@@ -13,6 +13,9 @@
 source "$(dirname "$0")/lib.sh"
 
 arbor_build
+# Its drags dock at the left and right edges of the screen, which are Arbor's only with macOS's own tiling off (MacTiling.swift). It declines on a
+# person's Mac, where the setting is theirs; with the tiling on there, those steps fail.
+macos_tiling off
 arbor_start 2 ARBOR_NO_HOTKEYS=0
 
 framed() { ! is parked "$1" && is parked "$2"; }

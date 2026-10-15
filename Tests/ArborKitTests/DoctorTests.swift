@@ -528,6 +528,7 @@ import Testing
     #expect(ticks(session.model) == [false, false, false])
 
     // Each move is ticked off as it happens, with no look at the clock.
+    h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
     h.system.drag(a, through: [CGPoint(x: 600, y: 210), CGPoint(x: 300, y: 300), CGPoint(x: 2, y: 400)])
     #expect(ticks(session.model) == [true, false, false])
     h.system.userFocus(a)

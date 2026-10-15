@@ -617,6 +617,7 @@ private let side = DisplaySnapshot(
 
   @Test func aDropAndAClickOnATileTeachToo() {
     let (h, a, b, _) = makeHarness(taught: false)
+    h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
     h.system.drag(a, through: [CGPoint(x: 600, y: 210), CGPoint(x: 300, y: 400), CGPoint(x: 2, y: 400)])
     #expect(lines(h) == ["Docked · ⌃⌥↩ frames it"])
 

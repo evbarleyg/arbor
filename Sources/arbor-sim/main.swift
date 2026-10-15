@@ -28,6 +28,8 @@ import Foundation
 //                                before letting go; `quick` lets go at once, `cmd` holds ⌘
 //   pick-up <id> <x> <y>         the first half of a drag: the window is held at that point, with the button down
 //   let-go                       the second half
+//   mac-tiling on|off            macOS's own tiling of dragged windows: on, as a Mac comes and every run begins, or off. With it on the
+//                                left, right and top edges of the screen are macOS's, which tiles a window let go at their last point
 //   move <id> <x> <y> <w> <h>    move/resize a window without the mouse
 //   shove <id> <x> <y> [then <x> <y>]
 //                                what no command does: the window is moved the way Arbor moves windows, behind the
@@ -369,6 +371,10 @@ func simulate(_ words: [String], harness: Harness, printLayout: inout Bool) -> (
     }
     system.heldModifiers = []
     return ("dragged \(id.rawValue) to \(Int(x)),\(Int(y))", true)
+  case "mac-tiling":
+    guard words.count == 2, words[1] == "on" || words[1] == "off" else { return usage("mac-tiling on|off") }
+    system.tiling = words[1] == "on" ? .on : .off
+    return ("macOS’s own tiling is \(words[1])", true)
   case "move":
     guard let id = window(1), let x = number(2), let y = number(3), let w = number(4), let h = number(5) else {
       return usage("move <id> <x> <y> <w> <h>")

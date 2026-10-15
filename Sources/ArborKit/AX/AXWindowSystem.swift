@@ -1187,6 +1187,11 @@ public final class AXWindowSystem: WindowSystem {
       // A button cannot go down twice: the release of whatever was going on was lost.
       releaseWasLost()
       press = makePress(at: cursorLocation())
+      // Served late, on a busy Mac, the press finds the window gone from under its own place: the list of windows is of now. Then the
+      // pointer's place of now, with the window's frame of now, is the pair to go by.
+      if press?.window == nil, press?.isSettled == false, eventLocation != nil {
+        press = makePress(at: ScreenGeometry.global(fromAppKit: NSEvent.mouseLocation))
+      }
       events?.pointerPressed()
     case .leftMouseDragged:
       if let window = draggingWindow {

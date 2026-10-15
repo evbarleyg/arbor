@@ -67,6 +67,12 @@ import Testing
     #expect(MacTiling(MacSwitch.inTheWay(macOS: 14) { _ in nil }) == .off, "macOS 14 tiles nothing")
   }
 
+  @Test func theEdgesThatAreMacOSs() {
+    #expect(MacTiling.on.edges == [.left, .right, .top])
+    #expect(MacTiling.off.edges == [])
+    #expect(MacTiling([.screenEdges]).edges == [.left, .right] && MacTiling([.menuBar]).edges == [.top] && MacTiling([.optionKey]).edges == [])
+  }
+
   /// Measured from the display under the pointer, not from zero, and a pointer between two whole points counts too.
   @Test func aSecondDisplayHasEdgesOfItsOwn() {
     let frame = CGRect(x: 1024, y: -200, width: 1920, height: 1080)

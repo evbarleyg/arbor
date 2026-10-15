@@ -31,15 +31,16 @@ extension ChaosRunner {
         + "part of it shows, though the other display has a better place.",
       script: """
         launch
+        mac-tiling off
         open 107 Xcode pid 1004 at 1201 365 2201 2311 min 2201 2311
         displays main:0,0,1920,1080:37,0,0,76* side:1920,-70,2560,1440:0,0,0,0 third:-60,1370,1512,982:0,0,0,88 windows-late
-        grab 107
-        release
+        dock 107 left
         carry 4328 1189
         layout Preview | Notes | Xcode
         """,
       """
         launch
+        mac-tiling off
         open 103 Mail pid 1002 at -3344 467 2048 1725 min 192 328
         displays main:0,0,1280,800:0,0,0,0* side:-1512,270,1512,982:25,0,49,0 windows-never
         dock right

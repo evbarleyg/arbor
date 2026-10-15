@@ -3988,12 +3988,12 @@
     "FakeWindowSystem.macTile"
    ],
    "guards": [
-    "test: thePreviewGoesAtTheLastPointAndComesBack",
+    "test: onItsWayToTheEdgePointByPointNoPreviewEverShows",
     "test: whenOptionComesUpThePreviewIsBack",
     "test: aSecondDisplayHasEdgesOfItsOwn",
     "e2e: Arbor shows no preview beside macOS's"
    ],
-   "copes": "MacTiling.claim says where macOS takes a window that is let go, and there Arbor shows no preview: it goes as the pointer reaches macOS's part of the edge and comes back as it leaves. The stand-ins know where macOS acts; they list no preview of macOS's.",
+   "copes": "MacTiling.claim says where macOS takes a window that is let go, and there Arbor shows no preview; and while the switch for an edge is on, none in the whole of its own band along that edge (MacTiling.edges), so that none comes up on the way there. The stand-ins know where macOS acts; they list no preview of macOS's.",
    "hurt": 3,
    "touches": [
     "fought"
@@ -4446,14 +4446,15 @@
     "FakeWindowSystem.macTile"
    ],
    "guards": [
-    "test: justInsideTheEdgeArborDocks",
+    "test: letGoInTheBandShortOfMacOSsPointAFloatingWindowStaysWhereItIs",
+    "test: theBottomEdgeStaysArborsAndWithTheSwitchesOffSoDoTheOthers",
     "test: macOSShowedItsPreviewHere",
     "test: thrownIntoTheMenuBarAndLetGoAtOnceTheWindowStaysAsItIs",
     "test: thrownAgainstTheSideItIsTiledAtOnce",
     "e2e: let go of a docked window at the very edge of the screen, where macOS tiles",
     "e2e: let go of a floating window in the menu bar, where macOS fills the screen"
    ],
-   "copes": "MacTiling.claim holds the places as they were measured: the first and the last point of the display's width and the menu bar are macOS's, one point further in the edge is Arbor's.",
+   "copes": "MacTiling.claim holds the places as they were measured: the first and the last point of the display's width and the menu bar are where macOS acts. Short of them, in the band that Arbor leaves to macOS while its switches are on, nobody acts.",
    "hurt": 2,
    "touches": [
     "fought"

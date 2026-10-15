@@ -23,7 +23,9 @@ system_profiler SPDisplaysDataType 2>/dev/null | grep -E "Resolution|Chipset|Dis
 echo "Accessibility for a child process: $(pointer ax-access)"
 echo "Screen Recording for a child process: $(pointer screen-access)"
 echo "pointer: $(pointer where)"
-macos_tiling
+# Its drags dock at the left and right edges of the screen, which are Arbor's only with macOS's own tiling off (MacTiling.swift). It declines on a
+# person's Mac, where the setting is theirs; with the tiling on there, those steps fail.
+macos_tiling off
 # On a person's Mac that is the list of the apps they have open, in output that gets pasted into pull requests.
 if on_throwaway_mac; then
   echo "windows on screen before the session (id pid layer x y w h on owner):"

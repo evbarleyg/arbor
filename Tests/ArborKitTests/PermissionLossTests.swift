@@ -215,6 +215,7 @@ import Testing
   @Test func aRefusedCallIsASecondOpinionTooAndIsActedOnOnceTheCallerHasReturned() {
     let (h, _, _, _, slack) = makeHarness(framed: false)
     h.revokeAccessibility()
+    h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
     h.system.drag(slack, through: [CGPoint(x: 700, y: 400), CGPoint(x: 400, y: 400), CGPoint(x: 2, y: 400)])
     #expect(h.system.deniedCalls > 0, "it tried, as it had no way of knowing")
     #expect(h.controller.isRunning, "and finished what it was doing")
@@ -305,6 +306,7 @@ import Testing
   @Test func aDragInProgressIsForgotten() {
     let (h, _, _, _, slack) = makeHarness(framed: false)
     h.system.mouseDown = true
+    h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
     h.controller.dragBegan(slack, at: CGPoint(x: 700, y: 400))
     h.controller.dragMoved(slack, to: CGPoint(x: 2, y: 400))
     #expect(h.overlays.preview != nil)

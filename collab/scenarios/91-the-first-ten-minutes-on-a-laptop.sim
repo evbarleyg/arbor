@@ -3,6 +3,8 @@
 # A third of that display is 560 points and Safari stops at 574: without F61, which makes room before it makes a tile, step 1 ends
 # with the browser as a tile and the tour falls apart.
 # Reference: T01 T02 T03 T10 T17 T20 T30 T32 T34 T40, A01 A05 A40 A41 A42 A51; F61. Window ids start at 101.
+# The three tiling switches of the guide's section 2 are off: with macOS's own tiling on, the left, right and top edges of the screen are macOS's (Q23).
+mac-tiling off
 display-size 1728x1117 33
 open Safari 1324x800 min 574x240
 open Terminal 585x400 min 177x100

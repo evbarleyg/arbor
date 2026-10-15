@@ -60,21 +60,133 @@ import Testing
     s.expectNothingLeftBehind()
   }
 
-  /// One point further in, the edge is Arbor's, as it is with macOS's tiling off.
-  @Test(arguments: [MacTiling.on, .off]) func justInsideTheEdgeArborDocks(tiling: MacTiling) {
-    for (point, edge) in [
-      (CGPoint(x: 1, y: 450), Edge.left), (CGPoint(x: 1438, y: 450), .right), (CGPoint(x: 700, y: 25), .top),
-      (CGPoint(x: 700, y: 899), .bottom),
+  /// A pointer travels. On its way to macOS's point of an edge it crosses Arbor's own band along that edge, and a preview that came up there
+  /// would go again as macOS's comes: two promises for one drag. So with the switch for an edge on, the whole edge is macOS's.
+  @Test(arguments: [CGPoint(x: 0, y: 450), CGPoint(x: 1439, y: 450), CGPoint(x: 700, y: 0), CGPoint(x: 0, y: 25), CGPoint(x: 1439, y: 899)])
+  func onItsWayToTheEdgePointByPointNoPreviewEverShows(end: CGPoint) {
+    let s = scene()
+    // From the middle of the Desktop, where nothing is offered either.
+    let start = CGPoint(x: s.desktop.midX, y: s.desktop.midY)
+    s.h.system.beginDrag(s.c, at: start)
+    let steps = Int(max(abs(end.x - start.x), abs(end.y - start.y)))
+    for step in 1...steps {
+      let share = CGFloat(step) / CGFloat(steps)
+      let point = CGPoint(x: start.x + (end.x - start.x) * share, y: start.y + (end.y - start.y) * share)
+      // Over the docked windows on the way Arbor may well offer something: what counts is the band along the edge.
+      let visible = s.h.visibleFrame
+      let inBand = point.x < visible.minX + 12 || point.x > visible.maxX - 12 || point.y < visible.minY + 12
+      s.h.system.moveDrag(to: point, holding: inBand ? 0.3 : 0)
+      if inBand { #expect(s.h.overlays.preview == nil, "at \(point)") }
+    }
+    s.h.system.holdDrag(for: 1)
+    s.h.system.endDrag()
+    s.h.scheduler.advance(by: 3)
+    #expect(s.h.workspace.isFloating(s.c))
+    #expect(s.h.system.frameLog.isEmpty, "\(s.h.system.frameLog)")
+    s.expectNothingLeftBehind()
+  }
+
+  /// Let go in the band, short of macOS's own point, nobody acts: a floating window floats where it is.
+  @Test(arguments: [CGPoint(x: 1, y: 450), CGPoint(x: 11, y: 450), CGPoint(x: 1438, y: 450), CGPoint(x: 1429, y: 450), CGPoint(x: 700, y: 25), CGPoint(x: 700, y: 36)])
+  func letGoInTheBandShortOfMacOSsPointAFloatingWindowStaysWhereItIs(point: CGPoint) {
+    let s = scene()
+    s.h.system.beginDrag(s.c)
+    s.h.system.moveDrag(to: point, holding: 1)
+    #expect(s.h.overlays.preview == nil)
+    let letGo = s.frame(s.c)
+    s.h.system.endDrag()
+    s.h.scheduler.advance(by: 3)
+    #expect(s.frame(s.c) == letGo)
+    #expect(s.h.workspace.isFloating(s.c))
+    #expect(s.h.system.frameLog.isEmpty, "\(s.h.system.frameLog)")
+    #expect(s.h.overlays.messages.isEmpty, "nobody took it")
+    s.expectNothingLeftBehind()
+  }
+
+  /// A docked one goes back to its slot, as wherever nothing is promised: macOS does not act there, so there is nobody to fight.
+  @Test func letGoInTheBandShortOfMacOSsPointADockedWindowGoesBack() {
+    let s = scene()
+    let slot = s.frame(s.b)
+    s.h.system.beginDrag(s.b)
+    s.h.system.moveDrag(to: s.onDesktop, holding: 0.3)
+    s.h.system.moveDrag(to: CGPoint(x: 5, y: 450), holding: 1)
+    #expect(s.h.overlays.preview == nil)
+    s.h.system.endDrag()
+    s.h.scheduler.advance(by: 3)
+    #expect(s.h.workspace.isDocked(s.b))
+    #expect(s.frame(s.b) == slot)
+    s.expectNothingLeftBehind()
+  }
+
+  /// The bottom edge is nobody's but Arbor's, away from the corners. With the switches off so are the others, to one point from the end.
+  @Test func theBottomEdgeStaysArborsAndWithTheSwitchesOffSoDoTheOthers() {
+    for (tiling, point, edge) in [
+      (MacTiling.on, CGPoint(x: 700, y: 899), Edge.bottom), (.on, CGPoint(x: 700, y: 890), .bottom),
+      (.off, CGPoint(x: 1, y: 450), .left), (.off, CGPoint(x: 1438, y: 450), .right), (.off, CGPoint(x: 700, y: 25), .top),
+      (.off, CGPoint(x: 700, y: 899), .bottom),
+      // Each switch for its own edges.
+      (MacTiling(screenEdges: true, menuBar: false, optionKey: true), CGPoint(x: 700, y: 30), .top),
+      (MacTiling(screenEdges: false, menuBar: true, optionKey: true), CGPoint(x: 5, y: 450), .left),
     ] {
       let s = scene(tiling)
       s.h.system.beginDrag(s.c)
       s.h.system.moveDrag(to: point, holding: 0.3)
-      #expect(s.h.overlays.preview != nil, "\(edge)")
+      #expect(s.h.overlays.preview != nil, "\(edge) with \(tiling)")
       s.h.system.endDrag()
       s.h.scheduler.advance(by: 3)
-      #expect(s.h.workspace.isDocked(s.c), "\(edge)")
+      #expect(s.h.workspace.isDocked(s.c), "\(edge) with \(tiling)")
       s.expectNothingLeftBehind()
     }
+  }
+
+  /// A window that lies under the menu bar, as every zoomed one does, has its title bar in the top band. Slid sideways, or merely nudged, it has
+  /// not been carried to the top: it used to dock to the top half. An edge in whose band the pointer took hold offers nothing until
+  /// the pointer has left the band once. At every setting of macOS's tiling; with it on the top band is silent anyway.
+  @Test(arguments: [MacTiling.off, .on]) func slidAlongTheEdgeItLiesAtAWindowDoesNotDock(tiling: MacTiling) {
+    let h = Harness()
+    h.system.tiling = tiling
+    let window = h.system.open(app: "Safari", frame: CGRect(x: 300, y: 25, width: 700, height: 500))
+    h.start()
+    h.system.clearFrameLog()
+    h.system.beginDrag(window)
+    for step in 1...60 { h.system.moveDrag(to: CGPoint(x: 650 + CGFloat(step), y: 35), holding: 0.05) }
+    h.system.holdDrag(for: 1)
+    #expect(h.overlays.previewHistory.allSatisfy { $0 == nil })
+    h.system.endDrag()
+    h.scheduler.advance(by: 3)
+    #expect(h.workspace.isFloating(window))
+    #expect(h.frame(window) == CGRect(x: 360, y: 25, width: 700, height: 500))
+    #expect(h.system.frameLog.isEmpty, "\(h.system.frameLog)")
+  }
+
+  /// Taken away from the edge and brought back, it has been carried there.
+  @Test func takenOutOfTheBandAndBroughtBackItDocks() {
+    let h = Harness()
+    h.system.tiling = .off
+    let window = h.system.open(app: "Safari", frame: CGRect(x: 300, y: 25, width: 700, height: 500))
+    h.start()
+    h.system.beginDrag(window)
+    h.system.moveDrag(to: CGPoint(x: 660, y: 35), holding: 0.3)
+    #expect(h.overlays.preview == nil)
+    h.system.moveDrag(to: CGPoint(x: 660, y: 120), holding: 0.3)
+    h.system.moveDrag(to: CGPoint(x: 660, y: 30), holding: 0.3)
+    #expect(h.overlays.preview != nil)
+    h.system.endDrag()
+    #expect(h.workspace.isDocked(window))
+  }
+
+  /// Only that edge. From the top band down the side to the left edge is a journey like any other.
+  @Test func theOtherEdgesAreOpenToIt() {
+    let h = Harness()
+    h.system.tiling = .off
+    let window = h.system.open(app: "Safari", frame: CGRect(x: 300, y: 25, width: 700, height: 500))
+    h.start()
+    h.system.beginDrag(window)
+    h.system.moveDrag(to: CGPoint(x: 300, y: 200), holding: 0.1)
+    h.system.moveDrag(to: CGPoint(x: 3, y: 450), holding: 0.3)
+    #expect(h.overlays.preview != nil)
+    h.system.endDrag()
+    #expect(h.workspace.isDocked(window))
   }
 
   /// What the switches are for: with them off every edge is Arbor's to its last point, and so is the menu bar.
@@ -82,21 +194,6 @@ import Testing
     let s = scene(.off)
     s.h.system.beginDrag(s.c)
     s.h.system.moveDrag(to: Self.places[index].0, holding: 0.3)
-    #expect(s.h.overlays.preview != nil)
-    s.h.system.endDrag()
-    #expect(s.h.workspace.isDocked(s.c))
-    s.expectNothingLeftBehind()
-  }
-
-  /// The preview is a promise, so it goes as the pointer reaches macOS's part of the edge and comes back as it leaves.
-  @Test func thePreviewGoesAtTheLastPointAndComesBack() {
-    let s = scene()
-    s.h.system.beginDrag(s.c)
-    s.h.system.moveDrag(to: CGPoint(x: 5, y: 450))
-    #expect(s.h.overlays.preview != nil)
-    s.h.system.moveDrag(to: CGPoint(x: 0, y: 450))
-    #expect(s.h.overlays.preview == nil)
-    s.h.system.moveDrag(to: CGPoint(x: 4, y: 450))
     #expect(s.h.overlays.preview != nil)
     s.h.system.endDrag()
     #expect(s.h.workspace.isDocked(s.c))
@@ -206,7 +303,7 @@ import Testing
     s.h.system.moveDrag(to: s.onDesktop, holding: 0.3)
     s.h.system.holdModifierKeys([.control, .option])
     s.h.run("pause")
-    #expect(s.h.overlays.messages.allSatisfy { !$0.model.line.hasPrefix("macOS tiles") })
+    #expect(s.h.overlays.messages.allSatisfy { !$0.model.line.hasPrefix("macOS tiled") })
     s.h.system.holdModifierKeys([])
     s.h.run("resume")
     s.h.scheduler.advance(by: 3)
@@ -327,7 +424,7 @@ import Testing
       s.h.scheduler.advance(by: 8)
       let said = s.h.overlays.messages.dropFirst(before).map(\.model.line)
       if round <= HeadsUpHint.timesShown {
-        #expect(said == ["macOS tiles windows let go here, so Arbor stood aside · Check Setup… in the menu"], "round \(round)")
+        #expect(said == ["macOS tiled this window; Arbor stood aside · ⌃⌥⌘← docks it · Check Setup… in the menu"], "round \(round)")
       } else {
         #expect(said.isEmpty, "round \(round)")
       }

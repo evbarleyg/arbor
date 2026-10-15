@@ -226,6 +226,7 @@ import Testing
     let (h, a, b, c) = makeHarness()
     h.run("dock \(a.rawValue) left")
     h.run("dock \(b.rawValue) right")
+    h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
     h.controller.dragBegan(c, at: titleBar(h, c))
     h.controller.dragMoved(c, to: CGPoint(x: 3, y: 400))
     #expect(h.overlays.preview != nil)

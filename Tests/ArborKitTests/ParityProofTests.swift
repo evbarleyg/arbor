@@ -279,6 +279,7 @@ import Testing
 
     // A docked window, dropped at the far edge of the other display.
     let start = h.frame(b)!
+    h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
     h.system.drag(
       b, through: [CGPoint(x: start.midX, y: start.minY + 10), CGPoint(x: 1600, y: 400), CGPoint(x: side.frame.maxX - 3, y: 400)])
     #expect(!h.workspace.contains(b))

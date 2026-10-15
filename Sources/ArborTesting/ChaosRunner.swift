@@ -361,6 +361,7 @@ public final class ChaosRunner {
     case .release: system.letGo()
     case .loseRelease: system.loseTheRelease()
     case .commandKey(held: let held): system.holdModifierKeys(held ? .command : [])
+    case .macTiling(on: let on): system.tiling = on ? .on : .off
     case .via(let source, let line):
       // `quit`, `pause` and the like have their promises checked in `run`.
       if let command = try? Command.parse(line), isRunning, ![.quit, .pause(minutes: nil), .togglePause].contains(command) {

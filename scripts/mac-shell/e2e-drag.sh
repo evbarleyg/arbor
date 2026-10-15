@@ -31,13 +31,32 @@ not() { ! "$@"; }
 # within <number> <low> <high>
 within() { [ "$1" -ge "$2" ] && [ "$1" -le "$3" ]; }
 
+# A key that is not there means on, from macOS 15 on, which is the first that tiles.
+macos_tiles() {
+  case "$(sw_vers -productVersion)" in 1[0-4].*) return 1 ;; esac
+  [ "$(defaults read com.apple.WindowManager "$1" 2>/dev/null || echo 1)" = 1 ]
+}
+
 step "drag a window by its title bar to the left screen edge"
 # shellcheck disable=SC2046
 drag $(titlebar_of "$W3") $((sx + 3)) $((sy + sh / 2)) --no-release
-check "a drop preview shows while the button is held" has_overlay 3
-release
-check "the window docks on release" eventually is docked "$W3"
-check "no preview is left behind" eventually not has_overlay 3
+if macos_tiles EnableTilingByEdgeDrag; then
+  # A hand pushes on to the last point, which is macOS's, so with its tiling on the whole edge is: Arbor offers nothing on the way there.
+  check "with macOS's tiling on Arbor offers nothing along the edge" not has_overlay 3
+  held=$(real_frame_of "$W3")
+  release
+  sleep 1.5
+  check "let go short of macOS's point, the window floats" is floating "$W3"
+  check "where it was let go" arbor_close "$(real_frame_of "$W3")" "$held"
+  # The keys and the commands stay Arbor's, and the journey goes on from a docked window.
+  ctl dock "$W3" left
+  check "a command docks it" eventually is docked "$W3"
+else
+  check "a drop preview shows while the button is held" has_overlay 3
+  release
+  check "the window docks on release" eventually is docked "$W3"
+  check "no preview is left behind" eventually not has_overlay 3
+fi
 read -r x3 y3 w3 h3 <<< "$(arbor_ask slot "$W3")"
 check "it sits at the left edge" [ "$x3" -le $((sx + 30)) ]
 summary
@@ -86,11 +105,6 @@ summary
 # macOS tiles dragged windows itself, and a Mac comes with that switched on: at the first and the last point of the display's width a
 # half or a quarter, in the menu bar the whole screen. It asks nobody, so there Arbor stands aside (MacTiling.swift). Before it
 # did, two previews showed, and the window went into Arbor's slot, to macOS's tile and back. Played as this Mac is set.
-# A key that is not there means on, from macOS 15 on, which is the first that tiles.
-macos_tiles() {
-  case "$(sw_vers -productVersion)" in 1[0-4].*) return 1 ;; esac
-  [ "$(defaults read com.apple.WindowManager "$1" 2>/dev/null || echo 1)" = 1 ]
-}
 # The whole display: its first point is macOS's, which with the Dock on the left is not where the visible part begins.
 read -r fx fy fw fh <<< "$(display_frame_of 1)"
 

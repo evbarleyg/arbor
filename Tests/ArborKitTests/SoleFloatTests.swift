@@ -586,6 +586,7 @@ private let side = DisplaySnapshot(
   @Test func draggedToADropTargetItDocks() {
     let (h, _, f) = makeHarness()
     let filled = desktop(h)
+    h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
     h.system.drag(f, through: [CGPoint(x: filled.midX, y: filled.minY + 10), CGPoint(x: 1438, y: 400)])
     #expect(h.workspace.isDocked(f), "\(h.ascii())")
     expectWindowsMatchLayout(h, on: h.display)

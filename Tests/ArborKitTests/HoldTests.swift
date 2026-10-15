@@ -857,6 +857,7 @@ private let cameraCommands = [
     #expect(h.run("dock \(s.slack.rawValue) right").ok)
     #expect(h.frame(s.mail)!.maxX <= h.frame(s.slack)!.minX)
     onlyTheTwo("moved one place to the right")
+    h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
     h.system.drag(s.slack, through: [h.frame(s.slack)!.center, CGPoint(x: 300, y: 500), CGPoint(x: 2, y: 500)])
     #expect(h.frame(s.slack)!.maxX <= h.frame(s.mail)!.minX)
     onlyTheTwo("dragged to the left edge")
@@ -889,6 +890,7 @@ private let cameraCommands = [
     h.run("hold")
     let t = h.system.open(app: "Terminal")
     // Keynote is in a row with the Desktop and Mail. Beside it the two are a group of their own (F62).
+    h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
     h.system.drag(t, through: [CGPoint(x: 620, y: 210), CGPoint(x: 1438, y: 500)])
     #expect(h.workspace.isDocked(t))
     #expect(h.frame(s.keynote)!.maxX <= h.frame(t)!.minX)
@@ -1356,6 +1358,7 @@ private let cameraCommands = [
     let t = h.system.open(app: "Terminal")
     #expect(h.controller.workspaceID(containing: t) == h.display)
     // The right edge of the side display, where the view is on Xcode, which is in a row with Safari.
+    h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
     h.system.drag(t, through: [CGPoint(x: 620, y: 210), CGPoint(x: 2000, y: 500), CGPoint(x: 3358, y: 500)])
     #expect(h.controller.workspaceID(containing: t) == Self.side.id, "it belongs to the display it is on")
     #expect(h.controller.workspaces[h.display]?.contains(t) == false)

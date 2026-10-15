@@ -403,6 +403,13 @@ docking, and neither `drop(of:…)` nor `soleFloatDropped` gives the window a fr
 arrangement without the size Arbor would otherwise give it back. From then on it is a floating window that something else
 moves, which `windowChanged` follows as always. Half a second later, if macOS has moved it, a hint says who took it
 (`HeadsUpHint.leftToMacOS`); macOS does not always: thrown into the menu bar and let go at once, the window stays as it is.
+A pointer travels, and on its way to macOS's point it crosses Arbor's own band along the screen's edge, where a preview would come up only to go
+again as macOS's comes. So while the switch for an edge is on, the whole band is silent (`MacTiling.edges`, `DropOptions.silentEdges`;
+`collab/QUESTIONS.md`, Q23): `DropResolver` answers `.float` there, in the corners too, before it looks at anything else that lies in the
+band. Let go there, short of macOS's point, a floating window stays where it is and a docked one goes back to its slot, as wherever nothing
+was promised. The bottom edge, docked windows' own edges further in and the keys stay Arbor's.
+An edge is silent in the same way, at every setting, while the pointer has not left the band in which it took hold (`DragSession.edgesNeverLeft`): a window that
+lies under the menu bar has its title bar in the top band, and slid sideways it has not been carried to the top.
 A release that Arbor never saw ends the same way at an edge or in the menu bar (`dragCancelled`), because macOS saw it; a drag
 that ends with the button still down (a pause, a quit) does not. Dragged off its tile, a window gets its earlier size
 back from macOS, the one change of size `windowChanged` takes from a window in the hand. One point decides, so

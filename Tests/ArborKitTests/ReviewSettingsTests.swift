@@ -306,6 +306,7 @@ import Testing
 
   @Test func previewsAreSwitchedOffDuringADrag() throws {
     let (h, a, _, c) = desk()
+    h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
     h.system.grab(c)
     h.system.carry(to: CGPoint(x: 5, y: 400))
     h.scheduler.advance(by: 1)

@@ -7,6 +7,9 @@
 source "$(dirname "$0")/lib.sh"
 needs_throwaway_mac "switch to dark mode, replace the wallpaper, add a Space, and change Reduce Motion and edge tiling"
 arbor_build
+# Its drags dock at the left and right edges of the screen, which are Arbor's only with macOS's own tiling off (MacTiling.swift). It declines on a
+# person's Mac, where the setting is theirs; with the tiling on there, those steps fail.
+macos_tiling off
 
 style() { defaults read -g AppleInterfaceStyle 2>/dev/null || echo Light; }
 shows() { [ "$(basename "$(pointer wallpaper | head -n 1)")" = "$1" ]; }
@@ -60,11 +63,6 @@ shot light-gradient
 wallpaper "#2e7d32"
 check "the desktop shows the colour" eventually shows wallpaper-2e7d32.png
 shot light-green
-
-step "macOS's own tiling, which is on unless somebody turned it off"
-# Where it acts and what Arbor does there is e2e-drag.sh's to play (MacTiling.swift has the measurements). Off for the rest of this script,
-# whose drags are about other things.
-macos_tiling off
 
 step "Reduce Motion"
 macos_reduce_motion off

@@ -1,0 +1,34 @@
+# Story: someone starts Arbor on a Mac as it comes, with macOS's own tiling on, and drags windows to the screen's edges as they always have.
+# Arbor never fights macOS over a window: the left, right and top edges are macOS's (issue #3, rule 1; QUESTIONS Q23).
+# The simulated display is 1440x900 with a 25-point menu bar.
+open Safari
+open Notes
+open Mail
+# Pushed against the left edge, Safari gets the left half of the screen from macOS. Arbor docks nothing and moves nothing.
+drag 101 0 450
+wait 1
+expect floating 101
+expect size 101 720x875
+expect count docked 0
+expect said macOS tiled this window; Arbor stood aside · ⌃⌥⌘← docks it · Check Setup… in the menu
+# Held in the menu bar, Notes fills the screen.
+drag 102 700 0
+wait 1
+expect floating 102
+expect size 102 1440x875
+# Let go a few points short of the edge, nobody acts.
+drag 103 1435 450
+wait 1
+expect floating 103
+expect count docked 0
+# The keys work at every setting.
+focus 103
+press dock left
+expect docked 103
+# So does the bottom edge, and the edges of a docked window.
+drag 101 900 897
+expect docked 101
+# With the switches off, every edge is Arbor's.
+mac-tiling off
+drag 102 1437 450
+expect docked 102

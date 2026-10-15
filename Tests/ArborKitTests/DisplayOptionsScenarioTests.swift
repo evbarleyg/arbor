@@ -83,6 +83,7 @@ private let studio = DisplaySnapshot(
     let (h, small, large) = makeHarness()
     for (display, window, gap) in [(laptop, small[0], CGFloat(6)), (studio, large[0], CGFloat(20))] {
       let edge = CGPoint(x: display.visibleFrame.minX + 2, y: display.visibleFrame.midY)
+      h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
       h.system.drag(window, through: [h.frame(window)!.center, display.frame.center, edge])
       let preview = h.overlays.previewHistory.compactMap { $0 }.last
       #expect(preview == h.frame(window), "\(display.name)")
@@ -94,6 +95,7 @@ private let studio = DisplaySnapshot(
     let (h, small, _) = makeHarness()
     h.run("dock \(small[0].rawValue) left")
     #expect(h.frame(small[0])!.minX == 6)
+    h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
     h.system.drag(
       small[0], through: [h.frame(small[0])!.center, studio.frame.center, CGPoint(x: studio.frame.maxX - 2, y: 700)])
     #expect(h.controller.workspaces[studio.id]!.isDocked(small[0]))
@@ -106,6 +108,7 @@ private let studio = DisplaySnapshot(
     // Thirty points from the left edge: inside the band on one display, outside it on the other.
     for (display, window, docks) in [(laptop, small[0], false), (studio, large[0], true)] {
       let point = CGPoint(x: display.visibleFrame.minX + 30, y: display.visibleFrame.midY)
+      h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
       h.system.drag(window, through: [h.frame(window)!.center, display.frame.center, point])
       #expect(h.controller.workspaces[display.id]!.isDocked(window) == docks, "\(display.name)")
     }

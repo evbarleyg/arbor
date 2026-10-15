@@ -110,6 +110,9 @@ public enum ChaosAction: Equatable, Sendable, CustomStringConvertible {
   case loseRelease
   /// ⌘ goes down, or comes up. Held during a drag, it turns docking off (F09).
   case commandKey(held: Bool)
+  /// macOS's own tiling of dragged windows is switched on, as a Mac comes and every walk begins, or off. With it on the left, right and
+  /// top edges of the screen are macOS's (`MacTiling`).
+  case macTiling(on: Bool)
   /// Drags a window's edges until it has this frame; with `hold` the button stays down.
   case edge(WindowID, CGRect, hold: Bool)
   case tile(DisplayID, NodeID)
@@ -250,6 +253,7 @@ public enum ChaosAction: Equatable, Sendable, CustomStringConvertible {
     case .release: return "release"
     case .loseRelease: return "lose-release"
     case .commandKey(held: let held): return held ? "cmd down" : "cmd up"
+    case .macTiling(on: let on): return on ? "mac-tiling on" : "mac-tiling off"
     case .via(let source, let line): return "via \(source.rawValue) \(line)"
     case .key(let line, let phase): return "key \(phase == .pressed ? "down" : "up") \(line)"
     case .pinch(let phase, let magnification): return "pinch \(Self.word(for: phase)) \(Self.format(magnification))"
@@ -406,6 +410,7 @@ public enum ChaosAction: Equatable, Sendable, CustomStringConvertible {
     case ("way-back", 2): return ChaosRunner.WayBack(rawValue: words[1]).map { .wayBack($0) }
     case ("lose-release", 1): return .loseRelease
     case ("cmd", 2) where words[1] == "down" || words[1] == "up": return .commandKey(held: words[1] == "down")
+    case ("mac-tiling", 2) where words[1] == "on" || words[1] == "off": return .macTiling(on: words[1] == "on")
     case ("via", 3...): return CommandSource(rawValue: words[1]).map { .via($0, words.dropFirst(2).joined(separator: " ")) }
     case ("key", 3...) where words[1] == "down" || words[1] == "up":
       return .key(words.dropFirst(2).joined(separator: " "), words[1] == "down" ? .pressed : .released)

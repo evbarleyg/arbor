@@ -187,6 +187,9 @@ import Testing
       let before = picture(h, without: dragged)
       h.system.beginDrag(dragged)
       wander(&random, h)
+      // The one exception: a release that Arbor never saw, macOS saw. Where it tiles, the window is its own by now, and leaves the arrangement
+      // instead of being pulled back out of macOS's tile (MacTilingTests).
+      if h.system.macTile(at: h.system.cursor) != nil { continue }
       h.system.loseTheReleaseOfTheDrag()
       h.system.heldModifiers = []
       expectNone(picture(h, without: dragged).differences(from: before), seed)
@@ -215,6 +218,8 @@ import Testing
         if dragging {
           h.system.beginDrag(dragged)
           wander(&journey, h)
+          // As above: where macOS tiles, the drag is not without consequence.
+          if h.system.macTile(at: h.system.cursor) != nil { return nil }
           h.system.loseTheReleaseOfTheDrag()
           h.system.heldModifiers = []
           h.system.cursor = CGPoint(x: 720, y: 450)

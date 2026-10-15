@@ -597,6 +597,7 @@ private let second = DisplaySnapshot(
 
   @Test func strictModeReportsADifferentDropPreview() {
     let (trace, _) = record(before: { $0.system.open(app: "Safari") }) { h in
+      h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
       h.system.drag(WindowID(101), through: [CGPoint(x: 620, y: 210), CGPoint(x: 300, y: 300), CGPoint(x: 3, y: 450)])
     }
     #expect(TraceReplayer(trace, mode: .strict).run().problems == [])
@@ -1127,6 +1128,7 @@ private let second = DisplaySnapshot(
     let (trace, _) = record(before: { $0.system.open(app: "Safari") }) { h in
       h.run("trace note drag Safari to the left edge")
       h.scheduler.advance(by: 0.5)
+      h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
       h.system.drag(WindowID(101), through: [CGPoint(x: 620, y: 210), CGPoint(x: 300, y: 300), CGPoint(x: 3, y: 450)])
     }
     let story = TraceReplayer(trace).run().story

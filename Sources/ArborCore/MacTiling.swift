@@ -44,6 +44,14 @@ public struct MacTiling: Equatable, Sendable, Codable {
   /// As a Mac comes.
   public static let on = MacTiling(screenEdges: true, menuBar: true, optionKey: true)
 
+  /// The screen edges that are macOS's as the switches stand. It acts only at their last point, but a hand pushes a window against an edge,
+  /// so Arbor leaves it the whole of its own band along them (`DropOptions.silentEdges`). The bottom edge is nobody's but Arbor's.
+  public var edges: Set<Edge> {
+    var edges: Set<Edge> = screenEdges ? [.left, .right] : []
+    if menuBar { edges.insert(.top) }
+    return edges
+  }
+
   /// How long the pointer has to rest in the menu bar before macOS fills the screen, in seconds: somewhere between 0.1 and 0.2. Arbor does
   /// not go by it. Taking a window back that macOS then takes after all is the fight again, and leaving one alone that macOS
   /// leaves alone too costs nothing: it floats where it was let go.

@@ -153,6 +153,8 @@ It has no other commands for Spaces; those need a scenario test.
 
 `drag <id> <x> <y>` holds the window at the point before letting go, so drop
 targets activate; add `quick` to let go at once and `cmd` to hold ⌘.
+**The simulated Mac comes as a real one does, with macOS's own tiling on**: the left, right and top edges of the screen are macOS's, and a window let go at their
+last point is tiled by the stand-in as macOS was seen to do it. `mac-tiling off` makes every edge Arbor's (in a test: `h.system.tiling = .off`; in a chaos script the same words).
 `find` prints the palette of Go to… as text; `finder-type [text]`, `finder-move <rows>`, `finder-choose [n]` and `finder-cancel` are the keys pressed in it.
 
 `focus 101` is the user clicking a window; with anything but a window id (`focus left`, `focus next`) it is Arbor's own
@@ -428,7 +430,7 @@ Child processes have Accessibility and Screen Recording. Reduce Motion is on. A 
 macOS's own tiling is at its default, which is on (no key of `com.apple.WindowManager` is set). Where it acts was measured there by holding a window
 with the pointer at one point after another and looking for WindowManager's preview in the window server's list: at x 0 and x 1023 (not 1, 2, 1021,
 1022), from y 0 to y 30 (not 31), nowhere along the bottom, and anywhere with ⌥ held, whatever else is held. At the sides at once; in the menu bar only after a rest of 0.1 to 0.2 s. A window of a
-fixed size is taken too, and moved into the tile as it is. There Arbor stands aside (`MacTiling.swift`, which has the
+fixed size is taken too, and moved into the tile as it is. There, and in the whole of its own band along those edges (Q23), Arbor stands aside (`MacTiling.swift`, which has the
 numbers; `e2e-drag.sh` plays it). A posted pointer is not stopped at the edge of the display as a hand's is: `drag … -40 368` really goes to x -40,
 where neither macOS nor Arbor does anything. `macos_tiling off` switches it off, and Arbor goes by the setting from the next drag on.
 A double-click on a title bar fills the screen too (macOS's default for it), tiling or no tiling.
@@ -1427,8 +1429,8 @@ Real apps, which the test windows cannot stand in for (F17):
   second; `kill -CONT` and the windows go where they belong.
 - Resize the Dock, or set it to hide, then `arborctl relayout`: the layout uses the new space.
 
-With macOS's own window tiling on, as a Mac comes, Arbor stands aside at the very edge of the screen and in the menu
-bar (`MacTiling`), so try the edges both ways: System Settings → Desktop & Dock → Windows. Stage Manager rearranges windows on its own and cannot be used with Arbor.
+With macOS's own window tiling on, as a Mac comes, the left, right and top edges of the screen are macOS's
+(`MacTiling`), so try the edges both ways: System Settings → Desktop & Dock → Windows. Stage Manager rearranges windows on its own and cannot be used with Arbor.
 
 How the menu bar item, the icon and the welcome window look can be seen without a screen: `Tests/ArborKitTests/MenuBarDrawingTests.swift` (macOS only, part
 of `swift test`) draws them with the real AppKit and SwiftUI code into bitmaps in memory, checks pixels and sizes, and leaves pictures of every

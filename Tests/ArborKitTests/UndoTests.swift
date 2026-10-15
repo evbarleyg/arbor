@@ -318,6 +318,7 @@ private func expectConsistent(_ h: Harness, _ note: String = "", sourceLocation:
     h.overlays.dragSeam(try #require(h.overlays.seams[h.display]?.first), by: 40)
     #expect(titles()[0] == "Resize")
     let frame = try #require(h.frame(b))
+    h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
     h.system.drag(b, through: [CGPoint(x: frame.midX, y: frame.minY + 10), CGPoint(x: 1437, y: 450)])
     #expect(h.workspace.isDocked(b))
     #expect(titles()[0] == "Dock")
@@ -693,6 +694,7 @@ private func expectConsistent(_ h: Harness, _ note: String = "", sourceLocation:
     let (h, a, b, _) = makeHarness()
     let before = Picture(h)
     let start = h.frame(a)!
+    h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
     h.system.drag(a, through: [CGPoint(x: start.midX, y: start.minY + 10), CGPoint(x: 200, y: 400), CGPoint(x: 3, y: 450)])
     #expect(h.workspace.isDocked(a))
     #expect(undoLabels(h) == ["drag \(a) to the left edge"])

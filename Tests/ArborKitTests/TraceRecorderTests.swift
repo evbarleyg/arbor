@@ -369,6 +369,7 @@ private func endReason(_ entries: [TraceEntry]) -> String? {
     let a = h.system.open(app: "Safari")
     h.start()
     h.run("trace on drag")
+    h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
     h.system.drag(a, through: [CGPoint(x: 620, y: 210), CGPoint(x: 300, y: 300), CGPoint(x: 3, y: 450)])
     h.run("trace off")
     let kinds = essential(recordedTrace(h).entries).map { $0.line.description.split(separator: " ").prefix(3).joined(separator: " ") }
@@ -544,6 +545,7 @@ private func endReason(_ entries: [TraceEntry]) -> String? {
     h.start()
     h.run("trace on edges")
     h.system.mouseDown = true
+    h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
     h.system.events?.dragBegan(a, at: CGPoint(x: 100, y: 400))
     // In and out of the band along the screen's left edge, a millisecond apart: the preview changes every time.
     let xs: [CGFloat] = [100, 3, 100, 3, 100, 3]

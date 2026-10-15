@@ -209,9 +209,9 @@ public enum HeadsUpHint: String, Sendable, CaseIterable {
     case .docked:
       return HeadsUpModel(kind: .hint, text: "Docked", hint: shortcut(.zoom(nil)).map { "\($0) frames it" })
     case .leftToMacOS:
-      // The way out is no shortcut, so it is said whatever the keys are.
-      return HeadsUpModel(
-        kind: .hint, text: "macOS tiles windows let go here, so Arbor stood aside", hint: "Check Setup… in the menu")
+      // First the way that works at once, then the lasting cure, which is no shortcut and is said whatever the keys are.
+      let ways = [shortcut(.dock(nil, .left)).map { "\($0) docks it" }, "Check Setup… in the menu"].compactMap { $0 }
+      return HeadsUpModel(kind: .hint, text: "macOS tiled this window; Arbor stood aside", hint: ways.joined(separator: " · "))
     }
   }
 }

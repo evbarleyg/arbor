@@ -44,6 +44,10 @@ extension Controller {
     var reflow = Reflow()
     /// macOS's own tiling as it stood when the drag began.
     var macTiling = MacTiling.off
+    /// The screen edges in whose band the pointer took hold and has been ever since. A window that lies under the menu bar has its title
+    /// bar in the top band: slid sideways, or merely nudged, it has not been carried to that edge. Nothing is offered along it
+    /// until the pointer has left the band once.
+    var edgesNeverLeft: Set<Edge> = []
   }
 
   /// Held while dragging, this turns docking off. Not ⌥: since macOS 15 that brings up macOS's own
@@ -74,6 +78,7 @@ extension Controller {
     drag = DragSession(window: id, sourceDisplay: workspaceID(containing: id), point: point)
     // Asked at every drag: people change it while Arbor runs, in the window that Check Setup sent them to.
     drag?.macTiling = system.macTiling()
+    drag?.edgesNeverLeft = screenEdges(near: point)
     soleFloatTakenInHand(id)
     // Word of a drag can come late, when the pointer has already stopped where it is going. The
     // hold counts from now, without waiting for a move that may not come.
@@ -83,12 +88,14 @@ extension Controller {
   public func dragMoved(_ id: WindowID, to point: CGPoint) {
     guard drag?.window == id else { return }
     drag?.point = point
+    if drag?.edgesNeverLeft.isEmpty == false { drag?.edgesNeverLeft.formIntersection(screenEdges(near: point)) }
     updateHover()
   }
 
   public func dragEnded(_ id: WindowID, at point: CGPoint) {
     guard drag?.window == id else { return }
     drag?.point = point
+    if drag?.edgesNeverLeft.isEmpty == false { drag?.edgesNeverLeft.formIntersection(screenEdges(near: point)) }
     guard let session = drag else { return }
     let hover = hover(of: session)
     let held =
@@ -149,6 +156,12 @@ extension Controller {
     return dropTarget(for: session.window, at: point)
   }
 
+  /// The edges of the display under `point` in whose band it lies.
+  private func screenEdges(near point: CGPoint) -> Set<Edge> {
+    guard let id = displayID(at: point), let display = display(id) else { return [] }
+    return DropResolver.screenEdges(near: point, visibleFrame: display.visibleFrame, options: options(for: id).dropOptions)
+  }
+
   /// What `session`'s pointer is over if the window is macOS's there, otherwise nil.
   func hoverLeftToMacOS(_ session: DragSession, optionHeld: Bool) -> Hover? {
     guard let id = displayID(at: session.point), workspaces[id] != nil, let display = display(id),
@@ -168,10 +181,11 @@ extension Controller {
       let docked = workspaces.values.contains { $0.isDocked(window) }
       return Hover(display: displayID, target: docked ? .none : .float, isNowhere: docked)
     }
+    var dropOptions = options(for: displayID).dropOptions
+    dropOptions.silentEdges = (drag?.macTiling.edges ?? []).union(drag?.edgesNeverLeft ?? [])
     func resolve(_ layout: Layout, _ tree: LayoutTree) -> DropTarget {
       DropResolver.resolve(
-        point: point, window: window, layout: layout, tree: tree, visibleFrame: display.visibleFrame,
-        options: options(for: displayID).dropOptions)
+        point: point, window: window, layout: layout, tree: tree, visibleFrame: display.visibleFrame, options: dropOptions)
     }
     var seen = (layout: layout, tree: workspace.tree)
     var target = resolve(seen.layout, seen.tree)

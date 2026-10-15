@@ -129,6 +129,7 @@ import Testing
     let start = h.frame(a)!
     let grab = CGPoint(x: start.midX, y: start.minY + 10)
     let edge = CGPoint(x: 3, y: 450)
+    h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
     h.system.drag(a, through: [grab, CGPoint(x: 200, y: 400), edge])
     #expect(h.workspace.isDocked(a))
     #expect(h.frame(a)!.minX == h.visibleFrame.minX + 12)

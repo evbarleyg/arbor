@@ -559,6 +559,7 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
 
   @Test func draggingAWindowToAnEdgeRemembersWhereItWasBeforeTheDrag() {
     let (h, notes, _, _) = makeHarness()
+    h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
     h.system.drag(notes, through: [CGPoint(x: 500, y: 210), CGPoint(x: 200, y: 300), CGPoint(x: 2, y: 400)])
     #expect(h.workspace.isDocked(notes))
     #expect(h.workspace.undockedFrame(of: notes) == notesFrame)
@@ -1503,6 +1504,7 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
     let h = Harness(displays: [main, side])
     let notes = h.system.open(app: "Notes", frame: notesFrame)
     h.start()
+    h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
     h.system.drag(notes, through: [CGPoint(x: 500, y: 210), CGPoint(x: 2000, y: 300), CGPoint(x: 2718, y: 400)])
     #expect(h.controller.workspaces[side.id]?.isDocked(notes) == true)
     h.run("float \(notes.rawValue)")

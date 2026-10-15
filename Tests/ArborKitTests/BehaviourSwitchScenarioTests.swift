@@ -102,6 +102,7 @@ private func withNothingRemembered(_ old: Harness) -> Harness {
 @Suite @MainActor struct PreviewDragsTests {
   /// Drags `a` over the middle of the Desktop to the left screen edge.
   func dragToTheLeftEdge(_ h: Harness, _ a: WindowID) {
+    h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
     h.system.drag(a, through: [CGPoint(x: 400, y: 110), CGPoint(x: 200, y: 300), CGPoint(x: 3, y: 450)])
   }
 
@@ -119,6 +120,7 @@ private func withNothingRemembered(_ old: Harness) -> Harness {
 
   @Test func turningThePreviewOffDuringADragHidesIt() {
     let (h, a, _, _) = makeHarness()
+    h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
     h.controller.dragBegan(a, at: CGPoint(x: 400, y: 110))
     h.controller.dragMoved(a, to: CGPoint(x: 3, y: 450))
     #expect(h.overlays.preview != nil)
@@ -329,6 +331,7 @@ private func withNothingRemembered(_ old: Harness) -> Harness {
   @Test func draggingAWindowToAnotherDisplayWidensOnlyTheNeighbour() {
     let (h, a, b, c) = makeRow(keep, displays: [main, side])
     let (before, desktop) = (frames(h), h.layout!.desktopFrame)
+    h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
     h.system.drag(b, through: [CGPoint(x: before[b]!.midX, y: before[b]!.minY + 10), CGPoint(x: 2717, y: 400)])
     #expect(h.controller.workspaces[side.id]!.isDocked(b))
     expectOnlyTheNeighbourGrew(h, from: before, desktop: desktop, a, b, c)
@@ -344,6 +347,7 @@ private func withNothingRemembered(_ old: Harness) -> Harness {
   @Test func thePreviewOfADockedWindowsMoveMatchesWhereItLands() {
     let (h, _, b, _) = makeRow(keep)
     let start = h.frame(b)!
+    h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
     h.system.drag(
       b, through: [CGPoint(x: start.midX, y: start.minY + 10), CGPoint(x: 900, y: 400), CGPoint(x: 1437, y: 450)])
     #expect(h.overlays.previewHistory.compactMap { $0 }.last == h.frame(b))

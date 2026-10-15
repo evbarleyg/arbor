@@ -249,7 +249,10 @@ import Testing
     #expect(HeadsUpHint.tile.model(facts: two, shortcut: keys).line == "Too small to show: click the tile to zoom in · ⌃⌥G goes there too")
     #expect(
       HeadsUpHint.leftToMacOS.model(facts: two, shortcut: keys).line
-        == "macOS tiles windows let go here, so Arbor stood aside · Check Setup… in the menu")
+        == "macOS tiled this window; Arbor stood aside · Check Setup… in the menu")
+    #expect(
+      HeadsUpHint.leftToMacOS.model(facts: two) { $0 == .dock(nil, .left) ? "⌃⌥⌘←" : nil }.line
+        == "macOS tiled this window; Arbor stood aside · ⌃⌥⌘← docks it · Check Setup… in the menu")
     for hint in HeadsUpHint.allCases {
       let bare = hint.model(facts: two) { _ in nil }
       // The one whose second half names a menu item, which is there whatever the keys are.
