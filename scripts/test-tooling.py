@@ -9,6 +9,7 @@ before 2026-10-14.
 arbor-e2e's guardian gets its situations too; test-e2e-guardian.py has them.
 
 `make check` runs this. The scenario rows need .build/debug/arbor-sim and are skipped, loudly, without it.
+`--only scenarios` runs those alone and `--but scenarios` all the others, which take two minutes and need no build.
 The rows for lib.sh run small scripts for real, against stand-ins for a Mac, under `bash` or $ARBOR_TEST_BASH (macOS has 3.2).
 Exit code 1 when a row comes out wrong.
 """
@@ -1888,27 +1889,40 @@ print(opener.open("http://127.0.0.1:%%d/" %% server.server_address[1], timeout=5
     row("serve.py: without a port it says how it is used", subprocess.run([sys.executable, os.path.join(HERE, "mac-shell", "serve.py")], capture_output=True, check=False).returncode, 1)
 
 
-def main():
+def chosen(arguments):
+    """All the checks, in the order they stand in here, or those named after `--only`, or all but those named after `--but`. Whatever is called
+    check_… is one: there is no list to forget it in. A name nobody knows would choose nothing, and is refused."""
+    names = {name[len("check_"):].replace("_", "-"): check for name, check in globals().items() if name.startswith("check_")}
+    if not arguments:
+        return list(names.values())
+    if arguments[0] not in ("--only", "--but") or not arguments[1:] or set(arguments[1:]) - set(names):
+        sys.exit(f"usage: test-tooling.py [--only NAME… | --but NAME…], the names being: {' '.join(names)}")
+    return [check for name, check in names.items() if (name in arguments[1:]) == (arguments[0] == "--only")]
+
+
+# Three minutes between them, two thirds of which they wait for the small scripts they run. So side by side, and beside all the rest: each keeps
+# to folders and stand-ins of its own. (One after another 186 s, like this 107 to 117 s, on four cores that were busy besides.)
+SIDE_BY_SIDE = ("check_mac_shell_lib", "check_run_list", "check_mac_shell_batch")
+
+
+def main(arguments=()):
+    checks = chosen(list(arguments))
     canary, since = subprocess.Popen(["sleep", "600"]), time.time()
-    check_parity()
-    check_ci_step()
-    check_scenarios()
-    check_lint()
-    check_mutate()
-    check_mac_shell_lint()
-    check_mac_shell_lib(canary, since)
-    check_rehearse()
-    check_makefile()
-    check_run_list()
-    check_install()
-    check_e2e()
-    check_e2e_guardian()
-    check_ci_mtimes()
-    check_ci_build_key()
-    check_mac_shell_batch()
-    check_preflight()
-    check_fuzz_launch()
-    check_no_server_asks_its_name()
+    try:
+        with concurrent.futures.ThreadPoolExecutor(len(SIDE_BY_SIDE)) as pool:
+            going = [pool.submit(check, *((canary, since) if check is check_mac_shell_lib else ())) for check in checks if check.__name__ in SIDE_BY_SIDE]
+            for check in checks:
+                if check.__name__ not in SIDE_BY_SIDE:
+                    check()
+            for one in going:
+                one.result()
+    finally:
+        canary.kill()
+        canary.wait()
+    if list(arguments[:1]) == ["--only"] and check_scenarios in checks:
+        row("asked for by name, the scenario rows are not skipped", os.access(os.path.join(ROOT, ".build", "debug", "arbor-sim"), os.X_OK), True)
+    row("--only and --but divide the checks between them", sorted(check.__name__ for how in ("--only", "--but") for check in chosen([how, "scenarios", "lint"])),
+        sorted(check.__name__ for check in chosen([])))
     wrong = 0
     for what, got, expected in rows:
         if got != expected:
@@ -1919,4 +1933,4 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(main(sys.argv[1:]))
