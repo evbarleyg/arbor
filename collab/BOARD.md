@@ -111,7 +111,7 @@ The walks and their rules are on the trunk since 2026-10-15 (`docs/TESTING.md`, 
 | `size-lost` | `size-kept-through-a-pause` 7,520 · `size-not-given-back` 375 | 1.20 · fixer 9 (the pin), 1.8 |
 | `moved-unasked` | `there-and-back-moved` 2,370 · `moved-unasked` 1,120 · `moved-before-any-dock` 190 · `pause-and-resume-moved` 105 · `left-its-place` 50 · `fetched-before-any-dock` 15 · `moved-at-resume` 10 | 1.19 · 1.18 · 1.20 |
 | `lost` | `start-took-out-of-view` 460 · `grown-while-hanging` 220 · `placed-partly-out` 150 · `docked-partly-out` 100 · `home-behind-the-dock` 85 · `home-not-whole` 70 | 1.3 · 1.18 should take the ground from the next two · the last three **free** |
-| `focus`, `behind` | `switched-to-out-of-view` 45 (mostly the net's own fault, being read) · `switched-to-behind` 30 (real; L is fixing it) · `switched-to-partly-out` 15 | L |
+| `focus`, `behind` | `switched-to-out-of-view` 45 (mostly the net's own fault, being read) · `switched-to-behind` 30, and **0 in 26,000 walks** with "Arbor raises nothing but a window kept in view" (played: GO) · `switched-to-partly-out` 15 | L |
 | | `slot` 10 | **free** |
 
 ### Ring 2: where the stand-ins do not yet tell the truth
@@ -228,6 +228,7 @@ Mends before features; what a person meets every day before what they meet once.
 | 4.15 | An address where an ordinary person gets an app: a plain page with one sentence, the short film and one button | with 4.1, when there is something to get | | | a reader who knows nothing finds the button |
 | 4.16 | `state` lists no window's title unless asked with `--titles`: what a person pastes into a public issue holds none. A change to the protocol | **free**, small; after the first build; ask the keeper of the privacy cure first | `state` with and without the flag; whatever reads titles from `state` today asks for them | | |
 | 4.17 | A word where an app was wanted, in a command Arbor can read (`summon X`, `exclude X`, `layout X \| Mail`), is written into the log and a trace only if it is an app Arbor has seen (a window of it, or macOS knows it); else a token. The one kind of a person's own words still written | the keeper of the privacy cure, a day, not urgent | The scrubber's table of situations, with a word that is no app | | |
+| 4.18 | Three small things about who is in front, each decided. A click on a tile gives the keyboard to the window of that space that was used last, guest or docked, not to the first docked. Among windows never used, the frontmost under the pointer by macOS's own order gets it, not a floating one on the guess that it lies in front. And a net that counts, without breaking a walk: after an act of Arbor's, a window that is in view and wholly covered and was not before | **free**, small; the net is L's | A tile's click after a guest was used last; two windows never used, the docked one in front | | the walks' scoreboard gets the count |
 
 ## 5. Sent back: what only a person at a desk could check
 
