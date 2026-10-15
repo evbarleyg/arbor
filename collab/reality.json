@@ -731,18 +731,25 @@
   {
    "id": "the-space-change-can-be-reported-before-the-stand-in-leaves-the-list",
    "kind": "order-of-reports",
-   "layer": "below the seam",
+   "layer": "at the seam",
    "expected": "When the change of Space is reported after full screen, the app lists the window that came out of it.",
-   "happened": "macOS's stand-in is on the app's list in the window's place until the animation ends. The change of Space was reported 0.14 s after that in one run, and a few milliseconds BEFORE it in two rounds of four. Then the lists were read too early, the window was missed, and Arbor heard of it from its second look: 1.07 s after it was on the screen. Its neighbours, the focus report and the ring were all a second late. When the stand-in is destroyed the window is listed again, and so are the other apps' windows: 16 rounds of 16.",
+   "happened": "macOS's stand-in is on the app's list in the window's place until the animation ends. The change of Space was reported 0.14 s after that in one run, and a few milliseconds BEFORE it in two rounds of four. Then the lists were read too early, the window was missed, and Arbor heard of it from its second look: 1.07 s after it was on the screen. Its neighbours, the focus report and the ring were all a second late. When the stand-in is destroyed the window is listed again, and so are the other apps' windows: 16 rounds of 16. With the stand-in watched the window is heard of 0.13 to 0.19 s after the others instead. Laid out without it in that time, its neighbours took its room in plain view, over the slot it had been given, and gave it back.",
    "found": "Arbor's log beside Accessibility's reports and the window server's frames, four rounds with Safari and TextEdit on a hosted Mac, macOS 26.6.2.",
-   "modelled": "cannot",
-   "knobs": [],
-   "guards": [],
-   "copes": "AXWindowSystem.watchIfItStandsInOnTheWayOutOfFullScreen subscribes to the end of a helper as large as the window that its app makes while the window is in full screen, and reads every app's list then.",
+   "modelled": "partly",
+   "knobs": [
+    "FakeWindowSystem.leaveFullScreen"
+   ],
+   "guards": [
+    "test: intoFullScreenAndStraightBackNothingButTheWindowMoves",
+    "test: norWhenAllAreReportedBackTogether"
+   ],
+   "copes": "AXWindowSystem.watchIfItStandsInOnTheWayOutOfFullScreen subscribes to the end of a helper as large as the window that its app makes while the window is in full screen, and reads every app's list then. Controller.someoneIsOnItsWayOutOfFullScreen: until the window is reported back, or looked at for the last time, its display is not laid out without it.",
    "hurt": 2,
    "sources": [
     "Sources/ArborKit/AX/AXWindowSystem.swift",
-    "docs/features/F30-full-screen-windows.md"
+    "docs/features/F30-full-screen-windows.md",
+    "Sources/ArborKit/Controller/Controller+Spaces.swift",
+    "Sources/ArborTesting/FakeWindowSystem.swift"
    ],
    "touches": [
     "jolt"
@@ -3056,7 +3063,7 @@
     "trace: safari-full-screen.jsonl",
     "trace: textedit-full-screen.jsonl"
    ],
-   "copes": "Controller.looksOnTheWayOut: from the report on Arbor looks ten times a second, for as long as the way takes, and asks again while the window is somewhere else than its slot. Nothing is concluded from what it answers.",
+   "copes": "Controller.looksOnTheWayOut: from the report on Arbor looks ten times a second, for as long as the way may take, and asks again while the window is somewhere else than its slot. Nothing is concluded from what it answers.",
    "hurt": 2,
    "sources": [
     "docs/features/F30-full-screen-windows.md",
@@ -7023,7 +7030,10 @@
     "test: intoFullScreenAndStraightBackNothingButTheWindowMoves",
     "test: whoeverComesBackToTheirSpaceWithoutItFindsThemClosingUpOnce",
     "test: aSpaceThatNeverGoesAwayIsLaidOutAllTheSame",
-    "scenario: 30-the-green-button.sim"
+    "scenario: 30-the-green-button.sim",
+    "test: aFocusReportWhileTheWayInPlaysDoesNotEndTheWait",
+    "test: heardOfWhenTheSpaceHasGoneThereIsNothingToWaitFor",
+    "test: closedInFullScreenItsNeighboursCloseUpOnce"
    ],
    "copes": "Controller.neighboursWaitWhileItGoesIntoFullScreen puts the layout off until the Space is reported away, 1.5 s at the most. A layout for a window that has gone away waits a tenth of a second to hear why.",
    "hurt": 2,

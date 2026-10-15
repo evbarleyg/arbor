@@ -859,8 +859,11 @@ extension FakeWindowSystem {
   /// the new place at the old size, and landed so. So the first frame that is heard here is heard by half. 0 is TextEdit, which
   /// takes it at once. Both land where they were last put. (`echoes.flightFromFullScreen`, deaf all the way, was a prediction,
   /// and has not been seen.)
+  ///
+  /// `othersFirst`: the change of Space is reported while the stand-in is still on the list, so the others are reported back 0.13 to
+  /// 0.19 s before the window (Safari, five rounds of eight). Otherwise all at once (TextEdit).
   public func leaveFullScreen(
-    _ window: WindowID, with others: [WindowID], whereItWas: Bool = false, deafFor: Double = 0.15
+    _ window: WindowID, with others: [WindowID], whereItWas: Bool = false, deafFor: Double = 0.15, othersFirst: Bool = true
   ) {
     guard windows[window]?.snapshot.isFullScreen == true else { return }
     setOnActiveSpace(window, false)
@@ -873,14 +876,20 @@ extension FakeWindowSystem {
     echoes.flightFromFullScreen = flight
     afterEvents?()
     deliverEchoes()
-    passTime?(0.72)
+    passTime?(0.6)
+    if othersFirst {
+      for id in others.sorted() { setOnActiveSpace(id, true) }
+      afterEvents?()
+      deliverEchoes()
+    }
+    passTime?(0.12)
     hearHalfNext.remove(window)
     inSightUnlisted.insert(window)
     sightings.append((window, windows[window]!.snapshot.frame))
-    passTime?(0.11)
+    passTime?(othersFirst ? 0.03 : 0.11)
     inSightUnlisted.remove(window)
     // One list after the other, in the order of the Accessibility layer's scan.
-    for id in (others + [window]).sorted() { setOnActiveSpace(id, true) }
+    for id in ((othersFirst ? [] : others) + [window]).sorted() { setOnActiveSpace(id, true) }
     // On a Mac the focus report comes in the same breath, before the layout that was put off. Not here: a strict replay runs what
     // is due between two reports of the same instant, and would part from the recording (docs/TRACES.md).
     afterEvents?()

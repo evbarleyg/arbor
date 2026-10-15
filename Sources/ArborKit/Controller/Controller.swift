@@ -170,6 +170,8 @@ public final class Controller {
   var returningWindows: Set<WindowID> = []
   /// Displays whose layout was put off until all the reports of a Space switch or a hidden app are in.
   var postponedRelayouts: Set<DisplayID> = []
+  /// Those of them that wait for the Space a window has left for full screen to go out of sight.
+  var waitingForASpaceToLeave: Set<DisplayID> = []
   /// What is remembered for a moment about the keyboard changing hands (Controller+Focus.swift).
   var keyboardHandOver = KeyboardHandOver()
   /// How often each parked window was sent back to its corner since it was parked (Controller+Layout.swift).
@@ -557,6 +559,7 @@ public final class Controller {
     cancelFocusLooks()
     for id in postponedRelayouts { scheduler.cancel("space-\(id.rawValue)") }
     postponedRelayouts.removeAll()
+    waitingForASpaceToLeave.removeAll()
     returningWindows.removeAll()
     keyboardHandOver = KeyboardHandOver()
     scheduler.cancel("pending-slots")
