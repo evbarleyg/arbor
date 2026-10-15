@@ -187,20 +187,25 @@ or it becomes a `FAIL`. With one unexplained the verdict is `NOT VIABLE`. Two cl
 
 ## 6. What an act may move
 
-Each window at most once, straight to where it ends up.
+Each window at most once, straight to where it ends up: that holds in every row, "anything" included. With Arbor's settings as they ship.
 
 | Act | May move |
 |---|---|
-| Arbor starts for the first time; `idle`; a switch to a window in view; anything done to a floating window but a drag of it | nothing |
+| Arbor starts for the first time; `idle`; a switch to a window in view; anything done to a floating window but a drag of it | nothing. One exception, at a start and when a window opens: what nobody could get hold of (no 24 points of its title bar on any display) may be fetched, once. Anything else stays: what is found counts as left, and people do park windows three quarters off an edge |
 | Arbor starts again | what was docked when it stopped. No window that is in view goes out of view (Q16) |
 | A window opens | nothing, and the new window stays where its app put it (`newWindows` ships `"float"`) |
 | A dock, by key or drag | that window and the docked windows. **No floating window, ever** (Q20) |
 | A float; a docked window closes, is minimized or hidden, or comes back | that window and the docked windows. There and back is nothing: hidden and unhidden, every window is where it was |
-| A drag | the dragged window goes where the pointer goes. Everything else waits for the button |
+| A drag | the dragged window goes where the pointer goes. Everything else waits for the button (`reflowWhileDragging` ships false) |
 | A move of the view; a switch to a window out of view | the docked windows; floating windows only out of view and back to exactly where they were |
 | A gap or an edge is dragged | the windows on both sides of it |
 | A window is kept in view, let go of again, or dragged or resized while it is kept in view | a docked window that is pinned goes to its own earlier size, once; after that the pinned window moves by the hand only. The docked windows, which make room beside it (Q25) |
-| Pause, resume, Float All, Quit | anything; afterwards `size-lost` and `lost` have their say |
+| Pause, resume, Float All, Quit; the permission lost and returned, which is a pause and a resume | anything, once; afterwards `size-lost` and `lost` have their say |
+| Undo, redo | what the step moved |
+| A peek; a hold | a peek that ends where it began is there and back: nothing. A hold moves nothing; a release the person chose brings in what waited |
+| Summon, and sending away | the summoned window |
+| A setting that shapes the layout is changed (the gap, the smallest usable sizes) | the docked windows |
+| An app is excluded, or a rule comes to match (a late title too) | that app's or that rule's windows, and the docked windows, as at a float or a dock |
 | macOS's own (full screen, Mission Control, a Space, the wallpaper click) | what the run without Arbor shows macOS moving. When it is over, every window is where it was before |
 | A display comes, goes, moves or changes size | the windows on the displays concerned; afterwards nothing is `lost` |
 
