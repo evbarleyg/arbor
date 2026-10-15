@@ -2020,8 +2020,10 @@ esac""",
                                            "2-hangs/output.txt", "2-hangs/run.json", "3-fine/run.json", "4-fine/run.json", "summary.txt"]))
     row("ci-mac-shell.sh: cut off in the middle: the script that was running could clean up", second, ["hangs", "cleaned up", "exit code 143"])
 
-    # run.sh in a checkout of its own whose origin is a folder beside it, with a stand-in for `gh` that notes every call. GitHub allows an account
-    # 5,000 calls an hour, and copies of this script have used them up: how many it makes is part of what it does.
+
+def check_run_sh():
+    """run.sh in a checkout of its own whose origin is a folder beside it, with a stand-in for `gh` that notes every call. GitHub allows an account
+    5,000 calls an hour, and copies of this script have used them up: how many it makes is part of what it does."""
     world = tempfile.TemporaryDirectory(prefix="tooling-")
     checkout, origin = os.path.join(world.name, "checkout"), os.path.join(world.name, "origin.git")
 
@@ -2305,7 +2307,7 @@ sys.exit(int(turns[min(look, len(turns) - 1)]))
     pushes = '''( sleep 3; w=$(mktemp -d); cd "$w"; git init -q; echo 0 > exit-code.txt; echo said > output.txt; git add -A
       git -c user.name=m -c user.email=m@example.com commit -q -m "mac-shell: output of a.sh at 1234567 (run 7)"
       git push -q --force "$ORIGIN" HEAD:refs/heads/mac-shell-out/t ) > /dev/null 2>&1 &'''
-    done, _, made = ran("a.sh", "feat/x", GOES=pushes, MAC_SHELL_TAG="t")
+    done, _, made = ran("a.sh", "feat/x", GOES=pushes, MAC_SHELL_TAG="t", MAC_SHELL_STEP="1")
     polls = [call for call in made if call.startswith("api repos/") and call.endswith("actions/runs/7 --jq .status")]
     row("run.sh: a whole run: it ends when the output branch appears, with the script's exit code", (done.returncode, "exit code: 0" in done.stdout), (0, True))
     row("run.sh: a whole run: GitHub was not asked once whether it had ended", polls, [])
@@ -2334,19 +2336,19 @@ sys.exit(int(turns[min(look, len(turns) - 1)]))
     row("run.sh: the longer it waits the more rarely GitHub is asked whether the run has ended", len([call for call in made if call.endswith("actions/runs/7 --jq .status")]) in (2, 3, 4), True)
 
     # How long it waits goes by what the run may rightly take.
-    def waits(*arguments, tags=("t",)):
-        both = "\n".join(pushes.replace("mac-shell-out/t ", f"mac-shell-out/{tag} ") for tag in tags)
-        said = ran(*arguments, "feat/x", GOES=both, MAC_SHELL_TAG="t")[0].stdout
+    # It says so as it starts. So the run ends at once, without output: half a minute of a whole run, six times, would tell nothing more.
+    def waits(*arguments):
+        said = ran(*arguments, "feat/x", GOES="true", STATUS="completed", MAC_SHELL_TAG="t", MAC_SHELL_ASK="0", MAC_SHELL_STEP="1")[0].stdout
         return [word for line in said.splitlines() if line.startswith("started ") for word in [line.split("; waits ")[-1]]]
 
     row("run.sh: it waits 2700 s for one script, as it always has", waits("a.sh"), ["2700 s at most"])
     both = "\n".join(pushes.replace("mac-shell-out/t ", f"mac-shell-out/{tag} ") for tag in ("t.1", "t.2"))
-    said = ran("--macs", "2", "a.sh", "feat/x", GOES=both, MAC_SHELL_TAG="t")[0].stdout
+    said = ran("--macs", "2", "a.sh", "feat/x", GOES=both, MAC_SHELL_TAG="t", MAC_SHELL_STEP="1")[0].stdout
     row("run.sh: one script on two Macs: the end of what it said on each is shown", [line for line in said.splitlines() if line == "said" or line.startswith("--- end of")][1::2], ["said", "said"])
     row("run.sh: twenty minutes more for each further script of that Mac", waits("a.sh", "b.sh", "c.sh"), ["5100 s at most"])
-    row("run.sh: Macs side by side take no longer than the one that has most", waits("--macs", "2", "a.sh", "b.sh", "c.sh", tags=("t.1", "t.2")), ["3900 s at most"])
+    row("run.sh: Macs side by side take no longer than the one that has most", waits("--macs", "2", "a.sh", "b.sh", "c.sh"), ["3900 s at most"])
     row("run.sh: and as long as the scripts may take", waits("through.sh"), ["3900 s at most"])
-    row("run.sh: one after the other they do", waits("--macs", "2", "--at-once", "1", "a.sh", "b.sh", tags=("t.1", "t.2")), ["3900 s at most"])
+    row("run.sh: one after the other they do", waits("--macs", "2", "--at-once", "1", "a.sh", "b.sh"), ["3900 s at most"])
     shutil.rmtree(os.path.join(checkout, ".mac-shell"), ignore_errors=True)
     world.cleanup()
 
@@ -2890,9 +2892,9 @@ def chosen(arguments):
     return [check for name, check in names.items() if (name in arguments[1:]) == (arguments[0] == "--only")]
 
 
-# Three minutes between them, two thirds of which they wait for the small scripts they run. So side by side, and beside all the rest: each keeps
-# to folders and stand-ins of its own. (One after another 186 s, like this 107 to 117 s, on four cores that were busy besides.)
-SIDE_BY_SIDE = ("check_mac_shell_lib", "check_run_list", "check_mac_shell_batch")
+# Seven minutes between them, most of which they wait for the small scripts they run. So side by side, and beside all the rest: each keeps
+# to folders and stand-ins of its own. (One after another 158, 27, 76 and 149 s; like this the whole self-test takes 177 s on four cores.)
+SIDE_BY_SIDE = ("check_mac_shell_lib", "check_run_list", "check_mac_shell_batch", "check_run_sh")
 
 
 def main(arguments=()):
