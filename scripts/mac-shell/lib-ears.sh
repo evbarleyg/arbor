@@ -463,6 +463,8 @@ HANDS="left:lctrl,lopt:hid right:rctrl,ropt:hid left-ctrl-right-opt:lctrl,ropt:h
   put-in-at-the-session:lctrl,lopt:session put-in-at-the-annotated-session:lctrl,lopt:annotated posted-to-the-app:lctrl,lopt:pid"
 odd_hands() {
   local state=$1 hand name mods road repeats chord code
+  # Which command each key runs, by Arbor's own list; nothing while no Arbor answers.
+  "$ARBOR_BIN/arborctl" bindings 2>/dev/null | awk -F ' → ' '/→/ { split($1, chord, " "); split($2, command, " "); print chord[1], command[1] }' > "$ARBOR_OUT/commands.txt"
   for hand in $HANDS; do
     IFS=: read -r name mods road repeats <<< "$hand"
     [ "$road" = pid ] && road=$FRONT_PID
@@ -473,14 +475,17 @@ odd_hands() {
       mark "$chord"
       "$EARS" press "$code" "$mods" "$road" ${repeats:+"$repeats"}
       sleep 0.25
+      # Before tidying up, which runs commands of its own.
+      echo "$(wall) AFTER arbor=$(arbor_lines)" >> "$HEARD"
       tidy
     done
     mark -
   done
-  python3 - "$HEARD" "$state" <<'PY'
-import collections, sys
-heard, state = sys.argv[1:3]
+  python3 - "$HEARD" "$state" "$ARBOR_OUT/commands.txt" "$ARBOR_HOME/arbor.log" <<'PY'
+import collections, os, re, sys
+heard, state, commands, log = sys.argv[1:5]
 order, rows, key, before = [], collections.defaultdict(lambda: [0, 0, 0, 0, set()]), None, 0
+spans = collections.OrderedDict()
 for line in open(heard, encoding="utf-8", errors="replace"):
     words = line.split()
     if len(words) < 3:
@@ -498,6 +503,8 @@ for line in open(heard, encoding="utf-8", errors="replace"):
                 order.append(name)
             rows[name][0] += 1
             key = [name, words[3], False, False]
+    elif key and words[1] == "AFTER":
+        spans[(key[0], key[1])] = (before, int(words[2].split("=")[1]))
     elif key and words[1] in ("local", "global"):
         key[2] = True
         rows[key[0]][4].update(word for word in words if word.startswith("flags="))
@@ -507,6 +514,21 @@ print(f"{state}: {'hand or road':34}{'keys':>5}{'seen at the keyboard end':>26}{
 for name in order:
     keys, app, arbor, hid, flags = rows[name]
     print(f"{'':{len(state) + 2}}{name:34}{keys:>5}{hid:>26}{app:>17}{arbor:>16}   {' '.join(sorted(flags))[:60]}")
+# How often each key's own command ran: the lines "<command>: …", "<command> <what> failed: …" and the like that Arbor's log gained between the press and the tidying up. Some commands write two
+# lines a run (find), so a number means something only beside the same key's number in the first row, the ordinary hand.
+command = dict(line.split() for line in open(commands, encoding="utf-8") if len(line.split()) == 2)
+if command and spans and os.path.exists(log):
+    lines = open(log, encoding="utf-8", errors="replace").read().split("\n")
+    chords = list(collections.OrderedDict((chord, None) for _, chord in spans))
+    print(f"{state}: lines of each key's own command in Arbor's log, press by press")
+    print(f"{'':{len(state) + 2}}{'hand or road':34}" + "".join(f"{chord.rsplit('+', 1)[1] + ' ' + command.get(chord, '?'):>18}" for chord in chords))
+    for name in order:
+        cells = []
+        for chord in chords:
+            first, last = spans.get((name, chord), (0, 0))
+            wanted = re.compile(r" [A-Z]+ +" + re.escape(command.get(chord, "\0")) + r"( [^:]*)?: ")
+            cells.append(sum(1 for line in lines[first:last] if wanted.search(line)))
+        print(f"{'':{len(state) + 2}}{name:34}" + "".join(f"{cell:>18}" for cell in cells))
 PY
 }
 what_arbor_says() {
