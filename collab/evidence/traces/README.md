@@ -38,12 +38,14 @@ records; its two traces say what was done about that. **B5 came back with a late
 **Displays and Spaces** (`ArborTestWindows`; recorded on 2026-10-15 by `scripts/mac-shell/check-displays.sh` and `check-desktop.sh` on GitHub's macOS runner, macOS 26.6.2; the second display is virtual, 1280×800, and plugging it in also switches the main one from
 1024×768 to 1920×1080). Nothing asks Arbor anything while one is recorded. In all of them `didChangeScreenParameters` comes first, the list of displays is new by the first window's report, the windows' `AXMoved` and `AXResized` come 20 to 150 ms after that word and within 5 to 100 ms of one
 another, and the controller's `displaysChanged` 1.65 s after it: for the controller the windows come first, and as moves by a hand.
-Seven more recordings of the same night are not here yet: a display that comes for the first time (two), goes (two) and changes side (three). A trace cut between macOS's own moves of the windows and `displaysChanged` is the very state in which letting go goes
-wrong: `everyWayBackReturnsEveryWindowFromEveryStateOfATrace` plays every such cut. Today `TraceReplayer` gives its fake the new displays only at `displaysChanged`, so the first two count windows as lost that are not; with that mended, the other five show a real fault, Float
-All giving frames back by the displays Arbor still believes in. They follow when that is cured, and guard it from then on.
+Five more recordings of the same night are not here yet: a display that goes (two) and changes side (three). A trace cut between macOS's own moves of the windows and `displaysChanged` is the very state in which letting go goes wrong, and
+`everyWayBackReturnsEveryWindowFromEveryStateOfATrace` plays every such cut, now that `TraceReplayer` takes the displays from the trace's own `displays` answers as they come. In those five it shows a real fault, Float All giving frames back by the displays
+Arbor still believes in (47 states). They follow when that is cured, and guard it from then on.
 
 | Trace | What it shows |
 |---|---|
+| `display-plugged-in` | A second display comes for the first time, and the main one grows from 1024×768 to 1920×1080. All five windows' first `AXMoved` and `AXResized` within 5 ms of one another, 121 ms after `didChangeScreenParameters`; the list of displays is new at the first of them; `displaysChanged` 1.65 s after the word. |
+| `display-retina-plugged-in` | Another display (another serial number, HiDPI) comes in its place. The windows' first reports come 10 ms after the word, with the list of displays already new; the word is said again up to 0.4 s later. |
 | `display-plugged-in-again` | The same display (same UUID) comes back: macOS itself puts the three windows back on it, at their old frames, 1.6 s before `displaysChanged`. |
 | `drag-to-the-second-display`, `drag-to-the-far-edge` | A floating window dragged by its title bar from the main display to the middle of the second, and another to three points inside its far edge, where it docks. |
 | `space-added`, `mission-control` | Mission Control opened, a Space added, closed again; and opened and closed. |
