@@ -141,7 +141,7 @@ EOF
 check "the server outlives clients that leave without reading or never speak" answers
 # A watcher that never reads, while the view moves until the server gives up on it.
 python3 - "$ARBOR_SOCKET" "$ctl" <<'EOF' || failed=1
-import socket, subprocess, sys, time
+import errno, socket, subprocess, sys, time
 stuck = socket.socket(socket.AF_UNIX)
 stuck.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 4096)
 stuck.connect(sys.argv[1])
@@ -150,7 +150,13 @@ def send(line):
     client = socket.socket(socket.AF_UNIX)
     client.connect(sys.argv[1])
     client.sendall(line)
-    client.shutdown(socket.SHUT_WR)
+    try:
+        client.shutdown(socket.SHUT_WR)
+    except OSError as error:
+        # The server has answered and hung up already. Linux does not mind; macOS says that the socket is not connected. The reply is
+        # there to be read all the same. (Seen once in these 2000 on a hosted Mac.)
+        if error.errno != errno.ENOTCONN:
+            raise
     started = time.time()
     while client.recv(65536):
         pass
