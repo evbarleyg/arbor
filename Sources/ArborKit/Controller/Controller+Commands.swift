@@ -487,51 +487,10 @@ extension Controller {
       return .success("docked \(id) at the \(edge.rawValue) edge" + pinNote + tileNote(id, on: display, since: shown))
     }
 
-    guard let layout = layouts[display], let view = treeView(display) else {
-      return .failure("display not laid out")
+    switch moving(id, at: leaf, toward: edge, in: workspace, on: display) {
+    case .refused(let why): return .failure(why)
+    case .moved(let moved): workspaces[display] = moved
     }
-    // The view can also be on a named group that is down to this window (F20): there is nowhere to go in it either.
-    guard !workspace.holdsOnly(id, in: workspace.camera) else { return .failure("\(id) fills the view\(adviceToStepOut)") }
-
-    // 1. A sibling on that side of the same split: trade places with it
-    //    (sizes travel with the nodes).
-    if let parent = workspace.tree.parent(of: leaf),
-      case .split(let axis, _) = workspace.tree[parent]?.kind, axis == edge.axis
-    {
-      let siblings = view.effectiveChildren(of: parent)
-      if let index = siblings.firstIndex(of: leaf) {
-        let next = edge.isLeading ? index - 1 : index + 1
-        if siblings.indices.contains(next) {
-          workspace.tree.swapSiblings(leaf, siblings[next])
-          workspaces[display] = workspace
-          relayout(display, reason: .structure)
-          focusIfShown(id, on: display)
-          scheduleSave()
-          return .success("moved \(id) \(edge.direction)" + tileNote(id, on: display, since: shown))
-        }
-      }
-    }
-
-    // 2. Otherwise step out of its group, next to whatever is beyond that edge.
-    if let neighbor = Navigation.adjacentLeaf(to: leaf, toward: edge, in: layout, tree: workspace.tree) {
-      guard let stepped = stepping(id, outBeside: neighbor, toward: edge, in: workspace, on: display) else {
-        return .failure(Workspace.DockOutcome.tooDeep.refusal(of: id)!)
-      }
-      workspace = stepped
-    } else {
-      // Nothing visible beyond that edge. If the window is already the
-      // outermost child of the view along that axis there is nowhere to go;
-      // otherwise it becomes the outermost child.
-      if let parent = workspace.tree.parent(of: leaf), parent == workspace.camera,
-        case .split(let axis, let siblings) = workspace.tree[parent]?.kind, axis == edge.axis,
-        (edge.isLeading ? siblings.first : siblings.last) == leaf
-      {
-        return .failure("\(id) is already at the \(edge.rawValue) edge")
-      }
-      let outcome = workspace.tryDock(id, at: .cameraEdge(edge), shareSpace: settings.shareRemovedSpace)
-      if let why = outcome.refusal(of: id) { return .failure(why) }
-    }
-    workspaces[display] = keepingDesktopUsable(workspace, on: display)
     relayout(display, reason: .structure)
     focusIfShown(id, on: display)
     scheduleSave()

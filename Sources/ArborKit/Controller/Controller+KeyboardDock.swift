@@ -3,6 +3,98 @@ import CoreGraphics
 
 /// Moving a docked window out of its group with `dock <edge>` (the rest is in `dock(_:edge:)`).
 extension Controller {
+  /// What `dock <edge>` makes of a window that is docked already.
+  enum KeyboardMove {
+    case moved(Workspace)
+    case refused(String)
+  }
+
+  /// `workspace` with the docked window `id`, which is at `leaf`, one place further toward `edge`. **A key acts on what a person sees:** what
+  /// is away (in the Dock, hidden) is neither a neighbour to pass nor company in a group. The menu asks here too, so that a row looks the
+  /// way it acts.
+  func moving(_ id: WindowID, at leaf: NodeID, toward edge: Edge, in workspace: Workspace, on display: DisplayID) -> KeyboardMove {
+    guard let layout = layouts[display] else { return .refused("display not laid out") }
+    var workspace = workspace
+    let present = presentWindowIDs()
+    let view = TreeView(tree: workspace.tree, isPresent: { present.contains($0) })
+    // The view can also be on a named group that is down to this window (F20), or on one of which it is all that shows: there is
+    // nowhere to go in it either.
+    // (Out of a tab group that fills the view a window can still go.)
+    let shown = workspace.tree.windows(under: workspace.camera).filter { present.contains($0) }
+    guard !workspace.holdsOnly(id, in: workspace.camera), shown != [id] || workspace.tree.subtree(workspace.camera, contains: workspace.tree.desktop)
+    else { return .refused("\(id) fills the view\(adviceToStepOut)") }
+
+    // 1. A sibling on that side of the same split: trade places with it
+    //    (sizes travel with the nodes). With it goes a group of which the window is all that shows.
+    let branch = whatShows(as: leaf, in: view, of: workspace)
+    if let parent = workspace.tree.parent(of: branch),
+      case .split(let axis, _) = workspace.tree[parent]?.kind, axis == edge.axis
+    {
+      let siblings = view.effectiveChildren(of: parent)
+      if let index = siblings.firstIndex(of: branch) {
+        let next = edge.isLeading ? index - 1 : index + 1
+        if siblings.indices.contains(next) {
+          workspace.tree.swapSiblings(branch, siblings[next])
+          return .moved(workspace)
+        }
+      }
+    }
+
+    // 2. Otherwise step out of its group, next to whatever is beyond that edge.
+    if let neighbor = Navigation.adjacentLeaf(to: leaf, toward: edge, in: layout, tree: workspace.tree) {
+      guard let stepped = stepping(id, outBeside: neighbor, toward: edge, in: workspace, on: display) else {
+        return .refused(Workspace.DockOutcome.tooDeep.refusal(of: id)!)
+      }
+      workspace = stepped
+    } else {
+      // Nothing visible beyond that edge. If the window is already the
+      // outermost thing that shows in the view along that axis there is nowhere
+      // to go; otherwise it becomes the outermost child.
+      if isOutermostThatShows(leaf, toward: edge, in: view, of: workspace) {
+        return .refused("\(id) is already at the \(edge.rawValue) edge")
+      }
+      let outcome = workspace.tryDock(id, at: .cameraEdge(edge), shareSpace: settings.shareRemovedSpace)
+      if let why = outcome.refusal(of: id) { return .refused(why) }
+    }
+    return .moved(keepingDesktopUsable(workspace, on: display))
+  }
+
+  /// What `leaf` is to the eye: itself, or the widest group around it, inside the view, of which it is all that shows. A column whose
+  /// other windows are in the Dock or hidden does not look like a column. Taking a window out of such a group is a step nobody can see:
+  /// the same picture, for a key that says "moved". So the group goes where the window goes, and is whole when the others come back.
+  /// A window that is itself away or out of view is nothing to the eye. No key reaches it; named by its id, it goes alone, as it always went.
+  func whatShows(as leaf: NodeID, in view: TreeView, of workspace: Workspace) -> NodeID {
+    guard view.isEffective(leaf), workspace.tree.subtree(workspace.camera, contains: leaf) else { return leaf }
+    var branch = leaf
+    while branch != workspace.camera, let parent = workspace.tree.parent(of: branch), parent != workspace.camera,
+      view.effectiveChildren(of: parent) == [branch]
+    {
+      branch = parent
+    }
+    return branch
+  }
+
+  /// Whether `leaf` is the outermost thing that shows in the view toward `edge`: `dock` has nowhere to take it. What is away does not count,
+  /// neither beside it nor beyond it, nor around the row or column it is in: if that is all that shows of the view, its ends are the view's.
+  func isOutermostThatShows(_ leaf: NodeID, toward edge: Edge, in view: TreeView, of workspace: Workspace) -> Bool {
+    let branch = whatShows(as: leaf, in: view, of: workspace)
+    guard let parent = workspace.tree.parent(of: branch), isAll(parent, thatShowsOf: workspace.camera, in: view, of: workspace),
+      case .split(let axis, let everyone) = workspace.tree[parent]?.kind, axis == edge.axis
+    else { return false }
+    let siblings = view.isEffective(branch) ? view.effectiveChildren(of: parent) : everyone
+    return (edge.isLeading ? siblings.first : siblings.last) == branch
+  }
+
+  /// Whether `node` is `group`, or all that shows of it.
+  func isAll(_ node: NodeID, thatShowsOf group: NodeID, in view: TreeView, of workspace: Workspace) -> Bool {
+    var node = node
+    while node != group {
+      guard let parent = workspace.tree.parent(of: node), view.effectiveChildren(of: parent) == [node] else { return false }
+      node = parent
+    }
+    return true
+  }
+
   /// `workspace` with `window` docked next to `neighbour`, the leaf, tile or Desktop beyond its
   /// `edge`. It takes half of the neighbour's slot, so nothing else moves. If that leaves the
   /// window or its neighbour too small to use (the narrow Desktop `arrange` makes, a slim column),
