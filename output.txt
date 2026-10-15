@@ -1,0 +1,830 @@
+# mac-shell: scripts/mac-shell/probe-permission-loss.sh at 45f5528, macOS 26.6.2, 2026-10-15T02:27Z
+built Arbor and the pointer tool in 5s
+the tools' own permission: true
+
+== the bundle
+session 1: Arbor pid 5776, test windows 29 30 (pid 5750)
+running: 1 display, 0 docked and 2 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+/Users/runner/Applications/ArborProbePermissionLoss.app: replacing existing signature
+cdhash H"d7f99154742a244b60f04efd3252c1908403076a"
+/Users/runner/Applications/ArborProbeBareTapper.app: replacing existing signature
+
+== round 1: by_tccutil, with arbor
+Arbor pid 6118, entry: com.evbarleyg.arbor.probe-permission-loss|2
+tap 1189641421 pid=6118 point=1 options=0 mask=0x44 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 596516649 pid=6118 point=1 options=0 mask=0x2 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+tap 1649760492 pid=6118 point=1 options=0 mask=0x400000 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 719885386 pid=6118 point=1 options=0 mask=0x20000000 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+Successfully reset Accessibility approval status for com.evbarleyg.arbor.probe-permission-loss
+the permission was taken between 02:28:03.138 and 02:28:03.207
+02:27:59.048 stream begins
+02:28:11.121 stream ends: 1200 events posted
+02:28:03.208Z INFO  Accessibility permission is gone (AXIsProcessTrusted says yes, but macOS refused a tap): removed the pinch and rectangle event taps
+02:28:03.209Z ERROR Accessibility permission was taken away with 0 window(s) out of view
+02:28:03.215Z INFO  stopped; no window was moved
+the tools' own permission afterwards: true
+Arbor's Accessibility permission was taken away, so it cannot move windows. Grant it again under Sys
+doubts ("macOS has not said …"): 0; "permission is back": 0; of them before the deed: 0
+false alarms ("permission is back after N ms (macOS has not said in time …"): 0
+slow answers ("macOS took N ms to say …"), N: 
+lines about a tap that macOS switched off: 0
+  ✔ round 1: Arbor has no event tap left
+posted 1200, arrived 1190, missing 10: [411, 412, 413, 414, 415, 416, 417, 418, 419, 420]
+arrived by kind: down 238, up 238, key-down 238, key-up 238, wheel 238
+before the loss: 410 arrived of 410 posted, longest hole 154 ms, worst lateness 45.7 ms, more than 10 ms late: 14
+from the loss until the taps were gone: 0 arrived of 10 posted, longest hole 135 ms, worst lateness 0.0 ms, more than 10 ms late: 0
+after the taps were gone: 780 arrived of 780 posted, longest hole 118 ms, worst lateness 34.6 ms, more than 10 ms late: 12
+median lateness in ms, before the loss / after the taps were gone: down 1.31 / 0.35, up 1.47 / 0.34, key-down 1.87 / 0.50, key-up 1.85 / 0.28, wheel 1.85 / 0.23
+  a hole of 154 ms from 02:28:02.776 (n=375) to 02:28:02.930 (n=376): 0 events lost in it
+  a hole of 135 ms from 02:28:03.121 (n=410) to 02:28:03.256 (n=421): 10 events lost in it
+the first event that was lost (n=411) was due at 02:28:03.148, +10 ms from the beginning of the deed
+the taps were gone 70 ms after the permission began to go
+THE LONGEST HOLE: 154 ms
+  ✘ round 1: NOTHING LOST: every event that was posted arrived (10 did not)
+  ✔ round 1: the hole while the permission went (135 ms) is no longer than a second
+  ✔ round 1: AT THE MEDIAN, by kind of event, no more than 10 ms later after the taps were gone than before the loss (0 ms at most)
+  ✔ round 1: (at the worst) no later after the taps were gone (35 ms) than this Mac was before the loss (46 ms), or 10 ms
+  ✔ round 1: no longer a hole after the taps were gone (118 ms) than before the loss (154 ms), or 150 ms
+  ✘ round 1: (the first bar) none more than 10 ms late once the taps were gone
+  ✔ round 1: (the first bar) input never stood still for a quarter of a second (154 ms)
+shot: mac-shell/round-1-afterwards.png
+
+== round 2: by_tccutil, with nobody
+Successfully reset Accessibility approval status for com.evbarleyg.arbor.probe-permission-loss
+the permission was taken between 02:28:24.011 and 02:28:24.057
+02:28:19.925 stream begins
+02:28:31.934 stream ends: 1195 events posted
+the tools' own permission afterwards: true
+posted 1195, arrived 1195, missing 0
+arrived by kind: down 239, up 239, key-down 239, key-up 239, wheel 239
+before the loss: 410 arrived of 410 posted, longest hole 122 ms, worst lateness 1.8 ms, more than 10 ms late: 0
+from the loss until the taps were gone: 5 arrived of 5 posted, longest hole 1 ms, worst lateness 1.2 ms, more than 10 ms late: 0
+after the taps were gone: 780 arrived of 780 posted, longest hole 121 ms, worst lateness 3.0 ms, more than 10 ms late: 0
+median lateness in ms, before the loss / after the taps were gone: down 0.24 / 0.22, up 0.23 / 0.17, key-down 0.46 / 0.24, key-up 0.21 / 0.17, wheel 0.17 / 0.14
+the taps were gone 46 ms after the permission began to go
+THE LONGEST HOLE: 122 ms
+  ✔ round 2: NOTHING LOST: every event that was posted arrived (0 did not)
+  ✔ round 2: the hole while the permission went (1 ms) is no longer than a second
+  ✔ round 2: AT THE MEDIAN, by kind of event, no more than 10 ms later after the taps were gone than before the loss (0 ms at most)
+  ✔ round 2: (at the worst) no later after the taps were gone (3 ms) than this Mac was before the loss (2 ms), or 10 ms
+  ✔ round 2: no longer a hole after the taps were gone (121 ms) than before the loss (122 ms), or 150 ms
+  ✔ round 2: (the first bar) none more than 10 ms late once the taps were gone
+  ✔ round 2: (the first bar) input never stood still for a quarter of a second (122 ms)
+shot: mac-shell/round-2-afterwards.png
+
+== round 3: by_tccutil, with arbor-without-taps
+Arbor pid 8306, entry: com.evbarleyg.arbor.probe-permission-loss|2
+Successfully reset Accessibility approval status for com.evbarleyg.arbor.probe-permission-loss
+the permission was taken between 02:28:46.944 and 02:28:46.986
+02:28:42.906 stream begins
+02:28:54.941 stream ends: 1200 events posted
+02:28:47.711Z ERROR Accessibility permission was taken away with 0 window(s) out of view
+02:28:47.712Z INFO  stopped; no window was moved
+the tools' own permission afterwards: true
+Arbor's Accessibility permission was taken away, so it cannot move windows. Grant it again under Sys
+("noticed" is the controller's line: there is no line about the taps' going)
+doubts ("macOS has not said …"): 0; "permission is back": 0; of them before the deed: 0
+false alarms ("permission is back after N ms (macOS has not said in time …"): 0
+slow answers ("macOS took N ms to say …"), N: 
+lines about a tap that macOS switched off: 0
+  ✔ round 3: Arbor has no event tap left
+posted 1200, arrived 1200, missing 0
+arrived by kind: down 240, up 240, key-down 240, key-up 240, wheel 240
+before the loss: 405 arrived of 405 posted, longest hole 120 ms, worst lateness 2.6 ms, more than 10 ms late: 0
+from the loss until the taps were gone: 80 arrived of 80 posted, longest hole 106 ms, worst lateness 0.8 ms, more than 10 ms late: 0
+after the taps were gone: 715 arrived of 715 posted, longest hole 125 ms, worst lateness 15.4 ms, more than 10 ms late: 2
+median lateness in ms, before the loss / after the taps were gone: down 0.28 / 0.28, up 0.22 / 0.25, key-down 0.34 / 0.35, key-up 0.34 / 0.21, wheel 0.29 / 0.19
+the taps were gone 767 ms after the permission began to go
+THE LONGEST HOLE: 125 ms
+  ✔ round 3: NOTHING LOST: every event that was posted arrived (0 did not)
+  ✔ round 3: the hole while the permission went (106 ms) is no longer than a second
+  ✔ round 3: AT THE MEDIAN, by kind of event, no more than 10 ms later after the taps were gone than before the loss (0 ms at most)
+  ✘ round 3: (at the worst) no later after the taps were gone (15 ms) than this Mac was before the loss (3 ms), or 10 ms
+  ✔ round 3: no longer a hole after the taps were gone (125 ms) than before the loss (120 ms), or 150 ms
+  ✘ round 3: (the first bar) none more than 10 ms late once the taps were gone
+  ✔ round 3: (the first bar) input never stood still for a quarter of a second (125 ms)
+shot: mac-shell/round-3-afterwards.png
+
+== round 4: by_tccutil, with bare-tapper
+tap 294702567 pid=9236 point=1 options=0 mask=0x2 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+Successfully reset Accessibility approval status for com.evbarleyg.arbor.probe-bare-tapper
+the permission was taken between 02:29:07.816 and 02:29:07.861
+02:29:03.791 stream begins
+02:29:15.792 stream ends: 1200 events posted
+the tools' own permission afterwards: true
+the tapper's own words:
+02:29:03.477 tap-ready pid=9236
+02:29:03.481 question tapIsEnabled = yes
+02:29:03.486 question AXIsProcessTrusted = yes
+02:29:03.488 question CGPreflightListenEventAccess = yes
+02:29:03.488 question CGPreflightPostEventAccess = yes
+02:29:03.488 question a trial tapCreate = yes
+02:29:07.866 question a trial tapCreate = no
+02:29:19.991 cost tapIsEnabled: 1258 calls, µs: median 61, 99th 327, worst 21701
+02:29:19.991 cost AXIsProcessTrusted: 1258 calls, µs: median 17, 99th 59, worst 5823
+02:29:19.991 cost CGPreflightListenEventAccess: 1258 calls, µs: median 13, 99th 45, worst 1442
+02:29:19.991 cost CGPreflightPostEventAccess: 1258 calls, µs: median 0, 99th 0, worst 109
+02:29:19.991 cost a trial tapCreate: 1258 calls, µs: median 319, 99th 1792, worst 13369
+02:29:20.490 the end: the tap is on
+its tap now, by the window server's list: none
+posted 1200, arrived 405, missing 795: [406, 407, 408, 409, 410, 411, 412, 413, 414, 415, 416, 417, 418, 419, 420, 421, 422, 423, 424, 425]
+arrived by kind: down 81, up 81, key-down 81, key-up 81, wheel 81
+before the loss: 405 arrived of 405 posted, longest hole 139 ms, worst lateness 18.8 ms, more than 10 ms late: 2
+from the loss until the taps were gone: 0 arrived of 5 posted, longest hole 0 ms, worst lateness 0.0 ms, more than 10 ms late: 0
+after the taps were gone: 0 arrived of 790 posted, longest hole 0 ms, worst lateness 0.0 ms, more than 10 ms late: 0
+median lateness in ms, before the loss / after the taps were gone: down 1.17 / 0.00, up 1.19 / 0.00, key-down 1.26 / 0.00, key-up 1.31 / 0.00, wheel 1.23 / 0.00
+  NOTHING ARRIVED from 02:29:07.810 to the end of the stream, 7982 ms: 795 events lost in it
+the first event that was lost (n=406) was due at 02:29:07.841, +25 ms from the beginning of the deed
+  question a trial tapCreate = no: +25 ms from the first lost event
+  cost tapIsEnabled: 1258 calls, µs: median 61, 99th 327, worst 21701
+  cost AXIsProcessTrusted: 1258 calls, µs: median 17, 99th 59, worst 5823
+  cost CGPreflightListenEventAccess: 1258 calls, µs: median 13, 99th 45, worst 1442
+  cost CGPreflightPostEventAccess: 1258 calls, µs: median 0, 99th 0, worst 109
+  cost a trial tapCreate: 1258 calls, µs: median 319, 99th 1792, worst 13369
+the taps were gone 45 ms after the permission began to go
+THE LONGEST HOLE: 7982 ms
+  ✘ round 4: NOTHING LOST: every event that was posted arrived (795 did not)
+  ✔ round 4: the hole while the permission went (0 ms) is no longer than a second
+  ✔ round 4: AT THE MEDIAN, by kind of event, no more than 10 ms later after the taps were gone than before the loss (0 ms at most)
+  ✔ round 4: (at the worst) no later after the taps were gone (0 ms) than this Mac was before the loss (19 ms), or 10 ms
+  ✘ round 4: no longer a hole after the taps were gone (7982 ms) than before the loss (139 ms), or 150 ms
+  ✔ round 4: (the first bar) none more than 10 ms late once the taps were gone
+  ✘ round 4: (the first bar) input never stood still for a quarter of a second (7982 ms)
+shot: mac-shell/round-4-afterwards.png
+
+== round 5: by_the_row_and_a_word, with arbor
+Arbor pid 10159, entry: com.evbarleyg.arbor.probe-permission-loss|2
+tap 1371499336 pid=10159 point=1 options=0 mask=0x44 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 1566288819 pid=10159 point=1 options=0 mask=0x2 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+tap 700108581 pid=10159 point=1 options=0 mask=0x400000 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 524688209 pid=10159 point=1 options=0 mask=0x20000000 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+02:29:35.344 announced com.apple.accessibility.api
+the permission was taken between 02:29:35.308 and 02:29:35.358
+02:29:31.171 stream begins
+02:29:43.192 stream ends: 1195 events posted
+02:29:36.300Z INFO  Accessibility permission is gone (AXIsProcessTrusted says no): removed the pinch and rectangle event taps
+02:29:36.300Z ERROR Accessibility permission was taken away with 0 window(s) out of view
+02:29:36.308Z INFO  stopped; no window was moved
+the tools' own permission afterwards: true
+Arbor's Accessibility permission was taken away, so it cannot move windows. Grant it again under Sys
+doubts ("macOS has not said …"): 0; "permission is back": 0; of them before the deed: 0
+false alarms ("permission is back after N ms (macOS has not said in time …"): 0
+slow answers ("macOS took N ms to say …"), N: 
+lines about a tap that macOS switched off: 0
+  ✔ round 5: Arbor has no event tap left
+posted 1195, arrived 1195, missing 0
+arrived by kind: down 239, up 239, key-down 239, key-up 239, wheel 239
+before the loss: 415 arrived of 415 posted, longest hole 123 ms, worst lateness 6.3 ms, more than 10 ms late: 0
+from the loss until the taps were gone: 100 arrived of 100 posted, longest hole 120 ms, worst lateness 10.0 ms, more than 10 ms late: 1
+after the taps were gone: 680 arrived of 680 posted, longest hole 129 ms, worst lateness 15.4 ms, more than 10 ms late: 10
+median lateness in ms, before the loss / after the taps were gone: down 1.19 / 0.57, up 1.23 / 0.52, key-down 1.69 / 0.56, key-up 1.68 / 0.54, wheel 1.69 / 0.30
+the taps were gone 992 ms after the permission began to go
+THE LONGEST HOLE: 129 ms
+  ✔ round 5: NOTHING LOST: every event that was posted arrived (0 did not)
+  ✔ round 5: the hole while the permission went (120 ms) is no longer than a second
+  ✔ round 5: AT THE MEDIAN, by kind of event, no more than 10 ms later after the taps were gone than before the loss (0 ms at most)
+  ✘ round 5: (at the worst) no later after the taps were gone (15 ms) than this Mac was before the loss (6 ms), or 10 ms
+  ✔ round 5: no longer a hole after the taps were gone (129 ms) than before the loss (123 ms), or 150 ms
+  ✘ round 5: (the first bar) none more than 10 ms late once the taps were gone
+  ✔ round 5: (the first bar) input never stood still for a quarter of a second (129 ms)
+shot: mac-shell/round-5-afterwards.png
+
+== round 6: by_the_row_and_a_word, with nobody
+02:29:55.775 announced com.apple.accessibility.api
+the permission was taken between 02:29:55.728 and 02:29:55.792
+02:29:51.640 stream begins
+02:30:03.693 stream ends: 1200 events posted
+the tools' own permission afterwards: true
+posted 1200, arrived 1200, missing 0
+arrived by kind: down 240, up 240, key-down 240, key-up 240, wheel 240
+before the loss: 410 arrived of 410 posted, longest hole 116 ms, worst lateness 4.1 ms, more than 10 ms late: 0
+from the loss until the taps were gone: 10 arrived of 10 posted, longest hole 1 ms, worst lateness 0.7 ms, more than 10 ms late: 0
+after the taps were gone: 780 arrived of 780 posted, longest hole 119 ms, worst lateness 6.3 ms, more than 10 ms late: 0
+median lateness in ms, before the loss / after the taps were gone: down 0.58 / 0.50, up 0.53 / 0.47, key-down 0.56 / 0.58, key-up 0.53 / 0.54, wheel 0.30 / 0.41
+the taps were gone 64 ms after the permission began to go
+THE LONGEST HOLE: 119 ms
+  ✔ round 6: NOTHING LOST: every event that was posted arrived (0 did not)
+  ✔ round 6: the hole while the permission went (1 ms) is no longer than a second
+  ✔ round 6: AT THE MEDIAN, by kind of event, no more than 10 ms later after the taps were gone than before the loss (0 ms at most)
+  ✔ round 6: (at the worst) no later after the taps were gone (6 ms) than this Mac was before the loss (4 ms), or 10 ms
+  ✔ round 6: no longer a hole after the taps were gone (119 ms) than before the loss (116 ms), or 150 ms
+  ✔ round 6: (the first bar) none more than 10 ms late once the taps were gone
+  ✔ round 6: (the first bar) input never stood still for a quarter of a second (119 ms)
+shot: mac-shell/round-6-afterwards.png
+
+== round 7: by_the_row_and_a_word, with arbor-without-taps
+Arbor pid 12347, entry: com.evbarleyg.arbor.probe-permission-loss|2
+02:30:18.396 announced com.apple.accessibility.api
+the permission was taken between 02:30:18.329 and 02:30:18.411
+02:30:14.248 stream begins
+02:30:26.254 stream ends: 1195 events posted
+02:30:18.999Z ERROR Accessibility permission was taken away with 0 window(s) out of view
+02:30:19.001Z INFO  stopped; no window was moved
+the tools' own permission afterwards: true
+Arbor's Accessibility permission was taken away, so it cannot move windows. Grant it again under Sys
+("noticed" is the controller's line: there is no line about the taps' going)
+doubts ("macOS has not said …"): 0; "permission is back": 0; of them before the deed: 0
+false alarms ("permission is back after N ms (macOS has not said in time …"): 0
+slow answers ("macOS took N ms to say …"), N: 
+lines about a tap that macOS switched off: 0
+  ✔ round 7: Arbor has no event tap left
+posted 1195, arrived 1195, missing 0
+arrived by kind: down 239, up 239, key-down 239, key-up 239, wheel 239
+before the loss: 410 arrived of 410 posted, longest hole 342 ms, worst lateness 48.4 ms, more than 10 ms late: 53
+from the loss until the taps were gone: 70 arrived of 70 posted, longest hole 122 ms, worst lateness 3.1 ms, more than 10 ms late: 0
+after the taps were gone: 715 arrived of 715 posted, longest hole 126 ms, worst lateness 34.3 ms, more than 10 ms late: 8
+median lateness in ms, before the loss / after the taps were gone: down 0.66 / 0.59, up 0.63 / 0.53, key-down 1.27 / 0.58, key-up 0.91 / 0.55, wheel 0.82 / 0.36
+  a hole of 342 ms from 02:30:14.963 (n=75) to 02:30:15.305 (n=76): 0 events lost in it
+  a hole of 204 ms from 02:30:15.675 (n=145) to 02:30:15.879 (n=146): 0 events lost in it
+the taps were gone 670 ms after the permission began to go
+THE LONGEST HOLE: 342 ms
+  ✔ round 7: NOTHING LOST: every event that was posted arrived (0 did not)
+  ✔ round 7: the hole while the permission went (122 ms) is no longer than a second
+  ✔ round 7: AT THE MEDIAN, by kind of event, no more than 10 ms later after the taps were gone than before the loss (0 ms at most)
+  ✔ round 7: (at the worst) no later after the taps were gone (34 ms) than this Mac was before the loss (48 ms), or 10 ms
+  ✔ round 7: no longer a hole after the taps were gone (126 ms) than before the loss (342 ms), or 150 ms
+  ✘ round 7: (the first bar) none more than 10 ms late once the taps were gone
+  ✘ round 7: (the first bar) input never stood still for a quarter of a second (342 ms)
+shot: mac-shell/round-7-afterwards.png
+
+== round 8: by_the_row_and_a_word, with bare-tapper
+tap 2118421993 pid=13269 point=1 options=0 mask=0x2 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+02:30:38.998 announced com.apple.accessibility.api
+the permission was taken between 02:30:38.956 and 02:30:39.013
+02:30:34.832 stream begins
+02:30:46.836 stream ends: 1200 events posted
+the tools' own permission afterwards: true
+the tapper's own words:
+02:30:34.679 tap-ready pid=13269
+02:30:34.683 question tapIsEnabled = yes
+02:30:34.688 question AXIsProcessTrusted = yes
+02:30:34.690 question CGPreflightListenEventAccess = yes
+02:30:34.690 question CGPreflightPostEventAccess = yes
+02:30:34.690 question a trial tapCreate = yes
+02:30:39.018 question AXIsProcessTrusted = no
+02:30:39.528 question a trial tapCreate = no
+02:30:51.192 cost tapIsEnabled: 1193 calls, µs: median 65, 99th 913, worst 12132
+02:30:51.192 cost AXIsProcessTrusted: 1193 calls, µs: median 17, 99th 63, worst 4936
+02:30:51.192 cost CGPreflightListenEventAccess: 1193 calls, µs: median 13, 99th 55, worst 1679
+02:30:51.192 cost CGPreflightPostEventAccess: 1193 calls, µs: median 0, 99th 0, worst 11
+02:30:51.192 cost a trial tapCreate: 1193 calls, µs: median 332, 99th 4029, worst 18513
+02:30:51.693 the end: the tap is on
+its tap now, by the window server's list: none
+posted 1200, arrived 470, missing 730: [471, 472, 473, 474, 475, 476, 477, 478, 479, 480, 481, 482, 483, 484, 485, 486, 487, 488, 489, 490]
+arrived by kind: down 94, up 94, key-down 94, key-up 94, wheel 94
+before the loss: 415 arrived of 415 posted, longest hole 118 ms, worst lateness 7.5 ms, more than 10 ms late: 0
+from the loss until the taps were gone: 5 arrived of 5 posted, longest hole 98 ms, worst lateness 0.0 ms, more than 10 ms late: 0
+after the taps were gone: 50 arrived of 780 posted, longest hole 103 ms, worst lateness 2.3 ms, more than 10 ms late: 0
+median lateness in ms, before the loss / after the taps were gone: down 0.87 / 1.05, up 1.04 / 1.39, key-down 2.18 / 1.78, key-up 2.27 / 1.79, wheel 2.38 / 1.85
+  NOTHING ARRIVED from 02:30:39.484 to the end of the stream, 7352 ms: 730 events lost in it
+the first event that was lost (n=471) was due at 02:30:39.532, +576 ms from the beginning of the deed
+  question AXIsProcessTrusted = no: -514 ms from the first lost event
+  question a trial tapCreate = no: -4 ms from the first lost event
+  cost tapIsEnabled: 1193 calls, µs: median 65, 99th 913, worst 12132
+  cost AXIsProcessTrusted: 1193 calls, µs: median 17, 99th 63, worst 4936
+  cost CGPreflightListenEventAccess: 1193 calls, µs: median 13, 99th 55, worst 1679
+  cost CGPreflightPostEventAccess: 1193 calls, µs: median 0, 99th 0, worst 11
+  cost a trial tapCreate: 1193 calls, µs: median 332, 99th 4029, worst 18513
+the taps were gone 57 ms after the permission began to go
+THE LONGEST HOLE: 7352 ms
+  ✘ round 8: NOTHING LOST: every event that was posted arrived (730 did not)
+  ✔ round 8: the hole while the permission went (98 ms) is no longer than a second
+  ✔ round 8: AT THE MEDIAN, by kind of event, no more than 10 ms later after the taps were gone than before the loss (0 ms at most)
+  ✔ round 8: (at the worst) no later after the taps were gone (2 ms) than this Mac was before the loss (8 ms), or 10 ms
+  ✘ round 8: no longer a hole after the taps were gone (7352 ms) than before the loss (118 ms), or 150 ms
+  ✔ round 8: (the first bar) none more than 10 ms late once the taps were gone
+  ✘ round 8: (the first bar) input never stood still for a quarter of a second (7352 ms)
+shot: mac-shell/round-8-afterwards.png
+
+== round 9: by_the_row, with arbor
+Arbor pid 14604, entry: com.evbarleyg.arbor.probe-permission-loss|2
+tap 2000419805 pid=14604 point=1 options=0 mask=0x44 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 35756851 pid=14604 point=1 options=0 mask=0x2 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+tap 1155722604 pid=14604 point=1 options=0 mask=0x400000 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 1360613073 pid=14604 point=1 options=0 mask=0x20000000 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+the entry deleted, tccd restarted
+the permission was taken between 02:31:05.725 and 02:31:05.805
+02:31:01.673 stream begins
+02:31:35.700 stream ends: 3395 events posted
+02:31:15.937Z INFO  Accessibility permission is gone (AXIsProcessTrusted says yes, but macOS refused a tap): removed the pinch and rectangle event taps
+02:31:15.938Z ERROR Accessibility permission was taken away with 0 window(s) out of view
+02:31:15.950Z INFO  stopped; no window was moved
+the tools' own permission afterwards: true
+Arbor's Accessibility permission was taken away, so it cannot move windows. Grant it again under Sys
+doubts ("macOS has not said …"): 0; "permission is back": 0; of them before the deed: 0
+false alarms ("permission is back after N ms (macOS has not said in time …"): 0
+slow answers ("macOS took N ms to say …"), N: 
+lines about a tap that macOS switched off: 0
+  ✔ round 9: Arbor has no event tap left
+posted 3395, arrived 3310, missing 85: [1341, 1342, 1343, 1344, 1345, 1346, 1347, 1348, 1349, 1350, 1351, 1352, 1353, 1354, 1355, 1356, 1357, 1358, 1359, 1360]
+arrived by kind: down 662, up 662, key-down 662, key-up 662, wheel 662
+before the loss: 410 arrived of 410 posted, longest hole 123 ms, worst lateness 12.2 ms, more than 10 ms late: 16
+FROM THE ROW'S DELETION UNTIL ARBOR NOTICED: 935 arrived of 1020 posted, longest hole 939 ms, worst lateness 32.4 ms, more than 10 ms late: 11
+after the taps were gone: 1965 arrived of 1965 posted, longest hole 125 ms, worst lateness 8.1 ms, more than 10 ms late: 0
+median lateness in ms, before the loss / after the taps were gone: down 1.35 / 0.53, up 1.80 / 0.50, key-down 3.13 / 0.57, key-up 3.16 / 0.54, wheel 3.27 / 0.31
+  a hole of 939 ms from 02:31:15.027 (n=1340) to 02:31:15.966 (n=1426): 85 events lost in it
+the first event that was lost (n=1341) was due at 02:31:15.073, +9348 ms from the beginning of the deed
+the taps were gone 10212 ms after the permission began to go
+THE LONGEST HOLE: 939 ms
+  ✘ round 9: NOTHING LOST: every event that was posted arrived (85 did not)
+  ✔ round 9: the hole while the permission went (939 ms) is no longer than a second
+  ✔ round 9: AT THE MEDIAN, by kind of event, no more than 10 ms later after the taps were gone than before the loss (0 ms at most)
+  ✔ round 9: (at the worst) no later after the taps were gone (8 ms) than this Mac was before the loss (12 ms), or 10 ms
+  ✔ round 9: no longer a hole after the taps were gone (125 ms) than before the loss (123 ms), or 150 ms
+  ✔ round 9: (the first bar) none more than 10 ms late once the taps were gone
+  ✘ round 9: (the first bar) input never stood still for a quarter of a second (939 ms)
+shot: mac-shell/round-9-afterwards.png
+
+== round 10: by_the_row, with nobody
+the entry deleted, tccd restarted
+the permission was taken between 02:31:48.286 and 02:31:48.357
+02:31:44.209 stream begins
+02:32:18.266 stream ends: 3400 events posted
+the tools' own permission afterwards: true
+posted 3400, arrived 3400, missing 0
+arrived by kind: down 680, up 680, key-down 680, key-up 680, wheel 680
+before the loss: 410 arrived of 410 posted, longest hole 117 ms, worst lateness 3.3 ms, more than 10 ms late: 0
+FROM THE ROW'S DELETION UNTIL ARBOR NOTICED: 5 arrived of 5 posted, longest hole 72 ms, worst lateness 0.5 ms, more than 10 ms late: 0
+after the taps were gone: 2985 arrived of 2985 posted, longest hole 125 ms, worst lateness 9.0 ms, more than 10 ms late: 0
+median lateness in ms, before the loss / after the taps were gone: down 0.26 / 0.38, up 0.25 / 0.37, key-down 0.33 / 0.51, key-up 0.24 / 0.28, wheel 0.18 / 0.23
+the taps were gone 71 ms after the permission began to go
+THE LONGEST HOLE: 125 ms
+  ✔ round 10: NOTHING LOST: every event that was posted arrived (0 did not)
+  ✔ round 10: the hole while the permission went (72 ms) is no longer than a second
+  ✔ round 10: AT THE MEDIAN, by kind of event, no more than 10 ms later after the taps were gone than before the loss (0 ms at most)
+  ✔ round 10: (at the worst) no later after the taps were gone (9 ms) than this Mac was before the loss (3 ms), or 10 ms
+  ✔ round 10: no longer a hole after the taps were gone (125 ms) than before the loss (117 ms), or 150 ms
+  ✔ round 10: (the first bar) none more than 10 ms late once the taps were gone
+  ✔ round 10: (the first bar) input never stood still for a quarter of a second (125 ms)
+shot: mac-shell/round-10-afterwards.png
+
+== round 11: by_the_row, with bare-tapper
+tap 550245196 pid=18586 point=1 options=0 mask=0x2 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+the entry deleted, tccd restarted
+the permission was taken between 02:32:30.997 and 02:32:31.062
+02:32:26.944 stream begins
+02:33:01.016 stream ends: 3400 events posted
+the tools' own permission afterwards: true
+the tapper's own words:
+02:32:26.794 tap-ready pid=18586
+02:32:26.798 question tapIsEnabled = yes
+02:32:26.803 question AXIsProcessTrusted = yes
+02:32:26.806 question CGPreflightListenEventAccess = yes
+02:32:26.806 question CGPreflightPostEventAccess = yes
+02:32:26.806 question a trial tapCreate = yes
+02:33:02.184 question a trial tapCreate = no
+02:33:05.299 cost tapIsEnabled: 2646 calls, µs: median 93, 99th 3261, worst 8240
+02:33:05.299 cost AXIsProcessTrusted: 2646 calls, µs: median 19, 99th 57, worst 5074
+02:33:05.299 cost CGPreflightListenEventAccess: 2646 calls, µs: median 17, 99th 50, worst 2632
+02:33:05.299 cost CGPreflightPostEventAccess: 2646 calls, µs: median 0, 99th 0, worst 3
+02:33:05.299 cost a trial tapCreate: 2646 calls, µs: median 347, 99th 8007, worst 10647
+02:33:05.818 the end: the tap is on
+its tap now, by the window server's list: none
+posted 3400, arrived 3400, missing 0
+arrived by kind: down 680, up 680, key-down 680, key-up 680, wheel 680
+before the loss: 410 arrived of 410 posted, longest hole 112 ms, worst lateness 10.9 ms, more than 10 ms late: 3
+FROM THE ROW'S DELETION UNTIL ARBOR NOTICED: 5 arrived of 5 posted, longest hole 83 ms, worst lateness 1.6 ms, more than 10 ms late: 0
+after the taps were gone: 2985 arrived of 2985 posted, longest hole 124 ms, worst lateness 25.8 ms, more than 10 ms late: 14
+median lateness in ms, before the loss / after the taps were gone: down 1.16 / 1.31, up 1.42 / 1.58, key-down 2.71 / 3.27, key-up 2.89 / 3.46, wheel 2.98 / 3.58
+  question a trial tapCreate = no: +31187 ms from the deed
+  cost tapIsEnabled: 2646 calls, µs: median 93, 99th 3261, worst 8240
+  cost AXIsProcessTrusted: 2646 calls, µs: median 19, 99th 57, worst 5074
+  cost CGPreflightListenEventAccess: 2646 calls, µs: median 17, 99th 50, worst 2632
+  cost CGPreflightPostEventAccess: 2646 calls, µs: median 0, 99th 0, worst 3
+  cost a trial tapCreate: 2646 calls, µs: median 347, 99th 8007, worst 10647
+the taps were gone 65 ms after the permission began to go
+THE LONGEST HOLE: 124 ms
+  ✔ round 11: NOTHING LOST: every event that was posted arrived (0 did not)
+  ✔ round 11: the hole while the permission went (83 ms) is no longer than a second
+  ✔ round 11: AT THE MEDIAN, by kind of event, no more than 10 ms later after the taps were gone than before the loss (1 ms at most)
+  ✘ round 11: (at the worst) no later after the taps were gone (26 ms) than this Mac was before the loss (11 ms), or 10 ms
+  ✔ round 11: no longer a hole after the taps were gone (124 ms) than before the loss (112 ms), or 150 ms
+  ✘ round 11: (the first bar) none more than 10 ms late once the taps were gone
+  ✔ round 11: (the first bar) input never stood still for a quarter of a second (124 ms)
+shot: mac-shell/round-11-afterwards.png
+
+== round 12: by_tccutil, with arbor
+Arbor pid 21087, entry: com.evbarleyg.arbor.probe-permission-loss|2
+tap 1120090212 pid=21087 point=1 options=0 mask=0x44 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 529235706 pid=21087 point=1 options=0 mask=0x2 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+tap 1430235839 pid=21087 point=1 options=0 mask=0x400000 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 1810998055 pid=21087 point=1 options=0 mask=0x20000000 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+Successfully reset Accessibility approval status for com.evbarleyg.arbor.probe-permission-loss
+the permission was taken between 02:33:19.815 and 02:33:19.853
+02:33:15.776 stream begins
+02:33:27.821 stream ends: 1200 events posted
+02:33:19.894Z INFO  Accessibility permission is gone (AXIsProcessTrusted says yes, but macOS refused a tap): removed the pinch and rectangle event taps
+02:33:19.894Z ERROR Accessibility permission was taken away with 0 window(s) out of view
+02:33:19.899Z INFO  stopped; no window was moved
+the tools' own permission afterwards: true
+Arbor's Accessibility permission was taken away, so it cannot move windows. Grant it again under Sys
+doubts ("macOS has not said …"): 0; "permission is back": 0; of them before the deed: 0
+false alarms ("permission is back after N ms (macOS has not said in time …"): 0
+slow answers ("macOS took N ms to say …"), N: 
+lines about a tap that macOS switched off: 0
+  ✔ round 12: Arbor has no event tap left
+posted 1200, arrived 1190, missing 10: [401, 402, 403, 404, 405, 406, 407, 408, 409, 410]
+arrived by kind: down 238, up 238, key-down 238, key-up 238, wheel 238
+before the loss: 400 arrived of 405 posted, longest hole 119 ms, worst lateness 10.2 ms, more than 10 ms late: 4
+from the loss until the taps were gone: 5 arrived of 10 posted, longest hole 194 ms, worst lateness 0.0 ms, more than 10 ms late: 0
+after the taps were gone: 785 arrived of 785 posted, longest hole 123 ms, worst lateness 8.0 ms, more than 10 ms late: 0
+median lateness in ms, before the loss / after the taps were gone: down 1.23 / 0.48, up 1.38 / 0.49, key-down 2.06 / 0.59, key-up 2.08 / 0.56, wheel 1.93 / 0.34
+  a hole of 194 ms from 02:33:19.759 (n=400) to 02:33:19.953 (n=411): 10 events lost in it
+the first event that was lost (n=401) was due at 02:33:19.776, -39 ms from the beginning of the deed
+the taps were gone 79 ms after the permission began to go
+THE LONGEST HOLE: 194 ms
+  ✘ round 12: NOTHING LOST: every event that was posted arrived (10 did not)
+  ✔ round 12: the hole while the permission went (194 ms) is no longer than a second
+  ✔ round 12: AT THE MEDIAN, by kind of event, no more than 10 ms later after the taps were gone than before the loss (0 ms at most)
+  ✔ round 12: (at the worst) no later after the taps were gone (8 ms) than this Mac was before the loss (10 ms), or 10 ms
+  ✔ round 12: no longer a hole after the taps were gone (123 ms) than before the loss (119 ms), or 150 ms
+  ✔ round 12: (the first bar) none more than 10 ms late once the taps were gone
+  ✔ round 12: (the first bar) input never stood still for a quarter of a second (194 ms)
+shot: mac-shell/round-12-afterwards.png
+
+== round 13: by_the_row_and_a_word, with arbor
+Arbor pid 22025, entry: com.evbarleyg.arbor.probe-permission-loss|2
+tap 1593740418 pid=22025 point=1 options=0 mask=0x44 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 1053514403 pid=22025 point=1 options=0 mask=0x2 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+tap 1008057661 pid=22025 point=1 options=0 mask=0x400000 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 1345554529 pid=22025 point=1 options=0 mask=0x20000000 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+02:33:42.368 announced com.apple.accessibility.api
+the permission was taken between 02:33:42.327 and 02:33:42.380
+02:33:38.291 stream begins
+02:33:50.292 stream ends: 1195 events posted
+02:33:42.411Z INFO  Accessibility permission is gone (AXIsProcessTrusted says no): removed the pinch and rectangle event taps
+02:33:42.411Z ERROR Accessibility permission was taken away with 0 window(s) out of view
+02:33:42.413Z INFO  stopped; no window was moved
+the tools' own permission afterwards: true
+Arbor's Accessibility permission was taken away, so it cannot move windows. Grant it again under Sys
+doubts ("macOS has not said …"): 0; "permission is back": 0; of them before the deed: 0
+false alarms ("permission is back after N ms (macOS has not said in time …"): 0
+slow answers ("macOS took N ms to say …"), N: 
+lines about a tap that macOS switched off: 0
+  ✔ round 13: Arbor has no event tap left
+posted 1195, arrived 1195, missing 0
+arrived by kind: down 239, up 239, key-down 239, key-up 239, wheel 239
+before the loss: 405 arrived of 405 posted, longest hole 122 ms, worst lateness 14.1 ms, more than 10 ms late: 17
+from the loss until the taps were gone: 10 arrived of 10 posted, longest hole 99 ms, worst lateness 1.9 ms, more than 10 ms late: 0
+after the taps were gone: 780 arrived of 780 posted, longest hole 121 ms, worst lateness 5.5 ms, more than 10 ms late: 0
+median lateness in ms, before the loss / after the taps were gone: down 1.33 / 0.53, up 1.91 / 0.52, key-down 3.84 / 0.59, key-up 3.85 / 0.55, wheel 4.02 / 0.32
+the taps were gone 84 ms after the permission began to go
+THE LONGEST HOLE: 122 ms
+  ✔ round 13: NOTHING LOST: every event that was posted arrived (0 did not)
+  ✔ round 13: the hole while the permission went (99 ms) is no longer than a second
+  ✔ round 13: AT THE MEDIAN, by kind of event, no more than 10 ms later after the taps were gone than before the loss (0 ms at most)
+  ✔ round 13: (at the worst) no later after the taps were gone (5 ms) than this Mac was before the loss (14 ms), or 10 ms
+  ✔ round 13: no longer a hole after the taps were gone (121 ms) than before the loss (122 ms), or 150 ms
+  ✔ round 13: (the first bar) none more than 10 ms late once the taps were gone
+  ✔ round 13: (the first bar) input never stood still for a quarter of a second (122 ms)
+shot: mac-shell/round-13-afterwards.png
+
+== round 14: by_tccutil, with arbor
+Arbor pid 22961, entry: com.evbarleyg.arbor.probe-permission-loss|2
+tap 184366026 pid=22961 point=1 options=0 mask=0x44 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 1550046828 pid=22961 point=1 options=0 mask=0x2 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+tap 1912802551 pid=22961 point=1 options=0 mask=0x400000 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 1286598370 pid=22961 point=1 options=0 mask=0x20000000 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+Successfully reset Accessibility approval status for com.evbarleyg.arbor.probe-permission-loss
+the permission was taken between 02:34:04.746 and 02:34:04.779
+02:34:00.701 stream begins
+02:34:12.714 stream ends: 1200 events posted
+02:34:05.816Z INFO  Accessibility permission is gone (AXIsProcessTrusted says yes, but macOS refused a tap): removed the pinch and rectangle event taps
+02:34:05.817Z ERROR Accessibility permission was taken away with 0 window(s) out of view
+02:34:05.828Z INFO  stopped; no window was moved
+the tools' own permission afterwards: true
+Arbor's Accessibility permission was taken away, so it cannot move windows. Grant it again under Sys
+doubts ("macOS has not said …"): 0; "permission is back": 0; of them before the deed: 0
+false alarms ("permission is back after N ms (macOS has not said in time …"): 0
+slow answers ("macOS took N ms to say …"), N: 
+lines about a tap that macOS switched off: 0
+  ✔ round 14: Arbor has no event tap left
+posted 1200, arrived 1085, missing 115: [401, 402, 403, 404, 405, 406, 407, 408, 409, 410, 411, 412, 413, 414, 415, 416, 417, 418, 419, 420]
+arrived by kind: down 217, up 217, key-down 217, key-up 217, wheel 217
+before the loss: 400 arrived of 405 posted, longest hole 123 ms, worst lateness 16.9 ms, more than 10 ms late: 6
+from the loss until the taps were gone: 0 arrived of 110 posted, longest hole 1248 ms, worst lateness 0.0 ms, more than 10 ms late: 0
+after the taps were gone: 685 arrived of 685 posted, longest hole 118 ms, worst lateness 12.4 ms, more than 10 ms late: 8
+median lateness in ms, before the loss / after the taps were gone: down 1.34 / 0.56, up 2.11 / 0.48, key-down 3.87 / 0.56, key-up 3.86 / 0.56, wheel 3.94 / 0.38
+  a hole of 1248 ms from 02:34:04.682 (n=400) to 02:34:05.930 (n=516): 115 events lost in it
+the first event that was lost (n=401) was due at 02:34:04.701, -45 ms from the beginning of the deed
+the taps were gone 1070 ms after the permission began to go
+THE LONGEST HOLE: 1248 ms
+  ✘ round 14: NOTHING LOST: every event that was posted arrived (115 did not)
+  ✘ round 14: the hole while the permission went (1248 ms) is no longer than a second
+  ✔ round 14: AT THE MEDIAN, by kind of event, no more than 10 ms later after the taps were gone than before the loss (0 ms at most)
+  ✔ round 14: (at the worst) no later after the taps were gone (12 ms) than this Mac was before the loss (17 ms), or 10 ms
+  ✔ round 14: no longer a hole after the taps were gone (118 ms) than before the loss (123 ms), or 150 ms
+  ✘ round 14: (the first bar) none more than 10 ms late once the taps were gone
+  ✘ round 14: (the first bar) input never stood still for a quarter of a second (1248 ms)
+shot: mac-shell/round-14-afterwards.png
+
+== round 15: by_the_row_and_a_word, with arbor
+Arbor pid 24312, entry: com.evbarleyg.arbor.probe-permission-loss|2
+tap 527532074 pid=24312 point=1 options=0 mask=0x44 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 300248473 pid=24312 point=1 options=0 mask=0x2 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+tap 566417809 pid=24312 point=1 options=0 mask=0x400000 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 1273207249 pid=24312 point=1 options=0 mask=0x20000000 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+02:34:27.270 announced com.apple.accessibility.api
+the permission was taken between 02:34:27.234 and 02:34:27.282
+02:34:23.188 stream begins
+02:34:35.209 stream ends: 1195 events posted
+02:34:27.981Z ERROR Accessibility permission was taken away with 0 window(s) out of view
+02:34:27.984Z INFO  stopped; no window was moved
+the tools' own permission afterwards: true
+Arbor's Accessibility permission was taken away, so it cannot move windows. Grant it again under Sys
+("noticed" is the controller's line: there is no line about the taps' going)
+doubts ("macOS has not said …"): 0; "permission is back": 0; of them before the deed: 0
+false alarms ("permission is back after N ms (macOS has not said in time …"): 0
+slow answers ("macOS took N ms to say …"), N: 
+lines about a tap that macOS switched off: 0
+  ✔ round 15: Arbor has no event tap left
+posted 1195, arrived 1195, missing 0
+arrived by kind: down 239, up 239, key-down 239, key-up 239, wheel 239
+before the loss: 405 arrived of 405 posted, longest hole 120 ms, worst lateness 21.4 ms, more than 10 ms late: 20
+from the loss until the taps were gone: 75 arrived of 75 posted, longest hole 116 ms, worst lateness 9.6 ms, more than 10 ms late: 0
+after the taps were gone: 715 arrived of 715 posted, longest hole 123 ms, worst lateness 9.5 ms, more than 10 ms late: 0
+median lateness in ms, before the loss / after the taps were gone: down 1.34 / 0.52, up 1.97 / 0.48, key-down 4.09 / 0.56, key-up 4.11 / 0.55, wheel 4.21 / 0.31
+the taps were gone 747 ms after the permission began to go
+THE LONGEST HOLE: 123 ms
+  ✔ round 15: NOTHING LOST: every event that was posted arrived (0 did not)
+  ✔ round 15: the hole while the permission went (116 ms) is no longer than a second
+  ✔ round 15: AT THE MEDIAN, by kind of event, no more than 10 ms later after the taps were gone than before the loss (0 ms at most)
+  ✔ round 15: (at the worst) no later after the taps were gone (10 ms) than this Mac was before the loss (21 ms), or 10 ms
+  ✔ round 15: no longer a hole after the taps were gone (123 ms) than before the loss (120 ms), or 150 ms
+  ✔ round 15: (the first bar) none more than 10 ms late once the taps were gone
+  ✔ round 15: (the first bar) input never stood still for a quarter of a second (123 ms)
+shot: mac-shell/round-15-afterwards.png
+
+== round 16: by_tccutil, with arbor, sampled
+Arbor pid 25256, entry: com.evbarleyg.arbor.probe-permission-loss|2
+tap 130644815 pid=25256 point=1 options=0 mask=0x44 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 2146220943 pid=25256 point=1 options=0 mask=0x2 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+tap 1984483445 pid=25256 point=1 options=0 mask=0x400000 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 1906423611 pid=25256 point=1 options=0 mask=0x20000000 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+Successfully reset Accessibility approval status for com.evbarleyg.arbor.probe-permission-loss
+the permission was taken between 02:34:49.753 and 02:34:49.790
+02:34:45.654 stream begins
+02:34:57.667 stream ends: 1200 events posted
+02:34:50.346Z ERROR Accessibility permission was taken away with 0 window(s) out of view
+02:34:50.371Z INFO  stopped; no window was moved
+the tools' own permission afterwards: true
+Arbor's Accessibility permission was taken away, so it cannot move windows. Grant it again under Sys
+("noticed" is the controller's line: there is no line about the taps' going)
+doubts ("macOS has not said …"): 0; "permission is back": 0; of them before the deed: 0
+false alarms ("permission is back after N ms (macOS has not said in time …"): 0
+slow answers ("macOS took N ms to say …"), N: 
+lines about a tap that macOS switched off: 0
+  ✔ round 16: Arbor has no event tap left
+posted 1200, arrived 1145, missing 55: [416, 417, 418, 419, 420, 421, 422, 423, 424, 425, 426, 427, 428, 429, 430, 431, 432, 433, 434, 435]
+arrived by kind: down 229, up 229, key-down 229, key-up 229, wheel 229
+before the loss: 410 arrived of 410 posted, longest hole 119 ms, worst lateness 16.3 ms, more than 10 ms late: 24
+from the loss until the taps were gone: 5 arrived of 60 posted, longest hole 612 ms, worst lateness 1.4 ms, more than 10 ms late: 0
+after the taps were gone: 730 arrived of 730 posted, longest hole 128 ms, worst lateness 10.7 ms, more than 10 ms late: 1
+median lateness in ms, before the loss / after the taps were gone: down 1.33 / 0.50, up 1.87 / 0.47, key-down 3.87 / 0.58, key-up 3.91 / 0.54, wheel 4.00 / 0.37
+  a hole of 612 ms from 02:34:49.756 (n=415) to 02:34:50.368 (n=471): 55 events lost in it
+the first event that was lost (n=416) was due at 02:34:49.804, +51 ms from the beginning of the deed
+the taps were gone 593 ms after the permission began to go
+THE LONGEST HOLE: 612 ms
+  ✘ round 16: NOTHING LOST: every event that was posted arrived (55 did not)
+  ✔ round 16: the hole while the permission went (612 ms) is no longer than a second
+  ✔ round 16: AT THE MEDIAN, by kind of event, no more than 10 ms later after the taps were gone than before the loss (0 ms at most)
+  ✔ round 16: (at the worst) no later after the taps were gone (11 ms) than this Mac was before the loss (16 ms), or 10 ms
+  ✔ round 16: no longer a hole after the taps were gone (128 ms) than before the loss (119 ms), or 150 ms
+  ✘ round 16: (the first bar) none more than 10 ms late once the taps were gone
+  ✘ round 16: (the first bar) input never stood still for a quarter of a second (612 ms)
+shot: mac-shell/round-16-afterwards.png
+
+== round 17: by_the_row_and_a_word, with arbor, sampled
+Arbor pid 26206, entry: com.evbarleyg.arbor.probe-permission-loss|2
+tap 136416008 pid=26206 point=1 options=0 mask=0x44 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 1241361591 pid=26206 point=1 options=0 mask=0x2 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+tap 78756298 pid=26206 point=1 options=0 mask=0x400000 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 1414460396 pid=26206 point=1 options=0 mask=0x20000000 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+02:35:12.645 announced com.apple.accessibility.api
+the permission was taken between 02:35:12.542 and 02:35:12.684
+02:35:08.376 stream begins
+02:35:20.395 stream ends: 1200 events posted
+02:35:13.550Z INFO  Accessibility permission is gone (AXIsProcessTrusted says no): removed the pinch and rectangle event taps
+02:35:13.551Z ERROR Accessibility permission was taken away with 0 window(s) out of view
+02:35:13.563Z INFO  stopped; no window was moved
+the tools' own permission afterwards: true
+Arbor's Accessibility permission was taken away, so it cannot move windows. Grant it again under Sys
+doubts ("macOS has not said …"): 0; "permission is back": 0; of them before the deed: 0
+false alarms ("permission is back after N ms (macOS has not said in time …"): 0
+slow answers ("macOS took N ms to say …"), N: 
+lines about a tap that macOS switched off: 0
+  ✔ round 17: Arbor has no event tap left
+posted 1200, arrived 1200, missing 0
+arrived by kind: down 240, up 240, key-down 240, key-up 240, wheel 240
+before the loss: 420 arrived of 420 posted, longest hole 126 ms, worst lateness 11.8 ms, more than 10 ms late: 2
+from the loss until the taps were gone: 100 arrived of 100 posted, longest hole 120 ms, worst lateness 18.1 ms, more than 10 ms late: 5
+after the taps were gone: 680 arrived of 680 posted, longest hole 121 ms, worst lateness 5.2 ms, more than 10 ms late: 0
+median lateness in ms, before the loss / after the taps were gone: down 1.23 / 0.46, up 1.65 / 0.39, key-down 3.17 / 0.44, key-up 3.23 / 0.50, wheel 3.41 / 0.33
+the taps were gone 1008 ms after the permission began to go
+THE LONGEST HOLE: 126 ms
+  ✔ round 17: NOTHING LOST: every event that was posted arrived (0 did not)
+  ✔ round 17: the hole while the permission went (120 ms) is no longer than a second
+  ✔ round 17: AT THE MEDIAN, by kind of event, no more than 10 ms later after the taps were gone than before the loss (0 ms at most)
+  ✔ round 17: (at the worst) no later after the taps were gone (5 ms) than this Mac was before the loss (12 ms), or 10 ms
+  ✔ round 17: no longer a hole after the taps were gone (121 ms) than before the loss (126 ms), or 150 ms
+  ✔ round 17: (the first bar) none more than 10 ms late once the taps were gone
+  ✔ round 17: (the first bar) input never stood still for a quarter of a second (126 ms)
+shot: mac-shell/round-17-afterwards.png
+
+== round 18: by_the_row_announced, with arbor, sampled
+Arbor pid 27369, entry: com.evbarleyg.arbor.probe-permission-loss|2
+tap 209854446 pid=27369 point=1 options=0 mask=0x44 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 1075669741 pid=27369 point=1 options=0 mask=0x2 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+tap 291425259 pid=27369 point=1 options=0 mask=0x400000 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 82095572 pid=27369 point=1 options=0 mask=0x20000000 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+the entry deleted, tccd restarted
+02:35:35.658 announced com.apple.accessibility.api
+the permission was taken between 02:35:35.558 and 02:35:35.678
+02:35:31.455 stream begins
+02:35:43.518 stream ends: 1200 events posted
+02:35:39.699Z INFO  Accessibility permission is gone (AXIsProcessTrusted says no): removed the pinch and rectangle event taps
+02:35:39.699Z ERROR Accessibility permission was taken away with 0 window(s) out of view
+02:35:39.704Z INFO  stopped; no window was moved
+the tools' own permission afterwards: true
+Arbor's Accessibility permission was taken away, so it cannot move windows. Grant it again under Sys
+doubts ("macOS has not said …"): 0; "permission is back": 0; of them before the deed: 0
+false alarms ("permission is back after N ms (macOS has not said in time …"): 0
+slow answers ("macOS took N ms to say …"), N: 
+lines about a tap that macOS switched off: 0
+  ✔ round 18: Arbor has no event tap left
+posted 1200, arrived 1195, missing 5: [821, 822, 823, 824, 825]
+arrived by kind: down 239, up 239, key-down 239, key-up 239, wheel 239
+before the loss: 415 arrived of 415 posted, longest hole 121 ms, worst lateness 10.2 ms, more than 10 ms late: 5
+from the loss until the taps were gone: 405 arrived of 410 posted, longest hole 122 ms, worst lateness 9.5 ms, more than 10 ms late: 0
+after the taps were gone: 375 arrived of 375 posted, longest hole 119 ms, worst lateness 12.8 ms, more than 10 ms late: 3
+median lateness in ms, before the loss / after the taps were gone: down 1.04 / 0.44, up 1.65 / 0.38, key-down 2.42 / 0.60, key-up 2.39 / 0.48, wheel 2.49 / 0.34
+  a hole of 81 ms from 02:35:39.652 (n=820) to 02:35:39.733 (n=826): 5 events lost in it
+the first event that was lost (n=821) was due at 02:35:39.655, +4097 ms from the beginning of the deed
+the taps were gone 4141 ms after the permission began to go
+THE LONGEST HOLE: 122 ms
+  ✘ round 18: NOTHING LOST: every event that was posted arrived (5 did not)
+  ✔ round 18: the hole while the permission went (122 ms) is no longer than a second
+  ✔ round 18: AT THE MEDIAN, by kind of event, no more than 10 ms later after the taps were gone than before the loss (0 ms at most)
+  ✘ round 18: (at the worst) no later after the taps were gone (13 ms) than this Mac was before the loss (10 ms), or 10 ms
+  ✔ round 18: no longer a hole after the taps were gone (119 ms) than before the loss (121 ms), or 150 ms
+  ✘ round 18: (the first bar) none more than 10 ms late once the taps were gone
+  ✔ round 18: (the first bar) input never stood still for a quarter of a second (122 ms)
+shot: mac-shell/round-18-afterwards.png
+
+== round 19: nothing, with arbor-stopped
+Arbor pid 28530, entry: com.evbarleyg.arbor.probe-permission-loss|2
+tap 486577616 pid=28530 point=1 options=0 mask=0x44 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 1093508921 pid=28530 point=1 options=0 mask=0x2 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+tap 1179339467 pid=28530 point=1 options=0 mask=0x400000 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 1219600867 pid=28530 point=1 options=0 mask=0x20000000 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+02:35:56.369 Arbor is halted
+nothing is taken
+the permission was taken between 02:35:58.439 and 02:35:58.456
+its taps, twenty seconds on:
+tap 486577616 pid=28530 point=1 options=0 mask=0x44 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 1093508921 pid=28530 point=1 options=0 mask=0x2 enabled=false latency_us min=1293.7162 avg=1293.7162 max=1293.7162
+tap 1179339467 pid=28530 point=1 options=0 mask=0x400000 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 1219600867 pid=28530 point=1 options=0 mask=0x20000000 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+02:36:18.513 Arbor is killed
+02:35:54.283 stream begins
+02:36:24.295 stream ends: 3000 events posted
+the tools' own permission afterwards: true
+posted 3000, arrived 2899, missing 101: [211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230]
+arrived by kind: down 579, up 580, key-down 580, key-up 580, wheel 580
+before the loss: 319 arrived of 420 posted, longest hole 1071 ms, worst lateness 10.9 ms, more than 10 ms late: 4
+FROM THE LOSS UNTIL ARBOR, HALTED, WAS KILLED: 2005 arrived of 2005 posted, longest hole 131 ms, worst lateness 16.8 ms, more than 10 ms late: 4
+after the taps were gone: 575 arrived of 575 posted, longest hole 123 ms, worst lateness 8.2 ms, more than 10 ms late: 0
+median lateness in ms, before the loss / after the taps were gone: down 1.08 / 0.59, up 1.34 / 0.53, key-down 2.34 / 0.64, key-up 2.18 / 0.55, wheel 2.17 / 0.34
+  a hole of 1071 ms from 02:35:56.362 (n=210) to 02:35:57.433 (n=312): 101 events lost in it
+the first event that was lost (n=211) was due at 02:35:56.383, -2056 ms from the beginning of the deed
+the taps were gone 20074 ms after the permission began to go
+THE LONGEST HOLE: 1071 ms
+  ✘ round 19: NOTHING LOST: every event that was posted arrived (101 did not)
+  ✔ round 19: the hole while the permission went (131 ms) is no longer than a second
+  ✔ round 19: AT THE MEDIAN, by kind of event, no more than 10 ms later after the taps were gone than before the loss (0 ms at most)
+  ✔ round 19: (at the worst) no later after the taps were gone (8 ms) than this Mac was before the loss (11 ms), or 10 ms
+  ✔ round 19: no longer a hole after the taps were gone (123 ms) than before the loss (1071 ms), or 150 ms
+  ✔ round 19: (the first bar) none more than 10 ms late once the taps were gone
+  ✘ round 19: (the first bar) input never stood still for a quarter of a second (1071 ms)
+shot: mac-shell/round-19-afterwards.png
+
+== round 20: by_tccutil, with arbor-stopped
+Arbor pid 30122, entry: com.evbarleyg.arbor.probe-permission-loss|2
+tap 1731812679 pid=30122 point=1 options=0 mask=0x44 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 452947988 pid=30122 point=1 options=0 mask=0x2 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+tap 1688622591 pid=30122 point=1 options=0 mask=0x400000 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 1449089325 pid=30122 point=1 options=0 mask=0x20000000 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+02:36:37.004 Arbor is halted
+Successfully reset Accessibility approval status for com.evbarleyg.arbor.probe-permission-loss
+the permission was taken between 02:36:39.061 and 02:36:39.105
+its taps, twenty seconds on:
+tap 1731812679 pid=30122 point=1 options=0 mask=0x44 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 452947988 pid=30122 point=1 options=0 mask=0x2 enabled=false latency_us min=1074.2079 avg=1074.2079 max=1074.2079
+tap 1688622591 pid=30122 point=1 options=0 mask=0x400000 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 1449089325 pid=30122 point=1 options=0 mask=0x20000000 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+02:36:59.199 Arbor is killed
+02:36:34.921 stream begins
+02:37:04.928 stream ends: 3000 events posted
+the tools' own permission afterwards: true
+posted 3000, arrived 2889, missing 111: [211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230]
+arrived by kind: down 577, up 578, key-down 578, key-up 578, wheel 578
+before the loss: 304 arrived of 415 posted, longest hole 1154 ms, worst lateness 7.0 ms, more than 10 ms late: 0
+FROM THE LOSS UNTIL ARBOR, HALTED, WAS KILLED: 2015 arrived of 2015 posted, longest hole 125 ms, worst lateness 10.3 ms, more than 10 ms late: 2
+after the taps were gone: 570 arrived of 570 posted, longest hole 120 ms, worst lateness 6.5 ms, more than 10 ms late: 0
+median lateness in ms, before the loss / after the taps were gone: down 0.69 / 0.51, up 0.86 / 0.44, key-down 1.42 / 0.55, key-up 1.50 / 0.56, wheel 1.23 / 0.39
+  a hole of 1154 ms from 02:36:36.978 (n=210) to 02:36:38.132 (n=322): 111 events lost in it
+the first event that was lost (n=211) was due at 02:36:37.021, -2040 ms from the beginning of the deed
+the taps were gone 20138 ms after the permission began to go
+THE LONGEST HOLE: 1154 ms
+  ✘ round 20: NOTHING LOST: every event that was posted arrived (111 did not)
+  ✔ round 20: the hole while the permission went (125 ms) is no longer than a second
+  ✔ round 20: AT THE MEDIAN, by kind of event, no more than 10 ms later after the taps were gone than before the loss (0 ms at most)
+  ✔ round 20: (at the worst) no later after the taps were gone (7 ms) than this Mac was before the loss (7 ms), or 10 ms
+  ✔ round 20: no longer a hole after the taps were gone (120 ms) than before the loss (1154 ms), or 150 ms
+  ✔ round 20: (the first bar) none more than 10 ms late once the taps were gone
+  ✘ round 20: (the first bar) input never stood still for a quarter of a second (1154 ms)
+shot: mac-shell/round-20-afterwards.png
+
+== side by side
+== round 1: by_tccutil, with arbor
+posted 1200, arrived 1190, missing 10: [411, 412, 413, 414, 415, 416, 417, 418, 419, 420]
+  a hole of 154 ms from 02:28:02.776 (n=375) to 02:28:02.930 (n=376): 0 events lost in it
+  a hole of 135 ms from 02:28:03.121 (n=410) to 02:28:03.256 (n=421): 10 events lost in it
+THE LONGEST HOLE: 154 ms
+== round 2: by_tccutil, with nobody
+posted 1195, arrived 1195, missing 0
+THE LONGEST HOLE: 122 ms
+== round 3: by_tccutil, with arbor-without-taps
+("noticed" is the controller's line: there is no line about the taps' going)
+posted 1200, arrived 1200, missing 0
+THE LONGEST HOLE: 125 ms
+== round 4: by_tccutil, with bare-tapper
+posted 1200, arrived 405, missing 795: [406, 407, 408, 409, 410, 411, 412, 413, 414, 415, 416, 417, 418, 419, 420, 421, 422, 423, 424, 425]
+THE LONGEST HOLE: 7982 ms
+== round 5: by_the_row_and_a_word, with arbor
+posted 1195, arrived 1195, missing 0
+THE LONGEST HOLE: 129 ms
+== round 6: by_the_row_and_a_word, with nobody
+posted 1200, arrived 1200, missing 0
+THE LONGEST HOLE: 119 ms
+== round 7: by_the_row_and_a_word, with arbor-without-taps
+("noticed" is the controller's line: there is no line about the taps' going)
+posted 1195, arrived 1195, missing 0
+  a hole of 342 ms from 02:30:14.963 (n=75) to 02:30:15.305 (n=76): 0 events lost in it
+  a hole of 204 ms from 02:30:15.675 (n=145) to 02:30:15.879 (n=146): 0 events lost in it
+THE LONGEST HOLE: 342 ms
+== round 8: by_the_row_and_a_word, with bare-tapper
+posted 1200, arrived 470, missing 730: [471, 472, 473, 474, 475, 476, 477, 478, 479, 480, 481, 482, 483, 484, 485, 486, 487, 488, 489, 490]
+THE LONGEST HOLE: 7352 ms
+== round 9: by_the_row, with arbor
+posted 3395, arrived 3310, missing 85: [1341, 1342, 1343, 1344, 1345, 1346, 1347, 1348, 1349, 1350, 1351, 1352, 1353, 1354, 1355, 1356, 1357, 1358, 1359, 1360]
+  a hole of 939 ms from 02:31:15.027 (n=1340) to 02:31:15.966 (n=1426): 85 events lost in it
+THE LONGEST HOLE: 939 ms
+== round 10: by_the_row, with nobody
+posted 3400, arrived 3400, missing 0
+THE LONGEST HOLE: 125 ms
+== round 11: by_the_row, with bare-tapper
+posted 3400, arrived 3400, missing 0
+THE LONGEST HOLE: 124 ms
+== round 12: by_tccutil, with arbor
+posted 1200, arrived 1190, missing 10: [401, 402, 403, 404, 405, 406, 407, 408, 409, 410]
+  a hole of 194 ms from 02:33:19.759 (n=400) to 02:33:19.953 (n=411): 10 events lost in it
+THE LONGEST HOLE: 194 ms
+== round 13: by_the_row_and_a_word, with arbor
+posted 1195, arrived 1195, missing 0
+THE LONGEST HOLE: 122 ms
+== round 14: by_tccutil, with arbor
+posted 1200, arrived 1085, missing 115: [401, 402, 403, 404, 405, 406, 407, 408, 409, 410, 411, 412, 413, 414, 415, 416, 417, 418, 419, 420]
+  a hole of 1248 ms from 02:34:04.682 (n=400) to 02:34:05.930 (n=516): 115 events lost in it
+THE LONGEST HOLE: 1248 ms
+== round 15: by_the_row_and_a_word, with arbor
+("noticed" is the controller's line: there is no line about the taps' going)
+posted 1195, arrived 1195, missing 0
+THE LONGEST HOLE: 123 ms
+== round 16: by_tccutil, with arbor, sampled
+("noticed" is the controller's line: there is no line about the taps' going)
+posted 1200, arrived 1145, missing 55: [416, 417, 418, 419, 420, 421, 422, 423, 424, 425, 426, 427, 428, 429, 430, 431, 432, 433, 434, 435]
+  a hole of 612 ms from 02:34:49.756 (n=415) to 02:34:50.368 (n=471): 55 events lost in it
+THE LONGEST HOLE: 612 ms
+== round 17: by_the_row_and_a_word, with arbor, sampled
+posted 1200, arrived 1200, missing 0
+THE LONGEST HOLE: 126 ms
+== round 18: by_the_row_announced, with arbor, sampled
+posted 1200, arrived 1195, missing 5: [821, 822, 823, 824, 825]
+  a hole of 81 ms from 02:35:39.652 (n=820) to 02:35:39.733 (n=826): 5 events lost in it
+THE LONGEST HOLE: 122 ms
+== round 19: nothing, with arbor-stopped
+posted 3000, arrived 2899, missing 101: [211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230]
+  a hole of 1071 ms from 02:35:56.362 (n=210) to 02:35:57.433 (n=312): 101 events lost in it
+THE LONGEST HOLE: 1071 ms
+== round 20: by_tccutil, with arbor-stopped
+posted 3000, arrived 2889, missing 111: [211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230]
+  a hole of 1154 ms from 02:36:36.978 (n=210) to 02:36:38.132 (n=322): 111 events lost in it
+THE LONGEST HOLE: 1154 ms
+
+== the end
+
+119 passed, 33 failed
+exit code 1
