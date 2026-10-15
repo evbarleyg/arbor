@@ -1,0 +1,86 @@
+# check-let-go-low 2026-10-15T16:52Z on macOS 26.6.2, commit 07bcac1
+
+== Test windows
+
+▸ a test window, docked, is dragged out and let go at 512,150
+  ✔ its title bar can be grabbed
+  ✔ a test window at 150: it is out of the arrangement
+  ✔ a test window at 150: on the screen it has its own size, 480 348
+
+▸ a test window is docked again and let go at 512,150, where nothing is in the way
+  ✔ its title bar can be grabbed
+  ✔ a test window at 150 after 150: its own size has not crept: 480 348
+
+▸ a test window, docked, is dragged out and let go at 512,300
+  ✔ its title bar can be grabbed
+  ✔ a test window at 300: it is out of the arrangement
+  ✔ a test window at 300: on the screen it has its own size, 480 348
+
+▸ a test window is docked again and let go at 512,150, where nothing is in the way
+  ✔ its title bar can be grabbed
+  ✔ a test window at 150 after 300: its own size has not crept: 480 348
+
+▸ a test window, docked, is dragged out and let go at 512,320
+  ✔ its title bar can be grabbed
+  ✔ a test window at 320: it is out of the arrangement
+  ✔ a test window at 320: on the screen it has its own size, 480 348
+
+▸ a test window is docked again and let go at 512,150, where nothing is in the way
+  ✔ its title bar can be grabbed
+  ✔ a test window at 150 after 320: its own size has not crept: 480 348
+
+▸ a test window, docked, is dragged out and let go at 512,420
+  ✔ its title bar can be grabbed
+  ✔ a test window at 420: it is out of the arrangement
+  ✔ a test window at 420: on the screen it has its own size, 480 348
+
+▸ a test window is docked again and let go at 512,150, where nothing is in the way
+  ✔ its title bar can be grabbed
+  ✔ a test window at 150 after 420: its own size has not crept: 480 348
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+
+== TextEdit beside Safari
+  ✔ TextEdit and Safari each have a window
+
+▸ TextEdit, docked, is dragged out and let go at 512,150
+  ✔ its title bar can be grabbed
+  ✔ TextEdit at 150: it is out of the arrangement
+  ✔ TextEdit at 150: on the screen it has its own size, 673 439
+
+▸ TextEdit is docked again and let go at 512,150, where nothing is in the way
+  ✔ its title bar can be grabbed
+  ✔ TextEdit at 150 after 150: its own size has not crept: 673 439
+
+▸ TextEdit, docked, is dragged out and let go at 512,300
+  ✔ its title bar can be grabbed
+  ✔ TextEdit at 300: it is out of the arrangement
+  ✔ TextEdit at 300: on the screen it has its own size, 673 439
+
+▸ TextEdit is docked again and let go at 512,150, where nothing is in the way
+  ✔ its title bar can be grabbed
+  ✔ TextEdit at 150 after 300: its own size has not crept: 673 439
+
+▸ TextEdit, docked, is dragged out and let go at 512,320
+  ✔ its title bar can be grabbed
+  ✔ TextEdit at 320: it is out of the arrangement
+  ✔ TextEdit at 320: on the screen it has its own size, 673 439
+
+▸ TextEdit is docked again and let go at 512,150, where nothing is in the way
+  ✔ its title bar can be grabbed
+  ✔ TextEdit at 150 after 320: its own size has not crept: 673 439
+
+▸ TextEdit, docked, is dragged out and let go at 512,420
+  ✔ its title bar can be grabbed
+  ✔ TextEdit at 420: it is out of the arrangement
+  ✔ TextEdit at 420: on the screen it has its own size, 673 439
+
+▸ TextEdit is docked again and let go at 512,150, where nothing is in the way
+  ✔ its title bar can be grabbed
+  ✔ TextEdit at 150 after 420: its own size has not crept: 673 439
+  ✔ Arbor exits within 5 s of quit
+
+45 passed, 0 failed

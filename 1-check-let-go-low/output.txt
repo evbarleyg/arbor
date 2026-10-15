@@ -1,0 +1,264 @@
+# mac-shell: scripts/mac-shell/check-let-go-low.sh at 07bcac1, macOS 26.6.2, 2026-10-15T16:52Z
+built Arbor, the pointer tool and the app bundles in 10s
+macOS's own tiling: com.apple.WindowManager EnableTilingByEdgeDrag: 1
+com.apple.WindowManager EnableTopTilingByEdgeDrag: 1
+com.apple.WindowManager EnableTilingOptionAccelerator: not set
+com.apple.WindowManager EnableTiledWindowMargins: not set; the key: cmd
+
+== Test windows
+session 1: Arbor pid 6383, test windows 29 30 (pid 6306)
+running: 1 display, 0 docked and 2 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> float-all
+arborctl: nothing is docked
+== a test window: w29, its own size 480 348
+
+▸ a test window, docked, is dragged out and let go at 512,150
+> float-all
+arborctl: nothing is docked
+> dock 29 left
+docked w29 at the left edge
+> dock 30 right
+docked w30 at the right edge
+it is managed docked at 12 43 494 650
+it is managed docked at 518 43 494 650
+  ✔ its title bar can be grabbed
+> drag 294 55 512 150 --hold 0.8 --mods cmd
+  ✔ a test window at 150: it is out of the arrangement
+a test window at 150: own 480 348; it is at 198 118 480 348
+  ✔ a test window at 150: on the screen it has its own size, 480 348
+
+▸ a test window is docked again and let go at 512,150, where nothing is in the way
+> float-all
+> dock 29 left
+docked w29 at the left edge
+> dock 30 right
+docked w30 at the right edge
+it is managed docked at 12 43 494 650
+it is managed docked at 518 43 494 650
+  ✔ its title bar can be grabbed
+> drag 294 55 512 150 --hold 0.8 --mods cmd
+a test window at 150 after 150: own 480 348; it is at 198 118 480 348
+  ✔ a test window at 150 after 150: its own size has not crept: 480 348
+
+▸ a test window, docked, is dragged out and let go at 512,300
+> float-all
+> dock 29 left
+docked w29 at the left edge
+> dock 30 right
+docked w30 at the right edge
+it is managed docked at 12 43 494 650
+it is managed docked at 518 43 494 650
+  ✔ its title bar can be grabbed
+> drag 294 55 512 300 --hold 0.8 --mods cmd
+  ✔ a test window at 300: it is out of the arrangement
+a test window at 300: own 480 348; it is at 149 240 480 348
+  ✔ a test window at 300: on the screen it has its own size, 480 348
+
+▸ a test window is docked again and let go at 512,150, where nothing is in the way
+> float-all
+> dock 29 left
+docked w29 at the left edge
+> dock 30 right
+docked w30 at the right edge
+it is managed docked at 12 43 494 650
+it is managed docked at 518 43 494 650
+  ✔ its title bar can be grabbed
+> drag 294 55 512 150 --hold 0.8 --mods cmd
+a test window at 150 after 300: own 480 348; it is at 198 118 480 348
+  ✔ a test window at 150 after 300: its own size has not crept: 480 348
+
+▸ a test window, docked, is dragged out and let go at 512,320
+> float-all
+> dock 29 left
+docked w29 at the left edge
+> dock 30 right
+docked w30 at the right edge
+it is managed docked at 12 43 494 650
+it is managed docked at 518 43 494 650
+  ✔ its title bar can be grabbed
+> drag 294 55 512 320 --hold 0.8 --mods cmd
+  ✔ a test window at 320: it is out of the arrangement
+a test window at 320: own 480 348; it is at 142 260 480 348
+  ✔ a test window at 320: on the screen it has its own size, 480 348
+
+▸ a test window is docked again and let go at 512,150, where nothing is in the way
+> float-all
+> dock 29 left
+docked w29 at the left edge
+> dock 30 right
+docked w30 at the right edge
+it is managed docked at 12 43 494 650
+it is managed docked at 518 43 494 650
+  ✔ its title bar can be grabbed
+> drag 294 55 512 150 --hold 0.8 --mods cmd
+a test window at 150 after 320: own 480 348; it is at 198 118 480 348
+  ✔ a test window at 150 after 320: its own size has not crept: 480 348
+
+▸ a test window, docked, is dragged out and let go at 512,420
+> float-all
+> dock 29 left
+docked w29 at the left edge
+> dock 30 right
+docked w30 at the right edge
+it is managed docked at 12 43 494 650
+it is managed docked at 518 43 494 650
+  ✔ its title bar can be grabbed
+> drag 294 55 512 420 --hold 0.8 --mods cmd
+  ✔ a test window at 420: it is out of the arrangement
+a test window at 420: own 480 348; it is at 114 360 480 348
+  ✔ a test window at 420: on the screen it has its own size, 480 348
+
+▸ a test window is docked again and let go at 512,150, where nothing is in the way
+> float-all
+> dock 29 left
+docked w29 at the left edge
+> dock 30 right
+docked w30 at the right edge
+it is managed docked at 12 43 494 650
+it is managed docked at 518 43 494 650
+  ✔ its title bar can be grabbed
+> drag 294 55 512 150 --hold 0.8 --mods cmd
+a test window at 150 after 420: own 480 348; it is at 198 118 480 348
+  ✔ a test window at 150 after 420: its own size has not crept: 480 348
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+
+== TextEdit beside Safari
+> open -g -b com.apple.TextEdit /tmp/arbor-apps.Ccqg1T/scratch/oak.txt
+pid 12511 lists (id role subrole x y w h flags):
+  41 AXWindow AXStandardWindow 79 56 673 439 main
+> open -g -b com.apple.Safari /tmp/arbor-apps.Ccqg1T/scratch/page.html
+pid 12740 lists (id role subrole x y w h flags):
+  44 AXWindow AXStandardWindow 0 31 1024 677 main,toolbar
+  ✔ TextEdit and Safari each have a window
+session 2: Arbor pid 12868, ARBOR_ONLY_PIDS=12511,12740: running: 1 display, 0 docked and 2 floating, 0 out of view
+Arbor dev
+> trace on check-let-go-low-apps
+> float-all
+arborctl: nothing is docked
+== TextEdit: w41, its own size 673 439
+
+▸ TextEdit, docked, is dragged out and let go at 512,150
+> float-all
+arborctl: nothing is docked
+> dock 41 left
+docked w41 at the left edge
+> dock 44 right
+docked w44 at the right edge
+it is managed docked at 12 43 414 653
+it is managed docked at 438 43 574 653
+  ✔ its title bar can be grabbed
+> drag 222 55 512 150 --hold 0.8 --mods cmd
+  ✔ TextEdit at 150: it is out of the arrangement
+TextEdit at 150: own 673 439; it is at 130 115 673 439
+  ✔ TextEdit at 150: on the screen it has its own size, 673 439
+
+▸ TextEdit is docked again and let go at 512,150, where nothing is in the way
+> float-all
+> dock 41 left
+docked w41 at the left edge
+> dock 44 right
+docked w44 at the right edge
+it is managed docked at 12 43 414 653
+it is managed docked at 438 43 574 653
+  ✔ its title bar can be grabbed
+> drag 222 55 512 150 --hold 0.8 --mods cmd
+TextEdit at 150 after 150: own 673 439; it is at 128 115 673 439
+  ✔ TextEdit at 150 after 150: its own size has not crept: 673 439
+
+▸ TextEdit, docked, is dragged out and let go at 512,300
+> float-all
+> dock 41 left
+docked w41 at the left edge
+> dock 44 right
+docked w44 at the right edge
+it is managed docked at 12 43 414 653
+it is managed docked at 438 43 574 653
+  ✔ its title bar can be grabbed
+> drag 222 55 512 300 --hold 0.8 --mods cmd
+  ✔ TextEdit at 300: it is out of the arrangement
+TextEdit at 300: own 673 439; it is at 67 240 673 439
+  ✔ TextEdit at 300: on the screen it has its own size, 673 439
+
+▸ TextEdit is docked again and let go at 512,150, where nothing is in the way
+> float-all
+> dock 41 left
+docked w41 at the left edge
+> dock 44 right
+docked w44 at the right edge
+it is managed docked at 12 43 414 653
+it is managed docked at 438 43 574 653
+  ✔ its title bar can be grabbed
+> drag 222 55 512 150 --hold 0.8 --mods cmd
+TextEdit at 150 after 300: own 673 439; it is at 128 115 673 439
+  ✔ TextEdit at 150 after 300: its own size has not crept: 673 439
+
+▸ TextEdit, docked, is dragged out and let go at 512,320
+> float-all
+> dock 41 left
+docked w41 at the left edge
+> dock 44 right
+docked w44 at the right edge
+it is managed docked at 12 43 414 653
+it is managed docked at 438 43 574 653
+  ✔ its title bar can be grabbed
+> drag 222 55 512 320 --hold 0.8 --mods cmd
+  ✔ TextEdit at 320: it is out of the arrangement
+TextEdit at 320: own 673 439; it is at 50 260 673 439
+  ✔ TextEdit at 320: on the screen it has its own size, 673 439
+
+▸ TextEdit is docked again and let go at 512,150, where nothing is in the way
+> float-all
+> dock 41 left
+docked w41 at the left edge
+> dock 44 right
+docked w44 at the right edge
+it is managed docked at 12 43 414 653
+it is managed docked at 438 43 574 653
+  ✔ its title bar can be grabbed
+> drag 222 55 512 150 --hold 0.8 --mods cmd
+TextEdit at 150 after 320: own 673 439; it is at 130 115 673 439
+  ✔ TextEdit at 150 after 320: its own size has not crept: 673 439
+
+▸ TextEdit, docked, is dragged out and let go at 512,420
+> float-all
+> dock 41 left
+docked w41 at the left edge
+> dock 44 right
+docked w44 at the right edge
+it is managed docked at 12 43 414 653
+it is managed docked at 438 43 574 653
+  ✔ its title bar can be grabbed
+> drag 222 55 512 420 --hold 0.8 --mods cmd
+  ✔ TextEdit at 420: it is out of the arrangement
+TextEdit at 420: own 673 439; it is at 18 360 673 439
+  ✔ TextEdit at 420: on the screen it has its own size, 673 439
+
+▸ TextEdit is docked again and let go at 512,150, where nothing is in the way
+> float-all
+> dock 41 left
+docked w41 at the left edge
+> dock 44 right
+docked w44 at the right edge
+it is managed docked at 12 43 414 653
+it is managed docked at 438 43 574 653
+  ✔ its title bar can be grabbed
+> drag 222 55 512 150 --hold 0.8 --mods cmd
+TextEdit at 150 after 420: own 673 439; it is at 128 115 673 439
+  ✔ TextEdit at 150 after 420: its own size has not crept: 673 439
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+
+45 passed, 0 failed
+still running when the script had ended, and stopped now:
+  12494 sleep
+mac-shell: put back after check-let-go-low.sh: window-manager
+exit code 0

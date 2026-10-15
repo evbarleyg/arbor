@@ -1,0 +1,95 @@
+# check-own-size 2026-10-15T16:56Z on macOS 26.6.2, commit 07bcac1
+
+▸ a tall window dragged out of a low slot and let go low has its own size
+  ✔ it stands where it was put
+  ✔ it is docked in the lower slot
+  ✔ it floats
+  ✔ at its own size
+  ✔ and stays so
+  ✔ docked and floated again it is no more than a point short of it
+  ✔ it stands where it was put
+
+▸ out of a slot as high as the screen, let go where its own size ends in the Dock's strip: its own size (drop 1)
+  ✔ it is docked, as high as the screen
+  ✔ it floats
+  ✔ at its own size
+  ✔ and stays so
+
+▸ out of a slot as high as the screen, let go where its own size ends in the Dock's strip: its own size (drop 2)
+  ✔ it is docked, as high as the screen
+  ✔ it floats
+  ✔ at its own size
+  ✔ and stays so
+
+▸ out of a slot as high as the screen, let go where its own size ends in the Dock's strip: its own size (drop 3)
+  ✔ it is docked, as high as the screen
+  ✔ it floats
+  ✔ at its own size
+  ✔ and stays so
+
+▸ the same by a fast drag, let go without a pause
+  ✔ it is docked, as high as the screen
+  ✔ it floats
+  ✔ at its own size
+  ✔ and stays so
+  ✔ Arbor exits within 5 s of quit
+  ✔ docked again, Quit gives it its own size
+
+▸ left hanging over the bottom, docked in a low slot, given back by float-all: whole, where it was
+  ✔ it stands where it was put
+  ✔ it is docked in the lower slot
+  ✔ it is where it was left, at its own size
+  ✔ and stays there
+
+▸ left hanging over the right edge, docked in a narrow slot, given back by float-all: whole, where it was
+  ✔ it stands where it was put
+  ✔ it is docked in the slot at the right
+  ✔ it is where it was left, at its own size
+  ✔ and stays there
+
+▸ left hanging over the bottom, docked in a low slot, given back by pause: whole, where it was
+  ✔ it stands where it was put
+  ✔ it is docked in the lower slot
+  ✔ it is where it was left, at its own size
+  ✔ and stays there
+
+▸ left hanging over the right edge, docked in a narrow slot, given back by pause: whole, where it was
+  ✔ it stands where it was put
+  ✔ it is docked in the slot at the right
+  ✔ it is where it was left, at its own size
+  ✔ and stays there
+
+▸ left hanging over the bottom, docked in a low slot, given back by quit: whole, where it was
+  ✔ it stands where it was put
+  ✔ it is docked in the lower slot
+  ✔ Arbor exits within 5 s of quit
+  ✔ it is where it was left, at its own size
+  ✔ and stays there
+
+▸ left hanging over the right edge, docked in a narrow slot, given back by quit: whole, where it was
+  ✔ it stands where it was put
+  ✔ it is docked in the slot at the right
+  ✔ Arbor exits within 5 s of quit
+  ✔ it is where it was left, at its own size
+  ✔ and stays there
+
+▸ as high as the visible frame, it comes back a point short at most
+  ✔ it stands where it was put
+  ✔ it is docked in the lower slot
+  ✔ as wide as it was
+  ✔ no more than a point short
+
+▸ let be at a start, ten points over the right edge, it is as wide as it stood
+  ✔ it stands where it was put
+  ✔ Arbor exits within 5 s of quit
+  ✔ Quit gives it back as it stood
+  ✔ it has the keyboard, so it is let be
+  ✔ as it stood
+  ✔ and stays so
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+
+64 passed, 0 failed

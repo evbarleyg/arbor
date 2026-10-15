@@ -1,0 +1,42 @@
+# mac-shell: scripts/mac-shell/check-a-dock-appears.sh at 07bcac1, macOS 26.6.2, 2026-10-15T16:58Z
+built Arbor, the pointer tool and the app bundles in 7s
+> the Dock hidden: true
+session 1: Arbor pid 24229, test windows 117 118 (pid 24205)
+running: 1 display, 0 docked and 2 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+with the Dock hidden the visible frame is 0 31 1024 737
+> dock 117 left
+docked w117 at the left edge
+> dock 118 beside 117 bottom
+docked w118 below w117
+  ✔ two rows are docked
+  ✔ as high as each other
+    the upper at 12 43 494 351, the lower at 12 406 494 350
+
+▸ the Dock appears under them
+> the Dock hidden: false
+> home
+with the Dock shown the visible frame is 0 31 1024 677
+  ✔ the visible frame is lower by more than the gap
+  ✔ the upper row is in its slot
+  ✔ the lower row is in its slot
+  ✔ they are as high as each other still: nobody's smallest height was learnt
+  ✔ and stay so
+    the upper at 12 43 494 321, the lower at 12 376 494 320
+display 0 0 1024 768, visible 0 31 1024 677, camera n2, back no
+  Desktop          518 43 494 653
+  w117 12 43 494 321        docked
+  w118 12 376 494 320       docked focused
+shot: mac-shell/the-dock-has-appeared.png
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+> the Dock hidden: false
+
+10 passed, 0 failed
+exit code 0
