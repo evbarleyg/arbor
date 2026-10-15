@@ -70,6 +70,13 @@ extension Controller {
     return changed
   }
 
+  /// Whether what is on record of how small `window` goes is so old that a layout in which it is a tile for it asks it again.
+  func hasARecordToBeAskedAbout(_ window: WindowID) -> Bool {
+    let interval = settings.tileRetryMinutes * 60
+    guard interval > 0, let record = confirmedSizes[window], record.size == minimumSizes[window] else { return false }
+    return abs(now().timeIntervalSince(record.at)) >= interval
+  }
+
   /// The windows that are tiles in `layout` because of a record older than `tileRetryMinutes`, and the slots that wait for them.
   private func tilesToAsk(in layout: Layout, on displayID: DisplayID) -> [(window: WindowID, slot: CGRect)] {
     let interval = settings.tileRetryMinutes * 60

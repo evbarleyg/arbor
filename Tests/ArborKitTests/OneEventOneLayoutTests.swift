@@ -374,3 +374,325 @@ private let oneLayout: Set<String> = [
     expectSound(h)
   }
 }
+
+/// A docked window comes back (out of the Dock, with its app) and has the keyboard, to a place that does not show. The view follows
+/// the keyboard, so that is the view the display is laid out for: not first for the one it is about to leave.
+@Suite @MainActor struct BackWithTheKeyboardIsOneLayoutTests {
+  /// Two windows too wide to show beside anything, one on each side of a third, which is in view. With the keyboard or without, `wide`
+  /// is a tile there: its neighbour cannot spare what it needs.
+  private func aTileAndItsNeighbour() -> (Harness, wide: WindowID, music: WindowID) {
+    let h = Harness()
+    let other = h.system.open(app: "Xcode", pid: 1004, frame: CGRect(x: 0, y: 52, width: 1370, height: 685), minimumSize: CGSize(width: 1188, height: 685))
+    let music = h.system.open(app: "Music", pid: 1006, frame: CGRect(x: 336, y: 214, width: 853, height: 480), minimumSize: CGSize(width: 680, height: 480))
+    let wide = h.system.open(app: "Xcode", pid: 1004, frame: CGRect(x: 39, y: 48, width: 1188, height: 800), minimumSize: CGSize(width: 1188, height: 685))
+    h.start()
+    runOK(h, "dock \(music.rawValue) left")
+    runOK(h, "dock \(other.rawValue) left")
+    h.system.userFocus(music)
+    runOK(h, "dock \(wide.rawValue) right")
+    h.system.userFocus(music)
+    h.scheduler.advance(by: 1)
+    return (h, wide, music)
+  }
+
+  @Test func outOfTheDock() {
+    let (h, wide, music) = aTileAndItsNeighbour()
+    #expect(h.layout!.windowFrames[wide] == nil && h.layout!.windowFrames[music] != nil, "the story needs a tile: \(h.layout!)")
+    h.system.setMinimized(wide, true)
+    h.scheduler.advance(by: 1)
+    let roads = Roads(h) { h.system.setMinimized(wide, false) }
+    roads.expectOneRoadEach()
+    #expect(h.layout!.windowFrames[wide] != nil && h.system.focused == wide, "the view has followed the keyboard")
+    #expect(roads.roads[music]?.count == 2, "straight out of view: \(roads.roads[music]?.map(\.brief) ?? [])")
+    expectSound(h)
+  }
+
+  @Test func withItsApp() {
+    let (h, wide, music) = aTileAndItsNeighbour()
+    h.system.setHidden(pid: 1004, true)
+    h.scheduler.advance(by: 1)
+    // The keyboard is reported first, as out of the Dock.
+    let roads = Roads(h) {
+      h.system.userFocus(wide)
+      h.system.setHidden(pid: 1004, false)
+    }
+    roads.expectOneRoadEach()
+    #expect(h.layout!.windowFrames[wide] != nil && h.system.focused == wide, "the view has followed the keyboard")
+    #expect(roads.roads[music]?.count == 2, "straight out of view: \(roads.roads[music]?.map(\.brief) ?? [])")
+    expectSound(h)
+  }
+
+  /// Safari on the left, Notes above Mail on the right. Mail goes away, and the view is framed on Safari.
+  private func framedElsewhere(_ away: (Harness, WindowID) -> Void) -> (Harness, safari: WindowID, notes: WindowID, mail: WindowID) {
+    let h = Harness()
+    let safari = h.system.open(app: "Safari", pid: 1000)
+    let notes = h.system.open(app: "Notes", pid: 1001)
+    let mail = h.system.open(app: "Mail", pid: 1002)
+    h.start()
+    runOK(h, "dock \(safari.rawValue) left")
+    runOK(h, "dock \(notes.rawValue) right")
+    runOK(h, "dock \(mail.rawValue) beside \(notes.rawValue) bottom")
+    h.system.userFocus(safari)
+    away(h, mail)
+    h.scheduler.advance(by: 1)
+    runOK(h, "zoom \(safari.rawValue)")
+    h.scheduler.advance(by: 1)
+    return (h, safari, notes, mail)
+  }
+
+  /// It stood in its old slot when it went. From there it goes straight to where it ends up, not by way of the corner.
+  @Test func intoAViewThatWasFramedElsewhere() {
+    let (h, _, notes, mail) = framedElsewhere { $0.system.setMinimized($1, true) }
+    let roads = Roads(h) { h.system.setMinimized(mail, false) }
+    roads.expectOneRoadEach()
+    #expect(roads.roads[mail].map(FakeWindowSystem.changesOfPlace) == 1, "\(roads.roads[mail]?.map(\.brief) ?? [])")
+    #expect(roads.roads[notes] == nil, "nobody asked for it: \(roads.roads[notes]?.map(\.brief) ?? [])")
+    #expect(h.layout!.windowFrames[mail] != nil && h.system.focused == mail)
+    expectSound(h)
+  }
+
+  /// The same by name: Go to…, `reveal`, a row of the menu.
+  @Test func fetchedByName() {
+    let (h, _, notes, mail) = framedElsewhere { $0.system.setMinimized($1, true) }
+    let roads = Roads(h) { runOK(h, "reveal \(mail.rawValue)") }
+    roads.expectOneRoadEach()
+    #expect(roads.roads[mail].map(FakeWindowSystem.changesOfPlace) == 1, "\(roads.roads[mail]?.map(\.brief) ?? [])")
+    #expect(roads.roads[notes] == nil, "nobody asked for it: \(roads.roads[notes]?.map(\.brief) ?? [])")
+    #expect(h.layout!.windowFrames[mail] != nil && h.system.focused == mail)
+    expectSound(h)
+  }
+
+  /// Where it shows in the view there is, the view stays.
+  @Test func aWindowThatHasRoomComesBackToItsSlot() {
+    let (h, w) = tilingScenario(["A", "B"], ["dock $0 left", "dock $1 right"])
+    let (camera, slot) = (h.workspace.camera, h.frame(w[1])!)
+    h.system.setMinimized(w[1], true)
+    h.scheduler.advance(by: 1)
+    let roads = Roads(h) { h.system.setMinimized(w[1], false) }
+    roads.expectOneRoadEach()
+    #expect(h.workspace.camera == camera && h.frame(w[1]) == slot)
+    expectSound(h)
+  }
+
+  /// Without the keyboard it is a tile again, and the view stays.
+  @Test func withoutTheKeyboardTheViewStays() {
+    let (h, wide, music) = aTileAndItsNeighbour()
+    let camera = h.workspace.camera
+    h.system.echoes.keyboard = false
+    h.system.setMinimized(wide, true)
+    h.scheduler.advance(by: 1)
+    let roads = Roads(h) { h.system.setMinimized(wide, false) }
+    roads.expectOneRoadEach()
+    #expect(h.workspace.camera == camera && h.layout!.windowFrames[wide] == nil && h.layout!.windowFrames[music] != nil)
+    expectSound(h)
+  }
+
+  /// A held view does not follow, and is laid out all the same.
+  @Test func underAHeldViewTheDisplayIsStillLaidOut() {
+    let (h, wide, music) = aTileAndItsNeighbour()
+    h.system.setMinimized(wide, true)
+    h.scheduler.advance(by: 1)
+    runOK(h, "hold")
+    let camera = h.workspace.camera
+    let roads = Roads(h) { h.system.setMinimized(wide, false) }
+    roads.expectOneRoadEach()
+    #expect(h.workspace.camera == camera, "a held view does not move")
+    #expect(h.staleLayouts().isEmpty, "\(h.staleLayouts())")
+    #expect(h.system.focused == music, "and the keyboard goes back to the window in view that had it")
+  }
+
+  // MARK: Where the view may stay after all, everything is as it was: laid out first, looked at afterwards, once
+
+  /// Plays a script of the walks and hands back the world it leaves.
+  private func world(after script: String) -> ChaosRunner {
+    let runner = ChaosRunner()
+    for action in ChaosAction.script(script) {
+      _ = runner.step(action)
+      #expect(runner.refusals.isEmpty, "\(action.text): \(runner.refusals)")
+    }
+    return runner
+  }
+
+  /// Its app would not let it be that small, more than ten minutes ago. On paper it is a tile. The layout asks such a window again, it
+  /// fits by now, and the view has no reason to go anywhere.
+  @Test func aTileByAnOldRecordIsAskedAgainAndTheViewStays() {
+    let h = Harness()
+    let pages = h.system.open(app: "Pages", pid: 1010)
+    let notes = h.system.open(app: "Notes", pid: 1001, frame: CGRect(x: 300, y: 200, width: 700, height: 500), minimumSize: CGSize(width: 600, height: 300))
+    _ = h.system.open(app: "Preview", pid: 1007, frame: CGRect(x: 300, y: 200, width: 700, height: 557), minimumSize: CGSize(width: 702, height: 419))
+    let safari = h.system.open(app: "Safari", pid: 1000, frame: CGRect(x: 300, y: 200, width: 1000, height: 700), minimumSize: CGSize(width: 574, height: 240))
+    h.start()
+    runOK(h, "dock \(pages.rawValue) top")
+    runOK(h, "dock \(notes.rawValue) beside \(pages.rawValue) left")
+    runOK(h, "dock \(safari.rawValue) left")
+    #expect(h.layout!.windowFrames[notes] == nil, "the story needs a tile: \(h.ascii())")
+    h.system.setMinimized(notes, true)
+    h.system.setMinimumSize(notes, .zero)
+    h.scheduler.advance(by: 700)
+    let camera = h.workspace.camera
+    h.system.setMinimized(notes, false)
+    h.scheduler.runPending()
+    #expect(h.workspace.camera == camera)
+    #expect(Set(h.layout!.windowFrames.keys) == [pages, notes, safari], "\(h.ascii())")
+  }
+
+  /// The window with the keyboard goes into the Dock and another comes out of it in the same breath. Whom the keyboard is handed to is
+  /// judged by what is on screen once that has been laid out: judged earlier, it went to a window that then left, and the view chased it.
+  @Test func afterALossNobodyIsChased() {
+    expectOneLayoutAtTheEnd(
+      of: """
+        launch
+        open 101 Preview pid 1007 at 300 200 700 557 min 702 419
+        open 102 Xcode pid 1004 at 300 200 1188 800 min 1188 685
+        open 103 Mail pid 1002 at 300 200 900 600 min 760 400
+        open 104 Music pid 1006 at 300 200 853 480 min 680 480
+        open 105 Mail pid 1002 at 300 200 800 500 min 760 400
+        dock 101 top
+        dock 102 beside 101 right
+        dock 103 beside 101 bottom
+        dock 105 right
+        seam main 3 -120
+        minimize 103
+        focus 101
+        advance 1
+        focus 105
+        advance 1
+        minimize 105
+        restore 103
+        react
+        """)
+  }
+
+  /// macOS picked it: the window that had the keyboard has just gone, and this one is its app's next. Nobody asked to see it.
+  @Test func aWindowThatMacOSPickedMovesNoView() {
+    let h = Harness()
+    let safari = h.system.open(app: "Safari", pid: 1000)
+    let notes = h.system.open(app: "Notes", pid: 1001)
+    let mail = h.system.open(app: "Mail", pid: 1002)
+    let second = h.system.open(app: "Mail", pid: 1002)
+    h.start()
+    runOK(h, "dock \(safari.rawValue) left")
+    runOK(h, "dock \(notes.rawValue) right")
+    runOK(h, "dock \(mail.rawValue) beside \(notes.rawValue) bottom")
+    runOK(h, "dock \(second.rawValue) beside \(safari.rawValue) bottom")
+    h.system.setMinimized(mail, true)
+    runOK(h, "zoom \(second.rawValue)")
+    h.system.setMinimized(second, true)
+    let camera = h.workspace.camera
+    h.system.setMinimized(mail, false)
+    h.scheduler.runPending()
+    #expect(h.workspace.camera == camera && h.layout!.windowFrames[mail] == nil, "\(h.ascii())")
+    #expect(h.system.focused.map { !h.controller.parked.contains($0) } == true, "\(String(describing: h.system.focused))")
+  }
+
+  /// A hold sends the keyboard back three times before it gives up. One arrival is one round.
+  @Test func underAHoldOneArrivalIsOneRound() {
+    let round = "\nrestore 103\nadvance 0.3\nfocus-nothing\nminimize 103\nadvance 0.3"
+    let runner = world(
+      after: """
+        open 101 Safari pid 1000 at 100 100 640 420
+        open 102 Notes pid 1001 at 200 100 640 420
+        open 103 Mail pid 1002 at 300 100 640 420
+        launch
+        dock 101 left
+        dock 102 right
+        dock 103 beside 102 bottom
+        focus 101
+        minimize 103
+        advance 1
+        zoom 101
+        advance 1
+        focus-nothing
+        hold
+        advance 1
+        """ + round + round + "\nrestore 103\nadvance 0.3\nadvance 1")
+    #expect(runner.system.focused != WindowID(103), "sent back the third time too, not left out of view with the keyboard")
+  }
+
+  /// A window its person floated lies where they left it. Whether the Desktop "comes into view", and gathers what floats, is judged by
+  /// what the display would have shown with the app back, not by what it showed while the app was hidden.
+  @Test func aFloatingWindowIsLeftWhereItLies() {
+    let before = """
+      launch
+      open 101 Mail pid 1002 at 300 200 800 500 min 760 400
+      open 102 Xcode pid 1004 at 300 200 1188 800 min 1188 685
+      open 103 Xcode pid 1004 at 300 200 1370 685 min 1188 685
+      open 104 Mail pid 1002 at 300 200 900 600 min 760 400
+      dock 101 left
+      dock 102 beside 101 right
+      dock 103 beside 101 left
+      dock 104 bottom
+      focus 102
+      hide 1002
+      toggle-float 102
+      """
+    let lay = world(after: before).system.windows[WindowID(102)]!.snapshot.frame
+    let after = world(after: before + "\nfocus 104\nshow 1002\nreact")
+    #expect(after.system.windows[WindowID(102)]!.snapshot.frame == lay)
+  }
+
+  /// `summon` waiting for some other app has nothing to do with this window.
+  @Test func summonWaitingForAnotherAppChangesNothing() {
+    let (h, wide, music) = aTileAndItsNeighbour()
+    h.system.setMinimized(wide, true)
+    h.scheduler.advance(by: 1)
+    _ = h.run("summon Calendar")
+    let roads = Roads(h) { h.system.setMinimized(wide, false) }
+    roads.expectOneRoadEach()
+    #expect(roads.roads[music].map(FakeWindowSystem.changesOfPlace) == 1, "\(roads.roads[music]?.map(\.brief) ?? [])")
+  }
+
+  /// As the walks found it.
+  @Test(arguments: [
+    """
+    displays main:0,0,1440,900:25,0,0,70* windows-never
+    open 102 Xcode pid 1004 at 0 52 1370 685 min 1188 685
+    open 103 Music pid 1006 at 336 214 853 480 min 680 480
+    launch
+    key down arrange
+    key down toggle-float
+    key down toggle-float
+    open 104 Xcode pid 1004 at 39 48 1188 800 min 1188 685
+    key down dock right
+    minimize 104
+    restore 104
+    """,
+    """
+    displays side:0,0,2560,1440:25,0,0,0* windows-never
+    open 102 Xcode pid 1004 at 704 153 1404 800 min 1188 685
+    launch
+    key down focus up
+    key down dock right
+    open 106 Notes pid 1001 at 1583 609 738 504 min 709 300
+    key down toggle-float
+    seam side 1 191
+    minimize 106
+    advance 1
+    restore 106
+    """,
+    // A tile before it went and a tile when it is back: the layout for a return starts from the gaps that stood, where no room is made
+    // (Controller+ThereAndBack.swift). The look on paper has to begin as the layout does, or it sees room that will not be made.
+    """
+    displays main:-1280,-150,1280,800:25,0,0,0 side:0,0,1920,1080:25,86,0,0* windows-never
+    open 101 Preview pid 1007 at -760 77 723 455 min 723 400 max 723 2000
+    launch
+    open 102 Terminal pid 1003 at -1158 170 947 464 min 177 60
+    advance 0.3
+    key down arrange
+    open 103 Mail pid 1002 at -1280 -125 1280 775 min 760 400
+    focus 101
+    edge 101 -714 -113 435 751
+    key down undo
+    grab 102
+    carry 349 709
+    release
+    grab 103
+    carry -578 263
+    advance 0.3
+    release
+    minimize 103
+    advance 1
+    restore 103
+    """,
+  ]) func theWalksOwnScripts(_ script: String) { expectOneLayoutAtTheEnd(of: script) }
+}

@@ -139,6 +139,13 @@ extension Controller: WindowSystemEvents {
       return
     }
 
+    // Back out of the Dock, perhaps with the keyboard: the view it ends in is worked out before anything is laid out.
+    if previous?.isPresent == false, window.isPresent {
+      relayout(display, forTheReturnOf: window.id)
+      scheduleSave()
+      return
+    }
+
     // Minimizing or restoring changes who takes up space.
     if previous?.isPresent != window.isPresent {
       let hadKeyboard = !window.isPresent && hadKeyboard(window.id)

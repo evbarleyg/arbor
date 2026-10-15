@@ -70,13 +70,14 @@ extension Controller {
     }
     postponedRelayouts.remove(displayID)
     waitingForASpaceToLeave.remove(displayID)
-    // macOS has just shown the switch in its own way.
-    relayout(displayID, reason: .structure, motion: .instant)
-    // One of the windows that came back may have been given the keyboard before it was reported.
     let returned = returningWindows
     returningWindows.removeAll()
+    // macOS has just shown the switch in its own way.
+    // One of the windows that came back may have been given the keyboard before it was reported.
     if let focused = system.focusedWindow(), returned.contains(focused) {
-      bringIntoViewIfFocused(focused, retries: 0)
+      relayout(displayID, motion: .instant, forTheReturnOf: focused)
+    } else {
+      relayout(displayID, reason: .structure, motion: .instant)
     }
   }
 
