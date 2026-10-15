@@ -1,0 +1,55 @@
+# mac-shell: scripts/mac-shell/newcomer.sh at c300ce9, macOS 26.6.2, 2026-10-15T05:38Z
+
+== the Mac
+macOS 26.6.2 (25G83) on arm64
+built the tools in 24s
+1600 900 1600 900
+display: 1 0 0 1600 900 1600 900 1
+com.apple.WindowManager EnableTilingByEdgeDrag: not set
+com.apple.WindowManager EnableTopTilingByEdgeDrag: not set
+com.apple.WindowManager EnableTilingOptionAccelerator: not set
+com.apple.WindowManager EnableTiledWindowMargins: not set
+com.apple.WindowManager EnableStandardClickToShowDesktop: not set
+Reduce Motion: false
+the sampler writes mac-shell/samples.log (pid 4994), the witness mac-shell/witness.log (pid 5003)
+
+== the desk
+> open -g -b com.apple.finder /tmp/arbor-apps.hRqURy/scratch/grove
+pid 343 lists (id role subrole x y w h flags):
+  32 AXWindow AXStandardWindow 340 120 920 436 main,toolbar
+  0 AXScrollArea - 0 0 1600 900 fixed-size,fixed-position,no-close,no-minimize,no-zoom
+  w32 is finder
+> open -g -b com.apple.Safari /tmp/arbor-apps.hRqURy/scratch/page.html
+pid 5075 lists (id role subrole x y w h flags):
+  33 AXWindow AXStandardWindow 138 30 1324 792 main,toolbar
+  w33 is safari
+> open -g -b com.apple.TextEdit /tmp/arbor-apps.hRqURy/scratch/oak.txt
+pid 5275 lists (id role subrole x y w h flags):
+  42 AXWindow AXStandardWindow 165 64 673 439 main
+  w42 is textedit
+> open -g -b com.apple.Notes 
+pid 5388 lists (id role subrole x y w h flags):
+  45 AXWindow AXStandardWindow 300 105 1000 660 main,close-disabled,sheets=1
+  w45 is notes
+something is in the way:
+  AXWindow/AXStandardWindow 300 105 1000 660
+    AXButton/AXCloseButton 308 113 16 16
+    AXButton/AXZoomButton 354 113 16 16
+    AXButton/AXMinimizeButton 331 113 16 16
+    AXSheet/- 563 135 475 600
+      AXButton/- 934 686 85 30 "Continue"
+pressed "Continue": 0
+pressed "Cancel": 0
+> open -g -b com.apple.iCal 
+pid 5599 lists (id role subrole x y w h flags):
+  49 AXWindow AXStandardWindow 200 86 935 598 main,toolbar
+  w49 is calendar
+the cast: finder=32,safari=33,textedit=42,notes=45,calendar=49
+42 5275 0 165 64 673 439 on TextEdit
+49 5599 0 200 86 935 598 on Calendar
+45 5388 0 300 105 1000 660 on Notes
+32 343 0 340 120 920 436 on Finder
+33 5075 0 138 30 1324 792 on Safari
+
+== the loop
+> move 720 450
