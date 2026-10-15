@@ -18,6 +18,13 @@
 # MAC_SHELL_LIMIT seconds (1200) is stopped as the job's own time limit would stop it, only that the others still get to run: TERM, which
 # the supervisor in lib.sh takes for an interruption and cleans up after, and KILL fifteen seconds later. Its exit code is 124.
 #
+# EACH SCRIPT FINDS THE MAC AS THE FIRST ONE FOUND IT, or results would depend on the order. After every script but the last the Mac is looked over:
+#   put back, and said so      macOS's own tiling and the click on the wallpaper (com.apple.WindowManager), Reduce Motion, light or dark
+#   cannot be put back         Accessibility for the runner's processes is gone (`tccutil reset`), there is another number of Spaces or of displays.
+#                              What would run on such a Mac would say nothing about Arbor, so the scripts that are left do not run: each says why, and
+#                              ends with exit code 75. Give a script that does such a thing the last place, or a run of its own.
+# The desktop picture is not looked at: nothing reads it back. Only where there is a `defaults`, so on a Mac.
+#
 # Readers that can reach only the REST API get each exit code and the end of each output as check annotations.
 # Exits with what it wrote to exit-code.txt. Written for bash 3.2, macOS's own.
 set -uo pipefail
@@ -38,6 +45,53 @@ show() {
   shown=$size
 }
 
+# MARK: the Mac as it was
+
+tool() { local name=$1; shift; [ -x ".build/mac-shell/$name" ] && ".build/mac-shell/$name" "$@" 2>/dev/null; }
+# What can be put back: a line for each. "-" where nothing is set.
+settings_now() {
+  echo "reduce-motion $(defaults read com.apple.universalaccess reduceMotion 2>/dev/null || echo -)"
+  echo "appearance $(defaults read -g AppleInterfaceStyle 2>/dev/null || echo Light)"
+  echo "window-manager $(defaults export com.apple.WindowManager - 2>/dev/null | cksum | cut -d ' ' -f 1)"
+}
+# What cannot.
+for_good_now() {
+  echo "Accessibility for the runner's processes: $(tool pointer ax-access | head -n 1)"
+  echo "Spaces: $(tool vdisplay spaces | tr '\n' ';')"
+  echo "displays: $(tool pointer displays | wc -l | tr -d ' ')"
+}
+mac_note() {
+  command -v defaults > /dev/null 2>&1 || return 0
+  settings_now > "$kept/.settings"
+  for_good_now > "$kept/.for-good"
+  defaults export com.apple.WindowManager "$kept/.window-manager.plist" 2>/dev/null
+}
+# Prints what it put back. Returns 1, having printed what differs, if the Mac cannot be made what it was.
+mac_put_back() {
+  [ -f "$kept/.settings" ] || return 0
+  local name was now
+  while read -r name was; do
+    now=$(settings_now | awk -v name="$name" '$1 == name { print $2 }')
+    [ "$now" != "$was" ] || continue
+    case "$name" in
+      reduce-motion)
+        if [ "$was" = - ]; then defaults delete com.apple.universalaccess reduceMotion 2>/dev/null
+        else defaults write com.apple.universalaccess reduceMotion -bool "$([ "$was" = 1 ] && echo true || echo false)"; fi ;;
+      appearance) tool vdisplay appearance "$(echo "$was" | tr 'DL' 'dl')" > /dev/null ;;
+      window-manager)
+        defaults import com.apple.WindowManager "$kept/.window-manager.plist" 2>/dev/null
+        # It reads its settings when it starts; launchd starts it again.
+        killall WindowManager 2>/dev/null
+        sleep 1 ;;
+    esac
+    echo "mac-shell: put back after $1: $name"
+  done < "$kept/.settings"
+  if ! for_good_now | cmp -s - "$kept/.for-good"; then
+    for_good_now | diff "$kept/.for-good" - | sed -n 's/^< /mac-shell: it was:  /p; s/^> /mac-shell: it is:   /p'
+    return 1
+  fi
+}
+
 # The job was cancelled or has run out of time: the script that is running gets the chance to clean up and to leave its logs.
 running=""
 trap '[ -n "$running" ] && kill -TERM "$running" 2>/dev/null' TERM INT HUP
@@ -46,6 +100,9 @@ share=${MAC_SHELL_SHARE:-1/1}
 case "$share" in [1-9]*/[1-9]*) ;; *) share=1/1 ;; esac
 # The workflow knows how many there are in all. Without it: what this Mac was given.
 export MAC_SHELL_PARTS=${MAC_SHELL_PARTS:-$#}
+
+[ $# -eq 1 ] || mac_note
+spoilt=""
 
 first=0 number=0
 for script in "$@"; do
@@ -57,7 +114,10 @@ for script in "$@"; do
   echo "$header" > "$out/output.txt"
   [ $# -eq 1 ] || echo "::group::$number of $#: $script"
   began=$SECONDS shown=0
-  if [ ! -f "$script" ]; then
+  if [ -n "$spoilt" ]; then
+    echo "not run: $spoilt left a Mac that cannot be made what it was, and what ran on it now would say nothing about Arbor" >> "$out/output.txt"
+    code=75
+  elif [ ! -f "$script" ]; then
     echo "::error::no file '$script' at $commit"
     echo "no file '$script' at $commit" >> "$out/output.txt"
     code=2
@@ -82,6 +142,10 @@ for script in "$@"; do
     code=$?
     running=""
     [ -z "$stopped" ] || code=124
+  fi
+  if [ -z "$spoilt" ] && [ "$number" -lt $# ] && ! mac_put_back "$(basename "$script")" >> "$out/output.txt" 2>&1; then
+    spoilt=$(basename "$script")
+    echo "::warning title=mac-shell::$spoilt left a Mac that cannot be made what it was: the scripts after it do not run"
   fi
   echo "exit code $code" >> "$out/output.txt"
   show "$out/output.txt"
@@ -112,6 +176,7 @@ done
 
 if [ $# -gt 1 ]; then
   rm -rf "$out"
+  rm -f "$kept/.settings" "$kept/.for-good" "$kept/.window-manager.plist"
   mv "$kept" "$out"
   echo "$first" > "$out/exit-code.txt"
   cat "$out/summary.txt"
