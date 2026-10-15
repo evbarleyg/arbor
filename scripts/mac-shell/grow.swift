@@ -18,8 +18,8 @@
 //                                                     SPS size, position, size (FramePlan.full)      PS position, size      SP size, position
 //                                                     sPS the smaller of both widths and of both heights, position, size
 //   turn <name> <x y w h> <x y w h> <waits> <n> <orders>   to and fro between two frames, which lie on different displays: when does the new display begin to judge a size call?
-//                                                   waits: milliseconds, 0,10,25; n: how often the whole is made; orders: PS position, WAIT, size; SPSS size, position, size back to
-//                                                   back, WAIT, size once more. Nothing is read between the calls. The waits are spun, and the result says how long they really were:
+//                                                   waits: milliseconds, 0,10,25; n: how often the whole is made; orders: PS position, WAIT, size; SP size, WAIT, position; SPSS size,
+//                                                   position, size back to back, WAIT, size once more. Nothing is read between the calls. The waits are spun, and the result says how long they really were:
 //                                                   "waited" from the return of the call before the wait, "sincePosition" from the return of the position call, to the start of the last call
 // A number is a sum of numbers and of these, for display 1 (the main one) and 2: l1 t1 r1 b1 (its frame's edges) and vl1 vt1 vr1 vb1 (its
 // visible frame's), in global coordinates, y down: `vb1-12.5`, `r1-494`. A step that names a display that is not there is skipped, and says so.
@@ -305,8 +305,13 @@ func settle(at rect: CGRect) {
 
 func turn(_ name: String, from start: CGRect, to target: CGRect, order: String, wait: Double) {
   let placed = frame(of: window)
-  var plan: [Call] = order == "PS" ? [.position(target.origin)] : [.size(target.size), .position(target.origin), .size(target.size)]
-  plan.append(.size(target.size))
+  let plan: [Call]
+  switch order {
+  case "PS": plan = [.position(target.origin), .size(target.size)]
+  case "SP": plan = [.size(target.size), .position(target.origin)]
+  case "SPSS": plan = [.size(target.size), .position(target.origin), .size(target.size), .size(target.size)]
+  default: fail("turn knows PS, SP and SPSS, not \(order)")
+  }
   var positioned = 0.0
   var waited = 0.0
   let time = now()
@@ -325,7 +330,7 @@ func turn(_ name: String, from start: CGRect, to target: CGRect, order: String, 
   let arrived = notes.take()
   var line: [String: Any] = [
     "kind": "turn", "label": label, "name": name, "order": order, "wait": wait, "waited": round3(waited * 1000),
-    "sincePosition": round3((begun - positioned) * 1000), "placed": list(placed), "placedRight": same(placed, start), "target": list(target),
+    "sincePosition": order == "SP" ? NSNull() as Any : round3((begun - positioned) * 1000), "placed": list(placed), "placedRight": same(placed, start), "target": list(target),
     "end": list(atOnce), "rest": list(atRest), "right": same(atRest, target), "ms": round3((returned - time) * 1000),
     "moved": arrived.filter { $0.1 == "AXMoved" }.count, "resized": arrived.filter { $0.1 == "AXResized" }.count,
     "notes": arrived.map { [round3(($0.0 - time) * 1000), $0.1] as [Any] },

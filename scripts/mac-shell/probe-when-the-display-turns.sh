@@ -1,7 +1,7 @@
 #!/bin/bash
 # For how long after a window has changed display is its size still judged by the display it came from? ARBOR IS NOT RUNNING.
 #
-#   scripts/mac-shell/run.sh scripts/mac-shell/probe-when-the-display-turns.sh          about seven minutes
+#   scripts/mac-shell/run.sh scripts/mac-shell/probe-when-the-display-turns.sh          about eight minutes
 #
 # probe-how-far-a-window-grows.sh found it: macOS lets a window grow as far as the edges of its display, and a size call made 0.5 to 5.6 ms after the position call that took the
 # window to another display was held to the edges of the OLD display, 10 times of 10; 200 ms after, to those of the new one, 4 of 4. So a window that goes from a small display to a slot on a
@@ -14,6 +14,8 @@
 # with waits of 0 to 300 ms, which are spun and not slept, because a timer on a hosted Mac comes 12 to 160 ms late; what they really were stands in every line. Nothing is read between the calls.
 # After every journey the window has 300 ms, is read again, and is then put to the point where the next journey starts (`placedRight` says whether it was).
 # The test window three times with ten waits, TextEdit twice with six.
+# L: the corner where Arbor parks a window (the main display's right edge less 1, as low as macOS lets it), with the small display to the right, below, and right beside and under that corner: on which display does macOS
+# count a window there? Does it grow whole there, as on one display? From there to a slot on the main display: position, then size at once and after 250 ms; and sized where it is parked, then moved.
 #
 # Before that, on one display, what the first probe left open. I: a bottom edge in the Dock's strip and just past the display's bottom: from where on is it free to grow?
 # K: a window cannot grow into a frame that hangs over an edge once it has been moved there (position, size ended 1 short of a frame 1 point over the right edge, 4 times of 4, where size,
@@ -37,7 +39,7 @@ if ! wait "$GROW_COMPILER"; then
   grep -A 6 "error:" "$ARBOR_OUT/build-grow.log" | head -n 60
   die "scripts/mac-shell/grow.swift did not compile"
 fi
-apps_watchdog 800
+apps_watchdog 900
 
 cat > "$STEPS/strip" << 'STEPS'
 round I in the strip of the Dock and past the bottom of the display
@@ -71,6 +73,15 @@ STEPS
 cat > "$STEPS/six-waits" << 'STEPS'
 round J when the display turns
 turn J vl1+12 vt1+12 1000 650 vl2+12 vt2+12 vr2-vl2-24 vb2-vt2-24 0,25,50,100,150,250 2 PS,SPSS
+STEPS
+
+cat > "$STEPS/corner" << 'STEPS'
+round L the corner where Arbor parks, beside a second display
+one L1-sent-to-the-corner vl1+12 vt1+12 480 348 pos r1-1 b1-1
+one L2-parked-it-grows.1 r1-1 vb1-28 325 524 size 1000 650
+one L2-parked-it-grows.2 r1-1 vb1-28 325 524 size 1000 650
+one L2-parked-it-grows.3 r1-1 vb1-28 325 524 size 1000 650
+turn L r1-1 vb1-28 325 524 vl1+12 vt1+12 1000 650 0,250 3 PS,SP
 STEPS
 
 cat > "$STEPS/app" << 'STEPS'
@@ -109,8 +120,8 @@ for line in sys.stdin:
     elif k == "window":
         print("  window %s of %s (%s, %s) at %s" % (o["window"], o["bundle"], o["role"], o["subrole"], f(o["frame"])))
     elif k == "turn":
-        print("  %-8s %-4s wait %3g: waited %7.2f ms, %7.2f since the position call | %s%s -> %s: %s %s | short %s | moved %d resized %d%s" % (
-            o["name"], o["order"], o["wait"], o["waited"], o["sincePosition"], f(o["placed"]), "" if o["placedRight"] else " (NOT WHERE IT SHOULD START)", f(o["target"]), f(o["rest"]),
+        print("  %-8s %-4s wait %3g: waited %7.2f ms, %s since the position call | %s%s -> %s: %s %s | short %s | moved %d resized %d%s" % (
+            o["name"], o["order"], o["wait"], o["waited"], "-" if o["sincePosition"] is None else "%7.2f" % o["sincePosition"], f(o["placed"]), "" if o["placedRight"] else " (NOT WHERE IT SHOULD START)", f(o["target"]), f(o["rest"]),
             "WHOLE" if o["right"] else "OTHER", f(o.get("short")), o["moved"], o["resized"], "" if o["end"] == o["rest"] else " | at once it was " + f(o["end"])))
     elif k == "result":
         looks = o.get("later", [])
@@ -154,7 +165,16 @@ for side in right left below; do
   "$ARBOR_VDISPLAY" list
   ask "test-window-$side" "$TEST" "$W1" all-waits
   [ -z "$TEXTEDIT" ] || ask "textedit-$side" "$TEXTEDIT" "$TEXTEDIT_WINDOW" six-waits
+  [ "$side" = left ] || ask "corner-$side" "$TEST" "$W1" corner
 done
+# And with the small display where it lies beside, or under, that very corner.
+read -r MAIN_WIDTH MAIN_HEIGHT <<< "$("$ARBOR_VDISPLAY" list | awk '$8 == "main" { print $5, $6 }')"
+display_move below $((MAIN_WIDTH - 800))
+"$ARBOR_VDISPLAY" list
+ask corner-below-at-the-right "$TEST" "$W1" corner
+display_move right $((MAIN_HEIGHT - 600))
+"$ARBOR_VDISPLAY" list
+ask corner-right-and-low "$TEST" "$W1" corner
 display_remove
 sleep 3
 [ -z "$TEXTEDIT" ] || app_quit "$TEXTEDIT"
@@ -171,7 +191,7 @@ table = collections.OrderedDict()
 for o in rows: table.setdefault((o["label"], o["name"], o["order"]), collections.OrderedDict()).setdefault(o["wait"], []).append(o)
 for (label, name, order), waits in table.items():
     print("%-20s %-8s %-5s" % (label, name, order) + "  ".join("%g: %d/%d (%.1f-%.1f)" % (
-        wait, sum(o["right"] for o in group), len(group), min(o["sincePosition"] for o in group), max(o["sincePosition"] for o in group)) for wait, group in waits.items()))
+        wait, sum(o["right"] for o in group), len(group), min(o["sincePosition"] or 0 for o in group), max(o["sincePosition"] or 0 for o in group)) for wait, group in waits.items()))
 print("started where it should: %d of %d" % (sum(o["placedRight"] for o in rows), len(rows)))
 PYTHON
 
