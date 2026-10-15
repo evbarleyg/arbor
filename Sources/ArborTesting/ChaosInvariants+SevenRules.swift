@@ -22,7 +22,11 @@ extension ChaosRunner {
     var pausedBefore = false
     var fullScreenBefore: Set<WindowID> = []
     /// Arbor's moves of each window that a person could see, since somebody last did something. Time passing is nobody.
-    var seenSinceSomebodyActed: [WindowID: [FakeWindowSystem.Move]] = [:]
+    var seenSinceSomebodyActed: [WindowID: [FakeWindowSystem.Move]] = [:] {
+      didSet { if seenSinceSomebodyActed.isEmpty { foundUnableToGrow = [] } }
+    }
+    /// The windows that turned out unable to grow among those moves, for the first time.
+    var foundUnableToGrow: Set<WindowID> = []
     /// The windows the last thing somebody did was about; nil is all of them. Timers finish that work.
     var concerned: Set<WindowID>? = []
     /// The size each window last had of its own: as its app opened it, or as somebody other than Arbor made it while it was not docked.
@@ -62,7 +66,7 @@ extension ChaosRunner {
   /// The detector of docs/VIABLE.md, section 5, that a rule of the walks stands for: one vocabulary on Linux and on a Mac.
   public nonisolated static func detector(for rule: String) -> String? {
     let table: [(prefix: String, detector: String)] = [
-      ("moved-twice", "jolt"), ("moved-again", "jolt"), ("sized-there-and-back", "jolt"), ("flashed-", "flash"), ("moved-over-and-over", "stuck"), ("moved-", "moved-unasked"), ("fetched-", "moved-unasked"), ("there-and-back", "moved-unasked"), ("dragged-gap", "moved-unasked"),
+      ("moved-twice", "jolt"), ("moved-again", "jolt"), ("sized-there-and-back", "jolt"), ("set-right-", "jolt"), ("flashed-", "flash"), ("moved-over-and-over", "stuck"), ("moved-", "moved-unasked"), ("fetched-", "moved-unasked"), ("there-and-back", "moved-unasked"), ("dragged-gap", "moved-unasked"),
       ("pause-and-resume", "moved-unasked"), ("left-its-place", "moved-unasked"), ("start-took", "lost"), ("quit-left", "lost"), ("displays-left", "lost"), ("switched-to-behind", "behind"),
       ("switched-to", "focus"), ("app-switch", "focus"), ("size-", "size-lost"), ("home-", "lost"), ("lost", "lost"), ("out-of-reach", "lost"),
       ("placed-", "lost"), ("vanished", "lost"), ("parked-on-the-desktop", "lost"), ("restless", "stuck"), ("given-up", "stuck"),
@@ -183,6 +187,8 @@ extension ChaosRunner {
     case .limits(let window, _, _), .behave(let window, _):
       seven.refusedLess.remove(window)
       seven.refusedMore.remove(window)
+    // It is told to forget where each window stopped growing, and offers everybody the whole slot again.
+    case _ where action.parsedCommand == .relayout: seven.refusedMore = []
     default: break
     }
     seven.ownSizes = seven.ownSizes.filter { system.windows[$0.key] != nil || system.backgroundTabs[$0.key] != nil }
@@ -284,11 +290,17 @@ extension ChaosRunner {
       asked("once")
       // A window Arbor does not know is asked for a size where it stands and goes to its place afterwards, so requests are not
       // what is counted. What a person sees is the road (`FakeWindowSystem.detour`).
-      var road = [moves[0].before]
-      for move in moves {
-        if road.last != move.before { road.append(move.before) }
-        road.append(move.after)
+      // Floating windows are placed by other code, with another owner.
+      let floats = controller.workspaces.values.contains { $0.isFloating(window) } ? "-floating" : ""
+      // Nobody in view is asked to grow where it stands: a window grows in its slot. That it cannot shows there, and it goes on to the
+      // middle of the slot, at the size it took. Once: from then on Arbor knows. That hop is left out of the road.
+      var mayLearn = floats.isEmpty && (!seven.refusedMore.contains(window) || seven.foundUnableToGrow.contains(window))
+      let road = Self.road(of: moves) { refusal, next in
+        guard mayLearn, Self.isTheWayToTheMiddle(next, after: refusal) else { return false }
+        mayLearn = false
+        return true
       }
+      if floats.isEmpty, !mayLearn, !seven.refusedMore.contains(window) { seven.foundUnableToGrow.insert(window) }
       let path = road.map(\.brief).joined(separator: " → ")
       // More than three times with nobody acting: Arbor and the window are stuck with each other, by however little.
       if timeOnly, moves.count > 3 {
@@ -296,6 +308,17 @@ extension ChaosRunner {
         continue
       }
       guard moves.count > 1, FakeWindowSystem.detour(road) != nil else { continue }
+      // A terminal takes whole character cells. How many go into a slot shows in the slot, at every size it has not been seen at, and it is
+      // set right by less than half a cell. Nothing else is wrong with this road.
+      let cell = system.windows[window].map { $0.sizeStep ?? ($0.behaviour == .grid ? CGSize(width: 20, height: 20) : .zero) } ?? .zero
+      let setRight = Self.road(of: moves) { refusal, next in
+        Self.isTheWayToTheMiddle(next, after: refusal) && refusal.requested.width - refusal.after.width < cell.width
+          && refusal.requested.height - refusal.after.height < cell.height
+      }
+      if floats.isEmpty, FakeWindowSystem.detour(setRight) == nil {
+        problems.append(.init("set-right-by-less-than-a-cell", "Arbor put \(window) into its slot and set it right afterwards: \(path)"))
+        continue
+      }
       // Its app would not take a size. The first time Arbor could not have known.
       let less = moves.contains { $0.after.width > $0.requested.width + 1 || $0.after.height > $0.requested.height + 1 }
       let more = moves.contains { $0.after.width < $0.requested.width - 1 || $0.after.height < $0.requested.height - 1 }
@@ -310,8 +333,6 @@ extension ChaosRunner {
             "\(window) \(first ? "left the screen and came back" : "showed and went again") for one thing that happened: \(path)"))
         continue
       }
-      // Floating windows are placed by other code, with another owner.
-      let floats = controller.workspaces.values.contains { $0.isFloating(window) } ? "-floating" : ""
       // Never in a wrong place, but smaller or larger on the way than it ends up.
       guard FakeWindowSystem.changesOfPlace(road) > 1 else {
         problems.append(.init("sized-there-and-back" + floats, "Arbor made \(window) smaller or larger than it ends up, for one thing that happened: \(path)"))
@@ -326,6 +347,29 @@ extension ChaosRunner {
       if move.after.width > move.requested.width + 1 || move.after.height > move.requested.height + 1 { seven.refusedLess.insert(move.window) }
       if move.after.width < move.requested.width - 1 || move.after.height < move.requested.height - 1 { seven.refusedMore.insert(move.window) }
     }
+  }
+
+  /// Whether `refusal` is a window that took less than the frame it was asked for, and no more on either side, and `next` only moves it,
+  /// as it is, within that frame.
+  static func isTheWayToTheMiddle(_ next: FakeWindowSystem.Move, after refusal: FakeWindowSystem.Move) -> Bool {
+    let (asked, took) = (refusal.requested, refusal.after)
+    return (took.width < asked.width - 1 || took.height < asked.height - 1) && took.width <= asked.width + 1 && took.height <= asked.height + 1
+      && next.before == took && abs(next.after.width - took.width) <= 1 && abs(next.after.height - took.height) <= 1
+      && asked.insetBy(dx: -1, dy: -1).contains(next.after)
+  }
+
+  /// Every frame a window had on the way of `moves`, but for where a move left it that `leavingOut` names, with the move after it.
+  static func road(
+    of moves: [FakeWindowSystem.Move], leavingOut: (_ move: FakeWindowSystem.Move, _ next: FakeWindowSystem.Move) -> Bool
+  ) -> [CGRect] {
+    var road = [moves[0].before]
+    var leftOut: CGRect?
+    for (move, next) in zip(moves, moves.dropFirst().map(Optional.some) + [nil]) {
+      if road.last != move.before, leftOut != move.before { road.append(move.before) }
+      leftOut = nil
+      if let next, leavingOut(move, next) { leftOut = move.after } else { road.append(move.after) }
+    }
+    return road
   }
 
   /// Whether no coordinate of the frames turns back on the way: left edge, top edge, width and height each only grow or only shrink.

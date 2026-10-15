@@ -106,9 +106,9 @@ import Testing
     return (h, tooWide, [editor, browser, notes].filter { $0 != tooWide })
   }
 
-  /// Real apps say how small they go only when asked, and a new process has never asked. So the window is offered its
-  /// place, keeps its size, and is wherever that left it: with a slot on the right, mostly off the display. It goes
-  /// back to where it stood. (Preview, with eight windows docked, on a hosted Mac.)
+  /// Real apps say how small they go only when asked, and a new process has never asked. So the window is asked, where it
+  /// stands, to be as narrow as its place (Controller+AskFirst.swift), keeps its size, and has not left. (Offered the place itself it was
+  /// wherever that left it: with a slot on the right, mostly off the display. Preview, with eight windows docked, on a hosted Mac.)
   @Test(arguments: ["left", "right"]) func oneThatTurnsOutToBeATileOnlyWhenAskedEndsWhereItStood(side: String) {
     let (h, tooWide, others) = quitWithTheKeyboardInAWindowThatIsTooWide(on: side)
     let (stood, mark) = (h.frame(tooWide)!, h.system.focusLog.count)
@@ -116,7 +116,7 @@ import Testing
     settle(h)
     #expect(h.controller.windowLetBe == tooWide, "\(h.ascii())")
     #expect(h.frame(tooWide) == stood)
-    #expect(moves(of: tooWide, h).count == 2, "there and back: \(moves(of: tooWide, h))")
+    #expect(moves(of: tooWide, h) == [stood], "asked once, and it never left")
     for window in others { #expect(h.system.isVisible(window), "\(window)") }
     #expect(h.workspace.camera == h.workspace.tree.root)
     #expect(h.system.focusedWindow() == tooWide && focused(h, since: mark) == [])

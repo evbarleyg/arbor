@@ -145,10 +145,13 @@ every learned minimum and offers each window its slot again.
 
 **A window moves once, to where it ends up** (`Controller+AskFirst.swift`, `SeenSizes`), so an answer has to be in before anybody acts
 on it. As small and as large as a window has been seen it can be again; only a size beyond that is a question, and it is put **where
-the window stands**: one `setFrame` with its own origin and the size of the slot. Those who may refuse to shrink are asked before
+the window stands**: one `setFrame` with its own origin and the size of the slot. **In view each side is only asked to shrink there**
+(`question`): macOS lets a window grow no further than to the bottom of the visible frame and the right edge of its display where
+it stands, so that answer would be the screen's, not the window's, and meanwhile it would lie over its neighbours. Those who may refuse to shrink are asked before
 anybody is moved (`askingFirst`; one at a time, newcomers first, then those who make room for them, the most squeezed first), because
 room is made from their answers; at the first refusal the layout is worked out again, until nobody in it is unknown. Whether a window can grow decides only its own place, in the middle of
-the slot, so that is asked while the others move (`apply`), and the window goes last. A size that cannot be changed is known
+the slot. A window out of view is asked in its corner, while the others move (`apply`), and goes last; one in view grows in its slot, and
+goes on to the middle of it if it turns out unable to, once. A size that cannot be changed is known
 beforehand (`isResizable`, `noteFixedSizes`). A window that once stopped short of a slot is sent straight to the middle of the next, still asked for
 the whole size, so it costs nothing to find out that it can grow again. To
 the eye a question and the move after it are what one `setFrame` has always been (`FramePlan`: size, position, size); tests look at the
