@@ -22,9 +22,9 @@ root  split(horizontal)
   group. Every change that can delete, collapse or merge a node goes through
   `Workspace.changeStructure`, which sees to the marks for views.
 - **Stack**: one or more windows; only the active one is shown.
-- **Desktop**: exactly one per tree. Floating windows are placed on it.
-- **Camera**: a node. The layout makes that node fill the display, and every
-  window outside it is *parked*: moved to a bottom corner, with one point left
+- **Desktop**: exactly one per tree. Floating windows belong to it; only with `floatingWindowsMakeWay` are they placed on it.
+- **Camera**: a node. The layout makes that node fill the display, and every docked
+  window outside it is *parked* (with `floatingWindowsMakeWay`, what floats on a Desktop outside it too): moved to a bottom corner, with one point left
   on screen, because macOS will not reliably move windows that are fully off-screen.
   Hemmed in by other displays, it goes where least of it shows. A managed window found beyond every display, at launch,
   after a display change or when its app is included again, counts as parked, which is what brings it back. The
@@ -106,25 +106,30 @@ display UUID strings.
 after the camera moved, `.structure` after the tree or the set of present
 windows changed, `.enforce` to put back docked windows that something else moved.
 (The exceptions: rescuing a window found off screen, releasing an app that was
-just excluded, `float-all`, quitting, and parking floating windows that arrive
-from a display that went away.)
+just excluded, `float-all`, quitting, and, of the floating windows that arrive
+from a display that went away, parking those that are not to be in view: what `summon`
+sent away and, with `floatingWindowsMakeWay` on, what arrives where the Desktop is not part of the view.)
 
-**A floating window's frame is its person's** (`Controller+OwnFrames.swift`; `collab/QUESTIONS.md`, Q20). Arbor sets it only to
-take the window out of view and to put it back exactly where it was. Each floating window has the frame its person last gave it
-(`Workspace.floating`), and while it is in view that is where it is: no layout places, shoves or squeezes it, whatever is docked,
-closed, hidden or minimized around it, so floating and docked windows may overlap and macOS's order says which is in front. The
-plan for floating windows (`floatingMoves`) asks `moveKeepingItsFrame`, which knows two moves. When the camera moves and the Desktop
-is no longer part of the view, the window is parked, and where it is at that moment is noted as its frame
-(`noteWhereItLeavesFrom`), whoever put it there. When the Desktop is part of the view again, as a tile too, it is put back there in
-one move, and nothing is raised (`putBackWhereItWas`). The one exception is `whereItWas`: if the displays have changed meanwhile and
-less than half of the window would show, or its title bar would be out of reach, it is fitted into its display; what is
-remembered stays its own frame (`fittedFrames`), so that it goes back when the displays are as they were. A change of displays
+**A floating window's frame is its person's, and no view takes it away** (`Controller+OwnFrames.swift`; `collab/QUESTIONS.md`, Q20
+and Q29, 4). Each floating window has the frame its person last gave it (`Workspace.floating`), and that is where it is: no
+layout places, shoves or squeezes it, whatever is docked, closed, hidden or minimized around it, and wherever the camera goes it
+stays, so floating and docked windows may overlap and macOS's order says which is in front. It is moved, sized, raised or hidden
+only by a command that names it. The plan for floating windows (`floatingMoves`) asks `moveKeepingItsFrame`, which knows one
+move: a window that is out of view all the same, and not by any view of Arbor's (a change of displays, an Arbor that died with
+windows in their corners), is put back with the next layout, whatever the camera shows, in one move, and nothing is raised
+(`putBackWhereItWas`). Where to is `whereItWas`: its own frame, unless the displays have changed so that less than half of the
+window would show, or its title bar would be out of reach: then it is fitted into its display, and what is remembered stays
+its own frame (`fittedFrames`), so that it goes back when the displays are as they were. A change of displays
 also displaces windows that are in view, and macOS itself moves and resizes some on the display that stays. What macOS does to a
 floating window then is macOS's: once Arbor is told, and after a blink, `takeFloatingWindowsFromWhereTheyAre` takes each one in view
 from where it is, by the displays that are (its place, its size, the display it belongs to), and sets no frame.
 `countAsOutOfViewWhatTheDisplaysDisplaced` says which the layout then fetches all the same: what Arbor had fitted, and what is no place.
 For F61 the Desktop counts as not in use (`roomTerms`), and F18 is off (`soleFloatIsOn`). A command that is about a floating
 window (`float`, `grow`, `move-to-display`, `undo`) may put it anywhere on the display (`roomToFloat`).
+A window that opens over a view the Desktop is not part of is a **guest** of that space (`Workspace.guests`, `Controller+Guests.swift`).
+It belongs to that view only in that it has the keyboard again when the view comes back (`inFront`, `floatsBesideTheView`).
+What still takes a floating window out of view: `summon`, which sends it away by name, and a hold, during which what arrives from a
+display that went waits until the hold ends (`holdKeepsOutWhatArrived`).
 
 The rest of this section, and whatever below speaks of windows pushed aside or squeezed, is how it was until Q20 and still is
 with **`floatingWindowsMakeWay`** on: floating windows live on the Desktop (`placeFloatingWindows`), and Arbor's own moves never
@@ -142,8 +147,7 @@ Desktop into a tile and back, and must not make the window someone is typing in 
 or vanish. A window the user moved over docked windows on purpose is left alone until
 the camera next brings the Desktop into view; where its app opened it does not count.
 A `dock` command keeps a Desktop that has windows on it wide and tall enough to use.
-A window that opens over a view the Desktop is not part of is a **guest** of that space
-(`Workspace.guests`, `Controller+Guests.swift`): it is also in view whenever its host is.
+A guest leaves the view with its host and comes back with it: it is also in view whenever its host is.
 
 **A floating window that fills the view** (`Workspace.filled`, `Controller+Fill.swift`): `zoom` frames a docked window by moving the
 view; a floating one has no place to look at, so it is the window that takes the frame a framed one has. The view stays, no layout
@@ -276,7 +280,8 @@ later still finds a view that has followed, which is taken back (`Workspace.retr
 for the going and before a closed window leaves the arrangement (`Controller.theViewGoesBack`), so that one layout shows both. A group
 is kept whole only while the view is on it, and what the going leaves of the group that was in view would otherwise dissolve and
 leave nothing to go back to.
-Two moves that cancel out are no move to a person. A window can float over a view that is not the Desktop's, and
+Two moves that cancel out are no move to a person. As Arbor ships neither touches what floats. With `floatingWindowsMakeWay`
+a window can float over a view that is not the Desktop's, and
 nothing in the model says that it does: the move back to such a view would park it. So the floating windows that
 were in view before the first move are where they were after the second (`Reveal.floatingInView`).
 When a camera move parks the window that has the keyboard, a visible window is
@@ -645,7 +650,7 @@ arrangement without it, which is what the user sees; its old slot still means
 "back where it was"; and the gap the others open for it counts as the target
 that opened it. Floating windows are placed by `placeFloatingWindows`, as for a
 real layout, which is lent the trial workspace and the last trial's layout for the
-call; the ones a trial moves aside stay there until the drag ends
+call. As Arbor ships that leaves them where they are. With `floatingWindowsMakeWay` the ones a trial moves aside stay there until the drag ends
 (`keepPushed`), or follow each trial, and the ones a trial brought into view with
 the Desktop leave with it. At the end `settle` lays the displays out
 from their real trees and puts those windows where a drag without reflow
@@ -821,7 +826,8 @@ together while it is the newest on both. The history lives in memory only.
 
 `install` then lays the displays out as for any change of structure. Layouts leave alone floating windows that are not on
 the Desktop, and a window that was docked a moment ago is still in its slot, so `floatingPlan` first decides for each
-floating window of the restored workspace whether it goes to the Desktop, back to where it was in view, or out of view.
+floating window of the restored workspace whether it goes to its own frame (with `floatingWindowsMakeWay`: to the Desktop), back to
+where it was in view, or, only with that setting, out of view.
 It moves nothing. **The layout does the moving**, once its stage is up (`relayout(…, puttingBack:)`, `placedOnPurpose`,
 `leavingView`): a window moved before the layout would vanish without a trace, one moved after it would jump when the stage
 lifts (`UndoMotionTests`). **A feature that gives floating windows a new way to be in or out of view** (guests, pinned,
