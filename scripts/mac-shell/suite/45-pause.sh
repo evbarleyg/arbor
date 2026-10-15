@@ -79,6 +79,8 @@ check "it goes to the window that was framed, which still has the keyboard" even
 drag_window "$W1" $left_edge --no-release
 check "a drag to the left screen edge shows no preview" stays no_overlays
 release
+# Hanging over the screen's edge, or where macOS tiled it. Either way a hand put it there, and it is the window's own place from now on.
+hand=$(resting_frame_of "$W1")
 check "Arbor is still paused" paused
 # shellcheck disable=SC2086
 check "the second window has not moved" stays frame_is "$W2" $second
@@ -148,10 +150,16 @@ ctl zoom "$W1"
 check "the others are out of view" eventually out_of_view "$W2"
 check "⌃⌥⇧F reaches Arbor" pressed ctrl+opt+shift+f float-all
 check "nothing is docked" eventually count docked 0
-check "the first window is in view" eventually in_view "$W1"
+# shellcheck disable=SC2086
+check "the first window is where a hand put it while Arbor was paused" eventually frame_is "$W1" ${hand:-0 0 0 0}
 check "the second window is in view" eventually in_view "$W2"
 check "the third window is in view" eventually in_view "$W3"
 check "the window that was framed no longer covers the screen" eventually fails fills "$W1"
+# Quitting leaves it there too, and arbor_stop expects every window whole.
+take "sx sy _ _" screen_of 1
+take "_ _ w h" resting_frame_of "$W1"
+tw move "$W1" "$((sx + 60))" "$((sy + 60))" "$w" "$h"
+eventually in_view "$W1"
 arbor_stop
 
 ARBOR_TEST_WINDOWS_ARGS="--max-size 1:300x240"
