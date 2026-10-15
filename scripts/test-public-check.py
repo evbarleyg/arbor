@@ -21,16 +21,16 @@ import tempfile
 import time
 import traceback
 
+import side_by_side
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 spec = importlib.util.spec_from_file_location("public_check", os.path.join(HERE, "public-check.py"))
 check = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(check)
 
-rows = []
-
-
-def row(what, got, expected):
-    rows.append((what, got, expected))
+# Each situation makes a repository of its own: they are played side by side.
+table = side_by_side.Table()
+row = table.row
 
 
 # MARK: words
@@ -277,6 +277,8 @@ class Repository:
         try:
             with contextlib.redirect_stdout(output), contextlib.redirect_stderr(output):
                 code = check.main(list(arguments), cwd=self.path)
+        except SystemExit as left:  # it gives its verdict back; one that walks out with it, 0 above all, must not end this test as well
+            code = f"it left by sys.exit({left.code})"
         finally:
             os.environ.clear()
             os.environ.update(saved)
@@ -288,6 +290,7 @@ class Repository:
         return self.run(*arguments, **more)[:2]
 
 
+@table.later
 def situation(what, expected, prepare, *arguments):
     """Makes a repository, lets `prepare` change it, and notes what the check says."""
     with tempfile.TemporaryDirectory() as folder:
@@ -556,6 +559,7 @@ def check_history():
         for name in names:
             r.git("push", "--quiet", "origin", f"HEAD:refs/heads/{name}")
 
+    @table.later
     def once(what, expected, prepare, branch, bad_on="main", base=None):
         with tempfile.TemporaryDirectory() as folder:
             repository = Repository(folder)
@@ -598,6 +602,7 @@ def check_history():
     once("nobody says which branch this is: it is read as asked", (1, ["person"]), lambda r: (the_merge(r), r.git("checkout", "--quiet", "--detach")), None)
     once("origin's main is not here to go by", (1, ["person"]), lambda r: (the_merge(r), r.git("update-ref", "-d", "refs/remotes/origin/main")), "swarm/trunk")
 
+    @table.later
     def once_more(what, expected, prepare, *arguments, bad_on="main", base=None):
         with tempfile.TemporaryDirectory() as folder:
             repository = Repository(folder)
@@ -792,6 +797,7 @@ def check_history():
             return {"standard_input": pushed.format(head=r.git("rev-parse", "HEAD"), none="0" * 40) + "\n" if pushed else ""}
         return prepare
 
+    @table.later
     def stopped(what, expected, prepare, *arguments):
         with tempfile.TemporaryDirectory() as folder:
             repository = Repository(folder)
@@ -801,13 +807,13 @@ def check_history():
     HELD, FREE = (1, True, True), (0, False, False)
     soon, past = ((datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=minutes)).strftime("%Y-%m-%dT%H:%MZ") for minutes in (30, -1))
     why = "\nA train is open:\nthe Macs are wanted for it.\n"
-    elsewhere = "until main is 0123456" + why
+    not_there_yet = "until main is 0123456" + why
 
     def main_of(r):
         return r.git("ls-remote", "origin", "refs/heads/main").split()[0]
     stopped("a hold until a time that has not come: refused, with the reason", HELD, hold(f"until {soon}{why}"))
     stopped("the time has come", FREE, hold(f"until {past}{why}"))
-    stopped("a hold until main is somewhere it is not yet", HELD, hold(elsewhere))
+    stopped("a hold until main is somewhere it is not yet", HELD, hold(not_there_yet))
     stopped("main is there", FREE, hold(lambda r: f"until main is {main_of(r)[:9]}{why}"))
     stopped("seven digits of it do", FREE, hold(lambda r: f"until main is {main_of(r)[:7]}{why}"))
     stopped("six are no commit's name: a first line nobody can read", HELD, hold(lambda r: f"until main is {main_of(r)[:6]}{why}"))
@@ -818,10 +824,10 @@ def check_history():
     stopped("main is past it already", FREE, hold(lambda r: f"until main is {r.before[:9]}{why}", also=moved_on))
     stopped("another branch is there, main is not", HELD,
             hold(lambda r: f"until main is {r.git('rev-parse', 'HEAD')[:9]}{why}", also=lambda r: r.git("push", "--quiet", "origin", "HEAD:refs/heads/a-branch")))
-    stopped("nobody took it away: after an hour and a half it is taken for forgotten", FREE, hold(elsewhere, age=91))
-    stopped("not yet forgotten", HELD, hold(elsewhere, age=89))
-    stopped("written a few minutes in the future, by a clock that is a little off", HELD, hold(elsewhere, age=-5))
-    stopped("written hours in the future: a clock is wrong, and it would never be forgotten", FREE, hold(elsewhere, age=-200))
+    stopped("nobody took it away: after an hour and a half it is taken for forgotten", FREE, hold(not_there_yet, age=91))
+    stopped("not yet forgotten", HELD, hold(not_there_yet, age=89))
+    stopped("written a few minutes in the future, by a clock that is a little off", HELD, hold(not_there_yet, age=-5))
+    stopped("written hours in the future: a clock is wrong, and it would never be forgotten", FREE, hold(not_there_yet, age=-200))
     stopped("a first line nobody can read holds all the same, as long as any", HELD, hold("until further notice" + why))
     stopped("and no longer", FREE, hold("until further notice" + why, age=91))
     stopped("a day that does not exist: likewise", HELD, hold("until 2026-13-45T99:99Z" + why))
@@ -1085,13 +1091,14 @@ def check_hook():
 
 
 def main():
-    for part in (check_texts, check_lists, check_history, check_the_test_itself, check_hook):
+    table.later(check_hook)()  # one long story, which cannot be cut up: it begins first
+    for part in (check_texts, check_lists, check_history, check_the_test_itself):
         try:
             part()
-        except Exception as error:  # a git that behaves otherwise, say: that is one row red, and the other parts still have their say
+        except (Exception, SystemExit) as error:  # a git that behaves otherwise, say: that is one row red, and the other parts still have their say
             place = traceback.extract_tb(error.__traceback__)
             row(f"{part.__name__} gets to its end", f"line {[frame.lineno for frame in place if frame.name == part.__name__][-1]}: {type(error).__name__}: {error}", "it does")
-    wrong = 0
+    wrong, rows = 0, table.finish(exactly=352)
     for what, got, expected in rows:
         if got != expected:
             wrong += 1

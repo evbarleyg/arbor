@@ -321,15 +321,18 @@ def self_test():
         class Local(GitHub):
             def address(self):
                 return folder
-        local, saved = Local("x/arbor", "t0ken"), dict(os.environ)
+        local, saved, stood = Local("x/arbor", "t0ken"), dict(os.environ), os.getcwd()
         os.environ.clear()
         os.environ.update(quiet)
+        # From that repository too: git runs the hooks of wherever it is called, and a clone's own pre-push hook has things to say that are not about this.
+        os.chdir(folder)
         try:
             for name in ("stays-put", "moves"):
                 git("update-ref", f"refs/heads/{name}", first)
             git("update-ref", "refs/heads/moves", second)
             outcomes = [local.delete("stays-put", first), local.delete("moves", first), local.delete("never-was", first)]
         finally:
+            os.chdir(stood)
             os.environ.clear()
             os.environ.update(saved)
         cases.append(("git deletes a branch that stands where it stood, and leaves one that has moved or is gone",

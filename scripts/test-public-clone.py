@@ -18,6 +18,8 @@ import subprocess
 import sys
 import tempfile
 
+import side_by_side
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 
@@ -31,11 +33,9 @@ def load(name):
 clone = load("public-clone")
 made = load("test-public-check")  # for its small repositories
 GOOD, BAD = made.GOOD, made.BAD
-rows = []
-
-
-def row(what, got, expected):
-    rows.append((what, got, expected))
+# Each situation makes a repository of its own: they are played side by side.
+table = side_by_side.Table()
+row = table.row
 
 
 def look(repository, *arguments, cwd=None):
@@ -47,6 +47,8 @@ def look(repository, *arguments, cwd=None):
     try:
         with contextlib.redirect_stdout(output):
             code = clone.main(arguments, cwd=cwd or repository.path)
+    except SystemExit as left:  # it gives its verdict back; one that walks out with it, 0 above all, must not end this test as well
+        code = f"it left by sys.exit({left.code})"
     finally:
         os.environ.clear()
         os.environ.update(saved)
@@ -69,6 +71,7 @@ def fresh(folder):
     return repository
 
 
+@table.later
 def situation(what, expected, prepare, mentions=(), still=None):
     """Code before; what of `mentions` was not said; the code after --remove and the rest by hand (None where nothing was found);
     and, where `still` is given, whether what is good is still there."""
@@ -488,7 +491,7 @@ def main():
         done = run(os.path.join(repository.path, ".claude", "hooks", "session-start.sh"), CLAUDE_PROJECT_DIR=outside)
         row("the session's hook: started outside any repository it says nothing, and does not fail", (done.returncode, done.stdout), (0, ""))
 
-    wrong = 0
+    wrong, rows = 0, table.finish(exactly=88)
     for what, got, expected in rows:
         if got != expected:
             wrong += 1
