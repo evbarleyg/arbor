@@ -86,7 +86,7 @@ after the taps were gone: 1395 arrived of 1395 posted, longest hole 122 ms, …
 
 1. **The marks are absolute**, and are held on tccutil's road, where the right goes first, which is the worst case: the hole at most 300 ms when macOS answers Arbor's question, 550 ms when it does not; lost no more than the beats that fit the hole.
    (The cure's beat is 0.15 s, 2.5 beats at worst without an answer; a plain beat of the stream shows as 120 to 138 ms with nobody running: so 280 and 505 ms are expected.) While the permission is gone the clock beats once a second.
-   There is no floor to be measured against: a bare tapper that does nothing loses the Mac its input for ever.
+   There is no floor to be measured against: a bare tapper that does nothing loses the Mac a second of input at every press, which under traffic is for ever.
 2. **The verdict needs both roads**: tccutil's, and **the switch itself**, which is what a person does and decides what the notes may say; no script can click it on a hosted Mac (above). The gentlest road (`by_the_row_and_a_word`) stays as the control that shows that Arbor
    leaves of its own accord when told; the two roads that kill tccd stay as controls for the poster's own hole.
 3. **NOTHING STAYS STUCK** is the first mark and the question that matters most. Not "no up is lost whose down arrived": with any hole above zero a release can fall into it, and Arbor cannot post one without the permission. But: after the hole the next press and release arrive whole, and the window
@@ -100,7 +100,7 @@ after the taps were gone: 1395 arrived of 1395 posted, longest hole 122 ms, …
 8. **The bare tapper's questions**: whichever turns at the instant of the withdrawal and is cheap is what the beat should go by (`probe-tapper-questions.sh`).
 9. **Open, and not to be settled on a hosted Mac**: whether real keys and buttons are dropped as posted ones are, and whether a real key whose up is lost goes on repeating.
 
-## What was found by 02:00 UTC on 2026-10-15 (macOS 26.6.2, debug build)
+## What was found by 03:00 UTC on 2026-10-15 (macOS 26.6.2, debug build unless it says otherwise)
 
 From the moment macOS withdraws the right until Arbor removes its taps, every event of every kind is dropped: 5 to 100 of them, 85 to 1091 ms, in fifteen rounds of sixteen with taps on the roads that withdraw; none in eight rounds with nobody and none in
 three with an Arbor without taps. The length is the wait for the next tick of the one-second check. Before and after, nothing is lost.
@@ -108,8 +108,12 @@ three with an Arbor without taps. The length is the wait for the next tick of th
 whoever only types loses nothing until the next press (or gesture); the button's own down is the first thing lost, and what can stick is a key or a modifier that is down at that press.
 **Of five questions only a trial `tapCreate` turns** at the withdrawal, 0 to 33 ms after the first dropped event, at 0.25 to 0.5 ms a call (99th 1.5 to 5 ms, worst 6 to 24, once 80). `tapIsEnabled` of the tapper's own tap, `AXIsProcessTrusted`, `CGPreflightListenEventAccess` and `CGPreflightPostEventAccess` never
 turn on tccutil's road. On the gentlest road the flag turns first and the right goes two thirds of a second later, and only if somebody asks.
-**The floor is for ever.** A bare tapper that does nothing loses the Mac all its input until it is killed (785 of 785 events in 8 s, 2400 of 2400 in 24 s). Its callback is told nothing, neither "by timeout" nor "by user input", and the window server's list goes on
-calling its tap enabled. So removal is what counts, and nobody will say when.
+**The floor: about a second for every event the tap has asked for, which under traffic is for ever.** A bare tapper that does nothing: each press is swallowed and takes with it whatever follows for about a second (0.4 to 1.25 s seen; 1071 and 1154 ms for an Arbor halted with SIGSTOP), which is macOS's own
+tap timeout; then input flows until the next press. With a press every 50 ms nothing arrives at all (785 of 785 events in 8 s, 2400 of 2400 in 24 s). Its callback IS told "by timeout", but in place of the next event that gets through, 1.25 and 3.5 s after the press that caused it, so in a dense stream never; and the word
+does not hold: `tapIsEnabled` goes on saying yes, the window server's list calls the tap enabled, and the next press is swallowed again. So removal is what counts, and nobody says when in time.
+**A tapper that hangs** (nothing taken, the process halted): one hole of about a second, 101 and 111 events lost, then macOS has switched the tap off for good (`enabled=false` in the list) and everything arrives. Taken away afterwards, the permission costs nothing more: a tap that is in but off started no drop in 20 s.
+**Nothing stays stuck** (sixteen rounds of sixteen). After an up was lost whose down had arrived: a key is held to be down, by the window server and the app, until its own next press and release (6.8 s in the probe: silence, a move, a notch and a click of the button did not help); a modifier until the next event of any kind
+(it came up within 56 ms of the pointer's next move; not by itself in three seconds of silence); the button never sticks, its down being the first thing lost. No drag goes on, nothing is held at the end.
 **The flag and the right to tap are two things.** With the row deleted, the notification posted and tccd left alone, the flag says no, Arbor takes its taps out of its own accord, and nothing is lost in four rounds of four: macOS had withdrawn nothing (the bare tapper keeps working on that road).
 `sample` from the deed on finds Arbor's main thread idle on every road. After a loss in mid ⌃⌥-drag nothing was stuck (one valid round).
 The flag `AXIsProcessTrusted()` is remembered inside a process until `com.apple.accessibility.api` is posted; a write to TCC.db and a restart of tccd announce nothing.
