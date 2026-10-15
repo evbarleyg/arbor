@@ -546,9 +546,13 @@ output lies in `mac-1/`, `mac-2/`, …. A script that is given to several Macs b
 dispatch it is and how many there are, over all its Macs, settled before the first begins: its place among `run.sh`'s arguments, so a playing that is lost shows as a gap. All kinds of Mac come out of the same five at a time.
 
 **Whose turn it is.** GitHub hands its Macs out in no particular order: a job has been seen to wait eight minutes while later ones started. So
-`run.sh` keeps the order itself, before it starts the run, where waiting takes nobody's place. `--priority 1` (or `ARBOR_MAC_PRIORITY=1`) starts at once: a
+`run.sh` keeps the order itself, before it starts the run, where waiting takes nobody's place. `--priority 1` (or `ARBOR_MAC_PRIORITY=1`) waits for nobody's ordinary run: a
 fault on real windows, a merge train, whatever others are blocked by. `2` holds back while three or more jobs are waiting for a Mac. `3`, the default, holds back
-while any is: pictures, features, whatever can wait. Whatever the priority, a branch has at most two jobs running or waiting at a time (`3`: one).
+while any is: pictures, features, whatever can wait. Whatever the priority, a branch has at most two jobs running or waiting at a time (`3`: one); the run that is being started again, under the same tag, does not count.
+**A train goes first,** before every priority. While CI's macOS job for `train/…`, `swarm/trunk` or `main` is waiting for a Mac nothing else starts: everybody's landing
+waits for that job. And it is seen coming: the job is not there until the one before it has had a Linux runner, for which a train has waited thirteen minutes while others
+took the Macs. So from the moment its run is queued one of the five is kept free: nothing starts while four or more jobs are running or waiting. Priority 1 reads this
+from what somebody else saw of late (`ARBOR_MAC_QUEUE_CACHE`), asks GitHub nothing, and goes if there is nothing to read.
 It says what it is holding back for, and the wait counts towards `MAC_SHELL_TIMEOUT`.
 
 **GitHub's API is shared too.** An account may make 5,000 REST calls an hour, for everything everybody does under it, and when they are used up nobody
@@ -1130,6 +1134,13 @@ the tests as above, the smoke runs and the scenarios, then side by side the type
 parity, which reads what the tests left instead of running them again. One line for each step; all output in `.build/gate/`. It goes on
 after a failure, so one round tells all. What `make check` runs besides lint, the build and the tests it reads from the Makefile, so a step
 added there is a step of the gate.
+
+**One gate at a time on one machine** (one container counts as one, whatever the checkouts): two shut each other, and so do a gate and a
+`scripts/test-tooling.py` beside it. The sign is a row of `lib.sh`'s that ends with 77 instead of 0, mostly "ARBOR_OUT from a stray environment is not
+taken". That row takes `ARBOR_REHEARSAL` away on purpose, so there `lib.sh` is in earnest: it finds the other copy's run under `/tmp/arbor-run.*` and declines, as
+it would on a Mac where two scripts would fight over the pointer. "On somebody's Mac a run that changed nothing says so" goes the same way, since the machine did
+change. Neither says anything about the change under test: run the self-test again by itself. To wait for a machine to fall quiet, chain the steps in one
+job: a loop round `pgrep -f <pattern>` finds the shell that carries the pattern, and never ends.
 
 The same script can divide the tests among several machines, the compiling too (`plan`, `cut`, `join`, `same`): its header says how.
 `scripts/test-fast-tests.py`, part of `make lint`, holds it to a table of Swift it must read rightly or refuse.

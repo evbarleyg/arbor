@@ -54,6 +54,14 @@ def skipped(asked, ended):
     return job("completed", asked, ended, ended, "skipped", runner="")
 
 
+def on_linux(status):
+    return job(status, "11:58:00", "11:58:10", name="changes", labels=["ubuntu-24.04"])
+
+
+def left_out():
+    return skipped("11:58:30", "11:58:30")
+
+
 def cancelled_waiting(asked, ended, **more):
     return job("completed", asked, asked, ended, "cancelled", **{"runner": "", **more})
 
@@ -213,6 +221,28 @@ def turn(priority, waits, own=0, own_waiting=0, others=0):
     return queue.hold_back(queue.facts(runs, NOON), priority, "mine")
 
 
+def beside(theirs, mine="mine", tag="", **more):
+    """Who of priorities 1, 2 and 3 is held back, for the branch `mine`, while the run `theirs` is there."""
+    return [bool(queue.hold_back(queue.facts([theirs, *more.get("also", [])], NOON), priority, mine, tag)) for priority in (1, 2, 3)]
+
+
+def train(branch="train/3", job=None, **more):
+    return run(job or waiting("11:59:00"), branch=branch, status="in_progress", **more)
+
+
+def known(kept):
+    """What a look that asks nobody makes of a cache that holds `kept`: the runs, or that there is nothing to go by."""
+    with tempfile.TemporaryDirectory() as folder:
+        path = os.path.join(folder, "queue.json")
+        if kept is not None:
+            with open(path, "w", encoding="utf-8") as handle:
+                handle.write(kept)
+        try:
+            return queue.shared("owner/repo", NOON, queue.nobody_looks, path), os.listdir(folder)
+        except queue.Unanswered:
+            return "nothing to go by", os.listdir(folder)
+
+
 def said(runs, **options):
     return queue.report(queue.facts(runs, NOON, **options), "owner/repo")
 
@@ -339,6 +369,27 @@ def after_a_start(kept, macs=1, repo="owner/repo"):
         return noted, found["waiting"], [bool(queue.hold_back(found, priority, "feat/second")) for priority in (1, 2, 3)]
 
 
+def overtaken(looked, starts=1, spoil="", what="waiting"):
+    """A run is started at noon. Then somebody's look, made at `looked`, is put in the cache's place. How many wait, for whoever reads a little later."""
+    with tempfile.TemporaryDirectory() as folder:
+        path = os.path.join(folder, "queue.json")
+        with open(path, "w", encoding="utf-8") as handle:
+            handle.write(EMPTY_QUEUE)
+        if spoil:
+            with open(f"{path}.started", "w", encoding="utf-8") as handle:
+                handle.write(spoil + "\n")
+        for _ in range(starts):
+            queue.note_started("owner/repo", NOON, "feat/first", 1, path)
+        with open(path, "w", encoding="utf-8") as handle:
+            handle.write(json.dumps({"repo": "owner/repo", "at": at(looked), "runs": []}))
+        later = NOON + timedelta(seconds=40)
+        runs = queue.shared("owner/repo", later, lambda: [], path, lambda where: None)
+        if what == "cache":
+            with open(path, encoding="utf-8") as handle:
+                return json.load(handle)["runs"]
+        return os.path.getsize(f"{path}.started") if what == "size" else queue.facts(runs, later)["waiting"]
+
+
 EMPTY_QUEUE = json.dumps({"repo": "owner/repo", "at": "2026-01-01T11:59:50Z", "runs": []})
 
 
@@ -387,9 +438,16 @@ SINGLE = [
         open(path, "w", encoding="utf-8").write(EMPTY_QUEUE), queue.note_started("owner/repo", NOON, "feat/first", 2, path),
         bool(queue.hold_back(queue.facts(queue.shared("owner/repo", NOON, lambda: [], path), NOON), 1, "feat/first")), os.remove(path))[2])(
             os.path.join(tempfile.gettempdir(), f"queue-{os.getpid()}.json")), True),
-    ("a start: no cache yet: nothing is noted, and nothing goes wrong", lambda: after_a_start(None), (False, 0, [False, False, False])),
-    ("a start: another repository's cache is left alone", lambda: after_a_start(EMPTY_QUEUE, repo="other/repo"), (False, 0, [False, False, False])),
-    ("a start: half a file is left alone", lambda: after_a_start(EMPTY_QUEUE[:30])[0], False),
+    ("a start: no cache yet: it is noted all the same, and counts with the first look", lambda: after_a_start(None), (True, 1, [False, False, True])),
+    ("a start: another repository's does not count here", lambda: after_a_start(EMPTY_QUEUE, repo="other/repo"), (True, 0, [False, False, False])),
+    ("a start: half a cache: noted all the same", lambda: after_a_start(EMPTY_QUEUE[:30])[:2], (True, 1)),
+    ("a start: A LOOK MADE BEFORE IT ARRIVES AFTER IT, in the cache's place: the start still counts", lambda: overtaken("11:59:58"), 1),
+    ("a start: so it does with a look made within twenty seconds of it, which may have missed it", lambda: overtaken("12:00:15"), 1),
+    ("a start: a look made later holds the run itself, and the note is done with", lambda: overtaken("12:00:25"), 0),
+    ("a start: the cache itself holds looks and nothing else", lambda: overtaken("11:59:58", what="cache"), []),
+    ("a start: two at the same moment both count", lambda: overtaken("11:59:58", starts=2), 2),
+    ("a start: half a line, as while somebody is writing, costs that line alone", lambda: overtaken("11:59:58", spoil='{"repo": "owner/re'), 1),
+    ("a start: what is noted does not grow for ever", lambda: overtaken("11:59:58", spoil="x" * 25_000, what="size") < 1_000, True),
     ("a start: no cache is named", lambda: queue.note_started("owner/repo", NOON, "feat/first", 1, ""), False),
     ("--started: exit code 0, not a word, GitHub is not asked", lambda: ends_with(None, "--started", "2", "--for", "feat/first"), (0, "")),
     ("no cache is named: everybody asks", lambda: [queue.shared("owner/repo", NOON, lambda: "asked", "")], ["asked"]),
@@ -408,6 +466,51 @@ SINGLE = [
     ("whose turn: one job of its own branch runs", lambda: [bool(turn(n, 0, own=1)) for n in (1, 2, 3)], [False, False, True]),
     ("whose turn: two of its own, one of them still waiting", lambda: [bool(turn(n, 0, own=1, own_waiting=1)) for n in (1, 2, 3)], [True] * 3),
     ("whose turn: it says that too", lambda: turn(1, 0, own=2), "2 jobs for mine are running or waiting already"),
+    ("a train goes first: its macOS job waits: nobody starts, whatever the priority", lambda: beside(train()), [True] * 3),
+    ("a train goes first: it says so", lambda: queue.hold_back(queue.facts([train()], NOON), 1, "mine"), "CI's macOS job for train/3 is waiting for a Mac, and a train goes first"),
+    ("a train goes first: so do the trunk's own pull request and main", lambda: [beside(train(branch)) for branch in ("swarm/trunk", "main")], [[True] * 3] * 2),
+    ("a train goes first: once it has its Mac nobody waits for it", lambda: beside(train(job=running("11:50:00", "11:50:10"))), [False] * 3),
+    ("a train goes first: a run for the train itself is not held back by it", lambda: beside(train(), mine="train/3")[0], False),
+    ("a train goes first: a Mac shell run for a train is a run like any other", lambda: beside(train(
+        branch="swarm/trunk", workflow="mac-shell", title="Mac shell: scripts/mac-shell/e2e.sh at train/3 [t]")), [False, False, True]),
+    ("a train goes first: a branch that only sounds like one is none", lambda: [beside(train(branch)) for branch in ("feat/train/3", "training", "train/", "mainly")],
+     [[False, False, True]] * 4),
+    ("a train is seen coming: its run is queued and has no job yet; four Macs are taken: the fifth is kept for it", lambda: beside(
+        run(branch="train/3", status="queued"), also=[run(*[running("11:50:00", "11:50:10")] * 4, number=2, branch="theirs", status="in_progress")]), [True] * 3),
+    ("a train is seen coming: it says so", lambda: queue.hold_back(queue.facts(
+        [run(branch="train/3", status="queued"), run(*[running("11:50:00", "11:50:10")] * 4, number=2, branch="theirs", status="in_progress")], NOON), 1, "mine"),
+     "train/3 is on its way to a Mac, and 4 jobs are running or waiting: one Mac is kept free for it"),
+    ("a train is seen coming: three are taken: there is room for one more", lambda: beside(
+        run(branch="train/3", status="queued"), also=[run(*[running("11:50:00", "11:50:10")] * 3, number=2, branch="theirs", status="in_progress")]), [False] * 3),
+    ("a train is seen coming: also while only its Linux jobs have begun", lambda: beside(
+        run(on_linux("in_progress"), branch="train/3", status="in_progress"), also=[run(*[running("11:50:00", "11:50:10")] * 4, number=2, branch="theirs", status="in_progress")]), [True] * 3),
+    ("a train is seen coming: it was settled that it wants no Mac: nothing is kept", lambda: beside(
+        run(on_linux("in_progress"), left_out(), branch="main", status="in_progress"), also=[run(*[running("11:50:00", "11:50:10")] * 4, number=2, branch="theirs", status="in_progress")]), [False] * 3),
+    ("a train is seen coming: it has its Mac, which is one of the four: nothing more is kept", lambda: beside(
+        run(running("11:50:00", "11:50:10"), branch="train/3", status="in_progress"), also=[run(*[running("11:50:00", "11:50:10")] * 3, number=2, branch="theirs", status="in_progress")]), [False] * 3),
+    ("a train is seen coming: one that has ended is none", lambda: beside(
+        run(branch="train/3", status="completed"), also=[run(*[running("11:50:00", "11:50:10")] * 4, number=2, branch="theirs", status="in_progress")]), [False] * 3),
+    ("a train is seen coming: another workflow's run for its branch is none", lambda: beside(
+        run(branch="train/3", status="queued", workflow="public-text"), also=[run(*[running("11:50:00", "11:50:10")] * 4, number=2, branch="theirs", status="in_progress")]), [False] * 3),
+    ("a train is seen coming: an ordinary pull request's queued run is none", lambda: beside(
+        run(branch="feat/y", status="queued"), also=[run(*[running("11:50:00", "11:50:10")] * 4, number=2, branch="theirs", status="in_progress")]), [False] * 3),
+    ("started again: what runs and waits under the same tag will be replaced, and does not count", lambda: beside(
+        run(running("11:50:00", "11:50:10"), running("11:50:00", "11:50:10"), workflow="mac-shell", title="Mac shell: scripts/mac-shell/a.sh at mine [mine.a]", status="in_progress"),
+        tag="mine.a"), [False] * 3),
+    ("started again: under another tag it counts, as it did", lambda: beside(
+        run(running("11:50:00", "11:50:10"), running("11:50:00", "11:50:10"), workflow="mac-shell", title="Mac shell: scripts/mac-shell/a.sh at mine [mine.a]", status="in_progress"),
+        tag="mine.b"), [True] * 3),
+    ("started again: a tag that another one ends with is another", lambda: beside(
+        run(running("11:50:00", "11:50:10"), running("11:50:00", "11:50:10"), workflow="mac-shell", title="Mac shell: scripts/mac-shell/a.sh at mine [x.mine.a]", status="in_progress"),
+        tag="mine.a"), [True] * 3),
+    ("started again: CI's job for the branch has no tag, and counts", lambda: beside(
+        run(running("11:50:00", "11:50:10"), running("11:50:00", "11:50:10"), branch="mine", status="in_progress"), tag="mine.a"), [True] * 3),
+    ("--known: a look of late is read", lambda: known(kept_at("11:58:00")), ([{"id": "kept"}], ["queue.json"])),
+    ("--known: an old one is nothing to go by, and nothing is written", lambda: known(kept_at("11:50:00")), ("nothing to go by", ["queue.json"])),
+    ("--known: nor is no cache at all", lambda: known(None), ("nothing to go by", [])),
+    ("--known: without a cache: exit code 1, not a word, though GitHub would have answered", lambda: ends_with([train()], "--turn", "1", "--for", "mine", "--known"), (1, "")),
+    ("--turn without it: GitHub is asked, and the train is seen", lambda: ends_with([train()], "--turn", "1", "--for", "mine"),
+     (4, "CI's macOS job for train/3 is waiting for a Mac, and a train goes first\n")),
     ("whose turn: five of other branches run, none waits", lambda: [turn(n, 0, others=5) for n in (1, 2, 3)], ["", "", ""]),
     ("exit code 4 when it is not its turn, and only the reason", lambda: ends_with([run(waiting("00:00:00"))], "--turn", "3", "--for", "mine"),
      (4, "1 job waiting for a Mac, and this has priority 3\n")),

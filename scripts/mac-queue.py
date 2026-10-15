@@ -7,7 +7,7 @@ build. A job that finds none free waits, and nothing on the run's page says for 
 before starting many runs, and when a run seems stuck.
 
 Usage: scripts/mac-queue.py [--minutes N] [--alarm N] [--json] [--repo owner/name]
-       scripts/mac-queue.py --turn 1|2|3 --for <branch>      for scripts/mac-shell/run.sh: may a run of that priority start now?
+       scripts/mac-queue.py --turn 1|2|3 --for <branch> [--tag <tag>] [--known]     for scripts/mac-shell/run.sh: may a run of that priority start now?
        scripts/mac-queue.py --started N --for <branch>       likewise: it has just started a run on N Macs
   --minutes N        how far to look back, 60 by default
   --alarm N          the mean wait, in minutes, above which it says ALARM, 5 by default
@@ -25,7 +25,14 @@ Exit code 0; 3 with a line that starts with `ALARM:` when that mean is above --a
 --turn prints nothing and exits with 0 when the run may start, or says what it should wait for and exits with 4. GitHub hands its Macs
 out in no particular order (see below), so whoever can wait does so before starting a run, where waiting takes nobody's place:
 priority 1 (a fault on real windows, a merge train) never waits for others, 2 waits while three or more jobs are waiting for a Mac,
-3 while any is. And nobody has more than two jobs for one branch running or waiting at a time (priority 3: one).
+3 while any is. And nobody has more than two jobs for one branch running or waiting at a time (priority 3: one); what runs or waits under
+--tag does not count, since the run that is about to start replaces it.
+A TRAIN GOES FIRST, before every priority: while CI's macOS job for a branch where work is integrated (train/…, swarm/trunk, main) is waiting for a Mac,
+nothing else starts. Everybody's landing waits for that job, and a Mac that is taken now is gone for minutes. And it is seen coming: that job is not there
+until the job before it has had a Linux runner, for which a train once waited thirteen minutes while others took the Macs. From the moment its run is
+queued until it is settled whether it wants a Mac, one of the five is kept free: nothing starts while four or more jobs are running or waiting.
+--known answers only from what somebody who shares the cache saw a short while ago, and asks GitHub nothing: exit code 1 if there is no such look.
+For priority 1, which is not to be held up by what cannot be found out, nor to pay for finding out.
 Needs `gh` and a token that may read the repository. It only reads: one request for every hundred runs, and one for
 every run that could have held or wanted a Mac within the period: some twenty to forty. GitHub allows an account 5,000 an hour, for
 everything everybody does under it, so do not run this in a loop; the last line but one says what is left.
@@ -35,8 +42,9 @@ run (of those the run's own state tells enough). With $ARBOR_MAC_QUEUE_CACHE nam
 reads the answer there and asks GitHub nothing: for several checkouts, containers or people on one machine or one shared folder.
 With $ARBOR_STATE_BRANCH naming the branch the poller at GitHub publishes to (scripts/gh-state.py; `state/github`), that file is first brought
 up to date from there by `git fetch`, which no limit counts: then nobody who waits for a turn asks GitHub's API anything.
---started writes a run that has just been started into that file, as waiting, and asks GitHub nothing: or everybody who was holding back
-would read "nobody waits" in the same look at an emptied queue, and start together. The next real look replaces it with the run itself.
+--started writes down beside that file that a run has just been started, and asks GitHub nothing: or everybody who was holding back would read
+"nobody waits" in the same look at an emptied queue, and start together. It counts as waiting with every look that was made before the start or
+within twenty seconds of it, whoever brings that look and whenever; a later look holds the run itself.
 
 What GitHub's answers mean, found by looking at them on 2026-10-14 while five jobs ran and five waited:
 
@@ -83,6 +91,12 @@ AT_ONCE = 8
 FRESH_FOR = 200
 # "Mac shell: scripts/mac-shell/shots-F10.sh at feat/x [tag]"; "at feat/x" is missing from the runs of older branches.
 MAC_SHELL = re.compile(r"^Mac shell(?: \([^)]*\))?: (?:scripts/mac-shell/)?(?P<script>.*?)(?: at (?P<ref>\S+))?(?: \(no pre-flight: .*\))?(?P<tag> \[[^\]]*\])?$")
+# Where work is integrated.
+INTEGRATED = re.compile(r"^(train/.+|swarm/trunk|main)$")
+# GitHub lends the repository five Macs at a time, of all kinds together (measured). For a train that is on its way one of them stays free.
+MACS, KEPT_FOR_A_TRAIN = 5, 1
+# For so many seconds after a run was started a look may miss it.
+MISSED_FOR = 20
 ALARMED = 3
 NOT_YET = 4
 # How many jobs may be waiting for a Mac when a run of this priority starts, and how many jobs its branch may have already.
@@ -183,7 +197,7 @@ def shared(repo, now, look, path=None, fetch=fetched):
         with open(path, encoding="utf-8") as handle:
             kept = json.load(handle)
         if kept["repo"] == repo and 0 <= (now - when(kept["at"])).total_seconds() < FRESH_FOR:
-            return kept["runs"]
+            return kept["runs"] + just_started(repo, when(kept["at"]), path)
     except (OSError, ValueError, KeyError, TypeError):
         pass  # none yet, or half of one: then this look is the first
     runs = look()
@@ -193,30 +207,53 @@ def shared(repo, now, look, path=None, fetch=fetched):
         os.replace(f"{path}.{os.getpid()}", path)
     except OSError:
         pass  # a cache that cannot be written costs requests, nothing else
-    return runs
+    return runs + just_started(repo, now, path)
+
+
+def nobody_looks():
+    raise Unanswered("nobody who shares the cache has looked at the queue of late")
 
 
 def note_started(repo, now, branch, macs, path=None):
-    """Adds a run on so many Macs, just started for `branch`, to what the cache holds. Without a cache, or one of this repository, nothing."""
+    """Writes down, beside the cache, that a run on so many Macs has just been started for `branch`. Where no cache is named, nothing."""
     path = os.environ.get("ARBOR_MAC_QUEUE_CACHE", "") if path is None else path
-    try:
-        with open(path, encoding="utf-8") as handle:
-            kept = json.load(handle)
-        if kept["repo"] != repo:
-            return False
-        for number in range(macs):
-            run = {
-                "id": f"just started {stamp(now)} {os.getpid()} {number}", "path": ".github/workflows/mac-shell.yml", "status": "queued", "head_branch": branch,
-                "display_title": f"Mac shell: just started at {branch} [?]", "html_url": "", "updated_at": stamp(now), "created_at": stamp(now),
-                "run_started_at": stamp(now),
-            }
-            kept["runs"].append({**run, "jobs": [stands_for(run)]})
-        with open(f"{path}.{os.getpid()}", "w", encoding="utf-8") as handle:
-            json.dump(kept, handle)
-        os.replace(f"{path}.{os.getpid()}", path)
-        return True
-    except (OSError, ValueError, KeyError, TypeError, AttributeError):
+    if not path:
         return False
+    try:
+        # Added to, not written anew: two who start at the same moment both get their line. What is old goes when there is much of it.
+        if os.path.exists(f"{path}.started") and os.path.getsize(f"{path}.started") > 20_000:
+            os.remove(f"{path}.started")
+        with open(f"{path}.started", "a", encoding="utf-8") as handle:
+            handle.write(json.dumps({"repo": repo, "at": stamp(now), "branch": branch, "macs": macs}) + "\n")
+        return True
+    except OSError:
+        return False
+
+
+def just_started(repo, looked, path):
+    """The runs that were started too late for a look made at `looked` to hold them: as waiting. Not in the cache itself, which anybody's next look
+    replaces: one that was made before the start and arrives after it (the poller's takes a while to get here) would take the note with it."""
+    try:
+        with open(f"{path}.started", encoding="utf-8") as handle:
+            lines = handle.read().splitlines()
+    except OSError:
+        return []
+    runs = []
+    for number, line in enumerate(lines):
+        try:
+            note = json.loads(line)
+            if note["repo"] != repo or when(note["at"]) + timedelta(seconds=MISSED_FOR) <= looked:
+                continue
+            for mac in range(int(note["macs"])):
+                run = {
+                    "id": f"just started {note['at']} {number} {mac}", "path": ".github/workflows/mac-shell.yml", "status": "queued", "head_branch": note["branch"],
+                    "display_title": f"Mac shell: just started at {note['branch']} [?]", "html_url": "", "updated_at": note["at"], "created_at": note["at"],
+                    "run_started_at": note["at"],
+                }
+                runs.append({**run, "jobs": [stands_for(run)]})
+        except (ValueError, KeyError, TypeError, AttributeError):
+            pass  # half a line: somebody is writing it
+    return runs
 
 
 def left_this_hour():
@@ -312,6 +349,14 @@ def mac_jobs(runs, now):
     ]
 
 
+def trains_coming(runs):
+    """The branches where work is integrated whose CI run is under way and has not got as far as its macOS job: neither started, nor left out, nor waiting."""
+    return sorted({
+        branch_of(run) for run in runs
+        if workflow_of(run) == "ci" and INTEGRATED.match(branch_of(run)) and run.get("status") != "completed" and not any(on_a_mac(job) for job in run["jobs"])
+    })
+
+
 def most_at_once(spans):
     """How many of the (start, end) hold at one moment, at most. One ending as another starts is a Mac handed on."""
     spans = [(start, end) for start, end in spans if start < end]
@@ -368,6 +413,7 @@ def facts(runs, now, minutes=60, alarm=5):
         "running": len(running),
         "waiting": len(waiting),
         "now": [line(job) for job in running + waiting],
+        "trains_coming": trains_coming(runs),
         # By the rule --turn holds a run back on, so that whoever looks here and run.sh see the same thing.
         "over": [{"branch": branch, "jobs": own} for branch, own in sorted(in_flight.items()) if own > AT_MOST_OF_ONE_BRANCH],
         "finished": len(finished),
@@ -390,9 +436,15 @@ def facts(runs, now, minutes=60, alarm=5):
     }
 
 
-def hold_back(found, priority, branch):
+def hold_back(found, priority, branch, tag=""):
     """Why a run of that priority for that branch should not start yet; nothing if it may."""
-    own = sum(1 for job in found["now"] if job["branch"] == branch)
+    trains = [job["branch"] for job in found["now"] if job["state"] == "waiting" and job["job"].startswith("ci /") and INTEGRATED.match(job["branch"])]
+    if trains and not INTEGRATED.match(branch):
+        return f"CI's macOS job for {trains[0]} is waiting for a Mac, and a train goes first"
+    if found["trains_coming"] and not INTEGRATED.match(branch) and len(found["now"]) >= MACS - KEPT_FOR_A_TRAIN:
+        return f"{found['trains_coming'][0]} is on its way to a Mac, and {count(len(found['now']))} are running or waiting: one Mac is kept free for it"
+    # A run started again under its tag cancels the one before (the workflow's concurrency group), so that one takes nobody's place.
+    own = sum(1 for job in found["now"] if job["branch"] == branch and not (tag and job["script"].endswith(f" [{tag}]")))
     if own > OF_ONE_BRANCH[priority]:
         return f"{count(own)} for {branch} {'is' if own == 1 else 'are'} running or waiting already"
     if MAY_WAIT[priority] is not None and found["waiting"] > MAY_WAIT[priority]:
@@ -470,6 +522,8 @@ def main():
     parser.add_argument("--turn", type=int, choices=sorted(MAY_WAIT), help="may a run of this priority start now?")
     parser.add_argument("--started", type=int, metavar="N", help="a run on N Macs has just been started: let whoever shares the cache know")
     parser.add_argument("--for", dest="branch", default="", help="with --turn and --started: the branch the run is for")
+    parser.add_argument("--tag", default="", help="with --turn: the run's tag; what runs under it already will be replaced, and does not count")
+    parser.add_argument("--known", action="store_true", help="with --turn: only from the shared cache, without asking GitHub")
     args = parser.parse_args()
 
     try:
@@ -478,13 +532,13 @@ def main():
         if args.started:
             note_started(repo, now, args.branch, args.started)
             return 0
-        runs = shared(repo, now, lambda: fetch_now(repo)) if args.turn else fetch(repo, now, args.minutes)
+        runs = shared(repo, now, nobody_looks if args.known else lambda: fetch_now(repo)) if args.turn else fetch(repo, now, args.minutes)
         found = facts(runs, now, args.minutes, args.alarm)
     except Unanswered as error:
         print(f"mac-queue.py: {error}", file=sys.stderr)
         return 1
     if args.turn:
-        why = hold_back(found, args.turn, args.branch)
+        why = hold_back(found, args.turn, args.branch, args.tag)
         print(why, end="\n" if why else "")
         return NOT_YET if why else 0
     print(json.dumps({"repo": repo, **found}, indent=2) if args.json else report(found, repo, left_this_hour()))

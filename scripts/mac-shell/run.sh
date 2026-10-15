@@ -22,9 +22,10 @@
 #   --on KIND   another of GitHub's Macs than macos-26: macos-15, macos-14 or macos-15-intel. They come out of the same five.
 #   --bare      no toolchain and no build: half a minute saved for a script that only asks the Mac something.
 #   --priority N   GitHub hands its Macs out in no particular order, so the order is kept here, before the run is started: waiting
-#               here costs nobody anything. 1 starts at once, and asks nothing: a fault on real windows, a merge train. 2 waits while three or
+#               here costs nobody anything. 1 waits for nobody's ordinary run: a fault on real windows, a merge train. 2 waits while three or
 #               more jobs are waiting for a Mac. 3 (the default) waits while any is: pictures, features, whatever can wait.
-#               And whatever the priority, it waits while two jobs for <ref> (3: one) are running or waiting already.
+#               And whatever the priority, it waits while two jobs for <ref> (3: one) are running or waiting already, the run it replaces aside,
+#               and WHILE A TRAIN'S OWN macOS JOB IS WAITING FOR A MAC (CI for train/…, swarm/trunk or main): everybody's landing waits for that one.
 #
 # Starts the "Mac shell" workflow (.github/workflows/mac-shell.yml) for <ref> (a branch; default: the
 # current one, which must be pushed: the Mac runs what GitHub has), waits for it, fetches the branch
@@ -151,18 +152,26 @@ elif [ "$ref" = "$(git rev-parse --abbrev-ref HEAD)" ] && [ "$(uname -s)" = Linu
 fi
 
 # Its turn. Only the answer "yes" lets it go. If the queue cannot be read, GitHub is most likely refusing calls because the hour's are used up, and
-# if that meant "go", everybody who was holding back would start at once, at the worst moment. Priority 1 does not ask.
+# if that meant "go", everybody who was holding back would start at once, at the worst moment. Priority 1 alone is not held up by what cannot be
+# found out, and does not pay for finding out: it reads what somebody else saw of late, and goes if there is nothing to read.
 start=$(date +%s)
 told=""
-while [ "$priority" != 1 ]; do
+while :; do
   # While work goes to main, its checks come first (hold.txt, docs/PUBLIC.md). Only the answer "held" holds: where nobody can tell, the queue decides.
-  why=$(python3 scripts/public-check.py --rules 2>/dev/null | sed -n '1s/^[^A-Za-z]*//p'; exit "${PIPESTATUS[0]}")
-  if [ $? -ne 1 ]; then
-    why=$(python3 scripts/mac-queue.py --repo "$repo" --turn "$priority" --for "$ref" 2>/dev/null)
+  # Priority 1 does not ask that; the queue it does ask, for a train that is waiting for a Mac or on its way to one.
+  held=""
+  if [ "$priority" != 1 ]; then
+    why=$(python3 scripts/public-check.py --rules 2>/dev/null | sed -n '1s/^[^A-Za-z]*//p'; exit "${PIPESTATUS[0]}")
+    [ $? -ne 1 ] || held=yes
+  fi
+  if [ -z "$held" ]; then
+    # shellcheck disable=SC2046
+    why=$(python3 scripts/mac-queue.py --repo "$repo" --turn "$priority" --for "$ref" --tag "$tag" $([ "$priority" != 1 ] || echo --known) 2>/dev/null)
     case $? in
       0) break ;;
       4) ;;
-      *) why="the queue for the Macs cannot be read (are GitHub's calls for this hour used up? gh api rate_limit says, and costs none)" ;;
+      *) [ "$priority" != 1 ] || break
+        why="the queue for the Macs cannot be read (are GitHub's calls for this hour used up? gh api rate_limit says, and costs none)" ;;
     esac
   fi
   [ $(($(date +%s) - start)) -le "$limit" ] || fail "not started after ${limit}s: $why" 98

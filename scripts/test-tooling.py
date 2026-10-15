@@ -1569,17 +1569,27 @@ esac
     with open(real_queue, encoding="utf-8") as handle:
         kept_queue = handle.read()
     with open(real_queue, "w", encoding="utf-8") as handle:
-        handle.write('import os, sys\nprint("three are waiting")\nsys.exit(int(os.environ["TURN"]))\n')
+        handle.write('import os, sys\nopen(os.environ["NOTED"] + ".asked", "w").write(" ".join(sys.argv[1:]))\nprint("three are waiting")\nsys.exit(int(os.environ["TURN"]))\n')
     for what, priority, turn, expected in [
         ("it is its turn", "3", "0", (97, True)),
         ("it is not", "3", "4", (98, False)),
         ("the queue cannot be read, as when GitHub refuses: that is no yes", "3", "1", (98, False)),
         ("the same at priority 2", "2", "1", (98, False)),
         ("the look at the queue falls over", "3", "120", (98, False)),
-        ("priority 1 does not ask", "1", "4", (97, True)),
+        ("priority 1 is held back too, by what holds everybody back: a train", "1", "4", (98, False)),
+        ("priority 1: it is its turn", "1", "0", (97, True)),
+        ("priority 1 alone is not held up by what cannot be found out", "1", "1", (97, True)),
+        ("nor by a look that falls over", "1", "120", (97, True)),
     ]:
         done, noted, _ = ran("a.sh", "feat/x", ARBOR_MAC_PRIORITY=priority, TURN=turn, MAC_SHELL_TIMEOUT="0", MAC_SHELL_POLL="0")
         row(f"run.sh: whose turn: {what}", (done.returncode, os.path.exists(noted)), expected)
+    asked = []
+    for priority in "123":
+        _, noted, _ = ran("a.sh", "feat/x", ARBOR_MAC_PRIORITY=priority, TURN="0", MAC_SHELL_TAG="t")
+        with open(noted + ".asked", encoding="utf-8") as handle:
+            asked.append(handle.read().split("--turn ")[1])
+    row("run.sh: whose turn: it says for which branch and under which tag; priority 1 asks only what is known already, which costs no call", asked,
+        ["1 --for feat/x --tag t --known", "2 --for feat/x --tag t", "3 --for feat/x --tag t"])
     # While work goes to main, with a stand-in for public-check.py --rules that ends as told.
     rules = os.path.join(checkout, "scripts", "public-check.py")
     with open(rules, "w", encoding="utf-8") as handle:
