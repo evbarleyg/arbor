@@ -82,6 +82,15 @@ def check_relisting():
     row("a claim that no longer proves the item is taken off", relist({"id": "T02", "e2e": ["c", "b"]}, {"b": True}), ["b"])
     row("an item the suite says nothing about keeps its list", relist({"id": "T03", "e2e": ["x"]}, {}), ["x"])
 
+    with tempfile.NamedTemporaryFile("w", suffix=".txt", encoding="utf-8", delete=False) as handle:
+        handle.write("# 10-edges 2026-10-14T09:11Z on macOS 26.6.2, commit abc1234\n\n▸ a\n  ✔ x\n▸ as it was worded then\n  ✔ y\n\n2 passed, 0 failed\n")
+    gone = suite_parity.struck_out([handle.name], {"a", "dock the first window"})
+    os.unlink(handle.name)
+    row("a claim that a Mac once showed and no script makes any more is struck out", gone, {"as it was worded then"})
+    row("and taken off, whatever the evidence says of it",
+        suite_parity.relist({"id": "T01", "e2e": ["dock the first window", "as it was worded then"]}, proofs, titles | gone,
+                            {"a": True, "b": True, "as it was worded then": True})[0], ["dock the first window", "a", "b"])
+
     with tempfile.NamedTemporaryFile("w", suffix=".sh", encoding="utf-8", delete=False) as handle:
         handle.write('claim "one"\nproves T01 A02\ncheck "x" true\n  claim "two"\n  proves T01\nclaim "three"\ncheck "y" true\n')
     found = suite_parity.claims_in([handle.name])

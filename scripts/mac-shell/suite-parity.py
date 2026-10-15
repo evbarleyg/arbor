@@ -11,7 +11,7 @@ collab/evidence/*-latest.txt. An item ALL of whose claims hold gets them in its 
 `make parity` call it verified. An item one of whose claims failed or has not run gets none of them: it is not
 verified by the ones that hold, and a failed claim in the list would make it broken and `make parity` fail for
 everyone. What is left out, and why, is printed: those are findings. Steps of other runners (arbor-e2e, proof.sh), and
-claims without a `proves` line, stay as they are listed.
+claims without a `proves` line, stay as they are listed. A claim that was reworded or struck out is taken off every list.
 
   scripts/mac-shell/suite-parity.py           rewrite collab/parity.json; then run `make parity`
   scripts/mac-shell/suite-parity.py --check   change nothing; exit code 1 if it is not up to date
@@ -48,6 +48,15 @@ def scripts():
     return sorted(glob.glob(os.path.join(HERE, "suite", "*.sh"))) + [os.path.join(HERE, "lib.sh")]
 
 
+def struck_out(evidence, runnable):
+    """Titles that stand in the suite's own evidence and that no runner can run: claims reworded or struck out since that run. Left in a
+    list they would go on calling an item verified by what nobody claims any more, since what a Mac once showed is still on file."""
+    shown = set()
+    for path in evidence:
+        shown.update(parity.parse_evidence(path)[0])
+    return shown - set(runnable)
+
+
 def relist(item, proofs, titles, steps):
     """Returns (the item's new "e2e" list, why its claims were left out: [(title, reason)])."""
     others = [title for title in item.get("e2e", []) if title not in titles]
@@ -64,6 +73,7 @@ def main():
     data = mergeable.parsed(mergeable.text_in(parity.PARITY))
 
     managed = {title for claims in proofs.values() for title in claims}
+    managed |= struck_out(glob.glob(os.path.join(os.path.dirname(parity.EVIDENCE), "suite-*-latest.txt")), parity.known_steps())
     known, changed, verified = set(), [], 0
     for item in data["features"]:
         known.add(item["id"])
