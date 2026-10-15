@@ -5,7 +5,7 @@ A hosted Mac filmed Arbor at 60 frames a second while a script pressed real keys
 what a PERSON would have seen, frame by frame. You have no stake in Arbor: say what is there, not what should be there.
 The windows are test windows, each one flat colour ("Arbor Test 1" red, 2 blue, 3 green, 4 orange), each an app of its own with an icon in that colour
 and as many white bars as its number.
-**As Arbor ships, windows go to their places AT ONCE: no motion, and nothing stands in for a window** (scenes of kind `instant`, and `drop`: the end of a drag). So you see the real windows going. What matters there is on very few
+**As Arbor ships, windows go to their places AT ONCE: no motion, and nothing stands in for a window** (scenes of kind `instant` and `told`; `drop` and `out`: the end of a drag; `closes`: a window closes, macOS fades it out, and what Arbor does shows beneath the fade). So you see the real windows going. What matters there is on very few
 frames, the first two to eight after the cause: look at EVERY one of them, enlarged if need be. The faults to look for: a window at its new size in its old place (or the other way round); windows arriving one after another; a hole (bare ground where a window is
 both before and after); an empty desk; a window lying for a frame over something that neither its old place nor its new one covers.
 With the OPTION of motion switched on, Arbor covers the display with a "stage" on which each window travels as a stand-in: a card in
@@ -31,6 +31,7 @@ Scenes named `macos-…` show macOS's own tiling of the same windows with Arbor 
    For a scene of kind `drag` or `drop`, two more, in the same form, about the time while the button is down:
    - D3 The drop preview comes and goes softly, once: a fade of some 80 to 250 ms, no blink, no second coming while the pointer rests.
    - D4 Others make room in one motion: windows that are not dragged move once, eased, together, or not at all.
+   In a scene of kind `out` a docked window is dragged out plainly: nothing of Arbor's may show while the button is down; let go, it floats at its own size where it lies, and the others close its place at once.
    In a scene of kind `plain` the person drags a window and asks NOTHING of Arbor: nothing of Arbor's may show while the button is down or after, no other window may stir, and the window stays where it was let go.
    In a scene of kind `aside` macOS itself acts (it tiles the window that was dragged to the screen's edge) and Arbor stands aside. Do not hold macOS's own motion against Arbor. Ask of E1 and E4:
    would somebody who has never seen Arbor understand what happened, whose doing it was, and what to do next to dock the window?

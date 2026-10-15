@@ -13,7 +13,7 @@ second column, *the options*, judged by the same rules and read by no gate. And 
 
 | | |
 |---|---|
-| What Linux proves | that the film scripts play (`scripts/mac-shell/rehearse.sh scripts/mac-shell/films-light.sh scripts/mac-shell/films.sh`) and that the judge catches what it claims to catch (`scripts/polish/judge.py --self-test`: 51 drawn films, each wrong in one known way or right; `scripts/polish/stills.py --self-test`: 30 drawn pictures) |
+| What Linux proves | that the film scripts play (`scripts/mac-shell/rehearse.sh scripts/mac-shell/films-light.sh scripts/mac-shell/films.sh`) and that the judge catches what it claims to catch (`scripts/polish/judge.py --self-test`: 69 drawn films, each wrong in one known way or right; `scripts/polish/stills.py --self-test`: 30 drawn pictures) |
 | What a Mac must run | `scripts/mac-shell/films-light.sh`, what ships: unattended, on a free hosted runner, about ten minutes; for the options `scripts/mac-shell/films.sh`, about a quarter of an hour. They only record |
 | What the sandbox judges afterwards | everything: `scripts/polish/judge.py score <run folder>`, then the sheets, by eye |
 
@@ -67,7 +67,8 @@ frames that show it, into `collab/polish/eyes-run-<n>.json`; *stills* = measured
 ### At once: asked of every act by key, from the menu, or at the end of a drag, as Arbor ships
 
 Arbor ships without motion: windows go to their places at once and nothing stands in for them. So the real windows are seen going: each is another app's, is asked for its place and its size one after the other, and obeys when it gets round to it.
-A **piece** is a frame in which a window comes, goes, or changes its place or size. A line of words that fades in afterwards is no part of the windows' arriving. `judge.py acts <run>` prints all of this for every act, with the window server's own account beside it.
+A **piece** is a frame in which a window comes, goes, or changes its place or size, up to the film's end. A line of words that fades in afterwards is no part of the windows' arriving; nor is a panel of Arbor's that was up when the act began, or
+what lies under a menu that macOS is fading out (the menu's frame is noted, and the judge looks beside it). **An act after which, by Arbor's own account, no window has another frame or state than before, earns nothing**, whatever came and went on the display. `judge.py acts <run>` prints all of this for every act, with the window server's own account beside it.
 
 | # | What | How | Passes when | Severity |
 |---|---|---|---|---|
@@ -77,7 +78,7 @@ A **piece** is a frame in which a window comes, goes, or changes its place or si
 | R2 | **The same end** as with motion (the options only) | the windows' rectangles in the last frame of `reduced-x` against those of `pictures-x`, the session that presses the same keys from the same beginning with motion on | within 1 px | 2 |
 | R3 | **No stage, no fade, no slide** with Reduce Motion (the options only) | Arbor's log has no "stage up"; no followed rectangle has more than two positions | so | 2 |
 
-M1, M8, M9, M11, M13 and S8 are asked here too. **R5 is the second build's mark** (the product owner, 2026-10-15): size and place are two askings, so the state between them must lie within the old frame or the new one; what grows is seen to before what leaves is
+M1, M8, M9, M11, M13 and S8 are asked here too (S8 not in the dark scenes: on a light wallpaper shadows fill the gaps, and no ruler can measure them). **R5 is the second build's mark** (the product owner, 2026-10-15): size and place are two askings, so the state between them must lie within the old frame or the new one; what grows is seen to before what leaves is
 sent away; tiles come at once. R4, none at all, stays the aim: `fill`, `everything` and `back` show that it can be had.
 
 ### Motion, an option: asked of every scene in which Arbor moves windows with `animationDuration` above 0
@@ -183,11 +184,12 @@ light one, where shadows and dark lines show. The keys are asked of Arbor (`bind
 | `menu`, `menu-arrange` | panel, instant | clicks the icon in the menu bar, closes the menu; chooses Arrange Windows with four floating windows | ✔ |
 | `drag-plain` | plain | drags a floating window over a docked one, waits, lets go. Nothing was asked of Arbor | ✔ |
 | `drag-held` | drop | the same with ⌘ held: the preview comes, and letting go docks | ✔ |
-| `drag-out` | drop | drags a docked window out, plainly: it floats at its own size where it was let go, and its place closes | ✔ |
+| `drag-out` | out | drags a docked window out, plainly: nothing of Arbor's shows meanwhile; it floats at its own size where it was let go, and its place closes at once | ✔ |
 | `dock-third`, `dock-fourth`, `dock-fourth-again` | instant | more docks than the display has room for: every window becomes a tile; the same a second time in the session | |
-| `close`, `quit` | instant | closes a docked window; quits Arbor: every window gets its own size back | |
+| `close`, `quit` | closes, told | closes a docked window (macOS fades it out over whatever Arbor does beneath: no ruler can part the two, so R1, R4 and R5 are not asked); quits Arbor: every window gets its own size back (no key says when: M1 is not asked) | |
 | `eight-arrange`, `eight-fill`, `eight-everything` | instant | the same with eight windows on a display of 1920 × 1080 | |
 | `macos-left`, `macos-right`, `macos-fill`, `macos-previous`, `macos-left-and-right` | bare | macOS's own tiling of the same windows, Arbor not running: the bar. Not counted | |
+| `ground`, `dark-ground` | bare | the bare desk, before a session's first window opens: the wallpaper as the display shows it, which the judge cannot tell any more once shadows lie on what is left of it. Not counted | |
 | `metronome-…` | control | the camera's own square: tests the instruments, not counted | |
 
 The panels of the first column: the menu, the drop preview, a tile, Go to…, the heads-up line, the coach, the setup check, the settings window.
