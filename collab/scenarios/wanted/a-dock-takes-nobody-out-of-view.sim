@@ -1,0 +1,41 @@
+# Wanted (board 0.26; the product owner's ruling of 2026-10-15). Fails until it is answered; then it moves up into collab/scenarios.
+# Story: the welcome coach's own first two keys. An editor that will not go under 1188 points goes left, a mail app that will not go under
+# 760 goes right, on a display 1920 wide. Side by side they need 1948 and there are 1896, and halves do not help. macOS alone would let
+# them overlap and hide nothing. So does Arbor: room first, and for what is still missing they overlap. Each keeps its place in
+# the arrangement and stands at its smallest, flush with the outer side of its place; the window the key named lies in front.
+display-size 1920x1080
+open Editor 1300x800 min 1188x685
+open Mail 1000x680 min 760x400
+focus 101
+press dock left
+expect visible 101
+focus 102
+press dock right
+# Nobody has left.
+expect visible 101
+expect visible 102
+expect count docked 2
+# Flush left at its smallest, flush right at its smallest.
+expect at 101 12 37
+expect size 101 1188x1031
+expect at 102 1148 37
+expect size 102 760x1031
+expect in-front 102
+expect focused 102
+expect said Too wide to stand side by side · they overlap
+# Which lies in front later is macOS's business: a click or ⌘Tab brings the editor forward, and moves and sizes nothing.
+focus 101
+expect still
+expect in-front 101
+# One step back: the mail app floats where it was, and the editor has the room.
+undo
+expect floating 102
+expect at 102 300 200
+expect size 102 1000x680
+# It ends by itself when something else gives the room: docked again, then the editor closes.
+redo
+expect at 101 12 37
+expect size 101 1188x1031
+expect at 102 1148 37
+close 101
+expect visible 102
