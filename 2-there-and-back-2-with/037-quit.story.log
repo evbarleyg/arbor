@@ -1,0 +1,18 @@
+37 quit: chooses Quit Arbor in Arbor's menu
+expected: {'act': 'quit-and-start', 'settled': 'quiet:786', 'moves': 'any', 'restores': 'all', 'places': '1', 'everything': '1'}
+FAIL rule 5: textedit (w363) is 165,65 656×422; its own size was 165,65 673×439
+FAIL rule 5: terminal (w366) is 40,51 863×499; its own size was 40,51 877×499
+FAIL rule 5: notes (w369) has its size back but not its place: 300,165 1000×600, it was at 2056,208 1000×600
+
+14:34:35.256 SCREEN -- begin 37 quit
+14:34:35.256 SCREEN -- text 37 chooses Quit Arbor in Arbor's menu
+14:34:36.078 SCREEN w678 of Arbor 1321,31 273×486 (level 101)
+14:34:37.328 SCREEN w678 of Arbor left the screen
+14:34:37.428 INFO  trace day-2 ended: 234 lines, Arbor stopped
+14:34:37.428 INFO  stopped; all windows returned to view
+14:34:37.431 INFO  Arbor quit
+14:34:37.452 SCREEN w410 of Arbor left the screen
+14:34:37.452 SCREEN front to back: preview safari notes calendar textedit w379 mail settings terminal finder
+14:34:37.515 SCREEN -- arbor gone
+14:34:38.496 SCREEN -- end 37 act=quit-and-start settled=quiet:786 moves=any restores=all places=1 everything=1
+14:34:38.786 SCRIPT == 38 input-after

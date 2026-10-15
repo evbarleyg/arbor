@@ -1,0 +1,243 @@
+{
+ "sampler": "samples 2284 seconds 79.8 hz 28.6 cost-ms 5.94 late 24 longest-gap-ms 624 whole-samples 4546 whole-seconds 158.9 whole-late 153",
+ "input": {
+  "events": 2,
+  "p50_us": 2009,
+  "p99_us": 2009,
+  "max_us": 2009,
+  "kinds": {
+   "down": {
+    "events": 1,
+    "p50_us": 2009,
+    "p99_us": 2009,
+    "max_us": 2009
+   },
+   "up": {
+    "events": 1,
+    "p50_us": 660,
+    "p99_us": 660,
+    "max_us": 660
+   }
+  },
+  "rounds": {
+   "before": {
+    "forward": {
+     "events": 8,
+     "p50_us": 61216,
+     "p99_us": 121802,
+     "max_us": 121802
+    },
+    "up": {
+     "events": 8,
+     "p50_us": 1648,
+     "p99_us": 14109,
+     "max_us": 14109
+    }
+   },
+   "after": {
+    "forward": {
+     "events": 8,
+     "p50_us": 55670,
+     "p99_us": 125577,
+     "max_us": 125577
+    },
+    "up": {
+     "events": 8,
+     "p50_us": 558,
+     "p99_us": 33169,
+     "max_us": 33169
+    }
+   }
+  },
+  "judged": [],
+  "silent": {
+   "down": "fewer than 10 such events in a round without Arbor",
+   "forward": "fewer than 10 such events in a round without Arbor",
+   "up": "fewer than 10 such events in a round without Arbor",
+   "key": "fewer than 10 such events in a round without Arbor",
+   "dragged": "fewer than 10 such events in a round without Arbor",
+   "scroll": "fewer than 10 such events in a round without Arbor"
+  }
+ },
+ "stage_seen": false,
+ "witnessed": true,
+ "steps": [
+  {
+   "number": 13,
+   "slug": "input-before",
+   "chapter": "Before Arbor: the apps are open already",
+   "text": "a round of input: presses on windows behind and in front, keys, a scroll, a drag inside a window",
+   "act": "instrument",
+   "judged": false,
+   "performed": true,
+   "began": 1792074593942,
+   "milliseconds": 12589,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 14,
+   "slug": "display-plug",
+   "chapter": "The walk",
+   "text": "the second display: plug",
+   "act": "display-change",
+   "judged": false,
+   "performed": true,
+   "began": 1792074606889,
+   "milliseconds": 6866,
+   "moved": {
+    "45": [
+     1,
+     1,
+     0
+    ],
+    "54": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 15,
+   "slug": "dock-icon-notes",
+   "chapter": "The walk",
+   "text": "clicks notes's icon in the Dock",
+   "act": "switch",
+   "judged": false,
+   "performed": true,
+   "began": 1792074614567,
+   "milliseconds": 2673,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 16,
+   "slug": "carry-notes-across",
+   "chapter": "The walk",
+   "text": "drags notes, which floats, by its title bar onto the other display and lets go",
+   "act": "drag",
+   "judged": false,
+   "performed": false,
+   "began": 1792074618669,
+   "milliseconds": 5047,
+   "moved": {},
+   "findings": [
+    {
+     "rule": "-",
+     "detector": "script",
+     "level": "ODD",
+     "window": null,
+     "what": "the act was not performed: drag_window could not be done",
+     "trace": null,
+     "explained": "not performed, so not judged"
+    }
+   ]
+  },
+  {
+   "number": 17,
+   "slug": "display-unplug",
+   "chapter": "The walk",
+   "text": "the second display: unplug",
+   "act": "display-change",
+   "judged": false,
+   "performed": true,
+   "began": 1792074625834,
+   "milliseconds": 3130,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 18,
+   "slug": "display-plug",
+   "chapter": "The walk",
+   "text": "the second display: plug",
+   "act": "display-change",
+   "judged": false,
+   "performed": true,
+   "began": 1792074629357,
+   "milliseconds": 6294,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 19,
+   "slug": "display-unplug",
+   "chapter": "The walk",
+   "text": "the second display: unplug",
+   "act": "display-change",
+   "judged": false,
+   "performed": true,
+   "began": 1792074636108,
+   "milliseconds": 3021,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 20,
+   "slug": "display-plug",
+   "chapter": "The walk",
+   "text": "the second display: plug",
+   "act": "display-change",
+   "judged": false,
+   "performed": true,
+   "began": 1792074639470,
+   "milliseconds": 6326,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 21,
+   "slug": "display-unplug",
+   "chapter": "The walk",
+   "text": "the second display: unplug",
+   "act": "display-change",
+   "judged": false,
+   "performed": true,
+   "began": 1792074646650,
+   "milliseconds": 3044,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 22,
+   "slug": "display-plug",
+   "chapter": "The walk",
+   "text": "the second display: plug",
+   "act": "display-change",
+   "judged": false,
+   "performed": true,
+   "began": 1792074650009,
+   "milliseconds": 6420,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 23,
+   "slug": "display-unplug",
+   "chapter": "The walk",
+   "text": "the second display: unplug",
+   "act": "display-change",
+   "judged": false,
+   "performed": true,
+   "began": 1792074657017,
+   "milliseconds": 3099,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 24,
+   "slug": "input-after",
+   "chapter": "The walk",
+   "text": "a round of input: presses on windows behind and in front, keys, a scroll, a drag inside a window",
+   "act": "instrument",
+   "judged": true,
+   "performed": true,
+   "began": 1792074660527,
+   "milliseconds": 12599,
+   "moved": {},
+   "findings": []
+  }
+ ]
+}

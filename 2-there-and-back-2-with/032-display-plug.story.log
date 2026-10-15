@@ -1,0 +1,17 @@
+32 display-plug: the second display: plug
+expected: {'act': 'display-change', 'settled': 'quiet:373', 'moves': 'any', 'leaves': 'any', 'floating': '349,352,363,366,369,370,371,375,377', 'docked': ''}
+FAIL rule 3: notes (w369) moved 2 times
+
+14:34:09.749 SCREEN -- begin 32 display-plug
+14:34:09.749 SCREEN -- text 32 the second display: plug
+14:34:09.811 SCREEN notes (w369) 2060,264 1000×600
+14:34:10.215 SCREEN (nothing was seen for 404 ms)
+14:34:10.215 SCREEN notes (w369) 2056,208 1000×600
+14:34:10.378 MACOS pid 17523 AXMoved w369 AXWindow/AXStandardWindow 2056 208 1000 600
+14:34:10.421 SCREEN (nothing was seen for 206 ms)
+14:34:12.126 INFO  displays changed: 2 display(s), 0 remembered
+14:34:12.133 DEBUG w369 has the keyboard
+14:34:12.205 DEBUG got ready the stage of F2C1F942-9B91-4AB3-9761-3E51A5277AB2 in 27 ms, the desktop 5 of them
+14:34:15.527 SCREEN (nothing was seen for 366 ms)
+14:34:16.458 SCREEN -- end 32 act=display-change settled=quiet:373 moves=any leaves=any floating=349,352,363,366,369,370,371,375,377 docked=
+14:34:17.042 SCRIPT == 33 view-home

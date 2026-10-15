@@ -1,0 +1,59 @@
+21 carry-notes-across: drags notes, which floats, by its title bar onto the other display and lets go
+expected: {'act': 'drag', 'settled': 'quiet:1172', 'drags': '369', 'front': '369', 'own': '369', 'floating': '349,352,363,366,369,370,371,375,377', 'docked': ''}
+FAIL rule 3: notes (w369) moved 59 points further than the pointer did, 2810 ms into the step
+
+14:33:31.744 SCREEN -- begin 21 carry-notes-across
+14:33:31.744 SCREEN -- text 21 drags notes, which floats, by its title bar onto the other display and lets go
+14:33:31.924 SCRIPT drag w369 from 804,177 to 2560,220
+14:33:32.715 SCREEN the button is down 804 177
+14:33:32.721 DEBUG the button went down at 804,177, the pointer is at 804,177: it is on w369
+14:33:32.862 DEBUG w369 is being dragged
+14:33:32.866 SCREEN notes (w369) 358,166 1000×600
+14:33:32.873 DEBUG drag of w369: on float
+14:33:32.937 SCREEN notes (w369) 417,167 1000×600
+14:33:32.976 MACOS pid 17523 AXMoved w369 AXWindow/AXStandardWindow 417 167 1000 600
+14:33:32.995 SCREEN notes (w369) 475,169 1000×600
+14:33:33.063 SCREEN notes (w369) 534,170 1000×600
+14:33:33.085 MACOS pid 17523 AXMoved w369 AXWindow/AXStandardWindow 534 170 1000 600
+14:33:33.134 SCREEN notes (w369) 592,172 1000×600
+14:33:33.270 SCREEN notes (w369) 651,173 1000×600
+14:33:33.306 MACOS pid 17523 AXMoved w369 AXWindow/AXStandardWindow 651 173 1000 600
+14:33:33.325 SCREEN notes (w369) 709,175 1000×600
+14:33:33.464 SCREEN notes (w369) 768,176 1000×600
+14:33:33.523 MACOS pid 17523 AXMoved w369 AXWindow/AXStandardWindow 709 175 1000 600
+14:33:33.526 SCREEN notes (w369) 826,177 1000×600
+14:33:33.628 SCREEN notes (w369) 943,180 1000×600
+14:33:33.673 MACOS pid 17523 AXMoved w369 AXWindow/AXStandardWindow 885 179 1000 600
+14:33:33.742 SCREEN notes (w369) 1002,182 1000×600
+14:33:33.819 MACOS pid 17523 AXMoved w369 AXWindow/AXStandardWindow 1002 182 1000 600
+14:33:33.820 SCREEN notes (w369) 1060,183 1000×600
+14:33:33.843 DEBUG drag of w369: on float
+14:33:33.844 SCREEN notes (w369) 1119,185 1000×600
+14:33:33.911 SCREEN notes (w369) 1236,187 1000×600
+14:33:33.979 SCREEN notes (w369) 1295,189 1000×600
+14:33:34.048 SCREEN notes (w369) 1353,190 1000×600
+14:33:34.121 SCREEN notes (w369) 1412,192 1000×600
+14:33:34.125 MACOS pid 17523 AXMoved w369 AXWindow/AXStandardWindow 1353 190 1000 600
+14:33:34.126 MACOS pid 17523 AXMoved w369 AXWindow/AXStandardWindow 1353 190 1000 600
+14:33:34.176 MACOS pid 17523 AXMoved w369 AXWindow/AXStandardWindow 1412 192 1000 600
+14:33:34.208 SCREEN notes (w369) 1529,195 1000×600
+14:33:34.450 SCREEN (nothing was seen for 241 ms)
+14:33:34.450 SCREEN notes (w369) 1587,196 1000×600
+14:33:34.474 MACOS pid 17523 AXMoved w369 AXWindow/AXStandardWindow 1529 195 1000 600
+14:33:34.554 SCREEN (nothing was seen for 103 ms)
+14:33:34.554 SCREEN notes (w369) 1763,200 1000×600
+14:33:34.594 SCREEN notes (w369) 1821,202 1000×600
+14:33:34.632 SCREEN notes (w369) 1880,203 1000×600
+14:33:34.668 MACOS pid 17523 AXMoved w369 AXWindow/AXStandardWindow 1880 203 1000 600
+14:33:34.745 SCREEN notes (w369) 1997,206 1000×600
+14:33:34.808 MACOS pid 17523 AXMoved w369 AXWindow/AXStandardWindow 2056 208 1000 600
+14:33:34.812 SCREEN notes (w369) 2056,208 1000×600
+14:33:35.019 SCREEN notes (w369) 2057,208 1000×600
+14:33:35.095 MACOS pid 17523 AXMoved w369 AXWindow/AXStandardWindow 2057 208 1000 600
+14:33:35.696 SCREEN notes (w369) 2056,208 1000×600
+14:33:35.868 SCREEN (nothing was seen for 166 ms)
+14:33:35.868 SCREEN the button is up 2560 220
+14:33:35.874 MACOS pid 17523 AXMoved w369 AXWindow/AXStandardWindow 2056 208 1000 600
+14:33:35.880 INFO  dropped w369 on float, display F2C1F942-9B91-4AB3-9761-3E51A5277AB2
+14:33:37.229 SCREEN -- end 21 act=drag settled=quiet:1172 drags=369 front=369 own=369 floating=349,352,363,366,369,370,371,375,377 docked=
+14:33:38.216 SCRIPT == 22 display-unplug

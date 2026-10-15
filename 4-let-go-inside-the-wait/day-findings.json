@@ -1,0 +1,476 @@
+{
+ "sampler": "samples 5299 seconds 138.5 hz 38.3 cost-ms 2.44 late 12 longest-gap-ms 395 whole-samples 7774 whole-seconds 203.2 whole-late 32",
+ "input": {
+  "events": 5,
+  "p50_us": 468,
+  "p99_us": 2456,
+  "max_us": 2456,
+  "kinds": {
+   "key": {
+    "events": 5,
+    "p50_us": 468,
+    "p99_us": 2456,
+    "max_us": 2456
+   }
+  },
+  "rounds": {
+   "before": {
+    "forward": {
+     "events": 8,
+     "p50_us": 39786,
+     "p99_us": 120862,
+     "max_us": 120862
+    },
+    "up": {
+     "events": 8,
+     "p50_us": 1906,
+     "p99_us": 28296,
+     "max_us": 28296
+    }
+   },
+   "started": {
+    "forward": {
+     "events": 8,
+     "p50_us": 34720,
+     "p99_us": 72547,
+     "max_us": 72547
+    },
+    "up": {
+     "events": 8,
+     "p50_us": 2992,
+     "p99_us": 10003,
+     "max_us": 10003
+    }
+   },
+   "last": {
+    "forward": {
+     "events": 8,
+     "p50_us": 32840,
+     "p99_us": 63020,
+     "max_us": 63020
+    },
+    "up": {
+     "events": 8,
+     "p50_us": 1251,
+     "p99_us": 5584,
+     "max_us": 5584
+    }
+   },
+   "after": {
+    "forward": {
+     "events": 8,
+     "p50_us": 24512,
+     "p99_us": 47571,
+     "max_us": 47571
+    },
+    "up": {
+     "events": 8,
+     "p50_us": 899,
+     "p99_us": 5564,
+     "max_us": 5564
+    }
+   }
+  },
+  "judged": [],
+  "silent": {
+   "down": "fewer than 10 such events in a round without Arbor",
+   "forward": "fewer than 10 such events in a round without Arbor",
+   "up": "fewer than 10 such events in a round without Arbor",
+   "key": "fewer than 10 such events in a round without Arbor",
+   "dragged": "fewer than 10 such events in a round without Arbor",
+   "scroll": "fewer than 10 such events in a round without Arbor"
+  }
+ },
+ "stage_seen": false,
+ "witnessed": true,
+ "steps": [
+  {
+   "number": 15,
+   "slug": "input-before",
+   "chapter": "Before Arbor: the apps are open already",
+   "text": "a round of input: presses on windows behind and in front, keys, a scroll, a drag inside a window",
+   "act": "instrument",
+   "judged": true,
+   "performed": true,
+   "began": 1792075124758,
+   "milliseconds": 11153,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 16,
+   "slug": "launch",
+   "chapter": "The walk",
+   "text": "starts Arbor",
+   "act": "quit-and-start",
+   "judged": true,
+   "performed": true,
+   "began": 1792075136203,
+   "milliseconds": 2168,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 17,
+   "slug": "input-started",
+   "chapter": "The walk",
+   "text": "a round of input: presses on windows behind and in front, keys, a scroll, a drag inside a window",
+   "act": "instrument",
+   "judged": true,
+   "performed": true,
+   "began": 1792075138788,
+   "milliseconds": 11670,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 18,
+   "slug": "display-plug-and-quit",
+   "chapter": "The walk",
+   "text": "the second display: plug, and within the second Arbor is told: quit",
+   "act": "display-change",
+   "judged": false,
+   "performed": true,
+   "began": 1792075150897,
+   "milliseconds": 6707,
+   "moved": {
+    "1018": [
+     1,
+     1,
+     0
+    ],
+    "1021": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 19,
+   "slug": "launch",
+   "chapter": "The walk",
+   "text": "starts Arbor",
+   "act": "quit-and-start",
+   "judged": true,
+   "performed": true,
+   "began": 1792075157960,
+   "milliseconds": 1176,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 20,
+   "slug": "display-unplug-and-quit",
+   "chapter": "The walk",
+   "text": "the second display: unplug, and within the second Arbor is told: quit",
+   "act": "display-change",
+   "judged": true,
+   "performed": true,
+   "began": 1792075164515,
+   "milliseconds": 2983,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 21,
+   "slug": "launch",
+   "chapter": "The walk",
+   "text": "starts Arbor",
+   "act": "quit-and-start",
+   "judged": true,
+   "performed": true,
+   "began": 1792075167769,
+   "milliseconds": 920,
+   "moved": {},
+   "findings": [
+    {
+     "rule": "-",
+     "detector": "busy",
+     "level": "FAIL",
+     "window": null,
+     "what": "with nothing to do Arbor used 1.2 % of a core",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 22,
+   "slug": "display-plug-and-pause",
+   "chapter": "The walk",
+   "text": "the second display: plug, and within the second Arbor is told: pause",
+   "act": "display-change",
+   "judged": true,
+   "performed": true,
+   "began": 1792075174056,
+   "milliseconds": 6040,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 23,
+   "slug": "resume",
+   "chapter": "The walk",
+   "text": "presses ⌃⌥⎋",
+   "act": "way-out",
+   "judged": true,
+   "performed": true,
+   "began": 1792075180457,
+   "milliseconds": 1305,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 24,
+   "slug": "display-unplug-and-pause",
+   "chapter": "The walk",
+   "text": "the second display: unplug, and within the second Arbor is told: pause",
+   "act": "display-change",
+   "judged": false,
+   "performed": true,
+   "began": 1792075187230,
+   "milliseconds": 2928,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 25,
+   "slug": "resume",
+   "chapter": "The walk",
+   "text": "presses ⌃⌥⎋",
+   "act": "way-out",
+   "judged": true,
+   "performed": true,
+   "began": 1792075190478,
+   "milliseconds": 1401,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 26,
+   "slug": "display-plug-and-pause",
+   "chapter": "The walk",
+   "text": "the second display: plug, and within the second Arbor is told: pause",
+   "act": "display-change",
+   "judged": true,
+   "performed": true,
+   "began": 1792075197238,
+   "milliseconds": 6152,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 27,
+   "slug": "resume",
+   "chapter": "The walk",
+   "text": "presses ⌃⌥⎋",
+   "act": "way-out",
+   "judged": true,
+   "performed": true,
+   "began": 1792075203770,
+   "milliseconds": 1355,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 28,
+   "slug": "display-unplug-and-quit",
+   "chapter": "The walk",
+   "text": "the second display: unplug, and within the second Arbor is told: quit",
+   "act": "display-change",
+   "judged": true,
+   "performed": true,
+   "began": 1792075210511,
+   "milliseconds": 2933,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 29,
+   "slug": "launch",
+   "chapter": "The walk",
+   "text": "starts Arbor",
+   "act": "quit-and-start",
+   "judged": true,
+   "performed": true,
+   "began": 1792075213731,
+   "milliseconds": 1019,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 30,
+   "slug": "input-last",
+   "chapter": "The end",
+   "text": "a round of input: presses on windows behind and in front, keys, a scroll, a drag inside a window",
+   "act": "instrument",
+   "judged": true,
+   "performed": true,
+   "began": 1792075220166,
+   "milliseconds": 10211,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 31,
+   "slug": "quit",
+   "chapter": "The end",
+   "text": "chooses Quit Arbor in Arbor's menu",
+   "act": "quit-and-start",
+   "judged": true,
+   "performed": true,
+   "began": 1792075230698,
+   "milliseconds": 2806,
+   "moved": {},
+   "findings": [
+    {
+     "rule": "5",
+     "detector": "size-lost",
+     "level": "FAIL",
+     "window": "textedit (w1018)",
+     "what": "is 165,65 656×422; its own size was 165,65 673×439",
+     "trace": null
+    },
+    {
+     "rule": "5",
+     "detector": "size-lost",
+     "level": "FAIL",
+     "window": "terminal (w1021)",
+     "what": "is 40,51 863×499; its own size was 40,51 877×499",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 32,
+   "slug": "input-after",
+   "chapter": "The end",
+   "text": "a round of input: presses on windows behind and in front, keys, a scroll, a drag inside a window",
+   "act": "instrument",
+   "judged": true,
+   "performed": true,
+   "began": 1792075233721,
+   "milliseconds": 9856,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 33,
+   "slug": "dock-icon-finder",
+   "chapter": "The end",
+   "text": "clicks finder's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792075243841,
+   "milliseconds": 1834,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 34,
+   "slug": "dock-icon-safari",
+   "chapter": "The end",
+   "text": "clicks safari's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792075246023,
+   "milliseconds": 1895,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 35,
+   "slug": "dock-icon-textedit",
+   "chapter": "The end",
+   "text": "clicks textedit's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792075248139,
+   "milliseconds": 1837,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 36,
+   "slug": "dock-icon-terminal",
+   "chapter": "The end",
+   "text": "clicks terminal's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792075250184,
+   "milliseconds": 1812,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 37,
+   "slug": "dock-icon-notes",
+   "chapter": "The end",
+   "text": "clicks notes's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792075252202,
+   "milliseconds": 1887,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 38,
+   "slug": "dock-icon-calendar",
+   "chapter": "The end",
+   "text": "clicks calendar's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792075254305,
+   "milliseconds": 1853,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 39,
+   "slug": "dock-icon-settings",
+   "chapter": "The end",
+   "text": "clicks settings's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792075256443,
+   "milliseconds": 2077,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 40,
+   "slug": "dock-icon-preview",
+   "chapter": "The end",
+   "text": "clicks preview's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792075258830,
+   "milliseconds": 1725,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 41,
+   "slug": "dock-icon-mail",
+   "chapter": "The end",
+   "text": "clicks mail's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792075260779,
+   "milliseconds": 1955,
+   "moved": {},
+   "findings": []
+  }
+ ]
+}

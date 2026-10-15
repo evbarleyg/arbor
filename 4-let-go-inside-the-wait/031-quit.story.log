@@ -1,0 +1,15 @@
+31 quit: chooses Quit Arbor in Arbor's menu
+expected: {'act': 'quit-and-start', 'settled': 'quiet:353', 'moves': 'any', 'restores': 'all', 'places': '1', 'everything': '1'}
+FAIL rule 5: textedit (w1018) is 165,65 656×422; its own size was 165,65 673×439
+FAIL rule 5: terminal (w1021) is 40,51 863×499; its own size was 40,51 877×499
+
+14:40:30.698 SCREEN -- begin 31 quit
+14:40:30.698 SCREEN -- text 31 chooses Quit Arbor in Arbor's menu
+14:40:31.557 SCREEN w1273 of Arbor 1321,31 273×486 (level 101)
+14:40:32.839 SCREEN w1273 of Arbor left the screen
+14:40:32.925 INFO  trace day-8 ended: 235 lines, Arbor stopped
+14:40:32.925 INFO  stopped; all windows returned to view
+14:40:32.926 INFO  Arbor quit
+14:40:33.047 SCREEN -- arbor gone
+14:40:33.504 SCREEN -- end 31 act=quit-and-start settled=quiet:353 moves=any restores=all places=1 everything=1
+14:40:33.719 SCRIPT == 32 input-after

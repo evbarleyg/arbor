@@ -1,0 +1,13 @@
+22 display-plug: the second display: plug
+expected: {'act': 'display-change', 'settled': 'quiet:353', 'moves': 'any', 'leaves': 'any'}
+FAIL rule 3: notes (w720) moved 2 times
+
+14:37:02.672 SCREEN -- begin 22 display-plug
+14:37:02.672 SCREEN -- text 22 the second display: plug
+14:37:02.706 SCREEN notes (w720) 2060,264 1000×600
+14:37:03.004 SCREEN (nothing was seen for 298 ms)
+14:37:03.004 SCREEN notes (w720) 2056,208 1000×600
+14:37:03.164 MACOS pid 31478 AXMoved w720 AXWindow/AXStandardWindow 2056 208 1000 600
+14:37:03.167 SCREEN (nothing was seen for 163 ms)
+14:37:08.968 SCREEN -- end 22 act=display-change settled=quiet:353 moves=any leaves=any
+14:37:09.290 SCRIPT == 23 display-unplug

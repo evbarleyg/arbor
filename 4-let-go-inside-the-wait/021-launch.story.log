@@ -1,0 +1,32 @@
+21 launch: starts Arbor
+expected: {'act': 'quit-and-start', 'settled': 'quiet:365', 'moves': ',,', 'everything': '1', 'floating': '1004,1007,1018,1021,1022,1025,1026,1030,1031', 'docked': ''}
+FAIL rule -: with nothing to do Arbor used 1.2 % of a core
+
+14:39:27.769 SCREEN -- begin 21 launch
+14:39:27.769 SCREEN -- text 21 starts Arbor
+14:39:27.882 INFO  Arbor dev starting, pid 45030, home /tmp/arbor-shell.x7m64x/home
+14:39:27.882 INFO  opened by a hand, as far as macOS says
+14:39:27.883 INFO  control socket at /tmp/arbor-shell.x7m64x/home/arbor.sock
+14:39:27.887 INFO  keyboard layout: U.S.
+14:39:27.898 INFO  registered 9 shortcuts in 2361 µs
+14:39:27.946 INFO  the menu bar item is up
+14:39:28.023 INFO  started: 1 display(s), 9 managed window(s)
+14:39:28.026 DEBUG w1030 has the keyboard
+14:39:28.040 ERROR setup: Desktop & Dock settings: as they stand, macOS reacts to the same clicks and drags as Arbor. `fix-setup` keeps them off for you while Arbor runs (and `fix-setup undo` ends that), or do it in System Settings → Desktop & Dock: | “Drag windows to left or right edge of screen to tile”: switch it off | “Drag windows to menu bar to fill screen”: switch it off | “Hold ⌥ key while dragging windows to tile”: switch it off | “Click wallpaper to reveal desktop” is on: a click on the wallpaper sweeps the windows aside, and the next one brings them back where they were. “Only in Stage Manager” switches that off
+14:39:28.085 DEBUG got ready the stage of 07230EFA-7A8D-4E37-845C-19CC8737EEF5 in 17 ms, the desktop 4 of them
+14:39:28.122 DEBUG got ready the costume of com.apple.finder in 22 ms
+14:39:28.124 DEBUG got ready the costume of com.apple.Safari in 2 ms
+14:39:28.135 DEBUG got ready the costume of com.apple.TextEdit in 4 ms
+14:39:28.151 DEBUG got ready the costume of com.apple.Terminal in 4 ms
+14:39:28.162 DEBUG got ready the costume of com.apple.Notes in 3 ms
+14:39:28.174 DEBUG got ready the costume of com.apple.iCal in 4 ms
+14:39:28.186 INFO  trace let-go-inside-the-wait-3-03: recording to /tmp/arbor-shell.x7m64x/home/traces/2026-10-15-143928-let-go-inside-the-wait-3-03.jsonl
+14:39:28.187 DEBUG got ready the costume of com.apple.systempreferences in 3 ms
+14:39:28.188 SCREEN -- arbor 45030
+14:39:28.198 INFO  trace let-go-inside-the-wait-3-03 ended: 4 lines, trace off
+14:39:28.200 DEBUG got ready the costume of com.apple.Preview in 4 ms
+14:39:28.214 INFO  trace day-3: recording to /tmp/arbor-shell.x7m64x/home/traces/2026-10-15-143928-day-3.jsonl
+14:39:28.215 DEBUG got ready the costume of com.apple.mail in 4 ms
+14:39:28.689 SCREEN -- end 21 act=quit-and-start settled=quiet:365 moves=,, everything=1 floating=1004,1007,1018,1021,1022,1025,1026,1030,1031 docked=
+14:39:33.996 SCREEN -- finding 21 -:busy FAIL with nothing to do Arbor used 1.2 % of a core
+14:39:34.045 SCRIPT == 22 display-plug-and-pause

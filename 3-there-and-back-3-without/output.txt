@@ -1,0 +1,234 @@
+# mac-shell: scripts/mac-shell/there-and-back-3-without.sh at acf38b7, macOS 26.6.2, 2026-10-15T14:35Z
+
+== the Mac
+macOS 26.6.2 (25G83) on arm64
+built the tools in 7s
+1600 900 1600 900
+display: 1 0 0 1600 900 1600 900 1
+macOS's own window management, as it comes:
+com.apple.WindowManager EnableTilingByEdgeDrag: not set
+com.apple.WindowManager EnableTopTilingByEdgeDrag: not set
+com.apple.WindowManager EnableTilingOptionAccelerator: not set
+com.apple.WindowManager EnableTiledWindowMargins: not set
+com.apple.WindowManager EnableStandardClickToShowDesktop: not set
+Reduce Motion: false
+the sampler writes mac-shell/samples.log (pid 30473), the witness mac-shell/witness.log (pid 30488)
+
+== Before Arbor: the apps are open already
+
+-- 1 open-finder: opens finder
+> open -g -b com.apple.finder /tmp/arbor-apps.PUeUGw/scratch/told/…-grove
+pid 29313 lists (id role subrole x y w h flags):
+  702 AXWindow AXStandardWindow 340 120 920 436 main,toolbar
+  0 AXScrollArea - 0 0 1600 900 fixed-size,fixed-position,no-close,no-minimize,no-zoom
+  w702 is finder
+  (quiet:951 ms) setup=1
+
+-- 2 open-safari: opens safari
+> open -g -b com.apple.Safari /tmp/arbor-apps.PUeUGw/scratch/told/…-page.html
+pid 30688 lists (id role subrole x y w h flags):
+  705 AXWindow AXStandardWindow 138 31 1324 791 main,toolbar
+  w705 is safari
+  (quiet:357 ms) setup=1
+
+-- 3 open-textedit: opens textedit
+> open -g -b com.apple.TextEdit /tmp/arbor-apps.PUeUGw/scratch/told/…-oak.txt
+pid 30820 lists (id role subrole x y w h flags):
+  716 AXWindow AXStandardWindow 165 65 673 439 main
+  w716 is textedit
+  (quiet:1358 ms) setup=1
+
+-- 4 open-terminal: opens terminal
+> open -g -b com.apple.Terminal 
+pid 31133 lists (id role subrole x y w h flags):
+  719 AXWindow AXStandardWindow 40 51 877 499 main
+  w719 is terminal
+  (quiet:1173 ms) setup=1
+
+-- 5 open-notes: opens notes
+> open -g -b com.apple.Notes 
+pid 31478 lists (id role subrole x y w h flags):
+  720 AXWindow AXStandardWindow 300 165 1000 600 main,toolbar
+  w720 is notes
+  (quiet:1005 ms) setup=1
+
+-- 6 open-calendar: opens calendar
+> open -g -b com.apple.iCal 
+pid 31578 lists (id role subrole x y w h flags):
+  723 AXWindow AXStandardWindow 403 115 937 600 main,toolbar
+  w723 is calendar
+  (quiet:968 ms) setup=1
+
+-- 7 open-settings: opens settings
+> open -g -b com.apple.systempreferences 
+pid 31633 lists (id role subrole x y w h flags):
+  724 AXWindow AXStandardWindow 437 85 723 625 main,toolbar
+  w724 is settings
+  (quiet:700 ms) setup=1
+
+-- 8 open-preview: opens preview
+> open -g -b com.apple.Preview /tmp/arbor-apps.PUeUGw/scratch/told/…-leaf.png
+pid 31698 lists (id role subrole x y w h flags):
+  728 AXWindow AXStandardWindow 4 35 708 424 main,toolbar
+  w728 is preview
+  (quiet:1026 ms) setup=1
+
+-- 9 open-mail: opens mail
+> open -g -b com.apple.mail 
+pid 32015 lists (id role subrole x y w h flags):
+  729 AXWindow AXStandardWindow 240 72 1120 630 main,close-disabled,sheets=1,toolbar
+  w729 is mail
+  (quiet:740 ms) setup=1
+the cast: finder safari textedit terminal notes calendar settings preview mail
+
+-- 10 tiling-acts: without Arbor: drags a window by its title bar against the menu bar and lets go
+> click 635 854
+> move 635 654
+> drag 739 127 800 0 --no-release
+> release
+  (quiet:1382 ms) setup=1
+
+-- 11 tiling-acts-back: drags it away again, a hand's breadth down
+> drag 672 43 800 130 --no-release
+> release
+  (quiet:1070 ms) setup=1
+macOS's tiling was seen to act: true
+  ✔ macOS's own tiling acts
+
+-- 12 look-around: looks at the screen
+  (quiet:386 ms) setup=1 own=all
+
+-- 13 input-before: a round of input: presses on windows behind and in front, keys, a scroll, a drag inside a window
+> click 1076 43
+> click 102 47
+> click 1076 43
+> click 102 47
+> click 1076 43
+> click 102 47
+> click 1076 43
+> click 102 47
+  8 presses on windows behind; textedit shows no free point of its title bar, so that is all
+  (quiet:679 ms) round=before posted=press:8,up:8
+
+== The walk
+
+-- 14 display-plug: the second display: plug
+> display_add 1920 1080: display 10, F2C1F942-9B91-4AB3-9761-3E51A5277AB2
+> display_move right: now at 1600 0 1920 1080
+  (quiet:405 ms) moves=any leaves=any
+
+-- left out: view home: Arbor is not acting
+
+-- 15 dock-icon-notes: clicks notes's icon in the Dock
+> click 803 854
+> move 803 654
+  (quiet:418 ms) front=720
+
+-- 16 carry-notes-across: drags notes, which floats, by its title bar onto the other display and lets go
+> drag 804 177 2560 220 --no-release
+> release
+  (quiet:1047 ms) drags=720 front=720 own=720 first=1
+
+-- 17 display-unplug: the second display: unplug
+> display_remove
+  (quiet:357 ms) moves=any leaves=any
+
+-- left out: view home: Arbor is not acting
+
+-- 18 display-plug: the second display: plug
+> display_add 1920 1080: display 11, F2C1F942-9B91-4AB3-9761-3E51A5277AB2
+> display_move right: now at 1600 0 1920 1080
+  (quiet:412 ms) moves=any leaves=any
+
+-- left out: view home: Arbor is not acting
+
+-- 19 display-unplug: the second display: unplug
+> display_remove
+  (quiet:359 ms) moves=any leaves=any
+
+-- left out: view home: Arbor is not acting
+
+-- 20 display-plug: the second display: plug
+> display_add 1920 1080: display 12, F2C1F942-9B91-4AB3-9761-3E51A5277AB2
+> display_move right: now at 1600 0 1920 1080
+  (quiet:361 ms) moves=any leaves=any
+
+-- left out: view home: Arbor is not acting
+
+-- 21 display-unplug: the second display: unplug
+> display_remove
+  (quiet:374 ms) moves=any leaves=any
+
+-- left out: view home: Arbor is not acting
+
+-- 22 display-plug: the second display: plug
+> display_add 1920 1080: display 13, F2C1F942-9B91-4AB3-9761-3E51A5277AB2
+> display_move right: now at 1600 0 1920 1080
+  (quiet:353 ms) moves=any leaves=any
+
+-- left out: view home: Arbor is not acting
+
+-- 23 display-unplug: the second display: unplug
+> display_remove
+  (quiet:391 ms) moves=any leaves=any
+
+-- left out: view home: Arbor is not acting
+
+-- 24 input-after: a round of input: presses on windows behind and in front, keys, a scroll, a drag inside a window
+> click 1076 43
+> click 102 47
+> click 1076 43
+> click 102 47
+> click 1076 43
+> click 102 47
+> click 1076 43
+> click 102 47
+  8 presses on windows behind; textedit shows no free point of its title bar, so that is all
+  (quiet:633 ms) round=after posted=press:8,up:8
+
+10 acts, 8 left out because they did not apply
+
+== the report (all of it: mac-shell/day-report.md)
+24 steps in 116 s, 5 of them judged, 6 with a rule broken. The sampler: samples 2540 seconds 70.5 hz 36.0 cost-ms 3.97 late 13 longest-gap-ms 685 whole-samples 4220 whole-seconds 117.1 whole-late 33.
+Input: 37 presses, releases, keys and scrolls reached the apps, half of them within 597 µs, 99 in 100 within 3700 µs, the latest after 3700 µs.
+By kind, listed only (events, half within, 99 in 100 within, µs): down 2, 2274, 2274; dragged 33, 597, 3700; up 2, 1629, 1629. `forward`: a press on a window of an app that was not in front.
+The round of input `before` (events, half within µs): forward 8, 39954; up 8, 959.
+The round of input `after` (events, half within µs): forward 8, 34361; up 8, 1428.
+Judged: no kind. Not down: fewer than 10 such events in a round without Arbor. Not forward: fewer than 10 such events in a round without Arbor. Not up: fewer than 10 such events in a round without Arbor. Not key: fewer than 10 such events in a round without Arbor. Not dragged: fewer than 10 such events in a round without Arbor. Not scroll: fewer than 10 such events in a round without Arbor.
+
+## Per rule
+
+| Rule | | Steps that checked it | Steps that broke it | Which |
+|---|---|---|---|---|
+| 1 | never fight macOS: where it answers a drag, Arbor stands aside | 1 | 0 |  |
+| 2 | nothing moves that the person did not move | 4 | 0 |  |
+| 3 | no jolts: a window moves once, to where it ends up | 12 | 6 | 17 display-unplug, 18 display-plug, 19 display-unplug, 20 display-plug, 21 display-unplug, 22 display-plug |
+| 4 | the window you switch to comes to the front and into view | 2 | 0 |  |
+| 5 | quitting, Float All and pause give windows their own sizes back | 0 | 0 |  |
+| 6 | what a person presses reaches the apps, at once | 4 | 0 |  |
+| L | no window is lost or stuck | 12 | 0 |  |
+| - | what the script itself checked | 12 | 0 |  |
+
+## Findings
+
+### Rule 3: no jolts: a window moves once, to where it ends up
+
+- ✘ **17 display-unplug** (the second display: unplug): notes (w720) moved 2 times [jolt]
+  - +0 ms 2056,208 1000×600 · +16 ms 297,130 1000×600 · +399 ms 300,165 1000×600
+- ✘ **18 display-plug** (the second display: plug): notes (w720) moved 2 times [jolt]
+  - +0 ms 300,165 1000×600 · +42 ms 2060,264 1000×600 · +728 ms 2056,208 1000×600
+- ✘ **19 display-unplug** (the second display: unplug): notes (w720) moved 2 times [jolt]
+  - +0 ms 2056,208 1000×600 · +-3 ms 297,130 1000×600 · +555 ms 300,165 1000×600
+- ✘ **20 display-plug** (the second display: plug): notes (w720) moved 2 times [jolt]
+  - +0 ms 300,165 1000×600 · +40 ms 2060,264 1000×600 · +371 ms 2056,208 1000×600
+- ✘ **21 display-unplug** (the second display: unplug): notes (w720) moved 2 times [jolt]
+  - +0 ms 2056,208 1000×600 · +2 ms 297,130 1000×600 · +558 ms 300,165 1000×600
+- ✘ **22 display-plug** (the second display: plug): notes (w720) moved 2 times [jolt]
+  - +0 ms 300,165 1000×600 · +34 ms 2060,264 1000×600 · +332 ms 2056,208 1000×600
+
+
+1 passed, 1 failed
+still running when the script had ended, and stopped now:
+  29977 sleep
+mac-shell: put back after there-and-back-3-without.sh: reduce-motion
+exit code 1
