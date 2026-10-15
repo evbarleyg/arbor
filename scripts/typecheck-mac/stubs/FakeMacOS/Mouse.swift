@@ -115,6 +115,12 @@ extension FakeMac {
       return tellMonitors(.leftMouseDown, toArbor: true)
     }
     tellMonitors(.leftMouseDown, toArbor: false, after: mouseDownIsLateBy)
+    // What lies above the apps' windows gets the press: the menu bar, a system alert. It belongs to another process, so the global monitor hears of it like of any other; no window
+    // comes forward, and none is in hand.
+    if (furnitureAtRest() + furniture).contains(where: { $0.isInFront && $0.layer > 0 && $0.alpha > 0 && $0.pid != arbor.pid && $0.bounds.contains(point) }) {
+      mouse.grab = Grab(kind: .nothing, window: nil, pressedAt: point, frameAtPress: .zero, time: now)
+      return
+    }
     // The resize area reaches a few points outside the frame.
     guard let window = windowShowing(at: point, reach: 4) else {
       mouse.grab = Grab(kind: .nothing, window: nil, pressedAt: point, frameAtPress: .zero)
@@ -170,7 +176,7 @@ extension FakeMac {
 
   /// The pointer moves.
   ///
-  /// By its title bar the window server moves a window itself, at once. The app learns of it about a tenth of a second later and posts eight to ten "moved"
+  /// By its title bar the window server moves a window itself, at once. The app learns of it about a tenth of a second later and posts five to nine "moved"
   /// a second; some apps post none until the drag is over. An app that hangs learns nothing, and its window moves all the same.
   /// By an edge it is the app that follows the pointer, so a hung app's window does not change.
   public func moveMouse(to point: CGPoint) {
@@ -242,7 +248,7 @@ extension FakeMac {
     }
   }
 
-  /// Eight to ten "moved" a second, however often the window moves; but the last place is always reported in the end (`flick-to-edge`: one more 30 ms after
+  /// Five to nine "moved" a second, however often the window moves; but the last place is always reported in the end (`flick-to-edge`: one more 30 ms after
   /// the release).
   private func reportMoved(_ window: Window) {
     // The one that is owed will tell of this move too.

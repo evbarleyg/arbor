@@ -61,6 +61,18 @@ extension FakeMac {
     } else {
       nextWindowBecomesKey(in: app, insteadOf: window)
     }
+    if app.dropsAClosingWindowAtOnce {
+      listWillChange(of: app)
+      // Who is told is settled now, while there is still somebody subscribed; the word takes its time.
+      window.closedWithoutAWord = !announced || !report("AXUIElementDestroyed", about: window, after: 0.2, mayBeDropped: true)
+      window.isOpen = false
+      window.exists = putAway
+      window.isMinimized = false
+      forgetRegistrations(on: window)
+      if !putAway { stack.removeAll { $0 === window } }
+      if mouse.grab?.window === window { mouse.grab = nil }
+      return
+    }
     appDoes(app, after: timing.focusBeforeDestroyed, "") { [self] in
       listWillChange(of: app)
       // Posted while there is still somebody subscribed.
@@ -112,7 +124,8 @@ extension FakeMac {
   // MARK: Minimizing
 
   /// The yellow button, ⌘M, or `AXMinimized`. Trace `minimize-restore`: "miniaturized" comes when the animation is over, 0.55 s later, and 15 to 20 ms
-  /// after that the screens' notice, because the Dock has grown.
+  /// after that Arbor's layer of the day said that the displays had changed, because the Dock had grown. If the window had its app's keyboard the next one's focus is reported first
+  /// (`Timing.focusBeforeMiniaturized`).
   public func minimize(_ window: Window) {
     guard window.isOpen, !window.isMinimized else { return }
     note("w\(window.number) is being minimized")
@@ -120,13 +133,14 @@ extension FakeMac {
     appDoes(window.app, after: timing.minimizing, "") { [self] in
       guard window.isOpen, !window.isMinimized else { return }
       window.isMinimized = true
-      report("AXWindowMiniaturized", about: window)
+      let hadTheKeyboard = window.app.focused === window
       nextWindowBecomesKey(in: window.app, insteadOf: window)
+      report("AXWindowMiniaturized", about: window, after: hadTheKeyboard && window.app.focused != nil ? timing.focusBeforeMiniaturized : 0)
       dockChanged(by: 2)
     }
   }
 
-  /// A click on it in the Dock, or its app. The focus is reported first, 1 to 4 ms before "deminiaturized" (`minimize-restore`, `app-minimize`).
+  /// A click on it in the Dock, or its app. The focus is reported first, 4 to 8 ms before "deminiaturized" (`minimize-restore`, `app-minimize`).
   public func restore(_ window: Window) {
     guard window.isOpen, window.isMinimized else { return }
     note("w\(window.number) is being restored")

@@ -86,7 +86,8 @@ public final class FakeMac: @unchecked Sendable {
   public var timing = Timing()
   public var manners = Manners()
 
-  /// How long a call waits for an app whose element has no timeout of its own: what was set on the system-wide element, else six seconds.
+  /// How long a call waits for an app whose element has no timeout of its own: what was set on the system-wide element, which a Mac showed to cover every element
+  /// (docs/features/F17, H3). Else six seconds, which is a GUESS from Apple's header: the one measurement there is, of window elements without a timeout of their own, gave 1.55 s.
   var processTimeout: TimeInterval = 6
   /// How many Accessibility calls Arbor has made, and how long it waited in them for apps that did not answer.
   public internal(set) var calls = 0
@@ -321,13 +322,15 @@ public final class FakeMac: @unchecked Sendable {
 extension FakeMac {
   /// How long things take on a Mac that behaves. From the traces in collab/evidence/traces (macOS 26.6 on a hosted Mac) where one is named.
   public struct Timing {
-    /// From an app's posting a notification to Arbor's observer. Echoes come 2 to 15 ms after the call (traces/README.md, row 1).
+    /// From an app's posting a notification to Arbor's observer. Echoes usually come 2 to 15 ms after the call, but 246 ms after it in `stubborn-slow`, and 0.3 to 0.55 s for
+    /// Finder and Terminal (traces/README.md, row 1): `App.reportsLateBy`.
     public var report: TimeInterval = 0.002
     /// Between two notifications an app posts for one change. `minimize-restore`: 0.1 to 0.4 ms between echoes.
     public var betweenReports: TimeInterval = 0.0003
     /// From an app's coming forward to `didActivateApplication`. Guess; only what follows was measured.
     public var activationNotice: TimeInterval = 0.004
-    /// `AXApplicationDeactivated` came 0.6 ms after `didActivateApplication`, `AXApplicationActivated` 8 ms after it (hosted Macs, 2026-10-14).
+    /// `app-switch-unreported`, its second switch (an app brings itself forward, its focused window unchanged): `AXApplicationDeactivated` 0.6 ms after `didActivateApplication`,
+    /// `AXApplicationActivated` 7.8 ms after it. Its first switch, where Arbor had asked for another window of the app, is another matter: `App.reportsFocusTwiceAndLate`.
     public var deactivatedAfterNotice: TimeInterval = 0.0006
     public var activatedAfterNotice: TimeInterval = 0.008
     /// From an event to the monitors. Guess.
@@ -335,19 +338,23 @@ extension FakeMac {
     /// The second mouse-up: `click-title-bar` 15 ms after the first, `flick-to-edge` 33 ms.
     public var secondMouseUp: TimeInterval = 0.015
     /// `minimize-restore`: "miniaturized" 0.55 s after the click, "deminiaturized" 0.54 s after the app's call.
+    /// At the end of the flight, if the window had its app's keyboard, the next window's focus is reported first: "focused window changed", "main window changed" 5.4 ms later, "miniaturized" 6.6 ms
+    /// after the first; nothing in the 0.67 s before (a recording of a hosted Mac: origin/mac-shell-out/sweep.proof, sweep.jsonl, "s6 the control").
+    public var focusBeforeMiniaturized: TimeInterval = 0.0066
     public var minimizing: TimeInterval = 0.55
-    /// `minimize-restore`: the screens' notice 15 to 20 ms after "miniaturized".
+    /// What was seen is Arbor's own `displaysChanged`, of a layer that passed every notice on at once: 20.4 and 15.3 ms after "miniaturized", 13.6 and 24.4 ms after
+    /// "deminiaturized" (`minimize-restore`, `app-minimize`). The notice itself is in no trace.
     public var dockAfterMinimizing: TimeInterval = 0.018
-    /// `minimize-restore`: "focused window changed" 4 ms before "deminiaturized"; `app-minimize` 1 to 2 ms.
-    public var focusBeforeDeminiaturized: TimeInterval = 0.002
-    /// `close`: "focused window changed" to the next window 12 ms before "destroyed".
+    /// "Focused window changed" before "deminiaturized", raw line to raw line: 4.1 ms (`minimize-restore`), 8.3 ms (`app-minimize`).
+    public var focusBeforeDeminiaturized: TimeInterval = 0.004
+    /// `close` (plain AppKit windows): "focused window changed" to the next window 12 ms before "destroyed". Safari and Finder are otherwise: `App.dropsAClosingWindowAtOnce`.
     public var focusBeforeDestroyed: TimeInterval = 0.012
     /// `app-quits`: the window was reported gone 36 ms after the note that the app was told to quit.
     public var terminationNotice: TimeInterval = 0.036
     /// Guess.
     public var launchNotice: TimeInterval = 0.05
     /// The app learns of a drag about a tenth of a second after the window server (`drag-to-edge`: first "moved" 0.1 s after the first
-    /// mouse-dragged), and posts eight to ten "moved" a second (0.11 to 0.2 s apart there).
+    /// mouse-dragged), and posts five to nine "moved" a second: 0.113 to 0.201 s apart there, 6.6 a second on average. This is the least gap.
     public var dragReachesApp: TimeInterval = 0.1
     public var betweenMovedReports: TimeInterval = 0.11
     /// A Space transition, and where in it the notice comes ("in the middle": docs/ARCHITECTURE.md). The lengths are guesses.
@@ -415,6 +422,17 @@ extension FakeMac {
     public var reportsFocusBeforeCreated = false
     /// Posts no "created" for its new windows. Nobody has seen such an app; the layer must not depend on there being none.
     public var doesNotReportCreated = false
+    /// A window that closes is off its list, and its element no longer valid, by the time the next window's focus is reported; "destroyed" comes a good while after. Safari and Finder, ⌘W on a
+    /// second window, in recordings of hosted Macs (origin/mac-shell-out/test-an-ordinary-day.day and others): the layer, looking through the app's windows at the focus report, missed the closing
+    /// one and said `destroyed` 4 to 13 ms, once 91 ms, BEFORE `focused`; the raw "destroyed" arrived only after both.
+    public var dropsAClosingWindowAtOnce = false
+    /// One call that it answers takes so long, instead of `Timing.answer`. With Safari and Finder the layer's work for one focus report took 100 to 190 ms (the same recordings).
+    public var answersIn: TimeInterval?
+    /// Everything it posts reaches Arbor so much later than usual (`Timing.report`).
+    public var reportsLateBy: TimeInterval = 0
+    /// A change of its focused window is posted twice over, and late: as in the first switch of `app-switch-unreported`, where Arbor had asked for a window of an app in the background. After
+    /// `didActivateApplication`: "deactivated" of the other app 4.5 ms, "focused window changed" 8.5, "main window changed" 26.6, "focused" again 34.5, "main" again 41.3, "activated" 44.3 ms.
+    public var reportsFocusTwiceAndLate = false
     /// New windows get their subrole so long after they are created.
     public var subroleComesAfter: TimeInterval = 0
     /// Its list of windows is so long behind every change. A window in plain view has been seen missing from its app's list (AXWindowSystem.swift, `rescan`); for

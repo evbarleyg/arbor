@@ -41,7 +41,7 @@ extension FakeMac {
     if app.isHung {
       // A job of the global pool runs on the main thread here, which cannot wait in its stead.
       guard isOnAThread || !Pump.isOffTheMainThread else { return .cannotComplete }
-      // A timeout of 0 means the default, not "do not wait".
+      // A timeout of 0 means the default, not "do not wait": Apple's header says so; not measured.
       let wait = timeout.flatMap { $0 > 0 ? $0 : nil } ?? processTimeout
       self.wait(until: now + wait) { !app.isHung || !app.isAlive }
       guard app.isAlive else { return .cannotComplete }
@@ -56,7 +56,8 @@ extension FakeMac {
       }
       // It woke in time, has seen to what was in its queue, and answers this call late.
     }
-    if isOnAThread { Worker.holder?.wait(timing.answer) } else if !Pump.isOffTheMainThread { now += timing.answer }
+    let cost = app.answersIn ?? timing.answer
+    if isOnAThread { Worker.holder?.wait(cost) } else if !Pump.isOffTheMainThread { now += cost }
     return nil
   }
 
@@ -389,7 +390,7 @@ extension FakeMac {
       for registration in observer.registrations where registration.name == name {
         guard registration.element == element || registration.element == .app(app.pid) else { continue }
         for _ in 0..<times {
-          send(after: timing.report + delay, from: .accessibility(app.pid), "→ \(name) \(shown) (pid \(app.pid))") { [weak observer] in
+          send(after: timing.report + app.reportsLateBy + delay, from: .accessibility(app.pid), "→ \(name) \(shown) (pid \(app.pid))") { [weak observer] in
             guard let observer, observer.isOnRunLoop else { return }
             observer.tell(element, name, registration.refcon)
           }

@@ -193,6 +193,38 @@ func tellOfLostDrags(_ book: Book) {
     }
   }
 
+  // Seen late in a job on a hosted Mac: a system alert, a window of another process at the level of modal panels, 260 by 250 at 382,118, lay over the title bar where the script pressed.
+  for storey in [1, 2] {
+    book.story("a system alert lies over the title bar where the button goes down\(storey == 2 ? ", and the window is docked" : "")") { story in
+      var window: FakeMac.Window!
+      let frame = CGRect(x: 300, y: 130, width: 400, height: 300)
+      let (mac, heard, layer): (FakeMac, Listener, AXWindowSystem)
+      var two: StoreyTwo?
+      if storey == 1 {
+        let one = StoreyOne(story) { mac in window = mac.open("window", in: mac.launch("Notes"), frame: frame) }
+        (mac, heard, layer) = (one.mac, one.heard, one.layer)
+      } else {
+        let stage = StoreyTwo(story) { mac in window = mac.open("window", in: mac.launch("Notes"), frame: frame) }
+        stage.run("dock \(window.number) left")
+        (mac, heard, layer, two) = (stage.mac, stage.heard, stage.layer, stage)
+      }
+      let home = window.frame
+      // Over the title bar, wherever the window is by now.
+      let alert = FakeMac.Furniture(number: 60, pid: 95, layer: 8, bounds: CGRect(x: home.midX - 130, y: home.minY - 12, width: 260, height: 250))
+      mac.furniture.append(alert)
+      heard.clear()
+      mac.drag(from: CGPoint(x: home.midX, y: home.minY + 12), to: CGPoint(x: home.midX + 200, y: home.minY + 160))
+      mac.release()
+      mac.pass(2)
+      story.check("the alert gets the press: the window stays where it is", window.frame == home, window.frame.text)
+      story.check("the press is reported, for the monitor hears of it as of any other", heard.all.contains(.pressed), heard.texts)
+      story.check("no drag and no resize is made of it", heard.outline.isEmpty, heard.texts)
+      story.check("nothing is said about the window or the keyboard", heard.all == [.pressed], heard.texts)
+      story.check("the alert is not among what Arbor takes for windows on screen", !layer.stackedWindows().contains { $0.id.rawValue == alert.number })
+      if let two { story.check("the window is still docked", two.isDocked(window)) }
+    }
+  }
+
   // What a person sees of it.
   for wait in [0, 100] {
     let words = wait > 0 ? ", and the window server begins to move it \(wait) ms after the press, with the pointer 40 points away" : ""

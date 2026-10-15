@@ -86,8 +86,9 @@ extension FakeMac {
     workspaceNotice("NSWorkspaceDidActivateApplicationNotification", app, after: notice) { [self] in
       if frontmost === app, frontmostByWorkspace !== app { app.noticeOutranTheProperty = true }
     }
-    if let old, old.isAlive { report("AXApplicationDeactivated", about: old, after: notice + timing.deactivatedAfterNotice - timing.report) }
-    report("AXApplicationActivated", about: app, after: notice + timing.activatedAfterNotice - timing.report)
+    let (deactivated, activated) = app.reportsFocusTwiceAndLate ? (0.0045, 0.0443) : (timing.deactivatedAfterNotice, timing.activatedAfterNotice)
+    if let old, old.isAlive { report("AXApplicationDeactivated", about: old, after: notice + deactivated - timing.report) }
+    report("AXApplicationActivated", about: app, after: notice + activated - timing.report)
   }
 
   /// `NSRunningApplication.activate()`, which since macOS 14 is only a request.
@@ -167,12 +168,20 @@ extension FakeMac {
     let (focusChanges, mainChanges) = (app.focused !== window, app.main !== window)
     app.focused = window
     app.main = window
+    if app.reportsFocusTwiceAndLate, focusChanges, reportingFocus {
+      // Counted from the notice that the app came forward, which follows Arbor's call by some 5 ms here.
+      let notice = 0.005 - timing.report
+      for (name, delay) in [("AXFocusedWindowChanged", 0.0085), ("AXMainWindowChanged", 0.0266), ("AXFocusedWindowChanged", 0.0345), ("AXMainWindowChanged", 0.0413)] {
+        report(name, about: window, after: notice + delay)
+      }
+      return
+    }
     if focusChanges, reportingFocus { report("AXFocusedWindowChanged", about: window) }
     if mainChanges { report("AXMainWindowChanged", about: window, after: timing.betweenReports) }
   }
 
   /// The app's key window is gone, minimized or behind another tab: the frontmost of its others that show takes over. With none left the app
-  /// has no key window, and posts nothing about that (AppKit reports a window that becomes key, not one that stops being it).
+  /// has no key window, and posts nothing about that (AppKit reports a window that becomes key, not one that stops being it): a GUESS; the recordings all have a sibling.
   func nextWindowBecomesKey(in app: App, insteadOf old: Window) {
     guard app.focused === old || app.main === old else { return }
     if let next = stack.first(where: { $0.app === app && $0 !== old && isShowing($0) && $0.canTakeKeyboard }) {

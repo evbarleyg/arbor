@@ -24,6 +24,45 @@ func tellOfGoing(_ book: Book) {
     story.check("Arbor knows the one that is left", one.known == [first.number])
   }
 
+  // Safari and Finder: the closing window is off the list, and no longer valid, when the next one's focus is reported; the raw "destroyed" comes after everything.
+  for slow in [false, true] {
+    book.story("a window closes in an app that drops it from its list at once\(slow ? ", and answers slowly, as big apps do" : "")") { story in
+      var first: FakeMac.Window!, second: FakeMac.Window!
+      let one = StoreyOne(story) { mac in
+        let app = mac.launch("Safari")
+        first = mac.open("first", in: app)
+        second = mac.open("second", in: app)
+      }
+      first.app.dropsAClosingWindowAtOnce = true
+      // Some twenty-five calls for one focus report: 100 to 190 ms were seen.
+      if slow { first.app.answersIn = 0.005 }
+      one.mac.close(second)
+      one.mac.pass(2)
+      story.check(
+        "the window is reported gone first, as in the recordings, then the app's next window focused", one.heard.outline == [.destroyed(second.number), .focused(first.number)],
+        one.heard.texts)
+      story.check("the \"destroyed\" that comes after both says nothing a second time", one.heard.all.filter { $0 == .destroyed(second.number) }.count == 1, one.heard.texts)
+      story.check("Arbor knows the one that is left", one.known == [first.number])
+    }
+  }
+
+  book.story("a docked window closes in an app that drops it from its list at once") { story in
+    var left: FakeMac.Window!, right: FakeMac.Window!
+    let two = StoreyTwo(story) { mac in
+      let app = mac.launch("Safari")
+      right = mac.open("right", in: app, frame: CGRect(x: 500, y: 100, width: 400, height: 300))
+      left = mac.open("left", in: app, frame: CGRect(x: 60, y: 100, width: 400, height: 300))
+    }
+    story.check("two windows are arranged", two.run("arrange").ok)
+    left.app.dropsAClosingWindowAtOnce = true
+    let (goes, stays): (FakeMac.Window, FakeMac.Window) = (left, right)
+    let half = stays.frame.width
+    two.mac.close(goes)
+    two.mac.pass(2)
+    story.check("its neighbour gets the room", stays.frame.width > half * 1.5, two.whereabouts(stays))
+    story.check("and the focus ring, with the keyboard", two.ring == stays.number, "\(String(describing: two.ring))")
+  }
+
   book.story("a window closes and the notification never comes") { story in
     var first: FakeMac.Window!, second: FakeMac.Window!
     let one = StoreyOne(story) { mac in
