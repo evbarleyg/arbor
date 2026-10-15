@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Writes a walk: a journey for a real Mac, made from a seed, in the words of lib-walk.sh.
 
-  walk.py <seed> [--acts n] [--display laptop|desk|two] [--tiling defaults|off] [--control]   prints the script
+  walk.py <seed> [--acts n] [--display laptop|desk|two] [--tiling defaults|off]   prints the script, to be saved as <seed>.sh
+  walk.py <seed> --control                                                        prints its control, which plays <seed>.sh beside it without Arbor
   walk.py --self-test
 
 The same seed gives the same walk, on any machine and any version of Python. The kinds of act come in the proportions docs/VIABLE.md asks of the whole
@@ -85,7 +86,7 @@ def walk(seed, acts, two=False):
         if kind == "switch":
             say(dice.weighted([(f"switch_dock {app}", 4), (f"switch_click {app}", 4), (f"switch_cmdtab {1 + dice.roll(3)}", 3),
                                ("switch_backtick", 1), (f"tile_click {1 + dice.roll(2)}", 1), (f"focus_key {dice.pick(['left', 'right', 'up', 'down'])}", 2),
-                               (f"summon {app}", 1), (f"switch_menu {dice.pick(['safari', 'finder', 'textedit', 'terminal'])}", 1)]))
+                               (f"switch_menu {dice.pick(['safari', 'finder', 'textedit', 'terminal'])}", 1)]))
         elif kind == "open-close":
             what = dice.roll(5)
             if what == 0:
@@ -137,8 +138,7 @@ def walk(seed, acts, two=False):
                 say("pause")
                 later("resume")
             elif what == 2:
-                say("hold_view")
-                later("release_view")
+                say("hold_view", 3)
             else:
                 say(dice.pick(["float_all", "float_all", "float_all_here"]))
         else:
@@ -155,7 +155,8 @@ def script(seed, acts, display, tiling, control):
         "# Written by a program. Change the program, not this file.",
     ]
     if control:
-        head.append("WALK_WITHOUT_ARBOR=1")
+        # The same script, so that what it brings back is told to be the same journey: only Arbor is missing.
+        return "\n".join(head + ["export WALK_WITHOUT_ARBOR=1", f'exec "$BASH" "$(dirname "${{BASH_SOURCE[0]}}")/{seed}.sh"']) + "\n"
     head += ['source "$(dirname "${BASH_SOURCE[0]}")/lib-walk.sh"', f"walk_begin stock {display} {tiling} {seed}"]
     return "\n".join(head + walk(seed, acts, display == "two") + ["walk_end"]) + "\n"
 
@@ -171,7 +172,7 @@ def self_test():
         failures.append(f"the walk from 4711 begins {walk('4711', 110)[:3]}, not {PINNED}")
     for seed in range(200):
         lines = walk(seed, 110)
-        for opens, closes in (("minimize", "restore"), ("hide", "unhide"), ("pause", "resume"), ("hold_view", "release_view"), ("full_screen on", "full_screen off"), ("quit_app", "reopen")):
+        for opens, closes in (("minimize", "restore"), ("hide", "unhide"), ("pause", "resume"), ("full_screen on", "full_screen off"), ("quit_app", "reopen")):
             if sum(line.startswith(opens) for line in lines) != sum(line.startswith(closes) for line in lines):
                 failures.append(f"seed {seed}: as many of `{opens}` as of `{closes}`")
         if lines.count("quit_and_start") != 1:
@@ -194,8 +195,8 @@ def self_test():
     return 1 if failures else 0
 
 
-WORDS = {"switch_dock", "switch_click", "switch_to", "switch_cmdtab", "switch_backtick", "switch_menu", "tile_click", "focus_key", "summon", "arrange_key", "undo",
-         "redo", "rotate", "mirror", "pin", "peek", "save_view", "view_n", "resize_edge", "float_all_here", "hold_view", "release_view", "open_new", "close_new", "minimize", "restore", "hide", "unhide",
+WORDS = {"switch_dock", "switch_click", "switch_to", "switch_cmdtab", "switch_backtick", "switch_menu", "tile_click", "focus_key", "arrange_key", "undo",
+         "redo", "rotate", "mirror", "pin", "peek", "save_view", "view_n", "resize_edge", "float_all_here", "hold_view", "open_new", "close_new", "minimize", "restore", "hide", "unhide",
          "quit_app", "reopen", "dock_key", "float_key", "drag_onto", "drag_out", "drag_by", "drag_edge", "view", "resize_gap", "resize_key", "full_screen",
          "wallpaper_click", "title_double_click", "pause", "resume", "float_all", "quit_and_start", "idle_act", "display", "send_across"}
 PINNED = ['view all', 'switch_dock calendar', 'minimize']
