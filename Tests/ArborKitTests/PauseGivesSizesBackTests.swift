@@ -435,4 +435,35 @@ import Testing
     #expect(desk.h.frame(desk.finder) == slot)
     #expect(desk.h.workspace.undockedFrame(of: desk.finder) == desk.own[desk.finder])
   }
+
+  // MARK: A window in the hand
+
+  /// The drag is over as far as Arbor is concerned. Called off as usual, the window went back to its slot first, and from there to
+  /// its own frame.
+  @Test(arguments: ["pause", "quit"])
+  func aDockedWindowInTheHandGoesStraightToItsOwnFrame(_ way: String) {
+    let desk = makeDesk()
+    desk.h.system.beginDrag(desk.finder)
+    desk.h.system.moveDrag(to: CGPoint(x: 800, y: 400), holding: 0.5)
+    #expect(desk.h.controller.draggedWindow == desk.finder)
+    desk.h.system.clearFrameLog()
+
+    if way == "pause" { desk.h.run("pause") } else { desk.h.controller.shutdown() }
+    #expect(desk.h.frame(desk.finder) == desk.own[desk.finder])
+    #expect(desk.moves().values.allSatisfy { $0 == 1 }, "\(desk.moves())")
+    #expect(desk.h.overlays.preview == nil && desk.h.controller.draggedWindow == nil)
+    for window in desk.all { #expect(desk.h.frame(window) == desk.own[window], "\(window)") }
+  }
+
+  /// A floating window is where the hand has it, and that is its own place from then on.
+  @Test func aFloatingWindowInTheHandStaysThere() throws {
+    let desk = makeDesk()
+    desk.h.system.beginDrag(desk.calendar)
+    desk.h.system.moveDrag(to: CGPoint(x: 800, y: 400), holding: 0.5)
+    let inTheHand = try #require(desk.h.frame(desk.calendar))
+    desk.h.system.clearFrameLog()
+    desk.h.run("pause")
+    #expect(desk.h.frame(desk.calendar) == inTheHand)
+    #expect(desk.moves()[desk.calendar] == nil)
+  }
 }

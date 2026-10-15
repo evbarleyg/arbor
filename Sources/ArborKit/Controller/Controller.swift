@@ -566,7 +566,7 @@ public final class Controller {
     }
     isStoppingWithoutMoving = !movingWindows
     defer { isStoppingWithoutMoving = false }
-    cancelDrag()
+    if movingWindows { cancelDragLettingGo() } else { cancelDrag() }
     if movingWindows { lookAtTheDisplaysBeforeLettingGo() }
     scheduler.cancel("save")
     overlays.finishAnimations()

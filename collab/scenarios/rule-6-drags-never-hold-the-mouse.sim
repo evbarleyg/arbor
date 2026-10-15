@@ -40,9 +40,7 @@ expect preview none
 pick-up 103 2 400
 expect preview showing
 pause
-# Known (the rest of board 1.20): the drag is called off, which puts the window back in its place, and then the pause gives it
-# its own size.
-expect jolt 103
+# The drag is called off, and the window goes straight to its own frame, not by way of its place.
 expect preview none
 let-go
 resume

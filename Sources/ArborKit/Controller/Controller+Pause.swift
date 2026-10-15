@@ -23,7 +23,7 @@ extension Controller {
     pauseEnd = minutes.map { now().addingTimeInterval($0 * 60) }
     if !isPaused {
       // Whatever the mouse was doing is over as far as Arbor is concerned.
-      cancelDrag()
+      cancelDragLettingGo()
       edgeResize = nil
       // Set first: observers of the `.lifecycle` change that `shutdown` sends read it.
       isPaused = true

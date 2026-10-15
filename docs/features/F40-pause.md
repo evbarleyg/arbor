@@ -15,7 +15,7 @@ everything and `resume` takes it back. (For a shared screen, where bringing ever
 
 - `pause`: **as if Arbor had quit, and it comes back.** Every window Arbor has moved or resized, in view or out of it, goes back to where it was, in its own size, in one move and without being raised: a docked window
   to the frame it floated at before it was docked if that is remembered (F48), otherwise into its slot with everything shown; a floating window that docked ones pushed aside or squeezed to where its user left it. A window Arbor has not
-  touched is not touched now. Tiles, gap handles and previews go away. Arbor stops observing windows and moves nothing, whatever happens.
+  touched is not touched now. A docked window that is in the hand goes straight there too, not by way of its slot; a floating one stays where the hand has it. Tiles, gap handles and previews go away. Arbor stops observing windows and moves nothing, whatever happens.
   ("Quitting, Float All and pause give windows back their own earlier sizes, not just a visible position." Until 2026-10-14 a pause left what was in view as it was, in the shape of its slot. Someone framed on a virtual machine who
   only wants ⌃⌥ back has Shortcuts Off in “App” (F41), which moves nothing.)
 - Windows come into view **because** nothing reacts to ⌘Tab during a pause: a window left out of view would be lost. They end up behind the window in use, as on any Mac.

@@ -399,4 +399,16 @@ extension Controller {
       endDrag(on: Hover(display: dropTarget(for: session.window, at: session.point).display, target: .float))
     }
   }
+
+  /// The same for Arbor letting go of every window (a quit, a pause). A docked window in the hand is about to get its own frame,
+  /// and does not go to its slot first; what trials of the drop have moved is about to be given back as well.
+  func cancelDragLettingGo() {
+    guard let session = drag, workspaces.values.contains(where: { $0.isDocked(session.window) }) else { return cancelDrag() }
+    scheduler.cancel(Self.dragDwellKey)
+    drag = nil
+    dragOrigin = nil
+    overlays.showDropPreview(nil)
+    // As `settle` does: what a trial taught goes with the trials.
+    if let known = session.reflow.minimumsBefore { minimumSizes = known.filter { windows[$0.key] != nil } }
+  }
 }
