@@ -464,8 +464,8 @@ extension Controller {
           actual = system.setFrame(target, of: window) ?? actual
         }
         windows[window]?.frame = actual
-        // The last net, whatever the cause: what Arbor puts in view is in view.
-        if showsOnlyASliver(window), let fitted = system.setFrame(actual.fitted(into: display.visibleFrame), of: window) {
+        // The last net, whatever the cause: what Arbor puts in view is in view, where a hand can get hold of it.
+        if !titleBarIsWithinReach(actual), let fitted = system.setFrame(actual.fitted(into: display.visibleFrame), of: window) {
           target = actual.fitted(into: display.visibleFrame)
           actual = fitted
           windows[window]?.frame = actual
@@ -559,9 +559,15 @@ extension Controller {
         else { continue }
         // Where its user left it hanging over the edge of the screen, it may go on doing so. That is known, not guessed:
         // every other frame is fitted.
-        let leftThere = !whereItsAppPutIt && wasLeftThereByItsUser(preferred, of: window, on: display)
-        let room = leftThere ? reach(of: desktop, for: preferred, on: display) : desktop
+        let leftThere = wasLeftThereByItsUser(preferred, of: window, on: display)
+        var room = leftThere ? reach(of: desktop, for: preferred, on: display) : desktop
         var frame = floatingFrame(preferred, on: room, of: display, minimum: minimumSizes[window])
+        // Pushed aside by what is docked, it hangs as far as it did, somewhere else: its title bar was within reach on the display next
+        // door, say, and is now above its own. Where Arbor puts a window, a hand can get hold of it.
+        if leftThere, !titleBarIsWithinReach(frame) {
+          room = desktop
+          frame = floatingFrame(preferred, on: room, of: display, minimum: minimumSizes[window])
+        }
         // However the remembered frame came to lie there (a display that moved, an app that took its window away):
         // where no display would show it is no place to send a window that is meant to be in view.
         if showsOnlyASliver(frame) { frame = frame.fitted(into: desktop.intersection(display.visibleFrame)) }
@@ -581,7 +587,9 @@ extension Controller {
           parked.contains(window) || showsOnlyASliver(window) || isBackFromThePause(window)
             || (reason == .camera && whereArborPutIt)
         else { continue }
-        moves.append((window, .place(preferred.fitted(into: display.visibleFrame), fitting: nil)))
+        // Exactly there, if a hand left it hanging over an edge.
+        let isLeftThere = isWhereItWasLeft(window, preferred, on: display)
+        moves.append((window, .place(isLeftThere ? preferred : preferred.fitted(into: display.visibleFrame), fitting: nil)))
       } else if !parked.contains(window), reason == .camera || showsOnlyASliver(window) || owedMoves.contains(window),
         drag?.window != window
       {
@@ -610,19 +618,17 @@ extension Controller {
 
   /// `region`, and beyond the edge of the screen as far as `preferred` hangs over it. People leave windows like that on
   /// purpose, some pushed aside until only a strip shows, and where the region reaches the edge nothing is docked
-  /// beyond it that would need the room. Asked only for a frame its user is known to have left (`wasLeftThereByItsUser`). Not over the top: macOS lets no title bar under the menu bar. And not if what
-  /// would show is too little to see and grab: that is no place anybody chose on this display, but one left over
-  /// from a larger or another one.
+  /// beyond it that would need the room. Asked only for a frame its user is known to have left (`wasLeftThereByItsUser`). Not if nobody
+  /// could get hold of it there. That is the one measure (`titleBarIsWithinReach`): what passes it when it is found is not fitted in
+  /// later either, be its title bar on the display next door or above.
   func reach(of region: CGRect, for preferred: CGRect, on display: DisplaySnapshot) -> CGRect {
     let visible = display.visibleFrame
-    let showing = preferred.intersection(visible)
-    guard !showing.isEmpty, showing.width >= Self.leastStrip, showing.height >= Self.leastStrip,
-      preferred.minY >= visible.minY, preferred.minY <= visible.maxY - Self.leastStrip
-    else { return region }
+    guard titleBarIsWithinReach(preferred) else { return region }
     let minX = region.minX <= visible.minX ? min(region.minX, preferred.minX) : region.minX
+    let minY = region.minY <= visible.minY ? min(region.minY, preferred.minY) : region.minY
     let maxX = region.maxX >= visible.maxX ? max(region.maxX, preferred.maxX) : region.maxX
     let maxY = region.maxY >= visible.maxY ? max(region.maxY, preferred.maxY) : region.maxY
-    return CGRect(x: minX, y: region.minY, width: maxX - minX, height: maxY - region.minY)
+    return CGRect(x: minX, y: minY, width: maxX - minX, height: maxY - minY)
   }
 
   /// The user's own hand has just given floating `window` the frame now remembered for it: a move or a resize, a drop.

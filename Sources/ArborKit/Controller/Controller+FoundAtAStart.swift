@@ -27,8 +27,9 @@ extension Controller {
     guard let found = foundAtThisStart[window] else { return false }
     // This start has had a reason to fetch it (`adopt`), so where it is now is nobody's choice.
     return windows[window]?.frame == found
-      // Nor is a corner, where a run that did not quit left it, or one that could not bring it back.
-      && !isOutOfView(found)
+      // Nor is a corner, where a run that did not quit left it, or one that could not bring it back. Beside another display it is no
+      // sliver: that one shows the window's whole title bar.
+      && !isOutOfView(found) && !isInAParkingCorner(window)
       // The whole display is not its frame. macOS gives it its own again when it leaves full screen.
       && windows[window]?.isFullScreen != true
   }

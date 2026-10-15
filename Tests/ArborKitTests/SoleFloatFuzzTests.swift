@@ -100,7 +100,12 @@ import Testing
       let size = h.frame(window)!.size
       #expect(
         size.width <= own.width + 1 && size.height <= own.height + 1, "\(window) is left at \(h.frame(window)!), its own is \(own)\n\(context)")
-      #expect(h.system.isVisible(window), "\(window) is left out of view\n\(context)")
+      // A drag can leave most of a window beyond the edge. Exactly there a quit leaves it, since it gives back what Arbor took and
+      // touches nothing else; and by the measure of the walk above it is not lost there.
+      let showing = h.frame(window)!.intersection(h.system.displayList[0].frame)
+      #expect(
+        h.system.isVisible(window) || (h.frame(window)!.approximatelyEquals(own, tolerance: 1) && showing.width * showing.height > 2000),
+        "\(window) is left out of view at \(h.frame(window)!), its own is \(own)\n\(context)")
     }
   }
 }

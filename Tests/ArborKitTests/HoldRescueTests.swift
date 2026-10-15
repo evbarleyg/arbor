@@ -179,12 +179,18 @@ import Testing
 
   /// It is kept out because it opened beside a window of its app that is out of view, which makes it something from out of view.
   /// One that is merely larger than the display would have opened over the view like any new window, and only went missing.
+  /// That is one nobody could get hold of (15 points of its title bar show). The one the random walk found, with 145, stays where it
+  /// opens since what is found counts as left (FoundCountsAsLeftTests), held or not: it is not kept out either.
   @Test(arguments: ["hold", "hold still"]) func aWindowWithNoWindowOfItsAppOutOfViewIsBroughtInAsEver(text: String) {
     let (h, _, _) = stage()
     h.run(text)
-    let huge = h.system.open(app: "Preview", frame: CGRect(x: 1295, y: 282, width: 2634, height: 2311))
+    let huge = h.system.open(app: "Preview", frame: CGRect(x: 1425, y: 282, width: 2634, height: 2311))
     #expect(h.system.isVisible(huge))
     #expect(!h.controller.parked.contains(huge))
+    let within = CGRect(x: 1295, y: 282, width: 2634, height: 2311)
+    let reachable = h.system.open(app: "Preview", frame: within)
+    #expect(h.frame(reachable) == within)
+    #expect(!h.controller.parked.contains(reachable))
     #expect(h.controller.invariantViolations().isEmpty)
   }
 

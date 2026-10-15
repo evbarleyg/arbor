@@ -54,7 +54,7 @@ extension Controller {
     if !lettingGo { for id in added { arriving += restoreDormantWorkspace(of: id) } }
     // Windows that had no display to go to (every display was gone).
     let homeless = managedWindowIDs.filter { workspaceID(containing: $0) == nil }
-    adoptNewlyManagedWindows()
+    adoptNewlyManagedWindows(.displaysChanged)
     rememberPlaces(of: homeless)
     restoreRoles(of: homeless)
     layouts = layouts.filter { current.contains($0.key) }

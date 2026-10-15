@@ -675,7 +675,7 @@ extension Controller {
     // The windows that floated all along have the whole display again.
     for (window, preferred) in workspace.floating.sorted(by: { $0.key < $1.key })
     where parked.contains(window) || wasPushedAside(window, from: preferred) {
-      if let screen = self.display(display) { toPutBack.append((window, asItWas(preferred, on: screen))) }
+      if let screen = self.display(display) { toPutBack.append((window, whereItWasLeft(window, preferred, on: screen))) }
     }
     workspaces[display] = updated
     // "As it was" is exact: the layout does not go on to tidy them onto the Desktop, which is a gap

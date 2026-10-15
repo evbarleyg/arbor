@@ -172,6 +172,7 @@ extension Controller {
     misfits[window.id] = misfits.removeValue(forKey: old)
     parkedAgain[window.id] = parkedAgain.removeValue(forKey: old)
     titleBars[window.id] = titleBars.removeValue(forKey: old)
+    chosenOnShape[window.id] = chosenOnShape.removeValue(forKey: old)
     soleFloatReplaced(old, by: window.id)
     shrunk[window.id] = shrunk.removeValue(forKey: old)
     fittedToADisplay[window.id] = fittedToADisplay.removeValue(forKey: old)

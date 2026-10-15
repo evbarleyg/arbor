@@ -81,7 +81,7 @@ public struct LidSweep {
     public var fittedAtEachChange = [0, 0, 0]
     /// Began on the laptop and is on it again now that the lid is open: on purpose.
     public var homeOnTheLaptop = 0
-    /// On the big display where the hand left it, seen from that display, where macOS alone has it elsewhere: on purpose.
+    /// On the big display where the hand left it, or where it was found, seen from that display, where macOS alone has it elsewhere: on purpose.
     public var whereTheHandLeftIt = 0
 
     public var isLost: Bool { !hidden.isEmpty || !outOfReach.isEmpty }
@@ -194,7 +194,8 @@ public struct LidSweep {
         let place = "\(width) wide at \(x),\(y), the lid \(name)\(command.isEmpty ? "" : ", " + command): \(Int(with.minX)),\(Int(with.minY)), without Arbor \(Int(without.minX)),\(Int(without.minY))"
         let lidIsOpen = name == "opens"
         let leftByTheHand = began.offsetBy(dx: lidIsOpen ? 0 : -CGFloat(origin.x), dy: lidIsOpen ? 0 : -CGFloat(origin.y))
-        if column.byHand, !beganOnTheLaptop, with == leftByTheHand, with != without {
+        // Or where it was found, which counts as left: Arbor fetched such a window at the start, when under half of it showed, until that was decided.
+        if !beganOnTheLaptop, with == leftByTheHand, with != without {
           tally.whereTheHandLeftIt += 1
         } else if mac.system.isVisible(window), !arbor.system.isVisible(window) {
           tally.hidden.append(place)

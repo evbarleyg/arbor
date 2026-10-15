@@ -428,38 +428,13 @@ extension ChaosRunner {
         """),
     ChaosKnownFailure(
       rule: "moved-before-any-dock", owner: "rule 2: a floating window's frame is its person's", severity: 2,
-      story: "Nothing is docked, and Arbor moves a window that hangs over an edge of the screen wholly into view: when another window closes, when it comes back out "
-        + "of the Dock, at a key that moves the view.",
+      story: "Nothing is docked, and Arbor moves a window that its app opened hanging over an edge of the screen, more than half of it showing, wholly into view at "
+        + "the next layout: at a key that moves the view, when another window closes. (One that was found hanging, or opened with under half showing, stays.) Or "
+        + "one that a hand hung over an edge while something was docked: squeezed then, it gets its size back there, or is pulled in, once nothing is docked.",
       script: """
-        open 101 Finder pid 1005 at 112 32 1058 458 min 501 300
-        grab 101
-        carry 1303 40
-        release
-        launch
-        open 104 Safari pid 1000 at 20 113 1068 656 min 574 240
-        close 104
-        """,
-      """
         launch
         open 108 Mail pid 1002 at 649 39 803 805 min 760 400
         key down desktop
-        """,
-      """
-        open 102 Preview pid 1007 at 184 55 723 455 min 723 400 max 723 2000
-        grab 102
-        carry 870 656
-        release
-        minimize 102
-        launch
-        restore 102
-        """),
-    ChaosKnownFailure(
-      rule: "fetched-before-any-dock", owner: "rule 2: nothing moves at a start", severity: 4,
-      story: "At a start, and when a window opens, one of which less than half shows is brought to the middle of the display: the rescue for what a crash left out "
-        + "of view. Arbor cannot tell it from a window its person pushed aside.",
-      script: """
-        open 101 Mail pid 1002 at 956 751 877 388
-        launch
         """),
     ChaosKnownFailure(
       rule: "size-not-given-back", owner: "rule 5: the displays come and go; Undo; carried to a smaller display by hand", severity: 3,

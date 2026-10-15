@@ -743,7 +743,8 @@ extension ChaosRunner {
 
   /// After `shutdown()`: every window Arbor had docked or parked is back in view, including the ones
   /// that are minimized, hidden or on another Space (their owner will want them later, when Arbor
-  /// is not there to fetch them): more than half of it, and its title bar within reach; nothing is parked or drawn; and timers left over do nothing.
+  /// is not there to fetch them): more than half of it, or as much as its person had left in view, and its title bar within reach; nothing is parked
+  /// or drawn; and timers left over do nothing.
   /// Floating windows that were in view stay where the user left them, half off the screen or not.
   func shutdownViolations(placed: Set<WindowID>) -> [InvariantViolation] {
     var problems: [InvariantViolation] = []
@@ -775,9 +776,15 @@ extension ChaosRunner {
         return frame.intersection(display.frame).area / most
       }.reduce(total, max)
       // A window that leaves the arrangement goes back to the frame it had of its own, which may hang over an edge, but
-      // not by more than half (F48, `asItWas`).
+      // not by more than half (F48, `asItWas`). Unless its person's own hand left it hanging as far on this display: what went out with the
+      // view is given back exactly where it was left, however little shows there (the product owner, 2026-10-15). In its own size,
+      // which can be larger than the one it was dropped in: then as much of it shows (`home-not-whole` has that story).
       let titleBarIsOnADisplay = system.displayList.contains { frame.overlaps($0.frame) && frame.minY >= $0.frame.minY }
-      if best < 0.5 || !titleBarIsOnADisplay {
+      let showing = Self.area(of: frame, showingOn: system.displayList)
+      let isWhereItWasLeft = (userPlaces[id] ?? []).contains { place in
+        system.displayList.contains { place.allows(frame, on: $0) || (place.isOn($0) && showing >= place.showing - 1) }
+      }
+      if (best < 0.5 && !isWhereItWasLeft) || !titleBarIsOnADisplay {
         problems.append(.init("shutdown", "\(id) was left at \(frame.brief), \(Int(best * 100))% in view"))
       }
     }

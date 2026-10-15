@@ -46,7 +46,9 @@ import Testing
     var states = 0
     for cut in cuts where cut > 2 {
       let prefix = try Trace(text: lines.prefix(cut - 1).joined(separator: "\n"))
-      // A window that is being dragged is where the hand holds it, which can be half off the screen. Nobody misses it.
+      // A window that is being dragged is where the hand holds it, which can be half off the screen. Nobody misses it, and no way
+      // back takes it out of the hand: a quit gives back what Arbor took and touches nothing else, and the next start finds it
+      // there. Exactly there: moved anywhere else out of view, it is lost.
       var inHand: WindowID?
       for entry in prefix.entries {
         switch entry.line {
@@ -62,6 +64,7 @@ import Testing
         // A trace ends when Arbor pauses or quits.
         guard h.controller.isRunning else { continue }
         states += 1
+        let held = inHand.flatMap { h.system.frame(of: $0) }
         // "Nothing is docked" is an answer too. What counts is what can be seen afterwards.
         if way == "float-all" { h.run("float-all") }
         if way != "float-all" { h.controller.shutdown() }
@@ -72,7 +75,7 @@ import Testing
         }
         h.scheduler.runPending()
         let lost = h.system.windows.values.map(\.snapshot)
-          .filter { $0.isPresent && !h.system.isVisible($0.id) && !(way == "float-all" && $0.id == inHand) }
+          .filter { $0.isPresent && !h.system.isVisible($0.id) && !($0.id == inHand && (way == "float-all" || $0.frame == held)) }
           .map { "\($0.id) \($0.appName) at \(traceText($0.frame))" }.sorted()
         #expect(
           lost == [],

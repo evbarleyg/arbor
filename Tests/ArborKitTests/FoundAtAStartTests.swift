@@ -556,8 +556,9 @@ private let beside = DisplaySnapshot(
     old.system.cursor = CGPoint(x: 2000, y: 400)
     old.run("dock \(editor.rawValue) left")
     settle(old)
-    // Pushed aside by hand until a third of it shows. The quit brings it wholly into view.
-    let aside = CGRect(x: 3232, y: 500, width: 600, height: 420)
+    // Pushed aside by hand until nobody could get hold of it again: 20 points show. The quit brings it wholly into view. (A third of it
+    // showing was enough for that until what is found counted as left: such a window is its person's, and a quit lets it be.)
+    let aside = CGRect(x: 3412, y: 500, width: 600, height: 420)
     old.system.userMove(notes, to: aside)
     settle(old)
     old.controller.shutdown()
@@ -602,8 +603,9 @@ private let beside = DisplaySnapshot(
   /// That is still the pause's doing: nobody has touched it.
   @Test func whatThePauseFetchesLateIsStillWhereThePauseLeftIt() throws {
     let (h, editor, notes) = editorDockedNotesFloating()
-    // Pushed aside by hand, so that where the pause fetches it to is not where it is remembered.
-    let aside = CGRect(x: 1312, y: 500, width: 600, height: 420)
+    // Pushed aside by hand to where nobody could get hold of it again (20 points show), so that where the pause fetches it to is not where
+    // it is remembered: within reach, it would be given back exactly there.
+    let aside = CGRect(x: 1492, y: 500, width: 600, height: 420)
     h.system.userMove(notes, to: aside)
     settle(h)
     h.system.userFocus(editor)
@@ -1213,11 +1215,12 @@ private let beside = DisplaySnapshot(
     #expect(remembered(notes, h) == own)
   }
 
-  /// Pushed by hand to where a third of it shows. The pause brings it wholly into view, which is not where it is remembered; nobody
-  /// touches it. That place is the pause's doing, so it does not become the window's own.
+  /// Pushed by hand to where nobody could get hold of it again: 20 points of it show. The pause brings it wholly into view, which is not
+  /// where it is remembered; nobody touches it. That place is the pause's doing, so it does not become the window's own. (With a third of
+  /// it showing the pause lets it be, since what is found counts as left: FoundCountsAsLeftTests.)
   @Test func whereThePauseItselfPutItIsNotItsOwnPlace() throws {
     let (h, _, notes) = editorDockedNotesFloating()
-    let aside = CGRect(x: 1312, y: 500, width: 600, height: 420)
+    let aside = CGRect(x: 1492, y: 500, width: 600, height: 420)
     h.system.userMove(notes, to: aside)
     settle(h)
     try #require(remembered(notes, h) == aside)
@@ -1276,11 +1279,11 @@ private let beside = DisplaySnapshot(
     #expect(!h.system.isVisible(browser), "the view is back")
   }
 
-  /// Found with nothing but a strip showing, so this start fetches it (`adopt`). Where the fetching put it is nobody's choice, and the place
-  /// remembered with the display that is back is the better one.
+  /// Found where nobody could get hold of it, 17 points of its title bar showing, so this start fetches it (`adopt`). Where the fetching put
+  /// it is nobody's choice, and the place remembered with the display that is back is the better one.
   @Test func whatThisStartItselfHadToFetchGoesWhereItIsRemembered() {
     let (h, _, notes) = homeFromTheDesk(docking: false)
-    h.system.place(notes, at: CGRect(x: 1400, y: 900, width: 720, height: 420))
+    h.system.place(notes, at: CGRect(x: 1495, y: 900, width: 720, height: 420))
     h.start()
     settle(h)
     #expect(h.frame(notes) == CGRect(x: 300, y: 200, width: 720, height: 420))

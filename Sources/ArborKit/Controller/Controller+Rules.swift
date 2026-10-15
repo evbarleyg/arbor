@@ -60,7 +60,7 @@ extension Controller {
     if workspaceID(containing: id) == nil {
       // Not every window that appears is new: one on a Space that was not showing when Arbor started
       // may have been left out of view by a run that did not quit cleanly.
-      adopt(id, rescue: true)
+      adopt(id, rescue: true, .opened)
       // Where the rescue put it is where a late `float` rule sends it back to.
       if let frame = windows[id]?.frame { titleWatches[id]?.openingFrame = frame }
       appPlacedFrames[id] = workspaceID(containing: id).flatMap { workspaces[$0]?.floating[id] }
@@ -162,7 +162,7 @@ extension Controller {
   /// neighbour, or along the bottom, which has no such mark, counts only in the place Arbor would choose with the displays as they
   /// are, or as far above it as macOS can have stopped it (Controller+TitleBars.swift). One display's corner is another's edge: a
   /// window that does not reach onto the display is not in its corner, and one that shows whole needs no fetching.
-  private func isInAParkingCorner(_ id: WindowID) -> Bool {
+  func isInAParkingCorner(_ id: WindowID) -> Bool {
     guard let frame = windows[id]?.frame, whatShows(of: frame) < frame.area else { return false }
     return displays.contains { display in
       guard frame.overlaps(display.frame) else { return false }

@@ -1,0 +1,61 @@
+# Proposed by the swarm (2026-10-15, board 1.34); the documenter may edit or drop it.
+# Story: somebody keeps Notes pushed three quarters over the right edge of the screen, to pull it in when needed, and
+# Music the same way over the bottom. They start Arbor. Nothing has changed, so nothing moves: both are where they were
+# left, and Arbor has not touched them. A run of Arbor that was killed has left Preview in the corner, a point wide:
+# nobody could get hold of that, so it is fetched, in one move. Later Calendar opens over the left edge, where it was
+# closed last: it stays too. A window that opens wholly beyond the edge is fetched.
+# Left is left: ⌃⌥0, ⌃⌥Space, a quit and the next start change nothing.
+# Reference: "nothing moves until the person docks something"; collab/QUESTIONS.md, "what is found counts as left".
+quiet
+relaunch quit
+open Notes 600x400 at 1290 300
+open Music 600x400 at 400 800
+open Preview 600x400 at 1439 868
+relaunch start
+expect ok
+expect still 101
+expect still 102
+expect moved-once
+expect visible 103
+expect size 103 600x400
+expect floating 101
+wait 5
+expect still
+
+open Calendar 600x400 at -450 300
+expect still
+expect at 104 -450 300
+expect floating 104
+wait 5
+expect still
+
+open Reminders 600x400 at 1500 300
+expect moved-once
+expect still 101
+expect still 102
+expect still 104
+expect visible 105
+
+# The keys that show everything have nothing to fetch.
+press home
+expect still
+press show-all
+expect still
+
+# In the evening they quit Arbor. It gives back what it took, which is nothing of these three.
+relaunch quit
+expect still 101
+expect still 102
+expect still 104
+expect at 101 1290 300
+expect at 102 400 800
+expect at 104 -450 300
+
+# And in the morning it finds them there again.
+relaunch start
+expect still
+press home
+expect still
+expect at 101 1290 300
+expect at 102 400 800
+expect at 104 -450 300

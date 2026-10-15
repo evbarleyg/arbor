@@ -460,9 +460,12 @@ import Testing
         problems = HalfInTheTreeTests.problems(in: h)
         let screens = h.system.displays().map(\.visibleFrame)
         for window in h.system.allWindows() where window.isPresent {
+          // Where Arbor has put a window, 40 points. The walk opens windows anywhere, also during a pause, and one that Arbor has never
+          // moved is where it opened: there 24 are the measure of what is found and counts as left (FoundCountsAsLeftTests).
+          let least: CGFloat = h.system.frameLog.contains { $0.window == window.id } ? 40 : 24
           let seen = screens.contains { screen in
             let part = screen.intersection(window.frame)
-            return part.width >= 40 && part.height >= 5
+            return part.width >= least && part.height >= 5
           }
           if !seen {
             problems.append("a window is out of reach after float-all [\(window.id) at \(window.frame); \(reply)]")

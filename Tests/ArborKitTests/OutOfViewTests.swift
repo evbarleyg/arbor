@@ -388,16 +388,21 @@ private let side = DisplaySnapshot(
     #expect(h.frame(notes) == strip)
   }
 
-  /// A frame Arbor was given by nobody's hand: its app opened the window there.
+  /// A frame Arbor was given by nobody's hand: its app opened the window there, more than half of it showing. One of which under half
+  /// shows was taken to the middle as it opened; since what is found counts as left it stays, and goes out of view and back like one that
+  /// a hand left (FoundCountsAsLeftTests).
   @Test func aWindowItsAppOpenedOverTheEdgeIsBroughtInWhenArborPlacesIt() {
     let h = Harness()
     let a = h.system.open(app: "Safari", pid: 11)
     h.start()
     h.run("dock \(a.rawValue) left")
-    let notes = h.system.open(app: "Notes", pid: 12, frame: CGRect(x: 1300, y: 300, width: 500, height: 400))
+    let notes = h.system.open(app: "Notes", pid: 12, frame: CGRect(x: 1100, y: 300, width: 500, height: 400))
+    let strip = CGRect(x: 1300, y: 300, width: 500, height: 400)
+    let mail = h.system.open(app: "Mail", pid: 13, frame: strip)
     h.run("zoom \(a.rawValue)")
     h.run("back")
     #expect(main.frame.contains(h.frame(notes)!), "\(h.frame(notes)!)")
+    #expect(h.frame(mail) == strip)
   }
 
   /// However a floating window came to be where no display shows it, unmarked: the first way home fetches it, and

@@ -408,7 +408,10 @@ extension ChaosRunner {
     guard !seen.isEmpty else { return }
     let resumed = seven.pausedBefore && !isPaused
     for window in Set(seen.map(\.window)).sorted() {
-      guard let fake = isFairGame(window), let before = framesBefore[window], before != fake.snapshot.frame else { continue }
+      // One that opened in this step was, before Arbor's first move, where its app opened it.
+      guard let fake = isFairGame(window), let before = framesBefore[window] ?? seen.first(where: { $0.window == window })?.before,
+        before != fake.snapshot.frame
+      else { continue }
       let named = seven.concerned?.contains(window) == true
       let whatHappened = "Arbor moved \(window) from \(before.brief) to \(fake.snapshot.frame.brief)"
       let showedBefore = Self.area(of: before, showingOn: system.displayList)
@@ -417,9 +420,28 @@ extension ChaosRunner {
         // Timers finish what it began.
         if action.isACommand || seven.timeOnly, named || seven.askedForEverything { continue }
         if seven.displaysChangedLast { continue }
+        // What is found counts as left. The one thing Arbor may fetch is what nobody could get hold of: no 24 points of its title bar
+        // are on any display (docs/VIABLE.md, section 6).
+        if showedBefore < 0.5 * before.area, !isReachable(before, by: 24) { continue }
+        // And what is there because of Arbor: apps open a window beside the one they have, and one that no display shows Arbor takes for
+        // one that it put out of view itself, in a run that was killed.
+        if showedBefore < 0.5 * before.area,
+          system.windows.values.contains(where: { other in
+            other.snapshot.id != window && !isInView(framesBefore[other.snapshot.id] ?? other.snapshot.frame)
+              && (fake.snapshot.bundleID != nil ? other.snapshot.bundleID == fake.snapshot.bundleID : other.snapshot.pid == fake.snapshot.pid)
+          })
+        {
+          continue
+        }
+        // Fetched is what is taken elsewhere as Arbor takes it into its books or lets go of it: Arbor starts in this step (a launch, the end of
+        // a pause) or stops (a quit, a pause), or the window opens or comes to a Space that shows. What a layout in between does to a window
+        // that hangs is the other story, however little showed: floating windows that are kept on the Desktop, and given their sizes back
+        // at the corner they have.
+        let isTakenInOrLetGo = !wasRunningBefore || !isRunning || framesBefore[window] == nil || !presentBefore.contains(window)
+        let isFetched = showedBefore < 0.5 * before.area && isTakenInOrLetGo && before.origin != fake.snapshot.frame.origin
         problems.append(
           .init(
-            showedBefore < 0.5 * before.area ? "fetched-before-any-dock" : "moved-before-any-dock",
+            isFetched ? "fetched-before-any-dock" : "moved-before-any-dock",
             "\(whatHappened), and nothing has been docked, pinned or summoned"))
         continue
       }

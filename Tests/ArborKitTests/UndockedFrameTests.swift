@@ -1135,11 +1135,16 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
     }
 
     #expect(commands > 20)
+    let left = h.workspace.floating
     h.controller.shutdown()
     for (window, size) in sizes.sorted(by: { $0.key < $1.key }) {
       #expect(h.frame(window)?.size == size, "\(window)")
-      // A window dropped over a screen edge goes back there.
-      #expect(h.system.isVisible(window), "\(window) is in view")
+      // A window dropped over a screen edge goes back there: exactly there, if under half of it shows, and enough of it to see and grab.
+      let showing = h.frame(window)!.intersection(h.system.displayList[0].frame)
+      let isWhereItWasDropped = left[window].map { h.frame(window)!.approximatelyEquals($0, tolerance: 1) } ?? false
+      #expect(
+        h.system.isVisible(window) || (isWhereItWasDropped && showing.width >= 24 && showing.height >= 24),
+        "\(window) is in view, or where it was dropped: \(h.frame(window)!)")
     }
   }
 

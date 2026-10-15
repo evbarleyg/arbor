@@ -395,6 +395,9 @@ func simulate(_ words: [String], harness: Harness, printLayout: inout Bool) -> (
       } else if words[index] == "fixed" {
         isResizable = false
         index += 1
+      } else if words[index] == "at", let x = number(index + 1), let y = number(index + 2) {
+        frame.origin = CGPoint(x: x, y: y)
+        index += 3
       } else if let parsed = size(words[index]) {
         frame.size = parsed
         index += 1

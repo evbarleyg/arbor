@@ -662,14 +662,21 @@ public final class Controller {
       }
       for (window, preferred) in workspace.floating.sorted(by: { $0.key < $1.key })
       where parked.contains(window) || wasPushedAside(window, from: preferred) {
-        putBack(window, at: asItWas(preferred, on: display), on: display)
+        putBack(window, at: whereItWasLeft(window, preferred, on: display), on: display)
       }
     }
     // Whatever the bookkeeping says, nothing Arbor arranges is left out of view: a window can be in the
     // corner without being in `parked`, for one when it was minimized there and its display changed.
+    // Arbor gives back what it took and touches nothing else: a window its person keeps three quarters over an edge is theirs.
+    // So is one that was in the hand: the drag was called off above, which is a drop where the hand had it. That is known, not
+    // guessed: what merely can be reached may be what a change of displays left.
     for id in managedWindowIDs {
       guard var frame = windows[id]?.frame, isMostlyOffScreen(id),
-        let home = workspaceID(containing: id) ?? displayID(at: frame.center), let display = display(home)
+        let home = workspaceID(containing: id) ?? displayID(at: frame.center), let display = display(home),
+        // Not "is it at that frame": the loop above has taken it as near to it as macOS allows, which keeps a title bar above the
+        // bottom edge and can stop a window some points short. Fetched from there it would move twice.
+        parked.contains(id) || !titleBarIsWithinReach(frame)
+          || workspaces[home]?.floating[id].map({ isWhereItWasLeft(id, $0, on: display) }) != true
       else { continue }
       frame.size = sizeInView(of: id) ?? frame.size
       placeVisibly(id, at: frame, on: display)
@@ -878,8 +885,14 @@ public final class Controller {
       // A floating window of which no display shows more than a sliver was left parked by a run that did not
       // quit cleanly. Counting it as parked sends it back to its frame when the Desktop is in view. One that
       // merely hangs off an edge is in view: the first layout parks it properly if the Desktop is not.
-      for window in workspace.floating.keys where showsOnlyASliver(window) { parked.insert(window) }
+      // Nor is one that is in Arbor's own corner, of which the display next door can show a whole title bar.
+      for window in workspace.floating.keys where showsOnlyASliver(window) || isInAParkingCorner(window) { parked.insert(window) }
       workspaces[id] = workspace
+      // The note of a person's own hand is not saved. One that is found where it is remembered counts as left there, like one
+      // that nobody remembers (`adopt`). The end of a pause has the notes of before it.
+      for (window, frame) in workspace.floating where !isResuming && !parked.contains(window) {
+        if windows[window]?.frame.approximatelyEquals(frame, tolerance: 1) == true { noteWhereItsUserLeftIt(window) }
+      }
     }
     for window in managed.subtracting(claimed).sorted() {
       adopt(window, rescue: true)
@@ -922,17 +935,63 @@ public final class Controller {
     return displays.allSatisfy { frame.fractionInside($0.frame) < 0.5 }
   }
 
-  /// Starts managing `window` as a floating window on the display it is on.
-  /// With `rescue`, a window found mostly off-screen (left parked by a run
-  /// that did not quit cleanly) is brought back to the middle of its display.
-  func adopt(_ window: WindowID, rescue: Bool) {
+  /// Whether a hand could get hold of a window at `frame`: 24 points of its title bar are on some display, or the whole
+  /// width of a window narrower than that. The strip asked about is the window's top 24 points, less than the lowest
+  /// title bar there is (28, 32 and 52 points were measured), so nobody needs to know how high this one's is. Half of
+  /// that height is enough to hit.
+  func titleBarIsWithinReach(_ frame: CGRect) -> Bool {
+    let bar = CGRect(x: frame.minX, y: frame.minY, width: frame.width, height: min(frame.height, Self.leastStrip))
+    return displays.contains {
+      let showing = bar.intersection($0.frame)
+      return !showing.isNull && showing.width >= min(bar.width, Self.leastStrip) && showing.height >= bar.height / 2
+    }
+  }
+
+  /// How Arbor came by a window it begins to arrange.
+  enum Arrival {
+    /// It was there: at a start, on a macOS Space that shows for the first time, of an app that is no longer excluded.
+    case found
+    /// Its app has just opened it.
+    case opened
+    /// It belonged to no display, because there was none.
+    case displaysChanged
+  }
+
+  /// What is found counts as left (collab/QUESTIONS.md, 2026-10-15). People park windows three quarters off an edge, and at
+  /// a start or when a window opens nothing has changed, so nothing is in doubt: of the windows that are mostly off
+  /// screen, only one that nobody could get hold of is fetched. Two more, because Arbor and not a person is the reason:
+  /// one that is exactly where Arbor puts windows out of view, which with displays on both sides is a place that shows
+  /// a whole title bar (a run that did not quit cleanly left it there); and one whose app has a window there, since
+  /// apps open a window beside the one they have. After the displays have changed the place was no choice on these
+  /// displays: there under half is reason enough (Q20's exception).
+  private func isToBeFetched(_ window: WindowID, _ arrival: Arrival) -> Bool {
+    guard isMostlyOffScreen(window), let frame = windows[window]?.frame else { return false }
+    return arrival == .displaysChanged || !titleBarIsWithinReach(frame) || isInAParkingCorner(window)
+      || hasASiblingWhereArborPutIt(window)
+  }
+
+  /// Whether another window of `id`'s app is out of view by Arbor's doing: this run's, or that of a run that was killed
+  /// or lost its permission, which is seen by where the window is. One that its person took from its place in view into the
+  /// Dock, or hid there, is in neither: it is out of view by their doing.
+  private func hasASiblingWhereArborPutIt(_ id: WindowID) -> Bool {
+    guard let window = windows[id] else { return false }
+    return windows.values.contains {
+      $0.id != id && (window.bundleID != nil ? $0.bundleID == window.bundleID : $0.pid == window.pid)
+        && (parked.contains($0.id) || showsOnlyASliver($0.frame) || isInAParkingCorner($0.id))
+    }
+  }
+
+  /// Starts managing `window` as a floating window on the display it is on, where it is.
+  /// With `rescue`, one that is to be fetched (`isToBeFetched`) is brought to the middle of its display, once.
+  func adopt(_ window: WindowID, rescue: Bool, _ arrival: Arrival = .found) {
     guard !ignoreIfARuleSaysSo(window) else { return }
     guard let snapshot = windows[window], let displayID = displayID(at: snapshot.frame.center),
       let display = display(displayID)
     else { return }
     var frame = snapshot.frame
+    let isToBeFetched = rescue && isToBeFetched(window, arrival)
     // Not out of the user's hand: a window being dragged is where the pointer is.
-    if rescue, isMostlyOffScreen(window), snapshot.isPresent, window != drag?.window {
+    if isToBeFetched, snapshot.isPresent, window != drag?.window {
       if isOutOfView(frame) { frame.size = Self.unshrunk(frame.size) }
       let visible = display.visibleFrame
       let centred = CGRect(
@@ -952,6 +1011,10 @@ public final class Controller {
       Log.info("rescued off-screen window \(window)")
     }
     workspaces[displayID]?.floating[window] = frame
+    // As if its person's own hand had just left it there, so that no later layout pulls in what hangs over an edge. Not one that
+    // is only not fetched now because it is in the Dock or hidden. Of the windows that open, only one that would have been
+    // fetched at once before: for the others, where their app opens them is still no place anybody chose (Q20 will say).
+    if rescue, !isToBeFetched, arrival == .found || isMostlyOffScreen(window) { noteWhereItsUserLeftIt(window) }
     hints[window] = WindowHint(bundleID: snapshot.bundleID, title: snapshot.title)
     notify(.windows)
   }
@@ -1006,10 +1069,10 @@ public final class Controller {
     }
   }
 
-  func adoptNewlyManagedWindows() {
+  func adoptNewlyManagedWindows(_ arrival: Arrival = .found) {
     for window in managedWindowIDs where workspaceID(containing: window) == nil {
       owedTheWayBack[window] = nil
-      adopt(window, rescue: true)
+      adopt(window, rescue: true, arrival)
       receiveAsGuestOfTheView(window)
     }
   }

@@ -237,6 +237,15 @@ public final class ChaosRunner {
   /// Where somebody other than Arbor last put each window, as seen from the corner of the display that shows most of it, and
   /// what that display was like. macOS carrying a window along with its display is nobody putting it anywhere.
   private func noteWhereItsUserLeftEachWindow(after action: ChaosAction, movesBefore: [WindowID: Int]) {
+    // A native tab is where its group is. Before what is known of windows that are gone is forgotten: the tab in front until now is one.
+    if case .openTab(let new, let front) = action, userPlaces[new] == nil {
+      userPlaces[new] = userPlaces[front]
+      if leftAcrossAnEdge.contains(front) { leftAcrossAnEdge.insert(new) }
+    }
+    if case .selectTab(let tab, let front) = action, userPlaces[tab] == nil {
+      userPlaces[tab] = userPlaces[front]
+      if leftAcrossAnEdge.contains(front) { leftAcrossAnEdge.insert(tab) }
+    }
     userPlaces = userPlaces.filter { system.windows[$0.key] != nil }
     leftAcrossAnEdge = leftAcrossAnEdge.filter { system.windows[$0] != nil }
     if case .displays = action { return }
@@ -256,17 +265,16 @@ public final class ChaosRunner {
     }
     // Also where Arbor has moved it on in the same step: `home` is the last frame that was not Arbor's.
     for (id, fake) in system.windows where fake.movesNotArbors != movesBefore[id] { if let home = fake.home { note(id, home) } }
-    // Where its app opened it counts as a place given it, if more than half of it shows there (the product owner).
+    // Where its app opened it, or where it is when Arbor starts, counts as a place given it, if more than half of it shows there or 24 points of
+    // its title bar are within reach: what is found counts as left (the product owner). What shows less is fetched.
     if case .open(let new) = action {
       let frame = Self.within(new.frame, minimum: new.minimum, maximum: new.maximum)
-      if Self.area(of: frame, showingOn: system.displayList) > 0.5 * frame.area { note(new.id, frame) } else { leftAcrossAnEdge.insert(new.id) }
+      if Self.area(of: frame, showingOn: system.displayList) > 0.5 * frame.area || isReachable(frame, by: 24) {
+        note(new.id, frame)
+      } else {
+        leftAcrossAnEdge.insert(new.id)
+      }
     }
-    // A native tab is where its group is.
-    if case .openTab(let new, let front) = action, userPlaces[new] == nil {
-      userPlaces[new] = userPlaces[front]
-      if leftAcrossAnEdge.contains(front) { leftAcrossAnEdge.insert(new) }
-    }
-    if case .selectTab(let tab, let front) = action, userPlaces[tab] == nil { userPlaces[tab] = userPlaces[front] }
     // Where a window is let go of is where its user put it, whatever size Arbor gives it there (F48).
     if let dropped = inHandBefore, system.dragging != dropped, let fake = system.windows[dropped], !controller.parked.contains(dropped),
       controller.workspaces.values.contains(where: { $0.isFloating(dropped) })
@@ -481,6 +489,9 @@ public final class ChaosRunner {
       guard !isRunning, !isPaused, system.windows[old] != nil, system.windows[new] == nil else { return }
       system.renumber(old, as: new)
       renumbered[old] = new
+      // It is the same window, where it was left.
+      userPlaces[new] = userPlaces.removeValue(forKey: old)
+      if leftAcrossAnEdge.remove(old) != nil { leftAcrossAnEdge.insert(new) }
     case .sleep(let days): if !isRunning, !isPaused { elapsed += min(max(days, 0), 400) * 86_400 }
     case .corrupt(let how): if !isRunning, !isPaused { damageStateFile(how) }
     }
@@ -506,15 +517,16 @@ public final class ChaosRunner {
   }
 
   /// Nobody moves or resizes a window to where they could not get hold of it again.
-  func isReachable(_ frame: CGRect) -> Bool { Self.isReachable(frame, on: system.displayList) }
+  /// With `points` 24, the least that counts when a window is found or opens, the bar is the window's top 24 points too.
+  func isReachable(_ frame: CGRect, by points: CGFloat = 40) -> Bool { Self.isReachable(frame, by: points, on: system.displayList) }
 
-  private static func isReachable(_ frame: CGRect, on displays: [DisplaySnapshot]) -> Bool {
+  private static func isReachable(_ frame: CGRect, by points: CGFloat, on displays: [DisplaySnapshot]) -> Bool {
     displays.isEmpty
       || displays.contains { display in
-        // Forty points of title bar, or half of a window narrower than that, and enough of its height to hit.
-        let bar = CGRect(x: frame.minX, y: frame.minY, width: frame.width, height: min(frame.height, 28))
+        // That many points of title bar, forty if nothing else is said, or half of a window narrower than that, and enough of its height to hit.
+        let bar = CGRect(x: frame.minX, y: frame.minY, width: frame.width, height: min(frame.height, min(points, 28)))
         let showing = bar.intersection(display.frame)
-        return !showing.isNull && showing.width >= min(frame.width / 2, 40) && showing.height >= min(bar.height, 12)
+        return !showing.isNull && showing.width >= min(frame.width / 2, points) && showing.height >= min(bar.height, 12)
       }
   }
 
@@ -549,7 +561,7 @@ public final class ChaosRunner {
         let destination = displays.first { $0.id == home.id } ?? main
         var moved = frame.offsetBy(dx: destination.frame.minX - home.frame.minX, dy: destination.frame.minY - home.frame.minY)
         // It does not leave a window where nobody could get hold of it, on a display that shrank, say.
-        if destination.id != home.id || !Self.isReachable(moved, on: displays) { moved = moved.fitted(into: destination.visibleFrame) }
+        if destination.id != home.id || !Self.isReachable(moved, by: 40, on: displays) { moved = moved.fitted(into: destination.visibleFrame) }
         if moved != frame { moves.append((id, moved)) }
         // On a display that is as large as it was, only elsewhere, the window is where it was on it, and there it stays.
         if destination.id == home.id, destination.frame.size == home.frame.size,
@@ -654,7 +666,12 @@ public final class ChaosRunner {
     lastCommandSucceeded = reply.ok
     if !reply.ok { refusals.append(reply.message) }
     if command == .quit { controller.shutdown() }
-    if wasRunning, !isRunning { found += shutdownViolations(placed: placed) }
+    if wasRunning, !isRunning {
+      // What a test has Arbor do wrong on its way out is there for the rule about the way out to see.
+      beforeTheNextCheck?(self)
+      beforeTheNextCheck = nil
+      found += shutdownViolations(placed: placed)
+    }
     if command == .quit, wasRunning || isPaused { endProcess() }
   }
 

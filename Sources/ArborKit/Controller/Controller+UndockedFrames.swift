@@ -171,6 +171,19 @@ extension Controller {
     return isStillGood ? frame : frame.fitted(into: visible)
   }
 
+  /// Where a floating window goes when Arbor lets go of it. What its person's own hand left on this display as it is, however little
+  /// of it shows, is given back as it was, if a hand could get hold of it there: the next layout would fetch it otherwise, a second
+  /// move. So would its pin, of a window that is kept in view. Of any other frame nobody knows how it came to hang there (`asItWas`).
+  func whereItWasLeft(_ window: WindowID, _ preferred: CGRect, on display: DisplaySnapshot) -> CGRect {
+    isWhereItWasLeft(window, preferred, on: display) ? preferred : asItWas(preferred, on: display)
+  }
+
+  /// Whether `frame` is known to be where floating `window`'s person left it, or Arbor found it, on this display as it is, and a place to
+  /// leave it in: a hand could get hold of it there, and nothing of Arbor's would fetch it from there.
+  func isWhereItWasLeft(_ window: WindowID, _ frame: CGRect, on display: DisplaySnapshot) -> Bool {
+    wasLeftThereByItsUser(frame, of: window, on: display) && titleBarIsWithinReach(frame) && !staysInView(window)
+  }
+
   /// Lets go of a docked window: back to where it floated, or, if that is not known, into view at `slot`.
   func letGo(of window: WindowID, on display: DisplaySnapshot, otherwiseAt slot: CGRect?) {
     if let frame = frameAsItWas(of: window, on: display.id) {

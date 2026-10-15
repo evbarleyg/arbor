@@ -124,7 +124,7 @@ import Testing
     #expect(h.frame(window) == frame)
   }
 
-  /// Nothing is docked, another app's window closes, and the window that hangs over the edge is pulled onto the screen.
+  /// Nothing is docked, another app's window closes, and the window that hangs over the edge stays: what is found counts as left.
   @Test(arguments: hanging) func aWindowHangingOverAnEdgeStaysThereWhenAnotherWindowCloses(frame: CGRect) {
     let h = Harness()
     let window = h.system.open(app: "Mail", pid: 1001, frame: frame)
@@ -132,10 +132,8 @@ import Testing
     h.start()
     h.system.close(other)
     settle(h)
-    withKnownIssue("board 1.18: a floating window's frame is its person's") {
-      #expect(h.frame(window) == frame)
-      #expect(h.system.moveLog.isEmpty, "\(h.system.moveLog)")
-    }
+    #expect(h.frame(window) == frame)
+    #expect(h.system.moveLog.isEmpty, "\(h.system.moveLog)")
   }
 
   /// Nothing is docked. A window is moved by hand while Arbor is paused. Until 2026-10-15, at the next thing that happened after the

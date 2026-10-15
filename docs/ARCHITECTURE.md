@@ -331,7 +331,7 @@ New commands are refused by `hold` until `Command.isAllowedWhileHeld` lists them
 | `windowFocused` → `holdNotesFocus` | remembers the window in view that has the keyboard, arranged by Arbor or not, and whether the report came within 0.5 s of a click or a modifier key (`WindowSystem.secondsSinceClickOrModifierKey`) |
 | `bringIntoView` → `holdTurnsAway` | a window out of view that has taken the keyboard stays there and the keyboard goes back. `.still` lets through what the user asked for. One arrival, reported two or three times, counts once; when that fifth of a second is over Arbor looks where the keyboard is (`holdLooksAgain`), because an app can take it just after it was asked back and no report says so. An app sent back three times in five seconds keeps the keyboard, out of view, and the line is around no window then. `.still` says on screen what it turned away, once for each app and hold (`holdSaysThatItTurnedAway`): it goes by time and can be wrong about a launcher |
 | `adoptNewWindow` → `holdPutsOff` | rules that dock wait. When the hold ends, which can happen by itself, they are applied in order to windows that still float where their app put them, each only if a rehearsal (`keepsTheView`) leaves the view where it is and showing what it shows. `.still` lets through a window that opens within 0.5 s of a click or a modifier key |
-| `adopt(rescue:)` → `holdLeavesOutOfView` | a new window that opens mostly off screen while a window of its app is out of view, which is why it opened there, is not brought to the middle of the display (one that is merely too large, or remembers a display that is gone, is, as ever): it floats, goes to its corner, and is kept out (`placeFloatingWindows` → `holdKeepsOut`), even off a Desktop that is in view, until its display's view next moves (`relayout` → `holdLetsInWhatWaited` when the layout follows a move of the view, reason `.camera`, and its view is not the last one's; not a command that announces a move and may make none, nor a new node alone, which arranging the windows in view makes too; never on a held view), which can be after the hold: its end brings nothing in. Its rule, if one waited, is not applied. It is nobody's guest. `.still` lets through one the user opened |
+| `adopt(rescue:)` → `holdLeavesOutOfView` | a new window that opens mostly off screen while a window of its app is out of view, which is why it opened there, is not brought to the middle of the display (one that is merely too large, or remembers a display that is gone, is, as ever, if nobody could get hold of it; otherwise it stays where it opened): it floats, goes to its corner, and is kept out (`placeFloatingWindows` → `holdKeepsOut`), even off a Desktop that is in view, until its display's view next moves (`relayout` → `holdLetsInWhatWaited` when the layout follows a move of the view, reason `.camera`, and its view is not the last one's; not a command that announces a move and may make none, nor a new node alone, which arranging the windows in view makes too; never on a held view), which can be after the hold: its end brings nothing in. Its rule, if one waited, is not applied. It is nobody's guest. `.still` lets through one the user opened |
 | `holdChanged` → `WindowSystem.leaveStrayDialogs` | at `.view` the Accessibility layer leaves dialogs that open out of view where they are (F47 would centre them), but for those of the app in use (`appInUse`: the app of the window in view that has the keyboard, not simply the one in front), which would look hung. It brings in those still open when told otherwise: just before the view next moves, or at a pause, `float-all` or quit |
 | `applicationActivated` → `holdNotesActivation` | going to an app brings in that app's dialogs that waited (`bringInStrayDialogs(ofApp:)`): the keyboard goes to the dialog, which Arbor does not arrange, so no focus report would move the view. Not at `.view`; at `.still` only within 0.5 s of a click or a modifier key. `status` counts them (`strayDialogsWaiting`) |
 | `relayout` → `holdFences` | see below. The fence is around what a layout **shows**, which is not where the view is while the window it is on is away: what is seen is what is held |
@@ -1050,16 +1050,25 @@ provisionally until the wait is over (`provisionalSlots`): what an app shows fir
 with the saved title takes the slot over, and if the holder closes the slot waits again. After `resume` only windows
 that still exist keep a slot: what is missing was closed by the user, not by a reboot. Slots wait in the
 remembered arrangements of disconnected displays too: the window floats where it appears and returns to its slot
-with the display. Whatever is found mostly off-screen (parked by a run
+with the display. Whatever is found with no more than a sliver showing (parked by a run
 that did not quit cleanly) counts as parked, so the first layout brings back everything the
 camera shows, and floating windows nobody remembers are moved to the middle of their display.
+**What is found counts as left** (`adopt`, `isToBeFetched`): people park windows three quarters over an edge, so of the windows
+of which under half shows, at a start and when one opens, only these are fetched, once: one that nobody could get hold of
+(`titleBarIsWithinReach`: no 24 points of its title bar on any display), one in Arbor's own corner, which between two displays
+shows a whole title bar next door, and one whose app has a window out of view by Arbor's doing, beside which apps
+open the next. Every other stays, and gets the note a person's own hand leaves (`noteWhereItsUserLeftIt`), which is not saved: a
+later start writes it again for a window it finds where it remembers it. A layout lets a noted window go on hanging by the same
+measure (`reach`), so what stays when it is found is not fitted in later.
 The size such a window is found at may be the small one of `shrinkOutOfView`, so it is not taken for the size it has in view
 (`noteWindowsLeftParked`).
 
 On quit, `shutdown()` brings every window back into view, including windows that were since minimized, hidden, or
 left on another Space: a docked window where it floated before it was docked (see Leaving the arrangement), or, if that
 is not known, in its slot with the display laid out at its root without tiles; a floating window where the user left
-it. It ends with a sweep for anything it arranges that is still mostly off-screen, whatever `parked` says.
+it, however little of it shows there (`whereItWasLeft`). It gives back what it took and touches nothing else: the sweep it ends with,
+whatever `parked` says, is for everything that is still mostly off-screen, but for a window that is known to be where its person left
+it or Arbor found it (`isWhereItWasLeft`), which one that was in the hand is too. What merely can be reached may be what a change of displays left.
 
 **Starting Arbor takes no window out of view that is in view** (`collab/QUESTIONS.md`, Q16). A first start moves nothing. A **launch** (a
 person starts Arbor, or logs in: `start()` reads the file itself) brings back what was docked, one move per window, and ends **showing

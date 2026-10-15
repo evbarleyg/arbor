@@ -193,6 +193,66 @@ private let b = WindowID(102)
         == ["moved-before-any-dock"])
   }
 
+  /// What is found counts as left: a window parked a quarter in view is nobody's to fetch, at a start or when it opens. One that nobody
+  /// could get hold of is, and the net has nothing to say to that.
+  @Test func whatIsParkedOverTheEdgeIsNotFetchedAndWhatIsOutOfReachMayBe() {
+    let parked = "open 101 Notes pid 1001 at 1290 300 600 400"
+    #expect(nets(after: [parked], then: "launch").isEmpty)
+    #expect(nets(after: [parked], then: "launch") { _ = $0.setFrame(self.rect(420, 262, 600, 400), of: a) } == ["fetched-before-any-dock"])
+    #expect(nets(after: ["launch"], then: parked).isEmpty)
+    #expect(nets(after: ["launch"], then: parked) { _ = $0.setFrame(self.rect(420, 262, 600, 400), of: a) } == ["fetched-before-any-dock"])
+    // 24 points of its title bar are the least that counts, and 23 are not enough.
+    #expect(
+      nets(after: ["open 101 Notes pid 1001 at 1416 300 600 400"], then: "launch") { _ = $0.setFrame(self.rect(420, 262, 600, 400), of: a) }
+        == ["fetched-before-any-dock"])
+    #expect(nets(after: ["open 101 Notes pid 1001 at 1417 300 600 400"], then: "launch").isEmpty, "Arbor fetches it, and may")
+    #expect(nets(after: ["launch"], then: "open 101 Notes pid 1001 at 1439 868 600 400").isEmpty, "Arbor fetches it, and may")
+  }
+
+  /// A window its person dragged two thirds over the bottom edge goes out with the view. On the way out of Arbor it is given back exactly
+  /// there, and the rule about a quit has nothing to say. Left anywhere else with as little showing, it is lost.
+  @Test(arguments: ["quit", "pause"]) func whatWentOutWithTheViewMayComeBackAsFarOverTheEdgeAsItWasLeftAndNoFurther(way: String) {
+    let story = [
+      "open 101 Notes pid 1001 at 30 26 738 624", "launch", "grab 101", "carry 426 689", "release", "open 102 Mail pid 1002 at 27 47 1196 685",
+      "dock 102 top", "zoom 102", "settle",
+    ]
+    func rules(fault: ((FakeWindowSystem) -> Void)? = nil) -> [String] {
+      let runner = ChaosRunner()
+      for line in story { _ = runner.step(ChaosAction(text: line)) }
+      #expect(runner.controller.parked.contains(a), "or this proves nothing")
+      if let fault { runner.beforeTheNextCheck = { fault($0.system) } }
+      return runner.step(ChaosAction(text: way)).map(\.rule)
+    }
+    #expect(!rules().contains("shutdown"))
+    #expect(rules { _ = $0.setFrame(self.rect(900, 679, 738, 624), of: a) }.contains("shutdown"))
+  }
+
+  /// Two scripts that stood under the known failure `moved-before-any-dock` until what is found counted as left. That rule is still excused
+  /// by name for what is left of it, so they are held to it here.
+  @Test(arguments: [
+    """
+    open 101 Finder pid 1005 at 112 32 1058 458 min 501 300
+    grab 101
+    carry 1303 40
+    release
+    launch
+    open 104 Safari pid 1000 at 20 113 1068 656 min 574 240
+    close 104
+    """,
+    """
+    open 102 Preview pid 1007 at 184 55 723 455 min 723 400 max 723 2000
+    grab 102
+    carry 870 656
+    release
+    minimize 102
+    launch
+    restore 102
+    """,
+  ]) func whatWasHungOverAnEdgeBeforeTheLaunchIsNotPulledInLater(script: String) {
+    let others = ChaosRunner.knownRules.subtracting(["moved-before-any-dock"])
+    #expect(ChaosRunner.replay(ChaosAction.script(script), excusing: others)?.violations.map(\.rule) == nil)
+  }
+
   @Test func aWindowTheStepWasNotAboutStaysWhereItIs() {
     #expect(nets(after: oneDocked, then: "focus 101").isEmpty)
     #expect(nets(after: oneDocked, then: "focus 101") { _ = $0.setFrame(self.rect(820, 300, 500, 400), of: b) }.contains("moved-unasked"))
