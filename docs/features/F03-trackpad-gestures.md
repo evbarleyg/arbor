@@ -61,8 +61,8 @@ Pinching in steps the camera in toward the pointer; pinching out steps out.
 - The taps' own thread has macOS asked every 0.15 s, while a tap is installed,
   whether Arbor still has Accessibility permission (`AXIsProcessTrusted()` and a
   throwaway tap), and removes all taps at once if not, because macOS 26 was seen to
-  drop all input while a process has active taps and not the permission
-  (`TapPermission`). They come back when permission does.
+  drop all input, at every event they ask for, while a process has active taps and
+  not the permission (`TapPermission`). They come back when permission does.
 - 2026-10-15 (Q26): `pointerGestures` is the one switch above this and every other gesture that needs an event tap. Off, `Controller.inputSettings` leaves the taps nothing to ask for. It ships off.
 - Settings `gesturesEnabled` (true) and `pinchThreshold` (0.25), applied at
   launch and on every settings change (`reload-settings`): the tap is
