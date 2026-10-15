@@ -42,7 +42,8 @@ rings.json; given a file it puts that key into it and keeps the others. It refus
 `git diff` (`origin/swarm/trunk...HEAD`), a file that holds a diff, or `-` for a diff on standard input; without it, what this branch and the working tree add to the trunk. It
 lists the cases that are played partly, not at all, or never can be, and that the change leans on: a line it adds to the code that ships calls or writes a member of the seam
 (the protocols in Sources/ArborKit/Platform) that the case names, in backticks or as `Type.member`; or it touches a file of the macOS-only code that the case cites. The first
-kind comes first; then the worst hurt, what crosses the seam, what is not played at all. Last, and marked "read there before", come the cases whose member the change only
+kind comes first; within a kind what is not played at all, what never can be, what is played partly, and only then the worst hurt and what crosses the seam: the question is what
+green cannot tell, so what is not played at all is the first answer, whatever it hurts. Last, and marked "read there before", come the cases whose member the change only
 takes out and puts in again within one hunk: a line reworded leans on nothing new, and a list of nothing else is no argument for a Mac. A dozen lines at most; `--all` for the rest. So a case that is about a call does well
 to name it.
 
@@ -103,8 +104,8 @@ SHIPS = ("Sources/ArborCore/", "Sources/ArborKit/", "Sources/ArborIPC/", "Source
 SEAM = "Sources/ArborKit/Platform/*.swift"
 # Of that, what Package.swift leaves out everywhere but on macOS: no test on Linux runs a line of it.
 BELOW = ("Sources/ArborKit/AX/", "Sources/ArborKit/UI/", "Sources/ArborKit/Input/", "Sources/ArborKit/App/", "Sources/Arbor/")
-# What a green run on Linux says nothing of, the most telling first: a stand-in could play it and does not, plays some of it, or never can.
-UNPLAYED = ["no", "partly", "cannot"]
+# What a green run on Linux says nothing of, the most telling first: a stand-in could play it and does not, never can, or plays some of it.
+UNPLAYED = ["no", "cannot", "partly"]
 TRUNKS = ("origin/swarm/trunk", "origin/main")
 DOZEN = 12
 # How a change comes to a case, the most telling first.
@@ -686,7 +687,7 @@ def read_diff(diff):
 
 
 def leans_on(entries, tree, diff):
-    """The cases the stand-ins do not play that a change leans on, each with why, the most pressing first.
+    """The cases the stand-ins do not play that a change leans on, each with why, and first what green on Linux knows least of.
 
     Only what ships counts (SHIPS): a page, a scenario, a tool, a test or a stand-in leans on nothing. Two roads, one on each side of the seam:
     - above it, by name: a line the change adds calls a member of the seam on one who holds it (`system.setFrame(`), or writes one (`func setFrame(`), and the case names that
@@ -694,6 +695,8 @@ def leans_on(entries, tree, diff):
     - below it, by file: the change touches a file that no test on Linux runs (BELOW), and the case cites that file under `sources`.
     A call that stood there before is no new leaning: where every hunk that adds a member takes it out as often, the line was only reworded, and the case comes last and is marked.
     It is counted hunk by hunk, because a call that goes from one place to another is new where it arrives: on 2026-10-15 moving the call was the fault.
+    Within each of the three: what is not played at all, what never can be, what is played partly, and only then the worst hurt. By hurt first the case that would have told on
+    2026-10-15 (hurt 3) goes under as soon as every case about `setFrame` says so: 17th of 27, and ten are printed.
     What each was measured to say, and the wider roads that were tried and said too much, is in docs/TESTING.md. A third road, by the detectors a case touches, is not taken: a
     change to a detector's code is a change to a tool, and to tools this has nothing to say."""
     hunks, touched = read_diff(diff)
@@ -724,7 +727,7 @@ def leans_on(entries, tree, diff):
         elif named:
             found.append((entry, ", ".join(named) + ", read there before", AS_BEFORE))
     nearest = ["at the seam"] + [layer for layer in LAYERS if layer != "at the seam"]
-    return sorted(found, key=lambda one: (one[2], one[0]["hurt"], nearest.index(one[0]["layer"]), UNPLAYED.index(one[0]["modelled"])))
+    return sorted(found, key=lambda one: (one[2], UNPLAYED.index(one[0]["modelled"]), one[0]["hurt"], nearest.index(one[0]["layer"])))
 
 
 def reading_list(root, diff, everything=False):
@@ -1147,9 +1150,15 @@ def self_test():
         lines = listed(asked + elsewhere("Sources/ArborKit/AX/Real.swift", "+    let sum = 1 + 1"))
         if not any("a-size-set-at-the-old-place-is-cut-to-what-fits-there" in line and "The size a window may take depends on where it stands." in line and "hurt 3" in line for line in lines):
             failures.append(f"the change that asks a window for a size where it stands is not told of the case that says what a size depends on: {lines}")
-        if [line.split()[0] for line in lines[1:]] != ["worse-and-partly", "a-size-set-at-the-old-place-is-cut-to-what-fits-there", "by-its-file"]:
-            failures.append(f"what a change leans on: the cases that name a member of the seam it calls, the worst first, then those that cite a file of the macOS-only code it touches; none that is played, "
-                            f"is about another member, has the word without the name, or cites a page or a file that the tests on Linux run: {lines}")
+        if [line.split()[0] for line in lines[1:]] != ["a-size-set-at-the-old-place-is-cut-to-what-fits-there", "worse-and-partly", "by-its-file"]:
+            failures.append(f"what a change leans on: the cases that name a member of the seam it calls, what is not played at all first, then those that cite a file of the macOS-only code it touches; none "
+                            f"that is played, is about another member, has the word without the name, or cites a page or a file that the tests on Linux run: {lines}")
+        # The question is what green cannot tell, so what is not played at all is the first answer, whatever it hurts. With every case about `setFrame` named, the case of 2026-10-15
+        # (hurt 3) stood 17th of 27 by hurt, and ten are printed.
+        order = [dict(cut, id=f"{played}-{hurt}", modelled=played, knobs=["Fake.knob"] if played == "partly" else [], hurt=hurt) for hurt in (1, 4) for played in ("partly", "cannot", "no")]
+        ranked = listed(asked + elsewhere("Sources/ArborKit/AX/Real.swift", "+    let sum = 1 + 1"), order + [case for case in cases if case["id"] == "by-its-file"])
+        if [line.split()[0] for line in ranked[1:]] != ["no-1", "no-4", "cannot-1", "cannot-4", "partly-1", "partly-4", "by-its-file"]:
+            failures.append(f"within one road: what the stand-ins do not play, what they never can, what they play partly; only then the worst hurt: {ranked}")
         if not any("  It waits. AXWindowSystem.setFrame waits for the app.  (" in line for line in lines):
             failures.append(f"one line of what happened: the first sentence, and the next if the first says nothing by itself: {lines}")
         for name, diff in [
@@ -1174,7 +1183,7 @@ def self_test():
         if len(lines) != 2 or not lines[1].startswith("  about-the-keyboard ") or not lines[1].endswith(before) or argument in lines[0] or "as they did before" not in lines[0]:
             failures.append(f"a hunk that takes a call out and puts the same call in leans on nothing new: the case stays, is marked, and is no argument for a Mac: {lines}")
         lines = listed(same + asked + elsewhere("Sources/ArborKit/AX/Real.swift", "+    let sum = 1 + 1"))
-        if [line.split()[0] for line in lines[1:]] != ["worse-and-partly", "a-size-set-at-the-old-place-is-cut-to-what-fits-there", "by-its-file", "about-the-keyboard"] \
+        if [line.split()[0] for line in lines[1:]] != ["a-size-set-at-the-old-place-is-cut-to-what-fits-there", "worse-and-partly", "by-its-file", "about-the-keyboard"] \
                 or not lines[-1].endswith(before) or sum("read there before" in line for line in lines[1:]) != 1 or argument not in lines[0] or "1 of them" not in lines[0]:
             failures.append(f"what was read there before comes last, after what is new, and the head tells the two apart: {lines}")
         for name, diff in [
