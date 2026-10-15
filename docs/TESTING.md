@@ -491,6 +491,8 @@ Things that bite:
 - There is no public way to make gesture events. `pinch` (and `witness pinch`, below) fills in the fields a trackpad's
   events carry, and Arbor's tap reads the result as it reads a trackpad's on macOS 26; a new macOS may change that.
 - On macOS 26 a menu bar item's window belongs to Control Center; `status_item` asks Accessibility instead.
+- Arbor's menu bar item is a row of buttons, and the middle of it, which `status_item` gives, is Show the Desktop: `open_menu`, a right click, opens the menu wherever in the item
+  it lands; `click` does not. Ask each time: paused, held or without the permission the item is one glyph, somewhere else. Ten scripts learned it at their first run.
 - bash 3.2: no associative arrays, no `${x,,}`, and an empty array is an error under `set -u`.
 - Plugging the virtual display in switches the runner's main display from 1024×768 to 1920×1080, and macOS shuffles the
   windows; unplugging switches it back. Ask `screen_of 1` and `frame_of` again afterwards.
@@ -719,12 +721,14 @@ copy from before the repository was public, and say what the script does once it
 | `check-review-ux.sh` | trunk | safe, steps fail | 90 s | The wallpaper is behind the curtain, so the two clicks on it prove nothing; the session with ⌘Tab skips itself |
 | `check-F44.sh` | trunk | safe, steps skip themselves | 60 s | Really selecting layouts |
 | `check-F41.sh` | trunk | safe, steps skip themselves | 2 min | The two measurements that press past the nets; switching layouts, and which are switched on; ⌘Tab |
+| `check-keyboard-returns.sh` | trunk | **never**: ends with 77 | | Plain letters typed after each of Arbor's panels has closed: with a fault in Arbor they land in whichever app has the keyboard |
 | `check-F49.sh` | trunk | safe, steps skip themselves | 2 min | The second display |
 | `check-F51.sh` | trunk | safe, steps skip themselves | 90 s | Holds ⌃⌥Space down for seconds at a time. All of it is ⌃⌥Space: declined where several input sources are on |
 | `check-switch.sh` | trunk | safe, steps skip themselves | 60 s | ⌘Tab: the app used before may be the person's own |
 | `check-F56.sh` | trunk | safe, steps skip themselves | 60 s | The second display. Types "arbor" into a test window |
 | `check-F09.sh` | trunk | safe, steps skip themselves | 3 min | Reduce Motion. The button is held for up to 6 s at a time, ⌘ for 2 s. macOS's own edge tiling stays on and may cost some checks at the screen edge |
 | `check-F18.sh` | trunk | safe | 15 s | |
+| `check-drag-from-behind.sh` | trunk | safe | 30 s | A second test app |
 | `check-F20.sh` | trunk | safe | 60 s, mostly keys | Types "Pair" and "up" with its own test app in front, which for this script has an icon in the Dock. One step is ⌃⌥Space: declined where several input sources are on |
 | `check-F54.sh` | trunk | safe, steps skip themselves | none | Part 2: Arbor over every window, TextEdit and Terminal killed and opened |
 | `check-F53.sh` | trunk | safe, steps skip themselves | 2 min | Launching Calculator by name. A second test app under the name ArborScratch |
@@ -757,6 +761,7 @@ copy from before the repository was public, and say what the script does once it
 | `shots-F15-apps.sh` | trunk | **never**: ends with 77 | | Ten real apps opened for their icons, and killed |
 | `first-dock.sh` (`first-dock.py`) | trunk | **never**: ends with 77 | | Nine real apps opened and quit, every window arranged, Reduce Motion, the display's size |
 | `check-F52.sh`, `check-F63.sh` | not landed, trunk | **never**: end with 77 | | Virtual displays, Accessibility taken from every app |
+| `check-macos-double-click.sh` | trunk | safe, steps skip themselves | 40 s | macOS's other title-bar actions (it would change the setting), TextEdit and Terminal. A test window fills the display for some seconds |
 | `check-claimed-keys.sh` | trunk | **never**: ends with 77 | | Writes an entry for Arbor's bundle into the privacy database; types into whatever has the keyboard |
 | `check-F59.sh` | not landed | safe | 30 s | During a carry nobody's app gets arrows, ↩ or ⎋ |
 | `shots-F04.sh`, `shots-F34.sh` | not landed | safe | 3 min, 60 s | Test windows go to the Dock and come back; one is closed by its tab's button |
@@ -1277,7 +1282,7 @@ one. It is a function of its seed: no clock, no system randomness, no dictionary
 
 **What it does.** `ChaosGenerator` looks at the state of the world and picks the next `ChaosAction`, mostly one
 that makes sense there and sometimes one that does not: apps open, close, quit, hide, minimize, change Space, go full
-screen, retitle and change their size limits; the user moves, resizes, focuses, clicks tiles, drags seams, types and chooses in Go to…, and drags
+screen, retitle and change their size limits; the user moves, resizes, focuses, double-clicks title bars (and macOS zooms), clicks tiles, drags seams, types and chooses in Go to…, and drags
 windows in pieces (`grab`, `carry`, `release`) so that anything can happen in mid-drag; every `Command` with valid
 and invalid arguments, nonsense lines and `arbor://` URLs; displays added, removed, resized and rearranged, with macOS
 reporting the windows before, after or never; timers fired early or late; settings.json edited sensibly and badly, and every setting in
@@ -1294,7 +1299,7 @@ windows are out of view; nothing Arbor placed is lost beyond the displays; overl
 preview without a drag; one focus ring, around the window that has the keyboard; a floating window in view goes out of view only
 when the camera moves; a pinned window is always in view; Go to… is open only while Arbor runs, on a display that is there and with nothing being
 dragged, and the window chosen in it has the keyboard and is in view; a saved slot that waits for its window is in a tree and has a timer that ends the
-wait; Arbor gives up only on windows that something keeps moving; only known timers, and they run dry; windows Arbor does not arrange are never moved;
+wait; Arbor gives up only on windows that something keeps moving, and lets be only those that a double-click moved; only known timers, and they run dry; windows Arbor does not arrange are never moved;
 `state` and state.json survive JSON; after `quit` or `pause` everything is back in view; a restart keeps the shape of every tree).
 
 **Running it**
