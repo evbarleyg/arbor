@@ -25,8 +25,11 @@ Rule 2 can let through a change that breaks the macOS-only code which uses it. S
 work is integrated: pushes to `main`, pull requests into `main`, and the pull request whose head is the swarm's trunk. There every
 change of code is compiled and driven on a real Mac.
 
+A pull request that is still a draft gets no Mac, whatever it changes and wherever it goes: its author has not said that it is ready, Linux
+runs lint alone for it (.github/workflows/linux.yml says why), and that run has no verdict. Marking it ready starts the whole run.
+
 "[mac]" in the subject of the head commit, or the label "mac" on the pull request, asks for the Mac
-whatever changed. When anything is unclear (a call fails, a comparison is too large to
+whatever changed, on a draft too. When anything is unclear (a call fails, a comparison is too large to
 list), it runs.
 
 A Mac that runs need not repeat what the Linux job does on the same commit, nor build what an earlier job has built. There are
@@ -217,8 +220,9 @@ def decide(name, event, repo, sha):
         integration = pull["head"].get("ref") == INTEGRATION_BRANCH or pull.get("base", {}).get("ref") == MAIN
         changed = lambda: files_of_pull_request(repo, pull["number"])
         labels = {label.get("name") for label in pull.get("labels", [])}
+        draft = bool(pull.get("draft"))
     elif name == "push":
-        head, whole, integration, labels = sha, "the push", True, set()
+        head, whole, integration, labels, draft = sha, "the push", True, set(), False
         changed = lambda: files_between(repo, event["before"], head)
     elif name == "schedule":
         return FULL, "every night: every test, built from nothing, as a backstop"
@@ -240,6 +244,9 @@ def decide(name, event, repo, sha):
         return how, f'{ASKED_FOR}: the pull request has the label "{LABEL}"; {HOW[how]}'
     if MARKER in words:
         return how, f"{ASKED_FOR}: the head commit's subject says {MARKER}; {HOW[how]}"
+    # Whoever asks for a Mac above gets one, on a draft too: a probe stays possible.
+    if draft:
+        return None, "a draft: the Mac runs when its author marks it ready for review, or when the label or the marker asks for it"
     if names and not beyond(names, *prose):
         return None, f"{whole} changes only prose, data that the Linux job checks too, and scripts the macOS job cannot reach"
     if names and not integration and not beyond(names, *prose, HEADLESS):

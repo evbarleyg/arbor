@@ -18,6 +18,14 @@ name: Linux
 # Steps run through scripts/ci-step.py, which publishes what matters as check annotations.
 on:
   workflow_call:
+    inputs:
+      # Everything, or lint alone. Fifteen runners have 900 minutes in an hour, and a run of all this takes over twenty of them. Whoever pushes
+      # has just run the same checks in the same image (`make gate`), so a pull request that is still a draft gets lint, and
+      # all of it from the moment its author marks it ready for review. ci.yml decides. With lint alone there is no verdict:
+      # it is skipped, which is not a success, so that nothing is taken for proven that was not run.
+      all:
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -46,6 +54,7 @@ jobs:
   # swift build sees the real thing.
   linux-typecheck-mac:
     name: typecheck-mac
+    if: ${{ inputs.all }}
     runs-on: ubuntu-24.04
     container: swift:6.4-noble
     timeout-minutes: 15
@@ -64,6 +73,7 @@ jobs:
   # Whatever drives the built arbor-sim, and the rest of `make check` that is not a test.
   linux-sim:
     name: sim
+    if: ${{ inputs.all }}
     runs-on: ubuntu-24.04
     container: swift:6.4-noble
     timeout-minutes: 15
@@ -94,6 +104,7 @@ jobs:
   # needs a build or Swift: at the end of that job, and then taking three, they made it the slowest of all.
   linux-tooling:
     name: tooling
+    if: ${{ inputs.all }}
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -113,6 +124,7 @@ jobs:
   # 0.13). That Swift has a job of its own in ci.yml, `oldest-swift`, for which the verdict does not wait.
   linux-tests:
     name: tests-${{ matrix.part }}
+    if: ${{ inputs.all }}
     strategy:
       fail-fast: false
       matrix:
@@ -154,7 +166,7 @@ jobs:
   linux-verdict:
     name: verdict
     needs: [linux-lint, linux-typecheck-mac, linux-sim, linux-tooling, linux-tests]
-    if: ${{ !cancelled() }}
+    if: ${{ inputs.all && !cancelled() }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:

@@ -4,6 +4,8 @@ on:
   push:
     branches: [main]
   pull_request:
+    # The last of them: a draft gets lint alone (see the job `linux`), and all the rest when its author marks it ready for review.
+    types: [opened, synchronize, reopened, ready_for_review]
   # Every test on a Mac, built from nothing, once a night on main: the backstop for all that the other runs leave to Linux and to caches.
   # At an hour when few people want a Mac.
   schedule:
@@ -153,7 +155,7 @@ jobs:
         run: ./scripts/ci-step.py scenarios ./scripts/scenarios.sh
       - name: Release tooling
         run: ./scripts/ci-step.py --summary '✘|release tools test' release-tools ./scripts/release-tools-test.sh
-      # It wants the log of every test. Linux has one on every commit, and checks the same.
+      # It wants the log of every test. Linux has one wherever there is a verdict, and checks the same.
       - name: Parity (no shipped feature may break; FEATURES.md must be current)
         if: env.TESTS == 'full'
         run: ./scripts/ci-step.py parity python3 scripts/parity.py --report mac.tsv.events --check
@@ -199,7 +201,8 @@ jobs:
   # only such a pass spares the next run its Mac.
   macos-from-nothing:
     needs: [changes, macos]
-    if: ${{ needs.macos.result == 'success' && needs.changes.outputs.build != 'upon' }}
+    # Not for a draft that asked for a Mac: nobody has checked there that every test ran somewhere.
+    if: ${{ needs.macos.result == 'success' && needs.changes.outputs.build != 'upon' && (github.event_name != 'pull_request' || !github.event.pull_request.draft) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
@@ -208,7 +211,8 @@ jobs:
   # The net under the selection: every test the Mac's build contains has run, there or on Linux. Its summary says what ran where.
   tests-accounted-for:
     needs: [changes, linux, macos]
-    if: ${{ !cancelled() && needs.macos.result != 'skipped' }}
+    # Not for a draft that asked for a Mac: Linux ran lint alone there and left no record to hold the Mac's against.
+    if: ${{ !cancelled() && needs.macos.result != 'skipped' && (github.event_name != 'pull_request' || !github.event.pull_request.draft) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
@@ -226,8 +230,13 @@ jobs:
         run: ./scripts/ci-tests.py account --mac mac.tsv --mac-all mac-all.txt --linux linux.tsv --mode "$MODE" --why "$WHY"
 
   # The headless stack, on Linux, in every run: .github/workflows/linux.yml. `needs: linux` waits for all of it.
+  # Of a pull request that is still a draft only lint: linux.yml says why. The checks of that run stay with the commit, as skipped,
+  # beside those of the run that marking it ready starts. So whoever asks whether a commit passed asks for `linux / verdict`,
+  # the newest of that name, and not whether all that is called linux succeeded.
   linux:
     uses: ./.github/workflows/linux.yml
+    with:
+      all: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
 
   # What is compiled for a part of the tests is not the checkout, and a process to a file is not how `swift test` runs them
   # (linux.yml). So where work is integrated (a push to main, a pull request into it, from whatever branch), and at
@@ -235,7 +244,8 @@ jobs:
   # to wait twelve minutes for it: whoever integrates waits for this one too. It starts at once, beside the parts: by
   # the time it has run, their record is there, or they failed and so does this.
   tests-whole:
-    if: ${{ github.event_name != 'pull_request' || github.base_ref == 'main' }}
+    # Not for a draft: there are no parts there to hold it against.
+    if: ${{ github.event_name != 'pull_request' || (github.base_ref == 'main' && !github.event.pull_request.draft) }}
     runs-on: ubuntu-24.04
     container: swift:6.4-noble
     timeout-minutes: 30
@@ -264,6 +274,8 @@ jobs:
   # than twice what the Linux verdict takes, so it is no part of that: a check of its own, which whoever lands reads by its name.
   # RED HERE STOPS A LANDING as a red verdict does. What it catches is easy to write (`let x = … { x(…) }`), so it will fire.
   oldest-swift:
+    # Not for a draft, like all but lint.
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
     runs-on: ubuntu-24.04
     container: swift:6.2-noble
     timeout-minutes: 30
