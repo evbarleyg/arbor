@@ -32,6 +32,10 @@ menu, whose macOS half has never had a key pressed or a hand laid on it on a rea
 exactly what has run, and says "by the spec's own words" where that is the source. It is here because it is the same debt: what is known about it is known from the stand-ins. Such a case shrinks as its check runs: what
 differed becomes cases of the other kinds, what held is said, and the entry goes when nothing is left that nobody knows.
 
+**What this list cannot see.** It counts where a Mac differed from the stand-ins. The first person who worked with Arbor quit it and went back to macOS's own tiling, and in nine of the ten complaints that were written down the stand-ins
+and the Mac agree: Arbor did what the specs said, or what had been overruled and was not yet built. They have a table of their own, with what held Arbor to each:
+[What the first person at a desk met](#what-the-first-person-at-a-desk-met).
+
 **How to keep it.**
 
 1. A real Mac surprised you: add an entry to `collab/reality.json` in the pull request that cures it, or at once with `"copes": "open"` if there is no cure yet.
@@ -54,24 +58,24 @@ differed becomes cases of the other kinds, what held is said, and the entry goes
 | [missing-report](#missing-report) | 40 | 7 | 12 | 6 | 4 | 18 | 21 | 1 | 4 | 14 | 10 |
 | [extra-report](#extra-report) | 8 | 0 | 3 | 3 | 0 | 2 | 6 | 0 | 0 | 2 | 0 |
 | [late-or-partial-answer](#late-or-partial-answer) | 42 | 8 | 10 | 14 | 6 | 12 | 27 | 0 | 5 | 10 | 12 |
-| [second-actor](#second-actor) | 44 | 6 | 12 | 16 | 9 | 7 | 27 | 0 | 4 | 13 | 7 |
+| [second-actor](#second-actor) | 44 | 6 | 12 | 16 | 9 | 7 | 26 | 0 | 4 | 14 | 8 |
 | [geometry](#geometry) | 27 | 0 | 7 | 12 | 6 | 2 | 16 | 1 | 2 | 8 | 6 |
 | [identity](#identity) | 28 | 4 | 6 | 5 | 6 | 11 | 11 | 1 | 2 | 14 | 7 |
 | [permissions](#permissions) | 21 | 7 | 5 | 3 | 3 | 10 | 10 | 2 | 2 | 7 | 4 |
 | [timing](#timing) | 47 | 7 | 4 | 16 | 7 | 20 | 25 | 4 | 7 | 11 | 8 |
-| [input](#input) | 52 | 5 | 5 | 12 | 11 | 24 | 20 | 6 | 7 | 19 | 7 |
+| [input](#input) | 55 | 7 | 6 | 13 | 12 | 24 | 20 | 6 | 7 | 22 | 10 |
 | [looks](#looks) | 18 | 0 | 0 | 0 | 1 | 17 | 1 | 2 | 3 | 12 | 4 |
 | [never-exercised](#never-exercised) | 16 | 7 | 2 | 13 | 0 | 1 | 0 | 0 | 15 | 1 | 16 |
 | [toolchain](#toolchain) | 40 | 1 | 0 | 1 | 4 | 35 | 22 | 1 | 0 | 17 | 6 |
-| **all** | 410 | 55 | 75 | 109 | 62 | 164 | 201 | 19 | 54 | 136 | 91 |
+| **all** | 413 | 57 | 76 | 110 | 63 | 164 | 200 | 19 | 54 | 140 | 95 |
 
 **Where the difference bit**
 
 | Where | That is | Cases | Hurt 1 or 2 | Guarded without a Mac | Guarded only on CI's Macs | Only when somebody starts a script | Not guarded |
 |---|---|---|---|---|---|---|---|
-| below the seam | in the macOS-only code under the platform protocols (AX, Input, UI, App), which no test on Linux runs | 132 | 83 | 42 | 13 | 32 | 45 |
+| below the seam | in the macOS-only code under the platform protocols (AX, Input, UI, App), which no test on Linux runs | 134 | 86 | 41 | 13 | 32 | 48 |
 | at the seam | in what crosses the platform protocols: a stand-in can play it to the controller | 143 | 89 | 106 | 0 | 11 | 26 |
-| controller | in the controller or the core, given reports that were right | 23 | 11 | 13 | 0 | 1 | 9 |
+| controller | in the controller or the core, given reports that were right | 24 | 12 | 13 | 0 | 1 | 10 |
 | test | in a test, a script or a harness that expected the wrong thing | 73 | 0 | 18 | 5 | 8 | 42 |
 | machine | in the machine, the toolchain or the way things are built and installed | 39 | 3 | 22 | 1 | 2 | 14 |
 
@@ -89,8 +93,10 @@ A fault that is known and open.
 
 | Case | Hurt | Where | Stand-ins play it | Guard |
 |---|---|---|---|---|
+| [a-key-arbor-does-not-hold-at-the-moment-reaches-the-app-in-front](#a-key-arbor-does-not-hold-at-the-moment-reaches-the-app-in-front) | 1 | below the seam | partly | not guarded |
 | [all-input-is-dropped-from-the-loss-of-the-permission-until-arbors-taps-are-gone](#all-input-is-dropped-from-the-loss-of-the-permission-until-arbors-taps-are-gone) | 1 | below the seam | cannot | not guarded |
 | [the-keyboard-stays-in-a-window-that-went-out-of-view](#the-keyboard-stays-in-a-window-that-went-out-of-view) | 1 | at the seam | yes | not guarded |
+| [with-fns-flag-on-the-event-arbors-letter-keys-are-not-arbors](#with-fns-flag-on-the-event-arbors-letter-keys-are-not-arbors) | 1 | below the seam | no | not guarded |
 | [a-quit-inside-arbors-wait-for-the-displays-goes-by-the-old-ones](#a-quit-inside-arbors-wait-for-the-displays-goes-by-the-old-ones) | 1 | at the seam | partly | only when somebody starts a script |
 | [an-app-that-is-busy-as-it-is-switched-to-is-never-reported-focused](#an-app-that-is-busy-as-it-is-switched-to-is-never-reported-focused) | 1 | below the seam | cannot | only when somebody starts a script |
 | [quitting-while-an-app-hangs-strands-its-windows](#quitting-while-an-app-hangs-strands-its-windows) | 1 | at the seam | partly | guarded without a mac |
@@ -99,9 +105,11 @@ A fault that is known and open.
 | [a-docked-window-let-go-in-macos-band-at-the-top-is-undocked](#a-docked-window-let-go-in-macos-band-at-the-top-is-undocked) | 2 | controller | yes | not guarded |
 | [a-move-that-a-hang-swallows-is-never-read-again](#a-move-that-a-hang-swallows-is-never-read-again) | 2 | below the seam | cannot | not guarded |
 | [a-move-that-timed-out-is-carried-out-when-the-app-wakes](#a-move-that-timed-out-is-carried-out-when-the-app-wakes) | 2 | at the seam | no | not guarded |
+| [a-window-would-not-dock-on-the-right-while-another-was-minimized](#a-window-would-not-dock-on-the-right-while-another-was-minimized) | 2 | controller | yes | not guarded |
 | [arbor-starts-while-an-app-hangs-and-each-try-to-observe-it-waits-a-second](#arbor-starts-while-an-app-hangs-and-each-try-to-observe-it-waits-a-second) | 2 | below the seam | cannot | not guarded |
 | [behind-a-locked-screen-arbor-takes-no-window](#behind-a-locked-screen-arbor-takes-no-window) | 2 | below the seam | cannot | not guarded |
 | [docking-into-a-slot-too-small-took-seven-to-twelve-seconds](#docking-into-a-slot-too-small-took-seven-to-twelve-seconds) | 2 | at the seam | no | not guarded |
+| [macos-never-refused-a-shortcut-that-another-process-holds](#macos-never-refused-a-shortcut-that-another-process-holds) | 2 | below the seam | no | not guarded |
 | [real-apps-are-reported-gone-before-their-sibling-has-the-keyboard](#real-apps-are-reported-gone-before-their-sibling-has-the-keyboard) | 2 | at the seam | no | not guarded |
 | [the-key-that-fills-the-screen-pressed-again-fills-it-with-another-apps-window](#the-key-that-fills-the-screen-pressed-again-fills-it-with-another-apps-window) | 2 | controller | partly | not guarded |
 | [the-second-click-of-a-double-click-lands-in-the-window-just-framed](#the-second-click-of-a-double-click-lands-in-the-window-just-framed) | 2 | below the seam | partly | not guarded |
@@ -177,12 +185,14 @@ So no test on Linux can meet it. (Those they play partly are not listed: see eac
 
 | Case | Hurt | Where | Stand-ins play it | Guard |
 |---|---|---|---|---|
+| [with-fns-flag-on-the-event-arbors-letter-keys-are-not-arbors](#with-fns-flag-on-the-event-arbors-letter-keys-are-not-arbors) | 1 | below the seam | no | not guarded |
 | [a-child-has-its-parents-permission](#a-child-has-its-parents-permission) | 1 | below the seam | no | guarded only on ci's macs |
 | [stage-manager-rearranges-windows-on-its-own](#stage-manager-rearranges-windows-on-its-own) | 1 | at the seam | no | guarded without a mac |
 | [tap-to-click-is-up-before-finder-has-answered](#tap-to-click-is-up-before-finder-has-answered) | 1 | below the seam | no | guarded without a mac |
 | [a-move-that-timed-out-is-carried-out-when-the-app-wakes](#a-move-that-timed-out-is-carried-out-when-the-app-wakes) | 2 | at the seam | no | not guarded |
 | [app-nap-delays-an-accessory-apps-timers](#app-nap-delays-an-accessory-apps-timers) | 2 | at the seam | no | not guarded |
 | [docking-into-a-slot-too-small-took-seven-to-twelve-seconds](#docking-into-a-slot-too-small-took-seven-to-twelve-seconds) | 2 | at the seam | no | not guarded |
+| [macos-never-refused-a-shortcut-that-another-process-holds](#macos-never-refused-a-shortcut-that-another-process-holds) | 2 | below the seam | no | not guarded |
 | [real-apps-are-reported-gone-before-their-sibling-has-the-keyboard](#real-apps-are-reported-gone-before-their-sibling-has-the-keyboard) | 2 | at the seam | no | not guarded |
 | [twins-and-displays-without-a-uuid-share-one-name](#twins-and-displays-without-a-uuid-share-one-name) | 2 | at the seam | no | not guarded |
 | [macos-puts-windows-back-on-a-display-that-returns](#macos-puts-windows-back-on-a-display-that-returns) | 2 | at the seam | no | only when somebody starts a script |
@@ -1733,7 +1743,7 @@ A second actor: macOS, an app or another tool moves things too.
 
 - **Expected:** Only drags and edge drags change a docked window by hand, so a change of size after a press is an edge resize. macOS's zoom was expected to arrive while the button is down and to move gaps nobody touched, so a rule was written against that. A script's double-click on a title bar is only Arbor's business.
 - **Happened:** macOS zooms a window whose title bar is double-clicked (or whose green button is ⌥-clicked) to the whole visible frame. A docked one flashes: Arbor puts it back 0.26 s later. A floating one covers the docked windows, in one step ((527,472 326×651) to (0,31 1024×674)), which would have hidden every later step of a script. On macOS 26 the resize arrives with the button already up, so it never was taken for an edge drag there.
-- **Found by:** A review of the Accessibility layer, the suite of real apps and the drag script with real clicks on a hosted Mac. The trap for scripts came to light in a rehearsal on the fake Mac.
+- **Found by:** A review of the Accessibility layer, the suite of real apps and the drag script with real clicks on a hosted Mac. The trap for scripts came to light in a rehearsal on the fake Mac. Met since by a person at a desk: the maintainer, in a working session with the first build, after Arrange Windows: the window filled the screen for a moment and was put back. It had been ruled a fault the day before (Q22) and was not built.
 - **Stand-ins play it:** partly (`World.zoom`, `FakeWindowSystem.userMove`, `World.zoomedFrom`)
 - **Guard:** `test: aSizeChangeAfterAPressInTheTitleBarIsNotAnEdgeResize`; `e2e: double-click the title bar of a docked window` (on CI's Macs); `e2e: no seam moved` (on CI's Macs)
 - **Arbor copes:** WindowGrab.classify: only a press within 10 points of the border begins an edge resize. The flash of a docked window remains, and floating windows keep macOS's behaviour by decision.
@@ -1846,6 +1856,18 @@ A second actor: macOS, an app or another tool moves things too.
 - **Guard:** `test: aParkedWindowThatMacOSPullsBackIntoViewIsParkedAgain`; `test: arborDoesNotFightOverAParkedWindowForEver`; `test: pulledBackIntoViewByMacOSItGoesOutOfViewAgain`; `test: pulledOutOfItsCornerItGoesBackWithTheNextMoveOfTheViewAndNotWhileThatIsPlanned`; `e2e: the window that was parked all along is out of view again` (by hand)
 - **Arbor copes:** Controller.hasLeftItsCorner: it is parked again with the next put-back, three times at most. Only the origin is compared, so a parked window that grows into view from the same corner stays in view (known failure `parked-not-put-back`).
 - **Read in:** `Tests/ArborKitTests/OutOfViewTests.swift`, `Sources/ArborKit/Controller/Controller+Events.swift`, `scripts/mac-shell/shots-review-controller.sh`, `collab/parity.json`, `Sources/ArborTesting/ChaosKnownFailures.swift`
+
+### macos-never-refused-a-shortcut-that-another-process-holds
+
+*hurt 2 · below the seam*
+
+- **Expected:** `RegisterEventHotKey` fails for a shortcut that another app already holds, so a refusal tells Arbor which keys are not its own: `HotKeyCenter.register` logs "shortcuts already in use by another app", and `doctor` names them. A hot key that is registered "swallows the key press so the frontmost app never sees it". This case said the first for as long as it stood, from the code's own words; no run was named.
+- **Happened:** On the one Mac that was asked `RegisterEventHotKey` never refused: it answered 0 to Arbor and to the other, in both orders, plain and exclusive. **Another process holds the chord, plain:** both hear every press; the app in front gets nothing. **Another process holds it with `kEventHotKeyExclusive`:** only that process hears, whoever came first. Arbor logs "registered 52 shortcuts" and `doctor` says "✔ Shortcuts: 52 registered": Arbor does not know that the key is not its own. **The app in front has a Carbon hot key of its own on the chord** (what Electron's `globalShortcut` is said to be): both ran, whoever registered first. **What a held key does keep from the app:** a menu item with the chord did not run, and a local and a global monitor in the app heard nothing. A listen-only event tap at the session level heard the key go down. So the road that Arbor is built for, the refusal, was never taken, and the two it has no eye for were: a key that is shared, and a key that is lost without a word. **On the first build's own binary too**, by a second probe: a rival with the same 52 hot keys, registered after Arbor and, in another session, before it, was refused none of 52, nor was Arbor; both heard every one of 51 keys, no app got any, and Arbor noticed nothing.
+- **Found by:** Stated in the input layer's code until 2026-10-15. Then a probe that is not on the trunk yet, one run on a hosted Mac (macOS 26.6.2; the trunk's Arbor as an app bundle that answers for its own permission, its input code the first build's, file for file; a witness app in front that writes down every key it is given; ten controls, all passed), in search of how a key of Arbor's reached another app (a-key-arbor-does-not-hold-at-the-moment-reaches-the-app-in-front); each order once. Then a second probe that is not on the trunk yet, by another session, one run on a hosted Mac (macOS 26.6.2) on the first build itself, its commit and the probe and nothing else: an app in front and a listener in the background with ears of every kind, taps at three points, monitors, a menu, a view, and Arbor's own log counted line by line. Every key was a posted event: no finger, no real keyboard.
+- **Stand-ins play it:** **no**
+- **Guard:** **none**
+- **Arbor copes:** **not yet**
+- **Read in:** `Sources/ArborKit/Input/HotKeyCenter.swift`, `Sources/ArborKit/App/ArborApp.swift`, `Sources/arbor-fakemac/World+Arbor.swift`, `Sources/ArborKit/Controller/Controller+Doctor.swift`, `Tests/ArborKitTests/DoctorTests.swift`
 
 ### macos-puts-windows-back-on-a-display-that-returns
 
@@ -2014,18 +2036,6 @@ A second actor: macOS, an app or another tool moves things too.
 - **Guard:** **none**
 - **Arbor copes:** Sources/ArborKit/Controller/Controller+Drag.swift chooses drop targets by the pointer, not by the window's frame, and sets no frame on a window that is being dragged. The script asks where the window is before it presses again.
 - **Read in:** `scripts/mac-shell/check-F09.sh`, `docs/TESTING.md`, `Sources/arbor-fakemac/World+Input.swift`, `collab/BACKLOG.md`, `docs/VIABLE.md`
-
-### macos-refuses-a-shortcut-another-app-holds
-
-*hurt 3 · below the seam*
-
-- **Expected:** Registering a hot key succeeds.
-- **Happened:** `RegisterEventHotKey` fails for a shortcut that another app already holds.
-- **Found by:** Stated in the input layer's code; no run is named.
-- **Stand-ins play it:** **no**
-- **Guard:** `test: shortcutsMacOSRefusedAreNamed`
-- **Arbor copes:** HotKeyCenter.register returns the refused ones; the app tells the controller (`refusedBindings`), `doctor` names them, and they are tried again.
-- **Read in:** `Sources/ArborKit/Input/HotKeyCenter.swift`, `Sources/ArborKit/App/ArborApp.swift`, `Sources/arbor-fakemac/World+Arbor.swift`
 
 ### option-held-in-a-drag-brings-up-macos-tiling-preview
 
@@ -3679,6 +3689,18 @@ Input: where presses, keys and gestures really go.
 - **Arbor copes:** Settings.guardDesktopClicks ships false until the guard has been seen on a Mac; PointerSurface.whatMayBeWaiting gives the click back unless everything above the palettes is what a Mac at rest has there.
 - **Read in:** `docs/features/F60-guard-the-wallpaper-click.md`, `Sources/ArborCore/PointerSurface.swift`, `docs/SETTINGS.md`, `Sources/ArborCore/Settings.swift`, `collab/BACKLOG.md`
 
+### a-key-arbor-does-not-hold-at-the-moment-reaches-the-app-in-front
+
+*hurt 1 · below the seam*
+
+- **Expected:** A shortcut that the menu, the guide and the panel of shortcuts show as Arbor's is Arbor's for as long as Arbor's item is in the menu bar. A key that Arbor does not hold at the moment does nothing: the guide's table of troubles has the state under "The shortcuts do nothing".
+- **Happened:** It does whatever the app in front makes of it. On a tester's Mac ⌃⌥A (`arrange`) with a widely used desktop chat app in front archived the open conversation in that app, twice in a row. **Seen since on hosted Macs, by two probes**, Arbor alive and its item in the menu bar in every state. *Another ad-hoc build put over a grant made for the old one, the row in the database still saying "allowed":* on the trunk's Arbor ⌃⌥A reached the app in front, one key down and one up; on the first build's own binary 52 of 52 keys did. *Never granted, waiting at a first launch:* ⌃⌥A twice in a row; 52 of 52. *The permission taken away while it ran, nothing out of view:* ⌃⌥A. And in the states a person asks for: paused, and with shortcuts off for the app in front, 51 of 51 each; with `hotkeysEnabled` false. No such press left a line in Arbor's log, since Arbor does not see the key. It knows the state and says so to whoever asks: without the permission `status` says "waiting for Accessibility permission" and `bindings` "all off without Accessibility permission". **Running, it did not**: 0 of 51 keys reached an app, in each probe, with no event tap installed, as Arbor ships; the key held through 12 repeats and let go: nothing; with a view held and holding still: taken; with secure input on: 0 of 51, though every tap and monitor is deaf then; after the display had slept and woken: 0 of 9. **The holes.** At launch 0.38 s passed between the start and "registered 52 shortcuts"; one ⌃⌥A fell into them and reached the app. Through 21 acts that might register the shortcuts anew Arbor did so twice, at a pause and at the resume, and the only presses an app was given were two during that pause. But that presser made about two presses a second, so a hole under half a second would mostly be missed; and of the first probe's 60 presses only 8 registrations of 1.2 to 1.5 ms fell among them, which is weak. Whether a peek's temporary shortcuts open a hole was not tried. **Which state the person was in is not known**, and nobody has read their log: a new local build over an old grant is the likelier of two candidates, not proven for that session. What shows, by the runs' pictures: the item is a warning triangle in each of these three states; in the first probe's two waiting states the welcome window is open besides; after the permission was taken away nothing else is on the screen. **The other candidate has Arbor running** (with-fns-flag-on-the-event-arbors-letter-keys-are-not-arbors). Two more roads fit a running Arbor: the app's own hot key on the same chord (macos-never-refused-a-shortcut-that-another-process-holds), and a key put in further in than the keyboard (macos-takes-a-hot-key-away-between-the-session-and-the-annotated-session). To hold no key in these states is what the specs ask (F63, criterion 5: "with none, no shortcut"; F40; F41). What no spec weighed is that the habit outlives the state: the same fingers reach the app. Ruled (Q29): ⌃⌥A is never bound again, and a key of Arbor's that is not Arbor's at that moment is something Arbor knows and says. No detector of the gate has an eye for it.
+- **Found by:** Met by a person at a desk: the maintainer, in a working session with the first build. Then a probe that is not on the trunk yet, one run on a hosted Mac (macOS 26.6.2; the trunk's Arbor as an app bundle that answers for its own permission, its input code the first build's, file for file; a witness app in front that writes down every key it is given; ten controls, all passed). Then a second probe that is not on the trunk yet, by another session, one run on a hosted Mac (macOS 26.6.2) on the first build itself, its commit and the probe and nothing else: an app in front and a listener in the background with ears of every kind, taps at three points, monitors, a menu, a view, and Arbor's own log counted line by line. Every key was a posted event: no finger, no real keyboard.
+- **Stand-ins play it:** partly (`World.pressKey`, `Harness.key`, `Harness.revokeAccessibility`)
+- **Guard:** **none**
+- **Arbor copes:** **not yet**
+- **Read in:** `collab/QUESTIONS.md`, `collab/BOARD.md`, `collab/scenarios/wanted/I16-a-key-of-arbors-never-reaches-another-app.sim`, `docs/GUIDE.md`, `docs/KEYBOARD.md`, `docs/features/F63-permission-taken-away.md`, `Sources/ArborKit/Controller/Controller+PassThrough.swift`, `Sources/ArborKit/App/ArborApp.swift`, `Sources/arbor-fakemac/World+Input.swift`, `Sources/ArborTesting/Harness.swift`
+
 ### a-silent-tap-freezes-all-input-until-the-next-event
 
 *hurt 1 · below the seam · touches `input-held`*
@@ -3726,6 +3748,18 @@ Input: where presses, keys and gestures really go.
 - **Guard:** `test: threeFreezesAreTheLimitHoweverManyTapsThereAre`; `e2e: and so is every other tap: they share the thread that was too slow` (by hand)
 - **Arbor copes:** TapHealth is one for the whole tap thread: switch-offs are counted together, and at the third every tap rests.
 - **Read in:** `docs/ARCHITECTURE.md`, `Sources/ArborKit/Input/EventTap.swift`, `collab/BACKLOG.md`
+
+### with-fns-flag-on-the-event-arbors-letter-keys-are-not-arbors
+
+*hurt 1 · below the seam · suspected*
+
+- **Expected:** A hot key that is registered for ⌃⌥A is Arbor's, whatever else is down. `docs/KEYBOARD.md`: "A global shortcut is taken away from every app on the Mac". `HotKeyCenter`: it "swallows the key press so the frontmost app never sees it".
+- **Happened:** With the flag that a held fn (Globe) key sets, 0x800000, on the key event, Arbor's keys that are not arrows are not Arbor's. Arbor running, 52 shortcuts registered, not paused, nothing on any list: ⌃⌥A, ⌃⌥↩, ⌃⌥Space, ⌃⌥[, ⌃⌥Z, ⌃⌥F and ⌃⌥G, seven of seven, reached the app in front (the tap at the annotated session point, the local monitor, `performKeyEquivalent`, then `keyDown` in the view), and Arbor's log did not grow by a line. ⌃⌥← and ⌃⌥→ with the flag went to Arbor as ever: an arrow carries it by nature, and posted without it an arrow reaches the app and not Arbor (posted-arrow-keys-need-the-flags-a-keyboard-adds, mirrored). So the window server compares that flag exactly when it looks for a hot key. With the flag AppKit's menu did not fire for the letters and the bracket, with Arbor or without; for ↩ and Space it did. So it fits an app that listens in its page or its view, not one with a plain menu equivalent for a letter. **What does not matter**, each 7 of 7 to Arbor and none to the app: the right-hand ⌃ and ⌥, left and right mixed, both of each pair down, Caps Lock's flag, the numeric-pad flag, flags with no modifier key going down at all, a key held to repeat. **Not shown:** that a real fn key held on a real keyboard puts that flag on a letter's key event as it passes the window server. On a laptop fn sits beside ⌃; if it does, a finger that catches fn with ⌃ turns ⌃⌥A into the app's own ⌃⌥A, with Arbor running and knowing nothing. One of two candidates for what a person met (a-key-arbor-does-not-hold-at-the-moment-reaches-the-app-in-front); it fits their words better in one respect, "Arbor running, not paused". A cure to try, not tried: Carbon has a bit for fn; each shortcut registered a second time with it. No stand-in compares flags, and no detector of the gate has an eye for a key of Arbor's that arrives elsewhere.
+- **Found by:** A second probe that is not on the trunk yet, by another session, one run on a hosted Mac (macOS 26.6.2) on the first build itself, its commit and the probe and nothing else: an app in front and a listener in the background with ears of every kind, taps at three points, monitors, a menu, a view, and Arbor's own log counted line by line: nine keys by thirteen hands and roads, beside the same thirteen with no Arbor. Every key was a posted event: no finger, no real keyboard.
+- **Stand-ins play it:** **no**
+- **Guard:** **none**
+- **Arbor copes:** **not yet**
+- **Read in:** `Sources/ArborKit/Input/HotKeyCenter.swift`, `docs/KEYBOARD.md`, `scripts/mac-shell/pointer.swift`, `collab/QUESTIONS.md`, `collab/BOARD.md`
 
 ### a-click-then-drag-arrives-as-a-double-click
 
@@ -3810,6 +3844,18 @@ Input: where presses, keys and gestures really go.
 - **Guard:** `test: movingTheViewWithNothingFocusedFocusesAWindowInView`; `test: aCommandThatLeavesTheViewWhereItIsLeavesTheFocusAloneToo`; `e2e: a click on the backdrop reaches the Finder's Desktop` (by hand)
 - **Arbor copes:** AXWindowSystem.keyboardLeftTheKnownWindows reports `keyboardFocusMoved`. Only an app's focused window counts, never its main one.
 - **Read in:** `collab/QUESTIONS.md`, `Sources/ArborKit/AX/AXWindowSystem.swift`, `Sources/arbor-fakemac/World+Input.swift`, `Sources/ArborKit/Platform/WindowSystem.swift`
+
+### a-window-would-not-dock-on-the-right-while-another-was-minimized
+
+*hurt 2 · controller · suspected*
+
+- **Expected:** ⌃⌥⌘→, or a drag to the right edge, docks the window in front on the right. `make sim` with three windows, one docked, one minimized, docks the third at `dock right`.
+- **Happened:** On a tester's Mac, with one window minimized, a browser window could not be docked on the right. Whether by key or by hand is not said, and which of two stories it was is not known. **By key**, played in arbor-sim on the first build and on the trunk alike: Arrange Windows puts three windows as a column of two, a third beside it, and the Desktop. With one of the two in the Dock, or hidden, the other fills the column. `dock right` on it first steps out of a group that nobody can see: the same picture on a display 1440 wide, both windows 464 points wide where they were 557, the reply "moved", nothing said on screen; the second press does what was meant. That is what F01 asks ("trades places with its neighbour or steps out of its group"). Ruled since: a key acts on what a person sees, one press, one visible step. **By hand**, played in arbor-sim: at macOS's defaults the right edge is macOS's (Q23), so nothing docks there, minimized window or not; a few points short of the last one macOS does not take the window either, and it is left hanging over the edge. Neither has been seen on a Mac.
+- **Found by:** Met by a person at a desk: the maintainer, in a working session with the first build. The two stories are its hunter's and the product owner's, each played in the simulator. Nobody asks for a trace from a person's Mac.
+- **Stand-ins play it:** yes (`FakeWindowSystem.setMinimized`, `FakeWindowSystem.tiling`)
+- **Guard:** **none**
+- **Arbor copes:** **not yet**
+- **Read in:** `collab/QUESTIONS.md`, `collab/BOARD.md`, `docs/features/F01-dock-and-zoom.md`, `Tests/ArborKitTests/GroupIdentityControllerTests.swift`, `collab/scenarios/93-macos-tiling-as-a-mac-comes.sim`, `collab/scenarios/wanted/README.md`
 
 ### an-accessory-app-stays-active-after-its-last-window
 
@@ -5190,6 +5236,51 @@ Toolchain and machines: compilers, runners and shells that differ from the ones 
 - **Guard:** **none**
 - **Arbor copes:** Sources/ArborKit/App/ArborEnvironment.swift: `ARBOR_APPEARANCE=dark` or `light` draws Arbor's own windows, panels and menu that way whatever the system's appearance.
 - **Read in:** `Sources/ArborKit/App/ArborEnvironment.swift`, `docs/ARCHITECTURE.md`, `collab/BACKLOG.md`
+
+## What the first person at a desk met
+
+The maintainer worked with the first build for a session (build 179, commit `3deb36a`), then quit it and went back to macOS's own tiling. What they said is `collab/IDEAS.md`, I16 to I25, and the handoff of 2026-10-14 beside it; it is ruled on in `collab/QUESTIONS.md`, Q29, and heads `collab/BOARD.md` as section 0.
+
+**Seven of ten were no fault by our own books, and the eighth hangs on a cause nobody can now read: the gap is not between the fake and the Mac but between the spec and the person.**
+
+**What is counted.** The ten are the ten scenarios of `collab/scenarios/wanted`, one for each thing disliked. Nine are the maintainer's own; the tenth, the key that fills the screen, nobody has met yet: the product owner foresaw it from the third task of I24. I21 has no scenario and stands under the table. *A fault by our own books* means: at that commit a spec, a ruling, the keyboard map or the guide said that Arbor should do otherwise than it did. Each row is sorted by what the maintainer wrote, not by what its scenario asks besides.
+
+- **Seven: no fault.** Arbor did what was written, and tests held it to that (of I18 nothing was written): I17, I18, I20 a, I20 b, I20 d with I20 e and I23, I22, the key that fills the screen.
+- **Two: faults, known, ruled on and not built.** I19 (Q22, board 1.22) and I20 c (Q20, board 1.18). Our own instruments had found both, the product owner had ruled against both on 2026-10-14, and both were on the board when the build was cut. The tests still held Arbor to the old way.
+- **One: open between two candidates, both being cured.** I16. If the first was theirs it is the eighth. If the second, it is a fault, and the first of the ten in which Arbor itself met a Mac that differs from what its books believe. In the product owner's words: seven, or eight if the likelier cause was theirs.
+- **In nine of the ten the stand-ins and a Mac agree**, and where they differ is all that the rest of this page counts. The tenth is I16: no app in a stand-in has a shortcut of its own, so a key that Arbor gives back does nothing there, and no stand-in compares flags at all.
+
+Names and numbers are as they stood at `3deb36a`, by grep. Whoever answers a complaint changes these tests; the table stays as the record of what held before.
+
+| | What the person met | A fault by our own books? | What held Arbor to it, or said the contrary of what the person met | What would have caught it | Board |
+|---|---|---|---|---|---|
+| **I16** | On a tester's Mac, ⌃⌥A (`arrange`) with a widely used desktop chat app in front archived the open conversation in that app, twice in a row: the app's own ⌃⌥A ran | **Open between two candidates. Nobody has read the person's log, and nobody will ask.** **One, by the book:** another ad-hoc build over a grant made for the old one. Arbor waits for the permission and holds no key. Seen twice on hosted Macs, with posted keys: on the trunk's Arbor, and on the first build's own binary, where 52 of 52 keys reached an app. `status` says "waiting for Accessibility permission", `bindings` "all off without Accessibility permission", the item is a warning triangle, and the row in the database still says allowed. To hold no key then is by the book. `docs/features/F63-permission-taken-away.md`: Arbor "gives the shortcuts back to the apps"; criterion 5: "with none, no shortcut". `docs/GUIDE.md` knows the state ("this happens after installing a new build") and files it under "The shortcuts do nothing". **Two, not by the book:** with the flag of a held fn key on the key event, Arbor's letter keys are not Arbor's. Arbor running, 52 shortcuts registered, not paused, nothing on any list: ⌃⌥A, ⌃⌥↩, ⌃⌥Space, ⌃⌥[, ⌃⌥Z, ⌃⌥F and ⌃⌥G, seven of seven, reached the app in front, and Arbor's log did not grow by a line. On a laptop fn sits beside ⌃. *Not shown:* that a real fn key held on a real keyboard puts that flag on a letter's key event. `docs/KEYBOARD.md`: "A global shortcut is taken away from every app on the Mac". That would be the first of the ten in which Arbor itself met a Mac that differs from what we believed, which is this page's own matter. It fits the maintainer's own words better in one respect: "Arbor running, not paused". That ⌃⌥A was bound at all is by the book: the row "⌃⌥A, `arrange`, shipped" of the keyboard map, whose table of clashes names editors, IDEs, design tools and remote desktops, no chat app. The cases: [a-key-arbor-does-not-hold-at-the-moment-reaches-the-app-in-front](#a-key-arbor-does-not-hold-at-the-moment-reaches-the-app-in-front), [with-fns-flag-on-the-event-arbors-letter-keys-are-not-arbors](#with-fns-flag-on-the-event-arbors-letter-keys-are-not-arbors), [macos-never-refused-a-shortcut-that-another-process-holds](#macos-never-refused-a-shortcut-that-another-process-holds) | `withNothingOutOfViewNoShortcutIsHeld`: without the permission Arbor holds nothing. `defaultLabelsAreTheOnesTheMenuAlwaysShowed`: Arrange is ⌃⌥A. In the stand-ins a key that is given back can do no harm: no app there has a ⌃⌥ shortcut of its own, and arbor-sim answers "pressed ctrl+opt+a" and goes on. On the fake Mac "A registered hot key never reaches an app" (`World.pressKey`). No stand-in compares flags: a key there is the name of a chord. This page had the premise and filed it as a trap for scripts, hurt 4: [posted-arrow-keys-need-the-flags-a-keyboard-adds](#posted-arrow-keys-need-the-flags-a-keyboard-adds), "The window server also compares the flags a real keyboard adds". Nobody turned it round | Checks on a hosted Mac, both written now: a witness app in front and the key pressed in every state Arbor can be in; the same keys by odd hands and odd roads. For the last step of the second a finger on a real keyboard. I25 d finds the clash, not the cause. A truer stand-in: apps that have shortcuts of their own | 0.1, 0.E |
+| **I17** | Too hard to work when not every open window can be seen. Windows out of view, parked or behind the framed space are hard to find again; Show Everything and Go to… are not enough as the way back | **No.** `docs/GUIDE.md`: "Where do the others go? Out of view." `docs/features/F01-dock-and-zoom.md`: "Windows outside the view are parked in a screen corner". Q20: "The one thing Arbor does to a floating window: it takes it out of view when the view leaves the Desktop". Beside it three known faults in which windows leave by themselves: board 1.29, 1.41, 1.47 | `zoomParksTheOthersAndBackRestoresThem` ("floating windows leave with the Desktop"), `otherFloatingWindowsStillLeaveWithTheDesktop`. 122 lines `expect hidden` in 40 of the 59 scenarios. The gate's own table, `docs/VIABLE.md`, section 6, lets a move of the view take floating windows "out of view and back" | I24 (its task "find a window that went out of view"); I25 a, once section 6 is rewritten | 0.9, 0.10, 0.11 |
+| **I18** | Bringing a few windows into a docked group takes one dock per window; it should be one step | **No: no book speaks of it.** The guide offers one window at a time or all of them: "In a hurry? ⌃⌥A docks every window on the display in a grid." Go to… (F27) chooses one row. `layout` (F54) docks several at once, for whoever types a line | Nothing says the contrary and nothing asks. The story of a newcomer, `90-the-first-ten-minutes`, docks three windows by three drags and is content | I25 b (steps and keys against macOS alone); I24 ("put two windows side by side": actions taken) | 0.12 |
+| **I19** | After `arrange`, a double-click on a title bar fills the screen for a moment, then Arbor puts the window back | **Yes, and known.** Q22 (2026-10-14): "Arbor stands aside. macOS's frame stays". Board 1.22. Not built when the build was cut | `resizesWithoutTheMouseAreStillPutBack`. **On real windows too:** `scripts/mac-shell/e2e-drag.sh`, which CI runs on its Macs, double-clicks a docked window's title bar, waits 1.5 s and checks "the window is in its slot": green meant that the fault was there. This page's own case, [a-double-click-on-a-title-bar-zooms-the-window](#a-double-click-on-a-title-bar-zooms-the-window), called it a flash that remains, and counted Arbor as coping. `fought` names Q22 in `docs/VIABLE.md`; that half is "to build" | I25 a. It needed no new instrument to be found, only to be built before the build was cut | 0.8 |
+| **I20 a** | An empty column for the Desktop in Arrange. `arrangeDesktopWeight` was set to its floor, 0.1, and even that is too much; wanted is none | **No.** `README.md`: "Width of the Desktop column made by Arrange". `docs/FEATURES.md`, T16: "grid plus a narrow Desktop column"; T03: "One Desktop leaf per display, always present". `docs/SETTINGS.md`: 0.1 to 3, so none cannot be asked for. (Two docks are two halves: ruled the same night, Q28, not built. Arrange was not in it) | `withNothingFloatingTheDesktopIsAsNarrowAsArrangeMakesIt`; `anAbsurdDesktopWeightStillArranges` asks for a Desktop wider than nothing even at a weight of 0; `dockingBuildsColumnsWithTheDesktopBetween`. `Desktop:0.5` is printed on 37 lines in seven files: 24 in 16 tests, ten in `docs/LAYOUTS.md`, whose transcripts a test plays | I25 b: "side by side" against macOS's halves. I24 | 0.6 |
+| **I20 b** | A window dragged near a screen edge or another window gets docked; it should be assumed to float, and dock only when asked | **No: it is the first sentence of the first spec.** F01: "Docking by drag (screen edges dock at the edge of the view, window edges dock beside that window…)". The guide: "drag a window to a screen edge and it **docks** there". F09 and the keyboard map: ⌘ held means "do not dock, just move" | `draggingToAScreenEdgeDocks`, `nearAScreenEdgeDocksAtTheCameraEdge`, `draggingOntoAWindowEdgeDocksBesideIt`, `nearAWindowEdgeDocksBesideIt`; on real windows "drag a window to the left screen edge". 41 drags in 15 scenarios, four of them with ⌘. Section 6 of `docs/VIABLE.md` counts "A dock, by key or drag" as asked for | I25 a, once a plain drag that ends docked counts as unasked; the same drags without Arbor, side by side (I25 b) | 0.4 |
+| **I20 c** | Docking one window arranges every window in the background | **Yes, and known.** Q20 (2026-10-14): "a floating window's frame is its person's. Arbor never resizes it and never moves it on screen." The guide, promise 2: "*Not yet:* a dock still pushes floating windows out of its way and can make them narrower". Board 1.18. Not built. (What its scenario asks besides, that filling the screen sends no floating window away, was by the book: Q20's "one thing") | `dockingPushesOverlappingFloatingWindowsOntoTheDesktop`; `20-floating-windows-make-way` ("Preview is pushed off the space Safari took"). F18, F48 and F61 each say they are overruled and "until it lands the text below is what the trunk does". The rule's own story passes: `rule-2-nothing-moves-until-you-dock` puts the two loose windows where the dock does not reach ("The others were not in its way and stay") | Found before: a day with nine real apps on a hosted Mac saw a window go from 1324 to 794 points. I25 a is that detector made a gate | 0.5 |
+| **I20 d, I20 e, I23** | A blue ring round the window in front, unwelcome and switched off. A tile with the app's icon stands in for a window that moves. The menu bar item grows to three icons at times | **No, three times.** `docs/features/F37-focus-ring.md`: "`focusRing`, true". Q15: "colour and icon is the look that ships". `docs/features/F10-menu-bar-and-onboarding.md`: "A setting `menuBarControls` (default true)"; the guide: "Once something is docked the icon grows into a row of small buttons" | The defaults themselves are tested: `settingsFilesFromBeforeTheRingStillLoad`, `oneMotionOf460Milliseconds`, `anOldSettingsFileGetsTheMenuBarDefaults`. The parity list names 25 tests for the ring (A15), 24 for the motion (T43), 23 for the buttons (T70). 25 lines `expect ring` in six scenarios | I25 c for the icon. For the ring and the cards only I24, or a person: no detector asks whether a thing drawn was wanted | 0.7, 0.A |
+| **I22** | The shortcuts are too elaborate: some fifty keys over ⌃⌥, ⌃⌥⇧ and ⌃⌥⌘, several differing by one modifier | **No.** `docs/KEYBOARD.md`, rule 1: "TrellisWM's published table works unchanged"; rules 2 to 4: ⌃⌥ looks, ⌘ moves, ⇧ is the counterpart. The same page: "each one has to earn its place" | 52 defaults: 28 with ⌃⌥, 17 with ⌃⌥⇧, seven with ⌃⌥⌘. `theDefaultShortcutsAreTheOnesTrellisWMPublishes` holds thirty of them key by key; `everyDefaultShortcutWorksOnEveryLayoutAndNoTwoShareAKey`. No test knows a number that would be too many | I25 c, a single test | 0.3, 0.A |
+| **The key that fills the screen** | (Foreseen, not met.) A newcomer who has docked nothing presses ⌃⌥↩: the window does not fill the screen | **No.** `docs/features/F43-say-what-happened.md` and the decisions in `collab/QUESTIONS.md`: on a floating window the key says "Mail floats · ⌃⌥⌘← docks it, then ⌃⌥↩ frames it" | `theFrameShortcutOnAFloatingWindowSaysWhatToDoFirst`, `framingAFloatingWindowShowsTheDesktopItLivesOn` | I24, its third task: "make one window fill the screen and keep it there" | 0.16 |
+
+**I21, which is not among the ten.** On a tester's Mac, with one window minimized, a browser window could not be docked on the right; `make sim` docked it. Which story the person met is not known ([a-window-would-not-dock-on-the-right-while-another-was-minimized](#a-window-would-not-dock-on-the-right-while-another-was-minimized)). Two have been told, and in both the heart of it is by the book:
+
+- *By key* (its hunter's; played in arbor-sim on the first build and on the trunk, no Mac needed; the cure is not on the trunk yet). Arrange Windows puts three windows as a column of two, a third beside it, and the Desktop. With one of the two in the Dock the other fills the column. ⌃⌥⌘→ on it first steps out of a group that nobody can see: the same picture, both windows 464 points wide where they were 557, the reply "moved"; the second press does what was meant. F01 says so: a docked window "trades places with its neighbour or steps out of its group", and `everyKeyboardMoveAlongARowChangesSomethingToSee` is content, since "the first press takes the window out of it, which shows in its size". Ruled since: a key acts on what a person sees, one press, one visible step.
+- *By hand* (the product owner's; played in arbor-sim, not seen on a Mac). At macOS's defaults the right edge is macOS's: Q23, "a window let go there, short of macOS's own point, floats where it is". `93-macos-tiling-as-a-mac-comes` holds Arbor to it: dragged to five points from the right edge, "nobody acts".
+
+Board 0.13. Counted by the maintainer's own notes instead, with I20 split in five and I21 in: twelve, of which eight were no fault, two were known faults, and two, I16 and I21, are open.
+
+**Read as a whole**
+
+- **In the seven the stand-ins told the truth.** The fake docked a dragged window, parked the others, left a column and drew a ring, and so did the Mac. No truer stand-in would have caught one of them, and ring 2, which counts where the stand-ins differ from a Mac, has no eye for them.
+- **The two faults needed no new instrument either.** They had been found, by a day with real apps on a hosted Mac and by whoever ported the double-click, and ruled on. What was missing was the build. In the product owner's words (Q29): "A decision that is not in the build a person tries is worth nothing to them."
+- **A ruling does not turn a test round.** After Q20 and Q22 the tests, a scenario and a check on CI's Macs went on asking for what had been overruled, so green meant that the fault was there. What follows, decided by the product owner on 2026-10-15: a ruling against the trunk comes the same day with its red scenario in `collab/scenarios/wanted`, with the list of the tests, scenarios and Mac checks that hold Arbor to what was overruled, and with a mark on each, so that their green is not counted as proof.
+- **Five of the seven are made of items that the parity list counts as shipped**: T01 and T02 (I20 b), T03 and T16 (I20 a), T32 (I17), T30 to T35 (I22), T43 and T70 (the motion, the buttons). `collab/README.md`: "A change improves Arbor when it raises the score". Each of these did. The ring (A15) is Arbor's own and counts for no score.
+- **The gate allowed them.** By section 6 of `docs/VIABLE.md` a drag that docks is asked for, and a move of the view may take floating windows away. So `moved-unasked` was silent by design on I17, I20 b and the second half of I20 c, and the day on a hosted Mac, 106 acts, could end with "no window lost". And no detector has an eye for a key of Arbor's that arrives in another app.
+- **The stories took the easy road.** The story of rule 2 keeps the loose windows out of the dock's way. The newcomer's ten minutes begin with `mac-tiling off`, which is not how a Mac comes. The guide calls a key that Arbor has let go of one that does nothing.
+- **What was never asked:** whether a person wanted what Arbor did. I24 and I25 a to e ask it.
 
 ## What the stand-ins say they cannot imitate
 
