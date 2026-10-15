@@ -59,7 +59,7 @@ Second half, the window and what the product owner asked of the commands:
 - A section's pane is drawn from the schema: a switch, a slider with a field and the unit, a menu, a checked text field; label and help
   from the entry; `advanced` entries behind a disclosure (at once where a section has no others); `hidden` ones nowhere. Restore
   Defaults per section. A new setting needs an entry and no code in the window.
-- Every change is a command (criterion 2: a refusal stands in red under the control it was made with, and the control falls back to
+- Every change is a command (criterion 2: a refusal stands under the control it was made with, behind a red mark, and the control falls back to
   the real value). A slider changes the setting when it is let go of. `arborctl set`, hand edits of the file and the menu show in the
   open window at once.
 - Shortcuts: every default in its usual order with what runs it now, then the user's own; click and press to record (Arbor lets go of
@@ -116,8 +116,31 @@ pane in both looks for somebody to look at:
   seen. Five of its checks were red through faults of its own on a display 1024 points wide, and are mended: with a wider gap every column became a tile
   (it asks for a smaller usable width now), it clicked where a window had been while it was a tile, and Accessibility names no app in front there.
 
+Round 3, what two judges found too faint in round 2's pictures, with a ruler (`scripts/polish/stills.py`):
+
+- What is wrong is said in the ink everything else is in, behind a mark in colour (`SettingsLook`, as on the panels: `PanelLook`). Warnings in macOS's orange came to
+  2.0 to 1 in the light look, with two buttons that depended on reading them, refusals in its red to 3.1 and 3.9; 4.5 is asked. The marks are a triangle and a
+  circle, for whoever cannot tell the colours apart, in colours of Arbor's that stand out from a card by 4.0 to 7.2 to 1 by reckoning.
+- The two banners stand on the window's own ground, with a line under them, and are told apart by their marks: the circle for a file that cannot be read, the triangle for the milder one. macOS's buttons let through what they lie on: over Arbor's tint their words came to 3.8 to 1
+  in the dark look, on the plain ground to 4.95.
+- A field's label is no longer the faint word inside it: Search has a magnifying glass before it, a rule's title field the words "Only windows whose title contains".
+- A setting that does nothing while a switch above it is off is dimmed and takes no clicks (`SettingsSchema.needs`, by key, and a switch may need another in its turn). Blue
+  switches stood under "Trackpad and mouse gestures", off, and did nothing. So it is in Gestures, two levels deep (that switch, Pinch to zoom, Zoom with ⌃⌥ and scroll), and
+  in Menu Bar. Behind Advanced and among what a search has found, where the switch may be out of sight, the row says which it waits for: of several the outermost.
+  What stood typed in a field when its switch went off is handed over all the same.
+- The card behind Advanced was nine points deeper at its foot than the one above it, which made General scroll for seven.
+- `SettingsWindowPictureTests` measures on the real views, on CI's Mac: what is in colour is a mark and no line of words, it stands out by 3 to 1, the words after it by 4.5, the
+  ground is not tinted; the rows under the switch lose their strong ink, in both looks; the two cards are as deep at the foot. Its ways of finding a mark and a card's foot were
+  tried on round 2's 95 pictures: the first names the eight with words in colour and no other, the second says 13 and 20. Not measured: the glass, the rule's label, and
+  where the sentence about the switch stands.
+
 ## Not shipped
 
+- What else hangs on a switch, going by the help: the ring's width, colour and radius on Focus ring, the share of colour on Tiles in their app's color, and the like in Windows. Not in `needs` yet:
+  each wants its proof that it does nothing meanwhile.
+- The welcome window still says a failure in macOS's red (`UI/Onboarding.swift`).
+- Round 3 has been seen by nobody yet: Linux type-checks it, CI's Mac measures it off screen. The next pictures from a hosted Mac are its proof.
+- No picture of the window with Increase Contrast, at two pixels to the point, or on glass (hosted Macs come with Reduce Transparency on).
 - Criterion 3 as far as pictures go: the panes have been looked at in light and dark, in pictures `shots-F12.sh` took on hosted Macs. Translucency cannot be
   judged there, and nobody has sat in front of the window.
 - Modifier keys and a colour are typed as text ("ctrl+opt", "accent").
