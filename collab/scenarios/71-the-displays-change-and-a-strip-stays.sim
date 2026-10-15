@@ -1,0 +1,54 @@
+# Proposed by the swarm (2026-10-15, board 0.23); the documenter may edit or drop it.
+# Story: Safari is docked. Chat is pushed aside by hand until a strip of it shows at the left edge of the screen. Then the displays
+# change, as they do all day: another resolution, a monitor plugged in and unplugged, the resolution as it was. As much of Chat
+# shows after each as before, so nothing moves. Arbor used to pull it wholly into view whenever its display had another size.
+# Then the strip is at the right edge and the screen gets narrower: most of the strip is gone. A hand can still get hold of Chat, so it
+# stays: what a change of displays does to a floating window is macOS's. Whoever misses it presses the key that brings windows back.
+# Reference: board 0.23: Arbor acts only where nobody could get hold of the window.
+quiet
+open Safari
+open Chat 400x400 at 800 200
+dock 101 left
+drag 102 -50 310
+wait 5
+expect at 102 -250 300
+
+# It only grows.
+display-size 1728x1117
+wait 5
+expect still
+expect at 102 -250 300
+# Smaller than it ever was, on the sides the strip is not on.
+display-size 1280x800
+wait 5
+expect at 102 -250 300
+# A monitor comes and goes.
+plug side right
+wait 5
+expect at 102 -250 300
+unplug side
+wait 5
+expect at 102 -250 300
+display-size 1440x900
+wait 5
+expect at 102 -250 300
+# The way home has nothing to fetch: it is where a hand left it.
+press home
+expect at 102 -250 300
+
+# The other edge, and this time the change takes most of what showed.
+drag 102 1480 310
+wait 5
+expect at 102 1280 300
+display-size 1340x840
+wait 5
+expect still
+expect at 102 1280 300
+# Nothing that happens by itself fetches it.
+open Notes 300x300
+wait 5
+expect at 102 1280 300
+# Its person does.
+press home
+expect at 102 940 300
+expect visible 102

@@ -89,7 +89,10 @@ extension Controller {
     // has just called off: then nobody else would.
     if !Self.areTheSame(before, displays) || somethingMovedBehindArborsBack { takeFloatingWindowsFromWhereTheyAre(movedByMacOS) }
     keepWhatMacOSRescued(whichShowed: showed)
-    let displaced = countAsOutOfViewWhatTheDisplaysDisplaced()
+    // (A layout may have seen the new menu bar before this report came.)
+    let lastReported = before.map { DisplaySnapshot(id: $0.id, frame: $0.frame, visibleFrame: visibleFramesLastReported[$0.id] ?? $0.visibleFrame, isMain: $0.isMain) }
+    visibleFramesLastReported = [:]
+    let displaced = countAsOutOfViewWhatTheDisplaysDisplaced(since: lastReported, movedByMacOS: movedByMacOS)
     guard !lettingGo else { return }
     // A display that came or went sent windows to another arrangement, whose view may not include the one being
     // typed in. As after a resume, it ends with that window in view. Before anything is laid out, so that every
@@ -102,6 +105,7 @@ extension Controller {
       bringIntoViewIfFocused(focused)
     }
     unasked { relayoutAll(reason: .camera, motion: .instant) }
+    leaveAsItIsWhatCouldNotBeMoved(of: displaced.union(arrivingInView))
     parkAgain()
     scheduleSave()
   }
@@ -449,7 +453,17 @@ extension Controller {
       // A window docked here was docked after any older dormant workspace
       // that still lists it went away, so this is the arrangement to keep.
       for window in workspace.tree.allWindows { forgetInDormantWorkspaces(window) }
-      dormant[displayID] = DormantWorkspace(workspace: workspace, since: dateToRemember(workspace), origin: corner)
+      // A floating window that came here across a border in nobody's hand, in the half minute before, and lies where it said: that is macOS's own
+      // move, said before Arbor heard of the displays. New numbers among the old displays, filed by the old geometry, are no place to
+      // come home to, two arrangements later. It is not remembered here, and is taken from where macOS has it when this display is back.
+      var remembered = workspace
+      let lately = now().addingTimeInterval(-Self.spokenLately)
+      for (window, place) in workspace.floating where !settings.floatingWindowsMakeWay && workspace.role(of: window) == nil {
+        if spokeOfItsPlace[window].map({ $0 >= lately }) == true, windows[window]?.frame == place, chosenOnShape[window]?.frame != place {
+          remembered.floating[window] = nil
+        }
+      }
+      dormant[displayID] = DormantWorkspace(workspace: remembered, since: dateToRemember(workspace), origin: corner)
       Log.info("display \(displayID) disconnected; remembering \(workspace.allWindows.count) window(s)")
     }
     guard let main = mainDisplayID, let mainDisplay = display(main), workspaces[main] != nil else {

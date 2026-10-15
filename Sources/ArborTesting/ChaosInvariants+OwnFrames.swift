@@ -1,6 +1,7 @@
 import ArborCore
 import ArborKit
 import CoreGraphics
+import Foundation
 
 /// A floating window's frame is its person's (collab/QUESTIONS.md, Q20), as a rule of the walks: with `floatingWindowsMakeWay`
 /// off, as it ships, **Arbor sets a floating window's frame only to take it out of view and to put it back exactly where
@@ -23,12 +24,22 @@ extension ChaosRunner {
   struct HandNote {
     var frame: CGRect
     var display: CGRect?
+    /// How much of it showed there and then, in square points.
+    var showing: CGFloat
+    var at: Date
   }
 
   func ownFrameViolations(after action: ChaosAction, _ problems: inout [InvariantViolation]) {
     departures = departures.filter { system.windows[$0.key] != nil }
     movedByUndo = movedByUndo.filter { system.windows[$0] != nil }
     noteWhatAHandLeft(after: action)
+    // ⌃⌥0, Show Everything, the Desktop, `relayout`, and what follows until the next command: an app that hung just then may wake. Any
+    // other command (Go to…, `reveal`, `find`) has its own say, for as long as nothing but time follows it.
+    if let command = action.parsedCommand, !command.isQuery {
+      (lookedForWindowsLast, askedSomethingLast) = ([.home, .showAll, .desktop, .relayout].contains(command), true)
+    } else if !seven.timeOnly, action.parsedCommand == nil {
+      askedSomethingLast = false
+    }
     // Once this step has been judged: a window that has just left is no longer where the hand left it.
     defer {
       leftByHand = leftByHand.filter { window, note in
@@ -46,8 +57,20 @@ extension ChaosRunner {
         guard let old = displaysBefore.first(where: { $0.frame == note.display }), let new = controller.display(old.id)?.frame,
           new.size == old.frame.size, new != old.frame
         else { continue }
-        leftByHand[window] = HandNote(frame: note.frame.offsetBy(dx: new.minX - old.frame.minX, dy: new.minY - old.frame.minY), display: new)
+        leftByHand[window] = HandNote(frame: note.frame.offsetBy(dx: new.minX - old.frame.minX, dy: new.minY - old.frame.minY), display: new, showing: note.showing, at: note.at)
       }
+      // What Arbor cannot know (board 0.23). A report in the half minute before it hears of the displays may be macOS's own, which passes for a
+      // hand's: on a display shaped otherwise since, such a note vouches for nothing. And a window that speaks while the old displays
+      // are still in force writes over what a hand left on record.
+      let lately = controller.now().addingTimeInterval(-30)
+      var speaksFirst = false
+      if case .displays(_, let order) = action { speaksFirst = order == .first || order == .recorded }
+      let known = Set(leftByHand.keys)
+      leftByHand = leftByHand.filter { window, note in
+        if speaksFirst, framesBefore[window] != system.windows[window]?.snapshot.frame { return false }
+        return note.at < lately || note.display == controller.workspaceID(containing: window).flatMap { controller.display($0)?.frame }
+      }
+      handsInDoubt.formUnion(known.subtracting(leftByHand.keys))
     }
     func floatsOrdinarily(_ window: WindowID, in workspaces: [DisplayID: Workspace]) -> Bool {
       // (Nor does one that fills the view: it has Arbor's frame because its person asked, and goes back when they say so. The rules
@@ -93,14 +116,19 @@ extension ChaosRunner {
           // Its display has only moved, and has taken the window and the hand's choice along; or is again as it was then.
         } else if left.displaysStayed, isWhere(now, left.frame, of: window) {
           // Where it was. Whether a hand once left it there Arbor may know better than this record, which an undo and a redo escape.
-        } else if !system.displayList.isEmpty, !showsHalf(now), !showsAllThatCan(now) {
+        } else if !system.displayList.isEmpty, !showsHalf(now), !showsAllThatCan(now), !isWhereAHandLeftIt(window, now) {
           problems.append(.init("own-frame-fit", "\(window) came back at \(now.brief), where nobody is known to have left it, and less than half of it shows"))
         }
       case (false, false):
-        // The one exception: a change of displays that cut it off. One that was nowhere a window can be used, and that no hand is known
-        // to have left there, is fetched whenever Arbor comes by. And a view can leave and come back within one step.
+        // The one exception: a change of displays that took it out of reach. One that is nowhere a window can be used, and that no hand left
+        // so (of which less shows than the hand left showing, too), is fetched when its person asks for their windows, and by nothing
+        // else: nothing is owed. And a view can leave and come back within one step.
+        let aHandLeftItSo =
+          leftByHand[window].map {
+            isWhere($0.frame, before, of: window) && Self.area(of: before, showingOn: system.displayList) >= $0.showing - 0.01 * before.area
+          } == true && showsEnoughToGrab(before)
         if now != before, now != whereMacOSPuts(before, window), moved.contains(window), !displaysChanged, !isAbout(window, action),
-          showsHalf(before) || (leftByHand[window].map { isWhere($0.frame, before, of: window) } == true && showsEnoughToGrab(before))
+          showsHalf(before) || aHandLeftItSo || !(lookedForWindowsLast || askedSomethingLast)
         {
           problems.append(.init("own-frame", "\(window) floated in view at \(before.brief), nobody touched it, and Arbor moved it to \(now.brief)"))
         }
@@ -133,7 +161,7 @@ extension ChaosRunner {
   private func noteWhatAHandLeft(after action: ChaosAction) {
     // What Arbor knows of hands it forgets with its process, not with a pause.
     switch action {
-    case .launch, .crash, .wayBack: return leftByHand.removeAll()
+    case .launch, .crash, .wayBack: return (leftByHand, handsInDoubt) = ([:], [])
     default: break
     }
     guard isRunning, wasRunningBefore else { return }
@@ -151,9 +179,10 @@ extension ChaosRunner {
     }
     guard let window, let frame = system.windows[window]?.snapshot.frame, let home = controller.workspaceID(containing: window) else { return }
     movedByUndo.remove(window)
+    handsInDoubt.remove(window)
     // No hand takes a window across a border without a drag, of the window or of one of its edges.
     if wasDragged || workspacesBefore[home]?.contains(window) == true {
-      leftByHand[window] = HandNote(frame: frame, display: controller.display(home)?.frame)
+      leftByHand[window] = HandNote(frame: frame, display: controller.display(home)?.frame, showing: Self.area(of: frame, showingOn: system.displayList), at: controller.now())
     }
   }
 

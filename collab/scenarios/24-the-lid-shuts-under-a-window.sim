@@ -25,8 +25,9 @@ expect above 101 102
 home
 wait 3
 expect above 101 102
-# The lid opens and Notes is let go across the two again. This time nobody rescues it, which no Mac does; Arbor copes anyway:
-# of a window that nobody left so, less than half is never all that shows.
+# The lid opens and Notes is let go across the two again. This time nobody rescues it, which no Mac does. A strip of it is left, with
+# its title bar: somebody can get hold of it, so Arbor moves nothing (board 0.23). Nobody left it so, and the key that brings windows
+# back fetches it.
 displays 2 below
 wait 3
 drag 101 700 880
@@ -34,4 +35,6 @@ wait 3
 expect visible 101
 displays 1
 wait 3
+expect still
+press home
 expect visible 101

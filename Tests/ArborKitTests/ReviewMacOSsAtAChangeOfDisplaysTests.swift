@@ -30,6 +30,19 @@ import Testing
     h.scheduler.advance(by: 3)
   }
 
+  /// A fit as there still is one. At a change of displays nothing is fitted that somebody can get hold of (board 0.23, the second half): so it is out of
+  /// view with its Desktop while the displays change, and comes back to where less than half of it would show.
+  func fitWhileOutOfView(_ h: Harness, _ terminal: WindowID, _ editor: WindowID, displays: [DisplaySnapshot] = [main]) -> CGRect {
+    h.run("dock \(editor.rawValue) left")
+    h.run("zoom \(editor.rawValue)")
+    h.scheduler.advance(by: 3)
+    h.system.changeDisplaysAsAMacDoes(displays)
+    h.scheduler.advance(by: 3)
+    h.run("back")
+    h.scheduler.advance(by: 40)
+    return h.frame(terminal)!
+  }
+
   func place(of window: WindowID, _ h: Harness) -> [DisplayID: CGRect] { h.controller.workspaces.compactMapValues { $0.floating[window] } }
   func framesSet(to window: WindowID, _ h: Harness) -> [CGRect] { h.system.frameLog.filter { $0.window == window }.map(\.frame) }
 
@@ -91,9 +104,8 @@ import Testing
   @Test func aFitDoesNotOutliveATaking() {
     let hanging = CGRect(x: 1250, y: 690, width: 600, height: 400)
     let (h, terminal, editor) = desk([Self.main, Self.side], terminalAt: hanging)
-    change(h, terminal, editor, to: hanging)
-    let fitted = h.frame(terminal)!
-    #expect(fitted != hanging, "the situation: it was fitted")
+    let fitted = fitWhileOutOfView(h, terminal, editor)
+    #expect(fitted != hanging && Self.main.visibleFrame.contains(fitted), "the situation: it was fitted")
     change(h, terminal, editor, to: Self.macOSs)
     h.system.clearFrameLog()
     change(h, terminal, editor, to: fitted)
@@ -136,7 +148,7 @@ import Testing
     #expect(!broken.contains { $0.rule == "size-not-given-back" }, "\(broken)")
   }
 
-  /// The same on a display that stays. It becomes narrower than the window and macOS does nothing about it, so Arbor fits the window. It becomes wide again, and macOS
+  /// The same on a display that stays. It becomes narrower than the window while that is out of view, so Arbor fits the window as it comes back. It becomes wide again, and macOS
   /// nudges the window, which is no longer at the frame Arbor fitted it to. It goes back to its own frame all the same, as it does unnudged, and
   /// has it when Arbor lets go.
   @Test(arguments: ["quit", "pause"]) func nudgedByMacOSAtASizeArborGaveItGoesBackToItsOwnFrame(how: String) {
@@ -145,9 +157,7 @@ import Testing
     var narrow = Self.main
     narrow.frame.size = CGSize(width: 800, height: 700)
     narrow.visibleFrame = CGRect(x: 0, y: 31, width: 800, height: 600)
-    h.system.changeDisplaysAsAMacDoes([narrow])
-    h.scheduler.advance(by: 3)
-    let fitted = h.frame(terminal)!
+    let fitted = fitWhileOutOfView(h, terminal, editor, displays: [narrow])
     #expect(fitted.width < wide.width, "the situation: Arbor made it narrower, \(fitted)")
     change(h, terminal, editor, to: fitted.offsetBy(dx: 0, dy: 24), displays: [Self.main])
     h.scheduler.advance(by: 20)
@@ -197,14 +207,18 @@ import Testing
   // MARK: Limits that nothing held
 
   /// Three quarters of it show, so it is not stranded, and its title bar is above every display: nobody could get hold of it. That is no place to take it from.
-  @Test func whereNobodyCouldGetHoldOfItItsOwnPlaceStands() {
+  /// It used to go back to its own place. Decided since (board 0.23, the second half): it is fitted, the least move that brings it wholly into view, and
+  /// the fitted frame is what the books hold.
+  @Test func whereNobodyCouldGetHoldOfItItIsFittedAndThatIsItsPlace() {
     var above = Self.side
     above.frame = CGRect(x: 0, y: -1080, width: 1920, height: 1080)
     above.visibleFrame = CGRect(x: 0, y: -1049, width: 1920, height: 1049)
     let (h, terminal, editor) = desk([Self.main, above])
     change(h, terminal, editor, to: CGRect(x: 400, y: -100, width: 600, height: 400), displays: [Self.main])
-    #expect(place(of: terminal, h) == [Self.main.id: Self.own])
-    #expect(h.frame(terminal) == Self.own)
+    let fitted = CGRect(x: 400, y: 31, width: 600, height: 400)
+    #expect(framesSet(to: terminal, h) == [fitted])
+    #expect(place(of: terminal, h) == [Self.main.id: fitted])
+    #expect(h.frame(terminal) == fitted)
   }
 
   /// Whoever lists windows by display is told that one has changed display.
@@ -247,9 +261,8 @@ import Testing
   @Test func whatArborFittedGoesBackToItsOwnFrame() {
     let hanging = CGRect(x: 1250, y: 690, width: 600, height: 400)
     let (h, terminal, editor) = desk([Self.main, Self.side], terminalAt: hanging)
-    change(h, terminal, editor, to: hanging)
-    let fitted = h.frame(terminal)!
-    #expect(fitted != hanging, "the situation: it was fitted")
+    let fitted = fitWhileOutOfView(h, terminal, editor)
+    #expect(fitted != hanging && Self.main.visibleFrame.contains(fitted), "the situation: it was fitted")
     change(h, terminal, editor, to: fitted)
     #expect(place(of: terminal, h) == [Self.main.id: hanging])
     #expect(h.frame(terminal) == hanging)

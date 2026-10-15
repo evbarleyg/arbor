@@ -116,6 +116,8 @@ extension Controller {
       let fresh = system.displays().first(where: { $0.id == displayID }),
       fresh.frame == displays[index].frame, fresh.visibleFrame != displays[index].visibleFrame
     else { return }
+    // (Whether a menu bar has come over a window is asked at the next report about the displays, of what the last one said.)
+    if visibleFramesLastReported[displayID] == nil { visibleFramesLastReported[displayID] = displays[index].visibleFrame }
     displays[index].visibleFrame = fresh.visibleFrame
   }
 

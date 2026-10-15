@@ -191,8 +191,14 @@ import Testing
     h.start()
     let chosen = CGRect(x: 776, y: 135, width: 230, height: 400)
     h.system.userMove(f, to: chosen)
+    h.scheduler.advance(by: 60)
     h.system.setDisplays([small()])
     h.scheduler.advance(by: 1)
+    // As Arbor ships the change itself moves nothing that a hand can get hold of (board 0.23): the key that brings windows back does.
+    if !makingWay {
+      #expect(h.frame(f) == chosen)
+      h.run("home")
+    }
     #expect(small().visibleFrame.contains(h.frame(f)!), "\(h.frame(f)!)")
     let a = h.system.open(app: "Mail", pid: 12)
     h.run("dock \(a.rawValue) left")

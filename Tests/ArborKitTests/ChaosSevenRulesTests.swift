@@ -449,7 +449,10 @@ private let b = WindowID(102)
     let unplug = "displays main:0,0,1440,900:25,0,0,0* windows-late"
     #expect(!nets(after: two, then: unplug, "react", "settle").contains("displays-left-mostly-out"))
     #expect(
-      nets(after: two, then: unplug, "react", "settle") { _ = $0.setFrame(self.rect(1380, 300, 500, 400), of: b) }.contains("displays-left-mostly-out"))
+      nets(after: two, then: unplug, "react", "settle") { _ = $0.setFrame(self.rect(1420, 300, 500, 400), of: b) }.contains("displays-left-mostly-out"))
+    // The control: however little of it shows, what somebody can get hold of may lie there (board 0.23).
+    #expect(
+      !nets(after: two, then: unplug, "react", "settle") { _ = $0.setFrame(self.rect(1380, 300, 500, 400), of: b) }.contains("displays-left-mostly-out"))
   }
 
   @Test func aGapItsPersonDraggedLasts() {
@@ -501,6 +504,23 @@ private let b = WindowID(102)
     for way in ["key down home", "quit", "pause"] {
       #expect(nets(after: twoFloating, then: way).isEmpty, "\(way)")
       #expect(nets(after: twoFloating, then: way) { _ = $0.setFrame(self.rect(120, 100, 500, 400), of: a) }.contains("moved-before-any-dock"), "\(way)")
+    }
+  }
+
+  /// A key that means "bring my windows back" may fetch what shows less than half where nobody left it so (board 0.23): Arbor does, and the net is
+  /// silent. Not what a hand left so, nor does anything else fetch. A command that names a window by a word may fetch that one.
+  @Test func withNothingArrangedAKeyThatBringsWindowsBackMayFetchWhatNobodyLeftSo() {
+    let narrower = ["advance 60", "displays main:0,0,1000,900:25,0,0,0* windows-late", "settle", "advance 60"]
+    let cutOff = ["launch", "open 101 Notes pid 1001 at 800 300 500 400", "open 102 Mail pid 1002 at 100 100 500 400", "settle"] + narrower
+    let pushedAside = ["launch", "open 101 Notes pid 1001 at 300 300 500 400", "settle", "move 101 800 300 500 400", "settle", "advance 60"]
+    let fetch: (FakeWindowSystem) -> Void = { _ = $0.setFrame(self.rect(500, 300, 500, 400), of: a) }
+    for way in ["key down home", "key down show-all", "desktop", "relayout"] {
+      #expect(nets(after: cutOff, then: way).isEmpty, "\(way)")
+      #expect(nets(after: ["displays main:0,0,1000,900:25,0,0,0* windows-never"] + pushedAside, then: way, fault: fetch).contains("moved-before-any-dock"), "\(way)")
+    }
+    #expect(nets(after: cutOff, then: "find Notes").isEmpty)
+    for other in ["cursor 10 10", "focus 102", "find Mail", "float-all"] {
+      #expect(nets(after: cutOff, then: other, fault: fetch).contains("moved-before-any-dock"), "\(other)")
     }
   }
 
@@ -727,10 +747,10 @@ private let b = WindowID(102)
   @Test func whatAChangeOfDisplaysTookNothingFromStays() {
     let hanging = oneDocked + ["move 102 -300 300 500 400", "settle", "advance 60"]
     #expect(!nets(after: hanging, then: "displays main:0,0,1280,800:25,0,0,0* windows-late", "settle").contains("displays-left-mostly-out"))
-    // The same change takes most of a window that was whole.
+    // The same change takes most of a window that was whole, and its title bar out of reach.
     let whole = oneDocked + ["move 102 900 450 500 400", "settle", "advance 60"]
     #expect(
-      nets(after: whole, then: "displays main:0,0,1280,800:25,0,0,0* windows-never", "settle") { _ = $0.setFrame(self.rect(1100, 650, 500, 400), of: b) }
+      nets(after: whole, then: "displays main:0,0,1280,800:25,0,0,0* windows-never", "settle") { _ = $0.setFrame(self.rect(1262, 650, 500, 400), of: b) }
         .contains("displays-left-mostly-out"))
   }
 

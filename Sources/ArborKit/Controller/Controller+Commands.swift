@@ -26,6 +26,10 @@ extension Controller {
     default: following.namesAPlace = false
     }
     defer { following.namesAPlace = outerNames }
+    // What a change of displays left out of sight or reach is fetched when its person asks (Controller+OwnFrames.swift).
+    let wasLooking = isLookingForWindows
+    isLookingForWindows = [.home, .showAll, .desktop, .relayout].contains(command)
+    defer { isLookingForWindows = wasLooking }
     // Once the command has had its own say about the keyboard (Controller+LetBe.swift).
     defer { theKeyboardLeavesTheTile() }
     let start = DispatchTime.now()

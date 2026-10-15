@@ -115,10 +115,15 @@ private let waysNotToLook = [["quit"], ["toggle-pause", "react", "advance 1", "r
       // But for the seven that another change on its way cures (#52, a display that changes side and shrinks): those may hold or
       // not, so that the two can land in either order.
       let curedElsewhere = desk.testDescription == Desk.laptopIsMain.testDescription && way.hasPrefix("external")
+      // Nine cells hold since a place said early is not remembered for the display that goes (board 0.23, `retireWorkspace`).
+      let holdsSince =
+        desk.testDescription == Desk.laptopIsMain.testDescription
+        ? ["laptop external", "laptop external none", "laptop none external"]
+        : ["external laptop", "external laptop none", "external none laptop", "laptop", "laptop none", "laptop none laptop"]
       withKnownIssue("a move reported before the displays change is judged by the old ones", isIntermittent: curedElsewhere) {
         thereAndBack(by: way, order: order, at: desk)
       } when: {
-        order == .first && !way.hasPrefix("none")
+        order == .first && !way.hasPrefix("none") && !holdsSince.contains(way)
       } matching: { issue in
         issue.comments.contains { $0.rawValue.contains("Arbor sent") || $0.rawValue.contains("ends on another display") }
       }
@@ -225,7 +230,7 @@ private let waysNotToLook = [["quit"], ["toggle-pause", "react", "advance 1", "r
   /// With real apps hosted Macs were recorded speaking in both orders within one change: in 10 of 13, one window, often the one with
   /// the keyboard, said where macOS had taken it a moment BEFORE macOS's list of displays changed, and the others after.
   ///
-  /// Every other window is where it began, in all 84 cells. The early speaker is not in 30: the older fault of the table above, for that
+  /// Every other window is where it began, in all 84 cells. The early speaker is not in 26: the older fault of the table above, for that
   /// one window, where its new place lies across a border of the displays as they still stand. (The controller before this
   /// suite's fix: 126 windows elsewhere, in 59 cells.) Strict, but for the eleven cells that #52 cures.
   @Test(arguments: waysThereAndBack, [101, 103])
@@ -234,8 +239,8 @@ private let waysNotToLook = [["quit"], ["toggle-pause", "react", "advance 1", "r
       let laptopIsMain = desk.testDescription == Desk.laptopIsMain.testDescription
       let crossesABorder =
         laptopIsMain
-        ? early == 103 && (!way.hasPrefix("none") || ["none external", "none laptop external"].contains(way))
-        : early == 101 && !way.hasPrefix("none")
+        ? early == 103 && (!way.hasPrefix("none") || ["none external", "none laptop external"].contains(way)) && way != "laptop external none"
+        : early == 101 && !way.hasPrefix("none") && !["external laptop", "external laptop none", "external none laptop"].contains(way)
       let curedElsewhere =
         laptopIsMain
         ? ["external laptop", "external laptop none", "external none", "external none laptop"].contains(way) : way.hasPrefix("laptop")

@@ -73,11 +73,13 @@ import Testing
 
   // MARK: What is noted of a window goes where the window goes
 
-  /// Fitted for a display that shrank. The display then moves (another one becomes the main display) and grows back.
+  /// Fitted for a display that shrank while it was out of view. The display then moves (another one becomes the main display) and grows back.
   @Test func whatWasFittedGoesBackThoughItsDisplayMovedMeanwhile() {
     let own = CGRect(x: 1000, y: 500, width: 400, height: 300)
-    let (h, _, _, f) = makeHarness(f: own)
+    let (h, a, _, f) = makeHarness(f: own)
+    h.run("zoom \(a.rawValue)")
     h.system.setDisplays([Self.display("main", CGRect(x: 0, y: 0, width: 1024, height: 768), isMain: true)])
+    h.run("back")
     let fitted = h.frame(f)!
     #expect(fitted == CGRect(x: 624, y: 468, width: 400, height: 300))
     // macOS takes the windows along.
@@ -160,14 +162,24 @@ import Testing
 
   // MARK: A hand's choice and a display that is another now
 
-  /// The walks found it. A hand chose a strip on the display as it was. On a display of another size nobody chose anything: the displays have
-  /// changed and less than half of the window shows, so it is fitted, though no less of it shows than did (Q20: "the price, accepted").
-  @Test func aStripLeftByHandIsFittedWhenItsDisplayChangesItsSize() {
+  /// A hand chose a strip on the display as it was. It used to be fitted on a display of another size though no less of it showed than did
+  /// ("the price, accepted"). Decided otherwise (board 0.23): Arbor acts only where nobody could get hold of the window. And the hand's
+  /// note is good for the display as it is shaped now, so no way home pulls the strip in. Where the change takes most of the strip it
+  /// stays too, but nobody chose what is left, and the key that brings windows back fetches it.
+  @Test func aStripLeftByHandStaysWhenItsDisplayChangesItsSize() {
     let (h, _, _, f) = makeHarness(f: CGRect(x: 800, y: 300, width: 400, height: 300))
     let strip = CGRect(x: 1380, y: 500, width: 400, height: 300)
     h.system.userMove(f, to: strip)
+    // (A report in the half minute before a change of displays may be macOS's own, and vouches for nothing.)
+    h.scheduler.advance(by: 60)
     h.system.setDisplays([Self.display("main", CGRect(x: 0, y: 0, width: 1440, height: 800), isMain: true)])
-    #expect(h.frame(f) == CGRect(x: 1040, y: 500, width: 400, height: 300))
+    #expect(h.frame(f) == strip)
+    h.run("home")
+    #expect(h.frame(f) == strip)
+    h.system.setDisplays([Self.display("main", CGRect(x: 0, y: 0, width: 1405, height: 800), isMain: true)])
+    #expect(h.frame(f) == strip)
+    h.run("home")
+    #expect(h.frame(f) == CGRect(x: 1005, y: 500, width: 400, height: 300))
   }
 
   /// The control: another display comes, its own is as it was, and the strip is still its person's.

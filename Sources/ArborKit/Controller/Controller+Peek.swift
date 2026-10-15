@@ -121,7 +121,7 @@ extension Controller {
       peek: Peek(origin: origin, root: root, at: peekTime, pointer: .zero, buttonDown: false), display: display, chord: chord,
       arrival: .toCome)
     // One key, one look at what came of it: everything, shown on the way to somewhere else, is no news.
-    summingUpForTheLine(on: display) { moveCamera(on: display, to: root, record: false) }
+    summingUpForTheLine(on: display) { lookingForWindows { moveCamera(on: display, to: root, record: false) } }
     peeking?.arrival = .over
     // The key has led somewhere, and is spent: nothing is left to hold, or to come back from.
     guard peeking?.peek.phase == .pressed else {

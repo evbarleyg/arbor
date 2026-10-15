@@ -474,8 +474,9 @@ import Testing
     #expect(h.system.isVisible(f), "\(h.frame(f)!)")
   }
 
-  /// A change of displays can also cut off a window that is in view. It had more than half showing, and has not now.
-  @Test func aWindowInViewThatAChangeOfDisplaysCutOffIsFitted() {
+  /// A change of displays can also cut off a window that is in view. It had more than half showing, and has not now. It used to be fitted.
+  /// Decided otherwise (board 0.23): Arbor acts only where nobody could get hold of the window. Its person's key fetches it.
+  @Test func aWindowInViewThatAChangeOfDisplaysCutOffStaysUntilItsPersonAsks() {
     let h = Harness(displays: [Self.display], settings: Settings())
     let a = h.system.open(app: "Finder", frame: CGRect(x: 340, y: 120, width: 920, height: 436))
     let f = h.system.open(app: "Terminal", frame: CGRect(x: 1100, y: 300, width: 400, height: 300))
@@ -487,6 +488,8 @@ import Testing
         id: DisplayID("main"), frame: CGRect(x: 0, y: 0, width: 1280, height: 800),
         visibleFrame: CGRect(x: 0, y: 31, width: 1280, height: 691), isMain: true, isBuiltIn: true)
     ])
+    #expect(h.frame(f) == CGRect(x: 1100, y: 300, width: 400, height: 300))
+    h.run("home")
     #expect(h.frame(f) == CGRect(x: 880, y: 300, width: 400, height: 300))
     #expect(h.frame(g) == CGRect(x: 100, y: 100, width: 700, height: 400), "the one that still shows is not touched")
   }
