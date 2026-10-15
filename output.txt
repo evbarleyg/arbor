@@ -1,0 +1,97 @@
+# mac-shell: scripts/mac-shell/check-fill-given-back.sh at ca73db4, macOS 26.6.2, 2026-10-15T16:04Z
+built Arbor, the pointer tool and the app bundles in 7s
+AppleActionOnDoubleClick: not set
+> open -g -b com.apple.TextEdit /tmp/arbor-apps.Snlo3J/scratch/oak.txt
+pid 5515 lists (id role subrole x y w h flags):
+  33 AXWindow AXStandardWindow 79 56 673 439 main
+session 1: Arbor pid 5729, ARBOR_ONLY_PIDS=5515: running: 1 display, 0 docked and 1 floating, 0 out of view
+Arbor dev
+
+▸ filled, zoomed by macOS and given back: the key gives the window its own frame
+> click 415 68
+> move 415 188
+  ✔ a real click gives it the keyboard
+> key ctrl+opt+return
+  ✔ the real key runs the command
+FRAMES key own: 79 56 673 439 filled: 12 43 1000 653
+  ✔ it fills the view
+> click 516 55 2
+> move 516 215
+  ✔ a real double-click on its title bar
+FRAMES key after the first double-click: 0 31 1024 677
+  ✔ macOS has given it another frame
+snap: mac-shell/key-1-zoomed-by-macos.jpg
+> click 518 43 2
+> move 518 203
+  ✔ a second real double-click
+FRAMES key after the second double-click: 12 43 1000 653
+  ✔ macOS has given it back what it had before: the fill's frame
+  ✘ which is not its own: Arbor knows that it fills — it is managed at 12 43 1000 653
+      picture: mac-shell/fail-check-fill-given-back-1.png
+      | display 0 0 1024 768, visible 0 31 1024 677, camera n0, back no
+      |   Desktop          12 43 1000 653
+      |   w33 12 43 1000 653       floating focused
+      log | INFO  trace check-fill-given-back-1-01 ended: 7 lines, another trace was started
+      log | INFO  trace check-fill-given-back-1-02: recording to /tmp/arbor-shell.bdDkFi/home/traces/2026-10-15-160519-check-fill-given-back-1-02.jsonl
+      log | DEBUG the button went down at 415,68, the pointer is at 415,68: it is on w33
+      log | INFO  zoom: filled the screen with w33
+      log | DEBUG the button went down at 516,55, the pointer is at 516,55: it is on w33
+      log | DEBUG the button went down at 516,55, the pointer is at 516,55: it is on w33
+      log | DEBUG the button went down at 518,43, the pointer is at 518,43: it is on w33
+      log | DEBUG the button went down at 518,43, the pointer is at 518,43: it is on w33
+snap: mac-shell/key-2-given-back.jpg
+> key ctrl+opt+return
+  ✔ the real key runs the command
+  ✘ it is exactly where and as large as it was
+      picture: mac-shell/fail-check-fill-given-back-2.png
+FRAMES key after the key: 12 43 1000 653
+  ✔ Arbor knows that it no longer fills
+snap: mac-shell/key-3-back.jpg
+
+▸ filled, zoomed by macOS and given back: Quit gives the window its own frame
+> click 415 68
+> move 415 188
+  ✔ a real click gives it the keyboard
+> key ctrl+opt+return
+  ✔ the real key runs the command
+FRAMES quit own: 79 56 673 439 filled: 12 43 1000 653
+  ✔ it fills the view
+> click 516 55 2
+> move 516 215
+  ✔ a real double-click on its title bar
+FRAMES quit after the first double-click: 0 31 1024 677
+  ✔ macOS has given it another frame
+snap: mac-shell/quit-1-zoomed-by-macos.jpg
+> click 518 43 2
+> move 518 203
+  ✔ a second real double-click
+FRAMES quit after the second double-click: 12 43 1000 653
+  ✔ macOS has given it back what it had before: the fill's frame
+  ✘ which is not its own: Arbor knows that it fills — it is managed at 12 43 1000 653
+      picture: mac-shell/fail-check-fill-given-back-3.png
+      | display 0 0 1024 768, visible 0 31 1024 677, camera n0, back no
+      |   Desktop          12 43 1000 653
+      |   w33 12 43 1000 653       floating focused
+      log | INFO  trace check-fill-given-back-1-02 ended: 135 lines, another trace was started
+      log | INFO  trace check-fill-given-back-1-03: recording to /tmp/arbor-shell.bdDkFi/home/traces/2026-10-15-160540-check-fill-given-back-1-03.jsonl
+      log | DEBUG the button went down at 415,68, the pointer is at 415,68: it is on w33
+      log | INFO  zoom: filled the screen with w33
+      log | DEBUG the button went down at 516,55, the pointer is at 516,55: it is on w33
+      log | DEBUG the button went down at 516,55, the pointer is at 516,55: it is on w33
+      log | DEBUG the button went down at 518,43, the pointer is at 518,43: it is on w33
+      log | DEBUG the button went down at 518,43, the pointer is at 518,43: it is on w33
+snap: mac-shell/quit-2-given-back.jpg
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+FRAMES quit after Quit: 12 43 1000 653
+  ✘ it is exactly where and as large as it was
+      picture: mac-shell/fail-check-fill-given-back-4.png
+snap: mac-shell/quit-3-after-quit.jpg
+
+17 passed, 4 failed
+still running when the script had ended, and stopped now:
+  5491 sleep
+exit code 1

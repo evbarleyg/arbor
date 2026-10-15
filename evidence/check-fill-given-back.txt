@@ -1,0 +1,30 @@
+# check-fill-given-back 2026-10-15T16:04Z on macOS 26.6.2, commit ca73db4
+
+▸ filled, zoomed by macOS and given back: the key gives the window its own frame
+  ✔ a real click gives it the keyboard
+  ✔ the real key runs the command
+  ✔ it fills the view
+  ✔ a real double-click on its title bar
+  ✔ macOS has given it another frame
+  ✔ a second real double-click
+  ✔ macOS has given it back what it had before: the fill's frame
+  ✘ which is not its own: Arbor knows that it fills — it is managed at 12 43 1000 653
+  ✔ the real key runs the command
+  ✘ it is exactly where and as large as it was
+  ✔ Arbor knows that it no longer fills
+
+▸ filled, zoomed by macOS and given back: Quit gives the window its own frame
+  ✔ a real click gives it the keyboard
+  ✔ the real key runs the command
+  ✔ it fills the view
+  ✔ a real double-click on its title bar
+  ✔ macOS has given it another frame
+  ✔ a second real double-click
+  ✔ macOS has given it back what it had before: the fill's frame
+  ✘ which is not its own: Arbor knows that it fills — it is managed at 12 43 1000 653
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✘ it is exactly where and as large as it was
+
+17 passed, 4 failed

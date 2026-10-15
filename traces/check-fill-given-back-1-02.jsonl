@@ -1,0 +1,135 @@
+{"arbor":"dev","cursor":[10,10],"displays":[{"frame":[0,0,1024,768],"id":"07230EFA-7A8D-4E37-845C-19CC8737EEF5","main":true,"name":"display-1","visible":[0,31,1024,677]}],"focusHistory":[33],"focused":33,"framePlan":2,"mouseDown":false,"name":"check-fill-given-back-1-02","onlyPIDs":[5515],"os":"macOS Version 26.6.2 (Build 25G83)","recorded":"2026-10-15T16:05:19Z","settings":{"allowAllURLCommands":false,"animationDuration":0.46,"appColourAmount":0.25,"appColours":true,"arrangeDesktopWeight":0.5,"autoDockMinimumHeight":300,"autoDockMinimumWidth":400,"automaticUpdateChecks":false,"bindings":{},"blurBehindArranged":0,"continuousZoom":false,"desktopColumn":false,"desktopEdge":0.05,"dimBehindArranged":0.25,"displays":[],"dropDwell":0.15,"excludedBundleIDs":[],"floatingWindowsMakeWay":false,"focusRing":true,"focusRingColour":"accent","focusRingRadius":0,"focusRingWidth":3,"frameRectangleModifier":"ctrl+opt","frameRectangleOnDesktop":true,"gap":12,"gapHandles":"shown","gesturesEnabled":true,"guardDesktopClicks":false,"historyButtons":true,"holdStillFor":[],"holdStillWhileCameraIsOn":false,"holdStillWhileMicrophoneIsOn":false,"hotkeysEnabled":true,"keepPushed":true,"makeRoom":true,"menuBarControls":true,"menuBarFill":0.25,"messages":"helpful","minimapDuration":0,"minimumUsableHeight":160,"minimumUsableWidth":240,"newWindows":"float","newWindowsWhileFramed":"guest","passThroughApps":[],"pauseForApps":[],"peek":true,"pinchThreshold":0.25,"pointerGestures":false,"previewDrags":true,"reflowWhileDragging":false,"resizeStep":40,"ruleTitleWait":2,"rules":[],"screenEdgeBand":12,"scrollOnDesktopZooms":false,"scrollZoom":true,"scrollZoomThreshold":40,"shareRemovedSpace":true,"shortcuts":"core","shortcutsFollowLayout":true,"shrinkOutOfView":false,"soleFloatTakesDesktop":false,"stepInToward":"auto","summonStays":false,"tabsEnabled":false,"tileFade":0.2,"tileRetryMinutes":10,"tileStyle":"icon","tintBehindArranged":0,"windowEdgeFraction":0.3,"windowPictures":false},"thinning":0.05,"trace":1,"windows":[{"app":"TextEdit","bundle":"com.apple.TextEdit","frame":[79,56,673,439],"id":33,"pid":5515,"title":"title[1]"}],"workspaces":{"07230EFA-7A8D-4E37-845C-19CC8737EEF5":{"back":[],"camera":0,"floating":{"33":[[79,56],[673,439]]},"forward":[],"names":{},"savedViews":{},"tree":{"desktop":0,"loans":[],"nextRawID":1,"nodes":{"0":{"id":0,"kind":{"desktop":{}},"weight":1}},"root":0,"visits":[]}}}}
+{"t":0.0026,"note":"filled, zoomed by macOS and given back: the key gives the window its own frame"}
+{"t":1.3746,"raw":"leftMouseDown 415,68"}
+{"t":1.3792,"event":"pointerPressed"}
+{"t":1.3907,"timer":"accessibility"}
+{"t":1.3912,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":1.4545,"raw":"leftMouseUp 415,68"}
+{"t":1.4581,"raw":"leftMouseUp 415,68"}
+{"t":2.5532,"note":"✔ a real click gives it the keyboard"}
+{"t":2.5885,"raw":"flagsChanged"}
+{"t":2.6750,"raw":"flagsChanged"}
+{"t":2.7603,"args":["ctrl+opt+return","zoom","pressed"],"event":"shortcut"}
+{"t":2.7605,"nested":true,"command":"zoom","from":"shortcut"}
+{"t":2.7610,"call":"focusedWindow","result":33}
+{"t":2.7613,"call":"focusedWindow","result":33}
+{"t":2.7615,"call":"displays","result":[{"frame":[0,0,1024,768],"id":"07230EFA-7A8D-4E37-845C-19CC8737EEF5","main":true,"name":"display-1","visible":[0,31,1024,677]}]}
+{"t":2.7618,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":2.7621,"call":"focusedWindow","result":33}
+{"t":2.7622,"call":"focusedWindow","result":33}
+{"t":2.7623,"call":"displays","result":[{"frame":[0,0,1024,768],"id":"07230EFA-7A8D-4E37-845C-19CC8737EEF5","main":true,"name":"display-1","visible":[0,31,1024,677]}]}
+{"t":2.9864,"call":"setFrame","frame":[12,43,1000,653],"id":33,"result":[12,43,1000,653],"took":0.224}
+{"t":2.9865,"call":"focus","id":33}
+{"t":2.9871,"call":"focusedWindow","result":33}
+{"t":2.9877,"call":"focusedWindow","result":33}
+{"t":2.9879,"done":"zoom","message":"filled the screen with w33","ok":true}
+{"t":2.9882,"args":["ctrl+opt+return","zoom","released"],"event":"shortcut"}
+{"t":2.9884,"raw":"screens 07230EFA-7A8D-4E37-845C-19CC8737EEF5 0,0 1024x768"}
+{"t":2.9884,"raw":"AXMoved w33"}
+{"t":2.9886,"event":"changed","user":false,"window":{"app":"TextEdit","bundle":"com.apple.TextEdit","frame":[12,43,1000,653],"id":33,"pid":5515,"title":"title[1]"}}
+{"t":2.9887,"raw":"AXResized w33"}
+{"t":2.9888,"event":"changed","user":false,"window":{"app":"TextEdit","bundle":"com.apple.TextEdit","frame":[12,43,1000,653],"id":33,"pid":5515,"title":"title[1]"}}
+{"t":2.9895,"raw":"flagsChanged"}
+{"t":3.0419,"raw":"flagsChanged"}
+{"t":3.1090,"note":"✔ the real key runs the command"}
+{"t":3.4907,"timer":"save"}
+{"t":3.4929,"event":"settingsFileMayHaveChanged"}
+{"t":3.4935,"event":"settingsFileMayHaveChanged"}
+{"t":3.8313,"timer":"settings-file"}
+{"t":4.2143,"command":"state","from":"script"}
+{"t":4.2152,"call":"focusedWindow","result":33}
+{"t":4.2153,"done":"state","message":"running: 1 display, 0 docked and 1 floating, 0 out of view","ok":true}
+{"t":4.2554,"note":"✔ it fills the view"}
+{"t":4.8575,"raw":"leftMouseDown 516,55"}
+{"t":4.8591,"event":"pointerPressed"}
+{"t":4.9681,"raw":"leftMouseUp 516,55"}
+{"t":4.9706,"raw":"leftMouseUp 516,55"}
+{"t":5.1197,"timer":"accessibility"}
+{"t":5.1201,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":5.1204,"raw":"leftMouseDown 516,55 click 2"}
+{"t":5.1210,"event":"pointerPressed"}
+{"t":5.1211,"args":[33],"event":"doubleClickReached"}
+{"t":5.2349,"raw":"leftMouseUp 516,55"}
+{"t":5.2389,"raw":"AXResized w33"}
+{"t":5.2444,"event":"changed","user":true,"window":{"app":"TextEdit","bundle":"com.apple.TextEdit","frame":[0,31,1024,677],"id":33,"pid":5515,"title":"title[1]"}}
+{"t":5.2450,"call":"displays","result":[{"frame":[0,0,1024,768],"id":"07230EFA-7A8D-4E37-845C-19CC8737EEF5","main":true,"name":"display-1","visible":[0,31,1024,677]}]}
+{"t":5.2452,"call":"isMouseButtonDown","result":false}
+{"t":5.7756,"timer":"save"}
+{"t":5.7768,"event":"settingsFileMayHaveChanged"}
+{"t":5.7776,"event":"settingsFileMayHaveChanged"}
+{"t":5.9445,"note":"✔ a real double-click on its title bar"}
+{"t":6.1496,"timer":"settings-file"}
+{"t":7.1373,"timer":"accessibility"}
+{"t":7.1381,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":8.0058,"note":"✔ macOS has given it another frame"}
+{"t":9.3329,"timer":"accessibility"}
+{"t":9.3380,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":9.8121,"raw":"leftMouseDown 518,43"}
+{"t":9.8180,"event":"pointerPressed"}
+{"t":9.8698,"raw":"leftMouseUp 518,43"}
+{"t":9.8734,"raw":"leftMouseUp 518,43"}
+{"t":10.0116,"raw":"leftMouseDown 518,43 click 2"}
+{"t":10.0123,"event":"pointerPressed"}
+{"t":10.0124,"args":[33],"event":"doubleClickReached"}
+{"t":10.0819,"raw":"leftMouseUp 518,43"}
+{"t":10.0861,"raw":"AXResized w33"}
+{"t":10.0914,"event":"changed","user":true,"window":{"app":"TextEdit","bundle":"com.apple.TextEdit","frame":[12,43,1000,653],"id":33,"pid":5515,"title":"title[1]"}}
+{"t":10.0922,"call":"displays","result":[{"frame":[0,0,1024,768],"id":"07230EFA-7A8D-4E37-845C-19CC8737EEF5","main":true,"name":"display-1","visible":[0,31,1024,677]}]}
+{"t":10.6661,"timer":"save"}
+{"t":10.6671,"event":"settingsFileMayHaveChanged"}
+{"t":10.6675,"event":"settingsFileMayHaveChanged"}
+{"t":10.7676,"note":"✔ a second real double-click"}
+{"t":11.0122,"timer":"settings-file"}
+{"t":11.5189,"timer":"accessibility"}
+{"t":11.5196,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":12.8342,"note":"✔ macOS has given it back what it had before: the fill's frame"}
+{"t":12.8504,"command":"state","from":"script"}
+{"t":12.8513,"call":"focusedWindow","result":33}
+{"t":12.8514,"done":"state","message":"running: 1 display, 0 docked and 1 floating, 0 out of view","ok":true}
+{"t":12.9256,"note":"✘ which is not its own: Arbor knows that it fills"}
+{"t":13.1695,"command":"state","from":"script"}
+{"t":13.1704,"call":"focusedWindow","result":33}
+{"t":13.1707,"done":"state","message":"running: 1 display, 0 docked and 1 floating, 0 out of view","ok":true}
+{"t":13.5663,"timer":"accessibility"}
+{"t":13.5674,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":14.1457,"raw":"flagsChanged"}
+{"t":14.1719,"raw":"flagsChanged"}
+{"t":14.2247,"args":["ctrl+opt+return","zoom","pressed"],"event":"shortcut"}
+{"t":14.2250,"nested":true,"command":"zoom","from":"shortcut"}
+{"t":14.2256,"call":"focusedWindow","result":33}
+{"t":14.2258,"call":"focusedWindow","result":33}
+{"t":14.2259,"call":"displays","result":[{"frame":[0,0,1024,768],"id":"07230EFA-7A8D-4E37-845C-19CC8737EEF5","main":true,"name":"display-1","visible":[0,31,1024,677]}]}
+{"t":14.2259,"args":[false],"read":"mayUseAccessibility","result":true}
+{"t":14.2261,"call":"focusedWindow","result":33}
+{"t":14.2263,"call":"focusedWindow","result":33}
+{"t":14.2264,"call":"displays","result":[{"frame":[0,0,1024,768],"id":"07230EFA-7A8D-4E37-845C-19CC8737EEF5","main":true,"name":"display-1","visible":[0,31,1024,677]}]}
+{"t":14.2267,"call":"focusedWindow","result":33}
+{"t":14.2268,"call":"focusedWindow","result":33}
+{"t":14.2881,"done":"zoom","message":"w33 fills the screen already","ok":true}
+{"t":14.3483,"args":["ctrl+opt+return","zoom","released"],"event":"shortcut"}
+{"t":14.3582,"raw":"flagsChanged"}
+{"t":14.3840,"raw":"flagsChanged"}
+{"t":14.4290,"note":"✔ the real key runs the command"}
+{"t":16.3907,"timer":"heads-up"}
+{"t":16.3912,"timer":"accessibility"}
+{"t":16.3915,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":18.5065,"timer":"accessibility"}
+{"t":18.5069,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":18.5081,"note":"✘ it is exactly where and as large as it was"}
+{"t":18.6552,"command":"state","from":"script"}
+{"t":18.6567,"call":"focusedWindow","result":33}
+{"t":18.6569,"done":"state","message":"running: 1 display, 0 docked and 1 floating, 0 out of view","ok":true}
+{"t":18.7066,"note":"✔ Arbor knows that it no longer fills"}
+{"t":19.5673,"raw":"AXResized w33"}
+{"t":19.5749,"event":"changed","user":true,"window":{"app":"TextEdit","bundle":"com.apple.TextEdit","frame":[12,43,673,439],"id":33,"pid":5515,"title":"title[1]"}}
+{"t":19.5754,"call":"displays","result":[{"frame":[0,0,1024,768],"id":"07230EFA-7A8D-4E37-845C-19CC8737EEF5","main":true,"name":"display-1","visible":[0,31,1024,677]}]}
+{"t":19.5760,"raw":"AXMoved w33"}
+{"t":19.5763,"event":"changed","user":true,"window":{"app":"TextEdit","bundle":"com.apple.TextEdit","frame":[79,56,673,439],"id":33,"pid":5515,"title":"title[1]"}}
+{"t":19.5765,"call":"displays","result":[{"frame":[0,0,1024,768],"id":"07230EFA-7A8D-4E37-845C-19CC8737EEF5","main":true,"name":"display-1","visible":[0,31,1024,677]}]}
+{"t":20.0964,"timer":"save"}
+{"t":20.0974,"event":"settingsFileMayHaveChanged"}
+{"t":20.0981,"event":"settingsFileMayHaveChanged"}
+{"t":20.4662,"timer":"settings-file"}
+{"t":20.6363,"timer":"accessibility"}
+{"t":20.6367,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":20.6376,"end":"another trace was started","lines":134,"thinned":0}
