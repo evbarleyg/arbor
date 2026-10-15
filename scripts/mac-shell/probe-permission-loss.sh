@@ -143,6 +143,9 @@ by_the_row_announced() {
   "$ASKER" announce
 }
 
+# A control: nothing is taken.
+nothing() { echo "nothing is taken"; }
+
 # The same without violence: no person kills a daemon. tccd is left alone and only told of nothing; the processes are told to ask again.
 by_the_row_and_a_word() {
   tcc "DELETE FROM access WHERE service = 'kTCCServiceAccessibility' AND client = '$BUNDLE_ID';"
@@ -195,7 +198,7 @@ one_round() {
   "$ASKER" arrivals "$((length + 5))" > "$ARBOR_OUT/arrivals-$round.txt" 2>&1 &
   started $!
   eventually grep -q arrivals-ready "$ARBOR_OUT/arrivals-$round.txt" || { invalid "the listener at the end of the taps started"; leave; return; }
-  "$ASKER" stream "$length" 50 "$x" "$y" > "$ARBOR_OUT/stream-$round.txt" 2>&1 &
+  "$ASKER" stream "$length" "${BEAT:-50}" "$x" "$y" --kinds "${KINDS:-click,key,wheel}" > "$ARBOR_OUT/stream-$round.txt" 2>&1 &
   stream=$!
   started "$stream"
   sleep 4
@@ -236,7 +239,9 @@ one_round() {
     fi
   fi
 
-  python3 - "$ARBOR_OUT/arrivals-$round.txt" "$ARBOR_OUT/stream-$round.txt" "$taken" "${removed:-$back}" "$between" > "$ARBOR_SESSION_DIR/verdict" <<'PYTHON'
+  python3 - "$ARBOR_OUT/arrivals-$round.txt" "$ARBOR_OUT/stream-$round.txt" "$taken" "${removed:-$back}" "$between" \
+    $([ "$who" = bare-tapper ] && echo "$ARBOR_OUT/tapper-$round.txt ${BEAT:-50} $(echo "${KINDS:-click,key,wheel}" | awk -F, '{ n = 0; for (i = 1; i <= NF; i++) n += ($i == "wheel" ? 1 : $i == "pinch" ? 3 : 2); print n }')") \
+    > "$ARBOR_SESSION_DIR/verdict" <<'PYTHON'
 import re, sys
 
 def seconds(text):
@@ -275,8 +280,22 @@ def stamp(time):
 for earlier, later in zip(found, found[1:]):
     if later[0] - earlier[0] > 0.15 or later[2] - earlier[2] > 1:
         print(f"  a hole of {(later[0] - earlier[0]) * 1000:.0f} ms from {stamp(earlier[0])} (n={earlier[2]}) to {stamp(later[0])} (n={later[2]}): {later[2] - earlier[2] - 1} events lost in it")
+text = open(stream).read()
+begins, ends = (seconds(re.search(r"(\S+) stream " + word, text).group(1)) for word in ("begins", "ends"))
+silence = ends - found[-1][0] if found else ends - begins
+if silence > 0.15:
+    print(f"  NOTHING ARRIVED from {stamp(found[-1][0]) if found else stamp(begins)} to the end of the stream, {silence * 1000:.0f} ms: {posted - (found[-1][2] if found else 0)} events lost in it")
+if missing and len(sys.argv) > 6:
+    # When the first event that was lost was due, by the stream's own beat; and how long after it each of the tapper's questions changed its answer.
+    beat, each = float(sys.argv[7]) / 1000, int(sys.argv[8])
+    due = begins + (missing[0] - 1) // each * beat
+    print(f"the first event that was lost (n={missing[0]}) was due at {stamp(due)}, {(due - taken) * 1000:.0f} ms after the deed began; the last to arrive before it came at {stamp(max(entry[0] for entry in found if entry[2] < missing[0]))}")
+    for line in open(sys.argv[6]):
+        match = re.match(r"(\S+) (question .*|switched-off .*)", line)
+        if match and seconds(match.group(1)) >= taken:
+            print(f"  {match.group(2)}: {(seconds(match.group(1)) - due) * 1000:+.0f} ms from the first lost event")
 print(f"the taps were gone {(removed - taken) * 1000:.0f} ms after the permission began to go")
-holes = [(later[0] - earlier[0], earlier[0]) for earlier, later in zip(found, found[1:])]
+holes = [(later[0] - earlier[0], earlier[0]) for earlier, later in zip(found, found[1:])] + ([(silence, found[-1][0])] if found else [])
 print(f"THE LONGEST HOLE: {max(holes)[0] * 1000:.0f} ms" if holes else "THE LONGEST HOLE: nothing arrived")
 print("facts", posted, len(missing), worst["before the loss"][0], worst["after the taps were gone"][0], worst["after the taps were gone"][3],
       round(max(holes)[0] * 1000) if holes else 999999, round(worst["before the loss"][2] / 1000), round(worst["after the taps were gone"][2] / 1000),
@@ -286,7 +305,8 @@ PYTHON
   read -r _ posted missing before after late hole late_before late_after hole_before hole_during hole_after <<< "$(grep "^facts " "$ARBOR_SESSION_DIR/verdict")"
   [ "${posted:-0}" -ge 500 ] || invalid "the stream posted its events (${posted:-0})"
   [ "${before:-0}" -ge 100 ] || invalid "events arrived before the loss (${before:-0})"
-  [ "${after:-0}" -ge 100 ] || invalid "events arrived after the taps were gone (${after:-0})"
+  # The bare tapper never lets go: that nothing arrives afterwards is what it is there to show.
+  [ "$who" = bare-tapper ] || [ "${after:-0}" -ge 100 ] || invalid "events arrived after the taps were gone (${after:-0})"
   # The rule: three absolutes, and the comparison on the same Mac. A hosted Mac is never quite still: with nothing taken from anybody events have been 85 ms late there.
   check "round $round: NOTHING LOST: every event that was posted arrived (${missing:-?} did not)" test "${missing:-1}" -eq 0
   check "round $round: the hole while the permission went (${hole_during:-?} ms) is no longer than a second" test "${hole_during:-9999}" -le 1000
@@ -301,7 +321,7 @@ PYTHON
   leave
 }
 
-# ROUNDS="<how>:<who>[:sampled] …" plays others than these.
+# ROUNDS="<how>:<who>[:sampled] …" plays others than these; BEAT=<ms> and KINDS=click,key,wheel make another stream (probe-tapper-questions.sh).
 number=0
 for each in ${ROUNDS:-by_tccutil:arbor by_tccutil:nobody by_tccutil:arbor-without-taps by_tccutil:bare-tapper \
   by_the_row_and_a_word:arbor by_the_row_and_a_word:nobody by_the_row_and_a_word:arbor-without-taps by_the_row_and_a_word:bare-tapper \

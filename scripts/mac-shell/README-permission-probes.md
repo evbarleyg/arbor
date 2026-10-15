@@ -1,6 +1,6 @@
 # The permission probes: what each does and how to read it
 
-Seven Mac shell scripts and one helper, written on 2026-10-15 to answer one question with numbers: what happens to the Mac's input when Arbor loses the
+Eight Mac shell scripts and one helper, written on 2026-10-15 to answer one question with numbers: what happens to the Mac's input when Arbor loses the
 Accessibility permission while its event taps are installed. They run on GitHub's hosted Macs only (`needs_throwaway_mac`): they write to the permission database.
 
 ```bash
@@ -23,6 +23,7 @@ each script: cut it out with `sed` and feed it a list from an earlier run, or a 
 | `asker.swift` | `stream`: posts a click, the key F19 and a wheel notch (or a small pinch) every 50 ms **by the clock**, each event with a number of its own in `eventSourceUserData`; `--ctrl-opt <from> <until>` holds ⌃⌥ meanwhile. `arrivals`: a listen-only tap at the tail of the session's taps that prints time, kind, number, lateness, modifiers. `ask`: writes `AXIsProcessTrusted()`, "can I make an active tap", "can I make a listening tap" twice a second. `announce` / `hear`: posts / prints the distributed notification `com.apple.accessibility.api`. `pairs`: the button, F19 and ⇧, each down 400 ms and up 400 ms, a third of that apart. `window`: an app that writes down what IT is given and, every 20 ms, what the window server and AppKit hold to be down. `tap`: a bare tapper, one active tap that is never let go of; on another thread it asks five questions every 10 ms (`tapIsEnabled` of its own tap, `AXIsProcessTrusted`, `CGPreflightListenEventAccess`, `CGPreflightPostEventAccess`, a trial `tapCreate`), writes down each change of answer, every word of macOS's that the tap was switched off, and at its end what one call of each costs. `now`: the time as all of these and `arbor.log` write it |
 | `probe-permission-loss.sh` | The loss with traffic through the mouse-down tap (always on). Roads × variants, see below |
 | `probe-loss-under-traffic.sh` | The loss with the taps that are on only at times: round a the scroll tap (⌃⌥ held), b the gesture tap (pinches), c the drag tap (the loss in mid ⌃⌥-drag: "nothing stuck") |
+| `probe-tapper-questions.sh` | `probe-permission-loss.sh` with the bare tapper alone and clicks every 20 ms: which of its five questions turns at the withdrawal, how long after the first dropped event, what a call costs |
 | `probe-nothing-stuck.sh` | Downs and ups 400 ms apart, so that the withdrawal falls between them: which up is lost whose down arrived, how long the window server then holds it down, what is held at the end, whether the next click is whole |
 | `probe-permission-grant.sh` | What wakes the flag in a process that is already running, both ways; then Arbor itself through a first minute |
 | `probe-what-the-taps-cost.sh` | The same stream in turns with no Arbor, Arbor without taps, Arbor with taps, on a release build |
@@ -86,9 +87,14 @@ after the taps were gone: 1395 arrived of 1395 posted, longest hole 122 ms, …
 
 ## What was found by 02:00 UTC on 2026-10-15 (macOS 26.6.2, debug build)
 
-From the moment macOS withdraws the right until Arbor removes its taps, every event of every kind is dropped: 5 to 95 of them, 85 to 1046 ms, in nine rounds of ten with taps; none in four rounds with nobody and none with an Arbor without taps.
-The length is the wait for the next tick of the one-second check. Before and after, nothing is lost. After a loss in mid ⌃⌥-drag nothing was stuck (one valid round).
+From the moment macOS withdraws the right until Arbor removes its taps, every event of every kind is dropped: 5 to 100 of them, 85 to 1091 ms, in fifteen rounds of sixteen with taps on the roads that withdraw; none in eight rounds with nobody and none in
+three with an Arbor without taps. The length is the wait for the next tick of the one-second check. Before and after, nothing is lost.
+**The floor is for ever.** A bare tapper that does nothing loses the Mac all its input until it is killed (785 of 785 events in 8 s, 2400 of 2400 in 24 s). Its callback is told nothing, neither "by timeout" nor "by user input", and the window server's list goes on
+calling its tap enabled. So removal is what counts, and nobody will say when.
+**The flag and the right to tap are two things.** With the row deleted, the notification posted and tccd left alone, the flag says no, Arbor takes its taps out of its own accord, and nothing is lost in four rounds of four: macOS had withdrawn nothing (the bare tapper keeps working on that road).
+`sample` from the deed on finds Arbor's main thread idle on every road. After a loss in mid ⌃⌥-drag nothing was stuck (one valid round).
 The flag `AXIsProcessTrusted()` is remembered inside a process until `com.apple.accessibility.api` is posted; a write to TCC.db and a restart of tccd announce nothing.
+The taps' own cost on a release build: 1.7 to 3.0 ms at the median, 6 ms at the 99th percentile.
 
 ## Traps, each of which cost a run
 
