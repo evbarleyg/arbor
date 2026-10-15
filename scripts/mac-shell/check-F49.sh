@@ -37,14 +37,16 @@ overlap() {
     | awk '{ exit !($1 < $5 + $7 && $5 < $1 + $3 && $2 < $6 + $8 && $6 < $2 + $4) }'
 }
 do_not_overlap() { ! overlap "$@"; }
-# Where the call's title bar has to go for the call to be in the top right corner of the main display, which is
-# over the browser whatever the display's size.
+# Where the point at which the call's title bar is taken has to go for the call to be in the top right corner of the main display, 16 points from its
+# edge: over the browser whatever the display's size, and clear of the editor, whose half of 1024 points ends at 506.
 corner() {
-  local sx sy sw sh x y w h
+  local sx sy sw sh x y w h tx ty
   read -r sx sy sw sh <<< "$(screen_of 1)"
   read -r x y w h <<< "$(frame_of "$CALL")"
   [ -n "$h" ] || die "the call has no frame"
-  echo "$((sx + sw - w / 2 - 40)) $((sy + 32))"
+  read -r tx ty <<< "$(titlebar_of "$CALL")"
+  [ -n "$ty" ] || die "the call's title bar cannot be taken anywhere"
+  echo "$((tx + sx + sw - w - 16 - x)) $((sy + 32))"
 }
 # Says where it is when that is somewhere else: `check` keeps only the verdict.
 same_place() { [ "$(real_frame_of "$CALL")" = "$1" ] || { echo "    the call is at $(real_frame_of "$CALL"), not at $1"; return 1; }; }
@@ -131,9 +133,10 @@ ctl zoom "$W1"
 check "the browser went out of view" eventually is parked "$W2"
 call_is_fine "$W1" "framed on the editor"
 shot 02-editor-framed
-ctl neighbor right
+# By name, and not by `neighbor right`: between two halves there is no Desktop to pass.
+ctl desktop
 call_is_fine "$W1" "on the Desktop (the keyboard stays in the editor, which is out of view)"
-ctl neighbor right
+ctl zoom "$W2"
 check "the editor went out of view" eventually is parked "$W1"
 call_is_fine "$W2" "framed on the browser"
 shot 03-browser-framed
@@ -172,10 +175,10 @@ check "the call has the keyboard" eventually is focused "$CALL"
 sleep 1.5
 check "the view did not move" camera_is "$view"
 check "the call has not moved" same_place "$home_frame"
-ctl neighbor right
+ctl desktop
 sleep 1
 check "on the empty Desktop, where nothing arrives, the keyboard stays in it" is focused "$CALL"
-ctl neighbor right
+ctl zoom "$W2"
 check "the next move of the view takes the keyboard along to the browser" eventually is focused "$W2"
 check "and the call has not moved" same_place "$home_frame"
 ctl show-all

@@ -31,8 +31,9 @@ within() { [ "$1" -ge "$((0 - $2))" ] && [ "$1" -le "$2" ]; }
 # check is that it has gone, a declined one would pass for one that worked.
 declined() { check "the harness let it through: $1" false; }
 
-# Where things are in the map of [W1 / W3 | Desktop | W2], three columns of one width: the map is the panel less 10 points all round, and a
-# caption adds its line at the top, so everything is measured from the panel's bottom edge. `left` is W3 until that floats.
+# Where things are in the map of [W1 / W3 | W2], two columns of one width: the map is the panel less 10 points all round, and a
+# caption adds its line at the top, so everything is measured from the panel's bottom edge. `left` is W3 until that floats. `middle` is the
+# Desktop's where it has room between them, which a `layout` line that names it gives it, and the border of the two where it has none.
 in_map() {
   local mx my mw mh
   read -r mx my mw mh <<< "$(minimap_frame)"
@@ -58,7 +59,7 @@ arbor_build
 # The runners have "Reduce motion" on, and then nothing fades. Declines on a person's Mac: it is their setting.
 macos_reduce_motion off
 
-step "session 1: an arrangement worth a map: two columns, one of them split, and the Desktop"
+step "session 1: an arrangement worth a map: two columns, one of them split"
 arbor_settings '{"minimapDuration": 3}'
 arbor_start 4 ARBOR_NO_HOTKEYS=0 ARBOR_PANELS_IN_PICTURES=1
 read -r sx sy sw sh <<< "$(arbor_ask screen)"
@@ -145,14 +146,6 @@ click $(in_map beside) || declined "the click beside the map"
 check "away" eventually minimap_gone
 check "and the view has not moved" not is parked "$W2"
 
-step "the Desktop's outline can be clicked too"
-key ctrl+opt+m
-check "up" eventually minimap_up
-# shellcheck disable=SC2046
-click $(in_map middle)
-check "the floating window is back in view" eventually not is parked "$W4"
-check "the docked ones are out of view" eventually is parked "$W2"
-
 step "and back to the window at the left"
 sleep 3.5
 key ctrl+opt+m
@@ -229,6 +222,23 @@ sleep 3
 check "still up after three" minimap_up
 sleep 2.5
 check "gone after five and a half" minimap_gone
+arbor_stop
+
+# Two docks are two halves, and a Desktop without room has no outline in the map. A line that names it gives it room, with no switch; so has whoever
+# comes from the first build with its arrangement.
+step "the Desktop has room, by a layout line: its outline can be clicked too"
+arbor_settings '{"minimapDuration": 3}'
+arbor_start 4 ARBOR_NO_HOTKEYS=0 ARBOR_PANELS_IN_PICTURES=1
+ctl layout "($W1 / $W3) | Desktop | $W2"
+ctl zoom "$W2"
+check "framed on the window at the right: the floating window is out of view" eventually is parked "$W4"
+sleep 3.5
+key ctrl+opt+m
+check "up" eventually minimap_up
+# shellcheck disable=SC2046
+click $(in_map middle)
+check "the floating window is back in view" eventually not is parked "$W4"
+check "the docked ones are out of view" eventually is parked "$W2"
 arbor_stop
 
 for look in light dark; do

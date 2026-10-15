@@ -85,16 +85,18 @@ cat > "$KEYS_APP/Contents/Info.plist" <<PLIST
 PLIST
 at_exit 'kill_started $KEYS_PID; rm -rf "$KEYS_APP"'
 
-step "[1 | Desktop | 2], the app on passThroughApps, shortcuts, taps and the menu bar item on"
+step "[1 / 2 | Desktop], the app on passThroughApps, shortcuts, taps and the menu bar item on"
 ARBOR_TEST_WINDOWS_ARGS="--regular"
 arbor_settings "{$ARBOR_GESTURES_ON, \"passThroughApps\": [\"$KEYS_ID\"]}"
 arbor_start 2 ARBOR_NO_HOTKEYS=0 ARBOR_NO_STATUS_ITEM=0
+# One above the other in one half: a second dock at the far side would take all that is left over, and the Desktop is wanted as a bare place.
 ctl dock "$W1" left
-ctl dock "$W2" right
+ctl dock "$W2" beside "$W1" bottom
 sleep 3  # a regular app joining the Dock resizes it, and with it every slot
 
-step "the app's window, in the middle of the Desktop between them, where neither covers it"
+step "the app's window, in the middle of the Desktop beside them, where neither covers it"
 read -r dx dy dw dh <<< "$(arbor_ask desktop)"
+[ -n "$dh" ] || die "the Desktop has no room, and the app's window wants a bare place"
 KEYS_X=$((dx + dw / 2))
 KEYS_Y=$((dy + dh / 2))
 # Started directly, not through `open`: a program inside a bundle has the bundle's id either way, and nothing gets registered.

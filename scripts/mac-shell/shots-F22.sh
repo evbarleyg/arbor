@@ -20,7 +20,7 @@ focus_is() { check "$2" eventually is focused "$1"; }
 
 # The second window refuses to be narrower than 300 points, which is more than Arbor's own limit of 240.
 ARBOR_TEST_WINDOWS_ARGS="--min-size 2:300x200"
-step "session 1: [ 1 / 3 | Desktop with 4 floating | 2 ], shortcuts and the menu bar item on"
+step "session 1: [ 1 / 3 | 2 ] with 4 floating over them, shortcuts and the menu bar item on"
 arbor_start 4 ARBOR_NO_HOTKEYS=0 ARBOR_NO_STATUS_ITEM=0
 ctl dock "$W1" left
 ctl dock "$W2" right
@@ -39,7 +39,12 @@ ctl focus right; focus_is "$W2" "focus right went on to window 2"
 ctl focus right
 ctl focus left;  focus_is "$W4" "focus left came back to the floating window"
 ctl focus left;  focus_is "$W1" "focus left came back to window 1, in focus more recently than 3"
+# The floating window lies over the docked ones since the Desktop has no column of its own, to the right and a little lower than window 1.
+known "board 1.122: by direction the window straight that way is to win; a floating one far to the side is taken for it"
 ctl focus down;  focus_is "$W3" "focus down went to window 3"
+known ""
+# Wherever that led: what follows is about the order, from window 3 on.
+ctl focus "$W3"
 ctl focus next;  focus_is "$W2" "focus next follows the tree"
 ctl focus next;  focus_is "$W4" "and then the floating windows"
 ctl focus previous; focus_is "$W2" "focus previous goes back"
@@ -49,7 +54,9 @@ check "the camera has not moved" test "$(camera)" = "$root"
 shot 02-focus
 
 step "focus by the real shortcuts"
+known "board 1.122: by direction the window straight that way is to win; a floating one far to the side is taken for it"
 key ctrl+opt+shift+down;  focus_is "$W3" "⌃⌥⇧↓ went to window 3"
+known ""
 key ctrl+opt+shift+up;    focus_is "$W1" "⌃⌥⇧↑ went to window 1"
 key ctrl+opt+shift+right; focus_is "$W4" "⌃⌥⇧→ went to the floating window"
 key ctrl+opt+shift+left;  focus_is "$W1" "⌃⌥⇧← went back"
@@ -60,9 +67,8 @@ key ctrl+opt+shift+down; focus_is "$W3" "⌃⌥⇧↓ went to window 3"
 check "window 3 is in view" eventually is on_screen "$W3"
 check "window 1 is tucked away" eventually is parked "$W1"
 shot 03-framed-down
-key ctrl+opt+shift+right; focus_is "$W4" "⌃⌥⇧→ went to the Desktop and its floating window"
-shot 04-framed-desktop
-key ctrl+opt+shift+right; focus_is "$W2" "⌃⌥⇧→ went on to window 2"
+# No Desktop lies between two halves: the walk through it is played further down, where a layout line gives it room.
+key ctrl+opt+shift+right; focus_is "$W2" "⌃⌥⇧→ went to window 2"
 sleep 1
 check "and it stays there once macOS has reported the change" is focused "$W2"
 check "window 2 is in view" is on_screen "$W2"
@@ -211,3 +217,16 @@ summary
 check "the camera has not moved" test "$(camera)" = "$root"
 shot 22-swapped-with-a-tile
 arbor_stop 23-after-quit
+
+# A Desktop without room is nobody's neighbour. A line that names it gives it room, with no switch, and the walk a stop there.
+step "session 3: the Desktop has room, by a layout line: [ 1 / 3 | Desktop with 4 floating | 2 ]: framed, the keys walk through it"
+ARBOR_TEST_WINDOWS_ARGS=""
+arbor_start 4 ARBOR_NO_HOTKEYS=0
+ctl layout "($W1 / $W3) | Desktop | $W2"
+ctl zoom "$W3"
+check "framed on window 3: window 1 is tucked away" eventually is parked "$W1"
+key ctrl+opt+shift+right; focus_is "$W4" "⌃⌥⇧→ went to the Desktop and its floating window"
+shot 04-framed-desktop
+key ctrl+opt+shift+right; focus_is "$W2" "⌃⌥⇧→ went on to window 2"
+check "window 2 is in view" eventually is on_screen "$W2"
+arbor_stop

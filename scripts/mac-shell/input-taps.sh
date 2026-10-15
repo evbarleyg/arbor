@@ -113,12 +113,13 @@ arbor_taps
 check "launched with an earlier build's settings Arbor holds no event tap" test "$(arbor_taps | wc -l)" -eq 0
 with_gestures '{}'
 ctl reload-settings
-ctl dock "$W1" left
-ctl dock "$W2" right
-ctl dock "$W3" beside "$W1" bottom
+# By a line that names the Desktop, which gives it room as Arbor ships; two docks at the two sides are two halves and leave none. The second window stays one
+# step in from everything, which the pinches and the scrolls below count on.
+ctl layout "($W1 / $W3) | Desktop | $W2"
 sleep 0.5
 summary
 read -r dx dy dw dh <<< "$(arbor_ask desktop)"
+[ -n "$dh" ] || die "the Desktop has no room, and every click on the wallpaper below wants a bare place"
 BARE_X=$((dx + dw / 2))
 BARE_Y=$((dy + dh / 2))
 echo "a bare point of the Desktop: $BARE_X $BARE_Y"
@@ -547,11 +548,11 @@ elif on_throwaway_mac; then
     sleep 1
   fi
 
-  ctl dock "$W1" left
-  ctl dock "$W2" right
+  ctl layout "$W1 | Desktop | $W2"
   sleep 0.5
   summary
   read -r dx dy dw dh <<< "$(arbor_ask desktop)"
+  [ -n "$dh" ] || die "the Desktop has no room, and every click on the wallpaper below wants a bare place"
   read -r fx fy fw fh <<< "$(frame_of "$W3")"
   # Below the floating window, on the Desktop's part of the layout.
   BARE_X=$((dx + dw / 2))
