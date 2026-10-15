@@ -66,6 +66,7 @@ private let side = DisplaySnapshot(
     let (old, editor, browser, notes) = framedOnTheEditor()
     old.controller.shutdown()
     let place = old.frame(notes)
+    let mark = old.system.moveLog.count
 
     let h = newProcess(after: old)
     h.start()
@@ -73,7 +74,8 @@ private let side = DisplaySnapshot(
     expectEverythingShows(h)
     #expect(h.workspace.isDocked(editor) && h.workspace.isDocked(browser), "what was docked is docked")
     #expect(h.frame(editor)!.maxX < h.frame(browser)!.minX)
-    #expect(moves(of: editor, h) == 1 && moves(of: browser, h) == 1, "one move each: \(h.system.frameLog)")
+    // Besides the question a new run has to put to each where the quit left it.
+    #expect(movesWithoutWaste(h, of: editor, since: mark) == 1 && movesWithoutWaste(h, of: browser, since: mark) == 1, "one move each: \(h.system.frameLog)")
     #expect(moves(of: notes, h) == 0, "never docked, so not moved: \(h.system.frameLog)")
     #expect(h.frame(notes) == place)
   }

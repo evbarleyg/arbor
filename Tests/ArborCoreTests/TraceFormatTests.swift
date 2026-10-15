@@ -64,11 +64,27 @@ private let display = TraceDisplay(
     header.dormant = [DisplayID("other"): Workspace()]
     header.parked = [WindowID(9)]
     header.minimumSizes = [WindowID(9): CGSize(width: 700, height: 500)]
+    header.seenSizes = [
+      WindowID(9): SeenSizes(
+        least: CGSize(width: 700, height: 300), most: CGSize(width: 1400, height: 851), stoppedAt: CGSize(width: 0, height: 851),
+        closeOffer: CGSize(width: 749, height: 0), closeTook: CGSize(width: 723, height: 0))
+    ]
     header.appPlaced = [WindowID(9): CGRect(x: 300, y: 200, width: 640, height: 420)]
     header.focusHistory = [WindowID(9), window.id]
     header.onlyPIDs = [811]
     header.ignored = [WindowID(5)]
     #expect(try roundTrip(header) == header)
+  }
+
+  @Test func whatWasSeenOfAWindowsSizesIsFivePairsInThisOrder() throws {
+    let json = #"{"trace":1,"displays":[],"seenSizes":{"9":[[700,300],[1400,851],[0,851],[749,0],[723,0]],"10":[[1,2],[3,4]]}}"#
+    let header = try JSONDecoder().decode(TraceHeader.self, from: Data(json.utf8))
+    #expect(
+      header.seenSizes == [
+        WindowID(9): SeenSizes(
+          least: CGSize(width: 700, height: 300), most: CGSize(width: 1400, height: 851), stoppedAt: CGSize(width: 0, height: 851),
+          closeOffer: CGSize(width: 749, height: 0), closeTook: CGSize(width: 723, height: 0))
+      ], "least, most, where it stopped, the offer it came close to, what it took; an entry that is anything else says nothing")
   }
 
   @Test func aHeaderWrittenByHandNeedsOnlyTheVersionAndTheDisplays() throws {

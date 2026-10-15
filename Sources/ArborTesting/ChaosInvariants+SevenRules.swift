@@ -60,7 +60,7 @@ extension ChaosRunner {
   /// The detector of docs/VIABLE.md, section 5, that a rule of the walks stands for: one vocabulary on Linux and on a Mac.
   public nonisolated static func detector(for rule: String) -> String? {
     let table: [(prefix: String, detector: String)] = [
-      ("moved-twice", "jolt"), ("moved-again", "jolt"), ("flashed-", "flash"), ("moved-over-and-over", "stuck"), ("moved-", "moved-unasked"), ("fetched-", "moved-unasked"), ("there-and-back", "moved-unasked"), ("dragged-gap", "moved-unasked"),
+      ("moved-twice", "jolt"), ("moved-again", "jolt"), ("sized-there-and-back", "jolt"), ("flashed-", "flash"), ("moved-over-and-over", "stuck"), ("moved-", "moved-unasked"), ("fetched-", "moved-unasked"), ("there-and-back", "moved-unasked"), ("dragged-gap", "moved-unasked"),
       ("pause-and-resume", "moved-unasked"), ("left-its-place", "moved-unasked"), ("start-took", "lost"), ("quit-left", "lost"), ("displays-left", "lost"), ("switched-to-behind", "behind"),
       ("switched-to", "focus"), ("app-switch", "focus"), ("size-", "size-lost"), ("home-", "lost"), ("lost", "lost"), ("out-of-reach", "lost"),
       ("placed-", "lost"), ("vanished", "lost"), ("parked-on-the-desktop", "lost"), ("restless", "stuck"), ("given-up", "stuck"),
@@ -275,14 +275,25 @@ extension ChaosRunner {
     for window in Set(seen.map(\.window)).sorted() {
       guard isFairGame(window) != nil, presentBefore.contains(window), let moves = seven.seenSinceSomebodyActed[window] else { continue }
       asked("once")
-      guard moves.count > 1 else { continue }
+      // A window Arbor does not know is asked for a size where it stands and goes to its place afterwards, so requests are not
+      // what is counted. What a person sees is the road (`FakeWindowSystem.detour`).
+      var road = [moves[0].before]
+      for move in moves {
+        if road.last != move.before { road.append(move.before) }
+        road.append(move.after)
+      }
+      let path = road.map(\.brief).joined(separator: " → ")
+      // More than three times with nobody acting: Arbor and the window are stuck with each other, by however little.
+      if timeOnly, moves.count > 3 {
+        problems.append(.init("moved-over-and-over", "Arbor moved \(window) \(moves.count) times with nobody touching anything: \(path)"))
+        continue
+      }
+      guard moves.count > 1, FakeWindowSystem.detour(road) != nil else { continue }
       // Its app would not take a size. The first time Arbor could not have known.
       let less = moves.contains { $0.after.width > $0.requested.width + 1 || $0.after.height > $0.requested.height + 1 }
       let more = moves.contains { $0.after.width < $0.requested.width - 1 || $0.after.height < $0.requested.height - 1 }
       let refused = less || more
       let knew = (less && seven.refusedLess.contains(window)) || (more && seven.refusedMore.contains(window))
-      let road = [moves[0].before] + moves.map(\.after)
-      let path = road.map(\.brief).joined(separator: " → ")
       // Out of view at both ends and in view between, or the other way round: a flash.
       let (first, last) = (isInView(road[0]), isInView(road[road.count - 1]))
       if first == last, road.dropFirst().dropLast().contains(where: { isInView($0) != first }) {
@@ -292,16 +303,16 @@ extension ChaosRunner {
             "\(window) \(first ? "left the screen and came back" : "showed and went again") for one thing that happened: \(path)"))
         continue
       }
-      // More than three times with nobody acting: Arbor and the window are stuck with each other.
-      if timeOnly, moves.count > 3 {
-        problems.append(.init("moved-over-and-over", "Arbor moved \(window) \(moves.count) times with nobody touching anything: \(path)"))
+      // Floating windows are placed by other code, with another owner.
+      let floats = controller.workspaces.values.contains { $0.isFloating(window) } ? "-floating" : ""
+      // Never in a wrong place, but smaller or larger on the way than it ends up.
+      guard FakeWindowSystem.changesOfPlace(road) > 1 else {
+        problems.append(.init("sized-there-and-back" + floats, "Arbor made \(window) smaller or larger than it ends up, for one thing that happened: \(path)"))
         continue
       }
-      // A window Arbor meets for the first time is sized where it stands and then moved once: each coordinate goes one way only.
-      if refused, !knew, Self.goesOneWayOnly(road) { continue }
       problems.append(
         .init(
-          (timeOnly ? "moved-again" : "moved-twice") + (knew ? "-sizing-again" : refused ? "-sizing" : ""),
+          (timeOnly ? "moved-again" : "moved-twice") + (knew ? "-sizing-again" : refused ? "-sizing" : "") + floats,
           "Arbor moved \(window) \(moves.count) times for one thing that happened: \(path)"))
     }
     for move in seen {

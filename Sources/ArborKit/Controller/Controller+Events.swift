@@ -37,6 +37,9 @@ extension Controller: WindowSystemEvents {
     misfits[id] = nil
     minimumSizes[id] = nil
     disprovedMinimums[id] = nil
+    seenSizes[id] = nil
+    justAnswered[id] = nil
+    fixedSizesNoted.remove(id)
     parkedAgain[id] = nil
     landsAt[id] = nil
     sharedItsSpace[id] = nil

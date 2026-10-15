@@ -7,7 +7,7 @@ import CoreGraphics
 /// refuses its slot, but it was read as one, so pressing ⌘+ in a docked Terminal turned it into a tile.
 extension Controller {
   /// No step is larger than this: character cells at a very large font.
-  private static let largestStep: CGFloat = 36
+  private static let largestStep = SeenSizes.largestStep
 
   /// Called when `window` was offered `slot` and `took` another frame. If it came out a little larger than
   /// the slot, asks for less, and less again, until it takes the step below. Returns the frame it ended

@@ -266,6 +266,7 @@ import Testing
     }
     let (first, later) = (questions(docksBefore: 0), questions(docksBefore: 1))
     #expect(first.focusReads == later.focusReads && first.focuses == later.focuses, "\(first) against \(later)")
-    #expect(first.moves <= later.moves, "\(first) against \(later)")
+    // But for the one thing nobody can know before: whether the window takes the size (Controller+AskFirst.swift).
+    #expect(first.moves - first.questions <= later.moves && later.questions == 0, "\(first) against \(later)")
   }
 }

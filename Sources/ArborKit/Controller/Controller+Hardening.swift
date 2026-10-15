@@ -165,6 +165,8 @@ extension Controller {
     settled[window.id] = settled.removeValue(forKey: old)
     minimumSizes[window.id] = minimumSizes.removeValue(forKey: old)
     disprovedMinimums[window.id] = disprovedMinimums.removeValue(forKey: old)
+    seenSizes[window.id] = seenSizes.removeValue(forKey: old)
+    if fixedSizesNoted.remove(old) != nil { fixedSizesNoted.insert(window.id) }
     misfits[window.id] = misfits.removeValue(forKey: old)
     parkedAgain[window.id] = parkedAgain.removeValue(forKey: old)
     soleFloatReplaced(old, by: window.id)

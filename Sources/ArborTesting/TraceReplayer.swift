@@ -698,6 +698,14 @@ public final class TraceReplayer {
       report.answeredFromTrace += 1
       return place(id, at: nearest.result)
     }
+    // The same size somewhere else: how large an app lets a window be does not depend on where it stands.
+    let sameSize = remembered[id]?.filter {
+      abs($0.request.width - frame.width) <= tolerance && abs($0.request.height - frame.height) <= tolerance
+    }
+    if let nearest = sameSize?.min(by: { abs($0.index - current) < abs($1.index - current) }) {
+      report.answeredFromTrace += 1
+      return place(id, at: fake.whereMacOSPuts(CGRect(origin: frame.origin, size: nearest.result.size)))
+    }
     report.answeredByModel += 1
     var frame = frame
     if let steps = widthSteps[id] { frame.size.width = steps.nearest(to: frame.width) }

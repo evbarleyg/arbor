@@ -77,7 +77,11 @@ private let side = DisplaySnapshot(
     let h = relaunch(old)
     h.start()
     #expect(h.layout?.windowFrames == slots)
-    for window in [a, b, c] { #expect(h.system.frameLog.filter { $0.window == window }.count == 1, "\(window)") }
+    // A new run knows nothing of them, so each is asked for the size where the quit left it, and then goes.
+    for window in [a, b, c] {
+      #expect(movesWithoutWaste(h, of: window) == 1, "\(window)")
+      #expect(FakeWindowSystem.detour(h.system.road(of: window)) == nil, "\(window)")
+    }
     #expect(!h.system.frameLog.contains { $0.window == f })
     expectWindowsMatchLayout(h, on: h.display)
     h.scheduler.runPending()

@@ -243,6 +243,8 @@ public struct TraceHeader: Equatable, Sendable {
   public var parked: [WindowID] = []
   /// Sizes Arbor had learned that apps refuse to go below.
   public var minimumSizes: [WindowID: CGSize] = [:]
+  /// How small and how large Arbor had seen each window, which decides whom it asks before it moves anybody.
+  public var seenSizes: [WindowID: SeenSizes] = [:]
   /// Where their apps opened the windows that nobody has moved since: no place anybody chose, so Arbor may move them.
   public var appPlaced: [WindowID: CGRect] = [:]
   /// Most recently focused first.
@@ -280,7 +282,7 @@ public struct TraceHeader: Equatable, Sendable {
 extension TraceHeader: Codable {
   private enum CodingKeys: String, CodingKey {
     case trace, name, arbor, os, recorded, displays, windows, settings, workspaces, dormant, parked
-    case minimumSizes, focusHistory, onlyPIDs, ignored, focused, cursor, mouseDown, thinning, appPlaced
+    case minimumSizes, focusHistory, onlyPIDs, ignored, focused, cursor, mouseDown, thinning, appPlaced, seenSizes
   }
 
   /// Only what a replay cannot do without is required, so that hand-written traces can be short.
@@ -300,6 +302,11 @@ extension TraceHeader: Codable {
     appPlaced = (try c.decodeIfPresent([WindowID: TraceRect].self, forKey: .appPlaced) ?? [:]).mapValues(\.rect)
     minimumSizes = (try c.decodeIfPresent([WindowID: TracePair].self, forKey: .minimumSizes) ?? [:])
       .mapValues(\.size)
+    // The least, the most, where it stopped growing, the offer it came close to and what it took of that.
+    seenSizes = (try c.decodeIfPresent([WindowID: [TracePair]].self, forKey: .seenSizes) ?? [:]).compactMapValues {
+      guard $0.count == 5 else { return nil }
+      return SeenSizes(least: $0[0].size, most: $0[1].size, stoppedAt: $0[2].size, closeOffer: $0[3].size, closeTook: $0[4].size)
+    }
     focusHistory = try c.decodeIfPresent([WindowID].self, forKey: .focusHistory) ?? []
     onlyPIDs = try c.decodeIfPresent([Int32].self, forKey: .onlyPIDs)
     ignored = try c.decodeIfPresent([WindowID].self, forKey: .ignored) ?? []
@@ -323,6 +330,10 @@ extension TraceHeader: Codable {
     if !dormant.isEmpty { try c.encode(dormant, forKey: .dormant) }
     if !parked.isEmpty { try c.encode(parked, forKey: .parked) }
     if !minimumSizes.isEmpty { try c.encode(minimumSizes.mapValues { TracePair($0) }, forKey: .minimumSizes) }
+    if !seenSizes.isEmpty {
+      try c.encode(
+        seenSizes.mapValues { [$0.least, $0.most, $0.stoppedAt, $0.closeOffer, $0.closeTook].map { TracePair($0) } }, forKey: .seenSizes)
+    }
     if !appPlaced.isEmpty { try c.encode(appPlaced.mapValues { TraceRect($0) }, forKey: .appPlaced) }
     if !focusHistory.isEmpty { try c.encode(focusHistory, forKey: .focusHistory) }
     try c.encodeIfPresent(onlyPIDs, forKey: .onlyPIDs)

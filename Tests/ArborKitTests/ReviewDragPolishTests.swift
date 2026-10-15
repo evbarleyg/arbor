@@ -324,8 +324,8 @@ import Testing
   func moves(_ h: Harness, _ body: () -> Void) -> (all: Int, repeated: Int, idle: Int) {
     let start = h.system.moveLog.count
     body()
-    let log = h.system.moveLog[start...]
-    return (log.count, log.count - Set(log.map(\.window)).count, log.filter { $0.before == $0.after }.count)
+    let budget = Budget.tally(h.system.moveLog[start...])
+    return (budget.moves, budget.repeatMoves, budget.idleMoves)
   }
 
   @Test func onlyAChangeOfTargetMovesAnything() throws {

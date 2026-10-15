@@ -28,6 +28,14 @@ func expectWindowsMatchLayout(
   for problem in h.layoutProblems(on: display) { Issue.record(Comment(rawValue: problem), sourceLocation: sourceLocation) }
 }
 
+/// How often Arbor moved `window` from entry `mark` of the move log on, not counting the questions put to it where it stood before it
+/// went anywhere (Controller+AskFirst.swift). Nil if any of it was done twice or for nothing.
+@MainActor
+func movesWithoutWaste(_ h: Harness, of window: WindowID, since mark: Int = 0) -> Int? {
+  let budget = Budget.tally(h.system.moveLog[min(mark, h.system.moveLog.count)...].filter { $0.window == window })
+  return budget.waste == 0 ? budget.moves - budget.questions : nil
+}
+
 /// Whether a floating window is on the Desktop: on the screen, and over no docked window or tile. On the sides where
 /// nothing is docked beside the Desktop it may reach the edge of the screen.
 @MainActor

@@ -117,6 +117,7 @@ extension Controller {
     header.dormant = dormant.mapValues(\.workspace)
     header.parked = parked.sorted()
     header.minimumSizes = minimumSizes
+    header.seenSizes = seenSizes
     header.appPlaced = appPlacedFrames
     header.focusHistory = focusHistory
     header.onlyPIDs = filter.onlyPIDs?.sorted()
@@ -136,6 +137,7 @@ extension Controller {
     filter.onlyPIDs = header.onlyPIDs.map { Set($0) }
     filter.ignoredWindowIDs = Set(header.ignored)
     minimumSizes = header.minimumSizes
+    seenSizes = header.seenSizes
     appPlacedFrames = header.appPlaced
     focusHistory = header.focusHistory
     // A recording begins in the middle of a run, so the replay goes on from the view of then. A launch would show everything.

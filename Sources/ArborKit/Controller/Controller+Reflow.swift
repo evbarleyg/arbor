@@ -52,10 +52,13 @@ extension Controller {
 
   /// Moves the windows of `displayID`, all but the dragged one, to where `trial` puts them.
   private func show(_ trial: Workspace, on displayID: DisplayID) {
+    // First: what Accessibility says of a window no trial has taught, so it does not go with the trials.
+    noteFixedSizes(of: trial.tree.allWindows)
+    if drag?.reflow.minimumsBefore == nil { drag?.reflow.minimumsBefore = minimumSizes }
     guard let dragged = drag?.window, var layout = layout(ofTrial: trial, on: displayID, without: dragged),
       layout != drag?.reflow.trials[displayID]
     else { return }
-    if drag?.reflow.minimumsBefore == nil { drag?.reflow.minimumsBefore = minimumSizes }
+    layout = askingFirst(layout, on: displayID) { self.layout(ofTrial: trial, on: displayID, without: dragged) }
     if apply(layout, on: displayID), let retry = self.layout(ofTrial: trial, on: displayID, without: dragged) {
       // As in `relayout`: a window refused its slot, so it becomes a tile.
       layout = retry

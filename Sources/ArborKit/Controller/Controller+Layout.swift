@@ -67,6 +67,7 @@ extension Controller {
     if reason != .enforce { dropOverdueSlots(on: displayID) }
     refreshVisibleFrame(of: displayID)
     let before = workspaces[displayID]
+    noteFixedSizes(of: before?.tree.allWindows ?? [])
     guard var layout = roomyLayout(of: displayID, for: reason) else { return }
     // Before anything is moved (Controller+Hold.swift). A new node alone is no move of the view: docking a window at the edge of the
     // view makes a group of the two, with the same things to see, and a rule that waited does that at the very end of a hold.
@@ -80,9 +81,11 @@ extension Controller {
     {
       layout = known
     }
+    // Before anybody is moved, so that everybody moves once (Controller+AskFirst.swift).
+    layout = askingFirst(layout, on: displayID) { self.roomyLayout(of: displayID, for: reason, startingFrom: before) }
     // After the stage has its pictures of the windows where they are.
     system.moveTogether(movesInSight(for: layout, on: displayID, reason: reason))
-    // A window refused its slot: lay out again so that room is made for it, or it becomes a tile. Or one that is
+    // A window refused its slot after all: lay out again so that room is made for it, or it becomes a tile. Or one that is
     // a tile for having refused takes the size of its slot now (Controller+LearnedSizes.swift): lay out again so it
     // gets it. A neighbour that gave room may refuse in its turn, and a window can take a size out of view and still
     // refuse it in view, so there is a second round. After that no more gaps move, and after two more there is
@@ -126,55 +129,18 @@ extension Controller {
   /// true if a window refused its slot (a new minimum size was learned).
   func apply(_ layout: Layout, on displayID: DisplayID) -> Bool {
     var learnedMinimum = false
+    // However this ends, an answer holds for the layout it was given in: next time a sheet may have closed.
+    defer { justAnswered.removeAll() }
+    // Of some nobody knows whether they can grow as far as their slot, and where they go depends on it (Controller+AskFirst.swift).
+    var unknown: [(window: WindowID, slot: CGRect, question: CGRect)] = []
     // A window being dragged stays in the user's hand whatever happens to the layout meanwhile.
     for (window, target) in layout.windowFrames.sorted(by: { $0.key < $1.key }) where window != drag?.window {
-      guard let current = windows[window] else { continue }
-      if isInPlace(current, at: target) {
-        settled[window] = current.frame
-        continue
-      }
-      // A window that could not take this slot's size is still where that attempt left it. Asking
-      // again would walk it through the slot's corner and back on every layout.
-      if !parked.contains(window), let misfit = misfits[window], misfit.slot == target,
-        current.frame.approximatelyEquals(misfit.frame, tolerance: 1)
+      if let current = windows[window], isStillToBePlaced(current, in: target),
+        let question = questionBeforePlacing(current, in: target, on: displayID)
       {
-        continue
-      }
-      if enforcement.givenUp.contains(window) {
-        settled[window] = current.frame
-        continue
-      }
-      guard var actual = system.setFrame(target, of: window) else {
-        unplaced.insert(window)
-        continue
-      }
-      unplaced.remove(window)
-      actual = askForLess(window, slot: target, took: actual)
-      // A window that cannot grow to its slot (Calculator, System Settings) sits in the middle of it,
-      // which looks meant, rather than in its top-left corner, which looks broken.
-      if actual.width < target.width - 2 || actual.height < target.height - 2 {
-        let centred = CGRect(
-          x: target.midX - min(actual.width, target.width) / 2, y: target.midY - min(actual.height, target.height) / 2,
-          width: actual.width, height: actual.height)
-        actual = system.setFrame(centred, of: window) ?? actual
-      }
-      parked.remove(window)
-      windows[window]?.frame = actual
-      settled[window] = actual
-      misfits[window] = actual.approximatelyEquals(target, tolerance: 1) ? nil : (target, actual)
-      // Only just back, it may not be ready to take a frame (Controller+OnTheWayBack.swift).
-      if misfits[window] != nil, postponesJudgement(of: window, on: displayID) { continue }
-
-      let tooWide = actual.width > target.width + 2
-      let tooTall = actual.height > target.height + 2
-      if tooWide || tooTall {
-        var minimum = minimumSizes[window] ?? .zero
-        if tooWide { minimum.width = max(minimum.width, actual.width) }
-        if tooTall { minimum.height = max(minimum.height, actual.height) }
-        if minimumSizes[window] != minimum {
-          minimumSizes[window] = minimum
-          learnedMinimum = true
-        }
+        unknown.append((window, target, question))
+      } else if place(window, in: target, on: displayID) {
+        learnedMinimum = true
       }
     }
     if let display = display(displayID) {
@@ -183,7 +149,57 @@ extension Controller {
         park(window, on: display)
       }
     }
+    // They come last, so that each stands at its old place in its new size no longer than the others' answers take.
+    for (window, _, question) in unknown {
+      if ask(window, question, on: displayID) { learnedMinimum = true }
+    }
+    // All that was foretold has been asked for by now, and this foretells anew.
+    let moves = unknown.compactMap { window, slot, _ in
+      windows[window].flatMap { isStillToBePlaced($0, in: slot) ? (window: window, frame: request(for: $0, in: slot)) : nil }
+    }
+    if moves.count > 1 { system.moveTogether(moves) }
+    // Whatever it answered: a window that is part of the layout is in its slot when the layout has been applied.
+    for (window, slot, _) in unknown {
+      if place(window, in: slot, on: displayID) { learnedMinimum = true }
+    }
     return learnedMinimum
+  }
+
+  /// Moves one docked window into its slot. Returns true if it refused the slot (a new minimum size was learned).
+  func place(_ window: WindowID, in target: CGRect, on displayID: DisplayID) -> Bool {
+    guard let current = windows[window] else { return false }
+    guard isStillToBePlaced(current, in: target) else {
+      // Not a misfit's: that is where its own answer left it, which is on record.
+      if isInPlace(current, at: target) || enforcement.givenUp.contains(window) { settled[window] = current.frame }
+      return false
+    }
+    let asked = request(for: current, in: target)
+    // It has answered where it stood, and that is where the answer belongs: there is nothing left to ask for.
+    let isThere = justAnswered[window] != nil && !parked.contains(window) && asked.approximatelyEquals(current.frame, tolerance: 1)
+    guard var actual = isThere ? current.frame : system.setFrame(asked, of: window) else {
+      unplaced.insert(window)
+      return false
+    }
+    unplaced.remove(window)
+    // One that was only moved, at the size it has, has been through this where it stood.
+    if asked.size == target.size { actual = askForLess(window, slot: target, took: actual) }
+    // A window that cannot grow to its slot (Calculator, System Settings) sits in the middle of it,
+    // which looks meant, rather than in its top-left corner, which looks broken.
+    if actual.width < target.width - 2 || actual.height < target.height - 2 {
+      let centred = Self.centred(actual.size, in: target)
+      // One that was known not to grow is there already.
+      if !actual.approximatelyEquals(centred, tolerance: 1) { actual = system.setFrame(centred, of: window) ?? actual }
+    } else if asked.origin != target.origin, !actual.approximatelyEquals(target, tolerance: 1) {
+      // It was not expected to grow, and has.
+      actual = system.setFrame(target, of: window) ?? actual
+    }
+    parked.remove(window)
+    windows[window]?.frame = actual
+    settled[window] = actual
+    misfits[window] = actual.approximatelyEquals(target, tolerance: 1) ? nil : (target, actual)
+    // Only just back, it may not be ready to take a frame (Controller+OnTheWayBack.swift).
+    if misfits[window] != nil, postponesJudgement(of: window, on: displayID) { return false }
+    return learn(from: window, was: current.frame.size, took: actual.size, offered: target.size)
   }
 
   /// Whether a window already sits where it belongs, so there is no need to move it.
@@ -218,6 +234,8 @@ extension Controller {
   func forgetLearnedMinimums() {
     minimumSizes.removeAll()
     disprovedMinimums.removeAll()
+    // How small and how large a window has been it has been. Where it stopped growing is what may have changed.
+    for window in seenSizes.keys { seenSizes[window]?.forgetWhereItStopped() }
   }
 
   /// Counts every managed window that no display shows as parked, whoever put it there. Knowing it as

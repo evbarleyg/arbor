@@ -175,10 +175,29 @@ import Testing
     #expect(h.jolts == [Jolt(window: windows[0], from: safariFrame, via: a, to: b)])
     #expect(h.movesInStep == [windows[0]: 2])
 
+    // A size where it stands, and then its place: one road, and how a Mac moves any window.
+    h.beginStep()
+    _ = h.system.setFrame(CGRect(origin: b.origin, size: CGSize(width: 600, height: 500)), of: windows[0])
+    _ = h.system.setFrame(CGRect(x: 100, y: 200, width: 600, height: 500), of: windows[0])
+    #expect(h.jolts.isEmpty && h.movesInStep == [windows[0]: 1])
+    // Not the other way about, nor a size that is taken back.
+    _ = h.system.setFrame(CGRect(x: 100, y: 200, width: 580, height: 500), of: windows[0])
+    #expect(h.jolts.count == 1)
+    h.beginStep()
+    _ = h.system.setFrame(CGRect(x: 100, y: 200, width: 400, height: 500), of: windows[0])
+    _ = h.system.setFrame(CGRect(x: 100, y: 200, width: 500, height: 500), of: windows[0])
+    #expect(h.jolts.count == 1)
+
     // Out of view and back: seen as a flash.
     h.beginStep()
     _ = h.system.setFrame(corner, of: windows[1])
     _ = h.system.setFrame(notesFrame, of: windows[1])
+    #expect(h.jolts.map(\.window) == [windows[1]])
+    // Also when it was asked for a size out there, which nobody saw.
+    h.beginStep()
+    _ = h.system.setFrame(corner, of: windows[1])
+    _ = h.system.setFrame(CGRect(origin: corner.origin, size: CGSize(width: 700, height: 500)), of: windows[1])
+    _ = h.system.setFrame(CGRect(origin: notesFrame.origin, size: CGSize(width: 700, height: 500)), of: windows[1])
     #expect(h.jolts.map(\.window) == [windows[1]])
 
     // Two places out of view, then into view: a person sees one move.
@@ -221,9 +240,7 @@ import Testing
     let slot = try #require(h.layout?.windowFrames[window])
     let frame = try #require(h.frame(window))
     #expect(abs(frame.midX - slot.midX) <= 1 && abs(frame.midY - slot.midY) <= 1, "\(frame) in \(slot)")
-    withKnownIssue("the board's baseline, `moved-twice-sizing`: it goes to its place's corner first") {
-      #expect(h.movesInStep[window] == 1, "\(h.system.moveLog.map(\.after))")
-    }
+    #expect(h.movesInStep[window] == 1, "\(h.system.moveLog.map(\.after))")
   }
 
   // MARK: 4. The window you switch to comes to the front and into view

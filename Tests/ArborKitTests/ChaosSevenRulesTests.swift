@@ -19,7 +19,7 @@ private let b = WindowID(102)
     let runner = ChaosRunner()
     for line in lines { _ = runner.step(ChaosAction(text: line)) }
     if let fault { runner.beforeTheNextCheck = { fault($0.system) } }
-    let prefixes = ["flashed-", "moved-", "fetched-", "switched-to-", "app-switch-", "size-", "home-", "there-and-back-", "start-", "pause-and-", "quit-", "displays-", "dragged-"]
+    let prefixes = ["flashed-", "moved-", "sized-", "fetched-", "switched-to-", "app-switch-", "size-", "home-", "there-and-back-", "start-", "pause-and-", "quit-", "displays-", "dragged-"]
     return Set(([last] + later).flatMap { runner.step(ChaosAction(text: $0)) }.map(\.rule).filter { rule in prefixes.contains { rule.hasPrefix($0) } })
   }
 
@@ -106,9 +106,38 @@ private let b = WindowID(102)
 
   @Test func anAppThatRefusesASizeIsToldApartAndOnlyTheFirstTimeIsNews() {
     let narrow = ["launch", "open 101 Notes pid 1001 at 100 100 500 400 max 500 2000", "open 102 Mail pid 1002 at 800 300 500 400", "settle"]
+    #expect(nets(after: narrow, then: "dock 101 left").isEmpty, "asked where it stands, and then straight to the middle")
     // Into the corner of its slot, and from there to its middle.
-    #expect(nets(after: narrow, then: "dock 101 left").contains("moved-twice-sizing"))
-    #expect(nets(after: narrow + ["dock 101 left", "settle", "float 101", "settle"], then: "dock 101 right").contains("moved-twice-sizing-again"))
+    let byWayOfTheCorner: (CGFloat) -> (FakeWindowSystem) -> Void = { x in
+      {
+        _ = $0.setFrame(self.rect(x, 37, 702, 851), of: a)
+        _ = $0.setFrame(self.rect(x + 101, 37, 500, 851), of: a)
+      }
+    }
+    #expect(nets(after: narrow, then: "dock 101 left", fault: byWayOfTheCorner(12)).contains("moved-twice-sizing"))
+    let again = narrow + ["dock 101 left", "settle", "float 101", "settle"]
+    #expect(nets(after: again, then: "dock 101 right").isEmpty)
+    #expect(nets(after: again, then: "dock 101 right", fault: byWayOfTheCorner(726)).contains("moved-twice-sizing-again"))
+  }
+
+  /// A window Arbor does not know is asked for a size where it stands, and goes to its place afterwards. That is two requests and
+  /// one road. Smaller on the way than it ends up is a jolt with a name of its own, and a floating window's has another owner.
+  @Test func whatIsJudgedIsTheRoadNotTheNumberOfRequests() {
+    #expect(
+      nets(after: oneDocked, then: "cursor 10 10") {
+        _ = $0.setFrame(self.rect(12, 37, 600, 851), of: a)
+        _ = $0.setFrame(self.rect(300, 37, 600, 851), of: a)
+      }.allSatisfy { !$0.hasPrefix("moved-twice") && !$0.hasPrefix("sized-") })
+    #expect(
+      nets(after: oneDocked, then: "cursor 10 10") {
+        _ = $0.setFrame(self.rect(12, 37, 400, 851), of: a)
+        _ = $0.setFrame(self.rect(12, 37, 600, 851), of: a)
+      }.contains("sized-there-and-back"))
+    #expect(
+      nets(after: oneDocked, then: "cursor 10 10") {
+        _ = $0.setFrame(self.rect(900, 300, 500, 400), of: b)
+        _ = $0.setFrame(self.rect(850, 300, 500, 400), of: b)
+      }.contains("moved-twice-floating"))
   }
 
   // MARK: Nothing moves that was not asked to

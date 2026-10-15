@@ -222,6 +222,12 @@ public final class Controller {
   /// Windows that did not take the size of their slot: the slot they were asked to fill and the
   /// frame they ended at. While both still hold there is no point in asking again.
   var misfits: [WindowID: (slot: CGRect, frame: CGRect)] = [:]
+  /// How small and how large each window has been seen, so that only what is not known is asked (Controller+AskFirst.swift).
+  var seenSizes: [WindowID: SeenSizes] = [:]
+  /// The windows asked for a size during the layout under way that have yet to go to their place: what each was offered.
+  var justAnswered: [WindowID: CGSize] = [:]
+  /// The windows whose size Accessibility said cannot be changed, once that has been written down.
+  var fixedSizesNoted: Set<WindowID> = []
   /// Making room before making tiles (Controller+MakeRoom.swift): true while the layout follows the person's own hand on a
   /// gap, and the slots they squeezed into tiles that way, which stay as they left them.
   var gapsInHand = false
@@ -496,6 +502,8 @@ public final class Controller {
     // What was learned about windows that still exist stays.
     minimumSizes = minimumSizes.filter { windows[$0.key] != nil }
     disprovedMinimums = disprovedMinimums.filter { windows[$0.key] != nil }
+    seenSizes = seenSizes.filter { windows[$0.key] != nil }
+    fixedSizesNoted = fixedSizesNoted.filter { windows[$0] != nil }
     owedTheWayBack = owedTheWayBack.filter { windows[$0.key] != nil }
     appPlacedFrames = appPlacedFrames.filter { windows[$0.key] != nil }
     spokeOfItsPlace = spokeOfItsPlace.filter { windows[$0.key] != nil }

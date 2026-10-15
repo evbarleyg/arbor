@@ -12,11 +12,12 @@ import Testing
       let budget = BenchmarkCase.named(name).run(windows: windows).budget
       #expect(budget.moves == windows && budget.movesAlone == 0, "\(name) with \(windows) windows: \(budget)")
     }
-    // On a desk with floating windows, those follow the Desktop one at a time. A single move needs no company.
+    // On a desk with floating windows, those follow the Desktop one at a time. A single move needs no company, nor does a
+    // single question (whether the window can grow as far as it has never been).
     let floating = Workload(windows: windows).floating.count
     for name in ["zoom", "back", "show-all", "zoom group", "neighbor", "focus out of view"] {
       let budget = BenchmarkCase.named(name).run(windows: windows).budget
-      #expect(budget.movesAlone <= floating + 1, "\(name) with \(windows) windows: \(budget)")
+      #expect(budget.movesAlone <= floating + 1 + min(budget.questions, 1), "\(name) with \(windows) windows: \(budget)")
     }
   }
 

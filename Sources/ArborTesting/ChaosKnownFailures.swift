@@ -130,12 +130,28 @@ extension ChaosRunner {
       rule: "docked-partly-out", owner: "F61 and the core",
       story: "A docked window that will not shrink to its slot keeps its size at the slot's corner and hangs out of the display: it should be a tile or get room (F61).",
       script: """
+        open 105 Xcode pid 1004 at 974 214 872 578 min 622 574 max 635 574
+        displays main:0,0,800,600:25,73,0,0* windows-late
         launch
-        open 101 Finder pid 1005 at 2376 698 772 533 min 506 533
-        space 101 off
-        dock 101 bottom
-        space 101 on
-        key down show-all
+        focus 105
+        key down dock right
+        find Xcode
+        """,
+      """
+        launch
+        open 109 Notes pid 1001 at 227 418 585 517 min 585 517 max 585 1119 title ~
+        space 109 off
+        dock 109 bottom
+        space 109 on
+        flush
+        """,
+      """
+        displays main:0,0,1280,800:25,86,0,0* windows-never
+        launch
+        open 107 Xcode pid 1004 at 86 25 1194 775 min 1188 685
+        key down dock right
+        quit
+        launch
         """),
     ChaosKnownFailure(
       rule: "left-its-place", owner: "the controller",
@@ -157,89 +173,236 @@ extension ChaosRunner {
         displays main:0,0,1440,900:0,0,0,0* windows-late
         """),
     ChaosKnownFailure(
-      rule: "moved-twice", owner: "rule 3: a refused size costs no second move", severity: 2,
-      story: "A window is docked whose app will not take the slot's size. Arbor has moved the NEIGHBOURS to make the first layout by then, lays out again and moves "
-        + "them a second time. Every second ordinary walk meets it.",
+      rule: "sized-there-and-back", owner: "board 1.32: Arbor knows how small apps go", severity: 2,
+      story: "Two windows Arbor has never seen at their smallest cannot both fit. The newcomer refuses its slot, room is to be made from the other, "
+        + "which is asked where it stands and stops short of what is needed: the newcomer becomes a tile and the other gets its share back. It was never in a "
+        + "wrong place, but narrower on the way than it ends up. `arrange` of several strangers has the same: a column is widened by one that refuses "
+        + "after another in it has shrunk. Only asking tells how small a window goes, so it ends when Arbor knows beforehand.",
       script: """
         launch
-        open 102 Terminal pid 1003 at 388 150 543 541
-        dock right
-        open 103 Music pid 1006 at 689 71 854 685 min 854 432
-        dock 103 beside 102 right
+        open 102 Finder pid 1005 at 1 54 1076 344 min 501 300
+        key down dock left
+        displays main:0,0,1280,800:25,0,48,0* windows-late
+        key down in
+        open 103 Mail pid 1002 at 50 235 1221 511 min 760 400
+        key down toggle-float
         """,
       """
-        displays main:0,0,1440,900:25,0,48,0* windows-never
+        displays main:0,0,1512,982:37,0,0,86* windows-never
+        launch
+        open 103 Xcode pid 1004 at 155 176 1188 685 min 1188 685
+        key down toggle-float
+        open 104 Mail pid 1002 at 170 68 1122 784 min 760 400
+        key down dock top
+        """,
+      """
+        open 102 Mail pid 1002 at 209 243 1023 819 min 760 400
+        open 103 Notes pid 1001 at 838 122 801 648 min 709 300
+        open 104 Notes pid 1001 at 351 78 709 714 min 709 300
+        launch
+        key down arrange
+        """),
+    ChaosKnownFailure(
+      rule: "sized-there-and-back-floating", owner: "rule 3: a floating window's frame is its person's", severity: 3,
+      story: "A floating window is squeezed onto the Desktop and given some of it back by the same command.",
+      script: """
+        settings {"arrangeDesktopWeight":1}
+        launch
+        open 106 Preview pid 1007 at -439 605 752 321 title Draft
+        arrange
+        open 109 Xcode pid 1004 at 874 45 848 418 title ~
+        layout Xcode | Notes
+        """,
+      """
+        displays main:0,0,1728,1117:37,86,0,0* side:1728,323,3008,1692:25,0,0,0 windows-never
+        launch
+        open 103 Preview pid 1007 at 953 480 723 624 min 723 400 max 723 2000
+        key down toggle-float
+        open 105 Notes pid 1001 at 3622 617 981 624 min 709 300
+        via menu toggle-pin
+        via menu move-to-display next
+        """),
+    ChaosKnownFailure(
+      rule: "moved-twice", owner: "rule 3: one thing that happens is one layout", severity: 2,
+      story: "Two layouts for one thing that happened, sizes apart. A window comes back out of the Dock: its neighbour goes into the slot that is left and is a tile a moment "
+        + "later. A change of displays lays out more than once.",
+      script: """
+        displays main:0,0,1280,800:25,0,48,0* windows-never
+        open 101 Finder pid 1005 at 148 53 975 358 min 501 300
+        open 102 Music pid 1006 at 159 70 862 558 min 680 480
+        launch
+        key down arrange
+        minimize 101
+        restore 101
+        """,
+      """
+        launch
+        displays main:0,0,1080,1920:37,0,0,0* windows-silent
+        open 110 Terminal pid 1003 at 776 219 1155 642 min 1155 583
+        dock bottom
+        open 116 Preview pid 1007 at 309 1176 626 610 title Inbox
+        via menu dock bottom
+        displays main:0,0,1512,982:25,0,58,0* windows-silent
+        """),
+    ChaosKnownFailure(
+      rule: "moved-twice-floating", owner: "rule 3: a floating window's frame is its person's", severity: 2,
+      story: "A floating window is pushed aside twice by one command.",
+      script: """
+        launch
+        open 103 Xcode pid 1004 at 1372 303 824 577 title Draft
+        open 104 Mail pid 1002 at -413 158 554.5 698.25 title Untitled
+        layout Xcode | Terminal
+        """,
+      """
+        open 103 Preview pid 1007 at -542 781 695.5 279.25 max 345 972
+        open 104 Music pid 1006 at -25 551 420 443 title Untitled
+        launch
+        layout Notes / Preview
+        """),
+    ChaosKnownFailure(
+      rule: "moved-twice-sizing", owner: "rule 3: one thing that happens is one layout", severity: 3,
+      story: "A docked window goes to another display and turns out unable to grow there: corner, then middle. It is not asked where it stands, because macOS lets a "
+        + "window be only as large as the display it is on allows. Once per window.",
+      script: """
+        displays main:0,0,1280,800:25,0,0,0* side:-3008,0,3008,1692:25,0,0,0 windows-never
+        launch
+        open 103 Preview pid 1007 at 48 115 723 663 min 723 400 max 723 2000
+        key down toggle-float
+        via menu move-to-display next
+        """),
+    ChaosKnownFailure(
+      rule: "moved-twice-sizing-floating", owner: "rule 3: a floating window's frame is its person's", severity: 2,
+      story: "A floating window is squeezed onto what is left of the Desktop, its app will not make it that small, and it is placed again. Every second ordinary walk meets it.",
+      script: """
+        launch
+        open 102 Mail pid 1002 at 1406 650 1155 511 min 760 400
+        open 103 Notes pid 1001 at 784 678 792 708 min 709 300
+        key down dock left
+        """,
+      """
+        launch
+        open 101 Xcode pid 1004 at 66 293 1041 395 min 1041 378 title Inbox
+        shrink 353
+        """),
+    ChaosKnownFailure(
+      rule: "moved-twice-sizing-again", owner: "rule 3: one thing that happens is one layout", severity: 3,
+      story: "A window that cannot grow comes from the corner to the left of a display, where it cannot be asked for a size: corner of its slot, then middle. Also: a window "
+        + "comes back out of the Dock, and its neighbour goes into the slot that is left and is a tile a moment later.",
+      script: """
+        displays main:-1512,-150,1512,982:37,0,0,0 side:0,0,1920,1080:25,70,0,0* windows-never
+        launch
+        open 107 Preview pid 1007 at -1371 -97 723 767 min 723 400 max 723 2000
+        key down toggle-float
+        seam main 0 48
+        tile main 1
+        """,
+      """
+        open 102 Preview pid 1007 at 606 305 723 585 min 723 400 max 723 2000
+        open 103 Mail pid 1002 at 185 136 1100 798 min 760 400
+        launch
+        key down arrange
+        key down rotate
+        minimize 103
+        restore 103
+        """),
+    ChaosKnownFailure(
+      rule: "moved-twice-sizing-again-floating", owner: "rule 3: a floating window's frame is its person's", severity: 2,
+      story: "The same as `moved-twice-sizing-floating`, though its app has refused in the same way before.",
+      script: """
         open 101 Finder pid 1005 at 302 264 837 449 min 501 300
         launch
         focus 101
         key down dock right
+        open 102 Xcode pid 1004 at 207 25 1188 827 min 1188 685
         open 103 Mail pid 1002 at 289 102 1078 539 min 760 400
+        seam main 0 -199
         key down dock top
+        """,
+      """
+        open 101 Music pid 1006 at 82 260 823 486 min 680 480
+        open 103 Terminal pid 1003 at 656 52 851 544 min 177 60
+        launch
+        focus 103
+        key down dock bottom
+        key down desktop
+        key down shrink
         """),
     ChaosKnownFailure(
-      rule: "moved-twice-sizing", owner: "rule 3: a refused size costs no second move", severity: 3,
-      story: "The window whose app refuses the size is itself moved twice: into the corner of its slot, and from there to where it fits (the middle, if it cannot "
-        + "grow). The first time Arbor cannot know.",
+      rule: "moved-again-floating", owner: "rule 3: a floating window's frame is its person's", severity: 3,
+      story: "As `moved-twice-floating`, in a layout that a timer runs.",
       script: """
+        open 109 Mail pid 1002 at 803 461 76 133
+        renumber 109 110
+        open 111 Preview pid 1007 at -83 282 1165 625 min 1165 625
+        renumber 110 112
         launch
-        open 101 Preview pid 1007 at 300 200 500 455 max 500 2000
-        dock left
-        """),
-    ChaosKnownFailure(
-      rule: "moved-twice-sizing-again", owner: "rule 3: a refused size costs no second move", severity: 2,
-      story: "The same, though its app has refused in the same way before: a settings window goes corner, then middle, every time it is docked.",
-      script: """
-        launch
-        open 101 Preview pid 1007 at 300 200 500 455 max 500 2000
-        dock left
+        displays third:0,0,800,600:25,0,0,0* windows-silent
+        displays main:0,0,2560,1440:25,0,0,88* side:-1440,268,1440,900:0,0,42,0 third:-4000,282,2560,1440:0,0,0,41 windows-late
+        space 111 off
+        open 116 Music pid 1006 at -2827 594 634 283 grid
+        displays main:0,0,800,600:25,0,0,0* windows-first
+        arrange all
+        dock 111 bottom
+        focus 111
+        undo
+        dock 116 beside 112 right
+        zoom-node 0
+        space 111 on
         settle
-        toggle-float
-        settle
-        dock right
         """),
     ChaosKnownFailure(
-      rule: "moved-again", owner: "rule 3: a refused size costs no second move", severity: 3,
-      story: "Two moves of one window by a layout that a timer runs (a Space that comes back, a tile clicked), or one by the command and one a moment later with "
-        + "nobody touching anything.",
+      rule: "moved-again-sizing", owner: "rule 3: one thing that happens is one layout", severity: 3,
+      story: "As `moved-twice-sizing`, in a layout that a timer runs: a window docked while its macOS Space was away comes back on other displays.",
       script: """
-        displays main:-1512,200,1512,982:37,0,0,0 side:0,0,2560,1440:25,86,0,0* windows-never
         launch
-        open 101 Xcode pid 1004 at 998 373 1365 752 min 1188 685
-        key down dock top
-        open 103 Finder pid 1005 at 424 47 892 523 min 501 300
-        key down focus right
-        seam side 0 -42
-        react
-        """),
-    ChaosKnownFailure(
-      rule: "moved-again-sizing", owner: "rule 3: a refused size costs no second move", severity: 3,
-      story: "As `moved-twice-sizing`, in a layout that a timer runs.",
-      script: """
-        open 104 Finder pid 1005 at 1744 430 433 547 min 345 191 max 816 191 title Untitled
-        launch
-        space 104 off
-        via shortcut dock 104 top
-        space 104 on
+        displays side:0,0,1080,1920:37,57,0,0* main:-185,1920,1280,800:0,0,0,0 third:-1625,115,1440,900:0,0,0,0 windows-silent
+        open 109 Safari pid 1000 at 265 1470 766 255 max 347 222
+        space 109 off
+        dock top
+        displays main:0,0,1920,1080:37,0,0,0* windows-silent
+        displays main:0,0,1080,1920:37,0,0,0* side:-8,1920,1280,800:37,0,0,0 windows-first
+        space 109 on
         flush
         """),
     ChaosKnownFailure(
-      rule: "moved-again-sizing-again", owner: "rule 3: a refused size costs no second move", severity: 2,
-      story: "A docked window that cannot grow is walked through the corner of its slot and back to the middle seconds after it was placed, with nobody touching "
-        + "anything.",
+      rule: "moved-again-sizing-again", owner: "rule 3: one thing that happens is one layout", severity: 3,
+      story: "As `moved-twice-sizing-again`, in a layout that a timer runs: a window whose macOS Space was away comes back on other displays.",
       script: """
-        open 101 Preview pid 1007 at 508 538 723 728 min 723 400 max 723 2000
+        displays main:0,0,2560,1440:25,0,0,0* side:-33,1440,800,600:0,0,0,0 windows-first
         launch
-        minimize 101
-        restore 101
-        key down arrange
-        advance 5
-        """,
-      """
+        open 106 Preview pid 1007 at 831 921 536 717 min 536 717
+        toggle-float 106
+        space 106 off
+        displays side:44,1920,1280,800:25,0,0,0 main:0,0,1080,1920:25,0,0,0* windows-never
+        space 106 on
+        hide 1003
+        advance 0.5
+        """),
+    ChaosKnownFailure(
+      rule: "moved-again-sizing-floating", owner: "rule 3: a floating window's frame is its person's", severity: 3,
+      story: "As `moved-twice-sizing-floating`, in a layout that a timer runs.",
+      script: """
         launch
-        open 103 Preview pid 1007 at 1644 2082 1702 1371 min 242 158 max 386 1629
-        dock 103 top
-        move 103 1117 12 383 700
-        advance 0.3
+        hang 1000
+        open 108 Safari pid 1000 at -254 915 758 429
+        displays side:0,0,1440,900:25,0,0,0* windows-never
+        wake 1000
+        limits 108 min 1579 1480
+        settle
+        """),
+    ChaosKnownFailure(
+      rule: "moved-again-sizing-again-floating", owner: "rule 3: a floating window's frame is its person's", severity: 3,
+      story: "The same, though its app has refused in the same way before.",
+      script: """
+        launch
+        open 109 Mail pid 1002 at 864 572 1103 322 min 1103 322 title Übersicht
+        arrange
+        space 109 off
+        displays third:0,0,2560,1440:25,63,0,0* windows-late
+        open 112 Mail pid 1002 at 536 1243 2062 1095 min 2062 1095 max 2062 1847
+        dock 112 top
+        space 109 on
+        flush
         """),
     ChaosKnownFailure(
       rule: "moved-unasked", owner: "rule 2: a floating window's frame is its person's", severity: 2,
@@ -433,34 +596,48 @@ extension ChaosRunner {
         launch
         """),
     ChaosKnownFailure(
-      rule: "flashed-into-view", owner: "rule 3: a refused size costs no second move", severity: 2,
-      story: "A window too large for its slot is a tile. At the next dock Arbor asks it again whether it fits by now, IN VIEW: it shows across the display and goes again. "
-        + "One ordinary walk in seven meets it: an editor on a laptop is enough.",
+      rule: "flashed-into-view", owner: "rule 3: one thing that happens is one layout", severity: 2,
+      story: "A window out of view shows and goes again for one thing that happened. A window closes, the display is laid out, the keyboard goes elsewhere and the view "
+        + "follows. Also: a window kept to the LEFT of a display cannot be asked for a size there (what shows of it depends on its width), so it is offered its slot in view, and refuses.",
       script: """
+        open 102 Finder pid 1005 at 1629 667 782 488 min 501 300
         launch
-        open 102 Finder pid 1005 at 211 312 957 336 min 501 300
-        open 104 Xcode pid 1004 at 103 25 1188 789 min 1188 685
-        key down arrange
-        key down dock bottom
+        open 103 Mail pid 1002 at 375 103 869 693 min 760 400
+        key down dock top
+        open 104 Mail pid 1002 at 200 28 1177 819 min 760 400
+        key down zoom
+        close 104
         """,
       """
-        open 101 Xcode pid 1004 at 91 57 1417 904 min 1188 685
-        open 104 Preview pid 1007 at 423 244 723 670 min 723 400 max 723 2000
+        displays main:0,0,1280,800:25,0,0,0* side:1280,0,2560,1440:25,0,0,0 windows-never
         launch
-        key down arrange
-        key down dock top
+        open 103 Xcode pid 1004 at 1287 404 1547 685 min 1188 685
+        grab 103
+        carry 1265 789
+        release
+        key down dock left
         """),
     ChaosKnownFailure(
-      rule: "flashed-out-of-view", owner: "rule 3: a refused size costs no second move", severity: 2,
-      story: "One command sends a window out of view and fetches it again: a first layout makes it a tile, a second one, which knows more about sizes, gives it a slot. "
-        + "Also: a summoned window at the end of a pause.",
+      rule: "flashed-out-of-view", owner: "rule 3: one thing that happens is one layout", severity: 2,
+      story: "One command sends a window out of view and fetches it again. `shrink` takes a docked window below what its app allows: it becomes a tile, the gaps are put back, "
+        + "and the command tries again with what it has learnt. A docked window becomes a tile, and a moment later the view follows the keyboard onto it. A summoned window at the end of a pause.",
       script: """
-        open 101 Xcode pid 1004 at 0 115 1188 808 min 1188 685
         launch
-        open 104 Safari pid 1000 at 27 188 1392 784 min 574 240
-        key down toggle-float
-        key down focus left
+        open 102 Xcode pid 1004 at 76 25 1248 875 min 1188 685
+        open 103 Mail pid 1002 at 138 215 1166 511 min 760 400
         key down arrange
+        key down dock top
+        key down shrink
+        """,
+      """
+        open 102 Music pid 1006 at 858 56 882 708 min 680 480
+        open 103 Xcode pid 1004 at 288 218 1188 856 min 1188 685
+        launch
+        focus 102
+        key down dock top
+        key down focus down
+        key down dock right
+        react
         """,
       """
         open 103 Xcode pid 1004 at 120 658 1430 685 min 1188 685
@@ -468,17 +645,6 @@ extension ChaosRunner {
         via shortcut summon Xcode
         toggle-pause
         toggle-pause
-        """),
-    ChaosKnownFailure(
-      rule: "moved-over-and-over", owner: "rule 3: a refused size costs no second move", severity: 2,
-      story: "A window that cannot grow, just back out of the Dock, is docked: within a second it goes corner, middle, corner, middle, with nobody touching anything.",
-      script: """
-        open 104 Preview pid 1007 at 468 62 723 650 min 723 400 max 723 2000
-        launch
-        minimize 104
-        restore 104
-        key down dock top
-        advance 1
         """),
     ChaosKnownFailure(
       rule: "placed-mostly-out", owner: "displays: what macOS rescued is not sent back", severity: 1,

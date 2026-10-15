@@ -132,6 +132,17 @@ wrong (an app that resizes a moment late, a sheet that was open), so a window
 later seen smaller than its learned minimum lowers it, and `relayout` forgets
 every learned minimum and offers each window its slot again.
 
+**A window moves once, to where it ends up** (`Controller+AskFirst.swift`, `SeenSizes`), so an answer has to be in before anybody acts
+on it. As small and as large as a window has been seen it can be again; only a size beyond that is a question, and it is put **where
+the window stands**: one `setFrame` with its own origin and the size of the slot. Those who may refuse to shrink are asked before
+anybody is moved (`askingFirst`; one at a time, newcomers first, then those who make room for them, the most squeezed first), because
+room is made from their answers; at the first refusal the layout is worked out again, until nobody in it is unknown. Whether a window can grow decides only its own place, in the middle of
+the slot, so that is asked while the others move (`apply`), and the window goes last. A size that cannot be changed is known
+beforehand (`isResizable`, `noteFixedSizes`). A window that once stopped short of a slot is sent straight to the middle of the next, still asked for
+the whole size, so it costs nothing to find out that it can grow again. To
+the eye a question and the move after it are what one `setFrame` has always been (`FramePlan`: size, position, size); tests look at the
+road a window takes (`FakeWindowSystem.detour`), and `Budget.questions` counts what it costs.
+
 A window that gives no such sign is **asked again where nobody can see** (`Controller+LearnedSizes.swift`). A tile's
 window is parked anyway. So when a display is laid out, and the record that makes a window a tile has stood for
 `tileRetryMinutes` (10), `relayout` asks the window, between applying the layout and laying out again, to take the size of

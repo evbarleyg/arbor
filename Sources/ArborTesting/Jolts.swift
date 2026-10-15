@@ -7,8 +7,9 @@ import CoreGraphics
 /// A jolt is Arbor changing its own mind where a person can see it: it asked a window for a frame, the window's app
 /// did exactly as it was asked, nobody else touched the window, and before the command or event was over Arbor asked
 /// the same window for another frame. Not a jolt: asking again because the app answered with another size than it was asked for
-/// (nobody can know an app's limits before asking), and two moves of which a person sees one, because the
-/// place in between is out of view like the place before or after it.
+/// (nobody can know an app's limits before asking), two moves of which a person sees one, because the
+/// place in between is out of view like the place before or after it, and a question: a window Arbor does not know is asked for
+/// a size where it stands and goes to its place afterwards, which is one road (Roads.swift), and how any window is moved on a Mac.
 public struct Jolt: Equatable, Sendable, CustomStringConvertible {
   public var window: WindowID
   public var from: CGRect
@@ -34,12 +35,21 @@ extension FakeWindowSystem {
     for move in moveLog[min(mark, moveLog.count)...] {
       defer { if move.after != whereMacOSPuts(move.requested) { learning = true } }
       guard move.before != move.after else { continue }
+      // What nobody can see belongs to the move before it: a window asked for a size in its corner is still in its corner, and
+      // one that is fetched from there has been out of view and back all the same.
+      if !shows(move.before), !shows(move.after), var earlier = last[move.window], earlier.after == move.before {
+        (earlier.requested, earlier.after) = (move.requested, move.after)
+        last[move.window] = earlier
+        continue
+      }
       defer { last[move.window] = move }
       guard let first = last[move.window],
         // The app did as it was asked, so there was nothing to learn from its answer.
         first.after == whereMacOSPuts(first.requested),
         // Nobody else has had the window since.
-        first.after == move.before
+        first.after == move.before,
+        // Not a question: a size where it stood, and from there straight on.
+        first.after.origin != first.before.origin || Self.detour([first.before, first.after, move.after]) != nil
       else { continue }
       let (before, between, after) = (shows(first.before), shows(first.after), shows(move.after))
       if between || (before && after) {

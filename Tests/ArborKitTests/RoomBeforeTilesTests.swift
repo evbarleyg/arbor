@@ -217,7 +217,9 @@ import Testing
     }
     #expect(h.workspace.tree == old.workspace.tree)
     // Into its slot, from wherever the quit left it, and no second thoughts.
-    for window in [notes, safari] { #expect(h.system.frameLog.filter { $0.window == window }.count <= 1) }
+    for window in [notes, safari] {
+      #expect((movesWithoutWaste(h, of: window) ?? 2) <= 1 && FakeWindowSystem.detour(h.system.road(of: window)) == nil)
+    }
   }
 
   // MARK: Whenever Arbor itself changes who has how much

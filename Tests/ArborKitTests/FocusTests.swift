@@ -277,9 +277,10 @@ import Testing
     var layouts = 0
     h.controller.observe { if case .layout = $0 { layouts += 1 } }
     h.system.clearFrameLog()
+    let mark = h.system.moveLog.count
     h.system.setHidden(pid: 11, true)
     #expect(layouts == 1)
-    #expect(h.system.frameLog.filter { $0.window == n }.count == 1, "its neighbour moves once")
+    #expect(movesWithoutWaste(h, of: n, since: mark) == 1, "its neighbour moves once")
     #expect(!h.system.frameLog.contains { $0.window == s1 || $0.window == s2 }, "a window being hidden is not moved")
     layouts = 0
     h.system.clearFrameLog()

@@ -528,7 +528,8 @@ private let second = DisplaySnapshot(
 
   @Test func strictModeReportsADifferentFrameWithItsLineAndBothFrames() {
     let trace = dockingTrace()
-    let line = firstLine(trace) { if case .setFrame = $0 { true } else { false } }
+    // Not the question that comes before it, where the window stood.
+    let line = firstLine(trace) { if case .setFrame(_, let frame, _, _) = $0 { frame.origin == CGPoint(x: 12, y: 37) } else { false } }
     let changed = edited(trace, line: line) { _ in
       let old = CGRect(x: 12, y: 37, width: 650, height: 851)
       return .setFrame(WindowID(101), old, result: old, took: nil)
@@ -823,7 +824,7 @@ private let second = DisplaySnapshot(
     #expect(replayer.harness.controller.windows[WindowID(8)]?.frame == frame)
     #expect(replayer.harness.controller.windows[WindowID(8)]?.title == "title-3")
     // Placed once. Had the echoes moved it, Arbor would have had to put it back.
-    #expect(replayer.harness.system.frameLog.filter { $0.window == WindowID(8) }.count == 1)
+    #expect(movesWithoutWaste(replayer.harness, of: WindowID(8)) == 1)
   }
 
   @Test func movesThatCameFromOutsideArborAreCarriedOver() throws {

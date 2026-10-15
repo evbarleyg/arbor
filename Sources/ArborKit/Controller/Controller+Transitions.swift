@@ -160,7 +160,7 @@ extension Controller {
         // Its app keeps moving it, and Arbor has stopped putting it back.
         continue
       } else {
-        frames[window] = slot
+        frames[window] = expectedFrame(of: current, in: slot)
       }
     }
     for window in layout.hiddenWindows { frames[window] = nil }

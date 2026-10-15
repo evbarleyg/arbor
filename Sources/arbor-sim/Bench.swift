@@ -23,12 +23,12 @@ func runBenchmarks(_ arguments: [String]) {
     print("\(size) windows")
     print(
       "  \("command".padding(toLength: 24, withPad: " ", startingAt: 0))"
-        + "  moves   idle repeat  alone  focus   idle  reads  overl   idle  saves      µs")
+        + "  moves  asked   idle repeat  alone  focus   idle  reads  overl   idle  saves      µs")
     for benchmark in BenchmarkCase.all {
       let result = benchmark.run(windows: size, repetitions: 5)
       let b = result.budget
       let columns = [
-        b.moves, b.idleMoves, b.repeatMoves, b.movesAlone, b.focuses, b.idleFocuses, b.focusReads, b.overlayUpdates,
+        b.moves, b.questions, b.idleMoves, b.repeatMoves, b.movesAlone, b.focuses, b.idleFocuses, b.focusReads, b.overlayUpdates,
         b.idleOverlayUpdates, b.saves,
       ]
       print(

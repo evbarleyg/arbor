@@ -128,7 +128,7 @@ trace needs nothing but itself, wherever in a session it was started.
 | `windows` | Every window the window system knew: `id`, `pid`, `bundle`, `app`, `title` (a token), `frame`, and `minimized`, `hidden`, `offSpace`, `fullScreen` where true |
 | `settings` | The settings in effect, as in `settings.json`, title patterns replaced |
 | `workspaces`, `dormant` | Each display's tree, camera, history, saved views and floating windows, as in `state.json`; the same for displays that were away |
-| `parked`, `minimumSizes`, `focusHistory`, `ignored`, `onlyPIDs`, `appPlaced` | What Arbor had learned and `state.json` does not hold |
+| `parked`, `minimumSizes`, `seenSizes`, `focusHistory`, `ignored`, `onlyPIDs`, `appPlaced` | What Arbor had learned and `state.json` does not hold |
 | `focused`, `cursor`, `mouseDown` | The focused window, the pointer, the left button |
 | `thinning` | The thinning interval in seconds (below) |
 
@@ -278,7 +278,9 @@ through the lines, moving the manual scheduler's clock to each line's time and d
    a point): the window takes the frame it took on the Mac;
 2. else by the same request anywhere in the trace, nearest first: an app's answer depends on the request far more than on
    the moment;
-3. else by the fake's own model, taught what the trace shows of the app: one that gave more than was asked has that minimum size, one that gave
+3. else by a request for the same size anywhere in the trace, nearest first: the window takes the size it took then, where it is asked to be
+   now. How large an app lets a window be does not depend on where it stands, and Arbor asks a window it does not know for a size before it moves it;
+4. else by the fake's own model, taught what the trace shows of the app: one that gave more than was asked has that minimum size, one that gave
    less that maximum. Unless its sizes come in steps: a terminal takes the whole number of characters nearest to what it is asked for, which half the
    time is more. Every size such a window was seen at lies on one grid, so the step is the greatest common divisor of their differences
    (Terminal: 681, 492 and 247 wide, a step of 7), and the model answers with the nearest point of the grid.

@@ -113,10 +113,10 @@ import Testing
 
   @Test func withoutAFlightNothingIsAskedTwice() {
     let (h, _, b) = makeHarness(flight: 0)
-    h.system.clearFrameLog()
+    let mark = h.system.moveLog.count
     h.system.setMinimized(b, false)
     h.scheduler.advance(by: 1)
-    #expect(h.system.frameLog.filter { $0.window == b }.count == 1)
+    #expect(movesWithoutWaste(h, of: b, since: mark) == 1)
     expectWindowsMatchLayout(h, on: h.display)
   }
 }

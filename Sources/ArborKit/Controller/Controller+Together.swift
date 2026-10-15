@@ -24,7 +24,8 @@ extension Controller {
       if !parked.contains(window), current.frame.approximatelyEquals(target, tolerance: 1) || misfits[window] != nil {
         continue
       }
-      moves.append((window, target))
+      // The first frame `apply` asks for.
+      moves.append((window, questionBeforePlacing(current, in: target, on: displayID) ?? request(for: current, in: target)))
     }
     // With `shrinkOutOfView` a window is parked at another size, which `parkingSize` works out and remembers in one
     // go: not for a forecast. Those moves wait on their own.

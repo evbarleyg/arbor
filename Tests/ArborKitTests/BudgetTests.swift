@@ -54,15 +54,18 @@ import Testing
 
   /// Only what borders the change moves, however many windows there are.
   @Test(arguments: sizes) func aSeamStepMovesOnlyWhatBordersTheSeam(windows: Int) {
-    #expect(BenchmarkCase.named("seam step").run(windows: windows).budget.moves == 2)
-    #expect(BenchmarkCase.named("minimize").run(windows: windows).budget.moves == 2)
+    let step = BenchmarkCase.named("seam step").run(windows: windows).budget
+    #expect(step.moves - step.questions == 2, "\(step)")
+    // They grow further than they have been seen to, so each is asked first whether it can.
+    let minimize = BenchmarkCase.named("minimize").run(windows: windows).budget
+    #expect(minimize.moves - minimize.questions == 2, "\(minimize)")
     #expect(BenchmarkCase.named("put back").run(windows: windows).budget.moves == 1)
   }
 
   /// A change on one display leaves the windows and overlays of the other alone.
   @Test(arguments: sizes) func aChangeOnOneDisplayLeavesTheOtherAlone(windows: Int) {
     let budget = BenchmarkCase.named("displays: Dock grows").run(windows: windows).budget
-    #expect(budget.moves == 3 && budget.overlayUpdates - budget.idleOverlayUpdates == 1, "\(budget)")
+    #expect(budget.moves - budget.questions == 3 && budget.overlayUpdates - budget.idleOverlayUpdates == 1, "\(budget)")
   }
 
   @Test func terminalsThatRoundTheirSizeAreNotAskedAgain() {
@@ -119,7 +122,7 @@ import Testing
     h.controller.observe { if case .layout = $0 { layouts += 1 } }
     let hide = h.measure { h.system.setHidden(pid: 2001, true) }
     #expect(layouts == 1 && hide.repeatMoves == 0 && hide.overlayUpdates == 1, "\(hide)")
-    #expect(hide.moves <= others.count, "only the windows that stay move: \(hide)")
+    #expect(hide.moves - hide.questions <= others.count, "only the windows that stay move: \(hide)")
     expectWindowsMatchLayout(h, on: h.display)
 
     layouts = 0

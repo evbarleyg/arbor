@@ -184,13 +184,13 @@ public final class Harness {
   public func beginStep() { stepMark = system.moveLog.count }
 
   /// How often Arbor has really moved each window since `beginStep()`, or since this harness was made. A request that left
-  /// the window where it was is no move.
+  /// the window where it was is no move, nor is a question put to it where it stood before it went anywhere (`Budget.questions`).
   public var movesInStep: [WindowID: Int] {
-    var counts: [WindowID: Int] = [:]
+    var moves: [WindowID: [FakeWindowSystem.Move]] = [:]
     for move in system.moveLog[min(stepMark ?? firstMark, system.moveLog.count)...] where move.before != move.after {
-      counts[move.window, default: 0] += 1
+      moves[move.window, default: []].append(move)
     }
-    return counts
+    return moves.mapValues { $0.count - Budget.tally($0).questions }
   }
 
   /// The windows Arbor has moved twice since then where once would have done (Jolts.swift). Those `whileLearning` are
