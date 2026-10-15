@@ -5,11 +5,12 @@ three faults lay that the first day on hosted Macs showed: an app reported "the 
 `NSWorkspace.shared.frontmostApplication` still named the old app. No stand-in at the seam can catch that class. This folder compiles the layer **as it is**, links it with a model of a Mac, and runs it.
 
 ```bash
-make mac-on-linux                                   # build what has changed, tell every story, walk a short walk. 5 s to run; see "How long"
+make mac-on-linux                                   # build what has changed, tell every story, walk a short walk. 15 s to run; see "How long"
 make mac-on-linux ARGS="--only tab --verbose"       # the stories whose names contain "tab", with everything that happened on the Mac
 make mac-on-linux ARGS="--only walk --seeds 1-500"  # a hunt
 make mac-on-linux ARGS="--help"
-make mac-on-linux-selftest                          # does the net hold? takes known cures out of the copy; the stories about them must go red. 3 minutes
+make mac-on-linux-build                             # build and stop: does Arbor still compile against the model? For a gate or a CI job
+make mac-on-linux-selftest                          # does the net hold? takes known cures out of the copy; the stories about them must go red. 10 minutes
 REF=origin/fix/some-cure make mac-on-linux          # that commit's Sources, with this checkout's stand-ins, scripts and stories
 COVERAGE=1 make mac-on-linux                        # afterwards: how much of each file of the layer was entered, and which lines were not
 ```
@@ -175,11 +176,11 @@ now, and lines in `known-failures.txt` that say which lines of the layer are con
 
 | | |
 |---|---|
-| Nothing changed | 4 s to find that out, 5 s to run |
+| Nothing changed | 15 s to find that out and link, 15 s to run |
 | A story, or a file of the layer | 10 to 15 s |
 | A stand-in or the model (everything is compiled again) | 45 to 80 s on four cores |
-| From nothing | 2 minutes |
-| The self-test | 3 minutes |
+| From nothing (`make mac-on-linux-build` in a fresh checkout) | 2 min 20 s on four cores, 3 min 40 s of processor time: the stand-ins 25 s, ArborCore 30 s, ArborKit 40 s, ArborTesting 30 s, the stories 10 s. 130 MB under `.build` |
+| The self-test | 10 minutes: thirty-five changes, each built and run |
 | 400 seeds of the walk | 1 minute |
 
 `REF=` and `SOURCES=` build in a work folder of their own, from nothing the first time (2 minutes). The stories read two things of the controller's that old commits do not have, `seenSizes` (since 9820641) and `windowLetBe` (since 493e65f): a commit older than those does not compile against them. A second run in the same work folder waits for the first. The stand-ins are compiled whole, with a stamp as in `check.sh`. Arbor's modules and the stories are compiled incrementally, as `swift build` does it: the copy is brought up to date file by file, touching only those whose text differs.

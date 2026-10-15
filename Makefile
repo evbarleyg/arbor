@@ -200,11 +200,15 @@ typecheck-mac:
 typecheck-mac-selftest:
 	@./scripts/typecheck-mac/selftest.py
 
-.PHONY: mac-on-linux mac-on-linux-selftest
+.PHONY: mac-on-linux mac-on-linux-build mac-on-linux-selftest
 # On Linux: the real Accessibility layer (Sources/ArborKit/AX), compiled, linked and RUN against a model of a Mac that is as rude as real ones were seen
 # to be (scripts/mac-on-linux/README.md). make mac-on-linux ARGS="--only tab --verbose"
 mac-on-linux:
 	@./scripts/mac-on-linux/build.sh $(ARGS)
+
+# The same, built and not run: does Arbor still compile against the model? Exit code 0 or 1, the compiler's errors on stdout, everything under .build.
+mac-on-linux-build:
+	@./scripts/mac-on-linux/build.sh --only-build
 
 # Does that net hold? Takes known cures out of a copy of the layer; the stories about them must go red.
 mac-on-linux-selftest:

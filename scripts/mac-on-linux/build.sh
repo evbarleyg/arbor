@@ -3,7 +3,8 @@
 #   scripts/mac-on-linux/build.sh                 build what has changed, run every story and a short walk
 #   scripts/mac-on-linux/build.sh --only TEXT     the stories whose names contain TEXT   (every other argument goes to the program too: --help)
 #   scripts/mac-on-linux/build.sh --self-test     does the net hold? each change in mutants.py is made to the copy, and its stories must go red
-#   scripts/mac-on-linux/build.sh --build-only
+#   scripts/mac-on-linux/build.sh --only-build    build, and stop: does Arbor still compile against the model? For a gate or a CI job. The compiler's `error:` lines
+#                                                 come on stdout with their places in Sources/; the last line says what was built. (--build-only is its older name.)
 #   REF=origin/fix/some-cure scripts/mac-on-linux/build.sh …   that commit's Sources, with this checkout's stand-ins, scripts and stories
 #   SOURCES=some/folder/Sources scripts/mac-on-linux/build.sh …   that folder, likewise: for sources that are in no commit
 #   COVERAGE=1 scripts/mac-on-linux/build.sh …                 afterwards: how much of each file of the layer the run has entered, and which lines it has not
@@ -60,6 +61,7 @@ flags=(-swift-version 6 -Onone -I modules -no-color-diagnostics -diagnostic-styl
 for headers in "$typecheck"/stubs/*/include; do flags+=(-I "$headers"); done
 report() { grep -E "^[^ ].*:[0-9]+:[0-9]+: error:|^error:|^<unknown>:0: error:" | sed -e "s#^$root/##" -e 's#^src/#Sources/#' | sort -u | head -40; }
 
+began=$SECONDS
 # --- The stand-ins change seldom: compile them again only when they, or the compiler, have.
 stamp=$( (swiftc --version 2>&1; for module in $frameworks; do find "$typecheck/stubs/$module" -type f -print0 | sort -z | xargs -0 cat; done) | sha256sum | cut -d' ' -f1)
 if [ "$(cat objects/stand-ins.stamp 2>/dev/null)" != "$stamp" ]; then
@@ -164,7 +166,6 @@ build() {
 
 export ARBOR_HOME="$work/home"
 mkdir -p "$ARBOR_HOME"
-began=$SECONDS
 copy_sources || exit 1
 
 if [ "${1:-}" = --self-test ]; then
@@ -219,6 +220,13 @@ if [ "${1:-}" = --self-test ]; then
   if ! cmp -s "$kept" heard-changed.jsonl && ! holds && ! cmp -s heard-changed.jsonl heard-before.jsonl && holds
   then echo "✔ a story of storey two that heard.jsonl does not have: the run fails once, rewrites the file, and passes the next time"
   else echo "✘ a story of storey two that heard.jsonl does not have goes unnoticed, or the file is not put right"; touch self-test-failed; fi
+  # A copy that does not compile is said so, with the compiler's own line and its place in Sources/: that line is all a CI job shows of it.
+  echo 'let nobody: Int = "a word"' >> src/ArborKit/AX/AXHelpers.swift
+  if said=$(build "$work/mutant"); then echo "✘ a copy that does not compile is built all the same"; touch self-test-failed
+  elif grep -q '^Sources/ArborKit/AX/AXHelpers.swift:[0-9]*:[0-9]*: error: ' <<< "$said" && grep -q '^ArborKit does not compile' <<< "$said"
+  then echo "✔ a copy that does not compile: the build fails, with the compiler's error and its place"
+  else echo "✘ a copy that does not compile: the build fails without the compiler's error and its place"; touch self-test-failed; fi
+  take_over
   # --- The net.
   # First the whole list: a list that cannot be had, or is empty, is no self-test that passed.
   "$here/mutants.py" --list > mutants.txt && [ -s mutants.txt ] || { echo "✘ scripts/mac-on-linux/mutants.py lists no change to make"; exit 1; }
@@ -247,7 +255,11 @@ fi
 
 build "$work/mac-on-linux" || exit 1
 echo "built in $((SECONDS - began)) s"
-[ "${1:-}" = --build-only ] && exit 0
+if [ "${1:-}" = --only-build ] || [ "${1:-}" = --build-only ]; then
+  # shellcheck disable=SC2086
+  echo "built: $(echo $frameworks | wc -w | tr -d ' ') stand-ins, $(echo $libraries | sed 's/ /, /g') and $("$work/mac-on-linux" --list | wc -l | tr -d ' ') stories, as $shown/mac-on-linux; nothing was run"
+  exit 0
+fi
 if [ -n "${COVERAGE:-}" ]; then
   LLVM_PROFILE_FILE="$work/run.profraw" "$work/mac-on-linux" --quiet --known "$here/known-failures.txt" "$@"
   code=$?
