@@ -18,6 +18,15 @@ func simulateHands(_ words: [String], harness: Harness) -> (String, Bool)? {
       return ("usage: from <\(sources)> <command>", false)
     }
     return report(harness.run(words.dropFirst(2).joined(separator: " "), from: source))
+  case "menu-choose":
+    let title = words.dropFirst().joined(separator: " ")
+    guard !title.isEmpty else { return ("usage: menu-choose <how the row's title begins>", false) }
+    // As the menu would open now. A row that opens a submenu is not chosen but passed over.
+    guard let item = harness.controller.menuModel().allItems.first(where: { $0.title.hasPrefix(title) && $0.sections.isEmpty }) else {
+      return ("error: no row of the menu begins with “\(title)”", false)
+    }
+    guard item.isEnabled, let command = item.command else { return ("error: “\(item.title)” cannot be chosen", false) }
+    return report(harness.run(command.text, from: .menu))
   case "keydown", "keyup", "key":
     guard words.count == 2, (try? KeyChord(text: words[1])) != nil else {
       return ("usage: \(words[0]) <shortcut>, e.g. \(words[0]) ctrl+opt+space", false)

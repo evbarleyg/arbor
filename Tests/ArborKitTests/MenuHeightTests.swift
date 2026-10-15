@@ -12,7 +12,7 @@ import Testing
 
   /// Every state a menu can open in, and of those that come in pairs the pairs that take the most rows.
   nonisolated static let running = [
-    "no windows", "nothing docked", "an ordinary day", "much of everything", "an update waits",
+    "no windows", "nothing docked", "an ordinary day", "much of everything", "thirty windows", "an update waits",
     "the view is held and settings.json has a mistake", "holding still and settings.json has a mistake",
     "shortcuts are off here and settings.json has a mistake", "the arrangement was repaired and settings.json has a mistake",
   ]
@@ -40,7 +40,8 @@ import Testing
     let apps = [
       "Safari", "Mail", "Notes", "Music", "Maps", "Photos", "Pages", "Numbers", "Keynote", "Preview", "Terminal", "Calendar",
     ]
-    let windows = state == "no windows" ? [] : apps.map { h.system.open(app: $0) }
+    var windows = state == "no windows" ? [] : apps.map { h.system.open(app: $0) }
+    if state == "thirty windows" { windows += (13...30).map { h.system.open(app: "Safari", title: "Tab \($0)") } }
     h.start()
     if state != "nothing docked", !windows.isEmpty { h.run("arrange") }
     if much {
@@ -140,9 +141,10 @@ import Testing
     #expect(much.allItems.filter { $0.title.hasPrefix("other") }.count == 20)
     #expect(much.item("Move to Next Display") != nil)
     #expect(much.allItems.contains { $0.title.hasPrefix("Redo ") })
+    #expect(harness(in: "thirty windows").controller.menuModel().item("Windows")?.sections.flatMap(\.items).count == 30)
   }
 
-  /// A list that a person makes longer (saved views, named spaces, apps that are not arranged) is in a submenu.
+  /// A list that a person makes longer (open windows, saved views, named spaces, apps that are not arranged) is in a submenu.
   @Test func nothingAPersonMakesLongerIsAtTheTopLevel() {
     func top(_ state: String) -> [[String]] {
       harness(in: state).controller.menuModel().sections.map { section in
@@ -151,6 +153,8 @@ import Testing
     }
     #expect(top("much of everything") == top("an ordinary day"))
     #expect(top("nothing docked") == top("an ordinary day"))
+    #expect(top("thirty windows") == top("an ordinary day"))
+    #expect(top("no windows") == top("an ordinary day"))
   }
 
   /// No submenu scrolls either, but for the lists people make: with all nine views saved, Saved Views is the longest.

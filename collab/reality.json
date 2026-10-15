@@ -9892,7 +9892,7 @@
    "kind": "geometry",
    "layer": "at the seam",
    "expected": "The visible frame is a constant of the display.",
-   "happened": "The Dock grows and shrinks with what is in it. At every minimize and restore it changes by the thumbnail and the visible frame by 2 points: a window sent out of view meanwhile is 652 high where its slot was 650. A regular app that joins the Dock resizes it, and every slot with it: with a regular test app there the visible frame's height went from 674 to 677. An app that has just left leaves the Dock shrinking for a second or so. In a later comparison with a rehearsal the height went from 674 to 676 at a minimize, macOS said so, and Arbor laid everything out again, where the fake Mac's display is a constant (`World.display`).",
+   "happened": "The Dock grows and shrinks with what is in it. At every minimize and restore it changes by the thumbnail and the visible frame by 2 points: a window sent out of view meanwhile is 652 high where its slot was 650. A regular app that joins the Dock resizes it, and every slot with it: with a regular test app there the visible frame's height went from 674 to 677. An app that has just left leaves the Dock shrinking for a second or so. In a later comparison with a rehearsal the height went from 674 to 676 at a minimize, macOS said so, and Arbor laid everything out again, where the fake Mac's display is a constant (`World.display`). A floating window that hung over the bottom edge, went into the Dock and was asked back from the menu's list is moved while it is in there, into the room of that moment: back out, with the Dock grown again, it ended 2 points lower than the room (at 507 for 505). Nothing covered it: the room ends above the Dock.",
    "found": "The trace minimize-restore and the proof run on a hosted Mac, and Mac shell scripts there whose frames were compared too early. Three of them sleep three seconds after starting or ending a regular app for it.",
    "modelled": "partly",
    "knobs": [
@@ -9920,7 +9920,8 @@
     "Sources/ArborKit/Platform/DisplayChange.swift",
     "Sources/arbor-fakemac/main.swift",
     "docs/ARCHITECTURE.md",
-    "Sources/arbor-fakemac/World.swift"
+    "Sources/arbor-fakemac/World.swift",
+    "scripts/mac-shell/check-window-list.sh"
    ]
   },
   {

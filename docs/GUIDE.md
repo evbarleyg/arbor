@@ -203,6 +203,10 @@ The focused window too small? **⌃⌥⌘=** grows it and **⌃⌥⌘-** shrinks
 **⌃⌥R** rotates the focused window's group: two windows side by side become one above the other. Press it again and they are as they were. **⌃⌥⇧R** mirrors the group: left becomes right. All five are also in the menu, under **Arrangement**.
 ### Where is that window?
 
+Open Arbor's menu and point at **Windows**. Every open window is there, by app and title, the one you are typing in first and the others in the order you used them. Whatever cannot be seen just now says why at the end of its row: out of view, minimized, hidden, full screen, another Space.
+Click a row and that window is in front of you, whole, with the keyboard, whatever kept it out of sight; one you left hanging over the edge of the screen comes all the way in. There is nothing to learn and nothing to remember.
+
+With the keyboard it is quicker still.
 Most of your windows are out of view most of the time. That is the point, and it is why **⌃⌥G**, Go to…, exists. Press it, type a few letters of the app or of the window's title, press Return: the view moves to that window
 and it has the keyboard. It does not matter what kept it out of view: another space, another tab, the Dock, ⌘H, another display, another macOS Space.
 If you were framed on one window, the one you go to is framed in its place; from a group, the view steps out just far enough to show both.

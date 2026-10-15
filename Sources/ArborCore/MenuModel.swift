@@ -48,6 +48,10 @@ public struct MenuModel: Equatable, Sendable {
     public var showsShortcut = true
     /// The tooltip.
     public var help: String?
+    /// A word or two at the row's right end, grey, where a shortcut would be: "out of view".
+    public var note: String?
+    /// The process whose app's icon stands before the title.
+    public var iconOfProcess: Int32?
 
     init(_ title: String, _ action: Action) {
       self.title = title
@@ -73,6 +77,8 @@ public struct MenuModel: Equatable, Sendable {
     public func help(_ help: String) -> Item { with { $0.help = help } }
     public func withoutShortcut() -> Item { with { $0.showsShortcut = false } }
     public func shortcut(_ chord: KeyChord) -> Item { with { $0.shortcut = Shortcut(chord) } }
+    public func note(_ note: String?) -> Item { with { $0.note = note } }
+    public func icon(ofProcess pid: Int32?) -> Item { with { $0.iconOfProcess = pid } }
     /// Greyed out when the menu bar button for the same place is, and ticked when that button is filled in.
     public func like(_ button: MenuBarModel.Button?) -> Item {
       enabled(button?.isEnabled != false).ticked(button?.isCurrent == true)
@@ -209,8 +215,8 @@ public struct MenuModel: Equatable, Sendable {
   // MARK: As text
 
   /// What `menu` prints: a line per item, indented under its section or parent, with ✓ for a tick, the shortcut
-  /// after two spaces, ▸ for a submenu and "(grey)" for what cannot be chosen. A line of dashes stands for the separator
-  /// above a section without a title.
+  /// after two spaces, a note in square brackets, ▸ for a submenu and "(gray)" for what cannot be chosen. A line of dashes stands
+  /// for the separator above a section without a title.
   public var text: String {
     func lines(_ sections: [Section], indent: String) -> [String] {
       sections.enumerated().flatMap { index, section -> [String] in
@@ -224,6 +230,7 @@ public struct MenuModel: Equatable, Sendable {
           var line = indent + (item.isTicked ? "  ✓ " : "    ") + item.title
           if !item.sections.isEmpty { line += " ▸" }
           if let shortcut = item.shortcut { line += "  " + shortcut.label }
+          if let note = item.note { line += "  [\(note)]" }
           if !item.isEnabled { line += "  (gray)" }
           out.append(line)
           // Under the item's title; a step further where the submenu has titles of its own.

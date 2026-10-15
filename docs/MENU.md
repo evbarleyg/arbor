@@ -10,8 +10,9 @@ Written by the executor swarm, 2026-10-14 (product owner); for the documenter to
 
 Arbor has no window and no Dock icon. The menu is the only part of it a newcomer can look at, so it has three jobs, in this order:
 
-1. **The way back.** Someone whose windows have just left the view opens this menu. What they need is the first command in it.
-2. **The vocabulary.** Read from the top, it teaches the model: show everything, frame, dock, float, arrange; stepping out and in is the first thing
+1. **The way back.** Someone whose windows have just left the view opens this menu. What they need is the first command in it, and
+   whoever misses one window finds it in the second row: every open window, by app and title.
+2. **The vocabulary.** Read from the top, it teaches the model: show everything, frame, dock, float, arrange; stepping out and in is
    under View. Each row shows its shortcut, in submenus too, so the menu is also where shortcuts are learned.
 3. **What Arbor is doing that is out of the ordinary**, and the command that ends it: paused, holding, waiting for permission.
 
@@ -33,14 +34,15 @@ would fail, and whatever would do something else than its title says.
    ways out. macOS 26 gives a row 24 points, a separator 11, a heading 24, and 5 above and below. So 18 rows and four separators are 486 points on
    an ordinary day, and with two states (two rows and a separator) 545. The room for two more rows is kept free (decided by the product owner, 2026-10-15). That is why the top level has no
    headings: **each group ends in a submenu that bears the group's name** and holds what is not wanted every day. There is no third
-   level. **A list that a person makes longer** (saved views, named spaces, apps that are not arranged) **is never at the top level**; in its
+   level. **A list that a person makes longer** (open windows, saved views, named spaces, apps that are not arranged) **is never at the top level**; in its
    submenu it has no limit, and comes last where it can: no way out is in there. `MenuHeightTests` counts rows and separators in every state,
    on Linux, and fails at 601; `MenuHeightAppKitTests` asks `NSMenu` itself for those sizes wherever the tests run on a Mac, and
    `scripts/mac-shell/check-menu-height.sh` holds them against the open menu and clicks the ways out.
 4. **Greyed out, not hidden.** A row that cannot act now keeps its place, so that hands and eyes find it where it was. Hidden only when
    the thing it is about does not exist: a second display, an app that is not arranged, an update, a feature switched off in settings.
 5. **Titles**: a verb first, Title Case, words from the glossary (a state's row is a sentence, and its command after the " · " is a title). `…` only when a window or a panel opens and asks for more. An app's name
-   in curly quotes, never a bundle id, never a window's title. A state that is on or off is a tick on one row, not two rows.
+   in curly quotes, never a bundle id, never a window's title. **The one exception is Windows ▸**: a person looking for a window knows it by
+   its title. A state that is on or off is a tick on one row, not two rows.
 6. **Shortcuts shown are the ones in effect** (rebound, moved by the keyboard layout, off in this app), from the same list the hot keys
    are registered from. A row whose shortcut is off shows none.
 7. **A command from the menu is answered as a shortcut is**: a line on screen when it failed or when nothing visible changed (F43).
@@ -54,7 +56,7 @@ would fail, and whatever would do something else than its title says.
 |---|---|---|---|---|---|
 | | *state lines, if any, and a separator* | | | | see [States](#states) |
 | 1 | Show Everything | ⌃⌥Space | `show-all` | shipped | ✓ when that is the view. With several displays, holding ⌥ turns it into **Show Everything on All Displays** (⌃⌥0, `home`) |
-| 2 | Show the Desktop | ⌃⌥D | `desktop` | shipped | ✓ when that is the view. The same title in the shortcuts panel. The way to see everything that floats |
+| 2 | Windows ▸ | | | shipped | every open window; a click brings it to the front and into view |
 | 3 | Frame Focused Window | ⌃⌥↩ | `zoom` | shipped | ✓ when it is framed; choosing it again un-frames, as the key does |
 | 4 | Go to… | ⌃⌥G | `find` | F27 | |
 | 5 | Saved Views ▸ | | | shipped, F10 | |
@@ -86,7 +88,25 @@ A separator is written `|`. Rows show their shortcuts here as at the top level.
 - heading *Save This View As*, then `View 1` … `View 9` ⌃⌥⇧1 …, a taken number reading `View 1 (replace)`.
 - separator, `Name This Space…` ⌃⌥N (F20); named spaces are listed under *Go To*, after the numbers.
 
-**View ▸** (6): `Step Out` ⌃⌥↑, `Step In` ⌃⌥↓, `Back` ⌃⌥[, `Forward` ⌃⌥] | `Show Minimap` ⌃⌥M (F26; ✓ while one that was asked for is up; choosing it
+**Windows ▸** (2): one row for every open window, on every display, whatever keeps it out of sight. Decided by the product owner, 2026-10-15
+(`collab/QUESTIONS.md`, Q29, point 8).
+- A row reads `Safari: Start Page`, after the app's icon: the app's name (cut at 30 characters), then the window's title, cut at 50 with `…`; more of
+  a title that was cut is in the row's tooltip. The name alone where the window has no title.
+- **In the order of use, not by app**: the window with the keyboard first, ticked, as in an app's own Window menu; then those that have had it,
+  the latest first; then the rest as they are laid out. Windows of apps Arbor does not arrange come after the others, by app.
+- **A mark in words at the right end, grey, for what cannot be seen just now**, and nothing for what can: `out of view` (docked outside the view, too
+  small to show, behind the window its tab group shows, floating while the Desktop is out of view or with most of it beyond the screen's edge, sent
+  away by `summon`), and macOS's own words for what macOS did: `minimized`, `hidden`, `full screen`, `another Space`; not for the window being typed
+  in, which is what is seen. No display's name.
+- **A click** runs `reveal` for that window, the road Go to… takes: it ends in front, with the keyboard, and whole. A floating window that hangs over an edge of the
+  screen is moved the least that brings all of it in. Moved, never sized: of one larger than its display the corner with the title bar comes in.
+  (So it is for `reveal`, `find` and Go to… too.) One that Arbor does not arrange is shown where it is.
+- No limit: thirty windows are 730 points, and macOS scrolls a submenu by itself. With nothing open: `No Open Windows`, grey.
+- Only while Arbor runs. While the view is held every row is grey, as all that would move it.
+- Titles are for the person at the Mac, here as in Go to…: they are in no log, no trace and not in `state`. `menu`, which a person asks for themselves,
+  prints them as `find` does: whoever passes its output on passes titles on.
+
+**View ▸** (6): `Show the Desktop` ⌃⌥D (✓ when that is the view; the same title in the shortcuts panel; the way to see everything that floats), `Step Out` ⌃⌥↑, `Step In` ⌃⌥↓, `Back` ⌃⌥[, `Forward` ⌃⌥] | `Show Minimap` ⌃⌥M (F26; ✓ while one that was asked for is up; choosing it
 again puts it away, as the key does) | `Hold This View` ✓, `Hold Still` ✓ (F58; with the reason as a remark when Arbor began it by itself). Whoever is
 about to share a screen looks under View; once the view is held, the line that says so and `Release` are the first two rows of the menu.
 

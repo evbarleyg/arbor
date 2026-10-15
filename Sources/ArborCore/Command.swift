@@ -679,7 +679,7 @@ public enum Command: Equatable, Sendable, Codable {
       focus <window>               focus a window and bring it into view
       focus-display <next|previous|n>  focus the window that display had in focus last
       find [text…]                 open Go to…, or go to the window, space or saved view that matches best
-      reveal [window]              bring a window into view, un-minimized and unhidden, and focus it
+      reveal [window]              bring a window into view, un-minimized, unhidden and whole, and focus it
       minimap                      the whole arrangement in small, with the view marked; click a window in it to
                                    frame it; again to put it away
 

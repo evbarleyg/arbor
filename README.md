@@ -80,6 +80,8 @@ independent implementation and is not affiliated with it.
 - **Saved views**: ⌃⌥⇧1–9 saves where you are looking, ⌃⌥1–9 goes back there.
 - **Named spaces**: ⌃⌥N gives the space you are looking at a name. `arborctl go writing`, `arbor://go/writing` or the
   menu take you there from anywhere, on any display. A named group stays itself while windows come and go.
+- **Every open window in the menu**: Windows, the second row, lists them all by app and title in the order you used them, and says
+  which are out of view, minimized or hidden. A click brings one to the front and into view.
 - **Go to anything**: ⌃⌥G, a few letters, Return, and the view moves to that window and focuses it, whatever
   kept it out of view: another space, another tab, the Dock, ⌘H, another display. Saved views are in the same
   list. Return straight away goes to the window you were in before.

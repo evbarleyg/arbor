@@ -269,6 +269,7 @@ extension Controller {
     // `bringIntoView` leaves the camera alone during a drag.
     guard drag == nil else { return .failure("a window is being dragged; drop it first") }
     guard let snapshot = windows[id] else { return .failure("\(id) has closed") }
+    fetchWhole(id)
 
     // macOS reports that these happened a moment later, in no particular order with the focus change.
     if snapshot.isHidden { system.unhideApp(pid: snapshot.pid) }
