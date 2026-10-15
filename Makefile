@@ -31,6 +31,7 @@ lint:
 	@python3 scripts/newcomer/rehearse.py
 	@python3 scripts/mac-shell/walk-diff.py --self-test > /dev/null || python3 scripts/mac-shell/walk-diff.py --self-test
 	@python3 scripts/mac-shell/held.py --self-test > /dev/null || python3 scripts/mac-shell/held.py --self-test
+	@python3 scripts/mac-shell/calls.py --self-test > /dev/null || python3 scripts/mac-shell/calls.py --self-test
 	@python3 scripts/mac-shell/walk.py 4711 --acts 100 | cmp -s - scripts/mac-shell/walk-sample.sh || { echo "scripts/mac-shell/walk-sample.sh is not what walk.py 4711 --acts 100 writes"; exit 1; }
 
 # Reads what this branch adds (lines, file names, commit messages, its own name) for what should stay private, and checks

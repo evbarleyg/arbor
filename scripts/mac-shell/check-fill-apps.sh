@@ -3,6 +3,7 @@
 # Terminal and System Settings: its frame before, filled and after, as the window server has them, and every other window's.
 # What only real apps can tell: whether each takes the view's frame in one go, what a terminal's whole lines and an app that will
 # not grow make of it, whether their late reports end the fill, and whether each gets exactly its own frame back.
+# And how each got there, which a look at a window at rest does not tell: the frames Arbor asked it to take, counted in Arbor's own trace.
 #
 #   scripts/mac-shell/run.sh scripts/mac-shell/check-fill.sh scripts/mac-shell/check-fill-apps.sh
 source "$(dirname "$0")/lib-apps.sh"
@@ -20,6 +21,13 @@ others_are_still() {
   done
   return $code
 }
+
+# calls_of <id> <command>: "2 calls in 73 ms: …": what Arbor asked of that window since the command last came (calls.py)
+calls_of() {
+  arbor_trace_note "at rest"
+  python3 "$ARBOR_ROOT/scripts/mac-shell/calls.py" "$ARBOR_HOME/traces" "$1" "$2"
+}
+in_one_call() { [ "${1%% *}" = 1 ] || { echo "$1"; return 1; }; }
 
 apps_build
 apps_scratch
@@ -54,6 +62,7 @@ BEFORE=()
 for window in "${WINDOWS[@]}"; do BEFORE+=("$(real_frame_of "$window")"); done
 snap 00-as-found
 
+FIRST=()
 index=0
 while [ "$index" -lt "${#WINDOWS[@]}" ]; do
   name=${NAMES[$index]} window=${WINDOWS[$index]} own=${BEFORE[$index]}
@@ -66,6 +75,8 @@ while [ "$index" -lt "${#WINDOWS[@]}" ]; do
   sleep 1
   filled=$(real_frame_of "$window")
   echo "FRAMES $name before: $own filled: $filled"
+  FIRST+=("$(calls_of "$window" zoom)")
+  echo "CALLS $name to fill the view, the first time: ${FIRST[$index]}"
   check "Arbor knows that it fills" is filled "$window"
   check "it still floats" is floating "$window"
   if [ "$name" = Settings ]; then
@@ -74,6 +85,7 @@ while [ "$index" -lt "${#WINDOWS[@]}" ]; do
     echo "NOTE $name holds whole lines: $(fills "$window" 2>&1 || true)"
   else
     check "it fills the view" fills "$window"
+    check "and went there in one call" in_one_call "${FIRST[$index]}"
   fi
   check "nothing else has moved" others_are_still "$window"
   snap "$((index + 1))1-$name-filled"
@@ -83,18 +95,40 @@ while [ "$index" -lt "${#WINDOWS[@]}" ]; do
   check "the real key runs the command" pressed ctrl+opt+return zoom
   check "it is exactly where and as large as it was" eventually is_at "$window" "$own"
   echo "FRAMES $name after: $(real_frame_of "$window")"
+  back=$(calls_of "$window" zoom)
+  echo "CALLS $name back: $back"
+  check "and went there in one call" in_one_call "$back"
   check "Arbor knows that it no longer fills" not is filled "$window"
   check "nothing else has moved" others_are_still "$window"
   index=$((index + 1))
 done
 snap 50-all-back
 
+claim "the first time, too, a window that does not take the view's size goes to its place in one call"
+known "board 1.120: how large a window goes is learned by offering it the whole view in the view's corner; after the cut"
+index=0
+while [ "$index" -lt "${#WINDOWS[@]}" ]; do
+  case ${NAMES[$index]} in
+    Settings | Terminal) check "${NAMES[$index]}" in_one_call "${FIRST[$index]}" ;;
+  esac
+  index=$((index + 1))
+done
+
 claim "filled at Quit, each has its own frame back"
 for window in "${WINDOWS[@]}"; do ctl zoom "$window"; done
 sleep 1
 index=0
 while [ "$index" -lt "${#WINDOWS[@]}" ]; do
-  echo "FRAMES ${NAMES[$index]} filled by name: $(real_frame_of "${WINDOWS[$index]}")"
+  name=${NAMES[$index]} window=${WINDOWS[$index]}
+  echo "FRAMES $name filled by name: $(real_frame_of "$window")"
+  again=$(calls_of "$window" "zoom $window")
+  echo "CALLS $name to fill the view, the second time: $again"
+  # What is known of a window by now is used: no way round by the corner. A terminal is talked down to whole lines where it lies.
+  if [ "$name" = Terminal ]; then
+    echo "NOTE $name holds whole lines"
+  else
+    check "$name went there in one call" in_one_call "$again"
+  fi
   index=$((index + 1))
 done
 snap 60-all-filled

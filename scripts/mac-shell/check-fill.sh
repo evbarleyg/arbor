@@ -3,6 +3,7 @@
 # What the fakes only assume: that the real ⌃⌥↩ reaches Arbor with a floating window in front, that macOS's late reports of Arbor's
 # own move are not taken for a hand's (that would end the fill, and make the view's size the window's own), that a real title-bar
 # drag brings the window out in its own size under the pointer, that a slip of the hand does not, and that a real resize sticks.
+# And how a window got where it is, which a look at it at rest does not tell: the frames Arbor asked it to take, counted in Arbor's own trace.
 #
 #   scripts/mac-shell/run.sh scripts/mac-shell/check-fill.sh scripts/mac-shell/check-fill-apps.sh
 #
@@ -18,6 +19,13 @@ has_size() {
   read -r _ _ w h <<< "$(real_frame_of "$1")"
   arbor_close "0 0 $w $h" "0 0 $2"
 }
+# calls_of <id> <command>: "2 calls in 73 ms: …": what Arbor asked of that window since the command last came (calls.py)
+calls_of() {
+  arbor_trace_note "at rest"
+  python3 "$ARBOR_ROOT/scripts/mac-shell/calls.py" "$ARBOR_HOME/traces" "$1" "$2"
+}
+# On a person's Mac nothing is recorded, so there is nothing to count.
+in_one_call() { ! arbor_records || [ "${1%% *}" = 1 ] || { echo "$1"; return 1; }; }
 
 arbor_build
 ARBOR_TEST_WINDOWS_ARGS="--regular --max-size 3:500x400"
@@ -32,6 +40,7 @@ claim "the key fills the screen with a window that was never docked, and nothing
 click_window "$W1"
 check "the real key runs the command" pressed ctrl+opt+return zoom
 check "it fills the view" eventually fills "$W1"
+check "and went there in one call" in_one_call "$(calls_of "$W1" zoom)"
 check "it still floats" is floating "$W1"
 check "Arbor knows that it fills" is filled "$W1"
 check "the second window has not moved" is_at "$W2" "$OWN2"
@@ -54,6 +63,7 @@ claim "the same key again gives back exactly the frame it had"
 click_window "$W1"
 check "the real key runs the command" pressed ctrl+opt+return zoom
 check "it is where and as large as it was" eventually is_at "$W1" "$OWN1"
+check "and went there in one call" in_one_call "$(calls_of "$W1" zoom)"
 check "Arbor knows that it no longer fills" not is filled "$W1"
 check "the second window has not moved" is_at "$W2" "$OWN2"
 shot 02-back
@@ -72,12 +82,24 @@ key ctrl+opt+return
 check "it is as large as it goes" eventually has_size "$W3" "500 400"
 read -r X Y W H <<< "$(real_frame_of "$W3")"
 echo "W3 is at $X $Y $W $H"
+FIRST=$(calls_of "$W3" zoom)
+echo "CALLS W3, the first time: $FIRST"
 check "Arbor knows that it fills" is filled "$W3"
 shot 03-no-larger
 sleep 2
 check "it stays there" stays is_at "$W3" "$X $Y $W $H"
 key ctrl+opt+return
 check "it is where and as large as it was" eventually is_at "$W3" "$OWN3"
+check "and went there in one call" in_one_call "$(calls_of "$W3" zoom)"
+key ctrl+opt+return
+check "the key once more, and it is in the middle again" eventually is_at "$W3" "$X $Y $W $H"
+check "known not to grow, it went straight there: one call" in_one_call "$(calls_of "$W3" zoom)"
+key ctrl+opt+return
+check "it is where and as large as it was" eventually is_at "$W3" "$OWN3"
+
+claim "the first time, too, a window that will not grow that far goes to the middle in one call"
+known "board 1.120: how large a window goes is learned by offering it the whole view in the view's corner; after the cut"
+check "it did" in_one_call "$FIRST"
 
 claim "dragged by its title bar it comes out in its own size, under the pointer"
 click_window "$W1"
