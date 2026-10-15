@@ -460,8 +460,8 @@ records traces and replays or judges them is rehearsed to its end.
 - A script that uses a command, an option or a tool the stand-ins lack fails loudly: a message that names it, exit
   code 64. Teach it to `Sources/arbor-fakemac/World*.swift` (or `scripts/mac-shell/rehearse/mac-tools`) then. A script that compiles a tool
   of its own against AppKit, or plugs in a display (`vdisplay.m`), stops there with exit code 2.
-- The fake Mac knows test windows. Real apps are `scripts/mac-shell/rehearse/real-apps`: `open -g`, `swiftc`, and as much of `apptool`, `sampler`, `witness` and `picture-time` as `probe-glide.sh` uses, over
-  windows that are files, in real time. Arbor cannot be started on them. `glide.swift` is compiled and run as it is. `apps_watchdog` ends a rehearsal at once, because its `sleep` takes no time there: set `ARBOR_TIME_LIMIT`.
+- The fake Mac knows test windows. Real apps are `scripts/mac-shell/rehearse/real-apps`: `open -g`, `swiftc`, and as much of `apptool` as `probe-place.sh` uses, over windows that are files. Arbor cannot be
+  started on them. `glide.swift` is compiled and run as it is, in real time.
 - The fake Mac stops the pointer at the edge of the display, as a hand's is stopped. On a Mac a posted pointer goes on: `drag … -40 368` ends at x -40
   there and at x 0 here, which is macOS's point of the edge.
 - **What it cannot prove**: anything about AppKit's and Accessibility's timing and order of events, animations,
@@ -563,13 +563,15 @@ window, how long it was until the first move, how much of that the stage took, w
 and `scripts/polish/judge.py` measures the films anywhere (how long, how eased, how many motions, what hopped, flickered or flashed), lays them out on sheets to look
 at, and scores them against `docs/POLISH.md`. `make polish-selftest` tries the judge on films drawn wrong in known ways.
 
-`scripts/mac-shell/probe-glide.sh` asks whether a real window can be seen moving as macOS's own tiling moves it, in place of a card on the stage, if its frame is set through Accessibility once for every
-frame of the display: Arbor does not run. `glide.swift` sets place and size, two askings, 18 times in 0.3 s on Arbor's curve, and writes down what every asking took and how late it began; its header has the
-rule for which of the two comes first (`--order by-edges`), and what no order can mend. One step is the control; `--menu` presses macOS's own Window > Move & Resize > Left, which is the bar. Each of the day's nine apps
-plays alone, on a road on which every edge moves and on one on which the far edges are to stand still, then in pairs of which one glides and the other is set once, while the sampler looks 120 times a second.
-`judge-glide.py <folder>`, which needs no Mac, reads both logs into a table for each app (frames reached, the longest gap, edges out of step, states with an edge off its road, where it ended, the processor's share)
-and says by limits that its header states and its options change which apps stutter; its last two lines are made to grep for, `stutter: 1 of 9 apps` and `verdict: alive` (`dead` from two apps on).
-`picture-time.swift` times the other road beside it: pictures of 1, 4 and 8 windows from ScreenCaptureKit. Never run on a Mac yet.
+`scripts/mac-shell/probe-place.sh` asks whether a real window glides as macOS's own tiling does if its PLACE ALONE is set through Accessibility once for every frame of the display: what a window that comes into view or
+leaves it needs, and a swap of two equal tiles. (A move that changes a size takes two askings, place and size, and the display shows the state between them: a first probe closed that road.) No Arbor moves anything.
+`glide.swift` asks, each window from a thread of its own that the same tick wakes. It is paced by the screen's display link, or with `--pace spin` by a thread that reads the clock, never by a timer, which on GitHub's
+Macs wakes tens of milliseconds late; it goes by the clock, so that a late tick leaves places out and never makes the glide longer; it writes down every tick and every asking, and says itself whether it was `paced`.
+`--duration 0` is the control, `--menu` presses macOS's own Window > Move & Resize > Left or Right, which is the bar. How smooth a glide is is judged from what the display showed: the polish judge's camera films two
+test windows of the cast, an act a film, each way five times, after its own square; five glides are played with no camera, in turns with filmed ones, and `pulse.swift` lies beside them all. The day's nine apps are
+not filmed: of them only what the tool's clock can say. `judge-place.py <folder>`, which needs no Mac
+but numpy and Pillow, gives a playing a vote only if it was paced and witnessed, holds it to a mark taken from films of macOS's own tiling, which its header states, and ends with `verdict: glides`,
+`verdict: stutters: <roads>` or `verdict: none: <why>`: none where the instruments, the bar or most of the glides are not to be believed. Never run on a Mac yet.
 
 **Only compiling.** `scripts/mac-shell/run.sh scripts/mac-shell/compile.sh` runs `swift build` on the Mac at your branch's
 head and brings back `build.log`, with the errors and warnings at the end of the output: for macOS-only code, or for a
@@ -801,7 +803,7 @@ copy from before the repository was public, and say what the script does once it
 | `check-resume.sh` | trunk | **never**: ends with 77 | | Calculator and TextEdit opened, brought forward in turn, and quit; `ARBOR_APPS_HERE=1` does not open it |
 | `shots-F15-apps.sh` | trunk | **never**: ends with 77 | | Ten real apps opened for their icons, and killed |
 | `first-dock.sh` (`first-dock.py`) | trunk | **never**: ends with 77 | | Nine real apps opened and quit, every window arranged, Reduce Motion, the display's size |
-| `probe-glide.sh` (`glide.swift`, `picture-time.swift`, `judge-glide.py`) | trunk | **never**: ends with 77 | | Nine real apps opened and quit, their windows moved and resized some 170 times through Accessibility, and tiled once each by macOS's own menu, Reduce Motion, the display's size. Arbor does not run. `picture-time` takes pictures of the apps' windows to time them, and keeps none |
+| `probe-place.sh` (`glide.swift`, `judge-place.py`) | trunk | **never**: ends with 77 | | The whole display filmed; nine real apps opened, their windows moved some 70 times through Accessibility and left out of view; two test windows moved some 70 times, and tiled six times by macOS's own menu; Reduce Motion, Reduce Transparency, the wallpaper. Arbor starts the test windows and quits |
 | `check-F52.sh`, `check-F63.sh` | not landed, trunk | **never**: end with 77 | | Virtual displays, Accessibility taken from every app |
 | `check-macos-double-click.sh` | trunk | safe, steps skip themselves | 40 s | macOS's other title-bar actions (it would change the setting), TextEdit and Terminal. A test window fills the display for some seconds |
 | `check-claimed-keys.sh` | trunk | **never**: ends with 77 | | Writes an entry for Arbor's bundle into the privacy database; types into whatever has the keyboard |

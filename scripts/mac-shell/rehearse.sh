@@ -23,8 +23,8 @@
 #   no daemon: a session's history is a text file next to its ARBOR_HOME, and every call replays it. The header of
 #   Sources/arbor-fakemac/main.swift says more.
 #   `trace on` records as in the app (docs/TRACES.md), on the fake clock. arbor-sim is the real one.
-# - Real apps, for a script in which Arbor does not run (probe-glide.sh): `open -g`, `swiftc` and the helper tools apptool, sampler, witness and
-#   picture-time are rehearse/real-apps, whose header says what an app is there. glide.swift is compiled and run as it is.
+# - Real apps, for acts in which Arbor does not run (probe-place.sh): `open -g`, `swiftc` and the helper tool apptool are rehearse/real-apps, whose header
+#   says what an app is there. glide.swift is compiled and run as it is.
 # - screencapture, sips, sw_vers, defaults, killall, launchctl, system_profiler, and sysctl and bc where they
 #   are missing, are rehearse/mac-tools.
 # - `sleep`: the fake Mac's clock moves a second with everything that is done to it, not with the real one. So a

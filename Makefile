@@ -11,7 +11,7 @@ lint:
 	@python3 scripts/lint-mac-shell.py --self-test > /dev/null || python3 scripts/lint-mac-shell.py --self-test
 	@python3 scripts/lint-mac-shell.py
 	@python3 scripts/mac-shell/first-dock.py --self-test > /dev/null
-	@python3 scripts/mac-shell/judge-glide.py --self-test > /dev/null 2>&1 || python3 scripts/mac-shell/judge-glide.py --self-test
+	@python3 scripts/mac-shell/judge-place.py --self-test > /dev/null 2>&1 || python3 scripts/mac-shell/judge-place.py --self-test
 	@python3 scripts/test-fast-tests.py
 	@python3 scripts/lint-paste-safe.py --self-test && python3 scripts/lint-paste-safe.py
 	@python3 scripts/side_by_side.py
@@ -213,6 +213,7 @@ rehearse:
 .PHONY: polish-selftest
 polish-selftest:
 	@python3 scripts/polish/judge.py --self-test
+	@python3 scripts/mac-shell/judge-place.py --self-test
 
 .PHONY: reality
 # How far the stand-ins are from a real Mac: the same script rehearsed here and run on a hosted Mac, step by step, and the differences counted.

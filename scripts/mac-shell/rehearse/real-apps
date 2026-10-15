@@ -1,30 +1,25 @@
 #!/usr/bin/env python3
 """Stands in, under their names, for what a Mac shell script about REAL APPS calls, in a rehearsal (scripts/mac-shell/rehearse.sh):
-`open -g`, `swiftc`, and the helper tools apptool, sampler, witness and picture-time. Each knows the few uses probe-glide.sh makes of it through
-lib-apps.sh, lib-day.sh and lib-walk.sh, and refuses the rest with exit code 64, so that a script that needs more is noticed.
+`open -g`, `swiftc`, and the helper tool apptool. Each knows the few uses probe-place.sh makes of it, and refuses the rest with exit code 64, so that a script that needs more is noticed.
 
-arbor-fakemac knows test windows and Arbor. These apps it does not know, and Arbor cannot be started on them: this is for scripts in which Arbor does not run.
+arbor-fakemac knows test windows and Arbor. These apps it does not know, and Arbor cannot be started on them: this is for acts in which Arbor does not run.
 
-An app's window is a file, $ARBOR_REHEARSAL_DIR/apps/<window>, of one line:  pid bundle-id x y w h <ms the app takes to answer a call> [fixed-size]
-Whoever moves the window rewrites the file in one go; the sampler reads them all, at its rate and in real time. There is no process behind an app: its pid is a
-number Linux never hands out (they end at 4194304), so that no signal meant for an app can reach anybody.
+An app's window is a file, $ARBOR_REHEARSAL_DIR/apps/<window>, of one line:  pid bundle-id x y w h <ms the app takes to answer a call>
+Whoever moves the window rewrites the file in one go. There is no process behind an app: its pid is a number Linux never hands out (they end at 4194304), so that no signal meant for an
+app can reach anybody.
 
   swiftc     compiles nothing: where the tool was to be it leaves a link to this file. But glide.swift is compiled, by the real compiler: it has a few lines
-             for this world, so that the rest of it is rehearsed and not a copy of it. The pointer tool has its stand-in already (arbor-fakemac).
+             for this world, so that the rest of it is rehearsed and not a copy of it.
 """
 import glob
 import os
-import signal
 import sys
-import threading
-import time
 
 TOOL = os.path.basename(sys.argv[0])
 ARGUMENTS = sys.argv[1:]
 WORLD = os.path.join(os.environ.get("ARBOR_REHEARSAL_DIR", "."), "apps")
-# Manners, so that whoever judges a rehearsal has something to find: one app that answers late, one whose window has one size.
+# Manners, so that whoever judges a rehearsal has something to find: one app that answers late.
 SLOW = {"com.apple.mail": 45}
-FIXED = {"com.apple.systempreferences"}
 
 
 def refuse():
@@ -32,7 +27,7 @@ def refuse():
 
 
 def windows():
-    """{window: [pid, bundle, x, y, w, h, ms, …]}, all strings."""
+    """{window: [pid, bundle, x, y, w, h, ms]}, all strings."""
     found = {}
     for path in glob.glob(os.path.join(WORLD, "[0-9]*")):
         try:
@@ -61,8 +56,7 @@ def open_app():
     if any(fields[1] == bundle for fields in known.values()):
         return
     count = len(known)
-    put(9001 + count, [str(5000001 + count), bundle, str(100 + 30 * count), str(60 + 25 * count), "640", "460", str(SLOW.get(bundle, 1))]
-        + (["fixed-size"] if bundle in FIXED else []))
+    put(9001 + count, [str(5000001 + count), bundle, str(100 + 30 * count), str(60 + 25 * count), "640", "460", str(SLOW.get(bundle, 1))])
 
 
 def swiftc():
@@ -76,12 +70,11 @@ def swiftc():
             if os.path.abspath(folder) != here and os.access(os.path.join(folder, "swiftc"), os.X_OK):
                 os.execv(os.path.join(folder, "swiftc"), ["swiftc"] + ARGUMENTS)
         refuse()
-    if tool in ("apptool", "sampler", "witness", "picture-time"):
-        if os.path.lexists(out):
-            os.remove(out)
-        os.symlink(os.path.realpath(__file__), out)
-    elif tool != "pointer":
+    if tool != "apptool":
         refuse()
+    if os.path.lexists(out):
+        os.remove(out)
+    os.symlink(os.path.realpath(__file__), out)
 
 
 def apptool():
@@ -94,91 +87,8 @@ def apptool():
         for window, fields in sorted(known.items()):
             if fields[0] == rest[0]:
                 print(window, "AXWindow AXStandardWindow", *fields[2:6], "main")
-    elif command == "set-frame":
-        fields = known.get(int(rest[0])) or sys.exit(1)
-        put(int(rest[0]), fields[:2] + rest[1:3] + (fields[4:6] if len(fields) > 7 else rest[3:5]) + fields[6:])
-        print(*windows()[int(rest[0])][2:6])
-    elif command == "set-mode":
-        sys.exit(0 if "x".join(rest) == os.environ.get("ARBOR_REHEARSAL_DISPLAY", "1024x768").split()[0] else 1)
-    elif command == "quit":
-        for window, fields in known.items():
-            if fields[0] == rest[0]:
-                os.remove(os.path.join(WORLD, str(window)))
     elif command not in ("raise", "activate"):
         refuse()
 
 
-def sampler():
-    """sampler.swift's W, M, L and S lines, and its three commands."""
-    log = open(ARGUMENTS[0], "a", encoding="utf-8")
-    hertz = float(ARGUMENTS[ARGUMENTS.index("--hz") + 1]) if "--hz" in ARGUMENTS else 60
-    late = float(ARGUMENTS[ARGUMENTS.index("--late") + 1]) if "--late" in ARGUMENTS else 100
-    lock, state = threading.Lock(), {"changed": time.time(), "samples": 0, "stop": False}
-
-    def write(line):
-        with lock:
-            log.write(f"{int(time.time() * 1000)} {line}\n")
-            log.flush()
-
-    def sample():
-        seen, last = {}, time.time()
-        while not state["stop"]:
-            if (time.time() - last) * 1000 > late:
-                write(f"L {int((time.time() - last) * 1000)}")
-            last = time.time()
-            for window, fields in sorted(windows().items()):
-                if seen.get(window) != fields[2:6]:
-                    seen[window] = fields[2:6]
-                    state["changed"] = time.time()
-                    write(f"W {window} {fields[0]} 0 {' '.join(fields[2:6])} {fields[1].split('.')[-1]}")
-            state["samples"] += 1
-            time.sleep(1 / hertz)
-
-    began = time.time()
-    # In this order, which is the order the script opens them in.
-    commands = open(ARGUMENTS[1], encoding="utf-8")
-    replies = open(ARGUMENTS[2], "w", encoding="utf-8")
-    write(f"M sampler at {int(hertz)} Hz")
-    threading.Thread(target=sample, daemon=True).start()
-    for line in commands:
-        word, _, rest = line.strip().partition(" ")
-        if word == "mark":
-            write(f"M {rest}")
-        elif word == "quiet":
-            wanted, limit, name = rest.split()
-            asked, answer = time.time(), "restless"
-            while (time.time() - asked) * 1000 < float(limit):
-                if (time.time() - state["changed"]) * 1000 >= float(wanted) and (time.time() - asked) * 1000 >= 350:
-                    answer = "quiet"
-                    break
-                time.sleep(0.02)
-            replies.write(f"{answer} {int((time.time() - asked) * 1000)} {name}\n")
-            replies.flush()
-        elif word == "stop":
-            break
-    state["stop"] = True
-    seconds = time.time() - began
-    write(f"S samples {state['samples']} seconds {seconds:.1f} hz {state['samples'] / max(seconds, 0.001):.1f} cost-ms 0.00 late 0 longest-gap-ms 0")
-
-
-def witness():
-    if ARGUMENTS[:1] != ["log"]:
-        refuse()
-    open(ARGUMENTS[1], "a", encoding="utf-8").close()
-    signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
-    # Nor does it outlive the script that started it, should that be killed.
-    while os.getppid() != 1:
-        time.sleep(0.2)
-
-
-def picture_time():
-    print("scale 1.0\nlist 30.0 12\nlist 6.0 12")
-    for turn in (1, 2, 3):
-        print(f"round {turn}")
-        for count in (1, 4, 8):
-            if count <= len(ARGUMENTS):
-                print(f"pictures {count} in-turn {20.0 * count} 0 each", *["20.0"] * count)
-                print(f"pictures {count} at-once {20.0 + 2 * count} 0")
-
-
-{"open": open_app, "swiftc": swiftc, "apptool": apptool, "sampler": sampler, "witness": witness, "picture-time": picture_time}.get(TOOL, refuse)()
+{"open": open_app, "swiftc": swiftc, "apptool": apptool}.get(TOOL, refuse)()
