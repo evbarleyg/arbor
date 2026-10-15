@@ -1,0 +1,113 @@
+# check-F13 2026-10-15T09:10Z on macOS 26.6.2, commit a3f9af9
+
+== the Mac
+
+== a clone to build in
+
+== a keychain of its own
+  ✔ the account's own search list and default keychain are as they were
+
+== 1  no identity: ad hoc, as before
+  ✔ make app says the signature is ad hoc
+  ✔ an ad-hoc build's requirement is its own hash
+  ✔ codesign --verify --deep --strict passes
+  ✔ arborctl has an identifier of its own
+  ✔ the version is stamped
+  ✔ the build number is stamped
+  ✔ the commit is stamped
+  ✔ so is the kind of signature, and codesign agrees
+  ✔ make install says aloud that the build is signed ad hoc
+  ✔ and what that costs
+  ✘ doctor names it
+  ✔ the property list is still valid
+
+== 2  the signing identity
+  ✔ the identity is in the keychain
+  ✔ nobody trusts the certificate, and nothing was asked to
+  ✔ codesign could use the key at once, without a dialog
+  ✔ codesign signs with the key, and asks nobody
+  ✔ running it again changes nothing
+  ✔ there is still one identity, the same one
+
+== 3  installing
+  ✔ it says which signature it made and what that means
+  ✔ and has nothing to warn of
+  ✔ the bundle says so itself
+  ✔ the app is in ~/Applications
+  ✔ the installed copy verifies (--deep --strict)
+  ✔ arborctl is linked into ~/.local/bin
+  ✔ LAUNCH=0 leaves it at that
+  ✔ the installed app starts and answers
+  ✘ its watchdog runs beside it
+  ✔ it runs from ~/Applications
+  ✘ arborctl --version, through the link, knows its version, and has nothing to add
+  ✔ the running app reports the same
+  ✔ status shows it, on a line of its own
+  ✔ so does the binary itself, beside the running copy
+  ✘ doctor names the signature
+
+== 4  a different build, the same requirement
+  ✔ the second build verifies (--deep --strict)
+  ✔ the two builds are different code
+  ✔ their designated requirements are identical
+  ✔ the requirement contains no cdhash
+  ✔ it names the app and the certificate
+  ✔ the second build satisfies the first one's requirement
+  ✔ arborctl does not: it cannot pass for the app
+  ✔ uncommitted changes show in the stamp
+  ✔ arborctl --version says when the running Arbor is another build
+  ✔ installing asked the running copy to quit
+  ✔ and did not have to stop it
+  ✔ the copy has gone
+  ✔ nothing of the old copy is left running, and its watchdog started nothing
+  ✔ the watchdog took it for a proper end
+  ✔ what is installed is the second build
+  ✔ the new build starts where the old one was
+
+== 5  uninstalling
+  ✔ it asked Arbor to quit
+  ✔ the copy has gone
+  ✔ it removed the app
+  ✔ and the link
+  ✔ nothing of it is left running, and its watchdog started nothing
+  ✔ the watchdog took it for a proper end
+  ✔ it says where settings and state are
+  ✔ settings are still there
+
+== 6  update checks
+  ✔ what GitHub answers about a private repository is no update information, not an error
+  ✔ a newer release is offered, with a page made from its tag
+
+== 7  another identity: the hardened runtime
+  ✔ the hardened runtime is on
+  ✔ for arborctl too
+  ✔ it verifies (--deep --strict)
+  ✔ the bundle says that a certificate signed it
+  ✔ Arbor starts and answers under the hardened runtime
+
+== 8  make release
+  ✔ both architectures were built in one go
+  ✔ Arbor is universal
+  ✔ arborctl is universal
+  ✔ the universal app verifies (--deep --strict)
+  ✔ the checksums hold
+  ✔ the cask is Ruby, with the version and the disk image's sum
+  ✔ the notes explain the first launch
+  ✔ the disk image holds the app, intact
+  ✔ and a link to /Applications
+  ✔ the zip holds the app, intact
+  ✔ xattr -dr takes the mark off
+  ✔ and the copy from the zip starts
+
+== 9  what the scripts rely on
+  ✔ a PKCS#12 file packed by OpenSSL 3.6.4 with -legacy imports, and codesign signs with the key
+
+== 10  --remove
+  ✔ the identity is gone
+  ✔ the certificate too
+  ✔ builds are ad hoc again
+  ✔ and say so themselves
+  ✔ the account's own search list and default keychain are still as they were
+  ✔ this checkout is as it was
+
+80 passed, 4 failed

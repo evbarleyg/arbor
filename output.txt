@@ -1,0 +1,409 @@
+# mac-shell: scripts/mac-shell/check-F13.sh at a3f9af9, macOS 26.6.2, 2026-10-15T09:10Z
+
+== the Mac
+macOS 26.6.2 (25G83) on arm64; bash 3.2.57(1)-release; GNU Make 3.81
+Apple Swift version 6.4.1 (swift-6.4.1-RELEASE)
+/usr/bin/openssl: LibreSSL 3.3.6
+System Integrity Protection status: disabled.; curl 8.7.1; Python 3.14.7
+one of GitHub's throwaway Macs
+the place apart: /private/tmp/arbor-f13.vbExcJ
+another openssl: /opt/homebrew/opt/openssl@3/bin/openssl OpenSSL 3.6.4 25 Aug 2026 (Library: OpenSSL 3.6.4 25 Aug 2026)
+
+== a clone to build in
+HEAD a3f9af9, 1 commits (a shallow checkout has 1); version.sh: 0.9.0 (build 1, a3f9af9)
+
+== a keychain of its own
+under the throwaway HOME the search list reads: 
+after making /private/tmp/arbor-f13.vbExcJ/signing.keychain-db:     "/private/tmp/arbor-f13.vbExcJ/signing.keychain-db"
+  ✔ the account's own search list and default keychain are as they were
+
+== 1  no identity: ad hoc, as before
+Signed build/Arbor.app ad hoc. The signature changes with every build, so each new build has to be given
+  Accessibility permission again. scripts/make-signing-identity.sh, run once, ends that (docs/INSTALL.md).
+Built build/Arbor.app, version 0.9.0 (build 1, a3f9af9)
+  designated => cdhash H"e41fec223994950fcfef7621314f19679b7b8b2c"
+    Identifier=com.evbarleyg.arbor
+    CodeDirectory v=20400 size=24396 flags=0x2(adhoc) hashes=756+3 location=embedded
+    CDHash=e41fec223994950fcfef7621314f19679b7b8b2c
+    Signature=adhoc
+    TeamIdentifier=not set
+    Arbor.app/Contents/_CodeSignature/CodeResources
+    Arbor.app/Contents/Helpers/arborctl
+    Arbor.app/Contents/Info.plist
+    Arbor.app/Contents/MacOS/Arbor
+    Arbor.app/Contents/Resources/Arbor.icns
+  ✔ make app says the signature is ad hoc
+  ✔ an ad-hoc build's requirement is its own hash
+  ✔ codesign --verify --deep --strict passes
+  ✔ arborctl has an identifier of its own
+  Info.plist: 0.9.0 / 1 / a3f9af9
+  ✔ the version is stamped
+  ✔ the build number is stamped
+  ✔ the commit is stamped
+  ✔ so is the kind of signature, and codesign agrees
+Not started (LAUNCH=0): open "/private/tmp/arbor-f13.vbExcJ/home/Applications/Arbor.app"
+
+NOTE: THIS BUILD IS SIGNED AD HOC. To macOS it is a new app, so macOS will ask for the Accessibility permission again,
+  now and after every `make install`. An entry an older build left under Accessibility looks switched on and does nothing:
+    tccutil reset Accessibility com.evbarleyg.arbor     then switch Arbor on again
+  To be asked once more and never again:  ./scripts/make-signing-identity.sh  then  make install  (docs/INSTALL.md).
+  ✔ make install says aloud that the build is signed ad hoc
+  ✔ and what that costs
+arborctl: ✘ Desktop & Dock settings: as they stand, macOS reacts to the same clicks and drags as Arbor. In System Settings → Desktop & Dock:
+    “Click wallpaper to reveal desktop”: choose “Only in Stage Manager”. Otherwise a click on the Desktop sends every window away
+    “Drag windows to left or right edge of screen to tile”: switch it off
+    “Drag windows to menu bar to fill screen”: switch it off
+    “Hold ⌥ key while dragging windows to tile”: switch it off
+– Gestures: off (ARBOR_NO_HOTKEYS)
+– Shortcuts: off (ARBOR_NO_HOTKEYS)
+– Menu bar item: unknown here
+– Version: 0.9.0 (build 1, a3f9af9)
+– Signature: ad hoc, so to macOS every build is a new app: after each `make install` or update it asks for the Accessibility permission again. `scripts/make-signing-identity.sh`, run once in a clone, ends that for builds made there (docs/INSTALL.md)
+✔ Accessibility: granted
+✔ Displays have separate Spaces: yes
+✔ Other window managers: none running
+✔ VoiceOver: off
+✔ Input sources: 1
+✔ settings.json: no problems
+✔ Displays: 1 (1024×768 main)
+  ✘ doctor names it
+      picture: mac-shell/fail-check-F13-1.png
+      log | INFO  Arbor 0.9.0 (build 1, a3f9af9) starting, pid 16011, home /private/tmp/arbor-f13.vbExcJ/arbor
+      log | INFO  control socket at /private/tmp/arbor-f13.vbExcJ/arbor/arbor.sock
+      log | INFO  keyboard layout: U.S.
+      log | INFO  started: 1 display(s), 0 managed window(s)
+  ✔ the property list is still valid
+
+== 2  the signing identity
+Made the code-signing certificate "Arbor Local Signing" in /private/tmp/arbor-f13.vbExcJ/signing.keychain-db
+  SHA-1 E23D4D558AB4DA0FBD7B28AAA5D8C8304794F681, valid until Oct 12 09:15:19 2036 GMT
+/var/folders/36/tjdph2t965j8snz9_vkdnw0r0000gn/T/tmp.n7vj73vGzz/probe: replacing existing signature
+codesign can sign with it. What macOS will remember about a build signed this way:
+  identifier "com.evbarleyg.arbor.probe" and certificate leaf = H"e23d4d558ab4da0fbd7b28aaa5d8c8304794f681"
+
+`make app` and `make install` sign with it from now on.
+The first build signed this way needs Accessibility permission once more. If an older build is listed there, clear
+its entry, but NOT YET: an Arbor that is running needs it to bring its windows back when it quits. In this order:
+  make install LAUNCH=0
+  tccutil reset Accessibility com.evbarleyg.arbor
+  open ~/Applications/Arbor.app
+Remove the certificate with scripts/make-signing-identity.sh --remove.
+
+Policy: Code Signing
+  Matching identities
+  1) E23D4D558AB4DA0FBD7B28AAA5D8C8304794F681 "Arbor Local Signing" (CSSMERR_TP_NOT_TRUSTED)
+     1 identities found
+
+  Valid identities only
+     0 valid identities found
+the key's attributes in the keychain:
+class: 0x00000010 
+    0x00000001 <blob>="Imported Private Key"
+    0x00000003 <uint32>=0x00000001 
+    0x0000000E <uint32>=0x00000001 
+    0x0000000F <uint32>=0x00000001 
+    0x00000010 <uint32>=0x00000001 
+    0x00000012 <uint32>=0x00000001 
+    0x00000013 <uint32>=0x00000001 
+    0x00000014 <uint32>=0x00000001 
+    0x00000015 <uint32>=0x00000001 
+    0x00000016 <uint32>=0x00000001 
+    0x00000017 <uint32>=0x00000001 
+  ✔ the identity is in the keychain
+  ✔ nobody trusts the certificate, and nothing was asked to
+  ✔ codesign could use the key at once, without a dialog
+  ✔ codesign signs with the key, and asks nobody
+"Arbor Local Signing" is already in /private/tmp/arbor-f13.vbExcJ/signing.keychain-db:
+  E23D4D558AB4DA0FBD7B28AAA5D8C8304794F681 "Arbor Local Signing" (CSSMERR_TP_NOT_TRUSTED)
+/var/folders/36/tjdph2t965j8snz9_vkdnw0r0000gn/T/tmp.0OTLRpkEAu/probe: replacing existing signature
+codesign can sign with it. What macOS will remember about a build signed this way:
+  identifier "com.evbarleyg.arbor.probe" and certificate leaf = H"e23d4d558ab4da0fbd7b28aaa5d8c8304794f681"
+Nothing to do.
+  ✔ running it again changes nothing
+  ✔ there is still one identity, the same one
+
+== 3  installing
+drew /private/tmp/arbor-f13.vbExcJ/src/build/Arbor.iconset
+build/Arbor.app/Contents/Helpers/arborctl: replacing existing signature
+build/Arbor.app: replacing existing signature
+Signed build/Arbor.app with "Arbor Local Signing", this Mac's own certificate: Accessibility permission, once given
+  to a build signed with it, carries over to the next.
+Built build/Arbor.app, version 0.9.0 (build 1, a3f9af9)
+Installed /private/tmp/arbor-f13.vbExcJ/home/Applications/Arbor.app, version 0.9.0 (build 1, a3f9af9)
+Linked /private/tmp/arbor-f13.vbExcJ/home/.local/bin/arborctl
+Not started (LAUNCH=0): open "/private/tmp/arbor-f13.vbExcJ/home/Applications/Arbor.app"
+  designated => identifier "com.evbarleyg.arbor" and certificate leaf = H"e23d4d558ab4da0fbd7b28aaa5d8c8304794f681"
+    Identifier=com.evbarleyg.arbor
+    CodeDirectory v=20400 size=24396 flags=0x0(none) hashes=756+3 location=embedded
+    CDHash=948111a0edf62174c850f2b60afe6b7d7bc5c633
+    Signature size=1643
+    Authority=Arbor Local Signing
+    TeamIdentifier=not set
+/private/tmp/arbor-f13.vbExcJ/home/.local/bin:
+total 0
+drwxr-xr-x  3 runner  wheel  96 Oct 15 09:15 .
+drwxr-xr-x  3 runner  wheel  96 Oct 15 09:10 ..
+lrwxr-xr-x  1 runner  wheel  83 Oct 15 09:15 arborctl -> /private/tmp/arbor-f13.vbExcJ/home/Applications/Arbor.app/Contents/Helpers/arborctl
+
+/private/tmp/arbor-f13.vbExcJ/home/Applications:
+total 0
+drwxr-xr-x  3 runner  wheel   96 Oct 15 09:15 .
+drwxr-xr-x  5 runner  wheel  160 Oct 15 09:15 ..
+drwxr-xr-x  3 runner  wheel   96 Oct 15 09:15 Arbor.app
+  ✔ it says which signature it made and what that means
+  ✔ and has nothing to warn of
+  ✔ the bundle says so itself
+  ✔ the app is in ~/Applications
+  ✔ the installed copy verifies (--deep --strict)
+  ✔ arborctl is linked into ~/.local/bin
+  ✔ LAUNCH=0 leaves it at that
+  ✔ the installed app starts and answers
+  ✘ its watchdog runs beside it
+      picture: mac-shell/fail-check-F13-2.png
+      log | INFO  Arbor 0.9.0 (build 1, a3f9af9) starting, pid 16520, home /private/tmp/arbor-f13.vbExcJ/arbor
+      log | INFO  watchdog started, pid 16545
+      log | INFO  control socket at /private/tmp/arbor-f13.vbExcJ/arbor/arbor.sock
+      log | INFO  keyboard layout: U.S.
+      log | INFO  started: 1 display(s), 0 managed window(s)
+  pgrep: 16520 /private/tmp/arbor-f13.vbExcJ/home/Applications/Arbor.app/Contents/MacOS/Arbor|
+  ✔ it runs from ~/Applications
+  arborctl --version:  arborctl dev|The Arbor that is running is another build, Arbor 0.9.0 (build 1, a3f9af9): quit it and open Arbor again|
+  arborctl version:    Arbor 0.9.0 (build 1, a3f9af9)|
+  arborctl status:     running: 1 display, 0 docked and 0 floating, 0 out of view|Arbor 0.9.0 (build 1, a3f9af9)|
+  Arbor --version:     Arbor 0.9.0 (build 1, a3f9af9)
+  ✘ arborctl --version, through the link, knows its version, and has nothing to add
+      picture: mac-shell/fail-check-F13-3.png
+  ✔ the running app reports the same
+  ✔ status shows it, on a line of its own
+  ✔ so does the binary itself, beside the running copy
+arborctl: ✘ Desktop & Dock settings: as they stand, macOS reacts to the same clicks and drags as Arbor. In System Settings → Desktop & Dock:
+    “Click wallpaper to reveal desktop”: choose “Only in Stage Manager”. Otherwise a click on the Desktop sends every window away
+    “Drag windows to left or right edge of screen to tile”: switch it off
+    “Drag windows to menu bar to fill screen”: switch it off
+    “Hold ⌥ key while dragging windows to tile”: switch it off
+– Gestures: off (ARBOR_NO_HOTKEYS)
+– Shortcuts: off (ARBOR_NO_HOTKEYS)
+– Menu bar item: unknown here
+– Version: 0.9.0 (build 1, a3f9af9)
+✔ Accessibility: granted
+✔ Displays have separate Spaces: yes
+✔ Other window managers: none running
+✔ VoiceOver: off
+✔ Input sources: 1
+✔ settings.json: no problems
+✔ Displays: 1 (1024×768 main)
+✔ Signature: this Mac’s own certificate: permissions carry over to the next build signed with it
+  ✘ doctor names the signature
+      picture: mac-shell/fail-check-F13-4.png
+  launch at login, only asked about: off
+
+== 4  a different build, the same requirement
+Signed build/Arbor.app with "Arbor Local Signing", this Mac's own certificate: Accessibility permission, once given
+  to a build signed with it, carries over to the next.
+Built build/Arbor.app, version 0.9.0 (build 1, a3f9af9-dirty)
+  designated => identifier "com.evbarleyg.arbor" and certificate leaf = H"e23d4d558ab4da0fbd7b28aaa5d8c8304794f681"
+    Identifier=com.evbarleyg.arbor
+    CodeDirectory v=20400 size=24396 flags=0x0(none) hashes=756+3 location=embedded
+    CDHash=2ee34d0e79d41df830668a0c22c8a5744223932a
+    Signature size=1643
+    Authority=Arbor Local Signing
+    TeamIdentifier=not set
+  ✔ the second build verifies (--deep --strict)
+  ✔ the two builds are different code
+  ✔ their designated requirements are identical
+  ✔ the requirement contains no cdhash
+  ✔ it names the app and the certificate
+  ✔ the second build satisfies the first one's requirement
+  ✔ arborctl does not: it cannot pass for the app
+  ✔ uncommitted changes show in the stamp
+  the new arborctl, while the old build runs: arborctl 0.9.0 (build 1, a3f9af9-dirty)|The Arbor that is running is another build, Arbor 0.9.0 (build 1, a3f9af9): quit it and open Arbor again|
+  ✔ arborctl --version says when the running Arbor is another build
+Asked the running Arbor to quit; it puts every window back in view first
+Installed /private/tmp/arbor-f13.vbExcJ/home/Applications/Arbor.app, version 0.9.0 (build 1, a3f9af9-dirty)
+Linked /private/tmp/arbor-f13.vbExcJ/home/.local/bin/arborctl
+Not started (LAUNCH=0): open "/private/tmp/arbor-f13.vbExcJ/home/Applications/Arbor.app"
+  ✔ installing asked the running copy to quit
+  ✔ and did not have to stop it
+  ✔ the copy has gone
+  ✔ nothing of the old copy is left running, and its watchdog started nothing
+  ✔ the watchdog took it for a proper end
+  ✔ what is installed is the second build
+  ✔ the new build starts where the old one was
+  Arbor 0.9.0 (build 1, a3f9af9-dirty)
+
+== 5  uninstalling
+Asked the running Arbor to quit; it puts every window back in view first
+Removed /private/tmp/arbor-f13.vbExcJ/home/Applications/Arbor.app
+Removed /private/tmp/arbor-f13.vbExcJ/home/.local/bin/arborctl
+Left alone:
+  /private/tmp/arbor-f13.vbExcJ/home/Library/Application Support/Arbor   settings.json, state.json (your arrangement) and arbor.log
+  Arbor's entry under Accessibility           tccutil reset Accessibility com.evbarleyg.arbor
+  the signing certificate, if you made one    scripts/make-signing-identity.sh --remove
+  ✔ it asked Arbor to quit
+  ✔ the copy has gone
+  ✔ it removed the app
+  ✔ and the link
+  ✔ nothing of it is left running, and its watchdog started nothing
+  ✔ the watchdog took it for a proper end
+  ✔ it says where settings and state are
+  ✔ settings are still there
+
+== 6  update checks
+Built build/Arbor.app, version 0.9.0 (build 1, a3f9af9)
+  running: 1 display, 0 docked and 0 floating, 0 out of view|Arbor 0.9.0 (build 1, a3f9af9)|
+  before: Arbor 0.9.0 (build 1, a3f9af9)
+  checking for updates; `version` shows the answer
+  ✔ what GitHub answers about a private repository is no update information, not an error
+  after:  Updates: no update information (GitHub lists no published release)
+shot: mac-shell/06-no-update-information.png (window 35)
+  asking http://127.0.0.1:8765/latest.json: checking for updates; `version` shows the answer
+  ✔ a newer release is offered, with a page made from its tag
+  Updates: Arbor 9.9.9 is available: https://github.com/evbarleyg/arbor/releases/tag/v9.9.9
+shot: mac-shell/06-update-available.png (window 38)
+Arbor's own windows (id pid level x y w h on owner):
+38 18463 3 382 129 260 284 on Arbor
+INFO  Arbor 0.9.0 (build 1, a3f9af9) starting, pid 16011, home /private/tmp/arbor-f13.vbExcJ/arbor
+INFO  Arbor 0.9.0 (build 1, a3f9af9) starting, pid 16520, home /private/tmp/arbor-f13.vbExcJ/arbor
+INFO  Arbor 0.9.0 (build 1, a3f9af9-dirty) starting, pid 17626, home /private/tmp/arbor-f13.vbExcJ/arbor
+INFO  Arbor 0.9.0 (build 1, a3f9af9) starting, pid 18170, home /private/tmp/arbor-f13.vbExcJ/arbor
+INFO  update check: no update information (GitHub lists no published release)
+INFO  Arbor 0.9.0 (build 1, a3f9af9) starting, pid 18463, home /private/tmp/arbor-f13.vbExcJ/arbor
+INFO  update check: Arbor 9.9.9 is available: https://github.com/evbarleyg/arbor/releases/tag/v9.9.9
+
+== 7  another identity: the hardened runtime
+  make install LAUNCH=0
+  tccutil reset Accessibility com.evbarleyg.arbor
+  open ~/Applications/Arbor.app
+Remove the certificate with scripts/make-signing-identity.sh --remove.
+build/Arbor.app: replacing existing signature
+Signed build/Arbor.app with "F13 Stand-in" and the hardened runtime: permissions carry over from build to build.
+Built build/Arbor.app, version 0.9.0 (build 1, a3f9af9)
+    Identifier=com.evbarleyg.arbor
+    CodeDirectory v=20500 size=24404 flags=0x10000(runtime) hashes=756+3 location=embedded
+    CDHash=d6deea2a15cd7c7dbae5b3ce1dc1a35b3e775284
+    Signature size=1622
+    Authority=F13 Stand-in
+    TeamIdentifier=not set
+  ✔ the hardened runtime is on
+  ✔ for arborctl too
+  ✔ it verifies (--deep --strict)
+  ✔ the bundle says that a certificate signed it
+  running: 1 display, 0 docked and 0 floating, 0 out of view|Arbor 0.9.0 (build 1, a3f9af9)|
+  ✔ Arbor starts and answers under the hardened runtime
+Deleted the certificate 0A3C82D101C1635076B96559115CC900DCFF3771 and its private key from /private/tmp/arbor-f13.vbExcJ/signing.keychain-db
+
+== 8  make release
+== Building Arbor 0.9.0 (build 1, a3f9af9) for Apple silicon and Intel
+drew /private/tmp/arbor-f13.vbExcJ/src/build/Arbor.iconset
+build/Arbor.app/Contents/Helpers/arborctl: replacing existing signature
+build/Arbor.app: replacing existing signature
+Signed build/Arbor.app ad hoc. The signature changes with every build, so each new build has to be given
+  Accessibility permission again. scripts/make-signing-identity.sh, run once, ends that (docs/INSTALL.md).
+Built build/Arbor.app, version 0.9.0 (build 1, a3f9af9)
+== Packing
+== Arbor 0.9.0 (build 1, a3f9af9)
+architectures: x86_64 arm64
+Identifier=com.evbarleyg.arbor
+CodeDirectory v=20400 size=24396 flags=0x2(adhoc) hashes=756+3 location=embedded
+Signature=adhoc
+TeamIdentifier=not set
+not notarized (ARBOR_NOTARY_PROFILE is not set)
+-rw-r--r--  1 runner  wheel       164 Oct 15 09:20 build/Arbor-0.9.0-checksums.txt
+-rw-r--r--  1 runner  wheel      4588 Oct 15 09:20 build/Arbor-0.9.0-notes.md
+-rw-r--r--@ 1 runner  wheel  13239866 Oct 15 09:20 build/Arbor-0.9.0.dmg
+-rw-r--r--  1 runner  wheel  11941112 Oct 15 09:20 build/Arbor-0.9.0.zip
+-rw-r--r--  1 runner  wheel      1073 Oct 15 09:20 build/arbor.rb
+c325b7e07d64a5c541a73228151ae812e6b745980acb3c627a1a7156b0b8fefe  Arbor-0.9.0.zip
+3a4d99af8214f86b07abcdb697cd7028716cf20f3c666bc321be9c8fdad63641  Arbor-0.9.0.dmg
+  ✔ both architectures were built in one go
+  Arbor:    x86_64 arm64, 25702160 bytes
+  arborctl: x86_64 arm64, 12313760 bytes
+  ✔ Arbor is universal
+  ✔ arborctl is universal
+  ✔ the universal app verifies (--deep --strict)
+  ✔ the checksums hold
+  ✔ the cask is Ruby, with the version and the disk image's sum
+  ✔ the notes explain the first launch
+  x86_64 under Rosetta: arborctl 0.9.0 (build 1, a3f9af9)
+    total 0
+    drwx------   4 runner  staff  128 Oct 15 09:20 .
+    drwx------  11 runner  wheel  352 Oct 15 09:20 ..
+    lrwxr-xr-x   1 runner  staff   13 Oct 15 09:20 Applications -> /Applications
+    drwxr-xr-x   3 runner  staff   96 Oct 15 09:20 Arbor.app
+  ✔ the disk image holds the app, intact
+  ✔ and a link to /Applications
+  ✔ the zip holds the app, intact
+Would create at https://api.github.com/repos/evbarleyg/arbor/releases:
+{
+  "tag_name": "v0.9.0",
+  "target_commitish": "a3f9af99e0a80f6e4442fcf70c13862d6e3437c6",
+  "name": "Arbor 0.9.0",
+  "body": "(4574 characters from build/Arbor-0.9.0-notes.md)",
+  "draft": true,
+  "prerelease": false
+}
+Would upload:
+-rw-r--r--  1 runner  wheel       164 Oct 15 09:20 build/Arbor-0.9.0-checksums.txt
+-rw-r--r--@ 1 runner  wheel  13239866 Oct 15 09:20 build/Arbor-0.9.0.dmg
+-rw-r--r--  1 runner  wheel  11941112 Oct 15 09:20 build/Arbor-0.9.0.zip
+-rw-r--r--  1 runner  wheel      1073 Oct 15 09:20 build/arbor.rb
+what Gatekeeper makes of a downloaded copy (only asked; check-F13-system.sh tries to open one):
+    assessments enabled
+    /private/tmp/arbor-f13.vbExcJ/unzipped/Arbor.app: rejected
+  ✔ xattr -dr takes the mark off
+  ✔ and the copy from the zip starts
+
+== 9  what the scripts rely on
+Made the code-signing certificate "Arbor Local Signing" in /private/tmp/arbor-f13.vbExcJ/probe.keychain-db
+  SHA-1 240B8C51FBF4467313074B2439A2AF431989EF4C, valid until Oct 12 09:20:55 2036 GMT
+/var/folders/36/tjdph2t965j8snz9_vkdnw0r0000gn/T/tmp.N3KyLvCeGi/probe: replacing existing signature
+  ✔ a PKCS#12 file packed by OpenSSL 3.6.4 with -legacy imports, and codesign signs with the key
+is a keychain that was made here on the throwaway HOME's search list?     "/private/tmp/arbor-f13.vbExcJ/signing.keychain-db"    "/private/tmp/arbor-f13.vbExcJ/probe.keychain-db"
+
+== 10  --remove
+Deleted the certificate E23D4D558AB4DA0FBD7B28AAA5D8C8304794F681 and its private key from /private/tmp/arbor-f13.vbExcJ/signing.keychain-db
+Builds are signed ad hoc from now on. Arbor's entry under Accessibility still names the old certificate:
+  tccutil reset Accessibility com.evbarleyg.arbor   removes it, and the next build asks again.
+  ✔ the identity is gone
+  ✔ the certificate too
+There is no "Arbor Local Signing" in /private/tmp/arbor-f13.vbExcJ/signing.keychain-db; nothing to remove
+Signed build/Arbor.app ad hoc. The signature changes with every build, so each new build has to be given
+  Accessibility permission again. scripts/make-signing-identity.sh, run once, ends that (docs/INSTALL.md).
+Built build/Arbor.app, version 0.9.0 (build 1, a3f9af9)
+  ✔ builds are ad hoc again
+  ✔ and say so themselves
+  ✔ the account's own search list and default keychain are still as they were
+  ✔ this checkout is as it was
+ 
+18092 06-no-update-information.png
+23200 06-update-available.png
+164 Arbor-0.9.0-checksums.txt
+4588 Arbor-0.9.0-notes.md
+0 arbor-stderr.log
+1073 arbor.rb
+510 build-hardened.log
+995 build-last.log
+0 build-pointer.log
+672 build-second.log
+672 build-third.log
+2120 build.log
+96 evidence
+81384 fail-check-F13-1.png
+81384 fail-check-F13-2.png
+81474 fail-check-F13-3.png
+81475 fail-check-F13-4.png
+483 identity-again.txt
+948 identity-openssl.txt
+950 identity.txt
+1288 install-adhoc.txt
+889 install-over.txt
+818 install.txt
+20829 output.txt
+0 pictures.log
+3311 release.log
+400 requirements.txt
+0 screencapture.log
+528 uninstall.txt
+
+80 passed, 4 failed
+exit code 1
