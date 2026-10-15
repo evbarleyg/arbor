@@ -90,6 +90,7 @@ import Foundation
 //   field-cancel                 press ⎋ in the name field
 //   relaunch                     quit Arbor and start it again: every window comes back into view, then a new process
 //                                that knows what was saved and nothing else. A trace or a `watch` ends with the quit
+//   relaunch quit | relaunch start   the two halves apart: what comes between them happens while Arbor is not running
 //   crash [<id>…]                Arbor dies as it stands and is started again: no window comes back first, what was not saved
 //                                yet (`flush`) is lost, and a trace is cut off. The windows named are closed and opened again by
 //                                their apps meanwhile: each is where it was, under the next number

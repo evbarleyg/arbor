@@ -757,6 +757,7 @@ copy from before the repository was public, and say what the script does once it
 | `shots-F15-apps.sh` | trunk | **never**: ends with 77 | | Ten real apps opened for their icons, and killed |
 | `first-dock.sh` (`first-dock.py`) | trunk | **never**: ends with 77 | | Nine real apps opened and quit, every window arranged, Reduce Motion, the display's size |
 | `check-F52.sh`, `check-F63.sh` | not landed, trunk | **never**: end with 77 | | Virtual displays, Accessibility taken from every app |
+| `check-claimed-keys.sh` | trunk | **never**: ends with 77 | | Writes an entry for Arbor's bundle into the privacy database; types into whatever has the keyboard |
 | `check-F59.sh` | not landed | safe | 30 s | During a carry nobody's app gets arrows, ↩ or ⎋ |
 | `shots-F04.sh`, `shots-F34.sh` | not landed | safe | 3 min, 60 s | Test windows go to the Dock and come back; one is closed by its tab's button |
 | `shots-F22.sh`, `shots-F19.sh` | trunk | safe | 90 s, 45 s | |
@@ -1331,7 +1332,7 @@ done to the world as if Arbor had done it, at which the net has to speak, beside
 
 | Rule of the product | Rules of the walks | Detector |
 |---|---|---|
-| Nothing moves until the person docks something, and nothing that was not asked to | `moved-before-any-dock`, `fetched-before-any-dock`, `moved-at-launch`, `moved-at-resume`, `moved-unasked`, `there-and-back-moved`, `pause-and-resume-moved`, `dragged-gap-did-not-last` | `moved-unasked` |
+| Nothing moves until the person docks something, and nothing that was not asked to | `moved-before-any-dock`, `fetched-before-any-dock`, `moved-at-launch`, `moved-at-launch-after-a-crash`, `moved-at-resume`, `moved-unasked`, `there-and-back-moved`, `pause-and-resume-moved`, `dragged-gap-did-not-last` | `moved-unasked` |
 | A start takes nothing out of view, but for what Show Everything itself has out of view; a quit leaves nothing there | `start-took-out-of-view` (the window with the keyboard stays in view even if it is such a window), `quit-left-out-of-reach` | `lost` |
 | A window moves once, to where it ends up | `moved-twice` (in the step of the command or event), `moved-again` (later, with nobody touching anything); `-sizing` where its app refused a size, `-sizing-again` where it had refused in the same way before; `sized-there-and-back` (never in a wrong place, but smaller or larger on the way than it ends up); all with `-floating` for a floating window. Judged by the road, not by the number of requests (`FakeWindowSystem.detour`): a window Arbor does not know is asked for a size where it stands, and then moved | `jolt` |
 | Out of view means out of view, and nothing goes on for ever | `flashed-into-view`, `flashed-out-of-view`; `moved-over-and-over` (more than three moves with nobody acting) | `flash`, `stuck` |
