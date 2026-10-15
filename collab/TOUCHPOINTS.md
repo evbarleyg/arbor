@@ -36,6 +36,11 @@ Every avoidable row names what would have avoided it, and that becomes a board i
 - *The tests pass and the real Mac disagrees.* What would have let the swarm see that by itself? A count of the differences between the stand-ins and real Macs, kept from the first day, and a rule that nothing is "done" on stand-ins alone. Now: ring 2 of `docs/VIABLE.md`.
 - *The Macs are the bottleneck.* What would have shown it? Measuring where an hour of waiting goes before adding hands. Now: Mac minutes per landed fix are on the scoreboard, and a Mac run has to name the question only a Mac can answer.
 
+**Eight notes they gave unasked, after working with the first build** (2026-10-14; `collab/IDEAS.md`, I16 to I23; ruled on as `collab/QUESTIONS.md`, Q29). Ten minutes of theirs turned the second build round: less by default. The question they leave is the hardest so far:
+
+- *Nothing in sixteen detectors, four rings and a day with real apps said that Arbor does too much.* Every instrument asks whether Arbor does rightly what it does; none asks whether a person wanted it done. What would have let the swarm see it by itself? A control that counts: for each act of a day, what changed on screen with Arbor that would not have changed without it, and whether the act asked for it. Readers who are given the app's behaviour, not its words, and asked what surprised them. And a rule for defaults, now Q29's: would a person who has read nothing be surprised? Then it is off.
+- *A key of Arbor's destroyed something in another app.* No test looked outside Arbor's own windows. Now: board 0.1, and a table of what each of Arbor's keys does in the apps people run.
+
 ## What still needs a person, and the default if nobody answers
 
 | What | Why only they can | Default on silence |
