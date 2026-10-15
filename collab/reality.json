@@ -1744,7 +1744,7 @@
     "e2e: the strip is seen to move, and the display does not stand still by itself",
     "tool: mac-shell/standstill.py"
    ],
-   "copes": "scripts/mac-shell/check-standstill.sh measures and prints every way back, fails on a later one that stands still for 0.3 s and on a first one over 1.5 s, and has the plain tool's figures beside them, so that a standstill that is Arbor's own would show. Arbor itself does nothing about it. Whoever films or times Arbor on a hosted Mac plays an act once before it counts, and prints what that first play took. A cure that might hold, tried in the plain tool only: draw into a bitmap in memory and hand that over as the layer's contents, so that Core Animation has nothing to draw.",
+   "copes": "scripts/mac-shell/check-standstill.sh measures and prints every way back, fails on a later one that stands still for 0.3 s and on a first one over 2.5 s (over 1.5 s it is marked), and has the plain tool's figures beside them, so that a standstill that is Arbor's own would show. Arbor itself does nothing about it. Whoever films or times Arbor on a hosted Mac plays an act once before it counts, and prints what that first play took. A cure that might hold, tried in the plain tool only: draw into a bitmap in memory and hand that over as the layer's contents, so that Core Animation has nothing to draw.",
    "hurt": 3,
    "touches": [
     "input-held",

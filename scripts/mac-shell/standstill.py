@@ -10,6 +10,7 @@ picture for that long, whatever else was or was not meant to move.
                                                the processes burnt meanwhile; then a line for each group of scenes
   standstill.py calm <run folder> <group> <ms> whether in every scene of that group (`back` is back-1, back-2, …) the display never stood still for that long. Fails,
                                                too, where the instrument was blind: fewer than 40 frames in the second before the cause
+  standstill.py each <run folder> <group>      the longest standstill of each scene of that group, in ms, on one line: to print beside another group's
   standstill.py waits <run folder> <ms>        every wait of that length in frames.log, inside a scene or not, with the mark that came last before it
   standstill.py longest <film folder>          that film's longest wait, of the display or of what is not the strip, in ms: for a script that decides what to keep
   standstill.py worst <run folder> <n>         `<from> <to> <scene>` in seconds since 1970, outwards to whole seconds, for the n longest waits
@@ -315,6 +316,9 @@ def main(arguments):
         return self_test()
     if len(arguments) == 4 and arguments[0] == "calm":
         return calm(arguments[1], arguments[2], int(arguments[3]))
+    if len(arguments) == 3 and arguments[0] == "each":
+        print(" ".join(str(film.longest()[1]) for film in films_of(arguments[1]) if group_of(film.name) == arguments[2] and len(film.frames) > 1) or "-")
+        return 0
     if len(arguments) == 3 and arguments[0] == "waits":
         return waits(arguments[1], int(arguments[2]))
     if len(arguments) == 3 and arguments[0] == "worst":

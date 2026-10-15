@@ -17,7 +17,7 @@
 #   1. THE CONTROL, told and not checked: no Arbor. A plain tool, a fresh process each time, shows a panel as Arbor shows a tile, puts it away and shows it again: after
 #      0.3, 1, 2 and 3.4 s; drawing less; and handing over a finished bitmap in place of drawing
 #   2. Arbor from fresh starts, without motion and with: every way back but the first is CHECKED at 0.3 s: what stands still then is Arbor's to answer for. The first is
-#      measured and printed like the others, and checked at 1.5 s
+#      measured and printed like the others, with the plain tool's beside it; marked over 1.5 s, and checked at 2.5 s
 #   3. the same with nobody filming: told
 ARBOR_TIME_LIMIT=900
 source "$(dirname "$0")/lib.sh"
@@ -34,8 +34,10 @@ STILL_WATCH_PID=""
 # A person sees a hitch of a tenth of a second, and a hosted Mac has hiccups of 0.13 s with nothing being done. What was found is 0.43 s and more.
 STILL_LIMIT=300
 # The first way back after a start is macOS's own (see above), and is measured and printed all the same: a fault that is passed over is not a fault that is cured.
-# It was 1.45 s at the most. Longer than this, and something has been added to it.
-STILL_FIRST=1500
+# It was 1.45 s at the most. A limit that stands a frame or two from what the Mac has done by itself goes red one day with nothing of Arbor's changed, and a red that
+# means nothing teaches people to walk past reds. So: over 1.5 s it is printed with a mark, and over 2.5 s something has been added to it.
+STILL_FIRST=2500
+STILL_FIRST_MARK=1500
 
 still_build() {
   local tool
@@ -141,6 +143,14 @@ still_stop() {
 trap '' PIPE
 still_mark() { [ -n "$STILL_WATCH_PID" ] && echo "mark $*" >&4; }
 
+# first_way_out <group>: the check of a first way out, with the plain tool's own beside it: whoever reads a red sees at once whether the Mac was slow for everybody
+first_way_out() {
+  check "the first way out, which costs what macOS makes it cost, took no more than that" calm "$1" "$STILL_FIRST"
+  [ -z "${ARBOR_REHEARSAL:-}" ] || return 0
+  echo "    the first way out: $(python3 "$STILL_PY" each "$ARBOR_OUT" "$1") ms; the plain tool's, with no Arbor, in this run: $(python3 "$STILL_PY" each "$ARBOR_OUT" control-away-3400) ms"
+  python3 "$STILL_PY" calm "$ARBOR_OUT" "$1" "$STILL_FIRST_MARK" > /dev/null || echo "    (!) OVER $STILL_FIRST_MARK ms: longer than it was ever seen to take"
+}
+
 # watched <scene> <command…>: the display at rest for a good second, the thing, and two seconds more
 watched() {
   local name=$1
@@ -230,7 +240,7 @@ for session in a b; do
   trial "tile-$session" stream
   check "on the way in" calm "tile-$session-away"
   check "on the way out" calm "tile-$session-back"
-  check "the first way out, which costs what macOS makes it cost, took no more than that" calm "tile-$session-first-back" "$STILL_FIRST"
+  first_way_out "tile-$session-first-back"
   arbor_stop
 done
 
@@ -239,7 +249,7 @@ claim "into a window that is a tile and back out, after the first time, with mot
 trial tile-motion stream
 check "on the way in" calm tile-motion-away
 check "on the way out" calm tile-motion-back
-check "the first way out, which costs what macOS makes it cost, took no more than that" calm tile-motion-first-back "$STILL_FIRST"
+first_way_out tile-motion-first-back
 arbor_stop
 
 MOTION=0
