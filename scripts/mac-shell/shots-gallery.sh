@@ -44,20 +44,30 @@ menu_is_open() { overlays | awk '$3 == 101 && $8 == "on" { found = 1 } END { exi
 surface_shows() { [ -n "$(overlays | awk '$3 < -1000 && $8 == "on"')" ]; }
 pointer_away() { move "$((sx + sw - 40))" "$((sy + 40))"; }
 type_text() {
-  local index
-  for ((index = 0; index < ${#1}; index++)); do key "${1:index:1}" > /dev/null || return 1; done
+  local index letter
+  for ((index = 0; index < ${#1}; index++)); do
+    letter=${1:index:1}
+    [ "$letter" = " " ] && letter=space
+    key "$letter" > /dev/null || return 1
+  done
 }
 
 # Arbor's own windows that are on screen.
 ids_on() { overlays | awk '$8 == "on" { print $1 }' | sort; }
 # has_come "<ids before>": whether a window of Arbor's is on screen that was not.
 has_come() { [ -n "$(comm -13 <(echo "$1") <(ids_on))" ]; }
-# both <name> "<ids before>" [seconds]: the whole screen, and each window of Arbor's that has come since, alone.
+# both <name> "<ids before>" [seconds]: the whole screen, and each window of Arbor's that has come since, alone. On a display
+# so large that `shot` makes the picture smaller, also that window with what lies behind it, pixel for pixel: a picture to be
+# measured is cropped, never scaled.
 both() {
-  local id number=1
+  local id number=1 x y w h
   shot_after "${3:-0.5}" "$1"
   for id in $(comm -13 <(echo "$2") <(ids_on)); do
     ARBOR_SETTLE=0 look "$1-alone-$number" "$id"
+    if [ -n "${GALLERY_CROPS:-}" ]; then
+      read -r x y w h <<< "$(overlays | awk -v id="$id" '$1 == id { print int($4), int($5), int($6), int($7) }')"
+      [ -n "${h:-}" ] && ARBOR_SETTLE=0 closeup "$1-on-glass-$number" "$((x - 12))" "$((y - 12))" "$((w + 24))" "$((h + 24))"
+    fi
     number=$((number + 1))
   done
 }
@@ -114,7 +124,9 @@ session() {
 # Titles as people's windows have them, for Go to…, the minimap and the tiles to show, each with a word in it that must turn up
 # nowhere but in the pictures (docs/VIABLE.md, `told`).
 CANARY=quokkadoo
-TITLES=("Train times to the coast" "Bread without kneading" "Inbox" "Budget" "Notes on oaks" "Untitled")
+TITLES=("Train times to the coast" "Bread without kneading" "Inbox"
+  "Budget for the year after next, third draft, with the figures from the meeting in March that nobody has checked yet"
+  "Notes on oaks" "Untitled")
 retitle() {
   local id index=0
   for id in $ARBOR_WINDOW_IDS; do
@@ -297,6 +309,8 @@ tour() {
   check "it is up" has_come "$before"
   type_text writing
   both "$p-13-name-typed" "$before"
+  type_text " and everything else that has to be done before the end of the month"
+  both "$p-13b-name-long" "$before"
   key escape
 
   claim "peek's outline  ($p)"
@@ -472,6 +486,7 @@ large() {
   local before pair id x y w h dx dy dw dh
 
   session large 5
+  GALLERY_CROPS=yes
   ARBOR_DISPLAY_ARGS=--hidpi
   if ! display_add 1440 900 right; then
     session_over
@@ -567,6 +582,7 @@ large() {
   # Arbor hears of a display that went a second and a half after macOS's last word on it, and a quit before that puts windows
   # back on the display that is gone (seen in this script's first run; known).
   sleep 3
+  GALLERY_CROPS=
   session_over large-99-after-quit
 }
 
