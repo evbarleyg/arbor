@@ -1526,6 +1526,62 @@ def check_preflight():
         row("preflight.sh: where Git does not work nothing counts as shown", (flight("--check", new)[0], flight(new)[0]), (2, 2))
 
 
+# MARK: ci-build-key.sh
+
+def check_ci_build_key():
+    """A build's name: there is always one, and it differs whenever what goes into the build does. A script that fails costs every run its cache, quietly."""
+    with tempfile.TemporaryDirectory(prefix="tooling-") as folder:
+        def git(*arguments):
+            subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@example.com", *arguments], cwd=folder, capture_output=True, check=True)
+
+        def write(path, text, mode=0o644):
+            os.makedirs(os.path.dirname(os.path.join(folder, path)), exist_ok=True)
+            with open(os.path.join(folder, path), "w", encoding="utf-8") as handle:
+                handle.write(text)
+            os.chmod(os.path.join(folder, path), mode)
+
+        for name in ("sw_vers", "xcodebuild", "swift"):
+            write(f"bin/{name}", f'#!/bin/sh\necho {name} "${{VERSION_OF_{name}:-1}}"\n', 0o755)
+        write(".gitignore", "/bin/\n")
+        for path in ("Package.swift", "Sources/A.swift", "Tests/T.swift", "scripts/mac-shell/pointer.swift", "scripts/mac-shell/compile-tools.sh", "docs/x.md"):
+            write(path, "one\n")
+        git("init", "--quiet")
+        git("add", "--all")
+        git("commit", "--quiet", "--message", "one")
+
+        def key(kind, **more):
+            environment = {name: value for name, value in os.environ.items() if not name.startswith("ARBOR_TEST_SOURCES_")}
+            done = subprocess.run([BASH, os.path.join(HERE, "ci-build-key.sh"), kind], cwd=folder, capture_output=True, text=True, check=False,
+                                  env={**environment, "PATH": os.path.join(folder, "bin") + os.pathsep + os.environ["PATH"], **more})
+            lines = dict(line.split("=", 1) for line in done.stdout.splitlines() if "=" in line)
+            return done.returncode, lines.get("key")
+
+        def changed(path, kind, text="two\n"):
+            before = key(kind)[1]
+            write(path, text)
+            git("add", "--all")
+            git("commit", "--quiet", "--message", path)
+            return key(kind)[1] != before
+
+        for kind in ("products", "tests"):
+            row(f"ci-build-key.sh: {kind}: there is a name", (key(kind)[0], bool(key(kind)[1])), (0, True))
+            row(f"ci-build-key.sh: {kind}: the same twice", key(kind) == key(kind), True)
+            for name in ("sw_vers", "xcodebuild", "swift"):
+                row(f"ci-build-key.sh: {kind}: another {name}, another name", key(kind) != key(kind, **{f"VERSION_OF_{name}": "2"}), True)
+        row("ci-build-key.sh: with and without the tests are two names", key("products")[1] != key("tests")[1], True)
+        row("ci-build-key.sh: which test files are compiled is part of the name of a build with tests",
+            key("tests") != key("tests", ARBOR_TEST_SOURCES_T="T.swift"), True)
+        row("ci-build-key.sh: and no part of the name of one without", key("products") == key("products", ARBOR_TEST_SOURCES_T="T.swift"), True)
+        for path in ("Package.swift", "Sources/A.swift", "scripts/mac-shell/pointer.swift", "scripts/mac-shell/compile-tools.sh"):
+            row(f"ci-build-key.sh: {path} changes: another name, with the tests and without", (changed(path, "products"), changed(path, "tests", "three\n")), (True, True))
+        row("ci-build-key.sh: a test changes: another name with the tests, the same without", (changed("Tests/T.swift", "tests"), changed("Tests/T.swift", "products", "three\n")),
+            (True, False))
+        row("ci-build-key.sh: prose changes: the same name", (changed("docs/x.md", "products"), changed("docs/x.md", "tests", "three\n")), (False, False))
+        row("ci-build-key.sh: no such kind", key("sideways")[0], 64)
+        write("Sources/A.swift", "not committed\n")
+        row("ci-build-key.sh: a checkout that differs from its commit has no name", key("products"), (2, None))
+
+
 def check_fuzz_launch():
     for situation in fuzz_launch.situations():
         row(*situation)
@@ -1546,6 +1602,7 @@ def main():
     check_install()
     check_e2e()
     check_ci_mtimes()
+    check_ci_build_key()
     check_mac_shell_batch()
     check_preflight()
     check_fuzz_launch()
