@@ -255,6 +255,31 @@ private let b = WindowID(102)
       }.isEmpty, "twice")
   }
 
+  /// Nor can anybody shrink into a frame that ends in the Dock's strip from where it hangs off the display: it is moved as it is to where it can, and
+  /// sized from there. Only that way, and only where one request would have left it too large.
+  @Test func onlyTheWayByWhereItCanShrinkIsLetPass() {
+    let dock = "displays main:0,0,1440,900:25,0,70,0* windows-never"
+    // It hangs off the display, 650 high at 500 of 900; the Dock begins at 830.
+    let hanging = [dock, "launch", "open 101 Notes pid 1001 at 100 100 500 400", "open 102 Mail pid 1002 at 800 100 500 650", "settle", "grab 102", "carry 1000 520", "release", "settle"]
+    let end = rect(800, 500, 500, 350)
+    func hop(by via: CGRect) -> (FakeWindowSystem) -> Void {
+      {
+        _ = $0.setFrame(via, of: b)
+        _ = $0.setFrame(end, of: b)
+      }
+    }
+    func jolts(after lines: [String], _ fault: @escaping (FakeWindowSystem) -> Void) -> Set<String> {
+      nets(after: lines, then: "cursor 10 10", fault: fault).filter { $0.hasPrefix("moved-twice") || $0.hasPrefix("sized-") || $0.hasPrefix("strayed") }
+    }
+    let stands = ChaosRunner()
+    for line in hanging { _ = stands.step(ChaosAction(text: line)) }
+    let standing = stands.system.frame(of: b) ?? .zero
+    #expect(standing.maxY > 900 && standing.height == 650, "the case: \(standing)")
+    #expect(jolts(after: hanging, hop(by: rect(800, 476, 500, 650))).isEmpty, "the hop itself")
+    #expect(!jolts(after: hanging, hop(by: rect(800, 300, 500, 650))).isEmpty, "further up than it takes")
+    #expect(!jolts(after: hanging, hop(by: rect(700, 476, 500, 650))).isEmpty, "and sideways")
+  }
+
   /// A terminal is a few points short of any slot, and stays in the slot's corner. Were it set right in it, that has a name of its own.
   @Test func aTerminalSetRightInItsSlotHasAName() {
     let terminal = ["launch", "open 101 Terminal pid 1001 at 100 100 500 400", "behave 101 grid", "open 102 Mail pid 1002 at 800 300 500 400", "settle"]

@@ -59,7 +59,7 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 | [extra-report](#extra-report) | 10 | 0 | 4 | 3 | 1 | 2 | 6 | 0 | 0 | 4 | 1 |
 | [late-or-partial-answer](#late-or-partial-answer) | 46 | 9 | 12 | 15 | 6 | 13 | 29 | 0 | 6 | 11 | 14 |
 | [second-actor](#second-actor) | 60 | 8 | 25 | 19 | 9 | 7 | 41 | 1 | 4 | 14 | 10 |
-| [geometry](#geometry) | 42 | 2 | 18 | 14 | 8 | 2 | 31 | 1 | 2 | 8 | 7 |
+| [geometry](#geometry) | 43 | 2 | 19 | 14 | 8 | 2 | 32 | 1 | 2 | 8 | 7 |
 | [identity](#identity) | 32 | 4 | 7 | 7 | 7 | 11 | 14 | 1 | 4 | 13 | 8 |
 | [permissions](#permissions) | 23 | 7 | 5 | 4 | 3 | 11 | 12 | 2 | 3 | 6 | 4 |
 | [timing](#timing) | 56 | 7 | 9 | 14 | 11 | 22 | 33 | 4 | 6 | 13 | 9 |
@@ -67,14 +67,14 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 | [looks](#looks) | 21 | 0 | 1 | 0 | 0 | 20 | 3 | 2 | 3 | 13 | 5 |
 | [never-exercised](#never-exercised) | 15 | 7 | 1 | 13 | 0 | 1 | 0 | 0 | 14 | 1 | 15 |
 | [toolchain](#toolchain) | 52 | 1 | 0 | 2 | 4 | 46 | 28 | 1 | 2 | 21 | 10 |
-| **all** | 490 | 63 | 113 | 123 | 71 | 183 | 265 | 20 | 61 | 144 | 107 |
+| **all** | 491 | 63 | 114 | 123 | 71 | 183 | 266 | 20 | 61 | 144 | 107 |
 
 **Where the difference bit**
 
 | Where | That is | Cases | Hurt 1 or 2 | Guarded without a Mac | Guarded only on CI's Macs | Only when somebody starts a script | Not guarded |
 |---|---|---|---|---|---|---|---|
 | below the seam | in the macOS-only code under the platform protocols (AX, Input, UI, App), which no test on Linux runs | 145 | 90 | 48 | 13 | 33 | 51 |
-| at the seam | in what crosses the platform protocols: a stand-in can play it to the controller | 176 | 104 | 139 | 1 | 10 | 26 |
+| at the seam | in what crosses the platform protocols: a stand-in can play it to the controller | 177 | 105 | 140 | 1 | 10 | 26 |
 | controller | in the controller or the core, given reports that were right | 31 | 16 | 19 | 0 | 1 | 11 |
 | test | in a test, a script or a harness that expected the wrong thing | 90 | 0 | 32 | 5 | 13 | 40 |
 | machine | in the machine, the toolchain or the way things are built and installed | 48 | 3 | 27 | 1 | 4 | 16 |
@@ -2627,6 +2627,18 @@ Geometry: displays, bars, sizes and coordinates that are not what was assumed.
 - **Guard:** `test: letGoInTheBandShortOfMacOSsPointAFloatingWindowStaysWhereItIs`; `test: theBottomEdgeStaysArborsAndWithTheSwitchesOffSoDoTheOthers`; `test: macOSShowedItsPreviewHere`; `test: thrownIntoTheMenuBarAndLetGoAtOnceTheWindowStaysAsItIs`; `test: thrownAgainstTheSideItIsTiledAtOnce`; `e2e: let go of a docked window at the very edge of the screen, where macOS tiles` (on CI's Macs); `e2e: let go of a floating window in the menu bar, where macOS fills the screen` (on CI's Macs)
 - **Arbor copes:** MacTiling.claim holds the places as they were measured: the first and the last point of the display's width and the menu bar are where macOS acts. Short of them, in the band that Arbor leaves to macOS while its switches are on, nobody acts.
 - **Read in:** `docs/TESTING.md`, `scripts/mac-shell/e2e-drag.sh`, `Sources/arbor-fakemac/main.swift`, `docs/features/F42-setup-check.md`, `collab/BACKLOG.md`, `Sources/ArborCore/MacTiling.swift`
+
+### no-size-call-leaves-an-edge-in-the-docks-strip
+
+*hurt 2 · at the seam · touches `size-lost`, `jolt`*
+
+- **Expected:** A window that is asked to be smaller becomes smaller, unless its app refuses. The rule for growth (a-window-asked-to-grow-stops-at-the-dock) said so in as many words: it only holds growth back, nobody is made larger by it, and an edge that is off the display is free. The stand-ins played that.
+- **Happened:** A size call leaves no edge inside the Dock's strip, between the visible frame's edge and the display's. Asked to end there, an edge that comes in from off the display stops at the display's end, so the window is LARGER than asked: 650 high at y 408 of 768 and asked to be 348, it became 360; 654 at 298 asked 439: 470; 653 at 288 asked 470: 480; 650 at 389 asked 348: 379. An edge that stands in the strip, or on the display's very end, stays where it is, for more and for less that would still end in the strip. Asked to end on the screen, from the strip or right across it, it does; a point past the display's end it is free. The same sideways with the Dock at the right. With the Dock hidden or elsewhere there is no strip, and the same call is taken whole. A call that was not obeyed brings no report. Arbor sizes what shrinks where it stands, so a window as high as its slot, dragged out and let go low, came out 12 to 41 points too high, also where its own size fitted on the screen; that was written down as its own, and the next drop added to it; Quit gave the grown one back. And when a Dock appeared under two rows of docked windows, the lower row came to its slot too high, Arbor learnt that as its app's smallest height and made room for it, and the upper row paid.
+- **Found by:** Four requests of Arbor's own in the traces of three runs on hosted Macs (a test window and a real editor; a slow drag, a fast one, a drop off a tile of macOS's own), each to the point. Then 150 bare Accessibility calls with no Arbor running, one hosted Mac, macOS 26.6.2, 1024×768, a test window and a real editor, the Dock below, at the right, at the left and hidden: every ask gave one answer, 6 times of 6, and all 54 controls came whole. Not varied: one display at scale 1, windows at rest, one call. Not seen: an edge asked exactly to the visible frame's, or exactly to the display's end; both sides past their lines at once; a second display beyond the edge. The Dock that appears was found by the stand-in once it told the truth: three old tests fell.
+- **Stand-ins play it:** yes (`Echoes.growsNoFurtherThanTheScreen`)
+- **Guard:** `test: noFootIsPutIntoTheDocksStrip`; `test: inTheStripAFootIsHeldForLessToo`; `test: theBareCallsOfTheShrinkingSide`; `test: draggedOutOfAHighSlotItHasItsOwnSizeWhereverItIsLetGo`; `test: itIsMovedWhereItCanShrinkAndSizedThere`; `test: whereItsSizeFitsAtTheGoalItIsAskedOnceMoreThere`; `test: dropAfterDropItGrowsByNothing`; `test: tallerAfterAllItIsNotWrittenDownAndMadeGood`; `test: whatIsOnlyRememberedIsNotHeldAgainstAWindowThatIsHigher`; `test: aDockThatAppearsUnderDockedWindowsTeachesNothing`; `test: withoutAGapADockThatAppearsTeachesNothingEither`; `test: aLowWindowComesBackFromTheCornerWithoutShowingItsOldSize`; `test: onlyTheWayByWhereItCanShrinkIsLetPass`
+- **Arbor copes:** ScreenLines.allows plays it, for the controller, the fake and the nets alike. Controller.give plays one request beforehand: where it would leave the window larger than asked and the frame ends in the strip, the window is moved as it is to where its size fits, straight above or beside, and one request from there sizes it first and then moves it; where the size fits at the goal, it goes there like anybody and is asked once more. An answer nobody foresaw that is larger, of a window the screen holds, is not written down and is made good the same way, once. An app's own limit is still its own: judged where it was sized. What is only remembered is not held against a window that is larger: nobody asked it for less. Controller.place takes such an answer for the screen's too: nothing is learnt, no less is asked for, and the window is asked once more in its slot: two requests at a Dock's appearance, by a ruling of the product owner's, who would not have the order of calls touched for it. Nobody is asked for a size in place on a side the screen would answer for. Not cured: a window that must grow one way over a line and shrink the other way into the strip stays too high on the screen, though not in the books. The model of a Mac behind make mac-on-linux does not play it yet.
+- **Read in:** `Sources/ArborCore/ScreenLines.swift`, `Sources/ArborKit/Controller/Controller+TheScreensAnswer.swift`, `Sources/ArborKit/Controller/Controller+Layout.swift`, `Sources/ArborKit/Controller/Controller+AskFirst.swift`, `Sources/ArborTesting/FakeWindowSystem.swift`, `scripts/mac-shell/check-let-go-low.sh`, `scripts/mac-shell/check-own-size.sh`, `scripts/mac-shell/check-a-dock-appears.sh`
 
 ### real-apps-are-wider-than-a-column
 
