@@ -13,6 +13,8 @@ source "$(dirname "$0")/lib.sh"
 paused() { "$ARBOR_BIN/arborctl" status | grep -q "^paused"; }
 running() { "$ARBOR_BIN/arborctl" status | grep -q "^running"; }
 no_overlays() { [ -z "$(overlays | awk '$8 == "on"')" ]; }
+# But for the line that says what happened (F43, level 6).
+only_the_line() { [ -z "$(overlays | awk '$8 == "on" && $3 != 6')" ]; }
 logged() { grep -q "$1" "$ARBOR_HOME/arbor.log"; }
 all_on_screen() { is on_screen "$W1" && is on_screen "$W2" && is on_screen "$W3"; }
 in_slot() { [ "$(arbor_ask slot "$1")" = "$(frame_of "$1")" ]; }
@@ -72,6 +74,10 @@ shot 02-framed
 key ctrl+opt+escape
 check "status says paused" eventually paused
 check "every window is back in view" eventually all_on_screen
+check "of Arbor's own windows only the line that says so is on screen" eventually only_the_line
+# "Paused until ⌃⌥⎋…" stays just under four seconds and goes by itself, which is about as long as `eventually` has patience: on
+# a Mac that was a race, and in a rehearsal, where short waits take no time, it was lost.
+sleep 4
 check "none of Arbor's own windows is on screen" eventually no_overlays
 check "only the shortcut that ends the pause is registered" eventually logged "registered 1 shortcuts"
 shot 03-paused
