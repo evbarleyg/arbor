@@ -2684,6 +2684,54 @@
    ]
   },
   {
+   "id": "a-size-asked-right-after-a-journey-to-another-display-is-judged-by-the-one-it-left",
+   "kind": "timing",
+   "layer": "at the seam",
+   "expected": "A window that has been moved to another display can grow as far as that display allows, at once. In the stand-ins a size call was judged by the display under the window's corner at that moment, so a window sent from a small display to a large one took its whole slot in one request.",
+   "happened": "Right after a position call has taken a window to another display, a size call is judged by the lines of the display it CAME from: 10 of 10 between 0.5 and 5.6 ms after the position call; by the new display's 4 of 4 from 200 ms on; between the two nobody has looked. In all four orders of the calls, 12 of 12, so no order of calls gets round it. Sent from 1280×720 to 1920×1080 a docked window asked to be 465×947 at y 43 took 465×677: 720 − 43, the foot of the display it had left. Asked again a millisecond later: 677. Let go by hand on the large display with its larger part still over the small one, under the older order of calls (size, position, size): 757 of 947; under today's order one such drop was answered whole at once. Arbor took the answer for an app that will not grow, centred the window in its slot (three calls within 2 ms) and wrote the short size down, and so it lay until it next went out of view. The same cut meets a window that is asked a question where it waits out of view, and one that is given its own larger size as it floats again: there the short size was written down as its own, which is lost for good. **Not measured:** which display counts for a window that straddles two. One sighting, of what macOS does with such a window when a display goes, speaks for the one that holds its larger part, as AppKit's own `NSWindow.screen` has it.",
+   "found": "A journey of test windows across two displays on a hosted Mac (macOS 26, a virtual display of 1280×720 beside a main display of 1920×1080), read row by row; then a probe of bare calls that set AXPosition and AXSize with a measured pause between them, Arbor not running; seen again with the order of calls of the trunk of 2026-10-15.",
+   "modelled": "partly",
+   "knobs": [
+    "Echoes.theDisplayItCameFromJudgesForAMoment"
+   ],
+   "guards": [
+    "test: aSizeAskedRightAfterAJourneyAcrossDisplaysIsJudgedByTheDisplayItCameFrom",
+    "test: sentToTheLargeDisplayByCommandADockedWindowFillsItsSlot",
+    "test: letGoNearTheBorderWithItsLargerPartStillOnTheSmallDisplay",
+    "test: onlyMovedAcrossAndAskedToGrowByTheNextLayout",
+    "test: askedWhereItWaitsOutOfViewNothingIsMadeOfTheAnswerEither",
+    "test: heldInTheStripOfTheOtherDisplaysDockItIsAskedAgainToo",
+    "test: draggedOutOfItsSlotAndLetGoOverTheBorderWhatIsWrittenDownIsItsOwnSize",
+    "test: floatedRightAfterAJourneyItHasItsOwnFrame",
+    "test: outOfViewWithinTheMomentTheShortSizeIsNotWrittenDown",
+    "test: sizedOnTheWayAndCutThereWhatIsWrittenDownIsStillWhatWasAsked",
+    "test: sentAcrossFloatingItHasItsOwnSize",
+    "test: oneThatReallyStopsOnThatVeryLineIsBelievedAfterASecond",
+    "test: theNetLetsItBeShortOnlyAtItsSlotsCornerAndOnlyUntilItHasBeenAsked",
+    "test: aSlowerMacIsAskedAtHalfASecondToo",
+    "test: whileTheMouseButtonIsDownNobodyIsAsked",
+    "test: norIsItAskedAgainForSomebodyElsesSake",
+    "scenario: 71-from-a-small-display-to-a-large-one.sim",
+    "e2e: whole within a second and a half, one further change, never off its slot's corner"
+   ],
+   "copes": "Sources/ArborKit/Controller/Controller+AcrossDisplays.swift: an answer that is as short as another display would have it (judged by that display's lines with the one model, ScreenLines: it ends on such a line, or in the strip of that display's Dock) is the screen's and not the window's. Nothing is made of it: it is not asked again on the spot, not centred, not written down, no misfit; a question so answered counts as not answered; what is written down as a window's own size is what was asked for, also if it goes out of view meanwhile. The window is asked again when macOS has caught up, a quarter of a second after the journey and, as long as it is still that short, half a second and a second after it; what it answers then is its own answer like any other, and that is logged. Not under a hand, however long it holds, nor while the displays are in doubt; and an asking that gets no answer ends the series. It goes by the answer and leans on no forecast, and any other display's lines will do, so it holds whichever display judges a window astride. The fake plays the moment at its longest, 0.2 s, and goes by the larger part: partly, because that is a guess; and a hand that carries a window across begins no moment there, which nobody has measured either. Not coped with: a Quit or a pause within that quarter of a second leaves the window short, and nobody is there to ask again.",
+   "hurt": 3,
+   "touches": [
+    "size-lost",
+    "jolt"
+   ],
+   "sources": [
+    "Sources/ArborCore/ScreenLines.swift",
+    "Sources/ArborKit/Controller/Controller+AcrossDisplays.swift",
+    "Sources/ArborKit/Controller/Controller+AskFirst.swift",
+    "Sources/ArborKit/Controller/Controller+Layout.swift",
+    "Sources/ArborKit/Controller/Controller+OwnFrames.swift",
+    "Sources/ArborKit/Controller/Controller+Tiling.swift",
+    "Sources/ArborTesting/FakeWindowSystem.swift",
+    "scripts/mac-shell/check-across-displays.sh"
+   ]
+  },
+  {
    "id": "a-size-call-in-the-hand-is-taken-as-at-rest-and-the-drag-goes-on",
    "kind": "input",
    "layer": "at the seam",
@@ -3441,7 +3489,7 @@
     "test: oneRequestIsPlayedCallByCall",
     "test: withTheDockAtTheRightGrowthStopsAPointShortOfIt"
    ],
-   "copes": "FramePlan moves first what grows, so a window grows where it ends up; one that grows into a frame that hangs over its display's edge gets size, position, size, and takes along what it got where it stood. The controller asks nobody in view to grow where it stands (a-size-clipped-by-the-screen-was-taken-for-the-apps-refusal), and gives a frame that hangs over a line through Controller.give (a-window-let-go-low-lost-its-own-size). ScreenLines is the one model of the rule, for the controller, the fake and the nets: the fake plays the plan's calls one by one, the point short of a Dock below and at the right, each edge by itself, and an edge that is free only off the display (in the strip of a Dock at the right that is a guess by likeness). That a size call right after a journey to another display is judged by the display the window came from it does not play yet.",
+   "copes": "FramePlan moves first what grows, so a window grows where it ends up; one that grows into a frame that hangs over its display's edge gets size, position, size, and takes along what it got where it stood. The controller asks nobody in view to grow where it stands (a-size-clipped-by-the-screen-was-taken-for-the-apps-refusal), and gives a frame that hangs over a line through Controller.give (a-window-let-go-low-lost-its-own-size). ScreenLines is the one model of the rule, for the controller, the fake and the nets: the fake plays the plan's calls one by one, the point short of a Dock below and at the right, each edge by itself, and an edge that is free only off the display (in the strip of a Dock at the right that is a guess by likeness). That a size call right after a journey to another display is judged by the display the window came from is a case of its own (a-size-asked-right-after-a-journey-to-another-display-is-judged-by-the-one-it-left).",
    "hurt": 2,
    "touches": [
     "jolt"

@@ -214,6 +214,9 @@ extension Controller {
       if isInPlace(current, at: target) { misfits[window] = nil }
       return false
     }
+    // The layouts that ask again after a journey across displays pass over whoever did not answer: every call to an app that hangs holds the
+    // main thread, and it is placed when its app answers (`noteThatTheAppAnswers`).
+    if isAskingAgainAfterAJourney, unplaced.contains(window) { return false }
     let (asked, expected) = (request(for: current, in: target), expectedFrame(of: current, in: target).size)
     let isThere = isWhereItsAnswerBelongs(current, asked: asked, in: target)
     guard var actual = isThere ? current.frame : system.setFrame(asked, of: window) else {
@@ -236,6 +239,18 @@ extension Controller {
       actual = offeredAnew(window, slot, unlessItTook: asked, took: actual)
       if !isOnlyMoved || seenSizes[window]?.cells != known { actual = askForLess(window, slot: slot, took: actual) }
     }
+    // Fresh from another display, it has been judged by that one (Controller+AcrossDisplays.swift). Nothing is made of such an answer: it is
+    // not asked again on the spot, which brings the same; not centred; not written down. It is asked again when macOS has caught up.
+    if isAnotherDisplaysAnswer(actual, shortOf: target, on: displayID), askAgainAfterTheJourney(window, on: displayID) {
+      parked.remove(window)
+      windows[window]?.frame = actual
+      settled[window] = actual
+      misfits[window] = nil
+      // (Whatever frame it was owed while it floated, it is docked now.)
+      journeys[window]?.owed = nil
+      return false
+    }
+    journeyIsOver(window)
     // An answer the screen may have given is no refusal (`mayHaveBeenStoppedByTheScreen`). It can be, anywhere but in the slot, which
     // lies on the screen: where the window stood, if its app carries out a move late and was still there when it was asked for the
     // size; and where it answers from, if it was not expected to grow, was asked lower than its slot begins, and has grown. Not

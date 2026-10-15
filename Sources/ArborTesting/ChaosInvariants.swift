@@ -24,6 +24,7 @@ extension ChaosRunner {
     "rehearsal",
     "meet-",
     "fill-in-hand-",
+    "across-",
   ]
 
   /// How far a docked window may sit from its slot: 4 points of the app rounding its size
@@ -103,6 +104,8 @@ extension ChaosRunner {
     // A window on its way back (from the Dock, full screen, a hidden app) is judged once it has landed.
     return timers.contains("enforce-" + display.rawValue) || timers.contains("space-" + display.rawValue)
       || timers.contains("landed-" + display.rawValue)
+      // One that has just come from another display is asked for its slot's size again when macOS has caught up.
+      || timers.contains("across-" + display.rawValue)
   }
 
   /// Whether the window's app does what it is asked, within its size limits.
@@ -471,7 +474,7 @@ extension ChaosRunner {
       return
     }
     let timers = harness.scheduler.pendingKeys
-    guard !timers.contains(where: { key in ["space-", "enforce-", "landed-", "displays-blinked"].contains { key.hasPrefix($0) } }) else { return }
+    guard !timers.contains(where: { key in ["space-", "enforce-", "landed-", "across-", "displays-blinked"].contains { key.hasPrefix($0) } }) else { return }
     for (window, place) in restingPlaces.sorted(by: { $0.key < $1.key }) {
       guard let fake = system.windows[window], fake.movesNotArbors == place.moves, fake.snapshot.isPresent, !fake.snapshot.isFullScreen,
         cooperates(fake), controller.filter.manages(fake.snapshot),

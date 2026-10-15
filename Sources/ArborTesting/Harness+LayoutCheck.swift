@@ -30,6 +30,7 @@ extension Harness {
     for display in system.displayList.map(\.id) where only == nil || only == display {
       guard let fresh = controller.freshLayout(of: display) else { continue }
       for (window, slot) in fresh.windowFrames.sorted(by: { $0.key < $1.key }) where frame(window) != slot {
+        if isShortForNow(window, in: slot) { continue }
         problems.append("\(window) is at \(frame(window).map(Self.brief) ?? "nowhere"), and its place is \(Self.brief(slot))")
       }
       // Asked last: it takes the whole of `state`, and hardly ever is a window in view that the layout has out of view.
@@ -39,6 +40,14 @@ extension Harness {
     }
     if let only, !system.displayList.contains(where: { $0.id == only }) { problems.append("there is no display \(only)") }
     return problems
+  }
+
+  /// Fresh from another display, a window is as large as that one let it be, and is asked again when macOS has caught up
+  /// (Controller+AcrossDisplays.swift). Until it has been asked it may be short of its slot, at the slot's corner and nowhere else. For
+  /// whoever compares windows with their slots in the very instant after a journey.
+  public func isShortForNow(_ window: WindowID, in slot: CGRect) -> Bool {
+    guard controller.windowsToBeAskedAgain.contains(window), let has = frame(window) else { return false }
+    return has.origin == slot.origin && has.width <= slot.width && has.height <= slot.height
   }
 
   /// The displays whose last layout is not what a layout would give now. That is never right once a command or an event

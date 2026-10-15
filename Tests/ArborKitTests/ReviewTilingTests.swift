@@ -317,7 +317,7 @@ private let upperDisplay = DisplaySnapshot(
       for (display, layout) in h.controller.layouts.sorted(by: { $0.key < $1.key }) {
         for (window, frame) in layout.windowFrames.sorted(by: { $0.key < $1.key }) {
           if h.controller.parked.contains(window) { return "\(display): \(window) shows and counts as parked" }
-          if h.frame(window)?.approximatelyEquals(frame, tolerance: 2) != true {
+          if h.frame(window)?.approximatelyEquals(frame, tolerance: 2) != true, !h.isShortForNow(window, in: frame) {
             return "\(display): \(window) is at \(String(describing: h.frame(window))), its slot at \(frame)"
           }
         }

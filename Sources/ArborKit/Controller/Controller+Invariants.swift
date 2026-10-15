@@ -232,6 +232,7 @@ extension Controller {
     check("settled", settled.keys)
     check("minimumSizes", minimumSizes.keys)
     check("misfits", misfits.keys)
+    check("journeys", journeys.keys)
     check("disprovedMinimums", disprovedMinimums.keys)
     check("seenSizes", seenSizes.keys)
     check("justAnswered", justAnswered.keys)

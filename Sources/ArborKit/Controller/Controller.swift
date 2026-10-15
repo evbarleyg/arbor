@@ -261,6 +261,12 @@ public final class Controller {
   var misfits: [WindowID: (slot: CGRect, frame: CGRect)] = [:]
   /// How small and how large each window has been seen, so that only what is not known is asked (Controller+AskFirst.swift).
   var seenSizes: [WindowID: SeenSizes] = [:]
+  /// The windows that are to be asked for their slot's size again after a journey across displays (Controller+AcrossDisplays.swift).
+  var journeys: [WindowID: Journey] = [:]
+  /// The displays for which the time until that asking is running.
+  var displaysToAskAgain: Set<DisplayID> = []
+  /// True while the layout runs that asks them.
+  var isAskingAgainAfterAJourney = false
   /// The windows asked for a size during the layout under way that have yet to go to their place: what each was offered.
   var justAnswered: [WindowID: CGSize] = [:]
   /// The windows whose size Accessibility said cannot be changed, once that has been written down.
@@ -563,6 +569,7 @@ public final class Controller {
     parked.removeAll()
     settled.removeAll()
     misfits.removeAll()
+    for window in journeys.keys.sorted() { journeyIsOver(window) }
     owedMoves.removeAll()
     forgetWhatCouldNotComeBack()
     pendingSlots.removeAll()

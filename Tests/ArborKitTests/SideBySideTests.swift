@@ -389,8 +389,10 @@ private let side = DisplaySnapshot(
     #expect(h.run("dock \(docked.rawValue) left").ok)
     h.system.userFocus(w[0])
     #expect(h.run(line([far, w[0], docked])).ok)
-    expectSideBySide(h, [far, w[0], docked], in: main.visibleFrame)
     #expect(h.controller.workspaces[side.id]!.allWindows.isEmpty)
+    // The arrangement at once; the heights when macOS has caught up with a window fresh from another display (Controller+AcrossDisplays.swift).
+    h.scheduler.advance(by: 1.1)
+    expectSideBySide(h, [far, w[0], docked], in: main.visibleFrame)
     expectWindowsMatchLayout(h, on: main.id)
     expectWindowsMatchLayout(h, on: side.id)
     #expect(h.run("undo").ok)

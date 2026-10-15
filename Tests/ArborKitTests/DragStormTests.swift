@@ -150,7 +150,9 @@ import Testing
       // (Within a point of its slot a window is left where it is, as in `Picture`. With a column for the Desktop seed 645 is the first to
       // meet that, in a slot that a trial made 161 points high and the drop 160; without one, seed 52.)
       for (window, frame) in (layout?.windowFrames ?? [:]).sorted(by: { $0.key < $1.key })
-      where h.system.windows[window]?.minimumSize == .zero && h.frame(window)?.approximatelyEquals(frame, tolerance: 1) != true {
+      where h.system.windows[window]?.minimumSize == .zero && h.frame(window)?.approximatelyEquals(frame, tolerance: 1) != true
+        && !h.isShortForNow(window, in: frame)
+      {
         notes.append("\(window) is at \(h.frame(window)!), its slot is \(frame)")
       }
       for window in (layout?.hiddenWindows ?? []).sorted() where h.system.isVisible(window) {

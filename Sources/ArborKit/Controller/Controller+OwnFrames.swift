@@ -61,6 +61,8 @@ extension Controller {
     if own.width - frame.width <= 2, own.height - frame.height <= 2, ownFrame(of: frame, askedFor: own.size).approximatelyEquals(own, tolerance: 0.99) {
       return
     }
+    // Nor what another display has made of it for the moment (Controller+AcrossDisplays.swift).
+    if journeys[window]?.owed?.has == frame { return }
     workspaces[displayID]?.floating[window] = frame
   }
 

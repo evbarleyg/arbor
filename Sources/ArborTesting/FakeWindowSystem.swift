@@ -357,10 +357,16 @@ public final class FakeWindowSystem: WindowSystem {
       func perform(_ steps: [FramePlan.Step]) {
         for (index, step) in steps.enumerated() {
           switch step {
-          case .position(let origin): isAt = whereMacOSPuts(CGRect(origin: origin, size: isAt.size), titleBar: fake.titleBar)
+          case .position(let origin):
+            let left = display(holdingMostOf: isAt)
+            isAt = whereMacOSPuts(CGRect(origin: origin, size: isAt.size), titleBar: fake.titleBar)
+            if echoes.theDisplayItCameFromJudgesForAMoment, let left, display(holdingMostOf: isAt)?.id != left.id {
+              cameFrom[window] = (left, clock() + timeToCatchUp)
+            }
           case .size(let size):
             let late = movesLate.contains(window) && index > 0 && index == steps.count - 1
-            let allowed = sizeMacOSAllows(size, to: late ? CGRect(origin: before.origin, size: isAt.size) : isAt)
+            let allowed = sizeMacOSAllows(
+              size, to: late ? CGRect(origin: before.origin, size: isAt.size) : isAt, judgedBy: displayThatStillJudges(window))
             isAt.size = Self.accepted(CGRect(origin: isAt.origin, size: allowed), by: fake).size
           }
         }
@@ -474,10 +480,45 @@ public final class FakeWindowSystem: WindowSystem {
     displayList.first { $0.frame.contains(origin) } ?? displayList.min { $0.frame.distance(to: origin) < $1.frame.distance(to: origin) }
   }
 
+  /// The display a window is on, to macOS: the one that holds the largest part of it, as AppKit's `NSWindow.screen` has it. A guess as
+  /// far as sizes go: nobody has measured a window that straddles two.
+  private func display(holdingMostOf frame: CGRect) -> DisplaySnapshot? {
+    func part(_ display: DisplaySnapshot) -> CGFloat {
+      let shared = display.frame.intersection(frame)
+      return shared.isNull ? 0 : shared.width * shared.height
+    }
+    let most = displayList.max { part($0) < part($1) }
+    return most.map(part) ?? 0 > 0 ? most : display(stopping: frame.origin)
+  }
+
+  /// How long macOS goes on judging a size by the display a position call has taken a window away from
+  /// (`echoes.theDisplayItCameFromJudgesForAMoment`). Somewhere between 6 ms and 200 ms on the one Mac that was asked; the longest it can be
+  /// there. A test may make it longer: nobody knows what a slower Mac takes.
+  public var timeToCatchUp = 0.2
+  /// The windows a position call has taken to another display, which one they came from, and until when it judges.
+  private var cameFrom: [WindowID: (display: DisplaySnapshot, until: Double)] = [:]
+
+  /// Work that was due then is being run, whatever the clock says (`ManualScheduler.beforeEach`): macOS has caught up with what it needed
+  /// no longer than that for.
+  public func itIsAtLeast(_ time: Double) {
+    cameFrom = cameFrom.filter { $0.value.until > time }
+  }
+
+  private func displayThatStillJudges(_ window: WindowID) -> DisplaySnapshot? {
+    guard let came = cameFrom[window] else { return nil }
+    // (A display that has gone meanwhile judges nobody.)
+    guard clock() < came.until, displayList.contains(where: { $0.id == came.display.id }) else {
+      cameFrom[window] = nil
+      return nil
+    }
+    return came.display
+  }
+
   /// What macOS passes on of a `size` asked of a window that stands at `standing` (`echoes.growsNoFurtherThanTheScreen`, `ScreenLines`). Its
-  /// app has its say afterwards: a minimum size wins.
-  private func sizeMacOSAllows(_ size: CGSize, to standing: CGRect) -> CGSize {
-    lines(at: standing.origin)?.allows(size, to: standing) ?? size
+  /// app has its say afterwards: a minimum size wins. `judge`: the display whose lines count, if not the one it stands on.
+  private func sizeMacOSAllows(_ size: CGSize, to standing: CGRect, judgedBy judge: DisplaySnapshot? = nil) -> CGSize {
+    guard echoes.growsNoFurtherThanTheScreen, let judge else { return lines(at: standing.origin)?.allows(size, to: standing) ?? size }
+    return ScreenLines(frame: judge.frame, visibleFrame: judge.visibleFrame).allows(size, to: standing)
   }
 
   private func lines(at origin: CGPoint) -> ScreenLines? {
@@ -1039,6 +1080,10 @@ extension FakeWindowSystem {
     /// Measured without Arbor: read right after Accessibility's answer, the list was behind in 143 results of 170; after 62 to 146 ms it
     /// had caught up in 165, after 200 ms in all.
     public var listIsBehind = 0.15
+    /// Right after a position call has taken a window to another display, a size call is judged by the lines of the display it came
+    /// from: under 6 ms 10 of 10, from 200 ms on by the new display's, 4 of 4 (macOS 26; between the two nobody has looked). From 1280×720
+    /// to 1920×1080, asked to be 947 high at y 43, a window became 677 high: 720 − 43. In every order of calls.
+    public var theDisplayItCameFromJudgesForAMoment = true
 
     public init() {}
     /// Nothing happens that a test did not ask for.
@@ -1047,6 +1092,7 @@ extension FakeWindowSystem {
       (echoes.focus, echoes.frames, echoes.keyboard, echoes.wholePoints) = (false, false, false, false)
       (echoes.titleBarStaysReachable, echoes.growsNoFurtherThanTheScreen) = (false, false)
       echoes.listIsBehind = 0
+      echoes.theDisplayItCameFromJudgesForAMoment = false
       return echoes
     }
   }

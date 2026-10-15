@@ -39,6 +39,7 @@ extension Controller: WindowSystemEvents {
     parked.remove(id)
     settled[id] = nil
     misfits[id] = nil
+    journeyIsOver(id)
     minimumSizes[id] = nil
     disprovedMinimums[id] = nil
     seenSizes[id] = nil

@@ -98,6 +98,8 @@ private let side = DisplaySnapshot(
     expectWindowsMatchLayout(h, on: side.id)
     theOriginMoves(by: 1440)
     h.system.setDisplays([main, side])
+    // A window fresh from another display has its whole size when macOS has caught up (Controller+AcrossDisplays.swift).
+    h.scheduler.advance(by: 1.1)
     #expect(h.frame(a) == before.0)
     #expect(h.frame(b) == before.1)
     #expect(h.frame(f) == before.2)
