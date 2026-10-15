@@ -166,6 +166,31 @@ public final class FilmHands {
     }
   }
 
+  /// A point of `window` that a person can see and reach: on the display, with no other window and nothing of Arbor's that takes
+  /// clicks in front. In `titleBar`, a point to drag it by, clear of its three buttons. The nearest to the middle there is; nil if all
+  /// of it is covered or out of view.
+  public func reachableSpot(of window: WindowID, titleBar: Bool = false) -> CGPoint? {
+    guard let frame = system.frame(of: window) else { return nil }
+    let shares: [CGFloat] = [0.5, 0.4, 0.6, 0.3, 0.7, 0.2, 0.8, 0.1, 0.9]
+    let rows: [CGFloat] = titleBar ? [(titleBarHeight / 2).rounded()] : shares.map { titleBarHeight + (frame.height - titleBarHeight) * $0 }
+    var spots: [CGPoint] = []
+    for y in rows { for x in shares { spots.append(CGPoint(x: frame.minX + frame.width * x, y: frame.minY + y)) } }
+    func distance(_ point: CGPoint) -> CGFloat { hypot(point.x - frame.midX, point.y - frame.midY) }
+    return spots.filter { point in
+      display.visibleFrame.contains(point) && self.window(at: point) == window && !isUnderAPanel(point)
+        && (!titleBar || point.x - frame.minX > 76)
+    }.min { distance($0) < distance($1) }
+  }
+
+  /// Whether a press at `point` would be Arbor's rather than a window's: what `land(at:)` asks before it asks for a window. While the
+  /// menu is open every press is the menu's.
+  private func isUnderAPanel(_ point: CGPoint) -> Bool {
+    let overlays = harness.overlays
+    if menu != nil || overlays.finder?.layout.panel.contains(point) == true { return true }
+    if let model = overlays.minimaps[display.id], model.takesClicks, model.frame.contains(point) { return true }
+    return false
+  }
+
   /// The gap handle at `point`, where no window covers it.
   public func seam(at point: CGPoint) -> Seam? {
     guard menu == nil, window(at: point) == nil else { return nil }

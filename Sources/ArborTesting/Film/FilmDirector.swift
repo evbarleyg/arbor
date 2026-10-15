@@ -261,20 +261,22 @@ public final class FilmDirector {
 
   // MARK: The pointer
 
-  /// `glide <x> <y>`, `glide window <id> title|middle|<share of width> <share of height>`, `glide item [button]` (Arbor's menu bar
+  /// `glide <x> <y>`, `glide window <id> title|visible|middle|<share of width> <share of height>`, `glide item [button]` (Arbor's menu bar
   /// item) or `glide menu <title>` (a row of its open menu), each with `in <seconds>` after it if the time matters.
   private func glide(_ words: [String]) -> Outcome {
     var words = words
     let time = seconds(after: "in", in: &words)
-    let usage = "usage: glide <x> <y> | window <id> title|middle|<fx> <fy> | item [button] | menu <title>, then [in <seconds>]"
+    let usage = "usage: glide <x> <y> | window <id> title|visible|middle|<fx> <fy> | item [button] | menu <title>, then [in <seconds>]"
     let target: CGPoint?
     switch words.first {
     case "window":
       guard words.count >= 3, let id = WindowID(word: words[1]), let frame = harness.system.frame(of: id) else {
         return (usage, false)
       }
-      if words.count == 3, words[2] == "title" {
-        target = CGPoint(x: frame.midX, y: frame.minY + (hands.titleBarHeight / 2).rounded())
+      if words.count == 3, words[2] == "title" || words[2] == "visible" {
+        // Where a person would take hold of it, or click it: a part they can see.
+        target = hands.reachableSpot(of: id, titleBar: words[2] == "title")
+        if target == nil { return ("error: \(words[2] == "title" ? "the title bar" : "all") of \(id) is covered or out of view", false) }
       } else if words.count == 3, words[2] == "middle" {
         target = frame.center
       } else if words.count == 4, let x = number(words[2]), let y = number(words[3]) {

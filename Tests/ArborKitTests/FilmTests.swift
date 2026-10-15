@@ -274,6 +274,7 @@ private func near(_ a: CGRect, _ b: CGRect, within tolerance: CGFloat = 0.01) ->
     var frames: [[String: Any]]
     var text: String
     var failures: [String]
+    var director: FilmDirector
   }
 
   private func film(_ script: String, fps: Int = 60) throws -> Film {
@@ -303,7 +304,8 @@ private func near(_ a: CGRect, _ b: CGRect, within tolerance: CGFloat = 0.01) ->
       let object = try JSONSerialization.jsonObject(with: Data(line.utf8))
       return try #require(object as? [String: Any])
     }
-    return Film(header: objects[0], frames: Array(objects.dropFirst()), text: lines.joined(separator: "\n"), failures: failures)
+    return Film(header: objects[0], frames: Array(objects.dropFirst()), text: lines.joined(separator: "\n"), failures: failures,
+      director: director)
   }
 
   private func rect(_ value: Any?) throws -> CGRect {
@@ -596,10 +598,12 @@ private func near(_ a: CGRect, _ b: CGRect, within tolerance: CGFloat = 0.01) ->
   }
 
   @Test func thePointerStaysOnTheDisplay() throws {
-    let film = try film(dragToTheLeftEdge + "\ntap ctrl+opt+return\nwait 0.6\nglide window 102 title in 0.3\nclick")
+    let film = try film(dragToTheLeftEdge + "\ntap ctrl+opt+return\nwait 0.6\nglide window 102 middle in 0.3\nclick")
+    #expect(film.failures.isEmpty)
     let end = try #require(film.frames.last)
     let at = try #require((end["pointer"] as? [String: Any])?["at"] as? [NSNumber])
-    #expect(at[0].doubleValue <= 1439 && at[1].doubleValue <= 809)
+    // It went as far as it could: to the edge past which the window is.
+    #expect(at[0].doubleValue == 1439 && at[1].doubleValue <= 809)
   }
 
   @Test func aClickOnTheBareDesktopTakesTheKeyboardFromTheWindows() throws {
@@ -619,6 +623,53 @@ private func near(_ a: CGRect, _ b: CGRect, within tolerance: CGFloat = 0.01) ->
     let script = "display 1440x810\n" + String(repeating: "wait 0.09\nwait 0.005\n", count: 40)
     #expect(try film(script, fps: 60).frames.count == 228 + 1)
     #expect(try film(script, fps: 30).frames.count == 114 + 1)
+  }
+
+  @Test func thePointerGoesForAPartOfTheWindowThatCanBeSeen() {
+    let director = FilmDirector()
+    let system = director.harness.system
+    let behind = system.open(app: "Mail", pid: 2001, frame: CGRect(x: 100, y: 100, width: 600, height: 400))
+    let front = system.open(app: "Notes", pid: 2002, frame: CGRect(x: 300, y: 60, width: 500, height: 300))
+    system.userFocus(front)
+
+    // The middle of the title bar and of the window are under Notes: the pointer goes beside it.
+    #expect(director.run("glide window \(behind.rawValue) title in 0.1").ok)
+    #expect(director.camera.hands.window(at: system.cursor) == behind)
+    #expect(system.cursor.y == 114 && system.cursor.x < 300 && system.cursor.x > 176)
+    #expect(director.run("glide window \(behind.rawValue) visible in 0.1").ok)
+    #expect(director.camera.hands.window(at: system.cursor) == behind)
+    #expect(director.run("click").message == "clicked \(behind)")
+
+    // Nobody can take hold of what is wholly covered, or out of view.
+    system.userMove(front, to: CGRect(x: 50, y: 50, width: 900, height: 600))
+    system.userFocus(front)
+    #expect(!director.run("glide window \(behind.rawValue) title").ok)
+    #expect(!director.run("glide window \(behind.rawValue) visible").ok)
+    system.userMove(front, to: CGRect(x: 1439, y: 700, width: 500, height: 300))
+    #expect(!director.run("glide window \(front.rawValue) title").ok)
+  }
+
+  @Test func whatLiesUnderGoToOrAnOpenMenuCannotBeReached() throws {
+    let film = try film(dragToTheLeftEdge + "\ntap ctrl+opt+g\nwait 0.3")
+    #expect(film.failures.isEmpty)
+    let director = film.director
+    let panel = try #require(director.harness.overlays.finder?.layout.panel)
+    let under = WindowID(102)
+    director.harness.system.userMove(under, to: panel.insetBy(dx: 30, dy: 30))
+    #expect(director.harness.overlays.finder != nil)
+    #expect(!director.run("glide window 102 visible").ok)
+    #expect(!director.run("glide window 102 title").ok)
+
+    // What looks out from under the panel can be reached there: the click closes the panel and is the window's.
+    director.harness.system.userMove(under, to: panel.insetBy(dx: 30, dy: 30).offsetBy(dx: 0, dy: panel.height / 2))
+    #expect(director.run("glide window 102 visible in 0.1").ok)
+    #expect(!panel.contains(director.harness.system.cursor))
+    #expect(director.run("click").message == "clicked \(under)")
+    #expect(director.harness.overlays.finder == nil)
+
+    #expect(director.run("glide item menu in 0.1").ok)
+    #expect(director.run("click").ok)
+    #expect(!director.run("glide window 102 visible").ok)
   }
 
   @Test func theFilmsOwnNotesTravelWithEveryFrameUntilTheyChange() throws {
