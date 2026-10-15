@@ -62,7 +62,7 @@ WALK_LEFT_OUT=0
 WALK_NEW=""
 WALK_MINIMIZED=""
 WALK_HIDDEN=""
-WALK_PAUSED="" WALK_BEFORE_PAUSE="" WALK_MOVED_IN_PAUSE=""
+WALK_PAUSED="" WALK_BEFORE_PAUSE="" WALK_MOVED_IN_PAUSE="" WALK_AT_PAUSE=""
 WALK_FULL_SCREEN=""
 # Whether this walk may have a second display, and whether it is plugged in.
 WALK_TWO=""
@@ -170,8 +170,8 @@ back_home() { [ -n "$WALK_HOME" ] && echo "returns=$WALK_HOME"; }
 
 walk_act() {
   WALK_ACTS=$((WALK_ACTS + 1))
-  # During a pause, anything but these changes what there is to come back to. The one drag that can be played then is of a floating window.
-  case "$1" in idle | drag | way-out) ;; *) WALK_BEFORE_PAUSE="" ;; esac
+  # During a pause, anything but these changes what there is to come back to. The one drag that can be played then is of a floating window. Of a switch `resume` asks where it led.
+  case "$1" in idle | drag | way-out | switch) ;; *) WALK_BEFORE_PAUSE="" ;; esac
   act "$@"
 }
 
@@ -747,6 +747,8 @@ pause() {
   local front
   arbor_acts || { left_out "pause: Arbor is not acting"; return; }
   front=$(front_window)
+  day_ids
+  WALK_AT_PAUSE="$front,$DAY_FLOATING"
   walk_act way-out pause "presses ⌃⌥⎋"
   key ctrl+opt+escape
   WALK_PAUSED=yes WALK_BEFORE_PAUSE=$((DAY_STEP - 1)) WALK_MOVED_IN_PAUSE=""
@@ -756,6 +758,8 @@ pause() {
 
 resume() {
   [ -n "$WALK_PAUSED" ] || { left_out "resume: Arbor is not paused"; return; }
+  # The view may follow the keyboard to a docked window it has gone to meanwhile. With a floating one, or the one that had it, there is nothing to follow.
+  case ",$WALK_AT_PAUSE," in *",$(front_window),"*) ;; *) WALK_BEFORE_PAUSE="" ;; esac
   walk_act way-out resume "presses ⌃⌥⎋"
   key ctrl+opt+escape
   WALK_PAUSED=""

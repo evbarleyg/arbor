@@ -329,6 +329,12 @@ acted() {
       case $'\n'"$DAY_AUDIT_BEFORE"$'\n' in *$'\n'"$line"$'\n'*) continue ;; esac
       # A floating window's frame is its person's, so it may lie over docked ones.
       case "$line" in "ODD floating "*" overlap by "*) continue ;; esac
+      # A floating window hangs over an edge where its person left it hanging, and Arbor has no business there (QUESTIONS Q20). What the samples show of it is jolts.py's to judge.
+      case "$line" in
+        "FAIL w"*" is in view for Arbor but only "*)
+          word=${line#FAIL w}
+          case ",$DAY_FLOATING," in *",${word%% *},"*) continue ;; esac ;;
+      esac
       case "$line" in
         FAIL*) echo "  ✘ ${line#FAIL }"; note "finding $DAY_STEP - FAIL ${line#FAIL }" ;;
         ODD*) echo "  ~ ${line#ODD }"; note "finding $DAY_STEP - ODD ${line#ODD }" ;;
