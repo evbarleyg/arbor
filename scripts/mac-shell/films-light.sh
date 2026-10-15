@@ -29,12 +29,39 @@ press() {
 # key_for <command…>: the shortcut that runs it in the map in effect, or nothing.
 key_for() { "$ARBOR_BIN/arborctl" bindings 2>/dev/null | awk -v command="$*" '{ key = $1; $1 = ""; $2 = ""; sub(/^ +/, ""); if ($0 == command) { print key; exit } }'; }
 
-# act <name> "<what the person does>" <key>: one key, one film. Without a key there is no such act as it ships, and no film.
+# act <name> "<what the person does>" <key>: one key, one film. Without a key there is no such act as it ships, and no film: said aloud, since the scenes after it begin elsewhere than they think.
 act() {
-  [ -n "$3" ] || { echo "act $1: no key does that in the map in effect"; return 0; }
+  check "$1: a key does that in the map in effect" test -n "$3" || return 0
   scene "$1" instant "$2 ($3)"
   key "$3"
   scene_end 1.6
+}
+
+# between <command…>: the same key off film, to set the next scene.
+between() {
+  local chord
+  chord=$(key_for "$@")
+  check "a key for $* in the map in effect" test -n "$chord" || return 0
+  key "$chord"
+  sleep 1.3
+}
+
+# from_menu <name> "<what the person does>" <item>: the menu is opened off the record of causes, its frame is noted (macOS fades it out over whatever moves beneath, and the judge looks beside it),
+# and the click on the item is the cause.
+from_menu() {
+  local point
+  scene "$1" instant "$2"
+  open_menu
+  sleep 0.8
+  film_overlays held
+  if point=$(eventually "$ARBOR_POINTER" menu-item "$ARBOR_PID" "$3"); then
+    # shellcheck disable=SC2086
+    click $point
+  else
+    echo "from_menu $1: no item $3"
+    key escape
+  fi
+  scene_end 1.8
 }
 
 # Floating windows that lie beside one another.
@@ -72,14 +99,12 @@ acts() {
   press "$W4"
   act "${p}fill" "fills the screen with a docked window" "$(key_for zoom)"
   act "${p}everything" "shows everything again" "$(key_for show-all)"
-  key "$(key_for zoom)"
-  sleep 1.3
+  between zoom
   act "${p}back" "goes back" "$(key_for back)"
   press "$W1"
   act "${p}float" "floats a docked window" "$(key_for toggle-float)"
   act "${p}undo" "undoes that" "$(key_for undo)"
-  key "$(key_for toggle-float)"
-  sleep 1.3
+  between toggle-float
   act "${p}float-back" "takes the floating window back in" "$(key_for toggle-float)"
   act "${p}pause" "pauses Arbor: every window gets its own size back" "$(key_for toggle-pause)"
   act "${p}resume" "resumes" "$(key_for toggle-pause)"
@@ -90,27 +115,24 @@ acts() {
   key escape
   scene_end 1.5
   press "$W4"
-  key "$(key_for zoom)"
-  sleep 1.3
-  key "$(key_for find)"
-  sleep 1
+  between zoom
+  between find
   key down
   sleep 0.3
   scene "${p}go-to-choose" instant "in Go to…, with another window chosen, presses ↩"
   key return
   scene_end 1.6
-  key "$(key_for show-all)"
-  sleep 1.3
+  between show-all
 
   scene "${p}menu" panel "clicks Arbor's icon in the menu bar, then ⎋"
-  open_menu
+  # With the left button, which the camera's tap sees: the opening is what is judged first.
+  # shellcheck disable=SC2046
+  click $(status_item)
   sleep 1.2
   key escape
   scene_end 1.5
   spread
-  scene "${p}menu-arrange" instant "chooses Arrange Windows from the menu: four floating windows at once"
-  click_menu "Arrange Windows"
-  scene_end 1.6
+  from_menu "${p}menu-arrange" "chooses Arrange Windows from the menu: four floating windows at once" "Arrange Windows"
 
   # One docked window at the left, three floating ones.
   spread
@@ -130,7 +152,7 @@ acts() {
   hold_drag $(titlebar_of "$W1") $((x + w - 100)) $((y + h / 2)) --duration 0.8 --mods cmd
   scene_end 1.6
   arrange
-  scene "${p}drag-out" drop "drags a docked window out by its title bar and lets go over the middle: a plain drag"
+  scene "${p}drag-out" out "drags a docked window out by its title bar and lets go over the middle: a plain drag"
   # shellcheck disable=SC2046
   hold_drag $(titlebar_of "$W1") 512 300 --duration 0.8
   scene_end 1.6
@@ -172,6 +194,10 @@ wallpaper "#000000"
 step "1. the camera's own square, right and wrong: whether the judge may be believed"
 for kind in good linear slow twice hop flash; do metronome "$kind"; done
 
+# The bare desk: the wallpaper as the display shows it, which the judge cannot tell any more once shadows lie on what is left of it.
+scene ground bare "the bare desk"
+scene_end 0.3
+
 step "2. four windows, each another app's"
 arbor_settings "$LIGHT"
 cast_start 4 $FACE
@@ -183,11 +209,9 @@ summary
 # More docks than the display has room for: every window becomes a tile.
 spread
 press "$W4"
-key "$(key_for dock left)"
-sleep 1.3
+between dock left
 press "$W3"
-key "$(key_for dock right)"
-sleep 1.3
+between dock right
 press "$W2"
 act dock-third "docks a third window at the right" "$(key_for dock right)"
 press "$W1"
@@ -203,13 +227,13 @@ press "$W1"
 act dock-fourth-again "docks a fourth window at the left, for the second time in this session" "$(key_for dock left)"
 
 arrange
-scene close instant "closes a docked window"
+scene close closes "closes a docked window"
 tell 1 "close $W1"
 scene_end 1.6
 ARBOR_WINDOW_IDS="$W2 $W3 $W4"
 
 trace_ends
-scene quit instant "quits Arbor: every window gets its own size back"
+scene quit told "quits Arbor: every window gets its own size back"
 ctl quit
 scene_end 1.6
 
@@ -228,6 +252,8 @@ cast_stop
 step "4. in dark mode, on a light wallpaper"
 appearance dark
 wallpaper "#b9bec6"
+scene dark-ground bare "the bare desk"
+scene_end 0.3
 arbor_settings "$LIGHT"
 cast_start 4 $FACE
 sleep 3
@@ -242,9 +268,7 @@ arbor_settings "$LIGHT"
 cast_start 8 $FACE
 sleep 3
 press "$W8"
-scene eight-arrange instant "chooses Arrange Windows: eight floating windows at once"
-click_menu "Arrange Windows"
-scene_end 2
+from_menu eight-arrange "chooses Arrange Windows: eight floating windows at once" "Arrange Windows"
 summary
 press "$W8"
 act eight-fill "fills the screen with one of eight" "$(key_for zoom)"

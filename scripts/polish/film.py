@@ -37,6 +37,7 @@ class Film:
         self.kind = ""
         self.text = ""
         self.before = {}
+        self.was = {}
         self.after = {}
         self.how = {}
         self.overlays = []
@@ -93,12 +94,26 @@ class Film:
             self.text = " ".join(words[1:])
         elif words[0] == "before" and len(words) in (6, 7):
             self.before[int(words[1])] = [float(word) for word in words[2:6]]
+            if len(words) == 7:
+                self.was[int(words[1])] = words[6]
         elif words[0] == "after" and len(words) in (6, 7):
             self.after[int(words[1])] = [float(word) for word in words[2:6]]
             if len(words) == 7:
                 self.how[int(words[1])] = words[6]
         elif words[0] == "overlay" and len(words) == 7:
             self.overlays.append((words[1], int(words[2]), [float(word) for word in words[3:7]]))
+
+    def ground(self):
+        """The wallpaper as the display shows it, from the film of the bare desk that the same session began with (`ground`, `dark-ground`), or None. A colour that is asked for is not the
+        colour that is shown, and once windows are docked their shadows lie on every bit of wallpaper that is left."""
+        bare = os.path.join(os.path.dirname(os.path.normpath(self.folder)), "dark-ground" if "dark-" in self.name else "ground", "0000.png")
+        if not os.path.isfile(bare):
+            return None
+        with Image.open(bare) as image:
+            data = np.asarray(image.convert("RGB"))
+        height, width = data.shape[:2]
+        middle = data[height // 4:height // 2, width // 4:3 * width // 4].reshape(-1, 3)
+        return tuple(int(value) for value in np.median(middle, axis=0))
 
     def time_of(self, text):
         """When the first mark that begins with these words was made."""
@@ -250,6 +265,7 @@ class Rect:
         self.ragged = ragged
         # Whether it lies inside another: an icon, a word's ground, or something that has no business there.
         self.detail = detail
+        self.titled = False
         self.cut = (self.left <= room[0] + 1, self.top <= room[1] + 1, self.right >= room[2] - 1, self.bottom >= room[3] - 1)
 
     @property
@@ -325,17 +341,21 @@ def whole(rects, room, scale):
     for body in sorted(rects, key=lambda rect: -rect.bottom):
         if id(body) in used:
             continue
-        box = list(body.edges)
+        box, titled = list(body.edges), False
         for bar in rects:
             if bar is body or id(bar) in used:
                 continue
             if abs(bar.left - box[0]) <= slack and abs(bar.right - box[2]) <= slack and abs(bar.bottom - box[1]) <= slack + 2:
                 box[1] = bar.top
                 used.add(id(bar))
+                titled = True
         used.add(id(body))
         joined.append(Rect(tuple(box), body.colour, room, ragged=body.ragged))
+        joined[-1].titled = titled
     for rect in joined:
-        rect.detail = any(other is not rect and other.area > 4 * rect.area and other.left - slack <= rect.left and other.top - slack <= rect.top
+        # What has a title bar, or is as large as a window, is a window wherever it lies: a floating one over a docked one.
+        large = rect.right - rect.left > 150 * scale and rect.bottom - rect.top > 150 * scale
+        rect.detail = not rect.titled and not large and any(other is not rect and other.area > 4 * rect.area and other.left - slack <= rect.left and other.top - slack <= rect.top
                           and other.right + slack >= rect.right and other.bottom + slack >= rect.bottom for other in joined)
     return joined
 
@@ -393,6 +413,17 @@ class Scan:
     # A thing that has not been seen for this long, in frames that were taken, is gone. (A fade from a card to the window hides both.)
     PATIENCE = 220
 
+    def is_ground(self, colour):
+        """The wallpaper, or the wallpaper as Arbor darkens it behind docked windows: every channel down by the same share, at most two fifths."""
+        if self.background is None:
+            return False
+        if apart_by(colour, self.background) <= FLAT:
+            return True
+        if min(self.background) < 40:
+            return False
+        shares = [value / ground for value, ground in zip(colour, self.background)]
+        return 0.6 <= min(shares) and max(shares) <= 1.0 and max(shares) - min(shares) <= 0.04
+
     def __init__(self, film):
         self.film = film
         self.room = film.room()
@@ -426,11 +457,11 @@ class Scan:
                 ring = np.concatenate([inside[:4].reshape(-1, 3), inside[-4:].reshape(-1, 3), inside[:, :4].reshape(-1, 3),
                                        inside[:, -4:].reshape(-1, 3)])
                 commonest = flat_colours(ring[None], 0.3)
-                self.background = commonest[0] if commonest else None
+                self.background = film.ground() or (commonest[0] if commonest else None)
             # Frame by frame, because a fade goes through colours that are nowhere else in the film.
             flat = []
             for colour in flat_colours(inside, self.SHARE, known):
-                if (self.background is None or apart_by(colour, self.background) > FLAT) and not any(apart_by(colour, other) <= FLAT for other in flat):
+                if not self.is_ground(colour) and not any(apart_by(colour, other) <= FLAT for other in flat):
                     flat.append(colour)
             self.colours.append(flat)
             if previous is not None and changed.any():

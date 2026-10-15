@@ -53,9 +53,10 @@ WEIGHT = {1: 5, 2: 3, 3: 1}
 MOVES = ("camera", "structure", "control")
 SETTLES = MOVES + ("drag", "follow")
 # aside: macOS acts and Arbor stands aside. What moves is macOS's to answer for; Arbor's part is to add nothing, and to say what happened.
-# instant: windows go to their places at once. drop: a drag that ends so. plain: a drag that asks nothing of Arbor.
-ALL = SETTLES + ("hold", "instant", "panel", "aside", "drop", "plain")
-AT_ONCE = ("instant", "drop")
+# instant: windows go to their places at once, at a key or a click. told: the same, at something the camera cannot time (a command, a window that closes itself). drop: a drag with
+# the key held that ends so. out: a docked window dragged out plainly. plain: a drag that asks nothing of Arbor. closes: a window closes, and macOS fades it out over whatever Arbor does beneath.
+ALL = SETTLES + ("hold", "instant", "told", "panel", "aside", "drop", "out", "plain", "closes")
+AT_ONCE = ("instant", "told", "drop", "out")
 # Of Arbor's own windows, the levels of those that have no business on screen once things are at rest: the drop preview, the stage.
 PASSING = (3, 4)
 
@@ -251,24 +252,58 @@ def bars(m, allow):
     return Verdict(MISS, "; ".join(faults)) if faults else Verdict(PASS, "the menu bar and the Dock stay as they are")
 
 
-def pieces(m, until=1500):
+def apart(film):
+    """Where the judge does not look for windows: the frames of a menu that was open when the act began (macOS fades it out over whatever moves beneath), in pixels, a little larger."""
+    return [tuple(int(value * film.scale) for value in (x - 4, y - 4, x + w + 4, y + h + 4)) for when, level, (x, y, w, h) in film.overlays if when == "held" and level >= 100]
+
+
+def touches_any(edges, boxes):
+    return any(edges[0] < right and edges[2] > left and edges[1] < bottom and edges[3] > top for left, top, right, bottom in boxes)
+
+
+def has_moved(film):
+    """Whether, by Arbor's own account before and after, any window has another frame or another state. None where the film does not say."""
+    if not film.before or not any(mark.startswith("windows after") for _, mark in film.marks):
+        return None
+    if set(film.before) != set(film.after):
+        return True
+    elsewhere = [window for window in film.before if max(abs(a - b) for a, b in zip(film.before[window], film.after[window])) > 2]
+    # The hand takes a dragged window elsewhere by itself. Arbor has done something if it is docked that was not, or the other way round, or another window has moved as well.
+    return any(film.was.get(window) != film.how.get(window) for window in film.before) or len(elsewhere) > (1 if film.kind in ("drop", "out") else 0)
+
+
+def pieces(m, until=None):
     """An act without motion, by its windows alone (a line of words that fades in afterwards is no part of their arriving): {"frames": those in which a window came, went, or changed its
     place or size, "times": when, "between": the frames in which some window is seen at a place or size that is neither its old nor its new one, "sized": those of them in which it has
     the size of the end at the place of the start, "followed": how many windows}."""
     cause, film = m["cause"], m["film"]
+    # To the film's end: whatever comes late is part of the act.
+    until = int(film.times[-1]) - cause if until is None else until
+    # Arbor's own panels that were up when the act began are no windows, whatever becomes of them.
+    menus = apart(film)
+    panels = [tuple(int(value * film.scale) for value in (x, y, x + w, y + h)) for when, level, (x, y, w, h) in film.overlays if when in ("held", "before") and level > 0]
 
     def same(a, b):
         return a is not None and b is not None and max(abs(p - q) for p, q in zip(a, b)) <= 2
 
     changed, between, followed, sized = set(), set(), 0, set()
     for track in m["scan"].tracks:
-        if track.detail:
+        if track.detail or any(same(track.rects[0].edges, panel) for panel in panels):
+            continue
+        # What is there for a frame or two and was not before is a flash, which M9 asks about, or a blend of two things that fade across each other: no window.
+        if len(track.indices) <= 2 and track.times[0] >= cause and track.indices[-1] < len(film) - 1:
             continue
         # The line of words is low and wide, and so is what it leaves of a window it lies across.
-        seen = [(int(time), index, rect.edges, rect.ragged) for time, index, rect in zip(track.times, track.indices, track.rects) if time <= cause + until and not rect.thin]
+        seen = [(int(time), index, rect.edges, rect.ragged) for time, index, rect in zip(track.times, track.indices, track.rects)
+                if time <= cause + until and not rect.thin and not touches_any(rect.edges, menus)]
         after = [entry for entry in seen if entry[0] >= cause]
         clean = [entry for entry in after if not entry[3]]
         if not clean:
+            # Seen until the cause and in no frame after it: it went in the first frame that followed.
+            gone = track.indices[-1] + 1
+            if seen and not after and gone < len(film) and cause <= film.times[gone] <= cause + until:
+                changed.add(gone)
+                followed += 1
             continue
         old = next((edges for time, _, edges, ragged in reversed(seen) if time < cause and not ragged), None)
         here = any(time < cause for time, _, _, _ in seen)
@@ -289,16 +324,19 @@ def pieces(m, until=1500):
             # Of a shape that is no rectangle (something lies across it) the edges say nothing.
             if ragged:
                 continue
+            # Held against where it was when it last counted as moved: steps of a pixel or two add up.
             if before is not None and not same(edges, before):
                 changed.add(index)
                 moved = True
+                before = edges
+            if before is None:
+                before = edges
             if not same(edges, old) and not same(edges, new):
                 between.add(index)
                 # The commonest of them: it has been given its new size and not yet its new place.
                 # (Its corner is where it was and its size is no longer what it was: how much of the new size shows depends on the room.)
                 if old is not None and max(abs(edges[0] - old[0]), abs(edges[1] - old[1])) <= 2:
                     sized.add(index)
-            before = edges
         if new is None and after[-1][1] + 1 < len(film):
             changed.add(after[-1][1] + 1)
             moved = True
@@ -307,7 +345,7 @@ def pieces(m, until=1500):
     return {"frames": frames, "times": [int(film.times[index]) - cause for index in frames], "between": sorted(between), "followed": followed, "sized": sorted(sized)}
 
 
-def in_one_piece(m, until=1500):
+def in_one_piece(m, until=None):
     """What is worse than a window a frame late, frame by frame between the first change of an act and its last: {"holes": frames in which the ground shows where there is a window both before
     the act and after it, "empty": frames in which there is nothing at all on a desk that had windows and has them again, "over": frames in which a window on its way covers what neither
     its old frame nor its new one covers}. None where the wallpaper is not plain."""
@@ -315,13 +353,17 @@ def in_one_piece(m, until=1500):
     said = pieces(m, until)
     if scan.background is None or not said["frames"]:
         return None
+    until = int(film.times[-1]) - cause if until is None else until
     x, y, width, height = (int(value * film.scale) for value in film.visible)
     first, last = said["frames"][0], said["frames"][-1]
-    room, taken, found = width * height, {}, {"holes": [], "empty": [], "over": []}
+    room, taken, found, menus = width * height, {}, {"holes": [], "empty": [], "over": []}, apart(film)
     for index, _, picture, _ in film.frames():
         if first - 1 <= index <= last:
             # Arbor darkens the ground behind docked windows: that is ground too.
             taken[index] = ~near(picture[y:y + height, x:x + width], scan.background, 64)
+            # Under a menu that is fading out nothing is asked: there it counts as taken throughout.
+            for left, top, right, bottom in menus:
+                taken[index][max(top - y, 0):max(bottom - y, 0), max(left - x, 0):max(right - x, 0)] = True
         if index >= last:
             break
     before, after = taken[first - 1], taken[last]
@@ -333,13 +375,15 @@ def in_one_piece(m, until=1500):
     for track in scan.tracks:
         if track.detail:
             continue
-        clean = [(int(time), index, rect) for time, index, rect in zip(track.times, track.indices, track.rects) if not rect.thin and not rect.ragged and time <= cause + until]
+        clean = [(int(time), index, rect) for time, index, rect in zip(track.times, track.indices, track.rects)
+                 if not rect.thin and not rect.ragged and time <= cause + until and not touches_any(rect.edges, menus)]
         old = next((rect for time, _, rect in reversed(clean) if time < cause), None)
         new = clean[-1][2] if clean and clean[-1][0] >= cause else None
         if old is None or new is None:
             continue
         for time, index, rect in clean:
-            if time < cause or index >= last:
+            # Within two pixels of either it is there: the ruler is no finer.
+            if time < cause or index >= last or any(max(abs(p - q) for p, q in zip(rect.edges, other.edges)) <= 2 for other in (old, new)):
                 continue
             # The part of it that lies in neither: its area, less what it shares with the old frame and with the new, plus what those two share within it.
             def shared(*others):
@@ -356,8 +400,8 @@ def whole(m, allow):
     if not m["episodes"]:
         return Verdict(UNSEEN, "nothing changed")
     found = in_one_piece(m)
-    if found is None:
-        return Verdict(UNSEEN, "no window could be followed, or the wallpaper is not plain")
+    if found is None or has_moved(m["film"]) is False:
+        return Verdict(UNSEEN, "no window could be followed, the wallpaper is not plain, or no window has another frame after the act than before it")
     said = [f"{what} in {len(frames)} frames" for what, frames in (("the desk is empty", found["empty"]), ("the ground shows through a hole", found["holes"]),
                                                                   ("a window covers what neither its old nor its new frame covers", found["over"])) if frames]
     return Verdict(MISS if said else PASS, "; ".join(said) or "no hole, no empty desk, no window over what neither of its frames covers",
@@ -369,8 +413,8 @@ def at_once(m, allow):
     if not m["episodes"]:
         return Verdict(UNSEEN, "nothing changed")
     said = pieces(m)
-    if not said["followed"]:
-        return Verdict(UNSEEN, "no window could be followed")
+    if not said["followed"] or has_moved(m["film"]) is False:
+        return Verdict(UNSEEN, "no window could be followed, or none has another frame after the act than before it")
     took = said["times"][-1] - said["times"][0]
     limit = 100 + allow["gap"]
     return Verdict(PASS if took <= limit else MISS, f"the windows arrive in {len(said['frames'])} pieces, {ms(took)} from the first to the last (at most {ms(limit)})", said["frames"][:8])
@@ -380,8 +424,8 @@ def old_or_new(m, allow):
     if not m["episodes"]:
         return Verdict(UNSEEN, "nothing changed")
     said = pieces(m)
-    if not said["followed"]:
-        return Verdict(UNSEEN, "no window could be followed")
+    if not said["followed"] or has_moved(m["film"]) is False:
+        return Verdict(UNSEEN, "no window could be followed, or none has another frame after the act than before it")
     return Verdict(MISS if said["between"] else PASS, f"in {len(said['between'])} frames a window is at a place or size that is neither its old nor its new one (none)", said["between"][:8])
 
 
@@ -514,7 +558,11 @@ def preview_true(m, allow):
     track, _ = dragged(m)
     if not previews:
         return Verdict(UNSEEN, "no drop preview was up while the drag was held, or the film does not say")
-    if track is None or track.indices[-1] < len(film) - 1:
+    if track is not None and track.indices[-1] < len(film) - 1:
+        # At once it may go further in one frame than the ruler follows: what has its colour and is there at the end is the same window.
+        # (The ruler may have taken it for the preview in another costume, since it is where the preview was.)
+        track = next((other for other in m["scan"].tracks if not other.detail and other.indices[-1] >= len(film) - 1 and apart_by(other.last.colour, track.last.colour) <= 12), None)
+    if track is None:
         return Verdict(UNSEEN, "the dragged window could not be followed to its rest")
     x, y, w, h = (value * film.scale for value in previews[0])
     off = max(abs(a - b) for a, b in zip(track.last.edges, (x, y, x + w, y + h)))
@@ -524,8 +572,8 @@ def preview_true(m, allow):
 def nothing_shown(m, allow):
     """While the button is down: no preview, no stage, no line of words."""
     held = [(level, frame) for when, level, frame in m["film"].overlays if when == "held"]
-    if not any(mark.startswith("overlays held") for _, mark in m["film"].marks):
-        return Verdict(UNSEEN, "the film does not say which panels were up while the drag was held")
+    if not any(mark.startswith("overlays held") for _, mark in m["film"].marks) or {what for _, what, _, _ in m["film"].buttons} != {"down", "up"}:
+        return Verdict(UNSEEN, "the film does not say which panels were up while the drag was held, or shows no drag")
     shown = sorted({level for level, _ in held if level in PASSING + (6,)})
     return Verdict(MISS if shown else PASS, f"while the button is down Arbor shows panels at the levels {shown}" if shown else "while the button is down Arbor shows nothing that was not there before")
 
@@ -632,7 +680,7 @@ def not_yet(m, allow):
 
 def nothing_left(m, allow):
     film = m["film"]
-    if not film.after and not any(when == "after" for when, _, _ in film.overlays):
+    if not film.after and not any(when == "after" for when, _, _ in film.overlays) and not any(mark.startswith("overlays after") for _, mark in film.marks):
         return Verdict(UNSEEN, "the film does not say which panels were up at its end")
     left = [level for when, level, _ in film.overlays if when == "after" and level in PASSING]
     return Verdict(MISS, f"still up at the end: panels at levels {left}") if left else Verdict(PASS, "no stage and no preview is left")
@@ -640,7 +688,7 @@ def nothing_left(m, allow):
 
 CHECKS = [
     # id, what it asks, how bad a miss is, the kinds of scene it is asked of, the function
-    ("M1", "answers at once", 2, tuple(kind for kind in ALL if kind != "plain"), answers),
+    ("M1", "answers at once", 2, tuple(kind for kind in ALL if kind not in ("plain", "told", "closes")), answers),
     ("M2", "lasts about 460 ms", 2, SETTLES, lasts),
     ("M3", "eased: quick off the mark, gentle at the end, never past it", 2, SETTLES, eased),
     ("M4", "one motion per action", 1, SETTLES, one_motion),
@@ -653,17 +701,17 @@ CHECKS = [
     ("M11", "the menu bar and the Dock are left alone", 2, ALL, bars),
     ("M12", "a window looks like itself all the way", 3, SETTLES, itself),
     ("M13", "nothing is left behind", 1, tuple(kind for kind in ALL if kind != "control"), nothing_left),
-    ("S8", "even gaps", 3, MOVES[:2] + ("drag",) + AT_ONCE, even_gaps),
+    ("S8", "even gaps", 3, MOVES[:2] + ("drag", "closes") + AT_ONCE, even_gaps),
     ("R1", "at once: from the first window to the last", 1, AT_ONCE, at_once),
     ("R2", "at once: the same end as with motion", 2, ("instant",), not_yet),
     ("R3", "at once: no slide anywhere", 2, AT_ONCE, few_places),
     ("R4", "at once: every window is where it was or where it belongs", 2, AT_ONCE, old_or_new),
     ("R5", "at once: in one piece: no hole, no empty desk, nothing covered that neither frame covers", 1, AT_ONCE, whole),
-    ("D1", "Arbor never pulls what is being dragged", 1, ("drag", "drop", "plain"), not_pulled),
+    ("D1", "Arbor never pulls what is being dragged", 1, ("drag", "drop", "out", "plain"), not_pulled),
     ("D2", "the preview tells the truth", 2, ("drag", "drop"), preview_true),
     ("D3", "the preview comes and goes softly, once", 2, ("drag", "drop"), not_yet),
     ("D4", "others make room in one motion", 1, ("drag", "drop"), not_yet),
-    ("D5", "in a plain drag nothing of Arbor's is on screen", 1, ("plain",), nothing_shown),
+    ("D5", "in a plain drag nothing of Arbor's is on screen", 1, ("plain", "out"), nothing_shown),
     ("D6", "after a plain drag the window is where it was let go, floating, at its own size", 1, ("plain",), let_be),
     ("G1", "what follows the fingers follows them closely", 1, ("follow",), follows),
     ("P1", "a panel is there at once and gone at once", 2, ("panel",), panel_prompt),
@@ -706,10 +754,10 @@ GATE_FILMED_TWICE = [
     ("dock-first", "instant", 1), ("dock-second", "instant", 1), ("fill", "instant", 1), ("everything", "instant", 1), ("back", "instant", 1),
     ("float", "instant", 1), ("undo", "instant", 1), ("float-back", "instant", 1), ("pause", "instant", 1), ("resume", "instant", 1),
     ("go-to", "panel", 1), ("go-to-choose", "instant", 1), ("menu", "panel", 1), ("menu-arrange", "instant", 1),
-    ("drag-plain", "plain", 1), ("drag-held", "drop", 1), ("drag-out", "drop", 1),
+    ("drag-plain", "plain", 1), ("drag-held", "drop", 1), ("drag-out", "out", 1),
 ]
 SHIPS = GATE_FILMED_TWICE + [("dark-" + name, kind, gate) for name, kind, gate in GATE_FILMED_TWICE] + [
-    ("dock-third", "instant", 0), ("dock-fourth", "instant", 0), ("dock-fourth-again", "instant", 0), ("close", "instant", 0), ("quit", "instant", 0),
+    ("dock-third", "instant", 0), ("dock-fourth", "instant", 0), ("dock-fourth-again", "instant", 0), ("close", "closes", 0), ("quit", "told", 0),
     ("eight-arrange", "instant", 0), ("eight-fill", "instant", 0), ("eight-everything", "instant", 0),
 ]
 
@@ -769,6 +817,10 @@ def judge(folder, allow=None):
             # A line of words that comes and goes is a change too. Where windows were to move, none could be followed and little of the room ever changed, the key did nothing.
             elif film.kind in SETTLES and not m["motion"].seen and not much(m) and verdicts[identifier].status == PASS:
                 verdicts[identifier] = Verdict(UNSEEN, "no window was seen to move")
+            elif film.kind in AT_ONCE and verdicts[identifier].status == PASS and (not pieces(m)["followed"] or has_moved(film) is False):
+                verdicts[identifier] = Verdict(UNSEEN, "no window was seen to move")
+            elif film.kind == "plain" and verdicts[identifier].status == PASS and {what for _, what, _, _ in film.buttons} != {"down", "up"}:
+                verdicts[identifier] = Verdict(UNSEEN, "the film shows no drag")
     return m, verdicts
 
 
@@ -898,6 +950,9 @@ def score(folder, eyes_path=None, stills_path=None, out=sys.stdout, without=(), 
             for identifier, title, severity, kinds, _ in CHECKS:
                 # With no motion to hold it against there is no "same end"; and whether anything slides is looked at more closely by the check after it.
                 if kind not in kinds or which == "ships" and identifier in ("R2", "R3"):
+                    continue
+                # On a light wallpaper shadows fill the gaps, and no ruler can measure them.
+                if which == "ships" and identifier == "S8" and name.startswith("dark-"):
                     continue
                 verdict = results[name][1].get(identifier) if name in results else Verdict(UNSEEN, "not filmed")
                 if verdict is None:
@@ -1066,8 +1121,10 @@ def act_of(samples, since, until, tick=1000 / 60):
 
 def acts(folder, out=sys.stdout):
     """Of every scene without motion: the two numbers that say whether "at once" is at once, by the display and by the window server."""
-    with open(os.path.join(folder, "samples.log"), encoding="utf-8") as log:
-        samples = [words for words in map(str.split, log) if len(words) > 8 and words[1] == "W"]
+    samples = []
+    if os.path.isfile(os.path.join(folder, "samples.log")):
+        with open(os.path.join(folder, "samples.log"), encoding="utf-8") as log:
+            samples = [words for words in map(str.split, log) if len(words) > 8 and words[1] == "W"]
     films = os.path.join(folder, "films")
     print("| Scene | Answers | On the display: pieces | first to last | frames with a window neither old nor new | holes, empty desk, over others | By the window server: first to last move | steps of each window that moved | frames in between |\n"
           "|---|---|---|---|---|---|---|---|---|", file=out)
@@ -1075,7 +1132,7 @@ def acts(folder, out=sys.stdout):
         if not os.path.isfile(os.path.join(films, name, "film.log")):
             continue
         film = Film(os.path.join(films, name))
-        if film.kind not in ("instant", "bare") or name.startswith("metronome-"):
+        if film.kind not in AT_ONCE + ("bare", "closes") or name.startswith("metronome-"):
             continue
         m = measure(film)
         cause, seen, worse = m["cause"], pieces(m), in_one_piece(m) or {}
@@ -1131,6 +1188,7 @@ def self_test():
         "an-empty-desk": ({"instant": True, "kind": "instant", "empty": True}, ["R5"], ["R1", "M8"]),
         "uneven": ({"end": {**studio.FRAMED, studio.RED: (12, 43, 996, 650)}}, ["S8"], []),
     }
+    words = {"words": (410, 612, 200, 36)}
     # The same for what is drawn by another hand: name -> (who draws it, how it is wrong, must miss, may miss)
     others = {
         "drag": (studio.shoot_drag, {}, [], []),
@@ -1138,7 +1196,27 @@ def self_test():
         "drag-under-a-tint": (studio.shoot_drag, {"tint": True}, [], []),
         "drag-pulled": (studio.shoot_drag, {"pull": 30}, ["D1"], []),
         "drag-preview-lies": (studio.shoot_drag, {"preview_off": 8}, ["D2"], []),
+        "others-leave-then-one-fills": (studio.shoot_steps, {"steps": [(None, studio.GRID), (34, {studio.RED: studio.GRID[studio.RED]}), (367, {studio.RED: studio.FRAMED[studio.RED]}),
+                                                                       (1900, {studio.RED: studio.FRAMED[studio.RED], **words})]}, ["R1", "R5"], []),
+        "an-empty-desk-for-long": (studio.shoot_steps, {"steps": [(None, studio.GRID), (34, {}), (634, studio.FRAMED), (1900, {**studio.FRAMED, **words})]}, ["R1", "R5"], ["M8"]),
+        "one-arrives-very-late": (studio.shoot_steps, {"steps": [(None, studio.FRAMED), (34, {**studio.GRID, studio.RED: (12, 43, 300, 319)}), (1584, studio.GRID),
+                                                                 (1900, {**studio.GRID, **words})]}, ["R1", "R4"], ["R5"]),
+        "at-once-on-a-light-ground": (studio.shoot_steps, {"steps": [(None, studio.GRID), (34, studio.FRAMED), (1900, {**studio.FRAMED, **words})], "ground": (185, 190, 198)}, [], []),
+        "a-hole-on-a-light-ground": (studio.shoot_steps, {"steps": [(None, studio.FRAMED), (34, {colour: rect for place, (colour, rect) in enumerate(studio.GRID.items()) if place}), (51, studio.GRID),
+                                                                    (1900, {**studio.GRID, **words})], "ground": (185, 190, 198)}, ["R5"], []),
+        "a-small-window-wanders-over-a-large-one": (studio.shoot_steps, {"steps": [(None, {studio.BLUE: (12, 43, 494, 650), studio.RED: (600, 100, 200, 160)}),
+                                                                                   (34, {studio.BLUE: (12, 43, 1000, 650), studio.RED: (300, 300, 200, 160)}),
+                                                                                   (284, {studio.BLUE: (12, 43, 1000, 650), studio.RED: (600, 100, 200, 160)}),
+                                                                                   (1900, {studio.BLUE: (12, 43, 1000, 650), studio.RED: (600, 100, 200, 160), **words})]}, ["R1", "R4", "R5"], []),
+        "drop": (studio.shoot_drop, {}, [], []),
+        "drop-with-the-new-size-first": (studio.shoot_drop, {"halfway": True}, ["R4", "R5"], []),
+        "drop-that-takes-its-time": (studio.shoot_drop, {"late": 300}, ["R1"], ["R5"]),
+        "dragged-out-with-a-preview": (studio.shoot_drop, {"kind": "out"}, ["D5"], []),
         "plain-drag": (studio.shoot_plain, {}, [], []),
+        "plain-drag-with-words": (studio.shoot_plain, {"preview": True, "level": 6}, ["D5"], ["M9"]),
+        "plain-drag-with-a-stage": (studio.shoot_plain, {"preview": True, "level": 4}, ["D5"], ["M9"]),
+        "plain-drag-and-another-window-stirs": (studio.shoot_plain, {"other": 30}, ["D6"], []),
+        "plain-drag-and-the-window-grows": (studio.shoot_plain, {"grown": 12}, ["D6"], []),
         "plain-drag-with-a-preview": (studio.shoot_plain, {"preview": True}, ["D5"], ["M9"]),
         "plain-drag-that-docks": (studio.shoot_plain, {"docks": True}, ["D6"], []),
         "plain-drag-put-right": (studio.shoot_plain, {"nudged": 9}, ["D6"], []),
@@ -1152,24 +1230,33 @@ def self_test():
         "panel-slides": (studio.shoot_panel, {"slide": 60}, ["P2"], []),
     }
     cases = {name: (studio.shoot, *case) for name, case in cases.items()} | others
+    # Films in which nothing may be earned: name -> (who draws it, how).
+    barren = {
+        "nothing-but-words": (studio.shoot, {"end": studio.GRID}),
+        "nothing-but-words-at-once": (studio.shoot_steps, {"steps": [(None, studio.GRID), (34, {**studio.GRID, **words}), (1900, studio.GRID)]}),
+        "a-panel-goes-and-no-window-moves": (studio.shoot_steps, {"steps": [(None, {**studio.GRID, (70, 70, 74): (212, 201, 600, 300)}), (34, studio.GRID), (1900, {**studio.GRID, **words})], "moved": False}),
+        "a-drop-that-docks-nothing": (studio.shoot_drop, {"nothing": True}),
+        "a-plain-drag-without-a-drag": (studio.shoot_plain, {"no_drag": True}),
+    }
     failures = 0
     with tempfile.TemporaryDirectory() as folder:
         for name, (draw, faults, must, may) in cases.items():
             draw(os.path.join(folder, name), **faults)
             _, verdicts = judge(os.path.join(folder, name))
             missed = [identifier for identifier, verdict in verdicts.items() if verdict.status == MISS]
-            unseen = [identifier for identifier, verdict in verdicts.items() if verdict.status == UNSEEN and verdict.said != not_yet(None, None).said]
+            unseen = [identifier for identifier, verdict in verdicts.items() if verdict.status == UNSEEN and verdict.said != not_yet(None, None).said and not verdict.said.endswith("for eyes")]
             wrong = [f"{identifier} did not miss" for identifier in must if identifier not in missed]
             wrong += [f"{identifier} missed: {verdicts[identifier].said}" for identifier in missed if identifier not in must + may]
             wrong += [f"{identifier} saw nothing: {verdicts[identifier].said}" for identifier in unseen]
             failures += bool(wrong)
             print(f"{'✘' if wrong else '✔'} {name}: missed {', '.join(missed) or 'nothing'}" + "".join(f"\n    {line}" for line in wrong))
-        # A key that does nothing but bring a line of words: no window moves, and nothing may be earned.
-        studio.shoot(os.path.join(folder, "nothing-but-words"), end=studio.GRID)
-        _, verdicts = judge(os.path.join(folder, "nothing-but-words"))
-        earned = [identifier for identifier, verdict in verdicts.items() if verdict.status == PASS]
-        failures += bool(earned)
-        print(f"{'✘' if earned else '✔'} nothing-but-words: earns {', '.join(earned) or 'nothing'}")
+        for name, (draw, how) in barren.items():
+            draw(os.path.join(folder, name), **how)
+            _, verdicts = judge(os.path.join(folder, name))
+            # That nothing is left behind, and that bars and Dock are left alone, is true of a film in which a drag took place and did nothing.
+            earned = [identifier for identifier, verdict in verdicts.items() if verdict.status == PASS]
+            failures += bool(earned)
+            print(f"{'✘' if earned else '✔'} {name}: earns {', '.join(earned) or 'nothing'}")
         # The window server's account beside a drawn film, through the command itself.
         run = os.path.join(folder, "run")
         studio.shoot(os.path.join(run, "films", "late"), cards=True)
@@ -1183,7 +1270,7 @@ def self_test():
         right = (not film.after or "AFTER THE STAGE WENT" in told.getvalue()) and "stage +15 to +600" in told.getvalue()
         failures += not right
         print(f"{'✔' if right else '✘'} home: {told.getvalue().splitlines()[0]}")
-    print(f"{len(cases) + 2 - failures} of {len(cases) + 2} drawn films judged as they should be")
+    print(f"{len(cases) + len(barren) + 1 - failures} of {len(cases) + len(barren) + 1} drawn films judged as they should be")
     account = [line.split() for line in ("90 W 7 1 0 0 0 9 9 Oak", "110 W 50 2 4 0 0 100 100 Arbor", "120 W 7 1 0 5 5 9 9 Oak", "130 W 8 1 0 5 5 9 9 Elm",
                                          "140 W 51 2 3 0 0 9 9 Arbor", "300 L 45", "600 G 50", "640 W 8 1 0 6 6 9 9 Elm", "5000 W 7 1 0 1 1 9 9 Oak")]
     said = home_of(account, 100, 4000, {7, 8})
@@ -1281,7 +1368,7 @@ def main(arguments):
             parts = {"begins": every[:12], "whole": [every[int(place)] for place in np.linspace(0, len(every) - 1, min(12, len(every)))],
                      "ends": [index for index in every if last - 9 <= index <= last + 2]}
             downs, ups = ([time for time, what, _, _ in film.buttons if what == which] for which in ("down", "up"))
-            if film.kind in ("drag", "aside") and downs and ups:
+            if film.kind in ("drag", "aside", "drop", "out", "plain") and downs and ups:
                 # What happens while the button is down comes before the cause.
                 held = [index for index, time in enumerate(film.times) if downs[0] - 20 <= time <= ups[-1] + 20]
                 if held:

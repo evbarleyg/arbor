@@ -200,6 +200,8 @@ for window in state["windows"]:
     how = "parked" if window.get("parked") else "docked" if window.get("docked") else "floating"
     print(sys.argv[1], window["id"], round(x, 2), round(y, 2), round(w, 2), round(h, 2), how)
 ' "$1" | while read -r line; do note "$line"; done
+  # So that "none" can be told from "nobody looked".
+  note "windows $1"
 }
 
 # Arbor's own windows that are on screen, as the window server sees them: level x y w h.
@@ -211,11 +213,17 @@ film_overlays() {
 }
 
 hold_drag() {
+  local mods="" previous="" word
+  for word in "$@"; do
+    [ "$previous" = --mods ] && mods=$word
+    previous=$word
+  done
   drag "$@" --no-release
   sleep 0.5
   film_overlays held
   sleep 0.3
-  release
+  # Whoever pressed the keys lets go of them: they would stay down for the rest of the script.
+  release ${mods:+--mods "$mods"}
 }
 
 scene() {
@@ -232,6 +240,7 @@ scene() {
   note "kind $kind"
   note "text $*"
   film_windows before
+  film_overlays before
   # Seen at rest first: what the first frame of a motion differs from.
   sleep 0.4
   note "action"

@@ -208,7 +208,88 @@ def shoot_drag(folder, pull=0, preview_off=0, drop=(1021, 368), tint=False):
     write_film(folder, frames, times, lines, visible=[0, 31, 1024, 674])
 
 
-def shoot_plain(folder, preview=False, docks=False, nudged=0):
+def shoot_steps(folder, steps, kind="instant", ground=None, moved=True):
+    """An act at once, frame by frame: steps are (ms after the key, {colour: rectangle}), the first (None) how things stand before. "words" among the colours is the line of words."""
+    frames, times = [], []
+    lines = [(BEGAN + 1, f"M kind {kind}"), (BEGAN + LEAD - 20, "M action"), (BEGAN + LEAD, "K down"), (BEGAN + LEAD + 40, "K up")]
+    for at, places in steps:
+        picture = desk()
+        if ground is not None:
+            picture[31:705] = ground
+        for colour, rect in places.items():
+            if colour == "words":
+                paint(picture, rect, (60, 60, 64))
+            else:
+                window(picture, rect, colour)
+        frames.append(picture)
+        times.append(BEGAN + (LEAD + at if at is not None else 0))
+    for when, time, places in (("before", BEGAN + 2, steps[0][1]), ("after", times[-1], steps[-1][1] if moved else steps[0][1])):
+        for number, (colour, rect) in enumerate(places.items()):
+            if colour != "words":
+                lines.append((time, f"M {when} {number} {rect[0]} {rect[1]} {rect[2]} {rect[3]} docked"))
+        lines.append((time, f"M windows {when}"))
+    lines.append((times[-1], "M overlays after"))
+    write_film(folder, frames, times, lines, visible=[0, 31, 1024, 674])
+
+
+def shoot_drop(folder, kind="drop", halfway=False, preview=True, nothing=False, late=0):
+    """A window dragged over the right half of one that fills the room, held there, let go: at once it has the right half and the other the left."""
+    slot, begin, press, drop = (518, 43, 494, 650), (200, 200, 400, 300), (400, 212), (760, 300)
+    wide, narrow = (12, 43, 1000, 650), (12, 43, 494, 650)
+    frames, times = [], []
+    down = BEGAN + LEAD
+    lines = [(BEGAN + 1, f"M kind {kind}"), (BEGAN + 2, "M before 1 200 200 400 300 floating"), (BEGAN + 2, "M before 2 12 43 1000 650 docked"), (BEGAN + 2, "M windows before"),
+             (BEGAN + LEAD - 20, "M action"), (down, f"B down {press[0]} {press[1]}")]
+
+    def take(time, rect, shown=False, blue=wide):
+        picture = desk()
+        window(picture, blue, BLUE)
+        if shown:
+            paint(picture, slot, (24, 62, 118))
+        window(picture, rect, RED)
+        if not frames or (picture != frames[-1]).any():
+            frames.append(picture)
+            times.append(int(round(time)))
+
+    take(BEGAN, begin)
+    steps = 48
+    for step in range(1, steps + 1):
+        pointer = between(press, drop, step / steps)
+        lines.append((int(down + step * TICK), f"P {pointer[0]:.0f} {pointer[1]:.0f}"))
+        behind = between(press, drop, (step - 1) / steps)
+        take(down + step * TICK, (begin[0] + behind[0] - press[0], begin[1] + behind[1] - press[1], begin[2], begin[3]))
+    held = (begin[0] + drop[0] - press[0], begin[1] + drop[1] - press[1], begin[2], begin[3])
+    rested = down + (steps + 1) * TICK
+    take(rested, held)
+    if preview:
+        take(rested + 120, held, shown=True)
+        lines.append((int(rested + 500), f"M overlay held 3 {slot[0]} {slot[1]} {slot[2]} {slot[3]}"))
+    lines.append((int(rested + 501), "M overlays held"))
+    up = int(rested + 800)
+    lines.append((up, f"B up {drop[0]} {drop[1]}"))
+    at, rest = up + 34, held if nothing else slot
+    if nothing:
+        # The preview goes, and that is all.
+        take(at, held)
+    else:
+        if halfway:
+            take(at, (held[0], held[1], slot[2], slot[3]), blue=narrow)
+            at += TICK
+        if late:
+            take(at, held, blue=narrow)
+            at += late
+        take(at, slot, blue=narrow)
+    lines.append((times[-1] + 900, f"M after 1 {rest[0]} {rest[1]} {rest[2]} {rest[3]} {'floating' if nothing else 'docked'}"))
+    lines.append((times[-1] + 900, f"M after 2 12 43 {1000 if nothing else 494} 650 docked"))
+    lines.append((times[-1] + 900, "M windows after"))
+    lines.append((times[-1] + 900, "M overlays after"))
+    frames.append(frames[-1].copy())
+    paint(frames[-1], (410, 612, 200, 36), (60, 60, 64))
+    times.append(times[-1] + 1500)
+    write_film(folder, frames, times, lines, visible=[0, 31, 1024, 674])
+
+
+def shoot_plain(folder, preview=False, docks=False, nudged=0, level=3, other=0, grown=0, no_drag=False):
     """A floating window dragged over a docked one, held there, let go. Nothing was asked of Arbor: nothing shows, and the window stays where it was let go."""
     slot, begin, press, drop = (518, 43, 494, 650), (560, 300, 300, 200), (700, 312), (300, 212)
     frames, times = [], []
@@ -238,14 +319,16 @@ def shoot_plain(folder, preview=False, docks=False, nudged=0):
     take(rested, held)
     if preview:
         take(rested + 120, held, shown=True)
-        lines.append((int(rested + 500), f"M overlay held 3 {slot[0]} {slot[1]} {slot[2]} {slot[3]}"))
+        lines.append((int(rested + 500), f"M overlay held {level} {slot[0]} {slot[1]} {slot[2]} {slot[3]}"))
     lines.append((int(rested + 501), "M overlays held"))
     up = int(rested + 800)
     lines.append((up, f"B up {drop[0]} {drop[1]}"))
-    rest = slot if docks else (held[0] + nudged, held[1], held[2], held[3])
+    if no_drag:
+        lines[:] = [line for line in lines if not line[1].startswith(("B ", "P "))]
+    rest = slot if docks else (held[0] + nudged, held[1], held[2] + grown, held[3])
     take(up + 34, rest)
     lines.append((up + 1500, f"M after 1 {rest[0]} {rest[1]} {rest[2]} {rest[3]} {'docked' if docks else 'floating'}"))
-    lines.append((up + 1500, "M after 2 12 374 494 319 docked"))
+    lines.append((up + 1500, f"M after 2 {12 + other} 374 494 319 docked"))
     lines.append((up + 1500, "M overlays after"))
     frames.append(frames[-1].copy())
     paint(frames[-1], (1000, 690, 4, 4), (60, 60, 64))
