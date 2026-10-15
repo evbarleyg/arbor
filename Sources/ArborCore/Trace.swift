@@ -245,6 +245,11 @@ public struct TraceHeader: Equatable, Sendable {
   public var minimumSizes: [WindowID: CGSize] = [:]
   /// How small and how large Arbor had seen each window, which decides whom it asks before it moves anybody.
   public var seenSizes: [WindowID: SeenSizes] = [:]
+  /// How small Arbor knew the apps to go that had a window then, and no other app: which apps somebody has used this month is
+  /// nobody's business. Traces from before do not have it: Arbor knew nothing.
+  public var appSizes: AppSizes?
+  /// Who had been asked about that already: "w", "h" or "wh".
+  public var askedAbout: [WindowID: String] = [:]
   /// Where their apps opened the windows that nobody has moved since: no place anybody chose, so Arbor may move them.
   public var appPlaced: [WindowID: CGRect] = [:]
   /// Most recently focused first.
@@ -286,6 +291,7 @@ extension TraceHeader: Codable {
     case trace, name, arbor, os, recorded, displays, windows, settings, workspaces, dormant, parked
     case minimumSizes, focusHistory, onlyPIDs, ignored, focused, cursor, mouseDown, thinning, appPlaced, seenSizes
     case framePlan
+    case appSizes, askedAbout
   }
 
   /// Only what a replay cannot do without is required, so that hand-written traces can be short.
@@ -310,6 +316,8 @@ extension TraceHeader: Codable {
       guard $0.count == 5 else { return nil }
       return SeenSizes(least: $0[0].size, most: $0[1].size, stoppedAt: $0[2].size, closeOffer: $0[3].size, closeTook: $0[4].size)
     }
+    appSizes = try c.decodeIfPresent(AppSizes.self, forKey: .appSizes)
+    askedAbout = try c.decodeIfPresent([WindowID: String].self, forKey: .askedAbout) ?? [:]
     focusHistory = try c.decodeIfPresent([WindowID].self, forKey: .focusHistory) ?? []
     onlyPIDs = try c.decodeIfPresent([Int32].self, forKey: .onlyPIDs)
     ignored = try c.decodeIfPresent([WindowID].self, forKey: .ignored) ?? []
@@ -339,6 +347,8 @@ extension TraceHeader: Codable {
         seenSizes.mapValues { [$0.least, $0.most, $0.stoppedAt, $0.closeOffer, $0.closeTook].map { TracePair($0) } }, forKey: .seenSizes)
     }
     if !appPlaced.isEmpty { try c.encode(appPlaced.mapValues { TraceRect($0) }, forKey: .appPlaced) }
+    try c.encodeIfPresent(appSizes, forKey: .appSizes)
+    if !askedAbout.isEmpty { try c.encode(askedAbout, forKey: .askedAbout) }
     if !focusHistory.isEmpty { try c.encode(focusHistory, forKey: .focusHistory) }
     try c.encodeIfPresent(onlyPIDs, forKey: .onlyPIDs)
     if !ignored.isEmpty { try c.encode(ignored, forKey: .ignored) }

@@ -235,6 +235,8 @@ extension Controller {
     check("seenSizes", seenSizes.keys)
     check("justAnswered", justAnswered.keys)
     check("fixedSizesNoted", fixedSizesNoted)
+    check("askedAbout", askedAbout.keys)
+    check("enteredSizes", enteredSizes.keys)
     check("parkedAgain", parkedAgain.keys)
     check("titleBars", titleBars.keys)
     check("appPlacedFrames", appPlacedFrames.keys)

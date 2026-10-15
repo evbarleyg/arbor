@@ -29,9 +29,12 @@ extension Controller {
     guard let workspace = workspaces[displayID], let display = display(displayID) else { return nil }
     var present = presentWindowIDs()
     if let including { present.insert(including) }
+    // What is on the display, or is about to be, is worked out with what is foreseen, like the layout that put it there. What would be if the
+    // view were elsewhere is asked in order to choose a view, and a choice goes by what windows answered (Controller+KnownSizes.swift).
     return laidOut(
       workspace.tree, camera: camera ?? workspace.camera, on: display,
-      options: options ?? self.options(for: displayID).layoutOptions, present: present)
+      options: options ?? self.options(for: displayID).layoutOptions, present: present,
+      minimums: camera == nil && including == nil ? plannedSizes : minimumSizes)
   }
 
   /// What `displayID` should look like, worked out now from the arrangement, the view, the windows that take space, the
@@ -83,7 +86,7 @@ extension Controller {
     // Before anything goes by what is known of the windows' sizes.
     noteFixedSizes(of: workspaces[displayID]?.tree.allWindows ?? [])
     let stood = startFromTheGapsThatStood(on: displayID, for: reason)
-    let before = workspaces[displayID]
+    var before = workspaces[displayID]
     guard var layout = stood ?? roomyLayout(of: displayID, for: reason) else { return }
     // Before anything is moved (Controller+Hold.swift). A new node alone is no move of the view: docking a window at the edge of the
     // view makes a group of the two, with the same things to see, and a rule that waited does that at the very end of a hold.
@@ -99,10 +102,16 @@ extension Controller {
     {
       layout = known
     }
-    // Before anybody is moved, so that everybody moves once (Controller+AskFirst.swift).
-    layout = askingFirst(layout, on: displayID, beginningWith: subject) {
-      thinkingAgain?()
-      return self.roomyLayout(of: displayID, for: reason, startingFrom: before)
+    // Before anybody is moved, so that everybody moves once (Controller+AskFirst.swift). Then whoever has its room on foresight alone: no plan
+    // stands on that unasked (Controller+KnownSizes.swift). A plan that it overturns is asked about like the first; each window is asked
+    // once, so this ends, and three rounds is where making room stops, too.
+    for _ in 0..<3 {
+      layout = askingFirst(layout, on: displayID, beginningWith: subject) {
+        thinkingAgain?()
+        return self.roomyLayout(of: displayID, for: reason, startingFrom: before)
+      }
+      guard let known = askingThoseWhoseRoomIsForeseen(layout, on: displayID, reason: reason, startingFrom: &before) else { break }
+      layout = known
     }
     // After the stage has its pictures of the windows where they are.
     system.moveTogether(movesInSight(for: layout, on: displayID, reason: reason))
@@ -113,6 +122,7 @@ extension Controller {
     // an end: an app that asks for more every time it is asked is not asked for ever.
     var again = apply(layout, on: displayID)
     if askTilesAgain(layout, on: displayID) { again = true }
+    if askOutOfView(layout, on: displayID) { again = true }
     var round = 0
     while again, round < 4 {
       round += 1
@@ -131,6 +141,7 @@ extension Controller {
     rememberSqueezes(in: layout, on: displayID)
     noteWhereTheGapsStand(in: layout, on: displayID, for: reason)
     placeFloatingWindows(on: displayID, layout: layout, reason: reason)
+    noteHowSmallAppsGo(after: layout, on: displayID)
     layouts[displayID] = layout
     lettingBeEndsWithAPlace(in: layout)
     settleTransition(staged, on: displayID, layout: layout)
@@ -286,6 +297,7 @@ extension Controller {
     if narrower { learned.width = window.frame.width }
     if shorter { learned.height = window.frame.height }
     minimumSizes[window.id] = learned
+    noteThatItWasSeenSmaller(window)
     guard layouts.values.contains(where: { $0.tiles.contains { $0.windows.contains(window.id) } }) else {
       return false
     }
@@ -299,6 +311,7 @@ extension Controller {
     disprovedMinimums.removeAll()
     // How small and how large a window has been it has been. Where it stopped growing is what may have changed.
     for window in seenSizes.keys { seenSizes[window]?.forgetWhereItStopped() }
+    forgetHowSmallAppsGo()
   }
 
   /// Counts every managed window that no display shows as parked, whoever put it there. Knowing it as

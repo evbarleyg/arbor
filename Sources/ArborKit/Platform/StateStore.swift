@@ -79,6 +79,8 @@ public struct PersistedState: Codable, Equatable, Sendable {
   /// The leaves, by display, that were kept open for windows that were not there yet when this was written, in the
   /// minutes after a login (Controller+KeptRoom.swift). Nearly always absent, and older files do not have it.
   public var roomKept: [DisplayID: [NodeID]]?
+  /// How small apps go (`AppSizes`). Nil while nothing is known; older files do not have it.
+  public var appSizes: AppSizes?
 
   public init(
     workspaces: [DisplayID: Workspace], hints: [WindowID: WindowHint],
@@ -118,6 +120,7 @@ public struct PersistedState: Codable, Equatable, Sendable {
     case origins
     case leftAt
     case roomKept
+    case appSizes
   }
 
   public init(from decoder: any Decoder) throws {
@@ -159,6 +162,13 @@ public struct PersistedState: Codable, Equatable, Sendable {
     roomKept = (try? c.decodeIfPresent(LossyDictionary<DisplayID, [NodeID]>.self, forKey: .roomKept))?.entries
     for id in dormant.keys where dormant[id]!.origin.map(DormantWorkspace.isPlaceForADisplay) == false {
       dormant[id]!.origin = nil
+    }
+    // Least of all over this: not knowing costs a question to a window.
+    do {
+      appSizes = try c.decodeIfPresent(AppSizes.self, forKey: .appSizes).flatMap { $0.isEmpty ? nil : $0 }
+    } catch {
+      appSizes = nil
+      (decoder.userInfo[DecodingNotes.key] as? DecodingNotes)?.add("`appSizes` could not be read", isLoss: false)
     }
   }
 }
@@ -203,7 +213,7 @@ extension PersistedState {
     // window has gone elsewhere) is the decoders' business, and most are not worth a word.
     let tables: Set = [
       "workspaces", "dormant", "hints", "nodes", "floating", "guests", "undockedFrames", "summonFrames", "names",
-      "savedViews", "hintsShown", "leftAt", "roomKept",
+      "savedViews", "hintsShown", "leftAt", "roomKept", "appSizes",
     ]
     guard let file = try? JSONSerialization.jsonObject(with: data),
       let written = try? JSONSerialization.jsonObject(with: JSONEncoder().encode(state))

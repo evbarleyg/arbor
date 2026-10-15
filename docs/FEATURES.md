@@ -6,7 +6,7 @@ A.. items are Arbor-only. Levels are explained in `collab/README.md`.
 
 **TrellisWM parity: 39 of 52 reference items shipped (75%), 18 verified on real windows.**
 
-Levels: verified 51, tested 64, partial 9, planned 7, missing 1, not-planned 3.
+Levels: verified 51, tested 65, partial 9, planned 7, missing 1, not-planned 3.
 
 Real-window evidence: mac-shell: scripts/mac-shell/proof.sh at ab40b20, macOS 26.6.2, 2026-10-14T06:48Z.
 
@@ -181,3 +181,4 @@ Real-window evidence: the real-window suite, 33 sections, the newest 2026-10-15T
 | A66 | The shortcuts on screen |  | ⌃⌥⇧/; `show-shortcuts`; Keyboard Shortcuts… in the menu: the shortcuts in effect by name, grouped as the help is; any key, click or command puts them away | tested | tests 21/21, real windows 3/5 | [F43](features/F43-say-what-happened.md) |
 | A227 | One switch for every event tap |  | `pointerGestures`, "Trackpad and mouse gestures" in the settings window: off, Arbor installs no event tap, whatever the pinch's, the scroll's and the rectangle's own settings say; keys, the menu and dragging windows stay. It ships off (Q26) | tested | tests 10/10 | [F03](features/F03-trackpad-gestures.md) |
 | A229 | A floating window's frame is its person's |  | Arbor sets a floating window's frame only to take it out of view and to put it back exactly where it was: no dock, ⌘M, ⌘H, ⌘Q, start or quit moves or sizes one. Fitted only if the displays changed and less than half would show. `floatingWindowsMakeWay` (off) brings back windows that make way | tested | tests 39/39 | [F64](features/F64-a-floating-windows-frame-is-its-persons.md) |
+| A264 | Arbor knows how small apps go |  | What a docked window of an app would not go below is kept for the next window of that app, in this run and the next (`appSizes` in `state.json`: bundle id, two numbers, the version of macOS, a date), so that windows that cannot all fit are planned on paper and each moves once. Foresight, never the truth: where asking costs nothing, nobody is given room or refused a place for it unasked | tested | tests 37/37 | [F68](features/F68-how-small-apps-go.md) |

@@ -60,6 +60,41 @@ private let minimums = [
     #expect(!tree.hasLoans)
   }
 
+  // MARK: A window that stays, and did not need what was taken for it (F68)
+
+  @Test func whatWasBorrowedForAWindowThatStaysGoesBackAndWhatOthersBorrowedDoesNot() throws {
+    var tree = served()
+    let before = parts(tree)
+    tree.giveBackWhatWasBorrowed(for: try #require(tree.leaf(containing: notes)))
+    #expect(tree.contains(try #require(tree.leaf(containing: notes))))
+    #expect(tree.hasLoans, "Safari's")
+    #expect(parts(tree)[0] < before[0] - 0.05, "\(parts(tree))")
+    #expect(abs(parts(tree)[2] - before[2]) < 1e-9, "Safari keeps what was made for it: \(parts(tree))")
+    // Nothing is left to give back a second time.
+    let once = parts(tree)
+    tree.giveBackWhatWasBorrowed(for: try #require(tree.leaf(containing: notes)))
+    #expect(parts(tree) == once)
+    tree.giveBackWhatWasBorrowed(for: try #require(tree.leaf(containing: safari)))
+    #expect(!tree.hasLoans)
+    expectParts(tree, [1.0 / 3, 1.0 / 3, 1.0 / 3])
+  }
+
+  /// A giver that has been wrapped in a group since has a weight that counts in another direction.
+  @Test func whatAGiverThatIsInAGroupByNowGaveIsNotPaidIntoThatGroup() throws {
+    var tree = LayoutTree()
+    tree.dock(notes, beside: tree.root, edge: .left)
+    tree.dock(safari, beside: tree.root, edge: .right)
+    // Only Notes is short: the Desktop and Safari give.
+    serve(&tree, known: [notes: CGSize(width: 1000, height: 300)])
+    #expect(tree.hasLoans)
+    let giver = try #require(tree.leaf(containing: safari))
+    tree.dock(mail, beside: giver, edge: .bottom)
+    let column = try #require(tree.parent(of: giver))
+    let inColumn = tree.children(of: column).map { tree[$0]!.weight }
+    tree.giveBackWhatWasBorrowed(for: try #require(tree.leaf(containing: notes)))
+    #expect(tree.children(of: column).map { tree[$0]!.weight } == inColumn, "the column's own shares are nobody's to pay into")
+  }
+
   @Test func aColumnThatGrewForAWindowInItShrinksAgainWhenThatWindowLeaves() throws {
     var tree = LayoutTree()
     let first = tree.dock(safari, beside: tree.root, edge: .left)

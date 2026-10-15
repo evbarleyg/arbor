@@ -49,7 +49,8 @@ extension Controller {
     for _ in 0..<Self.autoDockRounds {
       guard let workspace = workspaces[display] else { break }
       let present = presentWindowIDs()
-      let minimums = minimumSizes
+      // As the layout after the docking reckons, or a place would be tried and taken back round after round with nothing learned.
+      let minimums = plannedSizes
       // The layout after the docking makes room before it makes a tile (F61), so the plan reckons with that.
       let terms = settings.makeRoom ? roomTerms(on: display, docking: id) : nil
       let plan = AutoDock.plan(

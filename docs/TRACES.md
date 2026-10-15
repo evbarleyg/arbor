@@ -130,6 +130,7 @@ trace needs nothing but itself, wherever in a session it was started.
 | `settings` | The settings in effect, as in `settings.json`, title patterns replaced |
 | `workspaces`, `dormant` | Each display's tree, camera, history, saved views and floating windows, as in `state.json`; the same for displays that were away |
 | `parked`, `minimumSizes`, `seenSizes`, `focusHistory`, `ignored`, `onlyPIDs`, `appPlaced` | What Arbor had learned and `state.json` does not hold |
+| `appSizes` | How small Arbor knew apps to go (F68), as in `state.json`, but only for the apps that have a window in `windows`: which apps somebody has used this month is not a trace's business. Of an app whose first window comes later the trace is told then, in a line of its own (`read howSmallItGoes`, with the window's number and the entry: numbers only, because text in such a line is searched for titles and names), which a replay takes in with the header; nothing where nothing is known. Left out while nothing is known. A replay keeps each entry as old as it was when the trace began |
 | `focused`, `cursor`, `mouseDown` | The focused window, the pointer, the left button |
 | `thinning` | The thinning interval in seconds (below) |
 | `framePlan` | By which order of calls windows were given their frames (`FramePlan.version`): it decides how many reports follow a `setFrame`. Absent: 1, size, position, size |
