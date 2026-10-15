@@ -62,12 +62,12 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 | [geometry](#geometry) | 35 | 2 | 11 | 15 | 7 | 2 | 24 | 1 | 2 | 8 | 6 |
 | [identity](#identity) | 31 | 4 | 7 | 6 | 7 | 11 | 12 | 1 | 4 | 14 | 9 |
 | [permissions](#permissions) | 22 | 8 | 6 | 3 | 3 | 10 | 11 | 2 | 2 | 7 | 4 |
-| [timing](#timing) | 51 | 7 | 7 | 16 | 8 | 20 | 28 | 4 | 6 | 13 | 9 |
+| [timing](#timing) | 52 | 7 | 7 | 16 | 8 | 21 | 28 | 4 | 7 | 13 | 9 |
 | [input](#input) | 57 | 7 | 6 | 13 | 14 | 24 | 20 | 6 | 8 | 23 | 12 |
 | [looks](#looks) | 20 | 0 | 0 | 0 | 1 | 19 | 1 | 2 | 3 | 14 | 6 |
 | [never-exercised](#never-exercised) | 15 | 7 | 1 | 13 | 0 | 1 | 0 | 0 | 14 | 1 | 15 |
 | [toolchain](#toolchain) | 42 | 1 | 0 | 1 | 4 | 37 | 23 | 1 | 1 | 17 | 7 |
-| **all** | 451 | 61 | 89 | 121 | 71 | 170 | 224 | 19 | 58 | 150 | 110 |
+| **all** | 452 | 61 | 89 | 121 | 71 | 171 | 224 | 19 | 59 | 150 | 110 |
 
 **Where the difference bit**
 
@@ -77,7 +77,7 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 | at the seam | in what crosses the platform protocols: a stand-in can play it to the controller | 162 | 96 | 121 | 0 | 11 | 30 |
 | controller | in the controller or the core, given reports that were right | 27 | 14 | 15 | 0 | 1 | 11 |
 | test | in a test, a script or a harness that expected the wrong thing | 79 | 0 | 23 | 5 | 10 | 41 |
-| machine | in the machine, the toolchain or the way things are built and installed | 41 | 3 | 23 | 1 | 3 | 14 |
+| machine | in the machine, the toolchain or the way things are built and installed | 42 | 3 | 23 | 1 | 4 | 14 |
 
 Each case is counted under the best guard it has: one that goes red on any machine (a test, a scenario, a replayed trace, a tool that `make check` or CI runs), one that needs CI's Macs (a test for macOS alone, a step of a real-window run that CI starts), one that somebody has to start, or none.
 
@@ -4050,6 +4050,18 @@ Timing: how long things take, and what can happen meanwhile.
 - **Guard:** `tool: mac-shell/jolts.py`
 - **Arbor copes:** scripts/mac-shell/jolts.py counts the sampler's lateness over one stretch, from the first act that counts to the last, and keeps the whole run's figures beside it.
 - **Read in:** `scripts/mac-shell/jolts.py`, `scripts/mac-shell/sampler.swift`, `docs/VIABLE.md`
+
+### the-first-frame-after-a-long-rest-carries-a-stale-time
+
+*hurt 4 · machine*
+
+- **Expected:** A frame that ScreenCaptureKit hands over says when it was on the display (`displayTime`), so a film tells to the frame what came before a key and what after it.
+- **Happened:** The first frame that changed after the display had rested for a second carried a time 727 ms too early, before the key that caused it: one film in about 135. Whoever read the film took the state between two askings for how things stood before the act, and the act came out clean; a table of two builds was read wrongly from it. Arbor's own account of the windows, noted before the key, and the window server's list both had it right.
+- **Found by:** An adversarial review of the script that counts, held against the film's log, on films from a hosted Mac.
+- **Stand-ins play it:** cannot: it lies below or beside the seam
+- **Guard:** `tool: polish/arms.py` (by hand); `tool: polish/judge.py` (by hand)
+- **Arbor copes:** scripts/mac-shell/camera.swift does not believe a time that is a quarter of a second from when the frame arrived; scripts/polish/judge.py (`stirred`) and scripts/polish/arms.py (`set_right`) hold how things stood against Arbor's own account and say aloud when a film is not to be believed. Both have a drawn film of it in their self-tests.
+- **Read in:** `scripts/mac-shell/camera.swift`, `scripts/polish/judge.py`, `scripts/polish/arms.py`, `docs/POLISH.md`
 
 ### what-is-over-within-one-sample-shows-to-nobody
 
