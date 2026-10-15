@@ -53,9 +53,16 @@ extension Controller {
   /// A command that puts windows back itself (`putBack`) and then lays out hands them over as `puttingBack`
   /// instead: nobody must see a window jump ahead of the motion that explains it, so they are moved
   /// here, first of all, once the stage is up.
+  ///
+  /// One thing that happens is one layout. A command whose arrangement depends on how small a window goes (`shrink`) cannot know
+  /// before the window has been asked, which is done here, before anybody is moved. `thinkingAgain` is called whenever one has
+  /// refused the size it was offered, where it stood or in its slot, for as long as gaps still move (see below), and may change
+  /// the arrangement, on paper, to what the command wants now that it knows. `about` is the window on whose answer that
+  /// hangs: it is asked whatever is known of it, and before the others, who would otherwise be asked for a layout that never comes.
   func relayout(
     _ displayID: DisplayID, reason: RelayoutReason, motion: Motion = .animated,
-    puttingBack handedOver: [(window: WindowID, frame: CGRect)] = []
+    puttingBack handedOver: [(window: WindowID, frame: CGRect)] = [], about subject: WindowID? = nil,
+    thinkingAgain: (() -> Void)? = nil
   ) {
     let start = DispatchTime.now()
     defer { stats.record("controller", "lay out a display", seconds: CallStats.seconds(since: start)) }
@@ -93,7 +100,10 @@ extension Controller {
       layout = known
     }
     // Before anybody is moved, so that everybody moves once (Controller+AskFirst.swift).
-    layout = askingFirst(layout, on: displayID) { self.roomyLayout(of: displayID, for: reason, startingFrom: before) }
+    layout = askingFirst(layout, on: displayID, beginningWith: subject) {
+      thinkingAgain?()
+      return self.roomyLayout(of: displayID, for: reason, startingFrom: before)
+    }
     // After the stage has its pictures of the windows where they are.
     system.moveTogether(movesInSight(for: layout, on: displayID, reason: reason))
     // A window refused its slot after all: lay out again so that room is made for it, or it becomes a tile. Or one that is
@@ -106,6 +116,7 @@ extension Controller {
     var round = 0
     while again, round < 4 {
       round += 1
+      if round <= 2 { thinkingAgain?() }
       guard
         let retry = round <= 2
           ? roomyLayout(of: displayID, for: reason, startingFrom: before) : self.layout(of: displayID)
@@ -194,8 +205,7 @@ extension Controller {
       return false
     }
     let (asked, expected) = (request(for: current, in: target), expectedFrame(of: current, in: target).size)
-    // It has answered where it stood, and that is where the answer belongs: there is nothing left to ask for.
-    let isThere = justAnswered[window] != nil && !parked.contains(window) && asked.approximatelyEquals(current.frame, tolerance: 1)
+    let isThere = isWhereItsAnswerBelongs(current, asked: asked, in: target)
     guard var actual = isThere ? current.frame : system.setFrame(asked, of: window) else {
       unplaced.insert(window)
       return false
