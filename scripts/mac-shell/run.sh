@@ -1,7 +1,7 @@
 #!/bin/bash
 # Runs a script from this repository on a real Mac and brings back what it produced. Or several scripts.
 #
-#   scripts/mac-shell/run.sh [--macs N] [--at-once N] [--on macos-15] [--bare] [--release] [--priority N] [--no-preflight "<why>"] <script>… [ref]
+#   scripts/mac-shell/run.sh [--macs N] [--at-once N] [--on macos-15] [--bare] [--release] [--limit S] [--priority N] [--no-preflight "<why>"] <script>… [ref]
 #   scripts/mac-shell/run.sh scripts/mac-shell/shots-demo.sh
 #   scripts/mac-shell/run.sh scripts/mac-shell/shots-F10.sh scripts/mac-shell/shots-F12.sh scripts/mac-shell/shots-F43.sh
 #
@@ -22,6 +22,8 @@
 #   --at-once N   of the Macs of --macs, at most N at a time: for a long list that must not take every Mac there is from everybody else.
 #   --on KIND   another of GitHub's Macs than macos-26: macos-15, macos-14 or macos-15-intel. They come out of the same five.
 #   --bare      no toolchain and no build: half a minute saved for a script that only asks the Mac something.
+#   --limit S   each script may take S seconds and is stopped then. Without it: twenty minutes, or what the script that asks for most asks its own
+#               supervisor for ($ARBOR_TIME_LIMIT, in the script or in a file it reads in). A Mac has eighty minutes for its scripts, so fewer go to one.
 #   --release   the scripts drive the release build, the program people get (ARBOR_CONFIGURATION=release says the same): for whatever is measured,
 #               how busy, how long, how smooth. It is built before the first script and kept for the next run, apart from the debug builds.
 #   --priority N   GitHub hands its Macs out in no particular order, so the order is kept here, before the run is started: waiting
@@ -50,7 +52,7 @@
 # environments may push but not delete branches, and there each run replaces the last one's output
 # instead of adding a branch. Starting the same scripts for the same ref again cancels the run that is still under way.
 #
-# Environment: MAC_SHELL_TIMEOUT  seconds to wait for the run (default 2700 for one script; 1200 more for each further one on the Mac that has most), and as
+# Environment: MAC_SHELL_TIMEOUT  seconds to wait for the run (default: 1500, and what each script may take for the Mac that has most of them), and as
 #                                 many again once it has its Mac. It is this script's patience and nothing else: a run is never cancelled for it. One that
 #                                 waits keeps its place in GitHub's line, one that is half done its minutes.
 #              MAC_SHELL_ASK      seconds until GitHub is first asked whether the run has ended without output (default 180); twice as long each time after
@@ -69,8 +71,8 @@
 set -uo pipefail
 cd "$(dirname "$0")/../.." || exit 97
 
-usage="usage: scripts/mac-shell/run.sh [--macs N] [--at-once N] [--on macos-15] [--bare] [--release] [--priority N] [--no-preflight \"<why>\"] <script>… [ref]"
-macs="" at_once="" ref="" kind=macos-26 bare=false priority=${ARBOR_MAC_PRIORITY:-3} unchecked="" configuration=${ARBOR_CONFIGURATION:-debug}
+usage="usage: scripts/mac-shell/run.sh [--macs N] [--at-once N] [--on macos-15] [--bare] [--release] [--limit S] [--priority N] [--no-preflight \"<why>\"] <script>… [ref]"
+seconds="" longest="" macs="" at_once="" ref="" kind=macos-26 bare=false priority=${ARBOR_MAC_PRIORITY:-3} unchecked="" configuration=${ARBOR_CONFIGURATION:-debug}
 scripts=()
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -78,6 +80,7 @@ while [ $# -gt 0 ]; do
     --at-once) at_once=${2:?$usage}; shift ;;
     --on) kind=${2:?$usage}; shift ;;
     --release) configuration=release ;;
+    --limit) seconds=${2:?$usage}; shift ;;
     --bare) bare=true ;;
     --priority) priority=${2:?$usage}; shift ;;
     --no-preflight) unchecked=${2:?$usage}; shift ;;
@@ -91,43 +94,13 @@ done
 [ ${#scripts[@]} -gt 0 ] || { echo "$usage" >&2; exit 97; }
 case "$macs" in *[!0-9]* | 0) echo "run.sh: --macs takes a number, 1 or more" >&2; exit 97 ;; esac
 case "$at_once" in *[!0-9]* | 0) echo "run.sh: --at-once takes a number, 1 or more" >&2; exit 97 ;; esac
+case "$seconds" in *[!0-9]* | 0) echo "run.sh: --limit takes seconds, 1 or more" >&2; exit 97 ;; esac
 case "$priority" in 1 | 2 | 3) ;; *) echo "run.sh: --priority takes 1, 2 or 3" >&2; exit 97 ;; esac
 case "$configuration" in debug | release) ;; *) echo "run.sh: ARBOR_CONFIGURATION is debug or release, not '$configuration'" >&2; exit 97 ;; esac
 [ "$configuration" = debug ] || [ "$bare" = false ] || { echo "run.sh: --bare builds nothing, so there is no release build to drive" >&2; exit 97; }
 ref=${ref:-$(git rev-parse --abbrev-ref HEAD)}
 [ "$ref" != HEAD ] || { echo "run.sh: no branch is checked out; name one: run.sh <script> <ref>" >&2; exit 97; }
 script=${scripts[0]}
-
-# Who runs what: one line for each Mac.
-PER_MAC=4
-if [ ${#scripts[@]} -eq 1 ]; then
-  macs=${macs:-1}
-  shares=$(for ((mac = 0; mac < macs; mac++)); do echo "$script"; done)
-else
-  macs=${macs:-$(((${#scripts[@]} + PER_MAC - 1) / PER_MAC))}
-  [ "$macs" -le ${#scripts[@]} ] || macs=${#scripts[@]}
-  [ $(((${#scripts[@]} + macs - 1) / macs)) -le $PER_MAC ] \
-    || { echo "run.sh: ${#scripts[@]} scripts are more than $PER_MAC each for $macs Macs" >&2; exit 97; }
-  # Each Mac gets a block of the list, so that its playings have numbers that follow one another; the first Macs one more where it does not come out even.
-  shares=$(index=0
-    for ((mac = 0; mac < macs; mac++)); do
-      for ((count = ${#scripts[@]} / macs + (mac < ${#scripts[@]} % macs ? 1 : 0); count > 0; count--)); do
-        printf '%s ' "${scripts[index]}"
-        index=$((index + 1))
-      done
-      echo
-    done | sed 's/ $//')
-fi
-# As the workflow wants it: for each Mac its scripts, and which playings of how many they are. Only ONE script given to several Macs has a share of its
-# work on each ($MAC_SHELL_SHARE). A Mac that merely has neighbours does all of its scripts' work: nobody else would do the rest.
-plan=$(echo "$shares" | awk -v total="$([ ${#scripts[@]} -eq 1 ] && echo "$macs" || echo ${#scripts[@]})" -v sharing="$([ ${#scripts[@]} -eq 1 ] && [ "$macs" -gt 1 ] && echo "$macs")" '
-  { printf "%s{\"parts\":\"%d-%d\",\"of\":%d,\"scripts\":\"%s\"%s}", (NR > 1 ? "," : ""), first + 1, first + NF, total, $0, (sharing ? sprintf(",\"share\":\"%d/%d\"", NR, sharing) : ""); first += NF }
-  END { print "" }' | sed 's/.*/[&]/')
-# How long to wait: 1500 s for a Mac to come free, its set-up and the build, and the twenty minutes each script may take, for the Mac that has most of them;
-# as often as it takes for all the Macs to have had their turn.
-most=$(echo "$shares" | awk '{ if (NF > most) most = NF } END { print most }')
-waves=$(((macs + ${at_once:-5} - 1) / ${at_once:-5}))
-limit=${MAC_SHELL_TIMEOUT:-$((1500 + 1200 * most * waves))}
 
 repo=$(git remote get-url origin | sed -E 's#^(https://[^/]*/|git@[^:]*:|ssh://[^/]*/)##; s#\.git$##; s#/$##')
 api() { gh api "$@"; }
@@ -153,6 +126,56 @@ if [ "$ref" = "$(git rev-parse --abbrev-ref HEAD)" ]; then
   [ -z "$(git status --porcelain -- scripts Sources Package.swift)" ] \
     || echo "run.sh: note: uncommitted changes under scripts/ or Sources/ will not be part of this run" >&2
 fi
+
+# How long a script may take on the Mac before it is stopped (scripts/ci-mac-shell.sh): twenty minutes, or what it asks its own supervisor for if that is
+# more. The script says so itself, or a file it reads in (`ARBOR_TIME_LIMIT=2400`, `ARBOR_TIME_LIMIT=${ARBOR_TIME_LIMIT:-2400}`, at the beginning of a line):
+# one that asked for forty minutes used to be stopped at twenty all the same, and nothing said so beforehand.
+A_MAC=4800 # seconds of scripts for one Mac: the workflow's step has ninety minutes, and what was gathered must still get pushed
+asked_for() {
+  local file
+  for file in $(scripts/mac-shell/preflight.sh --read-in "$remote" "$1"); do git show "$remote:$file"; done 2>/dev/null \
+    | sed -nE 's/^(export[[:space:]]+)?ARBOR_TIME_LIMIT=("?\$\{ARBOR_TIME_LIMIT:-)?([0-9]+).*/\3/p' | sort -n | tail -n 1
+}
+if [ -z "$seconds" ]; then
+  seconds=1200
+  for each in "${scripts[@]}"; do
+    asks=$(asked_for "$each")
+    if [ "${asks:-0}" -gt "$seconds" ]; then seconds=$asks longest=$each; fi
+  done
+fi
+[ "$seconds" -le $A_MAC ] || fail "${longest:---limit} asks for $seconds s, and a hosted Mac has $A_MAC s for its scripts"
+[ "$seconds" -eq 1200 ] || echo "each script may take $seconds s${longest:+: $longest asks for it}"
+
+# Who runs what: one line for each Mac.
+PER_MAC=$((A_MAC / seconds))
+if [ ${#scripts[@]} -eq 1 ]; then
+  macs=${macs:-1}
+  shares=$(for ((mac = 0; mac < macs; mac++)); do echo "$script"; done)
+else
+  macs=${macs:-$(((${#scripts[@]} + PER_MAC - 1) / PER_MAC))}
+  [ "$macs" -le ${#scripts[@]} ] || macs=${#scripts[@]}
+  [ $(((${#scripts[@]} + macs - 1) / macs)) -le $PER_MAC ] \
+    || { echo "run.sh: ${#scripts[@]} scripts are more than $PER_MAC each for $macs Macs" >&2; exit 97; }
+  # Each Mac gets a block of the list, so that its playings have numbers that follow one another; the first Macs one more where it does not come out even.
+  shares=$(index=0
+    for ((mac = 0; mac < macs; mac++)); do
+      for ((count = ${#scripts[@]} / macs + (mac < ${#scripts[@]} % macs ? 1 : 0); count > 0; count--)); do
+        printf '%s ' "${scripts[index]}"
+        index=$((index + 1))
+      done
+      echo
+    done | sed 's/ $//')
+fi
+# As the workflow wants it: for each Mac its scripts, and which playings of how many they are. Only ONE script given to several Macs has a share of its
+# work on each ($MAC_SHELL_SHARE). A Mac that merely has neighbours does all of its scripts' work: nobody else would do the rest.
+plan=$(echo "$shares" | awk -v total="$([ ${#scripts[@]} -eq 1 ] && echo "$macs" || echo ${#scripts[@]})" -v sharing="$([ ${#scripts[@]} -eq 1 ] && [ "$macs" -gt 1 ] && echo "$macs")" '
+  { printf "%s{\"parts\":\"%d-%d\",\"of\":%d,\"scripts\":\"%s\"%s}", (NR > 1 ? "," : ""), first + 1, first + NF, total, $0, (sharing ? sprintf(",\"share\":\"%d/%d\"", NR, sharing) : ""); first += NF }
+  END { print "" }' | sed 's/.*/[&]/')
+# How long to wait: 1500 s for a Mac to come free, its set-up and the build, and the time each script may take, for the Mac that has most of them;
+# as often as it takes for all the Macs to have had their turn.
+most=$(echo "$shares" | awk '{ if (NF > most) most = NF } END { print most }')
+waves=$(((macs + ${at_once:-5} - 1) / ${at_once:-5}))
+limit=${MAC_SHELL_TIMEOUT:-$((1500 + seconds * most * waves))}
 
 home=${MAC_SHELL_WORKFLOW_REF:-}
 for candidate in swarm/trunk main; do
@@ -283,6 +306,7 @@ newest=$(api "$runs" --jq '.workflow_runs[0].id // 0') || fail "cannot list the 
 # Said only where it is asked for: GitHub refuses a start with an input the workflow does not know, and $home's may be an older one.
 other=()
 [ "$configuration" = debug ] || other=(-f "inputs[configuration]=$configuration")
+[ "$seconds" -eq 1200 ] || other+=(-f "inputs[limit]=$seconds")
 api -X POST "repos/$repo/actions/workflows/mac-shell.yml/dispatches" \
   -f ref="$home" -f "inputs[ref]=$ref" -f "inputs[script]=${scripts[*]}" -f "inputs[tag]=$tag" ${other[@]+"${other[@]}"} \
   -f "inputs[at-once]=${at_once:-5}" -f "inputs[runner]=$kind" -F "inputs[bare]=$bare" -f "inputs[unchecked]=$(printf '%s' "$unchecked" | tr -c 'A-Za-z0-9 .,:_/-' ' ' | cut -c 1-80)" \

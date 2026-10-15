@@ -3,6 +3,7 @@
 #
 #   scripts/mac-shell/preflight.sh <script>…           where Swift is (on Linux): check what has not been checked yet
 #   scripts/mac-shell/preflight.sh --check <script>…   anywhere, needs only Git: has it all been checked? Prints what has not; exit code 1 then
+#   scripts/mac-shell/preflight.sh --read-in <commit> <script>   for run.sh: the script and the files it reads in, and those they read in, at that commit
 #
 # GitHub lends the repository five Macs at a time, and a run that ends in a compiler's error, a typo in the script or a wait for
 # something that never comes has held one for minutes to say what Linux says for nothing. So, for the commit that is checked out:
@@ -66,6 +67,11 @@ leans_on() {
   local each
   { for each in $(read_in "$1" "$2"); do git rev-parse "$1:$each"; done; git ls-tree "$1" scripts/mac-shell/ | grep -E 'lib[^/]*\.sh|state\.py'; } 2>/dev/null | short
 }
+
+if [ "${1:-}" = --read-in ]; then
+  read_in "${2:?}" "${3:?}"
+  exit
+fi
 
 # shellcheck disable=SC2086
 dirty=$(git status --porcelain -- $CODE scripts/mac-shell "$@" | head -n 5)

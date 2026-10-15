@@ -57,6 +57,11 @@ on:
         required: false
         default: false
         type: boolean
+      limit:
+        description: Seconds each script may take before it is stopped (run.sh works it out from what the scripts ask for, or --limit)
+        required: false
+        default: "1200"
+        type: string
       configuration:
         description: Which build the scripts drive. release is the program people get, for whatever is measured (run.sh --release)
         required: false
@@ -92,6 +97,7 @@ jobs:
       REF: ${{ inputs.ref }}
       # For the build below and for lib.sh's arbor_build, which then finds nothing left to do.
       ARBOR_CONFIGURATION: ${{ inputs.configuration || 'debug' }}
+      MAC_SHELL_LIMIT: ${{ inputs.limit || '1200' }}
     steps:
       - name: Check the inputs
         id: inputs
@@ -106,6 +112,9 @@ jobs:
           set -f # a star in there is a mistake, not a pattern
           [ -n "$SCRIPT" ] || { echo "::error::no script"; exit 2; }
           [ "$(echo $SCRIPT | wc -w)" -le 4 ] || { echo "::error::at most four scripts for one Mac: give the rest to another (run.sh --macs)"; exit 2; }
+          # The step that runs them has ninety minutes, and what they gathered must still get pushed.
+          [[ "$MAC_SHELL_LIMIT" =~ ^[1-9][0-9]{0,3}$ ]] && [ $(($(echo $SCRIPT | wc -w) * MAC_SHELL_LIMIT)) -le 4800 ] \
+            || { echo "::error::$(echo $SCRIPT | wc -w) scripts of $MAC_SHELL_LIMIT s each are more than the 4800 s a Mac has for its scripts"; exit 2; }
           for script in $SCRIPT; do
             case "$script" in
               /*|-*|*..*|*[!A-Za-z0-9._/-]*)

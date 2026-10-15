@@ -1923,6 +1923,12 @@ esac""",
     for name in ["a", "b", "c", "d", "e", "e2e-drag", *map(str, range(9))]:
         with open(os.path.join(checkout, f"{name}.sh"), "w", encoding="utf-8") as handle:
             handle.write("echo hello\n")
+    # Scripts that ask their own supervisor for time: itself, through a file it reads in, only where it does not count, too much.
+    for name, text in {"long": "ARBOR_TIME_LIMIT=1500\n", "through": 'source "$(dirname "$0")/lib-long.sh"\n', "lib-long": "ARBOR_TIME_LIMIT=${ARBOR_TIME_LIMIT:-2400}\n",
+                       "short": "ARBOR_TIME_LIMIT=300\n", "elsewhere": "on_a_mac_of_theirs || ARBOR_TIME_LIMIT=${ARBOR_TIME_LIMIT:-1800}\n# ARBOR_TIME_LIMIT=9999\n",
+                       "endless": "export ARBOR_TIME_LIMIT=7000\n"}.items():
+        with open(os.path.join(checkout, f"{name}.sh"), "w", encoding="utf-8") as handle:
+            handle.write(text)
     subprocess.run(["git", "init", "--quiet", "--bare", origin], check=True)
     git("init", "--quiet", "--initial-branch=elsewhere")
     git("add", "--all")
@@ -1994,6 +2000,20 @@ esac
         [started("--release", "a.sh", branch)[2].get("inputs[configuration]") for branch in ("feat/new-lib", "feat/x")], ["release", "release"])
     row("run.sh: the debug build of the old branch is nobody's business", started("a.sh", "feat/old-lib")[1][1], "feat/old-lib")
     row("run.sh: --bare builds nothing, so not with --release", started("--bare", "--release", "a.sh", "feat/x")[:2], (97, NOT_STARTED))
+    given = lambda *arguments: (lambda code, _, asked: (code, asked.get("inputs[limit]"), asked.get("inputs[macs]", "").count('"parts"')))(*started(*arguments, "feat/x"))
+    row("run.sh: twenty minutes for a script are not said: an older workflow would refuse the start", given("a.sh"), (97, None, 1))
+    row("run.sh: a script that asks its supervisor for more gets it", given("long.sh"), (97, "1500", 1))
+    row("run.sh: so does one that asks through a file it reads in", given("through.sh"), (97, "2400", 1))
+    row("run.sh: who asks for most decides for all, and fewer go to one Mac: eighty minutes are two of forty", given("a.sh", "through.sh", "long.sh"), (97, "2400", 2))
+    row("run.sh: three of twenty-five minutes still fit on one", given("long.sh", "a.sh", "b.sh"), (97, "1500", 1))
+    row("run.sh: one that asks for less is given the twenty minutes all the same", given("short.sh"), (97, None, 1))
+    row("run.sh: what is said in a remark, or for another kind of Mac, is not asked for here", given("elsewhere.sh"), (97, None, 1))
+    row("run.sh: --limit has the last word, up or down", [given("--limit", "3000", "a.sh"), given("--limit", "600", "through.sh")], [(97, "3000", 1), (97, "600", 1)])
+    row("run.sh: more than a Mac has: nothing is started, and it says who asks", (lambda done, noted, _: (done.returncode, os.path.exists(noted), "endless.sh asks for 7000 s" in done.stderr))(
+        *ran("endless.sh", "feat/x")), (97, False, True))
+    row("run.sh: nor with --limit", started("--limit", "4801", "a.sh", "feat/x")[:2], (97, NOT_STARTED))
+    row("run.sh: --limit 0, --limit soon", [started("--limit", value, "a.sh", "feat/x")[:2] for value in ("0", "soon")], [(97, NOT_STARTED)] * 2)
+    row("run.sh: it says beforehand how long, and for whose sake", "each script may take 2400 s: through.sh asks for it" in ran("a.sh", "through.sh", "feat/x")[0].stdout, True)
     row("run.sh: three scripts go to one Mac", started("a.sh", "./b.sh", "c.sh", "feat/x")[:2], (97, ["home", "feat/x", "a.sh b.sh c.sh", '[{"parts":"1-3","of":3,"scripts":"a.sh b.sh c.sh"}]']))
     row("run.sh: five are too many for one", started("a.sh", "b.sh", "c.sh", "d.sh", "e.sh", "feat/x")[1][3], '[{"parts":"1-3","of":5,"scripts":"a.sh b.sh c.sh"},{"parts":"4-5","of":5,"scripts":"d.sh e.sh"}]')
     row("run.sh: --macs 3", started("--macs", "3", "a.sh", "b.sh", "c.sh", "d.sh", "feat/x")[1][3], '[{"parts":"1-2","of":4,"scripts":"a.sh b.sh"},{"parts":"3-3","of":4,"scripts":"c.sh"},{"parts":"4-4","of":4,"scripts":"d.sh"}]')
@@ -2182,6 +2202,7 @@ sys.exit(int(turns[min(look, len(turns) - 1)]))
     row("run.sh: one script on two Macs: the end of what it said on each is shown", [line for line in said.splitlines() if line == "said" or line.startswith("--- end of")][1::2], ["said", "said"])
     row("run.sh: twenty minutes more for each further script of that Mac", waits("a.sh", "b.sh", "c.sh"), ["5100 s at most"])
     row("run.sh: Macs side by side take no longer than the one that has most", waits("--macs", "2", "a.sh", "b.sh", "c.sh", tags=("t.1", "t.2")), ["3900 s at most"])
+    row("run.sh: and as long as the scripts may take", waits("through.sh"), ["3900 s at most"])
     row("run.sh: one after the other they do", waits("--macs", "2", "--at-once", "1", "a.sh", "b.sh", tags=("t.1", "t.2")), ["3900 s at most"])
     shutil.rmtree(os.path.join(checkout, ".mac-shell"), ignore_errors=True)
     world.cleanup()
