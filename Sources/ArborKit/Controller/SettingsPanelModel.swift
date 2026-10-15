@@ -115,6 +115,10 @@ public final class SettingsPanelModel {
     public let isChanged: Bool
     /// Why the last change made here was refused.
     public let error: String?
+    /// The label of a switch that is off, and without which this setting does nothing (`SettingsSchema.needs`).
+    public let waitsFor: String?
+    /// That, in a sentence, for where the switch may be out of sight.
+    public var whyItWaits: String? { waitsFor.map { "Does nothing while “\($0)” is off." } }
     public var id: String { key }
   }
 
@@ -148,7 +152,20 @@ public final class SettingsPanelModel {
     }
     return Row(
       key: entry.key, label: entry.label, help: entry.help, control: control,
-      isChanged: !entry.isDefault(in: settings), error: errors[entry.key])
+      isChanged: !entry.isDefault(in: settings), error: errors[entry.key], waitsFor: master(of: entry))
+  }
+
+  /// Of the switches `entry` hangs on that are off, the outermost: switching on a nearer one alone would change nothing.
+  private func master(of entry: SettingEntry) -> String? {
+    var off: String?
+    var key = entry.key
+    // (As many steps as there are lines: a ring, which a test rules out, must not hang the window.)
+    for _ in SettingsSchema.needs {
+      guard let next = SettingsSchema.needs[key], let master = try? SettingsSchema.entry(named: next) else { break }
+      if master.value(in: settings) == .bool(false) { off = master.label }
+      key = next
+    }
+    return off
   }
 
   /// A section with nothing but advanced settings shows them at once: a pane that holds only a closed
