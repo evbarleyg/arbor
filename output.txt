@@ -1,0 +1,282 @@
+# mac-shell: scripts/mac-shell/first-dock.sh at 06622a7, macOS 26.6.2, 2026-10-15T01:59Z
+
+== the Mac
+macOS 26.6.2 (25G83) on arm64, 3 cores
+built Arbor and the pointer tool in 13s
+1600 900 1600 900
+display: 1 0 0 1600 900 1600 900 1
+Reduce Motion: false
+
+== the apps are open already
+> open -g -b com.apple.finder /tmp/arbor-apps.Vn7whg/scratch/grove
+pid 360 lists (id role subrole x y w h flags):
+  30 AXWindow AXStandardWindow 340 120 920 436 main,toolbar
+  0 AXScrollArea - 0 0 1600 900 fixed-size,fixed-position,no-close,no-minimize,no-zoom
+> open -g -b com.apple.Safari /tmp/arbor-apps.Vn7whg/scratch/page.html
+pid 5087 lists (id role subrole x y w h flags):
+  31 AXWindow AXStandardWindow 138 31 1324 791 main,toolbar
+> open -g -b com.apple.TextEdit /tmp/arbor-apps.Vn7whg/scratch/oak.txt
+pid 5167 lists (id role subrole x y w h flags):
+  38 AXWindow AXStandardWindow 165 65 673 439 main
+> open -g -b com.apple.Terminal 
+pid 5264 lists (id role subrole x y w h flags):
+  43 AXWindow AXStandardWindow 40 51 877 499 main
+> open -g -b com.apple.Notes 
+pid 5480 lists (id role subrole x y w h flags):
+  44 AXWindow AXStandardWindow 300 105 1000 660 main,close-disabled,sheets=1
+something is in the way:
+  AXWindow/AXStandardWindow 300 105 1000 660
+    AXButton/AXCloseButton 308 113 16 16
+    AXButton/AXZoomButton 354 113 16 16
+    AXButton/AXMinimizeButton 331 113 16 16
+    AXSheet/- 563 135 475 600
+      AXButton/- 934 686 85 30 "Continue"
+pressed "Continue": 0
+pressed "Cancel": 0
+> open -g -b com.apple.iCal 
+pid 5614 lists (id role subrole x y w h flags):
+  48 AXWindow AXStandardWindow 200 86 935 598 main,toolbar
+> open -g -b com.apple.systempreferences 
+pid 5847 lists (id role subrole x y w h flags):
+  49 AXWindow AXStandardWindow 437 85 723 625 main,toolbar
+> open -g -b com.apple.Preview /tmp/arbor-apps.Vn7whg/scratch/leaf.png
+pid 5971 lists (id role subrole x y w h flags):
+  51 AXWindow AXStandardWindow 4 35 708 424 main,toolbar
+> open -g -b com.apple.mail 
+pid 6037 lists (id role subrole x y w h flags):
+  53 AXWindow AXStandardWindow 240 72 1120 630 main,close-disabled,sheets=1,toolbar
+something is in the way:
+  AXWindow/AXStandardWindow 240 72 1120 630
+      AXButton/- 404 72 44 52 "Sidebar"
+      AXButton/- 853 72 45 52 "New Message"
+        AXButton/AXSegment 920 72 36 52 "Reply"
+        AXButton/AXSegment 957 72 36 52 "Reply All"
+        AXButton/AXSegment 994 72 36 52 "Forward"
+        AXButton/AXSegment 1038 72 36 52 "Archive"
+        AXButton/AXSegment 1075 72 36 52 "Delete"
+        AXButton/AXSegment 1112 72 37 52 "Junk"
+          AXButton/AXSegment 1217 80 36 36 "flagged Orange"
+        AXButton/AXSearchField 1314 79 39 38 ""
+    AXButton/AXCloseButton 258 90 16 16
+    AXButton/AXZoomButton 304 90 16 16
+    AXButton/AXMinimizeButton 281 90 16 16
+    AXSheet/- 565 179 470 416
+          AXButton/- 936 302 79 24 "Continue"
+        AXButton/- 585 551 24 24 "Help"
+        AXButton/- 949 551 66 24 "Cancel"
+pressed "Cancel": 0
+the cast: 30 31 38 43 44 48 49 51 53
+
+== session debug
+session 1: Arbor pid 6427, ARBOR_LIMIT=none: running: 1 display, 0 docked and 8 floating, 0 out of view
+Arbor dev
+  status answered in 22 ms
+  status answered in 23 ms
+  status answered in 31 ms
+  status answered in 19 ms
+  status answered in 29 ms
+  status answered in 28 ms
+  processor time since the start (minutes:seconds): 0:00.34
+> trace on debug
+recording /tmp/arbor-shell.c7vVqU/home/traces/2026-10-15-020032-debug.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+> dock 30 left
+docked w30 at the left edge
+> dock 31 right
+docked w31 at the right edge
+> dock 38 right
+docked w38 at the right edge
+> zoom 30
+framed w30
+> show-all
+showing everything
+> trace off
+trace saved: /tmp/arbor-shell.c7vVqU/home/traces/2026-10-15-020032-debug.jsonl: 366 lines, trace off
+
+| command | first move | of it stage | at rest | answered | stage down | moves |
+|---|---|---|---|---|---|---|
+| dock 30 left | 28 | 24 | 391 | 501 | 755 | 8 to 8 windows, 360 ms |
+| dock 31 right | 5 | 3 | 661 | 831 | 1069 | 14 to 8 windows, 646 ms |
+| dock 38 right | 6 | 2 | 57 | 184 | 621 | 3 to 3 windows, 50 ms |
+| zoom 30 | 9 | 4 | 176 | 292 | 661 | 8 to 8 windows, 164 ms |
+| show-all | 27 | 19 | 423 | 432 | 640 | 8 to 8 windows, 367 ms |
+
+got ready ahead of time:
+   97 ms  the stage of 07230EFA-7A8D-4E37-845C-19CC8737EEF5
+  192 ms  the costume of com.apple.finder
+    4 ms  the costume of com.apple.Safari
+    3 ms  the costume of com.apple.TextEdit
+   50 ms  the costume of com.apple.Terminal
+    3 ms  the costume of com.apple.Notes
+   62 ms  the costume of com.apple.iCal
+   98 ms  the costume of com.apple.systempreferences
+    4 ms  the costume of com.apple.Preview
+  513 ms  in all, 9 pieces, the longest 192 ms
+2026-10-15T02:00:32.376Z DEBUG the stage kept the windows waiting 24 ms: its panel 0, 8 costumes 0 (0 not ready), the desktop 3, going up 21
+2026-10-15T02:00:35.052Z DEBUG the stage kept the windows waiting 3 ms: its panel 0, 8 costumes 0 (0 not ready), the desktop 1, going up 2
+2026-10-15T02:00:38.192Z DEBUG the stage kept the windows waiting 2 ms: its panel 0, 8 costumes 0 (0 not ready), the desktop 1, going up 1
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ debug, on a Mac that has drawn none of the icons: the stage keeps the first dock waiting under 100 ms
+  ✔ and every card has its colour and icon
+
+== session debug-unrehearsed
+session 2: Arbor pid 7912, ARBOR_LIMIT=none: running: 1 display, 0 docked and 8 floating, 0 out of view
+Arbor dev
+  status answered in 26 ms
+  status answered in 29 ms
+  status answered in 28 ms
+  status answered in 24 ms
+  status answered in 34 ms
+  status answered in 43 ms
+  processor time since the start (minutes:seconds): 0:00.24
+> trace on debug-unrehearsed
+recording /tmp/arbor-shell.oYSlpZ/home/traces/2026-10-15-020056-debug-unrehearsed.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+> dock 30 left
+docked w30 at the left edge
+> dock 31 right
+docked w31 at the right edge
+> dock 38 right
+docked w38 at the right edge
+> zoom 30
+framed w30
+> show-all
+showing everything
+> trace off
+trace saved: /tmp/arbor-shell.oYSlpZ/home/traces/2026-10-15-020056-debug-unrehearsed.jsonl: 341 lines, trace off
+
+| command | first move | of it stage | at rest | answered | stage down | moves |
+|---|---|---|---|---|---|---|
+| dock 30 left | 59 | 55 | 485 | 501 | 713 | 8 to 8 windows, 424 ms |
+| dock 31 right | 7 | 4 | 310 | 467 | 630 | 14 to 8 windows, 292 ms |
+| dock 38 right | 10 | 5 | 98 | 168 | 632 | 3 to 3 windows, 88 ms |
+| zoom 30 | 26 | 5 | 154 | 308 | 608 | 8 to 8 windows, 126 ms |
+| show-all | 6 | 3 | 253 | 262 | 586 | 8 to 8 windows, 238 ms |
+
+got ready ahead of time:
+   30 ms  the costume of com.apple.Safari
+    6 ms  the costume of com.apple.TextEdit
+   13 ms  the costume of com.apple.Terminal
+   23 ms  the costume of com.apple.Notes
+    6 ms  the costume of com.apple.iCal
+    5 ms  the costume of com.apple.systempreferences
+    6 ms  the costume of com.apple.Preview
+    4 ms  the costume of com.apple.finder
+   93 ms  in all, 8 pieces, the longest 30 ms
+2026-10-15T02:00:56.091Z DEBUG the stage kept the windows waiting 55 ms: its panel 14, 8 costumes 0 (8 not ready), the desktop 9, going up 31
+2026-10-15T02:00:58.652Z DEBUG the stage kept the windows waiting 4 ms: its panel 0, 8 costumes 0 (0 not ready), the desktop 1, going up 3
+2026-10-15T02:01:01.321Z DEBUG the stage kept the windows waiting 5 ms: its panel 0, 8 costumes 0 (0 not ready), the desktop 2, going up 2
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ with nothing got ready it waits for no icon either (55 ms)
+
+== the release build
+built in 210s
+
+== session release
+session 3: Arbor pid 19118, ARBOR_LIMIT=none: running: 1 display, 0 docked and 8 floating, 0 out of view
+Arbor dev
+  status answered in 36 ms
+  status answered in 21 ms
+  status answered in 28 ms
+  status answered in 22 ms
+  status answered in 34 ms
+  status answered in 21 ms
+  processor time since the start (minutes:seconds): 0:00.56
+> trace on release
+recording /tmp/arbor-shell.1Wr0Cu/home/traces/2026-10-15-020449-release.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+> dock 30 left
+docked w30 at the left edge
+> dock 31 right
+docked w31 at the right edge
+> dock 38 right
+docked w38 at the right edge
+> zoom 30
+framed w30
+> show-all
+showing everything
+> trace off
+trace saved: /tmp/arbor-shell.1Wr0Cu/home/traces/2026-10-15-020449-release.jsonl: 341 lines, trace off
+
+| command | first move | of it stage | at rest | answered | stage down | moves |
+|---|---|---|---|---|---|---|
+| dock 30 left | 42 | 37 | 711 | 738 | 912 | 8 to 8 windows, 661 ms |
+| dock 31 right | 7 | 5 | 369 | 508 | 740 | 14 to 8 windows, 355 ms |
+| dock 38 right | 26 | 13 | 265 | 458 | 760 | 3 to 3 windows, 238 ms |
+| zoom 30 | 8 | 6 | 244 | 443 | 580 | 8 to 8 windows, 234 ms |
+| show-all | 13 | 8 | 345 | 353 | 646 | 8 to 8 windows, 320 ms |
+
+got ready ahead of time:
+  269 ms  the stage of 07230EFA-7A8D-4E37-845C-19CC8737EEF5
+   98 ms  the costume of com.apple.finder
+    6 ms  the costume of com.apple.Safari
+    6 ms  the costume of com.apple.TextEdit
+    7 ms  the costume of com.apple.Terminal
+    6 ms  the costume of com.apple.Notes
+    5 ms  the costume of com.apple.iCal
+    4 ms  the costume of com.apple.systempreferences
+    5 ms  the costume of com.apple.Preview
+  406 ms  in all, 9 pieces, the longest 269 ms
+2026-10-15T02:04:49.405Z DEBUG the stage kept the windows waiting 37 ms: its panel 0, 8 costumes 0 (0 not ready), the desktop 2, going up 35
+2026-10-15T02:04:52.212Z DEBUG the stage kept the windows waiting 5 ms: its panel 0, 8 costumes 0 (0 not ready), the desktop 1, going up 3
+2026-10-15T02:04:54.989Z DEBUG the stage kept the windows waiting 13 ms: its panel 0, 8 costumes 0 (0 not ready), the desktop 6, going up 7
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ release: the stage keeps the first dock waiting under 100 ms
+
+== session release-unrehearsed
+session 4: Arbor pid 20187, ARBOR_LIMIT=none: running: 1 display, 0 docked and 8 floating, 0 out of view
+Arbor dev
+  status answered in 13 ms
+  status answered in 13 ms
+  status answered in 12 ms
+  status answered in 13 ms
+  status answered in 13 ms
+  status answered in 14 ms
+  processor time since the start (minutes:seconds): 0:00.15
+> trace on release-unrehearsed
+recording /tmp/arbor-shell.z4VBBM/home/traces/2026-10-15-020511-release-unrehearsed.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+> dock 30 left
+docked w30 at the left edge
+> dock 31 right
+docked w31 at the right edge
+> dock 38 right
+docked w38 at the right edge
+> zoom 30
+framed w30
+> show-all
+showing everything
+> trace off
+trace saved: /tmp/arbor-shell.z4VBBM/home/traces/2026-10-15-020511-release-unrehearsed.jsonl: 341 lines, trace off
+
+| command | first move | of it stage | at rest | answered | stage down | moves |
+|---|---|---|---|---|---|---|
+| dock 30 left | 39 | 37 | 237 | 247 | 719 | 8 to 8 windows, 195 ms |
+| dock 31 right | 5 | 3 | 264 | 376 | 660 | 14 to 8 windows, 252 ms |
+| dock 38 right | 28 | 24 | 148 | 284 | 664 | 3 to 3 windows, 116 ms |
+| zoom 30 | 10 | 7 | 218 | 324 | 594 | 8 to 8 windows, 206 ms |
+| show-all | 26 | 21 | 370 | 396 | 669 | 8 to 8 windows, 319 ms |
+
+got ready ahead of time:
+   22 ms  the costume of com.apple.Safari
+    4 ms  the costume of com.apple.TextEdit
+    5 ms  the costume of com.apple.Terminal
+   13 ms  the costume of com.apple.Notes
+    5 ms  the costume of com.apple.systempreferences
+    3 ms  the costume of com.apple.Preview
+    7 ms  the costume of com.apple.iCal
+    4 ms  the costume of com.apple.finder
+   63 ms  in all, 8 pieces, the longest 22 ms
+2026-10-15T02:05:12.030Z DEBUG the stage kept the windows waiting 37 ms: its panel 10, 8 costumes 0 (8 not ready), the desktop 2, going up 24
+2026-10-15T02:05:14.365Z DEBUG the stage kept the windows waiting 3 ms: its panel 0, 8 costumes 0 (0 not ready), the desktop 1, going up 2
+2026-10-15T02:05:16.866Z DEBUG the stage kept the windows waiting 24 ms: its panel 0, 8 costumes 0 (0 not ready), the desktop 1, going up 23
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+
+8 passed, 0 failed
+still running when the script had ended, and stopped now:
+  4041 sleep
+exit code 0
