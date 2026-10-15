@@ -56,6 +56,7 @@ fits it (`Navigation.bestFit`, already written and tested).
   button comes up, then sent on ahead of the mouse-up, so ⇧⌘-click keeps
   working in apps (Safari opens a link in a new tab with it).
 - 2026-10-15 (Q26): `pointerGestures` is the one switch above this and every other gesture that needs an event tap. Off, `Controller.inputSettings` leaves the taps nothing to ask for. It ships off.
+- 2026-10-15 (board 1.53): the tap on mouse-downs is installed but switched off, and goes on only while exactly the keys of a rectangle are down or a press is being followed (`RectangleGesture.downTapIsWanted`). ⇧ alone is not one of Arbor's keys, since it goes down with every capital letter: `frameRectangleOnDesktop` ships off.
 - Setting `frameRectangleModifier` (default `shift+cmd`), applied at launch
   and on every settings change (`reload-settings`). `none` or `off` turns
   rectangle framing off and removes its tap. An unreadable value is logged

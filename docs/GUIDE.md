@@ -57,7 +57,7 @@ That is all of it: **dock**, **float**, **zoom**. Everything else is a faster wa
 | Dock | drag to a screen edge, or hold over another docked window's edge until the preview shows | ⌃⌥⌘ + arrow |
 | Float | drag onto the Desktop, or anywhere with ⌘ held (in a view without the Desktop, only ⌘ takes a window out: let go without it, the window goes back to its place) | ⌃⌥F |
 | Frame one window | | ⌃⌥↩ (again to return) |
-| Step out, step in | with [the gestures switched on](#6-on-its-way): ⌥ + pinch, or pinch on the Desktop; with a mouse, ⌃⌥ + scroll down or up: a notch is one step, a flick goes all the way | ⌃⌥↑, ⌃⌥↓ |
+| Step out, step in | with [the gestures switched on](#6-on-its-way): ⌥ + pinch; with a mouse, ⌃⌥ + scroll down or up: a notch is one step, a flick goes all the way | ⌃⌥↑, ⌃⌥↓ |
 | Show everything | | ⌃⌥Space |
 | Peek: from one window to another | point while holding ⌃⌥Space | hold ⌃⌥Space, arrows, let go |
 | Take it back | menu → Undo, which names the step ("Undo Dock") | ⌃⌥Z, and ⌃⌥⇧Z to do it again: the last 50 changes to the arrangement, Arrange and Float All among them, with the saved views they cost |
@@ -225,7 +225,7 @@ Would you like to see it after every move of the view, without asking? `arborctl
 
 ### Reading and writing side by side
 
-Frame a rectangle (with [the gestures switched on](#6-on-its-way)): hold **⇧** and drag, starting on the Desktop, in a gap or on a tile, around the windows you want; or hold **⌃⌥** and start anywhere. The view moves to the space that fits best. It is the quickest way to say "these two". Let go of the keys first to call it off.
+Frame a rectangle (with [the gestures switched on](#6-on-its-way)): hold **⌃⌥** and drag around the windows you want. The view moves to the space that fits best. It is the quickest way to say "these two". Let go of the keys first to call it off.
 
 ### Something small for a moment
 
@@ -368,7 +368,7 @@ Arrange the windows by hand once, ask for the line, and bind it to a shortcut: `
 | **The shortcuts do nothing** | No permission; another app has the keys; shortcuts are off, or off in this app; Arbor is paused | Open the menu: it says if permission is missing or Arbor is paused, and Shortcuts Off in “App” has a tick if they are off in the app in front. Quit Rectangle, Magnet and the like. ⌃⌥⇧/ or Keyboard Shortcuts… in the menu shows the shortcuts in effect; `arborctl bindings` lists them too and says if they are off right now, and why |
 | **Only ⌃⌥Space does nothing**, or ⌃⌥Space no longer switches keyboards | With several keyboards or input methods set up, macOS uses the same keys for "Select next source in Input menu", and only one of the two gets them (on the one Mac where it was measured, Arbor) | ⌃⌥0 shows everything too. Free the key on either side: System Settings → Keyboard → Keyboard Shortcuts → Input Sources, or `arborctl unbind ctrl+opt+space` |
 | **Show Everything springs back** when the keys come up | They were held for a second or more, or the pointer moved meanwhile, which is a peek: letting go returns to the outlined view | Let go within a second with the pointer at rest, or use ⌃⌥0, which never peeks. `"peek": false` in `settings.json` turns peeking off |
-| **Clicks, scrolling or pinches feel late or go missing**, in any app, since you switched the gestures on | For the pinch, ⌃⌥ + scroll and the rectangle macOS shows Arbor each press, scroll and pinch first, and holds it until Arbor has answered | Settings… → Gestures → **Trackpad and mouse gestures** off, or `arborctl set pointerGestures false`: nothing waits for Arbor any more. Keys, the menu and dragging windows, gaps and tiles work as before. If that cures it, please tell us |
+| **Clicks, scrolling or pinches feel late or go missing**, in any app, since you switched the gestures on | While you hold ⌥ or ⌃⌥, macOS shows Arbor each press, scroll and pinch first, and holds it until Arbor has answered. With none of its keys down Arbor is not in the path of your input, unless you have switched on one of the four settings that say "needs Arbor in the path of every…" | Settings… → Gestures → **Trackpad and mouse gestures** off, or `arborctl set pointerGestures false`: nothing waits for Arbor any more. Keys, the menu and dragging windows, gaps and tiles work as before. If that cures it, please tell us |
 | **A beep** | The shortcut has nothing to do here, and `messages` is "off" | Set `messages` to "helpful" and Arbor says why on screen; or ask `arborctl` with the same command: `arborctl in` → "nothing is docked yet: drag a window to a screen edge…" |
 | **A window pushed against the edge takes half the screen**, or all of it at the top, and is not docked | With macOS's own tiling on, the left, right and top edges are macOS's, and Arbor stands aside | ⌃⌥⌘ + an arrow docks it at once. Or switch off the three switches in section 2, and every edge is Arbor's |
 | **A window shows as a coloured tile** with its icon | Its place is too small for it, or its app refused to shrink that far | Arbor has already moved the gaps as far as the Desktop and the neighbours could spare. Click the tile to zoom in on it. Give it more room by dragging a gap. Once there is room, Arbor asks the window again, out of view, and gives it the place if it fits |
@@ -397,5 +397,5 @@ Being built or waiting to be merged as this is written. When one lands, its sect
 | Presets | Set the table with one command |
 | Carry a window with the keyboard (⌃⌥⌘Space) | Everything a drag can do, from the keys: put a window under one other window, make a tab group |
 | Clicks on the Desktop guarded | Built, and off until someone has tried it on a Mac (`guardDesktopClicks`). Then the first of the four switches in section 2 will no longer be needed |
-| Trackpad and mouse gestures: the pinch, ⌃⌥ + scroll, the rectangle | Built, and off for now: for them macOS shows Arbor every pinch, scroll and press of the Mac first, in every app, and holds it until Arbor has answered. That waits until all its checks on a Mac are green. To have them today: Settings… → Gestures → **Trackpad and mouse gestures**, or `arborctl set pointerGestures true` |
+| Trackpad and mouse gestures: the pinch, ⌃⌥ + scroll, the rectangle | Built, and off for now: while you hold their keys macOS shows Arbor every pinch, scroll and press of the Mac first, in every app, and holds it until Arbor has answered. Arbor stands in the path of your input only while you hold its keys. That waits until all its checks on a Mac are green. To have them today: Settings… → Gestures → **Trackpad and mouse gestures**, or `arborctl set pointerGestures true` |
 | Double-click a title bar or the Desktop | More of what TrellisWM users' hands expect |

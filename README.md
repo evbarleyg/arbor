@@ -44,10 +44,10 @@ independent implementation and is not affiliated with it.
 - **Stay on the keyboard**: ⌃⌥⇧ + arrow moves focus to the nearest window that way, into tiles, on to the
   next space and the next display. ⌃⌥⌘= and ⌃⌥⌘- grow and shrink the focused window, ⌃⌥⌘0 balances the
   sizes, ⌃⌥R rotates a row into a column and back. See [Arranging from the keyboard](#arranging-from-the-keyboard).
-- **Pinch and frame**: with ⌥ held, or over the Desktop, pinch on the trackpad
-  to step out and spread two fingers to step in toward the pointer. Hold ⇧
-  and drag a rectangle, starting on the Desktop, to frame what it covers; with
-  ⌃⌥ held the drag can start anywhere. Off for now, with the next: `arborctl set pointerGestures true` switches them on.
+- **Pinch and frame**: with ⌥ held, pinch on the trackpad
+  to step out and spread two fingers to step in toward the pointer. Hold ⌃⌥
+  and drag a rectangle to frame what it covers. Arbor stands in the path of
+  your input only while you hold its keys. Off for now, with the next: `arborctl set pointerGestures true` switches them on.
 - **Zoom with a mouse**: hold ⌃⌥ and scroll: up steps in toward the pointer, down steps out. One step per notch of a
   wheel.
 - **Nothing gets lost**: windows outside the view are out of view, not closed: they wait past a
@@ -545,7 +545,7 @@ in the file it costs only its own key. [docs/SETTINGS.md](docs/SETTINGS.md) is t
 | `arrangeDesktopWeight` | 0.5 | Width of the Desktop column made by Arrange, in window columns; also by `layout` when the line does not mention the Desktop |
 | `bindings` | {} | Changes to the keyboard shortcuts (see [Keyboard](#keyboard)) |
 | `rules` | [] | What happens to new windows of an app (below) |
-| `gesturesEnabled` | true | Trackpad pinch with ⌥, or over the Desktop, steps the camera |
+| `gesturesEnabled` | true | Trackpad pinch with ⌥ steps the camera |
 | `pinchThreshold` | 0.25 | How far a pinch must go for one step (smaller is more sensitive) |
 | `frameRectangleModifier` | "ctrl+opt" | Keys to hold while dragging a rectangle to frame, starting anywhere; "none" turns it off |
 | `summonStays` | false | A summoned window stays when you turn to another window, until summoned away (see [Summoning](#summoning)) |
@@ -558,7 +558,7 @@ in the file it costs only its own key. [docs/SETTINGS.md](docs/SETTINGS.md) is t
 | `shareRemovedSpace` | true | A window that leaves (closed, floated, dragged out, minimized, hidden with ⌘H) gives its space to everyone in its group; false gives it to the neighbour before it, and nothing else moves (except where ⌃⌥⌘ + arrow has to take a little from everyone to keep a window usable) |
 | `shrinkOutOfView` | false | Windows out of view are also made small, 320 × 200 at most, until they come back (some apps rearrange their contents when they are made small) |
 | `ruleTitleWait` | 2 | Seconds (at most 60) a new window's title is checked against rules with a `title`; 0 checks only its first title |
-| `frameRectangleOnDesktop` | true | While something is docked on a display, ⇧-drag that starts on the bare Desktop, in a gap or on a tile there also frames a rectangle |
+| `frameRectangleOnDesktop` | false | While something is docked on a display, ⇧-drag that starts on the bare Desktop, in a gap or on a tile there also frames a rectangle. Needs Arbor in the path of every click made while ⇧ is down, as it is at every capital letter |
 | `guardDesktopClicks` | false | An experiment, not yet seen at work on a Mac. While something is docked on a display, a plain click on the bare Desktop or in a gap there is kept from macOS, which would sweep every window aside. Drags, icons and widgets are left alone, and so is every click while a menu, Spotlight or anything else of the kind is open |
 | `scrollZoom` | true | Scrolling with ⌃⌥ held steps in (up) and out (down); off with `gesturesEnabled` too |
 | `scrollZoomThreshold` | 40 | Points of travel for one step on a Magic Mouse or trackpad; a wheel steps once per notch |
@@ -599,7 +599,8 @@ in the file it costs only its own key. [docs/SETTINGS.md](docs/SETTINGS.md) is t
 | `newWindows` | "float" | What a new window does when no rule matches it. "dock": it docks beside the focused window (below). The menu's "Dock New Windows" and `toggle-auto-dock` switch it |
 | `autoDockMinimumWidth` / `autoDockMinimumHeight` | 400 / 300 | A window that opens smaller than this is never docked by `dock auto` or by a rule for `*` |
 | `minimapDuration` | 0 | Seconds (at most 10) the minimap shows by itself after the view has moved; 0 is off, ⌃⌥M shows it either way |
-| `pointerGestures` | false | The one switch above the pinch, ⌃⌥ + scroll, both ways to draw a rectangle and `guardDesktopClicks`. false: Arbor installs no event tap, so it holds back no click, scroll or pinch of the Mac, whatever their own settings say. Dragging windows, gaps and tiles works either way |
+| `pointerGestures` | false | The one switch above the pinch, ⌃⌥ + scroll, both ways to draw a rectangle and `guardDesktopClicks`. false: Arbor installs no event tap, so it holds back no click, scroll or pinch of the Mac, whatever their own settings say. true: it stands in the path of your input only while you hold its keys. Dragging windows, gaps and tiles works either way |
+| `pinchOnDesktop` | false | A pinch over the Desktop, in a gap or on a tile zooms without ⌥. Needs Arbor in the path of every touch of the trackpad, all day |
 
 The file is yours. When a command changes a setting (`set`, `bind`, `rule add`, "Don't Arrange"…), Arbor
 changes that setting in the file and leaves the rest as you wrote it: your order and spacing, keys

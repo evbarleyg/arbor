@@ -20,6 +20,9 @@ import Foundation
 ///   appearance, so that both can be looked at without changing a setting of somebody's Mac.
 /// - `ARBOR_NO_PICTURES=1`: take no pictures of windows, as without Screen Recording permission.
 /// - `ARBOR_RELEASES_URL=http://127.0.0.1:8000/latest.json`: ask there instead of GitHub's releases API.
+/// - `ARBOR_TAP_CLOCK_STOPS_AFTER=2`, `ARBOR_TAP_THREAD_STANDS_AFTER=2`: two sabotages, for probes of what a person would meet at the
+///   worst. So many seconds after the first beat of the event taps' clock its timer ends and nothing else does, or the taps'
+///   thread comes to stand for good (read by `EventTapThread`).
 /// - `ARBOR_NO_OPENING=1`: open no app (`summon` with no window to bring). An Arbor under test on somebody's Mac knows only
 ///   its test windows, so to it every app of theirs is one that has to be opened.
 /// - `ARBOR_NO_REHEARSAL=1`: get nothing ready for the first motion ahead of time, to measure what that saves.

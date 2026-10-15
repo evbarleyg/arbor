@@ -149,6 +149,15 @@ public struct RectangleGesture: Equatable, Sendable {
   /// Whether a press or drag is in progress.
   public var isTracking: Bool { state != .idle }
 
+  /// Whether the tap on mouse-downs has to be switched on. While it is, every press on the Mac waits for Arbor, and if Arbor
+  /// loses the right to its taps meanwhile, the next press costs the Mac its input (`TapPermission`). So it is installed but
+  /// paused, and switched on only while a press could be Arbor's: exactly the keys of one of the two gestures are down, or a
+  /// press is being followed, whatever the keys do meanwhile. With the guard of the wallpaper click any plain press could be.
+  public func downTapIsWanted(modifiers: Modifiers) -> Bool {
+    if guardsDesktopClicks || isTracking { return true }
+    return !modifiers.isEmpty && (modifiers == trigger || modifiers == desktopTrigger)
+  }
+
   /// Whether a press with these modifiers could be Arbor's on the Desktop and nowhere else (a plain one with the
   /// guard on, one with `desktopTrigger` held), so that it matters what is under the pointer. Finding that
   /// out is expensive, and must not be done for every click.

@@ -79,16 +79,17 @@ File). There are four ways to change one, and each takes effect at once and show
 
 | Key | Default | Values | What it does |
 |---|---|---|---|
-| `pointerGestures` | `false` | true or false | **Trackpad and mouse gestures.** The pinch, ⌃⌥ and scroll, and rectangles drawn with the pointer. Off, Arbor holds back no click, scroll or pinch of the Mac, whatever the switches below say. Dragging windows, gaps and tiles works either way. |
-| `gesturesEnabled` | `true` | true or false | **Pinch to zoom.** A trackpad pinch with ⌥ held, or over the Desktop, zooms the view in and out. |
+| `pointerGestures` | `false` | true or false | **Trackpad and mouse gestures.** The pinch, ⌃⌥ and scroll, and rectangles drawn with the pointer. On, Arbor stands in the path of your input only while you hold its keys. Off, it holds back no click, scroll or pinch of the Mac, whatever the switches below say. Dragging windows, gaps and tiles works either way. |
+| `gesturesEnabled` | `true` | true or false | **Pinch to zoom.** A trackpad pinch with ⌥ held zooms the view in and out. |
 | `pinchThreshold` | `0.25` | 0.05 to 2 | **Pinch travel for one step.** How far a pinch must travel for one step; smaller is more sensitive. *Advanced.* |
 | `frameRectangleModifier` | `ctrl+opt` | modifier keys joined by +, such as shift+cmd, or none | **Frame a rectangle with.** Hold these keys and drag a rectangle to frame what it covers; none turns this off. |
-| `frameRectangleOnDesktop` | `true` | true or false | **⇧-drag on the Desktop frames.** A ⇧-drag that starts on the Desktop, in a gap or on a tile also frames a rectangle. |
+| `frameRectangleOnDesktop` | `false` | true or false | **⇧-drag on the Desktop frames.** A ⇧-drag that starts on the Desktop, in a gap or on a tile also frames a rectangle. Needs Arbor in the path of every click made while ⇧ is down, as it is at every capital letter. |
 | `continuousZoom` | `false` | true or false | **Continuous zoom.** Not finished: the view will follow the fingers during a pinch, and pan with ⌥ and two fingers. For now a pinch steps as before. *Not in the settings window.* |
-| `guardDesktopClicks` | `false` | true or false | **Guard clicks on the Desktop.** Experimental. While something is docked, a plain click on the bare Desktop is kept from macOS, which would sweep every window aside (“Click wallpaper to reveal desktop”). Drags, icons and widgets are left alone. *Advanced.* |
+| `guardDesktopClicks` | `false` | true or false | **Guard clicks on the Desktop.** Experimental. While something is docked, a plain click on the bare Desktop is kept from macOS, which would sweep every window aside (“Click wallpaper to reveal desktop”). Drags, icons and widgets are left alone. Needs Arbor in the path of every click, all day. *Advanced.* |
 | `scrollZoom` | `true` | true or false | **Zoom with ⌃⌥ and scroll.** Scrolling with ⌃⌥ held zooms: up steps in toward the pointer, down steps out. Off with Pinch to zoom too. |
 | `scrollZoomThreshold` | `40` | 4 to 400 pt | **Scroll travel for one step.** How far a Magic Mouse or trackpad must scroll for one step; smaller is more sensitive. A wheel steps once per notch. *Advanced.* |
-| `scrollOnDesktopZooms` | `false` | true or false | **Scroll on the Desktop zooms.** Scrolling on the Desktop, in a gap or on a tile zooms without the keys. Every scroll on the Mac then passes through Arbor. *Advanced.* |
+| `scrollOnDesktopZooms` | `false` | true or false | **Scroll on the Desktop zooms.** Scrolling on the Desktop, in a gap or on a tile zooms without the keys. Needs Arbor in the path of every scroll, all day. *Advanced.* |
+| `pinchOnDesktop` | `false` | true or false | **Pinch on the Desktop zooms.** A pinch over the Desktop, in a gap or on a tile zooms without ⌥. Needs Arbor in the path of every touch of the trackpad, all day. *Advanced.* |
 
 ## Calls
 

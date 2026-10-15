@@ -819,12 +819,15 @@ magnification of a pinch that would have stepped as often.
 
 Once macOS 26 has withdrawn the right to tap from a process that has active taps, the first event that a switched-on tap asks for is dropped, and with it
 every event of the whole Mac for about a second, also keys, which no tap of Arbor's asks for; then again at the next such event, until the taps are removed (hosted Macs; nothing is lost without taps). A bare tool that never let go
-was told seconds late, and wrongly, and under a dense stream kept the Mac deaf until it was killed. So the hole is as long as Arbor takes to find out by asking. `TapPermission` (ArborCore, a value) decides, and `EventTapThread` does as it says: a clock
-on the taps' own thread, a beat every 0.15 s while a tap is installed, never on the main run loop, which waits for apps; the question
+was told seconds late, and wrongly, and under a dense stream kept the Mac deaf until it was killed. So the hole is as long as Arbor takes to find out by asking. A tap that is in but switched off starts nothing (four rounds of four), and one that was switched on after the right had gone started the drop that instant. So the taps are installed but
+switched off, each goes on only while a gesture could be Arbor's (`pinchTapIsWanted`, `scrollTapIsWanted`, `downTapIsWanted`: its keys are down, by two monitors in `PointerInput` that only listen, or a gesture of Arbor's is in progress), and **none goes on but by a fresh yes of macOS's**.
+`TapPermission` (ArborCore, a value) decides, and `EventTapThread` does as it says: whoever wants a tap on asks first, unless macOS has said yes within the last two beats; a clock
+on the taps' own thread, a beat every 0.05 s while a tap is wanted on and none otherwise, never on the main run loop, which waits for apps; the question
 (`EventTap.answer`: the flag, then a tap made and thrown away) is put by a third thread, because whoever waits for the window server and the privacy daemon answers for no event
 meanwhile (it took four seconds once, after the daemon had been killed); at a no, or at no answer in time, the taps' thread removes all taps in one turn and refuses to install any; the main thread
 hears afterwards (`PointerInput.permissionChanged`), and the controller only of what macOS said, not of its silence. A late yes, or a yes to the question put once a second from then on, brings them back. Until a
-tap is installed (every gesture switched off) no thread is started, no clock beats, and nobody asks but the controller. After every yes a tap is switched back on that macOS switched off.
+tap is installed (every gesture switched off) no thread is started, and with none of Arbor's keys down no clock beats and nobody asks but the controller. After every yes a tap is switched back on that macOS switched off.
+A pause from another thread (the keys come up) switches the tap off from there first, which needs nothing of the taps' thread.
 
 What macOS 26 does with a tap that does not answer, measured by stopping Arbor
 (`scripts/mac-shell/input-taps.sh`): the event waits, and so does every event
@@ -1477,6 +1480,7 @@ Everything else is a view of it:
 | `ARBOR_APPEARANCE=dark` | Draw Arbor's own windows, panels and menu dark (or `light`) whatever the system's appearance (pictures) |
 | `ARBOR_KEYBOARD_LAYOUT=com.apple.keylayout.German` | Go by that installed keyboard layout instead of the one selected (tests) |
 | `ARBOR_NO_PICTURES=1` | Take no pictures of windows, as without Screen Recording permission |
+| `ARBOR_TAP_CLOCK_STOPS_AFTER=2`, `ARBOR_TAP_THREAD_STANDS_AFTER=2` | Two sabotages, for probes of what a person would meet at the worst: so many seconds after the first beat of the event taps' clock its timer ends and nothing else does, or the taps' thread comes to stand for good |
 | `ARBOR_NO_OPENING=1` | Open no app: `summon` with no window to bring answers as if there were no such app |
 | `ARBOR_NO_REHEARSAL=1` | Get nothing ready for the first motion ahead of time (`first-dock.sh` measures what that saves) |
 | `ARBOR_RELEASES_URL=http://…` | Ask there instead of GitHub's releases API (tests of the real app) |

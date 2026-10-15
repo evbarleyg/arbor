@@ -695,7 +695,9 @@ extension Settings {
     #expect(settings.pinchThreshold == 0.25)
     #expect(settings.frameRectangleModifier == "ctrl+opt")
     #expect(RectangleGesture.Modifiers(text: settings.frameRectangleModifier) == [.control, .option])
-    #expect(settings.frameRectangleOnDesktop)
+    // Off since board 1.53: each needs a tap switched on while none of Arbor's keys is down.
+    #expect(!settings.frameRectangleOnDesktop)
+    #expect(!settings.pinchOnDesktop)
   }
 
   @Test func pointerSettingsDecodeAndRoundTrip() throws {

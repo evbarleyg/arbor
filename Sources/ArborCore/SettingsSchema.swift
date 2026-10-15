@@ -178,11 +178,12 @@ public enum SettingsSchema {
       // First, not last: it is the switch above the others.
       .toggle(
         "pointerGestures", \.pointerGestures, "Trackpad and mouse gestures",
-        "The pinch, ⌃⌥ and scroll, and rectangles drawn with the pointer. Off, Arbor holds back no click, scroll or pinch of the "
+        "The pinch, ⌃⌥ and scroll, and rectangles drawn with the pointer. On, Arbor stands in the path of your input only while "
+          + "you hold its keys. Off, it holds back no click, scroll or pinch of the "
           + "Mac, whatever the switches below say. Dragging windows, gaps and tiles works either way."),
       .toggle(
         "gesturesEnabled", \.gesturesEnabled, "Pinch to zoom",
-        "A trackpad pinch with ⌥ held, or over the Desktop, zooms the view in and out."),
+        "A trackpad pinch with ⌥ held zooms the view in and out."),
       .number(
         "pinchThreshold", \.pinchThreshold, min: GestureInterpreter.minimumThreshold, max: 2, step: 0.05,
         unit: "", "Pinch travel for one step",
@@ -194,7 +195,8 @@ public enum SettingsSchema {
         "Hold these keys and drag a rectangle to frame what it covers; none turns this off."),
       .toggle(
         "frameRectangleOnDesktop", \.frameRectangleOnDesktop, "⇧-drag on the Desktop frames",
-        "A ⇧-drag that starts on the Desktop, in a gap or on a tile also frames a rectangle."),
+        "A ⇧-drag that starts on the Desktop, in a gap or on a tile also frames a rectangle. Needs Arbor in the path of every "
+          + "click made while ⇧ is down, as it is at every capital letter."),
       .toggle(
         "continuousZoom", \.continuousZoom, "Continuous zoom",
         "Not finished: the view will follow the fingers during a pinch, and pan with ⌥ and two fingers. "
@@ -203,7 +205,7 @@ public enum SettingsSchema {
         "guardDesktopClicks", \.guardDesktopClicks, "Guard clicks on the Desktop",
         "Experimental. While something is docked, a plain click on the bare Desktop is "
           + "kept from macOS, which would sweep every window aside (“Click wallpaper to reveal desktop”). Drags, icons and "
-          + "widgets are left alone.", advanced: true),
+          + "widgets are left alone. Needs Arbor in the path of every click, all day.", advanced: true),
       .toggle(
         "scrollZoom", \.scrollZoom, "Zoom with ⌃⌥ and scroll",
         "Scrolling with ⌃⌥ held zooms: up steps in toward the pointer, down steps out. Off with Pinch to zoom too."),
@@ -214,8 +216,12 @@ public enum SettingsSchema {
           + "per notch.", advanced: true),
       .toggle(
         "scrollOnDesktopZooms", \.scrollOnDesktopZooms, "Scroll on the Desktop zooms",
-        "Scrolling on the Desktop, in a gap or on a tile zooms without the keys. Every scroll on the Mac then passes "
-          + "through Arbor.", advanced: true),
+        "Scrolling on the Desktop, in a gap or on a tile zooms without the keys. Needs Arbor in the path of every scroll, "
+          + "all day.", advanced: true),
+      .toggle(
+        "pinchOnDesktop", \.pinchOnDesktop, "Pinch on the Desktop zooms",
+        "A pinch over the Desktop, in a gap or on a tile zooms without ⌥. Needs Arbor in the path of every touch of the "
+          + "trackpad, all day.", advanced: true),
     ])
 
   private static let appearance = section(

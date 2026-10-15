@@ -103,7 +103,7 @@ public struct Settings: Codable, Equatable, Sendable {
   public var newWindowsWhileFramed: String = "guest"
   /// ⇧-drag that starts where no app's window is under the pointer (the Desktop, a gap between
   /// windows, a tile) also draws a rectangle to frame.
-  public var frameRectangleOnDesktop: Bool = true
+  public var frameRectangleOnDesktop: Bool = false
   /// The view follows the fingers during a pinch, and pans with ⌥ and two fingers, instead of
   /// stepping a level at a time (F16).
   public var continuousZoom: Bool = false
@@ -218,6 +218,9 @@ public struct Settings: Codable, Equatable, Sendable {
   /// (collab/QUESTIONS.md, Q26).
   /// Off as Arbor ships: no tap goes in at launch until all its checks of the taps on a Mac are green.
   public var pointerGestures: Bool = false
+  /// A pinch without ⌥ over the Desktop, a gap or a tile zooms too. Off as Arbor ships: it needs the pinch tap switched on all day,
+  /// and Arbor stands in the path of a person's input only while they hold its keys (board 1.53).
+  public var pinchOnDesktop: Bool = false
 
   public init() {}
 
@@ -293,6 +296,7 @@ public struct Settings: Codable, Equatable, Sendable {
     case minimapDuration
     case shareRemovedSpace, shrinkOutOfView
     case pointerGestures
+    case pinchOnDesktop
   }
 
   public init(from decoder: any Decoder) throws {
@@ -399,5 +403,6 @@ public struct Settings: Codable, Equatable, Sendable {
     try read(.shareRemovedSpace, into: &shareRemovedSpace)
     try read(.shrinkOutOfView, into: &shrinkOutOfView)
     try read(.pointerGestures, into: &pointerGestures)
+    try read(.pinchOnDesktop, into: &pinchOnDesktop)
   }
 }

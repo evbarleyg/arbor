@@ -17,10 +17,11 @@ import os
 /// `PointerSurface`; this class only reads events, draws the band and sends
 /// the command.
 ///
-/// Two taps, both on the tap thread (`EventTapThread`): one on mouse-downs,
+/// Two taps, both on the tap thread (`EventTapThread`): one on mouse-downs, paused
+/// except while a press could be Arbor's (`RectangleGesture.downTapIsWanted`: its keys are down),
 /// and one on drags and mouse-ups that is paused except while a modifier
-/// press is being followed, so the stream of ordinary drag events never
-/// passes through Arbor. They are installed together, so that no other
+/// press is being followed, so neither ordinary clicks nor the stream of ordinary drag events
+/// pass through Arbor. They are installed together, so that no other
 /// app's tap comes between them: one in between would see the mouse-down of a
 /// rectangle and never its mouse-up, and a modifier-click's mouse-down twice.
 /// The gesture state lives in a lock-protected box shared by the callbacks
@@ -45,6 +46,8 @@ final class RectangleFramer {
     /// Where the band should be (nil: hidden); drawn after the callback returns.
     var bandFrame: CGRect?
     var bandUpdateQueued = false
+    /// The tap on mouse-downs, paused except while a press could be Arbor's.
+    var downTap: EventTap?
     /// The tap on drags and mouse-ups, paused except while a press is being followed.
     var dragTap: EventTap?
     /// Where a press might land on bare Desktop, by the controller's latest word.
@@ -106,7 +109,10 @@ final class RectangleFramer {
       stop()
       return
     }
-    guard downTap == nil else { return }
+    guard downTap == nil else {
+      // The settings may have changed what is wanted.
+      return keysChanged(NSEvent.modifierFlags)
+    }
     let context = self.context!
     let tap = EventTap(name: "rectangle", mask: 1 << CGEventType.leftMouseDown.rawValue) { event, proxy in
       Self.handleDown(event, proxy: proxy, context: context)
@@ -117,15 +123,25 @@ final class RectangleFramer {
       Self.handleDrag(event, proxy: proxy, context: context)
     }
     dragTap.onReset = { Self.reset(context) }
-    guard tap.start() else { return }
+    guard tap.start(paused: true) else { return }
     guard dragTap.start(paused: true) else {
       tap.stop()
       return
     }
-    // A press that arrives before this line finds no drag tap and is let through.
-    context.state.withLockUnchecked { $0.dragTap = dragTap }
+    context.state.withLockUnchecked { ($0.downTap, $0.dragTap) = (tap, dragTap) }
     downTap = tap
     Log.info("rectangle event taps installed")
+    keysChanged(NSEvent.modifierFlags)
+  }
+
+  /// A modifier key went down or up (`PointerInput.watchKeys`): switches the tap on mouse-downs on or off as the gesture wants it.
+  func keysChanged(_ flags: NSEvent.ModifierFlags) {
+    var held: RectangleGesture.Modifiers = []
+    if flags.contains(.control) { held.insert(.control) }
+    if flags.contains(.option) { held.insert(.option) }
+    if flags.contains(.shift) { held.insert(.shift) }
+    if flags.contains(.command) { held.insert(.command) }
+    Self.switchDownTap(context, held)
   }
 
   func stop() {
@@ -133,7 +149,7 @@ final class RectangleFramer {
     downTap = nil
     Self.reset(context)
     let dragTap = context.state.withLockUnchecked { state -> EventTap? in
-      defer { state.dragTap = nil }
+      defer { (state.downTap, state.dragTap) = (nil, nil) }
       return state.dragTap
     }
     dragTap?.stop()
@@ -307,8 +323,16 @@ final class RectangleFramer {
     context.state.withLockUnchecked { $0.dragTap }?.resume() ?? false
   }
 
+  /// And with the keys up the tap on mouse-downs, which stayed on for the sake of the press, goes off with it.
   private nonisolated static func stopFollowing(_ context: Context) {
     context.state.withLockUnchecked { $0.dragTap }?.pause()
+    switchDownTap(context, modifiers(of: CGEventSource.flagsState(.combinedSessionState)))
+  }
+
+  /// Switches the tap on mouse-downs on or off as the gesture wants it. From any thread; its own handler may do it.
+  private nonisolated static func switchDownTap(_ context: Context, _ held: RectangleGesture.Modifiers) {
+    let (tap, isWanted) = context.state.withLockUnchecked { ($0.downTap, $0.gesture.downTapIsWanted(modifiers: held)) }
+    if isWanted { tap?.resume() } else { tap?.pause() }
   }
 
   /// Forgets the press or drag in progress, for when events may have been

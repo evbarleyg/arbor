@@ -6,7 +6,7 @@ import os
 /// `continuousZoom`, pinch and ⌃⌥-scroll are streamed to a view that follows the fingers
 /// (docs/features/F16-continuous-zoom-and-pan.md).
 ///
-/// A pinch is Arbor's when ⌥ is held as it begins, or when no app window is
+/// A pinch is Arbor's when ⌥ is held as it begins, or, with `pinchOnDesktop`, when no app window is
 /// under the pointer (the Desktop, a gap between windows, one of Arbor's
 /// tiles). Arbor swallows its pinches, and the rotations that begin during
 /// them, so the app under the pointer does not zoom or turn as well; every
@@ -24,7 +24,8 @@ final class GestureTap {
   /// What the tap callbacks need: the router, and the two things that must happen on the main actor.
   private final class Context: Sendable {
     let router = OSAllocatedUnfairLock(initialState: GestureRouter())
-    /// The scroll tap, for the handlers, which switch it on and off.
+    /// The taps, for the handlers, which switch them on and off.
+    let pinchTap = OSAllocatedUnfairLock<EventTap?>(initialState: nil)
     let scrollTap = OSAllocatedUnfairLock<EventTap?>(initialState: nil)
     let onCommand: @MainActor (Command) -> Void
     let onGesture: @MainActor (GestureUpdate) -> Void
@@ -39,15 +40,12 @@ final class GestureTap {
 
   private let context: Context
   private let settings: @MainActor () -> Settings
+  /// Paused except while a pinch could be Arbor's (`GestureRouter.pinchTapIsWanted`): switched on, every touch of the trackpad
+  /// passes through it.
   private var tap: EventTap?
   /// Installed only with `continuousZoom` or `scrollZoom`, and paused except while a scroll could be Arbor's
   /// (`GestureRouter.scrollTapIsWanted`): switched on, every scroll on the Mac passes through it.
   private var scrollTap: EventTap?
-  /// Tell when ⌃ and ⌥ go down and up. Monitors, not a tap: they only listen, after the fact, on the main thread. If they
-  /// hear nothing (secure keyboard entry, a busy main thread) the tap stays paused and the scroll is the app's. Two,
-  /// because a global monitor does not hear what goes to a window of Arbor's own. Nothing is remembered from one
-  /// event to the next: what was missed would make the memory wrong, and the next press would then be ignored.
-  private var keyMonitors: [Any] = []
 
   init(
     settings: @escaping @MainActor () -> Settings, onCommand: @escaping @MainActor (Command) -> Void,
@@ -63,13 +61,14 @@ final class GestureTap {
     let settings = settings()
     let threshold = settings.pinchThreshold
     let isContinuous = settings.continuousZoom
-    let (scrollZoom, scrollThreshold, onDesktop) =
-      (settings.scrollZoom, settings.scrollZoomThreshold, settings.scrollOnDesktopZooms)
+    let (scrollZoom, scrollThreshold, onDesktop, pinchOnDesktop) =
+      (settings.scrollZoom, settings.scrollZoomThreshold, settings.scrollOnDesktopZooms, settings.pinchOnDesktop)
     let needsVisit = context.router.withLock { router -> Bool in
       router.threshold = threshold
       router.zoomsWithScroll = scrollZoom
       router.scrollThreshold = scrollThreshold
       router.zoomsOnDesktop = onDesktop
+      router.pinchesOnDesktop = pinchOnDesktop
       return router.setContinuous(isContinuous)
     }
     if needsVisit { Self.visit(context) }
@@ -86,8 +85,10 @@ final class GestureTap {
       let mask = NSEvent.EventTypeMask.gesture.rawValue
       let tap = EventTap(name: "pinch", mask: mask) { event, _ in Self.handle(event, context: context) }
       tap.onReset = { Self.reset(context) }
-      if tap.start() {
+      let keys = Keys(NSEvent.modifierFlags)
+      if tap.start(paused: !context.router.withLock({ $0.pinchTapIsWanted(keys: keys) })) {
         self.tap = tap
+        context.pinchTap.withLock { $0 = tap }
         Log.info("pinch event tap installed")
       }
     }
@@ -102,18 +103,23 @@ final class GestureTap {
       if tap.start(paused: !isWanted) {
         scrollTap = tap
         context.scrollTap.withLock { $0 = tap }
-        watchKeys()
         Log.info("scroll event tap installed")
       }
     } else if !wantsScrolls {
       removeScrollTap()
-    } else {
-      // The settings may have changed what is wanted.
-      Self.switchScrollTap(context, Keys(NSEvent.modifierFlags))
     }
+    // The settings may have changed what is wanted.
+    keysChanged(NSEvent.modifierFlags)
+  }
+
+  /// A modifier key went down or up (`PointerInput.watchKeys`): switches each tap on or off as the router wants it. A few events a
+  /// second at most, and switching a tap to what it already is costs nothing.
+  func keysChanged(_ flags: NSEvent.ModifierFlags) {
+    Self.switchTaps(context, Keys(flags))
   }
 
   func stop() {
+    context.pinchTap.withLock { $0 = nil }
     tap?.stop()
     tap = nil
     removeScrollTap()
@@ -121,25 +127,9 @@ final class GestureTap {
   }
 
   private func removeScrollTap() {
-    for monitor in keyMonitors { NSEvent.removeMonitor(monitor) }
-    keyMonitors = []
     context.scrollTap.withLock { $0 = nil }
     scrollTap?.stop()
     scrollTap = nil
-  }
-
-  private func watchKeys() {
-    guard keyMonitors.isEmpty else { return }
-    let context = self.context
-    // A few events a second at most, and switching a tap to what it already is costs nothing.
-    let global = NSEvent.addGlobalMonitorForEvents(matching: .flagsChanged) { event in
-      Self.switchScrollTap(context, Keys(event.modifierFlags))
-    }
-    let local = NSEvent.addLocalMonitorForEvents(matching: .flagsChanged) { event in
-      Self.switchScrollTap(context, Keys(event.modifierFlags))
-      return event
-    }
-    keyMonitors = [global, local].compactMap { $0 }
   }
 
   var isInstalled: Bool { tap != nil || scrollTap != nil }
@@ -151,18 +141,28 @@ final class GestureTap {
 
   private typealias Keys = GestureRouter.Keys
 
-  /// Switches the scroll tap on or off as the router wants it. From any thread; a handler may do it to its own tap.
-  private nonisolated static func switchScrollTap(_ context: Context, _ keys: Keys) {
-    guard let tap = context.scrollTap.withLock({ $0 }) else { return }
-    if context.router.withLock({ $0.scrollTapIsWanted(keys: keys) }) {
-      tap.resume()
-    } else {
-      tap.pause()
+  /// Switches each tap on or off as the router wants it. From any thread; a handler may do it to its own tap.
+  private nonisolated static func switchTaps(_ context: Context, _ keys: Keys) {
+    let (pinch, scroll) = context.router.withLock { ($0.pinchTapIsWanted(keys: keys), $0.scrollTapIsWanted(keys: keys)) }
+    for (tap, isWanted) in [(context.pinchTap.withLock { $0 }, pinch), (context.scrollTap.withLock { $0 }, scroll)] {
+      if isWanted { tap?.resume() } else { tap?.pause() }
     }
+  }
+
+  /// The keys as the event has them and as they are held now: gesture events may not carry modifier flags.
+  private nonisolated static func keys(_ flags: CGEventFlags) -> Keys {
+    Keys(flags.union(CGEventSource.flagsState(.combinedSessionState)))
   }
 
   /// Returns true to swallow the event.
   private nonisolated static func handle(_ event: CGEvent, context: Context) -> Bool {
+    // While the tap is on every touch of the trackpad waits for this callback.
+    let held = keys(event.flags)
+    guard context.router.withLock({ $0.pinchTapIsWanted(keys: held) }) else {
+      // On for nothing: the monitors missed a key going up.
+      switchTaps(context, held)
+      return false
+    }
     guard let nsEvent = NSEvent(cgEvent: event) else { return false }
     // Check the type first: reading `magnification` of any other event raises an exception.
     switch nsEvent.type {
@@ -183,16 +183,18 @@ final class GestureTap {
     let flags = event.flags
     let magnification = Double(nsEvent.magnification)
     let answer = context.router.withLock {
+      let onDesktop = $0.pinchesOnDesktop
       // The claim is worked out only when a pinch begins.
-      $0.pinch(
+      return $0.pinch(
         phase, magnification: magnification, at: pointer,
-        claim: optionIsHeld(flags) || !WindowList.appWindowIsUnder(pointer))
+        claim: optionIsHeld(flags) || (onDesktop && !WindowList.appWindowIsUnder(pointer)))
     }
     if phase != .changed {
       TapLog.debug(
         "pinch \(phase) (NSEvent phase \(nsEvent.phase.rawValue)): \(answer.swallow ? "Arbor's" : "the app's")")
-      // A pinch of Arbor's claims the scrolls that begin during it, keys or no keys.
-      switchScrollTap(context, Keys(flags.union(CGEventSource.flagsState(.combinedSessionState))))
+      // A pinch of Arbor's claims the scrolls that begin during it, keys or no keys. And with the keys up this tap stays on only
+      // until the pinch is over.
+      switchTaps(context, keys(flags))
     }
     act(on: answer, context)
     return answer.swallow
@@ -204,7 +206,7 @@ final class GestureTap {
     // While the tap is on every scroll on the Mac waits for this callback.
     guard context.router.withLock({ $0.scrollNeedsALook(keys: keys) }) else {
       // On for nothing: the monitors missed a key going up.
-      switchScrollTap(context, keys)
+      switchTaps(context, keys)
       return false
     }
     let phase = ScrollClaim.Phase(scrollPhase: event.getIntegerValueField(.scrollWheelEventScrollPhase))
@@ -227,7 +229,7 @@ final class GestureTap {
       TapLog.debug("scroll \(phase): \(answer.swallow ? "Arbor's" : "the app's")")
     }
     // With the keys up the tap stays on only until the scroll and its momentum are over.
-    if keys != .arbors, phase != .changed { switchScrollTap(context, keys) }
+    if keys != .arbors, phase != .changed { switchTaps(context, keys) }
     act(on: answer, context)
     return answer.swallow
   }
@@ -252,6 +254,8 @@ final class GestureTap {
   /// Whoever saw it begin is told that it was cancelled.
   private nonisolated static func reset(_ context: Context) {
     if context.router.withLock({ $0.reset() }) { visit(context) }
+    // What was on only for the gesture's sake goes off.
+    switchTaps(context, keys([]))
   }
 
   private nonisolated static func phase(of event: NSEvent) -> GestureInterpreter.Phase? {

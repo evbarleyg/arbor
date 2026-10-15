@@ -58,6 +58,7 @@ arbor_taps() { "$WITNESS" taps | grep "pid=$ARBOR_PID "; }
 # tap_is <mask> <true|false>: whether Arbor's tap with that mask is switched on. 0x2 is mouse-downs, 0x44 drags
 # and mouse-ups, 0x400000 scrolls, 0x20000000 gestures.
 tap_is() { arbor_taps | grep -q "mask=$1 enabled=$2"; }
+none_is_on() { [ "$(arbor_taps | grep -c "enabled=true")" -eq 0 ]; }
 # This script is about the taps, so it asks for them, whatever Arbor ships with. with_gestures '<json object>': a settings.json with
 # every gesture that needs a tap switched on and, on top of that, what the object says.
 with_gestures() {
@@ -128,6 +129,21 @@ echo "Arbor's taps:"
 arbor_taps
 check "four taps are installed" test "$(arbor_taps | wc -l)" -eq 4
 check "the one on drags and mouse-ups is paused" tap_is 0x44 false
+check "with none of Arbor's keys down none of the four is switched on" test "$(arbor_taps | grep -c "enabled=true")" -eq 0
+"$WITNESS" hold 1.5 --ctrl --opt &
+sleep 0.7
+arbor_taps
+check "while ⌃⌥ is down the tap on mouse-downs is switched on" tap_is 0x2 true
+check "and so is the pinch tap, which goes by ⌥" tap_is 0x20000000 true
+check "the one on drags and mouse-ups is not: no press is being followed" tap_is 0x44 false
+wait $!
+check "when the keys go up all are off again" eventually none_is_on
+"$WITNESS" hold 1.5 --opt &
+sleep 0.7
+check "while ⌥ alone is down the pinch tap is switched on" tap_is 0x20000000 true
+check "and the tap on mouse-downs is not" tap_is 0x2 false
+wait $!
+check "and off again" eventually tap_is 0x20000000 false
 echo "windows on screen (id pid layer x y w h on owner):"
 if on_throwaway_mac; then pointer windows | awk '$8 == "on"'; else pointer windows --pid "$ARBOR_WINDOWS_PID"; overlays; fi
 
@@ -219,6 +235,13 @@ if [ "$PINCHES" = yes ]; then
   ctl show-all
   sleep 0.5
 
+  mark "pinch on the bare Desktop without ⌥, as Arbor ships"
+  "$WITNESS" pinch "$BARE_X" "$BARE_Y" 0.1 --steps 2 --tap "$PINCH_TAP"
+  check "it is not Arbor's: no key of Arbor's is down" test "$(count magnify)" -eq 4
+
+  with_gestures '{"pinchOnDesktop": true}'
+  ctl reload-settings
+  check "with pinchOnDesktop the pinch tap is on all day" eventually tap_is 0x20000000 true
   mark "pinch on the bare Desktop without ⌥"
   "$WITNESS" pinch "$BARE_X" "$BARE_Y" 0.1 --steps 2 --tap "$PINCH_TAP"
   check "it is Arbor's" test "$(count magnify)" -eq 0
@@ -234,6 +257,9 @@ if [ "$PINCHES" = yes ]; then
   sleep 1
   check "Arbor still answers" ctl status
   ctl show-all
+  with_gestures '{}'
+  ctl reload-settings
+  check "with pinchOnDesktop off again the pinch tap is off" eventually tap_is 0x20000000 false
 fi
 
 step "⇧-drag that starts on the bare Desktop: nothing reaches an app, release frames"
@@ -290,11 +316,14 @@ mark "shift drag with the setting off"
 drag "$BARE_X" "$BARE_Y" "$((BARE_X + 80))" "$((BARE_Y + 80))" --mods shift --steps 10
 check "Finder saw the mouse-down as it was" test "$(count '^down .*mark=none')" -eq 1
 check "Finder saw the drag" test "$(count '^dragged ')" -ge 10
-check "⌃⌥-drag is still watched for" tap_is 0x2 true
+"$WITNESS" hold 1.5 --ctrl --opt &
+sleep 0.7
+check "⌃⌥-drag is still watched for, while the keys are down" tap_is 0x2 true
+wait $!
 # The guard ships off, so it is asked for.
 with_gestures '{"frameRectangleOnDesktop": false, "frameRectangleModifier": "none", "guardDesktopClicks": true}'
 ctl reload-settings
-check "with both off the guard of the Desktop still watches the mouse" tap_is 0x2 true
+check "with both off the guard of the Desktop still watches the mouse, all day" eventually tap_is 0x2 true
 with_gestures '{"frameRectangleOnDesktop": false, "frameRectangleModifier": "none", "guardDesktopClicks": false}'
 ctl reload-settings
 check "with all three off, only the pinch and scroll taps are left" test "$(arbor_taps | wc -l)" -eq 2
@@ -489,7 +518,8 @@ arbor_close_windows
 arbor_new_home
 
 step "session 2: Arbor stops answering, again and again"
-with_gestures '{}'
+# The guard, because it keeps the tap on mouse-downs on with no key held, so that a plain click meets it.
+with_gestures '{"guardDesktopClicks": true}'
 arbor_start 1 ARBOR_NO_HOTKEYS=0
 mark "before the rounds"
 # Quick, so that three rounds fit into the ten seconds within which Arbor counts them (TapHealth).

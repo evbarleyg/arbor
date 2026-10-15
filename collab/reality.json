@@ -1424,7 +1424,7 @@
     "test: withoutBothKeysNothingIsLookedAtOrSwallowed",
     "e2e: pressed a second time it is switched on again"
    ],
-   "copes": "GestureTap.watchKeys passes on each event's own flags and remembers nothing from one event to the next; a tap found on for nothing switches itself off.",
+   "copes": "PointerInput.watchKeys passes on each event's own flags and remembers nothing from one event to the next; a tap found on for nothing switches itself off.",
    "hurt": 2,
    "touches": [
     "input-held"
@@ -5857,10 +5857,11 @@
     "test: theTapsWatchdogCountsAsASecondOpinion",
     "test: wheneverTheLossComesTheTapsAreOutWithinABeat",
     "test: theMainThreadBusyForFiveSecondsKeepsNoTapIn",
-    "test: aQuestionThatHangsForFiveSecondsKeepsNoTapInBeyondTwoBeats",
+    "test: aQuestionThatHangsForFiveSecondsKeepsNoTapOnBeyondThreeBeats",
+    "test: theRightGoesWhileTheKeysAreUpAndNoTapIsEverOnWithoutIt",
     "e2e: Arbor removes its taps within three seconds"
    ],
-   "copes": "TapPermission.beat: the taps' own thread has macOS asked at every beat of 0.15 s while a tap is installed, by a third thread, and removes all taps in the turn in which the answer is no or has not come in time. The main thread hears afterwards. By design input is still lost for up to a beat and the time the answer takes, two and a half beats if none comes. On a hosted Mac (2026-10-15, macOS 26.6.2, a debug build, the output on the branch `mac-shell-out/taps-go`): by `tccutil`, holes of 161, 142, 0 and 140 ms with 10, 5, 0 and 10 events lost of a click, a key and a notch every 50 ms, where the check of once a second had 85 to 1,248 ms and up to 115; with the taps that are on only at times, 271 ms at the worst (pinches) and 272 ms until the first notch arrived; nothing lost in five rounds of five where the loss was announced first; with presses 400 ms apart one press lost in twelve rounds and nothing left held; after a loss in the middle of a ⌃⌥-drag nothing left behind, four rounds of four; no false alarm. Where the privacy daemon had been killed the question took 4,001 ms: the taps went for want of an answer, 355 ms after the deed, and nothing was lost. Otherwise macOS answered in 0.3 to 2 ms on average and 54 ms at the worst.",
+   "copes": "TapPermission.wantsOn: the taps are installed but switched off, each goes on only while Arbor's keys are down or a gesture of Arbor's is in progress, and none goes on but by a fresh yes of macOS's. While one is wanted on the taps' own thread has macOS asked at every beat of 0.05 s, by a third thread, and removes all taps in the turn in which the answer is no or has not come in time. The main thread hears afterwards. By design a tap can be on without the right for a beat and the time the answer takes, three beats if none comes. As Arbor ships no tap is on with no key held. This has not run on a Mac yet. The step before it, a clock of 0.15 s while a tap was installed, has: on a hosted Mac (2026-10-15, macOS 26.6.2, a debug build, the output on the branch `mac-shell-out/taps-go`): by `tccutil`, holes of 161, 142, 0 and 140 ms with 10, 5, 0 and 10 events lost of a click, a key and a notch every 50 ms, where the check of once a second had 85 to 1,248 ms and up to 115; with the taps that are on only at times, 271 ms at the worst (pinches) and 272 ms until the first notch arrived; nothing lost in five rounds of five where the loss was announced first; with presses 400 ms apart one press lost in twelve rounds and nothing left held; after a loss in the middle of a ⌃⌥-drag nothing left behind, four rounds of four; no false alarm. Where the privacy daemon had been killed the question took 4,001 ms: the taps went for want of an answer, 355 ms after the deed, and nothing was lost. Otherwise macOS answered in 0.3 to 2 ms on average and 54 ms at the worst.",
    "hurt": 1,
    "touches": [
     "input-held"

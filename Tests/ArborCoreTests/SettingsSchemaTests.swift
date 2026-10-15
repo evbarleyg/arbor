@@ -389,10 +389,10 @@ private let simpleEntries = SettingsSchema.entries.filter {
   }
 
   @Test func theBeginningOfAKeyIsNotEnough() {
-    // `pinch` could only mean one key today; a later version may add another.
+    // `pinch` could once mean only one key; a later version added another.
     #expect(
       refusal { _ = try SettingsSchema.entry(named: "pinch") }
-        == "unknown setting `pinch`; did you mean `pinchThreshold` or `gesturesEnabled`?")  // "Pinch to zoom"
+        == "unknown setting `pinch`; did you mean `pinchOnDesktop`, `pinchThreshold` or `gesturesEnabled`?")  // "Pinch to zoom"
     #expect(refusal { _ = try SettingsSchema.entry(named: "ga") } != nil)
   }
 

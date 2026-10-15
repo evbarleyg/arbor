@@ -70,6 +70,8 @@ public struct GestureRouter: Equatable, Sendable {
   public var zoomsWithScroll = false
   /// The setting `scrollOnDesktopZooms`: so does one, without the keys, that no app's window is under.
   public var zoomsOnDesktop = false
+  /// The setting `pinchOnDesktop`: a pinch without ⌥ that no app's window is under is Arbor's too.
+  public var pinchesOnDesktop = false
 
   public init() {}
 
@@ -114,6 +116,14 @@ public struct GestureRouter: Equatable, Sendable {
   /// Returns whether to keep a rotate event from the app (`GestureInterpreter.feedRotation`).
   public mutating func rotation(_ phase: GestureInterpreter.Phase) -> Bool {
     interpreter.feedRotation(phase)
+  }
+
+  /// Whether the pinch tap has to be switched on. While it is, every touch of the trackpad passes through Arbor. So it is
+  /// installed but paused, like the scroll tap, and switched on only while a pinch could be Arbor's: ⌥ is down, whatever else is,
+  /// or a pinch of Arbor's or a rotation that began during one is in progress, whatever the keys do meanwhile. With
+  /// `pinchesOnDesktop` any pinch could be.
+  public func pinchTapIsWanted(keys: Keys) -> Bool {
+    pinchesOnDesktop || keys.option || interpreter.isClaimed || interpreter.isRotationClaimed || stream.isActive
   }
 
   /// Whether these settings ask for a scroll tap at all. The tap and `doctor` both go by this.

@@ -75,14 +75,17 @@ use exactly this key. **reserved**: keep free for that purpose, bound to nothing
 
 | Gesture | Does | Status |
 |---|---|---|
-| ⌥ + pinch anywhere; pinch on the Desktop | zoom | T |
+| ⌥ + pinch anywhere | zoom | T |
+| pinch on the Desktop, without ⌥ | zoom | T; a setting, off (`pinchOnDesktop`): it needs Arbor in the path of every touch of the trackpad, all day |
 | ⌃⌥ + scroll anywhere (exactly ⌃⌥; a wheel may have ⇧ besides) | zoom, for Macs without a trackpad: up steps in toward the pointer, down steps out. ⌃ + scroll is macOS's Accessibility zoom, ⌥ + scroll is the apps'; ⌃⌥ + scroll is nobody's, as far as anyone knows: whether macOS's zoom, set to ⌃, also takes ⌃⌥ + scroll is the first thing to try on a Mac | shipped (F55) |
-| ⇧-drag starting on the Desktop | frame the rectangle | T; shipped |
+| ⇧-drag starting on the Desktop | frame the rectangle | T; a setting, off since 2026-10-15 (`frameRectangleOnDesktop`): **⇧ alone is not one of Arbor's keys**, it goes down with every capital letter |
 | ⌃⌥-drag anywhere | frame the rectangle | shipped (⇧⌘ until 2026-10-14; `frameRectangleModifier`) |
 | **⌃⌥** + two fingers sideways; two fingers during a pinch of Arbor's | slide the view | assigned (F16). ⌥ + scroll **alone is never Arbor's**: editors, design tools, timelines and terminals use it, and ⌃⌥ is Arbor, with the pointer too |
 | **⌘** held while dragging a window | do not dock, just move | shipped (F09), **instead of ⌥**; see "Conflicts" |
 
-The first five need an event tap. `pointerGestures` ("Trackpad and mouse gestures" in the settings window) is the one switch above them: off, no tap is installed, whatever their own settings say. **It ships off** (Q26), so none of the five works until it is switched on.
+The first six need an event tap. `pointerGestures` ("Trackpad and mouse gestures" in the settings window) is the one switch above them: off, no tap is installed, whatever their own settings say. **It ships off** (Q26), so none of the six works until it is switched on.
+
+**Arbor stands in the path of your input only while you hold its keys** (board 1.53). The taps are installed but switched off, and each goes on only while a gesture could be Arbor's: ⌥ down for the pinch, exactly ⌃⌥ for the scroll and the rectangle, and until a gesture of Arbor's that has begun is over. Two monitors that only listen tell when the keys go down and up. If they hear nothing (secure keyboard entry, a busy moment) the gesture is the app's: in doubt it is not Arbor's. As Arbor ships no tap is on with no key held; the settings that need one say so.
 
 ## Never bind by default
 

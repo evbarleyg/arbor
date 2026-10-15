@@ -1,15 +1,22 @@
+import AppKit
 import ArborCore
-import Foundation
 
 /// The pointer input that becomes commands: trackpad pinch (F03,
 /// `GestureTap`) and the modifier-drag rectangle (F05, `RectangleFramer`).
-/// Each has its own event tap, installed only while its setting turns it on
-/// and while Arbor has Accessibility permission.
+/// Each has its own event taps, installed only while its setting turns it on
+/// and while Arbor has Accessibility permission, and switched on only while its keys are down:
+/// Arbor stands in the path of a person's input only while they hold its keys.
 @MainActor
 final class PointerInput {
   private let gestures: GestureTap
   private let framer: RectangleFramer
   private var isWatchingPermission = false
+  /// Tell when modifier keys go down and up. Monitors, not a tap: they only listen, after the fact, on the main thread, and were seen to
+  /// start nothing and to go on being served when their owner had lost the permission. If they hear nothing (secure keyboard
+  /// entry, a busy main thread) the taps stay paused and the gesture is the app's. Two, because a global monitor does not hear
+  /// what goes to a window of Arbor's own. Nothing is remembered from one event to the next: what was missed would make
+  /// the memory wrong, and the next press would then be ignored.
+  private var keyMonitors: [Any] = []
   /// True after Accessibility permission went away; the taps stay removed until it returns.
   private var suspended = false
   /// Called when macOS has told the taps' thread that the permission is gone, or back.
@@ -30,6 +37,33 @@ final class PointerInput {
     guard !suspended else { return }
     gestures.update()
     framer.update()
+    watchKeys()
+  }
+
+  /// Listens for the keys while there is a tap to switch, and not otherwise.
+  private func watchKeys() {
+    guard gestures.isInstalled || framer.isInstalled else {
+      for monitor in keyMonitors { NSEvent.removeMonitor(monitor) }
+      keyMonitors = []
+      return
+    }
+    guard keyMonitors.isEmpty else { return }
+    // Monitors are served on the main thread.
+    let global = NSEvent.addGlobalMonitorForEvents(matching: .flagsChanged) { [weak self] event in
+      let flags = event.modifierFlags
+      MainActor.assumeIsolated { self?.keysChanged(flags) }
+    }
+    let local = NSEvent.addLocalMonitorForEvents(matching: .flagsChanged) { [weak self] event in
+      let flags = event.modifierFlags
+      MainActor.assumeIsolated { self?.keysChanged(flags) }
+      return event
+    }
+    keyMonitors = [global, local].compactMap { $0 }
+  }
+
+  private func keysChanged(_ flags: NSEvent.ModifierFlags) {
+    gestures.keysChanged(flags)
+    framer.keysChanged(flags)
   }
 
   /// The names of the taps installed now, for `doctor`.
@@ -45,6 +79,7 @@ final class PointerInput {
   func stop() {
     gestures.stop()
     framer.stop()
+    watchKeys()
   }
 
   /// Users switch a misbehaving window manager off in System Settings, and macOS 26 drops all input at every event that the taps
@@ -70,6 +105,7 @@ final class PointerInput {
       gestures.update()
       framer.update()
     }
+    watchKeys()
     // Taps that went because macOS said nothing in time are no second opinion. Whoever listens would believe the next no at
     // once, which may be a daemon's that is just starting again, and would put the question that hangs on this thread.
     if macOSSaidSo { onPermissionChange?() }
