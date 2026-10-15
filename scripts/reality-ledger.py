@@ -501,7 +501,7 @@ def document(data, tree):
                 + [count(of_kind, lambda e, m=m: e["modelled"] == m) for m in MODELLED]
                 + [count(of_kind, lambda e, w=w: watched[e["id"]] == w) for w in WATCHES] + [count(of_kind, lambda e: e["copes"] == "open")])
     rows.append(["**all**"] + [sum(row[column] for row in rows) for column in range(1, 12)])
-    out += table(rows, ["Kind", "Cases", "Hurt 1", "Stand-ins play it", "partly", "not yet", "cannot"] + list(WATCHES.values()) + ["Arbor does not cope yet"])
+    out += table(rows, ["Kind", "Cases", "Hurt 1", "Stand-ins play it", "partly", "not yet", "cannot"] + list(WATCHES.values()) + ["Arbor does not cope yet, or nobody knows"])
     out += ["", "**Where the difference bit**", ""]
     rows = []
     for layer, meaning in LAYERS.items():
@@ -523,7 +523,7 @@ def document(data, tree):
     out += ["## What to do first", "", "Only cases that hurt a person (1 or 2).", ""]
     out += listing("Arbor does not cope yet", "A fault that is known and open.", [e for e in hurts if e["copes"] == "open" and e["kind"] != UNTRIED])
     if untried := [e for e in hurts if e["copes"] == "open" and e["kind"] == UNTRIED]:
-        out += listing("Nobody knows whether Arbor copes", "Within reach as Arbor ships, and never tried on a real Mac: see [never-exercised](#never-exercised).", untried)
+        out += listing("Nobody knows whether Arbor copes", "Within reach as Arbor ships, and its own check has never run on a real Mac: see [never-exercised](#never-exercised).", untried)
     out += listing(
         "Arbor copes, and nothing would notice if it stopped", "No guard, or only a script that somebody has to start.",
         [e for e in hurts if e["copes"] != "open" and watched[e["id"]] in ("hand", "none")])
