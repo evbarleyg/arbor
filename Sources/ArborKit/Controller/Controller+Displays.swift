@@ -34,8 +34,9 @@ extension Controller {
       for (window, place) in workspace.floating { all[window] = areaShowing(of: place) }
     }
     displays = system.displays()
-    // No frame outlives the displays it was made for (Controller+AppsDoubleClick.swift).
-    if displays != before { enforcement.reset(enforcement.leftAlone) }
+    // No frame outlives the display it was made for (Controller+AppsDoubleClick.swift).
+    let stand = displaysThatStand(since: before)
+    enforcement.reset(enforcement.leftAlone.filter { workspaceID(containing: $0).map(stand.contains) != true })
     followDisplaysThatMoved(since: before)
     endUndoHistoryIfDisplaysMoved(
       since: Dictionary(before.map { ($0.id, $0.frame.origin) }) { first, _ in first },
@@ -47,6 +48,8 @@ extension Controller {
       if let known = windows[snapshot.id]?.frame, known != snapshot.frame { movedByMacOS.insert(snapshot.id) }
       windows[snapshot.id]?.frame = snapshot.frame
     }
+    // Where macOS took a window along with the change is nobody's zoom.
+    enforcement.reset(enforcement.leftAlone.filter(movedByMacOS.contains))
     decideAboutWindowsFoundInTheDark()
     let current = Set(displays.map(\.id))
     let added = current.subtracting(previous).sorted()

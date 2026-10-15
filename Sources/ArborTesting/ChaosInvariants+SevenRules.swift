@@ -667,7 +667,10 @@ extension ChaosRunner {
         system.displayList.contains(where: { display in
           let showing = before.intersection(display.frame)
           return !showing.isNull && showing.area >= 0.5 * min(before.area, display.frame.area)
-        })
+        }),
+        // Nor with its title bar under the menu bar.
+        system.displayList.first(where: { $0.frame.contains(CGPoint(x: before.midX, y: before.minY + 1)) }).map({ before.minY >= $0.visibleFrame.minY - 1 })
+          ?? true
       else { continue }
       problems.append(
         .init(

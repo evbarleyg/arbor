@@ -49,8 +49,8 @@ extension Controller {
 
   /// The windows that a layout of `display` leaves where a double-click put them: every one that stays in view, unless a person
   /// asked for the layout. That a neighbour closed, was minimized or hidden, or that a rule docked a new window, says nothing about
-  /// this one: the others share the room behind it, and what its person asked macOS for is not undone by the way (Q22). Displays
-  /// that change end it for every window (`updateDisplays`).
+  /// this one: the others share the room behind it, and what its person asked macOS for is not undone by the way (Q22). A display
+  /// that comes, goes, moves or changes its size ends it for the windows on it (`updateDisplays`).
   func stillLetBe(in layout: Layout, on display: DisplayID) -> Set<WindowID> {
     // A resume is asked for, and is not about this: there and back a pause is nothing.
     guard !aPersonAsks || isResuming else { return [] }
@@ -61,8 +61,21 @@ extension Controller {
       guard window.isPresent else { return true }
       guard let slot = layout.windowFrames[id] else { return false }
       // If its slot has come to it, it is where it belongs, and is kept there. And nothing is let be where nobody can reach it.
-      return !slot.approximatelyEquals(window.frame, tolerance: 4) && isWithinReach(window.frame)
+      return !slot.approximatelyEquals(window.frame, tolerance: 4) && isWithinReach(window.frame) && !isUnderTheMenuBar(window.frame)
     }
+  }
+
+  /// The displays that stand as they stood in `then`: the same one, where it was, as large as it was, in whatever order macOS lists them. Not
+  /// what the Dock and the menu bar leave of it. The Dock grows and shrinks with what is in it: seen on a Mac, a neighbour went to the Dock, the
+  /// visible frame's height went from 674 to 676, macOS reported a change of the displays a third of a second later, and the window that was
+  /// let be was docked for it. No frame outlives the display it was made for; one that is plugged in beside it takes nothing from it.
+  func displaysThatStand(since then: [DisplaySnapshot]) -> Set<DisplayID> {
+    Set(displays.filter { now in then.contains { $0.id == now.id && $0.frame == now.frame } }.map(\.id))
+  }
+
+  /// Nobody gets hold of a title bar that is under the menu bar, which has stopped hiding for one.
+  func isUnderTheMenuBar(_ frame: CGRect) -> Bool {
+    displays.first { $0.frame.contains(CGPoint(x: frame.midX, y: frame.minY + 1)) }.map { frame.minY < $0.visibleFrame.minY - 1 } ?? false
   }
 
   /// Half of it shows, or it covers half a display: a window whose app keeps it larger than the display is never mostly in view.
@@ -97,9 +110,14 @@ extension Controller {
   }
 
   /// Called by `start()` before its first layout. Only a resume finds anything here: nothing is let be across a quit and a start, which
-  /// docks what was docked. Nor across displays that have changed, as while Arbor runs.
+  /// docks what was docked. Nor on a display that has changed, as while Arbor runs.
   func letBeAgainWhatThePauseLeftAlone() {
-    guard isResuming, displays == displaysWhenThePauseBegan else { return letBeWhenThePauseBegan = [:] }
+    guard isResuming else { return letBeWhenThePauseBegan = [:] }
+    let stand = displaysThatStand(since: displaysWhenThePauseBegan)
+    // Of a window that is not listed nobody knows the display: any change ends it.
+    if stand.count != displays.count || stand.count != displaysWhenThePauseBegan.count {
+      letBeWhenThePauseBegan = letBeWhenThePauseBegan.filter { workspaceID(containing: $0.key).map(stand.contains) == true && windows[$0.key] != nil }
+    }
     for id in letBeWhenThePauseBegan.keys.sorted() { if let window = windows[id] { letBeAgainIfThePauseLeftItAlone(window) } }
     forgetWhoWasLetBeAndWaitsNoMore()
   }
@@ -148,7 +166,8 @@ extension Controller {
     if appsDoubleClick?.window == window.id { appsDoubleClick = nil }
     guard enforcement.leftAlone.contains(window.id), let slot = layouts[display]?.windowFrames[window.id] else { return }
     let began = whereAZoomBegan[window.id]
-    let hasTheSlotItHad = began?.slot.map { $0.approximatelyEquals(slot, tolerance: 1) } ?? true
+    // To the few points by which the Dock, which changes its size, changes every slot.
+    let hasTheSlotItHad = began?.slot.map { $0.approximatelyEquals(slot, tolerance: 4) } ?? true
     if slot.approximatelyEquals(window.frame, tolerance: 4)
       || hasTheSlotItHad && began?.frame.approximatelyEquals(window.frame, tolerance: 2) == true
     {

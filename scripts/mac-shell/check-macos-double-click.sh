@@ -383,7 +383,10 @@ what_nobody_asked_for() {
   step "$name, nobody asked: a neighbour's app quits"
   # It lives until its stdin closes, of which this shell holds the other end.
   the_other_app_quits() {
+    # By the end of its pipe, which is its orderly way. But whatever runs in the background meanwhile holds that pipe too, and on a Mac the end
+    # never came: then it is told to go.
     exec 8>&-
+    arbor_await_exit "$ARBOR_WINDOWS_PID_2" 3 || kill "$ARBOR_WINDOWS_PID_2" 2> /dev/null
     arbor_await_exit "$ARBOR_WINDOWS_PID_2" 30 || echo "the second app is still there"
     ARBOR_WINDOWS_PID_2=""
   }

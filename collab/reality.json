@@ -9905,9 +9905,10 @@
     "test: aLayoutUsesTheVisibleFrameAsItIsNow",
     "test: aReportAboutTheSameDisplaysMovesNoView",
     "test: aDisplayWhoseVisibleFrameChangesIsLaidOutAgainWithTheSameTree",
-    "trace: minimize-restore.expect"
+    "trace: minimize-restore.expect",
+    "test: theDockThatChangesItsSizeIsNoChangeOfDisplays"
    ],
-   "copes": "DisplayChange.visibleFrameOnly: 0.3 s after the last notice the display is laid out again, once. A test has to change the fake's displays by hand, and the fake Mac's Dock keeps its size.",
+   "copes": "DisplayChange.visibleFrameOnly: 0.3 s after the last notice the display is laid out again, once. A test has to change the fake's displays by hand, and the fake Mac's Dock keeps its size. Controller.displaysThatStand: a window that is let be where macOS zoomed it stays through it: its display is the one it was.",
    "hurt": 3,
    "touches": [
     "moved-unasked",
