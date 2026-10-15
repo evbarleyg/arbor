@@ -1,0 +1,13 @@
+# Wanted (IDEAS I16; QUESTIONS Q29, 2; board 0.1). Fails until it is answered; then it moves up into collab/scenarios.
+# Story: a chat app is in front. Its own ⌃⌥A archives the open conversation. Arbor used to bind ⌃⌥A to Arrange Windows; on a
+# tester's Mac the key reached the app, twice. Whatever the cause, the habit outlives Arbor: paused, quit or crashed, the same
+# fingers reach the app. So Arbor holds that key in no map, and Arrange Windows is still there for whoever asks for it.
+open Chat
+open Notes
+expect shortcut ctrl+opt+a off
+set shortcuts all
+expect ok
+expect shortcut ctrl+opt+a off
+set shortcuts core
+arrange
+expect count docked 2

@@ -1,0 +1,34 @@
+# Wanted (IDEAS I17; QUESTIONS Q29, 8; board 0.9 and 0.10). Fails until it is answered; then it moves up into collab/scenarios.
+# Story: a person has five windows open. Whatever happens that they did not ask for, a start, a pause and resume, a window that closes,
+# every window they could see they still see. And every open window, the minimized one too, is in Arbor's list of windows.
+open Safari
+open Notes
+open Mail
+open Music
+open Preview
+dock 101 left
+dock 102 right
+minimize 105
+relaunch
+expect visible 101
+expect visible 102
+expect visible 103
+expect visible 104
+toggle-pause
+toggle-pause
+expect visible 103
+expect visible 104
+zoom 101
+expect visible 103
+expect visible 104
+close 101
+expect visible 102
+expect visible 103
+expect visible 104
+# The list the menu shows, as a command, by app: every open window, with what is out of view marked.
+windows
+expect ok
+expect replied Notes
+expect replied Mail
+expect replied Music
+expect replied Preview

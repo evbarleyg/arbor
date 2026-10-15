@@ -92,6 +92,19 @@ The documenter decides **what** and **in what order**; executors decide
 
 ## How "improve" is measured
 
+**Since 2026-10-15 a higher parity score is not what "better" means** (the maintainer's handoff of 2026-10-14; `collab/IDEAS.md`, I24 and I25; `collab/QUESTIONS.md`, Q29). It rises with every feature and never falls for clutter. **The bar is macOS alone**, and a change is judged by what a person feels:
+
+| Number | Wanted | Where |
+|---|---|---|
+| Unasked actions in a day: a window the person did not touch that moved; an act of theirs that Arbor reversed | none; each is a `FAIL` at the weight of a lost window | `make day`; `docs/VIABLE.md`, section 6 |
+| The day's journeys against macOS's own tiling, on steps, keys and surprises | Arbor is worse on none | `make day` beside its control |
+| The budget: default shortcuts; modifiers besides ⌃⌥; items in the menu bar | at most ten; none; one | a test |
+| Defaults of Arbor's that a common app also uses | none | a hosted Mac reads the apps' menus |
+| Complaints without an answer | none | `collab/scenarios/wanted/` is empty |
+| A newcomer who knows nothing: tasks done, wrong turns, surprises, against macOS alone | better, task by task | a hosted Mac, screenshots only |
+
+A report says what a change did to these. Parity stays as a list of what the reference has, and `make parity` goes on guarding that what is marked shipped is proven:
+
 `make parity` runs the test suite, reads the real-window evidence in
 `collab/evidence/*-latest.txt`, and for every item in `parity.json` reports:
 

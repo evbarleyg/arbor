@@ -1,0 +1,41 @@
+# Wanted (IDEAS I22, I25 c; QUESTIONS Q29, 1; board 0.3). Fails until it is answered; then it moves up into collab/scenarios.
+# Story: a newcomer learns Arbor's keys in a minute: nine, each ⌃⌥ and one key. Two windows side by side, one fills the screen,
+# the same key brings the two back. No key with a third modifier, no digit, no other letter is taken from the apps.
+open Safari
+open Notes
+expect shortcut ctrl+opt+left on
+expect shortcut ctrl+opt+right on
+expect shortcut ctrl+opt+return on
+expect shortcut ctrl+opt+space on
+expect shortcut ctrl+opt+[ on
+expect shortcut ctrl+opt+z on
+expect shortcut ctrl+opt+f on
+expect shortcut ctrl+opt+g on
+expect shortcut ctrl+opt+escape on
+expect shortcut ctrl+opt+cmd+left off
+expect shortcut ctrl+opt+shift+left off
+expect shortcut ctrl+opt+up off
+expect shortcut ctrl+opt+down off
+expect shortcut ctrl+opt+1 off
+expect shortcut ctrl+opt+shift+1 off
+expect shortcut ctrl+opt+shift+z off
+expect shortcut ctrl+opt+d off
+expect shortcut ctrl+opt+m off
+expect shortcut ctrl+opt+n off
+expect shortcut ctrl+opt+r off
+expect shortcut ctrl+opt+0 off
+focus 101
+key ctrl+opt+left
+expect docked 101
+focus 102
+key ctrl+opt+right
+expect docked 102
+expect left-of 101 102
+key ctrl+opt+return
+expect fills 102
+key ctrl+opt+return
+expect visible 101
+expect visible 102
+key ctrl+opt+z
+key ctrl+opt+f
+expect floating 102
