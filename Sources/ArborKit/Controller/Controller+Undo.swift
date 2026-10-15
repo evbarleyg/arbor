@@ -217,7 +217,8 @@ extension Controller {
       // All of the Desktop is not a place anybody chose for the window that has it to itself (F18).
       let filling = windowThatTakesDesktop(of: display)
       var frames: [WindowID: CGRect] = [:]
-      for window in workspace.floating.keys where !parked.contains(window) && window != filling {
+      // Nor is the size of the slot it left, for one that is still owed its own (Controller+LeftToMacOS.swift).
+      for window in workspace.floating.keys where !parked.contains(window) && window != filling && leftToMacOS[window] == nil {
         if let snapshot = windows[window], snapshot.isPresent { frames[window] = snapshot.frame }
       }
       result[display] = frames

@@ -1,0 +1,62 @@
+# Story: on a Mac as it comes, with macOS's own tiling on, someone flicks a docked window upwards, or carries it to where macOS tiles.
+# Arbor stands aside there and sets no frame while macOS may be moving the window (issue #3, rule 1; QUESTIONS Q23), so the window leaves its
+# slot as large as the slot. That size is never taken for its own (rule 5; board 1.67), and if macOS does not take the window it has its
+# own size half a second later, where it lies (board 1.56).
+# The simulated display is 1440x900 with a 25-point menu bar.
+quiet
+open Safari
+open Notes
+dock 101 left
+dock 102 right
+wait 1
+expect size 101 464x851
+# Thrown into the menu bar and let go at once: macOS fills the screen only for a pointer that has rested there, so it does nothing.
+drag 101 700 10 quick
+expect floating 101
+expect size 101 464x851
+expect moved-once
+wait 1
+expect size 101 640x420
+expect visible 101
+expect moved-once
+float-all
+wait 1
+expect size 101 640x420
+# A way out taken within that half second goes by the books: Float All, a pause, Quit.
+dock 101 left
+dock 102 right
+wait 1
+drag 101 700 10 quick
+float-all
+expect size 101 640x420
+wait 1
+expect size 101 640x420
+dock 101 left
+dock 102 right
+wait 1
+drag 101 700 10 quick
+pause
+expect size 101 640x420
+resume
+wait 1
+expect size 101 640x420
+# Rested in the menu bar, macOS fills the screen with it: that is what the hand asked macOS for, and Arbor never touches it.
+dock 101 left
+wait 1
+expect size 101 464x851
+drag 101 700 0
+wait 1
+expect floating 101
+expect size 101 1440x875
+# Dragged off that tile, macOS gives it the size it had when macOS took it, which was the slot's. Let go, it has its own.
+drag 101 700 300
+wait 1
+expect floating 101
+expect size 101 640x420
+dock 101 left
+wait 1
+drag 101 700 10 quick
+quit-check
+expect replied QUIT ok
+expect size 101 640x420
+expect size 102 640x420

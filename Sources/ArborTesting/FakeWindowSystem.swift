@@ -156,6 +156,9 @@ public final class FakeWindowSystem: WindowSystem {
   /// is played, and what is about ⌥ alone is tried both ways. ⌃⌥ without a third key, and ⌥ at an edge or in the menu bar, were
   /// never tried: there it tiles.
   public var optionAloneTiles = false
+  /// macOS does nothing about the next window that is let go, once, wherever that is. Seen on a Mac: a window that had rested in the menu bar
+  /// for 1.7 s was left where it was let go, in one of three such drags.
+  public var macOSOverlooksTheNextDrop = false
   /// The sizes windows had before macOS tiled them, which it gives back when they are dragged off their tiles.
   private var sizesBeforeTiles: [WindowID: CGSize] = [:]
   /// The modifier keys that are down. `hold` and `letGo` keep it; set it to let go of ⌃⌥ before the key.
@@ -1356,7 +1359,9 @@ extension FakeWindowSystem {
   /// quarter ends, and a height that shrinks, have not been measured. One that was too wide for the right half ended a point
   /// past it (one sighting).
   public func letMacOSTile(_ window: WindowID, letGoAt start: CGRect) {
-    guard var tile = macTile(at: cursor), let claim = macClaim(at: cursor), let fake = windows[window] else { return }
+    let overlooks = macOSOverlooksTheNextDrop
+    macOSOverlooksTheNextDrop = false
+    guard !overlooks, var tile = macTile(at: cursor), let claim = macClaim(at: cursor), let fake = windows[window] else { return }
     if claim == .menuBar, clock() - (inMenuBarSince ?? clock()) < MacTiling.menuBarRest { return }
     if claim == .optionKey, fake.maximumSize == fake.minimumSize { return }
     // With ⇧, ⌘, ⌃⌘ or ⌃⇧ held as well the same drag ended in the tile, by the ledger's word: no output of that is kept.

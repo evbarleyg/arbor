@@ -7610,9 +7610,14 @@
     "FakeWindowSystem.letMacOSTile"
    ],
    "guards": [
-    "test: draggedOffItsTileTheWindowIsItsOwnSizeForGood"
+    "test: draggedOffItsTileTheWindowIsItsOwnSizeForGood",
+    "test: draggedOffMacOSsTileItDoesNotGetTheSlotsSizeForGood",
+    "test: shrunkInTheHandStepByStepItIsStillNotTheSlotsSize",
+    "test: tiledBeforeArborHeardOfTheReleaseTheTilesSizeIsItsOwn",
+    "test: dockedAndFloatedSinceMacOSStillGivesTheSlotsSizeBackAndArborDoesNotKeepIt",
+    "test: sizedByHandInItsTileThatIsWhatItTakesWhenItIsDraggedOff"
    ],
-   "copes": "open",
+   "copes": "Controller.leftAsLargeAsTheirSlots notes the slot's size beside the window's own when a docked window is left to macOS. Let go as large as that again, to within two points, it takes its own size, or what somebody has given it since, and the slot's size is in the books for no longer than the drag (`finishDrop`). macOS still tiles from the slot's size: Arbor sets no frame on a window macOS may be moving.",
    "hurt": 2,
    "touches": [
     "fought",
@@ -7804,19 +7809,25 @@
    "expected": "With macOS's tiling on, a window dragged by its title bar against the menu bar and held there for a second fills the display when it is let go. One such drag says whether the tiling acts.",
    "happened": "Once in three such drags of the same window on the same Mac, macOS's preview came up with the pointer four points below the top, was gone 3 ms later and stayed away, although the pointer then rested at y 0 for 1.7 s. The window was left where it was let go. A run that took this for \"the tiling does not act\" would not have counted.",
    "found": "The samples of an ordinary day on a hosted Mac, macOS 26.6.2, with no Arbor running yet, on 2026-10-15; the same drag in the two scripts before and after it on that Mac was answered.",
-   "modelled": "no",
-   "knobs": [],
-   "guards": [
-    "e2e: macOS's own tiling acts"
+   "modelled": "partly",
+   "knobs": [
+    "FakeWindowSystem.macOSOverlooksTheNextDrop"
    ],
-   "copes": "scripts/mac-shell/lib-walk.sh takes one drag of three for proof that the tiling acts, and two of two for proof that it does not. Arbor goes by the setting and by where the pointer is, not by whether macOS answered.",
+   "guards": [
+    "e2e: macOS's own tiling acts",
+    "test: restedWhereMacOSTilesAndOverlooked",
+    "test: overlookedItTakesItsOwnSizeWhereItLiesInOneMoveAndNotBeforeMacOSWouldBeDone"
+   ],
+   "copes": "scripts/mac-shell/lib-walk.sh takes one drag of three for proof that the tiling acts, and two of two for proof that it does not. Arbor goes by the setting and by where the pointer is, not by whether macOS answered; half a second after the release Controller+LeftToMacOS.swift asks the window server where the window is, and a docked window that macOS has overlooked takes its own size where it lies.",
    "hurt": 4,
    "touches": [
-    "fought"
+    "fought",
+    "size-lost"
    ],
    "sources": [
     "scripts/mac-shell/lib-walk.sh",
-    "docs/TESTING.md"
+    "docs/TESTING.md",
+    "Tests/ArborKitTests/ASlotsSizeIsNoWindowsOwnTests.swift"
    ]
   },
   {
@@ -11988,9 +11999,11 @@
    "knobs": [],
    "guards": [
     "test: withOptionHeldEveryPlaceIsMacOSs",
-    "test: withOptionHeldItTakesTheWindowAnywhere"
+    "test: withOptionHeldItTakesTheWindowAnywhere",
+    "test: letGoWithOptionHeldAndOverlooked",
+    "test: letGoOverTheDesktopWithOptionHeldItFloatsThereAtItsOwnSize"
    ],
-   "copes": "MacTiling.claim, on what `macTiling()` answered when the drag began, takes every place for macOS's while ⌥ is held, so Arbor stands aside either way: a window that macOS then leaves alone floats where it was let go.",
+   "copes": "MacTiling.claim, on what `macTiling()` answered when the drag began, takes every place for macOS's while ⌥ is held, so Arbor stands aside either way: a window that macOS then leaves alone floats where it was let go. One that came out of a slot takes its own size there half a second later, when the window server still has it where it was let go: Arbor goes by what happened, not by what should have.",
    "hurt": 4,
    "touches": [
     "fought"

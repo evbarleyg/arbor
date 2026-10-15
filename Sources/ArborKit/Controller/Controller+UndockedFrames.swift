@@ -4,11 +4,13 @@ import CoreGraphics
 /// A window that leaves the arrangement gets back the size it had before it was docked
 /// (docs/features/F48-floating-restores-size.md). `Workspace.undockedFrames` remembers the frame.
 ///
-/// There are two ways out:
+/// There are three ways out:
 /// - **One window floats**, and the person is looking at it (`float`, `toggle-float`, a drag out of its
 ///   slot). It takes the remembered size where it is: centred on its slot, or under the pointer.
 /// - **Arbor lets go** (`float-all`, quitting, pausing, excluding its app). That means "as it was", so the
 ///   window takes the remembered position too.
+/// - **It is let go where macOS may tile it.** Arbor sets no frame there, so it goes as large as its slot, and what becomes of it shows half a second
+///   later (Controller+LeftToMacOS.swift; "Out of its slot as large as the slot", below).
 ///
 /// A window with nothing remembered (docked for as long as Arbor has known it) keeps its slot's size.
 extension Controller {
@@ -107,7 +109,8 @@ extension Controller {
 
   /// Where a docked window dropped at `pointer` to float should be: the size it floated at, with
   /// the pointer still over its title bar, as far along it as before. Nil if nothing is remembered.
-  /// Decided while it is still docked; `sizeOwed` is the size, if a command undocked it while it was in the hand.
+  /// Decided while it is still docked; `sizeOwed` is the size, if a command undocked it while it was in the hand, or if it floats
+  /// as large as a slot it left.
   func droppedFrame(
     of window: WindowID, on displayID: DisplayID?, at pointer: CGPoint?, sizeOwed: CGSize? = nil
   ) -> CGRect? {
@@ -140,13 +143,18 @@ extension Controller {
   /// How far below a window's top edge a press can be and still drag it (a tall toolbar).
   static let titleBarReach: CGFloat = 60
 
-  /// Gives a window that was just dropped to float on `displayID` the frame `droppedFrame` chose.
-  func shrinkDropped(_ window: WindowID, to frame: CGRect, on displayID: DisplayID) {
+  /// Gives a window that was just dropped to float on `displayID`, or that macOS has left alone there, the frame `droppedFrame` chose.
+  /// Returns false if its app did not answer.
+  @discardableResult
+  func shrinkDropped(_ window: WindowID, to frame: CGRect, on displayID: DisplayID) -> Bool {
     misfits[window] = nil
-    guard let actual = system.setFrame(frame, of: window) else { return }
-    Log.debug("\(window) was dropped out of its slot and took its own size, \(Int(actual.width))×\(Int(actual.height))")
+    guard let actual = system.setFrame(frame, of: window) else { return false }
+    // It has its own size, and macOS gives back a size from before a tile only once.
+    leftAsLargeAsTheirSlots[window] = nil
+    Log.debug("\(window) is out of its slot and took its own size, \(Int(actual.width))×\(Int(actual.height))")
     windows[window]?.frame = actual
     workspaces[displayID]?.floating[window] = actual
+    return true
   }
 
   // MARK: Arbor lets go
@@ -257,6 +265,8 @@ extension Controller {
     windows[window]?.frame = actual
     // It is where its user had it, not where Arbor chose to put it: later layouts treat it accordingly.
     settled[window] = nil
+    // Put back before Arbor has looked at what macOS makes of it: if it is still here then, macOS has left it alone.
+    leftToMacOS[window]?.letGo = actual
   }
 
   // MARK: Moved by its user
@@ -266,11 +276,13 @@ extension Controller {
   /// little further. It keeps its own size to go back to, from where it is now, on the display as far as `frame` is.
   /// `ownSize`: if that is not the size remembered where it floats now.
   func frameToRemember(of window: WindowID, movedFrom before: CGRect?, to frame: CGRect, ownSize: CGSize? = nil) -> CGRect {
-    guard settings.floatingWindowsMakeWay || ownSize != nil, let before, abs(before.width - frame.width) <= 1,
+    let isAsLargeAsTheSlotItLeft = self.ownSize(of: window, ifItIsAsLargeAsTheSlotItLeft: frame.size) != nil
+    guard settings.floatingWindowsMakeWay || ownSize != nil || isAsLargeAsTheSlotItLeft, let before, abs(before.width - frame.width) <= 1,
       abs(before.height - frame.height) <= 1,
       let own = ownSize ?? workspaceID(containing: window).flatMap({ workspaces[$0]?.floating[window]?.size }), own != frame.size,
-      // Squeezed, not stretched: one that fills the Desktop and is taken in hand stays as it is (Controller+SoleFloat.swift).
-      own.width >= frame.width, own.height >= frame.height
+      // Squeezed, not stretched: one that fills the Desktop and is taken in hand stays as it is (Controller+SoleFloat.swift). Or still
+      // as large as the slot it left.
+      own.width >= frame.width && own.height >= frame.height || isAsLargeAsTheSlotItLeft
     else { return frame }
     return self.frame(ofSize: own, from: frame)
   }
@@ -289,6 +301,50 @@ extension Controller {
       (remembered.origin.y, remembered.size.height) = (fitted.minY, fitted.height)
     }
     return remembered
+  }
+
+  // MARK: Out of its slot as large as the slot
+
+  /// A window that left the arrangement where macOS may tile it. Arbor stood aside and set no frame, so it went as large as its slot.
+  struct LeftAsLargeAsItsSlot {
+    var slot: CGSize
+    /// What it had before Arbor first sized it, or what a hand has given it since.
+    var own: CGSize
+    /// What macOS made of it, by the window server's word when Arbor looked. Nil until then, and if macOS left it alone.
+    var tile: CGSize?
+  }
+
+  /// A slot's size is never a window's own. `window`, docked till now, floats on `display` as it is, and its own size is what is remembered.
+  /// (Unless macOS has sized it already, after a release that Arbor never saw: a tile's size is what a hand asked macOS for.)
+  /// The note is for later. macOS may leave the window alone, as large as the slot until somebody sizes it. Or it tiles it, and
+  /// gives it the slot's size again at the next drag by the title bar, whatever has become of the window since: seen on a Mac.
+  func leaves(_ window: WindowID, _ sizes: LeftAsLargeAsItsSlot, on display: DisplayID) {
+    guard sizes.slot != sizes.own else { return }
+    leftAsLargeAsTheirSlots[window] = sizes
+    if let own = windows[window].flatMap({ ownSize(of: window, ifItIsAsLargeAsTheSlotItLeft: $0.frame.size) }) {
+      workspaces[display]?.floating[window]?.size = own
+    }
+  }
+
+  /// Part of `windowChanged`, for a floating window. A size somebody gives it after it has left its slot is its own from then on: the green button, a key
+  /// of another tool, its app. (A hand on its edges: `resizeEnded`.) Not what macOS makes of it on its way into a tile, of which a busy app can go on
+  /// telling after Arbor has looked: while the window server has it as large as the tile, nobody has sized it. Nor, with the button down,
+  /// on its way out of one, of which Arbor can hear before it hears of the drag.
+  func noteSizeGivenSinceItLeftItsSlot(_ window: WindowSnapshot, was previous: WindowSnapshot?) {
+    guard let tile = leftAsLargeAsTheirSlots[window.id]?.tile, leftToMacOS[window.id] == nil, let previous,
+      abs(previous.frame.width - window.frame.width) > 1 || abs(previous.frame.height - window.frame.height) > 1,
+      !system.isMouseButtonDown(), let now = system.stackedWindows().first(where: { $0.id == window.id })?.frame.size,
+      abs(now.width - tile.width) > 1 || abs(now.height - tile.height) > 1
+    else { return }
+    leftAsLargeAsTheirSlots[window.id]?.own = window.frame.size
+  }
+
+  /// The size that is `window`'s own if `size`, which it is seen to have, is that of the slot it left so. To within two points:
+  /// 325×650 came back from macOS as 326×651.
+  func ownSize(of window: WindowID, ifItIsAsLargeAsTheSlotItLeft size: CGSize) -> CGSize? {
+    guard let left = leftAsLargeAsTheirSlots[window], abs(left.slot.width - size.width) <= 2, abs(left.slot.height - size.height) <= 2
+    else { return nil }
+    return left.own
   }
 
   // MARK: From one display to another

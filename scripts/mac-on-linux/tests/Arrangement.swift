@@ -201,7 +201,8 @@ func tellOfArrangements(_ book: Book) {
 
   // As a Mac comes, those edges are macOS's: it acts only at their last point, but a hand pushes a window against an edge, so Arbor leaves it the whole of its own band along them.
   for edge in ["left", "right", "top"] {
-    let goal = ["left": CGPoint(x: 3, y: 368), "right": CGPoint(x: 1020, y: 368), "top": CGPoint(x: 512, y: 27)][edge]!
+    // Short of macOS's own point: the menu bar ends at y 31.
+    let goal = ["left": CGPoint(x: 3, y: 368), "right": CGPoint(x: 1020, y: 368), "top": CGPoint(x: 512, y: 35)][edge]!
     book.story("with macOS's tiling on, a floating window is dragged to the \(edge) edge of the screen") { story in
       var window: FakeMac.Window!
       let two = StoreyTwo(story) { mac in window = mac.open("window", in: mac.launch("Notes"), frame: CGRect(x: 300, y: 130, width: 400, height: 300)) }
@@ -225,11 +226,44 @@ func tellOfArrangements(_ book: Book) {
       two.mac.drag(from: CGPoint(x: home.midX, y: home.minY + 12), to: goal, steps: 25)
       two.mac.pass(0.3)
       story.check("Arbor stands aside: no preview", two.overlays.preview == nil)
+      let other = window === left ? right : left
+      let (neighbour, asked) = (other.frame, other.timesAskedForAFrame)
       two.mac.release()
       two.mac.pass(2)
-      // What becomes of it is written down nowhere, and differs: back in its slot at the left and right, floating where it was let go at the top.
-      story.check("let go, it is docked nowhere new: back in its slot, or floating", two.isDocked(window) ? window.frame == home : true, "\(two.whereabouts(window)), its slot was \(home.text)")
-      story.check("and in view", two.visibleFraction(window) > 0.9, two.whereabouts(window))
+      // Short of macOS's own point macOS never acts, and Arbor offers nothing: at all three edges alike it goes home (QUESTIONS Q23).
+      story.check("let go, it is back in its slot", two.isDocked(window) && window.frame == home, "\(two.whereabouts(window)), its slot was \(home.text)")
+      story.check("and its neighbour was not touched", other.frame == neighbour && other.timesAskedForAFrame == asked, two.whereabouts(other))
+    }
+  }
+
+  // At macOS's own point the window is macOS's, if macOS takes it. The model's macOS never does: it has the switch and no tiling of its own. So every window let go
+  // there is one that macOS overlooks, as a Mac was seen to overlook a flick into the menu bar, a window that had rested there, and ⌥ alone.
+  // The app hears a tenth of a second late where its window was left, and that word must not pass for a move of macOS's.
+  for (steps, interval, rest) in [(25, 0.08, 0.3), (6, 0.03, 0.0), (3, 0.02, 0.0), (2, 0.01, 0.05), (1, 0.01, 0.0), (12, 0.016, 0.12)] {
+    for goal in [CGPoint(x: 512, y: 10), CGPoint(x: 0, y: 368), CGPoint(x: 1023, y: 368)] {
+      book.story("with macOS's tiling on, a docked window is taken to \(Int(goal.x)),\(Int(goal.y)) in \(steps) steps of \(Int(interval * 1000)) ms, let go after \(Int(rest * 1000)) ms, and macOS overlooks it") { story in
+        let (two, left, right) = twoDocked(story)
+        let window = goal.x == 0 ? right : left
+        let home = window.frame
+        two.mac.drag(from: CGPoint(x: home.midX, y: home.minY + 12), to: goal, steps: steps, interval: interval)
+        two.mac.pass(rest)
+        guard two.heard.all.contains(.dragBegan(window.number)) else {
+          // Too quick for Arbor to have seen a drag at all, which other stories are about. Then it is a docked window that something moved.
+          two.mac.release()
+          two.mac.pass(3)
+          return story.check("never seen as a drag, it is put back", two.isDocked(window) && window.frame == home, two.whereabouts(window))
+        }
+        let asked = window.timesAskedForAFrame
+        two.mac.release()
+        two.mac.pass(0.4)
+        story.check("for as long as macOS might be moving it, Arbor asks nothing of it", window.timesAskedForAFrame == asked, two.whereabouts(window))
+        two.mac.pass(2.6)
+        story.check("it is out of the arrangement", !two.isDocked(window), two.whereabouts(window))
+        story.check("at its own size", window.frame.size == CGSize(width: 400, height: 300), two.whereabouts(window))
+        story.check("in view", two.visibleFraction(window) > 0.9, two.whereabouts(window))
+        // One frame is size, place, size to an app.
+        story.check("in one move", (1...3).contains(window.timesAskedForAFrame - asked), "asked \(window.timesAskedForAFrame - asked) times")
+      }
     }
   }
 
