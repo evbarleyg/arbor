@@ -572,6 +572,7 @@ killed in the middle of a gesture. `witness taps` lists every process's taps and
 `witness pinch x y <magnification> [--opt] [--rotate]` posts a pinch; `witness scroll x y <dx> <dy> [--opt] [--ctrl] [--momentum n]` a two-finger
 scroll; `witness wheel x y <notches> [--opt] [--ctrl]` turns a mouse wheel; `witness hold-space <n>` holds ⌃⌥Space down.
 The script clicks at places it takes to be empty, so outside GitHub's Macs it refuses to run unless told to (see its header).
+It leaves session 3, the guard of the Desktop, out; `input-taps-with-the-guard.sh` plays all of it.
 
 **Measuring.** `scripts/mac-shell/perf.sh` times camera moves over twelve real windows of one app and of four, using
 `arborctl stats`; checks that overlay panels that were put away and handed out again still show and take a drag; then runs
@@ -582,6 +583,10 @@ release build, each with and without what Arbor gets ready ahead of the first mo
 one that counts: a hosted Mac has drawn none of the apps' icons yet, which is what cost the first dock of a day its seconds. Its tables come from
 `first-dock.py`, which needs no Mac: `first-dock.py table <arbor.log> <trace.jsonl>…` says of any recorded session, for every command that moved a
 window, how long it was until the first move, how much of that the stage took, when the last app had answered and when the stage was down.
+
+**How far a window grows.** `probe-how-far-a-window-grows.sh` (twelve minutes), `probe-a-size-call-in-the-hand.sh` (eight) and `probe-when-the-display-turns.sh` (not played yet) ask macOS itself, with Arbor not
+running: `grow.swift` sets size and position through Accessibility one call at a time and writes down what came of each. They judge nothing: every line is an answer. `grow-table.py` and
+`grow-hand.py` print the lines; what they answered is `collab/reports/2026-10-15-how-far-a-window-grows.md`, and the lines are kept in `collab/evidence/how-far-a-window-grows/`.
 
 **Filming.** A burst of screenshots gets fourteen pictures a second, and a motion of Arbor's lasts half a second. `scripts/mac-shell/lib-film.sh` has a camera
 (`camera.swift`: every frame ScreenCaptureKit delivers, lossless, with the moment the display showed it and the moment the key went down):
@@ -617,7 +622,7 @@ ever taken for the other or built upon it. The line "built Arbor (release), …"
 They run one after the other. Each gets its turn and its own twenty minutes, whatever became of the one before, and starts with an empty
 `mac-shell/` **on the Mac as the first one found it**: after every script macOS's own tiling, the click on the wallpaper, Reduce Motion and light or dark are put
 back, and `output.txt` says so. What cannot be put back (Accessibility gone after a `tccutil reset`, another number of Spaces or displays) ends the list: the scripts
-that are left do not run, say why, and end with exit code 75. Give a script that does such a thing the last place, or a run of its own. The desktop picture is not looked at. What comes back is `.mac-shell/<first script>-x3-<run id>/` with a folder for each, `1-shots-F10/`, `2-shots-F12/`, …, holding what a
+that are left do not run, say why, and end with exit code 75. Give a script that does such a thing the last place, or a run of its own: `shots-finder.sh`, `check-desktop.sh` and `check-macos-double-click.sh` add a Space, and nothing takes a Space away; `input-taps.sh` and `input-taps-with-the-guard.sh` take the permission away and give it back. The desktop picture is not looked at. What comes back is `.mac-shell/<first script>-x3-<run id>/` with a folder for each, `1-shots-F10/`, `2-shots-F12/`, …, holding what a
 run of that script alone would have brought (`output.txt`, `exit-code.txt`, pictures, logs), and `summary.txt` with a line for each. `run.sh` exits with the
 first exit code that is not 0. At most four to a Mac; more are shared out, a block of the list each, among as many Macs as that takes, or among `--macs N`, whose
 output lies in `mac-1/`, `mac-2/`, …; `--at-once 2` lets a long list hold two Macs at a time and leaves the others to everybody else. A script that is given to several Macs by itself finds in `$MAC_SHELL_SHARE` which part is its own
@@ -846,7 +851,7 @@ copy from before the repository was public, and say what the script does once it
 | `check-displays.sh`, `check-desktop.sh`, `compat-pictures.sh` | trunk | **never**: end with 77 | | Virtual displays, dark mode, wallpaper, a Space that stays, every window arranged |
 | `check-sweep.sh` | trunk | **never**: ends with 77 | | Clicks on the wallpaper, which sweep aside whatever is open |
 | `compat.sh`, `compat-extras.sh` (`lib-apps.sh`) | trunk | **never, unless the person says `ARBOR_APPS_HERE=1`**: end with 77 | | An app that was not running is still theirs: launched, it brings back last time's windows and unsaved documents, and `app_quit` answers "Don't Save" |
-| `input-taps.sh` | trunk | **never, unless the person says `ARBOR_INPUT_TAPS_HERE=1`**: ends with 77 | | Pinches, scrolls and clicks at fixed places past the nets; stops Arbor while its taps hold everybody's input |
+| `input-taps.sh`, `input-taps-with-the-guard.sh` | trunk | **never, unless the person says `ARBOR_INPUT_TAPS_HERE=1`**: ends with 77 | | Pinches, scrolls and clicks at fixed places past the nets; stops Arbor while its taps hold everybody's input |
 | `rehearse.sh` | trunk | **never on a Mac**: ends with 77 | | It tells scripts that the Mac is thrown away; only what has a stand-in is fake. For Linux |
 | `run.sh` | trunk | safe for the Mac | none | Starts a run on GitHub |
 | `check-F13.sh` (`lib-F13.sh`) | trunk | safe | none | 10 to 25 minutes and 2 GB. Everything in a sandbox under `/tmp`: a throwaway `HOME`, `ARBOR_HOME`, keychain and clone. A small window takes the keyboard twice for seconds. Three copies run with their watchdog, which after a crash would use `open` |
@@ -870,6 +875,7 @@ copy from before the repository was public, and say what the script does once it
 | `check-window-list.sh` | trunk | **never**: ends with 77 | | Clicks in the menu bar and on rows of Windows ▸; hides and minimizes its own test windows |
 | `check-comes-back.sh` | trunk | safe | | A docked window fetched out of the Dock or out of a hidden app while the view is elsewhere, on real windows, three rounds each: whether its neighbour ever shows on its way, whether what was on screen stays, whether it fills the screen at the end. In the rehearsal it cannot fail for the flight, which the fake Mac does not play |
 | `probe-macos-own-moves.sh` | trunk | **never**: ends with 77 | | 10 min. macOS's own ways of moving a window, on a test window, TextEdit and Terminal, with Arbor paused and running: when the first and the last frame come, in how many steps, and what Arbor asked for meanwhile. A probe: it prints two tables and checks little |
+| `probe-how-far-a-window-grows.sh`, `probe-a-size-call-in-the-hand.sh`, `probe-when-the-display-turns.sh` (`grow.swift`, `grow-table.py`, `grow-hand.py`) | trunk | **never**: end with 77 | | 12, 8 and 10 min, Arbor not running. The Dock moved and hidden, a virtual display plugged in, Reduce Motion changed, windows dragged with the real pointer, real apps opened and quit. Probes |
 | `probe-an-app-that-is-ended.sh` | trunk | **never**: ends with 77 | | 3 min. TextEdit with a docked window is ended by SIGKILL, by SIGTERM, and asked to quit: how long the dead window keeps its slot, and what Arbor was told. A probe |
 | `check-moves-of-the-view.sh` | trunk | **never**: ends with 77 | | Four minutes. After a key that moves the view, whose is the keyboard? A plain x is typed and counted where it lands: in an app Arbor does not look at, in a test window's sheet and panel. It also writes down what Accessibility names as the focused window meanwhile (`apptool names <pid>`; lines that begin with "names:"). A rehearsal plays it as far as the first tool the fake Mac lacks, and the fake Mac gives no sheet the keyboard |
 | `check-a-key-in-the-wait.sh` | trunk | **never**: ends with 77 | | A virtual second display goes; Float All and Show Everything through `arborctl` at once, and ⌃⌥Space by a real key: refused, nothing moves, the line is on the display that is left; asked again every quarter of a second until it is carried out. Then a window goes to the Dock and the key half a second later is carried out. Three traces come back |
@@ -1399,6 +1405,10 @@ wrong, report it: the key stays until Arbor is cured, and then the Mac's side ha
 what the controller does in these journeys; a step the file does not have counts as `unplayed`. `commit.txt` in it says which commit was played. When `Sources/ArborCore` or `Sources/ArborKit` have changed since, the two sides may not play the same Arbor: the report
 warns, and names the journeys with anything new as to be recorded again. `--check` fails on them all the same: a ratchet does not go soft.
 
+**Three readers for what a run brings back:** `scripts/reality-slots.py <folder>` (at every step, does every docked window on screen fill its slot?), `scripts/reality-clip.py <folder>` (every `setFrame`: where the window stood, what was
+asked, what it took; one display, the Dock at the bottom) and `scripts/reality-clip-any-display.py <folder>` (the same with the Dock anywhere and several displays). The recording that is committed is of one commit and goes stale
+with every batch: `commit.txt` beside it says which.
+
 **After every batch that lands**, the five journeys at the trunk's head, and no train leaves from a head whose run is red or missing:
 
 ```bash
@@ -1650,7 +1660,7 @@ done to the world as if Arbor had done it, at which the net has to speak, beside
 | Less by default (Q29): a floating window is its person's, and a plain drag is what it is without Arbor | `floating-taken-out-of-view` (never, by anything; only what was summoned may be sent away); from the moment a window is taken until somebody does something else: `plain-drag-showed-a-preview`, `plain-drag-docked`, `plain-drag-moved-it` (it floated, and Arbor set a frame on it), `plain-drag-moved-another` (it floated: nobody else moves; it was docked: only what is docked), `plain-drag-started-a-timer`; a docked window let go 24 points or more from where it was taken floats, at its own size: `plain-drag-left-it-docked`, `plain-drag-not-its-own-size` | `lost`, `moved-unasked` |
 | The window you switch to comes to the front and into view | `switched-to-and-sent-away` (out of view with the keyboard in it), `switched-to-out-of-view`, `switched-to-mostly-out` (a floating window, where Arbor had put it), `switched-to-partly-out`, `app-switch-out-of-view` (only the app was reported), `switched-to-behind` | `focus`, `behind` |
 | After a person's own act macOS decides who has the keyboard | `keyboard-handed-on-unasked` (nobody asks Arbor for anything, no window that it knows has the keyboard, and Arbor focuses one) | `focus` |
-| Quitting, Float All and pause give windows their own sizes back | `size-not-given-back` | `size-lost` |
+| Quitting, Float All and pause give windows their own sizes back | `size-not-given-back`; the size macOS gave a floating window at a change of displays is its own: Arbor may leave it and may set the earlier one back, and an Arbor that makes the window smaller itself is not let off | `size-lost` |
 | After any way home no window shows less than its person left showing; after a change of displays none is mostly out of view | `home-not-whole`, `home-behind-the-dock`, `home-leaves-out`, but for the decided case: its own size, at the corner a hand gave, no less showing than was left showing; `displays-left-mostly-out`, `nothing-in-view-after-displays`, `nothing-in-view-held-after-displays` | `lost` |
 
 **A person's ⌘M is never undone** (`ChaosInvariants+Undone.swift`): `minimize-undone` speaks when a window that has just been minimized is not. The stand-in plays what a Mac does to a minimized window that is given the keyboard or raised: it comes out of the Dock. `asked: undone` counts the minimizes a running Arbor saw. Its control is in `TheFlightToTheDockTests`, its floor in `ReviewFlightToTheDockTests.theWalksMinimize`.
@@ -1676,7 +1686,7 @@ a moment between one thing and the next. No settings edited by hand, no app that
 the rest is in the menu, and no setting has been touched. Such a script begins with `settings {}`: **an empty object means that the file holds nothing, which is Arbor as it ships**, so these are the walks at the switches that
 ship, on whatever commit they run, and a replay knows it from the script. Every other walk begins as walks always did (the gestures on, and whatever else went off by default since), so that recorded seeds and listed scripts keep their meaning.
 
-**The Mac restarts in the walks.** After a restart of the Mac every window has a new number and comes back seconds after Arbor, one by one. Ordinary and light walks of seeds beyond the frozen versions restart the Mac now and then: Arbor quits; once it has let go of the windows, every window closes; 85 in 100 of them open again where they were, with the same app, limits and title and under a new number, in any order, a quarter of them before Arbor starts, the others one, two or five seconds apart after it (`ChaosGenerator.planTheLogin`). For that the windows of such walks have titles of one word. No frozen seed moves.
+**The Mac restarts in the walks.** After a restart of the Mac every window has a new number and comes back seconds after Arbor, one by one. Ordinary and light walks of seeds beyond the frozen versions restart the Mac now and then: Arbor quits; once it has let go of the windows, every window closes; 85 in 100 of them open again where they were, with the same app, limits and title and under a new number, in any order, a quarter of them before Arbor starts, the others one, two or five seconds apart after it (`ChaosGenerator.planTheLogin`). One in five says its title late: it opens under a title that says nothing and has its own a moment later. For that the windows of such walks have titles of one word. No frozen seed moves.
 
 ```bash
 ARBOR_CHAOS_ORDINARY=light .build/release/arbor-sim hunt 1 2000 300                            # nine keys, the menu, the mouse; as Arbor ships
@@ -1695,6 +1705,7 @@ ARBOR_CHAOS_ORDINARY=1 .build/release/arbor-sim hunt 1 2000 300 --known         
 | `strayed-between` | whatever the number of requests: on its way a window covers nothing in view, over 400 square points, that neither its old nor its new frame covers. A window that comes into view counts from where it first shows. Not asked of one that grows into a frame that lies within no display, which is sized first |
 | `dock-took-out-of-view` | a key that docks takes no docked window out of view that was in view: not the one it names, not one that becomes a tile for want of room |
 | `displays-moved-the-untouched` | a floating window from which a change of displays took nothing, and which macOS carried nowhere, is not moved by Arbor either |
+| `displays-fetched-what-was-in-reach` | at a change of displays Arbor fits only what the change took out of reach: a floating window that nobody named, whose title bar is within reach where macOS left it, is not set by Arbor at all, however little of it shows |
 | `plain-drag-left-an-undo-step` | Undo after a plain drag of a floating window takes back what was asked of Arbor before, not the hand's drag |
 | `keyboard-taken-unasked` | with nothing docked, kept in view or summoned, and nothing asked of it, Arbor sends the keyboard nowhere |
 | `parked-before-any-dock` | with nothing docked, kept in view, summoned or sent away there is no view that could leave a window out, so none counts as out of view |
