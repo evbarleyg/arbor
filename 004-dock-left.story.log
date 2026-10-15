@@ -1,0 +1,24 @@
+4 dock-left: docks Safari at the left
+expected: {'act': 'dock-key', 'settled': 'quiet:948', 'moves': '32', 'first': '1', 'floating': '37', 'docked': '32'}
+FAIL rule 2: notes (w37) a floating window, moved, and the step did not name it
+FAIL rule 4: the app in front changed (to process 9860), and nobody switched
+
+10:05:19.009 SCREEN -- begin 4 dock-left
+10:05:19.009 SCREEN -- text 4 docks Safari at the left
+10:05:19.019 DEBUG no stage: Reduce motion is on
+10:05:19.123 SCREEN safari (w32) 12,43 782×767
+10:05:19.203 SCREEN notes (w37) 300,105 794×660
+10:05:19.212 SCREEN notes (w37) 806,105 794×660
+10:05:19.263 SCREEN in front: process 9860 com.apple.Safari
+10:05:19.349 INFO  dock 32 left: docked w32 at the left edge
+10:05:19.363 DEBUG pid 9860 came forward, and macOS still names another app as the one in front
+10:05:19.414 SCREEN w50 of Arbor 797,96 809×678
+10:05:19.414 SCREEN w49 of Arbor 794,43 12×767
+10:05:19.414 SCREEN w51 of Arbor 0,31 1600×791 (level -2147483602)
+10:05:19.414 SCREEN front to back: safari w48 w50 notes w49
+10:05:19.518 DEBUG focus is on w32
+10:05:19.518 DEBUG w32 has the keyboard
+10:05:19.544 SCREEN w50 of Arbor 3,34 800×785
+10:05:19.544 SCREEN front to back: w50 safari w48 notes w49
+10:05:19.742 SCREEN (nothing was seen for 131 ms)
+10:05:20.659 SCREEN -- end 4 act=dock-key settled=quiet:948 moves=32 first=1 floating=37 docked=32 first=1

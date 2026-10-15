@@ -1,0 +1,20 @@
+9 float-all: floats everything
+expected: {'act': 'way-out', 'settled': 'quiet:1006', 'moves': 'any', 'restores': 'all', 'places': '1', 'everything': '1', 'floating': '32,37', 'docked': ''}
+FAIL rule 5: safari (w32) has its size back but not its place: 0,31 1324×790, it was at 138,31 1324×791
+FAIL rule 5: notes (w37) has its size back but not its place: 600,97 1000×660, it was at 300,105 1000×660
+
+10:05:28.153 SCREEN -- begin 9 float-all
+10:05:28.153 SCREEN -- text 9 floats everything
+10:05:28.168 DEBUG no stage: Reduce motion is on
+10:05:28.224 SCREEN notes (w37) 600,97 794×660
+10:05:28.245 SCREEN notes (w37) 600,97 1000×660
+10:05:28.247 INFO  float-all: floated 1 window
+10:05:28.255 SCREEN w50 of Arbor left the screen
+10:05:28.255 SCREEN w49 of Arbor left the screen
+10:05:28.255 SCREEN front to back: notes safari w48
+10:05:28.518 SCREEN w51 of Arbor left the screen
+10:05:29.086 SCREEN (nothing was seen for 121 ms)
+10:05:29.372 SCREEN -- end 9 act=way-out settled=quiet:1006 moves=any restores=all places=1 everything=1 floating=32,37 docked=
+10:05:29.623 SCREEN -- chapter Arrange Windows leaves nothing over
+10:05:29.634 INFO  trace day-2 ended: 142 lines, trace off
+10:05:29.644 INFO  trace day-3: recording to /tmp/arbor-shell.xVuUfg/home/traces/2026-10-15-100529-day-3.jsonl

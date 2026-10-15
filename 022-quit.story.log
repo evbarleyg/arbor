@@ -1,0 +1,18 @@
+22 quit: quits Arbor
+expected: {'act': 'quit-and-start', 'settled': 'quiet:898', 'moves': 'any', 'restores': 'all', 'everything': '1'}
+FAIL rule -: Arbor's process ended, and nobody asked it to
+FAIL rule -: the witness at the end of the event taps saw nothing all day
+
+10:06:10.454 SCREEN -- begin 22 quit
+10:06:10.454 SCREEN -- text 22 quits Arbor
+10:06:10.475 INFO  trace day-5 ended: 75 lines, Arbor stopped
+10:06:10.476 INFO  stopped; all windows returned to view
+10:06:10.479 INFO  Arbor quit
+10:06:10.488 SCREEN w48 of Arbor left the screen
+10:06:10.488 SCREEN front to back: notes calendar terminal textedit w62 mail safari
+10:06:10.502 SCREEN -- arbor gone
+10:06:10.858 SCREEN (nothing was seen for 102 ms)
+10:06:11.002 SCREEN (nothing was seen for 123 ms)
+10:06:11.528 SCREEN -- finding 22 -:crash FAIL Arbor's process ended, and nobody asked it to
+10:06:11.535 SCREEN -- end 22 act=quit-and-start settled=quiet:898 moves=any restores=all everything=1
+10:06:11.811 SCREEN -- finding 22 - FAIL the witness at the end of the event taps saw nothing all day

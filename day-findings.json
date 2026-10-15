@@ -1,0 +1,564 @@
+{
+ "sampler": "samples 1314 seconds 55.9 hz 23.5 cost-ms 9.01 late 112 longest-gap-ms 1357 whole-samples 1731 whole-seconds 73.6 whole-late 155",
+ "input": null,
+ "stage_seen": false,
+ "witnessed": false,
+ "steps": [
+  {
+   "number": 3,
+   "slug": "launch",
+   "chapter": "Two docks are two halves",
+   "text": "starts Arbor",
+   "act": "quit-and-start",
+   "judged": true,
+   "performed": true,
+   "began": 1792058716142,
+   "milliseconds": 2297,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 4,
+   "slug": "dock-left",
+   "chapter": "Two docks are two halves",
+   "text": "docks Safari at the left",
+   "act": "dock-key",
+   "judged": true,
+   "performed": true,
+   "began": 1792058719009,
+   "milliseconds": 1650,
+   "moved": {
+    "32": [
+     1,
+     1,
+     0
+    ],
+    "37": [
+     1,
+     2,
+     9
+    ]
+   },
+   "findings": [
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "notes (w37)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 300,105 1000×660 · +194 ms 300,105 794×660 · +203 ms 806,105 794×660"
+    },
+    {
+     "rule": "4",
+     "detector": "focus",
+     "level": "FAIL",
+     "window": null,
+     "what": "the app in front changed (to process 9860), and nobody switched",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 5,
+   "slug": "dock-right",
+   "chapter": "Two docks are two halves",
+   "text": "docks Notes at the right",
+   "act": "dock-key",
+   "judged": true,
+   "performed": true,
+   "began": 1792058721100,
+   "milliseconds": 1442,
+   "moved": {
+    "37": [
+     1,
+     2,
+     127
+    ]
+   },
+   "findings": [
+    {
+     "rule": "4",
+     "detector": "focus",
+     "level": "FAIL",
+     "window": null,
+     "what": "the app in front changed (to process 10080), and nobody switched",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 6,
+   "slug": "float-notes",
+   "chapter": "Whoever is left alone stays as it is",
+   "text": "floats Notes",
+   "act": "dock-key",
+   "judged": true,
+   "performed": true,
+   "began": 1792058723139,
+   "milliseconds": 1353,
+   "moved": {
+    "37": [
+     1,
+     2,
+     117
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 7,
+   "slug": "dock-right-again",
+   "chapter": "Whoever is left alone stays as it is",
+   "text": "docks Notes at the right again",
+   "act": "dock-key",
+   "judged": true,
+   "performed": true,
+   "began": 1792058724762,
+   "milliseconds": 1521,
+   "moved": {
+    "37": [
+     1,
+     2,
+     68
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 8,
+   "slug": "float-safari",
+   "chapter": "Whoever is left alone stays as it is",
+   "text": "floats Safari, the one that was docked first",
+   "act": "dock-key",
+   "judged": true,
+   "performed": true,
+   "began": 1792058726579,
+   "milliseconds": 1302,
+   "moved": {
+    "32": [
+     1,
+     2,
+     32
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 9,
+   "slug": "float-all",
+   "chapter": "Whoever is left alone stays as it is",
+   "text": "floats everything",
+   "act": "way-out",
+   "judged": true,
+   "performed": true,
+   "began": 1792058728153,
+   "milliseconds": 1219,
+   "moved": {
+    "37": [
+     1,
+     2,
+     21
+    ]
+   },
+   "findings": [
+    {
+     "rule": "5",
+     "detector": "size-lost",
+     "level": "FAIL",
+     "window": "safari (w32)",
+     "what": "has its size back but not its place: 0,31 1324×790, it was at 138,31 1324×791",
+     "trace": null
+    },
+    {
+     "rule": "5",
+     "detector": "size-lost",
+     "level": "FAIL",
+     "window": "notes (w37)",
+     "what": "has its size back but not its place: 600,97 1000×660, it was at 300,105 1000×660",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 10,
+   "slug": "arrange-2",
+   "chapter": "Arrange Windows leaves nothing over",
+   "text": "chooses Arrange Windows with 2 windows open",
+   "act": "dock-key",
+   "judged": true,
+   "performed": true,
+   "began": 1792058729689,
+   "milliseconds": 1340,
+   "moved": {
+    "32": [
+     1,
+     2,
+     42
+    ],
+    "37": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 11,
+   "slug": "open-mail",
+   "chapter": "Arrange Windows leaves nothing over",
+   "text": "opens mail",
+   "act": "open-close",
+   "judged": false,
+   "performed": true,
+   "began": 1792058731313,
+   "milliseconds": 4779,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 12,
+   "slug": "arrange-3",
+   "chapter": "Arrange Windows leaves nothing over",
+   "text": "chooses Arrange Windows with 3 windows open",
+   "act": "dock-key",
+   "judged": true,
+   "performed": true,
+   "began": 1792058736567,
+   "milliseconds": 1814,
+   "moved": {
+    "32": [
+     1,
+     1,
+     0
+    ],
+    "37": [
+     1,
+     2,
+     120
+    ],
+    "60": [
+     1,
+     2,
+     240
+    ],
+    "62": [
+     1,
+     2,
+     240
+    ]
+   },
+   "findings": [
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "notes (w37)",
+     "what": "went 146 points out of its way before it ended up",
+     "trace": "+0 ms 806,43 782×767 · +258 ms 806,43 709×767 · +378 ms 806,43 782×767"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "ODD",
+     "window": "w62 of Mail",
+     "what": "went 238 points out of its way before it ended up",
+     "trace": "+0 ms 565,179 470×416 · +159 ms 446,124 470×416 · +399 ms 1805,822 470×416",
+     "explained": "follows its window"
+    }
+   ]
+  },
+  {
+   "number": 13,
+   "slug": "open-textedit",
+   "chapter": "Arrange Windows leaves nothing over",
+   "text": "opens textedit",
+   "act": "open-close",
+   "judged": false,
+   "performed": true,
+   "began": 1792058738878,
+   "milliseconds": 2736,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 14,
+   "slug": "arrange-4",
+   "chapter": "Arrange Windows leaves nothing over",
+   "text": "chooses Arrange Windows with 4 windows open",
+   "act": "dock-key",
+   "judged": false,
+   "performed": true,
+   "began": 1792058743042,
+   "milliseconds": 1623,
+   "moved": {
+    "37": [
+     1,
+     2,
+     111
+    ],
+    "69": [
+     1,
+     3,
+     162
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 15,
+   "slug": "open-terminal",
+   "chapter": "Arrange Windows leaves nothing over",
+   "text": "opens terminal",
+   "act": "open-close",
+   "judged": false,
+   "performed": true,
+   "began": 1792058746824,
+   "milliseconds": 5230,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 16,
+   "slug": "arrange-5",
+   "chapter": "Arrange Windows leaves nothing over",
+   "text": "chooses Arrange Windows with 5 windows open",
+   "act": "dock-key",
+   "judged": false,
+   "performed": true,
+   "began": 1792058752900,
+   "milliseconds": 3561,
+   "moved": {
+    "32": [
+     1,
+     1,
+     0
+    ],
+    "37": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     2,
+     82
+    ],
+    "82": [
+     1,
+     3,
+     205
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 17,
+   "slug": "open-calendar",
+   "chapter": "Arrange Windows leaves nothing over",
+   "text": "opens calendar",
+   "act": "open-close",
+   "judged": false,
+   "performed": true,
+   "began": 1792058757215,
+   "milliseconds": 4589,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 18,
+   "slug": "arrange-6",
+   "chapter": "Arrange Windows leaves nothing over",
+   "text": "chooses Arrange Windows with 6 windows open",
+   "act": "dock-key",
+   "judged": true,
+   "performed": true,
+   "began": 1792058762459,
+   "milliseconds": 1802,
+   "moved": {
+    "32": [
+     1,
+     1,
+     0
+    ],
+    "37": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     2,
+     18
+    ],
+    "82": [
+     1,
+     3,
+     216
+    ],
+    "88": [
+     2,
+     2,
+     292
+    ]
+   },
+   "findings": [
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "calendar (w88)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 200,86 935×598 · +159 ms 200,86 680×503 · +451 ms 187,43 680×503"
+    }
+   ]
+  },
+  {
+   "number": 19,
+   "slug": "desktop",
+   "chapter": "The Desktop is still a place to go",
+   "text": "goes to the Desktop",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792058764706,
+   "milliseconds": 1433,
+   "moved": {
+    "37": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "82": [
+     1,
+     1,
+     0
+    ],
+    "88": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 20,
+   "slug": "back",
+   "chapter": "The Desktop is still a place to go",
+   "text": "and back",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792058766447,
+   "milliseconds": 1319,
+   "moved": {
+    "37": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "82": [
+     1,
+     1,
+     0
+    ],
+    "88": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 21,
+   "slug": "float-all-at-the-end",
+   "chapter": "The way out",
+   "text": "floats everything",
+   "act": "way-out",
+   "judged": true,
+   "performed": true,
+   "began": 1792058768107,
+   "milliseconds": 1995,
+   "moved": {
+    "32": [
+     1,
+     2,
+     27
+    ],
+    "37": [
+     1,
+     2,
+     114
+    ],
+    "60": [
+     1,
+     1,
+     0
+    ],
+    "62": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "82": [
+     1,
+     3,
+     44
+    ],
+    "88": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 22,
+   "slug": "quit",
+   "chapter": "The way out",
+   "text": "quits Arbor",
+   "act": "quit-and-start",
+   "judged": true,
+   "performed": true,
+   "began": 1792058770454,
+   "milliseconds": 1081,
+   "moved": {},
+   "findings": [
+    {
+     "rule": "-",
+     "detector": "crash",
+     "level": "FAIL",
+     "window": null,
+     "what": "Arbor's process ended, and nobody asked it to",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "detector": "script",
+     "level": "FAIL",
+     "window": null,
+     "what": "the witness at the end of the event taps saw nothing all day",
+     "trace": null
+    }
+   ]
+  }
+ ]
+}

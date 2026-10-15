@@ -1,0 +1,35 @@
+18 arrange-6: chooses Arrange Windows with 6 windows open
+expected: {'act': 'dock-key', 'settled': 'quiet:655', 'moves': 'any', 'tiles': '32@12:43:163:767,60@12:43:163:767', 'keyboard': '37', 'floating': '', 'docked': '32,37,60,69,82,88'}
+FAIL rule 3: calendar (w88) moved 2 times
+
+10:06:02.459 SCREEN -- begin 18 arrange-6
+10:06:02.459 SCREEN -- text 18 chooses Arrange Windows with 6 windows open
+10:06:02.472 INFO  made room for w37, w32
+10:06:02.480 DEBUG no stage: Reduce motion is on
+10:06:02.618 SCREEN (nothing was seen for 221 ms)
+10:06:02.618 SCREEN calendar (w88) 200,86 680×503
+10:06:02.649 INFO  made room for w37, w88
+10:06:02.694 SCREEN terminal (w82) 598,43 268×259
+10:06:02.731 SCREEN notes (w37) 879,433 709×377
+10:06:02.731 SCREEN terminal (w82) 598,43 268×244
+10:06:02.847 SCREEN textedit (w69) 598,433 709×378
+10:06:02.865 SCREEN textedit (w69) 879,43 709×378
+10:06:02.890 DEBUG no stage: Reduce motion is on
+10:06:02.910 SCREEN calendar (w88) 187,43 680×503
+10:06:02.910 SCREEN terminal (w82) 187,562 681×244
+10:06:02.910 SCREEN safari (w32) 1599,770 574×378
+10:06:02.910 INFO  arrange: arranged 6 windows
+10:06:02.940 SCREEN w50 of Arbor 870,424 727×395
+10:06:02.940 SCREEN w66 of Arbor 12,43 163×767
+10:06:02.940 SCREEN w67 of Arbor 187,546 680×12
+10:06:02.940 SCREEN w49 of Arbor 879,421 709×12
+10:06:02.940 SCREEN w73 of Arbor 175,43 12×767
+10:06:02.940 SCREEN front to back: w50 notes calendar terminal textedit w62 mail safari w48 w66 w67 w49 w73 w85
+10:06:03.669 SCREEN (nothing was seen for 125 ms)
+10:06:04.127 SCREEN (nothing was seen for 130 ms)
+10:06:04.261 SCREEN -- end 18 act=dock-key settled=quiet:655 moves=any tiles=32@12:43:163:767,60@12:43:163:767 keyboard=37 floating= docked=32,37,60,69,82,88
+10:06:04.393 SCREEN (nothing was seen for 127 ms)
+10:06:04.560 SCREEN (nothing was seen for 116 ms)
+10:06:04.610 SCREEN -- chapter The Desktop is still a place to go
+10:06:04.618 INFO  trace day-3 ended: 459 lines, trace off
+10:06:04.636 INFO  trace day-4: recording to /tmp/arbor-shell.xVuUfg/home/traces/2026-10-15-100604-day-4.jsonl

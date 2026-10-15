@@ -1,0 +1,31 @@
+5 dock-right: docks Notes at the right
+expected: {'act': 'dock-key', 'settled': 'quiet:804', 'moves': '37,32', 'docked': '32,37', 'floating': ''}
+FAIL rule 4: the app in front changed (to process 10080), and nobody switched
+
+10:05:21.100 SCREEN -- begin 5 dock-right
+10:05:21.100 SCREEN -- text 5 docks Notes at the right
+10:05:21.103 SCREEN (nothing was seen for 127 ms)
+10:05:21.110 DEBUG no stage: Reduce motion is on
+10:05:21.177 SCREEN notes (w37) 806,105 782×716
+10:05:21.275 SCREEN in front: process 10080 com.apple.Notes
+10:05:21.276 INFO  dock 37 right: docked w37 at the right edge
+10:05:21.279 DEBUG pid 10080 came forward, and macOS still names another app as the one in front
+10:05:21.301 DEBUG focus is on w37
+10:05:21.302 DEBUG w37 has the keyboard
+10:05:21.304 SCREEN (nothing was seen for 123 ms)
+10:05:21.304 SCREEN w50 of Arbor 797,34 800×785
+10:05:21.304 SCREEN notes (w37) 806,43 782×767
+10:05:21.304 SCREEN front to back: w50 notes safari w48 w49
+10:05:21.476 SCREEN (nothing was seen for 115 ms)
+10:05:21.593 SCREEN (nothing was seen for 112 ms)
+10:05:21.726 SCREEN (nothing was seen for 129 ms)
+10:05:22.111 SCREEN (nothing was seen for 100 ms)
+10:05:22.236 SCREEN (nothing was seen for 121 ms)
+10:05:22.446 SCREEN (nothing was seen for 102 ms)
+10:05:22.542 SCREEN -- end 5 act=dock-key settled=quiet:804 moves=37,32 docked=32,37 floating= docked=32,37
+10:05:22.605 SCREEN (nothing was seen for 119 ms)
+10:05:22.718 SCREEN (nothing was seen for 108 ms)
+10:05:22.843 SCREEN (nothing was seen for 119 ms)
+10:05:23.056 SCREEN -- chapter Whoever is left alone stays as it is
+10:05:23.065 INFO  trace day-1 ended: 169 lines, trace off
+10:05:23.080 INFO  trace day-2: recording to /tmp/arbor-shell.xVuUfg/home/traces/2026-10-15-100523-day-2.jsonl
