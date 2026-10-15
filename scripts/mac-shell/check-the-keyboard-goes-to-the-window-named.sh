@@ -21,6 +21,14 @@
 #
 # Not here: the same by the menu's list of windows, which is not on the trunk.
 #
+# HOW TO READ RUN 38746844791 (mac-shell-out/check.named, this script one commit earlier, macOS 26.6.2): its "113 passed, 27 failed" is the script's own fault, not Arbor's.
+# The 27 are nine rounds times three checks: real-apps-with-b-2 to real-apps-with-b-10. From the second round on the other app's window, back from the Dock at 0,32 700×677, covered the docked window (12,43 659×655)
+# wholly, so the click that is to give the docked window the keyboard found "no part of window 56 is in reach". Those rounds began with the keyboard already in the window named: they are void. (`back` is mended since.)
+# What counts, from rounds.jsonl: 31 rounds, 31 right, 0 wrong. Test apps with another app's floating window there 10 of 10, control 10 of 10; real apps 1 of 1 (9 void), control 10 of 10.
+# What it does not show: since `zoom` of a floating window fills the view, the view does not change and nobody is sent away, so the road on which the fault was found is not entered on that build. From the command to the
+# last look every trace holds one setFrame and one focus, both of the window named, and no app comes forward; the traces with the other app's window and without it have the same shape. The command is right; the race
+# underneath is neither shown nor refuted.
+#
 # Only on GitHub's Macs: it types plain letters, which land in whatever has the keyboard, and opens and quits real apps.
 source "$(dirname "${BASH_SOURCE[0]}")/lib-apps.sh"
 needs_throwaway_mac "type plain letters, which land in whichever app has the keyboard, and open and quit real apps"
@@ -187,7 +195,8 @@ else
   sleep 2
   keys_in() { "$TYPED" "$1" "$2"; }
   away() { apptool minimize "$OTHER"; }
-  back() { apptool unminimize "$OTHER"; }
+  # Back from the Dock the window lies on top, and Script Editor's covers the docked one wholly: nothing of that is left to click (run 38746844791, above). So the docked one is raised again; the click follows as before.
+  back() { apptool unminimize "$OTHER"; sleep 0.8; apptool raise "$DOCKED"; }
   check "TextEdit's first document is docked" is docked "$DOCKED"
   check "its second floats" is floating "$NAMED"
   check "Script Editor's floats" is floating "$OTHER"
