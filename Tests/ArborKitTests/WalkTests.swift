@@ -43,7 +43,8 @@ import Testing
   }
 
   @Test func everyWordOfLibWalksIsKnownHereAndEveryWordHereIsOneOfIts() throws {
-    let theirs = try contract().subtracting(["walk_begin", "walk_end"])
+    // `way_to` is no word: it is how a word runs a command of Arbor's, and the header names it in passing.
+    let theirs = try contract().subtracting(["walk_begin", "walk_end", "way_to"])
     // `chapter` is lib-day.sh's, and the header says so.
     let ours = Set(WalkWord.oneOfEach.map(\.name)).subtracting(["chapter"])
     #expect(theirs.count > 40, "the header of lib-walk.sh was not read")
@@ -74,54 +75,95 @@ import Testing
     return line.hasSuffix("}") ? String(line) : String(text[start.upperBound..<end.lowerBound])
   }
 
-  /// A key that is pressed on a Mac and the command that is played here are one thing only as long as the key is bound to the command. The command is what the player
-  /// really plays; the chord is looked for in the word's own function, as a word of its own.
-  @Test func theKeysLibWalkPressesAreBoundToTheCommandsPlayedHere() throws {
+  /// On a Mac a command of Arbor's is run as a person would run it: by the key it has now, else from the menu (lib-walk.sh's `way_to`). What is run there and what is played
+  /// here are one thing only as long as both name the same command and go the same way. The command is what the player really plays; lib-walk.sh's is looked for in the
+  /// word's own function, word by word. With the nine keys that ship, as every walk is played, and with the whole map, which the same words press.
+  @Test func theCommandsLibWalkRunsArePlayedHereAndByTheSameWay() throws {
     let text = try Self.file("scripts/mac-shell/lib-walk.sh")
-    // The word, the function that presses its key, the chord as that function spells it, and the chord.
-    let keys: [(word: WalkWord, function: String, written: String, chord: String)] = [
-      (.dockKey(.left), "dock_key", "ctrl+opt+cmd+$1", "ctrl+opt+cmd+left"), (.dockKey(.right), "dock_key", "ctrl+opt+cmd+$1", "ctrl+opt+cmd+right"),
-      (.dockKey(.up), "dock_key", "ctrl+opt+cmd+$1", "ctrl+opt+cmd+up"), (.dockKey(.down), "dock_key", "ctrl+opt+cmd+$1", "ctrl+opt+cmd+down"),
-      (.focusKey(.left), "focus_key", "ctrl+opt+shift+$1", "ctrl+opt+shift+left"), (.focusKey(.right), "focus_key", "ctrl+opt+shift+$1", "ctrl+opt+shift+right"),
-      (.focusKey(.up), "focus_key", "ctrl+opt+shift+$1", "ctrl+opt+shift+up"), (.focusKey(.down), "focus_key", "ctrl+opt+shift+$1", "ctrl+opt+shift+down"),
-      (.rotate, "rotate", "ctrl+opt+r", "ctrl+opt+r"), (.mirror, "mirror", "ctrl+opt+shift+r", "ctrl+opt+shift+r"), (.resizeKey(.grow), "resize_key", "chord=ctrl+opt+cmd+=", "ctrl+opt+cmd+="),
-      (.resizeKey(.shrink), "resize_key", "chord=ctrl+opt+cmd+-", "ctrl+opt+cmd+-"), (.resizeKey(.balance), "resize_key", "chord=ctrl+opt+cmd+0", "ctrl+opt+cmd+0"),
-      (.view(.frame), "view", "chord=ctrl+opt+return", "ctrl+opt+return"), (.view(.out), "view", "chord=ctrl+opt+up", "ctrl+opt+up"), (.view(.in), "view", "chord=ctrl+opt+down", "ctrl+opt+down"),
-      (.view(.left), "view", "chord=ctrl+opt+left", "ctrl+opt+left"), (.view(.right), "view", "chord=ctrl+opt+right", "ctrl+opt+right"), (.view(.back), "view", "ctrl+opt+[", "ctrl+opt+["),
-      (.view(.forward), "view", "ctrl+opt+]", "ctrl+opt+]"), (.view(.desktop), "view", "chord=ctrl+opt+d", "ctrl+opt+d"), (.view(.all), "view", "chord=ctrl+opt+space", "ctrl+opt+space"),
-      (.view(.home), "view", "chord=ctrl+opt+0", "ctrl+opt+0"), (.saveView(2), "save_view", "ctrl+opt+shift+$1", "ctrl+opt+shift+2"), (.viewN(2), "view_n", "ctrl+opt+$1", "ctrl+opt+2"),
-      (.peek, "peek", "ctrl+opt+space", "ctrl+opt+space"), (.undo, "undo", "ctrl+opt+z", "ctrl+opt+z"), (.redo, "redo", "ctrl+opt+shift+z", "ctrl+opt+shift+z"),
-      (.floatKey, "float_key", "ctrl+opt+f", "ctrl+opt+f"), (.arrangeKey, "arrange_key", "ctrl+opt+a", "ctrl+opt+a"), (.floatAll, "float_all", "ctrl+opt+shift+f", "ctrl+opt+shift+f"),
-      (.pause, "pause", "ctrl+opt+escape", "ctrl+opt+escape"), (.resume, "resume", "ctrl+opt+escape", "ctrl+opt+escape"),
+    let (byItsName, inView) = ([["way_to", "$command"], ["go_that_way", "$command"]], [["way_to", "$command"], ["go_that_way", "$command"]])
+    let (docks, sizes) = ([["way_to", "dock", "$edge"], ["go_that_way", "dock", "$edge"]], [["grow", "|", "shrink", "|", "balance)"], ["way_to", "$1"], ["go_that_way", "$1"]])
+    let plain = [["out", "|", "in", "|", "back", "|", "forward", "|", "desktop)", "command=$1"]] + inView
+    let (looks, walks) = ([["way_to", "focus", "$1"], ["key", "$WALK_CHORD"]], [["left", "|", "right)", "command=", "neighbor", "$1"]] + inView)
+    // The word, the function that runs its command, what that function says, the command, and whether it is left out where it has no key.
+    let commands: [(word: WalkWord, function: String, written: [[String]], command: String, needsAKey: Bool)] = [
+      (.dockKey(.left), "dock_key", docks + [["*)", "edge=$1"]], "dock left", false), (.dockKey(.right), "dock_key", docks, "dock right", false),
+      (.dockKey(.up), "dock_key", docks + [["up)", "edge=top"]], "dock top", false), (.dockKey(.down), "dock_key", docks + [["down)", "edge=bottom"]], "dock bottom", false),
+      (.focusKey(.left), "focus_key", looks, "focus left", true), (.focusKey(.right), "focus_key", looks, "focus right", true),
+      (.focusKey(.up), "focus_key", looks, "focus up", true), (.focusKey(.down), "focus_key", looks, "focus down", true),
+      (.rotate, "rotate", [["arrangement_key", "rotate"]], "rotate", false), (.mirror, "mirror", [["arrangement_key", "mirror"]], "mirror", false),
+      (.undo, "undo", [["arrangement_key", "undo"]], "undo", false), (.redo, "redo", [["arrangement_key", "redo"]], "redo", false),
+      (.arrangeKey, "arrange_key", [["arrangement_key", "arrange"]], "arrange", false), (.arrangeKey, "arrangement_key", [["local", "command=$1"]] + byItsName, "arrange", false),
+      (.resizeKey(.grow), "resize_key", sizes, "grow", false), (.resizeKey(.shrink), "resize_key", sizes, "shrink", false), (.resizeKey(.balance), "resize_key", sizes, "balance", false),
+      (.view(.frame), "view", [["command=zoom"]] + inView, "zoom", false), (.view(.out), "view", plain, "out", false), (.view(.in), "view", plain, "in", false),
+      (.view(.left), "view", walks, "neighbor left", true), (.view(.right), "view", walks, "neighbor right", true), (.view(.back), "view", plain, "back", false),
+      (.view(.forward), "view", plain, "forward", false), (.view(.desktop), "view", plain, "desktop", false), (.view(.all), "view", [["all)", "command=show-all"]] + inView, "show-all", false),
+      (.view(.home), "view", [["home)", "command=home"]] + inView, "home", false), (.saveView(2), "save_view", [["way_to", "save-view", "$1"], ["go_that_way", "save-view", "$1"]], "save-view 2", false),
+      (.viewN(2), "view_n", [["way_to", "view", "$1"], ["go_that_way", "view", "$1"]], "view 2", false), (.floatAll, "float_all", [["way_to", "float-all"], ["go_that_way", "float-all"]], "float-all", false),
+      // These press a key of the nine, whatever the map.
+      (.peek, "peek", [["ctrl+opt+space"]], "show-all", true), (.floatKey, "float_key", [["key", "ctrl+opt+f"]], "toggle-float", true),
+      (.pause, "pause", [["key", "ctrl+opt+escape"]], "toggle-pause", true), (.resume, "resume", [["key", "ctrl+opt+escape"]], "toggle-pause", true),
     ]
-    let player = WalkPlayer(WalkSetting(seed: "keys"))
-    Log.silenced {
-      player.begin()
-      for word in [WalkWord.switchDock("safari"), .dockKey(.left), .switchDock("notes"), .dockKey(.right)] { player.play(word) }
+    for (chord, command) in [("ctrl+opt+space", "show-all"), ("ctrl+opt+f", "toggle-float"), ("ctrl+opt+escape", "toggle-pause")] {
+      for map in [KeyBindings.core, KeyBindings.all] { #expect(map.first { $0.chord.text == chord }?.command.text == command, "\(chord)") }
     }
-    for key in keys {
-      let mark = player.script.count
-      // In a state in which it applies: everything in view, a docked window in front.
+    for (name, map) in [("core", KeyBindings.core), ("all", KeyBindings.all)] {
+      let player = WalkPlayer(WalkSetting(seed: "keys"))
       Log.silenced {
-        if key.word != .resume { for word in [WalkWord.view(.home), .switchDock("notes")] { player.play(word) } }
-        if key.word == .floatKey || key.word == .resizeKey(.grow) { player.play(.dockKey(.right)) }
+        player.begin()
+        if name != "core" { _ = player.runner.step(.settings(#"{"shortcuts": "all"}"#)) }
+        for word in [WalkWord.switchDock("safari"), .dockKey(.left), .switchDock("notes"), .dockKey(.right)] { player.play(word) }
       }
-      let before = player.script.count
-      #expect(Log.silenced { player.play(key.word) }.acts == 1, "\(key.word) did not apply")
-      let pressed = player.script[before...].compactMap { action -> String? in
-        switch action {
-        case .key(let command, .pressed): command
-        // The one key the chaos lab plays as a command.
-        case .command("toggle-pause"): "toggle-pause"
-        default: nil
+      #expect(Set(player.runner.controller.activeBindings.map(\.command.text)) == Set(map.map(\.command.text)), "a walk plays Arbor as it ships")
+      for row in commands {
+        // In a state in which it applies: everything in view, a docked window in front.
+        Log.silenced {
+          if row.word != .resume { for word in [WalkWord.view(.home), .switchDock("notes")] { player.play(word) } }
+          if row.word == .floatKey || row.word == .resizeKey(.grow) { player.play(.dockKey(.right)) }
+        }
+        let before = player.script.count
+        let outcome = Log.silenced { player.play(row.word) }
+        let played = player.script[before...].compactMap { action -> String? in
+          switch action {
+          case .key(let command, .pressed): "key \(command)"
+          // The one key the chaos lab plays as a command.
+          case .command("toggle-pause"): "key toggle-pause"
+          case .command(let command): "menu \(command)"
+          default: nil
+          }
+        }
+        if map.contains(where: { $0.command.text == row.command }) {
+          #expect(outcome.acts == 1 && played == ["key \(row.command)"], "\(row.word) with \(name): \(played)")
+        } else if row.needsAKey {
+          #expect(outcome.acts == 0 && outcome.leftOut && played.isEmpty, "\(row.word) with \(name): \(played)")
+        } else {
+          #expect(outcome.acts == 1 && played == ["menu \(row.command)"], "\(row.word) with \(name): \(played)")
         }
       }
-      let chord = try KeyChord(text: key.chord)
-      let bound = try #require(KeyBindings.all.first { $0.chord == chord }, "\(key.chord) is bound to nothing").command.text
-      #expect(pressed == [bound], "\(key.word): \(key.chord)")
-      let spelt = try body(of: key.function, in: text).split { " \"\n;".contains($0) }.map(String.init)
-      #expect(spelt.contains(key.written), "lib-walk.sh's \(key.function) does not press \(key.written)")
-      _ = mark
+    }
+    for row in commands {
+      let spelt = try body(of: row.function, in: text).replacingOccurrences(of: "\n", with: " \n ").split { " \";".contains($0) }.map(String.init)
+      for words in row.written {
+        // A command is all that follows on the line.
+        let whole = ["way_to", "go_that_way"].contains(words[0]) ? words + ["\n"] : words
+        #expect(spelt.indices.contains { spelt[$0...].starts(with: whole) }, "lib-walk.sh's \(row.function) does not say \(words.joined(separator: " "))")
+      }
+    }
+  }
+
+  /// `way_to` reads the key of a command out of what `arborctl bindings` prints: the first word of the line that ends in ` → ` and the command.
+  @Test func theKeyOfACommandIsReadOutOfTheListOfBindingsAsLibWalkReadsIt() throws {
+    let way = try body(of: "way_to", in: try Self.file("scripts/mac-shell/lib-walk.sh"))
+    #expect(way.contains("arborctl\" bindings") && way.contains("index($0, \" → \")") && way.contains("== want { print $1; exit }"))
+    for settings in [Settings(), .withEveryKey] {
+      let h = Harness(settings: settings)
+      let lines = try #require(h.run("bindings").text).components(separatedBy: "\n")
+      #expect(!h.controller.activeBindings.isEmpty)
+      for binding in h.controller.activeBindings {
+        let found = lines.first { line in line.range(of: " → ").map { line[$0.upperBound...] == binding.command.text } ?? false }
+        #expect(found?.split(separator: " ").first.map(String.init) == binding.chord.text, "\(binding.command.text)")
+      }
+      // No sentence below the list is taken for a line of it.
+      for command in ["arrange", "quit", "bindings"] { #expect(!lines.contains { $0.hasSuffix(" → \(command)") }) }
     }
   }
 
