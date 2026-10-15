@@ -1,0 +1,61 @@
+# check-standstill 2026-10-15T13:55Z on macOS 26.6.2, commit 232499c
+
+== 0. nothing is done
+  ✔ the strip is seen to move, and the display does not stand still by itself
+
+== 1. THE CONTROL: no Arbor. A plain tool, a fresh process each time, shows a panel of its own as Arbor shows a tile, puts it away and shows it again
+
+▸ into a window that is a tile and back out, after the first time, without motion: the display never stands still (a)
+  ✔ the third window is a tile
+  ✔ on the way in
+  ✔ on the way out
+  ✔ the first way out, which costs what macOS makes it cost, took no more than that
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+▸ into a window that is a tile and back out, after the first time, without motion: the display never stands still (b)
+  ✔ the third window is a tile
+  ✔ on the way in
+  ✔ on the way out
+  ✔ the first way out, which costs what macOS makes it cost, took no more than that
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+▸ into a window that is a tile and back out, after the first time, with motion: the display never stands still
+  ✔ the third window is a tile
+  ✔ on the way in
+  ✔ on the way out
+  ✔ the first way out, which costs what macOS makes it cost, took no more than that
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== 3. with nobody filming
+  ✔ the third window is a tile
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== for how long the display stood still
+
+== every wait of over 300 ms between two frames, whatever was going on
+
+== when the window server kept the sampler waiting for over 300 ms
+
+== the system's log, on one clock: who set up drawing through the GPU, Arbor's own lines, and what the window server says of its own threads
+
+30 passed, 0 failed

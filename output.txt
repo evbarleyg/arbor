@@ -1,0 +1,273 @@
+# mac-shell: scripts/mac-shell/check-standstill.sh at 232499c, macOS 26.6.2, 2026-10-15T13:55Z
+built Arbor, the pointer tool and the app bundles in 6s
+Reduce Motion: false
+
+== 0. nothing is done
+  ✔ the strip is seen to move, and the display does not stand still by itself
+
+== 1. THE CONTROL: no Arbor. A plain tool, a fresh process each time, shows a panel of its own as Arbor shows a tile, puts it away and shows it again
+> mover tile:771:43:241:653:0.2 wait:1500 leave:0.2 wait:300 go show:0.2
+> mover tile:771:43:241:653:0.2 wait:1500 leave:0.2 wait:1000 go show:0.2
+> mover tile:771:43:241:653:0.2 wait:1500 leave:0.2 wait:2000 go show:0.2
+> mover tile:771:43:241:653:0.2 wait:1500 leave:0.2 wait:3400 go show:0.2
+> mover look:bitmap tile:771:43:241:653:0.2 wait:1500 leave:0.2 wait:3400 go show:0.2
+> mover look:plain tile:771:43:241:653:0.2 wait:1500 leave:0.2 wait:3400 go show:0.2
+> mover tile:771:43:241:653:0.2 wait:1500 leave:0.2 wait:300 go show:0.2
+> mover tile:771:43:241:653:0.2 wait:1500 leave:0.2 wait:1000 go show:0.2
+> mover tile:771:43:241:653:0.2 wait:1500 leave:0.2 wait:2000 go show:0.2
+> mover tile:771:43:241:653:0.2 wait:1500 leave:0.2 wait:3400 go show:0.2
+> mover look:bitmap tile:771:43:241:653:0.2 wait:1500 leave:0.2 wait:3400 go show:0.2
+> mover look:plain tile:771:43:241:653:0.2 wait:1500 leave:0.2 wait:3400 go show:0.2
+> mover look:bitmap tile:771:43:241:653:0.2 wait:1500 leave:0.2 wait:3400 go show:0.2
+
+▸ into a window that is a tile and back out, after the first time, without motion: the display never stands still (a)
+session 1: Arbor pid 11471, test windows 47 48 49 (pid 11426)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+> dock 47 left
+docked w47 at the left edge
+> dock 48 right
+docked w48 at the right edge
+> dock 49 right
+docked w49 at the right edge; its space is too small to show it, so it is a tile
+  ✔ the third window is a tile
+> zoom 49
+framed w49
+> key ctrl+opt+[
+> zoom 49
+framed w49
+> key ctrl+opt+[
+> zoom 49
+framed w49
+> key ctrl+opt+[
+  ✔ on the way in
+  ✔ on the way out
+  ✔ the first way out, which costs what macOS makes it cost, took no more than that
+    the first way out: 50 ms; the plain tool's, with no Arbor, in this run: - ms
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+▸ into a window that is a tile and back out, after the first time, without motion: the display never stands still (b)
+session 2: Arbor pid 13507, test windows 64 65 66 (pid 13478)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+> dock 64 left
+docked w64 at the left edge
+> dock 65 right
+docked w65 at the right edge
+> dock 66 right
+docked w66 at the right edge; its space is too small to show it, so it is a tile
+  ✔ the third window is a tile
+> zoom 66
+framed w66
+> key ctrl+opt+[
+> zoom 66
+framed w66
+> key ctrl+opt+[
+> zoom 66
+framed w66
+> key ctrl+opt+[
+  ✔ on the way in
+  ✔ on the way out
+  ✔ the first way out, which costs what macOS makes it cost, took no more than that
+    the first way out: 34 ms; the plain tool's, with no Arbor, in this run: - ms
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+▸ into a window that is a tile and back out, after the first time, with motion: the display never stands still
+session 3: Arbor pid 14831, test windows 81 82 83 (pid 14814)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+> dock 81 left
+docked w81 at the left edge
+> dock 82 right
+docked w82 at the right edge
+> dock 83 right
+docked w83 at the right edge; its space is too small to show it, so it is a tile
+  ✔ the third window is a tile
+> zoom 83
+framed w83
+> key ctrl+opt+[
+> zoom 83
+framed w83
+> key ctrl+opt+[
+> zoom 83
+framed w83
+> key ctrl+opt+[
+  ✔ on the way in
+  ✔ on the way out
+  ✔ the first way out, which costs what macOS makes it cost, took no more than that
+    the first way out: 67 ms; the plain tool's, with no Arbor, in this run: - ms
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== 3. with nobody filming
+session 4: Arbor pid 16705, test windows 99 100 101 (pid 16683)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+> dock 99 left
+docked w99 at the left edge
+> dock 100 right
+docked w100 at the right edge
+> dock 101 right
+docked w101 at the right edge; its space is too small to show it, so it is a tile
+  ✔ the third window is a tile
+> zoom 101
+framed w101
+> key ctrl+opt+[
+> zoom 101
+framed w101
+> key ctrl+opt+[
+> zoom 101
+framed w101
+> key ctrl+opt+[
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== for how long the display stood still
+the display's longest standstill as filmed | the same for what is not the strip || and as told by who films nothing: the display's beat, the window list, the key held
+   67 ms from  +608 |     0 from    +0 || beat    0  list  119  key    -  rest-1                               (about); 34 before
+  258 ms from  +346 |   258 from  +346 || beat   56  list  295  key    -  control-away-300-1                   (go); 267 before
+ 1492 ms from   +82 |  1492 from   +82 || beat  956  list 1495  key    -  control-away-1000-1                  (go); 250 before
+ 1100 ms from   +73 |  1100 from   +73 || beat  768  list 1049  key    -  control-away-2000-1                  (go); 34 before
+ 1000 ms from   +46 |  1000 from   +46 || beat    0  list  125  key    -  control-away-3400-1                  (go); 67 before
+   34 ms from  +984 |    33 from  +251 || beat    0  list  112  key    -  control-bitmap-3400-1                (go); 50 before
+   50 ms from  +240 |    50 from  +240 || beat    0  list  140  key    -  control-plain-3400-1                 (go); 83 before
+ 1117 ms from   +66 |  1117 from   +66 || beat  660  list 1061  key    -  control-away-300-2                   (go); 50 before
+ 1113 ms from   +55 |  1113 from   +55 || beat  697  list 1138  key    -  control-away-1000-2                  (go); 34 before
+ 1034 ms from   +48 |  1034 from   +48 || beat   43  list  121  key    -  control-away-2000-2                  (go); 34 before
+ 1011 ms from   +73 |  1011 from   +73 || beat  750  list  986  key    -  control-away-3400-2                  (go); 67 before
+   50 ms from   +23 |    33 from   +73 || beat   56  list  119  key    -  control-bitmap-3400-2                (go); 34 before
+   33 ms from  +344 |    33 from  +344 || beat    0  list  123  key    -  control-plain-3400-2                 (go); 67 before
+   34 ms from   +73 |    34 from   +73 || beat    0  list  134  key    -  control-bitmap-3400-3                (go); 50 before
+   34 ms from  +420 |   750 from  +320 || beat    0  list  127  key    -  tile-a-first-away                    (about); 34 before
+   50 ms from +1021 |   200 from   +87 || beat   51  list    0  key   83  tile-a-first-back                    (key); 34 before
+   34 ms from  +223 |   366 from  +257 || beat    0  list    0  key    -  tile-a-away-1                        (about); 34 before
+   50 ms from  +168 |    50 from  +168 || beat    0  list    0  key  191  tile-a-back-1                        (key); 33 before
+   34 ms from  +120 |    34 from  +120 || beat    0  list    0  key    -  tile-a-away-2                        (about); 34 before
+   50 ms from   +75 |    50 from   +75 || beat    0  list    0  key  153  tile-a-back-2                        (key); 34 before
+   34 ms from  +699 |   734 from  +349 || beat    0  list    0  key    -  tile-b-first-away                    (about); 34 before
+   34 ms from   +57 |    50 from   +41 || beat    0  list    0  key  101  tile-b-first-back                    (key); 34 before
+   34 ms from  +166 |   216 from  +250 || beat    0  list    0  key    -  tile-b-away-1                        (about); 34 before
+   50 ms from +1337 |    33 from   +87 || beat    0  list    0  key  179  tile-b-back-1                        (key); 34 before
+   34 ms from   -20 |    33 from  +298 || beat    0  list    0  key    -  tile-b-away-2                        (about); 34 before
+   33 ms from  +239 |    33 from  +239 || beat    0  list    0  key  161  tile-b-back-2                        (key); 34 before
+   71 ms from +1194 |    17 from   +10 || beat   87  list    0  key    -  tile-motion-first-away               (about); 84 before
+   67 ms from  +314 |    67 from  +314 || beat    0  list    0  key  107  tile-motion-first-back               (key); 34 before
+   50 ms from  +857 |    34 from  +290 || beat    0  list    0  key    -  tile-motion-away-1                   (about); 67 before
+   85 ms from +1209 |    50 from  +226 || beat    0  list    0  key   67  tile-motion-back-1                   (key); 34 before
+  100 ms from   +46 |   100 from   +46 || beat    0  list    0  key    -  tile-motion-away-2                   (about); 67 before
+   67 ms from +1123 |    50 from  +107 || beat    0  list    0  key  140  tile-motion-back-2                   (key); 34 before
+   not filmed                            || beat    0  list    0  key    -  tile-unfilmed-first-away
+   not filmed                            || beat    0  list    0  key  148  tile-unfilmed-first-back
+   not filmed                            || beat    0  list    0  key    -  tile-unfilmed-away-1
+   not filmed                            || beat    0  list    0  key  164  tile-unfilmed-back-1
+   not filmed                            || beat    0  list    0  key    -  tile-unfilmed-away-2
+   not filmed                            || beat    0  list    0  key  130  tile-unfilmed-back-2
+
+group: filmed | the display's beat | the key held
+rest                                    67 |     0 |     -
+control-away-1                         258  1492  1100  1000 |    56   956   768     0 |     -     -     -     -
+control-bitmap-1                        34 |     0 |     -
+control-plain-1                         50 |     0 |     -
+control-away-2                        1117  1113  1034  1011 |   660   697    43   750 |     -     -     -     -
+control-bitmap-2                        50 |    56 |     -
+control-plain-2                         33 |     0 |     -
+control-bitmap-3                        34 |     0 |     -
+tile-a-first-away                       34 |     0 |     -
+tile-a-first-back                       50 |    51 |    83
+tile-a-away                             34    34 |     0     0 |     -     -
+tile-a-back                             50    50 |     0     0 |   191   153
+tile-b-first-away                       34 |     0 |     -
+tile-b-first-back                       34 |     0 |   101
+tile-b-away                             34    34 |     0     0 |     -     -
+tile-b-back                             50    33 |     0     0 |   179   161
+tile-motion-first-away                  71 |    87 |     -
+tile-motion-first-back                  67 |     0 |   107
+tile-motion-away                        50   100 |     0     0 |     -     -
+tile-motion-back                        85    67 |     0     0 |    67   140
+tile-unfilmed-first-away                 - |     0 |     -
+tile-unfilmed-first-back                 - |     0 |   148
+tile-unfilmed-away                       -     - |     0     0 |     -     -
+tile-unfilmed-back                       -     - |     0     0 |   164   130
+
+== every wait of over 300 ms between two frames, whatever was going on
+13:55:43.920    600 ms
+13:56:08.082   1492 ms, 3360 ms after the mark `action`
+13:56:16.753   1100 ms, 3753 ms after the mark `action`
+13:56:26.390   1000 ms, 5080 ms after the mark `action`
+13:56:50.437   1117 ms, 1999 ms after the mark `action`
+13:56:57.890   1113 ms, 2781 ms after the mark `action`
+13:57:06.194   1034 ms, 3716 ms after the mark `action`
+13:57:15.181   1011 ms, 5106 ms after the mark `action`
+13:59:36.084  37255 ms, -31743 ms after the mark `scene`
+9 in all
+
+== when the window server kept the sampler waiting for over 300 ms
+1792072569603 1495 ms
+1792072577827 1049 ms
+1792072611539 1061 ms
+1792072619017 1138 ms
+1792072636203 986 ms
+
+== the system's log, on one clock: who set up drawing through the GPU, Arbor's own lines, and what the window server says of its own threads
+2026-10-15 13:50:39.383 Df WindowServer[165:370] [com.apple.coreanimation:Metal] Precompiled pipelines disabled on unsupported hardware.
+2026-10-15 13:50:40.442 Df WindowServer[165:3af] [com.apple.coreanimation:WindowServer] Timer delayed by 1.04s
+2026-10-15 13:50:40.443 Df WindowServer[165:3b3] [com.apple.coreanimation:Render] Render::Server callback delayed by 1.06s
+2026-10-15 13:56:00.184 Df mover[7114:5c59] [com.apple.coreanimation:Metal] Precompiled pipelines disabled on unsupported hardware.
+2026-10-15 13:56:07.857 Df mover[7616:617d] [com.apple.coreanimation:Metal] Precompiled pipelines disabled on unsupported hardware.
+2026-10-15 13:56:09.412 Df WindowServer[165:3af] [com.apple.coreanimation:WindowServer] Timer delayed by 1.48s
+2026-10-15 13:56:09.414 Df WindowServer[165:3b3] [com.apple.coreanimation:Render] Render::Server callback delayed by 1.03s
+2026-10-15 13:56:16.521 Df mover[7945:654c] [com.apple.coreanimation:Metal] Precompiled pipelines disabled on unsupported hardware.
+2026-10-15 13:56:17.655 Df WindowServer[165:3af] [com.apple.coreanimation:WindowServer] Timer delayed by 1.07s
+2026-10-15 13:56:26.179 Df mover[8278:68a2] [com.apple.coreanimation:Metal] Precompiled pipelines disabled on unsupported hardware.
+2026-10-15 13:56:50.202 Df mover[9086:71a5] [com.apple.coreanimation:Metal] Precompiled pipelines disabled on unsupported hardware.
+2026-10-15 13:56:51.345 Df WindowServer[165:3af] [com.apple.coreanimation:WindowServer] Timer delayed by 1.08s
+2026-10-15 13:56:57.653 Df mover[9400:74e7] [com.apple.coreanimation:Metal] Precompiled pipelines disabled on unsupported hardware.
+2026-10-15 13:56:58.815 Df WindowServer[165:3af] [com.apple.coreanimation:WindowServer] Timer delayed by 1.10s
+2026-10-15 13:57:05.961 Df mover[9883:79e8] [com.apple.coreanimation:Metal] Precompiled pipelines disabled on unsupported hardware.
+2026-10-15 13:57:14.918 Df mover[10258:7da3] [com.apple.coreanimation:Metal] Precompiled pipelines disabled on unsupported hardware.
+2026-10-15 13:57:15.997 Df WindowServer[165:3af] [com.apple.coreanimation:WindowServer] Timer delayed by 1.01s
+2026-10-15 13:57:46.896 I  Arbor[11471:8a57] [dev.arbor:arbor] Arbor dev starting, pid 11471, home /tmp/arbor-shell.oevaAH/home
+2026-10-15 13:57:58.885 I  Arbor[11471:8a57] [dev.arbor:arbor] back: back to everything
+2026-10-15 13:58:06.115 I  Arbor[11471:8a57] [dev.arbor:arbor] back: back to everything
+2026-10-15 13:58:13.559 I  Arbor[11471:8a57] [dev.arbor:arbor] back: back to everything
+2026-10-15 13:58:23.698 I  Arbor[13507:9d2a] [dev.arbor:arbor] Arbor dev starting, pid 13507, home /tmp/arbor-shell.Bg4f1o/home
+2026-10-15 13:58:35.063 I  Arbor[13507:9d2a] [dev.arbor:arbor] back: back to everything
+2026-10-15 13:58:42.243 I  Arbor[13507:9d2a] [dev.arbor:arbor] back: back to everything
+2026-10-15 13:58:49.609 I  Arbor[13507:9d2a] [dev.arbor:arbor] back: back to everything
+2026-10-15 13:58:59.548 I  Arbor[14831:a9e8] [dev.arbor:arbor] Arbor dev starting, pid 14831, home /tmp/arbor-shell.ixrTpn/home
+2026-10-15 13:59:11.180 I  Arbor[14831:a9e8] [dev.arbor:arbor] back: back to everything
+2026-10-15 13:59:18.596 I  Arbor[14831:a9e8] [dev.arbor:arbor] back: back to everything
+2026-10-15 13:59:26.034 I  Arbor[14831:a9e8] [dev.arbor:arbor] back: back to everything
+2026-10-15 13:59:38.559 I  Arbor[16705:bb84] [dev.arbor:arbor] Arbor dev starting, pid 16705, home /tmp/arbor-shell.HKrpR0/home
+2026-10-15 13:59:50.268 I  Arbor[16705:bb84] [dev.arbor:arbor] back: back to everything
+2026-10-15 13:59:57.747 I  Arbor[16705:bb84] [dev.arbor:arbor] back: back to everything
+2026-10-15 14:00:05.201 I  Arbor[16705:bb84] [dev.arbor:arbor] back: back to everything
+
+30 passed, 0 failed
+exit code 0

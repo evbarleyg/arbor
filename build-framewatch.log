@@ -1,0 +1,15 @@
+/Users/runner/work/arbor/arbor/scripts/mac-shell/framewatch.swift:45:6: warning: concurrently-executed global function 'uptime()' must be marked as '@Sendable'; this is an error in the Swift 6 language mode
+ 43 | // Frames are stamped on the clock that counts from the Mac's start. The two clocks were seen to part by a tenth of a second in four minutes on a hosted
+ 44 | // Mac, so they are tied together anew at every mark.
+ 45 | func uptime() -> UInt64 { clock_gettime_nsec_np(CLOCK_UPTIME_RAW) }
+    |      `- warning: concurrently-executed global function 'uptime()' must be marked as '@Sendable'; this is an error in the Swift 6 language mode
+ 46 | let lock = NSLock()
+ 47 | var tied = (calendar: Date().timeIntervalSince1970 * 1000, uptime: uptime())
+
+/Users/runner/work/arbor/arbor/scripts/mac-shell/framewatch.swift:48:6: warning: concurrently-executed global function 'milliseconds(atUptime:)' must be marked as '@Sendable'; this is an error in the Swift 6 language mode
+ 46 | let lock = NSLock()
+ 47 | var tied = (calendar: Date().timeIntervalSince1970 * 1000, uptime: uptime())
+ 48 | func milliseconds(atUptime nanoseconds: UInt64) -> Int64 {
+    |      `- warning: concurrently-executed global function 'milliseconds(atUptime:)' must be marked as '@Sendable'; this is an error in the Swift 6 language mode
+ 49 |   Int64((tied.calendar + (Double(nanoseconds) - Double(tied.uptime)) / 1_000_000).rounded())
+ 50 | }
