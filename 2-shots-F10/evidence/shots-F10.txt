@@ -1,0 +1,112 @@
+# shots-F10 2026-10-15T04:48Z on macOS 26.6.2, commit cb0cf24
+
+== the app icon
+  ✔ the icon script and iconutil made Arbor.icns
+
+== session 1: the menu bar item
+  ✔ with the permission there, the welcome window still opens at the first launch
+  ✔ and closes
+  ✔ with nothing docked the item is Arbor's mark alone
+  ✔ and a plain click opens the menu
+  ✔ which closes again
+
+== two saved views
+  ✔ the first dock brings the buttons
+  ✔ there is nowhere to go back to
+
+== real clicks on the buttons
+  ✔ a click on 1 went to view 1
+  ✔ the other docked window is out of view
+  ✔ a click on back went back to everything
+  ✔ a click on forward went to view 1 again
+  ✔ a click on the Desktop button showed the Desktop
+  ✔ a click on the disabled forward button changed nothing
+  ✔ and opened no menu
+  ✔ a click on 3 went to view 3
+  ✔ a click on the Arbor mark showed everything
+  ✔ a plain click on the last button opened the menu
+  ✔ escape closed it again
+
+== a tooltip
+
+== the menu: right click, ⌃-click, ⌥-click
+  ✔ a right click opened the menu
+  ✔ escape closed it
+  ✔ and the view did not move
+  ✔ a ⌃-click opened the menu
+  ✔ an ⌥-click opened the menu
+  ✔ neither ran the button
+
+== an item of the menu, chosen with the keyboard
+  ✔ the second item, Show the Desktop, showed the Desktop
+
+== Help, and About Arbor in it
+  ✔ About Arbor opened a panel
+  ✔ and its close button closed it
+
+== nine saved views
+
+== a pause
+  ✔ paused, the item is a single icon
+  ✔ a click opens the menu
+  ✔ Resume, chosen from the menu, brought the buttons back
+
+== the settings
+  ✔ a plain click on the single icon opened the menu
+  ✔ the buttons are back
+
+== the welcome window, with everything granted
+  ✔ with everything floating the item is the mark again
+  ✔ welcome opens the window on the four moves
+  ✔ where it waits at the right of the display, clear of the left edge
+  ✔ check-setup turns it to the first page
+  ✔ the welcome window is on screen
+  ✔ it opens on its first page
+  ✔ a click on Continue turned the page
+
+== the four moves, for real
+  ✘ the dragged window docked — it is managed at -251 356 480 348
+  ✔ the second window docked
+  ✔ ⌃⌥↩ framed the docked window although the welcome window was clicked last
+  ✔ ⌃⌥Space showed everything
+
+== Back, and the close button
+  ✔ Back turned to the first page
+  ✔ its close button closed the welcome window
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== the second launch, with what the first one saved
+  ✔ the first launch wrote down that the window was seen
+  ✔ the welcome window does not open by itself again
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== session 2: a first launch without Accessibility permission
+  ✔ the welcome window opened by itself
+
+== closed, then Arbor is opened again
+  ✔ the welcome window closed
+  ✔ opening Arbor again brought the welcome window back
+
+== its button
+
+== session 3: dark
+
+== what gets in the way: another window manager, a second input source
+  ✔ the welcome window fits between the menu bar and the Dock
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+
+62 passed, 1 failed
