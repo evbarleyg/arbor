@@ -863,3 +863,186 @@ import Testing
     expectWindowsMatchLayout(h, on: h.display)
   }
 }
+
+/// A pause and Quit give back what Arbor took (rule 5). Of a window that its person had macOS fill, Arbor took nothing: it is left where
+/// it is (collab/QUESTIONS.md, Q22, third answer).
+@Suite @MainActor struct AZoomThroughAPauseTests {
+  func zoomed() -> (Harness, [WindowID]) {
+    let h = Harness()
+    let windows = ["Safari", "Mail", "Notes"].enumerated().map { index, app in
+      h.system.open(
+        app: app, pid: 1000 + Int32(index),
+        frame: CGRect(x: 80 + 60 * CGFloat(index), y: 90 + 40 * CGFloat(index), width: 640, height: 420))
+    }
+    h.start()
+    #expect(h.run("arrange").ok)
+    h.scheduler.advance(by: 5)
+    h.system.doubleClickTitleBar(of: windows[0])
+    h.scheduler.advance(by: 3)
+    h.system.clearFrameLog()
+    return (h, windows)
+  }
+
+  @Test func aPauseThereAndBackIsNothing() {
+    let (h, windows) = zoomed()
+    #expect(h.run("pause").ok)
+    h.scheduler.advance(by: 3)
+    #expect(h.system.windows[windows[0]]?.snapshot.frame == h.visibleFrame, "the pause left it where it was")
+    #expect(h.run("resume").ok)
+    h.scheduler.advance(by: 5)
+    #expect(h.frame(windows[0]) == h.visibleFrame)
+    #expect(h.system.frameLog.filter { $0.window == windows[0] }.isEmpty, "Arbor never moved it")
+    #expect(h.workspace.isDocked(windows[0]))
+    #expect(h.controller.windowsLeftWhereADoubleClickPutThem == [windows[0]], "let be as before")
+    // And from there everything is as it was before the pause.
+    h.system.doubleClickTitleBar(of: windows[0])
+    h.scheduler.advance(by: 3)
+    expectWindowsMatchLayout(h, on: h.display)
+  }
+
+  /// The others get their own frames back, as ever.
+  @Test func theOthersGetTheirOwnSizesBack() {
+    let (h, windows) = zoomed()
+    #expect(h.run("pause").ok)
+    #expect(h.system.windows[windows[1]]?.snapshot.frame == CGRect(x: 140, y: 130, width: 640, height: 420))
+    #expect(h.system.windows[windows[2]]?.snapshot.frame == CGRect(x: 200, y: 170, width: 640, height: 420))
+  }
+
+  @Test func movedDuringThePauseItIsAnOrdinaryDockedWindowAtTheResume() {
+    let (h, windows) = zoomed()
+    #expect(h.run("pause").ok)
+    h.system.userMove(windows[0], to: CGRect(x: 300, y: 200, width: 700, height: 500))
+    #expect(h.run("resume").ok)
+    h.scheduler.advance(by: 5)
+    #expect(h.controller.windowsLeftWhereADoubleClickPutThem.isEmpty)
+    expectWindowsMatchLayout(h, on: h.display)
+  }
+
+  @Test func quitLeavesItWhereItIs() {
+    let (h, windows) = zoomed()
+    h.controller.shutdown()
+    #expect(h.system.windows[windows[0]]?.snapshot.frame == h.visibleFrame)
+    #expect(h.system.frameLog.filter { $0.window == windows[0] }.isEmpty, "Arbor never moved it")
+    #expect(h.system.windows[windows[1]]?.snapshot.frame == CGRect(x: 140, y: 130, width: 640, height: 420))
+  }
+
+  /// Nothing is let be across a start: it docks what was docked (Q16), in one move.
+  @Test func afterAQuitAStartDocksItLikeTheRest() {
+    let (h, windows) = zoomed()
+    h.controller.shutdown()
+    h.system.clearFrameLog()
+    h.start()
+    h.scheduler.advance(by: 5)
+    #expect(h.controller.windowsLeftWhereADoubleClickPutThem.isEmpty)
+    #expect(h.system.frameLog.filter { $0.window == windows[0] }.count <= 1, "one move at most")
+    expectWindowsMatchLayout(h, on: h.display)
+  }
+
+  /// A command about every window names this one too.
+  @Test func floatAllGivesItItsOwnFrameLikeTheRest() {
+    let (h, windows) = zoomed()
+    #expect(h.run("float-all").ok)
+    h.scheduler.advance(by: 3)
+    #expect(h.frame(windows[0]) == CGRect(x: 80, y: 90, width: 640, height: 420))
+  }
+
+  /// macOS lists only what shows. On a Space that is not showing at the resume, its slot waits for it, and so does what is known of it.
+  @Test func outOfSightAtTheResumeItIsLetBeWhenItsPersonComesBackToIt() {
+    let (h, windows) = zoomed()
+    #expect(h.run("pause").ok)
+    h.system.setListed(windows[0], false)
+    #expect(h.run("resume").ok)
+    h.scheduler.advance(by: 5)
+    h.system.setListed(windows[0], true)
+    h.scheduler.advance(by: 5)
+    #expect(h.workspace.isDocked(windows[0]), "the test's own premise: its slot waited")
+    #expect(h.frame(windows[0]) == h.visibleFrame)
+    #expect(h.system.frameLog.filter { $0.window == windows[0] }.isEmpty, "Arbor never moved it")
+    #expect(h.controller.windowsLeftWhereADoubleClickPutThem == [windows[0]])
+  }
+
+  @Test(arguments: ["in the Dock", "hidden with its app"]) func awayWhenThePauseBeginsItComesBackAsItWent(_ whereTo: String) {
+    let (h, windows) = zoomed()
+    let pid = h.system.windows[windows[0]]!.snapshot.pid
+    func away(_ gone: Bool) { if whereTo == "in the Dock" { h.system.setMinimized(windows[0], gone) } else { h.system.setHidden(pid: pid, gone) } }
+    away(true)
+    h.scheduler.advance(by: 3)
+    #expect(h.run("pause").ok)
+    #expect(h.run("resume").ok)
+    h.scheduler.advance(by: 3)
+    away(false)
+    h.scheduler.advance(by: 5)
+    #expect(h.frame(windows[0]) == h.visibleFrame)
+    #expect(h.system.frameLog.filter { $0.window == windows[0] }.isEmpty, "Arbor never moved it")
+  }
+
+  @Test func aPauseThatEndsByItselfIsNothingEither() {
+    let (h, windows) = zoomed()
+    #expect(h.run("pause 5").ok)
+    h.scheduler.advance(by: 6 * 60)
+    #expect(h.controller.isRunning, "the test's own premise")
+    #expect(h.frame(windows[0]) == h.visibleFrame)
+    #expect(h.system.frameLog.filter { $0.window == windows[0] }.isEmpty, "Arbor never moved it")
+    #expect(h.controller.windowsLeftWhereADoubleClickPutThem == [windows[0]])
+  }
+
+  @Test func aSecondPauseSaysTheSameAndQuitDuringItMovesNothing() {
+    let (h, windows) = zoomed()
+    #expect(h.run("pause").ok)
+    #expect(h.run("pause 10").message.contains("stays"))
+    h.controller.shutdown()
+    #expect(h.system.windows[windows[0]]?.snapshot.frame == h.visibleFrame)
+    #expect(h.system.frameLog.filter { $0.window == windows[0] }.isEmpty, "Arbor never moved it")
+  }
+
+  /// As while Arbor runs: no frame outlives the displays it was made for.
+  @Test func displaysThatChangedDuringThePauseEndIt() {
+    let (h, windows) = zoomed()
+    #expect(h.run("pause").ok)
+    h.system.setDisplays([
+      DisplaySnapshot(
+        id: FakeWindowSystem.standardDisplay.id, frame: CGRect(x: 0, y: 0, width: 1920, height: 1080),
+        visibleFrame: CGRect(x: 0, y: 25, width: 1920, height: 1055), isMain: true)
+    ])
+    #expect(h.run("resume").ok)
+    h.scheduler.advance(by: 10)
+    #expect(h.controller.windowsLeftWhereADoubleClickPutThem.isEmpty, "\(windows[0])")
+    expectWindowsMatchLayout(h, on: h.display)
+  }
+
+  /// `shutdown`'s last net goes by the measure the window is let be by.
+  @Test func largerThanItsDisplayQuitLeavesItToo() {
+    let h = Harness()
+    let large = h.system.open(
+      app: "Notes", pid: 1001, frame: CGRect(x: 40, y: 60, width: 2385, height: 2028), minimumSize: CGSize(width: 2385, height: 2028))
+    h.system.open(app: "Safari", pid: 1000, frame: CGRect(x: 700, y: 200, width: 568, height: 607))
+    h.start()
+    #expect(h.run("arrange").ok)
+    #expect(h.run("zoom \(large.rawValue)").ok)
+    h.scheduler.advance(by: 5)
+    h.system.doubleClickTitleBar(of: large)
+    h.scheduler.advance(by: 3)
+    guard h.controller.windowsLeftWhereADoubleClickPutThem == [large], let zoomed = h.frame(large) else {
+      Issue.record("the test's own premise: macOS moved it, and it is let be")
+      return
+    }
+    h.system.clearFrameLog()
+    h.controller.shutdown()
+    #expect(h.system.windows[large]?.snapshot.frame == zoomed)
+    #expect(h.system.frameLog.filter { $0.window == large }.isEmpty, "Arbor asked nothing of it")
+  }
+
+  /// Arbor says what it has looked at.
+  @Test func thePauseDoesNotSayOfItWhatIsNotTrue() {
+    let (h, _) = zoomed()
+    let said = h.run("pause").message
+    #expect(said.contains("in their own sizes"))
+    #expect(said.contains("stays"), "\(said)")
+    let plain = Harness()
+    plain.system.open(app: "Safari")
+    plain.start()
+    plain.run("arrange")
+    #expect(!plain.run("pause").message.contains("stays"))
+  }
+}
+

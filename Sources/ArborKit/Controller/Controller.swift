@@ -211,6 +211,9 @@ public final class Controller {
   /// Where each window that is let be was when the double-click took it away, which is where macOS's second one returns it.
   /// And the slot it had then.
   var whereAZoomBegan: [WindowID: (frame: CGRect, slot: CGRect?)] = [:]
+  /// The windows that were let be when the pause began: where each was, and `whereAZoomBegan`'s word about it.
+  var letBeWhenThePauseBegan: [WindowID: (frame: CGRect, began: (frame: CGRect, slot: CGRect?)?)] = [:]
+  var displaysWhenThePauseBegan: [DisplaySnapshot] = []
 
   /// Managed windows, most recently focused first. `dock beside` rules use it
   /// to pick which of an app's windows to dock beside (Controller+Rules.swift).
@@ -605,6 +608,7 @@ public final class Controller {
     Log.info("started: \(displays.count) display(s), \(managedWindowIDs.count) managed window(s)")
     letTheViewFollowTheKeyboardBeforeTheFirstLayout()
     letTheWindowWithTheKeyboardBe()
+    letBeAgainWhatThePauseLeftAlone()
     // Before the first layout takes the windows: from here on the file must not say where Arbor left them.
     if !leftAt.isEmpty {
       saveNow()
@@ -721,6 +725,8 @@ public final class Controller {
     // guessed: what merely can be reached may be what a change of displays left.
     for id in managedWindowIDs {
       guard var frame = windows[id]?.frame, isMostlyOffScreen(id),
+        // Larger than its display, most of it never shows: by the measure it is let be by, it is in reach where it is.
+        !(enforcement.leftAlone.contains(id) && isWithinReach(frame)),
         let home = workspaceID(containing: id) ?? displayID(at: frame.center), let display = display(home),
         // Not "is it at that frame": the loop above has taken it as near to it as macOS allows, which keeps a title bar above the
         // bottom edge and can stop a window some points short. Fetched from there it would move twice.

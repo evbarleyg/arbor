@@ -186,6 +186,8 @@ extension Controller {
 
   /// Lets go of a docked window: back to where it floated, or, if that is not known, into view at `slot`.
   func letGo(of window: WindowID, on display: DisplaySnapshot, otherwiseAt slot: CGRect?) {
+    // What is given back is what Arbor took. Its person's last word about this one was said to macOS (Controller+AppsDoubleClick.swift).
+    guard !enforcement.leftAlone.contains(window) else { return }
     if let frame = frameAsItWas(of: window, on: display.id) {
       putBack(window, at: frame, on: display)
     } else if let slot {

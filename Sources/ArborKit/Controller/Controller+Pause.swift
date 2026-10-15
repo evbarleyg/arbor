@@ -36,6 +36,7 @@ extension Controller {
       // First, so that what macOS has shifted meanwhile does not pass for the pause's doing, which the resume undoes.
       lookAtTheDisplaysBeforeLettingGo()
       let before = windows.mapValues(\.frame)
+      noteWhoIsLetBeAsThePauseBegins()
       shutdown()
       pausedFrames = windows.mapValues(\.frame).filter { before[$0.key] != $0.value }
       // Arbor is not looking any more, so `state` and `ascii` must not pass off old frames as current.
@@ -50,9 +51,9 @@ extension Controller {
     // A second `pause` replaces the first one's end.
     scheduler.cancel("resume")
     savePause()
-    guard let minutes else { return .success("paused until `resume`; \(Self.whatThePauseDid)") }
+    guard let minutes else { return .success("paused until `resume`; \(whatThePauseDid)") }
     scheduler.schedule("resume", after: minutes * 60) { [weak self] in self?.timedPauseEnded() }
-    return .success("paused for \(Self.minutesText(minutes)); \(Self.whatThePauseDid)")
+    return .success("paused for \(Self.minutesText(minutes)); \(whatThePauseDid)")
   }
 
   func resume() -> CommandResult {
@@ -196,7 +197,10 @@ extension Controller {
     return quiet
   }
 
-  private static let whatThePauseDid = "windows are back in view, in their own sizes"
+  /// True of what Arbor has looked at: not of a window it left where macOS had put it.
+  private var whatThePauseDid: String {
+    "windows are back in view, in their own sizes" + (letBeWhenThePauseBegan.isEmpty ? "" : "; what macOS zoomed for you stays as it is")
+  }
 
   static func minutesText(_ minutes: Double) -> String {
     let number = minutes == minutes.rounded() ? String(Int(minutes)) : String(minutes)

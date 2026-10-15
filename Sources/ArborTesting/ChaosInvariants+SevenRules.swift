@@ -1185,6 +1185,13 @@ extension ChaosRunner {
         problems.append(.init("home-behind-the-dock", "after \(name), Arbor has put \(window) at \(frame.brief), where it \(overhang())"))
       }
       guard givesSizesBack, let own = seven.ownSizes[window] else { continue }
+      // A pause and Quit give back what Arbor took. What its person had macOS zoom is left as it is (Q22); Float All names every window.
+      if !isRunning, seven.letBeBefore.contains(window) {
+        if let before = framesBefore[window], before != frame, movedNow.contains(window) {
+          problems.append(.init("moved-out-of-its-zoom", "\(name) moved \(window) from \(before.brief), where a double-click had put it, to \(frame.brief)"))
+        }
+        continue
+      }
       asked("sizes")
       if let earlier = seven.earlierOwnSizes[window], abs(frame.width - earlier.width) <= 1.5, abs(frame.height - earlier.height) <= 1.5 { continue }
       // What its app allows today, and what the display has room for.

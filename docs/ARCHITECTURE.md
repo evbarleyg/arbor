@@ -408,7 +408,8 @@ a gesture, a key, Go to…, the settings) is on the stack. Whatever says nothing
 whoever asked: the window leaves the view, and the displays change. macOS's second double-click returns the window to
 the frame it had (`whereAZoomBegan`), which was its slot then; if the slot is another by now, the window is a docked window that something
 has moved from the first report of its way back, and is put into its slot a quarter of a second after the last (`noteWhetherItIsBackInItsSlot`).
-In the Dock, hidden or on another Space it stays let be, and so does another tab of its group in its stead. Not covered: ⌥-click on the green button and the tiles in its menu, which no press tells apart from an app's whim.
+In the Dock, hidden or on another Space it stays let be, and so does another tab of its group in its stead. A pause and Quit leave it where
+it is (`letGo`); a resume that finds it untouched lets it be again (`letBeAgainWhatThePauseLeftAlone`). Nothing is let be across a quit and a start. Not covered: ⌥-click on the green button and the tiles in its menu, which no press tells apart from an app's whim.
 
 ## Drag and drop
 

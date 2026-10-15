@@ -52,7 +52,8 @@ extension Controller {
   /// this one: the others share the room behind it, and what its person asked macOS for is not undone by the way (Q22). Displays
   /// that change end it for every window (`updateDisplays`).
   func stillLetBe(in layout: Layout, on display: DisplayID) -> Set<WindowID> {
-    guard !aPersonAsks else { return [] }
+    // A resume is asked for, and is not about this: there and back a pause is nothing.
+    guard !aPersonAsks || isResuming else { return [] }
     return enforcement.leftAlone.filter { id in
       guard let window = windows[id], workspaces[display]?.isDocked(id) == true else { return false }
       // In the Dock, hidden with its app or on another Space it has no slot, and nobody has said a word about its size: macOS brings
@@ -65,7 +66,7 @@ extension Controller {
   }
 
   /// Half of it shows, or it covers half a display: a window whose app keeps it larger than the display is never mostly in view.
-  private func isWithinReach(_ frame: CGRect) -> Bool {
+  func isWithinReach(_ frame: CGRect) -> Bool {
     displays.contains { display in
       let showing = frame.intersection(display.frame)
       return !showing.isNull && showing.width * showing.height >= 0.5 * min(frame.width * frame.height, display.frame.width * display.frame.height)
@@ -80,6 +81,43 @@ extension Controller {
     enforcement.reset(tree.allWindows.filter { !kept.contains($0) })
     enforcement.reset(enforcement.leftAlone.filter { id in !workspaces.values.contains { $0.isDocked(id) } })
     if !whereAZoomBegan.isEmpty { whereAZoomBegan = whereAZoomBegan.filter { enforcement.leftAlone.contains($0.key) } }
+    if !isResuming { forgetWhoWasLetBeAndWaitsNoMore() }
+  }
+
+  // MARK: A pause, and Quit
+
+  /// Before `shutdown`, which leaves these windows where they are (`letGo`) and forgets what is known about them.
+  func noteWhoIsLetBeAsThePauseBegins() {
+    // One that has been out of sight since the last pause goes on waiting.
+    letBeWhenThePauseBegan = letBeWhenThePauseBegan.filter { pendingSlots.contains($0.key) }
+    displaysWhenThePauseBegan = displays
+    for id in enforcement.leftAlone {
+      if let frame = windows[id]?.frame { letBeWhenThePauseBegan[id] = (frame, whereAZoomBegan[id]) }
+    }
+  }
+
+  /// Called by `start()` before its first layout. Only a resume finds anything here: nothing is let be across a quit and a start, which
+  /// docks what was docked. Nor across displays that have changed, as while Arbor runs.
+  func letBeAgainWhatThePauseLeftAlone() {
+    guard isResuming, displays == displaysWhenThePauseBegan else { return letBeWhenThePauseBegan = [:] }
+    for id in letBeWhenThePauseBegan.keys.sorted() { if let window = windows[id] { letBeAgainIfThePauseLeftItAlone(window) } }
+    forgetWhoWasLetBeAndWaitsNoMore()
+  }
+
+  /// `window` is listed: at the resume, or later, when its person comes to the Space it is on (macOS lists only what shows, and its slot
+  /// has waited for it: `claimPendingSlot`). One that anybody has moved or sized meanwhile is an ordinary docked window.
+  func letBeAgainIfThePauseLeftItAlone(_ window: WindowSnapshot) {
+    guard let note = letBeWhenThePauseBegan.removeValue(forKey: window.id), window.frame.approximatelyEquals(note.frame, tolerance: 2),
+      workspaces.values.contains(where: { $0.isDocked(window.id) })
+    else { return }
+    enforcement.leave(window.id)
+    settled[window.id] = window.frame
+    whereAZoomBegan[window.id] = note.began
+  }
+
+  /// A note lasts as long as the slot that waits for its window.
+  func forgetWhoWasLetBeAndWaitsNoMore() {
+    if !letBeWhenThePauseBegan.isEmpty { letBeWhenThePauseBegan = letBeWhenThePauseBegan.filter { pendingSlots.contains($0.key) } }
   }
 
   /// `window` stands for `old` from now on: another tab of its group, at the same frame.
