@@ -40,7 +40,7 @@ File). There are four ways to change one, and each takes effect at once and show
 | Key | Default | Values | What it does |
 |---|---|---|---|
 | `gap` | `12` | 0 to 100 pt | **Gap.** Space between docked windows, and between them and the screen edges. |
-| `minimumUsableWidth` | `240` | 0 to 1000 pt | **Smallest usable width.** A space narrower than this shows a tile with the app's colour and icon instead of its window. |
+| `minimumUsableWidth` | `240` | 0 to 1000 pt | **Smallest usable width.** A space narrower than this shows a tile with the app's color and icon instead of its window. |
 | `minimumUsableHeight` | `160` | 0 to 1000 pt | **Smallest usable height.** A space shorter than this shows a tile instead of its window. |
 | `arrangeDesktopWeight` | `0.5` | 0.1 to 3 | **Desktop width in Arrange.** How wide Arrange Windows leaves the Desktop, relative to the windows beside it. *Advanced.* |
 | `rules` | `[]` | a list of rules | **Rules.** What happens to new windows of particular apps. Rules are checked in order and the first match wins. Change it with `rule add`, `rule change`, `rule remove` and `rule move`. |
@@ -48,14 +48,14 @@ File). There are four ways to change one, and each takes effect at once and show
 | `newWindowsWhileFramed` | `guest` | guest or float | **New windows while framed.** A window that opens over a view that does not show the Desktop (a framed window, a group) can go out of view and come back with that view, or belong to the Desktop like any floating window. `guest`: Stay with that view. `float`: Belong to the Desktop. |
 | `tileRetryMinutes` | `10` | 0 to 1440 min | **Ask tiles again after.** A window that is a tile because it once refused the size of its space is asked again, out of view, after this long. 0 never asks; `relayout` always does. *Not in the settings window.* |
 | `summonStays` | `false` | true or false | **Summoned windows stay.** A summoned window stays over the view when another window gets the keyboard, until it is summoned away. Off, turning to another window sends it out of view. *Advanced.* |
-| `makeRoom` | `true` | true or false | **Make room before making a tile.** Before a window becomes a tile because its app will not shrink that far, move the gaps around it and take the room from the Desktop and from neighbours that can spare it. *Advanced.* |
+| `makeRoom` | `true` | true or false | **Make room before making a tile.** Before a window becomes a tile because its app will not shrink that far, move the gaps around it and take the room from the Desktop and from neighbors that can spare it. *Advanced.* |
 | `soleFloatTakesDesktop` | `false` | true or false | **Lone window fills the Desktop.** Beside docked windows, the only floating window takes the whole Desktop and follows it. It has its own size back as soon as a second window floats. Moved or resized by hand, it stays as you leave it. *Advanced.* |
 | `resizeStep` | `40` | 1 to 1000 pt | **Grow and Shrink by.** How much bigger or smaller Grow and Shrink (⌃⌥⌘= and ⌃⌥⌘-) make the focused window at a time. *Advanced.* |
 | `displays` | `[]` | a list of entries: `match` and the settings that differ there | **Options per display.** Other values of the gap, the smallest usable size and the screen edge band for particular displays. The first entry that matches a display and sets a value gives it. Change it with a text editor; `displays` shows what is in effect on each display. *Advanced.* |
 | `newWindows` | `float` | float or dock | **New windows.** What a new window does when no rule matches it. Docked, it takes half the place of the docked window you were working in, if there is room; small windows and windows of a fixed size float. Dock New Windows in the menu is the same switch. `toggle-auto-dock` switches it too. `float`: Float where they open. `dock`: Dock beside the focused window. |
 | `autoDockMinimumWidth` | `400` | 0 to 3000 pt | **Narrowest window docked.** Where new windows dock by themselves, one that opens narrower than this floats. That is `dock auto` and a rule for `*`; a rule that names an app docks its windows whatever their size. *Advanced.* |
 | `autoDockMinimumHeight` | `300` | 0 to 3000 pt | **Shortest window docked.** Where new windows dock by themselves, one that opens shorter than this floats. That is `dock auto` and a rule for `*`; a rule that names an app docks its windows whatever their size. *Advanced.* |
-| `shareRemovedSpace` | `true` | true or false | **Share a leaving window's space.** The space of a window that leaves is shared by its whole group. Off, it goes to the neighbour before it and nothing else moves. *Advanced.* |
+| `shareRemovedSpace` | `true` | true or false | **Share a leaving window's space.** The space of a window that leaves is shared by its whole group. Off, it goes to the neighbor before it and nothing else moves. *Advanced.* |
 | `shrinkOutOfView` | `false` | true or false | **Shrink windows out of view.** Windows that go out of view are also shrunk, to 320 by 200 points at most, until they come back. *Advanced.* |
 
 ## Dragging
@@ -104,18 +104,18 @@ File). There are four ways to change one, and each takes effect at once and show
 |---|---|---|---|
 | `focusRing` | `true` | true or false | **Focus ring.** Draw a line around the focused window, if Arbor arranges it. |
 | `focusRingWidth` | `3` | 1 to 12 pt | **Focus ring width.** How thick the line around the focused window is. *Advanced.* |
-| `focusRingColour` | `accent` | accent, #RRGGBB or #RRGGBBAA | **Focus ring colour.** The colour of the line: accent is the accent colour chosen in System Settings. *Advanced.* |
+| `focusRingColour` | `accent` | accent, #RRGGBB or #RRGGBBAA | **Focus ring color.** The color of the line: accent is the accent color chosen in System Settings. *Advanced.* |
 | `focusRingRadius` | `0` | 0 to 60 pt | **Focus ring corners.** The radius of the window corners the line follows; 0 picks that of the macOS Arbor runs on. *Not in the settings window.* |
 | `animationDuration` | `0.46` | 0 to 2 s | **Motion.** How long a zoom, a dock or a close takes to play; 0 applies everything at once. “Reduce motion” in System Settings turns the motion off as well. |
 | `minimapDuration` | `0` | 0 to 10 s | **Show minimap after each move.** For how long the minimap shows by itself after the view has moved. 0 is off; its shortcut shows it either way. |
 | `dimBehindArranged` | `0.25` | 0 to 1 | **Darken behind docked windows.** How much darker the wallpaper is behind docked windows, so that they read as one surface: from as it is to black. 0 leaves it as it is, 1 is black. |
 | `blurBehindArranged` | `0` | 0 to 1 | **Blur behind docked windows.** How much the wallpaper is blurred behind docked windows: from sharp to all the blur macOS has. 0 leaves it sharp, 1 is all the blur macOS has. *Advanced.* |
-| `tileStyle` | `name` | icon or name or plain | **Tiles show.** What the tile of a window too small to use shows on its colour. `icon`: The icon. `name`: The icon and the name. `plain`: Only the colour. |
-| `appColours` | `true` | true or false | **Tiles in their app's colour.** A tile takes on the colour of its app's icon. Off, every tile is the same grey. *Advanced.* |
-| `appColourAmount` | `0.25` | 0 to 1 | **How much of the app's colour.** How much of its app's colour goes into a tile: from grey to the colour itself. 0 is grey, 1 is the colour itself. *Advanced.* |
+| `tileStyle` | `name` | icon or name or plain | **Tiles show.** What the tile of a window too small to use shows on its color. `icon`: The icon. `name`: The icon and the name. `plain`: Only the color. |
+| `appColours` | `true` | true or false | **Tiles in their app's color.** A tile takes on the color of its app's icon. Off, every tile is the same gray. *Advanced.* |
+| `appColourAmount` | `0.25` | 0 to 1 | **How much of the app's color.** How much of its app's color goes into a tile: from gray to the color itself. 0 is gray, 1 is the color itself. *Advanced.* |
 | `gapHandles` | `shown` | shown or hidden or off | **Gaps between windows.** Whether dragging a gap resizes the windows on both sides of it, and whether a handle shows in the gap under the pointer. A window's own edges resize it either way. `resize` moves a window's edge whatever this says. `shown`: Drag them, with a handle. `hidden`: Drag them, nothing drawn. `off`: Only gaps. |
-| `windowPictures` | `false` | true or false | **Pictures of moving windows.** Not ready: it has crashed Arbor and has not been tried since it was mended. While they move, windows are still pictures of themselves instead of their app's colour and icon. Needs Screen & System Audio Recording permission; nothing is recorded or stored. *Not in the settings window.* |
-| `tintBehindArranged` | `0` | 0 to 1 | **Tint behind docked windows.** How much of your accent colour is laid over the wallpaper behind docked windows. *Advanced.* |
+| `windowPictures` | `false` | true or false | **Pictures of moving windows.** Not ready: it has crashed Arbor and has not been tried since it was mended. While they move, windows are still pictures of themselves instead of their app's color and icon. Needs Screen & System Audio Recording permission; nothing is recorded or stored. *Not in the settings window.* |
+| `tintBehindArranged` | `0` | 0 to 1 | **Tint behind docked windows.** How much of your accent color is laid over the wallpaper behind docked windows. *Advanced.* |
 | `desktopEdge` | `0.05` | 0 to 1 | **Line around the Desktop.** How strong the hairline around the Desktop is where it lies between docked windows; 0 draws none. *Advanced.* |
 | `tileFade` | `0.2` | 0 to 1 s | **Tiles fade for.** How long a tile takes to fade in and out; 0 shows and hides it at once. *Not in the settings window.* |
 

@@ -5,6 +5,7 @@
 lint:
 	@python3 scripts/test-ci-linux.py
 	@python3 scripts/lint-imports.py
+	@python3 scripts/lint-spelling.py --self-test && python3 scripts/lint-spelling.py
 	@python3 scripts/lint-share-space.py --self-test && python3 scripts/lint-share-space.py
 	@python3 scripts/lint-mac-shell.py --self-test > /dev/null || python3 scripts/lint-mac-shell.py --self-test
 	@python3 scripts/lint-mac-shell.py

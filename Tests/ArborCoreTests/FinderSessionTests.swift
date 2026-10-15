@@ -259,14 +259,14 @@ private func model(_ rows: [FinderModel.Row], notice: String? = nil) -> FinderMo
 
   @Test func notesSayWhereAndOnWhichDisplay() {
     var row = window(101, "Safari", "News", .minimized)
-    #expect(row.note == "minimised")
+    #expect(row.note == "minimized")
     row.displayName = "Studio Display"
-    #expect(row.note == "minimised, on Studio Display")
+    #expect(row.note == "minimized, on Studio Display")
     // The words of docs/GLOSSARY.md: out of view, never parked; hidden only for ⌘H; macOS Spaces by their full name.
     #expect(
       FinderPlace.allCases.map(\.rawValue) == [
         "in view", "out of view", "tile", "tab", "floating", "floating, out of view", "kept in view", "summoned",
-        "out of view until summoned", "minimised", "hidden",
+        "out of view until summoned", "minimized", "hidden",
         "full screen", "on another macOS Space", "not arranged", "saved view", "space",
       ])
   }

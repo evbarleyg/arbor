@@ -96,7 +96,7 @@ extension Controller {
     case true?: report.add(.ok, "Screen Recording", "granted")
     case false?:
       report.add(
-        .note, "Screen Recording", "not granted (optional: moving windows show their app’s colour, not their contents)")
+        .note, "Screen Recording", "not granted (optional: moving windows show their app’s color, not their contents)")
     case nil: report.add(.note, "Screen Recording", Self.unknown)
     }
   }

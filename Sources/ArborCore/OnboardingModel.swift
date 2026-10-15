@@ -266,7 +266,7 @@ public struct OnboardingModel: Equatable, Sendable {
           state: facts.screenRecording ? .done : .optional, status: facts.screenRecording ? "Granted" : "Not granted",
           detail: facts.screenRecording
             ? ""
-            : "With it, windows show their contents while they move. Without it they show their app’s colour and "
+            : "With it, windows show their contents while they move. Without it they show their app’s color and "
               + "icon. Nothing is recorded or stored. macOS restarts Arbor to apply it.",
           button: settings))
     }

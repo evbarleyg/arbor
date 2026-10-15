@@ -170,7 +170,7 @@ import Testing
       let palette = TilePalette(appColour: nil, amount: 0.25, isDark: isDark)
       let colour = middle(palette)
       #expect(max(colour.red, colour.green, colour.blue) - min(colour.red, colour.green, colour.blue) < 0.03)
-      #expect(palette == TilePalette(appColour: blue, amount: 0, isDark: isDark), "an amount of 0 is the same grey")
+      #expect(palette == TilePalette(appColour: blue, amount: 0, isDark: isDark), "an amount of 0 is the same gray")
       #expect(palette == TilePalette(appColour: nil, amount: 1, isDark: isDark))
     }
   }
@@ -183,7 +183,7 @@ import Testing
       let steps = [0, 0.25, 0.5, 1].map { distance(middle(TilePalette(appColour: blue, amount: $0, isDark: isDark)), blue) }
       #expect(steps == steps.sorted(by: >) && Set(steps).count == 4)
       // This blue is of middling lightness, so it gives way to its ink a little (`theInkCanBeReadOnEveryPartOfEveryFill`).
-      #expect(steps[3] < 0.4, "at 1 the tile is the app's colour, but for the gradient and what the ink needs: \(steps[3])")
+      #expect(steps[3] < 0.4, "at 1 the tile is the app's color, but for the gradient and what the ink needs: \(steps[3])")
       let navy = RGBA(red: 0.05, green: 0.1, blue: 0.35)
       #expect(distance(middle(TilePalette(appColour: navy, amount: 1, isDark: isDark)), navy) < 0.1, "a deep colour is left as it is")
     }
@@ -253,7 +253,7 @@ import Testing
   }
 
   @Test func onlyAFillOfMiddlingLightnessGivesWayToItsInk() {
-    // Pale and deep fills are the app's colour as mixed, shaded by 6 % either way.
+    // Pale and deep fills are the app's color as mixed, shaded by 6 % either way.
     for (colour, isDark) in [(RGBA(red: 0.1, green: 0.4, blue: 0.9), false), (RGBA(red: 0.98, green: 0.85, blue: 0.3), true)] {
       let grey = isDark ? RGBA(red: 0.173, green: 0.173, blue: 0.180) : RGBA(red: 0.949, green: 0.949, blue: 0.969)
       let base = grey.mixed(with: colour, amount: 0.25)

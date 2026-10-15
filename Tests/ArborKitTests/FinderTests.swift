@@ -137,7 +137,7 @@ private let side = DisplaySnapshot(
     #expect(note(h, terminal) == "floating, out of view")
     h.run("show-all")
     h.system.setMinimized(mail, true)
-    #expect(note(h, mail) == "minimised")
+    #expect(note(h, mail) == "minimized")
     h.system.setHidden(pid: 12, true)
     #expect(note(h, notes) == "hidden")
     h.system.setOnActiveSpace(safari, false)

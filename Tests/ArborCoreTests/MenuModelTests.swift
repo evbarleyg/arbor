@@ -119,7 +119,7 @@ import Testing
       model.text == """
         View
           ✓ Show Everything  ⌃⌥Space
-            Back  (grey)
+            Back  (gray)
             Saved Views ▸
                 Go To
                     View 1
@@ -128,7 +128,7 @@ import Testing
             Dock ▸
                 Left
         -----
-            Arbor 0.1.0  (grey)
+            Arbor 0.1.0  (gray)
         """)
   }
 }

@@ -65,7 +65,7 @@ public enum SettingsSchema {
       .number(
         "minimumUsableWidth", \.minimumUsableWidth, min: 0, max: 1000, step: 10, unit: "pt",
         "Smallest usable width",
-        "A space narrower than this shows a tile with the app's colour and icon instead of its window."),
+        "A space narrower than this shows a tile with the app's color and icon instead of its window."),
       .number(
         "minimumUsableHeight", \.minimumUsableHeight, min: 0, max: 1000, step: 10, unit: "pt",
         "Smallest usable height", "A space shorter than this shows a tile instead of its window."),
@@ -97,7 +97,7 @@ public enum SettingsSchema {
       .toggle(
         "makeRoom", \.makeRoom, "Make room before making a tile",
         "Before a window becomes a tile because its app will not shrink that far, move the gaps around it and take "
-          + "the room from the Desktop and from neighbours that can spare it.", advanced: true),
+          + "the room from the Desktop and from neighbors that can spare it.", advanced: true),
       .toggle(
         "soleFloatTakesDesktop", \.soleFloatTakesDesktop, "Lone window fills the Desktop",
         "Beside docked windows, the only floating window takes the whole Desktop and follows it. It has its own size "
@@ -130,7 +130,7 @@ public enum SettingsSchema {
       ).typed("That is `dock auto` and a rule for `*`; a rule that names an app docks its windows whatever their size."),
       .toggle(
         "shareRemovedSpace", \.shareRemovedSpace, "Share a leaving window's space",
-        "The space of a window that leaves is shared by its whole group. Off, it goes to the neighbour before it and "
+        "The space of a window that leaves is shared by its whole group. Off, it goes to the neighbor before it and "
           + "nothing else moves.", advanced: true),
       .toggle(
         "shrinkOutOfView", \.shrinkOutOfView, "Shrink windows out of view",
@@ -232,8 +232,8 @@ public enum SettingsSchema {
           guard FocusRingColour(text: text) != nil else { return nil }
           let word = text.trimmingCharacters(in: .whitespaces)
           return word.lowercased() == "accent" ? "accent" : word.uppercased()
-        }, "Focus ring colour",
-        "The colour of the line: accent is the accent colour chosen in System Settings.", advanced: true),
+        }, "Focus ring color",
+        "The color of the line: accent is the accent color chosen in System Settings.", advanced: true),
       .number(
         "focusRingRadius", \.focusRingRadius, min: 0, max: 60, step: 1, unit: "pt", "Focus ring corners",
         "The radius of the window corners the line follows; 0 picks that of the macOS Arbor runs on.",
@@ -256,15 +256,15 @@ public enum SettingsSchema {
         advanced: true
       ).share("0 leaves it sharp, 1 is all the blur macOS has."),
       .choice(
-        "tileStyle", \.tileStyle, ["icon": "The icon", "name": "The icon and the name", "plain": "Only the colour"],
-        "Tiles show", "What the tile of a window too small to use shows on its colour."),
+        "tileStyle", \.tileStyle, ["icon": "The icon", "name": "The icon and the name", "plain": "Only the color"],
+        "Tiles show", "What the tile of a window too small to use shows on its color."),
       .toggle(
-        "appColours", \.appColours, "Tiles in their app's colour",
-        "A tile takes on the colour of its app's icon. Off, every tile is the same grey.", advanced: true),
+        "appColours", \.appColours, "Tiles in their app's color",
+        "A tile takes on the color of its app's icon. Off, every tile is the same gray.", advanced: true),
       .number(
-        "appColourAmount", \.appColourAmount, min: 0, max: 1, step: 0.05, unit: "", "How much of the app's colour",
-        "How much of its app's colour goes into a tile: from grey to the colour itself.", advanced: true
-      ).share("0 is grey, 1 is the colour itself."),
+        "appColourAmount", \.appColourAmount, min: 0, max: 1, step: 0.05, unit: "", "How much of the app's color",
+        "How much of its app's color goes into a tile: from gray to the color itself.", advanced: true
+      ).share("0 is gray, 1 is the color itself."),
       .choice(
         "gapHandles", \.gapHandles,
         ["shown": "Drag them, with a handle", "hidden": "Drag them, nothing drawn", "off": "Only gaps"],
@@ -275,11 +275,11 @@ public enum SettingsSchema {
       .toggle(
         "windowPictures", \.windowPictures, "Pictures of moving windows",
         "Not ready: it has crashed Arbor and has not been tried since it was mended. While they move, windows are still "
-          + "pictures of themselves instead of their app's colour and icon. Needs Screen & System Audio Recording "
+          + "pictures of themselves instead of their app's color and icon. Needs Screen & System Audio Recording "
           + "permission; nothing is recorded or stored.", hidden: true),
       .number(
         "tintBehindArranged", \.tintBehindArranged, min: 0, max: 1, step: 0.05, unit: "", "Tint behind docked windows",
-        "How much of your accent colour is laid over the wallpaper behind docked windows.", advanced: true
+        "How much of your accent color is laid over the wallpaper behind docked windows.", advanced: true
       ).share(),
       .number(
         "desktopEdge", \.desktopEdge, min: 0, max: 1, step: 0.05, unit: "", "Line around the Desktop",

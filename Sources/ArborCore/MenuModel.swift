@@ -189,7 +189,7 @@ public struct MenuModel: Equatable, Sendable {
           var line = indent + (item.isTicked ? "  ✓ " : "    ") + item.title
           if !item.sections.isEmpty { line += " ▸" }
           if let shortcut = item.shortcut { line += "  " + shortcut.label }
-          if !item.isEnabled { line += "  (grey)" }
+          if !item.isEnabled { line += "  (gray)" }
           out.append(line)
           // Under the item's title; a step further where the submenu has titles of its own.
           let titled = item.sections.contains { $0.title != nil }

@@ -35,10 +35,10 @@ import Testing
           ✓ Show Everything  ⌃⌥Space
             Show the Desktop  ⌃⌥D
             Frame Focused Window  ⌃⌥↩
-            Step Out  ⌃⌥↑  (grey)
+            Step Out  ⌃⌥↑  (gray)
             Step In  ⌃⌥↓
-            Back  ⌃⌥[  (grey)
-            Forward  ⌃⌥]  (grey)
+            Back  ⌃⌥[  (gray)
+            Forward  ⌃⌥]  (gray)
             Go to…  ⌃⌥G
             Saved Views ▸
                 Go To
@@ -58,7 +58,7 @@ import Testing
             Show Minimap  ⌃⌥M
         Focused Window
             Dock Focused Window ▸
-                Left  ⌃⌥⌘←  (grey)
+                Left  ⌃⌥⌘←  (gray)
                 Right  ⌃⌥⌘→
                 Top  ⌃⌥⌘↑
                 Bottom  ⌃⌥⌘↓
@@ -68,7 +68,7 @@ import Testing
             Shortcuts Off in “Safari”
         Arrangement
             Undo Dock  ⌃⌥Z
-            Redo  ⌃⌥⇧Z  (grey)
+            Redo  ⌃⌥⇧Z  (gray)
             Arrange Windows  ⌃⌥A
             Float All Windows  ⌃⌥⇧F
             Adjust ▸
@@ -110,7 +110,7 @@ import Testing
     h.run("pause")
     #expect(
       h.run("menu").text == """
-            Arbor is paused: it leaves windows and shortcuts alone  (grey)
+            Arbor is paused: it leaves windows and shortcuts alone  (gray)
             Resume  ⌃⌥⎋
         -----
             Settings…
@@ -119,7 +119,7 @@ import Testing
                 Check Setup…
             -----
                 Settings File…
-                Reload Settings  (grey)
+                Reload Settings  (gray)
                 Show Log
             -----
                 Check for Updates…

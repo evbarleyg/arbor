@@ -131,6 +131,8 @@ against fakes.
   docs/SETTINGS.md, which a test rewrites (it fails once; commit the file). Old settings files must keep loading.
   A command that changes settings asks `refusalToChangeSettings()` first and returns
   `reply("…", unsaved: change(settings: updated))` (`Controller+Settings.swift`).
+- What the app shows (menus, panels, the settings window, the line on screen, replies, `help`, `doctor`) is spelled as macOS spells: color,
+  gray, neighbor, minimized. `make lint` reads the string literals for it. Keys of settings.json, comments and the docs stay as they are.
 - Never log window titles or the names people give to spaces. Log window ids, bundle ids and node ids.
 - Comments explain why, not what. Match the surrounding style (2-space indent, ~110 columns).
 - Commits: conventional (`feat:`, `fix:`, `test:`, `docs:`, `refactor:`, `chore:`), present tense, scoped.

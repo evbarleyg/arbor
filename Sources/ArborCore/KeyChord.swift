@@ -121,7 +121,7 @@ public struct KeyChord: Hashable, Sendable, CustomStringConvertible {
     case [.control, .option, .shift, .command]:
       return "⌃⌥⇧⌘ is the “hyper key” many people build for shortcuts of their own"
     case [.control, .option, .command] where [.digit8, .comma, .period].contains(key):
-      return "macOS uses \(label) itself, for Accessibility (invert colours, contrast)"
+      return "macOS uses \(label) itself, for Accessibility (invert colors, contrast)"
     case [.control, .option, .command] where isLetter || key == .returnKey:
       return "Xcode uses ⌃⌥⌘ with letters and ↩ (fix all issues, test again, the assistant editor)"
     case [.control, .option]:
