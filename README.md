@@ -109,7 +109,7 @@ independent implementation and is not affiliated with it.
   is no room for float as always, and nothing turns into a tile because a window opened. Off by default.
 - **Your Mac, your rules**: "Don't Arrange" leaves an app's windows alone; "Float All Windows" returns you
   to a normal Mac; quitting puts every window back in view.
-- **No trace**: a window that leaves the arrangement gets its own size back. Float All Windows, quitting, pausing
+- **No trace**: a window that leaves the arrangement gets its own size back. ⌃⌥F, Float All Windows, quitting, pausing
   and Don't Arrange put windows back where they were before they were docked.
 - **Out of the way when you need it**: ⌃⌥⎋ pauses Arbor for a game, a remote desktop or an app it
   gets in the way of: every window goes back to where it was, in its own size and in view, and windows, shortcuts and gestures are left

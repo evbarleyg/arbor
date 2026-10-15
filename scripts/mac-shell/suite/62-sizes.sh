@@ -15,6 +15,18 @@ is_at() {
   shift
   arbor_close "$(real_frame_of "$id")" "$*" || { echo "it is at $(real_frame_of "$id"), not at $*"; return 1; }
 }
+# in_front_of <a> <b>: by the window server's list, which is front to back, a comes before b. (`above` is the library's: higher up.)
+in_front_of() {
+  "$ARBOR_POINTER" windows --on-screen | awk -v a="$1" -v b="$2" '
+    $1 == a { found = 1; exit } $1 == b { exit } END { exit !found }' || { echo "w$1 does not lie in front of w$2"; return 1; }
+}
+# types_into <id>: a letter typed now arrives in that window. Who has the keyboard, by proof: what lies in front need not have it.
+types_into() {
+  local keys
+  keys=$(events_of "$1" key) || return 1
+  key_to "$1" x || return 1
+  eventually received "$1" key -gt "$keys"
+}
 # Arbor has heard of a move that the app made itself. What it gives back to a window is what it last saw of it.
 seen_where_it_is() { arbor_close "$(frame_of "$1")" "$(real_frame_of "$1")"; }
 # grip <id>: dx dy w: the pointer from the window's corner, and the window's width, by the window server.
@@ -52,6 +64,8 @@ all_h=$(height_of "$W2")
 own_w=$((all_w - 80))
 own_h=$((all_h - 50))
 take "x y _ _" resting_frame_of "$W1"
+own_x=$x
+own_y=$y
 tw move "$W1" "$x" "$y" "$own_w" "$own_h"
 eventually seen_where_it_is "$W1"
 ctl dock "$W1" left
@@ -65,6 +79,7 @@ click_window "$W1"
 check "⌃⌥F reaches Arbor" pressed ctrl+opt+f toggle-float
 check "the window floats" eventually is floating "$W1"
 check "it has its own size again" eventually has_size "$W1" "$own_w" "$own_h"
+check "and its own place: it is where it was" eventually is_at "$W1" "$own_x" "$own_y" "$own_w" "$own_h"
 check "all of it is in view" in_view "$W1"
 check "Arbor leaves it that size" stays has_size "$W1" "$own_w" "$own_h"
 check "the other docked window is in its slot" eventually in_slot "$W2"
@@ -79,9 +94,32 @@ check "the floating windows left with the Desktop" eventually out_of_view "$W3"
 check "⌃⌥F reaches Arbor" pressed ctrl+opt+f toggle-float
 check "the window floats" eventually is floating "$W1"
 check "it has its own size again" eventually has_size "$W1" "$own_w" "$own_h"
+check "and its own place: it is where it was" eventually is_at "$W1" "$own_x" "$own_y" "$own_w" "$own_h"
 check "all of it is in view" in_view "$W1"
 check "the Desktop is in view" eventually desktop_point
 check "and the windows that float on it" eventually in_view "$W3"
+settled
+
+claim "arborctl float on a docked window while another is worked in: it is where it was, in front of the window that stays docked there"
+proves A48
+# The window that is worked in is another app's: across apps macOS moves the keyboard only after the call has returned.
+ctl float "$W2"
+ctl dock "$V1" left
+ctl dock "$W1" right
+check "the other app's window is docked at the left edge, over the place the first window had" eventually at_edge "$V1" left
+click_window "$V1"
+check "it has the keyboard" eventually is focused "$V1"
+check "what is typed arrives in it" types_into "$V1"
+check "and it lies in front" in_front_of "$V1" "$W1"
+ctl float "$W1"
+check "the window floats" eventually is floating "$W1"
+check "it is where it was" eventually is_at "$W1" "$own_x" "$own_y" "$own_w" "$own_h"
+check "what names a window gives it the keyboard" eventually is focused "$W1"
+check "what is typed arrives in it" types_into "$W1"
+check "and with the keyboard it has the front" eventually in_front_of "$W1" "$V1"
+check "the other app's window stays docked" is docked "$V1"
+ctl float "$V1"
+ctl dock "$W2" right
 settled
 
 claim "drag a docked window out of its slot and drop it on the Desktop: it shrinks back to its own size under the pointer"

@@ -24,16 +24,18 @@ Windows all give a window its previous size back when it leaves a tile, so this 
 
 **Changed on 2026-10-14 by the product owner (QUESTIONS Q20, Q21):** Arbor no longer places or squeezes floating windows (`floatingWindowsMakeWay` ships false), so a floating window has only one frame, its own, and nothing to be given back. A pause gives docked windows their own frames back as Quit does: built. The first is being built; until it lands the text below is what the trunk does.
 
+**Changed on 2026-10-15 by the product owner (board 1.87):** there and back is nothing. On every way out but a drag (`float` and `toggle-float` by key, menu and arborctl, `float-all`, pausing, quitting, excluding) a docked window is given the **frame** it had when it was docked, size and place, over whatever stays docked there. However it has moved about the arrangement since, by key or by hand: a slot is a place in the arrangement, not on the desk. Only if that frame is known to be a place for it: all of it is in view, or its person's own hand left it hanging over an edge, on this display as it is, with its title bar within reach. What a change of displays left hanging nobody chose; a frame larger than the display, with its title bar under the menu bar, or lower than a title bar's height above the bottom, macOS lets nobody give a window. Otherwise as above; and one window that floats where `floatingWindowsMakeWay` is on goes onto the Desktop as above. `float` and `toggle-float` on a window that has not the keyboard give it the keyboard, and with it the front, if it is in view: what names a window asks for it, and where it was may lie under a window that stays docked.
+
 ## Design notes
 
 - `Workspace.undockedFrames: [WindowID: CGRect]?` (optional, so old `state.json` files load with the synthesised decoder). Set in `Workspace.dock` from `floating[window]` before it is cleared, only if nothing is
   remembered yet (moving a docked window must not overwrite it); cleared in `forget` and `undock`. `arrange` and `reset(tree:)` go through the same helper.
-- `Controller.floatingFrame(for:on:)` is the one place that decides where an undocked window goes.
+- `Controller.frameToGoBackTo(_:on:)` says whether a docked window can go back to where it was, on every way out; `Controller.floatingFrame(for:on:)` is the one place that decides where one window goes if it cannot, `asItWas` where it goes when Arbor lets go.
 - A remembered frame on a display that has gone is fitted into the current one.
 
 ## Acceptance criteria
 
-1. Dock a 400 × 300 window, float it: 400 × 300, centred on its old slot, inside the Desktop.
+1. Dock a 400 × 300 window, float it: 400 × 300, where it was. (Until 2026-10-15: centred on its old slot, inside the Desktop. Still so if where it was is no place for a window any more.)
 2. Frame it, then float it: 400 × 300, and the view is one that shows the Desktop.
 3. `arrange` then `float-all`: every window is back at its exact frame. The same for quit.
 4. Moving a docked window around with ⌃⌥⌘ + arrows does not change what is remembered.
@@ -41,7 +43,7 @@ Windows all give a window its previous size back when it leaves a tile, so this 
 
 ## Shipped / Not shipped
 
-Shipped: everything above. Each criterion has a scenario test in `Tests/ArborKitTests/UndockedFrameTests.swift` (1 `aFloatedWindowTakesItsOldSizeCentredOnItsSlot`, 2 `floatingAFramedWindowShowsTheDesktop`,
+Shipped: everything above. Each criterion has a scenario test in `Tests/ArborKitTests/UndockedFrameTests.swift` (1 `aFloatedWindowTakesItsOldFrame` and `Tests/ArborKitTests/FloatGivesThePlaceBackTests.swift`, 2 `floatingAFramedWindowShowsTheDesktop`,
 3 `floatAllPutsEveryWindowBackExactlyWhereItWas` and `quittingPutsEveryWindowBackExactlyWhereItWas`, 4 `movingADockedWindowAroundDoesNotChangeWhatIsRemembered`, 5 `anOldStateFileLoadsAndItsWindowsKeepTheirSlotsSize` and
 `theNextLaunchDocksThemAgainAndStillRemembers`); the model's part is in `Tests/ArborCoreTests/UndockedFrameTests.swift`; `collab/scenarios/48-float-gets-its-size-back.sim` tells the story; `arbor-e2e` checks `float` and quitting on real windows.
 

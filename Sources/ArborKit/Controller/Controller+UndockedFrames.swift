@@ -4,18 +4,52 @@ import CoreGraphics
 /// A window that leaves the arrangement gets back the size it had before it was docked
 /// (docs/features/F48-floating-restores-size.md). `Workspace.undockedFrames` remembers the frame.
 ///
-/// There are two ways out:
-/// - **One window floats**, and the person is looking at it (`float`, `toggle-float`, a drag out of its
-///   slot). It takes the remembered size where it is: centred on its slot, or under the pointer.
-/// - **Arbor lets go** (`float-all`, quitting, pausing, excluding its app). That means "as it was", so the
-///   window takes the remembered position too.
+/// There and back is nothing: on every way out but one it takes the remembered position too, if that is still a place for it
+/// (`frameToGoBackTo`). The ways out, and what each does if it is not:
+/// - **One window floats** (`float`, `toggle-float`), and the person is looking at it. It takes the remembered size where it
+///   is, centred on its slot. So it does where floating windows make way for the docked ones that stay.
+/// - **Arbor lets go** (`float-all`, quitting, pausing, excluding its app). The remembered frame, fitted into the display.
+/// - **A hand drags it out of its slot.** It takes the remembered size under the pointer: the place is the hand's.
+///
+/// (`pin`, a rule that comes late and `layout` take a docked window out as well, each in its own way.)
 ///
 /// A window with nothing remembered (docked for as long as Arbor has known it) keeps its slot's size.
 extension Controller {
+  // MARK: There and back
+
+  /// The frame a docked window had when it was docked, size and place, if it can have just that again. ⌃⌥← and then ⌃⌥F used to
+  /// give a window its size back somewhere else, which is two things to put right by hand instead of none; and a window pushed
+  /// aside until a strip showed came back from a quit in the middle of the screen.
+  ///
+  /// Nil if nothing is remembered, and if the frame is not known to be a place for the window:
+  /// - All of it is in view: that is one.
+  /// - It hangs over an edge: only where its person is known to have left it so, on this display as it is, with its title bar
+  ///   within reach (`isWhereItWasLeft`), and as much of it shows as then. Of any other frame nobody knows how it came to hang
+  ///   there: a display that shrank, say, or the one next door, which showed the rest of it.
+  ///   Nothing that Arbor places shows less than all of itself unless its person wanted it so.
+  /// - Larger than the display, with its title bar under the menu bar, or lower than a title bar's height above the bottom, it is
+  ///   a frame macOS lets nobody give a window, whoever vouches for it: the answer would be another, and what is remembered
+  ///   would be a frame the window never has, asked for again at every layout.
+  func frameToGoBackTo(_ window: WindowID, on displayID: DisplayID) -> CGRect? {
+    guard let frame = workspaces[displayID]?.undockedFrame(of: window), let display = display(displayID) else { return nil }
+    let visible = display.visibleFrame
+    guard frame.width <= visible.width, frame.height <= visible.height, frame.minY >= visible.minY,
+      frame.minY <= visible.maxY - Self.titleBarHeight
+    else { return nil }
+    return visible.contains(frame) || (showsAsMuchAsWasLeft(frame, of: window) && isWhereItWasLeft(window, frame, on: display))
+      ? frame : nil
+  }
+
+  /// The note of where its person left a window goes by the window's own display. What hung over to the next one shows less if
+  /// that one has changed since.
+  func showsAsMuchAsWasLeft(_ frame: CGRect, of window: WindowID) -> Bool {
+    chosenOnShape[window].map { areaShowing(of: frame) >= $0.showing - 1 } ?? false
+  }
+
   // MARK: One window floats
 
-  /// Where an undocked window should float, decided while it is still docked: the size it floated at,
-  /// centred on its slot (on the middle of the display if its slot is out of view).
+  /// Where an undocked window should float if it cannot go back to where it was, decided while it is still docked: the size
+  /// it floated at, centred on its slot (on the middle of the display if its slot is out of view).
   func floatingFrame(for window: WindowID, on displayID: DisplayID) -> CGRect {
     // It is in view at its own size already, and not in its slot (Controller+LetBe.swift).
     if isLetBe(window), let frame = windows[window]?.frame { return frame }
@@ -34,13 +68,15 @@ extension Controller {
     ).fitted(into: visible)
   }
 
-  /// Takes a docked window out of the arrangement where it is, for `float` and `toggle-float`. Returns true if the
-  /// view moved to show the Desktop.
+  /// Takes a docked window out of the arrangement, for `float` and `toggle-float`. Returns true if the view moved to show
+  /// the Desktop.
   @discardableResult
   func undock(_ window: WindowID, on displayID: DisplayID) -> Bool {
     guard var workspace = workspaces[displayID], let display = display(displayID) else { return false }
-    var frame = floatingFrame(for: window, on: displayID)
-    let standsWhereItFloats = isLetBe(window)
+    // Where floating windows make way for docked ones, the layout would push it off a place that lies over them at once.
+    let back = isLetBe(window) || settings.floatingWindowsMakeWay ? nil : frameToGoBackTo(window, on: displayID)
+    var frame = back ?? floatingFrame(for: window, on: displayID)
+    let frameIsFinal = isLetBe(window) || back != nil
     let camera = workspace.camera
     let wasFramed = workspace.tree.leaf(containing: window) == camera && workspace.tree.windows(under: camera) == [window]
     workspace.undock(
@@ -58,7 +94,7 @@ extension Controller {
     if let desktop = layoutToCome(on: displayID)?.desktopFrame {
       // Onto the Desktop. A window floated by command is put there on purpose, like one that is dropped: if the
       // Desktop is smaller than it (the narrow one `arrange` makes), it keeps its own size and hangs over the docked windows.
-      if !standsWhereItFloats {
+      if !frameIsFinal {
         frame = floatingFrame(frame, on: roomToFloat(desktop, on: display), of: display, minimum: frame.size)
       }
       workspaces[displayID]!.floating[window] = frame
@@ -75,8 +111,10 @@ extension Controller {
     placedOnPurpose = Set(toPutBack.map(\.window))
     defer { placedOnPurpose = [] }
     relayout(displayID, reason: .structure, puttingBack: toPutBack)
+    let hasTheKeyboard = giveTheKeyboardToTheWindowNamed(window)
     guard workspaces[displayID]?.camera != camera else { return false }
-    ensureFocusIsVisible(on: displayID)
+    // Nobody else is handed it on the way.
+    if !hasTheKeyboard { ensureFocusIsVisible(on: displayID) }
     notify(.camera(displayID))
     return wasFramed
   }
@@ -87,6 +125,19 @@ extension Controller {
     let (asItIs, noted, kept) = (workspaces[displayID], treesBeforeRoomWasMade[displayID], keptRoom[displayID])
     defer { (workspaces[displayID], treesBeforeRoomWasMade[displayID], keptRoom[displayID]) = (asItIs, noted, kept) }
     return roomyLayout(of: displayID, for: reason)
+  }
+
+  /// What names a window gives it the keyboard, and with the keyboard the front: naming is asking, and whoever picks Float for a
+  /// window in the menu, in Go to… or in a script is about to use it. Where it was may lie under a window that stays docked, and
+  /// a window that a command has just taken out of the arrangement and that cannot be seen afterwards looks lost. The road
+  /// `dock <id>` takes. Not a bare raise, which does not lift a window over the one that is being worked in (docs/REALITY.md).
+  ///
+  /// Only if it is in view, and nothing is asked if it has the keyboard, as with ⌃⌥F. Nor of an app that has just failed to answer.
+  /// Returns whether it has it or is about to.
+  func giveTheKeyboardToTheWindowNamed(_ window: WindowID) -> Bool {
+    guard windows[window]?.isPresent == true, !parked.contains(window), !unplaced.contains(window) else { return false }
+    if keyboardFocus() != window { askForTheKeyboard(for: window) }
+    return true
   }
 
   /// A window that starts to float while the Desktop is out of view would be gone at the next move of the view, and
@@ -158,14 +209,16 @@ extension Controller {
 
   // MARK: Arbor lets go
 
-  /// Where a docked window goes when Arbor lets go of it: the frame it floated at. Nil if nothing is remembered.
+  /// Where a docked window goes when Arbor lets go of it: the frame it floated at, fitted in if that is no place for it any
+  /// more. Nil if nothing is remembered.
   func frameAsItWas(of window: WindowID, on displayID: DisplayID) -> CGRect? {
     guard let frame = workspaces[displayID]?.undockedFrame(of: window), let display = display(displayID) else {
       return nil
     }
-    // The note goes by the window's own display. What hung over to the next one shows less if that one has changed since.
-    let showsAsMuch = chosenOnShape[window].map { areaShowing(of: frame) >= $0.showing - 1 } ?? false
-    return asItWas(frame, on: display, leftThereByItsUser: showsAsMuch && wasLeftThereByItsUser(frame, of: window, on: display))
+    if let itsOwn = frameToGoBackTo(window, on: displayID) { return itsOwn }
+    // What that refuses by the window's own display alone may lie across the border to the next, and show all the same.
+    let leftThere = showsAsMuchAsWasLeft(frame, of: window) && wasLeftThereByItsUser(frame, of: window, on: display)
+    return asItWas(frame, on: display, leftThereByItsUser: leftThere)
   }
 
   /// `frame`, where a window used to be, if that is still a place for a window on `display`. People leave

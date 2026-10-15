@@ -39,8 +39,10 @@ extension Controller {
       guard let snapshot = windows[window], snapshot.isFullScreen, let id = workspaceID(containing: window),
         let workspace = workspaces[id], let display = display(id)
       else { continue }
+      // Whoever reads the note takes a frame of which less than half shows for one out of view, and fits it into the main display.
       let frame =
-        frameAsItWas(of: window, on: id) ?? workspace.floating[window].map { asItWas($0, on: display) }
+        (frameAsItWas(of: window, on: id) ?? workspace.floating[window].map { asItWas($0, on: display) })
+        .map { showsLessThanHalf($0) ? asItWas($0, on: display) : $0 }
         ?? slotWithEverythingInView(of: window, in: workspace, on: display)
       if let frame { leftInFullScreen.notes[window] = LeftInFullScreen.Note(frame: frame, pid: snapshot.pid) }
     }

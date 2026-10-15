@@ -115,6 +115,8 @@ forget_window "$F1"
 claim "dock a window that refuses to shrink by command: the camera stays and a tile takes its place"
 ctl float "$W3"
 check "the window floats" eventually is floating "$W3"
+# What names a window gives it the keyboard. With the keyboard in it, a late report of that could take the camera to the tile.
+click_window "$W1"
 ctl dock "$W3" beside "$W1" bottom
 check "a tile stands in for it" eventually is tile "$W3"
 check "the camera stays on everything" stays camera_on root

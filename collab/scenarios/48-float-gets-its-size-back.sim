@@ -83,3 +83,38 @@ resume
 expect fills 102
 expect hidden 101
 expect count docked 3
+
+# There and back is nothing. Docked by a key and floated again, Notes is where it was, not only as large as it was,
+# whichever way it leaves, and though Safari stays docked under it. Named while Safari is worked in, it comes to the front.
+float-all
+move 101 800 300 400 300
+dock 102 right
+dock 101 left
+focus 102
+toggle-float 101
+expect at 101 800 300 400x300
+expect docked 102
+expect focused 101
+expect in-front 101
+dock 101 left
+dock 101 right
+float 101
+expect at 101 800 300 400x300
+dock 101 left
+float-all
+expect at 101 800 300 400x300
+dock 101 left
+pause
+expect at 101 800 300 400x300
+resume
+
+# Pushed aside by hand until a strip shows, it goes back to its strip.
+float-all
+move 101 1340 300 400 300
+dock 101 left
+float 101
+expect at 101 1340 300 400x300
+dock 101 left
+pause
+expect at 101 1340 300 400x300
+resume

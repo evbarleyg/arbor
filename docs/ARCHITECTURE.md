@@ -662,16 +662,27 @@ Docking stretches a window to its slot. `Workspace.undockedFrames` remembers the
 in `floating`, which the user chose, not where docked windows have pushed it since): `Workspace.dock` and
 `reset(tree:)` set it as the window stops floating, moving a docked window leaves it alone, `undock` and `forget`
 drop it, and it is saved with the workspace. A window docked by a rule as it opens floats for an
-instant first, so what is remembered is the frame its app gave it. `Controller+UndockedFrames.swift` uses it in two ways:
+instant first, so what is remembered is the frame its app gave it. `Controller+UndockedFrames.swift` uses it.
 
-- **One window floats** (`float`, `toggle-float`, a drag out of its slot): the remembered size, where the person
-  is looking. For the commands that is centred on its slot, then moved onto the Desktop if that is in view (not
-  shrunk: beside a Desktop narrower than itself it hangs over the docked windows), otherwise onto the display; floating
-  the framed window moves the view to one that shows the Desktop. A window dropped out of its slot takes its size
-  under the pointer, which stays as far along its title bar as it was; if it grew, it slides back onto the display as far
-  as the pointer stays on the title bar. Either way the layout that follows leaves it where it was put
-  (`placedOnPurpose`), and with the Desktop out of view it becomes a guest of the view it floats over (`stayWithTheView`).
-- **Arbor lets go** (`float-all`, quitting, excluding its app; pausing, for windows out of view): the remembered frame, position too, exactly,
+**There and back is nothing.** On every way out but a drag the window takes the remembered frame, position too, over whatever stays
+docked there, if that is known to be a place for it (`frameToGoBackTo`): all of it is in view, or its person's own hand left it hanging
+over an edge, on this display as it is, with its title bar within reach (`isWhereItWasLeft`). What a change of displays left hanging
+nobody chose, and a frame larger than the display, with its title bar under the menu bar or lower than a title bar's height above the
+bottom macOS lets nobody give a window, whoever vouches for it.
+However the window has moved about the arrangement since, by key or by hand: a slot is a place in the arrangement, not on the desk.
+What each way out does if there is no such place:
+
+- **One window floats** (`float`, `toggle-float`): the remembered size centred on its slot, then moved onto the Desktop if that is in
+  view (not shrunk: beside a Desktop narrower than itself it hangs over the docked windows), otherwise onto the display. So it does
+  where floating windows make way for the docked ones that stay. Floating the framed window moves the view to one that shows the
+  Desktop. What names a window gives it the keyboard, and with it the front (`giveTheKeyboardToTheWindowNamed`, the road `dock <id>`
+  takes): where it was may lie under a window that stays docked. Only if it is in view, and ⌃⌥F finds the keyboard there already.
+- **A hand drags it out of its slot**: always the remembered size under the pointer, which stays as far along its title bar as it was; if
+  it grew, it slides back onto the display as far as the pointer stays on the title bar.
+
+  Either way the layout that follows leaves it where it was put (`placedOnPurpose`), and with the Desktop out of view it becomes a
+  guest of the view it floats over (`stayWithTheView`).
+- **Arbor lets go** (`float-all`, quitting, pausing, excluding its app): the remembered frame as it is
   unless the display has changed so that it is no place for a window any more (`asItWas`), in which case it is fitted
   into the display. That includes windows that take no space just now (minimized, hidden, on another macOS Space),
   which would otherwise come back in the shape of a slot. Windows that floated all along go back to the frame in

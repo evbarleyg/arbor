@@ -783,8 +783,10 @@ public final class Controller {
         let home = workspaceID(containing: id) ?? displayID(at: frame.center), let display = display(home),
         // Not "is it at that frame": the loop above has taken it as near to it as macOS allows, which keeps a title bar above the
         // bottom edge and can stop a window some points short. Fetched from there it would move twice.
+        // One that was docked has gone back to where it floated before, which is its person's as much (`frameToGoBackTo`).
         parked.contains(id) || !titleBarIsWithinReach(frame)
-          || workspaces[home]?.floating[id].map({ isWhereItWasLeft(id, $0, on: display) }) != true
+          || (workspaces[home]?.floating[id] ?? workspaces[home]?.undockedFrame(of: id))
+            .map({ isWhereItWasLeft(id, $0, on: display) }) != true
       else { continue }
       frame.size = sizeInView(of: id) ?? frame.size
       placeVisibly(id, at: frame, on: display)
@@ -1146,7 +1148,9 @@ public final class Controller {
           ?? workspace.floating[window].flatMap {
             wasParked || wasPushedAside(window, from: $0) ? asItWas($0, on: display) : nil
           }
-        if wasParked { noteIfInFullScreen(window, belongsAt: frame, on: display) }
+        if wasParked {
+          noteIfInFullScreen(window, belongsAt: frame.map { showsLessThanHalf($0) ? asItWas($0, on: display) : $0 }, on: display)
+        }
         workspace.forget(window, shareSpace: settings.shareRemovedSpace, away: windows[window]?.isPresent != true)
         parked.remove(window)
         var place = frame

@@ -12,6 +12,9 @@
 #   a quit during a pause, which has nothing left to do;
 # - a kill -9 and a relaunch: is what was remembered still there;
 # - does a minimized window accept a frame.
+# With a window docked at either edge these steps drop a window on the Desktop between them. As Arbor ships two docks are two halves and there is
+# no such Desktop: the drop would dock it again. So, as in the suite's sections, what ships off is switched on, in every session.
+ARBOR_SWITCHES=all
 source "$(dirname "$0")/lib.sh"
 
 # near "<x y w h>" "<x y w h>" [first field] [tolerance]: whether the frames agree from that field on.
@@ -34,6 +37,10 @@ pointer_on_titlebar() {
 pointer_along() {
   awk 'BEGIN { split(ARGV[1], p, " "); split(ARGV[2], f, " "); printf "%d\n", 100 * (p[1] - f[1]) / f[3] }' \
     "$(pointer where)" "$(real_frame_of "$1")"
+}
+# How far below the window's top the pointer is, in points.
+pointer_below() {
+  awk 'BEGIN { split(ARGV[1], p, " "); split(ARGV[2], f, " "); printf "%d\n", p[2] - f[2] }' "$(pointer where)" "$(real_frame_of "$1")"
 }
 # Whether Arbor ends within five seconds. If not it is killed, so that no `wait` for it can hang the script.
 arbor_gone() { arbor_await_exit "$ARBOR_PID" 50 || { kill -KILL "$ARBOR_PID" 2>/dev/null; return 1; }; }
@@ -67,13 +74,14 @@ B1=$(real_frame_of "$W1"); B2=$(real_frame_of "$W2"); B3=$(real_frame_of "$W3");
 echo "before Arbor touched them: w$W1 $B1 | w$W2 $B2 | w$W3 $B3 | w$W4 $B4"
 shot 01-before
 
-step "float: the old size, centred on the slot"
+step "float: the old size, in the old place"
 ctl dock "$W1" left
 ctl dock "$W2" right
 slot=$(arbor_ask slot "$W1")
 shot 02-docked
 ctl float "$W1"
 check "the floated window has its old size" eventually has_size_of "$W1" "$B1"
+check "and is where it was" eventually is_at "$W1" "$B1"
 echo "its slot was $slot; it floats at $(real_frame_of "$W1"); the Desktop is $(arbor_ask desktop)"
 shot 03-floated
 
@@ -93,7 +101,10 @@ ctl dock "$W1" left
 sleep 0.5
 read -r x y w h <<< "$(frame_of "$W1")"
 drag "$((x + w / 2))" "$((y + 12))" 512 300 --no-release
-echo "held: the window server has it at $(real_frame_of "$W1"), Arbor at $(frame_of "$W1"), pointer $(pointer where)"
+# A window trails a posted pointer (docs/TESTING.md), so where the pointer is on it with the button still down is measured, not assumed.
+held_along=$(pointer_along "$W1")
+held_below=$(pointer_below "$W1")
+echo "held: the window server has it at $(real_frame_of "$W1"), Arbor at $(frame_of "$W1"), pointer $(pointer where): $held_along/100 along, $held_below below its top"
 shot 06-drag-held
 release &
 film 07-drag-released 3
@@ -101,9 +112,10 @@ wait $!
 check "it floats" eventually is floating "$W1"
 check "it has its old size" eventually has_size_of "$W1" "$B1"
 echo "released: the window server has it at $(real_frame_of "$W1"), pointer $(pointer where), $(pointer_along "$W1")/100 along"
-check "the pointer is still on its title bar" pointer_on_titlebar "$W1"
-along=$(pointer_along "$W1")
-check "about half way along, as it was grabbed" test "$along" -ge 42 -a "$along" -le 58
+# From further down than a title bar reaches (`Controller.titleBarReach`) the window comes up to the pointer.
+[ "$held_below" -gt 60 ] && held_below=60
+check "the pointer is as far below its top as it was held, or as far as a title bar reaches" about "$(pointer_below "$W1")" "$held_below" 3
+check "and as far along as it was held" about "$(pointer_along "$W1")" "$held_along" 2
 shot 08-drag-settled
 
 step "drag it out fast, grabbed near the left end, released without a pause"

@@ -23,7 +23,8 @@ extension Controller {
     }
     guard !workspaces[display]!.isPinned(id) else { return .failure("\(id) is already kept in view") }
     if workspaces[display]!.isDocked(id) {
-      // Where `float` would put it, at its own size however large (F48; QUESTIONS Q20): Arbor picks no size for a floating window.
+      // Where it is, centred on its slot, as `float` puts a window that cannot go back to where it was: it is pinned to be seen
+      // here. At its own size however large (F48; QUESTIONS Q20): Arbor picks no size for a floating window.
       let frame = floatingFrame(for: id, on: display)
       workspaces[display]!.undock(
         id, floatingAt: frame, shareSpace: settings.shareRemovedSpace, away: windows[id]?.isPresent != true)

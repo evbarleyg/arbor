@@ -40,8 +40,8 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
 
   // MARK: float, toggle-float
 
-  /// Criterion 1.
-  @Test func aFloatedWindowTakesItsOldSizeCentredOnItsSlot() throws {
+  /// Criterion 1. (Centred on its slot if it cannot go back: `FloatGivesThePlaceBackTests`.)
+  @Test func aFloatedWindowTakesItsOldFrame() throws {
     let (h, notes, safari, _) = makeHarness()
     h.run("dock \(notes.rawValue) left")
     h.run("dock \(safari.rawValue) right")
@@ -51,9 +51,7 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
 
     #expect(h.run("float \(notes.rawValue)").ok)
     let frame = try #require(h.frame(notes))
-    #expect(frame.size == notesFrame.size)
-    #expect(abs(frame.midX - slot.midX) <= 0.5 && abs(frame.midY - slot.midY) <= 0.5, "to the whole point")
-    #expect(try #require(h.layout?.desktopFrame).contains(frame))
+    #expect(frame == notesFrame, "size and place")
     #expect(h.workspace.floating[notes] == frame)
     #expect(h.workspace.undockedFrames?[notes] == nil, "it floats, so there is nothing left to go back to")
     expectWindowsMatchLayout(h, on: h.display)
@@ -82,9 +80,8 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
     h.controller.observe { if case .camera = $0 { cameraChanges += 1 } }
 
     #expect(h.run("float \(notes.rawValue)").ok)
-    let desktop = try #require(h.layout?.desktopFrame, "the view shows the Desktop")
-    #expect(h.frame(notes)?.size == notesFrame.size)
-    #expect(desktop.contains(try #require(h.frame(notes))))
+    #expect(h.layout?.desktopFrame != nil, "the view shows the Desktop")
+    #expect(h.frame(notes) == notesFrame)
     #expect(h.workspace.camera == h.workspace.tree.root)
     #expect(cameraChanges == 1, "whoever mirrors the view hears that it moved")
     expectWindowsMatchLayout(h, on: h.display)
@@ -114,13 +111,11 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
     let leaf = try #require(tree.leaf(containing: notes))
     let column = try #require(tree.parent(of: leaf))
     h.run("zoom-node \(column.rawValue)")
-    let slot = try #require(h.layout?.windowFrames[notes])
 
     h.run("float \(notes.rawValue)")
     #expect(h.layout?.desktopFrame == nil, "the view stays on what is left of the group")
     let frame = try #require(h.frame(notes))
-    #expect(frame.size == notesFrame.size)
-    #expect(abs(frame.midX - slot.midX) <= 0.5 && abs(frame.midY - slot.midY) <= 0.5)
+    #expect(frame == notesFrame)
     #expect(h.visibleFrame.contains(frame))
   }
 
@@ -382,8 +377,9 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
     #expect(h.frame(safari) == overTheRight)
   }
 
+  /// (Mostly off the display, where a hand left it with its title bar within reach, is a place: `FloatGivesThePlaceBackTests`.)
   @Test(arguments: [
-    CGRect(x: 1300, y: 90, width: 800, height: 600),  // mostly off the display
+    CGRect(x: 1430, y: 90, width: 800, height: 600),  // less of its title bar shows than a hand could get hold of
     CGRect(x: 300, y: 5, width: 400, height: 300),  // its title bar under the menu bar
     CGRect(x: -3000, y: -2000, width: 400, height: 300),  // nowhere
     CGRect(x: 0, y: 25, width: 1500, height: 300),  // wider than the display
@@ -395,6 +391,7 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
     h.run("dock \(notes.rawValue) left")
     h.run("float-all")
     #expect(h.visibleFrame.contains(try #require(h.frame(notes))))
+    #expect(h.workspace.floating[notes] == h.frame(notes), "fitted by Arbor, not cut by macOS")
   }
 
   @Test func floatAllReachesWindowsFramedOutOfViewMinimizedAndInTiles() {
@@ -620,13 +617,11 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
     h.system.drag(notes, through: [CGPoint(x: 500, y: 210), try #require(h.frame(mail)).center])
     let group = try #require(h.workspace.tree.leaf(containing: mail))
     #expect(h.workspace.tree.leaf(containing: notes) == group, "they share a place")
-    let place = try #require(h.layout?.nodeFrames[group])
 
     // The tab that is not showing.
     h.run("float \(mail.rawValue)")
-    #expect(h.frame(mail)?.size == mailFrame.size)
+    #expect(h.frame(mail) == mailFrame, "it comes out where it was")
     #expect(h.system.isVisible(mail))
-    #expect(abs(try #require(h.frame(mail)).midY - place.midY) <= 1, "it comes out where its group is")
     // Torn off with the mouse.
     h.run("dock \(mail.rawValue) beside \(notes.rawValue) bottom")
     h.system.drag(notes, through: [CGPoint(x: 300, y: 60), CGPoint(x: 1000, y: 300)])
@@ -1086,6 +1081,8 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
     for _ in 0..<4 { open() }
     h.start()
     var commands = 0
+    /// Where a hand last dropped a window out of its slot: this test's own record, not what Arbor remembers.
+    var dropped: [WindowID: CGRect] = [:]
 
     for step in 0..<50 {
       guard let window = sizes.keys.sorted().randomElement(using: &random),
@@ -1128,6 +1125,8 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
         let drop = CGPoint(x: Int.random(in: 1...1439, using: &random), y: Int.random(in: 30...890, using: &random))
         done = "drag \(window) to \(drop)"
         h.system.drag(window, through: [CGPoint(x: frame.midX, y: frame.minY + 10), CGPoint(x: 700, y: 450), drop])
+        // From slot to slot it stays as it is: a slot is a place in the arrangement, not on the desk.
+        if h.workspace.isFloating(window) { dropped[window] = h.frame(window) }
       default:
         done = "pending work"
         h.scheduler.runPending()
@@ -1142,13 +1141,13 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
     }
 
     #expect(commands > 20)
-    let left = h.workspace.floating
     h.controller.shutdown()
     for (window, size) in sizes.sorted(by: { $0.key < $1.key }) {
       #expect(h.frame(window)?.size == size, "\(window)")
-      // A window dropped over a screen edge goes back there: exactly there, if under half of it shows, and enough of it to see and grab.
+      // A window dropped over a screen edge goes back there, docked since or not: exactly there, if under half of it shows, and
+      // enough of it to see and grab.
       let showing = h.frame(window)!.intersection(h.system.displayList[0].frame)
-      let isWhereItWasDropped = left[window].map { h.frame(window)!.approximatelyEquals($0, tolerance: 1) } ?? false
+      let isWhereItWasDropped = dropped[window].map { h.frame(window)!.approximatelyEquals($0, tolerance: 1) } ?? false
       #expect(
         h.system.isVisible(window) || (isWhereItWasDropped && showing.width >= 24 && showing.height >= 24),
         "\(window) is in view, or where it was dropped: \(h.frame(window)!)")

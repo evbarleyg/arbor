@@ -936,6 +936,9 @@ private struct Dice {
       })
     h.start()
     var open: [WindowID] = []
+    /// Where a hand let go of each last, to float there, and how much of it the displays showed then, in square points.
+    var dropped: [WindowID: (frame: CGRect, showing: CGFloat)] = [:]
+    func showing(_ frame: CGRect) -> CGFloat { h.system.displayList.map { frame.intersection($0.frame).area }.reduce(0, +) }
     func any() -> UInt32 { open.isEmpty ? 1 : open[dice.roll(open.count)].rawValue }
     func edge() -> String { ["left", "right", "top", "bottom"][dice.roll(4)] }
     /// Somewhere the pointer can be: on a display that is connected.
@@ -980,6 +983,8 @@ private struct Dice {
         let window = WindowID(any())
         if let frame = h.frame(window), h.system.isVisible(window) {
           h.system.drag(window, through: [CGPoint(x: frame.midX, y: frame.minY + 10), point(), point()])
+          let floats = h.controller.workspaces.values.contains { $0.isFloating(window) }
+          dropped[window] = floats ? h.frame(window).map { ($0, showing($0)) } : nil
         }
       case 16: h.run("resize \(any()) \(edge()) \(dice.roll(400) - 200)")
       case 17 where h.controller.isRunning:
@@ -1018,8 +1023,16 @@ private struct Dice {
     h.controller.shutdown()
     for window in open {
       let frame = h.frame(window)!
-      // The others are in their slots or where the user dropped them.
-      if parked.contains(window) { #expect(h.system.isVisible(window), "\(window) at \(frame)") }
+      // The others are in their slots or where the user dropped them. So is one that was dropped with most of it over an edge and
+      // docked from there: it goes back to just that frame, which is its person's (`FloatGivesThePlaceBackTests`).
+      if parked.contains(window) {
+        // Just there, with no less of it showing than its person left showing, and its title bar where a hand can get hold of it.
+        let bar = CGRect(x: frame.minX, y: frame.minY, width: frame.width, height: 24)
+        let isWhereItWasDropped =
+          dropped[window].map { $0.frame.approximatelyEquals(frame, tolerance: 1) && showing(frame) >= $0.showing - 1 } == true
+          && h.system.displayList.contains { bar.intersection($0.frame).width >= 24 && bar.intersection($0.frame).height >= 12 }
+        #expect(h.system.isVisible(window) || isWhereItWasDropped, "\(window) at \(frame)")
+      }
       let cutToWidth = abs(frame.width - small.width) < 1 && frame.height <= small.height
       let cutToHeight = abs(frame.height - small.height) < 1 && frame.width <= small.width
       #expect(!cutToWidth && !cutToHeight, "\(window) was left small: \(frame)")

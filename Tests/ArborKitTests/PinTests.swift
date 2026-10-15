@@ -505,7 +505,7 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
     let slot = h.frame(browser)!
     #expect(h.run("pin \(browser.rawValue)").ok)
     #expect(h.workspace.isFloating(browser) && h.controller.isPinned(browser))
-    // As `float` has it: the size it floated at before it was docked (F48), centred on its slot, kept on the display.
+    // The size it floated at before it was docked (F48), centred on its slot, kept on the display.
     let frame = h.frame(browser)!
     #expect(
       frame

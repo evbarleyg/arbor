@@ -14,7 +14,7 @@ import Testing
 
   /// The frame `b` had before Arbor touched it.
   let untouched = CGRect(x: 220, y: 180, width: 480, height: 348)
-  /// Where `float` puts it: its own size, over the docked column for what the Desktop has no room for.
+  /// Where `float` puts it where floating windows make way: its own size, over the docked column for what the Desktop has no room for.
   let floated = CGRect(x: 544, y: 194, width: 480, height: 348)
 
   /// `[(a / c) | Desktop]`, the column 100 points wider than the half it was docked with, and `b` just floated out of the other
@@ -38,11 +38,12 @@ import Testing
   func moves(of window: WindowID, _ h: Harness) -> [CGRect] { h.system.frameLog.filter { $0.window == window }.map(\.frame) }
 
   /// F48, "its own size, also beside a narrow Desktop". Whether or not floating windows make way: `float` is about this window.
+  /// As Arbor ships it has its place back too.
   @Test(arguments: [false, true]) func aWindowFloatedBesideADesktopNarrowerThanItselfHasItsOwnSize(makingWay: Bool) {
     let (h, _, b, _) = makeHarness(makingWay: makingWay)
     #expect(h.layout!.desktopFrame == CGRect(x: 618, y: 43, width: 394, height: 650), "\(h.ascii())")
-    #expect(h.frame(b) == floated, "as on the real display")
-    #expect(moves(of: b, h) == [floated], "in one move")
+    #expect(h.frame(b) == (makingWay ? floated : untouched))
+    #expect(moves(of: b, h) == [makingWay ? floated : untouched], "in one move")
   }
 
   /// F18. The frame that is its own hangs over the docked column, where `float` put it. Once it has filled the Desktop it is a window

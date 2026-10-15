@@ -702,15 +702,15 @@ import Testing
   }
 
   @Test func floatingAWindowOutOfAColumnPutsItOnTheDesktopNotOverItsOldNeighbour() {
-    // Onto the Desktop only while floating windows make way. As Arbor ships it floats around where it was docked:
-    // `aWindowFloatedByCommandTakesItsOwnSizeAndIsNotSqueezedOntoTheDesktop`.
+    // Onto the Desktop only while floating windows make way. As Arbor ships it goes back to where it was before it was docked:
+    // `FloatGivesThePlaceBackTests`.
     let (h, a, _, _) = makeHarness(makingWay: true)
     let c = h.system.open(app: "Mail", frame: CGRect(x: 500, y: 300, width: 600, height: 400))
     h.run("dock \(c.rawValue) beside \(a.rawValue) bottom")
     #expect(h.run("float \(a.rawValue)").ok)
     // It has its own size back (F48), 600 wide, and the Desktop is narrower. It is on the Desktop as far as it fits
     // and hangs over on both sides alike, instead of lying where its slot was. A window that fits is wholly on the Desktop:
-    // `aFloatedWindowTakesItsOldSizeCentredOnItsSlot`.
+    // `whereFloatingWindowsMakeWayOneWindowIsPutOnTheDesktopAsBefore`.
     let desktop = h.layout!.desktopFrame!
     #expect(h.frame(a)!.size == CGSize(width: 600, height: 400))
     #expect(abs(h.frame(a)!.midX - desktop.midX) <= 1, "\(h.ascii())")

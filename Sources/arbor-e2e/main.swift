@@ -605,14 +605,20 @@ final class Runner {
       check("\(w2) is floating", state.displays[0].floating.contains(w2))
       let desktop = state.displays[0].desktopFrame ?? .zero
       check("the Desktop reaches the right edge", abs(desktop.maxX - (visible.maxX - gap)) <= 3, describe(desktop))
-      // All of it. A Desktop narrower than the window, as on a display 1024 points wide, moves it and does not shrink it (F48): it lies
-      // over the docked windows for the rest.
+      // All of it, whatever is docked where it lay: a floating window's frame is its person's (F48, F64).
       let old = untouched[w2]?.size ?? .zero
       let hasOldSize = poll(3) {
         let size = self.actualFrames()[w2]?.size ?? .zero
         return abs(size.width - old.width) <= 3 && abs(size.height - old.height) <= 3
       }
       check("\(w2) has its old size back", hasOldSize, "\(whereabouts(w2)), not \(Int(old.width))×\(Int(old.height))")
+      // There and back is nothing: the place too.
+      let place = untouched[w2]?.origin ?? .zero
+      let isWhereItWas = poll(3) {
+        let origin = self.actualFrames()[w2]?.origin ?? CGPoint(x: -1, y: -1)
+        return abs(origin.x - place.x) <= 3 && abs(origin.y - place.y) <= 3
+      }
+      check("\(w2) is where it was", isWhereItWas, "\(whereabouts(w2)), not at \(Int(place.x)),\(Int(place.y))")
       check("all of it is on the display", visibleFraction(w2) > 0.99, whereabouts(w2))
     }
     try soleFloatingWindow(w2)
