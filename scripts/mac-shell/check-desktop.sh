@@ -11,6 +11,20 @@ arbor_build
 style() { defaults read -g AppleInterfaceStyle 2>/dev/null || echo Light; }
 shows() { [ "$(basename "$(pointer wallpaper | head -n 1)")" = "$1" ]; }
 on_space() { [ "$(spaces | awk 'NR == 1 { print $3 }')" = "$1" ]; }
+# Every switch of Spaces is recorded as a trace of its own (docs/TRACES.md), which comes back in traces/: what macOS reports of the windows
+# that go and come, in which order and how far apart. Nothing asks Arbor anything while one is recorded.
+# recorded <name> <command…>
+TRACES="$ARBOR_OUT/traces"
+mkdir -p "$TRACES"
+recorded() {
+  local name=$1
+  shift
+  "$ARBOR_BIN/arborctl" trace on "$name" > /dev/null
+  "$@"
+  sleep 3
+  "$ARBOR_BIN/arborctl" trace off > /dev/null
+  cp "$ARBOR_HOME"/traces/*-"$name".jsonl "$TRACES/$name.jsonl" || echo "no trace $name"
+}
 
 # What Arbor draws itself, in one picture each: a tile and seams, the drop preview, the menu.
 portraits() {
@@ -96,14 +110,14 @@ step "Spaces: a second one, there and back, with a tile and seams on the first"
 is docked "$W3" || ctl dock "$W3" right
 summary
 slots="$(arbor_ask slot "$W1") / $(arbor_ask slot "$W3")"
-space_add
+recorded space-added space_add
 spaces
 check "the main display has two Spaces" test "$(spaces | awk 'NR == 1 { print $2 }')" = 2
-space_go right
+recorded space-to-the-second space_go right
 check "⌃→ shows the second Space" on_space 2
 shot spaces-1-second
 summary
-space_go left
+recorded space-back-to-the-first space_go left
 check "⌃← shows the first Space again" on_space 1
 shot spaces-2-first-again
 summary
@@ -113,18 +127,21 @@ check "and the slots are the ones they had" test "$slots" = "$(arbor_ask slot "$
 step "Spaces: carry a docked window to the second Space, as a person does: hold its title bar and press ⌃→"
 ctl float "$W2"
 read -r x y <<< "$(titlebar_of "$W3")"
-drag "$x" "$y" "$((x - 40))" "$((y + 40))" --no-release
-space_go right
-release
+carry() {
+  drag "$x" "$y" "$((x - 40))" "$((y + 40))" --no-release
+  space_go right
+  release
+}
+recorded space-window-carried carry
 check "the second Space shows" on_space 2
 shot spaces-3-carried
 summary
 echo "the window server has the carried window at $(real_frame_of "$W3")"
-space_go left
+recorded space-left-without-the-window space_go left
 shot spaces-4-without-it
 summary
 check "the window that stayed is in its slot" eventually is in_slot "$W1"
-space_go right
+recorded space-right-to-the-window space_go right
 shot spaces-5-with-it
 summary
 space_go left
@@ -133,11 +150,14 @@ step "Mission Control with a tile on the screen"
 ctl dock "$W2" beside "$W1" bottom
 sleep 1
 ctl show-all
-open -a "Mission Control"
-sleep 1.5
-shot mission-control
-key escape
-sleep 1
+mission_control() {
+  open -a "Mission Control"
+  sleep 1.5
+  shot mission-control
+  key escape
+  sleep 1
+}
+recorded mission-control mission_control
 grep -i -E "space|display" "$ARBOR_HOME/arbor.log" | cut -c 26- | uniq -c | tail -n 20
 
 arbor_stop after-quit

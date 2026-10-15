@@ -22,6 +22,23 @@ arbor_build
 echo "displays (id uuid x y w h scale main vendor model serial):"
 "$ARBOR_VDISPLAY" list
 
+# Every change of displays is recorded as a trace of its own (docs/TRACES.md), which comes back in traces/: in which order, and how far apart,
+# macOS reports displays and windows. Nothing asks Arbor anything while one is recorded, so that it holds what happened and not
+# the script's questions: where to point is worked out before, and the checks come after.
+# recorded <name> <command…>
+TRACES="$ARBOR_OUT/traces"
+mkdir -p "$TRACES"
+recorded() {
+  local name=$1
+  shift
+  "$ARBOR_BIN/arborctl" trace on "$name" > /dev/null
+  "$@"
+  # Echoes, put-backs and saves arrive up to a second after the last thing that happened; windows that macOS moves along, later still.
+  sleep 3
+  "$ARBOR_BIN/arborctl" trace off > /dev/null
+  cp "$ARBOR_HOME"/traces/*-"$name".jsonl "$TRACES/$name.jsonl" || echo "no trace $name"
+}
+
 # MARK: What every arrangement is checked for
 
 arranges() { [ "$(arbor_ask displays)" = "$1" ]; }
@@ -143,7 +160,7 @@ ctl dock "$W1" left
 summary
 
 step "plug a display in on the right"
-display_add $WIDTH $HEIGHT right
+recorded display-plugged-in display_add $WIDTH $HEIGHT right
 check "Arbor arranges two displays" eventually arranges 2
 check "Arbor knows the new display by its UUID" test "$(arbor_ask display-id 2)" = "$DISPLAY2_UUID"
 first_uuid=$DISPLAY2_UUID
@@ -154,12 +171,12 @@ shot plugged-in
 step "drag three windows across: one dropped in the middle, one at the far edge, one to become a tile"
 # The windows open in a cascade, so the last one is in front and its title bar is free.
 # shellcheck disable=SC2046
-drag $(titlebar_of "$W5") $(middle_of 2)
+recorded drag-to-the-second-display drag $(titlebar_of "$W5") $(middle_of 2)
 check "dropped on the second display it belongs to the second display" eventually is display2 "$W5"
 ctl dock "$W5" left
 check "docked with a command it stays on the second display" docked_on 2 "$W5"
 # shellcheck disable=SC2046
-drag $(titlebar_of "$W4") $(far_edge right)
+recorded drag-to-the-far-edge drag $(titlebar_of "$W4") $(far_edge right)
 check "dropped at the second display's right edge it docks there" eventually docked_on 2 "$W4"
 # shellcheck disable=SC2046
 drag $(titlebar_of "$W3") $(middle_of 2)
@@ -178,7 +195,7 @@ check_arrangement right
 
 step "unplug the display"
 arranged="$(arbor_ask slot "$W4") / $(arbor_ask slot "$W5") / $(arbor_ask tile "$W3")"
-display_remove
+recorded display-unplugged display_remove
 check "Arbor arranges one display" eventually arranges 1
 sleep 1
 summary
@@ -191,7 +208,7 @@ check "unplugged: window $W1 is in its slot" eventually is in_slot "$W1"
 check "unplugged: window $W2 is in its slot" eventually is in_slot "$W2"
 
 step "plug it in again"
-display_add $WIDTH $HEIGHT right
+recorded display-plugged-in-again display_add $WIDTH $HEIGHT right
 echo "the UUID was $first_uuid and is $DISPLAY2_UUID"
 check "a virtual display with the same serial number keeps its UUID" test "$first_uuid" = "$DISPLAY2_UUID"
 check "Arbor arranges two displays again" eventually arranges 2
@@ -207,25 +224,25 @@ check "replugged: the arrangement is the one that went away" \
 check_geometry replugged
 
 step "move the display to the left of the main one (negative x)"
-display_move left
+recorded display-moved-left display_move left
 check_arrangement left
 
 step "move the display above the main one (negative y)"
-display_move above
+recorded display-moved-above display_move above
 check_arrangement above
 
 step "move the display low on the right, over the corner where the main display parks"
-display_move right 400
+recorded display-moved-low-right display_move right 400
 panorama right-low-all
 check_geometry right-low
 check_cameras right-low
 
 step "swap it for a Retina display"
-display_remove
+recorded display-unplugged-arranged display_remove
 check "Arbor arranges one display" eventually arranges 1
 ARBOR_DISPLAY_SERIAL=2
 ARBOR_DISPLAY_ARGS=--hidpi
-display_add $WIDTH $HEIGHT right
+recorded display-retina-plugged-in display_add $WIDTH $HEIGHT right
 "$ARBOR_VDISPLAY" list
 check "another serial number is another display" test "$first_uuid" != "$DISPLAY2_UUID"
 check "Arbor arranges two displays" eventually arranges 2
