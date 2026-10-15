@@ -283,12 +283,15 @@ private func rect(_ x: CGFloat, _ y: CGFloat, _ width: CGFloat, _ height: CGFloa
     #expect(world.lost == [])
   }
 
-  /// A start sets no frame (QUESTIONS, Q16), and what it finds counts as left. ⌃⌥0 fetches it afterwards.
-  @Test func aStartAfterACrashMovesNothingAndTheKeyFetchesIt() {
+  /// A start sets no frame (QUESTIONS, Q16), and what it finds counts as left, whoever put it there: Arbor cannot tell this strip from one
+  /// a person parked, and its title bar is within reach. So ⌃⌥0 lets it be as well. (Before, the note was gone with the crash, and the
+  /// key fetched it.)
+  @Test func aStartAfterACrashMovesNothingAndWhatItFindsCountsAsLeft() {
     var world = played(Self.leftByAHungApp, then: "crash\nlaunch\nsettle")
     #expect(world.moves(of: a) == [])
     world.play("key down home")
-    #expect(world.frame(a) == rect(800, 840, 800, 600))
+    #expect(world.moves(of: a) == [])
+    #expect(world.lost == [])
   }
 
   // MARK: The same strip by another road: ⌃⌥Z
