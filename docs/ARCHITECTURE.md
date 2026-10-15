@@ -818,10 +818,14 @@ switch it. None of them remembers what the keys were: a key that goes up unheard
 is on, `scrollNeedsALook` sends most scrolls on after reading the event's flags and one comparison under the lock. `ScrollZoom` counts notches and points of travel into steps; with `continuousZoom` the router streams the same scroll as the
 magnification of a pinch that would have stepped as often.
 
-Once a second `PointerInput` checks that Arbor still has Accessibility
-permission and removes the taps if not, because an active tap left behind then
-has been reported to stop all input; the same check switches a tap back on
-that macOS switched off.
+Once macOS 26 has withdrawn the right to tap from a process that has active taps, the first event that a switched-on tap asks for is dropped, and with it
+every event of the whole Mac for about a second, also keys, which no tap of Arbor's asks for; then again at the next such event, until the taps are removed (hosted Macs; nothing is lost without taps). A bare tool that never let go
+was told seconds late, and wrongly, and under a dense stream kept the Mac deaf until it was killed. So the hole is as long as Arbor takes to find out by asking. `TapPermission` (ArborCore, a value) decides, and `EventTapThread` does as it says: a clock
+on the taps' own thread, a beat every 0.15 s while a tap is installed, never on the main run loop, which waits for apps; the question
+(`EventTap.answer`: the flag, then a tap made and thrown away) is put by a third thread, because whoever waits for the window server and the privacy daemon answers for no event
+meanwhile (it took four seconds once, after the daemon had been killed); at a no, or at no answer in time, the taps' thread removes all taps in one turn and refuses to install any; the main thread
+hears afterwards (`PointerInput.permissionChanged`), and the controller only of what macOS said, not of its silence. A late yes, or a yes to the question put once a second from then on, brings them back. Until a
+tap is installed (every gesture switched off) no thread is started, no clock beats, and nobody asks but the controller. After every yes a tap is switched back on that macOS switched off.
 
 What macOS 26 does with a tap that does not answer, measured by stopping Arbor
 (`scripts/mac-shell/input-taps.sh`): the event waits, and so does every event

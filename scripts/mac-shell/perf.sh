@@ -219,5 +219,5 @@ PERF_NO_HOTKEYS=0
 arbor_settings "{$ARBOR_GESTURES_ON}"
 perf_start 4 3
 quiet arrange
-idle "with shortcuts and event taps (and their permission check once a second)"
+idle "with shortcuts and event taps (and their permission check at every beat of their clock)"
 perf_stop

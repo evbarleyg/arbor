@@ -458,7 +458,7 @@ step "the permission check leaves the taps alone while permission is there"
 sleep 3
 check "the taps are still installed" test "$(arbor_taps | wc -l)" -eq 4
 check "the log does not say that permission went away" test "$(grep -c "permission is gone" "$ARBOR_HOME/arbor.log")" -eq 0
-echo "all taps now (a probe tap would show as a fourth of Arbor's):"
+echo "all taps now (a probe tap would show as a fifth of Arbor's):"
 "$WITNESS" taps
 
 step "a shortcut held down"

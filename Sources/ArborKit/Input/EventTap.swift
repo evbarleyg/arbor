@@ -22,7 +22,15 @@ final class EventTapThread: @unchecked Sendable {
   // Touched only on the tap thread.
   /// One for all the taps: see `TapHealth`.
   fileprivate var health = TapHealth()
+  /// One for all the taps: see `TapPermission`.
+  fileprivate var permission = TapPermission()
   fileprivate var taps: [EventTap] = []
+  /// Beats as `TapPermission` needs it.
+  private var clock: (timer: CFRunLoopTimer, interval: Double)?
+  /// How many questions macOS has answered, and how long it took over them, in seconds: what the clock costs.
+  private var answers = (count: 0, total: 0.0, slowest: 0.0)
+  /// Where macOS is asked whether Arbor still may. Whoever waits for that answer answers for no event meanwhile.
+  private let asker = DispatchQueue(label: "dev.arbor.event-taps.asker", qos: .userInteractive)
 
   private init() {
     let ready = DispatchSemaphore(value: 0)
@@ -75,6 +83,75 @@ final class EventTapThread: @unchecked Sendable {
   func async(_ block: @escaping @Sendable () -> Void) {
     CFRunLoopPerformBlock(runLoop, CFRunLoopMode.commonModes.rawValue, block)
     CFRunLoopWakeUp(runLoop)
+  }
+
+  /// Called on the tap thread after it removed the taps because the permission went, and when it is back. It says which:
+  /// whoever hears of it later, on a thread that was busy, hears of every turn in order. And whether macOS said so, or
+  /// said nothing in time. Not a property of the thread: to say who listens must not start it. Until a tap is
+  /// installed there is no thread, no clock and no question.
+  static let onPermissionChange = OSAllocatedUnfairLock<(@Sendable (_ isGone: Bool, _ macOSSaidSo: Bool) -> Void)?>(
+    initialState: nil)
+
+  fileprivate static func now() -> Double { ProcessInfo.processInfo.systemUptime }
+
+  /// Starts the clock, stops it or changes its beat. On the tap thread, after whatever changes which taps there are.
+  fileprivate func keepTheClock() {
+    let interval = permission.clock(tapsAreIn: !taps.isEmpty)
+    guard interval != clock?.interval else { return }
+    if let clock { CFRunLoopTimerInvalidate(clock.timer) }
+    clock = interval.map { interval in
+      // No tolerance: for how long all input can be lost is counted in these beats.
+      let timer = CFRunLoopTimerCreateWithHandler(
+        kCFAllocatorDefault, CFAbsoluteTimeGetCurrent() + interval, interval, 0, 0
+      ) { [unowned self] _ in
+        obey(permission.beat(at: Self.now(), tapsAreIn: !taps.isEmpty))
+      }
+      CFRunLoopAddTimer(runLoop, timer, .commonModes)
+      return (timer!, interval)
+    }
+  }
+
+  /// Does as `TapPermission` says. On the tap thread, and not from a tap's callback unless the order is to ask: a tap must
+  /// not be invalidated from inside its own.
+  fileprivate func obey(_ order: TapPermission.Order) {
+    // A copy: what the owners do on a reset may install and remove taps.
+    let all = taps
+    switch order {
+    case .nothing:
+      break
+    case .ask:
+      asker.async { [self] in
+        let began = Self.now()
+        let answer = EventTap.answer()
+        let took = Self.now() - began
+        async { [self] in
+          answers = (answers.count + 1, answers.total + took, max(answers.slowest, took))
+          // How near answers come to being too late, on a day on which none is.
+          if took > TapPermission.beat / 4 { TapLog.info("macOS took \(Int(took * 1000)) ms to say whether Arbor still may") }
+          obey(permission.heard(answer, at: Self.now(), tapsAreIn: !taps.isEmpty))
+        }
+      }
+    case .lookAfter:
+      for tap in all { tap.reviveIfSwitchedOff() }
+    case .removeAll(let answer):
+      for tap in all { tap.remove() }
+      // No event waits for this thread now, so it may write to the log itself. The main thread, which writes `TapLog`'s
+      // lines, may be busy, and the time on this line is what a probe goes by.
+      Log.info("Accessibility permission is gone (\(answer.words)): removed the pinch and rectangle event taps")
+      Log.info(
+        "macOS was asked \(answers.count) times, and took \(Int(answers.total / Double(max(answers.count, 1)) * 1e6)) µs on "
+          + "average and \(Int(answers.slowest * 1e6)) µs at worst")
+      // After the taps have gone: an owner gives back a press it holds, and posting an event can take long just now.
+      for tap in all { tap.onReset?() }
+      Self.onPermissionChange.withLock { $0 }?(true, answer != .nothing)
+    case .comeBack(let after, let wentFor):
+      // One line that says how long and why, so that a day's log can be asked how many alarms were false.
+      Log.info(
+        "Accessibility permission is back after \(Int((after * 1000).rounded())) ms (\(wentFor.words)): "
+          + "installing the pinch and rectangle event taps")
+      Self.onPermissionChange.withLock { $0 }?(false, true)
+    }
+    keepTheClock()
   }
 
   private final class RunLoopBox: @unchecked Sendable {
@@ -134,7 +211,9 @@ enum TapLog {
 /// that events were missed.
 /// docs/ARCHITECTURE.md, "Writing an event tap", has the rules for handlers.
 ///
-/// An active tap needs the Accessibility permission Arbor already has.
+/// An active tap needs the Accessibility permission Arbor already has. While a process has taps and not the permission,
+/// macOS 26 drops all input at every event they ask for, so the thread keeps asking, and all taps go the moment the answer
+/// is no (`TapPermission`).
 final class EventTap: @unchecked Sendable {
   /// Runs on the tap thread. Returns true to swallow the event. The proxy is
   /// for `CGEvent.tapPostEvent`.
@@ -145,8 +224,8 @@ final class EventTap: @unchecked Sendable {
   static let replayMark: Int64 = 0x4152_424F  // 'ARBO'
 
   let name: String
-  /// Called on the tap thread after macOS switched the tap off, when the taps go to rest and when
-  /// they are switched back on: events were missed.
+  /// Called on the tap thread after macOS switched the tap off, when the taps go to rest, when they are
+  /// switched back on and when the thread has removed them: events were missed.
   var onReset: (@Sendable () -> Void)?
 
   private let mask: CGEventMask
@@ -212,14 +291,12 @@ final class EventTap: @unchecked Sendable {
 
   /// Switches the tap back on if it is off: the taps' rest is over (`TapHealth`), or macOS switched it off
   /// and has not told the callback yet. It tells it in place of the next event the tap would have
-  /// had, so without this the first gesture after a stall is lost. Call it now and then, from any thread.
+  /// had, so without this the first gesture after a stall is lost. On the tap thread, after every yes to its clock's question.
   func reviveIfSwitchedOff() {
-    EventTapThread.shared.async { [self] in
-      // A paused tap too may find that the rest is over: there may be no other, and it could never be resumed.
-      let isResting = EventTapThread.shared.health.isResting
-      guard let port, isResting || (!isPaused && !CGEvent.tapIsEnabled(tap: port)) else { return }
-      act(on: EventTapThread.shared.health.foundOff(at: Self.now()), port, found: "the \(name) event tap was off")
-    }
+    // A paused tap too may find that the rest is over: there may be no other, and it could never be resumed.
+    let isResting = EventTapThread.shared.health.isResting
+    guard let port, isResting || (!isPaused && !CGEvent.tapIsEnabled(tap: port)) else { return }
+    act(on: EventTapThread.shared.health.foundOff(at: Self.now()), port, found: "the \(name) event tap was off")
   }
 
   /// Does as `TapHealth` says about this tap, which is off though it should be on. On the tap thread.
@@ -250,10 +327,12 @@ final class EventTap: @unchecked Sendable {
     }
   }
 
-  private static func now() -> Double { ProcessInfo.processInfo.systemUptime }
+  private static func now() -> Double { EventTapThread.now() }
 
   private func install(paused: Bool) -> Bool {
     guard port == nil else { return true }
+    // The main thread may not have heard yet. The owners are told when the permission is back.
+    guard EventTapThread.shared.permission.mayInstall else { return false }
     let reference = Unmanaged.passRetained(self)
     guard
       let port = CGEvent.tapCreate(
@@ -274,11 +353,12 @@ final class EventTap: @unchecked Sendable {
     retainedSelf = reference
     EventTapThread.shared.taps.append(self)
     installed.withLock { $0 = true }
+    EventTapThread.shared.keepTheClock()
     TapLog.debug("\(name) event tap installed")
     return true
   }
 
-  private func remove() {
+  fileprivate func remove() {
     guard let port else { return }
     CGEvent.tapEnable(tap: port, enable: false)
     if let source { CFRunLoopRemoveSource(CFRunLoopGetCurrent(), source, .commonModes) }
@@ -287,6 +367,7 @@ final class EventTap: @unchecked Sendable {
     source = nil
     EventTapThread.shared.taps.removeAll { $0 === self }
     installed.withLock { $0 = false }
+    EventTapThread.shared.keepTheClock()
     // Last, because it may drop the final reference to this object.
     let reference = retainedSelf
     retainedSelf = nil
@@ -300,32 +381,35 @@ final class EventTap: @unchecked Sendable {
   /// A tap is born switched on, and nothing serves this one, so an event that arrived before it is
   /// thrown away would wait for an answer that never comes. It therefore watches only for a
   /// drawing tablet's pen coming near, not for anything a mouse or a trackpad sends.
-  static func isPermitted() -> Bool { refusal() == nil }
+  static func isPermitted() -> Bool { answer() == .yes }
 
-  /// Nil if permitted, otherwise which of the two said no, for the log: nobody has yet seen on a running Arbor
-  /// whether the flag turns at once.
-  static func refusal() -> String? {
-    guard AXIsProcessTrusted() else { return "AXIsProcessTrusted says no" }
+  /// The same, and which of the two said no. From any thread but the one that events wait for.
+  static func answer() -> TapPermission.Answer {
+    guard AXIsProcessTrusted() else { return .flagSaysNo }
     let mask = CGEventMask(1) << CGEventType.tabletProximity.rawValue
     guard
       let probe = CGEvent.tapCreate(
         tap: .cgSessionEventTap, place: .tailAppendEventTap, options: .defaultTap,
         eventsOfInterest: mask, callback: eventTapCallback, userInfo: nil)
-    else { return "AXIsProcessTrusted says yes, but macOS refused a tap" }
+    else { return .tapRefused }
     CGEvent.tapEnable(tap: probe, enable: false)
     CFMachPortInvalidate(probe)
-    return nil
+    return .yes
   }
 
   /// Returns true to swallow the event.
   fileprivate func handle(_ type: CGEventType, _ event: CGEvent, proxy: CGEventTapProxy) -> Bool {
     switch type {
     case .tapDisabledByTimeout, .tapDisabledByUserInput:
+      let reason = type == .tapDisabledByTimeout ? "it was too slow" : "of user input"
+      // Every such word is written down, also those that are not acted on below. One that finds its tap switched on is what a
+      // bare tool heard, seconds late, after it had lost the right to tap. So macOS is asked at once; the word itself is not believed.
+      TapLog.info("macOS says that it switched the \(name) event tap off because \(reason)")
+      EventTapThread.shared.obey(EventTapThread.shared.permission.toldOff(at: Self.now()))
       // In case macOS reports Arbor's own pause this way: a paused tap stays off. And macOS says it late, in place of the
       // next event: a word that finds the tap on is about a switch-off the regular check has counted and mended
       // already. Counted again, one freeze would be two, and stale words after a rest could begin another.
       guard !isPaused, let port, !CGEvent.tapIsEnabled(tap: port) else { return false }
-      let reason = type == .tapDisabledByTimeout ? "it was too slow" : "of user input"
       act(
         on: EventTapThread.shared.health.switchedOff(at: Self.now()), port,
         found: "macOS switched the \(name) event tap off because \(reason)")
