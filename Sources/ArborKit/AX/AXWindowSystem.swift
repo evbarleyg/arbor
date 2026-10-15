@@ -733,7 +733,8 @@ public final class AXWindowSystem: WindowSystem {
         self.reportFocus(ofAppThatCameForward: pid, earlierLooks: earlierLooks + 1)
       }
     case .giveUp:
-      Log.debug("pid \(pid) came forward and was never named as the app in front: nothing is reported")
+      // For everybody to read: a switch may have been missed, and nothing else will say so.
+      Log.info("pid \(pid) came forward and was never named as the app in front: nothing is reported")
     }
   }
 
