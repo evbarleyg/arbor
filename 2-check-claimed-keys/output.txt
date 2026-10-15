@@ -1,0 +1,411 @@
+# mac-shell: scripts/mac-shell/check-claimed-keys.sh at d0bb3b3, macOS 26.6.2, 2026-10-15T14:15Z
+built Arbor, the pointer tool and the app bundles in 4s
+26.6.2
+
+== 0. the control: no Arbor at all
+> key j
+> key ctrl+opt+z
+RESULT | no Arbor | status: no Arbor | item in the menu bar: no | the app got: 1 down, 1 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 0
+  ✔ with nobody to take it, the key reaches the app: the witness works
+
+== 1. waiting for the permission: a first launch
+Arbor pid 8762: waiting for Accessibility permission (System Settings → Privacy & Secu
+  ✔ Arbor waits for the permission
+shot: mac-shell/10-waiting.png
+  ✔ its item is in the menu bar
+  ✔ the keys were registered before the item was made
+> key j
+> click 150 620
+> key j
+> key ctrl+opt+z
+RESULT | waiting for the permission (first launch) | status: waiting for Accessibility permission (System Settings → Privacy & Secu | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 1
+  ✔ the key is taken all the same
+  ✔ and the line says why
+shot: mac-shell/10-waiting-the-line.png
+Right now: Arbor takes them and can move nothing without Accessibility permission.
+arborctl: ✘ Accessibility: not granted, so Arbor cannot move windows (System Settings → Privacy & Security → Accessibility; the `check-setup` command opens a window that explains it)
+✔ Shortcuts: 9 registered
+> click 780 15 --right
+shot: mac-shell/11-waiting-its-menu.png
+> key escape
+> key j
+> click 150 620
+> key j
+> key ctrl+opt+z
+RESULT | waiting for the permission, a second time | status: waiting for Accessibility permission (System Settings → Privacy & Secu | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 1
+  ✔ a second time too
+
+== 1b. the permission arrives: the control for 1
+1792073765.70 the bundle has an entry that allows
+  ✔ Arbor starts by itself
+2026-10-15T14:15:47.595Z INFO  registered 9 shortcuts in 960 µs
+> key j
+> key ctrl+opt+z
+RESULT | running, permission granted while it waited | status: running: 1 display, 0 docked and 1 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 2
+  ✔ the key is Arbor's
+  ✔ and Arbor answers it
+shot: mac-shell/12-running.png
+
+== 1p. a peek's keys, from the press on: of the nine that ship ⌃⌥↓ is bound to nothing (board 1.80)
+> key j
+> key ctrl+opt+down
+RESULT | running, no peek: a key that is bound to nothing | status: running: 1 display, 0 docked and 1 floating, 0 out of view | item in the menu bar: yes | the app got: 1 down, 1 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 0
+  ✔ the control: without a peek it is the app's
+> key j
+> key ctrl+opt+space --down
+> key ctrl+opt+space --up
+RESULT | 1 a. as it failed: J, then the press, the tool gone | held: 0 | found up: 1 | in front: dev.arbor.test.keys
+  Arbor:
+    2026-10-15T14:16:16.706Z INFO  show-all: showing everything
+    2026-10-15T14:16:16.743Z DEBUG PROBE isHolding: key combined=false hid=true ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    2026-10-15T14:16:16.743Z DEBUG peek: the keys were found up
+  Arbor's looks, the same ones counted:
+       1 key combined=false hid=true ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+  from outside:
+    14:16:16.058 key combined=false hid=false ctrl=false opt=false flags appkit=0 combined=536870912 hid=536870912
+    14:16:16.518 key combined=false hid=false ctrl=true opt=false flags appkit=262144 combined=537133056 hid=537133056
+    14:16:16.610 key combined=false hid=false ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    14:16:16.705 key combined=true hid=true ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    14:16:17.802 key combined=false hid=false ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    14:16:17.845 key combined=false hid=false ctrl=true opt=false flags appkit=262144 combined=537133056 hid=537133056
+    14:16:17.904 key combined=false hid=false ctrl=false opt=false flags appkit=0 combined=536870912 hid=536870912
+> key ctrl+opt+space --down
+> key ctrl+opt+space --up
+RESULT | 1 b. no J before it | held: 0 | found up: 1 | in front: dev.arbor.test.keys
+  Arbor:
+    2026-10-15T14:16:20.293Z INFO  show-all: showing everything
+    2026-10-15T14:16:20.329Z DEBUG PROBE isHolding: key combined=false hid=true ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    2026-10-15T14:16:20.329Z DEBUG peek: the keys were found up
+  Arbor's looks, the same ones counted:
+       1 key combined=false hid=true ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+  from outside:
+    14:16:19.673 key combined=false hid=false ctrl=false opt=false flags appkit=0 combined=536870912 hid=536870912
+    14:16:20.138 key combined=false hid=false ctrl=true opt=false flags appkit=262144 combined=537133056 hid=537133056
+    14:16:20.193 key combined=false hid=false ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    14:16:20.297 key combined=true hid=true ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    14:16:21.527 key combined=false hid=false ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    14:16:21.628 key combined=false hid=false ctrl=true opt=false flags appkit=262144 combined=537133056 hid=537133056
+    14:16:21.714 key combined=false hid=false ctrl=false opt=false flags appkit=0 combined=536870912 hid=536870912
+> key j
+  afterwards the witness hears
+> key j
+> key ctrl+opt+space --down
+> key ctrl+opt+space --up
+RESULT | 1 c. J, two seconds, then the press | held: 0 | found up: 1 | in front: dev.arbor.test.keys
+  Arbor:
+    2026-10-15T14:16:27.087Z INFO  show-all: showing everything
+    2026-10-15T14:16:27.175Z DEBUG PROBE isHolding: key combined=false hid=true ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    2026-10-15T14:16:27.175Z DEBUG peek: the keys were found up
+  Arbor's looks, the same ones counted:
+       1 key combined=false hid=true ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+  from outside:
+    14:16:26.541 key combined=false hid=false ctrl=false opt=false flags appkit=0 combined=536870912 hid=536870912
+    14:16:26.954 key combined=false hid=false ctrl=true opt=false flags appkit=262144 combined=537133056 hid=537133056
+    14:16:27.023 key combined=false hid=false ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    14:16:27.085 key combined=true hid=true ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    14:16:28.221 key combined=false hid=false ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    14:16:28.311 key combined=false hid=false ctrl=true opt=false flags appkit=262144 combined=537133056 hid=537133056
+    14:16:28.394 key combined=false hid=false ctrl=false opt=false flags appkit=0 combined=536870912 hid=536870912
+> key j
+> key ctrl+opt+space --down --linger 1.5
+> key ctrl+opt+space --up
+RESULT | 1 d. J, and the tool stays alive through the hold | held: 0 | found up: 1 | in front: dev.arbor.test.keys
+  Arbor:
+    2026-10-15T14:16:31.162Z INFO  show-all: showing everything
+    2026-10-15T14:16:31.197Z DEBUG PROBE isHolding: key combined=false hid=true ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    2026-10-15T14:16:31.197Z DEBUG peek: the keys were found up
+  Arbor's looks, the same ones counted:
+       1 key combined=false hid=true ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+  from outside:
+    14:16:30.649 key combined=false hid=false ctrl=false opt=false flags appkit=0 combined=536870912 hid=536870912
+    14:16:31.079 key combined=false hid=false ctrl=true opt=false flags appkit=262144 combined=537133056 hid=537133056
+    14:16:31.113 key combined=false hid=false ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    14:16:31.159 key combined=true hid=true ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    14:16:32.173 key combined=false hid=false ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    14:16:32.254 key combined=false hid=false ctrl=true opt=false flags appkit=262144 combined=537133056 hid=537133056
+    14:16:32.297 key combined=false hid=false ctrl=false opt=false flags appkit=0 combined=536870912 hid=536870912
+> key j
+> key ctrl+opt+space --up
+RESULT | 1 x. J, and another tool presses: a keyboard's own bits, alive, with repeats | held: 0 | found up: 1 | in front: dev.arbor.test.keys
+  Arbor:
+    2026-10-15T14:16:35.074Z INFO  show-all: showing everything
+    2026-10-15T14:16:35.142Z DEBUG PROBE isHolding: key combined=false hid=true ctrl=true opt=true flags appkit=786432 combined=537657633 hid=537657633
+    2026-10-15T14:16:35.142Z DEBUG peek: the keys were found up
+  Arbor's looks, the same ones counted:
+       1 key combined=false hid=true ctrl=true opt=true flags appkit=786432 combined=537657633 hid=537657633
+  from outside:
+    14:16:34.523 key combined=false hid=false ctrl=false opt=false flags appkit=0 combined=536870912 hid=536870912
+    14:16:35.002 key combined=false hid=false ctrl=true opt=false flags appkit=262144 combined=537133313 hid=537133313
+    14:16:35.018 key combined=false hid=false ctrl=true opt=true flags appkit=786432 combined=537657633 hid=537657633
+    14:16:35.077 key combined=true hid=true ctrl=true opt=true flags appkit=786432 combined=537657633 hid=537657633
+    14:16:36.080 key combined=false hid=false ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    14:16:36.111 key combined=false hid=false ctrl=true opt=false flags appkit=262144 combined=537133056 hid=537133056
+    14:16:36.150 key combined=true hid=true ctrl=true opt=true flags appkit=786432 combined=537657633 hid=537657633
+    14:16:36.198 key combined=true hid=true ctrl=false opt=false flags appkit=0 combined=536870912 hid=536870912
+    14:16:36.258 key combined=true hid=true ctrl=true opt=true flags appkit=786432 combined=537657633 hid=537657633
+shortcuts = all (was core)
+> key j
+> key ctrl+opt+space --down
+> key ctrl+opt+space --up
+RESULT | 1 e. the whole map: nothing is asked for at the press | held: 0 | found up: 1 | in front: dev.arbor.test.keys
+  Arbor:
+    2026-10-15T14:16:39.678Z INFO  show-all: showing everything
+    2026-10-15T14:16:39.720Z DEBUG PROBE isHolding: key combined=false hid=true ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    2026-10-15T14:16:39.720Z DEBUG peek: the keys were found up
+  Arbor's looks, the same ones counted:
+       1 key combined=false hid=true ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+  from outside:
+    14:16:39.026 key combined=false hid=false ctrl=false opt=false flags appkit=0 combined=536870912 hid=536870912
+    14:16:39.511 key combined=false hid=false ctrl=true opt=false flags appkit=262144 combined=537133056 hid=537133056
+    14:16:39.565 key combined=false hid=false ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    14:16:39.679 key combined=true hid=true ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    14:16:40.793 key combined=false hid=false ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    14:16:40.860 key combined=false hid=false ctrl=true opt=false flags appkit=262144 combined=537133056 hid=537133056
+    14:16:40.895 key combined=false hid=false ctrl=false opt=false flags appkit=0 combined=536870912 hid=536870912
+shortcuts = core (was all)
+> key j
+> key ctrl+opt+space --down
+> key ctrl+opt+space --up
+RESULT | 2 a. as it failed: J, then the press, the tool gone | held: 0 | found up: 1 | in front: dev.arbor.test.keys
+  Arbor:
+    2026-10-15T14:16:44.578Z INFO  show-all: showing everything
+    2026-10-15T14:16:44.613Z DEBUG PROBE isHolding: key combined=false hid=true ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    2026-10-15T14:16:44.614Z DEBUG peek: the keys were found up
+  Arbor's looks, the same ones counted:
+       1 key combined=false hid=true ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+  from outside:
+    14:16:43.877 key combined=false hid=false ctrl=false opt=false flags appkit=0 combined=536870912 hid=536870912
+    14:16:44.445 key combined=false hid=false ctrl=true opt=false flags appkit=262144 combined=537133056 hid=537133056
+    14:16:44.529 key combined=false hid=false ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    14:16:44.580 key combined=true hid=true ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    14:16:45.806 key combined=false hid=false ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    14:16:45.880 key combined=false hid=false ctrl=true opt=false flags appkit=262144 combined=537133056 hid=537133056
+    14:16:45.907 key combined=false hid=false ctrl=false opt=false flags appkit=0 combined=536870912 hid=536870912
+> key ctrl+opt+space --down
+> key ctrl+opt+space --up
+RESULT | 2 b. no J before it | held: 0 | found up: 1 | in front: dev.arbor.test.keys
+  Arbor:
+    2026-10-15T14:16:48.327Z INFO  show-all: showing everything
+    2026-10-15T14:16:48.364Z DEBUG PROBE isHolding: key combined=false hid=true ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    2026-10-15T14:16:48.364Z DEBUG peek: the keys were found up
+  Arbor's looks, the same ones counted:
+       1 key combined=false hid=true ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+  from outside:
+    14:16:47.689 key combined=false hid=false ctrl=false opt=false flags appkit=0 combined=536870912 hid=536870912
+    14:16:48.180 key combined=false hid=false ctrl=true opt=false flags appkit=262144 combined=537133056 hid=537133056
+    14:16:48.279 key combined=false hid=false ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    14:16:48.327 key combined=true hid=true ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    14:16:49.530 key combined=false hid=false ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    14:16:49.589 key combined=false hid=false ctrl=true opt=false flags appkit=262144 combined=537133056 hid=537133056
+    14:16:49.622 key combined=false hid=false ctrl=false opt=false flags appkit=0 combined=536870912 hid=536870912
+> key j
+  afterwards the witness hears
+> key j
+> key ctrl+opt+space --down
+> key ctrl+opt+space --up
+RESULT | 2 c. J, two seconds, then the press | held: 0 | found up: 1 | in front: dev.arbor.test.keys
+  Arbor:
+    2026-10-15T14:16:54.836Z INFO  show-all: showing everything
+    2026-10-15T14:16:54.873Z DEBUG PROBE isHolding: key combined=false hid=true ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    2026-10-15T14:16:54.873Z DEBUG peek: the keys were found up
+  Arbor's looks, the same ones counted:
+       1 key combined=false hid=true ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+  from outside:
+    14:16:54.231 key combined=false hid=false ctrl=false opt=false flags appkit=0 combined=536870912 hid=536870912
+    14:16:54.648 key combined=false hid=false ctrl=true opt=false flags appkit=262144 combined=537133056 hid=537133056
+    14:16:54.746 key combined=false hid=false ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    14:16:54.831 key combined=true hid=true ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    14:16:55.927 key combined=false hid=false ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    14:16:56.009 key combined=false hid=false ctrl=true opt=false flags appkit=262144 combined=537133056 hid=537133056
+    14:16:56.080 key combined=false hid=false ctrl=false opt=false flags appkit=0 combined=536870912 hid=536870912
+> key j
+> key ctrl+opt+space --down --linger 1.5
+> key ctrl+opt+space --up
+RESULT | 2 d. J, and the tool stays alive through the hold | held: 0 | found up: 1 | in front: dev.arbor.test.keys
+  Arbor:
+    2026-10-15T14:16:59.016Z INFO  show-all: showing everything
+    2026-10-15T14:16:59.053Z DEBUG PROBE isHolding: key combined=false hid=true ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    2026-10-15T14:16:59.053Z DEBUG peek: the keys were found up
+  Arbor's looks, the same ones counted:
+       1 key combined=false hid=true ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+  from outside:
+    14:16:58.401 key combined=false hid=false ctrl=false opt=false flags appkit=0 combined=536870912 hid=536870912
+    14:16:58.872 key combined=false hid=false ctrl=true opt=false flags appkit=262144 combined=537133056 hid=537133056
+    14:16:58.937 key combined=false hid=false ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    14:16:59.018 key combined=true hid=true ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    14:16:59.932 key combined=false hid=false ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    14:16:59.957 key combined=false hid=false ctrl=true opt=false flags appkit=262144 combined=537133056 hid=537133056
+    14:17:00.032 key combined=false hid=false ctrl=false opt=false flags appkit=0 combined=536870912 hid=536870912
+> key j
+> key ctrl+opt+space --up
+RESULT | 2 x. J, and another tool presses: a keyboard's own bits, alive, with repeats | held: 0 | found up: 1 | in front: dev.arbor.test.keys
+  Arbor:
+    2026-10-15T14:17:02.804Z INFO  show-all: showing everything
+    2026-10-15T14:17:02.839Z DEBUG PROBE isHolding: key combined=false hid=true ctrl=true opt=true flags appkit=786432 combined=537657633 hid=537657633
+    2026-10-15T14:17:02.839Z DEBUG peek: the keys were found up
+  Arbor's looks, the same ones counted:
+       1 key combined=false hid=true ctrl=true opt=true flags appkit=786432 combined=537657633 hid=537657633
+  from outside:
+    14:17:02.318 key combined=false hid=false ctrl=false opt=false flags appkit=0 combined=536870912 hid=536870912
+    14:17:02.737 key combined=false hid=false ctrl=true opt=false flags appkit=262144 combined=537133313 hid=537133313
+    14:17:02.772 key combined=false hid=false ctrl=true opt=true flags appkit=786432 combined=537657633 hid=537657633
+    14:17:02.802 key combined=true hid=true ctrl=true opt=true flags appkit=786432 combined=537657633 hid=537657633
+    14:17:03.813 key combined=false hid=false ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    14:17:03.844 key combined=false hid=false ctrl=true opt=false flags appkit=262144 combined=537133056 hid=537133056
+    14:17:03.887 key combined=false hid=false ctrl=false opt=false flags appkit=0 combined=536870912 hid=536870912
+    14:17:03.917 key combined=true hid=true ctrl=true opt=true flags appkit=786432 combined=537657633 hid=537657633
+shortcuts = all (was core)
+> key j
+> key ctrl+opt+space --down
+> key ctrl+opt+space --up
+RESULT | 2 e. the whole map: nothing is asked for at the press | held: 0 | found up: 1 | in front: dev.arbor.test.keys
+  Arbor:
+    2026-10-15T14:17:07.230Z INFO  show-all: showing everything
+    2026-10-15T14:17:07.264Z DEBUG PROBE isHolding: key combined=false hid=true ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    2026-10-15T14:17:07.265Z DEBUG peek: the keys were found up
+  Arbor's looks, the same ones counted:
+       1 key combined=false hid=true ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+  from outside:
+    14:17:06.661 key combined=false hid=false ctrl=false opt=false flags appkit=0 combined=536870912 hid=536870912
+    14:17:07.094 key combined=false hid=false ctrl=true opt=false flags appkit=262144 combined=537133056 hid=537133056
+    14:17:07.131 key combined=false hid=false ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    14:17:07.230 key combined=true hid=true ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    14:17:08.350 key combined=false hid=false ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    14:17:08.417 key combined=false hid=false ctrl=true opt=false flags appkit=262144 combined=537133056 hid=537133056
+    14:17:08.510 key combined=false hid=false ctrl=false opt=false flags appkit=0 combined=536870912 hid=536870912
+shortcuts = core (was all)
+> key ctrl+opt+space --down
+> key ctrl+opt+space --up
+RESULT | f. another app has the keyboard, no J | held: 0 | found up: 1 | in front: com.apple.calculator
+  Arbor:
+    2026-10-15T14:17:14.075Z INFO  show-all: showing everything
+    2026-10-15T14:17:14.149Z DEBUG PROBE isHolding: key combined=false hid=true ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    2026-10-15T14:17:14.149Z DEBUG peek: the keys were found up
+  Arbor's looks, the same ones counted:
+       1 key combined=false hid=true ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+  from outside:
+    14:17:13.192 key combined=false hid=false ctrl=false opt=false flags appkit=0 combined=536870912 hid=536870912
+    14:17:13.902 key combined=false hid=false ctrl=true opt=false flags appkit=262144 combined=537133056 hid=537133056
+    14:17:13.994 key combined=false hid=false ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    14:17:14.079 key combined=true hid=true ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    14:17:15.292 key combined=false hid=false ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    14:17:15.326 key combined=false hid=false ctrl=true opt=false flags appkit=262144 combined=537133056 hid=537133056
+    14:17:15.370 key combined=false hid=false ctrl=false opt=false flags appkit=0 combined=536870912 hid=536870912
+> key ctrl+opt+space --down
+> key ctrl+opt+space --up
+RESULT | f. the same again | held: 0 | found up: 1 | in front: com.apple.calculator
+  Arbor:
+    2026-10-15T14:17:18.314Z INFO  show-all: showing everything
+    2026-10-15T14:17:18.351Z DEBUG PROBE isHolding: key combined=false hid=true ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    2026-10-15T14:17:18.351Z DEBUG peek: the keys were found up
+  Arbor's looks, the same ones counted:
+       1 key combined=false hid=true ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+  from outside:
+    14:17:17.224 key combined=false hid=false ctrl=false opt=false flags appkit=0 combined=536870912 hid=536870912
+    14:17:17.708 key combined=false hid=false ctrl=true opt=false flags appkit=262144 combined=537133056 hid=537133056
+    14:17:17.919 key combined=false hid=false ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    14:17:18.318 key combined=true hid=true ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    14:17:19.473 key combined=false hid=false ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    14:17:19.556 key combined=false hid=false ctrl=true opt=false flags appkit=262144 combined=537133056 hid=537133056
+    14:17:19.584 key combined=false hid=false ctrl=false opt=false flags appkit=0 combined=536870912 hid=536870912
+showing the welcome window
+shot: mac-shell/60-welcome.png
+> key ctrl+opt+space --down
+> key ctrl+opt+space --up
+RESULT | g. Arbor's welcome window was asked for, nobody brought forward, no J | held: 1 | found up: 0 | in front: dev.arbor.test.keys
+  Arbor:
+    2026-10-15T14:17:25.556Z INFO  show-all: showing everything
+    2026-10-15T14:17:25.593Z DEBUG PROBE isHolding: key combined=true hid=true ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    2026-10-15T14:17:25.627Z DEBUG PROBE isHolding: key combined=true hid=true ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    2026-10-15T14:17:25.662Z DEBUG PROBE isHolding: key combined=true hid=true ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    2026-10-15T14:17:25.698Z DEBUG PROBE isHolding: key combined=true hid=true ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    2026-10-15T14:17:25.733Z DEBUG PROBE isHolding: key combined=true hid=true ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    2026-10-15T14:17:25.769Z DEBUG PROBE isHolding: key combined=true hid=true ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+  Arbor's looks, the same ones counted:
+      30 key combined=true hid=true ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+  from outside:
+    14:17:24.926 key combined=false hid=false ctrl=false opt=false flags appkit=0 combined=536870912 hid=536870912
+    14:17:25.386 key combined=false hid=false ctrl=true opt=false flags appkit=262144 combined=537133056 hid=537133056
+    14:17:25.473 key combined=false hid=false ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    14:17:25.556 key combined=true hid=true ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    14:17:26.690 key combined=false hid=false ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    14:17:26.787 key combined=false hid=false ctrl=true opt=false flags appkit=262144 combined=537133056 hid=537133056
+    14:17:26.879 key combined=false hid=false ctrl=false opt=false flags appkit=0 combined=536870912 hid=536870912
+> key j
+  afterwards the witness DOES NOT HEAR
+> key ctrl+opt+space --down
+> key ctrl+opt+space --up
+RESULT | g. the same again, after a J | held: 1 | found up: 0 | in front: dev.arbor.test.keys
+  Arbor:
+    2026-10-15T14:17:29.786Z INFO  show-all: showing everything
+    2026-10-15T14:17:29.828Z DEBUG PROBE isHolding: key combined=true hid=true ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    2026-10-15T14:17:29.866Z DEBUG PROBE isHolding: key combined=true hid=true ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    2026-10-15T14:17:29.900Z DEBUG PROBE isHolding: key combined=true hid=true ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    2026-10-15T14:17:29.939Z DEBUG PROBE isHolding: key combined=true hid=true ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    2026-10-15T14:17:29.980Z DEBUG PROBE isHolding: key combined=true hid=true ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    2026-10-15T14:17:30.021Z DEBUG PROBE isHolding: key combined=true hid=true ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+  Arbor's looks, the same ones counted:
+      29 key combined=true hid=true ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+  from outside:
+    14:17:29.156 key combined=false hid=false ctrl=false opt=false flags appkit=0 combined=536870912 hid=536870912
+    14:17:29.633 key combined=false hid=false ctrl=true opt=false flags appkit=262144 combined=537133056 hid=537133056
+    14:17:29.665 key combined=false hid=false ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    14:17:29.792 key combined=true hid=true ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    14:17:30.948 key combined=false hid=false ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    14:17:30.981 key combined=false hid=false ctrl=true opt=false flags appkit=262144 combined=537133056 hid=537133056
+    14:17:31.007 key combined=false hid=false ctrl=false opt=false flags appkit=0 combined=536870912 hid=536870912
+> key j
+> key ctrl+opt+space --down
+> key ctrl+opt+space --up
+RESULT | h. no Arbor at all: J, then the press | held: 0 | found up: 0 | in front: dev.arbor.test.keys
+  Arbor:
+  Arbor's looks, the same ones counted:
+  from outside:
+    14:17:33.289 key combined=false hid=false ctrl=false opt=false flags appkit=0 combined=536870912 hid=536870912
+    14:17:33.746 key combined=false hid=false ctrl=true opt=false flags appkit=262144 combined=537133056 hid=537133056
+    14:17:33.832 key combined=false hid=false ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    14:17:33.888 key combined=true hid=true ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    14:17:35.061 key combined=false hid=false ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    14:17:35.127 key combined=false hid=false ctrl=true opt=false flags appkit=262144 combined=537133056 hid=537133056
+    14:17:35.168 key combined=false hid=false ctrl=false opt=false flags appkit=0 combined=536870912 hid=536870912
+> key ctrl+opt+space --down
+> key ctrl+opt+space --up
+RESULT | h. the same, no J | held: 0 | found up: 0 | in front: dev.arbor.test.keys
+  Arbor:
+  Arbor's looks, the same ones counted:
+  from outside:
+    14:17:36.955 key combined=false hid=false ctrl=false opt=false flags appkit=0 combined=536870912 hid=536870912
+    14:17:37.451 key combined=false hid=false ctrl=true opt=false flags appkit=262144 combined=537133056 hid=537133056
+    14:17:37.558 key combined=false hid=false ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    14:17:37.675 key combined=true hid=true ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    14:17:38.882 key combined=false hid=false ctrl=true opt=true flags appkit=786432 combined=537657344 hid=537657344
+    14:17:38.965 key combined=false hid=false ctrl=true opt=false flags appkit=262144 combined=537133056 hid=537133056
+    14:17:39.022 key combined=false hid=false ctrl=false opt=false flags appkit=0 combined=536870912 hid=536870912
+
+== the table
+RESULT | no Arbor | status: no Arbor | item in the menu bar: no | the app got: 1 down, 1 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 0
+RESULT | waiting for the permission (first launch) | status: waiting for Accessibility permission (System Settings → Privacy & Secu | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 1
+RESULT | waiting for the permission, a second time | status: waiting for Accessibility permission (System Settings → Privacy & Secu | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 1
+RESULT | running, permission granted while it waited | status: running: 1 display, 0 docked and 1 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 2
+RESULT | running, no peek: a key that is bound to nothing | status: running: 1 display, 0 docked and 1 floating, 0 out of view | item in the menu bar: yes | the app got: 1 down, 1 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 0
+RESULT | 1 a. as it failed: J, then the press, the tool gone | held: 0 | found up: 1 | in front: dev.arbor.test.keys
+RESULT | 1 b. no J before it | held: 0 | found up: 1 | in front: dev.arbor.test.keys
+RESULT | 1 c. J, two seconds, then the press | held: 0 | found up: 1 | in front: dev.arbor.test.keys
+RESULT | 1 d. J, and the tool stays alive through the hold | held: 0 | found up: 1 | in front: dev.arbor.test.keys
+RESULT | 1 x. J, and another tool presses: a keyboard's own bits, alive, with repeats | held: 0 | found up: 1 | in front: dev.arbor.test.keys
+RESULT | 1 e. the whole map: nothing is asked for at the press | held: 0 | found up: 1 | in front: dev.arbor.test.keys
+RESULT | 2 a. as it failed: J, then the press, the tool gone | held: 0 | found up: 1 | in front: dev.arbor.test.keys
+RESULT | 2 b. no J before it | held: 0 | found up: 1 | in front: dev.arbor.test.keys
+RESULT | 2 c. J, two seconds, then the press | held: 0 | found up: 1 | in front: dev.arbor.test.keys
+RESULT | 2 d. J, and the tool stays alive through the hold | held: 0 | found up: 1 | in front: dev.arbor.test.keys
+RESULT | 2 x. J, and another tool presses: a keyboard's own bits, alive, with repeats | held: 0 | found up: 1 | in front: dev.arbor.test.keys
+RESULT | 2 e. the whole map: nothing is asked for at the press | held: 0 | found up: 1 | in front: dev.arbor.test.keys
+RESULT | f. another app has the keyboard, no J | held: 0 | found up: 1 | in front: com.apple.calculator
+RESULT | f. the same again | held: 0 | found up: 1 | in front: com.apple.calculator
+RESULT | g. Arbor's welcome window was asked for, nobody brought forward, no J | held: 1 | found up: 0 | in front: dev.arbor.test.keys
+RESULT | g. the same again, after a J | held: 1 | found up: 0 | in front: dev.arbor.test.keys
+RESULT | h. no Arbor at all: J, then the press | held: 0 | found up: 0 | in front: dev.arbor.test.keys
+RESULT | h. the same, no J | held: 0 | found up: 0 | in front: dev.arbor.test.keys
+
+11 passed, 0 failed
+exit code 0

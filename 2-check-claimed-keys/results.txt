@@ -1,0 +1,23 @@
+RESULT | no Arbor | status: no Arbor | item in the menu bar: no | the app got: 1 down, 1 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 0
+RESULT | waiting for the permission (first launch) | status: waiting for Accessibility permission (System Settings → Privacy & Secu | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 1
+RESULT | waiting for the permission, a second time | status: waiting for Accessibility permission (System Settings → Privacy & Secu | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 1
+RESULT | running, permission granted while it waited | status: running: 1 display, 0 docked and 1 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 2
+RESULT | running, no peek: a key that is bound to nothing | status: running: 1 display, 0 docked and 1 floating, 0 out of view | item in the menu bar: yes | the app got: 1 down, 1 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 0
+RESULT | 1 a. as it failed: J, then the press, the tool gone | held: 0 | found up: 1 | in front: dev.arbor.test.keys
+RESULT | 1 b. no J before it | held: 0 | found up: 1 | in front: dev.arbor.test.keys
+RESULT | 1 c. J, two seconds, then the press | held: 0 | found up: 1 | in front: dev.arbor.test.keys
+RESULT | 1 d. J, and the tool stays alive through the hold | held: 0 | found up: 1 | in front: dev.arbor.test.keys
+RESULT | 1 x. J, and another tool presses: a keyboard's own bits, alive, with repeats | held: 0 | found up: 1 | in front: dev.arbor.test.keys
+RESULT | 1 e. the whole map: nothing is asked for at the press | held: 0 | found up: 1 | in front: dev.arbor.test.keys
+RESULT | 2 a. as it failed: J, then the press, the tool gone | held: 0 | found up: 1 | in front: dev.arbor.test.keys
+RESULT | 2 b. no J before it | held: 0 | found up: 1 | in front: dev.arbor.test.keys
+RESULT | 2 c. J, two seconds, then the press | held: 0 | found up: 1 | in front: dev.arbor.test.keys
+RESULT | 2 d. J, and the tool stays alive through the hold | held: 0 | found up: 1 | in front: dev.arbor.test.keys
+RESULT | 2 x. J, and another tool presses: a keyboard's own bits, alive, with repeats | held: 0 | found up: 1 | in front: dev.arbor.test.keys
+RESULT | 2 e. the whole map: nothing is asked for at the press | held: 0 | found up: 1 | in front: dev.arbor.test.keys
+RESULT | f. another app has the keyboard, no J | held: 0 | found up: 1 | in front: com.apple.calculator
+RESULT | f. the same again | held: 0 | found up: 1 | in front: com.apple.calculator
+RESULT | g. Arbor's welcome window was asked for, nobody brought forward, no J | held: 1 | found up: 0 | in front: dev.arbor.test.keys
+RESULT | g. the same again, after a J | held: 1 | found up: 0 | in front: dev.arbor.test.keys
+RESULT | h. no Arbor at all: J, then the press | held: 0 | found up: 0 | in front: dev.arbor.test.keys
+RESULT | h. the same, no J | held: 0 | found up: 0 | in front: dev.arbor.test.keys
