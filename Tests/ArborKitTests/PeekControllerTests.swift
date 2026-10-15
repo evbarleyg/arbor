@@ -254,9 +254,8 @@ private let side = DisplaySnapshot(
     #expect(desk.h.workspace == before)
     #expect(!desk.h.controller.isPaused, "⌃⌥⎋ means the peek while one is on")
     #expect(desk.outline == nil)
-    #expect(desk.h.controller.temporaryShortcuts.isEmpty)
     expectWindowsMatchLayout(desk.h, on: desk.h.display)
-    // The keys are still down; the pointer wanders; they come up.
+    // The keys are still down; the pointer wanders; they come up, and with them what was held for the peek alone (`expectNoTrace`).
     desk.point(at: desk.c)
     #expect(desk.outline == nil)
     desk.h.keyUp(space)
@@ -353,7 +352,6 @@ private let side = DisplaySnapshot(
     #expect(desk.h.workspace.camera == desk.leaf(desk.b), "with the keys still down")
     #expect(desk.h.workspace.back == before.back + [desk.leaf(desk.a)])
     #expect(desk.outline == nil)
-    #expect(desk.h.controller.temporaryShortcuts.isEmpty)
     let landed = desk.h.workspace
     desk.h.system.cursor = CGPoint(x: 100, y: 100)
     desk.h.scheduler.advance(by: 0.5)
@@ -639,13 +637,12 @@ private let side = DisplaySnapshot(
     return settings
   }
 
-  @Test func chordsBoundToNothingAreRegisteredForAsLongAsTheHoldLasts() {
+  @Test func chordsBoundToNothingAreRegisteredForAsLongAsTheKeyIsDown() {
     let desk = Desk(settings: sparse.withEveryKey)
     #expect(desk.h.key("ctrl+opt+left") == nil, "not Arbor's")
     desk.h.keyDown(space)
-    desk.h.scheduler.advance(by: 0.2)
-    #expect(desk.h.controller.temporaryShortcuts.isEmpty, "not before the threshold")
-    desk.h.scheduler.advance(by: 0.2)
+    #expect(desk.h.controller.temporaryShortcuts.map(\.chord.text) == ["ctrl+opt+left", "ctrl+opt+escape"], "from the press on")
+    desk.h.scheduler.advance(by: 0.4)
     #expect(desk.h.controller.temporaryShortcuts.map(\.chord.text) == ["ctrl+opt+left", "ctrl+opt+escape"])
     #expect(desk.asked.calls.count == 1)
     desk.point(at: desk.b)
@@ -699,11 +696,15 @@ private let side = DisplaySnapshot(
       desk.hold()
       #expect(!desk.h.controller.temporaryShortcuts.isEmpty, "\(name)")
       end(desk)
+      #expect(desk.outline == nil, "after \(name)")
+      // Whatever is still down comes up. Until then the keys are kept from the app in front (`PeekKeysFromThePressTests`), unless Arbor has stopped.
+      if !desk.h.controller.isRunning || !desk.h.system.isHolding(try! KeyChord(text: space)) {
+        #expect(desk.h.controller.temporaryShortcuts.isEmpty, "at once after \(name)")
+        #expect(desk.asked.calls.last == [], "at once after \(name) the app was told")
+      }
+      desk.h.keyUp(space)
       #expect(desk.h.controller.temporaryShortcuts.isEmpty, "after \(name)")
       #expect(desk.asked.calls.last == [], "after \(name) the app was told")
-      #expect(desk.outline == nil, "after \(name)")
-      // Whatever is still down comes up.
-      desk.h.keyUp(space)
       // Nor does any workspace, here or of a display that is away, go on believing that its view is only visiting.
       #expect(desk.h.controller.invariantViolations().filter { $0.rule == "leak" } == [], "after \(name)")
       #expect(desk.h.controller.workspaces.values.allSatisfy { $0.lookingFrom == nil }, "after \(name)")

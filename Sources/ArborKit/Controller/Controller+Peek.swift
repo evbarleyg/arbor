@@ -20,7 +20,6 @@ extension Controller {
     var chord: KeyChord
     /// What `onTemporaryShortcuts` was last told.
     var temporary: [KeyBinding] = []
-    var tookKeys = false
     var shownOutline: NodeID?
   }
 
@@ -67,20 +66,25 @@ extension Controller {
       // Before the hold counts and after it is decided the keys mean what they are bound to. Harmless where an arrow looks, as in the whole
       // map. Of the nine, ⌃⌥← and ⌃⌥→ dock: with everything showing and the key still down that would move a window of somebody
       // who believes they are peeking. So an arrow that arranges is the peek's for as long as the key is down: early, it begins the
-      // hold; late, it does nothing.
-      guard [.left, .right, .up, .down].contains(binding.chord.key), binding.command.group == .arrange else { return false }
+      // hold; late, it does nothing. So is a key that is bound to nothing and held for the peek alone (`showPeek`): its command is never run.
+      // And so is ⎋, whatever it is bound to. Whoever holds the key and reaches for ⎋ means "never mind", and with ⌃⌥ down that is ⌃⌥⎋, which
+      // pauses: every window moves, the opposite of never mind. Early it calls the peek off; again, it does nothing.
+      let arranges = [.left, .right, .up, .down].contains(binding.chord.key) && binding.command.group == .arrange
+      guard arranges || binding.chord.key == .escape || session.temporary.contains(where: { $0.chord == binding.chord }) else { return false }
       guard session.peek.phase == .pressed else { return true }
-      updatePeek {
-        $0.heldForAnArrow()
-        return nil
-      }
+      Log.debug("peek: \(binding.chord.text) came before the hold counted")
     }
     switch binding.chord.key {
     case .left: movePeekOutline(.left)
     case .right: movePeekOutline(.right)
     case .up: movePeekOutline(.top)
     case .down: movePeekOutline(.bottom)
-    case .escape: updatePeek { $0.escape() }
+    case .escape:
+      // In one step, early as well: no outline is drawn only to be taken away.
+      updatePeek {
+        $0.heldForAKey()
+        return $0.escape()
+      }
     default: return false
     }
     return true
@@ -97,6 +101,10 @@ extension Controller {
     guard settings.peek, isRunning, holdLevel != .view, drag == nil, edgeResize == nil,
       let (display, workspace) = deciding(true, { from(.shortcut) { cameraDisplay() } })
     else { return false }
+    // The keys first, before a single window is moved. They are Arbor's only once macOS has been asked, every move is a call into an app, and the
+    // arrow that is rolled off the fingers does not wait.
+    let keys = peekKeys(with: chord)
+    if !keys.isEmpty { onTemporaryShortcuts?(keys) }
     watchLifecycleForPeek()
     // As `perform` would before `show-all`, whose place this takes.
     closeFinder()
@@ -112,7 +120,7 @@ extension Controller {
       peek: Peek(
         origin: workspace.camera, root: workspace.tree.root, at: peekTime, pointer: system.cursorLocation(),
         buttonDown: system.isMouseButtonDown()),
-      display: display, chord: chord)
+      display: display, chord: chord, temporary: keys)
     scheduler.schedule("peek", after: Self.peekInterval) { [weak self] in self?.peekTick() }
     return true
   }
@@ -150,7 +158,10 @@ extension Controller {
     else { return }
     let space = Peek.step(
       from: session.peek.outline, toward: edge, focused: system.focusedWindow(), in: layout, tree: workspace.tree)
+    // Too early to tell a tap from a hold, and it leads nowhere: kept from the app, and a tap stays a tap.
+    if session.peek.phase == .pressed, space == nil { return }
     updatePeek {
+      $0.heldForAKey()
       $0.arrow(to: space, pointer: system.cursorLocation())
       return nil
     }
@@ -267,8 +278,13 @@ extension Controller {
     guard !following.watchesLifecycleForPeek else { return }
     following.watchesLifecycleForPeek = true
     observe { [weak self] change in
-      guard change == .lifecycle, let self, !self.isRunning else { return }
-      self.abandonPeek()
+      guard let self, self.peeking != nil else { return }
+      switch change {
+      case .lifecycle where !self.isRunning: self.abandonPeek()
+      // The person gave the keys away, to the app in front or altogether, or changed the map: at once, not at the timer's next look.
+      case .input, .settings: self.showPeek()
+      default: break
+      }
     }
   }
 
@@ -284,19 +300,20 @@ extension Controller {
     return session.peek.shownOutline.flatMap { Peek.frame(of: $0, in: layout, tree: tree) }
   }
 
+  /// The arrows and ⎋ that are bound to nothing, to be kept from the app in front while `chord` is down. None where the person gave the keys away
+  /// (`activeBindings`): if the peek's own shortcut is not held, nothing is held for its sake.
+  private func peekKeys(with chord: KeyChord) -> [KeyBinding] {
+    guard activeBindings.contains(where: { $0.chord == chord }) else { return [] }
+    return KeyBindings.whilePeeking(chord, besides: effectiveBindings.bindings)
+  }
+
   /// Draws or removes the outline, and asks for or gives back the temporary shortcuts, if either changed.
   private func showPeek() {
     guard var session = peeking else { return }
     let outline = session.peek.shownOutline
-    let (keysChanged, outlineChanged) = (session.peek.takesKeys != session.tookKeys, outline != session.shownOutline)
-    var wanted = session.temporary
-    if keysChanged {
-      wanted =
-        session.peek.takesKeys
-        ? KeyBindings.whilePeeking(session.chord, besides: KeyBindings.effective(settings: settings).bindings) : []
-    }
+    let outlineChanged = outline != session.shownOutline
+    let wanted = session.peek.keepsKeys ? peekKeys(with: session.chord) : []
     let asks = wanted != session.temporary
-    session.tookKeys = session.peek.takesKeys
     session.temporary = wanted
     session.shownOutline = outline
     peeking = session

@@ -1,0 +1,42 @@
+# Story: an editor is in front. ⌃⌥Space goes down to look around, and ⌃⌥↓ follows at once, rolled off the fingers. Of the nine keys that ship ⌃⌥↓ is bound to
+# nothing, and Arbor used to ask for it only once the tap had become a hold, 0.3 s later: until then it went to the editor, which
+# does with it whatever it does. The arrows are the peek's for as long as its key is down, from the press on (F51, acceptance 4; board 1.80).
+open Safari
+open Mail
+open Notes
+dock 101 left
+dock 102 right
+dock 103 beside 102 bottom
+zoom 102
+# The control: with no peek on such a key is the app's. (`app-got` names the last key the app in front got.)
+key ctrl+opt+up
+expect app-got ctrl+opt+up
+keydown ctrl+opt+space
+wait 0.1
+key ctrl+opt+down
+expect app-got ctrl+opt+up
+keyup ctrl+opt+space
+expect camera 103
+# Decided, and the key still down: nothing happens, and nothing goes astray.
+keydown ctrl+opt+space
+wait 0.5
+key ctrl+opt+escape
+expect camera 103
+key ctrl+opt+down
+expect app-got ctrl+opt+up
+expect camera 103
+keyup ctrl+opt+space
+# A tap gives them back at its release.
+key ctrl+opt+space
+key ctrl+opt+down
+expect app-got ctrl+opt+down
+# Unless the person said so themselves: an app that keeps its own ⌃⌥ comes to the front with the key still down.
+pass-through com.example.notes on
+expect ok
+focus 102
+keydown ctrl+opt+space
+wait 0.5
+focus 103
+key ctrl+opt+up
+expect app-got ctrl+opt+up
+keyup ctrl+opt+space

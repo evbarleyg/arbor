@@ -27,23 +27,23 @@ Everything spring-loaded, like ⌘Tab, Exposé's hold-the-key mode and spring-lo
   passive `NSEvent` global monitor only while a peek is on.
 - Controller: `peekBegan()`, `peekMoved(to:)`, `peekEnded(commit:)` in `Controller+Peek.swift`, with the tap-or-hold decision made from `scheduler` time, so tests drive it with `ManualScheduler`.
 - The outline is a new field of `OverlayScene`.
-- The arrows need temporary hot keys (plain arrows, ⎋) registered only during the hold.
+- The arrows need temporary hot keys (plain arrows, ⎋) registered only while the keys are down.
 
 ## Acceptance criteria
 
 1. Press and release within 0.3 s: the view is on everything, one history entry.
 2. Hold, move the pointer over a window, release: that window is framed; `back` returns to the view before the peek.
 3. Hold and release without moving, or ⎋: the original view, no history entry.
-4. Temporary hot keys are gone after every ending, including the window under the outline closing and Arbor pausing.
+4. The arrows and ⎋ that are bound to nothing are Arbor's **for as long as the shortcut's keys are down, from the press on** (board 1.80): they are asked for before a window is moved, and reach no app meanwhile, unless the person gives the keys away meanwhile (an app that keeps its own comes to the front, shortcuts are switched off, a pause). Before the hold counts, one of them begins it, but an arrow that leads nowhere leaves a tap a tap (acceptance 1); after the peek is decided they do nothing. **⎋ is the peek's for as long as the keys are down, whatever it is bound to**: ⌃⌥⎋ calls the peek off, early too, and pressed again does nothing; it pauses Arbor again from the moment the keys are up. They are given back when the keys come up, at a tap's release too, whatever ended the peek, including the window under the outline closing; and at once when Arbor pauses or stops.
 5. (was "Manual"; board, section 5) A film from a hosted Mac of a peek with real keys: one motion out and one in by the stage's log of frames; judged against `docs/POLISH.md`, "one thing".
 
 ## Shipped (2026-10-14, `feat/F51-peek`)
 
 - Everything under Behaviour, for whatever shortcut is bound to `show-all`; `home` (⌃⌥0) never peeks. Setting `peek`, default true.
 - The decision is a pure value, `Peek` (ArborCore). `HotKeyCenter` forwards press and release and nothing else.
-- **The arrow keys and ⎋ are ⌃⌥ + arrow and ⌃⌥⎋**, not the plain keys: ⌃⌥ are being held. All five are bound by default, so a peek takes those chords by
-  their keys, whatever they are bound to; temporary hot keys are registered only for the ones a user has unbound.
-- Nothing differs from a plain Show Everything for the first 0.3 s: ⌃⌥Space ⌃⌥↓ rolled off the fingers still shows everything and steps in.
+- **The arrow keys and ⎋ are ⌃⌥ + arrow and ⌃⌥⎋**, not the plain keys: ⌃⌥ are being held. In the whole map all five are bound, of the nine that ship ←, → and ⎋, so a peek takes those chords by
+  their keys, whatever they are bound to; temporary hot keys are registered only for the ones that are bound to nothing.
+- Nothing differs from a plain Show Everything for the first 0.3 s, but for the keys that are kept: ⌃⌥Space ⌃⌥↓ rolled off the fingers still shows everything and steps in. (With the nine keys ⌃⌥↓ is bound to nothing: there it begins the hold, and letting go lands below.)
 - Instead of a `flagsChanged` monitor and a mouse monitor, a timer reads the keys, the pointer and the button 30 times a second during the hold. It also ends a
   peek whose release was never reported. In doubt a peek ends as a tap, so Show Everything cannot start springing back.
 - A click lands when the button comes up. The outline's panel takes the click and reports it, so the app underneath never sees a ⌃⌥-click; the timer also

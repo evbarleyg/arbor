@@ -125,7 +125,7 @@ public enum KeyBindings {
     bindings.filter(\.command.endsPause)
   }
 
-  /// The shortcuts to register on top of `bindings` while a peek started with `chord` is held. The arrow keys
+  /// The shortcuts to register on top of `bindings` for as long as `chord`, which starts a peek, is down. The arrow keys
   /// and ⎋ arrive with the modifiers that are being held, and a peek takes those chords whatever they are bound
   /// to (of the nine ←, → and ⎋ are bound, in the whole map all five). These are the ones that are bound to nothing, so that
   /// they reach Arbor at all; their commands are never run.

@@ -4196,7 +4196,7 @@ Input: where presses, keys and gestures really go.
 - **Stand-ins play it:** partly (`World.pressKey`, `Harness.key`, `Harness.revokeAccessibility`)
 - **Guard:** **none**
 - **Arbor copes:** **not yet**
-- **Read in:** `collab/QUESTIONS.md`, `collab/BOARD.md`, `collab/scenarios/wanted/I16-a-key-of-arbors-never-reaches-another-app.sim`, `docs/GUIDE.md`, `docs/KEYBOARD.md`, `docs/features/F63-permission-taken-away.md`, `Sources/ArborKit/Controller/Controller+PassThrough.swift`, `Sources/ArborKit/App/ArborApp.swift`, `Sources/arbor-fakemac/World+Input.swift`, `Sources/ArborTesting/Harness.swift`, `scripts/make-signing-identity.sh`, `scripts/sign.sh`, `scripts/install.sh`
+- **Read in:** `collab/QUESTIONS.md`, `collab/BOARD.md`, `collab/scenarios/I16-a-key-of-arbors-never-reaches-another-app.sim`, `docs/GUIDE.md`, `docs/KEYBOARD.md`, `docs/features/F63-permission-taken-away.md`, `Sources/ArborKit/Controller/Controller+PassThrough.swift`, `Sources/ArborKit/App/ArborApp.swift`, `Sources/arbor-fakemac/World+Input.swift`, `Sources/ArborTesting/Harness.swift`, `scripts/make-signing-identity.sh`, `scripts/sign.sh`, `scripts/install.sh`
 
 ### a-key-registered-with-fn-and-without-is-two-keys-or-one
 
