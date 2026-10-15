@@ -573,6 +573,32 @@ def check_history():
     situation("pre-push: to one's fork, what the public repository has under another name is not new", (0, []),
               second_remote_has_it("upstream", "https://github.com/evbarleyg/arbor.git", pushing_to="origin"), "--pre-push")
 
+    # The exceptions belong to the commit.
+    def brings_its_own(standing_elsewhere):
+        def prepare(r):
+            r.write("scripts/public-check.allow", "person docs/x.md h.s\n")
+            line(r)
+            sha = r.git("rev-parse", "HEAD")
+            if standing_elsewhere:
+                r.git("checkout", "--quiet", "main")
+            return {"standard_input": f"refs/heads/x {sha} refs/heads/x {'0' * 40}\n"}
+        return prepare
+    situation("pre-push: a commit that brings its own honest exception", (0, []), brings_its_own(False), "--pre-push")
+    situation("pre-push: the same, pushed from a clone that stands somewhere else", (0, []), brings_its_own(True), "--pre-push")
+
+    def exception_elsewhere(r):
+        line(r)
+        sha = r.git("rev-parse", "HEAD")
+        r.git("checkout", "--quiet", "-b", "other", "main")
+        r.write("scripts/public-check.allow", "person docs/x.md h.s\n")
+        r.commit("chore: an exception on another branch")
+        return {"standard_input": f"refs/heads/x {sha} refs/heads/x {'0' * 40}\n"}
+    situation("pre-push: an exception where the clone stands does nothing for a commit that does not carry it", (1, ["person"]), exception_elsewhere, "--pre-push")
+
+    def compared(r):
+        brings_its_own(True)(r)
+    situation("--head: what is compared is held to its own exceptions too", (0, []), compared, "--base", "origin/main", "--head", "fix/something")
+
     # Where work is integrated.
     HERE_URL, FORK_URL = "https://github.com/evbarleyg/arbor", "https://github.com/someone/arbor.git"
 
@@ -736,9 +762,11 @@ def check_hook():
         repository.write("scripts/public-check.py", f"VERSION = {check.VERSION}\n" + lets_all_pass)
         row("the hook: nor one of the same age", push().returncode != 0, True)
         repository.write("scripts/public-check.allow", "nonsense\n")
+        row("the hook: exceptions that lie in the working tree and are in no commit count for nothing", "three fields are wanted" in push().stdout + push().stderr, False)
+        repository.commit("chore: exceptions that cannot be read")
         done = push()
-        row("the hook: the exceptions are the branch's own", "three fields are wanted" in done.stdout + done.stderr, True)
-        os.remove(os.path.join(repository.path, "scripts", "public-check.allow"))
+        row("the hook: the exceptions are those of the commit being pushed", "three fields are wanted" in done.stdout + done.stderr, True)
+        repository.git("reset", "--quiet", "--hard", "HEAD~1")
         repository.write("scripts/public-check.py", f"VERSION = {check.VERSION + 1}\n" + lets_all_pass)
         row("the hook: a newer one on the branch does", push().returncode, 0)
         os.remove(os.path.join(repository.path, "scripts", "public-check.py"))

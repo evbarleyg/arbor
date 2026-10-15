@@ -35,7 +35,7 @@ the commits were made.
 | When | How |
 |---|---|
 | When a clone is new, and whenever an agent's session starts in it | `make hooks` ends with `scripts/public-clone.py`, see below. `.claude/hooks/session-start.sh` runs it in every Claude Code session |
-| Before every push, by itself | `make hooks`, once per clone, and again when the check has changed. Git then runs the check, in every worktree and on every branch, and gives up the push if it finds something or cannot tell. Of the copy `make hooks` kept and the one on the branch, the newer does the reading, so a branch from before a hole was mended is read by the mended check; the exceptions are the branch's own |
+| Before every push, by itself | `make hooks`, once per clone, and again when the check has changed. Git then runs the check, in every worktree and on every branch, and gives up the push if it finds something or cannot tell. Of the copy `make hooks` kept and the one on the branch, the newer does the reading, so a branch from before a hole was mended is read by the mended check; the exceptions are those the pushed commit itself carries, wherever the clone stands |
 | Before a push, by hand | `make public-check` |
 | Before posting a pull request's body, an issue or a comment | `scripts/public-check.py --text body.md`, or pipe the text in |
 | After every push, of a branch or a tag, and on every pull request | The workflow `Public check`, on Linux, in seconds |

@@ -12,7 +12,6 @@ said=$(python3 "$kept" --rules) || { echo "$said"; echo "public-check: nothing w
 version() { number=$(sed -n 's/^VERSION = \([0-9][0-9]*\)$/\1/p' "$1" 2>/dev/null | head -n 1); echo "${number:-0}"; }
 check=$kept
 [ "$(version "$own")" -gt "$(version "$kept")" ] && check=$own
-# The exceptions are the branch's own: it may need one that nobody else has yet.
-[ -f "$top/scripts/public-check.allow" ] && PUBLIC_CHECK_ALLOW="$top/scripts/public-check.allow" && export PUBLIC_CHECK_ALLOW
+# (The exceptions are those of the commit being pushed, which the check reads from it.)
 # Which remote, and where it is, go by the environment too: no check, however old, trips over that.
 PUBLIC_CHECK_REMOTE="$1" PUBLIC_CHECK_TO="$2" exec python3 "$check" --pre-push

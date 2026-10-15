@@ -19,7 +19,8 @@ The rules name kinds of things, never the things themselves, so that reading thi
 the project has not linked to before, not a list of hosts to avoid; the name in LICENSE, read from LICENSE; this
 machine's own ids, read from its environment. There is no list of forbidden words here, not even in disguise. Words no
 kind covers go, one to a line, in a file of your own outside the repository (`git config arbor.privateWords <path>`), or
-in $PUBLIC_CHECK_WORDS. Honest exceptions are in public-check.allow, each with its reason.
+in $PUBLIC_CHECK_WORDS. Honest exceptions are in public-check.allow, each with its reason. They belong to the commit: what is pushed or
+compared is held to the exceptions it carries itself, wherever the clone happens to stand.
 
 Usage: scripts/public-check.py             what this branch adds to origin's main and swarm/trunk (`make public-check`)
        … --base REF [--head REF] [--branch NAME] [--tag NAME]   what REF..head adds (head: HEAD); CI's way
@@ -55,7 +56,7 @@ import urllib.request
 HERE = os.path.dirname(os.path.abspath(__file__))
 # Raise it whenever the check gets stricter or a hole in it is mended. The hook has two copies to choose from, the one `make hooks` kept
 # and the one on the branch that is checked out, and lets the newer do the reading.
-VERSION = 4
+VERSION = 5
 # The first public commit. All history begins here.
 ROOT_COMMIT = "51b162d5f28c02846134c1f4a113c787f5164602"
 # Where work is integrated: what these hold on origin has been read before.
@@ -429,8 +430,14 @@ def highest_number(cwd=None):
 
 # MARK: the command line
 
-def checker_for(top, here=None):
-    """The checker for a clone. `here`: what this machine would give away, where its environment is not the place to look."""
+def lines_of(text):
+    return [line for line in (line.strip() for line in text.splitlines()) if line and not line.startswith("#")]
+
+
+def checker_for(top, here=None, commit=None):
+    """The checker for a clone. `here`: what this machine would give away, where its environment is not the place to look. `commit`: whose
+    exceptions hold; without one, or where it has none, those beside this script."""
+    none, carried = git("show", f"{commit}:scripts/public-check.allow", cwd=top, check=False) if commit else (1, "")
     private = os.environ.get("PUBLIC_CHECK_WORDS", "").split("\n")
     code, path = git("config", "--get", "arbor.privateWords", cwd=top, check=False)
     if code == 0 and path.strip():
@@ -445,7 +452,7 @@ def checker_for(top, here=None):
     if highest is None:
         print("public-check: could not ask origin for its newest pull request, so numbers like #123 were not checked", file=sys.stderr)
     return Checker(
-        allowed=read_lines(os.environ.get("PUBLIC_CHECK_ALLOW") or os.path.join(HERE, "public-check.allow")), licence=licence, highest=highest,
+        allowed=read_lines(os.path.join(HERE, "public-check.allow")) if none else lines_of(carried), licence=licence, highest=highest,
         owner=os.environ.get("GITHUB_REPOSITORY_OWNER") or (owner.group(1) if owner else None),
         here=told_by_this_machine(os.environ, socket.gethostname()) if here is None else here, private=[word.strip() for word in private if word.strip()])
 
@@ -515,7 +522,7 @@ def pre_push(top, lines, masked, url=None):
     if unread:
         print(f"✘ {unread}\npublic-check: nothing was pushed.")
         return 1
-    checker, code = None, 0
+    code = 0
     for line in lines:
         fields = line.split()
         if len(fields) != 4:
@@ -525,11 +532,10 @@ def pre_push(top, lines, masked, url=None):
         guarded = remote_ref.replace("refs/heads/", "", 1) if remote_ref.startswith("refs/heads/") and (url is None or UPSTREAM.search(url)) else None
         if ZERO.match(sha):  # a branch being deleted adds nothing
             if guarded in INTEGRATION:
-                checker = checker or checker_for(top)
-                code |= report(checker, landing_problems(top, guarded, None, there), [], f"branch {guarded}", masked)
+                code |= report(checker_for(top), landing_problems(top, guarded, None, there), [], f"branch {guarded}", masked)
             continue
-        checker = checker or checker_for(top)
         commit = git("rev-parse", "--verify", sha + "^{commit}", cwd=top).strip()
+        checker = checker_for(top, commit=commit)
         problems, findings, count = check_range(checker, [commit, "--not", *public_already(top)], commit, top)
         if remote_ref.startswith("refs/tags/"):
             kind, name = "tag", remote_ref[len("refs/tags/"):]
@@ -569,7 +575,7 @@ def main(arguments=None, cwd=None):
             return 1 if unread else 0
         if options.pre_push:
             return pre_push(top, sys.stdin.read().splitlines(), masked, options.to or os.environ.get("PUBLIC_CHECK_TO"))
-        checker = checker_for(top)
+        checker = checker_for(top) if options.text or options.tree else None
         if options.text:
             findings = []
             for name in options.files or ["-"]:
@@ -596,6 +602,7 @@ def main(arguments=None, cwd=None):
             return report(checker, [], findings, "the whole tree", masked)
 
         head = git("rev-parse", "--verify", (options.head or "HEAD") + "^{commit}", cwd=top).strip()
+        checker = checker_for(top, commit=head)
         if options.base and not ZERO.match(options.base):  # all noughts: a branch's first push has nothing before it
             selection = [head, "^" + git("rev-parse", "--verify", options.base + "^{commit}", cwd=top).strip()]
         else:
