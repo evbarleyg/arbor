@@ -700,7 +700,9 @@ extension Controller {
   func scheduleEnforce(_ displayID: DisplayID) {
     scheduler.schedule("enforce-\(displayID.rawValue)", after: 0.25) { [weak self] in
       guard let self else { return }
-      if self.system.isMouseButtonDown() || self.isAwaitingResizeEnd(on: displayID) {
+      if self.system.isMouseButtonDown() || self.isAwaitingResizeEnd(on: displayID)
+        || self.someoneIsOnItsWayOutOfFullScreen(on: displayID)
+      {
         self.scheduleEnforce(displayID)
         return
       }

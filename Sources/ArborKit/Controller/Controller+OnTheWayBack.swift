@@ -50,8 +50,10 @@ extension Controller {
     seeThatItHasItsSlot(window.id)
   }
 
-  /// How often Arbor looks at a window on its way out of full screen, ten times a second: as long as the way takes.
-  static let looksOnTheWayOut = 7
+  /// How often Arbor looks at a window on its way out of full screen, ten times a second: as long as the way may take
+  /// (`timeToLandFromFullScreen`; 0.85 s from the report to the stand-in's end was seen). A look at a window that has its frame costs
+  /// nothing, and until the last one its neighbours are not laid out without it (Controller+Spaces.swift).
+  static let looksOnTheWayOut = 12
 
   /// By the clock, not with each of the window's reports, which come four at a time. One that left full screen from afar is never
   /// reported back: what happens to it after the last look is no part of its way out.
@@ -63,7 +65,7 @@ extension Controller {
       let actual = system.setFrame(meeting.target, of: window)
     {
       // The same answer twice, at the place it was asked to: that is what its app makes of the frame (it rounds sizes, or has limits), and
-      // it is not asked seven times. Once is not enough: a frame is set with several calls, and Safari's own placing falls
+      // it is not asked a dozen times. Once is not enough: a frame is set with several calls, and Safari's own placing falls
       // between them, so that it has the new size at the old place, or the new place at the old size.
       if let answer = meeting.answer, actual.approximatelyEquals(answer, tolerance: 1),
         abs(actual.minX - meeting.target.minX) <= 1, abs(actual.minY - meeting.target.minY) <= 1

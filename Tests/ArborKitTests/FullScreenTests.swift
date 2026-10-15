@@ -269,6 +269,51 @@ import Testing
     expectWindowsMatchLayout(h, on: h.display)
   }
 
+  /// TextEdit's order: all of them are reported back at once.
+  @Test func norWhenAllAreReportedBackTogether() {
+    let (h, a, others) = makeRow()
+    h.system.clearSightings()
+    h.system.enterFullScreen(a, leaving: others)
+    h.scheduler.advance(by: 3)
+    h.system.leaveFullScreen(a, with: others, deafFor: 0, othersFirst: false)
+    h.scheduler.advance(by: 3)
+    #expect(h.system.sightings.filter { $0.window != a }.isEmpty, "\(h.system.sightings)")
+    expectWindowsMatchLayout(h, on: h.display)
+  }
+
+  @Test func aFocusReportWhileTheWayInPlaysDoesNotEndTheWait() {
+    let (h, a, others) = makeRow()
+    h.system.clearSightings()
+    h.system.setOnActiveSpace(a, false)
+    h.system.setFullScreen(a, true)
+    h.scheduler.advance(by: 0.15)
+    // A chat window in the background, say.
+    h.system.backgroundFocus(others[0])
+    h.scheduler.advance(by: 0.3)
+    #expect(h.system.sightings.isEmpty, "\(h.system.sightings)")
+  }
+
+  @Test func heardOfWhenTheSpaceHasGoneThereIsNothingToWaitFor() {
+    let (h, a, others) = makeRow()
+    for other in others { h.system.setOnActiveSpace(other, false) }
+    h.system.setFullScreen(a, true)
+    h.scheduler.advance(by: 0.2)
+    #expect(!h.scheduler.pendingKeys.contains { $0.hasPrefix("space") })
+    #expect(h.layout!.windowFrames[a] == nil)
+  }
+
+  @Test func aFloatingWindowKeepsItsFrameInTheOrderOfAMacToo() {
+    let (h, a, others) = makeRow()
+    let f = others[1]
+    let chosen = h.workspace.floating[f]
+    h.system.enterFullScreen(f, leaving: [a, others[0]])
+    h.scheduler.advance(by: 3)
+    #expect(h.workspace.floating[f] == chosen, "not the display's")
+    h.system.leaveFullScreen(f, with: [a, others[0]])
+    h.scheduler.advance(by: 3)
+    #expect(h.workspace.floating[f] == chosen)
+  }
+
   @Test func whoeverComesBackToTheirSpaceWithoutItFindsThemClosingUpOnce() {
     let (h, a, others) = makeRow()
     h.system.enterFullScreen(a, leaving: others)
@@ -284,12 +329,28 @@ import Testing
     expectWindowsMatchLayout(h, on: h.display)
   }
 
+  @Test func closedInFullScreenItsNeighboursCloseUpOnce() {
+    let (h, a, others) = makeRow()
+    h.system.enterFullScreen(a, leaving: others)
+    h.scheduler.advance(by: 3)
+    h.system.clearSightings()
+    // Its Space goes with it, and macOS shows the one it came from.
+    h.system.close(a)
+    for other in others { h.system.setOnActiveSpace(other, true) }
+    h.scheduler.advance(by: 2)
+    for other in others { #expect(h.system.sightings(of: other).count <= 1, "\(h.system.sightings(of: other))") }
+    #expect(!h.system.sightings.isEmpty, "they have its room")
+    #expect(h.controller.invariantViolations().isEmpty, "\(h.controller.invariantViolations())")
+    expectWindowsMatchLayout(h, on: h.display)
+  }
+
   @Test func aSpaceThatNeverGoesAwayIsLaidOutAllTheSame() {
     let (h, a, others) = makeRow()
-    // Only the first two reports: whatever became of the rest.
-    h.system.setOnActiveSpace(a, false)
+    // Only the report that it is in full screen: whatever became of the rest.
     h.system.setFullScreen(a, true)
-    h.scheduler.advance(by: 3)
+    h.scheduler.advance(by: 1)
+    #expect(h.layout!.windowFrames[a] != nil, "still waiting")
+    h.scheduler.advance(by: 1)
     #expect(h.layout!.windowFrames[a] == nil)
     #expect(!h.scheduler.pendingKeys.contains { $0.hasPrefix("space") })
     _ = others

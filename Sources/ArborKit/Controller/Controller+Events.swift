@@ -103,6 +103,7 @@ extension Controller: WindowSystemEvents {
     // A Space switch reports each window separately: see Controller+Spaces.swift. What has gone away nobody sees, so the layout can wait
     // to hear why: a window on its way into full screen leaves its app's list a moment before it says so.
     if previous?.isOnActiveSpace != window.isOnActiveSpace {
+      waitingForASpaceToLeave.remove(display)
       scheduleSpaceRelayout(display, after: window.isOnActiveSpace ? 0 : Self.timeToSayWhyItWent)
       return
     }

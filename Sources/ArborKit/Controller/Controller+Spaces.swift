@@ -36,12 +36,23 @@ extension Controller {
     _ window: WindowSnapshot, was previous: WindowSnapshot?, on displayID: DisplayID
   ) -> Bool {
     guard window.isFullScreen else { return false }
-    // What else it reports from there (its size is the display's) is nothing to lay out for, nor to put right.
-    guard previous?.isFullScreen == false else { return previous?.isPresent == window.isPresent }
+    // What else it reports from there (its size is the display's, its app is hidden) is nothing to lay out for, nor to put right: it takes
+    // no room either way.
+    guard previous?.isFullScreen == false else { return previous != nil }
+    // Only while somebody is there to be seen. Arbor may hear of the full screen when the Space has gone already.
+    let others = workspaces[displayID]?.allWindows.contains { $0 != window.id && windows[$0]?.isPresent == true } ?? false
+    if others { waitingForASpaceToLeave.insert(displayID) }
     // The reports that the Space has gone bring the layout forward.
-    scheduleSpaceRelayout(displayID, after: Self.timeToLeaveForFullScreen)
+    scheduleSpaceRelayout(displayID, after: others ? Self.timeToLeaveForFullScreen : 0)
     scheduleSave()
     return true
+  }
+
+  /// A window of this display is on its way out of full screen (Controller+OnTheWayBack.swift). The others of its Space can be reported
+  /// back a tenth of a second or two before it (Safari, five rounds of eight on a hosted Mac). Laid out without it they would take
+  /// its room, in plain view, over the slot it has been given, and give it back when it is reported.
+  func someoneIsOnItsWayOutOfFullScreen(on displayID: DisplayID) -> Bool {
+    metAhead.keys.contains { workspaces[displayID]?.contains($0) == true }
   }
 
   private func runPostponedRelayout(of displayID: DisplayID) {
@@ -52,7 +63,13 @@ extension Controller {
       scheduleSpaceRelayout(displayID, after: 0.25)
       return
     }
+    // It ends by itself: with the report that the window is back, or with the last look at it.
+    if someoneIsOnItsWayOutOfFullScreen(on: displayID) {
+      scheduleSpaceRelayout(displayID, after: 0.05)
+      return
+    }
     postponedRelayouts.remove(displayID)
+    waitingForASpaceToLeave.remove(displayID)
     // macOS has just shown the switch in its own way.
     relayout(displayID, reason: .structure, motion: .instant)
     // One of the windows that came back may have been given the keyboard before it was reported.
@@ -67,7 +84,9 @@ extension Controller {
   /// arrive between the reports of a switch (which come in one go) and the layout after them.
   func runPostponedRelayouts() {
     guard drag == nil else { return }
-    for displayID in postponedRelayouts.sorted() {
+    // Not what waits for a Space to leave: any focus report would end the wait (a chat window's in the background, a second look at
+    // the window that is going), and what is in view there is as it was.
+    for displayID in postponedRelayouts.sorted() where !waitingForASpaceToLeave.contains(displayID) {
       scheduler.cancel("space-\(displayID.rawValue)")
       runPostponedRelayout(of: displayID)
     }

@@ -150,7 +150,7 @@ if [ -z "${PROBE_WITHOUT_ARBOR:-}" ]; then
   key ctrl+opt+cmd+right
   acted moves=any judge=no
   brief | sed 's/^/    /'
-  for name in safari textedit safari textedit safari textedit; do
+  for name in safari safari textedit safari safari textedit safari safari; do
     ROUND=$((ROUND + 1))
     chapter "With Arbor: $name, round $ROUND"
     reach "$name"

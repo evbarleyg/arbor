@@ -276,8 +276,22 @@ func simulate(_ words: [String], harness: Harness, printLayout: inout Bool) -> (
     return ("opened \(id.rawValue) (\(app))", true)
   case "close":
     guard let id = window(1) else { return usage("close <id>") }
+    // With a window in full screen its Space goes, and macOS shows the one it came from.
+    let display = harness.controller.workspaceID(containing: id)
+    let comeBack =
+      system.windows[id]?.snapshot.isFullScreen != true
+      ? []
+      : system.windows.keys.sorted().filter {
+        $0 != id && harness.controller.workspaceID(containing: $0) == display
+          && system.windows[$0]?.snapshot.isFullScreen == false
+      }
+    system.clearSightings()
     system.close(id)
-    return ("closed \(id.rawValue)", true)
+    guard !comeBack.isEmpty else { return ("closed \(id.rawValue)", true) }
+    for other in comeBack { system.setOnActiveSpace(other, true) }
+    harness.scheduler.advance(by: 2)
+    let moves = comeBack.map { "\($0.rawValue) \(system.sightings(of: $0).count)×" }.joined(separator: ", ")
+    return ("closed \(id.rawValue) in full screen; seen to move when their Space came back: \(moves)", true)
   case "minimize", "restore":
     guard let id = window(1) else { return usage("\(words[0]) <id>") }
     system.setMinimized(id, words[0] == "minimize")
