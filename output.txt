@@ -1,0 +1,71 @@
+# mac-shell: scripts/mac-shell/survey-browsers.sh at 160a906, macOS 26.6.2, 2026-10-15T02:10Z
+
+== the Mac
+macOS 26.6.2 (25G83) on arm64
+built the tools in 55s
+1600 900 1600 900
+display: 1 0 0 1600 900 1600 900 1
+
+== what is installed
+  Firefox.app
+  Google Chrome for Testing.app
+  Google Chrome.app
+  Microsoft Edge.app
+  PowerShell.app
+  Python 3.11
+  Python 3.12
+  Python 3.13
+  Python 3.14
+  Safari.app
+  Utilities
+  Xcode_26.0.1.app
+  Xcode_26.0.app
+  Xcode_26.1.1.app
+  Xcode_26.1.app
+  Xcode_26.2.0.app
+  Xcode_26.2.app
+  Xcode_26.3.0.app
+  Xcode_26.3.app
+  Xcode_26.4.1.app
+  Xcode_26.4.app
+  Xcode_26.5.0.app
+  Xcode_26.5.app
+  Xcode_26.6.0.app
+  Xcode_26.6.app
+  Xcode.app
+  /Applications/Utilities:  /System/Applications: App Store.app Apps.app Automator.app Books.app Calculator.app Calendar.app Chess.app Clock.app Contacts.app Dictionary.app FaceTime.
+  app FindMy.app Font Book.app Freeform.app Games.app Home.app Image Capture.app Image Playground.app iPhone Mirroring.app Journal.app Mail.app Maps.app Messages.app Mission Control.
+  app Music.app News.app Notes.app Passwords.app Phone.app Photo Booth.app Photos.app Podcasts.app Preview.app QuickTime Player.app Reminders.app Shortcuts.app Siri.app Stickies.app 
+  Stocks.app System Settings.app TextEdit.app Time Machine.app Tips.app TV.app Utilities VoiceMemos.app Weather.app  /System/Applications/Utilities: Activity Monitor.app AirPort Util
+  ity.app Audio MIDI Setup.app Bluetooth File Exchange.app Boot Camp Assistant.app ColorSync Utility.app Console.app Digital Color Meter.app Disk Utility.app Grapher.app Magnifier.ap
+  p Migration Assistant.app Print Center.app Screen Sharing.app Screenshot.app Script Editor.app System Information.app Terminal.app VoiceOver Utility.app 
+Java: /Users/runner/hostedtoolcache/Java_Temurin-Hotspot_jdk/25.0.4-101.0/arm64/Contents/Home
+
+== chrome (com.google.Chrome)
+open -b: exit code 124 after 90 s
+_LSOpenURLsWithCompletionHandler() failed for the application /Applications/Google Chrome.app with error -10673.
+open -a /Applications/Google Chrome.app: exit code 1 after 0 s
+
+== firefox (org.mozilla.firefox)
+open -b: exit code 124 after 91 s
+_LSOpenURLsWithCompletionHandler() failed for the application /Applications/Firefox.app with error -10673.
+open -a /Applications/Firefox.app: exit code 1 after 0 s
+
+== edge (com.microsoft.edgemac)
+open -b: exit code 124 after 91 s
+_LSOpenURLsWithCompletionHandler() failed for the application /Applications/Microsoft Edge.app with error -10673.
+open -a /Applications/Microsoft Edge.app: exit code 1 after 1 s
+
+== a Java app
+  42 AXWindow AXStandardWindow 350 51 900 750 main
+  14394 regular active net.java.openjdk.jconsole
+  the Dock's apps: 
+
+== the survey
+app      bundle                 standard windows  other windows  in the way  limits
+chrome   com.google.Chrome      does not open
+firefox  org.mozilla.firefox    does not open
+edge     com.microsoft.edgemac  does not open
+still running when the script had ended, and stopped now:
+  2887 sleep
+exit code 0
