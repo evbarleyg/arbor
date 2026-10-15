@@ -399,8 +399,13 @@ if wanted pointer; then
   carried "drag W2 out onto the Desktop" W2 "$W2" $((${dx:-0} + ${dw:-0} / 2)) $((${dy:-0} + 60))
   does "dock W1, too big for its slot, below W3" ctl dock "$W1" beside "$W3" bottom
   does "show-all" ctl show-all
-  # shellcheck disable=SC2046
-  does "click the tile" click $(tile_of "$W1")
+  # On a taller display W1 fits below W3 and is no tile. A step that cannot be played says so: a click without a place is a step that does nothing.
+  if [ -n "$(arbor_ask tile "$W1" 2>/dev/null)" ]; then
+    # shellcheck disable=SC2046
+    does "click the tile" click $(tile_of "$W1")
+  else
+    echo "skipped: click the tile: W1 has room below W3 on this display and is no tile"
+  fi
   journey_ends
 fi
 
