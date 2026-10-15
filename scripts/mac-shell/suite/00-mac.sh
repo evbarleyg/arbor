@@ -4,6 +4,8 @@
 source "$(dirname "$0")/../lib.sh"
 
 echo "macOS $(sw_vers -productVersion) ($(sw_vers -buildVersion)) on $(uname -m), bash $BASH_VERSION, $(python3 --version 2>&1)"
+# The one above is whichever comes first in the PATH. This is the one the Command Line Tools bring, which is what `make check` meets on a Mac that has no other.
+echo "/usr/bin/python3: $(/usr/bin/python3 --version 2>&1)"
 swift --version 2>&1 | head -n 1
 arbor_build
 

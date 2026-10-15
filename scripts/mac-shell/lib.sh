@@ -2094,9 +2094,18 @@ drag_window() {
 
 # Once something is docked the icon grows into a row of buttons, and a plain click in its middle presses one of them. A right click
 # anywhere on it opens the menu, on the single icon too.
+# The item's place lags behind its width: straight after a hold, a pause or the first dock Accessibility still gave the old one, and a click there
+# opened nothing (seen on a Mac). So it is believed once two looks a quarter of a second apart agree.
 open_menu() {
-  local point
+  local point again tries=0
   point=$(status_item) || return 1
+  while [ "$tries" -lt 8 ]; do
+    sleep 0.25
+    again=$(status_item) || return 1
+    [ "$again" = "$point" ] && break
+    point=$again
+    tries=$((tries + 1))
+  done
   # shellcheck disable=SC2086
   rightclick $point
 }
