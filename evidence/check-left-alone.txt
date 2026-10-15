@@ -1,0 +1,103 @@
+# check-left-alone 2026-10-15T13:08Z on macOS 26.6.2, commit fd3df1e
+
+== Test windows
+
+▸ a test window, docked, is thrown into the menu bar and let go at once
+  ✔ docked, it is as large as its slot (325 650), which is not its own size
+  ✔ its title bar can be grabbed
+  ✔ a test window thrown: it is out of the arrangement
+  ✔ a test window thrown: it is not as large as its slot (325 650): 180 31 480 348
+  ✔ a test window thrown: left alone, it is on the screen at its own size, 480 348
+  ✔ a test window thrown: Float All leaves it that size: 480 348
+
+▸ a test window, docked, is carried out and let go with ⌥ and nothing else held
+  ✔ its title bar can be grabbed
+  ✔ a test window with ⌥: it is out of the arrangement
+  ✔ a test window with ⌥: it is not as large as its slot (325 650): 220 288 480 348
+  ✔ a test window with ⌥: left alone, it is on the screen at its own size, 480 348
+  ✔ a test window with ⌥: Float All leaves it that size: 480 348
+
+▸ a test window, docked, rests in the menu bar for a second and is let go
+  ✔ its title bar can be grabbed
+  ✔ a test window rested: it is out of the arrangement
+  ✔ a test window rested: it is not as large as its slot (325 650): 0 31 1024 674
+  ✔ a test window rested: taken, it stays as macOS made it
+  ✔ a test window rested: Float All leaves it that size: 1024 674
+
+▸ a test window rested: it is dragged off macOS's tile and let go over the middle of the screen
+  ✔ its title bar can be grabbed
+  ✔ off its tile it has its own size, 480 348, not the slot's, 325 650: 244 298 480 348
+
+▸ Both are docked, the first is thrown into the menu bar, and Arbor quits
+  ✔ its title bar can be grabbed
+  ✔ Arbor exits within 5 s of quit
+  ✔ after Quit the other has its own size
+  ✔ after Quit the thrown one is not as large as its slot
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+
+== TextEdit and Safari
+  ✔ TextEdit and Safari each have a window
+
+▸ TextEdit, docked, is thrown into the menu bar and let go at once
+  ✔ docked, it is as large as its slot (322 653), which is not its own size
+  ✔ its title bar can be grabbed
+  ✔ TextEdit thrown: it is out of the arrangement
+  ✔ TextEdit thrown: it is not as large as its slot (322 653): 35 31 673 439
+  ✔ TextEdit thrown: left alone, it is on the screen at its own size, 673 439
+  ✔ TextEdit thrown: Float All leaves it that size: 673 439
+
+▸ TextEdit, docked, is carried out and let go with ⌥ and nothing else held
+  ✔ its title bar can be grabbed
+  ✔ TextEdit with ⌥: it is out of the arrangement
+  ✔ TextEdit with ⌥: it is not as large as its slot (322 653): 351 272 673 480
+  ✔ TextEdit with ⌥: taken, it stays as macOS made it
+  ✔ TextEdit with ⌥: Float All leaves it that size: 673 480
+
+▸ TextEdit with ⌥: it is dragged off macOS's tile and let go over the middle of the screen
+  ✔ its title bar can be grabbed
+  ✘ off its tile it has its own size, 673 439, not the slot's, 322 653: 164 288 673 480 — 480 is not about 439
+
+▸ TextEdit, docked, rests in the menu bar for a second and is let go
+  ✔ its title bar can be grabbed
+  ✔ TextEdit rested: it is out of the arrangement
+  ✔ TextEdit rested: it is not as large as its slot (494 653): 169 31 673 480
+  ✔ TextEdit rested: taken, it stays as macOS made it
+  ✔ TextEdit rested: Float All leaves it that size: 673 480
+
+▸ TextEdit rested: it is dragged off macOS's tile and let go over the middle of the screen
+  ✔ its title bar can be grabbed
+  ✘ off its tile it has its own size, 673 439, not the slot's, 494 653: 164 283 673 480 — 480 is not about 439
+
+▸ Safari, docked, is thrown into the menu bar and let go at once
+  ✘ docked, it is as large as its slot (1024 676), which is not its own size
+  ✔ its title bar can be grabbed
+  ✔ Safari thrown: it is out of the arrangement
+  ✘ Safari thrown: it is not as large as its slot (1024 676): 0 31 1024 676
+  ✔ Safari thrown: left alone, it is on the screen at its own size, 1024 676
+  ✔ Safari thrown: Float All leaves it that size: 1024 676
+
+▸ Safari, docked, is carried out and let go with ⌥ and nothing else held
+  ✔ its title bar can be grabbed
+  ✔ Safari with ⌥: it is out of the arrangement
+  ✔ Safari with ⌥: it is not as large as its slot (574 653): 0 272 1024 676
+  ✘ Safari with ⌥: left alone, it is on the screen at its own size, 1024 676 — only 73 % of it is to be seen: 0 272 1024 676
+  ✔ Safari with ⌥: Float All leaves it that size: 1024 676
+
+▸ Safari, docked, rests in the menu bar for a second and is let go
+  ✔ its title bar can be grabbed
+  ✔ Safari rested: it is out of the arrangement
+  ✔ Safari rested: it is not as large as its slot (574 653): 0 31 1024 677
+  ✔ Safari rested: left alone, it is on the screen at its own size, 1024 676
+  ✔ Safari rested: Float All leaves it that size: 1024 677
+
+▸ Both are docked, TextEdit is thrown into the menu bar, and Arbor quits
+  ✔ its title bar can be grabbed
+  ✔ Arbor exits within 5 s of quit
+  ✔ after Quit the other has its own size
+  ✔ after Quit the thrown one is not as large as its slot
+
+61 passed, 5 failed

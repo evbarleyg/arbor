@@ -1,0 +1,317 @@
+# mac-shell: scripts/mac-shell/check-left-alone.sh at fd3df1e, macOS 26.6.2, 2026-10-15T13:08Z
+built Arbor, the pointer tool and the app bundles in 5s
+macOS's own tiling: com.apple.WindowManager EnableTilingByEdgeDrag: 1
+com.apple.WindowManager EnableTopTilingByEdgeDrag: 1
+com.apple.WindowManager EnableTilingOptionAccelerator: not set
+com.apple.WindowManager EnableTiledWindowMargins: not set
+
+== Test windows
+session 1: Arbor pid 4135, test windows 29 30 (pid 4086)
+running: 1 display, 0 docked and 2 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> float-all
+arborctl: nothing is docked
+== a test window: w29, its own size 480 348
+
+▸ a test window, docked, is thrown into the menu bar and let go at once
+> float-all
+arborctl: nothing is docked
+> dock 29 left
+docked w29 at the left edge
+> dock 30 right
+docked w30 at the right edge
+  ✔ docked, it is as large as its slot (325 650), which is not its own size
+  ✔ its title bar can be grabbed
+> drag 210 55 512 220 --no-release
+> release 512 8
+  ✔ a test window thrown: it is out of the arrangement
+  ✔ a test window thrown: it is not as large as its slot (325 650): 180 31 480 348
+a test window thrown: macOS LEFT IT ALONE; it is at 180 31 480 348
+  ✔ a test window thrown: left alone, it is on the screen at its own size, 480 348
+> float-all
+floated 1 window
+  ✔ a test window thrown: Float All leaves it that size: 480 348
+
+▸ a test window, docked, is carried out and let go with ⌥ and nothing else held
+> float-all
+arborctl: nothing is docked
+> dock 29 left
+docked w29 at the left edge
+> dock 30 right
+docked w30 at the right edge
+  ✔ its title bar can be grabbed
+> drag 210 55 512 300 --hold 0.8 --mods opt
+  ✔ a test window with ⌥: it is out of the arrangement
+  ✔ a test window with ⌥: it is not as large as its slot (325 650): 220 288 480 348
+a test window with ⌥: macOS LEFT IT ALONE; it is at 220 288 480 348
+  ✔ a test window with ⌥: left alone, it is on the screen at its own size, 480 348
+> float-all
+floated 1 window
+  ✔ a test window with ⌥: Float All leaves it that size: 480 348
+
+▸ a test window, docked, rests in the menu bar for a second and is let go
+> float-all
+arborctl: nothing is docked
+> dock 29 left
+docked w29 at the left edge
+> dock 30 right
+docked w30 at the right edge
+  ✔ its title bar can be grabbed
+> drag 210 55 512 4 --hold 1.2
+  ✔ a test window rested: it is out of the arrangement
+  ✔ a test window rested: it is not as large as its slot (325 650): 0 31 1024 674
+1024 is not about 480
+a test window rested: macOS TOOK IT; it is at 0 31 1024 674
+  ✔ a test window rested: taken, it stays as macOS made it
+> float-all
+floated 1 window
+  ✔ a test window rested: Float All leaves it that size: 1024 674
+1024 is not about 480
+
+▸ a test window rested: it is dragged off macOS's tile and let go over the middle of the screen
+  ✔ its title bar can be grabbed
+> drag 546 43 500 320 --hold 0.5
+  ✔ off its tile it has its own size, 480 348, not the slot's, 325 650: 244 298 480 348
+
+▸ Both are docked, the first is thrown into the menu bar, and Arbor quits
+> float-all
+arborctl: nothing is docked
+> float-all
+arborctl: nothing is docked
+> dock 29 left
+docked w29 at the left edge
+> dock 30 right
+docked w30 at the right edge
+  ✔ its title bar can be grabbed
+> drag 210 55 512 220 --no-release
+> release 512 8
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+after Quit: 277 31 480 348 (own 480 348, slot 325 650); 220 180 480 348 (own 480 348)
+  ✔ after Quit the other has its own size
+  ✔ after Quit the thrown one is not as large as its slot
+session 1: Arbor pid 6281, test windows 29 30 (pid 4086)
+running: 1 display, 1 docked and 1 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+
+== TextEdit and Safari
+> open -g -b com.apple.TextEdit /tmp/arbor-apps.bWLD9w/scratch/oak.txt
+pid 8113 lists (id role subrole x y w h flags):
+  50 AXWindow AXStandardWindow 79 56 673 439 main
+> open -g -b com.apple.Safari /tmp/arbor-apps.bWLD9w/scratch/page.html
+pid 8266 lists (id role subrole x y w h flags):
+  53 AXWindow AXStandardWindow 0 31 1024 677 main,toolbar
+  ✔ TextEdit and Safari each have a window
+session 2: Arbor pid 8409, ARBOR_ONLY_PIDS=8113,8266: running: 1 display, 0 docked and 2 floating, 0 out of view
+Arbor dev
+> float-all
+arborctl: nothing is docked
+== TextEdit: w50, its own size 673 439
+
+▸ TextEdit, docked, is thrown into the menu bar and let go at once
+> float-all
+arborctl: nothing is docked
+> dock 50 left
+docked w50 at the left edge
+> dock 53 right
+docked w53 at the right edge
+  ✔ docked, it is as large as its slot (322 653), which is not its own size
+  ✔ its title bar can be grabbed
+> drag 180 55 512 220 --no-release
+> release 512 8
+  ✔ TextEdit thrown: it is out of the arrangement
+  ✔ TextEdit thrown: it is not as large as its slot (322 653): 35 31 673 439
+TextEdit thrown: macOS LEFT IT ALONE; it is at 35 31 673 439
+  ✔ TextEdit thrown: left alone, it is on the screen at its own size, 673 439
+> float-all
+floated 1 window
+  ✔ TextEdit thrown: Float All leaves it that size: 673 439
+
+▸ TextEdit, docked, is carried out and let go with ⌥ and nothing else held
+> float-all
+arborctl: nothing is docked
+> dock 50 left
+docked w50 at the left edge
+> dock 53 right
+docked w53 at the right edge
+  ✔ its title bar can be grabbed
+> drag 180 55 512 300 --hold 0.8 --mods opt
+  ✔ TextEdit with ⌥: it is out of the arrangement
+  ✔ TextEdit with ⌥: it is not as large as its slot (322 653): 351 272 673 480
+480 is not about 439
+TextEdit with ⌥: macOS TOOK IT; it is at 351 272 673 480
+  ✔ TextEdit with ⌥: taken, it stays as macOS made it
+> float-all
+floated 1 window
+  ✔ TextEdit with ⌥: Float All leaves it that size: 673 480
+480 is not about 439
+
+▸ TextEdit with ⌥: it is dragged off macOS's tile and let go over the middle of the screen
+  ✔ its title bar can be grabbed
+> drag 687 284 500 320 --hold 0.5
+  ✘ off its tile it has its own size, 673 439, not the slot's, 322 653: 164 288 673 480 — 480 is not about 439
+      picture: mac-shell/fail-check-left-alone-1.png
+      | display 0 0 1024 768, visible 0 31 1024 677, camera n0, back no
+      |   Desktop          12 43 1000 653
+      |   w50 164 288 673 480      floating focused
+      |   w53 0 31 1024 676        floating hidden
+      log | DEBUG the button went down at 687,284, the pointer is at 687,284: it is on w50
+      log | DEBUG w50 is being dragged
+      log | DEBUG drag of w50: on float
+      log | INFO  dropped w50 on float, display 5A42259C-47B8-4590-9762-97DBE4FE7F1B
+
+▸ TextEdit, docked, rests in the menu bar for a second and is let go
+> float-all
+arborctl: nothing is docked
+> dock 50 left
+docked w50 at the left edge
+> dock 53 right
+docked w53 at the right edge
+  ✔ its title bar can be grabbed
+> drag 264 55 512 4 --hold 1.2
+  ✔ TextEdit rested: it is out of the arrangement
+  ✔ TextEdit rested: it is not as large as its slot (494 653): 169 31 673 480
+480 is not about 439
+TextEdit rested: macOS TOOK IT; it is at 169 31 673 480
+  ✔ TextEdit rested: taken, it stays as macOS made it
+> float-all
+floated 1 window
+  ✔ TextEdit rested: Float All leaves it that size: 673 480
+480 is not about 439
+
+▸ TextEdit rested: it is dragged off macOS's tile and let go over the middle of the screen
+  ✔ its title bar can be grabbed
+> drag 505 43 500 320 --hold 0.5
+  ✘ off its tile it has its own size, 673 439, not the slot's, 494 653: 164 283 673 480 — 480 is not about 439
+      picture: mac-shell/fail-check-left-alone-2.png
+      | display 0 0 1024 768, visible 0 31 1024 677, camera n0, back no
+      |   Desktop          12 43 1000 653
+      |   w50 164 283 673 480      floating focused
+      |   w53 0 31 1024 676        floating hidden
+      log | DEBUG the button went down at 505,43, the pointer is at 505,43: it is on w50
+      log | DEBUG w50 is being dragged
+      log | DEBUG drag of w50: on float
+      log | INFO  dropped w50 on float, display 5A42259C-47B8-4590-9762-97DBE4FE7F1B
+> float-all
+arborctl: nothing is docked
+== Safari: w53, its own size 1024 676
+
+▸ Safari, docked, is thrown into the menu bar and let go at once
+> float-all
+arborctl: nothing is docked
+> dock 50 left
+docked w50 at the left edge
+> dock 53 right
+docked w53 at the right edge
+  ✘ docked, it is as large as its slot (1024 676), which is not its own size
+      picture: mac-shell/fail-check-left-alone-3.png
+      | display 0 0 1024 768, visible 0 31 1024 677, camera n2, back no
+      |   Desktop          518 43 494 653
+      |   w50 12 43 494 653        docked focused
+      |   w53 0 31 1024 676        docked hidden
+      log | DEBUG float-all failed: nothing is docked
+      log | DEBUG no stage: Reduce motion is on
+      log | INFO  dock 50 left: docked w50 at the left edge
+      log | INFO  dock 53 right: docked w53 at the right edge
+  ✔ its title bar can be grabbed
+> drag 942 55 512 220 --no-release
+> release 512 8
+  ✔ Safari thrown: it is out of the arrangement
+  ✘ Safari thrown: it is not as large as its slot (1024 676): 0 31 1024 676
+      picture: mac-shell/fail-check-left-alone-4.png
+Safari thrown: macOS LEFT IT ALONE; it is at 0 31 1024 676
+  ✔ Safari thrown: left alone, it is on the screen at its own size, 1024 676
+> float-all
+floated 1 window
+  ✔ Safari thrown: Float All leaves it that size: 1024 676
+
+▸ Safari, docked, is carried out and let go with ⌥ and nothing else held
+> float-all
+arborctl: nothing is docked
+> dock 50 left
+docked w50 at the left edge
+> dock 53 right
+docked w53 at the right edge
+  ✔ its title bar can be grabbed
+> drag 942 55 512 300 --hold 0.8 --mods opt
+  ✔ Safari with ⌥: it is out of the arrangement
+  ✔ Safari with ⌥: it is not as large as its slot (574 653): 0 272 1024 676
+Safari with ⌥: macOS LEFT IT ALONE; it is at 0 272 1024 676
+  ✘ Safari with ⌥: left alone, it is on the screen at its own size, 1024 676 — only 73 % of it is to be seen: 0 272 1024 676
+      picture: mac-shell/fail-check-left-alone-5.png
+      | display 0 0 1024 768, visible 0 31 1024 677, camera n2, back no
+      |   Desktop          518 43 494 653
+      |   w50 12 43 494 653        docked
+      |   w53 0 272 1024 676       floating focused
+      log | DEBUG float-all failed: nothing is docked
+      log | DEBUG no stage: Reduce motion is on
+      log | INFO  dock 50 left: docked w50 at the left edge
+      log | DEBUG pid 8113 came forward, and macOS still names another app as the one in front
+      log | DEBUG focus is on w50
+      log | DEBUG w50 has the keyboard
+      log | INFO  made room for w53
+      log | DEBUG no stage: Reduce motion is on
+      log | INFO  dock 53 right: docked w53 at the right edge
+      log | DEBUG pid 8266 came forward, and macOS still names another app as the one in front
+      log | DEBUG focus is on w53
+      log | DEBUG w53 has the keyboard
+      log | DEBUG the button went down at 942,55, the pointer is at 942,55: it is on w53
+      log | DEBUG w53 is being dragged
+      log | DEBUG drag of w53: on float, left to macOS’s tiling
+      log | INFO  dropped w53 on float, display 5A42259C-47B8-4590-9762-97DBE4FE7F1B, left to macOS’s tiling
+      log | DEBUG no stage: Reduce motion is on
+      log | DEBUG w53 is out of its slot and took its own size, 1024×676
+> float-all
+floated 1 window
+  ✔ Safari with ⌥: Float All leaves it that size: 1024 676
+
+▸ Safari, docked, rests in the menu bar for a second and is let go
+> float-all
+arborctl: nothing is docked
+> dock 50 left
+docked w50 at the left edge
+> dock 53 right
+docked w53 at the right edge
+  ✔ its title bar can be grabbed
+> drag 942 55 512 4 --hold 1.2
+  ✔ Safari rested: it is out of the arrangement
+  ✔ Safari rested: it is not as large as its slot (574 653): 0 31 1024 677
+Safari rested: macOS LEFT IT ALONE; it is at 0 31 1024 677
+  ✔ Safari rested: left alone, it is on the screen at its own size, 1024 676
+> float-all
+floated 1 window
+  ✔ Safari rested: Float All leaves it that size: 1024 677
+
+▸ Both are docked, TextEdit is thrown into the menu bar, and Arbor quits
+> float-all
+arborctl: nothing is docked
+> float-all
+arborctl: nothing is docked
+> dock 50 left
+docked w50 at the left edge
+> dock 53 right
+docked w53 at the right edge
+  ✔ its title bar can be grabbed
+> drag 180 55 512 220 --no-release
+> release 512 8
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+after Quit: 284 31 673 480 (own 673 480, slot 322 653); 0 31 1024 676 (own 1024 677)
+  ✔ after Quit the other has its own size
+  ✔ after Quit the thrown one is not as large as its slot
+
+61 passed, 5 failed
+still running when the script had ended, and stopped now:
+  8104 sleep
+exit code 1
