@@ -1,7 +1,7 @@
 #!/bin/bash
 # Arbor is asked for a window that is OUT OF VIEW, of the app in front, while another app's window was used after it: has the window named the keyboard afterwards? (collab/BOARD.md, 1.89.)
 #
-#   scripts/mac-shell/run.sh scripts/mac-shell/check-the-keyboard-goes-to-a-window-out-of-view.sh          about fifteen minutes of play
+#   scripts/mac-shell/run.sh scripts/mac-shell/check-the-keyboard-goes-to-a-window-out-of-view.sh          about ten minutes of play
 #
 # check-the-keyboard-goes-to-the-window-named.sh asked with `zoom <floating window>`, which fills the view since and sends nobody away: the road on which the fault was found was not entered. A model of a Mac found
 # roads that enter it on today's trunk. This is the plainest.
@@ -11,12 +11,12 @@
 # By reading: the view changes first; D, which has the keyboard, goes out of view; Arbor hands the keyboard to the window in view that was used last, which is O, and brings B forward; the request for N follows in the
 # same breath and spares itself the bringing forward, because macOS still calls A the app in front. B's coming forward lands last.
 #
-# THE ARMS, ten rounds each, one after the other within a round's number, with two test apps and with real apps (A is TextEdit with two documents, B is Script Editor with one):
+# THE ARMS, one after the other within a round's number (the road ten rounds, the others five: every second time), with two test apps and with real apps (A is TextEdit with two documents, B is Script Editor with one):
 #   road        as above
 #   dock        control: O lies in the Dock, so that there is nobody else to hand the keyboard to
 #   order       control: used in the order O, N, D: the window used last but one is the window named
 #   everything  control: no `zoom D`: the act comes from the view of everything, and nobody goes out of view
-#   menu        the road, and the act is a real click on N's row in Arbor's menu, Windows ▸ (five rounds: every second time)
+#   menu        the road, and the act is a real click on N's row in Arbor's menu, Windows ▸
 #
 # THE FORECAST, by the model: road and menu end with B in front and the keyboard in O; dock, order and everything end with A in front and the keyboard in N.
 # How it is to be read, fixed beforehand: wrong in any round of road AND right in all rounds of the controls = the fault is seen on a Mac. Right in all rounds = the Mac lets A's window stand.
@@ -207,7 +207,12 @@ for (part, arm), verdicts in count.items():
 PYTHON
 }
 
-enough_count() { [ "$(grep -c "\"part\":\"$1\",\"arm\":\"$2\".*\"verdict\":\"void\"" "$ROUNDS")" -le $((TIMES / 5)) ]; }
+enough_count() {
+  local played void
+  played=$(grep -c "\"part\":\"$1\",\"arm\":\"$2\"" "$ROUNDS")
+  void=$(grep -c "\"part\":\"$1\",\"arm\":\"$2\".*\"verdict\":\"void\"" "$ROUNDS")
+  [ "$played" -gt 0 ] && [ "$void" -le $((played / 5)) ] || { echo "$void of its $played rounds are void"; return 1; }
+}
 
 # rounds <part>
 rounds() {
@@ -216,8 +221,8 @@ rounds() {
   summary
   for time in $(seq 1 "$TIMES"); do
     for arm in $ARMS; do
-      # The menu's arm costs the most and decides nothing by itself: every second time.
-      [ "$arm" != menu ] || [ $((time % 2)) -eq 1 ] || continue
+      # On the model the fault shows every time, so rounds buy little and a Mac's minutes are dear: all but the road every second time.
+      [ "$arm" = road ] || [ $((time % 2)) -eq 1 ] || continue
       round "$1" "$arm" "$time"
     done
   done
