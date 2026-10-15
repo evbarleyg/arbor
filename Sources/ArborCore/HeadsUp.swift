@@ -34,7 +34,7 @@ extension Settings {
 /// One line on screen.
 public struct HeadsUpModel: Equatable, Sendable {
   public enum Kind: String, Sendable {
-    /// The command failed: the key is not dead, there was nothing for it to do.
+    /// The command failed: the key is not dead, there was nothing for it to do. Or keys go where their person does not see it.
     case problem
     /// Something changed that cannot be seen.
     case change

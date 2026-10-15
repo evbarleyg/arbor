@@ -1860,7 +1860,10 @@ private let cameraCommands = [
     }
     h.system.secondsSinceInput = .infinity
     h.scheduler.advance(by: 3)
-    #expect(h.overlays.messages.count == said, "\(h.overlays.messages.last?.model.line ?? "")")
+    // Where the keyboard is now is another matter, and is said ("The keyboard out of view on a held view").
+    #expect(
+      !h.overlays.messages.dropFirst(said).contains { $0.model.text.hasSuffix("the view is held") },
+      "\(h.overlays.messages.last?.model.line ?? "")")
   }
 
   /// The same as a Mac plays it: a window that is closing does not take the keyboard back, so the one macOS picked still has it when Arbor
@@ -1966,6 +1969,395 @@ private let cameraCommands = [
     h.scheduler.advance(by: 3)
     #expect(!h.system.isVisible(xcode) && h.system.focused == s.keynote)
     #expect(h.overlays.messages.count == said, "\(h.overlays.messages.last?.model.line ?? "")")
+  }
+
+  // MARK: The keyboard out of view on a held view
+
+  private static let mailHasIt = "Mail has the keyboard, out of view · ⌃⌥⎋ releases the view"
+
+  /// Keynote alone in view, held. It closes, and macOS gives the keyboard to Mail, which is out of view.
+  private func heldAndEmptyWithTheKeyboardInMail(apart: Bool = false, configure: (inout Settings) -> Void = { _ in }) -> Stage {
+    let s = stage(apart: apart, configure: configure)
+    s.h.run("hold")
+    s.h.system.echoes.keyboard = false
+    s.h.system.close(s.keynote)
+    s.h.system.echoes.keyboard = true
+    s.h.system.comesForward(s.mail)
+    s.h.scheduler.advance(by: 3)
+    return s
+  }
+
+  /// The only window in view goes, macOS hands the keyboard to the app's next one, which is out of view, and there is nobody in view to
+  /// give it to. Nothing moves and the hold is kept (QUESTIONS, "F58, a held view that is empty"). But not in silence: what is typed
+  /// now goes where nobody sees it, so the line says so FOR AS LONG AS IT IS SO.
+  @Test func withNobodyInViewToGiveItToTheLineSaysWhereTheKeyboardIsForAsLongAsItIsThere() {
+    let s = heldAndEmptyWithTheKeyboardInMail()
+    let h = s.h
+    #expect(h.system.focused == s.mail && !h.system.isVisible(s.mail))
+    #expect(h.overlays.headsUp[h.display]?.line == Self.mailHasIt)
+    #expect(h.overlays.headsUp[h.display]?.kind == .problem)
+    let said = h.overlays.messages.count
+    h.scheduler.advance(by: 600)
+    #expect(h.overlays.headsUp[h.display]?.line == Self.mailHasIt, "no timer takes it away")
+    #expect(h.overlays.messages.count == said, "and it is not said again and again")
+    #expect(h.controller.holdLevel == .view && h.controller.displaysHeldEmpty == [h.display])
+
+    #expect(h.run("release").ok)
+    #expect(h.overlays.headsUp.values.allSatisfy { $0.line != Self.mailHasIt }, "it is no longer so: at once")
+    h.scheduler.advance(by: 10)
+    #expect(h.overlays.headsUp.isEmpty)
+  }
+
+  /// Another line covers it for its own time, and then it is back: it is still so.
+  @Test func afterAnotherLineHasCoveredItTheLineIsBack() {
+    let s = heldAndEmptyWithTheKeyboardInMail()
+    let h = s.h
+    #expect(!h.run("out", from: .shortcut).ok)
+    #expect(h.overlays.headsUp[h.display]?.line == "The view is held · ⌃⌥⎋ releases it")
+    h.scheduler.advance(by: 10)
+    #expect(h.overlays.headsUp[h.display]?.line == Self.mailHasIt)
+    // A key that sweeps the lines away and says nothing of its own does not blink it away.
+    let shown = h.overlays.messages.count
+    #expect(h.run("relayout", from: .shortcut).ok)
+    #expect(h.overlays.headsUp[h.display]?.line == Self.mailHasIt && h.overlays.messages.count == shown)
+    // What covers it has its own time, also when there is nothing left to come back.
+    #expect(!h.run("out", from: .shortcut).ok)
+    h.controller.windowDestroyed(s.mail)
+    h.scheduler.advance(by: 1.3)
+    #expect(h.overlays.headsUp[h.display]?.line == "The view is held · ⌃⌥⎋ releases it")
+    h.scheduler.advance(by: 10)
+    #expect(h.overlays.headsUp.isEmpty)
+  }
+
+  enum Ending: String, CaseIterable {
+    case itCloses, itIsMinimized, itsAppIsHidden, anotherOutOfViewTakesIt, aWindowComesIntoTheView, holdingStillInstead, aPause
+    case theLinesAreSwitchedOff
+  }
+
+  /// It goes, or changes, with what it says.
+  @Test(arguments: Ending.allCases) func theLineEndsWithWhatItSays(ending: Ending) {
+    let s = heldAndEmptyWithTheKeyboardInMail(apart: true)
+    let h = s.h
+    #expect(h.overlays.headsUp[h.display]?.line == Self.mailHasIt)
+    var left: String?
+    switch ending {
+    case .itCloses:
+      // ⌘W typed blind, which is the accident the line warns of. Nobody says where the keyboard went.
+      h.controller.windowDestroyed(s.mail)
+    case .itIsMinimized:
+      // An app can go on naming a window in the Dock as its focused one.
+      h.system.echoes.keyboard = false
+      h.system.setMinimized(s.mail, true)
+      #expect(h.system.focused == s.mail, "the premise")
+    case .itsAppIsHidden:
+      h.system.echoes.keyboard = false
+      h.system.setHidden(pid: 12, true)
+      #expect(h.system.focused == s.mail, "the premise")
+    case .anotherOutOfViewTakesIt:
+      h.system.comesForward(s.slack)
+      left = "Slack has the keyboard, out of view · ⌃⌥⎋ releases the view"
+      // As soon as it is seen that it is no longer Mail, the line no longer says Mail.
+      var lines = [h.overlays.headsUp[h.display]?.line]
+      for _ in 0..<100 {
+        h.scheduler.advance(by: 0.05)
+        if lines[lines.count - 1] != h.overlays.headsUp[h.display]?.line { lines.append(h.overlays.headsUp[h.display]?.line) }
+      }
+      #expect(lines == [Self.mailHasIt, nil, left])
+    case .aWindowComesIntoTheView:
+      let new = h.system.open(app: "Preview")
+      #expect(h.system.focused == new && h.system.isVisible(new), "the premise")
+    case .holdingStillInstead:
+      h.run("hold still")
+      #expect(h.overlays.headsUp.values.allSatisfy { $0.line != Self.mailHasIt }, "at once")
+    case .aPause:
+      h.run("pause")
+      #expect(h.overlays.headsUp.values.allSatisfy { $0.line != Self.mailHasIt }, "at once")
+    case .theLinesAreSwitchedOff:
+      var settings = h.controller.settings
+      settings.messages = "off"
+      h.controller.apply(settings: settings)
+    }
+    h.scheduler.advance(by: 10)
+    #expect(h.overlays.headsUp[h.display]?.line == left)
+  }
+
+  /// A floating window out of view that goes changes no layout, least of all that of a view with nothing in it, and here nobody says
+  /// where the keyboard went.
+  @Test(arguments: ["closes", "is minimized", "is hidden"]) func theLineDoesNotOutliveAWindowWhoseEndChangesNothing(end: String) {
+    let s = stage(apart: true)
+    let h = s.h
+    h.run("hold")
+    #expect(h.workspace.isFloating(s.notes) && !h.system.isVisible(s.notes), "the premise")
+    h.system.echoes.keyboard = false
+    h.system.close(s.keynote)
+    h.system.echoes.keyboard = true
+    h.system.comesForward(s.notes)
+    h.scheduler.advance(by: 3)
+    #expect(h.overlays.headsUp[h.display]?.line == "Notes has the keyboard, out of view · ⌃⌥⎋ releases the view")
+    var heard: [Controller.Change] = []
+    h.controller.observe { heard.append($0) }
+    h.system.echoes.keyboard = false
+    switch end {
+    case "closes": h.controller.windowDestroyed(s.notes)
+    case "is minimized": h.system.setMinimized(s.notes, true)
+    default: h.system.setHidden(pid: 14, true)
+    }
+    h.scheduler.advance(by: 2)
+    #expect(!heard.contains { if case .focus = $0 { true } else { $0 == .hold || $0 == .keyboard } }, "the premise: \(heard)")
+    #expect(h.overlays.headsUp.isEmpty)
+  }
+
+  /// ⌘W typed blind asks whether to save: the keyboard is in a dialog, which Arbor does not arrange and the hold keeps out of view as well.
+  /// Or the app is busy and answers nothing. As long as that app is in front the line is as true as it was.
+  @Test(arguments: [nil, WindowID(9999)]) func theLineStaysWhileItsAppIsInFrontAndNobodyArborKnowsHasTheKeyboard(answer: WindowID?) {
+    let s = heldAndEmptyWithTheKeyboardInMail(apart: true)
+    let h = s.h
+    h.system.activateApp(of: s.mail)
+    h.system.focused = answer
+    h.controller.keyboardFocusMoved()
+    h.scheduler.advance(by: 5)
+    #expect(h.overlays.headsUp[h.display]?.line == Self.mailHasIt)
+    // A launcher, the Finder's desktop: then it is no longer Mail that is typed into.
+    h.system.activate(bundleID: "com.apple.finder", name: "Finder")
+    h.scheduler.advance(by: 0.7)
+    #expect(h.overlays.headsUp.isEmpty)
+    // And nothing is said FIRST on such grounds.
+    h.system.activateApp(of: s.mail)
+    h.scheduler.advance(by: 5)
+    #expect(h.overlays.headsUp.isEmpty)
+  }
+
+  /// A change of displays takes the line down until the displays are known. It is back then over the dialog as well.
+  @Test func overItsAppsOwnDialogTheLineComesBackAfterAChangeOfDisplays() {
+    let s = heldAndEmptyWithTheKeyboardInMail(apart: true)
+    let h = s.h
+    h.system.activateApp(of: s.mail)
+    h.system.focused = nil
+    h.controller.keyboardFocusMoved()
+    h.scheduler.advance(by: 2)
+    var larger = FakeWindowSystem.standardDisplay
+    larger.frame.size = CGSize(width: 1920, height: 1200)
+    larger.visibleFrame.size = CGSize(width: 1920, height: 1175)
+    h.system.setDisplays([larger])
+    #expect(h.overlays.headsUp.isEmpty)
+    h.scheduler.advance(by: 3)
+    #expect(h.overlays.headsUp[h.display]?.line == Self.mailHasIt)
+  }
+
+  /// Nor after one look that found the keyboard there: that is the moment every app has that comes forward.
+  @Test func oneLookAndThenNobodyArborKnowsIsNotTwoLooks() {
+    let s = heldAndEmptyWithTheKeyboardInMail(apart: true)
+    let h = s.h
+    h.system.activate(bundleID: "com.apple.finder", name: "Finder")
+    h.system.focused = nil
+    h.scheduler.advance(by: 3)
+    #expect(h.overlays.headsUp.isEmpty, "the premise")
+    let said = h.overlays.messages.count
+    h.system.focused = s.slack
+    h.system.activateApp(of: s.slack)
+    h.scheduler.advance(by: 0.55)
+    h.system.focused = nil  // in silence
+    h.scheduler.advance(by: 5)
+    #expect(h.overlays.messages.count == said)
+  }
+
+  /// Two picks of one window within five seconds are four arrivals on a Mac, and Arbor fights no app for long: the keyboard is left where it
+  /// is, out of view. That was silent as well.
+  @Test func anAppThatIsLeftWithTheKeyboardAfterTheFightIsNamedToo() {
+    let s = stage(apart: true)
+    let h = s.h
+    h.run("hold")
+    h.scheduler.advance(by: 2)  // the look that the hold's beginning asked for has been and gone
+    h.system.defersFocus = true  // asked back every time, and macOS never does it
+    h.system.comesForward(s.mail)
+    h.scheduler.advance(by: 3)
+    #expect(h.system.focused == s.mail && !h.system.isVisible(s.mail))
+    #expect(h.overlays.headsUp[h.display]?.line == Self.mailHasIt)
+    h.system.defersFocus = false
+    h.system.userFocus(s.keynote)
+    h.scheduler.advance(by: 1)
+    #expect(h.overlays.headsUp.isEmpty)
+  }
+
+  /// Another window of the app in front (⌘`): no app comes forward, so a report about the window is all there is.
+  @Test func soIsAnotherWindowOfTheAppInFront() {
+    let s = stage(apart: true)
+    let h = s.h
+    let second = h.system.open(app: "Keynote", pid: 11)
+    h.run("dock \(second.rawValue) beside \(s.mail.rawValue) top")
+    h.run("zoom \(s.keynote.rawValue)")
+    h.system.userFocus(s.keynote)
+    h.run("hold")
+    h.scheduler.advance(by: 2)
+    #expect(!h.system.isVisible(second), "the premise")
+    h.system.defersFocus = true
+    h.system.comesForward(second)
+    h.scheduler.advance(by: 3)
+    #expect(h.system.focused == second && !h.system.isVisible(second), "the premise")
+    #expect(h.overlays.headsUp[h.display]?.line == "Keynote has the keyboard, out of view · ⌃⌥⎋ releases the view")
+  }
+
+  /// On a Mac the keyboard is said to have moved some 20 ms before the window is reported (collab/evidence/traces/app-switch-unreported.jsonl),
+  /// or the window up to half a second before the keyboard has moved. Either way there is a moment in which the keyboard is out of view
+  /// and nobody has been turned away yet. Nothing is said in it: it would flash an app's name at the audience each time one comes forward.
+  /// Whenever Arbor happens to look: something else, `before` the app comes, has made it look. And when the app comes a second time,
+  /// soon or late: a look then and a look now, with the keyboard back in view in between, are not two looks running. And whether or not
+  /// anybody says that the keyboard has moved, when the report came first.
+  /// - Parameter lead: by how much the keyboard's move comes before the report; negative, after it.
+  @Test(arguments: [0.02, -0.1, -0.27, -0.45], Array(stride(from: 0.01, through: 1.03, by: 0.06)))
+  func anAppThatIsTurnedAwayAndGoesIsNotSpokenOf(lead: Double, before: Double) {
+    for (again, inSilence) in [0.3, 0.52, 0.74, 1.07, 6].flatMap({ again in (lead > 0 ? [false] : [false, true]).map { (again, $0) } }) {
+      let s = stage(apart: true)
+      let h = s.h
+      h.run("hold")
+      h.scheduler.advance(by: 1)
+      let said = h.overlays.messages.count
+      h.system.activate(bundleID: "com.example.menu-bar-app")  // whatever makes Arbor look
+      h.scheduler.advance(by: before)
+      for wait in [again, 6] {
+        if lead > 0 {
+          h.system.focused = s.mail
+          h.controller.keyboardFocusMoved()
+          h.scheduler.advance(by: lead)
+          h.system.backgroundFocus(s.mail)
+        } else {
+          h.system.backgroundFocus(s.mail)
+          h.scheduler.advance(by: -lead)
+          h.system.focused = s.mail
+          if !inSilence { h.controller.keyboardFocusMoved() }
+        }
+        h.scheduler.advance(by: wait)
+      }
+      let what = "again after \(again)\(inSilence ? ", in silence" : ""): \(h.overlays.messages.last?.model.line ?? "")"
+      #expect(h.system.focused == s.keynote, "the premise, that it is sent back: \(what)")
+      #expect(h.overlays.messages.count == said && h.overlays.headsUp.isEmpty, "\(what)")
+    }
+  }
+
+  /// macOS takes its time to give the keyboard back, and Arbor is still asking. Not yet.
+  @Test(arguments: Array(stride(from: 0.0, through: 0.52, by: 0.02))) func norWhileArborIsStillAskingTheKeyboardBack(before: Double) {
+    let s = stage(apart: true)
+    let h = s.h
+    h.run("hold")
+    h.scheduler.advance(by: 1)
+    let said = h.overlays.messages.count
+    h.system.activate(bundleID: "com.example.menu-bar-app")  // whatever makes Arbor look
+    h.scheduler.advance(by: before)
+    h.system.defersFocus = true
+    h.system.comesForward(s.mail)
+    h.scheduler.advance(by: 0.55)
+    #expect(h.system.focused == s.mail, "the premise")
+    h.system.defersFocus = false
+    h.system.settleFocus()
+    h.scheduler.advance(by: 3)
+    #expect(h.system.focused == s.keynote, "the premise")
+    #expect(h.overlays.messages.count == said && h.overlays.headsUp.isEmpty, "\(h.overlays.messages.last?.model.line ?? "")")
+  }
+
+  /// A look is a question to the app in front, which may hang. However much is reported, one; and none while the line stands.
+  @Test func lookingCostsOneQuestionHoweverMuchIsReported() {
+    let s = stage(apart: true)
+    let h = s.h
+    h.run("hold")
+    h.scheduler.advance(by: 1)
+    var reads = h.system.focusedWindowReads
+    for turn in 0..<20 { h.system.activate(bundleID: "com.example.app-\(turn % 2)") }
+    h.scheduler.advance(by: 5)
+    #expect(h.system.focusedWindowReads - reads == 1, "and with the keyboard in view that is the end of it")
+
+    let empty = heldAndEmptyWithTheKeyboardInMail(apart: true)
+    reads = empty.h.system.focusedWindowReads
+    empty.h.scheduler.advance(by: 60)
+    #expect(empty.h.system.focusedWindowReads == reads)
+  }
+
+  /// The person's own pick is turned away and told why; macOS never gives the keyboard back. The second line waits for the first to
+  /// have had its time.
+  @Test func theLineWaitsBehindTheOneThatSaysWhyAPickDidNothing() {
+    let s = stage(apart: true)
+    let h = s.h
+    h.run("hold")
+    h.system.defersFocus = true
+    h.system.secondsSinceInput = 0.1
+    h.system.userFocus(s.mail)
+    h.system.secondsSinceInput = 40
+    h.scheduler.advance(by: 3)
+    #expect(h.system.focused == s.mail && !h.system.isVisible(s.mail), "the premise")
+    #expect(h.overlays.headsUp[h.display]?.line == "Mail is out of view: the view is held · ⌃⌥⎋ releases it")
+    h.scheduler.advance(by: 10)
+    #expect(h.overlays.headsUp[h.display]?.line == Self.mailHasIt)
+  }
+
+  /// Its own window is reported once more, long after the fight (a sheet closes; its app comes forward again). Arbor fights for the keyboard
+  /// anew, in vain. The line does not go dark for that.
+  @Test func theLineDoesNotBlinkWhenItsOwnWindowIsReportedAgain() {
+    let s = heldAndEmptyWithTheKeyboardInMail(apart: true)
+    let h = s.h
+    h.scheduler.advance(by: 30)
+    let shown = h.overlays.messages.count
+    h.system.backgroundFocus(s.mail)
+    for _ in 0..<30 {
+      h.scheduler.advance(by: 0.05)
+      #expect(h.overlays.headsUp[h.display]?.line == Self.mailHasIt)
+    }
+    #expect(h.overlays.messages.count == shown)
+  }
+
+  /// The display gets another size: the line is where it belongs there.
+  @Test func theLineKeepsItsPlaceOnADisplayThatChanges() throws {
+    let s = heldAndEmptyWithTheKeyboardInMail()
+    let h = s.h
+    let before = try #require(h.overlays.headsUp[h.display]?.anchor)
+    var larger = FakeWindowSystem.standardDisplay
+    larger.frame.size = CGSize(width: 1920, height: 1200)
+    larger.visibleFrame.size = CGSize(width: 1920, height: 1175)
+    h.system.setDisplays([larger])
+    #expect(h.overlays.headsUp.isEmpty, "its place was worked out for the display as it was")
+    h.scheduler.advance(by: 3)
+    let after = try #require(h.overlays.headsUp[h.display])
+    #expect(after.line == Self.mailHasIt)
+    #expect(after.anchor != before && after.anchor.x == larger.visibleFrame.midX, "\(after.anchor)")
+  }
+
+  /// It is on the display its window belongs to. That display goes: so does the line, and it is on the display the window has come to.
+  @Test func theLineIsOnTheDisplayOfItsWindowAndGoesWithIt() {
+    let (s, _, safari) = twoDisplays()
+    let h = s.h
+    h.run("hold")
+    h.system.defersFocus = true  // asked back every time, and macOS never does it
+    h.system.comesForward(safari)
+    h.scheduler.advance(by: 3)
+    let line = "Safari has the keyboard, out of view · ⌃⌥⎋ releases the view"
+    #expect(h.overlays.headsUp.mapValues(\.line) == [Self.side.id: line])
+    // There is one line for all displays. One on another display covers it, and then it is back where it was.
+    h.system.cursor = CGPoint(x: 700, y: 450)
+    #expect(!h.run("out", from: .shortcut).ok)
+    #expect(h.overlays.headsUp.mapValues(\.line) == [h.display: "The view is held · ⌃⌥⎋ releases it"])
+    h.scheduler.advance(by: 10)
+    #expect(h.overlays.headsUp.mapValues(\.line) == [Self.side.id: line])
+    h.system.setDisplays([FakeWindowSystem.standardDisplay])
+    h.scheduler.advance(by: 3)
+    #expect(h.system.focused == safari && !h.system.isVisible(safari), "the premise")
+    #expect(h.overlays.headsUp.mapValues(\.line) == [h.display: line])
+  }
+
+  @Test func aHoldThatEndsByItselfTakesTheLineWithIt() {
+    let s = heldAndEmptyWithTheKeyboardInMail()
+    let h = s.h
+    #expect(h.run("hold 1").ok)
+    h.scheduler.advance(by: 30)
+    #expect(h.overlays.headsUp[h.display]?.line == Self.mailHasIt)
+    h.scheduler.advance(by: 40)
+    #expect(h.controller.holdLevel == nil, "the premise")
+    #expect(h.overlays.headsUp.values.allSatisfy { $0.line != Self.mailHasIt })
+  }
+
+  @Test func theLineAboutTheKeyboardNamesAKeyThatWorksOrTheMenuAndKeepsQuietWhenToldTo() {
+    let s = heldAndEmptyWithTheKeyboardInMail { $0.bindings = ["ctrl+opt+escape": nil] }
+    #expect(s.h.overlays.headsUp[s.h.display]?.line == "Mail has the keyboard, out of view · Release the view from Arbor’s menu")
+
+    let quiet = heldAndEmptyWithTheKeyboardInMail { $0.messages = "off" }
+    #expect(quiet.h.overlays.messages.isEmpty)
   }
 
   /// Read, not run, by the minimap's owner, and true. macOS's answer to "who has the keyboard" can lag behind its report, and then the view

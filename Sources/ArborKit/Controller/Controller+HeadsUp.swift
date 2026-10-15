@@ -33,6 +33,8 @@ extension Controller {
     var trying = 0
     /// The last line as the log got it.
     var logged = ""
+    /// A line that stays for as long as what it says is so (`letStand`), and where.
+    var standing: (model: HeadsUpModel, display: DisplayID)?
   }
 
   /// The inside of `perform(_:from:)` (Controller+Lead.swift): runs a command and, when a person asked for it with keys, a
@@ -155,14 +157,17 @@ extension Controller {
       HeadsUpModel(kind: kind, text: text, hint: wayBack), on: display, inTheLog: wayBack.map { "\(logged) · \($0)" } ?? logged)
   }
 
-  /// The few outcomes where the reply, written for someone who can name windows and apps at a terminal, has nothing to
-  /// offer someone at the keyboard.
   /// What follows "The view is held" on screen, in place of the reply's three ways, the last of which is a command to type.
-  var wayOutOfAHold: String {
+  var wayOutOfAHold: String { wayOutOfAHold(called: "it") }
+
+  /// "it" where the line has just named the view.
+  func wayOutOfAHold(called view: String) -> String {
     let keys = [Command.toggleHold, .release, .togglePause].lazy.compactMap(shortcutLabel(for:)).first
-    return keys.map { "\($0) releases it" } ?? "Release it from Arbor’s menu"
+    return keys.map { "\($0) releases \(view)" } ?? "Release \(view) from Arbor’s menu"
   }
 
+  /// The few outcomes where the reply, written for someone who can name windows and apps at a terminal, has nothing to
+  /// offer someone at the keyboard.
   private func lineOfItsOwn(for command: Command, _ result: CommandResult, changedNothing: Bool) -> HeadsUpModel? {
     let ok = result.ok
     // Said in front of an audience, so in as few words as will do. The reply ends in a command to type.
@@ -214,10 +219,14 @@ extension Controller {
     case .hold:
       // What was said before the hold began, by command or because a call started, is not for the audience either.
       if !mayShowUnasked, headsUp.line?.kind != .problem { hideHeadsUp() }
+      holdWillLookWhereTheKeyboardIs()
+    case .focus, .keyboard, .settings:
+      holdWillLookWhereTheKeyboardIs()
     case .lifecycle where !isRunning:
       // `shutdown` has removed every overlay. A pause says that it began after this.
       scheduler.cancel("heads-up")
       headsUp.showing = nil
+      headsUp.standing = nil
       headsUp.cheatSheet = nil
       headsUp.facts.removeAll()
     case .lifecycle:
@@ -313,20 +322,41 @@ extension Controller {
     showHeadsUp(model, on: display)
   }
 
-  private func showHeadsUp(_ model: HeadsUpModel, on display: DisplaySnapshot, inTheLog: String? = nil) {
+  private func showHeadsUp(_ model: HeadsUpModel, on display: DisplaySnapshot, inTheLog: String? = nil, staying: Bool = false) {
     let id = display.id
-    // During a hold only the reason why a key did nothing: the rest is Arbor speaking unasked on a screen that may be shared.
+    // During a hold only the reason why a key did nothing, and that keys go where nobody sees them (`holdWillLookWhereTheKeyboardIs`):
+    // the rest is Arbor speaking unasked on a screen that may be shared.
     guard mayShowUnasked || model.kind == .problem else { return }
-    if let old = headsUp.showing, old != id { overlays.showHeadsUp(nil, on: old) }
-    headsUp.showing = id
     var placed = model.placed(in: display.visibleFrame, above: minimapFrame(on: id))
     // Said while a person's command is being carried out. What follows from one a moment later is Arbor's own remark.
-    placed.isAnswer = headsUp.source?.isAnsweredOnScreen == true
+    placed.isAnswer = !staying && headsUp.source?.isAnsweredOnScreen == true
+    // It stands there already: shown again it would fade in again.
+    if staying, headsUp.showing == id, headsUp.line == placed { return }
+    if let old = headsUp.showing, old != id { overlays.showHeadsUp(nil, on: old) }
+    headsUp.showing = id
     headsUp.line = placed
     headsUp.logged = inTheLog ?? placed.line
     Log.debug("said on \(id): \(headsUp.logged)")
     overlays.showHeadsUp(placed, on: id)
     scheduler.schedule("heads-up", after: placed.duration) { [weak self] in self?.hideHeadsUp() }
+  }
+
+  /// A line that stays for as long as what it says is so: whatever takes the line away (its time is up, a key sweeps it away, another
+  /// line has covered it for its own time) puts this one back (`hideHeadsUp`). Whoever lets it stand takes it down, with nil. It waits
+  /// its turn behind a line that is showing: that one answers a key pressed just now.
+  func letStand(_ model: HeadsUpModel?, on id: DisplayID? = nil) {
+    guard let model, let id else {
+      guard let was = headsUp.standing else { return }
+      headsUp.standing = nil
+      // Not another line that covers it.
+      if headsUp.showing == was.display, headsUp.line?.line == was.model.line { hideHeadsUp() }
+      return
+    }
+    let was = headsUp.standing
+    headsUp.standing = (model, id)
+    let coveredByAnother = headsUp.showing != nil && headsUp.line?.line != was?.model.line
+    // Also when it says what it said: the display may have another size by now, and the line another place.
+    if !coveredByAnother { hideHeadsUp() }
   }
 
   /// The minimap came, went or grew on `id`. The line keeps directly above it, and its time runs on.
@@ -340,6 +370,9 @@ extension Controller {
 
   func hideHeadsUp() {
     scheduler.cancel("heads-up")
+    if let standing = headsUp.standing, let display = display(standing.display) {
+      return showHeadsUp(standing.model, on: display, staying: true)
+    }
     guard let display = headsUp.showing else { return }
     headsUp.showing = nil
     overlays.showHeadsUp(nil, on: display)

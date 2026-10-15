@@ -97,6 +97,7 @@ extension Controller: WindowSystemEvents {
     let previous = windows[window.id]
     // Every window Arbor moves reports back what Arbor knows already. Storing that would count as a change of `windows`.
     if previous != window { windows[window.id] = window }
+    if previous?.isPresent != window.isPresent { holdWillLookWhereTheKeyboardIs() }
     lettingBeNotes(window, movedByItsUser: userInitiated && previous?.frame != window.frame)
     if owedTheWayBack[window.id] != nil { payTheWayBack(to: window.id) }
     noteWhetherItCameBack(window, was: previous)
@@ -293,12 +294,15 @@ extension Controller: WindowSystemEvents {
     // The places of the line and the panel of shortcuts were worked out for displays as they were, and macOS would move
     // what is on a display that goes to one where nobody put it. Also during a pause, which says that it began.
     hideCheatSheet()
+    // One that stands as well: it is back, in its new place, once the displays are known (`holdWillLookWhereTheKeyboardIs`).
+    letStand(nil)
     hideHeadsUp()
     guard isRunning else { return }
     closeFinderBecauseTheUserLeft()
     // Displays that go away keep their arrangement and get it back when they
     // return: see Controller+Displays.swift.
     updateDisplays()
+    holdWillLookWhereTheKeyboardIs()
   }
 }
 
