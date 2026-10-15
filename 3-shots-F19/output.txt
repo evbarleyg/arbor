@@ -1,0 +1,129 @@
+# mac-shell: scripts/mac-shell/shots-F19.sh at 150e6c2, macOS 26.6.2, 2026-10-15T03:46Z
+built Arbor and the pointer tool in 2s
+com.apple.WindowManager EnableTilingByEdgeDrag: 0
+com.apple.WindowManager EnableTopTilingByEdgeDrag: 0
+com.apple.WindowManager EnableTilingOptionAccelerator: not set
+com.apple.WindowManager EnableTiledWindowMargins: not set
+
+== three floating windows, with the shortcuts and the menu bar item on
+session 1: Arbor pid 28204, test windows 161 162 163 (pid 28186)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+display 0 0 1024 768, visible 0 31 1024 674, camera n0, back no
+  Desktop          12 43 1000 650
+  w161 170 220 480 348      floating
+  w162 220 180 480 348      floating
+  w163 270 140 480 348      floating
+  ✔ there is nothing to undo yet
+
+== the menu with nothing to undo or redo
+> click 746 15 --right
+shot: mac-shell/01-menu-nothing-to-undo.png
+> key escape
+
+== dock two windows, and give macOS time to echo everything back
+> dock 161 left
+docked w161 at the left edge
+> dock 162 right
+docked w162 at the right edge
+shot: mac-shell/02-docked.png
+  ✔ the newest step is the second dock
+> click 174 368
+
+== a real drag of the gap is one step, and ⌃⌥Z takes it back
+> drag 343 368 433 368 --steps 30 --duration 0.8
+shot: mac-shell/03-gap-dragged.png
+  ✔ the drag made the left window wider
+  ✔ the newest step is the drag
+> key ctrl+opt+z
+  ✔ ⌃⌥Z put the left window back
+  ✔ and the step before it is the dock, so the drag was one step
+shot: mac-shell/04-gap-undone.png
+> key ctrl+opt+shift+z
+  ✔ ⌃⌥⇧Z made it wider again
+> undo
+undid drag the gap between ArborTestWindows (n1) and the Desktop
+  ✔ undo put it back once more
+
+== a real resize by the window's own edge is one step
+> drag 336 368 396 368 --steps 20 --duration 0.6
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          409 43 266 650
+  w161 12 43 385 650        docked focused
+  w162 687 43 325 650       docked
+  w163 409 140 266 348      floating
+  ✔ the newest step is the resize
+> undo
+undid resize w161 by its edges
+  ✔ undo put the window back
+
+== a window dragged to a screen edge goes back to where it was picked up
+> drag 512 152 3 368
+  ✔ the dragged window docked
+shot: mac-shell/05-dropped-on-the-edge.png
+  ✔ the newest step is the drop
+> key ctrl+opt+z
+  ✔ ⌃⌥Z floats it again
+  ✔ where it was picked up
+  ✔ and the docked windows have their places back
+shot: mac-shell/06-drop-undone.png
+
+== Arrange Windows by mistake
+> arrange
+arranged 3 windows
+shot: mac-shell/07-arranged.png
+  ✔ everything is docked
+> key ctrl+opt+z
+  ✔ ⌃⌥Z floats the third window where it was
+  ✔ the first window is back
+  ✔ the second window is back
+shot: mac-shell/08-arrange-undone.png
+
+== a change that moves the view is undone with the view
+> zoom 161
+framed w161
+> toggle-float 161
+w161 is floating; showing the Desktop
+shot: mac-shell/09-framed-window-floated.png
+> undo
+undid toggle-float w161
+  ✔ the window fills the view again
+  ✔ and the other one is out of view again
+shot: mac-shell/10-framed-again.png
+> show-all
+showing everything
+
+== the menu with something to undo and to redo
+> undo
+undid dock w162 right
+> click 696 15 --right
+shot: mac-shell/11-menu-undo-and-redo.png
+> key escape
+> redo
+redid dock w162 right
+
+== unwind: exactly the two docks are left, so no echo added a step
+undid dock w162 right
+undid dock w161 left
+arborctl: nothing to undo
+  ✔ two steps were left (there were 2)
+  ✔ the first window floats where it started
+  ✔ the second window floats where it started
+  ✔ the third window floats where it started
+shot: mac-shell/12-all-undone.png
+display 0 0 1024 768, visible 0 31 1024 674, camera n0, back no
+  Desktop          12 43 1000 650
+  w161 170 220 480 348      floating focused
+  w162 220 180 480 348      floating
+  w163 270 140 480 348      floating
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 161 is back on screen after quitting
+  ✔ window 162 is back on screen after quitting
+  ✔ window 163 is back on screen after quitting
+shot: mac-shell/13-after-quit.png
+
+29 passed, 0 failed
+exit code 0

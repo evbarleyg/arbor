@@ -1,0 +1,80 @@
+# mac-shell: scripts/mac-shell/shots-F45.sh at 150e6c2, macOS 26.6.2, 2026-10-15T03:47Z
+built Arbor and the pointer tool in 2s
+session 1: Arbor pid 30739, test windows 184 185 186 (pid 30676)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+
+== a window that cannot shrink to its slot becomes a tile
+> dock 184 left
+docked w184 at the left edge
+> dock 185 right
+docked w185 at the right edge
+> dock 186 beside 185 bottom
+docked w186 below w185; its space is too small to show it, so it is a tile
+> show-all
+showing everything
+  ✔ it is a tile
+  ✔ it is out of view
+shot: mac-shell/01-tile.png
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          349 43 326 650
+  tile n4 window   687 374 325 319  holds w186
+  w184 12 43 325 650        docked
+  w185 687 43 325 319       docked focused
+  w186 1023 677 700 500     docked parked
+
+== asked every three seconds for about ten, it never shows, and nothing else moves
+asked 3 times; at most 0 of it was on a display at any of 120 looks
+  ✔ it was asked at all
+  ✔ and not with every layout
+  ✔ it never came into view
+  ✔ it is still a tile
+  ✔ the first window has not moved
+  ✔ the second window has not moved
+it is parked at 1023 677 700 500
+film: 4 pictures in .31 s
+shot: mac-shell/02-while-asked-1.png
+shot: mac-shell/02-while-asked-2.png
+shot: mac-shell/02-while-asked-3.png
+shot: mac-shell/02-while-asked-4.png
+
+== relayout tries in view, and ends where it began
+> relayout
+laid out again
+film: 4 pictures in .31 s
+shot: mac-shell/03-relayout-1.png
+shot: mac-shell/03-relayout-2.png
+shot: mac-shell/03-relayout-3.png
+shot: mac-shell/03-relayout-4.png
+  ✔ it is a tile again
+  ✔ it is out of view again
+  ✔ the first window is where it was
+  ✔ the second window is where it was
+shot: mac-shell/04-after-relayout.png
+
+== the app lowers its minimum: the window comes back by itself
+film: 4 pictures in .49 s
+shot: mac-shell/05-coming-back-1.png
+shot: mac-shell/05-coming-back-2.png
+shot: mac-shell/05-coming-back-3.png
+shot: mac-shell/05-coming-back-4.png
+  ✔ it is no longer a tile
+  ✔ it is in its slot
+  ✔ the first window has not moved
+shot: mac-shell/06-back.png
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          349 43 326 650
+  w184 12 43 325 650        docked
+  w185 687 43 325 319       docked focused
+  w186 687 374 325 319      docked
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 184 is back on screen after quitting
+  ✔ window 185 is back on screen after quitting
+  ✔ window 186 is back on screen after quitting
+shot: mac-shell/07-after-quit.png
+
+19 passed, 0 failed
+exit code 0
