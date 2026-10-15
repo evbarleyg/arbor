@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: The rules that decide about the macOS job
         run: ./scripts/ci-step.py ci-changes ./scripts/test-ci-changes.py
       - name: The arithmetic of the queue for the Macs
@@ -59,7 +59,7 @@ jobs:
     container: swift:6.4-noble
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Python and make for the scripts, and a git that trusts the checkout
         # The checkout belongs to the runner's user and the container runs as root, which git refuses to work with.
         run: |
@@ -78,7 +78,7 @@ jobs:
     container: swift:6.4-noble
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Python and make for the scripts, and a git that trusts the checkout
         # The checkout belongs to the runner's user and the container runs as root, which git refuses to work with.
         run: |
@@ -118,7 +118,7 @@ jobs:
       PART: ${{ matrix.part }}
       PARTS: ${{ strategy.job-total }}
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Python and make for the scripts, and a git that trusts the checkout
         # The checkout belongs to the runner's user and the container runs as root, which git refuses to work with.
         run: |
@@ -137,7 +137,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: The tools that report all this can also report a failure
         run: ./scripts/ci-step.py tooling python3 scripts/test-tooling.py --but scenarios rehearse
 
@@ -165,7 +165,7 @@ jobs:
       PART: ${{ matrix.part }}
       PARTS: ${{ strategy.job-total }}
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Python and make for the scripts, and a git that trusts the checkout
         # The checkout belongs to the runner's user and the container runs as root, which git refuses to work with.
         run: |
@@ -181,7 +181,7 @@ jobs:
         run: ./scripts/ci-step.py --summary ' tests of | slowest files' --report "test-$PART.jsonl" test ./scripts/fast-tests.py run --no-build --events "test-$PART.jsonl"
       - name: Hand over what ran
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: linux-tests-${{ matrix.part }}
           path: test-${{ matrix.part }}.jsonl
@@ -211,9 +211,9 @@ jobs:
                   print(f"::error title=linux::{name}: {result}")
           sys.exit(0 if results and all(result == "success" for result in results.values()) else 1)
           VERDICT
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         if: ${{ !cancelled() }}
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         if: ${{ !cancelled() }}
         with:
           pattern: linux-tests-*
@@ -225,7 +225,7 @@ jobs:
         if: ${{ !cancelled() }}
         run: ./scripts/ci-step.py parity python3 scripts/parity.py --report test-*.jsonl --check
       - name: Keep the record of which test ran on Linux
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: tests-linux
           path: linux.tsv

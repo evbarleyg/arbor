@@ -54,7 +54,7 @@ jobs:
       build: ${{ steps.decide.outputs.build }}
       why: ${{ steps.decide.outputs.why }}
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           # The rules, and what they read off which scripts the macOS job can reach.
           sparse-checkout: |
@@ -86,7 +86,7 @@ jobs:
       # Anything but these two words means the most: every test, built from nothing.
       TESTS: ${{ needs.changes.outputs.tests == 'mac-only' && 'mac-only' || 'full' }}
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # Compiling all the test files took longer than running the ones this job runs. For every step: it is part of the manifest's answer.
       - name: Which test files are compiled
         run: ./scripts/ci-tests.py sources --mode "$TESTS" >> "$GITHUB_ENV"
@@ -153,7 +153,7 @@ jobs:
           ./scripts/ci-tests.py run --mode "$TESTS" --record mac.tsv --all mac-all.txt
       - name: Hand on what ran
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: tests-mac
           path: |
@@ -184,7 +184,7 @@ jobs:
           { echo "said<<END-OF-WHAT-WAS-SAID"; cat e2e.out e2e-drag.out 2>/dev/null | grep -E '^::(error|notice) ' | cut -c 1-4000 | head -n 24; echo "END-OF-WHAT-WAS-SAID"; } >> "$GITHUB_OUTPUT"
       - name: Keep the evidence
         if: ${{ !cancelled() && steps.e2e.outcome != 'skipped' }}
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: e2e-evidence
           path: collab/evidence/e2e-latest.txt
@@ -228,10 +228,10 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           sparse-checkout: scripts
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           pattern: tests-*
           merge-multiple: true
@@ -263,7 +263,7 @@ jobs:
     container: swift:6.4-noble
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Python and make for the scripts, and a git that trusts the checkout
         # The checkout belongs to the runner's user and the container runs as root, which git refuses to work with.
         run: |
@@ -275,7 +275,7 @@ jobs:
         run: ./scripts/ci-step.py --summary 'Test run with' test swift test --event-stream-output-path whole.jsonl --event-stream-version 0
       - name: Keep the record of how each test came out
         # Not called tests-…: `tests-accounted-for` fetches all that is.
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: whole-tests
           path: whole.jsonl
@@ -290,11 +290,11 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: tests-linux
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: whole-tests
       - name: Whole and in parts, the same tests came out the same
@@ -313,7 +313,7 @@ jobs:
       ARBOR_REHEARSAL_AS: person
       ARBOR_REHEARSAL_DISPLAY: 1728x1117 33 0
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Python and make for the scripts, and a git that trusts the checkout
         # The checkout belongs to the runner's user and the container runs as root, which git refuses to work with.
         run: |
@@ -338,7 +338,7 @@ jobs:
     container: swift:6.2-noble
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Python and make for the scripts, and a git that trusts the checkout
         # The checkout belongs to the runner's user and the container runs as root, which git refuses to work with.
         run: |
@@ -370,7 +370,7 @@ jobs:
       matrix:
         swift: [oldest, newest]
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: The oldest Xcode Arbor promises to build with
         if: matrix.swift == 'oldest'
         run: |
