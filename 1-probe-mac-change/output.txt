@@ -1,0 +1,15 @@
+# mac-shell: scripts/mac-shell/probe-mac-change.sh at e843fba, macOS 26.6.2, 2026-10-15T03:51Z
+built Arbor, the pointer tool and the app bundles in 12s
+
+== changing everything that can be put back
+com.apple.WindowManager EnableTilingByEdgeDrag: 0
+com.apple.WindowManager EnableTopTilingByEdgeDrag: 0
+com.apple.WindowManager EnableTilingOptionAccelerator: not set
+com.apple.WindowManager EnableTiledWindowMargins: not set
+com.apple.WindowManager EnableStandardClickToShowDesktop: 0
+Reduce Motion: false
+> appearance dark: now dark
+mac-shell: put back after probe-mac-change.sh: reduce-motion
+mac-shell: put back after probe-mac-change.sh: appearance
+mac-shell: put back after probe-mac-change.sh: window-manager
+exit code 0
