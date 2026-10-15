@@ -45,6 +45,8 @@ TABLE = [
     (NO, "these rules, their table and the tools' self-tests, which Linux runs", pull(), dict(files=[
         "scripts/ci-changes.py", "scripts/test-ci-changes.py", "scripts/test-tooling.py", "scripts/test-ci-tests.py"])),
     (NO, "trunk: the same", TRUNK, dict(files=[".github/workflows/mac-shell.yml", "scripts/ci-changes.py"])),
+    (NO, "the workflow that holds the Linux jobs", pull(), dict(files=[".github/workflows/linux.yml"])),
+    (UPON, "the workflow that calls it, and holds the macOS job", pull(), dict(files=[".github/workflows/linux.yml", ".github/workflows/ci.yml"])),
     (NO, "the look at the queue for the Macs, and its self-test", pull(), dict(files=["scripts/mac-queue.py", "scripts/test-mac-queue.py"])),
     (NO, "scripts the macOS job cannot reach, with prose", pull(), dict(files=["scripts/census.py", "scripts/tools/ledger.py", DOC, "CLAUDE.md"])),
     (NO, "trunk: the same", TRUNK, dict(files=["scripts/census.py"])),

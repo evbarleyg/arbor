@@ -57,8 +57,9 @@ import sys
 
 PROSE = re.compile(
     r"^(collab|docs|scripts/typecheck-mac)/|^scripts/mac-shell/(?!(e2e-drag\.sh|lib\.sh|compile-tools\.sh|state\.py|.*\.swift|.*\.m)$)|\.md$"
-    # What CI's macOS job never runs. The Mac shell workflow is proved by a Mac shell run, these rules and the tools' self-tests by Linux.
-    r"|^\.github/workflows/mac-shell\.yml$|^scripts/ci-mac-shell\.sh$"
+    # What CI's macOS job never runs. The Mac shell workflow is proved by a Mac shell run; the Linux jobs' own workflow, these rules and the
+    # tools' self-tests by Linux.
+    r"|^\.github/workflows/(mac-shell|linux)\.yml$|^scripts/ci-mac-shell\.sh$"
     r"|^scripts/(test-)?(ci-changes|mac-queue)\.py$|^scripts/test-(tooling|ci-tests)\.py$"
     # The Makefile: no step of a macOS job calls make. And what looks after the repository itself, on Linux or at GitHub's.
     r"|^Makefile$|^scripts/(test-)?public-[a-z-]+\.\w+$|^scripts/git-hooks/|^scripts/(lint-workflows|housekeeping|gh-state)\.py$|^\.github/(workflows/(public-[a-z-]+|housekeeping)|dependabot)\.yml$|^\.claude/"
