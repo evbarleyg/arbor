@@ -1,0 +1,79 @@
+# check-F51 2026-10-15T16:13Z on macOS 26.6.2, commit 7f3aa9f
+
+== A tap shows everything, and it stays
+  ✔ everything shows
+  ✔ and still does a second later
+  ✔ no outline
+  ✔ back returns to w1
+
+== A tap with ⌃⌥ kept down, as between two shortcuts
+  ✔ everything shows a second after the tap
+  ✔ no outline
+  ✔ and does not spring back when ⌃⌥ come up
+
+== Hold, point, let go
+  ✔ everything shows while the keys are down
+  ✔ an outline shows
+  ✔ letting go frames the window under the pointer
+  ✔ which has the keyboard
+  ✔ the outline is gone
+  ✔ back returns to the view before the peek
+
+== A slow press: held for half a second, nothing chosen
+  ✔ everything stays
+  ✔ and does not spring back
+
+== Hold for a good look and let go without moving
+  ✔ the original view is back
+  ✔ and history has no entry for it: back goes to everything, where start_over came from
+
+== ⎋
+  ✔ ⌃⌥⎋ returns to the original view
+  ✔ and does not pause
+  ✔ letting go afterwards changes nothing
+
+== The arrow keys
+  ✔ ⌃⌥↓ did not step in
+  ✔ letting go frames the window below
+
+== ⌃⌥ come up before Space
+  ✔ that ends the hold
+  ✔ and Space coming up changes nothing
+
+== Auto-repeat
+  ✔ everything shows
+  ✔ the outline shows
+  ✔ letting go returns to the original view
+
+== A click
+  ✔ the clicked window is framed with Space still down
+  ✔ and no app was hidden by an ⌥-click
+  ✔ letting go afterwards changes nothing
+
+== Another shortcut during the hold
+  ✔ nothing is left of the peek
+
+== A release that is never reported: the shortcut is unbound while its key is down
+  ✔ the hold is seen
+  ✔ while the key is down no look finds it up
+  ✔ once it is up a look finds it up
+  ✔ and macOS had reported no release
+  ✔ nothing is left of the peek
+
+== For information: a key that is put in further in than the keyboard, as a remapper or a remote hand may
+
+== As on any later day: the same Arbor started again, with the permission in place from before it starts
+  ✔ Arbor exits within 5 s of quit
+  ✔ the hold is seen
+  ✔ and no look found the keys up
+  ✔ letting go returns to the original view
+
+== What the log says
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+44 passed, 0 failed

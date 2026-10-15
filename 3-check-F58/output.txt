@@ -1,0 +1,598 @@
+# mac-shell: scripts/mac-shell/check-F58.sh at 7f3aa9f, macOS 26.6.2, 2026-10-15T16:17Z
+built Arbor, the pointer tool and the app bundles in 7s
+> wallpaper #808080
+/System/Library/Desktop Pictures/Solid Colors/Black.png
+
+== 1. where macOS lets a window be put, and what shows there (no Arbor)
+1 0 0 1024 768 1024 768 1
+display 1024 x 768, window 480 wide
+> move 500 420
+> share-probe place 19930 120 200 200
+asked 200,200 error 0 now 200,200
+shot: mac-shell/spot-reference.png
+-- today-1-point-right
+> share-probe place 19930 120 1023 767
+asked 1023,767 error 0 now 1023,677
+  window 120: window server 1023 677 480 348, share on a display 0.00, on-screen list: on
+shot: mac-shell/spot-today-1-point-right.png
+column 1017: 102 pixels differ, rows 666 to 767, by up to 12 of 255
+column 1018: 103 pixels differ, rows 662 to 767, by up to 13 of 255
+column 1019: 102 pixels differ, rows 666 to 767, by up to 15 of 255
+column 1020: 104 pixels differ, rows 663 to 767, by up to 16 of 255
+column 1021: 104 pixels differ, rows 661 to 767, by up to 17 of 255
+column 1022: 103 pixels differ, rows 665 to 767, by up to 35 of 255
+column 1023: 106 pixels differ, rows 662 to 767, by up to 109 of 255
+edges: 2492 pixels differ, 230 of them plainly (16 or more of 255), by up to 109
+> share-probe place 19930 120 200 200
+asked 200,200 error 0 now 200,200
+  and back: 200 200 480 348
+-- 0-points-right
+> share-probe place 19930 120 1024 767
+asked 1024,767 error 0 now 984,677
+  window 120: window server 984 677 480 348, share on a display 0.02, on-screen list: on
+shot: mac-shell/spot-0-points-right.png
+column 1017: 109 pixels differ, rows 659 to 767, by up to 128 of 255
+column 1018: 110 pixels differ, rows 656 to 767, by up to 128 of 255
+column 1019: 109 pixels differ, rows 658 to 767, by up to 128 of 255
+column 1020: 108 pixels differ, rows 659 to 767, by up to 128 of 255
+column 1021: 109 pixels differ, rows 658 to 767, by up to 128 of 255
+column 1022: 108 pixels differ, rows 660 to 767, by up to 128 of 255
+column 1023: 108 pixels differ, rows 659 to 767, by up to 128 of 255
+edges: 6259 pixels differ, 4329 of them plainly (16 or more of 255), by up to 128
+> share-probe place 19930 120 200 200
+asked 200,200 error 0 now 200,200
+  and back: 200 200 480 348
+-- 40-beyond-right
+> share-probe place 19930 120 1064 767
+asked 1064,767 error 0 now 984,677
+  window 120: window server 984 677 480 348, share on a display 0.02, on-screen list: on
+shot: mac-shell/spot-40-beyond-right.png
+column 1017: 109 pixels differ, rows 659 to 767, by up to 128 of 255
+column 1018: 110 pixels differ, rows 656 to 767, by up to 128 of 255
+column 1019: 109 pixels differ, rows 658 to 767, by up to 128 of 255
+column 1020: 108 pixels differ, rows 659 to 767, by up to 128 of 255
+column 1021: 109 pixels differ, rows 658 to 767, by up to 128 of 255
+column 1022: 108 pixels differ, rows 660 to 767, by up to 128 of 255
+column 1023: 108 pixels differ, rows 659 to 767, by up to 128 of 255
+edges: 6259 pixels differ, 4329 of them plainly (16 or more of 255), by up to 128
+> share-probe place 19930 120 200 200
+asked 200,200 error 0 now 200,200
+  and back: 200 200 480 348
+-- far-beyond
+> share-probe place 19930 120 3072 2304
+asked 3072,2304 error 0 now 984,677
+  window 120: window server 984 677 480 348, share on a display 0.02, on-screen list: on
+shot: mac-shell/spot-far-beyond.png
+column 1017: 109 pixels differ, rows 659 to 767, by up to 128 of 255
+column 1018: 110 pixels differ, rows 656 to 767, by up to 128 of 255
+column 1019: 109 pixels differ, rows 658 to 767, by up to 128 of 255
+column 1020: 108 pixels differ, rows 659 to 767, by up to 128 of 255
+column 1021: 109 pixels differ, rows 658 to 767, by up to 128 of 255
+column 1022: 108 pixels differ, rows 660 to 767, by up to 128 of 255
+column 1023: 108 pixels differ, rows 659 to 767, by up to 128 of 255
+edges: 6259 pixels differ, 4329 of them plainly (16 or more of 255), by up to 128
+> share-probe place 19930 120 200 200
+asked 200,200 error 0 now 200,200
+  and back: 200 200 480 348
+-- today-1-point-left
+> share-probe place 19930 120 -479 767
+asked -479,767 error 0 now -479,677
+  window 120: window server -479 677 480 348, share on a display 0.00, on-screen list: on
+shot: mac-shell/spot-today-1-point-left.png
+column 23: 72 pixels differ, rows 678 to 767, by up to 1 of 255
+column 24: 72 pixels differ, rows 680 to 766, by up to 1 of 255
+column 25: 49 pixels differ, rows 694 to 767, by up to 1 of 255
+column 26: 38 pixels differ, rows 688 to 767, by up to 1 of 255
+column 27: 21 pixels differ, rows 705 to 763, by up to 1 of 255
+column 28: 9 pixels differ, rows 709 to 762, by up to 1 of 255
+column 29: 6 pixels differ, rows 706 to 757, by up to 1 of 255
+edges: 2485 pixels differ, 233 of them plainly (16 or more of 255), by up to 109
+> share-probe place 19930 120 200 200
+asked 200,200 error 0 now 200,200
+  and back: 200 200 480 348
+-- 0-points-left
+> share-probe place 19930 120 -480 767
+asked -480,767 error 0 now -440,677
+  window 120: window server -440 677 480 348, share on a display 0.02, on-screen list: on
+shot: mac-shell/spot-0-points-left.png
+column 53: 61 pixels differ, rows 672 to 767, by up to 35 of 255
+column 54: 61 pixels differ, rows 671 to 767, by up to 34 of 255
+column 55: 58 pixels differ, rows 673 to 767, by up to 35 of 255
+column 56: 58 pixels differ, rows 673 to 767, by up to 34 of 255
+column 57: 55 pixels differ, rows 675 to 767, by up to 33 of 255
+column 58: 55 pixels differ, rows 678 to 767, by up to 34 of 255
+column 59: 52 pixels differ, rows 680 to 767, by up to 34 of 255
+edges: 5724 pixels differ, 4231 of them plainly (16 or more of 255), by up to 128
+> share-probe place 19930 120 200 200
+asked 200,200 error 0 now 200,200
+  and back: 200 200 480 348
+-- below-the-bottom
+> share-probe place 19930 120 200 767
+asked 200,767 error 0 now 200,677
+  window 120: window server 200 677 480 348, share on a display 0.26, on-screen list: on
+shot: mac-shell/spot-below-the-bottom.png
+column 982: 48 pixels differ, rows 711 to 758, by up to 1 of 255
+column 983: 50 pixels differ, rows 710 to 759, by up to 1 of 255
+column 984: 46 pixels differ, rows 712 to 757, by up to 1 of 255
+column 985: 44 pixels differ, rows 712 to 757, by up to 1 of 255
+column 986: 36 pixels differ, rows 715 to 754, by up to 2 of 255
+column 987: 36 pixels differ, rows 714 to 755, by up to 2 of 255
+column 988: 22 pixels differ, rows 723 to 746, by up to 2 of 255
+edges: 1712 pixels differ, 0 of them plainly (16 or more of 255), by up to 7
+> share-probe place 19930 120 200 200
+asked 200,200 error 0 now 200,200
+  and back: 200 200 480 348
+
+== a second process with two windows
+second process 21049 with windows 123 124
+/tmp/arbor-shell.cObCEW/Arbor.app: replacing existing signature
+session 1: Arbor pid 21406, launched without the permission
+started as a person starts it: the app, through Launch Services, granted while it waited (pid 21406)
+running: 1 display, 0 docked and 5 floating, 0 out of view
+Arbor 0.0.0 (build 0)
+  ✔ Arbor manages the second process's windows too
+> dock 129 left
+docked w129 at the left edge
+> dock 130 right
+docked w130 at the right edge
+> dock 131 beside 130 bottom
+docked w131 below w130
+> dock 123 beside 129 bottom
+docked w123 below w129
+> click 294 55
+  ✔ the click gave W1 the keyboard
+> zoom 129
+framed w129
+  ✔ window 130 is out of view
+  ✔ window 131 is out of view
+  ✔ window 123 is out of view
+  ✔ window 124 is out of view
+display 0 0 1024 768, visible 0 31 1024 679, camera n1, back yes
+  w123 1023 682 494 321     docked parked
+  w124 1023 682 480 348     floating parked
+  w129 12 43 1000 655       docked focused
+  w130 1023 682 494 322     docked parked
+  w131 1023 682 494 321     docked parked
+
+== 2. what a share of the whole screen shows of four windows that are out of view
+> hold
+holding this view until `release`
+  ✔ the view is held
+> move 500 420
+shot: mac-shell/share-four-out-of-view.png
+  window 130: window server 1023 682 494 322, share on a display 0.00, on-screen list: on
+  window 131: window server 1023 682 494 321, share on a display 0.00, on-screen list: on
+  window 123: window server 1023 682 494 321, share on a display 0.00, on-screen list: on
+  window 124: window server 1023 682 480 348, share on a display 0.00, on-screen list: on
+
+== 2b. what the pickers of Zoom, Meet and Teams are told, and what sharing one window that is out of view sends
+> share-probe shareable 129 130 131 123 124
+123: listed among on-screen windows yes, isOnScreen true, frame 1023,682 494x321
+124: listed among on-screen windows yes, isOnScreen true, frame 1023,682 480x348
+129: listed among on-screen windows yes, isOnScreen true, frame 12,43 1000x655
+130: listed among on-screen windows yes, isOnScreen true, frame 1023,682 494x322
+131: listed among on-screen windows yes, isOnScreen true, frame 1023,682 494x321
+  ✔ ScreenCaptureKit gives a picture of a window that is out of view
+> share-probe colours /Users/runner/work/arbor/arbor/mac-shell/share-one-window-out-of-view.png
+494x322: #0088ff 89%, #ececec 7%, #ffffff 0%
+  ✔ and of the one in view
+> share-probe colours /Users/runner/work/arbor/arbor/mac-shell/share-one-window-in-view.png
+1000x655: #ff383c 95%, #ffffff 4%, #d91216 0%
+shot: mac-shell/share-one-window-the-old-way.png
+> share-probe colours /Users/runner/work/arbor/arbor/mac-shell/share-one-window-the-old-way.png
+480x348: #0088ff 90%, #ececec 7%, #ffffff 0%
+
+== 3. held: windows out of view are minimized and restored (the reference picture for part 2)
+> axtool set 21376 130 AXMinimized yes
+0
+> axtool set 21376 131 AXMinimized yes
+0
+> axtool set 21049 123 AXMinimized yes
+0
+> axtool set 21049 124 AXMinimized yes
+0
+> move 500 420
+shot: mac-shell/share-reference-none-out-of-view.png
+  ✔ the view did not move
+above the Dock:
+column 1013: 24 pixels differ, rows 686 to 709, by up to 155 of 255
+column 1014: 32 pixels differ, rows 678 to 709, by up to 105 of 255
+column 1015: 44 pixels differ, rows 652 to 709, by up to 26 of 255
+column 1016: 39 pixels differ, rows 668 to 709, by up to 30 of 255
+column 1017: 37 pixels differ, rows 669 to 709, by up to 34 of 255
+column 1018: 43 pixels differ, rows 653 to 709, by up to 36 of 255
+column 1019: 43 pixels differ, rows 649 to 709, by up to 41 of 255
+column 1020: 46 pixels differ, rows 649 to 709, by up to 45 of 255
+column 1021: 44 pixels differ, rows 650 to 709, by up to 47 of 255
+column 1022: 44 pixels differ, rows 650 to 709, by up to 88 of 255
+column 1023: 46 pixels differ, rows 645 to 709, by up to 87 of 255
+edges: 2524 pixels differ, 1513 of them plainly (16 or more of 255), by up to 255
+the whole height:
+column 1021: 102 pixels differ, rows 650 to 767, by up to 56 of 255
+column 1022: 102 pixels differ, rows 650 to 767, by up to 97 of 255
+column 1023: 104 pixels differ, rows 645 to 767, by up to 111 of 255
+edges: 8656 pixels differ, 3824 of them plainly (16 or more of 255), by up to 255
+> axtool set 21049 123 AXMinimized no
+0
+film: 6 pictures in .70 s
+shot: mac-shell/held-restore-1.png
+shot: mac-shell/held-restore-2.png
+shot: mac-shell/held-restore-3.png
+shot: mac-shell/held-restore-4.png
+shot: mac-shell/held-restore-5.png
+shot: mac-shell/held-restore-6.png
+  ✔ restored, X1 is out of view again
+  ✔ and W1 has the keyboard back
+  ✔ the view did not move
+> axtool set 21049 124 AXMinimized no
+0
+> axtool set 21376 130 AXMinimized no
+0
+> axtool set 21376 131 AXMinimized no
+0
+  ✔ window 130 is out of view
+  ✔ window 131 is out of view
+  ✔ window 123 is out of view
+  ✔ window 124 is out of view
+  ✔ W1 has the keyboard
+  ✔ the view did not move
+  ✔ W1 is where it was
+DEBUG focus report for w123, which does not have the keyboard or takes no space; 0 checks left
+DEBUG focus report for w124, which does not have the keyboard or takes no space; 0 checks left
+DEBUG hold: focus report for w130, 12.054608458 s after the last click or modifier key
+DEBUG focus report for w130, which does not have the keyboard or takes no space; 4 checks left
+DEBUG w130 has the keyboard
+INFO  hold: w130 took the keyboard out of view; sending it back
+DEBUG hold: focus report for w129, 12.089050542 s after the last click or modifier key
+DEBUG w129 has the keyboard
+DEBUG hold: focus report for w131, 12.688927917 s after the last click or modifier key
+DEBUG focus report for w131, which does not have the keyboard or takes no space; 4 checks left
+DEBUG w131 has the keyboard
+INFO  hold: w131 took the keyboard out of view; sending it back
+DEBUG hold: focus report for w129, 12.721937875 s after the last click or modifier key
+DEBUG w129 has the keyboard
+
+== 3b. held: another app comes forward by itself
+> axtool activate 21049
+0 true
+film: 8 pictures in .90 s
+shot: mac-shell/held-comes-forward-1.png
+shot: mac-shell/held-comes-forward-2.png
+shot: mac-shell/held-comes-forward-3.png
+shot: mac-shell/held-comes-forward-4.png
+shot: mac-shell/held-comes-forward-5.png
+shot: mac-shell/held-comes-forward-6.png
+shot: mac-shell/held-comes-forward-7.png
+shot: mac-shell/held-comes-forward-8.png
+> axtool front
+21376 129
+  ✔ its windows stay out of view
+  ✔ both of them
+  ✔ W1 has the keyboard back
+  ✔ the view did not move
+DEBUG hold: focus report for w124, 14.871958375 s after the last click or modifier key
+DEBUG w124 has the keyboard
+INFO  hold: w124 took the keyboard out of view; sending it back
+DEBUG hold: focus report for w129, 14.924901333 s after the last click or modifier key
+DEBUG w129 has the keyboard
+shot: mac-shell/held-after-comes-forward.png
+
+== 3c. held: ⌘Tab to it is turned away as well
+> key cmd+tab
+> axtool front
+21376 129
+  ✔ its windows stay out of view
+  ✔ W1 has the keyboard back
+  ✔ the view did not move
+DEBUG hold: focus report for w124, 0.00603425 s after the last click or modifier key
+DEBUG w124 has the keyboard
+INFO  hold: w124 took the keyboard out of view; sending it back
+DEBUG hold: focus report for w129, 0.020891208 s after the last click or modifier key
+DEBUG w129 has the keyboard
+
+== 3d. held: keys and drags that would move the view
+> key ctrl+opt+space
+  ✔ ctrl+opt+space changes nothing
+> key ctrl+opt+up
+  ✔ ctrl+opt+up changes nothing
+> key ctrl+opt+right
+  ✔ ctrl+opt+right changes nothing
+> key ctrl+opt+0
+  ✔ ctrl+opt+0 changes nothing
+> key ctrl+opt+d
+  ✔ ctrl+opt+d changes nothing
+  ✔ W1 is where it was
+> drag 546 55 3 400 --no-release
+shot: mac-shell/held-drag-no-preview.png
+  ✔ no drop preview promises what will not happen
+> release
+  ✔ dropped, it goes back to its place
+  ✔ the view did not move
+  ✔ window 130 is still out of view
+  ✔ window 131 is still out of view
+  ✔ window 123 is still out of view
+  ✔ window 124 is still out of view
+
+== 3e. held: the three things that showed an audience everything (found on review)
+> key ctrl+opt+shift+f
+  ✔ ⌃⌥⇧F floats nothing
+  ✔ window 130 is still out of view
+  ✔ window 131 is still out of view
+  ✔ window 123 is still out of view
+  ✔ window 124 is still out of view
+  ✔ Accessibility: W1 has the keyboard first
+> axtool set 21376 129 AXMinimized yes
+0
+shot: mac-shell/held-and-empty.png
+  ✔ Accessibility: W1 stays in the Dock
+  ✔ Accessibility: W1 says that it is minimized
+  ✔ Accessibility: and Arbor knows
+  ✔ Accessibility: its app named a window out of view, and Arbor asked W1 before sending the keyboard back
+  ✔ Accessibility: the view is empty and still held
+  ✔ Accessibility: the view is still held
+  ✔ Accessibility: with W1 minimized, window 130 is still out of view
+  ✔ Accessibility: with W1 minimized, window 131 is still out of view
+  ✔ Accessibility: with W1 minimized, window 123 is still out of view
+  ✔ Accessibility: with W1 minimized, window 124 is still out of view
+> axtool set 21376 129 AXMinimized no
+0
+  ✔ Accessibility: restored, W1 is where it was
+  ✔ Accessibility: the view did not move
+  ✔ ⌘M: W1 has the keyboard first
+> key cmd+m
+  ✔ ⌘M: W1 stays in the Dock
+  ✔ ⌘M: W1 says that it is minimized
+  ✔ ⌘M: and Arbor knows
+  ✔ ⌘M: its app named a window out of view, and Arbor asked W1 before sending the keyboard back
+  ✔ ⌘M: the view is empty and still held
+  ✔ ⌘M: the view is still held
+  ✔ ⌘M: with W1 minimized, window 130 is still out of view
+  ✔ ⌘M: with W1 minimized, window 131 is still out of view
+  ✔ ⌘M: with W1 minimized, window 123 is still out of view
+  ✔ ⌘M: with W1 minimized, window 124 is still out of view
+> axtool set 21376 129 AXMinimized no
+0
+  ✔ ⌘M: restored, W1 is where it was
+  ✔ ⌘M: the view did not move
+  ✔ the yellow button: W1 has the keyboard first
+> click 46 57
+> move 500 420
+  ✔ the yellow button: W1 stays in the Dock
+  ✔ the yellow button: W1 says that it is minimized
+  ✔ the yellow button: and Arbor knows
+  ✔ the yellow button: its app named a window out of view, and Arbor asked W1 before sending the keyboard back
+  ✔ the yellow button: the view is empty and still held
+  ✔ the yellow button: the view is still held
+  ✔ the yellow button: with W1 minimized, window 130 is still out of view
+  ✔ the yellow button: with W1 minimized, window 131 is still out of view
+  ✔ the yellow button: with W1 minimized, window 123 is still out of view
+  ✔ the yellow button: with W1 minimized, window 124 is still out of view
+> axtool set 21376 129 AXMinimized no
+0
+  ✔ the yellow button: restored, W1 is where it was
+  ✔ the yellow button: the view did not move
+> key ctrl+opt+escape --down
+> key ctrl+opt+escape --repeat 60
+  ✔ ⌃⌥⎋ released the hold
+  ✔ kept down for three seconds, it did not go on to pause
+> key ctrl+opt+escape --up
+  ✔ released, window 130 is still out of view
+  ✔ released, window 131 is still out of view
+  ✔ released, window 123 is still out of view
+  ✔ released, window 124 is still out of view
+INFO  hold: view → none
+DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Released; the same key again pauses Arbor
+> hold
+holding this view until `release`
+  ✔ held again
+
+== 3f. the lock in the menu bar, and the menu
+shot: mac-shell/held-menu-bar.png
+> click 780 15 --right
+shot: mac-shell/held-menu.png
+> key escape
+
+== 4. release, then hold still
+> release
+released
+> key ctrl+opt+space
+  ✔ released, ⌃⌥Space shows everything
+> click 294 55
+  ✔ the click gave W1 the keyboard
+> zoom 129
+framed w129
+  ✔ framed again
+> hold still
+holding still until `release`: the view moves only when you ask
+shot: mac-shell/still-menu-bar.png
+> axtool activate 21049
+0 true
+  ✔ an app that comes forward by itself stays out of view
+  ✔ W1 has the keyboard back
+  ✔ the view did not move
+DEBUG hold: focus report for w124, 2.550169584 s after the last click or modifier key
+DEBUG w124 has the keyboard
+INFO  hold: w124 took the keyboard out of view; sending it back
+DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: ArborTestWindows is out of view: holding still · ⌘Tab or ⌃⌥G goes there
+DEBUG hold: focus report for w129, 2.59171325 s after the last click or modifier key
+DEBUG w129 has the keyboard
+> key ctrl+opt+up
+  ✔ the user's own keys move the view
+> zoom 129
+framed w129
+  ✔ framed again
+> key cmd+tab
+> axtool front
+21049 124
+DEBUG hold: focus report for w124, 0.007399125 s after the last click or modifier key
+DEBUG w124 has the keyboard
+it is managed at 220 180 480 348
+  ✔ the view follows ⌘Tab while holding still
+display 0 0 1024 768, visible 0 31 1024 679, camera n0, back yes
+  Desktop          12 43 1000 655
+  w123 1023 682 1000 321    docked parked
+  w124 220 180 480 348      floating focused
+  w129 1023 682 1000 655    docked parked
+  w130 1023 682 494 322     docked parked
+  w131 1023 682 494 321     docked parked
+> release
+released
+
+== 5. a second display to the right: where do windows go that are out of view, and what does each display show?
+> show-all
+showing everything
+> click 294 55
+> zoom 129
+framed w129
+  ✔ framed
+> hold
+holding this view until `release`
+> display_add 1280 720: display 2, EC4B6CBE-4317-409E-8B7F-4292FB08C773
+> display_move right: now at 1920 0 1280 720
+  ✔ display-comes: both lookers came to an end
+display-comes: 79 looks, 7 pictures; the most of a window on a display: 1; from .88 s to 2.82 s
+  .88 s 130:0.00 131:1.00 123:1.00 124:1.00
+  1.31 s 130:1.00 131:1.00 123:1.00 124:1.00
+  1.45 s 130:1.00 131:1.00 123:1.00 124:1.00
+  2.82 s 130:1.00 131:0.00 123:0.00 124:0.00
+  ✔ display-comes: there were looks, and each got an answer
+  ✘ held, nothing that is out of view lay on a display while one came (the most: 1 of a window) — (known: board 1.64)
+      picture: mac-shell/fail-check-F58-1.png
+      | display 1 0 0 1920 1080, visible 0 31 1920 971, camera n1, back yes
+      | display 2 1920 0 1280 720, visible 1920 31 1280 689, camera n0, back no
+      |   Desktop          1932 43 1256 665
+      |   w123 1919 974 480 348     display 1, docked parked
+      |   w124 1919 974 480 348     display 1, floating parked
+      |   w129 12 43 1896 947       display 1, docked focused
+      |   w130 1919 974 480 348     display 1, docked parked
+      |   w131 1919 974 480 348     display 1, docked parked
+      log | INFO  trace check-F58-1-10 ended: 306 lines, another trace was started
+      log | INFO  trace check-F58-1-11: recording to /tmp/arbor-shell.cObCEW/home/traces/2026-10-15-161957-check-F58-1-11.jsonl
+      log | INFO  show-all: showing everything
+      log | DEBUG focus is on w129
+      log | DEBUG w129 has the keyboard
+      log | DEBUG the button went down at 294,55, the pointer is at 294,55: it is on w129
+      log | DEBUG no stage: Reduce motion is on
+      log | INFO  zoom 129: framed w129
+      log | INFO  hold: none → view
+      log | INFO  hold: holding this view until `release`
+      log | INFO  hold: settings.json has changed; it is read when the view is released
+      log | INFO  displays changed: 2 display(s), 0 remembered
+      log | DEBUG w129 has the keyboard
+      log | INFO  hold: settings.json has changed; it is read when the view is released
+display 1 0 0 1920 1080, visible 0 31 1920 971, camera n1, back yes
+display 2 1920 0 1280 720, visible 1920 31 1280 689, camera n0, back no
+  Desktop          1932 43 1256 665
+  w123 1919 974 480 348     display 1, docked parked
+  w124 1919 974 480 348     display 1, floating parked
+  w129 12 43 1896 947       display 1, docked focused
+  w130 1919 974 480 348     display 1, docked parked
+  w131 1919 974 480 348     display 1, docked parked
+1 0 0 1920 1080 1920 1080 1
+2 1920 0 1280 720 1280 720 1
+  window 130: window server 1919 974 480 348, share on a display 0.00, on-screen list: on
+  window 131: window server 1919 974 480 348, share on a display 0.00, on-screen list: on
+  window 123: window server 1919 974 480 348, share on a display 0.00, on-screen list: on
+  window 124: window server 1919 974 480 348, share on a display 0.00, on-screen list: on
+  ✔ still held
+  ✔ window 130 is out of view
+  ✔ window 131 is out of view
+  ✔ window 123 is out of view
+  ✔ window 124 is out of view
+> move 500 420
+shot: mac-shell/two-displays.png and two-displays-d2.png
+shot: mac-shell/two-displays-panorama.png
+
+== 5b. held, with two displays: a third comes and goes
+  ✔ third-display-comes: both lookers came to an end
+third-display-comes: 40 looks, 4 pictures; the most of a window on a display: 1; from .46 s to 2.08 s
+  .46 s 130:0.00 131:1.00 123:1.00 124:1.00
+  .58 s 130:1.00 131:1.00 123:1.00 124:1.00
+  .69 s 130:1.00 131:1.00 123:1.00 124:1.00
+  2.08 s 130:1.00 131:1.00 123:0.00 124:0.00
+  ✔ third-display-comes: there were looks, and each got an answer
+1 0 0 1920 1080 1920 1080 1
+2 1920 0 1280 720 1280 720 1
+3 -1280 0 1280 720 1280 720 1
+  ✔ there are three displays
+  ✔ the main display kept its size (1920 1080)
+  ✘ held, nothing that is out of view lay on a display while the third came (the most: 1 of a window) — (known: board 1.64)
+      picture: mac-shell/fail-check-F58-2.png
+      | display 1 0 0 1920 1080, visible 0 31 1920 971, camera n1, back yes
+      | display 2 1920 0 1280 720, visible 1920 31 1280 689, camera n0, back no
+      |   Desktop          1932 43 1256 665
+      | display 3 -1280 0 1280 720, visible -1280 31 1280 689, camera n0, back no
+      |   Desktop          -1268 43 1256 665
+      |   w123 1919 974 480 348     display 1, docked parked
+      |   w124 1919 974 480 348     display 1, floating parked
+      |   w129 12 43 1896 947       display 1, docked focused
+      |   w130 1919 974 480 348     display 1, docked parked
+      |   w131 1919 974 480 348     display 1, docked parked
+      log | INFO  trace check-F58-1-11 ended: 224 lines, another trace was started
+      log | INFO  trace check-F58-1-12: recording to /tmp/arbor-shell.cObCEW/home/traces/2026-10-15-162010-check-F58-1-12.jsonl
+      log | INFO  displays changed: 3 display(s), 0 remembered
+      log | DEBUG w129 has the keyboard
+      log | INFO  hold: settings.json has changed; it is read when the view is released
+  ✔ still held
+  ✔ third-display-goes: both lookers came to an end
+third-display-goes: 51 looks, 5 pictures; the most of a window on a display: 1; from .37 s to 1.84 s
+  .37 s 130:1.00 131:1.00 123:1.00 124:1.00
+  .46 s 130:1.00 131:1.00 123:1.00 124:1.00
+  .58 s 130:1.00 131:1.00 123:1.00 124:1.00
+  1.84 s 130:1.00 131:1.00 123:1.00 124:0.00
+  ✔ third-display-goes: there were looks, and each got an answer
+  ✔ the main display kept its size (1920 1080)
+  ✘ nor while it went (the most: 1 of a window) — (known: board 1.64)
+      picture: mac-shell/fail-check-F58-3.png
+
+== 5c. held: the second display goes, and the main one changes its size again
+> display_remove
+  ✔ display-goes: both lookers came to an end
+display-goes: 42 looks, 5 pictures; the most of a window on a display: 1; from .38 s to 1.74 s
+  .38 s 130:1.00 131:1.00 123:1.00 124:1.00
+  .53 s 130:1.00 131:1.00 123:1.00 124:1.00
+  .72 s 130:1.00 131:1.00 123:1.00 124:1.00
+  1.74 s 130:1.00 131:1.00 123:1.00 124:1.00
+  ✔ display-goes: there were looks, and each got an answer
+  ✘ held, nothing that is out of view lay on a display meanwhile (the most: 1 of a window) — (known: board 1.64)
+      picture: mac-shell/fail-check-F58-4.png
+      | display 0 0 1024 768, visible 0 31 1024 679, camera n1, back yes
+      |   w123 1023 682 480 348     docked parked
+      |   w124 1023 682 480 348     floating parked
+      |   w129 12 43 1000 655       docked focused
+      |   w130 1023 682 480 348     docked parked
+      |   w131 1023 682 480 348     docked parked
+      log | INFO  trace check-F58-1-12 ended: 156 lines, another trace was started
+      log | INFO  trace check-F58-1-13: recording to /tmp/arbor-shell.cObCEW/home/traces/2026-10-15-162024-check-F58-1-13.jsonl
+      log | INFO  displays changed: 1 display(s), 0 remembered
+      log | DEBUG w129 has the keyboard
+      log | INFO  hold: settings.json has changed; it is read when the view is released
+display 0 0 1024 768, visible 0 31 1024 679, camera n1, back yes
+  w123 1023 682 480 348     docked parked
+  w124 1023 682 480 348     floating parked
+  w129 12 43 1000 655       docked focused
+  w130 1023 682 480 348     docked parked
+  w131 1023 682 480 348     docked parked
+  ✔ window 130 is out of view
+  ✔ window 131 is out of view
+  ✔ window 123 is out of view
+  ✔ window 124 is out of view
+
+== 6. quitting while held brings every window back
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+shot: mac-shell/after-quit.png
+  ✔ window 123 is back on screen after quitting
+  ✔ window 124 is back on screen after quitting
+
+128 passed, 4 failed
+4 of the failures are known
+still running when the script had ended, and stopped now:
+  19930 ArborTestWindows
+exit code 0

@@ -1,0 +1,167 @@
+# check-F58 2026-10-15T16:17Z on macOS 26.6.2, commit 7f3aa9f
+
+== 1. where macOS lets a window be put, and what shows there (no Arbor)
+
+== a second process with two windows
+  ✔ Arbor manages the second process's windows too
+  ✔ the click gave W1 the keyboard
+  ✔ window 130 is out of view
+  ✔ window 131 is out of view
+  ✔ window 123 is out of view
+  ✔ window 124 is out of view
+
+== 2. what a share of the whole screen shows of four windows that are out of view
+  ✔ the view is held
+
+== 2b. what the pickers of Zoom, Meet and Teams are told, and what sharing one window that is out of view sends
+  ✔ ScreenCaptureKit gives a picture of a window that is out of view
+  ✔ and of the one in view
+
+== 3. held: windows out of view are minimized and restored (the reference picture for part 2)
+  ✔ the view did not move
+  ✔ restored, X1 is out of view again
+  ✔ and W1 has the keyboard back
+  ✔ the view did not move
+  ✔ window 130 is out of view
+  ✔ window 131 is out of view
+  ✔ window 123 is out of view
+  ✔ window 124 is out of view
+  ✔ W1 has the keyboard
+  ✔ the view did not move
+  ✔ W1 is where it was
+
+== 3b. held: another app comes forward by itself
+  ✔ its windows stay out of view
+  ✔ both of them
+  ✔ W1 has the keyboard back
+  ✔ the view did not move
+
+== 3c. held: ⌘Tab to it is turned away as well
+  ✔ its windows stay out of view
+  ✔ W1 has the keyboard back
+  ✔ the view did not move
+
+== 3d. held: keys and drags that would move the view
+  ✔ ctrl+opt+space changes nothing
+  ✔ ctrl+opt+up changes nothing
+  ✔ ctrl+opt+right changes nothing
+  ✔ ctrl+opt+0 changes nothing
+  ✔ ctrl+opt+d changes nothing
+  ✔ W1 is where it was
+  ✔ no drop preview promises what will not happen
+  ✔ dropped, it goes back to its place
+  ✔ the view did not move
+  ✔ window 130 is still out of view
+  ✔ window 131 is still out of view
+  ✔ window 123 is still out of view
+  ✔ window 124 is still out of view
+
+== 3e. held: the three things that showed an audience everything (found on review)
+  ✔ ⌃⌥⇧F floats nothing
+  ✔ window 130 is still out of view
+  ✔ window 131 is still out of view
+  ✔ window 123 is still out of view
+  ✔ window 124 is still out of view
+  ✔ Accessibility: W1 has the keyboard first
+  ✔ Accessibility: W1 stays in the Dock
+  ✔ Accessibility: W1 says that it is minimized
+  ✔ Accessibility: and Arbor knows
+  ✔ Accessibility: its app named a window out of view, and Arbor asked W1 before sending the keyboard back
+  ✔ Accessibility: the view is empty and still held
+  ✔ Accessibility: the view is still held
+  ✔ Accessibility: with W1 minimized, window 130 is still out of view
+  ✔ Accessibility: with W1 minimized, window 131 is still out of view
+  ✔ Accessibility: with W1 minimized, window 123 is still out of view
+  ✔ Accessibility: with W1 minimized, window 124 is still out of view
+  ✔ Accessibility: restored, W1 is where it was
+  ✔ Accessibility: the view did not move
+  ✔ ⌘M: W1 has the keyboard first
+  ✔ ⌘M: W1 stays in the Dock
+  ✔ ⌘M: W1 says that it is minimized
+  ✔ ⌘M: and Arbor knows
+  ✔ ⌘M: its app named a window out of view, and Arbor asked W1 before sending the keyboard back
+  ✔ ⌘M: the view is empty and still held
+  ✔ ⌘M: the view is still held
+  ✔ ⌘M: with W1 minimized, window 130 is still out of view
+  ✔ ⌘M: with W1 minimized, window 131 is still out of view
+  ✔ ⌘M: with W1 minimized, window 123 is still out of view
+  ✔ ⌘M: with W1 minimized, window 124 is still out of view
+  ✔ ⌘M: restored, W1 is where it was
+  ✔ ⌘M: the view did not move
+  ✔ the yellow button: W1 has the keyboard first
+  ✔ the yellow button: W1 stays in the Dock
+  ✔ the yellow button: W1 says that it is minimized
+  ✔ the yellow button: and Arbor knows
+  ✔ the yellow button: its app named a window out of view, and Arbor asked W1 before sending the keyboard back
+  ✔ the yellow button: the view is empty and still held
+  ✔ the yellow button: the view is still held
+  ✔ the yellow button: with W1 minimized, window 130 is still out of view
+  ✔ the yellow button: with W1 minimized, window 131 is still out of view
+  ✔ the yellow button: with W1 minimized, window 123 is still out of view
+  ✔ the yellow button: with W1 minimized, window 124 is still out of view
+  ✔ the yellow button: restored, W1 is where it was
+  ✔ the yellow button: the view did not move
+  ✔ ⌃⌥⎋ released the hold
+  ✔ kept down for three seconds, it did not go on to pause
+  ✔ released, window 130 is still out of view
+  ✔ released, window 131 is still out of view
+  ✔ released, window 123 is still out of view
+  ✔ released, window 124 is still out of view
+  ✔ held again
+
+== 3f. the lock in the menu bar, and the menu
+
+== 4. release, then hold still
+  ✔ released, ⌃⌥Space shows everything
+  ✔ the click gave W1 the keyboard
+  ✔ framed again
+  ✔ an app that comes forward by itself stays out of view
+  ✔ W1 has the keyboard back
+  ✔ the view did not move
+  ✔ the user's own keys move the view
+  ✔ framed again
+  ✔ the view follows ⌘Tab while holding still
+
+== 5. a second display to the right: where do windows go that are out of view, and what does each display show?
+  ✔ framed
+  ✔ display-comes: both lookers came to an end
+  ✔ display-comes: there were looks, and each got an answer
+  ✘ held, nothing that is out of view lay on a display while one came (the most: 1 of a window) — (known: board 1.64)
+  ✔ still held
+  ✔ window 130 is out of view
+  ✔ window 131 is out of view
+  ✔ window 123 is out of view
+  ✔ window 124 is out of view
+
+== 5b. held, with two displays: a third comes and goes
+  ✔ third-display-comes: both lookers came to an end
+  ✔ third-display-comes: there were looks, and each got an answer
+  ✔ there are three displays
+  ✔ the main display kept its size (1920 1080)
+  ✘ held, nothing that is out of view lay on a display while the third came (the most: 1 of a window) — (known: board 1.64)
+  ✔ still held
+  ✔ third-display-goes: both lookers came to an end
+  ✔ third-display-goes: there were looks, and each got an answer
+  ✔ the main display kept its size (1920 1080)
+  ✘ nor while it went (the most: 1 of a window) — (known: board 1.64)
+
+== 5c. held: the second display goes, and the main one changes its size again
+  ✔ display-goes: both lookers came to an end
+  ✔ display-goes: there were looks, and each got an answer
+  ✘ held, nothing that is out of view lay on a display meanwhile (the most: 1 of a window) — (known: board 1.64)
+  ✔ window 130 is out of view
+  ✔ window 131 is out of view
+  ✔ window 123 is out of view
+  ✔ window 124 is out of view
+
+== 6. quitting while held brings every window back
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 123 is back on screen after quitting
+  ✔ window 124 is back on screen after quitting
+
+128 passed, 4 failed
