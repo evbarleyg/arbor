@@ -267,6 +267,8 @@ public final class Controller {
   /// What the app was last given to register and what the log was last told of it (Controller+KeysHeld.swift).
   var shortcutsLastAsked: (bindings: [KeyBinding], problems: [String], isNews: Bool)?
   var shortcutRefusalsSaid: [String] = []
+  /// macOS said no to some key's twin with fn the last time, so it is asked again at the next occasion.
+  var shortcutsLackATwin = false
   /// Reads what only macOS knows, for `doctor` and the welcome window (Controller+Doctor.swift).
   public var systemFacts: (() -> SystemFacts)?
   /// macOS's own switches under Desktop & Dock, for `fix-setup` (Controller+FixSetup.swift). Nil where they cannot be changed.

@@ -38,4 +38,14 @@ public struct HotKey: Hashable, Sendable {
     keyCode = binding.keyCode
     modifiers = binding.modifiers
   }
+
+  /// Whether a real key with this code sends the flag of the fn key whatever the fingers do: arrows, function keys, Help, Home, End, Page
+  /// Up, Page Down, forward delete. Such a key gets no twin with fn (`KeyChord.hasFnTwin`).
+  public var carriesFn: Bool { Self.codesThatCarryFn.contains(keyCode) }
+
+  /// F1 to F20, then Help to the arrows (Carbon's `kVK_*`).
+  private static let codesThatCarryFn: Set<UInt32> = [
+    122, 120, 99, 118, 96, 97, 98, 100, 101, 109, 103, 111, 105, 107, 113, 106, 64, 79, 80, 90,
+    114, 115, 116, 117, 119, 121, 123, 124, 125, 126,
+  ]
 }

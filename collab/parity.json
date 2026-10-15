@@ -1492,6 +1492,34 @@
       ]
     },
     {
+      "id": "A231",
+      "area": "Arbor only",
+      "title": "A shortcut is Arbor's with fn down as well",
+      "trellis": "",
+      "arbor": "macOS compares the fn key's flag exactly, and fn sits beside ⌃: a shortcut with ⌃⌥ is registered a second time with fn, but for arrows and function keys, which would fire twice, and tab and delete, which nobody has measured. One press runs one command whatever macOS makes of the two. A person sees keys, not registrations. Measured on macOS 15 and 26 with posted events only",
+      "status": "partial",
+      "spec": "F42",
+      "priority": 1,
+      "tests": [
+        "aKeyIsNeverGivenAwayWhileArborStillTakesItWithFn",
+        "aLetterOnAnArrowsKeyGetsNoTwin",
+        "aReleaseThatIsNeverReportedCostsOnePressAtMost",
+        "aTwinThatMacOSRefusesIsLoggedAndIsNoProblem",
+        "aTwinThatMacOSRefusesIsReportedApartAndTriedAgain",
+        "arrowsAndFunctionKeysHaveNoTwinWithFnAndPrintingKeysDo",
+        "everythingCountsKeysAndNotRegistrations",
+        "heldBothWaysAnArrowFiresTwiceAndALetterOnce",
+        "ifMacOSKeepsOnlyOneOfTheTwoNothingLeaksAndItIsPutRightLater",
+        "ifMacOSRefusesEveryTwinTheLogHasOneShortLineAndNothingIsWrong",
+        "noPressOfAnyKeyEverRunsItsCommandTwiceAndNoKeyThatCarriesFnByNatureGetsATwin",
+        "onAMacOSThatIgnoresTheBitEveryCommandStillRunsOnce",
+        "onlyAShortcutWithControlAndOptionHasATwin",
+        "whatAPeekAddsFollowsTheSameRule",
+        "whileAKeyIsDownUnderOneNumberWhatComesUnderTheOtherIsNobodys",
+        "withFnDownAKeyOfArborsIsStillArbors"
+      ]
+    },
+    {
       "id": "A04",
       "area": "Arbor only",
       "title": "Rules for new windows per app",

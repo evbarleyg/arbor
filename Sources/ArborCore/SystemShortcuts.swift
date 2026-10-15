@@ -37,8 +37,9 @@ public struct SystemShortcuts: Equatable, Sendable {
       ([.left, .right, .up, .down, .f1, .f2, .f3, .f4, .f5, .f6, .f7, .f8, .f9, .f10, .f11, .f12] as [KeyChord.Key])
         .map(\.code))
 
-    /// Its modifiers as a shortcut of Arbor's has them. Nil if it takes something that none of Arbor's can have, the
-    /// Globe key for one: fn Q (Quick Note) is not Q.
+    /// Its modifiers as a shortcut of Arbor's has them. Nil if it takes something that nobody can bind in Arbor, the
+    /// Globe key for one: fn Q (Quick Note) is not Q. (Arbor does take its own ⌃⌥ shortcuts with fn down as well, `KeyChord.hasFnTwin`;
+    /// a shortcut of macOS's on fn ⌃ ⌥ and a letter would meet that, and this does not look for one.)
     public var modifiers: KeyChord.Modifiers? {
       var rest = carbonModifiers
       var result: KeyChord.Modifiers = []

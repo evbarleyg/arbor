@@ -17,6 +17,11 @@ public struct KeyChord: Hashable, Sendable, CustomStringConvertible {
     isPositional = positional && key.character != nil
   }
 
+  /// Whether the shortcut is registered a second time, with fn: its key is of a kind that is (`Key.hasFnTwin`), and ⌃ and ⌥ are both in
+  /// it, as in all of Arbor's own. Only such shortcuts has a Mac been asked about. And fn with ⌃ alone and a letter is macOS's (fn ⌃ F fills the
+  /// screen, fn ⌃ C centres): somebody's own `ctrl+f` must not take that from them as well.
+  public var hasFnTwin: Bool { key.hasFnTwin && modifiers.isSuperset(of: [.control, .option]) }
+
   /// What comes before a key's name to mean its position on a US keyboard.
   static let positionPrefix = "us:"
 
@@ -200,6 +205,29 @@ extension KeyChord {
       switch self {
       case .f1, .f2, .f3, .f4, .f5, .f6, .f7, .f8, .f9, .f10, .f11, .f12: true
       default: false
+      }
+    }
+
+    /// Whether a shortcut on this key can be registered a second time, with fn (`KeyChord.hasFnTwin`).
+    ///
+    /// Where macOS looks for a hot key it compares the flag of the fn (Globe) key exactly: with it on the event ⌃⌥A is not the
+    /// ⌃⌥A that was registered, and goes to the app in front. fn sits beside ⌃ on a laptop. A second registration with Carbon's bit for fn
+    /// hears it, and only it. **Not for a key that carries the flag by nature**, as arrows and function keys do: there macOS takes the
+    /// two registrations for one and a press fires both. No `default`: whoever adds a key decides, and Home, Page Up or F13 are of that kind.
+    ///
+    /// Asked of hosted Macs, macOS 15 and 26, with posted events: A Z F G [ ↩ Space ⎋. The other letters, the digits and the other signs are
+    /// taken to be like them.
+    public var hasFnTwin: Bool {
+      switch self {
+      case .a, .b, .c, .d, .e, .f, .g, .h, .i, .j, .k, .l, .m, .n, .o, .p, .q, .r, .s, .t, .u, .v, .w, .x, .y, .z,
+        .digit0, .digit1, .digit2, .digit3, .digit4, .digit5, .digit6, .digit7, .digit8, .digit9,
+        .leftBracket, .rightBracket, .minus, .equals, .comma, .period, .slash, .semicolon, .quote, .grave, .backslash,
+        .space, .returnKey, .escape:
+        true
+      // They carry the flag by nature.
+      case .left, .right, .up, .down, .f1, .f2, .f3, .f4, .f5, .f6, .f7, .f8, .f9, .f10, .f11, .f12: false
+      // Nobody has asked a Mac. On Apple's keyboards fn and ⌫ is another key altogether, as are fn and ↩, whose twin may never be pressed.
+      case .tab, .delete: false
       }
     }
 

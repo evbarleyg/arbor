@@ -266,4 +266,35 @@ import Testing
     #expect(throws: Command.ParseError.self) { try Command.parse("bindings now") }
     #expect(Command.helpText.contains("bindings"))
   }
+
+  /// Which keys are registered a second time, with fn (`KeyChord.Key.hasFnTwin`). A hosted Mac fired both registrations of an arrow,
+  /// of F5 and of their kin at one press: a key of those kinds with a twin would run its command twice.
+  @Test func arrowsAndFunctionKeysHaveNoTwinWithFnAndPrintingKeysDo() {
+    let none = KeyChord.Key.allCases.filter { !$0.hasFnTwin }
+    let arrows: [KeyChord.Key] = [.left, .right, .up, .down]
+    #expect(arrows.allSatisfy { !$0.hasFnTwin })
+    #expect(KeyChord.Key.allCases.filter(\.isFunctionKey).count == 12)
+    #expect(KeyChord.Key.allCases.filter(\.isFunctionKey).allSatisfy { !$0.hasFnTwin })
+    // Nobody has asked a Mac about these two, so they have none either.
+    #expect(none.contains(.tab) && none.contains(.delete))
+    // The list of those that HAVE one is what is pinned: a key that is added (Home, Page Up, F13: the kinds that fire twice) has none until somebody
+    // puts it here, having asked a Mac.
+    let printing = KeyChord.Key.allCases.filter { $0.rawValue.count == 1 }
+    #expect(printing.count == 26 + 10 + 11)
+    #expect(Set(KeyChord.Key.allCases.filter(\.hasFnTwin)) == Set(printing + [.space, .returnKey, .escape]))
+    // The eight a Mac was asked about.
+    let asked: [KeyChord.Key] = [.a, .returnKey, .space, .leftBracket, .z, .f, .g, .escape]
+    #expect(asked.filter { !$0.hasFnTwin }.isEmpty)
+  }
+
+  /// All of Arbor's own have both, and only such shortcuts has a Mac been asked about. fn with ⌃ alone and a letter is macOS's.
+  @Test func onlyAShortcutWithControlAndOptionHasATwin() {
+    let all: [KeyChord.Modifiers] = [.control, .option, .command, .shift]
+    for bits in 0..<16 {
+      let modifiers = all.enumerated().reduce(into: KeyChord.Modifiers()) { if bits & (1 << $1.offset) != 0 { $0.insert($1.element) } }
+      let both = modifiers.contains(.control) && modifiers.contains(.option)
+      #expect(KeyChord(modifiers, .f).hasFnTwin == both, "\(modifiers)")
+      #expect(!KeyChord(modifiers, .left).hasFnTwin && !KeyChord(modifiers, .f5).hasFnTwin && !KeyChord(modifiers, .tab).hasFnTwin)
+    }
+  }
 }

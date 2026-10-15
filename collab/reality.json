@@ -1147,6 +1147,36 @@
    ]
   },
   {
+   "id": "a-key-registered-with-fn-and-without-is-two-keys-or-one",
+   "kind": "input",
+   "layer": "below the seam",
+   "expected": "A key registered a second time, with Carbon's bit for fn, is a second key: a press fires the one registration or the other, whatever the key.",
+   "happened": "For a letter, a sign, ↩, Space and ⎋ it is: `RegisterEventHotKey` with 1 << 17 answers 0; a press with fn's flag fires that registration once and the app in front gets nothing; a plain press does not fire it; both held by one process, neither is refused and each press fires its own. **For arrows, F5, Home, End, Page Up, Page Down and forward delete, which carry the flag by nature, macOS takes the two for one: either alone fires with the flag and not without, and held both ways a press fires both**: down, down, up, up: a command would run twice. Bits it does not know (1 << 16, 1 << 23) it ignores: such a registration behaves as a plain one, so a macOS that does not know 1 << 17 would fire both at every press of every key. The release is reported once, also when fn comes up before the key. The numeric-pad flag changes nothing; nor does `kEventHotKeyExclusive`. **macOS 15 answers as macOS 26 does**: 87 rows in both tables, held against each other by a script, and not one differs. Asked of macOS 15 besides: the key down plainly, fn down, the key up: the release comes under the number that went down, the other is silent, the app gets nothing; a key-down marked as a repeat, with the flag, after fn went down: the other does not fire on it, and it does not reach the app.",
+   "found": "A probe on hosted Macs on 2026-10-15 (macOS 26.6.2, then 15.7.9); the first run's output is on the branch `mac-shell-out/fnbit.1`, the script on `test/probes-of-section-0`. The probe's own process registered as `HotKeyCenter` does, not Arbor; a witness in front. Sixteen keys, five hands and later seven, six ways of registering. Every key a posted event, every chord ⌃⌥. Not asked: macOS 14; digits, the other signs, `tab`, `delete`; ⌃⌥⇧ and ⌃⌥⌘; a real keyboard.",
+   "modelled": "partly",
+   "knobs": [
+    "FakeHotKeyServer.fires",
+    "FakeHotKeyServer.ignoresTheFnBit",
+    "FakeHotKeyServer.refusesTwins",
+    "FakeHotKeyServer.keepsTwins"
+   ],
+   "guards": [
+    "test: noPressOfAnyKeyEverRunsItsCommandTwiceAndNoKeyThatCarriesFnByNatureGetsATwin",
+    "test: heldBothWaysAnArrowFiresTwiceAndALetterOnce",
+    "test: onAMacOSThatIgnoresTheBitEveryCommandStillRunsOnce",
+    "test: whileAKeyIsDownUnderOneNumberWhatComesUnderTheOtherIsNobodys",
+    "test: arrowsAndFunctionKeysHaveNoTwinWithFnAndPrintingKeysDo"
+   ],
+   "copes": "KeyChord.hasFnTwin gives no twin to a key that carries the flag by nature, by its name and by its code (`HotKey.carriesFn`), nor to `tab` and `delete`. HotKeyTable.heard lets one press run one command whatever macOS makes of the two: while a key is down under one of its numbers, what comes under the other is nobody's.",
+   "hurt": 1,
+   "sources": [
+    "Sources/ArborKit/Controller/HotKeyTable.swift",
+    "Sources/ArborCore/KeyChord.swift",
+    "Sources/ArborKit/Input/HotKeyCenter.swift",
+    "Sources/ArborTesting/FakeHotKeys.swift"
+   ]
+  },
+  {
    "id": "a-late-grant-may-not-allow-event-taps",
    "kind": "permissions",
    "layer": "at the seam",
@@ -11779,14 +11809,21 @@
    "kind": "input",
    "layer": "below the seam",
    "expected": "A hot key that is registered for ⌃⌥A is Arbor's, whatever else is down. `docs/KEYBOARD.md`: \"A global shortcut is taken away from every app on the Mac\". `HotKeyCenter`: it \"swallows the key press so the frontmost app never sees it\".",
-   "happened": "With the flag that a held fn (Globe) key sets, 0x800000, on the key event, Arbor's keys that are not arrows are not Arbor's. Arbor running, 52 shortcuts registered, not paused, nothing on any list: ⌃⌥A, ⌃⌥↩, ⌃⌥Space, ⌃⌥[, ⌃⌥Z, ⌃⌥F and ⌃⌥G, seven of seven, reached the app in front (the tap at the annotated session point, the local monitor, `performKeyEquivalent`, then `keyDown` in the view), and Arbor's log did not grow by a line. ⌃⌥← and ⌃⌥→ with the flag went to Arbor as ever: an arrow carries it by nature, and posted without it an arrow reaches the app and not Arbor (posted-arrow-keys-need-the-flags-a-keyboard-adds, mirrored). So the window server compares that flag exactly when it looks for a hot key. With the flag AppKit's menu did not fire for the letters and the bracket, with Arbor or without; for ↩ and Space it did. So it fits an app that listens in its page or its view, not one with a plain menu equivalent for a letter. **What does not matter**, each 7 of 7 to Arbor and none to the app: the right-hand ⌃ and ⌥, left and right mixed, both of each pair down, Caps Lock's flag, the numeric-pad flag, flags with no modifier key going down at all, a key held to repeat. **Not shown:** that a real fn key held on a real keyboard puts that flag on a letter's key event as it passes the window server. On a laptop fn sits beside ⌃; if it does, a finger that catches fn with ⌃ turns ⌃⌥A into the app's own ⌃⌥A, with Arbor running and knowing nothing. One of two candidates for what a person met (a-key-arbor-does-not-hold-at-the-moment-reaches-the-app-in-front); it fits their words better in one respect, \"Arbor running, not paused\". A cure to try, not tried: Carbon has a bit for fn; each shortcut registered a second time with it. No stand-in compares flags, and no detector of the gate has an eye for a key of Arbor's that arrives elsewhere.",
+   "happened": "With the flag that a held fn (Globe) key sets, 0x800000, on the key event, Arbor's keys that are not arrows are not Arbor's. Arbor running, 52 shortcuts registered, not paused, nothing on any list: ⌃⌥A, ⌃⌥↩, ⌃⌥Space, ⌃⌥[, ⌃⌥Z, ⌃⌥F and ⌃⌥G, seven of seven, reached the app in front (the tap at the annotated session point, the local monitor, `performKeyEquivalent`, then `keyDown` in the view), and Arbor's log did not grow by a line. ⌃⌥← and ⌃⌥→ with the flag went to Arbor as ever: an arrow carries it by nature, and posted without it an arrow reaches the app and not Arbor (posted-arrow-keys-need-the-flags-a-keyboard-adds, mirrored). So the window server compares that flag exactly when it looks for a hot key. With the flag AppKit's menu did not fire for the letters and the bracket, with Arbor or without; for ↩ and Space it did. So it fits an app that listens in its page or its view, not one with a plain menu equivalent for a letter. **What does not matter**, each 7 of 7 to Arbor and none to the app: the right-hand ⌃ and ⌥, left and right mixed, both of each pair down, Caps Lock's flag, the numeric-pad flag, flags with no modifier key going down at all, a key held to repeat. **Not shown:** that a real fn key held on a real keyboard puts that flag on a letter's key event as it passes the window server. On a laptop fn sits beside ⌃; if it does, a finger that catches fn with ⌃ turns ⌃⌥A into the app's own ⌃⌥A, with Arbor running and knowing nothing. One of two candidates for what a person met (a-key-arbor-does-not-hold-at-the-moment-reaches-the-app-in-front); it fits their words better in one respect, \"Arbor running, not paused\". The cure that was tried next, a second registration with Carbon's bit for fn, is heard (a-key-registered-with-fn-and-without-is-two-keys-or-one). No detector of the gate has an eye for a key of Arbor's that arrives elsewhere.",
    "found": "A second probe, `probe-whose-key.sh`, one run on a hosted Mac (macOS 26.6.2) on the first build itself, its commit and the probe and nothing else: an app in front and a listener in the background with ears of every kind, taps at three points, monitors, a menu, a view, and Arbor's own log counted line by line: nine keys by thirteen hands and roads, beside the same thirteen with no Arbor. Every key was a posted event: no finger, no real keyboard.",
-   "modelled": "no",
-   "knobs": [],
-   "guards": [],
-   "copes": "open",
+   "modelled": "partly",
+   "knobs": [
+    "FakeHotKeyServer.fires"
+   ],
+   "guards": [
+    "test: withFnDownAKeyOfArborsIsStillArbors",
+    "test: whateverChangesWhatArborWantsTheAppHearsOfItAtOnce"
+   ],
+   "copes": "HotKeyTable registers each shortcut that has one (`KeyChord.hasFnTwin`: ⌃ and ⌥ in it, a printing key, Space, ↩ or ⎋) a second time with fn, under one shortcut; the two come and go together. Seen on a hosted Mac (macOS 26.6.2, posted events, once; `mac-shell-out/whosekey.sum`): with fn's flag none of nine keys reached the app in front, where seven had on the first build, and each key's command ran once, as without the flag. On Apple's keyboards fn with an arrow, ↩ or ⌫ is another key altogether: there this does not help.",
    "hurt": 1,
    "sources": [
+    "Sources/ArborKit/Controller/HotKeyTable.swift",
+    "Sources/ArborCore/KeyChord.swift",
     "Sources/ArborKit/Input/HotKeyCenter.swift",
     "docs/KEYBOARD.md",
     "scripts/mac-shell/pointer.swift",
