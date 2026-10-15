@@ -5,6 +5,8 @@
                              [--through "<words of a remark>" | --until "<words of a remark>"]
                              [--cure <commit, branch or a..b>] [--apps <bundle id>,…] [--no-tests]
     scripts/trace-to-test.py --again <name>… | --again --all      what Arbor does has changed, and rightly: write the expectations anew
+    scripts/trace-to-test.py --summary [--since <commit>]         what has changed in the expectations since <commit> (HEAD), in a person's words;
+                                                                  with --again: after writing them. By itself it needs nothing built
     scripts/trace-to-test.py --jolts                              where, in all the recordings, today's Arbor moves a window twice in answer to one thing
     scripts/trace-to-test.py --self-test
     make test-from-trace TRACE=<trace.jsonl> NAME=<name> SHOWS="…" [THROUGH="…"] [UNTIL="…"] [CURE=…]
@@ -28,15 +30,19 @@ answered (docs/TRACES.md), and the traces come back with the run, in `traces/`. 
  7. RUNS `TraceCorpusTests`, which also tries every way back from every state of the new trace.
 
 Lines of an `.expect` file above the one that begins with `# ----` are a person's and stay; those below are written anew by `--again`.
-Where Swift is (on Linux: in the container). Exit code 0, or 1 with the reason; then every file is as it was.
+Where Swift is (on Linux: in the container). Exit code 0, or 1 with the reason; then every file is as it was, and so it is after Ctrl-C or `timeout`.
 """
 
 import argparse
+import collections
+import contextlib
 import datetime
+import io
 import json
 import os
 import re
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -305,6 +311,10 @@ def expectations(own, shows, written):
     return "\n".join(head + [f"{MARK} on {today}; `--again` writes it anew, and what stands above this line stays ----"] + written) + "\n"
 
 
+def has_mark(text):
+    return any(line.startswith(MARK) for line in text.split("\n"))
+
+
 def own_lines(path):
     """What a person wrote: everything above the mark, or all of a file that has none."""
     if not os.path.isfile(path):
@@ -508,42 +518,50 @@ def corpus_tests(options):
     return 0 if tested.returncode == 0 else 1
 
 
-def again(options):
+def again(options, afterwards=lambda: 0):
+    """`afterwards`: what is still to be done with the files as they are written. Whatever stops that takes them back as well."""
     names = sorted(file[:-6] for file in os.listdir(TRACES) if file.endswith(".jsonl")) if options.all else options.names
+    for name in names:
+        if not os.path.isfile(os.path.join(TRACES, name + ".jsonl")):
+            raise Refusal(f"there is no trace {name}")
     sim = simulator()
     changed = 0
     all_before = as_they_are([os.path.join(TRACES, name + ".expect") for name in names])
-    for name in names:
-        path, expect = os.path.join(TRACES, name + ".jsonl"), os.path.join(TRACES, name + ".expect")
-        if not os.path.isfile(path):
-            raise Refusal(f"there is no trace {name}")
-        before = ""
-        if os.path.isfile(expect):
-            with open(expect, encoding="utf-8") as file:
-                before = file.read()
-        if options.all and MARK not in before:
-            continue
-        own = own_lines(expect)
-        new = without_what_is_said_already(draft(sim, path), own)
-        old = [line for line in before.split("\n")[len(own) + 1:] if line]
-        if new == old:
-            continue
-        changed += 1
-        print(f"{name}:")
-        for line in old:
-            if line not in new:
-                print(f"  - {line}")
-        for line in new:
-            if line not in old:
-                print(f"  + {line}")
-        with open(expect, "w", encoding="utf-8") as file:
-            file.write(expectations(own, "", new))
-        broken = problems(sim, path)
-        if broken:
-            put_back(all_before)
-            raise Refusal(f"{name}: the replay has problems that no new expectation cures, and every file is as it was:\n  " + "\n  ".join(broken))
-    print(f"{changed} of {len(names)} written anew. Read what changed: each line is something a person at that Mac would have seen.")
-    return 0
+    try:
+        for name in names:
+            path, expect = os.path.join(TRACES, name + ".jsonl"), os.path.join(TRACES, name + ".expect")
+            try:
+                before = (all_before[expect] or b"").decode("utf-8")
+            except UnicodeDecodeError as error:
+                raise Refusal(f"{name}.expect is not UTF-8") from error
+            # `--all` writes nothing into a file that is all a person's. Whether its lines still hold is asked below, as of every other.
+            own = own_lines(expect)
+            old = [line for line in before.split("\n")[len(own) + 1:] if line]
+            new = without_what_is_said_already(draft(sim, path), own) if has_mark(before) or not options.all else old
+            if new != old:
+                changed += 1
+                print(f"{name}:")
+                for line in old:
+                    if line not in new:
+                        print(f"  - {line}")
+                for line in new:
+                    if line not in old:
+                        print(f"  + {line}")
+                with open(expect, "w", encoding="utf-8") as file:
+                    file.write(expectations(own, "", new))
+            # Also where nothing was written: what a person says of a thing is left out below the mark, so it is only here that it is held against today's Arbor.
+            broken = problems(sim, path)
+            if broken:
+                raise Refusal(f"{name}: the replay has problems that no new expectation cures:\n  " + "\n  ".join(broken))
+        print(f"{changed} of {len(names)} written anew. Read what changed: each line is something a person at that Mac would have seen.")
+        return afterwards()
+    except Refusal as refusal:
+        put_back(all_before)
+        raise Refusal(f"{refusal}\nEvery file is as it was.") from refusal
+    except BaseException:
+        # Ctrl-C, an arbor-sim that somebody is just building anew: half a batch's expectations are worse than none.
+        put_back(all_before)
+        raise
 
 
 JOLT = 0.5
@@ -580,24 +598,184 @@ def moved_again(line, when):
     return int(found.group(1)), sorted(again)
 
 
+def recordings():
+    """Every recording that has expectations: (its name, the trace's text, the expectations' text)."""
+    for file in sorted(os.listdir(TRACES)):
+        if file.endswith(".expect") and os.path.isfile(os.path.join(TRACES, file[:-7] + ".jsonl")):
+            with open(os.path.join(TRACES, file[:-7] + ".jsonl"), encoding="utf-8") as trace, open(os.path.join(TRACES, file), encoding="utf-8") as expect:
+                yield file[:-7], trace.read(), expect.read()
+
+
 def jolts():
     """A window moves once, to where it ends up. The `.expect` files say where it does not, on what real Macs reported and real apps answered."""
     total = 0
-    for file in sorted(os.listdir(TRACES)):
-        if not file.endswith(".expect") or not os.path.isfile(os.path.join(TRACES, file[:-7] + ".jsonl")):
-            continue
-        with open(os.path.join(TRACES, file[:-7] + ".jsonl"), encoding="utf-8") as handle:
-            when = moments(parse(handle.read()))
-        with open(os.path.join(TRACES, file), encoding="utf-8") as handle:
-            found = [pair for pair in (moved_again(line, when) for line in handle) if pair and pair[1]]
+    for name, trace, expect in recordings():
+        when = moments(parse(trace))
+        found = [pair for pair in (moved_again(line, when) for line in expect.splitlines()) if pair and pair[1]]
         by_line = {}
         for window, lines in found:
             for line in lines:
                 by_line.setdefault(line, []).append(window)
         for line, windows in sorted(by_line.items()):
             total += len(windows)
-            print(f"{file[:-7]}, line {line}: " + ", ".join(f"w{window}" for window in windows))
+            print(f"{name}, line {line}: " + ", ".join(f"w{window}" for window in windows))
     print(f"{total} times a window is moved again within {JOLT} s, and nobody did anything in between. See one with: make replay FILE=collab/evidence/traces/<name>.jsonl")
+    return 0
+
+
+# MARK: What a change did to the recordings, in a person's words
+
+
+def account(expect, trace):
+    """What a recording's expectations say, a person's lines and the written ones alike: moves by window, questions, windows moved again, where each
+    ends and in what state, whom the keyboard was asked for, who has it and what the view is on."""
+    found = {"moves": {}, "questions": 0, "again": 0, "frames": {}, "states": {}, "one": {}}
+    when = moments(parse(trace))
+    for line in telling(expect):
+        words = line.split()
+        words = words[1:] if words[0] == "expect" else words
+        if len(words) < 2 or words[0] == "problem":
+            continue
+        if words[0] == "moved":
+            # `moved 98 1 since <remark>` counts from somewhere in the middle: it is no sum.
+            if len(words) > 2 and words[2].isdigit() and "since" not in words:
+                found["moves"][words[1]] = int(words[2])
+                found["questions"] += sum(1 for word in words[4:] if word.endswith("?"))
+                found["again"] += len((moved_again(" ".join(words), when) or (0, []))[1])
+        elif words[0] == "frame":
+            found["frames"][words[1]] = words[2:]
+        elif words[0] in ("camera", "focused", "asked-focus"):
+            found["one"][words[0]] = " ".join(words[1:])
+        elif len(words) == 2 and words[0] not in found["states"].setdefault(words[1], []):
+            found["states"][words[1]].append(words[0])
+    return found
+
+
+def telling(expect):
+    """The lines that a replay is held to, and those that name a known fault: no remark, no mark, nothing empty."""
+    return [line for line in expect.split("\n") if subject(line) or line.split()[:1] == ["problem"]]
+
+
+def above_the_mark(expect):
+    lines = expect.split("\n")
+    marks = [index for index, line in enumerate(lines) if line.startswith(MARK)]
+    return telling("\n".join(lines[:marks[0] if marks else None]))
+
+
+def a_persons_word(before, now):
+    """What somebody changed above the mark, or "". A mark that has moved up over a person's lines has taken them away: the next `--again` writes them."""
+    old, new = collections.Counter(above_the_mark(before)), collections.Counter(above_the_mark(now))
+    gone, come = list((old - new).elements()), list((new - old).elements())
+    quoted = lambda lines: ", ".join(f"`{line}`" for line in lines) or "nothing"
+    return f"A PERSON'S WORD: {quoted(gone)} → {quoted(come)}" if gone or come else ""
+
+
+def difference(old, new):
+    """(how many moves more, fewer, windows that end elsewhere, in another state; a sentence) from two accounts of one recording."""
+    windows = sorted({w for side in (old, new) for kind in ("moves", "frames", "states") for w in side[kind]}, key=lambda w: (len(w), w))
+    before, now = (lambda w: old["moves"].get(w, 0)), (lambda w: new["moves"].get(w, 0))
+    more, fewer = sum(max(0, now(w) - before(w)) for w in windows), sum(max(0, before(w) - now(w)) for w in windows)
+    frames = [w for w in windows if old["frames"].get(w) != new["frames"].get(w)]
+    states = [w for w in windows if sorted(old["states"].get(w, [])) != sorted(new["states"].get(w, []))]
+    said = []
+    if more:
+        said.append(f"{more} MORE (" + ", ".join(f"w{w} {before(w)} → {now(w)}" for w in windows if now(w) > before(w)) + ")")
+    if fewer:
+        said.append(f"{fewer} fewer")
+    if new["questions"] != old["questions"]:
+        said.append(f"questions {old['questions']} → {new['questions']}")
+    if new["again"] != old["again"]:
+        said.append(f"moved again within {JOLT} s {old['again']} → {new['again']}")
+    if frames:
+        said.append(f"{len(frames)} end elsewhere (" + ", ".join("w" + w for w in frames) + ")")
+    if states:
+        said.append("another state: " + ", ".join(
+            f"w{w} {' '.join(old['states'].get(w, ['-']))} → {' '.join(new['states'].get(w, ['-']))}" for w in states))
+    for what, words in (("asked-focus", "the keyboard asked for"), ("focused", "the keyboard is with"), ("camera", "the view is on")):
+        if old["one"].get(what) != new["one"].get(what):
+            said.append(f"{words} {old['one'].get(what, 'nothing said')} → {new['one'].get(what, 'nothing said')}")
+    return (more, fewer, len(frames), len(states)), "; ".join(said)
+
+
+def compared(before, now):
+    """The lines of a summary. `before` and `now`: {name: (the trace's text, the expectations' text)}, of every recording that has expectations."""
+    BROKEN, WORD, OTHER, NEW = range(4)
+    rows, sums = [], [0, 0, 0, 0]
+    questions, again = [0, 0], [0, 0]
+
+    def told(name, trace, expect):
+        try:
+            return account(expect, trace)
+        except Refusal as refusal:
+            raise Refusal(f"{name}: {refusal}") from refusal
+
+    for name in sorted(set(before) | set(now)):
+        # What is broken says nothing about Arbor, on either side of the sums.
+        if name not in now:
+            rows.append((BROKEN, 0, 0, name, "GONE: the recording or its expectations are no longer there"))
+            continue
+        was, text = before.get(name, (None, None))[1], now[name][1]
+        if sum(line.startswith(MARK) for line in text.split("\n")) > 1:
+            rows.append((BROKEN, 0, 0, name, f"TWO MARKS: a conflict that kept both sides: `--again {name}` writes what is below the first anew"))
+            continue
+        if was is not None and has_mark(was) and not has_mark(text):
+            rows.append((BROKEN, 0, 0, name, f"LOST: the lines about what Arbor did are gone: `--again {name}` writes them"))
+            continue
+        new = told(name, *now[name])
+        word = a_persons_word(was, text) if was is not None else ""
+        # Of a recording that is new, or held to its course for the first time, what it says now is no change of Arbor's.
+        first = was is None or (has_mark(text) and not has_mark(was))
+        # Neither the day in the mark, nor a remark, nor the order of the lines.
+        same = not first and not word and sorted(telling(was)) == sorted(telling(text))
+        old = new if first or same else told(name, *before[name])
+        for index, side in enumerate((old, new)):
+            questions[index] += side["questions"]
+            again[index] += side["again"]
+        if same:
+            continue
+        if first:
+            said = (f"held to what Arbor did for the first time: {sum(new['moves'].values())} moves, {new['questions']} questions" if has_mark(text)
+                    else f"new, with a person's lines and no more: `--again {name}` writes what Arbor did")
+            rows.append((WORD, 0, 0, name, f"{word}; {said}") if word else (NEW, 0, 0, name, said))
+            continue
+        counts, said = difference(old, new)
+        if not said and not word:
+            moved = lambda lines: sorted(line for line in telling(lines) if "moved" in line.split()[:2])
+            said = "the same moves in answer to other lines" if moved(was) != moved(text) else "lines of which this makes nothing: read them"
+        rows.append((WORD if word else OTHER, -counts[0], old["again"] - new["again"], name, "; ".join(part for part in (word, said) if part)))
+        sums = [a + b for a, b in zip(sums, counts)]
+    new_ones = sum(1 for row in rows if row[0] == NEW)
+    return [f"{name}: {said}" for *_, name, said in sorted(rows)] + [
+        f"In all: {len(rows) - new_ones} of {len(set(before) | set(now))} recordings differ" + (f", and {new_ones} {'is' if new_ones == 1 else 'are'} new" if new_ones else "")
+        + f": {sums[1]} moves fewer, {sums[0]} more; questions {questions[0]} → {questions[1]}; "
+        f"moved again within {JOLT} s with nobody acting {again[0]} → {again[1]}; {sums[2]} windows end elsewhere, {sums[3]} in another state."]
+
+
+def commit_named(name):
+    return git("rev-parse", "--verify", f"{name}^{{commit}}", where=ROOT).strip()
+
+
+def summary(commit):
+    """One line for every recording whose expectations differ from those at `commit`, the worst first, and the sum."""
+    folder = os.path.relpath(TRACES, ROOT)
+
+    def files(*arguments):
+        # As they are spelled: git puts a name that is not ASCII in quotes otherwise.
+        return {os.path.basename(path) for path in git("-c", "core.quotePath=false", *arguments, where=ROOT).split("\n")}
+
+    now = {name: (trace, expect) for name, trace, expect in recordings()}
+    changed = files("diff", "--name-only", commit, "--", folder)
+    there = files("ls-tree", "--name-only", commit, folder + "/")
+
+    def then(file, today):
+        return git("show", f"{commit}:{folder}/{file}", where=ROOT) if file in changed else today
+
+    before = {}
+    for name in sorted(file[:-7] for file in there if file.endswith(".expect") and file[:-7] + ".jsonl" in there):
+        today = now.get(name, (None, None))
+        before[name] = (then(name + ".jsonl", today[0]), then(name + ".expect", today[1]))
+    for line in compared(before, now):
+        print(line)
     return 0
 
 
@@ -706,42 +884,237 @@ def self_test():
     expect("nor do the lists and rules of the settings go unread", strangers(listed, set()) == ["? (net.sample.mail)", "? (org.example-corp.chat)"])
     expect("a new file begins with what the trace shows", expectations([], "It shows.", ["moved 1 0"]).startswith("# It shows.\n" + MARK))
 
+    # What a change did to the recordings. Lines 2 and 3 of the trace are one act and what followed it at once, line 4 is the next act.
+    day = text_of(trace(header, {"t": 1, "command": "dock 98 left"}, {"t": 1.1, "event": "focused", "id": 98}, {"t": 9, "command": "zoom 98"}))
+    mark = MARK + " on 2026-01-01 ----\n"
+    was = mark + "moved 98 2 at 2 4\nframe 98 1 2 3 4\ndocked 98\nvisible 98\nmoved 99 1 at 2\nasked-focus 98 99\nfocused 99\ncamera root\n"
+    is_now = mark + "moved 98 3 at 2? 2 3 4\nframe 98 1 2 3 5\ndocked 98\nhidden 98\nmoved 99 0\nasked-focus 98\ncamera root\n"
+    counts, said = difference(account(was, day), account(is_now, day))
+    expect("moves more and fewer are counted window by window, not set off against each other", counts == (1, 1, 1, 1))
+    expect("the sentence begins with who is moved more often",
+           said.startswith("1 MORE (w98 2 → 3); 1 fewer; questions 0 → 1; moved again within 0.5 s 0 → 1; 1 end elsewhere (w98); another state: w98 docked visible → docked hidden"))
+    expect("of keyboard and view what changed is said, what did not is not",
+           said.endswith("the keyboard asked for 98 99 → 98; the keyboard is with 99 → nothing said") and "view" not in said)
+
+    def lines(before, now):
+        return compared({name: (day, text) for name, text in before.items()}, {name: (day, text) for name, text in now.items()})
+
+    expect("the day in the mark is no difference", lines({"a": was}, {"a": was.replace("2026-01-01", "2026-01-02")})[0].startswith("In all: 0 of 1 recordings differ: 0 moves fewer, 0 more; questions 0 → 0"))
+    expect("the worst comes first, and the sum last", [line.split(":")[0] for line in lines({"a": was, "b": was, "c": was}, {"a": was.replace("moved 99 1 at 2", "moved 99 0"), "b": is_now, "c": was})]
+           == ["b", "a", "In all"])
+    expect("the same moves at other lines are a difference too", lines({"a": mark + "moved 98 1 at 2\n"}, {"a": mark + "moved 98 1 at 4\n"})[0] == "a: the same moves in answer to other lines")
+    held = lines({"a": "visible 98\n"}, {"a": "visible 98\n" + is_now, "b": "visible 98\n"})
+    expect("a recording held to its course for the first time is new and no change of Arbor's", held[0] == "a: held to what Arbor did for the first time: 3 moves, 1 questions"
+           and held[-1].startswith("In all: 0 of 2 recordings differ, and 2 are new: 0 moves fewer, 0 more; questions 1 → 1; moved again within 0.5 s with nobody acting 1 → 1"))
+    expect("one that came with a person's lines alone is told how to get the rest", held[1] == "b: new, with a person's lines and no more: `--again b` writes what Arbor did")
+    nothing = ": 0 moves fewer, 0 more; questions 0 → 0; moved again within 0.5 s with nobody acting 0 → 0; 0 windows end elsewhere, 0 in another state."
+    expect("expectations that lost what was written are no Arbor that moves, asks or jolts less", lines({"a": "visible 98\n" + is_now}, {"a": "visible 98\n"})
+           == ["a: LOST: the lines about what Arbor did are gone: `--again a` writes them", "In all: 1 of 1 recordings differ" + nothing])
+    expect("nor is a recording that is gone", lines({"a": is_now, "b": was}, {"b": was})
+           == ["a: GONE: the recording or its expectations are no longer there", "In all: 1 of 2 recordings differ" + nothing])
+    expect("nor one in which a conflict kept both sides", lines({"a": is_now}, {"a": is_now + is_now})
+           == ["a: TWO MARKS: a conflict that kept both sides: `--again a` writes what is below the first anew", "In all: 1 of 1 recordings differ" + nothing])
+    fewer = was.replace("moved 99 1 at 2", "moved 99 0")
+    expect("the sum is the sum of the rows", lines({"a": was, "b": was}, {"a": is_now, "b": fewer.replace("frame 98 1 2 3 4", "frame 98 1 2 3 9")})[-1]
+           == "In all: 2 of 2 recordings differ: 2 moves fewer, 1 more; questions 0 → 1; moved again within 0.5 s with nobody acting 0 → 1; 2 windows end elsewhere, 1 in another state.")
+    expect("what is broken comes first, then a person's word, then who is moved more, who is moved again, the rest, and last what is new",
+           [line.split(":")[0] for line in lines({"y": was, "z": was, "x": "visible 97\n" + was, "w": was, "v": was, "u": was},
+                                                 {"z": "visible 98\n", "x": "hidden 97\n" + was, "w": is_now, "v": was.replace("at 2 4", "at 2 3"), "u": fewer, "a": was})]
+           == ["y", "z", "x", "w", "v", "u", "a", "In all"])
+    expect("a person's word that changed is said before all else, also where there is no mark",
+           lines({"a": "# why\nvisible 98\n"}, {"a": "# why not\nhidden 98\n"})[0] == "a: A PERSON'S WORD: `visible 98` → `hidden 98`; another state: w98 visible → hidden")
+    expect("so is a known problem that is no longer one", lines({"a": "moved 98 1\nproblem moved 98 1\n" + mark}, {"a": "moved 98 1\n" + mark})[0]
+           == "a: A PERSON'S WORD: `problem moved 98 1` → nothing")
+    expect("so is one changed in the step that brings the mark, and that is no new recording", lines({"a": "visible 98\n"}, {"a": "hidden 98\n" + is_now})
+           == ["a: A PERSON'S WORD: `visible 98` → `hidden 98`; held to what Arbor did for the first time: 3 moves, 1 questions",
+               "In all: 1 of 1 recordings differ: 0 moves fewer, 0 more; questions 1 → 1; moved again within 0.5 s with nobody acting 1 → 1; 0 windows end elsewhere, 0 in another state."])
+    expect("a mark that has moved up over a person's line has taken it away", lines({"a": "visible 97\n" + was}, {"a": mark + "visible 97\n" + was[len(mark):]})[0]
+           == "a: A PERSON'S WORD: `visible 97` → nothing")
+    expect("a remark and the order of the lines are no difference",
+           lines({"a": "# why\nvisible 97\nhidden 96\n" + was}, {"a": "# why not\nhidden 96\nvisible 97\n" + was}) == ["In all: 0 of 1 recordings differ" + nothing])
+    expect("a line said twice is a state said once", lines({"a": "visible 97\nvisible 97\n" + was}, {"a": "visible 97\n" + was})[0] == "a: A PERSON'S WORD: `visible 97` → nothing")
+    expect("a mark that a remark quotes is none", not has_mark("# see " + mark) and has_mark("visible 98\n" + mark))
+    expect("moves counted from a remark on are no sum, `expect` may stand before a line, half a line is passed over",
+           account(mark + "moved 98 2 at 2 4\nmoved 98 1 since a remark\nframe\n", day)["moves"] == {"98": 2}
+           and [account("expect moved 98 2 at 2 3\nexpect visible 98\n", day)[key] for key in ("moves", "again", "states")] == [{"98": 2}, 1, {"98": ["visible"]}])
+    try:
+        compared({}, {"a": (day, was), "b": ("no trace", was)})
+        expect("a trace that cannot be read is named", False)
+    except Refusal as refusal:
+        expect("a trace that cannot be read is named", str(refusal).startswith("b: "))
+    expect("a window whose moves a person has spoken for is looked at like any other",
+           "1 end elsewhere (w98); another state: w98 visible → hidden" in lines({"a": "moved 98 1 at 2\n" + mark + "frame 98 1 2 3 4\nvisible 98\n"}, {"a": "moved 98 1 at 2\n" + mark + "frame 98 9 9 3 4\nhidden 98\n"})[0])
+    longer = text_of(trace(header, {"t": 0, "note": "a remark"}, {"t": 1, "command": "dock 98 left"}, {"t": 1.1, "event": "focused", "id": 98}))
+    expect("old expectations go by the trace they were written for", compared({"a": (day, mark + "moved 98 2 at 2 3\n")}, {"a": (longer, mark + "moved 98 2 at 3 4\n")})[-1].count("nobody acting 1 → 1") == 1)
+
+    # The arguments, with stand-ins for what they lead to.
+    kept = {name: globals()[name] for name in ("ROOT", "TRACES", "simulator", "draft", "problems", "again", "summary", "jolts", "self_test", "make")}
+
+    def called(*arguments):
+        """(the exit code, what was said, what was begun)"""
+        begun, said = [], io.StringIO()
+        globals().update(again=lambda options, afterwards: begun.append("again") or afterwards(), summary=lambda commit: begun.append("summary") or 0,
+                         jolts=lambda: begun.append("jolts") or 0, self_test=lambda: begun.append("self-test") or 0, make=lambda options: begun.append("make") or 0)
+        try:
+            with contextlib.redirect_stderr(said):
+                return main(list(arguments)), said.getvalue(), begun
+        finally:
+            globals().update(kept)
+
+    expect("a commit that does not exist is found out before anything is built or written", called("--again", "--all", "--summary", "--since", "no-such-commit")[::2] == (1, []))
+    expect("nor does an empty one mean HEAD", called("--summary", "--since", "")[::2] == (1, []))
+    expect("the summary comes after the writing, as a part of it", called("--again", "--all", "--summary") == (0, "", ["again", "summary"]) and called("--again", "--all")[2] == ["again"])
+    expect("no name is taken for a commit", called("--summary", "close") == (1, "trace-to-test: --summary goes by itself or with --again\n", []))
+    for arguments in (("--since", "HEAD"), ("--summary", "--all"), ("--jolts", "--summary"), ("--self-test", "--summary", "--since", "no-such-commit"), ("--summary", "--shows", "x"),
+                      ("--again", "--all", "--no-tests"), ("--again",), ("--again", "--all", "close"), ("--jolts", "close")):
+        expect(f"nothing that is asked for is passed over in silence: {' '.join(arguments)}", called(*arguments)[::2] == (1, []))
+    expect("what goes by itself goes", [called(flag)[::2] for flag in ("--jolts", "--self-test", "--summary")] == [(0, ["jolts"]), (0, ["self-test"]), (0, ["summary"])]
+           and called("a.jsonl", "a", "--shows", "x", "--no-tests")[::2] == (0, ["make"]))
+
+    # The summary, in a repository of its own.
+    with tempfile.TemporaryDirectory() as root:
+        folder = os.path.join(root, "collab", "evidence", "traces")
+        os.makedirs(folder)
+
+        def put(name, recording, text):
+            for kind, content in ((".jsonl", recording), (".expect", text)):
+                with open(os.path.join(folder, name + kind), "w", encoding="utf-8") as file:
+                    file.write(content)
+
+        for name in ("a", "b", "c", "zu-groß"):
+            put(name, day, was if name != "b" else mark + "moved 98 2 at 2 3\n")
+        git("init", "--quiet", where=root)
+        git("add", "--all", where=root)
+        git("-c", "user.name=nobody", "-c", "user.email=nobody@example.com", "-c", "commit.gpgsign=false", "commit", "--quiet", "--message", "first", where=root)
+        put("a", day, is_now)
+        put("b", longer, mark + "moved 98 2 at 3 4\n")
+        put("zu-groß", day, fewer)
+        put("new", day, was)
+        # Out of the index and still there.
+        git("rm", "--cached", "--quiet", "collab/evidence/traces/c.expect", where=root)
+        put("c", day, fewer)
+        said = io.StringIO()
+        globals().update(ROOT=root, TRACES=folder)
+        try:
+            with contextlib.redirect_stdout(said):
+                summary(commit_named("HEAD"))
+        finally:
+            globals().update(kept)
+        expect("the summary holds the files as they are against those of the commit, each against the trace it was written for, whatever its name, tracked or not",
+               [line.split(";")[0] for line in said.getvalue().splitlines()]
+               == ["a: 1 MORE (w98 2 → 3)", "b: the same moves in answer to other lines", "c: 1 fewer", "zu-groß: 1 fewer", "new: held to what Arbor did for the first time: 3 moves, 0 questions",
+                   "In all: 4 of 5 recordings differ, and 1 is new: 3 moves fewer, 1 more"] and "nobody acting 1 → 2" in said.getvalue())
+
+    # --again, with an arbor-sim that says what it is told to.
+    with tempfile.TemporaryDirectory() as folder:
+        def write(name, content, kind=".expect"):
+            with open(os.path.join(folder, name + kind), "wb") as file:
+                file.write(content if isinstance(content, bytes) else content.encode("utf-8"))
+
+        def read(name):
+            with open(os.path.join(folder, name + ".expect"), encoding="utf-8") as file:
+                return file.read()
+
+        at_first = {"a": mark + "moved 98 1 at 2\n", "b": "camera root\n" + mark + "moved 98 1 at 2\n", "c": "camera root\n"}
+
+        def tried(names, broken=(), afterwards=lambda: 0, files=None):
+            """What stopped `--again`, or None. From the same three files each time, but for `files`."""
+            for name, text in {**at_first, **(files or {})}.items():
+                write(name, day, ".jsonl")
+                write(name, text)
+
+            def ask(sim, path):
+                name = os.path.basename(path)[:-6]
+                if isinstance(dict(broken).get(name), BaseException):
+                    raise dict(broken)[name]
+                return [dict(broken)[name]] if name in dict(broken) else []
+
+            globals().update(TRACES=folder, simulator=lambda: "sim", draft=lambda sim, path: ["moved 98 2 at 2 4", "camera 98"], problems=ask)
+            try:
+                with open(os.devnull, "w", encoding="utf-8") as nowhere, contextlib.redirect_stdout(nowhere):
+                    again(argparse.Namespace(all=not names, names=names), afterwards)
+                return None
+            except BaseException as stopped:  # pylint: disable=broad-except
+                return stopped
+            finally:
+                globals().update(kept)
+
+        def as_at_first():
+            return all(read(name) == text for name, text in at_first.items())
+
+        def refuse():
+            raise Refusal("no")
+
+        no_longer = "line 3: `camera root`"
+        refused = tried([], {"b": no_longer})
+        expect("a person's line that no longer holds stops --again, and what was written before it is taken back",
+               isinstance(refused, Refusal) and str(refused).startswith("b: ") and str(refused).endswith("Every file is as it was.") and as_at_first())
+        expect("also where there is nothing to write", str(tried(["b"], {"b": no_longer}, files={"b": "camera root\n" + mark + "moved 98 2 at 2 4\n"})).startswith("b: "))
+        expect("also in a file that is all a person's, into which --all writes nothing", str(tried([], {"c": no_longer})).startswith("c: ") and as_at_first())
+        expect("a name that is no trace's is found out before anything is written", str(tried(["a", "z"])) == "there is no trace z" and as_at_first())
+        expect("whatever stops it takes back what was written: Ctrl-C", isinstance(tried([], {"b": KeyboardInterrupt()}), KeyboardInterrupt) and as_at_first())
+        expect("an arbor-sim that is gone", isinstance(tried([], {"b": FileNotFoundError()}), FileNotFoundError) and as_at_first())
+        expect("the summary", str(tried([], afterwards=refuse)) == "no\nEvery file is as it was." and as_at_first())
+        expect("a file that is no text", str(tried([], files={"b": b"\xff"})).startswith("b.expect is not UTF-8") and read("a") == at_first["a"])
+        expect("otherwise it writes, and leaves a person's word on the view alone", tried([]) is None and "moved 98 2 at 2 4" in read("a") and "camera 98" in read("a")
+               and read("b").startswith("camera root\n" + MARK) and "camera 98" not in read("b") and read("c") == at_first["c"])
+        expect("by its name a file that is all a person's gets its mark", tried(["c"]) is None and read("c").startswith("camera root\n" + MARK) and "moved 98 2 at 2 4" in read("c"))
+
     for failure in failures:
         print(f"✘ {failure}")
     print(f"trace-to-test self-test: {'failed' if failures else 'passed'}")
     return 1 if failures else 0
 
 
-def main():
+def main(arguments=None):
     parser = argparse.ArgumentParser(usage=__doc__.split("\n\n")[1], add_help=False)
     parser.add_argument("names", nargs="*")
-    for flag in ("--shows", "--through", "--until", "--cure", "--apps"):
+    for flag in ("--shows", "--through", "--until", "--cure", "--apps", "--since"):
         parser.add_argument(flag)
-    for flag in ("--again", "--all", "--self-test", "--no-tests", "--replace", "--help", "--jolts"):
+    for flag in ("--again", "--all", "--self-test", "--no-tests", "--replace", "--help", "--jolts", "--summary"):
         parser.add_argument(flag, action="store_true")
-    options = parser.parse_args()
+    options = parser.parse_args(arguments)
     if options.help:
         print(__doc__.strip())
         return 0
-    if options.self_test:
-        return self_test()
-    if options.jolts:
-        return jolts()
+    given = {name for name, value in vars(options).items() if value not in (None, False, [])}
+    # Whoever is stopped by `timeout` or by a harness tidies up like one stopped by Ctrl-C.
+    signal.signal(signal.SIGTERM, lambda *_: sys.exit(143))
     try:
+        # Nothing that was asked for is passed over in silence.
+        for alone in ("self_test", "jolts"):
+            if alone in given and given != {alone}:
+                raise Refusal(f"--{alone.replace('_', '-')} goes by itself")
+        if "since" in given and "summary" not in given:
+            raise Refusal("--since <commit> goes with --summary")
+        if "all" in given and "again" not in given:
+            raise Refusal("--all goes with --again")
+        for_a_new_test = sorted(given & {"shows", "through", "until", "cure", "apps", "no_tests", "replace"})
+        if for_a_new_test and given & {"again", "summary"}:
+            raise Refusal(f"--{for_a_new_test[0].replace('_', '-')} is for making a test of a trace, not for --again or --summary")
+        if options.self_test:
+            return self_test()
+        if options.jolts:
+            return jolts()
+        # Before anything is built or written.
+        since = commit_named("HEAD" if options.since is None else options.since) if options.summary else None
         if options.again:
             if bool(options.names) == options.all:
                 raise Refusal("--again <name>…, or --again --all")
-            return again(options)
+            return again(options, (lambda: summary(since)) if since else (lambda: 0))
+        if options.summary:
+            if options.names:
+                raise Refusal("--summary goes by itself or with --again")
+            return summary(since)
         if len(options.names) != 2 or (options.through and options.until):
             print(__doc__.split("\n\n")[1], file=sys.stderr)
             return 64
         options.trace, options.name = options.names
         return make(options)
-    except Refusal as refusal:
-        print(f"trace-to-test: {refusal}", file=sys.stderr)
-        return 1
-    except OSError as error:
-        print(f"trace-to-test: {error}", file=sys.stderr)
+    except (Refusal, OSError, UnicodeDecodeError) as stopped:
+        # The reason comes last, also where both go into one file.
+        sys.stdout.flush()
+        print(f"trace-to-test: {stopped}", file=sys.stderr)
         return 1
 
 

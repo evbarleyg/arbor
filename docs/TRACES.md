@@ -495,6 +495,26 @@ scripts/trace-to-test.py .mac-shell/day-38652033829/traces/day-9.jsonl leaving-f
 If anything is amiss it says what and writes nothing. When Arbor's behaviour changes, and rightly, `scripts/trace-to-test.py --again <name>` (or `--again --all`) writes the lines below the mark anew and prints what changed; what a person wrote above the
 mark stays. Read the difference: each line is something a person at that Mac would have seen.
 
+**Once a batch.** Whoever lands a batch of pull requests runs `scripts/trace-to-test.py --again --all --summary` on the sum (seconds, once arbor-sim is built) and commits what it wrote, as with the
+generated pages; the authors read. `--summary [--since <commit>]`, which also works alone and then needs nothing built, says what differs from the expectations at that commit (HEAD) in a person's
+words, one line a recording, the worst first, and the sum:
+
+```
+too-big: A PERSON'S WORD: `tile 52`, `visible 53` → `visible 52`, `tile 53`; 3 MORE (w51 0 → 1, w52 1 → 2, w53 1 → 2); 3 end elsewhere (w51, w52, w53); …
+day-08-windows-come-and-go: the keyboard asked for 98 121 → 98
+minimized-with-finder-in-front: held to what Arbor did for the first time: 2 moves, 0 questions
+In all: 5 of 96 recordings differ, and 1 is new: 2 moves fewer, 3 more; questions 64 → 65; moved again within 0.5 s with nobody acting 18 → 18; …
+```
+
+MORE is where to look first: `make replay FILE=…` shows in answer to which line. Before those come the rows with A PERSON'S WORD: a line above a mark that somebody changed, or a mark that has moved up over
+it. And before everything GONE, LOST and TWO MARKS: a recording, or its written lines, that are no longer there, or are there twice. A conflict resolved to the wrong side looks like that, and not like an Arbor
+that moves less: such a row counts on neither side of the sums. A remark, the order of the lines and the day in the mark are no difference. Two pull requests that both change what Arbor does to windows
+conflict in the same files, from the mark (it has its day) downwards: take either side and run it again, those lines are written and not merged.
+
+`--again` replays every recording against its file, also where it has nothing to write. Where a line a person wrote no longer holds, or a `problem` line names a fault that is cured, it
+refuses, names the recording and the line, and puts every file back: that is a change against somebody's word, and its author's to settle. Whatever else stops it, Ctrl-C or the summary, puts them back
+as well. `--all` writes nothing into a file that has no mark yet, which is all a person's, and replays it like the others; `--again <name>` gives it its mark.
+
 What it cannot do: show a fault that lies below the seam (in `AXWindowSystem`, the event taps, AppKit), see "Known limits"; and cut a trace at the front.
 
 **To add a trace by hand**: `make trace NAME=<name>` (or copy the file), read what `make trace-check` lists, cut it short if it is long
