@@ -1,0 +1,19 @@
+19 dock-icon-textedit: clicks textedit's icon in the Dock
+expected: {'act': 'switch', 'settled': 'quiet:382', 'front': '42'}
+FAIL rule 6: the button came up, and the apps heard of it 217 ms later
+
+07:25:56.946 SCREEN -- begin 19 dock-icon-textedit
+07:25:56.946 SCREEN -- text 19 clicks textedit's icon in the Dock
+07:25:57.575 SCREEN (nothing was seen for 156 ms)
+07:25:57.827 SCREEN (nothing was seen for 139 ms)
+07:25:57.827 SCREEN the button is down 1220 854
+07:25:58.376 SCREEN (nothing was seen for 549 ms)
+07:25:58.376 SCREEN front to back: textedit preview w69 mail safari calendar settings notes terminal finder
+07:25:58.376 SCREEN the button is up 1220 854
+07:25:58.395 MACOS pid 10890 AXApplicationDeactivated
+07:25:58.406 MACOS workspace didActivate pid 6809 com.apple.TextEdit regular
+07:25:58.406 MACOS workspace didDeactivate pid 10890 com.apple.Preview regular
+07:25:58.407 MACOS pid 6809 AXApplicationActivated
+07:25:58.414 SCREEN in front: process 6809 com.apple.TextEdit
+07:25:59.525 SCREEN -- end 19 act=switch settled=quiet:382 front=42
+07:25:59.863 SCRIPT == 20 dock-icon-calendar

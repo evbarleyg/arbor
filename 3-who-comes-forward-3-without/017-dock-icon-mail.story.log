@@ -1,0 +1,17 @@
+17 dock-icon-mail: clicks mail's icon in the Dock
+expected: {'act': 'switch', 'settled': 'quiet:377', 'front': '356'}
+FAIL rule 6: the button came up, and the apps heard of it 160 ms later
+
+07:32:25.286 SCREEN -- begin 17 dock-icon-mail
+07:32:25.286 SCREEN -- text 17 clicks mail's icon in the Dock
+07:32:26.179 SCREEN the button is down 355 831
+07:32:26.377 MACOS pid 28851 AXApplicationDeactivated
+07:32:26.378 MACOS workspace didActivate pid 30377 com.apple.mail regular
+07:32:26.379 SCREEN (nothing was seen for 190 ms)
+07:32:26.379 SCREEN the button is up 355 831
+07:32:26.379 MACOS workspace didDeactivate pid 28851 com.apple.Safari regular
+07:32:26.381 SCREEN in front: process 30377 com.apple.mail
+07:32:26.468 SCREEN front to back: w356 mail safari preview calendar textedit settings notes terminal finder
+07:32:26.506 MACOS pid 30377 AXApplicationActivated
+07:32:27.570 SCREEN -- end 17 act=switch settled=quiet:377 front=356
+07:32:28.110 SCRIPT == 18 dock-icon-preview
