@@ -1,0 +1,25 @@
+# mac-shell: scripts/mac-shell/probe-load.sh at 5c40e2e, macOS 26.6.2, 2026-10-15T00:10Z
+ 0:10  up 8 mins, 1 user, load averages: 22.64 25.29 16.75
+swift build --build-tests: exit 0, 198 s
+swift test: exit 0, 73 s
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.
+ 0:14  up 12 mins, 1 user, load averages: 4.01 13.35 13.69
+ %CPU COMM
+  4.6 /usr/libexec/duetexpertd
+  1.2 bash
+  1.0 /usr/libexec/airportd
+  0.8 /usr/libexec/mobileassetd
+  0.4 /usr/libexec/logd
+  0.4 /usr/libexec/trustd
+  0.2 /System/Library/PrivateFrameworks/ViewBridge.framework/Versions/A/XPCServices/ViewBridgeAuxiliary.xpc/Contents/MacOS/ViewBridgeAuxiliary
+ps: stdout: Broken pipe
+ powernap             1
+ sleep                0 (sleep prevented by powerd, addonsd)
+ displaysleep         0 (display sleep prevented by addonsd)
+   UserIsActive                   1
+   PreventUserIdleDisplaySleep    1
+   PreventUserIdleSystemSleep     1
+   pid 99(powerd): [0x0000000700018000] 00:11:59 PreventUserIdleSystemSleep named: "Powerd - Prevent sleep while display is on"  
+   pid 99(powerd): [0x0000000700098001] 00:11:59 UserIsActive named: "com.apple.powerd.ws.initialize"  
+exit code 0
