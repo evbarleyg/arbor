@@ -2399,7 +2399,7 @@
    "kind": "late-or-partial-answer",
    "layer": "at the seam",
    "expected": "Position, then size, gives a window its frame. In the fake `setFrame` is one step: size and place change together, and one echo carries the frame asked for.",
-   "happened": "The size a window may take depends on where it stands. Asked for 12,43 1000×319 from 272,31 480×348, the window first reports 752×319, which is what fits between x 272 and the display's right edge, then moves, then takes 1000. Going back to a floating size it reports 512×661 before 512×673. One command, three reports with three different frames. A large window is clamped in the same way on its way to a smaller display, and the frame Arbor believes a window has can be out of date. The stand-in plays the number of reports this makes (a third where the size does not fit at the old place; none for a window at its minimum, or one that hung over that edge already), not the frames in between, which the real layer does not pass on either: it reads the frame when a report arrives.",
+   "happened": "The size a window may take depends on where it stands. Asked for 12,43 1000×319 from 272,31 480×348, the window first reports 752×319, which is what fits between x 272 and the display's right edge, then moves, then takes 1000. Going back to a floating size it reports 512×661 before 512×673. One command, three reports with three different frames. A large window is clamped in the same way on its way to a smaller display, and the frame Arbor believes a window has can be out of date. The stand-in plays the number of reports this makes (a third where the size does not fit at the old place; none for a window at its minimum, or one that hung over that edge already), not the frames in between, which the real layer does not pass on either: it reads the frame when a report arrives. The whole rule has been read off a later run (a-window-asked-to-grow-stops-at-the-dock): it holds growth back and nothing else, at the Dock as at the right edge. This case stood here as not played by the stand-ins when a change landed that leant on the stand-ins for it (a-size-clipped-by-the-screen-was-taken-for-the-apps-refusal).",
    "found": "A watcher of raw Accessibility notifications that ran beside probe scripts on a hosted Mac. The clamp between displays stands in the frame plan's own comments, which name no run.",
    "modelled": "partly",
    "knobs": [
@@ -4569,7 +4569,7 @@
    "kind": "geometry",
    "layer": "at the seam",
    "expected": "The fake kept fractions: a frame of 150.5 stays 150.5.",
-   "happened": "On a display of scale 1 the window server keeps whole points: 150.5 became 150, 261.5 became 261, 24.5 became 24, but 46.5 became 47 and 248.5 became 249. A docked window that cannot grow to its slot was centred on half points.",
+   "happened": "On a display of scale 1 the window server keeps whole points: 150.5 became 150, 261.5 became 261, 24.5 became 24, but 46.5 became 47 and 248.5 became 249. A docked window that cannot grow to its slot was centred on half points. A later run gives the rule for a position: x goes down and y goes up, as if rounded down in AppKit's coordinates, whose y runs the other way. 596.5 became 596 (2 of 2); 55.5 became 56, 117.5 118, 72.5 73, 52.5 53 (9 of 9). `FakeWindowSystem.whereMacOSPuts` rounds both down.",
    "found": "Traces of real apps (all 40 read for it), and a rehearsal on the fake Mac compared with the real run.",
    "modelled": "partly",
    "knobs": [
@@ -4599,7 +4599,7 @@
    "kind": "geometry",
    "layer": "at the seam",
    "expected": "macOS keeps 32 points of every window above the bottom of the visible frame. The controller, the fake and the fake Mac all hold that one number.",
-   "happened": "What stays above is the window's own title bar, and title bars are not one height. Terminal and TextEdit kept 32 points, Finder, Calculator and System Settings 52: a toolbar is part of it. The test windows kept 32 in the first recordings and 28 (1023,677; 480×348, not 480×352) in every run since, on the same macOS 26.6 and the same display: only the build differed. An earlier reading (29, 26 and 47) held every trace against a visible frame that ends at 705, while in the traces of real apps the Dock is lower and it ends at 708, 710 and 711. With 32 in `World.titleBarHeight` and `FakeWindowSystem.whereMacOSPuts`, every frame, request and answer that holds a floating window's height or a parked window's place was 4 points off: 142 of the 307 differences of the first comparison of one script on a hosted Mac and in a rehearsal. And the one number hid three faults of Arbor's, which held it too: a window left in Arbor's corner by a crash was known only within a point of 32, so one with a toolbar that a rule ignores was never fetched; every report of the displays sent each window out of view with another height to its corner again; and a window with a toolbar showed along the bottom of a neighbouring display that ends 33 to 52 points higher. A display without a Dock has not been measured, nor a title bar with a tab bar under it; and with several displays, which of them stops a window is still a guess that Arbor and the fake share.",
+   "happened": "What stays above is the window's own title bar, and title bars are not one height. Terminal and TextEdit kept 32 points, Finder, Calculator and System Settings 52: a toolbar is part of it. The test windows kept 32 in the first recordings and 28 (1023,677; 480×348, not 480×352) in every run since, on the same macOS 26.6 and the same display: only the build differed. An earlier reading (29, 26 and 47) held every trace against a visible frame that ends at 705, while in the traces of real apps the Dock is lower and it ends at 708, 710 and 711. With 32 in `World.titleBarHeight` and `FakeWindowSystem.whereMacOSPuts`, every frame, request and answer that holds a floating window's height or a parked window's place was 4 points off: 142 of the 307 differences of the first comparison of one script on a hosted Mac and in a rehearsal. And the one number hid three faults of Arbor's, which held it too: a window left in Arbor's corner by a crash was known only within a point of 32, so one with a toolbar that a rule ignores was never fetched; every report of the displays sent each window out of view with another height to its corner again; and a window with a toolbar showed along the bottom of a neighbouring display that ends 33 to 52 points higher. A display without a Dock has not been measured, nor a title bar with a tab bar under it; and with several displays, which of them stops a window is still a guess that Arbor and the fake share. Again in a later run: asked 1023,767, the test windows stopped at 1023,677, 20 times of 20: the visible bottom less 28.",
    "found": "Traces of real apps, and the frames in every real-window run of one day compared with the traces committed that morning, on hosted Macs. Later the first comparison, line by line, of one script played on a hosted Mac (six runs, macOS 26.6.2, one display of 1024×768) and in a rehearsal on Linux. The difference was seen; its cause is a reading.",
    "modelled": "partly",
    "knobs": [
@@ -5211,6 +5211,49 @@
     "docs/features/F18-sole-floating-window.md"
    ],
    "certainty": "suspected"
+  },
+  {
+   "id": "a-window-asked-to-grow-stops-at-the-dock",
+   "kind": "geometry",
+   "layer": "at the seam",
+   "expected": "A window takes the size it is given unless its app refuses. In the stand-ins `FakeWindowSystem.setFrame` takes any size anywhere, and so does the fake Mac: a window may grow off the bottom of the screen.",
+   "happened": "A size call that makes a window grow stops where its bottom edge comes to the visible frame's bottom less 1, and its right edge to the display's right edge. The origin stays. With the visible bottom at 705 the bottom came to 704 in 23 answers of 23 (stood and asked 170,220: 494×650 asked, 494×484 taken; 12,374: 1000×650 asked, 1000×330 taken); the right edge to 1024 in 2 of 2 (687,106: 494 wide asked, 337 taken). **Growth only.** It never made a window smaller: one that stood with its bottom at 704 already kept its height (asked 273×650, took 273×348). An edge that is past the line already is free: a parked window at 1023,677 took 1000×650 whole, 2 of 2. Position calls are not touched: a window that got its whole size in the corner was then put at 687,106 325×650, its bottom at 756, 51 points behind the Dock, until Arbor's next move. **It is decided where the window stands when each size call arrives**, not by whether the request names a new place. One `setFrame` of Arbor's is up to three calls, size, position, size: moved into a slot a window is clipped at the first and made good at the third, which is why nothing showed for as long as windows were sized on their way (a-size-set-at-the-old-place-is-cut-to-what-fits-there had seen that much). **It is the Dock as it is at that moment**, whatever Arbor has been told: after a window had gone into the Dock an answer stopped at 706, 0.33 s before Arbor heard that the visible bottom was 707. The app's own smallest size wins over it (in an older run: asked 446×348, took 700×500, bottom 720, right edge 1278). Why less 1 at the bottom and not at the right is not known. **Not seen:** the Dock at a side, a second display, one edge past the line and the other not, any app but AppKit's plain test window; so neither whether AppKit or the window server does it. A mend of the fake is on its way with the cure of what it cost Arbor (a-size-clipped-by-the-screen-was-taken-for-the-apps-refusal).",
+   "found": "Five journeys of test windows, played on a hosted Mac and in a rehearsal on Linux and compared line by line, by an instrument that is not on the trunk yet: one run (macOS 26.6.2, one display of 1024×768, visible frame 0,31 1024×674, the Dock at the bottom, the trunk's Arbor of the night of 2026-10-15), 182 `setFrame` calls, every one read. The traces come with that instrument's pull request; and 313 calls of two older runs.",
+   "modelled": "no",
+   "knobs": [],
+   "guards": [],
+   "copes": "FramePlan.full sets size, position, size, so a window that is moved gets at its new place what it was denied at the old. A window that is asked for a size where it stands gets no third call.",
+   "hurt": 2,
+   "touches": [
+    "jolt"
+   ],
+   "sources": [
+    "Sources/ArborCore/FramePlan.swift",
+    "Sources/ArborTesting/FakeWindowSystem.swift",
+    "Sources/ArborKit/AX/AXWindowSystem.swift"
+   ]
+  },
+  {
+   "id": "a-size-clipped-by-the-screen-was-taken-for-the-apps-refusal",
+   "kind": "geometry",
+   "layer": "controller",
+   "expected": "A window of which it is not known whether it can be as large as its slot is asked where it stands: its own origin, the slot's size. What it takes is what its app allows, and it is then only moved, at that size, to where that belongs.",
+   "happened": "The answer is the room below the window, not the app's limit (a-window-asked-to-grow-stops-at-the-dock), and Arbor lays the window out at that size in the middle of its slot. `dock W1 left`: asked 170,220 494×650, took 494×484, then put at 12,126 494×484, in a slot of 12,43 494×650. A window framed: asked 12,374 1000×650, took 1000×330, put at 12,203, where 12,43 1000×650 was meant. It is asked again at every later layout, from higher up, so it grows by steps: one window was 484, 578, 625, 648 and at last 650 high. 25 answers were short of what was asked, in all four journeys that set a frame, in three of them at the very first dock. Seen: the calls, the answers and the places. **By reading, not by bisecting:** it came with \"a refused size costs nobody a second move\", since which a window is asked where it stands. Every test and rehearsal on Linux was green, because the stand-ins let a window grow off the screen. **Ruled by the product owner:** severity 1 for a build. An answer clipped by the screen is no refusal. The question where it stands is for a window asked to be smaller; one asked to be larger is moved first, then sized.",
+   "found": "Five journeys of test windows, played on a hosted Mac and in a rehearsal on Linux and compared line by line, by an instrument that is not on the trunk yet: one run (macOS 26.6.2, one display of 1024×768, visible frame 0,31 1024×674, the Dock at the bottom, the trunk's Arbor of the night of 2026-10-15), 182 `setFrame` calls, every one read. The traces come with that instrument's pull request. Found 43 minutes after the change had landed.",
+   "modelled": "no",
+   "knobs": [],
+   "guards": [],
+   "copes": "open",
+   "hurt": 1,
+   "touches": [
+    "stuck"
+   ],
+   "sources": [
+    "Sources/ArborKit/Controller/Controller+AskFirst.swift",
+    "Sources/ArborCore/SeenSizes.swift",
+    "Sources/ArborTesting/FakeWindowSystem.swift",
+    "docs/ARCHITECTURE.md"
+   ]
   },
   {
    "id": "a-destroyed-element-has-no-window-number",
@@ -11156,6 +11199,10 @@
   "- **The gate allowed them.** By section 6 of `docs/VIABLE.md` a drag that docks is asked for, and a move of the view may take floating windows away. So `moved-unasked` was silent by design on I17, I20 b and the second half of I20 c, and the day on a hosted Mac, 106 acts, could end with \"no window lost\". And no detector has an eye for a key of Arbor's that arrives in another app.",
   "- **The stories took the easy road.** The story of rule 2 keeps the loose windows out of the dock's way. The newcomer's ten minutes begin with `mac-tiling off`, which is not how a Mac comes. The guide calls a key that Arbor has let go of one that does nothing.",
   "- **What was never asked:** whether a person wanted what Arbor did. I24 and I25 a to e ask it.",
+  "",
+  "## The first regression that a Mac caught after it had landed",
+  "",
+  "In the night of 2026-10-15 a change landed that was green in every test and rehearsal on Linux, and from then on the first dock on a Mac left the window short of its slot ([a-size-clipped-by-the-screen-was-taken-for-the-apps-refusal](#a-size-clipped-by-the-screen-was-taken-for-the-apps-refusal)). It was caught 43 minutes later by playing five journeys on a hosted Mac and in a rehearsal and comparing them line by line. Linux could not see it because the stand-ins let a window grow off the screen ([a-window-asked-to-grow-stops-at-the-dock](#a-window-asked-to-grow-stops-at-the-dock)); that they do not play what a size depends on had stood on this page, among the cases of ring 2, and nobody held the change against it. The five journeys cost about six and a half minutes of one hosted Mac, and from now on they are played at the trunk's head after every batch. **Its limits:** five journeys of test windows on one small display. No real apps, no second display, no app that hangs, no permission that goes. It caught this because a plain first dock meets it.",
   "",
   "## What the stand-ins say they cannot imitate",
   "",
