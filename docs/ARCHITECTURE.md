@@ -1308,6 +1308,28 @@ of**, keeps its number, so that its release is still heard, and only has its com
 in front for two to three milliseconds at every pause, settings change and change of layout. What a peek added for the time
 being outlives a registration. What macOS refused, or would not take back, is tried again at every occasion, alone.
 
+**With fn or without.** Where macOS looks for a hot key it compares the flag of the fn (Globe) key exactly: with it on the event ⌃⌥A is not the ⌃⌥A
+that was registered, and goes to the app in front, with Arbor running and none the wiser. fn sits beside ⌃ on a laptop. So the table registers most
+shortcuts twice, plainly and with Carbon's bit for fn, under two numbers and one shortcut: whichever fires, the same command runs. The two come and go
+together, the twin first on the way out, so that a key is never given away while Arbor still takes it with fn. Everything a person sees counts
+keys, not registrations. A twin that macOS refuses is logged, tried again at the next occasion, and is no problem: the key is Arbor's.
+
+- **Who gets one** (`KeyChord.hasFnTwin`). Never a key that carries the flag by nature (arrows, function keys): there macOS takes the two
+  registrations for one and a press fires both. The key's name decides, by a `switch` without a `default`, and so does its code (`HotKey.carriesFn`), which is what
+  macOS goes by. Not `tab` or `delete`, about which no Mac has been asked. And only a shortcut with ⌃ and ⌥ in it, which all of Arbor's own have: fn with ⌃ alone and
+  a letter is macOS's own (Fill, Center), and somebody's `ctrl+f` must not take that too.
+- **One press, one command** (`HotKeyTable.heard`). It does not rest on that list alone. While a key is down under one of its numbers, what macOS reports under the
+  other is nobody's. So a command cannot run twice for one press, whatever macOS makes of the two registrations.
+- **What was measured, and what was not.** One hosted Mac, macOS 26, posted events, ⌃⌥ with A Z F G [ ↩ Space ⎋, ← →, F5, Home, End, Page Up, Page Down and
+  forward delete. The other letters, the digits, the other signs, and ⌃⌥⇧ and ⌃⌥⌘ are taken to be like them. **macOS 14 and 15 have not been asked**: a macOS that
+  does not know the bit would, by what this one did with bits it does not know, fire both at every press, which is what `heard` is for. That a real fn key sets the flag where macOS
+  looks is likely and not shown. On Apple's keyboards fn with an arrow, ↩ or ⌫ is another key altogether (Home and its kin, Enter, forward delete): there the twin
+  does not help, and ↩'s may never be pressed. The real app with its twins has run on no Mac yet.
+- **What it costs.** Some forty more calls to macOS whenever all keys come back (a resume, leaving an app that keeps its own), so the microseconds in "registered N
+  shortcuts" nearly double.
+- `FakeHotKeyServer.fires` plays what the Mac answered, the double fire included, and `ignoresTheFnBit` a macOS that does not know the bit. It plays neither fn
+  changing in the middle of a press nor auto-repeat.
+
 **Whose a key is.** `KeysHeld` says of each key of the map in effect: held, handed over (Arbor does not ask for it now, and
 `whyKeysAreTheApps` has the words), refused, or missing (wanted, and macOS was not asked or Arbor cannot listen). `bindings` marks each line that is not Arbor's at
 that moment; `doctor`, Check Setup (the row `lostShortcuts`) and the log say what is refused or missing; menus, tooltips and the welcome

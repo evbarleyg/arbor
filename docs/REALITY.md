@@ -63,17 +63,17 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 | [identity](#identity) | 28 | 4 | 6 | 5 | 6 | 11 | 11 | 1 | 2 | 14 | 7 |
 | [permissions](#permissions) | 22 | 8 | 6 | 3 | 3 | 10 | 11 | 2 | 2 | 7 | 4 |
 | [timing](#timing) | 50 | 7 | 7 | 15 | 8 | 20 | 27 | 4 | 6 | 13 | 9 |
-| [input](#input) | 56 | 7 | 6 | 13 | 13 | 24 | 20 | 6 | 7 | 23 | 11 |
+| [input](#input) | 57 | 8 | 6 | 15 | 12 | 24 | 22 | 6 | 7 | 22 | 10 |
 | [looks](#looks) | 18 | 0 | 0 | 0 | 1 | 17 | 1 | 2 | 3 | 12 | 4 |
 | [never-exercised](#never-exercised) | 16 | 7 | 2 | 13 | 0 | 1 | 0 | 0 | 15 | 1 | 16 |
 | [toolchain](#toolchain) | 41 | 1 | 0 | 1 | 4 | 36 | 23 | 1 | 0 | 17 | 6 |
-| **all** | 422 | 59 | 80 | 110 | 66 | 166 | 205 | 19 | 53 | 145 | 98 |
+| **all** | 423 | 60 | 80 | 112 | 65 | 166 | 207 | 19 | 53 | 144 | 97 |
 
 **Where the difference bit**
 
 | Where | That is | Cases | Hurt 1 or 2 | Guarded without a Mac | Guarded only on CI's Macs | Only when somebody starts a script | Not guarded |
 |---|---|---|---|---|---|---|---|
-| below the seam | in the macOS-only code under the platform protocols (AX, Input, UI, App), which no test on Linux runs | 137 | 88 | 42 | 13 | 32 | 50 |
+| below the seam | in the macOS-only code under the platform protocols (AX, Input, UI, App), which no test on Linux runs | 138 | 89 | 44 | 13 | 32 | 49 |
 | at the seam | in what crosses the platform protocols: a stand-in can play it to the controller | 146 | 91 | 108 | 0 | 10 | 28 |
 | controller | in the controller or the core, given reports that were right | 25 | 13 | 13 | 0 | 1 | 11 |
 | test | in a test, a script or a harness that expected the wrong thing | 74 | 0 | 19 | 5 | 8 | 42 |
@@ -97,7 +97,6 @@ A fault that is known and open.
 | [a-size-clipped-by-the-screen-was-taken-for-the-apps-refusal](#a-size-clipped-by-the-screen-was-taken-for-the-apps-refusal) | 1 | controller | no | not guarded |
 | [all-input-is-dropped-from-the-loss-of-the-permission-until-arbors-taps-are-gone](#all-input-is-dropped-from-the-loss-of-the-permission-until-arbors-taps-are-gone) | 1 | below the seam | cannot | not guarded |
 | [the-keyboard-stays-in-a-window-that-went-out-of-view](#the-keyboard-stays-in-a-window-that-went-out-of-view) | 1 | at the seam | yes | not guarded |
-| [with-fns-flag-on-the-event-arbors-letter-keys-are-not-arbors](#with-fns-flag-on-the-event-arbors-letter-keys-are-not-arbors) | 1 | below the seam | no | not guarded |
 | [an-app-that-is-busy-as-it-is-switched-to-is-never-reported-focused](#an-app-that-is-busy-as-it-is-switched-to-is-never-reported-focused) | 1 | below the seam | cannot | only when somebody starts a script |
 | [quitting-while-an-app-hangs-strands-its-windows](#quitting-while-an-app-hangs-strands-its-windows) | 1 | at the seam | partly | guarded without a mac |
 | [stage-manager-rearranges-windows-on-its-own](#stage-manager-rearranges-windows-on-its-own) | 1 | at the seam | no | guarded without a mac |
@@ -188,7 +187,6 @@ So no test on Linux can meet it. (Those they play partly are not listed: see eac
 | Case | Hurt | Where | Stand-ins play it | Guard |
 |---|---|---|---|---|
 | [a-size-clipped-by-the-screen-was-taken-for-the-apps-refusal](#a-size-clipped-by-the-screen-was-taken-for-the-apps-refusal) | 1 | controller | no | not guarded |
-| [with-fns-flag-on-the-event-arbors-letter-keys-are-not-arbors](#with-fns-flag-on-the-event-arbors-letter-keys-are-not-arbors) | 1 | below the seam | no | not guarded |
 | [a-child-has-its-parents-permission](#a-child-has-its-parents-permission) | 1 | below the seam | no | guarded only on ci's macs |
 | [stage-manager-rearranges-windows-on-its-own](#stage-manager-rearranges-windows-on-its-own) | 1 | at the seam | no | guarded without a mac |
 | [tap-to-click-is-up-before-finder-has-answered](#tap-to-click-is-up-before-finder-has-answered) | 1 | below the seam | no | guarded without a mac |
@@ -3789,6 +3787,18 @@ Input: where presses, keys and gestures really go.
 - **Arbor copes:** **not yet**
 - **Read in:** `collab/QUESTIONS.md`, `collab/BOARD.md`, `collab/scenarios/wanted/I16-a-key-of-arbors-never-reaches-another-app.sim`, `docs/GUIDE.md`, `docs/KEYBOARD.md`, `docs/features/F63-permission-taken-away.md`, `Sources/ArborKit/Controller/Controller+PassThrough.swift`, `Sources/ArborKit/App/ArborApp.swift`, `Sources/arbor-fakemac/World+Input.swift`, `Sources/ArborTesting/Harness.swift`, `scripts/make-signing-identity.sh`, `scripts/sign.sh`, `scripts/install.sh`
 
+### a-key-registered-with-fn-and-without-is-two-keys-or-one
+
+*hurt 1 · below the seam*
+
+- **Expected:** A key registered a second time, with Carbon's bit for fn, is a second key: a press fires the one registration or the other, whatever the key.
+- **Happened:** For a letter, a sign, ↩, Space and ⎋ it is: `RegisterEventHotKey` with 1 << 17 answers 0; a press with fn's flag fires that registration once and the app in front gets nothing; a plain press does not fire it; both held by one process, neither is refused and each press fires its own. **For arrows, F5, Home, End, Page Up, Page Down and forward delete, which carry the flag by nature, macOS takes the two for one: either alone fires with the flag and not without, and held both ways a press fires both**: down, down, up, up: a command would run twice. Bits it does not know (1 << 16, 1 << 23) it ignores: such a registration behaves as a plain one, so a macOS that does not know 1 << 17 would fire both at every press of every key. The release is reported once, also when fn comes up before the key. The numeric-pad flag changes nothing; nor does `kEventHotKeyExclusive`.
+- **Found by:** A probe on a hosted Mac on 2026-10-15 (macOS 26.6.2); its output is on the branch `mac-shell-out/fnbit.1`, its script on `test/probes-of-section-0`. The probe's own process registered as `HotKeyCenter` does, not Arbor; a witness in front. Sixteen keys, five hands, six ways of registering. Every key a posted event, every chord ⌃⌥. Not asked: macOS 14 and 15; digits, the other signs, `tab`, `delete`; ⌃⌥⇧ and ⌃⌥⌘; fn going down in the middle of a press; auto-repeat; a real keyboard.
+- **Stand-ins play it:** partly (`FakeHotKeyServer.fires`, `FakeHotKeyServer.ignoresTheFnBit`, `FakeHotKeyServer.refusesTwins`, `FakeHotKeyServer.keepsTwins`)
+- **Guard:** `test: noPressOfAnyKeyEverRunsItsCommandTwiceAndNoKeyThatCarriesFnByNatureGetsATwin`; `test: heldBothWaysAnArrowFiresTwiceAndALetterOnce`; `test: onAMacOSThatIgnoresTheBitEveryCommandStillRunsOnce`; `test: whileAKeyIsDownUnderOneNumberWhatComesUnderTheOtherIsNobodys`; `test: arrowsAndFunctionKeysHaveNoTwinWithFnAndPrintingKeysDo`
+- **Arbor copes:** KeyChord.hasFnTwin gives no twin to a key that carries the flag by nature, by its name and by its code (`HotKey.carriesFn`), nor to `tab` and `delete`. HotKeyTable.heard lets one press run one command whatever macOS makes of the two: while a key is down under one of its numbers, what comes under the other is nobody's.
+- **Read in:** `Sources/ArborKit/Controller/HotKeyTable.swift`, `Sources/ArborCore/KeyChord.swift`, `Sources/ArborKit/Input/HotKeyCenter.swift`, `Sources/ArborTesting/FakeHotKeys.swift`
+
 ### a-silent-tap-freezes-all-input-until-the-next-event
 
 *hurt 1 · below the seam · touches `input-held`*
@@ -3842,12 +3852,12 @@ Input: where presses, keys and gestures really go.
 *hurt 1 · below the seam · suspected*
 
 - **Expected:** A hot key that is registered for ⌃⌥A is Arbor's, whatever else is down. `docs/KEYBOARD.md`: "A global shortcut is taken away from every app on the Mac". `HotKeyCenter`: it "swallows the key press so the frontmost app never sees it".
-- **Happened:** With the flag that a held fn (Globe) key sets, 0x800000, on the key event, Arbor's keys that are not arrows are not Arbor's. Arbor running, 52 shortcuts registered, not paused, nothing on any list: ⌃⌥A, ⌃⌥↩, ⌃⌥Space, ⌃⌥[, ⌃⌥Z, ⌃⌥F and ⌃⌥G, seven of seven, reached the app in front (the tap at the annotated session point, the local monitor, `performKeyEquivalent`, then `keyDown` in the view), and Arbor's log did not grow by a line. ⌃⌥← and ⌃⌥→ with the flag went to Arbor as ever: an arrow carries it by nature, and posted without it an arrow reaches the app and not Arbor (posted-arrow-keys-need-the-flags-a-keyboard-adds, mirrored). So the window server compares that flag exactly when it looks for a hot key. With the flag AppKit's menu did not fire for the letters and the bracket, with Arbor or without; for ↩ and Space it did. So it fits an app that listens in its page or its view, not one with a plain menu equivalent for a letter. **What does not matter**, each 7 of 7 to Arbor and none to the app: the right-hand ⌃ and ⌥, left and right mixed, both of each pair down, Caps Lock's flag, the numeric-pad flag, flags with no modifier key going down at all, a key held to repeat. **Not shown:** that a real fn key held on a real keyboard puts that flag on a letter's key event as it passes the window server. On a laptop fn sits beside ⌃; if it does, a finger that catches fn with ⌃ turns ⌃⌥A into the app's own ⌃⌥A, with Arbor running and knowing nothing. One of two candidates for what a person met (a-key-arbor-does-not-hold-at-the-moment-reaches-the-app-in-front); it fits their words better in one respect, "Arbor running, not paused". A cure to try, not tried: Carbon has a bit for fn; each shortcut registered a second time with it. No stand-in compares flags, and no detector of the gate has an eye for a key of Arbor's that arrives elsewhere.
+- **Happened:** With the flag that a held fn (Globe) key sets, 0x800000, on the key event, Arbor's keys that are not arrows are not Arbor's. Arbor running, 52 shortcuts registered, not paused, nothing on any list: ⌃⌥A, ⌃⌥↩, ⌃⌥Space, ⌃⌥[, ⌃⌥Z, ⌃⌥F and ⌃⌥G, seven of seven, reached the app in front (the tap at the annotated session point, the local monitor, `performKeyEquivalent`, then `keyDown` in the view), and Arbor's log did not grow by a line. ⌃⌥← and ⌃⌥→ with the flag went to Arbor as ever: an arrow carries it by nature, and posted without it an arrow reaches the app and not Arbor (posted-arrow-keys-need-the-flags-a-keyboard-adds, mirrored). So the window server compares that flag exactly when it looks for a hot key. With the flag AppKit's menu did not fire for the letters and the bracket, with Arbor or without; for ↩ and Space it did. So it fits an app that listens in its page or its view, not one with a plain menu equivalent for a letter. **What does not matter**, each 7 of 7 to Arbor and none to the app: the right-hand ⌃ and ⌥, left and right mixed, both of each pair down, Caps Lock's flag, the numeric-pad flag, flags with no modifier key going down at all, a key held to repeat. **Not shown:** that a real fn key held on a real keyboard puts that flag on a letter's key event as it passes the window server. On a laptop fn sits beside ⌃; if it does, a finger that catches fn with ⌃ turns ⌃⌥A into the app's own ⌃⌥A, with Arbor running and knowing nothing. One of two candidates for what a person met (a-key-arbor-does-not-hold-at-the-moment-reaches-the-app-in-front); it fits their words better in one respect, "Arbor running, not paused". The cure that was tried next, a second registration with Carbon's bit for fn, is heard (a-key-registered-with-fn-and-without-is-two-keys-or-one). No detector of the gate has an eye for a key of Arbor's that arrives elsewhere.
 - **Found by:** A second probe that is not on the trunk yet, by another session, one run on a hosted Mac (macOS 26.6.2) on the first build itself, its commit and the probe and nothing else: an app in front and a listener in the background with ears of every kind, taps at three points, monitors, a menu, a view, and Arbor's own log counted line by line: nine keys by thirteen hands and roads, beside the same thirteen with no Arbor. Every key was a posted event: no finger, no real keyboard.
-- **Stand-ins play it:** **no**
-- **Guard:** **none**
-- **Arbor copes:** **not yet**
-- **Read in:** `Sources/ArborKit/Input/HotKeyCenter.swift`, `docs/KEYBOARD.md`, `scripts/mac-shell/pointer.swift`, `collab/QUESTIONS.md`, `collab/BOARD.md`
+- **Stand-ins play it:** partly (`FakeHotKeyServer.fires`)
+- **Guard:** `test: withFnDownAKeyOfArborsIsStillArbors`; `test: whateverChangesWhatArborWantsTheAppHearsOfItAtOnce`
+- **Arbor copes:** HotKeyTable registers each shortcut that has one (`KeyChord.hasFnTwin`: ⌃ and ⌥ in it, a printing key, Space, ↩ or ⎋) a second time with fn, under one shortcut; the two come and go together. Arbor with its twins has run on no Mac yet. On Apple's keyboards fn with an arrow, ↩ or ⌫ is another key altogether: there this does not help.
+- **Read in:** `Sources/ArborKit/Controller/HotKeyTable.swift`, `Sources/ArborCore/KeyChord.swift`, `Sources/ArborKit/Input/HotKeyCenter.swift`, `docs/KEYBOARD.md`, `scripts/mac-shell/pointer.swift`, `collab/QUESTIONS.md`, `collab/BOARD.md`
 
 ### a-click-then-drag-arrives-as-a-double-click
 

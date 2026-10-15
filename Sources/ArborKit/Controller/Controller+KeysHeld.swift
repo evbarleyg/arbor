@@ -40,7 +40,7 @@ extension Controller {
     let bindings = shortcutsWanted
     let problems = effectiveBindings.problems
     let isNews = shortcutsLastAsked.map { $0.bindings != bindings || $0.problems != problems } ?? true
-    guard isNews || registeredBindings != bindings else { return nil }
+    guard isNews || registeredBindings != bindings || shortcutsLackATwin else { return nil }
     shortcutsLastAsked = (bindings, problems, isNews)
     if isNews {
       logSkippedBindings()
@@ -59,7 +59,13 @@ extension Controller {
     let before = registeredBindings
     refusedBindings = outcome?.refused.map(\.binding) ?? []
     registeredBindings = outcome?.held ?? []
-    let refusals = (outcome?.refused.map { "no to \($0.text)" } ?? []) + (outcome?.stuck.map { "would not take back \($0.text)" } ?? [])
+    // A key without its twin is Arbor's all the same: for the log, and no problem in `doctor`. Sorted, so that the same in another order
+    // is not news; counted if there are many, which is what a macOS that will have none of them would make of it.
+    let twinless = (outcome?.withoutTwin ?? []).map { "no to fn \($0.text)" }.sorted()
+    shortcutsLackATwin = !twinless.isEmpty
+    let refusals =
+      (outcome?.refused.map { "no to \($0.text)" } ?? []) + (outcome?.stuck.map { "would not take back \($0.text)" } ?? [])
+      + (twinless.count > 3 ? ["no to \(twinless.count) shortcuts with fn, \(twinless[0].dropFirst(6)) among them"] : twinless)
     if refusals != shortcutRefusalsSaid, !refusals.isEmpty {
       lines.append("shortcuts: macOS said \(refusals.joined(separator: ", "))")
       Log.error(lines[0])

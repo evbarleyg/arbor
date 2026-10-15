@@ -337,6 +337,87 @@ import Testing
     #expect(app.leaked.isEmpty)
   }
 
+  // MARK: A key and its twin with fn are one
+
+  /// A person sees fifty-two, or nine: keys, not registrations.
+  @Test func everythingCountsKeysAndNotRegistrations() {
+    let (h, app) = makeApp()
+    #expect(app.server.registrations.count > count + 30, "most keys are registered twice")
+    #expect(app.table.count == count)
+    #expect(app.lines == ["registered \(count) shortcuts in 900 µs"])
+    #expect(h.run("bindings").message == "\(count) shortcuts")
+    #expect(h.run("bindings").text?.split(separator: "\n").filter { $0.contains(" → ") }.count == count)
+    #expect(shortcuts(h)?.detail == "\(count) registered")
+    #expect(h.controller.registeredBindings?.count == count)
+  }
+
+  /// The key is Arbor's. What is amiss is for whoever reads the log.
+  @Test func aTwinThatMacOSRefusesIsLoggedAndIsNoProblem() throws {
+    let arrange = try #require(map.first { $0.command == .arrange })
+    let (h, app) = makeApp { $0.server.refusesTwins = [HotKey(arrange)] }
+    #expect(app.lines == ["shortcuts: macOS said no to fn ⌃⌥A (error -9879)", "registered \(count) shortcuts in 900 µs"])
+    #expect(h.controller.keysHeld.all(.held).count == count)
+    #expect(h.controller.keysHeld.lost.isEmpty && h.controller.refusedBindings.isEmpty)
+    #expect(shortcuts(h)?.mark == .ok)
+    #expect(h.run("doctor").ok)
+    #expect(row(h) == nil)
+    #expect(h.run("bindings").message == "\(count) shortcuts")
+    #expect(app.runs(HotKey(arrange)).map(\.command) == [.arrange])
+    // Tried again at every occasion, alone, and in silence while the answer is the same.
+    let asked = app.server.asked
+    app.server.steps = []
+    h.run("hold")
+    h.run("release")
+    #expect(app.server.asked == asked + 2 && app.server.steps.isEmpty)
+    #expect(app.lines.count == 2)
+    h.run("pause")
+    h.run("resume")
+    #expect(app.lines.filter { $0.contains("fn ⌃⌥A") }.count == 2, "said again when the key came back and the twin did not")
+    app.server.refusesTwins = []
+    h.run("hold")
+    #expect(app.runs(HotKey(arrange), fn: true).map(\.command) == [.arrange])
+    let registrations = app.registrations
+    h.run("release")
+    #expect(app.registrations == registrations, "and then macOS is left in peace")
+  }
+
+  /// What a macOS that will have none of them would make of it: one short line, the same whatever the order, and every key Arbor's.
+  @Test func ifMacOSRefusesEveryTwinTheLogHasOneShortLineAndNothingIsWrong() {
+    let (h, app) = makeApp { $0.server.refusesTwins = Set(KeyBindings.defaults.map(HotKey.init)) }
+    let twins = map.filter(\.chord.hasFnTwin).count
+    #expect(app.lines.count == 2)
+    #expect(app.lines.first?.hasPrefix("shortcuts: macOS said no to \(twins) shortcuts with fn, ") == true)
+    #expect((app.lines.first?.count ?? 999) < 100)
+    #expect(app.lines.last == "registered \(count) shortcuts in 900 µs")
+    #expect(h.run("doctor").ok && row(h) == nil)
+    h.run("hold")
+    h.run("release")
+    #expect(app.lines.count == 2)
+  }
+
+  /// Two keys without a twin come back from a pause in another order than they were in at launch. That is no news.
+  @Test func theSameRefusalsInAnotherOrderAreNotSaidAgain() throws {
+    let arrange = try #require(map.first { $0.command == .arrange })
+    let pause = try #require(KeyBindings.whilePaused(map).first)
+    #expect(pause.chord.hasFnTwin)
+    let (h, app) = makeApp { $0.server.refusesTwins = [HotKey(arrange), HotKey(pause)] }
+    h.run("pause")
+    h.run("resume")
+    let said = app.lines.filter { $0.hasPrefix("shortcuts: ") }
+    h.run("set gap 20")
+    h.run("hold")
+    h.run("release")
+    #expect(app.lines.filter { $0.hasPrefix("shortcuts: ") } == said)
+    #expect(Set(said).count == 2, "both; the pause's own alone; and both again")
+  }
+
+  /// Only macOS 26 has been asked about the bit (`FakeHotKeyServer.ignoresTheFnBit`).
+  @Test func onAMacOSThatIgnoresTheBitEveryKeyRunsItsCommandOnce() {
+    let (h, app) = makeApp { $0.server.ignoresTheFnBit = true }
+    for binding in h.controller.activeBindings { #expect(app.runs(HotKey(binding)) == [binding], "\(binding.label)") }
+    #expect(app.lines == ["registered \(count) shortcuts in 900 µs"])
+  }
+
   // MARK: Nothing is ever missing
 
   /// What `KeysHeld` is worth hangs on this: whatever changes the answer of `activeBindings`, the app hears of it in the same
@@ -345,9 +426,17 @@ import Testing
     let wanted = h.controller.activeBindings
     #expect(h.controller.keysHeld.all(.missing).isEmpty, "\(what)")
     #expect(h.controller.registeredBindings == wanted, "\(what)")
-    #expect(app.server.held == Set((wanted + h.controller.temporaryShortcuts).map(HotKey.init)), "\(what)")
+    let all = wanted + h.controller.temporaryShortcuts
+    #expect(app.server.held == Set(all.map(HotKey.init)), "\(what)")
+    #expect(app.server.twins == Set(all.filter(\.chord.hasFnTwin).map(HotKey.init)), "a twin comes and goes with its key: \(what)")
     #expect(app.leaked.isEmpty, "\(what)")
-    #expect(wanted.allSatisfy { app.binding(at: HotKey($0))?.command == $0.command }, "\(what)")
+    // Arbor's, and once. With fn as well, of the keys that have a twin; of the others, never more than once.
+    #expect(wanted.allSatisfy { app.runs(HotKey($0)).map(\.command) == [$0.command] }, "\(what)")
+    #expect(wanted.filter(\.chord.hasFnTwin).allSatisfy { app.runs(HotKey($0), fn: true).map(\.command) == [$0.command] }, "\(what)")
+    #expect(wanted.allSatisfy { app.runs(HotKey($0), fn: true).count <= 1 }, "\(what)")
+    // And what was given away is the app's, with fn or without.
+    let givenAway = h.controller.effectiveBindings.bindings.filter { binding in !all.contains { HotKey($0) == HotKey(binding) } }
+    #expect(givenAway.allSatisfy { app.runs(HotKey($0)).isEmpty && app.runs(HotKey($0), fn: true).isEmpty }, "\(what)")
   }
 
   @Test func whateverChangesWhatArborWantsTheAppHearsOfItAtOnce() {
@@ -418,6 +507,8 @@ import Testing
         }
         script.append(what)
         expectInStep(h, app, script.joined(separator: ", "))
+        // A walk that has failed fails at every step after, which takes minutes to write down.
+        guard h.controller.registeredBindings == h.controller.activeBindings, app.leaked.isEmpty else { return }
       }
     }
   }

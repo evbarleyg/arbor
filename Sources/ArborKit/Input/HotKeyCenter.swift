@@ -8,6 +8,7 @@ import Carbon.HIToolbox
 ///
 /// What macOS's yes is worth, as seen on macOS 26: it says yes whoever else holds the key. Another program that
 /// registered the same key hears it as well, and one that registered it exclusively hears it alone. Nothing tells Arbor.
+/// And it compares the flag of the fn key exactly, so most keys are registered twice (`HotKeyTable`).
 @MainActor
 public final class HotKeyCenter {
   fileprivate static weak var current: HotKeyCenter?
@@ -54,7 +55,7 @@ public final class HotKeyCenter {
   public func setTemporary(_ bindings: [KeyBinding]) {
     guard listen() else { return }
     let outcome = table.setTemporary(bindings, ask: Self.ask, giveBack: Self.giveBack)
-    let refusals = (outcome.refused + outcome.stuck).map(\.text)
+    let refusals = (outcome.refused + outcome.stuck).map(\.text) + outcome.withoutTwin.map { "fn " + $0.text }
     if !refusals.isEmpty { Log.error("shortcuts for the time being: macOS said no to \(refusals.joined(separator: ", "))") }
   }
 
@@ -63,18 +64,21 @@ public final class HotKeyCenter {
     if !stuck.isEmpty { Log.error("macOS would not take shortcuts back: \(stuck.joined(separator: ", "))") }
   }
 
-  private static func ask(_ binding: KeyBinding, _ identifier: UInt32) -> (EventHotKeyRef?, HotKeyOutcome.Status) {
+  private static func ask(
+    _ binding: KeyBinding, _ identifier: UInt32, _ withFn: Bool
+  ) -> (EventHotKeyRef?, HotKeyOutcome.Status) {
     var ref: EventHotKeyRef?
     let hotKeyID = EventHotKeyID(signature: OSType(0x4152_424F), id: identifier)  // 'ARBO'
-    let status = RegisterEventHotKey(
-      binding.keyCode, binding.modifiers.carbonFlags, hotKeyID, GetEventDispatcherTarget(), 0, &ref)
+    // Carbon's kEventKeyModifierFnMask. Which keys are asked for a second time with it: `KeyChord.hasFnTwin`.
+    let flags = binding.modifiers.carbonFlags | (withFn ? 1 << 17 : 0)
+    let status = RegisterEventHotKey(binding.keyCode, flags, hotKeyID, GetEventDispatcherTarget(), 0, &ref)
     return (ref, status)
   }
 
   private static func giveBack(_ ref: EventHotKeyRef) -> HotKeyOutcome.Status { UnregisterEventHotKey(ref) }
 
   fileprivate func fire(_ identifier: UInt32, _ phase: KeyPhase) {
-    guard let binding = table.binding(for: identifier) else { return }
+    guard let binding = table.heard(identifier, phase) else { return }
     onKey(binding, phase)
   }
 }
