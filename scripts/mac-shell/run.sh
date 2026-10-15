@@ -49,7 +49,7 @@
 # instead of adding a branch. Starting the same scripts for the same ref again cancels the run that is still under way.
 #
 # Environment: MAC_SHELL_TIMEOUT  seconds to wait for the run (default 2700 for one script; 1200 more for each further one on the Mac that has most)
-#              MAC_SHELL_TAIL     lines of output.txt to print (default 40)
+#              MAC_SHELL_TAIL     lines of output.txt to print (default 40; of each of several Macs 12)
 #              MAC_SHELL_POLL     seconds between two looks at the queue while it holds back (default 120, and up to a quarter more)
 #              ARBOR_MAC_QUEUE_CACHE   a file in which several checkouts share one look at the queue (scripts/mac-queue.py)
 #              ARBOR_MAC_PRIORITY as --priority
@@ -278,7 +278,9 @@ bring_back() {
   mkdir -p "$2"
   git archive "refs/mac-shell/$1" | tar -x -C "$2"
   git update-ref -d "refs/mac-shell/$1"
-  api -X DELETE "repos/$repo/git/refs/heads/$branch" >/dev/null 2>&1 \
+  # By Git: where branches may not be deleted a call to GitHub would be one of the hour's spent on a refusal, for every Mac of every run.
+  # safe anywhere: it removes, at GitHub, the throwaway branch this very run pushed and has just fetched; nothing on this machine changes
+  GIT_TERMINAL_PROMPT=0 git push --quiet origin --delete "refs/heads/$branch" >/dev/null 2>&1 \
     || echo "(this environment may not delete branches: $branch stays until the next run replaces it)"
 }
 
@@ -320,6 +322,10 @@ if [ ${#scripts[@]} -eq 1 ] && [ "$macs" -eq 1 ]; then
   echo "---"
 else
   cat "$directory"/summary.txt "$directory"/mac-*/summary.txt 2>/dev/null
+  # A Mac that had one script wrote no summary: the end of what the script said, shorter, since there are several.
+  for each in "$directory"/mac-*/; do
+    [ -f "$each/summary.txt" ] || [ ! -f "$each/output.txt" ] || { echo "--- end of ${each}output.txt"; tail -n "${MAC_SHELL_TAIL:-12}" "$each/output.txt"; }
+  done
 fi
 echo "output: $PWD/$directory"
 ls "$directory" | sed 's/^/  /'

@@ -1792,6 +1792,8 @@ esac
     row("run.sh: a whole run: it ends when the output branch appears, with the script's exit code", (done.returncode, "exit code: 0" in done.stdout), (0, True))
     row("run.sh: a whole run: GitHub was not asked once whether it had ended", polls, [])
     row("run.sh: a whole run: ten calls at most", len(made) <= 10, True)
+    row("run.sh: a whole run: the output branch is gone afterwards, and that took Git and no call",
+        (subprocess.run(["git", "ls-remote", origin, "refs/heads/mac-shell-out/*"], capture_output=True, text=True, check=False).stdout, [call for call in made if "DELETE" in call]), ("", []))
     # How long it waits goes by what the run may rightly take.
     def waits(*arguments, tags=("t",)):
         both = "\n".join(pushes.replace("mac-shell-out/t ", f"mac-shell-out/{tag} ") for tag in tags)
@@ -1799,6 +1801,9 @@ esac
         return [word for line in said.splitlines() if line.startswith("started ") for word in [line.split("; waits ")[-1]]]
 
     row("run.sh: it waits 2700 s for one script, as it always has", waits("a.sh"), ["2700 s at most"])
+    both = "\n".join(pushes.replace("mac-shell-out/t ", f"mac-shell-out/{tag} ") for tag in ("t.1", "t.2"))
+    said = ran("--macs", "2", "a.sh", "feat/x", GOES=both, MAC_SHELL_TAG="t")[0].stdout
+    row("run.sh: one script on two Macs: the end of what it said on each is shown", [line for line in said.splitlines() if line == "said" or line.startswith("--- end of")][1::2], ["said", "said"])
     row("run.sh: twenty minutes more for each further script of that Mac", waits("a.sh", "b.sh", "c.sh"), ["5100 s at most"])
     row("run.sh: Macs side by side take no longer than the one that has most", waits("--macs", "2", "a.sh", "b.sh", "c.sh", tags=("t.1", "t.2")), ["3900 s at most"])
     row("run.sh: one after the other they do", waits("--macs", "2", "--at-once", "1", "a.sh", "b.sh", tags=("t.1", "t.2")), ["3900 s at most"])
