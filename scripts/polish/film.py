@@ -33,6 +33,7 @@ class Film:
         self.size = None
         self.scale = 1
         self.dropped = 0
+        self.ends = 0
         self.kind = ""
         self.text = ""
         self.after = {}
@@ -50,8 +51,10 @@ class Film:
                 if len(words) < 2:
                     continue
                 time, kind, rest = int(words[0]), words[1], words[2:]
+                self.ends = max(self.ends, time)
                 if kind == "F":
-                    numbered.append((int(rest[0]), time, tuple(int(word) for word in rest[1:3]) if len(rest) >= 3 else (0, 0)))
+                    numbered.append((int(rest[0]), time, tuple(int(word) for word in rest[1:3]) if len(rest) >= 3 else (0, 0),
+                                     tuple(int(word) for word in rest[3:5]) if len(rest) >= 5 else (0, 0)))
                 elif kind == "D":
                     self.display = [int(word) for word in rest]
                 elif kind == "V":
@@ -72,8 +75,10 @@ class Film:
         # By their numbers, which is how the pictures are named: the lines are in the order of their times, and the first frame's is the
         # moment the film began, which a frame that was under way then may undercut.
         numbered.sort()
-        self.places = [place for _, _, place in numbered]
-        self.times = np.maximum.accumulate(np.array([time for _, time, _ in numbered], dtype=np.int64)) if numbered else np.array([], dtype=np.int64)
+        self.places = [place for _, _, place, _ in numbered]
+        # How much of the display each frame changed: width and height.
+        self.extents = [extent for _, _, _, extent in numbered]
+        self.times = np.maximum.accumulate(np.array([time for _, time, _, _ in numbered], dtype=np.int64)) if numbered else np.array([], dtype=np.int64)
         # The Dock grows and shrinks with the apps that run. The panel Arbor hangs behind everything fills the room as it is now.
         behind = [frame for _, level, frame in self.overlays if level < -1000]
         if behind:
