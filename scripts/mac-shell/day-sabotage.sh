@@ -200,6 +200,16 @@ place "$A" "$((fx + 40))" "$fy" "$fw" "$fh"
 sleep 0.2
 tell unpanel
 acted moves="$A"
+act dock-key under-no-stage "OFFENCE: the same under a panel that is wholly transparent, as Arbor's is when it rehearses its stage: everybody sees the window go about"
+tell panel 4 "$dx" "$dy" "$dw" "$dh" 0
+sleep 0.5
+read -r fx fy fw fh <<< "$(real_of "$A")"
+place "$A" "$((fx + 300))" "$((fy + 200))" "$fw" "$fh"
+sleep 0.4
+place "$A" "$((fx - 40))" "$fy" "$fw" "$fh"
+sleep 0.2
+tell unpanel
+acted moves="$A" offence=jolt
 act switch held-back "OFFENCE: the button comes up, and an event tap keeps that from the apps for a fifth of a second"
 tell hold 200 4
 sleep 0.5
