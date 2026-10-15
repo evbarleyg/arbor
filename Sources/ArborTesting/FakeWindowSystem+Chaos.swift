@@ -25,6 +25,7 @@ extension FakeWindowSystem {
     windows[window]?.behaviour = behaviour
     windows[window]?.home = nil
     windows[window]?.changedItsWays = true
+    windows[window]?.limitsGivenSince = true
   }
 
   /// The frame a window's app makes of `frame` when Arbor asks for it, before macOS has its say.

@@ -3471,6 +3471,34 @@
    ]
   },
   {
+   "id": "a-window-below-its-minimum-stays-so-while-it-is-only-moved",
+   "kind": "geometry",
+   "layer": "at the seam",
+   "expected": "An app holds its window to its limits whatever it is asked. `FakeWindowSystem.setFrame` passed every answer through the window's minimum, maximum and steps, were it only a move.",
+   "happened": "An app looks at its limits when it is asked for a size, and only then, and Arbor's layer asks for the place alone where the size is right already (`FramePlan`). A test window opened at 480×348 with a minimum of 700×500 went to the corner and back as it was: asked 1023,767 480×348 it took 1023,677 480×348, asked 170,220 480×348 it took that. Asked for 170,220 480×319 it took 700×500. One run on a hosted Mac, three calls, one app. The fake answered all three with 700×500. It leaves a size alone now that is not asked for. One manner of its own is kept, which is no Mac's: a limit that a test gives a window after it has opened still bites at the next asking, were it only a move. Eleven tests of 7,784 stage their stories so (a sidebar that opened, a wide mode that was left, a terminal's cells) and would want another staging: on a Mac the app resizes its window itself, at once, or nothing shows until a size is asked for.",
+   "found": "The comparison of a rehearsal with a run on a hosted Mac.",
+   "modelled": "partly",
+   "knobs": [
+    "FakeWindowSystem.setFrame",
+    "FakeWindowSystem.setMinimumSize",
+    "FakeWindowSystem.setMaximumSize",
+    "FakeWindowSystem.setSizeStep"
+   ],
+   "guards": [
+    "test: aWindowBelowItsMinimumStaysSoWhileItIsOnlyMoved",
+    "test: aSizeNobodyAskedForIsReportedToo"
+   ],
+   "copes": "Controller.learn goes by what a window took when it was offered a size, so a move teaches it nothing either way.",
+   "hurt": 4,
+   "touches": [
+    "size-lost"
+   ],
+   "sources": [
+    "Sources/ArborTesting/FakeWindowSystem.swift",
+    "Sources/ArborCore/FramePlan.swift"
+   ]
+  },
+  {
    "id": "a-window-can-close-without-a-notice",
    "kind": "missing-report",
    "layer": "below the seam",
