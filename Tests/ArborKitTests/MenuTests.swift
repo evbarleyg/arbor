@@ -164,6 +164,27 @@ import Testing
   }
 
   /// docs/MENU.md, rule 4: a row that cannot act now keeps its place.
+  /// For a moment after a key that moved the keyboard macOS still names the old window. The keys are about the new one by then
+  /// (`keyboardFocus()`), and a row looks the way it acts.
+  @Test func theRowsAreAboutTheWindowTheKeysAreAbout() {
+    let h = Harness()
+    let safari = h.system.open(app: "Safari", pid: 11)
+    let notes = h.system.open(app: "Notes", pid: 12)
+    h.start()
+    h.run("dock \(safari.rawValue) left")
+    h.system.userFocus(safari)
+    #expect(h.controller.menuModel().item("Don’t Arrange “Safari”") != nil)
+    #expect(h.controller.menuModel().item("Float Focused Window")?.isEnabled == true)
+
+    h.system.focusIsSlow = true
+    h.run("focus \(notes.rawValue)")
+    #expect(h.system.focusRequests.last == notes)
+    let menu = h.controller.menuModel()
+    #expect(menu.item("Don’t Arrange “Notes”") != nil)
+    #expect(menu.item("Float Focused Window")?.isEnabled == false, "Notes floats already: the key would dock it")
+    #expect(h.run("toggle-float").message.contains("\(notes)"), "which is what it does")
+  }
+
   @Test func rowsAreGreyedOutNotLeftOut() {
     func rows(_ state: String) -> [[String]] {
       harness(in: state).controller.menuModel().sections.map { section in
