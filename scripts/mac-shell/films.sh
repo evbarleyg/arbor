@@ -9,7 +9,8 @@
 # afterwards: all of it. The script checks only that its scenes played; it has no opinion on how they looked.
 #
 # 1. The metronome: the camera and the judge are tried on a motion that is known, right once and wrong in five ways.
-# 2. Arbor as it ships, at macOS's default settings but for Reduce Motion, which GitHub's Macs come with: the moves (below), then
+# 2. Arbor at macOS's default settings (GitHub's Macs come with Reduce Motion and Reduce Transparency on: both are switched off), as it
+#    ships but for one switch: "Trackpad and mouse gestures", because two of the moves are gestures. The moves (below), then
 #    the rest of the camera, peek, a seam, Arbor's own panels, quitting; then docking by key, floating, undo and closing.
 # 3. A window too large for its slot: the tile, and opening it.
 # 4. The moves again in dark mode, on a light wallpaper, where shadows and dark lines show.
@@ -46,7 +47,7 @@ arrange() {
 
 # moves <prefix>: what docs/POLISH.md calls the five moves, as far as Arbor has them, from four floating windows.
 moves() {
-  local p=$1 x y w h x2 y2 w2 h2
+  local p=$1 x y w h x2 y2 w2 h2 view
   read -r x y w h <<< "$(screen_of 1)"
   # The bottom edge: with macOS's own tiling on, as a Mac comes, the other three are macOS's, and Arbor stands aside there.
   scene "${p}dock-drag-edge" drag "drags a window by its title bar to the bottom edge, waits, lets go"
@@ -85,28 +86,36 @@ moves() {
 
   read -r x y w h <<< "$(frame_of "$W4")"
   read -r x2 y2 w2 h2 <<< "$(frame_of "$W2")"
+  view=$(view_now)
   scene "${p}rectangle" drag "holds ⌃⌥ and drags a rectangle over the left column"
   drag $((x + 30)) $((y + 60)) $((x2 + w2 - 30)) $((y2 + h2 - 30)) --mods ctrl+opt --duration 0.7 --hold 0.3
   scene_end
+  played "${p}rectangle" "$view"
 
   scene "${p}save-view" panel "presses ⌃⌥⇧1"
   key ctrl+opt+shift+1
   scene_end 6
   home
+  view=$(view_now)
   scene "${p}view" camera "presses ⌃⌥1"
   key ctrl+opt+1
   scene_end
+  played "${p}view" "$view"
   home
 
   # shellcheck disable=SC2046
   set -- $(center_of "$W3")
   move "$1" "$2"
+  view=$(view_now)
   scene "${p}pinch-in" camera "holds ⌥ and spreads two fingers over a window"
   pinch "$1" "$2" 0.8 --opt
   scene_end
+  [ -n "${ARBOR_REHEARSAL:-}" ] || played "${p}pinch-in" "$view"
+  view=$(view_now)
   scene "${p}pinch-out" camera "holds ⌥ and pinches"
   pinch "$1" "$2" -0.8 --opt
   scene_end
+  [ -n "${ARBOR_REHEARSAL:-}" ] || played "${p}pinch-out" "$view"
   home
 }
 
@@ -143,6 +152,7 @@ step "the Mac"
 echo "Screen Recording for a child process: $(pointer screen-access)"
 pointer displays
 macos_reduce_motion off
+glass on
 macos_tiling
 if ! camera_start; then
   echo "the stream gave no frames; trying one picture after another"
@@ -164,6 +174,7 @@ step "1. the metronome"
 for kind in good linear slow twice hop flash; do metronome "$kind"; done
 
 step "2. Arbor as it ships"
+arbor_settings "{$ARBOR_GESTURES_ON}"
 cast_start 4 $FACE ARBOR_NO_STATUS_ITEM=0
 # The Dock grows by an icon, which changes the room there is.
 sleep 3
@@ -275,6 +286,7 @@ sleep 1.2
 key escape
 scene_end 1.5
 
+trace_ends
 scene quit instant "quits Arbor"
 ctl quit
 scene_end
@@ -336,6 +348,7 @@ ARBOR_TEST_WINDOWS_ARGS="--regular"
 step "4. dark, on a light wallpaper"
 appearance dark
 wallpaper "#b9bec6"
+arbor_settings "{$ARBOR_GESTURES_ON}"
 cast_start 4 $FACE ARBOR_NO_STATUS_ITEM=0
 sleep 3
 moves dark-
