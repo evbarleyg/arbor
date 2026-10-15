@@ -735,7 +735,7 @@
    "expected": "When the change of Space is reported after full screen, the app lists the window that came out of it.",
    "happened": "macOS's stand-in is on the app's list in the window's place until the animation ends. The change of Space was reported 0.14 s after that in one run, and a few milliseconds BEFORE it in two rounds of four. Then the lists were read too early, the window was missed, and Arbor heard of it from its second look: 1.07 s after it was on the screen. Its neighbours, the focus report and the ring were all a second late. When the stand-in is destroyed the window is listed again, and so are the other apps' windows: 16 rounds of 16. With the stand-in watched the window is heard of 0.13 to 0.19 s after the others instead. Laid out without it in that time, its neighbours took its room in plain view, over the slot it had been given, and gave it back.",
    "found": "Arbor's log beside Accessibility's reports and the window server's frames, four rounds with Safari and TextEdit on a hosted Mac, macOS 26.6.2.",
-   "modelled": "partly",
+   "modelled": "yes",
    "knobs": [
     "FakeWindowSystem.leaveFullScreen"
    ],
