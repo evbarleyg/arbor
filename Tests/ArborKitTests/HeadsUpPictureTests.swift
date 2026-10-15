@@ -111,7 +111,7 @@
       let h = harness()
       var lines: [(name: String, model: HeadsUpModel)] = []
       for (name, command) in [
-        ("1-floats", "zoom"), ("2-problem", "out"), ("3-names-keys", "view 9"), ("4-docked", "dock left"), ("5-out-of-view", "zoom"),
+        ("1-nothing-there", "back"), ("2-problem", "out"), ("3-names-keys", "view 9"), ("4-docked", "dock left"), ("5-out-of-view", "zoom"),
         ("6-change", "save-view 2"),
       ] {
         h.run(command, from: .shortcut)

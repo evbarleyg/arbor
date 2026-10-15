@@ -318,6 +318,8 @@ extension Runner {
     }
     try step("float it again", "float \(w3.rawValue)") { _ in }
     try step("ask for tiles, as it was", "set windowsThatDoNotFit tile") { _ in }
+    // Where room is made, the window with the keyboard gets it at its neighbours' cost and is never the tile: they are.
+    try step("and for no room to be made", "set makeRoom false") { _ in }
     try step("dock a window that cannot shrink to its slot", "dock \(w3.rawValue) beside \(w1.rawValue) bottom") { state in
       check("it becomes a tile", state.displays[0].tiles.contains { $0.windows == [w3] })
       check("the window itself is out of view", leavesView(w3), whereabouts(w3))

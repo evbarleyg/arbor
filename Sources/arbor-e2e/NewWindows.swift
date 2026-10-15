@@ -71,7 +71,8 @@ extension Runner {
       check("it is docked", eventually { $0.displays[0].windowFrames[docked] != nil }, whereabouts(docked))
       let state = try state()
       let (old, new) = (state.displays[0].windowFrames[w1] ?? .zero, state.displays[0].windowFrames[docked] ?? .zero)
-      check("the two share the slot the focused window had", old.union(new).approximatelyEquals(whole, tolerance: 2), "\(describe(old)) and \(describe(new))")
+      // Without a column for the Desktop two docks are two halves: the one that was alone keeps its half, the new one takes what was left over.
+      check("the focused window keeps its slot", old.approximatelyEquals(whole, tolerance: 2), "\(describe(old)), was \(describe(whole))")
       check("the new one comes after it", new.minX > old.maxX || new.minY > old.maxY, "\(describe(old)) and \(describe(new))")
       check("nothing became a tile", state.displays[0].tiles.isEmpty)
       check("the view stayed", state.displays[0].camera == state.displays[0].tree.root)

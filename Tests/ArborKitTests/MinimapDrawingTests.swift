@@ -131,12 +131,12 @@
         app: { (pid: Int32($0.rawValue), bundleID: nil) })
     }
 
-    /// [1 / 3 | Desktop | 2]
-    func threeWindows() -> LayoutTree {
+    /// [1 / 3 | 2], and with a column for the Desktop [1 / 3 | Desktop | 2].
+    func threeWindows(desktopColumn: Bool = false) -> LayoutTree {
       var tree = LayoutTree()
-      let left = tree.dock(window(1), beside: tree.desktop, edge: .left)
-      tree.dock(window(2), beside: tree.desktop, edge: .right)
-      tree.dock(window(3), beside: left, edge: .bottom)
+      let left = tree.dock(window(1), beside: tree.desktop, edge: .left, desktopColumn: desktopColumn)
+      tree.dock(window(2), beside: tree.desktop, edge: .right, desktopColumn: desktopColumn)
+      tree.dock(window(3), beside: left, edge: .bottom, desktopColumn: desktopColumn)
       return tree
     }
 
@@ -188,7 +188,7 @@
     }
 
     @Test func theDesktopIsAnOutline() throws {
-      let tree = threeWindows()
+      let tree = threeWindows(desktopColumn: true)
       let model = try model(tree, camera: tree.leaf(containing: window(2)))
       let canvas = try picture(model)
       let desktop = try #require(model.desktop)
