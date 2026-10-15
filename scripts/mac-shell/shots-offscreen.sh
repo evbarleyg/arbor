@@ -11,7 +11,7 @@
 ARBOR_TIME_LIMIT=1100
 source "$(dirname "$0")/lib.sh"
 
-SUITES='AccentInkPictureTests|AppearancePictures|FinderDrawingTests|HeadsUpPictureTests|MenuBarDrawingTests|MinimapDrawingTests|SettingsWindowPictureTests|TileDrawingTests'
+SUITES='AccentInkPictureTests|PanelGroundPictureTests|PreviewVariantsPictureTests|UpdateAlertTests|AppearancePictures|FinderDrawingTests|HeadsUpPictureTests|MenuBarDrawingTests|MinimapDrawingTests|SettingsWindowPictureTests|TileDrawingTests'
 
 step "build, tests included"
 started_at=$(date +%s)
