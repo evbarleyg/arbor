@@ -132,6 +132,9 @@ settled
 claim "move a docked window without the mouse: Arbor puts it back"
 proves A11
 take "x y w h" resting_frame_of "$W3"
+# Longer than the second within which a docked window's new frame is taken for its person's asking macOS, and let be (Controller+AskedOfMacOS.swift):
+# the claim before this one ends with the pointer's release. On a Mac the move came 0.79 s after it, and the window was rightly left as it was.
+sleep 1.5
 tw move "$W3" "$((x + 120))" "$((y - 90))" "$w" "$h"
 check "it is back in its slot" eventually in_slot "$W3"
 settled

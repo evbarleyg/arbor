@@ -95,6 +95,9 @@ own="$((x + 30)) $((y + 30)) $((w - 60)) $((h - 60))"
 
 claim "an app moves its docked window once: Arbor puts it back"
 proves A72
+# Longer than the second within which a docked window's new frame is taken for its person's asking macOS, and let be (Controller+AskedOfMacOS.swift):
+# the claim before this one ends with ⌘W, about a second ago.
+sleep 1.5
 # shellcheck disable=SC2086
 check "the app moves it" tw move "$W1" $own
 # shellcheck disable=SC2086
