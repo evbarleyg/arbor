@@ -652,6 +652,7 @@ holds for the commit named (second reading, 10:45 UTC) and says what the script 
 | `watch.sh` | trunk | **not this copy**: #233's | 6 s; 10 min in all | On the trunk: `arborctl watch` without a limit, more than 900 s, and the end-to-end runner under a time limit. #233 `cea45a10`: safe |
 | `shots-F10.sh` | trunk | **not this copy**: #180's | 5 min | On the trunk: pictures of its own without a look at the permission, a bundle with its watchdog, `doctor` in full. #180 `08f12ac4`: safe, steps skip themselves, once it leaves out the pictures of the welcome window's first page, which shows what `doctor` found |
 | `desktop-facts.sh` | #197 `e75d37f8` | safe | none | It reads the window list, four preferences and three answers of Finder's, and names only Apple's own processes |
+| `check-resume.sh` | trunk | **never**: ends with 77 | | Calculator and TextEdit opened, brought forward in turn, and quit; `ARBOR_APPS_HERE=1` does not open it |
 | `shots-F15-apps.sh` | trunk | **never**: ends with 77 | | Ten real apps opened for their icons, and killed |
 | `check-F52.sh`, `check-F63.sh` | #59, #66 | **never**: end with 77 | | Virtual displays, Accessibility taken from every app |
 | `check-F59.sh` | #158 `6907ce87` | safe | 30 s | During a carry nobody's app gets arrows, ↩ or ⎋ |
