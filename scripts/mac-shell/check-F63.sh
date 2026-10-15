@@ -12,6 +12,7 @@ source "$(dirname "$0")/lib-gestures.sh"
 needs_throwaway_mac "switch Accessibility off for every app in the privacy database"
 
 KEYS="$ARBOR_ROOT/.build/mac-shell/keys"
+ANNOUNCE="$ARBOR_ROOT/.build/mac-shell/announce-accessibility"
 TCC="/Library/Application Support/com.apple.TCC/TCC.db"
 
 tcc() { sudo sqlite3 "$TCC" "$1"; }
@@ -24,20 +25,28 @@ all_on_screen() { is on_screen "$W1" && is on_screen "$W2" && is on_screen "$W3"
 off_screen() { ! is on_screen "$1"; }
 # allow 0|2: what the switch records, for the entries that were allowed when the script began and for no other: an app that was
 # refused, or never answered, must not come out of this with the permission. Which entry Arbor runs under depends on who
-# started the script, so it is all of those. tccd caches, so it is restarted if nothing happens.
+# started the script, so it is all of those.
+#
+# The switch does three things, and so does this, in that order (asked of a hosted Mac on 2026-10-15, macOS 26.6.2). It writes the entry. The
+# daemon, which answers from memory, learns of it: here by being restarted. And it is ANNOUNCED: a process that is already running hears of a
+# grant or a loss only through the distributed notification com.apple.accessibility.api, which neither the write nor the restart
+# sends. Arbor, launched without the entry, went on waiting after both, and had started 127 ms after the notification. Announced before the
+# restart, the flag says yes and taps are refused for as long as that process lives.
 ALLOWED_ROWS=""
 allow() {
   [ -n "$ALLOWED_ROWS" ] || return 0
   tcc "UPDATE access SET auth_value = $1 WHERE service = 'kTCCServiceAccessibility' AND rowid IN ($ALLOWED_ROWS);"
-  echo "$(arbor_now) Accessibility set to $1 for entries $ALLOWED_ROWS"
+  sudo killall -9 tccd 2>/dev/null
+  sleep 0.5
+  [ -x "$ANNOUNCE" ] && "$ANNOUNCE"
+  echo "$(arbor_now) Accessibility set to $1 for entries $ALLOWED_ROWS, the daemon restarted, the change announced"
 }
-# until_status <prefix>: waits for it, says how long it took, and nudges tccd once if six seconds were not enough.
+# until_status <prefix>: waits for it, twelve seconds at most, and says how long it took.
 until_status() {
   local started tries=0
   started=$(arbor_now)
   until status_starts "$1"; do
     tries=$((tries + 1))
-    [ "$tries" -eq 60 ] && { echo "  nothing after 6 s: restarting tccd"; sudo killall -9 tccd 2>/dev/null; }
     [ "$tries" -ge 120 ] && return 1
     sleep 0.1
   done
@@ -55,6 +64,11 @@ bindings_say() { "$ARBOR_BIN/arborctl" bindings 2>&1 | tail -n 1 | grep -q "$1";
 arbor_build
 swiftc -O -swift-version 5 "$ARBOR_ROOT/scripts/mac-shell/keys.swift" -o "$KEYS" > "$ARBOR_OUT/build-keys.log" 2>&1 \
   || die "scripts/mac-shell/keys.swift did not compile"
+swiftc -O -swift-version 5 - -o "$ANNOUNCE" > "$ARBOR_OUT/build-announce.log" 2>&1 <<'SWIFT' || die "the three lines that announce a change did not compile"
+import Foundation
+DistributedNotificationCenter.default().postNotificationName(
+  Notification.Name("com.apple.accessibility.api"), object: nil, userInfo: nil, deliverImmediately: true)
+SWIFT
 tcc "SELECT count(*) FROM access;" > /dev/null 2>&1 || die "the privacy database cannot be read here"
 ALLOWED_ROWS=$(tcc "SELECT group_concat(rowid) FROM access WHERE service = 'kTCCServiceAccessibility' AND auth_value = 2;")
 [ -n "$ALLOWED_ROWS" ] || die "nothing has the Accessibility permission here, so there is none to take away"
@@ -67,8 +81,6 @@ at_exit 'allow 2 > /dev/null'
 # make event taps at once. If not, Arbor must go on arranging windows (it believes the flag until a tap has worked once).
 step "the first minute: launched without the permission, then granted"
 allow 0
-# A new process asks the daemon, which answers from memory.
-sudo killall -9 tccd 2>/dev/null
 sleep 1
 # The permission goes with taps installed: that is what this is about.
 arbor_settings "{$ARBOR_GESTURES_ON}"
