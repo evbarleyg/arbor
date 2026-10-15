@@ -1,0 +1,275 @@
+# mac-shell: scripts/mac-shell/probe-nothing-stuck.sh at 9d130b9, macOS 26.6.2, 2026-10-15T03:17Z
+built Arbor and the pointer tool in 5s
+
+== the bundles
+session 1: Arbor pid 37353, test windows 73 (pid 37338)
+running: 1 display, 0 docked and 1 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+/Users/runner/Applications/ArborProbeNothingStuck.app: replacing existing signature
+/Users/runner/Applications/ArborProbeStuckTapper.app: replacing existing signature
+
+== round 1: with nobody
+Successfully reset Accessibility approval status for com.evbarleyg.arbor.probe-nothing-stuck
+posted 60, arrived at the end of the taps 60, given to the app 60, lost 0
+held down at the end: nothing; key repeats the app was given: 0
+the button a second after the stream, by the window server: 760 490 up
+the next plain click, at the end of the taps: 2 of 2
+  ✔ round 1: NO UP WAS LOST WHOSE DOWN ARRIVED (0 were)
+  ✔ round 1: nothing is held down at the end
+  ✔ round 1: the next plain click arrives whole
+
+== round 2: with bare-tapper
+bare-tapper is pid 38318 with 1 taps
+Successfully reset Accessibility approval status for com.evbarleyg.arbor.probe-stuck-tapper
+03:17:39.330 question tapIsEnabled = yes
+03:17:39.335 question AXIsProcessTrusted = yes
+03:17:39.336 question CGPreflightListenEventAccess = yes
+03:17:39.336 question CGPreflightPostEventAccess = yes
+03:17:39.336 question a trial tapCreate = yes
+03:17:42.597 question a trial tapCreate = no
+03:17:49.555 switched-off by timeout
+posted 60, arrived at the end of the taps 18, given to the app 18, lost 42: n=19 down, n=20 key-down, n=21 shift-down, n=22 up, n=23 key-up, n=24 shift-up, n=25 down, n=26 key-down, n=27 shift-down, n=28 up, n=29 key-up, n=30 shift-up, n=31 down, n=32 key-down, n=33 shift-down, n=34 up, n=35 key-up, n=36 shift-up, n=37 down, n=38 key-down, n=39 shift-down, n=40 up, n=41 key-up, n=42 shift-up, n=43 down, n=44 key-down, n=45 shift-down, n=46 up, n=47 key-up, n=48 shift-up, n=49 down, n=50 key-down, n=51 shift-down, n=52 up, n=53 key-up, n=54 shift-up, n=55 down, n=56 key-down, n=57 shift-down, n=58 up, n=59 key-up, n=60 shift-up
+the first that was lost was posted 228 ms after the deed began, the last 5643 ms after it
+held down at the end: nothing; key repeats the app was given: 0
+the button a second after the stream, by the window server: 760 490 up
+the next plain click, at the end of the taps: 0 of 2
+  ✔ round 2: NO UP WAS LOST WHOSE DOWN ARRIVED (0 were)
+  ✔ round 2: nothing is held down at the end
+  ✘ round 2: the next plain click arrives whole
+
+== round 3: with arbor
+arbor is pid 39487 with 4 taps
+Successfully reset Accessibility approval status for com.evbarleyg.arbor.probe-nothing-stuck
+03:18:02.313Z INFO  Accessibility permission is gone (AXIsProcessTrusted says yes, but macOS refused a tap): removed the pinch and rectangle event taps
+03:18:02.313Z INFO  macOS was asked 36 times, and took 536 µs on average and 2737 µs at worst
+03:18:02.314Z ERROR Accessibility permission was taken away with 0 window(s) out of view
+doubts ("macOS has not said …"): 0
+posted 60, arrived at the end of the taps 60, given to the app 60, lost 0
+held down at the end: nothing; key repeats the app was given: 0
+the button a second after the stream, by the window server: 760 490 up
+the next plain click, at the end of the taps: 2 of 2
+  ✔ round 3: NO UP WAS LOST WHOSE DOWN ARRIVED (0 were)
+  ✔ round 3: nothing is held down at the end
+  ✔ round 3: the next plain click arrives whole
+
+== round 4: with arbor
+arbor is pid 40190 with 4 taps
+Successfully reset Accessibility approval status for com.evbarleyg.arbor.probe-nothing-stuck
+03:18:21.993Z INFO  Accessibility permission is gone (AXIsProcessTrusted says yes, but macOS refused a tap): removed the pinch and rectangle event taps
+03:18:21.994Z INFO  macOS was asked 35 times, and took 533 µs on average and 2477 µs at worst
+03:18:21.994Z ERROR Accessibility permission was taken away with 0 window(s) out of view
+doubts ("macOS has not said …"): 0
+posted 60, arrived at the end of the taps 60, given to the app 60, lost 0
+held down at the end: nothing; key repeats the app was given: 0
+the button a second after the stream, by the window server: 760 490 up
+the next plain click, at the end of the taps: 2 of 2
+  ✔ round 4: NO UP WAS LOST WHOSE DOWN ARRIVED (0 were)
+  ✔ round 4: nothing is held down at the end
+  ✔ round 4: the next plain click arrives whole
+
+== round 5: with arbor
+arbor is pid 41049 with 4 taps
+Successfully reset Accessibility approval status for com.evbarleyg.arbor.probe-nothing-stuck
+03:18:41.580Z INFO  Accessibility permission is gone (AXIsProcessTrusted says yes, but macOS refused a tap): removed the pinch and rectangle event taps
+03:18:41.580Z INFO  macOS was asked 36 times, and took 480 µs on average and 1529 µs at worst
+03:18:41.581Z ERROR Accessibility permission was taken away with 0 window(s) out of view
+doubts ("macOS has not said …"): 0
+posted 60, arrived at the end of the taps 59, given to the app 59, lost 1: n=19 down
+the first that was lost was posted 36 ms after the deed began, the last 36 ms after it; Arbor noticed 46 ms after it
+  an up without its down: n=22 up
+held down at the end: nothing; key repeats the app was given: 0
+the button a second after the stream, by the window server: 760 490 up
+the next plain click, at the end of the taps: 2 of 2
+  ✔ round 5: NO UP WAS LOST WHOSE DOWN ARRIVED (0 were)
+  ✔ round 5: nothing is held down at the end
+  ✔ round 5: the next plain click arrives whole
+
+== round 6: with arbor
+arbor is pid 41909 with 4 taps
+Successfully reset Accessibility approval status for com.evbarleyg.arbor.probe-nothing-stuck
+03:19:01.451Z INFO  Accessibility permission is gone (AXIsProcessTrusted says yes, but macOS refused a tap): removed the pinch and rectangle event taps
+03:19:01.452Z INFO  macOS was asked 38 times, and took 477 µs on average and 2389 µs at worst
+03:19:01.452Z ERROR Accessibility permission was taken away with 0 window(s) out of view
+doubts ("macOS has not said …"): 0
+posted 60, arrived at the end of the taps 60, given to the app 60, lost 0
+held down at the end: nothing; key repeats the app was given: 0
+the button a second after the stream, by the window server: 760 490 up
+the next plain click, at the end of the taps: 2 of 2
+  ✔ round 6: NO UP WAS LOST WHOSE DOWN ARRIVED (0 were)
+  ✔ round 6: nothing is held down at the end
+  ✔ round 6: the next plain click arrives whole
+
+== round 7: with arbor
+arbor is pid 43185 with 4 taps
+Successfully reset Accessibility approval status for com.evbarleyg.arbor.probe-nothing-stuck
+03:19:21.141Z INFO  Accessibility permission is gone (AXIsProcessTrusted says yes, but macOS refused a tap): removed the pinch and rectangle event taps
+03:19:21.141Z INFO  macOS was asked 38 times, and took 667 µs on average and 5722 µs at worst
+03:19:21.142Z ERROR Accessibility permission was taken away with 0 window(s) out of view
+doubts ("macOS has not said …"): 0
+posted 60, arrived at the end of the taps 60, given to the app 60, lost 0
+held down at the end: nothing; key repeats the app was given: 0
+the button a second after the stream, by the window server: 760 490 up
+the next plain click, at the end of the taps: 2 of 2
+  ✔ round 7: NO UP WAS LOST WHOSE DOWN ARRIVED (0 were)
+  ✔ round 7: nothing is held down at the end
+  ✔ round 7: the next plain click arrives whole
+
+== round 8: with arbor
+arbor is pid 44046 with 4 taps
+Successfully reset Accessibility approval status for com.evbarleyg.arbor.probe-nothing-stuck
+03:19:40.804Z INFO  Accessibility permission is gone (AXIsProcessTrusted says yes, but macOS refused a tap): removed the pinch and rectangle event taps
+03:19:40.804Z INFO  macOS was asked 38 times, and took 594 µs on average and 2821 µs at worst
+03:19:40.804Z ERROR Accessibility permission was taken away with 0 window(s) out of view
+doubts ("macOS has not said …"): 0
+posted 60, arrived at the end of the taps 60, given to the app 60, lost 0
+held down at the end: nothing; key repeats the app was given: 0
+the button a second after the stream, by the window server: 760 490 up
+the next plain click, at the end of the taps: 2 of 2
+  ✔ round 8: NO UP WAS LOST WHOSE DOWN ARRIVED (0 were)
+  ✔ round 8: nothing is held down at the end
+  ✔ round 8: the next plain click arrives whole
+
+== round 9: with bare-tapper
+bare-tapper is pid 44643 with 1 taps
+Successfully reset Accessibility approval status for com.evbarleyg.arbor.probe-stuck-tapper
+03:19:55.061 question tapIsEnabled = yes
+03:19:55.064 question AXIsProcessTrusted = yes
+03:19:55.066 question CGPreflightListenEventAccess = yes
+03:19:55.066 question CGPreflightPostEventAccess = yes
+03:19:55.066 question a trial tapCreate = yes
+03:19:58.618 question a trial tapCreate = no
+03:20:04.996 switched-off by timeout
+03:20:04.996 question tapIsEnabled = no
+03:20:05.012 question tapIsEnabled = yes
+posted 60, arrived at the end of the taps 24, given to the app 24, lost 36: n=25 down, n=26 key-down, n=27 shift-down, n=28 up, n=29 key-up, n=30 shift-up, n=31 down, n=32 key-down, n=33 shift-down, n=34 up, n=35 key-up, n=36 shift-up, n=37 down, n=38 key-down, n=39 shift-down, n=40 up, n=41 key-up, n=42 shift-up, n=43 down, n=44 key-down, n=45 shift-down, n=46 up, n=47 key-up, n=48 shift-up, n=49 down, n=50 key-down, n=51 shift-down, n=52 up, n=53 key-up, n=54 shift-up, n=55 down, n=56 key-down, n=57 shift-down, n=58 up, n=59 key-up, n=60 shift-up
+the first that was lost was posted 538 ms after the deed began, the last 5173 ms after it
+held down at the end: nothing; key repeats the app was given: 0
+the button a second after the stream, by the window server: 760 490 up
+the next plain click, at the end of the taps: 0 of 2
+  ✔ round 9: NO UP WAS LOST WHOSE DOWN ARRIVED (0 were)
+  ✔ round 9: nothing is held down at the end
+  ✘ round 9: the next plain click arrives whole
+
+== round 10: with arbor
+arbor is pid 45690 with 4 taps
+Successfully reset Accessibility approval status for com.evbarleyg.arbor.probe-nothing-stuck
+03:20:18.337Z INFO  Accessibility permission is gone (AXIsProcessTrusted says yes, but macOS refused a tap): removed the pinch and rectangle event taps
+03:20:18.337Z INFO  macOS was asked 39 times, and took 490 µs on average and 4907 µs at worst
+03:20:18.338Z ERROR Accessibility permission was taken away with 0 window(s) out of view
+doubts ("macOS has not said …"): 0
+posted 60, arrived at the end of the taps 60, given to the app 60, lost 0
+held down at the end: nothing; key repeats the app was given: 0
+the button a second after the stream, by the window server: 760 490 up
+the next plain click, at the end of the taps: 2 of 2
+  ✔ round 10: NO UP WAS LOST WHOSE DOWN ARRIVED (0 were)
+  ✔ round 10: nothing is held down at the end
+  ✔ round 10: the next plain click arrives whole
+
+== round 11: with arbor
+arbor is pid 46758 with 4 taps
+Successfully reset Accessibility approval status for com.evbarleyg.arbor.probe-nothing-stuck
+03:20:38.100Z INFO  Accessibility permission is gone (AXIsProcessTrusted says yes, but macOS refused a tap): removed the pinch and rectangle event taps
+03:20:38.100Z INFO  macOS was asked 39 times, and took 721 µs on average and 3804 µs at worst
+03:20:38.100Z ERROR Accessibility permission was taken away with 0 window(s) out of view
+doubts ("macOS has not said …"): 0
+posted 60, arrived at the end of the taps 60, given to the app 60, lost 0
+held down at the end: nothing; key repeats the app was given: 0
+the button a second after the stream, by the window server: 760 490 up
+the next plain click, at the end of the taps: 2 of 2
+  ✔ round 11: NO UP WAS LOST WHOSE DOWN ARRIVED (0 were)
+  ✔ round 11: nothing is held down at the end
+  ✔ round 11: the next plain click arrives whole
+
+== round 12: with arbor
+arbor is pid 47615 with 4 taps
+Successfully reset Accessibility approval status for com.evbarleyg.arbor.probe-nothing-stuck
+03:20:56.805Z INFO  Accessibility permission is gone (AXIsProcessTrusted says yes, but macOS refused a tap): removed the pinch and rectangle event taps
+03:20:56.805Z INFO  macOS was asked 34 times, and took 698 µs on average and 3080 µs at worst
+03:20:56.806Z ERROR Accessibility permission was taken away with 0 window(s) out of view
+doubts ("macOS has not said …"): 0
+posted 60, arrived at the end of the taps 60, given to the app 60, lost 0
+held down at the end: nothing; key repeats the app was given: 0
+the button a second after the stream, by the window server: 760 490 up
+the next plain click, at the end of the taps: 2 of 2
+  ✔ round 12: NO UP WAS LOST WHOSE DOWN ARRIVED (0 were)
+  ✔ round 12: nothing is held down at the end
+  ✔ round 12: the next plain click arrives whole
+
+== round 13: with arbor
+arbor is pid 48460 with 4 taps
+Successfully reset Accessibility approval status for com.evbarleyg.arbor.probe-nothing-stuck
+03:21:16.224Z INFO  Accessibility permission is gone (AXIsProcessTrusted says yes, but macOS refused a tap): removed the pinch and rectangle event taps
+03:21:16.224Z INFO  macOS was asked 35 times, and took 742 µs on average and 7160 µs at worst
+03:21:16.225Z ERROR Accessibility permission was taken away with 0 window(s) out of view
+doubts ("macOS has not said …"): 0
+posted 60, arrived at the end of the taps 60, given to the app 60, lost 0
+held down at the end: nothing; key repeats the app was given: 0
+the button a second after the stream, by the window server: 760 490 up
+the next plain click, at the end of the taps: 2 of 2
+  ✔ round 13: NO UP WAS LOST WHOSE DOWN ARRIVED (0 were)
+  ✔ round 13: nothing is held down at the end
+  ✔ round 13: the next plain click arrives whole
+
+== round 14: with arbor
+arbor is pid 49479 with 4 taps
+Successfully reset Accessibility approval status for com.evbarleyg.arbor.probe-nothing-stuck
+03:21:35.537Z INFO  Accessibility permission is gone (AXIsProcessTrusted says yes, but macOS refused a tap): removed the pinch and rectangle event taps
+03:21:35.537Z INFO  macOS was asked 36 times, and took 671 µs on average and 4387 µs at worst
+03:21:35.537Z ERROR Accessibility permission was taken away with 0 window(s) out of view
+doubts ("macOS has not said …"): 0
+posted 60, arrived at the end of the taps 60, given to the app 60, lost 0
+held down at the end: nothing; key repeats the app was given: 0
+the button a second after the stream, by the window server: 760 490 up
+the next plain click, at the end of the taps: 2 of 2
+  ✔ round 14: NO UP WAS LOST WHOSE DOWN ARRIVED (0 were)
+  ✔ round 14: nothing is held down at the end
+  ✔ round 14: the next plain click arrives whole
+
+== round 15: with arbor
+arbor is pid 50335 with 4 taps
+Successfully reset Accessibility approval status for com.evbarleyg.arbor.probe-nothing-stuck
+03:21:54.858Z INFO  Accessibility permission is gone (AXIsProcessTrusted says yes, but macOS refused a tap): removed the pinch and rectangle event taps
+03:21:54.858Z INFO  macOS was asked 36 times, and took 510 µs on average and 2239 µs at worst
+03:21:54.859Z ERROR Accessibility permission was taken away with 0 window(s) out of view
+doubts ("macOS has not said …"): 0
+posted 60, arrived at the end of the taps 60, given to the app 60, lost 0
+held down at the end: nothing; key repeats the app was given: 0
+the button a second after the stream, by the window server: 760 490 up
+the next plain click, at the end of the taps: 2 of 2
+  ✔ round 15: NO UP WAS LOST WHOSE DOWN ARRIVED (0 were)
+  ✔ round 15: nothing is held down at the end
+  ✔ round 15: the next plain click arrives whole
+
+== round 16: with nobody
+Successfully reset Accessibility approval status for com.evbarleyg.arbor.probe-nothing-stuck
+posted 60, arrived at the end of the taps 60, given to the app 60, lost 0
+held down at the end: nothing; key repeats the app was given: 0
+the button a second after the stream, by the window server: 760 490 up
+the next plain click, at the end of the taps: 2 of 2
+  ✔ round 16: NO UP WAS LOST WHOSE DOWN ARRIVED (0 were)
+  ✔ round 16: nothing is held down at the end
+  ✔ round 16: the next plain click arrives whole
+
+== side by side
+1 nobody lost=0 downs-without-up=0 ups-without-down=0 held-at-the-end=0 repeats=0
+2 bare-tapper lost=42 downs-without-up=0 ups-without-down=0 held-at-the-end=0 repeats=0
+3 arbor lost=0 downs-without-up=0 ups-without-down=0 held-at-the-end=0 repeats=0
+4 arbor lost=0 downs-without-up=0 ups-without-down=0 held-at-the-end=0 repeats=0
+5 arbor lost=1 downs-without-up=0 ups-without-down=1 held-at-the-end=0 repeats=0
+6 arbor lost=0 downs-without-up=0 ups-without-down=0 held-at-the-end=0 repeats=0
+7 arbor lost=0 downs-without-up=0 ups-without-down=0 held-at-the-end=0 repeats=0
+8 arbor lost=0 downs-without-up=0 ups-without-down=0 held-at-the-end=0 repeats=0
+9 bare-tapper lost=36 downs-without-up=0 ups-without-down=0 held-at-the-end=0 repeats=0
+10 arbor lost=0 downs-without-up=0 ups-without-down=0 held-at-the-end=0 repeats=0
+11 arbor lost=0 downs-without-up=0 ups-without-down=0 held-at-the-end=0 repeats=0
+12 arbor lost=0 downs-without-up=0 ups-without-down=0 held-at-the-end=0 repeats=0
+13 arbor lost=0 downs-without-up=0 ups-without-down=0 held-at-the-end=0 repeats=0
+14 arbor lost=0 downs-without-up=0 ups-without-down=0 held-at-the-end=0 repeats=0
+15 arbor lost=0 downs-without-up=0 ups-without-down=0 held-at-the-end=0 repeats=0
+16 nobody lost=0 downs-without-up=0 ups-without-down=0 held-at-the-end=0 repeats=0
+
+46 passed, 2 failed
+still running when the script had ended, and stopped now:
+  51197 asker
+exit code 1

@@ -1,0 +1,565 @@
+# mac-shell: scripts/mac-shell/probe-loss-under-traffic.sh at 9d130b9, macOS 26.6.2, 2026-10-15T03:22Z
+built Arbor and the pointer tool in 2s
+
+== the bundle
+session 1: Arbor pid 53123, test windows 103 104 (pid 53092)
+running: 1 display, 0 docked and 2 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+/Users/runner/Applications/ArborProbeLossUnderTraffic.app: replacing existing signature
+
+== round a-tccutil-1, by the road "tccutil": the scroll tap: ⌃⌥ down from a second before the loss, a notch and a key every 50 ms
+true true ctrl+opt true false false 
+tap 1115519640 pid=53892 point=1 options=0 mask=0x44 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 1660316701 pid=53892 point=1 options=0 mask=0x2 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+tap 373947051 pid=53892 point=1 options=0 mask=0x400000 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 2123044746 pid=53892 point=1 options=0 mask=0x20000000 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+> move 849 368
+tap 373947051 pid=53892 point=1 options=0 mask=0x400000 enabled=true latency_us min=65038.332 avg=65038.332 max=65038.332
+Successfully reset Accessibility approval status for com.evbarleyg.arbor.probe-loss-under-traffic
+the permission was taken by the road "tccutil" between 03:22:47.383 and 03:22:47.424
+03:22:43.673 stream begins
+03:22:46.714 ctrl+opt down after n=180
+03:22:53.729 ctrl+opt up after n=600
+03:22:55.686 stream ends: 720 events posted
+03:22:47.496Z INFO  Accessibility permission is gone (AXIsProcessTrusted says yes, but macOS refused a tap): removed the pinch and rectangle event taps
+03:22:47.498Z ERROR Accessibility permission was taken away with 1 window(s) out of view
+03:22:47.502Z INFO  stopped; no window was moved
+false alarms ("permission is back after N ms (macOS has not said in time …"): 0
+slow answers ("macOS took N ms to say …"), N: 
+doubts ("macOS has not said …"): 0; "permission is back": 0; of them before the deed: 0
+lines about a tap that macOS switched off: 0
+  ✔ round a-tccutil-1: Arbor has no event tap left
+Arbor's Accessibility permission was taken away, so it cannot move windows. 1 window (ArborTestWindows) is out of view a
+the tools' own permission afterwards: true
+posted 720, arrived 703: key-down 240, key-up 240, wheel 223
+the taps were gone 113 ms after the permission began to go
+key-down+key-up before the loss: 148 arrived, LONGEST HOLE 119 ms, worst lateness 4.8 ms, more than 10 ms late: 0
+key-down+key-up from the loss until the taps were gone: 6 arrived, LONGEST HOLE 66 ms, worst lateness 0.5 ms, more than 10 ms late: 0
+key-down+key-up after the taps were gone: 326 arrived, LONGEST HOLE 125 ms, worst lateness 4.7 ms, more than 10 ms late: 0
+median lateness in ms, before the loss / after the taps were gone: key-down 0.52 / 0.94, key-up 0.31 / 0.44
+key-down+key-up: LOST 0 of 480 posted
+wheel: 60 arrived before ⌃⌥ went down (03:22:46.714); 0 arrived with ⌃⌥ down and the permission there (0 = Arbor swallowed them all)
+wheel: THE FIRST TO ARRIVE AFTER THE LOSS came 165 ms after it (n=234, mods=ctrl+opt); of the 163 from there on 0 were lost; longest hole among them 124 ms
+key-downs after ⌃⌥ came up (03:22:53.729): 40, their modifiers: ['none']
+  ✔ round a-tccutil-1: NOTHING LOST of what must always arrive (0 were)
+  ✔ round a-tccutil-1: no hole longer than a second while Arbor let go of its taps (66 ms)
+  ✔ round a-tccutil-1: no hole after that (125 ms; a beat is 50)
+  ✔ round a-tccutil-1: nothing more than 10 ms late after that
+  ✔ round a-tccutil-1: nothing lost after that
+  ✔ round a-tccutil-1: AT THE MEDIAN, by kind of event, no more than 10 ms later after that than before the loss (0 ms at most)
+  ✔ round a-tccutil-1: (at the worst) no later after that (5 ms) than this Mac was before the loss (5 ms), or 10 ms
+  ✔ round a-tccutil-1: no longer a hole after that (125 ms) than before the loss (119 ms), or 150 ms
+  ✔ round a-tccutil-1: notches arrive again after the loss (the first after 165 ms)
+  ✔ round a-tccutil-1: and within the second
+  ✔ round a-tccutil-1: no modifier is stuck: keys after ⌃⌥ came up carry none
+  ✔ round a-tccutil-1: nothing of Arbor's is left on the screen
+shot: mac-shell/round-a-tccutil-1-afterwards.png
+
+== round b-tccutil-1, by the road "tccutil": the gesture tap: a small pinch without ⌥ over a test window every 50 ms
+true true ctrl+opt true false false 
+tap 375518078 pid=54893 point=1 options=0 mask=0x44 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 1733898061 pid=54893 point=1 options=0 mask=0x2 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+tap 501088883 pid=54893 point=1 options=0 mask=0x400000 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 1052818916 pid=54893 point=1 options=0 mask=0x20000000 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+arborctl: w103 is already at the left edge
+arborctl: w104 is already at the right edge
+> move 849 368
+Successfully reset Accessibility approval status for com.evbarleyg.arbor.probe-loss-under-traffic
+the permission was taken by the road "tccutil" between 03:23:11.588 and 03:23:11.634
+03:23:07.491 stream begins
+03:23:19.560 stream ends: 720 events posted
+pinches Arbor's tap saw begin: 82
+03:23:11.640Z INFO  Accessibility permission is gone (AXIsProcessTrusted says yes, but macOS refused a tap): removed the pinch and rectangle event taps
+03:23:11.640Z ERROR Accessibility permission was taken away with 0 window(s) out of view
+03:23:11.644Z INFO  stopped; no window was moved
+false alarms ("permission is back after N ms (macOS has not said in time …"): 0
+slow answers ("macOS took N ms to say …"), N: 
+doubts ("macOS has not said …"): 0; "permission is back": 0; of them before the deed: 0
+lines about a tap that macOS switched off: 0
+  ✔ round b-tccutil-1: Arbor has no event tap left
+Arbor's Accessibility permission was taken away, so it cannot move windows. Grant it again under System Settings → Priva
+the tools' own permission afterwards: true
+posted 720, arrived 720: gesture 720
+the taps were gone 52 ms after the permission began to go
+gesture before the loss: 246 arrived, LONGEST HOLE 129 ms, worst lateness 7.8 ms, more than 10 ms late: 0
+gesture from the loss until the taps were gone: 0 arrived, LONGEST HOLE 0 ms, worst lateness 0.0 ms, more than 10 ms late: 0
+gesture after the taps were gone: 474 arrived, LONGEST HOLE 127 ms, worst lateness 3.6 ms, more than 10 ms late: 0
+median lateness in ms, before the loss / after the taps were gone: gesture 3.79 / 0.36
+gesture: LOST 0 of 720 posted
+lost altogether: 0
+  ✔ round b-tccutil-1: NOTHING LOST of what must always arrive (0 were)
+  ✔ round b-tccutil-1: no hole longer than a second while Arbor let go of its taps (0 ms)
+  ✔ round b-tccutil-1: no hole after that (127 ms; a beat is 50)
+  ✔ round b-tccutil-1: nothing more than 10 ms late after that
+  ✔ round b-tccutil-1: nothing lost after that
+  ✔ round b-tccutil-1: AT THE MEDIAN, by kind of event, no more than 10 ms later after that than before the loss (0 ms at most)
+  ✔ round b-tccutil-1: (at the worst) no later after that (4 ms) than this Mac was before the loss (8 ms), or 10 ms
+  ✔ round b-tccutil-1: no longer a hole after that (127 ms) than before the loss (129 ms), or 150 ms
+  ✔ round b-tccutil-1: nothing of Arbor's is left on the screen
+
+== round c-tccutil-1, by the road "tccutil": the drag tap: the loss in the middle of a ⌃⌥-drag, the button down and the band showing
+true true ctrl+opt true false false 
+tap 1937775122 pid=55876 point=1 options=0 mask=0x44 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 1091359264 pid=55876 point=1 options=0 mask=0x2 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+tap 1680949563 pid=55876 point=1 options=0 mask=0x400000 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 999114641 pid=55876 point=1 options=0 mask=0x20000000 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+arborctl: w103 is already at the left edge
+arborctl: w104 is already at the right edge
+> move 849 368
+> click 849 368
+> drag 717 103 982 653 --mods ctrl+opt --no-release
+tap 1937775122 pid=55876 point=1 options=0 mask=0x44 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+tap 1091359264 pid=55876 point=1 options=0 mask=0x2 enabled=true latency_us min=938046.06 avg=938046.06 max=938046.06
+tap 1680949563 pid=55876 point=1 options=0 mask=0x400000 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+tap 999114641 pid=55876 point=1 options=0 mask=0x20000000 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+shot: mac-shell/round-c-tccutil-1-1-band.png
+Successfully reset Accessibility approval status for com.evbarleyg.arbor.probe-loss-under-traffic
+the permission was taken by the road "tccutil" between 03:23:36.773 and 03:23:36.806
+03:23:36.860Z INFO  Accessibility permission is gone (AXIsProcessTrusted says yes, but macOS refused a tap): removed the pinch and rectangle event taps
+03:23:36.862Z ERROR Accessibility permission was taken away with 0 window(s) out of view
+03:23:36.866Z INFO  stopped; no window was moved
+false alarms ("permission is back after N ms (macOS has not said in time …"): 0
+slow answers ("macOS took N ms to say …"), N: 
+doubts ("macOS has not said …"): 0; "permission is back": 0; of them before the deed: 0
+lines about a tap that macOS switched off: 0
+  ✔ round c-tccutil-1: Arbor has no event tap left
+Arbor's Accessibility permission was taken away, so it cannot move windows. Grant it again under System Settings → Priva
+the tools' own permission afterwards: true
+shot: mac-shell/round-c-tccutil-1-2-after-the-loss.png
+  ✔ round c-tccutil-1: no band or panel of Arbor's is left on the screen, the button still down
+> release --mods ctrl+opt
+  ✔ round c-tccutil-1: the button's release arrived
+> click 849 368
+  ✔ round c-tccutil-1: the next plain click arrives whole: one down
+  ✔ round c-tccutil-1: and one up
+> drag 849 368 889 408 --steps 10
+  ✔ round c-tccutil-1: the next plain drag arrives whole: one down
+  ✔ round c-tccutil-1: ten moves or more
+  ✔ round c-tccutil-1: one up
+> key f6
+  ✔ round c-tccutil-1: no modifier is stuck: a key arrives without any
+worst lateness after the loss: 1571 µs
+the button, by the window server: 889 408 up
+shot: mac-shell/round-c-tccutil-1-3-afterwards.png
+
+== round a-word-2, by the road "word": the scroll tap: ⌃⌥ down from a second before the loss, a notch and a key every 50 ms
+true true ctrl+opt true false false 
+tap 1666662720 pid=57564 point=1 options=0 mask=0x44 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 1210911548 pid=57564 point=1 options=0 mask=0x2 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+tap 2103688051 pid=57564 point=1 options=0 mask=0x400000 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 1995061991 pid=57564 point=1 options=0 mask=0x20000000 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+arborctl: w103 is already at the left edge
+arborctl: w104 is already at the right edge
+> move 849 368
+tap 2103688051 pid=57564 point=1 options=0 mask=0x400000 enabled=true latency_us min=65710.71 avg=65710.71 max=65710.71
+03:23:59.744 announced com.apple.accessibility.api
+the permission was taken by the road "word" between 03:23:59.700 and 03:23:59.757
+03:23:55.992 stream begins
+03:23:59.083 ctrl+opt down after n=177
+03:24:06.100 ctrl+opt up after n=600
+03:24:08.005 stream ends: 717 events posted
+03:23:59.790Z INFO  Accessibility permission is gone (AXIsProcessTrusted says no): removed the pinch and rectangle event taps
+03:23:59.791Z ERROR Accessibility permission was taken away with 1 window(s) out of view
+03:23:59.795Z INFO  stopped; no window was moved
+false alarms ("permission is back after N ms (macOS has not said in time …"): 0
+slow answers ("macOS took N ms to say …"), N: 
+doubts ("macOS has not said …"): 0; "permission is back": 0; of them before the deed: 0
+lines about a tap that macOS switched off: 0
+  ✔ round a-word-2: Arbor has no event tap left
+Arbor's Accessibility permission was taken away, so it cannot move windows. 1 window (ArborTestWindows) is out of view a
+the tools' own permission afterwards: true
+posted 717, arrived 701: key-down 239, key-up 239, wheel 223
+the taps were gone 90 ms after the permission began to go
+key-down+key-up before the loss: 146 arrived, LONGEST HOLE 170 ms, worst lateness 4.5 ms, more than 10 ms late: 0
+key-down+key-up from the loss until the taps were gone: 4 arrived, LONGEST HOLE 92 ms, worst lateness 0.6 ms, more than 10 ms late: 0
+key-down+key-up after the taps were gone: 328 arrived, LONGEST HOLE 124 ms, worst lateness 5.5 ms, more than 10 ms late: 0
+median lateness in ms, before the loss / after the taps were gone: key-down 0.82 / 0.76, key-up 0.43 / 0.39
+key-down+key-up: LOST 0 of 478 posted
+  a hole of 170 ms from 03:23:58.916 (n=176) to 03:23:59.086 (n=178)
+wheel: 59 arrived before ⌃⌥ went down (03:23:59.083); 0 arrived with ⌃⌥ down and the permission there (0 = Arbor swallowed them all)
+wheel: THE FIRST TO ARRIVE AFTER THE LOSS came 96 ms after it (n=228, mods=ctrl+opt); of the 164 from there on 0 were lost; longest hole among them 125 ms
+key-downs after ⌃⌥ came up (03:24:06.100): 39, their modifiers: ['none']
+  ✔ round a-word-2: NOTHING LOST of what must always arrive (0 were)
+  ✔ round a-word-2: no hole longer than a second while Arbor let go of its taps (92 ms)
+  ✔ round a-word-2: no hole after that (124 ms; a beat is 50)
+  ✔ round a-word-2: nothing more than 10 ms late after that
+  ✔ round a-word-2: nothing lost after that
+  ✔ round a-word-2: AT THE MEDIAN, by kind of event, no more than 10 ms later after that than before the loss (0 ms at most)
+  ✔ round a-word-2: (at the worst) no later after that (6 ms) than this Mac was before the loss (5 ms), or 10 ms
+  ✔ round a-word-2: no longer a hole after that (124 ms) than before the loss (170 ms), or 150 ms
+  ✔ round a-word-2: notches arrive again after the loss (the first after 96 ms)
+  ✔ round a-word-2: and within the second
+  ✔ round a-word-2: no modifier is stuck: keys after ⌃⌥ came up carry none
+  ✔ round a-word-2: nothing of Arbor's is left on the screen
+shot: mac-shell/round-a-word-2-afterwards.png
+
+== round b-word-2, by the road "word": the gesture tap: a small pinch without ⌥ over a test window every 50 ms
+true true ctrl+opt true false false 
+tap 1132036857 pid=58567 point=1 options=0 mask=0x44 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 1151978198 pid=58567 point=1 options=0 mask=0x2 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+tap 583988229 pid=58567 point=1 options=0 mask=0x400000 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 951966463 pid=58567 point=1 options=0 mask=0x20000000 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+arborctl: w103 is already at the left edge
+arborctl: w104 is already at the right edge
+> move 849 368
+03:24:23.933 announced com.apple.accessibility.api
+the permission was taken by the road "word" between 03:24:23.892 and 03:24:23.943
+03:24:19.770 stream begins
+03:24:31.847 stream ends: 720 events posted
+pinches Arbor's tap saw begin: 85
+03:24:24.056Z INFO  Accessibility permission is gone (AXIsProcessTrusted says no): removed the pinch and rectangle event taps
+03:24:24.056Z ERROR Accessibility permission was taken away with 0 window(s) out of view
+03:24:24.061Z INFO  stopped; no window was moved
+false alarms ("permission is back after N ms (macOS has not said in time …"): 0
+slow answers ("macOS took N ms to say …"), N: 
+doubts ("macOS has not said …"): 0; "permission is back": 0; of them before the deed: 0
+lines about a tap that macOS switched off: 0
+  ✔ round b-word-2: Arbor has no event tap left
+Arbor's Accessibility permission was taken away, so it cannot move windows. Grant it again under System Settings → Priva
+the tools' own permission afterwards: true
+posted 720, arrived 720: gesture 720
+the taps were gone 164 ms after the permission began to go
+gesture before the loss: 243 arrived, LONGEST HOLE 124 ms, worst lateness 7.1 ms, more than 10 ms late: 0
+gesture from the loss until the taps were gone: 12 arrived, LONGEST HOLE 89 ms, worst lateness 2.7 ms, more than 10 ms late: 0
+gesture after the taps were gone: 465 arrived, LONGEST HOLE 131 ms, worst lateness 3.3 ms, more than 10 ms late: 0
+median lateness in ms, before the loss / after the taps were gone: gesture 3.66 / 0.42
+gesture: LOST 0 of 720 posted
+lost altogether: 0
+  ✔ round b-word-2: NOTHING LOST of what must always arrive (0 were)
+  ✔ round b-word-2: no hole longer than a second while Arbor let go of its taps (89 ms)
+  ✔ round b-word-2: no hole after that (131 ms; a beat is 50)
+  ✔ round b-word-2: nothing more than 10 ms late after that
+  ✔ round b-word-2: nothing lost after that
+  ✔ round b-word-2: AT THE MEDIAN, by kind of event, no more than 10 ms later after that than before the loss (0 ms at most)
+  ✔ round b-word-2: (at the worst) no later after that (3 ms) than this Mac was before the loss (7 ms), or 10 ms
+  ✔ round b-word-2: no longer a hole after that (131 ms) than before the loss (124 ms), or 150 ms
+  ✔ round b-word-2: nothing of Arbor's is left on the screen
+
+== round c-word-2, by the road "word": the drag tap: the loss in the middle of a ⌃⌥-drag, the button down and the band showing
+true true ctrl+opt true false false 
+tap 1272474285 pid=59549 point=1 options=0 mask=0x44 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 1115296009 pid=59549 point=1 options=0 mask=0x2 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+tap 928027710 pid=59549 point=1 options=0 mask=0x400000 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 1863090086 pid=59549 point=1 options=0 mask=0x20000000 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+arborctl: w103 is already at the left edge
+arborctl: w104 is already at the right edge
+> move 849 368
+> click 849 368
+> drag 717 103 982 653 --mods ctrl+opt --no-release
+tap 1272474285 pid=59549 point=1 options=0 mask=0x44 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+tap 1115296009 pid=59549 point=1 options=0 mask=0x2 enabled=true latency_us min=959684.44 avg=959684.44 max=959684.44
+tap 928027710 pid=59549 point=1 options=0 mask=0x400000 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+tap 1863090086 pid=59549 point=1 options=0 mask=0x20000000 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+shot: mac-shell/round-c-word-2-1-band.png
+03:24:49.462 announced com.apple.accessibility.api
+the permission was taken by the road "word" between 03:24:49.433 and 03:24:49.472
+03:24:49.621Z INFO  Accessibility permission is gone (AXIsProcessTrusted says no): removed the pinch and rectangle event taps
+03:24:49.621Z ERROR Accessibility permission was taken away with 0 window(s) out of view
+03:24:49.626Z INFO  stopped; no window was moved
+false alarms ("permission is back after N ms (macOS has not said in time …"): 0
+slow answers ("macOS took N ms to say …"), N: 
+doubts ("macOS has not said …"): 0; "permission is back": 0; of them before the deed: 0
+lines about a tap that macOS switched off: 0
+  ✔ round c-word-2: Arbor has no event tap left
+Arbor's Accessibility permission was taken away, so it cannot move windows. Grant it again under System Settings → Priva
+the tools' own permission afterwards: true
+shot: mac-shell/round-c-word-2-2-after-the-loss.png
+  ✔ round c-word-2: no band or panel of Arbor's is left on the screen, the button still down
+> release --mods ctrl+opt
+  ✔ round c-word-2: the button's release arrived
+> click 849 368
+  ✔ round c-word-2: the next plain click arrives whole: one down
+  ✔ round c-word-2: and one up
+> drag 849 368 889 408 --steps 10
+  ✔ round c-word-2: the next plain drag arrives whole: one down
+  ✔ round c-word-2: ten moves or more
+  ✔ round c-word-2: one up
+> key f6
+  ✔ round c-word-2: no modifier is stuck: a key arrives without any
+worst lateness after the loss: 1671 µs
+the button, by the window server: 889 408 up
+shot: mac-shell/round-c-word-2-3-afterwards.png
+
+== round a-tccutil-3, by the road "tccutil": the scroll tap: ⌃⌥ down from a second before the loss, a notch and a key every 50 ms
+true true ctrl+opt true false false 
+tap 1063285287 pid=60972 point=1 options=0 mask=0x44 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 561442570 pid=60972 point=1 options=0 mask=0x2 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+tap 1461622789 pid=60972 point=1 options=0 mask=0x400000 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 636948247 pid=60972 point=1 options=0 mask=0x20000000 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+arborctl: w103 is already at the left edge
+arborctl: w104 is already at the right edge
+> move 849 368
+tap 1461622789 pid=60972 point=1 options=0 mask=0x400000 enabled=true latency_us min=81471.47 avg=81471.47 max=81471.47
+Successfully reset Accessibility approval status for com.evbarleyg.arbor.probe-loss-under-traffic
+the permission was taken by the road "tccutil" between 03:25:12.241 and 03:25:12.277
+03:25:08.589 stream begins
+03:25:11.702 ctrl+opt down after n=180
+03:25:18.704 ctrl+opt up after n=600
+03:25:20.592 stream ends: 720 events posted
+03:25:12.408Z INFO  Accessibility permission is gone (AXIsProcessTrusted says yes, but macOS refused a tap): removed the pinch and rectangle event taps
+03:25:12.420Z ERROR Accessibility permission was taken away with 1 window(s) out of view
+03:25:12.424Z INFO  stopped; no window was moved
+false alarms ("permission is back after N ms (macOS has not said in time …"): 0
+slow answers ("macOS took N ms to say …"), N: 
+doubts ("macOS has not said …"): 0; "permission is back": 0; of them before the deed: 0
+lines about a tap that macOS switched off: 0
+  ✔ round a-tccutil-3: Arbor has no event tap left
+Arbor's Accessibility permission was taken away, so it cannot move windows. 1 window (ArborTestWindows) is out of view a
+the tools' own permission afterwards: true
+posted 720, arrived 701: key-down 239, key-up 239, wheel 223
+the taps were gone 167 ms after the permission began to go
+key-down+key-up before the loss: 144 arrived, LONGEST HOLE 148 ms, worst lateness 2.2 ms, more than 10 ms late: 0
+key-down+key-up from the loss until the taps were gone: 8 arrived, LONGEST HOLE 116 ms, worst lateness 0.6 ms, more than 10 ms late: 0
+key-down+key-up after the taps were gone: 326 arrived, LONGEST HOLE 140 ms, worst lateness 39.2 ms, more than 10 ms late: 1
+median lateness in ms, before the loss / after the taps were gone: key-down 0.80 / 0.77, key-up 0.38 / 0.41
+key-down+key-up: LOST 2 of 480 posted, n=229 to 230
+wheel: 60 arrived before ⌃⌥ went down (03:25:11.702); 0 arrived with ⌃⌥ down and the permission there (0 = Arbor swallowed them all)
+wheel: THE FIRST TO ARRIVE AFTER THE LOSS came 272 ms after it (n=234, mods=ctrl+opt); of the 163 from there on 0 were lost; longest hole among them 141 ms
+key-downs after ⌃⌥ came up (03:25:18.704): 40, their modifiers: ['none']
+  ✘ round a-tccutil-3: NOTHING LOST of what must always arrive (2 were)
+  ✔ round a-tccutil-3: no hole longer than a second while Arbor let go of its taps (116 ms)
+  ✔ round a-tccutil-3: no hole after that (140 ms; a beat is 50)
+  ✘ round a-tccutil-3: nothing more than 10 ms late after that
+  ✔ round a-tccutil-3: nothing lost after that
+  ✔ round a-tccutil-3: AT THE MEDIAN, by kind of event, no more than 10 ms later after that than before the loss (0 ms at most)
+  ✘ round a-tccutil-3: (at the worst) no later after that (39 ms) than this Mac was before the loss (2 ms), or 10 ms
+  ✔ round a-tccutil-3: no longer a hole after that (140 ms) than before the loss (148 ms), or 150 ms
+  ✔ round a-tccutil-3: notches arrive again after the loss (the first after 272 ms)
+  ✔ round a-tccutil-3: and within the second
+  ✔ round a-tccutil-3: no modifier is stuck: keys after ⌃⌥ came up carry none
+  ✔ round a-tccutil-3: nothing of Arbor's is left on the screen
+shot: mac-shell/round-a-tccutil-3-afterwards.png
+
+== round b-tccutil-3, by the road "tccutil": the gesture tap: a small pinch without ⌥ over a test window every 50 ms
+true true ctrl+opt true false false 
+tap 1375303482 pid=62231 point=1 options=0 mask=0x44 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 1657018507 pid=62231 point=1 options=0 mask=0x2 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+tap 787670983 pid=62231 point=1 options=0 mask=0x400000 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 1349871009 pid=62231 point=1 options=0 mask=0x20000000 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+arborctl: w103 is already at the left edge
+arborctl: w104 is already at the right edge
+> move 849 368
+Successfully reset Accessibility approval status for com.evbarleyg.arbor.probe-loss-under-traffic
+the permission was taken by the road "tccutil" between 03:25:37.140 and 03:25:37.176
+03:25:33.088 stream begins
+03:25:45.091 stream ends: 720 events posted
+pinches Arbor's tap saw begin: 85
+03:25:37.306Z INFO  Accessibility permission is gone (AXIsProcessTrusted says yes, but macOS refused a tap): removed the pinch and rectangle event taps
+03:25:37.307Z ERROR Accessibility permission was taken away with 0 window(s) out of view
+03:25:37.313Z INFO  stopped; no window was moved
+false alarms ("permission is back after N ms (macOS has not said in time …"): 0
+slow answers ("macOS took N ms to say …"), N: 
+doubts ("macOS has not said …"): 0; "permission is back": 0; of them before the deed: 0
+lines about a tap that macOS switched off: 0
+  ✔ round b-tccutil-3: Arbor has no event tap left
+Arbor's Accessibility permission was taken away, so it cannot move windows. Grant it again under System Settings → Priva
+the tools' own permission afterwards: true
+posted 720, arrived 708: gesture 708
+the taps were gone 166 ms after the permission began to go
+gesture before the loss: 243 arrived, LONGEST HOLE 271 ms, worst lateness 9.3 ms, more than 10 ms late: 0
+gesture from the loss until the taps were gone: 0 arrived, LONGEST HOLE 0 ms, worst lateness 0.0 ms, more than 10 ms late: 0
+gesture after the taps were gone: 465 arrived, LONGEST HOLE 128 ms, worst lateness 5.9 ms, more than 10 ms late: 0
+median lateness in ms, before the loss / after the taps were gone: gesture 3.23 / 0.36
+gesture: LOST 12 of 720 posted, n=244 to 255
+  a hole of 271 ms from 03:25:37.093 (n=243) to 03:25:37.364 (n=256)
+lost altogether: 12
+  ✘ round b-tccutil-3: NOTHING LOST of what must always arrive (12 were)
+  ✔ round b-tccutil-3: no hole longer than a second while Arbor let go of its taps (0 ms)
+  ✔ round b-tccutil-3: no hole after that (128 ms; a beat is 50)
+  ✔ round b-tccutil-3: nothing more than 10 ms late after that
+  ✘ round b-tccutil-3: nothing lost after that
+  ✔ round b-tccutil-3: AT THE MEDIAN, by kind of event, no more than 10 ms later after that than before the loss (0 ms at most)
+  ✔ round b-tccutil-3: (at the worst) no later after that (6 ms) than this Mac was before the loss (9 ms), or 10 ms
+  ✔ round b-tccutil-3: no longer a hole after that (128 ms) than before the loss (271 ms), or 150 ms
+  ✔ round b-tccutil-3: nothing of Arbor's is left on the screen
+
+== round c-tccutil-3, by the road "tccutil": the drag tap: the loss in the middle of a ⌃⌥-drag, the button down and the band showing
+true true ctrl+opt true false false 
+tap 873798383 pid=63224 point=1 options=0 mask=0x44 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 1878437668 pid=63224 point=1 options=0 mask=0x2 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+tap 1418408182 pid=63224 point=1 options=0 mask=0x400000 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 1448636640 pid=63224 point=1 options=0 mask=0x20000000 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+arborctl: w103 is already at the left edge
+arborctl: w104 is already at the right edge
+> move 849 368
+> click 849 368
+> drag 717 103 982 653 --mods ctrl+opt --no-release
+tap 873798383 pid=63224 point=1 options=0 mask=0x44 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+tap 1878437668 pid=63224 point=1 options=0 mask=0x2 enabled=true latency_us min=977914.4 avg=977914.4 max=977914.4
+tap 1418408182 pid=63224 point=1 options=0 mask=0x400000 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+tap 1448636640 pid=63224 point=1 options=0 mask=0x20000000 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+shot: mac-shell/round-c-tccutil-3-1-band.png
+Successfully reset Accessibility approval status for com.evbarleyg.arbor.probe-loss-under-traffic
+the permission was taken by the road "tccutil" between 03:26:02.308 and 03:26:02.356
+03:26:02.452Z INFO  Accessibility permission is gone (AXIsProcessTrusted says yes, but macOS refused a tap): removed the pinch and rectangle event taps
+03:26:02.453Z ERROR Accessibility permission was taken away with 0 window(s) out of view
+03:26:02.458Z INFO  stopped; no window was moved
+false alarms ("permission is back after N ms (macOS has not said in time …"): 0
+slow answers ("macOS took N ms to say …"), N: 
+doubts ("macOS has not said …"): 0; "permission is back": 0; of them before the deed: 0
+lines about a tap that macOS switched off: 0
+  ✔ round c-tccutil-3: Arbor has no event tap left
+Arbor's Accessibility permission was taken away, so it cannot move windows. Grant it again under System Settings → Priva
+the tools' own permission afterwards: true
+shot: mac-shell/round-c-tccutil-3-2-after-the-loss.png
+  ✔ round c-tccutil-3: no band or panel of Arbor's is left on the screen, the button still down
+> release --mods ctrl+opt
+  ✔ round c-tccutil-3: the button's release arrived
+> click 849 368
+  ✔ round c-tccutil-3: the next plain click arrives whole: one down
+  ✔ round c-tccutil-3: and one up
+> drag 849 368 889 408 --steps 10
+  ✔ round c-tccutil-3: the next plain drag arrives whole: one down
+  ✔ round c-tccutil-3: ten moves or more
+  ✔ round c-tccutil-3: one up
+> key f6
+  ✔ round c-tccutil-3: no modifier is stuck: a key arrives without any
+worst lateness after the loss: 2556 µs
+the button, by the window server: 889 408 up
+shot: mac-shell/round-c-tccutil-3-3-afterwards.png
+
+== round a-word-4, by the road "word": the scroll tap: ⌃⌥ down from a second before the loss, a notch and a key every 50 ms
+true true ctrl+opt true false false 
+tap 1999001511 pid=64642 point=1 options=0 mask=0x44 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 2069741529 pid=64642 point=1 options=0 mask=0x2 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+tap 1218398759 pid=64642 point=1 options=0 mask=0x400000 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 1913702650 pid=64642 point=1 options=0 mask=0x20000000 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+arborctl: w103 is already at the left edge
+arborctl: w104 is already at the right edge
+> move 849 368
+tap 1218398759 pid=64642 point=1 options=0 mask=0x400000 enabled=true latency_us min=84149.38 avg=84149.38 max=84149.38
+03:26:25.510 announced com.apple.accessibility.api
+the permission was taken by the road "word" between 03:26:25.472 and 03:26:25.524
+03:26:21.792 stream begins
+03:26:24.872 ctrl+opt down after n=177
+03:26:31.901 ctrl+opt up after n=600
+03:26:33.818 stream ends: 717 events posted
+03:26:25.536Z INFO  Accessibility permission is gone (AXIsProcessTrusted says no): removed the pinch and rectangle event taps
+03:26:25.536Z ERROR Accessibility permission was taken away with 0 window(s) out of view
+03:26:25.539Z INFO  stopped; no window was moved
+false alarms ("permission is back after N ms (macOS has not said in time …"): 0
+slow answers ("macOS took N ms to say …"), N: 
+doubts ("macOS has not said …"): 0; "permission is back": 0; of them before the deed: 0
+lines about a tap that macOS switched off: 0
+  ✔ round a-word-4: Arbor has no event tap left
+Arbor's Accessibility permission was taken away, so it cannot move windows. Grant it again under System Settings → Priva
+the tools' own permission afterwards: true
+posted 717, arrived 702: key-down 239, key-up 239, wheel 224
+the taps were gone 64 ms after the permission began to go
+key-down+key-up before the loss: 146 arrived, LONGEST HOLE 172 ms, worst lateness 2.9 ms, more than 10 ms late: 0
+key-down+key-up from the loss until the taps were gone: 2 arrived, LONGEST HOLE 55 ms, worst lateness 0.8 ms, more than 10 ms late: 0
+key-down+key-up after the taps were gone: 330 arrived, LONGEST HOLE 127 ms, worst lateness 8.6 ms, more than 10 ms late: 0
+median lateness in ms, before the loss / after the taps were gone: key-down 0.47 / 0.64, key-up 0.28 / 0.38
+key-down+key-up: LOST 0 of 478 posted
+  a hole of 172 ms from 03:26:24.701 (n=176) to 03:26:24.873 (n=178)
+wheel: 59 arrived before ⌃⌥ went down (03:26:24.872); 0 arrived with ⌃⌥ down and the permission there (0 = Arbor swallowed them all)
+wheel: THE FIRST TO ARRIVE AFTER THE LOSS came 64 ms after it (n=225, mods=ctrl+opt); of the 165 from there on 0 were lost; longest hole among them 127 ms
+key-downs after ⌃⌥ came up (03:26:31.901): 39, their modifiers: ['none']
+  ✔ round a-word-4: NOTHING LOST of what must always arrive (0 were)
+  ✔ round a-word-4: no hole longer than a second while Arbor let go of its taps (55 ms)
+  ✔ round a-word-4: no hole after that (127 ms; a beat is 50)
+  ✔ round a-word-4: nothing more than 10 ms late after that
+  ✔ round a-word-4: nothing lost after that
+  ✔ round a-word-4: AT THE MEDIAN, by kind of event, no more than 10 ms later after that than before the loss (0 ms at most)
+  ✔ round a-word-4: (at the worst) no later after that (9 ms) than this Mac was before the loss (3 ms), or 10 ms
+  ✔ round a-word-4: no longer a hole after that (127 ms) than before the loss (172 ms), or 150 ms
+  ✔ round a-word-4: notches arrive again after the loss (the first after 64 ms)
+  ✔ round a-word-4: and within the second
+  ✔ round a-word-4: no modifier is stuck: keys after ⌃⌥ came up carry none
+  ✔ round a-word-4: nothing of Arbor's is left on the screen
+shot: mac-shell/round-a-word-4-afterwards.png
+
+== round b-word-4, by the road "word": the gesture tap: a small pinch without ⌥ over a test window every 50 ms
+true true ctrl+opt true false false 
+tap 374967600 pid=65647 point=1 options=0 mask=0x44 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 1098526873 pid=65647 point=1 options=0 mask=0x2 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+tap 139863078 pid=65647 point=1 options=0 mask=0x400000 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 1802148194 pid=65647 point=1 options=0 mask=0x20000000 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+arborctl: w103 is already at the left edge
+arborctl: w104 is already at the right edge
+> move 849 368
+03:26:49.886 announced com.apple.accessibility.api
+the permission was taken by the road "word" between 03:26:49.857 and 03:26:49.895
+03:26:45.742 stream begins
+03:26:57.770 stream ends: 717 events posted
+pinches Arbor's tap saw begin: 85
+03:26:49.999Z INFO  Accessibility permission is gone (AXIsProcessTrusted says no): removed the pinch and rectangle event taps
+03:26:50.000Z ERROR Accessibility permission was taken away with 0 window(s) out of view
+03:26:50.002Z INFO  stopped; no window was moved
+false alarms ("permission is back after N ms (macOS has not said in time …"): 0
+slow answers ("macOS took N ms to say …"), N: 
+doubts ("macOS has not said …"): 0; "permission is back": 0; of them before the deed: 0
+lines about a tap that macOS switched off: 0
+  ✔ round b-word-4: Arbor has no event tap left
+Arbor's Accessibility permission was taken away, so it cannot move windows. Grant it again under System Settings → Priva
+the tools' own permission afterwards: true
+posted 717, arrived 717: gesture 717
+the taps were gone 142 ms after the permission began to go
+gesture before the loss: 249 arrived, LONGEST HOLE 126 ms, worst lateness 7.3 ms, more than 10 ms late: 0
+gesture from the loss until the taps were gone: 6 arrived, LONGEST HOLE 100 ms, worst lateness 0.9 ms, more than 10 ms late: 0
+gesture after the taps were gone: 462 arrived, LONGEST HOLE 124 ms, worst lateness 37.2 ms, more than 10 ms late: 1
+median lateness in ms, before the loss / after the taps were gone: gesture 3.38 / 0.35
+gesture: LOST 0 of 717 posted
+lost altogether: 0
+  ✔ round b-word-4: NOTHING LOST of what must always arrive (0 were)
+  ✔ round b-word-4: no hole longer than a second while Arbor let go of its taps (100 ms)
+  ✔ round b-word-4: no hole after that (124 ms; a beat is 50)
+  ✘ round b-word-4: nothing more than 10 ms late after that
+  ✔ round b-word-4: nothing lost after that
+  ✔ round b-word-4: AT THE MEDIAN, by kind of event, no more than 10 ms later after that than before the loss (0 ms at most)
+  ✘ round b-word-4: (at the worst) no later after that (37 ms) than this Mac was before the loss (7 ms), or 10 ms
+  ✔ round b-word-4: no longer a hole after that (124 ms) than before the loss (126 ms), or 150 ms
+  ✔ round b-word-4: nothing of Arbor's is left on the screen
+
+== round c-word-4, by the road "word": the drag tap: the loss in the middle of a ⌃⌥-drag, the button down and the band showing
+true true ctrl+opt true false false 
+tap 466805858 pid=66628 point=1 options=0 mask=0x44 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 417023023 pid=66628 point=1 options=0 mask=0x2 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+tap 1133126168 pid=66628 point=1 options=0 mask=0x400000 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 176928911 pid=66628 point=1 options=0 mask=0x20000000 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+arborctl: w103 is already at the left edge
+arborctl: w104 is already at the right edge
+> move 849 368
+> click 849 368
+> drag 717 103 982 653 --mods ctrl+opt --no-release
+tap 466805858 pid=66628 point=1 options=0 mask=0x44 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+tap 417023023 pid=66628 point=1 options=0 mask=0x2 enabled=true latency_us min=1064685.5 avg=1064685.5 max=1064685.5
+tap 1133126168 pid=66628 point=1 options=0 mask=0x400000 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+tap 176928911 pid=66628 point=1 options=0 mask=0x20000000 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+shot: mac-shell/round-c-word-4-1-band.png
+03:27:15.075 announced com.apple.accessibility.api
+the permission was taken by the road "word" between 03:27:14.994 and 03:27:15.106
+03:27:15.218Z INFO  Accessibility permission is gone (AXIsProcessTrusted says no): removed the pinch and rectangle event taps
+03:27:15.219Z ERROR Accessibility permission was taken away with 0 window(s) out of view
+03:27:15.223Z INFO  stopped; no window was moved
+false alarms ("permission is back after N ms (macOS has not said in time …"): 0
+slow answers ("macOS took N ms to say …"), N: 
+doubts ("macOS has not said …"): 0; "permission is back": 0; of them before the deed: 0
+lines about a tap that macOS switched off: 0
+  ✔ round c-word-4: Arbor has no event tap left
+Arbor's Accessibility permission was taken away, so it cannot move windows. Grant it again under System Settings → Priva
+the tools' own permission afterwards: true
+shot: mac-shell/round-c-word-4-2-after-the-loss.png
+  ✔ round c-word-4: no band or panel of Arbor's is left on the screen, the button still down
+> release --mods ctrl+opt
+  ✔ round c-word-4: the button's release arrived
+> click 849 368
+  ✔ round c-word-4: the next plain click arrives whole: one down
+  ✔ round c-word-4: and one up
+> drag 849 368 889 408 --steps 10
+  ✔ round c-word-4: the next plain drag arrives whole: one down
+  ✔ round c-word-4: ten moves or more
+  ✔ round c-word-4: one up
+> key f6
+  ✔ round c-word-4: no modifier is stuck: a key arrives without any
+worst lateness after the loss: 504 µs
+the button, by the window server: 889 408 up
+shot: mac-shell/round-c-word-4-3-afterwards.png
+
+== the end
+
+121 passed, 7 failed
+still running when the script had ended, and stopped now:
+  66976 asker
+exit code 1
