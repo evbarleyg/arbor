@@ -413,9 +413,11 @@ public final class FakeWindowSystem: WindowSystem {
     if echoes.titleBarStaysReachable, let display = display(stopping: applied.origin) {
       applied.origin.y = min(applied.minY, display.visibleFrame.maxY - titleBar)
     }
+    // Half a point of a place is rounded down where AppKit counts, from the bottom left: x goes down and y, counted from the top, goes up.
+    // In the traces x went down ten times out of ten and y up nine out of nine. No size with half a point was ever asked for there.
     if echoes.wholePoints {
       applied = CGRect(
-        x: applied.minX.rounded(.down), y: applied.minY.rounded(.down), width: applied.width.rounded(.down),
+        x: applied.minX.rounded(.down), y: applied.minY.rounded(.up), width: applied.width.rounded(.down),
         height: applied.height.rounded(.down))
     }
     return applied

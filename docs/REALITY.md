@@ -2614,10 +2614,10 @@ Geometry: displays, bars, sizes and coordinates that are not what was assumed.
 *hurt 3 · at the seam · K223 · K1830 · K095*
 
 - **Expected:** The fake's `setFrame` kept fractions: a frame of 150.5 stays 150.5.
-- **Happened:** On a display of scale 1 the window server keeps whole points: 150.5 became 150, 261.5 became 261, 24.5 became 24, but 46.5 became 47 and 248.5 became 249. A docked window that cannot grow to its slot was centred on half points. A later run gives the rule for a position: x goes down and y goes up, as if rounded down in AppKit's coordinates, whose y runs the other way. 596.5 became 596 (2 of 2); 55.5 became 56, 117.5 118, 72.5 73, 52.5 53 (9 of 9). `FakeWindowSystem.whereMacOSPuts` rounds both down.
+- **Happened:** On a display of scale 1 the window server keeps whole points: 150.5 became 150, 261.5 became 261, 24.5 became 24, but 46.5 became 47 and 248.5 became 249. A docked window that cannot grow to its slot was centred on half points. A later run gives the rule for a position: x goes down and y goes up, as if rounded down in AppKit's coordinates, whose y runs the other way. 596.5 became 596 (2 of 2); 55.5 became 56, 117.5 118, 72.5 73, 52.5 53 (9 of 9). So the "but" above is no riddle: the first three are x's, the other two y's. `FakeWindowSystem.whereMacOSPuts` rounded both down; no test fell when y was made to go up. No size with a fraction was ever asked for in a recording, so which way a size goes is not known.
 - **Found by:** Traces of real apps (all 40 read for it), and a rehearsal on the fake Mac compared with the real run.
 - **Stand-ins play it:** partly (`Echoes.wholePoints`)
-- **Guard:** `test: arborsOwnCallsAreAnsweredAfterTheyReturn`; `test: aGapThatIsNotAWholeNumberIsRounded`; `trace: settings-commands.jsonl`; `trace: apps-arrange.jsonl`
+- **Guard:** `test: halfAPointOfXGoesDownAndOfYGoesUp`; `test: theRecordingsBearItOut`; `test: arborsOwnCallsAreAnsweredAfterTheyReturn`; `test: aGapThatIsNotAWholeNumberIsRounded`; `trace: settings-commands.jsonl`; `trace: apps-arrange.jsonl`
 - **Arbor copes:** LayoutEngine rounds gaps and boundaries to whole points, and small differences are accepted; the centring on half points is still open.
 - **Read in:** `collab/evidence/traces/README.md`, `Sources/ArborTesting/FakeWindowSystem.swift`, `collab/BACKLOG.md`
 
