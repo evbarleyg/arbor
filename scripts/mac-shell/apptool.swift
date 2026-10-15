@@ -40,7 +40,7 @@ let usage = """
     hide | unhide | activate | quit | kill <pid>
     tree <pid> [depth]            roles, subroles and frames; buttons with their titles
     press <pid> <title>…          press the first button with one of these titles (exit code 1: none)
-    top-at x y                    id pid: the frontmost ordinary window there
+    top-at x y                    id pid: the frontmost ordinary window there that takes a press (not the line Arbor draws round a window)
     modes                         w h pixel-w pixel-h, one line per mode of the main display; * marks the current one
     set-mode w h                  switch the main display to that many points
     watch [pid…]                  print notifications until killed; without pids, of every regular app
@@ -180,14 +180,14 @@ func owner(of window: UInt32) -> pid_t? {
 /// ring: a window at the ordinary level, right in front of the focused window and a few points larger all round, that lets presses
 /// through. Arbor's other windows (its welcome, its settings) take presses like anybody's.
 /// `among`: the list, for whoever asks about many points at one moment.
+/// Without `ringAround` it is told by what it is: a window of Arbor's that lies so round any window of somebody else's.
 func topWindow(at point: CGPoint, ringAround framed: CGRect? = nil, among list: [[String: Any]]? = nil) -> (id: UInt32, pid: pid_t)? {
-  for info in list ?? windowList([.optionOnScreenOnly, .excludeDesktopElements]) where number(info, kCGWindowLayer) == 0 {
+  let ordinary = (list ?? windowList([.optionOnScreenOnly, .excludeDesktopElements])).filter { number($0, kCGWindowLayer) == 0 }
+  func isArbors(_ info: [String: Any]) -> Bool { info[kCGWindowOwnerName as String] as? String == "Arbor" }
+  let framedOnes = framed.map { [$0] } ?? ordinary.filter { !isArbors($0) }.compactMap(bounds)
+  for info in ordinary {
     guard let rect = bounds(info), rect.contains(point), let id = number(info, kCGWindowNumber) else { continue }
-    if let framed, info[kCGWindowOwnerName as String] as? String == "Arbor", rect.contains(framed),
-      framed.insetBy(dx: -24, dy: -24).contains(rect)
-    {
-      continue
-    }
+    if isArbors(info), framedOnes.contains(where: { rect.contains($0) && $0.insetBy(dx: -24, dy: -24).contains(rect) }) { continue }
     return (UInt32(id), pid_t(number(info, kCGWindowOwnerPID) ?? 0))
   }
   return nil
