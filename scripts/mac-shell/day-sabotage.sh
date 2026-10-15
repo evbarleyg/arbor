@@ -254,6 +254,7 @@ sleep 0.5
 tell quit
 exec 7>&-
 want "it ends within five seconds" day_gone
+day_forgets
 acted offence=left-behind
 kill_started "$SECOND"
 impostor

@@ -811,6 +811,7 @@ walk_quit() {
   walk_act quit-and-start quit "chooses Quit Arbor in Arbor's menu"
   must arbor_menu up return
   want "Arbor ends within five seconds" day_gone
+  day_forgets
   WALK_PAUSED="" WALK_BEFORE_PAUSE=""
   acted moves=any restores=all places=1 everything=1
 }

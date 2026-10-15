@@ -48,6 +48,7 @@
 #                                     $ARBOR_HOME every time, so that a second launch finds what the first one saved
 #   day_gone                        after a step that quit Arbor: waits for it to end, forgets its process, and looks for what it left: a process, a
 #                                     panel (`left-behind`)
+#   day_forgets                     on the line after `want "…" day_gone`: what is checked runs in a shell of its own, where the forgetting stays
 #   docked_ids | floating_ids       the ids Arbor has docked | floating, separated by commas
 #   arbor_window                    the id of Arbor's own standard window, if one is open: its welcome
 #   click_window <window>           a real click on a free point of its title bar (fails when it is covered)
@@ -383,6 +384,11 @@ day_gone() {
   # The window server drops a process's taps when it ends. One that is still listed would go on holding every event of the Mac's.
   left=$("$DAY_WITNESS" taps 2> /dev/null | awk -v pid="pid=$pid" '$3 == pid' | wc -l | tr -d ' ')
   [ "$left" -eq 0 ] || note "finding $DAY_STEP -:left-behind FAIL after Quit $left event taps of Arbor's are still there"
+}
+# `check`, and so `want`, runs what it checks in a shell of its own, and a variable set there is lost. With the process still on the books
+# the next `acted` took every Quit for a death ("ARBOR DIED", a `crash` in the report). One that has not ended stays on them.
+day_forgets() {
+  kill -0 "$ARBOR_PID" 2> /dev/null || ARBOR_PID=""
 }
 
 # MARK: What a person does

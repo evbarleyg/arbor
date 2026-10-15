@@ -59,6 +59,7 @@ forget_window() { ARBOR_WINDOW_IDS=$(for id in $ARBOR_WINDOW_IDS; do [ "$id" = "
 arbor_ready() { "$ARBOR_BIN/arborctl" state 2> /dev/null | python3 "$ARBOR_STATE_PY" ready "$1" 2> /dev/null; }
 
 # Quits Arbor and starts it again ($2: another binary) on the same windows and the same home folder.
+# Not under `check`, which runs what it checks in a shell of its own: ARBOR_PID would stay that of the Arbor that has quit.
 arbor_relaunch() {
   "$ARBOR_BIN/arborctl" quit > /dev/null
   arbor_await_exit "$ARBOR_PID" 50 || kill -KILL "$ARBOR_PID" 2> /dev/null
@@ -176,7 +177,8 @@ ctl show-all
 claim "the arrangement survives a restart"
 ctl zoom "$W4"
 check "one window is framed and the other docked one is out of view" eventually is parked "$W1"
-check "Arbor comes up again on the same windows" arbor_relaunch 3
+arbor_relaunch 3
+check "Arbor comes up again on the same windows" [ $? -eq 0 ]
 summary
 check "the left window is docked again" is docked "$W4"
 check "the right window is docked again" is docked "$W1"
@@ -200,7 +202,8 @@ if on_throwaway_mac; then
   cp "$ARBOR_ROOT/Resources/Info.plist" "$app/Contents/Info.plist"
   codesign --force --sign - "$app" 2>&1 | tail -n 1
   /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f -R -trusted "$app"
-  check "Arbor comes up from a bundle" arbor_relaunch 3 "$app/Contents/MacOS/Arbor"
+  arbor_relaunch 3 "$app/Contents/MacOS/Arbor"
+  check "Arbor comes up from a bundle" [ $? -eq 0 ]
   echo "> open arbor://zoom/$W1"
   open "arbor://zoom/$W1"
   check "arbor://zoom/<id> framed the window" eventually fills "$W1"

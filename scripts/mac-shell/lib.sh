@@ -126,7 +126,8 @@
 #                                     speaks of what is new. Take it off when the claim holds: the script says when
 #   step "<title>"                  == title: a heading. It ends the claim: what follows is preparation
 #   check "<what should hold>" <command…>    ✔ or ✘ — why; a ✘ takes a picture, prints the state and the log
-#                                     since the claim, and makes the script exit with 1
+#                                     since the claim, and makes the script exit with 1. THE COMMAND RUNS IN A SHELL OF ITS OWN, under
+#                                     `eventually` too: a variable it sets, a process it starts and means to wait for, are lost to the script
 #   settled                         the check that every docked window in view is where Arbor's layout says
 #   eventually <command…>           try it for up to three seconds: `eventually is docked $W2`
 #   stays <command…>                it holds now and for the next second: for things that must not happen

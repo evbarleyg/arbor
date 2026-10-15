@@ -1001,8 +1001,19 @@ kill $mine
         code, _ = mac.run("true")
         return [("lib.sh: ARBOR_OUT from a stray environment is not taken", (code, os.path.exists(os.path.join(mac.folder, "precious", "empty.log"))), (0, True))]
 
+    def own_shell(mac):
+        _, output = mac.run(f'source "{os.path.join(HERE, "mac-shell", "lib-day.sh")}"\n'
+                            'sets() { SET=$1; }\ncheck "x" sets once\ncheck "x" eventually sets twice\necho "set: [${SET:-}]"\n'
+                            'sleep 0.2 &\nARBOR_PID=$!\nwant "it ends" day_gone\necho "after want: [${ARBOR_PID:+on the books}]"\n'
+                            'day_forgets\necho "after day_forgets: [${ARBOR_PID:+on the books}]"\n'
+                            'sleep 30 &\nARBOR_PID=$!\nstarted $!\nday_forgets\necho "one that runs: [${ARBOR_PID:+on the books}]"\nkill_started "$ARBOR_PID"\nARBOR_PID=""')
+        return [("lib.sh: what is checked runs in a shell of its own, as its header says: a variable it sets is lost", "set: []" in output, True),
+                ("lib-day.sh: so after `want … day_gone` the process is still on the books, and day_forgets takes it off: a Quit is no death",
+                 ("after want: [on the books]" in output, "after day_forgets: []" in output), (True, True)),
+                ("lib-day.sh: day_forgets keeps an Arbor that has not ended", "one that runs: [on the books]" in output, True)]
+
     throwaway = [second_lock, which_build, folders, full_disk, disk_fills_up, strange_mktemp, refusals, strangers, limited, both_killed, supervisor_killed, two_at_once,
-                 ended("the time limit"), ended("an interrupt"), ended("kill -9")]
+                 ended("the time limit"), ended("an interrupt"), ended("kill -9"), own_shell]
     somebodys = [nets, pictures, discreet, nameless, curtain_down, stale_output, defaults_for_arbor, no_curtain, both_killed, supervisor_killed,
                  ended("the time limit", "on somebody's Mac, "), ended("an interrupt", "on somebody's Mac, "), ended("kill -9", "on somebody's Mac, "),
                  declined("not beside an Arbor that is running already", running__Arbor=str(canary)),
