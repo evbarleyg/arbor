@@ -1,0 +1,56 @@
+30 view-all: presses ⌃⌥Space
+expected: {'act': 'view', 'settled': 'quiet:1223', 'moves': 'any', 'everything': '1', 'tiles': '67@12:43:246:248,36@270:43:247:248,71@270:562:247:248,60@1250:43:246:378,63@1250:433:246:377', 'keyboard': '73', 'floating': '', 'docked': '32,36,46,51,54,60,63,67,71,87,89'}
+ODD rule 3: the last window came to rest 770 ms after the key or the button
+
+03:17:26.909 SCREEN -- begin 30 view-all
+03:17:26.909 SCREEN -- text 30 presses ⌃⌥Space
+03:17:27.208 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 11 stand-ins, 0.46 s
+03:17:27.225 MACOS pid 348 AXMoved w32 AXWindow/AXStandardWindow 529 375 709 252
+03:17:27.242 MACOS pid 11945 AXMoved w46 AXWindow/AXStandardWindow 270 303 247 247
+03:17:27.254 SCREEN w146 of Arbor 0,0 1600×900 (level 4)
+03:17:27.254 SCREEN finder (w32) 529,375 709×252
+03:17:27.254 SCREEN textedit (w46) 270,303 247×247
+03:17:27.283 MACOS pid 12217 AXMoved w51 AXWindow/AXStandardWindow 12 303 247 244
+03:17:27.293 MACOS pid 12217 AXMoved w51 AXWindow/AXStandardWindow 12 305 247 244
+03:17:27.318 SCREEN terminal (w51) 12,305 247×244
+03:17:27.321 MACOS pid 12488 AXMoved w54 AXWindow/AXStandardWindow 529 43 709 320
+03:17:27.351 SCREEN notes (w54) 529,43 709×320
+03:17:27.376 MACOS pid 14652 AXMoved w87 AXWindow/AXStandardWindow 12 562 246 248
+03:17:27.401 MACOS pid 14680 AXMoved w89 AXWindow/AXStandardWindow 529 639 709 171
+03:17:27.441 SCREEN desk-a (w87) 12,562 246×248
+03:17:27.441 SCREEN desk-b (w89) 529,639 709×171
+03:17:27.452 MACOS pid 13508 AXMoved w71 AXWindow/AXStandardWindow 1599 770 1576 767
+03:17:27.462 SCREEN w73 of Mail 2152,945 470×416
+03:17:27.462 SCREEN mail (w71) 1599,770 1576×767
+03:17:27.485 DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Too small to show: click the tile to zoom in · ⌃⌥G goes there too
+03:17:27.493 INFO  show-all: showing everything
+03:17:27.636 DEBUG peek: the key came up
+03:17:27.690 SCREEN w154 of Arbor 12,291 246×12
+03:17:27.690 SCREEN w164 of Arbor 12,550 246×12
+03:17:27.690 SCREEN w157 of Arbor 270,291 247×12
+03:17:27.690 SCREEN w158 of Arbor 270,550 247×12
+03:17:27.690 SCREEN w155 of Arbor 529,363 709×12
+03:17:27.690 SCREEN w159 of Arbor 529,627 709×12
+03:17:27.690 SCREEN w160 of Arbor 1250,421 246×12
+03:17:27.690 SCREEN w161 of Arbor 258,43 12×767
+03:17:27.690 SCREEN w156 of Arbor 517,43 12×767
+03:17:27.690 SCREEN w162 of Arbor 1238,43 12×767
+03:17:27.690 SCREEN w163 of Arbor 1496,43 12×767
+03:17:27.690 SCREEN front to back: w73 mail finder notes terminal desk-a desk-b w118 calendar textedit preview settings safari w154 w164 w157 w158 w155 w159 w160 w161 w156 w162 w163
+03:17:27.712 SCREEN w167 of Arbor 554,728 493×38 (level 6)
+03:17:27.712 SCREEN w153 of Arbor 12,43 246×248
+03:17:27.712 SCREEN w149 of Arbor 270,43 247×248
+03:17:27.712 SCREEN w148 of Arbor 270,562 247×248
+03:17:27.712 SCREEN w151 of Arbor 1250,43 246×378
+03:17:27.712 SCREEN w150 of Arbor 1250,433 246×377
+03:17:27.712 SCREEN w152 of Arbor 1508,43 80×767
+03:17:27.712 SCREEN front to back: w73 mail finder notes terminal desk-a desk-b w118 calendar textedit preview settings safari w153 w149 w148 w151 w150 w152 w154 w164 w157 w158 w155 w159 w160 w161 w156 w162 w163
+03:17:27.899 DEBUG stage down
+03:17:27.948 SCREEN w146 of Arbor left the screen
+03:17:28.596 SCREEN (nothing was seen for 100 ms)
+03:17:28.756 SCREEN (nothing was seen for 103 ms)
+03:17:29.007 SCREEN -- end 30 act=view settled=quiet:1223 moves=any everything=1 tiles=67@12:43:246:248,36@270:43:247:248,71@270:562:247:248,60@1250:43:246:378,63@1250:433:246:377 keyboard=73 floating= docked=32,36,46,51,54,60,63,67,71,87,89
+03:17:29.019 SCREEN (nothing was seen for 107 ms)
+03:17:29.513 SCREEN (nothing was seen for 134 ms)
+03:17:29.834 SCREEN (nothing was seen for 143 ms)
+03:17:30.094 SCRIPT == 31 view-back

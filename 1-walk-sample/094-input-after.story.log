@@ -1,0 +1,212 @@
+94 input-after: a round of input on two windows of its own: presses behind and in front, keys, a scroll, a drag inside the text
+expected: {'act': 'instrument', 'settled': 'quiet:892', 'round': 'after', 'front': '87', 'posted': 'press:25,up:25,key:13,scroll:28,dragged:20'}
+FAIL rule 3: w344 of Safari opened in one place and was then moved to another
+FAIL rule 3: w344 of Safari moved 11 times
+FAIL rule 4: desk-a (w87) is not in front: safari (w223) ahead of it, of which 1 cover part of it
+FAIL rule 4: desk-a (w87) its app is not the one in front (process 23854 is)
+
+03:21:23.485 SCREEN -- begin 94 input-after
+03:21:23.485 SCREEN -- text 94 a round of input on two windows of its own: presses behind and in front, keys, a scroll, a drag inside the text
+03:21:25.136 SCREEN the button is down 510 84
+03:21:25.181 MACOS pid 23854 AXApplicationActivated
+03:21:25.253 SCREEN in front: process 23854 com.apple.Safari
+03:21:25.260 MACOS workspace didActivate pid 23854 com.apple.Safari regular
+03:21:25.261 SCREEN front to back: safari desk-a finder notes terminal calendar w73 mail textedit desk-b preview settings
+03:21:25.261 SCREEN the button is up 510 84
+03:21:25.261 MACOS workspace didDeactivate pid 14652 ? regular
+03:21:25.270 MACOS pid 14652 AXApplicationDeactivated
+03:21:25.749 SCREEN w344 of Safari 487,83 19×7
+03:21:25.749 SCREEN front to back: w344 safari desk-a finder notes terminal calendar w73 mail textedit desk-b preview settings
+03:21:25.866 SCREEN (nothing was seen for 117 ms)
+03:21:25.866 SCREEN w344 of Safari 330,83 332×144
+03:21:25.883 SCREEN w344 of Safari 320,83 352×153
+03:21:25.914 SCREEN w344 of Safari 306,83 380×165
+03:21:25.948 SCREEN w344 of Safari 299,83 394×171
+03:21:25.997 SCREEN w344 of Safari 297,82 398×174
+03:21:26.096 SCREEN w344 of Safari 298,82 395×172
+03:21:26.152 SCREEN w344 of Safari 299,83 394×171
+03:21:26.218 SCREEN w344 of Safari 300,83 392×170
+03:21:26.260 SCREEN the button is down 190 84
+03:21:26.379 SCREEN the button is up 190 84
+03:21:26.462 SCREEN w344 of Safari 348,83 296×129
+03:21:26.489 SCREEN w344 of Safari 372,83 248×108
+03:21:26.521 SCREEN w344 of Safari 416,83 161×70
+03:21:26.560 SCREEN w344 of Safari 462,83 69×31
+03:21:26.628 SCREEN w344 of Safari 489,83 15×7
+03:21:26.655 SCREEN w344 of Safari 492,83 9×5
+03:21:26.713 SCREEN w344 of Safari left the screen
+03:21:26.713 SCREEN front to back: safari desk-a finder notes terminal calendar w73 mail textedit desk-b preview settings
+03:21:27.252 SCREEN the button is down 510 84
+03:21:27.316 SCREEN w344 of Safari 496,84 1×1
+03:21:27.316 SCREEN front to back: w344 safari desk-a finder notes terminal calendar w73 mail textedit desk-b preview settings
+03:21:27.316 SCREEN the button is up 510 84
+03:21:27.386 SCREEN w344 of Safari 413,83 167×73
+03:21:27.417 SCREEN w344 of Safari 365,83 262×114
+03:21:27.485 SCREEN w344 of Safari 312,83 369×160
+03:21:27.545 SCREEN w344 of Safari 297,82 398×173
+03:21:27.599 SCREEN w344 of Safari 297,82 398×174
+03:21:27.632 SCREEN w344 of Safari 297,82 398×173
+03:21:27.653 SCREEN w344 of Safari 298,82 396×173
+03:21:27.719 SCREEN w344 of Safari 299,83 394×171
+03:21:27.794 SCREEN w344 of Safari 300,83 392×170
+03:21:28.099 SCREEN the button is down 190 84
+03:21:28.169 SCREEN w344 of Safari 369,83 254×110
+03:21:28.203 SCREEN w344 of Safari 414,83 165×72
+03:21:28.209 SCREEN front to back: safari w344 desk-a finder notes terminal calendar w73 mail textedit desk-b preview settings
+03:21:28.209 SCREEN the button is up 190 84
+03:21:28.233 SCREEN w344 of Safari 448,83 97×43
+03:21:28.294 SCREEN w344 of Safari 484,83 25×12
+03:21:28.330 SCREEN w344 of Safari 492,83 9×5
+03:21:28.368 SCREEN w344 of Safari 496,84 1×1
+03:21:28.378 SCREEN w344 of Safari left the screen
+03:21:28.378 SCREEN front to back: safari desk-a finder notes terminal calendar w73 mail textedit desk-b preview settings
+03:21:29.061 SCREEN the button is down 510 84
+03:21:29.149 SCREEN the button is up 510 84
+03:21:29.215 SCREEN w344 of Safari 462,83 69×31
+03:21:29.215 SCREEN front to back: w344 safari desk-a finder notes terminal calendar w73 mail textedit desk-b preview settings
+03:21:29.252 SCREEN w344 of Safari 409,83 175×77
+03:21:29.261 SCREEN w344 of Safari 384,83 225×98
+03:21:29.291 SCREEN w344 of Safari 362,83 268×117
+03:21:29.295 SCREEN w344 of Safari 344,83 304×132
+03:21:29.320 SCREEN w344 of Safari 329,83 334×145
+03:21:29.346 SCREEN w344 of Safari 310,83 372×161
+03:21:29.374 SCREEN w344 of Safari 305,83 382×166
+03:21:29.402 SCREEN w344 of Safari 299,82 394×172
+03:21:29.411 SCREEN w344 of Safari 297,82 398×173
+03:21:29.438 SCREEN w344 of Safari 297,82 398×174
+03:21:29.519 SCREEN w344 of Safari 298,82 396×173
+03:21:29.564 SCREEN w344 of Safari 299,83 394×171
+03:21:29.687 SCREEN w344 of Safari 300,83 392×170
+03:21:30.012 SCREEN the button is down 190 84
+03:21:30.064 SCREEN w344 of Safari 324,83 344×149
+03:21:30.126 SCREEN w344 of Safari 415,83 163×71
+03:21:30.126 SCREEN front to back: safari w344 desk-a finder notes terminal calendar w73 mail textedit desk-b preview settings
+03:21:30.126 SCREEN the button is up 190 84
+03:21:30.197 SCREEN w344 of Safari 471,83 51×23
+03:21:30.232 SCREEN w344 of Safari 485,83 23×11
+03:21:30.280 SCREEN w344 of Safari 494,83 5×3
+03:21:30.329 SCREEN w344 of Safari left the screen
+03:21:30.329 SCREEN front to back: safari desk-a finder notes terminal calendar w73 mail textedit desk-b preview settings
+03:21:31.013 SCREEN the button is down 510 84
+03:21:31.118 SCREEN the button is up 510 84
+03:21:31.172 SCREEN w344 of Safari 481,83 31×15
+03:21:31.172 SCREEN front to back: w344 safari desk-a finder notes terminal calendar w73 mail textedit desk-b preview settings
+03:21:31.230 SCREEN w344 of Safari 379,83 234×102
+03:21:31.286 SCREEN w344 of Safari 327,83 338×147
+03:21:31.342 SCREEN w344 of Safari 304,83 384×167
+03:21:31.348 SCREEN w344 of Safari 300,83 392×170
+03:21:31.386 SCREEN w344 of Safari 297,82 398×174
+03:21:31.487 SCREEN w344 of Safari 298,82 396×173
+03:21:31.530 SCREEN w344 of Safari 299,83 394×171
+03:21:31.636 SCREEN w344 of Safari 300,83 392×170
+03:21:32.002 SCREEN w344 of Safari 317,83 358×155
+03:21:32.002 SCREEN the button is down 190 84
+03:21:32.002 SCREEN the button is up 190 84
+03:21:32.011 SCREEN w344 of Safari 339,83 314×137
+03:21:32.011 SCREEN front to back: safari w344 desk-a finder notes terminal calendar w73 mail textedit desk-b preview settings
+03:21:32.045 SCREEN w344 of Safari 386,83 220×96
+03:21:32.080 SCREEN w344 of Safari 427,83 138×61
+03:21:32.116 SCREEN w344 of Safari 457,83 79×35
+03:21:32.149 SCREEN w344 of Safari 476,83 41×18
+03:21:32.163 SCREEN w344 of Safari 483,83 27×13
+03:21:32.231 SCREEN w344 of Safari 495,83 3×2
+03:21:32.298 SCREEN w344 of Safari left the screen
+03:21:32.298 SCREEN front to back: safari desk-a finder notes terminal calendar w73 mail textedit desk-b preview settings
+03:21:32.889 SCREEN the button is down 510 84
+03:21:32.889 SCREEN the button is up 510 84
+03:21:32.933 SCREEN w344 of Safari 496,84 1×1
+03:21:32.933 SCREEN front to back: w344 safari desk-a finder notes terminal calendar w73 mail textedit desk-b preview settings
+03:21:32.954 SCREEN w344 of Safari 484,83 25×12
+03:21:32.986 SCREEN w344 of Safari 436,83 121×53
+03:21:32.994 SCREEN w344 of Safari 409,83 175×77
+03:21:33.038 SCREEN w344 of Safari 362,83 268×117
+03:21:33.045 SCREEN w344 of Safari 344,83 304×132
+03:21:33.092 SCREEN w344 of Safari 319,83 355×154
+03:21:33.095 SCREEN w344 of Safari 310,83 372×161
+03:21:33.150 SCREEN w344 of Safari 299,82 394×172
+03:21:33.219 SCREEN w344 of Safari 297,82 398×174
+03:21:33.286 SCREEN w344 of Safari 298,82 396×173
+03:21:33.345 SCREEN w344 of Safari 299,83 394×171
+03:21:33.469 SCREEN w344 of Safari 300,83 392×170
+03:21:33.772 SCREEN the button is down 190 84
+03:21:33.806 SCREEN w344 of Safari 302,83 388×168
+03:21:33.811 SCREEN w344 of Safari 317,83 358×156
+03:21:33.841 SCREEN w344 of Safari 338,83 316×138
+03:21:33.845 SCREEN w344 of Safari 362,83 269×117
+03:21:33.871 SCREEN w344 of Safari 385,83 222×97
+03:21:33.889 SCREEN w344 of Safari 407,83 178×78
+03:21:33.889 SCREEN the button is up 190 84
+03:21:33.903 SCREEN w344 of Safari 426,83 140×61
+03:21:33.903 SCREEN front to back: safari w344 desk-a finder notes terminal calendar w73 mail textedit desk-b preview settings
+03:21:33.926 SCREEN w344 of Safari 443,83 107×47
+03:21:33.934 SCREEN w344 of Safari 457,83 79×35
+03:21:33.965 SCREEN w344 of Safari 476,83 41×19
+03:21:33.996 SCREEN w344 of Safari 487,83 18×9
+03:21:34.017 SCREEN w344 of Safari 491,83 11×6
+03:21:34.027 SCREEN w344 of Safari 493,83 7×4
+03:21:34.058 SCREEN w344 of Safari 495,83 3×2
+03:21:34.066 SCREEN w344 of Safari left the screen
+03:21:34.066 SCREEN front to back: safari desk-a finder notes terminal calendar w73 mail textedit desk-b preview settings
+03:21:34.836 SCREEN the button is down 510 84
+03:21:34.944 SCREEN the button is up 510 84
+03:21:34.952 SCREEN w344 of Safari 496,84 1×1
+03:21:34.952 SCREEN front to back: w344 safari desk-a finder notes terminal calendar w73 mail textedit desk-b preview settings
+03:21:35.003 SCREEN w344 of Safari 439,83 115×51
+03:21:35.054 SCREEN w344 of Safari 364,83 264×115
+03:21:35.062 SCREEN w344 of Safari 346,83 301×131
+03:21:35.086 SCREEN w344 of Safari 331,83 330×143
+03:21:35.099 SCREEN w344 of Safari 320,83 352×153
+03:21:35.132 SCREEN w344 of Safari 305,83 382×166
+03:21:35.186 SCREEN w344 of Safari 297,82 398×173
+03:21:35.217 SCREEN w344 of Safari 297,82 398×174
+03:21:35.262 SCREEN w344 of Safari 297,82 398×173
+03:21:35.296 SCREEN w344 of Safari 298,82 396×173
+03:21:35.345 SCREEN w344 of Safari 299,83 394×171
+03:21:35.465 SCREEN w344 of Safari 300,83 392×170
+03:21:35.821 SCREEN the button is down 190 84
+03:21:35.857 SCREEN w344 of Safari 303,83 386×168
+03:21:35.861 SCREEN w344 of Safari 317,83 358×155
+03:21:35.890 SCREEN w344 of Safari 339,83 315×137
+03:21:35.899 SCREEN w344 of Safari 362,83 268×116
+03:21:35.913 SCREEN w344 of Safari 386,83 221×96
+03:21:35.913 SCREEN the button is up 190 84
+03:21:35.970 SCREEN w344 of Safari 443,83 106×47
+03:21:35.970 SCREEN front to back: safari w344 desk-a finder notes terminal calendar w73 mail textedit desk-b preview settings
+03:21:35.979 SCREEN w344 of Safari 457,83 79×35
+03:21:36.003 SCREEN w344 of Safari 468,83 57×26
+03:21:36.012 SCREEN w344 of Safari 476,83 41×18
+03:21:36.031 SCREEN w344 of Safari 483,83 27×13
+03:21:36.051 SCREEN w344 of Safari 488,83 17×9
+03:21:36.060 SCREEN w344 of Safari 491,83 11×6
+03:21:36.093 SCREEN w344 of Safari 494,83 5×4
+03:21:36.103 SCREEN w344 of Safari 495,83 3×2
+03:21:36.115 SCREEN w344 of Safari left the screen
+03:21:36.115 SCREEN front to back: safari desk-a finder notes terminal calendar w73 mail textedit desk-b preview settings
+03:21:36.720 SCREEN the button is down 184 84
+03:21:36.816 SCREEN the button is up 184 84
+03:21:37.713 SCREEN the button is down 196 84
+03:21:37.773 SCREEN the button is up 196 84
+03:21:38.678 SCREEN the button is down 184 84
+03:21:38.722 SCREEN the button is up 184 84
+03:21:39.388 SCREEN the button is down 196 84
+03:21:39.431 SCREEN the button is up 196 84
+03:21:40.225 SCREEN the button is down 184 84
+03:21:40.270 SCREEN the button is up 184 84
+03:21:41.075 SCREEN the button is down 196 84
+03:21:41.186 SCREEN the button is up 196 84
+03:21:41.868 SCREEN the button is down 184 84
+03:21:41.939 SCREEN the button is up 184 84
+03:21:42.755 SCREEN the button is down 196 84
+03:21:42.870 SCREEN the button is up 196 84
+03:21:43.640 SCREEN the button is down 184 84
+03:21:43.691 SCREEN the button is up 184 84
+03:21:44.461 SCREEN the button is down 196 84
+03:21:44.621 SCREEN the button is up 196 84
+03:21:45.429 SCREEN the button is down 184 84
+03:21:45.561 SCREEN the button is up 184 84
+03:21:46.371 SCREEN the button is down 196 84
+03:21:46.460 SCREEN the button is up 196 84
+03:21:51.363 SCREEN the button is down 160 175
+03:21:53.594 SCREEN the button is up 220 195
+03:21:54.744 SCREEN -- end 94 act=instrument settled=quiet:892 round=after front=87 posted=press:25,up:25,key:13,scroll:28,dragged:20
+03:21:55.084 SCRIPT == 95 dock-icon-finder

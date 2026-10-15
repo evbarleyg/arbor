@@ -1,0 +1,47 @@
+57 hide-notes: presses ⌘H
+expected: {'act': 'open-close', 'settled': 'quiet:1117', 'moves': '32,46,51,54,60,63,67,71,87,89,32,46,51,54,60,63,67,71,87,89,', 'leaves': '54,', 'floating': '223', 'docked': '32,46,51,54,60,63,67,71,87,89'}
+FAIL rule 2: safari (w223) a floating window, moved, and the step did not name it
+
+03:18:48.996 SCREEN -- begin 57 hide-notes
+03:18:48.996 SCREEN -- text 57 presses ⌘H
+03:18:49.240 SCREEN notes (w54) left the screen
+03:18:49.240 SCREEN front to back: w73 mail w272 calendar textedit safari finder terminal desk-a desk-b preview settings
+03:18:49.241 SCREEN in front: process 13508 com.apple.mail
+03:18:49.241 MACOS pid 12488 AXApplicationHidden
+03:18:49.242 MACOS workspace didActivate pid 13508 com.apple.mail regular
+03:18:49.243 MACOS workspace didDeactivate pid 12488 com.apple.Notes regular
+03:18:49.243 MACOS workspace didHide pid 12488 com.apple.Notes regular
+03:18:49.244 DEBUG focus is on w71
+03:18:49.244 MACOS pid 13508 AXApplicationActivated
+03:18:49.244 MACOS pid 12488 AXApplicationDeactivated
+03:18:49.325 SCREEN finder (w32) 1599,770 1576×378
+03:18:49.327 MACOS pid 348 AXResized w32 AXWindow/AXStandardWindow 12 43 1576 378
+03:18:49.337 MACOS pid 348 AXMoved w32 AXWindow/AXStandardWindow 12 43 1576 378
+03:18:49.350 SCREEN finder (w32) 12,43 1576×378
+03:18:49.372 MACOS pid 14680 AXResized w89 AXWindow/AXStandardWindow 12 433 1576 377
+03:18:49.373 MACOS pid 14680 AXMoved w89 AXWindow/AXStandardWindow 12 433 1576 377
+03:18:49.387 SCREEN safari (w223) 12,43 1576×767
+03:18:49.387 SCREEN desk-b (w89) 12,433 1576×377
+03:18:49.394 MACOS pid 23854 AXMoved w223 AXWindow/AXStandardWindow 12 43 1576 767
+03:18:49.394 MACOS pid 23854 AXFocusedWindowChanged w223 AXWindow/AXStandardWindow 12 43 1576 767
+03:18:49.400 DEBUG w71 has the keyboard
+03:18:49.400 MACOS pid 23854 AXMainWindowChanged w223 AXWindow/AXStandardWindow 12 43 1576 767
+03:18:49.401 SCREEN front to back: w73 mail safari w272 calendar textedit finder terminal desk-a desk-b preview settings
+03:18:49.404 MACOS pid 23854 AXFocusedWindowChanged w223 AXWindow/AXStandardWindow 12 43 1576 767
+03:18:49.474 MACOS pid 23854 AXMainWindowChanged w223 AXWindow/AXStandardWindow 12 43 1576 767
+03:18:49.485 MACOS pid 23854 AXFocusedWindowChanged w223 AXWindow/AXStandardWindow 12 43 1576 767
+03:18:49.488 MACOS workspace didActivate pid 23854 com.apple.Safari regular
+03:18:49.488 MACOS workspace didDeactivate pid 13508 com.apple.mail regular
+03:18:49.488 MACOS pid 13508 AXApplicationDeactivated
+03:18:49.489 MACOS pid 23854 AXMainWindowChanged w223 AXWindow/AXStandardWindow 12 43 1576 767
+03:18:49.489 MACOS pid 23854 AXApplicationActivated
+03:18:49.491 SCREEN in front: process 23854 com.apple.Safari
+03:18:49.500 SCREEN w269 of Arbor 12,421 1576×12
+03:18:49.500 SCREEN w272 of Arbor left the screen
+03:18:49.500 SCREEN front to back: safari w73 mail calendar textedit finder terminal desk-a desk-b preview settings w269
+03:18:49.504 DEBUG focus is on w223
+03:18:49.505 DEBUG w223 has the keyboard
+03:18:49.552 SCREEN w272 of Arbor 3,34 1594×785
+03:18:49.552 SCREEN front to back: w272 safari w73 mail calendar textedit finder terminal desk-a desk-b preview settings w269
+03:18:50.738 SCREEN -- end 57 act=open-close settled=quiet:1117 moves=32,46,51,54,60,63,67,71,87,89,32,46,51,54,60,63,67,71,87,89, leaves=54, floating=223 docked=32,46,51,54,60,63,67,71,87,89
+03:18:51.175 SCRIPT == 58 unhide-notes

@@ -1,0 +1,70 @@
+27 arrange: presses ⌃⌥A
+expected: {'act': 'dock-key', 'settled': 'quiet:1980', 'moves': 'any', 'floating': '', 'docked': '32,36,46,51,54,60,63,67,71,87,89'}
+ODD rule 3: the last window came to rest 1393 ms after the key or the button
+
+03:17:06.980 SCREEN -- begin 27 arrange
+03:17:06.980 SCREEN -- text 27 presses ⌃⌥A
+03:17:07.127 DEBUG commands follow the pointer: a shortcut, pointer idle 1.4 s, keys 7.1 s, focus 1.8 s
+03:17:07.136 INFO  made room for w32, w54
+03:17:07.143 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 11 stand-ins, 0.46 s
+03:17:07.168 SCREEN w146 of Arbor 0,0 1600×900 (level 4)
+03:17:07.203 SCREEN finder (w32) 529,355 709×252
+03:17:07.204 MACOS pid 348 AXResized w32 AXWindow/AXStandardWindow 529 355 709 252
+03:17:07.205 MACOS pid 348 AXMoved w32 AXWindow/AXStandardWindow 529 355 709 252
+03:17:07.216 MACOS pid 11945 AXResized w46 AXWindow/AXStandardWindow 1599 790 247 247
+03:17:07.217 MACOS pid 11945 AXMoved w46 AXWindow/AXStandardWindow 270 303 247 247
+03:17:07.240 SCREEN textedit (w46) 270,303 247×247
+03:17:07.252 MACOS pid 12217 AXTitleChanged w51 AXWindow/AXStandardWindow 12 303 247 244
+03:17:07.252 MACOS pid 12217 AXResized w51 AXWindow/AXStandardWindow 12 303 247 244
+03:17:07.252 MACOS pid 12217 AXMoved w51 AXWindow/AXStandardWindow 12 303 247 244
+03:17:07.254 SCREEN terminal (w51) 1599,790 247×244
+03:17:07.259 MACOS pid 12217 AXMoved w51 AXWindow/AXStandardWindow 12 305 247 244
+03:17:07.272 SCREEN terminal (w51) 12,303 247×244
+03:17:07.278 SCREEN terminal (w51) 12,305 247×244
+03:17:07.344 SCREEN notes (w54) 1599,770 709×320
+03:17:07.344 MACOS pid 12488 AXResized w54 AXWindow/AXStandardWindow 529 43 709 320
+03:17:07.345 MACOS pid 12488 AXMoved w54 AXWindow/AXStandardWindow 529 43 709 320
+03:17:07.387 SCREEN notes (w54) 529,43 709×320
+03:17:07.509 SCREEN desk-a (w87) 1599,790 246×248
+03:17:07.525 MACOS pid 14652 AXResized w87 AXWindow/AXStandardWindow 12 562 246 248
+03:17:07.525 MACOS pid 14652 AXMoved w87 AXWindow/AXStandardWindow 12 562 246 248
+03:17:07.545 MACOS pid 14680 AXResized w89 AXWindow/AXStandardWindow 529 619 709 191
+03:17:07.553 SCREEN desk-a (w87) 12,562 246×248
+03:17:07.556 INFO  made room for w32, w54
+03:17:07.560 MACOS pid 14680 AXMoved w89 AXWindow/AXStandardWindow 529 619 709 191
+03:17:07.561 MACOS pid 348 AXMoved w32 AXWindow/AXStandardWindow 529 375 709 252
+03:17:07.603 SCREEN finder (w32) 529,375 709×252
+03:17:07.603 SCREEN desk-b (w89) 529,619 709×171
+03:17:07.607 DEBUG stage retargeted on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 11 stand-ins, 0.46 s
+03:17:07.607 MACOS pid 14680 AXResized w89 AXWindow/AXStandardWindow 529 639 709 171
+03:17:07.607 MACOS pid 14680 AXMoved w89 AXWindow/AXStandardWindow 529 639 709 171
+03:17:07.611 SCREEN desk-b (w89) 529,639 709×171
+03:17:07.646 INFO  arrange: arranged 11 windows
+03:17:07.647 DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Too small to show: click the tile to zoom in · ⌃⌥G goes there too
+03:17:08.336 SCREEN (nothing was seen for 300 ms)
+03:17:08.359 SCREEN w165 of Arbor 520,366 727×270
+03:17:08.359 SCREEN w154 of Arbor 12,291 246×12
+03:17:08.359 SCREEN w156 of Arbor 12,550 246×12
+03:17:08.359 SCREEN w164 of Arbor 270,291 247×12
+03:17:08.359 SCREEN w163 of Arbor 270,550 247×12
+03:17:08.359 SCREEN w162 of Arbor 529,363 709×12
+03:17:08.359 SCREEN w159 of Arbor 529,627 709×12
+03:17:08.359 SCREEN w161 of Arbor 1250,421 246×12
+03:17:08.359 SCREEN w160 of Arbor 258,43 12×767
+03:17:08.359 SCREEN w155 of Arbor 517,43 12×767
+03:17:08.359 SCREEN w158 of Arbor 1238,43 12×767
+03:17:08.359 SCREEN w157 of Arbor 1496,43 12×767
+03:17:08.359 SCREEN front to back: w165 finder notes terminal w73 mail desk-a desk-b w118 calendar textedit preview settings safari w154 w156 w164 w163 w162 w159 w161 w160 w155 w158 w157
+03:17:08.402 SCREEN w167 of Arbor 554,728 493×38 (level 6)
+03:17:08.402 SCREEN w152 of Arbor 12,43 246×248
+03:17:08.402 SCREEN w150 of Arbor 270,43 247×248
+03:17:08.402 SCREEN w151 of Arbor 270,562 247×248
+03:17:08.402 SCREEN w153 of Arbor 1250,43 246×378
+03:17:08.402 SCREEN w148 of Arbor 1250,433 246×377
+03:17:08.402 SCREEN w149 of Arbor 1508,43 80×767
+03:17:08.402 SCREEN front to back: w165 finder notes terminal w73 mail desk-a desk-b w118 calendar textedit preview settings safari w152 w150 w151 w153 w148 w149 w154 w156 w164 w163 w162 w159 w161 w160 w155 w158 w157
+03:17:08.552 DEBUG stage down
+03:17:08.561 SCREEN w146 of Arbor left the screen
+03:17:09.737 SCREEN -- end 27 act=dock-key settled=quiet:1980 moves=any floating= docked=32,36,46,51,54,60,63,67,71,87,89
+03:17:10.091 SCREEN (nothing was seen for 112 ms)
+03:17:10.646 SCRIPT == 28 cmd-tab-2

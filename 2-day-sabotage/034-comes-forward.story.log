@@ -1,0 +1,13 @@
+34 comes-forward: OFFENCE: nobody does anything, and an app comes forward by itself
+expected: {'act': 'idle', 'settled': 'quiet:443', 'offence': 'focus'}
+FAIL rule 4: the app in front changed (to process 40057), and nobody switched
+
+03:24:44.356 SCREEN -- begin 34 comes-forward
+03:24:44.356 SCREEN -- text 34 OFFENCE: nobody does anything, and an app comes forward by itself
+03:24:45.442 SCREEN in front: process 40057 com.apple.Terminal
+03:24:45.443 MACOS workspace didActivate pid 40057 com.apple.Terminal regular
+03:24:45.443 MACOS workspace didDeactivate pid 39815 com.apple.TextEdit regular
+03:24:45.444 MACOS pid 40057 AXApplicationActivated
+03:24:45.444 MACOS pid 39815 AXApplicationDeactivated
+03:24:46.967 SCREEN -- end 34 act=idle settled=quiet:443 offence=focus
+03:24:47.164 SCRIPT == 35 honest-click-4

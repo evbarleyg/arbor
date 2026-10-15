@@ -1,0 +1,31 @@
+36 view-right: presses ⌃⌥→
+expected: {'act': 'view', 'settled': 'quiet:917', 'moves': 'any', 'floating': '', 'docked': '32,36,46,51,54,60,63,67,71,87,89'}
+ODD rule 3: the last window came to rest 725 ms after the key or the button
+
+03:17:42.665 SCREEN -- begin 36 view-right
+03:17:42.665 SCREEN -- text 36 presses ⌃⌥→
+03:17:42.749 SCREEN w194 of Arbor left the screen
+03:17:42.830 DEBUG commands follow the keyboard: a shortcut, pointer idle 4.3 s, keys 2.6 s, focus 18.4 s
+03:17:42.833 INFO  made room for w63
+03:17:42.844 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 5 stand-ins, 0.46 s
+03:17:42.852 SCREEN w146 of Arbor 0,0 1600×900 (level 4)
+03:17:42.887 MACOS pid 13011 AXResized w63 AXWindow/AXStandardWindow 12 340 723 470
+03:17:42.888 MACOS pid 13011 AXMoved w63 AXWindow/AXStandardWindow 12 340 723 470
+03:17:42.900 MACOS pid 13011 AXMoved w63 AXWindow/AXStandardWindow 438 340 723 470
+03:17:42.909 MACOS pid 348 AXMoved w32 AXWindow/AXStandardWindow 1599 770 1576 252
+03:17:42.917 MACOS pid 12488 AXMoved w54 AXWindow/AXStandardWindow 1599 770 1576 320
+03:17:42.919 SCREEN finder (w32) 1599,770 1576×252
+03:17:42.919 SCREEN settings (w63) 438,340 723×470
+03:17:42.928 MACOS pid 14680 AXMoved w89 AXWindow/AXStandardWindow 1599 790 1576 171
+03:17:42.930 SCREEN notes (w54) 1599,770 1576×320
+03:17:42.930 SCREEN desk-b (w89) 1599,790 1576×171
+03:17:42.941 DEBUG stage retargeted on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 5 stand-ins, 0.46 s
+03:17:42.954 INFO  neighbor right: moved to Calendar and System Settings (n16)
+03:17:43.002 SCREEN w200 of Arbor 12,43 1576×285
+03:17:43.002 SCREEN w195 of Arbor 12,328 1576×12
+03:17:43.002 SCREEN w196 of Arbor left the screen
+03:17:43.002 SCREEN front to back: w73 mail finder notes terminal desk-a desk-b w118 calendar textedit preview settings safari w200 w195
+03:17:43.545 DEBUG stage down
+03:17:43.552 SCREEN w146 of Arbor left the screen
+03:17:44.276 SCREEN -- end 36 act=view settled=quiet:917 moves=any floating= docked=32,36,46,51,54,60,63,67,71,87,89
+03:17:44.761 SCRIPT == 37 dock-icon-safari

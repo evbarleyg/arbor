@@ -1,0 +1,32 @@
+39 unhide-safari: clicks its icon in the Dock
+expected: {'act': 'open-close', 'settled': 'quiet:493', 'moves': '32,36,46,51,54,60,63,67,71,87,89,32,36,46,51,54,60,63,67,71,87,89,', 'comes': '36', 'front': '36', 'returns': '37', 'floating': '', 'docked': '32,36,46,51,54,60,63,67,71,87,89'}
+ODD rule 2: w73 of Mail moved along with a window of its app
+
+03:17:50.927 SCREEN -- begin 39 unhide-safari
+03:17:50.927 SCREEN -- text 39 clicks its icon in the Dock
+03:17:51.596 SCREEN the button is down 189 854
+03:17:51.757 SCREEN the button is up 189 854
+03:17:51.758 SCREEN in front: process 11552 com.apple.Safari
+03:17:51.758 MACOS pid 13508 AXApplicationDeactivated
+03:17:51.759 MACOS workspace didActivate pid 11552 com.apple.Safari regular
+03:17:51.759 MACOS workspace didDeactivate pid 13508 com.apple.mail regular
+03:17:51.759 MACOS workspace didUnhide pid 11552 com.apple.Safari regular
+03:17:51.781 SCREEN safari (w36) 12,43 1576×767
+03:17:51.781 SCREEN front to back: safari w205 w73 mail finder notes terminal desk-a desk-b w118 calendar textedit preview settings w195
+03:17:51.872 MACOS pid 11552 AXApplicationShown
+03:17:51.880 MACOS pid 11552 AXApplicationActivated
+03:17:51.884 DEBUG focus is on w36
+03:17:51.886 DEBUG focus report for w36, which does not have the keyboard or takes no space; 4 checks left
+03:17:51.900 SCREEN textedit (w46) 1599,790 1576×378
+03:17:51.900 SCREEN w205 of Arbor left the screen
+03:17:51.900 SCREEN front to back: safari w73 mail finder notes terminal desk-a desk-b w118 calendar textedit preview settings w195
+03:17:51.904 MACOS pid 11945 AXMoved w46 AXWindow/AXStandardWindow 1599 790 1576 378
+03:17:51.934 SCREEN w73 of Mail 2152,822 470×416
+03:17:51.934 SCREEN mail (w71) 1599,770 1576×377
+03:17:51.935 MACOS pid 13508 AXMoved w71 AXWindow/AXStandardWindow 1599 770 1576 377
+03:17:51.969 DEBUG w36 has the keyboard
+03:17:52.005 SCREEN w205 of Arbor 3,34 1594×785
+03:17:52.005 SCREEN w195 of Arbor left the screen
+03:17:52.005 SCREEN front to back: w205 safari w73 mail finder notes terminal desk-a desk-b w118 calendar textedit preview settings
+03:17:53.146 SCREEN -- end 39 act=open-close settled=quiet:493 moves=32,36,46,51,54,60,63,67,71,87,89,32,36,46,51,54,60,63,67,71,87,89, comes=36 front=36 returns=37 floating= docked=32,36,46,51,54,60,63,67,71,87,89
+03:17:53.670 SCRIPT == 40 shrink

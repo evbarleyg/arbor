@@ -1,0 +1,32 @@
+38 hide-safari: presses ⌘H
+expected: {'act': 'open-close', 'settled': 'quiet:991', 'moves': '32,36,46,51,54,60,63,67,71,87,89,32,36,46,51,54,60,63,67,71,87,89,', 'leaves': '36,', 'floating': '', 'docked': '32,36,46,51,54,60,63,67,71,87,89'}
+ODD rule 2: w73 of Mail moved along with a window of its app
+
+03:17:48.919 SCREEN -- begin 38 hide-safari
+03:17:48.919 SCREEN -- text 38 presses ⌘H
+03:17:49.157 MACOS pid 11552 AXApplicationHidden
+03:17:49.160 SCREEN (nothing was seen for 140 ms)
+03:17:49.160 SCREEN safari (w36) left the screen
+03:17:49.160 SCREEN front to back: w73 mail w205 finder notes terminal desk-a desk-b w118 calendar textedit preview settings
+03:17:49.160 MACOS pid 13508 AXFocusedWindowChanged w71 AXWindow/AXStandardWindow 1599 770 1120 630
+03:17:49.160 MACOS workspace didActivate pid 13508 com.apple.mail regular
+03:17:49.161 MACOS workspace didDeactivate pid 11552 com.apple.Safari regular
+03:17:49.161 MACOS workspace didHide pid 11552 com.apple.Safari regular
+03:17:49.161 MACOS pid 11552 AXApplicationDeactivated
+03:17:49.162 SCREEN in front: process 13508 com.apple.mail
+03:17:49.162 MACOS pid 13508 AXMainWindowChanged w71 AXWindow/AXStandardWindow 1599 770 1120 630
+03:17:49.162 MACOS pid 13508 AXApplicationActivated
+03:17:49.165 DEBUG focus is on w71
+03:17:49.189 MACOS pid 11945 AXResized w46 AXWindow/AXStandardWindow 12 43 1576 378
+03:17:49.190 MACOS pid 11945 AXMoved w46 AXWindow/AXStandardWindow 12 43 1576 378
+03:17:49.231 SCREEN textedit (w46) 12,43 1576×378
+03:17:49.278 MACOS pid 13508 AXResized w71 AXWindow/AXStandardWindow 12 433 1576 377
+03:17:49.289 MACOS pid 13508 AXMoved w71 AXWindow/AXStandardWindow 12 433 1576 377
+03:17:49.293 DEBUG w71 has the keyboard
+03:17:49.314 SCREEN w205 of Arbor 3,424 1594×395
+03:17:49.314 SCREEN w73 of Mail 565,485 470×416
+03:17:49.314 SCREEN mail (w71) 12,433 1576×377
+03:17:49.314 SCREEN w195 of Arbor 12,421 1576×12
+03:17:49.314 SCREEN front to back: w205 w73 mail finder notes terminal desk-a desk-b w118 calendar textedit preview settings w195
+03:17:50.556 SCREEN -- end 38 act=open-close settled=quiet:991 moves=32,36,46,51,54,60,63,67,71,87,89,32,36,46,51,54,60,63,67,71,87,89, leaves=36, floating= docked=32,36,46,51,54,60,63,67,71,87,89
+03:17:50.914 SCRIPT == 39 unhide-safari

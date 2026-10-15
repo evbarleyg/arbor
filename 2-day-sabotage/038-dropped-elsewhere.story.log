@@ -1,0 +1,40 @@
+38 dropped-elsewhere: OFFENCE: a window is dragged and let go, and goes somewhere else altogether
+expected: {'act': 'drag', 'settled': 'quiet:1096', 'drags': '381', 'offence': 'stuck'}
+FAIL rule 3: textedit (w381) ended neither where it was let go nor where the preview was: let go at 119,79 600×420, no preview, now at 539,339 600×420
+
+03:24:59.031 SCREEN -- begin 38 dropped-elsewhere
+03:24:59.032 SCREEN -- text 38 OFFENCE: a window is dragged and let go, and goes somewhere else altogether
+03:24:59.086 SCRIPT drag w381 from 345,72 to 445,112
+03:24:59.528 SCREEN the button is down 345 72
+03:24:59.753 SCREEN textedit (w381) 54,61 600×420
+03:24:59.816 SCREEN textedit (w381) 57,62 600×420
+03:24:59.834 MACOS pid 39815 AXMoved w381 AXWindow/AXStandardWindow 57 62 600 420
+03:24:59.863 SCREEN textedit (w381) 61,64 600×420
+03:24:59.940 SCREEN textedit (w381) 64,65 600×420
+03:24:59.962 MACOS pid 39815 AXMoved w381 AXWindow/AXStandardWindow 64 65 600 420
+03:25:00.012 SCREEN textedit (w381) 67,66 600×420
+03:25:00.089 SCREEN textedit (w381) 71,68 600×420
+03:25:00.106 MACOS pid 39815 AXMoved w381 AXWindow/AXStandardWindow 71 68 600 420
+03:25:00.169 SCREEN textedit (w381) 74,69 600×420
+03:25:00.233 SCREEN textedit (w381) 77,70 600×420
+03:25:00.272 MACOS pid 39815 AXMoved w381 AXWindow/AXStandardWindow 77 70 600 420
+03:25:00.348 SCREEN textedit (w381) 84,73 600×420
+03:25:00.392 SCREEN textedit (w381) 87,74 600×420
+03:25:00.425 MACOS pid 39815 AXMoved w381 AXWindow/AXStandardWindow 87 74 600 420
+03:25:00.528 SCREEN textedit (w381) 94,77 600×420
+03:25:00.538 SCREEN textedit (w381) 97,78 600×420
+03:25:00.577 MACOS pid 39815 AXMoved w381 AXWindow/AXStandardWindow 101 79 600 420
+03:25:00.591 SCREEN textedit (w381) 101,79 600×420
+03:25:00.650 SCREEN textedit (w381) 104,79 600×420
+03:25:00.719 SCREEN textedit (w381) 107,79 600×420
+03:25:00.754 MACOS pid 39815 AXMoved w381 AXWindow/AXStandardWindow 107 79 600 420
+03:25:00.828 SCREEN textedit (w381) 111,79 600×420
+03:25:00.902 SCREEN textedit (w381) 117,79 600×420
+03:25:00.906 MACOS pid 39815 AXMoved w381 AXWindow/AXStandardWindow 117 79 600 420
+03:25:01.013 SCREEN textedit (w381) 119,79 600×420
+03:25:01.074 MACOS pid 39815 AXMoved w381 AXWindow/AXStandardWindow 119 79 600 420
+03:25:02.375 SCREEN the button is up 445 112
+03:25:02.422 MACOS pid 39815 AXMoved w381 AXWindow/AXStandardWindow 539 339 600 420
+03:25:02.484 SCREEN textedit (w381) 539,339 600×420
+03:25:03.519 SCREEN -- end 38 act=drag settled=quiet:1096 drags=381 offence=stuck
+03:25:03.694 SCRIPT == 39 honest-move-2

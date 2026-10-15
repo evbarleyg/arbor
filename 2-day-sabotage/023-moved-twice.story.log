@@ -1,0 +1,12 @@
+23 moved-twice: OFFENCE: a window is moved, and half a second later moved again
+expected: {'act': 'dock-key', 'settled': 'quiet:1037', 'moves': '381', 'offence': 'jolt'}
+FAIL rule 3: textedit (w381) moved 2 times
+
+03:24:24.674 SCREEN -- begin 23 moved-twice
+03:24:24.674 SCREEN -- text 23 OFFENCE: a window is moved, and half a second later moved again
+03:24:24.699 MACOS pid 39815 AXMoved w381 AXWindow/AXStandardWindow 160 100 600 420
+03:24:24.731 SCREEN textedit (w381) 160,100 600×420
+03:24:25.280 MACOS pid 39815 AXMoved w381 AXWindow/AXStandardWindow 220 100 600 420
+03:24:25.283 SCREEN textedit (w381) 220,100 600×420
+03:24:26.320 SCREEN -- end 23 act=dock-key settled=quiet:1037 moves=381 offence=jolt
+03:24:26.505 SCRIPT == 24 elsewhere-first

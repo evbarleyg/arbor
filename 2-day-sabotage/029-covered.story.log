@@ -1,0 +1,13 @@
+29 covered: OFFENCE: the window switched to is covered by another one at once
+expected: {'act': 'switch', 'settled': 'quiet:1064', 'front': '381', 'offence': 'behind'}
+FAIL rule 4: textedit (w381) is not in front: elm (w447) ahead of it, of which 1 cover part of it
+
+03:24:33.251 SCREEN -- begin 29 covered
+03:24:33.251 SCREEN -- text 29 OFFENCE: the window switched to is covered by another one at once
+03:24:33.786 SCREEN the button is down 394 112
+03:24:33.877 SCREEN the button is up 394 112
+03:24:34.934 MACOS pid 39815 AXFocusedWindowChanged w447 AXWindow/AXStandardWindow 140 500 520 300
+03:24:34.935 MACOS pid 39815 AXMainWindowChanged w447 AXWindow/AXStandardWindow 140 500 520 300
+03:24:34.981 SCREEN front to back: elm textedit desk-a desk-b preview terminal finder
+03:24:36.000 SCREEN -- end 29 act=switch settled=quiet:1064 front=381 offence=behind
+03:24:36.211 SCRIPT == 30 honest-click-2

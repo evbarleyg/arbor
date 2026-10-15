@@ -1,0 +1,57 @@
+33 pause: presses ⌃⌥⎋
+expected: {'act': 'way-out', 'settled': 'quiet:1698', 'moves': 'any', 'restores': 'all', 'places': '1', 'everything': '1', 'front': '73', 'floating': '', 'docked': ''}
+ODD rule 3: the last window came to rest 979 ms after the key or the button
+
+03:17:34.322 SCREEN -- begin 33 pause
+03:17:34.322 SCREEN -- text 33 presses ⌃⌥⎋
+03:17:34.676 MACOS pid 348 AXResized w32 AXWindow/AXStandardWindow 340 120 920 436
+03:17:34.677 MACOS pid 348 AXMoved w32 AXWindow/AXStandardWindow 340 120 920 436
+03:17:34.721 SCREEN finder (w32) 340,120 920×436
+03:17:34.818 SCREEN safari (w36) 138,31 1324×791
+03:17:34.822 MACOS pid 11552 AXResized w36 AXWindow/AXStandardWindow 138 31 1324 791
+03:17:34.823 MACOS pid 11552 AXMoved w36 AXWindow/AXStandardWindow 138 31 1324 791
+03:17:34.863 MACOS pid 11945 AXResized w46 AXWindow/AXStandardWindow 1599 790 673 439
+03:17:34.865 MACOS pid 11945 AXMoved w46 AXWindow/AXStandardWindow 165 65 673 439
+03:17:34.870 SCREEN textedit (w46) 165,65 673×439
+03:17:34.936 MACOS pid 12217 AXTitleChanged w51 AXWindow/AXStandardWindow 40 51 877 499
+03:17:34.936 MACOS pid 12217 AXResized w51 AXWindow/AXStandardWindow 40 51 877 499
+03:17:34.937 MACOS pid 12217 AXMoved w51 AXWindow/AXStandardWindow 40 51 877 499
+03:17:34.951 SCREEN terminal (w51) 40,51 877×499
+03:17:35.007 MACOS pid 12488 AXResized w54 AXWindow/AXStandardWindow 300 105 1000 660
+03:17:35.009 MACOS pid 12488 AXMoved w54 AXWindow/AXStandardWindow 300 105 1000 660
+03:17:35.012 SCREEN notes (w54) 12,43 1000×660
+03:17:35.090 SCREEN notes (w54) 300,105 1000×660
+03:17:35.139 MACOS pid 12931 AXResized w60 AXWindow/AXStandardWindow 404 115 936 599
+03:17:35.140 MACOS pid 12931 AXMoved w60 AXWindow/AXStandardWindow 404 115 936 599
+03:17:35.145 SCREEN calendar (w60) 404,115 936×599
+03:17:35.207 MACOS pid 13011 AXResized w63 AXWindow/AXStandardWindow 437 85 723 625
+03:17:35.207 MACOS pid 13011 AXMoved w63 AXWindow/AXStandardWindow 437 85 723 625
+03:17:35.269 MACOS pid 13159 AXResized w67 AXWindow/AXStandardWindow 1599 770 708 424
+03:17:35.273 MACOS pid 13159 AXMoved w67 AXWindow/AXStandardWindow 4 35 708 424
+03:17:35.302 SCREEN preview (w67) 4,35 708×424
+03:17:35.302 SCREEN settings (w63) 437,85 723×625
+03:17:35.360 SCREEN w73 of Mail 1924,877 470×416
+03:17:35.360 SCREEN mail (w71) 1599,770 1120×630
+03:17:35.377 MACOS pid 13508 AXResized w71 AXWindow/AXStandardWindow 240 72 1120 630
+03:17:35.378 MACOS pid 13508 AXMoved w71 AXWindow/AXStandardWindow 240 72 1120 630
+03:17:35.385 SCREEN w73 of Mail 565,179 470×416
+03:17:35.385 SCREEN mail (w71) 240,72 1120×630
+03:17:35.489 MACOS pid 14652 AXResized w87 AXWindow/AXStandardWindow 40 70 300 190
+03:17:35.490 MACOS pid 14652 AXMoved w87 AXWindow/AXStandardWindow 40 70 300 190
+03:17:35.492 SCREEN desk-a (w87) 40,70 300×190
+03:17:35.526 MACOS pid 14680 AXResized w89 AXWindow/AXStandardWindow 360 70 300 190
+03:17:35.526 MACOS pid 14680 AXMoved w89 AXWindow/AXStandardWindow 360 70 300 190
+03:17:35.527 MACOS pid 14680 AXResized w89 AXWindow/AXStandardWindow 360 70 300 190
+03:17:35.545 INFO  trace day-1 ended: 1370 lines, Arbor stopped
+03:17:35.548 SCREEN desk-b (w89) 360,70 300×190
+03:17:35.555 INFO  registered 1 shortcuts in 8407 µs
+03:17:35.555 INFO  stopped; all windows returned to view
+03:17:35.555 INFO  paused
+03:17:35.557 DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Paused until ⌃⌥⎋; windows are back in view, in their own sizes
+03:17:35.617 SCREEN w166 of Arbor left the screen
+03:17:35.617 SCREEN w157 of Arbor left the screen
+03:17:35.617 SCREEN w154 of Arbor left the screen
+03:17:35.617 SCREEN front to back: w73 mail finder notes terminal desk-a desk-b w118 calendar textedit preview settings safari
+03:17:35.687 SCREEN w194 of Arbor 559,728 482×38 (level 6)
+03:17:36.855 SCREEN -- end 33 act=way-out settled=quiet:1698 moves=any restores=all places=1 everything=1 front=73 floating= docked=
+03:17:37.353 SCRIPT == 34 dock-icon-mail

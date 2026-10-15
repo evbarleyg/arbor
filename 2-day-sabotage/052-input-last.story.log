@@ -1,0 +1,60 @@
+52 input-last: a round of input on two windows of its own: presses behind and in front, keys, a scroll, a drag inside the text
+expected: {'act': 'instrument', 'settled': 'quiet:803', 'round': 'last', 'front': '417', 'posted': 'press:25,up:25,key:13,scroll:28,dragged:20', 'offence': 'input-held', 'floating': '', 'docked': ''}
+FAIL rule 4: desk-a (w417) is not in front: textedit (w381) ahead of it, of which 1 cover part of it
+FAIL rule 4: desk-a (w417) its app is not the one in front (process 39815 is)
+FAIL rule 6: 1 of 13 events of the kind key never reached the apps
+
+03:26:09.336 SCREEN -- begin 52 input-last
+03:26:09.336 SCREEN -- text 52 a round of input on two windows of its own: presses behind and in front, keys, a scroll, a drag inside the text
+03:26:10.867 SCREEN the button is down 510 84
+03:26:10.920 SCREEN the button is up 510 84
+03:26:11.799 SCREEN the button is down 190 84
+03:26:11.845 SCREEN the button is up 190 84
+03:26:12.801 SCREEN the button is down 510 84
+03:26:12.896 SCREEN the button is up 510 84
+03:26:13.709 SCREEN the button is down 190 84
+03:26:13.750 SCREEN the button is up 190 84
+03:26:14.632 SCREEN the button is down 510 84
+03:26:14.746 SCREEN the button is up 510 84
+03:26:15.619 SCREEN the button is down 190 84
+03:26:15.744 SCREEN the button is up 190 84
+03:26:16.686 SCREEN the button is down 510 84
+03:26:16.715 SCREEN the button is up 510 84
+03:26:17.487 SCREEN the button is down 190 84
+03:26:17.668 SCREEN the button is up 190 84
+03:26:18.466 SCREEN the button is down 510 84
+03:26:18.537 SCREEN the button is up 510 84
+03:26:19.389 SCREEN the button is down 190 84
+03:26:19.437 SCREEN the button is up 190 84
+03:26:20.249 SCREEN the button is down 510 84
+03:26:20.303 SCREEN the button is up 510 84
+03:26:21.100 SCREEN the button is down 190 84
+03:26:21.100 SCREEN the button is up 190 84
+03:26:21.748 SCREEN the button is down 184 84
+03:26:21.778 SCREEN the button is up 184 84
+03:26:22.396 SCREEN the button is down 196 84
+03:26:22.548 SCREEN the button is up 196 84
+03:26:23.285 SCREEN the button is down 184 84
+03:26:23.361 SCREEN the button is up 184 84
+03:26:24.102 SCREEN the button is down 196 84
+03:26:24.187 SCREEN the button is up 196 84
+03:26:25.058 SCREEN the button is down 184 84
+03:26:25.138 SCREEN the button is up 184 84
+03:26:25.847 SCREEN the button is down 196 84
+03:26:25.965 SCREEN the button is up 196 84
+03:26:26.820 SCREEN the button is down 184 84
+03:26:26.928 SCREEN the button is up 184 84
+03:26:27.602 SCREEN the button is down 196 84
+03:26:27.748 SCREEN the button is up 196 84
+03:26:28.537 SCREEN the button is down 184 84
+03:26:28.598 SCREEN the button is up 184 84
+03:26:29.372 SCREEN the button is down 196 84
+03:26:29.466 SCREEN the button is up 196 84
+03:26:30.294 SCREEN the button is down 184 84
+03:26:30.363 SCREEN the button is up 184 84
+03:26:31.093 SCREEN the button is down 196 84
+03:26:31.182 SCREEN the button is up 196 84
+03:26:36.469 SCREEN the button is down 160 175
+03:26:38.761 SCREEN the button is up 220 195
+03:26:39.850 SCREEN -- end 52 act=instrument settled=quiet:803 round=last front=417 posted=press:25,up:25,key:13,scroll:28,dragged:20 offence=input-held floating= docked=
+03:26:40.203 SCRIPT == 53 both-previews

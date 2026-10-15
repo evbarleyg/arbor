@@ -1,0 +1,93 @@
+# mac-shell: scripts/mac-shell/survey-browsers.sh at 30ceeeb, macOS 26.6.2, 2026-10-15T03:27Z
+
+== the Mac
+macOS 26.6.2 (25G83) on arm64
+built the tools in 7s
+1600 900 1600 900
+display: 1 0 0 1600 900 1600 900 1
+
+== what is installed
+  Firefox.app
+  Google Chrome for Testing.app
+  Google Chrome.app
+  Microsoft Edge.app
+  PowerShell.app
+  Python 3.11
+  Python 3.12
+  Python 3.13
+  Python 3.14
+  Safari.app
+  Utilities
+  Xcode_26.0.1.app
+  Xcode_26.0.app
+  Xcode_26.1.1.app
+  Xcode_26.1.app
+  Xcode_26.2.0.app
+  Xcode_26.2.app
+  Xcode_26.3.0.app
+  Xcode_26.3.app
+  Xcode_26.4.1.app
+  Xcode_26.4.app
+  Xcode_26.5.0.app
+  Xcode_26.5.app
+  Xcode_26.6.0.app
+  Xcode_26.6.app
+  Xcode.app
+  /Applications/Utilities:  /System/Applications: App Store.app Apps.app Automator.app Books.app Calculator.app Calendar.app Chess.app Clock.app Contacts.app Dictionary.app FaceTime.
+  app FindMy.app Font Book.app Freeform.app Games.app Home.app Image Capture.app Image Playground.app iPhone Mirroring.app Journal.app Mail.app Maps.app Messages.app Mission Control.
+  app Music.app News.app Notes.app Passwords.app Phone.app Photo Booth.app Photos.app Podcasts.app Preview.app QuickTime Player.app Reminders.app Shortcuts.app Siri.app Stickies.app 
+  Stocks.app System Settings.app TextEdit.app Time Machine.app Tips.app TV.app Utilities VoiceMemos.app Weather.app  /System/Applications/Utilities: Activity Monitor.app AirPort Util
+  ity.app Audio MIDI Setup.app Bluetooth File Exchange.app Boot Camp Assistant.app ColorSync Utility.app Console.app Digital Color Meter.app Disk Utility.app Grapher.app Magnifier.ap
+  p Migration Assistant.app Print Center.app Screen Sharing.app Screenshot.app Script Editor.app System Information.app Terminal.app VoiceOver Utility.app 
+Java: /Users/runner/hostedtoolcache/Java_Temurin-Hotspot_jdk/25.0.4-101.0/arm64/Contents/Home
+
+== chrome (com.google.Chrome)
+the mark on /Applications/Google Chrome.app: 0181;6a9e518f;Homebrew\x20Cask;4D731A0A-48AA-4A2C-AFD9-F3F02
+taken off
+open -b: exit code 0 after 0 s
+  531 AXWindow AXStandardWindow 22 53 1200 747 main
+  limits: min 500x375 max 1596x781 asked 637x488 got 637x488 late no slowest-ms 261 errors none parked-at 1599,781 of 1599,899 restored yes
+> key cmd+n
+  ⌘N opened:
+    542 AXWindow AXStandardWindow 44 75 1200 747 main
+    531 AXWindow AXStandardWindow 22 53 1200 747 -
+  the Window menu: 546 15
+  in the Dock: 1332 854
+
+== firefox (org.mozilla.firefox)
+the mark on /Applications/Firefox.app: 0181;6a9e51c0;Homebrew\x20Cask;F4CB6538-183F-419D-B65E-37A1E
+taken off
+open -b: exit code 0 after 0 s
+  556 AXWindow AXStandardWindow 4 31 1280 711 main,focused
+  limits: min 500x120 max 1596x781 asked 637x233 got 637x233 late no slowest-ms 49 errors none parked-at 1599,790 of 1599,899 restored yes
+> key cmd+n
+  ⌘N opened no window
+  the Window menu: 551 15
+  in the Dock: 1332 854
+
+== edge (com.microsoft.edgemac)
+the mark on /Applications/Microsoft Edge.app: 0181;6a9e51f1;Homebrew\x20Cask;FBC13967-B136-4E28-AD70-0943B
+taken off
+open -b: exit code 0 after 0 s
+  565 AXWindow AXStandardWindow 22 53 1200 747 main
+  limits: min 500x375 max 1596x777 asked 637x488 got 637x488 late no slowest-ms 206 errors none parked-at 1599,777 of 1599,899 restored yes
+> key cmd+n
+  ⌘N opened:
+    576 AXWindow AXStandardWindow 44 31 1200 747 main
+    565 AXWindow AXStandardWindow 22 53 1200 747 -
+  the Window menu: 515 15
+  in the Dock: 1369 852
+
+== a Java app
+  587 AXWindow AXStandardWindow 350 49 900 750 main
+  59415 regular active net.java.openjdk.jconsole
+  the Dock's apps: 
+
+== the survey
+app      bundle                 standard windows  other windows  in the way  limits
+chrome   com.google.Chrome      1                 -              -           min 500x375 max 1596x781 asked 637x488 got 637x488 late no slowest-ms 261 errors none parked-at 1599,781 of 1599,899 restored yes
+firefox  org.mozilla.firefox    1                 -              -           min 500x120 max 1596x781 asked 637x233 got 637x233 late no slowest-ms 49 errors none parked-at 1599,790 of 1599,899 restored yes
+edge     com.microsoft.edgemac  1                 -              -           min 500x375 max 1596x777 asked 637x488 got 637x488 late no slowest-ms 206 errors none parked-at 1599,777 of 1599,899 restored yes
+still running when the script had ended, and stopped now:
+  55206 sleep
+exit code 0

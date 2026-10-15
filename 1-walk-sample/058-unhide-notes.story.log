@@ -1,0 +1,31 @@
+58 unhide-notes: clicks its icon in the Dock
+expected: {'act': 'open-close', 'settled': 'quiet:382', 'moves': '32,46,51,54,60,63,67,71,87,89,32,46,51,54,60,63,67,71,87,89,', 'comes': '54', 'front': '54', 'returns': '56', 'floating': '223', 'docked': '32,46,51,54,60,63,67,71,87,89'}
+FAIL rule 2: safari (w223) is not back where it was after step 56: 12,43 1576×767, it was at 1599,770 1576×767
+
+03:18:51.188 SCREEN -- begin 58 unhide-notes
+03:18:51.188 SCREEN -- text 58 clicks its icon in the Dock
+03:18:51.938 SCREEN the button is down 747 854
+03:18:51.980 SCREEN the button is up 747 854
+03:18:52.122 MACOS pid 23854 AXApplicationDeactivated
+03:18:52.124 MACOS workspace didActivate pid 12488 com.apple.Notes regular
+03:18:52.124 MACOS workspace didDeactivate pid 23854 com.apple.Safari regular
+03:18:52.125 SCREEN (nothing was seen for 144 ms)
+03:18:52.125 SCREEN notes (w54) 12,43 1576×767
+03:18:52.125 SCREEN w272 of Arbor left the screen
+03:18:52.125 SCREEN front to back: notes safari w73 mail calendar textedit finder terminal desk-a desk-b preview settings w269
+03:18:52.125 MACOS workspace didUnhide pid 12488 com.apple.Notes regular
+03:18:52.125 MACOS pid 12488 AXApplicationShown
+03:18:52.125 MACOS pid 12488 AXApplicationActivated
+03:18:52.131 SCREEN in front: process 12488 com.apple.Notes
+03:18:52.144 DEBUG focus is on w54
+03:18:52.160 MACOS pid 348 AXMoved w32 AXWindow/AXStandardWindow 1599 770 1576 378
+03:18:52.168 MACOS pid 14680 AXMoved w89 AXWindow/AXStandardWindow 1599 790 1576 377
+03:18:52.179 DEBUG w54 has the keyboard
+03:18:52.180 DEBUG w54 has the keyboard
+03:18:52.186 SCREEN w272 of Arbor 3,34 1594×785
+03:18:52.186 SCREEN finder (w32) 1599,770 1576×378
+03:18:52.186 SCREEN desk-b (w89) 1599,790 1576×377
+03:18:52.186 SCREEN w269 of Arbor left the screen
+03:18:52.186 SCREEN front to back: w272 notes safari w73 mail calendar textedit finder terminal desk-a desk-b preview settings
+03:18:53.345 SCREEN -- end 58 act=open-close settled=quiet:382 moves=32,46,51,54,60,63,67,71,87,89,32,46,51,54,60,63,67,71,87,89, comes=54 front=54 returns=56 floating=223 docked=32,46,51,54,60,63,67,71,87,89
+03:18:53.713 SCRIPT == 59 view-3

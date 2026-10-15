@@ -1,0 +1,19 @@
+71 float: presses ⌃⌥F
+expected: {'act': 'dock-key', 'settled': 'quiet:857', 'moves': '32,46,51,54,60,63,67,71,87,89,223,32,46,51,60,63,67,71,87,89,223,', 'front': '54', 'restores': '54', 'floating': '54', 'docked': '32,46,51,60,63,67,71,87,89,223'}
+ODD rule 3: the last window came to rest 713 ms after the key or the button
+
+03:19:23.943 SCREEN -- begin 71 float
+03:19:23.943 SCREEN -- text 71 presses ⌃⌥F
+03:19:24.109 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 5 stand-ins, 0.46 s
+03:19:24.111 SCREEN w271 of Arbor 0,0 1600×900 (level 4)
+03:19:24.160 MACOS pid 12488 AXResized w54 AXWindow/AXStandardWindow 300 97 1000 660
+03:19:24.167 SCREEN notes (w54) 12,43 1000×660
+03:19:24.167 MACOS pid 12488 AXMoved w54 AXWindow/AXStandardWindow 300 97 1000 660
+03:19:24.183 INFO  toggle-float: w54 is floating; showing the Desktop
+03:19:24.185 SCREEN notes (w54) 300,97 1000×660
+03:19:24.205 SCREEN w272 of Arbor 291,88 1018×678
+03:19:24.465 SCREEN w270 of Arbor left the screen
+03:19:24.797 DEBUG stage down
+03:19:24.824 SCREEN w271 of Arbor left the screen
+03:19:25.376 SCREEN -- end 71 act=dock-key settled=quiet:857 moves=32,46,51,54,60,63,67,71,87,89,223,32,46,51,60,63,67,71,87,89,223, front=54 restores=54 floating=54 docked=32,46,51,60,63,67,71,87,89,223
+03:19:25.696 SCRIPT == 72 view-back

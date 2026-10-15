@@ -1,0 +1,50 @@
+83 drag-right-edge-of-terminal: drags the right edge of terminal's window by -30 points
+expected: {'act': 'resize', 'settled': 'quiet:1257', 'moves': '32,46,51,60,63,67,71,87,89,223,32,46,51,60,63,67,71,87,89,223,', 'floating': '54', 'docked': '32,46,51,60,63,67,71,87,89,223'}
+FAIL rule 3: terminal (w51) moved 5 times
+ODD rule 3: the last window came to rest 829 ms after the key or the button
+
+03:20:21.649 SCREEN -- begin 83 drag-right-edge-of-terminal
+03:20:21.649 SCREEN -- text 83 drags the right edge of terminal's window by -30 points
+03:20:22.230 SCREEN the button is down 301 427
+03:20:22.775 MACOS pid 12217 AXTitleChanged w51 AXWindow/AXStandardWindow 13 305 282 244
+03:20:22.776 DEBUG w51 is being resized by its edges
+03:20:22.777 MACOS pid 12217 AXResized w51 AXWindow/AXStandardWindow 13 305 282 244
+03:20:22.796 SCREEN terminal (w51) 13,305 282×244
+03:20:22.796 SCREEN w272 of Arbor left the screen
+03:20:22.796 SCREEN front to back: terminal safari notes calendar w73 mail textedit finder desk-a desk-b preview settings w254 w255 w253 w258 w257 w269 w267 w266 w289 w265 w262 w264 w260 w268 w263
+03:20:23.104 MACOS pid 12217 AXTitleChanged w51 AXWindow/AXStandardWindow 13 305 275 244
+03:20:23.105 MACOS pid 12217 AXResized w51 AXWindow/AXStandardWindow 13 305 275 244
+03:20:23.119 SCREEN terminal (w51) 13,305 275×244
+03:20:23.505 MACOS pid 12217 AXTitleChanged w51 AXWindow/AXStandardWindow 13 305 268 244
+03:20:23.506 MACOS pid 12217 AXResized w51 AXWindow/AXStandardWindow 13 305 268 244
+03:20:23.553 SCREEN terminal (w51) 13,305 268×244
+03:20:24.017 MACOS pid 12217 AXTitleChanged w51 AXWindow/AXStandardWindow 13 305 261 244
+03:20:24.018 MACOS pid 12217 AXResized w51 AXWindow/AXStandardWindow 13 305 261 244
+03:20:24.036 SCREEN terminal (w51) 13,305 261×244
+03:20:25.194 SCREEN the button is up 271 427
+03:20:25.248 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 11 stand-ins, 0.46 s
+03:20:25.261 MACOS pid 11945 AXResized w46 AXWindow/AXStandardWindow 286 43 321 378
+03:20:25.289 MACOS pid 11945 AXMoved w46 AXWindow/AXStandardWindow 286 43 321 378
+03:20:25.300 MACOS pid 12217 AXMoved w51 AXWindow/AXStandardWindow 12 303 261 244
+03:20:25.301 SCREEN w314 of Arbor 0,0 1600×900 (level 4)
+03:20:25.301 SCREEN terminal (w51) 12,303 261×244
+03:20:25.301 SCREEN textedit (w46) 286,43 321×378
+03:20:25.321 MACOS pid 12217 AXMoved w51 AXWindow/AXStandardWindow 12 305 261 244
+03:20:25.348 MACOS pid 14652 AXResized w87 AXWindow/AXStandardWindow 12 562 262 248
+03:20:25.365 DEBUG stage retargeted on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 11 stand-ins, 0.46 s
+03:20:25.379 DEBUG edge resize of w51: edges ["right"], seams beside ["right"]
+03:20:25.391 SCREEN terminal (w51) 12,305 261×244
+03:20:25.391 SCREEN desk-a (w87) 12,562 262×248
+03:20:25.436 SCREEN w272 of Arbor 3,296 279×262
+03:20:25.436 SCREEN w254 of Arbor 12,43 262×248
+03:20:25.436 SCREEN w255 of Arbor 286,433 321×377
+03:20:25.436 SCREEN w269 of Arbor 12,291 262×12
+03:20:25.436 SCREEN w267 of Arbor 12,550 262×12
+03:20:25.436 SCREEN w266 of Arbor 286,421 321×12
+03:20:25.436 SCREEN w264 of Arbor 274,43 12×767
+03:20:25.436 SCREEN front to back: w272 terminal safari notes calendar w73 mail textedit finder desk-a desk-b preview settings w253 w258 w257 w289 w265 w262 w260 w268 w263 w254 w255 w269 w267 w266 w264
+03:20:25.981 DEBUG stage down
+03:20:26.023 SCREEN w314 of Arbor left the screen
+03:20:26.565 SCREEN -- end 83 act=resize settled=quiet:1257 moves=32,46,51,60,63,67,71,87,89,223,32,46,51,60,63,67,71,87,89,223, floating=54 docked=32,46,51,60,63,67,71,87,89,223
+03:20:26.880 SCREEN (nothing was seen for 101 ms)
+03:20:27.104 SCRIPT == 84 dock-icon-finder
