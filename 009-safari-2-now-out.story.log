@@ -1,0 +1,79 @@
+9 safari-2-now-out: presses ⌃⌘F again; the window is asked for its slot: now
+expected: {'act': 'macos-own', 'settled': 'quiet:0', 'moves': 'any', 'leaves': 'any', 'comes': '36'}
+FAIL rule 3: safari (w36) moved 2 times
+ODD rule 3: safari (w36) was still moving 475 ms after everything had been quiet for a second
+
+00:00:16.664 SCREEN -- begin 9 safari-2-now-out
+00:00:16.664 SCREEN -- text 9 presses ⌃⌘F again; the window is asked for its slot: now
+00:00:16.680 SCREEN (nothing was seen for 44 ms)
+00:00:16.813 SCREEN (nothing was seen for 68 ms)
+00:00:16.962 SCREEN (nothing was seen for 42 ms)
+00:00:16.962 SCREEN w101 of Safari 0,0 1600×900
+00:00:16.962 SCREEN textedit (w46) 165,65 673×439
+00:00:16.962 SCREEN finder (w32) 340,120 920×436
+00:00:16.962 SCREEN w86 of Safari left the screen
+00:00:16.962 SCREEN safari (w36) left the screen
+00:00:16.962 SCREEN front to back: w101 textedit finder
+00:00:16.987 MACOS pid 13002 AXWindowCreated w101 AXWindow/AXUnknown 0 0 1600 900
+00:00:16.987 MACOS pid 13002 AXResized w36 AXWindow/AXStandardWindow 138 31 1324 791
+00:00:17.010 MACOS pid 13002 AXMoved w36 AXWindow/AXStandardWindow 138 31 1324 791
+00:00:17.019 SCREEN (nothing was seen for 48 ms)
+00:00:17.161 SCREEN (nothing was seen for 49 ms)
+00:00:17.235 SCREEN (nothing was seen for 60 ms)
+00:00:17.314 SCREEN (nothing was seen for 75 ms)
+00:00:17.509 SCREEN (nothing was seen for 73 ms)
+00:00:17.510 MACOS pid 13002 AXUIElementDestroyed w101
+00:00:17.527 SCREEN safari (w36) 138,31 1324×791
+00:00:17.527 SCREEN w101 of Safari left the screen
+00:00:17.527 SCREEN front to back: safari textedit finder
+00:00:17.656 SCREEN (nothing was seen for 66 ms)
+00:00:17.719 SCREEN (nothing was seen for 55 ms)
+00:00:17.774 SCREEN (nothing was seen for 49 ms)
+00:00:17.958 SCREEN (nothing was seen for 60 ms)
+00:00:18.028 SCREEN (nothing was seen for 66 ms)
+00:00:18.078 SCREEN (nothing was seen for 43 ms)
+00:00:18.178 SCREEN (nothing was seen for 56 ms)
+00:00:18.231 SCREEN (nothing was seen for 46 ms)
+00:00:18.333 SCREEN (nothing was seen for 47 ms)
+00:00:18.413 SCREEN (nothing was seen for 77 ms)
+00:00:18.476 SCREEN (nothing was seen for 56 ms)
+00:00:18.548 SCREEN (nothing was seen for 62 ms)
+00:00:18.752 SCREEN (nothing was seen for 66 ms)
+00:00:18.900 SCREEN (nothing was seen for 53 ms)
+00:00:18.969 SCREEN (nothing was seen for 66 ms)
+00:00:19.035 SCREEN (nothing was seen for 61 ms)
+00:00:19.104 SCREEN (nothing was seen for 63 ms)
+00:00:19.152 SCREEN (nothing was seen for 41 ms)
+00:00:19.219 SCREEN (nothing was seen for 61 ms)
+00:00:19.316 SCREEN (nothing was seen for 57 ms)
+00:00:19.419 SCREEN (nothing was seen for 49 ms)
+00:00:19.481 SCREEN (nothing was seen for 57 ms)
+00:00:19.607 SCREEN (nothing was seen for 55 ms)
+00:00:19.769 SCREEN (nothing was seen for 71 ms)
+00:00:19.835 SCREEN (nothing was seen for 60 ms)
+00:00:19.961 SCREEN (nothing was seen for 52 ms)
+00:00:20.028 SCREEN (nothing was seen for 60 ms)
+00:00:20.148 SCREEN (nothing was seen for 70 ms)
+00:00:20.261 SCREEN (nothing was seen for 54 ms)
+00:00:20.328 SCREEN (nothing was seen for 60 ms)
+00:00:20.448 SCREEN (nothing was seen for 59 ms)
+00:00:20.523 SCREEN (nothing was seen for 70 ms)
+00:00:20.582 SCREEN (nothing was seen for 52 ms)
+00:00:20.653 SCREEN (nothing was seen for 66 ms)
+00:00:20.795 SCREEN (nothing was seen for 61 ms)
+00:00:20.928 SCREEN (nothing was seen for 70 ms)
+00:00:20.981 SCREEN (nothing was seen for 43 ms)
+00:00:21.034 SCREEN (nothing was seen for 43 ms)
+00:00:21.199 SCREEN (nothing was seen for 52 ms)
+00:00:21.319 SCREEN (nothing was seen for 64 ms)
+00:00:21.420 SCREEN (nothing was seen for 42 ms)
+00:00:21.569 SCREEN (nothing was seen for 49 ms)
+00:00:21.628 SCREEN (nothing was seen for 52 ms)
+00:00:21.632 SCREEN -- end 9 act=macos-own settled=quiet:0 moves=any leaves=any comes=36
+00:00:21.715 SCREEN (nothing was seen for 52 ms)
+00:00:21.969 SCREEN (nothing was seen for 62 ms)
+00:00:22.038 SCREEN (nothing was seen for 63 ms)
+00:00:22.107 SCREEN safari (w36) 800,60 620×640
+00:00:22.126 MACOS pid 13002 AXResized w36 AXWindow/AXStandardWindow 800 60 620 640
+00:00:22.127 MACOS pid 13002 AXMoved w36 AXWindow/AXStandardWindow 800 60 620 640
+00:00:22.157 SCRIPT == 10 reach-safari-3

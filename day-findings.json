@@ -1,0 +1,1319 @@
+{
+ "sampler": "samples 8734 seconds 233.5 hz 37.4 cost-ms 2.26 late 2264 longest-gap-ms 1436",
+ "steps": [
+  {
+   "number": 1,
+   "slug": "open-finder",
+   "chapter": "The apps are open",
+   "text": "opens finder",
+   "act": "open-close",
+   "judged": false,
+   "began": 1792022377228,
+   "milliseconds": 2945,
+   "moved": {
+    "32": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 2,
+   "slug": "open-safari",
+   "chapter": "The apps are open",
+   "text": "opens safari",
+   "act": "open-close",
+   "judged": false,
+   "began": 1792022380956,
+   "milliseconds": 7498,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 3,
+   "slug": "open-textedit",
+   "chapter": "The apps are open",
+   "text": "opens textedit",
+   "act": "open-close",
+   "judged": false,
+   "began": 1792022390451,
+   "milliseconds": 2847,
+   "moved": {
+    "36": [
+     1,
+     1,
+     0
+    ],
+    "46": [
+     1,
+     3,
+     274
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 4,
+   "slug": "reach-safari-1",
+   "chapter": "Without Arbor: asked at one moment per round",
+   "text": "clicks safari's title bar, or its Dock icon if that is covered",
+   "act": "switch",
+   "judged": false,
+   "began": 1792022397376,
+   "milliseconds": 1966,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 5,
+   "slug": "safari-1-in",
+   "chapter": "Without Arbor: asked at one moment per round",
+   "text": "presses ⌃⌘F in safari",
+   "act": "macos-own",
+   "judged": false,
+   "began": 1792022399779,
+   "milliseconds": 3406,
+   "moved": {
+    "36": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 6,
+   "slug": "safari-1-never-out",
+   "chapter": "Without Arbor: asked at one moment per round",
+   "text": "presses ⌃⌘F again; the window is asked for its slot: never",
+   "act": "macos-own",
+   "judged": true,
+   "began": 1792022404698,
+   "milliseconds": 5070,
+   "moved": {
+    "36": [
+     2,
+     3,
+     4427
+    ]
+   },
+   "findings": [
+    {
+     "rule": "3",
+     "level": "FAIL",
+     "window": "safari (w36)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 0,0 1600×900 · +459 ms off the screen · +1112 ms 138,31 1324×791 · +5511 ms 138,31 620×640 · +5539 ms 800,60 620×640"
+    },
+    {
+     "rule": "3",
+     "level": "ODD",
+     "window": "safari (w36)",
+     "what": "was still moving 469 ms after everything had been quiet for a second",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 7,
+   "slug": "reach-safari-2",
+   "chapter": "Without Arbor: asked at one moment per round",
+   "text": "clicks safari's title bar, or its Dock icon if that is covered",
+   "act": "switch",
+   "judged": false,
+   "began": 1792022410268,
+   "milliseconds": 1684,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 8,
+   "slug": "safari-2-in",
+   "chapter": "Without Arbor: asked at one moment per round",
+   "text": "presses ⌃⌘F in safari",
+   "act": "macos-own",
+   "judged": false,
+   "began": 1792022412191,
+   "milliseconds": 3125,
+   "moved": {
+    "36": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 9,
+   "slug": "safari-2-now-out",
+   "chapter": "Without Arbor: asked at one moment per round",
+   "text": "presses ⌃⌘F again; the window is asked for its slot: now",
+   "act": "macos-own",
+   "judged": true,
+   "began": 1792022416664,
+   "milliseconds": 4968,
+   "moved": {
+    "36": [
+     2,
+     2,
+     4580
+    ]
+   },
+   "findings": [
+    {
+     "rule": "3",
+     "level": "FAIL",
+     "window": "safari (w36)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 0,0 1600×900 · +298 ms off the screen · +863 ms 138,31 1324×791 · +5443 ms 800,60 620×640"
+    },
+    {
+     "rule": "3",
+     "level": "ODD",
+     "window": "safari (w36)",
+     "what": "was still moving 475 ms after everything had been quiet for a second",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 10,
+   "slug": "reach-safari-3",
+   "chapter": "Without Arbor: asked at one moment per round",
+   "text": "clicks safari's title bar, or its Dock icon if that is covered",
+   "act": "switch",
+   "judged": false,
+   "began": 1792022422159,
+   "milliseconds": 1892,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 11,
+   "slug": "safari-3-in",
+   "chapter": "Without Arbor: asked at one moment per round",
+   "text": "presses ⌃⌘F in safari",
+   "act": "macos-own",
+   "judged": false,
+   "began": 1792022424322,
+   "milliseconds": 3134,
+   "moved": {
+    "36": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 12,
+   "slug": "safari-3-scaffold-out",
+   "chapter": "Without Arbor: asked at one moment per round",
+   "text": "presses ⌃⌘F again; the window is asked for its slot: scaffold",
+   "act": "macos-own",
+   "judged": true,
+   "began": 1792022428892,
+   "milliseconds": 5027,
+   "moved": {
+    "36": [
+     2,
+     2,
+     4347
+    ]
+   },
+   "findings": [
+    {
+     "rule": "3",
+     "level": "FAIL",
+     "window": "safari (w36)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 0,0 1600×900 · +319 ms off the screen · +1047 ms 138,31 1324×791 · +5394 ms 800,60 620×640"
+    },
+    {
+     "rule": "3",
+     "level": "ODD",
+     "window": "safari (w36)",
+     "what": "was still moving 367 ms after everything had been quiet for a second",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 13,
+   "slug": "reach-safari-4",
+   "chapter": "Without Arbor: asked at one moment per round",
+   "text": "clicks safari's title bar, or its Dock icon if that is covered",
+   "act": "switch",
+   "judged": false,
+   "began": 1792022434294,
+   "milliseconds": 1886,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 14,
+   "slug": "safari-4-in",
+   "chapter": "Without Arbor: asked at one moment per round",
+   "text": "presses ⌃⌘F in safari",
+   "act": "macos-own",
+   "judged": false,
+   "began": 1792022436402,
+   "milliseconds": 3184,
+   "moved": {
+    "36": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 15,
+   "slug": "safari-4-left-out",
+   "chapter": "Without Arbor: asked at one moment per round",
+   "text": "presses ⌃⌘F again; the window is asked for its slot: left",
+   "act": "macos-own",
+   "judged": true,
+   "began": 1792022441082,
+   "milliseconds": 5004,
+   "moved": {
+    "36": [
+     2,
+     2,
+     4265
+    ]
+   },
+   "findings": [
+    {
+     "rule": "3",
+     "level": "FAIL",
+     "window": "safari (w36)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 0,0 1600×900 · +372 ms off the screen · +1180 ms 138,31 1324×791 · +5445 ms 800,60 620×640"
+    },
+    {
+     "rule": "3",
+     "level": "ODD",
+     "window": "safari (w36)",
+     "what": "was still moving 441 ms after everything had been quiet for a second",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 16,
+   "slug": "reach-safari-5",
+   "chapter": "Without Arbor: asked at one moment per round",
+   "text": "clicks safari's title bar, or its Dock icon if that is covered",
+   "act": "switch",
+   "judged": false,
+   "began": 1792022446532,
+   "milliseconds": 1738,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 17,
+   "slug": "safari-5-in",
+   "chapter": "Without Arbor: asked at one moment per round",
+   "text": "presses ⌃⌘F in safari",
+   "act": "macos-own",
+   "judged": false,
+   "began": 1792022448490,
+   "milliseconds": 3136,
+   "moved": {
+    "36": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 18,
+   "slug": "safari-5-landed-out",
+   "chapter": "Without Arbor: asked at one moment per round",
+   "text": "presses ⌃⌘F again; the window is asked for its slot: landed",
+   "act": "macos-own",
+   "judged": true,
+   "began": 1792022452876,
+   "milliseconds": 5054,
+   "moved": {
+    "36": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 19,
+   "slug": "reach-safari-6",
+   "chapter": "Without Arbor: asked at one moment per round",
+   "text": "clicks safari's title bar, or its Dock icon if that is covered",
+   "act": "switch",
+   "judged": false,
+   "began": 1792022458309,
+   "milliseconds": 1722,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 20,
+   "slug": "safari-6-in",
+   "chapter": "Without Arbor: asked at one moment per round",
+   "text": "presses ⌃⌘F in safari",
+   "act": "macos-own",
+   "judged": false,
+   "began": 1792022460265,
+   "milliseconds": 3218,
+   "moved": {
+    "36": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 21,
+   "slug": "safari-6-never-out",
+   "chapter": "Without Arbor: asked at one moment per round",
+   "text": "presses ⌃⌘F again; the window is asked for its slot: never",
+   "act": "macos-own",
+   "judged": true,
+   "began": 1792022464928,
+   "milliseconds": 4979,
+   "moved": {
+    "36": [
+     1,
+     1,
+     0
+    ],
+    "46": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "3",
+     "level": "ODD",
+     "window": "textedit (w46)",
+     "what": "was still moving 509 ms after everything had been quiet for a second",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 22,
+   "slug": "reach-textedit-7",
+   "chapter": "Without Arbor: asked at one moment per round",
+   "text": "clicks textedit's title bar, or its Dock icon if that is covered",
+   "act": "switch",
+   "judged": false,
+   "began": 1792022470452,
+   "milliseconds": 2007,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 23,
+   "slug": "textedit-7-in",
+   "chapter": "Without Arbor: asked at one moment per round",
+   "text": "presses ⌃⌘F in textedit",
+   "act": "macos-own",
+   "judged": false,
+   "began": 1792022472742,
+   "milliseconds": 3137,
+   "moved": {
+    "46": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 24,
+   "slug": "textedit-7-never-out",
+   "chapter": "Without Arbor: asked at one moment per round",
+   "text": "presses ⌃⌘F again; the window is asked for its slot: never",
+   "act": "macos-own",
+   "judged": true,
+   "began": 1792022477257,
+   "milliseconds": 4925,
+   "moved": {
+    "46": [
+     2,
+     2,
+     4532
+    ]
+   },
+   "findings": [
+    {
+     "rule": "3",
+     "level": "FAIL",
+     "window": "textedit (w46)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 0,0 1600×900 · +165 ms off the screen · +713 ms 165,65 656×422 · +5245 ms 800,60 620×640"
+    },
+    {
+     "rule": "3",
+     "level": "ODD",
+     "window": "textedit (w46)",
+     "what": "was still moving 320 ms after everything had been quiet for a second",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 25,
+   "slug": "reach-textedit-8",
+   "chapter": "Without Arbor: asked at one moment per round",
+   "text": "clicks textedit's title bar, or its Dock icon if that is covered",
+   "act": "switch",
+   "judged": false,
+   "began": 1792022482515,
+   "milliseconds": 1788,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 26,
+   "slug": "textedit-8-in",
+   "chapter": "Without Arbor: asked at one moment per round",
+   "text": "presses ⌃⌘F in textedit",
+   "act": "macos-own",
+   "judged": false,
+   "began": 1792022484507,
+   "milliseconds": 3153,
+   "moved": {
+    "46": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 27,
+   "slug": "textedit-8-now-out",
+   "chapter": "Without Arbor: asked at one moment per round",
+   "text": "presses ⌃⌘F again; the window is asked for its slot: now",
+   "act": "macos-own",
+   "judged": true,
+   "began": 1792022489325,
+   "milliseconds": 5090,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 28,
+   "slug": "reach-textedit-9",
+   "chapter": "Without Arbor: asked at one moment per round",
+   "text": "clicks textedit's title bar, or its Dock icon if that is covered",
+   "act": "switch",
+   "judged": false,
+   "began": 1792022494839,
+   "milliseconds": 3148,
+   "moved": {
+    "46": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 29,
+   "slug": "textedit-9-in",
+   "chapter": "Without Arbor: asked at one moment per round",
+   "text": "presses ⌃⌘F in textedit",
+   "act": "macos-own",
+   "judged": false,
+   "began": 1792022498245,
+   "milliseconds": 3072,
+   "moved": {
+    "46": [
+     1,
+     1,
+     0
+    ],
+    "265": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 30,
+   "slug": "textedit-9-scaffold-out",
+   "chapter": "Without Arbor: asked at one moment per round",
+   "text": "presses ⌃⌘F again; the window is asked for its slot: scaffold",
+   "act": "macos-own",
+   "judged": true,
+   "began": 1792022502534,
+   "milliseconds": 5105,
+   "moved": {
+    "46": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 31,
+   "slug": "reach-textedit-10",
+   "chapter": "Without Arbor: asked at one moment per round",
+   "text": "clicks textedit's title bar, or its Dock icon if that is covered",
+   "act": "switch",
+   "judged": false,
+   "began": 1792022507971,
+   "milliseconds": 1637,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 32,
+   "slug": "textedit-10-in",
+   "chapter": "Without Arbor: asked at one moment per round",
+   "text": "presses ⌃⌘F in textedit",
+   "act": "macos-own",
+   "judged": false,
+   "began": 1792022509889,
+   "milliseconds": 3185,
+   "moved": {
+    "46": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 33,
+   "slug": "textedit-10-left-out",
+   "chapter": "Without Arbor: asked at one moment per round",
+   "text": "presses ⌃⌘F again; the window is asked for its slot: left",
+   "act": "macos-own",
+   "judged": true,
+   "began": 1792022514383,
+   "milliseconds": 5175,
+   "moved": {
+    "46": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 34,
+   "slug": "reach-textedit-11",
+   "chapter": "Without Arbor: asked at one moment per round",
+   "text": "clicks textedit's title bar, or its Dock icon if that is covered",
+   "act": "switch",
+   "judged": false,
+   "began": 1792022520108,
+   "milliseconds": 1579,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 35,
+   "slug": "textedit-11-in",
+   "chapter": "Without Arbor: asked at one moment per round",
+   "text": "presses ⌃⌘F in textedit",
+   "act": "macos-own",
+   "judged": false,
+   "began": 1792022521871,
+   "milliseconds": 3015,
+   "moved": {
+    "46": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 36,
+   "slug": "textedit-11-landed-out",
+   "chapter": "Without Arbor: asked at one moment per round",
+   "text": "presses ⌃⌘F again; the window is asked for its slot: landed",
+   "act": "macos-own",
+   "judged": true,
+   "began": 1792022526194,
+   "milliseconds": 5088,
+   "moved": {
+    "46": [
+     1,
+     2,
+     44
+    ]
+   },
+   "findings": [
+    {
+     "rule": "3",
+     "level": "FAIL",
+     "window": "textedit (w46)",
+     "what": "went 436 points out of its way before it ended up",
+     "trace": "+0 ms 0,0 1600×900 · +305 ms off the screen · +831 ms 165,65 656×422 · +875 ms 800,60 620×640"
+    }
+   ]
+  },
+  {
+   "number": 37,
+   "slug": "reach-textedit-12",
+   "chapter": "Without Arbor: asked at one moment per round",
+   "text": "clicks textedit's title bar, or its Dock icon if that is covered",
+   "act": "switch",
+   "judged": false,
+   "began": 1792022531821,
+   "milliseconds": 1683,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 38,
+   "slug": "textedit-12-in",
+   "chapter": "Without Arbor: asked at one moment per round",
+   "text": "presses ⌃⌘F in textedit",
+   "act": "macos-own",
+   "judged": false,
+   "began": 1792022533685,
+   "milliseconds": 3106,
+   "moved": {
+    "46": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 39,
+   "slug": "textedit-12-never-out",
+   "chapter": "Without Arbor: asked at one moment per round",
+   "text": "presses ⌃⌘F again; the window is asked for its slot: never",
+   "act": "macos-own",
+   "judged": true,
+   "began": 1792022538077,
+   "milliseconds": 5012,
+   "moved": {
+    "46": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 40,
+   "slug": "launch",
+   "chapter": "With Arbor",
+   "text": "starts Arbor",
+   "act": "quit-and-start",
+   "judged": false,
+   "began": 1792022543369,
+   "milliseconds": 2065,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 41,
+   "slug": "reach-finder-100",
+   "chapter": "With Arbor",
+   "text": "clicks finder's title bar, or its Dock icon if that is covered",
+   "act": "switch",
+   "judged": false,
+   "began": 1792022545746,
+   "milliseconds": 1888,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 42,
+   "slug": "dock-finder-left",
+   "chapter": "With Arbor",
+   "text": "presses ⌃⌥⌘←",
+   "act": "dock-key",
+   "judged": false,
+   "began": 1792022548043,
+   "milliseconds": 3137,
+   "moved": {
+    "36": [
+     1,
+     1,
+     0
+    ],
+    "32": [
+     1,
+     1,
+     0
+    ],
+    "46": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "took more than a second longer to agree with the screen: w32 is at 340,120 920×436 but Arbor believes 12,43 782×767",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 43,
+   "slug": "reach-safari-100",
+   "chapter": "With Arbor",
+   "text": "clicks safari's title bar, or its Dock icon if that is covered",
+   "act": "switch",
+   "judged": false,
+   "began": 1792022551591,
+   "milliseconds": 1998,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 44,
+   "slug": "dock-safari-right",
+   "chapter": "With Arbor",
+   "text": "presses ⌃⌥⌘→",
+   "act": "dock-key",
+   "judged": false,
+   "began": 1792022553913,
+   "milliseconds": 1624,
+   "moved": {
+    "36": [
+     1,
+     2,
+     12
+    ],
+    "32": [
+     1,
+     1,
+     0
+    ],
+    "46": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 45,
+   "slug": "reach-textedit-100",
+   "chapter": "With Arbor",
+   "text": "clicks textedit's title bar, or its Dock icon if that is covered",
+   "act": "switch",
+   "judged": false,
+   "began": 1792022555922,
+   "milliseconds": 1935,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 46,
+   "slug": "dock-textedit-right",
+   "chapter": "With Arbor",
+   "text": "presses ⌃⌥⌘→",
+   "act": "dock-key",
+   "judged": false,
+   "began": 1792022558168,
+   "milliseconds": 1549,
+   "moved": {
+    "36": [
+     1,
+     2,
+     32
+    ],
+    "32": [
+     1,
+     1,
+     0
+    ],
+    "46": [
+     1,
+     2,
+     45
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 47,
+   "slug": "reach-safari-101",
+   "chapter": "With Arbor: safari, round 101",
+   "text": "clicks safari's title bar, or its Dock icon if that is covered",
+   "act": "switch",
+   "judged": false,
+   "began": 1792022560246,
+   "milliseconds": 1928,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 48,
+   "slug": "safari-101-in",
+   "chapter": "With Arbor: safari, round 101",
+   "text": "presses ⌃⌘F in safari",
+   "act": "macos-own",
+   "judged": false,
+   "began": 1792022562477,
+   "milliseconds": 3292,
+   "moved": {
+    "36": [
+     1,
+     1,
+     0
+    ],
+    "32": [
+     1,
+     1,
+     0
+    ],
+    "46": [
+     1,
+     2,
+     49
+    ]
+   },
+   "findings": [
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w32 is in view for Arbor but the window server does not show it",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w32 is docked and not parked, but has neither a slot nor a tile",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w36 is docked and not parked, but has neither a slot nor a tile",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w46 is in view for Arbor but the window server does not show it",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w46 is docked and not parked, but has neither a slot nor a tile",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 49,
+   "slug": "safari-101-arbor-out",
+   "chapter": "With Arbor: safari, round 101",
+   "text": "presses ⌃⌘F again",
+   "act": "macos-own",
+   "judged": true,
+   "began": 1792022566091,
+   "milliseconds": 3271,
+   "moved": {
+    "32": [
+     1,
+     1,
+     0
+    ],
+    "36": [
+     1,
+     1,
+     0
+    ],
+    "46": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 50,
+   "slug": "reach-textedit-102",
+   "chapter": "With Arbor: textedit, round 102",
+   "text": "clicks textedit's title bar, or its Dock icon if that is covered",
+   "act": "switch",
+   "judged": false,
+   "began": 1792022569979,
+   "milliseconds": 2050,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 51,
+   "slug": "textedit-102-in",
+   "chapter": "With Arbor: textedit, round 102",
+   "text": "presses ⌃⌘F in textedit",
+   "act": "macos-own",
+   "judged": false,
+   "began": 1792022572441,
+   "milliseconds": 3238,
+   "moved": {
+    "46": [
+     1,
+     1,
+     0
+    ],
+    "32": [
+     1,
+     1,
+     0
+    ],
+    "36": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w32 is in view for Arbor but the window server does not show it",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w32 is docked and not parked, but has neither a slot nor a tile",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w36 is in view for Arbor but the window server does not show it",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w36 is docked and not parked, but has neither a slot nor a tile",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w46 is docked and not parked, but has neither a slot nor a tile",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 52,
+   "slug": "textedit-102-arbor-out",
+   "chapter": "With Arbor: textedit, round 102",
+   "text": "presses ⌃⌘F again",
+   "act": "macos-own",
+   "judged": true,
+   "began": 1792022576083,
+   "milliseconds": 2570,
+   "moved": {
+    "32": [
+     1,
+     1,
+     0
+    ],
+    "36": [
+     1,
+     1,
+     0
+    ],
+    "46": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 53,
+   "slug": "reach-safari-103",
+   "chapter": "With Arbor: safari, round 103",
+   "text": "clicks safari's title bar, or its Dock icon if that is covered",
+   "act": "switch",
+   "judged": false,
+   "began": 1792022578940,
+   "milliseconds": 1786,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 54,
+   "slug": "safari-103-in",
+   "chapter": "With Arbor: safari, round 103",
+   "text": "presses ⌃⌘F in safari",
+   "act": "macos-own",
+   "judged": false,
+   "began": 1792022581041,
+   "milliseconds": 3290,
+   "moved": {
+    "36": [
+     1,
+     1,
+     0
+    ],
+    "32": [
+     1,
+     1,
+     0
+    ],
+    "46": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w32 is in view for Arbor but the window server does not show it",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w32 is docked and not parked, but has neither a slot nor a tile",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w36 is docked and not parked, but has neither a slot nor a tile",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w46 is in view for Arbor but the window server does not show it",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w46 is docked and not parked, but has neither a slot nor a tile",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 55,
+   "slug": "safari-103-arbor-out",
+   "chapter": "With Arbor: safari, round 103",
+   "text": "presses ⌃⌘F again",
+   "act": "macos-own",
+   "judged": true,
+   "began": 1792022584889,
+   "milliseconds": 2801,
+   "moved": {
+    "32": [
+     1,
+     1,
+     0
+    ],
+    "36": [
+     1,
+     1,
+     0
+    ],
+    "46": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 56,
+   "slug": "reach-textedit-104",
+   "chapter": "With Arbor: textedit, round 104",
+   "text": "clicks textedit's title bar, or its Dock icon if that is covered",
+   "act": "switch",
+   "judged": false,
+   "began": 1792022588102,
+   "milliseconds": 1933,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 57,
+   "slug": "textedit-104-in",
+   "chapter": "With Arbor: textedit, round 104",
+   "text": "presses ⌃⌘F in textedit",
+   "act": "macos-own",
+   "judged": false,
+   "began": 1792022590299,
+   "milliseconds": 3266,
+   "moved": {
+    "46": [
+     1,
+     1,
+     0
+    ],
+    "32": [
+     1,
+     1,
+     0
+    ],
+    "36": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w32 is in view for Arbor but the window server does not show it",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w32 is docked and not parked, but has neither a slot nor a tile",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w36 is in view for Arbor but the window server does not show it",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w36 is docked and not parked, but has neither a slot nor a tile",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w46 is docked and not parked, but has neither a slot nor a tile",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 58,
+   "slug": "textedit-104-arbor-out",
+   "chapter": "With Arbor: textedit, round 104",
+   "text": "presses ⌃⌘F again",
+   "act": "macos-own",
+   "judged": true,
+   "began": 1792022593892,
+   "milliseconds": 3257,
+   "moved": {
+    "32": [
+     1,
+     1,
+     0
+    ],
+    "36": [
+     1,
+     1,
+     0
+    ],
+    "46": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 59,
+   "slug": "quit",
+   "chapter": "With Arbor: textedit, round 104",
+   "text": "quits Arbor",
+   "act": "quit-and-start",
+   "judged": false,
+   "began": 1792022597624,
+   "milliseconds": 1341,
+   "moved": {
+    "36": [
+     1,
+     3,
+     73
+    ],
+    "32": [
+     1,
+     2,
+     21
+    ],
+    "46": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  }
+ ]
+}

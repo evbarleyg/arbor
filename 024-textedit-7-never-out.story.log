@@ -1,0 +1,83 @@
+24 textedit-7-never-out: presses ⌃⌘F again; the window is asked for its slot: never
+expected: {'act': 'macos-own', 'settled': 'quiet:0', 'moves': 'any', 'leaves': 'any', 'comes': '46'}
+FAIL rule 3: textedit (w46) moved 2 times
+ODD rule 3: textedit (w46) was still moving 320 ms after everything had been quiet for a second
+
+00:01:17.257 SCREEN -- begin 24 textedit-7-never-out
+00:01:17.257 SCREEN -- text 24 presses ⌃⌘F again; the window is asked for its slot: never
+00:01:17.286 SCREEN (nothing was seen for 60 ms)
+00:01:17.356 SCREEN (nothing was seen for 45 ms)
+00:01:17.410 SCREEN safari (w36) 138,31 1324×791
+00:01:17.410 SCREEN finder (w32) 340,120 920×436
+00:01:17.410 SCREEN front to back: w217 textedit safari finder
+00:01:17.422 SCREEN w231 of TextEdit 0,0 1600×900
+00:01:17.422 SCREEN w217 of TextEdit left the screen
+00:01:17.422 SCREEN textedit (w46) left the screen
+00:01:17.422 SCREEN front to back: w231 safari finder
+00:01:17.446 MACOS pid 13171 AXWindowCreated w231 AXWindow/AXUnknown 0 0 1600 900
+00:01:17.447 MACOS pid 13171 AXResized w46 AXWindow/AXStandardWindow 165 65 656 422
+00:01:17.449 MACOS pid 13171 AXMoved w46 AXWindow/AXStandardWindow 165 65 656 422
+00:01:17.528 SCREEN (nothing was seen for 52 ms)
+00:01:17.644 SCREEN (nothing was seen for 48 ms)
+00:01:17.718 SCREEN (nothing was seen for 66 ms)
+00:01:17.783 SCREEN (nothing was seen for 58 ms)
+00:01:17.970 SCREEN (nothing was seen for 72 ms)
+00:01:17.970 SCREEN textedit (w46) 165,65 656×422
+00:01:17.970 SCREEN w231 of TextEdit left the screen
+00:01:17.970 SCREEN front to back: textedit safari finder
+00:01:17.971 MACOS pid 13171 AXUIElementDestroyed w231
+00:01:18.035 SCREEN (nothing was seen for 59 ms)
+00:01:18.185 SCREEN (nothing was seen for 73 ms)
+00:01:18.244 SCREEN (nothing was seen for 50 ms)
+00:01:18.319 SCREEN (nothing was seen for 69 ms)
+00:01:18.461 SCREEN (nothing was seen for 52 ms)
+00:01:18.563 SCREEN (nothing was seen for 59 ms)
+00:01:18.641 SCREEN (nothing was seen for 55 ms)
+00:01:18.710 SCREEN (nothing was seen for 65 ms)
+00:01:18.764 SCREEN (nothing was seen for 48 ms)
+00:01:18.846 SCREEN (nothing was seen for 80 ms)
+00:01:18.908 SCREEN (nothing was seen for 56 ms)
+00:01:18.965 SCREEN (nothing was seen for 53 ms)
+00:01:19.014 SCREEN (nothing was seen for 45 ms)
+00:01:19.063 SCREEN (nothing was seen for 44 ms)
+00:01:19.112 SCREEN (nothing was seen for 42 ms)
+00:01:19.263 SCREEN (nothing was seen for 45 ms)
+00:01:19.328 SCREEN (nothing was seen for 58 ms)
+00:01:19.402 SCREEN (nothing was seen for 71 ms)
+00:01:19.509 SCREEN (nothing was seen for 53 ms)
+00:01:19.579 SCREEN (nothing was seen for 49 ms)
+00:01:19.694 SCREEN (nothing was seen for 58 ms)
+00:01:19.746 SCREEN (nothing was seen for 45 ms)
+00:01:19.831 SCREEN (nothing was seen for 45 ms)
+00:01:19.986 SCREEN (nothing was seen for 67 ms)
+00:01:20.102 SCREEN (nothing was seen for 60 ms)
+00:01:20.197 SCREEN (nothing was seen for 45 ms)
+00:01:20.269 SCREEN (nothing was seen for 66 ms)
+00:01:20.356 SCREEN (nothing was seen for 45 ms)
+00:01:20.519 SCREEN (nothing was seen for 51 ms)
+00:01:20.635 SCREEN (nothing was seen for 50 ms)
+00:01:20.794 SCREEN (nothing was seen for 57 ms)
+00:01:20.849 SCREEN (nothing was seen for 46 ms)
+00:01:20.913 SCREEN (nothing was seen for 58 ms)
+00:01:20.981 SCREEN (nothing was seen for 45 ms)
+00:01:21.047 SCREEN (nothing was seen for 61 ms)
+00:01:21.106 SCREEN (nothing was seen for 54 ms)
+00:01:21.219 SCREEN (nothing was seen for 66 ms)
+00:01:21.267 SCREEN (nothing was seen for 43 ms)
+00:01:21.316 SCREEN (nothing was seen for 43 ms)
+00:01:21.383 SCREEN (nothing was seen for 60 ms)
+00:01:21.461 SCREEN (nothing was seen for 75 ms)
+00:01:21.669 SCREEN (nothing was seen for 54 ms)
+00:01:21.856 SCREEN (nothing was seen for 52 ms)
+00:01:21.913 SCREEN (nothing was seen for 51 ms)
+00:01:22.161 SCREEN (nothing was seen for 59 ms)
+00:01:22.182 SCREEN -- end 24 act=macos-own settled=quiet:0 moves=any leaves=any comes=46
+00:01:22.219 SCREEN (nothing was seen for 50 ms)
+00:01:22.272 SCREEN (nothing was seen for 47 ms)
+00:01:22.379 SCREEN (nothing was seen for 43 ms)
+00:01:22.446 SCREEN (nothing was seen for 58 ms)
+00:01:22.483 MACOS pid 13171 AXResized w46 AXWindow/AXStandardWindow 800 60 620 640
+00:01:22.483 MACOS pid 13171 AXMoved w46 AXWindow/AXStandardWindow 800 60 620 640
+00:01:22.502 SCREEN (nothing was seen for 50 ms)
+00:01:22.502 SCREEN textedit (w46) 800,60 620×640
+00:01:22.510 SCRIPT == 25 reach-textedit-8

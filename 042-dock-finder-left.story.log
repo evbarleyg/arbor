@@ -1,0 +1,59 @@
+42 dock-finder-left: presses ⌃⌥⌘←
+expected: {'act': 'dock-key', 'settled': 'quiet:0', 'moves': 'any', 'judge': 'no', 'floating': ''}
+ODD rule -: took more than a second longer to agree with the screen: w32 is at 340,120 920×436 but Arbor believes 12,43 782×767
+
+00:02:28.043 SCREEN -- begin 42 dock-finder-left
+00:02:28.043 SCREEN -- text 42 presses ⌃⌥⌘←
+00:02:28.052 SCREEN (nothing was seen for 45 ms)
+00:02:28.114 SCREEN (nothing was seen for 56 ms)
+00:02:28.219 SCREEN (nothing was seen for 48 ms)
+00:02:28.364 SCREEN (nothing was seen for 58 ms)
+00:02:28.435 SCREEN (nothing was seen for 68 ms)
+00:02:28.746 SCREEN (nothing was seen for 60 ms)
+00:02:29.085 SCREEN (nothing was seen for 63 ms)
+00:02:29.115 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 3 stand-ins, 0.46 s
+00:02:29.136 SCREEN (nothing was seen for 46 ms)
+00:02:29.136 SCREEN w373 of Arbor 0,0 1600×900 (level 4)
+00:02:29.192 MACOS pid 380 AXResized w32 AXWindow/AXStandardWindow 12 43 782 701
+00:02:29.192 MACOS pid 380 AXMoved w32 AXWindow/AXStandardWindow 12 43 782 767
+00:02:29.193 MACOS pid 380 AXResized w32 AXWindow/AXStandardWindow 12 43 782 767
+00:02:29.247 SCREEN (nothing was seen for 73 ms)
+00:02:29.247 SCREEN finder (w32) 12,43 782×767
+00:02:29.247 SCREEN safari (w36) 806,31 794×791
+00:02:29.250 MACOS pid 13002 AXResized w36 AXWindow/AXStandardWindow 806 31 794 791
+00:02:29.250 MACOS pid 13002 AXMoved w36 AXWindow/AXStandardWindow 806 31 794 791
+00:02:29.252 MACOS pid 13171 AXMoved w46 AXWindow/AXStandardWindow 806 65 656 422
+00:02:29.297 SCREEN (nothing was seen for 45 ms)
+00:02:29.297 SCREEN textedit (w46) 806,65 656×422
+00:02:29.311 INFO  dock left: docked w32 at the left edge
+00:02:29.314 DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Docked · ⌃⌥↩ frames it
+00:02:29.356 SCREEN (nothing was seen for 54 ms)
+00:02:29.392 SCREEN w377 of Arbor 696,728 208×38 (level 6)
+00:02:29.392 SCREEN w375 of Arbor 3,34 800×785
+00:02:29.392 SCREEN w374 of Arbor 794,43 12×767
+00:02:29.392 SCREEN w376 of Arbor 0,31 1600×791 (level -2147483602)
+00:02:29.392 SCREEN front to back: w375 finder w366 textedit safari w374
+00:02:29.685 SCREEN (nothing was seen for 67 ms)
+00:02:29.752 SCREEN (nothing was seen for 53 ms)
+00:02:29.797 DEBUG stage down
+00:02:29.811 SCREEN (nothing was seen for 53 ms)
+00:02:29.811 SCREEN w373 of Arbor left the screen
+00:02:29.947 SCREEN (nothing was seen for 70 ms)
+00:02:30.015 SCREEN (nothing was seen for 60 ms)
+00:02:30.069 SCREEN (nothing was seen for 44 ms)
+00:02:30.198 SCREEN (nothing was seen for 59 ms)
+00:02:30.265 SCREEN (nothing was seen for 58 ms)
+00:02:30.381 SCREEN (nothing was seen for 61 ms)
+00:02:30.461 SCREEN (nothing was seen for 75 ms)
+00:02:30.530 SCREEN (nothing was seen for 60 ms)
+00:02:30.600 SCREEN (nothing was seen for 61 ms)
+00:02:30.664 SCREEN (nothing was seen for 56 ms)
+00:02:30.735 SCREEN (nothing was seen for 66 ms)
+00:02:31.048 SCREEN (nothing was seen for 53 ms)
+00:02:31.107 SCREEN -- finding 42 - ODD took more than a second longer to agree with the screen: w32 is at 340,120 920×436 but Arbor believes 12,43 782×767
+00:02:31.180 SCREEN -- end 42 act=dock-key settled=quiet:0 moves=any judge=no floating=
+00:02:31.199 SCREEN (nothing was seen for 57 ms)
+00:02:31.199 SCREEN w377 of Arbor left the screen
+00:02:31.323 SCREEN (nothing was seen for 45 ms)
+00:02:31.381 SCREEN (nothing was seen for 52 ms)
+00:02:31.574 SCRIPT == 43 reach-safari-100

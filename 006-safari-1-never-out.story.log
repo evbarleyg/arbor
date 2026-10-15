@@ -1,0 +1,83 @@
+6 safari-1-never-out: presses ⌃⌘F again; the window is asked for its slot: never
+expected: {'act': 'macos-own', 'settled': 'quiet:0', 'moves': 'any', 'leaves': 'any', 'comes': '36'}
+FAIL rule 3: safari (w36) moved 2 times
+ODD rule 3: safari (w36) was still moving 469 ms after everything had been quiet for a second
+
+00:00:04.698 SCREEN -- begin 6 safari-1-never-out
+00:00:04.698 SCREEN -- text 6 presses ⌃⌘F again; the window is asked for its slot: never
+00:00:04.839 SCREEN (nothing was seen for 69 ms)
+00:00:04.940 SCREEN (nothing was seen for 57 ms)
+00:00:05.053 SCREEN (nothing was seen for 51 ms)
+00:00:05.086 MACOS pid 13002 AXWindowCreated w75 AXWindow/AXUnknown 0 0 1600 900
+00:00:05.090 MACOS pid 13002 AXResized w36 AXWindow/AXStandardWindow 138 31 1324 791
+00:00:05.157 SCREEN (nothing was seen for 96 ms)
+00:00:05.157 SCREEN w75 of Safari 0,0 1600×900
+00:00:05.157 SCREEN textedit (w46) 165,65 673×439
+00:00:05.157 SCREEN finder (w32) 340,120 920×436
+00:00:05.157 SCREEN safari (w36) left the screen
+00:00:05.157 SCREEN w58 of Safari left the screen
+00:00:05.157 SCREEN front to back: w75 textedit finder
+00:00:05.257 MACOS pid 13002 AXMoved w36 AXWindow/AXStandardWindow 138 31 1324 791
+00:00:05.258 MACOS pid 13002 AXMoved w75 AXWindow/AXUnknown 0 0 1600 900
+00:00:05.266 SCREEN (nothing was seen for 109 ms)
+00:00:05.364 SCREEN (nothing was seen for 44 ms)
+00:00:05.431 SCREEN (nothing was seen for 61 ms)
+00:00:05.481 SCREEN (nothing was seen for 43 ms)
+00:00:05.534 SCREEN (nothing was seen for 44 ms)
+00:00:05.602 SCREEN (nothing was seen for 58 ms)
+00:00:05.810 SCREEN (nothing was seen for 202 ms)
+00:00:05.810 SCREEN safari (w36) 138,31 1324×791
+00:00:05.810 SCREEN w75 of Safari left the screen
+00:00:05.810 SCREEN front to back: safari textedit finder
+00:00:05.811 MACOS pid 13002 AXUIElementDestroyed w75
+00:00:06.006 SCREEN (nothing was seen for 60 ms)
+00:00:06.070 SCREEN (nothing was seen for 58 ms)
+00:00:06.202 SCREEN (nothing was seen for 86 ms)
+00:00:06.309 SCREEN (nothing was seen for 65 ms)
+00:00:06.386 SCREEN (nothing was seen for 72 ms)
+00:00:06.523 SCREEN (nothing was seen for 90 ms)
+00:00:06.618 SCREEN (nothing was seen for 75 ms)
+00:00:06.690 SCREEN (nothing was seen for 65 ms)
+00:00:06.823 SCREEN (nothing was seen for 53 ms)
+00:00:06.945 SCREEN (nothing was seen for 67 ms)
+00:00:07.047 SCREEN (nothing was seen for 47 ms)
+00:00:07.159 SCREEN (nothing was seen for 58 ms)
+00:00:07.235 SCREEN (nothing was seen for 62 ms)
+00:00:07.428 SCREEN (nothing was seen for 54 ms)
+00:00:07.502 SCREEN (nothing was seen for 72 ms)
+00:00:07.558 SCREEN (nothing was seen for 48 ms)
+00:00:07.628 SCREEN (nothing was seen for 67 ms)
+00:00:07.694 SCREEN (nothing was seen for 59 ms)
+00:00:07.746 SCREEN (nothing was seen for 46 ms)
+00:00:07.820 SCREEN (nothing was seen for 71 ms)
+00:00:07.910 SCREEN (nothing was seen for 49 ms)
+00:00:07.982 SCREEN (nothing was seen for 68 ms)
+00:00:08.036 SCREEN (nothing was seen for 46 ms)
+00:00:08.229 SCREEN (nothing was seen for 74 ms)
+00:00:08.328 SCREEN (nothing was seen for 49 ms)
+00:00:08.387 SCREEN (nothing was seen for 51 ms)
+00:00:08.504 SCREEN (nothing was seen for 68 ms)
+00:00:08.576 SCREEN (nothing was seen for 47 ms)
+00:00:08.688 SCREEN (nothing was seen for 68 ms)
+00:00:08.745 SCREEN (nothing was seen for 50 ms)
+00:00:08.807 SCREEN (nothing was seen for 54 ms)
+00:00:08.864 SCREEN (nothing was seen for 52 ms)
+00:00:08.982 SCREEN (nothing was seen for 73 ms)
+00:00:09.078 SCREEN (nothing was seen for 55 ms)
+00:00:09.170 SCREEN (nothing was seen for 50 ms)
+00:00:09.281 SCREEN (nothing was seen for 59 ms)
+00:00:09.338 SCREEN (nothing was seen for 48 ms)
+00:00:09.389 SCREEN (nothing was seen for 43 ms)
+00:00:09.497 SCREEN (nothing was seen for 60 ms)
+00:00:09.557 SCREEN (nothing was seen for 49 ms)
+00:00:09.617 SCREEN (nothing was seen for 53 ms)
+00:00:09.768 SCREEN -- end 6 act=macos-own settled=quiet:0 moves=any leaves=any comes=36
+00:00:09.831 SCREEN (nothing was seen for 57 ms)
+00:00:10.065 SCREEN (nothing was seen for 60 ms)
+00:00:10.128 SCREEN (nothing was seen for 55 ms)
+00:00:10.202 SCREEN (nothing was seen for 66 ms)
+00:00:10.209 SCREEN safari (w36) 138,31 620×640
+00:00:10.237 SCREEN safari (w36) 800,60 620×640
+00:00:10.240 MACOS pid 13002 AXResized w36 AXWindow/AXStandardWindow 800 60 620 640
+00:00:10.241 MACOS pid 13002 AXMoved w36 AXWindow/AXStandardWindow 800 60 620 640
+00:00:10.263 SCRIPT == 7 reach-safari-2
