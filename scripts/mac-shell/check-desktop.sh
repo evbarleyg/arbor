@@ -100,6 +100,20 @@ summary
 check "both docked windows are back in their slots" eval 'eventually is in_slot "$W1" && eventually is in_slot "$W3"'
 check "and the slots are the ones they had" test "$slots" = "$(arbor_ask slot "$W1") / $(arbor_ask slot "$W3")"
 
+step "Spaces: there and back with one window framed"
+ctl zoom "$W1"
+check "the window fills the screen" eventually fills "$W1"
+check "its neighbour is out of view" eventually out_of_view "$W3"
+space_go right
+check "⌃→ shows the second Space" on_space 2
+space_go left
+check "⌃← shows the first Space again" on_space 1
+check "the window is still framed" eventually fills "$W1"
+check "and stays so" stays fills "$W1"
+check "its neighbour is still out of view" out_of_view "$W3"
+ctl show-all
+check "with everything in view both are in the slots they had" eval 'eventually is in_slot "$W1" && eventually is in_slot "$W3"'
+
 step "Spaces: carry a docked window to the second Space, as a person does: hold its title bar and press ⌃→"
 ctl float "$W2"
 read -r x y <<< "$(titlebar_of "$W3")"

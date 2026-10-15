@@ -35,8 +35,8 @@ keys() {
 }
 is_not_minimized() { ! is minimized "$1"; }
 is_not_tile() { ! is tile "$1"; }
-# Every test window is called "Arbor Test <n>".
-log_has_no_titles() { ! grep -q "Arbor Test" "$ARBOR_HOME/arbor.log"; }
+# Every test window is called "Arbor Test <n>", and one for a while something long about a committee.
+log_has_no_titles() { ! grep -q -e "Arbor Test" -e committee "$ARBOR_HOME/arbor.log"; }
 
 arbor_build
 step "five windows: [1 / 5 | Desktop with 4 | 2 / 3], shortcuts and the menu bar item on"
@@ -271,6 +271,20 @@ else
   shot 15-not-minimised
 fi
 
+step "a title longer than its row"
+ctl show-all
+# shellcheck disable=SC2046
+click $(center_of "$W1")
+tw title "$W4" Minutes of the quarterly meeting of the committee on the naming of committees, third draft, with comments
+key ctrl+opt+g
+check "open" eventually palette
+# LOOK: the title ends in … before the note at the right, and the letters typed are set off in it.
+keys m i n
+shot 17a-long-title
+key escape
+check "closed" eventually no_palette
+tw title "$W4" Arbor Test 4
+
 step "without the palette"
 ctl zoom "$W1"
 ctl find test 4
@@ -281,9 +295,8 @@ ctl reveal "$W3"
 check "reveal focused window 3" eventually is focused "$W3"
 
 step "the menu"
-if item=$(status_item); then
-  # shellcheck disable=SC2086
-  click $item
+# A right click: with something docked the item is a row of buttons, and a plain click in its middle presses one, which moves the view.
+if open_menu; then
   shot 18-menu
   key escape
 fi
@@ -297,3 +310,21 @@ arbor_log
 check "no window title reached the log" log_has_no_titles
 grep "find" "$ARBOR_HOME/arbor.log" | tail -n 12
 arbor_stop 19-after-quit
+
+step "the palette drawn dark"
+# This Arbor's own windows alone: the Mac's appearance stays as it is.
+arbor_start 5 ARBOR_NO_HOTKEYS=0 ARBOR_PANELS_IN_PICTURES=1 ARBOR_APPEARANCE=dark
+ctl dock "$W1" left
+ctl dock "$W2" right
+# shellcheck disable=SC2046
+click $(center_of "$W1")
+key ctrl+opt+g
+check "open" eventually palette
+shot 20-dark-open
+keys t 3
+shot 21-dark-typed
+keys z z
+shot 22-dark-nothing-matches
+key escape
+check "closed" eventually no_palette
+arbor_stop 23-dark-quit

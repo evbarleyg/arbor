@@ -132,4 +132,31 @@ shortcut ctrl+opt+up
 check "the pointer moved last: ⌃⌥↑ zooms the display under it out" eventually both_in_view "$W1" "$W2"
 check "and the display with the keyboard stays as it was" framed "$W3" "$W4"
 panorama 03-the-display-pointed-at
+
+step "Two displays: Go to… a window on the other one, then a shortcut with the mouse untouched"
+# The palette's level is floating (3) plus 2.
+palette_on() { inside "$(overlay_frame 5)" "$(display_frame_of "$1")"; }
+ctl zoom "$W1"
+# shellcheck disable=SC2046
+click $(center_of "$W1")
+check "the keyboard is on the first display, where the pointer is" eventually is focused "$W1"
+check "a window is framed there" eventually framed "$W1" "$W2"
+check "and one on the second display" framed "$W3" "$W4"
+where=$(pointer where)
+shortcut ctrl+opt+g
+check "⌃⌥G opens the palette on the display in use" eventually palette_on 1
+# Every test window is called "Arbor Test <n>".
+key 4
+key return
+check "↩ closes the palette" eventually fails has_overlay 5
+check "the window chosen is framed on its own display, as its neighbour was" eventually framed "$W4" "$W3"
+check "it has not changed displays" is display2 "$W4"
+check "it has the keyboard" eventually is focused "$W4"
+check "the first display stays as it was" framed "$W1" "$W2"
+check "the pointer has not moved" test "$(pointer where)" = "$where"
+sleep 0.3
+shortcut ctrl+opt+up
+check "⌃⌥↑, pressed next, zooms the display gone to" eventually both_in_view "$W3" "$W4"
+check "and not the one under the pointer" framed "$W1" "$W2"
+panorama 03a-gone-to-the-other-display
 arbor_stop 04-after-quit
