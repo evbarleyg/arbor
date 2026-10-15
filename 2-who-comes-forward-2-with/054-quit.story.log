@@ -1,0 +1,17 @@
+54 quit: chooses Quit Arbor in Arbor's menu
+expected: {'act': 'quit-and-start', 'settled': 'quiet:947', 'moves': 'any', 'restores': 'all', 'places': '1', 'everything': '1'}
+FAIL rule -: Arbor's process ended, and nobody asked it to
+
+09:07:20.896 SCREEN -- begin 54 quit
+09:07:20.896 SCREEN -- text 54 chooses Quit Arbor in Arbor's menu
+09:07:21.721 SCREEN w310 of Arbor 1308,31 286×785 (level 101)
+09:07:22.938 SCREEN w310 of Arbor left the screen
+09:07:23.032 INFO  trace day-2 ended: 69 lines, Arbor stopped
+09:07:23.033 INFO  stopped; all windows returned to view
+09:07:23.036 INFO  Arbor quit
+09:07:23.059 SCREEN w230 of Arbor left the screen
+09:07:23.059 SCREEN front to back: safari textedit w198 mail notes terminal finder settings
+09:07:23.060 SCREEN -- arbor gone
+09:07:24.075 SCREEN -- finding 54 -:crash FAIL Arbor's process ended, and nobody asked it to
+09:07:24.093 SCREEN -- end 54 act=quit-and-start settled=quiet:947 moves=any restores=all places=1 everything=1
+09:07:24.256 SCRIPT == 55 input-after

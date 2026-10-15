@@ -1,0 +1,412 @@
+# mac-shell: scripts/mac-shell/who-comes-forward-2-with.sh at 6479784, macOS 26.6.2, 2026-10-15T09:04Z
+
+== the Mac
+macOS 26.6.2 (25G83) on arm64
+built Arbor, the pointer tool and the app bundles in 8s
+1600 900 1600 900
+display: 1 0 0 1600 900 1600 900 1
+macOS's own window management, as it comes:
+com.apple.WindowManager EnableTilingByEdgeDrag: not set
+com.apple.WindowManager EnableTopTilingByEdgeDrag: not set
+com.apple.WindowManager EnableTilingOptionAccelerator: not set
+com.apple.WindowManager EnableTiledWindowMargins: not set
+com.apple.WindowManager EnableStandardClickToShowDesktop: not set
+Reduce Motion: false
+the sampler writes mac-shell/samples.log (pid 15659), the witness mac-shell/witness.log (pid 15668)
+
+== Before Arbor: the apps are open already
+
+-- 1 open-finder: opens finder
+> open -g -b com.apple.finder /tmp/arbor-apps.SEDwGl/scratch/told/…-grove
+pid 14628 lists (id role subrole x y w h flags):
+  173 AXWindow AXStandardWindow 340 120 920 436 main,toolbar
+  0 AXScrollArea - 0 0 1600 900 fixed-size,fixed-position,no-close,no-minimize,no-zoom
+  w173 is finder
+  (quiet:994 ms) setup=1
+
+-- 2 open-safari: opens safari
+> open -g -b com.apple.Safari /tmp/arbor-apps.SEDwGl/scratch/told/…-page.html
+pid 15747 lists (id role subrole x y w h flags):
+  176 AXWindow AXStandardWindow 138 31 1324 791 main,toolbar
+  w176 is safari
+  (quiet:792 ms) setup=1
+
+-- 3 open-textedit: opens textedit
+> open -g -b com.apple.TextEdit /tmp/arbor-apps.SEDwGl/scratch/told/…-oak.txt
+pid 16008 lists (id role subrole x y w h flags):
+  184 AXWindow AXStandardWindow 165 65 673 439 main
+  w184 is textedit
+  (quiet:1235 ms) setup=1
+
+-- 4 open-terminal: opens terminal
+> open -g -b com.apple.Terminal 
+pid 16178 lists (id role subrole x y w h flags):
+  187 AXWindow AXStandardWindow 40 51 877 499 main
+  w187 is terminal
+  (quiet:1221 ms) setup=1
+
+-- 5 open-notes: opens notes
+> open -g -b com.apple.Notes 
+pid 16269 lists (id role subrole x y w h flags):
+  188 AXWindow AXStandardWindow 300 105 1000 660 main,toolbar
+  w188 is notes
+  (quiet:1079 ms) setup=1
+
+-- 6 open-calendar: opens calendar
+> open -g -b com.apple.iCal 
+pid 16327 lists (id role subrole x y w h flags):
+  189 AXWindow AXStandardWindow 404 114 936 599 main,toolbar
+  w189 is calendar
+  (quiet:960 ms) setup=1
+
+-- 7 open-settings: opens settings
+> open -g -b com.apple.systempreferences 
+pid 16383 lists (id role subrole x y w h flags):
+  192 AXWindow AXStandardWindow 437 85 723 625 main,toolbar
+  w192 is settings
+  (quiet:383 ms) setup=1
+
+-- 8 open-preview: opens preview
+> open -g -b com.apple.Preview /tmp/arbor-apps.SEDwGl/scratch/told/…-leaf.png
+pid 16631 lists (id role subrole x y w h flags):
+  194 AXWindow AXStandardWindow 4 35 708 424 main,toolbar
+  w194 is preview
+  (quiet:1092 ms) setup=1
+
+-- 9 open-mail: opens mail
+> open -g -b com.apple.mail 
+pid 16834 lists (id role subrole x y w h flags):
+  196 AXWindow AXStandardWindow 240 72 1120 630 main,close-disabled,sheets=1,toolbar
+  w196 is mail
+  (quiet:782 ms) setup=1
+the cast: finder safari textedit terminal notes calendar settings preview mail
+
+-- 10 tiling-acts: without Arbor: drags a window by its title bar against the menu bar and lets go
+> click 635 854
+> move 635 654
+> drag 740 126 800 0 --no-release
+> release
+  (quiet:1123 ms) setup=1
+
+
+-- 11 tiling-acts-back: drags it away again, a hand's breadth down
+> drag 800 43 800 130 --no-release
+> release
+  (quiet:1078 ms) setup=1
+
+-- 12 tiling-acts: without Arbor: drags a window by its title bar against the menu bar and lets go
+> click 635 854
+> move 635 654
+> drag 800 130 800 0 --no-release
+> release
+  (quiet:1389 ms) setup=1
+
+-- 13 tiling-acts-back: drags it away again, a hand's breadth down
+> drag 672 43 800 130 --no-release
+> release
+  (quiet:1026 ms) setup=1
+macOS's tiling was seen to act: true
+  ✔ macOS's own tiling acts
+
+-- 14 look-around: looks at the screen
+  (quiet:367 ms) setup=1 own=all
+
+-- 15 input-before: a round of input: presses on windows behind and in front, keys, a scroll, a drag inside a window
+> click 1076 43
+> click 102 47
+> click 1076 43
+> click 102 47
+> click 1076 43
+> click 102 47
+> click 1076 43
+> click 102 47
+  8 presses on windows behind; textedit shows no free point of its title bar, so that is all
+  (quiet:752 ms) round=before posted=press:8,up:8
+
+== The walk
+
+-- 16 launch: starts Arbor
+session 1: Arbor pid 20050, ARBOR_LIMIT=none: running: 1 display, 0 docked and 9 floating, 0 out of view
+Arbor dev
+recording traces/2026-10-15-090554-day-1.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+  (quiet:1016 ms) moves=,, everything=1 floating=173,176,184,187,188,189,192,194,196 docked=
+
+-- 17 input-started: a round of input: presses on windows behind and in front, keys, a scroll, a drag inside a window
+> click 1076 43
+> click 102 47
+> click 1076 43
+> click 102 47
+> click 1076 43
+> click 102 47
+> click 1076 43
+> click 102 47
+  8 presses on windows behind; textedit shows no free point of its title bar, so that is all
+  (quiet:741 ms) round=started posted=press:8,up:8 floating=173,176,184,187,188,189,192,194,196 docked=
+
+-- 18 dock-icon-safari: clicks safari's icon in the Dock
+> click 243 854
+> move 243 654
+  (quiet:417 ms) front=176 floating=173,176,184,187,188,189,192,194,196 docked=
+
+-- 19 dock-icon-mail: clicks mail's icon in the Dock
+> click 355 854
+> move 355 654
+  (quiet:443 ms) front=198 floating=173,176,184,187,188,189,192,194,196 docked=
+
+-- 20 dock-icon-preview: clicks preview's icon in the Dock
+> click 1332 854
+> move 1332 654
+  (quiet:386 ms) front=194 floating=173,176,184,187,188,189,192,194,196 docked=
+
+-- 21 quit-preview: presses ⌘Q in preview
+> key cmd+q
+  (quiet:792 ms) moves=,, leaves=194, floating=173,176,184,187,188,189,192,196 docked=
+
+-- 22 reopen-preview: opens preview's document again
+> open -g -b com.apple.Preview /tmp/arbor-apps.SEDwGl/scratch/told/…-leaf.png
+pid 21596 lists (id role subrole x y w h flags):
+  247 AXWindow AXStandardWindow 4 35 708 424 main,toolbar
+  w247 is preview
+  (quiet:731 ms) moves=,, front=247 floating=173,176,184,187,188,189,192,196,247 docked=
+
+-- 23 dock-icon-textedit: clicks textedit's icon in the Dock
+> click 1220 854
+> move 1220 654
+  (quiet:414 ms) front=184 floating=173,176,184,187,188,189,192,196,247 docked=
+
+-- 24 dock-icon-calendar: clicks calendar's icon in the Dock
+> click 635 854
+> move 635 654
+  (quiet:421 ms) front=189 floating=173,176,184,187,188,189,192,196,247 docked=
+
+-- 25 hide-calendar: presses ⌘H
+> key cmd+h
+  (quiet:850 ms) moves=,, leaves=189, floating=173,176,184,187,188,189,192,196,247 docked=
+
+-- 26 unhide-calendar: clicks its icon in the Dock
+> click 635 854
+> move 635 654
+  (quiet:365 ms) moves=,, comes=189 front=189 returns=24 floating=173,176,184,187,188,189,192,196,247 docked=
+
+-- 27 dock-icon-notes: clicks notes's icon in the Dock
+> click 803 854
+> move 803 654
+  (quiet:362 ms) front=188 floating=173,176,184,187,188,189,192,196,247 docked=
+
+-- 28 dock-icon-safari: clicks safari's icon in the Dock
+> click 243 854
+> move 243 654
+  (quiet:388 ms) front=176 floating=173,176,184,187,188,189,192,196,247 docked=
+
+-- 29 quit-safari: presses ⌘Q in safari
+> key cmd+q
+  (quiet:786 ms) moves=,, leaves=176, floating=173,184,187,188,189,192,196,247 docked=
+
+-- 30 reopen-safari: opens safari's document again
+> open -g -b com.apple.Safari /tmp/arbor-apps.SEDwGl/scratch/told/…-page.html
+pid 22475 lists (id role subrole x y w h flags):
+  263 AXWindow AXStandardWindow 138 31 1324 791 main,toolbar
+  w263 is safari
+  (quiet:368 ms) moves=,, front=263 floating=173,184,187,188,189,192,196,247,263 docked=
+
+-- 31 dock-icon-settings: clicks settings's icon in the Dock
+> click 1139 854
+> move 1139 654
+  (quiet:375 ms) front=192 floating=173,184,187,188,189,192,196,247,263 docked=
+
+-- 32 dock-icon-textedit: clicks textedit's icon in the Dock
+> click 1220 854
+> move 1220 654
+  (quiet:462 ms) front=184 floating=173,184,187,188,189,192,196,247,263 docked=
+
+-- 33 quit-textedit: presses ⌘Q in textedit
+> key cmd+q
+  (quiet:784 ms) moves=,, leaves=184, floating=173,187,188,189,192,196,247,263 docked=
+
+-- 34 reopen-textedit: opens textedit's document again
+> open -g -b com.apple.TextEdit /tmp/arbor-apps.SEDwGl/scratch/told/…-oak.txt
+pid 23115 lists (id role subrole x y w h flags):
+  279 AXWindow AXStandardWindow 165 65 673 439 main
+  w279 is textedit
+  (quiet:801 ms) moves=,, front=279 floating=173,187,188,189,192,196,247,263,279 docked=
+
+-- 35 dock-icon-preview: clicks preview's icon in the Dock
+> click 1332 854
+> move 1332 654
+  (quiet:424 ms) front=247 floating=173,187,188,189,192,196,247,263,279 docked=
+
+-- 36 dock-icon-finder: clicks finder's icon in the Dock
+> click 131 854
+> move 131 654
+  (quiet:432 ms) front=173 floating=173,187,188,189,192,196,247,263,279 docked=
+
+-- 37 hide-finder: presses ⌘H
+> key cmd+h
+  (quiet:910 ms) moves=,, leaves=173, floating=173,187,188,189,192,196,247,263,279 docked=
+
+-- 38 unhide-finder: clicks its icon in the Dock
+> click 131 854
+> move 131 654
+  (quiet:364 ms) moves=,, comes=173 front=173 returns=36 floating=173,187,188,189,192,196,247,263,279 docked=
+
+-- 39 dock-icon-terminal: clicks terminal's icon in the Dock
+> click 1276 854
+> move 1276 654
+  (quiet:397 ms) front=187 floating=173,187,188,189,192,196,247,263,279 docked=
+
+-- 40 dock-icon-calendar: clicks calendar's icon in the Dock
+> click 635 854
+> move 635 654
+  (quiet:394 ms) front=189 floating=173,187,188,189,192,196,247,263,279 docked=
+
+-- 41 minimize-calendar: presses ⌘M
+> key cmd+m
+  (quiet:1110 ms) moves=,, leaves=189 floating=173,187,188,189,192,196,247,263,279 docked=
+
+-- 42 restore-calendar: clicks its miniature in the Dock
+> click 1441 854
+> move 1441 654
+  (quiet:973 ms) moves=,, comes=189 front=189 returns=40 floating=173,187,188,189,192,196,247,263,279 docked=
+
+-- 43 dock-icon-safari: clicks safari's icon in the Dock
+> click 243 854
+> move 243 654
+  (quiet:373 ms) front=263 floating=173,187,188,189,192,196,247,263,279 docked=
+
+-- 44 dock-icon-notes: clicks notes's icon in the Dock
+> click 803 854
+> move 803 654
+  (quiet:436 ms) front=188 floating=173,187,188,189,192,196,247,263,279 docked=
+
+-- 45 minimize-notes: presses ⌘M
+> key cmd+m
+  (quiet:1003 ms) moves=,, leaves=188 floating=173,187,188,189,192,196,247,263,279 docked=
+
+-- 46 restore-notes: clicks notes's icon in the Dock, which brings its minimized window back
+> click 775 854
+> move 775 654
+  (quiet:964 ms) moves=,, comes=188 front=188 returns=44 floating=173,187,188,189,192,196,247,263,279 docked=
+
+-- 47 dock-icon-mail: clicks mail's icon in the Dock
+> click 355 854
+> move 355 654
+  (quiet:484 ms) front=198 floating=173,187,188,189,192,196,247,263,279 docked=
+
+-- 48 dock-icon-preview: clicks preview's icon in the Dock
+> click 1332 854
+> move 1332 654
+  (quiet:428 ms) front=247 floating=173,187,188,189,192,196,247,263,279 docked=
+
+-- 49 close-only-preview: presses ⌘W on the only window of preview
+> key cmd+w
+  (quiet:1253 ms) moves=,, leaves=247 floating=173,187,188,189,192,196,263,279 docked=
+
+-- 50 dock-icon-textedit: clicks textedit's icon in the Dock
+> click 1220 854
+> move 1220 654
+  (quiet:358 ms) front=279 floating=173,187,188,189,192,196,263,279 docked=
+
+-- 51 dock-icon-calendar: clicks calendar's icon in the Dock
+> click 635 854
+> move 635 654
+  (quiet:377 ms) front=189 floating=173,187,188,189,192,196,263,279 docked=
+
+-- 52 close-only-calendar: presses ⌘W on the only window of calendar
+> key cmd+w
+  (quiet:964 ms) moves=,, leaves=189 floating=173,187,188,192,196,263,279 docked=
+
+== The end
+recording traces/2026-10-15-090718-day-2.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+
+-- 53 input-last: a round of input: presses on windows behind and in front, keys, a scroll, a drag inside a window
+> click 1076 43
+  1 presses on windows behind; textedit shows no free point of its title bar, so that is all
+  (quiet:422 ms) round=last posted=press:1,up:1 floating=173,187,188,192,196,263,279 docked=
+
+-- 54 quit: chooses Quit Arbor in Arbor's menu
+> click 1358 15 --right
+> key up
+> key return
+  ✔ Arbor ends within five seconds
+  ✘ ARBOR DIED
+  (quiet:947 ms) moves=any restores=all places=1 everything=1
+
+-- 55 input-after: a round of input: presses on windows behind and in front, keys, a scroll, a drag inside a window
+  0 presses on windows behind; textedit shows no free point of its title bar, so that is all
+  (quiet:386 ms) round=after posted=press:0,up:0
+
+-- 56 dock-icon-finder: clicks finder's icon in the Dock
+> click 131 854
+> move 131 654
+  (quiet:471 ms) front=173
+
+-- 57 dock-icon-safari: clicks safari's icon in the Dock
+> click 243 854
+> move 243 654
+  (quiet:370 ms) front=263
+
+-- 58 dock-icon-textedit: clicks textedit's icon in the Dock
+> click 1220 854
+> move 1220 654
+  (quiet:401 ms) front=279
+
+-- 59 dock-icon-terminal: clicks terminal's icon in the Dock
+> click 1276 854
+> move 1276 654
+  (quiet:357 ms) front=187
+
+-- 60 dock-icon-notes: clicks notes's icon in the Dock
+> click 803 854
+> move 803 654
+  (quiet:488 ms) front=188
+
+-- left out: switch_dock calendar: it has no window to come forward
+
+-- 61 dock-icon-settings: clicks settings's icon in the Dock
+> click 1139 854
+> move 1139 654
+  (quiet:396 ms) front=192
+
+-- left out: switch_dock preview: it has no window to come forward
+
+-- 62 dock-icon-mail: clicks mail's icon in the Dock
+> click 355 854
+> move 355 654
+  (quiet:432 ms) front=198
+
+44 acts, 2 left out because they did not apply
+
+== the report (all of it: mac-shell/day-report.md)
+62 steps in 179 s, 46 of them judged, 1 with a rule broken. The sampler: samples 4359 seconds 117.1 hz 37.2 cost-ms 2.17 late 12 longest-gap-ms 1008 whole-samples 6708 whole-seconds 180.2 whole-late 26.
+Input: 57 presses, releases, keys and scrolls reached the apps, half of them within 569 µs, 99 in 100 within 80314 µs, the latest after 80314 µs.
+By kind, listed only (events, half within, 99 in 100 within, µs): down 23, 759, 5380; key 11, 278, 368; up 23, 815, 80314. `forward`: a press on a window of an app that was not in front.
+The round of input `before` (events, half within µs): forward 8, 32829; up 8, 730.
+The round of input `started` (events, half within µs): forward 8, 38988; up 8, 386.
+The round of input `last` (events, half within µs): forward 1, 19873; up 1, 2018.
+The round of input `after` (events, half within µs): .
+Judged: no kind. Not down: fewer than 10 such events in a round without Arbor. Not forward: fewer than 10 such events in a round without Arbor. Not up: fewer than 10 such events in a round without Arbor. Not key: fewer than 10 such events in a round without Arbor. Not dragged: fewer than 10 such events in a round without Arbor. Not scroll: fewer than 10 such events in a round without Arbor.
+
+## Per rule
+
+| Rule | | Steps that checked it | Steps that broke it | Which |
+|---|---|---|---|---|
+| 1 | never fight macOS: where it answers a drag, Arbor stands aside | 0 | 0 |  |
+| 2 | nothing moves that the person did not move | 47 | 0 |  |
+| 3 | no jolts: a window moves once, to where it ends up | 48 | 0 |  |
+| 4 | the window you switch to comes to the front and into view | 33 | 0 |  |
+| 5 | quitting, Float All and pause give windows their own sizes back | 1 | 0 |  |
+| 6 | what a person presses reaches the apps, at once | 33 | 0 |  |
+| L | no window is lost or stuck | 48 | 0 |  |
+| - | what the script itself checked | 48 | 1 | 54 quit |
+
+## Findings
+
+### Rule -: what the script itself checked
+
+- ✘ **54 quit** (chooses Quit Arbor in Arbor's menu): Arbor's process ended, and nobody asked it to [crash]
+
+
+2 passed, 1 failed
+still running when the script had ended, and stopped now:
+  14999 sleep
+exit code 1
