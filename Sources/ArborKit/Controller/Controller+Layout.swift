@@ -163,7 +163,7 @@ extension Controller {
     }
     // All that was foretold has been asked for by now, and this foretells anew.
     let moves = unknown.compactMap { window, slot, _ in
-      windows[window].flatMap { isStillToBePlaced($0, in: slot) ? (window: window, frame: request(for: $0, in: slot)) : nil }
+      windows[window].flatMap { whatPlaceAsksFirst(of: $0, in: slot) }.map { (window: window, frame: $0) }
     }
     if moves.count > 1 { system.moveTogether(moves) }
     // Whatever it answered: a window that is part of the layout is in its slot when the layout has been applied.

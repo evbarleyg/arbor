@@ -74,6 +74,42 @@ import Testing
     for window in floating { #expect(h.frame(window) == plain.frame(window), "\(window)") }
   }
 
+  /// A window of which it is not known whether it takes its slot's size is asked where it stands. If that is also where its answer
+  /// belongs, `place` asks nothing more of it, and a forecast of "stay as you are" would be a call to its app for nothing, which
+  /// nobody claims. Found by the twins, in five walks of two thousand: one that will not shrink, asked before anybody is moved; and
+  /// two that cannot grow, foretold a second time in the middle of `apply`.
+  @Test(arguments: [
+    """
+    launch
+    open 103 Finder pid 1005 at 1209 281 424 271
+    open 107 Xcode pid 1004 at 795 162 2930 1848 min 2930 1848
+    space 107 off
+    via shortcut dock 107 top
+    zoom-node 1
+    space 107 on
+    dock 103 left
+    pause 1440
+    toggle-pause
+    out
+    """,
+    """
+    open 109 Mail pid 1002 at 715 799 781 543 max 308 1965
+    launch
+    open 116 Safari pid 1000 at 198 389 339 325 max 384 1849 title Untitled
+    via shortcut arrange
+    relayout
+    """,
+  ])
+  func aWindowThatHasAnsweredWhereItBelongsIsNotForetold(script: String) {
+    var broken: [InvariantViolation] = []
+    Log.silenced {
+      let world = ChaosRunner()
+      for action in ChaosAction.script(script) { broken += world.step(action).filter { $0.rule == "forecast" } }
+      #expect(world.system.moveLog.contains { $0.together }, "something is foretold, or this says nothing")
+    }
+    #expect(broken.isEmpty, "\(broken)")
+  }
+
   /// While a drop is only tried out (`reflowWhileDragging`), the trial and its layout are lent to `placeFloatingWindows` in place of
   /// the real ones. A forecast begins with the window system reporting what was left of the one before, and whoever heard that
   /// then would lay out, or save, a drop that was never made. So a trial foretells nothing, and what was left waits.

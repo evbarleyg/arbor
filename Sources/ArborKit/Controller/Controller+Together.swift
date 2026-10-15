@@ -28,7 +28,11 @@ extension Controller {
         continue
       }
       // The first frame `apply` asks for.
-      moves.append((window, questionBeforePlacing(current, in: target, on: displayID) ?? request(for: current, in: target)))
+      if let question = questionBeforePlacing(current, in: target, on: displayID) {
+        moves.append((window, question))
+        continue
+      }
+      if let asked = whatPlaceAsksFirst(of: current, in: target) { moves.append((window, asked)) }
     }
     // With `shrinkOutOfView` a window is parked at another size, which `parkingSize` works out and remembers in one
     // go: not for a forecast. Those moves wait on their own.
@@ -40,6 +44,16 @@ extension Controller {
     }
     // One window needs no company.
     return moves.count > 1 ? moves : []
+  }
+
+  /// The first frame `place` asks of a docked window, for whoever foretells it. Nil if it asks nothing: the window is in its slot, or
+  /// has just answered where it stood and that is where the answer belongs ("stay as you are" would be a call to its app for nothing,
+  /// which nobody claims).
+  func whatPlaceAsksFirst(of window: WindowSnapshot, in slot: CGRect) -> CGRect? {
+    guard isStillToBePlaced(window, in: slot) else { return nil }
+    let asked = request(for: window, in: slot)
+    let isThere = justAnswered[window.id] != nil && !parked.contains(window.id) && asked.approximatelyEquals(window.frame, tolerance: 1)
+    return isThere ? nil : asked
   }
 
   /// What `placeFloatingWindows` is about to ask for, walking `plan`.
