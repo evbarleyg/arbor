@@ -2,7 +2,7 @@
 # The films that docs/POLISH.md is scored on: everything of Arbor's that moves, done as a person does it, in one run.
 #
 #   scripts/mac-shell/rehearse.sh scripts/mac-shell/films.sh      on Linux, first, for nothing
-#   scripts/mac-shell/run.sh scripts/mac-shell/films.sh           about ten minutes on a hosted Mac
+#   scripts/mac-shell/run.sh scripts/mac-shell/films.sh           about a quarter of an hour on a hosted Mac
 #   scripts/polish/judge.py score .mac-shell/films-<run id>       anywhere, afterwards
 #
 # What only a Mac can answer: what the display really showed, frame by frame, while Arbor moved things. What the sandbox judges
@@ -107,7 +107,14 @@ moves() {
   scene "${p}rectangle" drag "holds ⌃⌥ and drags a rectangle over the left column"
   drag $((x + 30)) $((y + 60)) $((x2 + w2 - 30)) $((y2 + h2 - 30)) --mods ctrl+opt --duration 0.7 --hold 0.3
   scene_end
-  [ "$how" = shipped ] || played "${p}rectangle" "$view"
+  if [ "$how" = shipped ]; then
+    # The gesture ships off, so the view is still everything, and a view saved now would be the one ⌃⌥1 is pressed in: nothing would move. The keys do ship.
+    press "$W4"
+    key ctrl+opt+return
+    sleep 1.3
+  else
+    played "${p}rectangle" "$view"
+  fi
 
   scene "${p}save-view" panel "presses ⌃⌥⇧1"
   key ctrl+opt+shift+1
@@ -117,7 +124,7 @@ moves() {
   scene "${p}view" camera "presses ⌃⌥1"
   key ctrl+opt+1
   scene_end
-  [ "$how" = shipped ] || played "${p}view" "$view"
+  played "${p}view" "$view"
   home
 
   # shellcheck disable=SC2046
@@ -297,6 +304,16 @@ key escape
 scene_end 1.5
 
 trace_ends
+# Filmed and not scored. Arbor as it ships records nothing; the sessions here do, for whoever looks for a cause. Whether that costs the motion anything
+# is seen by holding these two against `frame` and `show-everything`.
+arrange
+press "$W4"
+scene untraced-frame bare "presses ⌃⌥↩ on a docked window, with no trace being recorded"
+key ctrl+opt+return
+scene_end
+scene untraced-show-everything bare "presses ⌃⌥Space"
+key ctrl+opt+space
+scene_end
 scene quit instant "quits Arbor"
 ctl quit
 scene_end

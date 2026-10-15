@@ -5,7 +5,7 @@ Nobody is asked to look at Arbor and say whether it feels right. A hosted Mac fi
 ruler can settle it measures, and for the rest it lays the frames out on sheets that an agent with eyes goes through, whose
 verdicts (collab/polish/eyes-run-<n>.json) it counts like its own.
 
-  judge.py score <run folder> [--json <file>] [--eyes <file>] [--stills <file>]
+  judge.py score <run folder> [--json <file>] [--eyes <file>] [--stills <file> [--without "<panel>, <panel>"]]
                                         every film in <run folder>/films: the table, the findings with the frames that show
                                         them, the score. Exit code 1 when the instruments fail their own test (the metronome)
   judge.py sheets <run folder> <folder> three sheets per scene: how it begins, the whole, how it ends; of a drag also what happens while the button is down
@@ -17,10 +17,12 @@ verdicts (collab/polish/eyes-run-<n>.json) it counts like its own.
                                         ruler claims, to confirm or refute. REVIEWERS.md, beside this file, is what each reviewer is told
   judge.py eyes <run id> <commit> <verdicts.json>… > eyes-run-<n>.json
                                         the reviewers' files as one, in the form `score --eyes` reads
-  judge.py stills <where the pictures are from> <verdicts.json>… > stills-run-<n>.json
+  judge.py stills <commit> <where the pictures are from> <verdicts.json>… > stills-<n>.json
                                         the same for the reviewers of pictures at rest (REVIEWERS-STILLS.md, stills.py), in the form `score --stills` reads
   judge.py home <run folder>            of every scene with stand-ins: when the window server had each real window at its place, beside when the stand-ins
                                         went and when the display last changed (needs the run's samples.log). It scores nothing: it says where to look
+  judge.py acts <run folder>            of every scene without motion: how long the display took from the first change to the last, how long the window server, in how many steps each
+                                        window went, and for how many frames a window was neither where it had been nor where it belongs (needs samples.log)
   judge.py frame <film folder> <n> <png>    one frame, whole
   judge.py curve <film folder>          time and progress, one line per frame: the easing curve as it was seen
   judge.py --self-test                  films drawn by studio.py, each wrong in one known way: every check must catch its own
@@ -28,10 +30,13 @@ verdicts (collab/polish/eyes-run-<n>.json) it counts like its own.
 Needs numpy and Pillow (and no Mac). The checks' numbers are docs/POLISH.md's: change them there first.
 """
 
+import io
 import json
+import multiprocessing
 import os
 import sys
 import tempfile
+import types
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -75,6 +80,11 @@ def answers(m, allow):
         return Verdict(UNSEEN, "the film does not say when the key went down")
     if m["latency"] is None:
         return Verdict(MISS, "nothing on the display ever changed")
+    film = m["film"]
+    # Of two keys in a row the second is the cause, and what the first set off is still under way: whose change the next frame is nobody can say.
+    earlier = [time for time, what in film.keys if what == "down" and (film.time_of("action") or 0) <= time < m["cause"]]
+    if earlier and ((film.times >= m["cause"] - 50) & (film.times < m["cause"])).any():
+        return Verdict(UNSEEN, "the display was changing already when the key went down")
     limit = 100 + allow["latency"]
     return Verdict(PASS if m["latency"] <= limit else MISS, f"first change after {ms(m['latency'])} (at most {ms(limit)})",
                    [m["episodes"][0][2]])
@@ -579,6 +589,9 @@ def judge(folder, allow=None):
                 verdicts[identifier] = Verdict(UNSEEN, f"the camera ran out of room: the film's last {film.dropped} frames are missing")
             elif not m["episodes"] and verdicts[identifier].status == PASS:
                 verdicts[identifier] = Verdict(UNSEEN, "nothing happens in the film")
+            # A line of words that comes and goes is a change too. Where windows were to move and none was seen to, the key did nothing or the ruler lost them.
+            elif film.kind in SETTLES and not m["motion"].seen and verdicts[identifier].status == PASS:
+                verdicts[identifier] = Verdict(UNSEEN, "no window was seen to move")
     return m, verdicts
 
 
@@ -629,22 +642,29 @@ def leeway(results):
     }
 
 
-def score(folder, eyes_path=None, stills_path=None, out=sys.stdout):
+def judged(task):
+    """One film, for `score`, which measures several at a time: what it needs of the measures, and no frames."""
+    m, verdicts = judge(*task)
+    return {"film": types.SimpleNamespace(kind=m["film"].kind), "rests": rests_of(m)}, verdicts
+
+
+def score(folder, eyes_path=None, stills_path=None, out=sys.stdout, without=()):
     films = os.path.join(folder, "films")
     filmed = sorted(name for name in os.listdir(films) if os.path.isfile(os.path.join(films, name, "film.log")))
     results = {}
     for name in [name for name in filmed if name.startswith("metronome-")]:
         results[name] = judge(os.path.join(films, name))
     allow = leeway(results)
-    for name in [name for name in filmed if not name.startswith("metronome-")]:
-        results[name] = judge(os.path.join(films, name), allow)
+    others = [name for name in filmed if not name.startswith("metronome-")]
+    with multiprocessing.get_context("fork").Pool(os.cpu_count()) as pool:
+        results.update(zip(others, pool.map(judged, [(os.path.join(films, name), allow) for name in others], chunksize=1)))
 
     # The same keys with and without motion, from the same beginning: the session with pictures is the one that has it.
     for name in ("dock-key", "frame", "show-everything"):
         still, moving = results.get("reduced-" + name), results.get("pictures-" + name)
         if not still or not moving:
             continue
-        a, b = rests_of(still[0]), rests_of(moving[0])
+        a, b = still[0]["rests"], moving[0]["rests"]
         if not a or len(a) != len(b):
             still[1]["R2"] = Verdict(MISS if a and b else UNSEEN, f"{len(a)} windows at rest without motion, {len(b)} with")
             continue
@@ -686,7 +706,8 @@ def score(folder, eyes_path=None, stills_path=None, out=sys.stdout):
     # Verdicts are about frames, so about one run's films and no other's.
     if seen_by_eye and str(seen_by_eye.get("run")) not in os.path.basename(os.path.normpath(folder)):
         raise SystemExit(f"judge.py: {eyes_path} is about run {seen_by_eye.get('run')}, not about {folder}")
-    eyes, stills = seen_by_eye.get("scenes", {}), read(stills_path).get("panels", {})
+    pictures = read(stills_path)
+    eyes, stills = seen_by_eye.get("scenes", {}), pictures.get("panels", {})
     def column(everything_on):
         """(cells, table): a cell is (scene or panel, check, title, severity, move, Verdict)."""
         cells, table = [], []
@@ -726,6 +747,8 @@ def score(folder, eyes_path=None, stills_path=None, out=sys.stdout):
                     continue
                 seen = stills.get(panel, {}).get(identifier)
                 verdict = Verdict(seen["status"], seen["said"]) if seen else Verdict(UNSEEN, "no picture has been measured")
+                if panel in without:
+                    verdict = Verdict(UNSEEN, "what draws it has changed since it was pictured")
                 cells.append((panel, identifier, "", severity, 0, verdict))
         return cells, table
 
@@ -771,13 +794,15 @@ def score(folder, eyes_path=None, stills_path=None, out=sys.stdout):
     worst = sum(1 for cell in cells if cell[5].status == MISS and cell[3] == 1)
     print(f"\n## Score: {number:.1f} of 100 ({earned} of {total} points); seen {100 * seen / total:.0f}%; {worst} misses of severity 1", file=out)
     print(f"That is Arbor as it ships, on a Mac as it comes. With everything on (the laboratory's own column, which no gate reads): {lab_number:.1f}.", file=out)
+    if pictures:
+        print(f"The pictures at rest are of {pictures['commit']}: {pictures['from']}." + (f" Left out, because what draws them has changed since: {', '.join(without)}." if without else ""), file=out)
     print(f"The rubric {'PASSES' if not gate and number >= 90 else 'does not pass'}: {len(gate)} cells of severity 1 or 2 in the five moves "
           "miss or are unseen.", file=out)
     if not trusted:
         print("\nTHE INSTRUMENTS FAILED THEIR OWN TEST: the score above is not to be believed.", file=out)
     return {
         "score": round(number, 1), "everything_on": round(lab_number, 1), "earned": earned, "total": total, "seen": round(100 * seen / total, 1), "trusted": trusted,
-        "leeway": allow, "gate": len(gate), "severity1": worst,
+        "leeway": allow, "gate": len(gate), "severity1": worst, "pictures": pictures.get("commit"),
         "cells": [{"where": name, "check": identifier, "severity": severity, "move": move, "status": verdict.status, "said": verdict.said,
                    "frames": [int(frame) for frame in verdict.frames]}
                   for name, identifier, _, severity, move, verdict in cells + [cell for cell in lab_cells if cell[0].startswith("on-")]],
@@ -816,19 +841,74 @@ def home(folder, out=sys.stdout):
             continue
         film = Film(os.path.join(films, name))
         cause = cause_of(film)[0]
-        said = home_of(samples, cause - 20, cause + 4000, set(film.after))
+        # No further than the film goes: what the script does next, to set the next scene, is not this scene's.
+        said = home_of(samples, cause - 20, min(cause + 4000, film.ends), set(film.after))
         if said["up"] is None:
             continue
         # The line of words goes seconds later, by itself.
-        shown = [int(time) for time, place in zip(film.times, film.places) if cause < time <= cause + 2500 and place[2] * place[3] > 40000 * film.scale**2]
+        shown = [int(time) for time, (w, h) in zip(film.times, film.extents) if cause < time <= cause + 2500 and w * h > 40000 * film.scale**2]
         after = {window: time - cause for window, time in sorted(said["moved"].items())}
         late += bool(said["late"])
-        print(f"{name}: stage {said['up'] - cause:+d} to {said['down'] - cause if said['down'] else '?':+}; windows moved last at "
+        down = f"{said['down'] - cause:+d}" if said["down"] else "the film's end, and beyond"
+        print(f"{name}: stage {said['up'] - cause:+d} to {down}; windows moved last at "
               + (", ".join(f"{window} {time:+d}" for window, time in after.items()) or "no time")
               + f"; the display changed last at {shown[-1] - cause if shown else 0:+d}"
               + (f"; AFTER THE STAGE WENT: {', '.join(map(str, said['late']))}" if said["late"] else "")
               + (f"; the sampler saw nothing for up to {said['blind']} ms" if said["blind"] else ""), file=out)
     print(f"{late} scenes in which a window was still being moved when the stand-ins had gone", file=out)
+    return 0
+
+
+def act_of(samples, since, until, tick=1000 / 60):
+    """One act as the window server saw it, from the W lines of ordinary windows: {window: [(time, frame)…]} for those that moved between the two moments, each beginning with where
+    it was before; when the first and the last move were seen; and for how many of the display's frames some window was at a place or size that is neither its old nor its new one."""
+    before, moves = {}, {}
+    for words in samples:
+        if words[1] != "W" or words[4] != "0":
+            continue
+        time, window, frame = int(words[0]), int(words[2]), tuple(float(word) for word in words[5:9])
+        if time < since:
+            before[window] = frame
+        elif time <= until:
+            moves.setdefault(window, [(since, before.get(window))]).append((time, frame))
+    between = []
+    for steps in moves.values():
+        old, new = steps[0][1], steps[-1][1]
+        between += [(time, later) for (time, frame), (later, _) in zip(steps[1:], steps[2:]) if frame not in (old, new)]
+    # Two windows that are nowhere at the same moment are one bad frame, not two.
+    bad, reached = 0.0, 0
+    for start, end in sorted(between):
+        bad += max(end - max(start, reached), 0)
+        reached = max(reached, end)
+    times = [time for steps in moves.values() for time, _ in steps[1:]]
+    return {"moves": moves, "first": min(times, default=None), "last": max(times, default=None), "between": round(bad / tick)}
+
+
+def acts(folder, out=sys.stdout):
+    """Of every scene without motion: the two numbers that say whether "at once" is at once, by the display and by the window server."""
+    with open(os.path.join(folder, "samples.log"), encoding="utf-8") as log:
+        samples = [words for words in map(str.split, log) if len(words) > 8 and words[1] == "W"]
+    films = os.path.join(folder, "films")
+    print("| Scene | Answers | The display: first to last change | in frames | The window server: first to last move | windows moved, steps each | frames with a window neither old nor new |\n|---|---|---|---|---|---|---|", file=out)
+    for name in sorted(os.listdir(films)):
+        if not os.path.isfile(os.path.join(films, name, "film.log")):
+            continue
+        film = Film(os.path.join(films, name))
+        if film.kind not in ("instant", "bare") or name.startswith("metronome-"):
+            continue
+        cause, known = cause_of(film)
+        until = min(cause + 2000, film.ends)
+        # The pointer, a caret and the line of words change little; a window that moves changes much.
+        large = [int(time) for time, (w, h) in zip(film.times, film.extents) if cause <= time <= until and w * h > 10000 * film.scale**2]
+        spell = [large[0]] if large else []
+        for time in large[1:]:
+            if time - spell[-1] > 250:
+                break
+            spell.append(time)
+        said = act_of(samples, cause - 20, until)
+        steps = ", ".join(f"{window}: {len(moved) - 1}" for window, moved in sorted(said["moves"].items()))
+        print(f"| `{name}` | {f'{spell[0] - cause} ms' if spell and known == 'exact' else '?'} | {f'{spell[-1] - spell[0]} ms' if spell else 'nothing changed'} | {len(spell)} | "
+              + (f"{said['last'] - said['first']} ms" if said["moves"] else "nothing moved") + f" | {steps or 'none'} | {said['between']} |", file=out)
     return 0
 
 
@@ -895,13 +975,38 @@ def self_test():
             wrong += [f"{identifier} saw nothing: {verdicts[identifier].said}" for identifier in unseen]
             failures += bool(wrong)
             print(f"{'✘' if wrong else '✔'} {name}: missed {', '.join(missed) or 'nothing'}" + "".join(f"\n    {line}" for line in wrong))
-    print(f"{len(cases) - failures} of {len(cases)} drawn films judged as they should be")
+        # A key that does nothing but bring a line of words: no window moves, and nothing may be earned.
+        studio.shoot(os.path.join(folder, "nothing-but-words"), end=studio.GRID)
+        _, verdicts = judge(os.path.join(folder, "nothing-but-words"))
+        earned = [identifier for identifier, verdict in verdicts.items() if verdict.status == PASS]
+        failures += bool(earned)
+        print(f"{'✘' if earned else '✔'} nothing-but-words: earns {', '.join(earned) or 'nothing'}")
+        # The window server's account beside a drawn film, through the command itself.
+        run = os.path.join(folder, "run")
+        studio.shoot(os.path.join(run, "films", "late"), cards=True)
+        film = Film(os.path.join(run, "films", "late"))
+        cause, window = cause_of(film)[0], sorted(film.after)[0] if film.after else 7
+        with open(os.path.join(run, "samples.log"), "w", encoding="utf-8") as log:
+            log.write(f"{cause + 15} W 50 2 4 0 0 1024 768 Arbor\n{cause + 30} W {window} 1 0 5 5 9 9 Oak\n{cause + 600} G 50\n{cause + 700} W {window} 1 0 6 6 9 9 Oak\n"
+                      f"{film.ends + 50} W {window} 1 0 7 7 9 9 Oak\n")
+        told = io.StringIO()
+        home(run, told)
+        right = (not film.after or "AFTER THE STAGE WENT" in told.getvalue()) and "stage +15 to +600" in told.getvalue()
+        failures += not right
+        print(f"{'✔' if right else '✘'} home: {told.getvalue().splitlines()[0]}")
+    print(f"{len(cases) + 2 - failures} of {len(cases) + 2} drawn films judged as they should be")
     account = [line.split() for line in ("90 W 7 1 0 0 0 9 9 Oak", "110 W 50 2 4 0 0 100 100 Arbor", "120 W 7 1 0 5 5 9 9 Oak", "130 W 8 1 0 5 5 9 9 Elm",
                                          "140 W 51 2 3 0 0 9 9 Arbor", "300 L 45", "600 G 50", "640 W 8 1 0 6 6 9 9 Elm", "5000 W 7 1 0 1 1 9 9 Oak")]
     said = home_of(account, 100, 4000, {7, 8})
     wanted = {"up": 110, "down": 600, "moved": {7: 120, 8: 640}, "late": [8], "blind": 45}
     print(f"{'✔' if said == wanted else '✘'} the window server's account: {said}")
-    return 1 if failures or said != wanted else 0
+    # One window goes at once; another takes its new size at its old place for two frames; a third was moved before the act.
+    account = [line.split() for line in ("50 W 1 9 0 0 0 10 10 Oak", "50 W 2 9 0 0 0 10 10 Elm", "60 W 3 9 0 5 5 10 10 Ash", "120 W 1 9 0 50 0 20 10 Oak", "120 W 2 9 0 0 0 20 10 Elm",
+                                         "153 W 2 9 0 50 50 20 10 Elm", "130 W 7 9 4 0 0 99 99 Arbor")]
+    act = act_of(account, 100, 1000)
+    right = (act["first"], act["last"], act["between"], sorted(act["moves"])) == (120, 153, 2, [1, 2])
+    print(f"{'✔' if right else '✘'} an act in two steps: first {act['first']}, last {act['last']}, {act['between']} frames in between, windows {sorted(act['moves'])}")
+    return 1 if failures or said != wanted or not right else 0
 
 
 def option(arguments, name, default=None):
@@ -922,7 +1027,10 @@ def main(arguments):
         return self_test()
     if command == "score":
         path, eyes, stills = option(arguments, "--json"), option(arguments, "--eyes"), option(arguments, "--stills")
-        summary = score(arguments[0], eyes, stills)
+        without = [panel.strip() for panel in (option(arguments, "--without") or "").split(",") if panel.strip()]
+        if set(without) - set(PANELS):
+            raise SystemExit(f"judge.py: no panels of docs/POLISH.md: {', '.join(sorted(set(without) - set(PANELS)))}")
+        summary = score(arguments[0], eyes, stills, without=without)
         if path:
             with open(path, "w", encoding="utf-8") as file:
                 json.dump(summary, file, indent=1)
@@ -982,7 +1090,7 @@ def main(arguments):
             parts = {"begins": every[:12], "whole": [every[int(place)] for place in np.linspace(0, len(every) - 1, min(12, len(every)))],
                      "ends": [index for index in every if last - 9 <= index <= last + 2]}
             downs, ups = ([time for time, what, _, _ in film.buttons if what == which] for which in ("down", "up"))
-            if film.kind == "drag" and downs and ups:
+            if film.kind in ("drag", "aside") and downs and ups:
                 # What happens while the button is down comes before the cause.
                 held = [index for index, time in enumerate(film.times) if downs[0] - 20 <= time <= ups[-1] + 20]
                 if held:
@@ -1028,19 +1136,25 @@ def main(arguments):
         return 0
     if command == "stills":
         panels, other = {}, []
-        for path in arguments[1:]:
+        for path in arguments[2:]:
             with open(path, encoding="utf-8") as file:
                 said = json.load(file)
             other += said.get("other", []) + said["panels"].pop("other", [])
             for panel, cells in said["panels"].items():
                 if panel not in PANELS:
                     raise SystemExit(f"judge.py: {path} speaks of {panel}, which is no panel of docs/POLISH.md")
-                panels[panel] = {cell: {"status": verdict["status"], "said": verdict["said"], "pictures": verdict.get("pictures", [])}
-                                 for cell, verdict in cells.items() if cell in dict(STILLS) and verdict["status"] in (PASS, MISS)}
-        json.dump({"from": arguments[0], "panels": panels, "other": other}, sys.stdout, indent=1, ensure_ascii=False)
+                for cell, verdict in cells.items():
+                    if cell not in dict(STILLS) or verdict["status"] not in (PASS, MISS):
+                        raise SystemExit(f"judge.py: {path}, {panel}: {cell}: {verdict['status']} is no cell of docs/POLISH.md, or no verdict")
+                    # Of two reviewers the one who found a fault is believed.
+                    if panels.setdefault(panel, {}).get(cell, {}).get("status") != MISS:
+                        panels[panel][cell] = {"status": verdict["status"], "said": verdict["said"], "pictures": verdict.get("pictures", [])}
+        json.dump({"commit": arguments[0], "from": arguments[1], "panels": panels, "other": other}, sys.stdout, indent=1, ensure_ascii=False)
         return 0
     if command == "home":
         return home(arguments[0])
+    if command == "acts":
+        return acts(arguments[0])
     if command == "frame":
         Image.fromarray(Film(arguments[0]).frame(int(arguments[1]))).save(arguments[2])
         return 0

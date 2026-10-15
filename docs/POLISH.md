@@ -9,8 +9,8 @@ regression, found before it lands, like a failing test.
 
 | | |
 |---|---|
-| What Linux proves | that the film script plays (`scripts/mac-shell/rehearse.sh scripts/mac-shell/films.sh`) and that the judge catches what it claims to catch (`scripts/polish/judge.py --self-test`: 41 drawn films, each wrong in one known way or right) |
-| What a Mac must run | `scripts/mac-shell/films.sh`: unattended, on a free hosted runner, one run for everything, under ten minutes. It only records |
+| What Linux proves | that the film script plays (`scripts/mac-shell/rehearse.sh scripts/mac-shell/films.sh`) and that the judge catches what it claims to catch (`scripts/polish/judge.py --self-test`: 43 drawn films, each wrong in one known way or right; `scripts/polish/stills.py --self-test`: 30 drawn pictures) |
+| What a Mac must run | `scripts/mac-shell/films.sh`: unattended, on a free hosted runner, one run for everything, about a quarter of an hour. It only records |
 | What the sandbox judges afterwards | everything: `scripts/polish/judge.py score <run folder>`, then the sheets, by eye |
 
 ## How bad a miss is
@@ -43,8 +43,10 @@ the scenes for tabs, double clicks and continuous zoom are in the sum from the f
   showed it; and, from an event tap at the head of the chain, the moment each key and button went down or up. Screen Recording is the one permission
   it needs, and child processes on the runner have it.
 - **The metronome**: before Arbor is filmed, the camera films a square of its own that moves in a way that is known: once as this page asks
-  (460 ms, Arbor's curve), then wrong in five ways (linear; 900 ms; in two pushes; a 9-pixel hop at the end; a flash of two frames). If the judge does
-  not find exactly those faults in those films, **the run's score is void**. What the good film shows of delay and of waits between frames is the
+  (460 ms, Arbor's curve), then wrong in five ways (linear; 900 ms; in two pushes; a 9-pixel hop at the end; a flash of two frames). If the judge finds
+  anything in the good film, cannot follow it, or does not find in each of the others the fault that was put there, **the run's score is void**. (A motion in two pushes is also too long: what else a
+  wrong film misses is not held against the judge.) One exception, which run 2 needed: a spark whose timer came late and that stayed too long to be a flash is a control that failed, not a judge; the run counts if the judge
+  found the spark and measured how long it stayed. Since then Core Animation times it. What the good film shows of delay and of waits between frames is the
   camera's and the runner's doing, and is allowed to Arbor's films as well.
 - **A film** is a folder of PNGs (the first frame whole, then only the pixels that changed) and `film.log`, in the grammar of the window sampler's log
   (`<ms since 1970> <kind> …`), so that the two merge by time. `camera.swift`'s header has the details.
@@ -110,9 +112,12 @@ After the button comes up, M1 to M13 are asked with that as the cause.
 | S3 | **Text is never clipped** and never touches an edge | the box of the ink (pixels 60 levels from the panel's ground) against the panel's own | ≥ 6 pt at the sides, ≥ 3 pt above and below; with the longest words there are, and at the largest text size | stills, eyes | 1 |
 | S4 | **It can be read**, flat and on glass | contrast of ink to ground (WCAG), the ground being what the display shows behind the ink | ≥ 4.5 : 1 for words one must read to act; ≥ 3 : 1 for secondary ones; nothing under 3 | stills | 2 |
 | S5 | **Light and dark** | S1 to S4 in both; the ground's lightness follows the system's | so | stills | 2 |
-| S6 | **Increase Contrast is honoured** | with it on: contrast of each panel's outline to what is around it; of ink to ground | ≥ 3 : 1; ≥ 7 : 1 | stills | 2 |
-| S7 | **Reduce Transparency is honoured** | with it on, over windows of strong colours: how much a panel's ground varies | flat (deviation ≤ 2 levels) | stills | 3 |
+| S6 | **Increase Contrast is honoured** | with it on: contrast to what is outside of the line at each panel's side (of its ground, where it has no line of its own); of ink to ground | ≥ 3 : 1; ≥ 7 : 1 | stills | 2 |
+| S7 | **Reduce Transparency is honoured** | with it on, over windows of strong colours: how much a panel's ground varies with what lies behind it | ≤ 2 levels, within a stretch of ground and between stretches over different colours | stills | 3 |
 | S8 | **Even gaps** | at rest: the gaps between neighbouring windows and to the room's edges | all equal to `gap` within 1 px | ruler | 3 |
+
+**The ruler's error.** Tried on 1,800 lines of words drawn in known colours, the contrast `stills.py` reads in a line's worst strip is 2% low in the middle and no more than 4% low in 19 lines of 20. A reading
+up to 4% under a mark reaches it.
 
 **Where macOS draws its own control in its own colour, macOS is the measure** (the product owner, 2026-10-15). "Nothing under 3" is written for what Arbor draws as text.
 A disabled control as macOS draws it is no cell: it says "not now", and a brighter one would lie. A placeholder in macOS's own colour is exempt only where something else says
