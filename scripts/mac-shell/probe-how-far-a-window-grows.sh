@@ -1,7 +1,7 @@
 #!/bin/bash
 # How far does macOS let a window grow or go when its size and position are set through Accessibility? ARBOR IS NOT RUNNING.
 #
-#   scripts/mac-shell/run.sh scripts/mac-shell/probe-how-far-a-window-grows.sh          about six minutes
+#   scripts/mac-shell/run.sh scripts/mac-shell/probe-how-far-a-window-grows.sh          about twelve minutes
 #
 # Read off traces of Arbor on one hosted Mac (one display, the Dock at the bottom, test windows only): a size call that makes a window GROW stops where the bottom edge comes to the
 # visible frame's bottom less 1 and the right edge to the display's right edge, judged where the window stands when the call arrives; an edge that is past its line
@@ -15,11 +15,14 @@
 #   E  A, B, D again with the Dock at the left, and A and D with the Dock hidden
 #   G  real apps: TextEdit, Finder, Terminal, Safari; Chrome and a Java app, which draw their own windows' content with toolkits of their own
 #   F  a second, smaller display to the right, to the left and below: growing across the shared edge, a large window on its way to the smaller display and back
+#   H  who moves late? ONE call, the frame read back at once, and where the window is 50, 200 and 600 ms after the call returned, by Accessibility and by the window server; then
+#      the next call. And a journey into a slot and out of it, its calls back to back as Arbor makes them, with the three later looks after the last. Asked of the test window,
+#      of G's apps and of seven more. From G on with Reduce Motion off, as a person's Mac has it (a hosted Mac comes with it on); at the end one app once more with it on
 #
 # What comes back: grow.jsonl, every call and every result as grow.swift printed them (its header says what is in a line); output.txt, a line for each result.
-# It judges nothing: every line is an answer. Exit code 0 unless a tool did not compile.
+# LATE stands in a line wherever a later look differs from the reading at once. It judges nothing: every line is an answer. Exit code 0 unless a tool did not compile.
 source "$(dirname "${BASH_SOURCE[0]}")/lib-apps.sh"
-needs_throwaway_mac "move the Dock to the left and hide it, plug in a virtual display, and open and quit real apps"
+needs_throwaway_mac "move the Dock to the left and hide it, plug in a virtual display, change the setting Reduce Motion, and open and quit real apps"
 
 GROW="$ARBOR_ROOT/.build/mac-shell/grow"
 RESULTS="$ARBOR_OUT/grow.jsonl"
@@ -34,7 +37,7 @@ if ! wait "$GROW_COMPILER"; then
   grep -A 6 "error:" "$ARBOR_OUT/build-grow.log" | head -n 60
   die "scripts/mac-shell/grow.swift did not compile"
 fi
-apps_watchdog 900
+apps_watchdog 1080
 
 # MARK: The steps. Every number is relative to the displays as they are, and comes to the known one on a display of 1024×768 with the Dock's top at 705.
 
@@ -136,6 +139,21 @@ journey F9-back-to-the-larger vl2+12 vt2+12 vr2-vl2-24 vb2-vt2-24 vl1+12 vt1+12 
 journey F10-small-to-the-whole-of-the-second vl1+100 vt1+100 300 200 vl2 vt2 vr2-vl2 vb2-vt2
 STEPS
 
+cat > "$STEPS/late" << 'STEPS'
+round H who moves late
+later on
+one H1-taller-and-wider 100 100 600 400 size 700 500
+one H2-smaller 100 100 700 500 size 600 400
+one H3-moved 100 100 600 400 pos 300 150
+one H4-sent-to-the-corner 100 100 600 400 pos r1-1 b1-1
+one H5-back-from-the-corner r1-1 vb1-28 600 400 pos 100 100
+one H6-taller-than-there-is-room 170 vb1-485 600 348 size 600 650
+orders SPS,PS
+reads off
+journey H7-into-a-slot 170 220 600 348 vl1+12 vt1+12 700 vb1-vt1-24
+journey H8-out-of-the-slot vl1+12 vt1+12 700 vb1-vt1-24 300 200 600 348
+STEPS
+
 # MARK: Asking
 
 # A line for each result, for whoever reads output.txt; all of it is in grow.jsonl.
@@ -153,10 +171,13 @@ for line in sys.stdin:
     elif k == "window":
         print("  window %s of %s (%s, %s) at %s" % (o["window"], o["bundle"], o["role"], o["subrole"], f(o["frame"])))
     elif k == "result":
+        looks = o.get("later", [])
+        late = any(l["ax"] != o["end"] or l["ws"] != o["endServer"] for l in looks)
         print("  %-44s %-4s %-5s %s -> %s: %s %s | short %s | half way %s | moved %d resized %d | %.1f ms%s" % (
             o["name"], o.get("order", ""), {True: "reads", False: "blind"}.get(o.get("reads"), ""), f(o["placed"]), f(o.get("target")), f(o["rest"]),
             "RIGHT" if o.get("right") else "OTHER", f(o.get("short")), "; ".join(f(h) for h in o["halfway"]) or "-", o["moved"], o["resized"], o["ms"],
-            "" if o["end"] == o["rest"] else " | at once it was " + f(o["end"])) + ("" if o["rest"] == o["restServer"] else " | the window server says " + f(o["restServer"])))
+            "" if o["end"] == o["rest"] else " | at once it was " + f(o["end"])) + ("" if o["rest"] == o["restServer"] else " | the window server says " + f(o["restServer"]))
+            + ("" if not looks else " | LATE: at once %s (server %s); " % (f(o["end"]), f(o["endServer"])) + "; ".join("%d ms %s (server %s)" % (l["after"], f(l["ax"]), f(l["ws"])) for l in looks) if late else " | the same 50, 200 and 600 ms later"))
     elif k in ("skipped", "note"):
         print("  %s: %s" % (k, o.get("text")))
 '
@@ -196,7 +217,9 @@ TEST=$ARBOR_WINDOWS_PID
 
 printf 'reads both\n' > "$STEPS/both"
 printf 'reads on\n' > "$STEPS/on"
-ask base "$TEST" "$W1" control both orders on hanging exact
+printf 'later on\n' > "$STEPS/looks"
+printf 'later off\n' > "$STEPS/no-looks"
+ask base "$TEST" "$W1" control both looks orders no-looks on hanging exact late
 shot base
 
 # MARK: E, the Dock
@@ -211,8 +234,12 @@ dock bottom false
 DOCK_IS_OURS=""
 ask base-again "$TEST" "$W1" control
 
-# MARK: G, real apps
+# MARK: G and H, real apps
+# A hosted Mac comes with Reduce Motion on; a person's Mac has it off. The apps are opened after this, and so find it off.
+macos_reduce_motion
+macos_reduce_motion off
 apps_scratch
+QUESTIONS="app late"
 
 # real <label> <bundle id> [file…]
 real() {
@@ -225,7 +252,8 @@ real() {
   fi
   app_dismiss "$APP_PID"
   sleep 1
-  ask "$label" "$APP_PID" "$APP_WINDOW" app
+  # shellcheck disable=SC2086
+  ask "$label" "$APP_PID" "$APP_WINDOW" $QUESTIONS
 }
 
 real textedit com.apple.TextEdit "$APPS_SCRATCH/oak.txt"
@@ -251,7 +279,7 @@ if bounded 60 open -g -b com.google.Chrome --args --no-first-run --no-default-br
     apptool wait-window "$CHROME" 20 | sed 's/^/  /'
     echo "open after $((SECONDS - began)) s"
     sleep 2
-    ask chrome "$CHROME" first app
+    ask chrome "$CHROME" first app late
     app_quit "$CHROME"
   else
     echo "Chrome did not start"
@@ -267,7 +295,7 @@ if java=$(/usr/libexec/java_home 2>/dev/null) && [ -x "$java/bin/jconsole" ]; th
   started "$JAVA_PID"
   sleep 8
   apptool windows "$JAVA_PID" | sed 's/^/  /'
-  ask java "$JAVA_PID" first app
+  ask java "$JAVA_PID" first app late
   kill_started "$JAVA_PID"
 else
   echo "no jconsole"
@@ -291,6 +319,40 @@ ask two-below "$TEST" "$W1" control two
 display_remove
 sleep 3
 ask base-at-the-end "$TEST" "$W1" control
+
+# MARK: H, more apps
+QUESTIONS="late"
+APP_WAIT=12
+for each in "preview com.apple.Preview $APPS_SCRATCH/leaf.png" "script-editor com.apple.ScriptEditor2 $APPS_SCRATCH/hello.applescript" \
+  "activity-monitor com.apple.ActivityMonitor" "console com.apple.Console" "notes com.apple.Notes" "calendar com.apple.iCal"; do
+  # shellcheck disable=SC2086
+  real $each
+  [ -z "$APP_PID" ] || app_quit "$APP_PID"
+done
+step "Firefox"
+if bounded 60 open -g -b org.mozilla.firefox --args "file://$APPS_SCRATCH/page.html"; then
+  tries=0
+  until FIREFOX=$(apptool pid org.mozilla.firefox 2>/dev/null); do
+    [ "$tries" -ge 100 ] && break
+    sleep 0.1
+    tries=$((tries + 1))
+  done
+  if [ -n "${FIREFOX:-}" ]; then
+    apps_remember "$FIREFOX"
+    apptool wait-window "$FIREFOX" 20 | sed 's/^/  /'
+    sleep 2
+    ask firefox "$FIREFOX" first late
+    app_quit "$FIREFOX"
+  else
+    echo "Firefox did not start"
+  fi
+else
+  echo "there is no Firefox, or it does not open"
+fi
+# As the Mac came: does the setting change anything?
+macos_reduce_motion on
+real textedit-reduce-motion com.apple.TextEdit "$APPS_SCRATCH/oak.txt"
+[ -z "$APP_PID" ] || app_quit "$APP_PID"
 
 step "done"
 echo "$(grep -c '"kind":"call"' "$RESULTS") calls, $(grep -c '"kind":"result"' "$RESULTS") results in grow.jsonl"

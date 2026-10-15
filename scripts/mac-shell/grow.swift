@@ -10,6 +10,8 @@
 //   reads on|off|both                               whether a journey reads the frame back after every call (on), only at its end, as Arbor
 //                                                   does (off), or is made twice (both). Default on
 //   orders SPS,PS,SP,sPS                            which orders the journeys to come are made in. Default all four
+//   later on|off                                    on: after a `one`'s call, and after the LAST call of a journey, look again 50, 200 and 600 ms after the call
+//                                                   returned: does an app say yes at once and carry the frame out later? Default off
 //   one <name> <x y w h> size <w> <h>               put the window at x y w h, then make that one call
 //   one <name> <x y w h> pos <x> <y>
 //   journey <name> <x y w h> <x y w h>              from the first frame to the second, once in each order, put back before each:
@@ -21,7 +23,8 @@
 // What is printed: {"kind":"displays"…}, for every call {"kind":"call"…} with what was asked, the frame before, the AXError, how long the call took,
 // the frame read back through Accessibility and the one the window server lists; for every one and journey {"kind":"result"…} with the
 // end frames at once and at rest, how far short of the target, the frames half way, and the AXMoved and AXResized that arrived with
-// their times. The notifications are taken on a thread of their own, so their times are those of their arrival and not of somebody's turn to look.
+// their times; with `later on` also "later": for each look how long after the call's return each of the two readings began (ms), how long Accessibility took to
+// answer, and the two frames. The notifications are taken on a thread of their own, so their times are those of their arrival and not of somebody's turn to look.
 //
 // Compile it as lib.sh compiles pointer.swift: swiftc -O -swift-version 5. Needs Accessibility permission. It moves and resizes the window it is given.
 
@@ -190,6 +193,27 @@ func rest(_ seconds: Double) { RunLoop.main.run(until: Date().addingTimeInterval
 
 var context: [String: Any] = [:]
 var serial = 0
+var later = false
+/// When the last call returned.
+var returned = 0.0
+
+/// Where the window is 50, 200 and 600 ms after the last call returned, by Accessibility and by the window server.
+func looks() -> [[String: Any]] {
+  var all: [[String: Any]] = []
+  for after in [0.05, 0.2, 0.6] {
+    let wait = returned + after - now()
+    if wait > 0 { rest(wait) }
+    let asked = now()
+    let ax = frame(of: window)
+    let answered = now()
+    let server = serverFrame(of: windowID)
+    all.append([
+      "after": Int(after * 1000), "axAt": round3((asked - returned) * 1000), "axTook": round3((answered - asked) * 1000), "ax": list(ax),
+      "wsAt": round3((answered - returned) * 1000), "ws": list(server),
+    ])
+  }
+  return all
+}
 
 enum Call {
   case size(CGSize), position(CGPoint)
@@ -220,6 +244,7 @@ func make(_ call: Call, reads: Bool, quiet: Bool = false) -> CGRect? {
   let start = now()
   let error = AXUIElementSetAttributeValue(window, name as CFString, value)
   let end = now()
+  returned = end
   serial += 1
   var line: [String: Any] = [
     "kind": "call", "label": label, "n": serial, "call": call.word, "asked": call.asked, "error": Int(error.rawValue), "t": round3(start),
@@ -233,6 +258,7 @@ func make(_ call: Call, reads: Bool, quiet: Bool = false) -> CGRect? {
   let after = frame(of: window)
   line["before"] = list(before)
   line["ax"] = list(after)
+  line["axTook"] = round3((now() - end) * 1000)
   line["ws"] = list(serverFrame(of: windowID))
   if !quiet { emit(line) }
   return after
@@ -248,7 +274,7 @@ func place(_ rect: CGRect) -> CGRect? {
   make(.position(roomy()), reads: false, quiet: true)
   make(.size(rect.size), reads: false, quiet: true)
   make(.position(rect.origin), reads: false, quiet: true)
-  rest(0.2)
+  rest(later ? 0.7 : 0.2)
   _ = notes.take()
   return frame(of: window)
 }
@@ -257,7 +283,8 @@ func finish(_ name: String, start: CGRect, placed: CGRect?, target: CGRect?, hal
   let atOnce = frame(of: window)
   let atOnceServer = serverFrame(of: windowID)
   let took = now() - began
-  rest(0.35)
+  let seen = later ? looks() : []
+  if !later { rest(0.35) }
   let atRest = frame(of: window)
   let arrived = notes.take()
   var line: [String: Any] = [
@@ -268,6 +295,7 @@ func finish(_ name: String, start: CGRect, placed: CGRect?, target: CGRect?, hal
     "notes": arrived.map { [round3(($0.0 - began) * 1000), $0.1] as [Any] },
   ]
   for (key, value) in context { line[key] = value }
+  if later { line["later"] = seen }
   if let target {
     line["target"] = list(target)
     line["right"] = same(atRest, target)
@@ -347,6 +375,10 @@ while let raw = readLine() {
   case "reads":
     guard words.count == 2 else { fail("reads on|off|both") }
     readsModes = words[1] == "both" ? [true, false] : [words[1] == "on"]
+
+  case "later":
+    guard words.count == 2 else { fail("later on|off") }
+    later = words[1] == "on"
 
   case "orders":
     guard words.count == 2 else { fail("orders SPS,PS,SP,sPS") }
