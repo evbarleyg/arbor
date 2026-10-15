@@ -54,7 +54,7 @@
           data: nil, width: drawn.width, height: drawn.height, bitsPerComponent: 8, bytesPerRow: 0, space: space,
           bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
       let whole = CGRect(x: 0, y: 0, width: drawn.width, height: drawn.height)
-      let radius = 16 * scale
+      let radius = PanelLook.Corner.panel * scale
       context.addPath(CGPath(roundedRect: whole, cornerWidth: radius, cornerHeight: radius, transform: nil))
       context.clip()
       context.setFillColor(background)

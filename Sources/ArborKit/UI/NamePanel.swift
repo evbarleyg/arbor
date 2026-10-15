@@ -49,15 +49,11 @@ final class NamePanel: OverlayPanel, NSTextFieldDelegate {
     ignoresMouseEvents = false
     collectionBehavior = [.ignoresCycle, .transient, .fullScreenAuxiliary]
 
-    let background = NSVisualEffectView()
-    background.material = .hudWindow
-    background.blendingMode = .behindWindow
-    background.state = .active  // The app is never active, and an inactive effect view turns flat grey.
-    background.maskImage = Self.roundedMask
+    let background = PanelGround()
     contentView = background
 
     titleLabel.font = .systemFont(ofSize: 11, weight: .semibold)
-    titleLabel.textColor = .secondaryLabelColor
+    titleLabel.textColor = PanelInk.second
     field.font = .systemFont(ofSize: 20)
     field.isBordered = false
     field.isBezeled = false
@@ -66,7 +62,9 @@ final class NamePanel: OverlayPanel, NSTextFieldDelegate {
     field.usesSingleLineMode = true
     field.lineBreakMode = .byTruncatingTail
     field.cell?.isScrollable = true
-    field.placeholderString = "Name"
+    field.textColor = PanelInk.main
+    field.placeholderAttributedString = NSAttributedString(
+      string: "Name", attributes: [.font: NSFont.systemFont(ofSize: 20), .foregroundColor: PanelInk.second])
     field.delegate = self
     noteLabel.font = .systemFont(ofSize: 11)
     noteLabel.lineBreakMode = .byTruncatingTail
@@ -74,22 +72,6 @@ final class NamePanel: OverlayPanel, NSTextFieldDelegate {
   }
 
   override var canBecomeKey: Bool { true }
-
-  /// A layer's corner radius does not reach what the window server blurs behind the window; a mask image does. The
-  /// corners keep their size and the middle stretches. (As in `HeadsUpPanel`, F43.)
-  private static let roundedMask: NSImage = {
-    let radius: CGFloat = 14
-    // AppKit may draw an image on any thread, so the closure must not inherit the main actor.
-    let draw: @Sendable (NSRect) -> Bool = { rect in
-      NSColor.black.setFill()
-      NSBezierPath(roundedRect: rect, xRadius: radius, yRadius: radius).fill()
-      return true
-    }
-    let image = NSImage(size: NSSize(width: radius * 2 + 1, height: radius * 2 + 1), flipped: false, drawingHandler: draw)
-    image.capInsets = NSEdgeInsets(top: radius, left: radius, bottom: radius, right: radius)
-    image.resizingMode = .stretch
-    return image
-  }()
 
   func show(_ new: NamePromptModel) {
     let wasHidden = model == nil
@@ -137,7 +119,7 @@ final class NamePanel: OverlayPanel, NSTextFieldDelegate {
     guard let model else { return }
     let answer = model.answer(to: field.stringValue)
     noteLabel.stringValue = problem ?? answer.note
-    noteLabel.textColor = problem != nil || answer.isProblem ? .systemRed : .secondaryLabelColor
+    noteLabel.textColor = problem != nil || answer.isProblem ? .systemRed : PanelInk.second
   }
 
   private func submit() {

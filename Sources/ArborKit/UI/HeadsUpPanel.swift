@@ -6,11 +6,10 @@ import Foundation
 /// A panel that comes, says something and goes: a translucent rounded background that fades in and out, above
 /// everything else Arbor draws. The heads-up line and the panel of shortcuts are both one.
 class PassingPanel: OverlayPanel {
-  static let cornerRadius: CGFloat = 12
   static let fadeIn: TimeInterval = 0.1
   static let fadeOut: TimeInterval = 0.25
 
-  let background = NSVisualEffectView()
+  let background = PanelGround()
   /// Whether the panel is meant to be seen. It stays on screen a little longer, while it fades out.
   private(set) var isWanted = false
   /// How often it has begun to fade out, so that the end of an earlier fade does not cut a later one short.
@@ -24,28 +23,8 @@ class PassingPanel: OverlayPanel {
     // Not `.fullScreenAuxiliary`: another app's full-screen Space is none of Arbor's business. `.transient`, because a
     // `.stationary` panel stays on screen in Mission Control.
     collectionBehavior = [.canJoinAllSpaces, .transient, .ignoresCycle]
-    background.material = .hudWindow
-    background.blendingMode = .behindWindow
-    background.state = .active  // The app is never active, and an inactive effect view turns flat grey.
-    background.maskImage = Self.roundedMask
     contentView = background
   }
-
-  /// A layer's corner radius does not reach what the window server blurs behind the window; a mask image does. The
-  /// corners keep their size and the middle stretches.
-  private static let roundedMask: NSImage = {
-    let radius = cornerRadius
-    // AppKit may draw an image on any thread, so the closure must not inherit the main actor.
-    let draw: @Sendable (NSRect) -> Bool = { rect in
-      NSColor.black.setFill()
-      NSBezierPath(roundedRect: rect, xRadius: radius, yRadius: radius).fill()
-      return true
-    }
-    let image = NSImage(size: NSSize(width: radius * 2 + 1, height: radius * 2 + 1), flipped: false, drawingHandler: draw)
-    image.capInsets = NSEdgeInsets(top: radius, left: radius, bottom: radius, right: radius)
-    image.resizingMode = .stretch
-    return image
-  }()
 
   private var animates: Bool { !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion }
 
@@ -129,6 +108,7 @@ final class HeadsUpPanel: PassingPanel {
     shown = model
     let placement = Self.placement(of: model)
     setFrame(ScreenGeometry.appKit(fromGlobal: placement.frame), display: false)
+    background.radius = PanelLook.Corner.line(height: placement.frame.height)
     line.frame = placement.textFrame
     line.text = placement.text
     invalidateShadow()
@@ -145,11 +125,11 @@ final class HeadsUpPanel: PassingPanel {
     let text = NSMutableAttributedString(
       string: model.text,
       attributes: [
-        .font: NSFont.systemFont(ofSize: 15, weight: .medium), .foregroundColor: NSColor.labelColor,
+        .font: NSFont.systemFont(ofSize: 15, weight: .medium), .foregroundColor: PanelInk.main,
         .paragraphStyle: paragraph,
       ])
     if let hint = model.hint {
-      for (part, colour) in [("  ·\u{A0}\u{A0}", NSColor.tertiaryLabelColor), (hint, NSColor.labelColor)] {
+      for (part, colour) in [("  ·\u{A0}\u{A0}", PanelInk.second), (hint, PanelInk.main)] {
         text.append(
           NSAttributedString(
             string: part,

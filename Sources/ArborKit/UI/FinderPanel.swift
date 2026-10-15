@@ -54,12 +54,7 @@ final class FinderPanel: NSPanel, NSTextFieldDelegate {
     // scripts/mac-shell/shots-finder.sh need to see it.
     sharingType = ProcessInfo.processInfo.environment["ARBOR_PANELS_IN_PICTURES"] == "1" ? .readOnly : .none
 
-    let backdrop = NSVisualEffectView(frame: .zero)
-    backdrop.material = .popover
-    backdrop.blendingMode = .behindWindow
-    // Otherwise it follows the app, which is never active, and looks switched off.
-    backdrop.state = .active
-    backdrop.maskImage = Self.roundedMask
+    let backdrop = PanelGround(material: .popover, drawsOutline: false)
     contentView = backdrop
 
     finderView.frame = backdrop.bounds
@@ -72,8 +67,10 @@ final class FinderPanel: NSPanel, NSTextFieldDelegate {
     field.drawsBackground = false
     field.focusRingType = .none
     field.font = .systemFont(ofSize: 22)
-    field.textColor = .labelColor
-    field.placeholderString = FinderSession.placeholder
+    field.textColor = PanelInk.main
+    field.placeholderAttributedString = NSAttributedString(
+      string: FinderSession.placeholder,
+      attributes: [.font: NSFont.systemFont(ofSize: 22), .foregroundColor: PanelInk.second])
     field.usesSingleLineMode = true
     field.cell?.wraps = false
     field.cell?.isScrollable = true
@@ -83,22 +80,6 @@ final class FinderPanel: NSPanel, NSTextFieldDelegate {
 
   override var canBecomeKey: Bool { true }
   override var canBecomeMain: Bool { false }
-
-  /// A layer's corner radius does not reach what the window server blurs behind the window; a mask image does. The
-  /// corners keep their size and the middle stretches.
-  private static let roundedMask: NSImage = {
-    let radius = FinderView.cornerRadius
-    // AppKit may draw an image on any thread, so the closure must not inherit the main actor.
-    let draw: @Sendable (NSRect) -> Bool = { rect in
-      NSColor.black.setFill()
-      NSBezierPath(roundedRect: rect, xRadius: radius, yRadius: radius).fill()
-      return true
-    }
-    let image = NSImage(size: NSSize(width: radius * 2 + 1, height: radius * 2 + 1), flipped: false, drawingHandler: draw)
-    image.capInsets = NSEdgeInsets(top: radius, left: radius, bottom: radius, right: radius)
-    image.resizingMode = .stretch
-    return image
-  }()
 
   // MARK: Showing and closing
 
@@ -287,7 +268,7 @@ final class FinderPanel: NSPanel, NSTextFieldDelegate {
 /// Everything in the palette but the text field, which is its subview: the line under the field, the rows,
 /// the message and the outline. Coordinates are `FinderLayout`'s: origin top-left, y down.
 private final class FinderView: NSView {
-  static let cornerRadius: CGFloat = 16
+  static let cornerRadius = PanelLook.Corner.panel
 
   /// A click on the row at this place from the top.
   var onClick: ((Int) -> Void)?
@@ -347,29 +328,27 @@ private final class FinderView: NSView {
       NSAttributedString(
         string: message,
         attributes: [
-          .font: NSFont.systemFont(ofSize: 12), .foregroundColor: NSColor.secondaryLabelColor,
+          .font: NSFont.systemFont(ofSize: 12), .foregroundColor: PanelInk.second,
           .paragraphStyle: Self.truncating,
         ]
       ).draw(in: NSRect(x: frame.minX + 12, y: frame.midY - 8, width: max(frame.width - 24, 0), height: 16))
     }
-    // A hairline, so the palette keeps its shape over a window of the same brightness.
-    let outline = NSBezierPath(
-      roundedRect: bounds.insetBy(dx: 0.5, dy: 0.5), xRadius: Self.cornerRadius - 0.5, yRadius: Self.cornerRadius - 0.5)
-    NSColor.separatorColor.setStroke()
-    outline.lineWidth = 1
-    outline.stroke()
+    // Here and not on the ground, so that it is in the pictures the tests take of this view.
+    PanelOutlineView.draw(in: bounds, radius: Self.cornerRadius, increasesContrast: effectiveAppearance.increasesContrast)
   }
 
   private func draw(_ item: FinderSession.Item, in frame: NSRect) {
     let selected = item.isSelected
     if selected {
       NSColor.controlAccentColor.setFill()
-      NSBezierPath(roundedRect: frame, xRadius: 9, yRadius: 9).fill()
+      // Side by side with the panel's own corner.
+      let radius = PanelLook.Corner.inside(Self.cornerRadius, inset: frame.minX)
+      NSBezierPath(roundedRect: frame, xRadius: radius, yRadius: radius).fill()
     }
-    let primary: NSColor = selected ? .white : .labelColor
-    let secondary: NSColor = selected ? NSColor.white.withAlphaComponent(0.8) : .secondaryLabelColor
-    let faint: NSColor = selected ? NSColor.white.withAlphaComponent(0.7) : .tertiaryLabelColor
-    let matched: NSColor = selected ? .white : .controlAccentColor
+    // The title is in the main ink too: it is what tells six windows of one app apart. The app's name is set off by its weight,
+    // and the letters that matched by theirs: the accent colour cannot be read on every ground.
+    let primary: NSColor = selected ? .white : PanelInk.main
+    let faint: NSColor = selected ? NSColor.white.withAlphaComponent(0.85) : PanelInk.second
 
     let iconFrame = NSRect(x: frame.minX + 10, y: frame.midY - 12, width: 24, height: 24)
     if let pid = item.row.pid {
@@ -394,28 +373,25 @@ private final class FinderView: NSView {
     note.draw(in: noteFrame)
 
     let line = styled(
-      item.row.name, item.match.nameRanges, font: .systemFont(ofSize: 13, weight: .semibold), colour: primary,
-      matched: matched)
+      item.row.name, item.match.nameRanges, font: .systemFont(ofSize: 13, weight: .semibold), colour: primary)
     if !item.row.detail.isEmpty {
       line.append(NSAttributedString(string: "   ", attributes: [.font: NSFont.systemFont(ofSize: 13)]))
       line.append(
-        styled(
-          item.row.detail, item.match.detailRanges, font: .systemFont(ofSize: 13), colour: secondary, matched: matched))
+        styled(item.row.detail, item.match.detailRanges, font: .systemFont(ofSize: 13), colour: primary))
     }
     line.addAttribute(.paragraphStyle, value: Self.truncating, range: NSRange(location: 0, length: line.length))
     let left = iconFrame.maxX + 10
     line.draw(in: NSRect(x: left, y: frame.midY - 9, width: max(noteFrame.minX - 12 - left, 0), height: 18))
   }
 
-  /// `text` with the characters in `ranges` (character offsets) set off in bold and in the `matched` colour.
-  private func styled(
-    _ text: String, _ ranges: [Range<Int>], font: NSFont, colour: NSColor, matched: NSColor
-  ) -> NSMutableAttributedString {
+  /// `text` with the characters in `ranges` (character offsets) set off: heavy, and underlined, which shows in the app's name too.
+  private func styled(_ text: String, _ ranges: [Range<Int>], font: NSFont, colour: NSColor) -> NSMutableAttributedString {
     let result = NSMutableAttributedString(string: text, attributes: [.font: font, .foregroundColor: colour])
-    let bold = NSFont.systemFont(ofSize: font.pointSize, weight: .bold)
+    let bold = NSFont.systemFont(ofSize: font.pointSize, weight: .heavy)
     for range in FinderMatch.utf16Ranges(ranges, in: text) where range.upperBound <= result.length {
       result.addAttributes(
-        [.font: bold, .foregroundColor: matched], range: NSRange(location: range.lowerBound, length: range.count))
+        [.font: bold, .underlineStyle: NSUnderlineStyle.single.rawValue],
+        range: NSRange(location: range.lowerBound, length: range.count))
     }
     return result
   }
