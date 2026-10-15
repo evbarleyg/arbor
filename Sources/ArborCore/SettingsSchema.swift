@@ -35,7 +35,7 @@ public enum SettingsSchema {
       "autoDockMinimumWidth", "autoDockMinimumHeight", "makeRoom", "floatingWindowsMakeWay", "soleFloatTakesDesktop", "summonStays",
       "shareRemovedSpace", "arrangeDesktopWeight", "resizeStep", "displays", "ruleTitleWait", "tileRetryMinutes", "shrinkOutOfView",
     ],
-    .dragging: ["previewDrags", "dropDwell", "screenEdgeBand", "windowEdgeFraction", "reflowWhileDragging", "keepPushed"],
+    .dragging: ["dragDocks", "previewDrags", "dropDwell", "screenEdgeBand", "windowEdgeFraction", "reflowWhileDragging", "keepPushed"],
     .tabs: ["tabsEnabled"],
     .gestures: [
       "pointerGestures", "gesturesEnabled", "continuousZoom", "scrollZoom", "frameRectangleModifier", "frameRectangleOnDesktop",
@@ -201,6 +201,12 @@ public enum SettingsSchema {
         "keepPushed", \.keepPushed, "Pushed windows stay aside",
         "With reflowWhileDragging and floatingWindowsMakeWay: floating windows pushed aside stay there until the drag ends.",
         hidden: true),
+      .choice(
+        "dragDocks", \.dragDocks,
+        ["held": "While ⌘ is held", "always": "Always, unless ⌘ is held", "never": "Never"], "A dragged window docks",
+        "A window dragged by its title bar floats where you let go of it. Hold ⌘ while you drag, from the start or on the way, and "
+          + "Arbor shows where it would dock; let go of the window first and it docks there. The shortcuts and the menu dock "
+          + "whatever this says, and a gap between docked windows can always be dragged."),
     ])
 
   private static let tabs = section(

@@ -307,6 +307,7 @@ import Testing
     let (h, _, _, _, slack) = makeHarness(framed: false)
     h.system.mouseDown = true
     h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
+    h.system.heldModifiers = DragDocks.key  // held by whoever means to dock, as Arbor ships
     h.controller.dragBegan(slack, at: CGPoint(x: 700, y: 400))
     h.controller.dragMoved(slack, to: CGPoint(x: 2, y: 400))
     #expect(h.overlays.preview != nil)

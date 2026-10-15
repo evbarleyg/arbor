@@ -354,6 +354,7 @@ import Testing
     let (h, a, b, c) = makeHarness()
     // b closes while c is being dragged: a takes the space at once, under the window in the user's hand.
     h.system.mouseDown = true
+    h.system.heldModifiers = DragDocks.key
     h.controller.dragBegan(c, at: h.frame(c)!.center)
     h.system.close(b)
     #expect(h.frame(a)!.width > 464)

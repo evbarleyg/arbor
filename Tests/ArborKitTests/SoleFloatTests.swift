@@ -636,6 +636,7 @@ private let side = DisplaySnapshot(
   @Test func aLayoutDuringTheDragLeavesTheDraggedWindowAlone() {
     let (h, a, f) = makeHarness()
     let filled = desktop(h)
+    h.system.heldModifiers = DragDocks.key
     h.controller.dragBegan(f, at: CGPoint(x: filled.midX, y: filled.minY + 10))
     h.system.clearFrameLog()
     h.run("resize \(a.rawValue) right 40")

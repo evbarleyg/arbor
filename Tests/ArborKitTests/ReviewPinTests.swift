@@ -381,6 +381,7 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
     let (h, _, _, _) = makeHarness()
     let notes = h.system.open(app: "Notes", pid: 1005, frame: CGRect(x: 600, y: 300, width: 200, height: 200))
     h.system.mouseDown = true
+    h.system.heldModifiers = DragDocks.key
     h.controller.dragBegan(notes, at: CGPoint(x: 700, y: 310))
     h.system.clearFrameLog()
     #expect(h.run("pin \(notes.rawValue)").ok)

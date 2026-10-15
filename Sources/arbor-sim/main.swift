@@ -388,6 +388,11 @@ func simulate(_ words: [String], harness: Harness, printLayout: inout Bool) -> (
     return parts.count == 2 ? CGSize(width: parts[0], height: parts[1]) : nil
   }
   func usage(_ text: String) -> (String, Bool) { ("usage: \(text)", false) }
+  // The window went from under the hand (it closed): the key that `pick-up` pressed does not stay down for the rest of the story.
+  if pickedUpWithCommand, system.dragging == nil {
+    system.holdAlone(.command, false)
+    pickedUpWithCommand = false
+  }
 
   switch words[0] {
   case "open":
@@ -455,13 +460,10 @@ func simulate(_ words: [String], harness: Harness, printLayout: inout Bool) -> (
     let grab = CGPoint(x: start.midX, y: start.minY + 10)
     let end = CGPoint(x: x, y: y)
     let middle = CGPoint(x: (grab.x + end.x) / 2, y: (grab.y + end.y) / 2)
-    system.heldModifiers = extras.contains("cmd") ? .command : []
-    if extras.contains("quick") {
-      system.drag(id, through: [grab, middle, end], holding: 0)
-    } else {
-      system.drag(id, through: [grab, middle, end])
-    }
-    system.heldModifiers = []
+    let pressed = extras.contains("cmd") && system.holdAlone(.command, true)
+    // A story says what is held: nothing, unless it says `cmd`.
+    system.drag(id, through: [grab, middle, end], holding: extras.contains("quick") ? 0 : 0.3, plainly: true)
+    if pressed { system.holdAlone(.command, false) }
     return ("dragged \(id.rawValue) to \(Int(x)),\(Int(y))", true)
   case "mac-tiling":
     guard words.count == 2, words[1] == "on" || words[1] == "off" else { return usage("mac-tiling on|off") }
@@ -561,15 +563,23 @@ func simulate(_ words: [String], harness: Harness, printLayout: inout Bool) -> (
     }
     return (words[1] == "defaults" ? "macOS is set as it comes" : "none of macOS's switches is in Arbor's way", true)
   case "pick-up":
-    guard let id = window(1), let x = number(2), let y = number(3), system.frame(of: id) != nil, system.dragging == nil else {
-      return usage("pick-up <id> <x> <y>")
-    }
-    system.beginDrag(id)
+    guard let id = window(1), let x = number(2), let y = number(3), system.frame(of: id) != nil, system.dragging == nil,
+      words.count == 4 || Array(words.dropFirst(4)) == ["cmd"]
+    else { return usage("pick-up <id> <x> <y> [cmd]") }
+    pickedUpWithCommand = words.count == 5 && system.holdAlone(.command, true)
+    system.beginDrag(id, plainly: true)
     system.moveDrag(to: CGPoint(x: x, y: y), holding: 0.5)
     return ("\(id.rawValue) is in the hand at \(Int(x)),\(Int(y))", true)
+  case "cmd":
+    // ⌘ goes down or comes up by itself, with a window in the hand or not.
+    guard words.count == 2, ["down", "up"].contains(words[1]) else { return usage("cmd down|up") }
+    system.holdAlone(.command, words[1] == "down")
+    return ("⌘ is \(words[1])", true)
   case "let-go":
     guard let id = system.dragging else { return ("error: nothing is in the hand", false) }
     system.endDrag()
+    if pickedUpWithCommand { system.holdAlone(.command, false) }
+    pickedUpWithCommand = false
     return ("let go of \(id.rawValue)", true)
   case "shove":
     let text = "shove <id> <x> <y> [then <x> <y>]"

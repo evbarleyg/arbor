@@ -107,10 +107,8 @@ import Testing
     h.scheduler.advance(by: 2)
     #expect(h.frame(window) == low)
 
-    // Across the border, by a drag with ⌘ held, which drops the window where it is let go.
-    h.system.heldModifiers = [.command]
-    h.system.drag(window, through: [CGPoint(x: 750, y: 810), CGPoint(x: 2400, y: 1000)])
-    h.system.heldModifiers = []
+    // Across the border, by a plain drag, which leaves the window where it is let go.
+    h.system.drag(window, through: [CGPoint(x: 750, y: 810), CGPoint(x: 2400, y: 1000)], plainly: true)
     h.scheduler.advance(by: 2)
     let dropped = h.frame(window)!
     #expect(dropped.maxY > desk.frame.maxY, "the drop leaves it hanging below the display: \(dropped)")

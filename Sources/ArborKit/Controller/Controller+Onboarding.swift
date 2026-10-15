@@ -22,7 +22,7 @@ extension Controller {
       fixSetupFailure: fixSetupFailure,
       menuBarIsOneIcon: menuBarIsSurelyOneIcon, menuBarIcon: menuBarIconInShort, desktops: desktopsBetweenWhatIsDocked,
       isNewcomer: isFirstLaunch && workspaces.values.allSatisfy { $0.tree.allWindows.isEmpty }, isPaused: isPaused && accessibilityGranted,
-      lostShortcuts: facts.inputDisabled ? [] : keysHeld.lost.map(\.label), signature: buildInfo.signature,
+      lostShortcuts: facts.inputDisabled ? [] : keysHeld.lost.map(\.label), signature: buildInfo.signature, dragDocks: dragDocks,
       shortcut: { KeyBindings.label(for: $0, in: bindings) })
   }
 

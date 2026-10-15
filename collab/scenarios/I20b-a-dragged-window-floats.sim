@@ -1,0 +1,53 @@
+# A complaint answered (IDEAS I20 b, I25 a; QUESTIONS Q29, 3; board 0.4): it failed until a dragged window floated.
+# Story: a person moves windows about as on any Mac. Near a screen edge, near another window: nothing of Arbor's shows and nothing
+# docks. Holding ⌘ while dragging asks Arbor. macOS's own tiling is off here, so that the edges would be Arbor's to take.
+mac-tiling off
+open Safari
+open Notes
+pick-up 101 2 400
+expect preview none
+let-go
+expect floating 101
+expect count docked 0
+# With ⌘ held it docks there. (From somewhere else: the simulator's hand takes a title bar by its middle, which now lies in the edge's band,
+# and a hand that takes hold within the band and never leaves it has carried nothing there, ⌘ or not: a ⌘-click that slips docks nothing.)
+drag 101 600 300
+expect floating 101
+drag 101 2 400 cmd
+expect docked 101
+# Beside a docked window, plainly: it floats where it was let go.
+pick-up 102 650 400
+wait 1
+expect preview none
+let-go
+expect floating 102
+expect still 101
+# A docked window dragged plainly comes out, at the size it had before Arbor sized it.
+drag 101 700 300
+expect floating 101
+expect size 101 640x420
+expect count docked 0
+# ⌘ may go down on the way, and the preview comes with it; it comes up again before the window is let go, and nothing docks.
+pick-up 102 2 400
+expect preview none
+cmd down
+expect preview showing
+cmd up
+expect preview none
+let-go
+expect floating 102
+expect count docked 0
+# A click on a docked window's title bar that slips by a few points takes nothing out.
+dock 101 left
+drag 101 366 55
+expect docked 101
+expect still 102
+# One setting brings back the first build's way, another lets no drag dock.
+set dragDocks always
+drag 102 1438 400
+expect docked 102
+set dragDocks never
+drag 102 700 300
+expect floating 102
+drag 102 1438 400 cmd
+expect floating 102

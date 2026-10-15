@@ -630,6 +630,7 @@ private final class Listener {
     // Carried to another of macOS's Spaces: the layout waits for the drop.
     let grab = CGPoint(x: h.frame(b)!.midX, y: h.frame(b)!.minY + 10)
     h.system.mouseDown = true
+    h.system.heldModifiers = DragDocks.key
     h.controller.dragBegan(b, at: grab)
     h.system.setOnActiveSpace(a, false)
     turn(h)

@@ -583,12 +583,18 @@ public struct ChaosGenerator {
       for _ in 0..<random.int(0...3) { gesture.append(.carry(point(in: world, dragging: id))) }
       // A target counts once the pointer has rested on it (F09).
       if random.chance(60) { gesture.append(.advance(random.pick([0.1, 0.2, 0.3])!)) }
-      // ⌘ goes down somewhere on the way.
-      if random.chance(15) { gesture.insert(.commandKey(held: true), at: random.int(0...gesture.count)) }
+      // Most drags only move a window. In some of them ⌘ goes down somewhere on the way, and now and then it comes up again
+      // before the window is let go.
+      let plainly = random.chance(60)
+      if random.chance(plainly ? 30 : 15) {
+        let down = random.int(0...gesture.count)
+        gesture.insert(.commandKey(held: true), at: down)
+        if random.chance(25) { gesture.insert(.commandKey(held: false), at: random.int((down + 1)...gesture.count)) }
+      }
       gesture.append(.release)
-      if gesture.contains(.commandKey(held: true)) { gesture.append(.commandKey(held: false)) }
+      if gesture.contains(.commandKey(held: true)), !gesture.contains(.commandKey(held: false)) { gesture.append(.commandKey(held: false)) }
       planned.insert(contentsOf: gesture, at: 0)
-      return .grab(id)
+      return plainly ? .grabPlainly(id) : .grab(id)
     case .carry: return .carry(point(in: world, dragging: system.dragging))
     case .release: return .release
     case .edge:
@@ -988,7 +994,9 @@ public struct ChaosGenerator {
     case 12, 13:
       // How a drag behaves (F09).
       let dwell = number([0, 0.1, 0.15, 0.3], [-1, 2, 50, 1e300], &random)
-      return "{\"reflowWhileDragging\":\(random.chance(70)),\"keepPushed\":\(random.chance(50)),\"dropDwell\":\(dwell),\"previewDrags\":\(random.chance(70))}"
+      let docks = random.pick(weighted: [(5, "held"), (3, "always"), (1, "never"), (1, "Always")])!
+      return "{\"reflowWhileDragging\":\(random.chance(70)),\"keepPushed\":\(random.chance(50)),\"dropDwell\":\(dwell),\"previewDrags\":\(random.chance(70)),"
+        + "\"dragDocks\":\"\(docks)\"}"
     case 14:
       // What a dropped or leaving window meets.
       let framed = random.pick(["guest", "float"])!

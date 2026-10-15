@@ -39,7 +39,7 @@ expect camera root
 redo
 expect left-of 101 102
 # A drop on the wrong edge.
-drag 103 1437 450
+drag 103 1437 450 cmd
 expect docked 103
 expect left-of 102 103
 undo

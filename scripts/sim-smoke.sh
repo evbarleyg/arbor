@@ -45,7 +45,7 @@ grep -q "^\* gap = 20 " <<<"$output" || fail "settings does not list the changed
 
 # A film (docs/FILM.md): the simulator's own words and the film's in one script, a line of JSON per frame, and no film of what Arbor refuses.
 printf '%s\n' "display 1440x810 bar 24 dock 76" "open Safari 800x500" "mac-tiling off" "launch" "glide window 101 title in 0.2" "press" \
-  "glide 3 400 in 0.5" "wait 0.3" "lift" "wait 0.7" "expect docked 101" "tap ctrl+opt+return" "wait 0.6" > "$folder/film.txt"
+  "keydown cmd" "glide 3 400 in 0.5" "wait 0.3" "lift" "keyup cmd" "wait 0.7" "expect docked 101" "tap ctrl+opt+return" "wait 0.6" > "$folder/film.txt"
 output=$(.build/debug/arbor-sim film "$folder/film.txt" --out "$folder/film.jsonl") || fail "the film script failed"
 grep -q "the button is down on the title bar of w101" <<<"$output" || fail "the film's pointer missed the title bar"
 grep -q "^146 frames, 2.43 s at 60 frames a second" <<<"$output" || fail "the film has the wrong length"

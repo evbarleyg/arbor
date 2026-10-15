@@ -47,9 +47,7 @@ import Testing
       desk.h.system.userMove(desk.floating, to: frame.offsetBy(dx: 0, dy: down))
     case .drags:
       let grip = CGPoint(x: frame.midX, y: frame.minY + 10)
-      desk.h.system.heldModifiers = [.command]
-      desk.h.system.drag(desk.floating, through: [grip, CGPoint(x: grip.x, y: grip.y + down)])
-      desk.h.system.heldModifiers = []
+      desk.h.system.drag(desk.floating, through: [grip, CGPoint(x: grip.x, y: grip.y + down)], plainly: true)
     }
     desk.h.scheduler.advance(by: 2)
     #expect(desk.h.frame(desk.floating) == frame.offsetBy(dx: 0, dy: down), "the hand only moves it")

@@ -15,6 +15,9 @@
 # The first round plays Arbor as it ships, which is without an event tap. The second has every gesture switched on, so that Arbor's taps
 # lie in the way of each press and release: only then can a release be late through Arbor's fault.
 #
+# As Arbor ships, a plain drag only moves a window and ⌘ held during the drag docks (`dragDocks`). lib.sh's `drag` holds ⌘ by itself when it
+# takes a window by its title bar; the steps about plain drags say --plain.
+#
 # Needs Accessibility for the terminal it runs from. Exit code 0: every check passed; 1: one failed; 2: no session, or a round that
 # did not get to its end.
 source "$(dirname "$0")/lib.sh"
@@ -61,15 +64,19 @@ release_was_seen() { [ -r "$ARBOR_HOME/arbor.log" ] && fails logged "was not see
 # the release (Q17 says 300 ms). Out of the same call of the tool, because two calls, with what this file does between them, lie 0.6 to
 # 0.8 s apart there. CLICKED_AFTER: how many milliseconds it was.
 timed_release() {
-  local took
+  local took hand
   CLICKED_AFTER=""
+  # The release carries what the hand holds, which comes up after the button and before the click.
+  hand=$(arbor_hand_lets_go)
   # Letting go is never declined, and a click is: on a person's Mac it has to land on something of the session's.
   if [ $# -eq 2 ] && arbor_input_is_ours click "$1" "$2"; then
-    echo "> release --timed --then-click $1,$2"
-    read -r took CLICKED_AFTER <<< "$(pointer release --timed --then-click "$1,$2")"
+    echo "> release --timed --then-click $1,$2 $hand"
+    # shellcheck disable=SC2086
+    read -r took CLICKED_AFTER <<< "$(pointer release --timed --then-click "$1,$2" $hand)"
   else
-    echo "> release --timed"
-    took=$(pointer release --timed)
+    echo "> release --timed $hand"
+    # shellcheck disable=SC2086
+    took=$(pointer release --timed $hand)
   fi
   check "the button is up within 100 ms (after ${took:-?} ms)" test "${took:-1000}" -le 100
 }
@@ -104,6 +111,37 @@ drop() {
   check "no preview is left behind" eventually not has_overlay 3
 }
 test_presses() { [ "$(events_of "$1" down)" = "$2" ]; }
+
+# unmoved <window> <x y w h>: the window server has it exactly there.
+unmoved() { [ "$(real_frame_of "$1")" = "$2" ]; }
+
+# left_where <window> "<x y w h>": the window server has it where the hand had it. Or higher, if that was with its title bar behind the Dock: macOS
+# pulls such a window up within milliseconds of the release, to 28 points above the end of the visible frame, and asks nobody
+# (docs/REALITY.md, a-title-bar-let-go-behind-the-dock-is-pulled-up). The fake Mac leaves it hanging.
+left_where() {
+  local x y w h line=$((sy + sh - 28))
+  read -r x y w h <<< "$2"
+  arbor_close "$(real_frame_of "$1")" "$2" || { [ "${y%.*}" -gt "$line" ] && arbor_close "$(real_frame_of "$1")" "$x $line $w $h"; }
+}
+
+# plainly <window> <x> <y> <where, in words>: dragged there with nothing held and let go. Nothing of Arbor's shows, it floats where it was
+# let go, and the two others have not moved by a point.
+plainly() {
+  local id=$1 x=$2 y=$3 where=$4 other held start before=""
+  for other in "$W1" "$W2" "$W3"; do [ "$other" = "$id" ] || before="$before $other:$(real_frame_of "$other" | tr ' ' ,)"; done
+  start=$(real_frame_of "$id")
+  drag_window "$id" "$x" "$y" --plain --hold 0.6 --no-release
+  check "$where: the window is in the hand" not unmoved "$id" "$start"
+  check "$where: no preview" not has_overlay 3
+  held=$(real_frame_of "$id")
+  timed_release
+  sleep 1
+  check "$where: it floats" is floating "$id"
+  check "$where: where it was let go" left_where "$id" "$held"
+  for other in $before; do
+    check "$where: window ${other%%:*} has not moved" unmoved "${other%%:*}" "$(echo "${other#*:}" | tr , ' ')"
+  done
+}
 
 # Whether one of macOS's switches is on; `macos_tiles` asks for either. A key that is not there means on, from macOS 15 on, the first that tiles.
 macos_has_on() {
@@ -161,7 +199,7 @@ left_to_macos() {
 
 # journey <as-shipped|taps> [then-off]: then-off switches macOS's tiling off at the end, while Arbor runs.
 journey() {
-  local before held
+  local before held start own tx ty
   if [ "$1" = taps ]; then
     arbor_settings "{$ARBOR_GESTURES_ON}"
     arbor_start 3 ARBOR_NO_HOTKEYS=0
@@ -172,6 +210,16 @@ journey() {
   read -r sx sy sw sh <<< "$(arbor_ask screen)"
   # The whole display: its first point is macOS's, which with the Dock on the left is not where the visible part begins.
   read -r fx fy fw fh <<< "$(display_frame_of 1)"
+  summary
+
+  step "plain drags to the four screen edges: nothing of Arbor's shows and nothing docks"
+  # Three points short of the display's last: macOS, as it comes, takes a window only at the very last point and in the menu bar.
+  plainly "$W1" $((sx + 3)) $((sy + sh / 2)) "the left edge"
+  plainly "$W1" $((sx + sw - 3)) $((sy + sh / 2)) "the right edge"
+  plainly "$W1" $((sx + sw / 2)) $((sy + 3)) "the top edge"
+  plainly "$W1" $((sx + sw / 2)) $((sy + sh - 3)) "the bottom edge"
+  plainly "$W1" $((sx + sw * 3 / 5)) $((sy + sh / 3)) "back in the middle"
+  check "nothing is docked" arbor_ask count docked 0
   summary
 
   step "drag a window by its title bar to the left screen edge"
@@ -225,6 +273,35 @@ journey() {
   check "to the right of the first" [ "$x2" -ge $((x3 + w3)) ]
   summary
 
+  step "a plain drag onto the edge of a docked window"
+  # shellcheck disable=SC2046
+  plainly "$W1" $(zone_of "$W3" bottom) "the lower part of a docked window"
+
+  step "⌘ goes down with the window held there, and comes up again"
+  drag_window "$W1" $((sx + sw * 3 / 5)) $((sy + sh / 3)) --plain
+  start=$(real_frame_of "$W1")
+  # shellcheck disable=SC2046
+  drag_window "$W1" $(zone_of "$W3" bottom) --plain --hold 0.6 --no-release
+  check "the window is in the hand" not unmoved "$W1" "$start"
+  check "nothing held: no preview" not has_overlay 3
+  key cmd --down
+  check "⌘ down: the preview comes, with the pointer at rest" eventually has_overlay 3
+  key cmd --up
+  check "⌘ up: it goes" eventually not has_overlay 3
+  release
+  sleep 1
+  check "let go without the key, the window floats" is floating "$W1"
+  check "the docked windows are in their slots" eventually same_frame "$W3" "$x3" "$y3" "$w3" "$h3"
+  drag_window "$W1" $((sx + sw * 3 / 5)) $((sy + sh / 3)) --plain
+  summary
+
+  step "a click on a docked window's title bar that slips by a few points"
+  read -r tx ty <<< "$(titlebar_of "$W3")"
+  drag "$tx" "$ty" $((tx + 6)) $((ty + 4)) --plain --steps 3 --duration 0.1 --hold 0
+  check "it is still docked" stays is docked "$W3"
+  check "and back in its slot" eventually same_frame "$W3" "$x3" "$y3" "$w3" "$h3"
+  check "no seam moved" eventually same_frame "$W2" "$x2" "$y2" "$w2" "$h2"
+
   step "double-click the title bar of a docked window (H5)"
   # shellcheck disable=SC2046
   dblclick $(titlebar_of "$W3")
@@ -251,6 +328,25 @@ journey() {
   check "it floats" eventually is floating "$W2"
   check "the first window is still docked" is docked "$W3"
   check "Arbor saw the release" release_was_seen
+  summary
+
+  step "a docked window dragged plainly comes out wherever it is let go"
+  own=$(real_frame_of "$W2" | awk '{ print int($3 + 0.5), int($4 + 0.5) }')
+  ctl dock "$W2" right
+  check "docked again" eventually is docked "$W2"
+  read -r x3 y3 w3 h3 <<< "$(arbor_ask slot "$W3")"
+  # Over the middle of the other docked window, from where a ⌘-drag goes home.
+  # shellcheck disable=SC2046
+  drag $(titlebar_of "$W2") $((x3 + w3 / 2)) $((y3 + h3 / 2)) --plain --hold 0.6 --no-release
+  check "no preview" not has_overlay 3
+  timed_release
+  check "it floats" eventually is floating "$W2"
+  check "at the size it had before it was docked" eventually [ "$(real_frame_of "$W2" | awk '{ print int($3 + 0.5), int($4 + 0.5) }')" = "$own" ]
+  check "the other is still docked, in its slot" eventually is in_slot "$W3"
+  check "Arbor saw the release" release_was_seen
+  # Back to where the journey had it, clear of what comes next.
+  # shellcheck disable=SC2046
+  drag $(titlebar_of "$W2") $((dx + dw / 2)) $((dy + 60)) --plain
   summary
 
   step "drag a floating window to the bottom edge, which is Arbor's at every setting"

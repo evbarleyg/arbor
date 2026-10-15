@@ -37,7 +37,7 @@ expect in-front 103
 show-all
 expect visible 103
 # Dragging moves it, even over the edge of a docked window, where any other window would dock.
-drag 103 60 400
+drag 103 60 400 cmd
 expect floating 103
 expect pinned 103
 move 103 1090 50 320 240

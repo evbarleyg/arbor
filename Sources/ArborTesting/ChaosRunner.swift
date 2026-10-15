@@ -83,6 +83,8 @@ public final class ChaosRunner {
   var displaysBeforeTheChange: Set<DisplayID> = []
   var userPlaces: [WindowID: [UserPlace]] = [:]
   var inHandBefore: WindowID?
+  /// The window that was being dragged with nothing held that docks (ChaosInvariants+PlainDrags.swift).
+  var plainlyInHandBefore: WindowID?
   /// For the harness's own tests: something done as part of the next step, as if Arbor had done it.
   public var beforeTheNextCheck: ((ChaosRunner) -> Void)?
   /// What the last step broke of `countedRules`.
@@ -241,6 +243,7 @@ public final class ChaosRunner {
     wasPeekingBefore = timersBefore.contains("peek")
     let movesBefore = system.windows.mapValues(\.movesNotArbors)
     inHandBefore = system.dragging ?? system.resizing
+    notePlainDrag()
     noteBeforeTheSevenRules(action)
     raiseLogMark = system.raiseLog.count
     madeWayBefore = controller.settings.floatingWindowsMakeWay
@@ -250,7 +253,7 @@ public final class ChaosRunner {
     beforeTheNextCheck = nil
     noteWhereItsUserLeftEachWindow(after: action, movesBefore: movesBefore)
     noteAfterTheSevenRules(action, movesBefore: movesBefore)
-    let all = found + wayHomeViolations(after: action) + raiseViolations(after: action) + check(after: action)
+    let all = found + wayHomeViolations(after: action) + raiseViolations(after: action) + plainDragViolations(after: action) + check(after: action)
     // Numbers, not gates: no walk, replay or test ends at them.
     counted = all.filter { Self.countedRules.contains($0.rule) }
     return counted.isEmpty ? all : all.filter { !Self.countedRules.contains($0.rule) }
@@ -397,10 +400,10 @@ public final class ChaosRunner {
     case .backgroundFocus(let window): system.backgroundFocus(window)
     case .press:
       if system.dragging == nil, system.resizing == nil { system.mouseDown = true }
-    case .grab(let window):
+    case .grab(let window), .grabPlainly(let window):
       // Only a window that can be seen can be picked up.
       if let snapshot = system.windows[window]?.snapshot, snapshot.isPresent, isReachable(snapshot.frame), !system.displayList.isEmpty {
-        system.grab(window)
+        system.grab(window, plainly: action == .grabPlainly(window))
       }
     case .doubleClick(let window):
       // Only a title bar that can be seen, and only with a button that is up.

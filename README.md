@@ -27,12 +27,15 @@ independent implementation and is not affiliated with it.
 
 ## What it does
 
-- **Dock**: drag a window to a screen edge to dock it beside everything you can
-  see, or hold it over another window's edge for a moment to dock beside that
-  window; a preview shows where it will land. Drop it on the Desktop to float it
-  again, at the size it had before. Let go anywhere else, where no preview shows,
-  and a docked window goes back to its place. Hold ⌘ while dragging and nothing
-  docks: the window floats. The keyboard docks too: ⌃⌥⌘ + arrow.
+- **Dock**: hold ⌘ while you drag to dock. Carry a window to a screen edge to dock
+  it beside everything you can see, or hold it over another window's edge for a
+  moment to dock beside that window; a preview shows where it will land, and goes
+  when you let go of the key. What docks is what was shown: no preview, no dock.
+  The keyboard docks too: ⌃⌥⌘ + arrow.
+- **A plain drag only moves a window**, as on any Mac: nothing of Arbor's shows and
+  nothing else moves. A docked window dragged plainly comes out and floats where you
+  let go of it, at the size it had before. (`arborctl set dragDocks always` has
+  every drag dock, as in the first build; `never` leaves docking to the keys.)
 - **The Desktop stays**: windows you have not docked float exactly as they always have. Arbor never
   moves or resizes one: it stays where you put it, over docked windows too, goes out of view when you
   zoom in on something else, and comes back to the same place. ⌃⌥D shows all that floats.
@@ -618,6 +621,7 @@ version changes one. [docs/SETTINGS.md](docs/SETTINGS.md) is the complete refere
 | `autoDockMinimumWidth` / `autoDockMinimumHeight` | 400 / 300 | A window that opens smaller than this is never docked by `dock auto` or by a rule for `*` |
 | `minimapDuration` | 0 | Seconds (at most 10) the minimap shows by itself after the view has moved; 0 is off, ⌃⌥M shows it either way |
 | `pointerGestures` | false | The one switch above the pinch, ⌃⌥ + scroll, both ways to draw a rectangle and `guardDesktopClicks`. false: Arbor installs no event tap, so it holds back no click, scroll or pinch of the Mac, whatever their own settings say. Dragging windows, gaps and tiles works either way |
+| `dragDocks` | "held" | When a window dragged by its title bar docks. "held": while ⌘ is held, from the start or on the way; a plain drag only moves it. "always": every drag, unless ⌘ is held, as in the first build. "never": no drag. The shortcuts and the menu dock either way |
 
 The file is yours. When a command changes a setting (`set`, `bind`, `rule add`, "Don't Arrange"…), Arbor
 changes that setting in the file and leaves the rest as you wrote it: your order and spacing, keys

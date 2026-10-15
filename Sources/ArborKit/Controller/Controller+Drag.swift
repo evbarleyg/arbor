@@ -1,5 +1,6 @@
 import ArborCore
 import CoreGraphics
+import Foundation
 
 /// Dragging a window by its title bar: finding the drop target under the pointer, previewing where
 /// the window would land, and docking or floating it on release. The three `drag…` methods are
@@ -22,6 +23,8 @@ extension Controller {
     /// Let go here, the window is macOS's, which tiles it, and this is why (`MacTiling`). Arbor stands aside: the target is
     /// `.float`, nothing is previewed, and no frame is set on a window that macOS is about to move.
     var leftToMacOS: MacTiling.Claim?
+    /// Nothing is offered, by what is set and what is held (`dragDocks`): the drag is a plain one.
+    var isPlain = false
   }
 
   /// A drag in progress, from `dragBegan` to `endDrag(on:)`.
@@ -31,6 +34,12 @@ extension Controller {
     var sourceDisplay: DisplayID?
     /// Where the pointer was last seen.
     var point: CGPoint
+    /// Where the pointer was when word of the drag came, and the window's place then: where Arbor had put it, or where Arbor knew a
+    /// window to be that the layout does not place (`isASlip`).
+    var taken: (at: CGPoint, frame: CGRect?)
+    /// Whether the drag was a plain one when Arbor last looked. For a drag that ends without a release: which keys were down when
+    /// the button came up, nobody knows by then.
+    var wasPlain = false
     /// What the pointer is over. Nil whenever the arrangement has changed under the drag, so that
     /// the next move looks afresh.
     var hover: Hover?
@@ -47,19 +56,20 @@ extension Controller {
     var macTiling = MacTiling.off
     /// The screen edges in whose band the pointer took hold and has been ever since. A window that lies under the menu bar has its title
     /// bar in the top band: slid sideways, or merely nudged, it has not been carried to that edge. Nothing is offered along it
-    /// until the pointer has left the band once.
+    /// until the pointer has left the band once. With ⌘ held too: a ⌘-click on such a title bar that slips would dock the window.
+    /// Where it took hold is a matter of where the window stood (`whereTheHandTook`).
     var edgesNeverLeft: Set<Edge> = []
   }
 
-  /// Held while dragging, this turns docking off. Not ⌥: since macOS 15 that brings up macOS's own
-  /// tiling preview during a window drag.
-  static let dragSuppressModifier: KeyChord.Modifiers = .command
+  /// When a dragged window docks, as it is set.
+  var dragDocks: DragDocks { DragDocks(setting: settings.dragDocks) }
 
-  /// Whether `held` turns docking off: ⌘, whatever else is held, except ⌃⌥⌘, which is the beginning of a shortcut of
-  /// Arbor's own (⌃⌥⌘ + arrow moves the focused window).
-  static func suppressesDocking(_ held: KeyChord.Modifiers) -> Bool {
-    held.contains(dragSuppressModifier) && !held.isSuperset(of: [.control, .option])
-  }
+  /// What a command that finds nothing docked tells a newcomer to do.
+  var howToDockAFirstWindow: String { (dragDocks.howToDockByDragging.map { "\($0), or " } ?? "") + "try `dock left`" }
+
+  /// How far a docked window must have been carried for a plain drag to have taken it out of its place. A click on a title bar
+  /// slips by a few points, and nobody who clicked meant to undock a window and see it change its size.
+  static let slip: CGFloat = 24
   /// The timer that activates the target under the pointer.
   static let dragDwellKey = "drag-dwell"
   /// The timer that looks at what macOS made of a window that was left to it.
@@ -82,10 +92,15 @@ extension Controller {
     let own = wasMadeSmall ? workspaceID(containing: id).flatMap { workspaces[$0]?.floating[id]?.size } : nil
     // Whatever Arbor did with it before, it is in the user's hand and in view now.
     parked.remove(id)
-    drag = DragSession(window: id, sourceDisplay: workspaceID(containing: id), point: point)
+    // Word of a drag can come after word of where it has carried the window. Where Arbor put a docked one is older than both: the frame
+    // it took, which is not its slot's if it cannot grow to that (a calculator lies in the middle of its slot).
+    // Of any other, what Arbor knew when the button went down.
+    let slot = workspaceID(containing: id).flatMap { layouts[$0]?.windowFrames[id] }
+    let place = slot.map { settled[id] ?? $0 } ?? whereItStoodAtThePress(id) ?? windows[id]?.frame
+    drag = DragSession(window: id, sourceDisplay: workspaceID(containing: id), point: point, taken: (point, place))
     // Asked at every drag: people change it while Arbor runs, in the window that Check Setup sent them to.
     drag?.macTiling = system.macTiling()
-    drag?.edgesNeverLeft = screenEdges(near: point)
+    drag?.edgesNeverLeft = screenEdges(near: point).intersection(screenEdges(near: whereTheHandTook(place, nearest: point)))
     drag?.sizeOwed = own
     soleFloatTakenInHand(id)
     // Word of a drag can come late, when the pointer has already stopped where it is going. The
@@ -110,6 +125,7 @@ extension Controller {
     if drag?.edgesNeverLeft.isEmpty == false { drag?.edgesNeverLeft.formIntersection(screenEdges(near: point)) }
     guard let session = drag else { return }
     let hover = hover(of: session)
+    drag?.wasPlain = hover.isPlain
     let held =
       hover == session.hover ? session.isActive : dwell(for: hover) <= 0
     // Let go before the target was held long enough, nothing the preview has not shown happens: a
@@ -130,6 +146,7 @@ extension Controller {
   func updateHover() {
     guard let session = drag else { return }
     let hover = hover(of: session)
+    drag?.wasPlain = hover.isPlain
     guard hover != session.hover else { return }
     scheduler.cancel(Self.dragDwellKey)
     drag?.hover = hover
@@ -142,7 +159,7 @@ extension Controller {
 
   func dwellElapsed() {
     guard let session = drag, !session.isActive else { return }
-    // ⌘ may have gone down since the pointer last moved.
+    // ⌘ may have gone down or up since the pointer last moved.
     guard hover(of: session) == session.hover else { return updateHover() }
     showHover(active: true)
   }
@@ -151,12 +168,20 @@ extension Controller {
   func hover(of session: DragSession) -> Hover {
     let point = session.point
     let held = system.modifierKeysDown()
+    let isPlain = !dragDocks.docks(holding: held)
     // First, because it holds whatever else is held: macOS asks nobody.
-    if let macOSs = hoverLeftToMacOS(session, optionHeld: held.contains(.option)) { return macOSs }
-    // ⌘ turns docking off: wherever it is let go, even on its own slot, the window floats. A pinned window
-    // lives over docked windows, so nudging it would dock it nearly every time.
-    if Self.suppressesDocking(held) || staysInView(session.window) {
-      return Hover(display: displayID(at: point).flatMap { workspaces[$0] == nil ? nil : $0 }, target: .float)
+    if var macOSs = hoverLeftToMacOS(session, optionHeld: held.contains(.option)) {
+      macOSs.isPlain = isPlain
+      return macOSs
+    }
+    // A plain drag is macOS's own: wherever it is let go, even on its own slot, the window floats, and nothing is shown on the
+    // way. Only with ⌘ held is anything offered (`dragDocks`). A pinned window lives over docked windows, so nudging it
+    // would dock it nearly every time.
+    if isPlain || staysInView(session.window) {
+      // Where every drag docks, ⌘ is held to take a window out, wherever. Otherwise nobody has said so, and a docked window that has
+      // hardly left its place was not taken out of it.
+      let saidSo = dragDocks == .always && DragDocks.isKeyHeld(held)
+      return saidSo ? dropTarget(for: session.window, at: point, offering: false) : plainDrop(of: session)
     }
     if settings.reflowWhileDragging, session.isActive, let hover = session.hover,
       session.landing?.contains(point) == true
@@ -166,6 +191,43 @@ extension Controller {
       return hover
     }
     return dropTarget(for: session.window, at: point)
+  }
+
+  /// What letting go of a plain drag does: the window floats where it lies, but a docked one that has only slipped goes back.
+  func plainDrop(of session: DragSession) -> Hover {
+    if isASlip(session), let home = workspaceID(containing: session.window), workspaces[home]?.isDocked(session.window) == true {
+      return Hover(display: home, target: .none, isPlain: true)
+    }
+    return dropTarget(for: session.window, at: session.point, offering: false)
+  }
+
+  /// Whether the hand has carried `session`'s window less than `slip` from its place. Both the window and the pointer have to
+  /// say so: word of where a window is can be a moment old, and word of a drag can come when the pointer is nearly there.
+  func isASlip(_ session: DragSession) -> Bool {
+    guard let before = session.taken.frame, let now = windows[session.window]?.frame else { return false }
+    return hypot(now.minX - before.minX, now.minY - before.minY) < Self.slip
+      && hypot(session.point.x - session.taken.at.x, session.point.y - session.taken.at.y) < Self.slip
+  }
+
+  /// Called at every press of the button, before anything it moves is heard of.
+  func noteWhereWindowsStandAtAPress() { lastPress = (now(), windows.mapValues(\.frame)) }
+
+  /// Where Arbor knew `window` to be when the button went down for the drag that begins now. Not every press is heard of, so one of
+  /// a while ago is none of this drag's: word of a drag comes within a second of its press.
+  private func whereItStoodAtThePress(_ window: WindowID) -> CGRect? {
+    guard let press = lastPress, now().timeIntervalSince(press.at) < Self.aPressIsRemembered else { return nil }
+    return press.frames[window]
+  }
+  static let aPressIsRemembered: TimeInterval = 3
+
+  /// Where the hand took hold of a window that stood at `place`, as near as can be told: the point of its title bar nearest to the
+  /// pointer. A busy Mac serves the press late, and word of the drag comes with the pointer at the edge the window was carried to.
+  /// A drag began where the window stood when the button went down, not where the pointer is when Arbor hears of it.
+  private func whereTheHandTook(_ place: CGRect?, nearest point: CGPoint) -> CGPoint {
+    guard let place else { return point }
+    return CGPoint(
+      x: min(max(point.x, place.minX), place.maxX),
+      y: min(max(point.y, place.minY), place.minY + min(Self.titleBarReach, place.height)))
   }
 
   /// The edges of the display under `point` in whose band it lies.
@@ -183,7 +245,14 @@ extension Controller {
     return Hover(display: id, target: .float, leftToMacOS: claim)
   }
 
-  func dropTarget(for window: WindowID, at point: CGPoint) -> Hover {
+  /// What a window let go at `point` is let go over. Not `offering`: nowhere to dock, so it floats, unless that cannot be.
+  func dropTarget(for window: WindowID, at point: CGPoint, offering: Bool = true) -> Hover {
+    var hover = whatIsUnder(point, for: window, offering: offering)
+    hover.isPlain = !offering
+    return hover
+  }
+
+  private func whatIsUnder(_ point: CGPoint, for window: WindowID, offering: Bool) -> Hover {
     guard let displayID = displayID(at: point), let workspace = workspaces[displayID],
       let layout = layouts[displayID], let display = display(displayID)
     else { return Hover(display: nil, target: .float) }
@@ -196,7 +265,8 @@ extension Controller {
     var dropOptions = options(for: displayID).dropOptions
     dropOptions.silentEdges = (drag?.macTiling.edges ?? []).union(drag?.edgesNeverLeft ?? [])
     func resolve(_ layout: Layout, _ tree: LayoutTree) -> DropTarget {
-      DropResolver.resolve(
+      guard offering else { return .float }
+      return DropResolver.resolve(
         point: point, window: window, layout: layout, tree: tree, visibleFrame: display.visibleFrame, options: dropOptions)
     }
     var seen = (layout: layout, tree: workspace.tree)
@@ -207,9 +277,9 @@ extension Controller {
       seen = lifted
       target = resolve(seen.layout, seen.tree)
     }
-    // A docked window leaves the arrangement only where that is plainly meant: over the Desktop (or with ⌘). Over the
-    // middle of another window, or a gap, nothing is previewed and nothing happens: it goes back to its slot.
-    if target == .float, workspaces.values.contains(where: { $0.isDocked(window) }) {
+    // While it is offered places to dock, a docked window leaves the arrangement only where that is plainly meant: over the
+    // Desktop. Over the middle of another window, or a gap, nothing is previewed and nothing happens: it goes back to its slot.
+    if offering, target == .float, workspaces.values.contains(where: { $0.isDocked(window) }) {
       let onDesktop =
         seen.layout.leafOrTile(at: point, in: seen.tree) == seen.tree.desktop
         || seen.layout.desktopFrame.map { floatingRegion($0, on: display).contains(point) } == true
@@ -296,11 +366,11 @@ extension Controller {
     finishDrop(session.window, on: hover, at: session.point, sizeOwed: session.sizeOwed, after: session.reflow)
     soleFloatDropped(session.window, from: session.sourceDisplay, leftToMacOS: hover.leftToMacOS != nil)
     noteWhereItsUserLeftIt(session.window)
-    // Whoever meant Arbor's edge and got macOS's tile is told where that can be changed. Whoever held ⌥ asked macOS. Said once macOS
-    // has moved the window, which it does not always do: thrown into the menu bar and let go at once, it stays as it is.
-    // Whoever has no edges of Arbor's there (a band of 0) meant none.
-    if let claim = hover.leftToMacOS, claim != .optionKey, let display = hover.display,
-      options(for: display).dropOptions.offersScreenEdges, let letGo = windows[session.window]?.frame
+    // Whoever meant Arbor's edge and got macOS's tile is told where that can be changed. Whoever held ⌥ asked macOS, and so did
+    // whoever dragged it there while Arbor offered nothing. Said once macOS has moved the window, which it does not always
+    // do: thrown into the menu bar and let go at once, it stays as it is. Whoever has no edges of Arbor's there (a band
+    // of 0) meant none.
+    if let claim = hover.leftToMacOS, claim != .optionKey, !hover.isPlain, let display = hover.display, options(for: display).dropOptions.offersScreenEdges, let letGo = windows[session.window]?.frame
     {
       scheduler.schedule(Self.leftToMacOSKey, after: 0.5) { [weak self] in
         guard let self, let now = self.windows[session.window]?.frame, now != letGo else { return }
@@ -397,11 +467,13 @@ extension Controller {
 
   /// Ends the drag in progress, if any, without a drop: the window was let go over a target not held
   /// long enough, or no release will come, or it no longer matters. A docked window goes back to
-  /// its slot and a floating one stays where it is.
+  /// its slot and a floating one stays where it is. But where a drag docks only when asked, a plain one means out, wherever it
+  /// ends: what it has carried out of its place floats where it lies.
   func cancelDrag() {
     guard let session = drag else { return }
     if let display = workspaceID(containing: session.window), workspaces[display]?.isDocked(session.window) == true {
-      endDrag(on: Hover(display: display, target: .none))
+      let isOut = session.wasPlain && dragDocks != .always
+      endDrag(on: isOut ? plainDrop(of: session) : Hover(display: display, target: .none))
     } else {
       endDrag(on: Hover(display: dropTarget(for: session.window, at: session.point).display, target: .float))
     }

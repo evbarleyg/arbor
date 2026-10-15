@@ -14,6 +14,45 @@ public enum DropTarget: Equatable, Sendable, Codable {
   case none
 }
 
+/// When a window dragged by its title bar docks (`Settings.dragDocks`).
+public enum DragDocks: String, Sendable, CaseIterable {
+  /// Only while the key is held. A plain drag is macOS's own and nothing else: no preview, no dock, nothing else moves.
+  case held
+  /// Wherever there is a target; the key turns that off.
+  case always
+  case never
+
+  /// What is written in settings.json. Anything that is none of the three means what Arbor ships with.
+  public init(setting: String) { self = DragDocks(rawValue: setting) ?? .held }
+
+  /// Not ⌥: since macOS 15 that brings up macOS's own tiling preview during a window drag. Not ⌃: a press with it is a right click.
+  public static let key: KeyChord.Modifiers = .command
+
+  /// Whether `held` counts as the key: ⌘, whatever else is held, except ⌃⌥⌘, which is the beginning of a shortcut of
+  /// Arbor's own (⌃⌥⌘ + arrow moves the focused window).
+  public static func isKeyHeld(_ held: KeyChord.Modifiers) -> Bool {
+    held.contains(key) && !held.isSuperset(of: [.control, .option])
+  }
+
+  /// How a first window is docked with the pointer, in words that go on after a colon. Nil where no drag docks.
+  public var howToDockByDragging: String? {
+    switch self {
+    case .held: return "hold ⌘ and drag a window to a screen edge"
+    case .always: return "drag a window to a screen edge"
+    case .never: return nil
+    }
+  }
+
+  /// Whether a window dragged with `held` down is offered anywhere to dock.
+  public func docks(holding held: KeyChord.Modifiers) -> Bool {
+    switch self {
+    case .held: return Self.isKeyHeld(held)
+    case .always: return !Self.isKeyHeld(held)
+    case .never: return false
+    }
+  }
+}
+
 public struct DropOptions: Equatable, Sendable {
   /// How close to a screen edge the pointer must be to dock at the camera edge. 0: no edge is ever offered.
   public var screenEdgeBand: CGFloat

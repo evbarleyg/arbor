@@ -1,6 +1,9 @@
 import ArborCore
 import ArborTesting
 
+/// `pick-up … cmd` pressed ⌘, which comes up again at `let-go`, or when the window is gone from the hand.
+@MainActor var pickedUpWithCommand = false
+
 /// What the user's hands do besides moving windows: words for stories about where a command came
 /// from and what was touched last (docs/features/F56-keys-follow-the-keyboard.md). Nil for any other word.
 @MainActor

@@ -267,7 +267,7 @@ private let side = DisplaySnapshot(
     let h = Harness()
     let a = h.system.open(app: "Safari")
     h.start()
-    #expect(h.run("in").message.contains("drag a window to a screen edge"))
+    #expect(h.run("in").message.contains("hold ⌘ and drag a window to a screen edge"))
     #expect(h.run("view 3").message.contains("save-view 3"))
     #expect(h.run("dock 999 left").message.contains("no window w999"))
     h.run("exclude com.example.safari")

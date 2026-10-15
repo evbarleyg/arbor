@@ -5,19 +5,19 @@ open Safari
 open Notes
 open Mail
 # Pushed against the left edge, Safari gets the left half of the screen from macOS. Arbor docks nothing and moves nothing.
-drag 101 0 450
+drag 101 0 450 cmd
 wait 1
 expect floating 101
 expect size 101 720x875
 expect count docked 0
 expect said macOS tiled this window; Arbor stood aside · ⌃⌥⌘← docks it · Check Setup… in the menu
 # Held in the menu bar, Notes fills the screen.
-drag 102 700 0
+drag 102 700 0 cmd
 wait 1
 expect floating 102
 expect size 102 1440x875
 # Let go a few points short of the edge, nobody acts.
-drag 103 1435 450
+drag 103 1435 450 cmd
 wait 1
 expect floating 103
 expect count docked 0
@@ -26,9 +26,9 @@ focus 103
 press dock left
 expect docked 103
 # So does the bottom edge, and the edges of a docked window.
-drag 101 900 897
+drag 101 900 897 cmd
 expect docked 101
 # With the switches off, every edge is Arbor's.
 mac-tiling off
-drag 102 1437 450
+drag 102 1437 450 cmd
 expect docked 102

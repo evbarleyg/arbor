@@ -330,11 +330,18 @@ private func near(_ a: CGRect, _ b: CGRect, within tolerance: CGFloat = 0.01) ->
     wait 0.5
     glide window 101 title in 0.5
     press
+    keydown cmd
     glide 3 400 in 1
     wait 0.5
     lift
+    keyup cmd
     wait 1
     """
+
+  /// The same with nothing held: as Arbor ships, that only moves the window.
+  private var plainDragToTheLeftEdge: String {
+    dragToTheLeftEdge.replacingOccurrences(of: "keydown cmd\n", with: "").replacingOccurrences(of: "keyup cmd\n", with: "")
+  }
 
   @Test func onAMacAsItComesTheEdgeIsMacOSsAndWhatItDoesThereIsFilmed() throws {
     let script = dragToTheLeftEdge.replacingOccurrences(of: "mac-tiling off", with: "mac-tiling on")
@@ -356,9 +363,19 @@ private func near(_ a: CGRect, _ b: CGRect, within tolerance: CGFloat = 0.01) ->
     #expect(film.frames.count == lifted + 18 + 60 + 1)
   }
 
+  /// As Arbor ships, a plain drag is macOS's own: the same film without the key shows nothing of Arbor's, and nothing docks.
+  @Test func withoutTheKeyNothingOfArborsIsInTheFilm() throws {
+    let film = try film(plainDragToTheLeftEdge)
+    #expect(film.failures.isEmpty)
+    for key in ["preview", "backdrop", "stage", "headsUp", "keys"] { #expect(film.frames.allSatisfy { $0[key] == nil }, "\(key)") }
+    let end = try window(101, in: try #require(film.frames.last))
+    #expect(end.size == CGSize(width: 800, height: 500))
+    #expect(end.midX == 3, "where it was let go")
+  }
+
   @Test func aModifierKeyIsHeldByItselfDuringADrag() throws {
-    // ⌘ goes down once the window rests at the edge, under Arbor's preview, and comes up again before the button does.
-    let script = dragToTheLeftEdge.replacingOccurrences(
+    // ⌘ goes down once the window rests at the edge, and comes up again before the button does.
+    let script = plainDragToTheLeftEdge.replacingOccurrences(
       of: "wait 0.5\nlift", with: "wait 0.5\nkeydown cmd\nwait 0.5\nkeyup cmd\nwait 0.5\nlift")
     let film = try film(script)
     #expect(film.failures.isEmpty)
@@ -367,15 +384,15 @@ private func near(_ a: CGRect, _ b: CGRect, within tolerance: CGFloat = 0.01) ->
     #expect(before["keys"] == nil && after["keys"] == nil)
     let keys = try #require(during["keys"] as? [String: Any])
     #expect(keys["modifiers"] as? [String] == ["cmd"] && keys["key"] == nil && keys["label"] as? String == "⌘")
-    // Arbor hears of the key at once, though the pointer rests: with ⌘ down it keeps out of the drag.
+    // Arbor hears of the key at once, though the pointer rests: the preview comes with ⌘ and goes with it.
     let shown = [before, during, after].map { ($0["preview"] as? [String: Any])?["opacity"] as? NSNumber == 1 }
-    #expect(shown == [true, false, true])
-    #expect(film.director.harness.workspace.isDocked(WindowID(101)))
+    #expect(shown == [false, true, false])
+    #expect(!film.director.harness.workspace.isDocked(WindowID(101)), "let go without the key: it floats")
 
-    // Let go of with ⌘ still down, the window floats where it lies.
-    let kept = try self.film(dragToTheLeftEdge.replacingOccurrences(of: "wait 0.5\nlift", with: "keydown cmd\nwait 0.5\nlift\nkeyup cmd"))
+    // Let go of with ⌘ still down, the window docks.
+    let kept = try self.film(plainDragToTheLeftEdge.replacingOccurrences(of: "wait 0.5\nlift", with: "keydown cmd\nwait 0.5\nlift\nkeyup cmd"))
     #expect(kept.failures.isEmpty)
-    #expect(!kept.director.harness.workspace.isDocked(WindowID(101)))
+    #expect(kept.director.harness.workspace.isDocked(WindowID(101)))
   }
 
   @Test func whatIsHeldByItselfAndWhatAShortcutHoldsAreToldApart() throws {
@@ -516,7 +533,11 @@ private func near(_ a: CGRect, _ b: CGRect, within tolerance: CGFloat = 0.01) ->
   @Test func keysAreDownWhileTheyAreDownAndTheShortcutRuns() throws {
     let film = try film(dragToTheLeftEdge + "\ntap ctrl+opt+return\nwait 1")
     #expect(film.failures.isEmpty)
-    let held = film.frames.filter { $0["keys"] != nil }
+    // ⌘ by itself is down for as long as the window is dragged: a second on the way and half a second at the edge.
+    let command = film.frames.filter { ($0["keys"] as? [String: Any])?["label"] as? String == "⌘" }
+    #expect(command.count == 90)
+    #expect(command.allSatisfy { ($0["pointer"] as? [String: Any])?["down"] as? Bool == true })
+    let held = film.frames.filter { $0["keys"] != nil && ($0["keys"] as? [String: Any])?["label"] as? String != "⌘" }
     #expect(held.count == 7)
     let keys = try #require(held[0]["keys"] as? [String: Any])
     #expect(keys["modifiers"] as? [String] == ["ctrl", "opt"])

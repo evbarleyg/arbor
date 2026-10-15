@@ -147,7 +147,7 @@ import Testing
     var settings = Settings.withGestures
     #expect(pointerRows(settings).suffix(3) == ["⌥ + pinch", "⌃⌥ + drag", "⇧ + drag on the Desktop"])
     settings.pointerGestures = false
-    #expect(pointerRows(settings) == ["Drag to a screen edge", "Drag to a window’s edge", "Drag a gap", "Click a tile"])
+    #expect(pointerRows(settings) == ["⌘ + drag to a screen edge", "⌘ + drag to a window’s edge", "Drag a gap", "Click a tile"])
   }
 
   @Test func aFileWrittenByAnEarlierBuildCannotHoldItAndSoFollowsTheDefault() throws {

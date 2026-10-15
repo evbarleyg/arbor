@@ -262,7 +262,8 @@ extension ChaosGenerator {
       for _ in 0..<random.int(1...3) { gesture.append(.carry(point(in: world, dragging: window))) }
       if random.chance(80) { gesture.append(.advance(random.pick([0.2, 0.3, 0.5])!)) }
       thenAMoment(gesture + [.release])
-      return .grab(window)
+      // What people do with a title bar, most of the time, is put a window somewhere else.
+      return random.chance(70) ? .grabPlainly(window) : .grab(window)
     case .edge:
       guard let window = existing(world, .inView), let frame = system.windows[window]?.snapshot.frame else { return .flush }
       var resized = frame

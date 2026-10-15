@@ -89,6 +89,7 @@ import Testing
     let slotB = h.frame(b)!
     let carried = slotB.offsetBy(dx: -300, dy: 40)
     h.system.mouseDown = true
+    h.system.heldModifiers = DragDocks.key  // held by whoever means to dock, as Arbor ships
     h.controller.dragBegan(b, at: CGPoint(x: slotB.midX, y: slotB.minY + 10))
     h.system.userMove(b, to: carried)
 

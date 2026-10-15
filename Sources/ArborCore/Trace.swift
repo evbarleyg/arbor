@@ -298,7 +298,7 @@ extension TraceHeader: Codable {
     recorded = try c.decodeIfPresent(String.self, forKey: .recorded) ?? ""
     displays = try c.decode([TraceDisplay].self, forKey: .displays)
     windows = try c.decodeIfPresent([TraceWindow].self, forKey: .windows) ?? []
-    settings = try c.decodeIfPresent(Settings.self, forKey: .settings) ?? Settings()
+    settings = try c.decodeIfPresent(RecordedSettings.self, forKey: .settings)?.settings ?? Settings()
     workspaces = try c.decodeIfPresent([DisplayID: Workspace].self, forKey: .workspaces) ?? [:]
     dormant = try c.decodeIfPresent([DisplayID: Workspace].self, forKey: .dormant) ?? [:]
     parked = try c.decodeIfPresent([WindowID].self, forKey: .parked) ?? []
@@ -347,6 +347,22 @@ extension TraceHeader: Codable {
     try c.encode(mouseDown, forKey: .mouseDown)
     try c.encode(thinning, forKey: .thinning)
     if framePlan != 1 { try c.encode(framePlan, forKey: .framePlan) }
+  }
+}
+
+/// Settings as a recording holds them. A recording writes every key its build knew. A key that came later is missing, and then what
+/// holds is not what Arbor ships with today but what that build did: the hands and apps in the recording answered to that.
+/// (A header without settings at all is written by hand, and means Arbor as it ships.)
+struct RecordedSettings: Decodable {
+  var settings: Settings
+
+  private enum LaterKeys: String, CodingKey { case dragDocks }
+
+  init(from decoder: any Decoder) throws {
+    settings = try Settings(from: decoder)
+    let later = try decoder.container(keyedBy: LaterKeys.self)
+    // Until there was a key, a plain drag docked.
+    if !later.contains(.dragDocks) { settings.dragDocks = DragDocks.always.rawValue }
   }
 }
 
@@ -605,7 +621,7 @@ extension TraceLine: Codable {
       }
     } else if let key = try c.decodeIfPresent(String.self, forKey: .timer) {
       self = .timer(key)
-    } else if let settings = try c.decodeIfPresent(Settings.self, forKey: .settings) {
+    } else if let settings = try c.decodeIfPresent(RecordedSettings.self, forKey: .settings)?.settings {
       self = .settings(settings)
     } else if let text = try c.decodeIfPresent(String.self, forKey: .raw) {
       self = .raw(text)

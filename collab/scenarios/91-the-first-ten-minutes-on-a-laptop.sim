@@ -11,9 +11,9 @@ open Terminal 585x400 min 177x100
 open Slack 1100x750 min 760x500
 open Notes 1000x660 min 709x300
 # 1. Dock: drag Safari to the left edge of the screen and Terminal to the right one. The rest floats on the Desktop.
-drag 101 2 400
+drag 101 2 400 cmd
 expect docked 101
-drag 102 1726 400
+drag 102 1726 400 cmd
 expect docked 102
 expect left-of 101 102
 expect floating 103
@@ -43,7 +43,7 @@ key ctrl+opt+space
 expect camera root
 # 4. A group: drag Slack onto the lower half of Terminal. ⌃⌥↩ frames Slack, ⌃⌥↑ steps out to the two of them.
 #    Then everything, and the gap between the two is dragged upwards: both change size, nothing overlaps.
-drag 103 1500 950
+drag 103 1500 950 cmd
 expect docked 103
 expect above 102 103
 focus 103
