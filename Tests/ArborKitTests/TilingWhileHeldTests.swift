@@ -34,7 +34,7 @@ import Testing
     expectSound(h)
   }
 
-  @Test func aTileIsNoStop() {
+  @Test(.withTiles) func aTileIsNoStop() {
     var settings = noRoomMade
     settings.minimumUsableWidth = 500
     let (h, w) = tilingScenario(["A", "B", "C"], ["dock $0 left", "dock $1 right", "dock $2 beside $1 right"], settings: settings)

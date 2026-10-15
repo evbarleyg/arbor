@@ -203,7 +203,7 @@ private func echo(_ h: Harness, _ window: WindowID, from old: CGRect) {
   /// "Back to a normal Mac" and quitting lay windows out as if nothing were too small to show. Windows that were
   /// inside tiles, shrunk in the corner, and whose own frames nobody remembers go side by side where their tiles were,
   /// not on top of each other.
-  @Test func floatAllAndQuittingPutWindowsThatWereInTilesWhereTheirTilesWere() {
+  @Test(.withTiles) func floatAllAndQuittingPutWindowsThatWereInTilesWhereTheirTilesWere() {
     for leave in ["float-all", "quit"] {
       var settings = shrinking()
       // Three in a row are 464 points wide each.
@@ -226,7 +226,7 @@ private func echo(_ h: Harness, _ window: WindowID, from old: CGRect) {
   }
 
   /// The same for a tile that stands for a whole group, whose windows have no rectangle of their own in the layout.
-  @Test func floatAllAndQuittingBringBackTheWindowsOfAGroupTile() {
+  @Test(.withTiles) func floatAllAndQuittingBringBackTheWindowsOfAGroupTile() {
     for leave in ["float-all", "quit"] {
       var settings = shrinking()
       // Two columns are 702 points wide each.
@@ -253,7 +253,7 @@ private func echo(_ h: Harness, _ window: WindowID, from old: CGRect) {
 
   /// A window that is a tile because its app will not shrink to its slot goes to the corner like the rest. What it
   /// does there says nothing new about it: it stays a tile, and Arbor does not keep trying.
-  @Test func aTileWhoseAppRefusesToShrinkStaysATileThroughTheEchoes() {
+  @Test(.withTiles) func aTileWhoseAppRefusesToShrinkStaysATileThroughTheEchoes() {
     // Without F61, which would take room from the neighbours instead of making a tile.
     var settings = shrinking()
     settings.makeRoom = false

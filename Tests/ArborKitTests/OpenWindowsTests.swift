@@ -226,7 +226,7 @@ import Testing
   }
 
   /// A tile is a window too small to show. Whoever looks for it does not see it, and need not know the word.
-  @Test func aTileIsOutOfView() {
+  @Test(.withTiles) func aTileIsOutOfView() {
     let (h, _, notes, _, _) = desk()
     let xcode = h.system.open(app: "Xcode", frame: CGRect(x: 400, y: 200, width: 700, height: 500))
     h.system.setMinimumSize(xcode, CGSize(width: 900, height: 600))
@@ -467,7 +467,7 @@ import Testing
     return (h, mail)
   }
 
-  @Test(arguments: Kind.allCases, [false, true]) func aClickEndsWithTheWindowInFrontAndWhole(kind: Kind, prompt: Bool) {
+  @Test(.withTiles, arguments: Kind.allCases, [false, true]) func aClickEndsWithTheWindowInFrontAndWhole(kind: Kind, prompt: Bool) {
     let (h, window) = make(kind)
     h.scheduler.advance(by: 2)
     #expect(h.system.focusedWindow() != window, "the story is about a window that has not got the keyboard")

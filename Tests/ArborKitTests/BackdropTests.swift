@@ -158,7 +158,7 @@ private let side = DisplaySnapshot(
     #expect(backdrop(h) == both)
   }
 
-  @Test func tilesLieOnTheSurfaceToo() {
+  @Test(.withTiles) func tilesLieOnTheSurfaceToo() {
     // With room made for it (F61) the window would be no tile.
     var settings = Settings.withBackdrop
     settings.makeRoom = false

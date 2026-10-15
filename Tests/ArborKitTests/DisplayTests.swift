@@ -674,7 +674,7 @@ private func reopen(_ old: Harness, in new: Harness) {
     #expect(h.controller.dormant[side.id]?.workspace.isDocked(a) == true)
   }
 
-  @Test func theOverlaysOfAGoneDisplayAreRemoved() {
+  @Test(.withTiles) func theOverlaysOfAGoneDisplayAreRemoved() {
     let (h, _, b, _) = makeHarness()
     let big = h.system.open(app: "Xcode", frame: CGRect(x: 1600, y: 200, width: 700, height: 500))
     h.system.setMinimumSize(big, CGSize(width: 900, height: 600))

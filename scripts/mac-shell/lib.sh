@@ -657,7 +657,10 @@ at_exit() { ARBOR_AT_EXIT="$1"$'\n'"$ARBOR_AT_EXIT"; }
 #
 # To go between the braces of a settings.json; what a script passes to arbor_settings comes after it and wins. Empty: no file is written
 # for a session that asks for none.
-ARBOR_EVERYTHING_ON='"desktopColumn": true, "shortcuts": "all"'
+#
+# A script outside the suite that stages a window's tile asks for tiles, which ship off (F69): arbor_settings "{$ARBOR_TILES_ON}" before arbor_start.
+ARBOR_TILES_ON='"windowsThatDoNotFit": "tile"'
+ARBOR_EVERYTHING_ON="\"desktopColumn\": true, \"shortcuts\": \"all\", $ARBOR_TILES_ON"
 
 arbor_switches() {
   local which=${ARBOR_SWITCHES:-}

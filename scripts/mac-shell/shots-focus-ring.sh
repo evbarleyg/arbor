@@ -195,7 +195,7 @@ arbor_stop 19-after-quit
 # Without `makeRoom` (F61), which would move the gaps until the third window fits: this session wants it in a tile.
 step "session 2: no gap, a thicker yellow line; the third window cannot shrink"
 ARBOR_TEST_WINDOWS_ARGS="--min-size 3:700x500"
-arbor_settings '{"focusRing": true, "makeRoom": false, "gap": 0, "focusRingWidth": 4, "focusRingColour": "#FFCC00"}'
+arbor_settings "{\"focusRing\": true, \"makeRoom\": false, \"gap\": 0, \"focusRingWidth\": 4, \"focusRingColour\": \"#FFCC00\", $ARBOR_TILES_ON}"
 arbor_start 3
 ctl dock "$W1" left
 ctl dock "$W2" right

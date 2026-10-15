@@ -124,7 +124,7 @@ public enum Navigation {
   ) -> NodeID? {
     guard let origin = layout.nodeFrames[leaf] else { return nil }
     var candidates: [NodeID: CGRect] = [:]
-    for (window, frame) in layout.windowFrames {
+    for (window, frame) in layout.slots {
       if let node = tree.leaf(containing: window), node != leaf { candidates[node] = frame }
     }
     for tile in layout.tiles where tile.node != leaf { candidates[tile.node] = tile.frame }

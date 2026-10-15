@@ -32,7 +32,7 @@ private let notes = "com.example.notes"
     return (h, a, b, between)
   }
 
-  @Test func itGoesStraightToWhereItEndsUp() throws {
+  @Test(.withTiles) func itGoesStraightToWhereItEndsUp() throws {
     let (h, a, b, between) = thirdsAndARuleThatHalvesOne()
     h.beginStep()
     let new = h.system.open(app: "Notes")
@@ -45,7 +45,7 @@ private let notes = "com.example.notes"
   }
 
   /// The view is on Mail. What is out of view stays there: it came into view for the layout in between, and left again.
-  @Test func fromAViewOnOneWindowNobodyElseComesAndGoes() throws {
+  @Test(.withTiles) func fromAViewOnOneWindowNobodyElseComesAndGoes() throws {
     let (h, a, b, between) = thirdsAndARuleThatHalvesOne()
     let c = h.system.open(app: "Music")
     h.run("dock \(c.rawValue) beside \(b.rawValue) bottom")
@@ -76,7 +76,7 @@ private let notes = "com.example.notes"
 
   /// macOS says beforehand that its size cannot be changed, so nobody has to ask: larger than its slot and than what the
   /// neighbours can spare, it is not sent to a slot first.
-  @Test func aWindowOfAFixedSizeThatFitsNowhereBesideTheOthersGoesStraightToo() {
+  @Test(.withTiles) func aWindowOfAFixedSizeThatFitsNowhereBesideTheOthersGoesStraightToo() {
     let (h, _, _, _) = thirdsAndARuleThatHalvesOne()
     h.beginStep()
     let new = h.system.open(app: "Notes", frame: CGRect(x: 100, y: 100, width: 1300, height: 600), isResizable: false)
@@ -94,7 +94,7 @@ private let notes = "com.example.notes"
 
   /// Whichever way the view got there, or did not: the same view, the same arrangement, the same windows in view, the same way
   /// back. The longer way is the one a window still goes whose keyboard comes after it.
-  @Test(arguments: Before.allCases) func itEndsAsItDoesWhenTheKeyboardComesLater(before: Before) throws {
+  @Test(.withTiles, arguments: Before.allCases) func itEndsAsItDoesWhenTheKeyboardComesLater(before: Before) throws {
     func played(keyboardAtOnce: Bool) -> (Harness, WindowID) {
       let (h, a, b, _) = thirdsAndARuleThatHalvesOne()
       switch before {
@@ -155,7 +155,7 @@ private let notes = "com.example.notes"
   /// The view followed the keyboard. If the window that had it goes in the same moment, macOS picked the new one and nobody asked
   /// to see it: the move is taken back, as after any report that moved the view (`keyboardLeft`). Both are one app's, which puts one
   /// window in the place of another: macOS hands the keyboard on within an app.
-  @Test func theMoveIsTakenBackIfTheWindowThatHadTheKeyboardGoesInTheSameMoment() {
+  @Test(.withTiles) func theMoveIsTakenBackIfTheWindowThatHadTheKeyboardGoesInTheSameMoment() {
     let (h, a, b, _) = thirdsAndARuleThatHalvesOne(theOther: "Notes")
     h.system.userFocus(b)
     let view = h.workspace.camera
@@ -170,7 +170,7 @@ private let notes = "com.example.notes"
   }
 
   /// One undo takes the docking back, and the view with it.
-  @Test func oneUndoTakesItBack() {
+  @Test(.withTiles) func oneUndoTakesItBack() {
     let (h, a, b, _) = thirdsAndARuleThatHalvesOne()
     let before = h.workspace
     let new = h.system.open(app: "Notes")
@@ -209,7 +209,7 @@ private let notes = "com.example.notes"
   }
 
   /// A window that opens in the background has no keyboard, and pulls no view: a tile, as before.
-  @Test func withoutTheKeyboardItIsATileAndTheViewStays() {
+  @Test(.withTiles) func withoutTheKeyboardItIsATileAndTheViewStays() {
     let (h, _, b, _) = thirdsAndARuleThatHalvesOne()
     h.system.userFocus(b)
     let view = h.workspace.camera

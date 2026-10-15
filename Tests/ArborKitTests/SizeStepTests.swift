@@ -70,7 +70,7 @@ import Testing
     try expectFits(h, terminal, step: larger)
   }
 
-  @Test func aWindowWhoseMinimumIsALittleOverItsSlotIsStillATile() throws {
+  @Test(.withTiles) func aWindowWhoseMinimumIsALittleOverItsSlotIsStillATile() throws {
     let h = Harness()
     let stubborn = h.system.open(app: "Stubborn")
     let notes = h.system.open(app: "Notes")

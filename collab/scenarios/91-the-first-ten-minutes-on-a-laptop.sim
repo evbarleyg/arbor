@@ -93,12 +93,14 @@ focus 104
 key ctrl+opt+cmd+left
 expect docked 104
 expect visible 104
-# Notes 709, Safari 574, the chat 760 and a Desktop do not fit this display: the window docked first is the tile. Nothing is lost.
-expect tile 101
+# Notes 709, Safari 574, the chat 760 and a Desktop do not fit this display: they overlap, and nobody leaves (F69).
+expect visible 101
+expect visible 102
 key ctrl+opt+cmd+right
 expect docked 104
 expect visible 104
-expect tile 101
+expect visible 101
+expect visible 102
 key ctrl+opt+f
 expect floating 104
 expect visible 101

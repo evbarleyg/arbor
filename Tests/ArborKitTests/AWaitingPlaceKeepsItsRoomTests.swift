@@ -214,7 +214,7 @@ import Testing
   }
 
   /// A place too narrow to use would be a tile if its window were there. Kept open it is still nothing.
-  @Test func aHoleTooSmallToUseIsNoTile() throws {
+  @Test(.withTiles) func aHoleTooSmallToUseIsNoTile() throws {
     let first = Harness()
     let ids = (0..<4).map { first.system.open(app: ["Safari", "Notes", "Mail", "Terminal"][$0], pid: Int32(500 + $0)) }
     first.start()
@@ -642,7 +642,7 @@ import Testing
 
   /// Four windows docked by halving on a laptop: the last two places are too small to use. One of those windows is back before Arbor and in
   /// view. A start takes nothing out of view (Q16): it is not made a tile beside an empty screen for the sake of who is late.
-  @Test func aHoleNeverMakesATileOfAWindowThatCouldShow() throws {
+  @Test(.withTiles) func aHoleNeverMakesATileOfAWindowThatCouldShow() throws {
     let first = Harness()
     let ids = (0..<4).map { first.system.open(app: ["Safari", "Notes", "Mail", "Terminal"][$0], pid: Int32(500 + $0)) }
     first.start()
@@ -755,7 +755,7 @@ import Testing
   /// In the evening Mail, which will not go under 700 points, was a tile under Notes, which could not have given it that much and stayed
   /// of use. In the morning it comes first. With holes Arbor does no worse than without: Mail shows, everything shows, and the holes of
   /// that display are given up for good, also in the file.
-  @Test func aWindowThatWillNotFitBesideAHoleShowsAllTheSame() throws {
+  @Test(.withTiles) func aWindowThatWillNotFitBesideAHoleShowsAllTheSame() throws {
     let first = Harness()
     let notes = first.system.open(app: "Notes", pid: 501, frame: CGRect(x: 190, y: 140, width: 600, height: 400))
     let mail = first.system.open(

@@ -106,7 +106,7 @@ private func columns(settings: Settings = Settings()) -> (Harness, WindowID, Win
     expectSound(h)
   }
 
-  @Test func swappingWithATileBringsItsWindowOut() {
+  @Test(.withTiles) func swappingWithATileBringsItsWindowOut() {
     let (h, w) = tilingScenario(["A"], ["dock $0 left"], settings: noRoomMade)
     let a = w[0]
     let big = h.system.open(app: "Xcode", frame: CGRect(x: 400, y: 200, width: 720, height: 520))
@@ -123,7 +123,7 @@ private func columns(settings: Settings = Settings()) -> (Harness, WindowID, Win
     expectSound(h)
   }
 
-  @Test func focusLeavesAWindowThatSwapsIntoASlotTooSmallForIt() {
+  @Test(.withTiles) func focusLeavesAWindowThatSwapsIntoASlotTooSmallForIt() {
     let h = Harness(settings: noRoomMade)
     let a = h.system.open(app: "Xcode", frame: CGRect(x: 100, y: 100, width: 720, height: 520), minimumSize: CGSize(width: 700, height: 500))
     let b = h.system.open(app: "Notes", frame: CGRect(x: 300, y: 200, width: 400, height: 300))
@@ -137,7 +137,7 @@ private func columns(settings: Settings = Settings()) -> (Harness, WindowID, Win
     expectSound(h)
   }
 
-  @Test func aGroupShownAsATileIsNotSwappedWith() {
+  @Test(.withTiles) func aGroupShownAsATileIsNotSwappedWith() {
     let (h, w) = tilingScenario(
       ["A", "B", "C"], ["dock $0 left", "dock $1 right", "dock $2 beside $1 bottom", "resize $1 left -500"])
     #expect(h.layout!.tiles.map(\.kind) == [.group], "202 points of its 702")
@@ -413,7 +413,7 @@ private func columns(settings: Settings = Settings()) -> (Harness, WindowID, Win
   }
 
   /// A gap once dragged until a window became a tile is no longer the person's wish once they ask for equal sizes.
-  @Test func balanceBringsBackAWindowThatWasSqueezedIntoATileByHand() {
+  @Test(.withTiles) func balanceBringsBackAWindowThatWasSqueezedIntoATileByHand() {
     let h = Harness()
     let a = h.system.open(app: "A", frame: CGRect(x: 100, y: 100, width: 400, height: 300))
     let b = h.system.open(
@@ -432,7 +432,7 @@ private func columns(settings: Settings = Settings()) -> (Harness, WindowID, Win
   }
 
   /// Found by the random run.
-  @Test func theKeyboardDoesNotStayWithAWindowWhoseEqualShareIsTooSmall() {
+  @Test(.withTiles) func theKeyboardDoesNotStayWithAWindowWhoseEqualShareIsTooSmall() {
     let h = Harness(settings: noRoomMade)
     let a = h.system.open(app: "A", frame: CGRect(x: 100, y: 100, width: 400, height: 300))
     // Half the display is 702 points.
@@ -579,7 +579,7 @@ private func columns(settings: Settings = Settings()) -> (Harness, WindowID, Win
     expectSound(h)
   }
 
-  @Test func rotateRefusesWhenTheWindowsWouldBecomeTiles() {
+  @Test(.withTiles) func rotateRefusesWhenTheWindowsWouldBecomeTiles() {
     // Side by side in a column 462 points wide, a and c would be 225 points each: tiles.
     let (h, a, _, _) = columns()
     runOK(h, "resize \(a.rawValue) right -240")
@@ -596,7 +596,7 @@ private func columns(settings: Settings = Settings()) -> (Harness, WindowID, Win
   }
 
   /// Found by the random run: how small an app lets its window get is known only once it has been asked.
-  @Test func rotateTakesItselfBackWhenAnAppRefusesItsNewSlot() {
+  @Test(.withTiles) func rotateTakesItselfBackWhenAnAppRefusesItsNewSlot() {
     let h = Harness()
     // One above the other they need 1000 points of the display's 875: no room can be made (F61).
     let a = h.system.open(
@@ -800,7 +800,7 @@ private func columns(settings: Settings = Settings()) -> (Harness, WindowID, Win
     expectSound(h)
   }
 
-  @Test func growingStopsWhenTheNeighbourIsDownToTheLimit() {
+  @Test(.withTiles) func growingStopsWhenTheNeighbourIsDownToTheLimit() {
     let (h, w) = tilingScenario(["A", "B"], ["dock $0 left", "dock $1 right"], settings: Settings())
     let a = w[0]
     h.system.userFocus(a)

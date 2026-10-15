@@ -164,6 +164,10 @@ public struct HeadsUpFacts: Equatable, Sendable {
   public var docked: Int
   public var outOfView: Int
   public var tiles: Int
+  /// Docked windows in view that are wider than their places, and so lie partly over a neighbour (`Layout.overhangs`).
+  public var tooWide = 0
+  /// The same for those that are only taller.
+  public var tooTall = 0
 
   public init(docked: Int, outOfView: Int, tiles: Int) {
     self.docked = docked
@@ -178,6 +182,8 @@ public struct HeadsUpFacts: Equatable, Sendable {
     // window to the next would otherwise use the hint up in three key presses.
     if outOfView == 0, after.outOfView > 0 { moments.append(.outOfView) }
     if tiles == 0, after.tiles > 0 { moments.append(.tile) }
+    // At the act that causes it: one more than before.
+    if after.tooWide + after.tooTall > tooWide + tooTall { moments.append(.overlap) }
     // One window. After `arrange` there is no "it" to frame.
     if after.docked == docked + 1 { moments.append(.docked) }
     return moments
@@ -196,6 +202,8 @@ public enum HeadsUpHint: String, Sendable, CaseIterable {
   /// A docked window has another frame within a second of a click or a modifier key, and Arbor let it be. Who did it, macOS or its app, Arbor
   /// does not know, so it does not say.
   case leftAsItIs
+  /// Docked windows do not fit beside or above each other at their smallest, and lie partly over each other.
+  case overlap
 
   /// How often each is shown before Arbor takes it as read. More than once, because a line that fades
   /// after a few seconds is easily missed the first time.
@@ -229,6 +237,10 @@ public enum HeadsUpHint: String, Sendable, CaseIterable {
       return HeadsUpModel(
         kind: .hint, text: "Left as it is",
         hint: shortcut(.showAll).map { "\($0) puts it back in its place" } ?? "Show Everything in the menu puts it back in its place")
+    case .overlap:
+      return HeadsUpModel(
+        kind: .hint, text: facts.tooWide > 0 ? "Too wide to stand side by side" : "Too tall to stand one above the other",
+        hint: "they overlap")
     }
   }
 }

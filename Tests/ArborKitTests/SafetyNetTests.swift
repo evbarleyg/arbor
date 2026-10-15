@@ -167,7 +167,7 @@ import Testing
     #expect(h.workspace.camera == tree.root)
   }
 
-  @Test func revealingAWindowThatWouldBeATileFramesIt() {
+  @Test(.withTiles) func revealingAWindowThatWouldBeATileFramesIt() {
     let (h, a, b, _) = makeHarness()
     // More than its neighbour could spare (F61).
     h.system.setMinimumSize(b, CGSize(width: 1200, height: 600))
@@ -213,7 +213,7 @@ import Testing
     #expect(h.system.focused == c)
   }
 
-  @Test func openingATileFocusesWhatIsInside() {
+  @Test(.withTiles) func openingATileFocusesWhatIsInside() {
     var settings = Settings()
     settings.minimumUsableWidth = 750  // more than half the display
     let (h, a, b, _) = makeHarness(settings: settings)
@@ -332,7 +332,7 @@ import Testing
     #expect(h.frame(e)!.origin == CGPoint(x: Self.side.frame.maxX - 1, y: Self.side.frame.maxY - 1))
   }
 
-  @Test func aWindowThatIsOnlyTooTallBecomesATileToo() {
+  @Test(.withTiles) func aWindowThatIsOnlyTooTallBecomesATileToo() {
     let (h, a, b, c) = makeHarness()
     // More than the window above it could spare (F61).
     h.system.setMinimumSize(c, CGSize(width: 100, height: 700))

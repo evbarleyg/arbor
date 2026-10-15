@@ -100,7 +100,7 @@ import Testing
     expectWindowsMatchLayout(h, on: h.display)
   }
 
-  @Test func aWindowThatReallyRefusesStillBecomesATileAMomentLater() {
+  @Test(.withTiles) func aWindowThatReallyRefusesStillBecomesATileAMomentLater() {
     let (h, _, b) = makeHarness(flight: 0)
     // Without F61, which would make room for it first.
     h.run("set makeRoom off")

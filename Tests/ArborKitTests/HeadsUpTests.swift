@@ -459,7 +459,7 @@ private let side = DisplaySnapshot(
 
   // MARK: Acceptance 2: teaching moments
 
-  @Test func theFirstDockTheFirstWindowsOutOfViewAndTheFirstTileAreExplained() {
+  @Test(.withTiles) func theFirstDockTheFirstWindowsOutOfViewAndTheFirstTileAreExplained() {
     let (h, _, b, _) = makeHarness(taught: false)
     h.run("dock left", from: .shortcut)
     #expect(lines(h).last == "Docked · ⌃⌥↩ frames it")

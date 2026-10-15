@@ -167,7 +167,7 @@ public final class Controller {
   public var isInTheMiddleOfAStart: Bool { isTurning }
 
   /// Sizes apps refused to shrink below, learned when a frame does not stick.
-  var minimumSizes: [WindowID: CGSize] = [:]
+  public internal(set) var minimumSizes: [WindowID: CGSize] = [:]
   /// How often each window has been seen smaller than its learned size (Controller+Layout.swift).
   var disprovedMinimums: [WindowID: Int] = [:]
   /// When each window last stood by its learned size (Controller+LearnedSizes.swift).
@@ -277,6 +277,8 @@ public final class Controller {
   /// gap, and the slots they squeezed into tiles that way, which stay as they left them.
   var gapsInHand = false
   var squeezedByHand: [DisplayID: Set<NodeID>] = [:]
+  /// The gap a hand is dragging, or was a moment ago (Controller+Overlap.swift).
+  var seamInHand: (display: DisplayID, split: NodeID, leading: NodeID, trailing: NodeID)?
   /// True while a layout is made that nobody asked for (`unasked`): the window with the keyboard costs nobody their place.
   var layingOutUnasked = false
   /// The window that is being docked as it opens (`asItOpens`): with the keyboard in it, it costs nobody their place either.
@@ -1263,6 +1265,7 @@ public final class Controller {
       snapshot.windows[index].stashed = role == .stashed
       if case .summoned = role { snapshot.windows[index].summoned = true }
       snapshot.windows[index].letBe = isSaidToBeLetBe(snapshot.windows[index].id, docked: snapshot.windows[index].docked)
+      snapshot.windows[index].overItsPlaceBy = overhang(of: snapshot.windows[index].id)
     }
     snapshot.held = holdLevel
     return snapshot

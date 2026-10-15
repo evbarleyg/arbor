@@ -29,9 +29,11 @@ extension ChaosRunner {
   public nonisolated static let knownFailures: [ChaosKnownFailure] = [
     ChaosKnownFailure(
       rule: "parked-beside-another-display-making-way", owner: "the controller",
-      story: "Only with `floatingWindowsMakeWay` on, which ships off (F64). A window out of view beside one display is docked on another display, out of view there too. It stays where it was, where "
+      story: "Only with `windowsThatDoNotFit` at `tile`, which ships at `overlap` (F69): the script needs a window that becomes a tile. "
+        + "Only with `floatingWindowsMakeWay` on, which ships off (F64). A window out of view beside one display is docked on another display, out of view there too. It stays where it was, where "
         + "part of it shows, though the other display has a better place.",
       script: """
+        settings {"windowsThatDoNotFit":"tile"}
         settings {"desktopColumn":true,"floatingWindowsMakeWay":true}
         launch
         mac-tiling off
@@ -136,9 +138,11 @@ extension ChaosRunner {
         """),
     ChaosKnownFailure(
       rule: "left-its-place-making-way", owner: "the controller",
-      story: "Only with `floatingWindowsMakeWay` on, which ships off (F64). With something docked, a display that comes or goes beside this one makes Arbor lay this one out again: a floating window that lay over a docked neighbour is moved "
+      story: "Only with `windowsThatDoNotFit` at `tile`, which ships at `overlap` (F69): the script needs a window that becomes a tile. "
+        + "Only with `floatingWindowsMakeWay` on, which ships off (F64). With something docked, a display that comes or goes beside this one makes Arbor lay this one out again: a floating window that lay over a docked neighbour is moved "
         + "onto the Desktop's part, though nothing about its own display has changed.",
       script: """
+        settings {"windowsThatDoNotFit":"tile"}
         settings {"floatingWindowsMakeWay":true}
         launch
         open 102 Finder pid 1005 at -435 193 1915 2399 min 1915 2399
@@ -157,7 +161,8 @@ extension ChaosRunner {
         """),
     ChaosKnownFailure(
       rule: "sized-there-and-back", owner: "board 1.32: Arbor knows how small apps go", severity: 2,
-      story: "Two windows Arbor has never seen at their smallest cannot both fit. The newcomer refuses its slot, room is to be made from the other, "
+      story: "Only with `windowsThatDoNotFit` at `tile`, which ships at `overlap` (F69): the script needs a window that becomes a tile. "
+        + "Two windows Arbor has never seen at their smallest cannot both fit. The newcomer refuses its slot, room is to be made from the other, "
         + "which is asked where it stands and stops short of what is needed: the newcomer becomes a tile and the other gets its share back. It was never in a "
         + "wrong place, but narrower on the way than it ends up. `arrange` of several strangers has the same: a column is widened by one that refuses "
         + "after another in it has shrunk. Only asking tells how small a window goes, so it ends when Arbor knows beforehand.",
@@ -171,6 +176,7 @@ extension ChaosRunner {
         key down toggle-float
         """,
       """
+        settings {"windowsThatDoNotFit":"tile"}
         displays main:0,0,1512,982:37,0,0,86* windows-never
         launch
         open 103 Xcode pid 1004 at 155 176 1188 685 min 1188 685
@@ -187,11 +193,13 @@ extension ChaosRunner {
         """),
     ChaosKnownFailure(
       rule: "sized-there-and-back-let-be", owner: "board 1.32: Arbor knows how small apps go, and believes it of the window that is let be", severity: 3,
-      story: "Quit Arbor, click an app in the Dock, open Arbor. The window with the keyboard turns out to have no room, so it is let be where it stands "
+      story: "Only with `windowsThatDoNotFit` at `tile`, which ships at `overlap` (F69): the script needs a window that becomes a tile. "
+        + "Quit Arbor, click an app in the Dock, open Arbor. The window with the keyboard turns out to have no room, so it is let be where it stands "
         + "(Q16). Let be means that no frame is set, and after a pause none is, because what was learned is still known. A new process knows nobody's "
         + "smallest size: the window is asked where it stands, like anybody, becomes narrower, and gets its width back. It ends when a launch knows what the "
         + "last run knew; for this window the paper is then believed, unasked, as it is for a lender.",
       script: """
+        settings {"windowsThatDoNotFit":"tile"}
         launch
         open 101 Mail pid 1002 at 100 100 900 700 min 820 400
         focus 101
@@ -204,6 +212,7 @@ extension ChaosRunner {
         launch
         """,
       """
+        settings {"windowsThatDoNotFit":"tile"}
         launch
         open 101 Xcode pid 1004 at 40 100 1350 700 min 1300 500
         focus 101
@@ -238,9 +247,11 @@ extension ChaosRunner {
         """),
     ChaosKnownFailure(
       rule: "moved-twice", owner: "rule 3: one thing that happens is one layout", severity: 2,
-      story: "Two layouts for one thing that happened, sizes apart. A window comes back out of the Dock: its neighbour goes into the slot that is left and is a tile a moment "
+      story: "Only with `windowsThatDoNotFit` at `tile`, which ships at `overlap` (F69): the script needs a window that becomes a tile. "
+        + "Two layouts for one thing that happened, sizes apart. A window comes back out of the Dock: its neighbour goes into the slot that is left and is a tile a moment "
         + "later. A change of displays lays out more than once.",
       script: """
+        settings {"windowsThatDoNotFit":"tile"}
         displays main:0,0,1280,800:25,0,48,0* windows-never
         open 101 Finder pid 1005 at 148 53 975 358 min 501 300
         open 102 Music pid 1006 at 159 70 862 558 min 680 480
@@ -250,6 +261,7 @@ extension ChaosRunner {
         restore 101
         """,
       """
+        settings {"windowsThatDoNotFit":"tile"}
         launch
         displays main:0,0,1080,1920:37,0,0,0* windows-silent
         open 110 Terminal pid 1003 at 776 219 1155 642 min 1155 583
@@ -554,7 +566,8 @@ extension ChaosRunner {
         """),
     ChaosKnownFailure(
       rule: "flashed-into-view", owner: "rule 3: one thing that happens is one layout", severity: 2,
-      story: "A window out of view shows and goes again for one thing that happened. A window closes, the display is laid out, the keyboard goes elsewhere and the view "
+      story: "Only with `windowsThatDoNotFit` at `tile`, which ships at `overlap` (F69): the script needs a window that becomes a tile. "
+        + "A window out of view shows and goes again for one thing that happened. A window closes, the display is laid out, the keyboard goes elsewhere and the view "
         + "follows. Also: a window kept to the LEFT of a display cannot be asked for a size there (what shows of it depends on its width), so it is offered its slot in view, and refuses.",
       script: """
         open 102 Finder pid 1005 at 1629 667 782 488 min 501 300
@@ -566,6 +579,7 @@ extension ChaosRunner {
         close 104
         """,
       """
+        settings {"windowsThatDoNotFit":"tile"}
         displays main:0,0,1280,800:25,0,0,0* side:1280,0,2560,1440:25,0,0,0 windows-never
         launch
         open 103 Xcode pid 1004 at 1287 404 1547 685 min 1188 685
@@ -576,10 +590,12 @@ extension ChaosRunner {
         """),
     ChaosKnownFailure(
       rule: "flashed-out-of-view", owner: "rule 3: one thing that happens is one layout", severity: 2,
-      story: "One command sends a window out of view and fetches it again. `rotate` turns the group, a window will not be as small as its new slot and is a tile, "
+      story: "Only with `windowsThatDoNotFit` at `tile`, which ships at `overlap` (F69): the script needs a window that becomes a tile. "
+        + "One command sends a window out of view and fetches it again. `rotate` turns the group, a window will not be as small as its new slot and is a tile, "
         + "and the command takes itself back: every window has gone there and back for \"not enough room\". Also: a docked window becomes a tile, and a moment "
         + "later the view follows the keyboard onto it.",
       script: """
+        settings {"windowsThatDoNotFit":"tile"}
         displays side:0,0,2560,1440:25,0,0,70* windows-never
         open 101 Safari pid 1000 at 861 153 972 864 min 574 240
         open 102 Notes pid 1001 at 157 794 819 516 min 709 300
@@ -589,6 +605,7 @@ extension ChaosRunner {
         key down rotate
         """,
       """
+        settings {"windowsThatDoNotFit":"tile"}
         open 102 Music pid 1006 at 858 56 882 708 min 680 480
         open 103 Xcode pid 1004 at 288 218 1188 856 min 1188 685
         launch
@@ -656,8 +673,10 @@ extension ChaosRunner {
         """),
     ChaosKnownFailure(
       rule: "flipped-into-view", owner: "rule 3: one thing that happens is one layout", severity: 4,
-      story: "A window that is out of view shows and goes again at a key that turns to a neighbour, among five windows of which some are tiles.",
+      story: "Only with `windowsThatDoNotFit` at `tile`, which ships at `overlap` (F69): the script needs a window that becomes a tile. "
+        + "A window that is out of view shows and goes again at a key that turns to a neighbour, among five windows of which some are tiles.",
       script: """
+        settings {"windowsThatDoNotFit":"tile"}
         displays main:0,0,1728,1117:37,0,0,0* side:1728,323,3008,1692:25,0,0,0 windows-never
         open 101 Notes pid 1001 at 1912 1231 837 618 min 709 320
         open 102 Mail pid 1002 at 3312 834 871 833 min 871 236
@@ -678,7 +697,8 @@ extension ChaosRunner {
         """),
     ChaosKnownFailure(
       rule: "flipped-out-of-view", owner: "rule 3: one thing that happens is one layout", severity: 3,
-      story: "A window leaves the screen and comes back for one thing that happened, and no app refused a size. ⌃⌥D with one docked window that has the keyboard: it goes, and a moment later the "
+      story: "Only with `windowsThatDoNotFit` at `tile`, which ships at `overlap` (F69): the script needs a window that becomes a tile. "
+        + "A window leaves the screen and comes back for one thing that happened, and no app refused a size. ⌃⌥D with one docked window that has the keyboard: it goes, and a moment later the "
         + "view follows the keyboard and it is back. Move to Next Display: by way of the corner. Grow at the limit: out and in, twice.",
       script: """
         open 103 Mail pid 1002 at 1553 134 1155 658 min 760 400
@@ -688,6 +708,7 @@ extension ChaosRunner {
         react
         """,
       """
+        settings {"windowsThatDoNotFit":"tile"}
         displays main:-1280,0,1280,800:25,0,0,0 side:0,0,1920,1080:25,86,0,0* windows-never
         open 103 Notes pid 1001 at 367 327 972 654 min 709 300
         launch
@@ -697,6 +718,7 @@ extension ChaosRunner {
         via menu move-to-display next
         """,
       """
+        settings {"windowsThatDoNotFit":"tile"}
         launch
         open 103 Xcode pid 1004 at 85 62 1188 800 min 1188 685
         key down dock right
@@ -957,7 +979,8 @@ extension ChaosRunner {
         """),
     ChaosKnownFailure(
       rule: "switched-to-partly-out", owner: "follows from where Arbor placed it: the pin, a slot narrower than what shows", severity: 3,
-      story: "The window switched to hangs over an edge where Arbor put it, and the switch does not fetch it: a docked window that is pinned and will not be as small as the pin wants; "
+      story: "Only with `windowsThatDoNotFit` at `tile`, which ships at `overlap` (F69), where a window larger than the view by less than the gap around it stays on the display. "
+        + "The window switched to hangs over an edge where Arbor put it, and the switch does not fetch it: a docked window that is pinned and will not be as small as the pin wants; "
         + "an editor alone on a small laptop with the Dock at the side, 6 points over the edge.",
       script: """
         launch
@@ -968,6 +991,7 @@ extension ChaosRunner {
         focus 106
         """,
       """
+        settings {"windowsThatDoNotFit":"tile"}
         displays main:0,0,1280,800:25,86,0,0* windows-never
         open 101 Xcode pid 1004 at 86 25 1188 775 min 1188 685
         launch
@@ -1022,6 +1046,34 @@ extension ChaosRunner {
         hang 2000
         quit
         wake 2000
+        """),
+    ChaosKnownFailure(
+      rule: "moved-unasked-out-of-view", owner: "nobody yet: found while board 0.26 was built, and as old as the rule", severity: 4,
+      story: "A docked window is out of view because the view is on something else. Its app moves it, so that part of it shows. Arbor leaves it there, and sends it out of view "
+        + "again at the next thing that happens, which is about another window. Right in the end and late: it was owed at the move.",
+      script: """
+        open 101 Preview pid 1007 at 602 842 311.5 510.25 min 203 303 title Untitled
+        launch
+        space 101 off
+        open 106 Mail pid 1002 at -57 174 3183 2286 min 3183 2286 title main.swift
+        open 108 Notes pid 1001 at -586 640 674 635 min 562 418
+        dock bottom
+        tile main 0
+        toggle-float 101
+        move 108 1297 38 720 735
+        via gesture dock 101 left
+        """,
+      """
+        displays main:0,0,2560,1440:25,0,86,0* side:2560,-170,1280,800:0,0,0,0 windows-never
+        open 101 Preview pid 1007 at 611 684 1066 365 min 1066 365
+        open 103 Mail pid 1002 at 2111 881 2285 2296 min 2285 2296 max 2285 2296
+        cursor 3434 -160
+        open 104 Mail pid 1002 at 2426 476 782 631 title Inbox
+        launch
+        layout Preview | Preview | Terminal
+        tile side 0
+        move 101 1839 381 788 546
+        move-to-display next 103
         """),
     ChaosKnownFailure(
       rule: "moved-unasked", owner: "nobody yet: what is left of it since F64, none of it an ordinary floating window", severity: 3,
@@ -1098,9 +1150,11 @@ extension ChaosRunner {
         """),
     ChaosKnownFailure(
       rule: "parked-beside-another-display", owner: "the controller", severity: 3,
-      story: "A window out of view beside one display is docked on another display, out of view there too. It stays where it was, where part of "
+      story: "Only with `windowsThatDoNotFit` at `tile`, which ships at `overlap` (F69): the script needs a window that becomes a tile. "
+        + "A window out of view beside one display is docked on another display, out of view there too. It stays where it was, where part of "
         + "it shows, though the other display has a better place.",
       script: """
+        settings {"windowsThatDoNotFit":"tile"}
         settings {"desktopColumn":true}
         launch
         displays main:0,0,800,600:25,0,0,0* side:-223,600,2560,1440:0,50,0,0 windows-first
@@ -1112,6 +1166,7 @@ extension ChaosRunner {
         layout Finder | Notes | Preview
         """,
       """
+        settings {"windowsThatDoNotFit":"tile"}
         settings {"desktopColumn":true}
         launch
         displays main:0,0,1280,800:25,0,97,0* side:-53,800,1440,900:0,0,0,0 windows-late
@@ -1279,7 +1334,7 @@ extension ChaosRunner {
   /// read 0; whoever brings one there takes it out of this set, and from then on it ends walks like any other rule.
   public nonisolated static let countedRules: Set<String> = [
     "eye-moved-twice", "eye-moved-twice-sizing", "eye-moved-again", "eye-moved-again-sizing",
-    "floating-taken-out-of-view", "strayed-between", "dock-took-out-of-view", "displays-moved-the-untouched",
+    "floating-taken-out-of-view", "strayed-between", "displays-moved-the-untouched",
     "parked-before-any-dock", "arrival-moved-a-neighbour", "arrival-took-a-neighbour-out-of-view",
     "displays-fetched-what-was-in-reach",
   ]

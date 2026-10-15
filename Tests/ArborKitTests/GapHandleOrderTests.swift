@@ -117,7 +117,7 @@ private struct SplitMix: RandomNumberGenerator {
   }
 
   /// [left | (right over a tile)]: what stands where no window is stands in plain view.
-  @Test func aGapWithATileAlongPartOfASideToo() throws {
+  @Test(.withTiles) func aGapWithATileAlongPartOfASideToo() throws {
     let (h, left, right, _) = makeHarness()
     let wide = h.system.open(app: "Mail", pid: 1004)
     h.system.setMinimumSize(wide, CGSize(width: 1350, height: 300))

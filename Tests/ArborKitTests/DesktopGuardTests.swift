@@ -106,7 +106,7 @@ import Testing
     #expect(h.controller.desktopGuardZones().displays.allSatisfy { $0.windows.count == 1 })
   }
 
-  @Test func tilesKeepTheirClicks() {
+  @Test(.withTiles) func tilesKeepTheirClicks() {
     let (h, _, b) = makeHarness()
     let big = h.system.open(app: "Xcode", frame: CGRect(x: 400, y: 200, width: 700, height: 500))
     h.system.setMinimumSize(big, CGSize(width: 1250, height: 700))

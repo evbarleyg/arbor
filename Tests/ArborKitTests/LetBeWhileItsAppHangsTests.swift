@@ -6,7 +6,7 @@ import Testing
 
 /// A window is let be where it stood when Arbor started (`Controller+LetBe.swift`), its app stops answering, and somebody asks for a
 /// layout. It cannot be moved now, so it goes on being let be, unless the layout they asked for has a place for it.
-@Suite @MainActor struct LetBeWhileItsAppHangsTests {
+@Suite(.withTiles) @MainActor struct LetBeWhileItsAppHangsTests {
   let fixtures = LaunchLetsBeTests()
 
   /// Found by a walk: it stayed on record as let be, which is for a window the layout hides, and would never have got its place.

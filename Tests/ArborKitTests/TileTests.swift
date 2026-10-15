@@ -5,7 +5,7 @@ import CoreGraphics
 import Testing
 
 /// Tiles: windows too small to use, and windows whose app would not take the slot.
-@Suite @MainActor struct TileTests {
+@Suite(.withTiles) @MainActor struct TileTests {
   /// `[a | b]`, two halves (thirds, where the Desktop has a column between them), and `c` to dock below one of them.
   func makeHarness() -> (Harness, a: WindowID, b: WindowID, c: WindowID) {
     let h = Harness()

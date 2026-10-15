@@ -255,7 +255,7 @@ import Testing
     #expect(h.system.focused == a)
   }
 
-  @Test func dockingAWindowThatBecomesATileDoesNotZoomOntoIt() {
+  @Test(.withTiles) func dockingAWindowThatBecomesATileDoesNotZoomOntoIt() {
     for focusedFirst in [true, false] {
       let (h, _, b, _) = makeHarness()
       let big = h.system.open(app: "Xcode", frame: CGRect(x: 400, y: 200, width: 700, height: 500))
@@ -334,7 +334,7 @@ import Testing
 
   /// macOS names the app's next window before it reports the minimize, so the view has followed already. Taking that
   /// back only to find nothing in view, and following again, would show as three motions.
-  @Test func aViewThatWouldHaveToFollowAnywayIsNotTakenBackFirst() {
+  @Test(.withTiles) func aViewThatWouldHaveToFollowAnywayIsNotTakenBackFirst() {
     // With a column for the Desktop: it shares what the small one leaves, and half the display is too narrow for the big one.
     // Without, the big one would have everything and be in view.
     let h = Harness(settings: .withDesktopColumn)

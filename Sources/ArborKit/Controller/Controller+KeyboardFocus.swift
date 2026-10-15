@@ -120,7 +120,9 @@ extension Controller {
     guard let layout = layouts[display], let workspace = workspaces[display] else { return [] }
     var candidates: [FocusCandidate] = []
     func add(_ window: WindowID) {
-      guard let frame = frameInView(of: window, on: display), !(arriving && workspace.isPinned(window)) else { return }
+      // One that hangs over its neighbour lies where its place is: left of that neighbour, however far it reaches.
+      guard let frame = layout.tightPlaces[window] ?? frameInView(of: window, on: display), !(arriving && workspace.isPinned(window))
+      else { return }
       candidates.append(FocusCandidate(id: .window(window), frame: frame, recency: focusRecency(of: [window])))
     }
     for window in workspace.tree.windows(under: layout.camera) { add(window) }

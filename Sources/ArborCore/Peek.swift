@@ -206,7 +206,7 @@ public struct Peek: Equatable, Sendable {
       return Navigation.adjacentLeaf(to: leaf, toward: edge, in: layout, tree: tree) ?? leaf
     }
     var spaces = layout.tiles.map { ($0.node, $0.frame) }
-    for (window, frame) in layout.windowFrames {
+    for (window, frame) in layout.slots {
       if let leaf = tree.leaf(containing: window) { spaces.append((leaf, frame)) }
     }
     return spaces.min { ($0.1.minY, $0.1.minX, $0.0) < ($1.1.minY, $1.1.minX, $1.0) }?.0

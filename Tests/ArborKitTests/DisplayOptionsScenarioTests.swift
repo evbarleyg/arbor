@@ -65,7 +65,7 @@ private let studio = DisplaySnapshot(
     #expect(ScenarioExpectation.check(["fills", "\(large[0].rawValue)"], harness: h, lastCommandOK: true) == nil)
   }
 
-  @Test func tilesStartAtTheDisplaysOwnSize() {
+  @Test(.withTiles) func tilesStartAtTheDisplaysOwnSize() {
     let (h, small, large) = makeHarness()
     // Two columns: about 710 points each on the laptop, about 1250 on the large display.
     for window in small + large { h.run("dock \(window.rawValue) left") }

@@ -332,7 +332,7 @@ import Testing
   /// Two halves are each window's own, so for the window with the keyboard the other lends of its own, which costs it its place. It is lent, not
   /// given: a person has dragged the gap, the app being typed in grows beyond what is there, and shrinks again or closes. The gap
   /// is where the hand left it, to the point.
-  @Test(arguments: End.allCases) func whatTheOtherLentForTheKeyboardsSakeGoesBackToTheGapTheHandLeft(_ end: End) throws {
+  @Test(.withTiles, arguments: End.allCases) func whatTheOtherLentForTheKeyboardsSakeGoesBackToTheGapTheHandLeft(_ end: End) throws {
     let h = Harness(settings: Settings())
     let mail = h.system.open(
       app: "Mail", pid: 1001, frame: CGRect(x: 100, y: 100, width: 700, height: 600), minimumSize: CGSize(width: 560, height: 400))
@@ -379,7 +379,7 @@ import Testing
   }
 
   /// Not at a start, which takes no window out of view that is in view: the window with the keyboard is let be where it stands.
-  @Test func atAStartNobodyPaysWithTheirPlace() {
+  @Test(.withTiles) func atAStartNobodyPaysWithTheirPlace() {
     let old = Harness(settings: Settings())
     old.start()
     let editor = old.system.open(app: "Xcode", pid: 11, frame: CGRect(x: 100, y: 100, width: 1200, height: 600))
@@ -400,7 +400,7 @@ import Testing
   }
 
   /// On the word of a record that is too old to go by nobody pays either (F45): the window is asked first, where it is.
-  @Test(arguments: [true, false]) func anOldRecordCostsNobodyTheirPlaceUnasked(relents: Bool) {
+  @Test(.withTiles, arguments: [true, false]) func anOldRecordCostsNobodyTheirPlaceUnasked(relents: Bool) {
     let h = Harness(settings: Settings())
     let a = h.system.open(app: "Safari", frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     let b = h.system.open(app: "Notes", frame: CGRect(x: 200, y: 100, width: 600, height: 400))

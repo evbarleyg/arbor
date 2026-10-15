@@ -5,6 +5,8 @@
 # With a column for the Desktop, for the gap at the end: it lies between the Desktop and the chat, so moving it squeezes nobody. As Arbor
 # ships the first half is the same, but the only gap is that of Mail's tile, and a tile that a hand has made shorter stays as it was left (T20).
 set desktopColumn true
+# As Arbor ships, what cannot fit overlaps (F69). This story is about the tile, which is an option now.
+set windowsThatDoNotFit tile
 open Mail 1100x700 min 820x400
 open Slack 1100x750 min 760x500
 focus 101

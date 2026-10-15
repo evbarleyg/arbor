@@ -35,8 +35,8 @@ extension Controller {
   /// window 0). Only what is said of the window itself, which is what its person is looking at: other sizes alone can part two
   /// bystanders that lay one above the other, or send them into a tile.
   private func place(of id: WindowID, in layout: Layout, of workspace: Workspace) -> [[UInt32]] {
-    guard let own = layout.windowFrames[id] ?? layout.tiles.first(where: { $0.windows.contains(id) })?.frame else { return [] }
-    var others = layout.windowFrames.map { (id: $0.key.rawValue, frame: $0.value) }
+    guard let own = layout.slots[id] ?? layout.tiles.first(where: { $0.windows.contains(id) })?.frame else { return [] }
+    var others = layout.slots.map { (id: $0.key.rawValue, frame: $0.value) }
     if let desktop = layout.desktopFrame { others.append((0, desktop)) }
     for tile in layout.tiles {
       for window in tile.windows { others.append((window.rawValue, tile.frame)) }
@@ -153,14 +153,14 @@ extension Controller {
     /// Whether the window would show, and how many tiles there would be.
     func outcome(_ candidate: Workspace) -> (shown: Bool, tiles: Int) {
       guard let layout = trialLayout(of: candidate, on: display) else { return (false, .max) }
-      return (layout.windowFrames[window] != nil, layout.tiles.count)
+      return (layout.fits(window), layout.placesTooSmall)
     }
 
     var copy = workspace
     let halved =
       copy.dock(window, at: .beside(neighbour, edge.opposite), shareSpace: settings.shareRemovedSpace, desktopColumn: settings.desktopColumn) ? copy : nil
     let half = halved.map(outcome) ?? (false, .max)
-    if half.shown, half.tiles <= layouts[display]?.tiles.count ?? 0 { return halved }
+    if half.shown, half.tiles <= layouts[display]?.placesTooSmall ?? 0 { return halved }
 
     // The child of the split the two share that holds the neighbour.
     guard let leaf = workspace.tree.leaf(containing: window) else { return halved }
@@ -206,7 +206,7 @@ extension Controller {
     }
     // Not at the price of another tile.
     guard let better = trialLayout(of: result, on: display), better.desktopFrame != nil,
-      better.tiles.count < trial.tiles.count
+      better.placesTooSmall < trial.placesTooSmall
     else { return candidate }
     return result
   }

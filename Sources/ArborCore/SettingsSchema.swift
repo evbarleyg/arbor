@@ -32,7 +32,7 @@ public enum SettingsSchema {
     ],
     .windows: [
       "gap", "minimumUsableWidth", "minimumUsableHeight", "newWindows", "newWindowsWhileFramed", "desktopColumn", "rules",
-      "autoDockMinimumWidth", "autoDockMinimumHeight", "makeRoom", "floatingWindowsMakeWay", "soleFloatTakesDesktop", "summonStays",
+      "autoDockMinimumWidth", "autoDockMinimumHeight", "makeRoom", "windowsThatDoNotFit", "floatingWindowsMakeWay", "soleFloatTakesDesktop", "summonStays",
       "shareRemovedSpace", "arrangeDesktopWeight", "resizeStep", "displays", "ruleTitleWait", "tileRetryMinutes", "shrinkOutOfView",
     ],
     .dragging: ["dragDocks", "previewDrags", "dropDwell", "screenEdgeBand", "windowEdgeFraction", "reflowWhileDragging", "keepPushed"],
@@ -185,6 +185,11 @@ public enum SettingsSchema {
         "The Desktop keeps a share of the display among docked windows: two docked windows and the Desktop are thirds, and "
           + "Arrange Windows leaves a column free. Off, docked windows take what is left over first: two are two halves, and "
           + "Arrange Windows leaves nothing over."),
+      .choice(
+        "windowsThatDoNotFit", \.windowsThatDoNotFit, ["overlap": "Overlap", "tile": "Become tiles"],
+        "Windows that do not fit",
+        "What happens to a docked window whose app will not make it as small as its place. It stays in view at its smallest "
+          + "size and lies partly over its neighbor, or it goes out of view and a tile stands in its place.", advanced: true),
     ])
 
   private static let dragging = section(

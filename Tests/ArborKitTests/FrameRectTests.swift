@@ -136,7 +136,7 @@ import Testing
     #expect(h.system.isVisible(a) && h.system.isVisible(b))
   }
 
-  @Test func aRectangleOverATileZoomsOntoIt() {
+  @Test(.withTiles) func aRectangleOverATileZoomsOntoIt() {
     let h = Harness()
     let a = h.system.open(app: "Safari", frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     let b = h.system.open(app: "Notes", frame: CGRect(x: 300, y: 200, width: 600, height: 400))

@@ -644,7 +644,7 @@ private let second = DisplaySnapshot(
     + #""windows":[{"id":7,"pid":70,"bundle":"com.apple.systempreferences","app":"System Settings","title":"title-1","frame":[300,100,715,600]},"#
     + #"{"id":8,"pid":80,"bundle":"com.apple.Safari","app":"Safari","title":"title-2","frame":[200,200,800,500]}]}"#
 
-  @Test func anAppThatRefusedASizeInTheRecordingRefusesItInTheReplay() throws {
+  @Test(.withTiles) func anAppThatRefusedASizeInTheRecordingRefusesItInTheReplay() throws {
     // System Settings is asked to be 348 wide and stays 715: Arbor makes it a tile.
     var trace = try Trace(
       text: """

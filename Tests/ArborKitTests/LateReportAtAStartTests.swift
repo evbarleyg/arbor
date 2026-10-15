@@ -8,7 +8,7 @@ import Testing
 /// Arbor starts, and macOS does not say yet who has the keyboard: whatever started Arbor is still in front, or the app is slow to
 /// answer. The window that has it is a tile with everything showing, goes to the corner like any other, and a moment later the
 /// report comes. The view used to go to it, and every other window left (`Controller+LetBe.swift`, "A report that comes late").
-@Suite @MainActor struct LateReportAtAStartTests {
+@Suite(.withTiles) @MainActor struct LateReportAtAStartTests {
   let fixtures = LaunchLetsBeTests()
 
   /// Started with nobody named. The player stood in view and is in the corner, behind its tile.

@@ -358,6 +358,7 @@ fi
 if wanted pointer; then
   # The first window refuses to be smaller than 700×500, so a small slot turns it into a tile.
   ARBOR_TEST_WINDOWS_ARGS="--min-size 1:700x500"
+  arbor_settings "{$ARBOR_TILES_ON}"
   journey pointer 3
   ARBOR_TEST_WINDOWS_ARGS=""
   # shellcheck disable=SC2046

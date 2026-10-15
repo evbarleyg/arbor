@@ -317,8 +317,8 @@ extension Controller {
             movedAtAll = moveTheGaps()
           })
     }
-    if layouts[display]?.windowFrames[id] == nil {
-      // It is a tile all the same: it will not even be as small as it was, or asks for more every time it is asked. Put the
+    if layouts[display]?.windowFrames[id] == nil || (!growing && layout.fits(id) && layouts[display]?.fits(id) == false) {
+      // It is a tile all the same, or hangs over its place: it will not even be as small as it was, or asks for more every time it is asked. Put the
       // seams back, and now that Arbor has learned how small the window can get, go as far as that.
       putTheGapsBack()
       byHand { relayout(display, reason: .structure) }

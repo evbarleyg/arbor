@@ -35,8 +35,13 @@ extension Controller {
 
     guard let display = display(displayID) else { return false }
     var changed = false
-    for (window, slot) in tilesToAsk(in: layout, on: displayID) where parked.contains(window) {
-      if ask(window, toTake: slot.size, on: display) { changed = true }
+    for (window, slot) in tilesToAsk(in: layout, on: displayID) {
+      if parked.contains(window) {
+        if ask(window, toTake: slot.size, on: display) { changed = true }
+      } else if layout.tightPlaces[window] != nil, !enforcement.givenUp.contains(window) {
+        // It has just come into view, hanging over its place. There is no corner to ask it in: a refusal shows nothing, here either.
+        if askInView(window, toTake: slot.size) { changed = true }
+      }
     }
     return changed
   }
@@ -85,16 +90,20 @@ extension Controller {
     guard interval > 0, !isHeld, drag == nil, edgeResize == nil, let view = treeView(displayID) else { return [] }
     let now = self.now()
     let usable = options(for: displayID).layoutOptions.minimumUsableSize
-    return layout.tiles.compactMap { tile in
+    // A window that hangs over its place does so because of a record too (`LayoutOptions.overlaps`). It is in view, and is asked there.
+    let short =
+      layout.tiles.filter { $0.kind == .window }.map { ($0.node, $0.frame) }
+      + layout.tightPlaces.sorted { $0.key < $1.key }.compactMap { window, place in view.tree.leaf(containing: window).map { ($0, place) } }
+    return short.compactMap { node, frame in
       // A slot too small to use makes a tile of any window.
-      guard tile.kind == .window, tile.frame.width >= usable.width - 0.5, tile.frame.height >= usable.height - 0.5,
-        let window = view.visibleWindow(of: tile.node), let record = confirmedSizes[window],
+      guard frame.width >= usable.width - 0.5, frame.height >= usable.height - 0.5,
+        let window = view.visibleWindow(of: node), let record = confirmedSizes[window],
         // A record that has changed since is as good as new.
         record.size == minimumSizes[window],
         // Either way, so that a clock that was set back does not silence the question.
         abs(now.timeIntervalSince(record.at)) >= interval
       else { return nil }
-      return (window, tile.frame)
+      return (window, frame)
     }
   }
 

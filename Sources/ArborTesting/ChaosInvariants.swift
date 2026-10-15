@@ -26,6 +26,7 @@ extension ChaosRunner {
     "fill-in-hand-",
     "across-",
     "order-handles",
+    "seam-in-hand",
   ]
 
   /// How far a docked window may sit from its slot: 4 points of the app rounding its size
@@ -195,11 +196,28 @@ extension ChaosRunner {
         if actual.approximatelyEquals(slot, tolerance: 1), controller.windowsLeftWhereADoubleClickPutThem.contains(window) {
           problems.append(.init("left-alone", "\(window) is in its slot, and Arbor would not keep it there: it still lets it be as after a double-click"))
         }
-        // A window nudged within the tolerance may lean a few points over a narrow gap.
-        if exactly { shown.append((window, actual)) }
+        // One that hangs over its place is as small as its app lets it be, or as a window is of use: no point more covers a neighbour. As far as Arbor
+        // can know: an app that has come to allow less says so to nobody, and a record is believed until it is old (F45).
+        if let over = layout.overhangs[window], exactly, fake.behaviour == .normal {
+          let usable = controller.settings.layoutOptions.minimumUsableSize
+          let known = controller.minimumSizes[window] ?? .zero
+          if (over.width > 0 && actual.width > max(fake.minimumSize.width, known.width, usable.width) + 2)
+            || (over.height > 0 && actual.height > max(fake.minimumSize.height, known.height, usable.height) + 2)
+          {
+            problems.append(
+              .init("overhang-too-large", "\(window) hangs over its place at \(actual.brief), and goes as small as \(fake.minimumSize.width)×\(fake.minimumSize.height)"))
+          }
+        }
+        // A window nudged within the tolerance may lean a few points over a narrow gap. What hangs over its place does so on purpose.
+        if exactly, layout.overhangs[window] == nil { shown.append((window, actual)) }
         if refused { tooLarge.insert(window) }
+        // One that its app keeps larger than the view is in view all the same, from the view's top left (`LayoutOptions.overlaps`).
+        let view = LayoutEngine.content(of: layout.frame, options: controller.options(for: display.id).layoutOptions)
+        let largerThanTheView =
+          layout.tightPlaces[window] != nil && actual.minX >= bounds.minX && actual.minY >= bounds.minY
+          && (actual.width > view.width || actual.maxX <= bounds.maxX) && (actual.height > view.height || actual.maxY <= bounds.maxY)
         // One whose app has only just answered again is placed a moment later.
-        if !refused, !bounds.contains(actual), !owedAMoveBefore.contains(window) {
+        if !refused, !largerThanTheView, !bounds.contains(actual), !owedAMoveBefore.contains(window) {
           problems.append(
             .init("outside", "\(window) at \(actual.brief) leaves the visible frame \(display.visibleFrame.brief) of \(display.id)"))
         }
@@ -376,7 +394,8 @@ extension ChaosRunner {
           problems.append(.init("backdrop", "two parts of the surface on \(display.id) overlap: \(rect.brief) and \(other.brief)"))
         }
       }
-      for slot in Array(layout.windowFrames.values) + layout.tiles.map(\.frame) {
+      // The surface lies behind the places (`BackdropShape.slots`), whatever hangs over them.
+      for slot in Array(layout.slots.values) + layout.tiles.map(\.frame) {
         var wanted = slot.intersection(layout.frame)
         guard !wanted.isNull, wanted.width >= 1, wanted.height >= 1 else { continue }
         // The Desktop comes first where a slot reaches into it.

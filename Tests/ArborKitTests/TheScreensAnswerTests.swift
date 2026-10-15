@@ -142,6 +142,7 @@ import Testing
   @Test func aWindowLetBeAtAStartHasTheWidthItStoodAt() {
     let runner = ChaosRunner()
     let story = [
+      #"settings {"windowsThatDoNotFit":"tile"}"#,
       "launch", "open 101 Editor pid 1004 at 100 100 1350 700 min 1300 500", "focus 101", "dock 101 left",
       "open 102 Browser pid 1000 at 300 100 600 500 min 0 0", "dock 102 right", "settle", "quit", "focus 101", "launch", "settle",
     ]

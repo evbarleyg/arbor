@@ -37,7 +37,7 @@ fi
 # The third window refuses to be smaller than 700×500, so a small slot turns it into a tile.
 ARBOR_TEST_WINDOWS_ARGS="--min-size 3:700x500"
 # On a large screen Arbor would make room for it instead (F61), and there would be no tile to show.
-arbor_settings '{"makeRoom": false}'
+arbor_settings "{\"makeRoom\": false, $ARBOR_TILES_ON}"
 step "session 1: four windows"
 arbor_start 4
 summary

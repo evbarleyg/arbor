@@ -531,7 +531,7 @@ private func endReason(_ entries: [TraceEntry]) -> String? {
     }
   }
 
-  @Test func edgeResizesReadsOverlayActionsAndDisplayChangesAreRecorded() {
+  @Test(.withTiles) func edgeResizesReadsOverlayActionsAndDisplayChangesAreRecorded() {
     let h = Harness()
     let a = h.system.open(app: "Safari")
     let b = h.system.open(app: "Xcode", minimumSize: CGSize(width: 900, height: 600))

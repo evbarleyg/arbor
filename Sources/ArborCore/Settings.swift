@@ -238,6 +238,10 @@ public struct Settings: Codable, Equatable, Sendable {
   /// When a window dragged by its title bar docks: `"held"`, only while ⌘ is held, so that a plain drag is macOS's own and nothing
   /// else; `"always"`, wherever there is a target, and ⌘ turns that off; `"never"`. Anything else means `"held"` (`DragDocks`).
   public var dragDocks: String = DragDocks.held.rawValue
+  /// What becomes of a docked window whose app will not make it as small as its place, when room has been made and is not
+  /// enough. `overlap`, as it ships: it stays in view at its smallest size, flush with the outer side of its place, and
+  /// hangs over its neighbour. `tile`: it goes out of view and a tile stands in its place (`LayoutOptions.overlaps`).
+  public var windowsThatDoNotFit: String = "overlap"
 
   public init() {}
 
@@ -258,7 +262,7 @@ public struct Settings: Codable, Equatable, Sendable {
     LayoutOptions(
       gap: CGFloat(gap),
       minimumUsableSize: CGSize(width: minimumUsableWidth, height: minimumUsableHeight),
-      shareRemovedSpace: shareRemovedSpace, desktopColumn: desktopColumn)
+      shareRemovedSpace: shareRemovedSpace, desktopColumn: desktopColumn, overlaps: windowsThatDoNotFit != "tile")
   }
 
   /// How wide Arrange Windows, `balance` and a `layout` line that does not mention it leave the Desktop, counted in windows. Nil: it
@@ -324,6 +328,7 @@ public struct Settings: Codable, Equatable, Sendable {
     case floatingWindowsMakeWay
     case desktopColumn
     case dragDocks
+    case windowsThatDoNotFit
   }
 
   public init(from decoder: any Decoder) throws {
@@ -434,5 +439,6 @@ public struct Settings: Codable, Equatable, Sendable {
     try read(.floatingWindowsMakeWay, into: &floatingWindowsMakeWay)
     try read(.desktopColumn, into: &desktopColumn)
     try read(.dragDocks, into: &dragDocks)
+    try read(.windowsThatDoNotFit, into: &windowsThatDoNotFit)
   }
 }

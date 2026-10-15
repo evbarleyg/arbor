@@ -237,7 +237,7 @@ step "session 2: the published keyboard, on [ [W1 / W3] | Desktop | W2 ] with W4
 # The fourth window refuses to be smaller than 700×500, for the tile further down.
 ARBOR_TEST_WINDOWS_ARGS="--min-size 4:700x500"
 # For the ⌃⌥ rectangle further down.
-arbor_settings "{$ARBOR_GESTURES_ON}"
+arbor_settings "{$ARBOR_GESTURES_ON, $ARBOR_TILES_ON}"
 arbor_start 4 ARBOR_NO_HOTKEYS=0
 ctl dock "$W1" left
 ctl dock "$W2" right

@@ -815,7 +815,7 @@ private let third = DisplaySnapshot(
     #expect(d.h.run("back").ok && d.h.run("forward").message == "forward to Writing (\(d.column))")
   }
 
-  @Test func aTileThatStandsForANamedSpaceIsCaptionedWithTheName() {
+  @Test(.withTiles) func aTileThatStandsForANamedSpaceIsCaptionedWithTheName() {
     let d = Desk(settings: Settings())
     d.nameColumn()
     #expect(d.h.overlays.tiles[d.h.display]?.isEmpty == true)

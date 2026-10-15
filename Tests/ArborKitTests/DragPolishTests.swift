@@ -74,7 +74,7 @@ struct DragScene {
     #expect(h.overlays.preview == nil, sourceLocation: sourceLocation)
     for display in h.controller.workspaces.keys {
       expectWindowsMatchLayout(h, on: display, sourceLocation: sourceLocation)
-      #expect(h.overlays.seams[display] == h.controller.layouts[display]?.seams, sourceLocation: sourceLocation)
+      #expect(h.overlays.seams[display] == h.controller.layouts[display]?.seamsInReach, sourceLocation: sourceLocation)
       #expect(
         h.overlays.tiles[display]?.map(\.node) == h.controller.layouts[display]?.tiles.map(\.node),
         sourceLocation: sourceLocation)
@@ -288,7 +288,7 @@ private let side = DisplaySnapshot(
     #expect(s.h.workspace.isDocked(s.c))
   }
 
-  @Test func tilesWaitLikeWindows() {
+  @Test(.withTiles) func tilesWaitLikeWindows() {
     let s = DragScene()
     let big = s.h.system.open(app: "Xcode", frame: CGRect(x: 500, y: 200, width: 440, height: 300))
     // More than anybody can spare, or room would be made for it (F61).
@@ -614,7 +614,7 @@ private let side = DisplaySnapshot(
     s.expectNothingLeftBehind()
   }
 
-  @Test func aWindowThatCannotShrinkToMakeRoomBecomesATileAndComesBack() {
+  @Test(.withTiles) func aWindowThatCannotShrinkToMakeRoomBecomesATileAndComesBack() {
     let s = DragScene(Self.reflow)
     s.h.system.setMinimumSize(s.b, CGSize(width: 300, height: 600))
     let before = s.outcome
@@ -925,7 +925,7 @@ private let side = DisplaySnapshot(
   }
 
   /// What trials learn about a window's size goes with the drag, but not what a real layout has gone by meanwhile.
-  @Test func aMinimumSizeThatARealLayoutWentByDuringTheDragIsKept() {
+  @Test(.withTiles) func aMinimumSizeThatARealLayoutWentByDuringTheDragIsKept() {
     let s = DragScene { $0.reflowWhileDragging = true }
     s.h.system.setMinimumSize(s.b, CGSize(width: 300, height: 600))
     s.h.system.beginDrag(s.c)

@@ -1200,5 +1200,6 @@ private struct RecordedSettings: Decodable {
     if isMissing("desktopColumn") { settings.desktopColumn = true }
     // Until there was a key, a plain drag docked.
     if isMissing("dragDocks") { settings.dragDocks = DragDocks.always.rawValue }
+    if isMissing("windowsThatDoNotFit") { settings.windowsThatDoNotFit = "tile" }
   }
 }

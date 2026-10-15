@@ -77,6 +77,7 @@ extension Controller {
     defer { putBackWhatWaits() }
     guard isRunning, holdFences(displayID) else { return }
     laidOutAt[displayID] = now()
+    if !gapsInHand { letGoOfTheSeam() }
     lettingBeEndsIfItNoLongerApplies()
     aLayoutSomebodyAskedForEndsLettingBe(on: displayID)
     refreshVisibleFrame(of: displayID)
@@ -150,7 +151,7 @@ extension Controller {
     var scene = OverlayScene()
     scene.peekOutline = peekOutline(for: layout, on: displayID)
     scene.tiles = tileModels(for: layout, on: displayID)
-    scene.seams = layout.seams
+    scene.seams = seamsWithAHandle(in: layout, on: displayID)
     scene.focusRing = focusRingModel(on: displayID)
     scene.namePrompt = namePromptModel(on: displayID)
     applyAppearance(to: &scene, for: layout, on: displayID)
@@ -308,9 +309,9 @@ extension Controller {
   /// A learned minimum can be wrong: an app that resizes a moment late, or had a sheet open, looks
   /// like one that refuses to shrink, and its window would be a tile for as long as it lives.
   /// A window seen smaller than its learned minimum disproves it, so the minimum comes down to what
-  /// was seen. Returns true if the window is a tile, which should now be laid out again (a window
-  /// in view may be in the user's hands). An app that keeps bouncing between sizes is believed
-  /// three times, so that Arbor never chases it.
+  /// was seen. Returns true if the window is a tile, or hangs over its place, which should now be laid out
+  /// again (a window in view may be in the user's hands: not then). An app that keeps bouncing between sizes
+  /// is believed three times, so that Arbor never chases it.
   func lowerDisprovedMinimum(of window: WindowSnapshot) -> Bool {
     guard var learned = minimumSizes[window.id], disprovedMinimums[window.id, default: 0] < 3 else {
       return false
@@ -321,7 +322,8 @@ extension Controller {
     if narrower { learned.width = window.frame.width }
     if shorter { learned.height = window.frame.height }
     minimumSizes[window.id] = learned
-    guard layouts.values.contains(where: { $0.tiles.contains { $0.windows.contains(window.id) } }) else {
+    let hangsOver = drag == nil && edgeResize == nil && !gapsInHand && layouts.values.contains { $0.tightPlaces[window.id] != nil }
+    guard hangsOver || layouts.values.contains(where: { $0.tiles.contains { $0.windows.contains(window.id) } }) else {
       return false
     }
     disprovedMinimums[window.id, default: 0] += 1

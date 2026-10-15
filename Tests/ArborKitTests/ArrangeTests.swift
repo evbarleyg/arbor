@@ -47,7 +47,7 @@ import Testing
 
   /// A window that is a tile, a tab behind another, minimized or out of view is not where its place is. Sorted
   /// by where it was, it went to the end of the grid, and the rest moved up.
-  @Test func arrangingWhatIsArrangedChangesNothing() {
+  @Test(.withTiles) func arrangingWhatIsArrangedChangesNothing() {
     let (h, _) = gridWithTiles()
     let (tree, frames) = (h.workspace.tree, h.system.allWindows().map(\.frame))
     for press in 2...4 {
@@ -57,7 +57,7 @@ import Testing
     }
   }
 
-  @Test func alsoWhileZoomedInOnOneOfThem() {
+  @Test(.withTiles) func alsoWhileZoomedInOnOneOfThem() {
     let (h, windows) = gridWithTiles()
     let order = h.workspace.tree.allWindows
     h.run("zoom \(windows[5].rawValue)")
@@ -65,7 +65,7 @@ import Testing
     #expect(h.workspace.tree.allWindows == order)
   }
 
-  @Test func aMinimizedWindowAndAHiddenAppKeepTheirPlaces() {
+  @Test(.withTiles) func aMinimizedWindowAndAHiddenAppKeepTheirPlaces() {
     let (h, windows) = gridWithTiles()
     let order = h.workspace.tree.allWindows
     h.system.setMinimized(windows[0], true)

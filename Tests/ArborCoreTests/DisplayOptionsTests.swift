@@ -102,10 +102,10 @@ private func decode(_ json: String) throws -> Settings {
     #expect(onLaptop.gap == 6, "builtin comes before main")
     #expect(onLaptop.minimumUsableWidth == Settings().minimumUsableWidth)
     #expect(onLaptop.screenEdgeBand == 20, "a key the entry leaves out stays as it is everywhere")
-    #expect(onLaptop.layoutOptions == LayoutOptions(gap: 6, minimumUsableSize: CGSize(width: 240, height: 160)))
+    #expect(onLaptop.layoutOptions == LayoutOptions(gap: 6, minimumUsableSize: CGSize(width: 240, height: 160), overlaps: true))
 
     let onStudio = settings.applying(to: studio)
-    #expect(onStudio.layoutOptions == LayoutOptions(gap: 16, minimumUsableSize: CGSize(width: 300, height: 200)))
+    #expect(onStudio.layoutOptions == LayoutOptions(gap: 16, minimumUsableSize: CGSize(width: 300, height: 200), overlaps: true))
     #expect(onStudio.dropOptions == settings.dropOptions)
 
     var other = studio

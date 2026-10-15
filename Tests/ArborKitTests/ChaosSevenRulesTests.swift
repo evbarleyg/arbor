@@ -19,7 +19,7 @@ private let b = WindowID(102)
     let runner = ChaosRunner()
     for line in lines { _ = runner.step(ChaosAction(text: line)) }
     if let fault { runner.beforeTheNextCheck = { fault($0.system) } }
-    let prefixes = ["plain-drag-", "flashed-", "flipped", "taken-", "nothing-", "moved-", "sized-", "set-right-", "fetched-", "switched-to-", "app-switch-", "size-", "home-", "there-and-back-", "start-", "pause-and-", "quit-", "displays-", "dragged-", "docked-", "same-"]
+    let prefixes = ["plain-drag-", "flashed-", "flipped", "taken-", "nothing-", "moved-", "sized-", "set-right-", "fetched-", "switched-to-", "app-switch-", "size-", "home-", "there-and-back-", "start-", "pause-and-", "quit-", "displays-", "dragged-", "docked-", "dock-", "same-"]
     return Set(([last] + later).flatMap { runner.step(ChaosAction(text: $0)) }.map(\.rule).filter { rule in prefixes.contains { rule.hasPrefix($0) } })
   }
 
@@ -781,10 +781,18 @@ private let b = WindowID(102)
   }
 
   @Test func aKeyThatDocksTakesNoWindowOutOfView() {
-    #expect(!numbers(after: oneDocked, then: "dock 102 right").contains("dock-took-out-of-view"))
-    #expect(numbers(after: oneDocked, then: "dock 102 right") { _ = $0.setFrame(self.rect(1439, 868, 702, 851), of: a) }.contains("dock-took-out-of-view"))
+    #expect(!nets(after: oneDocked, then: "dock 102 right").contains("dock-took-out-of-view"))
+    #expect(nets(after: oneDocked, then: "dock 102 right") { _ = $0.setFrame(self.rect(1439, 868, 702, 851), of: a) }.contains("dock-took-out-of-view"))
     // A key that moves the view is what sends docked windows out of view.
-    #expect(!numbers(after: oneDocked + ["dock 102 right", "settle"], then: "zoom 101").contains("dock-took-out-of-view"))
+    #expect(!nets(after: oneDocked + ["dock 102 right", "settle"], then: "zoom 101").contains("dock-took-out-of-view"))
+    // Two that cannot both fit: nobody leaves. Whoever has asked for tiles has asked for the one docked first to leave.
+    let tooWide = [
+      "launch", "open 101 Xcode pid 1004 at 100 100 1188 700 min 1188 685", "open 102 Mail pid 1002 at 300 200 900 600 min 760 400", "dock 101 left", "settle",
+    ]
+    #expect(!nets(after: tooWide, then: "dock 102 right").contains("dock-took-out-of-view"))
+    #expect(!nets(after: [#"settings {"windowsThatDoNotFit":"tile"}"#] + tooWide, then: "dock 102 right").contains("dock-took-out-of-view"))
+    // The Desktop is framed, and what floats on it is docked: it goes where the view is not, which its person asked for.
+    #expect(!nets(after: oneDocked + ["desktop", "settle", "focus 102"], then: "toggle-float 102").contains("dock-took-out-of-view"))
   }
 
   /// A floating window on the display that stays, half over its right edge, its title bar in reach. The other display goes.

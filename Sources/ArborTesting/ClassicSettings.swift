@@ -26,6 +26,7 @@ extension Settings {
       .withFloatsMakingWay
       .withMotion
       .withRing
+      .withTiles
   }
 
   public static var withBackdrop: Settings { Settings().withBackdrop }
@@ -35,6 +36,7 @@ extension Settings {
   public static var withFloatsMakingWay: Settings { Settings().withFloatsMakingWay }
   public static var withMotion: Settings { Settings().withMotion }
   public static var withRing: Settings { Settings().withRing }
+  public static var withTiles: Settings { Settings().withTiles }
 
   /// The surface behind docked windows as the first build drew it (F15, F36): the wallpaper a quarter darker, a hairline round the Desktop.
   public var withBackdrop: Settings {
@@ -84,6 +86,14 @@ extension Settings {
   public var withRing: Settings {
     var settings = self
     settings.focusRing = true
+    return settings
+  }
+
+  /// A docked window too large for its place goes out of view and a tile stands there, as until board 0.26 (`windowsThatDoNotFit`, F69). A test says
+  /// `@Test(.withTiles)` or `@Suite(.withTiles)` at its head, which reaches every harness it makes (`Harness.makesTiles`).
+  public var withTiles: Settings {
+    var settings = self
+    settings.windowsThatDoNotFit = "tile"
     return settings
   }
 }

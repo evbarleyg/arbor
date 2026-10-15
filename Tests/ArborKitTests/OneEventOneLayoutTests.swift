@@ -259,10 +259,10 @@ private let oneLayout: Set<String> = [
     }
     _ = h.run("shrink 600")
     h.system.willSetFrame = nil
-    // In its slot, or a tile, out of view, if by now it asks for more than it had.
+    // In its slot. Or, if by now it asks for more than it had, hanging over it as the layout says (F69); with tiles, a tile, out of view.
     if let slot = h.layout!.windowFrames[a] {
       #expect(h.frame(a)!.width <= slot.width + 2, "larger than its slot: \(h.frame(a)!.brief) in \(slot.brief)")
-      #expect(h.frame(a)!.maxX <= h.frame(b)!.minX, "\(h.frame(a)!.brief) lies over \(h.frame(b)!.brief)")
+      #expect(!h.layout!.fits(a) || h.frame(a)!.maxX <= h.frame(b)!.minX, "\(h.frame(a)!.brief) lies over \(h.frame(b)!.brief)")
     } else {
       #expect(h.controller.parked.contains(a) && h.system.focused != a, "\(h.frame(a)!.brief), keyboard in \(String(describing: h.system.focused))")
     }
@@ -380,7 +380,7 @@ private let oneLayout: Set<String> = [
 
 /// A docked window comes back (out of the Dock, with its app) and has the keyboard, to a place that does not show. The view follows
 /// the keyboard, so that is the view the display is laid out for: not first for the one it is about to leave.
-@Suite @MainActor struct BackWithTheKeyboardIsOneLayoutTests {
+@Suite(.withTiles) @MainActor struct BackWithTheKeyboardIsOneLayoutTests {
   /// Two windows too wide to show beside anything, one on each side of a third, which is in view. With the keyboard or without, `wide`
   /// is a tile there: its neighbour cannot spare what it needs.
   private func aTileAndItsNeighbour() -> (Harness, wide: WindowID, music: WindowID) {
@@ -398,7 +398,7 @@ private let oneLayout: Set<String> = [
     return (h, wide, music)
   }
 
-  @Test func outOfTheDock() {
+  @Test(.withTiles) func outOfTheDock() {
     let (h, wide, music) = aTileAndItsNeighbour()
     #expect(h.layout!.windowFrames[wide] == nil && h.layout!.windowFrames[music] != nil, "the story needs a tile: \(h.layout!)")
     h.system.setMinimized(wide, true)
@@ -568,7 +568,7 @@ private let oneLayout: Set<String> = [
   }
 
   /// Without the keyboard it is a tile again, and the view stays.
-  @Test func withoutTheKeyboardTheViewStays() {
+  @Test(.withTiles) func withoutTheKeyboardTheViewStays() {
     let (h, wide, music) = aTileAndItsNeighbour()
     let camera = h.workspace.camera
     h.system.echoes.keyboard = false
@@ -581,7 +581,7 @@ private let oneLayout: Set<String> = [
   }
 
   /// A held view does not follow, and is laid out all the same.
-  @Test func underAHeldViewTheDisplayIsStillLaidOut() {
+  @Test(.withTiles) func underAHeldViewTheDisplayIsStillLaidOut() {
     let (h, wide, music) = aTileAndItsNeighbour()
     h.system.setMinimized(wide, true)
     h.scheduler.advance(by: 1)
@@ -608,7 +608,7 @@ private let oneLayout: Set<String> = [
 
   /// Its app would not let it be that small, more than ten minutes ago. On paper it is a tile. The layout asks such a window again, it
   /// fits by now, and the view has no reason to go anywhere.
-  @Test func aTileByAnOldRecordIsAskedAgainAndTheViewStays() {
+  @Test(.withTiles) func aTileByAnOldRecordIsAskedAgainAndTheViewStays() {
     let h = Harness()
     let pages = h.system.open(app: "Pages", pid: 1010)
     let notes = h.system.open(app: "Notes", pid: 1001, frame: CGRect(x: 300, y: 200, width: 700, height: 500), minimumSize: CGSize(width: 600, height: 300))

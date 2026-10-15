@@ -1,6 +1,8 @@
 # F45. Slack has a sheet open when it is docked, so it refuses the size of its space and becomes a tile.
 # The sheet closes. Nobody tells Arbor, and nobody should have to close the window to get it back.
 quiet
+# As Arbor ships, what cannot fit overlaps (F69). This story is about the tile, which is an option now.
+set windowsThatDoNotFit tile
 open Safari
 open Notes
 open Slack 900x700 min 900x700

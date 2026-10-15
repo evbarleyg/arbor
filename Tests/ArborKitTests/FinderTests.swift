@@ -150,7 +150,7 @@ private let side = DisplaySnapshot(
     #expect(note(h, safari) == "on another macOS Space")
   }
 
-  @Test func aWindowTooSmallToShowIsATile() {
+  @Test(.withTiles) func aWindowTooSmallToShowIsATile() {
     let (h, _, notes, _, _) = makeHarness()
     let xcode = h.system.open(app: "Xcode", frame: CGRect(x: 400, y: 200, width: 700, height: 500))
     h.system.setMinimumSize(xcode, CGSize(width: 900, height: 600))
@@ -645,7 +645,7 @@ private let side = DisplaySnapshot(
     _ = (safari, mail)
   }
 
-  @Test func aTileIsFramed() {
+  @Test(.withTiles) func aTileIsFramed() {
     let (h, _, notes, _, _) = makeHarness()
     let xcode = h.system.open(app: "Xcode", frame: CGRect(x: 400, y: 200, width: 700, height: 500))
     h.system.setMinimumSize(xcode, CGSize(width: 900, height: 600))

@@ -7,7 +7,7 @@ import Testing
 
 /// A person starts Arbor with the keyboard in a docked window for which there is no room when everything shows
 /// (`collab/QUESTIONS.md`, Q16; `Controller+LetBe.swift`). The view used to go to it, and every other window left.
-@Suite @MainActor struct LaunchLetsBeTests {
+@Suite(.withTiles) @MainActor struct LaunchLetsBeTests {
   /// `[player | browser / mail]` and loose notes. Somebody has squeezed the player's slot to under what
   /// Arbor uses, and has switched off that Arbor makes room: the player is a tile wherever it is not alone, and no
   /// room can be made for it. Arbor has quit, so every window is in view at its own frame, and somebody has clicked

@@ -342,7 +342,7 @@ import Testing
   /// A window of the view that is too small to show there: whether it shows depends on how the layout turns out. With the keyboard in
   /// it, it is let be where the pause left it, and the view stays (`collab/QUESTIONS.md`, Q16; `LaunchLetsBeTests`). It used
   /// to be framed, and everything else left.
-  @Test func aTileWithTheKeyboardIsLetBe() {
+  @Test(.withTiles) func aTileWithTheKeyboardIsLetBe() {
     let desk = makeDesk()
     let wide = desk.h.system.open(
       app: "Xcode", pid: 2100, frame: CGRect(x: 100, y: 100, width: 1500, height: 700), minimumSize: CGSize(width: 1500, height: 700))

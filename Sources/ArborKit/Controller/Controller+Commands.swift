@@ -263,7 +263,7 @@ extension Controller {
     let others = shownBefore.subtracting([window]).intersection(inTiles).count
     let own = "; its space is too small to show it, so it is a tile"
     switch (itself, others) {
-    case (false, 0): return ""
+    case (false, 0): return overlapNote(on: display)
     case (true, 0): return own
     case (true, 1): return own + ", and so is 1 other window now"
     case (true, _): return own + ", and so are \(others) other windows now"
