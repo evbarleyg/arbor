@@ -29,9 +29,14 @@
 #   cast_start [count] [NAME=v…]    arbor_start, with every test window another app's, as a person's windows are: W1…Wcount (4; eight are two to an app)
 #   cast_stop [name]                arbor_stop, and the cast goes home
 #   tell <n> <command…>             a command for the app of the nth window (Sources/ArborTestWindows/Commands.swift)
+#   trace_ends                      end the session's trace now and keep it (cast_stop does; a scene that quits Arbor has to, before)
+#   view_now                        the node the camera is at, for `played`
+#   played "<scene>" <view before>  a check that the camera went somewhere: a film in which nothing happens is a Mac's time for nothing
+#   glass on|off                    translucent materials, as a Mac comes (on), or Reduce Transparency, as GitHub's Macs come (off)
 #   metronome <kind>                a scene of its own: the camera's square, moving in a way that is known (camera.swift)
 #   pinch x y <amount> [options]    a pinch at that place (witness.swift)
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/lib-gestures.sh"
 needs_throwaway_mac "film the whole display, with whatever is on it"
 
 FILM_CAMERA="$ARBOR_ROOT/.build/mac-shell/camera"
@@ -291,6 +296,7 @@ cast_start() {
   case "${1:-}" in "" | *[!0-9]*) ;; *) count=$1; shift ;; esac
   if [ -z "$FILM_CAST" ]; then
     arbor_start "$count" "$@"
+    trace_begins
     return
   fi
   # Up to four windows, an app each; more are dealt out evenly among four apps.
@@ -348,11 +354,42 @@ cast_start() {
   tell "$count" activate
   sleep 0.5
   echo "the cast's windows:$ARBOR_WINDOW_IDS"
+  trace_begins
 }
 
 cast_is_managed() { "$ARBOR_BIN/arborctl" state 2>/dev/null | python3 "$ARBOR_STATE_PY" ready "$1" 2>/dev/null; }
 
+# Every run on a Mac records what macOS reported and what the apps answered (docs/TRACES.md: numbers, never titles), so that what it
+# taught can be replayed anywhere; and the stage's own frames, where Arbor logs them, lie beside the display's.
+trace_begins() { ctl trace on "films-$ARBOR_SESSION"; }
+
+trace_ends() {
+  local file
+  [ -n "$ARBOR_PID" ] || return 0
+  # A log that ends with the stage up reads as a stage that never came down.
+  sleep 1
+  ctl trace off
+  mkdir -p "$ARBOR_OUT/traces"
+  for file in "$ARBOR_HOME"/traces/*.jsonl; do
+    [ -f "$file" ] && cp "$file" "$ARBOR_OUT/traces/${file##*/}"
+  done
+}
+
+view_now() { summary | sed -n 's/.*camera \(n[0-9]*\).*/\1/p' | head -n 1; }
+film_elsewhere() { [ "$(view_now)" != "$1" ]; }
+played() { check "$1: the camera went somewhere" film_elsewhere "$2"; }
+
+# Read by an app when it starts, like Reduce Motion.
+glass() {
+  local value=true
+  [ "$1" = on ] && value=false
+  arbor_may "change the Accessibility setting Reduce Transparency" || return 0
+  defaults write com.apple.universalaccess reduceTransparency -bool "$value"
+  echo "Reduce Transparency: $(defaults read com.apple.universalaccess reduceTransparency 2>&1 | tail -n 1)"
+}
+
 cast_stop() {
+  trace_ends
   arbor_stop "$@"
   # shellcheck disable=SC2086
   [ -z "$FILM_CAST_PIDS" ] || kill_started $FILM_CAST_PIDS

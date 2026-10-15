@@ -6,7 +6,6 @@ what a PERSON would have seen, frame by frame. You have no stake in Arbor: say w
 The windows are test windows, each one flat colour ("Arbor Test 1" red, 2 blue, 3 green, 4 orange), each an app of its own with an icon in that colour
 and as many white bars as its number. While Arbor moves windows it covers the display with a "stage" on which each window travels as a stand-in: a card in
 the colour of the app's icon, with the icon on it. That cards are used instead of pictures of the windows is a product decision: judge how it LOOKS, do not argue with the decision.
-A hosted Mac draws every system material as one flat colour: do not judge translucency or blur.
 
 ## What to do, for every scene in your brief
 

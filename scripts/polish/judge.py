@@ -535,7 +535,8 @@ SCENES = MOVES_FILMED_TWICE + [("dark-" + name, kind, move) for name, kind, move
 # Whatever Arbor draws of its own, and what is asked of a picture of each (docs/POLISH.md, "Panels"): check, severity.
 PANELS = ["heads-up line", "drop preview", "tile", "seam", "focus ring", "peek outline", "rectangle", "minimap", "go to", "shortcuts",
           "name field", "menu", "settings", "coach", "setup check", "tab strip"]
-STILLS = [("S1 at 1x", 2), ("S1 at 2x", 2), ("S2", 3), ("S3", 1), ("S4 light", 2), ("S4 dark", 2), ("S6", 2)]
+STILLS = [("S1 at 1x", 2), ("S1 at 2x", 2), ("S2", 3), ("S3", 1), ("S4 light", 2), ("S4 dark", 2), ("S4 light on glass", 2), ("S4 dark on glass", 2),
+          ("S6", 2), ("S7", 3)]
 
 # What the metronome's films must say, or the instruments are not to be believed: kind -> the checks that must miss.
 METRONOME = {"good": [], "linear": ["M3"], "slow": ["M2"], "twice": ["M4"], "hop": ["M6"], "flash": ["M9"]}
