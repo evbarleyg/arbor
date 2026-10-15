@@ -1,0 +1,53 @@
+47 redo: chooses `redo` from Arbor's menu
+expected: {'act': 'dock-key', 'settled': 'quiet:1024', 'moves': 'any', 'floating': '', 'docked': '326,329,337,344,347,348,349,353,355'}
+ODD rule -: w344 fills 709×184 of its slot 12,619 709×191
+
+16:58:23.120 SCREEN -- begin 47 redo
+16:58:23.120 SCREEN -- text 47 chooses `redo` from Arbor's menu
+16:58:23.201 MACOS pid 20668 AXResized w326 AXWindow/AXStandardWindow 1087 43 501 252
+16:58:23.202 MACOS pid 20668 AXMoved w326 AXWindow/AXStandardWindow 1087 43 501 252
+16:58:23.222 SCREEN finder (w326) 1087,43 501×252
+16:58:23.222 MACOS pid 22047 AXResized w337 AXWindow/AXStandardWindow 733 303 342 247
+16:58:23.223 MACOS pid 22047 AXMoved w337 AXWindow/AXStandardWindow 733 303 342 247
+16:58:23.233 SCREEN textedit (w337) 165,65 342×247
+16:58:23.261 MACOS pid 22170 AXTitleChanged w344 AXWindow/AXStandardWindow 12 619 709 184
+16:58:23.261 MACOS pid 22170 AXResized w344 AXWindow/AXStandardWindow 12 619 709 184
+16:58:23.262 SCREEN terminal (w344) 40,51 709×184
+16:58:23.262 SCREEN textedit (w337) 733,303 342×247
+16:58:23.262 MACOS pid 22170 AXMoved w344 AXWindow/AXStandardWindow 12 619 709 184
+16:58:23.286 SCREEN terminal (w344) 12,619 709×184
+16:58:23.379 MACOS pid 22651 AXResized w347 AXWindow/AXStandardWindow 12 43 709 320
+16:58:23.379 MACOS pid 22651 AXMoved w347 AXWindow/AXStandardWindow 12 43 709 320
+16:58:23.382 SCREEN notes (w347) 12,43 709×320
+16:58:23.434 SCREEN preview (w353) 4,35 708×232
+16:58:23.455 MACOS pid 23240 AXResized w353 AXWindow/AXStandardWindow 12 375 708 232
+16:58:23.456 MACOS pid 23240 AXMoved w353 AXWindow/AXStandardWindow 12 375 709 232
+16:58:23.456 MACOS pid 23240 AXResized w353 AXWindow/AXStandardWindow 12 375 709 232
+16:58:23.480 SCREEN preview (w353) 12,375 709×232
+16:58:23.480 SCREEN safari (w329) -1323,770 1324×790
+16:58:23.480 MACOS pid 21968 AXMoved w329 AXWindow/AXStandardWindow -1323 770 1324 790
+16:58:23.496 MACOS pid 22813 AXMoved w348 AXWindow/AXStandardWindow -936 770 937 600
+16:58:23.497 SCREEN calendar (w348) -936,770 937×600
+16:58:23.516 MACOS pid 22992 AXMoved w349 AXWindow/AXStandardWindow -722 770 723 625
+16:58:23.541 SCREEN settings (w349) -722,770 723×625
+16:58:23.556 MACOS pid 23502 AXMoved w355 AXWindow/AXStandardWindow -1119 770 1120 630
+16:58:23.563 SCREEN w357 of Mail -794,877 470×416
+16:58:23.563 SCREEN mail (w355) -1119,770 1120×630
+16:58:23.602 INFO  redo: redid arrange
+16:58:23.684 SCREEN w396 of Arbor 12,363 709×12
+16:58:23.684 SCREEN w395 of Arbor 12,607 709×12
+16:58:23.684 SCREEN w397 of Arbor 733,291 342×12
+16:58:23.684 SCREEN w399 of Arbor 733,550 342×12
+16:58:23.684 SCREEN w402 of Arbor 1087,295 501×12
+16:58:23.684 SCREEN w400 of Arbor 1087,552 501×12
+16:58:23.684 SCREEN w401 of Arbor 721,43 12×767
+16:58:23.684 SCREEN w398 of Arbor 1075,43 12×767
+16:58:23.684 SCREEN front to back: finder settings notes calendar terminal textedit preview safari w382 w357 mail w396 w395 w397 w399 w402 w400 w401 w398
+16:58:23.909 SCREEN w391 of Arbor 733,43 342×248
+16:58:23.909 SCREEN w392 of Arbor 733,562 342×248
+16:58:23.909 SCREEN w393 of Arbor 1087,307 501×245
+16:58:23.909 SCREEN w394 of Arbor 1087,564 501×246
+16:58:23.909 SCREEN front to back: finder settings notes calendar terminal textedit preview safari w382 w357 mail w391 w392 w393 w394 w396 w395 w397 w399 w402 w400 w401 w398
+16:58:25.070 SCREEN -- finding 47 - ODD w344 fills 709×184 of its slot 12,619 709×191
+16:58:25.071 SCREEN -- end 47 act=dock-key settled=quiet:1024 moves=any floating= docked=326,329,337,344,347,348,349,353,355
+16:58:25.525 SCRIPT == 48 display-right

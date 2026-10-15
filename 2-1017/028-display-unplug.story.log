@@ -1,0 +1,86 @@
+28 display-unplug: the second display: unplug
+expected: {'act': 'display-change', 'settled': 'quiet:901', 'moves': 'any', 'leaves': 'any', 'floating': '', 'docked': '326,329,337,344,347,348,349,353,355'}
+FAIL rule 3: finder (w326) moved 2 times
+FAIL rule 3: safari (w329) is out of view before and after, and 100% of it showed in between
+FAIL rule 3: textedit (w337) moved 2 times
+FAIL rule 3: terminal (w344) moved 2 times
+FAIL rule 3: notes (w347) moved 2 times
+FAIL rule 3: calendar (w348) is out of view before and after, and 100% of it showed in between
+FAIL rule 3: settings (w349) is out of view before and after, and 100% of it showed in between
+FAIL rule 3: preview (w353) moved 2 times
+FAIL rule 3: mail (w355) is out of view before and after, and 100% of it showed in between
+FAIL rule 3: w357 of Mail is out of view before and after, and 100% of it showed in between
+
+16:57:22.892 SCREEN -- begin 28 display-unplug
+16:57:22.892 SCREEN -- text 28 the second display: unplug
+16:57:23.477 SCREEN (nothing was seen for 503 ms)
+16:57:23.477 SCREEN textedit (w337) 165,65 656×422
+16:57:23.477 SCREEN notes (w347) 0,105 1000×660
+16:57:23.477 SCREEN preview (w353) 4,35 708×424
+16:57:23.477 SCREEN calendar (w348) 403,115 937×600
+16:57:23.477 SCREEN w357 of Mail 565,179 470×416
+16:57:23.477 SCREEN mail (w355) 240,72 1120×630
+16:57:23.477 SCREEN terminal (w344) 40,51 863×499
+16:57:23.717 MACOS pid 23502 AXMoved w355 AXWindow/AXStandardWindow 240 72 1120 630
+16:57:23.718 MACOS pid 22813 AXMoved w348 AXWindow/AXStandardWindow 403 115 937 600
+16:57:23.758 MACOS pid 22651 AXMoved w347 AXWindow/AXStandardWindow 0 105 1000 660
+16:57:23.763 SCREEN (nothing was seen for 286 ms)
+16:57:23.763 SCREEN safari (w329) 138,31 1324×791
+16:57:23.957 MACOS pid 20668 AXMoved w326 AXWindow/AXStandardWindow 340 120 920 436
+16:57:23.959 MACOS pid 22170 AXMoved w344 AXWindow/AXStandardWindow 40 51 863 499
+16:57:23.959 MACOS pid 23240 AXMoved w353 AXWindow/AXStandardWindow 4 35 708 424
+16:57:23.960 MACOS pid 22047 AXMoved w337 AXWindow/AXStandardWindow 165 65 656 422
+16:57:23.960 MACOS pid 22992 AXMoved w349 AXWindow/AXStandardWindow 437 85 723 625
+16:57:23.961 MACOS pid 21968 AXMoved w329 AXWindow/AXStandardWindow 138 31 1324 791
+16:57:23.962 MACOS pid 22651 AXResized w347 AXWindow/AXStandardWindow 0 105 1000 660
+16:57:23.963 MACOS pid 20668 AXResized w326 AXWindow/AXStandardWindow 340 120 920 436
+16:57:23.968 MACOS pid 22170 AXTitleChanged w344 AXWindow/AXStandardWindow 40 51 863 499
+16:57:23.969 MACOS pid 23240 AXResized w353 AXWindow/AXStandardWindow 4 35 708 424
+16:57:23.971 MACOS pid 22047 AXResized w337 AXWindow/AXStandardWindow 165 65 656 422
+16:57:23.971 MACOS pid 22170 AXResized w344 AXWindow/AXStandardWindow 40 51 863 499
+16:57:23.973 SCREEN (nothing was seen for 210 ms)
+16:57:23.973 SCREEN settings (w349) 437,85 723×625
+16:57:23.973 SCREEN finder (w326) 340,120 920×436
+16:57:24.008 SCREEN w394 of Arbor 1087,562 342×248
+16:57:24.008 SCREEN w391 of Arbor 733,46 501×245
+16:57:24.008 SCREEN w393 of Arbor 1087,306 501×246
+16:57:24.008 SCREEN w398 of Arbor 733,550 709×12
+16:57:24.008 SCREEN w402 of Arbor 1075,798 709×12
+16:57:24.008 SCREEN w400 of Arbor 1087,552 342×12
+16:57:24.008 SCREEN w396 of Arbor 12,607 342×12
+16:57:24.008 SCREEN w397 of Arbor 733,291 501×12
+16:57:24.008 SCREEN w399 of Arbor 1087,295 501×12
+16:57:24.008 SCREEN w395 of Arbor 12,-392 12×767
+16:57:24.008 SCREEN w401 of Arbor 721,43 12×767
+16:57:25.566 INFO  displays changed: 1 display(s), 0 remembered
+16:57:25.569 DEBUG w337 has the keyboard
+16:57:25.649 SCREEN finder (w326) 1087,43 501×252
+16:57:25.653 MACOS pid 20668 AXResized w326 AXWindow/AXStandardWindow 1087 43 501 252
+16:57:25.653 MACOS pid 20668 AXMoved w326 AXWindow/AXStandardWindow 1087 43 501 252
+16:57:25.680 MACOS pid 22047 AXResized w337 AXWindow/AXStandardWindow 733 303 342 247
+16:57:25.683 MACOS pid 22047 AXMoved w337 AXWindow/AXStandardWindow 733 303 342 247
+16:57:25.714 SCREEN textedit (w337) 733,303 342×247
+16:57:25.714 SCREEN terminal (w344) 40,51 709×184
+16:57:25.719 MACOS pid 22170 AXTitleChanged w344 AXWindow/AXStandardWindow 12 619 709 184
+16:57:25.724 MACOS pid 22170 AXResized w344 AXWindow/AXStandardWindow 12 619 709 184
+16:57:25.729 SCREEN terminal (w344) 12,619 709×184
+16:57:25.734 MACOS pid 22170 AXMoved w344 AXWindow/AXStandardWindow 12 619 709 184
+16:57:25.810 MACOS pid 22651 AXResized w347 AXWindow/AXStandardWindow 12 43 709 320
+16:57:25.813 MACOS pid 22651 AXMoved w347 AXWindow/AXStandardWindow 12 43 709 320
+16:57:25.818 SCREEN notes (w347) 12,43 709×320
+16:57:25.818 SCREEN preview (w353) 4,35 708×232
+16:57:25.842 MACOS pid 23240 AXResized w353 AXWindow/AXStandardWindow 4 35 708 232
+16:57:25.868 SCREEN preview (w353) 12,375 709×232
+16:57:25.868 MACOS pid 23240 AXMoved w353 AXWindow/AXStandardWindow 12 375 708 232
+16:57:25.869 MACOS pid 23240 AXResized w353 AXWindow/AXStandardWindow 12 375 709 232
+16:57:25.923 MACOS pid 21968 AXMoved w329 AXWindow/AXStandardWindow 1599 770 1324 791
+16:57:25.953 MACOS pid 22813 AXMoved w348 AXWindow/AXStandardWindow 1599 770 937 600
+16:57:25.957 SCREEN safari (w329) 1599,770 1324×791
+16:57:25.957 SCREEN calendar (w348) 1599,770 937×600
+16:57:25.988 MACOS pid 22992 AXMoved w349 AXWindow/AXStandardWindow 1599 770 723 625
+16:57:26.038 SCREEN settings (w349) 1599,770 723×625
+16:57:26.038 SCREEN w357 of Mail 1924,877 470×416
+16:57:26.038 SCREEN mail (w355) 1599,770 1120×630
+16:57:26.038 MACOS pid 23502 AXMoved w355 AXWindow/AXStandardWindow 1599 770 1120 630
+16:57:27.287 SCREEN -- end 28 act=display-change settled=quiet:901 moves=any leaves=any floating= docked=326,329,337,344,347,348,349,353,355
+16:57:27.946 SCRIPT == 29 view-home

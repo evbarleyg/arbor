@@ -1,0 +1,33 @@
+80 float: presses ⌃⌥F
+expected: {'act': 'dock-key', 'settled': 'quiet:903', 'moves': '326,329,337,344,347,348,349,353,355,326,337,344,347,348,349,353,355,', 'front': '329', 'restores': '329', 'floating': '329', 'docked': '326,337,344,347,348,349,353,355'}
+FAIL rule 3: terminal (w344) went 14 points out of its way before it ended up
+
+17:00:56.038 SCREEN -- begin 80 float
+17:00:56.038 SCREEN -- text 80 presses ⌃⌥F
+17:00:56.354 SCREEN safari (w329) 0,31 574×248
+17:00:56.460 MACOS pid 21968 AXMoved w329 AXWindow/AXStandardWindow 0 31 1324 790
+17:00:56.463 MACOS pid 21968 AXResized w329 AXWindow/AXStandardWindow 0 31 1324 790
+17:00:56.472 SCREEN safari (w329) 0,31 1324×790
+17:00:56.472 SCREEN textedit (w337) 279,303 382×247
+17:00:56.476 MACOS pid 22047 AXResized w337 AXWindow/AXStandardWindow 279 303 382 247
+17:00:56.490 SCREEN textedit (w337) 471,43 382×378
+17:00:56.499 MACOS pid 22047 AXMoved w337 AXWindow/AXStandardWindow 471 43 382 378
+17:00:56.500 MACOS pid 22047 AXResized w337 AXWindow/AXStandardWindow 471 43 382 378
+17:00:56.518 MACOS pid 22170 AXTitleChanged w344 AXWindow/AXStandardWindow 12 562 450 244
+17:00:56.522 MACOS pid 22170 AXResized w344 AXWindow/AXStandardWindow 12 562 450 244
+17:00:56.538 SCREEN terminal (w344) 12,562 450×244
+17:00:56.557 MACOS pid 22170 AXTitleChanged w344 AXWindow/AXStandardWindow 12 562 443 244
+17:00:56.558 MACOS pid 22170 AXResized w344 AXWindow/AXStandardWindow 12 562 443 244
+17:00:56.560 SCREEN terminal (w344) 12,562 443×244
+17:00:56.562 INFO  toggle-float: w329 is floating
+17:00:56.592 SCREEN w701 of Arbor 12,43 447×248
+17:00:56.592 SCREEN w703 of Arbor 12,303 447×247
+17:00:56.592 SCREEN w699 of Arbor 471,433 382×377
+17:00:56.592 SCREEN w707 of Arbor 12,291 447×12
+17:00:56.592 SCREEN w704 of Arbor 12,550 447×12
+17:00:56.592 SCREEN w706 of Arbor 471,421 382×12
+17:00:56.592 SCREEN w710 of Arbor 459,43 12×767
+17:00:56.592 SCREEN w711 of Arbor left the screen
+17:00:56.592 SCREEN front to back: safari settings terminal finder calendar notes textedit preview w357 mail w700 w702 w708 w709 w705 w701 w703 w699 w707 w704 w706 w710
+17:00:57.774 SCREEN -- end 80 act=dock-key settled=quiet:903 moves=326,329,337,344,347,348,349,353,355,326,337,344,347,348,349,353,355, front=329 restores=329 floating=329 docked=326,337,344,347,348,349,353,355
+17:00:58.548 SCRIPT == 81 view-frame

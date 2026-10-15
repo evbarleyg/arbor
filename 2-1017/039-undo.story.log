@@ -1,0 +1,63 @@
+39 undo: presses ctrl+opt+z
+expected: {'act': 'dock-key', 'settled': 'quiet:1677', 'moves': 'any', 'floating': '326,329,337,344,347,348,349,353,355', 'docked': ''}
+ODD rule 3: w357 of Mail went 456 points out of its way before it ended up
+ODD rule 3: the last window came to rest 843 ms after the key or the button
+
+16:58:00.056 SCREEN -- begin 39 undo
+16:58:00.056 SCREEN -- text 39 presses ctrl+opt+z
+16:58:00.276 DEBUG commands follow the pointer: a shortcut, pointer idle 1.5 s, keys 5.2 s, focus 1.8 s
+16:58:00.336 SCREEN finder (w326) 340,120 501×252
+16:58:00.435 SCREEN finder (w326) 340,120 920×436
+16:58:00.436 MACOS pid 20668 AXMoved w326 AXWindow/AXStandardWindow 340 120 920 436
+16:58:00.438 MACOS pid 20668 AXResized w326 AXWindow/AXStandardWindow 340 120 920 436
+16:58:00.467 SCREEN safari (w329) 138,31 1324×790
+16:58:00.479 MACOS pid 21968 AXMoved w329 AXWindow/AXStandardWindow 138 31 1324 790
+16:58:00.480 MACOS pid 21968 AXResized w329 AXWindow/AXStandardWindow 138 31 1324 790
+16:58:00.558 SCREEN textedit (w337) 165,65 342×247
+16:58:00.581 MACOS pid 22047 AXMoved w337 AXWindow/AXStandardWindow 165 65 342 247
+16:58:00.582 MACOS pid 22047 AXResized w337 AXWindow/AXStandardWindow 165 65 673 439
+16:58:00.601 SCREEN textedit (w337) 165,65 673×439
+16:58:00.628 SCREEN terminal (w344) 40,51 709×184
+16:58:00.641 MACOS pid 22170 AXMoved w344 AXWindow/AXStandardWindow 40 51 877 499
+16:58:00.642 MACOS pid 22170 AXTitleChanged w344 AXWindow/AXStandardWindow 40 51 877 499
+16:58:00.642 MACOS pid 22170 AXResized w344 AXWindow/AXStandardWindow 40 51 877 499
+16:58:00.684 SCREEN terminal (w344) 40,51 877×499
+16:58:00.684 SCREEN notes (w347) 0,105 709×320
+16:58:00.734 SCREEN notes (w347) 0,105 1000×660
+16:58:00.820 MACOS pid 22651 AXMoved w347 AXWindow/AXStandardWindow 0 105 1000 660
+16:58:00.821 MACOS pid 22651 AXResized w347 AXWindow/AXStandardWindow 0 105 1000 660
+16:58:00.845 MACOS pid 22813 AXMoved w348 AXWindow/AXStandardWindow 403 115 937 600
+16:58:00.870 SCREEN calendar (w348) 403,115 937×600
+16:58:00.871 MACOS pid 22992 AXMoved w349 AXWindow/AXStandardWindow 437 85 723 625
+16:58:00.903 SCREEN settings (w349) 437,85 723×625
+16:58:00.903 SCREEN preview (w353) 12,375 708×232
+16:58:00.932 MACOS pid 23240 AXResized w353 AXWindow/AXStandardWindow 4 35 708 424
+16:58:00.933 MACOS pid 23240 AXMoved w353 AXWindow/AXStandardWindow 4 35 708 424
+16:58:00.935 MACOS pid 23240 AXResized w353 AXWindow/AXStandardWindow 4 35 708 424
+16:58:00.967 SCREEN preview (w353) 4,35 708×424
+16:58:00.967 SCREEN w357 of Mail 793,124 470×416
+16:58:00.967 SCREEN mail (w355) 240,72 1576×248
+16:58:01.092 SCREEN w357 of Mail 565,179 470×416
+16:58:01.092 SCREEN mail (w355) 240,72 1120×630
+16:58:01.096 MACOS pid 23502 AXMoved w355 AXWindow/AXStandardWindow 240 72 1120 630
+16:58:01.096 MACOS pid 23502 AXResized w355 AXWindow/AXStandardWindow 240 72 1120 630
+16:58:01.118 INFO  undo: undid arrange
+16:58:01.118 DEBUG said on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: Undid Arrange
+16:58:01.178 SCREEN w401 of Arbor left the screen
+16:58:01.178 SCREEN w399 of Arbor left the screen
+16:58:01.178 SCREEN w398 of Arbor left the screen
+16:58:01.178 SCREEN w396 of Arbor left the screen
+16:58:01.178 SCREEN w395 of Arbor left the screen
+16:58:01.178 SCREEN w400 of Arbor left the screen
+16:58:01.178 SCREEN w402 of Arbor left the screen
+16:58:01.178 SCREEN w397 of Arbor left the screen
+16:58:01.178 SCREEN front to back: terminal textedit settings notes preview safari w382 calendar w357 mail finder w393 w392 w394 w391
+16:58:01.225 SCREEN w475 of Arbor 731,728 139×38 (level 6)
+16:58:01.366 SCREEN w394 of Arbor left the screen
+16:58:01.366 SCREEN w393 of Arbor left the screen
+16:58:01.366 SCREEN w392 of Arbor left the screen
+16:58:01.366 SCREEN w391 of Arbor left the screen
+16:58:01.366 SCREEN front to back: terminal textedit settings notes preview safari w382 calendar w357 mail finder
+16:58:02.554 SCREEN -- end 39 act=dock-key settled=quiet:1677 moves=any floating=326,329,337,344,347,348,349,353,355 docked=
+16:58:02.991 SCREEN w475 of Arbor left the screen
+16:58:03.280 SCRIPT == 40 view-back

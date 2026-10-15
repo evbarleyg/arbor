@@ -1,0 +1,31 @@
+116 display-unplug: the second display: unplug
+expected: {'act': 'display-change', 'settled': 'quiet:533', 'moves': 'any', 'leaves': 'any', 'floating': '326,329,337,344,347,348,349,353,355', 'docked': ''}
+FAIL rule 3: calendar (w348) moved 2 times
+
+17:03:31.625 SCREEN -- begin 116 display-unplug
+17:03:31.625 SCREEN -- text 116 the second display: unplug
+17:03:31.642 SCREEN w718 of Arbor left the screen
+17:03:32.183 MACOS pid 23240 AXMoved w353 AXWindow/AXStandardWindow 0 31 801 791
+17:03:32.187 MACOS pid 22813 AXMoved w348 AXWindow/AXStandardWindow 1263 300 937 600
+17:03:32.189 MACOS pid 22170 AXMoved w344 AXWindow/AXStandardWindow 1157 438 443 244
+17:03:32.190 MACOS pid 23240 AXResized w353 AXWindow/AXStandardWindow 0 31 801 791
+17:03:32.190 MACOS pid 23240 AXResized w353 AXWindow/AXStandardWindow 0 31 801 791
+17:03:32.197 SCREEN (nothing was seen for 554 ms)
+17:03:32.197 SCREEN preview (w353) 0,31 801×791
+17:03:32.197 SCREEN calendar (w348) 1263,300 937×600
+17:03:32.197 SCREEN terminal (w344) 1157,438 443×244
+17:03:33.824 INFO  displays changed: 1 display(s), 0 remembered
+17:03:33.827 DEBUG w353 has the keyboard
+17:03:33.835 MACOS pid 22813 AXMoved w348 AXWindow/AXStandardWindow 663 222 937 600
+17:03:33.843 DEBUG raised w348, which stays in view
+17:03:33.844 MACOS pid 22813 AXFocusedWindowChanged w348 AXWindow/AXStandardWindow 663 222 937 600
+17:03:33.845 MACOS pid 22813 AXMainWindowChanged w348 AXWindow/AXStandardWindow 663 222 937 600
+17:03:33.848 SCREEN calendar (w348) 663,222 937×600
+17:03:34.114 DEBUG raised w348, which stays in view
+17:03:34.117 MACOS pid 22813 AXFocusedWindowChanged w348 AXWindow/AXStandardWindow 663 222 937 600
+17:03:34.119 MACOS pid 22813 AXMainWindowChanged w348 AXWindow/AXStandardWindow 663 222 937 600
+17:03:34.404 DEBUG raised w348, which stays in view
+17:03:34.405 MACOS pid 22813 AXFocusedWindowChanged w348 AXWindow/AXStandardWindow 663 222 937 600
+17:03:34.406 MACOS pid 22813 AXMainWindowChanged w348 AXWindow/AXStandardWindow 663 222 937 600
+17:03:35.057 SCREEN -- end 116 act=display-change settled=quiet:533 moves=any leaves=any floating=326,329,337,344,347,348,349,353,355 docked=
+17:03:35.468 SCRIPT == 117 view-home

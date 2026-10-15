@@ -1,0 +1,38 @@
+51 view-frame: presses ctrl+opt+return
+expected: {'act': 'view', 'settled': 'quiet:1555', 'moves': 'any', 'front': '326', 'floating': '', 'docked': '326,329,337,344,347,348,349,353,355'}
+FAIL rule 3: finder (w326) moved 2 times
+
+16:59:04.922 SCREEN -- begin 51 view-frame
+16:59:04.922 SCREEN -- text 51 presses ctrl+opt+return
+16:59:05.108 MACOS pid 20668 AXMoved w326 AXWindow/AXStandardWindow 12 43 501 252
+16:59:05.111 SCREEN finder (w326) 12,43 501×252
+16:59:05.375 SCREEN finder (w326) 12,43 1576×767
+16:59:05.375 SCREEN textedit (w337) -341,790 342×247
+16:59:05.399 MACOS pid 20668 AXResized w326 AXWindow/AXStandardWindow 12 43 1576 767
+16:59:05.433 MACOS pid 22047 AXMoved w337 AXWindow/AXStandardWindow -341 790 342 247
+16:59:05.447 MACOS pid 22170 AXMoved w344 AXWindow/AXStandardWindow -708 790 709 184
+16:59:05.459 SCREEN notes (w347) -708,770 709×320
+16:59:05.459 SCREEN terminal (w344) -708,790 709×184
+16:59:05.467 MACOS pid 22651 AXMoved w347 AXWindow/AXStandardWindow -708 770 709 320
+16:59:05.483 MACOS pid 23240 AXMoved w353 AXWindow/AXStandardWindow -708 770 709 232
+16:59:05.488 SCREEN preview (w353) -708,770 709×232
+16:59:05.652 SCREEN (nothing was seen for 117 ms)
+16:59:05.724 INFO  zoom: framed w326
+16:59:05.726 DEBUG said on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: Your other windows are out of view, not closed · ⌃⌥Space shows everything
+16:59:05.785 SCREEN w475 of Arbor 512,728 576×38 (level 6)
+16:59:05.785 SCREEN w401 of Arbor left the screen
+16:59:05.785 SCREEN w399 of Arbor left the screen
+16:59:05.785 SCREEN w398 of Arbor left the screen
+16:59:05.785 SCREEN w396 of Arbor left the screen
+16:59:05.785 SCREEN w395 of Arbor left the screen
+16:59:05.785 SCREEN w402 of Arbor left the screen
+16:59:05.785 SCREEN w397 of Arbor left the screen
+16:59:05.785 SCREEN w400 of Arbor left the screen
+16:59:05.785 SCREEN front to back: finder settings notes calendar terminal textedit preview safari w382 w357 mail w391 w392 w393 w394
+16:59:05.948 SCREEN w394 of Arbor left the screen
+16:59:05.948 SCREEN w393 of Arbor left the screen
+16:59:05.948 SCREEN w391 of Arbor left the screen
+16:59:05.948 SCREEN w392 of Arbor left the screen
+16:59:05.948 SCREEN front to back: finder settings notes calendar terminal textedit preview safari w382 w357 mail
+16:59:07.193 SCREEN -- end 51 act=view settled=quiet:1555 moves=any front=326 floating= docked=326,329,337,344,347,348,349,353,355
+16:59:07.900 SCRIPT == 52 dock-icon-settings

@@ -1,0 +1,18 @@
+29 display-plug: the second display: plug
+expected: {'act': 'display-change', 'settled': 'quiet:351', 'moves': 'any', 'leaves': 'any', 'floating': '30,33,43,49,50,56,59,63,67', 'docked': ''}
+FAIL rule 3: notes (w50) moved 2 times
+
+16:53:24.245 SCREEN -- begin 29 display-plug
+16:53:24.245 SCREEN -- text 29 the second display: plug
+16:53:24.454 SCREEN (nothing was seen for 223 ms)
+16:53:24.454 SCREEN notes (w50) 0,105 1000×660
+16:53:24.716 MACOS pid 6439 AXMoved w50 AXWindow/AXStandardWindow 0 105 1000 660
+16:53:24.811 SCREEN (nothing was seen for 357 ms)
+16:53:25.174 SCREEN (nothing was seen for 121 ms)
+16:53:25.174 SCREEN notes (w50) -406,105 1000×660
+16:53:25.176 MACOS pid 6439 AXMoved w50 AXWindow/AXStandardWindow -406 105 1000 660
+16:53:27.086 INFO  displays changed: 2 display(s), 0 remembered
+16:53:27.088 DEBUG w50 has the keyboard
+16:53:29.764 SCREEN (nothing was seen for 163 ms)
+16:53:32.751 SCREEN -- end 29 act=display-change settled=quiet:351 moves=any leaves=any floating=30,33,43,49,50,56,59,63,67 docked=
+16:53:33.366 SCRIPT == 30 view-home

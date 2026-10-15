@@ -1,0 +1,42 @@
+37 view-all: presses ctrl+opt+space
+expected: {'act': 'view', 'settled': 'quiet:865', 'moves': 'any', 'floating': '', 'docked': '326,329,337,344,347,348,349,353,355'}
+ODD rule -: w344 fills 709×184 of its slot 12,619 709×191
+
+16:57:54.700 SCREEN -- begin 37 view-all
+16:57:54.700 SCREEN -- text 37 presses ctrl+opt+space
+16:57:54.922 MACOS pid 20668 AXMoved w326 AXWindow/AXStandardWindow 1087 43 501 252
+16:57:54.936 MACOS pid 22047 AXResized w337 AXWindow/AXStandardWindow 733 303 342 247
+16:57:54.936 MACOS pid 22047 AXMoved w337 AXWindow/AXStandardWindow 733 303 342 247
+16:57:54.940 MACOS pid 22170 AXMoved w344 AXWindow/AXStandardWindow 12 619 709 184
+16:57:54.944 MACOS pid 22651 AXMoved w347 AXWindow/AXStandardWindow 12 43 709 320
+16:57:54.951 MACOS pid 23240 AXMoved w353 AXWindow/AXStandardWindow 12 375 709 232
+16:57:54.959 MACOS pid 21968 AXMoved w329 AXWindow/AXStandardWindow -1575 770 1576 248
+16:57:54.965 SCREEN textedit (w337) 733,303 342×247
+16:57:54.965 SCREEN notes (w347) 12,43 709×320
+16:57:54.965 SCREEN preview (w353) 12,375 709×232
+16:57:54.965 SCREEN safari (w329) -1575,770 1576×248
+16:57:54.965 SCREEN terminal (w344) 12,619 709×184
+16:57:54.965 SCREEN finder (w326) 1087,43 501×252
+16:57:54.972 MACOS pid 23502 AXMoved w355 AXWindow/AXStandardWindow -1575 770 1576 248
+16:57:54.983 SCREEN w357 of Mail -1022,822 470×416
+16:57:54.983 SCREEN mail (w355) -1575,770 1576×248
+16:57:54.995 DEBUG said on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: Too small to show: click the tile to zoom in · ⌃⌥G goes there too
+16:57:54.996 INFO  show-all: showing everything
+16:57:55.033 SCREEN w475 of Arbor 554,728 493×38 (level 6)
+16:57:55.033 SCREEN w393 of Arbor 733,43 342×248
+16:57:55.033 SCREEN w392 of Arbor 733,562 342×248
+16:57:55.033 SCREEN w394 of Arbor 1087,307 501×245
+16:57:55.033 SCREEN w391 of Arbor 1087,564 501×246
+16:57:55.033 SCREEN w401 of Arbor 12,363 709×12
+16:57:55.033 SCREEN w399 of Arbor 12,607 709×12
+16:57:55.033 SCREEN w400 of Arbor 733,291 342×12
+16:57:55.033 SCREEN w396 of Arbor 733,550 342×12
+16:57:55.033 SCREEN w402 of Arbor 1087,295 501×12
+16:57:55.033 SCREEN w397 of Arbor 1087,552 501×12
+16:57:55.033 SCREEN w398 of Arbor 721,43 12×767
+16:57:55.033 SCREEN w395 of Arbor 1075,43 12×767
+16:57:55.033 SCREEN front to back: textedit settings notes preview safari w382 calendar w357 mail terminal finder w393 w392 w394 w391 w401 w399 w400 w396 w402 w397 w398 w395
+16:57:55.065 DEBUG peek: the keys were found up
+16:57:56.239 SCREEN -- finding 37 - ODD w344 fills 709×184 of its slot 12,619 709×191
+16:57:56.239 SCREEN -- end 37 act=view settled=quiet:865 moves=any floating= docked=326,329,337,344,347,348,349,353,355
+16:57:57.210 SCRIPT == 38 click-terminal

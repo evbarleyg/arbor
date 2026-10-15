@@ -1,0 +1,43 @@
+59 view-home: chooses `home` from Arbor's menu
+expected: {'act': 'view', 'settled': 'quiet:1039', 'moves': 'any', 'everything': '1', 'tiles': '329@733:43:342:248,355@733:562:342:248,348@1087:307:501:245,349@1087:564:501:246', 'keyboard': '632', 'floating': '632', 'docked': '326,329,337,344,347,348,349,353,355'}
+ODD rule -: w344 fills 709×184 of its slot 12,619 709×191
+
+16:59:29.724 SCREEN -- begin 59 view-home
+16:59:29.724 SCREEN -- text 59 chooses `home` from Arbor's menu
+16:59:29.825 SCREEN finder (w326) 1087,43 501×252
+16:59:29.825 MACOS pid 20668 AXResized w326 AXWindow/AXStandardWindow 1087 43 501 252
+16:59:29.827 MACOS pid 20668 AXMoved w326 AXWindow/AXStandardWindow 1087 43 501 252
+16:59:29.857 MACOS pid 22047 AXResized w337 AXWindow/AXStandardWindow 733 303 342 247
+16:59:29.857 MACOS pid 22047 AXMoved w337 AXWindow/AXStandardWindow 733 303 342 247
+16:59:29.863 SCREEN textedit (w337) 733,303 342×247
+16:59:29.882 MACOS pid 22170 AXTitleChanged w344 AXWindow/AXStandardWindow 12 619 709 184
+16:59:29.883 MACOS pid 22170 AXResized w344 AXWindow/AXStandardWindow 12 619 709 184
+16:59:29.884 SCREEN terminal (w344) 1599,790 709×184
+16:59:29.884 MACOS pid 22170 AXMoved w344 AXWindow/AXStandardWindow 12 619 709 184
+16:59:29.915 SCREEN terminal (w344) 12,619 709×184
+16:59:29.971 MACOS pid 22651 AXResized w347 AXWindow/AXStandardWindow 12 43 709 320
+16:59:29.971 MACOS pid 22651 AXMoved w347 AXWindow/AXStandardWindow 12 43 709 320
+16:59:29.974 SCREEN notes (w347) 1599,770 709×320
+16:59:30.001 MACOS pid 23240 AXResized w353 AXWindow/AXStandardWindow 1599 770 708 232
+16:59:30.005 SCREEN notes (w347) 12,43 709×320
+16:59:30.005 SCREEN preview (w353) 1599,770 708×232
+16:59:30.031 MACOS pid 23240 AXMoved w353 AXWindow/AXStandardWindow 12 375 709 232
+16:59:30.033 MACOS pid 23240 AXResized w353 AXWindow/AXStandardWindow 12 375 709 232
+16:59:30.052 SCREEN preview (w353) 12,375 709×232
+16:59:30.062 INFO  home: showing everything on every display
+16:59:30.109 SCREEN w394 of Arbor 733,43 342×248
+16:59:30.109 SCREEN w392 of Arbor 733,562 342×248
+16:59:30.109 SCREEN w391 of Arbor 1087,307 501×245
+16:59:30.109 SCREEN w393 of Arbor 1087,564 501×246
+16:59:30.109 SCREEN w399 of Arbor 12,363 709×12
+16:59:30.109 SCREEN w398 of Arbor 12,607 709×12
+16:59:30.109 SCREEN w400 of Arbor 733,291 342×12
+16:59:30.109 SCREEN w395 of Arbor 733,550 342×12
+16:59:30.109 SCREEN w402 of Arbor 1087,295 501×12
+16:59:30.109 SCREEN w397 of Arbor 1087,552 501×12
+16:59:30.109 SCREEN w396 of Arbor 721,43 12×767
+16:59:30.109 SCREEN w401 of Arbor 1075,43 12×767
+16:59:30.109 SCREEN front to back: finder-new-57 finder notes settings calendar terminal textedit preview safari w382 w357 mail w394 w392 w391 w393 w399 w398 w400 w395 w402 w397 w396 w401
+16:59:31.426 SCREEN -- finding 59 - ODD w344 fills 709×184 of its slot 12,619 709×191
+16:59:31.427 SCREEN -- end 59 act=view settled=quiet:1039 moves=any everything=1 tiles=329@733:43:342:248,355@733:562:342:248,348@1087:307:501:245,349@1087:564:501:246 keyboard=632 floating=632 docked=326,329,337,344,347,348,349,353,355
+16:59:32.083 SCRIPT == 60 close-window

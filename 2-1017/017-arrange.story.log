@@ -1,0 +1,85 @@
+17 arrange: chooses `arrange` from Arbor's menu
+expected: {'act': 'dock-key', 'settled': 'quiet:1085', 'moves': 'any', 'floating': '', 'docked': '326,329,337,344,347,348,349,353,355', 'first': '1'}
+ODD rule -: w344 fills 709×184 of its slot 12,619 709×191
+FAIL rule 3: finder (w326) moved 2 times
+FAIL rule 3: safari (w329) moved 2 times
+FAIL rule 3: notes (w347) moved 2 times
+FAIL rule 3: calendar (w348) moved 2 times
+FAIL rule 3: preview (w353) went 16 points out of its way before it ended up
+FAIL rule 3: mail (w355) moved 2 times
+FAIL rule 3: w357 of Mail moved 2 times
+
+16:56:48.053 SCREEN -- begin 17 arrange
+16:56:48.053 SCREEN -- text 17 chooses `arrange` from Arbor's menu
+16:56:48.070 DEBUG commands follow the pointer: a script, pointer idle 1.7 s, keys 140.7 s, focus 2.2 s
+16:56:48.155 SCREEN safari (w329) 138,31 574×248
+16:56:48.155 MACOS pid 21968 AXResized w329 AXWindow/AXStandardWindow 138 31 574 248
+16:56:48.246 INFO  made room for w329
+16:56:48.337 SCREEN notes (w347) 0,105 709×320
+16:56:48.354 MACOS pid 22651 AXResized w347 AXWindow/AXStandardWindow 0 105 709 320
+16:56:48.358 INFO  made room for w347, w329
+16:56:48.509 MACOS pid 22813 AXResized w348 AXWindow/AXStandardWindow 403 115 680 503
+16:56:48.513 INFO  made room for w347, w329
+16:56:48.520 SCREEN calendar (w348) 403,115 680×503
+16:56:48.601 MACOS pid 20668 AXResized w326 AXWindow/AXStandardWindow 340 120 501 252
+16:56:48.602 INFO  made room for w347, w326
+16:56:48.617 SCREEN finder (w326) 340,120 501×252
+16:56:48.827 SCREEN w357 of Mail 441,124 470×416
+16:56:48.827 SCREEN mail (w355) 240,72 871×248
+16:56:48.828 MACOS pid 23502 AXResized w355 AXWindow/AXStandardWindow 240 72 871 248
+16:56:48.842 INFO  made room for w347, w326
+16:56:48.961 MACOS pid 22992 AXResized w349 AXWindow/AXStandardWindow 437 85 723 470
+16:56:48.966 INFO  made room for w347, w326
+16:56:49.004 MACOS pid 22170 AXTitleChanged w344 AXWindow/AXStandardWindow 40 51 709 214
+16:56:49.005 MACOS pid 22170 AXResized w344 AXWindow/AXStandardWindow 40 51 709 214
+16:56:49.017 SCREEN settings (w349) 437,85 723×470
+16:56:49.017 SCREEN terminal (w344) 40,51 709×214
+16:56:49.024 MACOS pid 23240 AXResized w353 AXWindow/AXStandardWindow 4 35 708 224
+16:56:49.048 INFO  made room for w347, w326
+16:56:49.054 SCREEN preview (w353) 4,35 708×224
+16:56:49.077 SCREEN textedit (w337) 165,65 342×247
+16:56:49.085 MACOS pid 22047 AXResized w337 AXWindow/AXStandardWindow 165 65 342 247
+16:56:49.097 MACOS pid 22170 AXTitleChanged w344 AXWindow/AXStandardWindow 40 51 709 184
+16:56:49.098 MACOS pid 22170 AXResized w344 AXWindow/AXStandardWindow 40 51 709 184
+16:56:49.103 SCREEN terminal (w344) 40,51 709×184
+16:56:49.114 MACOS pid 20668 AXMoved w326 AXWindow/AXStandardWindow 1087 43 501 252
+16:56:49.129 MACOS pid 22047 AXMoved w337 AXWindow/AXStandardWindow 733 303 342 247
+16:56:49.134 SCREEN textedit (w337) 733,303 342×247
+16:56:49.134 SCREEN finder (w326) 1087,43 501×252
+16:56:49.145 MACOS pid 22170 AXMoved w344 AXWindow/AXStandardWindow 12 619 709 184
+16:56:49.155 SCREEN terminal (w344) 12,619 709×184
+16:56:49.159 MACOS pid 22651 AXMoved w347 AXWindow/AXStandardWindow 12 43 709 320
+16:56:49.162 MACOS pid 23240 AXMoved w353 AXWindow/AXStandardWindow 12 375 708 224
+16:56:49.199 SCREEN notes (w347) 12,43 709×320
+16:56:49.199 SCREEN preview (w353) 12,375 709×232
+16:56:49.202 MACOS pid 23240 AXResized w353 AXWindow/AXStandardWindow 12 375 709 232
+16:56:49.225 SCREEN safari (w329) 1599,770 574×248
+16:56:49.226 MACOS pid 21968 AXMoved w329 AXWindow/AXStandardWindow 1599 770 574 248
+16:56:49.244 MACOS pid 22813 AXMoved w348 AXWindow/AXStandardWindow 1599 770 680 503
+16:56:49.261 MACOS pid 22992 AXMoved w349 AXWindow/AXStandardWindow 1599 770 723 470
+16:56:49.263 SCREEN calendar (w348) 1599,770 680×503
+16:56:49.263 SCREEN w357 of Mail 1800,822 470×416
+16:56:49.263 SCREEN mail (w355) 1599,770 871×248
+16:56:49.263 SCREEN settings (w349) 1599,770 723×470
+16:56:49.287 MACOS pid 23502 AXMoved w355 AXWindow/AXStandardWindow 1599 770 871 248
+16:56:49.454 INFO  arrange: arranged 9 windows
+16:56:50.420 SCREEN (nothing was seen for 400 ms)
+16:56:50.623 SCREEN w395 of Arbor 12,363 709×12
+16:56:50.623 SCREEN w396 of Arbor 12,607 709×12
+16:56:50.623 SCREEN w397 of Arbor 733,291 342×12
+16:56:50.623 SCREEN w398 of Arbor 733,550 342×12
+16:56:50.623 SCREEN w399 of Arbor 1087,295 501×12
+16:56:50.623 SCREEN w400 of Arbor 1087,552 501×12
+16:56:50.623 SCREEN w401 of Arbor 721,43 12×767
+16:56:50.623 SCREEN w402 of Arbor 1075,43 12×767
+16:56:50.623 SCREEN front to back: notes preview safari w382 calendar textedit w357 mail settings terminal finder w395 w396 w397 w398 w399 w400 w401 w402
+16:56:50.669 SCREEN w391 of Arbor 733,43 342×248
+16:56:50.669 SCREEN w392 of Arbor 733,562 342×248
+16:56:50.669 SCREEN w393 of Arbor 1087,307 501×245
+16:56:50.669 SCREEN w394 of Arbor 1087,564 501×246
+16:56:50.669 SCREEN front to back: notes preview safari w382 calendar textedit w357 mail settings terminal finder w391 w392 w393 w394 w395 w396 w397 w398 w399 w400 w401 w402
+16:56:52.012 SCREEN -- finding 17 - ODD w344 fills 709×184 of its slot 12,619 709×191
+16:56:52.013 SCREEN -- end 17 act=dock-key settled=quiet:1085 moves=any floating= docked=326,329,337,344,347,348,349,353,355 first=1
+16:56:52.354 SCREEN (nothing was seen for 179 ms)
+16:56:52.872 SCREEN (nothing was seen for 145 ms)
+16:56:53.073 SCRIPT == 18 display-plug

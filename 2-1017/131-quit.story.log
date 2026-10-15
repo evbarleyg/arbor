@@ -1,0 +1,27 @@
+131 quit: chooses Quit Arbor in Arbor's menu
+expected: {'act': 'quit-and-start', 'settled': 'quiet:767', 'moves': 'any', 'restores': 'all', 'places': '1', 'everything': '1'}
+FAIL rule 5: textedit (w337) is 165,65 656×422; its own size was 165,65 673×439
+FAIL rule 5: terminal (w344) is 1157,438 443×244; its own size was 800,35 800×784
+FAIL rule 5: preview (w353) is -756,439 1576×377; its own size was 2160,160 801×791
+
+17:04:43.305 SCREEN -- begin 131 quit
+17:04:43.305 SCREEN -- text 131 chooses Quit Arbor in Arbor's menu
+17:04:43.981 SCREEN w1001 of Arbor 1321,31 273×486 (level 101)
+17:04:45.376 SCREEN w1001 of Arbor left the screen
+17:04:45.472 MACOS pid 22992 AXMoved w349 AXWindow/AXStandardWindow 437 85 723 470
+17:04:45.473 MACOS pid 22992 AXResized w349 AXWindow/AXStandardWindow 437 85 723 625
+17:04:45.482 SCREEN settings (w349) 437,85 723×625
+17:04:45.518 SCREEN calendar (w348) 663,300 801×600
+17:04:45.540 MACOS pid 22813 AXResized w348 AXWindow/AXStandardWindow 800 31 801 790
+17:04:45.542 MACOS pid 22813 AXMoved w348 AXWindow/AXStandardWindow 800 31 801 790
+17:04:45.542 MACOS pid 22813 AXResized w348 AXWindow/AXStandardWindow 800 32 801 790
+17:04:45.542 MACOS pid 22813 AXMoved w348 AXWindow/AXStandardWindow 800 32 801 790
+17:04:45.547 INFO  trace day-3 ended: 496 lines, Arbor stopped
+17:04:45.547 INFO  stopped; all windows returned to view
+17:04:45.556 INFO  Arbor quit
+17:04:45.577 SCREEN calendar (w348) 800,32 801×790
+17:04:45.577 SCREEN w708 of Arbor left the screen
+17:04:45.577 SCREEN front to back: preview calendar safari settings notes textedit finder terminal w357 mail
+17:04:45.702 SCREEN -- arbor gone
+17:04:46.599 SCREEN -- end 131 act=quit-and-start settled=quiet:767 moves=any restores=all places=1 everything=1
+17:04:46.893 SCRIPT == 132 input-after

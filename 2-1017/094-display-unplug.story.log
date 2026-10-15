@@ -1,0 +1,35 @@
+94 display-unplug: the second display: unplug
+expected: {'act': 'display-change', 'settled': 'quiet:585', 'moves': 'any', 'leaves': 'any', 'floating': '326,329,337,344,347,348,349,353,355', 'docked': ''}
+FAIL rule 3: calendar (w348) moved 2 times
+
+17:01:52.491 SCREEN -- begin 94 display-unplug
+17:01:52.491 SCREEN -- text 94 the second display: unplug
+17:01:52.838 SCREEN (nothing was seen for 347 ms)
+17:01:52.838 SCREEN safari (w329) 38,109 1324×791
+17:01:52.838 SCREEN calendar (w348) 1263,300 937×600
+17:01:52.838 SCREEN terminal (w344) 1375,438 443×244
+17:01:52.838 SCREEN textedit (w337) 165,65 656×422
+17:01:53.072 MACOS pid 21968 AXMoved w329 AXWindow/AXStandardWindow 38 109 1324 791
+17:01:53.075 MACOS pid 21968 AXResized w329 AXWindow/AXStandardWindow 38 109 1324 791
+17:01:53.076 MACOS pid 22813 AXMoved w348 AXWindow/AXStandardWindow 1263 300 937 600
+17:01:53.077 MACOS pid 22047 AXMoved w337 AXWindow/AXStandardWindow 165 65 656 422
+17:01:53.078 MACOS pid 22170 AXTitleChanged w344 AXWindow/AXStandardWindow 1375 438 443 244
+17:01:53.078 MACOS pid 22813 AXResized w348 AXWindow/AXStandardWindow 1263 300 937 600
+17:01:53.079 MACOS pid 22047 AXResized w337 AXWindow/AXStandardWindow 165 65 656 422
+17:01:53.080 MACOS pid 22170 AXResized w344 AXWindow/AXStandardWindow 1375 438 443 244
+17:01:53.103 SCREEN (nothing was seen for 264 ms)
+17:01:54.698 INFO  displays changed: 1 display(s), 0 remembered
+17:01:54.710 DEBUG w329 has the keyboard
+17:01:54.719 MACOS pid 22813 AXMoved w348 AXWindow/AXStandardWindow 663 222 937 600
+17:01:54.722 DEBUG raised w348, which stays in view
+17:01:54.723 MACOS pid 22813 AXFocusedWindowChanged w348 AXWindow/AXStandardWindow 663 222 937 600
+17:01:54.723 MACOS pid 22813 AXMainWindowChanged w348 AXWindow/AXStandardWindow 663 222 937 600
+17:01:54.758 SCREEN calendar (w348) 663,222 937×600
+17:01:54.949 DEBUG raised w348, which stays in view
+17:01:54.951 MACOS pid 22813 AXFocusedWindowChanged w348 AXWindow/AXStandardWindow 663 222 937 600
+17:01:54.952 MACOS pid 22813 AXMainWindowChanged w348 AXWindow/AXStandardWindow 663 222 937 600
+17:01:55.177 DEBUG raised w348, which stays in view
+17:01:55.179 MACOS pid 22813 AXFocusedWindowChanged w348 AXWindow/AXStandardWindow 663 222 937 600
+17:01:55.181 MACOS pid 22813 AXMainWindowChanged w348 AXWindow/AXStandardWindow 663 222 937 600
+17:01:57.585 SCREEN -- end 94 act=display-change settled=quiet:585 moves=any leaves=any floating=326,329,337,344,347,348,349,353,355 docked=
+17:01:57.944 SCRIPT == 95 view-home

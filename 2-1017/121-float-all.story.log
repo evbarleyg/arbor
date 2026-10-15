@@ -1,0 +1,12 @@
+121 float-all: chooses `float-all` from Arbor's menu
+expected: {'act': 'way-out', 'settled': 'quiet:357', 'moves': 'any', 'restores': 'all', 'places': '1', 'everything': '1', 'floating': '326,329,337,344,347,348,349,353,355', 'docked': ''}
+FAIL rule 5: safari (w329) is 38,109 1324×791; its own size was 146,43 574×378
+FAIL rule 5: textedit (w337) is 165,65 656×422; its own size was 165,65 673×439
+FAIL rule 5: terminal (w344) is 1375,438 443×244; its own size was 800,35 800×784
+FAIL rule 5: calendar (w348) is 1263,300 937×600; its own size was 800,32 801×791
+
+17:03:50.794 SCREEN -- begin 121 float-all
+17:03:50.794 SCREEN -- text 121 chooses `float-all` from Arbor's menu
+17:03:50.806 DEBUG float-all failed: nothing is docked
+17:03:52.934 SCREEN -- end 121 act=way-out settled=quiet:357 moves=any restores=all places=1 everything=1 floating=326,329,337,344,347,348,349,353,355 docked=
+17:03:53.320 SCRIPT == 122 click-settings

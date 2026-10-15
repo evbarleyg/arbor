@@ -1,0 +1,112 @@
+77 launch: starts Arbor
+expected: {'act': 'quit-and-start', 'settled': 'quiet:911', 'moves': ',326,329,337,344,347,348,349,353,355,', 'everything': '1', 'floating': '', 'docked': '326,329,337,344,347,348,349,353,355'}
+FAIL rule 3: safari (w329) moved 2 times
+FAIL rule 3: terminal (w344) moved 2 times
+FAIL rule 3: notes (w347) moved 2 times
+FAIL rule 3: calendar (w348) moved 2 times
+FAIL rule 3: settings (w349) moved 2 times
+FAIL rule 3: preview (w353) moved 2 times
+FAIL rule 3: mail (w355) moved 2 times
+ODD rule 2: w357 of Mail moved along with a window of its app
+FAIL rule 3: w357 of Mail moved 2 times
+FAIL rule L: notes (w347) is out of view: 0% of it is on a display, at 1599,770 709×320
+FAIL rule L: calendar (w348) is out of view: 0% of it is on a display, at 1599,770 680×503
+FAIL rule L: preview (w353) is out of view: 0% of it is on a display, at 1599,770 708×247
+FAIL rule L: mail (w355) is out of view: 0% of it is on a display, at 1599,770 871×248
+
+17:00:46.599 SCREEN -- begin 77 launch
+17:00:46.599 SCREEN -- text 77 starts Arbor
+17:00:46.748 INFO  Arbor dev starting, pid 40322, home /tmp/arbor-shell.ZYVx7w/home
+17:00:46.749 INFO  opened by a hand, as far as macOS says
+17:00:46.750 INFO  control socket at /tmp/arbor-shell.ZYVx7w/home/arbor.sock
+17:00:46.755 INFO  keyboard layout: U.S.
+17:00:46.769 INFO  registered 9 shortcuts in 1101 µs
+17:00:46.841 INFO  the menu bar item is up
+17:00:46.930 INFO  started: 1 display(s), 9 managed window(s)
+17:00:46.983 MACOS pid 21968 AXResized w329 AXWindow/AXStandardWindow 138 31 574 248
+17:00:46.989 INFO  made room for w329
+17:00:46.998 MACOS pid 22170 AXTitleChanged w344 AXWindow/AXStandardWindow 40 51 548 184
+17:00:46.999 MACOS pid 22170 AXResized w344 AXWindow/AXStandardWindow 40 51 548 184
+17:00:47.005 SCREEN terminal (w344) 40,51 548×184
+17:00:47.005 SCREEN safari (w329) 138,31 574×248
+17:00:47.068 MACOS pid 22992 AXResized w349 AXWindow/AXStandardWindow 437 85 723 470
+17:00:47.076 INFO  made room for w329
+17:00:47.105 SCREEN settings (w349) 437,85 723×470
+17:00:47.232 MACOS pid 23502 AXResized w355 AXWindow/AXStandardWindow 240 72 871 248
+17:00:47.234 SCREEN w357 of Mail 441,124 470×416
+17:00:47.234 SCREEN mail (w355) 240,72 871×248
+17:00:47.234 INFO  made room for w355
+17:00:47.282 SCREEN calendar (w348) 403,115 680×503
+17:00:47.299 MACOS pid 22813 AXResized w348 AXWindow/AXStandardWindow 403 115 680 503
+17:00:47.302 INFO  made room for w349, w329
+17:00:47.370 MACOS pid 22651 AXResized w347 AXWindow/AXStandardWindow 80 158 709 320
+17:00:47.373 INFO  made room for w349, w329
+17:00:47.375 SCREEN notes (w347) 80,158 709×320
+17:00:47.391 SCREEN preview (w353) 4,35 708×247
+17:00:47.395 MACOS pid 23240 AXResized w353 AXWindow/AXStandardWindow 4 35 708 247
+17:00:47.402 INFO  made room for w349, w329
+17:00:47.487 MACOS pid 20668 AXResized w326 AXWindow/AXStandardWindow 340 120 723 252
+17:00:47.493 INFO  made room for w355
+17:00:47.521 SCREEN finder (w326) 340,120 501×252
+17:00:47.544 MACOS pid 20668 AXResized w326 AXWindow/AXStandardWindow 340 120 501 252
+17:00:47.553 INFO  made room for w329
+17:00:47.585 MACOS pid 22047 AXResized w337 AXWindow/AXStandardWindow 165 65 574 247
+17:00:47.596 SCREEN textedit (w337) 165,65 574×247
+17:00:47.598 MACOS pid 22170 AXTitleChanged w344 AXWindow/AXStandardWindow 40 51 478 184
+17:00:47.605 MACOS pid 22170 AXResized w344 AXWindow/AXStandardWindow 40 51 478 184
+17:00:47.608 MACOS pid 20668 AXMoved w326 AXWindow/AXStandardWindow 1087 43 501 252
+17:00:47.625 SCREEN terminal (w344) 40,51 478×184
+17:00:47.625 SCREEN safari (w329) 501,43 574×248
+17:00:47.627 MACOS pid 21968 AXMoved w329 AXWindow/AXStandardWindow 501 43 574 248
+17:00:47.639 MACOS pid 22047 AXMoved w337 AXWindow/AXStandardWindow 501 303 574 247
+17:00:47.644 SCREEN finder (w326) 1087,43 501×252
+17:00:47.644 SCREEN textedit (w337) 501,303 574×247
+17:00:47.648 MACOS pid 22170 AXMoved w344 AXWindow/AXStandardWindow 12 562 478 244
+17:00:47.654 MACOS pid 22170 AXTitleChanged w344 AXWindow/AXStandardWindow 12 562 478 244
+17:00:47.655 MACOS pid 22170 AXResized w344 AXWindow/AXStandardWindow 12 562 478 244
+17:00:47.657 MACOS pid 22651 AXMoved w347 AXWindow/AXStandardWindow 1599 770 709 320
+17:00:47.680 MACOS pid 22813 AXMoved w348 AXWindow/AXStandardWindow 1599 770 680 503
+17:00:47.687 MACOS pid 23240 AXMoved w353 AXWindow/AXStandardWindow 1599 770 708 247
+17:00:47.704 SCREEN terminal (w344) 12,562 478×244
+17:00:47.704 SCREEN calendar (w348) 1599,770 680×503
+17:00:47.704 SCREEN notes (w347) 1599,770 709×320
+17:00:47.704 SCREEN preview (w353) 1599,770 708×247
+17:00:47.705 MACOS pid 23502 AXMoved w355 AXWindow/AXStandardWindow 1599 770 871 248
+17:00:47.712 SCREEN w357 of Mail 1800,822 470×416
+17:00:47.712 SCREEN mail (w355) 1599,770 871×248
+17:00:47.847 INFO  w349 has the keyboard and would be a tile: let be where it stands
+17:00:47.864 MACOS pid 22992 AXResized w349 AXWindow/AXStandardWindow 437 85 723 625
+17:00:47.865 DEBUG w349 has the keyboard
+17:00:47.888 SCREEN settings (w349) 437,85 723×625
+17:00:47.893 ERROR setup: Desktop & Dock settings: as they stand, macOS reacts to the same clicks and drags as Arbor. `fix-setup` keeps them off for you while Arbor runs (and `fix-setup undo` ends that), or do it in System Settings → Desktop & Dock: | “Drag windows to left or right edge of screen to tile”: switch it off | “Drag windows to menu bar to fill screen”: switch it off | “Hold ⌥ key while dragging windows to tile”: switch it off | “Click wallpaper to reveal desktop” is on: a click on the wallpaper sweeps the windows aside, and the next one brings them back where they were. “Only in Stage Manager” switches that off
+17:00:47.986 SCREEN w699 of Arbor 12,43 477×248
+17:00:47.986 SCREEN w700 of Arbor 12,303 477×247
+17:00:47.986 SCREEN w701 of Arbor 501,562 574×248
+17:00:47.986 SCREEN w702 of Arbor 1087,307 501×245
+17:00:47.986 SCREEN w703 of Arbor 1087,564 501×246
+17:00:47.986 SCREEN w704 of Arbor 12,291 477×12
+17:00:47.986 SCREEN w705 of Arbor 12,550 477×12
+17:00:47.986 SCREEN w706 of Arbor 501,291 574×12
+17:00:47.986 SCREEN w707 of Arbor 501,550 574×12
+17:00:47.986 SCREEN w708 of Arbor 1087,295 501×12
+17:00:47.986 SCREEN w709 of Arbor 1087,552 501×12
+17:00:47.986 SCREEN w710 of Arbor 489,43 12×767
+17:00:47.986 SCREEN w711 of Arbor 1075,43 12×767
+17:00:47.986 SCREEN front to back: settings terminal finder safari calendar notes textedit preview w357 mail w699 w700 w701 w702 w703 w704 w705 w706 w707 w708 w709 w710 w711
+17:00:47.988 DEBUG got ready the costume of com.apple.finder in 9 ms
+17:00:48.014 DEBUG got ready the costume of com.apple.Safari in 6 ms
+17:00:48.053 INFO  trace 1017-2-02: recording to /tmp/arbor-shell.ZYVx7w/home/traces/2026-10-15-170048-1017-2-02.jsonl
+17:00:48.079 DEBUG got ready the costume of com.apple.TextEdit in 7 ms
+17:00:48.087 SCREEN -- arbor 40322
+17:00:48.108 DEBUG got ready the costume of com.apple.Terminal in 9 ms
+17:00:48.111 INFO  trace 1017-2-02 ended: 5 lines, trace off
+17:00:48.114 DEBUG got ready the costume of com.apple.Notes in 4 ms
+17:00:48.141 INFO  trace day-2: recording to /tmp/arbor-shell.ZYVx7w/home/traces/2026-10-15-170048-day-2.jsonl
+17:00:48.144 DEBUG got ready the costume of com.apple.iCal in 3 ms
+17:00:48.156 DEBUG got ready the costume of com.apple.systempreferences in 4 ms
+17:00:48.179 DEBUG got ready the costume of com.apple.Preview in 5 ms
+17:00:48.194 DEBUG got ready the costume of com.apple.mail in 2 ms
+17:00:49.165 SCREEN -- end 77 act=quit-and-start settled=quiet:911 moves=,326,329,337,344,347,348,349,353,355, everything=1 floating= docked=326,329,337,344,347,348,349,353,355
+17:00:49.382 SCREEN (nothing was seen for 150 ms)
+17:00:49.602 SCREEN (nothing was seen for 126 ms)
+17:00:49.926 SCRIPT == 78 view-in

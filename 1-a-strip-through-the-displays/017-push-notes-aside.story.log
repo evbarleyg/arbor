@@ -1,0 +1,15 @@
+17 push-notes-aside: drags notes, which floats, by its title bar towards the left edge of the screen and lets go
+expected: {'act': 'drag', 'settled': 'quiet:1054', 'judge': 'no', 'performed': 'no', 'undone': 'drag_window', 'drags': '50', 'front': '50', 'own': '50', 'floating': '30,33,43,49,50,56,59,63,67', 'docked': '', 'first': '1'}
+ODD rule -: the act was not performed: drag_window could not be done
+
+16:52:18.308 SCREEN -- begin 17 push-notes-aside
+16:52:18.308 SCREEN -- text 17 drags notes, which floats, by its title bar towards the left edge of the screen and lets go
+16:52:18.484 SCRIPT drag w50 from 804,117 to 70,117
+16:52:18.622 SCREEN (nothing was seen for 130 ms)
+16:52:19.387 DEBUG the button went down at 804,117, the pointer is at 804,117: it is on w50
+16:52:19.399 SCREEN the button is down 804 117
+16:52:19.557 DEBUG the press on w50 has moved nothing so far: looking less often
+16:52:22.578 SCREEN (nothing was seen for 103 ms)
+16:52:22.758 SCREEN the button is up 70 117
+16:52:24.021 SCREEN -- end 17 act=drag settled=quiet:1054 judge=no performed=no undone=drag_window drags=50 front=50 own=50 floating=30,33,43,49,50,56,59,63,67 docked= first=1
+16:52:24.779 SCRIPT == 18 push-notes-aside

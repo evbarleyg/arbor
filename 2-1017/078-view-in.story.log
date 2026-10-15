@@ -1,0 +1,42 @@
+78 view-in: chooses `in` from Arbor's menu
+expected: {'act': 'view', 'settled': 'quiet:1201', 'moves': 'any', 'floating': '', 'docked': '326,329,337,344,347,348,349,353,355', 'first': '1'}
+FAIL rule 3: settings (w349) went 850 points out of its way before it ended up
+
+17:00:49.948 SCREEN -- begin 78 view-in
+17:00:49.948 SCREEN -- text 78 chooses `in` from Arbor's menu
+17:00:49.983 INFO  made room for w349
+17:00:50.027 MACOS pid 22992 AXResized w349 AXWindow/AXStandardWindow 12 340 723 470
+17:00:50.027 MACOS pid 22992 AXMoved w349 AXWindow/AXStandardWindow 12 340 723 470
+17:00:50.037 SCREEN settings (w349) 12,340 723×470
+17:00:50.041 MACOS pid 22992 AXMoved w349 AXWindow/AXStandardWindow 438 340 723 470
+17:00:50.074 MACOS pid 20668 AXMoved w326 AXWindow/AXStandardWindow 1599 770 501 252
+17:00:50.109 SCREEN settings (w349) 438,340 723×470
+17:00:50.109 SCREEN finder (w326) 1599,770 501×252
+17:00:50.109 SCREEN safari (w329) 1599,770 574×248
+17:00:50.109 MACOS pid 21968 AXMoved w329 AXWindow/AXStandardWindow 1599 770 574 248
+17:00:50.138 MACOS pid 22047 AXMoved w337 AXWindow/AXStandardWindow 1599 790 574 247
+17:00:50.142 MACOS pid 22170 AXMoved w344 AXWindow/AXStandardWindow 1599 790 478 244
+17:00:50.144 SCREEN terminal (w344) 1599,790 478×244
+17:00:50.144 SCREEN textedit (w337) 1599,790 574×247
+17:00:50.151 INFO  in: stepped in to Finder, Calendar and System Settings (n12)
+17:00:50.486 SCREEN (nothing was seen for 197 ms)
+17:00:50.927 SCREEN (nothing was seen for 386 ms)
+17:00:50.945 SCREEN w702 of Arbor 12,192 1576×136
+17:00:50.945 SCREEN w708 of Arbor 12,180 1576×12
+17:00:50.945 SCREEN w709 of Arbor 12,328 1576×12
+17:00:50.945 SCREEN w705 of Arbor left the screen
+17:00:50.945 SCREEN w704 of Arbor left the screen
+17:00:50.945 SCREEN w706 of Arbor left the screen
+17:00:50.945 SCREEN w700 of Arbor left the screen
+17:00:50.945 SCREEN w707 of Arbor left the screen
+17:00:50.945 SCREEN w710 of Arbor left the screen
+17:00:50.945 SCREEN w711 of Arbor left the screen
+17:00:50.945 SCREEN front to back: settings terminal finder safari calendar notes textedit preview w357 mail w699 w701 w703 w702 w708 w709
+17:00:50.974 SCREEN w700 of Arbor 12,43 1576×137
+17:00:50.974 SCREEN front to back: settings terminal finder safari calendar notes textedit preview w357 mail w699 w701 w703 w700 w702 w708 w709
+17:00:51.131 SCREEN w699 of Arbor left the screen
+17:00:51.131 SCREEN w701 of Arbor left the screen
+17:00:51.131 SCREEN w703 of Arbor left the screen
+17:00:51.131 SCREEN front to back: settings terminal finder safari calendar notes textedit preview w357 mail w700 w702 w708 w709
+17:00:52.351 SCREEN -- end 78 act=view settled=quiet:1201 moves=any floating= docked=326,329,337,344,347,348,349,353,355 first=1
+17:00:52.921 SCRIPT == 79 dock-icon-safari

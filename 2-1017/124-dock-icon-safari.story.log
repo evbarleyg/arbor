@@ -1,0 +1,30 @@
+124 dock-icon-safari: clicks safari's icon in the Dock
+expected: {'act': 'switch', 'settled': 'quiet:382', 'front': '329', 'floating': '326,329,337,344,347,348,353,355', 'docked': '349'}
+FAIL rule 4: safari (w329) is not wholly in view: 90% of it, at 38,109 1324×791 in 0,31 1600×791 and 1600,31 1920×1049
+
+17:04:01.212 SCREEN -- begin 124 dock-icon-safari
+17:04:01.212 SCREEN -- text 124 clicks safari's icon in the Dock
+17:04:01.868 DEBUG the button went down at 243,854, the pointer is at 243,854: it is on w329
+17:04:01.878 SCREEN the button is down 243 854
+17:04:02.045 SCREEN (nothing was seen for 153 ms)
+17:04:02.045 SCREEN front to back: safari settings calendar preview notes textedit finder terminal w357 mail w708
+17:04:02.045 SCREEN the button is up 243 854
+17:04:02.045 SCREEN in front: process 21968 com.apple.Safari
+17:04:02.060 MACOS pid 22992 AXApplicationDeactivated
+17:04:02.072 MACOS workspace didActivate pid 21968 com.apple.Safari regular
+17:04:02.072 MACOS workspace didDeactivate pid 22992 com.apple.systempreferences regular
+17:04:02.072 MACOS pid 21968 AXApplicationActivated
+17:04:02.093 DEBUG focus is on w329
+17:04:02.094 DEBUG w329 has the keyboard
+17:04:02.121 DEBUG raised w348, which stays in view
+17:04:02.122 MACOS pid 22813 AXFocusedWindowChanged w348 AXWindow/AXStandardWindow 1263 300 937 600
+17:04:02.122 MACOS pid 22813 AXMainWindowChanged w348 AXWindow/AXStandardWindow 1263 300 937 600
+17:04:02.137 SCREEN front to back: safari calendar settings preview notes textedit finder terminal w357 mail w708
+17:04:02.409 DEBUG raised w348, which stays in view
+17:04:02.410 MACOS pid 22813 AXFocusedWindowChanged w348 AXWindow/AXStandardWindow 1263 300 937 600
+17:04:02.411 MACOS pid 22813 AXMainWindowChanged w348 AXWindow/AXStandardWindow 1263 300 937 600
+17:04:02.693 DEBUG raised w348, which stays in view
+17:04:02.693 MACOS pid 22813 AXFocusedWindowChanged w348 AXWindow/AXStandardWindow 1263 300 937 600
+17:04:02.694 MACOS pid 22813 AXMainWindowChanged w348 AXWindow/AXStandardWindow 1263 300 937 600
+17:04:04.928 SCREEN -- end 124 act=switch settled=quiet:382 front=329 floating=326,329,337,344,347,348,353,355 docked=349
+17:04:05.374 SCRIPT == 125 quit-safari

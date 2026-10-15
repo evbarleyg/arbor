@@ -1,0 +1,43 @@
+128 display-unplug: the second display: unplug
+expected: {'act': 'display-change', 'settled': 'quiet:721', 'moves': 'any', 'leaves': 'any', 'floating': '326,337,344,347,348,353,355,985', 'docked': '349'}
+FAIL rule 3: calendar (w348) moved 2 times
+FAIL rule 3: settings (w349) moved 2 times
+FAIL rule 3: preview (w353) moved 2 times
+
+17:04:19.835 SCREEN -- begin 128 display-unplug
+17:04:19.835 SCREEN -- text 128 the second display: unplug
+17:04:19.835 SCREEN calendar (w348) -337,187 937×600
+17:04:19.835 SCREEN preview (w353) 399,60 801×791
+17:04:19.835 SCREEN front to back: calendar preview safari settings notes textedit finder terminal w357 mail w708
+17:04:20.326 MACOS pid 22170 AXMoved w344 AXWindow/AXStandardWindow 1157 438 443 244
+17:04:20.327 MACOS pid 22813 AXMoved w348 AXWindow/AXStandardWindow 663 300 937 600
+17:04:20.329 MACOS pid 23240 AXMoved w353 AXWindow/AXStandardWindow -756 439 1576 377
+17:04:20.370 SCREEN (nothing was seen for 534 ms)
+17:04:20.370 SCREEN calendar (w348) 663,300 937×600
+17:04:20.370 SCREEN preview (w353) -756,439 1576×377
+17:04:20.370 SCREEN terminal (w344) 1157,438 443×244
+17:04:20.370 SCREEN front to back: safari settings calendar preview notes textedit finder terminal w357 mail w708
+17:04:20.412 MACOS pid 22992 AXMoved w349 AXWindow/AXStandardWindow 437 85 723 625
+17:04:20.413 MACOS pid 23240 AXResized w353 AXWindow/AXStandardWindow -756 439 1576 377
+17:04:20.413 MACOS pid 22992 AXResized w349 AXWindow/AXStandardWindow 437 85 723 625
+17:04:20.426 SCREEN settings (w349) 437,85 723×625
+17:04:20.450 SCREEN w708 of Arbor 1087,295 1576×12
+17:04:22.100 INFO  display 334EBA17-6FD1-4A35-93BE-3310FA7FF46E disconnected; remembering 1 window(s)
+17:04:22.101 INFO  displays changed: 1 display(s), 1 remembered
+17:04:22.104 DEBUG w985 has the keyboard
+17:04:22.125 MACOS pid 22992 AXResized w349 AXWindow/AXStandardWindow 438 43 723 470
+17:04:22.126 MACOS pid 22992 AXMoved w349 AXWindow/AXStandardWindow 438 43 723 470
+17:04:22.131 DEBUG raised w348, which stays in view
+17:04:22.138 SCREEN settings (w349) 438,43 723×470
+17:04:22.156 MACOS pid 22813 AXFocusedWindowChanged w348 AXWindow/AXStandardWindow 663 300 937 600
+17:04:22.157 MACOS pid 22813 AXMainWindowChanged w348 AXWindow/AXStandardWindow 663 300 937 600
+17:04:22.172 SCREEN front to back: safari calendar settings preview notes textedit finder terminal w357 mail w708
+17:04:22.378 DEBUG raised w348, which stays in view
+17:04:22.380 MACOS pid 22813 AXFocusedWindowChanged w348 AXWindow/AXStandardWindow 663 300 937 600
+17:04:22.380 MACOS pid 22813 AXMainWindowChanged w348 AXWindow/AXStandardWindow 663 300 937 600
+17:04:22.606 DEBUG raised w348, which stays in view
+17:04:22.607 MACOS pid 22813 AXFocusedWindowChanged w348 AXWindow/AXStandardWindow 663 300 937 600
+17:04:22.608 MACOS pid 22813 AXMainWindowChanged w348 AXWindow/AXStandardWindow 663 300 937 600
+17:04:24.939 SCREEN -- end 128 act=display-change settled=quiet:721 moves=any leaves=any floating=326,337,344,347,348,353,355,985 docked=349
+17:04:25.278 SCREEN (nothing was seen for 153 ms)
+17:04:25.477 SCRIPT == 129 view-home

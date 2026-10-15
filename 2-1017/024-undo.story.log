@@ -1,0 +1,70 @@
+24 undo: presses ctrl+opt+z
+expected: {'act': 'dock-key', 'settled': 'quiet:1489', 'moves': 'any', 'floating': '', 'docked': '326,329,337,344,347,348,349,353,355'}
+ODD rule -: w344 fills 709×184 of its slot 12,619 709×191
+FAIL rule 4: the app in front changed (to process 22047), and nobody switched
+
+16:57:15.191 SCREEN -- begin 24 undo
+16:57:15.191 SCREEN -- text 24 presses ctrl+opt+z
+16:57:15.430 MACOS pid 20668 AXResized w326 AXWindow/AXStandardWindow 1087 43 501 252
+16:57:15.431 MACOS pid 20668 AXMoved w326 AXWindow/AXStandardWindow 1087 43 501 252
+16:57:15.442 MACOS pid 22047 AXResized w337 AXWindow/AXStandardWindow 733 303 342 247
+16:57:15.444 SCREEN textedit (w337) 165,65 342×247
+16:57:15.444 SCREEN finder (w326) 340,120 501×252
+16:57:15.444 MACOS pid 22047 AXMoved w337 AXWindow/AXStandardWindow 733 303 342 247
+16:57:15.452 SCREEN textedit (w337) 733,303 342×247
+16:57:15.462 MACOS pid 22170 AXTitleChanged w344 AXWindow/AXStandardWindow 12 619 709 184
+16:57:15.462 MACOS pid 22170 AXResized w344 AXWindow/AXStandardWindow 12 619 709 184
+16:57:15.463 MACOS pid 22170 AXMoved w344 AXWindow/AXStandardWindow 12 619 709 184
+16:57:15.502 SCREEN terminal (w344) 12,619 709×184
+16:57:15.502 SCREEN finder (w326) 1087,43 501×252
+16:57:15.540 MACOS pid 22651 AXResized w347 AXWindow/AXStandardWindow 12 43 709 320
+16:57:15.541 MACOS pid 22651 AXMoved w347 AXWindow/AXStandardWindow 12 43 709 320
+16:57:15.542 SCREEN notes (w347) 12,43 709×320
+16:57:15.542 SCREEN preview (w353) 4,35 708×232
+16:57:15.601 MACOS pid 23240 AXResized w353 AXWindow/AXStandardWindow 12 375 709 232
+16:57:15.601 MACOS pid 23240 AXMoved w353 AXWindow/AXStandardWindow 12 375 709 232
+16:57:15.602 MACOS pid 23240 AXResized w353 AXWindow/AXStandardWindow 12 375 709 232
+16:57:15.619 SCREEN preview (w353) 12,375 709×232
+16:57:15.621 MACOS pid 21968 AXMoved w329 AXWindow/AXStandardWindow -1323 770 1324 791
+16:57:15.638 MACOS pid 22813 AXMoved w348 AXWindow/AXStandardWindow -936 770 937 600
+16:57:15.652 SCREEN safari (w329) -1323,770 1324×791
+16:57:15.652 SCREEN calendar (w348) -936,770 937×600
+16:57:15.653 MACOS pid 22992 AXMoved w349 AXWindow/AXStandardWindow -722 770 723 625
+16:57:15.692 SCREEN settings (w349) -722,770 723×625
+16:57:15.692 SCREEN w357 of Mail -794,877 470×416
+16:57:15.692 SCREEN mail (w355) -1119,770 1120×630
+16:57:15.700 MACOS pid 23502 AXMoved w355 AXWindow/AXStandardWindow -1119 770 1120 630
+16:57:15.722 MACOS pid 22047 AXFocusedWindowChanged w337 AXWindow/AXStandardWindow 733 303 342 247
+16:57:15.722 MACOS pid 22047 AXMainWindowChanged w337 AXWindow/AXStandardWindow 733 303 342 247
+16:57:15.722 MACOS pid 22047 AXFocusedWindowChanged w337 AXWindow/AXStandardWindow 733 303 342 247
+16:57:15.723 MACOS pid 22047 AXMainWindowChanged w337 AXWindow/AXStandardWindow 733 303 342 247
+16:57:15.758 SCREEN front to back: textedit settings notes preview safari w382 calendar w357 mail terminal finder
+16:57:15.764 SCREEN in front: process 22047 com.apple.TextEdit
+16:57:15.905 MACOS pid 22992 AXApplicationDeactivated
+16:57:15.905 MACOS workspace didActivate pid 22047 com.apple.TextEdit regular
+16:57:15.906 INFO  undo: undid float-all
+16:57:15.906 MACOS workspace didDeactivate pid 22992 com.apple.systempreferences regular
+16:57:15.906 MACOS pid 22047 AXApplicationActivated
+16:57:15.907 DEBUG said on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: Undid Float All
+16:57:15.939 DEBUG focus is on w337
+16:57:15.940 DEBUG w337 has the keyboard
+16:57:15.987 SCREEN w398 of Arbor 12,363 709×12
+16:57:15.987 SCREEN w402 of Arbor 12,607 709×12
+16:57:15.987 SCREEN w400 of Arbor 733,291 342×12
+16:57:15.987 SCREEN w396 of Arbor 733,550 342×12
+16:57:15.987 SCREEN w397 of Arbor 1087,295 501×12
+16:57:15.987 SCREEN w399 of Arbor 1087,552 501×12
+16:57:15.987 SCREEN w395 of Arbor 721,43 12×767
+16:57:15.987 SCREEN w401 of Arbor 1075,43 12×767
+16:57:15.987 SCREEN front to back: textedit settings notes preview safari w382 calendar w357 mail terminal finder w398 w402 w400 w396 w397 w399 w395 w401
+16:57:16.035 SCREEN w475 of Arbor 731,728 139×38 (level 6)
+16:57:16.035 SCREEN w394 of Arbor 733,43 342×248
+16:57:16.035 SCREEN w392 of Arbor 733,562 342×248
+16:57:16.035 SCREEN w391 of Arbor 1087,307 501×245
+16:57:16.035 SCREEN w393 of Arbor 1087,564 501×246
+16:57:16.035 SCREEN front to back: textedit settings notes preview safari w382 calendar w357 mail terminal finder w394 w392 w391 w393 w398 w402 w400 w396 w397 w399 w395 w401
+16:57:17.325 SCREEN -- finding 24 - ODD w344 fills 709×184 of its slot 12,619 709×191
+16:57:17.325 SCREEN -- end 24 act=dock-key settled=quiet:1489 moves=any floating= docked=326,329,337,344,347,348,349,353,355
+16:57:17.836 SCREEN (nothing was seen for 105 ms)
+16:57:17.836 SCREEN w475 of Arbor left the screen
+16:57:17.879 SCRIPT == 25 hold
