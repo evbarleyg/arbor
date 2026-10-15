@@ -1,0 +1,262 @@
+# mac-shell: scripts/mac-shell/check-signing.sh at c175238, macOS 14.8.9, 2026-10-15T07:00Z
+
+== the Mac
+macOS 14.8.9 on arm64; /usr/bin/openssl: LibreSSL 3.3.6
+another openssl: /opt/homebrew/opt/openssl@3/bin/openssl OpenSSL 3.6.3 9 Jun 2026 (Library: OpenSSL 3.6.3 9 Jun 2026)
+
+== 1  made and tried
+    Made the code-signing certificate "Arbor Local Signing" in /private/tmp/arbor-signing.QTh9t1/first.keychain-db
+      SHA-1 6E8D93FA2E3D279877C2ED2C65AFB4CBFCCA7911, valid until Oct 12 07:00:57 2036 GMT
+    /var/folders/s6/5hzmn6lx4dz5nxs7k_0slzph0000gn/T/tmp.rqpnEzm0GG/probe: replacing existing signature
+    codesign can sign with it. What macOS will remember about a build signed this way:
+      identifier "com.evbarleyg.arbor.probe" and certificate leaf = H"6e8d93fa2e3d279877c2ed2c65afb4cbfcca7911"
+    
+    `make app` and `make install` sign with it from now on.
+    The first build signed this way needs Accessibility permission once more. If an older build is listed there, clear
+    its entry, but NOT YET: an Arbor that is running needs it to bring its windows back when it quits. In this order:
+      make install LAUNCH=0
+      tccutil reset Accessibility com.evbarleyg.arbor
+      open ~/Applications/Arbor.app
+    Remove the certificate with scripts/make-signing-identity.sh --remove.
+    exit code 0
+  macOS calls the key "Arbor Local Signing"
+  ✔ it succeeds
+  ✔ and says that codesign can sign with the key
+  ✔ not a word about a password
+  ✔ codesign signs again, and asks nobody
+    "Arbor Local Signing" is already in /private/tmp/arbor-signing.QTh9t1/first.keychain-db:
+      6E8D93FA2E3D279877C2ED2C65AFB4CBFCCA7911 "Arbor Local Signing" (CSSMERR_TP_NOT_TRUSTED)
+    /var/folders/s6/5hzmn6lx4dz5nxs7k_0slzph0000gn/T/tmp.zQWCP4YiS8/probe: replacing existing signature
+    codesign can sign with it. What macOS will remember about a build signed this way:
+      identifier "com.evbarleyg.arbor.probe" and certificate leaf = H"6e8d93fa2e3d279877c2ed2c65afb4cbfcca7911"
+    Nothing to do.
+    exit code 0
+  ✔ run again, it changes nothing, having tried a signature
+    Deleted the certificate 6E8D93FA2E3D279877C2ED2C65AFB4CBFCCA7911 and its private key from /private/tmp/arbor-signing.QTh9t1/first.keychain-db
+    Builds are signed ad hoc from now on. Arbor's entry under Accessibility still names the old certificate:
+      tccutil reset Accessibility com.evbarleyg.arbor   removes it, and the next build asks again.
+    exit code 0
+  ✔ --remove says that it deleted one certificate
+  ✔ the identity has gone
+  ✔ and the key
+    Made the code-signing certificate "Arbor Local Signing" in /private/tmp/arbor-signing.QTh9t1/second.keychain-db
+      SHA-1 3854B69B511CE1156BC628EAD660CE004AD02934, valid until Oct 12 07:00:58 2036 GMT
+    /var/folders/s6/5hzmn6lx4dz5nxs7k_0slzph0000gn/T/tmp.irnazVDhD2/probe: replacing existing signature
+    codesign can sign with it. What macOS will remember about a build signed this way:
+      identifier "com.evbarleyg.arbor.probe" and certificate leaf = H"3854b69b511ce1156bc628ead660ce004ad02934"
+    
+    `make app` and `make install` sign with it from now on.
+    The first build signed this way needs Accessibility permission once more. If an older build is listed there, clear
+    its entry, but NOT YET: an Arbor that is running needs it to bring its windows back when it quits. In this order:
+      make install LAUNCH=0
+      tccutil reset Accessibility com.evbarleyg.arbor
+      open ~/Applications/Arbor.app
+    Remove the certificate with scripts/make-signing-identity.sh --remove.
+    exit code 0
+  macOS calls the key "Arbor Local Signing"
+  ✔ packed by OpenSSL 3.6.3: the same
+  ✔ codesign signs again, and asks nobody
+
+== 2  off the search list
+    Made the code-signing certificate "Arbor Local Signing" in /private/tmp/arbor-signing.QTh9t1/third.keychain-db
+      SHA-1 8AB726F266D14640096770C35F2DCCDF6F618465, valid until Oct 12 07:00:59 2036 GMT
+    error: The specified item could not be found in the keychain.
+    make-signing-identity.sh: codesign cannot sign with the new certificate.
+      /private/tmp/arbor-signing.QTh9t1/third.keychain-db is not on the keychain search list, and codesign finds an identity nowhere else, whatever --keychain says.
+      `security list-keychains -d user` shows the list; with -s and every keychain that is to be on it, it sets it.
+      The certificate and its key were taken out of the keychain again: builds are signed ad hoc as before.
+    exit code 1
+  ✔ it fails, and says that that is why
+  ✔ it says that it took the certificate out again
+  ✔ nothing is left of the certificate
+  ✔ nor of the key
+
+== 3  a throwaway HOME
+  under the throwaway HOME the search list reads:     "/private/tmp/arbor-signing.QTh9t1/apart.keychain-db"
+  ✔ the account's own search list is as it was
+    Made the code-signing certificate "Arbor Local Signing" in /private/tmp/arbor-signing.QTh9t1/apart.keychain-db
+      SHA-1 E1B46FC8D1D06ED2547A9B06F81354FD0C929166, valid until Oct 12 07:00:59 2036 GMT
+    /var/folders/s6/5hzmn6lx4dz5nxs7k_0slzph0000gn/T/tmp.xN4XL5ZDHj/probe: replacing existing signature
+    codesign can sign with it. What macOS will remember about a build signed this way:
+      identifier "com.evbarleyg.arbor.probe" and certificate leaf = H"e1b46fc8d1d06ed2547a9b06f81354fd0c929166"
+    
+    `make app` and `make install` sign with it from now on.
+    The first build signed this way needs Accessibility permission once more. If an older build is listed there, clear
+    its entry, but NOT YET: an Arbor that is running needs it to bring its windows back when it quits. In this order:
+      make install LAUNCH=0
+      tccutil reset Accessibility com.evbarleyg.arbor
+      open ~/Applications/Arbor.app
+    Remove the certificate with scripts/make-signing-identity.sh --remove.
+    exit code 0
+  ✔ on that list and not on the account's: codesign follows HOME to the search list
+
+== 4  beside what is somebody's
+  the keychain's attributes and access lists fill 112 lines, 6 entries; its keys are called:
+    "Imported Private Key"
+    "Arbor Local Signing 2"
+  ✔ there is something to compare
+    Made the code-signing certificate "Arbor Local Signing" in /private/tmp/arbor-signing.QTh9t1/fourth.keychain-db
+      SHA-1 BF36B009154FA669870FF4BDBD97C1B1818FA90B, valid until Oct 12 07:01:00 2036 GMT
+    /var/folders/s6/5hzmn6lx4dz5nxs7k_0slzph0000gn/T/tmp.nOtPbNoeZa/probe: replacing existing signature
+    codesign can sign with it. What macOS will remember about a build signed this way:
+      identifier "com.evbarleyg.arbor.probe" and certificate leaf = H"bf36b009154fa669870ff4bdbd97c1b1818fa90b"
+    
+    `make app` and `make install` sign with it from now on.
+    The first build signed this way needs Accessibility permission once more. If an older build is listed there, clear
+    its entry, but NOT YET: an Arbor that is running needs it to bring its windows back when it quits. In this order:
+      make install LAUNCH=0
+      tccutil reset Accessibility com.evbarleyg.arbor
+      open ~/Applications/Arbor.app
+    Remove the certificate with scripts/make-signing-identity.sh --remove.
+    exit code 0
+  ✔ ours is made beside them
+  ✔ and the keychain reads otherwise for it, so the comparison can tell
+    Deleted the certificate BF36B009154FA669870FF4BDBD97C1B1818FA90B and its private key from /private/tmp/arbor-signing.QTh9t1/fourth.keychain-db
+    Builds are signed ad hoc from now on. Arbor's entry under Accessibility still names the old certificate:
+      tccutil reset Accessibility com.evbarleyg.arbor   removes it, and the next build asks again.
+    exit code 0
+  ✔ --remove deletes ours alone
+  ✔ with ours taken out again, not an attribute and not an access list of theirs has changed
+  ✔ the identity whose name begins like ours still signs
+
+== 5  sign.sh
+/private/tmp/arbor-signing.QTh9t1/Arbor.app/Contents/Helpers/arborctl: replacing existing signature
+/private/tmp/arbor-signing.QTh9t1/Arbor.app: replacing existing signature
+    Signed /private/tmp/arbor-signing.QTh9t1/Arbor.app ad hoc. The signature changes with every build, so each new build has to be given
+      Accessibility permission again. scripts/make-signing-identity.sh, run once, ends that (docs/INSTALL.md).
+  ✔ ad hoc: the stamp and codesign agree
+  ✔ the signature covers the stamp
+/private/tmp/arbor-signing.QTh9t1/Arbor.app/Contents/Helpers/arborctl: replacing existing signature
+/private/tmp/arbor-signing.QTh9t1/Arbor.app: replacing existing signature
+    Signed /private/tmp/arbor-signing.QTh9t1/Arbor.app with "Arbor Local Signing", this Mac's own certificate: Accessibility permission, once given
+      to a build signed with it, carries over to the next.
+  ✔ with the certificate: the stamp and codesign agree
+  ✔ the signature covers the stamp
+
+== 6  at a terminal, a keychain of its own
+    Made the code-signing certificate "Arbor Local Signing" in /private/tmp/arbor-signing.QTh9t1/sixth.keychain-db
+      SHA-1 FFA7699B9D5E40314FCFD7E28E93DF9D6452BB3B, valid until Oct 12 07:01:02 2036 GMT
+    If macOS now asks for the keychain's password, so that codesign may use Arbor's key: choose Always Allow, and it will not ask again.
+      Its dialog calls the key "Arbor Local Signing". Allow: this once, and it asks again at every build, twice. Deny: nothing is signed.
+    /var/folders/s6/5hzmn6lx4dz5nxs7k_0slzph0000gn/T/tmp.e2Sla5PnpT/probe: replacing existing signature
+    codesign can sign with it. What macOS will remember about a build signed this way:
+      identifier "com.evbarleyg.arbor.probe" and certificate leaf = H"ffa7699b9d5e40314fcfd7e28e93df9d6452bb3b"
+    
+  the key's partition list: []
+  ✔ it succeeds
+  ✔ it asks for no password
+  ✔ it allows for a dialog and does not promise one
+  ✔ none came
+  ✔ the script ends by saying that codesign can sign
+  ✔ and the next signature asks nobody
+
+== 7  the account's own login keychain
+  the login keychain holds 0 identities for signing code
+    Made the code-signing certificate "Arbor Local Signing" in /Users/runner/Library/Keychains/login.keychain-db
+      SHA-1 8CCA643F5B9A0263C53A1F854A81706AA150DC35, valid until Oct 12 07:01:02 2036 GMT
+    /var/folders/s6/5hzmn6lx4dz5nxs7k_0slzph0000gn/T/tmp.RQWTstZByV/probe: replacing existing signature
+    make-signing-identity.sh: codesign cannot sign with the new certificate.
+      It had no answer in 6 seconds: macOS asks in a dialog, and nobody is at a terminal here. Run this from a terminal and
+      answer with Always Allow.
+      The certificate and its key were taken out of the keychain again: builds are signed ad hoc as before.
+      A dialog of macOS's may still be on screen. It asks about a key that is gone: close it with Deny.
+    exit code 1
+  ✔ told nothing, it uses the login keychain
+  ✔ macOS asks, nobody answers, and it gives up in the time it was given
+  ✔ it says that the dialog may still be there, and what to do about it
+  ✔ which is so: the dialog has outlived codesign and the key
+  it says:
+        AXStaticText _NS:73 "" "codesign wants to access key “Arbor Local Signing” in your keychain."
+        AXStaticText infotext "" "To allow this, enter the “login” keychain password."
+        AXStaticText _NS:99 "" "Password:"
+        AXButton _NS:42 "Help" ""
+        AXButton _NS:21 "Always Allow" ""
+        AXButton _NS:29 "Deny" ""
+        AXButton _NS:8 "Allow" ""
+shot: mac-shell/orphan.png
+  ✔ it calls the key by the certificate's name
+> click 1026 368
+  ✔ Deny closes it
+  ✔ and it has gone
+  ✔ the login keychain lists what it listed before
+  ✔ nothing is left of the certificate
+  ✔ at a terminal: the dialog comes
+> click 1026 368
+    Made the code-signing certificate "Arbor Local Signing" in /Users/runner/Library/Keychains/login.keychain-db
+      SHA-1 16A45A91E6EAA6D2958B79212D9C8E250B1B2BCE, valid until Oct 12 07:01:12 2036 GMT
+    macOS will now ask for your login keychain's password, so that codesign may use Arbor's key. Choose Always Allow, and it
+    will not ask again.
+      Its dialog calls the key "Arbor Local Signing". Allow: this once, and it asks again at every build, twice. Deny: nothing is signed.
+    /var/folders/s6/5hzmn6lx4dz5nxs7k_0slzph0000gn/T/tmp.fWrjgZBxYY/probe: replacing existing signature
+    /var/folders/s6/5hzmn6lx4dz5nxs7k_0slzph0000gn/T/tmp.fWrjgZBxYY/probe: errSecInternalComponent
+    make-signing-identity.sh: codesign cannot sign with the new certificate.
+      "errSecInternalComponent" is what codesign says when the dialog was answered Deny or closed: nothing was signed. It says the same
+      of a keychain that is locked, as it is over ssh: `security unlock-keychain`.
+      The certificate and its key were taken out of the keychain again: builds are signed ad hoc as before.
+  ✔ it had said that macOS would ask, and what to choose
+  ✔ after Deny it says what codesign's word means
+  ✔ and speaks of no dialog left behind
+  ✔ nothing is left of the certificate
+
+== 8  as a person runs it
+  ✔ the dialog comes
+        AXStaticText _NS:73 "" "codesign wants to access key “Arbor Local Signing” in your keychain."
+        AXStaticText infotext "" "To allow this, enter the “login” keychain password."
+        AXStaticText _NS:99 "" "Password:"
+        AXButton _NS:42 "Help" ""
+        AXButton _NS:21 "Always Allow" ""
+        AXButton _NS:29 "Deny" ""
+        AXButton _NS:8 "Allow" ""
+shot: mac-shell/road-dialog.png
+> key p
+> key r
+> key o
+> key b
+> key e
+> key 2
+> key 0
+> key 6
+> key 5
+> key 7
+> click 888 368
+  ✔ the password, and Always Allow
+    Made the code-signing certificate "Arbor Local Signing" in /Users/runner/Library/Keychains/login.keychain-db
+      SHA-1 45D3FAB1EBE2EEEFAD4EFF72033448A2C4FC4640, valid until Oct 12 07:01:15 2036 GMT
+    macOS will now ask for your login keychain's password, so that codesign may use Arbor's key. Choose Always Allow, and it
+    will not ask again.
+      Its dialog calls the key "Arbor Local Signing". Allow: this once, and it asks again at every build, twice. Deny: nothing is signed.
+    /var/folders/s6/5hzmn6lx4dz5nxs7k_0slzph0000gn/T/tmp.7QxIjPu8t5/probe: replacing existing signature
+    codesign can sign with it. What macOS will remember about a build signed this way:
+      identifier "com.evbarleyg.arbor.probe" and certificate leaf = H"45d3fab1ebe2eeefad4eff72033448a2c4fc4640"
+    
+  ✔ the script ends by saying that codesign can sign
+  ✔ no dialog is left
+  the key's partition list: [apple-tool:, apple:]
+  ✔ Always Allow has put codesign's partition on the key's list
+  ✔ the next signature asks nobody
+/private/tmp/arbor-signing.QTh9t1/Arbor.app/Contents/Helpers/arborctl: replacing existing signature
+/private/tmp/arbor-signing.QTh9t1/Arbor.app: replacing existing signature
+    Signed /private/tmp/arbor-signing.QTh9t1/Arbor.app with "Arbor Local Signing", this Mac's own certificate: Accessibility permission, once given
+      to a build signed with it, carries over to the next.
+  ✔ sign.sh, told nothing, finds it and signs twice with it, and nobody is asked
+    "Arbor Local Signing" is already in /Users/runner/Library/Keychains/login.keychain-db:
+      45D3FAB1EBE2EEEFAD4EFF72033448A2C4FC4640 "Arbor Local Signing" (CSSMERR_TP_NOT_TRUSTED)
+    /var/folders/s6/5hzmn6lx4dz5nxs7k_0slzph0000gn/T/tmp.b00YN4tUvp/probe: replacing existing signature
+    codesign can sign with it. What macOS will remember about a build signed this way:
+      identifier "com.evbarleyg.arbor.probe" and certificate leaf = H"45d3fab1ebe2eeefad4eff72033448a2c4fc4640"
+    Nothing to do.
+    exit code 0
+  ✔ run again with nobody there: nothing to do, and nobody is asked
+    Deleted the certificate 45D3FAB1EBE2EEEFAD4EFF72033448A2C4FC4640 and its private key from /Users/runner/Library/Keychains/login.keychain-db
+    Builds are signed ad hoc from now on. Arbor's entry under Accessibility still names the old certificate:
+      tccutil reset Accessibility com.evbarleyg.arbor   removes it, and the next build asks again.
+    exit code 0
+  ✔ --remove takes it out again
+/private/tmp/arbor-signing.QTh9t1/Arbor.app/Contents/Helpers/arborctl: replacing existing signature
+/private/tmp/arbor-signing.QTh9t1/Arbor.app: replacing existing signature
+    Signed /private/tmp/arbor-signing.QTh9t1/Arbor.app ad hoc. The signature changes with every build, so each new build has to be given
+      Accessibility permission again. scripts/make-signing-identity.sh, run once, ends that (docs/INSTALL.md).
+  ✔ sign.sh is back to ad hoc, and says so in the bundle
+
+56 passed, 0 failed
+exit code 0

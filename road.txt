@@ -1,0 +1,16 @@
+Made the code-signing certificate "Arbor Local Signing" in /Users/runner/Library/Keychains/login.keychain-db
+  SHA-1 45D3FAB1EBE2EEEFAD4EFF72033448A2C4FC4640, valid until Oct 12 07:01:15 2036 GMT
+macOS will now ask for your login keychain's password, so that codesign may use Arbor's key. Choose Always Allow, and it
+will not ask again.
+  Its dialog calls the key "Arbor Local Signing". Allow: this once, and it asks again at every build, twice. Deny: nothing is signed.
+/var/folders/s6/5hzmn6lx4dz5nxs7k_0slzph0000gn/T/tmp.7QxIjPu8t5/probe: replacing existing signature
+codesign can sign with it. What macOS will remember about a build signed this way:
+  identifier "com.evbarleyg.arbor.probe" and certificate leaf = H"45d3fab1ebe2eeefad4eff72033448a2c4fc4640"
+
+`make app` and `make install` sign with it from now on.
+The first build signed this way needs Accessibility permission once more. If an older build is listed there, clear
+its entry, but NOT YET: an Arbor that is running needs it to bring its windows back when it quits. In this order:
+  make install LAUNCH=0
+  tccutil reset Accessibility com.evbarleyg.arbor
+  open ~/Applications/Arbor.app
+Remove the certificate with scripts/make-signing-identity.sh --remove.

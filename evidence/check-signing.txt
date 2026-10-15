@@ -1,0 +1,77 @@
+# check-signing 2026-10-15T07:00Z on macOS 14.8.9, commit c175238
+
+== the Mac
+
+== 1  made and tried
+  ✔ it succeeds
+  ✔ and says that codesign can sign with the key
+  ✔ not a word about a password
+  ✔ codesign signs again, and asks nobody
+  ✔ run again, it changes nothing, having tried a signature
+  ✔ --remove says that it deleted one certificate
+  ✔ the identity has gone
+  ✔ and the key
+  ✔ packed by OpenSSL 3.6.3: the same
+  ✔ codesign signs again, and asks nobody
+
+== 2  off the search list
+  ✔ it fails, and says that that is why
+  ✔ it says that it took the certificate out again
+  ✔ nothing is left of the certificate
+  ✔ nor of the key
+
+== 3  a throwaway HOME
+  ✔ the account's own search list is as it was
+  ✔ on that list and not on the account's: codesign follows HOME to the search list
+
+== 4  beside what is somebody's
+  ✔ there is something to compare
+  ✔ ours is made beside them
+  ✔ and the keychain reads otherwise for it, so the comparison can tell
+  ✔ --remove deletes ours alone
+  ✔ with ours taken out again, not an attribute and not an access list of theirs has changed
+  ✔ the identity whose name begins like ours still signs
+
+== 5  sign.sh
+  ✔ ad hoc: the stamp and codesign agree
+  ✔ the signature covers the stamp
+  ✔ with the certificate: the stamp and codesign agree
+  ✔ the signature covers the stamp
+
+== 6  at a terminal, a keychain of its own
+  ✔ it succeeds
+  ✔ it asks for no password
+  ✔ it allows for a dialog and does not promise one
+  ✔ none came
+  ✔ the script ends by saying that codesign can sign
+  ✔ and the next signature asks nobody
+
+== 7  the account's own login keychain
+  ✔ told nothing, it uses the login keychain
+  ✔ macOS asks, nobody answers, and it gives up in the time it was given
+  ✔ it says that the dialog may still be there, and what to do about it
+  ✔ which is so: the dialog has outlived codesign and the key
+  ✔ it calls the key by the certificate's name
+  ✔ Deny closes it
+  ✔ and it has gone
+  ✔ the login keychain lists what it listed before
+  ✔ nothing is left of the certificate
+  ✔ at a terminal: the dialog comes
+  ✔ it had said that macOS would ask, and what to choose
+  ✔ after Deny it says what codesign's word means
+  ✔ and speaks of no dialog left behind
+  ✔ nothing is left of the certificate
+
+== 8  as a person runs it
+  ✔ the dialog comes
+  ✔ the password, and Always Allow
+  ✔ the script ends by saying that codesign can sign
+  ✔ no dialog is left
+  ✔ Always Allow has put codesign's partition on the key's list
+  ✔ the next signature asks nobody
+  ✔ sign.sh, told nothing, finds it and signs twice with it, and nobody is asked
+  ✔ run again with nobody there: nothing to do, and nobody is asked
+  ✔ --remove takes it out again
+  ✔ sign.sh is back to ad hoc, and says so in the bundle
+
+56 passed, 0 failed

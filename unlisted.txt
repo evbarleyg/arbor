@@ -1,0 +1,7 @@
+Made the code-signing certificate "Arbor Local Signing" in /private/tmp/arbor-signing.QTh9t1/third.keychain-db
+  SHA-1 8AB726F266D14640096770C35F2DCCDF6F618465, valid until Oct 12 07:00:59 2036 GMT
+error: The specified item could not be found in the keychain.
+make-signing-identity.sh: codesign cannot sign with the new certificate.
+  /private/tmp/arbor-signing.QTh9t1/third.keychain-db is not on the keychain search list, and codesign finds an identity nowhere else, whatever --keychain says.
+  `security list-keychains -d user` shows the list; with -s and every keychain that is to be on it, it sets it.
+  The certificate and its key were taken out of the keychain again: builds are signed ad hoc as before.
