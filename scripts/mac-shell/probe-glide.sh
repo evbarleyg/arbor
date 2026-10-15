@@ -4,7 +4,7 @@
 #   scripts/mac-shell/run.sh scripts/mac-shell/probe-glide.sh          on one of GitHub's Macs, from anywhere: six minutes
 #
 # Arbor's motion shows cards on a stage while the real windows are moved once, underneath. A picture of the window in the card's place needs Screen Recording, which Arbor
-# never asks for. macOS's own tiling moves the real window: it glides and grows for 0.3 s, a new frame with every frame of the display, four edges in step. What is left to Arbor
+# never asks for. macOS's own tiling moves the real window: it glides and grows for 0.3 s, a new frame with nearly every frame of the display, four edges in step. What is left to Arbor
 # is to SET THE REAL WINDOW'S FRAME ONCE FOR EVERY FRAME OF THE DISPLAY through Accessibility, which it has anyway: two askings each time, place and size (glide.swift).
 # THE QUESTIONS ONLY A MAC CAN ANSWER, of each of the day's nine apps alone: of 18 frames asked for in 0.3 s, how many does the window server ever show, and how long does the window
 # stand still between two? Which order of the two askings keeps the edges in step, and what shows between them? What does it cost the processor? Where does it end? Each beside a
