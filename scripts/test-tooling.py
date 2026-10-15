@@ -1720,6 +1720,26 @@ esac
     row("run.sh: a whole run: it ends when the output branch appears, with the script's exit code", (done.returncode, "exit code: 0" in done.stdout), (0, True))
     row("run.sh: a whole run: GitHub was not asked once whether it had ended", polls, [])
     row("run.sh: a whole run: ten calls at most", len(made) <= 10, True)
+
+    # Its patience is at an end.
+    def time_up(status, *arguments):
+        done, _, made = ran(*arguments, "a.sh", "feat/x", GOES="true", STATUS=status, MAC_SHELL_TAG="u", MAC_SHELL_TIMEOUT="0", MAC_SHELL_STEP="1")
+        said = done.stderr.splitlines()
+        return (done.returncode, [call for call in made if "cancel" in call], next((line[8:] for line in said if line.startswith("run.sh: still")), ""),
+                [line.strip().split("  ")[0].rstrip(":") for line in said if line.startswith("  ")])
+
+    told = ["has it ended?", "what it brought", "cancel it by hand"]
+    row("run.sh: its patience is at an end and the run still waits for a Mac: NOTHING IS CANCELLED, it keeps its place; how to watch, fetch and cancel it is said", time_up("queued"),
+        (98, [], "still waiting for a Mac after 0s. NOT CANCELLED: the run keeps its place and goes on without this waiter.", told))
+    row("run.sh: the run has its Mac: the time counts anew, once; then it is let go of likewise", time_up("in_progress"),
+        (98, [], "still under way after 0s. NOT CANCELLED: the run keeps its place and goes on without this waiter.", told))
+    row("run.sh: of several Macs it names the branches", "mac-shell-out/u.1 (to .2)" in ran("--macs", "2", "a.sh", "feat/x", GOES="true", STATUS="queued", MAC_SHELL_TAG="u",
+                                                                                            MAC_SHELL_TIMEOUT="0", MAC_SHELL_STEP="1")[0].stderr, True)
+    row("run.sh: it had ended meanwhile, without output: that is found out at the limit, and is no time-out", time_up("completed")[0], 99)
+    # The output comes after fourteen seconds, six of which go into finding the run. Eight of waiting, first asked after one: at 1, 3 and 7 s. Once a second
+    # it would be seven or eight times.
+    _, _, made = ran("a.sh", "feat/x", GOES=pushes.replace("sleep 3", "sleep 14"), MAC_SHELL_TAG="t", MAC_SHELL_ASK="1", MAC_SHELL_STEP="1")
+    row("run.sh: the longer it waits the more rarely GitHub is asked whether the run has ended", len([call for call in made if call.endswith("actions/runs/7 --jq .status")]) in (2, 3, 4), True)
     shutil.rmtree(os.path.join(checkout, ".mac-shell"), ignore_errors=True)
     world.cleanup()
 
