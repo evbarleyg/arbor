@@ -368,19 +368,6 @@
         "withBothBandsAtNoughtNoDragDocks",
         "withCommandHeldADropOverAnyTargetFloatsTheWindow",
         "withoutPreviewsNothingHasToBeHeld"
-      ],
-      "e2e": [
-        "drag a window to the screen edge: the preview does not wait for the hold",
-        "hold a window over a docked window's edge: the preview waits until the hold is over",
-        "hold a window over one edge of a docked window, then over another: the preview shows the new place, and the window docks there",
-        "hold ⌘ and drag a window to the screen edge: no preview shows, and let go there it floats",
-        "hold ⌘ and hold a window over a docked window's edge: no preview shows, and let go there it floats",
-        "hold ⌘ and let go of a docked window over its own slot: it floats",
-        "let go of a docked window over the middle of another: no preview shows, and it goes back into its slot",
-        "let go of a window over a docked window's edge before the hold is over: it floats",
-        "press ⌘ while a preview shows, without moving the pointer: it goes; let go of ⌘: it comes back, and the window docks there",
-        "sweep a docked window the same way: it goes back into its slot",
-        "sweep a window over a docked window's edge and let go without stopping: no preview shows, and it floats where it was let go"
       ]
     },
     {
@@ -401,11 +388,7 @@
       ],
       "e2e": [
         "drag a window to the left screen edge",
-        "drag a window to the left screen edge: a preview shows where it will land, and it docks there",
-        "drag a window to the screen edge: the preview does not wait for the hold",
-        "drop a window on another window's lower edge",
-        "drop a window on the right part of a docked window: it docks on its right",
-        "hold a window over one edge of a docked window, then over another: the preview shows the new place, and the window docks there"
+        "drop a window on another window's lower edge"
       ]
     },
     {

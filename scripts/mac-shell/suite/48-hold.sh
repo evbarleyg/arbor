@@ -73,15 +73,17 @@ check "it is still docked" stays is docked "$W1"
 check "it still fills the screen" fills "$W1"
 check "the other app's window is still out of view" out_of_view "$V1"
 
-claim "⌘-drag the only window of a held view out of its slot: nothing else comes into view"
-proves A58
-# With ⌘ held a docked window floats wherever it is let go. Without a hold the window below it would take its place in the view.
+claim "drag the only window of a held view out of its slot, with no key held: it goes back, and nothing else comes into view"
+proves A58 A234
+# Dragged plainly a docked window comes out wherever it is let go. Without a hold the window below it would then take its place in the view.
 take "x y" titlebar_of "$W1"
-drag "$x" "$y" "$((x + 60))" "$((y + 80))" --mods cmd --no-release
+drag "$x" "$y" "$((x + 60))" "$((y + 80))" --plain --no-release
 check "it follows the pointer while the button is held" eventually fails fills "$W1"
 check "the window below it stays out of view meanwhile" stays out_of_view "$W2"
-release --mods cmd
-check "let go, the window below it stays out of view" stays out_of_view "$W2"
+release
+check "let go, it fills the screen again" eventually fills "$W1"
+check "it is still docked" is docked "$W1"
+check "the window below it stays out of view" stays out_of_view "$W2"
 check "and so does the other app's" out_of_view "$V1"
 check "and the floating one" out_of_view "$W3"
 check "the dragged window is in view" in_view "$W1"
