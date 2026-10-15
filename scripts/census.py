@@ -21,18 +21,20 @@ questions.
 
    Where a test touches several, the first of F, E, B, G, D, C, A wins (`classify`).
 2. For each helper that stands for the world: how many tests rest on it, and does a committed recording of a real Mac
-   hold the kind of report it makes up?
+   hold the kind of report it makes up? And of the recordings: how many do tests replay, in how many cases, what is each
+   held to, and has anybody seen its test fail?
 3. For each file that only a Mac can run: lines, branches, and what executes it without being asked: a test of class F or
-   G, `make e2e`, `make e2e-drag` (CI's job real-windows); or only a Mac shell script that somebody has to start; or nothing.
+   G, `make e2e`, `make e2e-drag` (two steps of CI's job macos); or only a Mac shell script that somebody has to start; or nothing.
 
 **Not part of `make check` or CI, and it should not be.** Half of it is judgement, kept in tables so that it can be argued
 with: which members of the stand-ins stand for the world, which suites have a tool for a subject (right below), what a
-recording would have to hold (EVIDENCE), what a run must switch on to get into a file (WIRING), what the ranking of
-features in the document rests on (RANKING_…). The script stops, and names what it met, when the sources have outgrown
-a table: a public member of a stand-in that is in none, a file of real code without an entry, a source line its reading of the
-wiring rests on that is gone, a default the ranking goes by that has changed. Then a person looks, mends the table, and
-reads what the document says about it. A check that fails for whoever adds a helper to a fake would teach people to
-fill in tables without looking.
+recording would have to hold (EVIDENCE), which tests on a recording are controls (CONTROLS), what a run must switch on to
+get into a file (WIRING), what the ranking of features in the document rests on (RANKING_…). The script stops, and names
+what it met, when the sources have outgrown a table: a public member of a stand-in that is in none, a file of real code without
+an entry, a source line its reading of the wiring rests on that is gone, a default the ranking goes by that has changed; and
+when a recording holds what the document says none does (`{{no:…}}`). Then a person looks, mends the table, and reads what
+the document says about it. A check that fails for whoever adds a helper to a fake would teach people to fill in tables
+without looking.
 
 The document is scripts/census-template.md with the tables and numbers put in: `{{table:classes}}`, `{{functions}}`,
 `{{d:system.userFocus}}` (`Census.lookup` lists the forms). Prose, and the whole of its section 4, are written there.
@@ -70,18 +72,18 @@ DOCUMENT = "docs/CENSUS.md"
 # The fake sends Arbor a report, or changes the world behind Arbor's back: macOS, an app or a hand acts.
 SYSTEM_REPORTS = """
 close setMinimized setHidden unhideApp setOnActiveSpace userMove setTitle userFocus drag activate activateApp setDisplays
-setListed openUnlisted finishSlowFocus userResize releaseMouse backgroundFocus setFullScreen userFocusesNothing
+setListed openUnlisted finishSlowFocus userResize releaseMouse backgroundFocus setFullScreen leaveFullScreen enterFullScreen plug unplug makeMain moveDisplay userFocusesNothing
 userSwitchesApp appsSettle setUnresponsive openTab selectTab closeTab dragAndLoseTheRelease quit quitApp comesForward
-settleFocus click userClick beginDrag moveDrag holdDrag holdModifierKeys endDrag loseTheReleaseOfTheDrag appsReact grab
+settleFocus click userClick userClickBringsAppForward beginDrag moveDrag holdDrag holdModifierKeys endDrag loseTheReleaseOfTheDrag appsReact grab
 carry letGo loseTheRelease moveSilently report renumber finishRestoring openStrayDialog forgetSession type keyDown keyUp
-hold
+hold clickOnTheWallpaper pressShowDesktopKey clickOnTheStrip letMacOSTile doubleClick doubleClickTitleBar zoomAsMacOSDoes bringForward
 """.split()
 # The test tells the fake what macOS or an app will answer when Arbor asks or acts. Methods, then properties that are set.
 SYSTEM_ANSWERS = "setMinimumSize setMaximumSize setSizeStep setBehaviour setTitleBar".split()
 SYSTEM_ANSWER_PROPERTIES = """
 cursor mouseDown focused heldModifiers secondsSinceInput displayList stubbornFrames focusIsSlow defersFocus restoresLate
 willSetFrame echoes holdsEchoes isDenied flagLags refusesTaps stackingIsUnknown strangers missingApps unlaunchableApps
-ignoresMoveTogether
+ignoresMoveTogether tiling optionAloneTiles
 """.split()
 # Opening a window is set-up by the definition of class C, whether before or after the start. It is counted in part 2 all
 # the same, because after the start it is a report like any other.
@@ -99,31 +101,34 @@ snapshot minimumSize maximumSize sizeStep behaviour lastRequest placeIsArborsDoi
 changedItsWays window requested before after together wasFocused focus frames keyboard wholePoints
 titleBarStaysReachable growsNoFurtherThanTheScreen movesLate flightFromTheDock flightFromFullScreen none jolts titleBar usualTitleBar
 measuredTitleBars reports
+sightings clearSightings macTiling macTile takeSizeBeforeTile isSweptAside
+whereItWaits movesWhenTheFrameLogWasCleared road roadTolerance changesOfPlace detour giveToTheAppInFront keysTheAppInFrontGot doubleClicks idealSize sizeMargin framePlan
 """.split()
 
 # A hand on one of Arbor's own panels: the fake calls the action the real panel would call.
 OVERLAY_ACTIONS = """
-clickTile clickOutline dragSeam dismissCheatSheet submitName cancelName typeInFinder moveFinderSelection chooseInFinder
+clickTile clickOutline dragSeam dismissCheatSheet submitName cancelName typeInFinder moveFinderSelection pageFinderSelection chooseInFinder
 dismissFinder clickMinimap
 """.split()
 OVERLAY_NEUTRAL = """
 actions preview previewHistory scenes tiles seams transitions finishedAnimations onAnimate namePrompt headsUp messages
 cheatSheets minimaps minimapHistory updateLog showDropPreview update removeAll animate finishAnimations clearTransitions
-showHeadsUp showCheatSheet finder finderBeeps showFinder showMinimap display changed
+showHeadsUp showCheatSheet finder finderBeeps showFinder showMinimap display changed rehearsals madeInTheMotion onCall rehearse onFinish
 """.split()
 
 # Harness: a key that is held, or whose release is a report of its own; the permission taken away.
-HARNESS_REPORTS = "keyDown keyUp keyRepeat revokeAccessibility grantAccessibility watchAccessibility".split()
+HARNESS_REPORTS = "keyDown keyUp keyRepeat revokeAccessibility grantAccessibility watchAccessibility permissionArrives".split()
 HARNESS_NEUTRAL = """
 system overlays store scheduler controller releases loginItem recorder start run press registeredShortcuts key display
 workspace layout visibleFrame frame ascii lastTrace layoutProblems staleLayouts measure beginStep stepMark movesInStep jolts
+newProcess launch launchForTheFirstTime mac welcome settingsWhenNoneAreGiven
 """.split()
 
 # What the stand-ins for GitHub's releases and macOS's login items are told to answer.
 OTHER_ANSWERS = {"releases": "reply answer".split(), "loginItem": "status refuses statusAfterRefusal".split()}
 OTHER_NEUTRAL = """
 saved saveCount repairs keptCopy loadProblem load save afterEach now schedule cancel pendingKeys runPending advance fire location lines isClosed failure
-text write close requests latestRelease changes setEnabled description
+text write close requests latestRelease changes setEnabled description nextDue
 """.split()
 
 # The ways into the controller that the macOS-only layers use, called by a test itself: the test makes the report up.
@@ -162,6 +167,7 @@ TOOL_SUITES = {
     "PinExpectationTests": "the `expect` lines of scenarios",
     "ChaosTests": "the chaos lab: text forms, determinism, shrinking",
     "ChaosKnownFailureTests": "the chaos lab's list of known failures",
+    "ChaosSevenRulesTests": "the chaos lab's nets for the seven rules, each tried on a fault done on purpose",
     "TraceRecorderTests": "the trace recorder",
     "TraceFileTests": "the trace format",
     "TraceFormatTests": "the trace format",
@@ -1077,13 +1083,18 @@ def read_traces(root):
     return traces
 
 
+def from_a_mac(header):
+    """arbor-sim and the test harness call their system "simulated", a rehearsal of a Mac shell script on Linux "rehearsal"."""
+    return header.get("os") not in ("simulated", "rehearsal")
+
+
 def fingerprints(traces):
     """For each kind of report or answer, the recordings of a real Mac that hold it."""
     seen = collections.defaultdict(set)
     counts = collections.Counter()
     kinds = collections.Counter()
     for name, header, lines in traces:
-        if header.get("os") == "simulated":
+        if not from_a_mac(header):
             continue
 
         def mark(what):
@@ -1098,8 +1109,10 @@ def fingerprints(traces):
         pids = {w["id"]: w.get("pid") for w in header.get("windows", [])}
         asked_focus = {}
         dragging = resizing = None
-        last_press = -10
+        last_press = let_go_for_macos = -10
         focused_pid = pids.get(header.get("focused"))
+        front_pid = keys_pressed = None
+        keys_down = {}
         for o in lines:
             t = o.get("t", 0)
             for key in ("event", "action", "call", "read"):
@@ -1111,6 +1124,16 @@ def fingerprints(traces):
                 mark("raw " + word)
                 if word == "leftMouseDown":
                     last_press = t
+                elif word == "didActivateApplication":
+                    front_pid = int(o["raw"].split()[-1])
+                elif word == "leftMouseUp":
+                    # where macOS takes a window that is let go: Sources/ArborCore/MacTiling.swift
+                    x, y = (float(n) for n in o["raw"].split()[1].split(","))
+                    for d in displays:
+                        left, top, width, height = d["frame"]
+                        if left <= x < left + width and top <= y < top + height and (
+                                x < left + 1 or x >= left + width - 1 or y < d.get("visible", d["frame"])[1]):
+                            let_go_for_macos = t
             event = o.get("event")
             if event:
                 mark("event " + event)
@@ -1125,9 +1148,24 @@ def fingerprints(traces):
                     mark("changed by somebody else, another frame, no drag")
                 if not o.get("user"):
                     mark("changed, echo of Arbor's own move")
+                before = frames.get(w["id"])
+                if o.get("user") and t - let_go_for_macos <= 2 and before and w.get("frame") and (
+                        abs(w["frame"][2] - before[2]) > 1 or abs(w["frame"][3] - before[3]) > 1):
+                    mark("changed by somebody else, another size, after a release where macOS tiles")
                 frames[w["id"]], titles[w["id"]] = w.get("frame"), w.get("title")
-            elif event == "appeared":
-                frames[o["window"]["id"]] = o["window"].get("frame")
+            elif event in ("appeared", "windowFound"):
+                w = o["window"] if event == "appeared" else o["args"][0]
+                frames[w["id"]], pids[w["id"]] = w.get("frame"), w.get("pid")
+            elif event == "shortcut":
+                chord, command, phase = o["args"]
+                if phase == "pressed" and chord in keys_down:
+                    mark("shortcut, pressed again before it came up")
+                elif phase == "pressed":
+                    keys_down[chord] = t
+                elif command == "show-all" and t - keys_down.get(chord, t) >= 0.3:      # Peek.holdThreshold: sooner is a tap
+                    mark("shortcut, Show Everything held longer than a tap")
+                if phase != "pressed":
+                    keys_down.pop(chord, None)
             elif event == "focused":
                 if t - asked_focus.get(o["id"], -10) <= 1:
                     mark("focused, answering Arbor's focus")
@@ -1139,6 +1177,8 @@ def fingerprints(traces):
                         mark("focused, with no press before it")
                     if pids.get(o["id"]) != focused_pid and focused_pid is not None:
                         mark("focused, a window of another app")
+                    if front_pid is not None and pids.get(o["id"]) != front_pid:
+                        mark("focused, a window of an app that is not in front")
                 focused_pid = pids.get(o["id"], focused_pid)
             elif event == "dragBegan":
                 dragging = o["id"]
@@ -1152,6 +1192,7 @@ def fingerprints(traces):
                 to = o.get("to", [])
                 if len(to) != len(displays) or [d.get("frame") for d in to] != [d.get("frame") for d in displays]:
                     mark("displaysChanged, a display came, went, moved or changed size")
+                    mark("displaysChanged, a display " + ("came" if len(to) > len(displays) else "went" if len(to) < len(displays) else "moved or changed size"))
                 else:
                     mark("displaysChanged, only the room the Dock or menu bar leaves")
                 displays = to
@@ -1165,7 +1206,8 @@ def fingerprints(traces):
             if call == "setFrame":
                 asked, took = o.get("frame"), o.get("result")
                 if took is None:
-                    mark("setFrame, no answer")
+                    if o.get("took", 0) >= 0.5:        # nothing at once: a window that is gone, and a hung app's after the first wait
+                        mark("setFrame, no answer after a wait")
                 elif asked:
                     if took[2] > asked[2] + 1 or took[3] > asked[3] + 1:
                         mark("setFrame, took more than asked")
@@ -1176,40 +1218,123 @@ def fingerprints(traces):
                     frames[o["id"]] = took
             if "read" in o:
                 mark("read " + o["read"])
+                mark("a question recorded by name")
+                answer = o.get("result")
+                if o["read"] == "mayUseAccessibility" and answer is False:
+                    mark("mayUseAccessibility, answered no")
+                elif o["read"] == "modifierKeysDown" and answer:
+                    mark("modifierKeysDown, a key is down")
+                elif o["read"] == "windowsFrontToBack" and not answer:
+                    mark("windowsFrontToBack, no answer")
+                elif o["read"] == "inputActivity":
+                    if keys_pressed is not None and answer.get("keyPresses", 0) > keys_pressed:
+                        mark("inputActivity, more keys pressed than at the last answer")
+                    keys_pressed = answer.get("keyPresses", 0)
+                elif o["read"] == "stackedWindows":
+                    # The window server's list against what the apps say, which is what `changed` and `setFrame` carry.
+                    for w in answer:
+                        has = frames.get(w["id"])
+                        if has and (abs(w["frame"][0][0] - has[0]) > 1 or abs(w["frame"][0][1] - has[1]) > 1):
+                            mark("stackedWindows, a window listed elsewhere than its app has it")
+                            break
     return seen, counts, kinds
+
+
+# A test of class E that takes no arguments replays one recording for a purpose of its own. These put the fault back that the recording
+# was made with and ask that its expectations fail: whoever runs the tests sees that recording's test fail, every time.
+CONTROLS = {"withoutTheReportThatWasLostTheSwitchOfAppsFails": "app-switch-unreported"}
+SEEN_TO_FAIL = "Made into tests from runs on hosted Macs"      # the table of the traces' README whose last column says who has
+
+
+def expectations(text):
+    """Of an `.expect` file (docs/TRACES.md, "Traces as tests"): the lines that expect something, those among them that hold Arbor to what
+    it did on the way, and the bugs nobody has fixed yet."""
+    lines = [re.sub(r"^expect\s+", "", line.strip()) for line in text.split("\n")]
+    lines = [line for line in lines if line and not line.startswith("#")]
+    problems = [line for line in lines if line.split()[0] == "problem"]
+    return len(lines) - len(problems), sum(1 for line in lines if line.split()[0] == "moved"), len(problems)
+
+
+def seen_to_fail(readme):
+    """The traces of which the last column of that table says anything but that nobody has seen the test fail."""
+    found, inside = [], False
+    for line in readme.split("\n"):
+        if line.startswith("#"):
+            inside = line.lstrip("# ").strip() == SEEN_TO_FAIL
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        m = re.fullmatch(r"`([\w-]+)`", cells[0])
+        if inside and m and len(cells) > 1 and cells[-1] != "nobody has":
+            found.append(m.group(1))
+    return found
+
+
+def replayed(root, traces, tests):
+    """The recordings of a real Mac that tests replay, how often, and what each is held to."""
+    folder = os.path.join(root, "collab/evidence/traces")
+    mine = [t for t in tests if t.cls == "E"]
+    every = [t for t in mine if t.parameterised]          # `@Test(arguments: names)`: once for each `.jsonl` in the folder
+    unknown = [t.name for t in mine if not t.parameterised and t.name not in CONTROLS]
+    gone = [n for n in CONTROLS if n not in {t.name for t in mine}] + [n for n in CONTROLS.values() if n not in {t[0] for t in traces}]
+    if unknown or gone:
+        sys.exit("census.py: CONTROLS no longer fits the tests of class E; look at them and mend it: " + ", ".join(unknown + gone))
+    real = [n for n, h, _ in traces if from_a_mac(h)]
+    facts = collections.Counter({"replayed": len(real) if every else len(set(CONTROLS.values()) & set(real)),
+                                 "e_cases": len(every) * len(traces) + len(mine) - len(every)})
+    for name in real:
+        path = os.path.join(folder, name + ".expect")
+        lines, moved, problems = expectations(open(path, encoding="utf-8").read()) if os.path.exists(path) else (0, 0, 0)
+        facts.update({"held_to_the_course": 1 if moved else 0, "expect_lines": lines, "known_problems": problems})
+    failed = set(seen_to_fail(read(root, "collab/evidence/traces/README.md"))) | set(CONTROLS.values())
+    facts["seen_to_fail"] = len(failed & set(real))
+    facts["never_seen_to_fail"] = facts["replayed"] - facts["seen_to_fail"]
+    return facts
 
 
 # What a recording would have to hold for a helper's report to have been seen on a Mac: any of the fingerprints named.
 # `differs` quotes collab/evidence/traces/README.md ("What real macOS does that FakeWindowSystem does not") where the fake, read
-# today, still does otherwise than the recording.
+# today, still does otherwise than the recording; for what that table does not have yet it names the trace that shows it.
 EVIDENCE = {
     "system.open": (["event appeared"], ""),
     "system.open(minimumSize:)": (["setFrame, took more than asked"], ""),
     "system.close": (["event destroyed"], ""),
     "system.quit": (["event destroyed"], ""),
     "system.quitApp": (["event destroyed"], ""),
-    "system.setMinimized": (["changed, minimized"], "row 13: on a Mac the Dock grows and `displaysChanged` follows; the fake sends one `changed`"),
+    "system.setMinimized": (["changed, minimized"], "row 13: on the small display the Dock grows and `displaysChanged` follows (at 1600×900 it "
+                            "does not); the fake sends one `changed`"),
     "system.setHidden": (["changed, hidden"], "row 11: on a Mac unhiding first moves windows that were nearly off screen; the fake changes "
                          "the flag only"),
     "system.unhideApp": (["changed, hidden"], ""),
     "system.finishRestoring": (["changed, minimized", "changed, hidden"], ""),
     "system.restoresLate=": (["changed, minimized", "changed, hidden"], ""),
     "system.setOnActiveSpace": (["changed, offSpace"], ""),
-    "system.setFullScreen": (["changed, fullScreen"], ""),
+    "system.setFullScreen": (["changed, fullScreen"], "`day-09-full-screen` and the three like it: on a Mac the window comes out at a frame of its "
+                             "app's choosing (Safari: the one it had before Arbor ever moved it) and is reported off the Space first, going in and "
+                             "coming out; the fake gives it the frame it went in with and says nothing of a Space"),
+    # Written from those recordings: the whole way out as a hosted Mac played it.
+    "system.leaveFullScreen": (["changed, fullScreen"], ""),
+    "system.enterFullScreen": (["changed, fullScreen"], ""),
+    # Each is `setDisplays` with another list.
+    "system.plug": (["displaysChanged, a display came"], ""),
+    "system.unplug": (["displaysChanged, a display went"], ""),
+    "system.makeMain": (["displaysChanged, a display moved or changed size"], ""),
+    "system.moveDisplay": (["displaysChanged, a display moved or changed size"], ""),
     "system.userMove": (["changed by somebody else, another frame, no drag"], ""),
     "system.moveSilently": (["changed by somebody else, another frame, no drag"], ""),
     "system.report": (["changed by somebody else, another frame, no drag"], ""),
     "system.setTitle": (["changed, another title"], ""),
     "system.userFocus": (["focused, within a second of a press"],
-                         "the fake also announces the app (`applicationActivated`), which no recording holds"),
+                         "the fake also announces the app (`applicationActivated`), which no recording holds; and where the focus crosses apps "
+                         "a Mac reports `keyboardFocusMoved` before and after it (`day-02-dock-icons-and-cmd-tab`), the fake not at all"),
     "system.userClick": (["event pointerPressed"], ""),
+    "system.userClickBringsAppForward": (["event applicationActivated"], ""),
     "system.click": (["event pointerPressed"], ""),
     "system.comesForward": (["read secondsSinceClickOrModifierKey"], ""),
+    "system.bringForward": (["event applicationActivated"], ""),
     "system.settleFocus": (["focused, answering Arbor's focus"], ""),
     "system.finishSlowFocus": (["focused, answering Arbor's focus"], ""),
     "system.focusIsSlow=": (["focused, answering Arbor's focus"], ""),
     "system.defersFocus=": (["focused, answering Arbor's focus"], ""),
-    "system.backgroundFocus": (["focused, a window of another app"], ""),
+    "system.backgroundFocus": (["focused, a window of an app that is not in front"], ""),
     "system.userSwitchesApp": (["event keyboardFocusMoved"], ""),
     "system.userFocusesNothing": (["event keyboardFocusMoved"], ""),
     "system.activate": (["event applicationActivated"], ""),
@@ -1223,22 +1348,23 @@ EVIDENCE = {
     "system.holdDrag": (["event dragMoved"], ""),
     "system.endDrag": (["event dragEnded"], ""),
     "system.letGo": (["event dragEnded"], ""),
-    "system.holdModifierKeys": (["read modifierKeysDown"], ""),
-    "system.heldModifiers=": (["read modifierKeysDown"], ""),
+    "system.holdModifierKeys": (["modifierKeysDown, a key is down"], ""),
+    "system.heldModifiers=": (["modifierKeysDown, a key is down"], ""),
     "system.loseTheReleaseOfTheDrag": (["event dragCancelled"], ""),
     "system.loseTheRelease": (["event dragCancelled"], ""),
     "system.dragAndLoseTheRelease": (["event dragCancelled"], ""),
     "system.userResize": (["event resizeBegan"], "rows 7, 9 and 15: a Mac focuses first, stalls in mid-drag, and reports nothing for a "
                           "window that cannot be resized"),
     "system.releaseMouse": (["event resizeEnded"], ""),
-    "system.setDisplays": (["displaysChanged, a display came, went, moved or changed size"], ""),
-    "system.displayList=": (["displaysChanged, a display came, went, moved or changed size"], ""),
+    # A test hands these any list: a display comes, goes, moves. They count as recorded with the kind that came last, not with the first.
+    "system.setDisplays": (["displaysChanged, a display went"], ""),
+    "system.displayList=": (["displaysChanged, a display went"], ""),
     "system.setListed": (["event windowFound"], ""),
     "system.openUnlisted": (["event windowFound"], ""),
     "system.openTab": (["event windowReplaced"], ""),
     "system.selectTab": (["event windowReplaced"], ""),
     "system.closeTab": (["event windowReplaced"], ""),
-    "system.setUnresponsive": (["setFrame, no answer"], ""),
+    "system.setUnresponsive": (["setFrame, no answer after a wait"], ""),
     "system.appsSettle": (["changed by somebody else, another frame, no drag"], ""),
     "system.stubbornFrames=": (["changed by somebody else, another frame, no drag"], ""),
     "system.appsReact": (["changed, echo of Arbor's own move"], ""),
@@ -1248,31 +1374,42 @@ EVIDENCE = {
     "system.setMinimumSize": (["setFrame, took more than asked"], ""),
     "system.setMaximumSize": (["setFrame, took less than asked"], ""),
     "system.setSizeStep": (["setFrame, took more than asked"], ""),
+    "system.setTitleBar": (["setFrame, stopped short of the place asked for"], ""),
     "system.willSetFrame=": (["setFrame, took more than asked"], ""),
     "system.cursor=": (["call cursorLocation"], ""),
     "system.mouseDown=": (["call isMouseButtonDown"], ""),
     "system.focused=": (["call focusedWindow"], ""),
     "system.secondsSinceInput=": (["read secondsSinceClickOrModifierKey"], ""),
-    "system.type": (["read inputActivity"], ""),
-    "system.keyDown": (["read inputActivity"], ""),
+    "system.type": (["inputActivity, more keys pressed than at the last answer"], ""),
+    "system.keyDown": (["inputActivity, more keys pressed than at the last answer"], ""),
     "system.keyUp": (["read inputActivity"], ""),
     "system.hold": (["read isHolding"], ""),
     "system.strangers=": (["read stackedWindows"], ""),
-    "system.stackingIsUnknown=": (["read windowsFrontToBack"], ""),
+    "system.stackingIsUnknown=": (["windowsFrontToBack, no answer"], ""),
     "system.openStrayDialog": (["read strayDialogsWaiting"], ""),
-    "system.isDenied=": (["event accessibilityWasRefused", "read mayUseAccessibility"], ""),
-    "system.flagLags=": (["read mayUseAccessibility"], ""),
-    "system.refusesTaps=": (["read mayUseAccessibility"], ""),
+    "system.isDenied=": (["event accessibilityWasRefused", "mayUseAccessibility, answered no"], ""),
+    "system.flagLags=": (["mayUseAccessibility, answered no"], ""),
+    "system.refusesTaps=": (["mayUseAccessibility, answered no"], ""),
     "system.missingApps=": (["call openApplication"], ""),
     "system.unlaunchableApps=": (["call launchApp"], ""),
+    "system.clickOnTheWallpaper": (["stackedWindows, a window listed elsewhere than its app has it"], ""),
+    "system.pressShowDesktopKey": (["stackedWindows, a window listed elsewhere than its app has it"], ""),
+    "system.clickOnTheStrip": (["stackedWindows, a window listed elsewhere than its app has it"], ""),
+    "system.letMacOSTile": (["changed by somebody else, another size, after a release where macOS tiles"], ""),
+    "system.tiling=": (["read macTiling"], ""),
+    "system.optionAloneTiles=": (["changed by somebody else, another size, after a release where macOS tiles"], ""),
+    "system.doubleClick": (["event doubleClickReached"], ""),
+    "system.doubleClickTitleBar": (["event doubleClickReached"], ""),
+    "system.zoomAsMacOSDoes": (["event doubleClickReached"], ""),
     "system.ignoresMoveTogether=": ([], ""),
     "system.renumber": ([], ""),
     "system.forgetSession": ([], ""),
     "harness.keyDown": (["event shortcut"], ""),
     "harness.keyUp": (["event shortcut"], ""),
-    "harness.keyRepeat": (["event shortcut"], ""),
-    "harness.revokeAccessibility": (["event accessibilityWasRefused", "read mayUseAccessibility"], ""),
-    "harness.grantAccessibility": (["read mayUseAccessibility"], ""),
+    "harness.keyRepeat": (["shortcut, pressed again before it came up"], ""),
+    "harness.revokeAccessibility": (["event accessibilityWasRefused", "mayUseAccessibility, answered no"], ""),
+    "harness.grantAccessibility": (["mayUseAccessibility, answered no"], ""),
+    "harness.permissionArrives": (["mayUseAccessibility, answered no"], ""),
     "harness.watchAccessibility": (["read mayUseAccessibility"], ""),
     "overlays.clickTile": (["action tileActivated"], ""),
     "overlays.dragSeam": (["action seamDragged"], ""),
@@ -1282,17 +1419,18 @@ EVIDENCE = {
     "overlays.cancelName": ([], ""),
     "overlays.typeInFinder": ([], ""),
     "overlays.moveFinderSelection": ([], ""),
+    "overlays.pageFinderSelection": ([], ""),
     "overlays.chooseInFinder": (["action finderChose"], ""),
     "overlays.dismissFinder": (["action finderDismissed"], ""),
     "overlays.clickMinimap": (["action minimapClicked"], ""),
     "controller.shortcut": (["event shortcut"], ""),
     "controller.gesture": ([], ""),
-    "controller.callSignalsChanged": ([], ""),
+    "controller.callSignalsChanged": (["event callSignalsChanged"], ""),
     "controller.keyboardLayoutChanged": ([], ""),
-    "controller.settingsFileMayHaveChanged": ([], ""),
+    "controller.settingsFileMayHaveChanged": (["event settingsFileMayHaveChanged"], ""),
     "controller.sessionIsEnding": ([], ""),
-    "controller.accessibilityGranted=": (["read mayUseAccessibility"], ""),
-    "controller.accessibilityProbe=": (["read mayUseAccessibility"], ""),
+    "controller.accessibilityGranted=": (["mayUseAccessibility, answered no"], ""),
+    "controller.accessibilityProbe=": (["mayUseAccessibility, answered no"], ""),
     "controller.systemFacts=": ([], ""),
     "controller.systemShortcuts=": ([], ""),
     "controller.registeredBindings=": ([], ""),
@@ -1302,6 +1440,9 @@ EVIDENCE = {
     "loginItem.status=": ([], ""), "loginItem.refuses=": ([], ""), "loginItem.statusAfterRefusal=": ([], ""),
     "SampleKeyLayouts": ([], ""),
 }
+# Fingerprints that no helper's entry names and the template's prose asks about.
+ASKED_BY_THE_TEMPLATE = ["more than one display", "displaysChanged, a display came, went, moved or changed size", "shortcut, Show Everything held longer than a tap", "focused, a window of another app",
+                         "a question recorded by name"]
 EVENT_WORDS = {
     "windowAppeared": "event appeared", "windowDestroyed": "event destroyed", "windowChanged": "event changed",
     "windowFocused": "event focused", "tileActivated": "action tileActivated", "seamDragged": "action seamDragged",
@@ -1445,6 +1586,7 @@ WIRING = {
     "Sources/ArborKit/AX/AXWindowSystem+StackedWindows.swift": ([[]], ""),
     "Sources/ArborKit/AX/AXWindowSystem+Stacking.swift": ([["cmd:pin"], ["cmd:summon"]], ""),
     "Sources/ArborKit/AX/ScreenGeometry.swift": ([[]], ""),
+    "Sources/ArborKit/UI/AccentInk.swift": ([["drag"], ["hotkeys", "hold"]], ""),
     "Sources/ArborKit/UI/AppKitOverlays.swift": ([[]], "panels are shown; no tile is clicked and no gap handle dragged"),
     "Sources/ArborKit/UI/AppKitOverlays+HeadsUp.swift": ([["cmd:show-shortcuts"], ["hotkeys"], ["status"], ["drag"]], ""),
     "Sources/ArborKit/UI/AppKitOverlays+Motion.swift": ([[]], ""),
@@ -1458,12 +1600,16 @@ WIRING = {
                                                "the hint after the first dock by a real drag shows; nothing looks at it"),
     "Sources/ArborKit/UI/MinimapPanel.swift": ([["cmd:minimap"]], ""),
     "Sources/ArborKit/UI/NamePanel.swift": ([["cmd:ask-name"], ["hotkeys", "text:ctrl+opt+n"]], ""),
+    "Sources/ArborKit/UI/NSAppearance+Look.swift": ([[]], "asked by whatever is drawn; a hosted Mac has one appearance, light, without Increase Contrast"),
+    "Sources/ArborKit/UI/PanelGround.swift": ([["cmd:find"], ["cmd:minimap"], ["cmd:ask-name"], ["hotkeys"], ["status"], ["drag"]], "with whichever panel stands on it"),
     "Sources/ArborKit/UI/Onboarding.swift": ([["prompt"], ["cmd:welcome"], ["cmd:check-setup"]], ""),
     "Sources/ArborKit/UI/PeekOutlinePanel.swift": ([["hotkeys", "hold"]], ""),
     "Sources/ArborKit/UI/SettingsListViews.swift": ([["cmd:settings-window"]], "the window opens on one pane; nothing in it is clicked"),
     "Sources/ArborKit/UI/SettingsViews.swift": ([["cmd:settings-window"]], "the window opens on one pane; nothing in it is clicked"),
     "Sources/ArborKit/UI/SettingsWindow.swift": ([["cmd:settings-window"]], ""),
     "Sources/ArborKit/UI/Stage.swift": ([["motion"]], ""),
+    "Sources/ArborKit/UI/StageSampler.swift": ([["motion"]], "looks only while a trace is recorded, which every run on a hosted Mac is"),
+    "Sources/ArborKit/UI/Wardrobe.swift": ([[]], "covers are ordered ahead of time at every launch (`StageDirector.rehearse`); a motion takes them only with Reduce Motion off"),
     "Sources/ArborKit/UI/StageDirector.swift": ([[]], "with Reduce Motion on `play` returns at its first line; what keeps pictures fresh runs"),
     "Sources/ArborKit/UI/StatusMenu.swift": ([["status"]], ""),
     "Sources/ArborKit/UI/TileDrawing.swift": ([["tile"]], ""),
@@ -1490,12 +1636,14 @@ WIRING = {
     "Sources/ArborKit/App/SettingsWatcher.swift": ([[]], ""),
     "Sources/ArborKit/App/SystemLoginItem.swift": ([["cmd:settings-window"], ["cmd:launch-at-login"], ["text:--launch-at-login"]],
                                                    "its status is read; nothing is switched"),
+    "Sources/ArborKit/App/SystemMacSwitchboard.swift": ([["allpids"], ["text:ARBOR_MAC_SWITCHES"]], "made only where Arbor looks after every app's windows, or where a script asks for it"),
     "Sources/ArborKit/App/Watchdog.swift": ([["watchdog"]], ""),
     "Sources/ArborKit/IPC/ControlEndpoint.swift": ([[]], ""),
     "Sources/ArborKit/IPC/ControlServer.swift": ([[]], ""),
     "Sources/Arbor/main.swift": ([[]], ""),
     "Sources/arborctl/main.swift": ([["ctl"]], ""),
     "Sources/ArborTestWindows/Commands.swift": ([[]], ""),
+    "Sources/ArborTestWindows/MoreCommands.swift": ([[]], ""),
     "Sources/ArborTestWindows/main.swift": ([[]], ""),
 }
 # One call that an automatic run does make into a file whose work it otherwise leaves alone.
@@ -1519,7 +1667,7 @@ NOT_BY_TESTS = {
 ANCHORS = [
     ("Sources/ArborKit/App/ArborApp.swift", r"if !environment\.noHotkeys \{\s*let input = PointerInput\("),
     ("Sources/ArborKit/App/ArborApp.swift", r"controller\.shortcutsAreDisabled = environment\.noHotkeys"),
-    ("Sources/ArborKit/App/ArborApp.swift", r"if !environment\.noStatusItem \{ statusMenu = StatusMenu\("),
+    ("Sources/ArborKit/App/ArborApp.swift", r"if !environment\.noStatusItem \{\s+statusMenu = StatusMenu\("),
     ("Sources/ArborKit/App/ArborApp.swift", r"if environment\.onlyPIDs == nil \{\s*callSensor = CallSensor"),
     ("Sources/ArborKit/App/ArborApp.swift", r"if !environment\.noPrompt, let page = controller\.pageToWelcomeOn\(\)"),
     ("Sources/ArborKit/App/ArborApp.swift", r"thoroughly \? EventTap\.isPermitted\(\)"),
@@ -1529,10 +1677,13 @@ ANCHORS = [
     ("Sources/arbor-e2e/main.swift", r'environment\["ARBOR_NO_PROMPT"\] = "1"'),
     ("Sources/arbor-e2e/main.swift", r'environment\["ARBOR_ONLY_PIDS"\] ='),
     ("scripts/mac-shell/lib.sh", r"ARBOR_NO_PROMPT=1 ARBOR_DEBUG=1 ARBOR_NO_HOTKEYS=1 ARBOR_NO_STATUS_ITEM=1"),
-    ("scripts/mac-shell/lib.sh", r"ARBOR_NO_WATCHDOG=1 \"\$@\""),
+    ("scripts/mac-shell/lib.sh", r"ARBOR_NO_WATCHDOG=1 \$ARBOR_LAUNCH_ENV"),
     (".github/workflows/ci.yml", r"\./scripts/e2e\.sh --full-screen"),
     (".github/workflows/ci.yml", r"\./scripts/mac-shell/e2e-drag\.sh"),
-    (".github/workflows/ci.yml", r"test swift test"),
+    (".github/workflows/ci.yml", r"test\s+\./scripts/ci-tests\.py run --mode \"\$TESTS\""),
+    (".github/workflows/ci.yml", r"test \./scripts/ci-tests\.py run --mode full"),
+    ("scripts/ci-tests.py", r'command = \["swift", "test",'),
+    ("scripts/ci-tests.py", r'\("a compile-time condition", re\.compile\('),
     (".github/workflows/ci.yml", r"\./scripts/sim-smoke\.sh"),
     (".github/workflows/mac-shell.yml", r"on:\s*workflow_dispatch:"),
     ("scripts/sim-smoke.sh", r"\./scripts/cli-smoke\.sh"),
@@ -1718,7 +1869,7 @@ def opens_after_start(t):
 def helper_table(root, rules, tests):
     traces = read_traces(root)
     seen, counts, kinds = fingerprints(traces)
-    real = [n for n, h, _ in traces if h.get("os") != "simulated"]
+    real = [n for n, h, _ in traces if from_a_mac(h)]
     citations = cited(rules.testing, root)
     faithful = set()
     for t in tests:
@@ -1952,7 +2103,7 @@ class Census:
             ["Test file", "Functions", "Arbor's macOS-only types it names", "Apple's, by prefix"], rows, "lrll"))
 
         # ---- 2: the helpers
-        self.helpers, traces, real, kinds, _ = helpers, traces, real, kinds, _ = helper_table(root, rules, tests)
+        self.helpers, traces, real, self.kinds, self.seen = helpers, traces, real, kinds, _ = helper_table(root, rules, tests)
         header = ["Helper", "Kind", "Tests of class D", "Tests of all classes", "A recording would hold", "Recordings that do", "Verdict",
                   "Outcome on real windows in CI", "Real input once (table 2d)"]
 
@@ -2004,19 +2155,35 @@ class Census:
             f"{sum(1 for t in one_process if any(h in ('system.close', 'system.setMinimized') for h, _, _ in t.world))} of those close or minimize a "
             "window, after which the fake hands the keyboard to \"the app's next window\", which there is any window at all."))
         blocks["differs"] = ("Table 2b. Recorded, and the fake is known to do otherwise", markdown(
-            ["Helper", "Tests of class D", "The difference (collab/evidence/traces/README.md)"],
+            ["Helper", "Tests of class D", "The difference (by its row in collab/evidence/traces/README.md, or by the trace that shows it)"],
             [[f"`{r['helper']}`", r["d"], r["differs"]] for r in helpers if r["verdict"] == "recorded; the fake differs"], "lrl"))
 
         def tally(counter):
-            return ", ".join(f"{k} ({v})" for k, v in counter.most_common())
+            return ", ".join(f"{k} ({v})" for k, v in sorted(counter.items(), key=lambda item: (-item[1], str(item[0]))))
 
-        from_a_mac = [(n, h) for n, h, _ in traces if h.get("os") != "simulated"]
-        shapes = collections.Counter(" + ".join("%d×%d" % tuple(d["frame"][2:]) for d in h.get("displays", [])) for _, h in from_a_mac)
+        macs = [(n, h) for n, h, _ in traces if from_a_mac(h)]
+        shapes = collections.Counter(" + ".join("%d×%d" % tuple(d["frame"][2:]) for d in h.get("displays", [])) for _, h in macs)
+        apps = collections.Counter()
+        for _, h, lines in traces:
+            if from_a_mac(h):
+                apps.update({w.get("app") for w in h.get("windows", [])} | {o["window"].get("app") for o in lines if o.get("event") == "appeared"})
+        days = collections.Counter(h.get("recorded", "")[:10] for _, h in macs)
         facts["traces"], facts["real_traces"] = len(traces), len(real)
+        facts["recorded_apps"], facts["recorded_days"] = len(apps) - (1 if "ArborTestWindows" in apps else 0), len(days)
         blocks["recordings"] = ("Table 2c. What the recordings hold", (
             f"{len(traces)} traces, {len(real)} of them from a Mac. Systems: {tally(collections.Counter(h.get('os') for _, h, _ in traces))}. "
-            f"Builds of Arbor that recorded on the Mac: {tally(collections.Counter(h.get('arbor') for _, h in from_a_mac))}. "
-            f"Displays there: {tally(shapes)}."))
+            f"Builds of Arbor that recorded on the Mac: {tally(collections.Counter(h.get('arbor') for _, h in macs))}. "
+            f"Displays there: {tally(shapes)}. Days: {tally(days)}. Apps whose windows are in them, and in how many: {tally(apps)}."))
+        facts.update(replayed(root, traces, tests))
+        blocks["replayed"] = (None, markdown(["The recordings as tests", ""], [
+            ["Recordings from a real Mac that a test replays", facts["replayed"]],
+            ["Test functions that replay a recording (class E)", count["E"]],
+            ["Test cases: a function that takes the traces as arguments runs once for each", facts["e_cases"]],
+            ["Recordings whose `.expect` file holds Arbor to what it did on the way (`moved …`)", facts["held_to_the_course"]],
+            ["Lines of expectation in the `.expect` files of the recordings", facts["expect_lines"]],
+            ["Recordings whose test somebody has seen fail: by the README's last column, or by a control among the tests", facts["seen_to_fail"]],
+            ["Known problems: `problem` lines, each a fault the recording shows and nobody has cured here", facts["known_problems"]],
+        ], "lr"))
         blocks["recording_kinds"] = (None, markdown(["Kind of line", "Lines in the recordings from a Mac"],
                                                     [[f"`{k}`", v] for k, v in sorted(kinds.items())], "lr"))
         events = [EVENT_WORDS.get(e, "event " + e)[6:] for e in rules.events] + ["shortcut"]
@@ -2081,10 +2248,28 @@ class Census:
     # -- looking things up for the template
 
     def lookup(self, key):
-        """`{{table:classes}}`, `{{functions}}`, `{{d:system.userFocus}}`, `{{unrun:UI/Stage.swift}}`, `{{claim:close a docked window}}`."""
+        """`{{table:classes}}`, `{{functions}}`, `{{d:system.userFocus}}`, `{{unrun:UI/Stage.swift}}`, `{{claim:close a docked window}}`,
+        `{{holds:event appeared}}`: how many recordings from a Mac hold that fingerprint; `{{lines:event:appeared}}`: how many lines of that kind
+        they have. `{{no:event windowReplaced; event dragCancelled}}` is the words "no recording" (`No:` with a capital), and stops the script once
+        a recording holds one of them: a sentence that says what is missing is read again on the day it is no longer missing."""
         kind, _, name = key.partition(":")
         if not name:
             return self.facts[key]
+        if kind in ("holds", "no", "No"):
+            known = {w for wanted, _ in EVIDENCE.values() for w in wanted} | set(ASKED_BY_THE_TEMPLATE)
+            for fingerprint in (n.strip() for n in name.split(";")):      # a slip of the pen would be in no recording either
+                if fingerprint not in known and not re.fullmatch(r"(event|action|call|read|raw) \w+", fingerprint):
+                    sys.exit("census.py: the template asks about `%s`, which is no fingerprint `fingerprints` looks for" % fingerprint)
+        if kind == "holds":
+            return len(self.seen.get(name, ()))
+        if kind == "lines":
+            return self.kinds.get(name, 0)
+        if kind in ("no", "No"):
+            for fingerprint in (n.strip() for n in name.split(";")):
+                if self.seen.get(fingerprint):
+                    sys.exit("census.py: the template says that no recording holds `%s`, and these do: %s. Read the sentence again"
+                             % (fingerprint, ", ".join(sorted(self.seen[fingerprint]))))
+            return kind + " recording"
         if kind == "table":
             return self.extra[name] if name in self.extra else self.blocks[name][1]
         if kind in ("d", "all", "found"):
@@ -2284,6 +2469,71 @@ SMALL = {
 }
 
 
+# Recordings and the tests that replay them, small. One is from arbor-sim and one from a rehearsal: traces, and no Mac's.
+RECORDED = {
+    "Tests/SmallTests/CorpusTests.swift": """
+        import Testing
+        @Suite struct CorpusTests {
+          static let folder = "collab/evidence/traces"
+          static let names = ["app-switch-unreported", "a-day", "by-the-simulator", "a-rehearsal"]
+          @Test(arguments: names) func everyTraceReplays(name: String) { _ = TraceReplayer(folder + name).run() }
+          @Test(arguments: names) func everyWayBack(name: String) { _ = TraceReplayer(folder + name).run() }
+          @Test func withoutTheReportThatWasLostTheSwitchOfAppsFails() { _ = TraceReplayer(folder + "app-switch-unreported").run() }
+          @Test(arguments: names) func titlesAreTokens(name: String) { #expect(!(folder + name).isEmpty) }
+        }
+        """,
+    "collab/evidence/traces/README.md": """
+        | Trace | What it shows |
+        |---|---|
+        | `app-switch-unreported` | A table that has no such column. |
+
+        ## Made into tests from runs on hosted Macs
+
+        | Trace | Recorded | What it shows | Seen to fail |
+        |---|---|---|---|
+        | `a-day` | 2026-10-14 | A day. | without abc1234: `moved 7 1 at 3`: Arbor moved w7 0 time(s), not 1 |
+        | `a-rehearsal` | 2026-10-14 | No Mac. | it does today |
+        | `another-day` | 2026-10-14 | Another. | nobody has |
+        | `gone-since` | 2026-10-14 | Not there. | it does today |
+
+        ## What comes after
+
+        | `by-the-simulator` | something else |
+        """,
+    "collab/evidence/traces/app-switch-unreported.jsonl": """
+        {"trace":1,"os":"macOS Version 26","displays":[{"frame":[0,0,1000,800],"visible":[0,30,1000,770]}],"windows":[{"id":7,"pid":1,"frame":[10,40,300,200]}]}
+        # a remark
+        {"t":1,"read":"mayUseAccessibility","args":[true],"result":true}
+        {"t":2,"read":"stackedWindows","result":[{"id":7,"frame":[[10,40],[300,200]]}]}
+        """,
+    "collab/evidence/traces/app-switch-unreported.expect": "visible 7\n",
+    "collab/evidence/traces/a-day.jsonl": """
+        {"trace":1,"os":"macOS Version 26","displays":[{"frame":[0,0,1000,800],"visible":[0,30,1000,770]}],"windows":[{"id":7,"pid":1,"frame":[10,40,300,200]}]}
+        {"t":1,"read":"mayUseAccessibility","args":[true],"result":false}
+        {"t":2,"read":"stackedWindows","result":[{"id":7,"frame":[[988,40],[300,200]]}]}
+        {"t":3,"raw":"leftMouseUp 0,400"}
+        {"t":3.2,"event":"changed","user":true,"window":{"id":7,"pid":1,"frame":[0,30,500,770]}}
+        """,
+    "collab/evidence/traces/a-day.expect": """
+        # A remark, and a blank line.
+
+        problem moved 7 1 at 3
+        expect docked 7
+        moved 7 1 at 3
+        frame 7 0 30 500 770
+        """,
+    "collab/evidence/traces/by-the-simulator.jsonl": """
+        {"trace":1,"os":"simulated","displays":[]}
+        {"t":1,"event":"windowReplaced","args":[]}
+        """,
+    "collab/evidence/traces/by-the-simulator.expect": "moved 7 0\nproblem something\n",
+    "collab/evidence/traces/a-rehearsal.jsonl": """
+        {"trace":1,"os":"rehearsal","displays":[]}
+        {"t":1,"event":"windowReplaced","args":[]}
+        """,
+}
+
+
 def self_test():
     import tempfile
     import textwrap
@@ -2342,6 +2592,50 @@ def self_test():
     finally:
         done(folder)
     situations.append(("a public member of a stand-in that is in no table stops the run", stopped, True))
+    folder = small(RECORDED)
+    try:
+        tests, _ = collect_tests(folder, Rules(folder))
+        traces = read_traces(folder)
+        facts = replayed(folder, traces, tests)
+        try:
+            replayed(folder, traces, [t for t in tests if t.name not in CONTROLS])
+            stopped = "went on"
+        except SystemExit as stop:
+            stopped = "withoutTheReportThatWasLostTheSwitchOfAppsFails" in str(stop)
+    finally:
+        done(folder)
+    seen, _, _ = fingerprints(traces)
+    situations += [
+        ("to replay a recording is class E, to read its name is not", sorted(t.name for t in tests if t.cls == "E"),
+         ["everyTraceReplays", "everyWayBack", "withoutTheReportThatWasLostTheSwitchOfAppsFails"]),
+        ("a trace from arbor-sim or from a rehearsal is no recording of a Mac", facts["replayed"], 2),
+        ("… but each is a case of every function that takes the traces as arguments", facts["e_cases"], 2 * 4 + 1),
+        ("one `moved` line holds a recording to its course", facts["held_to_the_course"], 1),
+        ("remarks, blank lines and `problem` lines expect nothing; the word `expect` may stand in front", facts["expect_lines"], 1 + 3),
+        ("`problem` lines are counted by themselves, and only a Mac's", facts["known_problems"], 1),
+        ("who has seen a test fail is the last column of one table of the README", seen_to_fail(textwrap.dedent(RECORDED["collab/evidence/traces/README.md"])),
+         ["a-day", "a-rehearsal", "gone-since"]),
+        ("seen to fail: by that column, if the trace is a Mac's and is there, or by a control", facts["seen_to_fail"], 2),
+        ("a control that is gone stops the run", stopped, True),
+        ("the permission is in a recording once the answer is no", sorted(seen["mayUseAccessibility, answered no"]), ["a-day"]),
+        ("a sweep: the window server lists a window elsewhere than its app has it",
+         sorted(seen["stackedWindows, a window listed elsewhere than its app has it"]), ["a-day"]),
+        ("let go at the side of the display, and it grows by itself",
+         sorted(seen["changed by somebody else, another size, after a release where macOS tiles"]), ["a-day"]),
+        ("what only a simulator or a rehearsal reported is in no recording", sorted(seen["event windowReplaced"]), []),
+    ]
+    page = Census.__new__(Census)
+    page.seen = seen
+    try:
+        page.lookup("no:event windowReplaced; mayUseAccessibility, answered no")
+        stopped = "went on"
+    except SystemExit as stop:
+        stopped = "a-day" in str(stop)
+    situations += [
+        ("the template can ask how many recordings hold something", page.lookup("holds:read mayUseAccessibility"), 2),
+        ("… and say that none does", page.lookup("No:event windowReplaced; event dragCancelled"), "No recording"),
+        ("… which stops the run once one does", stopped, True),
+    ]
     code, bare = lex('let a = "x { \\(f("y")) }" // {\nlet b = #"""#\nlet c = /[{]/\n')
     situations.append(("strings, comments and regexes hide their brackets", (bare.count("{"), bare.count("}"), len(bare) == len(code)), (0, 0, True)))
     situations.append(("branches: if, guard, while, the cases of a switch; not an enum's, not `if case`", sum(count_branches(
