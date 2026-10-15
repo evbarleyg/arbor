@@ -66,10 +66,13 @@ import Testing
     h.run("dock \(b.rawValue) right")
     h.run("zoom \(a.rawValue)")
     // Parked, then minimized; then its display goes and comes back, after which Arbor no longer
-    // counts it as parked, and moves nothing because a minimized window takes no space.
+    // counts it as parked, and moves nothing because a minimized window takes no space. (Its app obeys nobody while it is in
+    // the Dock, or Arbor would have brought it into view on the display that stayed.)
     h.system.setMinimized(b, true)
+    h.system.setBehaviour(b, .frozen)
     h.system.setDisplays([FakeWindowSystem.standardDisplay])
     h.system.setDisplays([FakeWindowSystem.standardDisplay, Self.second])
+    h.system.setBehaviour(b, .normal)
     #expect(!h.system.isVisible(b))
     h.controller.shutdown()
     #expect(h.system.isVisible(b), "\(h.frame(b)!)")

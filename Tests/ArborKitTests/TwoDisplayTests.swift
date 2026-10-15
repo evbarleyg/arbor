@@ -59,21 +59,45 @@ private let side = DisplaySnapshot(
     expectWindowsMatchLayout(h, on: main.id)
   }
 
-  @Test(arguments: [false, true]) func theSameWindowStillFloatingWaitsOutOfViewForTheDesktop(makingWay: Bool) {
+  /// Still floating, it comes out of the Dock where it went in, as on one display (below): over a framed view too, whether or not a display
+  /// went meanwhile (the product owner, 2026-10-15; Q29: a floating window is not taken out of view). It used to be out of view then, waiting for the
+  /// Desktop, but only because it still counted as out of view from the unplug, when it had been sent to the corner with
+  /// the Desktop in view: the fault of `AwayWhenItsDisplayGoesTests`.
+  @Test(arguments: [false, true]) func theSameWindowStillFloatingComesOutOfTheDockWhereItWentIn(makingWay: Bool) {
     let (h, a, _, f) = makeHarness(settings: makingWay ? .makingWay : Settings())
     h.system.setMinimized(f, true)
     unplugSide(h, macOSMoves: f)
+    let broughtTo = h.frame(f)!
+    #expect(h.system.isVisible(f) && !h.controller.parked.contains(f))
     h.run("zoom \(a.rawValue)")
     h.system.echoes.keyboard = false
     h.system.setMinimized(f, false)
-    #expect(!h.system.isVisible(f), "\(h.frame(f)!) lies over the framed window")
+    #expect(h.frame(f) == broughtTo)
+    #expect(h.workspace.camera == h.workspace.tree.leaf(containing: a), "the view stays on Safari")
     h.run("show-all")
     if makingWay {
       #expect(h.layout!.desktopFrame!.contains(h.frame(f)!), "\(h.ascii())")
     } else {
-      // As far from this display's corner as it was from its own display's: it has not been in view here yet.
-      #expect(h.frame(f) == CGRect(x: 60, y: 325, width: 320, height: 300))
+      // Where macOS has brought it is where it is. (It used to go as far from this display's corner as it was from its own display's,
+      // (60,325): a second move, by Arbor, for a frame of Arbor's own reckoning.)
+      #expect(h.frame(f) == broughtTo)
     }
+  }
+
+  /// The measure for the test above: the same story with no display coming or going.
+  @Test func asAFloatingWindowThatWasInTheDockOnOneDisplayAllAlong() {
+    let h = Harness(displays: [main])
+    let a = h.system.open(app: "Safari", frame: CGRect(x: 100, y: 100, width: 600, height: 400))
+    let f = h.system.open(app: "Calculator", frame: CGRect(x: 900, y: 300, width: 320, height: 300))
+    h.start()
+    h.run("dock \(a.rawValue) left")
+    let wentIn = h.frame(f)!
+    h.system.setMinimized(f, true)
+    h.run("zoom \(a.rawValue)")
+    h.system.echoes.keyboard = false
+    h.system.setMinimized(f, false)
+    #expect(h.frame(f) == wentIn)
+    #expect(h.workspace.camera == h.workspace.tree.leaf(containing: a))
   }
 
   @Test func theLidClosesAndOpens() {

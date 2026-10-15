@@ -1,0 +1,47 @@
+# Proposed by an executor (2026-10-15); the documenter may edit or drop it.
+# Story: a laptop beside a monitor, nothing docked. A terminal floats on the monitor and its app is hidden with ⌘H. The
+# monitor's cable is pulled. macOS brings the window onto the laptop, and there it is when the app is shown again. Arbor
+# used to take it to the corner behind its person's back, from where it jumped back when it showed, and where it stayed if
+# Arbor ended meanwhile. Plugged in again while still hidden, the window is back on the monitor before it shows.
+# Played in the order hosted Macs were recorded speaking in: macOS's list of displays is new at once, the apps say where
+# their windows are, and Arbor is told once the displays have settled.
+# Reference: rule 2 (nothing moves until the person docks something), Q20 (there and back is nothing), F08.
+plug side right 1920x1080
+open Terminal 800x600
+move 101 1700 200 800 600
+wait 3
+hide Terminal
+quietly unplug side
+move 101 260 200 800 600
+wait 1.7
+report-displays
+expect still
+expect at 101 260 200
+wait 3
+unhide Terminal
+expect still
+expect at 101 260 200
+expect visible 101
+expect floating 101
+# And back, hidden again: nothing moves before its person's eyes.
+hide Terminal
+quietly plug side right 1920x1080
+wait 1.7
+report-displays
+expect at 101 1700 200
+wait 3
+unhide Terminal
+expect still
+expect at 101 1700 200
+expect size 101 800x600
+# In the Dock instead of hidden, it is the same.
+minimize 101
+quietly unplug side
+move 101 260 200 800 600
+wait 1.7
+report-displays
+expect still
+expect at 101 260 200
+restore 101
+expect still
+expect visible 101

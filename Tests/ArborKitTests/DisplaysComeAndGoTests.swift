@@ -76,11 +76,10 @@ private let moment = ["settle", "react", "advance 1", "react"]
   /// Plays `lines`. No net may speak but of what is known. Returns the world.
   @discardableResult
   private func play(
-    _ lines: [String], in runner: ChaosRunner = ChaosRunner(), excusing excused: Set<String> = [],
-    sourceLocation: SourceLocation = #_sourceLocation
+    _ lines: [String], in runner: ChaosRunner = ChaosRunner(), sourceLocation: SourceLocation = #_sourceLocation
   ) -> ChaosRunner {
     for line in lines {
-      let violations = runner.step(ChaosAction(text: line)).filter { !ChaosRunner.knownRules.union(excused).contains($0.rule) }
+      let violations = runner.step(ChaosAction(text: line)).filter { !ChaosRunner.knownRules.contains($0.rule) }
       #expect(violations.isEmpty, "\(line): \(violations)", sourceLocation: sourceLocation)
     }
     return runner
@@ -188,9 +187,7 @@ private let moment = ["settle", "react", "advance 1", "react"]
         }
         let found = frames(runner)
         let mark = runner.system.frameLog.count
-        // Where a display GOES, Arbor works out a place of its own for what macOS has just brought over, and moves it the height the
-        // two menu bars differ by: another fault, with a fix of its own on the way, which takes this excuse out.
-        play([line] + moment, in: runner, excusing: ["moved-for-nothing"])
+        play([line] + moment, in: runner)
         let came = !Set(next.map(\.id)).subtracting(connected).isEmpty && Set(old.map(\.id)).isSubset(of: Set(next.map(\.id)))
         connected = Set(next.map(\.id))
         // Where a display only comes, and none goes: every window is where it belongs already.

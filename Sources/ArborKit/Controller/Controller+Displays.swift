@@ -88,7 +88,7 @@ extension Controller {
       bringIntoViewIfFocused(focused)
     }
     relayoutAll(reason: .camera, motion: .instant)
-    parkAgain()
+    parkAgain(placing: Set(arriving))
     scheduleSave()
   }
 
@@ -279,7 +279,7 @@ extension Controller {
     Log.info("a display blinked: \(moved.count) window(s) that macOS moved meanwhile are looked after")
     placeArrivingWindows(moved)
     relayoutAll(reason: .camera, motion: .instant)
-    parkAgain()
+    parkAgain(placing: Set(moved))
   }
 
   /// Keeps the workspace of a display that went away as dormant and floats
@@ -319,7 +319,17 @@ extension Controller {
       } else {
         frame = frame.offsetBy(dx: visible.minX - origin.x, dy: visible.minY - origin.y)
       }
-      workspaces[main]!.floating[window] = frame.fitted(into: visible)
+      // macOS clears a display that goes at once. Where it has brought a floating window, at its own size and most of it on
+      // this display, is where the window is, and that outranks what is worked out here: macOS goes by the displays'
+      // corners and this by what the menu bars leave, and a window off the screen would jump by the difference when it
+      // shows.
+      if workspace.isFloating(window), !parked.contains(window), let actual = windows[window]?.frame,
+        actual.size == frame.size, actual.fractionInside(mainDisplay.frame) >= 0.5
+      {
+        workspaces[main]!.floating[window] = actual
+      } else {
+        workspaces[main]!.floating[window] = frame.fitted(into: visible)
+      }
       workspaces[main]!.setRole(workspace.role(of: window), of: window)
     }
     return moving
@@ -501,12 +511,14 @@ extension Controller {
 
   /// Sends the windows that are still parked after a display change to the corner that is out of view
   /// with the displays as they are now. The old corner can be in the middle of a display that grew, or on
-  /// one plugged in beside it.
-  func parkAgain() {
+  /// one plugged in beside it. `arrived`: the windows this change has sent to another display, which count as out of view
+  /// until a layout has placed them (`placeArrivingWindows`).
+  func parkAgain(placing arrived: Set<WindowID> = []) {
     for window in parked.sorted() {
       guard let displayID = workspaceID(containing: window), let display = display(displayID),
         let frame = windows[window]?.frame
       else { continue }
+      if arrived.contains(window), floatsInView(window, on: displayID), putWhereItFloats(window, on: display) { continue }
       // macOS stops a window short of the corner (`parkingOrigin`). One that is where it would stop again stays. So does one in
       // another of the places, chosen before its title bar was known, if no less of it would show in the one chosen now. Of a
       // window found out of view at a start, its place says how high its title bar is; where it does not, the guess stands.
@@ -522,6 +534,55 @@ extension Controller {
       park(window, on: display)
       parkedAgain[window] = nil  // nobody is fighting over it
     }
+  }
+
+  /// Whether `window` floats on `displayID` and is meant to show with the view there as it is: told to stay in view, or on a
+  /// Desktop that is part of the view. By the layout in effect, not a fresh one, which widens to the surroundings of a view
+  /// whose window takes up no room; and a held view that shows nothing gives nothing away, wherever its camera has got to.
+  private func floatsInView(_ window: WindowID, on displayID: DisplayID) -> Bool {
+    guard let workspace = workspaces[displayID], workspace.isFloating(window), !workspace.isStashed(window),
+      !holdKeepsOut(window)
+    else { return false }
+    if workspace.staysInView(window) { return true }
+    guard !displaysHeldEmpty.contains(displayID) else { return false }
+    return layouts[displayID].map { workspace.tree.subtree($0.camera, contains: workspace.tree.desktop) } ?? false
+  }
+
+  /// `window` has changed display and belongs in view, and no layout has placed it: none places a window whose app is hidden or
+  /// that is in the Dock, and a held view that shows nothing lets no layout through. It is put where it floats, which as a
+  /// rule is where macOS has brought it already. It used to go on counting as out of view and was taken to the corner:
+  /// with nothing docked, behind its person's back, to jump back before their eyes when it showed again, and to stay there
+  /// if Arbor ended meanwhile. (Making way for docked windows is left to the layout that comes when it shows, as before.)
+  /// False if it could not be done.
+  private func putWhereItFloats(_ window: WindowID, on display: DisplaySnapshot) -> Bool {
+    // macOS lets nobody move a window in full screen, and its frame there says nothing. It is fetched when it leaves.
+    guard let current = windows[window], !current.isFullScreen, let floats = workspaces[display.id]?.floating[window] else {
+      return false
+    }
+    // Where its person left it hanging over the edge it goes on hanging, as in `floatingMoves`.
+    let leftThere = appPlacedFrames[window] != floats && wasLeftThereByItsUser(floats, of: window, on: display)
+    // Where a layout would put it: there is one measure of that for each way of treating floating windows.
+    let target =
+      settings.floatingWindowsMakeWay
+      ? floats.fitted(into: leftThere ? reach(of: display.visibleFrame, for: floats, on: display) : display.visibleFrame)
+      : whereItWas(floats, of: window, on: display)
+    if !current.frame.approximatelyEquals(target, tolerance: 1) {
+      guard let actual = system.setFrame(target, of: window) else { return false }
+      windows[window]?.frame = actual
+      // On a hosted Mac a test window obeyed, hidden and in the Dock (`scripts/mac-shell/check-off-the-screen-at-an-unplug.sh`); of real
+      // apps nobody knows. One that has not gone there goes on counting as out of view, which is what fetches it when it
+      // shows. (Another size can be its character cells.)
+      guard abs(actual.minX - target.minX) <= 2, abs(actual.minY - target.minY) <= 2 else { return false }
+    }
+    settled[window] = windows[window]?.frame
+    // Fitted, it is there for the displays' sake, and what is remembered is still its own (`putBackWhereItWas`).
+    if !settings.floatingWindowsMakeWay { fittedFrames[window] = target == floats ? nil : windows[window]?.frame }
+    (misfits[window], parkedAgain[window]) = (nil, nil)
+    parked.remove(window)
+    unplaced.remove(window)
+    // As the layout does for a window kept in view that it brings in.
+    if current.isPresent, staysInView(window) { system.raise(window) }
+    return true
   }
 
   /// Removes a window from every dormant workspace, dropping workspaces left
