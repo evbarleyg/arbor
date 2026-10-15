@@ -869,7 +869,7 @@ private func endReason(_ entries: [TraceEntry]) -> String? {
     #expect(spy.calls.last == "raise w5")
     system.moveTogether([(id, frame)])
     #expect(spy.calls.last == "moveTogether w5")
-    system.finishMoves(timeout: 1)
+    system.finishMoves(timeout: 1, arborLivesOn: true)
     #expect(spy.calls.last == "finishMoves")
     #expect(system.windowsFrontToBack() == [WindowID(77), WindowID(5)])
     #expect(system.macTiling() == MacTiling(screenEdges: true, menuBar: false, optionKey: true))
@@ -1131,7 +1131,7 @@ final class SpyWindowSystem: WindowSystem {
   func moveTogether(_ frames: [(window: WindowID, frame: CGRect)]) {
     calls.append("moveTogether " + frames.map { "\($0.window)" }.joined(separator: " "))
   }
-  func finishMoves(timeout: Double) { calls.append("finishMoves") }
+  func finishMoves(timeout: Double, arborLivesOn: Bool) { calls.append("finishMoves") }
   func windowsFrontToBack() -> [WindowID] { [WindowID(77), WindowID(5)] }
   func stackedWindows() -> [StackedWindow] { [] }
   func modifierKeysDown() -> KeyChord.Modifiers { [.command] }

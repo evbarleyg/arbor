@@ -221,6 +221,7 @@ extension FakeWindowSystem {
 
   /// Forgets the mouse and whatever was queued: Arbor's process ended, and its next run sees neither.
   public func forgetSession() {
+    arborsProcessEnded()
     inHand = nil
     undelivered.removeAll()
     mouseDown = false

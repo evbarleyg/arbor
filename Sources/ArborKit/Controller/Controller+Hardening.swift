@@ -101,8 +101,23 @@ extension Controller {
     scheduler.cancel(Self.couldNotComeBackKey)
   }
 
+  /// The word left at the pause (`finishMoves`) is carried out when the app wakes, and nobody hears of it. A window that stands where the pause
+  /// wanted it is there by the pause's doing, like one that a try fetches, and that is where Arbor left it (`leftAt`). One that stands
+  /// elsewhere, somebody has fetched or moved on. Asks the window server, which takes no app. Called before each try, and when the pause ends.
+  func noteWhatTheWordBroughtBack() {
+    guard isPaused, !couldNotComeBack.isEmpty else { return }
+    for window in system.stackedWindows() {
+      guard let wanted = couldNotComeBack[window.id], window.frame.approximatelyEquals(wanted, tolerance: 1) else { continue }
+      couldNotComeBack[window.id] = nil
+      leftAt?[window.id] = window.frame
+      noteThatThePauseFetched(window.id, to: window.frame)
+    }
+    savePause()
+  }
+
   private func tryWhatCouldNotComeBack() {
     guard isPaused else { return }
+    noteWhatTheWordBroughtBack()
     // First what the window server knows, which takes no app: it has closed, or somebody else has fetched it (Mission Control,
     // its app on waking). In view is all that was owed, wherever.
     let existing = system.existingWindowIDs()

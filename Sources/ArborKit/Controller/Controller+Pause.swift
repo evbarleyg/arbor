@@ -71,6 +71,7 @@ extension Controller {
       }
       return .failure(isRunning ? "not paused" : statusText)
     }
+    noteWhatTheWordBroughtBack()
     scheduler.cancel("resume")
     isPaused = false
     isPausedForApp = false
@@ -181,6 +182,7 @@ extension Controller {
   /// Quitting during a pause. The pause has let go of every window as a quit does, so nothing is left but to stop looking
   /// for what it still owed.
   func letGoAfterPause() {
+    noteWhatTheWordBroughtBack()
     forgetWindowsLeftInFullScreen()
     pausedFrames.removeAll()
   }

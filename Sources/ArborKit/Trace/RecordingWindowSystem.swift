@@ -143,10 +143,10 @@ public final class RecordingWindowSystem: WindowSystem {
   }
 
   /// The same: what it waits for is reported as events, which are recorded.
-  public func finishMoves(timeout: Double) {
-    guard recorder.isRecording else { return inner.finishMoves(timeout: timeout) }
+  public func finishMoves(timeout: Double, arborLivesOn: Bool) {
+    guard recorder.isRecording else { return inner.finishMoves(timeout: timeout, arborLivesOn: arborLivesOn) }
     let before = recorder.clock()
-    inner.finishMoves(timeout: timeout)
+    inner.finishMoves(timeout: timeout, arborLivesOn: arborLivesOn)
     let took = ((recorder.clock() - before) * 10_000).rounded() / 10_000
     recorder.record(.note("finishMoves took \(took) s"))
   }

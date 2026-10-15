@@ -158,7 +158,7 @@ final class WatchedSystem: WindowSystem {
   }
   func launchApp(_ name: String) -> Bool { fake.launchApp(name) }
   func moveTogether(_ frames: [(window: WindowID, frame: CGRect)]) { fake.moveTogether(frames) }
-  func finishMoves(timeout: Double) { fake.finishMoves(timeout: timeout) }
+  func finishMoves(timeout: Double, arborLivesOn: Bool) { fake.finishMoves(timeout: timeout, arborLivesOn: arborLivesOn) }
 
   func raise(_ window: WindowID) {
     guard fake.windows[window] != nil else { return }

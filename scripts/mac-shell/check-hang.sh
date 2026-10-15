@@ -13,6 +13,7 @@ source "$(dirname "$0")/lib.sh"
 
 HANG=20
 TRACES="$ARBOR_OUT/traces"
+not() { ! "$@"; }
 mkdir -p "$TRACES"
 
 # Everything stays a real window on a small display, so a move of the view has five windows to move.
@@ -182,9 +183,12 @@ done
 echo "what the log says of the end:"
 grep -iE "stopped|does not answer|could not|left word" "$SESSION_HOME/arbor.log" | tail -n 6
 await_the_end_of_the_hang
+# Still open. Word left for the app at a quit was tried on a hosted Mac and did nothing: macOS drops what a dead process asked.
+known "a quit while an app hangs leaves its windows out of view: nobody is there to fetch them when it wakes"
 for id in "$X1" "$X2"; do
   check "window $id comes back on screen once its app is awake, though Arbor is gone" eventually is on_screen "$id"
 done
+known ""
 echo "the window server has them at: $(real_frame_of "$X1") and $(real_frame_of "$X2")"
 # Seen, not inferred from a sleep: an app obeys its stdin only when its main thread runs again.
 tell_awkward move "$X1" 120 120 420 300
@@ -192,6 +196,9 @@ check "the app is awake by then: told to, it moves window $X1 into view itself" 
 session_ends
 
 step "3. a pause while an app hangs whose windows are out of view"
+# The pause tries again 1, 3, 7, 15 and 31 s after it began, and a try can wait some seconds for the app. The app wakes well between two
+# of them, so that it shows who fetched the windows.
+HANG=25
 awkward_start
 session hang-pause
 check "Arbor arranges the second app's windows too" eventually is managed "$X1"
@@ -207,7 +214,7 @@ for id in "$W1" "$W2" "$W3"; do
   check "window $id of the other app is on screen at once" is on_screen "$id"
 done
 await_the_end_of_the_hang
-# During a pause Arbor tries again after 1, 2, 4, 8, 16 s and so on: after a hang of 20 s the next try is 31 s into the pause.
+# After a hang of 25 s the next try is 31 s into the pause.
 waited=0
 until { is on_screen "$X1" && is on_screen "$X2"; } || [ "$waited" -ge 20 ]; do
   sleep 1
@@ -217,9 +224,16 @@ echo "waited $waited s for them after the app woke"
 for id in "$X1" "$X2"; do
   check "window $id comes back on screen once its app is awake: a pause promises every window in view" is on_screen "$id"
 done
+# Who fetched them? A try that happens to be waiting for the app as it wakes fetches them as promptly as the word left at the pause (so it was on
+# a hosted Mac before any word was left: the try of 15 s was still waiting after 18.6), and says so in the log.
+echo "what the log says of the pause:"
+grep -E "left word|brought the window into view|gave up on" "$SESSION_HOME/arbor.log" | tail -n 6
+check "they are back at once" at_most "$waited" 0
+check "and by the word left at the pause: no later try fetched them" not grep -q "brought the window into view" "$SESSION_HOME/arbor.log"
 ctl resume
 sleep 1
 session_ends
+HANG=20
 
 step "4. Arbor starts while an app hangs"
 awkward_start

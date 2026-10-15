@@ -114,7 +114,9 @@ to grow, the counterpart of `minimumSize`.
 
 What else real apps do: `stubbornFrames` with
 `appsSettle()` (an app that moves its window back a moment after anyone moves it);
-`setUnresponsive(pid:_:)` (`setFrame` returns nil until the app wakes up and reports its windows);
+`setUnresponsive(pid:_:)` (`setFrame` returns nil until the app wakes up and reports its windows; with `havingJustAnswered: true` the first move is sent all the same, as to an app nobody has reason to doubt yet.
+What was sent in vain, that move and the word left at a pause, is in `askedInVain` and is carried out in order when the app wakes, unless `arborsProcessEnded()` came first: macOS drops what a dead process asked.
+`Harness.newProcess` and the chaos lab's quit and crash say so by themselves; a test that only calls `shutdown()` says it by hand);
 `slowApps` (a move has no answer and goes on behind Arbor's back until `slowAppsFinish()`, whatever else is asked of the app meanwhile is turned away;
 with `slowAppsOutlastTheWait` it is not done either when Arbor has waited for it before letting go);
 `openTab(in:)`, `selectTab(_:insteadOf:)`, `closeTab(_:revealing:)` (native tab groups);

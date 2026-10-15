@@ -55,9 +55,9 @@ enum AXCalls {
 /// animate every frame change. Asked once for all the moves of a moment instead of before every one. Safe from any thread.
 ///
 /// It hardly ever changes, and is remembered for a second only all the same, because the question is also a guard. An app that
-/// hangs carries out, when it wakes, whatever was sent to it meanwhile, perhaps with Arbor gone: a window told to go out of view
-/// would go there with nobody left to fetch it. So the first call to an app that has not been heard of for a second asks
-/// something and sets nothing, and one that hangs by then gets nothing to carry out.
+/// hangs carries out, when it wakes, whatever was sent to it meanwhile, for as long as Arbor lives: a window told to go out of view
+/// would go there seconds later, when the view may be another or Arbor paused. So the first call to an app that has not been heard of for a
+/// second asks something and sets nothing, and one that hangs by then gets nothing to carry out.
 final class AXEnhancedUI: @unchecked Sendable {
   static let shared = AXEnhancedUI()
 

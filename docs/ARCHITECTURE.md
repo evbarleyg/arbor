@@ -342,10 +342,15 @@ and nothing else is worth optimising.
   frame it was asked for, so that nothing is tried in its place. A move that is still not done after the wait is entered in the
   books as made, so that a window on its way out of view is fetched from there. And while Arbor lets go the main thread waits 1.2 s
   for a move (3 s in all) instead of 0.5: long enough to hear that an app hangs, of which "on its way" must not be said.
+  For such an app a **pause** leaves word (`finishMoves(timeout:arborLivesOn:)`): an app carries out, when it wakes, what it was asked while it hung, in the order it was asked. So `stop` sends each of its windows that is
+  out of view, or on its way there, without waiting for an answer, to the first place in view that was asked for it while Arbor let go (where it floated, in its own size). A move out of view that lay in the app's queue is
+  carried out first and undone by it; the pause's own tries would have struck the window off, because the window server shows it in view until the app wakes. **A quit leaves none: macOS drops what a dead process asked**
+  (seen on a hosted Mac, of two calls that fetch, each with a timeout of a tenth of a second; that a move out of view goes the same way is taken from that, not measured). So a quit while an app hangs still leaves that app's
+  windows that are out of view where they are. The log's last line says which.
 - It asks as little as it can: a window that is where it should go is not moved, the window that has the focus is not given it,
   the frame is read back in one call (`AXUIElementCopyMultipleAttributeValues`), as is a window's whole state; whether an app
   animates frame changes is asked once for all the moves of a moment, not before every one (and again after a second: it is also the
-  question that keeps a move from being sent to an app that hangs already, which would carry it out on waking, perhaps with Arbor gone); and a window Arbor knows is told by comparing elements,
+  question that keeps a move from being sent to an app that hangs already, which would carry it out on waking, when the view may be another); and a window Arbor knows is told by comparing elements,
   not by asking for its number. Every call is counted and timed by kind, by app and by thread (`AX/AXCalls.swift`): `arborctl stats`
   says which app makes Arbor feel slow.
 

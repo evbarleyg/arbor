@@ -249,6 +249,20 @@ public final class FakeWindowSystem: WindowSystem {
   private var turnedAway: Set<Int32> = []
   private var focusWhenFree: WindowID?
   private var isLettingGo = false
+  /// What was sent to an app that did not answer in time. It lies in the app's queue, and the app carries it out, in that order, when it
+  /// wakes: a move out of view as well as a fetch. BUT ONLY WHILE THE PROCESS THAT ASKED LIVES: macOS drops what a dead process asked
+  /// (`arborsProcessEnded`). Seen on a hosted Mac, macOS 26.6 (`origin/mac-shell-out/hang.after`, check-hang.sh, sessions 2 and 3): of the
+  /// same two calls, where Arbor had paused both windows were back at the first look, 2.5 s after the app woke, and no try of the pause's
+  /// had fetched them; where it had quit they stayed past the corner. MEASURED: two calls that fetch, each with a timeout of a tenth of a
+  /// second. TAKEN FROM THAT, not measured: that a move out of view, sent with the usual timeout of a second, goes the same way.
+  public private(set) var askedInVain: [(window: WindowID, frame: CGRect)] = []
+  /// Apps that began to hang so soon after they last answered that the Accessibility layer has no reason to doubt them: it asks an app one
+  /// question before it moves a window, and remembers the answer for a second (`setUnresponsive(pid:_:havingJustAnswered:)`).
+  private var hangsUnnoticed: Set<Int32> = []
+  /// Like the Accessibility layer: where windows out of view whose apps do not answer were to go since `finishMoves`, the first place in
+  /// view asked for each. At `stop()` it is sent all the same, if Arbor lives on to see it carried out.
+  private var owed: [WindowID: CGRect] = [:]
+  private var leavesWord = false
 
   /// A 1440×900 display with a 25-point menu bar.
   public static let standardDisplay = DisplaySnapshot(
@@ -273,6 +287,9 @@ public final class FakeWindowSystem: WindowSystem {
     slowAppsFinish()
     events = listener
     isLettingGo = false
+    if leavesWord { askedInVain += owed.sorted { $0.key < $1.key }.map { (window: $0.key, frame: $0.value) } }
+    owed.removeAll()
+    leavesWord = false
     started = false
     undelivered.removeAll()
   }
@@ -309,11 +326,13 @@ public final class FakeWindowSystem: WindowSystem {
     for (window, frame) in frames { answersAhead[window] = (frame, move(window, to: frame, together: true)) }
   }
 
-  public func finishMoves(timeout: Double) {
+  public func finishMoves(timeout: Double, arborLivesOn: Bool) {
     defer { isLettingGo = true }
-    guard slowAppsOutlastTheWait else { return slowAppsFinish() }
+    owed.removeAll()
+    leavesWord = arborLivesOn
+    if !slowAppsOutlastTheWait { slowAppsFinish() }
     // Like the Accessibility layer: the books say where each is going, so that whoever lets go of the windows fetches it from there.
-    for (window, frame) in movesUnderWay {
+    for (window, frame) in movesUnderWay + askedInVain {
       guard var snapshot = windows[window]?.snapshot else { continue }
       snapshot.frame = frame
       events?.windowChanged(snapshot, userInitiated: false)
@@ -341,7 +360,20 @@ public final class FakeWindowSystem: WindowSystem {
 
   private func move(_ window: WindowID, to frame: CGRect, together: Bool) -> CGRect? {
     willSetFrame?(window, frame)
-    guard var fake = windows[window], !unresponsive.contains(fake.snapshot.pid) else { return nil }
+    guard var fake = windows[window] else { return nil }
+    guard !unresponsive.contains(fake.snapshot.pid) else {
+      func isInView(_ frame: CGRect) -> Bool { !frame.showsLessThanHalf(on: displayList.map(\.frame)) }
+      if hangsUnnoticed.remove(fake.snapshot.pid) != nil {
+        // Sent, and not answered: that is how the layer learns of the hang. The rest of what it had for the app is not sent.
+        askedInVain.append((window, frame))
+      } else if isLettingGo, owed[window] == nil, frame.titleBarIsWithinReach(on: displayList.map(\.frame)),
+        !isInView(askedInVain.last { $0.window == window }?.frame ?? fake.snapshot.frame)
+      {
+        owed[window] = frame
+      }
+      return nil
+    }
+    owed[window] = nil
     if isDenied {
       // Every call fails and the frame cannot be read back; the real window system has been known to answer
       // with the frame it was asked for, which is the worse of the two things it could say.
@@ -1171,15 +1203,30 @@ extension FakeWindowSystem {
   }
 
   /// The process stops answering, or answers again. Like a real app, one that wakes up has something to
-  /// report about its windows.
-  public func setUnresponsive(pid: Int32, _ hung: Bool) {
+  /// report about its windows. `havingJustAnswered`: the hang begins within a second of the app's last answer, so the first move Arbor
+  /// makes of one of its windows is sent to it, goes unanswered, and is carried out when it wakes (`askedInVain`).
+  public func setUnresponsive(pid: Int32, _ hung: Bool, havingJustAnswered: Bool = false) {
     if hung {
       unresponsive.insert(pid)
+      if havingJustAnswered { hangsUnnoticed.insert(pid) }
     } else if unresponsive.remove(pid) != nil {
+      hangsUnnoticed.remove(pid)
+      // What lay in its queue is carried out now, in the order it came.
+      let queue = askedInVain.filter { windows[$0.window]?.snapshot.pid == pid }
+      // With it goes what was asked of windows that have closed since.
+      askedInVain.removeAll { windows[$0.window]?.snapshot.pid ?? pid == pid }
+      for (id, frame) in queue { _ = move(id, to: frame, together: false) }
       for id in windows.keys.sorted() where windows[id]!.snapshot.pid == pid {
         events?.windowChanged(windows[id]!.snapshot, userInitiated: true)
       }
     }
+  }
+
+  /// Arbor's process has ended, in good order or not. macOS drops what a dead process asked: nothing of it is carried out when the app
+  /// wakes. Seen of the fetch that would have brought a window back; taken to hold as well of the move that would have taken one away
+  /// (`askedInVain`).
+  public func arborsProcessEnded() {
+    askedInVain.removeAll()
   }
 
   /// Opens a new tab in `window`'s native tab group, in front: a new window at the same frame, while
