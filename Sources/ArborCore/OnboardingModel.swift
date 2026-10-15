@@ -96,7 +96,7 @@ public struct OnboardingModel: Equatable, Sendable {
     public var state: State
     /// The state in a word or two, for VoiceOver: "Granted", "Not granted", "In order".
     public var status: String
-    /// Why it matters and what to do. Empty once the row is in order: a tick says enough.
+    /// Why it matters and what to do. Empty once the row is in order: a tick says enough, unless it will not last.
     public var detail: String
     /// What to change, one line each, listed under the detail.
     public var points: [String] = []
@@ -166,18 +166,20 @@ public struct OnboardingModel: Equatable, Sendable {
   ///   - offersScreenRecording: whether the optional permission has a row. Only where Arbor makes good use of it.
   ///   - appsWithOwnShortcuts: the names of open apps known to use ⌃⌥ themselves, for which nothing has been decided (F41).
   ///   - isPaused: the user has paused Arbor, so none of the moves would do anything.
+  ///   - signature: how this build is signed, if anybody said: it decides how long the permission lasts.
   ///   - shortcut: the label of the shortcut that runs a command, e.g. ⌃⌥Space. A move without one is
   ///     explained by the menu instead, and with no shortcuts at all the rows about what collides
   ///     with them are left out.
   public init(
     _ facts: SystemFacts, flow: OnboardingFlow? = nil, windowsOutOfView: Int = 0, offersScreenRecording: Bool = false,
-    appsWithOwnShortcuts: [String] = [], isPaused: Bool = false, shortcut: (Command) -> String? = { _ in nil }
+    appsWithOwnShortcuts: [String] = [], isPaused: Bool = false, signature: BuildInfo.Signature? = nil,
+    shortcut: (Command) -> String? = { _ in nil }
   ) {
     let flow = flow ?? OnboardingFlow(isReady: facts.accessibility)
     page = flow.page
     rows = Self.rows(
       facts, windowsOutOfView: windowsOutOfView, offersScreenRecording: offersScreenRecording,
-      appsWithOwnShortcuts: appsWithOwnShortcuts, shortcut: shortcut)
+      appsWithOwnShortcuts: appsWithOwnShortcuts, signature: signature, shortcut: shortcut)
     steps = Self.steps(flow.steps, shortcut: shortcut)
     opensAtLogin = facts.opensAtLogin
     loginTitle = "Open at Login"
@@ -240,9 +242,12 @@ public struct OnboardingModel: Equatable, Sendable {
 
   private static func rows(
     _ facts: SystemFacts, windowsOutOfView: Int, offersScreenRecording: Bool, appsWithOwnShortcuts apps: [String],
-    shortcut: (Command) -> String?
+    signature: BuildInfo.Signature?, shortcut: (Command) -> String?
   ) -> [Row] {
     let settings = "Open Settings…"
+    // Said under the tick as well, for whoever opens Check Setup. Whoever downloads Arbor reads this too, so in a stranger's words:
+    // "signed ad hoc" is a builder's, and `doctor` and `make install` have it.
+    let isForThisBuildOnly = signature?.outlivesTheBuild == false
     let stranded =
       windowsOutOfView == 0
       ? ""
@@ -253,10 +258,16 @@ public struct OnboardingModel: Equatable, Sendable {
         id: .accessibility, title: "Accessibility", importance: "Required",
         state: facts.accessibility ? .done : .required, status: facts.accessibility ? "Granted" : "Not granted",
         detail: facts.accessibility
-          ? ""
+          ? (isForThisBuildOnly
+            ? "macOS will ask for this permission again after each update of Arbor, because Arbor is not yet signed with an Apple "
+              + "Developer ID."
+            : "")
           : stranded + "macOS lets an app move other apps’ windows only with Accessibility permission. Arbor reads "
             + "where windows are and their titles, moves them, and sends nothing anywhere. If Arbor is already "
-            + "switched on in the list, this is a new build: switch it off and on again.",
+            + "switched on in the list, this is a new build"
+            + (isForThisBuildOnly
+              ? ". macOS asks like this after every update: switch Arbor off and on again in the list."
+              : ": switch it off and on again."),
         button: settings),
     ]
     if offersScreenRecording {

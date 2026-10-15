@@ -46,6 +46,32 @@ import Testing
         """)
   }
 
+  /// The signature decides whether the next build keeps the permission. `scripts/sign.sh` stamps its kind into the bundle.
+  @Test func theSignatureIsNamedWithWhatItCosts() throws {
+    let h = makeHarness()
+    #expect(check(h, "Signature") == nil, "nobody stamped it: a binary outside a bundle")
+
+    h.controller.buildInfo.signature = .adHoc
+    let adHoc = try #require(check(h, "Signature"))
+    #expect(adHoc.mark == .note, "this build works as well as any")
+    #expect(adHoc.detail.hasPrefix("ad hoc, so to macOS every build is a new app: after each `make install` or update it asks "))
+    #expect(adHoc.detail.contains("permission again") && adHoc.detail.contains("scripts/make-signing-identity.sh"))
+    #expect(h.run("doctor").ok)
+    #expect(h.run("doctor").text?.contains("\n– Signature: ad hoc, so") == true)
+
+    h.controller.buildInfo.signature = .local
+    #expect(check(h, "Signature")?.mark == .ok)
+    #expect(check(h, "Signature")?.detail.hasPrefix("this Mac’s own certificate") == true)
+    h.controller.buildInfo.signature = .issued
+    #expect(check(h, "Signature")?.mark == .ok)
+
+    // Check Setup is told the same.
+    h.controller.buildInfo.signature = .adHoc
+    #expect(h.controller.onboardingModel(Self.healthy).row(.accessibility)?.detail.hasPrefix("macOS will ask for this permission again") == true)
+    h.controller.buildInfo.signature = .local
+    #expect(h.controller.onboardingModel(Self.healthy).row(.accessibility)?.detail == "")
+  }
+
   /// Whoever runs `doctor` has a problem, and should not have to look for it among what is in order.
   @Test func theWorstComesFirst() {
     var facts = Self.healthy

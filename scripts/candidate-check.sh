@@ -63,6 +63,7 @@ check "the property list is valid" plutil -lint "$app/Contents/Info.plist"
 check "the version is stamped" same "$(stamp CFBundleShortVersionString)" "$(./scripts/version.sh version)"
 check "the build number is stamped" same "$(stamp CFBundleVersion)" "$(./scripts/version.sh build)"
 check "the commit is stamped" same "$(stamp ArborCommit)" "$(./scripts/version.sh commit)"
+check "so is the kind of signature" same "$(stamp ArborSignature)" adhoc
 check "Arbor --version answers, and leaves" same "$(version_of "$app/Contents/MacOS/Arbor")" "Arbor $expected"
 check "arborctl --version answers" same "$(version_of "$app/Contents/Helpers/arborctl")" "arborctl $expected"
 

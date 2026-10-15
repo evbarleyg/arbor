@@ -15,7 +15,7 @@ extension Controller {
     facts.accessibility = hasPermission(facts)
     return OnboardingModel(
       facts, flow: flow, windowsOutOfView: permissionLoss?.windows ?? 0, offersScreenRecording: offersScreenRecording, appsWithOwnShortcuts: passThroughSuggestions.map(\.name), isPaused: isPaused && accessibilityGranted,
-      shortcut: { KeyBindings.label(for: $0, in: bindings) })
+      signature: buildInfo.signature, shortcut: { KeyBindings.label(for: $0, in: bindings) })
   }
 
   /// Both must say yes: macOS's own flag, and Arbor, whose probe can find the permission gone before the flag follows (F63). Otherwise

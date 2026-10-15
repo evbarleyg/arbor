@@ -17,7 +17,7 @@ Real-window evidence: the real-window suite, 33 sections, the newest 2026-10-15T
 | ID | Feature | TrellisWM | Arbor | Level | Evidence | Spec |
 |---|---|---|---|---|---|---|
 | T00 | Native menu-bar app | Swift, AppKit, Accessibility, ScreenCaptureKit; menu bar only; macOS 14+ | Swift, AppKit, Accessibility; menu bar only; macOS 14+ | verified | nothing to test | [F01](features/F01-dock-and-zoom.md) |
-| T75 | Permissions explained | Accessibility required, Screen Recording optional, both explained | A welcome window with a live tick for Accessibility and for each macOS setting that matters, then three moves to try (Screen Recording is explained and asked for only with the hidden `windowPictures`, T53); `doctor` checks the same from the command line | tested | tests 22/22 | [F10](features/F10-menu-bar-and-onboarding.md) |
+| T75 | Permissions explained | Accessibility required, Screen Recording optional, both explained | A welcome window with a live tick for Accessibility and for each macOS setting that matters, then three moves to try (Screen Recording is explained and asked for only with the hidden `windowPictures`, T53); `doctor` checks the same from the command line. Both say when the build is signed ad hoc, so that macOS will ask again after the next one | tested | tests 25/25 | [F10](features/F10-menu-bar-and-onboarding.md) |
 
 ## Docking and arrangement
 

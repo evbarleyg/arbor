@@ -118,6 +118,37 @@ private let tuned = SystemFacts(accessibility: true, screenRecording: true, swit
     #expect(OnboardingModel(tuned, windowsOutOfView: 3).title == "Arbor is ready")
   }
 
+  /// macOS knows an ad-hoc build by its hash, so the next one has to ask again. Whoever is asked for the third time is told why,
+  /// and whoever opens Check Setup while all is well is told before the next time comes.
+  @Test func anAdHocSignatureIsNamedWithWhatItCosts() {
+    func detail(_ facts: SystemFacts, _ signature: BuildInfo.Signature?) -> String? {
+      OnboardingModel(facts, signature: signature).row(.accessibility)?.detail
+    }
+    // What to do is said once.
+    #expect(detail(fresh, nil)?.hasSuffix("in the list, this is a new build: switch it off and on again.") == true)
+    #expect(
+      detail(fresh, .adHoc)?.hasSuffix(
+        "in the list, this is a new build. macOS asks like this after every update: switch Arbor off and on again in the list.") == true)
+    #expect(detail(fresh, .adHoc)?.components(separatedBy: "off and on again").count == 2)
+    #expect(
+      detail(tuned, .adHoc)
+        == "macOS will ask for this permission again after each update of Arbor, because Arbor is not yet signed with an Apple "
+        + "Developer ID.")
+    // A download is signed so too, and "ad hoc" is a builder's word.
+    #expect(detail(fresh, .adHoc)?.contains("ad hoc") == false && detail(tuned, .adHoc)?.contains("ad hoc") == false)
+    // It is something to know, nothing to put right: the tick stays, and the window does not come up for it.
+    let granted = OnboardingModel(tuned, signature: .adHoc)
+    #expect(granted.row(.accessibility)?.state == .done)
+    #expect(granted.isReady && granted.title == OnboardingModel(tuned).title)
+    #expect(granted.pageToOpenOn == OnboardingModel(tuned).pageToOpenOn)
+    // With a certificate, or where nobody said, not a word more than before.
+    for signature: BuildInfo.Signature? in [.local, .issued, nil] {
+      #expect(detail(fresh, signature) == OnboardingModel(fresh).row(.accessibility)?.detail)
+      #expect(detail(fresh, signature)?.contains("after every update") == false)
+      #expect(detail(tuned, signature) == "")
+    }
+  }
+
   @Test func otherWindowManagersAreNamed() throws {
     var facts = tuned
     facts.competingApps = ["Rectangle"]
