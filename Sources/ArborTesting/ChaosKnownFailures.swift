@@ -964,19 +964,6 @@ extension ChaosRunner {
         restore 101
         """),
     ChaosKnownFailure(
-      rule: "fetched-before-any-dock", owner: "the ways out: Quit and a pause leave no window with less than half of it showing; a question for the product owner", severity: 3,
-      story: "Nothing was ever docked. A window lies across two displays where its person dragged it, and is made lower by an edge, so that less than half of it shows. Quit pulls it in.",
-      script: """
-        displays main:-1440,0,1440,900:25,0,0,0 side:0,0,2560,1440:25,0,70,0* windows-never
-        launch
-        open 103 Music pid 1006 at -1285 78 1127 654 min 980 600
-        grab 103
-        carry -168 793
-        release
-        edge 103 -731.5 783 1127 469
-        quit
-        """),
-    ChaosKnownFailure(
       rule: "moved-before-any-dock", owner: "rule 2: the displays change during a pause", severity: 3,
       story: "Nothing was ever docked. A window is dragged to the foot of the monitor; Arbor is paused, the laptop goes, Arbor is resumed; ⌃⌥0 pulls the window up by 377 points.",
       script: """

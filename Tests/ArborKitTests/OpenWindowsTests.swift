@@ -229,6 +229,9 @@ import Testing
     let xcode = h.system.open(app: "Xcode", frame: CGRect(x: 400, y: 200, width: 700, height: 500))
     h.system.setMinimumSize(xcode, CGSize(width: 900, height: 600))
     h.run("dock \(xcode.rawValue) beside \(notes.rawValue) bottom")
+    // The window with the keyboard is never the tile: its person types in a neighbour and looks at everything again.
+    h.system.userFocus(notes)
+    h.run("show-all")
     #expect(ScenarioExpectation.check(["tile", "\(xcode.rawValue)"], harness: h, lastCommandOK: true) == nil)
     #expect(row(h, xcode)?.note == "out of view")
   }
@@ -336,6 +339,9 @@ import Testing
       let xcode = h.system.open(app: "Xcode", frame: CGRect(x: 400, y: 200, width: 700, height: 500))
       h.system.setMinimumSize(xcode, CGSize(width: 900, height: 600))
       h.run("dock \(xcode.rawValue) beside \(notes.rawValue) bottom")
+      // The window with the keyboard is never the tile: its person types in a neighbour and looks at everything again.
+      h.system.userFocus(notes)
+      h.run("show-all")
       h.system.userFocus(safari)
       return (h, xcode)
     case .floating:
