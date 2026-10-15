@@ -79,7 +79,8 @@ private func expectConsistent(_ workspace: Workspace, at location: SourceLocatio
   @Test func everyStoredPropertyIsSaved() throws {
     let saved = Set(try WorkspaceFile(sample()).object.keys)
     let stored = Set(Mirror(reflecting: sample()).children.compactMap(\.label))
-    #expect(saved == stored)
+    // All but one, on purpose: a look does not outlast Arbor (`HistoryTests.aLookIsNotSaved`).
+    #expect(saved == stored.subtracting(["lookingFrom"]))
   }
 
   @Test func onlyTheTreeIsRequired() throws {

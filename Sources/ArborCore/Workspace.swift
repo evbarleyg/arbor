@@ -8,6 +8,9 @@ public struct Workspace: Codable, Sendable, Equatable {
   public private(set) var camera: NodeID
   public private(set) var back: [NodeID] = []
   public private(set) var forward: [NodeID] = []
+  /// Where the view was when somebody began only to look at everything (a peek), and where `returnFromALook` takes it. Nil at
+  /// all other times. Not saved: a look does not outlast Arbor, and what is saved meanwhile is a view of everything.
+  public private(set) var lookingFrom: NodeID?
   /// Saved camera positions keyed by slot ("1"…"9").
   public private(set) var savedViews: [String: NodeID] = [:]
   /// Floating windows and the frame each was last placed at by the user.
@@ -75,14 +78,36 @@ public struct Workspace: Codable, Sendable, Equatable {
     tidyHistory()
   }
 
-  /// Puts the camera and what Back and Forward held back as they were, for whoever moved the camera only to look (a peek).
-  /// An unrecorded move is not enough for that: a look at the view that Back leads to makes history repeat the camera, and
-  /// the entry is tidied away. Spaces that have gone meanwhile are left out.
-  public mutating func returnFromALook(to node: NodeID, back earlier: [NodeID], forward later: [NodeID]) {
-    camera = tree.contains(node) ? node : tree.root
-    back = earlier.filter(tree.contains)
-    forward = later.filter(tree.contains)
+  /// Somebody is about to look at everything without meaning to go there (a peek): an unrecorded move follows, and
+  /// `returnFromALook` ends it. Until then history is kept as for a view that is still where it was.
+  ///
+  /// An unrecorded move there and back is not enough. History never ends where the view is (`tidyHistory`), everything is where
+  /// Back most often leads, and whatever closes meanwhile can make more of history mean everything: all of that would be
+  /// tidied away for a view that is only visiting. Nor are copies of the lists enough, put back afterwards: they miss what
+  /// live history is told, that a group has given way to its last member, say. So the lists go on living, the place
+  /// to return to lives with them, and it is that place they are tidied against.
+  public mutating func beginLook() {
+    // From everything there is nowhere to return to. (And the first window to be docked gets a new root: the old number would
+    // go on as the Desktop alone.)
+    guard lookingFrom == nil, camera != tree.root else { return }
+    lookingFrom = camera
+  }
+
+  /// The camera back where the look began, or on what has taken that space's place since, and history as it would be had nobody
+  /// looked. If all that space held has gone meanwhile, the view stays on everything.
+  public mutating func returnFromALook() {
+    guard let origin = lookingFrom else { return }
+    lookingFrom = nil
+    camera = tree.contains(origin) ? origin : tree.root
     tidyHistory()
+  }
+
+  /// The look has become a stay, because whoever looked is gone (a pause, a display unplugged): the view is on everything, and
+  /// Back leads to where it came from.
+  public mutating func stayAfterALook() {
+    guard lookingFrom != nil else { return }
+    returnFromALook()
+    moveCamera(to: tree.root)
   }
 
   /// Steps back to the most recent camera position that still exists. Returns false if none.
@@ -268,6 +293,7 @@ public struct Workspace: Codable, Sendable, Equatable {
   public mutating func reset(tree newTree: LayoutTree) {
     tree = newTree
     camera = newTree.root
+    lookingFrom = nil
     back.removeAll()
     forward.removeAll()
     savedViews.removeAll()
@@ -295,7 +321,8 @@ public struct Workspace: Codable, Sendable, Equatable {
   /// changes only the marks that make a difference stay in the tree. History does not keep
   /// anything: a place visited long ago must not decide how a drag or a resize behaves today.
   private mutating func keepWhatIsViewed(and others: Set<NodeID> = [], done: Bool = false) {
-    let viewed = others.union(savedViews.values).union((guests ?? [:]).values).union([camera])
+    // A view that is only visiting (`beginLook`) still belongs where it came from.
+    let viewed = others.union(savedViews.values).union((guests ?? [:]).values).union([camera]).union([lookingFrom].compactMap { $0 })
     apply(tree.keep(exactly: viewed, for: .view))
     if done { tree.stopKeepingWhereItChangesNothing(for: [.view, .turned]) }
   }
@@ -333,6 +360,9 @@ public struct Workspace: Codable, Sendable, Equatable {
   private mutating func apply(_ remap: Remap, except kept: NodeID?) {
     func resolve(_ id: NodeID) -> NodeID { id == kept ? id : remap.resolve(id, in: tree) }
     camera = remap.resolve(camera, in: tree)
+    // What it collapsed or merged into. If all it held is gone there is nowhere to return to, and the view is on everything to stay:
+    // a view that is there falls back on the nearest thing left, but nobody who lets go expects to land on that.
+    lookingFrom = lookingFrom.flatMap { remap.survivor(of: $0, in: tree) }
     back = back.map(resolve)
     forward = forward.map(resolve)
     tidyHistory()
@@ -373,8 +403,10 @@ public struct Workspace: Codable, Sendable, Equatable {
   private mutating func tidyHistory() {
     back = Self.dedupe(back)
     forward = Self.dedupe(forward)
-    while back.last == camera { back.removeLast() }
-    while forward.last == camera { forward.removeLast() }
+    // A view that is only visiting (`beginLook`) still belongs where it came from.
+    let place = lookingFrom ?? camera
+    while back.last == place { back.removeLast() }
+    while forward.last == place { forward.removeLast() }
   }
 
   private static func dedupe(_ ids: [NodeID]) -> [NodeID] {
@@ -712,6 +744,9 @@ extension Workspace {
     var result = self
     func survives(_ node: NodeID) -> Bool { current.tree.isSameNode(node, in: tree) }
 
+    // `lookingFrom` (F51): a step saved during a look (a window closed meanwhile) was saved by a view that was only visiting. The look is
+    // long over, every command ends it, so what comes back is the view it would have returned to.
+    result.returnFromALook()
     if current.camera != reference.camera || current.back != reference.back || current.forward != reference.forward {
       if survives(current.camera) { result.camera = current.camera }
       result.back = Self.dedupe(current.back.filter(survives))

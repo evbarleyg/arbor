@@ -8,9 +8,10 @@ import Foundation
 /// a timer looks at the pointer, the mouse button and the keys thirty times a second, so the only thing
 /// the app has to add is the key's press and release.
 ///
-/// History: the move to everything is not recorded when the key goes down. Whatever ends the peek first puts the camera, Back
-/// and Forward back as they were, without laying anything out, and then makes one ordinary move. So history gets one
-/// entry from the view that was left to the landing, or none.
+/// History: the move to everything is not recorded when the key goes down, and the workspace knows that the view is only visiting
+/// (`Workspace.beginLook`): Back and Forward go on living as if it had stayed. Whatever ends the peek first takes the camera back,
+/// without laying anything out, and then makes one ordinary move. So history gets one entry from the view that was left to
+/// the landing, or none.
 extension Controller {
   struct PeekSession {
     var peek: Peek
@@ -21,9 +22,6 @@ extension Controller {
     var temporary: [KeyBinding] = []
     var tookKeys = false
     var shownOutline: NodeID?
-    /// What Back and Forward held when the key went down.
-    var back: [NodeID]
-    var forward: [NodeID]
   }
 
   static let peekInterval = 1.0 / 30
@@ -93,6 +91,7 @@ extension Controller {
     // On every display, as the command does. A peek can begin while Arbor holds still, and then it fetches nothing
     // (Controller+Hold.swift).
     if holdLevel == nil { holdFetchesWhatWaited(on: nil) }
+    workspaces[display]?.beginLook()
     moveCamera(on: display, to: workspace.tree.root, record: false)
     Log.info("show-all: showing everything")
     // The clock starts once everything shows. Laying out many windows takes a while, and a release that
@@ -101,7 +100,7 @@ extension Controller {
       peek: Peek(
         origin: workspace.camera, root: workspace.tree.root, at: peekTime, pointer: system.cursorLocation(),
         buttonDown: system.isMouseButtonDown()),
-      display: display, chord: chord, back: workspace.back, forward: workspace.forward)
+      display: display, chord: chord)
     scheduler.schedule("peek", after: Self.peekInterval) { [weak self] in self?.peekTick() }
     return true
   }
@@ -175,7 +174,9 @@ extension Controller {
   /// shortcuts and the timer in step with it.
   private func updatePeek(_ event: (inout Peek) -> Peek.Ending?) {
     guard var session = peeking else { return }
-    if let tree = workspaces[session.display]?.tree { session.peek.spacesChanged(root: tree.root, exists: tree.contains) }
+    if let workspace = workspaces[session.display] {
+      session.peek.spacesChanged(root: workspace.tree.root, origin: workspace.lookingFrom, exists: workspace.tree.contains)
+    }
     let ending = event(&session.peek)
     peeking = session
     // The outline goes before the windows move.
@@ -191,9 +192,9 @@ extension Controller {
 
   // MARK: Ending
 
-  /// The books as they were when the key went down, without laying anything out. One ordinary move follows, or none.
+  /// The camera back where it belongs, without laying anything out. One ordinary move follows, or none.
   private func returnFromPeek(_ session: PeekSession) {
-    workspaces[session.display]?.returnFromALook(to: session.peek.origin, back: session.back, forward: session.forward)
+    workspaces[session.display]?.returnFromALook()
   }
 
   private func endPeek(_ ending: Peek.Ending, of session: PeekSession) {
@@ -239,8 +240,9 @@ extension Controller {
 
   /// Arbor stopped looking (a pause, quitting) or the display is gone: there is nothing left to move.
   private func abandonPeek() {
-    guard peeking != nil else { return }
+    guard let session = peeking else { return }
     let hadTemporary = !temporaryShortcuts.isEmpty
+    workspaces[session.display]?.stayAfterALook()
     peeking = nil
     scheduler.cancel("peek")
     if hadTemporary { onTemporaryShortcuts?([]) }
@@ -260,9 +262,10 @@ extension Controller {
 
   /// The outline for `overlayScene(for:on:)`.
   func peekOutline(for layout: Layout, on display: DisplayID) -> CGRect? {
-    guard var session = peeking, session.display == display, let tree = workspaces[display]?.tree else { return nil }
+    guard var session = peeking, session.display == display, let workspace = workspaces[display] else { return nil }
+    let tree = workspace.tree
     // A layout after a window closed comes before the next tick.
-    session.peek.spacesChanged(root: tree.root, exists: tree.contains)
+    session.peek.spacesChanged(root: tree.root, origin: workspace.lookingFrom, exists: tree.contains)
     peeking = session
     return session.peek.shownOutline.flatMap { Peek.frame(of: $0, in: layout, tree: tree) }
   }

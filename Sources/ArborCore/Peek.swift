@@ -163,13 +163,15 @@ public struct Peek: Equatable, Sendable {
 
   /// The tree changed, and `root` is everything now. An outlined space that is gone gives the outline back to the view
   /// that was left, and if that is gone too there is nothing to go back to but everything.
-  public mutating func spacesChanged(root now: NodeID? = nil, exists: (NodeID) -> Bool) {
+  public mutating func spacesChanged(root now: NodeID? = nil, origin followed: NodeID? = nil, exists: (NodeID) -> Bool) {
     if let now, now != root {
       // The first window to be docked gets a new root above the Desktop, and the old number lives on as the Desktop
       // alone. What meant everything goes on meaning everything.
       if origin == root { origin = now }
       root = now
     }
+    // What has taken the place of the view that was left (a group gives way to its last member) is where letting go leads.
+    if let followed, origin != root, exists(followed) { origin = followed }
     if !exists(origin) { origin = root }
     if let current = outline, !exists(current) { outline = nil }
     if let current = pressedOn, !exists(current) { pressedOn = nil }

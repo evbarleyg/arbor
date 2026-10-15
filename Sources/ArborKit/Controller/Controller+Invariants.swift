@@ -39,9 +39,15 @@ extension Controller {
     var docked: [DisplayID: [WindowID]] = [:]
     for (id, workspace) in workspaces {
       docked[id] = Self.check(workspace, named: "display \(id)", &problems)
+      if workspace.lookingFrom != nil, peeking?.display != id {
+        problems.append(.init("leak", "display \(id): the view is only visiting, and nobody is peeking there"))
+      }
     }
     for (id, entry) in dormant {
       _ = Self.check(entry.workspace, named: "dormant display \(id)", &problems)
+      if entry.workspace.lookingFrom != nil {
+        problems.append(.init("leak", "dormant display \(id): the view is only visiting"))
+      }
     }
     if isRunning {
       membershipViolations(docked, &problems)
@@ -75,8 +81,12 @@ extension Controller {
       problems.append(
         .init("history", "\(name()): \(workspace.back.count) back and \(workspace.forward.count) forward entries"))
     }
-    // Back and Forward always go somewhere else: no view is in the history twice in a row, or next to where the camera is.
-    let path = workspace.back + [workspace.camera] + workspace.forward.reversed()
+    if let origin = workspace.lookingFrom, !tree.contains(origin) {
+      problems.append(.init("camera", "\(name()): the look began on \(origin), which does not exist"))
+    }
+    // Back and Forward always go somewhere else: no view is in the history twice in a row, or next to where the camera is, or,
+    // while it is only visiting (`Workspace.beginLook`), next to where it belongs.
+    let path = workspace.back + [workspace.lookingFrom ?? workspace.camera] + workspace.forward.reversed()
     if let twice = zip(path, path.dropFirst()).first(where: { $0 == $1 })?.0 {
       problems.append(
         .init("history-repeats", "\(name()): \(twice) twice in a row: back \(workspace.back), camera \(workspace.camera), forward \(workspace.forward)"))

@@ -824,7 +824,7 @@ private func change(_ before: UInt32, _ after: UInt32) -> UndoHistory.Change {
   /// the field, and put its name on the first list. If it holds none, put it on the second.
   @Test func everyStoredPropertyThatHoldsWindowNumbersIsKnownToRenumber() {
     let holdsWindows: Set = ["tree", "floating", "pinned", "guests", "undockedFrames", "summoned", "stashed"]
-    let holdsNone: Set = ["camera", "back", "forward", "savedViews", "summonFrames", "names", "desktopIsOwedRoom"]
+    let holdsNone: Set = ["camera", "back", "forward", "lookingFrom", "savedViews", "summonFrames", "names", "desktopIsOwedRoom"]
     let stored = Set(Mirror(reflecting: Workspace()).children.compactMap(\.label))
     #expect(stored.subtracting(holdsWindows).subtracting(holdsNone) == [], "on neither list")
     #expect(holdsWindows.union(holdsNone).subtracting(stored) == [], "gone from `Workspace`: take it off the list")

@@ -204,7 +204,9 @@ extension Controller {
   /// Keeps the workspace of a display that went away as dormant and floats
   /// its windows on the main display. Returns the windows that moved.
   func retireWorkspace(of displayID: DisplayID, whichWasAt corner: CGPoint? = nil) -> [WindowID] {
-    guard let workspace = workspaces.removeValue(forKey: displayID) else { return [] }
+    guard var workspace = workspaces.removeValue(forKey: displayID) else { return [] }
+    // A peek on it ends at its next tick, which no longer finds the workspace.
+    workspace.stayAfterALook()
     if namePrompt?.display == displayID { namePrompt = nil }
     undoHistory.removeAll(on: displayID)
     overlays.update(display: displayID, scene: OverlayScene())

@@ -518,6 +518,36 @@ private let side = DisplaySnapshot(
     #expect(h.workspace.camera == h.workspace.tree.root)
   }
 
+  @Test func aWindowThatClosesDuringTheHoldReachesBackAsItAlwaysDoes() {
+    // [ a | Desktop | (b / c) ]; c, the group, a: Back leads to the group.
+    func go(peeking: Bool) -> Harness {
+      let h = Harness()
+      let a = h.system.open(app: "Safari"), b = h.system.open(app: "Notes"), c = h.system.open(app: "Mail")
+      h.start()
+      h.run("dock \(a.rawValue) left")
+      h.run("dock \(b.rawValue) right")
+      h.run("dock \(c.rawValue) beside \(b.rawValue) bottom")
+      h.run("show-all")
+      h.run("zoom \(c.rawValue)")
+      h.run("out")
+      h.run("zoom \(a.rawValue)")
+      h.system.userFocus(a)
+      h.system.cursor = CGPoint(x: 720, y: 450)
+      if peeking {
+        h.keyDown(space)
+        h.scheduler.advance(by: 1.5)
+      }
+      h.system.close(c)
+      h.scheduler.advance(by: 0.2)
+      if peeking { h.keyUp(space) }
+      return h
+    }
+    let (plain, peeked) = (go(peeking: false), go(peeking: true))
+    #expect(peeked.workspace == plain.workspace)
+    #expect(peeked.run("back").message == plain.run("back").message)
+    #expect(peeked.workspace.camera != peeked.workspace.tree.root, "to b, which took the group's place")
+  }
+
   // MARK: The arrangement changes while the keys are down (found by the chaos lab)
 
   /// Nothing is docked, ⌃⌥Space is down for `held` seconds, and a rule docks the window that opens: a new root.
@@ -671,6 +701,9 @@ private let side = DisplaySnapshot(
       #expect(desk.outline == nil, "after \(name)")
       // Whatever is still down comes up.
       desk.h.keyUp(space)
+      // Nor does any workspace, here or of a display that is away, go on believing that its view is only visiting.
+      #expect(desk.h.controller.invariantViolations().filter { $0.rule == "leak" } == [], "after \(name)")
+      #expect(desk.h.controller.workspaces.values.allSatisfy { $0.lookingFrom == nil }, "after \(name)")
       desk.h.scheduler.advance(by: 0.2)
       #expect(!desk.h.scheduler.pendingKeys.contains("peek"), "after \(name) the timer has stopped")
       #expect(desk.asked.calls.count == 2, "after \(name): asked once, given back once")
