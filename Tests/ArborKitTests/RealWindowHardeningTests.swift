@@ -503,6 +503,90 @@ import Testing
     #expect(h.system.isVisible(a) && h.system.isVisible(b), "and this time a quit brings it back")
   }
 
+  // MARK: A window that was to get its own frame back while its app did not answer
+
+  /// Float All gives every window its own earlier frame back. One whose app hangs at that moment is in view, in the shape of its slot, and
+  /// floats: no layout has a place for it, so nothing ever moved it again, and a second Float All said "nothing is docked".
+  @Test func aWindowFloatedWhileItsAppHangsGetsItsOwnFrameBackWhenItWakes() {
+    let (h, a, b) = makeHarness()
+    h.system.setUnresponsive(pid: 2000, true)
+    h.run("float-all")
+    #expect(h.frame(a) == CGRect(x: 100, y: 100, width: 600, height: 400))
+    #expect(h.frame(b) != CGRect(x: 300, y: 200, width: 600, height: 400), "nothing can be done about it yet")
+    h.system.setUnresponsive(pid: 2000, false)
+    h.scheduler.advance(by: 2)
+    #expect(h.frame(b) == CGRect(x: 300, y: 200, width: 600, height: 400), "its own frame, as Float All promises")
+  }
+
+  /// Three windows of an app that takes longer over a move than Arbor waits: the first move goes on behind Arbor's back, the others find
+  /// the app busy and are turned away.
+  func threeDockedWindowsOfASlowApp() -> (Harness, [WindowID], [CGRect]) {
+    let h = Harness()
+    let own = (0..<3).map { CGRect(x: 100 + 60 * $0, y: 100 + 50 * $0, width: 500, height: 300) }
+    let windows = own.map { h.system.open(app: "Notes", pid: 2000, frame: $0) }
+    h.start()
+    h.run("arrange")
+    h.scheduler.advance(by: 1)
+    h.system.slowApps = [2000]
+    return (h, windows, own)
+  }
+
+  @Test(arguments: ["float-all", "undo"]) func theWindowsOfASlowAppAllGetTheirOwnFramesBack(_ way: String) {
+    let (h, windows, own) = threeDockedWindowsOfASlowApp()
+    h.run(way)
+    for _ in 0..<8 {
+      h.system.slowAppsFinish()
+      h.scheduler.advance(by: 1)
+    }
+    #expect(windows.map { h.frame($0) } == own, "\(way)")
+  }
+
+  /// What is owed is the frame that was asked for then. Whoever has moved the window since has the last word.
+  @Test func aWindowItsPersonHasMovedMeanwhileIsOwedNothing() {
+    let (h, _, b) = makeHarness()
+    h.system.setUnresponsive(pid: 2000, true)
+    h.run("float-all")
+    // The window server moves the window of an app that hangs, too.
+    let chosen = CGRect(x: 640, y: 380, width: 464, height: 851).offsetBy(dx: 0, dy: -340)
+    h.system.userMove(b, to: chosen)
+    h.system.setUnresponsive(pid: 2000, false)
+    h.scheduler.advance(by: 5)
+    #expect(h.frame(b) == chosen)
+  }
+
+  /// The view has gone to a docked window meanwhile and leaves what floats out. What the window is owed then is the way out of view: paid its
+  /// frame, it would show over the window that fills the view, unasked, and go away a moment later.
+  @Test func whereTheViewLeavesFloatingWindowsOutTheFrameIsNotPaidOverIt() {
+    let (h, a, b) = makeHarness()
+    h.system.setUnresponsive(pid: 2000, true)
+    h.run("float-all")
+    h.run("dock \(a.rawValue) left")
+    h.run("zoom \(a.rawValue)")
+    h.system.clearFrameLog()
+    h.system.setUnresponsive(pid: 2000, false)
+    h.scheduler.advance(by: 3)
+    #expect(!h.system.isVisible(b), "\(String(describing: h.frame(b)))")
+    #expect(h.system.frameLog.filter { $0.window == b }.count == 1, "one move, out of view: \(h.system.frameLog.filter { $0.window == b })")
+    h.run("show-all")
+    h.scheduler.advance(by: 1)
+    #expect(h.frame(b) == CGRect(x: 300, y: 200, width: 600, height: 400), "and it comes back to its own frame, not to the shape of its slot")
+  }
+
+  /// Nor is one that has been docked again.
+  @Test func aWindowDockedAgainMeanwhileIsOwedNothing() {
+    let (h, _, b) = makeHarness()
+    h.system.setUnresponsive(pid: 2000, true)
+    h.run("float-all")
+    h.run("dock \(b.rawValue) left")
+    let before = h.system.moveLog.count
+    h.system.setUnresponsive(pid: 2000, false)
+    h.scheduler.advance(by: 2)
+    #expect(h.workspace.isDocked(b))
+    expectWindowsMatchLayout(h, on: h.display)
+    let own = CGRect(x: 300, y: 200, width: 600, height: 400)
+    #expect(!h.system.moveLog[before...].contains { $0.window == b && $0.requested == own }, "not by way of the frame it floated in")
+  }
+
   /// A move that is not answered is owed, whoever asked for it. Summon and pin took the window off the list of what is out of
   /// view before they knew that it had come back (bug bash 1).
   @Test func aWindowSummonedWhileItsAppHangsArrivesWhenItWakes() {

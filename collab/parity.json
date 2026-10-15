@@ -2802,6 +2802,9 @@
       "tests": [
         "aHungAppsFloatingWindowGoesOutOfViewWhenTheAppWakesUp",
         "aHungAppsWindowGetsItsSlotWhenTheAppWakesUp",
+        "aWindowDockedAgainMeanwhileIsOwedNothing",
+        "aWindowFloatedWhileItsAppHangsGetsItsOwnFrameBackWhenItWakes",
+        "aWindowItsPersonHasMovedMeanwhileIsOwedNothing",
         "aWindowSomebodyElseBroughtBackMeanwhileIsLeftWhereItIs",
         "aWindowSummonedWhileItsAppHangsArrivesWhenItWakes",
         "aWindowThatClosesWhileItIsWaitedForIsForgotten",
@@ -2812,7 +2815,9 @@
         "anOrdinaryPauseWaitsForNothing",
         "anotherAppsFloatingWindowStaysWhereItsUserPutItWhenAHungAppWakesUp",
         "resumingEndsTheWaitAndArrangesTheWindowAsEver",
-        "theTriesComeFurtherApartAndEnd"
+        "theTriesComeFurtherApartAndEnd",
+        "theWindowsOfASlowAppAllGetTheirOwnFramesBack",
+        "whereTheViewLeavesFloatingWindowsOutTheFrameIsNotPaidOverIt"
       ],
       "e2e": [
         "an app hangs with its windows out of view and ⌃⌥⎋ pauses Arbor: once it answers, its windows are back in view",

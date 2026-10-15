@@ -36,11 +36,32 @@ extension Controller {
   /// A report about a window shows that its app is talking. If the app did not answer when the window was to be
   /// moved, now is the time to place it.
   func noteThatTheAppAnswers(_ window: WindowSnapshot, on display: DisplayID) {
-    guard unplaced.remove(window.id) != nil else { return }
+    guard unplaced.remove(window.id) != nil else {
+      // Somebody has placed it since, so it is owed nothing.
+      owedFrames[window.id] = nil
+      return
+    }
     // A layout that only puts windows back takes no floating window out of view: that is for a move of the camera. This
     // window missed such a move.
     owedMoves.insert(window.id)
+    payTheFrameOwed(to: window, on: display)
     scheduleEnforce(display)
+  }
+
+  /// Float All, `float` and undo give a window its own earlier frame back. One whose app did not answer then floats from there on, in view, in
+  /// the shape of its slot, and no layout moves a floating window that is in view: it kept that shape for good, and a second
+  /// Float All found nothing docked. Not if it has been docked again, or stands elsewhere by now: whoever moved it has the last word.
+  /// Nor where the view has gone elsewhere and leaves it out: what it is owed then is the way out of view (`owedMoves`), in one move. The
+  /// debt stands until it is next placed, so that it comes back to its own frame and not to the shape of its slot (`noteWhereItLeavesFrom`).
+  private func payTheFrameOwed(to window: WindowSnapshot, on displayID: DisplayID) {
+    guard let owed = owedFrames[window.id] else { return }
+    guard workspaces[displayID]?.isFloating(window.id) == true, window.frame.approximatelyEquals(owed.from, tolerance: 1),
+      let display = display(displayID), let layout = layouts[displayID]
+    else { return owedFrames[window.id] = nil }
+    let goesOutOfView = floatingMoves(on: displayID, layout: layout, reason: .enforce).contains { move in
+      if case .park = move.move { move.window == window.id } else { false }
+    }
+    if !goesOutOfView { putBack(window.id, at: owed.frame, on: display) }
   }
 
   // MARK: A pause while an app hangs (K003, the half that Arbor lives to see)

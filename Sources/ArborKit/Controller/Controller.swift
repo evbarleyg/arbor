@@ -361,6 +361,9 @@ public final class Controller {
   /// Of those, the ones whose app has answered since. The layout that follows owes them the move they missed, whatever
   /// else that layout is for (Controller+Hardening.swift).
   var owedMoves: Set<WindowID> = []
+  /// Windows that were to get a frame of their own back (Float All, `float`, undo) while their apps did not answer: the frame, and where each
+  /// stood then. No layout has a place for a floating window that is in view, so this is paid by itself (Controller+Hardening.swift).
+  var owedFrames: [WindowID: (frame: CGRect, from: CGRect)] = [:]
   /// Windows that were out of view when a pause began and could not be brought back, because their app did not answer, and where
   /// each was to go; and how often it has been tried since (Controller+Hardening.swift).
   var couldNotComeBack: [WindowID: CGRect] = [:]
@@ -599,6 +602,7 @@ public final class Controller {
     parkedAgain.removeAll()
     unplaced.removeAll()
     owedMoves.removeAll()
+    owedFrames.removeAll()
     enforcement = EnforcementLimiter()
     focusHistory.removeAll { windows[$0] == nil }
     let savedHints = hints
