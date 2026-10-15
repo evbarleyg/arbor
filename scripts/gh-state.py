@@ -17,9 +17,14 @@ a reader never sees half of it.
 With --queue it also writes, from the same answers, the file scripts/mac-queue.py shares one look at the queue through
 ($ARBOR_MAC_QUEUE_CACHE): as long as that is fresh, nobody who waits for a turn on a Mac asks GitHub anything.
 
-Usage: scripts/gh-state.py --out FILE [--queue FILE] [--every SECONDS] [--cache FILE] [--once]    the poller; 150 seconds by default
-       scripts/gh-state.py --read FILE [WHAT]                 prints the file, or the lines about WHAT (a pull request's number, a branch, a commit)
-       scripts/gh-state.py --read FILE --wait WHAT [--for MINUTES]   waits, asking nobody, until WHAT's checks have all finished; 60 by default
+A poller somebody has to keep alive is forgotten one day. So the one that counts runs at GitHub (.github/workflows/state.yml), with
+the workflow's own token, which has a limit of its own, and with --publish puts both files on a branch after every round. Readers
+say --from and that branch: a file that is more than a round old is then brought up to date by `git fetch`, which no limit counts.
+
+Usage: scripts/gh-state.py --out FILE [--queue FILE] [--every SECONDS] [--cache FILE] [--once] [--for MINUTES] [--publish BRANCH]
+                                                              the poller; every 150 seconds, for ever, by default
+       scripts/gh-state.py --read FILE [--from BRANCH] [WHAT]  prints the file, or the lines about WHAT (a pull request's number, a branch, a commit)
+       scripts/gh-state.py --read FILE [--from BRANCH] --wait WHAT [--for MINUTES]   waits, asking nobody, until WHAT's checks have all finished; 60 by default
        scripts/gh-state.py --self-test
 
 --wait exits with 0 when all is green, 1 when something failed, 3 when the time was up or the file has gone stale (nobody is polling).
@@ -41,8 +46,12 @@ import urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 EVERY = 150
-# Below this many requests the poller leaves the rest to those who have to act.
+# Below this many requests the poller leaves the rest to those who have to act; of a small limit, below a fifth.
 LEAVE = 400
+# What is published hangs on the commit everything here descends from, so that a clone that fetches it holds no second history.
+ROOT = "51b162d5f28c02846134c1f4a113c787f5164602"
+# The two files, as they are called on the branch.
+STATE, QUEUE = "github-state.md", "mac-queue-cache.json"
 # A file older than this was written by a poller that has stopped.
 STALE = datetime.timedelta(minutes=12)
 # Workflows a job of which can want a Mac, besides the Mac shell. Of the others' runs only the number matters.
@@ -107,7 +116,7 @@ def heads_by_git(cwd=None):
 def read_state(github, finished, now):
     """Everything the file says, as a dictionary. `finished`: commit → its checks, for commits whose checks are all in; kept between rounds."""
     limit = github.get("rate_limit", lambda body: body["resources"]["core"])
-    state = {"limit": limit, "paused": limit["remaining"] < LEAVE}
+    state = {"limit": limit, "paused": limit["remaining"] < min(LEAVE, limit["limit"] // 5)}
     if state["paused"]:
         return state
     pull = lambda item: {"number": item["number"], "branch": item["head"]["ref"], "sha": item["head"]["sha"], "base": item["base"]["ref"], "title": item["title"],
@@ -210,7 +219,51 @@ def save(path, text):
     os.replace(beside, path)
 
 
-def poll(github, out, cache_file, every, once, clock=time.time, sleep=time.sleep, heads=heads_by_git, queue=None):
+def git(*arguments, cwd=None, given=None, who=None):
+    """git's answer. Without the GIT_ variables of whoever called: in a hook or a rebase they point at another repository."""
+    environment = {key: value for key, value in os.environ.items() if not key.startswith("GIT_")}
+    done = subprocess.run(["git", *arguments], cwd=cwd or HERE, input=given or "", capture_output=True, text=True, timeout=120, check=False,
+                          env={**environment, **(who or {})})
+    if done.returncode:
+        raise OSError(f"git {arguments[0]}: {done.stderr.strip()[:200]}")
+    return done.stdout
+
+
+def publish(branch, files, cwd=None, root=ROOT):
+    """Puts `files` (name → path) on `branch` at origin: always one commit on top of the first, in place of the one before."""
+    entries = "".join(f"100644 blob {git('hash-object', '-w', path, cwd=cwd).strip()}\t{name}\n" for name, path in files.items() if os.path.exists(path))
+    bot = {f"GIT_{role}_{key}": value for role in ("AUTHOR", "COMMITTER")
+           for key, value in (("NAME", "github-actions[bot]"), ("EMAIL", "41898282+github-actions[bot]@users.noreply.github.com"))}
+    commit = git("commit-tree", git("mktree", cwd=cwd, given=entries).strip(), "-p", root, "-m", "state: how things stand at GitHub", cwd=cwd, who=bot).strip()
+    git("push", "--quiet", "--force", "origin", f"{commit}:refs/heads/{branch}", cwd=cwd)
+
+
+def refresh(path, branch, cwd=None, clock=time.time):
+    """Brings `path`, and the queue's file beside it, up to date from `branch` if it is more than a round old. Never puts an older one in a newer one's place."""
+    now = datetime.datetime.fromtimestamp(clock(), datetime.timezone.utc)
+    try:
+        with open(path, encoding="utf-8") as handle:
+            age = age_of(handle.read(), now)
+    except OSError:
+        age = None
+    if age is not None and age < datetime.timedelta(seconds=EVERY):
+        return
+    try:
+        git("fetch", "--quiet", "--no-tags", "origin", f"+refs/heads/{branch}:refs/arbor/state", cwd=cwd)
+        text = git("show", f"refs/arbor/state:{STATE}", cwd=cwd)
+        newer = age_of(text, now)
+        if newer is None or (age is not None and newer >= age):
+            return
+        try:
+            save(os.path.join(os.path.dirname(os.path.abspath(path)), QUEUE), git("show", f"refs/arbor/state:{QUEUE}", cwd=cwd))
+        except OSError:  # a round in which the poller left the rest to others writes none
+            pass
+        save(path, text)
+    except (OSError, subprocess.TimeoutExpired) as error:  # the file's own time tells
+        print(f"gh-state: {branch} could not be fetched ({error})", file=sys.stderr)
+
+
+def poll(github, out, cache_file, every, once, clock=time.time, sleep=time.sleep, heads=heads_by_git, queue=None, until=None, published=None):
     finished = {}
     while True:
         now = datetime.datetime.fromtimestamp(clock(), datetime.timezone.utc)
@@ -223,10 +276,12 @@ def poll(github, out, cache_file, every, once, clock=time.time, sleep=time.sleep
                 save(queue, json.dumps({"repo": github.repository, "at": now.strftime("%Y-%m-%dT%H:%M:%SZ"), "runs": runs}))
             if cache_file:
                 save(cache_file, json.dumps(github.cache))
+            if published:
+                published({STATE: out, **({QUEUE: queue} if queue else {})})
             print(f"{now.strftime('%H:%M:%S')} written; {state['limit']['remaining']} left, {len(github.counted)} spent here in the last hour", flush=True)
         except (*NO_ANSWER, KeyError, TypeError, subprocess.TimeoutExpired) as error:  # the next round may fare better; the file's time tells
             print(f"{now.strftime('%H:%M:%S')} no round: {type(error).__name__}: {error}", flush=True)
-        if once:
+        if once or (until is not None and clock() + every >= until):
             return 0
         sleep(every)
 
@@ -246,9 +301,11 @@ def age_of(text, now):
     return now - datetime.datetime.strptime(found.group(1), "%Y-%m-%d %H:%M:%S").replace(tzinfo=datetime.timezone.utc) if found else None
 
 
-def wait(path, what, limit, clock=time.time, sleep=time.sleep):
+def wait(path, what, limit, clock=time.time, sleep=time.sleep, refreshed=None):
     until = clock() + limit * 60
     while True:
+        if refreshed:
+            refreshed()
         try:
             with open(path, encoding="utf-8") as handle:
                 text = handle.read()
@@ -455,6 +512,66 @@ def self_test():
         ]
         with contextlib.redirect_stdout(io.StringIO()):
             rows.append(("--wait: no file", wait(os.path.join(folder, "none.md"), "2", 1, clock=start.timestamp, sleep=lambda seconds: None), 3))
+
+        # Published by one clone, read by another, with a real git between them.
+        origin, one, two = (os.path.join(folder, name) for name in ("origin.git", "one", "two"))
+        somebody = {f"GIT_{role}_{key}": value for role in ("AUTHOR", "COMMITTER") for key, value in (("NAME", "x"), ("EMAIL", "x@example.com"))}
+        git("init", "--quiet", "--bare", origin, cwd=folder)
+        git("init", "--quiet", one, cwd=folder)
+        git("remote", "add", "origin", origin, cwd=one)
+        first = git("commit-tree", git("mktree", cwd=one).strip(), "-m", "the first commit", cwd=one, who=somebody).strip()
+        git("push", "--quiet", "origin", f"{first}:refs/heads/main", cwd=one)
+        git("clone", "--quiet", "--branch", "main", origin, two, cwd=folder)
+        theirs, mine = os.path.join(folder, "theirs"), os.path.join(folder, "mine")
+        os.mkdir(theirs), os.mkdir(mine)
+
+        def at(minute):
+            return text.replace("read 2026-01-02 12:00:00 UTC", f"read 2026-01-02 12:{minute:02}:00 UTC")
+
+        def put(minute, queue="{}"):
+            save(os.path.join(theirs, "s.md"), at(minute))
+            save(os.path.join(theirs, "q.json"), queue)
+            publish("state/github", {STATE: os.path.join(theirs, "s.md"), QUEUE: os.path.join(theirs, "q.json")}, cwd=one, root=first)
+
+        def got(minute, name="state.md"):
+            with contextlib.redirect_stderr(io.StringIO()):
+                refresh(os.path.join(mine, "state.md"), "state/github", cwd=two, clock=lambda: start.timestamp() + 60 * minute)
+            with open(os.path.join(mine, name), encoding="utf-8") as handle:
+                return handle.read()
+        put(0, '{"runs": []}')
+        rows += [
+            ("--from: where there is no file yet, both are brought", (got(1) == at(0), got(1, QUEUE)), (True, '{"runs": []}')),
+            ("what is published is one commit on top of the first, so no clone gets a second history",
+             (git("rev-list", "refs/arbor/state", cwd=two).split()[1:], git("rev-list", "--max-parents=0", "refs/arbor/state", cwd=two).split()), ([first], [first])),
+        ]
+        put(3)
+        rows.append(("--from: a file less than a round old is left alone, and nothing is fetched", got(2) == at(0), True))
+        rows += [
+            ("--from: an older one is brought up to date", got(4) == at(3), True),
+            ("and the branch is still two commits long", len(git("rev-list", "refs/arbor/state", cwd=two).split()), 2),
+        ]
+        save(os.path.join(mine, "state.md"), at(10))
+        rows.append(("--from: what somebody nearer by wrote later is not replaced by what the branch has", got(20) == at(10), True))
+        os.rename(origin, origin + ".gone")
+        rows.append(("--from: GitHub cannot be reached: the file stays, and its own time tells", got(30) == at(10), True))
+
+        calls = []
+        with contextlib.redirect_stdout(io.StringIO()):
+            waited_for = wait(path, "1", 2, clock=lambda: start.timestamp() + 30 * len(calls), sleep=lambda seconds: None, refreshed=lambda: calls.append(1))
+        rows.append(("--wait --from: it looks before every reading", (waited_for, len(calls) > 3), (3, True)))
+
+        def small(remaining):
+            return {"rate_limit": {"resources": {"core": {"limit": 1000, "remaining": remaining, "reset": int(start.timestamp()) + 1800}}}}
+        rows += [
+            ("a workflow's own limit is a thousand: with 250 left it goes on", read_state(Stub(world(**small(250))), {}, start)["paused"], False),
+            ("below a fifth it leaves the rest to the other workflows", read_state(Stub(world(**small(199))), {}, start)["paused"], True),
+        ]
+        ticks, sent = [], []
+        with contextlib.redirect_stdout(io.StringIO()):
+            poll(Stub(world()), os.path.join(folder, "p.md"), None, 150, False, clock=lambda: start.timestamp() + 150 * len(ticks), sleep=ticks.append,
+                 heads=lambda: {}, queue=os.path.join(folder, "p.json"), until=start.timestamp() + 600, published=sent.append)
+        rows.append(("--for: the poller ends by itself before the time is up, and has published every round",
+                     (len(ticks), [sorted(files) for files in sent]), (3, [[STATE, QUEUE]] * 4)))
     failed = [f"{what}: got {got!r}, expected {wanted!r}" for what, got, wanted in rows if got != wanted]
     for line in failed:
         print("gh-state self-test:", line)
@@ -464,19 +581,23 @@ def self_test():
 
 def main():
     parser = argparse.ArgumentParser(usage="see the top of scripts/gh-state.py", add_help=False)
-    for flag in ("--out", "--cache", "--queue", "--read", "--wait"):
+    for flag in ("--out", "--cache", "--queue", "--read", "--wait", "--publish"):
         parser.add_argument(flag)
+    parser.add_argument("--from", dest="branch")
     parser.add_argument("--every", type=int, default=EVERY)
-    parser.add_argument("--for", dest="limit", type=float, default=60)
+    parser.add_argument("--for", dest="limit", type=float)
     for flag in ("--once", "--self-test", "--help"):
         parser.add_argument(flag, action="store_true")
     parser.add_argument("what", nargs="?")
     options = parser.parse_args()
     if options.self_test:
         return self_test()
+    refreshed = (lambda: refresh(options.read, options.branch)) if options.read and options.branch else None
     if options.read and options.wait:
-        return wait(options.read, options.wait, options.limit)
+        return wait(options.read, options.wait, options.limit or 60, refreshed=refreshed)
     if options.read:
+        if refreshed:
+            refreshed()
         with open(options.read, encoding="utf-8") as handle:
             text = handle.read()
         print("\n".join(text.splitlines()[2:4] + lines_about(text, options.what)) if options.what else text, end="" if not options.what else "\n")
@@ -495,7 +616,9 @@ def main():
     if options.cache and os.path.exists(options.cache):
         with open(options.cache, encoding="utf-8") as handle:
             cache = {url: tuple(value) for url, value in json.load(handle).items()}
-    return poll(GitHub(repository, token, cache), options.out, options.cache, max(60, options.every), options.once, queue=options.queue)
+    return poll(GitHub(repository, token, cache), options.out, options.cache, max(60, options.every), options.once, queue=options.queue,
+                until=time.time() + options.limit * 60 if options.limit else None,
+                published=(lambda files: publish(options.publish, files)) if options.publish else None)
 
 
 if __name__ == "__main__":

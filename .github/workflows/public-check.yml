@@ -8,8 +8,8 @@ name: Public check
 
 on:
   push:
-    # All but the output of Mac shell runs: one commit each, with no history, made by a workflow.
-    branches-ignore: ["mac-shell-out/**"]
+    # All but what workflows write: the output of Mac shell runs, one commit each with no history, and how things stand here.
+    branches-ignore: ["mac-shell-out/**", "state/**"]
     tags: ["**"]
   pull_request:
 

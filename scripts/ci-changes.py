@@ -64,7 +64,7 @@ PROSE = re.compile(
     # The Makefile: no step of CI's macOS job calls make, so a Mac here would prove nothing about it. (release.yml's does, `make check` and
     # `make release`, and CI never runs that workflow: its own rehearsal is what tries them.) And what looks after the repository itself, on
     # Linux or at GitHub's.
-    r"|^Makefile$|^scripts/(test-)?public-[a-z-]+\.\w+$|^scripts/git-hooks/|^scripts/(lint-workflows|housekeeping|gh-state)\.py$|^\.github/(workflows/(public-[a-z-]+|housekeeping)|dependabot)\.yml$|^\.claude/"
+    r"|^Makefile$|^scripts/(test-)?public-[a-z-]+\.\w+$|^scripts/git-hooks/|^scripts/(lint-workflows|housekeeping|gh-state)\.py$|^\.github/(workflows/(public-[a-z-]+|housekeeping|state)|dependabot)\.yml$|^\.claude/"
 )
 # What Package.swift builds on Linux too. Anything in neither list needs a Mac.
 HEADLESS = re.compile(

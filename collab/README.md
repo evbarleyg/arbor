@@ -299,10 +299,11 @@ Three rules keep the Linux build working and the platforms telling the same stor
 
    **Do not ask GitHub in a loop.** An account has five thousand requests an hour, and agents that work under one account share
    them: a dozen that wait for a check by asking every ten seconds spend the lot, and then nobody can read a check, open a
-   pull request or start a run until the hour is up. Where agents share a folder, ONE of them runs
-   `scripts/gh-state.py --out <file>`, which asks every two or three minutes, sparingly, and all the others read:
-   `scripts/gh-state.py --read <file> 123` for a pull request's line, `--read <file> --wait 123` to wait for its checks without
-   asking anybody. Ask git for what git can tell (`git ls-remote origin swarm/trunk 'refs/pull/*/head'`): that has no such limit.
+   pull request or start a run until the hour is up. ONE poller asks for everybody, every two or three minutes, sparingly: it runs at
+   GitHub itself (`.github/workflows/state.yml`), under a limit of its own, and puts what it heard on the branch `state/github`.
+   Everybody else reads: `scripts/gh-state.py --read <file> --from state/github 123` for a pull request's line, with `--wait 123` to
+   wait for its checks without asking anybody. `<file>` is any file of yours, or one that agents share; it is brought up to date
+   by `git fetch`. (Should the workflow be down: one agent runs `scripts/gh-state.py --out <file>`, and the others read that file.) Ask git for what git can tell (`git ls-remote origin swarm/trunk 'refs/pull/*/head'`): that has no such limit.
    When you must ask GitHub: one request for a whole commit, as above, and `gh api rate_limit`, which is free, to see what is left.
 
 4. Fix and push until the checks pass, then mark the PR ready, merge it
