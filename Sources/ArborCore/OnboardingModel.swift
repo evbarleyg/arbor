@@ -117,7 +117,7 @@ public struct OnboardingModel: Equatable, Sendable {
     public var state: State
     /// The state in a word or two, for VoiceOver: "Granted", "Not granted", "In order".
     public var status: String
-    /// Why it matters and what to do. Empty once the row is in order: a tick says enough.
+    /// Why it matters and what to do. Empty once the row is in order: a tick says enough, unless it will not last.
     public var detail: String
     /// What is on, one line each, listed under the detail.
     public var points: [String] = []
@@ -226,6 +226,7 @@ public struct OnboardingModel: Equatable, Sendable {
   ///   - desktops: see `desktops`.
   ///   - isNewcomer: Arbor has never run on this Mac and nothing is docked.
   ///   - isPaused: the user has paused Arbor, so none of the moves would do anything.
+  ///   - signature: how this build is signed, if anybody said: it decides how long the permission lasts.
   ///   - shortcut: the label of the shortcut that runs a command, e.g. ⌃⌥Space. A move without one is
   ///     explained by the menu instead, and with no shortcuts at all the rows about what collides
   ///     with them are left out.
@@ -235,7 +236,7 @@ public struct OnboardingModel: Equatable, Sendable {
     switchesGivenBack: [MacSwitch] = [],
     fixSetupFailure: String? = nil, menuBarIsOneIcon: Bool = true, menuBarIcon: MenuBarModel.Icon = MenuBarModel.Icon(),
     desktops: [CGRect] = [], isNewcomer: Bool = false,
-    isPaused: Bool = false, lostShortcuts: [String] = [],
+    isPaused: Bool = false, lostShortcuts: [String] = [], signature: BuildInfo.Signature? = nil,
     shortcut: (Command) -> String? = { _ in nil }
   ) {
     let flow = flow ?? .checkingSetup(isReady: facts.accessibility)
@@ -254,7 +255,7 @@ public struct OnboardingModel: Equatable, Sendable {
       appsWithOwnShortcuts: appsWithOwnShortcuts, canFixSetup: canFixSetup, changed: page == .setup ? switchesChangedByArbor : [],
       givenBack: page == .setup ? switchesGivenBack : [], isPaused: isPaused,
       failure: fixSetupFailure, canDock: facts.accessibility && !isPaused,
-      lostShortcuts: lostShortcuts, shortcut: shortcut)
+      lostShortcuts: lostShortcuts, isNewcomer: isNewcomer, signature: signature, shortcut: shortcut)
     rows =
       page == .setup
       ? all
@@ -425,7 +426,7 @@ public struct OnboardingModel: Equatable, Sendable {
   private static func rows(
     _ facts: SystemFacts, windowsOutOfView: Int, offersScreenRecording: Bool, appsWithOwnShortcuts apps: [String],
     canFixSetup: Bool, changed: [MacSwitch], givenBack: [MacSwitch], isPaused: Bool, failure: String?, canDock: Bool,
-    lostShortcuts lost: [String], shortcut: (Command) -> String?
+    lostShortcuts lost: [String], isNewcomer: Bool, signature: BuildInfo.Signature?, shortcut: (Command) -> String?
   ) -> [Row] {
     let settings = "Open Settings…"
     let stranded =
@@ -438,12 +439,19 @@ public struct OnboardingModel: Equatable, Sendable {
         id: .accessibility, title: "Accessibility", importance: "Required",
         state: facts.accessibility ? .done : .required, status: facts.accessibility ? "Granted" : "Not granted",
         detail: facts.accessibility
-          ? ""
+          // For whoever opens Check Setup while all is well, before the next time comes. Whoever downloads Arbor reads this too, so in a
+          // stranger's words: "signed ad hoc" is a builder's, and `doctor` and `make install` have it. Not in the first minute: no update is near.
+          ? (signature?.outlivesTheBuild == false && !isNewcomer
+            ? "macOS will ask for this permission again after each update of Arbor, because Arbor is not yet signed with an Apple "
+              + "Developer ID."
+            : "")
           : stranded + "macOS asks your permission before an app may move other apps’ windows. Arbor reads only each window’s position "
             + "and title, and nothing leaves your Mac. Flip the switch next to Arbor in System Settings. This window comes back by itself."
             // Another build over an old grant: the switch looks on, and Arbor waits. It looks like a first launch too, so this is said to
-            // everybody, or whoever meets it finds nothing to flip. The reason, not where the permission went while Arbor ran.
-            + " Already on? Switch it off and on again" + (windowsOutOfView == 0 ? ": macOS asks anew after every update." : "."),
+            // everybody, or whoever meets it finds nothing to flip. The reason, not where the permission went while Arbor ran, nor of a build
+            // signed with a certificate, of which it is not true.
+            + " Already on? Switch it off and on again"
+            + (windowsOutOfView == 0 && signature?.outlivesTheBuild != true ? ": macOS asks anew after every update." : "."),
         button: settings),
     ]
     if offersScreenRecording {

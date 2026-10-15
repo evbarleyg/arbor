@@ -278,6 +278,42 @@ private let tuned = SystemFacts(accessibility: true, screenRecording: true, swit
     #expect(OnboardingModel(tuned, windowsOutOfView: 3).title == "Arbor is ready")
   }
 
+  /// macOS knows an ad-hoc build by its hash, so the next one has to ask again. Whoever is asked for the third time is told why,
+  /// and whoever opens Check Setup while all is well is told before the next time comes.
+  @Test func anAdHocSignatureIsNamedWithWhatItCosts() {
+    func detail(_ facts: SystemFacts, _ signature: BuildInfo.Signature?) -> String? {
+      OnboardingModel(facts, signature: signature).row(.accessibility)?.detail
+    }
+    // Not granted: what to do is said to everybody, with the reason wherever it may be true: ad hoc, and where nobody said.
+    let whatToDo = " Already on? Switch it off and on again"
+    for signature: BuildInfo.Signature? in [.adHoc, nil] {
+      #expect(detail(fresh, signature)?.hasSuffix(whatToDo + ": macOS asks anew after every update.") == true)
+    }
+    // The next build signed with the same certificate inherits the permission, so of such a build the reason is not true.
+    for signature: BuildInfo.Signature in [.local, .issued] {
+      #expect(detail(fresh, signature)?.hasSuffix(whatToDo + ".") == true)
+      #expect(detail(fresh, signature)?.contains("every update") == false)
+    }
+    // Where it went while Arbor ran nothing was updated, however the build is signed.
+    #expect(OnboardingModel(fresh, windowsOutOfView: 3, signature: .adHoc).row(.accessibility)?.detail.hasSuffix(whatToDo + ".") == true)
+    // Granted: whoever opens Check Setup is told before the next time comes.
+    #expect(
+      detail(tuned, .adHoc)
+        == "macOS will ask for this permission again after each update of Arbor, because Arbor is not yet signed with an Apple "
+        + "Developer ID.")
+    // A download is signed so too, and "ad hoc" is a builder's word.
+    #expect(detail(fresh, .adHoc)?.contains("ad hoc") == false && detail(tuned, .adHoc)?.contains("ad hoc") == false)
+    // It is something to know, nothing to put right: the tick stays, and the window does not come up for it.
+    let granted = OnboardingModel(tuned, signature: .adHoc)
+    #expect(granted.row(.accessibility)?.state == .done)
+    #expect(granted.isReady && granted.title == OnboardingModel(tuned).title)
+    #expect(granted.pageToOpenOn == OnboardingModel(tuned).pageToOpenOn)
+    // With a certificate, or where nobody said, a tick says enough.
+    for signature: BuildInfo.Signature? in [.local, .issued, nil] { #expect(detail(tuned, signature) == "") }
+    // So it does in the first minute: no update is near.
+    #expect(OnboardingModel(tuned, isNewcomer: true, signature: .adHoc).row(.accessibility)?.detail == "")
+  }
+
   @Test func otherWindowManagersAreNamed() throws {
     var facts = tuned
     facts.competingApps = ["Rectangle"]

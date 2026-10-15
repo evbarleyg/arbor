@@ -1239,15 +1239,18 @@ def check_install():
                                   env={**kept, "HOME": home, "PATH": os.path.join(home, "bin") + os.pathsep + os.environ["PATH"], "ARBOR_UNATTENDED": "1", **more})
             return done.returncode, os.path.isdir(os.path.join(home, "Applications", "Arbor.app")), "NOTHING WAS REMOVED" in done.stderr
 
-    def installed(cp, rm='exec /bin/rm "$@"'):
-        """(exit code, what the installed app holds, whether Arbor was asked to quit, what else lies beside it) with stand-ins for `cp` and `rm`."""
+    def installed(cp, rm='exec /bin/rm "$@"', codesign=None, said=False):
+        """(exit code, what the installed app holds, whether Arbor was asked to quit, what else lies beside it) with stand-ins for `cp` and `rm`.
+
+        With `said`: (exit code, what it printed), `codesign` being a stand-in for the tool of that name."""
         with tempfile.TemporaryDirectory(prefix="tooling-") as folder:
             home = os.path.join(folder, "home")
             for path in ("scripts", "bin", "build/Arbor.app/Contents/Helpers", "home/Applications/Arbor.app"):
                 os.makedirs(os.path.join(folder, path))
             shutil.copy(os.path.join(HERE, "install.sh"), os.path.join(folder, "scripts", "install.sh"))
             for path, text in (("scripts/version.sh", "echo 1.0"), ("bin/swift", "echo 0"), ("bin/cp", cp), ("bin/rm", rm),
-                               ("build/Arbor.app/Contents/Helpers/arborctl", f'echo "$1" >> "{folder}/asked"; exit 2')):
+                               ("build/Arbor.app/Contents/Helpers/arborctl", f'echo "$1" >> "{folder}/asked"; exit 2'),
+                               *([("bin/codesign", codesign)] if codesign else [])):
                 with open(os.path.join(folder, path), "w", encoding="utf-8") as handle:
                     handle.write(f"#!/bin/bash\n{text}\n")
                 os.chmod(os.path.join(folder, path), 0o755)
@@ -1255,6 +1258,8 @@ def check_install():
             done = subprocess.run(["bash", "scripts/install.sh"], cwd=folder, stdin=subprocess.DEVNULL, capture_output=True, text=True,
                                   env={**kept, "HOME": home, "PATH": os.path.join(folder, "bin") + os.pathsep + os.environ["PATH"], "ARBOR_UNATTENDED": "1", "LAUNCH": "0"})
             app = os.path.join(home, "Applications", "Arbor.app")
+            if said:
+                return done.returncode, done.stdout
             return (done.returncode, sorted(os.listdir(app)) if os.path.isdir(app) else "no app at all", os.path.exists(os.path.join(folder, "asked")),
                     sorted(name for name in os.listdir(os.path.join(home, "Applications")) if name != "Arbor.app"))
 
@@ -1267,6 +1272,21 @@ def check_install():
     row("install.sh: once the swap has begun it is finished, whatever signal comes: never neither app",
         [installed('exec /bin/cp "$@"', rm=f'case "${{@: -1}}" in */Arbor.app) kill -{signal} $PPID; sleep 0.3 ;; esac; exec /bin/rm "$@"') for signal in ("TERM", "INT", "HUP")],
         [(0, ["Contents"], True, [])] * 3)
+    # What `codesign --display --verbose=2` writes, to standard error, for the two kinds of signature.
+    described = "cat >&2 <<'END'\nExecutable=/x/Arbor.app/Contents/MacOS/Arbor\nIdentifier=com.evbarleyg.arbor\n%s\nTeamIdentifier=not set\nEND"
+    code, output = installed('exec /bin/cp "$@"', codesign=described % "Signature=adhoc", said=True)
+    row("install.sh: an ad-hoc signature is said aloud, last, with what it costs and what ends it",
+        (code, output.count("SIGNED AD HOC"), "macOS will ask for the Accessibility permission again" in output,
+         "make-signing-identity.sh" in output.splitlines()[-1], output.find("SIGNED AD HOC") > output.find("Not started") >= 0), (0, 1, True, True, True))
+    # As the real one writes: a line at a time. A reader that leaves at the match kills it, and under pipefail that made a no of the yes.
+    slowly = "for line in Executable=/x Identifier=com.evbarleyg.arbor Signature=adhoc 'Info.plist entries=24' 'TeamIdentifier=not set' 'Sealed Resources version=2'; do echo \"$line\" >&2 || exit 1; sleep 0.02; done"
+    row("install.sh: however slowly codesign writes what follows", "SIGNED AD HOC" in installed('exec /bin/cp "$@"', codesign=slowly, said=True)[1], True)
+    row("install.sh: of a signature made with a certificate it says nothing more; nor of one it cannot read, where there is no codesign, or it fails",
+        [(code, "AD HOC" in output) for code, output in (
+            installed('exec /bin/cp "$@"', codesign=described % "Signature size=1663\nAuthority=Arbor Local Signing", said=True),
+            installed('exec /bin/cp "$@"', codesign=described % "Signature=adhoc-ish", said=True),
+            installed('exec /bin/cp "$@"', said=True), installed('exec /bin/cp "$@"', codesign="echo Signature=adhoc >&2; exit 1", said=True))],
+        [(0, False)] * 4)
     row("install.sh: uninstalling removes the hidden copy that a killed install left, beside an app or alone",
         (leftover_after_uninstalling(True), leftover_after_uninstalling(False)), (False, False))
     row("install.sh: with windows still out of view after Arbor has quit, nothing is removed", uninstalled("echo 2"), (75, True, True))
