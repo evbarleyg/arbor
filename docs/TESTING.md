@@ -603,6 +603,12 @@ dispatch it is and how many there are, over all its Macs: its place among `run.s
 until the script leaves one of its own in `mac-shell/`: so a playing that never began shows as that, not as a gap. What has been gathered comes back also when the job is cut
 off in the middle of the list. All kinds of Mac come out of the same five at a time.
 
+**Every run is recorded**, without the script doing anything for it: `traces/<script>-<session>-<number>.jsonl` holds what macOS reported, what Arbor asked of it and what the apps answered (never a window title), a new trace from every `step`, with every heading and every check as a remark. `make replay FILE=…` tells one as a story, on any machine. **What the Mac showed you should never need a Mac again:** `scripts/trace-to-test.py <trace> <name> --shows "…"` makes a test for every platform of it, in one command (`docs/TRACES.md`, "Every run on a hosted Mac is recorded" and "From a run on a Mac to a test"). A script that measures time says `ARBOR_TRACE=0` above `source lib.sh`.
+
+**A press says what it lands on**, if that is not what the script opened: under an alert, a permission dialog or a banner, which macOS floats above every app's windows, `click` and `drag` print `✘ NOT ARBOR: UserNotificationCenter's window (382 118 260 250, layer 8) lies over 510,152`, which counts as a check that failed and, like every ✘ on a hosted Mac, leaves a picture of the screen at that moment (`fail-<script>-<n>.png`). `e2e-drag.sh` was red for hours, and six theories about Arbor died, before somebody saw that such an alert lay over the title bars it pressed on. arbor-e2e leaves the moment of each failed check in `mac-shell/e2e/`: `failed-<n>.png`, and `failed-<n>.txt` with the windows on the screen from front to back.
+
+**What comes back is kept small.** Everybody's `git fetch` brings every output branch along, so a branch holds at most 40 MB (`scripts/ci-keep-output.py`). Output, logs, traces and other text always stay; films, then pictures go, the largest first, and `dropped.txt` says which. A script that needs more writes the megabytes, 200 at most, into its output folder: `echo 150 > "$ARBOR_OUT/keep-mb.txt"`.
+
 **Whose turn it is.** GitHub hands its Macs out in no particular order: a job has been seen to wait eight minutes while later ones started. So
 `run.sh` keeps the order itself, before it starts the run, where waiting takes nobody's place. `--priority 1` (or `ARBOR_MAC_PRIORITY=1`) waits for nobody's ordinary run: a
 fault on real windows, a merge train, whatever others are blocked by. `2` holds back while three or more jobs are waiting for a Mac. `3`, the default, holds back
@@ -1143,6 +1149,9 @@ It says which acts were played in one place alone, where windows, the pile or wh
 difference breeds the next, so that act is the one to look at. The first comparison, of a walk a hosted Mac had already played, ended 29 acts in a row alike to the point and corrected five smallest sizes
 of `RealApps.swift` and where a window lies that is dragged off a tile of macOS's, and showed that a second Tab posted too soon after ⌘Tab does not count.
 
+- **One playing to a Mac cannot tell Arbor from the Mac.** A pair of Macs, with and without, detects; what one Mac of several shows is played without, with, without on ONE Mac before anybody calls it Arbor's: give `run.sh` the three scripts in that order (`who-comes-forward-1-without.sh`, `-2-with.sh`, `-3-without.sh` are the pattern). Then `walk-diff.py --with <2> --without <1>`, the same with `<3>`, and the two without Arbor as `walk-diff.py <1> <3>`.
+- `scripts/mac-shell/held.py <samples.log> [<beginning of a slug>]`: of every drag in a playing, the pointer's real speed, its way and the window's, and where the window stood. The speed a script asks of `drag` is not the speed it gets.
+
 ### A newcomer's eval (`make newcomer`, `scripts/newcomer`)
 
 The day finds faults; it cannot find "I could not find it" or "it took five steps". For that, somebody who has never seen this repository gets what a stranger
@@ -1587,6 +1596,7 @@ done to the world as if Arbor had done it, at which the net has to speak, beside
 | Out of view means out of view, and nothing goes on for ever | `flashed-into-view`, `flashed-out-of-view` (an app refused a size in that step: a layout finding out), `flipped-into-view`, `flipped-out-of-view` (nobody refused: the view flew somewhere and was taken back); `moved-over-and-over` (more than three moves with nobody acting) | `flash`, `stuck` |
 | Less by default (Q29): a floating window is its person's, and a plain drag is what it is without Arbor | `floating-taken-out-of-view` (never, by anything; only what was summoned may be sent away); from the moment a window is taken until somebody does something else: `plain-drag-showed-a-preview`, `plain-drag-docked`, `plain-drag-moved-it` (it floated, and Arbor set a frame on it), `plain-drag-moved-another` (it floated: nobody else moves; it was docked: only what is docked), `plain-drag-started-a-timer`; a docked window let go 24 points or more from where it was taken floats, at its own size: `plain-drag-left-it-docked`, `plain-drag-not-its-own-size` | `lost`, `moved-unasked` |
 | The window you switch to comes to the front and into view | `switched-to-and-sent-away` (out of view with the keyboard in it), `switched-to-out-of-view`, `switched-to-mostly-out` (a floating window, where Arbor had put it), `switched-to-partly-out`, `app-switch-out-of-view` (only the app was reported), `switched-to-behind` | `focus`, `behind` |
+| After a person's own act macOS decides who has the keyboard | `keyboard-handed-on-unasked` (nobody asks Arbor for anything, no window that it knows has the keyboard, and Arbor focuses one) | `focus` |
 | Quitting, Float All and pause give windows their own sizes back | `size-not-given-back` | `size-lost` |
 | After any way home no window shows less than its person left showing; after a change of displays none is mostly out of view | `home-not-whole`, `home-behind-the-dock`, `home-leaves-out`; `displays-left-mostly-out`, `nothing-in-view-after-displays`, `nothing-in-view-held-after-displays` | `lost` |
 
@@ -1637,8 +1647,8 @@ ARBOR_CHAOS_ORDINARY=1 .build/release/arbor-sim hunt 1 2000 300 --known         
 
 **The scoreboard** is the number of ordinary walks in 10,000 in which a rule broke, by rule: the `known:` lines of a hunt count the walks that passed a rule by, the summary line those that ended at one.
 
-**Seeds mean something only on one generator.** A new `Command` case, weight or event sends every seed elsewhere: compare rates and scripts, never
-seed numbers, between two commits. **A script means something only on a harness that knows its words**: a line that is no event is taken for
+**Seeds under 1,000,000 are frozen for words, not for acts.** They draw their commands and the settings they change from lists as they stood on 2026-10-15 (`ChaosGenerator+Vocabulary.swift`), so a new `Command` case or a new setting changes none of them, and its author has nothing to do; the tests walk only such seeds. Seeds of 1,000,000 and up draw from everything there is: hunt with those. A new KIND OF ACT or a new WEIGHT in a generator still sends a seed elsewhere, so it gets its weight only where `drawsFromEverything` is true and 0 elsewhere. A change to the stand-ins or to the cast (the apps' sizes, a terminal's cells, macOS's tile) changes what the same acts lead to on every seed: across such a landing 'the same seeds' compares nothing; put the same lab on both sides and change only the product.
+**A script means something only on a harness that knows its words**: a line that is no event is taken for
 a command, and a command Arbor does not know does nothing, so a script with `via …` or `key down …` on a branch from before those events
 replays to "every invariant held" and proves nothing. A command spelt like an event (`release`, `focus 101`, `save`) is written `do release`.
 
