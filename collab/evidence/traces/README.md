@@ -35,6 +35,22 @@ records; its two traces say what was done about that. **B5 came back with a late
 | `quit` | `quit` with windows docked: everything is put back in view, then `stop`. |
 | `desktop-shown` | Recorded on 2026-10-15 by `scripts/mac-shell/check-sweep.sh`, up to its seventh step. macOS shows its desktop six times (a click on the wallpaper, as macOS comes) and brings the windows back at a second click, at clicks on strips that slip and rest, at pulls at strips. All that reaches Arbor is the press, and Finder coming forward the first time: no move, no drag, and Arbor sets no frame. Then `resize` with nothing swept and again while swept: `stackedWindows` has the windows at the sides of the display, with the sizes they had, while `setFrame` is answered as ever. The script's own `state` and `layout` questions are in it. |
 
+**Displays and Spaces** (`ArborTestWindows`; recorded on 2026-10-15 by `scripts/mac-shell/check-displays.sh` and `check-desktop.sh` on GitHub's macOS runner, macOS 26.6.2; the second display is virtual, 1280×800, and plugging it in also switches the main one from
+1024×768 to 1920×1080). Nothing asks Arbor anything while one is recorded. In all of them `didChangeScreenParameters` comes first, the list of displays is new by the first window's report, the windows' `AXMoved` and `AXResized` come 20 to 150 ms after that word and within 5 to 100 ms of one
+another, and the controller's `displaysChanged` 1.65 s after it: for the controller the windows come first, and as moves by a hand.
+Seven more recordings of the same night are not here yet: a display that comes for the first time (two), goes (two) and changes side (three). A trace cut between macOS's own moves of the windows and `displaysChanged` is the very state in which letting go goes
+wrong: `everyWayBackReturnsEveryWindowFromEveryStateOfATrace` plays every such cut. Today `TraceReplayer` gives its fake the new displays only at `displaysChanged`, so the first two count windows as lost that are not; with that mended, the other five show a real fault, Float
+All giving frames back by the displays Arbor still believes in. They follow when that is cured, and guard it from then on.
+
+| Trace | What it shows |
+|---|---|
+| `display-plugged-in-again` | The same display (same UUID) comes back: macOS itself puts the three windows back on it, at their old frames, 1.6 s before `displaysChanged`. |
+| `drag-to-the-second-display`, `drag-to-the-far-edge` | A floating window dragged by its title bar from the main display to the middle of the second, and another to three points inside its far edge, where it docks. |
+| `space-added`, `mission-control` | Mission Control opened, a Space added, closed again; and opened and closed. |
+| `space-to-the-second`, `space-back-to-the-first` | ⌃→ and ⌃← with real keys. (The view was on the Desktop with one docked window: the script had clicked a button of the menu bar item.) |
+| `space-window-carried`, `space-left-without-the-window`, `space-right-to-the-window` | A docked window held by its title bar while ⌃→ is pressed, let go on the second Space; then back without it, and to it again. |
+| `drag-first-step-of-45-points` | Recorded by `scripts/mac-shell/probe-coarse-drag.sh` on the code before "a window that starts late is still being dragged": the first dragged event is 45.5 points from the press, the window's first move comes 108 ms later, and no `dragBegan` ever. |
+
 **Test windows doing things by themselves**, as odd apps do (lines on `ArborTestWindows`' stdin)
 
 | Trace | What it shows |
