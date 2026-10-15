@@ -1,0 +1,587 @@
+# mac-shell: scripts/mac-shell/check-left-alone.sh at 292afd3, macOS 26.6.2, 2026-10-15T14:58Z
+built Arbor, the pointer tool and the app bundles in 7s
+macOS's own tiling: com.apple.WindowManager EnableTilingByEdgeDrag: 1
+com.apple.WindowManager EnableTopTilingByEdgeDrag: 1
+com.apple.WindowManager EnableTilingOptionAccelerator: not set
+com.apple.WindowManager EnableTiledWindowMargins: not set
+
+== Test windows
+session 1: Arbor pid 3560, test windows 29 30 (pid 3525)
+running: 1 display, 0 docked and 2 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> float-all
+arborctl: nothing is docked
+== a test window: w29, its own size 480 348
+
+▸ a test window, docked, is thrown into the menu bar and let go at once
+> float-all
+arborctl: nothing is docked
+> dock 29 left
+docked w29 at the left edge
+> dock 30 right
+docked w30 at the right edge
+it is managed docked at 12 43 325 650
+it is managed docked at 687 43 325 650
+  ✔ docked, it is as large as its slot (325 650), which is not its own size
+  ✔ its title bar can be grabbed
+> drag 210 55 512 220 --no-release
+> release 512 8
+  ✔ a test window thrown: it is out of the arrangement
+  ✔ a test window thrown: it is not as large as its slot (325 650): 165 31 480 348
+a test window thrown: macOS LEFT IT ALONE, and Arbor sized it; it is at 165 31 480 348
+  ✔ a test window thrown: left alone, it has its own size, 480 348
+  ✔ a test window thrown: left alone, at least half of it is in view
+> float-all
+floated 1 window
+  ✔ a test window thrown: Float All leaves it that size: 480 348
+
+▸ a test window, docked, is carried out and let go with ⌥ and nothing else held
+> float-all
+arborctl: nothing is docked
+> dock 29 left
+docked w29 at the left edge
+> dock 30 right
+docked w30 at the right edge
+it is managed docked at 12 43 325 650
+it is managed docked at 687 43 325 650
+  ✔ its title bar can be grabbed
+> drag 210 55 512 200 --hold 0.8 --mods opt
+  ✔ a test window with ⌥: it is out of the arrangement
+  ✔ a test window with ⌥: it is not as large as its slot (325 650): 220 188 480 348
+a test window with ⌥: macOS LEFT IT ALONE, and Arbor sized it; it is at 220 188 480 348
+  ✔ a test window with ⌥: left alone, it has its own size, 480 348
+  ✔ a test window with ⌥: left alone, at least half of it is in view
+> float-all
+floated 1 window
+  ✔ a test window with ⌥: Float All leaves it that size: 480 348
+
+▸ a test window, docked, rests in the menu bar for a second and is let go
+> float-all
+arborctl: nothing is docked
+> dock 29 left
+docked w29 at the left edge
+> dock 30 right
+docked w30 at the right edge
+it is managed docked at 12 43 325 650
+it is managed docked at 687 43 325 650
+  ✔ its title bar can be grabbed
+> drag 210 55 512 4 --hold 1.2
+  ✔ a test window rested: it is out of the arrangement
+  ✔ a test window rested: it is not as large as its slot (325 650): 0 31 1024 674
+a test window rested: macOS TOOK IT; it is at 0 31 1024 674
+  ✔ a test window rested: taken, it stays as macOS made it
+> float-all
+floated 1 window
+  ✔ a test window rested: Float All leaves it that size: 1024 674
+1024 is not about 480
+
+▸ a test window rested: it is dragged off macOS's tile and let go over the middle of the screen
+  ✔ its title bar can be grabbed
+> drag 546 43 500 320 --hold 0.5
+  ✔ off its tile it has its own size, 480 348, not the slot's, 325 650: 244 298 480 348
+
+▸ a test window, docked, is let go at 512,150 with opt held
+> float-all
+arborctl: nothing is docked
+> float-all
+arborctl: nothing is docked
+> dock 29 left
+docked w29 at the left edge
+> dock 30 right
+docked w30 at the right edge
+it is managed docked at 12 43 325 650
+it is managed docked at 687 43 325 650
+  ✔ its title bar can be grabbed
+> drag 210 55 512 150 --hold 0.8 --mods opt
+a test window at 150 with opt: own 480 348; it is at 220 138 480 348
+  ✔ a test window at 150 with opt: it has its own size, 480 348
+
+▸ a test window, docked, is let go at 512,150 with cmd held
+> float-all
+> float-all
+arborctl: nothing is docked
+> dock 29 left
+docked w29 at the left edge
+> dock 30 right
+docked w30 at the right edge
+it is managed docked at 12 43 325 650
+it is managed docked at 687 43 325 650
+  ✔ its title bar can be grabbed
+> drag 210 55 512 150 --hold 0.8 --mods cmd
+a test window at 150 with cmd: own 480 348; it is at 236 90 480 348
+  ✔ a test window at 150 with cmd: it has its own size, 480 348
+
+▸ a test window, docked, is let go at 512,300 with opt held
+> float-all
+> float-all
+arborctl: nothing is docked
+> dock 29 left
+docked w29 at the left edge
+> dock 30 right
+docked w30 at the right edge
+it is managed docked at 12 43 325 650
+it is managed docked at 687 43 325 650
+  ✔ its title bar can be grabbed
+> drag 210 55 512 300 --hold 0.8 --mods opt
+a test window at 300 with opt: own 480 348; it is at 220 288 480 348
+  ✔ a test window at 300 with opt: it has its own size, 480 348
+
+▸ a test window, docked, is let go at 512,300 with cmd held
+> float-all
+> float-all
+arborctl: nothing is docked
+> dock 29 left
+docked w29 at the left edge
+> dock 30 right
+docked w30 at the right edge
+it is managed docked at 12 43 325 650
+it is managed docked at 687 43 325 650
+  ✔ its title bar can be grabbed
+> drag 210 55 512 300 --hold 0.8 --mods cmd
+a test window at 300 with cmd: own 480 348; it is at 135 240 480 348
+  ✔ a test window at 300 with cmd: it has its own size, 480 348
+
+▸ a test window, docked, is let go at 512,320 with opt held
+> float-all
+> float-all
+arborctl: nothing is docked
+> dock 29 left
+docked w29 at the left edge
+> dock 30 right
+docked w30 at the right edge
+it is managed docked at 12 43 325 650
+it is managed docked at 687 43 325 650
+  ✔ its title bar can be grabbed
+> drag 210 55 512 320 --hold 0.8 --mods opt
+a test window at 320 with opt: own 480 348; it is at 220 308 480 348
+  ✔ a test window at 320 with opt: it has its own size, 480 348
+
+▸ a test window, docked, is let go at 512,320 with cmd held
+> float-all
+> float-all
+arborctl: nothing is docked
+> dock 29 left
+docked w29 at the left edge
+> dock 30 right
+docked w30 at the right edge
+it is managed docked at 12 43 325 650
+it is managed docked at 687 43 325 650
+  ✔ its title bar can be grabbed
+> drag 210 55 512 320 --hold 0.8 --mods cmd
+a test window at 320 with cmd: own 480 348; it is at 135 260 480 348
+  ✔ a test window at 320 with cmd: it has its own size, 480 348
+
+▸ a test window, docked, is let go at 512,420 with opt held
+> float-all
+> float-all
+arborctl: nothing is docked
+> dock 29 left
+docked w29 at the left edge
+> dock 30 right
+docked w30 at the right edge
+it is managed docked at 12 43 325 650
+it is managed docked at 687 43 325 650
+  ✔ its title bar can be grabbed
+> drag 210 55 512 420 --hold 0.8 --mods opt
+a test window at 420 with opt: own 480 348; it is at 220 392 480 360
+  ✘ a test window at 420 with opt: it has its own size, 480 348 — 360 is not about 348
+      picture: mac-shell/fail-check-left-alone-1.png
+      | display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+      |   Desktop          12 43 494 650
+      |   w29 220 392 480 360      floating focused
+      |   w30 518 43 494 650       docked
+      log | INFO  trace check-left-alone-1-11 ended: 225 lines, another trace was started
+      log | INFO  trace check-left-alone-1-12: recording to /tmp/arbor-shell.3FgR8M/home/traces/2026-10-15-150013-check-left-alone-1-12.jsonl
+      log | DEBUG no stage: Reduce motion is on
+      log | INFO  float-all: floated 1 window
+      log | DEBUG float-all failed: nothing is docked
+      log | DEBUG no stage: Reduce motion is on
+      log | INFO  dock 29 left: docked w29 at the left edge
+      log | DEBUG focus is on w29
+      log | DEBUG w29 has the keyboard
+      log | DEBUG no stage: Reduce motion is on
+      log | INFO  dock 30 right: docked w30 at the right edge
+      log | DEBUG focus is on w30
+      log | DEBUG w30 has the keyboard
+      log | DEBUG focus is on w29
+      log | DEBUG w29 has the keyboard
+      log | DEBUG the button went down at 210,55, the pointer is at 210,55: it is on w29
+      log | DEBUG w29 is being dragged
+      log | DEBUG drag of w29: on float, left to macOS’s tiling
+      log | INFO  dropped w29 on float, display 07230EFA-7A8D-4E37-845C-19CC8737EEF5, left to macOS’s tiling
+      log | DEBUG no stage: Reduce motion is on
+      log | DEBUG w29 is out of its slot and took its own size, 480×360
+
+▸ a test window, docked, is let go at 512,420 with cmd held
+> float-all
+> float-all
+arborctl: nothing is docked
+> dock 29 left
+docked w29 at the left edge
+> dock 30 right
+docked w30 at the right edge
+it is managed docked at 12 43 325 650
+it is managed docked at 687 43 325 650
+  ✔ its title bar can be grabbed
+> drag 210 55 512 420 --hold 0.8 --mods cmd
+a test window at 420 with cmd: own 480 360; it is at 237 392 480 360
+  ✔ a test window at 420 with cmd: it has its own size, 480 360
+
+▸ Both are docked, the first is thrown into the menu bar, and Arbor quits
+> float-all
+> float-all
+arborctl: nothing is docked
+> dock 29 left
+docked w29 at the left edge
+> dock 30 right
+docked w30 at the right edge
+it is managed docked at 12 43 325 650
+it is managed docked at 687 43 325 650
+  ✔ its title bar can be grabbed
+> drag 210 55 512 220 --no-release
+> release 512 8
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+after Quit: 277 31 480 360 (own 480 360, slot 325 650); 220 180 480 348 (own 480 348)
+  ✔ after Quit the other has its own size
+  ✔ after Quit the thrown one is not as large as its slot
+session 1: Arbor pid 9301, test windows 29 30 (pid 3525)
+running: 1 display, 1 docked and 1 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+
+== TextEdit and Safari
+> open -g -b com.apple.TextEdit /tmp/arbor-apps.0VDOqZ/scratch/oak.txt
+pid 11453 lists (id role subrole x y w h flags):
+  60 AXWindow AXStandardWindow 79 56 673 439 main
+> open -g -b com.apple.Safari /tmp/arbor-apps.0VDOqZ/scratch/page.html
+pid 11559 lists (id role subrole x y w h flags):
+  63 AXWindow AXStandardWindow 0 31 1024 677 main,toolbar
+  ✔ TextEdit and Safari each have a window
+session 2: Arbor pid 11682, ARBOR_ONLY_PIDS=11453,11559: running: 1 display, 0 docked and 2 floating, 0 out of view
+Arbor dev
+> trace on check-left-alone-apps
+> float-all
+arborctl: nothing is docked
+== TextEdit: w60, its own size 673 439
+
+▸ TextEdit, docked, is thrown into the menu bar and let go at once
+> float-all
+arborctl: nothing is docked
+> dock 60 left
+docked w60 at the left edge
+> dock 63 right
+docked w63 at the right edge
+it is managed docked at 12 43 322 653
+it is managed docked at 438 43 574 653
+  ✔ docked, it is as large as its slot (322 653), which is not its own size
+  ✔ its title bar can be grabbed
+> drag 180 55 512 220 --no-release
+> release 512 8
+  ✔ TextEdit thrown: it is out of the arrangement
+  ✔ TextEdit thrown: it is not as large as its slot (322 653): 35 31 673 439
+TextEdit thrown: macOS LEFT IT ALONE, and Arbor sized it; it is at 35 31 673 439
+  ✔ TextEdit thrown: left alone, it has its own size, 673 439
+  ✔ TextEdit thrown: left alone, at least half of it is in view
+> float-all
+floated 1 window
+  ✔ TextEdit thrown: Float All leaves it that size: 673 439
+
+▸ TextEdit, docked, is carried out and let go with ⌥ and nothing else held
+> float-all
+arborctl: nothing is docked
+> dock 60 left
+docked w60 at the left edge
+> dock 63 right
+docked w63 at the right edge
+it is managed docked at 12 43 322 653
+it is managed docked at 438 43 574 653
+  ✔ its title bar can be grabbed
+> drag 180 55 512 200 --hold 0.8 --mods opt
+  ✔ TextEdit with ⌥: it is out of the arrangement
+  ✔ TextEdit with ⌥: it is not as large as its slot (322 653): 351 188 673 439
+TextEdit with ⌥: macOS LEFT IT ALONE, and Arbor sized it; it is at 351 188 673 439
+  ✔ TextEdit with ⌥: left alone, it has its own size, 673 439
+  ✔ TextEdit with ⌥: left alone, at least half of it is in view
+> float-all
+floated 1 window
+  ✔ TextEdit with ⌥: Float All leaves it that size: 673 439
+
+▸ TextEdit, docked, rests in the menu bar for a second and is let go
+> float-all
+arborctl: nothing is docked
+> dock 60 left
+docked w60 at the left edge
+> dock 63 right
+docked w63 at the right edge
+it is managed docked at 12 43 494 653
+
+  ✔ its title bar can be grabbed
+> drag 264 55 512 4 --hold 1.2
+  ✔ TextEdit rested: it is out of the arrangement
+  ✔ TextEdit rested: it is not as large as its slot (494 653): 0 31 1024 677
+TextEdit rested: macOS TOOK IT; it is at 0 31 1024 677
+  ✔ TextEdit rested: taken, it stays as macOS made it
+> float-all
+floated 1 window
+  ✔ TextEdit rested: Float All leaves it that size: 1024 677
+1024 is not about 673
+
+▸ TextEdit rested: it is dragged off macOS's tile and let go over the middle of the screen
+  ✔ its title bar can be grabbed
+> drag 518 43 500 320 --hold 0.5
+  ✘ off its tile it has its own size, 673 439, not the slot's, 494 653: 159 292 673 470 — 470 is not about 439
+      picture: mac-shell/fail-check-left-alone-2.png
+      | display 0 0 1024 768, visible 0 31 1024 677, camera n0, back no
+      |   Desktop          12 43 1000 653
+      |   w60 159 292 673 470      floating focused
+      |   w63 0 31 1024 676        floating hidden
+      log | DEBUG the button went down at 518,43, the pointer is at 518,43: it is on w60
+      log | DEBUG w60 is being dragged
+      log | DEBUG drag of w60: on float
+      log | DEBUG w60 is out of its slot and took its own size, 673×470
+      log | INFO  dropped w60 on float, display 07230EFA-7A8D-4E37-845C-19CC8737EEF5
+
+▸ TextEdit, docked, is let go at 512,150 with opt held
+> float-all
+arborctl: nothing is docked
+> float-all
+arborctl: nothing is docked
+> dock 60 left
+docked w60 at the left edge
+> dock 63 right
+docked w63 at the right edge
+it is managed docked at 12 43 494 653
+
+  ✔ its title bar can be grabbed
+> drag 264 55 512 150 --hold 0.8 --mods opt
+TextEdit at 150 with opt: own 673 470; it is at 169 138 673 470
+  ✔ TextEdit at 150 with opt: it has its own size, 673 470
+
+▸ TextEdit, docked, is let go at 512,150 with cmd held
+> float-all
+> float-all
+arborctl: nothing is docked
+> dock 60 left
+docked w60 at the left edge
+> dock 63 right
+docked w63 at the right edge
+it is managed docked at 12 43 494 653
+
+  ✔ its title bar can be grabbed
+> drag 264 55 512 150 --hold 0.8 --mods cmd
+TextEdit at 150 with cmd: own 673 470; it is at 169 90 673 470
+  ✔ TextEdit at 150 with cmd: it has its own size, 673 470
+
+▸ TextEdit, docked, is let go at 512,300 with opt held
+> float-all
+> float-all
+arborctl: nothing is docked
+> dock 60 left
+docked w60 at the left edge
+> dock 63 right
+docked w63 at the right edge
+it is managed docked at 12 43 494 653
+
+  ✔ its title bar can be grabbed
+> drag 264 55 512 300 --hold 0.8 --mods opt
+TextEdit at 300 with opt: own 673 470; it is at 169 272 673 480
+  ✘ TextEdit at 300 with opt: it has its own size, 673 470 — 480 is not about 470
+      picture: mac-shell/fail-check-left-alone-3.png
+      | display 0 0 1024 768, visible 0 31 1024 677, camera n2, back no
+      |   Desktop          12 43 1000 653
+      |   w60 169 272 673 480      floating focused
+      |   w63 0 31 1024 676        docked hidden
+      log | INFO  float-all: floated 1 window
+      log | DEBUG float-all failed: nothing is docked
+      log | DEBUG no stage: Reduce motion is on
+      log | INFO  dock 60 left: docked w60 at the left edge
+      log | INFO  dock 63 right: docked w63 at the right edge
+      log | DEBUG the button went down at 264,55, the pointer is at 264,55: it is on w60
+      log | DEBUG w60 is being dragged
+      log | DEBUG drag of w60: on float, left to macOS’s tiling
+      log | INFO  dropped w60 on float, display 07230EFA-7A8D-4E37-845C-19CC8737EEF5, left to macOS’s tiling
+      log | DEBUG w60 is out of its slot and took its own size, 673×480
+
+▸ TextEdit, docked, is let go at 512,300 with cmd held
+> float-all
+> float-all
+arborctl: nothing is docked
+> dock 60 left
+docked w60 at the left edge
+> dock 63 right
+docked w63 at the right edge
+it is managed docked at 12 43 494 653
+
+  ✔ its title bar can be grabbed
+> drag 264 55 512 300 --hold 0.8 --mods cmd
+TextEdit at 300 with cmd: own 673 480; it is at 61 240 673 480
+  ✔ TextEdit at 300 with cmd: it has its own size, 673 480
+
+▸ TextEdit, docked, is let go at 512,320 with opt held
+> float-all
+> float-all
+arborctl: nothing is docked
+> dock 60 left
+docked w60 at the left edge
+> dock 63 right
+docked w63 at the right edge
+it is managed docked at 12 43 494 653
+
+  ✔ its title bar can be grabbed
+> drag 264 55 512 320 --hold 0.8 --mods opt
+TextEdit at 320 with opt: own 673 480; it is at 169 292 673 480
+  ✔ TextEdit at 320 with opt: it has its own size, 673 480
+
+▸ TextEdit, docked, is let go at 512,320 with cmd held
+> float-all
+> float-all
+arborctl: nothing is docked
+> dock 60 left
+docked w60 at the left edge
+> dock 63 right
+docked w63 at the right edge
+it is managed docked at 12 43 494 653
+
+  ✔ its title bar can be grabbed
+> drag 264 55 512 320 --hold 0.8 --mods cmd
+TextEdit at 320 with cmd: own 673 480; it is at 75 260 673 480
+  ✔ TextEdit at 320 with cmd: it has its own size, 673 480
+
+▸ TextEdit, docked, is let go at 512,420 with opt held
+> float-all
+> float-all
+arborctl: nothing is docked
+> dock 60 left
+docked w60 at the left edge
+> dock 63 right
+docked w63 at the right edge
+it is managed docked at 12 43 494 653
+
+  ✔ its title bar can be grabbed
+> drag 264 55 512 420 --hold 0.8 --mods opt
+TextEdit at 420 with opt: own 673 480; it is at 169 392 673 480
+  ✔ TextEdit at 420 with opt: it has its own size, 673 480
+
+▸ TextEdit, docked, is let go at 512,420 with cmd held
+> float-all
+> float-all
+arborctl: nothing is docked
+> dock 60 left
+docked w60 at the left edge
+> dock 63 right
+docked w63 at the right edge
+it is managed docked at 12 43 494 653
+
+  ✔ its title bar can be grabbed
+> drag 264 55 512 420 --hold 0.8 --mods cmd
+TextEdit at 420 with cmd: own 673 480; it is at 152 392 673 480
+  ✔ TextEdit at 420 with cmd: it has its own size, 673 480
+> float-all
+== Safari: w63, its own size 1024 676
+
+▸ Safari, docked, is thrown into the menu bar and let go at once
+> float-all
+arborctl: nothing is docked
+> dock 60 left
+docked w60 at the left edge
+> dock 63 right
+docked w63 at the right edge
+it is managed docked at 12 43 494 653
+
+  ✘ docked, it is as large as its slot (1024 676), which is not its own size
+      picture: mac-shell/fail-check-left-alone-4.png
+      | display 0 0 1024 768, visible 0 31 1024 677, camera n2, back no
+      |   Desktop          518 43 494 653
+      |   w60 12 43 494 653        docked focused
+      |   w63 0 31 1024 676        docked hidden
+      log | DEBUG float-all failed: nothing is docked
+      log | DEBUG no stage: Reduce motion is on
+      log | INFO  dock 60 left: docked w60 at the left edge
+      log | INFO  dock 63 right: docked w63 at the right edge
+  ✔ its title bar can be grabbed
+> drag 942 55 512 220 --no-release
+> release 512 8
+  ✔ Safari thrown: it is out of the arrangement
+  ✘ Safari thrown: it is not as large as its slot (1024 676): 0 31 1024 676
+      picture: mac-shell/fail-check-left-alone-5.png
+Safari thrown: macOS LEFT IT ALONE, and Arbor sized it; it is at 0 31 1024 676
+  ✔ Safari thrown: left alone, it has its own size, 1024 676
+  ✔ Safari thrown: left alone, at least half of it is in view
+> float-all
+floated 1 window
+  ✔ Safari thrown: Float All leaves it that size: 1024 676
+
+▸ Safari, docked, is carried out and let go with ⌥ and nothing else held
+> float-all
+arborctl: nothing is docked
+> dock 60 left
+docked w60 at the left edge
+> dock 63 right
+docked w63 at the right edge
+it is managed docked at 12 43 322 653
+it is managed docked at 438 43 574 653
+  ✔ its title bar can be grabbed
+> drag 942 55 512 200 --hold 0.8 --mods opt
+  ✔ Safari with ⌥: it is out of the arrangement
+  ✔ Safari with ⌥: it is not as large as its slot (574 653): 0 172 1024 677
+Safari with ⌥: macOS LEFT IT ALONE, and Arbor sized it; it is at 0 172 1024 677
+  ✔ Safari with ⌥: left alone, it has its own size, 1024 676
+  ✔ Safari with ⌥: left alone, at least half of it is in view
+> float-all
+floated 1 window
+  ✔ Safari with ⌥: Float All leaves it that size: 1024 677
+
+▸ Safari, docked, rests in the menu bar for a second and is let go
+> float-all
+arborctl: nothing is docked
+> dock 60 left
+docked w60 at the left edge
+> dock 63 right
+docked w63 at the right edge
+it is managed docked at 12 43 322 653
+it is managed docked at 438 43 574 653
+  ✔ its title bar can be grabbed
+> drag 942 55 512 4 --hold 1.2
+  ✔ Safari rested: it is out of the arrangement
+  ✔ Safari rested: it is not as large as its slot (574 653): 0 31 1024 677
+Safari rested: macOS TOOK IT; it is at 0 31 1024 677
+  ✔ Safari rested: taken, it stays as macOS made it
+> float-all
+floated 1 window
+  ✔ Safari rested: Float All leaves it that size: 1024 677
+
+▸ Both are docked, TextEdit is thrown into the menu bar, and Arbor quits
+> float-all
+arborctl: nothing is docked
+> float-all
+arborctl: nothing is docked
+> dock 60 left
+docked w60 at the left edge
+> dock 63 right
+docked w63 at the right edge
+it is managed docked at 12 43 322 653
+it is managed docked at 438 43 574 653
+  ✔ its title bar can be grabbed
+> drag 180 55 512 220 --no-release
+> release 512 8
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+after Quit: 284 31 673 480 (own 673 480, slot 322 653); 0 31 1024 676 (own 1024 677)
+  ✔ after Quit the other has its own size
+  ✔ after Quit the thrown one is not as large as its slot
+
+97 passed, 5 failed
+still running when the script had ended, and stopped now:
+  11450 sleep
+exit code 1
