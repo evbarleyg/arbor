@@ -12,7 +12,8 @@
 // apps have windows on the screen, so what it writes on a person's Mac is that person's. lib-day.sh compiles and wraps it.
 //
 // The log has one line per change, `<milliseconds since 1970> <kind> …`, in global points, origin top-left, y down:
-//   W id pid layer x y w h owner   a window came on screen, or its frame changed (spaces in the owner's name are _)
+//   W id pid layer x y w h owner   a window came on screen, or its frame changed (spaces in the owner's name are _). One that is wholly
+//                                  transparent is not on the screen: nobody sees it
 //   G id                           it left the screen: closed, hidden, minimized, or on another Space
 //   Z id,id,…                      the order of the ordinary windows (layer 0) changed: from the frontmost to the one at the back
 //   A pid bundle-id                another app came to the front
@@ -127,7 +128,9 @@ final class Sampler {
     for case let info as NSDictionary in list {
       guard let id = (info[kCGWindowNumber] as? NSNumber)?.intValue,
         let bounds = info[kCGWindowBounds] as? NSDictionary,
-        let frame = CGRect(dictionaryRepresentation: bounds as CFDictionary)
+        let frame = CGRect(dictionaryRepresentation: bounds as CFDictionary),
+        // Arbor rehearses its stage after a start with a panel nobody can see, and apps keep such windows about.
+        ((info[kCGWindowAlpha] as? NSNumber)?.doubleValue ?? 1) > 0
       else { continue }
       let seen = Seen(
         pid: (info[kCGWindowOwnerPID] as? NSNumber)?.intValue ?? 0, layer: (info[kCGWindowLayer] as? NSNumber)?.intValue ?? 0,
