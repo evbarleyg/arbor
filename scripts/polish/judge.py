@@ -34,6 +34,7 @@ import io
 import json
 import multiprocessing
 import os
+import shutil
 import sys
 import tempfile
 import types
@@ -946,6 +947,18 @@ def judged(task):
     return {"film": types.SimpleNamespace(kind=m["film"].kind), "rests": rests_of(m)}, verdicts
 
 
+def first_lines(trusted, short, seen, total, which):
+    """What whoever reads one line of a score must know, before anything else: that the instruments failed; that it is not what ships; that under half was seen."""
+    lines = []
+    if not trusted:
+        lines.append("**THE INSTRUMENTS FAILED THEIR OWN TEST: the score below is not to be believed.**")
+    if short:
+        lines.append("**NOT YET WHAT SHIPS: " + ". And ".join(short) + ".**")
+    if 2 * seen < total:
+        lines.append(f"**SEEN: {100 * seen // total}% OF {'WHAT SHIPS' if which == 'ships' else 'THE OPTIONS'}, UNDER HALF. Whatever follows is about that part; the rest counts as missed.**")
+    return lines
+
+
 def score(folder, eyes_path=None, stills_path=None, out=sys.stdout, without=(), which="ships"):
     scenes, panels = TABLES[which]
     films = os.path.join(folder, "films")
@@ -1124,13 +1137,8 @@ def score(folder, eyes_path=None, stills_path=None, out=sys.stdout, without=(), 
         print(f"The pictures at rest are of {pictures['commit']}: {pictures['from']}." + (f" Left out, because what draws them has changed since: {', '.join(without)}." if without else ""), file=out)
     print(f"The rubric {'PASSES' if not gate and number >= 90 else 'does not pass'}: {len(gate)} cells of severity 1 or 2 in what the gate asks for "
           "miss or are unseen.", file=out)
-    # What whoever reads one line must know comes first: that the instruments failed; that under half was seen; that it is not what ships.
-    if not trusted:
-        print("**THE INSTRUMENTS FAILED THEIR OWN TEST: the score below is not to be believed.**\n", file=first)
-    if short:
-        print("**NOT YET WHAT SHIPS: " + ". And ".join(short) + ".**\n", file=first)
-    if 2 * seen < total:
-        print(f"**SEEN: {100 * seen // total}% OF {'WHAT SHIPS' if which == 'ships' else 'THE OPTIONS'}, UNDER HALF. Whatever follows is about that part; the rest counts as missed.**\n", file=first)
+    for line in first_lines(trusted, short, seen, total, which):
+        print(line + "\n", file=first)
     first.write(out.getvalue())
     return {
         "score": round(number, 1), "everything_on": round(lab_number, 1), "earned": earned, "total": total, "seen": round(100 * seen / total, 1), "trusted": trusted,
@@ -1509,6 +1517,54 @@ def self_test():
             earned = [identifier for identifier, verdict in verdicts.items() if verdict.status == PASS]
             failures += bool(earned)
             print(f"{'✘' if earned else '✔'} {name}: earns {', '.join(earned) or 'nothing'}")
+        # The score itself, through the command: the table of what ships, its new rows, and the first lines.
+        table = os.path.join(folder, "table")
+        for drawn, scenes in (("at-once", ["fill"]), ("told", ["eight-arrange-told", "crowd-arrange-told-again", "quit"]), ("ground", ["ground"])):
+            for scene in scenes:
+                shutil.copytree(os.path.join(folder, drawn), os.path.join(table, "films", scene))
+        wrong = []
+
+        def scored(ships):
+            path = os.path.join(table, "films", "ships.json")
+            if ships is None:
+                if os.path.exists(path):
+                    os.remove(path)
+            else:
+                with open(path, "w", encoding="utf-8") as file:
+                    json.dump(ships, file)
+            said = io.StringIO()
+            return score(table, out=said), [line for line in said.getvalue().splitlines() if line]
+        summary, lines = scored(None)
+        cells = {(cell["where"], cell["check"]): cell for cell in summary["cells"]}
+        wrong += [] if lines[0].startswith("**THE INSTRUMENTS FAILED") else ["no metronome was filmed, and the first line does not say that the instruments failed"]
+        wrong += [] if lines[1].startswith("**SEEN: ") and "UNDER HALF" in lines[1] else ["four films of some seventy, and the second line does not say that under half was seen"]
+        wrong += [] if any("they say nothing of what was switched" in line for line in lines) else ["films that say nothing of their switches are taken at their word"]
+        for name, kind, gate in SHIPS:
+            found = {check for where, check in cells if where == name}
+            wrong += [] if "R5" in found or kind not in AT_ONCE else [f"{name} has no cell for R5"]
+            wrong += [] if ("M1" in found) == (kind in ("instant", "drop", "out")) or kind not in AT_ONCE else [f"{name}, {kind}: M1 is {'asked' if 'M1' in found else 'not asked'}"]
+            # (A panel of the same name has cells of its own under it: the menu.)
+            wrong += [] if name in SHIPPED or all(bool(cells[name, check]["move"]) == bool(gate) for check in found) else [f"{name}: the gate {'does not ask' if gate else 'asks'} for it"]
+        for name in ("eight-arrange", "eight-arrange-again", "crowd-arrange", "crowd-arrange-again", "eight-arrange-told", "eight-arrange-told-again", "crowd-arrange-told", "crowd-arrange-told-again"):
+            wrong += [] if (name, "R1") in cells and not cells[name, "R1"]["move"] else [f"{name} is no row of what ships, or the gate asks for it"]
+        for name in ("fill", "eight-arrange-told", "crowd-arrange-told-again"):
+            wrong += [] if all(cells[name, check]["status"] == PASS for check in ("R1", "R4", "R5")) else [f"{name}, drawn clean, does not pass R1, R4 and R5"]
+        wrong += [] if cells["crowd-arrange-told", "R5"]["status"] == UNSEEN else ["a scene that was not filmed is not unseen"]
+        wrong += [] if summary["total"] == sum(WEIGHT[cell["severity"]] for cell in summary["cells"]) and summary["earned"] == sum(WEIGHT[cell["severity"]] for cell in summary["cells"] if cell["status"] == PASS) \
+            else ["the sum is not the sum of its cells"]
+        summary, lines = scored({"written": {"focusRing": False}, "still": ["a plain drag docks"]})
+        wrong += [] if lines[1].startswith("**NOT YET WHAT SHIPS") and "focusRing false" in lines[1] and "a plain drag docks" in lines[1] else ["films of switches: the second line does not say so"]
+        wrong += [] if not any("That is Arbor as it ships" in line for line in lines) else ["films of switches are called Arbor as it ships"]
+        summary, lines = scored({"written": {}, "still": ["a plain drag docks"]})
+        wrong += [] if lines[1].startswith("**NOT YET WHAT SHIPS") and "written out" not in lines[1] else ["what no switch can give: the second line does not say so, or speaks of switches"]
+        summary, lines = scored({"written": {}, "still": []})
+        wrong += [] if not any("NOT YET" in line for line in lines) and any(line.startswith("That is Arbor as it ships, on a Mac as it comes.") and "nothing of what" not in line for line in lines) \
+            else ["films of what ships are not called so"]
+        wrong += [] if first_lines(True, [], 500, 1000, "ships") == [] else ["exactly half is called under half"]
+        wrong += [] if first_lines(True, [], 4999, 10000, "ships")[0].startswith("**SEEN: 49% OF WHAT SHIPS") else ["a hair under half is rounded up to half"]
+        wrong += [] if first_lines(True, [], 0, 1000, "options")[0].startswith("**SEEN: 0% OF THE OPTIONS") else ["nothing seen of the options"]
+        failures += bool(wrong)
+        print(f"{'✘' if wrong else '✔'} the score, through the command: " + ("; ".join(wrong) if wrong else "its rows, its sums and its first lines"))
         # The window server's account beside a drawn film, through the command itself.
         run = os.path.join(folder, "run")
         studio.shoot(os.path.join(run, "films", "late"), cards=True)
@@ -1522,7 +1578,7 @@ def self_test():
         right = (not film.after or "AFTER THE STAGE WENT" in told.getvalue()) and "stage +15 to +600" in told.getvalue()
         failures += not right
         print(f"{'✔' if right else '✘'} home: {told.getvalue().splitlines()[0]}")
-    print(f"{len(cases) + len(barren) + len(blind) + 3 - failures} of {len(cases) + len(barren) + len(blind) + 3} drawn films judged as they should be")
+    print(f"{len(cases) + len(barren) + len(blind) + 4 - failures} of {len(cases) + len(barren) + len(blind) + 4} drawn films judged as they should be")
     account = [line.split() for line in ("90 W 7 1 0 0 0 9 9 Oak", "110 W 50 2 4 0 0 100 100 Arbor", "120 W 7 1 0 5 5 9 9 Oak", "130 W 8 1 0 5 5 9 9 Elm",
                                          "140 W 51 2 3 0 0 9 9 Arbor", "300 L 45", "600 G 50", "640 W 8 1 0 6 6 9 9 Elm", "5000 W 7 1 0 1 1 9 9 Oak")]
     said = home_of(account, 100, 4000, {7, 8})
