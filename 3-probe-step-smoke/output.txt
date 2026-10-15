@@ -1,0 +1,41 @@
+# mac-shell: scripts/mac-shell/probe-step-smoke.sh at 6e3287b, macOS 26.6.2, 2026-10-15T01:17Z
+sim-smoke.sh: exit 0, 11 s
+scenarios.sh: exit 0, 14 s
+release-tools-test.sh: exit 0, 37 s
+
+== what this step leaves behind (up 14 mins, 1 user, load averages: 2.63 16.08 17.47)
+-- processes of Arbor's:
+-- in front: pointer: no app has the keyboard
+-- the pointer: 10 10 up, the button: pointer: expected a process id, x, y and close, minimize or zoom
+-- Accessibility for this process: true
+-- Spaces:
+07230EFA-7A8D-4E37-845C-19CC8737EEF5 1 1
+-- windows on screen:
+30 2325 0 0 0 0 0 off nsattributedstringagent
+29 450 2147483628 388 318 247 100 off TextInputSwitcher
+26 340 25 799 0 31 30 on Control Center
+25 404 3 0 255 0 0 off Accessibility
+24 446 0 0 268 64 64 off CursorUIViewService
+23 444 0 0 268 64 64 off Spotlight
+22 340 25 830 0 42 30 on Control Center
+21 340 25 872 0 152 30 on Control Center
+20 444 23 146 346 640 56 off Spotlight
+18 444 23 90 96 844 577 off Spotlight
+17 342 0 0 268 64 64 off Finder
+63 26066 8 382 118 260 250 on UserNotificationCenter
+16 161 -2147483602 0 0 1024 65 off Window Server
+62 446 0 0 268 64 64 off CursorUIViewService
+15 161 24 0 0 1024 30 on Window Server
+14 342 0 0 0 1024 30 off Finder
+13 342 0 0 0 1024 30 off Finder
+12 342 0 0 0 1024 30 off Finder
+10 342 0 0 0 1024 30 off Finder
+9 342 -2147483603 0 0 1024 768 on Finder
+7 339 -2147483624 0 0 1024 768 on Dock
+6 339 20 0 0 1024 768 on Dock
+3 161 2147483630 579 348 28 40 off Window Server
+2 161 -2147483626 0 0 1024 768 on Window Server
+-- macOS's own tiling and the wallpaper click:
+    EnableTilingByEdgeDrag = 1;
+-- secure input: 0
+exit code 0

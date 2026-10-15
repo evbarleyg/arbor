@@ -1,0 +1,145 @@
+sim smoke test passed
+watch, from hello to quitting
+  ✔ hello arrives at once, in a file
+  ✔ a move of the view arrives while arborctl is still running
+  ✔ and through a pipe
+  ✔ arborctl is still watching
+  ✔ no titles unless asked for
+  ✔ a pause is reported
+  ✔ and ends no watch
+  ✔ nor does resuming
+  ✔ and the events go on
+  ✔ quit succeeds
+  ✔ watch exits with 0 when Arbor quits
+  ✔ the last line is quitting
+  ✔ nothing was complained about
+  ✔ the filtered watcher saw view events only
+exit codes
+  ✔ 2 when Arbor is not running
+  ✔ and it says so
+  ✔ 2 for any other command too
+  ✔ but help needs no Arbor
+  ✔ 1 when Arbor says no
+  ✔ with nothing on standard output
+  ✔ and the reason on standard error
+  ✔ --json keeps the exit code
+  ✔ and puts the whole reply on standard output
+  ✔ 0 when it says yes, with the answer on standard output
+  ✔ 1 for an event that does not exist
+  ✔ and it lists the ones that do
+  ✔ 1 when Arbor says no and nobody reads standard error, not a crash
+  ✔ titles when asked for
+clients that misbehave
+  ✔ a watcher whose reader leaves does too, with 0
+  ✔ and the reader got its line
+  ✔ the server outlives clients that leave without reading or never speak
+    the stuck watcher was hung up on 8131 bytes in; the slowest command took 10 ms
+  ✔ the server outlives a watcher that stops reading
+  ✔ the well-behaved watcher is still served
+Arbor goes away without a word
+  ✔ watch exits with 3
+  ✔ and it says so
+watch smoke test passed
+without Arbor
+  ✔ arborctl : the help, exit code 0
+  ✔   with arborctl's own options
+  ✔   and Arbor's commands
+  ✔ arborctl --help: the help, exit code 0
+  ✔   with arborctl's own options
+  ✔   and Arbor's commands
+  ✔ arborctl -h: the help, exit code 0
+  ✔   with arborctl's own options
+  ✔   and Arbor's commands
+  ✔ arborctl help: the help, exit code 0
+  ✔   with arborctl's own options
+  ✔   and Arbor's commands
+  ✔ arborctl --json --help: the help, exit code 0
+  ✔   with arborctl's own options
+  ✔   and Arbor's commands
+  ✔ --version answers
+  ✔ a command: exit code 2
+  ✔   nothing on standard output
+  ✔   the reason on standard error
+  ✔ a batch stops at once when nobody is there, even with --keep-going
+arguments arborctl does not understand: exit code 64, nothing sent
+  ✔ arborctl --bogus status
+  ✔   says why on standard error only
+  ✔ arborctl --timeout
+  ✔   says why on standard error only
+  ✔ arborctl --timeout soon status
+  ✔   says why on standard error only
+  ✔ arborctl --timeout 0 status
+  ✔   says why on standard error only
+  ✔ arborctl status --timeout
+  ✔   says why on standard error only
+  ✔ arborctl - status
+  ✔   says why on standard error only
+  ✔ arborctl completions
+  ✔   says why on standard error only
+  ✔ arborctl completions powershell
+  ✔   says why on standard error only
+  ✔ arborctl --titles watch
+  ✔   says why on standard error only
+  ✔ arborctl , status
+  ✔   says why on standard error only
+  ✔ arborctl status ,
+  ✔   says why on standard error only
+  ✔ arborctl status , watch
+  ✔   says why on standard error only
+  ✔ a line break inside an argument
+completions
+  ✔ zsh: a script that offers the commands
+  ✔ bash: a script that offers the commands
+  ✔ fish: a script that offers the commands
+  ✔ bash completes toggle- to the commands that start so
+  ✔ and an edge after dock
+with Arbor
+  ✔ yes: exit code 0, the answer on standard output, no complaint
+  ✔ no: exit code 1
+  ✔   nothing on standard output
+  ✔   the reason on standard error
+  ✔ --json: the exit code stays, the whole reply goes to standard output
+  ✔ options combine
+  ✔ options count after the command too
+  ✔   several of them
+  ✔ -- ends the options
+  ✔   so what follows it is sent, and Arbor refuses it
+  ✔ -q: exit code 0
+  ✔   and nothing printed
+  ✔ -q: a refusal is exit code 1
+  ✔   and nothing printed
+  ✔ watch is watch also when the shell hands it over as one word with its arguments
+  ✔ a request that is too long is refused by Arbor: exit code 1, not 2
+  ✔   with the reason
+several commands on one line
+  ✔ a , b , c: exit code 0
+  ✔   one answer per command
+  ✔ they stop at the first refusal: exit code 1
+  ✔   and what follows is not run
+  ✔ --keep-going: still exit code 1
+  ✔   and the rest is run
+batches
+  ✔ comments, blank lines and odd spacing: exit code 0
+  ✔   one answer per command
+  ✔   and both are docked
+  ✔ a batch stops at the first refusal: exit code 1
+  ✔   which names its line
+  ✔   and what follows is not run
+  ✔ --keep-going: still exit code 1
+  ✔   every refusal with its line
+  ✔   and the rest is run, the last line without a line break too
+  ✔ lines that end in a carriage return alone are all run
+  ✔ watch in a batch is refused: exit code 64
+  ✔   with its line
+  ✔   and what follows is not run
+  ✔ an empty batch is done: exit code 0
+  ✔ each answer comes before the next command is sent
+a server that never answers
+  ✔ exit code 4, not 2: Arbor is there
+  ✔   after the time given
+  ✔   and it says how long it waited
+  ✔ watch waits no longer for its first line: exit code 4
+  ✔   nor into a pipe
+  ✔ in a batch with --keep-going each line gets its time
+  ✔ quit
+cli smoke test passed

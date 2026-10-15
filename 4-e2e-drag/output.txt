@@ -1,0 +1,130 @@
+# mac-shell: scripts/mac-shell/e2e-drag.sh at 6e3287b, macOS 26.6.2, 2026-10-15T01:18Z
+This takes over the real pointer for about half a minute. Hands off the mouse until it says it is done.
+built Arbor and the pointer tool in 2s
+session 1: Arbor pid 27689, test windows 64 65 66 (pid 27674)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+display 0 0 1024 768, visible 0 31 1024 674, camera n0, back no
+  Desktop          12 43 1000 650
+  w64 170 220 480 348      floating
+  w65 220 180 480 348      floating
+  w66 270 140 480 348      floating
+
+== drag a window by its title bar to the left screen edge
+> drag 510 152 3 368 --no-release
+  ✘ a drop preview shows while the button is held
+> release
+  ✘ the window docks on release
+  ✔ no preview is left behind
+state.py: window 66 has no slot in view
+  ✘ it sits at the left edge
+display 0 0 1024 768, visible 0 31 1024 674, camera n0, back no
+  Desktop          12 43 1000 650
+  w64 170 220 480 348      floating
+  w65 220 180 480 348      floating
+  w66 270 140 480 348      floating
+
+== drag the right edge of the docked window 60 points to the right
+> drag -1 0 59 0
+  ✘ the window is 60 points wider
+  ✘ the Desktop gave up the space
+state.py: window 66 has no slot in view
+display 0 0 1024 768, visible 0 31 1024 674, camera n0, back no
+  Desktop          12 43 1000 650
+  w64 170 220 480 348      floating
+  w65 220 180 480 348      floating
+  w66 270 140 480 348      floating
+
+== drag another window onto the right part of the docked one
+> drag 460 192 0 0
+  ✘ it docks
+state.py: window 66 has no slot in view
+state.py: window 65 has no slot in view
+  ✘ to the right of the first
+display 0 0 1024 768, visible 0 31 1024 674, camera n0, back no
+  Desktop          12 43 1000 650
+  w64 170 220 480 348      floating
+  w65 220 180 480 348      floating
+  w66 270 140 480 348      floating focused
+
+== double-click the title bar of a docked window (H5)
+> click 510 152 2
+  ✘ the window is in its slot
+  ✘ no seam moved
+
+== press inside a docked window and move the pointer
+> drag 0 0 90 60 --no-release
+  ✔ that is not a drag: no preview
+> release
+  ✘ the window is in its slot
+
+== drag a docked window out onto the Desktop
+> drag 460 192 512 103
+  ✔ it floats
+  ✘ the first window is still docked
+display 0 0 1024 768, visible 0 31 1024 674, camera n0, back no
+  Desktop          12 43 1000 650
+  w64 170 220 480 348      floating
+  w65 220 180 480 348      floating
+  w66 0 31 1024 674        floating focused
+
+== let go of a docked window at the very edge of the screen, where macOS tiles
+> drag 512 43 0 368 --hold 1 --no-release
+  ✔ Arbor shows no preview beside macOS's
+> release
+  ✔ macOS gives it its tile
+  ✔ where it stays
+  ✔ it floats
+  ✔ and Arbor knows where it is
+display 0 0 1024 768, visible 0 31 1024 674, camera n0, back no
+  Desktop          12 43 1000 650
+  w64 170 220 480 348      floating
+  w65 220 180 480 348      floating
+  w66 -1 32 513 674        floating focused
+
+== let go of a floating window in the menu bar, where macOS fills the screen
+> drag 460 192 512 15 --hold 1 --no-release
+  ✔ Arbor shows no preview beside macOS's
+> release
+  ✘ macOS gives it its tile
+  ✘ where it stays
+  ✔ it floats
+  ✔ and Arbor knows where it is
+display 0 0 1024 768, visible 0 31 1024 674, camera n0, back no
+  Desktop          12 43 1000 650
+  w64 170 220 480 348      floating
+  w65 220 180 480 348      floating
+  w66 -1 32 513 674        floating focused
+
+== with macOS's tiling switched off meanwhile, the menu bar and the last point of the edge are Arbor's
+com.apple.WindowManager EnableTilingByEdgeDrag: 0
+com.apple.WindowManager EnableTopTilingByEdgeDrag: 0
+com.apple.WindowManager EnableTilingOptionAccelerator: not set
+com.apple.WindowManager EnableTiledWindowMargins: not set
+> drag 460 192 512 231
+> drag 460 192 512 15 --hold 1 --no-release
+  ✘ a drop preview shows
+> release
+  ✘ the window docks
+  ✘ in its slot
+> drag 256 43 0 536 --hold 1 --no-release
+  ✔ a drop preview shows
+> release
+  ✔ the window docks
+  ✔ in its slot
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          518 43 494 650
+  w64 518 220 480 348      floating
+  w65 518 180 480 348      floating
+  w66 12 43 494 650        docked focused
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 64 is back on screen after quitting
+  ✔ window 65 is back on screen after quitting
+  ✔ window 66 is back on screen after quitting
+Done: the pointer is yours again.
+
+18 passed, 16 failed
+exit code 1
