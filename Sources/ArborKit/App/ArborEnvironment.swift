@@ -22,6 +22,7 @@ import Foundation
 /// - `ARBOR_RELEASES_URL=http://127.0.0.1:8000/latest.json`: ask there instead of GitHub's releases API.
 /// - `ARBOR_NO_OPENING=1`: open no app (`summon` with no window to bring). An Arbor under test on somebody's Mac knows only
 ///   its test windows, so to it every app of theirs is one that has to be opened.
+/// - `ARBOR_NO_REHEARSAL=1`: get nothing ready for the first motion ahead of time, to measure what that saves.
 public struct ArborEnvironment: Sendable {
   public var onlyPIDs: Set<Int32>?
   public var noHotkeys: Bool
@@ -35,6 +36,7 @@ public struct ArborEnvironment: Sendable {
   public var releasesURL: String?
   public var restarted: Bool
   public var noOpening: Bool
+  public var noRehearsal: Bool
 
   public static var current: ArborEnvironment {
     let env = ProcessInfo.processInfo.environment
@@ -51,6 +53,7 @@ public struct ArborEnvironment: Sendable {
       darkAppearance: ["dark": true, "light": false][env["ARBOR_APPEARANCE"]?.lowercased() ?? ""],
       noPictures: flag("ARBOR_NO_PICTURES"),
       releasesURL: env["ARBOR_RELEASES_URL"].flatMap { $0.isEmpty ? nil : $0 },
-      restarted: !(env["ARBOR_RESTARTS"] ?? "").isEmpty, noOpening: flag("ARBOR_NO_OPENING"))
+      restarted: !(env["ARBOR_RESTARTS"] ?? "").isEmpty, noOpening: flag("ARBOR_NO_OPENING"),
+      noRehearsal: flag("ARBOR_NO_REHEARSAL"))
   }
 }

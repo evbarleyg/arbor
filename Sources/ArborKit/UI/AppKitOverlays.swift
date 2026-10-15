@@ -457,22 +457,31 @@ enum AppAppearance {
 
   /// The colour of the app's icon as a plain fill, darkened a little so white captions stay readable.
   static func colour(pid: Int32, bundleID: String?) -> NSColor {
-    rgba(pid: pid, bundleID: bundleID)?.mixed(with: .black, amount: 0.25).nsColor ?? .systemGray
+    rgba(pid: pid, bundleID: bundleID).map(fill) ?? .systemGray
   }
+
+  static func fill(_ colour: RGBA) -> NSColor { colour.mixed(with: .black, amount: 0.25).nsColor }
+
+  /// A colour that was worked out elsewhere (`Wardrobe`), so that nobody here has to wait for the icon.
+  static func remember(_ colour: RGBA, pid: Int32, bundleID: String?) { colours[key(pid: pid, bundleID: bundleID)] = colour }
+
+  /// What an app's colour and cover are kept under.
+  static func key(pid: Int32, bundleID: String?) -> String { bundleID ?? "pid-\(pid)" }
 
   /// The colour the app's icon is recognised by (`IconColour`), which tints its tiles. Nil without an icon.
   static func rgba(pid: Int32, bundleID: String?) -> RGBA? {
-    let key = bundleID ?? "pid-\(pid)"
+    let key = key(pid: pid, bundleID: bundleID)
     if let cached = colours[key] { return cached }
     guard let icon = icon(pid: pid), let colour = colour(of: icon) else { return nil }
     colours[key] = colour
     return colour
   }
 
-  static func colour(of icon: NSImage) -> RGBA? { IconColour.dominant(of: samples(of: icon)) }
+  /// On any thread, like `samples`: they touch nothing but the icon and a bitmap of their own.
+  nonisolated static func colour(of icon: NSImage) -> RGBA? { IconColour.dominant(of: samples(of: icon)) }
 
   /// The icon's pixels at a size where its large shapes are left and its details are not, in sRGB like every `RGBA`.
-  private static func samples(of icon: NSImage) -> [RGBA] {
+  nonisolated private static func samples(of icon: NSImage) -> [RGBA] {
     let side = 24
     guard let space = CGColorSpace(name: CGColorSpace.sRGB),
       let bitmap = CGContext(

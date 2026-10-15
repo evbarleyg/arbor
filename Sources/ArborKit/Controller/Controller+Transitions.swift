@@ -64,6 +64,7 @@ extension Controller {
     }
     fit(&transition, to: stack)
     overlays.animate(transition)
+    rehearsalWaits(for: transition.duration)
     return StagedTransition(before: before, stack: stack, sent: transition)
   }
 
@@ -100,11 +101,14 @@ extension Controller {
     guard let workspace = workspaces[displayID] else { return }
     keyframes[displayID] = Keyframe(
       tree: workspace.tree, layout: layout, present: presentWindowIDs(), visible: [:])
+    rehearseNextMotion()
     guard let staged, let display = display(displayID),
       var actual = transition(on: display, from: staged.before, visible: framesInView(on: display), layout: layout)
     else { return }
     fit(&actual, to: staged.stack)
-    if !actual.endsLike(staged.sent) { overlays.animate(actual) }
+    guard !actual.endsLike(staged.sent) else { return }
+    overlays.animate(actual)
+    rehearsalWaits(for: actual.duration)
   }
 
   private func transition(

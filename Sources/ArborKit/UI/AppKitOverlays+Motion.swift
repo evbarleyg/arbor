@@ -8,6 +8,15 @@ extension AppKitOverlays {
 
   public func finishAnimations() { director.finish() }
 
+  public func rehearse(_ rehearsal: Rehearsal) { director.rehearse(rehearsal) }
+
+  /// Called when what was got ready, or was not, no longer fits: with Reduce Motion on there is no motion to get ready for,
+  /// and it has just been switched on or off.
+  public var onRehearsalOutdated: (() -> Void)? {
+    get { director.onDisplayOptionsChanged }
+    set { director.onDisplayOptionsChanged = newValue }
+  }
+
   /// The `windowPictures` setting: whether stand-ins may be pictures of their windows.
   public var takesPicturesOfWindows: Bool {
     get { director.pictures.isWanted }

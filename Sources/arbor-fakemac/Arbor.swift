@@ -232,6 +232,7 @@ final class WatchedOverlays: OverlayPresenter {
   /// Recorded and not shown: nothing in this world takes time, so the stage would be down again before anyone could look.
   func animate(_ transition: Transition) { fake.animate(transition) }
   func finishAnimations() { fake.finishAnimations() }
+  func rehearse(_ rehearsal: Rehearsal) { fake.rehearse(rehearsal) }
 
   /// Recorded and not listed among the windows yet: no script asks where the line or the panel of shortcuts is.
   func showHeadsUp(_ model: HeadsUpModel?, on display: DisplayID) { fake.showHeadsUp(model, on: display) }

@@ -117,7 +117,8 @@ import Testing
 
   @Test func outerEdgesArePutBack() {
     let (h, a, _, _) = columns()
-    h.scheduler.runPending()
+    // Longer than one round of what is pending: what is got ready after a start comes piece by piece.
+    h.scheduler.advance(by: 1)
     let slotA = h.frame(a)!
     let tree = h.workspace.tree
 
@@ -322,7 +323,7 @@ import Testing
 
   @Test func theNewSizesAreSaved() {
     let (h, a, _, _) = columns()
-    h.scheduler.runPending()
+    h.scheduler.advance(by: 1)
     h.system.userResize(a, to: dragging(h.frame(a)!, .right, by: 100))
     #expect(h.scheduler.pendingKeys == ["save"])
     h.scheduler.runPending()

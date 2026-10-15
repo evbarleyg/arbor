@@ -14,17 +14,30 @@ final class StageDirector {
   /// The windows each display's last transition left showing as themselves, largest first. Their
   /// pictures are taken again once things have settled.
   private var showing: [DisplayID: [WindowID]] = [:]
-  private var icons: [String: CGImage] = [:]
+  private let wardrobe = Wardrobe()
+  /// The stand-ins of each display's last motion that set off without their cover, by app.
+  private var undressed: [DisplayID: [Rehearsal.App: [WindowID]]] = [:]
   private var mouseMonitors: [Any] = []
   private var observers: [NSObjectProtocol] = []
   /// When the last transition began, in seconds since the Mac started, as events are stamped.
   private var lastBegan: TimeInterval = 0
   private var focused: WindowID?
+  /// Reduce Motion may have been switched on or off. While it is on nothing is got ready.
+  var onDisplayOptionsChanged: (() -> Void)?
+  /// `ARBOR_NO_REHEARSAL`, for measuring what a first motion costs that nothing was got ready for.
+  private static let rehearsalIsSwitchedOff = ArborEnvironment.current.noRehearsal
 
   init() {
     pictures.onPicture = { [weak self] window, picture in
       guard let self else { return }
       for stage in self.stages.values { stage.show(picture, of: window) }
+    }
+    wardrobe.onCover = { [weak self] app, cover in
+      guard let self else { return }
+      for (display, cast) in self.undressed {
+        for window in cast[app] ?? [] { self.stages[display]?.show(cover, of: window) }
+        self.undressed[display]?[app] = nil
+      }
     }
     let workspace = NSWorkspace.shared.notificationCenter
     for name in [
@@ -37,13 +50,20 @@ final class StageDirector {
         })
     }
     observers.append(
+      workspace.addObserver(forName: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil, queue: .main) {
+        [weak self] _ in
+        MainActor.assumeIsolated { self?.onDisplayOptionsChanged?() }
+      })
+    observers.append(
       NotificationCenter.default.addObserver(
         forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main
       ) { [weak self] _ in
         MainActor.assumeIsolated {
-          self?.finish()
-          // A display that went away takes its stage with it.
-          self?.stages.removeAll()
+          guard let self else { return }
+          self.finish()
+          // A display that went away takes its stage with it. The others keep theirs: macOS says this at every minimize, and
+          // the next motion would wait for a new panel each time. A stage takes its display's frame whenever it plays.
+          self.stages = self.stages.filter { ScreenGeometry.screen(for: $0.key) != nil }
         }
       })
   }
@@ -62,11 +82,30 @@ final class StageDirector {
       return
     }
     let display = transition.display
+    // The real windows wait until the stage is up, and whoever pressed the key waits with them. Where that time went
+    // is in the log, because no one can tell afterwards.
+    var marks = [uptime]
     let stage = stages[display] ?? makeStage(for: display)
+    let wasUp = stage.isUp
+    marks.append(uptime)
     var costumes: [WindowID: Costume] = [:]
-    for item in transition.items { costumes[item.window] = costume(for: item) }
+    undressed[display] = [:]
+    for item in transition.items { costumes[item.window] = costume(for: item, on: display) }
+    let plainCards = undressed[display]?.values.reduce(0) { $0 + $1.count } ?? 0
+    marks.append(uptime)
+    let desktop = pictures.desktop(of: display)
+    marks.append(uptime)
     lastBegan = ProcessInfo.processInfo.systemUptime
-    stage.play(transition, costumes: costumes, backdrop: pictures.desktop(of: display), surface: surface)
+    stage.play(transition, costumes: costumes, backdrop: desktop, surface: surface)
+    marks.append(uptime)
+    // Not for a correction: the windows have moved by then.
+    if !wasUp {
+      let took = zip(marks.dropFirst(), marks).map { ms($0 - $1) }
+      let story = "the stage kept the windows waiting \(ms(marks[4] - marks[0])) ms: its panel \(took[0]), "
+        + "\(costumes.count) costumes \(took[1]) (\(plainCards) not ready), the desktop \(took[2]), going up \(took[3])"
+      // A tenth of a second is felt. That is worth a line in anybody's log.
+      if marks[4] - marks[0] >= 0.1 { Log.info(story) } else { Log.debug(story) }
+    }
     watchTheMouse()
 
     let staying = transition.items.filter {
@@ -108,6 +147,34 @@ final class StageDirector {
     pictures.refresh(showing[display] ?? [], after: 0.3)
   }
 
+  // MARK: Getting ready
+
+  /// Makes now, when nobody waits, what the next motion would otherwise make while somebody does: a display's stage and
+  /// the picture behind it. An app's colour and icon are ordered (`Wardrobe`). All of it is kept, and what is there already is
+  /// skipped. The controller hands out one display or one app at a time (Controller+Rehearsal.swift).
+  func rehearse(_ rehearsal: Rehearsal) {
+    guard !Self.rehearsalIsSwitchedOff, !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion else { return }
+    for display in rehearsal.displays {
+      guard let screen = ScreenGeometry.screen(for: display) else { continue }
+      var marks = [uptime]
+      // Kept once read, and let go of when Arbor stops and when pictures are switched off. With pictures a sweep brings the
+      // desktop as it is, and the wallpaper's file would be read for nothing.
+      let desktop = pictures.areTaken ? nil : pictures.desktop(of: display)
+      marks.append(uptime)
+      if stages[display] == nil {
+        makeStage(for: display).rehearse(in: ScreenGeometry.global(fromAppKit: screen.frame), backdrop: desktop)
+      }
+      marks.append(uptime)
+      Log.debug("got ready the stage of \(display) in \(ms(marks[2] - marks[0])) ms, the desktop \(ms(marks[1] - marks[0])) of them")
+    }
+    // Also where stand-ins are pictures of their windows: a tile, a window back from the Dock and one that has only just opened are covers.
+    for app in rehearsal.apps { wardrobe.order(app, again: app.bundleID == nil) }
+  }
+
+  private func ms(_ seconds: TimeInterval) -> Int { Int((seconds * 1000).rounded()) }
+
+  private var uptime: TimeInterval { ProcessInfo.processInfo.systemUptime }
+
   // MARK: Keeping pictures fresh
 
   /// Windows may have appeared or changed size. The first time is at launch, which is what has
@@ -125,28 +192,16 @@ final class StageDirector {
 
   // MARK: Costumes
 
-  private func costume(for item: Transition.Item) -> Costume {
+  private func costume(for item: Transition.Item, on display: DisplayID) -> Costume {
     let picture = pictures.picture(of: item.window)
-    // Working out an app's colour and icon takes a few milliseconds the first time. A motion must not
-    // wait for a cover that stays hidden behind the picture.
+    // A cover that stays hidden behind the picture is not even looked for.
     guard picture == nil || item.fromLook == .cover || item.toLook == .cover else {
       return Costume(picture: picture)
     }
-    return Costume(
-      picture: picture,
-      // The colour is the icon's average, transparent margin included. A cover hides what is behind it.
-      colour: AppAppearance.colour(pid: item.pid, bundleID: item.bundleID).withAlphaComponent(1).cgColor,
-      icon: icon(for: item))
-  }
-
-  private func icon(for item: Transition.Item) -> CGImage? {
-    let key = item.bundleID ?? "pid-\(item.pid)"
-    if let cached = icons[key] { return cached }
-    var proposed = NSRect(x: 0, y: 0, width: 256, height: 256)
-    guard let image = AppAppearance.icon(pid: item.pid)?.cgImage(forProposedRect: &proposed, context: nil, hints: nil)
-    else { return nil }
-    icons[key] = image
-    return image
+    // Never waited for: see `Wardrobe`.
+    let cover = wardrobe.cover(of: item.app)
+    if cover == nil { undressed[display, default: [:]][item.app, default: []].append(item.window) }
+    return Costume(picture: picture, colour: (cover ?? Wardrobe.plain).colour, icon: cover?.icon)
   }
 
   // MARK: A click during an animation ends it

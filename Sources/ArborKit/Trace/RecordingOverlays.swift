@@ -36,6 +36,8 @@ public final class RecordingOverlays: OverlayPresenter {
   public func showHeadsUp(_ model: HeadsUpModel?, on display: DisplayID) { inner.showHeadsUp(model, on: display) }
   public func showCheatSheet(_ model: CheatSheetModel?, on display: DisplayID) { inner.showCheatSheet(model, on: display) }
   public func showMinimap(_ model: MinimapModel?, on display: DisplayID) { inner.showMinimap(model, on: display) }
+  /// Follows from the windows and displays, which are recorded.
+  public func rehearse(_ rehearsal: Rehearsal) { inner.rehearse(rehearsal) }
 }
 
 extension RecordingOverlays: OverlayActions {

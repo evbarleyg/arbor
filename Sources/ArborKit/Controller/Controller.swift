@@ -406,6 +406,9 @@ public final class Controller {
   /// Windows parked smaller than they are in view (Controller+Switches.swift).
   var shrunk: [WindowID: ShrunkWindow] = [:]
 
+  /// What the presenter has got ready for the next motion (Controller+Rehearsal.swift).
+  var rehearsed = Rehearsed()
+
   public init(
     system: any WindowSystem, overlays: any OverlayPresenter, store: any StateStore,
     scheduler: any Scheduler, settings: Settings = Settings(), filter: WindowFilter = WindowFilter()
@@ -618,6 +621,7 @@ public final class Controller {
     provisionalSlots.removeAll()
     store.flush()
     isRunning = false
+    forgetRehearsal()
     system.stop()
     scheduleUpdateChecks()
     notify(.lifecycle)
@@ -655,6 +659,8 @@ public final class Controller {
       notify(.settings)
     }
     traceRecorder?.settingsWillApply(newSettings)
+    // With pictures of windows the presenter needs other things for a motion than without.
+    if newSettings.windowPictures != settings.windowPictures { forgetRehearsal() }
     settings = newSettings
     filter.excludedBundleIDs = Set(newSettings.excludedBundleIDs)
     stopWatchingTitles()

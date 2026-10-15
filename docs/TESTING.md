@@ -480,6 +480,12 @@ The script clicks at places it takes to be empty, so outside GitHub's Macs it re
 `arborctl stats`; checks that overlay panels that were put away and handed out again still show and take a drag; then runs
 1200 commands and prints `footprint`, `heap` and `leaks`, and `top`'s idle wakeups while nothing happens.
 
+`scripts/mac-shell/first-dock.sh` measures the first act after a start against the next ones, with nine real apps open, in the debug and in the
+release build, each with and without what Arbor gets ready ahead of the first motion (`ARBOR_NO_REHEARSAL=1` is the control). Its first session is the
+one that counts: a hosted Mac has drawn none of the apps' icons yet, which is what cost the first dock of a day its seconds. Its tables come from
+`first-dock.py`, which needs no Mac: `first-dock.py table <arbor.log> <trace.jsonl>…` says of any recorded session, for every command that moved a
+window, how long it was until the first move, how much of that the stage took, when the last app had answered and when the stage was down.
+
 **Only compiling.** `scripts/mac-shell/run.sh scripts/mac-shell/compile.sh` runs `swift build` on the Mac at your branch's
 head and brings back `build.log`, with the errors and warnings at the end of the output: for macOS-only code, or for a
 pull request whose macOS CI job is left out because it touches only code that Linux builds too (see "Executors
@@ -671,6 +677,7 @@ holds for the commit named (second reading, 10:45 UTC) and says what the script 
 | `desktop-facts.sh` | #197 `e75d37f8` | safe | none | It reads the window list, four preferences and three answers of Finder's, and names only Apple's own processes |
 | `check-resume.sh` | trunk | **never**: ends with 77 | | Calculator and TextEdit opened, brought forward in turn, and quit; `ARBOR_APPS_HERE=1` does not open it |
 | `shots-F15-apps.sh` | trunk | **never**: ends with 77 | | Ten real apps opened for their icons, and killed |
+| `first-dock.sh` (`first-dock.py`) | trunk | **never**: ends with 77 | | Nine real apps opened and quit, every window arranged, Reduce Motion, the display's size |
 | `check-F52.sh`, `check-F63.sh` | #59, #66 | **never**: end with 77 | | Virtual displays, Accessibility taken from every app |
 | `check-F59.sh` | #158 `6907ce87` | safe | 30 s | During a carry nobody's app gets arrows, ↩ or ⎋ |
 | `shots-F04.sh`, `shots-F34.sh` | #79 `32612c35`, #187 `acf72c67` | safe | 3 min, 60 s | Test windows go to the Dock and come back; one is closed by its tab's button |

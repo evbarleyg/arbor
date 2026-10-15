@@ -110,6 +110,7 @@ public final class ArborApp: NSObject, NSApplicationDelegate {
       default: break
       }
     }
+    overlays.onRehearsalOutdated = { [weak controller] in controller?.rehearseAfresh() }
     let build = BuildInfo(infoDictionary: Bundle.main.infoDictionary)
     controller.buildInfo = build
     controller.releaseFeed = GitHubReleaseFeed(

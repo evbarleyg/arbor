@@ -235,6 +235,9 @@ import Testing
       "expectedScene",
       // What even Show Everything leaves out of view, for the chaos lab: it asks, as `freshLayout` does.
       "layoutOfEverything",
+      // What the presenter is told ahead of a motion is said again. No window, view or layout depends on it, and its scheduled work (`rehearsal`)
+      // only tells the presenter.
+      "rehearseAfresh",
     ]
     /// Everything they do, they do by calling `perform`. A gesture that moves the view by itself (F16) will have to be recorded.
     let endAsCommands: Set = ["gesture"]

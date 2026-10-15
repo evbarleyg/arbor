@@ -17,6 +17,13 @@ public final class FakeOverlays: OverlayPresenter {
   public private(set) var transitions: [Transition] = []
   /// How many times the controller dropped the stages.
   public private(set) var finishedAnimations = 0
+  /// Every `rehearse`, oldest first.
+  public private(set) var rehearsals: [Rehearsal] = []
+  private var readyDisplays: Set<DisplayID> = []
+  private var readyApps: Set<Rehearsal.App> = []
+  /// What a motion needed that no rehearsal and no earlier motion had got ready. On a Mac a stage is time between the key
+  /// and the first move, and a costume that is missing a window that travels as a plain card.
+  public private(set) var madeInTheMotion: [String] = []
   /// Called with each transition as it arrives, for tests that care what has happened by then.
   public var onAnimate: ((Transition) -> Void)?
   /// The field for typing a space's name, if a display shows it.
@@ -79,8 +86,19 @@ public final class FakeOverlays: OverlayPresenter {
   }
 
   public func animate(_ transition: Transition) {
+    // As on a Mac: what nobody got ready is made for this motion, or missed in it, and kept from then on.
+    if readyDisplays.insert(transition.display).inserted { madeInTheMotion.append("the stage of \(transition.display)") }
+    for app in transition.items.map(\.app) where readyApps.insert(app).inserted {
+      madeInTheMotion.append("the costume of \(app.bundleID ?? "pid \(app.pid)")")
+    }
     transitions.append(transition)
     onAnimate?(transition)
+  }
+
+  public func rehearse(_ rehearsal: Rehearsal) {
+    rehearsals.append(rehearsal)
+    readyDisplays.formUnion(rehearsal.displays)
+    readyApps.formUnion(rehearsal.apps)
   }
 
   public func finishAnimations() { finishedAnimations += 1 }

@@ -145,6 +145,10 @@ public protocol OverlayPresenter: AnyObject {
   /// Shows the minimap on `display` in place of the one there, or takes it away when nil. The controller takes it
   /// away itself when its time is up (Controller+Minimap.swift).
   func showMinimap(_ model: MinimapModel?, on display: DisplayID)
+  /// Gets ready for a motion on these displays with windows of these apps in it: makes now whatever `animate` would otherwise
+  /// make or look up for the first time while somebody waits, and skips what it has. Nothing shows and nothing moves. The
+  /// controller hands out one display or one app at a time, when nobody waits (Controller+Rehearsal.swift).
+  func rehearse(_ rehearsal: Rehearsal)
 }
 
 /// What the user did with an overlay.

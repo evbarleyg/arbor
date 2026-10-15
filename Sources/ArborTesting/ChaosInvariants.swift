@@ -21,6 +21,7 @@ extension ChaosRunner {
     "back-from-full-screen",
     "desktop-guard-zones",
     "left-to-macos",
+    "rehearsal",
   ]
 
   /// How far a docked window may sit from its slot: 4 points of the app rounding its size

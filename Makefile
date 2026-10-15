@@ -8,6 +8,7 @@ lint:
 	@python3 scripts/lint-share-space.py --self-test && python3 scripts/lint-share-space.py
 	@python3 scripts/lint-mac-shell.py --self-test > /dev/null || python3 scripts/lint-mac-shell.py --self-test
 	@python3 scripts/lint-mac-shell.py
+	@python3 scripts/mac-shell/first-dock.py --self-test > /dev/null
 	@python3 scripts/test-fast-tests.py
 	@python3 scripts/lint-paste-safe.py --self-test && python3 scripts/lint-paste-safe.py
 	@for test in scripts/test-public-*.py; do python3 $$test || exit 1; done

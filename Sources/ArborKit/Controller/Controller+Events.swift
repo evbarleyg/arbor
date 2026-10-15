@@ -8,6 +8,7 @@ extension Controller: WindowSystemEvents {
     defer { refreshFocusRing(.focus) }
     refreshHoldCaller()
     guard isRunning else { return }
+    rehearseNextMotion()
     guard filter.manages(window) else {
       giveUpPendingSlot(of: window.id)
       return

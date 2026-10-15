@@ -27,6 +27,9 @@ final class WindowPictures {
     }
   }
 
+  /// Whether stand-ins are pictures of their windows, now or as soon as a sweep has been round.
+  var areTaken: Bool { isWanted && Self.isAllowed }
+
   /// `ARBOR_NO_PICTURES`, for looking at Arbor as it is without the permission on a Mac that has it.
   private static let isSwitchedOff = ArborEnvironment.current.noPictures
 

@@ -153,6 +153,33 @@ final class Stage {
     Log.debug("stage \(wasUp ? "retargeted" : "up") on \(transition.display): \(items.count) stand-ins, \(transition.duration) s")
   }
 
+  /// Up and down again with nothing to be seen, when nobody waits: the first time, the window server makes the panel's
+  /// window, Core Animation its context, and the picture of the desktop goes to the render server. The panel is clear
+  /// through and through meanwhile and lets clicks pass as ever, and it is down before this returns.
+  func rehearse(in frame: CGRect, backdrop desktop: CGImage?) {
+    guard !isUp, frame.isFinite, frame.width >= 1, frame.height >= 1 else { return }
+    let standIn = StandIn()
+    panel.alphaValue = 0
+    CATransaction.begin()
+    CATransaction.setDisableActions(true)
+    panel.setFrame(ScreenGeometry.appKit(fromGlobal: frame), display: false)
+    canvas.frame = CGRect(origin: .zero, size: frame.size)
+    backdrop.frame = canvas.bounds
+    backdrop.contents = desktop
+    standIn.place(canvas.bounds.insetBy(dx: frame.width / 4, dy: frame.height / 4))
+    canvas.addSublayer(standIn.layer)
+    CATransaction.commit()
+    panel.orderFrontRegardless()
+    CATransaction.flush()
+    panel.orderOut(nil)
+    CATransaction.begin()
+    CATransaction.setDisableActions(true)
+    standIn.layer.removeFromSuperlayer()
+    backdrop.contents = nil
+    CATransaction.commit()
+    panel.alphaValue = 1
+  }
+
   /// The scene the motion ends in has arrived: the surface fades into its new shape while the windows travel, and is
   /// what the stage reveals when it lifts.
   func show(surface model: BackdropModel?) {
@@ -167,6 +194,15 @@ final class Stage {
     CATransaction.begin()
     CATransaction.setAnimationDuration(0.1)
     standIn.wear(picture)
+    CATransaction.commit()
+  }
+
+  /// Dresses a stand-in that set off as a plain card: its app's colour and icon have only just been made.
+  func show(_ cover: Wardrobe.Cover, of window: WindowID) {
+    guard isUp, let standIn = standIns[window] else { return }
+    CATransaction.begin()
+    CATransaction.setAnimationDuration(0.1)
+    standIn.wear(Costume(picture: nil, colour: cover.colour, icon: cover.icon))
     CATransaction.commit()
   }
 

@@ -226,6 +226,22 @@ block both end a motion, and a mouse button going down anywhere, sleep, wake, a 
 display change, `pause` and quitting take every stage down at once. The left button also comes by way of
 the controller (`WindowSystemEvents.pointerPressed`), which is how tests reach it.
 
+**Nothing is made while somebody waits** (`Controller+Rehearsal.swift`, `StageDirector.rehearse`). The real windows wait until the stage is
+up, so what the stage needs is time between the key and the first move. All of it is kept once made, which left the first motion after
+a start to pay for everything: two seconds with nine apps' windows on a hosted Mac, against five milliseconds for the second. So after every
+layout, the one at the start among them, and when a window turns up, the controller notes which displays and which apps are new and hands
+them to the presenter (`OverlayPresenter.rehearse`), one display or one app at a time with a pause between them (the timer `rehearsal`), so that a
+key pressed meanwhile waits for one piece at most; a motion puts the rest off until it is over, and a stop ends it. The director makes the
+display's stage and backdrop and skips what it has. The stage goes up once, clear through and through, and is down again before the call
+returns. An app's colour and icon are made on a thread of their own (`UI/Wardrobe.swift`), because they were nearly all of the two seconds:
+macOS draws an icon at a size the first time anybody asks, 4.7 s for eight apps on a Mac that had drawn none and 27 ms a minute later. **A
+motion never waits for one**: a window whose app has no cover yet sets off as a plain grey card and is dressed on its way, when the cover
+arrives. No window is asked anything. With `animationDuration` 0 nothing is handed out; with Reduce Motion on, or
+where stand-ins are pictures of their windows, the director leaves out what would not be seen, and when either changes everything is said
+again (`rehearseAfresh`). A stage stays while its display does: macOS reports a change of screen parameters at every minimize. What cannot be
+helped: a window of an app nobody knew of that a rule docks as it opens sets off as a plain card. `FakeOverlays.madeInTheMotion` lists what a motion met that
+nobody had got ready (`RehearsalTests`). Every stage that comes up logs what kept the windows waiting, as `INFO` from a tenth of a second.
+
 **Pictures** (`UI/WindowPictures.swift`). With Screen Recording permission, stand-ins are still pictures
 taken with ScreenCaptureKit, and the backdrop is a picture of everything below the windows (wallpaper,
 icons, widgets). A motion cannot wait for a picture, so they are taken ahead of time (at launch, when the
@@ -1450,6 +1466,7 @@ Everything else is a view of it:
 | `ARBOR_KEYBOARD_LAYOUT=com.apple.keylayout.German` | Go by that installed keyboard layout instead of the one selected (tests) |
 | `ARBOR_NO_PICTURES=1` | Take no pictures of windows, as without Screen Recording permission |
 | `ARBOR_NO_OPENING=1` | Open no app: `summon` with no window to bring answers as if there were no such app |
+| `ARBOR_NO_REHEARSAL=1` | Get nothing ready for the first motion ahead of time (`first-dock.sh` measures what that saves) |
 | `ARBOR_RELEASES_URL=http://…` | Ask there instead of GitHub's releases API (tests of the real app) |
 | `ARBOR_BUILD=abc1234` | Which commit this build is, for the header of traces |
 
