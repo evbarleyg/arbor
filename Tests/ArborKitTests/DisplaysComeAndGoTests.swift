@@ -616,10 +616,10 @@ private let waysNotToLook = [["quit"], ["toggle-pause", "react", "advance 1", "r
   @Test(arguments: waysNotToLook) func aDeskSessionArborNeverSawPassesForAHand(ending: [String]) {
     let (runner, waits) = mailWaitsOnTheLaptop()
     let dropped = waits.offsetBy(dx: 60, dy: 25)
-    play(
-      ending + ["\(desk.both) windows-silent", "move 103 1540 85 1100 700", "\(desk.laptop) windows-never"]
-        + ["move 103 \(Int(dropped.minX)) \(Int(dropped.minY)) \(Int(dropped.width)) \(Int(dropped.height))"] + lookingAgain(after: ending)
-        + ["\(desk.both) windows-late"] + moment, in: runner)
+    var lines = ending + ["\(desk.both) windows-silent", "move 103 1540 85 1100 700", "\(desk.laptop) windows-never"]
+    lines += ["move 103 \(Int(dropped.minX)) \(Int(dropped.minY)) \(Int(dropped.width)) \(Int(dropped.height))"]
+    lines += lookingAgain(after: ending) + ["\(desk.both) windows-late"] + moment
+    play(lines, in: runner)
     #expect(frames(runner)[mail] == dropped)
   }
 
@@ -662,9 +662,10 @@ private let waysNotToLook = [["quit"], ["toggle-pause", "react", "advance 1", "r
   @Test(arguments: waysNotToLook) func letGoOfWithNoDisplayNobodyCanTell(ending: [String]) {
     let runner = play(["\(desk.both) windows-never"] + desk.windows + ["launch", "settle"])
     let began = frames(runner)
-    play(
-      ["displays windows-between"] + moment + ending + ["\(desk.laptop) windows-silent"] + lookingAgain(after: ending) + moment
-        + ["\(desk.both) windows-between"] + moment, in: runner)
+    var lines = ["displays windows-between"] + moment + ending
+    lines += ["\(desk.laptop) windows-silent"] + lookingAgain(after: ending) + moment
+    lines += ["\(desk.both) windows-between"] + moment
+    play(lines, in: runner)
     #expect(frames(runner) == began)
   }
 
@@ -701,9 +702,10 @@ private let waysNotToLook = [["quit"], ["toggle-pause", "react", "advance 1", "r
     let dock = ["focus 103", "react", "advance 1", "react", "key down dock left", "key up dock left", "react", "advance 1", "react"]
     let docked = play(["\(desk.both) windows-never", desk.windows[2], "launch", "settle"] + dock)
     let slot = frames(docked)[mail]!
-    play(
-      ["\(desk.laptop) windows-late"] + moment + ending + ["move 103 300 150 1100 700"] + lookingAgain(after: ending)
-        + ["\(desk.both) windows-late"] + moment, in: docked)
+    var lines = ["\(desk.laptop) windows-late"] + moment + ending
+    lines += ["move 103 300 150 1100 700"] + lookingAgain(after: ending)
+    lines += ["\(desk.both) windows-late"] + moment
+    play(lines, in: docked)
     #expect(docked.controller.workspaces[monitor]?.isDocked(mail) == true)
     #expect(frames(docked)[mail] == slot)
   }
