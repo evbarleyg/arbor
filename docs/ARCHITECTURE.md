@@ -948,6 +948,10 @@ directory unless it is given an `ARBOR_HOME`, so that a test run on a Mac where 
   messages are cut at 1000 characters. A line that cannot be written (full disk) is dropped.
 - `arbor.sock`: the control socket.
 - `arbor.lock`: locked (`flock`) by the running Arbor and holding its pid. Never deleted.
+- `arbor.user.lock`, always in `~/Library/Application Support/Arbor`, whatever `ARBOR_HOME` says: locked by the one Arbor that arranges
+  everybody's windows, and holding its pid and its home folder. Two Arbors with different home folders would still hold the same
+  shortcuts and event taps and move the same windows. One that is confined with `ARBOR_ONLY_PIDS` does not take it, and may run beside
+  the person's own (`SingleInstance`).
 - `traces/`: what `trace on` recorded (docs/TRACES.md). No titles: tokens stand in for them.
 
 **Privacy.** `state.json` holds window titles, which macOS otherwise shows only to apps
@@ -1460,7 +1464,7 @@ Everything else is a view of it:
 
 | Variable | Effect |
 |---|---|
-| `ARBOR_HOME` | Folder for settings, state, log, traces and socket |
+| `ARBOR_HOME` | Folder for settings, state, log, traces and socket. It does not make room for a second Arbor: see `arbor.user.lock` above and `ARBOR_ONLY_PIDS` |
 | `ARBOR_SOCKET` | Socket path (default `$ARBOR_HOME/arbor.sock`) |
 | `ARBOR_ONLY_PIDS=1,2` | Arrange only these processes' windows (tests) |
 | `ARBOR_NO_HOTKEYS=1` | Do not register global shortcuts or install the pinch and rectangle event taps |

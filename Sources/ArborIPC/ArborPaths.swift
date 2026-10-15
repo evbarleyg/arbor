@@ -1,7 +1,8 @@
 import Foundation
 
 /// Where Arbor keeps its files. Everything lives in one folder so a test run
-/// can point `ARBOR_HOME` at a temporary directory and touch nothing else.
+/// can point `ARBOR_HOME` at a temporary directory and touch nothing else. (One exception: an Arbor that arranges everybody's
+/// windows takes the lock that is one per person, which is in `usualHome`. A test's Arbor, confined to named processes, does not.)
 ///
 /// - `ARBOR_HOME`: the folder (default `~/Library/Application Support/Arbor` for the app and arborctl, and a
 ///   folder in the temporary directory for every other program: see `home(environment:program:)`)
@@ -25,6 +26,12 @@ public enum ArborPaths {
       // The user's number: on Linux the temporary directory is everybody's.
       return FileManager.default.temporaryDirectory.appendingPathComponent("arbor-guests-\(getuid())", isDirectory: true)
     }
+    return usualHome
+  }
+
+  /// The person's folder. Whatever `ARBOR_HOME` says, the lock that is one per person is here (`SingleInstance`);
+  /// nothing else is.
+  public static var usualHome: URL {
     let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
     return support.appendingPathComponent("Arbor", isDirectory: true)
   }

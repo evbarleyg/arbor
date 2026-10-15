@@ -5,7 +5,7 @@ import ArborIPC
 /// itself, the lock that keeps a second copy out, the watchdog, and staying awake and in time.
 @MainActor
 final class ProcessGuards {
-  private let lock = InstanceLock(path: ArborPaths.lockFile.path)
+  private var locks: [InstanceLock] = []
   private var watchdog: Watchdog?
   private var activity: (any NSObjectProtocol)?
   private var powerOffObserver: (any NSObjectProtocol)?
@@ -20,33 +20,36 @@ final class ProcessGuards {
     umask(0o077)
   }
 
-  /// Ends the process, with an explanation, if another Arbor already runs from this home folder.
-  func claimSingleInstance(prompt: Bool) {
+  /// Ends the process, with an explanation, if another Arbor already runs from this home folder, or, unless this one
+  /// is confined to named processes, anywhere in this person's session (`SingleInstance`).
+  func claimSingleInstance(prompt: Bool, isConfined: Bool) {
     try? ArborPaths.ensureHome()
-    switch lock.acquire(attempts: 10) {
-    case .acquired:
-      return
-    case .unavailable(let reason):
-      Log.error("running without the lock that keeps a second Arbor out: \(reason)")
-      return
-    case .held(let pid):
-      let who = pid.map { " (pid \($0))" } ?? ""
-      // Whoever opens Arbor twice was most likely looking for the window it does not have.
-      let advice = """
-        It has no window of its own: it is the icon in the menu bar. To start it afresh, choose Quit Arbor \
-        there (or run arborctl quit) and open it again.
-        """
-      Log.error("another Arbor\(who) already runs from \(ArborPaths.home.path); this one (pid \(getpid())) is leaving")
-      try? FileHandle.standardError.write(contentsOf: Data("Arbor is already running. \(advice)\n".utf8))
-      if prompt {
-        let alert = NSAlert()
-        alert.messageText = "Arbor is already running"
-        alert.informativeText = advice
-        NSApp.activate()
-        alert.runModal()
+    if !isConfined { try? ArborPaths.secure(folder: ArborPaths.usualHome) }
+    let (home, usualHome) = (ArborPaths.home.path, ArborPaths.usualHome.path)
+    for path in SingleInstance.lockFiles(home: home, usualHome: usualHome, isConfined: isConfined) {
+      let lock = InstanceLock(path: path)
+      // arbor.lock holds the pid and nothing else: scripts read it. Whoever finds it held shares the holder's home folder.
+      let isHomeLock = path == ArborPaths.lockFile.path
+      switch lock.acquire(attempts: 10, note: isHomeLock ? "" : home) {
+      case .acquired:
+        locks.append(lock)
+      case .unavailable(let reason):
+        Log.error("running without a lock that keeps a second Arbor out: \(reason)")
+      case .held(let pid):
+        let refusal = SingleInstance.refusal(
+          pid: pid, holderHome: isHomeLock ? home : lock.holderNote, ownHome: home, usualHome: usualHome)
+        Log.error(refusal.log)
+        try? FileHandle.standardError.write(contentsOf: Data("\(refusal.title). \(refusal.text)\n".utf8))
+        if prompt {
+          let alert = NSAlert()
+          alert.messageText = refusal.title
+          alert.informativeText = refusal.text
+          NSApp.activate()
+          alert.runModal()
+        }
+        // Not `terminate`: nothing was started, and nothing of the other copy's may be cleaned up.
+        exit(Self.alreadyRunningExitCode)
       }
-      // Not `terminate`: nothing was started, and nothing of the other copy's may be cleaned up.
-      exit(Self.alreadyRunningExitCode)
     }
   }
 
@@ -79,6 +82,7 @@ final class ProcessGuards {
     watchdog = nil
     if let activity { ProcessInfo.processInfo.endActivity(activity) }
     activity = nil
-    lock.release()
+    for lock in locks { lock.release() }
+    locks.removeAll()
   }
 }

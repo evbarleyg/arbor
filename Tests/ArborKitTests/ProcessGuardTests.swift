@@ -151,3 +151,69 @@ func temporaryFolder() throws -> URL {
     #expect(throws: ArborPaths.Problem.self) { try ArborPaths.secure(folder: foreign) }
   }
 }
+
+/// One Arbor per home folder, and one per person that arranges everybody's windows.
+@Suite struct SingleInstanceTests {
+  let usual = "/usual/Application Support/Arbor"
+
+  @Test func anArborThatArrangesEverybodysWindowsIsAloneOnTheMac() {
+    let locks = SingleInstance.lockFiles(home: "/tmp/x", usualHome: usual, isConfined: false)
+    #expect(locks == ["/tmp/x/arbor.lock", usual + "/arbor.user.lock"])
+    // Also from the usual folder: the two files answer two questions.
+    #expect(
+      SingleInstance.lockFiles(home: usual, usualHome: usual, isConfined: false)
+        == [usual + "/arbor.lock", usual + "/arbor.user.lock"])
+  }
+
+  @Test func oneThatIsConfinedToNamedProcessesMayRunBesideIt() {
+    #expect(SingleInstance.lockFiles(home: "/tmp/x", usualHome: usual, isConfined: true) == ["/tmp/x/arbor.lock"])
+  }
+
+  @Test func theHolderLeavesWordOfWhereItRunsFrom() throws {
+    let path = NSTemporaryDirectory() + "arbor-lock-\(UUID().uuidString)"
+    defer { unlink(path) }
+    let (first, second) = (InstanceLock(path: path), InstanceLock(path: path))
+    #expect(first.acquire(note: "/tmp/some home") == .acquired)
+    #expect(second.acquire() == .held(by: getpid()))
+    #expect(second.holderNote == "/tmp/some home")
+    // A file written by an Arbor that left no word, or by anybody.
+    first.release()
+    try Data("123".utf8).write(to: URL(fileURLWithPath: path))
+    let third = InstanceLock(path: path)
+    #expect(third.acquire(note: "a\nb") == .acquired)
+    #expect(second.acquire() == .held(by: getpid()))
+    #expect(second.holderNote == "a b", "one line")
+  }
+
+  @Test func whoeverOpensArborTwiceIsToldWhereItIs() {
+    let refusal = SingleInstance.refusal(pid: 41, holderHome: usual, ownHome: usual, usualHome: usual)
+    #expect(refusal.title == "Arbor is already running")
+    #expect(refusal.text.contains("It has no window of its own: it is the icon in the menu bar."))
+    #expect(!refusal.text.contains("41"), "the number is for the log")
+    #expect(refusal.log.contains("pid 41"))
+    #expect(refusal.log.contains("already runs from \(usual)"))
+  }
+
+  @Test func aCopyWithAHomeFolderOfItsOwnIsToldAboutTheInstalledOneInTheSameWords() {
+    let refusal = SingleInstance.refusal(pid: 41, holderHome: usual, ownHome: "/tmp/x", usualHome: usual)
+    #expect(refusal.text.contains("it is the icon in the menu bar"))
+    #expect(refusal.text.contains("ARBOR_ONLY_PIDS"), "and how a test can run beside it")
+  }
+
+  @Test func theInstalledOneIsToldAboutACopyThatATestOrAScriptStarted() {
+    // That one may have no icon, and `arborctl quit` would not reach it.
+    let refusal = SingleInstance.refusal(pid: 41, holderHome: "/tmp/x", ownHome: usual, usualHome: usual)
+    #expect(refusal.title == "Arbor is already running")
+    #expect(!refusal.text.contains("it is the icon in the menu bar"))
+    #expect(refusal.text.contains("/tmp/x"))
+    #expect(refusal.text.contains("kill 41"))
+  }
+
+  @Test func withoutANumberOrAFolderItStillMakesSense() {
+    let refusal = SingleInstance.refusal(pid: nil, holderHome: nil, ownHome: "/tmp/x", usualHome: usual)
+    #expect(refusal.title == "Arbor is already running")
+    #expect(!refusal.text.contains("nil") && !refusal.log.contains("nil"))
+    #expect(!refusal.log.contains("/tmp/x"), "nobody knows where the other one runs from: not from here")
+    #expect(!refusal.text.contains("kill"))
+  }
+}
