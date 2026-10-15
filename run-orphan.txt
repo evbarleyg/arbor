@@ -1,0 +1,43 @@
+guardian: pid 7290
+test windows: w50 w51 w52 (pid 7291)
+this Mac: screen locked: no; display asleep: no; screen saver: no; on the console: yes; last input: 319 s ago
+
+▸ start watching events  (watch)
+  ✔ hello arrives at once
+  ✔ hello says that Arbor is running
+  ✔ hello lists the test windows, floating
+display 07230EFA-7A8D-4E37-845C-19CC8737EEF5 visible frame (0,31 1024×674)
+
+▸ dock the first window on the left  (dock 50 left)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w50 is docked
+  ✔ w50 sits at the left edge
+
+▸ dock the second window on the right  (dock 51 right)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w51 sits at the right edge
+  ✔ the Desktop stays between them
+
+▸ dock the third window below the first  (dock 52 beside 50 bottom)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w52 is below w50
+  ✔ w52 shares w50's column
+
+▸ look behind the docked windows  (status)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ the backdrop is on screen just above the Desktop's icons
+  ✔ it covers the display's visible frame
+
+▸ frame the first window on its own  (zoom 50)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w50 fills the screen
+  ✔ w51 is out of view
+  ✔ w52 is out of view
+
+▸ go back  (back)
+  ✔ command succeeded

@@ -1,0 +1,60 @@
+guardian: pid 4813
+test windows: w31 w32 w33 (pid 4814)
+this Mac: screen locked: no; display asleep: no; screen saver: no; on the console: yes; last input: 280 s ago
+
+▸ start watching events  (watch)
+  ✔ hello arrives at once
+  ✔ hello says that Arbor is running
+  ✔ hello lists the test windows, floating
+display 07230EFA-7A8D-4E37-845C-19CC8737EEF5 visible frame (0,31 1024×674)
+
+▸ dock the first window on the left  (dock 31 left)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w31 is docked
+  ✔ w31 sits at the left edge
+
+▸ dock the second window on the right  (dock 32 right)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w32 sits at the right edge
+  ✔ the Desktop stays between them
+
+▸ dock the third window below the first  (dock 33 beside 31 bottom)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w33 is below w31
+  ✔ w33 shares w31's column
+
+▸ look behind the docked windows  (status)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ the backdrop is on screen just above the Desktop's icons
+  ✔ it covers the display's visible frame
+
+▸ frame the first window on its own  (zoom 31)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w31 fills the screen
+  ✔ w32 is out of view
+  ✔ w33 is out of view
+
+▸ go back  (back)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w31 is back in view
+  ✔ w32 is back in view
+  ✔ w33 is back in view
+  ✔ w31 is back in its slot
+
+▸ resize the first window by command  (resize 31 right 100)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w31 is 100 points wider
+
+▸ resize by an absurd amount  (resize 31 right 1e300)
+  ✔ the command is refused
+  ✔ Arbor is still running
+
+▸ float the second window  (float 32)
+  ✔ command succeeded

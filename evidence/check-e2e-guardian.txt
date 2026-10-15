@@ -1,0 +1,40 @@
+# check-e2e-guardian 2026-10-15T05:15Z on macOS 26.6.2, commit 6e53a53
+
+== the runner alone is killed (kill -9)
+  ✔ before: Arbor and its watchdog run
+  ✔ before: the test windows' app runs
+  ✔ before: the guardian waits
+  ✔ before: the run's folder is there
+  ✔ before: the runner is in the middle of its run
+  ✔ no Arbor and no watchdog is left
+  ✔ the test windows' app has left
+  ✔ the run's folder is gone
+  ✔ the guardian has left
+  ✔ and nothing comes back
+
+== its whole process group is killed, as by a caller's time limit (kill -9)
+  ✔ before: Arbor and its watchdog run
+  ✔ before: the test windows' app runs
+  ✔ before: the guardian waits
+  ✔ before: the run's folder is there
+  ✔ before: the runner is in the middle of its run
+  ✔ no Arbor and no watchdog is left
+  ✔ the test windows' app has left
+  ✔ the run's folder is gone
+  ✔ the guardian has left
+  ✔ and nothing comes back
+
+== Arbor is killed, and the runner a moment later: the watchdog's next Arbor is nobody's (kill -9, twice)
+  ✔ before: Arbor and its watchdog run
+  ✔ before: the test windows' app runs
+  ✔ before: the guardian waits
+  ✔ before: the run's folder is there
+  ✔ before: the runner is in the middle of its run
+  ✔ the watchdog starts another Arbor
+  ✔ no Arbor and no watchdog is left
+  ✔ the test windows' app has left
+  ✔ the run's folder is gone
+  ✔ the guardian has left
+  ✔ and nothing comes back
+
+31 passed, 0 failed

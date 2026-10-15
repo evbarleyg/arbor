@@ -1,0 +1,71 @@
+# mac-shell: scripts/mac-shell/check-e2e-guardian.sh at 6e53a53, macOS 26.6.2, 2026-10-15T05:15Z
+built Arbor, the pointer tool and the app bundles in 6s
+
+== the runner alone is killed (kill -9)
+  in the step: ▸ go back  (back)
+  process, group and command of the runner, the guardian, Arbor and its watchdog:
+     4799  4799 arbor-e2e       
+     4813  4813 perl            
+     4836  4836 Arbor           
+     4837  4837 Arbor           
+  ✔ before: Arbor and its watchdog run
+  ✔ before: the test windows' app runs
+  ✔ before: the guardian waits
+  ✔ before: the run's folder is there
+  ✔ before: the runner is in the middle of its run
+  ✔ no Arbor and no watchdog is left
+  after 0.1 s
+  ✔ the test windows' app has left
+  ✔ the run's folder is gone
+  ✔ the guardian has left
+  after 15.1 s
+/Users/runner/work/arbor/arbor/scripts/mac-shell/check-e2e-guardian.sh: line 70:  4799 Killed: 9               perl -e 'setpgrp(0, 0); exec { $ARGV[0] } @ARGV' "$ARBOR_BIN/arbor-e2e" > "$ARBOR_OUT/run-$2.txt" 2>&1 < /dev/null
+  ✔ and nothing comes back
+
+== its whole process group is killed, as by a caller's time limit (kill -9)
+  in the step: ▸ go back  (back)
+  process, group and command of the runner, the guardian, Arbor and its watchdog:
+     5846  5846 arbor-e2e       
+     5860  5860 perl            
+     5873  5873 Arbor           
+     5883  5883 Arbor           
+  ✔ before: Arbor and its watchdog run
+  ✔ before: the test windows' app runs
+  ✔ before: the guardian waits
+  ✔ before: the run's folder is there
+  ✔ before: the runner is in the middle of its run
+  ✔ no Arbor and no watchdog is left
+  after 0.1 s
+  ✔ the test windows' app has left
+  ✔ the run's folder is gone
+  ✔ the guardian has left
+  after 15.3 s
+/Users/runner/work/arbor/arbor/scripts/mac-shell/check-e2e-guardian.sh: line 70:  5846 Killed: 9               perl -e 'setpgrp(0, 0); exec { $ARGV[0] } @ARGV' "$ARBOR_BIN/arbor-e2e" > "$ARBOR_OUT/run-$2.txt" 2>&1 < /dev/null
+  ✔ and nothing comes back
+
+== Arbor is killed, and the runner a moment later: the watchdog's next Arbor is nobody's (kill -9, twice)
+  in the step: ▸ go back  (back)
+  process, group and command of the runner, the guardian, Arbor and its watchdog:
+     7276  7276 arbor-e2e       
+     7290  7290 perl            
+     7312  7312 Arbor           
+     7322  7322 Arbor           
+  ✔ before: Arbor and its watchdog run
+  ✔ before: the test windows' app runs
+  ✔ before: the guardian waits
+  ✔ before: the run's folder is there
+  ✔ before: the runner is in the middle of its run
+  ✔ the watchdog starts another Arbor
+/Users/runner/work/arbor/arbor/scripts/mac-shell/check-e2e-guardian.sh: line 99:  7276 Killed: 9               perl -e 'setpgrp(0, 0); exec { $ARGV[0] } @ARGV' "$ARBOR_BIN/arbor-e2e" > "$ARBOR_OUT/run-$2.txt" 2>&1 < /dev/null
+  after 0.6 s
+  ✔ no Arbor and no watchdog is left
+  after 1.8 s
+  ✔ the test windows' app has left
+  ✔ the run's folder is gone
+  ✔ the guardian has left
+  after 14.6 s
+  ✔ and nothing comes back
+/Users/runner/work/arbor/arbor/scripts/mac-shell/check-e2e-guardian.sh: line 101: LAST_HOLDER: unbound variable
+
+31 passed, 0 failed
+exit code 1
