@@ -1,0 +1,750 @@
+# mac-shell: scripts/mac-shell/probe-the-top-corners.sh at 1b9615b, macOS 26.6.2, 2026-10-15T13:09Z
+
+== the build
+built the tools in 51s
+clock: built 51s after the script began, at 13:09:57Z
+
+== the Mac
+macOS 26.6.2 (25G83) on arm64, commit 1b9615b
+this is probe-the-top-corners: THE CONTROL, without Arbor; playing 1 of 1 on this dispatch
+its places are 40 points to the right and 30 down of the table's
+parts: T
+1600 900 1600 900
+display: 1 0 0 1600 900 1600 900 1
+com.apple.WindowManager EnableTilingByEdgeDrag: not set
+com.apple.WindowManager EnableTopTilingByEdgeDrag: not set
+com.apple.WindowManager EnableTilingOptionAccelerator: not set
+com.apple.WindowManager EnableTiledWindowMargins: not set
+Reduce Motion: false
+displays before id 1 serial 305419896 frame 0 0 1600 900 main
+  vdisplay list: 1 5A42259C-47B8-4590-9762-97DBE4FE7F1B 0 0 1600 900 1 main 0 0 305419896
+clock: before done 54s after the script began, at 13:10:00Z
+the sampler writes mac-shell/samples.log (pid 4626), the witness mac-shell/witness.log (pid 4636)
+
+== no display stays: a display comes and goes once, before the main display's frame is read
+
+-- 1 display-t0a-plug-B: t0a: display B: plug
+> plug B: display 2, serial 2, 1280 x 800: it came at -1280 0 and is moved to 1600 0: now at 1600 0 1280 800
+displays t0a id 1 serial 305419896 frame 0 0 1600 900 main ; id 2 serial 2 frame 1600 0 1280 800 -
+  vdisplay list: 1 5A42259C-47B8-4590-9762-97DBE4FE7F1B 0 0 1600 900 1 main 0 0 305419896
+  vdisplay list: 2 53E827A3-0CA2-4031-AC83-8E3CA1A98F8A 1600 0 1280 800 1 - 42928 1 2
+clock: t0a done 58s after the script began, at 13:10:04Z
+
+-- 2 display-t0b-unplug-B: t0b: display B: unplug
+> unplug B
+displays t0b id 1 serial 305419896 frame 0 0 1600 900 main
+  vdisplay list: 1 5A42259C-47B8-4590-9762-97DBE4FE7F1B 0 0 1600 900 1 main 0 0 305419896
+clock: t0b done 60s after the script began, at 13:10:06Z
+the main display from here on (id x y w h): 1 0 0 1600 900
+
+== the windows
+
+-- 3 open-LIVES: opens com.apple.Notes
+> open -g -b com.apple.Notes 
+pid 5008 lists (id role subrole x y w h flags):
+  47 AXWindow AXStandardWindow 300 105 1000 660 main,close-disabled,sheets=1
+  w47 is LIVES
+something is in the way:
+  AXWindow/AXStandardWindow 300 105 1000 660
+    AXButton/AXCloseButton 308 113 16 16
+    AXButton/AXZoomButton 354 113 16 16
+    AXButton/AXMinimizeButton 331 113 16 16
+    AXSheet/- 563 135 475 600
+      AXButton/- 934 686 85 30 "Continue"
+pressed "Continue": 0
+pressed "Cancel": 0
+
+-- 4 open-TEXT: opens com.apple.TextEdit
+> open -g -b com.apple.TextEdit /tmp/arbor-apps.wejoKU/scratch/oak.txt
+pid 5404 lists (id role subrole x y w h flags):
+  56 AXWindow AXStandardWindow 165 65 673 439 main
+  w56 is TEXT
+
+-- 5 open-JAVA: starts jconsole, a Java app
+  w62 is JAVA
+window LIVES 47 pid 5008: 47 AXWindow AXStandardWindow 300 105 1000 660 main,focused,toolbar
+window TEXT 56 pid 5404: 56 AXWindow AXStandardWindow 165 65 673 439 main
+window JAVA 62 pid 5473: 62 AXWindow AXStandardWindow 350 51 900 750 main
+on the screen now, from the front (id pid level x y w h on owner):
+3 169 2147483630 5 5 28 40 on Window Server
+26 343 25 1375 0 31 30 on Control Center
+25 343 25 1406 0 42 30 on Control Center
+24 343 25 1448 0 152 30 on Control Center
+15 169 24 0 0 1600 30 on Window Server
+6 341 20 0 0 1600 900 on Dock
+62 5473 0 350 51 900 750 on JConsole
+47 5008 0 300 105 1000 660 on Notes
+56 5404 0 165 65 673 439 on TextEdit
+9 345 -2147483603 0 0 1600 900 on Finder
+7 341 -2147483624 0 0 1600 900 on Dock
+2 169 -2147483626 0 0 1600 900 on Window Server
+
+== Arbor
+
+-- 6 arbor: arbor: no Arbor is started: this is the control
+no Arbor runs: `pgrep -x Arbor` finds no process; none is built or started by this script, and the question is asked again after the last step
+> move 800 600
+displays arbor id 1 serial 305419896 frame 0 0 1600 900 main
+  vdisplay list: 1 5A42259C-47B8-4590-9762-97DBE4FE7F1B 0 0 1600 900 1 main 0 0 305419896
+at arbor LIVES 47 ax 300 105 1000 660 server 300 105 1000 660
+share arbor LIVES 47 shown 1.00 lies 1.00 on main flags main,focused,toolbar
+at arbor TEXT 56 ax 165 65 673 439 server 165 65 673 439
+share arbor TEXT 56 shown 1.00 lies 1.00 on main flags main
+at arbor JAVA 62 ax 350 51 900 750 server 350 51 900 750
+share arbor JAVA 62 shown 1.00 lies 1.00 on main flags main
+clock: arbor done 88s after the script began, at 13:10:34Z
+
+== T. the top corners
+no Arbor runs at T: `pgrep -x Arbor` finds no process
+put T TEXT 56 asked 300 200 640 420 took 300 200 640 420
+put T LIVES 47 asked 300 200 1000 660 took 300 200 1000 660
+dock: orientation not set, which is the bottom, autohide not set, which is off; the main display 0 0 1600 900, visible 0 31 1600 791
+
+-- 7 display-t2-plug-below: t2: display below: plug, under-and-wider
+> plug below: display 3, serial 3, 1920 x 1080: it came at 1600 0 and is moved to -160 900: now at -160 900 1920 1080
+displays t2 id 1 serial 305419896 frame 0 0 1600 900 main ; id 3 serial 3 frame -160 900 1920 1080 -
+  vdisplay list: 1 5A42259C-47B8-4590-9762-97DBE4FE7F1B 0 0 1600 900 1 main 0 0 305419896
+  vdisplay list: 3 930B3A55-09D2-41FB-A80C-2F9AFA1C8D7D -160 900 1920 1080 1 - 42928 1 3
+at t2 LIVES 47 ax 300 165 1000 600 server 300 165 1000 600
+share t2 LIVES 47 shown 1.00 lies 1.00 on main flags main,focused,toolbar
+at t2 TEXT 56 ax 165 65 656 422 server 165 65 656 422
+share t2 TEXT 56 shown 1.00 lies 1.00 on main flags main
+at t2 JAVA 62 ax 350 51 900 750 server 350 51 900 750
+share t2 JAVA 62 shown 1.00 lies 1.00 on main flags main
+clock: t2 done 93s after the script began, at 13:10:39Z
+visible t2 main 0 31 1600 869
+visible t2 below -160 931 1920 971
+put t2 TEXT 56 asked 300 200 656 422 took 300 200 656 422
+
+-- 8 top-t2-TEXT-a: t2: TEXT is asked through Accessibility for 1599 0, at the size it has
+answer t2 TEXT 56 asked 1599 0 656 422 took 1599 31 656 422
+top t2 TEXT 56 asked 1599 0 656 422 | accessibility 1599 31 656 422 | server 1599 31 656 422 | shown 0.00 on main
+shot: mac-shell/top-t2-a.png and top-t2-a-d2.png
+put t2 TEXT 56 asked 300 200 656 422 took 300 200 656 422
+
+-- 9 top-t2-TEXT-b: t2: TEXT is asked through Accessibility for 1599 -50, at the size it has
+answer t2 TEXT 56 asked 1599 -50 656 422 took 1599 31 656 422
+top t2 TEXT 56 asked 1599 -50 656 422 | accessibility 1599 31 656 422 | server 1599 31 656 422 | shown 0.00 on main
+shot: mac-shell/top-t2-b.png and top-t2-b-d2.png
+put t2 TEXT 56 asked 300 200 656 422 took 300 200 656 422
+
+-- 10 top-t2-TEXT-c: t2: TEXT is asked through Accessibility for -655 0, at the size it has
+answer t2 TEXT 56 asked -655 0 656 422 took -655 31 656 422
+top t2 TEXT 56 asked -655 0 656 422 | accessibility -655 31 656 422 | server -655 31 656 422 | shown 0.00 on main
+shot: mac-shell/top-t2-c.png and top-t2-c-d2.png
+put t2 TEXT 56 asked 300 200 656 422 took 300 200 656 422
+
+-- 11 top-t2-TEXT-d: t2: TEXT is asked through Accessibility for -655 -50, at the size it has
+answer t2 TEXT 56 asked -655 -50 656 422 took -655 31 656 422
+top t2 TEXT 56 asked -655 -50 656 422 | accessibility -655 31 656 422 | server -655 31 656 422 | shown 0.00 on main
+shot: mac-shell/top-t2-d.png and top-t2-d-d2.png
+put t2 TEXT 56 asked 300 200 656 422 took 300 200 656 422
+
+-- 12 top-t2-TEXT-e: t2: TEXT is asked through Accessibility for 1599 899, at the size it has
+answer t2 TEXT 56 asked 1599 899 656 422 took 1599 931 656 422
+top t2 TEXT 56 asked 1599 899 656 422 | accessibility 1599 931 656 422 | server 1599 931 656 422 | shown 0.25 on below
+shot: mac-shell/top-t2-e.png and top-t2-e-d2.png
+SKIPPED: top t2 TEXT f: the same place as e: nothing is taken off the main display's right
+put t2 TEXT 56 asked 300 200 656 422 took 300 200 656 422
+put t2 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
+
+-- 13 top-t2-LIVES-a: t2: LIVES is asked through Accessibility for 1599 0, at the size it has
+answer t2 LIVES 47 asked 1599 0 1000 600 took 1599 31 1000 600
+top t2 LIVES 47 asked 1599 0 1000 600 | accessibility 1599 31 1000 600 | server 1599 31 1000 600 | shown 0.00 on main
+put t2 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
+
+-- 14 top-t2-LIVES-b: t2: LIVES is asked through Accessibility for 1599 -50, at the size it has
+answer t2 LIVES 47 asked 1599 -50 1000 600 took 1599 31 1000 600
+top t2 LIVES 47 asked 1599 -50 1000 600 | accessibility 1599 31 1000 600 | server 1599 31 1000 600 | shown 0.00 on main
+put t2 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
+
+-- 15 top-t2-LIVES-c: t2: LIVES is asked through Accessibility for -999 0, at the size it has
+answer t2 LIVES 47 asked -999 0 1000 600 took -999 31 1000 600
+top t2 LIVES 47 asked -999 0 1000 600 | accessibility -999 31 1000 600 | server -999 31 1000 600 | shown 0.00 on main
+put t2 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
+
+-- 16 top-t2-LIVES-d: t2: LIVES is asked through Accessibility for -999 -50, at the size it has
+answer t2 LIVES 47 asked -999 -50 1000 600 took -999 31 1000 600
+top t2 LIVES 47 asked -999 -50 1000 600 | accessibility -999 31 1000 600 | server -999 31 1000 600 | shown 0.00 on main
+put t2 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
+
+-- 17 top-t2-LIVES-e: t2: LIVES is asked through Accessibility for 1599 899, at the size it has
+answer t2 LIVES 47 asked 1599 899 1000 600 took 1599 931 1000 600
+top t2 LIVES 47 asked 1599 899 1000 600 | accessibility 1599 931 1000 600 | server 1599 931 1000 600 | shown 0.16 on below
+SKIPPED: top t2 LIVES f: the same place as e: nothing is taken off the main display's right
+put t2 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
+put t2 JAVA 62 asked 300 200 900 750 took 300 200 900 750
+
+-- 18 top-t2-JAVA-a: t2: JAVA is asked through Accessibility for 1599 0, at the size it has
+answer t2 JAVA 62 asked 1599 0 900 750 took 1599 31 900 750
+top t2 JAVA 62 asked 1599 0 900 750 | accessibility 1599 31 900 750 | server 1599 31 900 750 | shown 0.00 on main
+put t2 JAVA 62 asked 300 200 900 750 took 300 200 900 750
+
+-- 19 top-t2-JAVA-b: t2: JAVA is asked through Accessibility for 1599 -50, at the size it has
+answer t2 JAVA 62 asked 1599 -50 900 750 took 1599 31 900 750
+top t2 JAVA 62 asked 1599 -50 900 750 | accessibility 1599 31 900 750 | server 1599 31 900 750 | shown 0.00 on main
+put t2 JAVA 62 asked 300 200 900 750 took 300 200 900 750
+
+-- 20 top-t2-JAVA-c: t2: JAVA is asked through Accessibility for -899 0, at the size it has
+answer t2 JAVA 62 asked -899 0 900 750 took -899 31 900 750
+top t2 JAVA 62 asked -899 0 900 750 | accessibility -899 31 900 750 | server -899 31 900 750 | shown 0.00 on main
+put t2 JAVA 62 asked 300 200 900 750 took 300 200 900 750
+
+-- 21 top-t2-JAVA-d: t2: JAVA is asked through Accessibility for -899 -50, at the size it has
+answer t2 JAVA 62 asked -899 -50 900 750 took -899 31 900 750
+top t2 JAVA 62 asked -899 -50 900 750 | accessibility -899 31 900 750 | server -899 31 900 750 | shown 0.00 on main
+put t2 JAVA 62 asked 300 200 900 750 took 300 200 900 750
+
+-- 22 top-t2-JAVA-e: t2: JAVA is asked through Accessibility for 1599 899, at the size it has
+answer t2 JAVA 62 asked 1599 899 900 750 took 1599 931 900 750
+top t2 JAVA 62 asked 1599 899 900 750 | accessibility 1599 931 900 750 | server 1599 931 900 750 | shown 0.18 on below
+SKIPPED: top t2 JAVA f: the same place as e: nothing is taken off the main display's right
+put t2 JAVA 62 asked 300 200 900 750 took 300 200 900 750
+clock: t2 asked 122s after the script began, at 13:11:08Z
+
+-- 23 display-t2z-unplug-below: t2z: display below: unplug
+> unplug below
+displays t2z id 1 serial 305419896 frame 0 0 1600 900 main
+  vdisplay list: 1 5A42259C-47B8-4590-9762-97DBE4FE7F1B 0 0 1600 900 1 main 0 0 305419896
+at t2z LIVES 47 ax 300 165 1000 600 server 300 165 1000 600
+share t2z LIVES 47 shown 1.00 lies 1.00 on main flags main,focused,toolbar
+at t2z TEXT 56 ax 165 65 656 422 server 165 65 656 422
+share t2z TEXT 56 shown 1.00 lies 1.00 on main flags main
+at t2z JAVA 62 ax 350 51 900 750 server 350 51 900 750
+share t2z JAVA 62 shown 1.00 lies 1.00 on main flags main
+clock: t2z done 125s after the script began, at 13:11:11Z
+
+-- 24 display-t3-plug-B: t3: display B: plug, left-and-lower
+> plug B: display 4, serial 2, 1280 x 800: it came at 1600 0 and is moved to -1280 500: now at -1280 500 1280 800
+displays t3 id 1 serial 305419896 frame 0 0 1600 900 main ; id 4 serial 2 frame -1280 500 1280 800 -
+  vdisplay list: 1 5A42259C-47B8-4590-9762-97DBE4FE7F1B 0 0 1600 900 1 main 0 0 305419896
+  vdisplay list: 4 53E827A3-0CA2-4031-AC83-8E3CA1A98F8A -1280 500 1280 800 1 - 42928 1 2
+at t3 LIVES 47 ax 300 165 1000 600 server 300 165 1000 600
+share t3 LIVES 47 shown 1.00 lies 1.00 on main flags main,focused,toolbar
+at t3 TEXT 56 ax 165 65 656 422 server 165 65 656 422
+share t3 TEXT 56 shown 1.00 lies 1.00 on main flags main
+at t3 JAVA 62 ax 350 51 900 750 server 350 51 900 750
+share t3 JAVA 62 shown 1.00 lies 1.00 on main flags main
+clock: t3 done 128s after the script began, at 13:11:14Z
+visible t3 main 0 31 1600 791
+visible t3 B -1280 531 1280 769
+put t3 TEXT 56 asked 300 200 656 422 took 300 200 656 422
+
+-- 25 top-t3-TEXT-a: t3: TEXT is asked through Accessibility for 1599 0, at the size it has
+answer t3 TEXT 56 asked 1599 0 656 422 took 1599 31 656 422
+top t3 TEXT 56 asked 1599 0 656 422 | accessibility 1599 31 656 422 | server 1599 31 656 422 | shown 0.00 on main
+shot: mac-shell/top-t3-a.png and top-t3-a-d2.png
+put t3 TEXT 56 asked 300 200 656 422 took 300 200 656 422
+
+-- 26 top-t3-TEXT-b: t3: TEXT is asked through Accessibility for 1599 -50, at the size it has
+answer t3 TEXT 56 asked 1599 -50 656 422 took 1599 31 656 422
+top t3 TEXT 56 asked 1599 -50 656 422 | accessibility 1599 31 656 422 | server 1599 31 656 422 | shown 0.00 on main
+shot: mac-shell/top-t3-b.png and top-t3-b-d2.png
+put t3 TEXT 56 asked 300 200 656 422 took 300 200 656 422
+
+-- 27 top-t3-TEXT-c: t3: TEXT is asked through Accessibility for -655 0, at the size it has
+answer t3 TEXT 56 asked -655 0 656 422 took -655 31 656 422
+top t3 TEXT 56 asked -655 0 656 422 | accessibility -655 31 656 422 | server -655 31 656 422 | shown 0.00 on main
+shot: mac-shell/top-t3-c.png and top-t3-c-d2.png
+put t3 TEXT 56 asked 300 200 656 422 took 300 200 656 422
+
+-- 28 top-t3-TEXT-d: t3: TEXT is asked through Accessibility for -655 -50, at the size it has
+answer t3 TEXT 56 asked -655 -50 656 422 took -655 531 656 422
+top t3 TEXT 56 asked -655 -50 656 422 | accessibility -655 531 656 422 | server -655 531 656 422 | shown 1.00 on B
+shot: mac-shell/top-t3-d.png and top-t3-d-d2.png
+put t3 TEXT 56 asked 300 200 656 422 took 300 200 656 422
+put t3 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
+
+-- 29 top-t3-LIVES-a: t3: LIVES is asked through Accessibility for 1599 0, at the size it has
+answer t3 LIVES 47 asked 1599 0 1000 600 took 1599 31 1000 600
+top t3 LIVES 47 asked 1599 0 1000 600 | accessibility 1599 31 1000 600 | server 1599 31 1000 600 | shown 0.00 on main
+put t3 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
+
+-- 30 top-t3-LIVES-b: t3: LIVES is asked through Accessibility for 1599 -50, at the size it has
+answer t3 LIVES 47 asked 1599 -50 1000 600 took 1599 31 1000 600
+top t3 LIVES 47 asked 1599 -50 1000 600 | accessibility 1599 31 1000 600 | server 1599 31 1000 600 | shown 0.00 on main
+put t3 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
+
+-- 31 top-t3-LIVES-c: t3: LIVES is asked through Accessibility for -999 0, at the size it has
+answer t3 LIVES 47 asked -999 0 1000 600 took -999 31 1000 600
+top t3 LIVES 47 asked -999 0 1000 600 | accessibility -999 531 1000 600 | server -999 531 1000 600 | shown 1.00 on B
+put t3 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
+
+-- 32 top-t3-LIVES-d: t3: LIVES is asked through Accessibility for -999 -50, at the size it has
+answer t3 LIVES 47 asked -999 -50 1000 600 took -999 31 1000 600
+top t3 LIVES 47 asked -999 -50 1000 600 | accessibility -999 531 1000 600 | server -999 531 1000 600 | shown 1.00 on B
+put t3 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
+put t3 JAVA 62 asked 300 200 900 750 took 300 200 900 750
+
+-- 33 top-t3-JAVA-a: t3: JAVA is asked through Accessibility for 1599 0, at the size it has
+answer t3 JAVA 62 asked 1599 0 900 750 took 1599 31 900 750
+top t3 JAVA 62 asked 1599 0 900 750 | accessibility 1599 31 900 750 | server 1599 31 900 750 | shown 0.00 on main
+put t3 JAVA 62 asked 300 200 900 750 took 300 200 900 750
+
+-- 34 top-t3-JAVA-b: t3: JAVA is asked through Accessibility for 1599 -50, at the size it has
+answer t3 JAVA 62 asked 1599 -50 900 750 took 1599 31 900 750
+top t3 JAVA 62 asked 1599 -50 900 750 | accessibility 1599 31 900 750 | server 1599 31 900 750 | shown 0.00 on main
+put t3 JAVA 62 asked 300 200 900 750 took 300 200 900 750
+
+-- 35 top-t3-JAVA-c: t3: JAVA is asked through Accessibility for -899 0, at the size it has
+answer t3 JAVA 62 asked -899 0 900 750 took -899 31 900 750
+top t3 JAVA 62 asked -899 0 900 750 | accessibility -899 531 900 750 | server -899 531 900 750 | shown 1.00 on B
+put t3 JAVA 62 asked 300 200 900 750 took 300 200 900 750
+
+-- 36 top-t3-JAVA-d: t3: JAVA is asked through Accessibility for -899 -50, at the size it has
+answer t3 JAVA 62 asked -899 -50 900 750 took -899 531 900 750
+top t3 JAVA 62 asked -899 -50 900 750 | accessibility -899 531 900 750 | server -899 531 900 750 | shown 1.00 on B
+put t3 JAVA 62 asked 300 200 900 750 took 300 200 900 750
+clock: t3 asked 151s after the script began, at 13:11:37Z
+
+-- 37 display-t3z-unplug-B: t3z: display B: unplug
+> unplug B
+displays t3z id 1 serial 305419896 frame 0 0 1600 900 main
+  vdisplay list: 1 5A42259C-47B8-4590-9762-97DBE4FE7F1B 0 0 1600 900 1 main 0 0 305419896
+at t3z LIVES 47 ax 300 165 1000 600 server 300 165 1000 600
+share t3z LIVES 47 shown 1.00 lies 1.00 on main flags main,focused,toolbar
+at t3z TEXT 56 ax 165 65 656 422 server 165 65 656 422
+share t3z TEXT 56 shown 1.00 lies 1.00 on main flags main
+at t3z JAVA 62 ax 350 51 900 750 server 350 51 900 750
+share t3z JAVA 62 shown 1.00 lies 1.00 on main flags main
+clock: t3z done 155s after the script began, at 13:11:41Z
+
+-- 38 display-t5-plug-B: t5: display B: plug, above
+> plug B: display 5, serial 2, 1280 x 800: it came at -1280 500 and is moved to 0 -800: now at 0 -800 1280 800
+displays t5 id 1 serial 305419896 frame 0 0 1600 900 main ; id 5 serial 2 frame 0 -800 1280 800 -
+  vdisplay list: 1 5A42259C-47B8-4590-9762-97DBE4FE7F1B 0 0 1600 900 1 main 0 0 305419896
+  vdisplay list: 5 53E827A3-0CA2-4031-AC83-8E3CA1A98F8A 0 -800 1280 800 1 - 42928 1 2
+at t5 LIVES 47 ax 300 165 1000 600 server 300 165 1000 600
+share t5 LIVES 47 shown 1.00 lies 1.00 on main flags main,focused,toolbar
+at t5 TEXT 56 ax 165 65 656 422 server 165 65 656 422
+share t5 TEXT 56 shown 1.00 lies 1.00 on main flags main
+at t5 JAVA 62 ax 350 51 900 750 server 350 51 900 750
+share t5 JAVA 62 shown 1.00 lies 1.00 on main flags main
+clock: t5 done 158s after the script began, at 13:11:44Z
+visible t5 main 0 31 1600 791
+visible t5 B 0 -769 1280 769
+put t5 TEXT 56 asked 300 200 656 422 took 300 200 656 422
+
+-- 39 top-t5-TEXT-a: t5: TEXT is asked through Accessibility for 1599 0, at the size it has
+answer t5 TEXT 56 asked 1599 0 656 422 took 1599 31 656 422
+top t5 TEXT 56 asked 1599 0 656 422 | accessibility 1599 31 656 422 | server 1599 31 656 422 | shown 0.00 on main
+shot: mac-shell/top-t5-a.png and top-t5-a-d2.png
+put t5 TEXT 56 asked 300 200 656 422 took 300 200 656 422
+
+-- 40 top-t5-TEXT-b: t5: TEXT is asked through Accessibility for 1599 -50, at the size it has
+answer t5 TEXT 56 asked 1599 -50 656 422 took 1599 31 656 422
+top t5 TEXT 56 asked 1599 -50 656 422 | accessibility 1599 31 656 422 | server 1599 31 656 422 | shown 0.00 on main
+shot: mac-shell/top-t5-b.png and top-t5-b-d2.png
+put t5 TEXT 56 asked 300 200 656 422 took 300 200 656 422
+
+-- 41 top-t5-TEXT-c: t5: TEXT is asked through Accessibility for -655 0, at the size it has
+answer t5 TEXT 56 asked -655 0 656 422 took -655 31 656 422
+top t5 TEXT 56 asked -655 0 656 422 | accessibility -655 31 656 422 | server -655 31 656 422 | shown 0.00 on main
+shot: mac-shell/top-t5-c.png and top-t5-c-d2.png
+put t5 TEXT 56 asked 300 200 656 422 took 300 200 656 422
+
+-- 42 top-t5-TEXT-d: t5: TEXT is asked through Accessibility for -655 -50, at the size it has
+answer t5 TEXT 56 asked -655 -50 656 422 took -655 -50 656 422
+top t5 TEXT 56 asked -655 -50 656 422 | accessibility -655 31 656 422 | server -655 31 656 422 | shown 0.00 on main
+shot: mac-shell/top-t5-d.png and top-t5-d-d2.png
+put t5 TEXT 56 asked 300 200 656 422 took 300 200 656 422
+put t5 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
+
+-- 43 top-t5-LIVES-a: t5: LIVES is asked through Accessibility for 1599 0, at the size it has
+answer t5 LIVES 47 asked 1599 0 1000 600 took 1599 31 1000 600
+top t5 LIVES 47 asked 1599 0 1000 600 | accessibility 1599 31 1000 600 | server 1599 31 1000 600 | shown 0.00 on main
+put t5 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
+
+-- 44 top-t5-LIVES-b: t5: LIVES is asked through Accessibility for 1599 -50, at the size it has
+answer t5 LIVES 47 asked 1599 -50 1000 600 took 1599 31 1000 600
+top t5 LIVES 47 asked 1599 -50 1000 600 | accessibility 1599 31 1000 600 | server 1599 31 1000 600 | shown 0.00 on main
+put t5 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
+
+-- 45 top-t5-LIVES-c: t5: LIVES is asked through Accessibility for -999 0, at the size it has
+answer t5 LIVES 47 asked -999 0 1000 600 took -999 31 1000 600
+top t5 LIVES 47 asked -999 0 1000 600 | accessibility -999 31 1000 600 | server -999 31 1000 600 | shown 0.00 on main
+put t5 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
+
+-- 46 top-t5-LIVES-d: t5: LIVES is asked through Accessibility for -999 -50, at the size it has
+answer t5 LIVES 47 asked -999 -50 1000 600 took -999 -52 1000 600
+top t5 LIVES 47 asked -999 -50 1000 600 | accessibility -999 31 1000 600 | server -999 31 1000 600 | shown 0.00 on main
+put t5 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
+put t5 JAVA 62 asked 300 200 900 750 took 300 200 900 750
+
+-- 47 top-t5-JAVA-a: t5: JAVA is asked through Accessibility for 1599 0, at the size it has
+answer t5 JAVA 62 asked 1599 0 900 750 took 1599 31 900 750
+top t5 JAVA 62 asked 1599 0 900 750 | accessibility 1599 31 900 750 | server 1599 31 900 750 | shown 0.00 on main
+put t5 JAVA 62 asked 300 200 900 750 took 300 200 900 750
+
+-- 48 top-t5-JAVA-b: t5: JAVA is asked through Accessibility for 1599 -50, at the size it has
+answer t5 JAVA 62 asked 1599 -50 900 750 took 1599 31 900 750
+top t5 JAVA 62 asked 1599 -50 900 750 | accessibility 1599 31 900 750 | server 1599 31 900 750 | shown 0.00 on main
+put t5 JAVA 62 asked 300 200 900 750 took 300 200 900 750
+
+-- 49 top-t5-JAVA-c: t5: JAVA is asked through Accessibility for -899 0, at the size it has
+answer t5 JAVA 62 asked -899 0 900 750 took -899 31 900 750
+top t5 JAVA 62 asked -899 0 900 750 | accessibility -899 31 900 750 | server -899 31 900 750 | shown 0.00 on main
+put t5 JAVA 62 asked 300 200 900 750 took 300 200 900 750
+
+-- 50 top-t5-JAVA-d: t5: JAVA is asked through Accessibility for -899 -50, at the size it has
+answer t5 JAVA 62 asked -899 -50 900 750 took -899 -50 900 750
+top t5 JAVA 62 asked -899 -50 900 750 | accessibility -899 31 900 750 | server -899 31 900 750 | shown 0.00 on main
+put t5 JAVA 62 asked 300 200 900 750 took 300 200 900 750
+clock: t5 asked 181s after the script began, at 13:12:07Z
+
+-- 51 display-t5z-unplug-B: t5z: display B: unplug
+> unplug B
+displays t5z id 1 serial 305419896 frame 0 0 1600 900 main
+  vdisplay list: 1 5A42259C-47B8-4590-9762-97DBE4FE7F1B 0 0 1600 900 1 main 0 0 305419896
+at t5z LIVES 47 ax 300 165 1000 600 server 300 165 1000 600
+share t5z LIVES 47 shown 1.00 lies 1.00 on main flags main,focused,toolbar
+at t5z TEXT 56 ax 165 65 656 422 server 165 65 656 422
+share t5z TEXT 56 shown 1.00 lies 1.00 on main flags main
+at t5z JAVA 62 ax 350 51 900 750 server 350 51 900 750
+share t5z JAVA 62 shown 1.00 lies 1.00 on main flags main
+clock: t5z done 184s after the script began, at 13:12:10Z
+
+-- 52 display-t4b-plug-B: t4b: display B: plug, left-and-lower
+> plug B: display 6, serial 2, 1280 x 800: it came at 0 -800 and is moved to -1280 500: now at -1280 500 1280 800
+displays t4b id 1 serial 305419896 frame 0 0 1600 900 main ; id 6 serial 2 frame -1280 500 1280 800 -
+  vdisplay list: 1 5A42259C-47B8-4590-9762-97DBE4FE7F1B 0 0 1600 900 1 main 0 0 305419896
+  vdisplay list: 6 53E827A3-0CA2-4031-AC83-8E3CA1A98F8A -1280 500 1280 800 1 - 42928 1 2
+at t4b LIVES 47 ax 300 165 1000 600 server 300 165 1000 600
+share t4b LIVES 47 shown 1.00 lies 1.00 on main flags main,focused,toolbar
+at t4b TEXT 56 ax 165 65 656 422 server 165 65 656 422
+share t4b TEXT 56 shown 1.00 lies 1.00 on main flags main
+at t4b JAVA 62 ax 350 51 900 750 server 350 51 900 750
+share t4b JAVA 62 shown 1.00 lies 1.00 on main flags main
+clock: t4b done 187s after the script began, at 13:12:13Z
+
+-- 53 display-t4-plug-A: t4: display A: plug, right
+> plug A: display 7, serial 1, 1920 x 1080: it came at 1600 0, where it belongs, and is not moved
+displays t4 id 1 serial 305419896 frame 0 0 1600 900 main ; id 6 serial 2 frame -1280 500 1280 800 - ; id 7 serial 1 frame 1600 0 1920 1080 -
+  vdisplay list: 1 5A42259C-47B8-4590-9762-97DBE4FE7F1B 0 0 1600 900 1 main 0 0 305419896
+  vdisplay list: 6 53E827A3-0CA2-4031-AC83-8E3CA1A98F8A -1280 500 1280 800 1 - 42928 1 2
+  vdisplay list: 7 A1CE474A-92EC-4D1C-B73F-4E9EC712D6D5 1600 0 1920 1080 1 - 42928 1 1
+at t4 LIVES 47 ax 300 165 1000 600 server 300 165 1000 600
+share t4 LIVES 47 shown 1.00 lies 1.00 on main flags main,focused,toolbar
+at t4 TEXT 56 ax 165 65 656 422 server 165 65 656 422
+share t4 TEXT 56 shown 1.00 lies 1.00 on main flags main
+at t4 JAVA 62 ax 350 51 900 750 server 350 51 900 750
+share t4 JAVA 62 shown 1.00 lies 1.00 on main flags main
+clock: t4 done 191s after the script began, at 13:12:17Z
+visible t4 main 0 31 1600 791
+visible t4 B -1280 531 1280 769
+visible t4 A 1600 31 1920 1049
+put t4 TEXT 56 asked 300 200 656 422 took 300 200 656 422
+
+-- 54 top-t4-TEXT-a: t4: TEXT is asked through Accessibility for 1599 0, at the size it has
+answer t4 TEXT 56 asked 1599 0 656 422 took 1599 31 656 422
+top t4 TEXT 56 asked 1599 0 656 422 | accessibility 1599 31 656 422 | server 1599 31 656 422 | shown 1.00 on A
+shot: mac-shell/top-t4-a.png and top-t4-a-d2.png and top-t4-a-d3.png
+put t4 TEXT 56 asked 300 200 656 422 took 300 200 656 422
+
+-- 55 top-t4-TEXT-b: t4: TEXT is asked through Accessibility for 1599 -50, at the size it has
+answer t4 TEXT 56 asked 1599 -50 656 422 took 1599 31 656 422
+top t4 TEXT 56 asked 1599 -50 656 422 | accessibility 1599 31 656 422 | server 1599 31 656 422 | shown 1.00 on A
+shot: mac-shell/top-t4-b.png and top-t4-b-d2.png and top-t4-b-d3.png
+put t4 TEXT 56 asked 300 200 656 422 took 300 200 656 422
+
+-- 56 top-t4-TEXT-c: t4: TEXT is asked through Accessibility for -655 0, at the size it has
+answer t4 TEXT 56 asked -655 0 656 422 took -655 31 656 422
+top t4 TEXT 56 asked -655 0 656 422 | accessibility -655 31 656 422 | server -655 31 656 422 | shown 0.00 on main
+shot: mac-shell/top-t4-c.png and top-t4-c-d2.png and top-t4-c-d3.png
+put t4 TEXT 56 asked 300 200 656 422 took 300 200 656 422
+
+-- 57 top-t4-TEXT-d: t4: TEXT is asked through Accessibility for -655 -50, at the size it has
+answer t4 TEXT 56 asked -655 -50 656 422 took -655 531 656 422
+top t4 TEXT 56 asked -655 -50 656 422 | accessibility -655 531 656 422 | server -655 531 656 422 | shown 1.00 on B
+shot: mac-shell/top-t4-d.png and top-t4-d-d2.png and top-t4-d-d3.png
+put t4 TEXT 56 asked 300 200 656 422 took 300 200 656 422
+put t4 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
+
+-- 58 top-t4-LIVES-a: t4: LIVES is asked through Accessibility for 1599 0, at the size it has
+answer t4 LIVES 47 asked 1599 0 1000 600 took 1599 31 1000 600
+top t4 LIVES 47 asked 1599 0 1000 600 | accessibility 1599 31 1000 600 | server 1599 31 1000 600 | shown 1.00 on A
+put t4 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
+
+-- 59 top-t4-LIVES-b: t4: LIVES is asked through Accessibility for 1599 -50, at the size it has
+answer t4 LIVES 47 asked 1599 -50 1000 600 took 1599 31 1000 600
+top t4 LIVES 47 asked 1599 -50 1000 600 | accessibility 1599 31 1000 600 | server 1599 31 1000 600 | shown 1.00 on A
+put t4 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
+
+-- 60 top-t4-LIVES-c: t4: LIVES is asked through Accessibility for -999 0, at the size it has
+answer t4 LIVES 47 asked -999 0 1000 600 took -999 31 1000 600
+top t4 LIVES 47 asked -999 0 1000 600 | accessibility -999 531 1000 600 | server -999 531 1000 600 | shown 1.00 on B
+put t4 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
+
+-- 61 top-t4-LIVES-d: t4: LIVES is asked through Accessibility for -999 -50, at the size it has
+answer t4 LIVES 47 asked -999 -50 1000 600 took -999 31 1000 600
+top t4 LIVES 47 asked -999 -50 1000 600 | accessibility -999 531 1000 600 | server -999 531 1000 600 | shown 1.00 on B
+put t4 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
+put t4 JAVA 62 asked 300 200 900 750 took 300 200 900 750
+
+-- 62 top-t4-JAVA-a: t4: JAVA is asked through Accessibility for 1599 0, at the size it has
+answer t4 JAVA 62 asked 1599 0 900 750 took 1599 31 900 750
+top t4 JAVA 62 asked 1599 0 900 750 | accessibility 1599 31 900 750 | server 1599 31 900 750 | shown 1.00 on A
+put t4 JAVA 62 asked 300 200 900 750 took 300 200 900 750
+
+-- 63 top-t4-JAVA-b: t4: JAVA is asked through Accessibility for 1599 -50, at the size it has
+answer t4 JAVA 62 asked 1599 -50 900 750 took 1599 31 900 750
+top t4 JAVA 62 asked 1599 -50 900 750 | accessibility 1599 31 900 750 | server 1599 31 900 750 | shown 1.00 on A
+put t4 JAVA 62 asked 300 200 900 750 took 300 200 900 750
+
+-- 64 top-t4-JAVA-c: t4: JAVA is asked through Accessibility for -899 0, at the size it has
+answer t4 JAVA 62 asked -899 0 900 750 took -899 31 900 750
+top t4 JAVA 62 asked -899 0 900 750 | accessibility -899 531 900 750 | server -899 531 900 750 | shown 1.00 on B
+put t4 JAVA 62 asked 300 200 900 750 took 300 200 900 750
+
+-- 65 top-t4-JAVA-d: t4: JAVA is asked through Accessibility for -899 -50, at the size it has
+answer t4 JAVA 62 asked -899 -50 900 750 took -899 531 900 750
+top t4 JAVA 62 asked -899 -50 900 750 | accessibility -899 531 900 750 | server -899 531 900 750 | shown 1.00 on B
+put t4 JAVA 62 asked 300 200 900 750 took 300 200 900 750
+clock: t4 asked 216s after the script began, at 13:12:42Z
+
+-- 66 display-t4y-unplug-A: t4y: display A: unplug
+> unplug A
+displays t4y id 1 serial 305419896 frame 0 0 1600 900 main ; id 6 serial 2 frame -1280 500 1280 800 -
+  vdisplay list: 1 5A42259C-47B8-4590-9762-97DBE4FE7F1B 0 0 1600 900 1 main 0 0 305419896
+  vdisplay list: 6 53E827A3-0CA2-4031-AC83-8E3CA1A98F8A -1280 500 1280 800 1 - 42928 1 2
+at t4y LIVES 47 ax 300 165 1000 600 server 300 165 1000 600
+share t4y LIVES 47 shown 1.00 lies 1.00 on main flags main,focused,toolbar
+at t4y TEXT 56 ax 165 65 656 422 server 165 65 656 422
+share t4y TEXT 56 shown 1.00 lies 1.00 on main flags main
+at t4y JAVA 62 ax 350 51 900 750 server 350 51 900 750
+share t4y JAVA 62 shown 1.00 lies 1.00 on main flags main
+clock: t4y done 219s after the script began, at 13:12:45Z
+
+-- 67 display-t4z-unplug-B: t4z: display B: unplug
+> unplug B
+displays t4z id 1 serial 305419896 frame 0 0 1600 900 main
+  vdisplay list: 1 5A42259C-47B8-4590-9762-97DBE4FE7F1B 0 0 1600 900 1 main 0 0 305419896
+at t4z LIVES 47 ax 300 165 1000 600 server 300 165 1000 600
+share t4z LIVES 47 shown 1.00 lies 1.00 on main flags main,focused,toolbar
+at t4z TEXT 56 ax 165 65 656 422 server 165 65 656 422
+share t4z TEXT 56 shown 1.00 lies 1.00 on main flags main
+at t4z JAVA 62 ax 350 51 900 750 server 350 51 900 750
+share t4z JAVA 62 shown 1.00 lies 1.00 on main flags main
+clock: t4z done 222s after the script began, at 13:12:48Z
+visible t1 main 0 31 1600 791
+put t1 TEXT 56 asked 300 200 656 422 took 300 200 656 422
+
+-- 68 top-t1-TEXT-a: t1: TEXT is asked through Accessibility for 1599 0, at the size it has
+answer t1 TEXT 56 asked 1599 0 656 422 took 1599 31 656 422
+top t1 TEXT 56 asked 1599 0 656 422 | accessibility 1599 31 656 422 | server 1599 31 656 422 | shown 0.00 on main
+shot: mac-shell/top-t1-a.png
+put t1 TEXT 56 asked 300 200 656 422 took 300 200 656 422
+
+-- 69 top-t1-TEXT-b: t1: TEXT is asked through Accessibility for 1599 -50, at the size it has
+answer t1 TEXT 56 asked 1599 -50 656 422 took 1599 31 656 422
+top t1 TEXT 56 asked 1599 -50 656 422 | accessibility 1599 31 656 422 | server 1599 31 656 422 | shown 0.00 on main
+shot: mac-shell/top-t1-b.png
+put t1 TEXT 56 asked 300 200 656 422 took 300 200 656 422
+
+-- 70 top-t1-TEXT-c: t1: TEXT is asked through Accessibility for -655 0, at the size it has
+answer t1 TEXT 56 asked -655 0 656 422 took -655 31 656 422
+top t1 TEXT 56 asked -655 0 656 422 | accessibility -655 31 656 422 | server -655 31 656 422 | shown 0.00 on main
+shot: mac-shell/top-t1-c.png
+put t1 TEXT 56 asked 300 200 656 422 took 300 200 656 422
+
+-- 71 top-t1-TEXT-d: t1: TEXT is asked through Accessibility for -655 -50, at the size it has
+answer t1 TEXT 56 asked -655 -50 656 422 took -655 31 656 422
+top t1 TEXT 56 asked -655 -50 656 422 | accessibility -655 31 656 422 | server -655 31 656 422 | shown 0.00 on main
+shot: mac-shell/top-t1-d.png
+put t1 TEXT 56 asked 300 200 656 422 took 300 200 656 422
+
+-- 72 top-t1-TEXT-e: t1: TEXT is asked through Accessibility for 1599 899, at the size it has
+answer t1 TEXT 56 asked 1599 899 656 422 took 1599 790 656 422
+top t1 TEXT 56 asked 1599 899 656 422 | accessibility 1599 790 656 422 | server 1599 790 656 422 | shown 0.00 on main
+shot: mac-shell/top-t1-e.png
+SKIPPED: top t1 TEXT f: the same place as e: nothing is taken off the main display's right
+put t1 TEXT 56 asked 300 200 656 422 took 300 200 656 422
+put t1 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
+
+-- 73 top-t1-LIVES-a: t1: LIVES is asked through Accessibility for 1599 0, at the size it has
+answer t1 LIVES 47 asked 1599 0 1000 600 took 1599 31 1000 600
+top t1 LIVES 47 asked 1599 0 1000 600 | accessibility 1599 31 1000 600 | server 1599 31 1000 600 | shown 0.00 on main
+put t1 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
+
+-- 74 top-t1-LIVES-b: t1: LIVES is asked through Accessibility for 1599 -50, at the size it has
+answer t1 LIVES 47 asked 1599 -50 1000 600 took 1599 31 1000 600
+top t1 LIVES 47 asked 1599 -50 1000 600 | accessibility 1599 31 1000 600 | server 1599 31 1000 600 | shown 0.00 on main
+put t1 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
+
+-- 75 top-t1-LIVES-c: t1: LIVES is asked through Accessibility for -999 0, at the size it has
+answer t1 LIVES 47 asked -999 0 1000 600 took -999 31 1000 600
+top t1 LIVES 47 asked -999 0 1000 600 | accessibility -999 31 1000 600 | server -999 31 1000 600 | shown 0.00 on main
+put t1 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
+
+-- 76 top-t1-LIVES-d: t1: LIVES is asked through Accessibility for -999 -50, at the size it has
+answer t1 LIVES 47 asked -999 -50 1000 600 took -999 31 1000 600
+top t1 LIVES 47 asked -999 -50 1000 600 | accessibility -999 31 1000 600 | server -999 31 1000 600 | shown 0.00 on main
+put t1 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
+
+-- 77 top-t1-LIVES-e: t1: LIVES is asked through Accessibility for 1599 899, at the size it has
+answer t1 LIVES 47 asked 1599 899 1000 600 took 1599 770 1000 600
+top t1 LIVES 47 asked 1599 899 1000 600 | accessibility 1599 770 1000 600 | server 1599 770 1000 600 | shown 0.00 on main
+SKIPPED: top t1 LIVES f: the same place as e: nothing is taken off the main display's right
+put t1 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
+put t1 JAVA 62 asked 300 200 900 750 took 300 200 900 750
+
+-- 78 top-t1-JAVA-a: t1: JAVA is asked through Accessibility for 1599 0, at the size it has
+answer t1 JAVA 62 asked 1599 0 900 750 took 1599 31 900 750
+top t1 JAVA 62 asked 1599 0 900 750 | accessibility 1599 31 900 750 | server 1599 31 900 750 | shown 0.00 on main
+put t1 JAVA 62 asked 300 200 900 750 took 300 200 900 750
+
+-- 79 top-t1-JAVA-b: t1: JAVA is asked through Accessibility for 1599 -50, at the size it has
+answer t1 JAVA 62 asked 1599 -50 900 750 took 1599 31 900 750
+top t1 JAVA 62 asked 1599 -50 900 750 | accessibility 1599 31 900 750 | server 1599 31 900 750 | shown 0.00 on main
+put t1 JAVA 62 asked 300 200 900 750 took 300 200 900 750
+
+-- 80 top-t1-JAVA-c: t1: JAVA is asked through Accessibility for -899 0, at the size it has
+answer t1 JAVA 62 asked -899 0 900 750 took -899 31 900 750
+top t1 JAVA 62 asked -899 0 900 750 | accessibility -899 31 900 750 | server -899 31 900 750 | shown 0.00 on main
+put t1 JAVA 62 asked 300 200 900 750 took 300 200 900 750
+
+-- 81 top-t1-JAVA-d: t1: JAVA is asked through Accessibility for -899 -50, at the size it has
+answer t1 JAVA 62 asked -899 -50 900 750 took -899 31 900 750
+top t1 JAVA 62 asked -899 -50 900 750 | accessibility -899 31 900 750 | server -899 31 900 750 | shown 0.00 on main
+put t1 JAVA 62 asked 300 200 900 750 took 300 200 900 750
+
+-- 82 top-t1-JAVA-e: t1: JAVA is asked through Accessibility for 1599 899, at the size it has
+answer t1 JAVA 62 asked 1599 899 900 750 took 1599 794 900 750
+top t1 JAVA 62 asked 1599 899 900 750 | accessibility 1599 794 900 750 | server 1599 794 900 750 | shown 0.00 on main
+SKIPPED: top t1 JAVA f: the same place as e: nothing is taken off the main display's right
+put t1 JAVA 62 asked 300 200 900 750 took 300 200 900 750
+clock: t1 asked 248s after the script began, at 13:13:14Z
+
+-- 83 display-t6-plug-A: t6: display A: plug, right-and-higher
+> plug A: display 8, serial 1, 1920 x 1080: it came at 1600 0 and is moved to 1600 -700: now at 1600 -700 1920 1080
+displays t6 id 1 serial 305419896 frame 0 0 1600 900 main ; id 8 serial 1 frame 1600 -700 1920 1080 -
+  vdisplay list: 1 5A42259C-47B8-4590-9762-97DBE4FE7F1B 0 0 1600 900 1 main 0 0 305419896
+  vdisplay list: 8 A1CE474A-92EC-4D1C-B73F-4E9EC712D6D5 1600 -700 1920 1080 1 - 42928 1 1
+at t6 LIVES 47 ax 300 165 1000 600 server 300 165 1000 600
+share t6 LIVES 47 shown 1.00 lies 1.00 on main flags main,focused,toolbar
+at t6 TEXT 56 ax 165 65 656 422 server 165 65 656 422
+share t6 TEXT 56 shown 1.00 lies 1.00 on main flags main
+at t6 JAVA 62 ax 350 51 900 750 server 350 51 900 750
+share t6 JAVA 62 shown 1.00 lies 1.00 on main flags main
+clock: t6 done 252s after the script began, at 13:13:18Z
+visible t6 main 0 31 1600 791
+visible t6 A 1600 -669 1920 1049
+put t6 TEXT 56 asked 300 200 656 422 took 300 200 656 422
+
+-- 84 top-t6-TEXT-a: t6: TEXT is asked through Accessibility for 1599 0, at the size it has
+answer t6 TEXT 56 asked 1599 0 656 422 took 1599 0 656 422
+top t6 TEXT 56 asked 1599 0 656 422 | accessibility 1599 0 656 422 | server 1599 0 656 422 | shown 0.90 on A
+shot: mac-shell/top-t6-a.png and top-t6-a-d2.png
+put t6 TEXT 56 asked 300 200 656 422 took 300 200 656 422
+
+-- 85 top-t6-TEXT-b: t6: TEXT is asked through Accessibility for 1599 -50, at the size it has
+answer t6 TEXT 56 asked 1599 -50 656 422 took 1599 -50 656 422
+top t6 TEXT 56 asked 1599 -50 656 422 | accessibility 1599 -50 656 422 | server 1599 -50 656 422 | shown 1.00 on A
+shot: mac-shell/top-t6-b.png and top-t6-b-d2.png
+put t6 TEXT 56 asked 300 200 656 422 took 300 200 656 422
+
+-- 86 top-t6-TEXT-c: t6: TEXT is asked through Accessibility for -655 0, at the size it has
+answer t6 TEXT 56 asked -655 0 656 422 took -655 31 656 422
+top t6 TEXT 56 asked -655 0 656 422 | accessibility -655 31 656 422 | server -655 31 656 422 | shown 0.00 on main
+shot: mac-shell/top-t6-c.png and top-t6-c-d2.png
+put t6 TEXT 56 asked 300 200 656 422 took 300 200 656 422
+
+-- 87 top-t6-TEXT-d: t6: TEXT is asked through Accessibility for -655 -50, at the size it has
+answer t6 TEXT 56 asked -655 -50 656 422 took -655 31 656 422
+top t6 TEXT 56 asked -655 -50 656 422 | accessibility -655 31 656 422 | server -655 31 656 422 | shown 0.00 on main
+shot: mac-shell/top-t6-d.png and top-t6-d-d2.png
+put t6 TEXT 56 asked 300 200 656 422 took 300 200 656 422
+put t6 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
+
+-- 88 top-t6-LIVES-a: t6: LIVES is asked through Accessibility for 1599 0, at the size it has
+answer t6 LIVES 47 asked 1599 0 1000 600 took 1599 0 1000 600
+top t6 LIVES 47 asked 1599 0 1000 600 | accessibility 1599 0 1000 600 | server 1599 0 1000 600 | shown 0.63 on A
+put t6 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
+
+-- 89 top-t6-LIVES-b: t6: LIVES is asked through Accessibility for 1599 -50, at the size it has
+answer t6 LIVES 47 asked 1599 -50 1000 600 took 1599 -50 1000 600
+top t6 LIVES 47 asked 1599 -50 1000 600 | accessibility 1599 -50 1000 600 | server 1599 -50 1000 600 | shown 0.72 on A
+put t6 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
+
+-- 90 top-t6-LIVES-c: t6: LIVES is asked through Accessibility for -999 0, at the size it has
+answer t6 LIVES 47 asked -999 0 1000 600 took -999 31 1000 600
+top t6 LIVES 47 asked -999 0 1000 600 | accessibility -999 31 1000 600 | server -999 31 1000 600 | shown 0.00 on main
+put t6 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
+
+-- 91 top-t6-LIVES-d: t6: LIVES is asked through Accessibility for -999 -50, at the size it has
+answer t6 LIVES 47 asked -999 -50 1000 600 took -999 31 1000 600
+top t6 LIVES 47 asked -999 -50 1000 600 | accessibility -999 31 1000 600 | server -999 31 1000 600 | shown 0.00 on main
+put t6 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
+put t6 JAVA 62 asked 300 200 900 750 took 300 200 900 750
+
+-- 92 top-t6-JAVA-a: t6: JAVA is asked through Accessibility for 1599 0, at the size it has
+answer t6 JAVA 62 asked 1599 0 900 750 took 1599 0 900 750
+top t6 JAVA 62 asked 1599 0 900 750 | accessibility 1599 0 900 750 | server 1599 0 900 750 | shown 0.51 on A
+put t6 JAVA 62 asked 300 200 900 750 took 300 200 900 750
+
+-- 93 top-t6-JAVA-b: t6: JAVA is asked through Accessibility for 1599 -50, at the size it has
+answer t6 JAVA 62 asked 1599 -50 900 750 took 1599 -50 900 750
+top t6 JAVA 62 asked 1599 -50 900 750 | accessibility 1599 -50 900 750 | server 1599 -50 900 750 | shown 0.57 on A
+put t6 JAVA 62 asked 300 200 900 750 took 300 200 900 750
+
+-- 94 top-t6-JAVA-c: t6: JAVA is asked through Accessibility for -899 0, at the size it has
+answer t6 JAVA 62 asked -899 0 900 750 took -899 31 900 750
+top t6 JAVA 62 asked -899 0 900 750 | accessibility -899 31 900 750 | server -899 31 900 750 | shown 0.00 on main
+put t6 JAVA 62 asked 300 200 900 750 took 300 200 900 750
+
+-- 95 top-t6-JAVA-d: t6: JAVA is asked through Accessibility for -899 -50, at the size it has
+answer t6 JAVA 62 asked -899 -50 900 750 took -899 31 900 750
+top t6 JAVA 62 asked -899 -50 900 750 | accessibility -899 31 900 750 | server -899 31 900 750 | shown 0.00 on main
+put t6 JAVA 62 asked 300 200 900 750 took 300 200 900 750
+clock: t6 asked 275s after the script began, at 13:13:41Z
+
+-- 96 display-t6z-unplug-A: t6z: display A: unplug
+> unplug A
+displays t6z id 1 serial 305419896 frame 0 0 1600 900 main
+  vdisplay list: 1 5A42259C-47B8-4590-9762-97DBE4FE7F1B 0 0 1600 900 1 main 0 0 305419896
+at t6z LIVES 47 ax 300 165 1000 600 server 300 165 1000 600
+share t6z LIVES 47 shown 1.00 lies 1.00 on main flags main,focused,toolbar
+at t6z TEXT 56 ax 165 65 656 422 server 165 65 656 422
+share t6z TEXT 56 shown 1.00 lies 1.00 on main flags main
+at t6z JAVA 62 ax 350 51 900 750 server 350 51 900 750
+share t6z JAVA 62 shown 1.00 lies 1.00 on main flags main
+clock: t6z done 278s after the script began, at 13:13:44Z
+
+== the end
+
+-- 97 quit: quit: nothing happens: the control has no Arbor to quit
+displays quit id 1 serial 305419896 frame 0 0 1600 900 main
+  vdisplay list: 1 5A42259C-47B8-4590-9762-97DBE4FE7F1B 0 0 1600 900 1 main 0 0 305419896
+at quit LIVES 47 ax 300 165 1000 600 server 300 165 1000 600
+share quit LIVES 47 shown 1.00 lies 1.00 on main flags main,focused,toolbar
+at quit TEXT 56 ax 165 65 656 422 server 165 65 656 422
+share quit TEXT 56 shown 1.00 lies 1.00 on main flags main
+at quit JAVA 62 ax 350 51 900 750 server 350 51 900 750
+share quit JAVA 62 shown 1.00 lies 1.00 on main flags main
+clock: quit done 280s after the script began, at 13:13:46Z
+displays end id 1 serial 305419896 frame 0 0 1600 900 main
+  vdisplay list: 1 5A42259C-47B8-4590-9762-97DBE4FE7F1B 0 0 1600 900 1 main 0 0 305419896
+at end LIVES 47 ax 300 165 1000 600 server 300 165 1000 600
+share end LIVES 47 shown 1.00 lies 1.00 on main flags main,focused,toolbar
+at end TEXT 56 ax 165 65 656 422 server 165 65 656 422
+share end TEXT 56 shown 1.00 lies 1.00 on main flags main
+at end JAVA 62 ax 350 51 900 750 server 350 51 900 750
+share end JAVA 62 shown 1.00 lies 1.00 on main flags main
+clock: end done 280s after the script began, at 13:13:46Z
+no Arbor runs now: `pgrep -x Arbor` finds no process
+reach LIVES 47 100 % of it lie on a display: 300 165 1000 600
+  ✔ LIVES is within reach at the end: a tenth of it or more lies on a display
+reach TEXT 56 100 % of it lie on a display: 165 65 656 422
+  ✔ TEXT is within reach at the end: a tenth of it or more lies on a display
+reach JAVA 62 100 % of it lie on a display: 350 51 900 750
+  ✔ JAVA is within reach at the end: a tenth of it or more lies on a display
+Reduce Motion: true
+
+== what came back
+mac-shell/samples.log: 1103 lines, 97 steps
+  the sampler's own account: S samples 8805 seconds 226.8 hz 38.8 cost-ms 2.22 late 37 longest-gap-ms 540
+mac-shell/macos-reports.log: 306 lines
+clock: all done 282s after the script began, at 13:13:48Z
+
+3 passed, 0 failed
+exit code 0
