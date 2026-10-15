@@ -127,7 +127,11 @@ public final class FakeWindowSystem: WindowSystem {
   public private(set) var backgroundTabs: [WindowID: FakeWindow] = [:]
   /// Accessibility permission has been taken away: nothing can be moved, focused or asked. Set it through
   /// `Harness.revokeAccessibility()`.
-  public var isDenied = false
+  public var isDenied = false {
+    didSet { if isDenied, !oldValue { rememberedWithoutPermission = started ? windows.mapValues(\.snapshot) : [:] } }
+  }
+  /// What the Accessibility layer goes on giving while it is refused: the windows as it knew them when the permission went.
+  private var rememberedWithoutPermission: [WindowID: WindowSnapshot] = [:]
   /// How often Arbor tried to move or focus a window all the same.
   public private(set) var deniedCalls = 0
   /// `AXIsProcessTrusted()` goes on saying yes, as after Arbor was removed from the list with the − button.
@@ -255,6 +259,7 @@ public final class FakeWindowSystem: WindowSystem {
   public func start() {
     started = true
     starts += 1
+    if isDenied { rememberedWithoutPermission = [:] }
   }
   /// The real one lets go of every app, so what the apps were about to report of Arbor's last moves is never heard.
   public func stop() {
@@ -269,9 +274,10 @@ public final class FakeWindowSystem: WindowSystem {
     return setFrame(frame, of: window)
   }
 
+  /// Also without the permission: the Accessibility layer asks nobody for this, it gives what it remembers. One that was started without
+  /// it has been told of no window.
   public func allWindows() -> [WindowSnapshot] {
-    guard !isDenied else { return [] }
-    return windows.values.map(\.snapshot).sorted { $0.id < $1.id }
+    (isDenied ? Array(rememberedWithoutPermission.values) : windows.values.map(\.snapshot)).sorted { $0.id < $1.id }
   }
 
   public func displays() -> [DisplaySnapshot] { displayList }
@@ -296,11 +302,11 @@ public final class FakeWindowSystem: WindowSystem {
     willSetFrame?(window, frame)
     guard var fake = windows[window], !unresponsive.contains(fake.snapshot.pid) else { return nil }
     if isDenied {
-      // Every call fails and the frame cannot be read back; the real window system has been known to answer
-      // with the frame it was asked for, which is the worse of the two things it could say.
+      // Every call fails and the frame cannot be read back. Like the Accessibility layer, which says that it was refused and answers
+      // nothing: of a window whose frame is not known, nobody may believe that it took the frame.
       deniedCalls += 1
       events?.accessibilityWasRefused()
-      return frame
+      return nil
     }
     // macOS does not let a window in full screen be moved or resized.
     if fake.snapshot.isFullScreen {

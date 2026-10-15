@@ -3258,10 +3258,10 @@ Permissions: what macOS allows, to whom, and how it says no.
 *hurt 1 · at the seam · suspected · K848 · M1052 · touches `lost`*
 
 - **Expected:** A call that fails means that the app did not answer.
-- **Happened:** With the permission gone every call is taken to answer `apiDisabled`, in the middle of a layout. That is not the app's silence, and the calls to come would be refused as well. Whether calls fail at once on a Mac has never been seen. The stand-in answers a refused `setFrame` with the frame asked for and lists no windows, where today's layer answers nil and goes on giving what it remembers.
+- **Happened:** With the permission gone every call is taken to answer `apiDisabled`, in the middle of a layout. That is not the app's silence, and the calls to come would be refused as well. Whether calls fail at once on a Mac has never been seen. The stand-in answered a refused `setFrame` with the frame asked for and listed no windows, where today's layer answers nil and goes on giving what it remembers. It does as the layer does now; no test fell.
 - **Found by:** Writing the feature and reading the Accessibility layer. The script that asks a Mac has not run.
 - **Stand-ins play it:** partly (`FakeWindowSystem.isDenied`, `FakeWindowSystem.deniedCalls`)
-- **Guard:** `test: aRefusedCallIsASecondOpinionTooAndIsActedOnOnceTheCallerHasReturned`; `test: aRefusalThatMacOSDoesNotConfirmChangesNothing`
+- **Guard:** `test: aRefusedCallIsASecondOpinionTooAndIsActedOnOnceTheCallerHasReturned`; `test: aRefusalThatMacOSDoesNotConfirmChangesNothing`; `test: aRefusedMoveAnswersNothingAndTheWindowsAreThoseRemembered`
 - **Arbor copes:** WindowSystemEvents.accessibilityWasRefused is sent from inside the call, which answers nil; the controller acts once the caller has returned.
 - **Read in:** `Sources/ArborKit/AX/AXWindowSystem.swift`, `Sources/ArborKit/Platform/WindowSystem.swift`, `Sources/ArborTesting/FakeWindowSystem.swift`, `collab/BACKLOG.md`
 
@@ -3318,7 +3318,7 @@ Permissions: what macOS allows, to whom, and how it says no.
 *hurt 1 · at the seam · K002 · K920 · M1052 · touches `lost`, `input-held`*
 
 - **Expected:** A call without the permission fails and somebody notices. The old stand-in's `setFrame` simply worked without it.
-- **Happened:** With Accessibility switched off while Arbor runs, shortcuts still swallowed their keys, commands succeeded in words and nothing moved, and windows out of view could not be fetched. The real window system has been known to answer with the frame it was asked for, the worse of the two things it could say.
+- **Happened:** With Accessibility switched off while Arbor runs, shortcuts still swallowed their keys, commands succeeded in words and nothing moved, and windows out of view could not be fetched. The real window system had been known to answer with the frame it was asked for, the worse of the two things it could say; today's answers nothing, and so does the stand-in.
 - **Found by:** Reviews of the app's shell and of the Accessibility layer. The switch itself has not been tried on a Mac.
 - **Stand-ins play it:** yes (`FakeWindowSystem.isDenied`, `FakeWindowSystem.deniedCalls`, `Harness.revokeAccessibility`, `Harness.grantAccessibility`)
 - **Guard:** `test: itIsNoticedWithinThreeSecondsWithoutAnybodyDoingAnything`; `test: aCommandGivenAfterwardsFailsTheFirstTimeAndMovesNothing`; `test: withWindowsOutOfViewEveryShortcutIsStillHeldAndNoneWorks`; `test: itComesBackWithinASecondWithEverythingInViewAndTheOldViewOneBackAway`; `scenario: 63-permission-taken-away.sim`; `e2e: 2 is still out of view: nothing could be done` (by hand)

@@ -313,6 +313,25 @@ private final class Recorder: WindowSystemEvents {
     #expect(recorder.log.suffix(2) == ["changed \(a) by hand", "resize ended \(a)"])
   }
 
+  /// Without the permission, as today's Accessibility layer has it: a move says that it was refused and answers nothing, so that nobody
+  /// believes the window took the frame, and the windows are those it remembers, as it remembers them.
+  @Test func aRefusedMoveAnswersNothingAndTheWindowsAreThoseRemembered() {
+    let (system, _, a, b, c) = make()
+    let before = system.allWindows()
+    system.isDenied = true
+    #expect(system.setFrame(CGRect(x: 10, y: 40, width: 300, height: 200), of: a) == nil)
+    #expect(system.deniedCalls == 1 && system.frame(of: a) == before.first { $0.id == a }?.frame)
+    system.userMove(b, to: CGRect(x: 50, y: 60, width: 300, height: 200))
+    system.open(app: "Notes")
+    #expect(system.allWindows() == before, "\([a, b, c])")
+    // One that starts without it has been told of nothing.
+    system.stop()
+    system.start()
+    #expect(system.allWindows().isEmpty)
+    system.isDenied = false
+    #expect(system.allWindows().count == 4)
+  }
+
   @Test func everySwitchCanBeTurnedOff() {
     let (system, recorder, a, b, _) = make(.none)
     system.focus(b)

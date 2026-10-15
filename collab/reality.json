@@ -2233,7 +2233,7 @@
    "kind": "permissions",
    "layer": "at the seam",
    "expected": "A call that fails means that the app did not answer.",
-   "happened": "With the permission gone every call is taken to answer `apiDisabled`, in the middle of a layout. That is not the app's silence, and the calls to come would be refused as well. Whether calls fail at once on a Mac has never been seen. The stand-in answers a refused `setFrame` with the frame asked for and lists no windows, where today's layer answers nil and goes on giving what it remembers.",
+   "happened": "With the permission gone every call is taken to answer `apiDisabled`, in the middle of a layout. That is not the app's silence, and the calls to come would be refused as well. Whether calls fail at once on a Mac has never been seen. The stand-in answered a refused `setFrame` with the frame asked for and listed no windows, where today's layer answers nil and goes on giving what it remembers. It does as the layer does now; no test fell.",
    "found": "Writing the feature and reading the Accessibility layer. The script that asks a Mac has not run.",
    "modelled": "partly",
    "knobs": [
@@ -2242,7 +2242,8 @@
    ],
    "guards": [
     "test: aRefusedCallIsASecondOpinionTooAndIsActedOnOnceTheCallerHasReturned",
-    "test: aRefusalThatMacOSDoesNotConfirmChangesNothing"
+    "test: aRefusalThatMacOSDoesNotConfirmChangesNothing",
+    "test: aRefusedMoveAnswersNothingAndTheWindowsAreThoseRemembered"
    ],
    "copes": "WindowSystemEvents.accessibilityWasRefused is sent from inside the call, which answers nil; the controller acts once the caller has returned.",
    "hurt": 1,
@@ -12194,7 +12195,7 @@
    "kind": "permissions",
    "layer": "at the seam",
    "expected": "A call without the permission fails and somebody notices. The old stand-in's `setFrame` simply worked without it.",
-   "happened": "With Accessibility switched off while Arbor runs, shortcuts still swallowed their keys, commands succeeded in words and nothing moved, and windows out of view could not be fetched. The real window system has been known to answer with the frame it was asked for, the worse of the two things it could say.",
+   "happened": "With Accessibility switched off while Arbor runs, shortcuts still swallowed their keys, commands succeeded in words and nothing moved, and windows out of view could not be fetched. The real window system had been known to answer with the frame it was asked for, the worse of the two things it could say; today's answers nothing, and so does the stand-in.",
    "found": "Reviews of the app's shell and of the Accessibility layer. The switch itself has not been tried on a Mac.",
    "modelled": "yes",
    "knobs": [
