@@ -119,8 +119,7 @@ import Testing
     let got = h.system.keysTheAppInFrontGot.count
     #expect(h.key("ctrl+opt+cmd+left")?.ok == false)
     #expect(h.system.keysTheAppInFrontGot.count == got, "it does not land in the app in front")
-    #expect(
-      h.overlays.headsUp[h.display]?.line == "Arbor needs the Accessibility permission · System Settings → Privacy & Security → Accessibility")
+    #expect(h.overlays.headsUp[h.display]?.line == "Arbor needs the Accessibility permission · Check Setup… in its menu")
     #expect(h.welcome.isOpen && h.welcome.model.page == .permissions)
     h.scheduler.advance(by: 5)
     #expect(h.welcome.timesMacOSWasAsked == 0 && h.welcome.panesOpened.isEmpty)
