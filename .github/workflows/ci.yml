@@ -253,8 +253,8 @@ jobs:
   # What is compiled for a part of the tests is not the checkout, and a process to a file is not how `swift test` runs them
   # (linux.yml). So where work is integrated (a push to main, a merge train, a pull request into main from whatever branch), and at
   # night, plain `swift test` runs everything once more and must come to the same outcome, test by test. Nobody else has
-  # to wait twelve minutes for it: whoever integrates waits for this one too. It starts at once, beside the parts: by
-  # the time it has run, their record is there, or they failed and so does this.
+  # to wait twelve minutes for it: whoever integrates waits for this one too. It starts at once, beside the parts, and hands on
+  # how each test came out; `tests-same`, behind both, holds the two records against each other.
   tests-whole:
     # Not for a draft: there are no parts there to hold it against.
     if: ${{ github.event.action != 'closed' && (github.event_name != 'pull_request' || (github.base_ref == 'main' && !github.event.pull_request.draft)) }}
@@ -272,9 +272,30 @@ jobs:
         run: ./scripts/ci-step.py toolchain swift --version
       - name: Test
         run: ./scripts/ci-step.py --summary 'Test run with' test swift test --event-stream-output-path whole.jsonl --event-stream-version 0
+      - name: Keep the record of how each test came out
+        # Not called tests-…: `tests-accounted-for` fetches all that is.
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: whole-tests
+          path: whole.jsonl
+          retention-days: 7
+
+  # A job of its own, behind both, whichever ends first. `tests-whole` used to ask this itself, as its last step, on the ground that the parts would
+  # be through by then. With runners free they are. On a day when the parts waited an hour for theirs it passed every test, found no record to hold
+  # them against, and was red: on a merge train, for nothing. Where either of the two failed or did not run this is skipped, by
+  # GitHub's own rule, and what is red is where the fault is. Seconds, on a bare runner: two files and Python.
+  tests-same:
+    needs: [linux, tests-whole]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: tests-linux
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: whole-tests
       - name: Whole and in parts, the same tests came out the same
         run: ./scripts/ci-step.py same ./scripts/fast-tests.py same whole.jsonl linux.tsv
 

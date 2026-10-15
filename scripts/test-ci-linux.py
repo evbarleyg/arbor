@@ -23,7 +23,8 @@ reads .github/workflows/linux.yml, ci.yml, which calls it, and the Makefile, and
   the jobs that use an image use the same, which scripts/linux.sh takes from the first in linux.yml. But `oldest-swift` in ci.yml,
   which is there for the oldest Swift that README.md promises: it has another, compiles everything and type-checks the
   macOS-only code, and what it runs counts for nothing above (or dropping the type-check with the newest would go unnoticed);
-  `tests-whole` runs plain `swift test` and holds it against the record that `linux-verdict` hands on, under the same names.
+  `tests-whole` runs plain `swift test`, waits for nothing, fetches nothing, and hands its record on; `tests-same` waits for it and for `linux`, for both and
+  on no condition of its own, fetches that record and the one `linux-verdict` hands on, under the same names, and holds them against each other.
 
 Then it holds itself to a table of workflows that are wrong in one way each. `make lint` runs this. It reads the files as
 text: the Swift image has no YAML parser, and the few shapes that matter are easy to tell.
@@ -45,16 +46,16 @@ CALLER, CALLED = "linux", "./.github/workflows/linux.yml"
 # about the code; `tests-whole` runs only where work is integrated, takes twelve minutes, and whoever integrates waits
 # for it by name; `oldest-swift` takes eleven, and whoever lands reads it by name; `suite-as-a-person` rehearses the real-window suite once more, as
 # somebody's own Mac would run it, where `tests-whole` runs.
-WHOLE_JOB, OLDEST_JOB = "tests-whole", "oldest-swift"
-NOT_A_CHECK = {"changes", WHOLE_JOB, OLDEST_JOB, "suite-as-a-person"}
+WHOLE_JOB, SAME_JOB, OLDEST_JOB = "tests-whole", "tests-same", "oldest-swift"
+NOT_A_CHECK = {"changes", WHOLE_JOB, SAME_JOB, OLDEST_JOB, "suite-as-a-person"}
 OLDEST_RUNS = ["swift build --build-tests", "make typecheck-mac"]
 # On Linux runners because they need no Mac, but what they say is about the macOS job, after which they run and with which they are
 # skipped. Each is a check of its own, by its own name: what real windows said there, whether every test ran there or here, that it
 # had built from nothing.
 OF_THE_MAC = {"real-windows", "tests-accounted-for", "macos-from-nothing"}
 # What that job must run, and what is handed from the verdict to it.
-WHOLE_RUNS = ["swift test", "scripts/fast-tests.py same whole.jsonl linux.tsv"]
-HANDED_ON = ("tests-linux", "linux.tsv")
+WHOLE_RUNS, SAME_RUNS = ["swift test"], ["scripts/fast-tests.py same whole.jsonl linux.tsv"]
+HANDED_ON, WHOLE_HANDED_ON = ("tests-linux", "linux.tsv"), ("whole-tests", "whole.jsonl")
 # What CI's Linux jobs run beyond `make check`.
 ALSO = ["make typecheck-mac", "scripts/parity.py --report test-*.jsonl --check", "scripts/test-ci-changes.py",
         "scripts/test-mac-queue.py", "scripts/test-ci-tests.py"]
@@ -266,10 +267,22 @@ def problems_in(workflow, makefile, caller):
     whole = others.get(WHOLE_JOB, [])
     ran = {plain(line) for script in scripts_of(whole) for line in script.split("\n")}
     found += [f"`{WHOLE_JOB}` does not run `{command}`" for command in WHOLE_RUNS if command not in ran]
-    if HANDED_ON[0] not in values_of(whole, "name"):
-        found.append(f"`{WHOLE_JOB}` does not fetch `{HANDED_ON[0]}`")
+    if WHOLE_HANDED_ON[0] not in values_of(whole, "name") or WHOLE_HANDED_ON[1] not in values_of(whole, "path"):
+        found.append(f"`{WHOLE_JOB}` does not hand on `{WHOLE_HANDED_ON[1]}` as `{WHOLE_HANDED_ON[0]}`")
+    if any("download-artifact" in used for used in values_of(whole, "uses")):
+        found.append(f"`{WHOLE_JOB}` fetches something, and waits for nothing: what it fetches may not be there yet, and then it is red though every test passed")
+    if values_of(whole, "needs", 4):
+        found.append(f"`{WHOLE_JOB}` waits for another job: twelve minutes more for whoever integrates, and on a busy branch the next push ends it first")
     if values_of(whole, "continue-on-error"):
         found.append(f"{WHOLE_JOB} may fail and pass all the same (continue-on-error)")
+    same = others.get(SAME_JOB, [])
+    ran = {plain(line) for script in scripts_of(same) for line in script.split("\n")}
+    found += [f"`{SAME_JOB}` does not run `{command}`" for command in SAME_RUNS if command not in ran]
+    found += [f"`{SAME_JOB}` does not fetch `{name}`" for name in (HANDED_ON[0], WHOLE_HANDED_ON[0]) if name not in values_of(same, "name")]
+    if sorted(re.findall(r"[\w-]+", " ".join(values_of(same, "needs", 4)))) != sorted([CALLER, WHOLE_JOB]):
+        found.append(f"`{SAME_JOB}` must wait for `{CALLER}` and `{WHOLE_JOB}`, both and no other: what it fetches is there when they are through, whichever ends first")
+    if values_of(same, "if") or values_of(same, "continue-on-error"):
+        found.append(f"{SAME_JOB} has a condition, or may fail and pass all the same: it runs whenever both it waits for succeeded, and then it counts")
     oldest = others.get(OLDEST_JOB, [])
     ran = {plain(line) for script in scripts_of(oldest) for line in script.split("\n")}
     found += [f"`{OLDEST_JOB}` does not run `{command}`" for command in OLDEST_RUNS if command not in ran]
@@ -369,9 +382,20 @@ jobs:
     container: swift:1
     steps:
       - run: ./scripts/ci-step.py test swift test --event-stream-output-path whole.jsonl --event-stream-version 0
+      - uses: actions/upload-artifact@v4
+        with:
+          name: whole-tests
+          path: whole.jsonl
+  tests-same:
+    needs: [linux, tests-whole]
+    runs-on: ubuntu-latest
+    steps:
       - uses: actions/download-artifact@v4
         with:
           name: tests-linux
+      - uses: actions/download-artifact@v4
+        with:
+          name: whole-tests
       - run: ./scripts/ci-step.py same ./scripts/fast-tests.py same whole.jsonl linux.tsv
   oldest-swift:
     runs-on: ubuntu-latest
@@ -482,9 +506,26 @@ TABLE = [
     ("suite in ci.yml calls another workflow", "ci.yml calls a second workflow", GOOD, MAKEFILE, CI + "  suite:\n    uses: ./.github/workflows/suite.yml\n"),
     ("`tests-whole` does not run `swift test", "the whole is not run", GOOD, MAKEFILE, changed("test swift test --event", "test true --event", CI)),
     ("`tests-whole` does not run `swift test", "only some of the whole is run", GOOD, MAKEFILE, changed("--event-stream-version 0", "--event-stream-version 0 --filter Core", CI)),
-    ("`tests-whole` does not run `scripts/fast-tests.py same", "the whole is compared with nothing", GOOD, MAKEFILE,
+    ("`tests-same` does not run `scripts/fast-tests.py same", "the whole is compared with nothing", GOOD, MAKEFILE,
      changed("      - run: ./scripts/ci-step.py same ./scripts/fast-tests.py same whole.jsonl linux.tsv\n", "", CI)),
-    ("`tests-whole` does not fetch", "the whole fetches something else", GOOD, MAKEFILE, changed("name: tests-linux", "name: tests", CI)),
+    ("`tests-same` does not fetch `tests-linux`", "the parts' record is fetched under another name", GOOD, MAKEFILE, changed("name: tests-linux", "name: tests", CI)),
+    ("`tests-same` does not fetch `whole-tests`", "the whole's record is not fetched", GOOD, MAKEFILE,
+     changed("      - uses: actions/download-artifact@v4\n        with:\n          name: whole-tests\n", "", CI)),
+    ("`tests-whole` does not hand on", "the whole keeps its record to itself", GOOD, MAKEFILE,
+     changed("      - uses: actions/upload-artifact@v4\n        with:\n          name: whole-tests\n          path: whole.jsonl\n", "", CI)),
+    ("`tests-whole` does not hand on", "it hands on another file", GOOD, MAKEFILE, changed("          path: whole.jsonl\n", "          path: test.jsonl\n", CI)),
+    ("`tests-whole` fetches something, and waits for nothing", "as it was: the whole asks for the parts' record itself, and they have not had a runner yet", GOOD, MAKEFILE,
+     changed("          path: whole.jsonl\n", "          path: whole.jsonl\n      - uses: actions/download-artifact@v4\n        with:\n          name: tests-linux\n", CI)),
+    ("`tests-whole` waits for another job", "the whole starts when the parts are through", GOOD, MAKEFILE, changed("  tests-whole:\n", "  tests-whole:\n    needs: linux\n", CI)),
+    ("`tests-same` must wait for", "it waits for the whole alone", GOOD, MAKEFILE, changed("    needs: [linux, tests-whole]\n", "    needs: tests-whole\n", CI)),
+    ("`tests-same` must wait for", "it waits for the parts alone", GOOD, MAKEFILE, changed("    needs: [linux, tests-whole]\n", "    needs: [linux]\n", CI)),
+    ("`tests-same` must wait for", "it waits for nothing", GOOD, MAKEFILE, changed("    needs: [linux, tests-whole]\n", "", CI)),
+    ("`tests-same` must wait for", "it waits for the Mac besides", GOOD, MAKEFILE, changed("    needs: [linux, tests-whole]\n", "    needs: [linux, tests-whole, macos]\n", CI)),
+    ("tests-same has a condition", "it runs whatever became of the two, and finds no record", GOOD, MAKEFILE,
+     changed("    needs: [linux, tests-whole]\n", "    needs: [linux, tests-whole]\n    if: ${{ !cancelled() }}\n", CI)),
+    ("tests-same has a condition", "it may find a difference and pass", GOOD, MAKEFILE,
+     changed("    needs: [linux, tests-whole]\n", "    needs: [linux, tests-whole]\n    continue-on-error: true\n", CI)),
+    ("`tests-same` does not run", "there is no comparison at all", GOOD, MAKEFILE, CI[:CI.index("  tests-same:")] + CI[CI.index("  oldest-swift:"):]),
     ("`tests-whole` does not run", "there is no whole at all", GOOD, MAKEFILE, CI[:CI.index("  tests-whole:")]),
     ("tests-whole may fail and pass", "the whole may fail", GOOD, MAKEFILE, changed("    container: swift:1\n", "    container: swift:1\n    continue-on-error: true\n", CI)),
     ("does not hand on", "the record is handed on under another name", changed("name: tests-linux", "name: linux-tests"), MAKEFILE),

@@ -278,8 +278,8 @@ Three rules keep the Linux build working and the platforms telling the same stor
    are fifteen Linux runners for everybody: a new job costs all of them, so put a new step into a job that is there if you
    can. A new job is named `linux-…` and gets a place in the `needs` of `linux-verdict`; `scripts/test-ci-linux.py` (part of
    `make lint`) fails if it has none, or if a step of `make check` is run by no job. Where work is integrated (a push to
-   `main`, a merge train, a pull request into `main`) the job `tests-whole` runs plain `swift test` once more, in the image, and holds
-   it against what the parts said, test by test.
+   `main`, a merge train, a pull request into `main`) the job `tests-whole` runs plain `swift test` once more, in the image, and
+   `tests-same`, behind it and the parts, holds the one against the other, test by test.
 
    **A pull request that is still a draft gets `linux / lint` and nothing else**: no tests, no verdict, no Mac (unless `[mac]` or the
    label asks for one). Fifteen runners have 900 minutes in an hour and a whole run takes over twenty of them, and you have just run the same
