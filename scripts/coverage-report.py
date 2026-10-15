@@ -21,7 +21,8 @@ How llvm-cov counts, which is not how a person counts lines:
   - a line was executed if any part of it was: in `guard let x else { return }` the `return` hides behind the `guard`;
   - a region is a stretch of code that runs as one, so it does tell the two apart. Swift's compiler records no branches:
     regions never entered are the nearest thing;
-  - every closure is a function of its own, and its lines count for the function around it too.
+  - every closure is a function of its own, the hidden one to the right of `&&`, `||` and `??` too, so more functions "never ran" than
+    there are `func`s that did not. In the list of functions a closure's lines count for the function around it as well.
 
 Exit code 0, or 2 for a file that cannot be read and for a mistake in the call. It judges nothing: there is no number to reach.
 """

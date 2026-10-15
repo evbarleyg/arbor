@@ -683,6 +683,7 @@ holds for the commit named (second reading, 10:45 UTC) and says what the script 
 | `check-F12.sh` | trunk | safe | none | |
 | `perf.sh` | trunk | safe, steps skip themselves | one drag | `footprint`, `heap`, `leaks` where developer mode is off (macOS would ask for a password) |
 | `check-F13-system.sh` | trunk | **never**: ends with 77 | | TCC.db as root, `tccutil`, login items, `make install` as a person runs it |
+| `coverage.sh` | trunk | **never**: ends with 77 | | Leaves an instrumented build in `.build/debug`, which writes a profile wherever it is started; Reduce Motion |
 | `check-F58.sh` (`share-probe.swift`) | trunk | safe, steps skip themselves | 2 min | ⌘Tab, the second display, the grey wallpaper; the pictures of single test windows only where Screen Recording is granted already. Two test apps have an icon in the Dock. A test window is put at and beyond the display's edges, so with two displays it shows on the other for a moment |
 | `shots-finder.sh` | trunk | safe, steps skip themselves | 3 min, mostly keys | ⌘Tab, Mission Control, the swipe to another Space. Types digits and letters with the palette open or its own test app in front, which has an icon in the Dock |
 | `watch.sh` | trunk | **not this copy**: #233's | 6 s; 10 min in all | On the trunk: `arborctl watch` without a limit, more than 900 s, and the end-to-end runner under a time limit. #233 `cea45a10`: safe |
@@ -1147,6 +1148,43 @@ use `--shuffle`, so that a run cut short has still looked everywhere. `--shard 0
 between copies side by side; give each its own `--scratch`, because a run starts by emptying that folder.
 `--seed N` picks another sample. `--again <an earlier --out file>` runs only what survived there: the way to see
 whether the tests you wrote since do their job. It is not part of `make check` or CI.
+
+## What the real-window checks execute (`scripts/mac-shell/coverage.sh`)
+
+No test can run `Sources/ArborKit/{AX,UI,Input,App}`. What runs that code without being asked is CI's job `real-windows`: `arbor-e2e --full-screen` and
+`e2e-drag.sh`. This measures how much of it the two execute, so that "a run gets into that file" does not pass for "that file is tried".
+
+```bash
+scripts/mac-shell/run.sh scripts/mac-shell/coverage.sh                                  # NUMBER-OF-MINUTES on the Mac; with the queue give it 45
+scripts/coverage-report.py .mac-shell/coverage-<run id>/coverage/both/coverage.json     # the tables again, from what came back
+```
+
+The script builds everything with the compiler's coverage instrumentation, runs the two checks unchanged, as CI does, collects a profile from every Arbor they
+start (its header says how, and what becomes of an Arbor that is killed with -9), and has `llvm-cov` write the tables. While there is time left it then plays `shots-demo.sh`
+and `proof.sh` with Reduce Motion off: sessions with the shortcuts, the event taps and the menu bar item on, nearer to the Arbor a person runs. That shows what
+one such session would add to CI. The measurements, each a folder in `coverage/`:
+
+| | |
+|---|---|
+| `e2e`, `drag`, `both` | `arbor-e2e` alone, `e2e-drag.sh` alone, the two together: **`both` is what CI executes** |
+| `session`, `with-session` | the two played scripts alone; everything together |
+
+**Reading it.** `report.txt` (`report.md` is the same as tables for a pull request) has every measurement side by side, per folder and per file, the file with the most lines that never ran first, and closes with
+`real-window coverage: X of Y lines (Z %) of the macOS-only code; N functions never run`. In each folder, `functions.txt` names the functions that never ran, with the largest of all at its end: start
+there. `lines/<file>.txt` is the source with a count before each line, and `0` marks a line nothing reached. `summary.txt` is `llvm-cov`'s own table. `processes.txt` says how many Arbors ran and whether each left a profile.
+
+- **The lines are `llvm-cov`'s, not a person's.** A line counts if it lies in the body of a function, a closure or an initial value, comments and blank lines in there included; imports,
+  declarations and the comments between functions count nowhere. So Y is not the number of lines in the files.
+- **A line ran if any part of it did.** In `guard let x else { return }` the `return` hides behind the `guard`. Regions tell them apart: "never entered" is the nearest thing to branches, which Swift's
+  compiler does not record.
+- **Every closure is a function**, the hidden one to the right of `&&`, `||` and `??` too, so N is larger than the number of `func`s that never ran.
+- **Executed is not checked.** A line that ran may have done the wrong thing with nobody looking: for the headless stack `mutate.py` asks that question, for this code nothing does.
+  What the number is good for is its other side: a line that never ran was tried by nothing.
+- **A check that fails or is cut off runs less.** The script exits with 1 then, and says which. Do not quote such a run's number as CI's.
+- It says nothing of `swift test` on a Mac, which draws some of the views in `UI` without a screen (`OffscreenPicture`), nor of the scripts somebody starts by hand.
+
+It runs on GitHub's Macs only (elsewhere it ends with 77): it leaves an instrumented build in `.build/debug`, which writes a profile wherever it is started. It is not part of CI.
+
 ## Installing, signing and releasing
 
 `scripts/release-tools-test.sh`, part of `make check` and of CI, tests what needs no Mac in a temporary copy: `version.sh`,
