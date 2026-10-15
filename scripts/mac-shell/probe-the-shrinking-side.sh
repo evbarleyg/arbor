@@ -17,7 +17,7 @@
 #         less and still in it (c) and out of it (d)
 #   ask7  feet 35 past the visible bottom, at the display's bottom, 1, 32 and 82 past it, asked 100 MORE: where between the strip and far off does an edge become free?
 #   ask0  THE CONTROLS, wherever the Dock is: a window that stands wholly in view, 300,100 400×480, asked 439 high, and 300,100 400×300 asked 100 more, with room; with the Dock at the right also 100,100 700×300 asked 320 wide.
-#         Each must be taken whole, or the tool is at fault and not macOS. ask5 is the control of ask1: the same stand and the same call, and only the strip is gone.
+#         Each must be taken whole, or the tool is at fault and not macOS. ask5 is the control of ask1: the same stand and the same 439, where there is no strip below; the foot asked for then lies ABOVE the visible bottom, not past it: output.txt says beside every ask where its edge would end.
 # A test window and TextEdit, three times each.
 #
 # What comes back: shrink.jsonl, as grow.swift printed it (`put`, `hand`; "label" is <app>.<where the Dock is>); output.txt, the same in words. It judges nothing. Exit code 0 unless a tool did not compile.
@@ -81,14 +81,22 @@ def forecast(name, stood, asked, main):
     bottom, right = main[1] + main[3] - stood[1], main[0] + main[2] - stood[0]
     return {"ask0": "whole", "ask1": "%g high" % bottom, "ask2": "%g high, or %g" % (asked[1], bottom), "ask3": "%g high kept" % stood[3], "ask4": "%g high, or %g kept" % (asked[1], stood[3]), "ask5": "whole", "ask6a": "%g wide" % right,
             "ask6b": "%g wide, or %g" % (asked[0], right), "ask6c": "%g wide kept" % stood[2], "ask6d": "%g wide, or %g kept" % (asked[0], stood[2]), "ask7": "none: kept, or whole"}[name.split("-")[0]]
-stood = main = None
+def ends(name, stood, asked, main, visible):
+    # Where the edge asked for would lie in THIS place of the Dock: the same call is not the same geometry once the visible frame has moved.
+    if stood is None or main is None: return "-"
+    if name.startswith("ask6") or name.endswith("narrower"):
+        edge = stood[0] + asked[0]
+        return "right edge %g = the visible right %+g, the display%s right %+g" % (edge, edge - visible[0] - visible[2], "\x27s", edge - main[0] - main[2])
+    edge = stood[1] + asked[1]
+    return "foot %g = the visible bottom %+g, the display%s bottom %+g" % (edge, edge - visible[1] - visible[3], "\x27s", edge - main[1] - main[3])
+stood = main = visible = None
 for line in sys.stdin:
     try: o = json.loads(line)
     except ValueError:
         print("  " + line.rstrip()); continue
     k = o.get("kind")
     if k == "displays" and o["why"] != "end":
-        main = o["displays"][0]["frame"]
+        main, visible = o["displays"][0]["frame"], o["displays"][0]["visible"]
         print("  displays (%s): " % o["why"] + "; ".join("%d: %s visible %s" % (d["n"], f(d["frame"]), f(d["visible"])) for d in o["displays"]))
     elif k == "window":
         print("  window %s of %s (%s, %s) at %s" % (o["window"], o["bundle"], o["role"], o["subrole"], f(o["frame"])))
@@ -97,7 +105,7 @@ for line in sys.stdin:
         print("  %-52s stands %s%s" % (o["name"], f(o["ax"]), "" if o["right"] else " (WANTED %s)" % f(o["wanted"])))
     elif k == "hand":
         a = o["later"][-1]["ax"]
-        print("  %-52s asked %s (forecast: %s): at once %s (server %s); %s | foot %s, right edge %s | reports: %s" % ("", f(o["calls"][0]["asked"]), forecast(o["name"], stood, o["calls"][0]["asked"], main), f(o["once"]["ax"]), f(o["once"]["ws"]),
+        print("  %-52s asked %s, which would end: %s (forecast: %s): at once %s (server %s); %s | foot %s, right edge %s | reports: %s" % ("", f(o["calls"][0]["asked"]), ends(o["name"], stood, o["calls"][0]["asked"], main, visible), forecast(o["name"], stood, o["calls"][0]["asked"], main), f(o["once"]["ax"]), f(o["once"]["ws"]),
             "; ".join("%d ms %s (server %s)" % (l["after"], f(l["ax"]), f(l["ws"])) for l in o["later"]), "-" if a is None else format(a[1] + a[3], "g"), "-" if a is None else format(a[0] + a[2], "g"),
             "; ".join("%s %.1f" % (n[1], n[0]) for n in o["notes"]) or "none"))
 '
