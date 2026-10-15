@@ -16,6 +16,7 @@
 //   BREATH_GUARD=1  before each window its APP is asked whether assistive tools have "enhanced user interface" on, as Arbor asks
 //   BREATH_REST=2   so many seconds of rest after each round (0.4): an app that is left alone for a while may be slower to answer
 //   BREATH_EACH=1   also say how long each window took
+//   BREATH_PILE=700x480   the size of the windows in the pile (420x300): real apps have minimum sizes
 //
 // Each round takes the windows from a pile to a grid or back. `grid` or `pile` for a number: that one act from wherever the windows
 // are, for a film. Meanwhile a thread of its own asks the window server for these windows'
@@ -217,8 +218,10 @@ let grid = all.indices.map { index in
     x: visible.minX + CGFloat(index % columns) * cell.width, y: visible.minY + CGFloat(index / columns) * cell.height,
     width: cell.width - 8, height: cell.height - 8)
 }
+let piled = (ProcessInfo.processInfo.environment["BREATH_PILE"] ?? "420x300").split(separator: "x").compactMap { Double($0) }
+guard piled.count == 2 else { fail("BREATH_PILE: <width>x<height>") }
 let pile = all.indices.map { index in
-  CGRect(x: visible.minX + 40 + CGFloat(index) * 24, y: visible.minY + 30 + CGFloat(index) * 20, width: 420, height: 300)
+  CGRect(x: visible.minX + 40 + CGFloat(index) * 24, y: visible.minY + 30 + CGFloat(index) * 20, width: piled[0], height: piled[1])
 }
 let apps = Dictionary(grouping: all.indices, by: { all[$0].pid }).values.map { $0.sorted() }.sorted { $0[0] < $1[0] }
 
