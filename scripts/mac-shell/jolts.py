@@ -124,9 +124,11 @@ RESIZING = 300
 DROPPED = 24
 # The button is up for the apps this many microseconds after it came up, at the latest. It was 50,000, which a hosted Mac without Arbor broke once in 118 presses and
 # releases (57 ms): a limit like that measures the Mac. What is systematic and smaller is for the next number.
-HELD = 100000
-# Of a hundred events that are not Arbor's own, the latest but one reaches the apps at most this many microseconds later than without Arbor.
-HELD_MORE = 10000
+HELD = 1000 * of_the_gate("input", "release_ms_max", otherwise=100)
+# Of a hundred events of one kind that are not Arbor's own, the latest but one reaches the apps at most this many microseconds later than in the same journey without Arbor.
+HELD_MORE = 1000 * of_the_gate("input", "p99_more_ms_max", otherwise=10)
+# A press brings its app forward within 70 ms, and a sample can be 100 ms late: which app was in front before a press is asked of this many milliseconds earlier.
+JUST_NOW = 150
 # With macOS's tiling on, this many points along the left, right and top edges of the screen are macOS's: Arbor offers nothing there.
 EDGE_BAND = 12
 # Less of a window than this on the display is its parking strip; more than that, and it shows.
@@ -197,6 +199,8 @@ class Step:
         self.late_samples = []
         # A process of Arbor's was running at some time during the step.
         self.alive = False
+        # For each press of the button, in order: whether it fell on a window of an app that was not in front.
+        self.presses = []
         self.app_before = None
         # When a key went down or the button changed.
         self.inputs = []
@@ -264,6 +268,8 @@ class World:
         self.layers = {}
         self.order = []
         self.app = None
+        # Which app came to the front when.
+        self.fronts = []
         self.visible = None
         self.display = None
         # The displays besides the main one: id -> (frame, the part between its menu bar and the Dock).
@@ -299,6 +305,14 @@ class World:
     def ordinary(self, window):
         return (self.layers.get(window) == 0 and self.pids.get(window) not in self.arbors
                 and not self.owners.get(window, "").startswith("WindowManager"))
+
+    def under(self, point):
+        """The frontmost ordinary window at a point, or None: the Dock, the menu bar, the wallpaper."""
+        if not point:
+            return None
+        return next((window for window in self.order if self.ordinary(window) and window in self.frames
+                     and self.frames[window][0] <= point[0] < self.frames[window][0] + self.frames[window][2]
+                     and self.frames[window][1] <= point[1] < self.frames[window][1] + self.frames[window][3]), None)
 
     def name(self, window):
         if window in self.labels:
@@ -417,6 +431,7 @@ def read(path):
                     current.tops.append(top)
             elif kind == "A" and rest:
                 world.app = int(rest[0])
+                world.fronts.append((time, world.app))
                 if current:
                     current.apps.append(world.app)
             elif kind == "B" and rest:
@@ -426,6 +441,10 @@ def read(path):
                     if len(rest) >= 3:
                         current.pointer.append((time, float(rest[1]), float(rest[2])))
                         world.pointer = (float(rest[1]), float(rest[2]))
+                    if world.button:
+                        # The app may have come forward within the same sample, and that is written first.
+                        before = next((app for when, app in reversed(world.fronts) if when <= time - JUST_NOW), world.fronts[0][1] if world.fronts else None)
+                        current.presses.append(world.pids.get(world.under(world.pointer)) not in (None, before))
                     if not world.button and current.dropped is None:
                         current.dropped = time
                         # It goes with the button, and within one sample its going is written first.
@@ -521,11 +540,34 @@ def hear(path, steps):
 
 
 def lateness(steps):
-    """How late the events that are not Arbor's own reached the apps, over the steps that are judged: how many, the middle one, the latest but one in a hundred, the latest."""
-    late = sorted(delay for step in steps if step.wants.get("judge") != "no" for _, _, delay, arbors in step.arrived if not arbors)
-    if not late:
+    """How late the events that are not Arbor's own reached the apps, over the steps that are judged: how many, the middle one, the latest but one in a hundred, the latest. All
+    together, for the report, and **by kind**, to be compared with: a figure over all events says more about what a journey is made of than about who held anything back.
+    A press on a window of an app that is not in front takes macOS some 20 ms by itself, and any other press 1 ms (one on an icon in the Dock too, which brings an app forward
+    afterwards), so they are two kinds: `forward` and `down`. In a run with Arbor only what arrived while a process of Arbor's was there counts: what comes after Quit is the Mac's."""
+    there = any(step.alive for step in steps)
+    kinds = {}
+    for step in steps:
+        if step.wants.get("judge") == "no" or (there and not step.alive):
+            continue
+        presses = iter(step.presses)
+        for _, kind, delay, arbors in step.arrived:
+            # The sampler and the witness both see every press, in the same order. Arbor's own replays are the witness's alone.
+            if not arbors:
+                kinds.setdefault("forward" if kind == "down" and next(presses, False) else kind, []).append(delay)
+
+    def account(late):
+        late = sorted(late)
+        return {"events": len(late), "p50_us": late[len(late) // 2], "p99_us": late[min(len(late) - 1, len(late) * 99 // 100)], "max_us": late[-1]}
+
+    if not kinds:
         return None
-    return {"events": len(late), "p50_us": late[len(late) // 2], "p99_us": late[min(len(late) - 1, len(late) * 99 // 100)], "max_us": late[-1]}
+    return dict(account([delay for late in kinds.values() for delay in late]), kinds={kind: account(late) for kind, late in sorted(kinds.items())})
+
+
+def held_more(heard, without):
+    """The kinds of event of which 99 in 100 reached the apps later than in the same journey without Arbor, by more than is allowed: (kind, with, without), in µs."""
+    return [(kind, told["p99_us"], without["kinds"][kind]["p99_us"]) for kind, told in sorted(heard["kinds"].items())
+            if kind in without.get("kinds", {}) and told["p99_us"] > without["kinds"][kind]["p99_us"] + HELD_MORE]
 
 
 def road(trace):
@@ -892,6 +934,8 @@ def report(world, steps, account):
     heard = lateness(steps)
     if heard:
         out.append(f"Input: {heard['events']} presses, releases, keys and scrolls reached the apps, half of them within {heard['p50_us']} µs, 99 in 100 within {heard['p99_us']} µs, the latest after {heard['max_us']} µs.")
+        out.append("By kind (events, half within, 99 in 100 within, µs): " + "; ".join(
+            f"{kind} {told['events']}, {told['p50_us']}, {told['p99_us']}" for kind, told in heard["kinds"].items()) + ". `forward`: a press on a window of an app that was not in front.")
     out.append("")
     out.append("## Per rule")
     out.append("")
@@ -1404,14 +1448,26 @@ def self_test():
         got = [[finding["detector"] for finding in step.findings] for step in heard]
         if got != [[], [], ["input-held"]]:
             failures.append(f"a mouse-up that is held back for 210 ms is input-held, in its own step and no other: {got}")
-        if lateness(heard) != {"events": 5, "p50_us": 400, "p99_us": 210000, "max_us": 210000}:
+        if {key: value for key, value in lateness(heard).items() if key != "kinds"} != {"events": 5, "p50_us": 400, "p99_us": 210000, "max_us": 210000}:
             failures.append(f"the lateness of five events: {lateness(heard)}")
+        if {kind: told["p99_us"] for kind, told in lateness(heard)["kinds"].items()} != {"down": 300, "up": 210000, "key": 900}:
+            failures.append(f"the lateness of five events by kind: {lateness(heard)['kinds']}")
         with open(os.path.join(folder, "witness.log"), "w", encoding="utf-8") as handle:
             handle.write("4100 E down 300 none\n4350 E up 90000 none\n")
         if any(step.findings for step in read(samples)[1]):
             failures.append("a mouse-up that takes 90 ms is what a hosted Mac does by itself now and then")
         with open(os.path.join(folder, "witness.log"), "w", encoding="utf-8") as handle:
             handle.write("4100 E down 300 none\n4350 E up 210000 none\n")
+        for name, lines, wanted in (
+                ("on a window of the app behind", ["4100 B down 600 150", "4140 B up 600 150", "4160 A 20 app.two"], ["forward"]),
+                ("the app came forward within the same sample, which is written first", ["4100 A 20 app.two", "4100 B down 600 150", "4140 B up 600 150"], ["forward"]),
+                ("on a window of the app in front", ["4100 B down 200 150", "4140 B up 200 150"], ["down"]),
+                ("on no window: the Dock, which brings an app forward afterwards", ["4100 B down 600 790", "4140 B up 600 790", "4160 A 20 app.two"], ["down"])):
+            with open(samples, "w", encoding="utf-8") as handle:
+                handle.write("\n".join(start + ["2000 M begin 2 click", "3000 M end 2", "4000 M begin 3 click"] + lines + ["5000 M end 3"]) + "\n")
+            got = [kind for kind in lateness(read(samples)[1])["kinds"] if kind != "up"]
+            if got != wanted:
+                failures.append(f"a press {name} is of the kind {wanted}, not {got}")
         for name, marks, wanted in (("after Arbor has gone nobody holds anything back", ["3500 M arbor gone"], []),
                                     ("Arbor started again holds it back", ["3400 M arbor gone", "3500 M arbor 98"], ["input-held"]),
                                     ("it ends during the step, and was there", ["4600 M arbor gone"], ["input-held"])):
@@ -1435,7 +1491,8 @@ def self_test():
     # One number, three places: the page decides, this file has a copy for samples that are judged elsewhere, and the sampler counts by its own.
     with open(os.path.join(HERE, "sampler.swift"), encoding="utf-8") as handle:
         samplers = re.search(r"static let late = ([0-9.]+)", handle.read())
-    for name, mine, path in (("blind_ms_max", 250, ("sampler", "blind_ms_max")), ("late_ms", samplers and float(samplers.group(1)), ("sampler", "late_ms"))):
+    for name, mine, path in (("blind_ms_max", 250, ("sampler", "blind_ms_max")), ("late_ms", samplers and float(samplers.group(1)), ("sampler", "late_ms")),
+                             ("release_ms_max", 100, ("input", "release_ms_max")), ("p99_more_ms_max", 10, ("input", "p99_more_ms_max"))):
         if of_the_gate(*path, otherwise=None) != mine:
             failures.append(f"docs/VIABLE.md has {of_the_gate(*path, otherwise=None)!r} for {name}, and what judges by it has {mine!r}")
 
@@ -1458,8 +1515,8 @@ def main(arguments):
         if "--control" in options and steps:
             with open(options["--control"], encoding="utf-8") as handle:
                 without, heard = json.load(handle).get("input"), lateness(steps)
-            if without and heard and heard["p99_us"] > without["p99_us"] + HELD_MORE:
-                steps[-1].find("6", "FAIL", None, f"99 in 100 events reached the apps within {heard['p99_us']} µs; without Arbor, within {without['p99_us']} µs")
+            for kind, told, alone in held_more(heard, without) if without and heard else []:
+                steps[-1].find("6", "FAIL", None, f"99 in 100 events of the kind {kind} reached the apps within {told} µs; in the same journey without Arbor, within {alone} µs")
         print(report(world, steps, account), end="")
         if "--json" in options:
             with open(options["--json"], "w", encoding="utf-8") as handle:
