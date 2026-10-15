@@ -35,9 +35,12 @@ tool=Contents/Helpers/arborctl
 
 on_path() { case ":$PATH:" in *":$1:"*) return 0 ;; *) return 1 ;; esac; }
 
-# The pids of Arbor running from the folder being replaced, its watchdog's among them, and the watchdog's alone.
-installed_pids() { pgrep -f "^$installed/Contents/MacOS/Arbor" 2>/dev/null || true; }
-watchdog_pids() { pgrep -f "^$installed/Contents/MacOS/Arbor --watchdog" 2>/dev/null || true; }
+# The pids of Arbor running from the folder being replaced, its watchdog's among them, and the watchdog's alone. By either name of a
+# folder under /private: of a copy in /private/tmp macOS lists the app there and its watchdog, which Arbor starts by its bundle's own idea
+# of the path, under /tmp (seen on macOS 26.6.2). In ~/Applications there is one name.
+case "$installed" in /private/*) running="^(/private)?${installed#/private}/Contents/MacOS/Arbor" ;; *) running="^$installed/Contents/MacOS/Arbor" ;; esac
+installed_pids() { pgrep -f "$running" 2>/dev/null || true; }
+watchdog_pids() { pgrep -f "$running --watchdog" 2>/dev/null || true; }
 
 # wait_until <tenths of a second> <command…>: whether the command succeeded in time.
 wait_until() {

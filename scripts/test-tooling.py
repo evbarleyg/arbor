@@ -1450,7 +1450,10 @@ matching() {
   while read -r pid rest; do if [[ $rest =~ $1 ]]; then echo "$pid $rest"; found=0; fi; done <<< "$PROCESSES"
   return $found
 }
-pgrep() { [ -z "${PGREP_FAILS:-}" ] || return 2; matching "${@: -1}"; }
+pgrep() {
+  [ -z "${PGREP_FAILS:-}" ] || return 2
+  case "$1" in *l*) matching "${@: -1}" ;; *) matching "${@: -1}" > /dev/null && matching "${@: -1}" | sed 's/ .*//' ;; esac
+}
 pkill() { matching "${@: -1}" | sed 's/ .*//; s/^/stopped /'; }
 ps() { matching "" | sed -n "s/^${@: -1} //p" | grep .; }
 check() { local what=${1%% *}; shift; if "$@" > /dev/null 2>&1; then echo "yes $what"; else echo "no $what"; fi; }
@@ -1485,6 +1488,20 @@ check() { local what=${1%% *}; shift; if "$@" > /dev/null 2>&1; then echo "yes $
     row("lib-F13.sh: the watchdog is the one the log names last, alive, and this app's; one that is spelled otherwise is told from one that is not there",
         [asked(log, found, LOGGED=logged) for found, logged in (((app, far), "23"), ((app,), "23"), ((app, "24 /somewhere/else/Contents/MacOS/Arbor --watchdog 21"), "24"), ((app, near), "12"))],
         [["yes", "its", "yes", "and"], ["no", "its", "no", "and"], ["yes", "its", "no", "and"], ["no", "its", "yes", "and"]])
+    # The product's own script looks the same way, before it replaces or removes a copy. The watchdog goes first: it takes any other end for an accident.
+    with open(os.path.join(HERE, "install.sh"), encoding="utf-8") as file:
+        text = file.read()
+    searches = stand_ins + text[text.index("# The pids of Arbor running from the folder being replaced"):text.index("# wait_until <tenths of a second>")]
+
+    def pids(installed, processes):
+        done = subprocess.run([BASH, "-c", f"installed='{installed}'\n" + searches + 'echo "$(installed_pids | tr "\n" " ")/ $(watchdog_pids | tr "\n" " ")"'],
+                              capture_output=True, text=True, env={**os.environ, "PROCESSES": "\n".join(others + list(processes))})
+        return done.stdout.strip()
+
+    home = ["31 /Users/you/Applications/Arbor.app/Contents/MacOS/Arbor", "32 /Users/you/Applications/Arbor.app/Contents/MacOS/Arbor --watchdog 31"]
+    row("install.sh: of a copy under /private/tmp the watchdog is listed under /tmp, and is found; in a person's ~/Applications all is as it was; nobody else's Arbor is found",
+        [pids(ours, (app, far)), pids(ours, (app, near)), pids(ours, ()), pids("/Users/you/Applications/Arbor.app", home), pids("/Users/you/Applications/Arbor.app", (app, far))],
+        ["21 23 / 23", "21 22 / 22", "/", "31 32 / 32", "/"])
     direct = []
     for name in ("lib-F13.sh", "check-F13.sh", "check-F13-system.sh"):
         with open(os.path.join(folder, name), encoding="utf-8") as file:
