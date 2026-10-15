@@ -34,6 +34,7 @@
 # The desktop picture is not looked at: nothing reads it back. Only on one of GitHub's Macs: anybody else's is left alone altogether.
 #
 # Readers that can reach only the REST API get each exit code and the end of each output as check annotations.
+# A script that ends with 0 after a ✘ it never counted, or after counting more failures than are known, has not passed: its exit code is 70.
 # Exits with what it wrote to exit-code.txt. Written for bash 3.2, macOS's own.
 set -uo pipefail
 [ $# -gt 0 ] || { echo "usage: scripts/ci-mac-shell.sh <script>…" >&2; exit 64; }
@@ -212,6 +213,25 @@ for script in "$@"; do
     code=$?
     running=""
     [ -z "$stopped" ] || code=124
+    # A script's reds become its exit code in its own closing (lib.sh's arbor_exit), after the clean-up and the count. If that closing dies half way, as under
+    # `set -u` over a variable the script has unset, the shell ends with 0: twenty ✔, six ✘, no count, "exit code 0", and a green run. So 0 is held to what was said.
+    if [ "$code" -eq 0 ]; then
+      reds=$(grep -cE '^[[:space:]]*✘' "$out/output.txt")
+      # Each count with the word on known failures that follows it: an output may hold several, as the real-window suite's does, one for each section, and
+      # what one section knew does not cover another's red.
+      counted=$(awk '
+        function weigh() { if (seen && failed > known && !bad) bad = "counted " failed " failed, of which " known " are known" }
+        /^[0-9]+ passed, [0-9]+ failed$/ { weigh(); seen = 1; failed = $3 + 0; known = 0 }
+        /^[0-9]+ of the failures are known$/ { known = $1 + 0 }
+        END { weigh(); print (seen ? "yes" : "no") ":" bad }' "$out/output.txt")
+      why=${counted#*:}
+      [ "${counted%%:*}" = yes ] || [ "$reds" -eq 0 ] || why="said ✘ $reds times and never counted"
+      if [ -n "$why" ]; then
+        echo "mac-shell: it ended with 0, but $why: its closing did not get to its end. That is no pass: 70" >> "$out/output.txt"
+        echo "::warning title=mac-shell::$(basename "$script") ended with 0, but $why: that is no pass (70)"
+        code=70
+      fi
+    fi
   fi
   if [ -z "$spoilt" ] && [ -z "$cut_off" ] && [ "$number" -lt $# ] && ! mac_put_back "$(basename "$script")" >> "$out/output.txt" 2>&1; then
     spoilt=$(basename "$script")

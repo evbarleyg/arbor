@@ -1746,6 +1746,18 @@ def check_mac_shell_batch():
         "part.sh": "echo part $MAC_SHELL_PART of $MAC_SHELL_PARTS\n",
         "own.sh": """echo '{"started": true, "part": '$MAC_SHELL_PART'}' > mac-shell/run.json\n""",
         "lists.sh": "ls mac-shell\n",
+        # What a script says, and 0 all the same.
+        "uncounted.sh": "echo '  ✔ one'; echo '  ✘ two'; echo '✘ three'; echo 'lib.sh: line 1162: ARBOR_HOME: unbound variable'\n",
+        "miscounted.sh": "echo '  ✘ two'; echo '  ✘ three'; echo; echo '1 passed, 2 failed'; echo '1 of the failures are known'\n",
+        "unturned.sh": "echo '  ✘ two'; echo; echo '1 passed, 1 failed'\n",
+        "known.sh": "echo '  ✘ two'; echo; echo '1 passed, 1 failed'; echo '1 of the failures are known'\n",
+        "quotes.sh": "echo 'the log says: ✘ and 3 passed, 9 failed, somewhere in a line'\n",
+        "red.sh": "echo '  ✘ two'; exit 1\n",
+        # As the real-window suite does: the sections' own words and counts, one after the other, in one output.
+        "sections.sh": "echo '  ✘ a (known: 1.2)'; echo '3 passed, 1 failed'; echo '1 of the failures are known'; echo '  ✔ b'; echo '4 passed, 0 failed'\n",
+        "sections-2.sh": "echo '4 passed, 0 failed'; echo '  ✘ a'; echo '  ✘ b'; echo '3 passed, 2 failed'; echo '2 of the failures are known'; echo 'suite: 7 passed, 2 failed (2 of them known)'\n",
+        "sections-4.sh": "echo '  ✘ a'; echo '3 passed, 1 failed'; echo '  ✔ b'; echo '4 passed, 0 failed'\n",
+        "sections-3.sh": "echo '  ✘ a'; echo '  ✘ b'; echo '3 passed, 2 failed'; echo '2 of the failures are known'; echo '  ✘ c'; echo '3 passed, 1 failed'\n",
     }
 
     def tried(*names, limit="60", **more):
@@ -1783,6 +1795,23 @@ def check_mac_shell_batch():
         [["1", "fine.sh", "exit", "0"], ["2", "fails.sh", "exit", "1"], ["3", "nothing.sh", "exit", "2"], ["4", "worse.sh", "exit", "7"],
          ["5", "fine.sh", "exit", "0"]])
     row("ci-mac-shell.sh: all pass", tried("fine.sh", "fine.sh")[0], 0)
+
+    # 0 is held to what was said.
+    code, left, said, _ = tried("uncounted.sh")
+    row("ci-mac-shell.sh: it ended with 0 after reds it never counted: its closing died, and that is no pass", (code, left["exit-code.txt"], left["output.txt"].splitlines()[-2:]),
+        (70, "70\n", ["mac-shell: it ended with 0, but said ✘ 2 times and never counted: its closing did not get to its end. That is no pass: 70", "exit code 70"]))
+    row("ci-mac-shell.sh: and it is an annotation", "::warning title=mac-shell::uncounted.sh ended with 0, but said ✘ 2 times and never counted: that is no pass (70)" in said, True)
+    row("ci-mac-shell.sh: it counted, and died before the count became its exit code", tried("unturned.sh")[0], 70)
+    row("ci-mac-shell.sh: more failed than are known", tried("miscounted.sh")[0], 70)
+    row("ci-mac-shell.sh: all that failed is known: that is a pass, as lib.sh has it", tried("known.sh")[0], 0)
+    row("ci-mac-shell.sh: a ✘ or a count somewhere in a line is somebody's words, not a verdict", tried("quotes.sh")[0], 0)
+    row("ci-mac-shell.sh: a script that ends red keeps its own exit code", tried("red.sh")[0], 1)
+    row("ci-mac-shell.sh: several counts in one output, as the suite's sections leave them: all that failed is known, in whichever section", [tried(name)[0] for name in ("sections.sh", "sections-2.sh")], [0, 0])
+    row("ci-mac-shell.sh: the last section's red is not covered by what an earlier one knew", tried("sections-3.sh")[0], 70)
+    row("ci-mac-shell.sh: nor an earlier section's by a clean one after it", tried("sections-4.sh")[0], 70)
+    code, left, _, _ = tried("fine.sh", "uncounted.sh", "fine.sh")
+    row("ci-mac-shell.sh: of several it is the first that is not 0, stands in the summary, and the next one runs",
+        (code, [line.split()[:4] for line in left["summary.txt"].splitlines()]), (70, [["1", "fine.sh", "exit", "0"], ["2", "uncounted.sh", "exit", "70"], ["3", "fine.sh", "exit", "0"]]))
 
     # Three seconds, not one: the limit is the next script's too, and on a busy machine one that does nothing has taken longer than a second over it.
     code, left, _, _ = tried("hangs.sh", "fine.sh", limit="3")
