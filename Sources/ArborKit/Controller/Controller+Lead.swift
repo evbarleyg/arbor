@@ -65,9 +65,9 @@ extension Controller {
   /// Called whenever the keyboard may have moved (`keyboardFocusMoved()`, where every `windowFocused` ends up too).
   /// The reports only say when to look: an app in the background reports focus changes as well, another app
   /// coming forward moves the keyboard with no report, some changes are reported twice, and Arbor's own
-  /// `focus` calls are reported back. A window that already had the keyboard is no change.
-  func noteFocus() {
-    let window = system.focusedWindow()
+  /// `focus` calls are reported back. A window that already had the keyboard is no change. `window` is what the window system
+  /// answered just now.
+  func noteFocus(_ window: WindowID?) {
     confirmFocusRequest(at: window)
     if let focus = following.focus, focus.window == window { return }
     following.focus = (window, now())

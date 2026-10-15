@@ -524,9 +524,9 @@ extension Controller {
   }
 
   /// The window to show as having the keyboard. While one that was turned away is on its way out, that is still
-  /// the window the keyboard is going back to, so that the line around it does not blink on a shared screen.
-  func windowShownAsFocused() -> WindowID? {
-    let focused = system.focusedWindow()
+  /// the window the keyboard is going back to, so that the line around it does not blink on a shared screen. `focused` is what
+  /// the window system answered just now.
+  func windowShownAsFocused(_ focused: WindowID?) -> WindowID? {
     guard isHeld, hold.isSendingBack, let focused, hold.sentBack?.window == focused, let home = hold.home else { return focused }
     return home
   }

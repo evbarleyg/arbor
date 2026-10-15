@@ -67,9 +67,12 @@ extension Controller {
     notify(.keyboard)
     // Nothing is asked of the window system during a pause.
     guard isRunning else { return }
-    noteFocus()
+    // One question for the two who need the answer. It goes to the app in front, which answers on its main thread, and this is called
+    // three times within some thirty milliseconds when a click brings an app forward: just when the app has the press itself to see to.
+    let focused = system.focusedWindow()
+    noteFocus(focused)
     guard settings.focusRing else { return }
-    refreshFocusRing(.focus)
+    refreshFocusRing(.focus, focused: focused)
     // macOS does not change everything at once when the keyboard moves, and an event can arrive before the window
     // system's answer has changed. A ring left on the wrong window is worse than none, so look once more.
     scheduler.schedule("focus-ring-again", after: 0.25) { [weak self] in self?.refreshFocusRing(.focus) }
@@ -89,15 +92,18 @@ extension Controller {
 
   /// The ring in `displayID`'s scene. Called while the scene is put together.
   func focusRingModel(on displayID: DisplayID) -> FocusRingModel? {
-    if !focusRing.isWorkedOut { workOutFocusRing(.geometry) }
+    if !focusRing.isWorkedOut { workOutFocusRing(.geometry, focused: system.focusedWindow()) }
     let model = focusRing.display == displayID ? focusRing.model : nil
     focusRing.shown[displayID] = model
     return model
   }
 
-  func refreshFocusRing(_ cause: FocusRingCause) {
+  func refreshFocusRing(_ cause: FocusRingCause) { refreshFocusRing(cause, focused: system.focusedWindow()) }
+
+  /// `focused`: the window system's answer, for a caller that has it already. Not looked at where there is no ring to draw anyway.
+  private func refreshFocusRing(_ cause: FocusRingCause, focused: @autoclosure () -> WindowID?) {
     guard isRunning else { return }
-    workOutFocusRing(cause)
+    workOutFocusRing(cause, focused: focused())
     showFocusRing()
   }
 
@@ -112,7 +118,7 @@ extension Controller {
   }
 
   /// Decides where the ring is now.
-  private func workOutFocusRing(_ cause: FocusRingCause) {
+  private func workOutFocusRing(_ cause: FocusRingCause, focused: @autoclosure () -> WindowID?) {
     focusRing.display = nil
     focusRing.model = nil
     guard let options = settings.focusRingOptions else {
@@ -145,7 +151,7 @@ extension Controller {
     // ring must not come and go as the keyboard moves between displays. Asked first, so that a Mac with
     // nothing docked pays no Accessibility call for a change of focus.
     guard workspaces.values.contains(where: { !$0.tree.allWindows.isEmpty }) else { return }
-    guard let id = windowShownAsFocused(), isManaged(id), let snapshot = windows[id], snapshot.isPresent,
+    guard let id = windowShownAsFocused(focused()), isManaged(id), let snapshot = windows[id], snapshot.isPresent,
       !parked.contains(id), let displayID = workspaceID(containing: id), let display = display(displayID),
       let workspace = workspaces[displayID]
     else { return }

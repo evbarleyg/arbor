@@ -33,4 +33,18 @@ extension FakeWindowSystem {
     raised.removeAll { $0 == window }
     raised.insert(window, at: 0)
   }
+
+  /// The user clicks in a window of an app that is not in front, told in the order a Mac tells it (macOS 26, recorded on a hosted Mac,
+  /// `collab/reality.json`): macOS brings the app forward first and passes the press on afterwards. So the window is reported as focused
+  /// while the button is down already, the app says that it is active, only then is the press heard of, and the app that was in front
+  /// says last that it no longer is. `userClick` tells of the press first, which is the order within one app.
+  public func userClickBringsAppForward(_ window: WindowID) {
+    guard windows[window] != nil else { return }
+    mouseDown = true
+    userFocus(window)
+    events?.keyboardFocusMoved()
+    mouseDown = false
+    events?.pointerPressed()
+    events?.keyboardFocusMoved()
+  }
 }
