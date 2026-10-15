@@ -34,6 +34,11 @@ lines of the README of the build under test, and the newest picture. It needs gi
 eyes. **All runs that are compared are played by the same kind of newcomer, told the same two lines**, and promptly: with Arbor the Mac waits about ten minutes for `ready`,
 no longer than leaves every task its whole time.
 
+**It needs somebody's leave.** Its words travel as pushes to a public repository, from a session that was told next to nothing. Where agents work under a permission check, that check
+may refuse exactly this, and did, the first night: a session without the repository was not allowed to push to it, and neither a relay nor a helper inside another session is a
+way round, being the same pushes by another path. Whoever is responsible for the newcomer has to say, in their own words, that it may push to
+`mac-shell-out/newcomer.<run>.action`. Until then the rig can be tried by whoever keeps it, which proves the rig and scores nothing.
+
 ## The tasks
 
 The maintainer's seven and one of the product owner's (3), in [tasks.py](tasks.py), in words that say what is wanted and never how. With macOS alone the first and the last fall away.
