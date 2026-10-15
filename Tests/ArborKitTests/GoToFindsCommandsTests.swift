@@ -287,6 +287,21 @@ import Testing
     #expect(h.overlays.cheatSheets[h.display] != nil)
   }
 
+  /// The menu greys such a row out under the row that says why. The palette lists no row that opens a file, so it says why itself:
+  /// run by its key the same command names the file too.
+  @Test func whatAMistakeInSettingsJsonKeepsFromWorkingSaysSo() throws {
+    let (h, _, _, _) = makeHarness()
+    h.controller.loadSettings = { throw MenuHeightTests.Broken() }
+    h.run("reload-settings")
+    #expect(choose(h, "dock new windows"))
+    #expect(h.overlays.finder?.message == "“Arrangement ▸ Dock New Windows” has to wait: settings.json has a mistake (line 3, column 3)")
+    #expect(h.controller.settings.docksNewWindows == Settings().docksNewWindows, "and nothing was changed")
+    // What is greyed out for another reason says what it said. The palette has stayed.
+    #expect(picked(h, typing: "step out") == .command(Command.stepOut.text))
+    #expect(h.overlays.chooseInFinder())
+    #expect(h.overlays.finder?.message == "“View ▸ Step Out” can do nothing just now")
+  }
+
   @Test func theRowsAreAsTheMenuStoodWhenThePaletteOpenedAndAFreshListHasTheMenusNewWords() throws {
     let (h, safari, notes, _) = makeHarness()
     h.run("find")

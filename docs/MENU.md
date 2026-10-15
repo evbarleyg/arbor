@@ -139,8 +139,9 @@ state 2, state 8, and what comes under the row of a permission that was taken aw
 
 States are shown first in the menu, above Arrange Windows, with a separator under them. When several hold, the first two in this order
 are shown: while Arbor runs that is two rows, which rule 3 counts on. **The topmost state's way out is never greyed out.** One below it may
-wait for it, if it is one choice away: with the view held and a mistake in the file, Release is at full strength and the file's row,
-which would open a window over what is being shown (F58), follows it.
+wait for it: with the view held and a mistake in the file, Release is at full strength and the file's row, which would open a window over
+what is being shown (F58), follows it, one choice away; with a mistake in the file and the shortcuts off in this app, the file's row is at
+full strength, and Turn On, which would change a setting, follows once the file is mended.
 
 The first row under the icon can thus be chosen. Whoever presses on the icon, lets the pointer drift down some twenty points with the button
 held and lets go has chosen it, as in every menu of macOS whose first row can be chosen; a plain click does not do that. Known and
@@ -151,10 +152,10 @@ accepted: the one place where it could hurt is Release on a shared screen.
 | 1 | No Accessibility permission (never given, or taken away: F63) | `Arbor needs Accessibility permission · Check Setup…`, one row; taken away: `Arbor’s Accessibility permission was taken away · Check Setup…`, and under it, as text, how many windows were out of view and that they come back with it | It opens Check Setup, not System Settings: with a new build over an old grant the switch there looks on, and only Check Setup says to switch Arbor off and on again in the list | nothing else but `Settings…`, **Help ▸** and `Quit Arbor` |
 | 2 | Starting | `Arbor is starting…` | | as above |
 | 3 | Paused | `Arbor is paused · Resume` ⌃⌥⎋, one row; begun for an app: `Arbor is paused for “Game” · Resume`; timed: `… until 14:30 · Resume` | That it leaves windows and shortcuts alone is the row's tooltip; what the pause did is said by the line on screen at the pause | nothing else but `Settings…`, **Help ▸** and `Quit Arbor` |
-| 4 | The view is held (F58) | `The view is held · Release`, with the key that releases; `The view is held: nothing is in it · Release` | That nothing moves the view is the tooltip | rows that would move the view are greyed out, and those that open a window over what is being shown (F58), state 7's among them |
+| 4 | The view is held (F58) | `The view is held · Release`, with the key that releases; `The view is held: nothing is in it · Release` | That nothing moves the view is the tooltip | rows that would move the view are greyed out, and those that open a window over what is being shown (F58), state 6's among them |
 | 5 | Holding still (F58) | `Holding still while the camera is on · Release` (or the microphone, or “Keynote” is open); begun by hand: `Holding still · Release` | That the view moves only when asked is the tooltip | |
-| 6 | Shortcuts off in this app (F41) | `Shortcuts are off in “Emacs” · Turn On` | It does what the ticked `Shortcuts Off in “Emacs”` in **Focused Window ▸** does: in this state no key helps | shortcuts are shown on no row but Pause Arbor |
-| 7 | `settings.json` cannot be read | `Settings.json has a mistake: line 3, column 3 · Settings File…` | | |
+| 6 | `settings.json` cannot be read | `Settings.json has a mistake: line 3, column 3 · Settings File…` | Before state 7, which only a change of settings ends | **every row that would change a setting is greyed out** (Don’t Arrange “App”, Shortcuts Off in “App”, Dock New Windows, Arrange Again’s apps, state 7’s row): Arbor does not write to a file it cannot read, and they would fail |
+| 7 | Shortcuts off in this app (F41) | `Shortcuts are off in “Emacs” · Turn On` | It does what the ticked `Shortcuts Off in “Emacs”` in **Focused Window ▸** does: in this state no key helps | shortcuts are shown on no row but Pause Arbor |
 | 8 | A place is kept, or an arrangement was set aside | one line, as in `status` | | |
 
 macOS's own tiling being on is not a state either (Q23): nobody is reminded of it by the menu or the icon. **Help ▸** `Check Setup…` has the

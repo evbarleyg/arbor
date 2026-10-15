@@ -86,7 +86,12 @@ extension Controller {
     let rows = paletteCommands(on: display).filter { $0.row.destination == .command(text) }
     guard let chosen = rows.first(where: \.row.isAvailable) else {
       Log.debug("find: \(FinderDestination.command(text)) cannot act now")
-      let notice = rows.first.map { "“\($0.row.name)” can do nothing just now" } ?? "That command is not in the menu now"
+      var notice = rows.first.map { "“\($0.row.name)” can do nothing just now" } ?? "That command is not in the menu now"
+      // The menu has the reason in the row above. Here nothing else would say it: the row that opens the file runs no command.
+      if let row = rows.first, row.command.changesSettings, let problem = settingsFileProblem {
+        let place = problem.split(separator: ":", maxSplits: 1).first.map(String.init) ?? problem
+        notice = "“\(row.row.name)” has to wait: settings.json has a mistake (\(place))"
+      }
       if let model = finderModel(on: display, notice: notice) {
         overlays.showFinder(model)
       } else {

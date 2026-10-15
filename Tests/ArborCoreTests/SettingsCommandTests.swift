@@ -242,6 +242,27 @@ private func refusal(_ text: String) -> String? {
     #expect(refusal("rule move 1 2 3") != nil)
   }
 
+  /// What is refused while settings.json cannot be read, for a menu that greys it out.
+  @Test func whatWritesToSettingsJsonSaysSo() throws {
+    for text in [
+      "exclude com.apple.mail", "exclude", "include com.apple.mail", "pass-through com.apple.mail", "pass-through com.apple.mail off",
+      "toggle-auto-dock", "set gap 12", "set focusRing toggle", "reset gap", "reset all", "bind ctrl+opt+k zoom", "unbind ctrl+opt+k",
+      "rule add com.apple.mail float", "rule remove 1",
+    ] {
+      #expect(try Command.parse(text).changesSettings, "\(text)")
+    }
+    for text in [
+      // They read, or open a window.
+      "get gap", "settings", "settings-window", "reload-settings",
+      // It replaces the file, which is a way out of the mistake.
+      "reset everything",
+      // Kept elsewhere than in settings.json, or nowhere.
+      "launch-at-login on", "save-view 1", "name Work", "hold", "pause", "minimap", "arrange", "float-all", "undo", "quit",
+    ] {
+      #expect(try !Command.parse(text).changesSettings, "\(text)")
+    }
+  }
+
   @Test func helpMentionsEveryVerb() {
     for verb in [
       "settings-window", "settings [--json]", "set <key>", "get <key>", "reset <key>", "bind <shortcut>", "unbind <shortcut>", "rule add",

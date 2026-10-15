@@ -405,6 +405,55 @@ import Testing
     }
   }
 
+  /// With a mistake in settings.json no setting can be changed: Arbor will not write to a file it cannot read. The rows that would are
+  /// greyed out, under the row that says why and opens the file.
+  @Test(arguments: ["everything", "framed", "floating", "nothing docked", "no windows"])
+  func whatCanBeChosenDoesNotFailWhileSettingsJsonHasAMistake(state: String) throws {
+    func broken() -> Harness {
+      let h = harness(in: state)
+      h.controller.loadSettings = { throw MenuHeightTests.Broken() }
+      h.run("reload-settings")
+      return h
+    }
+    // Reload Settings is what is chosen once the file is mended, which the menu cannot know when it opens.
+    let elsewhere: [Command] = [.togglePause, .welcome, .checkSetup, .settings(.showWindow()), .floatAll, .reloadSettings]
+    let menu = broken().controller.menuModel()
+    #expect(menu.sections.first?.items.first?.title.hasPrefix("Settings.json has a mistake") == true)
+    #expect(menu.sections.first?.items.first?.isEnabled == true)
+    for item in menu.allItems where item.isEnabled {
+      guard let command = item.command, !elsewhere.contains(command) else { continue }
+      let result = broken().controller.perform(command, from: .menu)
+      #expect(result.ok, "\(item.title): \(result.message)")
+    }
+    // And no more than those: what is greyed out now and was not before would have failed, for this reason.
+    let before = Dictionary(harness(in: state).controller.menuModel().allItems.map { ($0.title, $0.isEnabled) }, uniquingKeysWith: { $0 || $1 })
+    var greyedOutForIt = 0
+    for item in menu.allItems where !item.isEnabled && before[item.title] == true {
+      let result = broken().controller.perform(try #require(item.command, "\(item.title)"), from: .menu)
+      #expect(!result.ok && result.message.hasPrefix("settings.json cannot be read"), "\(item.title): \(result.message)")
+      greyedOutForIt += 1
+    }
+    #expect(greyedOutForIt > 0, "or this looks at nothing")
+  }
+
+  /// The file's row comes before the row of a state that only a change of settings ends: the topmost way out is never greyed out.
+  @Test func theFilesRowComesBeforeTheRowItKeepsFromWorking() {
+    let rows = MenuHeightTests().harness(in: "shortcuts are off here and settings.json has a mistake").controller.menuModel().sections.first?.items
+    #expect(rows?.map(\.title) == ["Settings.json has a mistake: line 3, column 3 · Settings File…", "Shortcuts are off in “Safari” · Turn On"])
+    #expect(rows?.map(\.isEnabled) == [true, false])
+  }
+
+  /// With a third state before them the shortcuts' row drops out of the two that are shown. That they are off can still be read in the menu:
+  /// the row in Focused Window ▸ stands there with its tick, greyed out.
+  @Test func thatShortcutsAreOffCanBeReadWhereverTheStatesRowIs() throws {
+    let h = MenuHeightTests().harness(in: "shortcuts are off here and settings.json has a mistake")
+    h.run("hold still")
+    let menu = h.controller.menuModel()
+    #expect(menu.sections.first?.items.map(\.title) == ["Holding still · Release", "Settings.json has a mistake: line 3, column 3 · Settings File…"])
+    let row = try #require(menu.item("Shortcuts Off in “Safari”"))
+    #expect(row.isTicked && !row.isEnabled)
+  }
+
   // MARK: Items that depend on something
 
   @Test func goToIsGreyedOutWhenThereIsNowhereToGo() {
@@ -479,7 +528,7 @@ import Testing
     #expect(h.controller.menuModel().item("Keep This Window in View")?.isTicked == true)
   }
 
-  /// docs/MENU.md, state 6: a row says so and ends it, its usual row carries the tick, and no row shows a shortcut that is off.
+  /// docs/MENU.md, state 7: a row says so and ends it, its usual row carries the tick, and no row shows a shortcut that is off.
   @Test func anAppThatKeepsItsOwnShortcutsIsSaidAndTicked() {
     let (h, _, _, _) = makeHarness()
     let row = h.controller.menuModel().item("Shortcuts Off in “Safari”")
@@ -581,7 +630,7 @@ import Testing
     #expect(row?.title == "Check for Updates…" && row?.command == .checkForUpdates && row?.shortcut == nil)
   }
 
-  /// docs/MENU.md, state 7, and "at most two states".
+  /// docs/MENU.md, state 6, and "at most two states".
   @Test func aSettingsFileThatCannotBeReadIsAStateWithTheFileUnderIt() throws {
     struct Broken: Error, CustomStringConvertible { let description = "line 3, column 3: expected `,` or `}`" }
     let (h, _, _, _) = makeHarness()
@@ -599,7 +648,7 @@ import Testing
     other.run("reload-settings")
     #expect(
       other.controller.menuModel().sections.first?.items.map(\.title)
-        == ["Shortcuts are off in “Safari” · Turn On", line])
+        == [line, "Shortcuts are off in “Safari” · Turn On"])
     // …and so it is during a pause, when shortcuts are off everywhere and that line has nothing to add.
     other.run("pause")
     #expect(
