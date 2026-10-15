@@ -548,7 +548,8 @@ import Testing
     h.run("pause")
     #expect(h.controller.isInBusiness)
     h.revokeAccessibility()
-    h.scheduler.advance(by: 3)
+    // Long enough to be somebody's doing: a doubt that passes would leave the pause on.
+    h.scheduler.advance(by: 20)
     #expect(h.controller.isInBusiness)
     h.grantAccessibility()
     h.scheduler.advance(by: 1)
@@ -785,10 +786,85 @@ import Testing
     #expect(!h.controller.isPaused && !h.controller.isRunning)
     #expect(h.controller.permissionLoss?.windows == 0, "a pause had brought everything into view")
     #expect(h.run("resume").message.hasPrefix("Arbor's Accessibility permission was taken away"))
+    // It takes a person a while to find the switch. That they did is what says that they want Arbor.
+    h.scheduler.advance(by: 20)
     h.grantAccessibility()
     h.scheduler.advance(by: 1)
     #expect(h.controller.isRunning && !h.controller.isPaused)
     #expect(h.workspace == before, "the arrangement and the view the pause had kept")
+  }
+
+  // MARK: A doubt that passes by itself ends nothing
+
+  /// Noticed, and over within a second: the privacy daemon restarted, say.
+  func doubt(_ h: Harness) {
+    h.revokeAccessibility()
+    h.scheduler.advance(by: 2.6)
+    #expect(h.controller.permissionLoss != nil, "or this proves nothing")
+    h.grantAccessibility()
+    h.scheduler.advance(by: 1)
+    #expect(h.controller.permissionLoss == nil && h.controller.accessibilityGranted)
+  }
+
+  @Test func aDoubtThatPassesLeavesAPauseByHandAsItWas() {
+    let (h, _, _, _, _) = makeHarness()
+    let before = h.workspace
+    h.run("pause")
+    let moves = h.system.frameLog.count
+    var held: Set<[String]> = []
+    h.controller.observe { [controller = h.controller] _ in held.insert(controller.activeBindings.map(\.command.text).sorted()) }
+    doubt(h)
+    #expect(h.controller.isPaused && !h.controller.isRunning)
+    #expect(h.system.frameLog.count == moves, "no window is laid out")
+    #expect(held == [["toggle-pause"]], "no key is taken back, not for a moment: \(held)")
+    #expect(h.run("status").message.hasPrefix("paused"))
+    #expect(h.run("resume").ok)
+    #expect(h.workspace == before, "the arrangement and the view the pause had kept")
+    expectWindowsMatchLayout(h, on: h.display)
+  }
+
+  @Test func aPauseWithAnEndStillEndsWhenItWasToEnd() {
+    let (h, _, _, _, _) = makeHarness()
+    h.run("pause 1")
+    h.scheduler.advance(by: 10)
+    doubt(h)
+    #expect(h.controller.isPaused)
+    h.scheduler.advance(by: 40)
+    #expect(h.controller.isPaused, "a minute is not over")
+    h.scheduler.advance(by: 10)
+    #expect(h.controller.isRunning)
+  }
+
+  @Test func aPauseWhoseEndFellIntoTheDoubtEndsAfterIt() {
+    let (h, _, _, _, _) = makeHarness()
+    h.run("pause 1")
+    h.scheduler.advance(by: 57)
+    doubt(h)
+    h.scheduler.advance(by: 0.1)
+    #expect(h.controller.isRunning && !h.controller.isPaused)
+  }
+
+  @Test func aDoubtThatPassesLeavesAPauseForAnAppAsItWas() {
+    let (h, _, _, _, _) = makeHarness()
+    h.run("set pauseForApps add com.example.game")
+    let game = h.system.open(app: "Game", bundleID: "com.example.game")
+    h.system.userFocus(game)
+    #expect(h.controller.isPausedForApp)
+    let moves = h.system.frameLog.count
+    doubt(h)
+    #expect(h.controller.isPausedForApp)
+    #expect(h.system.frameLog.count == moves)
+  }
+
+  /// While Arbor runs a doubt was harmless before, and is.
+  @Test func aDoubtWhileArborRunsLeavesNoPauseBehind() {
+    let (h, _, _, _, _) = makeHarness()
+    doubt(h)
+    #expect(h.controller.isRunning && !h.controller.isPaused)
+    h.run("pause")
+    h.run("resume")
+    doubt(h)
+    #expect(h.controller.isRunning && !h.controller.isPaused)
   }
 
   @Test func aTimedPauseDoesNotResumeIntoTheLoss() {

@@ -24,7 +24,7 @@ Arbor cannot prevent this. It can notice at once, stop pretending, say what is g
 - So does a call that macOS refuses because Accessibility is disabled: not everything that moves windows is a command (a drop, a window that closes, a gap that is dragged).
 
 **Stopping.** Nothing is moved: it could not be, and if the alarm was false nothing shows. Arbor saves the arrangement and the view, removes its own tiles, gap handles, previews and focus ring (they would
-soon be wrong), stops observing and removes both pointer taps. **It keeps its shortcuts** (QUESTIONS Q29, 2, after IDEAS I16; until then it gave them back to the apps): its item is still in the menu bar, nobody said that the keys are the apps' again, and a key of Arbor's that lands in the app in front can do there what cannot be taken back. A pause in progress is over: granting the permission again means wanting Arbor, as launching it does.
+soon be wrong), stops observing and removes both pointer taps. **It keeps its shortcuts** (QUESTIONS Q29, 2, after IDEAS I16; until then it gave them back to the apps): its item is still in the menu bar, nobody said that the keys are the apps' again, and a key of Arbor's that lands in the app in front can do there what cannot be taken back. A pause in progress is over: granting the permission again means wanting Arbor, as launching it does. Only if somebody did grant it: after a loss of under three seconds, which nobody mended, the pause goes on as it was.
 
 **Saying so.**
 
@@ -65,7 +65,7 @@ For the guide and the welcome window, not for Arbor to do: ⌘Tab to the app and
 4. The sentence counts the windows that were out of view and names their apps, never their titles; with none out of view it says so by leaving them out.
 5. Every shortcut in effect is held, with windows out of view and with none, and while Arbor waits at a launch; none of them moves anything; each but Settings… is answered by the line; only a way home pressed with windows out of view opens System Settings. In an app on `passThroughApps` or `pauseForApps`: the ways home with windows out of view, otherwise none. After a pause by the person: only what ends a pause. The taps' settings are off in every case.
 6. When the permission returns, arrangement, history and saved views are as they were; windows closed, opened and moved meanwhile are coped with; everything is in view if windows had been out of view, and the old view is one Back away; otherwise the view is as it was.
-7. A pause, by hand, timed or for an app, ends with the loss and does not come back with the permission.
+7. A pause, by hand, timed or for an app, ends with a loss that somebody mended (three seconds or more) and does not come back with the permission. **A doubt that passes by itself ends nothing**: the pause goes on as it was, with its end, no window touched and no key taken back.
 8. Losing it twice, losing it while it is already lost, and getting it back while running are harmless.
 9. Quitting while it is lost is safe, and the next start brings the windows back.
 10. (was "Manual"; board, section 5) On a hosted Mac, with a window out of view, the script takes the permission away (`tccutil reset Accessibility`) and gives it back: within three seconds the icon changes and the welcome window asks for the permission back; mouse and keyboard keep working; ⌃⌥Space beeps and opens the settings; switch it on: every window is in view.
@@ -83,7 +83,7 @@ warning sign in F10's menu model (`Controller+Menu.swift`, `MenuBarModel.Icon.ne
 | 4 | `theSentenceCountsWindowsAndNamesAppsNeverTitles`, `withNothingOutOfViewItLeavesThemOut`, `oneWindowAndManyAppsReadWell` |
 | 5 | `withWindowsOutOfViewEveryShortcutIsStillHeldAndNoneWorks`, `withNothingOutOfViewEveryShortcutIsStillHeld`, `inAnAppThatKeepsItsOwnKeysOnlyTheWaysHomeAreHeld`, `theWaysHomeLeadToTheSettingsAtMostOnceInTenSeconds`, `everythingIsHeldAgainAfterwards`; `ClaimedKeysTests`; scenario `I16-arbor-keeps-its-keys-where-nobody-gave-them-away.sim`; on a Mac: `check-claimed-keys.sh` |
 | 6 | `itComesBackWithinASecondWithEverythingInViewAndTheOldViewOneBackAway`, `aLossThatIsOverInAMomentLeavesTheViewAsItWas`, `withNothingOutOfViewTheViewIsAsItWas`, `itCopesWithWhatChangedMeanwhile`, `twoDisplaysBothShowEverythingAfterwards` |
-| 7 | `aPauseEndsWithTheLossAndDoesNotComeBack`, `aTimedPauseDoesNotResumeIntoTheLoss`, `aPauseForAnAppEndsTooAndBeginsAgainAfterwardsIfTheAppIsStillInFront` |
+| 7 | `aDoubtThatPassesLeavesAPauseByHandAsItWas`, `aPauseWithAnEndStillEndsWhenItWasToEnd`, `aPauseWhoseEndFellIntoTheDoubtEndsAfterIt`, `aDoubtThatPassesLeavesAPauseForAnAppAsItWas`, `aPauseEndsWithTheLossAndDoesNotComeBack`, `aTimedPauseDoesNotResumeIntoTheLoss`, `aPauseForAnAppEndsTooAndBeginsAgainAfterwardsIfTheAppIsStillInFront` |
 | 8 | `losingItAgainAndAgainIsHarmless`, `itIsLostOnceHoweverOftenTheAnswerIsNo` |
 | 9 | `quittingWithoutItIsSafeAndTheNextLaunchBringsTheWindowsBack` |
 | The first minute | `launchedWithoutThePermissionThenGrantedThenRevokedThenGrantedAgain`, `ifMacOSRefusesTapsFromTheFirstMinuteArborBelievesTheFlagAndGoesOn`, `onceTheThoroughWayHasWorkedItsNoIsBelievedAgainstTheFlag`; on a Mac: the first step of `check-F63.sh` |

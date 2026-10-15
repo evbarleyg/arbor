@@ -246,6 +246,8 @@ import Testing
     #expect(h.controller.permissionLoss != nil)
     h.key("ctrl+opt+z")
     #expect(h.system.keysTheAppInFrontGot.map(\.text) == ["ctrl+opt+z"])
+    // It takes a person a while to find the switch.
+    h.scheduler.advance(by: 20)
     h.grantAccessibility()
     h.scheduler.advance(by: 1)
     #expect(h.controller.isRunning, "granting it again means wanting Arbor")

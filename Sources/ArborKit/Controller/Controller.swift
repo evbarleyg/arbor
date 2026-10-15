@@ -392,6 +392,8 @@ public final class Controller {
   public internal(set) var isPausedForApp = false
   /// Whether the pause is one that nobody asked for: Arbor's own, at a logout (`sessionIsEnding`). It lets go of the windows and of no key.
   var pauseIsArborsOwn = false
+  /// The pause that was on when the Accessibility permission went, for the case that nobody took it away (`regainAccessibility`).
+  var pauseTheLossEnded: PauseTheLossEnded?
   /// What `followFrontmostApp` last told observers.
   var wasPassingThrough = false
   /// The shortcuts kept in an app that keeps its own ⌃⌥ because they send away what is summoned, as last told.

@@ -1,4 +1,5 @@
 import ArborCore
+import CoreGraphics
 import Foundation
 
 /// Accessibility permission taken away while Arbor runs (docs/features/F63-permission-taken-away.md).
@@ -17,6 +18,14 @@ extension Controller {
     public var since: Date
     /// Whether the person had paused Arbor, and so given its keys away.
     public var duringAPause = false
+  }
+
+  /// A pause as it was when the permission went.
+  struct PauseTheLossEnded {
+    var until: Date?
+    var forApp: Bool
+    var isArborsOwn: Bool
+    var frames: [WindowID: CGRect]
   }
 
   /// A loss shorter than this is taken for a false alarm, or for a slip of the finger: the view stays as it was.
@@ -102,7 +111,10 @@ extension Controller {
     accessibilityGranted = false
     permissionLoss = loss
     Log.error("Accessibility permission was taken away with \(loss.windows) window(s) out of view")
-    // Granting it again means wanting Arbor, as launching it does: a pause does not outlive this.
+    // Granting it again means wanting Arbor, as launching it does: a pause does not outlive this. Unless nobody granted anything: see
+    // `regainAccessibility`.
+    pauseTheLossEnded =
+      isPaused ? PauseTheLossEnded(until: pauseEnd, forApp: isPausedForApp, isArborsOwn: pauseIsArborsOwn, frames: pausedFrames) : nil
     scheduler.cancel("resume")
     isPausedForApp = false
     pauseIsArborsOwn = false
@@ -132,6 +144,11 @@ extension Controller {
     isListedUnderAccessibility = true
     permissionLoss = nil
     Log.info("Accessibility permission is back")
+    let pause = pauseTheLossEnded
+    pauseTheLossEnded = nil
+    // A doubt that passes by itself ends nothing. Nobody granted anything, so nobody said that they want Arbor back: to run now would end the pause
+    // they asked for, take their keys back and lay their windows out, in the middle of the game: three unasked acts from one false alarm.
+    if let pause, let loss, now().timeIntervalSince(loss.since) < Self.shortestLossWorthAFuss { return goOnPausing(pause) }
     start()
     filter.ignoredWindowIDs.formIntersection(windows.keys)
     lastVisitToSettings = nil
@@ -142,6 +159,24 @@ extension Controller {
     }
     // As after a pause: Arbor was not looking when the keyboard went where it is now.
     if isRunning, let focused = system.focusedWindow() { keyboardIs(in: focused, saysMacOS: false) }
+  }
+
+  /// The pause goes on as if nothing had been: no window is touched, no key taken.
+  private func goOnPausing(_ pause: PauseTheLossEnded) {
+    isPaused = true
+    isPausedForApp = pause.forApp
+    pauseIsArborsOwn = pause.isArborsOwn
+    pauseEnd = pause.until
+    pausedFrames = pause.frames
+    lastVisitToSettings = nil
+    Log.info("still paused: the permission was gone for a moment only")
+    notify(.lifecycle)
+    if let until = pause.until {
+      // Its end may have come meanwhile.
+      scheduler.schedule("resume", after: max(until.timeIntervalSince(now()), 0)) { [weak self] in self?.timedPauseEnded() }
+    }
+    // The app it was for may have left the front meanwhile.
+    followFrontmostApp()
   }
 
   /// Whether a shortcut that failed for want of the permission should open the Accessibility pane now. Only one of the ways home, pressed by
