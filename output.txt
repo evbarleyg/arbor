@@ -1,0 +1,134 @@
+# mac-shell: scripts/mac-shell/check-download.sh at 9892856, macOS 26.6.2, 2026-10-15T02:50Z
+
+== the Mac
+macOS 26.6.2 on arm64; Gatekeeper: assessments enabled
+a Swift toolchain of swift.org's here? 
+
+== 1  the files
+Arbor 0.9.0: 11M zip, 12M disk image
+  ✔ the checksums hold
+  ✔ the cask names this version
+  ✔ and the disk image's checksum
+  ✔ the cask is Ruby that parses
+
+== 2  the zip, marked as a browser marks a download, and unpacked
+  ✔ unpacking passes the mark on to the app
+  ✔ and to the program inside
+  ✔ the signature holds
+    Identifier=com.evbarleyg.arbor
+    Signature=adhoc
+    TeamIdentifier=not set
+  ✔ for Apple silicon and for Intel
+  ✔ from macOS 14 on
+  ✔ it needs no library but the system's
+  ✔ arborctl says the version
+  ✔ and so does its Intel half
+    /private/tmp/arbor-download.d22DaR/Arbor.app: rejected
+
+== 3  opened as it is
+  ✔ macOS puts up its dialog
+shot: mac-shell/03-refused.png
+    AXStaticText _NS:74 "" "“Arbor” Not Opened"
+    AXStaticText _NS:58 "" "Apple could not verify “Arbor” is free of malware that may harm your Mac or compromise your privacy."
+    AXButton _NS:30 "Help" ""
+    AXButton action-button--897 "Move to Trash" ""
+    AXButton action-button--898 "Done" ""
+  ✔ in the words the install page quotes
+  ✔ with Done to click
+  ✔ Arbor does not run
+> click 512 371
+
+== 4  the way past it in System Settings (told, not judged)
+    AXStaticText - "" "“Arbor” was blocked to protect your Mac."
+    AXButton - "Open Anyway" ""
+    AXStaticText - "" "Apple could not verify “Arbor” is free of malware that may harm your Mac or compromise your privacy."
+shot: mac-shell/04-open-anyway.png
+> click 789 474
+shot: mac-shell/04-asked-again.png
+    AXStaticText _NS:74 "" "Open “Arbor”?"
+    AXStaticText _NS:58 "" "Apple is not able to verify that it is free from malware that could harm your Mac or compromise your privacy. Don’t open this unless you are certain it is from a trustworthy so
+    AXButton _NS:30 "Help" ""
+    AXButton action-button--897 "Move to Trash" ""
+    AXButton action-button--894 "Open Anyway" ""
+    AXButton action-button--898 "Done" ""
+> click 512 398
+  asked by: coreautha
+shot: mac-shell/04-asked-who.png
+    AXStaticText _NS:9 "" "Passwords…"
+    AXStaticText - "" "Privacy & Security"
+    AXStaticText - "" "You are attempting to open an app that may cause harm to your Mac or compromise your privacy"
+    AXStaticText - "" "Enter an administrator’s username and password to allow this."
+    AXTextField - "" "runner"
+    AXButton - "Cancel" ""
+    AXButton - "OK" ""
+> key escape
+> key escape
+  Arbor does not run yet
+
+== 5  the way past it in Terminal, and the first run
+  ✔ a second copy is marked like the first
+  ✔ xattr -dr com.apple.quarantine takes the mark off
+  ✔ Arbor starts
+  ✔ no dialog of macOS's stands in the way
+    waiting for Accessibility permission (System Settings → Privacy & Security → Accessibility)
+  ✔ it says its version
+  ✔ never given anything, it waits for the permission
+  ✔ its welcome window is up and names the permission
+shot: mac-shell/05-first-run.png
+    AXStaticText - "" "Welcome to Arbor"
+    AXStaticText - "" "Dock windows side by side, then zoom between them: a camera frames one window, its group, or everything at once."
+    AXStaticText - "" "Accessibility"
+    AXStaticText - "" "Required"
+    AXButton - "Open Settings…" ""
+    AXStaticText - "" "macOS lets an app move other apps’ windows only with Accessibility permission. Arbor reads where windows are and their titles, moves them, and sends nothing anywhere. If Arbor is al
+    AXStaticText - "" "Desktop & Dock settings"
+    AXStaticText - "" "Best changed"
+    AXButton - "Open Settings…" ""
+    AXStaticText - "" "As they stand, macOS reacts to the same clicks and drags as Arbor:"
+    AXStaticText - "" "•"
+    AXStaticText - "" "“Click wallpaper to reveal desktop”: choose “Only in Stage Manager”. Otherwise a click on the Desktop sends every window away"
+    AXStaticText - "" "•"
+    AXStaticText - "" "“Drag windows to left or right edge of screen to tile”: switch it off"
+
+== 6  with the permission
+    designated => cdhash H"385b3ef0b012b62a11982b259bafda4ee6a01b81" or cdhash H"04d50927f0598c062a4c1f9617ec8cc529658647"
+  ✔ it runs, without having been started again
+  ✔ it sees two windows
+    arranged 2 windows
+  ✔ and docks them
+shot: mac-shell/06-docked.png
+display 07230EFA-7A8D-4E37-845C-19CC8737EEF5
++---------------------------++--------------------------+###############
+|w63 TextEdit               ||w64 TextEdit              |#desktop      #
+|                           ||                          |#             #
+|                           ||                          |#             #
+|                           ||                          |#             #
+|                           ||                          |#             #
+|                           ||                          |#             #
+|                           ||                          |#             #
+|                           ||                          |#             #
+|                           ||                          |#             #
+|                           ||                          |#             #
+|                           ||                          |#             #
+|                           ||                          |#             #
+|                           ||                          |#             #
+|                           ||                          |#             #
+|                           ||                          |#             #
+|                           ||                          |#             #
+|                           ||                          |#             #
+|                           ||                          |#             #
+|                           ||                          |#             #
+|                           ||                          |#             #
++---------------------------++--------------------------+###############
+camera n2
+    quitting
+  ✔ asked to quit, it has gone
+shot: mac-shell/06-after-quit.png
+
+== 7  the disk image
+  ✔ it mounts
+  ✔ it holds the very app that is in the zip
+  ✔ and the link to drag it onto
+
+30 passed, 0 failed
+exit code 0
