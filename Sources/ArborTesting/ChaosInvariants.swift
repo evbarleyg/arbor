@@ -48,6 +48,16 @@ extension ChaosRunner {
     if staleSinceADrop {
       for index in inside.indices where inside[index].rule == "stale-layout" { inside[index].rule = "stale-layout-after-drop" }
     }
+    // The app registers `activeBindings` and its taps follow `inputSettings` only when it is told that they changed
+    // (`Change.input`, `.lifecycle`, `.hold`, settings applied). Whatever changes either has to say so.
+    if isRunning || isPaused, let told = toldBindings {
+      let now = controller.activeBindings
+      if told != now {
+        let gone = told.filter { !now.contains($0) }.map(\.command.text), new = now.filter { !told.contains($0) }.map(\.command.text)
+        inside.append(.init("registered", "the app holds \(told.count) shortcuts, Arbor wants \(now.count): too many \(gone.prefix(4)), missing \(new.prefix(4))"))
+      }
+      if toldInput != controller.inputSettings { inside.append(.init("taps", "the taps follow settings that are out of date")) }
+    }
     guard isRunning else {
       // Quitting and pausing move more windows at once than anything else, each of them once.
       var jolts: [InvariantViolation] = []

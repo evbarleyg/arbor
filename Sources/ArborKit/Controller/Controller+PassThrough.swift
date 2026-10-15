@@ -29,11 +29,15 @@ extension Controller {
 
   /// Whether the command is the `summon` of the app whose window is summoned now, so that it would send it away. A key that
   /// brought an app has to be there to send it away again, also in an app that otherwise keeps its own ⌃⌥: a terminal is
-  /// the first thing people summon, and the first they switch Arbor's shortcuts off in.
+  /// the first thing people summon, and the first they switch Arbor's shortcuts off in. Only while that app is the one in
+  /// front: with `summonStays` a summoned terminal can lie there while a virtual machine has the keyboard, and all its keys.
   private func sendsAwayWhatIsSummoned(_ command: Command) -> Bool {
     guard case .summon(let app) = command else { return false }
     return workspaces.values.contains { workspace in
-      workspace.summoned.flatMap { windows[$0.window] }.map { Self.isWindow($0, of: app) } ?? false
+      guard let window = workspace.summoned.flatMap({ windows[$0.window] }), Self.isWindow(window, of: app) else {
+        return false
+      }
+      return window.bundleID == frontmostApp?.bundleID
     }
   }
 
@@ -71,7 +75,11 @@ extension Controller {
     } else if isPausedForApp {
       _ = resume()
     }
-    guard isPassingThrough != wasPassingThrough else { return }
+    guard isPassingThrough != wasPassingThrough else {
+      // From one app that keeps its keys to another: which of them is summoned may make a difference.
+      summonKeysMayHaveChanged()
+      return
+    }
     wasPassingThrough = isPassingThrough
     // Told with this.
     summonKeysLastTold = isPassingThrough ? activeBindings.filter { sendsAwayWhatIsSummoned($0.command) }.map(\.chord) : []
