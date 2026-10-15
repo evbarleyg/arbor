@@ -1,0 +1,210 @@
+// breath: gives several apps' windows new frames through Accessibility in one of three ways, and says how long the display
+// showed something in between. For scripts/mac-shell/probe-breath.sh. Arbor is not involved: this asks macOS what is possible.
+//
+//   breath <way> <rounds> <pid>…
+//     one-by-one    as Arbor does today: a window at a time, each answer waited for (size, position, size, then the frame read back)
+//     side-by-side  a thread to an app; within an app a window at a time; the caller waits for all of them
+//     no-wait       every size and position is sent with a time limit of a millisecond, so that nobody is waited for (a call that
+//                   times out is still delivered); then the limit is put back and every frame is read, which waits for its app
+//
+// Each round takes the windows from a pile to a grid or back. Meanwhile a thread of its own asks the window server for these windows'
+// bounds as fast as it answers. A line a round: how long the calls took, when the first and the last change showed, in how many
+// sixtieths of a second something changed ("pieces"), and how many windows ended where they were sent.
+//
+// A script compiles it itself (swiftc -O -swift-version 5 scripts/mac-shell/breath.swift -o …). Needs Accessibility.
+
+import AppKit
+import ApplicationServices
+
+func fail(_ message: String) -> Never {
+  FileHandle.standardError.write(Data("breath: \(message)\n".utf8))
+  exit(64)
+}
+
+@_silgen_name("_AXUIElementGetWindow")
+func _AXUIElementGetWindow(_ element: AXUIElement, _ identifier: UnsafeMutablePointer<CGWindowID>) -> AXError
+
+struct Window {
+  var pid: pid_t
+  var id: CGWindowID
+  var element: AXUIElement
+}
+
+func windows(of pid: pid_t) -> [Window] {
+  var value: CFTypeRef?
+  guard AXUIElementCopyAttributeValue(AXUIElementCreateApplication(pid), kAXWindowsAttribute as CFString, &value) == .success,
+    let items = value as? [AnyObject]
+  else { return [] }
+  return items.compactMap { item in
+    guard CFGetTypeID(item) == AXUIElementGetTypeID() else { return nil }
+    let element = item as! AXUIElement
+    var id = CGWindowID(0)
+    guard _AXUIElementGetWindow(element, &id) == .success, id != 0 else { return nil }
+    return Window(pid: pid, id: id, element: element)
+  }
+}
+
+@discardableResult func set(_ element: AXUIElement, size: CGSize) -> AXError {
+  var size = size
+  guard let value = AXValueCreate(.cgSize, &size) else { return .failure }
+  return AXUIElementSetAttributeValue(element, kAXSizeAttribute as CFString, value)
+}
+
+@discardableResult func set(_ element: AXUIElement, position: CGPoint) -> AXError {
+  var position = position
+  guard let value = AXValueCreate(.cgPoint, &position) else { return .failure }
+  return AXUIElementSetAttributeValue(element, kAXPositionAttribute as CFString, value)
+}
+
+func frame(of element: AXUIElement) -> CGRect? {
+  var position: CFTypeRef?
+  var size: CFTypeRef?
+  guard AXUIElementCopyAttributeValue(element, kAXPositionAttribute as CFString, &position) == .success,
+    AXUIElementCopyAttributeValue(element, kAXSizeAttribute as CFString, &size) == .success,
+    let position, let size
+  else { return nil }
+  var rect = CGRect.zero
+  AXValueGetValue(position as! AXValue, .cgPoint, &rect.origin)
+  AXValueGetValue(size as! AXValue, .cgSize, &rect.size)
+  return rect
+}
+
+func now() -> Double { ProcessInfo.processInfo.systemUptime }
+
+/// As `AXWindowSystem.setFrame` does it for a window that changes its size (`FramePlan.full`).
+func move(_ window: Window, to target: CGRect) {
+  set(window.element, size: target.size)
+  set(window.element, position: target.origin)
+  set(window.element, size: target.size)
+  _ = frame(of: window.element)
+}
+
+// MARK: What the window server shows
+
+final class Watcher: @unchecked Sendable {
+  private let ids: [CGWindowID]
+  private let lock = NSLock()
+  private var changes: [(at: Double, id: CGWindowID, bounds: CGRect)] = []
+  private var looks = 0
+  private var stopped = false
+
+  init(_ ids: [CGWindowID]) { self.ids = ids }
+
+  /// A question a window: the whole list takes a hosted Mac 25 ms, which is more than there is to measure.
+  static func bounds(of ids: [CGWindowID]) -> [CGWindowID: CGRect] {
+    var found: [CGWindowID: CGRect] = [:]
+    for id in ids {
+      guard let list = CGWindowListCopyWindowInfo([.optionIncludingWindow], id) as? [[String: Any]], let entry = list.first,
+        let box = entry[kCGWindowBounds as String] as? NSDictionary, let rect = CGRect(dictionaryRepresentation: box as CFDictionary)
+      else { continue }
+      found[id] = rect
+    }
+    return found
+  }
+
+  func start() {
+    let thread = Thread { [self] in
+      var last = Self.bounds(of: ids)
+      while true {
+        let seen = Self.bounds(of: ids)
+        let at = now()
+        lock.lock()
+        looks += 1
+        for (id, rect) in seen where last[id] != rect { changes.append((at, id, rect)) }
+        let done = stopped
+        lock.unlock()
+        last = seen
+        if done { return }
+      }
+    }
+    thread.qualityOfService = .userInteractive
+    thread.start()
+  }
+
+  func stop() -> (changes: [(at: Double, id: CGWindowID, bounds: CGRect)], looks: Int) {
+    lock.lock()
+    defer { lock.unlock() }
+    stopped = true
+    return (changes, looks)
+  }
+}
+
+// MARK: The rounds
+
+let arguments = Array(CommandLine.arguments.dropFirst())
+guard arguments.count >= 3, let rounds = Int(arguments[1]), rounds > 0 else {
+  fail("usage: breath <one-by-one|side-by-side|no-wait> <rounds> <pid>…")
+}
+let way = arguments[0]
+guard ["one-by-one", "side-by-side", "no-wait"].contains(way) else { fail("no such way: \(way)") }
+guard AXIsProcessTrusted() else { fail("no Accessibility permission") }
+let all = arguments.dropFirst(2).compactMap { pid_t($0) }.flatMap { windows(of: $0) }
+guard all.count > 1 else { fail("found \(all.count) windows") }
+for window in all { AXUIElementSetMessagingTimeout(window.element, 1) }
+
+guard let screen = NSScreen.main else { fail("no display") }
+// Global coordinates with the origin at the top left, as Accessibility and the window server have them.
+let visible = CGRect(
+  x: screen.visibleFrame.minX, y: screen.frame.maxY - screen.visibleFrame.maxY, width: screen.visibleFrame.width,
+  height: screen.visibleFrame.height)
+let columns = Int(Double(all.count).squareRoot().rounded(.up))
+let rows = (all.count + columns - 1) / columns
+let cell = CGSize(width: (visible.width / CGFloat(columns)).rounded(.down), height: (visible.height / CGFloat(rows)).rounded(.down))
+let grid = all.indices.map { index in
+  CGRect(
+    x: visible.minX + CGFloat(index % columns) * cell.width, y: visible.minY + CGFloat(index / columns) * cell.height,
+    width: cell.width - 8, height: cell.height - 8)
+}
+let pile = all.indices.map { index in
+  CGRect(x: visible.minX + 40 + CGFloat(index) * 24, y: visible.minY + 30 + CGFloat(index) * 20, width: 420, height: 300)
+}
+let apps = Dictionary(grouping: all.indices, by: { all[$0].pid }).values.map { $0.sorted() }.sorted { $0[0] < $1[0] }
+
+for (index, window) in all.enumerated() { move(window, to: pile[index]) }
+Thread.sleep(forTimeInterval: 0.5)
+print("\(way): \(all.count) windows of \(apps.count) apps, cells of \(Int(cell.width))×\(Int(cell.height))")
+
+for round in 1...rounds {
+  let targets = round % 2 == 1 ? grid : pile
+  let watcher = Watcher(all.map(\.id))
+  watcher.start()
+  Thread.sleep(forTimeInterval: 0.1)
+  let began = now()
+  var sent = began
+  switch way {
+  case "one-by-one":
+    for (index, window) in all.enumerated() { move(window, to: targets[index]) }
+  case "side-by-side":
+    DispatchQueue.concurrentPerform(iterations: apps.count) { app in
+      for index in apps[app] { move(all[index], to: targets[index]) }
+    }
+  default:
+    for window in all { AXUIElementSetMessagingTimeout(window.element, 0.001) }
+    for (index, window) in all.enumerated() {
+      set(window.element, size: targets[index].size)
+      set(window.element, position: targets[index].origin)
+      set(window.element, size: targets[index].size)
+    }
+    sent = now()
+    for window in all { AXUIElementSetMessagingTimeout(window.element, 1) }
+    for window in all { _ = frame(of: window.element) }
+  }
+  let answered = now()
+  Thread.sleep(forTimeInterval: 0.4)
+  let (changes, looks) = watcher.stop()
+  let final = Watcher.bounds(of: all.map(\.id))
+  let arrived = all.indices.filter { index in
+    guard let rect = final[all[index].id] else { return false }
+    return abs(rect.minX - targets[index].minX) <= 1 && abs(rect.minY - targets[index].minY) <= 1
+      && abs(rect.width - targets[index].width) <= 1 && abs(rect.height - targets[index].height) <= 1
+  }.count
+  func ms(_ time: Double) -> String { String(format: "%.1f", (time - began) * 1000) }
+  let after = changes.filter { $0.at >= began }
+  let pieces = Set(after.map { Int(($0.at - began) * 60) }).count
+  let span = after.isEmpty ? "-" : String(format: "%.1f", (after.last!.at - after.first!.at) * 1000)
+  print(
+    "  round \(round) to the \(round % 2 == 1 ? "grid" : "pile"): answered \(ms(answered)) ms"
+      + (way == "no-wait" ? " (sent \(ms(sent)))" : "")
+      + ", first change \(after.first.map { ms($0.at) } ?? "-"), last \(after.last.map { ms($0.at) } ?? "-"), span \(span) ms, "
+      + "\(pieces) pieces, \(after.count) changes, \(arrived) of \(all.count) arrived, \(looks) looks")
+}
