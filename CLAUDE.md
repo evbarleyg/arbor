@@ -130,8 +130,10 @@ against fakes.
   add one line to the `perform` switch.
 - Settings: add keys at the end of `Settings` (a property with its default, a
   `CodingKeys` case, one `try read(.key, into: &key)` line in `init(from:)`), and one entry in
-  `SettingsSchema`, at the end of its section's list: it gives the key its range, `set` and `get`, and its row in
-  docs/SETTINGS.md, which a test rewrites (it fails once; commit the file). Old settings files must keep loading.
+  `SettingsSchema`, at the end of its section's list: it gives the key its range, `set` and `get`, its row in the settings
+  window and in docs/SETTINGS.md, which a test rewrites (it fails once; commit the file). The file's header says how to
+  choose words and level (`hidden: true` when in doubt); its place among the others is `SettingsSchema.order`. Old settings
+  files must keep loading.
   A command that changes settings asks `refusalToChangeSettings()` first and returns
   `reply("…", unsaved: change(settings: updated))` (`Controller+Settings.swift`).
 - What the app shows (menus, panels, the settings window, the line on screen, replies, `help`, `doctor`) is spelled as macOS spells: color,

@@ -87,12 +87,42 @@ Second half, the window and what the product owner asked of the commands:
 
 - 2026-10-15 (Q27): `settings.json` holds only what differs from the defaults, and `"format": 2` (`ArborCore/SettingsFileFormat.swift`). A first launch writes no default; `set` writes one key; `reset`, and `set` to the very default, take the key out. A file from before the mark is stripped once, at a launch, of what equals the defaults of its day (a frozen table), with a copy kept. `SettingsFileFormatTests`, `SettingsFileUpgradeTests`; on a Mac `check-F12.sh`.
 
+Round 2, what reading, extremes, bad days and the first pictures from a hosted Mac found. Linux proves the model and type-checks the three SwiftUI files
+against stand-ins (`make typecheck-mac`); `scripts/mac-shell/shots-F12.sh` clicks through the window on a hosted Mac, unattended, and brings back every
+pane in both looks for somebody to look at:
+
+- Nothing typed that can be used is lost. What is typed into a field is kept by the model (`drafts`), not by the view, and handed over on Return, when the field loses the
+  keyboard, and before anything that takes the field away or acts on what it is about: another pane, a search, a rule's buttons and menus, the
+  window closing, Advanced closing over it. A title typed for a rule is dropped if another rule has come to its place. The slider, Restore Defaults and
+  replacing the file overtake what stands in a field. What cannot be used is refused under its field, or, if the field has gone with its pane, on the line on screen.
+- A field follows its setting. On a hosted Mac a field that had the keyboard said 40 while its slider stood at 86, and went on saying so after `set gap 20`: it had
+  reported what it was given to show, and that was taken for typing. What a field would show anyway is no typing now, and a change from outside drops
+  what stood half typed in that setting's field, so closing the window cannot undo it.
+- Rows stand in a chosen order, `SettingsSchema.order`: what is looked for first comes first, what belongs together stands together. Entries are
+  still added at the end of their lists and never moved; a key the order does not name comes last. `settings` and docs/SETTINGS.md follow it.
+- Help never explains a choice by its values, hidden settings included. The choices of Gaps between windows say what they do ("Cannot be dragged", not
+  "Only gaps").
+- Sliders land on multiples of the step (1, 10, 20, not 1, 11, 21). `shrinkOutOfView` is hidden.
+- What is behind Advanced looks like the rows above it: lines between the rows, their room, and a list of apps at the left, where pictures showed it a
+  hundred points to the right.
+- Small ones: skipped entries of `displays` are told by `doctor` and the window's banner (never by the log: what an entry matches can be a person's name); an app a
+  hand-edited list names twice shows once, an empty entry can be taken off; "did you mean" finds a label however it is spelt (`smallest-usable-width`).
+- `SettingsExtremesTests`: every setting at the ends of what the schema allows, alone, all at once and in the middle of a drag, a motion and a peek, by `set`, by a
+  file and by the window's model, followed by an ordinary day; junk from beyond the ends gets in by no way. It knows no setting by name. `SettingsWindowOnABadDayTests`: every control
+  during a pause, before the permission, over a file that cannot be read, where nothing can be saved, with no display.
+- `SettingsWindowAmongWindowsTests`: looking around the window moves nothing and asks for nobody's keyboard; a slider that is let go of, a field handed over and every other
+  control move a window once at most, to where it ends up; a floating window as wide as the Desktop follows it, once.
+- `shots-F12.sh` takes its pictures first, in both looks: every pane from top to bottom, the Calls pane too, and again with Advanced open, which nobody had
+  seen. Five of its checks were red through faults of its own on a display 1024 points wide, and are mended: with a wider gap every column became a tile
+  (it asks for a smaller usable width now), it clicked where a window had been while it was a tile, and Accessibility names no app in front there.
+
 ## Not shipped
 
-- Criterion 3: nobody has seen the window. It compiles and its tests pass on a Mac; the script that clicks through it and takes its
-  pictures in light and dark has not been run.
+- Criterion 3 as far as pictures go: the panes have been looked at in light and dark, in pictures `shots-F12.sh` took on hosted Macs. Translucency cannot be
+  judged there, and nobody has sat in front of the window.
+- Modifier keys and a colour are typed as text ("ctrl+opt", "accent").
+- The README's long table of settings repeats docs/SETTINGS.md by hand, and falls behind it. It should give way to a paragraph that points there.
 - `doctor`'s row and the menu's state line for a broken file wait for F10.
-- The Shortcuts pane names commands by their text (`show-all`); F43's `Command.title` gives them words when it lands.
 - No editor for `displays`: a line with its length and Open the File.
 - `arborctl --json` exits 0 after a refusal, and refusals go to stdout (with F50).
 - `excludedBundleIDs` is read as a whole: one entry that is not text costs the list (and `exclude` then refuses to write
