@@ -1,0 +1,103 @@
+# mac-shell: scripts/mac-shell/probe-coarse-drag.sh at 36d5e99, macOS 26.6.2, 2026-10-15T03:06Z
+built Arbor and the pointer tool in 4s
+session 1: Arbor pid 34931, test windows 31 (pid 34904)
+running: 1 display, 0 docked and 1 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+com.apple.WindowManager EnableTilingByEdgeDrag: not set
+com.apple.WindowManager EnableTopTilingByEdgeDrag: not set
+com.apple.WindowManager EnableTilingOptionAccelerator: not set
+com.apple.WindowManager EnableTiledWindowMargins: not set
+
+== part 1, one display: 500 points to and fro, a step every 20 ms
+  steps-of-71: 410 232 to 910 232 in 7 steps: the window went from (170 220 480 348) to (670 220 480 348); Arbor saw a drag: 1
+  steps-of-71: 910 232 to 410 232 in 7 steps: the window went from (670 220 480 348) to (170 220 480 348); Arbor saw a drag: 0
+  steps-of-71: 410 232 to 910 232 in 7 steps: the window went from (170 220 480 348) to (670 220 480 348); Arbor saw a drag: 0
+  steps-of-71: 910 232 to 410 232 in 7 steps: the window went from (670 220 480 348) to (170 220 480 348); Arbor saw a drag: 0
+  steps-of-71: 410 232 to 910 232 in 7 steps: the window went from (170 220 480 348) to (670 220 480 348); Arbor saw a drag: 0
+  steps-of-71: 910 232 to 410 232 in 7 steps: the window went from (670 220 480 348) to (170 220 480 348); Arbor saw a drag: 0
+  steps-of-45: 410 232 to 910 232 in 11 steps: the window went from (170 220 480 348) to (670 220 480 348); Arbor saw a drag: 0
+  steps-of-45: 910 232 to 410 232 in 11 steps: the window went from (670 220 480 348) to (170 220 480 348); Arbor saw a drag: 0
+  steps-of-45: 410 232 to 910 232 in 11 steps: the window went from (170 220 480 348) to (670 220 480 348); Arbor saw a drag: 0
+  steps-of-45: 910 232 to 410 232 in 11 steps: the window went from (670 220 480 348) to (170 220 480 348); Arbor saw a drag: 0
+  steps-of-45: 410 232 to 910 232 in 11 steps: the window went from (170 220 480 348) to (670 220 480 348); Arbor saw a drag: 0
+  steps-of-45: 910 232 to 410 232 in 11 steps: the window went from (670 220 480 348) to (170 220 480 348); Arbor saw a drag: 0
+  steps-of-29: 410 232 to 910 232 in 17 steps: the window went from (170 220 480 348) to (670 220 480 348); Arbor saw a drag: 0
+  steps-of-29: 910 232 to 410 232 in 17 steps: the window went from (670 220 480 348) to (170 220 480 348); Arbor saw a drag: 0
+  steps-of-29: 410 232 to 910 232 in 17 steps: the window went from (170 220 480 348) to (670 220 480 348); Arbor saw a drag: 0
+  steps-of-29: 910 232 to 410 232 in 17 steps: the window went from (670 220 480 348) to (170 220 480 348); Arbor saw a drag: 0
+  steps-of-29: 410 232 to 910 232 in 17 steps: the window went from (170 220 480 348) to (670 220 480 348); Arbor saw a drag: 0
+  steps-of-29: 910 232 to 410 232 in 17 steps: the window went from (670 220 480 348) to (170 220 480 348); Arbor saw a drag: 1
+  steps-of-22: 410 232 to 910 232 in 22 steps: the window went from (170 220 480 348) to (681 220 480 348); Arbor saw a drag: 1
+  steps-of-22: 921 232 to 421 232 in 22 steps: the window went from (681 220 480 348) to (181 220 480 348); Arbor saw a drag: 1
+  steps-of-22: 421 232 to 921 232 in 22 steps: the window went from (181 220 480 348) to (681 220 480 348); Arbor saw a drag: 1
+  steps-of-22: 921 232 to 421 232 in 22 steps: the window went from (681 220 480 348) to (181 220 480 348); Arbor saw a drag: 1
+  steps-of-22: 421 232 to 921 232 in 22 steps: the window went from (181 220 480 348) to (681 220 480 348); Arbor saw a drag: 1
+  steps-of-22: 921 232 to 421 232 in 22 steps: the window went from (681 220 480 348) to (181 220 480 348); Arbor saw a drag: 1
+  steps-of-14: 421 232 to 921 232 in 34 steps: the window went from (181 220 480 348) to (677 220 480 348); Arbor saw a drag: 1
+  steps-of-14: 917 232 to 417 232 in 34 steps: the window went from (677 220 480 348) to (177 220 480 348); Arbor saw a drag: 1
+  steps-of-14: 417 232 to 917 232 in 34 steps: the window went from (177 220 480 348) to (662 220 480 348); Arbor saw a drag: 1
+  steps-of-14: 902 232 to 402 232 in 34 steps: the window went from (662 220 480 348) to (162 220 480 348); Arbor saw a drag: 1
+  steps-of-14: 402 232 to 902 232 in 34 steps: the window went from (162 220 480 348) to (647 220 480 348); Arbor saw a drag: 1
+  steps-of-14: 887 232 to 387 232 in 34 steps: the window went from (647 220 480 348) to (147 220 480 348); Arbor saw a drag: 1
+  steps-of-7: 387 232 to 887 232 in 63 steps: the window went from (147 220 480 348) to (624 220 480 348); Arbor saw a drag: 1
+  steps-of-7: 864 232 to 364 232 in 63 steps: the window went from (624 220 480 348) to (124 220 480 348); Arbor saw a drag: 1
+  steps-of-7: 364 232 to 864 232 in 63 steps: the window went from (124 220 480 348) to (600 220 480 348); Arbor saw a drag: 1
+  steps-of-7: 840 232 to 340 232 in 63 steps: the window went from (600 220 480 348) to (100 220 480 348); Arbor saw a drag: 1
+  steps-of-7: 340 232 to 840 232 in 63 steps: the window went from (100 220 480 348) to (576 220 480 348); Arbor saw a drag: 1
+  steps-of-7: 816 232 to 316 232 in 63 steps: the window went from (576 220 480 348) to (76 220 480 348); Arbor saw a drag: 1
+
+steps of 71 points: seen 1 of 6 (the window moved in 6)
+steps of 45 points: seen 0 of 6 (the window moved in 6)
+steps of 29 points: seen 1 of 6 (the window moved in 6)
+steps of 22 points: seen 6 of 6 (the window moved in 6)
+steps of 14 points: seen 6 of 6 (the window moved in 6)
+steps of 7 points: seen 6 of 6 (the window moved in 6)
+  ✔ steps of 71 points: the window went along every time, so these were drags
+  ✔ steps of 45 points: the window went along every time, so these were drags
+  ✔ steps of 29 points: the window went along every time, so these were drags
+  ✔ steps of 22 points: the window went along every time, so these were drags
+  ✔ steps of 14 points: the window went along every time, so these were drags
+  ✔ steps of 7 points: the window went along every time, so these were drags
+  ✔ the control: steps of 14 points are always seen
+  ✔ the control: steps of 7 points are always seen
+  ✔ steps of 22 points, just within the patience, are always seen
+  ✘ steps of 29 points are always seen
+  ✘ steps of 45 points are always seen
+  ✘ steps of 71 points are always seen
+
+== part 2, two displays: check-displays.sh's own drag, to the middle of the second display and back
+> display_add 1280 800: display 2, 10860C7C-BEC6-4632-9AED-0E04B168F0D0
+> display_move right: now at 1920 0 1280 800
+  in-30-steps: 316 232 to 2560 415 in 30 steps: the window went from (76 220 480 348) to (2320 403 480 348); Arbor saw a drag: 1
+  in-30-steps: 2560 415 to 960 516 in 30 steps: the window went from (2320 403 480 348) to (720 503 480 348); Arbor saw a drag: 0
+  in-fine-steps: 960 515 to 2560 415 in 101 steps: the window went from (720 503 480 348) to (2328 403 480 348); Arbor saw a drag: 1
+  in-fine-steps: 2568 415 to 960 516 in 101 steps: the window went from (2328 403 480 348) to (720 499 480 348); Arbor saw a drag: 1
+  in-30-steps: 960 511 to 2560 415 in 30 steps: the window went from (720 499 480 348) to (2320 403 480 348); Arbor saw a drag: 0
+  in-30-steps: 2560 415 to 960 516 in 30 steps: the window went from (2320 403 480 348) to (720 503 480 348); Arbor saw a drag: 0
+  in-fine-steps: 960 515 to 2560 415 in 101 steps: the window went from (720 503 480 348) to (2312 403 480 348); Arbor saw a drag: 1
+  in-fine-steps: 2552 415 to 960 516 in 100 steps: the window went from (2312 403 480 348) to (720 500 480 348); Arbor saw a drag: 1
+  in-30-steps: 960 512 to 2560 415 in 30 steps: the window went from (720 500 480 348) to (2320 403 480 348); Arbor saw a drag: 0
+  in-30-steps: 2560 415 to 960 516 in 30 steps: the window went from (2320 403 480 348) to (720 503 480 348); Arbor saw a drag: 0
+  in-fine-steps: 960 515 to 2560 415 in 101 steps: the window went from (720 503 480 348) to (2312 403 480 348); Arbor saw a drag: 1
+  in-fine-steps: 2552 415 to 960 516 in 100 steps: the window went from (2312 403 480 348) to (726 499 480 348); Arbor saw a drag: 1
+  in-30-steps: 966 511 to 2560 415 in 30 steps: the window went from (726 499 480 348) to (2320 403 480 348); Arbor saw a drag: 0
+  in-30-steps: 2560 415 to 960 516 in 30 steps: the window went from (2320 403 480 348) to (720 503 480 348); Arbor saw a drag: 0
+  in-fine-steps: 960 515 to 2560 415 in 101 steps: the window went from (720 503 480 348) to (2312 403 480 348); Arbor saw a drag: 1
+  in-fine-steps: 2552 415 to 960 516 in 100 steps: the window went from (2312 403 480 348) to (726 499 480 348); Arbor saw a drag: 1
+
+in 30 steps:   seen 1 of 8 (the window moved in 8)
+in fine steps: seen 8 of 8 (the window moved in 8)
+  ✔ in 30 steps the window went along every time
+  ✔ in fine steps the window went along every time
+  ✔ the control: in steps of under 20 points the long drag is always seen
+  ✘ in 30 steps the long drag is always seen
+> display_remove
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✘ window 31 is back on screen after quitting
+shot: mac-shell/after-quit.png
+
+13 passed, 5 failed
+exit code 1
