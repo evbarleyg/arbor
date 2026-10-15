@@ -129,6 +129,8 @@
 #   check "<what should hold>" <command…>    ✔ or ✘ — why; a ✘ takes a picture, prints the state and the log
 #                                     since the claim, and makes the script exit with 1. THE COMMAND RUNS IN A SHELL OF ITS OWN, under
 #                                     `eventually` too: a variable it sets, a process it starts and means to wait for, are lost to the script
+#                                     On GitHub's Macs, where Arbor "did not answer within" the time (or at every ✘, with ARBOR_SAMPLE=1, for a fault
+#                                     that is being hunted), first of all a `sample` of its threads: mac-shell/sample-fail-<script>-<n>.txt
 #   settled                         the check that every docked window in view is where Arbor's layout says
 #   eventually <command…>           try it for up to three seconds: `eventually is docked $W2`
 #   stays <command…>                it holds now and for the next second: for things that must not happen
@@ -1896,6 +1898,14 @@ pressed() {
 # What a failed check leaves behind: a picture every time; the state and the log since the claim once per claim.
 arbor_explain() {
   local name="fail-$ARBOR_NAME-$ARBOR_FAILED"
+  # An Arbor that answers nobody names the call it stands in: `sample` of its threads, first of all, since it may answer again a second
+  # later, and the picture and the summary below take six. Call stacks and the names of libraries; no window's title.
+  # ARBOR_SAMPLE=1: at every failed check, for a fault that is being hunted.
+  if [ -n "${ARBOR_WAS_SILENT:-}${ARBOR_SAMPLE:-}" ] && on_throwaway_mac && [ -n "$ARBOR_PID" ] && kill -0 "$ARBOR_PID" 2>/dev/null \
+    && command -v sample > /dev/null 2>&1; then
+    sample "$ARBOR_PID" 2 1 -mayDie -file "$ARBOR_OUT/sample-$name.txt" > /dev/null 2>&1 \
+      && echo "      sample: mac-shell/sample-$name.txt"
+  fi
   # Never on a person's Mac, whatever ARBOR_SHOTS says: there a check fails just when a window of theirs has come forward.
   if on_throwaway_mac; then
     arbor_capture "$name" && echo "      picture: mac-shell/$name.png"
@@ -1938,6 +1948,8 @@ check() {
   else
     ARBOR_FAILED=$((ARBOR_FAILED + 1))
     ARBOR_CLAIM_FAILED=$((ARBOR_CLAIM_FAILED + 1))
+    # Looked for in all that was heard: arborctl's own words come first, and only the last line is printed.
+    case "$detail" in *"did not answer within"*) ARBOR_WAS_SILENT=yes ;; *) ARBOR_WAS_SILENT="" ;; esac
     detail=$(printf '%s\n' "$detail" | grep -v '^$' | tail -n 1 | cut -c 1-200)
     if [ -n "$ARBOR_KNOWN" ]; then
       ARBOR_KNOWN_FAILED=$((ARBOR_KNOWN_FAILED + 1))

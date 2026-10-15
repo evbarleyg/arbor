@@ -1095,6 +1095,34 @@ kill $mine
         return [("lib.sh: an Arbor that does not answer costs a second a step, not a second a check", words_to_the_recorder(mac),
                  ["trace next script-1-01 stopped", "trace next script-1-01 next"])]
 
+    SAMPLE = '#!/bin/bash\necho "sample $1" >> "$FAKE/order"\nwhile [ $# -gt 0 ]; do [ "$1" = -file ] && echo stacks > "$2"; shift; done\n'
+    SILENT = ('#!/bin/bash\necho "arborctl $1" >> "$FAKE/order"\n'
+              '[ "$1" = state ] && { echo "arborctl: Arbor did not answer within 5 s; it may be waiting for an app that is busy" >&2; exit 1; }\nexit 0\n')
+
+    def sampled(mac, body, before=""):
+        mac.tool("sample", SAMPLE)
+        mac.tool("arborctl", SILENT)
+        mac.put("order", "")
+        _, output = mac.run(SESSION + 'echo "$$" > "$FAKE/arbor"\n' + body + '\nARBOR_PID=""', before)
+        asked = [line for line in mac.read("order").split("\n") if line.startswith("sample") or line == "arborctl state"]
+        return (asked, [line.strip() for line in output.splitlines() if line.strip().startswith("sample: ")],
+                sorted(name for name in os.listdir(os.path.join(mac.folder, "out")) if name.startswith("sample-")))
+
+    def a_silent_arbor_names_itself(mac):
+        asked, said, kept = sampled(mac, 'check "it is a tile" is tile 101')
+        arbor = mac.read("arbor").strip()
+        _, plain, _ = sampled(mac, 'check "it does not" false')
+        _, hunted, _ = sampled(mac, 'check "it does not" false', before="ARBOR_SAMPLE=1")
+        return [("lib.sh: on a hosted Mac a check that Arbor did not answer takes a sample of its threads before anything else is asked of it",
+                 (asked[:3], said, kept), (["arborctl state", f"sample {arbor}", "arborctl state"], ["sample: mac-shell/sample-fail-script-1.txt"], ["sample-fail-script-1.txt"])),
+                ("lib.sh: a check that fails with an Arbor that answers takes none, but where a fault is hunted (ARBOR_SAMPLE=1)",
+                 (plain, hunted), ([], ["sample: mac-shell/sample-fail-script-1.txt"]))]
+
+    def nobody_is_sampled_on_their_own_mac(mac):
+        asked, said, kept = sampled(mac, 'check "it is a tile" is tile 101', before="ARBOR_SAMPLE=1")
+        return [("lib.sh: on somebody's Mac no sample is taken, whatever is set",
+                 ([line for line in asked if line.startswith("sample")], said, kept), ([], [], []))]
+
     def cut_off(mac):
         process = mac.start(NOTES + 'mkdir -p "$ARBOR_HOME/traces"; echo x > "$ARBOR_HOME/traces/2026-10-15-010203-script-1-01.jsonl"; echo y > "$ARBOR_HOME/arbor.log"\n'
                             'echo ready > "$FAKE/ready"\nsleep 300')
@@ -1120,9 +1148,9 @@ kill $mine
                       "✘ NOT ARBOR: UserNotificationCenter's window (382 118 260 250, layer 8) lies over 460,192: the press lands on it, and what follows says nothing about Arbor"])),
                 ("lib.sh: the presses are made all the same", mac.read("posted").splitlines()[:4], ["click 510 152", "click 100 500", "click 650 450", "drag 460 192 3 400"])]
 
-    throwaway = [under_an_alert, the_log_is_the_sessions, ended_by_the_script, recorded, told_not_to_record, refused, trace_had_ended, arbor_does_not_answer, cut_off, second_lock, which_build, folders, full_disk, disk_fills_up, strange_mktemp, refusals, strangers, limited, both_killed, supervisor_killed, two_at_once,
+    throwaway = [under_an_alert, the_log_is_the_sessions, ended_by_the_script, recorded, told_not_to_record, refused, trace_had_ended, arbor_does_not_answer, a_silent_arbor_names_itself, cut_off, second_lock, which_build, folders, full_disk, disk_fills_up, strange_mktemp, refusals, strangers, limited, both_killed, supervisor_killed, two_at_once,
                  ended("the time limit"), ended("an interrupt"), ended("kill -9"), own_shell]
-    somebodys = [not_recorded, asked_to_record, nets, pictures, discreet, nameless, curtain_down, stale_output, defaults_for_arbor, no_curtain, both_killed, supervisor_killed,
+    somebodys = [not_recorded, asked_to_record, nobody_is_sampled_on_their_own_mac, nets, pictures, discreet, nameless, curtain_down, stale_output, defaults_for_arbor, no_curtain, both_killed, supervisor_killed,
                  ended("the time limit", "on somebody's Mac, "), ended("an interrupt", "on somebody's Mac, "), ended("kill -9", "on somebody's Mac, "),
                  declined("not beside an Arbor that is running already", running__Arbor=str(canary)),
                  declined("not beside another window manager", running__Rectangle=str(canary)),
