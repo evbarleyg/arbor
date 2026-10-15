@@ -110,7 +110,7 @@ extension FakeMac {
       note("pid \(pid) is asked to come forward and takes no notice")
       return true
     }
-    send(after: 0.001, from: .system, "") { [self] in activate(app, raisingAll: false) }
+    send(after: activationLandsAfter, from: .system, "") { [self] in activate(app, raisingAll: false) }
     return true
   }
 

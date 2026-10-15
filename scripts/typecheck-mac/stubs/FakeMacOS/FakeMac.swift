@@ -60,6 +60,8 @@ public final class FakeMac: @unchecked Sendable {
   /// How long that copy goes on naming the old app after `didActivateApplication` has been delivered. Zero: it names the new one by then. On
   /// hosted Macs it still named the old one 27 times in three runs. How long it takes to catch up nobody has measured.
   public var frontmostLagsNoticeBy: TimeInterval = 0
+  /// How long after `NSRunningApplication.activate()` has returned the app comes forward. 1 ms as the model has it: a GUESS; nobody has measured this one by itself.
+  public var activationLandsAfter: TimeInterval = 0.001
   /// The next app that comes forward does so without `didActivateApplication`. A GUESS that this happens at all: switches of apps have gone unreported on hosted Macs (trace `app-switch-unreported`), and nobody has shown
   /// which of the words was missing. What Accessibility posts, and `frontmostApplication`, are as ever.
   public var losesTheNextActivationNotice = false
