@@ -1,0 +1,396 @@
+# check-macos-double-click 2026-10-15T10:16Z on macOS 26.6.2, commit 480b0c8
+
+== session: macOS's own action is default
+
+== default: double-click the docked window's title bar
+  ✔ Arbor heard that the double-click reached the app
+  ✔ the window is docked as before
+  ✔ macOS gave it another frame
+  ✔ Arbor set no frame at all
+  ✔ the neighbour did not move
+  ✔ the window went one way, and did not turn round
+  ✔ nor two seconds later: it is where macOS put it
+  ✔ and Arbor says that it lets it be
+
+== default: double-click it again
+  ✔ and Arbor set no frame
+  ✔ macOS returns it to where it stood
+  ✔ by one road
+  ✔ from where Arbor keeps it like any docked window
+  ✔ and says so
+
+== default: once more, and this time Arbor takes it back
+  ✔ showing everything puts it at its slot
+  ✔ and Arbor lets it be no longer
+  ✔ by one road
+  ✔ the neighbour did not move
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== session: macOS's own action is Fill
+
+== Fill: double-click the docked window's title bar
+  ✔ Arbor heard that the double-click reached the app
+  ✔ the window is docked as before
+  ✔ macOS gave it another frame
+  ✔ Arbor set no frame at all
+  ✔ the neighbour did not move
+  ✔ the window went one way, and did not turn round
+  ✔ nor two seconds later: it is where macOS put it
+  ✔ and Arbor says that it lets it be
+
+== Fill: double-click it again
+  ✔ and Arbor set no frame
+  ✔ set to fill, macOS leaves it filled
+  ✔ and Arbor goes on letting it be
+
+== Fill: once more, and this time Arbor takes it back
+  ✔ showing everything puts it at its slot
+  ✔ and Arbor lets it be no longer
+  ✔ by one road
+  ✔ the neighbour did not move
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== session: macOS's own action is Maximize
+
+== Maximize: double-click the docked window's title bar
+  ✔ Arbor heard that the double-click reached the app
+  ✔ the window is docked as before
+  ✔ macOS gave it another frame
+  ✔ Arbor set no frame at all
+  ✔ the neighbour did not move
+  ✔ the window went one way, and did not turn round
+  ✔ nor two seconds later: it is where macOS put it
+  ✔ and Arbor says that it lets it be
+
+== Maximize: double-click it again
+  ✔ and Arbor set no frame
+  ✔ macOS returns it to where it stood
+  ✔ by one road
+  ✔ from where Arbor keeps it like any docked window
+  ✔ and says so
+
+== Maximize: once more, and this time Arbor takes it back
+  ✔ showing everything puts it at its slot
+  ✔ and Arbor lets it be no longer
+  ✔ by one road
+  ✔ the neighbour did not move
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== session: macOS's own action is Minimize
+
+== Minimize: double-click the docked window's title bar
+  ✔ Arbor heard that the double-click reached the app
+  ✔ the window is docked as before
+  ✔ macOS minimized it
+  ✔ back from the Dock it is in its slot
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== session: macOS's own action is None
+
+== None: double-click the docked window's title bar
+  ✔ Arbor heard that the double-click reached the app
+  ✔ the window is docked as before
+  ✔ macOS did nothing with it
+  ✔ Arbor set no frame at all
+  ✔ the neighbour did not move
+  ✔ the window is in its slot
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== session: four windows arranged; macOS's own action is default
+
+== default, arranged: double-click a title bar
+  ✔ macOS gave it another frame
+  ✔ it went one way, and did not turn round
+  ✔ five seconds later it is where macOS put it
+  ✔ Arbor set no frame at all
+  ✔ the other three did not move
+  ✔ it is docked as before
+  ✔ and `arborctl state` says that it is let be
+
+== default, arranged: switch to the others, and back
+  ✔ the window switched to has the keyboard
+  ✔ it is where macOS put it
+  ✔ the other three did not move
+
+== default, arranged: a window opens, and closes
+  ✔ it is where macOS put it
+  ✔ and after that one has closed
+  ✔ the other three did not move
+
+== default, arranged: everything (the key is ⌃⌥0), and back
+  ✔ a command of the person's puts it into its slot
+  ✔ by one road
+  ✔ the way back is a view, not a size: it stays there
+  ✔ the other three did not move
+
+== default, arranged: there again, and macOS's second double-click
+  ✔ macOS returns it to where it stood
+  ✔ by one road
+
+== default, arranged: there once more, and a docked neighbour closes
+  ✔ macOS gave it another frame
+  ✔ it did not move at all
+  ✔ it is docked, and let be
+  ✔ the room is shared behind it: its slot is another now
+
+== default, arranged: macOS's second double-click, and the slot is another by now
+  ✔ it ends at its slot as it is now: the corner and the width
+  ✔ a docked window like any other
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== session: four windows arranged; macOS's own action is Fill
+
+== Fill, arranged: double-click a title bar
+  ✔ macOS gave it another frame
+  ✘ it went one way, and did not turn round
+  ✔ five seconds later it is where macOS put it
+  ✔ Arbor set no frame at all
+  ✔ the other three did not move
+  ✔ it is docked as before
+  ✔ and `arborctl state` says that it is let be
+
+== Fill, arranged: switch to the others, and back
+  ✔ the window switched to has the keyboard
+  ✔ it is where macOS put it
+  ✔ the other three did not move
+
+== Fill, arranged: a window opens, and closes
+  ✔ it is where macOS put it
+  ✔ and after that one has closed
+  ✔ the other three did not move
+
+== Fill, arranged: everything (the key is ⌃⌥0), and back
+  ✔ a command of the person's puts it into its slot
+  ✔ by one road
+  ✔ the way back is a view, not a size: it stays there
+  ✔ the other three did not move
+
+== Fill, arranged: there again, and macOS's second double-click
+  ✔ set to fill, macOS leaves it filled
+  ✔ and a key puts it back
+
+== Fill, arranged: there once more, and a docked neighbour closes
+  ✔ macOS gave it another frame
+  ✔ it did not move at all
+  ✔ it is docked, and let be
+  ✔ the room is shared behind it: its slot is another now
+
+== Fill, arranged: macOS's second double-click, and the slot is another by now
+  ✔ set to fill, macOS leaves it filled
+  ✔ it ends at its slot as it is now: the corner and the width
+  ✔ a docked window like any other
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== session: four windows arranged; macOS's own action is Maximize
+
+== Maximize, arranged: double-click a title bar
+  ✔ macOS gave it another frame
+  ✔ it went one way, and did not turn round
+  ✔ five seconds later it is where macOS put it
+  ✔ Arbor set no frame at all
+  ✔ the other three did not move
+  ✔ it is docked as before
+  ✔ and `arborctl state` says that it is let be
+
+== Maximize, arranged: switch to the others, and back
+  ✔ the window switched to has the keyboard
+  ✔ it is where macOS put it
+  ✔ the other three did not move
+
+== Maximize, arranged: a window opens, and closes
+  ✔ it is where macOS put it
+  ✔ and after that one has closed
+  ✔ the other three did not move
+
+== Maximize, arranged: everything (the key is ⌃⌥0), and back
+  ✔ a command of the person's puts it into its slot
+  ✔ by one road
+  ✔ the way back is a view, not a size: it stays there
+  ✔ the other three did not move
+
+== Maximize, arranged: there again, and macOS's second double-click
+  ✔ macOS returns it to where it stood
+  ✔ by one road
+
+== Maximize, arranged: there once more, and a docked neighbour closes
+  ✔ macOS gave it another frame
+  ✔ it did not move at all
+  ✔ it is docked, and let be
+  ✔ the room is shared behind it: its slot is another now
+
+== Maximize, arranged: macOS's second double-click, and the slot is another by now
+  ✔ it ends at its slot as it is now: the corner and the width
+  ✔ a docked window like any other
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== session: three windows and another app's, arranged; macOS's own action as it is
+  ✔ macOS gave it another frame
+  ✔ it is docked, and let be
+
+== unasked, nobody asked: a dialog opens over a neighbour, and closes
+  ✔ a dialog is up: it is where macOS put it
+  ✔ a dialog is up: docked, and let be
+  ✔ it did not move at all
+  ✔ the dialog has closed: it is where macOS put it
+  ✔ the dialog has closed: docked, and let be
+
+== unasked, nobody asked: a docked neighbour goes to the Dock, and comes back
+  ✔ it did not move at all
+  ✔ a neighbour is minimized: it is where macOS put it
+  ✔ a neighbour is minimized: docked, and let be
+  ✔ it did not move at all
+  ✔ the neighbour is back: it is where macOS put it
+  ✔ the neighbour is back: docked, and let be
+
+== unasked, nobody asked: a neighbour's app is hidden, and shown
+  ✔ it did not move at all
+  ✔ the other app is hidden: it is where macOS put it
+  ✔ the other app is hidden: docked, and let be
+  ✔ it did not move at all
+  ✔ the other app shows again: it is where macOS put it
+  ✔ the other app shows again: docked, and let be
+
+== unasked, nobody asked: the window itself goes to the Dock, and comes back
+  ✔ it is in the Dock
+  ✔ it is back
+  ✔ back from the Dock: it is where macOS put it
+  ✔ back from the Dock: docked, and let be
+
+== unasked, nobody asked: its own app is hidden, and shown
+  ✔ it is hidden
+  ✔ it shows again
+  ✔ shown again: it is where macOS put it
+  ✔ shown again: docked, and let be
+
+== unasked, nobody asked: another Space, and back
+  ✔ back on its Space: it is where macOS put it
+  ✔ back on its Space: docked, and let be
+
+== unasked, nobody asked: a neighbour's app quits
+  ✘ Arbor knows that its window is gone
+  ✔ it did not move at all
+  ✔ the other app has quit: it is where macOS put it
+  ✔ the other app has quit: docked, and let be
+  ✔ in all of that Arbor never set its frame
+
+== unasked: pause, and resume
+  ✔ the pause did not move it at all
+  ✔ a neighbour has its own size again
+  ✔ nor did the resume
+  ✔ in Arbor's own trace it never set that window's frame
+  ✔ resumed: it is where macOS put it
+  ✔ resumed: docked, and let be
+  ✔ the neighbour is where it was before the pause
+
+== unasked: Quit, and a start
+  ✔ Arbor exits within 5 s of quit
+  ✔ Quit did not move it at all
+  ✔ a neighbour has its own size again
+  ✔ the start docks it like the rest
+  ✔ by one road
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== session: TextEdit, docked beside a test window
+
+== TextEdit: double-click the docked window's title bar
+  ✔ Arbor heard that the double-click reached the app
+  ✔ the window is docked as before
+  ✔ macOS gave it another frame
+  ✔ Arbor set no frame at all
+  ✔ the neighbour did not move
+  ✔ the window went one way, and did not turn round
+  ✔ nor two seconds later: it is where macOS put it
+  ✔ and Arbor says that it lets it be
+
+== TextEdit: double-click it again
+  ✔ and Arbor set no frame
+  ✔ macOS returns it to where it stood
+  ✔ by one road
+  ✔ from where Arbor keeps it like any docked window
+  ✔ and says so
+
+== TextEdit: once more, and this time Arbor takes it back
+  ✔ showing everything puts it at its slot
+  ✔ and Arbor lets it be no longer
+  ✔ by one road
+  ✔ the neighbour did not move
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+
+== session: Terminal, docked beside a test window
+
+== Terminal: double-click the docked window's title bar
+  ✔ Arbor heard that the double-click reached the app
+  ✔ the window is docked as before
+  ✔ macOS gave it another frame
+  ✔ Arbor set no frame at all
+  ✔ the neighbour did not move
+  ✔ the window went one way, and did not turn round
+  ✔ nor two seconds later: it is where macOS put it
+  ✔ and Arbor says that it lets it be
+
+== Terminal: double-click it again
+  ✔ and Arbor set no frame
+  ✔ macOS returns it to where it stood
+  ✔ by one road
+  ✔ from where Arbor keeps it like any docked window
+  ✔ and says so
+
+== Terminal: once more, and this time Arbor takes it back
+  ✔ showing everything puts it at its slot
+  ✔ and Arbor lets it be no longer
+  ✔ by one road
+  ✔ the neighbour did not move
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+
+253 passed, 2 failed

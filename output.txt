@@ -1,0 +1,1104 @@
+# mac-shell: scripts/mac-shell/check-macos-double-click.sh at 480b0c8, macOS 26.6.2, 2026-10-15T10:16Z
+built Arbor, the pointer tool and the app bundles in 6s
+
+== session: macOS's own action is default
+AppleActionOnDoubleClick: not set
+session 1: Arbor pid 5252, test windows 28 29 30 (pid 5203)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 28 left
+docked w28 at the left edge
+> dock 29 right
+docked w29 at the right edge
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          349 43 326 650
+  w28 12 43 325 650        docked
+  w29 687 43 325 650       docked focused
+  w30 349 140 326 348      floating
+
+== default: double-click the docked window's title bar
+> trace on double-click-default
+recording /tmp/arbor-shell.iBCzFj/home/traces/2026-10-15-101650-double-click-default.jsonl: 1 lines, 2 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+> click 210 55 2
+frames of 28 meanwhile:
+    12 43 325 650
+    0 31 1024 674
+> trace off
+trace saved: /tmp/arbor-shell.iBCzFj/home/traces/2026-10-15-101650-double-click-default.jsonl: 37 lines, trace off
+shot: mac-shell/default-1-after-the-double-click.png
+  ✔ Arbor heard that the double-click reached the app
+  ✔ the window is docked as before
+  ✔ macOS gave it another frame
+it is managed docked at 0 31 1024 674
+  ✔ Arbor set no frame at all
+  ✔ the neighbour did not move
+  ✔ the window went one way, and did not turn round
+  ✔ nor two seconds later: it is where macOS put it
+  ✔ and Arbor says that it lets it be
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          349 43 326 650
+  w28 0 31 1024 674        docked letBe focused
+  w29 687 43 325 650       docked
+  w30 349 140 326 348      floating
+
+== default: double-click it again
+> trace on double-click-default-again
+recording /tmp/arbor-shell.iBCzFj/home/traces/2026-10-15-101656-double-click-default-again.jsonl: 1 lines, 2 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+> click 512 43 2
+frames of 28 meanwhile:
+    0 31 1024 674
+    12 43 325 650
+> trace off
+trace saved: /tmp/arbor-shell.iBCzFj/home/traces/2026-10-15-101656-double-click-default-again.jsonl: 20 lines, trace off
+  ✔ and Arbor set no frame
+  ✔ macOS returns it to where it stood
+  ✔ by one road
+  ✔ from where Arbor keeps it like any docked window
+  ✔ and says so
+shot: mac-shell/default-2-back.png
+
+== default: once more, and this time Arbor takes it back
+> click 210 55 2
+the window is at 0 31 1024 674
+> trace on double-click-default-show-all
+recording /tmp/arbor-shell.iBCzFj/home/traces/2026-10-15-101703-double-click-default-show-all.jsonl: 1 lines, 2 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+> show-all
+showing everything
+frames of 28 meanwhile:
+    0 31 1024 674
+    12 43 325 650
+> trace off
+trace saved: /tmp/arbor-shell.iBCzFj/home/traces/2026-10-15-101703-double-click-default-show-all.jsonl: 24 lines, trace off
+  ✔ showing everything puts it at its slot
+  ✔ and Arbor lets it be no longer
+  ✔ by one road
+  ✔ the neighbour did not move
+Arbor set the window's frame 1 time(s)
+shot: mac-shell/default-3-taken-back.png
+    2026-10-15T10:16:53.075Z INFO  trace double-click-default ended: 37 lines, trace off
+    2026-10-15T10:16:56.786Z INFO  trace double-click-default-again: recording to /tmp/arbor-shell.iBCzFj/home/traces/2026-10-15-101656-double-click-default-again.jsonl
+    2026-10-15T10:16:57.885Z DEBUG a double-click reached w28
+    2026-10-15T10:16:59.165Z INFO  trace double-click-default-again ended: 20 lines, trace off
+    2026-10-15T10:17:01.218Z DEBUG a double-click reached w28
+    2026-10-15T10:17:01.338Z INFO  w28 has a new frame after a double-click; it stays there until it is back in its slot or somebody asks for a layout
+    2026-10-15T10:17:03.595Z INFO  trace double-click-default-show-all: recording to /tmp/arbor-shell.iBCzFj/home/traces/2026-10-15-101703-double-click-default-show-all.jsonl
+    2026-10-15T10:17:06.029Z INFO  trace double-click-default-show-all ended: 24 lines, trace off
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== session: macOS's own action is Fill
+AppleActionOnDoubleClick: Fill
+session 2: Arbor pid 6627, test windows 44 45 46 (pid 6609)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 44 left
+docked w44 at the left edge
+> dock 45 right
+docked w45 at the right edge
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          349 43 326 650
+  w44 12 43 325 650        docked
+  w45 687 43 325 650       docked focused
+  w46 349 140 326 348      floating
+
+== Fill: double-click the docked window's title bar
+> trace on double-click-Fill
+recording /tmp/arbor-shell.DW9Cis/home/traces/2026-10-15-101714-double-click-Fill.jsonl: 1 lines, 2 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+> click 210 55 2
+frames of 44 meanwhile:
+    12 43 325 650
+    9 41 444 655
+    7 39 561 659
+    1 32 946 672
+    0 32 986 673
+    0 31 998 674
+    0 31 1010 674
+    0 31 1015 674
+    0 31 1020 674
+    0 31 1023 674
+    0 31 1024 674
+> trace off
+trace saved: /tmp/arbor-shell.DW9Cis/home/traces/2026-10-15-101714-double-click-Fill.jsonl: 113 lines, trace off
+shot: mac-shell/Fill-1-after-the-double-click.png
+  ✔ Arbor heard that the double-click reached the app
+  ✔ the window is docked as before
+  ✔ macOS gave it another frame
+it is managed docked at 0 31 1024 674
+  ✔ Arbor set no frame at all
+  ✔ the neighbour did not move
+  ✔ the window went one way, and did not turn round
+  ✔ nor two seconds later: it is where macOS put it
+  ✔ and Arbor says that it lets it be
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          349 43 326 650
+  w44 0 31 1024 674        docked letBe focused
+  w45 687 43 325 650       docked
+  w46 349 140 326 348      floating
+
+== Fill: double-click it again
+> trace on double-click-Fill-again
+recording /tmp/arbor-shell.DW9Cis/home/traces/2026-10-15-101720-double-click-Fill-again.jsonl: 1 lines, 2 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+> click 512 43 2
+frames of 44 meanwhile:
+    0 31 1024 674
+> trace off
+trace saved: /tmp/arbor-shell.DW9Cis/home/traces/2026-10-15-101720-double-click-Fill-again.jsonl: 15 lines, trace off
+  ✔ and Arbor set no frame
+  ✔ set to fill, macOS leaves it filled
+  ✔ and Arbor goes on letting it be
+shot: mac-shell/Fill-2-back.png
+
+== Fill: once more, and this time Arbor takes it back
+> click 210 55 2
+the window is at 0 31 1024 674
+> trace on double-click-Fill-show-all
+recording /tmp/arbor-shell.DW9Cis/home/traces/2026-10-15-101727-double-click-Fill-show-all.jsonl: 1 lines, 2 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+> show-all
+showing everything
+frames of 44 meanwhile:
+    0 31 1024 674
+    0 31 325 650
+    12 43 325 650
+> trace off
+trace saved: /tmp/arbor-shell.DW9Cis/home/traces/2026-10-15-101727-double-click-Fill-show-all.jsonl: 23 lines, trace off
+  ✔ showing everything puts it at its slot
+  ✔ and Arbor lets it be no longer
+  ✔ by one road
+  ✔ the neighbour did not move
+Arbor set the window's frame 1 time(s)
+shot: mac-shell/Fill-3-taken-back.png
+    2026-10-15T10:17:15.507Z INFO  w44 has a new frame after a double-click; it stays there until it is back in its slot or somebody asks for a layout
+    2026-10-15T10:17:17.074Z INFO  trace double-click-Fill ended: 113 lines, trace off
+    2026-10-15T10:17:20.769Z INFO  trace double-click-Fill-again: recording to /tmp/arbor-shell.DW9Cis/home/traces/2026-10-15-101720-double-click-Fill-again.jsonl
+    2026-10-15T10:17:22.093Z DEBUG a double-click reached w44
+    2026-10-15T10:17:23.338Z INFO  trace double-click-Fill-again ended: 15 lines, trace off
+    2026-10-15T10:17:25.551Z DEBUG a double-click reached w44
+    2026-10-15T10:17:27.867Z INFO  trace double-click-Fill-show-all: recording to /tmp/arbor-shell.DW9Cis/home/traces/2026-10-15-101727-double-click-Fill-show-all.jsonl
+    2026-10-15T10:17:30.101Z INFO  trace double-click-Fill-show-all ended: 23 lines, trace off
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== session: macOS's own action is Maximize
+AppleActionOnDoubleClick: Maximize
+session 3: Arbor pid 8300, test windows 59 60 61 (pid 8275)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 59 left
+docked w59 at the left edge
+> dock 60 right
+docked w60 at the right edge
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          349 43 326 650
+  w59 12 43 325 650        docked
+  w60 687 43 325 650       docked focused
+  w61 349 140 326 348      floating
+
+== Maximize: double-click the docked window's title bar
+> trace on double-click-Maximize
+recording /tmp/arbor-shell.iOcdkR/home/traces/2026-10-15-101738-double-click-Maximize.jsonl: 1 lines, 2 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+> click 210 55 2
+frames of 59 meanwhile:
+    12 43 325 650
+    0 31 1024 674
+> trace off
+trace saved: /tmp/arbor-shell.iOcdkR/home/traces/2026-10-15-101738-double-click-Maximize.jsonl: 37 lines, trace off
+shot: mac-shell/Maximize-1-after-the-double-click.png
+  ✔ Arbor heard that the double-click reached the app
+  ✔ the window is docked as before
+  ✔ macOS gave it another frame
+it is managed docked at 0 31 1024 674
+  ✔ Arbor set no frame at all
+  ✔ the neighbour did not move
+  ✔ the window went one way, and did not turn round
+  ✔ nor two seconds later: it is where macOS put it
+  ✔ and Arbor says that it lets it be
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          349 43 326 650
+  w59 0 31 1024 674        docked letBe focused
+  w60 687 43 325 650       docked
+  w61 349 140 326 348      floating
+
+== Maximize: double-click it again
+> trace on double-click-Maximize-again
+recording /tmp/arbor-shell.iOcdkR/home/traces/2026-10-15-101744-double-click-Maximize-again.jsonl: 1 lines, 2 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+> click 512 43 2
+frames of 59 meanwhile:
+    0 31 1024 674
+    12 43 325 650
+> trace off
+trace saved: /tmp/arbor-shell.iOcdkR/home/traces/2026-10-15-101744-double-click-Maximize-again.jsonl: 20 lines, trace off
+  ✔ and Arbor set no frame
+  ✔ macOS returns it to where it stood
+  ✔ by one road
+  ✔ from where Arbor keeps it like any docked window
+  ✔ and says so
+shot: mac-shell/Maximize-2-back.png
+
+== Maximize: once more, and this time Arbor takes it back
+> click 210 55 2
+the window is at 0 31 1024 674
+> trace on double-click-Maximize-show-all
+recording /tmp/arbor-shell.iOcdkR/home/traces/2026-10-15-101751-double-click-Maximize-show-all.jsonl: 1 lines, 2 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+> show-all
+showing everything
+frames of 59 meanwhile:
+    0 31 1024 674
+    0 31 325 650
+    12 43 325 650
+> trace off
+trace saved: /tmp/arbor-shell.iOcdkR/home/traces/2026-10-15-101751-double-click-Maximize-show-all.jsonl: 24 lines, trace off
+  ✔ showing everything puts it at its slot
+  ✔ and Arbor lets it be no longer
+  ✔ by one road
+  ✔ the neighbour did not move
+Arbor set the window's frame 1 time(s)
+shot: mac-shell/Maximize-3-taken-back.png
+    2026-10-15T10:17:41.062Z INFO  trace double-click-Maximize ended: 37 lines, trace off
+    2026-10-15T10:17:44.467Z INFO  trace double-click-Maximize-again: recording to /tmp/arbor-shell.iOcdkR/home/traces/2026-10-15-101744-double-click-Maximize-again.jsonl
+    2026-10-15T10:17:45.452Z DEBUG a double-click reached w59
+    2026-10-15T10:17:47.045Z INFO  trace double-click-Maximize-again ended: 20 lines, trace off
+    2026-10-15T10:17:48.864Z DEBUG a double-click reached w59
+    2026-10-15T10:17:48.922Z INFO  w59 has a new frame after a double-click; it stays there until it is back in its slot or somebody asks for a layout
+    2026-10-15T10:17:51.107Z INFO  trace double-click-Maximize-show-all: recording to /tmp/arbor-shell.iOcdkR/home/traces/2026-10-15-101751-double-click-Maximize-show-all.jsonl
+    2026-10-15T10:17:54.108Z INFO  trace double-click-Maximize-show-all ended: 24 lines, trace off
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== session: macOS's own action is Minimize
+AppleActionOnDoubleClick: Minimize
+session 4: Arbor pid 9747, test windows 74 75 76 (pid 9718)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 74 left
+docked w74 at the left edge
+> dock 75 right
+docked w75 at the right edge
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          349 43 326 650
+  w74 12 43 325 650        docked
+  w75 687 43 325 650       docked focused
+  w76 349 140 326 348      floating
+
+== Minimize: double-click the docked window's title bar
+> trace on double-click-Minimize
+recording /tmp/arbor-shell.tbDdsw/home/traces/2026-10-15-101803-double-click-Minimize.jsonl: 1 lines, 2 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+> click 210 55 2
+frames of 74 meanwhile:
+    12 43 325 650
+    12 43 334 650
+    12 43 493 650
+    12 43 714 650
+    12 43 862 650
+    12 47 921 651
+    37 113 900 638
+    201 243 735 508
+    391 340 544 411
+    658 469 277 282
+    806 557 128 194
+    867 609 67 142
+    907 668 27 83
+    915 702 19 49
+    12 43 325 650
+> trace off
+trace saved: /tmp/arbor-shell.tbDdsw/home/traces/2026-10-15-101803-double-click-Minimize.jsonl: 61 lines, trace off
+shot: mac-shell/Minimize-1-after-the-double-click.png
+  ✔ Arbor heard that the double-click reached the app
+  ✔ the window is docked as before
+  ✔ macOS minimized it
+like any window that is minimized: its neighbours share its room, as they always have
+  ✔ back from the Dock it is in its slot
+    2026-10-15T10:18:03.215Z INFO  trace double-click-Minimize: recording to /tmp/arbor-shell.tbDdsw/home/traces/2026-10-15-101803-double-click-Minimize.jsonl
+    2026-10-15T10:18:04.113Z DEBUG a double-click reached w74
+    2026-10-15T10:18:06.096Z INFO  trace double-click-Minimize ended: 61 lines, trace off
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== session: macOS's own action is None
+AppleActionOnDoubleClick: None
+session 5: Arbor pid 10404, test windows 84 85 86 (pid 10379)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 84 left
+docked w84 at the left edge
+> dock 85 right
+docked w85 at the right edge
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          349 43 326 650
+  w84 12 43 325 650        docked
+  w85 687 43 325 650       docked focused
+  w86 349 140 326 348      floating
+
+== None: double-click the docked window's title bar
+> trace on double-click-None
+recording /tmp/arbor-shell.X0zq6m/home/traces/2026-10-15-101815-double-click-None.jsonl: 1 lines, 2 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+> click 210 55 2
+frames of 84 meanwhile:
+    12 43 325 650
+> trace off
+trace saved: /tmp/arbor-shell.X0zq6m/home/traces/2026-10-15-101815-double-click-None.jsonl: 27 lines, trace off
+shot: mac-shell/None-1-after-the-double-click.png
+  ✔ Arbor heard that the double-click reached the app
+  ✔ the window is docked as before
+  ✔ macOS did nothing with it
+it is managed docked at 12 43 325 650
+  ✔ Arbor set no frame at all
+  ✔ the neighbour did not move
+  ✔ the window is in its slot
+    2026-10-15T10:18:15.718Z INFO  trace double-click-None: recording to /tmp/arbor-shell.X0zq6m/home/traces/2026-10-15-101815-double-click-None.jsonl
+    2026-10-15T10:18:16.607Z DEBUG a double-click reached w84
+    2026-10-15T10:18:18.032Z INFO  trace double-click-None ended: 27 lines, trace off
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== session: four windows arranged; macOS's own action is default
+AppleActionOnDoubleClick: not set
+session 6: Arbor pid 11046, test windows 94 95 96 97 (pid 11002)
+running: 1 display, 0 docked and 4 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> arrange
+arranged 4 windows
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  tile n0 desktop  817 43 195 650  holds -
+  w94 12 43 390 319        docked focused
+  w95 12 374 390 319       docked
+  w96 414 43 391 319       docked
+  w97 414 374 391 319      docked
+
+== default, arranged: double-click a title bar
+> trace on arranged-default
+recording /tmp/arbor-shell.VJe9gy/home/traces/2026-10-15-101827-arranged-default.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+> click 240 55 2
+frames of 94 meanwhile:
+    12 43 390 319
+    0 31 1024 674
+shot: mac-shell/default-arranged-1-after-the-double-click.png
+  ✔ macOS gave it another frame
+  ✔ it went one way, and did not turn round
+> trace off
+trace saved: /tmp/arbor-shell.VJe9gy/home/traces/2026-10-15-101827-arranged-default.jsonl: 35 lines, trace off
+  ✔ five seconds later it is where macOS put it
+  ✔ Arbor set no frame at all
+  ✔ the other three did not move
+  ✔ it is docked as before
+  ✔ and `arborctl state` says that it is let be
+
+== default, arranged: switch to the others, and back
+> focus 96
+focused w96
+  ✔ the window switched to has the keyboard
+shot: mac-shell/default-arranged-switched-to-another.png
+> test windows: front 97
+> focus 94
+focused w94
+  ✔ it is where macOS put it
+  ✔ the other three did not move
+
+== default, arranged: a window opens, and closes
+> test windows: open 300 300 500 300
+  ✔ it is where macOS put it
+> test windows: close 110
+  ✔ and after that one has closed
+  ✔ the other three did not move
+
+== default, arranged: everything (the key is ⌃⌥0), and back
+> home
+showing everything
+frames of 94 meanwhile:
+    0 31 1024 674
+    12 43 390 319
+  ✔ a command of the person's puts it into its slot
+  ✔ by one road
+> back
+arborctl: nothing to go back to
+  ✔ the way back is a view, not a size: it stays there
+  ✔ the other three did not move
+
+== default, arranged: there again, and macOS's second double-click
+> click 240 55 2
+> click 512 43 2
+frames of 94 meanwhile:
+    0 31 1024 674
+    12 43 390 319
+  ✔ macOS returns it to where it stood
+  ✔ by one road
+shot: mac-shell/default-arranged-2-back.png
+
+== default, arranged: there once more, and a docked neighbour closes
+> click 240 55 2
+  ✔ macOS gave it another frame
+> trace on arranged-default-neighbour
+recording /tmp/arbor-shell.VJe9gy/home/traces/2026-10-15-101858-arranged-default-neighbour.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+> test windows: close 95
+frames of 94 meanwhile:
+    0 31 1024 674
+  ✔ it did not move at all
+  ✔ it is docked, and let be
+  ✔ the room is shared behind it: its slot is another now
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  tile n0 desktop  817 43 195 650  holds -
+  w94 0 31 1024 674        docked letBe focused
+  w96 414 43 391 319       docked
+  w97 414 374 391 319      docked
+shot: mac-shell/default-arranged-3-a-neighbour-has-closed.png
+
+== default, arranged: macOS's second double-click, and the slot is another by now
+> click 512 43 2
+frames of 94 meanwhile:
+    0 31 1024 674
+    12 43 390 319
+    12 43 390 650
+> trace off
+trace saved: /tmp/arbor-shell.VJe9gy/home/traces/2026-10-15-101858-arranged-default-neighbour.jsonl: 54 lines, trace off
+  ✔ it ends at its slot as it is now: the corner and the width
+  ✔ a docked window like any other
+Arbor set its frame 1 time(s): once is what is allowed, after macOS's own way back
+shot: mac-shell/default-arranged-4-in-the-slot-as-it-is-now.png
+    2026-10-15T10:18:28.277Z INFO  w94 has a new frame after a double-click; it stays there until it is back in its slot or somebody asks for a layout
+    2026-10-15T10:18:48.829Z DEBUG a double-click reached w94
+    2026-10-15T10:18:48.915Z INFO  w94 has a new frame after a double-click; it stays there until it is back in its slot or somebody asks for a layout
+    2026-10-15T10:18:52.066Z DEBUG a double-click reached w94
+    2026-10-15T10:18:55.770Z DEBUG a double-click reached w94
+    2026-10-15T10:18:55.889Z INFO  w94 has a new frame after a double-click; it stays there until it is back in its slot or somebody asks for a layout
+    2026-10-15T10:19:03.026Z DEBUG a double-click reached w94
+    2026-10-15T10:19:03.143Z INFO  w94 is on its way back from where a double-click sent it, and its slot is another now
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== session: four windows arranged; macOS's own action is Fill
+AppleActionOnDoubleClick: Fill
+session 7: Arbor pid 14306, test windows 118 119 120 121 (pid 14288)
+running: 1 display, 0 docked and 4 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> arrange
+arranged 4 windows
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  tile n0 desktop  817 43 195 650  holds -
+  w118 12 43 390 319        docked
+  w119 12 374 390 319       docked
+  w120 414 43 391 319       docked focused
+  w121 414 374 391 319      docked
+
+== Fill, arranged: double-click a title bar
+> trace on arranged-Fill
+recording /tmp/arbor-shell.Mwl5Gv/home/traces/2026-10-15-101914-arranged-Fill.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+> click 240 55 2
+frames of 118 meanwhile:
+    12 43 390 319
+    10 42 453 354
+    6 38 659 470
+    3 35 824 562
+    2 33 880 594
+    0 32 990 655
+    0 31 1009 666
+    0 32 1017 670
+    0 31 1020 672
+    0 31 1022 673
+    0 31 1024 674
+shot: mac-shell/Fill-arranged-1-after-the-double-click.png
+  ✔ macOS gave it another frame
+  ✘ it went one way, and did not turn round
+      picture: mac-shell/fail-check-macos-double-click-1.png
+      | display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+      |   tile n0 desktop  817 43 195 650  holds -
+      |   w118 0 31 1024 674        docked letBe focused
+      |   w119 12 374 390 319       docked
+      |   w120 414 43 391 319       docked
+      |   w121 414 374 391 319      docked
+      log | INFO  trace arranged-Fill: recording to /tmp/arbor-shell.Mwl5Gv/home/traces/2026-10-15-101914-arranged-Fill.jsonl
+      log | DEBUG the button went down at 240,55, the pointer is at 240,55: it is on w118
+      log | DEBUG focus is on w118
+      log | DEBUG w118 has the keyboard
+      log | DEBUG the button went down at 240,55, the pointer is at 240,55: it is on w118
+      log | DEBUG a double-click reached w118
+      log | DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: macOS zoomed this window · ⌃⌥Space puts it back
+      log | INFO  w118 has a new frame after a double-click; it stays there until it is back in its slot or somebody asks for a layout
+> trace off
+trace saved: /tmp/arbor-shell.Mwl5Gv/home/traces/2026-10-15-101914-arranged-Fill.jsonl: 134 lines, trace off
+  ✔ five seconds later it is where macOS put it
+  ✔ Arbor set no frame at all
+  ✔ the other three did not move
+  ✔ it is docked as before
+  ✔ and `arborctl state` says that it is let be
+
+== Fill, arranged: switch to the others, and back
+> focus 120
+focused w120
+  ✔ the window switched to has the keyboard
+shot: mac-shell/Fill-arranged-switched-to-another.png
+> test windows: front 121
+> focus 118
+focused w118
+  ✔ it is where macOS put it
+  ✔ the other three did not move
+
+== Fill, arranged: a window opens, and closes
+> test windows: open 300 300 500 300
+  ✔ it is where macOS put it
+> test windows: close 134
+  ✔ and after that one has closed
+  ✔ the other three did not move
+
+== Fill, arranged: everything (the key is ⌃⌥0), and back
+> home
+showing everything
+frames of 118 meanwhile:
+    0 31 1024 674
+    0 31 390 319
+    12 43 390 319
+  ✔ a command of the person's puts it into its slot
+  ✔ by one road
+> back
+arborctl: nothing to go back to
+  ✔ the way back is a view, not a size: it stays there
+  ✔ the other three did not move
+
+== Fill, arranged: there again, and macOS's second double-click
+> click 240 55 2
+> click 512 43 2
+frames of 118 meanwhile:
+    0 31 1024 674
+  ✔ set to fill, macOS leaves it filled
+> show-all
+showing everything
+  ✔ and a key puts it back
+shot: mac-shell/Fill-arranged-2-back.png
+
+== Fill, arranged: there once more, and a docked neighbour closes
+> click 240 55 2
+  ✔ macOS gave it another frame
+> trace on arranged-Fill-neighbour
+recording /tmp/arbor-shell.Mwl5Gv/home/traces/2026-10-15-101945-arranged-Fill-neighbour.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+> test windows: close 119
+frames of 118 meanwhile:
+    0 31 1024 674
+  ✔ it did not move at all
+  ✔ it is docked, and let be
+  ✔ the room is shared behind it: its slot is another now
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  tile n0 desktop  817 43 195 650  holds -
+  w118 0 31 1024 674        docked letBe focused
+  w120 414 43 391 319       docked
+  w121 414 374 391 319      docked
+shot: mac-shell/Fill-arranged-3-a-neighbour-has-closed.png
+
+== Fill, arranged: macOS's second double-click, and the slot is another by now
+> click 512 43 2
+frames of 118 meanwhile:
+    0 31 1024 674
+> trace off
+trace saved: /tmp/arbor-shell.Mwl5Gv/home/traces/2026-10-15-101945-arranged-Fill-neighbour.jsonl: 38 lines, trace off
+  ✔ set to fill, macOS leaves it filled
+> show-all
+showing everything
+  ✔ it ends at its slot as it is now: the corner and the width
+  ✔ a docked window like any other
+Arbor set its frame 0 time(s): once is what is allowed, after macOS's own way back
+shot: mac-shell/Fill-arranged-4-in-the-slot-as-it-is-now.png
+    2026-10-15T10:19:15.238Z DEBUG a double-click reached w118
+    2026-10-15T10:19:15.349Z INFO  w118 has a new frame after a double-click; it stays there until it is back in its slot or somebody asks for a layout
+    2026-10-15T10:19:36.076Z DEBUG a double-click reached w118
+    2026-10-15T10:19:36.186Z INFO  w118 has a new frame after a double-click; it stays there until it is back in its slot or somebody asks for a layout
+    2026-10-15T10:19:39.294Z DEBUG a double-click reached w118
+    2026-10-15T10:19:43.202Z DEBUG a double-click reached w118
+    2026-10-15T10:19:43.318Z INFO  w118 has a new frame after a double-click; it stays there until it is back in its slot or somebody asks for a layout
+    2026-10-15T10:19:50.176Z DEBUG a double-click reached w118
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== session: four windows arranged; macOS's own action is Maximize
+AppleActionOnDoubleClick: Maximize
+session 8: Arbor pid 17326, test windows 143 144 145 146 (pid 17302)
+running: 1 display, 0 docked and 4 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> arrange
+arranged 4 windows
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  tile n0 desktop  817 43 195 650  holds -
+  w143 12 43 390 319        docked
+  w144 12 374 390 319       docked
+  w145 414 43 391 319       docked focused
+  w146 414 374 391 319      docked
+
+== Maximize, arranged: double-click a title bar
+> trace on arranged-Maximize
+recording /tmp/arbor-shell.GKDexW/home/traces/2026-10-15-102001-arranged-Maximize.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+> click 240 55 2
+frames of 143 meanwhile:
+    12 43 390 319
+    0 31 1024 674
+shot: mac-shell/Maximize-arranged-1-after-the-double-click.png
+  ✔ macOS gave it another frame
+  ✔ it went one way, and did not turn round
+> trace off
+trace saved: /tmp/arbor-shell.GKDexW/home/traces/2026-10-15-102001-arranged-Maximize.jsonl: 44 lines, trace off
+  ✔ five seconds later it is where macOS put it
+  ✔ Arbor set no frame at all
+  ✔ the other three did not move
+  ✔ it is docked as before
+  ✔ and `arborctl state` says that it is let be
+
+== Maximize, arranged: switch to the others, and back
+> focus 145
+focused w145
+  ✔ the window switched to has the keyboard
+shot: mac-shell/Maximize-arranged-switched-to-another.png
+> test windows: front 146
+> focus 143
+focused w143
+  ✔ it is where macOS put it
+  ✔ the other three did not move
+
+== Maximize, arranged: a window opens, and closes
+> test windows: open 300 300 500 300
+  ✔ it is where macOS put it
+> test windows: close 159
+  ✔ and after that one has closed
+  ✔ the other three did not move
+
+== Maximize, arranged: everything (the key is ⌃⌥0), and back
+> home
+showing everything
+frames of 143 meanwhile:
+    0 31 1024 674
+    0 31 390 319
+    12 43 390 319
+  ✔ a command of the person's puts it into its slot
+  ✔ by one road
+> back
+arborctl: nothing to go back to
+  ✔ the way back is a view, not a size: it stays there
+  ✔ the other three did not move
+
+== Maximize, arranged: there again, and macOS's second double-click
+> click 240 55 2
+> click 512 43 2
+frames of 143 meanwhile:
+    0 31 1024 674
+    12 43 390 319
+  ✔ macOS returns it to where it stood
+  ✔ by one road
+shot: mac-shell/Maximize-arranged-2-back.png
+
+== Maximize, arranged: there once more, and a docked neighbour closes
+> click 240 55 2
+  ✔ macOS gave it another frame
+> trace on arranged-Maximize-neighbour
+recording /tmp/arbor-shell.GKDexW/home/traces/2026-10-15-102032-arranged-Maximize-neighbour.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+> test windows: close 144
+frames of 143 meanwhile:
+    0 31 1024 674
+  ✔ it did not move at all
+  ✔ it is docked, and let be
+  ✔ the room is shared behind it: its slot is another now
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  tile n0 desktop  817 43 195 650  holds -
+  w143 0 31 1024 674        docked letBe focused
+  w145 414 43 391 319       docked
+  w146 414 374 391 319      docked
+shot: mac-shell/Maximize-arranged-3-a-neighbour-has-closed.png
+
+== Maximize, arranged: macOS's second double-click, and the slot is another by now
+> click 512 43 2
+frames of 143 meanwhile:
+    0 31 1024 674
+    12 43 390 319
+    12 43 390 650
+> trace off
+trace saved: /tmp/arbor-shell.GKDexW/home/traces/2026-10-15-102032-arranged-Maximize-neighbour.jsonl: 54 lines, trace off
+  ✔ it ends at its slot as it is now: the corner and the width
+  ✔ a docked window like any other
+Arbor set its frame 1 time(s): once is what is allowed, after macOS's own way back
+shot: mac-shell/Maximize-arranged-4-in-the-slot-as-it-is-now.png
+    2026-10-15T10:20:02.144Z INFO  w143 has a new frame after a double-click; it stays there until it is back in its slot or somebody asks for a layout
+    2026-10-15T10:20:23.136Z DEBUG a double-click reached w143
+    2026-10-15T10:20:23.253Z INFO  w143 has a new frame after a double-click; it stays there until it is back in its slot or somebody asks for a layout
+    2026-10-15T10:20:26.233Z DEBUG a double-click reached w143
+    2026-10-15T10:20:29.783Z DEBUG a double-click reached w143
+    2026-10-15T10:20:29.835Z INFO  w143 has a new frame after a double-click; it stays there until it is back in its slot or somebody asks for a layout
+    2026-10-15T10:20:37.041Z DEBUG a double-click reached w143
+    2026-10-15T10:20:37.127Z INFO  w143 is on its way back from where a double-click sent it, and its slot is another now
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== session: three windows and another app's, arranged; macOS's own action as it is
+AppleActionOnDoubleClick: not set
+session 9: Arbor pid 20200, test windows 167 168 169 170 (pid 20158,20179)
+running: 1 display, 0 docked and 4 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> arrange
+arranged 4 windows
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  tile n0 desktop  817 43 195 650  holds -
+  w167 12 43 390 319        docked
+  w168 414 43 391 319       docked focused
+  w169 414 374 391 319      docked
+  w170 12 374 390 319       docked
+> click 240 55 2
+  ✔ macOS gave it another frame
+  ✔ it is docked, and let be
+> trace on unasked-unasked
+recording /tmp/arbor-shell.cql3lZ/home/traces/2026-10-15-102050-unasked-unasked.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+
+== unasked, nobody asked: a dialog opens over a neighbour, and closes
+> test windows: dialog 168
+  ✔ a dialog is up: it is where macOS put it
+  ✔ a dialog is up: docked, and let be
+> test windows: close 179
+frames of 167 meanwhile:
+    0 31 1024 674
+  ✔ it did not move at all
+  ✔ the dialog has closed: it is where macOS put it
+  ✔ the dialog has closed: docked, and let be
+
+== unasked, nobody asked: a docked neighbour goes to the Dock, and comes back
+> test windows: minimize 168
+frames of 167 meanwhile:
+    0 31 1024 674
+  ✔ it did not move at all
+  ✔ a neighbour is minimized: it is where macOS put it
+  ✔ a neighbour is minimized: docked, and let be
+> test windows: restore 168
+frames of 167 meanwhile:
+    0 31 1024 674
+  ✔ it did not move at all
+  ✔ the neighbour is back: it is where macOS put it
+  ✔ the neighbour is back: docked, and let be
+
+== unasked, nobody asked: a neighbour's app is hidden, and shown
+> test windows: hide
+frames of 167 meanwhile:
+    0 31 1024 674
+  ✔ it did not move at all
+  ✔ the other app is hidden: it is where macOS put it
+  ✔ the other app is hidden: docked, and let be
+> test windows: unhide
+frames of 167 meanwhile:
+    0 31 1024 674
+  ✔ it did not move at all
+  ✔ the other app shows again: it is where macOS put it
+  ✔ the other app shows again: docked, and let be
+shot: mac-shell/unasked-unasked-1-after-the-neighbours.png
+
+== unasked, nobody asked: the window itself goes to the Dock, and comes back
+> test windows: minimize 167
+  ✔ it is in the Dock
+> test windows: restore 167
+  ✔ it is back
+  ✔ back from the Dock: it is where macOS put it
+  ✔ back from the Dock: docked, and let be
+
+== unasked, nobody asked: its own app is hidden, and shown
+> test windows: hide
+  ✔ it is hidden
+> test windows: unhide
+  ✔ it shows again
+  ✔ shown again: it is where macOS put it
+  ✔ shown again: docked, and let be
+shot: mac-shell/unasked-unasked-2-after-its-own-trips.png
+
+== unasked, nobody asked: another Space, and back
+> space_add
+07230EFA-7A8D-4E37-845C-19CC8737EEF5 2 1
+> key ctrl+right
+07230EFA-7A8D-4E37-845C-19CC8737EEF5 2 2
+> key ctrl+left
+07230EFA-7A8D-4E37-845C-19CC8737EEF5 2 1
+  ✔ back on its Space: it is where macOS put it
+  ✔ back on its Space: docked, and let be
+
+== unasked, nobody asked: a neighbour's app quits
+frames of 167 meanwhile:
+    0 31 1024 674
+  ✘ Arbor knows that its window is gone
+      picture: mac-shell/fail-check-macos-double-click-2.png
+      | display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+      |   tile n0 desktop  817 43 195 650  holds -
+      |   w167 0 31 1024 674        docked letBe
+      |   w168 414 43 391 319       docked
+      |   w169 414 374 391 319      docked
+      |   w170 12 374 390 319       docked
+  ✔ it did not move at all
+  ✔ the other app has quit: it is where macOS put it
+  ✔ the other app has quit: docked, and let be
+> trace off
+trace saved: /tmp/arbor-shell.cql3lZ/home/traces/2026-10-15-102050-unasked-unasked.jsonl: 427 lines, trace off
+  ✔ in all of that Arbor never set its frame
+shot: mac-shell/unasked-unasked-3-at-the-end.png
+
+== unasked: pause, and resume
+> trace on pause-unasked
+recording /tmp/arbor-shell.cql3lZ/home/traces/2026-10-15-102135-pause-unasked.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+> pause
+paused until `resume`; windows are back in view, in their own sizes; what macOS zoomed for you stays as it is
+frames of 167 meanwhile:
+    0 31 1024 674
+  ✔ the pause did not move it at all
+  ✔ a neighbour has its own size again
+shot: mac-shell/unasked-pause-1-paused.png
+> resume
+resumed
+frames of 167 meanwhile:
+    0 31 1024 674
+> trace off
+arborctl: not recording; last trace /tmp/arbor-shell.cql3lZ/home/traces/2026-10-15-102135-pause-unasked.jsonl: 13 lines, Arbor stopped
+  ✔ nor did the resume
+  ✔ in Arbor's own trace it never set that window's frame
+  ✔ resumed: it is where macOS put it
+  ✔ resumed: docked, and let be
+  ✔ the neighbour is where it was before the pause
+shot: mac-shell/unasked-pause-2-resumed.png
+
+== unasked: Quit, and a start
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+frames of 167 meanwhile:
+    0 31 1024 674
+  ✔ Quit did not move it at all
+  ✔ a neighbour has its own size again
+shot: mac-shell/unasked-quit.png
+session 9: Arbor pid 24715, test windows 167 168 169 (pid 20158)
+running: 1 display, 3 docked and 0 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+frames of 167 meanwhile:
+    0 31 1024 674
+    12 43 390 650
+  ✔ the start docks it like the rest
+  ✔ by one road
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  tile n0 desktop  817 43 195 650  holds -
+  w167 12 43 390 650        docked
+  w168 414 43 391 319       docked
+  w169 414 374 391 319      docked
+    2026-10-15T10:20:48.449Z DEBUG a double-click reached w167
+    2026-10-15T10:20:48.589Z INFO  w167 has a new frame after a double-click; it stays there until it is back in its slot or somebody asks for a layout
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+AppleActionOnDoubleClick: not set
+
+== session: TextEdit, docked beside a test window
+session 10: Arbor pid 25472, test windows 234 (pid 25428,25318)
+running: 1 display, 0 docked and 2 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 231 left
+docked w231 at the left edge
+> dock 234 right
+docked w234 at the right edge
+display 0 0 1024 768, visible 0 31 1024 677, camera n2, back no
+  Desktop          349 43 326 653
+  w231 12 43 325 653        docked
+  w234 687 43 325 653       docked focused
+
+== TextEdit: double-click the docked window's title bar
+> trace on double-click-TextEdit
+recording /tmp/arbor-shell.n4ItRd/home/traces/2026-10-15-102202-double-click-TextEdit.jsonl: 1 lines, 2 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+> click 210 55 2
+frames of 231 meanwhile:
+    12 43 325 653
+    0 31 1024 677
+> trace off
+trace saved: /tmp/arbor-shell.n4ItRd/home/traces/2026-10-15-102202-double-click-TextEdit.jsonl: 44 lines, trace off
+shot: mac-shell/TextEdit-1-after-the-double-click.png
+  ✔ Arbor heard that the double-click reached the app
+  ✔ the window is docked as before
+  ✔ macOS gave it another frame
+it is managed docked at 0 31 1024 677
+  ✔ Arbor set no frame at all
+  ✔ the neighbour did not move
+  ✔ the window went one way, and did not turn round
+  ✔ nor two seconds later: it is where macOS put it
+  ✔ and Arbor says that it lets it be
+display 0 0 1024 768, visible 0 31 1024 677, camera n2, back no
+  Desktop          349 43 326 653
+  w231 0 31 1024 677        docked letBe focused
+  w234 687 43 325 653       docked
+
+== TextEdit: double-click it again
+> trace on double-click-TextEdit-again
+recording /tmp/arbor-shell.n4ItRd/home/traces/2026-10-15-102208-double-click-TextEdit-again.jsonl: 1 lines, 2 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+> click 512 43 2
+frames of 231 meanwhile:
+    0 31 1024 677
+    12 43 325 653
+> trace off
+trace saved: /tmp/arbor-shell.n4ItRd/home/traces/2026-10-15-102208-double-click-TextEdit-again.jsonl: 20 lines, trace off
+  ✔ and Arbor set no frame
+  ✔ macOS returns it to where it stood
+  ✔ by one road
+  ✔ from where Arbor keeps it like any docked window
+  ✔ and says so
+shot: mac-shell/TextEdit-2-back.png
+
+== TextEdit: once more, and this time Arbor takes it back
+> click 210 55 2
+the window is at 0 31 1024 677
+> trace on double-click-TextEdit-show-all
+recording /tmp/arbor-shell.n4ItRd/home/traces/2026-10-15-102215-double-click-TextEdit-show-all.jsonl: 1 lines, 2 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+> show-all
+showing everything
+frames of 231 meanwhile:
+    0 31 1024 677
+    12 43 325 653
+> trace off
+trace saved: /tmp/arbor-shell.n4ItRd/home/traces/2026-10-15-102215-double-click-TextEdit-show-all.jsonl: 24 lines, trace off
+  ✔ showing everything puts it at its slot
+  ✔ and Arbor lets it be no longer
+  ✔ by one road
+  ✔ the neighbour did not move
+Arbor set the window's frame 1 time(s)
+shot: mac-shell/TextEdit-3-taken-back.png
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+
+== session: Terminal, docked beside a test window
+session 11: Arbor pid 27682, test windows 255 (pid 27666,27587)
+running: 1 display, 0 docked and 2 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 252 left
+docked w252 at the left edge
+> dock 255 right
+docked w255 at the right edge
+display 0 0 1024 768, visible 0 31 1024 679, camera n2, back no
+  Desktop          349 43 326 655
+  w252 12 46 324 649        docked
+  w255 687 43 325 655       docked focused
+
+== Terminal: double-click the docked window's title bar
+> trace on double-click-Terminal
+recording /tmp/arbor-shell.EiZMkw/home/traces/2026-10-15-102230-double-click-Terminal.jsonl: 1 lines, 2 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+> click 210 58 2
+frames of 252 meanwhile:
+    12 46 324 649
+    0 31 1024 679
+> trace off
+trace saved: /tmp/arbor-shell.EiZMkw/home/traces/2026-10-15-102230-double-click-Terminal.jsonl: 46 lines, trace off
+shot: mac-shell/Terminal-1-after-the-double-click.png
+  ✔ Arbor heard that the double-click reached the app
+  ✔ the window is docked as before
+  ✔ macOS gave it another frame
+it is managed docked at 0 31 1024 679
+  ✔ Arbor set no frame at all
+  ✔ the neighbour did not move
+  ✔ the window went one way, and did not turn round
+  ✔ nor two seconds later: it is where macOS put it
+  ✔ and Arbor says that it lets it be
+display 0 0 1024 768, visible 0 31 1024 679, camera n2, back no
+  Desktop          349 43 326 655
+  w252 0 31 1024 679        docked letBe focused
+  w255 687 43 325 655       docked
+
+== Terminal: double-click it again
+> trace on double-click-Terminal-again
+recording /tmp/arbor-shell.EiZMkw/home/traces/2026-10-15-102236-double-click-Terminal-again.jsonl: 1 lines, 2 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+> click 512 43 2
+frames of 252 meanwhile:
+    0 31 1024 679
+    12 46 324 649
+> trace off
+trace saved: /tmp/arbor-shell.EiZMkw/home/traces/2026-10-15-102236-double-click-Terminal-again.jsonl: 22 lines, trace off
+  ✔ and Arbor set no frame
+  ✔ macOS returns it to where it stood
+  ✔ by one road
+it did not stand in its slot before the zoom (12 46 324 649; its slot: 12 43 325 655)
+  ✔ from where Arbor keeps it like any docked window
+  ✔ and says so
+shot: mac-shell/Terminal-2-back.png
+
+== Terminal: once more, and this time Arbor takes it back
+> click 210 58 2
+the window is at 0 31 1024 679
+> trace on double-click-Terminal-show-all
+recording /tmp/arbor-shell.EiZMkw/home/traces/2026-10-15-102243-double-click-Terminal-show-all.jsonl: 1 lines, 2 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+> show-all
+showing everything
+frames of 252 meanwhile:
+    0 31 1024 679
+    12 43 324 649
+    12 46 324 649
+> trace off
+trace saved: /tmp/arbor-shell.EiZMkw/home/traces/2026-10-15-102243-double-click-Terminal-show-all.jsonl: 32 lines, trace off
+  ✔ showing everything puts it at its slot
+  ✔ and Arbor lets it be no longer
+  ✔ by one road
+  ✔ the neighbour did not move
+Arbor set the window's frame 2 time(s)
+shot: mac-shell/Terminal-3-taken-back.png
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+
+253 passed, 2 failed
+exit code 1
