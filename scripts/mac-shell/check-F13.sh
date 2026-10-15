@@ -19,8 +19,8 @@
 #
 # SAFE ON A PERSON'S MAC. No sudo. It works in a place apart (lib-F13.sh): a throwaway HOME, ARBOR_HOME and keychain in
 # /tmp, and a clone of this checkout to build in. It does not touch the account's keychains, their search list or the
-# default keychain (it signs through ARBOR_SIGN_KEYCHAIN, compares those settings before and after, and stops at once
-# if `security` turns out not to follow HOME), nor ~/Applications, the PATH, Arbor's folder in Application Support, the
+# default keychain (its keychain is on the throwaway HOME's search list only, it compares the account's settings before and after,
+# and stops at once if `security` turns out not to follow HOME), nor ~/Applications, the PATH, Arbor's folder in Application Support, the
 # permission database, the login items, what Launch Services knows (nothing is started with `open`), or a file of this
 # checkout. The copies of Arbor it starts arrange nobody's windows and ask for nothing, so an Arbor that is already
 # running is neither quit nor disturbed. Pictures are of Arbor's own window only, and only where this shell may
@@ -60,22 +60,29 @@ echo "  Info.plist: $(stamp CFBundleShortVersionString "$app") / $(stamp CFBundl
 check "the version is stamped" same "$(stamp CFBundleShortVersionString "$app")" "$(cat VERSION)"
 check "the build number is stamped" same "$(stamp CFBundleVersion "$app")" "$(git rev-list --count HEAD)"
 check "the commit is stamped" same "$(stamp ArborCommit "$app")" "$(git rev-parse --short HEAD)"
+check "so is the kind of signature, and codesign agrees" same "$(stamp ArborSignature "$app") $(codesign --display --verbose=2 "$app" 2>&1 | grep '^Signature=')" "adhoc Signature=adhoc"
+install_here > "$ARBOR_OUT/install-adhoc.txt" 2>&1
+tail -n 6 "$ARBOR_OUT/install-adhoc.txt"
+check "make install says aloud that the build is signed ad hoc" says "$ARBOR_OUT/install-adhoc.txt" "NOTE: THIS BUILD IS SIGNED AD HOC"
+check "and what that costs" says "$ARBOR_OUT/install-adhoc.txt" "macOS will ask for the Accessibility permission again"
+start_copy "$installed"
+check "doctor names it" with "$(ask doctor)" "– Signature: ad hoc, so to macOS every build is a new app"
+stop_copy
 check "the property list is still valid" plutil -lint "$app/Contents/Info.plist"
 
 step "2  the signing identity"
-ARBOR_KEYCHAIN_PASSWORD=$password limit 120 ./scripts/make-signing-identity.sh --keychain "$keychain" < /dev/null 2>&1 | tee "$ARBOR_OUT/identity.txt"
+limit 120 ./scripts/make-signing-identity.sh --keychain "$keychain" < /dev/null 2>&1 | tee "$ARBOR_OUT/identity.txt"
 security find-identity -p codesigning "$keychain"
 echo "the key's attributes in the keychain:"
 security dump-keychain "$keychain" 2>/dev/null | grep -E '^class|0x00000001|"labl"' | head -n 12
 check "the identity is in the keychain" with "$(security find-identity -p codesigning "$keychain")" "\"$identity\""
 check "nobody trusts the certificate, and nothing was asked to" \
   without "$(security find-identity -v -p codesigning "$keychain")" "\"$identity\""
-if ! check "codesign could use the key at once, without a dialog" says "$ARBOR_OUT/identity.txt" "codesign can sign with it"; then
-  echo "trying without the label (this keychain holds no other key), so that the rest of this run can go on:"
-  allow_every_key "$keychain" 2>&1 | tail -n 3
-fi
-# Every build from here on signs with the key. If macOS wants to ask somebody first, better to learn it from one
-# codesign that is gone again in twenty seconds, dialog and all, than from a `make install`.
+# Every build from here on signs with the key. A keychain made with `security create-keychain` gives its keys no partition list, so macOS asks
+# nobody (check-signing.sh). Should it ask all the same, the script has given up after a minute, has taken the identity out again and has said
+# that the dialog stays until it is closed; this run ends here: better than to learn it from a `make install`.
+check "codesign could use the key at once, without a dialog" says "$ARBOR_OUT/identity.txt" "codesign can sign with it" \
+  || die "codesign cannot use the key without a dialog; the rest would put dialogs on this Mac's screen"
 cp /usr/bin/true "$sandbox/signed-first"
 check "codesign signs with the key, and asks nobody" \
   limit 20 codesign --force --sign "$identity" --keychain "$keychain" --timestamp=none "$sandbox/signed-first" \
@@ -94,6 +101,8 @@ echo "  designated => $first_requirement"
 signature "$installed"
 ls -la "$home/Applications" "$home/.local/bin"
 check "it says which signature it made and what that means" says "$ARBOR_OUT/install.txt" "with \"$identity\", this Mac's own certificate"
+check "and has nothing to warn of" without "$(cat "$ARBOR_OUT/install.txt")" "AD HOC"
+check "the bundle says so itself" same "$(stamp ArborSignature "$installed")" local
 check "the app is in ~/Applications" test -x "$installed/Contents/MacOS/Arbor"
 check "the installed copy verifies (--deep --strict)" codesign --verify --deep --strict "$installed"
 check "arborctl is linked into ~/.local/bin" same "$(readlink "$home/.local/bin/arborctl")" "$installed/$tool"
@@ -112,6 +121,7 @@ check "arborctl --version, through the link, knows its version, and has nothing 
 check "the running app reports the same" same "$(arborctl version | head -n 1)" "Arbor $expected"
 check "status shows it, on a line of its own" same "$(arborctl status | tail -n 1)" "Arbor $expected"
 check "so does the binary itself, beside the running copy" same "$("$installed/Contents/MacOS/Arbor" --version)" "Arbor $expected"
+check "doctor names the signature" with "$(arborctl doctor)" "✔ Signature: this Mac’s own certificate"
 echo "  launch at login, only asked about: $(arborctl launch-at-login)"
 
 step "4  a different build, the same requirement"
@@ -208,12 +218,13 @@ kill "$feed_pid" 2>/dev/null
 feed_pid=""
 
 step "7  another identity: the hardened runtime"
-ARBOR_KEYCHAIN_PASSWORD=$password limit 120 ./scripts/make-signing-identity.sh --keychain "$keychain" --name "F13 Stand-in" < /dev/null 2>&1 | tail -n 4
+limit 120 ./scripts/make-signing-identity.sh --keychain "$keychain" --name "F13 Stand-in" < /dev/null 2>&1 | tail -n 4
 make_app "$ARBOR_OUT/build-hardened.log" ARBOR_SIGN_IDENTITY="F13 Stand-in"
 signature "$app"
 check "the hardened runtime is on" with "$(codesign --display --verbose=3 "$app" 2>&1 | grep '^CodeDirectory')" "runtime"
 check "for arborctl too" with "$(codesign --display --verbose=3 "$app/$tool" 2>&1 | grep '^CodeDirectory')" "runtime"
 check "it verifies (--deep --strict)" codesign --verify --deep --strict "$app"
+check "the bundle says that a certificate signed it" same "$(stamp ArborSignature "$app")" issued
 start_copy "$app"
 echo "  $(ask status | tr '\n' '|')"
 # "running" where this shell has Accessibility to pass on, "waiting" where it has not.
@@ -266,21 +277,13 @@ stop_copy
 step "9  what the scripts rely on"
 probe="$sandbox/probe.keychain-db"
 new_keychain "$probe"
+search_list "$keychain" "$probe"
 if [ -n "$other_openssl" ]; then
-  ARBOR_OPENSSL=$other_openssl limit 60 ./scripts/make-signing-identity.sh --keychain "$probe" < /dev/null 2>&1 | head -n 3
-  check "a PKCS#12 file packed by $("$other_openssl" version | cut -d ' ' -f 1-2) with -legacy imports" \
-    with "$(security find-identity -p codesigning "$probe")" "\"$identity\""
-else
-  limit 60 ./scripts/make-signing-identity.sh --keychain "$probe" < /dev/null 2>&1 | head -n 3
-fi
-if on_throwaway_mac; then
-  # Both may ask in a dialog, which is the question; nobody's screen is the place to find out.
-  cp /usr/bin/true "$sandbox/true"
-  echo "set-key-partition-list without -k, the password on standard input:"
-  printf '%s\n' "$password" | limit 20 security set-key-partition-list -S apple-tool:,apple: -s -l "$identity" "$probe" 2>&1 | grep -vE '^ |^keychain|^class|^attributes|^version' | head -n 5
-  echo "  exit codes: ${PIPESTATUS[*]}"
-  limit 20 codesign --force --sign "$identity" --keychain "$probe" --timestamp=none "$sandbox/true" 2>&1 | head -n 3
-  echo "  codesign after that, exit codes: ${PIPESTATUS[*]}; $(requirement "$sandbox/true")"
+  # Into a file: a reader that leaves after three lines would end the script.
+  ARBOR_OPENSSL=$other_openssl limit 60 ./scripts/make-signing-identity.sh --keychain "$probe" < /dev/null > "$ARBOR_OUT/identity-openssl.txt" 2>&1
+  head -n 3 "$ARBOR_OUT/identity-openssl.txt"
+  check "a PKCS#12 file packed by $("$other_openssl" version | cut -d ' ' -f 1-2) with -legacy imports, and codesign signs with the key" \
+    says "$ARBOR_OUT/identity-openssl.txt" "codesign can sign with it"
 fi
 echo "is a keychain that was made here on the throwaway HOME's search list? $(security list-keychains -d user | tr -d '\n')"
 drop_keychain "$probe"
@@ -292,6 +295,7 @@ check "the certificate too" sh -c "! security find-certificate -c '$identity' '$
 limit 60 ./scripts/make-signing-identity.sh --keychain "$keychain" --remove
 make_app "$ARBOR_OUT/build-last.log" | tail -n 3
 check "builds are ad hoc again" with "$(requirement "$app")" "cdhash H\""
+check "and say so themselves" same "$(stamp ArborSignature "$app")" adhoc
 drop_keychain "$keychain"
 check "the account's own search list and default keychain are still as they were" unchanged "$real_settings" "$(real_keychain_settings)"
 check "this checkout is as it was" unchanged "$checkout_before" "$(git -C "$ARBOR_ROOT" status --porcelain)"

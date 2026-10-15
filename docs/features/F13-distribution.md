@@ -34,7 +34,8 @@ For users: [docs/INSTALL.md](../INSTALL.md).
 
 - **A stable local signature.** `scripts/make-signing-identity.sh` makes, once, a self-signed code-signing certificate
   ("Arbor Local Signing") with a key that cannot be exported, in the login keychain; no trust step, no administrator
-  rights, one question (Return and macOS's own Always Allow dialog, or the keychain's password instead); idempotent; `--remove`.
+  rights, no password asked for or taken (macOS asks once, in its own dialog: Always Allow; the script signs something and goes by
+  that); a run that fails or is interrupted leaves nothing; idempotent; `--remove`.
   `scripts/sign.sh` signs with `ARBOR_SIGN_IDENTITY`, else that certificate, else ad hoc, and says which and what it means
   for permissions. Any other identity gets the hardened runtime. `arborctl` has an identifier of its own and sits in
   `Contents/Helpers` (app shell review).
