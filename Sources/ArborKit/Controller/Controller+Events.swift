@@ -4,6 +4,7 @@ import CoreGraphics
 extension Controller: WindowSystemEvents {
   public func windowAppeared(_ window: WindowSnapshot) {
     windows[window.id] = window
+    appsSeen.insert(window.bundleID ?? window.appName)
     keyboardHandOver.newcomers[window.id] = now()
     // A window can have the keyboard before Arbor hears of it.
     defer { refreshFocusRing(.focus) }
@@ -314,6 +315,9 @@ extension Controller: OverlayActions {
     guard isRunning, workspaces[display]?.tree.contains(node) == true else { return }
     // Refused as the command it stands for, so that a click that does nothing is told why in the words a key is.
     guard holdLevel != .view else { return _ = perform(.zoomNode(node), from: .gesture) }
+    let outer = following.namesAPlace
+    following.namesAPlace = true
+    defer { following.namesAPlace = outer }
     moveCamera(on: display, to: node)
     if let layout = layouts[display],
       let first = workspaces[display]?.tree.windows(under: node).first(where: { layout.windowFrames[$0] != nil })

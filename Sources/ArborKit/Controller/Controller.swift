@@ -429,6 +429,8 @@ public final class Controller {
 
   /// The app in front, as last reported (Controller+PassThrough.swift). Nil until the first report.
   public internal(set) var frontmostApp: FrontmostApp?
+  /// The apps of which this process has known a window, by bundle id, or by name where there is none. A pause forgets none.
+  var appsSeen: Set<String> = []
   /// True while the pause is one Arbor began by itself because of `pauseForApps`, and will end by itself.
   public internal(set) var isPausedForApp = false
   /// Whether the pause is one that nobody asked for: Arbor's own, at a logout (`sessionIsEnding`). It lets go of the windows and of no key.
@@ -602,6 +604,7 @@ public final class Controller {
     // The file has the corners only; what the displays were like when Arbor stopped is still in memory.
     endUndoHistoryIfDisplaysMoved(since: saved?.origins ?? [:], sizes: shapes.mapValues(\.size))
     for window in system.allWindows() { windows[window.id] = window }
+    appsSeen.formUnion(windows.values.map { $0.bundleID ?? $0.appName })
     foundAtThisStart = windows.mapValues(\.frame)
     if let saved, saved.origins == nil {
       for display in displays where saved.workspaces[display.id] != nil { healFramesOfUnknownOrigin(on: display) }

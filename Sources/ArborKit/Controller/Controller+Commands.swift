@@ -17,6 +17,12 @@ extension Controller {
     let outer = following.decides
     following.decides = !command.isQuery
     defer { following.decides = outer }
+    let outerNames = following.namesAPlace
+    switch command {
+    case .zoomNode, .goToView, .goToSpace, .frameRect: following.namesAPlace = true
+    default: following.namesAPlace = false
+    }
+    defer { following.namesAPlace = outerNames }
     // Once the command has had its own say about the keyboard (Controller+LetBe.swift).
     defer { theKeyboardLeavesTheTile() }
     let start = DispatchTime.now()

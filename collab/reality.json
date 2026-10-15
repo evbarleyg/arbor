@@ -8379,14 +8379,20 @@
    "kind": "late-or-partial-answer",
    "layer": "at the seam",
    "expected": "`focusedWindow()` is nil when nobody has the keyboard: the bare Desktop.",
-   "happened": "It is also nil whenever the app in front is not observed or does not answer: Spotlight, another launcher, a menu bar app's panel, a sheet. A shortcut that moves the view then takes the keyboard out of the launcher somebody is typing in, which it was decided to leave as it is for commands a person gives. A window closing behind a launcher made Arbor give the keyboard to another window a quarter of a second later; it no longer does (the-window-used-last-is-not-the-window-with-the-keyboard). What a real Spotlight does then is still to be tried by hand.",
-   "found": "A rehearsal check that was bisected, then reading the Accessibility layer, and a headless probe. Not seen on a Mac.",
+   "happened": "It is also nil whenever the app in front is not observed or does not answer: a launcher that comes forward, a menu bar app's panel. (Not for a sheet or a panel of an app that is observed: what-macos-names-while-a-sheet-or-a-panel-has-the-keyboard.) A shortcut that moves the view then took the keyboard out of the launcher somebody was typing in: ten times of ten on a hosted Mac, with an app in front that Arbor was not pointed at. It had been decided to leave that as it is for commands a person gives; that is overruled: Arbor takes the keyboard only from a window that it takes out of view, and goes by the app in front where it knows no focused window (`Controller.ensureFocusIsVisible`). Open still: what brings no app forward. A window closing behind a launcher made Arbor give the keyboard to another window a quarter of a second later; it no longer does (the-window-used-last-is-not-the-window-with-the-keyboard). What a real Spotlight does then is still to be tried by hand.",
+   "found": "A rehearsal check that was bisected, then reading the Accessibility layer, and a headless probe. Then seen on a hosted Mac, behind the greens of the check of apps that keep their own shortcuts: the app that writes down its keys resigned 5 ms after `show-all`.",
    "modelled": "partly",
    "knobs": [
     "FakeWindowSystem.sheetTakesTheKeyboard"
    ],
    "guards": [
-    "test: theKeyboardStaysInASheet"
+    "test: aKeyThatMovesTheViewLeavesTheKeyboardWithAnAppArborDoesNotLookAt",
+    "test: aSheetKeepsTheKeyboardForAsLongAsItsWindowIsInView",
+    "test: anAppWithNoWindowLeftIsNobody",
+    "test: theKeyboardStaysInASheet",
+    "test: theSheetIsWhereItsAppsWindowIs",
+    "test: whatNamesAPlaceTakesTheKeyboardThereWhoeverHadIt",
+    "test: withArborItselfInFrontTheKeyboardGoesAlongWithTheView"
    ],
    "copes": "open",
    "hurt": 2,
@@ -8402,8 +8408,7 @@
     "K1601",
     "K1608",
     "M1609"
-   ],
-   "certainty": "suspected"
+   ]
   },
   {
    "id": "nothing-announces-a-change-of-permission",
@@ -12057,6 +12062,31 @@
    "sources": [
     "scripts/mac-shell/day-sabotage.sh",
     "docs/TESTING.md"
+   ]
+  },
+  {
+   "id": "what-macos-names-while-a-sheet-or-a-panel-has-the-keyboard",
+   "kind": "identity",
+   "layer": "below the seam",
+   "expected": "While a sheet, a dialog or a panel has the keyboard an app names no focused window, or the window it belongs to.",
+   "happened": "It names the sheet or the panel itself, by a number of its own at the window server. A sheet: role AXSheet, no subrole, and its window goes on being the main window (a test window's sheet; a stock editor's Save As…). A free-standing utility panel: AXWindow, AXFloatingWindow. The stock editor's Open…: AXWindow, AXStandardWindow, without close, minimize or zoom buttons. Arbor's layer passes those numbers on as they come, nobody above it knows them, and the stand-ins say nil instead: a rule written for nil (a sheet whose window is taken out of view hands the keyboard on) would never have run on a Mac. When the sheet begins, \"focused window changed\" is posted, and \"main window changed\" 44 ms later if its window was not the main one.",
+   "found": "A reader of the rule asked what the real layer answers, and nobody knew. Then a script on a hosted Mac that writes down number, role and subrole of what Accessibility names, with keys counted in the sheet, the panel and the windows themselves, and Arbor's own trace of the same minutes.",
+   "modelled": "partly",
+   "knobs": [
+    "FakeWindowSystem.sheetTakesTheKeyboard"
+   ],
+   "guards": [
+    "test: aSheetKeepsTheKeyboardForAsLongAsItsWindowIsInView",
+    "test: theSheetIsWhereItsAppsWindowIs"
+   ],
+   "copes": "Controller.ensureFocusIsVisible takes a number it does not know like none, and the window of the app in front that was used last for the sheet's. Seen on a hosted Mac: a sheet whose window stays in view keeps the keyboard, one whose window leaves hands it on. A free-standing panel is taken like a sheet and loses the keyboard in plain sight when that window leaves: decided otherwise, and to follow: the layer is to answer a sheet with its window's number.",
+   "hurt": 2,
+   "touches": [
+    "focus"
+   ],
+   "sources": [
+    "Sources/ArborKit/AX/AXWindowSystem.swift",
+    "scripts/mac-shell/check-moves-of-the-view.sh"
    ]
   },
   {

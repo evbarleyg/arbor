@@ -14,6 +14,10 @@ extension Controller {
     var source: CommandSource = .script
     /// Whether a command is being performed, as opposed to a question being asked: see `currentLead()`.
     var decides = false
+    /// What is being performed says where it goes: a space, a saved view, a tile, a rectangle. The keyboard goes there with the
+    /// view, whoever has it (`ensureFocusIsVisible`). Show Everything, Back or a neighbour name nothing. What names a window
+    /// gives it the keyboard by a call of its own.
+    var namesAPlace = false
     /// The display that whoever runs the command, or asks, has said it is about: Go to…'s rows are about the display the palette is on,
     /// wherever the pointer rests and whoever has the keyboard by then (`on(_:_:)`).
     var display: DisplayID?

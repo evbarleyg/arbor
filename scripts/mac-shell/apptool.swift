@@ -25,6 +25,8 @@ let usage = """
     front                         pid bundle-id of the frontmost app
     focused [pid]                 id pid: the window of the frontmost app (or of that one) that has the keyboard, or would
                                   have it if the app were in front (exit code 1: none)
+    names <pid>                   what Accessibility names for that app, raw: four lines `<what> <id|no-number|none> <role> <subrole>` for its
+                                  focused window, its main window, its focused element and the window of that element
     dock <bundle id | name>       x y: the middle of that app's icon in the Dock (exit code 1: it has none)
     dock-window <window>          x y: the middle of that minimized window's miniature in the Dock (exit code 1: none)
     menu <pid> <title>            x y: the middle of that menu's title in the menu bar, e.g. Window (exit code 1: none)
@@ -569,6 +571,18 @@ case "focused":
     let id = window.windowNumber
   else { fail("the app has no focused window", code: 1) }
   print("\(id) \(app.processIdentifier)")
+
+case "names":
+  let element = application(appArgument().processIdentifier)
+  func name(_ what: String, _ named: AXUIElement?) {
+    guard let named else { return print("\(what) none") }
+    print("\(what) \(named.windowNumber.map { String($0) } ?? "no-number") \(named.role) \(named.subrole)")
+  }
+  let inFocus = element.element(kAXFocusedUIElementAttribute)
+  name("focused-window", element.element(kAXFocusedWindowAttribute))
+  name("main-window", element.element(kAXMainWindowAttribute))
+  name("focused-element", inFocus)
+  name("window-of-the-focused-element", inFocus?.element(kAXWindowAttribute))
 
 case "dock", "dock-window":
   guard let dock = runningApp("com.apple.dock") else { fail("the Dock is not running", code: 1) }
