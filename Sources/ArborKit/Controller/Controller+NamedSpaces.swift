@@ -118,8 +118,9 @@ extension Controller {
       let elsewhere = space.display != acting
       let place = self.name(of: space.node, on: space.display) + (elsewhere ? " on another display" : "")
       if !space.isInView { moveCamera(on: space.display, to: space.node) }
-      // The user went there, so the keyboard does, and with it the shortcuts that follow (F56).
-      if elsewhere { focusSomething(on: space.display) }
+      // The user went there, so the keyboard does, and with it the shortcuts that follow (F56). By where the keyboard is: the display
+      // that acts can be another (Controller+HandedAcross.swift).
+      if space.display != focusedPlace?.display ?? acting { focusSomething(on: space.display) }
       return .success(space.isInView ? "already showing \(place)" : "moved to \(place)")
     }
   }

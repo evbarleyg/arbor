@@ -1668,6 +1668,14 @@ would have followed unasked, and a trace need not hold the question.
 
 With the keyboard in the lead the display is the focused window's, also when Arbor does not arrange that window (a call in an
 app set to Don't Arrange), and `in` steps toward that window if Arbor arranges it. With no focused window the pointer decides after all.
+Two exceptions, both after the window with the keyboard has gone, because the eyes are still where it went. Where macOS picked nobody,
+the display is that one until somebody goes elsewhere (`KeyboardHandOver.wentOn`). Where Arbor handed the keyboard to a window on
+another display for want of one there, it is that one for the next key of Arbor's, once (`Controller+HandedAcross.swift`): a key for the
+focused window acts on the heir, and whatever the key did, the one after it follows the keyboard. If that key has brought into view there
+a window that can be an heir, the want is over: that window gets the keyboard, macOS's own pick first, so two keys in a row do not change
+displays halfway. It ends sooner when the person is seen to be elsewhere, or there (another window or app, a press of the pointer, a
+key typed, the heir going, the displays changing), and after thirty seconds, with nothing said or moved. A key that fails then says
+nothing about the display.
 
 Arbor sees no typing and must not: `WindowSystem.inputActivity()` reads three figures that macOS keeps for every login
 session and gives to any app (`CGEventSource.secondsSinceLastEventType` and `counterForEventType`): how long the pointer has

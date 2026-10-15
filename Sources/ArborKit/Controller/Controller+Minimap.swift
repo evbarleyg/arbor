@@ -186,9 +186,16 @@ extension Controller {
   // MARK: On demand
 
   /// The `minimap` command: a look on demand, on the display under the pointer, also when moves of the view bring none
-  /// up. Again puts it away.
+  /// up. Again puts it away, on whichever display it is: what a key means may have gone to another display since, with the pointer or
+  /// the keyboard, and a second minimap there would leave the first one up. Not the menu's row, which is about the display under the
+  /// pointer, its tick too.
   func toggleMinimap() -> CommandResult {
     minimap.justAsked = nil
+    let up = following.source == .menu ? [] : minimap.showing.filter { $0.value.takesClicks }.keys.sorted()
+    if !up.isEmpty {
+      up.forEach { hideMinimap(on: $0) }
+      return .success("put the minimap away")
+    }
     guard let (display, workspace) = cameraDisplay() else { return .failure("no display") }
     if minimap.showing[display]?.takesClicks == true {
       hideMinimap(on: display)

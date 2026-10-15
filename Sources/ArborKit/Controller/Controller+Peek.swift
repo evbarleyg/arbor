@@ -22,6 +22,8 @@ extension Controller {
     var temporary: [KeyBinding] = []
     var tookKeys = false
     var shownOutline: NodeID?
+    /// What held when the key went down (Controller+HandedAcross.swift).
+    var handedAcross: HandedAcross?
   }
 
   static let peekInterval = 1.0 / 30
@@ -99,6 +101,10 @@ extension Controller {
       // Behind a window that fills the view there is nothing to look at. The command takes it out of the way first (Controller+Fill.swift).
       workspace.filled == nil
     else { return false }
+    // The next key, once: this one takes the place of a command, and no command runs. What it has brought into view is known when
+    // it is let go of.
+    let handedAcross = from(.shortcut) { handOverBeforeTheNextKey }
+    theHandOverAcrossIsOver()
     watchLifecycleForPeek()
     // As `perform` would before `show-all`, whose place this takes.
     closeFinder()
@@ -114,7 +120,7 @@ extension Controller {
       peek: Peek(
         origin: workspace.camera, root: workspace.tree.root, at: peekTime, pointer: system.cursorLocation(),
         buttonDown: system.isMouseButtonDown()),
-      display: display, chord: chord)
+      display: display, chord: chord, handedAcross: handedAcross)
     scheduler.schedule("peek", after: Self.peekInterval) { [weak self] in self?.peekTick() }
     return true
   }
@@ -221,6 +227,7 @@ extension Controller {
     case .stay:
       // Everything is showing already, so only the record changes.
       workspaces[display]!.moveCamera(to: session.peek.root)
+      theNextKeyHasActed(after: session.handedAcross)
       notify(.camera(display))
       scheduleSave()
     case .goBack:

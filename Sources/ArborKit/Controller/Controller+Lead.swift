@@ -84,6 +84,7 @@ extension Controller {
   func noteFocus(_ window: WindowID?) {
     confirmFocusRequest(at: window)
     if window != nil { keyboardHandOver.wentOn = nil }
+    if let heir = keyboardHandOver.handedAcross?.to, window != heir, focusRequest?.window != heir { theHandOverAcrossIsOver() }
     if let focus = following.focus, focus.window == window { return }
     following.focus = (window, now())
     following.lead.focusChanged()
@@ -130,8 +131,10 @@ extension Controller {
     return pointerDisplayID
   }
 
-  /// The display the focused window is on: its workspace's, or for a window Arbor does not arrange the one it sits on.
+  /// The display the focused window is on: its workspace's, or for a window Arbor does not arrange the one it sits on. Unless Arbor
+  /// itself sent the keyboard there from another display a moment ago, where the eyes still are (Controller+HandedAcross.swift).
   var focusedDisplayID: DisplayID? {
+    if let across = handOverAcrossThatHolds { return across.from }
     if let place = focusedPlace { return place.display }
     guard let window = system.focusedWindow(), let frame = windows[window]?.frame else {
       return keyboardHandOver.wentOn.flatMap { workspaces[$0] != nil ? $0 : nil }

@@ -88,7 +88,7 @@ extension Controller {
     }
     // The window that had the keyboard has just gone, and macOS picked this one. Nobody asked to see it.
     if let loss, now().timeIntervalSince(loss.time) < Self.handOverTime, loss.app == nil || loss.app == windows[id]?.pid,
-      aWindowInViewGetsTheKeyboard(after: loss.display, picked: display)
+      aWindowInViewGetsTheKeyboard(after: loss.display, insteadOf: id, on: display)
     {
       return
     }
@@ -138,6 +138,8 @@ extension Controller {
     /// no window. Whoever was typing there is still looking there, and the next key that names no display means that one
     /// (`focusedDisplayID`), wherever the pointer was left.
     var wentOn: DisplayID?
+    /// Arbor gave the keyboard to a window on another display than the one of the going (Controller+HandedAcross.swift).
+    var handedAcross: HandedAcross?
     /// The windows that are going to be looked at again (`scheduleFocusCheck`).
     var secondLooks: Set<WindowID> = []
     /// `window`, out of view, has taken the keyboard from `holder`, a window of the same app, and the view has not followed yet
@@ -231,6 +233,7 @@ extension Controller {
   /// `app` is its process, or nil if the whole app was hidden. `wentBack`: what `theViewGoesBack` returned; its display has not been laid out.
   func keyboardLeft(_ id: WindowID, of app: Int32?, on display: DisplayID, wentBack: KeyboardHandOver.Reveal? = nil) {
     guard isRunning else { return }
+    if keyboardHandOver.handedAcross?.to == id { theHandOverAcrossIsOver() }
     // Its heir was named first and has waited for this. From here on it is the order in which the going comes first.
     let heir = keyboardHandOver.waiting.flatMap { $0.holder == id ? $0.window : nil }
     defer { if let heir { bringIntoViewIfFocused(heir, retries: 0) } }
@@ -261,7 +264,7 @@ extension Controller {
         keyboardHandOver.comingBack = nil
         // Only for that layout: should the view have to move on, they go with it like any other.
         placedOnPurpose.subtract(back.map(\.window))
-        if !aWindowInViewGetsTheKeyboard(after: display, picked: reveal.display), let heir = system.focusedWindow(), heir != id,
+        if !aWindowInViewGetsTheKeyboard(after: display, insteadOf: reveal.window, on: reveal.display), let heir = system.focusedWindow(), heir != id,
           windows[heir]?.isPresent == true
         {
           bringIntoView(heir)
@@ -292,23 +295,25 @@ extension Controller {
         return
       }
       self.keyboardHandOver.loss = nil
-      if !self.aWindowInViewGetsTheKeyboard(after: display, picked: home) { self.bringIntoView(heir) }
+      if !self.aWindowInViewGetsTheKeyboard(after: display, insteadOf: heir, on: home) { self.bringIntoView(heir) }
     }
   }
 
-  /// The window with the keyboard went, on `display`, and macOS picked one that Arbor keeps out of view, on `picked`. A window in
+  /// The window with the keyboard went, on `display`, and macOS picked one that Arbor keeps out of view: `pick`, on `picked`. A window in
   /// view gets the keyboard, and "in view" is asked of all displays: first of `display`, where the eyes and the pointer are, then
   /// of `picked`, where the app goes on, then of the others; on each it is the window used last. A display that shows only its
   /// wallpaper once its last window has closed is what closing the last window means, and nobody at another display asked
-  /// for its view to move. Returns whether there was one.
+  /// for its view to move. Returns whether there was one, and remembers a hand-over to another display (`handedAcross`).
   ///
   /// Not where macOS picked none: no window is out of view with the keyboard in it then, and no app is brought forward on
   /// another display for it.
-  private func aWindowInViewGetsTheKeyboard(after display: DisplayID, picked: DisplayID) -> Bool {
+  private func aWindowInViewGetsTheKeyboard(after display: DisplayID, insteadOf pick: WindowID, on picked: DisplayID) -> Bool {
     // Each display once: asking costs a question to macOS.
     var asked: Set<DisplayID> = []
-    return ([display, picked] + workspaces.keys.sorted())
-      .first { asked.insert($0).inserted && ensureFocusIsVisible(on: $0, alsoFromNothing: false, asAnHeir: true) } != nil
+    let found = ([display, picked] + workspaces.keys.sorted())
+      .first { asked.insert($0).inserted && ensureFocusIsVisible(on: $0, alsoFromNothing: false, asAnHeir: true) }
+    if let found, found != display { theKeyboardWasHandedAcross(from: display, insteadOf: pick) }
+    return found != nil
   }
 
   /// Not a window of an app that Arbor pauses for or passes its keys through to. Given the keyboard, its app comes forward: the one

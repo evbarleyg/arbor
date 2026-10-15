@@ -17,6 +17,9 @@ extension Controller {
     let outer = following.decides
     following.decides = !command.isQuery
     defer { following.decides = outer }
+    // The next key, once, whatever it did (Controller+HandedAcross.swift).
+    let handedAcross = command.isQuery ? nil : handOverBeforeTheNextKey
+    defer { if !command.isQuery { theNextKeyHasActed(after: handedAcross) } }
     // Once the command has had its own say about the keyboard (Controller+LetBe.swift).
     defer { theKeyboardLeavesTheTile() }
     let start = DispatchTime.now()
@@ -242,6 +245,8 @@ extension Controller {
   var onPointerDisplay: String {
     guard displays.count > 1 else { return "" }
     let followedKeyboard = following.lead.last == .keyboard && focusedDisplayID != nil
+    // The display where a window went, with the keyboard in nobody or on another display: it is not the focused window's.
+    if followedKeyboard, keyboardFocus() == nil || handOverAcrossThatHolds != nil { return "" }
     return followedKeyboard ? " on the focused window's display" : " on the display under the pointer"
   }
 

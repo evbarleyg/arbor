@@ -299,6 +299,7 @@ extension Controller: WindowSystemEvents {
     // Displays that go away keep their arrangement and get it back when they
     // return: see Controller+Displays.swift.
     updateDisplays()
+    theHandOverAcrossIsOver()
   }
 }
 

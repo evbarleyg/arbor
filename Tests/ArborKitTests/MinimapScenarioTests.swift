@@ -593,6 +593,41 @@ private let side = DisplaySnapshot(
     #expect(h.overlays.minimaps[FakeWindowSystem.standardDisplay.id]?.takesClicks == true, "the other's is left alone")
   }
 
+  /// The key that raised it is the key that ends it. The pointer has gone to the other display meanwhile, and so has what the key means:
+  /// a second minimap there would leave the first one up. Pressed once more it raises one where it now means.
+  @Test(arguments: [CommandSource.shortcut, .script]) func askingAgainPutsItAwayOnWhicheverDisplayItIs(from source: CommandSource) {
+    let h = Harness(displays: [FakeWindowSystem.standardDisplay, side], settings: off)
+    let a = h.system.open(app: "Safari", frame: CGRect(x: 100, y: 100, width: 600, height: 400))
+    let b = h.system.open(app: "Notes", frame: CGRect(x: 1600, y: 100, width: 600, height: 400))
+    h.start()
+    h.run("dock \(a.rawValue) left")
+    h.run("dock \(b.rawValue) left")
+    h.system.cursor = CGPoint(x: 700, y: 400)
+    #expect(h.run("minimap", from: source).message == "showing the minimap")
+    #expect(h.overlays.minimaps.keys.sorted() == [h.display])
+    h.system.cursor = CGPoint(x: 2000, y: 400)
+    #expect(h.run("minimap", from: source).message == "put the minimap away")
+    #expect(h.overlays.minimaps.isEmpty, "the first is away, and none is raised in its stead")
+    #expect(timers(h).isEmpty)
+    #expect(h.run("minimap", from: source).message == "showing the minimap")
+    #expect(h.overlays.minimaps.keys.sorted() == [side.id])
+  }
+
+  /// One that only passes by, after a move of the view, was not asked for: the key raises its own and leaves that one to its time.
+  @Test func aPassingMinimapOnAnotherDisplayIsNotWhatTheKeyPutsAway() {
+    let h = Harness(displays: [FakeWindowSystem.standardDisplay, side], settings: passing)
+    let a = h.system.open(app: "Safari", frame: CGRect(x: 100, y: 100, width: 600, height: 400))
+    let b = h.system.open(app: "Notes", frame: CGRect(x: 1600, y: 100, width: 600, height: 400))
+    h.start()
+    h.run("dock \(a.rawValue) left")
+    h.run("dock \(b.rawValue) left")
+    h.run("zoom \(a.rawValue)")
+    #expect(h.overlays.minimaps[h.display]?.takesClicks == false)
+    h.system.cursor = CGPoint(x: 2000, y: 400)
+    #expect(h.run("minimap", from: .shortcut).message == "showing the minimap")
+    #expect(h.overlays.minimaps[side.id]?.takesClicks == true && h.overlays.minimaps[h.display] != nil)
+  }
+
   @Test func askingAgainPutsItAway() {
     let (h, _, _, _) = makeHarness()
     h.run("minimap")

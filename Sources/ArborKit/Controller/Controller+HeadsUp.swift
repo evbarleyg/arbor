@@ -354,6 +354,13 @@ extension Controller {
     if let window = command.window, let id = window ?? system.focusedWindow(), let display = workspaceID(containing: id) {
       return display
     }
+    if handOverAcrossThatHolds != nil {
+      // These start from the focused window, which is not on the display that a key about the view means just now.
+      switch command {
+      case .focus, .rotate, .mirror, .focusDisplay, .swap, .grow, .shrink: return keyboardDisplayID
+      default: break
+      }
+    }
     return cameraDisplay()?.0 ?? pointerDisplayID
   }
 

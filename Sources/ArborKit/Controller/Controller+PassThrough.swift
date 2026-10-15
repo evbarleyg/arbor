@@ -66,6 +66,9 @@ extension Controller {
     frontmostApp = app
     // Somebody has gone elsewhere: to Finder, to an app with no window.
     keyboardHandOver.wentOn = nil
+    if let heir = keyboardHandOver.handedAcross?.to, app?.bundleID != windows[heir]?.bundleID, focusRequest?.window != heir {
+      theHandOverAcrossIsOver()
+    }
     holdNotesActivation(of: app)
     followFrontmostApp(justActivated: true)
   }

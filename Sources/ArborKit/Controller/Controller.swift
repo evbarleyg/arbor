@@ -700,6 +700,7 @@ public final class Controller {
     waitingForASpaceToLeave.removeAll()
     returningWindows.removeAll()
     stopAwaitingAnybody()
+    theHandOverAcrossIsOver()
     keyboardHandOver = KeyboardHandOver()
     letBe = nil
     scheduler.cancel("pending-slots")
