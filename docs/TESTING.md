@@ -563,11 +563,13 @@ window, how long it was until the first move, how much of that the stage took, w
 and `scripts/polish/judge.py` measures the films anywhere (how long, how eased, how many motions, what hopped, flickered or flashed), lays them out on sheets to look
 at, and scores them against `docs/POLISH.md`. `make polish-selftest` tries the judge on films drawn wrong in known ways.
 
-`scripts/mac-shell/probe-glide.sh` asks whether a real window can be seen moving if it is moved in steps through Accessibility, in place of a card on the stage: Arbor does not run.
-`glide.swift` gives a window its final size, then moves it along a straight road on Arbor's curve, 8 or 12 steps in 0.2 s, and writes down what every call took and how late it began; one step is the
-control. Each of the day's nine apps plays alone, then two and four together, from one thread and from a thread for each app, while the sampler looks 120 times a second. `judge-glide.py <folder>`, which needs
-no Mac, reads both logs into a table for each app and each set, and says by limits that its header states and its options change which apps stutter; its last two lines are made to grep for,
-`stutter: 1 of 9 apps` and `verdict: alive` (`dead` from two apps on). `picture-time.swift` times the other road beside it: pictures of 1, 4 and 8 windows from ScreenCaptureKit. Never run on a Mac yet.
+`scripts/mac-shell/probe-glide.sh` asks whether a real window can be seen moving as macOS's own tiling moves it, in place of a card on the stage, if its frame is set through Accessibility once for every
+frame of the display: Arbor does not run. `glide.swift` sets place and size, two askings, 18 times in 0.3 s on Arbor's curve, and writes down what every asking took and how late it began; its header has the
+rule for which of the two comes first (`--order by-edges`), and what no order can mend. One step is the control; `--menu` presses macOS's own Window > Move & Resize > Left, which is the bar. Each of the day's nine apps
+plays alone, on a road on which every edge moves and on one on which the far edges are to stand still, then in pairs of which one glides and the other is set once, while the sampler looks 120 times a second.
+`judge-glide.py <folder>`, which needs no Mac, reads both logs into a table for each app (frames reached, the longest gap, edges out of step, states with an edge off its road, where it ended, the processor's share)
+and says by limits that its header states and its options change which apps stutter; its last two lines are made to grep for, `stutter: 1 of 9 apps` and `verdict: alive` (`dead` from two apps on).
+`picture-time.swift` times the other road beside it: pictures of 1, 4 and 8 windows from ScreenCaptureKit. Never run on a Mac yet.
 
 **Only compiling.** `scripts/mac-shell/run.sh scripts/mac-shell/compile.sh` runs `swift build` on the Mac at your branch's
 head and brings back `build.log`, with the errors and warnings at the end of the output: for macOS-only code, or for a
@@ -799,7 +801,7 @@ copy from before the repository was public, and say what the script does once it
 | `check-resume.sh` | trunk | **never**: ends with 77 | | Calculator and TextEdit opened, brought forward in turn, and quit; `ARBOR_APPS_HERE=1` does not open it |
 | `shots-F15-apps.sh` | trunk | **never**: ends with 77 | | Ten real apps opened for their icons, and killed |
 | `first-dock.sh` (`first-dock.py`) | trunk | **never**: ends with 77 | | Nine real apps opened and quit, every window arranged, Reduce Motion, the display's size |
-| `probe-glide.sh` (`glide.swift`, `picture-time.swift`, `judge-glide.py`) | trunk | **never**: ends with 77 | | Nine real apps opened and quit, their windows moved and resized some 150 times through Accessibility, Reduce Motion, the display's size. Arbor does not run. `picture-time` takes pictures of the apps' windows to time them, and keeps none |
+| `probe-glide.sh` (`glide.swift`, `picture-time.swift`, `judge-glide.py`) | trunk | **never**: ends with 77 | | Nine real apps opened and quit, their windows moved and resized some 200 times through Accessibility, and tiled once each by macOS's own menu, Reduce Motion, the display's size. Arbor does not run. `picture-time` takes pictures of the apps' windows to time them, and keeps none |
 | `check-F52.sh`, `check-F63.sh` | not landed, trunk | **never**: end with 77 | | Virtual displays, Accessibility taken from every app |
 | `check-macos-double-click.sh` | trunk | safe, steps skip themselves | 40 s | macOS's other title-bar actions (it would change the setting), TextEdit and Terminal. A test window fills the display for some seconds |
 | `check-claimed-keys.sh` | trunk | **never**: ends with 77 | | Writes an entry for Arbor's bundle into the privacy database; types into whatever has the keyboard |
