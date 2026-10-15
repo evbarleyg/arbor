@@ -2,7 +2,7 @@
 
 Written by the executor swarm, 2026-10-14; for the documenter to review.
 
-Status: done (feat/F61-room-before-tiles)
+Status: done (feat/F61-room-before-tiles). **Since F64 (Q20) the Desktop counts as not in use, whatever floats on it, unless `floatingWindowsMakeWay` is on: what is said below of a Desktop in use holds only then.**
 Depends on: F01. Goes with F45 (what is learned about a size can be unlearned) and T21 (a single floating window fills the Desktop)
 Size: medium
 Reference items: T03, T20, A05

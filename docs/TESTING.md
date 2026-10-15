@@ -483,8 +483,8 @@ A double-click on a title bar fills the screen too (macOS's default for it), til
 Things that bite:
 
 - A window's title bar must not be covered when you press on it. The test windows open in a cascade with the
-  last one in front; floating windows are pushed onto the Desktop's part of the layout. `drag_window`, `titlebar_of` and
-  `click_window` look for a point that nothing covers.
+  last one in front, and floating windows stay where they are when something is docked, over it or behind it.
+  `drag_window`, `titlebar_of` and `click_window` look for a point that nothing covers.
 - `check` runs its command in a subshell, and `$(…)` among its arguments is evaluated once, before `eventually`
   starts trying: write `eventually wider_than $W1 400`, not `eventually test $(width_of $W1) -gt 400`.
 - Commands that act on the focused window, and shortcuts, need a real `click` on a test window first.
@@ -1347,6 +1347,13 @@ done to the world as if Arbor had done it, at which the net has to speak, beside
 **Arbor raises nothing else** (`ChaosInvariants+Raises.swift`, QUESTIONS Q20 and Q25): `raised-unasked` speaks at any raise, which is a window brought to the front without the keyboard, of a window that is neither kept in view nor summoned, at the step in which it is made,
 and at any raise at all by an Arbor that has paused or quit. `switched-to-behind` sees the harm only where the raised window happens to lie over the one just switched to. `asked: raised` counts how often a floating window that nothing keeps in view
 came back into view, which is where Arbor used to raise. Its controls and its floor are in `RaisesNothingElseTests`.
+
+**A floating window's frame is its person's** (F64, `ChaosInvariants+OwnFrames.swift`). The runner keeps its own record of where each floating window was when it went out of view and of what a hand left where, and asks the
+window system: `own-frame` (one in view was moved or resized, and nothing that happened was about it), `own-frame-back` (it came back somewhere else than it left from; `-after-undo` where an undo lies between),
+`own-frame-jolt` (in more than one move), `own-frame-fit` (it came back where nobody is known to have left it, and less than half of it shows). Walks switch `floatingWindowsMakeWay` on now and then. From
+there on the rules that placing, shoving and squeezing break (`rulesThatMakingWayBreaks`) are called `<rule>-making-way`, so **what is known of the old behaviour excuses nothing as Arbor ships**.
+`make test-making-way` runs the whole suite with the setting on wherever a test does not choose its settings, which is how the suite ran until F64: a test of how Arbor ships says `Settings()`, one of the old
+behaviour `Settings.makingWay`.
 
 The ways home (`way-back home`, `show-all`, `pause`, `float-all`, `start-again`, `quit`) are each taken at the end of every walk, the ones that leave the arrangement alone first.
 A hunt ends with `asked: <net> <n> times`: **a net that never asks its question catches nothing**, and `ordinaryWalksReachEveryQuestion` holds each to a floor.

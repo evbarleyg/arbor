@@ -124,7 +124,7 @@ Nothing moves when permission arrives. Arbor arranges nothing until you ask.
 ### Four moves
 
 1. **Dock.** Click any window and press **⌃⌥⌘←**. (Or drag it by its title bar to the left edge of the screen; a preview shows where it will land. With macOS's own tiling on, that edge is macOS's: the key works at every setting.)
-2. **Dock a second.** Click another and press **⌃⌥⌘→**. Windows that were floating where the docked ones now sit are nudged onto the Desktop between them.
+2. **Dock a second.** Click another and press **⌃⌥⌘→**. No other window moves: what floated where the docked ones now sit is still there, behind them, exactly as you left it.
 3. **Frame.** Click one of the docked windows and press **⌃⌥↩**. It fills the screen. **Your other windows are out of view, not closed.**
 4. **And back.** Press **⌃⌥↩** again (or ⌃⌥Space). The arrangement is back.
 
@@ -238,7 +238,9 @@ Frame a rectangle (with [the gestures switched on](#6-on-its-way)): hold **⇧**
 
 Calculator, a Finder window, a note: leave them floating. **⌃⌥D** gives the Desktop, and all of them, the whole screen; ⌃⌥[ returns. Small fixed-size windows can be docked too: they sit in the middle of their place.
 
-If you would rather see no wallpaper around a window that floats alone, `arborctl set soleFloatTakesDesktop true`: the only floating window then takes the whole Desktop, and has its own size back as soon as a second one floats. Drag it and it is its own size again where you drop it; resize it and it stays as you leave it; `arborctl float` makes it take the Desktop again.
+A floating window's place and size are yours. Arbor never moves or resizes one that is in view, whatever you dock, close, hide or minimize around it. It takes them out of view when the view leaves the Desktop, and puts each back exactly where it was. Only if the displays have changed meanwhile, so that less than half of a window would show, is it moved: the least that brings all of it into view. If you would rather have floating windows keep clear of docked ones, `arborctl set floatingWindowsMakeWay true`: docked windows then push them aside and squeeze them onto the Desktop, and they go back as room returns.
+
+If, with that on, you would also rather see no wallpaper around a window that floats alone, `arborctl set soleFloatTakesDesktop true`: the only floating window then takes the whole Desktop, and has its own size back as soon as a second one floats. Drag it and it is its own size again where you drop it; resize it and it stays as you leave it; `arborctl float` makes it take the Desktop again.
 
 ### A terminal for ten seconds
 

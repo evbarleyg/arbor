@@ -33,9 +33,9 @@ independent implementation and is not affiliated with it.
   again, at the size it had before. Let go anywhere else, where no preview shows,
   and a docked window goes back to its place. Hold ⌘ while dragging and nothing
   docks: the window floats. The keyboard docks too: ⌃⌥⌘ + arrow.
-- **The Desktop stays**: windows you have not docked float on the Desktop, between
-  the docked ones. They make way when a window docks and go back to where you
-  put them when there is room again.
+- **The Desktop stays**: windows you have not docked float exactly as they always have. Arbor never
+  moves or resizes one: it stays where you put it, over docked windows too, goes out of view when you
+  zoom in on something else, and comes back to the same place. ⌃⌥D shows all that floats.
 - **Zoom**: ⌃⌥↩ frames the focused window (again to return), ⌃⌥↑ steps out a level, ⌃⌥↓ steps
   in toward the window you are typing in (or pointing at), ⌃⌥Space shows everything, ⌃⌥[ and ⌃⌥] go back and forward.
 - **Peek**: hold ⌃⌥Space instead of tapping it. Everything shows while the keys are down; point at a window, or walk to it with
@@ -592,12 +592,13 @@ version changes one. [docs/SETTINGS.md](docs/SETTINGS.md) is the complete refere
 | `dropDwell` | 0.15 | Seconds to hold a dragged window over a window or tile before it can be dropped there (0 to 2); screen edges never wait |
 | `previewDrags` | true | Show where a dragged window will land. Without it nothing has to be held either |
 | `reflowWhileDragging` | false | While you drag, the other windows close up and make room, showing what letting go would do |
-| `keepPushed` | true | With `reflowWhileDragging`: floating windows pushed aside stay there until the drag ends |
+| `keepPushed` | true | With `reflowWhileDragging` and `floatingWindowsMakeWay`: floating windows pushed aside stay there until the drag ends |
 | `menuBarControls` | true | Buttons in the menu bar item; false shows a single icon that opens the menu |
 | `historyButtons` | true | Back and forward among those buttons |
 | `menuBarFill` | 0.25 | How strongly the button for where you are is filled in, from 0 to 1 |
 | `makeRoom` | true | Before a window becomes a tile because its app will not shrink that far, move the gaps around it and take the room from the Desktop and from neighbours that can spare it |
-| `soleFloatTakesDesktop` | false | A window that floats alone beside docked windows takes the whole Desktop, and has its own size back as soon as a second one floats |
+| `soleFloatTakesDesktop` | false | A window that floats alone beside docked windows takes the whole Desktop, and has its own size back as soon as a second one floats. Only with `floatingWindowsMakeWay` |
+| `floatingWindowsMakeWay` | false | Docked windows push floating windows aside and squeeze them, so that they stay on the Desktop. Off, a floating window stays exactly where you put it |
 | `resizeStep` | 40 | Points `grow` and `shrink` add or take when no amount is given |
 | `displays` | [] | Other values of `gap`, `minimumUsableWidth`, `minimumUsableHeight` and `screenEdgeBand` for particular displays (below) |
 | `messages` | "helpful" | What Arbor says on screen after a shortcut, a gesture or a menu item: "helpful" (problems, unseen changes, a few hints), "all" (every reply) or "off" |

@@ -2,7 +2,7 @@
 
 Written by the executor swarm, 2026-10-14; for the documenter to review.
 
-Status: done (`feat/F18-sole-float`)
+Status: done (`feat/F18-sole-float`). **Since F64 (Q20) it takes `floatingWindowsMakeWay` as well, which ships off: without it Arbor sizes no floating window.**
 Depends on: F01. Fits together with F48 (a window's own size), F49 (pinned windows), F57 (guests)
 Reference: T21 (inferred from the name of a setting; nobody has seen TrellisWM do it)
 

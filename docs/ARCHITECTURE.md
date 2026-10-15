@@ -96,9 +96,23 @@ windows changed, `.enforce` to put back docked windows that something else moved
 just excluded, `float-all`, quitting, and parking floating windows that arrive
 from a display that went away.)
 
-Floating windows live on the Desktop (`placeFloatingWindows`). Each has the frame
-the user last gave it (`Workspace.floating`), which Arbor's own moves never
-change. While the Desktop is in view, a window that was on it (give or take two
+**A floating window's frame is its person's** (`Controller+OwnFrames.swift`; `collab/QUESTIONS.md`, Q20). Arbor sets it only to
+take the window out of view and to put it back exactly where it was. Each floating window has the frame its person last gave it
+(`Workspace.floating`), and while it is in view that is where it is: no layout places, shoves or squeezes it, whatever is docked,
+closed, hidden or minimized around it, so floating and docked windows may overlap and macOS's order says which is in front. The
+plan for floating windows (`floatingMoves`) asks `moveKeepingItsFrame`, which knows two moves. When the camera moves and the Desktop
+is no longer part of the view, the window is parked, and where it is at that moment is noted as its frame
+(`noteWhereItLeavesFrom`), whoever put it there. When the Desktop is part of the view again, as a tile too, it is put back there in
+one move, and nothing is raised (`putBackWhereItWas`). The one exception is `whereItWas`: if the displays have changed meanwhile and
+less than half of the window would show, or its title bar would be out of reach, it is fitted into its display; what is
+remembered stays its own frame (`fittedFrames`), so that it goes back when the displays are as they were. A change of displays
+also displaces windows that are in view; `countAsOutOfViewWhatTheDisplaysDisplaced` says which of them the layout then fetches.
+For F61 the Desktop counts as not in use (`roomTerms`), and F18 is off (`soleFloatIsOn`). A command that is about a floating
+window (`float`, `grow`, `move-to-display`, `undo`) may put it anywhere on the display (`roomToFloat`).
+
+The rest of this section, and whatever below speaks of windows pushed aside or squeezed, is how it was until Q20 and still is
+with **`floatingWindowsMakeWay`** on: floating windows live on the Desktop (`placeFloatingWindows`), and Arbor's own moves never
+change the frame in `Workspace.floating`. While the Desktop is in view, a window that was on it (give or take two
 gaps) sits as near to that frame as the Desktop allows, so docked windows push
 it aside or shrink it and it goes back as they make room. On the sides where nothing
 is docked beside the Desktop they may reach the edge of the screen. When the camera
@@ -607,7 +621,7 @@ event can arrive a moment after the button is physically released.
 
 ## A window that floats alone
 
-With `soleFloatTakesDesktop` on (spec F18, `Controller+SoleFloat.swift`), `placeFloatingWindows` stretches the only floating window that takes
+With `soleFloatTakesDesktop` on, and `floatingWindowsMakeWay`, without which Arbor sizes no floating window (spec F18, `Controller+SoleFloat.swift`, `soleFloatIsOn`), `placeFloatingWindows` stretches the only floating window that takes
 up room on a display over the Desktop instead of placing it at its own frame. That frame stays in `Workspace.floating`, so the ways back
 need no code: as soon as the window has company, the setting goes off or no docked window is left, the next layout places it like any floating
 window. A floating window arriving, or leaving for another display, causes no layout by itself, so those events ask for one while the

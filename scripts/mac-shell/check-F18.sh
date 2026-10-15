@@ -20,7 +20,7 @@ has_size() {
 }
 
 arbor_build
-arbor_settings '{"soleFloatTakesDesktop": true}'
+arbor_settings '{"soleFloatTakesDesktop": true, "floatingWindowsMakeWay": true}'
 arbor_start 3
 read -r _ _ OWN_W OWN_H <<< "$(real_frame_of "$W3")"
 OWN="$OWN_W $OWN_H"
