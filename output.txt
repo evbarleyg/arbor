@@ -1,0 +1,1371 @@
+# mac-shell: scripts/mac-shell/probe-a-size-call-in-the-hand.sh at 19ca32f, macOS 26.6.2, 2026-10-15T09:12Z
+built Arbor, the pointer tool and the app bundles in 9s
+clock: built after 10s
+
+== the Mac
+ProductName:		macOS
+ProductVersion:		26.6.2
+BuildVersion:		25G83
+defaults read com.apple.WindowManager:
+  {
+      "LastHeartbeatDateString.daily" = "2026-10-15T09:07:59Z";
+  }
+com.apple.WindowManager EnableTilingByEdgeDrag: not set
+com.apple.WindowManager EnableTopTilingByEdgeDrag: not set
+com.apple.WindowManager EnableTilingOptionAccelerator: not set
+com.apple.WindowManager EnableTiledWindowMargins: not set
+Reduce Motion: true
+the Dock: orientation not set, autohide not set
+1 0 0 1024 768 1024 768 1
+  window 32 of dev.arbor.testwindows (AXWindow, AXStandardWindow) at 170 220 480 348
+  displays (start): 1: 0 0 1024 768 visible 0 31 1024 674
+  first:     170 220 480 348 (server 170 220 480 348) pointer 10 10 up
+  displays (end): 1: 0 0 1024 768 visible 0 31 1024 674
+
+== test-window.T1-smaller.1
+> drag 500 162 560 202 --no-release --steps 15 --duration 0.3 --hold 0.1
+> drag-on 620 202 --steps 10 --duration 0.4 --hold 0.1
+> release
+  put: 200 150 600 400
+  asked: size 480 300 (1.1 ms)
+    before:  261 190 600 400 (server 261 190 600 400) pointer 560 202 down
+    at once: 261 190 480 300 (server 261 190 600 400) pointer 560 202 down
+     50 ms:  261 190 480 300 (server 261 190 480 300) pointer 560 202 down
+    200 ms:  261 190 480 300 (server 261 190 480 300) pointer 560 202 down
+    500 ms:  261 190 480 300 (server 261 190 480 300) pointer 560 202 down
+    reports: AXResized 1.1
+  carried:   320 190 480 300 (server 320 190 480 300) pointer 620 202 down
+  let-go:    320 190 480 300 (server 320 190 480 300) pointer 620 202 up
+  rest:      320 190 480 300 (server 320 190 480 300) pointer 620 202 up
+
+== test-window.T4-narrower-than-where-it-is-held.1
+> drag 840 132 880 172 --no-release --steps 15 --duration 0.3 --hold 0.1
+> drag-on 820 172 --steps 10 --duration 0.4 --hold 0.1
+> release
+  put: 40 120 936 400
+  asked: size 304 400 (1.1 ms)
+    before:  80 160 936 400 (server 80 160 936 400) pointer 880 172 down
+    at once: 80 160 304 400 (server 80 160 936 400) pointer 880 172 down
+     50 ms:  80 160 304 400 (server 80 160 304 400) pointer 880 172 down
+    200 ms:  80 160 304 400 (server 80 160 304 400) pointer 880 172 down
+    500 ms:  80 160 304 400 (server 80 160 304 400) pointer 880 172 down
+    reports: AXResized 1.1
+  carried:   20 160 304 400 (server 20 160 304 400) pointer 820 172 down
+  let-go:    20 160 304 400 (server 20 160 304 400) pointer 820 172 up
+  rest:      20 160 304 400 (server 20 160 304 400) pointer 820 172 up
+
+== test-window.T5-wider-and-higher-held-left.1
+> drag 390 72 430 102 --no-release --steps 15 --duration 0.3 --hold 0.1
+> drag-on 490 102 --steps 10 --duration 0.4 --hold 0.1
+> release
+  put: 300 60 325 319
+  asked: size 480 600 (1.3 ms)
+    before:  341 90 325 319 (server 341 90 325 319) pointer 430 102 down
+    at once: 341 90 480 600 (server 341 90 325 319) pointer 430 102 down
+     50 ms:  341 90 480 600 (server 341 90 480 600) pointer 430 102 down
+    200 ms:  341 90 480 600 (server 341 90 480 600) pointer 430 102 down
+    500 ms:  341 90 480 600 (server 341 90 480 600) pointer 430 102 down
+    reports: AXResized 1.2
+  carried:   401 90 480 600 (server 401 90 480 600) pointer 490 102 down
+  let-go:    400 90 480 600 (server 400 90 480 600) pointer 490 102 up
+  rest:      400 90 480 600 (server 400 90 480 600) pointer 490 102 up
+
+== test-window.T5-wider-and-higher-held-in-the-middle.1
+> drag 462 72 502 102 --no-release --steps 15 --duration 0.3 --hold 0.1
+> drag-on 562 102 --steps 10 --duration 0.4 --hold 0.1
+> release
+  put: 300 60 325 319
+  asked: size 480 600 (1.0 ms)
+    before:  340 90 325 319 (server 340 90 325 319) pointer 502 102 down
+    at once: 340 90 480 600 (server 340 90 325 319) pointer 502 102 down
+     50 ms:  340 90 480 600 (server 340 90 480 600) pointer 502 102 down
+    200 ms:  340 90 480 600 (server 340 90 480 600) pointer 502 102 down
+    500 ms:  340 90 480 600 (server 340 90 480 600) pointer 502 102 down
+    reports: AXResized 1.0
+  carried:   400 90 480 600 (server 400 90 480 600) pointer 562 102 down
+  let-go:    400 90 480 600 (server 400 90 480 600) pointer 562 102 up
+  rest:      400 90 480 600 (server 400 90 480 600) pointer 562 102 up
+
+== test-window.T5-wider-and-higher-held-right.1
+> drag 600 72 640 102 --no-release --steps 15 --duration 0.3 --hold 0.1
+> drag-on 700 102 --steps 10 --duration 0.4 --hold 0.1
+> release
+  put: 300 60 325 319
+  asked: size 480 600 (1.2 ms)
+    before:  340 90 325 319 (server 340 90 325 319) pointer 640 102 down
+    at once: 340 90 480 600 (server 340 90 325 319) pointer 640 102 down
+     50 ms:  340 90 480 600 (server 340 90 480 600) pointer 640 102 down
+    200 ms:  340 90 480 600 (server 340 90 480 600) pointer 640 102 down
+    500 ms:  340 90 480 600 (server 340 90 480 600) pointer 640 102 down
+    reports: AXResized 1.2
+  carried:   400 90 480 600 (server 400 90 480 600) pointer 700 102 down
+  let-go:    400 90 480 600 (server 400 90 480 600) pointer 700 102 up
+  rest:      400 90 480 600 (server 400 90 480 600) pointer 700 102 up
+
+== test-window.T6a-the-cut-from-200-high.1
+> drag 462 376 502 416 --no-release --steps 15 --duration 0.3 --hold 0.1
+> drag-on 502 92 --steps 20 --duration 0.5 --hold 0.1
+> drag-on 562 92 --steps 10 --duration 0.4 --hold 0.1
+> release
+  put: 300 364 325 200
+  asked-low: size 325 600 (1.1 ms)
+    before:  341 404 325 200 (server 341 404 325 200) pointer 502 416 down
+    at once: 341 404 325 300 (server 341 404 325 200) pointer 502 416 down
+     50 ms:  341 404 325 300 (server 341 404 325 300) pointer 502 416 down
+    200 ms:  341 404 325 300 (server 341 404 325 300) pointer 502 416 down
+    500 ms:  341 404 325 300 (server 341 404 325 300) pointer 502 416 down
+    reports: AXResized 1.1
+  carried-up: 340 80 325 300 (server 340 80 325 300) pointer 502 92 down
+  asked-high: size 325 600 (1.2 ms)
+    before:  340 80 325 300 (server 340 80 325 300) pointer 502 92 down
+    at once: 340 80 325 600 (server 340 80 325 300) pointer 502 92 down
+     50 ms:  340 80 325 600 (server 340 80 325 600) pointer 502 92 down
+    200 ms:  340 80 325 600 (server 340 80 325 600) pointer 502 92 down
+    500 ms:  340 80 325 600 (server 340 80 325 600) pointer 502 92 down
+    reports: AXResized 1.2
+  carried:   400 80 325 600 (server 400 80 325 600) pointer 562 92 down
+  let-go:    400 80 325 600 (server 400 80 325 600) pointer 562 92 up
+  rest:      400 80 325 600 (server 400 80 325 600) pointer 562 92 up
+
+== test-window.T6b-the-cut-from-319-high.1
+> drag 462 376 502 416 --no-release --steps 15 --duration 0.3 --hold 0.1
+> drag-on 502 92 --steps 20 --duration 0.5 --hold 0.1
+> drag-on 562 92 --steps 10 --duration 0.4 --hold 0.1
+> release
+  put: 300 364 325 319
+  asked-low: size 325 600 (0.4 ms)
+    before:  341 385 325 319 (server 341 385 325 319) pointer 502 416 down
+    at once: 341 385 325 319 (server 341 385 325 319) pointer 502 416 down
+     50 ms:  341 385 325 319 (server 341 385 325 319) pointer 502 416 down
+    200 ms:  341 385 325 319 (server 341 385 325 319) pointer 502 416 down
+    500 ms:  341 385 325 319 (server 341 385 325 319) pointer 502 416 down
+    reports: none
+  carried-up: 341 62 325 319 (server 341 62 325 319) pointer 502 92 down
+  asked-high: size 325 600 (0.8 ms)
+    before:  341 62 325 319 (server 341 62 325 319) pointer 502 92 down
+    at once: 341 62 325 600 (server 341 62 325 319) pointer 502 92 down
+     50 ms:  341 62 325 600 (server 341 62 325 600) pointer 502 92 down
+    200 ms:  341 62 325 600 (server 341 62 325 600) pointer 502 92 down
+    500 ms:  341 62 325 600 (server 341 62 325 600) pointer 502 92 down
+    reports: AXResized 0.8
+  carried:   401 62 325 600 (server 401 62 325 600) pointer 562 92 down
+  let-go:    400 62 325 600 (server 400 62 325 600) pointer 562 92 up
+  rest:      400 62 325 600 (server 400 62 325 600) pointer 562 92 up
+
+== test-window.T7-5-ms-after-the-release.1
+> drag 500 162 560 202 --no-release --steps 15 --duration 0.3 --hold 0.1
+> release
+  put: 200 150 600 400
+  held:      261 190 600 400 (server 261 190 600 400) pointer 560 202 down
+  asked: size 480 300 (1.1 ms), 5.01 ms after the release
+    at once: 260 190 480 300 (server 260 190 600 400) pointer 560 202 up
+     50 ms:  260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+    200 ms:  260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+    500 ms:  260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+    reports: AXResized 1.1
+  rest:      260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+
+== test-window.T7-20-ms-after-the-release.1
+> drag 500 162 560 202 --no-release --steps 15 --duration 0.3 --hold 0.1
+> release
+  put: 200 150 600 400
+  held:      261 190 600 400 (server 261 190 600 400) pointer 560 202 down
+  asked: size 480 300 (1.2 ms), 20.03 ms after the release
+    at once: 260 190 480 300 (server 260 190 600 400) pointer 560 202 up
+     50 ms:  260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+    200 ms:  260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+    500 ms:  260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+    reports: AXResized 1.2
+  rest:      260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+
+== test-window.T7-50-ms-after-the-release.1
+> drag 500 162 560 202 --no-release --steps 15 --duration 0.3 --hold 0.1
+> release
+  put: 200 150 600 400
+  held:      261 190 600 400 (server 261 190 600 400) pointer 560 202 down
+  asked: size 480 300 (1.1 ms), 50.01 ms after the release
+    at once: 260 190 480 300 (server 260 190 600 400) pointer 560 202 up
+     50 ms:  260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+    200 ms:  260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+    500 ms:  260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+    reports: AXResized 1.1
+  rest:      260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+
+== test-window.T9-sized-where-it-fits-then-moved.1
+  put: 624 404 400 319
+  there-and-back: pos 624 80 (0.4 ms); size 400 600 (1.0 ms); pos 624 404 (0.2 ms)
+    before:  624 404 400 319 (server 624 404 400 319) pointer 560 202 up
+    at once: 624 404 400 600 (server 624 80 400 319) pointer 560 202 up
+     50 ms:  624 404 400 600 (server 624 404 400 600) pointer 560 202 up
+    200 ms:  624 404 400 600 (server 624 404 400 600) pointer 560 202 up
+    500 ms:  624 404 400 600 (server 624 404 400 600) pointer 560 202 up
+    reports: AXMoved 0.4; AXResized 1.5; AXMoved 1.7
+  rest:      624 404 400 600 (server 624 404 400 600) pointer 560 202 up
+
+== test-window.T1-smaller.2
+> drag 500 162 560 202 --no-release --steps 15 --duration 0.3 --hold 0.1
+> drag-on 620 202 --steps 10 --duration 0.4 --hold 0.1
+> release
+  put: 200 150 600 400
+  asked: size 480 300 (1.3 ms)
+    before:  261 190 600 400 (server 261 190 600 400) pointer 560 202 down
+    at once: 261 190 480 300 (server 261 190 600 400) pointer 560 202 down
+     50 ms:  261 190 480 300 (server 261 190 480 300) pointer 560 202 down
+    200 ms:  261 190 480 300 (server 261 190 480 300) pointer 560 202 down
+    500 ms:  261 190 480 300 (server 261 190 480 300) pointer 560 202 down
+    reports: AXResized 1.3
+  carried:   321 190 480 300 (server 321 190 480 300) pointer 620 202 down
+  let-go:    320 190 480 300 (server 320 190 480 300) pointer 620 202 up
+  rest:      320 190 480 300 (server 320 190 480 300) pointer 620 202 up
+
+== test-window.T4-narrower-than-where-it-is-held.2
+> drag 840 132 880 172 --no-release --steps 15 --duration 0.3 --hold 0.1
+> drag-on 820 172 --steps 10 --duration 0.4 --hold 0.1
+> release
+  put: 40 120 936 400
+  asked: size 304 400 (1.0 ms)
+    before:  81 160 936 400 (server 81 160 936 400) pointer 880 172 down
+    at once: 81 160 304 400 (server 81 160 936 400) pointer 880 172 down
+     50 ms:  81 160 304 400 (server 81 160 304 400) pointer 880 172 down
+    200 ms:  81 160 304 400 (server 81 160 304 400) pointer 880 172 down
+    500 ms:  81 160 304 400 (server 81 160 304 400) pointer 880 172 down
+    reports: AXResized 1.0
+  carried:   20 160 304 400 (server 20 160 304 400) pointer 820 172 down
+  let-go:    20 160 304 400 (server 20 160 304 400) pointer 820 172 up
+  rest:      20 160 304 400 (server 20 160 304 400) pointer 820 172 up
+
+== test-window.T5-wider-and-higher-held-left.2
+> drag 390 72 430 102 --no-release --steps 15 --duration 0.3 --hold 0.1
+> drag-on 490 102 --steps 10 --duration 0.4 --hold 0.1
+> release
+  put: 300 60 325 319
+  asked: size 480 600 (1.1 ms)
+    before:  341 90 325 319 (server 341 90 325 319) pointer 430 102 down
+    at once: 341 90 480 600 (server 341 90 325 319) pointer 430 102 down
+     50 ms:  341 90 480 600 (server 341 90 480 600) pointer 430 102 down
+    200 ms:  341 90 480 600 (server 341 90 480 600) pointer 430 102 down
+    500 ms:  341 90 480 600 (server 341 90 480 600) pointer 430 102 down
+    reports: AXResized 1.1
+  carried:   401 90 480 600 (server 401 90 480 600) pointer 490 102 down
+  let-go:    400 90 480 600 (server 400 90 480 600) pointer 490 102 up
+  rest:      400 90 480 600 (server 400 90 480 600) pointer 490 102 up
+
+== test-window.T5-wider-and-higher-held-in-the-middle.2
+> drag 462 72 502 102 --no-release --steps 15 --duration 0.3 --hold 0.1
+> drag-on 562 102 --steps 10 --duration 0.4 --hold 0.1
+> release
+  put: 300 60 325 319
+  asked: size 480 600 (1.2 ms)
+    before:  341 90 325 319 (server 341 90 325 319) pointer 502 102 down
+    at once: 341 90 480 600 (server 341 90 325 319) pointer 502 102 down
+     50 ms:  341 90 480 600 (server 341 90 480 600) pointer 502 102 down
+    200 ms:  341 90 480 600 (server 341 90 480 600) pointer 502 102 down
+    500 ms:  341 90 480 600 (server 341 90 480 600) pointer 502 102 down
+    reports: AXResized 1.1
+  carried:   401 90 480 600 (server 401 90 480 600) pointer 562 102 down
+  let-go:    400 90 480 600 (server 400 90 480 600) pointer 562 102 up
+  rest:      400 90 480 600 (server 400 90 480 600) pointer 562 102 up
+
+== test-window.T5-wider-and-higher-held-right.2
+> drag 600 72 640 102 --no-release --steps 15 --duration 0.3 --hold 0.1
+> drag-on 700 102 --steps 10 --duration 0.4 --hold 0.1
+> release
+  put: 300 60 325 319
+  asked: size 480 600 (0.9 ms)
+    before:  341 90 325 319 (server 341 90 325 319) pointer 640 102 down
+    at once: 341 90 480 600 (server 341 90 325 319) pointer 640 102 down
+     50 ms:  341 90 480 600 (server 341 90 480 600) pointer 640 102 down
+    200 ms:  341 90 480 600 (server 341 90 480 600) pointer 640 102 down
+    500 ms:  341 90 480 600 (server 341 90 480 600) pointer 640 102 down
+    reports: AXResized 0.9
+  carried:   401 90 480 600 (server 401 90 480 600) pointer 700 102 down
+  let-go:    400 90 480 600 (server 400 90 480 600) pointer 700 102 up
+  rest:      400 90 480 600 (server 400 90 480 600) pointer 700 102 up
+
+== test-window.T6a-the-cut-from-200-high.2
+> drag 462 376 502 416 --no-release --steps 15 --duration 0.3 --hold 0.1
+> drag-on 502 92 --steps 20 --duration 0.5 --hold 0.1
+> drag-on 562 92 --steps 10 --duration 0.4 --hold 0.1
+> release
+  put: 300 364 325 200
+  asked-low: size 325 600 (0.7 ms)
+    before:  341 404 325 200 (server 341 404 325 200) pointer 502 416 down
+    at once: 341 404 325 300 (server 341 404 325 200) pointer 502 416 down
+     50 ms:  341 404 325 300 (server 341 404 325 300) pointer 502 416 down
+    200 ms:  341 404 325 300 (server 341 404 325 300) pointer 502 416 down
+    500 ms:  341 404 325 300 (server 341 404 325 300) pointer 502 416 down
+    reports: AXResized 0.8
+  carried-up: 340 80 325 300 (server 340 80 325 300) pointer 502 92 down
+  asked-high: size 325 600 (1.0 ms)
+    before:  340 80 325 300 (server 340 80 325 300) pointer 502 92 down
+    at once: 340 80 325 600 (server 340 80 325 300) pointer 502 92 down
+     50 ms:  340 80 325 600 (server 340 80 325 600) pointer 502 92 down
+    200 ms:  340 80 325 600 (server 340 80 325 600) pointer 502 92 down
+    500 ms:  340 80 325 600 (server 340 80 325 600) pointer 502 92 down
+    reports: AXResized 1.0
+  carried:   401 80 325 600 (server 401 80 325 600) pointer 562 92 down
+  let-go:    400 80 325 600 (server 400 80 325 600) pointer 562 92 up
+  rest:      400 80 325 600 (server 400 80 325 600) pointer 562 92 up
+
+== test-window.T6b-the-cut-from-319-high.2
+> drag 462 376 502 416 --no-release --steps 15 --duration 0.3 --hold 0.1
+> drag-on 502 92 --steps 20 --duration 0.5 --hold 0.1
+> drag-on 562 92 --steps 10 --duration 0.4 --hold 0.1
+> release
+  put: 300 364 325 319
+  asked-low: size 325 600 (0.4 ms)
+    before:  341 385 325 319 (server 341 385 325 319) pointer 502 416 down
+    at once: 341 385 325 319 (server 341 385 325 319) pointer 502 416 down
+     50 ms:  341 385 325 319 (server 341 385 325 319) pointer 502 416 down
+    200 ms:  341 385 325 319 (server 341 385 325 319) pointer 502 416 down
+    500 ms:  341 385 325 319 (server 341 385 325 319) pointer 502 416 down
+    reports: none
+  carried-up: 341 62 325 319 (server 341 62 325 319) pointer 502 92 down
+  asked-high: size 325 600 (0.8 ms)
+    before:  341 62 325 319 (server 341 62 325 319) pointer 502 92 down
+    at once: 341 62 325 600 (server 341 62 325 319) pointer 502 92 down
+     50 ms:  341 62 325 600 (server 341 62 325 600) pointer 502 92 down
+    200 ms:  341 62 325 600 (server 341 62 325 600) pointer 502 92 down
+    500 ms:  341 62 325 600 (server 341 62 325 600) pointer 502 92 down
+    reports: AXResized 0.7
+  carried:   400 62 325 600 (server 400 62 325 600) pointer 562 92 down
+  let-go:    400 62 325 600 (server 400 62 325 600) pointer 562 92 up
+  rest:      400 62 325 600 (server 400 62 325 600) pointer 562 92 up
+
+== test-window.T7-5-ms-after-the-release.2
+> drag 500 162 560 202 --no-release --steps 15 --duration 0.3 --hold 0.1
+> release
+  put: 200 150 600 400
+  held:      260 190 600 400 (server 260 190 600 400) pointer 560 202 down
+  asked: size 480 300 (0.9 ms), 5.01 ms after the release
+    at once: 260 190 480 300 (server 260 190 600 400) pointer 560 202 up
+     50 ms:  260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+    200 ms:  260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+    500 ms:  260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+    reports: AXResized 0.9
+  rest:      260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+
+== test-window.T7-20-ms-after-the-release.2
+> drag 500 162 560 202 --no-release --steps 15 --duration 0.3 --hold 0.1
+> release
+  put: 200 150 600 400
+  held:      261 190 600 400 (server 261 190 600 400) pointer 560 202 down
+  asked: size 480 300 (1.3 ms), 20.01 ms after the release
+    at once: 260 190 480 300 (server 260 190 600 400) pointer 560 202 up
+     50 ms:  260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+    200 ms:  260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+    500 ms:  260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+    reports: AXResized 1.3
+  rest:      260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+
+== test-window.T7-50-ms-after-the-release.2
+> drag 500 162 560 202 --no-release --steps 15 --duration 0.3 --hold 0.1
+> release
+  put: 200 150 600 400
+  held:      261 190 600 400 (server 261 190 600 400) pointer 560 202 down
+  asked: size 480 300 (1.2 ms), 50.03 ms after the release
+    at once: 260 190 480 300 (server 260 190 600 400) pointer 560 202 up
+     50 ms:  260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+    200 ms:  260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+    500 ms:  260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+    reports: AXResized 1.2
+  rest:      260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+
+== test-window.T9-sized-where-it-fits-then-moved.2
+  put: 624 404 400 319
+  there-and-back: pos 624 80 (0.4 ms); size 400 600 (1.0 ms); pos 624 404 (0.2 ms)
+    before:  624 404 400 319 (server 624 404 400 319) pointer 560 202 up
+    at once: 624 404 400 600 (server 624 80 400 319) pointer 560 202 up
+     50 ms:  624 404 400 600 (server 624 404 400 600) pointer 560 202 up
+    200 ms:  624 404 400 600 (server 624 404 400 600) pointer 560 202 up
+    500 ms:  624 404 400 600 (server 624 404 400 600) pointer 560 202 up
+    reports: AXMoved 0.5; AXResized 1.5; AXMoved 1.7
+  rest:      624 404 400 600 (server 624 404 400 600) pointer 560 202 up
+
+== test-window.T1-smaller.3
+> drag 500 162 560 202 --no-release --steps 15 --duration 0.3 --hold 0.1
+> drag-on 620 202 --steps 10 --duration 0.4 --hold 0.1
+> release
+  put: 200 150 600 400
+  asked: size 480 300 (0.9 ms)
+    before:  261 190 600 400 (server 261 190 600 400) pointer 560 202 down
+    at once: 261 190 480 300 (server 261 190 600 400) pointer 560 202 down
+     50 ms:  261 190 480 300 (server 261 190 480 300) pointer 560 202 down
+    200 ms:  261 190 480 300 (server 261 190 480 300) pointer 560 202 down
+    500 ms:  261 190 480 300 (server 261 190 480 300) pointer 560 202 down
+    reports: AXResized 0.9
+  carried:   320 190 480 300 (server 320 190 480 300) pointer 620 202 down
+  let-go:    320 190 480 300 (server 320 190 480 300) pointer 620 202 up
+  rest:      320 190 480 300 (server 320 190 480 300) pointer 620 202 up
+
+== test-window.T4-narrower-than-where-it-is-held.3
+> drag 840 132 880 172 --no-release --steps 15 --duration 0.3 --hold 0.1
+> drag-on 820 172 --steps 10 --duration 0.4 --hold 0.1
+> release
+  put: 40 120 936 400
+  asked: size 304 400 (2.1 ms)
+    before:  81 160 936 400 (server 81 160 936 400) pointer 880 172 down
+    at once: 81 160 304 400 (server 81 160 304 400) pointer 880 172 down
+     50 ms:  81 160 304 400 (server 81 160 304 400) pointer 880 172 down
+    200 ms:  81 160 304 400 (server 81 160 304 400) pointer 880 172 down
+    500 ms:  81 160 304 400 (server 81 160 304 400) pointer 880 172 down
+    reports: AXResized 2.0
+  carried:   21 160 304 400 (server 21 160 304 400) pointer 820 172 down
+  let-go:    20 160 304 400 (server 20 160 304 400) pointer 820 172 up
+  rest:      20 160 304 400 (server 20 160 304 400) pointer 820 172 up
+
+== test-window.T5-wider-and-higher-held-left.3
+> drag 390 72 430 102 --no-release --steps 15 --duration 0.3 --hold 0.1
+> drag-on 490 102 --steps 10 --duration 0.4 --hold 0.1
+> release
+  put: 300 60 325 319
+  asked: size 480 600 (1.2 ms)
+    before:  340 90 325 319 (server 340 90 325 319) pointer 430 102 down
+    at once: 340 90 480 600 (server 340 90 325 319) pointer 430 102 down
+     50 ms:  340 90 480 600 (server 340 90 480 600) pointer 430 102 down
+    200 ms:  340 90 480 600 (server 340 90 480 600) pointer 430 102 down
+    500 ms:  340 90 480 600 (server 340 90 480 600) pointer 430 102 down
+    reports: AXResized 1.2
+  carried:   401 90 480 600 (server 401 90 480 600) pointer 490 102 down
+  let-go:    400 90 480 600 (server 400 90 480 600) pointer 490 102 up
+  rest:      400 90 480 600 (server 400 90 480 600) pointer 490 102 up
+
+== test-window.T5-wider-and-higher-held-in-the-middle.3
+> drag 462 72 502 102 --no-release --steps 15 --duration 0.3 --hold 0.1
+> drag-on 562 102 --steps 10 --duration 0.4 --hold 0.1
+> release
+  put: 300 60 325 319
+  asked: size 480 600 (1.0 ms)
+    before:  341 90 325 319 (server 341 90 325 319) pointer 502 102 down
+    at once: 341 90 480 600 (server 341 90 325 319) pointer 502 102 down
+     50 ms:  341 90 480 600 (server 341 90 480 600) pointer 502 102 down
+    200 ms:  341 90 480 600 (server 341 90 480 600) pointer 502 102 down
+    500 ms:  341 90 480 600 (server 341 90 480 600) pointer 502 102 down
+    reports: AXResized 1.0
+  carried:   401 90 480 600 (server 401 90 480 600) pointer 562 102 down
+  let-go:    400 90 480 600 (server 400 90 480 600) pointer 562 102 up
+  rest:      400 90 480 600 (server 400 90 480 600) pointer 562 102 up
+
+== test-window.T5-wider-and-higher-held-right.3
+> drag 600 72 640 102 --no-release --steps 15 --duration 0.3 --hold 0.1
+> drag-on 700 102 --steps 10 --duration 0.4 --hold 0.1
+> release
+  put: 300 60 325 319
+  asked: size 480 600 (1.0 ms)
+    before:  340 90 325 319 (server 340 90 325 319) pointer 640 102 down
+    at once: 340 90 480 600 (server 340 90 325 319) pointer 640 102 down
+     50 ms:  340 90 480 600 (server 340 90 480 600) pointer 640 102 down
+    200 ms:  340 90 480 600 (server 340 90 480 600) pointer 640 102 down
+    500 ms:  340 90 480 600 (server 340 90 480 600) pointer 640 102 down
+    reports: AXResized 1.0
+  carried:   401 90 480 600 (server 401 90 480 600) pointer 700 102 down
+  let-go:    400 90 480 600 (server 400 90 480 600) pointer 700 102 up
+  rest:      400 90 480 600 (server 400 90 480 600) pointer 700 102 up
+
+== test-window.T6a-the-cut-from-200-high.3
+> drag 462 376 502 416 --no-release --steps 15 --duration 0.3 --hold 0.1
+> drag-on 502 92 --steps 20 --duration 0.5 --hold 0.1
+> drag-on 562 92 --steps 10 --duration 0.4 --hold 0.1
+> release
+  put: 300 364 325 200
+  asked-low: size 325 600 (1.3 ms)
+    before:  341 404 325 200 (server 341 404 325 200) pointer 502 416 down
+    at once: 341 404 325 300 (server 341 404 325 200) pointer 502 416 down
+     50 ms:  341 404 325 300 (server 341 404 325 300) pointer 502 416 down
+    200 ms:  341 404 325 300 (server 341 404 325 300) pointer 502 416 down
+    500 ms:  341 404 325 300 (server 341 404 325 300) pointer 502 416 down
+    reports: AXResized 1.2
+  carried-up: 341 80 325 300 (server 341 80 325 300) pointer 502 92 down
+  asked-high: size 325 600 (1.0 ms)
+    before:  341 80 325 300 (server 341 80 325 300) pointer 502 92 down
+    at once: 341 80 325 600 (server 341 80 325 300) pointer 502 92 down
+     50 ms:  341 80 325 600 (server 341 80 325 600) pointer 502 92 down
+    200 ms:  341 80 325 600 (server 341 80 325 600) pointer 502 92 down
+    500 ms:  341 80 325 600 (server 341 80 325 600) pointer 502 92 down
+    reports: AXResized 1.0
+  carried:   401 80 325 600 (server 401 80 325 600) pointer 562 92 down
+  let-go:    400 80 325 600 (server 400 80 325 600) pointer 562 92 up
+  rest:      400 80 325 600 (server 400 80 325 600) pointer 562 92 up
+
+== test-window.T6b-the-cut-from-319-high.3
+> drag 462 376 502 416 --no-release --steps 15 --duration 0.3 --hold 0.1
+> drag-on 502 92 --steps 20 --duration 0.5 --hold 0.1
+> drag-on 562 92 --steps 10 --duration 0.4 --hold 0.1
+> release
+  put: 300 364 325 319
+  asked-low: size 325 600 (0.3 ms)
+    before:  341 385 325 319 (server 341 385 325 319) pointer 502 416 down
+    at once: 341 385 325 319 (server 341 385 325 319) pointer 502 416 down
+     50 ms:  341 385 325 319 (server 341 385 325 319) pointer 502 416 down
+    200 ms:  341 385 325 319 (server 341 385 325 319) pointer 502 416 down
+    500 ms:  341 385 325 319 (server 341 385 325 319) pointer 502 416 down
+    reports: none
+  carried-up: 340 62 325 319 (server 340 62 325 319) pointer 502 92 down
+  asked-high: size 325 600 (1.0 ms)
+    before:  340 62 325 319 (server 340 62 325 319) pointer 502 92 down
+    at once: 340 62 325 600 (server 340 62 325 319) pointer 502 92 down
+     50 ms:  340 62 325 600 (server 340 62 325 600) pointer 502 92 down
+    200 ms:  340 62 325 600 (server 340 62 325 600) pointer 502 92 down
+    500 ms:  340 62 325 600 (server 340 62 325 600) pointer 502 92 down
+    reports: AXResized 0.9
+  carried:   401 62 325 600 (server 401 62 325 600) pointer 562 92 down
+  let-go:    400 62 325 600 (server 400 62 325 600) pointer 562 92 up
+  rest:      400 62 325 600 (server 400 62 325 600) pointer 562 92 up
+
+== test-window.T7-5-ms-after-the-release.3
+> drag 500 162 560 202 --no-release --steps 15 --duration 0.3 --hold 0.1
+> release
+  put: 200 150 600 400
+  held:      260 190 600 400 (server 260 190 600 400) pointer 560 202 down
+  asked: size 480 300 (1.5 ms), 5.02 ms after the release
+    at once: 260 190 480 300 (server 260 190 600 400) pointer 560 202 up
+     50 ms:  260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+    200 ms:  260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+    500 ms:  260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+    reports: AXResized 1.5
+  rest:      260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+
+== test-window.T7-20-ms-after-the-release.3
+> drag 500 162 560 202 --no-release --steps 15 --duration 0.3 --hold 0.1
+> release
+  put: 200 150 600 400
+  held:      261 190 600 400 (server 261 190 600 400) pointer 560 202 down
+  asked: size 480 300 (2.2 ms), 20.02 ms after the release
+    at once: 260 190 480 300 (server 260 190 600 400) pointer 560 202 up
+     50 ms:  260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+    200 ms:  260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+    500 ms:  260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+    reports: AXResized 2.2
+  rest:      260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+
+== test-window.T7-50-ms-after-the-release.3
+> drag 500 162 560 202 --no-release --steps 15 --duration 0.3 --hold 0.1
+> release
+  put: 200 150 600 400
+  held:      260 190 600 400 (server 260 190 600 400) pointer 560 202 down
+  asked: size 480 300 (1.8 ms), 50.01 ms after the release
+    at once: 260 190 480 300 (server 260 190 600 400) pointer 560 202 up
+     50 ms:  260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+    200 ms:  260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+    500 ms:  260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+    reports: AXResized 1.8
+  rest:      260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+
+== test-window.T9-sized-where-it-fits-then-moved.3
+  put: 624 404 400 319
+  there-and-back: pos 624 80 (0.4 ms); size 400 600 (0.9 ms); pos 624 404 (0.1 ms)
+    before:  624 404 400 319 (server 624 404 400 319) pointer 560 202 up
+    at once: 624 404 400 600 (server 624 404 400 319) pointer 560 202 up
+     50 ms:  624 404 400 600 (server 624 404 400 600) pointer 560 202 up
+    200 ms:  624 404 400 600 (server 624 404 400 600) pointer 560 202 up
+    500 ms:  624 404 400 600 (server 624 404 400 600) pointer 560 202 up
+    reports: AXMoved 0.4; AXResized 1.3; AXMoved 1.4
+  rest:      624 404 400 600 (server 624 404 400 600) pointer 560 202 up
+
+== test-window.T1-smaller.4
+> drag 500 162 560 202 --no-release --steps 15 --duration 0.3 --hold 0.1
+> drag-on 620 202 --steps 10 --duration 0.4 --hold 0.1
+> release
+  put: 200 150 600 400
+  asked: size 480 300 (1.2 ms)
+    before:  261 190 600 400 (server 261 190 600 400) pointer 560 202 down
+    at once: 261 190 480 300 (server 261 190 480 300) pointer 560 202 down
+     50 ms:  261 190 480 300 (server 261 190 480 300) pointer 560 202 down
+    200 ms:  261 190 480 300 (server 261 190 480 300) pointer 560 202 down
+    500 ms:  261 190 480 300 (server 261 190 480 300) pointer 560 202 down
+    reports: AXResized 1.1
+  carried:   320 190 480 300 (server 320 190 480 300) pointer 620 202 down
+  let-go:    320 190 480 300 (server 320 190 480 300) pointer 620 202 up
+  rest:      320 190 480 300 (server 320 190 480 300) pointer 620 202 up
+
+== test-window.T4-narrower-than-where-it-is-held.4
+> drag 840 132 880 172 --no-release --steps 15 --duration 0.3 --hold 0.1
+> drag-on 820 172 --steps 10 --duration 0.4 --hold 0.1
+> release
+  put: 40 120 936 400
+  asked: size 304 400 (1.0 ms)
+    before:  80 160 936 400 (server 80 160 936 400) pointer 880 172 down
+    at once: 80 160 304 400 (server 80 160 936 400) pointer 880 172 down
+     50 ms:  80 160 304 400 (server 80 160 304 400) pointer 880 172 down
+    200 ms:  80 160 304 400 (server 80 160 304 400) pointer 880 172 down
+    500 ms:  80 160 304 400 (server 80 160 304 400) pointer 880 172 down
+    reports: AXResized 1.0
+  carried:   21 160 304 400 (server 21 160 304 400) pointer 820 172 down
+  let-go:    20 160 304 400 (server 20 160 304 400) pointer 820 172 up
+  rest:      20 160 304 400 (server 20 160 304 400) pointer 820 172 up
+
+== test-window.T5-wider-and-higher-held-left.4
+> drag 390 72 430 102 --no-release --steps 15 --duration 0.3 --hold 0.1
+> drag-on 490 102 --steps 10 --duration 0.4 --hold 0.1
+> release
+  put: 300 60 325 319
+  asked: size 480 600 (1.2 ms)
+    before:  341 90 325 319 (server 341 90 325 319) pointer 430 102 down
+    at once: 341 90 480 600 (server 341 90 325 319) pointer 430 102 down
+     50 ms:  341 90 480 600 (server 341 90 480 600) pointer 430 102 down
+    200 ms:  341 90 480 600 (server 341 90 480 600) pointer 430 102 down
+    500 ms:  341 90 480 600 (server 341 90 480 600) pointer 430 102 down
+    reports: AXResized 1.1
+  carried:   401 90 480 600 (server 401 90 480 600) pointer 490 102 down
+  let-go:    400 90 480 600 (server 400 90 480 600) pointer 490 102 up
+  rest:      400 90 480 600 (server 400 90 480 600) pointer 490 102 up
+
+== test-window.T5-wider-and-higher-held-in-the-middle.4
+> drag 462 72 502 102 --no-release --steps 15 --duration 0.3 --hold 0.1
+> drag-on 562 102 --steps 10 --duration 0.4 --hold 0.1
+> release
+  put: 300 60 325 319
+  asked: size 480 600 (1.1 ms)
+    before:  341 90 325 319 (server 341 90 325 319) pointer 502 102 down
+    at once: 341 90 480 600 (server 341 90 325 319) pointer 502 102 down
+     50 ms:  341 90 480 600 (server 341 90 480 600) pointer 502 102 down
+    200 ms:  341 90 480 600 (server 341 90 480 600) pointer 502 102 down
+    500 ms:  341 90 480 600 (server 341 90 480 600) pointer 502 102 down
+    reports: AXResized 1.1
+  carried:   400 90 480 600 (server 400 90 480 600) pointer 562 102 down
+  let-go:    400 90 480 600 (server 400 90 480 600) pointer 562 102 up
+  rest:      400 90 480 600 (server 400 90 480 600) pointer 562 102 up
+
+== test-window.T5-wider-and-higher-held-right.4
+> drag 600 72 640 102 --no-release --steps 15 --duration 0.3 --hold 0.1
+> drag-on 700 102 --steps 10 --duration 0.4 --hold 0.1
+> release
+  put: 300 60 325 319
+  asked: size 480 600 (1.3 ms)
+    before:  341 90 325 319 (server 341 90 325 319) pointer 640 102 down
+    at once: 341 90 480 600 (server 341 90 325 319) pointer 640 102 down
+     50 ms:  341 90 480 600 (server 341 90 480 600) pointer 640 102 down
+    200 ms:  341 90 480 600 (server 341 90 480 600) pointer 640 102 down
+    500 ms:  341 90 480 600 (server 341 90 480 600) pointer 640 102 down
+    reports: AXResized 1.3
+  carried:   401 90 480 600 (server 401 90 480 600) pointer 700 102 down
+  let-go:    400 90 480 600 (server 400 90 480 600) pointer 700 102 up
+  rest:      400 90 480 600 (server 400 90 480 600) pointer 700 102 up
+
+== test-window.T6a-the-cut-from-200-high.4
+> drag 462 376 502 416 --no-release --steps 15 --duration 0.3 --hold 0.1
+> drag-on 502 92 --steps 20 --duration 0.5 --hold 0.1
+> drag-on 562 92 --steps 10 --duration 0.4 --hold 0.1
+> release
+  put: 300 364 325 200
+  asked-low: size 325 600 (0.7 ms)
+    before:  341 404 325 200 (server 341 404 325 200) pointer 502 416 down
+    at once: 341 404 325 300 (server 341 404 325 200) pointer 502 416 down
+     50 ms:  341 404 325 300 (server 341 404 325 300) pointer 502 416 down
+    200 ms:  341 404 325 300 (server 341 404 325 300) pointer 502 416 down
+    500 ms:  341 404 325 300 (server 341 404 325 300) pointer 502 416 down
+    reports: AXResized 0.7
+  carried-up: 341 80 325 300 (server 341 80 325 300) pointer 502 92 down
+  asked-high: size 325 600 (0.8 ms)
+    before:  341 80 325 300 (server 341 80 325 300) pointer 502 92 down
+    at once: 341 80 325 600 (server 341 80 325 300) pointer 502 92 down
+     50 ms:  341 80 325 600 (server 341 80 325 600) pointer 502 92 down
+    200 ms:  341 80 325 600 (server 341 80 325 600) pointer 502 92 down
+    500 ms:  341 80 325 600 (server 341 80 325 600) pointer 502 92 down
+    reports: AXResized 0.8
+  carried:   401 80 325 600 (server 401 80 325 600) pointer 562 92 down
+  let-go:    400 80 325 600 (server 400 80 325 600) pointer 562 92 up
+  rest:      400 80 325 600 (server 400 80 325 600) pointer 562 92 up
+
+== test-window.T6b-the-cut-from-319-high.4
+> drag 462 376 502 416 --no-release --steps 15 --duration 0.3 --hold 0.1
+> drag-on 502 92 --steps 20 --duration 0.5 --hold 0.1
+> drag-on 562 92 --steps 10 --duration 0.4 --hold 0.1
+> release
+  put: 300 364 325 319
+  asked-low: size 325 600 (0.3 ms)
+    before:  341 385 325 319 (server 341 385 325 319) pointer 502 416 down
+    at once: 341 385 325 319 (server 341 385 325 319) pointer 502 416 down
+     50 ms:  341 385 325 319 (server 341 385 325 319) pointer 502 416 down
+    200 ms:  341 385 325 319 (server 341 385 325 319) pointer 502 416 down
+    500 ms:  341 385 325 319 (server 341 385 325 319) pointer 502 416 down
+    reports: none
+  carried-up: 341 62 325 319 (server 341 62 325 319) pointer 502 92 down
+  asked-high: size 325 600 (1.0 ms)
+    before:  341 62 325 319 (server 341 62 325 319) pointer 502 92 down
+    at once: 341 62 325 600 (server 341 62 325 319) pointer 502 92 down
+     50 ms:  341 62 325 600 (server 341 62 325 600) pointer 502 92 down
+    200 ms:  341 62 325 600 (server 341 62 325 600) pointer 502 92 down
+    500 ms:  341 62 325 600 (server 341 62 325 600) pointer 502 92 down
+    reports: AXResized 1.0
+  carried:   401 62 325 600 (server 401 62 325 600) pointer 562 92 down
+  let-go:    400 62 325 600 (server 400 62 325 600) pointer 562 92 up
+  rest:      400 62 325 600 (server 400 62 325 600) pointer 562 92 up
+
+== test-window.T7-5-ms-after-the-release.4
+> drag 500 162 560 202 --no-release --steps 15 --duration 0.3 --hold 0.1
+> release
+  put: 200 150 600 400
+  held:      261 190 600 400 (server 261 190 600 400) pointer 560 202 down
+  asked: size 480 300 (1.4 ms), 5.01 ms after the release
+    at once: 260 190 480 300 (server 260 190 600 400) pointer 560 202 up
+     50 ms:  260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+    200 ms:  260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+    500 ms:  260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+    reports: AXResized 1.4
+  rest:      260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+
+== test-window.T7-20-ms-after-the-release.4
+> drag 500 162 560 202 --no-release --steps 15 --duration 0.3 --hold 0.1
+> release
+  put: 200 150 600 400
+  held:      261 190 600 400 (server 261 190 600 400) pointer 560 202 down
+  asked: size 480 300 (0.8 ms), 20.01 ms after the release
+    at once: 260 190 480 300 (server 260 190 600 400) pointer 560 202 up
+     50 ms:  260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+    200 ms:  260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+    500 ms:  260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+    reports: AXResized 0.8
+  rest:      260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+
+== test-window.T7-50-ms-after-the-release.4
+> drag 500 162 560 202 --no-release --steps 15 --duration 0.3 --hold 0.1
+> release
+  put: 200 150 600 400
+  held:      261 190 600 400 (server 261 190 600 400) pointer 560 202 down
+  asked: size 480 300 (1.3 ms), 50.02 ms after the release
+    at once: 260 190 480 300 (server 260 190 600 400) pointer 560 202 up
+     50 ms:  260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+    200 ms:  260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+    500 ms:  260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+    reports: AXResized 1.2
+  rest:      260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+
+== test-window.T9-sized-where-it-fits-then-moved.4
+  put: 624 404 400 319
+  there-and-back: pos 624 80 (0.8 ms); size 400 600 (1.5 ms); pos 624 404 (0.3 ms)
+    before:  624 404 400 319 (server 624 404 400 319) pointer 560 202 up
+    at once: 624 404 400 600 (server 624 80 400 319) pointer 560 202 up
+     50 ms:  624 404 400 600 (server 624 404 400 600) pointer 560 202 up
+    200 ms:  624 404 400 600 (server 624 404 400 600) pointer 560 202 up
+    500 ms:  624 404 400 600 (server 624 404 400 600) pointer 560 202 up
+    reports: AXMoved 0.8; AXResized 2.3; AXMoved 2.6
+  rest:      624 404 400 600 (server 624 404 400 600) pointer 560 202 up
+
+== test-window.T1-smaller.5
+> drag 500 162 560 202 --no-release --steps 15 --duration 0.3 --hold 0.1
+> drag-on 620 202 --steps 10 --duration 0.4 --hold 0.1
+> release
+  put: 200 150 600 400
+  asked: size 480 300 (1.3 ms)
+    before:  261 190 600 400 (server 261 190 600 400) pointer 560 202 down
+    at once: 261 190 480 300 (server 261 190 600 400) pointer 560 202 down
+     50 ms:  261 190 480 300 (server 261 190 480 300) pointer 560 202 down
+    200 ms:  261 190 480 300 (server 261 190 480 300) pointer 560 202 down
+    500 ms:  261 190 480 300 (server 261 190 480 300) pointer 560 202 down
+    reports: AXResized 1.2
+  carried:   320 190 480 300 (server 320 190 480 300) pointer 620 202 down
+  let-go:    320 190 480 300 (server 320 190 480 300) pointer 620 202 up
+  rest:      320 190 480 300 (server 320 190 480 300) pointer 620 202 up
+
+== test-window.T4-narrower-than-where-it-is-held.5
+> drag 840 132 880 172 --no-release --steps 15 --duration 0.3 --hold 0.1
+> drag-on 820 172 --steps 10 --duration 0.4 --hold 0.1
+> release
+  put: 40 120 936 400
+  asked: size 304 400 (0.9 ms)
+    before:  80 160 936 400 (server 80 160 936 400) pointer 880 172 down
+    at once: 80 160 304 400 (server 80 160 936 400) pointer 880 172 down
+     50 ms:  80 160 304 400 (server 80 160 304 400) pointer 880 172 down
+    200 ms:  80 160 304 400 (server 80 160 304 400) pointer 880 172 down
+    500 ms:  80 160 304 400 (server 80 160 304 400) pointer 880 172 down
+    reports: AXResized 0.8
+  carried:   21 160 304 400 (server 21 160 304 400) pointer 820 172 down
+  let-go:    20 160 304 400 (server 20 160 304 400) pointer 820 172 up
+  rest:      20 160 304 400 (server 20 160 304 400) pointer 820 172 up
+
+== test-window.T5-wider-and-higher-held-left.5
+> drag 390 72 430 102 --no-release --steps 15 --duration 0.3 --hold 0.1
+> drag-on 490 102 --steps 10 --duration 0.4 --hold 0.1
+> release
+  put: 300 60 325 319
+  asked: size 480 600 (1.2 ms)
+    before:  341 90 325 319 (server 341 90 325 319) pointer 430 102 down
+    at once: 341 90 480 600 (server 341 90 325 319) pointer 430 102 down
+     50 ms:  341 90 480 600 (server 341 90 480 600) pointer 430 102 down
+    200 ms:  341 90 480 600 (server 341 90 480 600) pointer 430 102 down
+    500 ms:  341 90 480 600 (server 341 90 480 600) pointer 430 102 down
+    reports: AXResized 1.2
+  carried:   400 90 480 600 (server 400 90 480 600) pointer 490 102 down
+  let-go:    400 90 480 600 (server 400 90 480 600) pointer 490 102 up
+  rest:      400 90 480 600 (server 400 90 480 600) pointer 490 102 up
+
+== test-window.T5-wider-and-higher-held-in-the-middle.5
+> drag 462 72 502 102 --no-release --steps 15 --duration 0.3 --hold 0.1
+> drag-on 562 102 --steps 10 --duration 0.4 --hold 0.1
+> release
+  put: 300 60 325 319
+  asked: size 480 600 (1.6 ms)
+    before:  341 90 325 319 (server 341 90 325 319) pointer 502 102 down
+    at once: 341 90 480 600 (server 341 90 325 319) pointer 502 102 down
+     50 ms:  341 90 480 600 (server 341 90 480 600) pointer 502 102 down
+    200 ms:  341 90 480 600 (server 341 90 480 600) pointer 502 102 down
+    500 ms:  341 90 480 600 (server 341 90 480 600) pointer 502 102 down
+    reports: AXResized 1.6
+  carried:   400 90 480 600 (server 400 90 480 600) pointer 562 102 down
+  let-go:    400 90 480 600 (server 400 90 480 600) pointer 562 102 up
+  rest:      400 90 480 600 (server 400 90 480 600) pointer 562 102 up
+
+== test-window.T5-wider-and-higher-held-right.5
+> drag 600 72 640 102 --no-release --steps 15 --duration 0.3 --hold 0.1
+> drag-on 700 102 --steps 10 --duration 0.4 --hold 0.1
+> release
+  put: 300 60 325 319
+  asked: size 480 600 (1.0 ms)
+    before:  341 90 325 319 (server 341 90 325 319) pointer 640 102 down
+    at once: 341 90 480 600 (server 341 90 325 319) pointer 640 102 down
+     50 ms:  341 90 480 600 (server 341 90 480 600) pointer 640 102 down
+    200 ms:  341 90 480 600 (server 341 90 480 600) pointer 640 102 down
+    500 ms:  341 90 480 600 (server 341 90 480 600) pointer 640 102 down
+    reports: AXResized 1.0
+  carried:   401 90 480 600 (server 401 90 480 600) pointer 700 102 down
+  let-go:    400 90 480 600 (server 400 90 480 600) pointer 700 102 up
+  rest:      400 90 480 600 (server 400 90 480 600) pointer 700 102 up
+
+== test-window.T6a-the-cut-from-200-high.5
+> drag 462 376 502 416 --no-release --steps 15 --duration 0.3 --hold 0.1
+> drag-on 502 92 --steps 20 --duration 0.5 --hold 0.1
+> drag-on 562 92 --steps 10 --duration 0.4 --hold 0.1
+> release
+  put: 300 364 325 200
+  asked-low: size 325 600 (1.1 ms)
+    before:  340 404 325 200 (server 340 404 325 200) pointer 502 416 down
+    at once: 340 404 325 300 (server 340 404 325 200) pointer 502 416 down
+     50 ms:  340 404 325 300 (server 340 404 325 300) pointer 502 416 down
+    200 ms:  340 404 325 300 (server 340 404 325 300) pointer 502 416 down
+    500 ms:  340 404 325 300 (server 340 404 325 300) pointer 502 416 down
+    reports: AXResized 1.1
+  carried-up: 340 80 325 300 (server 340 80 325 300) pointer 502 92 down
+  asked-high: size 325 600 (0.7 ms)
+    before:  340 80 325 300 (server 340 80 325 300) pointer 502 92 down
+    at once: 340 80 325 600 (server 340 80 325 300) pointer 502 92 down
+     50 ms:  340 80 325 600 (server 340 80 325 600) pointer 502 92 down
+    200 ms:  340 80 325 600 (server 340 80 325 600) pointer 502 92 down
+    500 ms:  340 80 325 600 (server 340 80 325 600) pointer 502 92 down
+    reports: AXResized 0.7
+  carried:   401 80 325 600 (server 401 80 325 600) pointer 562 92 down
+  let-go:    400 80 325 600 (server 400 80 325 600) pointer 562 92 up
+  rest:      400 80 325 600 (server 400 80 325 600) pointer 562 92 up
+
+== test-window.T6b-the-cut-from-319-high.5
+> drag 462 376 502 416 --no-release --steps 15 --duration 0.3 --hold 0.1
+> drag-on 502 92 --steps 20 --duration 0.5 --hold 0.1
+> drag-on 562 92 --steps 10 --duration 0.4 --hold 0.1
+> release
+  put: 300 364 325 319
+  asked-low: size 325 600 (0.3 ms)
+    before:  341 385 325 319 (server 341 385 325 319) pointer 502 416 down
+    at once: 341 385 325 319 (server 341 385 325 319) pointer 502 416 down
+     50 ms:  341 385 325 319 (server 341 385 325 319) pointer 502 416 down
+    200 ms:  341 385 325 319 (server 341 385 325 319) pointer 502 416 down
+    500 ms:  341 385 325 319 (server 341 385 325 319) pointer 502 416 down
+    reports: none
+  carried-up: 341 62 325 319 (server 341 62 325 319) pointer 502 92 down
+  asked-high: size 325 600 (0.7 ms)
+    before:  341 62 325 319 (server 341 62 325 319) pointer 502 92 down
+    at once: 341 62 325 600 (server 341 62 325 319) pointer 502 92 down
+     50 ms:  341 62 325 600 (server 341 62 325 600) pointer 502 92 down
+    200 ms:  341 62 325 600 (server 341 62 325 600) pointer 502 92 down
+    500 ms:  341 62 325 600 (server 341 62 325 600) pointer 502 92 down
+    reports: AXResized 0.7
+  carried:   401 62 325 600 (server 401 62 325 600) pointer 562 92 down
+  let-go:    400 62 325 600 (server 400 62 325 600) pointer 562 92 up
+  rest:      400 62 325 600 (server 400 62 325 600) pointer 562 92 up
+
+== test-window.T7-5-ms-after-the-release.5
+> drag 500 162 560 202 --no-release --steps 15 --duration 0.3 --hold 0.1
+> release
+  put: 200 150 600 400
+  held:      261 190 600 400 (server 261 190 600 400) pointer 560 202 down
+  asked: size 480 300 (1.1 ms), 5.01 ms after the release
+    at once: 260 190 480 300 (server 260 190 600 400) pointer 560 202 up
+     50 ms:  260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+    200 ms:  260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+    500 ms:  260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+    reports: AXResized 1.0
+  rest:      260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+
+== test-window.T7-20-ms-after-the-release.5
+> drag 500 162 560 202 --no-release --steps 15 --duration 0.3 --hold 0.1
+> release
+  put: 200 150 600 400
+  held:      261 190 600 400 (server 261 190 600 400) pointer 560 202 down
+  asked: size 480 300 (1.4 ms), 20.02 ms after the release
+    at once: 260 190 480 300 (server 260 190 600 400) pointer 560 202 up
+     50 ms:  260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+    200 ms:  260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+    500 ms:  260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+    reports: AXResized 1.4
+  rest:      260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+
+== test-window.T7-50-ms-after-the-release.5
+> drag 500 162 560 202 --no-release --steps 15 --duration 0.3 --hold 0.1
+> release
+  put: 200 150 600 400
+  held:      261 190 600 400 (server 261 190 600 400) pointer 560 202 down
+  asked: size 480 300 (1.9 ms), 50.12 ms after the release
+    at once: 260 190 480 300 (server 260 190 600 400) pointer 560 202 up
+     50 ms:  260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+    200 ms:  260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+    500 ms:  260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+    reports: AXResized 1.9
+  rest:      260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+
+== test-window.T9-sized-where-it-fits-then-moved.5
+  put: 624 404 400 319
+  there-and-back: pos 624 80 (0.4 ms); size 400 600 (1.2 ms); pos 624 404 (0.1 ms)
+    before:  624 404 400 319 (server 624 404 400 319) pointer 560 202 up
+    at once: 624 404 400 600 (server 624 404 400 319) pointer 560 202 up
+     50 ms:  624 404 400 600 (server 624 80 400 319) pointer 560 202 up
+    200 ms:  624 404 400 600 (server 624 404 400 600) pointer 560 202 up
+    500 ms:  624 404 400 600 (server 624 404 400 600) pointer 560 202 up
+    reports: AXMoved 0.4; AXResized 1.6; AXMoved 1.8
+  rest:      624 404 400 600 (server 624 404 400 600) pointer 560 202 up
+clock: the test window done after 302s
+
+== textedit opens
+> open -g -b com.apple.TextEdit /tmp/arbor-apps.9RDVJm/scratch/oak.txt
+pid 20970 lists (id role subrole x y w h flags):
+  38 AXWindow AXStandardWindow 79 56 673 439 main
+  window 38 of com.apple.TextEdit (AXWindow, AXStandardWindow) at 79 56 673 439
+  displays (start): 1: 0 0 1024 768 visible 0 31 1024 677
+  put: 200 150 600 400
+  displays (end): 1: 0 0 1024 768 visible 0 31 1024 677
+held 12 points below its top (AXWindow)
+
+== textedit.T1-smaller.1
+> drag 500 162 560 202 --no-release --steps 15 --duration 0.3 --hold 0.1
+> drag-on 620 202 --steps 10 --duration 0.4 --hold 0.1
+> release
+  put: 200 150 600 400
+  asked: size 480 300 (3.9 ms)
+    before:  261 190 600 400 (server 261 190 600 400) pointer 560 202 down
+    at once: 261 190 480 300 (server 261 190 600 400) pointer 560 202 down
+     50 ms:  261 190 480 300 (server 261 190 480 300) pointer 560 202 down
+    200 ms:  261 190 480 300 (server 261 190 480 300) pointer 560 202 down
+    500 ms:  261 190 480 300 (server 261 190 480 300) pointer 560 202 down
+    reports: AXResized 3.8
+  carried:   321 190 480 300 (server 321 190 480 300) pointer 620 202 down
+  let-go:    320 190 480 300 (server 320 190 480 300) pointer 620 202 up
+  rest:      320 190 480 300 (server 320 190 480 300) pointer 620 202 up
+
+== textedit.T4-narrower-than-where-it-is-held.1
+> drag 840 132 880 172 --no-release --steps 15 --duration 0.3 --hold 0.1
+> drag-on 820 172 --steps 10 --duration 0.4 --hold 0.1
+> release
+  put: 40 120 936 400
+  asked: size 304 400 (1.8 ms)
+    before:  81 160 936 400 (server 81 160 936 400) pointer 880 172 down
+    at once: 81 160 304 400 (server 81 160 936 400) pointer 880 172 down
+     50 ms:  81 160 304 400 (server 81 160 304 400) pointer 880 172 down
+    200 ms:  81 160 304 400 (server 81 160 304 400) pointer 880 172 down
+    500 ms:  81 160 304 400 (server 81 160 304 400) pointer 880 172 down
+    reports: AXResized 1.8
+  carried:   21 160 304 400 (server 21 160 304 400) pointer 820 172 down
+  let-go:    20 160 304 400 (server 20 160 304 400) pointer 820 172 up
+  rest:      20 160 304 400 (server 20 160 304 400) pointer 820 172 up
+
+== textedit.T5-wider-and-higher-held-in-the-middle.1
+> drag 462 72 502 102 --no-release --steps 15 --duration 0.3 --hold 0.1
+> drag-on 562 102 --steps 10 --duration 0.4 --hold 0.1
+> release
+  put: 300 60 325 319
+  asked: size 480 600 (2.2 ms)
+    before:  340 84 325 319 (server 340 84 325 319) pointer 502 102 down
+    at once: 340 84 480 600 (server 340 84 325 319) pointer 502 102 down
+     50 ms:  340 84 480 600 (server 340 84 480 600) pointer 502 102 down
+    200 ms:  340 84 480 600 (server 340 84 480 600) pointer 502 102 down
+    500 ms:  340 84 480 600 (server 340 84 480 600) pointer 502 102 down
+    reports: AXResized 2.1
+  carried:   401 84 480 600 (server 401 84 480 600) pointer 562 102 down
+  let-go:    400 84 480 600 (server 400 84 480 600) pointer 562 102 up
+  rest:      400 84 480 600 (server 400 84 480 600) pointer 562 102 up
+
+== textedit.T6a-the-cut-from-200-high.1
+> drag 462 376 502 416 --no-release --steps 15 --duration 0.3 --hold 0.1
+> drag-on 502 92 --steps 20 --duration 0.5 --hold 0.1
+> drag-on 562 92 --steps 10 --duration 0.4 --hold 0.1
+> release
+  put: 300 364 325 200
+  asked-low: size 325 600 (2.3 ms)
+    before:  340 404 325 200 (server 340 404 325 200) pointer 502 416 down
+    at once: 340 404 325 303 (server 340 404 325 200) pointer 502 416 down
+     50 ms:  340 404 325 303 (server 340 404 325 303) pointer 502 416 down
+    200 ms:  340 404 325 303 (server 340 404 325 303) pointer 502 416 down
+    500 ms:  340 404 325 303 (server 340 404 325 303) pointer 502 416 down
+    reports: AXResized 2.2
+  carried-up: 341 80 325 303 (server 341 80 325 303) pointer 502 92 down
+  asked-high: size 325 600 (1.8 ms)
+    before:  341 80 325 303 (server 341 80 325 303) pointer 502 92 down
+    at once: 341 80 325 600 (server 341 80 325 303) pointer 502 92 down
+     50 ms:  341 80 325 600 (server 341 80 325 600) pointer 502 92 down
+    200 ms:  341 80 325 600 (server 341 80 325 600) pointer 502 92 down
+    500 ms:  341 80 325 600 (server 341 80 325 600) pointer 502 92 down
+    reports: AXResized 1.8
+  carried:   401 80 325 600 (server 401 80 325 600) pointer 562 92 down
+  let-go:    400 80 325 600 (server 400 80 325 600) pointer 562 92 up
+  rest:      400 80 325 600 (server 400 80 325 600) pointer 562 92 up
+
+== textedit.T7-20-ms-after-the-release.1
+> drag 500 162 560 202 --no-release --steps 15 --duration 0.3 --hold 0.1
+> release
+  put: 200 150 600 400
+  held:      261 190 600 400 (server 261 190 600 400) pointer 560 202 down
+  asked: size 480 300 (2.6 ms), 20.01 ms after the release
+    at once: 260 190 480 300 (server 260 190 600 400) pointer 560 202 up
+     50 ms:  260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+    200 ms:  260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+    500 ms:  260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+    reports: AXResized 2.5
+  rest:      260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+
+== textedit.T9-sized-where-it-fits-then-moved.1
+  put: 624 404 400 319
+  there-and-back: pos 624 80 (0.4 ms); size 400 600 (2.3 ms); pos 624 404 (0.4 ms)
+    before:  624 404 400 319 (server 624 404 400 319) pointer 560 202 up
+    at once: 624 404 400 600 (server 624 80 400 319) pointer 560 202 up
+     50 ms:  624 404 400 600 (server 624 404 400 600) pointer 560 202 up
+    200 ms:  624 404 400 600 (server 624 404 400 600) pointer 560 202 up
+    500 ms:  624 404 400 600 (server 624 404 400 600) pointer 560 202 up
+    reports: AXMoved 0.4; AXResized 2.7; AXMoved 3.1
+  rest:      624 404 400 600 (server 624 404 400 600) pointer 560 202 up
+
+== textedit.T1-smaller.2
+> drag 500 162 560 202 --no-release --steps 15 --duration 0.3 --hold 0.1
+> drag-on 620 202 --steps 10 --duration 0.4 --hold 0.1
+> release
+  put: 200 150 600 400
+  asked: size 480 300 (2.5 ms)
+    before:  261 190 600 400 (server 261 190 600 400) pointer 560 202 down
+    at once: 261 190 480 300 (server 261 190 600 400) pointer 560 202 down
+     50 ms:  261 190 480 300 (server 261 190 480 300) pointer 560 202 down
+    200 ms:  261 190 480 300 (server 261 190 480 300) pointer 560 202 down
+    500 ms:  261 190 480 300 (server 261 190 480 300) pointer 560 202 down
+    reports: AXResized 2.4
+  carried:   321 190 480 300 (server 321 190 480 300) pointer 620 202 down
+  let-go:    320 190 480 300 (server 320 190 480 300) pointer 620 202 up
+  rest:      320 190 480 300 (server 320 190 480 300) pointer 620 202 up
+
+== textedit.T4-narrower-than-where-it-is-held.2
+> drag 840 132 880 172 --no-release --steps 15 --duration 0.3 --hold 0.1
+> drag-on 820 172 --steps 10 --duration 0.4 --hold 0.1
+> release
+  put: 40 120 936 400
+  asked: size 304 400 (1.8 ms)
+    before:  81 160 936 400 (server 81 160 936 400) pointer 880 172 down
+    at once: 81 160 304 400 (server 81 160 936 400) pointer 880 172 down
+     50 ms:  81 160 304 400 (server 81 160 304 400) pointer 880 172 down
+    200 ms:  81 160 304 400 (server 81 160 304 400) pointer 880 172 down
+    500 ms:  81 160 304 400 (server 81 160 304 400) pointer 880 172 down
+    reports: AXResized 1.7
+  carried:   21 160 304 400 (server 21 160 304 400) pointer 820 172 down
+  let-go:    20 160 304 400 (server 20 160 304 400) pointer 820 172 up
+  rest:      20 160 304 400 (server 20 160 304 400) pointer 820 172 up
+
+== textedit.T5-wider-and-higher-held-in-the-middle.2
+> drag 462 72 502 102 --no-release --steps 15 --duration 0.3 --hold 0.1
+> drag-on 562 102 --steps 10 --duration 0.4 --hold 0.1
+> release
+  put: 300 60 325 319
+  asked: size 480 600 (2.7 ms)
+    before:  340 84 325 319 (server 340 84 325 319) pointer 502 102 down
+    at once: 340 84 480 600 (server 340 84 325 319) pointer 502 102 down
+     50 ms:  340 84 480 600 (server 340 84 480 600) pointer 502 102 down
+    200 ms:  340 84 480 600 (server 340 84 480 600) pointer 502 102 down
+    500 ms:  340 84 480 600 (server 340 84 480 600) pointer 502 102 down
+    reports: AXResized 2.7
+  carried:   401 84 480 600 (server 401 84 480 600) pointer 562 102 down
+  let-go:    400 84 480 600 (server 400 84 480 600) pointer 562 102 up
+  rest:      400 84 480 600 (server 400 84 480 600) pointer 562 102 up
+
+== textedit.T6a-the-cut-from-200-high.2
+> drag 462 376 502 416 --no-release --steps 15 --duration 0.3 --hold 0.1
+> drag-on 502 92 --steps 20 --duration 0.5 --hold 0.1
+> drag-on 562 92 --steps 10 --duration 0.4 --hold 0.1
+> release
+  put: 300 364 325 200
+  asked-low: size 325 600 (1.9 ms)
+    before:  341 404 325 200 (server 341 404 325 200) pointer 502 416 down
+    at once: 341 404 325 303 (server 341 404 325 200) pointer 502 416 down
+     50 ms:  341 404 325 303 (server 341 404 325 303) pointer 502 416 down
+    200 ms:  341 404 325 303 (server 341 404 325 303) pointer 502 416 down
+    500 ms:  341 404 325 303 (server 341 404 325 303) pointer 502 416 down
+    reports: AXResized 1.9
+  carried-up: 341 80 325 303 (server 341 80 325 303) pointer 502 92 down
+  asked-high: size 325 600 (2.5 ms)
+    before:  341 80 325 303 (server 341 80 325 303) pointer 502 92 down
+    at once: 341 80 325 600 (server 341 80 325 303) pointer 502 92 down
+     50 ms:  341 80 325 600 (server 341 80 325 600) pointer 502 92 down
+    200 ms:  341 80 325 600 (server 341 80 325 600) pointer 502 92 down
+    500 ms:  341 80 325 600 (server 341 80 325 600) pointer 502 92 down
+    reports: AXResized 2.4
+  carried:   401 80 325 600 (server 401 80 325 600) pointer 562 92 down
+  let-go:    400 80 325 600 (server 400 80 325 600) pointer 562 92 up
+  rest:      400 80 325 600 (server 400 80 325 600) pointer 562 92 up
+
+== textedit.T7-20-ms-after-the-release.2
+> drag 500 162 560 202 --no-release --steps 15 --duration 0.3 --hold 0.1
+> release
+  put: 200 150 600 400
+  held:      261 190 600 400 (server 261 190 600 400) pointer 560 202 down
+  asked: size 480 300 (3.9 ms), 20.02 ms after the release
+    at once: 260 190 480 300 (server 260 190 600 400) pointer 560 202 up
+     50 ms:  260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+    200 ms:  260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+    500 ms:  260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+    reports: AXResized 3.9
+  rest:      260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+
+== textedit.T9-sized-where-it-fits-then-moved.2
+  put: 624 404 400 319
+  there-and-back: pos 624 80 (0.4 ms); size 400 600 (2.2 ms); pos 624 404 (0.2 ms)
+    before:  624 404 400 319 (server 624 404 400 319) pointer 560 202 up
+    at once: 624 404 400 600 (server 624 80 400 319) pointer 560 202 up
+     50 ms:  624 404 400 600 (server 624 404 400 600) pointer 560 202 up
+    200 ms:  624 404 400 600 (server 624 404 400 600) pointer 560 202 up
+    500 ms:  624 404 400 600 (server 624 404 400 600) pointer 560 202 up
+    reports: AXMoved 0.4; AXResized 2.5; AXMoved 2.8
+  rest:      624 404 400 600 (server 624 404 400 600) pointer 560 202 up
+
+== textedit.T1-smaller.3
+> drag 500 162 560 202 --no-release --steps 15 --duration 0.3 --hold 0.1
+> drag-on 620 202 --steps 10 --duration 0.4 --hold 0.1
+> release
+  put: 200 150 600 400
+  asked: size 480 300 (2.8 ms)
+    before:  260 190 600 400 (server 260 190 600 400) pointer 560 202 down
+    at once: 260 190 480 300 (server 260 190 600 400) pointer 560 202 down
+     50 ms:  260 190 480 300 (server 260 190 480 300) pointer 560 202 down
+    200 ms:  260 190 480 300 (server 260 190 480 300) pointer 560 202 down
+    500 ms:  260 190 480 300 (server 260 190 480 300) pointer 560 202 down
+    reports: AXResized 2.7
+  carried:   321 190 480 300 (server 321 190 480 300) pointer 620 202 down
+  let-go:    320 190 480 300 (server 320 190 480 300) pointer 620 202 up
+  rest:      320 190 480 300 (server 320 190 480 300) pointer 620 202 up
+
+== textedit.T4-narrower-than-where-it-is-held.3
+> drag 840 132 880 172 --no-release --steps 15 --duration 0.3 --hold 0.1
+> drag-on 820 172 --steps 10 --duration 0.4 --hold 0.1
+> release
+  put: 40 120 936 400
+  asked: size 304 400 (2.6 ms)
+    before:  80 160 936 400 (server 80 160 936 400) pointer 880 172 down
+    at once: 80 160 304 400 (server 80 160 936 400) pointer 880 172 down
+     50 ms:  80 160 304 400 (server 80 160 304 400) pointer 880 172 down
+    200 ms:  80 160 304 400 (server 80 160 304 400) pointer 880 172 down
+    500 ms:  80 160 304 400 (server 80 160 304 400) pointer 880 172 down
+    reports: AXResized 2.5
+  carried:   21 160 304 400 (server 21 160 304 400) pointer 820 172 down
+  let-go:    20 160 304 400 (server 20 160 304 400) pointer 820 172 up
+  rest:      20 160 304 400 (server 20 160 304 400) pointer 820 172 up
+
+== textedit.T5-wider-and-higher-held-in-the-middle.3
+> drag 462 72 502 102 --no-release --steps 15 --duration 0.3 --hold 0.1
+> drag-on 562 102 --steps 10 --duration 0.4 --hold 0.1
+> release
+  put: 300 60 325 319
+  asked: size 480 600 (2.6 ms)
+    before:  341 84 325 319 (server 341 84 325 319) pointer 502 102 down
+    at once: 341 84 480 600 (server 341 84 325 319) pointer 502 102 down
+     50 ms:  341 84 480 600 (server 341 84 480 600) pointer 502 102 down
+    200 ms:  341 84 480 600 (server 341 84 480 600) pointer 502 102 down
+    500 ms:  341 84 480 600 (server 341 84 480 600) pointer 502 102 down
+    reports: AXResized 2.5
+  carried:   401 84 480 600 (server 401 84 480 600) pointer 562 102 down
+  let-go:    400 84 480 600 (server 400 84 480 600) pointer 562 102 up
+  rest:      400 84 480 600 (server 400 84 480 600) pointer 562 102 up
+
+== textedit.T6a-the-cut-from-200-high.3
+> drag 462 376 502 416 --no-release --steps 15 --duration 0.3 --hold 0.1
+> drag-on 502 92 --steps 20 --duration 0.5 --hold 0.1
+> drag-on 562 92 --steps 10 --duration 0.4 --hold 0.1
+> release
+  put: 300 364 325 200
+  asked-low: size 325 600 (3.2 ms)
+    before:  341 404 325 200 (server 341 404 325 200) pointer 502 416 down
+    at once: 341 404 325 303 (server 341 404 325 200) pointer 502 416 down
+     50 ms:  341 404 325 303 (server 341 404 325 303) pointer 502 416 down
+    200 ms:  341 404 325 303 (server 341 404 325 303) pointer 502 416 down
+    500 ms:  341 404 325 303 (server 341 404 325 303) pointer 502 416 down
+    reports: AXResized 3.2
+  carried-up: 340 80 325 303 (server 340 80 325 303) pointer 502 92 down
+  asked-high: size 325 600 (1.9 ms)
+    before:  340 80 325 303 (server 340 80 325 303) pointer 502 92 down
+    at once: 340 80 325 600 (server 340 80 325 303) pointer 502 92 down
+     50 ms:  340 80 325 600 (server 340 80 325 600) pointer 502 92 down
+    200 ms:  340 80 325 600 (server 340 80 325 600) pointer 502 92 down
+    500 ms:  340 80 325 600 (server 340 80 325 600) pointer 502 92 down
+    reports: AXResized 1.8
+  carried:   401 80 325 600 (server 401 80 325 600) pointer 562 92 down
+  let-go:    400 80 325 600 (server 400 80 325 600) pointer 562 92 up
+  rest:      400 80 325 600 (server 400 80 325 600) pointer 562 92 up
+
+== textedit.T7-20-ms-after-the-release.3
+> drag 500 162 560 202 --no-release --steps 15 --duration 0.3 --hold 0.1
+> release
+  put: 200 150 600 400
+  held:      260 190 600 400 (server 260 190 600 400) pointer 560 202 down
+  asked: size 480 300 (2.9 ms), 20.09 ms after the release
+    at once: 260 190 480 300 (server 260 190 600 400) pointer 560 202 up
+     50 ms:  260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+    200 ms:  260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+    500 ms:  260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+    reports: AXResized 2.9
+  rest:      260 190 480 300 (server 260 190 480 300) pointer 560 202 up
+
+== textedit.T9-sized-where-it-fits-then-moved.3
+  put: 624 404 400 319
+  there-and-back: pos 624 80 (0.4 ms); size 400 600 (2.5 ms); pos 624 404 (4.3 ms)
+    before:  624 404 400 319 (server 624 404 400 319) pointer 560 202 up
+    at once: 624 404 400 600 (server 624 80 400 319) pointer 560 202 up
+     50 ms:  624 404 400 600 (server 624 404 400 600) pointer 560 202 up
+    200 ms:  624 404 400 600 (server 624 404 400 600) pointer 560 202 up
+    500 ms:  624 404 400 600 (server 624 404 400 600) pointer 560 202 up
+    reports: AXMoved 0.4; AXResized 2.9; AXMoved 7.2
+  rest:      624 404 400 600 (server 624 404 400 600) pointer 560 202 up
+clock: textedit done after 396s
+
+== safari opens
+> open -g -b com.apple.Safari /tmp/arbor-apps.9RDVJm/scratch/page.html
+pid 25695 lists (id role subrole x y w h flags):
+  42 AXWindow AXStandardWindow 0 31 1024 677 main,toolbar
+  window 42 of com.apple.Safari (AXWindow, AXStandardWindow) at 0 31 1024 677
+  displays (start): 1: 0 0 1024 768 visible 0 31 1024 677
+  put: 200 150 600 400
+  displays (end): 1: 0 0 1024 768 visible 0 31 1024 677
+held 20 points below its top (AXStaticText)
+
+== safari.T1-smaller.1
+> drag 500 170 560 210 --no-release --steps 15 --duration 0.3 --hold 0.1
+> drag-on 620 210 --steps 10 --duration 0.4 --hold 0.1
+> release
+  put: 200 150 600 400
+  asked: size 480 300 (0.1 ms)
+    before:  454 213 34 34 (server 200 150 600 400) pointer 560 210 down
+    at once: 454 213 34 34 (server 200 150 600 400) pointer 560 210 down
+     50 ms:  454 213 34 34 (server 200 150 600 400) pointer 560 210 down
+    200 ms:  454 213 34 34 (server 200 150 600 400) pointer 560 210 down
+    500 ms:  454 213 34 34 (server 200 150 600 400) pointer 560 210 down
+    reports: none
+  carried:   454 213 34 34 (server 200 150 600 400) pointer 620 210 down
+  let-go:    454 213 34 34 (server 200 150 600 400) pointer 620 210 up
+  rest:      454 213 34 34 (server 200 150 600 400) pointer 620 210 up
+
+== safari.T4-narrower-than-where-it-is-held.1
+> drag 840 140 880 180 --no-release --steps 15 --duration 0.3 --hold 0.1
+> drag-on 820 180 --steps 10 --duration 0.4 --hold 0.1
+> release
+  put: 454 213 34 34 (WANTED 40 120 936 400)
+  asked: size 304 400 (0.1 ms)
+    before:  454 213 34 34 (server 200 150 600 400) pointer 880 180 down
+    at once: 454 213 34 34 (server 200 150 600 400) pointer 880 180 down
+     50 ms:  454 213 34 34 (server 200 150 600 400) pointer 880 180 down
+    200 ms:  454 213 34 34 (server 200 150 600 400) pointer 880 180 down
+    500 ms:  454 213 34 34 (server 200 150 600 400) pointer 880 180 down
+    reports: none
+  carried:   454 213 34 34 (server 200 150 600 400) pointer 820 180 down
+  let-go:    200 150 600 400 (server 200 150 600 400) pointer 820 180 up
+  rest:      200 150 600 400 (server 200 150 600 400) pointer 820 180 up
+
+== safari.T5-wider-and-higher-held-in-the-middle.1
+> drag 462 80 502 110 --no-release --steps 15 --duration 0.3 --hold 0.1
+> drag-on 562 110 --steps 10 --duration 0.4 --hold 0.1
+> release
+  put: 300 60 574 319 (WANTED 300 60 325 319)
+  asked: size 480 600 (7.3 ms)
+    before:  341 84 574 319 (server 341 84 574 319) pointer 502 110 down
+    at once: 341 84 574 600 (server 341 84 574 600) pointer 502 110 down
+     50 ms:  341 84 574 600 (server 341 84 574 600) pointer 502 110 down
+    200 ms:  341 84 574 600 (server 341 84 574 600) pointer 502 110 down
+    500 ms:  341 84 574 600 (server 341 84 574 600) pointer 502 110 down
+    reports: AXResized 7.2
+  carried:   401 84 574 600 (server 401 84 574 600) pointer 562 110 down
+  let-go:    400 84 574 600 (server 400 84 574 600) pointer 562 110 up
+  rest:      400 84 574 600 (server 400 84 574 600) pointer 562 110 up
+
+== safari.T6a-the-cut-from-200-high.1
+> drag 462 384 502 424 --no-release --steps 15 --duration 0.3 --hold 0.1
+> drag-on 502 100 --steps 20 --duration 0.5 --hold 0.1
+> drag-on 562 100 --steps 10 --duration 0.4 --hold 0.1
+> release
+  put: 300 364 574 240 (WANTED 300 364 325 200)
+  asked-low: size 325 600 (9.7 ms)
+    before:  341 404 574 240 (server 341 404 574 240) pointer 502 424 down
+    at once: 341 404 574 303 (server 341 404 574 303) pointer 502 424 down
+     50 ms:  341 404 574 303 (server 341 404 574 303) pointer 502 424 down
+    200 ms:  341 404 574 303 (server 341 404 574 303) pointer 502 424 down
+    500 ms:  341 404 574 303 (server 341 404 574 303) pointer 502 424 down
+    reports: AXResized 9.4
+  carried-up: 340 80 574 303 (server 340 80 574 303) pointer 502 100 down
+  asked-high: size 325 600 (6.8 ms)
+    before:  340 80 574 303 (server 340 80 574 303) pointer 502 100 down
+    at once: 340 80 574 600 (server 340 80 574 600) pointer 502 100 down
+     50 ms:  340 80 574 600 (server 340 80 574 600) pointer 502 100 down
+    200 ms:  340 80 574 600 (server 340 80 574 600) pointer 502 100 down
+    500 ms:  340 80 574 600 (server 340 80 574 600) pointer 502 100 down
+    reports: AXResized 6.7
+  carried:   401 80 574 600 (server 401 80 574 600) pointer 562 100 down
+  let-go:    400 80 574 600 (server 400 80 574 600) pointer 562 100 up
+  rest:      400 80 574 600 (server 400 80 574 600) pointer 562 100 up
+
+== safari.T7-20-ms-after-the-release.1
+> drag 500 170 560 210 --no-release --steps 15 --duration 0.3 --hold 0.1
+> release
+  put: 200 150 600 400
+  held:      200 150 600 400 (server 200 150 600 400) pointer 560 210 down
+  asked: size 480 300 (11.1 ms), 20.03 ms after the release
+    at once: 200 150 574 300 (server 200 150 574 300) pointer 560 210 up
+     50 ms:  200 150 574 300 (server 200 150 574 300) pointer 560 210 up
+    200 ms:  200 150 574 300 (server 200 150 574 300) pointer 560 210 up
+    500 ms:  200 150 574 300 (server 200 150 574 300) pointer 560 210 up
+    reports: AXResized 10.5
+  rest:      200 150 574 300 (server 200 150 574 300) pointer 560 210 up
+
+== safari.T9-sized-where-it-fits-then-moved.1
+  put: 624 404 574 319 (WANTED 624 404 400 319)
+  there-and-back: pos 624 80 (1.5 ms); size 400 600 (9.6 ms); pos 624 404 (5.2 ms)
+    before:  624 404 574 319 (server 624 404 574 319) pointer 560 210 up
+    at once: 624 404 574 600 (server 624 80 574 600) pointer 560 210 up
+     50 ms:  624 404 574 600 (server 624 404 574 600) pointer 560 210 up
+    200 ms:  624 404 574 600 (server 624 404 574 600) pointer 560 210 up
+    500 ms:  624 404 574 600 (server 624 404 574 600) pointer 560 210 up
+    reports: AXMoved 1.4; AXResized 11.0; AXMoved 16.1
+  rest:      624 404 574 600 (server 624 404 574 600) pointer 560 210 up
+
+== safari.T1-smaller.2
+> drag 500 170 560 210 --no-release --steps 15 --duration 0.3 --hold 0.1
+> drag-on 620 210 --steps 10 --duration 0.4 --hold 0.1
+> release
+  put: 200 150 600 400
+  asked: size 480 300 (7.9 ms)
+    before:  200 150 600 400 (server 200 150 600 400) pointer 560 210 down
+    at once: 200 150 574 300 (server 200 150 574 300) pointer 560 210 down
+     50 ms:  200 150 574 300 (server 200 150 574 300) pointer 560 210 down
+    200 ms:  200 150 574 300 (server 200 150 574 300) pointer 560 210 down
+    500 ms:  200 150 574 300 (server 200 150 574 300) pointer 560 210 down
+    reports: AXResized 7.3
+  carried:   200 150 574 300 (server 200 150 574 300) pointer 620 210 down
+  let-go:    200 150 574 300 (server 200 150 574 300) pointer 620 210 up
+  rest:      200 150 574 300 (server 200 150 574 300) pointer 620 210 up
+SKIPPED: safari.T4-narrower-than-where-it-is-held.2 (442s have gone, the budget is 440s)
+SKIPPED: safari.T5-wider-and-higher-held-in-the-middle.2 (442s have gone, the budget is 440s)
+SKIPPED: safari.T6a-the-cut-from-200-high.2 (442s have gone, the budget is 440s)
+SKIPPED: safari.T7-20-ms-after-the-release.2 (442s have gone, the budget is 440s)
+SKIPPED: safari.T9-sized-where-it-fits-then-moved.2 (442s have gone, the budget is 440s)
+SKIPPED: safari.T1-smaller.3 (442s have gone, the budget is 440s)
+SKIPPED: safari.T4-narrower-than-where-it-is-held.3 (442s have gone, the budget is 440s)
+SKIPPED: safari.T5-wider-and-higher-held-in-the-middle.3 (442s have gone, the budget is 440s)
+SKIPPED: safari.T6a-the-cut-from-200-high.3 (442s have gone, the budget is 440s)
+SKIPPED: safari.T7-20-ms-after-the-release.3 (442s have gone, the budget is 440s)
+SKIPPED: safari.T9-sized-where-it-fits-then-moved.3 (442s have gone, the budget is 440s)
+clock: safari done after 442s
+SKIPPED: terminal (442s have gone, the budget is 440s)
+
+== done
+80 trials, 94 rounds of calls, 12 skipped; samples.log 4432 lines; ax-events.txt 1786 lines
+NOT VARIED: one Mac, one macOS; one display, at scale 1; the Dock at the bottom, shown; macOS's tiling switches as the image has them (printed at the top); Reduce Motion as the image has it (printed at the top);
+NOT VARIED: one Space, no Stage Manager, no full screen; a synthetic pointer, which rests while the call is made and moves in even steps; the pointer never near an edge or a corner of the display, nor in the menu bar;
+NOT VARIED: no modifier key down; one size call at a time, never a position call in the hand; the window in front from the press on; Arbor not running, so no event tap of its own in the way.
+still running when the script had ended, and stopped now:
+  6313 sleep
+exit code 0
