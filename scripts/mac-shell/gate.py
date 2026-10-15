@@ -33,6 +33,8 @@ JOURNEYS_PER_CELL = 4
 SCENE, ACT, IDLE = 50, 2.4, 31
 # Of the acts a walk is written with, this share is played and judged, at the least. Measured: 101 of 116 applied when their turn came, and 96 % of those were
 # judged (the sampler is blind at times): 0.84.
+# One share for every kind of act, which is too simple: of the few drags onto a window and clicks on a tile that first walk was written with, none applied when its turn came.
+# To be measured by kind as runs come back.
 COUNTED = 0.8
 
 
@@ -79,7 +81,7 @@ def seed_of(commit, row, salt):
 
 def asked(display):
     """What is done to the second display comes on top of what a walk is asked for, and each such act is followed by a look at everything."""
-    return ACTS - 16 if display == "two" else ACTS
+    return ACTS - 24 if display == "two" else ACTS
 
 
 def acts_of(seed, display, acts=None, cast="stock"):
@@ -88,14 +90,14 @@ def acts_of(seed, display, acts=None, cast="stock"):
 
 # The kind of act each word counts as (lib-walk.sh). A name that ends in _ stands for every word that begins so.
 KINDS = {"switch": "switch_ focus_key", "tile-click": "tile_click", "open-close": "open_new close_new minimize restore hide unhide quit_app reopen",
-         "dock-key": "dock_key float_key arrange_key undo redo rotate mirror pin", "drag": "drag_onto drag_out drag_by", "drag-where-macos-tiles": "drag_edge",
+         "dock-key": "dock_key float_key arrange_key undo redo rotate mirror pin send_across", "drag": "drag_onto drag_out drag_by", "drag-where-macos-tiles": "drag_edge",
          "view": "view peek save_view view_n", "resize": "resize_", "macos-own": "full_screen wallpaper_click title_double_click",
-         "way-out": "pause resume float_all float_all_here hold_view", "display-change": "display send_across", "idle": "idle_act"}
+         "way-out": "pause resume float_all float_all_here hold_view", "display-change": "display", "idle": "idle_act"}
 # Every app of the cast is called up once, to see that it still comes. The smallest cast has this many.
 ROLL_CALL = ["switch"] * min(len(cast["apps"]) for cast in walk.CASTS.values())
 # Words that are several acts, and what every journey begins and ends with: Arbor is started and its welcome closed; it is quit.
 SEVERAL = {"quit_and_start": ["quit-and-start"] + ROLL_CALL[::3] + ["quit-and-start", "open-close"], "wallpaper_click": ["macos-own"] * 2,
-           "title_double_click": ["macos-own"] * 2, "hold_view": ["way-out"] * 3, "display": ["display-change", "view"]}
+           "title_double_click": ["macos-own"] * 2, "hold_view": ["way-out", "view", "way-out"], "display": ["display-change", "view"]}
 AROUND = ["quit-and-start", "open-close", "quit-and-start"] + ROLL_CALL
 
 
