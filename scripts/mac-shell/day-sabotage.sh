@@ -21,6 +21,8 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib-walk.sh"
 needs_throwaway_mac "open real apps, move, cover and close their windows, hold back everybody's mouse-up for a moment, and switch the display's size"
 
 place() { apptool set-frame "$@" > /dev/null; }
+# By the window server's list of what is on the screen. Accessibility goes on giving a hidden app's window its frame.
+on_top() { [ "$(apptool top-at "$2" "$3" 2> /dev/null | cut -d ' ' -f 1)" = "$1" ]; }
 
 # The same Mac, the same cast and the same manifest as a day's, so that the run can be counted as one of its cell.
 walk_begin stock laptop defaults
@@ -98,6 +100,25 @@ acted front="$A"
 act open-close honest-minimize "Terminal's window is minimized"
 apptool minimize "$D"
 acted leaves="$D"
+act open-close honest-hide "Preview is hidden"
+apptool hide "$P_preview"
+acted leaves="$C"
+act open-close honest-landing "it is shown again, and is where it was"
+apptool unhide "$P_preview"
+must eventually on_top "$C" 1000 660
+acted comes="$C" lands="$C" moves="$C"
+act open-close honest-hide-2 "Preview is hidden again"
+apptool hide "$P_preview"
+acted leaves="$C"
+act open-close lands-elsewhere "OFFENCE: it is shown again where it was, and a tenth of a second later it is somewhere else: one burst, a straight road"
+apptool unhide "$P_preview"
+must eventually on_top "$C" 1000 660
+sleep 0.1
+place "$C" 460 500 480 320
+acted comes="$C" lands="$C" moves="$C" offence=jolt
+act idle honest-put-back "it is put back"
+place "$C" 760 500 480 320
+acted moves="$C" own="$C"
 act switch keyboard-taken "OFFENCE: after the switch another app, with no window to show, takes the keyboard"
 must click_window "$A"
 sleep 0.4

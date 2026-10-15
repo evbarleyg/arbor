@@ -96,10 +96,10 @@ KINDS = {"switch": "switch_ focus_key", "tile-click": "tile_click", "open-close"
          "way-out": "pause resume float_all float_all_here hold_view", "display-change": "display", "idle": "idle_act"}
 # Every app of the cast is called up once, to see that it still comes. The smallest cast has this many.
 ROLL_CALL = ["switch"] * min(len(cast["apps"]) for cast in walk.CASTS.values())
-# Words that are several acts, and what every journey begins and ends with: Arbor is started and its welcome closed; it is quit.
+# Words that are several acts, and what every journey begins and ends with: Arbor is started and its welcome closed; everything is brought into view, and it is quit.
 SEVERAL = {"quit_and_start": ["quit-and-start"] + ROLL_CALL[::3] + ["quit-and-start", "open-close"], "wallpaper_click": ["macos-own"] * 2,
            "title_double_click": ["macos-own"] * 2, "hold_view": ["way-out", "view", "way-out"], "display": ["display-change", "view"]}
-AROUND = ["quit-and-start", "open-close", "quit-and-start"] + ROLL_CALL
+AROUND = ["quit-and-start", "open-close", "view", "quit-and-start"] + ROLL_CALL
 
 
 def kinds_of(line):

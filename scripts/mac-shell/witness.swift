@@ -40,6 +40,8 @@ let usage = """
     wheel x y <notches> [--opt] [--ctrl] [--tap hid|session]
                                         a mouse wheel turned that many notches, up if positive, with ⌥ or ⌃ held
     hold-space <repeats>                ⌃⌥Space held down: one key-down, then that many auto-repeats, then key-up
+    round ax ay bx by x y               a round of input (lib-walk.sh, input_round): a dozen presses in turn at b and at a, a dozen at a, a dozen arrow keys, a scroll
+                                        at x y there and back, a drag there, one key more. Prints what it posted, by kind: `press:25,up:25,key:13,scroll:28,dragged:20`
   """
 
 // MARK: Watching
@@ -259,6 +261,45 @@ func key(_ code: CGKeyCode, down: Bool, flags: CGEventFlags, repeating: Bool = f
   rest(0.03)
 }
 
+/// What a round has posted so far, by kind. Whoever posts knows; nobody else has to reckon it.
+var posted: [String: Int] = [:]
+
+func mouse(_ type: CGEventType, at point: CGPoint) {
+  guard let event = CGEvent(mouseEventSource: CGEventSource(stateID: .hidSystemState), mouseType: type, mouseCursorPosition: point, mouseButton: .left)
+  else { fail("could not create a mouse event") }
+  if type != .mouseMoved { event.setIntegerValueField(.mouseEventClickState, value: 1) }
+  event.post(tap: .cghidEventTap)
+  let kinds: [CGEventType: String] = [.leftMouseDown: "press", .leftMouseUp: "up", .leftMouseDragged: "dragged"]
+  if let kind = kinds[type] { posted[kind, default: 0] += 1 }
+}
+
+/// The button stays down for three of the sampler's looks, so that it sees every press the taps see.
+func press(at point: CGPoint, then pause: Double) {
+  mouse(.mouseMoved, at: point)
+  rest(0.03)
+  mouse(.leftMouseDown, at: point)
+  rest(0.08)
+  mouse(.leftMouseUp, at: point)
+  rest(pause)
+}
+
+func stroke(_ code: CGKeyCode) {
+  key(code, down: true, flags: [])
+  key(code, down: false, flags: [])
+  posted["key", default: 0] += 1
+}
+
+func scrolled(by dy: Int32, steps: Int, at point: CGPoint) {
+  scroll(dx: 0, dy: 0, phase: 1, momentum: 0, at: point, flags: [])
+  rest(0.01)
+  for _ in 1...steps {
+    scroll(dx: 0, dy: dy, phase: 2, momentum: 0, at: point, flags: [])
+    rest(0.01)
+  }
+  scroll(dx: 0, dy: 0, phase: 4, momentum: 0, at: point, flags: [])
+  posted["scroll", default: 0] += steps + 2
+}
+
 // MARK: Commands
 
 guard !arguments.isEmpty else { fail(usage) }
@@ -356,6 +397,42 @@ case "hold-space":
   key(49, down: false, flags: flags)
   key(58, down: false, flags: .maskControl)
   key(59, down: false, flags: [])
+
+case "round":
+  let a = CGPoint(x: number(0), y: number(1))
+  let b = CGPoint(x: number(2), y: number(3))
+  let inside = CGPoint(x: number(4), y: number(5))
+  // Each on the app that is not in front. macOS takes up to 140 ms to bring one forward, and jolts.py asks who was in front 150 ms before a press.
+  for _ in 1...6 {
+    press(at: b, then: 0.3)
+    press(at: a, then: 0.3)
+  }
+  // Six points to either side in turn, so that no two are a double-click, whatever counts them.
+  for _ in 1...6 {
+    press(at: CGPoint(x: a.x - 6, y: a.y), then: 0.06)
+    press(at: CGPoint(x: a.x + 6, y: a.y), then: 0.06)
+  }
+  for _ in 1...6 {
+    stroke(124)
+    stroke(123)
+  }
+  mouse(.mouseMoved, at: inside)
+  rest(0.05)
+  scrolled(by: -3, steps: 12, at: inside)
+  rest(0.05)
+  scrolled(by: 3, steps: 12, at: inside)
+  rest(0.05)
+  mouse(.leftMouseDown, at: inside)
+  rest(0.15)  // AppKit decides what the press means before the first movement
+  for step in 1...20 {
+    mouse(.leftMouseDragged, at: CGPoint(x: inside.x + CGFloat(step) * 3, y: inside.y + CGFloat(step)))
+    rest(0.02)
+  }
+  mouse(.leftMouseUp, at: CGPoint(x: inside.x + 60, y: inside.y + 20))
+  rest(0.05)
+  // What was selected is let go of again.
+  stroke(123)
+  print(["press", "up", "key", "scroll", "dragged"].map { "\($0):\(posted[$0] ?? 0)" }.joined(separator: ","))
 
 default:
   fail("unknown command \(command)\n\(usage)")

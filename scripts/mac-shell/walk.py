@@ -21,7 +21,7 @@ CASTS = {
     "stock": {"apps": ["finder", "safari", "textedit", "terminal", "notes", "calendar", "settings", "preview", "mail"],
               "new": ["safari", "textedit", "finder", "terminal"], "menu": ["safari", "finder", "textedit", "terminal"], "quit": ["textedit", "preview", "safari"]},
     "browsers": {"apps": ["safari", "chrome", "firefox", "edge", "finder", "textedit", "terminal"],
-                 "new": ["safari", "chrome", "firefox", "edge"], "menu": ["safari", "chrome", "firefox", "edge"], "quit": ["textedit", "safari"]},
+                 "new": ["safari", "chrome", "edge"], "menu": ["safari", "chrome", "firefox", "edge"], "quit": ["textedit", "safari"]},
     "awkward": {"apps": ["finder", "terminal", "textedit", "safari", "calculator", "books", "music", "stickies", "reminders"],
                 "new": ["finder", "terminal", "stickies", "safari"], "menu": ["finder", "terminal", "safari", "stickies"], "quit": ["safari"]},
 }
