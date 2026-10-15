@@ -15,7 +15,8 @@ import CoreGraphics
 /// - left and right: at x 0 and at x 1023; not at 1, 2, 1021 or 1022. A half from y 60 to y 740, a quarter at y 0, 31 and 767;
 /// - the top: from y 0 to y 30; not at 31, 32 or 42. At the bottom edge, nothing. Only for a pointer that has rested there: let go
 ///   0.1 s after it arrived the window was left alone, after 0.2 s it filled the screen. At the sides macOS waits for nothing;
-/// - with ⌥ held: wherever the pointer is, and whatever else is held (⇧, ⌘, ⌃⌘, ⌃⇧). ⇧ alone changes nothing;
+/// - with ⌥ held: wherever the pointer is, and whatever else is held (⇧, ⌘, ⌃⌘, ⌃⇧). ⇧ alone changes nothing. With ⌥ and nothing else, let go
+///   with posted keys, the preview was all: the window stayed where it was. Arbor stands aside either way;
 /// - a window that cannot change its size is taken all the same, and moved into the tile as it is (not with ⌥);
 /// - with the pointer beyond the display, where a hand's cannot go but a display that was unplugged leaves it: nothing.
 public struct MacTiling: Equatable, Sendable, Codable {

@@ -139,6 +139,12 @@ public final class FakeWindowSystem: WindowSystem {
   /// macOS's own tiling of dragged windows, which `endDrag` carries out as macOS does. On, as a Mac comes: what holds only with
   /// the switches off does not hold for most people.
   public var tiling = MacTiling.on
+  /// Whether macOS tiles a window that is let go with ⌥ and nothing else held, away from the edges. Nobody knows what a hand gets. Its
+  /// switch is called "Hold ⌥ key while dragging windows to tile". What was seen is the preview and then no tile: ten times out of
+  /// ten on two versions of macOS, but of one drag, to one point, with posted keys and ⌥ down before the press. So that is what
+  /// is played, and what is about ⌥ alone is tried both ways. ⌃⌥ without a third key, and ⌥ at an edge or in the menu bar, were
+  /// never tried: there it tiles.
+  public var optionAloneTiles = false
   /// The sizes windows had before macOS tiled them, which it gives back when they are dragged off their tiles.
   private var sizesBeforeTiles: [WindowID: CGSize] = [:]
   /// The modifier keys that are down. `hold` and `letGo` keep it; set it to let go of ⌃⌥ before the key.
@@ -1216,8 +1222,9 @@ extension FakeWindowSystem {
     if let letGo { letMacOSTile(window, letGoAt: letGo) }
   }
 
-  /// Where macOS puts a window that is let go with the pointer at `point`, or nil where it leaves it alone. The
-  /// halves, the quarters and the whole of the visible frame, where they were seen on a Mac (`MacTiling`).
+  /// The tile macOS's preview promises a window that is held with the pointer at `point`, or nil where it shows none. The
+  /// halves, the quarters and the whole of the visible frame, where they were seen on a Mac (`MacTiling`). What becomes of the window
+  /// when it is let go is `letMacOSTile`'s to say.
   public func macTile(at point: CGPoint) -> CGRect? {
     guard let display = displayList.first(where: { $0.frame.contains(point) }), let claim = macClaim(at: point) else {
       return nil
@@ -1255,7 +1262,8 @@ extension FakeWindowSystem {
   /// Thrown into the menu bar and let go at once, the window is left alone (`MacTiling.menuBarRest`); at the sides macOS waits for
   /// nothing. A window that cannot take the tile's size keeps the nearest it can: one too small lies against the side of the
   /// screen, or in the middle of a screen it should have filled, half way up; one too large begins where the left half does, or
-  /// ends with the right half. ⌥ means nothing for a window of a fixed size.
+  /// ends with the right half. ⌥ means nothing for a window of a fixed size, and by itself it brings up the preview and no more
+  /// (`optionAloneTiles`).
   ///
   /// A window whose size changes on the way comes to rest a hair short of where it was going, by a whole point: a point further
   /// left if it came from the left, a point wider if it shrank, a point lower if its lower edge came from below. So the left
@@ -1269,6 +1277,8 @@ extension FakeWindowSystem {
     guard var tile = macTile(at: cursor), let claim = macClaim(at: cursor), let fake = windows[window] else { return }
     if claim == .menuBar, clock() - (inMenuBarSince ?? clock()) < MacTiling.menuBarRest { return }
     if claim == .optionKey, fake.maximumSize == fake.minimumSize { return }
+    // With ⇧, ⌘, ⌃⌘ or ⌃⇧ held as well the same drag ended in the tile, by the ledger's word: no output of that is kept.
+    if claim == .optionKey, heldModifiers == .option, !optionAloneTiles { return }
     let asked = CGSize(width: tile.width + (start.width > tile.width ? 1 : 0), height: tile.height)
     let largest = fake.maximumSize ?? asked
     let size = CGSize(

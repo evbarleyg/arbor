@@ -5,7 +5,7 @@ import CoreGraphics
 import Testing
 
 /// Arbor never fights macOS over a window. With macOS's own tiling as a Mac comes, which is on, a window let go at the very
-/// edge of the display, in the menu bar or with ⌥ held is macOS's: it grows the window to a tile of its own, asking nobody.
+/// edge of the display, in the menu bar or with ⌥ held is macOS's: it takes the window to a tile of its own, asking nobody, or leaves it.
 /// Seen on a Mac before this: two previews, and the window went into Arbor's slot, to macOS's tile and back into the slot.
 ///
 /// The fake tiles as the Mac was seen to (`FakeWindowSystem.tiling`). The arrangement is [a | Desktop | b] with c floating.
@@ -210,11 +210,12 @@ import Testing
     #expect(s.h.overlays.preview != nil)
     s.h.system.holdModifierKeys(.option)
     #expect(s.h.overlays.preview == nil)
+    let letGo = s.frame(s.c)
     s.h.system.endDrag()
     s.h.system.holdModifierKeys([])
     s.h.scheduler.advance(by: 3)
     #expect(s.h.workspace.isFloating(s.c))
-    #expect(s.frame(s.c) == CGRect(x: 720, y: 26, width: 720, height: 875))
+    #expect(s.frame(s.c) == letGo, "with nothing else held macOS shows its preview and leaves it at that")
     #expect(s.h.system.frameLog.isEmpty, "\(s.h.system.frameLog)")
     #expect(s.h.overlays.messages.isEmpty, "whoever holds ⌥ asked macOS, and needs no telling")
 
@@ -226,6 +227,7 @@ import Testing
     #expect(third.h.overlays.preview == nil)
     third.h.system.endDrag()
     third.h.scheduler.advance(by: 3)
+    #expect(third.frame(third.c) == CGRect(x: 720, y: 26, width: 720, height: 875), "its lower edge came from below the tile's")
     #expect(third.h.workspace.isFloating(third.c))
     #expect(third.h.system.frameLog.isEmpty, "\(third.h.system.frameLog)")
 
@@ -234,6 +236,78 @@ import Testing
     other.h.system.holdModifierKeys(.option)
     other.h.system.drag(other.c, through: [other.frame(other.c).center, other.edge(.bottom, of: other.b)])
     #expect(other.h.workspace.isDocked(other.c))
+  }
+
+  /// With ⌥ and nothing else held macOS was seen to show its preview and then to leave the window where it was let go, with posted keys. By the
+  /// name of its switch it tiles. Arbor cannot know which it will be, and stands aside all the same: whichever macOS does, Arbor has
+  /// shown nothing and set no frame.
+  @Test(arguments: [false, true]) func letGoWithOptionAloneAFloatingWindowIsMacOSsWhicheverItDoes(tiles: Bool) {
+    let s = scene()
+    s.h.system.optionAloneTiles = tiles
+    s.h.system.beginDrag(s.c)
+    s.h.system.moveDrag(to: s.edge(.bottom, of: s.b), holding: 0.3)
+    s.h.system.holdModifierKeys(.option)
+    s.h.system.holdDrag(for: 1)
+    #expect(s.h.system.macTile(at: s.h.system.cursor) != nil, "macOS shows its preview")
+    #expect(s.h.overlays.preview == nil, "and Arbor none beside it")
+    let letGo = s.frame(s.c)
+    s.h.system.endDrag()
+    s.h.system.holdModifierKeys([])
+    s.h.scheduler.advance(by: 3)
+    #expect(s.frame(s.c) == (tiles ? CGRect(x: 720, y: 26, width: 720, height: 875) : letGo))
+    #expect(s.h.workspace.isFloating(s.c))
+    #expect(s.h.system.frameLog.isEmpty, "\(s.h.system.frameLog)")
+    s.expectNothingLeftBehind()
+  }
+
+  /// Should ⌥ alone tile after all, a docked window is macOS's like any other that it takes: whatever is done about the one below must not
+  /// put a second hand on a window that macOS is moving.
+  @Test func shouldOptionAloneTileADockedWindowArborKeepsItsHandsOffIt() {
+    let s = scene()
+    s.h.system.optionAloneTiles = true
+    s.h.system.beginDrag(s.a)
+    s.h.system.moveDrag(to: s.onDesktop, holding: 0.3)
+    s.h.system.holdModifierKeys(.option)
+    s.h.system.holdDrag(for: 1)
+    s.h.system.endDrag()
+    s.h.system.holdModifierKeys([])
+    s.h.scheduler.advance(by: 3)
+    #expect(s.frame(s.a) == CGRect(x: 0, y: 26, width: 720, height: 875))
+    #expect(s.h.workspace.isFloating(s.a))
+    #expect(!s.h.system.frameLog.contains { $0.window == s.a }, "\(s.h.system.frameLog)")
+    s.expectNothingLeftBehind()
+  }
+
+  /// A docked window has its slot's size in the hand. Arbor leaves it so where macOS is about to size it. Where macOS then does not, nobody has
+  /// given it its own size. Decided: a plain drag means out wherever it ends, so macOS takes the window or it floats at its own size where it
+  /// lies; and Arbor never takes a slot's size for a window's own, so the ways out give it back whatever else happens (rule 5).
+  /// `thrownIntoTheMenuBarAndLetGoAtOnceTheWindowStaysAsItIs` holds the same window to its slot's size, and changes with the cure.
+  @Test func letGoWithOptionAloneADockedWindowIsNotLeftWithItsSlotsSize() {
+    let s = scene()
+    let own = CGSize(width: 600, height: 400)
+    let slot = s.frame(s.a).size
+    #expect(slot != own)
+    s.h.system.beginDrag(s.a)
+    s.h.system.moveDrag(to: s.onDesktop, holding: 0.3)
+    s.h.system.holdModifierKeys(.option)
+    s.h.system.holdDrag(for: 1)
+    s.h.system.endDrag()
+    s.h.system.holdModifierKeys([])
+    s.h.scheduler.advance(by: 3)
+    #expect(s.h.system.takeSizeBeforeTile(of: s.a) == nil, "macOS has tiled nothing")
+    #expect(s.h.workspace.isFloating(s.a))
+    withKnownIssue("board 1.67: left to macOS and left alone by it, a docked window keeps its slot's size for good") {
+      #expect(s.frame(s.a).size == own, "it floats at \(s.frame(s.a)); its slot was \(slot)")
+    }
+    withKnownIssue("board 1.67") {
+      #expect(s.h.workspace.floating[s.a]?.size == own, "what is remembered: \(String(describing: s.h.workspace.floating[s.a]))")
+    }
+    s.expectNothingLeftBehind()
+    s.h.run("float-all")
+    s.h.scheduler.advance(by: 3)
+    withKnownIssue("board 1.67") {
+      #expect(s.frame(s.a).size == own, "after Float All: \(s.frame(s.a))")
+    }
   }
 
   /// Another tool's event tap can swallow the release. macOS has seen it all the same and has tiled the window by the time Arbor
