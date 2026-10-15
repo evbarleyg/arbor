@@ -10,3 +10,23 @@ a click on another window of another app, and NSWorkspace names the old app for 
 a click on another window of another app, and NSWorkspace names the old app for 50 ms more: the window that was clicked is reported focused # reportFocus(of:) trusts a frontmostApplication that lags
 ⌘Tab to an app whose window is out of view, and NSWorkspace names the old app for 5 ms more: the view moves to show the window that has the keyboard now # reportFocus(of:) trusts a frontmostApplication that lags
 ⌘Tab to an app whose window is out of view, and NSWorkspace names the old app for 50 ms more: the view moves to show the window that has the keyboard now # reportFocus(of:) trusts a frontmostApplication that lags
+
+# A window closes and "destroyed" never comes. The layer reads an app's list only when a window is created, the focused or main window changes, a window comes out of
+# the Dock, the app is shown, or the Space changes; and the focus report of a closing window comes 12 ms BEFORE the window goes (trace `close`), when the list
+# still has it. After that nothing looks. `setFrame` of such a window gets `invalidUIElement`, reads no frame back and answers nil, for ever.
+a window closes and the notification never comes: it is reported gone all the same, once # nothing reads the app's list again, and setFrame does not take invalidUIElement for an answer
+a window closes and the notification never comes: Arbor knows the one that is left # the same
+the last window of an app closes and the notification never comes: by the time its app has been left and come back to, it is reported gone # appCameForward reads the focus, not the list
+a docked window closes and the notification never comes: its neighbour gets the room # the same, seen from the screen
+a docked window closes and the notification never comes: at the latest after the person has gone on working # zoom and show-all ask the ghost for a frame, get nil, and keep it
+
+# An app ends and nothing says so (one started from a shell). The layer finds out when a call to it fails, and nothing calls until a layout wants its window moved.
+an app with a docked window ends and nothing says so: the window that is left gets the room # nobody asks a silent app anything until the next layout that moves its window
+
+# If "focused window changed" of the new Space's window comes before the notice of the switch, the list is read as after any change of focus, and a window that left the
+# list while another of its app joined it in the same place is taken for a native tab. Nobody knows the order on a Mac.
+two windows of one app fill the same place on two Spaces, and the Space is switched, the focus reported before the notice: the one is not taken for a tab of the other # rescan(afterSpaceSwitch: false) runs before the notice has come
+two windows of one app fill the same place on two Spaces, and the Space is switched, the focus reported before the notice: Arbor knows both, one showing and one not # the same
+
+# The "resized" reports of a window on its way into full screen can come before AXFullScreen says yes. Until it does they are a docked window out of its slot.
+a docked window enters full screen and leaves it, saying so late: and Arbor has not pulled at it on the way # the controller puts it back in its slot in the middle of the transition

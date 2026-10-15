@@ -105,6 +105,16 @@ extension FakeMac {
     for number in 0..<max(notices, 1) { screensNotice(after: 0.01 + 0.05 * Double(number)) }
   }
 
+  /// Another display becomes the main one: the origin of all coordinates moves, so every window has new ones, and no app posts anything about it.
+  public func renumber(dx: CGFloat, dy: CGFloat) {
+    for window in stack {
+      window.frame = window.frame.offsetBy(dx: dx, dy: dy)
+      window.bounds = window.bounds.offsetBy(dx: dx, dy: dy)
+    }
+    mouse.location.x += dx
+    mouse.location.y += dy
+  }
+
   func screensNotice(after delay: TimeInterval) {
     send(after: delay, from: .screens, "→ didChangeScreenParameters") {
       NotificationCenter.default.post(name: Notification.Name("NSApplicationDidChangeScreenParametersNotification"), object: nil)

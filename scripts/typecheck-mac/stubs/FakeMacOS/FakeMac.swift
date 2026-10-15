@@ -324,6 +324,8 @@ extension FakeMac {
     public var refusesObserversUntil: TimeInterval = 0
     /// "The focus is on it" is posted before "it was created". Seen on hosted Macs, a millisecond apart, for every window opened in a running app.
     public var reportsFocusBeforeCreated = false
+    /// Posts no "created" for its new windows. Nobody has seen such an app; the layer must not depend on there being none.
+    public var doesNotReportCreated = false
     /// New windows get their subrole so long after they are created.
     public var subroleComesAfter: TimeInterval = 0
     /// A new size is applied so long after the call returned.
@@ -332,6 +334,8 @@ extension FakeMac {
     public var isSilentDuringDrags = false
     /// Takes no notice of `activate()`: since macOS 14 that is only a request.
     public var ignoresActivation = false
+    /// It answers so many more calls and then hangs: in the middle of what Arbor is asking of it.
+    public var hangsAfterCalls: Int?
 
     /// What was asked of it, and what it would have posted, while it hung.
     var backlog: [(label: String, run: () -> Void)] = []
@@ -380,6 +384,10 @@ extension FakeMac {
     public internal(set) var tabGroup: Int?
     public internal(set) var isFrontTab = true
     public var alpha = 1.0
+    /// False for tooltips and macOS's helpers, which never become anybody's key window.
+    public var canTakeKeyboard = true
+    /// How often somebody outside its app has asked it for a place or a size.
+    public internal(set) var timesAskedForAFrame = 0
     var lastMovedReport: TimeInterval = 0
     /// Goes back to the frame it had so long after every move from outside (traces `stubborn-fast`, `stubborn-slow`).
     public var goesBackAfter: TimeInterval?

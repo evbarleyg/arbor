@@ -32,6 +32,10 @@ extension FakeMac {
     calls += 1
     guard isTrusted else { return .apiDisabled }
     guard let app = app(pid), app.isAlive else { return .cannotComplete }
+    if let left = app.hangsAfterCalls {
+      app.hangsAfterCalls = left > 0 ? left - 1 : nil
+      if left == 0 { hang(app) }
+    }
     if app.isHung {
       if !Pump.isOffTheMainThread {
         // A timeout of 0 means the default, not "do not wait".
@@ -238,6 +242,7 @@ extension FakeMac {
   }
 
   func setPosition(_ point: CGPoint, of window: Window) {
+    window.timesAskedForAFrame += 1
     // macOS accepts a new frame for a full-screen window and does nothing.
     guard !window.isFullScreen else { return }
     let before = window.frame
@@ -248,6 +253,7 @@ extension FakeMac {
   }
 
   func setSize(_ size: CGSize, of window: Window) {
+    window.timesAskedForAFrame += 1
     guard !window.isFullScreen, window.isOpen, window.isResizable else { return }
     let before = window.frame
     change(window, to: CGRect(origin: before.origin, size: allowedSize(size, for: window, at: before.origin)), goingBackTo: before)

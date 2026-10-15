@@ -1,6 +1,7 @@
 import ArborCore
 @testable import ArborKit
 import ArborTesting
+import ApplicationServices
 import CoreGraphics
 import FakeMacOS
 import Foundation
@@ -38,6 +39,8 @@ final class StoreyTwo {
     heard.next = recording
     layer.events = heard
     controller.accessibilityGranted = true
+    // The app's thorough way is to make an event tap, which the model has none of.
+    controller.accessibilityProbe = { _ in AXIsProcessTrusted() }
     watcher = FrontmostAppWatcher { [weak controller] app in controller?.applicationActivated(app) }
     mac.note("Arbor starts")
     watcher.start()

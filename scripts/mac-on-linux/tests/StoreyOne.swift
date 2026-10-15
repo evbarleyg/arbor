@@ -173,4 +173,14 @@ final class StoreyOne {
 
   func snapshot(_ window: FakeMac.Window) -> WindowSnapshot? { layer.allWindows().first { $0.id.rawValue == window.number } }
   var known: [UInt32] { layer.allWindows().map(\.id.rawValue) }
+
+  /// Where the keyboard is by the layer's last word on it: the window it last reported focused, or, if it has said since that the keyboard may be
+  /// somewhere else, what it answers when asked (`WindowSystemEvents.keyboardFocusMoved`).
+  var lastWordOnTheKeyboard: UInt32? {
+    for event in heard.all.reversed() {
+      if case .focused(let id) = event { return id }
+      if event == .keyboardMoved { return layer.focusedWindow()?.rawValue }
+    }
+    return layer.focusedWindow()?.rawValue
+  }
 }

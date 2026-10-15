@@ -19,6 +19,7 @@ extension FakeMac {
     let window = Window(number: lastWindowNumber, serial: windowsMade, app: app, title: title, frame: frame, space: activeSpace)
     window.role = role
     window.subrole = subrole
+    window.canTakeKeyboard = takesKeyboard
     windowsBySerial[window.serial] = window
     app.windows.append(window)
     note("\(app.name) opens w\(window.number)\(subrole == "AXStandardWindow" ? "" : " (\(subrole ?? "no subrole"))")")
@@ -34,12 +35,13 @@ extension FakeMac {
     window.hasSubroleFrom = now + app.subroleComesAfter
     stack.removeAll { $0 === window }
     stack.insert(window, at: 0)
-    guard takesKeyboard else { return report("AXWindowCreated", about: window) }
+    func created(after delay: TimeInterval = 0) { if !app.doesNotReportCreated { report("AXWindowCreated", about: window, after: delay) } }
+    guard takesKeyboard else { return created() }
     if app.reportsFocusBeforeCreated {
       makeKey(window)
-      report("AXWindowCreated", about: window, after: 0.001)
+      created(after: 0.001)
     } else {
-      report("AXWindowCreated", about: window)
+      created()
       makeKey(window)
     }
   }
@@ -93,6 +95,19 @@ extension FakeMac {
     take(frame, window)
   }
 
+  /// The app makes another of its windows the key one, whether it is in front or not.
+  public func appMakesKey(_ window: Window) {
+    note("\(window.app.name) makes w\(window.number) its key window")
+    makeKey(window)
+  }
+
+  /// A window has another frame and nobody has heard: its app posts nothing, or the report is still on its way.
+  public func changeSilently(_ window: Window, to frame: CGRect) {
+    note("w\(window.number) has the frame \(frame), and nothing says so")
+    window.frame = frame
+    window.bounds = frame
+  }
+
   // MARK: Minimizing
 
   /// The yellow button, ⌘M, or `AXMinimized`. Trace `minimize-restore`: "miniaturized" comes when the animation is over, 0.55 s later, and 15 to 20 ms
@@ -141,7 +156,7 @@ extension FakeMac {
     if lists == .neither { listsAreEmptyUntil = now + timing.spaceTransition }
     workspaceNotice("NSWorkspaceActiveSpaceDidChangeNotification", nil, after: timing.spaceNotice)
     send(after: timing.spaceNotice + (appComesForwardFirst ? -0.02 : 0.02), from: .system, "") { [self] in
-      guard activeSpace == space, let top = stack.first(where: { isShowing($0) }) else { return }
+      guard activeSpace == space, let top = stack.first(where: { isShowing($0) && $0.canTakeKeyboard }) else { return }
       // The window on top of the new Space gets the keyboard.
       makeKey(top)
       activate(top.app, raisingAll: false)
@@ -184,7 +199,11 @@ extension FakeMac {
       window.space = own
       switchSpace(to: own, lists: lists)
       if saysSoLate {
-        appDoes(window.app, after: timing.spaceTransition - 0.1, "w\(window.number) says that it is in full screen") { window.isFullScreen = true }
+        appDoes(window.app, after: timing.spaceTransition - 0.1, "w\(window.number) says that it is in full screen") { [self] in
+          window.isFullScreen = true
+          // Whatever was done to it on the way, the transition ends with the window filling the display.
+          take(display, window)
+        }
       }
     }
   }

@@ -162,7 +162,7 @@ extension FakeMac {
   /// has no key window, and posts nothing about that (AppKit reports a window that becomes key, not one that stops being it).
   func nextWindowBecomesKey(in app: App, insteadOf old: Window) {
     guard app.focused === old || app.main === old else { return }
-    if let next = stack.first(where: { $0.app === app && $0 !== old && isShowing($0) }) {
+    if let next = stack.first(where: { $0.app === app && $0 !== old && isShowing($0) && $0.canTakeKeyboard }) {
       makeKey(next)
     } else {
       app.focused = nil
