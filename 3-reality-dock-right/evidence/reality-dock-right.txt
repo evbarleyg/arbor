@@ -1,0 +1,63 @@
+# reality-dock-right 2026-10-15T11:39Z on macOS 26.6.2, commit c3333c9
+
+== the Mac
+
+== the Dock goes to the right
+  ✔ the Dock stands at the right: the visible frame leaves room at that edge of the screen
+
+== journey: commands
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== journey: apps
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== journey: edges
+  ✔ W3 came along to the left edge
+  ✔ W2 came along to the top edge
+  ✔ W1 came along to the right edge
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== journey: pointer
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== journey: keys
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== written down
+
+== out of view, 1: what is to be seen of a window that Arbor has taken out of view
+
+== out of view, 2: how far macOS lets a window go. Arbor is paused and asks nothing
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✘ window 2 is back on screen after quitting — only 1 % of it is to be seen: 973 740 480 348
+  ✔ window 3 is back on screen after quitting
+
+27 passed, 1 failed
