@@ -111,7 +111,8 @@ public struct OnboardingModel: Equatable, Sendable {
 
     public var id: ID
     public var title: String
-    /// How much it matters, next to the title: "Required", "Optional", "Best changed". Once the row is in order, the state instead:
+    /// How much it matters, next to the title: "Required", "Optional", "Best changed"; empty for what is only offered. Once the row is in
+    /// order, the state instead:
     /// "Best changed" beside a tick reads as if there were still something to change.
     public var importance: String
     public var state: State
@@ -204,8 +205,12 @@ public struct OnboardingModel: Equatable, Sendable {
 
   /// Whether this is good news that somebody is waiting for in another window: the permission has arrived, or the last thing in the
   /// way has gone. They are in System Settings then, which covers this window, and Arbor has no other face: it comes forward.
+  /// So is a tick on a row that sent them there, advice or not. Not what a setting of Arbor's own makes of a row: that has put nothing right.
   public func isWorthComingForward(after old: OnboardingModel) -> Bool {
-    (isReady && !old.isReady) || (!needsAttention && old.needsAttention)
+    func isInOrder(_ row: Row) -> Bool { self.row(row.id)?.isSatisfied ?? true }
+    let advised = old.rows.filter(\.needsAttention)
+    return (isReady && !old.isReady) || (!needsAttention && !advised.isEmpty && advised.allSatisfy(isInOrder))
+      || old.rows.contains { !$0.isSatisfied && $0.button != nil && self.row($0.id)?.isSatisfied == true }
   }
 
   public func row(_ id: Row.ID) -> Row? { rows.first { $0.id == id } }
@@ -221,6 +226,8 @@ public struct OnboardingModel: Equatable, Sendable {
   ///   - switchesChangedByArbor: the ones it keeps off while it runs, because somebody asked it to.
   ///   - switchesGivenBack: those of them macOS has back for the time being: Arbor is paused, or may not arrange windows.
   ///   - fixSetupFailure: what `fix-setup` answered when it last failed in this showing of the window.
+  ///   - switchesAskedForInVain: those of them that are on all the same while Arbor arranges windows.
+  ///   - edgeDrags: when a window dragged to a screen edge docks (`MacSwitch.weight`).
   ///   - menuBarIsOneIcon: the menu bar item is Arbor's icon alone, which a plain click opens; with something docked it is a row of buttons.
   ///   - menuBarIcon: that icon as it is now.
   ///   - desktops: see `desktops`.
@@ -234,9 +241,10 @@ public struct OnboardingModel: Equatable, Sendable {
     _ facts: SystemFacts, flow: OnboardingFlow? = nil, windowsOutOfView: Int = 0, offersScreenRecording: Bool = false,
     appsWithOwnShortcuts: [String] = [], canFixSetup: Bool = false, switchesChangedByArbor: [MacSwitch] = [],
     switchesGivenBack: [MacSwitch] = [],
-    fixSetupFailure: String? = nil, menuBarIsOneIcon: Bool = true, menuBarIcon: MenuBarModel.Icon = MenuBarModel.Icon(),
+    switchesAskedForInVain: [MacSwitch] = [], fixSetupFailure: String? = nil, edgeDrags: DragDocks = .held,
+    menuBarIsOneIcon: Bool = true, menuBarIcon: MenuBarModel.Icon = MenuBarModel.Icon(),
     desktops: [CGRect] = [], isNewcomer: Bool = false,
-    isPaused: Bool = false, lostShortcuts: [String] = [], signature: BuildInfo.Signature? = nil, dragDocks: DragDocks = .held,
+    isPaused: Bool = false, lostShortcuts: [String] = [], signature: BuildInfo.Signature? = nil,
     shortcut: (Command) -> String? = { _ in nil }
   ) {
     let flow = flow ?? .checkingSetup(isReady: facts.accessibility)
@@ -254,8 +262,8 @@ public struct OnboardingModel: Equatable, Sendable {
       told, windowsOutOfView: windowsOutOfView, offersScreenRecording: offersScreenRecording,
       appsWithOwnShortcuts: appsWithOwnShortcuts, canFixSetup: canFixSetup, changed: page == .setup ? switchesChangedByArbor : [],
       givenBack: page == .setup ? switchesGivenBack : [], isPaused: isPaused,
-      failure: fixSetupFailure, canDock: facts.accessibility && !isPaused,
-      lostShortcuts: lostShortcuts, isNewcomer: isNewcomer, signature: signature, dragDocks: dragDocks, shortcut: shortcut)
+      inVain: page == .setup ? switchesAskedForInVain : [], failure: fixSetupFailure, canDock: facts.accessibility && !isPaused,
+      lostShortcuts: lostShortcuts, isNewcomer: isNewcomer, signature: signature, edgeDrags: edgeDrags, shortcut: shortcut)
     rows =
       page == .setup
       ? all
@@ -405,37 +413,33 @@ public struct OnboardingModel: Equatable, Sendable {
     return Placement(frame: frame, glides: false)
   }
 
-  /// Where the window waits during the moves: its top left corner. Low on the display, so that the title bars of the
-  /// windows the moves are made on stay in reach, with room below for the line that says what each move did. It keeps to the Desktop, as
-  /// every window does that is not docked: at the right while nothing is docked, because the first move goes to the left edge; then over
-  /// the Desktop, which lies beside the first docked window and between the two. Where the Desktop is narrower than the window, it lies
-  /// over the near edges of what is docked.
+  /// Where the window waits during the moves: its top left corner. Its promise is to keep out of the windows' way, and a dock touches only
+  /// what is docked: the others lie where they lay, and what shows of them shows in the free part of the display. So it rests in the
+  /// bottom corner on that side, farthest from what has been docked, a gap's width in: at the right while nothing is docked, because
+  /// the first move goes to the left. Where the line that says what each move did could reach it, it gives way upward.
   static func restingPlace(size: CGSize, visible: CGRect, desktops: [CGRect]) -> CGPoint {
-    let x =
-      desktops.first { $0.overlaps(visible) }.map { min(max($0.midX - size.width / 2, visible.minX), visible.maxX - size.width) }
-      ?? visible.maxX - size.width - 24
+    let isAtTheLeft = desktops.first { $0.overlaps(visible) }.map { $0.midX < visible.midX - 1 } ?? false
+    let x = isAtTheLeft ? visible.minX + inset : visible.maxX - size.width - inset
+    // The line is centred, and as wide as its words, up to this.
+    let reach = HeadsUpModel(kind: .hint, text: "").placed(in: visible).maximumWidth / 2
+    let meetsTheLine = x < visible.midX + reach && x + size.width > visible.midX - reach
+    let y = visible.maxY - (meetsTheLine ? roomBelow : inset) - size.height
     // On whole points, or the window would be asked for a frame it cannot have, again at every look.
-    return CGPoint(x: x.rounded(), y: max(visible.maxY - roomBelow - size.height, visible.minY).rounded())
+    return CGPoint(x: x.rounded(), y: max(y, visible.minY).rounded())
   }
 
+  /// As wide as the gap between docked windows comes.
+  static let inset: CGFloat = 12
   /// The heads-up line and a little air.
   static let roomBelow = HeadsUpModel.bottomMargin + 48
 
   // MARK: The first page
 
-  /// What somebody can do at a screen edge now that it is Arbor's, by how a dragged window docks. Nothing where no drag does.
-  private static func whatTheEdgesAreFor(_ dragDocks: DragDocks) -> String {
-    switch dragDocks {
-    case .held: " To dock a window there, hold ⌘ and drag it to a screen edge."
-    case .always: " A window dragged to a screen edge docks now."
-    case .never: ""
-    }
-  }
-
   private static func rows(
     _ facts: SystemFacts, windowsOutOfView: Int, offersScreenRecording: Bool, appsWithOwnShortcuts apps: [String],
-    canFixSetup: Bool, changed: [MacSwitch], givenBack: [MacSwitch], isPaused: Bool, failure: String?, canDock: Bool,
-    lostShortcuts lost: [String], isNewcomer: Bool, signature: BuildInfo.Signature?, dragDocks: DragDocks, shortcut: (Command) -> String?
+    canFixSetup: Bool, changed: [MacSwitch], givenBack: [MacSwitch], isPaused: Bool, inVain: [MacSwitch],
+    failure: String?, canDock: Bool, lostShortcuts lost: [String], isNewcomer: Bool, signature: BuildInfo.Signature?,
+    edgeDrags: DragDocks, shortcut: (Command) -> String?
   ) -> [Row] {
     let settings = "Open Settings…"
     let stranded =
@@ -474,32 +478,44 @@ public struct OnboardingModel: Equatable, Sendable {
               + "icon. Nothing is recorded or stored. macOS restarts Arbor to apply it.",
           button: settings))
     }
+    // What is only offered stands below what is advised.
+    var offered: Row?
     if let all = facts.switches?.filter(\.isInArborsWay) {
-      // What a newcomer is about to run into comes first: the first thing they will try is a drag.
       let order: [MacSwitch] = [.screenEdges, .menuBar, .optionKey, .stageManager]
       // What Arbor has given back for the time being is on by Arbor's own doing, and in nobody's way: Arbor is not arranging windows.
       let lent = givenBack
       let switches = (order.filter(all.contains) + all.filter { !order.contains($0) }).filter { !lent.contains($0) }
-      let mine = switches.filter(\.canBeSwitchedOffForYou).count
+      func weight(_ item: MacSwitch) -> MacSwitch.Weight { item.weight(edgeDrags: edgeDrags, askedFor: inVain.contains(item)) }
+      let isAdvice = switches.contains { weight($0) == .inTheWay }
+      // All that the step would change, whatever each weighs.
+      let tiling = switches.filter(\.canBeSwitchedOffForYou)
+      // Beside Stage Manager, which is advice, nothing is said of what is none: the suggestion would be headed by it.
+      let speaksOfTiling = tiling.contains { weight($0) == .inTheWay } || (!isAdvice && tiling.contains { weight($0) != .nothing })
+      let mine = speaksOfTiling ? tiling.count : 0
       // While macOS's switch for an edge is on, that whole edge is macOS's (collab/QUESTIONS.md, Q23).
       let takesEdges = switches.contains(.screenEdges) || switches.contains(.menuBar)
+      let how = edgeDrags.howToDockByDragging
       let offers = canFixSetup && mine > 0
       var sentences: [String] = []
       if mine > 0 {
-        // What it does to a person, what the step gets them, and for how long. No word that has to be learnt, and no keys: six readers of
-        // six called the longer text a wall.
-        sentences = [
-          "Your Mac tiles a window dragged \(takesEdges ? "to a screen edge" : "with Option held"), before Arbor gets it."
-        ]
+        // What somebody would want it for, what macOS does to that, what the step gets them, and for how long. No word that has to be
+        // learnt: six readers of six called the longer text a wall.
+        if takesEdges, let how {
+          sentences = ["To dock with the mouse, \(how).", "There your Mac’s own tiling gets it first."]
+        } else {
+          sentences = ["Your Mac tiles a window dragged \(takesEdges ? "to a screen edge" : "with Option held"), before Arbor gets it."]
+        }
         if offers {
-          sentences.append("Switch that off, only while Arbor runs, and Arbor has \(takesEdges ? "the edges" : "the drag").")
+          sentences.append("Switch that off, only while Arbor runs, and \(takesEdges ? "the edges are Arbor’s" : "Arbor has the drag").")
         }
       }
       if switches.contains(.stageManager) { sentences.append("Stage Manager moves windows itself: use one or the other.") }
-      let names = switches.filter(\.canBeSwitchedOffForYou).map(\.named)
+      let names = speaksOfTiling ? tiling.map(\.named) : []
+      // No tick, and no "Off", over a switch that is on, whatever it weighs.
+      let state: Row.State = switches.isEmpty ? .done : isAdvice ? .recommended : speaksOfTiling ? .optional : .note
       var row = Row(
-        id: .desktopAndDock, title: mine > 0 || switches.isEmpty ? "macOS tiling" : "Stage Manager", importance: "Recommended",
-        state: switches.isEmpty ? .done : .recommended, status: switches.isEmpty ? "Off" : "On",
+        id: .desktopAndDock, title: mine > 0 || !switches.contains(.stageManager) ? "macOS tiling" : "Stage Manager",
+        importance: isAdvice ? "Recommended" : "", state: state, status: switches.isEmpty ? "Off" : "On",
         detail: sentences.joined(separator: " "),
         // By their names in System Settings, for whoever goes there. With the offer they are the small print under the button.
         points: offers ? [] : names, button: offers ? "Or do it yourself in Desktop & Dock…" : "Open Desktop & Dock…")
@@ -520,7 +536,8 @@ public struct OnboardingModel: Equatable, Sendable {
             "While Arbor runs, \(off) setting\(one ? "" : "s") of macOS \(one ? "is" : "are") off. Quit or pause Arbor, and your Mac is as "
             + "it was. To end that for good: here, or later under Help → Check Setup… in Arbor’s menu."
             // What it was for, where that has come true: every edge is Arbor's, and Arbor may and does move windows.
-            + (changed.contains(.screenEdges) && !takesEdges && canDock ? Self.whatTheEdgesAreFor(dragDocks) : "")
+            + (changed.contains(.screenEdges) && !takesEdges && canDock
+              ? how.map { " The screen edges are Arbor’s now: \($0), and it docks." } ?? "" : "")
           row.undo = Row.Action(one ? "Put It Back" : "Put Them Back", .fixSetup(undo: true))
         } else if !lent.isEmpty {
           // Neither a tick, which would say "off", nor advice: this is Arbor keeping its word.
@@ -538,7 +555,12 @@ public struct OnboardingModel: Equatable, Sendable {
         }
       }
       if let failure { row.failure = "That did not work: \(failure)." }
-      rows.append(row)
+      // Where macOS's tiling is nothing to Arbor there is nothing to say of it, on or off: only of what Arbor did to this Mac, and of
+      // a button that was pressed in vain.
+      let hasSomethingToSay = state == .recommended || state == .optional || (state == .done && how != nil)
+      if hasSomethingToSay || !row.done.isEmpty || failure != nil {
+        if state == .optional { offered = row } else { rows.append(row) }
+      }
     }
     if !facts.competingApps.isEmpty {
       let several = facts.competingApps.count > 1
@@ -560,6 +582,7 @@ public struct OnboardingModel: Equatable, Sendable {
             + "the VoiceOver modifier (VoiceOver Utility → General), or set hotkeysEnabled to false in Arbor’s settings.",
           button: nil))
     }
+    if let offered { rows.append(offered) }
     if let count = facts.inputSources, count > 1, everything == "⌃⌥Space" {
       let alternative = shortcut(.home).map { " \($0) does the same." } ?? ""
       rows.append(
@@ -622,7 +645,7 @@ public struct OnboardingModel: Equatable, Sendable {
           }
         // Beside the title: the button of a row that has no step to offer, as `OnboardingView` places them.
         let beside = row.action != nil ? nil : row.isSatisfied ? row.undo?.title ?? row.button : row.button
-        lines.append("\(mark) \(row.title) (\(row.importance))" + (beside.map { "  [\($0)]" } ?? ""))
+        lines.append("\(mark) \(row.title)" + (row.importance.isEmpty ? "" : " (\(row.importance))") + (beside.map { "  [\($0)]" } ?? ""))
         if !row.detail.isEmpty { lines.append("    \(row.detail)") }
         lines += row.points.map { "    • \($0)" }
         if let action = row.action { lines.append("    [\(action.title)]" + (row.button.map { " [\($0)]" } ?? "")) }

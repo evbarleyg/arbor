@@ -65,7 +65,7 @@ import Testing
     #expect(h.controller.pageToWelcomeOn() == .permissions, "to a newcomer: what Arbor is for")
     #expect(h.controller.onboardingModel(facts, flow: OnboardingFlow(isReady: true)).rows.map(\.id) == [.accessibility], "and nothing of macOS's")
     let row = try #require(h.controller.onboardingModel(facts).row(.desktopAndDock))
-    #expect(row.state == .recommended)
+    #expect(row.state == .optional, "in nobody's way: a plain drag is macOS's own")
     for tiling in [MacSwitch.screenEdges, .menuBar, .optionKey] { #expect(row.afterword.contains(tiling.named)) }
     #expect(windows.map { h.frame($0) } == before)
     #expect(h.system.frameLog.isEmpty, "\(h.system.frameLog)")

@@ -44,13 +44,13 @@ private let tuned = SystemFacts(accessibility: true, screenRecording: true, swit
     #expect(model.page == .setup && model.title == "Arbor needs one permission")
     #expect(model.summary == "What on this Mac matters to Arbor, and how it stands.")
     #expect(model.rows.map(\.id) == [.accessibility, .screenRecording, .desktopAndDock])
-    #expect(model.rows.map(\.state) == [.required, .optional, .recommended])
-    #expect(model.rows.map(\.importance) == ["Required", "Optional", "Recommended"])
+    #expect(model.rows.map(\.state) == [.required, .optional, .optional])
+    #expect(model.rows.map(\.importance) == ["Required", "Optional", ""])
     #expect(model.rows.map(\.status) == ["Not granted", "Not granted", "On"])
     #expect(model.rows.allSatisfy { !$0.isSatisfied && !$0.detail.isEmpty && $0.button != nil })
     var permitted = fresh
     permitted.accessibility = true
-    #expect(OnboardingModel(permitted).title == "Ready, with one suggestion")
+    #expect(OnboardingModel(permitted).title == "Arbor is ready", "on a Mac as it comes")
     // An ad-hoc build loses the permission while System Settings still shows the switch on.
     let alreadyOn = " Already on? Switch it off and on again: macOS asks anew after every update."
     #expect(model.row(.accessibility)?.detail.hasSuffix("This window comes back by itself." + alreadyOn) == true)
@@ -146,31 +146,128 @@ private let tuned = SystemFacts(accessibility: true, screenRecording: true, swit
     #expect(!OnboardingModel(fresh).text.contains(" [Arbor"))
   }
 
+  /// The one rule, which Check Setup… and `doctor` both go by: macOS's tiling is in the way of a drag that docks at a screen edge, and of
+  /// nothing else.
+  @Test func howMuchASwitchOfMacOSsMatters() {
+    func weights(_ edgeDrags: DragDocks, askedFor: Bool = false) -> [MacSwitch.Weight] {
+      [MacSwitch.screenEdges, .menuBar, .optionKey, .stageManager, .clickWallpaper].map { $0.weight(edgeDrags: edgeDrags, askedFor: askedFor) }
+    }
+    #expect(weights(.always) == [.inTheWay, .inTheWay, .inTheWay, .inTheWay, .nothing])
+    // A plain drag is macOS's own (Q29, 3). With ⌥ alone it is a plain drag too, and Arbor wants nothing of it.
+    #expect(weights(.held) == [.goodToKnow, .goodToKnow, .nothing, .inTheWay, .nothing])
+    #expect(weights(.never) == [.nothing, .nothing, .nothing, .inTheWay, .nothing])
+    // Somebody asked Arbor to keep it off, and it is on all the same: that is in their way, however they drag.
+    for edgeDrags in DragDocks.allCases { #expect(weights(edgeDrags, askedFor: true) == [.inTheWay, .inTheWay, .inTheWay, .inTheWay, .nothing]) }
+  }
+
+  /// A plain drag is macOS's own (Q29, 3), so its tiling is in nobody's way: Arbor is ready, and the row is for whoever wants a drag with ⌘
+  /// held to reach the screen edges. It follows `dragDocks`, as the moves follow the shortcuts in effect.
+  @Test func macOSsTilingIsASuggestionOnlyWhereAPlainDragDocks() throws {
+    var facts = fresh
+    facts.accessibility = true
+    func model(_ edgeDrags: DragDocks, changed: [MacSwitch] = [], inVain: [MacSwitch] = [], failure: String? = nil) -> OnboardingModel {
+      OnboardingModel(
+        facts, canFixSetup: true, switchesChangedByArbor: changed, switchesAskedForInVain: inVain, fixSetupFailure: failure, edgeDrags: edgeDrags)
+    }
+    let tiling: [MacSwitch] = [.screenEdges, .menuBar, .optionKey]
+    let step = " There your Mac’s own tiling gets it first. Switch that off, only while Arbor runs, and the edges are Arbor’s."
+    let held = try #require(model(.held).row(.desktopAndDock))
+    #expect(held.state == .optional && held.importance.isEmpty && held.status == "On" && !held.needsAttention)
+    #expect(held.detail == "To dock with the mouse, hold ⌘ and drag a window to a screen edge." + step)
+    #expect(held.action?.title == "Switch Off macOS Tiling", "the step is there as ever")
+    #expect(held.afterword.hasPrefix("Changes 3 settings"), "all that the step would change, whatever each weighs")
+    #expect(model(.held).title == "Arbor is ready" && OnboardingModel(facts, canFixSetup: true).row(.desktopAndDock) == held, "as Arbor ships")
+
+    let always = try #require(model(.always).row(.desktopAndDock))
+    #expect(always.state == .recommended && always.importance == "Recommended")
+    #expect(always.detail == "To dock with the mouse, drag a window to a screen edge." + step)
+    #expect(model(.always).title == "Ready, with one suggestion")
+
+    // No drag docks there: macOS's tiling is nothing to Arbor, and nothing is said of it,
+    #expect(model(.never).row(.desktopAndDock) == nil && model(.never).title == "Arbor is ready")
+    // except what went wrong at a button that was pressed.
+    #expect(model(.never, failure: "no").row(.desktopAndDock)?.failure == "That did not work: no.")
+
+    // Asked for, and on all the same (a full disk, a Mac managed by somebody else): in their way, however they drag.
+    #expect(model(.held, changed: tiling, inVain: tiling).row(.desktopAndDock)?.state == .recommended)
+    #expect(model(.held, changed: tiling, inVain: tiling).title == "Ready, with one suggestion")
+
+    // What Arbor did to this Mac is said whatever the setting, with the way back, and counted by what is really off.
+    facts.switches = [.clickWallpaper, .menuBar]
+    for edgeDrags in DragDocks.allCases {
+      let row = try #require(model(edgeDrags, changed: tiling).row(.desktopAndDock))
+      #expect(row.done.hasPrefix("While Arbor runs, 2 settings of macOS are off.") && row.undo?.title == "Put Them Back", "\(edgeDrags)")
+      #expect(!row.isSatisfied && row.status == "On", "no tick over a switch that is on: \(edgeDrags)")
+    }
+    facts.switches = [.clickWallpaper]
+    #expect(model(.never, changed: tiling).row(.desktopAndDock)?.isSatisfied == true)
+    #expect(model(.never, changed: tiling).row(.desktopAndDock)?.done.hasSuffix("in Arbor’s menu.") == true)
+    // What it was for, in the words of the drag that docks.
+    #expect(
+      model(.held, changed: tiling).row(.desktopAndDock)?.done
+        .hasSuffix(" The screen edges are Arbor’s now: hold ⌘ and drag a window to a screen edge, and it docks.") == true)
+    #expect(
+      model(.always, changed: tiling).row(.desktopAndDock)?.done
+        .hasSuffix(" The screen edges are Arbor’s now: drag a window to a screen edge, and it docks.") == true)
+
+    // With ⌥ alone a drag is a plain drag: that switch by itself is nothing to an Arbor that ships, and no tick says "Off" over it.
+    facts.switches = [.optionKey]
+    #expect(model(.held).row(.desktopAndDock) == nil)
+    #expect(model(.always).row(.desktopAndDock)?.detail.hasPrefix("Your Mac tiles a window dragged with Option held, before Arbor gets it.") == true)
+    facts.switches = []
+    #expect(model(.held).row(.desktopAndDock)?.isSatisfied == true && model(.never).row(.desktopAndDock) == nil)
+
+    // Stage Manager moves windows itself, whoever drags what. The suggestion is that, and is not headed by what is none.
+    facts.switches = [.screenEdges, .stageManager]
+    for edgeDrags in [DragDocks.held, .never] {
+      let row = try #require(model(edgeDrags).row(.desktopAndDock))
+      #expect(row.state == .recommended && row.title == "Stage Manager" && row.action == nil, "\(edgeDrags)")
+      #expect(row.detail == "Stage Manager moves windows itself: use one or the other.")
+    }
+    #expect(model(.always).row(.desktopAndDock)?.title == "macOS tiling" && model(.always).row(.desktopAndDock)?.action != nil)
+  }
+
+  /// What is no suggestion stands below what is.
+  @Test func whatIsOnlyOfferedComesAfterWhatIsAdvised() {
+    var facts = fresh
+    facts.accessibility = true
+    facts.competingApps = ["Rectangle"]
+    facts.voiceOver = true
+    facts.inputSources = 2
+    #expect(
+      OnboardingModel(facts, shortcut: defaults).rows.map(\.id) == [.accessibility, .competingApps, .voiceOver, .desktopAndDock, .inputSources])
+    #expect(
+      OnboardingModel(facts, edgeDrags: .always, shortcut: defaults).rows.map(\.id)
+        == [.accessibility, .desktopAndDock, .competingApps, .voiceOver, .inputSources])
+  }
+
   @Test func theDesktopAndDockRowListsWhatIsStillInTheWay() throws {
     let all = try #require(OnboardingModel(fresh).row(.desktopAndDock))
     // What it does to a person, in words that need no learning. Then the switches by the names they have in System Settings, which say
     // in plain words what they do.
     #expect(all.title == "macOS tiling")
-    #expect(all.detail == "Your Mac tiles a window dragged to a screen edge, before Arbor gets it.")
+    let edges = "To dock with the mouse, hold ⌘ and drag a window to a screen edge. There your Mac’s own tiling gets it first."
+    #expect(all.detail == edges)
     #expect(
       all.points == [
         "“Drag windows to left or right edge of screen to tile”", "“Drag windows to menu bar to fill screen”",
         "“Hold ⌥ key while dragging windows to tile”",
       ])
     #expect(all.button == "Open Desktop & Dock…" && all.afterword.isEmpty)
-    func detail(_ switches: [MacSwitch]) -> String? {
+    func detail(_ switches: [MacSwitch], _ edgeDrags: DragDocks = .held) -> String? {
       var facts = fresh
       facts.switches = switches
-      return OnboardingModel(facts).row(.desktopAndDock)?.detail
+      return OnboardingModel(facts, edgeDrags: edgeDrags).row(.desktopAndDock)?.detail
     }
-    #expect(detail([.menuBar]) == "Your Mac tiles a window dragged to a screen edge, before Arbor gets it.")
-    #expect(detail([.optionKey]) == "Your Mac tiles a window dragged with Option held, before Arbor gets it.")
+    #expect(detail([.menuBar]) == edges)
+    // That one matters only where a plain drag docks (`howMuchASwitchOfMacOSsMatters`).
+    #expect(detail([.optionKey], .always) == "Your Mac tiles a window dragged with Option held, before Arbor gets it.")
 
     var facts = fresh
-    facts.switches = [.optionKey]
+    facts.switches = [.menuBar]
     let one = try #require(OnboardingModel(facts).row(.desktopAndDock))
-    #expect(one.state == .recommended)
-    #expect(one.points == ["“Hold ⌥ key while dragging windows to tile”"] && one.afterword.isEmpty)
+    #expect(one.state == .optional)
+    #expect(one.points == ["“Drag windows to menu bar to fill screen”"] && one.afterword.isEmpty)
 
     facts.switches = [.stageManager]
     let stage = try #require(OnboardingModel(facts).row(.desktopAndDock))
@@ -186,14 +283,15 @@ private let tuned = SystemFacts(accessibility: true, screenRecording: true, swit
     #expect(row.action == OnboardingModel.Row.Action("Switch Off macOS Tiling", .fixSetup(undo: false)))
     #expect(
       row.detail
-        == "Your Mac tiles a window dragged to a screen edge, before Arbor gets it. Switch that off, only while Arbor runs, and Arbor has the edges.",
+        == "To dock with the mouse, hold ⌘ and drag a window to a screen edge. There your Mac’s own tiling gets it first. Switch that off, only "
+        + "while Arbor runs, and the edges are Arbor’s.",
       "for how long makes it a small thing to ask: said in the text, not the small print")
     // By their names: without them "3 settings" made six readers of six uneasy.
     #expect(
       row.afterword == "Changes 3 settings in Desktop & Dock, nothing else: “Drag windows to left or right edge of screen to tile”, “Drag "
         + "windows to menu bar to fill screen”, “Hold ⌥ key while dragging windows to tile”.")
     #expect(row.button == "Or do it yourself in Desktop & Dock…", "whoever would rather do it by hand still can")
-    #expect(row.points.isEmpty && row.state == .recommended, "the names are the small print")
+    #expect(row.points.isEmpty && row.state == .optional, "the names are the small print")
 
     var facts = fresh
     facts.switches = [.menuBar]
@@ -214,7 +312,8 @@ private let tuned = SystemFacts(accessibility: true, screenRecording: true, swit
     let alone = try #require(OnboardingModel(facts, canFixSetup: true).row(.desktopAndDock))
     #expect(alone.action == nil && alone.afterword.isEmpty)
     facts.switches = [.screenEdges, .menuBar, .stageManager]
-    let among = try #require(OnboardingModel(facts, canFixSetup: true).row(.desktopAndDock))
+    // Where macOS's tiling is advice as well. Where it is not, the row is Stage Manager's (`macOSsTilingIsASuggestionOnlyWhereAPlainDragDocks`).
+    let among = try #require(OnboardingModel(facts, canFixSetup: true, edgeDrags: .always).row(.desktopAndDock))
     #expect(among.action?.title == "Switch Off macOS Tiling")
     #expect(among.afterword.hasPrefix("Changes 2 settings in Desktop & Dock, nothing else: ") && !among.afterword.contains("Stage Manager"))
     #expect(among.detail.hasSuffix("Stage Manager moves windows itself: use one or the other."))
@@ -228,12 +327,12 @@ private let tuned = SystemFacts(accessibility: true, screenRecording: true, swit
     let two =
       "While Arbor runs, 2 settings of macOS are off. Quit or pause Arbor, and your Mac is as it was. To end that for good: here, or later "
       + "under Help → Check Setup… in Arbor’s menu."
-    #expect(row.done == two + " To dock a window there, hold ⌘ and drag it to a screen edge.")
-    // By how a dragged window docks (`dragDocks`): what to do now, and nothing where no drag docks.
+    #expect(row.done == two + " The screen edges are Arbor’s now: hold ⌘ and drag a window to a screen edge, and it docks.")
+    // By how a dragged window docks there: what to do now, and nothing where no drag docks.
     func said(_ docks: DragDocks) -> String? {
-      OnboardingModel(tuned, canFixSetup: true, switchesChangedByArbor: [.screenEdges, .menuBar], dragDocks: docks).row(.desktopAndDock)?.done
+      OnboardingModel(tuned, canFixSetup: true, switchesChangedByArbor: [.screenEdges, .menuBar], edgeDrags: docks).row(.desktopAndDock)?.done
     }
-    #expect(said(.always) == two + " A window dragged to a screen edge docks now.")
+    #expect(said(.always) == two + " The screen edges are Arbor’s now: drag a window to a screen edge, and it docks.")
     #expect(said(.never) == two)
     #expect(row.undo == OnboardingModel.Row.Action("Put Them Back", .fixSetup(undo: true)) && row.action == nil)
     // What it was for is said only where it has come true: with the permission, without a pause, with every edge Arbor's.
@@ -460,6 +559,8 @@ private let tuned = SystemFacts(accessibility: true, screenRecording: true, swit
     var facts = tuned
     #expect(OnboardingModel(facts, shortcut: defaults).title == "Arbor is ready")
     facts.switches = [.menuBar, .optionKey]
+    #expect(OnboardingModel(facts, shortcut: defaults).title == "Arbor is ready", "macOS's tiling is in nobody's way")
+    facts.switches = [.menuBar, .stageManager]
     #expect(OnboardingModel(facts, shortcut: defaults).title == "Ready, with one suggestion", "a row, however many switches")
     facts.competingApps = ["Rectangle", "Magnet"]
     #expect(OnboardingModel(facts, shortcut: defaults).title == "Ready, with two suggestions")
@@ -487,8 +588,17 @@ private let tuned = SystemFacts(accessibility: true, screenRecording: true, swit
     #expect(!ready.isWorthComingForward(after: ready))
     // One switch of several is a step on the way: whoever is at it is not interrupted.
     var fewer = granted
-    fewer.switches = [.optionKey]
+    fewer.switches = [.menuBar]
     #expect(!OnboardingModel(fewer).isWorthComingForward(after: held))
+    // The same where macOS's tiling is advice.
+    let (advised, taken) = (OnboardingModel(granted, edgeDrags: .always), OnboardingModel(tuned, edgeDrags: .always))
+    #expect(taken.isWorthComingForward(after: advised))
+    // The last of what was in the way has gone, though it had no button: somebody quit Rectangle.
+    var rival = tuned
+    rival.competingApps = ["Rectangle"]
+    #expect(ready.isWorthComingForward(after: OnboardingModel(rival)))
+    // A setting of Arbor's own that makes advice of an offer, or the other way round, has put nothing right on this Mac.
+    #expect(!held.isWorthComingForward(after: advised) && !advised.isWorthComingForward(after: held))
     // Bad news comes by other roads (F63 opens the window).
     #expect(!waiting.isWorthComingForward(after: ready) && !held.isWorthComingForward(after: ready))
   }
@@ -705,8 +815,9 @@ private let tuned = SystemFacts(accessibility: true, screenRecording: true, swit
     #expect(steps.dockedTwo)
   }
 
-  /// The window keeps to the Desktop, as every window does that is not docked, and low, clear of title bars and of the heads-up line.
-  @Test func duringTheMovesTheWindowWaitsOverTheDesktop() {
+  /// A dock touches only what is docked, so the other windows lie where they lay, and what shows of them shows in the free part of the
+  /// display. The window keeps out of their way: in the bottom corner on that side, farthest from what has been docked.
+  @Test func duringTheMovesTheWindowWaitsInTheCornerAwayFromWhatIsDocked() {
     let visible = CGRect(x: 0, y: 25, width: 1440, height: 875)
     let width = OnboardingModel.width(of: .firstSteps)
     func place(_ desktops: [CGRect], height: CGFloat = 400, in visible: CGRect = visible) -> CGPoint {
@@ -716,26 +827,28 @@ private let tuned = SystemFacts(accessibility: true, screenRecording: true, swit
       ).frame.origin
     }
     #expect(width == 420)
-    #expect(place([]).x == 996, "at the right while nothing is docked: the first move goes to the left edge")
-    let beside = CGRect(x: 726, y: 37, width: 702, height: 851), between = CGRect(x: 488, y: 37, width: 464, height: 851)
-    #expect(place([beside]).x == 867, "beside the first docked window")
-    #expect(place([between]).x == 510, "between the two")
-    // Here it hides nothing of what the moves have made.
-    for desktop in [beside, between] {
-      #expect(desktop.contains(CGRect(origin: place([desktop]), size: CGSize(width: width, height: 400))))
-    }
-    // Never off the display, and over the Desktop of its own display, whichever comes first.
-    #expect(place([CGRect(x: 1200, y: 37, width: 228, height: 851)]).x == 1020)
-    #expect(place([CGRect(x: 12, y: 37, width: 200, height: 851)]).x == 0)
-    let elsewhere = CGRect(x: 1452, y: 37, width: 900, height: 851)
-    #expect(place([elsewhere]).x == 996)
-    #expect(place([elsewhere, between]).x == 510)
-    // The line that says what a move did shows under it, not over its buttons.
+    #expect(place([]).x == 1008, "a gap's width from the right while nothing is docked: the first move goes to the left")
+    let atTheRight = CGRect(x: 726, y: 37, width: 702, height: 851), between = CGRect(x: 488, y: 37, width: 464, height: 851)
+    #expect(place([atTheRight]).x == 1008, "the first window is docked at the left")
+    #expect(place([between]).x == 1008, "between two it stays where it was")
+    #expect(place([CGRect(x: 12, y: 37, width: 702, height: 851)]).x == 12, "whoever docks at the right first")
+    // By the free part of its own display, whichever comes first.
+    let elsewhere = CGRect(x: 1452, y: 37, width: 200, height: 851)
+    #expect(place([elsewhere]).x == 1008)
+    #expect(place([elsewhere, CGRect(x: 12, y: 37, width: 702, height: 851)]).x == 12)
+    // The line that says what a move did is centred at the bottom. Where it could reach the window, the window gives way upward,
     let line = HeadsUpModel(kind: .hint, text: "Docked").placed(in: visible)
+    #expect(line.anchor.x + line.maximumWidth / 2 > 1008)
     #expect(place([]).y + 400 <= line.anchor.y - 40, "its lower edge, and the top of a line of one row")
+    // and where it cannot, the window is in the very corner.
+    let wide = CGRect(x: 0, y: 25, width: 2560, height: 1415)
+    #expect(place([], in: wide) == CGPoint(x: 2560 - 12 - 420, y: 1440 - 12 - 400))
     #expect(place([], height: 2000).y == visible.minY, "taller than the display: its title bar stays in reach")
-    // On whole points, whatever the Desktop's width and the window's height.
-    let odd = place([CGRect(x: 349, y: 37, width: 325, height: 600)], height: 331.5, in: CGRect(x: 0, y: 25, width: 1024, height: 673))
+    // On the smallest display: 37 points further from the docked window than the middle of the free half.
+    let small = CGRect(x: 0, y: 31, width: 1024, height: 677)
+    #expect(place([CGRect(x: 518, y: 43, width: 494, height: 653)], height: 364, in: small) == CGPoint(x: 592, y: 240))
+    // On whole points, whatever the window's height.
+    let odd = place([], height: 331.5, in: CGRect(x: 0, y: 25, width: 1024.5, height: 673))
     #expect(odd == CGPoint(x: odd.x.rounded(), y: odd.y.rounded()))
   }
 
@@ -759,7 +872,7 @@ private let tuned = SystemFacts(accessibility: true, screenRecording: true, swit
     #expect(placement(.permissions, after: .permissions, old: low, size: first).frame.maxY == visible.maxY)
     // Continue: it glides to where it rests. Opened on the moves, it is there at once.
     let resting = placement(.firstSteps, after: .permissions, old: opened.frame, size: moves)
-    #expect(resting.glides && resting.frame == CGRect(x: 996, y: 326, width: 420, height: 400))
+    #expect(resting.glides && resting.frame == CGRect(x: 1008, y: 326, width: 420, height: 400))
     #expect(placement(.firstSteps, after: nil, old: .zero, size: moves) == .init(frame: resting.frame, glides: false))
     // Back: to the middle again.
     #expect(placement(.permissions, after: .firstSteps, old: resting.frame, size: first) == opened)

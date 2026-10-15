@@ -84,10 +84,10 @@ import Testing
     #expect(lines.map { $0.prefix(1) }.filter { "✘–✔".contains($0) }.map(String.init).joined().hasPrefix("✘✘––✔"))
     // Within a kind, the order the checks are made in; a check's notes stay under it.
     facts = Self.healthy
-    facts.switches = [.optionKey]
+    facts.switches = [.stageManager]
     let withNotes = (makeHarness(facts).run("doctor").text ?? "").split(separator: "\n").map(String.init)
     #expect(withNotes[0].hasPrefix("✘ Desktop & Dock settings"))
-    #expect(withNotes[1] == "    " + MacSwitch.optionKey.advice)
+    #expect(withNotes[1] == "    " + MacSwitch.stageManager.advice)
   }
 
   /// Most people never run `doctor`: what it would call a problem is in the log from the start.
@@ -101,6 +101,19 @@ import Testing
     #expect(lines.count == 2)
     #expect(lines[0].hasPrefix("setup: Desktop & Dock settings: ") && lines[0].hasSuffix(" | " + MacSwitch.stageManager.advice))
     #expect(lines[1].hasPrefix("setup: Other window managers: yabai running"))
+    #expect(makeHarness(facts).controller.setupNoteLines.isEmpty && makeHarness().controller.setupNoteLines.isEmpty)
+  }
+
+  /// One note goes there too: whoever reads the log of a Mac on which "it would not dock at the edge" wants to know first that macOS's
+  /// own tiling is on. It is no problem, and is not logged as one.
+  @Test func thatMacOSTilesIsInTheLogThoughItIsNoProblem() {
+    var facts = Self.healthy
+    facts.switches = MacSwitch.inTheWay(macOS: 26) { _ in nil }
+    let h = makeHarness(facts)
+    #expect(h.controller.setupProblemLines.isEmpty)
+    #expect(h.controller.setupNoteLines.count == 1)
+    #expect(h.controller.setupNoteLines.first?.hasPrefix("setup: Desktop & Dock settings: macOS’s own tiling is on") == true)
+    #expect(h.controller.setupNoteLines.first?.contains(MacSwitch.screenEdges.advice) == true)
   }
 
   /// Signs a keyboard cannot type alone stay where a US keyboard has them (F44): said, because the README's table does not.
@@ -178,14 +191,48 @@ import Testing
     #expect(h.run("doctor").ok)
   }
 
+  /// macOS's tiling is in the way of a drag that docks, and of nothing else: a problem where a plain drag docks, something to know where
+  /// only a drag with ⌘ held does, which is how Arbor ships (Q29, 3), and nothing where none does.
   @Test func desktopAndDockSettingsCompeteWithArbor() {
     var facts = Self.healthy
     facts.switches = [.menuBar, .optionKey]
-    let h = makeHarness(facts)
+    func harness(_ dragDocks: DragDocks) -> Harness {
+      var settings = Settings()
+      settings.dragDocks = dragDocks.rawValue
+      return makeHarness(facts, settings: settings)
+    }
+    var h = harness(.always)
     #expect(check(h, "Desktop & Dock settings")?.mark == .problem)
     #expect(check(h, "Desktop & Dock settings")?.detail.contains("System Settings → Desktop & Dock") == true)
     #expect(check(h, "Desktop & Dock settings")?.notes == [MacSwitch.menuBar.advice, MacSwitch.optionKey.advice])
     #expect(!h.run("doctor").ok)
+
+    h = makeHarness(facts)
+    #expect(check(h, "Desktop & Dock settings") == check(harness(.held), "Desktop & Dock settings"), "as Arbor ships")
+    #expect(check(h, "Desktop & Dock settings")?.mark == .note)
+    #expect(
+      check(h, "Desktop & Dock settings")?.detail.hasPrefix("macOS’s own tiling is on, and gets a window dragged to a screen edge first, with ⌘ held too.")
+        == true)
+    #expect(check(h, "Desktop & Dock settings")?.notes == [MacSwitch.menuBar.advice, MacSwitch.optionKey.advice])
+    #expect(h.run("doctor").ok, "a Mac as it comes has no problem")
+
+    #expect(check(harness(.never), "Desktop & Dock settings")?.mark == .ok)
+    #expect(check(harness(.never), "Desktop & Dock settings")?.detail == "none in the way")
+    // Nor does any drag dock at a screen edge for whoever has no band of Arbor's there.
+    var noBand = Settings()
+    noBand.screenEdgeBand = 0
+    #expect(check(makeHarness(facts, settings: noBand), "Desktop & Dock settings")?.mark == .ok)
+    #expect(makeHarness(facts, settings: noBand).controller.onboardingModel(facts).row(.desktopAndDock) == nil)
+
+    // With ⌥ alone a drag is a plain drag: that switch by itself is nothing to an Arbor as it ships.
+    facts.switches = [.optionKey]
+    #expect(check(makeHarness(facts), "Desktop & Dock settings")?.mark == .ok && check(harness(.always), "Desktop & Dock settings")?.mark == .problem)
+
+    // Stage Manager moves windows itself, whoever drags what. Under the ✘ stands what is a problem, as in Check Setup….
+    facts.switches = [.menuBar, .stageManager]
+    for dragDocks in DragDocks.allCases { #expect(check(harness(dragDocks), "Desktop & Dock settings")?.mark == .problem) }
+    #expect(check(harness(.held), "Desktop & Dock settings")?.notes == [MacSwitch.stageManager.advice])
+    #expect(check(harness(.always), "Desktop & Dock settings")?.notes == [MacSwitch.menuBar.advice, MacSwitch.stageManager.advice])
 
     // What cannot be read is unknown, never a problem.
     facts.switches = nil
@@ -207,11 +254,11 @@ import Testing
     #expect(alone?.notes.first?.contains("Only in Stage Manager") == true, "which is surer still")
     #expect(makeHarness(facts, settings: guarded).run("doctor").ok)
 
-    // The others are as much in the way as ever.
-    facts.switches = [.clickWallpaper, .optionKey]
+    // The others are named as ever.
+    facts.switches = [.clickWallpaper, .menuBar]
     let both = check(makeHarness(facts, settings: guarded), "Desktop & Dock settings")
-    #expect(both?.mark == .problem)
-    #expect(both?.notes.first == MacSwitch.optionKey.advice && both?.notes.count == 2)
+    #expect(both?.mark == .note)
+    #expect(both?.notes.first == MacSwitch.menuBar.advice && both?.notes.count == 2)
 
     // Nor is a newcomer sent to look for it.
     facts.switches = [.clickWallpaper]
@@ -651,10 +698,10 @@ import Testing
     session.refresh()
     #expect(shown.isEmpty, "nothing has changed, so nothing is drawn again")
 
-    mac.facts.switches = [.optionKey]
+    mac.facts.switches = [.menuBar]
     session.refresh()
     #expect(shown.count == 1)
-    #expect(shown.last?.row(.desktopAndDock)?.afterword == "Changes 1 setting in Desktop & Dock, nothing else: \(MacSwitch.optionKey.named).")
+    #expect(shown.last?.row(.desktopAndDock)?.afterword == "Changes 1 setting in Desktop & Dock, nothing else: \(MacSwitch.menuBar.named).")
 
     // The last one.
     mac.facts.switches = []

@@ -70,6 +70,29 @@ public enum MacSwitch: String, CaseIterable, Sendable {
   /// which hardly anybody chose. Stage Manager is off as a Mac comes: whoever has it on wanted it, and switching it off rearranges their windows.
   public var canBeSwitchedOffForYou: Bool { isInArborsWay && isOnByDefault }
 
+  /// How much it matters to Arbor that a switch is on.
+  public enum Weight: Sendable {
+    case nothing
+    /// Nothing anybody does unasked runs into it.
+    case goodToKnow
+    case inTheWay
+  }
+
+  /// The one rule for what Check Setup… and `doctor` make of a switch that is on. macOS's tiling is in the way of a drag that docks at a
+  /// screen edge, and of nothing else: where a plain drag is macOS's own (Q29, 3) it is good to know for whoever holds the key, and with ⌥
+  /// alone a drag is a plain drag. Stage Manager moves windows itself, whoever drags what.
+  /// - Parameters:
+  ///   - edgeDrags: when a window dragged to a screen edge docks. `never` also where Arbor has no band along the edges.
+  ///   - askedFor: somebody asked Arbor to keep it off, Arbor arranges windows, and it is on all the same.
+  public func weight(edgeDrags: DragDocks, askedFor: Bool) -> Weight {
+    switch self {
+    case .clickWallpaper: .nothing
+    case .stageManager: .inTheWay
+    case .screenEdges, .menuBar: askedFor || edgeDrags == .always ? .inTheWay : edgeDrags == .held ? .goodToKnow : .nothing
+    case .optionKey: askedFor || edgeDrags == .always ? .inTheWay : .nothing
+    }
+  }
+
   /// The first macOS that has it.
   var since: Int {
     switch self {

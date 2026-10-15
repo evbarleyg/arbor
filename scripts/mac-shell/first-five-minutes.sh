@@ -88,6 +88,23 @@ inside_of() {
   x=${x%.*}; y=${y%.*}; h=${h%.*}
   echo "$((x + 60)) $((y + h / 2))"
 }
+# window_at <x> <y>: the frontmost window there that takes a click. Arbor's own panels but the welcome window let clicks through.
+window_at() {
+  pointer windows --on-screen | awk -v x="$1" -v y="$2" -v arbor="$ARBOR_PID" -v welcome="$(welcome_id)" \
+    '($2 != arbor || $1 == welcome) && $4 <= x && x < $4 + $6 && $5 <= y && y < $5 + $7 { print $1; exit }'
+}
+# seen_point_of <id>: a point of its title bar that nothing lies over.
+seen_point_of() {
+  local x y w h at
+  read -r x y w h <<< "$(real_frame_of "$1")"
+  for at in 110 $((w / 2)) $((w - 60)) $((w - 20)); do
+    if [ "$(window_at $((x + at)) $((y + 12)))" = "$1" ]; then
+      echo "$((x + at)) $((y + 12))"
+      return 0
+    fi
+  done
+  return 1
+}
 # uncover <x> <y>: on a small display the welcome window, which floats above everything, may lie over the point. A person would push it
 # aside, and so does this, to the top corner further from the point, and counts it: from then on the window stays where it was put.
 pushed=0
@@ -106,12 +123,11 @@ uncover() {
   sleep 0.5
 }
 # Where the window rests, while nobody has pushed it: it glides there.
-rests_right_of() {
-  local frame wx wy ww wh x y w h
+rests_in_the_right_corner() {
+  local frame wx wy ww wh
   frame=$(welcome_frame) || return 1
   read -r wx wy ww wh <<< "$frame"
-  read -r x y w h <<< "$(real_frame_of "$1")"
-  [ "$wx" -ge "$((${x%.*} + ${w%.*}))" ]
+  [ "$((wx + ww))" -eq "$((screen_width - 12))" ]
 }
 # The moves are made exactly as the window words them: the keys are read from the window, so they are whatever keys ship.
 ticks() { ax tree 2>/dev/null | grep AXImage | grep -c '"Done"'; }
@@ -281,12 +297,15 @@ make_move "Click a window and press"
 check "the window docked" eventually is docked "$FIRST"
 check "the first move is ticked" eventually ticked 1
 see 31-docked
-[ "$pushed" -gt 0 ] || check "the welcome window has gone over the Desktop, beside the docked window" eventually rests_right_of "$FIRST"
+[ "$pushed" -gt 0 ] || check "the welcome window is in the corner away from the docked window" eventually rests_in_the_right_corner
 echo "the second window is at $(real_frame_of "$SECOND"), the welcome window at $(welcome_frame)"
-# shellcheck disable=SC2046
-uncover $(grab_of "$SECOND")
-# shellcheck disable=SC2046
-click $(grab_of "$SECOND")
+# A dock touches only what is docked, so the others lie where they lay, partly under the docked window. A person clicks what they see.
+if where=$(seen_point_of "$SECOND"); then
+  # shellcheck disable=SC2086
+  click $where
+else
+  check "something of the second window's title bar is to be seen, to click on" false
+fi
 make_move "Click another and press"
 check "the second window docked" eventually is docked "$SECOND"
 check "the second move is ticked" eventually ticked 2
@@ -355,7 +374,8 @@ step "5  Check Setup…"
 ctl check-setup
 check "Check Setup… opens the window" eventually welcome_frame
 see 50-check-setup
-check "here macOS's tiling is spoken of" says "Your Mac tiles a window dragged to a screen edge, before Arbor gets it."
+check "on a Mac as it comes Arbor is ready" says "Arbor is ready"
+check "here macOS's tiling is spoken of, for whoever wants the edges" says "There your Mac’s own tiling gets it first."
 check "with the three settings by their names" says "Drag windows to menu bar to fill screen"
 before_the_step=$(frames)
 if press "Switch Off macOS Tiling"; then
@@ -376,7 +396,7 @@ uncover $(grab_of "$FIRST")
 drag $(grab_of "$FIRST") 0 400 --hold 1.2 --no-release
 shot 52-held-at-the-edge
 check "macOS is seen to have stopped tiling: it shows no preview" no_macos_preview
-# "To dock a window there, hold ⌘ and drag it to a screen edge", says the row.
+# "The screen edges are Arbor’s now: hold ⌘ and drag a window to a screen edge, and it docks", says the row.
 check "Arbor shows where the window will land" arbor_preview
 release
 check "the window docked" eventually is docked "$FIRST"

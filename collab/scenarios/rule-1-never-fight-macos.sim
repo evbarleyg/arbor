@@ -1,16 +1,16 @@
 # Rule 1 of the product direction (issue #3): never fight macOS.
-# Story: somebody starts Arbor on a Mac that is set as macOS comes. macOS's own tiling wants the same edges and the same
-# drags. Arbor knows, and says so, before it has arranged anything.
+# Story: somebody starts Arbor on a Mac that is set as macOS comes. macOS's own tiling wants the same screen edges. Arbor knows, and
+# tells whoever asks, before it has arranged anything. A plain drag is macOS's own, so nothing anybody does unasked runs into it:
+# it is something to know, and no problem.
 # This is what Arbor knows and says. That it stands aside where macOS acts on a drag is in `MacTilingTests`; the fix in one
-# step is board 1.4.
+# step is `fix-setup`.
 quiet
 macos defaults
 open Safari
 open Notes
-# `doctor` fails while there is something to put right, so that a script notices too.
 doctor
-expect fail
-expect replied macOS reacts to the same clicks and drags as Arbor
+expect ok
+expect replied macOS’s own tiling is on, and gets a window dragged to a screen edge first, with ⌘ held too
 expect replied Drag windows to left or right edge of screen to tile
 expect replied Drag windows to menu bar to fill screen
 expect replied Hold ⌥ key while dragging windows to tile
@@ -18,6 +18,14 @@ expect replied Click wallpaper to reveal desktop
 # Asking moved nothing, and nothing is arranged.
 expect still
 expect count docked 0
+# Where a plain drag docks, the two want the same drags. `doctor` fails while there is something to put right, so that a script
+# notices too.
+set dragDocks always
+doctor
+expect fail
+expect replied macOS reacts to the same clicks and drags as Arbor
+expect replied Drag windows to left or right edge of screen to tile
+expect still
 # With the switches off there is nothing left to say.
 macos tidy
 doctor

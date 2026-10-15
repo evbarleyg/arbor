@@ -396,9 +396,10 @@ echo "the welcome window is at: $(welcome_frame)"
 summary
 
 step "the four moves, for real"
-# shellcheck disable=SC2046
-drag $(titlebar_of "$W1") 3 400
-check "the dragged window docked" eventually is docked "$W1"
+# The moves are keys, and first-five-minutes.sh presses them as it reads them from the window. Here they are for the pictures. (This
+# used to be a drag to the left edge, which is macOS's while its tiling is on, as it is on a Mac as it comes.)
+ctl dock "$W1" left
+check "the first window docked" eventually is docked "$W1"
 shot 42-docked
 look_welcome 42-docked-own
 ctl dock "$W2" right

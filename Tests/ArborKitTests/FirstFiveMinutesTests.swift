@@ -218,12 +218,12 @@ import Testing
     #expect(h.overlays.messages.last?.model.line == "macOS tiled this window; Arbor stood aside · ⌃⌥⌘← docks it · Check Setup… in the menu")
 
     h.run("check-setup")
-    #expect(h.welcome.model.page == .setup && h.welcome.model.title == "Ready, with one suggestion")
+    #expect(h.welcome.model.page == .setup && h.welcome.model.title == "Arbor is ready")
     #expect(
       h.welcome.text?.contains(
         """
-        * macOS tiling (Recommended)
-            Your Mac tiles a window dragged to a screen edge, before Arbor gets it. Switch that off, only while Arbor runs, and Arbor has the edges.
+        ○ macOS tiling
+            To dock with the mouse, hold ⌘ and drag a window to a screen edge. There your Mac’s own tiling gets it first. Switch that off, only while Arbor runs, and the edges are Arbor’s.
             [Switch Off macOS Tiling] [Or do it yourself in Desktop & Dock…]
             Changes 3 settings in Desktop & Dock, nothing else: “Drag windows to left or right edge of screen to tile”, “Drag windows to menu bar to fill screen”, “Hold ⌥ key while dragging windows to tile”.
         """) == true)

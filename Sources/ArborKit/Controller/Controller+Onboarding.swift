@@ -19,10 +19,10 @@ extension Controller {
     return OnboardingModel(
       facts, flow: flow, windowsOutOfView: permissionLoss?.windows ?? 0, offersScreenRecording: offersScreenRecording, appsWithOwnShortcuts: passThroughSuggestions.map(\.name),
       canFixSetup: macSwitchboard != nil, switchesChangedByArbor: macSwitchesChangedByArbor, switchesGivenBack: macSwitchesLent,
-      fixSetupFailure: fixSetupFailure,
-      menuBarIsOneIcon: menuBarIsSurelyOneIcon, menuBarIcon: menuBarIconInShort, desktops: desktopsBetweenWhatIsDocked,
+      switchesAskedForInVain: macSwitchesAskedForInVain, fixSetupFailure: fixSetupFailure,
+      edgeDrags: edgeDrags, menuBarIsOneIcon: menuBarIsSurelyOneIcon, menuBarIcon: menuBarIconInShort, desktops: desktopsBetweenWhatIsDocked,
       isNewcomer: isFirstLaunch && workspaces.values.allSatisfy { $0.tree.allWindows.isEmpty }, isPaused: isPaused && accessibilityGranted,
-      lostShortcuts: facts.inputDisabled ? [] : keysHeld.lost.map(\.label), signature: buildInfo.signature, dragDocks: dragDocks,
+      lostShortcuts: facts.inputDisabled ? [] : keysHeld.lost.map(\.label), signature: buildInfo.signature,
       shortcut: { KeyBindings.label(for: $0, in: bindings) })
   }
 
@@ -181,7 +181,7 @@ public final class OnboardingSession {
     // Another icon in the menu bar: Arbor started or stopped, lost or got its permission, holds or has let go. Much of what the window says
     // is about that, and the page it is on, so it looks at the Mac again. It is rare.
     guard controller.menuBarIconInShort == model.footnoteIcon else { return refresh() }
-    // The window rests over the Desktop, so it follows that too.
+    // The window rests on the side where the Desktop is, so it follows that too.
     if flow.steps != before || (flow.page == .firstSteps && controller.desktopsBetweenWhatIsDocked != model.desktops) { publish() }
   }
 

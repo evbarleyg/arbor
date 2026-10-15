@@ -163,8 +163,8 @@ minute asks for nothing else.** (If another window manager is running, or VoiceO
 
 When the permission arrives the window comes forward and goes on by itself to **four moves to try** on your own windows, all of them keys, ticked
 off as you make them: click a window and press ⌃⌥⌘←, click another and press ⌃⌥⌘→, ⌃⌥↩ to fill the screen with one, ⌃⌥↩ again to have the
-arrangement back. The window words them from the shortcuts in effect. For the moves it is small, explains only the next one, and waits low over the
-Desktop until you put it elsewhere. It names one way back: ⌃⌥⎋ pauses Arbor and every window is as it was; Quit does the same. After the moves the
+arrangement back. The window words them from the shortcuts in effect. For the moves it is small, explains only the next one, and waits in the
+bottom corner away from what you have docked, until you put it elsewhere. It names one way back: ⌃⌥⎋ pauses Arbor and every window is as it was; Quit does the same. After the moves the
 same page has the box for Open at Login, which is also in the settings window, under General.
 
 **Help → Check Setup…** is for whoever asks: everything on this Mac that matters to Arbor, with a live tick on what is in order and a button that
@@ -173,7 +173,7 @@ opens the right pane of System Settings:
 - **Accessibility** (required): macOS lets an app move other apps' windows only with this permission (System Settings →
   Privacy & Security → Accessibility). If the switch is on there and Arbor still says it has no permission, the build's signature has
   changed: switch it off and on again ([docs/INSTALL.md](docs/INSTALL.md) has how to sign so that this does not happen).
-- **macOS tiling** (recommended): macOS's own tiling, three settings under Desktop & Dock, reacts to the same drags as Arbor, and before it. **Switch Off macOS Tiling** in
+- **macOS tiling** (only for docking with the mouse; a suggestion only with `dragDocks` set to `always`, or where you asked for the step and macOS kept its switches on): a plain drag is macOS's own, so its tiling is in nobody's way, and on a Mac as it comes the window is headed "Arbor is ready". But macOS's tiling, three settings under Desktop & Dock, gets a window dragged to a screen edge first, with ⌘ held too. **Switch Off macOS Tiling** in
   the row does it in one step (`arborctl fix-setup`): it changes those settings and nothing else, takes effect at once, and writes down how they
   were. They are off **only while Arbor runs**: a quit or a pause leaves the Mac as Arbor found it, and the next start switches them off again.
   **Put Them Back** in the same row (Help → Check Setup…, or `arborctl fix-setup undo`) and `make uninstall` end that for good. Nothing is changed unasked. By hand: under Windows,
