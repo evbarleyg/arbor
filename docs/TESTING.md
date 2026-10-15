@@ -141,6 +141,26 @@ loads each `json` block that follows `<!-- settings -->`. Comments such as `<!--
 (the header of `Tests/ArborKitTests/DocTranscripts.swift` lists them). After changing a reply, run the tests once with
 `ARBOR_UPDATE_DOCS=1` to write the new output into the files, and read the diff.
 
+### Tests and the defaults
+
+A plain `Harness()`, a plain `Settings()` and arbor-sim without further words are **Arbor as it ships**. Arbor ships doing less than it can
+(`collab/QUESTIONS.md`, Q29), and what went off by default is still there as an option. `Sources/ArborTesting/ClassicSettings.swift` has a chaining property
+for each such option, and `Settings.classic` for all of them.
+
+- A test **about** an option names it: `Harness(settings: .withEveryKey)`, `settings.withEveryKey`.
+- A test about something else whose **means** is yesterday's (it presses a key that is no longer bound) is rewritten to what ships, if that does not change what
+  it proves. Otherwise it names the option.
+- Everything else follows what ships. There is no switch that makes every `Harness()` classic.
+- A scenario says `set shortcuts all` at its head, under a comment that says why.
+- `ArborCoreTests` does not import `ArborTesting`: there the property is set by hand.
+
+**Shortcuts.** Nine ship (`KeyBindings.core`); `.withEveryKey` is the whole map (`KeyBindings.all`; `docs/KEYBOARD.md`). `h.key("ctrl+opt+d")` returns nil for keys that nobody
+holds, as the app in front would get them: a test that goes on without looking at the reply then proves nothing, so look at it. `h.press("desktop")` and `h.run("desktop", from: .shortcut)`
+go by the command and need no key. `NineKeysTests` and `collab/scenarios/22-nine-keys.sim` play the nine; `LessByDefaultTests` holds them to their budget.
+One place starts on the whole map all the same, and says so where it does: the chaos lab (`ChaosRunner.settingsFile`: a walk presses the key of a command, and a command
+without a key is a step in which nothing happens; `set shortcuts` is among a wild walk's steps). A Mac shell script is Arbor as it ships too, with no settings.json in its home,
+unless it is a section of the suite (section 10) or says `ARBOR_SHORTCUTS=all` before it sources `lib.sh` (section 5). The day and the walks (`lib-walk.sh`) say nothing: they run each command by the key it has, or from the menu.
+
 ## 3. arbor-sim
 
 The same harness as a command-line tool, printing an ASCII drawing after each step:
@@ -149,7 +169,8 @@ The same harness as a command-line tool, printing an ASCII drawing after each st
 make sim ARGS='"open Safari" "open Notes 640x420 min 900x600" "dock 101 left" "dock 102 right" "state"'
 ```
 
-Docked windows are `+-|` boxes, tiles `#`, the Desktop `.`, floating windows `~`.
+Docked windows are `+-|` boxes, tiles `#`, the Desktop `.`, floating windows `~`, with `:` a docked window that is let be, where it stands: its slot or its tile shows
+the place that is kept for it. Under the drawing: the windows out of view, those that are let be.
 Besides every `arborctl` command it understands `open`, `close`, `minimize`,
 `restore`, `focus`, `cursor`, `drag`, `move`, `seam`, `tile`, `flush`, `quiet` and `loud`.
 `title <id> <text>` changes a window's title.
@@ -474,6 +495,7 @@ for a second display, `check-desktop.sh` those for dark mode, wallpapers and Spa
 | | |
 |---|---|
 | `arbor_start [count] [NAME=value…]` | Shortcuts, event taps and the menu bar item are off unless you pass `ARBOR_NO_HOTKEYS=0`, `ARBOR_NO_STATUS_ITEM=0`. `ARBOR_APPEARANCE=dark` draws Arbor's own windows and menus dark. `ARBOR_TEST_WINDOWS_ARGS="--min-size 3:700x500"` makes the third window refuse to shrink; `ARBOR_SECOND_APP=1` adds a second app's window `$V1`; `ARBOR_BUNDLED=1` runs Arbor from an app bundle. After `arbor_stop` a script can start another session. |
+| `ARBOR_SHORTCUTS=all` | **Before** `source …/lib.sh`, in a script that is no section of the suite and presses keys of the whole map. A session is Arbor as it ships: nine keys, and a home without a settings.json. With this line every home starts with a file that asks for the whole map, and `arbor_settings` adds it to what it writes. A file the script writes by other means says `"shortcuts": "all"` for itself |
 | `arbor_settings "{$ARBOR_GESTURES_ON}"` | With `lib-gestures.sh` sourced after `lib.sh`. Before `arbor_start`, in a script about the pinch, ⌃⌥ + scroll, the ⌃⌥ rectangle, ⇧-drag on the Desktop or the event taps themselves: it asks for all four and for the switch above them, whatever Arbor ships with. Every session has a home of its own, so every session asks again |
 | `arbor_quit`, `arbor_kill [signal]`, `arbor_relaunch`, `reopen_test_windows <n>` | End Arbor alone and start it again on the same windows, settings and saved state; restart the test app |
 | `ctl`, `summary`, `state` | `arborctl` on the session's socket; the state as readable lines; as JSON |
@@ -835,6 +857,7 @@ copy from before the repository was public, and say what the script does once it
 | `check-claimed-keys.sh` | trunk | **never**: ends with 77 | | Writes an entry for Arbor's bundle into the privacy database; types into whatever has the keyboard |
 | `check-menu-height.sh` | trunk | **never**: ends with 77 | | Clicks in the menu bar; pauses, holds and quits its Arbor from the menu |
 | `check-window-list.sh` | trunk | **never**: ends with 77 | | Clicks in the menu bar and on rows of Windows ▸; hides and minimizes its own test windows |
+| `check-comes-back.sh` | trunk | safe | | A docked window fetched out of the Dock or out of a hidden app while the view is elsewhere, on real windows, three rounds each: whether its neighbour ever shows on its way, whether what was on screen stays, whether it fills the screen at the end. In the rehearsal it cannot fail for the flight, which the fake Mac does not play |
 | `check-standstill.sh` (`pulse.swift`, `framewatch.swift`, `mover.swift`) | trunk | **never**: ends with 77 | | Watches the whole display for changes, changes Reduce Motion |
 | `probe-mission-control.sh` | trunk | **never**: ends with 77 | | Mission Control and the app's windows opened, a window picked there by a click |
 | `probe-whose-key.sh`, `probe-fn-bit.sh` (`lib-ears.sh`) | trunk | **never**: ends with 77 | | Some fifty shortcuts pressed a dozen times over into whatever is in front; event taps that listen; hot keys registered; secure input switched on and off; Arbor stopped, killed and installed as a bundle of its own under `~/Applications`; the display put to sleep; an entry in the permission database, as root |
@@ -1196,6 +1219,7 @@ seconds to two minutes. `scripts/mac-on-linux/README.md` has all of it; in short
 - **`known-failures.txt`**: the run fails when a check that is not listed fails and when one that is listed passes; a rule of the walk is listed with the number of seeds that break it, and another number is news. **Whoever lands a cure in the layer deletes its lines.**
 - **`make mac-on-linux-selftest`** takes twenty-three known cures out of the copy, one at a time, and expects the stories about them to go red.
 - **The rude walk**: seeded, under four kinds of bad manners in general and once politely as a control; a breach prints the shortest script, which `--replay` plays. `ARGS="--only walk --seeds 1-500"` is a hunt.
+- **The walk upstairs**: the same with the real controller on top, commands, a pause, a quit and a new start among the steps, and rules that look at the model's screen.
 - **`REF=origin/fix/some-cure make mac-on-linux`** holds another commit's layer against this checkout's stories: how a cure is tried before a Mac sees it, as the one for the app switch was. `COVERAGE=1` says which lines no story enters (92 % of `AXWindowSystem.swift`'s are entered).
 
 Run it after every change under `Sources/ArborKit/AX`, and tell a story for every fault a Mac shows there. A green story proves the layer right about what we have seen or guessed, not about a Mac; a red one that rests on a guess is worth a run on a hosted Mac.
@@ -1610,7 +1634,7 @@ done to the world as if Arbor had done it, at which the net has to speak, beside
 | The window you switch to comes to the front and into view | `switched-to-and-sent-away` (out of view with the keyboard in it), `switched-to-out-of-view`, `switched-to-mostly-out` (a floating window, where Arbor had put it), `switched-to-partly-out`, `app-switch-out-of-view` (only the app was reported), `switched-to-behind` | `focus`, `behind` |
 | After a person's own act macOS decides who has the keyboard | `keyboard-handed-on-unasked` (nobody asks Arbor for anything, no window that it knows has the keyboard, and Arbor focuses one) | `focus` |
 | Quitting, Float All and pause give windows their own sizes back | `size-not-given-back` | `size-lost` |
-| After any way home no window shows less than its person left showing; after a change of displays none is mostly out of view | `home-not-whole`, `home-behind-the-dock`, `home-leaves-out`; `displays-left-mostly-out`, `nothing-in-view-after-displays`, `nothing-in-view-held-after-displays` | `lost` |
+| After any way home no window shows less than its person left showing; after a change of displays none is mostly out of view | `home-not-whole`, `home-behind-the-dock`, `home-leaves-out`, but for the decided case: its own size, at the corner a hand gave, no less showing than was left showing; `displays-left-mostly-out`, `nothing-in-view-after-displays`, `nothing-in-view-held-after-displays` | `lost` |
 
 **Arbor raises nothing else** (`ChaosInvariants+Raises.swift`, QUESTIONS Q20 and Q25): `raised-unasked` speaks at any raise, which is a window brought to the front without the keyboard, of a window that is neither kept in view nor summoned, at the step in which it is made,
 and at any raise at all by an Arbor that has paused or quit. `switched-to-behind` sees the harm only where the raised window happens to lie over the one just switched to. `asked: raised` counts how often a floating window that nothing keeps in view
@@ -1652,6 +1676,7 @@ ARBOR_CHAOS_ORDINARY=1 .build/release/arbor-sim hunt 1 2000 300 --known         
 | `displays-moved-the-untouched` | a floating window from which a change of displays took nothing, and which macOS carried nowhere, is not moved by Arbor either |
 | `plain-drag-left-an-undo-step` | Undo after a plain drag of a floating window takes back what was asked of Arbor before, not the hand's drag |
 | `keyboard-taken-unasked` | with nothing docked, kept in view or summoned, and nothing asked of it, Arbor sends the keyboard nowhere |
+| `parked-before-any-dock` | with nothing docked, kept in view, summoned or sent away there is no view that could leave a window out, so none counts as out of view |
 
 **A word that is added changes no old walk.** A walk draws its commands and the settings it changes from lists, so one more entry sent every seed another way, and whoever added a command met, in their own pull request, faults of the trunk that had nothing to do with it. Now the lists are frozen, version by version (`ChaosGenerator+Vocabulary.swift`): seeds under 1,000,000 draw from the list as it stood on 2026-10-15; seeds beyond the last frozen version draw from everything there is, and are the seeds for hunting. The tests walk frozen seeds only. **Adding a command or a setting needs nothing there.** A new kind of act or a new weight gets its weight only where `drawsFromEverything` is true. The keeper of the lab freezes a new version now and then.
 
@@ -1694,6 +1719,11 @@ A script starts with one standard display, no windows and Arbor not running. The
 other line is a command. What a user cannot do (carry a window off every display, grab one that is out of view) is
 not done whatever the script says, so shrinking cannot arrive at an impossible story. A step that takes more than ten seconds ends
 `arbor-sim` with `RULE hang` (exit code 4), so a loop that never ends is found, and shrunk, like a crash.
+
+**A drag and a key are shrunk whole or not at all.** Light walks are mostly drags, and the shrinker took them apart: 9 of 33 scripts shrunk from light walks on two displays had an act with a window still in the hand (a click on a tile between `grab` and `release`; a `grab` that is never let go while a display goes). Mended by hand they fell silent, and a real find was nearly written off as unreal. Now a candidate may hold no more half gestures than the walk itself had (`ChaosRunner.halfGestures(in:)`: something done with a window in the hand, a hand that moves or lets go of nothing, a key that goes down and never comes up, or comes up without having gone down; a gesture that the script's end cuts off is whole), and, since a gesture cannot go piece by piece, each is tried as a whole once single acts can go no further.
+
+**The orders of reports.** `windows-recorded`: in the order and at the times hosted Macs were recorded (`FakeWindowSystem.changeDisplaysAsAMacDoes`); time passes in it; no generator says it yet.
+`arbor-sim sweep story` and the lid sweep play every order of reports in which no time passes.
 
 **Extending it**
 
