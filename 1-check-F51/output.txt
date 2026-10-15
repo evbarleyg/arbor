@@ -1,0 +1,232 @@
+# mac-shell: scripts/mac-shell/check-F51.sh at 0ac75fc, macOS 26.6.2, 2026-10-15T16:54Z
+built Arbor, the pointer tool and the app bundles in 6s
+/tmp/arbor-shell.JoQqs1/Arbor.app: replacing existing signature
+session 1: Arbor pid 5887, launched without the permission
+started as a person starts it: the app, through Launch Services, granted while it waited (pid 5887)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor 0.0.0 (build 0)
+> dock 29 left
+docked w29 at the left edge
+> dock 30 right
+docked w30 at the right edge
+> dock 31 beside 29 bottom
+docked w31 below w29
+
+== A tap shows everything, and it stays
+> show-all
+showing everything
+> zoom 29
+framed w29
+it is managed docked at 12 43 1000 650
+> click 512 368
+> key ctrl+opt+space
+  ✔ everything shows
+  ✔ and still does a second later
+  ✔ no outline
+> back
+back to ArborTestWindows (n1)
+  ✔ back returns to w1
+
+== A tap with ⌃⌥ kept down, as between two shortcuts
+> show-all
+showing everything
+> zoom 29
+framed w29
+it is managed docked at 12 43 1000 650
+> click 512 368
+> key ctrl+opt --down
+> key ctrl+opt+space --held
+  ✔ everything shows a second after the tap
+  ✔ no outline
+> key ctrl+opt --up
+  ✔ and does not spring back when ⌃⌥ come up
+
+== Hold, point, let go
+> show-all
+showing everything
+> zoom 29
+framed w29
+it is managed docked at 12 43 1000 650
+> click 512 368
+> key ctrl+opt+space --down
+  ✔ everything shows while the keys are down
+  ✔ an outline shows
+shot: mac-shell/01-held-outline-where-i-came-from.png
+> move 765 368
+shot: mac-shell/02-outline-follows-the-pointer.png
+> key ctrl+opt+space --up
+  ✔ letting go frames the window under the pointer
+  ✔ which has the keyboard
+  ✔ the outline is gone
+> back
+back to ArborTestWindows (n1)
+  ✔ back returns to the view before the peek
+
+== A slow press: held for half a second, nothing chosen
+> show-all
+showing everything
+> zoom 29
+framed w29
+it is managed docked at 12 43 1000 650
+> click 512 368
+> key ctrl+opt+space --down
+> key ctrl+opt+space --up
+  ✔ everything stays
+  ✔ and does not spring back
+
+== Hold for a good look and let go without moving
+> show-all
+showing everything
+> zoom 29
+framed w29
+it is managed docked at 12 43 1000 650
+> click 512 368
+> key ctrl+opt+space --down
+> key ctrl+opt+space --up
+  ✔ the original view is back
+> back
+back to everything
+  ✔ and history has no entry for it: back goes to everything, where start_over came from
+
+== ⎋
+> show-all
+showing everything
+> zoom 29
+framed w29
+it is managed docked at 12 43 1000 650
+> click 512 368
+> key ctrl+opt+space --down
+> move 765 368
+> key ctrl+opt+escape --held
+  ✔ ⌃⌥⎋ returns to the original view
+  ✔ and does not pause
+> key ctrl+opt+space --up
+  ✔ letting go afterwards changes nothing
+
+== The arrow keys
+> show-all
+showing everything
+> zoom 29
+framed w29
+it is managed docked at 12 43 1000 650
+> click 512 368
+> key ctrl+opt+space --down
+> key ctrl+opt+down --held
+shot: mac-shell/03-outline-moved-by-an-arrow.png
+  ✔ ⌃⌥↓ did not step in
+> key ctrl+opt+space --up
+  ✔ letting go frames the window below
+
+== ⌃⌥ come up before Space
+> show-all
+showing everything
+> zoom 29
+framed w29
+it is managed docked at 12 43 1000 650
+> click 512 368
+> key ctrl+opt+space --down
+> move 765 368
+> key ctrl+opt --up
+  ✔ that ends the hold
+> key space --up
+  ✔ and Space coming up changes nothing
+
+== Auto-repeat
+> show-all
+showing everything
+> zoom 29
+framed w29
+it is managed docked at 12 43 1000 650
+> click 512 368
+> key ctrl+opt+space --down
+> key ctrl+opt+space --repeat 40
+  ✔ everything shows
+  ✔ the outline shows
+> key ctrl+opt+space --up
+  ✔ letting go returns to the original view
+
+== A click
+> show-all
+showing everything
+> zoom 29
+framed w29
+it is managed docked at 12 43 1000 650
+> click 512 368
+> key ctrl+opt+space --down
+> click 765 368
+  ✔ the clicked window is framed with Space still down
+  ✔ and no app was hidden by an ⌥-click
+> key ctrl+opt+space --up
+  ✔ letting go afterwards changes nothing
+
+== Another shortcut during the hold
+> show-all
+showing everything
+> zoom 29
+framed w29
+it is managed docked at 12 43 1000 650
+> click 512 368
+> key ctrl+opt+space --down
+> key ctrl+opt+d --held
+> key ctrl+opt+space --up
+display 0 0 1024 768, visible 0 31 1024 674, camera n0, back yes
+  Desktop          12 43 1000 650
+  w29 1023 677 494 319     docked parked focused
+  w30 1023 677 494 650     docked parked
+  w31 1023 677 494 319     docked parked
+  ✔ nothing is left of the peek
+
+== A release that is never reported: the shortcut is unbound while its key is down
+> show-all
+showing everything
+> zoom 29
+framed w29
+it is managed docked at 12 43 1000 650
+> click 512 368
+> key ctrl+opt+space --down
+  ✔ the hold is seen
+> unbind ctrl+opt+space
+ctrl+opt+space no longer runs `show-all`; no shortcut does now
+  ✔ while the key is down no look finds it up
+> key space --up
+  ✔ once it is up a look finds it up, with ⌃⌥ still down
+> key ctrl+opt --up
+  ✔ and macOS had reported no release
+  ✔ nothing is left of the peek
+> bind ctrl+opt+space show-all
+ctrl+opt+space runs `show-all`
+
+== As on any later day: the same Arbor started again, with the permission in place from before it starts
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+session 1: Arbor pid 9732, test windows 29 30 31 (pid 5840)
+running: 1 display, 3 docked and 0 floating, 0 out of view
+Arbor 0.0.0 (build 0)
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> show-all
+showing everything
+> zoom 29
+framed w29
+it is managed docked at 12 43 1000 650
+> click 512 368
+> key ctrl+opt+space --down
+  ✔ the hold is seen
+  ✔ and no look found the keys up
+> key ctrl+opt+space --up
+  ✔ letting go returns to the original view
+
+== What the log says
+grep: /Users/runner/work/arbor/arbor/mac-shell/arbor.log: No such file or directory
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+shot: mac-shell/04-after-quit.png
+
+44 passed, 0 failed
+exit code 0

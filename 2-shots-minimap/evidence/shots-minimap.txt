@@ -1,0 +1,133 @@
+# shots-minimap 2026-10-15T16:56Z on macOS 26.6.2, commit 0ac75fc
+
+== session 1: an arrangement worth a map: two columns, one of them split, and the Desktop
+  ✔ docking from the widest view brings no minimap up
+
+== frame a window
+  ✔ the minimap is on screen
+  ✔ it is centred
+  ✔ its bottom edge is 56 points above the bottom of the usable area
+  ✔ it is at most 240 by 160
+
+== a click where it is goes through to the window below
+  ✔ the view has not moved
+  ✔ the window on the right is still out of view
+  ✔ the framed window has the keyboard
+
+== a group, the Desktop; not everything
+  ✔ none when the view goes to everything
+
+== a saved view has a caption, and the map does not jump
+  ✔ the panel is a line taller
+  ✔ and its bottom edge has stayed
+
+== it goes by itself
+  ✔ gone after its time
+
+== the framed window leaves the arrangement, and the view goes to everything: none
+  ✔ up
+  ✔ the one that was up goes with the view it marked
+  ✔ and none comes
+
+== on demand, with real keys: ⌃⌥M
+  ✔ the keys bring it up
+  ✔ a click on the window at the right frames it
+  ✔ the window that was framed is out of view
+  ✔ the clicked window has the keyboard
+  ✔ then it goes like any other
+
+== ⌃⌥M again puts it away; so does a click beside the map
+  ✔ up
+  ✔ away
+  ✔ up
+  ✔ away
+  ✔ and the view has not moved
+
+== the Desktop's outline can be clicked too
+  ✔ up
+  ✘ the floating window is back in view
+  ✔ the docked ones are out of view
+
+== and back to the window at the left
+  ✔ up
+  ✔ it is framed
+  ✔ and has the keyboard
+
+== held, like ⌃⌥Space: hold to look, let go to land
+  ✔ the keys bring it up
+  ✔ it outlasts its five seconds while they are down
+  ✔ letting go frames the window the pointer is over
+  ✔ the window that was framed is out of view
+  ✔ the landing has the keyboard
+
+== held and let go with the pointer over nothing
+  ✔ up
+  ✔ away
+  ✔ and the view has not moved
+
+== ⎋ while holding gives up, and pauses nothing
+  ✔ up
+  ✔ away
+  ✔ Arbor is not paused: what is out of view stays there
+
+== its time does not run out under the pointer
+  ✔ up
+  ✔ still up after seven seconds
+  ✔ gone six seconds after the pointer left
+
+== ⌃⌥ let go first
+  ✔ up
+  ✔ that is letting go too
+  ✔ and the keys still work
+  ✔ both ways
+
+== left alone, it goes after five seconds
+  ✔ still up after three
+  ✔ gone after five and a half
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+
+== the light look
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+
+== the dark look
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+
+== the fades, at 0.9 s
+  ✔ gone again
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== as it ships: nothing by itself
+  ✔ no minimap after a move of the view
+
+== quitting while it shows
+  ✔ the command still shows it
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+
+75 passed, 1 failed

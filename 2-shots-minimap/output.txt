@@ -1,0 +1,312 @@
+# mac-shell: scripts/mac-shell/shots-minimap.sh at 0ac75fc, macOS 26.6.2, 2026-10-15T16:56Z
+built Arbor, the pointer tool and the app bundles in 7s
+Reduce Motion: false
+
+== session 1: an arrangement worth a map: two columns, one of them split, and the Desktop
+/tmp/arbor-shell.kifnBu/Arbor.app: replacing existing signature
+session 1: Arbor pid 11186, launched without the permission
+started as a person starts it: the app, through Launch Services, granted while it waited (pid 11186)
+running: 1 display, 0 docked and 4 floating, 0 out of view
+Arbor 0.0.0 (build 0)
+> dock 47 left
+docked w47 at the left edge
+> dock 48 right
+docked w48 at the right edge
+> dock 49 beside 47 bottom
+docked w49 below w47
+  ✔ docking from the widest view brings no minimap up
+
+== frame a window
+> zoom 47
+framed w47
+  ✔ the minimap is on screen
+shot: mac-shell/01-framed.png
+the panel, as the window server sees it: 396 489 233 160; the display's usable area: 0 31 1024 674
+52 11186 0 506 43 12 650 off Arbor
+51 11186 0 12 362 494 12 off Arbor
+53 11186 5 396 489 233 160 on Arbor
+  ✔ it is centred
+  ✔ its bottom edge is 56 points above the bottom of the usable area
+  ✔ it is at most 240 by 160
+
+== a click where it is goes through to the window below
+> click 599 589
+  ✔ the view has not moved
+  ✔ the window on the right is still out of view
+  ✔ the framed window has the keyboard
+
+== a group, the Desktop; not everything
+> out
+stepped out to 2 ArborTestWindows windows (n5)
+shot: mac-shell/02-group.png
+> desktop
+showing the Desktop
+shot: mac-shell/03-desktop.png
+> show-all
+showing everything
+  ✔ none when the view goes to everything
+
+== a saved view has a caption, and the map does not jump
+> zoom 48
+framed w48
+> save-view 3
+saved view 3: ArborTestWindows (n3)
+> show-all
+showing everything
+> view 3
+view 3: ArborTestWindows (n3)
+shot: mac-shell/05-caption.png
+  ✔ the panel is a line taller
+  ✔ and its bottom edge has stayed
+
+== it goes by itself
+  ✔ gone after its time
+shot: mac-shell/06-gone.png
+
+== the framed window leaves the arrangement, and the view goes to everything: none
+> zoom 49
+framed w49
+  ✔ up
+> float 49
+w49 is floating; showing the Desktop
+  ✔ the one that was up goes with the view it marked
+  ✔ and none comes
+
+== on demand, with real keys: ⌃⌥M
+> zoom 47
+framed w47
+> click 512 368
+> key ctrl+opt+m
+  ✔ the keys bring it up
+shot: mac-shell/08-on-demand.png
+> click 599 589
+  ✔ a click on the window at the right frames it
+  ✔ the window that was framed is out of view
+  ✔ the clicked window has the keyboard
+shot: mac-shell/09-after-the-click.png
+  ✔ then it goes like any other
+
+== ⌃⌥M again puts it away; so does a click beside the map
+> key ctrl+opt+m
+  ✔ up
+> key ctrl+opt+m
+  ✔ away
+> key ctrl+opt+m
+  ✔ up
+> click 512 646
+  ✔ away
+  ✔ and the view has not moved
+
+== the Desktop's outline can be clicked too
+> key ctrl+opt+m
+  ✔ up
+> click 512 589
+  ✘ the floating window is back in view
+      picture: mac-shell/fail-shots-minimap-1.png
+      | display 0 0 1024 768, visible 0 31 1024 674, camera n1, back yes
+      |   w47 12 43 1000 650       docked focused
+      |   w48 1023 677 1000 650    docked parked
+      |   w49 1023 677 480 348     floating parked
+      |   w50 1023 677 480 348     floating parked
+      log | INFO  trace shots-minimap-1-09 ended: 153 lines, another trace was started
+      log | INFO  trace shots-minimap-1-10: recording to /tmp/arbor-shell.kifnBu/home/traces/2026-10-15-165719-shots-minimap-1-10.jsonl
+      log | DEBUG commands follow the pointer: a shortcut, pointer idle 0.7 s, keys 1.4 s, focus 7.2 s
+      log | INFO  minimap: showing the minimap
+      log | DEBUG focus is on w47
+      log | DEBUG w47 has the keyboard
+  ✔ the docked ones are out of view
+
+== and back to the window at the left
+> key ctrl+opt+m
+  ✔ up
+> click 426 589
+  ✔ it is framed
+  ✔ and has the keyboard
+
+== held, like ⌃⌥Space: hold to look, let go to land
+> click 512 368
+> key ctrl+opt+m --down
+  ✔ the keys bring it up
+  ✔ it outlasts its five seconds while they are down
+> move 599 589
+shot: mac-shell/09b-held-outline-under-the-pointer.png
+> key ctrl+opt+m --up
+  ✔ letting go frames the window the pointer is over
+  ✔ the window that was framed is out of view
+  ✔ the landing has the keyboard
+
+== held and let go with the pointer over nothing
+> move 512 368
+> key ctrl+opt+m --down
+  ✔ up
+> key ctrl+opt+m --up
+  ✔ away
+  ✔ and the view has not moved
+
+== ⎋ while holding gives up, and pauses nothing
+> key ctrl+opt+m --down
+  ✔ up
+> key ctrl+opt+escape --held
+  ✔ away
+  ✔ Arbor is not paused: what is out of view stays there
+> key ctrl+opt+m --up
+
+== its time does not run out under the pointer
+> key ctrl+opt+m
+  ✔ up
+> move 512 589
+  ✔ still up after seven seconds
+> move 512 368
+  ✔ gone six seconds after the pointer left
+
+== ⌃⌥ let go first
+> key ctrl+opt+m --down
+  ✔ up
+> key ctrl+opt --up
+  ✔ that is letting go too
+> key m --up
+> key ctrl+opt+m
+  ✔ and the keys still work
+> key ctrl+opt+m
+  ✔ both ways
+
+== left alone, it goes after five seconds
+> minimap
+showing the minimap
+  ✔ still up after three
+  ✔ gone after five and a half
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+
+== the light look
+session 2: Arbor pid 16533, test windows 65 66 67 68 (pid 16428)
+running: 1 display, 0 docked and 4 floating, 0 out of view
+Arbor dev
+> dock 65 left
+docked w65 at the left edge
+> dock 66 right
+docked w66 at the right edge
+> dock 67 beside 65 bottom
+docked w67 below w65
+> zoom 67
+framed w67
+> save-view 1
+saved view 1: ArborTestWindows (n4)
+> show-all
+showing everything
+> view 1
+view 1: ArborTestWindows (n4)
+shot: mac-shell/10-light.png
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+
+== the dark look
+session 3: Arbor pid 16786, test windows 75 76 77 78 (pid 16766)
+running: 1 display, 0 docked and 4 floating, 0 out of view
+Arbor dev
+> dock 75 left
+docked w75 at the left edge
+> dock 76 right
+docked w76 at the right edge
+> dock 77 beside 75 bottom
+docked w77 below w75
+> zoom 77
+framed w77
+> save-view 1
+saved view 1: ArborTestWindows (n4)
+> show-all
+showing everything
+> view 1
+view 1: ArborTestWindows (n4)
+shot: mac-shell/10-dark.png
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+
+== the fades, at 0.9 s
+session 4: Arbor pid 17272, test windows 85 86 87 (pid 17258)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+> dock 85 left
+docked w85 at the left edge
+> dock 86 right
+docked w86 at the right edge
+> zoom 85
+framed w85
+film: 20 pictures in 2.36 s
+shot: mac-shell/11-fade-1.png
+shot: mac-shell/11-fade-2.png
+shot: mac-shell/11-fade-3.png
+shot: mac-shell/11-fade-4.png
+shot: mac-shell/11-fade-5.png
+shot: mac-shell/11-fade-6.png
+shot: mac-shell/11-fade-7.png
+shot: mac-shell/11-fade-8.png
+shot: mac-shell/11-fade-9.png
+shot: mac-shell/11-fade-10.png
+shot: mac-shell/11-fade-11.png
+shot: mac-shell/11-fade-12.png
+shot: mac-shell/11-fade-13.png
+shot: mac-shell/11-fade-14.png
+shot: mac-shell/11-fade-15.png
+shot: mac-shell/11-fade-16.png
+shot: mac-shell/11-fade-17.png
+shot: mac-shell/11-fade-18.png
+shot: mac-shell/11-fade-19.png
+shot: mac-shell/11-fade-20.png
+  ✔ gone again
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== as it ships: nothing by itself
+session 5: Arbor pid 17846, test windows 93 94 (pid 17756)
+running: 1 display, 0 docked and 2 floating, 0 out of view
+Arbor dev
+> dock 93 left
+docked w93 at the left edge
+> zoom 93
+framed w93
+  ✔ no minimap after a move of the view
+
+== quitting while it shows
+> minimap
+showing the minimap
+  ✔ the command still shows it
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+shot: mac-shell/12-after-quit.png
+
+75 passed, 1 failed
+mac-shell: put back after shots-minimap.sh: reduce-motion
+exit code 1
