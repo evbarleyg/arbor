@@ -1,18 +1,21 @@
 /// Decides when the event taps go because Arbor may no longer have them.
 ///
-/// Seen on hosted Macs (macOS 26): from the instant macOS withdraws the right to tap from a process that has active event taps
-/// until those taps are removed, **every event of the whole Mac is dropped**: clicks, and also keys, which no tap of Arbor's asks
-/// for, and the wheel, whose tap was switched off. With the same Arbor without taps, and with no Arbor, nothing was lost. A bare
-/// tool with one tap that never let go took all input away until it was killed; its callback was told nothing, and the window
-/// server went on listing its tap as switched on. So only removal gives the Mac back, the hole is as long as Arbor takes to
-/// find out by asking, and finding out may depend on nothing that can be busy.
+/// Seen on hosted Macs (macOS 26): once macOS has withdrawn the right to tap from a process that has active event taps, the first
+/// event that a switched-on tap asks for is dropped, **and with it every event of the whole Mac** for about a second: also
+/// keys, which no tap of Arbor's asks for, and the wheel, whose tap was switched off. Then input flows until the next such
+/// event. With one more often than once a second nothing arrives at all, until the taps are removed. With the same Arbor without
+/// taps, and with no Arbor, nothing was lost. A bare tool with one tap that never let go was told late and wrongly ("switched off
+/// by timeout", seconds after, in place of the next event that got through, while its tap stayed switched on and swallowed the
+/// next press too). So removal gives the Mac back, the hole is as long as Arbor takes to find out by asking, and finding out may
+/// depend on nothing that can be busy.
 ///
 /// - The clock beats on the taps' own thread while taps are in. Not on the main thread, which waits for apps.
 /// - The question is not put on that thread either: it goes to the window server and the privacy daemon, and whoever
 ///   waits for them answers for no event meanwhile. Another thread asks and reports back. Nobody has seen the question
 ///   wait, but posting an event was seen to wait two seconds for a daemon that had been killed.
 /// - **No answer in time is a no.** If it was a yes after all, the taps come back with it.
-/// - At a no all taps are removed, in one turn. Switching them off is not enough.
+/// - At a no all taps are removed, in one turn. A tap that is in but switched off was seen not to start the drop; whether
+///   switching off ends one that has begun nobody has tried.
 /// - While the permission is gone no tap is installed, whoever asks: the main thread may not have heard yet.
 ///
 /// For how long a tap can be in without the permission: a beat and the time the answer takes; if no answer comes, two and a half
@@ -93,8 +96,8 @@ public struct TapPermission: Sendable {
     return lose(.nothing, at: now)
   }
 
-  /// macOS tells a callback that it switched a tap off. It does that to a tap that is too slow. At the loss of the permission
-  /// a bare tool was told nothing; in case another macOS does tell, the question does not wait for the clock.
+  /// macOS tells a callback that it switched a tap off. It does that to a tap that is too slow, and, late, to one that has
+  /// outlived the right to it. Nothing is believed of the word: the question is put now and does not wait for the clock.
   public mutating func toldOff(at now: Double) -> Order {
     guard !isGone, askedAt == nil else { return .nothing }
     askedAt = now

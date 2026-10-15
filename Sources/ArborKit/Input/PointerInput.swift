@@ -47,8 +47,8 @@ final class PointerInput {
     framer.stop()
   }
 
-  /// Users switch a misbehaving window manager off in System Settings, and macOS 26 drops all input from the moment a
-  /// process with active event taps loses the right to them until its taps are gone. So the taps' own thread watches
+  /// Users switch a misbehaving window manager off in System Settings, and macOS 26 drops all input at every event that the taps
+  /// of a process ask for which has lost the right to them, until those taps are gone. So the taps' own thread watches
   /// over that, and removes them without waiting for this one (`TapPermission`, `EventTapThread`). Here, afterwards,
   /// the owners forget the taps that are gone, and install them again when the permission is back.
   private func watchPermission() {

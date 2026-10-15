@@ -212,7 +212,8 @@ enum TapLog {
 /// docs/ARCHITECTURE.md, "Writing an event tap", has the rules for handlers.
 ///
 /// An active tap needs the Accessibility permission Arbor already has. While a process has taps and not the permission,
-/// macOS 26 drops all input, so the thread keeps asking, and all taps go the moment the answer is no (`TapPermission`).
+/// macOS 26 drops all input at every event they ask for, so the thread keeps asking, and all taps go the moment the answer
+/// is no (`TapPermission`).
 final class EventTap: @unchecked Sendable {
   /// Runs on the tap thread. Returns true to swallow the event. The proxy is
   /// for `CGEvent.tapPostEvent`.
@@ -401,8 +402,8 @@ final class EventTap: @unchecked Sendable {
     switch type {
     case .tapDisabledByTimeout, .tapDisabledByUserInput:
       let reason = type == .tapDisabledByTimeout ? "it was too slow" : "of user input"
-      // Every such word is written down, also those that are not acted on below. None came to a bare tool that lost the
-      // permission on macOS 26; in case one does elsewhere, macOS is asked at once.
+      // Every such word is written down, also those that are not acted on below. One that finds its tap switched on is what a
+      // bare tool heard, seconds late, after it had lost the right to tap. So macOS is asked at once; the word itself is not believed.
       TapLog.info("macOS says that it switched the \(name) event tap off because \(reason)")
       EventTapThread.shared.obey(EventTapThread.shared.permission.toldOff(at: Self.now()))
       // In case macOS reports Arbor's own pause this way: a paused tap stays off. And macOS says it late, in place of the
