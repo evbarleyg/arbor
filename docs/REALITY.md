@@ -64,20 +64,20 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 | [permissions](#permissions) | 23 | 8 | 6 | 3 | 3 | 11 | 12 | 2 | 3 | 6 | 4 |
 | [timing](#timing) | 55 | 7 | 7 | 16 | 10 | 22 | 31 | 4 | 7 | 13 | 9 |
 | [input](#input) | 59 | 8 | 7 | 15 | 13 | 24 | 24 | 6 | 8 | 21 | 11 |
-| [looks](#looks) | 21 | 0 | 0 | 0 | 1 | 20 | 2 | 2 | 3 | 14 | 6 |
+| [looks](#looks) | 23 | 0 | 0 | 0 | 1 | 22 | 3 | 2 | 4 | 14 | 6 |
 | [never-exercised](#never-exercised) | 15 | 7 | 1 | 13 | 0 | 1 | 0 | 0 | 14 | 1 | 15 |
 | [toolchain](#toolchain) | 45 | 1 | 0 | 2 | 4 | 39 | 27 | 1 | 1 | 16 | 7 |
-| **all** | 472 | 64 | 100 | 127 | 69 | 176 | 250 | 19 | 60 | 143 | 107 |
+| **all** | 474 | 64 | 100 | 127 | 69 | 178 | 251 | 19 | 61 | 143 | 107 |
 
 **Where the difference bit**
 
 | Where | That is | Cases | Hurt 1 or 2 | Guarded without a Mac | Guarded only on CI's Macs | Only when somebody starts a script | Not guarded |
 |---|---|---|---|---|---|---|---|
-| below the seam | in the macOS-only code under the platform protocols (AX, Input, UI, App), which no test on Linux runs | 146 | 91 | 47 | 13 | 34 | 52 |
+| below the seam | in the macOS-only code under the platform protocols (AX, Input, UI, App), which no test on Linux runs | 147 | 91 | 48 | 13 | 34 | 52 |
 | at the seam | in what crosses the platform protocols: a stand-in can play it to the controller | 166 | 99 | 129 | 0 | 10 | 27 |
 | controller | in the controller or the core, given reports that were right | 30 | 16 | 18 | 0 | 1 | 11 |
-| test | in a test, a script or a harness that expected the wrong thing | 83 | 0 | 29 | 5 | 11 | 38 |
-| machine | in the machine, the toolchain or the way things are built and installed | 47 | 3 | 27 | 1 | 4 | 15 |
+| test | in a test, a script or a harness that expected the wrong thing | 84 | 0 | 29 | 5 | 11 | 39 |
+| machine | in the machine, the toolchain or the way things are built and installed | 47 | 3 | 27 | 1 | 5 | 14 |
 
 Each case is counted under the best guard it has: one that goes red on any machine (a test, a scenario, a replayed trace, a tool that `make check` or CI runs), one that needs CI's Macs (a test for macOS alone, a step of a real-window run that CI starts), one that somebody has to start, or none.
 
@@ -5139,6 +5139,18 @@ Looks: what is on the screen is not what the model said.
 - **Arbor copes:** **not yet**
 - **Read in:** `collab/BACKLOG.md`
 
+### a-shot-of-a-large-display-is-made-smaller
+
+*hurt 4 · test*
+
+- **Expected:** A picture of a Retina display holds two pixels to the point, and edges in it can be measured.
+- **Happened:** `shot` resamples whatever is wider than 1600 pixels, to keep runs small: 2880 by 1800 came back as 1600 by 1000, 1.11 pixels to the point, and a display of 1920 at 0.84. No edge in such a picture can be asked anything, and three pictures "at 2x" were judged as if they were.
+- **Found by:** The judge of the stills, measuring the gallery's pictures.
+- **Stand-ins play it:** cannot: it lies below or beside the seam
+- **Guard:** **none**
+- **Arbor copes:** scripts/mac-shell/lib.sh: `closeup` crops with screencapture -R and never scales; the gallery takes every panel on a large display that way too.
+- **Read in:** `scripts/mac-shell/lib.sh`, `scripts/mac-shell/shots-gallery.sh`
+
 ### a-wrapped-line-does-not-make-the-panel-half-as-high-again
 
 *hurt 4 · test · K1610*
@@ -5151,17 +5163,17 @@ Looks: what is on the screen is not what the model said.
 - **Arbor copes:** Tests/ArborKitTests/HeadsUpPictureTests.swift compares the heights of the text, not of the panels.
 - **Read in:** `Tests/ArborKitTests/HeadsUpPictureTests.swift`, `collab/BACKLOG.md`
 
-### hosted-macs-draw-every-material-as-one-flat-colour
+### hosted-macs-come-with-reduce-transparency-on
 
 *hurt 4 · machine*
 
 - **Expected:** A picture from a hosted Mac shows a translucent panel as a person's Mac would: blurred, and tinted by what lies behind.
-- **Happened:** Every material of an effect view (HUD, popover, menu, sidebar, under the window's background; blending behind the window, state active) is one opaque colour there: exactly (228,228,228) in light and (38,38,38) in dark, over any wallpaper, in Arbor's panels and in the harness's own plain sheet alike. macOS's own menus and the Dock do tint. It was concluded that blur, translucency and `blurBehindArranged` cannot be judged on those Macs, and that is corrected: the runners come with Reduce Transparency on. Switched off before the app starts (`defaults write com.apple.universalaccess reduceTransparency -bool false`), materials blur and tint. Increase Contrast switches it on again by itself.
-- **Found by:** Pictures of Arbor's panels and of a sheet of the harness's own over several wallpapers, on hosted Macs. Then a run that takes pictures of everything Arbor draws, which asked the Mac for the setting at its start.
+- **Happened:** Every material of an effect view (HUD, popover, menu, sidebar, under the window's background; blending behind the window, state active) was one opaque colour there: exactly (228,228,228) in light and (38,38,38) in dark, over any wallpaper, in Arbor's panels and in the harness's own plain sheet alike. For a day that was taken for a limit of the virtual machine, and translucency was struck from what is judged. It is a setting: the hosted Macs come with Reduce Transparency switched on, as they come with Reduce Motion. Switched off before the app starts, materials blur and take on the colour of what lies behind them as on anybody's Mac. Increase Contrast switches it on again by itself. So until 2026-10-15 nobody had seen the look that ships, and it was where the faults were: words at 1.1 to 2.4 to 1.
+- **Found by:** The gallery's first lines, which print what the Mac says of itself before anything is changed: Reduce Transparency: true. Then the first pictures with it off.
 - **Stand-ins play it:** cannot: it lies below or beside the seam
-- **Guard:** **none**
-- **Arbor copes:** docs/VIABLE.md, section 8: translucency and blur are not scored. What is scored is the flat look, which a person with Reduce Transparency sees, and nothing in Arbor may rest on the rest. That page was written before the setting was found.
-- **Read in:** `scripts/mac-shell/scenery.swift`, `Sources/ArborKit/UI/BackdropPanel.swift`, `docs/features/F15-appearance-options.md`, `docs/VIABLE.md`
+- **Guard:** `tool: mac-shell/shots-gallery.sh` (by hand)
+- **Arbor copes:** scripts/mac-shell/lib.sh: `macos_reduce_transparency off` before `arbor_start`, as `macos_reduce_motion off` for motion; the setting is among the facts a run compares before and after. The gallery takes the panels both ways.
+- **Read in:** `scripts/mac-shell/lib.sh`, `scripts/mac-shell/pointer.swift`, `scripts/mac-shell/shots-gallery.sh`, `scripts/mac-shell/scenery.swift`, `docs/VIABLE.md`
 
 ### hosted-macs-have-a-black-wallpaper
 
@@ -5198,6 +5210,18 @@ Looks: what is on the screen is not what the model said.
 - **Guard:** **none**
 - **Arbor copes:** **not yet**
 - **Read in:** `Sources/arbor-fakemac/Arbor.swift`, `Sources/arbor-fakemac/World+Pointer.swift`, `Sources/ArborKit/UI/BackdropPanel.swift`, `Sources/ArborKit/UI/HeadsUpPanel.swift`, `scripts/mac-shell/lib.sh`
+
+### what-lies-behind-docked-windows-is-under-their-shadows
+
+*hurt 4 · below the seam*
+
+- **Expected:** A colour Arbor draws in a gap between docked windows comes out on screen as that colour.
+- **Happened:** The gap's handle and the surface are ordered behind the docked windows, and macOS draws the windows' shadows over whatever lies behind them. In a gap of 12 points everything came out multiplied by about 0.70 in the light look and 0.49 in the dark one: the accent (0,64,221) as (0,45,156), (23,116,218) as (11,56,107); a white line is 179 of 255 at most in the light look. The surface itself runs from (72,101,81) beside a window to (96,133,108) sixty pixels away. So black and white, 21 to 1 apart on paper, are 10 apart there in the light look and 5 in the dark one, and over a wallpaper of middling brightness in the dark look no colour reaches 3 to 1.
+- **Found by:** The judges' ruler on pictures from a hosted Mac (macOS 26.6) of the handle with Increase Contrast, and a reader's arithmetic on the raw pixels, counted twice.
+- **Stand-ins play it:** cannot: it lies below or beside the seam
+- **Guard:** `test: inTheGapOneOfThemStillStandsOutUnderTheWindowsShadows`
+- **Arbor copes:** Sources/ArborKit/Platform/PanelLook.swift: with Increase Contrast what Arbor draws on other apps' ground has a point of black and a point of white, the two tones farthest apart; the test reckons them under the shadows on the grounds that were measured. What colour cannot cure stays: it would take the handle in front of the windows.
+- **Read in:** `Sources/ArborKit/Platform/PanelLook.swift`, `Sources/ArborKit/UI/AppKitOverlays.swift`, `Tests/ArborKitTests/PanelLookTests.swift`
 
 ### what-the-window-server-adds-cannot-be-drawn-off-screen
 
