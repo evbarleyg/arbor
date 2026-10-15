@@ -8,8 +8,8 @@
 # (scripts/newcomer/courier.sh), which pushes a picture every round. What it finds in the environment:
 #   NEWCOMER_RUN      the run's name          NEWCOMER_ARM    arbor | macos: with Arbor to install, or with what macOS itself offers
 #   NEWCOMER_BOX      the folder it shares with the courier
-#   NEWCOMER_ZIP      with Arbor: the build, zipped, as a download would be; NEWCOMER_README: that build's README; NEWCOMER_BUILD: its commit
-#   NEWCOMER_MARK     yes: the zip is marked as a browser marks a download, so that macOS's Gatekeeper refuses it as it would a stranger's
+#   NEWCOMER_ZIP      with Arbor: the build, zipped, as a download would be; NEWCOMER_README: that build's README; NEWCOMER_BUILD: its commit; NEWCOMER_CDHASH: its code hash
+#   NEWCOMER_MARK     yes: the zip is marked as a browser marks a download, so that macOS's Gatekeeper meets it as it would a stranger's. no: it is spared that
 #   NEWCOMER_UNTIL    seconds since 1970: when all of it has to be over
 #
 # macOS is as it comes: its own tiling and "click wallpaper to reveal desktop" on. Motion and transparency are as on a person's Mac, not as the runners come.
@@ -24,7 +24,8 @@ needs_throwaway_mac "hand the pointer and the keyboard to whoever can push to th
 
 run=${NEWCOMER_RUN:?} arm=${NEWCOMER_ARM:?} box=${NEWCOMER_BOX:?}
 [ -d "$box" ] || die "no folder $box"
-helped="the account's password is typed for it, since nobody knows a hosted Mac's"
+helped=""
+[ "$arm" != arbor ] || helped="the account's password is typed for it, since nobody knows a hosted Mac's"
 
 step "the Mac"
 echo "macOS $(sw_vers -productVersion) ($(sw_vers -buildVersion)) on $(uname -m)"
@@ -71,7 +72,7 @@ if [ "$arm" = arbor ]; then
   step "the download"
   [ -f "${NEWCOMER_ZIP:-}" ] || die "no build to download: NEWCOMER_ZIP"
   cp "$NEWCOMER_ZIP" "$HOME/Downloads/Arbor.zip"
-  if [ "${NEWCOMER_MARK:-no}" = yes ]; then
+  if [ "${NEWCOMER_MARK:-yes}" = yes ]; then
     xattr -w com.apple.quarantine "0083;$(printf '%x' "$(date +%s)");Safari;$(uuidgen)" "$HOME/Downloads/Arbor.zip"
   else
     helped="$helped; the download bears no mark of a browser's, so macOS does not refuse to open it as it would for a stranger"
@@ -87,7 +88,7 @@ step "the loop"
 move 720 450
 python3 "$ARBOR_ROOT/scripts/newcomer/rig.py" --run "$run" --arm "$arm" --box "$box" --remote "https://github.com/${GITHUB_REPOSITORY:?}.git" \
   --out "$ARBOR_OUT" --cast "${cast#,}" --build "${NEWCOMER_BUILD:-}" --system "$(sw_vers -productVersion)" --helped "$helped" \
-  --until "${NEWCOMER_UNTIL:-0}" --tools "$ARBOR_ROOT/.build/mac-shell" --samples "$DAY_SAMPLES" --sampler-in 6 --sampler-out 5
+  --until "${NEWCOMER_UNTIL:-0}" --cdhash "${NEWCOMER_CDHASH:-}" --tools "$ARBOR_ROOT/.build/mac-shell" --samples "$DAY_SAMPLES" --sampler-in 6 --sampler-out 5
 code=$?
 echo "the loop ended with $code"
 

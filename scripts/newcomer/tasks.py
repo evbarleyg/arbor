@@ -18,28 +18,33 @@ Written for Python 3.9, which is what a hosted Mac has.
 NEAR = 12
 
 TASKS = [
-    {"id": "install", "arms": ("arbor",), "minutes": 20,
+    {"id": "install", "arms": ("arbor",), "minutes": 15,
      "title": "install and start it",
      "words": "A build of Arbor has been downloaded for you: Arbor.zip, in the Downloads folder. Install it, start it, and get it to "
               "the point where it is ready to arrange windows."},
-    {"id": "side-by-side", "arms": ("arbor", "macos"), "minutes": 12,
+    {"id": "side-by-side", "arms": ("arbor", "macos"), "minutes": 10,
      "title": "two windows side by side",
      "words": "Put the TextEdit window and the Safari window side by side, TextEdit on the left and Safari on the right, so that "
               "the two together fill the screen and neither covers the other."},
-    {"id": "fill", "arms": ("arbor", "macos"), "minutes": 12,
+    # The product owner's, after the maintainer's seven: the one thing Arbor claims over macOS's tiling is that an arrangement comes back.
+    {"id": "return", "arms": ("arbor", "macos"), "minutes": 10,
+     "title": "an arrangement comes back",
+     "words": "Look at where the TextEdit window and the Safari window are now. Make the Safari window fill the screen. Then bring the two back "
+              "exactly as they are now."},
+    {"id": "fill", "arms": ("arbor", "macos"), "minutes": 10,
      "title": "one window fills the screen, and stays",
      "words": "Make the Calendar window fill the screen, and keep it there: it has to stay that big."},
-    {"id": "find", "arms": ("arbor", "macos"), "minutes": 12,
+    {"id": "find", "arms": ("arbor", "macos"), "minutes": 10,
      "title": "find a window that went out of view",
      "words": "The Notes window was open when you came. Find it, and bring it to the front so that all of it can be seen."},
-    {"id": "undo", "arms": ("arbor", "macos"), "minutes": 12,
+    {"id": "undo", "arms": ("arbor", "macos"), "minutes": 10,
      "title": "undo a mistake",
      "words": "Make the Finder window take up the left half of the screen. Then suppose that was a mistake: put everything back "
               "exactly as it was before you did it."},
-    {"id": "back", "arms": ("arbor", "macos"), "minutes": 12,
+    {"id": "back", "arms": ("arbor", "macos"), "minutes": 10,
      "title": "go back to how the Mac was",
      "words": "Go back to how the Mac was when you first saw it: every window where it was then, and as big as it was then."},
-    {"id": "quit", "arms": ("arbor",), "minutes": 10,
+    {"id": "quit", "arms": ("arbor",), "minutes": 8,
      "title": "quit, and leave the Mac as it was found",
      "words": "Quit Arbor, and leave the Mac as you found it."},
 ]
@@ -79,16 +84,36 @@ def on_screen(look, identifier):
     return bool(found and found["on"] and str(identifier) in look["order"])
 
 
+def is_ring(above, mine):
+    """The line Arbor draws round the window with the keyboard: a window of its own, right above that one and a little larger, which hides nothing and lets
+    presses through. The rule is apptool.swift's (`top-at`)."""
+    a, b = above["frame"], mine["frame"]
+    return (above["owner"] == "Arbor" and a[0] <= b[0] and a[1] <= b[1] and a[0] + a[2] >= b[0] + b[2] and a[1] + a[3] >= b[1] + b[3]
+            and a[2] <= b[2] + 48 and a[3] <= b[3] + 48)
+
+
 def covered(look, identifier):
-    """The largest share of the window that one ordinary window in front of it hides."""
+    """The largest share of the window that one window in front of it hides. Ordinary windows and panels that float above them (layers 0 to 19: the Dock is 20, the
+    menu bar 24, menus 101). Not what belongs to the same app: a toolbar in full screen, a sheet, a popover are the window's own."""
     mine, most = window(look, identifier), 0.0
     for other in look["order"]:
         if other == str(identifier):
             break
         above = look["windows"].get(other)
-        if above and above["layer"] == 0:
+        if above and 0 <= above["layer"] < 20 and above["pid"] != mine["pid"] and not is_ring(above, mine):
             most = max(most, share(above["frame"], mine["frame"]))
     return most
+
+
+def stand_in(look, then, identifier):
+    """The window the words of a task mean: the one that was there at the beginning, or, when that has been closed, the frontmost ordinary window of the same app.
+    Whoever closes the Finder window and opens another has not lost the Finder window."""
+    if on_screen(look, identifier) or not window(then, identifier):
+        return identifier
+    owner, people = window(then, identifier)["owner"], ordinary(look)
+    if window(look, identifier):
+        return identifier  # it is still there, only not on the screen: hidden, minimized, on another Space
+    return next((other for other in look["order"] if other in people and people[other]["owner"] == owner), identifier)
 
 
 def ordinary(look, without=("Arbor",)):
@@ -107,6 +132,8 @@ def moved(before, after, by=2):
     was, now = ordinary(before), ordinary(after)
     changed, gone, come = [], [], []
     for identifier in sorted(set(was) & set(now), key=int):
+        if not was[identifier]["on"] and not now[identifier]["on"]:
+            continue  # nobody saw it
         if not near(was[identifier]["frame"], now[identifier]["frame"], by):
             changed.append({"id": identifier, "owner": now[identifier]["owner"], "from": was[identifier]["frame"], "to": now[identifier]["frame"]})
         elif was[identifier]["on"] and not now[identifier]["on"]:
@@ -127,6 +154,7 @@ def back_where_it_was(look, then, cast, notes):
         was = window(then, identifier)
         if not was or not was["on"]:
             continue
+        identifier = stand_in(look, then, identifier)
         if not on_screen(look, identifier):
             notes.append("%s is not on the screen" % name)
         elif not near(window(look, identifier)["frame"], was["frame"]):
@@ -136,11 +164,19 @@ def back_where_it_was(look, then, cast, notes):
     return back
 
 
+def away(look, then, cast):
+    """How many of the cast's windows are not where they were in the look `then`."""
+    notes = []
+    back_where_it_was(look, then, cast, notes)
+    return len(notes)
+
+
 def judge(task, look, cast, first, begun, seen):
-    """(done, notes). `first`: the look before the first task that arranges anything; `begun`: at this task's beginning; `seen`: every look
-    since. The notes say what is amiss, for whoever reads the score."""
+    """(done, notes). `first`: the look when the newcomer said ready; `begun`: at this task's beginning; `seen`: every look since.
+    The notes say what is amiss, for whoever reads the score. One that begins "aside: " is told and not held against anybody."""
     notes = []
     visible, display = look["visible"], look["display"]
+    cast = {name: stand_in(look, first, identifier) for name, identifier in cast.items()} if task not in ("return", "undo", "back", "quit") else cast
     if task == "install":
         if look["arbor"] != "running":
             notes.append({"none": "Arbor does not run", "waiting": "Arbor runs and waits for the Accessibility permission"}.get(look["arbor"], look["arbor"]))
@@ -164,6 +200,10 @@ def judge(task, look, cast, first, begun, seen):
                     notes.append("%s is partly behind another window" % name)
             if (overlap(a, visible) + overlap(b, visible)) < 0.85 * area(visible):
                 notes.append("together they fill %d %% of the screen" % round(100 * (overlap(a, visible) + overlap(b, visible)) / area(visible)))
+    elif task == "return":
+        if not any(not fills(each, cast.get("safari"), "safari", each["visible"], each["display"]) for each in seen):
+            notes.append("safari never filled the screen")
+        back_where_it_was(look, begun, {name: cast[name] for name in ("textedit", "safari") if name in cast}, notes)
     elif task == "fill":
         notes += fills(look, cast.get("calendar"), "calendar", visible, display)
     elif task == "find":
@@ -171,15 +211,16 @@ def judge(task, look, cast, first, begun, seen):
         if not on_screen(look, identifier):
             notes.append("notes is not on the screen")
         else:
-            if share(display, window(look, identifier)["frame"]) < 0.98:
-                notes.append("%d %% of notes is on the display" % round(100 * share(display, window(look, identifier)["frame"])))
+            if share(visible, window(look, identifier)["frame"]) < 0.98:
+                notes.append("%d %% of notes is between the menu bar and the Dock" % round(100 * share(visible, window(look, identifier)["frame"])))
             if covered(look, identifier) > 0.02:
                 notes.append("notes is partly behind another window")
     elif task == "undo":
-        identifier = cast.get("finder")
+        owner = (window(begun, cast.get("finder")) or window(first, cast.get("finder")) or {"owner": "Finder"})["owner"]
         half = [visible[0], visible[1], visible[2] / 2, visible[3]]
-        if not any(on_screen(each, identifier) and share(window(each, identifier)["frame"], half) > 0.8
-                   and window(each, identifier)["frame"][2] <= 0.65 * visible[2] for each in seen):
+        # Any window of Finder's: after installing there may be two, and the words do not say which.
+        if not any(found["on"] and found["owner"] == owner and share(found["frame"], half) > 0.8 and found["frame"][2] <= 0.65 * visible[2]
+                   for each in seen for found in ordinary(each).values()):
             notes.append("finder never took up the left half")
         back_where_it_was(look, begun, cast, notes)
     elif task in ("back", "quit"):
@@ -188,9 +229,13 @@ def judge(task, look, cast, first, begun, seen):
         if task == "quit" and any(found["owner"] == "Arbor" and found["on"] for found in look["windows"].values()):
             notes.append("something of Arbor's is still on the screen")
         back_where_it_was(look, first, cast, notes)
+        more = sorted(found["owner"] for identifier, found in ordinary(look).items() if found["on"] and identifier not in first["windows"]
+                      and identifier not in (stand_in(look, first, each) for each in cast.values()))
+        if more:
+            notes.append("aside: open now and not then: %s" % ", ".join(more))
     else:
         notes.append("no such task: %s" % task)
-    return not notes, notes
+    return not [note for note in notes if not note.startswith("aside: ")], notes
 
 
 def fills(look, identifier, name, visible, display):

@@ -7,17 +7,25 @@
 It reads the journals the rig kept (rig.py), which hold what the newcomer sent, what the window server's list showed before and after every
 act, and the rig's verdict on each task. Nothing in it is anybody's opinion but the remarks, and those are counted, not weighed.
 
-    done          what the windows showed at the end of the task (tasks.py), whatever the newcomer thought
-    acts          clicks, drags, keys, texts typed, scrolls, moves of the pointer, passwords. Not waiting
-    wrong turns   the times it said `wrong`, and the acts after which nothing on the screen had changed
+    done          what the windows showed at the end of the task (tasks.py), whatever the newcomer thought. "already so": it was done before the task began,
+                  because a task before it had failed
+    acts          clicks, drags, scrolls, moves of the pointer, texts typed, passwords, and every chord pressed. Not waiting
+    wrong turns   acts after which nothing on the screen had changed (not the picture, not who has the keyboard, not the order of the windows), and the times it
+                  said `wrong`; one that it said right after such an act is the same turn
     stuck, surprised, looked up      the times it said so
-    moved untouched   windows whose frame changed in a round though the act did not touch them: they were not under the press or the release and
-                  had the keyboard neither before nor after. Each window counts once a round. What moved between two rounds, while nobody did
-                  anything, was touched by nobody
+    moved untouched   windows whose frame changed in a round though the act did not touch them: they were not under the press or the release, and for
+                  keys did not have the keyboard before or after. Each window counts once a round. What moved between two rounds or after the last act, while
+                  nobody did anything, was touched by nobody. A window that moves and is back within one round is seen by the sampler alone (samples.log)
+    unasked       of those, the ones the act did not even name, by the table in docs/VIABLE.md, section 6: an Arrange, a pause, a resume, Float All, Quit, undo and
+                  redo name every window; any other command of Arbor's, and a drag, name the docked windows; nothing names a floating window, and nobody named what
+                  moved while nothing was done. Without Arbor nothing is named
     seconds       from the task's first picture to its end. Most of it is the way through Git and the newcomer's thinking, the same for all runs
 
-A run with Arbor is held against the first run without: better where it is done and nothing counted is worse and something is better; worse where it
-is not done though macOS alone was, or everything that differs is worse. A task macOS alone does not have (installing, quitting) is a cost.
+A run with Arbor is held against every run without, on what needs nobody's word: done, acts, acts that changed nothing, moved untouched. How often somebody says that
+it is surprised depends on who it is, so what was said stands beside the verdict and is no part of it. Better: done, nothing counted worse and something better,
+against each of them. Worse: not done, or not reached, where macOS alone did it, or everything that differs is worse. A task macOS alone does not have (installing,
+quitting) is a cost. Where the two began from different places (one had less to bring back, or found the task done), they are not compared.
+One run is one newcomer: a difference of an act or two is no finding.
 """
 
 import json
@@ -29,8 +37,11 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import tasks  # noqa: E402
 from rig import DEAD  # noqa: E402
 
-COUNTED = ("acts", "wrong", "stuck", "surprised", "lookup", "untouched")
-HEADS = ("done", "acts", "wrong turns", "stuck", "surprised", "looked up", "moved untouched", "seconds")
+COUNTED = ("acts", "wrong", "stuck", "surprised", "lookup", "untouched", "unasked")
+JUDGED = ("acts", "dead", "untouched")
+HEADS = ("done", "acts", "wrong turns", "stuck", "surprised", "looked up", "moved untouched", "unasked", "seconds")
+# Commands of Arbor's that name every window (docs/VIABLE.md, section 6).
+NAME_ALL = ("arrange", "pause", "resume", "float-all", "quit", "undo", "redo")
 NO_ACT = ("wait", "ready")
 
 
@@ -49,8 +60,26 @@ def read(path):
 
 def is_dead(entry):
     """An act after which a person would have seen nothing happen."""
-    return (entry["verb"] not in NO_ACT + ("move",) and entry.get("cells") is not None and entry["cells"] <= DEAD
-            and not entry["moved"] and not entry["gone"] and not entry["come"])
+    return (entry["verb"] not in NO_ACT + ("move", "release") and entry.get("fine", True) and entry.get("cells") is not None and entry["cells"] <= DEAD
+            and not entry["moved"] and not entry["gone"] and not entry["come"] and not entry.get("turned"))
+
+
+def commands(entry):
+    """The commands Arbor's log says it ran: `… INFO  dock left: docked …`."""
+    found = []
+    for line in entry.get("said") or []:
+        words = line.split(" INFO ", 1)[1].split(":")[0].split()
+        if words:
+            found.append(words[0])
+    return found
+
+
+def named(entry):
+    """Which windows the act named: "all", or a set of ids."""
+    ran = commands(entry)
+    if any(command in NAME_ALL for command in ran):
+        return "all"
+    return set(entry.get("docked") or []) if ran or entry["verb"] in ("drag", "release") else set()
 
 
 def tally(entries):
@@ -61,7 +90,8 @@ def tally(entries):
         if kind == "run":
             score["run"] = entry
         elif kind == "task-begin":
-            score["tasks"][entry["task"]] = dict({name: 0 for name in COUNTED}, dead=0, left=0, done=None, how="cut off", notes=[], seconds=None, who=[])
+            score["tasks"][entry["task"]] = dict({name: 0 for name in COUNTED}, dead=0, left=0, blind=0, wallpaper=0, done=None, how="cut off", notes=[], seconds=None,
+                                                 who=[], already=entry.get("already", False), away=entry.get("away", 0), helped=None, last_dead=None)
         elif kind == "nonsense":
             score["nonsense"] += 1
         elif kind == "end":
@@ -69,24 +99,42 @@ def tally(entries):
         elif kind == "remark":
             score["remarks"].append(entry)
             counts = score["tasks"].get(entry["task"])
-            if counts and entry["verb"] in counts:
+            if counts and entry["verb"] == "wrong" and counts["last_dead"] in (entry["round"], entry["round"] - 1):
+                counts["last_dead"] = None  # it saw for itself that nothing had happened: one turn, not two
+            elif counts and entry["verb"] in counts:
                 counts[entry["verb"]] += 1
         elif kind == "round":
             counts = score["tasks"][entry["task"]]
             if entry["verb"] not in NO_ACT:
-                counts["acts"] += 1
+                counts["acts"] += len(entry["line"].split()) - 1 if entry["verb"] == "key" else 1
             if is_dead(entry):
                 counts["dead"] += 1
                 counts["wrong"] += 1
-            strangers = [each for each in entry["moved"] if each["id"] not in entry["touched"]] + entry["idle_moved"]
+                counts["last_dead"] = entry["round"]
+            if entry.get("cells") is None:
+                counts["blind"] += 1
+            bystanders = [each for each in entry["moved"] if each["id"] not in entry["touched"]]
+            strangers = bystanders + entry["idle_moved"]
+            names = named(entry)
             counts["untouched"] += len(strangers)
+            counts["unasked"] += len(entry["idle_moved"]) + len([each for each in bystanders if names != "all" and each["id"] not in names])
             counts["who"] += [each["owner"] for each in strangers]
+            if entry["verb"] == "click" and not entry.get("pressed") and len(bystanders) >= 3:
+                counts["wallpaper"] += len(bystanders)
             counts["left"] += len([each for each in entry["gone"] if each not in entry["touched"]]) + len(entry["idle_gone"])
             for part, seconds in entry["timing"].items():
                 if isinstance(seconds, (int, float)) and not isinstance(seconds, bool):
                     score["timing"].setdefault(part, []).append(seconds)
         elif kind == "task-end":
-            score["tasks"][entry["task"]].update(done=entry["done"], how=entry["how"], notes=entry["notes"], seconds=entry["seconds"])
+            counts = score["tasks"][entry["task"]]
+            counts.update(done=entry["done"], how=entry["how"], notes=entry["notes"], seconds=entry["seconds"])
+            late = entry.get("idle_moved") or []
+            counts["untouched"] += len(late)
+            counts["unasked"] += len(late)
+            counts["who"] += [each["owner"] for each in late]
+            counts["left"] += len(entry.get("idle_gone") or [])
+        elif kind == "helped":
+            score["tasks"][entry["task"]]["helped"] = entry["how"]
     return score
 
 
@@ -98,49 +146,61 @@ def name_of(score):
 
 
 def done_word(counts):
+    if counts["done"] and counts.get("already"):
+        return "yes (already so)"
     if counts["done"]:
         return "yes" if counts["how"] == "done" else "yes (%s)" % {"time": "and never said so", "giveup": "and gave up"}.get(counts["how"], counts["how"])
     return "NO (%s)" % {"done": "thought so", "giveup": "gave up", "time": "out of time"}.get(counts["how"], counts["how"])
 
 
-def compare(counts, base):
-    """How a run with Arbor did against macOS alone on one task."""
+def compare(counts, base, task=""):
+    """How a run with Arbor did against one run with macOS alone on one task."""
     if base is None:
         return "a cost macOS alone does not have"
+    if counts is None:
+        return "WORSE: not reached" if base["done"] else "neither did it"
+    if counts.get("already") != base.get("already"):
+        return "not comparable: one of them found it done"
+    if task in ("back", "quit") and counts.get("away") != base.get("away"):
+        return "not comparable: %d against %d windows to bring back" % (counts.get("away", 0), base.get("away", 0))
     if not counts["done"]:
-        return "WORSE" if base["done"] else "no better: neither did it"
+        return "WORSE" if base["done"] else "neither did it"
     if not base["done"]:
         return "BETTER"
-    less = [name for name in COUNTED if counts[name] < base[name]]
-    more = [name for name in COUNTED if counts[name] > base[name]]
+    less = [name for name in JUDGED if counts[name] < base[name]]
+    more = [name for name in JUDGED if counts[name] > base[name]]
     if less and not more:
         return "BETTER"
     if more and not less:
         return "WORSE"
-    return "the same" if not more else "mixed: less %s; more %s" % (", ".join(less), ", ".join(more))
+    words = {"dead": "acts that changed nothing", "untouched": "moved untouched"}
+    return "the same" if not more else "mixed: less %s; more %s" % (", ".join(words.get(name, name) for name in less), ", ".join(words.get(name, name) for name in more))
+
+
+def against(counts, bases, task):
+    """Against every run without Arbor: a verdict only where they all give the same."""
+    verdicts = [compare(counts, base["tasks"].get(task["id"]), task["id"]) for base in bases if "macos" not in task["arms"] or task["id"] in base["tasks"]]
+    if not verdicts:
+        return "macOS alone did not get that far"
+    return verdicts[0] if len(set(verdicts)) == 1 else "it depends on the run: " + "; ".join(sorted(set(verdicts)))
 
 
 def table(scores):
-    base = next((score for score in scores if score["run"].get("arm") == "macos"), None)
+    bases = [score for score in scores if score["run"].get("arm") == "macos"]
     lines = ["| task | with | " + " | ".join(HEADS) + " | against macOS alone |", "|---|---|" + "---|" * (len(HEADS) + 1)]
     for task in tasks.TASKS:
         first = True
         for score in scores:
             counts = score["tasks"].get(task["id"])
-            if counts is None:
-                if score["run"].get("arm") in task["arms"]:
-                    cells = ["not reached"] + ["–"] * (len(HEADS) - 1) + [""]
-                else:
-                    cells = ["nothing to do"] + ["0"] * (len(HEADS) - 1) + [""]
+            verdict = "" if score in bases or not bases else against(counts, bases, task)
+            if counts is None and score["run"].get("arm") in task["arms"]:
+                cells = ["not reached"] + ["–"] * (len(HEADS) - 1)
+            elif counts is None:
+                cells = ["nothing to do"] + ["0"] * (len(HEADS) - 1)
             else:
-                cells = [done_word(counts)] + [str(counts[name]) for name in COUNTED] + [str(round(counts["seconds"])) if counts["seconds"] is not None else "–"]
-                if score is base or base is None:
-                    cells.append("")
-                elif "macos" in task["arms"] and task["id"] not in base["tasks"]:
-                    cells.append("macOS alone did not get that far")
-                else:
-                    cells.append(compare(counts, base["tasks"].get(task["id"])))
-            lines.append("| %s | %s | %s |" % (task["title"] if first else "", name_of(score), " | ".join(cells)))
+                cells = [done_word(counts) + (", then helped" if counts["helped"] else "")] + [str(counts[name]) for name in COUNTED]
+                cells.append(str(round(counts["seconds"])) if counts["seconds"] is not None else "–")
+            lines.append("| %s | %s | %s | %s |" % (task["title"] if first else "", name_of(score), " | ".join(cells), verdict))
             first = False
     return lines
 
@@ -154,7 +214,8 @@ def report(scores):
             score["end"], ". Helped: " + run["helped"] if run.get("helped") else ""))
     lines += [""] + table(scores) + [""]
     for score in scores:
-        amiss = [(task, counts) for task, counts in score["tasks"].items() if counts["notes"] or counts["who"] or counts["left"] or counts["dead"]]
+        amiss = [(task, counts) for task, counts in score["tasks"].items()
+                 if counts["notes"] or counts["who"] or counts["left"] or counts["dead"] or counts["helped"] or counts["blind"]]
         if amiss:
             lines += ["## %s: what lies behind the numbers" % name_of(score), ""]
         for task, counts in amiss:
@@ -165,8 +226,14 @@ def report(scores):
                 parts.append("moved untouched: " + ", ".join("%s x%d" % (owner, counts["who"].count(owner)) for owner in sorted(set(counts["who"]))))
             if counts["left"]:
                 parts.append("%d left the screen untouched (hidden, minimized, another Space)" % counts["left"])
+            if counts["wallpaper"]:
+                parts.append("%d of them after a click where no window lay: macOS sweeps the windows aside at a click on the wallpaper" % counts["wallpaper"])
             if counts["dead"]:
                 parts.append("%d acts changed nothing on the screen" % counts["dead"])
+            if counts["blind"]:
+                parts.append("in %d rounds the pictures could not be compared" % counts["blind"])
+            if counts["helped"]:
+                parts.append("HELPED afterwards, so that the run could go on: %s" % counts["helped"])
             lines.append("- %s: %s" % (task, ". ".join(parts)))
         if amiss:
             lines.append("")
@@ -207,6 +274,20 @@ def self_test():
         ("nor a wrong turn", a_run("arbor", *a_task("fill", True, "done", a_round("fill", "wait", cells=0)))["tasks"]["fill"]["wrong"], 0),
         ("a key that changes nothing is one", a_run("arbor", *a_task("fill", True, "done", a_round("fill", "key", cells=3)))["tasks"]["fill"]["wrong"], 1),
         ("unless the picture could not be compared", a_run("arbor", *a_task("fill", True, "done", a_round("fill", "key", cells=None)))["tasks"]["fill"]["wrong"], 0),
+        ("said right after it, `wrong` is the same turn", a_run("arbor", *a_task("fill", True, "done", a_round("fill", "key", cells=3), {"kind": "remark", "task": "fill", "round": 2, "verb": "wrong", "words": "w"}))["tasks"]["fill"]["wrong"], 1),
+        ("said of something else, it is another", a_run("arbor", *a_task("fill", True, "done", a_round("fill", "key", cells=3), {"kind": "remark", "task": "fill", "round": 7, "verb": "wrong", "words": "w"}))["tasks"]["fill"]["wrong"], 2),
+        ("a click that only gives the keyboard away is none", a_run("arbor", *a_task("fill", True, "done", a_round("fill", cells=3, turned=True)))["tasks"]["fill"]["wrong"], 0),
+        ("nor is an act the Mac's tools did not take", a_run("arbor", *a_task("fill", True, "done", a_round("fill", cells=3, fine=False)))["tasks"]["fill"]["wrong"], 0),
+        ("three chords are three acts", a_run("arbor", *a_task("fill", True, "done", a_round("fill", "key", line="key cmd+a cmd+b cmd+c")))["tasks"]["fill"]["acts"], 3),
+        ("what moves after the last act counts", tally([{"kind": "run", "arm": "arbor"}, {"kind": "task-begin", "task": "fill"}, {"kind": "task-end", "task": "fill", "done": True, "how": "done", "notes": [], "seconds": 1, "idle_moved": [stranger]}])["tasks"]["fill"]["untouched"], 1),
+        ("an Arrange names all it moves", a_run("arbor", *a_task("fill", True, "done", a_round("fill", "key", moved=[stranger], said=["05:00:00.000 INFO  arrange: 5 windows"])))["tasks"]["fill"]["unasked"], 0),
+        ("and they still count as untouched", a_run("arbor", *a_task("fill", True, "done", a_round("fill", "key", moved=[stranger], said=["05:00:00.000 INFO  arrange: 5 windows"])))["tasks"]["fill"]["untouched"], 1),
+        ("a dock names the docked", a_run("arbor", *a_task("fill", True, "done", a_round("fill", "key", moved=[stranger], docked=["2"], said=["05:00:00.000 INFO  dock left: docked"])))["tasks"]["fill"]["unasked"], 0),
+        ("and no floating window", a_run("arbor", *a_task("fill", True, "done", a_round("fill", "key", moved=[stranger], docked=["7"], said=["05:00:00.000 INFO  dock left: docked"])))["tasks"]["fill"]["unasked"], 1),
+        ("a remark more is no verdict", compare(a_run("arbor", *a_task("fill", True, "done", a_round("fill", moved=[mine]), {"kind": "remark", "task": "fill", "round": 9, "verb": "surprised", "words": "w"}))["tasks"]["fill"], plain["tasks"]["fill"]), "the same"),
+        ("not reached where macOS alone did it", compare(None, plain["tasks"]["fill"]), "WORSE: not reached"),
+        ("found done is not compared", compare(dict(plain["tasks"]["fill"], already=True), plain["tasks"]["fill"]), "not comparable: one of them found it done"),
+        ("less to bring back is not compared", compare(dict(plain["tasks"]["fill"], away=1), dict(plain["tasks"]["fill"], away=4), "back"), "not comparable: 1 against 4 windows to bring back"),
         ("done and the same", compare(plain["tasks"]["fill"], plain["tasks"]["fill"]), "the same"),
         ("not done where macOS alone was", compare(a_run("arbor", *a_task("fill", False, "done"))["tasks"]["fill"], plain["tasks"]["fill"]), "WORSE"),
         ("done with more acts", compare(a_run("arbor", *a_task("fill", True, "done", a_round("fill"), a_round("fill")))["tasks"]["fill"], plain["tasks"]["fill"]), "WORSE"),
@@ -218,7 +299,7 @@ def self_test():
     for name, got, wanted in cases:
         print("%s %s%s" % ("✘" if name in failed else "✔", name, ": %r, not %r" % (got, wanted) if name in failed else ""))
     text = report([a_run("arbor", *a_task("fill", True, "done", a_round("fill", moved=[stranger]))), plain])
-    for wanted in ("| one window fills the screen, and stays | Arbor abc | yes | 1 | 0 | 0 | 0 | 0 | 1 | 10 | WORSE |", "| install and start it | Arbor abc | not reached",
+    for wanted in ("| one window fills the screen, and stays | Arbor abc | yes | 1 | 0 | 0 | 0 | 0 | 1 | 1 | 10 | WORSE |", "| install and start it | Arbor abc | not reached",
                    "|  | macOS alone | nothing to do | 0", "moved untouched: Notes x1"):
         if wanted not in text:
             print("✘ the report lacks: %s" % wanted)

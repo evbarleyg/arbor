@@ -9,7 +9,7 @@ cd "$(dirname "$0")/../.."
 [ $# -gt 0 ] || { echo "usage: scripts/newcomer/fetch.sh <run>…" >&2; exit 64; }
 for run in "$@"; do
   [[ "$run" =~ ^[A-Za-z0-9-]{1,20}$ ]] || { echo "fetch.sh: '$run' is no run's name" >&2; exit 64; }
-  git fetch --quiet --no-tags --depth 1 origin "+refs/heads/mac-shell-out/newcomer.$run.record:refs/newcomer/$run" \
+  git fetch --quiet --no-tags origin "+refs/heads/mac-shell-out/newcomer.$run.record:refs/newcomer/$run" \
     || { echo "fetch.sh: $run has left no record (yet)" >&2; exit 1; }
   rm -rf ".newcomer/${run:?}"
   mkdir -p ".newcomer/$run"

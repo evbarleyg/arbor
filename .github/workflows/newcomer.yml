@@ -39,7 +39,7 @@ jobs:
           name=${BRANCH#newcomer-start/}
           [[ "$name" =~ ^[A-Za-z0-9-]{1,20}$ ]] || { echo "::error::a run's name is 1 to 20 letters, digits and dashes"; exit 2; }
           subject=$(printf '%s\n' "$MESSAGE" | head -n 1)
-          arm="" build="" mark=no
+          arm="" build="" mark=yes
           case "$subject" in "newcomer: "*) ;; *) echo "::error::the commit's subject begins 'newcomer: ' (scripts/newcomer/start.sh writes it)"; exit 2 ;; esac
           for word in ${subject#newcomer: }; do
             case "$word" in
@@ -60,8 +60,8 @@ jobs:
             echo "arm=$arm"
             echo "build=$build"
             echo "mark=$mark"
-            # Twenty minutes short of the job's own limit: whatever happens, what was seen comes back.
-            echo "until=$(($(date +%s) + 6000))"
+            # Ten minutes short of the job's own limit: whatever happens, what was seen comes back.
+            echo "until=$(($(date +%s) + 6600))"
           } >> "$GITHUB_OUTPUT"
 
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
@@ -76,8 +76,13 @@ jobs:
           path: product
           fetch-depth: 0 # the build's number is the number of commits that lead to it
           persist-credentials: false
-      - name: Which Git need not see
-        run: echo product >> .git/info/exclude
+      # GitHub hands out the commits of forks and of strangers' pull requests under this repository's name to whoever knows their ids. What is built and started here
+      # runs beside a token, on a Mac whose pictures are published: it has to be the work of somebody who may push here.
+      - name: It is on a branch of this repository
+        if: steps.asked.outputs.arm == 'arbor'
+        run: |
+          echo product >> .git/info/exclude
+          [ -n "$(git -C product branch --remotes --contains HEAD)" ] || { echo "::error::that commit is on no branch of this repository"; exit 2; }
 
       - name: Set up
         uses: ./.github/actions/mac-setup
@@ -94,15 +99,29 @@ jobs:
           make app || ARBOR_CONFIGURATION=debug make app
           ditto -c -k --keepParent build/Arbor.app "$RUNNER_TEMP/Arbor.zip"
           ls -l "$RUNNER_TEMP/Arbor.zip"
+          {
+            echo "NEWCOMER_CDHASH=$(codesign --display --verbose=3 build/Arbor.app 2>&1 | sed -n 's/^CDHash=//p')"
+            echo "NEWCOMER_BUILD=$(git rev-parse --short HEAD)"
+          } >> "$GITHUB_ENV"
+          cp README.md "$RUNNER_TEMP/README-of-the-build.md"
+      # A stranger has the app and not its source, which would otherwise lie a few clicks away in Finder.
+      - name: The source goes
+        if: steps.asked.outputs.arm == 'arbor'
+        run: rm -rf product
 
-      # As root, with the token on its standard input: see the header of courier.sh. It outlives this step and ends with the next but one.
+      # As root, from a copy that is root's, with the token on its standard input: see the header of courier.sh. It outlives this step and ends with the next but one.
       - name: The courier
         env:
           TOKEN: ${{ github.token }}
           NAME: ${{ steps.asked.outputs.run }}
         run: |
+          # GitHub keeps the token itself out of its logs, and this form of it only when told.
+          echo "::add-mask::$(printf 'x-access-token:%s' "$TOKEN" | base64 | tr -d '\n')"
           mkdir -p "$RUNNER_TEMP/box"
-          printf '%s\n' "$TOKEN" | sudo nohup bash scripts/newcomer/courier.sh "$RUNNER_TEMP/box" "https://github.com/$GITHUB_REPOSITORY.git" "$NAME" \
+          sudo install -o root -m 700 scripts/newcomer/courier.sh /var/root/newcomer-courier.sh
+          token=$TOKEN
+          unset TOKEN # or sudo, which stays for as long as the courier does, would have it in its environment
+          printf '%s\n' "$token" | sudo nohup bash /var/root/newcomer-courier.sh "$RUNNER_TEMP/box" "https://github.com/$GITHUB_REPOSITORY.git" "$NAME" \
             > "$RUNNER_TEMP/courier.log" 2>&1 &
           sleep 1
 
@@ -114,45 +133,31 @@ jobs:
           NEWCOMER_MARK: ${{ steps.asked.outputs.mark }}
           NEWCOMER_UNTIL: ${{ steps.asked.outputs.until }}
         run: |
-          export NEWCOMER_BOX="$RUNNER_TEMP/box" NEWCOMER_ZIP="$RUNNER_TEMP/Arbor.zip" NEWCOMER_README="$PWD/product/README.md"
-          [ "$NEWCOMER_ARM" != arbor ] || NEWCOMER_BUILD=$(git -C product rev-parse --short HEAD)
-          export NEWCOMER_BUILD
+          export NEWCOMER_BOX="$RUNNER_TEMP/box" NEWCOMER_ZIP="$RUNNER_TEMP/Arbor.zip" NEWCOMER_README="$RUNNER_TEMP/README-of-the-build.md"
           # The loop ends by itself when its time is up; this is for a loop that does not.
           export MAC_SHELL_LIMIT=$((NEWCOMER_UNTIL - $(date +%s) + 240)) ARBOR_TIME_LIMIT=$((NEWCOMER_UNTIL - $(date +%s) + 200))
           scripts/ci-mac-shell.sh scripts/mac-shell/newcomer.sh
 
-      - name: The courier goes home
-        if: always()
-        run: |
-          touch "$RUNNER_TEMP/box/stop"
-          sleep 2
-          cat "$RUNNER_TEMP/courier.log" || true
-
-      # All of it, where the courier has pushed the journal alone so far; and the branch that started the run has done its work.
-      - name: Push the record
+      # All of it, where the journal alone has gone out so far; and the branch that started the run has done its work. The courier's last errands: no step after
+      # the first hands anybody a token, least of all after two hours in which this Mac did what it was told from afar.
+      - name: The record goes out, and the courier goes home
         if: always() && steps.asked.outcome == 'success'
-        env:
-          TOKEN: ${{ github.token }}
-          NAME: ${{ steps.asked.outputs.run }}
         run: |
-          export GIT_TERMINAL_PROMPT=0
-          export GIT_CONFIG_COUNT=1
-          export GIT_CONFIG_KEY_0="http.https://github.com/.extraheader"
-          export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$TOKEN" | base64 | tr -d '\n')"
-          git push --quiet --delete "https://github.com/$GITHUB_REPOSITORY.git" "refs/heads/newcomer-start/$NAME" || echo "::warning::newcomer-start/$NAME is still there"
-          if [ ! -f mac-shell/journal.jsonl ]; then
-            # Cut off before the loop could hand it over.
-            mkdir -p mac-shell
-            cp "$RUNNER_TEMP/box/record/journal.jsonl" mac-shell/ || { echo "::warning::there is no journal"; exit 0; }
+          box="$RUNNER_TEMP/box"
+          ask() {
+            echo "$1 $2" > "$box/request.new" && mv "$box/request.new" "$box/request"
+            for _ in $(seq 1 240); do [ -f "$box/answer-$1" ] && break; sleep 0.5; done
+            echo "$2: $(cat "$box/answer-$1" 2>/dev/null || echo "no answer")"
+          }
+          if [ -d mac-shell ]; then
+            gzip -9 mac-shell/samples.log mac-shell/witness.log 2>/dev/null || true
+            find mac-shell -type f -size +20m -print -delete | sed 's/^/::warning::left out, over 20 MB: /'
+            # The journal that is there already is the whole one unless the loop handed over its own.
+            cp -R mac-shell/. "$box/record/"
           fi
-          out=$(mktemp -d)
-          cp -R mac-shell/. "$out/"
-          cd "$out"
-          gzip -9 samples.log witness.log 2>/dev/null || true
-          find . -type f -size +20m -print -delete | sed 's/^/::warning::left out, over 20 MB: /'
-          git init --quiet --initial-branch=out
-          git add --all
-          git -c user.name="mac-shell" -c user.email="mac-shell@users.noreply.github.com" \
-            commit --quiet --message "mac-shell: newcomer $NAME, the record (run $GITHUB_RUN_ID)"
-          git push --quiet --force "https://github.com/$GITHUB_REPOSITORY.git" "out:refs/heads/mac-shell-out/newcomer.$NAME.record"
-          echo "::notice title=newcomer::mac-shell-out/newcomer.$NAME.record ($(git ls-files | wc -l | tr -d ' ') files, $(du -sm . | cut -f 1) MB)"
+          echo "::notice title=newcomer::the record: $(find "$box/record" -type f | wc -l | tr -d ' ') files, $(du -sm "$box/record" | cut -f 1) MB"
+          ask 1000001 record
+          ask 1000002 goodbye
+          touch "$box/stop"
+          for _ in $(seq 1 60); do pgrep -f newcomer-courier.sh > /dev/null || break; sleep 0.5; done
+          cat "$RUNNER_TEMP/courier.log" || true
