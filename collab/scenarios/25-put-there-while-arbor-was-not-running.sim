@@ -1,0 +1,48 @@
+# Proposed by an executor (2026-10-15); the documenter may edit or drop it.
+# Story: a laptop beside a monitor, nothing docked, mail on the monitor. The monitor's cable is pulled and mail waits on
+# the laptop. Arbor is quit; its person drags mail to where they want it on the lap, and starts Arbor again. Next morning the
+# monitor is plugged in: mail stays where it was put. Arbor used to take it back to the monitor: a drag it sees has always
+# ended the monitor's claim, one it did not see had not.
+# And what must stay. Notes waited beside it and nobody touched it: it goes home. Then: quit at the desk, the cable pulled while
+# Arbor is not running, a start on the lap. macOS had to move Notes, which is nobody's hand: back at the desk it goes home.
+# Reference: rule 2 (nothing moves until the person docks something); collab/QUESTIONS.md, "a hand Arbor did not see".
+plug side right 1920x1080
+open Mail 700x500
+open Notes 600x400
+move 101 1600 100 700 500
+move 102 2400 500 600 400
+wait 3
+quietly unplug side
+move 101 160 100 700 500
+move 102 840 475 600 400
+wait 1.7
+report-displays
+wait 3
+expect visible 101
+expect visible 102
+relaunch quit
+move 101 500 300 700 500
+relaunch start
+expect still
+wait 3
+quietly plug side right 1920x1080
+wait 1.7
+report-displays
+wait 3
+expect at 101 500 300
+expect size 101 700x500
+expect floating 101
+expect at 102 2400 500
+# Quit at the desk, the cable pulled meanwhile, a start on the lap, back at the desk.
+relaunch quit
+quietly unplug side
+move 102 840 475 600 400
+relaunch start
+wait 3
+expect visible 102
+quietly plug side right 1920x1080
+wait 1.7
+report-displays
+wait 3
+expect at 102 2400 500
+expect at 101 500 300

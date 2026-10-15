@@ -606,7 +606,9 @@ public final class Controller {
     noteWindowsLeftParked()
     resumeDormantWorkspaces(from: saved, hints: savedHints)
     keepRoomForWhoIsLate(saved: saved?.roomKept)
-    takeFloatingWindowsAsFound(leftAt: leftAt, ownSizes: ownSizesWhenArborStopped(saved, hints: savedHints))
+    takeFloatingWindowsAsFound(
+      leftAt: leftAt, ownSizes: ownSizesWhenArborStopped(saved, hints: savedHints),
+      couldHaveStayed: Set(displays.flatMap { saved?.workspaces[$0.id].map { Array($0.floating.keys) } ?? [] }))
     if areTheDisplaysArborLeft(saved, shapes: shapes) { takeDockedWindowsAsFound(leftAt: leftAt, then: saved?.workspaces ?? [:]) }
     foundAtThisStart.removeAll()
     // A run that did not quit cleanly leaves its parked windows out of view.

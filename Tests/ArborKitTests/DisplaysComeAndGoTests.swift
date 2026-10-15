@@ -65,6 +65,8 @@ private let waysThereAndBack: [String] = {
 private let laptop = DisplayID("main")
 private let monitor = DisplayID("side")
 private let moment = ["settle", "react", "advance 1", "react"]
+/// Arbor is not looking: it has quit, or is paused. Both write down where they left each window (`leftAt`).
+private let waysNotToLook = [["quit"], ["toggle-pause", "react", "advance 1", "react"]]
 
 /// Displays that come and go while Arbor runs and NOTHING IS DOCKED (rule 2: nothing moves until the person docks something).
 ///
@@ -504,6 +506,225 @@ private let moment = ["settle", "react", "advance 1", "react"]
         + ["\(desk.both) windows-late"] + moment, in: runner)
     #expect(runner.controller.workspaces[monitor]?.isDocked(mail) == true)
     #expect(frames(runner)[mail] == slot)
+  }
+
+  // MARK: A hand Arbor did not see
+
+  private func lookingAgain(after ending: [String]) -> [String] { ending[0] == "quit" ? ["launch", "settle"] : ending }
+
+  /// Mail, the monitor's own, waits on the laptop. Returns the world, and where it waits.
+  private func mailWaitsOnTheLaptop(_ before: [String] = []) -> (ChaosRunner, CGRect) {
+    let runner = play(["\(desk.both) windows-never", desk.windows[2], "launch", "settle"] + before + ["\(desk.laptop) windows-late"] + moment)
+    return (runner, frames(runner)[mail]!)
+  }
+
+  /// **A hand Arbor did not see counts as a hand** (the product owner, 2026-10-15). Found elsewhere, or at another size, than Arbor left it,
+  /// a floating window has been placed by somebody who is not Arbor, and no display fetches it. It may have been an app and no
+  /// person: left where it is costs one drag; taken from where its person put it is what Arbor is not for.
+  @Test(arguments: waysNotToLook, [CGRect(x: 300, y: 150, width: 1100, height: 700), CGRect(x: 100, y: 85, width: 900, height: 600)])
+  func whatSomebodyPlacedWhileArborWasNotLookingStays(ending: [String], placed: CGRect) {
+    let (runner, waits) = mailWaitsOnTheLaptop()
+    #expect(waits != placed)
+    let move = "move 103 \(Int(placed.minX)) \(Int(placed.minY)) \(Int(placed.width)) \(Int(placed.height))"
+    play(ending + [move] + lookingAgain(after: ending), in: runner)
+    // Asked while the monitor is still away: once it is back nothing is remembered of it either way.
+    #expect(runner.controller.dormant[monitor] == nil, "it remembered nothing else")
+    play(["\(desk.both) windows-late"] + moment, in: runner)
+    #expect(frames(runner)[mail] == placed)
+    #expect(runner.controller.workspaces[laptop]?.isFloating(mail) == true)
+  }
+
+  /// And on file by the start itself: a crash at once, before anything else could have written it, and the monitor still has no claim.
+  @Test func theUnseenHandsWordIsOnFile() {
+    let (runner, _) = mailWaitsOnTheLaptop()
+    play(["quit", "move 103 300 150 1100 700", "launch", "crash", "launch", "settle", "\(desk.both) windows-late"] + moment, in: runner)
+    #expect(frames(runner)[mail] == CGRect(x: 300, y: 150, width: 1100, height: 700))
+  }
+
+  /// Only the window that was placed: its neighbour, which nobody touched, goes home.
+  @Test(arguments: waysNotToLook) func itsNeighbourThatNobodyTouchedGoesHome(ending: [String]) {
+    let runner = play(["\(desk.both) windows-never", desk.windows[2], desk.windows[3], "launch", "settle", "\(desk.laptop) windows-late"] + moment)
+    play(ending + ["move 103 300 150 1100 700"] + lookingAgain(after: ending) + ["\(desk.both) windows-late"] + moment, in: runner)
+    #expect(frames(runner)[mail] == CGRect(x: 300, y: 150, width: 1100, height: 700))
+    #expect(frames(runner)[WindowID(104)] == CGRect(x: 2140, y: 325, width: 877, height: 499))
+  }
+
+  /// Three displays; Mail's own, `third`, is away. "A display that is still there" is any of them, not the first or the main one;
+  /// "no display that is away" is all of them, not one.
+  private static let (main3, side3, third3) = (
+    "main:0,0,1440,900:25,0,70,0*", "side:1440,0,2560,1440:25,0,0,0", "third:-1920,0,1920,1080:25,0,0,0"
+  )
+  private func mailOfTheThirdDisplayWaits(onTheSide: Bool) -> ChaosRunner {
+    let (main, side, third) = (Self.main3, Self.side3, Self.third3)
+    return play(
+      ["displays \(main) \(side) \(third) windows-never", "open 103 Mail pid 1002 at -1500 200 800 500", "launch", "settle"]
+        + ["displays \(main) \(side) windows-between"] + moment + (onTheSide ? ["move 103 2000 400 800 500"] + moment : []))
+  }
+
+  /// It waits on the display at the side, which is neither the first nor the main one. (Its app took it there, in Arbor's sight: that
+  /// is no hand, and `third` still has its claim.) Placed unseen within that display, it stays.
+  @Test(arguments: waysNotToLook) func placedUnseenOnADisplayThatIsNeitherFirstNorMainItStays(ending: [String]) {
+    let runner = mailOfTheThirdDisplayWaits(onTheSide: true)
+    #expect(runner.controller.dormant[DisplayID("third")]?.workspace.isFloating(mail) == true)
+    play(ending + ["move 103 2600 700 800 500"] + lookingAgain(after: ending), in: runner)
+    #expect(runner.controller.dormant[DisplayID("third")] == nil)
+    play(["displays \(Self.main3) \(Self.side3) \(Self.third3) windows-between"] + moment, in: runner)
+    #expect(frames(runner)[mail] == CGRect(x: 2600, y: 700, width: 800, height: 500))
+  }
+
+  /// Carried unseen from the laptop to another display that is connected.
+  @Test(arguments: waysNotToLook) func carriedUnseenToAnotherDisplayItStaysThere(ending: [String]) {
+    let runner = mailOfTheThirdDisplayWaits(onTheSide: false)
+    #expect(runner.controller.dormant[DisplayID("third")]?.workspace.isFloating(mail) == true)
+    play(ending + ["move 103 2000 400 800 500"] + lookingAgain(after: ending), in: runner)
+    #expect(runner.controller.dormant[DisplayID("third")] == nil)
+    play(["displays \(Self.main3) \(Self.side3) \(Self.third3) windows-between"] + moment, in: runner)
+    #expect(frames(runner)[mail] == CGRect(x: 2000, y: 400, width: 800, height: 500))
+    #expect(runner.controller.workspaces[monitor]?.isFloating(mail) == true)
+  }
+
+  /// Two displays are away that remember it: its own, and the one it waited on next. Placed unseen on the laptop, neither fetches it,
+  /// whichever comes back first.
+  @Test(arguments: waysNotToLook, [false, true]) func withTwoDisplaysAwayNeitherFetchesIt(ending: [String], ownFirst: Bool) {
+    let (main, side, third) = (Self.main3, Self.side3, Self.third3)
+    let runner = play(
+      ["displays \(main) \(side) \(third) windows-never", "open 103 Mail pid 1002 at -1500 200 800 500", "launch", "settle"]
+        + ["displays \(side.replacingOccurrences(of: ":25,0,0,0", with: ":25,0,0,0*")) windows-between"] + moment)
+    #expect(display(showing: frames(runner)[mail]!, in: runner) == monitor)
+    play(["displays \(main) windows-between"] + moment, in: runner)
+    #expect(runner.controller.dormant.values.filter { $0.workspace.isFloating(mail) }.count == 2, "\(runner.controller.dormant.keys)")
+    play(ending + ["move 103 300 200 800 500"] + lookingAgain(after: ending), in: runner)
+    #expect(runner.controller.dormant.values.allSatisfy { !$0.workspace.isFloating(mail) })
+    play(["displays \(main) \(ownFirst ? third : side) windows-between"] + moment, in: runner)
+    play(["displays \(main) \(side) \(third) windows-between"] + moment, in: runner)
+    #expect(frames(runner)[mail] == CGRect(x: 300, y: 200, width: 800, height: 500))
+  }
+
+  /// Sized where it stands, its corner where Arbor left it: that is a hand too.
+  @Test(arguments: waysNotToLook) func sizedUnseenWhereItStandsItKeepsThatSize(ending: [String]) {
+    let (runner, waits) = mailWaitsOnTheLaptop()
+    let sized = CGRect(x: waits.minX, y: waits.minY, width: waits.width - 200, height: waits.height - 100)
+    play(
+      ending + ["move 103 \(Int(sized.minX)) \(Int(sized.minY)) \(Int(sized.width)) \(Int(sized.height))"] + lookingAgain(after: ending)
+        + ["\(desk.both) windows-late"] + moment, in: runner)
+    #expect(frames(runner)[mail] == sized)
+  }
+
+  /// What the rule costs, besides: a desk session that Arbor never saw. The monitor comes, macOS puts its windows back on it, the cable is
+  /// pulled, and macOS drops them on the lap some points from where Arbor had left them. The laptop was there all along, so they
+  /// could have stayed, and macOS's shove passes for a hand: they are not fetched. Nothing Arbor knows tells the two apart.
+  @Test(arguments: waysNotToLook) func aDeskSessionArborNeverSawPassesForAHand(ending: [String]) {
+    let (runner, waits) = mailWaitsOnTheLaptop()
+    let dropped = waits.offsetBy(dx: 60, dy: 25)
+    play(
+      ending + ["\(desk.both) windows-silent", "move 103 1540 85 1100 700", "\(desk.laptop) windows-never"]
+        + ["move 103 \(Int(dropped.minX)) \(Int(dropped.minY)) \(Int(dropped.width)) \(Int(dropped.height))"] + lookingAgain(after: ending)
+        + ["\(desk.both) windows-late"] + moment, in: runner)
+    #expect(frames(runner)[mail] == dropped)
+  }
+
+  /// What must stay: nobody touched it, so back at the desk it goes home, to the point.
+  @Test(arguments: waysNotToLook) func whatWaitedWhereArborLeftItGoesHome(ending: [String]) {
+    let (runner, _) = mailWaitsOnTheLaptop()
+    play(ending + lookingAgain(after: ending) + ["\(desk.both) windows-late"] + moment, in: runner)
+    #expect(frames(runner)[mail] == whereMailWas)
+  }
+
+  /// What must stay: quit at the desk, the cable pulled meanwhile, a start on the lap, back at the desk. It is found elsewhere than Arbor
+  /// left it because its display went and macOS had to move it. That is nobody's hand, and it goes home.
+  @Test(arguments: waysNotToLook, [false, true]) func whatMacOSHadToMoveMeanwhileGoesHome(ending: [String], pinned: Bool) {
+    let runner = play(["\(desk.both) windows-never", desk.windows[2], "launch", "settle"] + (pinned ? ["pin 103", "settle"] : []))
+    play(
+      ending + ["\(desk.laptop) windows-silent"] + lookingAgain(after: ending) + moment + ["\(desk.both) windows-late"] + moment, in: runner)
+    #expect(frames(runner)[mail] == whereMailWas)
+    #expect(runner.controller.workspaces[monitor]?.isPinned(mail) == pinned)
+  }
+
+  /// The same for a window that only waited on the display that went unseen: its own display went long before. Nobody has touched it, so
+  /// nothing is forgotten, least of all its home. (A first build kept the claim of the display it waited on and forgot
+  /// the elder one: it never went home again. Found by a reader.)
+  @Test(arguments: waysNotToLook, [["side"], ["third", "side"], ["side", "third"]])
+  func whereItOnlyWaitedWentUnseenAndItStillGoesHome(ending: [String], back: [String]) {
+    let (main, third, side) = ("main:-1440,0,1440,900:25,0,70,0", "third:0,0,1920,1080:25,0,0,0*", "side:1920,0,2560,1440:25,0,0,0")
+    let runner = play(
+      ["displays \(main) \(third) \(side) windows-never", "open 103 Mail pid 1002 at 2500 300 1100 700 min 760 400", "launch", "settle"]
+        + ["displays \(main) \(third) windows-between", "settle"] + ending + ["displays main:0,0,1440,900:25,0,70,0* windows-silent"]
+        + lookingAgain(after: ending) + moment)
+    var connected = ["main:-1440,0,1440,900:25,0,70,0*"]
+    for display in back {
+      connected = [main + (display == "third" || connected.contains(third) ? "" : "*")] + connected.dropFirst() + [display == "third" ? third : side]
+      play(["displays \(connected.joined(separator: " ")) windows-between", "settle"], in: runner)
+    }
+    #expect(frames(runner)[mail] == CGRect(x: 2500, y: 300, width: 1100, height: 700))
+  }
+
+  /// Let go of with no display at all (both unplugged, then a quit): no window could have stayed anywhere, and all go home.
+  @Test(arguments: waysNotToLook) func letGoOfWithNoDisplayNobodyCanTell(ending: [String]) {
+    let runner = play(["\(desk.both) windows-never"] + desk.windows + ["launch", "settle"])
+    let began = frames(runner)
+    play(
+      ["displays windows-between"] + moment + ending + ["\(desk.laptop) windows-silent"] + lookingAgain(after: ending) + moment
+        + ["\(desk.both) windows-between"] + moment, in: runner)
+    #expect(frames(runner) == began)
+  }
+
+  /// What the exception costs, so that nobody takes it for an accident: the cable pulled unseen, THEN a hand on the lap. Nobody can tell
+  /// that hand from macOS's own move, and the window is fetched.
+  @Test(arguments: waysNotToLook) func aHandAfterTheCableWasPulledUnseenIsNotKnownForOne(ending: [String]) {
+    let runner = play(["\(desk.both) windows-never", desk.windows[2], "launch", "settle"])
+    play(
+      ending + ["\(desk.laptop) windows-silent", "move 103 300 150 1100 700"] + lookingAgain(after: ending) + moment
+        + ["\(desk.both) windows-late"] + moment, in: runner)
+    #expect(frames(runner)[mail] == whereMailWas)
+  }
+
+  /// What must stay: a point is no hand. The tolerance is the one a start already goes by when it asks whether a window was touched.
+  @Test(arguments: waysNotToLook) func aPointIsNoHand(ending: [String]) {
+    let (runner, waits) = mailWaitsOnTheLaptop()
+    let move = "move 103 \(Int(waits.minX) + 1) \(Int(waits.minY) - 1) \(Int(waits.width)) \(Int(waits.height))"
+    play(ending + [move] + lookingAgain(after: ending) + ["\(desk.both) windows-late"] + moment, in: runner)
+    #expect(frames(runner)[mail] == whereMailWas)
+  }
+
+  /// And two points are one.
+  @Test(arguments: waysNotToLook) func twoPointsAreAHand(ending: [String]) {
+    let (runner, waits) = mailWaitsOnTheLaptop()
+    let placed = waits.offsetBy(dx: 2, dy: 0)
+    play(
+      ending + ["move 103 \(Int(placed.minX)) \(Int(placed.minY)) \(Int(placed.width)) \(Int(placed.height))"] + lookingAgain(after: ending)
+        + ["\(desk.both) windows-late"] + moment, in: runner)
+    #expect(frames(runner)[mail] == placed)
+  }
+
+  /// What must stay: a slot in an arrangement is a slot. What is nudged on the lap is a stand-in (F08).
+  @Test(arguments: waysNotToLook) func whatWasDockedGoesBackToItsSlotEvenIfPlacedUnseen(ending: [String]) {
+    let dock = ["focus 103", "react", "advance 1", "react", "key down dock left", "key up dock left", "react", "advance 1", "react"]
+    let docked = play(["\(desk.both) windows-never", desk.windows[2], "launch", "settle"] + dock)
+    let slot = frames(docked)[mail]!
+    play(
+      ["\(desk.laptop) windows-late"] + moment + ending + ["move 103 300 150 1100 700"] + lookingAgain(after: ending)
+        + ["\(desk.both) windows-late"] + moment, in: docked)
+    #expect(docked.controller.workspaces[monitor]?.isDocked(mail) == true)
+    #expect(frames(docked)[mail] == slot)
+  }
+
+  /// A pin goes by the same rule: untouched it goes home, placed unseen it stays; pinned either way.
+  @Test(arguments: waysNotToLook) func aPinPlacedUnseenGoesByTheSameRule(ending: [String]) {
+    let (home, _) = mailWaitsOnTheLaptop(["pin 103", "settle"])
+    play(ending + lookingAgain(after: ending) + ["\(desk.both) windows-late"] + moment, in: home)
+    #expect(frames(home)[mail] == whereMailWas)
+    #expect(home.controller.workspaces[monitor]?.isPinned(mail) == true)
+    let (stays, _) = mailWaitsOnTheLaptop(["pin 103", "settle"])
+    play(ending + ["move 103 300 150 1100 700"] + lookingAgain(after: ending) + ["\(desk.both) windows-late"] + moment, in: stays)
+    #expect(frames(stays)[mail] == CGRect(x: 300, y: 150, width: 1100, height: 700))
+    #expect(stays.controller.workspaces[laptop]?.isPinned(mail) == true)
+  }
+
+  /// The control: after a crash nothing says where Arbor left it, so nobody can tell, and what is remembered stands.
+  @Test func afterACrashNobodyCanTell() {
+    let (runner, _) = mailWaitsOnTheLaptop()
+    play(["crash", "move 103 300 150 1100 700", "launch", "settle", "\(desk.both) windows-late"] + moment, in: runner)
+    #expect(frames(runner)[mail] == whereMailWas)
   }
 
   /// macOS remembers too. What it has brought back to within a few points gets no second move for nothing.

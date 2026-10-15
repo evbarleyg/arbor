@@ -63,12 +63,16 @@ extension Controller {
 
   /// Once the arrangements are back, of the connected displays and of those that returned, and before anything is laid out.
   /// Moves nothing: it corrects what is remembered of the floating windows. `leftAt`: where Arbor left each when it let go, if it did.
-  func takeFloatingWindowsAsFound(leftAt: [WindowID: CGRect], ownSizes: [WindowID: CGSize]) {
+  /// `couldHaveStayed`: the windows that floated then on a display that is still there.
+  func takeFloatingWindowsAsFound(leftAt: [WindowID: CGRect], ownSizes: [WindowID: CGSize], couldHaveStayed: Set<WindowID> = []) {
     for id in workspaces.keys.sorted() {
       for (window, remembered) in workspaces[id]!.floating.sorted(by: { $0.key < $1.key })
       where countsAsLeftWhereItWasFound(window) {
         guard let found = foundAtThisStart[window] else { continue }
         let touched = leftAt[window].map { !found.approximatelyEquals($0, tolerance: 1) } ?? false
+        // A hand Arbor did not see counts as a hand: no display that is away fetches the window when it comes back. Only where it could
+        // have stayed: if the display it was on when Arbor let go has gone, macOS had to move it, and where it is found says nothing.
+        if touched, couldHaveStayed.contains(window) { aHandHasPlaced(window) }
         let home = displayID(at: found.center) ?? id
         // Taken in afresh, because the display it floated on is not there: then where it is found is all that is remembered here.
         let isNewHere = remembered == found && ownSizes[window].map { $0 != found.size } == true
