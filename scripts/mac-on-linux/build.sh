@@ -30,13 +30,13 @@ if [ -n "${COVERAGE:-}" ]; then work="$work-coverage"; fi
 if [ "$(uname)" = Darwin ]; then echo "On a Mac the real thing runs: make e2e."; exit 2; fi
 
 # The stand-ins the layer needs, each after the ones it imports. Here they are compiled for real, not only read for what they declare.
-frameworks="FakeMacOS MacFoundation Darwin CoreGraphics ApplicationServices QuartzCore AppKit os"
+frameworks="FakeMacOS MacFoundation Darwin CarbonSwift CoreGraphics ApplicationServices QuartzCore AppKit os"
 # Arbor's own, each after the ones it imports.
 libraries="ArborCore ArborIPC ArborKit ArborTesting"
 # Of ArborKit: all that builds on Linux anyway, the Accessibility layer, and of the app's own files the one that listens to the workspace beside it
-# and the one the layer reads its environment from. UI, Input and the rest of App stay out: their stand-ins do nothing, so running them would
-# show nothing.
-kit="Controller Platform Support Trace AX App/FrontmostAppWatcher.swift App/ArborEnvironment.swift"
+# and the two the layer reads its environment and macOS's settings from. UI, Input and the rest of App stay out: their stand-ins do nothing, so
+# running them would show nothing.
+kit="Controller Platform Support Trace AX App/FrontmostAppWatcher.swift App/ArborEnvironment.swift App/MacFacts.swift"
 # These must know no clock but the model's (retime.py).
 onTheModelsClock="ArborKit/AX ArborKit/App ArborKit/Platform/Scheduler.swift"
 

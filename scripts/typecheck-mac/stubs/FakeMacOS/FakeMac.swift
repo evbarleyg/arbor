@@ -250,6 +250,12 @@ public final class FakeMac: @unchecked Sendable {
     sleepers.removeAll()
   }
 
+  // MARK: Which macOS
+
+  /// What `ProcessInfo.processInfo.operatingSystemVersion` becomes in the copy. The hosted Macs the traces were recorded on.
+  public var macOS = OperatingSystemVersion(majorVersion: 26, minorVersion: 6, patchVersion: 2)
+  public static var operatingSystemVersion: OperatingSystemVersion { current.macOS }
+
   // MARK: Processes
 
   /// What `kill(pid, 0)` becomes in the copy: whether the process is there. The model's pids are nobody's on the machine the test runs on.

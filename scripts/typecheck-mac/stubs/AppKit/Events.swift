@@ -86,7 +86,13 @@ open class NSEvent: NSObject {
   public convenience init?(cgEvent: CGEvent) { self.init() }
   var _type = EventType.leftMouseDown
   var _flags: ModifierFlags = []
-  open var cgEvent: CGEvent? { nil }
+  /// Where the pointer was when it happened, in CoreGraphics' coordinates, which are the model's.
+  var _location: CGPoint?
+  open var cgEvent: CGEvent? {
+    guard let _location, let event = CGEvent(source: nil) else { return nil }
+    event.location = _location
+    return event
+  }
   open var type: EventType { _type }
   open var subtype: EventSubtype { .windowExposed }
   open var modifierFlags: ModifierFlags { _flags }
@@ -140,17 +146,18 @@ open class NSEvent: NSObject {
     let number: Int
     init(number: Int) { self.number = number }
   }
-  private class func _event(_ type: FakeMac.MouseEvent, _ flags: UInt) -> NSEvent {
+  private class func _event(_ type: FakeMac.MouseEvent, _ flags: UInt, _ location: CGPoint) -> NSEvent {
     let event = NSEvent()
+    event._location = location
     event._type = EventType(rawValue: type.rawValue) ?? .leftMouseDown
     event._flags = ModifierFlags(rawValue: flags)
     return event
   }
   open class func addGlobalMonitorForEvents(matching mask: EventTypeMask, handler block: @escaping (NSEvent) -> Void) -> Any? {
-    _Monitor(number: FakeMac.current.addMonitor(global: true, mask: mask.rawValue) { type, flags in block(_event(type, flags)) })
+    _Monitor(number: FakeMac.current.addMonitor(global: true, mask: mask.rawValue) { type, flags, location in block(_event(type, flags, location)) })
   }
   open class func addLocalMonitorForEvents(matching mask: EventTypeMask, handler block: @escaping (NSEvent) -> NSEvent?) -> Any? {
-    _Monitor(number: FakeMac.current.addMonitor(global: false, mask: mask.rawValue) { type, flags in _ = block(_event(type, flags)) })
+    _Monitor(number: FakeMac.current.addMonitor(global: false, mask: mask.rawValue) { type, flags, location in _ = block(_event(type, flags, location)) })
   }
   open class func removeMonitor(_ eventMonitor: Any) {
     if let monitor = eventMonitor as? _Monitor { FakeMac.current.removeMonitor(monitor.number) }

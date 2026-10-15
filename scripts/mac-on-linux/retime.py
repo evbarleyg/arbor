@@ -3,7 +3,7 @@
 
     retime.py <folder with the copied sources> [<folder or file in it that must know no other clock>...]
 
-Rewrites the copy in place, never changing the number of lines. Waiting, the time, and the question whether a process is there go to the
+Rewrites the copy in place, never changing the number of lines. Waiting, the time, which macOS this is, and the question whether a process is there go to the
 model of a Mac (scripts/typecheck-mac/stubs/FakeMacOS), so that a test says `mac.pass(0.3)` and everything due runs, in order, with no real waiting.
 In the folders named it also reports, in the compiler's format, every other way to wait or to tell the time: code that used one would run on
 the machine's clock while the model stands still, and the stories would prove nothing about it. Exit code 1 if it found any.
@@ -15,6 +15,8 @@ import sys
 REWRITES = [
     (re.compile(r"\bTask\.sleep\((nanoseconds|for):"), r"FakeMac.sleep(\1:"),
     (re.compile(r"\bProcessInfo\.processInfo\.systemUptime\b"), "FakeMac.uptime"),
+    # Which macOS this is: not the kernel of the machine the test runs on.
+    (re.compile(r"\bProcessInfo\.processInfo\.operatingSystemVersion\b"), "FakeMac.operatingSystemVersion"),
     # The model's processes are nobody's on this machine.
     (re.compile(r"(?<![\w.])kill\("), "FakeMac.kill("),
 ]

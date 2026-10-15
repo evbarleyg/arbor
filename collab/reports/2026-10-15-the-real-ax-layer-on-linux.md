@@ -4,16 +4,17 @@
 - Branch: test/the-real-ax-layer-on-linux
 - What: `make mac-on-linux` (scripts/mac-on-linux/README.md; docs/TESTING.md, section 9)
 
-`Sources/ArborKit/AX` ran in no headless test. Now it is compiled as it is, linked with a model of a Mac and run on Linux: 181 stories (707 ✔, 74 ✘ known) and a random walk under four kinds of bad manners, five seconds to run. The run enters 92 % of the lines and 81 % of
-the regions of `AXWindowSystem.swift` (`COVERAGE=1`). Nineteen changes that take known cures out of a copy of the layer all turn their stories red (`make mac-on-linux-selftest`).
+`Sources/ArborKit/AX` ran in no headless test. Now it is compiled as it is, linked with a model of a Mac and run on Linux: 181 stories (726 ✔, 55 ✘ known, on the trunk at 302a0b0) and a random walk under four kinds of bad manners, five seconds to run. The run enters 92 % of the lines and 81 % of
+the regions of `AXWindowSystem.swift` (`COVERAGE=1`). Twenty-one changes that take known cures out of a copy of the layer all turn their stories red (`make mac-on-linux-selftest`).
 
 This report is what it found. Nothing in the layer was changed. Each finding says what a person would see, the lines concerned, and how sure the model is of the manners that bring it out: SEEN on a Mac, or GUESS. Every red check is listed in
-`scripts/mac-on-linux/known-failures.txt`; whoever cures one deletes its lines. Line numbers are those of `Sources/ArborKit/AX/AXWindowSystem.swift` at f0d67cc.
+`scripts/mac-on-linux/known-failures.txt`; whoever cures one deletes its lines. Line numbers are those of `Sources/ArborKit/AX/AXWindowSystem.swift` at f0d67cc, the trunk when the work began; two cures have landed in the file since (5726225, 37d0f05), and what comes after line 470 is some
+forty lines further down now.
 
 | | What a person sees | Needs | How sure |
 |---|---|---|---|
 | R1 | (cured) a window opened in a running app is filed as open all along | focus reported before creation | seen; red again without the cure |
-| R2 | (open) ⌘Tab or a click to another app: the view does not follow | `frontmostApplication` lags the notice | seen |
+| R2 | (cured by 5726225 while this was written; red again without it; still red at 600 ms) ⌘Tab or a click to another app: the view does not follow | `frontmostApplication` lags the notice | seen |
 | N1 | a docked window closes, its slot stays empty, whatever one does | "destroyed" never comes | seen that it can happen; how often unknown |
 | N2 | the same for an app that ends without a word, until some layout moves its window | an end nobody reports | seen |
 | N3 | two windows of one app in the same place on two Spaces become one | the focus report beats the Space notice | guess as to the order |
@@ -22,8 +23,9 @@ This report is what it found. Nothing in the layer was changed. Each finding say
 | N6 | ⌘T in a docked window makes a second window of it; closing the front tab loses the group | the app's list 10 ms behind | lists lag: seen; at that moment: guess |
 | N7 | an app opens a window and gets busy: Arbor is dead for four seconds | three notifications on their way | the layer's own logic |
 | N8 | two rare races | | for the record |
-| L1 | **a drag of any length is not seen at all; nothing is logged** | the window server a moment late, the pointer more than 24 points away | guess that fits what loaded hosted Macs showed |
+| L1 | **a drag of any length is not seen at all; nothing is logged** | the window server a moment late, the pointer more than 24 points away | found on a guess; **since SEEN on a hosted Mac**: three of four drags of 1,244 to 1,991 points in 30 steps never taken for drags, nothing logged |
 | L2 | a flick is not seen | the gesture over before Arbor hears of the press | the layer's own logic |
+| L3 | **(new with 37d0f05) a drag of a second is not seen** | the press heard half a second late | the layer's own logic; a regression |
 
 ## Reproductions of what was already known
 
@@ -31,7 +33,7 @@ This report is what it found. Nothing in the layer was changed. Each finding say
 Story "a window opens in a running app that reports the focus before the creation". Green on the trunk. With `hasOpenedSince` forced to false in the copy
 (`make mac-on-linux-selftest`) the layer reports `found w102, focused w102` instead of `appeared w102, focused w102`: exactly the fault seen on the hosted Macs.
 
-### R2. Fault (c), OPEN on the trunk: reproduces, at both storeys
+### R2. Fault (c): reproduced at both storeys while it was open; cured by 5726225; red again without the cure; still red at 600 ms
 Stories "⌘Tab to another app, and NSWorkspace names the old app for 5 / 50 ms more", "a click on another window of another app, …", "⌘Tab to an app whose window is
 out of view, …". With a fresh `frontmostApplication` all green. Stale: the layer reports only `keyboard moved, keyboard moved`, never `focused`; at storey two the
 window with the keyboard stays parked at 1023,673 (the very place seen on the hosted Mac) for the three seconds the story waits.
@@ -153,6 +155,13 @@ itself (`.undecided`); mouse-up ends nothing. The `AXMoved` in the backlog are n
 A LATE PRESS ALONE LOSES NOTHING as long as the window still moves afterwards: it only delays `dragBegan`, in all three orders of the backlog. The order makes 11 ms of difference and no other.
 So the leftMouseDown being late against the first AXMoved (0, 20, 100, 500 ms) is harmless by itself; it needs a gesture shorter than the lateness.
 
+### L3. Since 37d0f05: the press's own place, held against the window list of the moment it is served
+Found at the rebase onto the trunk that has the cure for macOS's tiling. The story "a window is dragged for a second, and the monitor hears of the press 500 ms late" was green (drag began at 551 ms, row above) and is RED: no drag at all, 6 reports that the window changed.
+WHY: `handleMouse` now takes `event.cgEvent?.location` for mouse-down and mouse-up, and `cursorLocation()` answers with it while the event is handled. So `makePress(at:)` gets the point where the button went down, 300,112; but it looks for the window under that point in `CGWindowListCopyWindowInfo` as it is NOW, when the window
+has been dragged to 200,175 and no longer lies under it. No window is found (or the one behind, which settles the press). The second sign fails as well: `noteMoveWhilePressed` falls back on "where the window was" by Arbor's belief, which two `AXMoved` have already brought up to date.
+Before, both the point and the list were of the moment of serving, which agreed with each other, and the drag was picked up from there. At 0, 20 and 100 ms late, and with the main thread busy for 300 ms, it is still seen (there the belief is still the old one, and the second sign saves it).
+TO CONSIDER: look for the pressed window with the point of the event among the frames Arbor believed BEFORE the first report that came with the button down; or, if no window lies under the event's point, try once more with the pointer's place now.
+
 ### Is anything logged? NO, at no level
 arbor.log with ARBOR_DEBUG=1: a drag that is seen logs `DEBUG w101 is being dragged`. A lost one logs NOTHING: `.neither` (1248) and `.undecided` are silent, and so is a mouse-up with no grab (1150-1152). A trace would show the raw mouse lines and the `changed` events and no `dragBegan`.
 CHEAP AND WORTH HAVING WHATEVER THE CURE: a debug line at 1249 ("the press on \(window) is settled as not about it: pointer N points away, window where it was"), and one at mouse-up when the pressed window's bounds differ from `press.frame` and no grab was open ("\(window) moved by dx, dy while the button was down and no drag was seen").
@@ -174,9 +183,9 @@ CHEAP AND WORTH HAVING WHATEVER THE CURE: a debug line at 1249 ("the press on \(
 SEEN: the layer's code paths above run unmodified; `WindowGrab` is the real one. The traces' pointer steps and rests. GUESS: that a loaded window server starts late and then catches up with the pointer in one jump (modelled so); how the run loop orders a backlog (all three orders played; no difference).
 The 15 red checks are listed in scripts/mac-on-linux/known-failures.txt, so whoever cures this deletes the lines.
 
-## A cure proposed for R2, held against the stories before a Mac saw it
+## The cure for R2, held against the stories before it landed
 
-The branch fix/an-app-switch-is-never-dropped at a698364 (it asks again every 10 ms, for half a second, until macOS names the app), with `REF=`: that commit's Sources, this branch's stand-ins and stories. 657 checks in 146 stories on each side at the time.
+The branch fix/an-app-switch-is-never-dropped at a698364, on the trunk since as 5726225 (it asks again every 10 ms, for half a second, until macOS names the app), with `REF=`: that commit's Sources, this branch's stand-ins and stories. 657 checks in 146 stories on each side at the time. "Trunk" below is the trunk before it.
 
 VERDICT: it cures what it sets out to cure, at both storeys, up to its own limit of half a second, and NO check that is green on the trunk goes red.
 
@@ -226,12 +235,13 @@ An app that HANGS, or is still marked as silent, at the moment it comes forward 
 ### Small print
 - The model's order and delays around a switch: didActivate 4 ms after the switch (GUESS), AXApplicationDeactivated +0.6 ms and AXApplicationActivated +8 ms after the notice (SEEN on hosted Macs). The lag itself is the knob.
 - On trunk AND cure, a click on another app's window with a FRESH property can report that window focused twice within a millisecond (once for AXMainWindowChanged, once for didActivate, which resets `lastReportedFocus`). Harmless so far as the stories see; not new.
-- When the cure lands: delete the lines about 5 ms and 50 ms from scripts/mac-on-linux/known-failures.txt (the run fails until then: that is the arrangement). The 600 ms stories stay listed, with a word that this is the cure's chosen limit.
+- When it landed, the run failed until 23 lines were deleted from scripts/mac-on-linux/known-failures.txt: that is the arrangement. The 600 ms stories stay listed, with a word that this is the cure's chosen limit. Two entries in `mutants.py` take it out again.
 
 ## Still to check on a real Mac
 
 - The order of "focused window changed" and `activeSpaceDidChange` at a Space switch between two windows of one app (N3). A trace of a Space switch is on the list of traces still to record.
-- Whether a loaded window server lags the pointer: log `serverBounds` against `cursorLocation()` at every `leftMouseDragged` on a loaded runner (L1).
+- L1 has been seen; a trace to confirm the mechanism (the window server behind the pointer at the first `leftMouseDragged`) is still owed: log `serverBounds` against `cursorLocation()` at every `leftMouseDragged` on a loaded runner.
+- How late a mouse-down can reach the monitor on a loaded Mac (L3 needs more than the hand's rest and the app's first "moved": about a quarter of a second).
 - How long `frontmostApplication` lags at most (R2: the cure gives up after half a second).
 - Whether an app's list is behind when "created" of a new tab arrives (N6).
 - Whether `_AXUIElementGetWindow` waits for an app that hangs (N7: four seconds with, three without).

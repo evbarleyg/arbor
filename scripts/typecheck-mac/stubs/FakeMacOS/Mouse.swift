@@ -35,8 +35,8 @@ extension FakeMac {
     let number: Int
     let isGlobal: Bool
     let mask: UInt64
-    let tell: (MouseEvent, UInt) -> Void
-    init(number: Int, isGlobal: Bool, mask: UInt64, tell: @escaping (MouseEvent, UInt) -> Void) {
+    let tell: (MouseEvent, UInt, CGPoint) -> Void
+    init(number: Int, isGlobal: Bool, mask: UInt64, tell: @escaping (MouseEvent, UInt, CGPoint) -> Void) {
       self.number = number
       self.isGlobal = isGlobal
       self.mask = mask
@@ -46,7 +46,8 @@ extension FakeMac {
 
   // MARK: Monitors
 
-  public func addMonitor(global: Bool, mask: UInt64, tell: @escaping (MouseEvent, UInt) -> Void) -> Int {
+  /// `tell` gets the event, the modifier keys and the place of the pointer as they were when it happened, however late it is served.
+  public func addMonitor(global: Bool, mask: UInt64, tell: @escaping (MouseEvent, UInt, CGPoint) -> Void) -> Int {
     monitorsMade += 1
     monitors.append(Monitor(number: monitorsMade, isGlobal: global, mask: mask, tell: tell))
     return monitorsMade
@@ -58,12 +59,12 @@ extension FakeMac {
   private func tellMonitors(_ event: MouseEvent, toArbor: Bool, after delay: TimeInterval = 0, mayBeDropped: Bool = false) {
     happened(UInt32(event.rawValue))
     if mayBeDropped, manners.chance(manners.drops) { return note("(swallowed: \(event))") }
-    let flags = mouse.flags
+    let (flags, location) = (mouse.flags, mouse.location)
     let place = "\(Int(mouse.location.x)),\(Int(mouse.location.y))"
     let times = event != .leftMouseDragged && manners.chance(manners.repeats) ? 2 : 1
     for _ in 0..<times {
       send(after: timing.mouseEvent + delay, from: .mouse, "→ \(event) \(place)\(toArbor ? " (to a panel of Arbor's)" : "")") { [self] in
-        for monitor in monitors where monitor.isGlobal != toArbor && monitor.mask & (1 << UInt64(event.rawValue)) != 0 { monitor.tell(event, flags) }
+        for monitor in monitors where monitor.isGlobal != toArbor && monitor.mask & (1 << UInt64(event.rawValue)) != 0 { monitor.tell(event, flags, location) }
       }
     }
   }

@@ -9,8 +9,8 @@ import Foundation
 // Switching apps posts no "focused window changed" if the app's focused window is the one it was: `didActivateApplication` is the only sign. On hosted Macs that
 // notice arrived while `NSWorkspace.shared.frontmostApplication` STILL NAMED THE OLD APP, 27 times in three runs on 2026-10-14. What macOS said in the switches
 // that failed: did activate; the other app deactivated 0.6 ms later; this one activated 8 ms later; nothing more. For eight seconds the window with the keyboard
-// lay out of view. How long the property takes to catch up nobody has measured, so the stale case is told twice: it has caught up when
-// "application activated" comes (5 ms), and it has not (50 ms).
+// lay out of view. Cured by 5726225: the layer asks again every 10 ms until macOS names the app, for half a second (`AppThatCameForward`). How long the property takes to catch
+// up nobody has measured, so the stale case is told at lags from 5 ms, where it has caught up when "application activated" comes, to 600 ms, which is past what the cure looks for.
 
 private let lags: [(words: String, seconds: TimeInterval)] = [("", 0)] + [5, 8, 20, 50, 200, 600].map {
   (", and NSWorkspace names the old app for \($0) ms more", Double($0) / 1000)

@@ -25,6 +25,24 @@ MUTANTS = [
         ],
     },
     {
+        # The other fault of that day, cured by 5726225: the notice that an app came forward outran `frontmostApplication`, and the report was dropped.
+        "name": "an app that macOS does not name in front yet is dropped",
+        "old": "    reportFocus(ofAppThatCameForward: pid, earlierLooks: 0)\n",
+        "new": "    reportFocus(of: pid)\n",
+        "red": [
+            "⌘Tab to another app, and NSWorkspace names the old app for 5 ms more: the window that has the keyboard now is reported focused",
+            "a click on another window of another app, and NSWorkspace names the old app for 20 ms more: the window that was clicked is reported focused",
+            "⌘Tab to an app whose window is out of view, and NSWorkspace names the old app for 50 ms more: the view moves to show the window that has the keyboard now",
+            "the rude walk (stale answers): a window whose app came forward while NSWorkspace still named another is reported focused",
+        ],
+    },
+    {
+        "name": "an app that has been overtaken is still looked at",
+        "old": "    // Whoever came forward before has been overtaken.\n    lookAtAppThatCameForward?.cancel()\n",
+        "new": "    // Whoever came forward before has been overtaken.\n    _ = 0\n",
+        "red": ["⌘Tab to another app and back 30 ms later, and NSWorkspace lags by 50 ms: the last window to be reported focused is the one that has the keyboard"],
+    },
+    {
         "name": "a window that was put away still counts as there",
         "old": "    putAway.insert(window)\n",
         "new": "    _ = window\n",

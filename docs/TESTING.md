@@ -884,11 +884,11 @@ seconds to two minutes. `scripts/mac-on-linux/README.md` has all of it; in short
 - **Two storeys.** `AXWindowSystem` alone with a listener that writes down what it reports; and the real `Controller` on top, wired as in the app, where the checks look at the screen ("⌘Tab to an app whose window is out of view: the view moves to show it").
 - **Polite first, then rude**, with the rudeness that was seen on a Mac and the numbers from the traces: reports in the other order, a `frontmostApplication` that lags, lists that are behind, apps that hang in the middle of a move and carry the calls out when they wake, ends nobody reports, releases that are swallowed,
   a window server that is ahead of the app, or late. What is a guess is marked "Guess" in the model.
-- **Time is the model's**: `mac.pass(0.3)`, no waiting, no threads, no chance. A copy of the sources is rewritten in three places, line for line (`retime.py`).
+- **Time is the model's**: `mac.pass(0.3)`, no waiting, no threads, no chance. A copy of the sources is rewritten in four ways, line for line (`retime.py`).
 - **`known-failures.txt`**: the run fails when a check that is not listed fails and when one that is listed passes. **Whoever lands a cure in the layer deletes its lines.**
-- **`make mac-on-linux-selftest`** takes nineteen known cures out of the copy, one at a time, and expects the stories about them to go red.
+- **`make mac-on-linux-selftest`** takes twenty-one known cures out of the copy, one at a time, and expects the stories about them to go red.
 - **The rude walk**: seeded, under four kinds of bad manners in general and once politely as a control; a breach prints the shortest script, which `--replay` plays. `ARGS="--only walk --seeds 1-500"` is a hunt.
-- **`REF=origin/fix/some-cure make mac-on-linux`** holds another commit's layer against this checkout's stories: how a cure is tried before a Mac sees it. `COVERAGE=1` says which lines no story enters (92 % of `AXWindowSystem.swift`'s are entered).
+- **`REF=origin/fix/some-cure make mac-on-linux`** holds another commit's layer against this checkout's stories: how a cure is tried before a Mac sees it, as the one for the app switch was. `COVERAGE=1` says which lines no story enters (92 % of `AXWindowSystem.swift`'s are entered).
 
 Run it after every change under `Sources/ArborKit/AX`, and tell a story for every fault a Mac shows there. A green story proves the layer right about what we have seen or guessed, not about a Mac; a red one that rests on a guess is worth a run on a hosted Mac.
 
