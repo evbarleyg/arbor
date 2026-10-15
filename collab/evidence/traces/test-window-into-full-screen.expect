@@ -1,0 +1,21 @@
+# arbor-e2e, make a docked window full screen: it gives up its slot, and the others are reported off the Space.
+# ---- what Arbor did, written by scripts/trace-to-test.py on 2026-10-15; `--again` writes it anew, and what stands above this line stays ----
+moved 52 0
+frame 52 170 220 480 348
+docked 52
+hidden 52
+moved 53 0
+frame 53 0 0 1024 768
+docked 53
+hidden 53
+moved 54 0
+frame 54 270 140 480 348
+docked 54
+hidden 54
+moved 97 0
+frame 97 170 220 480 348
+floating 97
+hidden 97
+asked-focus none
+focused 52
+camera root

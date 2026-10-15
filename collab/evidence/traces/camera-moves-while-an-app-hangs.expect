@@ -1,0 +1,21 @@
+# arbor-e2e, the view goes to another window while an app hangs for six seconds: Arbor answers all the same, and a frame set on the hung app's window comes back with nothing.
+# ---- what Arbor did, written by scripts/trace-to-test.py on 2026-10-15; `--again` writes it anew, and what stands above this line stays ----
+moved 52 1 at 50
+frame 52 1023 677 390 319
+docked 52
+hidden 52
+moved 53 1 at 50
+frame 53 1023 677 391 650
+docked 53
+hidden 53
+moved 54 1 at 50
+frame 54 12 43 1000 650
+docked 54
+visible 54
+moved 97 1 at 12
+frame 97 1023 677 341 348
+floating 97
+hidden 97
+asked-focus 54
+focused 52
+camera 54
