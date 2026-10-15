@@ -1,0 +1,343 @@
+# mac-shell: scripts/mac-shell/check-own-size-apps.sh at f921749, macOS 26.6.2, 2026-10-15T12:53Z
+built Arbor, the pointer tool and the app bundles in 8s
+1600 900 1600 900
+display: 1 0 0 1600 900 1600 900 1
+
+== Safari, TextEdit and a test window
+> open -g -b com.apple.Safari /tmp/arbor-apps.7WXTJZ/scratch/page.html
+pid 9815 lists (id role subrole x y w h flags):
+  32 AXWindow AXStandardWindow 138 31 1324 791 main,toolbar
+> open -g -b com.apple.TextEdit /tmp/arbor-apps.7WXTJZ/scratch/oak.txt
+pid 9892 lists (id role subrole x y w h flags):
+  39 AXWindow AXStandardWindow 165 65 673 439 main
+companions: pid 9941, 1 windows
+session 1: Arbor pid 10052, ARBOR_ONLY_PIDS=9815,9892,9941: running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+the visible frame is 0 31 1600 791, the display 0 0 1600 900
+
+▸ Safari, hung over the right edge by a real drag, docked where there is no room for its size, given back by float-all
+> drag 1230 103 1590 103 --steps 24 --duration 0.8
+    it hangs at 819 91 1066 500
+  ✔ the case: it hangs over the right edge
+> dock 44 left
+docked w44 at the left edge
+> dock 32 right
+docked w32 at the right edge
+  ✔ it is docked, in view
+camera n2, visible 0,31 1600×791, Desktop 541,43 461×767
+  w32 com.apple.Safari 1014,43 574×767, slot 1014,43 574×767: docked focused
+  w39 com.apple.TextEdit 165,65 673×439: floating
+  w44 pid 9941 12,43 517×767, slot 12,43 517×767: docked
+> float-all
+floated 2 windows
+  ✔ it is where it hung, whole
+  ✔ and stays there
+    (DEBUG the button went down at 1230,103, the pointer is at 1305,103: it is served late, with w32 in the hand)
+    (DEBUG w32 is being dragged)
+    (DEBUG drag of w32: on float)
+    (INFO  dropped w32 on float, display 07230EFA-7A8D-4E37-845C-19CC8737EEF5)
+    (INFO  made room for w32)
+    (INFO  dock 32 right: docked w32 at the right edge)
+    (DEBUG focus is on w32)
+    (DEBUG w32 has the keyboard)
+snap: mac-shell/Safari-right-edge-float-all.jpg
+
+▸ Safari, hung over the right edge by a real drag, docked where there is no room for its size, given back by pause
+> drag 1230 103 1590 103 --steps 24 --duration 0.8
+    it hangs at 819 91 1066 500
+  ✔ the case: it hangs over the right edge
+> dock 44 left
+docked w44 at the left edge
+> dock 32 right
+docked w32 at the right edge
+  ✔ it is docked, in view
+camera n2, visible 0,31 1600×791, Desktop 541,43 461×767
+  w32 com.apple.Safari 1014,43 574×767, slot 1014,43 574×767: docked focused
+  w39 com.apple.TextEdit 165,65 673×439: floating
+  w44 pid 9941 12,43 517×767, slot 12,43 517×767: docked
+> pause
+paused until `resume`; windows are back in view, in their own sizes
+  ✔ it is where it hung, whole
+  ✔ and stays there
+    (DEBUG the button went down at 1230,103, the pointer is at 1230,103: it is on w32)
+    (DEBUG w32 is being dragged)
+    (DEBUG drag of w32: on float)
+    (INFO  dropped w32 on float, display 07230EFA-7A8D-4E37-845C-19CC8737EEF5)
+    (INFO  made room for w32)
+    (INFO  dock 32 right: docked w32 at the right edge)
+    (DEBUG focus is on w32)
+    (DEBUG w32 has the keyboard)
+snap: mac-shell/Safari-right-edge-pause.jpg
+> resume
+resumed
+> float-all
+
+▸ Safari, hung over the right edge by a real drag, docked where there is no room for its size, given back by quit
+> drag 1230 103 1590 103 --steps 24 --duration 0.8
+    it hangs at 819 91 1066 500
+  ✔ the case: it hangs over the right edge
+> dock 44 left
+docked w44 at the left edge
+> dock 32 right
+docked w32 at the right edge
+  ✔ it is docked, in view
+camera n2, visible 0,31 1600×791, Desktop 541,43 461×767
+  w32 com.apple.Safari 1014,43 574×767, slot 1014,43 574×767: docked focused
+  w39 com.apple.TextEdit 165,65 673×439: floating
+  w44 pid 9941 12,43 517×767, slot 12,43 517×767: docked
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ it is where it hung, whole
+  ✔ and stays there
+snap: mac-shell/Safari-right-edge-quit.jpg
+session 2: Arbor pid 11688, ARBOR_ONLY_PIDS=9815,9892,9941: running: 1 display, 2 docked and 1 floating, 0 out of view
+Arbor dev
+> float-all
+
+▸ TextEdit, hung over the right edge by a real drag, docked where there is no room for its size, given back by float-all
+> drag 796 103 1156 103 --steps 24 --duration 0.8
+    it hangs at 819 91 1066 500
+  ✔ the case: it hangs over the right edge
+> dock 44 left
+docked w44 at the left edge
+> dock 39 right
+docked w39 at the right edge
+  ✔ it is docked, in view
+camera n2, visible 0,31 1600×791, Desktop 541,43 518×767
+  w32 com.apple.Safari 819,91 1066×500: floating
+  w39 com.apple.TextEdit 1071,43 517×767, slot 1071,43 517×767: docked focused
+  w44 pid 9941 12,43 517×767, slot 12,43 517×767: docked
+> float-all
+floated 2 windows
+  ✔ it is where it hung, whole
+  ✔ and stays there
+    (DEBUG w39 has the keyboard)
+    (DEBUG the button went down at 796,103, the pointer is at 796,103: it is on w39)
+    (DEBUG w39 is being dragged)
+    (DEBUG drag of w39: on float)
+    (INFO  dropped w39 on float, display 07230EFA-7A8D-4E37-845C-19CC8737EEF5)
+    (INFO  dock 39 right: docked w39 at the right edge)
+    (DEBUG focus is on w39)
+    (DEBUG w39 has the keyboard)
+snap: mac-shell/TextEdit-right-edge-float-all.jpg
+
+▸ TextEdit, hung over the right edge by a real drag, docked where there is no room for its size, given back by pause
+> drag 1006 103 1366 103 --steps 24 --duration 0.8
+    it hangs at 819 91 1066 500
+  ✔ the case: it hangs over the right edge
+> dock 44 left
+docked w44 at the left edge
+> dock 39 right
+docked w39 at the right edge
+  ✔ it is docked, in view
+camera n2, visible 0,31 1600×791, Desktop 541,43 518×767
+  w32 com.apple.Safari 819,91 1066×500: floating
+  w39 com.apple.TextEdit 1071,43 517×767, slot 1071,43 517×767: docked focused
+  w44 pid 9941 12,43 517×767, slot 12,43 517×767: docked
+> pause
+paused until `resume`; windows are back in view, in their own sizes
+  ✔ it is where it hung, whole
+  ✔ and stays there
+    (DEBUG the button went down at 1006,103, the pointer is at 1006,103: it is on w39)
+    (DEBUG w39 is being dragged)
+    (DEBUG drag of w39: on float)
+    (INFO  dropped w39 on float, display 07230EFA-7A8D-4E37-845C-19CC8737EEF5)
+    (INFO  dock 39 right: docked w39 at the right edge)
+    (DEBUG focus is on w39)
+    (DEBUG w39 has the keyboard)
+snap: mac-shell/TextEdit-right-edge-pause.jpg
+> resume
+resumed
+> float-all
+
+▸ TextEdit, hung over the right edge by a real drag, docked where there is no room for its size, given back by quit
+> drag 1006 103 1366 103 --steps 24 --duration 0.8
+    it hangs at 819 91 1066 500
+  ✔ the case: it hangs over the right edge
+> dock 44 left
+docked w44 at the left edge
+> dock 39 right
+docked w39 at the right edge
+  ✔ it is docked, in view
+camera n2, visible 0,31 1600×791, Desktop 541,43 518×767
+  w32 com.apple.Safari 819,91 1066×500: floating
+  w39 com.apple.TextEdit 1071,43 517×767, slot 1071,43 517×767: docked focused
+  w44 pid 9941 12,43 517×767, slot 12,43 517×767: docked
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ it is where it hung, whole
+  ✔ and stays there
+snap: mac-shell/TextEdit-right-edge-quit.jpg
+session 3: Arbor pid 13574, ARBOR_ONLY_PIDS=9815,9892,9941: running: 1 display, 2 docked and 1 floating, 0 out of view
+Arbor dev
+> float-all
+
+▸ Safari, hung over the bottom by a real drag, docked where there is no room for its size, given back by float-all
+> drag 1052 63 1052 363 --steps 24 --duration 0.8
+    it hangs at 800 317 640 671
+  ✔ the case: it hangs over the bottom
+> dock 44 left
+docked w44 at the left edge
+> dock 32 beside 44 bottom
+docked w32 below w44
+  ✔ it is docked, in view
+camera n2, visible 0,31 1600×791, Desktop 806,43 782×767
+  w32 com.apple.Safari 12,433 782×377, slot 12,433 782×377: docked focused
+  w39 com.apple.TextEdit 819,91 1066×500: floating
+  w44 pid 9941 12,43 782×378, slot 12,43 782×378: docked
+> float-all
+floated 2 windows
+  ✔ it is where it hung, whole
+  ✔ and stays there
+    (DEBUG w32 has the keyboard)
+    (DEBUG the button went down at 1052,63, the pointer is at 1052,63: it is on w32)
+    (DEBUG w32 is being dragged)
+    (DEBUG drag of w32: on float)
+    (INFO  dropped w32 on float, display 07230EFA-7A8D-4E37-845C-19CC8737EEF5)
+    (INFO  dock 32 beside 44 bottom: docked w32 below w44)
+    (DEBUG focus is on w32)
+    (DEBUG w32 has the keyboard)
+snap: mac-shell/Safari-bottom-float-all.jpg
+
+▸ Safari, hung over the bottom by a real drag, docked where there is no room for its size, given back by pause
+> drag 1052 63 1052 363 --steps 24 --duration 0.8
+    it hangs at 800 317 640 671
+  ✔ the case: it hangs over the bottom
+> dock 44 left
+docked w44 at the left edge
+> dock 32 beside 44 bottom
+docked w32 below w44
+  ✔ it is docked, in view
+camera n2, visible 0,31 1600×791, Desktop 806,43 782×767
+  w32 com.apple.Safari 12,433 782×377, slot 12,433 782×377: docked focused
+  w39 com.apple.TextEdit 819,91 1066×500: floating
+  w44 pid 9941 12,43 782×378, slot 12,43 782×378: docked
+> pause
+paused until `resume`; windows are back in view, in their own sizes
+  ✔ it is where it hung, whole
+  ✔ and stays there
+    (DEBUG the button went down at 1052,63, the pointer is at 1052,63: it is on w32)
+    (DEBUG w32 is being dragged)
+    (DEBUG drag of w32: on float)
+    (INFO  dropped w32 on float, display 07230EFA-7A8D-4E37-845C-19CC8737EEF5)
+    (INFO  dock 32 beside 44 bottom: docked w32 below w44)
+    (DEBUG focus is on w32)
+    (DEBUG w32 has the keyboard)
+snap: mac-shell/Safari-bottom-pause.jpg
+> resume
+resumed
+> float-all
+
+▸ Safari, hung over the bottom by a real drag, docked where there is no room for its size, given back by quit
+> drag 1052 63 1052 363 --steps 24 --duration 0.8
+    it hangs at 800 317 640 671
+  ✔ the case: it hangs over the bottom
+> dock 44 left
+docked w44 at the left edge
+> dock 32 beside 44 bottom
+docked w32 below w44
+  ✔ it is docked, in view
+camera n2, visible 0,31 1600×791, Desktop 806,43 782×767
+  w32 com.apple.Safari 12,433 782×377, slot 12,433 782×377: docked focused
+  w39 com.apple.TextEdit 819,91 1066×500: floating
+  w44 pid 9941 12,43 782×378, slot 12,43 782×378: docked
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ it is where it hung, whole
+  ✔ and stays there
+snap: mac-shell/Safari-bottom-quit.jpg
+session 4: Arbor pid 14978, ARBOR_ONLY_PIDS=9815,9892,9941: running: 1 display, 2 docked and 1 floating, 0 out of view
+Arbor dev
+> float-all
+
+▸ TextEdit, hung over the bottom by a real drag, docked where there is no room for its size, given back by float-all
+> drag 1122 63 1122 363 --steps 24 --duration 0.8
+    it hangs at 800 317 640 671
+  ✔ the case: it hangs over the bottom
+> dock 44 left
+docked w44 at the left edge
+> dock 39 beside 44 bottom
+docked w39 below w44
+  ✔ it is docked, in view
+camera n2, visible 0,31 1600×791, Desktop 806,43 782×767
+  w32 com.apple.Safari 800,317 640×671: floating
+  w39 com.apple.TextEdit 12,433 782×377, slot 12,433 782×377: docked focused
+  w44 pid 9941 12,43 782×378, slot 12,43 782×378: docked
+> float-all
+floated 2 windows
+  ✔ it is where it hung, whole
+  ✔ and stays there
+    (DEBUG focus is on w39)
+    (DEBUG w39 has the keyboard)
+    (DEBUG w39 is being dragged)
+    (DEBUG drag of w39: on float)
+    (INFO  dropped w39 on float, display 07230EFA-7A8D-4E37-845C-19CC8737EEF5)
+    (INFO  dock 39 beside 44 bottom: docked w39 below w44)
+    (DEBUG focus is on w39)
+    (DEBUG w39 has the keyboard)
+snap: mac-shell/TextEdit-bottom-float-all.jpg
+
+▸ TextEdit, hung over the bottom by a real drag, docked where there is no room for its size, given back by pause
+> drag 1122 63 1122 363 --steps 24 --duration 0.8
+    it hangs at 800 317 640 671
+  ✔ the case: it hangs over the bottom
+> dock 44 left
+docked w44 at the left edge
+> dock 39 beside 44 bottom
+docked w39 below w44
+  ✔ it is docked, in view
+camera n2, visible 0,31 1600×791, Desktop 806,43 782×767
+  w32 com.apple.Safari 800,317 640×671: floating
+  w39 com.apple.TextEdit 12,433 782×377, slot 12,433 782×377: docked focused
+  w44 pid 9941 12,43 782×378, slot 12,43 782×378: docked
+> pause
+paused until `resume`; windows are back in view, in their own sizes
+  ✔ it is where it hung, whole
+  ✔ and stays there
+    (DEBUG the button went down at 1122,63, the pointer is at 1122,63: it is on w39)
+    (DEBUG w39 is being dragged)
+    (DEBUG drag of w39: on float)
+    (INFO  dropped w39 on float, display 07230EFA-7A8D-4E37-845C-19CC8737EEF5)
+    (INFO  dock 39 beside 44 bottom: docked w39 below w44)
+    (DEBUG focus is on w39)
+    (DEBUG w39 has the keyboard)
+snap: mac-shell/TextEdit-bottom-pause.jpg
+> resume
+resumed
+> float-all
+
+▸ TextEdit, hung over the bottom by a real drag, docked where there is no room for its size, given back by quit
+> drag 1122 63 1122 363 --steps 24 --duration 0.8
+    it hangs at 800 317 640 671
+  ✔ the case: it hangs over the bottom
+> dock 44 left
+docked w44 at the left edge
+> dock 39 beside 44 bottom
+docked w39 below w44
+  ✔ it is docked, in view
+camera n2, visible 0,31 1600×791, Desktop 806,43 782×767
+  w32 com.apple.Safari 800,317 640×671: floating
+  w39 com.apple.TextEdit 12,433 782×377, slot 12,433 782×377: docked focused
+  w44 pid 9941 12,43 782×378, slot 12,43 782×378: docked
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ it is where it hung, whole
+  ✔ and stays there
+snap: mac-shell/TextEdit-bottom-quit.jpg
+session 5: Arbor pid 16641, ARBOR_ONLY_PIDS=9815,9892,9941: running: 1 display, 2 docked and 1 floating, 0 out of view
+Arbor dev
+> float-all
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+
+53 passed, 0 failed
+still running when the script had ended, and stopped now:
+  9626 sleep
+exit code 0
