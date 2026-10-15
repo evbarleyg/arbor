@@ -1,0 +1,90 @@
+54 drag-settings-by: drags settings, which floats, by its title bar 114 across and 98 down, and clicks there 0.3 s after letting go
+expected: {'act': 'drag', 'settled': 'quiet:932', 'drags': '63', 'front': '63', 'own': '63', 'floating': '31,45,51,54,60,63,71,148,164,231', 'docked': ''}
+ODD rule 3: settings (w63) changed its size while it was being dragged
+
+05:39:17.290 SCREEN -- begin 54 drag-settings-by
+05:39:17.290 SCREEN -- text 54 drags settings, which floats, by its title bar 114 across and 98 down, and clicks there 0.3 s after letting go
+05:39:17.356 SCRIPT drag w63 from 209,44 to 323,142
+05:39:18.015 SCREEN front to back: settings w73 mail finder safari textedit textedit-new-25 calendar notes preview terminal w98
+05:39:18.015 SCREEN the button is down 209 44
+05:39:18.015 SCREEN in front: process 6275 com.apple.systempreferences
+05:39:18.015 MACOS pid 6692 AXApplicationDeactivated
+05:39:18.016 MACOS workspace didActivate pid 6275 com.apple.systempreferences regular
+05:39:18.016 MACOS workspace didDeactivate pid 6692 com.apple.mail regular
+05:39:18.065 DEBUG focus is on w63
+05:39:18.065 MACOS pid 6275 AXApplicationActivated
+05:39:18.066 DEBUG w63 has the keyboard
+05:39:18.150 SCREEN settings (w63) 2,35 723×791
+05:39:18.166 DEBUG w63 is being dragged
+05:39:18.167 DEBUG drag of w63: on float
+05:39:18.192 MACOS pid 6275 AXResized w63 AXWindow/AXStandardWindow -1 32 723 788
+05:39:18.206 SCREEN settings (w63) 6,38 723×791
+05:39:18.215 SCREEN settings (w63) 5,38 723×788
+05:39:18.222 MACOS pid 6275 AXResized w63 AXWindow/AXStandardWindow -1 32 723 767
+05:39:18.234 SCREEN settings (w63) 5,38 723×767
+05:39:18.283 SCREEN settings (w63) 9,41 723×690
+05:39:18.289 MACOS pid 6275 AXResized w63 AXWindow/AXStandardWindow -1 32 723 713
+05:39:18.290 MACOS pid 6275 AXMoved w63 AXWindow/AXStandardWindow 5 38 723 690
+05:39:18.291 MACOS pid 6275 AXResized w63 AXWindow/AXStandardWindow 5 38 723 690
+05:39:18.334 MACOS pid 6275 AXResized w63 AXWindow/AXStandardWindow 5 38 723 642
+05:39:18.335 MACOS pid 6275 AXResized w63 AXWindow/AXStandardWindow 5 38 723 642
+05:39:18.376 SCREEN settings (w63) 13,44 723×642
+05:39:18.383 SCREEN settings (w63) 13,44 723×633
+05:39:18.401 MACOS pid 6275 AXResized w63 AXWindow/AXStandardWindow 13 44 723 631
+05:39:18.401 MACOS pid 6275 AXResized w63 AXWindow/AXStandardWindow 13 44 723 631
+05:39:18.402 MACOS pid 6275 AXMoved w63 AXWindow/AXStandardWindow 13 44 723 631
+05:39:18.431 SCREEN settings (w63) 17,48 723×631
+05:39:18.459 SCREEN settings (w63) 17,48 723×628
+05:39:18.471 MACOS pid 6275 AXResized w63 AXWindow/AXStandardWindow 13 44 723 626
+05:39:18.471 MACOS pid 6275 AXResized w63 AXWindow/AXStandardWindow 13 44 723 626
+05:39:18.472 MACOS pid 6275 AXResized w63 AXWindow/AXStandardWindow 13 44 723 626
+05:39:18.473 SCREEN settings (w63) 17,48 723×627
+05:39:18.502 MACOS pid 6275 AXMoved w63 AXWindow/AXStandardWindow 21 51 723 626
+05:39:18.516 SCREEN settings (w63) 21,51 723×626
+05:39:18.524 SCREEN settings (w63) 24,54 723×626
+05:39:18.638 MACOS pid 6275 AXMoved w63 AXWindow/AXStandardWindow 28 57 723 626
+05:39:18.645 SCREEN settings (w63) 28,57 723×626
+05:39:18.705 SCREEN settings (w63) 32,61 723×626
+05:39:18.779 SCREEN settings (w63) 36,64 723×626
+05:39:18.819 MACOS pid 6275 AXMoved w63 AXWindow/AXStandardWindow 36 64 723 626
+05:39:18.897 SCREEN settings (w63) 40,67 723×626
+05:39:18.919 SCREEN settings (w63) 43,70 723×626
+05:39:18.972 MACOS pid 6275 AXMoved w63 AXWindow/AXStandardWindow 43 70 723 626
+05:39:18.974 SCREEN settings (w63) 47,74 723×626
+05:39:19.082 MACOS pid 6275 AXMoved w63 AXWindow/AXStandardWindow 51 77 723 626
+05:39:19.100 SCREEN settings (w63) 51,77 723×626
+05:39:19.148 SCREEN settings (w63) 55,80 723×626
+05:39:19.252 MACOS pid 6275 AXMoved w63 AXWindow/AXStandardWindow 59 84 723 626
+05:39:19.288 SCREEN settings (w63) 59,84 723×626
+05:39:19.291 SCREEN settings (w63) 62,87 723×626
+05:39:19.341 SCREEN settings (w63) 66,90 723×626
+05:39:19.402 MACOS pid 6275 AXMoved w63 AXWindow/AXStandardWindow 66 90 723 626
+05:39:19.429 SCREEN settings (w63) 70,93 723×626
+05:39:19.486 SCREEN settings (w63) 74,97 723×626
+05:39:19.520 MACOS pid 6275 AXMoved w63 AXWindow/AXStandardWindow 74 97 723 626
+05:39:19.576 SCREEN settings (w63) 78,100 723×626
+05:39:19.599 SCREEN settings (w63) 81,103 723×626
+05:39:19.640 SCREEN settings (w63) 85,106 723×626
+05:39:19.681 MACOS pid 6275 AXMoved w63 AXWindow/AXStandardWindow 85 106 723 626
+05:39:19.735 SCREEN settings (w63) 89,110 723×626
+05:39:19.800 SCREEN settings (w63) 93,113 723×626
+05:39:19.802 MACOS pid 6275 AXMoved w63 AXWindow/AXStandardWindow 93 113 723 626
+05:39:19.902 SCREEN settings (w63) 97,116 723×626
+05:39:19.973 SCREEN settings (w63) 100,119 723×626
+05:39:19.988 MACOS pid 6275 AXMoved w63 AXWindow/AXStandardWindow 100 119 723 626
+05:39:20.033 SCREEN settings (w63) 104,123 723×626
+05:39:20.074 SCREEN settings (w63) 108,126 723×626
+05:39:20.098 MACOS pid 6275 AXMoved w63 AXWindow/AXStandardWindow 108 126 723 626
+05:39:20.276 SCREEN settings (w63) 109,126 723×626
+05:39:20.371 MACOS pid 6275 AXMoved w63 AXWindow/AXStandardWindow 109 126 723 626
+05:39:20.409 SCREEN settings (w63) 108,126 723×626
+05:39:20.502 MACOS pid 6275 AXMoved w63 AXWindow/AXStandardWindow 108 126 723 626
+05:39:21.160 SCREEN the button is up 323 142
+05:39:21.169 INFO  dropped w63 on float, display 07230EFA-7A8D-4E37-845C-19CC8737EEF5
+05:39:21.968 SCREEN the button is down 323 142
+05:39:22.044 SCREEN the button is up 323 142
+05:39:24.644 SCREEN (nothing was seen for 262 ms)
+05:39:25.130 SCREEN (nothing was seen for 486 ms)
+05:39:25.260 SCREEN (nothing was seen for 129 ms)
+05:39:25.438 SCREEN -- end 54 act=drag settled=quiet:932 drags=63 front=63 own=63 floating=31,45,51,54,60,63,71,148,164,231 docked=
+05:39:26.085 SCRIPT == 55 drag-settings-by

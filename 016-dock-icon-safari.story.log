@@ -1,0 +1,26 @@
+16 dock-icon-safari: clicks safari's icon in the Dock
+expected: {'act': 'switch', 'settled': 'quiet:458', 'front': '35', 'floating': '31,35,45,51,54,60,63,67,71', 'docked': ''}
+FAIL rule 6: the button came up, and the apps heard of it 132 ms later
+
+05:36:26.803 SCREEN -- begin 16 dock-icon-safari
+05:36:26.803 SCREEN -- text 16 clicks safari's icon in the Dock
+05:36:26.952 SCREEN (nothing was seen for 114 ms)
+05:36:27.175 SCREEN (nothing was seen for 144 ms)
+05:36:27.471 SCREEN (nothing was seen for 254 ms)
+05:36:27.591 SCREEN (nothing was seen for 103 ms)
+05:36:27.888 SCREEN the button is down 243 854
+05:36:28.118 SCREEN (nothing was seen for 137 ms)
+05:36:28.118 SCREEN front to back: safari preview w98 calendar textedit w73 mail settings notes terminal finder
+05:36:28.118 SCREEN the button is up 243 854
+05:36:28.118 SCREEN in front: process 5196 com.apple.Safari
+05:36:28.119 MACOS pid 6356 AXApplicationDeactivated
+05:36:28.120 DEBUG focus is on w35
+05:36:28.121 MACOS workspace didActivate pid 5196 com.apple.Safari regular
+05:36:28.121 MACOS workspace didDeactivate pid 6356 com.apple.Preview regular
+05:36:28.121 MACOS pid 5196 AXApplicationActivated
+05:36:28.122 DEBUG w35 has the keyboard
+05:36:29.565 SCREEN (nothing was seen for 245 ms)
+05:36:29.720 SCREEN (nothing was seen for 155 ms)
+05:36:30.028 SCREEN (nothing was seen for 101 ms)
+05:36:30.103 SCREEN -- end 16 act=switch settled=quiet:458 front=35 floating=31,35,45,51,54,60,63,67,71 docked=
+05:36:30.622 SCRIPT == 17 full-screen

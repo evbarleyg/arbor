@@ -1,0 +1,17 @@
+53 dock-icon-mail: clicks mail's icon in the Dock
+expected: {'act': 'switch', 'settled': 'quiet:411', 'front': '73', 'floating': '31,45,51,54,60,63,71,148,164,231', 'docked': ''}
+FAIL rule 6: the button came up, and the apps heard of it 124 ms later
+
+05:39:13.000 SCREEN -- begin 53 dock-icon-mail
+05:39:13.000 SCREEN -- text 53 clicks mail's icon in the Dock
+05:39:13.589 SCREEN the button is down 355 854
+05:39:13.630 SCREEN front to back: w73 mail settings finder safari textedit textedit-new-25 calendar notes preview terminal w98
+05:39:13.630 SCREEN the button is up 355 854
+05:39:13.755 SCREEN in front: process 6692 com.apple.mail
+05:39:13.835 MACOS pid 6275 AXApplicationDeactivated
+05:39:13.838 SCREEN (nothing was seen for 207 ms)
+05:39:13.839 MACOS workspace didActivate pid 6692 com.apple.mail regular
+05:39:13.839 MACOS workspace didDeactivate pid 6275 com.apple.systempreferences regular
+05:39:13.839 MACOS pid 6692 AXApplicationActivated
+05:39:16.549 SCREEN -- end 53 act=switch settled=quiet:411 front=73 floating=31,45,51,54,60,63,71,148,164,231 docked=
+05:39:17.272 SCRIPT == 54 drag-settings-by

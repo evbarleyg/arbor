@@ -1,0 +1,9 @@
+98 leave-alone: does nothing for half a minute
+expected: {'act': 'idle', 'settled': 'quiet:372', 'floating': '31,51,54,60,63,71,164,304,401', 'docked': ''}
+FAIL rule -: with nothing to do Arbor used 1.3 % of a core
+
+05:42:41.784 SCREEN -- begin 98 leave-alone
+05:42:41.784 SCREEN -- text 98 does nothing for half a minute
+05:43:11.840 SCREEN -- finding 98 -:busy FAIL with nothing to do Arbor used 1.3 % of a core
+05:43:13.970 SCREEN -- end 98 act=idle settled=quiet:372 floating=31,51,54,60,63,71,164,304,401 docked=
+05:43:14.407 SCRIPT == 99 cmd-tab-1
