@@ -1187,8 +1187,8 @@ def acts(folder, out=sys.stdout):
         with open(os.path.join(folder, "samples.log"), encoding="utf-8") as log:
             samples = [words for words in map(str.split, log) if len(words) > 8 and words[1] == "W"]
     films = os.path.join(folder, "films")
-    print("| Scene | Answers | On the display: pieces | first to last | frames with a window neither old nor new | holes, empty desk, over others | By the window server: first to last move | steps of each window that moved | frames in between |\n"
-          "|---|---|---|---|---|---|---|---|---|", file=out)
+    print("| Scene | Answers | On the display: pieces | first to last | the longest wait | frames with a window neither old nor new | holes, empty desk, over others | By the window server: first to last move | steps of each window that moved | frames in between |\n"
+          "|---|---|---|---|---|---|---|---|---|---|", file=out)
     used, aloud = 0, []
     for name in sorted(os.listdir(films)):
         if not os.path.isfile(os.path.join(films, name, "film.log")):
@@ -1201,7 +1201,7 @@ def acts(folder, out=sys.stdout):
         said = act_of(samples, cause - 20, min(cause + 2000, film.ends))
         steps = ", ".join(f"{window}: {len(moved) - 1}" for window, moved in sorted(said["moves"].items()))
         print(f"| `{name}` | {f'{seen_at(seen)} ms' if seen['frames'] and m['cause_known'] == 'exact' else '?'} | {len(seen['frames']) or 'none followed'} | "
-              + (f"{seen['times'][-1] - seen['times'][0]} ms" if seen["frames"] else "") + f" | {len(seen['between'])} {seen['between'][:8] if seen['between'] else ''}" + (f", of them the new size at the old place: {len(seen['sized'])}" if seen["sized"] else "") + " | "
+              + (f"{seen['times'][-1] - seen['times'][0]} ms" if seen["frames"] else "") + f" | {waited(m, seen)} | {len(seen['between'])} {seen['between'][:8] if seen['between'] else ''}" + (f", of them the new size at the old place: {len(seen['sized'])}" if seen["sized"] else "") + " | "
               + (", ".join(f"{what} {frames}" for what, frames in worse.items() if frames) or "none") + " | "
               + (f"{said['last'] - said['first']} ms" if said["moves"] else "nothing moved") + f" | {steps or 'none'} | {said['between']} |", file=out)
         used += bool(worse.get("excused"))
@@ -1215,6 +1215,16 @@ def acts(folder, out=sys.stdout):
     if aloud:
         print("\nREAD THIS:\n" + "\n".join(f"- {line}" for line in aloud), file=out)
     return 0
+
+
+def waited(m, seen):
+    """How long the display stood still at the longest between the cause and the last piece of an act: before it answered, or between two frames of any kind. It is printed for every film, scored or
+    not: a first use that is played once unscored is measured all the same, since a fault that is masked is not cured."""
+    if not seen["frames"]:
+        return ""
+    film, cause = m["film"], m["cause"]
+    times = [cause] + [int(time) for time in film.times[:seen["frames"][-1] + 1] if time > cause]
+    return f"{max(after - before for before, after in zip(times, times[1:]))} ms" + ("" if m["cause_known"] == "exact" else " (from a mark, not a key)")
 
 
 def seen_at(seen):

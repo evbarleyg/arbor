@@ -9958,6 +9958,29 @@
    ]
   },
   {
+   "id": "the-first-frame-after-a-long-rest-carries-a-stale-time",
+   "kind": "timing",
+   "layer": "machine",
+   "expected": "A frame that ScreenCaptureKit hands over says when it was on the display (`displayTime`), so a film tells to the frame what came before a key and what after it.",
+   "happened": "The first frame that changed after the display had rested for a second carried a time 727 ms too early, before the key that caused it: one film in about 135. Whoever read the film took the state between two askings for how things stood before the act, and the act came out clean; a table of two builds was read wrongly from it. Arbor's own account of the windows, noted before the key, and the window server's list both had it right.",
+   "found": "An adversarial review of the script that counts, held against the film's log, on films from a hosted Mac.",
+   "modelled": "cannot",
+   "knobs": [],
+   "guards": [
+    "tool: polish/arms.py",
+    "tool: polish/judge.py"
+   ],
+   "copes": "scripts/mac-shell/camera.swift does not believe a time that is a quarter of a second from when the frame arrived; scripts/polish/judge.py (`stirred`) and scripts/polish/arms.py (`set_right`) hold how things stood against Arbor's own account and say aloud when a film is not to be believed. Both have a drawn film of it in their self-tests.",
+   "hurt": 4,
+   "sources": [
+    "scripts/mac-shell/camera.swift",
+    "scripts/polish/judge.py",
+    "scripts/polish/arms.py",
+    "docs/POLISH.md"
+   ],
+   "backlog": []
+  },
+  {
    "id": "the-first-question-about-a-running-app-is-a-round-trip",
    "kind": "timing",
    "layer": "below the seam",
