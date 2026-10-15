@@ -292,8 +292,6 @@ The gravest, those that can cost sight of a window or stop Arbor, are [at the he
 | **⌘W or ⌘M** on the focused window, when its app's next window is out of view: the view goes out to that window and comes back | | decided: the view waits until the keyboard has settled |
 | A shortcut that cannot act **over another app's full-screen window** is silent: no line on screen, no beep; ⌃⌥? there opens its panel unseen | F43 | decided: both show there too |
 | While Arbor is **paused**, `arborctl home` and `float-all` are refused, though every window is on screen already | F40 | decided: ways back work from wherever you are |
-| Arbor is **started** with the keyboard in a docked window that is a **tile** when everything shows: the view goes to that window and the others leave it, instead of everything showing | since a launch shows everything | decided (Q16): everything shows, and that window is let be where it stands, with the keyboard, its place kept |
-| After ⌘W on an app's **last window** the keyboard goes to the window you used before, so a quick ⌘N lands in another app | | on purpose; to be judged by a person |
 | A **dialog** of an app whose window is out of view may open off screen | always; not yet seen | F47 |
 | On a **shared screen**, windows that are out of view show as a line one point wide and 20 to 85 tall in a bottom corner | always | F58's follow-up: needs measuring on a Mac |
 | If you **rebound a letter** by writing the US letter of the key you wanted, as the guide used to say, that shortcut has moved to the key that types the letter. Write `ctrl+opt+us:z` for a place | F44 | |
@@ -312,5 +310,5 @@ The gravest, those that can cost sight of a window or stop Arbor, are [at the he
 6. Emacs, an IDE or a remote desktop with Shortcuts Off: do its own ⌃⌥ keys arrive?
 7. A keyboard layout that is not US; two layouts switched during the day.
 8. With `"guardDesktopClicks": true`, `"pointerGestures": true` and macOS's "Click wallpaper to reveal desktop" at its default: click the wallpaper between docked windows. Then an icon, a widget, a rubber band round icons, a file dragged from the Desktop into a docked window; and a click on the wallpaper to dismiss an open menu, Spotlight, Control Centre, a Dock stack; the items of Arbor's own menu; tap to click.
-9. ⌘W on an app's last window: the keyboard goes to the window you used before. Welcome, or did the next ⌘N land in the wrong app?
+9. ⌘W or ⌘M on an app's last window: the app stays in front with no window, as on a Mac alone. Does a key of Arbor's that needs a window then say that there is none?
 10. Double-click a word in Safari's address field, a browser tab, a toolbar button in a docked window (once F14 is in): the view must stay.

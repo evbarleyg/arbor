@@ -55,7 +55,7 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 | Kind | Cases | Hurt 1 | Stand-ins play it | partly | not yet | cannot | Guarded without a Mac | Guarded only on CI's Macs | Only when somebody starts a script | Not guarded | Arbor does not cope yet, or nobody knows |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | [order-of-reports](#order-of-reports) | 27 | 3 | 9 | 8 | 5 | 5 | 15 | 1 | 3 | 8 | 4 |
-| [missing-report](#missing-report) | 41 | 7 | 12 | 6 | 4 | 19 | 21 | 1 | 5 | 14 | 11 |
+| [missing-report](#missing-report) | 42 | 7 | 13 | 6 | 4 | 19 | 22 | 1 | 5 | 14 | 11 |
 | [extra-report](#extra-report) | 8 | 0 | 3 | 3 | 0 | 2 | 6 | 0 | 0 | 2 | 0 |
 | [late-or-partial-answer](#late-or-partial-answer) | 45 | 9 | 11 | 15 | 6 | 13 | 27 | 0 | 6 | 12 | 15 |
 | [second-actor](#second-actor) | 45 | 6 | 12 | 16 | 10 | 7 | 26 | 0 | 5 | 14 | 9 |
@@ -67,7 +67,7 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 | [looks](#looks) | 20 | 0 | 0 | 0 | 1 | 19 | 1 | 2 | 3 | 14 | 6 |
 | [never-exercised](#never-exercised) | 15 | 7 | 1 | 13 | 0 | 1 | 0 | 0 | 14 | 1 | 15 |
 | [toolchain](#toolchain) | 42 | 1 | 0 | 1 | 4 | 37 | 23 | 1 | 1 | 17 | 7 |
-| **all** | 432 | 60 | 80 | 111 | 71 | 170 | 204 | 19 | 59 | 150 | 109 |
+| **all** | 433 | 60 | 81 | 111 | 71 | 170 | 205 | 19 | 59 | 150 | 109 |
 
 **Where the difference bit**
 
@@ -75,7 +75,7 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 |---|---|---|---|---|---|---|---|
 | below the seam | in the macOS-only code under the platform protocols (AX, Input, UI, App), which no test on Linux runs | 141 | 88 | 41 | 13 | 33 | 54 |
 | at the seam | in what crosses the platform protocols: a stand-in can play it to the controller | 148 | 93 | 108 | 0 | 12 | 28 |
-| controller | in the controller or the core, given reports that were right | 26 | 14 | 13 | 0 | 1 | 12 |
+| controller | in the controller or the core, given reports that were right | 27 | 15 | 14 | 0 | 1 | 12 |
 | test | in a test, a script or a harness that expected the wrong thing | 76 | 0 | 19 | 5 | 10 | 42 |
 | machine | in the machine, the toolchain or the way things are built and installed | 41 | 3 | 23 | 1 | 3 | 14 |
 
@@ -787,6 +787,18 @@ Missing reports: something happens and nobody says so.
 - **Arbor copes:** GestureTap.watchKeys passes on each event's own flags and remembers nothing from one event to the next; a tap found on for nothing switches itself off.
 - **Read in:** `Sources/ArborKit/Input/GestureTap.swift`, `collab/BACKLOG.md`
 
+### the-window-used-last-is-not-the-window-with-the-keyboard
+
+*hurt 2 · controller · touches `focus`*
+
+- **Expected:** The window that was last reported focused has the keyboard until another window is reported. So when it closes or goes into the Dock the keyboard is lost.
+- **Happened:** A click on the wallpaper brings Finder forward. All Arbor hears is that the keyboard moved, and from then on nobody it knows has it. 38 s later the window used last was minimized by its app: Arbor took that for the loss of the keyboard and focused another window a quarter of a second later, whose app came forward. Whoever is renaming a file on the desktop loses the keyboard, and windows swept aside by the click all come back.
+- **Found by:** The check of windows swept aside on a hosted Mac, in a step meant as its control; its trace is in the corpus.
+- **Stand-ins play it:** yes (`FakeWindowSystem.userFocusesNothing`)
+- **Guard:** `test: aWindowThatGoesWhileTheKeyboardIsWithFinderCostsFinderNothing`; `test: theKeyboardIsHandedOnToNobodyUnasked`; `trace: minimized-with-finder-in-front.expect`
+- **Arbor copes:** Controller.keyboardLeft: where no window that Arbor knows has the keyboard a quarter of a second after a going, macOS has decided so, and nobody is handed it.
+- **Read in:** `Sources/ArborKit/Controller/Controller+Focus.swift`, `Tests/ArborKitTests/FocusTests.swift`, `collab/evidence/traces/README.md`
+
 ### the-windows-of-an-app-that-ended-in-silence-stay-until-arbor-next-calls-it
 
 *hurt 2 · below the seam · suspected*
@@ -855,8 +867,8 @@ Missing reports: something happens and nobody says so.
 - **Happened:** When an app's last window is closed or minimized (⌘W, ⌘M), macOS focuses nothing. The app stays in front without a window, no move of the view focused anything, and shortcuts for the focused window have nothing to act on.
 - **Found by:** Part of the order of reports that was recorded on macOS 26 on a hosted Mac and given to the fake. The consequence was found while focus was mended, and played in the simulator.
 - **Stand-ins play it:** yes (`FakeWindowSystem.giveKeyboard`, `Echoes.keyboard`, `FakeWindowSystem.close`)
-- **Guard:** `test: closingAnAppsLastWindowLeavesTheAppInFrontWithoutAWindow`; `test: afterTheLastWindowOfAnAppClosesAWindowInViewGetsTheKeyboard`; `test: closingAnAppsLastWindowEndsWithAFocusedWindowInView`; `test: aMinimizedWindowLosesTheRing`
-- **Arbor copes:** Controller.keyboardLeft: a quarter of a second later a window in view gets the keyboard. The price, ⌘N right after ⌘W landing in another app, is accepted and waits for a person's judgement.
+- **Guard:** `test: closingAnAppsLastWindowLeavesTheAppInFrontWithoutAWindow`; `test: afterTheLastWindowOfAnAppClosesNobodyIsHandedTheKeyboard`; `test: afterAnAppsLastWindowHasGoneNobodyIsHandedTheKeyboard`; `test: norWithNothingDocked`; `scenario: the-keyboard-after-their-own-act.sim`; `test: aMinimizedWindowLosesTheRing`
+- **Arbor copes:** Controller.keyboardLeft leaves it so: after a person's own act macOS decides. For a day Arbor gave the keyboard to a window in view a quarter of a second later, so that shortcuts had something to act on: at ⌘M on an app's only window another app jumped forward, with nothing docked and nothing asked (seen on two fresh hosted Macs; two thirds of what a stranger's walk found). A key that needs a window in front says that there is none.
 - **Read in:** `collab/QUESTIONS.md`, `docs/RELEASE-NOTES.md`, `Sources/ArborKit/Controller/Controller+Focus.swift`, `Sources/ArborTesting/FakeWindowSystem.swift`, `Tests/ArborKitTests/FocusRingTests.swift`
 
 ### an-input-source-added-but-not-selected-is-not-announced
@@ -1412,9 +1424,9 @@ Late or partial answers: a call returns before the deed, after it, with half of 
 *hurt 2 · at the seam · suspected · K1601 · K1608 · M1609 · touches `focus`*
 
 - **Expected:** `focusedWindow()` is nil when nobody has the keyboard: the bare Desktop.
-- **Happened:** It is also nil whenever the app in front is not observed or does not answer: Spotlight, another launcher, a menu bar app's panel, a sheet. A shortcut that moves the view then takes the keyboard out of the launcher somebody is typing in, which it was decided to leave as it is for commands a person gives. A window closing behind a launcher makes Arbor give the keyboard to another window a quarter of a second later. What a real Spotlight does then is still to be tried by hand.
+- **Happened:** It is also nil whenever the app in front is not observed or does not answer: Spotlight, another launcher, a menu bar app's panel, a sheet. A shortcut that moves the view then takes the keyboard out of the launcher somebody is typing in, which it was decided to leave as it is for commands a person gives. A window closing behind a launcher made Arbor give the keyboard to another window a quarter of a second later; it no longer does (the-window-used-last-is-not-the-window-with-the-keyboard). What a real Spotlight does then is still to be tried by hand.
 - **Found by:** A rehearsal check that was bisected, then reading the Accessibility layer, and a headless probe. Not seen on a Mac.
-- **Stand-ins play it:** partly (`FakeWindowSystem.userFocusesNothing`)
+- **Stand-ins play it:** partly (`FakeWindowSystem.sheetTakesTheKeyboard`)
 - **Guard:** `test: theKeyboardStaysInASheet`
 - **Arbor copes:** **not yet**
 - **Read in:** `Sources/ArborKit/AX/AXWindowSystem.swift`, `Tests/ArborKitTests/ReviewTilingTests.swift`, `collab/BACKLOG.md`
@@ -2710,7 +2722,7 @@ Identity: what counts as a window, an app or a display, and whether it is the sa
 - **Expected:** Every window the window server lists for an app is a window to arrange.
 - **Happened:** A sheet is a child of its window and not one of the app's windows. A utility panel is a floating window to Accessibility, an alert a dialog. When one of them takes the keyboard the system says so, and Arbor's layer passes on only that the keyboard left the known windows. On a hosted Mac the test process had more than four windows at the normal and floating levels, and Arbor managed exactly four.
 - **Found by:** A script of claims about real windows on a hosted Mac, where all these checks passed, and experiments with a sheet and a dialog of TextEdit.
-- **Stand-ins play it:** yes (`World.extras`, `FakeWindowSystem.strangers`, `FakeWindowSystem.userFocusesNothing`, `FakeWindowSystem.openStrayDialog`)
+- **Stand-ins play it:** yes (`World.extras`, `FakeWindowSystem.strangers`, `FakeWindowSystem.sheetTakesTheKeyboard`, `FakeWindowSystem.openStrayDialog`)
 - **Guard:** `test: standardWindowsAreWindows`; `test: everythingElseInViewIsNot`; `e2e: windows that are not standard windows are left alone` (on CI's Macs); `e2e: the panel and the sheet stayed out of it` (on CI's Macs)
 - **Arbor copes:** WindowKind.classify takes standard windows only; `StrayDialog` moves a dialog that opens out of view to the middle of the display, once.
 - **Read in:** `docs/ARCHITECTURE.md`, `scripts/mac-shell/proof.sh`, `Sources/arbor-fakemac/World.swift`, `Sources/arbor-fakemac/World+Input.swift`, `Sources/ArborKit/AX/AXWindowSystem.swift`
@@ -5705,7 +5717,8 @@ Counted by grep at commit `a391fe4`. "Rude" means on unless a test switches it o
 | `comesForward` | FWS | polite | an app brings itself forward, nobody touched anything | 34 / 5; sim; 1 scenario; lab: never |
 | `secondsSinceInput` | FWS | polite (infinity; 0 during `userFocus`) | how long since a click or a modifier key | 11 / 4 |
 | `userSwitchesApp` | FWS | polite | ⌘Tab as macOS alone reports it: no `windowFocused` (not what Arbor's layer sends: K1978) | 12 / 8; lab `switch-app`; fake Mac |
-| `userFocusesNothing` | FWS | polite | the keyboard goes to the Desktop, a sheet, a launcher | 10 / 7; lab; fake Mac |
+| `userFocusesNothing` | FWS | polite | a click on the Desktop: Finder comes forward, and no known window has the keyboard | 14 / 9; lab |
+| `sheetTakesTheKeyboard` | FWS | polite | the keyboard goes to a sheet, a panel or a launcher: no known window has it, and the app in front stays | 1 / 1; fake Mac |
 | `userClick` | FakeWindowSystem+Stacking.swift | polite | a click in the focused window raises it and reports no focus | 6 / 3 |
 | `activate(bundleID:)` | FWS | polite | an app without a window comes to the front | 13 / 5; lab |
 | `openStrayDialog` | FWS | polite | a dialog that opens beside a window out of view | 7 / 2 |

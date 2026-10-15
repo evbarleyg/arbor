@@ -187,7 +187,7 @@ extension Controller {
   /// The focused window, if commands that name no window would take it (`target(_:)`).
   private var focusedWindowInHand: FocusedWindow? {
     guard let id = keyboardFocus(), let window = windows[id], filter.manages(window), !window.isFullScreen,
-      let display = workspaceID(containing: id), let workspace = workspaces[display]
+      !window.isMinimized, !window.isHidden, let display = workspaceID(containing: id), let workspace = workspaces[display]
     else { return nil }
     return FocusedWindow(window: window, display: display, workspace: workspace, leaf: workspace.tree.leaf(containing: id))
   }

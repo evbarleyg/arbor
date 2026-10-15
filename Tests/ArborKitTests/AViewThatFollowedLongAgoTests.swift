@@ -8,7 +8,8 @@ import Testing
 /// keyboard on, nobody asked to see the other window, and the view is taken back (Controller+Focus.swift). These are about when that record ends.
 @Suite @MainActor struct AViewThatFollowedLongAgoTests {
   /// ⌘Tab to Notes, out of view: the view steps out, and Safari stays in view. A click on Safari moves no view. Seconds later ⌘W on it,
-  /// its app's last window. The record was still there and made this the late end of that story: no loss, no look, and nobody had the keyboard.
+  /// its app's last window. The record was still there and made this the late end of that story: no loss, and no look at who has the keyboard
+  /// now. (Where that look finds nobody, macOS has decided so, and nobody is handed the keyboard: Q29, board 0.20. This went by that hand-over.)
   @Test(arguments: ["close", "minimize"], [0.1, 5]) func itSwallowsNoLoss(going: String, later: Double) {
     let h = Harness()
     let safari = h.system.open(app: "Safari", pid: 11)
@@ -30,8 +31,9 @@ import Testing
     h.scheduler.advance(by: later)
     if going == "close" { h.system.close(safari) } else { h.system.setMinimized(safari, true) }
     #expect(h.system.focused == nil)
+    #expect(h.scheduler.pendingKeys.contains("focus-after-loss"), "a loss, which is looked after: \(h.scheduler.pendingKeys)")
     h.scheduler.advance(by: 2)
-    #expect(h.system.focused == notes, "the one used last: \(String(describing: h.system.focused))")
+    #expect(h.system.focused == nil, "\(String(describing: h.system.focused))")
     expectWindowsMatchLayout(h)
   }
 
@@ -90,7 +92,8 @@ import Testing
     h.scheduler.advance(by: 2)
     #expect(h.system.focused == a)
     h.system.close(a)
+    #expect(h.scheduler.pendingKeys.contains("focus-after-loss"), "a loss, which is looked after: \(h.scheduler.pendingKeys)")
     h.scheduler.advance(by: 2)
-    #expect(h.system.focused == mail, "\(String(describing: h.system.focused))")
+    #expect(h.system.focused == nil, "its app's last window: macOS decides (Q29). \(String(describing: h.system.focused))")
   }
 }
