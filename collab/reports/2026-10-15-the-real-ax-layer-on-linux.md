@@ -4,7 +4,7 @@
 - Branch: test/the-real-ax-layer-on-linux, then test/mac-on-linux-round-2 and -round-3
 - What: `make mac-on-linux` (scripts/mac-on-linux/README.md; docs/TESTING.md, section 9)
 
-`Sources/ArborKit/AX` ran in no headless test. Now it is compiled as it is, linked with a model of a Mac and run on Linux: 308 stories (1,263 ✔, 98 ✘ known, on the trunk at 9b4cd51; 181 stories at the end of round 1) and a random walk under four kinds of bad manners, at both storeys, five seconds to run. The run enters 92 % of the lines and 81 % of
+`Sources/ArborKit/AX` ran in no headless test. Now it is compiled as it is, linked with a model of a Mac and run on Linux: 326 stories (1,321 ✔, 105 ✘ known, on the trunk at 361a635; 181 stories at the end of round 1) and a random walk under four kinds of bad manners, at both storeys, five seconds to run. The run enters 92 % of the lines and 81 % of
 the regions of `AXWindowSystem.swift` (`COVERAGE=1`). Twenty-three changes that take known cures out of a copy of the layer all turn their stories red (`make mac-on-linux-selftest`).
 
 This report is what it found. Nothing in the layer was changed. Each finding says what a person would see, the lines concerned, and how sure the model is of the manners that bring it out: SEEN on a Mac, or GUESS. Every red check is listed in
@@ -27,10 +27,11 @@ forty lines further down now. **The findings of round 2 (N9 to N15, the addition
 | N10 | a window that its app had put away before Arbor started is filed as open all along when it is shown again | focus reported before creation | both halves seen, never together |
 | N11 | an app moves its window and gets busy: Arbor goes on believing the old place | a hang within 2 to 15 ms of the move | the layer's own logic |
 | N12 | **Arbor is quit while an app with windows out of view hangs: they stay out of view for good** | nothing: a polite Mac | seen on a hosted Mac |
-| N13 | **a window goes out of view seconds AFTER Arbor is gone** | a hang in the middle of a move out of view, a quit meanwhile | seen on a hosted Mac |
+| ~~N13~~ | ~~a window goes out of view seconds AFTER Arbor is gone~~ **STRUCK: the model's own fault, refuted by a hosted Mac** (below). What is left of it: at a PAUSE, and a guess | a hang in the middle of a move out of view, a quit meanwhile | WRONG |
 | N14 | Arbor's request for the keyboard, held up by a slow app, takes the keyboard away from where the person has gone meanwhile | an app busy for less than the timeout | the layer's own logic |
 | N15 | a command answers after 3.3 s because one app is slow | an app that takes 0.1 s over a call | the layer's own logic; slow answers seen |
 | N16 | a floating window comes back from out of view moved and shrunk; Arbor's own moves count as the person's | an app that carries out a moment late what it says yes to | seen of Safari leaving full screen; in general a guess |
+| N17 | **Arbor is paused while a park waits in the queue of an app that hangs: the window goes out of view when the app wakes, and stays there until `resume`** | a hang between the layer's question and its move; a pause during the hang | the controller's own logic; that a park is carried out on waking with Arbor alive is seen |
 | U1 | **a window dropped where there is no room for it goes out of view, as a tile, and what is typed goes into it** | nothing: a polite Mac, 1024 points, three windows | the controller's; the stand-ins show the same; no net asks |
 | U2 | a window that opened over a docked one jumps, and shrinks, when something else happens | nothing: a polite Mac | the controller's; known to the chaos lab (`moved-unasked`, severity 2) |
 | U3 | the view goes to an empty Desktop, and what is typed goes into a window out of view | nothing: `arrange`, `desktop` | the controller's; the stand-ins show the same; no net asks |
@@ -161,7 +162,8 @@ Told by what is on the screen, so that they hold for a layer that asks on the ma
 | story | the trunk |
 |---|---|
 | **N12** Arbor is quit 0, 0.3, 1 s after an app with windows out of view begins to hang | **the windows stay at 1023,673 for good** after the app wakes |
-| **N13** an app hangs for 8 s at the first setting call, or at the reading back, of a move out of view; Arbor is quit meanwhile | **"AXPosition = 1023,767" is carried out when the app wakes, 7 s after Arbor is gone** |
+| ~~N13~~ an app hangs for 8 s at the first setting call of a move out of view; Arbor is quit meanwhile | ~~"AXPosition = 1023,767" is carried out when the app wakes, 7 s after Arbor is gone~~ **the park goes with Arbor's process: all in view.** Only if the app is in the middle of that very call is it taken to be carried out (a guess, a story of its own) |
+| **N12 again** it hangs at the reading back: the park HAS been carried out | **the window is out of view, and Arbor can neither fetch it nor leave word** |
 | … it hangs at the very beginning of that move | nothing was sent: all in view |
 | Arbor is paused 0, 0.3, 1 s after such a hang | taken within 4 s; windows back within 10 s of the wake |
 | **N14** ⌘Tab away while Arbor's request for the keyboard waits 0.8 s for a slow app | **the keyboard, and the ring, are taken from where the person went** |
@@ -170,11 +172,15 @@ Told by what is on the screen, so that they hold for a layer that asks on the ma
 | the app opens a window, resizes a docked one, gets a new tab 5 ms after it wakes | known, in view, right size, the tab in its place |
 | a window is moved by hand while Arbor moves its slow app's sibling (storey one) | told apart |
 
-WHAT A PERSON SEES, N12 and N13: quit Arbor while an app beachballs, and windows of that app are gone from the screen with nothing left running that could fetch them: the one thing a window manager must not do. N13 is the meaner: everything is in view when Arbor quits.
+WHAT A PERSON SEES, N12: quit Arbor while an app beachballs, and windows of that app are gone from the screen with nothing left running that could fetch them: the one thing a window manager must not do.
+**N13 IS STRUCK (2026-10-15).** It said that a park which waits in the queue of an app that hangs is carried out after Arbor is gone. That was the model's own assumption ("what is sent is sent"), written down as seen when it had only been seen with Arbor alive. A hosted Mac has refuted it (macOS 26.6.2, `scripts/mac-shell/check-hang.sh`,
+session 2, on a layer that leaves word at a quit): a place and a size sent to each of two windows, Arbor's process gone half a second later, the app awake 18 s after that, both windows where they had been, place and size; in session 3, after the same four calls at a pause, with Arbor alive, both were in view at the script's first look, 2.5 s after the wake, and the log lacks the line with which the controller says that IT fetched a window (the run on the trunk, which leaves no word, has that line). **macOS
+drops what a process has asked once that process is dead.** So the advice below to leave word at `stop()` is void at a quit, and holds at a pause. With the model put right the quit stories have the same colours on the trunk and on both halves of the lanes.
 WHY: N12: `setFrame` gives an app up at the first call that goes unanswered, and `stop()` leaves no word for it. N13: a call that timed out lies in the app's queue and is carried out on waking; nothing is sent after it to undo it. N14: `focus` 303: `setBool(kAXMainAttribute)` (307) waits for the app on the main thread; if the app
 answers within the second, 316-318 go on to raise and activate without asking whether another app has come forward since `began`; `activations`, which 324 reads for the opposite purpose, would tell. N15: every call of every move is waited for on the main thread, one after the other.
-HOW SURE: N12 and N13 SEEN on a hosted Mac (traces of a hang at a quit, at a pause, while the view moves: a park is carried out on waking as well as a fetch). N14, N15: the layer's own logic; that big apps answer slowly is seen (100 to 190 ms of the layer's work for one focus report with Safari and Finder).
-TO CONSIDER: N12, N13: at `stop()`, send the fetch to every window that is or may be out of view, with a short timeout and without waiting for an answer: what lies in the queue last wins. N14: after 307, `guard activations == before`. N15: the lanes.
+HOW SURE: N12 SEEN on hosted Macs, twice: with a layer that sends nothing more at a quit, and with one that leaves word. That a park is carried out on waking as well as a fetch is seen WITH ARBOR ALIVE (while the view moves, at a pause). N14, N15: the layer's own logic; that big apps answer slowly is seen (100 to 190 ms of the layer's work for one focus report with Safari and Finder).
+TO CONSIDER: N12: ~~at `stop()`, send the fetch to every window that is or may be out of view, with a short timeout and without waiting for an answer: what lies in the queue last wins~~ works at a pause only. At a quit somebody has to outlive Arbor until the app answers (a helper process, or Arbor's own process staying on without its menu), or
+the quit has to wait. N14: after 307, `guard activations == before`. N15: the lanes.
 
 ### N16. Arbor's own move is reported as the person's, if the app carries it out a moment after saying yes   (FOUND BY THE WALK AT STOREY TWO, under all four; told without dice)
 WHAT A PERSON SEES: an app answers "done" at once and moves its window 20, 50 or 200 ms later. Frame another window and come back: the app's FLOATING window is not where it was (624,218 400×300) but at 624,405, and 341 points wide. In the walk a floating window that had been sent out of view was taken for put in the corner by hand, and
@@ -184,6 +190,21 @@ WHY: `setFrame` reads the frame back right after the calls and gets the old one;
 `windowChanged(…, userInitiated: true)`. To the controller a floating window's frame is its person's.
 HOW SURE: the layer's own logic. The manners: SEEN of Safari on its way out of full screen ("answers success to all three calls, reads back the old frame", docs/REALITY.md) and "the window server applies moves a moment later"; in general, and for how long, a GUESS.
 TO CONSIDER: `hasStrayed` against what was ASKED FOR as well as what was read back: a window that is where Arbor sent it has not strayed.
+COUNTED: "how often Arbor asks for a frame as the view goes away and comes back": of two windows of an app that is on time 4 times, of one that is 20, 50 or 200 ms late 6 times: each is sent out of view twice, the second time 0.3 s after the first. Then Arbor has done with them. In 1 of 400 seeds of the walk upstairs the late calls of
+several moves land in one burst and two docked windows are left out of their places, over a third.
+
+### N17. A pause while a park waits in the queue of an app that hangs   (told for a change under review; the trunk has it too)
+WHAT A PERSON SEES: an app begins to beachball just as the view moves away from its windows; they stay on the screen, because the app does not carry the move out. Pause Arbor, which promises every window in view. Seconds later the app wakes, and one of its windows leaves the screen. Nothing fetches it until `resume`.
+STORIES: "an app hangs between the question and the move as its windows are sent out of view, and Arbor is paused" (never, in 40 s). For a layer that remembers an app's answer for a second instead of asking before every move: "an app hangs 0.5 / 1.5 s after it last answered Arbor, its windows are sent out of view, and Arbor is paused", green on the
+trunk, whose question times out so that nothing is sent. Both end with "and after `resume` they are in view": green.
+WHY: `Controller+Hardening.swift`, `tryWhatCouldNotComeBack`: the look-out first asks the window server and strikes from its list whatever is in view ("somebody else has fetched it"). Until the app wakes that is where the window is. One second into the pause the list is empty, with the park still in the app's queue. The account shows it: after the
+pause not one wait for the app, so no try ever got as far as asking it.
+HOW SURE: the controller's own logic. That a park which timed out is carried out on waking while Arbor lives: SEEN on hosted Macs. The look-out itself is held to two logs of hosted Macs ("as on a hosted Mac: … and half a second later Arbor is paused"): three tries, each held up a second by the app, as there.
+TO CONSIDER: strike a window off only once its app has answered something since the note was made; or leave word at a pause, after whatever may be in the queue (a change under review does, and both stories are green with it).
+
+### For whoever keeps a request for the keyboard until an app answers again
+Six stories: "an app in front begins to hang, Arbor is asked to give the keyboard to another of its windows, and … before it wakes": nothing else happens (the window gets it); the person goes to another app with ⌘Tab; the same, and the workspace's notice of it is lost (a GUESS that this happens); clicks in another app's window; Arbor is asked for another app's window; the person asks the app for a third window with ⌘`. All
+green on the trunk, which keeps nothing: its request lies in the app's queue in its turn. Two are traps. The key lies in the queue too (a GUESS), is obeyed at the wake, and a request made afresh after that takes the keyboard back. And after an activation that Arbor never hears of, a kept request brings the app forward over the one the person went to.
 
 ## What the walk at storey two found (round 3)
 
@@ -388,7 +409,8 @@ What a model says is worth what has been checked against Macs. So far:
 |---|---|
 | **Right, before a Mac showed it** | **L1.** Found on a guess (the window server a moment late, the pointer more than 24 points away: no drag at all, nothing logged). **Since proven on a hosted Mac, with a control.** On the code before the cure, drags in steps of 71, 45 and 29 points were seen 1, 0 and 1 times of 6, in steps of 22, 14 and 7 points 6 of 6 each: the line lies exactly at the 24 points. In the trace the window's first move comes 108 ms after the first dragged event, a quarter of a second after the press. After the cure: 52 of 52. (The traces are to come into the repository.) How it was first seen: Hours later SEEN on a hosted Mac: three of four long drags in coarse steps were never taken for drags, nothing logged; at the first look the pointer was 27 points out and the window still in its place. The stories in coarse steps give the same picture, and the cure, which has landed (a3c0281), was shaped by two verdicts from them |
 | **Right, without having been built for it** | **Safari's and Finder's order at a close.** Told only that these apps drop a closing window from their list at once, the real layer on the model says `destroyed` and then `focused` of the sibling, 15 to 20 ms apart: the order, and about the gap, of recordings of hosted Macs (4 to 13 ms, once 91) |
-| **Right, afterwards** | **R2**: red at both storeys while it was open, green with 5726225, red again with the cure taken out. **N13**: the park carried out after Arbor is gone, measured on a hosted Mac, comes out of the model as told: "AXPosition = 1023,767", 7 s after the quit. **A repeat from nothing** of the verdict on the mended cure by another hand gave the same 61 and 2 |
+| **Right, afterwards** | **R2**: red at both storeys while it was open, green with 5726225, red again with the cure taken out. **A repeat from nothing** of the verdict on the mended cure by another hand gave the same 61 and 2 |
+| **WRONG WHERE IT COUNTED, and corrected by a hosted Mac** | **"What is sent is sent", whether the sender lives or not.** Seen only with the sender alive, written down without that circumstance. Refuted on macOS 26.6.2 (above, under N13). It cost: a finding that was no fault of Arbor's (N13), a verdict on a change under review ("never the first half alone") that rested on it in part, and a cure (word left at a quit) that was green here and did nothing on the Mac. This table used to list N13 under "right, afterwards": the model gave back what had been put into it, which proves nothing |
 | **Wrong, and corrected by a recording** | **The order at a minimize.** The model posted "miniaturized" and then the sibling's focus. A recording has the focus 6.6 ms BEFORE, at the end of the flight. Swapped; no story changed its verdict |
 | **Wrong, and corrected by a review** | Six delays said more, or other, than the trace they cite (below) |
 | **Wrong, and corrected by its own stories and the polite walk** | Always in the same way: ruder, or tidier, than a Mac. The list is in `scripts/mac-on-linux/README.md`; new in round 2: ⌘Tab to an app whose windows are all on another Space did not switch Space; the walk closed "by hand" windows that did not show |
@@ -435,7 +457,7 @@ What a model says is worth what has been checked against Macs. So far:
 
 ## One short probe on a hosted Mac for each thing that is not known, ranked by what it costs a person if the model is right
 
-Each is one script for `scripts/mac-shell/run.sh`, a minute or two of a hosted Mac, with a trace recorded. "The test app" is ArborTestWindows; "stopped" means `kill -STOP`, "goes on" `kill -CONT`. N12 and N13 need none: they have been seen.
+Each is one script for `scripts/mac-shell/run.sh`, a minute or two of a hosted Mac, with a trace recorded. "The test app" is ArborTestWindows; "stopped" means `kill -STOP`, "goes on" `kill -CONT`. N12 needs none: it has been seen. N13 has been refuted.
 
 | | finding | what is not known | the probe | what settles it |
 |---|---|---|---|---|

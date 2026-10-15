@@ -347,6 +347,57 @@ func tellOfGoing(_ book: Book) {
     }
   }
 
+  // An app in front begins to hang, with no switch of apps to tell of it.
+  book.story("an app in front begins to hang, and Arbor is asked to give the keyboard to another of its windows") { story in
+    var a: FakeMac.Window!, b: FakeMac.Window!
+    let one = StoreyOne(story) { mac in
+      let app = mac.launch("Busy")
+      b = mac.open("b", in: app, frame: CGRect(x: 400, y: 60, width: 300, height: 300))
+      a = mac.open("a", in: app, frame: CGRect(x: 40, y: 60, width: 300, height: 300))
+    }
+    story.check("one of its windows has the keyboard", one.mac.keyWindow === a)
+    one.mac.hang(a.app)
+    let stoodStill = one.mac.secondsTheMainThreadWaited
+    one.layer.focus(WindowID(b.number))
+    story.check("Arbor's main thread stands still for a second at most, not for one with every question", one.mac.secondsTheMainThreadWaited - stoodStill < 1.01, "\(one.mac.secondsTheMainThreadWaited - stoodStill) s")
+  }
+
+  // What is owed to an app that fell silent is a request for the keyboard that comes seconds late. Whoever keeps one has to drop it as soon as the person says otherwise.
+  for (how, goes) in [
+    ("nothing else happens", "b"), ("the person goes to another app with ⌘Tab", "mine"), ("the person goes to another app with ⌘Tab, of which the notice is lost,", "mine"),
+    ("the person clicks in another app's window", "mine"),
+    ("the person asks the app for a third window with ⌘`", "c"), ("Arbor is asked to give it to another app's window", "mine"),
+  ] {
+    book.story("an app in front begins to hang, Arbor is asked to give the keyboard to another of its windows, and \(how) before it wakes") { story in
+      var windows: [String: FakeMac.Window] = [:]
+      let one = StoreyOne(story) { mac in
+        windows["mine"] = mac.open("mine", in: mac.launch("Mine"), frame: CGRect(x: 40, y: 400, width: 300, height: 250))
+        let app = mac.launch("Busy")
+        for (name, x) in [("c", 700), ("b", 370), ("a", 40)] { windows[name] = mac.open(name, in: app, frame: CGRect(x: x, y: 60, width: 300, height: 300)) }
+      }
+      let (a, b, c, mine) = (windows["a"]!, windows["b"]!, windows["c"]!, windows["mine"]!)
+      story.check("one of its windows has the keyboard", one.mac.keyWindow === a)
+      one.mac.hang(a.app)
+      one.layer.focus(WindowID(b.number))
+      one.mac.pass(1)
+      switch goes {
+      case "c": one.mac.personAsksAppInFront(for: c)
+      case "mine" where how.contains("⌘Tab"):
+        one.mac.losesTheNextActivationNotice = how.contains("lost")
+        one.mac.activate(mine.app)
+      case "mine" where how.contains("clicks"): one.mac.click(mine)
+      case "mine": one.layer.focus(WindowID(mine.number))
+      default: break
+      }
+      one.mac.pass(2)
+      one.mac.wake(a.app)
+      one.mac.pass(4)
+      story.check(
+        goes == "b" ? "the window gets the keyboard once its app has woken" : "the keyboard is where the person last sent it, four seconds after the app has woken",
+        one.mac.keyWindow === windows[goes], "w\(one.mac.keyWindow?.number ?? 0) has it")
+    }
+  }
+
   book.story("three docked windows of an app that hangs") { story in
     var windows: [FakeMac.Window] = []
     var mine: FakeMac.Window!
@@ -358,7 +409,11 @@ func tellOfGoing(_ book: Book) {
     story.check("four windows are arranged", two.run("arrange").ok)
     two.mac.hang(windows[0].app)
     let began = two.mac.now
+    two.heard.clear()
     story.check("Arbor answers a command all the same", two.run("zoom \(mine.number)", then: 0).ok)
+    two.mac.pass(0.5)
+    // On time, but served behind whatever the main thread has waited for the app that hangs.
+    story.check("the echoes of its move of the OTHER app's window count as echoes", !two.heard.all.contains(.changed(mine.number, byUser: true)), two.heard.texts)
     story.check("within three seconds", two.mac.now - began < 3, "\(two.mac.now - began) s")
     two.mac.pass(3)
     story.check("the window that was asked for fills the view", mine.frame.width > 900, two.whereabouts(mine))

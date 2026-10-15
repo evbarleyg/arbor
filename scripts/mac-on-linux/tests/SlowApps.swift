@@ -7,8 +7,8 @@ import Foundation
 // Apps that hang or are slow while Arbor has something to ask of them, and what a person is left with: at a quit, at a pause, when something else happens meanwhile. Told at storey two, by what
 // is on the screen, so that they hold for a layer that asks on the main thread and for one that gives each app a lane of its own.
 //
-// Measured on a hosted Mac: a hung app lets a call on the main thread go unanswered for 1.06 s; a call that timed out is carried out when the app wakes, a park (the window goes out of view after Arbor
-// is gone) as well as a fetch.
+// Measured on hosted Macs: a hung app lets a call on the main thread go unanswered for 1.06 s; a call that timed out, after a second or after a tenth, is carried out when the app wakes, a park as well as a
+// fetch, AS LONG AS ARBOR'S PROCESS LIVES. What a process has asked is dropped when it ends (`FakeMac.arborIsGone`).
 
 extension StoreyTwo {
   /// The person quits Arbor: it puts things back as well as it can, and its process ends.
@@ -74,15 +74,36 @@ func tellOfSlowApps(_ book: Book) {
     }
   }
 
-  // The park that is carried out after Arbor is gone.
+  // Sessions 2 and 3 of scripts/mac-shell/check-hang.sh, second for second, as hosted Macs have played them (macOS 26.6.2, 2026-10-15): arrange, 1 s, zoom, 1 s, the app hangs for 20 s, 0.5 s, quit or pause, and a look
+  // 22.5 s after the hang began. At the quit the windows were out of view at that look and for good, with a layer that sent nothing and with one that left word. At the pause they were in view at that look with both:
+  // the one that sent nothing fetched them with the controller's fourth try, which was waiting for the app as it woke; the one that left word made no such try, the word had done it.
+  for ending in ["quit", "paused"] {
+    book.story("as on a hosted Mac: an app with windows out of view hangs for 20 s, and half a second later Arbor is \(ending)") { story in
+      let (two, mine, theirs) = stage(story)
+      two.mac.pass(1)
+      two.run("zoom \(mine.number)", then: 1)
+      story.check("the app's windows are out of view", theirs.allSatisfy { two.isOutOfView($0) }, places(two, theirs))
+      let began = two.mac.now
+      two.mac.hang(theirs[0].app, for: 20)
+      two.mac.pass(0.5)
+      if ending == "quit" { two.quit() } else { two.run("pause", then: 0) }
+      story.check("that takes two seconds at most", two.mac.now - began <= 2.5, "\(two.mac.now - began - 0.5) s")
+      two.mac.pass(began + 22.5 - two.mac.now)
+      story.check("two and a half seconds after the app has woken its windows are in view", theirs.allSatisfy { two.isInView($0) }, places(two, theirs))
+    }
+  }
+
+  // A park that waits in the queue of an app that hangs goes with Arbor's process. One that the app is in the middle of is taken to be carried out after Arbor is gone, which is a guess; one that has been carried
+  // out, with the app hanging at the next call, leaves a window out of view that Arbor cannot fetch and cannot leave word for.
   for (seconds, calls, words) in [
-    (8.0, Int?.none, "at the beginning of"), (8, 1, "at the first call that sets something in"), (8, 2, "at the reading back in"),
+    (8.0, Int?.none, "at the beginning of"), (8, 1, "at the first call that sets something in"), (8, 1, "in the middle of carrying out the first call that sets something in"), (8, 2, "at the reading back in"),
     // Short enough that only a layer that does not wait for the app gets to the quit in time; of another the story has not been told, and its second check says so.
     (2, nil, "at the beginning of"), (2, 1, "at the first call that sets something in"),
   ] {
     book.story("an app hangs for \(Int(seconds)) s \(words) a move out of view, and Arbor is quit meanwhile") { story in
       let (two, mine, theirs) = stage(story)
       let busy = theirs[0].app
+      busy.hangsInTheMiddleOfThatCall = words.hasPrefix("in the middle")
       if let calls { busy.hangsAfterCalls = calls } else { two.mac.hang(busy) }
       two.mac.later(seconds) { two.mac.wake(busy) }
       two.run("zoom \(mine.number)", then: 0.3)
@@ -111,6 +132,79 @@ func tellOfSlowApps(_ book: Book) {
       two.mac.pass(10)
       story.check("in the end all its windows are in view", theirs.allSatisfy { two.isInView($0) }, places(two, theirs))
     }
+  }
+
+  // The same at a pause, where Arbor lives on and what it has sent is carried out. The park lies in the app's queue; until the app wakes the window server shows the windows in view, and whoever asks it whether
+  // they still have to be fetched is told no.
+  for silence in [0.5, 1.5] {
+    book.story("an app hangs \(silence) s after it last answered Arbor, its windows are sent out of view, and Arbor is paused") { story in
+      let (two, mine, theirs) = stage(story)
+      let busy = theirs[0].app
+      two.run("zoom \(mine.number)", then: 1)
+      two.run("show-all", then: 0)
+      two.mac.pass(silence)
+      two.mac.hang(busy, for: 8)
+      two.run("zoom \(mine.number)", then: 0.3)
+      story.check("the pause is taken", two.run("pause", then: 0).ok)
+      story.check("while the app still hangs", busy.isHung)
+      let owed = !two.controller.couldNotComeBack.isEmpty
+      two.mac.pass(4)
+      story.check("what Arbor has noted as owed it has not struck off while the app hangs", busy.isHung && (!owed || !two.controller.couldNotComeBack.isEmpty), "noted at the pause, struck off within four seconds; \(places(two, theirs))")
+      two.mac.pass(5)
+      story.check("the app is awake again", !busy.isHung)
+      var back: TimeInterval?
+      for half in 0..<80 where back == nil {
+        if theirs.allSatisfy({ two.isInView($0) }) { back = Double(half) / 2 }
+        two.mac.pass(0.5)
+      }
+      story.check("once the app has woken, all its windows are in view, or come back", back != nil, places(two, theirs))
+      story.check("within ten seconds", (back ?? .infinity) <= 10, "\(back.map { "\($0) s" } ?? "never, in 40 s")")
+      two.run("resume", then: 3)
+      two.run("show-all", then: 3)
+      story.check("and after `resume` they are in view", theirs.allSatisfy { two.isInView($0) }, places(two, theirs))
+    }
+  }
+
+  // At a pause nobody leaves word and goes: Arbor stays, and has to fetch what comes to lie out of view after all.
+  for (words, calls) in [("has hung for 2.5 s when", Int?.none), ("hangs between the question and the move as", 1)] {
+    book.story("an app \(words) its windows are sent out of view, and Arbor is paused") { story in
+      let (two, mine, theirs) = stage(story)
+      let busy = theirs[0].app
+      two.mac.pass(2)
+      if let calls {
+        busy.hangsAfterCalls = calls
+      } else {
+        two.mac.hang(busy)
+        two.mac.pass(2.5)
+      }
+      two.run("zoom \(mine.number)", then: 3)
+      story.check("the app hangs", busy.isHung)
+      story.check("the pause is taken", two.run("pause", then: 2.5).ok)
+      let woke = two.mac.now
+      two.mac.wake(busy)
+      var back: TimeInterval?
+      for _ in 0..<80 where back == nil {
+        two.mac.pass(0.5)
+        if theirs.allSatisfy({ two.isInView($0) }) { back = two.mac.now - woke }
+      }
+      story.check("once the app has woken, all its windows are in view, or come back", back != nil, places(two, theirs))
+      story.check("within ten seconds", (back ?? .infinity) <= 10, "\(back.map { "\($0) s" } ?? "never, in 40 s")")
+    }
+  }
+
+  // Two points: what the Dock gives back when a window leaves it. Too little to count as having strayed.
+  book.story("an app carries out 50 ms late what it is asked, and Arbor makes its window two points higher") { story in
+    var window: FakeMac.Window!
+    let one = StoreyOne(story) { mac in window = mac.open("window", in: mac.launch("Late")) }
+    var target = CGRect(x: 12, y: 43, width: 494, height: 650)
+    _ = one.layer.setFrame(target, of: WindowID(window.number))
+    one.mac.pass(2)
+    window.app.carriesOutAfter = 0.05
+    target.size.height += 2
+    _ = one.layer.setFrame(target, of: WindowID(window.number))
+    one.mac.pass(3)
+    story.check("the window has the frame", window.frame == target, window.frame.text)
+    story.check("Arbor knows how high it is", one.snapshot(window)?.frame == target, "\(one.snapshot(window)?.frame.text ?? "")")
   }
 
   // The app says yes at once and does it a moment later, so that what Arbor reads back right after the call is the old frame. Its report, when it comes, is the only word on how things stand.
@@ -152,6 +246,23 @@ func tellOfSlowApps(_ book: Book) {
       two.run("show-all", then: 3)
       story.check("shown again, it is in view", two.isInView(theirs[1]), two.whereabouts(theirs[1]))
       story.check("where it was", theirs[1].frame == home, "\(two.whereabouts(theirs[1])), it was at \(home.text)")
+    }
+  }
+
+  // A reading that the layer passes on upstairs must not set off a correction, whose reading is passed on in its turn. The app that is on time comes first and sets the measure.
+  var askedOfAnAppOnTime: Int?
+  for late in [0.0, 0.02, 0.05, 0.2] {
+    book.story("how often Arbor asks for a frame as the view goes away and comes back, of an app that \(late > 0 ? "carries out \(Int(late * 1000)) ms late what it is asked" : "is on time")") { story in
+      let (two, mine, theirs) = stage(story)
+      theirs[0].app.carriesOutAfter = late
+      let before = theirs.reduce(0) { $0 + $1.timesAskedForAFrame }
+      two.run("zoom \(mine.number)", then: 3)
+      two.run("show-all", then: 3)
+      let asked = theirs.reduce(0) { $0 + $1.timesAskedForAFrame } - before
+      if late == 0 { askedOfAnAppOnTime = asked }
+      story.check("no oftener than of an app that is on time", asked <= askedOfAnAppOnTime ?? asked, "\(asked) times against \(askedOfAnAppOnTime ?? 0)")
+      two.mac.pass(5)
+      story.check("and then it has done with them", theirs.reduce(0) { $0 + $1.timesAskedForAFrame } - before == asked, "\(theirs.reduce(0) { $0 + $1.timesAskedForAFrame } - before - asked) times more")
     }
   }
 

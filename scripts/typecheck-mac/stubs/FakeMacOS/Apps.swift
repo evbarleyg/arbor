@@ -83,8 +83,13 @@ extension FakeMac {
     send(after: lag > 0 ? notice + lag : notice / 2, from: .workspaceCache, lag > 0 ? "(NSWorkspace's frontmostApplication catches up: pid \(app.pid))" : "") {
       [self] in frontmostByWorkspace = app
     }
-    workspaceNotice("NSWorkspaceDidActivateApplicationNotification", app, after: notice) { [self] in
-      if frontmost === app, frontmostByWorkspace !== app { app.noticeOutranTheProperty = true }
+    if losesTheNextActivationNotice {
+      losesTheNextActivationNotice = false
+      note("(the workspace's notice of that is lost)")
+    } else {
+      workspaceNotice("NSWorkspaceDidActivateApplicationNotification", app, after: notice) { [self] in
+        if frontmost === app, frontmostByWorkspace !== app { app.noticeOutranTheProperty = true }
+      }
     }
     let (deactivated, activated) = app.reportsFocusTwiceAndLate ? (0.0045, 0.0443) : (timing.deactivatedAfterNotice, timing.activatedAfterNotice)
     if let old, old.isAlive { report("AXApplicationDeactivated", about: old, after: notice + deactivated - timing.report) }

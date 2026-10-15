@@ -60,6 +60,9 @@ public final class FakeMac: @unchecked Sendable {
   /// How long that copy goes on naming the old app after `didActivateApplication` has been delivered. Zero: it names the new one by then. On
   /// hosted Macs it still named the old one 27 times in three runs. How long it takes to catch up nobody has measured.
   public var frontmostLagsNoticeBy: TimeInterval = 0
+  /// The next app that comes forward does so without `didActivateApplication`. A GUESS that this happens at all: switches of apps have gone unreported on hosted Macs (trace `app-switch-unreported`), and nobody has shown
+  /// which of the words was missing. What Accessibility posts, and `frontmostApplication`, are as ever.
+  public var losesTheNextActivationNotice = false
   /// The apps that were in front, latest first: who comes forward when the one in front goes.
   var activationHistory: [App] = []
 
@@ -296,12 +299,23 @@ public final class FakeMac: @unchecked Sendable {
   // MARK: Arbor ends, the Mac goes on
 
   public private(set) var arborHasGone = false
+  /// A call the app had begun to carry out when it hung (`hangsInTheMiddleOfThatCall`), and whose sender ends meanwhile. A GUESS, nobody has measured it: the app has read the message and is at work, so it goes
+  /// through with it.
+  public var appsFinishWhatTheyAreAtThoughItsSenderIsGone = true
 
-  /// Arbor's process ends. Its threads, timers, observers and monitors go with it, and what was on its way to it reaches nobody. What it has sent is sent: an app that hangs still finds it in its
-  /// queue when it wakes.
+  /// Arbor's process ends. Its threads, timers, observers and monitors go with it, and what was on its way to it reaches nobody.
+  ///
+  /// What it has asked of an app that hangs goes with it too. SEEN on a hosted Mac, macOS 26.6.2, 2026-10-15 (`scripts/mac-shell/check-hang.sh`, session 2): a place and a size were sent to each of two windows of
+  /// an app that hung; Arbor's process ended half a second later; the app woke 18 s after that, and both windows were still where they had been. In session 3 the same four calls were sent at a pause, Arbor
+  /// lived on, and both windows were in view at the first look, 2.5 s after the app woke, with no line in the log of the controller's having fetched them. Until then this model had it the other way round ("what is sent is sent"), and was wrong.
   public func arborIsGone() {
     note("Arbor is gone")
     arborHasGone = true
+    for app in apps {
+      let before = app.backlog.count
+      app.backlog.removeAll { $0.asked == .waiting || ($0.asked == .underWay && !appsFinishWhatTheyAreAtThoughItsSenderIsGone) }
+      if app.backlog.count < before { note("of what Arbor asked of pid \(app.pid), which hangs, \(before - app.backlog.count) calls are dropped unserved") }
+    }
     pending.removeAll { item in
       if case .thread = item.source { return true }
       return isForTheMainThread(item.source)
@@ -523,6 +537,9 @@ extension FakeMac {
     public var ignoresActivation = false
     /// It answers so many more calls and then hangs: in the middle of what Arbor is asking of it.
     public var hangsAfterCalls: Int?
+    /// It hangs over the call itself, which it has taken from its queue (a window that takes seconds to lay itself out anew). Otherwise it hangs over something of its own a moment before, and the call waits in the
+    /// queue like all that follow. The difference shows only if Arbor's process ends before the app wakes.
+    public var hangsInTheMiddleOfThatCall = false
 
     // What has happened to it, for those who want to tell one cause of a fault from another.
 
@@ -538,7 +555,9 @@ extension FakeMac {
     public internal(set) var secondsWaitedForInThisHang: TimeInterval = 0
 
     /// What was asked of it, and what it would have posted, while it hung.
-    var backlog: [(label: String, run: () -> Void)] = []
+    /// `asked`: by Arbor, and whether the app was already at it when it began to hang, or had it still waiting in its queue.
+    var backlog: [(label: String, asked: Asked, run: () -> Void)] = []
+    enum Asked { case byNobody, waiting, underWay }
     /// The list of windows it still gives out although it has changed.
     var staleList: (until: TimeInterval, windows: [Window])?
 

@@ -114,6 +114,16 @@ extension FakeMac {
     makeKey(window)
   }
 
+  /// ⌘`: the person asks the app in front for another of its windows. A key goes to the app like a call does: if the app hangs, the key lies in its queue, behind what
+  /// was sent before, and is obeyed when it wakes (a guess: nobody has recorded it; it is what typing at an app that hangs is known to end in).
+  public func personAsksAppInFront(for window: Window) {
+    note("⌘`: the person asks \(window.app.name) for w\(window.number)")
+    appDoes(window.app, after: 0.001, "the key it finds in its queue: w\(window.number) is to be its key window") { [self] in
+      raise(window)
+      makeKey(window)
+    }
+  }
+
   /// A window has another frame and nobody has heard: its app posts nothing, or the report is still on its way.
   public func changeSilently(_ window: Window, to frame: CGRect) {
     note("w\(window.number) has the frame \(frame), and nothing says so")

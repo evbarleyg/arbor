@@ -177,16 +177,16 @@ extension FakeMac {
   public func write(_ value: Value, to attribute: String, of element: Element, timeout: TimeInterval?) -> Answer {
     guard let pid = element.pid else { return .illegalArgument }
     if let app = app(pid), reaches(app) {
-      // The message is in the app's queue from the moment it is sent, and is read when the app wakes: whether the caller has given up by then, or is no more.
+      // The message is in the app's queue from the moment it is sent, and is read when the app wakes, though the caller has given up by then. Not if the caller is no more (`arborIsGone`).
       var outcome: Answer?
-      app.backlog.append(("what was asked of it while it hung: \(attribute) = \(value)", { [self] in outcome = carryOut(value, attribute, element, app) }))
+      app.backlog.append(("what was asked of it while it hung: \(attribute) = \(value)", .waiting, { [self] in outcome = carryOut(value, attribute, element, app) }))
       return refusal(by: pid, timeout: timeout) ?? outcome ?? .cannotComplete
     }
     let refusal = refusal(by: pid, timeout: timeout)
     guard let app = app(pid), app.isAlive else { return refusal ?? .cannotComplete }
     if refusal == .cannotComplete, app.isHung, !arborHasGone {
       // It began to hang at this very call.
-      app.backlog.append(("what was asked of it while it hung: \(attribute) = \(value)", { [self] in _ = carryOut(value, attribute, element, app) }))
+      app.backlog.append(("what was asked of it while it hung: \(attribute) = \(value)", app.hangsInTheMiddleOfThatCall ? .underWay : .waiting, { [self] in _ = carryOut(value, attribute, element, app) }))
     }
     if let refusal { return refusal }
     if case .window = element {
@@ -241,13 +241,13 @@ extension FakeMac {
   public func perform(_ action: String, on element: Element, timeout: TimeInterval?) -> Answer {
     guard let pid = element.pid else { return .illegalArgument }
     if let app = app(pid), reaches(app), action == "AXRaise", let window = window(for: element) {
-      app.backlog.append(("what was asked of it while it hung: AXRaise", { [self] in raise(window) }))
+      app.backlog.append(("what was asked of it while it hung: AXRaise", .waiting, { [self] in raise(window) }))
       return refusal(by: pid, timeout: timeout) ?? .success
     }
     if let refusal = refusal(by: pid, timeout: timeout) {
       // It began to hang at this very call.
       if refusal == .cannotComplete, let app = app(pid), app.isHung, action == "AXRaise", let window = window(for: element) {
-        app.backlog.append(("what was asked of it while it hung: AXRaise", { [self] in raise(window) }))
+        app.backlog.append(("what was asked of it while it hung: AXRaise", app.hangsInTheMiddleOfThatCall ? .underWay : .waiting, { [self] in raise(window) }))
       }
       return refusal
     }
@@ -410,7 +410,7 @@ extension FakeMac {
     guard app.isAlive else { return true }
     if app.isHung {
       // Its main thread would have posted it.
-      app.backlog.append(("", { [self] in _ = report(name, about: element, of: app, shown: shown, after: delay, mayBeDropped: false) }))
+      app.backlog.append(("", .byNobody, { [self] in _ = report(name, about: element, of: app, shown: shown, after: delay, mayBeDropped: false) }))
       return true
     }
     if mayBeDropped, manners.chance(manners.drops) {
@@ -442,7 +442,7 @@ extension FakeMac {
     send(after: delay, from: .app(app.pid), "") { [self] in
       guard app.isAlive else { return }
       if app.isHung {
-        app.backlog.append((label, action))
+        app.backlog.append((label, .byNobody, action))
       } else {
         if !label.isEmpty { note(label) }
         action()
