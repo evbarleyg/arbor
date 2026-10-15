@@ -145,7 +145,7 @@
             let panel = NSRect(origin: .zero, size: placement.frame.size)
             let text = placement.textFrame
             let tall = NSRect(x: text.minX, y: 4, width: text.width, height: panel.height - 8)
-            let wide = NSRect(x: 6, y: text.minY + 6, width: panel.width - 12, height: text.height - 12)
+            let wide = NSRect(x: 6, y: text.minY, width: panel.width - 12, height: text.height)
             for whole in [tall, wide] {
               let all = picture.ink(in: whole, isDark: look.isDark)
               #expect(all == picture.ink(in: text.intersection(whole), isDark: look.isDark), "nothing in the padding: \(what)")

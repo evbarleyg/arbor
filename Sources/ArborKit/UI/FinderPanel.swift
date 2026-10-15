@@ -340,8 +340,8 @@ private final class FinderView: NSView {
 
   private func draw(_ item: FinderSession.Item, in frame: NSRect) {
     let selected = item.isSelected
-    let selection = PanelInk.selection()
-    if selected {
+    let selection = selected ? PanelInk.selection() : nil
+    if let selection {
       selection.fill.setFill()
       // Side by side with the panel's own corner.
       let radius = PanelLook.Corner.inside(Self.cornerRadius, inset: frame.minX)
@@ -349,15 +349,15 @@ private final class FinderView: NSView {
     }
     // The title is in the main ink too: it is what tells six windows of one app apart. The app's name is set off by its
     // weight, and the letters that matched by theirs: the accent colour cannot be read on every ground.
-    let primary: NSColor = selected ? selection.ink : PanelInk.main
-    let faint: NSColor = selected ? selection.ink.withAlphaComponent(0.85) : PanelInk.second
+    let primary: NSColor = selection?.ink ?? PanelInk.main
+    let faint: NSColor = selection?.ink.withAlphaComponent(0.85) ?? PanelInk.second
 
     let iconFrame = NSRect(x: frame.minX + 10, y: frame.midY - 12, width: 24, height: 24)
     if let pid = item.row.pid {
       icon(for: pid)?.draw(
         in: iconFrame, from: .zero, operation: .sourceOver, fraction: 1, respectFlipped: true, hints: nil)
     } else if let badge = item.row.badge {
-      (selected ? selection.ink.withAlphaComponent(0.25) : NSColor.quaternaryLabelColor).setFill()
+      (selection?.ink.withAlphaComponent(0.25) ?? NSColor.quaternaryLabelColor).setFill()
       NSBezierPath(roundedRect: iconFrame, xRadius: 6, yRadius: 6).fill()
       let text = NSAttributedString(
         string: badge, attributes: [.font: NSFont.systemFont(ofSize: 13, weight: .semibold), .foregroundColor: primary])
