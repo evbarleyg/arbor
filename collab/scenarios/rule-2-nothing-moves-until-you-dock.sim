@@ -1,8 +1,8 @@
 # Rule 2 of the product direction (issue #3; QUESTIONS Q16): nothing moves until the person docks something.
 # Story: three windows are open when Arbor starts. They stay where they are, at the sizes they have, whatever happens on
 # the Mac, until their owner docks one. Then that one moves, and nothing else.
-# A resume is a start: it finds the windows that opened while Arbor was not looking. The first launch itself is in
-# `PromisesTests` and in the chaos lab, which can open windows before Arbor runs.
+# A resume is a start: it finds the windows that opened while Arbor was not looking. So is `relaunch`. The very first launch
+# is in `PromisesTests` and in the chaos lab, which can open windows before Arbor has ever run.
 quiet
 pause
 open Safari 800x600
@@ -49,6 +49,12 @@ desktop
 expect still
 relayout
 expect still
+# Arbor is quit and started again with nothing docked: neither moves anything.
+relaunch
+expect still
+expect count docked 0
+expect at 102 1000 100
+expect at 103 760 440
 # The first dock: that window, once. The others were not in its way and stay.
 dock 101 left
 expect moved-once
