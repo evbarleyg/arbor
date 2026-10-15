@@ -448,7 +448,7 @@ can_be_dragged() {
 }
 
 drag_onto() {
-  local x y w h px py window target
+  local x y w h px py window target fell
   arbor_acts || { left_out "drag_onto $*: Arbor is not acting"; return; }
   [ "$1" != "$2" ] && can_be_dragged "$1" && present "$2" || { left_out "drag_onto $*: nothing to take hold of"; return; }
   window=$(window_of "$1") target=$(window_of "$2")
@@ -464,6 +464,14 @@ drag_onto() {
   walk_act drag "drag-$1-onto-$2-$3" "drags $1 by its title bar onto the $3 part of $2 and lets go"
   must drag_window "$window" "$px" "$py"
   changed
+  # Where there is no room for it Arbor promises nothing, shows no preview and lets it float where it was let go (Preview, 702 wide at the least, onto a slot of 445). So Arbor's own
+  # account of where the drop fell is asked, and a dock is demanded where it says it fell on a place.
+  fell=$(grep -o "dropped w$window on [a-zA-Z]*" "$ARBOR_HOME/arbor.log" 2> /dev/null | tail -n 1 | cut -d ' ' -f 4)
+  if [ -z "$DAY_UNDONE" ] && [ "$fell" = float ]; then
+    echo "  Arbor had no place for it there: it floats where it was let go"
+    acted drags="$window" moves=docked front="$window" own="$window"
+    return
+  fi
   [ -n "$DAY_UNDONE" ] || want "it is docked" eventually is docked "$window"
   acted drags="$window" moves=docked front="$window"
 }
@@ -800,6 +808,9 @@ float_all() {
 
 float_all_here() {
   arbor_acts || { left_out "float_all_here: Arbor is not acting"; return; }
+  # With nothing docked Arbor declines, and says so: there is nothing to do, which is no act.
+  day_ids
+  [ -n "$DAY_DOCKED" ] || { left_out "float_all_here: nothing is docked"; return; }
   walk_act way-out float-all-here "floats every window of this display"
   must ctl float-all here
   changed
