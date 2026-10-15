@@ -29,7 +29,8 @@ permissions:
 # failed as check annotations, for executors that cannot download logs.
 jobs:
   changes:
-    runs-on: ubuntu-latest
+    # By its number: if this job ever failed on a new system that `latest` had moved to, every run would take a Mac, by design.
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
       contents: read
@@ -175,7 +176,7 @@ jobs:
   real-windows:
     needs: macos
     if: ${{ !cancelled() && needs.macos.result != 'skipped' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - name: What real windows said
@@ -195,7 +196,7 @@ jobs:
   macos-from-nothing:
     needs: [changes, macos]
     if: ${{ needs.macos.result == 'success' && needs.changes.outputs.build != 'upon' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - run: echo "::notice title=macos::passed, built from nothing"
@@ -204,7 +205,7 @@ jobs:
   tests-accounted-for:
     needs: [changes, linux, macos]
     if: ${{ !cancelled() && needs.macos.result != 'skipped' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v5

@@ -839,7 +839,7 @@ run against stand-ins for a Mac and are interrupted, timed out and killed, with 
 (`ARBOR_TEST_BASH=<a bash 3.2>` tries them under macOS's own shell). `make check` runs it. When you teach one of these tools something, add
 the situation that would have fooled it.
 
-The two scripts that decide what CI's Mac does have tables of their own, which `make check` and the `linux` job run: `scripts/test-ci-changes.py`
+The two scripts that decide what CI's Mac does have tables of their own, which the job `linux-lint` runs: `scripts/test-ci-changes.py`
 (whether a Mac is needed, which tests it runs, and whether it may build upon a cache) and `scripts/test-ci-tests.py` (which tests a Mac can say something about, the record of
 a run, and the net that fails when a test ran nowhere). Most of their rows are situations in which the answer must be the careful one.
 
