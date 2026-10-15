@@ -242,7 +242,7 @@ private final class Heard: WindowSystemEvents {
   /// Arbor sets no frame, and takes what it finds for the window's own.
   ///
   /// On hosted Macs that hung on some hundredths of a second: of 8 windows that spoke before macOS's list changed Arbor set none back, of 24 that
-  /// spoke after it 22. So here: the terminal is left alone when it speaks early, and the very same window is set back when it does not.
+  /// spoke after it 22. So it was here: the terminal was left alone when it spoke early, and the very same window set back when it did not.
   @Test func whatMacOSDoesToAFloatingWindowAtAChangeOfDisplaysIsMacOSs() {
     let main = DisplaySnapshot(
       id: DisplayID("main"), frame: CGRect(x: 0, y: 0, width: 1600, height: 900), visibleFrame: CGRect(x: 0, y: 31, width: 1600, height: 791), isMain: true)
@@ -270,9 +270,9 @@ private final class Heard: WindowSystemEvents {
     #expect(early[0].rests == macOSs[0])
     #expect(early[0].place == macOSs[0])
     for (name, seen, macOSs) in [("the terminal, late", late[0], macOSs[0]), ("TextEdit, late", late[1], macOSs[1]), ("TextEdit, after the terminal", early[1], macOSs[1])] {
-      withKnownIssue("board 0.23: a floating window that speaks after macOS's list has changed is set back") { #expect(seen.set == 0, "\(name)") }
-      withKnownIssue("board 0.23") { #expect(seen.rests == macOSs, "\(name)") }
-      withKnownIssue("board 0.23") { #expect(seen.place == macOSs, "\(name)") }
+      #expect(seen.set == 0, "\(name)")
+      #expect(seen.rests == macOSs, "\(name)")
+      #expect(seen.place == macOSs, "\(name)")
     }
   }
 

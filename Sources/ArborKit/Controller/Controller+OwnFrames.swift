@@ -12,8 +12,8 @@ import CoreGraphics
 /// With the setting on, floating windows are kept on the Desktop as they were until Q20: `floatingMoves` places them,
 /// and everything that follows from that (own sizes of squeezed windows, pushed windows going back) is at work.
 ///
-/// `Workspace.floating` holds the frame the window's person gave it, as ever. With the setting off that is also where the
-/// window is, for as long as it is in view.
+/// `Workspace.floating` holds the frame the window's person gave it, as ever, or macOS at a change of displays
+/// (`takeFloatingWindowsFromWhereTheyAre`). With the setting off that is also where the window is, for as long as it is in view.
 extension Controller {
   // MARK: Out of view and back
 
@@ -133,43 +133,19 @@ extension Controller {
 
   // MARK: A change of displays
 
-  /// What has to be known of the floating windows before the displays change.
-  struct BeforeTheDisplaysChanged {
-    /// The windows that were in view where they belong, or were until macOS moved them before Arbor heard of the change
-    /// (`noteMoveBehindArborsBack`).
-    var inTheirPlaces: Set<WindowID> = []
-    /// How large each display was.
-    var sizes: [DisplayID: CGSize] = [:]
-  }
-
-  func noteBeforeTheDisplaysChange() -> BeforeTheDisplaysChanged {
-    var note = BeforeTheDisplaysChanged()
-    guard !settings.floatingWindowsMakeWay else { return note }
-    note.sizes = Dictionary(displays.map { ($0.id, $0.frame.size) }) { first, _ in first }
-    note.inTheirPlaces = movedBehindArborsBack
-    for workspace in workspaces.values {
-      for (window, own) in workspace.floating where !parked.contains(window) && windows[window]?.frame == own {
-        note.inTheirPlaces.insert(window)
-      }
-    }
-    return note
-  }
-
   /// A change of displays moves windows that are in view, or the ground under them, and nobody chose where that leaves them.
   /// Such a window counts as out of view, so that the layout that follows puts it where it belongs (`whereItWas`), or
   /// out of view with the rest of its Desktop:
-  /// - one that was in its place and is not now, because macOS has shuffled it or has not taken it along with its display, goes back
-  ///   where it was on its display, if that is as large as it was (on one that shrank macOS may have found it a better place);
-  /// - one that Arbor fitted for the displays as they were goes back to its own frame, if that is a place again;
+  /// - one that Arbor fitted for the displays as they were goes back to its own frame, if that is a place again, also if macOS has moved it on
+  ///   since at the size Arbor gave it (`isAsArborFittedIt`);
   /// - one of which less than half shows now, or whose title bar is out of reach, is fitted. Not one that its person's own hand left
   ///   hanging, as long as its display is as it was then and no less of it shows than it left showing (`wasLeftThereByItsUser`).
   /// Returns those that the layout is going to put in view.
-  func countAsOutOfViewWhatTheDisplaysDisplaced(since before: BeforeTheDisplaysChanged) -> Set<WindowID> {
+  func countAsOutOfViewWhatTheDisplaysDisplaced() -> Set<WindowID> {
     guard !settings.floatingWindowsMakeWay else { return [] }
     var displaced: Set<WindowID> = []
     for (id, workspace) in workspaces.sorted(by: { $0.key < $1.key }) {
       guard let display = display(id) else { continue }
-      let isAsLargeAsItWas = before.sizes[id] == display.frame.size
       let desktopShows = layout(of: id).map { workspace.tree.subtree($0.camera, contains: workspace.tree.desktop) } ?? false
       for (window, own) in workspace.floating.sorted(by: { $0.key < $1.key }) where workspace.role(of: window) == nil {
         guard !parked.contains(window), window != drag?.window, isManaged(window), let current = windows[window],
@@ -177,8 +153,7 @@ extension Controller {
         else { continue }
         let hangsAsItWasLeft = wasLeftThereByItsUser(current.frame, of: window, on: display)
         guard
-          (isAsLargeAsItWas && before.inTheirPlaces.contains(window) && current.frame != own)
-            || fittedFrames[window] == current.frame
+          isAsArborFittedIt(window, at: current.frame, whoseOwnSizeIs: own.size)
             || (!isAPlace(current.frame) && !hangsAsItWasLeft),
           // Not one that is where it would be sent: a call to its app costs more than everything Arbor does itself.
           !whereItWas(own, of: window, on: display).approximatelyEquals(current.frame, tolerance: 0.99)

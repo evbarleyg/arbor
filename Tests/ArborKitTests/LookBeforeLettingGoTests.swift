@@ -280,10 +280,11 @@ import Testing
     for window in there + [home] { #expect(replayer.harness.frame(window) == h.frame(window)) }
   }
 
-  // MARK: What is not a reason to look
+  // MARK: What is not a reason to move anything, or to look
 
   /// A display that has only just been plugged in takes nothing away. Arbor lets go as it would have a second earlier, and does
-  /// not first send windows over to it.
+  /// not first send windows over to it. It used not to look at all. It does now, at its books alone: macOS moves floating windows for a display
+  /// that comes too, and what it does to them is macOS's (board 0.23; `MacOSsAtAChangeOfDisplaysTests`).
   @Test(arguments: Way.allCases) func aDisplayThatHasOnlyJustComeIsNoReasonToMoveAnything(_ way: Way) {
     let h = Harness()
     let a = h.system.open(app: "Safari", frame: CGRect(x: 300, y: 200, width: 640, height: 420))
@@ -298,7 +299,7 @@ import Testing
     #expect(h.frame(a) == CGRect(x: 300, y: 200, width: 640, height: 420))
     #expect(moves(of: a, h).count == 1)
     #expect(moves(of: b, h).count <= 1)
-    #expect(h.controller.displays.count == 1 || way == .pause, "it has not looked")
+    #expect(h.controller.displays.count == 2 || way == .pause, "it has looked, and moved nothing for it")
   }
 
   /// Without the permission nothing can be moved, and nothing is tried.

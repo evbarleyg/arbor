@@ -1198,21 +1198,21 @@ extension ChaosRunner {
         """),
     ChaosKnownFailure(
       rule: "left-its-place", owner: "nobody yet (F64, a change of displays)", severity: 3,
-      story: "A display moves or its menu bar changes, macOS takes a floating window along, and Arbor puts it some points beside where macOS had "
-        + "it: where it reckons the window was on its display.",
+      story: "A display comes back and fetches its own floating window (F08) from a display that has itself moved or changed meanwhile, where macOS "
+        + "had taken it along: to the net it has left its place. (That Arbor put a window some points beside where macOS had brought it, where "
+        + "it reckoned the window was on its display, is cured.)",
       script: """
-        displays side:0,0,1512,982:25,45,0,0* main:-1920,58,1920,1080:25,0,0,0 windows-never
         launch
-        open 102 Terminal pid 1003 at -1562 457 436 481 title Übersicht
-        displays main:0,0,1920,1080:25,0,0,0* windows-first
+        open 106 Music pid 1006 at 626 754 791 512 min 420 351 title main.swift grid
+        displays third:0,0,1920,1080:25,0,0,0* side:-1920,100,1920,1080:0,0,0,0 windows-silent
+        displays side:0,0,1920,1080:37,0,0,72* main:-1440,259,1440,900:0,0,0,0 windows-late
+        displays main:0,0,1440,900:0,0,0,0* side:-292,900,1920,1080:0,0,0,0 windows-silent
         """,
       """
-        open 107 Notes pid 1001 at 324 420 712 580
-        edge 107 12 12 1416 876 hold
-        release
-        displays side:1440,60,800,600:0,90,0,0 main:0,0,1440,900:37,0,0,0* windows-first
+        open 105 Safari pid 1000 at 698 775 408 549 min 308 134 max 631 1999
         launch
-        displays main:0,0,1440,900:37,0,0,0* windows-silent
+        displays third:0,0,2560,1440:0,0,0,0* windows-silent
+        displays side:0,0,2560,1440:37,0,0,0* main:-14,1440,800,600:0,0,0,0 third:-29,2040,2560,1440:0,0,0,0 windows-silent
         """),
     ChaosKnownFailure(
       rule: "parked-beside-another-display", owner: "the controller", severity: 3,

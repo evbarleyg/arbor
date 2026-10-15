@@ -32,10 +32,11 @@ extension Controller {
       isPaused = true
       endSummonsWithoutMoving()
       dropOverdueSlotsBeforeAStop()
+      // First, so that what macOS has shifted meanwhile does not pass for the pause's doing, which the resume undoes. And before the books are
+      // kept for the resume, or it would bring back what they said before the look.
+      lookAtTheDisplaysBeforeLettingGo()
       // Kept in memory as well, so that resuming does not depend on the file having been written.
       resumeState = persistedState()
-      // First, so that what macOS has shifted meanwhile does not pass for the pause's doing, which the resume undoes.
-      lookAtTheDisplaysBeforeLettingGo()
       let before = windows.mapValues(\.frame)
       noteWhoIsLetBeAsThePauseBegins()
       resumeState?.zoomedByMacOS = letBeWhenThePauseBegan.isEmpty ? nil : letBeWhenThePauseBegan
