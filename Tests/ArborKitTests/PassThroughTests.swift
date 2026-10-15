@@ -13,7 +13,7 @@ import Testing
   func makeHarness(passThrough: [String] = [emacsID], pauseFor: [String] = [gameID])
     -> (Harness, emacs: WindowID, safari: WindowID, game: WindowID)
   {
-    var settings = Settings()
+    var settings = Settings.withGestures  // what a listed app takes away
     settings.passThroughApps = passThrough
     settings.pauseForApps = pauseFor
     let h = Harness(settings: settings)

@@ -9,7 +9,8 @@ import Testing
 @Suite @MainActor struct LeftInFullScreenTests {
   /// `[a | Desktop | b]` framed on `a`, and `b`, out of view, in full screen.
   func makeHarness() -> (Harness, a: WindowID, b: WindowID) {
-    let h = Harness()
+    // With the gestures on: the zones they ask for have a timer of their own, and "no timer is left" is about every timer.
+    let h = Harness(settings: .withGestures)
     let a = h.system.open(app: "Safari", pid: 11, frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     let b = h.system.open(app: "Mail", pid: 12, frame: CGRect(x: 300, y: 200, width: 640, height: 420))
     h.start()

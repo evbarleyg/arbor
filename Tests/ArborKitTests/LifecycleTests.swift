@@ -310,7 +310,8 @@ import Testing
 
   @Test func aPauseSilencesTheWaitAndResumingTakesItUpAgain() {
     let (saved, _, safari, _) = savedPair()
-    let h = Harness(saved: saved)
+    // With the gestures on, whose zones have a timer of their own.
+    let h = Harness(settings: .withGestures, saved: saved)
     h.start()
     h.scheduler.advance(by: 1)
     #expect(h.run("pause").ok)

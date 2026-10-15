@@ -15,6 +15,7 @@
 # and keeps that app in the build folder. It does move the pointer and take the keyboard. The two measurements that cannot
 # afford the time lib.sh's nets take, and the switching of layouts, are left out there.
 source "$(dirname "$0")/lib.sh"
+source "$(dirname "$0")/lib-gestures.sh"
 
 KEYS="$ARBOR_ROOT/.build/mac-shell/keys"
 KEYS_APP="$ARBOR_ROOT/.build/mac-shell/ArborKeys.app"
@@ -85,7 +86,7 @@ at_exit 'kill_started $KEYS_PID; rm -rf "$KEYS_APP"'
 
 step "[1 | Desktop | 2], the app on passThroughApps, shortcuts, taps and the menu bar item on"
 ARBOR_TEST_WINDOWS_ARGS="--regular"
-arbor_settings "{\"passThroughApps\": [\"$KEYS_ID\"]}"
+arbor_settings "{$ARBOR_GESTURES_ON, \"passThroughApps\": [\"$KEYS_ID\"]}"
 arbor_start 2 ARBOR_NO_HOTKEYS=0 ARBOR_NO_STATUS_ITEM=0
 ctl dock "$W1" left
 ctl dock "$W2" right
@@ -253,7 +254,7 @@ ctl dock "$W1" left
 ctl dock "$W2" right
 sleep 3
 to_test_windows
-arbor_settings "{\"pauseForApps\": [\"$KEYS_ID\"]}"
+arbor_settings "{$ARBOR_GESTURES_ON, \"pauseForApps\": [\"$KEYS_ID\"]}"
 ctl reload-settings
 check "running while another app is in front" eventually status_has "^running"
 ctl zoom "$W1"

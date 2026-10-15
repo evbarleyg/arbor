@@ -173,8 +173,9 @@ private func withNothingRemembered(_ old: Harness) -> Harness {
 
   @Test func withHandlesOffAPressInAGapIsKeptFromTheWallpaper() {
     // No panel of Arbor's takes it, and macOS would sweep every window aside (F60).
-    let (off, _, _, _) = makeRow(settings { $0.gapHandles = "off" })
-    let (hidden, _, _, _) = makeRow(settings { $0.gapHandles = "hidden" })
+    // The guard asks where the wallpaper shows; with it off nobody is told.
+    let (off, _, _, _) = makeRow(settings { ($0.gapHandles, $0.guardDesktopClicks) = ("off", true) })
+    let (hidden, _, _, _) = makeRow(settings { ($0.gapHandles, $0.guardDesktopClicks) = ("hidden", true) })
     for seam in off.layout!.seams {
       #expect(off.controller.desktopGuardZones().mayBeBare(seam.frame.center))
       #expect(!hidden.controller.desktopGuardZones().mayBeBare(seam.frame.center))

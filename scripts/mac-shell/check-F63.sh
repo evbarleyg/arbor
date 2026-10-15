@@ -8,6 +8,7 @@
 # either: its tools lose the permission too. What it can do is ask Arbor over the socket, count event taps, read the
 # log and ask the window server where the windows are.
 source "$(dirname "$0")/lib.sh"
+source "$(dirname "$0")/lib-gestures.sh"
 needs_throwaway_mac "switch Accessibility off for every app in the privacy database"
 
 KEYS="$ARBOR_ROOT/.build/mac-shell/keys"
@@ -69,6 +70,8 @@ allow 0
 # A new process asks the daemon, which answers from memory.
 sudo killall -9 tccd 2>/dev/null
 sleep 1
+# The permission goes with taps installed: that is what this is about.
+arbor_settings "{$ARBOR_GESTURES_ON}"
 ARBOR_MAY_LACK_PERMISSION=1 arbor_start 3 ARBOR_NO_HOTKEYS=0 ARBOR_NO_STATUS_ITEM=0 ARBOR_NO_PROMPT=0
 expect_status "Arbor waits for the permission" "waiting for Accessibility permission"
 check "it holds no event tap" taps_are 0

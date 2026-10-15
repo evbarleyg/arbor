@@ -8,7 +8,7 @@ import Testing
 @Suite @MainActor struct PauseTests {
   /// [a | Desktop | b / c] with d floating on the Desktop, framed on c: a, b and d are out of view.
   func makeHarness() -> (Harness, WindowID, WindowID, WindowID, WindowID) {
-    let h = Harness()
+    let h = Harness(settings: .withGestures)  // which a pause switches off
     let a = h.system.open(app: "Safari")
     let b = h.system.open(app: "Mail")
     let c = h.system.open(app: "Notes")

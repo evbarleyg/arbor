@@ -280,17 +280,17 @@ import Testing
   @Test func anEventTapTheSettingsAskForMustBeInstalled() {
     var facts = Self.healthy
     facts.eventTaps = ["scroll", "rectangle"]
-    let h = makeHarness(facts)
+    let h = makeHarness(facts, settings: .withGestures)
     #expect(check(h, "Gestures")?.mark == .problem)
     #expect(check(h, "Gestures")?.detail == "pinch does nothing: its event tap is not installed (installed: scroll, rectangle)")
     facts.eventTaps = []
     #expect(
-      check(makeHarness(facts), "Gestures")?.detail
+      check(makeHarness(facts, settings: .withGestures), "Gestures")?.detail
         == "pinch, scroll and rectangle do nothing: their event taps are not installed (installed: none)")
     facts.eventTaps = ["rectangle"]
 
     // Switched off in the settings, it is not missed.
-    var settings = Settings()
+    var settings = Settings.withGestures
     settings.gesturesEnabled = false
     #expect(check(makeHarness(facts, settings: settings), "Gestures") == .init(mark: .ok, title: "Gestures", detail: "rectangle"))
     // ⇧-drag on the Desktop and the guard against the wallpaper click listen through the same tap as the rectangle.
@@ -307,20 +307,21 @@ import Testing
     // A tap doctor has not heard of is listed, not complained about.
     facts.eventTaps = ["pinch", "scroll", "rectangle", "double-click"]
     #expect(
-      check(makeHarness(facts), "Gestures") == .init(mark: .ok, title: "Gestures", detail: "pinch, scroll, rectangle, double-click"))
+      check(makeHarness(facts, settings: .withGestures), "Gestures")
+        == .init(mark: .ok, title: "Gestures", detail: "pinch, scroll, rectangle, double-click"))
   }
 
   @Test func theTapForScrollingIsATapOfItsOwn() {
-    // ⌃⌥ + scroll (F55) is on by default, and listens through another tap than the pinch.
+    // ⌃⌥ + scroll (F55) listens through another tap than the pinch.
     var facts = Self.healthy
     facts.eventTaps = ["pinch", "rectangle"]
     #expect(
-      check(makeHarness(facts), "Gestures")
+      check(makeHarness(facts, settings: .withGestures), "Gestures")
         == .init(
           mark: .problem, title: "Gestures",
           detail: "scroll does nothing: its event tap is not installed (installed: pinch, rectangle)"))
     // Nothing that scrolls is asked for: it is not missed.
-    var settings = Settings()
+    var settings = Settings.withGestures
     settings.scrollZoom = false
     #expect(check(makeHarness(facts, settings: settings), "Gestures") == .init(mark: .ok, title: "Gestures", detail: "pinch, rectangle"))
     // The view that follows the fingers slides with two of them (F16).

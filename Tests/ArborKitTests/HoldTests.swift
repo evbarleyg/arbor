@@ -24,7 +24,7 @@ private let cameraCommands = [
   func stage(
     displays: [DisplaySnapshot] = [FakeWindowSystem.standardDisplay], configure: (inout Settings) -> Void = { _ in }
   ) -> Stage {
-    var settings = Settings()
+    var settings = Settings.withGestures  // which a hold switches off
     // Both ship off (`outOfTheBoxNothingStartsAHoldByItself`). The tests about calls are about someone who has switched them on.
     settings.holdStillWhileCameraIsOn = true
     settings.holdStillFor = ["us.zoom.xos Zoom Meeting"]

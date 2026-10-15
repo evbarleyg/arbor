@@ -8,7 +8,8 @@ import Testing
 @Suite @MainActor struct DesktopGuardTests {
   /// root(h)[a, desktop, b], showing everything.
   func makeHarness() -> (Harness, WindowID, WindowID) {
-    let h = Harness()
+    // ⇧-drag on the Desktop asks the same question as the guard, and is what asks it in most of these tests.
+    let h = Harness(settings: .withGestures)
     let a = h.system.open(app: "Safari", frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     let b = h.system.open(app: "Notes", frame: CGRect(x: 300, y: 200, width: 600, height: 400))
     h.start()
@@ -41,7 +42,7 @@ import Testing
   @Test func theWallpaperAroundAWindowThatCannotFillItsSlotIsGuarded() {
     // Calculator, System Settings: centred in their slot, with wallpaper all round, inside what looks like
     // Arbor's territory.
-    let h = Harness()
+    let h = Harness(settings: .withGestures)
     let a = h.system.open(app: "Calculator", frame: CGRect(x: 100, y: 100, width: 200, height: 300))
     h.system.setMaximumSize(a, CGSize(width: 200, height: 300))
     h.start()
@@ -85,7 +86,7 @@ import Testing
   }
 
   @Test func aPinnedWindowAloneIsNothingDocked() {
-    let h = Harness()
+    let h = Harness(settings: .withGestures)
     let call = h.system.open(app: "Zoom", frame: CGRect(x: 100, y: 100, width: 320, height: 240))
     h.start()
     h.run("pin \(call.rawValue)")
@@ -135,7 +136,7 @@ import Testing
   }
 
   @Test func withNothingDockedNothingIsGuarded() {
-    let h = Harness()
+    let h = Harness(settings: .withGestures)
     _ = h.system.open(app: "Safari", frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     h.start()
     #expect(h.controller.desktopGuardZones().isEmpty)
@@ -159,7 +160,7 @@ import Testing
 
   @Test func whileAnAppThatKeepsItsOwnKeysIsInFrontNothingIsGuarded() {
     // F41: no event may pass through Arbor then, so the guard goes with the rest, and the tap's copy hears of it.
-    var settings = Settings()
+    var settings = Settings.withGestures
     settings.passThroughApps = ["com.example.emacs"]
     let h = Harness(settings: settings)
     let emacs = h.system.open(app: "Emacs")
@@ -201,14 +202,14 @@ import Testing
   }
 
   @Test func beforeTheStartNothingIsGuarded() {
-    #expect(Harness().controller.desktopGuardZones().isEmpty)
+    #expect(Harness(settings: .withGestures).controller.desktopGuardZones().isEmpty)
   }
 
   @Test func onlyDisplaysWithSomethingDockedAreGuarded() {
     let side = DisplaySnapshot(
       id: DisplayID("side"), frame: CGRect(x: 1440, y: 0, width: 1280, height: 800),
       visibleFrame: CGRect(x: 1440, y: 0, width: 1280, height: 800), isMain: false)
-    let h = Harness(displays: [FakeWindowSystem.standardDisplay, side])
+    let h = Harness(displays: [FakeWindowSystem.standardDisplay, side], settings: .withGestures)
     let main = h.system.open(app: "Safari", frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     _ = h.system.open(app: "Notes", frame: CGRect(x: 1500, y: 100, width: 500, height: 400))
     h.start()
