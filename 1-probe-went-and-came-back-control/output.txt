@@ -1,0 +1,236 @@
+# mac-shell: scripts/mac-shell/probe-went-and-came-back-control.sh at 06627e1, macOS 26.6.2, 2026-10-15T09:38Z
+
+== the build
+built the tools in 36s
+clock: built 36s after the script began, at 09:39:11Z
+
+== the Mac
+macOS 26.6.2 (25G83) on arm64, commit 06627e1
+this is probe-went-and-came-back-control: THE CONTROL, without Arbor; playing 1 of 2 on this dispatch
+1600 900 1600 900
+display: 1 0 0 1600 900 1600 900 1
+com.apple.WindowManager EnableTilingByEdgeDrag: not set
+com.apple.WindowManager EnableTopTilingByEdgeDrag: not set
+com.apple.WindowManager EnableTilingOptionAccelerator: not set
+com.apple.WindowManager EnableTiledWindowMargins: not set
+Reduce Motion: false
+displays before id 1 serial 305419896 frame 0 0 1600 900 main
+  vdisplay list: 1 07230EFA-7A8D-4E37-845C-19CC8737EEF5 0 0 1600 900 1 main 0 0 305419896
+clock: before done 39s after the script began, at 09:39:14Z
+the sampler writes mac-shell/samples.log (pid 8184), the witness mac-shell/witness.log (pid 8198)
+
+== the display that stays
+
+-- 1 display-stays-plug-stays: stays: display stays: plug
+> plug stays: display 2, serial 9, 1280 x 720: it came at -1280 0, where it belongs, and is not moved
+displays stays id 1 serial 305419896 frame 0 0 1600 900 main ; id 2 serial 9 frame -1280 0 1280 720 -
+  vdisplay list: 1 07230EFA-7A8D-4E37-845C-19CC8737EEF5 0 0 1600 900 1 main 0 0 305419896
+  vdisplay list: 2 5FA3C79F-BF47-4D2A-8196-327B0C194CEC -1280 0 1280 720 1 - 42928 1 9
+clock: stays done 45s after the script began, at 09:39:20Z
+the main display from here on (id x y w h): 1 0 0 1600 900
+
+== the two windows
+
+-- 2 open-LIVES: opens Notes
+> open -g -b com.apple.Notes 
+pid 8509 lists (id role subrole x y w h flags):
+  44 AXWindow AXStandardWindow 300 105 1000 660 main,close-disabled,sheets=1
+  w44 is LIVES
+something is in the way:
+  AXWindow/AXStandardWindow 300 105 1000 660
+    AXButton/AXCloseButton 308 113 16 16
+    AXButton/AXZoomButton 354 113 16 16
+    AXButton/AXMinimizeButton 331 113 16 16
+    AXSheet/- 563 135 475 600
+      AXButton/- 934 686 85 30 "Continue"
+pressed "Continue": 0
+pressed "Cancel": 0
+
+-- 3 open-STRADDLES: opens Terminal
+> open -g -b com.apple.Terminal 
+pid 8924 lists (id role subrole x y w h flags):
+  56 AXWindow AXStandardWindow 40 51 877 499 main
+  w56 is STRADDLES
+window LIVES 44 pid 8509 app com.apple.Notes: 44 AXWindow AXStandardWindow 300 105 1000 660 main,focused,toolbar
+window STRADDLES 56 pid 8924 app com.apple.Terminal: 56 AXWindow AXStandardWindow 40 51 877 499 main
+on the screen now, from the front (id pid level x y w h on owner):
+3 165 2147483630 5 5 28 40 on Window Server
+36 338 25 -225 0 31 30 on Control Center
+35 338 25 -194 0 42 30 on Control Center
+33 338 25 -152 0 152 30 on Control Center
+25 338 25 1375 0 31 30 on Control Center
+22 338 25 1406 0 42 30 on Control Center
+21 338 25 1448 0 152 30 on Control Center
+42 165 24 -1280 0 1280 30 on Window Server
+14 165 24 0 0 1600 30 on Window Server
+6 336 20 0 0 1600 900 on Dock
+44 8509 0 300 105 1000 660 on Notes
+56 8924 0 40 51 877 499 on Terminal
+13 340 -2147483603 0 0 1600 900 on Finder
+32 340 -2147483603 -1280 0 1280 720 on Finder
+34 336 -2147483624 -1280 0 1280 720 on Dock
+7 336 -2147483624 0 0 1600 900 on Dock
+2 165 -2147483626 0 0 1600 900 on Window Server
+41 165 -2147483626 -1280 0 1280 720 on Window Server
+
+== Arbor
+
+-- 4 arbor: arbor: no Arbor is started: this is the control
+no Arbor runs: `pgrep -x Arbor` finds no process; none is built or started by this script, and the question is asked again after the last step
+displays arbor id 1 serial 305419896 frame 0 0 1600 900 main ; id 2 serial 9 frame -1280 0 1280 720 -
+  vdisplay list: 1 07230EFA-7A8D-4E37-845C-19CC8737EEF5 0 0 1600 900 1 main 0 0 305419896
+  vdisplay list: 2 5FA3C79F-BF47-4D2A-8196-327B0C194CEC -1280 0 1280 720 1 - 42928 1 9
+at arbor LIVES 44 ax 300 105 1000 660 server 300 105 1000 660
+at arbor STRADDLES 56 ax 40 51 877 499 server 40 51 877 499
+clock: arbor done 67s after the script began, at 09:39:42Z
+
+== the journey
+
+-- 5 put-s0-home: s0: both windows are put wholly on the main display, through Accessibility
+put s0 LIVES 44 asked 300 105 1000 660 took 300 105 1000 660
+put s0 STRADDLES 56 asked 500 330 877 499 took 500 330 877 499
+displays s0 id 1 serial 305419896 frame 0 0 1600 900 main ; id 2 serial 9 frame -1280 0 1280 720 -
+  vdisplay list: 1 07230EFA-7A8D-4E37-845C-19CC8737EEF5 0 0 1600 900 1 main 0 0 305419896
+  vdisplay list: 2 5FA3C79F-BF47-4D2A-8196-327B0C194CEC -1280 0 1280 720 1 - 42928 1 9
+at s0 LIVES 44 ax 300 105 1000 660 server 300 105 1000 660
+at s0 STRADDLES 56 ax 500 330 877 499 server 500 330 877 499
+clock: s0 done 71s after the script began, at 09:39:46Z
+
+-- 6 display-s1-plug-A: s1: display A: plug
+> plug A: display 3, serial 1, 1920 x 1080: it came at 1600 0, where it belongs, and is not moved
+displays s1 id 1 serial 305419896 frame 0 0 1600 900 main ; id 2 serial 9 frame -1280 0 1280 720 - ; id 3 serial 1 frame 1600 0 1920 1080 -
+  vdisplay list: 1 07230EFA-7A8D-4E37-845C-19CC8737EEF5 0 0 1600 900 1 main 0 0 305419896
+  vdisplay list: 2 5FA3C79F-BF47-4D2A-8196-327B0C194CEC -1280 0 1280 720 1 - 42928 1 9
+  vdisplay list: 3 FA71D0AD-BF15-4363-9EAC-8A9DEFC22C41 1600 0 1920 1080 1 - 42928 1 1
+at s1 LIVES 44 ax 300 165 1000 600 server 300 165 1000 600
+at s1 STRADDLES 56 ax 40 51 863 499 server 40 51 863 499
+clock: s1 done 76s after the script began, at 09:39:51Z
+
+-- 7 put-s2-on-A: s2: LIVES is put wholly on A and STRADDLES across the edge between the main display and A, through Accessibility
+put s2 LIVES 44 asked 2050 190 1000 660 took 2050 190 1000 660
+put s2 STRADDLES 56 asked 1450 300 863 499 took 1450 300 863 499
+displays s2 id 1 serial 305419896 frame 0 0 1600 900 main ; id 2 serial 9 frame -1280 0 1280 720 - ; id 3 serial 1 frame 1600 0 1920 1080 -
+  vdisplay list: 1 07230EFA-7A8D-4E37-845C-19CC8737EEF5 0 0 1600 900 1 main 0 0 305419896
+  vdisplay list: 2 5FA3C79F-BF47-4D2A-8196-327B0C194CEC -1280 0 1280 720 1 - 42928 1 9
+  vdisplay list: 3 FA71D0AD-BF15-4363-9EAC-8A9DEFC22C41 1600 0 1920 1080 1 - 42928 1 1
+at s2 LIVES 44 ax 2050 190 1000 660 server 2050 190 1000 660
+at s2 STRADDLES 56 ax 1450 300 863 499 server 1450 300 863 499
+clock: s2 done 80s after the script began, at 09:39:55Z
+
+-- 8 display-s3-unplug-A: s3: display A: unplug
+> unplug A
+displays s3 id 1 serial 305419896 frame 0 0 1600 900 main ; id 2 serial 9 frame -1280 0 1280 720 -
+  vdisplay list: 1 07230EFA-7A8D-4E37-845C-19CC8737EEF5 0 0 1600 900 1 main 0 0 305419896
+  vdisplay list: 2 5FA3C79F-BF47-4D2A-8196-327B0C194CEC -1280 0 1280 720 1 - 42928 1 9
+at s3 LIVES 44 ax 300 165 1000 600 server 300 165 1000 600
+at s3 STRADDLES 56 ax 40 51 863 499 server 40 51 863 499
+clock: s3 done 85s after the script began, at 09:40:00Z
+
+-- 9 display-s4-plug-A: s4: display A: plug
+> plug A: display 4, serial 1, 1920 x 1080: it came at 1600 0, where it belongs, and is not moved
+displays s4 id 1 serial 305419896 frame 0 0 1600 900 main ; id 2 serial 9 frame -1280 0 1280 720 - ; id 4 serial 1 frame 1600 0 1920 1080 -
+  vdisplay list: 1 07230EFA-7A8D-4E37-845C-19CC8737EEF5 0 0 1600 900 1 main 0 0 305419896
+  vdisplay list: 2 5FA3C79F-BF47-4D2A-8196-327B0C194CEC -1280 0 1280 720 1 - 42928 1 9
+  vdisplay list: 4 FA71D0AD-BF15-4363-9EAC-8A9DEFC22C41 1600 0 1920 1080 1 - 42928 1 1
+at s4 LIVES 44 ax 2050 190 1000 660 server 2050 190 1000 660
+at s4 STRADDLES 56 ax 1450 300 863 499 server 1450 300 863 499
+clock: s4 done 89s after the script began, at 09:40:04Z
+
+-- 10 display-s5-unplug-A: s5: display A: unplug
+> unplug A
+displays s5 id 1 serial 305419896 frame 0 0 1600 900 main ; id 2 serial 9 frame -1280 0 1280 720 -
+  vdisplay list: 1 07230EFA-7A8D-4E37-845C-19CC8737EEF5 0 0 1600 900 1 main 0 0 305419896
+  vdisplay list: 2 5FA3C79F-BF47-4D2A-8196-327B0C194CEC -1280 0 1280 720 1 - 42928 1 9
+at s5 LIVES 44 ax 300 165 1000 600 server 300 165 1000 600
+at s5 STRADDLES 56 ax 40 51 863 499 server 40 51 863 499
+clock: s5 done 94s after the script began, at 09:40:09Z
+
+-- 11 display-s6-plug-B: s6: display B: plug
+> plug B: display 5, serial 2, 1280 x 800: it came at -1280 0 and is moved to 1600 0: now at 1600 0 1280 800
+displays s6 id 1 serial 305419896 frame 0 0 1600 900 main ; id 2 serial 9 frame -1280 0 1280 720 - ; id 5 serial 2 frame 1600 0 1280 800 -
+  vdisplay list: 1 07230EFA-7A8D-4E37-845C-19CC8737EEF5 0 0 1600 900 1 main 0 0 305419896
+  vdisplay list: 2 5FA3C79F-BF47-4D2A-8196-327B0C194CEC -1280 0 1280 720 1 - 42928 1 9
+  vdisplay list: 5 A4D4B536-D349-4832-805D-C9B023C505B8 1600 0 1280 800 1 - 42928 1 2
+at s6 LIVES 44 ax 300 165 1000 600 server 300 165 1000 600
+at s6 STRADDLES 56 ax 40 51 863 499 server 40 51 863 499
+clock: s6 done 98s after the script began, at 09:40:13Z
+
+-- 12 display-s7-unplug-B: s7: display B: unplug
+> unplug B
+displays s7 id 1 serial 305419896 frame 0 0 1600 900 main ; id 2 serial 9 frame -1280 0 1280 720 -
+  vdisplay list: 1 07230EFA-7A8D-4E37-845C-19CC8737EEF5 0 0 1600 900 1 main 0 0 305419896
+  vdisplay list: 2 5FA3C79F-BF47-4D2A-8196-327B0C194CEC -1280 0 1280 720 1 - 42928 1 9
+at s7 LIVES 44 ax 300 165 1000 600 server 300 165 1000 600
+at s7 STRADDLES 56 ax 40 51 863 499 server 40 51 863 499
+clock: s7 done 103s after the script began, at 09:40:18Z
+
+-- 13 display-s8-plug-A: s8: display A: plug
+> plug A: display 6, serial 1, 1920 x 1080: it came at 1600 0, where it belongs, and is not moved
+displays s8 id 1 serial 305419896 frame 0 0 1600 900 main ; id 2 serial 9 frame -1280 0 1280 720 - ; id 6 serial 1 frame 1600 0 1920 1080 -
+  vdisplay list: 1 07230EFA-7A8D-4E37-845C-19CC8737EEF5 0 0 1600 900 1 main 0 0 305419896
+  vdisplay list: 2 5FA3C79F-BF47-4D2A-8196-327B0C194CEC -1280 0 1280 720 1 - 42928 1 9
+  vdisplay list: 6 FA71D0AD-BF15-4363-9EAC-8A9DEFC22C41 1600 0 1920 1080 1 - 42928 1 1
+at s8 LIVES 44 ax 2050 190 1000 660 server 2050 190 1000 660
+at s8 STRADDLES 56 ax 1450 300 863 499 server 1450 300 863 499
+clock: s8 done 107s after the script began, at 09:40:22Z
+
+-- 14 display-s9-unplug-A: s9: display A: unplug
+> unplug A
+displays s9 id 1 serial 305419896 frame 0 0 1600 900 main ; id 2 serial 9 frame -1280 0 1280 720 -
+  vdisplay list: 1 07230EFA-7A8D-4E37-845C-19CC8737EEF5 0 0 1600 900 1 main 0 0 305419896
+  vdisplay list: 2 5FA3C79F-BF47-4D2A-8196-327B0C194CEC -1280 0 1280 720 1 - 42928 1 9
+at s9 LIVES 44 ax 300 165 1000 600 server 300 165 1000 600
+at s9 STRADDLES 56 ax 40 51 863 499 server 40 51 863 499
+clock: s9 done 112s after the script began, at 09:40:27Z
+
+-- 15 display-s10-plug-A: s10: display A: plug
+> plug A: display 7, serial 1, 1920 x 1080: it came at 1600 0, where it belongs, and is not moved
+displays s10 id 1 serial 305419896 frame 0 0 1600 900 main ; id 2 serial 9 frame -1280 0 1280 720 - ; id 7 serial 1 frame 1600 0 1920 1080 -
+  vdisplay list: 1 07230EFA-7A8D-4E37-845C-19CC8737EEF5 0 0 1600 900 1 main 0 0 305419896
+  vdisplay list: 2 5FA3C79F-BF47-4D2A-8196-327B0C194CEC -1280 0 1280 720 1 - 42928 1 9
+  vdisplay list: 7 FA71D0AD-BF15-4363-9EAC-8A9DEFC22C41 1600 0 1920 1080 1 - 42928 1 1
+at s10 LIVES 44 ax 2050 190 1000 660 server 2050 190 1000 660
+at s10 STRADDLES 56 ax 1450 300 863 499 server 1450 300 863 499
+clock: s10 done 116s after the script began, at 09:40:31Z
+
+-- 16 display-s11-unplug-A: s11: display A: unplug
+> unplug A
+displays s11 id 1 serial 305419896 frame 0 0 1600 900 main ; id 2 serial 9 frame -1280 0 1280 720 -
+  vdisplay list: 1 07230EFA-7A8D-4E37-845C-19CC8737EEF5 0 0 1600 900 1 main 0 0 305419896
+  vdisplay list: 2 5FA3C79F-BF47-4D2A-8196-327B0C194CEC -1280 0 1280 720 1 - 42928 1 9
+at s11 LIVES 44 ax 300 165 1000 600 server 300 165 1000 600
+at s11 STRADDLES 56 ax 40 51 863 499 server 40 51 863 499
+clock: s11 done 121s after the script began, at 09:40:36Z
+
+== the end
+
+-- 17 quit: quit: nothing happens: the control has no Arbor to quit
+displays quit id 1 serial 305419896 frame 0 0 1600 900 main ; id 2 serial 9 frame -1280 0 1280 720 -
+  vdisplay list: 1 07230EFA-7A8D-4E37-845C-19CC8737EEF5 0 0 1600 900 1 main 0 0 305419896
+  vdisplay list: 2 5FA3C79F-BF47-4D2A-8196-327B0C194CEC -1280 0 1280 720 1 - 42928 1 9
+at quit LIVES 44 ax 300 165 1000 600 server 300 165 1000 600
+at quit STRADDLES 56 ax 40 51 863 499 server 40 51 863 499
+clock: quit done 125s after the script began, at 09:40:40Z
+
+-- 18 display-end-unplug-stays: end: display stays: unplug
+> unplug stays
+displays end id 1 serial 305419896 frame 0 0 1600 900 main
+  vdisplay list: 1 07230EFA-7A8D-4E37-845C-19CC8737EEF5 0 0 1600 900 1 main 0 0 305419896
+at end LIVES 44 ax 300 165 1000 600 server 300 165 1000 600
+at end STRADDLES 56 ax 40 51 863 499 server 40 51 863 499
+clock: end done 130s after the script began, at 09:40:45Z
+no Arbor runs now: `pgrep -x Arbor` finds no process
+reach LIVES 44 100 % of it lie on a display: 300 165 1000 600
+  ✔ LIVES is within reach at the end: a tenth of it or more lies on a display
+reach STRADDLES 56 100 % of it lie on a display: 40 51 863 499
+  ✔ STRADDLES is within reach at the end: a tenth of it or more lies on a display
+Reduce Motion: true
+
+== what came back
+mac-shell/samples.log: 409 lines, 18 steps
+  the sampler's own account: S samples 3180 seconds 90.7 hz 35.1 cost-ms 1.94 late 118 longest-gap-ms 254
+mac-shell/macos-reports.log: 52 lines
+clock: all done 131s after the script began, at 09:40:46Z
+
+2 passed, 0 failed
+exit code 0

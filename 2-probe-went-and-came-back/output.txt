@@ -1,0 +1,482 @@
+# mac-shell: scripts/mac-shell/probe-went-and-came-back.sh at 06627e1, macOS 26.6.2, 2026-10-15T09:40Z
+
+== the build
+built Arbor, the pointer tool and the app bundles in 8s
+clock: built 10s after the script began, at 09:40:58Z
+
+== the Mac
+macOS 26.6.2 (25G83) on arm64, commit 06627e1
+this is probe-went-and-came-back: WITH ARBOR; playing 2 of 2 on this dispatch
+1600 900 1600 900
+display: 1 0 0 1600 900 1600 900 1
+com.apple.WindowManager EnableTilingByEdgeDrag: not set
+com.apple.WindowManager EnableTopTilingByEdgeDrag: not set
+com.apple.WindowManager EnableTilingOptionAccelerator: not set
+com.apple.WindowManager EnableTiledWindowMargins: not set
+Reduce Motion: false
+displays before id 1 serial 305419896 frame 0 0 1600 900 main
+  vdisplay list: 1 07230EFA-7A8D-4E37-845C-19CC8737EEF5 0 0 1600 900 1 main 0 0 305419896
+clock: before done 12s after the script began, at 09:41:00Z
+the sampler writes mac-shell/samples.log (pid 14018), the witness mac-shell/witness.log (pid 14028)
+
+== the display that stays
+
+-- 1 display-stays-plug-stays: stays: display stays: plug
+> plug stays: display 8, serial 9, 1280 x 720: it came at -1280 0, where it belongs, and is not moved
+displays stays id 1 serial 305419896 frame 0 0 1600 900 main ; id 8 serial 9 frame -1280 0 1280 720 -
+  vdisplay list: 1 07230EFA-7A8D-4E37-845C-19CC8737EEF5 0 0 1600 900 1 main 0 0 305419896
+  vdisplay list: 8 5FA3C79F-BF47-4D2A-8196-327B0C194CEC -1280 0 1280 720 1 - 42928 1 9
+clock: stays done 18s after the script began, at 09:41:06Z
+the main display from here on (id x y w h): 1 0 0 1600 900
+
+== the two windows
+
+-- 2 open-LIVES: opens Notes
+> open -g -b com.apple.Notes 
+pid 14405 lists (id role subrole x y w h flags):
+  196 AXWindow AXStandardWindow 300 165 1000 600 main,toolbar
+  w196 is LIVES
+
+-- 3 open-STRADDLES: opens Terminal
+> open -g -b com.apple.Terminal 
+pid 14487 lists (id role subrole x y w h flags):
+  205 AXWindow AXStandardWindow 40 51 877 499 main
+  w205 is STRADDLES
+window LIVES 196 pid 14405 app com.apple.Notes: 196 AXWindow AXStandardWindow 300 165 1000 600 main,toolbar
+window STRADDLES 205 pid 14487 app com.apple.Terminal: 205 AXWindow AXStandardWindow 40 51 877 499 main
+on the screen now, from the front (id pid level x y w h on owner):
+3 165 2147483630 5 5 28 40 on Window Server
+194 338 25 -225 0 31 30 on Control Center
+191 338 25 -194 0 42 30 on Control Center
+185 338 25 -152 0 152 30 on Control Center
+25 338 25 1375 0 31 30 on Control Center
+22 338 25 1406 0 42 30 on Control Center
+21 338 25 1448 0 152 30 on Control Center
+192 165 24 -1280 0 1280 30 on Window Server
+14 165 24 0 0 1600 30 on Window Server
+6 336 20 0 0 1600 900 on Dock
+196 14405 0 300 165 1000 600 on Notes
+205 14487 0 40 51 877 499 on Terminal
+13 340 -2147483603 0 0 1600 900 on Finder
+184 340 -2147483603 -1280 0 1280 720 on Finder
+190 336 -2147483624 -1280 0 1280 720 on Dock
+7 336 -2147483624 0 0 1600 900 on Dock
+2 165 -2147483626 0 0 1600 900 on Window Server
+195 165 -2147483626 -1280 0 1280 720 on Window Server
+
+== Arbor
+
+-- 4 arbor: arbor: Arbor is started
+session 1: Arbor pid 14893, ARBOR_LIMIT=none: running: 2 displays, 0 docked and 2 floating, 0 out of view
+Arbor dev
+both windows float, nothing is docked, Arbor is not paused, and its home holds no settings.json
+trace: recording traces/2026-10-15-094120-went-and-came-back.jsonl: 1 lines, 2 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+trace: recording traces/2026-10-15-094120-went-and-came-back.jsonl: 2 lines, 2 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+displays arbor id 1 serial 305419896 frame 0 0 1600 900 main ; id 8 serial 9 frame -1280 0 1280 720 -
+  vdisplay list: 1 07230EFA-7A8D-4E37-845C-19CC8737EEF5 0 0 1600 900 1 main 0 0 305419896
+  vdisplay list: 8 5FA3C79F-BF47-4D2A-8196-327B0C194CEC -1280 0 1280 720 1 - 42928 1 9
+at arbor LIVES 196 ax 300 165 1000 600 server 300 165 1000 600
+at arbor STRADDLES 205 ax 40 51 877 499 server 40 51 877 499
+arbor arbor | display 1 0 0 1600 900, visible 0 31 1600 791, camera n0, back no
+arbor arbor |   Desktop          12 43 1576 767
+arbor arbor | display 2 -1280 0 1280 720, visible -1280 31 1280 689, camera n0, back no
+arbor arbor |   Desktop          -1268 43 1256 665
+arbor arbor |   w196 300 165 1000 600     display 1, floating focused
+arbor arbor |   w205 40 51 877 499        display 1, floating
+clock: arbor done 37s after the script began, at 09:41:25Z
+
+== the journey
+
+-- 5 put-s0-home: s0: both windows are put wholly on the main display, through Accessibility
+put s0 LIVES 196 asked 300 105 1000 660 took 300 105 1000 660
+put s0 STRADDLES 205 asked 500 330 877 499 took 500 330 877 499
+displays s0 id 1 serial 305419896 frame 0 0 1600 900 main ; id 8 serial 9 frame -1280 0 1280 720 -
+  vdisplay list: 1 07230EFA-7A8D-4E37-845C-19CC8737EEF5 0 0 1600 900 1 main 0 0 305419896
+  vdisplay list: 8 5FA3C79F-BF47-4D2A-8196-327B0C194CEC -1280 0 1280 720 1 - 42928 1 9
+at s0 LIVES 196 ax 300 105 1000 660 server 300 105 1000 660
+at s0 STRADDLES 205 ax 500 330 877 499 server 500 330 877 499
+arbor s0 | display 1 0 0 1600 900, visible 0 31 1600 791, camera n0, back no
+arbor s0 |   Desktop          12 43 1576 767
+arbor s0 | display 2 -1280 0 1280 720, visible -1280 31 1280 689, camera n0, back no
+arbor s0 |   Desktop          -1268 43 1256 665
+arbor s0 |   w196 300 105 1000 660     display 1, floating focused
+arbor s0 |   w205 500 330 877 499      display 1, floating
+clock: s0 done 41s after the script began, at 09:41:29Z
+
+-- 6 display-s1-plug-A: s1: display A: plug
+> plug A: display 9, serial 1, 1920 x 1080: it came at 1600 0, where it belongs, and is not moved
+displays s1 id 1 serial 305419896 frame 0 0 1600 900 main ; id 8 serial 9 frame -1280 0 1280 720 - ; id 9 serial 1 frame 1600 0 1920 1080 -
+  vdisplay list: 1 07230EFA-7A8D-4E37-845C-19CC8737EEF5 0 0 1600 900 1 main 0 0 305419896
+  vdisplay list: 8 5FA3C79F-BF47-4D2A-8196-327B0C194CEC -1280 0 1280 720 1 - 42928 1 9
+  vdisplay list: 9 FA71D0AD-BF15-4363-9EAC-8A9DEFC22C41 1600 0 1920 1080 1 - 42928 1 1
+at s1 LIVES 196 ax 300 165 1000 600 server 300 165 1000 600
+at s1 STRADDLES 205 ax 500 330 877 499 server 500 330 877 499
+arbor s1 | display 1 0 0 1600 900, visible 0 31 1600 791, camera n0, back no
+arbor s1 |   Desktop          12 43 1576 767
+arbor s1 | display 2 -1280 0 1280 720, visible -1280 31 1280 689, camera n0, back no
+arbor s1 |   Desktop          -1268 43 1256 665
+arbor s1 | display 3 1600 0 1920 1080, visible 1600 31 1920 1049, camera n0, back no
+arbor s1 |   Desktop          1612 43 1896 1025
+arbor s1 |   w196 300 165 1000 600     display 1, floating focused
+arbor s1 |   w205 500 330 877 499      display 1, floating
+clock: s1 done 46s after the script began, at 09:41:34Z
+
+-- 7 put-s2-on-A: s2: LIVES is put wholly on A and STRADDLES across the edge between the main display and A, through Accessibility
+put s2 LIVES 196 asked 2050 190 1000 660 took 2050 190 1000 660
+put s2 STRADDLES 205 asked 1450 300 877 499 took 1450 300 877 499
+displays s2 id 1 serial 305419896 frame 0 0 1600 900 main ; id 8 serial 9 frame -1280 0 1280 720 - ; id 9 serial 1 frame 1600 0 1920 1080 -
+  vdisplay list: 1 07230EFA-7A8D-4E37-845C-19CC8737EEF5 0 0 1600 900 1 main 0 0 305419896
+  vdisplay list: 8 5FA3C79F-BF47-4D2A-8196-327B0C194CEC -1280 0 1280 720 1 - 42928 1 9
+  vdisplay list: 9 FA71D0AD-BF15-4363-9EAC-8A9DEFC22C41 1600 0 1920 1080 1 - 42928 1 1
+at s2 LIVES 196 ax 2050 190 1000 660 server 2050 190 1000 660
+at s2 STRADDLES 205 ax 1450 300 877 499 server 1450 300 877 499
+arbor s2 | display 1 0 0 1600 900, visible 0 31 1600 791, camera n0, back no
+arbor s2 |   Desktop          12 43 1576 767
+arbor s2 | display 2 -1280 0 1280 720, visible -1280 31 1280 689, camera n0, back no
+arbor s2 |   Desktop          -1268 43 1256 665
+arbor s2 | display 3 1600 0 1920 1080, visible 1600 31 1920 1049, camera n0, back no
+arbor s2 |   Desktop          1612 43 1896 1025
+arbor s2 |   w196 2050 190 1000 660    display 3, floating focused
+arbor s2 |   w205 1450 300 877 499     display 3, floating
+clock: s2 done 50s after the script began, at 09:41:38Z
+
+-- 8 display-s3-unplug-A: s3: display A: unplug
+> unplug A
+displays s3 id 1 serial 305419896 frame 0 0 1600 900 main ; id 8 serial 9 frame -1280 0 1280 720 -
+  vdisplay list: 1 07230EFA-7A8D-4E37-845C-19CC8737EEF5 0 0 1600 900 1 main 0 0 305419896
+  vdisplay list: 8 5FA3C79F-BF47-4D2A-8196-327B0C194CEC -1280 0 1280 720 1 - 42928 1 9
+at s3 LIVES 196 ax 300 165 1000 600 server 300 165 1000 600
+at s3 STRADDLES 205 ax 0 300 877 499 server 0 300 877 499
+arbor s3 | display 1 0 0 1600 900, visible 0 31 1600 791, camera n0, back no
+arbor s3 |   Desktop          12 43 1576 767
+arbor s3 | display 2 -1280 0 1280 720, visible -1280 31 1280 689, camera n0, back no
+arbor s3 |   Desktop          -1268 43 1256 665
+arbor s3 |   w196 300 165 1000 600     display 1, floating focused
+arbor s3 |   w205 0 300 877 499        display 1, floating
+clock: s3 done 55s after the script began, at 09:41:43Z
+
+-- 9 display-s4-plug-A: s4: display A: plug
+> plug A: display 10, serial 1, 1920 x 1080: it came at 1600 0, where it belongs, and is not moved
+displays s4 id 1 serial 305419896 frame 0 0 1600 900 main ; id 8 serial 9 frame -1280 0 1280 720 - ; id 10 serial 1 frame 1600 0 1920 1080 -
+  vdisplay list: 1 07230EFA-7A8D-4E37-845C-19CC8737EEF5 0 0 1600 900 1 main 0 0 305419896
+  vdisplay list: 8 5FA3C79F-BF47-4D2A-8196-327B0C194CEC -1280 0 1280 720 1 - 42928 1 9
+  vdisplay list: 10 FA71D0AD-BF15-4363-9EAC-8A9DEFC22C41 1600 0 1920 1080 1 - 42928 1 1
+at s4 LIVES 196 ax 2050 190 1000 660 server 2050 190 1000 660
+at s4 STRADDLES 205 ax 1600 300 877 499 server 1600 300 877 499
+arbor s4 | display 1 0 0 1600 900, visible 0 31 1600 791, camera n0, back no
+arbor s4 |   Desktop          12 43 1576 767
+arbor s4 | display 2 -1280 0 1280 720, visible -1280 31 1280 689, camera n0, back no
+arbor s4 |   Desktop          -1268 43 1256 665
+arbor s4 | display 3 1600 0 1920 1080, visible 1600 31 1920 1049, camera n0, back no
+arbor s4 |   Desktop          1612 43 1896 1025
+arbor s4 |   w196 2050 190 1000 660    display 1, floating focused
+arbor s4 |   w205 1600 300 877 499     display 3, floating
+clock: s4 done 59s after the script began, at 09:41:47Z
+
+-- 10 display-s5-unplug-A: s5: display A: unplug
+> unplug A
+displays s5 id 1 serial 305419896 frame 0 0 1600 900 main ; id 8 serial 9 frame -1280 0 1280 720 -
+  vdisplay list: 1 07230EFA-7A8D-4E37-845C-19CC8737EEF5 0 0 1600 900 1 main 0 0 305419896
+  vdisplay list: 8 5FA3C79F-BF47-4D2A-8196-327B0C194CEC -1280 0 1280 720 1 - 42928 1 9
+at s5 LIVES 196 ax 300 165 1000 600 server 300 165 1000 600
+at s5 STRADDLES 205 ax 0 300 877 499 server 0 300 877 499
+arbor s5 | display 1 0 0 1600 900, visible 0 31 1600 791, camera n0, back no
+arbor s5 |   Desktop          12 43 1576 767
+arbor s5 | display 2 -1280 0 1280 720, visible -1280 31 1280 689, camera n0, back no
+arbor s5 |   Desktop          -1268 43 1256 665
+arbor s5 |   w196 300 165 1000 600     display 1, floating focused
+arbor s5 |   w205 0 300 877 499        display 1, floating
+clock: s5 done 63s after the script began, at 09:41:52Z
+
+-- 11 display-s6-plug-B: s6: display B: plug
+> plug B: display 11, serial 2, 1280 x 800: it came at 1600 0, where it belongs, and is not moved
+displays s6 id 1 serial 305419896 frame 0 0 1600 900 main ; id 8 serial 9 frame -1280 0 1280 720 - ; id 11 serial 2 frame 1600 0 1280 800 -
+  vdisplay list: 1 07230EFA-7A8D-4E37-845C-19CC8737EEF5 0 0 1600 900 1 main 0 0 305419896
+  vdisplay list: 8 5FA3C79F-BF47-4D2A-8196-327B0C194CEC -1280 0 1280 720 1 - 42928 1 9
+  vdisplay list: 11 A4D4B536-D349-4832-805D-C9B023C505B8 1600 0 1280 800 1 - 42928 1 2
+at s6 LIVES 196 ax 300 165 1000 600 server 300 165 1000 600
+at s6 STRADDLES 205 ax 0 300 877 499 server 0 300 877 499
+arbor s6 | display 1 0 0 1600 900, visible 0 31 1600 791, camera n0, back no
+arbor s6 |   Desktop          12 43 1576 767
+arbor s6 | display 2 -1280 0 1280 720, visible -1280 31 1280 689, camera n0, back no
+arbor s6 |   Desktop          -1268 43 1256 665
+arbor s6 | display 3 1600 0 1280 800, visible 1600 31 1280 769, camera n0, back no
+arbor s6 |   Desktop          1612 43 1256 745
+arbor s6 |   w196 300 165 1000 600     display 1, floating focused
+arbor s6 |   w205 0 300 877 499        display 1, floating
+clock: s6 done 68s after the script began, at 09:41:56Z
+
+-- 12 display-s7-unplug-B: s7: display B: unplug
+> unplug B
+displays s7 id 1 serial 305419896 frame 0 0 1600 900 main ; id 8 serial 9 frame -1280 0 1280 720 -
+  vdisplay list: 1 07230EFA-7A8D-4E37-845C-19CC8737EEF5 0 0 1600 900 1 main 0 0 305419896
+  vdisplay list: 8 5FA3C79F-BF47-4D2A-8196-327B0C194CEC -1280 0 1280 720 1 - 42928 1 9
+at s7 LIVES 196 ax 300 165 1000 600 server 300 165 1000 600
+at s7 STRADDLES 205 ax 40 51 863 499 server 40 51 863 499
+arbor s7 | display 1 0 0 1600 900, visible 0 31 1600 791, camera n0, back no
+arbor s7 |   Desktop          12 43 1576 767
+arbor s7 | display 2 -1280 0 1280 720, visible -1280 31 1280 689, camera n0, back no
+arbor s7 |   Desktop          -1268 43 1256 665
+arbor s7 |   w196 300 165 1000 600     display 1, floating focused
+arbor s7 |   w205 40 51 863 499        display 1, floating
+clock: s7 done 72s after the script began, at 09:42:00Z
+
+-- 13 display-s8-plug-A: s8: display A: plug
+> plug A: display 12, serial 1, 1920 x 1080: it came at 1600 0, where it belongs, and is not moved
+displays s8 id 1 serial 305419896 frame 0 0 1600 900 main ; id 8 serial 9 frame -1280 0 1280 720 - ; id 12 serial 1 frame 1600 0 1920 1080 -
+  vdisplay list: 1 07230EFA-7A8D-4E37-845C-19CC8737EEF5 0 0 1600 900 1 main 0 0 305419896
+  vdisplay list: 8 5FA3C79F-BF47-4D2A-8196-327B0C194CEC -1280 0 1280 720 1 - 42928 1 9
+  vdisplay list: 12 FA71D0AD-BF15-4363-9EAC-8A9DEFC22C41 1600 0 1920 1080 1 - 42928 1 1
+at s8 LIVES 196 ax 2050 190 1000 660 server 2050 190 1000 660
+at s8 STRADDLES 205 ax 1600 300 877 499 server 1600 300 877 499
+arbor s8 | display 1 0 0 1600 900, visible 0 31 1600 791, camera n0, back no
+arbor s8 |   Desktop          12 43 1576 767
+arbor s8 | display 2 -1280 0 1280 720, visible -1280 31 1280 689, camera n0, back no
+arbor s8 |   Desktop          -1268 43 1256 665
+arbor s8 | display 3 1600 0 1920 1080, visible 1600 31 1920 1049, camera n0, back no
+arbor s8 |   Desktop          1612 43 1896 1025
+arbor s8 |   w196 2050 190 1000 660    display 1, floating focused
+arbor s8 |   w205 1600 300 877 499     display 3, floating
+clock: s8 done 77s after the script began, at 09:42:05Z
+
+-- 14 display-s9-unplug-A: s9: display A: unplug
+> unplug A
+displays s9 id 1 serial 305419896 frame 0 0 1600 900 main ; id 8 serial 9 frame -1280 0 1280 720 -
+  vdisplay list: 1 07230EFA-7A8D-4E37-845C-19CC8737EEF5 0 0 1600 900 1 main 0 0 305419896
+  vdisplay list: 8 5FA3C79F-BF47-4D2A-8196-327B0C194CEC -1280 0 1280 720 1 - 42928 1 9
+at s9 LIVES 196 ax 300 165 1000 600 server 300 165 1000 600
+at s9 STRADDLES 205 ax 0 300 877 499 server 0 300 877 499
+arbor s9 | display 1 0 0 1600 900, visible 0 31 1600 791, camera n0, back no
+arbor s9 |   Desktop          12 43 1576 767
+arbor s9 | display 2 -1280 0 1280 720, visible -1280 31 1280 689, camera n0, back no
+arbor s9 |   Desktop          -1268 43 1256 665
+arbor s9 |   w196 300 165 1000 600     display 1, floating focused
+arbor s9 |   w205 0 300 877 499        display 1, floating
+clock: s9 done 81s after the script began, at 09:42:09Z
+
+-- 15 display-s10-plug-A: s10: display A: plug
+> plug A: display 13, serial 1, 1920 x 1080: it came at 1600 0, where it belongs, and is not moved
+displays s10 id 1 serial 305419896 frame 0 0 1600 900 main ; id 8 serial 9 frame -1280 0 1280 720 - ; id 13 serial 1 frame 1600 0 1920 1080 -
+  vdisplay list: 1 07230EFA-7A8D-4E37-845C-19CC8737EEF5 0 0 1600 900 1 main 0 0 305419896
+  vdisplay list: 8 5FA3C79F-BF47-4D2A-8196-327B0C194CEC -1280 0 1280 720 1 - 42928 1 9
+  vdisplay list: 13 FA71D0AD-BF15-4363-9EAC-8A9DEFC22C41 1600 0 1920 1080 1 - 42928 1 1
+at s10 LIVES 196 ax 2050 190 1000 660 server 2050 190 1000 660
+at s10 STRADDLES 205 ax 1600 300 877 499 server 1600 300 877 499
+arbor s10 | display 1 0 0 1600 900, visible 0 31 1600 791, camera n0, back no
+arbor s10 |   Desktop          12 43 1576 767
+arbor s10 | display 2 -1280 0 1280 720, visible -1280 31 1280 689, camera n0, back no
+arbor s10 |   Desktop          -1268 43 1256 665
+arbor s10 | display 3 1600 0 1920 1080, visible 1600 31 1920 1049, camera n0, back no
+arbor s10 |   Desktop          1612 43 1896 1025
+arbor s10 |   w196 2050 190 1000 660    display 1, floating focused
+arbor s10 |   w205 1600 300 877 499     display 3, floating
+clock: s10 done 86s after the script began, at 09:42:14Z
+
+-- 16 display-s11-unplug-A: s11: display A: unplug
+> unplug A
+displays s11 id 1 serial 305419896 frame 0 0 1600 900 main ; id 8 serial 9 frame -1280 0 1280 720 -
+  vdisplay list: 1 07230EFA-7A8D-4E37-845C-19CC8737EEF5 0 0 1600 900 1 main 0 0 305419896
+  vdisplay list: 8 5FA3C79F-BF47-4D2A-8196-327B0C194CEC -1280 0 1280 720 1 - 42928 1 9
+at s11 LIVES 196 ax 300 165 1000 600 server 300 165 1000 600
+at s11 STRADDLES 205 ax 0 300 877 499 server 0 300 877 499
+arbor s11 | display 1 0 0 1600 900, visible 0 31 1600 791, camera n0, back no
+arbor s11 |   Desktop          12 43 1576 767
+arbor s11 | display 2 -1280 0 1280 720, visible -1280 31 1280 689, camera n0, back no
+arbor s11 |   Desktop          -1268 43 1256 665
+arbor s11 |   w196 300 165 1000 600     display 1, floating focused
+arbor s11 |   w205 0 300 877 499        display 1, floating
+clock: s11 done 90s after the script began, at 09:42:18Z
+
+== P1. out of view, with a display below the main one
+trace: recording traces/2026-10-15-094218-went-and-came-back-P1.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+trace: recording traces/2026-10-15-094218-went-and-came-back-P1.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+
+-- 17 display-P1a-plug-below: P1a: display below: plug
+> plug below: display 14, serial 3, 1280 x 720: it came at -1280 0 and is moved to 0 900: now at 0 900 1280 720
+displays P1a id 1 serial 305419896 frame 0 0 1600 900 main ; id 8 serial 9 frame -1280 0 1280 720 - ; id 14 serial 3 frame 0 900 1280 720 -
+  vdisplay list: 1 07230EFA-7A8D-4E37-845C-19CC8737EEF5 0 0 1600 900 1 main 0 0 305419896
+  vdisplay list: 8 5FA3C79F-BF47-4D2A-8196-327B0C194CEC -1280 0 1280 720 1 - 42928 1 9
+  vdisplay list: 14 9B0F8931-5BEE-4884-BAF1-3BB1A81536F3 0 900 1280 720 1 - 42928 1 3
+at P1a LIVES 196 ax 300 165 1000 600 server 300 165 1000 600
+at P1a STRADDLES 205 ax 40 51 863 499 server 40 51 863 499
+arbor P1a | display 1 0 0 1600 900, visible 0 31 1600 869, camera n0, back no
+arbor P1a |   Desktop          12 43 1576 845
+arbor P1a | display 2 -1280 0 1280 720, visible -1280 31 1280 689, camera n0, back no
+arbor P1a |   Desktop          -1268 43 1256 665
+arbor P1a | display 3 0 900 1280 720, visible 0 931 1280 615, camera n0, back no
+arbor P1a |   Desktop          12 943 1256 591
+arbor P1a |   w196 300 165 1000 600     display 1, floating focused
+arbor P1a |   w205 40 51 863 499        display 1, floating
+clock: P1a done 95s after the script began, at 09:42:23Z
+
+-- 18 put-P1b-home: P1b: both windows are put wholly on the main display, through Accessibility
+put P1b LIVES 196 asked 300 105 1000 660 took 300 105 1000 660
+put P1b STRADDLES 205 asked 500 330 863 499 took 500 330 863 499
+displays P1b id 1 serial 305419896 frame 0 0 1600 900 main ; id 8 serial 9 frame -1280 0 1280 720 - ; id 14 serial 3 frame 0 900 1280 720 -
+  vdisplay list: 1 07230EFA-7A8D-4E37-845C-19CC8737EEF5 0 0 1600 900 1 main 0 0 305419896
+  vdisplay list: 8 5FA3C79F-BF47-4D2A-8196-327B0C194CEC -1280 0 1280 720 1 - 42928 1 9
+  vdisplay list: 14 9B0F8931-5BEE-4884-BAF1-3BB1A81536F3 0 900 1280 720 1 - 42928 1 3
+at P1b LIVES 196 ax 300 105 1000 660 server 300 105 1000 660
+at P1b STRADDLES 205 ax 500 330 863 499 server 500 330 863 499
+arbor P1b | display 1 0 0 1600 900, visible 0 31 1600 869, camera n0, back no
+arbor P1b |   Desktop          12 43 1576 845
+arbor P1b | display 2 -1280 0 1280 720, visible -1280 31 1280 689, camera n0, back no
+arbor P1b |   Desktop          -1268 43 1256 665
+arbor P1b | display 3 0 900 1280 720, visible 0 931 1280 615, camera n0, back no
+arbor P1b |   Desktop          12 943 1256 591
+arbor P1b |   w196 300 105 1000 660     display 1, floating focused
+arbor P1b |   w205 500 330 863 499      display 1, floating
+clock: P1b done 100s after the script began, at 09:42:28Z
+
+-- 19 P1c-dock-and-frame: P1c: STRADDLES is docked at the left and framed: LIVES, which floats, goes out of view
+> dock 205 left
+docked w205 at the left edge
+> zoom 205
+framed w205
+displays P1c id 1 serial 305419896 frame 0 0 1600 900 main ; id 8 serial 9 frame -1280 0 1280 720 - ; id 14 serial 3 frame 0 900 1280 720 -
+  vdisplay list: 1 07230EFA-7A8D-4E37-845C-19CC8737EEF5 0 0 1600 900 1 main 0 0 305419896
+  vdisplay list: 8 5FA3C79F-BF47-4D2A-8196-327B0C194CEC -1280 0 1280 720 1 - 42928 1 9
+  vdisplay list: 14 9B0F8931-5BEE-4884-BAF1-3BB1A81536F3 0 900 1280 720 1 - 42928 1 3
+at P1c LIVES 196 ax 1599 848 794 660 server 1599 848 794 660
+at P1c STRADDLES 205 ax 12 43 1577 844 server 12 43 1577 844
+arbor P1c | display 1 0 0 1600 900, visible 0 31 1600 869, camera n1, back yes
+arbor P1c | display 2 -1280 0 1280 720, visible -1280 31 1280 689, camera n0, back no
+arbor P1c |   Desktop          -1268 43 1256 665
+arbor P1c | display 3 0 900 1280 720, visible 0 931 1280 615, camera n0, back no
+arbor P1c |   Desktop          12 943 1256 591
+arbor P1c |   w196 1599 848 794 660     display 1, floating parked
+arbor P1c |   w205 12 43 1577 844       display 1, docked focused
+clock: P1c done 104s after the script began, at 09:42:32Z
+parked P1c LIVES 196 server 1599 848 794 660
+visible P1c main 0 31 1600 869
+
+-- 20 display-P1d-plug-B: P1d: display B: plug
+> plug B: display 15, serial 2, 1280 x 800: it came at -1280 0 and is moved to 1600 0: now at 1600 0 1280 800
+displays P1d id 1 serial 305419896 frame 0 0 1600 900 main ; id 8 serial 9 frame -1280 0 1280 720 - ; id 14 serial 3 frame 0 900 1280 720 - ; id 15 serial 2 frame 1600 0 1280 800 -
+  vdisplay list: 1 07230EFA-7A8D-4E37-845C-19CC8737EEF5 0 0 1600 900 1 main 0 0 305419896
+  vdisplay list: 8 5FA3C79F-BF47-4D2A-8196-327B0C194CEC -1280 0 1280 720 1 - 42928 1 9
+  vdisplay list: 14 9B0F8931-5BEE-4884-BAF1-3BB1A81536F3 0 900 1280 720 1 - 42928 1 3
+  vdisplay list: 15 A4D4B536-D349-4832-805D-C9B023C505B8 1600 0 1280 800 1 - 42928 1 2
+at P1d LIVES 196 ax 1599 848 1000 600 server 1599 848 1000 600
+at P1d STRADDLES 205 ax 12 43 1577 844 server 12 43 1577 844
+arbor P1d | display 1 0 0 1600 900, visible 0 31 1600 869, camera n1, back yes
+arbor P1d | display 2 -1280 0 1280 720, visible -1280 31 1280 689, camera n0, back no
+arbor P1d |   Desktop          -1268 43 1256 665
+arbor P1d | display 3 0 900 1280 720, visible 0 931 1280 615, camera n0, back no
+arbor P1d |   Desktop          12 943 1256 591
+arbor P1d | display 4 1600 0 1280 800, visible 1600 31 1280 769, camera n0, back no
+arbor P1d |   Desktop          1612 43 1256 745
+arbor P1d |   w196 1599 848 1000 600    display 1, floating parked
+arbor P1d |   w205 12 43 1577 844       display 1, docked focused
+clock: P1d done 109s after the script began, at 09:42:37Z
+
+-- 21 display-P1e-unplug-B: P1e: display B: unplug
+> unplug B
+displays P1e id 1 serial 305419896 frame 0 0 1600 900 main ; id 8 serial 9 frame -1280 0 1280 720 - ; id 14 serial 3 frame 0 900 1280 720 -
+  vdisplay list: 1 07230EFA-7A8D-4E37-845C-19CC8737EEF5 0 0 1600 900 1 main 0 0 305419896
+  vdisplay list: 8 5FA3C79F-BF47-4D2A-8196-327B0C194CEC -1280 0 1280 720 1 - 42928 1 9
+  vdisplay list: 14 9B0F8931-5BEE-4884-BAF1-3BB1A81536F3 0 900 1280 720 1 - 42928 1 3
+at P1e LIVES 196 ax 1599 848 1000 600 server 1599 848 1000 600
+at P1e STRADDLES 205 ax 12 43 1577 844 server 12 43 1577 844
+arbor P1e | display 1 0 0 1600 900, visible 0 31 1600 869, camera n1, back yes
+arbor P1e | display 2 -1280 0 1280 720, visible -1280 31 1280 689, camera n0, back no
+arbor P1e |   Desktop          -1268 43 1256 665
+arbor P1e | display 3 0 900 1280 720, visible 0 931 1280 615, camera n0, back no
+arbor P1e |   Desktop          12 943 1256 591
+arbor P1e |   w196 1599 848 1000 600    display 1, floating parked
+arbor P1e |   w205 12 43 1577 844       display 1, docked focused
+clock: P1e done 114s after the script began, at 09:42:42Z
+
+-- 22 display-P1f-plug-B: P1f: display B: plug
+> plug B: display 16, serial 2, 1280 x 800: it came at 1600 0, where it belongs, and is not moved
+displays P1f id 1 serial 305419896 frame 0 0 1600 900 main ; id 8 serial 9 frame -1280 0 1280 720 - ; id 14 serial 3 frame 0 900 1280 720 - ; id 16 serial 2 frame 1600 0 1280 800 -
+  vdisplay list: 1 07230EFA-7A8D-4E37-845C-19CC8737EEF5 0 0 1600 900 1 main 0 0 305419896
+  vdisplay list: 8 5FA3C79F-BF47-4D2A-8196-327B0C194CEC -1280 0 1280 720 1 - 42928 1 9
+  vdisplay list: 14 9B0F8931-5BEE-4884-BAF1-3BB1A81536F3 0 900 1280 720 1 - 42928 1 3
+  vdisplay list: 16 A4D4B536-D349-4832-805D-C9B023C505B8 1600 0 1280 800 1 - 42928 1 2
+at P1f LIVES 196 ax 1599 848 1000 600 server 1599 848 1000 600
+at P1f STRADDLES 205 ax 12 43 1577 844 server 12 43 1577 844
+arbor P1f | display 1 0 0 1600 900, visible 0 31 1600 869, camera n1, back yes
+arbor P1f | display 2 -1280 0 1280 720, visible -1280 31 1280 689, camera n0, back no
+arbor P1f |   Desktop          -1268 43 1256 665
+arbor P1f | display 3 0 900 1280 720, visible 0 931 1280 615, camera n0, back no
+arbor P1f |   Desktop          12 943 1256 591
+arbor P1f | display 4 1600 0 1280 800, visible 1600 31 1280 769, camera n0, back no
+arbor P1f |   Desktop          1612 43 1256 745
+arbor P1f |   w196 1599 848 1000 600    display 1, floating parked
+arbor P1f |   w205 12 43 1577 844       display 1, docked focused
+clock: P1f done 118s after the script began, at 09:42:46Z
+
+-- 23 display-P1g-unplug-B: P1g: display B: unplug
+> unplug B
+displays P1g id 1 serial 305419896 frame 0 0 1600 900 main ; id 8 serial 9 frame -1280 0 1280 720 - ; id 14 serial 3 frame 0 900 1280 720 -
+  vdisplay list: 1 07230EFA-7A8D-4E37-845C-19CC8737EEF5 0 0 1600 900 1 main 0 0 305419896
+  vdisplay list: 8 5FA3C79F-BF47-4D2A-8196-327B0C194CEC -1280 0 1280 720 1 - 42928 1 9
+  vdisplay list: 14 9B0F8931-5BEE-4884-BAF1-3BB1A81536F3 0 900 1280 720 1 - 42928 1 3
+at P1g LIVES 196 ax 1599 848 1000 600 server 1599 848 1000 600
+at P1g STRADDLES 205 ax 12 43 1577 844 server 12 43 1577 844
+arbor P1g | display 1 0 0 1600 900, visible 0 31 1600 869, camera n1, back yes
+arbor P1g | display 2 -1280 0 1280 720, visible -1280 31 1280 689, camera n0, back no
+arbor P1g |   Desktop          -1268 43 1256 665
+arbor P1g | display 3 0 900 1280 720, visible 0 931 1280 615, camera n0, back no
+arbor P1g |   Desktop          12 943 1256 591
+arbor P1g |   w196 1599 848 1000 600    display 1, floating parked
+arbor P1g |   w205 12 43 1577 844       display 1, docked focused
+clock: P1g done 123s after the script began, at 09:42:51Z
+
+-- 24 display-P1h-unplug-below: P1h: display below: unplug
+> unplug below
+displays P1h id 1 serial 305419896 frame 0 0 1600 900 main ; id 8 serial 9 frame -1280 0 1280 720 -
+  vdisplay list: 1 07230EFA-7A8D-4E37-845C-19CC8737EEF5 0 0 1600 900 1 main 0 0 305419896
+  vdisplay list: 8 5FA3C79F-BF47-4D2A-8196-327B0C194CEC -1280 0 1280 720 1 - 42928 1 9
+at P1h LIVES 196 ax 1599 770 1000 600 server 1599 770 1000 600
+at P1h STRADDLES 205 ax 12 43 1577 769 server 12 43 1577 769
+arbor P1h | display 1 0 0 1600 900, visible 0 31 1600 791, camera n1, back yes
+arbor P1h | display 2 -1280 0 1280 720, visible -1280 31 1280 689, camera n0, back no
+arbor P1h |   Desktop          -1268 43 1256 665
+arbor P1h |   w196 1599 770 1000 600    display 1, floating parked
+arbor P1h |   w205 12 43 1577 769       display 1, docked focused
+clock: P1h done 128s after the script began, at 09:42:56Z
+
+== the end
+
+-- 25 quit: quit: Arbor quits
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+
+== after Arbor
+displays quit id 1 serial 305419896 frame 0 0 1600 900 main ; id 8 serial 9 frame -1280 0 1280 720 -
+  vdisplay list: 1 07230EFA-7A8D-4E37-845C-19CC8737EEF5 0 0 1600 900 1 main 0 0 305419896
+  vdisplay list: 8 5FA3C79F-BF47-4D2A-8196-327B0C194CEC -1280 0 1280 720 1 - 42928 1 9
+at quit LIVES 196 ax 300 105 1000 660 server 300 105 1000 660
+at quit STRADDLES 205 ax 500 330 863 499 server 500 330 863 499
+clock: quit done 132s after the script began, at 09:43:00Z
+
+-- 26 display-end-unplug-stays: end: display stays: unplug
+> unplug stays
+displays end id 1 serial 305419896 frame 0 0 1600 900 main
+  vdisplay list: 1 07230EFA-7A8D-4E37-845C-19CC8737EEF5 0 0 1600 900 1 main 0 0 305419896
+at end LIVES 196 ax 300 165 1000 600 server 300 165 1000 600
+at end STRADDLES 205 ax 40 51 863 499 server 40 51 863 499
+clock: end done 137s after the script began, at 09:43:05Z
+no Arbor runs now: `pgrep -x Arbor` finds no process
+reach LIVES 196 100 % of it lie on a display: 300 165 1000 600
+  ✔ LIVES is within reach at the end: a tenth of it or more lies on a display
+reach STRADDLES 205 100 % of it lie on a display: 40 51 863 499
+  ✔ STRADDLES is within reach at the end: a tenth of it or more lies on a display
+Reduce Motion: true
+
+== what came back
+mac-shell/samples.log: 507 lines, 26 steps
+  the sampler's own account: S samples 5340 seconds 124.9 hz 42.8 cost-ms 1.84 late 11 longest-gap-ms 377
+mac-shell/macos-reports.log: 182 lines
+mac-shell/traces/2026-10-15-094120-went-and-came-back.jsonl: 620 lines, 10 with displaysChanged in them
+mac-shell/traces/2026-10-15-094218-went-and-came-back-P1.jsonl: 679 lines, 6 with displaysChanged in them
+mac-shell/arbor-probe-went-and-came-back.log: 77 lines
+clock: all done 137s after the script began, at 09:43:05Z
+
+3 passed, 0 failed
+exit code 0
