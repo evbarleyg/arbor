@@ -62,18 +62,18 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 | [geometry](#geometry) | 27 | 0 | 7 | 12 | 6 | 2 | 16 | 1 | 2 | 8 | 6 |
 | [identity](#identity) | 28 | 4 | 6 | 5 | 6 | 11 | 11 | 1 | 2 | 14 | 7 |
 | [permissions](#permissions) | 21 | 7 | 5 | 3 | 3 | 10 | 10 | 2 | 2 | 7 | 4 |
-| [timing](#timing) | 49 | 7 | 7 | 15 | 7 | 20 | 27 | 4 | 6 | 12 | 8 |
-| [input](#input) | 55 | 7 | 6 | 13 | 12 | 24 | 20 | 6 | 7 | 22 | 10 |
+| [timing](#timing) | 50 | 7 | 7 | 15 | 8 | 20 | 27 | 4 | 6 | 13 | 9 |
+| [input](#input) | 56 | 7 | 6 | 13 | 13 | 24 | 20 | 6 | 7 | 23 | 11 |
 | [looks](#looks) | 18 | 0 | 0 | 0 | 1 | 17 | 1 | 2 | 3 | 12 | 4 |
 | [never-exercised](#never-exercised) | 16 | 7 | 2 | 13 | 0 | 1 | 0 | 0 | 15 | 1 | 16 |
 | [toolchain](#toolchain) | 40 | 1 | 0 | 1 | 4 | 35 | 22 | 1 | 0 | 17 | 6 |
-| **all** | 416 | 57 | 79 | 109 | 63 | 165 | 202 | 19 | 53 | 142 | 96 |
+| **all** | 418 | 57 | 79 | 109 | 65 | 165 | 202 | 19 | 53 | 144 | 98 |
 
 **Where the difference bit**
 
 | Where | That is | Cases | Hurt 1 or 2 | Guarded without a Mac | Guarded only on CI's Macs | Only when somebody starts a script | Not guarded |
 |---|---|---|---|---|---|---|---|
-| below the seam | in the macOS-only code under the platform protocols (AX, Input, UI, App), which no test on Linux runs | 135 | 87 | 41 | 13 | 32 | 49 |
+| below the seam | in the macOS-only code under the platform protocols (AX, Input, UI, App), which no test on Linux runs | 137 | 88 | 41 | 13 | 32 | 51 |
 | at the seam | in what crosses the platform protocols: a stand-in can play it to the controller | 144 | 89 | 107 | 0 | 10 | 27 |
 | controller | in the controller or the core, given reports that were right | 24 | 12 | 13 | 0 | 1 | 10 |
 | test | in a test, a script or a harness that expected the wrong thing | 74 | 0 | 19 | 5 | 8 | 42 |
@@ -107,6 +107,7 @@ A fault that is known and open.
 | [a-stale-read-back-makes-arbors-own-move-the-persons](#a-stale-read-back-makes-arbors-own-move-the-persons) | 2 | below the seam | cannot | not guarded |
 | [a-window-would-not-dock-on-the-right-while-another-was-minimized](#a-window-would-not-dock-on-the-right-while-another-was-minimized) | 2 | controller | yes | not guarded |
 | [arbor-starts-while-an-app-hangs-and-each-try-to-observe-it-waits-a-second](#arbor-starts-while-an-app-hangs-and-each-try-to-observe-it-waits-a-second) | 2 | below the seam | cannot | not guarded |
+| [arbor-stopped-swallows-its-keys-and-runs-them-all-at-once-when-woken](#arbor-stopped-swallows-its-keys-and-runs-them-all-at-once-when-woken) | 2 | below the seam | no | not guarded |
 | [behind-a-locked-screen-arbor-takes-no-window](#behind-a-locked-screen-arbor-takes-no-window) | 2 | below the seam | cannot | not guarded |
 | [docking-into-a-slot-too-small-took-seven-to-twelve-seconds](#docking-into-a-slot-too-small-took-seven-to-twelve-seconds) | 2 | at the seam | no | not guarded |
 | [macos-never-refused-a-shortcut-that-another-process-holds](#macos-never-refused-a-shortcut-that-another-process-holds) | 2 | below the seam | no | not guarded |
@@ -191,6 +192,7 @@ So no test on Linux can meet it. (Those they play partly are not listed: see eac
 | [tap-to-click-is-up-before-finder-has-answered](#tap-to-click-is-up-before-finder-has-answered) | 1 | below the seam | no | guarded without a mac |
 | [a-move-that-timed-out-is-carried-out-when-the-app-wakes](#a-move-that-timed-out-is-carried-out-when-the-app-wakes) | 2 | at the seam | no | not guarded |
 | [app-nap-delays-an-accessory-apps-timers](#app-nap-delays-an-accessory-apps-timers) | 2 | at the seam | no | not guarded |
+| [arbor-stopped-swallows-its-keys-and-runs-them-all-at-once-when-woken](#arbor-stopped-swallows-its-keys-and-runs-them-all-at-once-when-woken) | 2 | below the seam | no | not guarded |
 | [docking-into-a-slot-too-small-took-seven-to-twelve-seconds](#docking-into-a-slot-too-small-took-seven-to-twelve-seconds) | 2 | at the seam | no | not guarded |
 | [macos-never-refused-a-shortcut-that-another-process-holds](#macos-never-refused-a-shortcut-that-another-process-holds) | 2 | below the seam | no | not guarded |
 | [real-apps-are-reported-gone-before-their-sibling-has-the-keyboard](#real-apps-are-reported-gone-before-their-sibling-has-the-keyboard) | 2 | at the seam | no | not guarded |
@@ -204,7 +206,7 @@ So no test on Linux can meet it. (Those they play partly are not listed: see eac
 
 ## Ring 2: what the walks on Linux cannot vouch for
 
-The viable gate (`docs/VIABLE.md`, section 2) asks of this ledger that no open row touches one of the detectors of its section 5: with such a row open, ten thousand clean walks against the stand-ins say nothing about that detector. Each case says which detectors a person's trouble would set off (*touches*). It counts here when Arbor does not cope with it yet or nobody knows (**bold**), or when it crosses the seam and the stand-ins play it only partly or not at all. 111 cases count, each once, however many detectors it touches: that is the number `scripts/reality-ledger.py --rings` hands to the gate.
+The viable gate (`docs/VIABLE.md`, section 2) asks of this ledger that no open row touches one of the detectors of its section 5: with such a row open, ten thousand clean walks against the stand-ins say nothing about that detector. Each case says which detectors a person's trouble would set off (*touches*). It counts here when Arbor does not cope with it yet or nobody knows (**bold**), or when it crosses the seam and the stand-ins play it only partly or not at all. 112 cases count, each once, however many detectors it touches: that is the number `scripts/reality-ledger.py --rings` hands to the gate.
 
 | Detector | Cases | Open or unplayed cases that touch it |
 |---|---|---|
@@ -219,7 +221,7 @@ The viable gate (`docs/VIABLE.md`, section 2) asks of this ledger that no open r
 | `focus` | 20 | **[an-app-that-is-busy-as-it-is-switched-to-is-never-reported-focused](#an-app-that-is-busy-as-it-is-switched-to-is-never-reported-focused)**, **[f58-hold-the-view-its-own-check-has-never-run](#f58-hold-the-view-its-own-check-has-never-run)**, **[the-keyboard-stays-in-a-window-that-went-out-of-view](#the-keyboard-stays-in-a-window-that-went-out-of-view)**, **[f20-the-name-field-its-own-check-has-never-run](#f20-the-name-field-its-own-check-has-never-run)**, **[f22-the-tiling-keys-were-pressed-once-and-their-own-check-has-never-run](#f22-the-tiling-keys-were-pressed-once-and-their-own-check-has-never-run)**, **[f27-go-to-no-key-is-known-to-have-been-pressed-in-it](#f27-go-to-no-key-is-known-to-have-been-pressed-in-it)**, **[f49-pin-its-own-check-has-never-run](#f49-pin-its-own-check-has-never-run)**, **[nobody-has-the-keyboard-also-means-a-launcher-has-it](#nobody-has-the-keyboard-also-means-a-launcher-has-it)**, **[the-key-that-fills-the-screen-pressed-again-fills-it-with-another-apps-window](#the-key-that-fills-the-screen-pressed-again-fills-it-with-another-apps-window)**, **[go-to-opened-straight-after-a-move-of-the-focus-closes-when-the-keyboard-arrives](#go-to-opened-straight-after-a-move-of-the-focus-closes-when-the-keyboard-arrives)**, **[the-labs-switch-app-is-not-command-tab](#the-labs-switch-app-is-not-command-tab)**, [a-new-window-has-the-keyboard-before-arbor-hears-of-it](#a-new-window-has-the-keyboard-before-arbor-hears-of-it), [a-space-switch-brings-an-app-forward-before-or-after-its-windows-are-known](#a-space-switch-brings-an-app-forward-before-or-after-its-windows-are-known), [one-focus-change-is-reported-two-to-four-times](#one-focus-change-is-reported-two-to-four-times), [raising-a-window-can-make-its-app-report-a-focus-change](#raising-a-window-can-make-its-app-report-a-focus-change), [the-window-and-its-app-report-in-either-order](#the-window-and-its-app-report-in-either-order), [an-app-that-comes-forward-raises-only-its-key-window](#an-app-that-comes-forward-raises-only-its-key-window), [an-app-that-comes-forward-says-the-keyboard-moved-up-to-three-times](#an-app-that-comes-forward-says-the-keyboard-moved-up-to-three-times), [hiding-an-app-brings-finder-forward-first](#hiding-an-app-brings-finder-forward-first), [what-a-background-app-does-with-its-focus-is-not-passed-on](#what-a-background-app-does-with-its-focus-is-not-passed-on) |
 | `size-lost` | 9 | **[quitting-while-an-app-hangs-strands-its-windows](#quitting-while-an-app-hangs-strands-its-windows)**, **[a-move-that-a-hang-swallows-is-never-read-again](#a-move-that-a-hang-swallows-is-never-read-again)**, **[a-stale-read-back-makes-arbors-own-move-the-persons](#a-stale-read-back-makes-arbors-own-move-the-persons)**, **[macos-remembers-a-tile-arbor-has-undone](#macos-remembers-a-tile-arbor-has-undone)**, **[an-app-settles-its-size-after-the-mouse-is-up](#an-app-settles-its-size-after-the-mouse-is-up)**, [every-setframe-is-echoed-after-the-call-returns](#every-setframe-is-echoed-after-the-call-returns), [terminal-snaps-to-whole-cells-late](#terminal-snaps-to-whole-cells-late), [the-app-learns-of-a-drag-later-than-the-window-server](#the-app-learns-of-a-drag-later-than-the-window-server), [a-stopped-layer-is-deaf-and-the-fake-goes-on-talking](#a-stopped-layer-is-deaf-and-the-fake-goes-on-talking) |
 | `input-held` | 10 | **[all-input-is-dropped-from-the-loss-of-the-permission-until-arbors-taps-are-gone](#all-input-is-dropped-from-the-loss-of-the-permission-until-arbors-taps-are-gone)**, **[f05-no-hand-has-drawn-the-rectangle](#f05-no-hand-has-drawn-the-rectangle)**, **[f55-no-wheel-and-no-trackpad-has-scrolled](#f55-no-wheel-and-no-trackpad-has-scrolled)**, **[f63-its-own-check-has-not-got-past-the-grant-and-no-real-key-has-met-the-loss](#f63-its-own-check-has-not-got-past-the-grant-and-no-real-key-has-met-the-loss)**, **[a-click-then-drag-arrives-as-a-double-click](#a-click-then-drag-arrives-as-a-double-click)**, **[f26-the-minimap-its-own-check-has-never-run](#f26-the-minimap-its-own-check-has-never-run)**, **[f41-no-listed-app-has-had-its-keys](#f41-no-listed-app-has-had-its-keys)**, **[voiceover-and-other-window-managers-use-control-option-too](#voiceover-and-other-window-managers-use-control-option-too)**, **[a-press-reaches-the-tap-before-its-app-comes-forward](#a-press-reaches-the-tap-before-its-app-comes-forward)**, **[a-title-bar-an-app-draws-itself-answers-with-bare-groups](#a-title-bar-an-app-draws-itself-answers-with-bare-groups)** |
-| `slow` | 10 | **[arbor-starts-while-an-app-hangs-and-each-try-to-observe-it-waits-a-second](#arbor-starts-while-an-app-hangs-and-each-try-to-observe-it-waits-a-second)**, **[docking-into-a-slot-too-small-took-seven-to-twelve-seconds](#docking-into-a-slot-too-small-took-seven-to-twelve-seconds)**, **[each-notice-on-its-way-when-an-app-hangs-costs-the-main-thread-a-second](#each-notice-on-its-way-when-an-app-hangs-costs-the-main-thread-a-second)**, **[picture-sweeps-hold-the-main-actor](#picture-sweeps-hold-the-main-actor)**, [every-display-notice-restarts-the-wait](#every-display-notice-restarts-the-wait), [app-nap-delays-an-accessory-apps-timers](#app-nap-delays-an-accessory-apps-timers), [starting-asks-every-running-app](#starting-asks-every-running-app), [during-a-pause-each-try-for-a-hung-apps-window-waits-for-the-app-itself](#during-a-pause-each-try-for-a-hung-apps-window-waits-for-the-app-itself), [every-call-is-a-round-trip-to-another-process](#every-call-is-a-round-trip-to-another-process), [the-first-dock-after-a-start-takes-seconds](#the-first-dock-after-a-start-takes-seconds) |
+| `slow` | 11 | **[arbor-starts-while-an-app-hangs-and-each-try-to-observe-it-waits-a-second](#arbor-starts-while-an-app-hangs-and-each-try-to-observe-it-waits-a-second)**, **[arbor-stopped-swallows-its-keys-and-runs-them-all-at-once-when-woken](#arbor-stopped-swallows-its-keys-and-runs-them-all-at-once-when-woken)**, **[docking-into-a-slot-too-small-took-seven-to-twelve-seconds](#docking-into-a-slot-too-small-took-seven-to-twelve-seconds)**, **[each-notice-on-its-way-when-an-app-hangs-costs-the-main-thread-a-second](#each-notice-on-its-way-when-an-app-hangs-costs-the-main-thread-a-second)**, **[picture-sweeps-hold-the-main-actor](#picture-sweeps-hold-the-main-actor)**, [every-display-notice-restarts-the-wait](#every-display-notice-restarts-the-wait), [app-nap-delays-an-accessory-apps-timers](#app-nap-delays-an-accessory-apps-timers), [starting-asks-every-running-app](#starting-asks-every-running-app), [during-a-pause-each-try-for-a-hung-apps-window-waits-for-the-app-itself](#during-a-pause-each-try-for-a-hung-apps-window-waits-for-the-app-itself), [every-call-is-a-round-trip-to-another-process](#every-call-is-a-round-trip-to-another-process), [the-first-dock-after-a-start-takes-seconds](#the-first-dock-after-a-start-takes-seconds) |
 | `crash` | 2 | **[docking-into-a-slot-too-small-took-seven-to-twelve-seconds](#docking-into-a-slot-too-small-took-seven-to-twelve-seconds)**, **[each-notice-on-its-way-when-an-app-hangs-costs-the-main-thread-a-second](#each-notice-on-its-way-when-an-app-hangs-costs-the-main-thread-a-second)** |
 | `busy` | 0 | none |
 | `left-behind` | 1 | **[the-fake-mac-lists-no-window-for-four-of-arbors-panels](#the-fake-mac-lists-no-window-for-four-of-arbors-panels)** |
@@ -2174,7 +2176,7 @@ A second actor: macOS, an app or another tool moves things too.
 *hurt 4 · test*
 
 - **Expected:** A script that posts Arbor's shortcuts one after the other talks to Arbor alone.
-- **Happened:** Two ⌃⌥ shortcuts posted in a row brought up macOS's own alert "Do you want to enable Dictation?", above everything, and it took the clicks for the rest of the run. Whether a person's two quick shortcuts do the same has not been tried.
+- **Happened:** Two ⌃⌥ shortcuts posted in a row brought up macOS's own alert "Do you want to enable Dictation?", above everything, and it took the clicks for the rest of the run. Whether a person's two quick shortcuts do the same has not been tried. Seen again in a probe that pressed ⌃ over and over ("To start dictating, press the Control key twice"): the alert stood on the screen for some nine minutes, to the end of the run. There it took no key that could be found: the rounds after it are complete.
 - **Found by:** The first run, on hosted Macs, of a suite of real-window checks that is not on the trunk yet (macOS 26.6.2; 1,406 of 1,454 checks passed), beside its rehearsal on Linux, which has no such alert.
 - **Stand-ins play it:** cannot: it lies below or beside the seam
 - **Guard:** **none**
@@ -3313,6 +3315,18 @@ Timing: how long things take, and what can happen meanwhile.
 - **Arbor copes:** **not yet**
 - **Read in:** `Sources/ArborKit/AX/AXWindowSystem.swift`, `Sources/ArborCore/RetrySchedule.swift`
 
+### arbor-stopped-swallows-its-keys-and-runs-them-all-at-once-when-woken
+
+*hurt 2 · below the seam · touches `slow`*
+
+- **Expected:** A key pressed while Arbor cannot answer is lost, or goes to the app in front.
+- **Happened:** Neither. With Arbor stopped by a signal, nine of its keys were pressed: the taps at the keyboard's end heard them, no app got one, and Arbor's log did not grow. Set going again, its log grew by 23 lines, the commands one after another within 140 ms: `arrange` ("arranged 3 windows; 9 saved views are gone"), `zoom`, `show-all`, `back`, `undo`, `toggle-float`, `find`. macOS keeps a hot key for the process that registered it until that process takes it. By reading, not tried: the same would hold for every long hang of Arbor's main thread, as when it waits for an app that does not answer (a-hung-app-holds-every-call-for-the-whole-timeout): what a person presses again because nothing happens is all carried out when Arbor comes to.
+- **Found by:** A probe that is not on the trunk yet, one run on a hosted Mac (macOS 26.6.2) on the first build itself, its commit and the probe and nothing else: an app in front and a listener in the background with ears of every kind, taps at three points, monitors, a menu, a view, and Arbor's own log counted line by line. Every key was a posted event: no finger, no real keyboard.
+- **Stand-ins play it:** **no**
+- **Guard:** **none**
+- **Arbor copes:** **not yet**
+- **Read in:** `Sources/ArborKit/Input/HotKeyCenter.swift`, `Sources/ArborKit/App/ArborApp.swift`
+
 ### docking-into-a-slot-too-small-took-seven-to-twelve-seconds
 
 *hurt 2 · at the seam · touches `slow`, `crash`*
@@ -4085,6 +4099,18 @@ Input: where presses, keys and gestures really go.
 - **Arbor copes:** AXWindowSystem.eventModifiers: while a mouse event is handled, `modifierKeysDown` answers with the flags the event itself carried.
 - **Read in:** `Sources/ArborKit/AX/AXWindowSystem.swift`, `docs/ARCHITECTURE.md`, `docs/RELEASE-NOTES.md`, `scripts/mac-on-linux/mutants.py`
 
+### macos-takes-a-hot-key-away-between-the-session-and-the-annotated-session
+
+*hurt 3 · below the seam*
+
+- **Expected:** A hot key is taken away before anybody else hears it, and no key gets past the place where it is taken.
+- **Happened:** Taps at the HID point and at the session point hear every one of Arbor's keys. The tap at the annotated session point, a local and a global monitor hear none. So macOS takes a hot key away between the session and the annotated-session points. A key put in at the session point is Arbor's, as from the keyboard. A key put in at the annotated session point, or posted to the app with `postToPid`: 9 of 9 reached the app, its menu items fired, and Arbor's log did not grow. That is a road which tools that remap keys or play macros may take; none was tried. With secure input on, as in a password field, every tap and monitor is deaf and the hot keys work: 0 of 51 reached the app, and 50 of 51 ran by Arbor's log (the 51st opens the settings window and logs nothing). An earlier probe agrees: a listen-only tap at the session level heard ⌃⌥A go down while Arbor held it, and a menu item and both monitors in the app heard nothing.
+- **Found by:** A probe that is not on the trunk yet, one run on a hosted Mac (macOS 26.6.2) on the first build itself, its commit and the probe and nothing else: an app in front and a listener in the background with ears of every kind, taps at three points, monitors, a menu, a view, and Arbor's own log counted line by line. Every key was a posted event: no finger, no real keyboard.
+- **Stand-ins play it:** **no**
+- **Guard:** **none**
+- **Arbor copes:** **not yet**
+- **Read in:** `Sources/ArborKit/Input/HotKeyCenter.swift`, `docs/KEYBOARD.md`
+
 ### the-key-that-opened-a-panel-is-still-down
 
 *hurt 3 · below the seam*
@@ -4306,7 +4332,7 @@ Input: where presses, keys and gestures really go.
 *hurt 4 · test*
 
 - **Expected:** A posted key event with the right key code and modifiers fires a Carbon hot key.
-- **Happened:** The window server also compares the flags a real keyboard adds to these keys (arrows: numeric pad and fn; function keys: fn). Without them ⌃⌥⌘← reaches the app in front as a key press and no hot key fires.
+- **Happened:** The window server also compares the flags a real keyboard adds to these keys (arrows: numeric pad and fn; function keys: fn). Without them ⌃⌥⌘← reaches the app in front as a key press and no hot key fires. Turned round since: a letter posted with fn's flag is not Arbor's either (with-fns-flag-on-the-event-arbors-letter-keys-are-not-arbors). For an arrow fn's flag alone was enough there: with it, and without the numeric-pad flag, ⌃⌥← and ⌃⌥→ went to Arbor; and the numeric-pad flag on a letter changed nothing.
 - **Found by:** Writing the pointer tool; with the flags in place the shortcuts in scripts/mac-shell/proof.sh worked on a hosted Mac.
 - **Stand-ins play it:** **no**
 - **Guard:** `e2e: ⌃⌥→ and ⌃⌥← move to the neighbouring space` (on CI's Macs)

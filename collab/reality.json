@@ -4356,7 +4356,7 @@
    "kind": "second-actor",
    "layer": "test",
    "expected": "A script that posts Arbor's shortcuts one after the other talks to Arbor alone.",
-   "happened": "Two ⌃⌥ shortcuts posted in a row brought up macOS's own alert \"Do you want to enable Dictation?\", above everything, and it took the clicks for the rest of the run. Whether a person's two quick shortcuts do the same has not been tried.",
+   "happened": "Two ⌃⌥ shortcuts posted in a row brought up macOS's own alert \"Do you want to enable Dictation?\", above everything, and it took the clicks for the rest of the run. Whether a person's two quick shortcuts do the same has not been tried. Seen again in a probe that pressed ⌃ over and over (\"To start dictating, press the Control key twice\"): the alert stood on the screen for some nine minutes, to the end of the run. There it took no key that could be found: the rounds after it are complete.",
    "found": "The first run, on hosted Macs, of a suite of real-window checks that is not on the trunk yet (macOS 26.6.2; 1,406 of 1,454 checks passed), beside its rehearsal on Linux, which has no such alert.",
    "modelled": "cannot",
    "knobs": [],
@@ -8276,7 +8276,7 @@
    "kind": "input",
    "layer": "test",
    "expected": "A posted key event with the right key code and modifiers fires a Carbon hot key.",
-   "happened": "The window server also compares the flags a real keyboard adds to these keys (arrows: numeric pad and fn; function keys: fn). Without them ⌃⌥⌘← reaches the app in front as a key press and no hot key fires.",
+   "happened": "The window server also compares the flags a real keyboard adds to these keys (arrows: numeric pad and fn; function keys: fn). Without them ⌃⌥⌘← reaches the app in front as a key press and no hot key fires. Turned round since: a letter posted with fn's flag is not Arbor's either (with-fns-flag-on-the-event-arbors-letter-keys-are-not-arbors). For an arrow fn's flag alone was enough there: with it, and without the numeric-pad flag, ⌃⌥← and ⌃⌥→ went to Arbor; and the numeric-pad flag on a letter changed nothing.",
    "found": "Writing the pointer tool; with the flags in place the shortcuts in scripts/mac-shell/proof.sh worked on a hosted Mac.",
    "modelled": "no",
    "knobs": [],
@@ -10946,6 +10946,26 @@
    ]
   },
   {
+   "id": "arbor-stopped-swallows-its-keys-and-runs-them-all-at-once-when-woken",
+   "kind": "timing",
+   "layer": "below the seam",
+   "expected": "A key pressed while Arbor cannot answer is lost, or goes to the app in front.",
+   "happened": "Neither. With Arbor stopped by a signal, nine of its keys were pressed: the taps at the keyboard's end heard them, no app got one, and Arbor's log did not grow. Set going again, its log grew by 23 lines, the commands one after another within 140 ms: `arrange` (\"arranged 3 windows; 9 saved views are gone\"), `zoom`, `show-all`, `back`, `undo`, `toggle-float`, `find`. macOS keeps a hot key for the process that registered it until that process takes it. By reading, not tried: the same would hold for every long hang of Arbor's main thread, as when it waits for an app that does not answer (a-hung-app-holds-every-call-for-the-whole-timeout): what a person presses again because nothing happens is all carried out when Arbor comes to.",
+   "found": "A probe that is not on the trunk yet, one run on a hosted Mac (macOS 26.6.2) on the first build itself, its commit and the probe and nothing else: an app in front and a listener in the background with ears of every kind, taps at three points, monitors, a menu, a view, and Arbor's own log counted line by line. Every key was a posted event: no finger, no real keyboard.",
+   "modelled": "no",
+   "knobs": [],
+   "guards": [],
+   "copes": "open",
+   "hurt": 2,
+   "touches": [
+    "slow"
+   ],
+   "sources": [
+    "Sources/ArborKit/Input/HotKeyCenter.swift",
+    "Sources/ArborKit/App/ArborApp.swift"
+   ]
+  },
+  {
    "id": "macos-holds-a-press-until-it-has-brought-the-app-forward",
    "kind": "input",
    "layer": "machine",
@@ -11069,6 +11089,23 @@
     "collab/scenarios/wanted/README.md"
    ],
    "certainty": "suspected"
+  },
+  {
+   "id": "macos-takes-a-hot-key-away-between-the-session-and-the-annotated-session",
+   "kind": "input",
+   "layer": "below the seam",
+   "expected": "A hot key is taken away before anybody else hears it, and no key gets past the place where it is taken.",
+   "happened": "Taps at the HID point and at the session point hear every one of Arbor's keys. The tap at the annotated session point, a local and a global monitor hear none. So macOS takes a hot key away between the session and the annotated-session points. A key put in at the session point is Arbor's, as from the keyboard. A key put in at the annotated session point, or posted to the app with `postToPid`: 9 of 9 reached the app, its menu items fired, and Arbor's log did not grow. That is a road which tools that remap keys or play macros may take; none was tried. With secure input on, as in a password field, every tap and monitor is deaf and the hot keys work: 0 of 51 reached the app, and 50 of 51 ran by Arbor's log (the 51st opens the settings window and logs nothing). An earlier probe agrees: a listen-only tap at the session level heard ⌃⌥A go down while Arbor held it, and a menu item and both monitors in the app heard nothing.",
+   "found": "A probe that is not on the trunk yet, one run on a hosted Mac (macOS 26.6.2) on the first build itself, its commit and the probe and nothing else: an app in front and a listener in the background with ears of every kind, taps at three points, monitors, a menu, a view, and Arbor's own log counted line by line. Every key was a posted event: no finger, no real keyboard.",
+   "modelled": "no",
+   "knobs": [],
+   "guards": [],
+   "copes": "open",
+   "hurt": 3,
+   "sources": [
+    "Sources/ArborKit/Input/HotKeyCenter.swift",
+    "docs/KEYBOARD.md"
+   ]
   }
  ],
  "afterword": [
