@@ -53,15 +53,17 @@ final class Book {
   /// Only a run of everything, with the usual seeds, says what the file should hold.
   var isWholeRun: Bool { options.only.isEmpty && options.walkSeeds == nil && options.expectsRed.isEmpty && !options.listsOnly }
 
-  /// A line of the file without its milliseconds.
+  /// A line of the file without what changes under people who never touched the layer: its milliseconds, and at storey two, where the controller decides what is asked of the layer, all that was heard.
   private static func reports(in line: Substring) -> String {
     guard var object = (try? JSONSerialization.jsonObject(with: Data(line.utf8))) as? [String: Any] else { return String(line) }
     object["ms"] = nil
+    if object["storey"] as? Int == 2 { object["heard"] = nil }
     return (try? JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])).map { String(decoding: $0, as: UTF8.self) } ?? String(line)
   }
 
-  /// Holds the file against this run. If it is out of date it is rewritten, and the run fails this once. It goes out of date by what was REPORTED. The milliseconds are there to tell one burst from the next, and move with
-  /// every change to the controller's timing, made by people who never touched the layer: for them alone the file is left as it is, or everybody's working tree would have it changed, each a little differently.
+  /// Holds the file against this run. If it is out of date it is rewritten, and the run fails this once. It goes out of date by what was REPORTED at storey one and on the walk, and by the stories themselves. The milliseconds
+  /// are there to tell one burst from the next, and move with every change to the controller's timing; what is heard at storey two moves with every change to what the controller asks for. Both are made by people who never
+  /// touched the layer: for them alone the file is left as it is, or everybody's working tree would have it changed, each a little differently, and a run would be red for whoever comes next.
   private func heardFileIsCurrent() -> Bool {
     guard let path = options.heardFile, isWholeRun else { return true }
     let text = heardLines.joined(separator: "\n") + "\n"
@@ -69,7 +71,7 @@ final class Book {
     if kept == text { return true }
     if let kept, kept.split(separator: "\n").map(Self.reports) == text.split(separator: "\n").map(Self.reports) {
       let moved = zip(kept.split(separator: "\n"), text.split(separator: "\n")).filter { $0 != $1 }.count
-      print("  in collab/evidence/mac-on-linux/heard.jsonl the reports are those of this run, the milliseconds of \(moved) lines are not: the file is left as it is (to refresh it, delete it and run again)")
+      print("  in collab/evidence/mac-on-linux/heard.jsonl storey one's reports and the walk's are those of this run; \(moved) lines have other milliseconds, or other reports at storey two: the file is left as it is (to refresh it, delete it and run again)")
       return true
     }
     try? FileManager.default.createDirectory(atPath: (path as NSString).deletingLastPathComponent, withIntermediateDirectories: true)

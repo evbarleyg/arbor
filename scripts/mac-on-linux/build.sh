@@ -207,6 +207,18 @@ if [ "${1:-}" = --self-test ]; then
   if ! cmp -s "$kept" heard-changed.jsonl && ! holds && ! cmp -s heard-changed.jsonl heard-before.jsonl && holds
   then echo "✔ another report in heard.jsonl: the run fails once, rewrites the file, and passes the next time"
   else echo "✘ another report in heard.jsonl goes unnoticed, or the file is not put right"; touch self-test-failed; fi
+  # At storey two the controller decides what is asked of the layer: what is heard there is a note. That a story is there is not.
+  upstairs="$(grep -n '"storey":2' "$kept" | head -1 | cut -d: -f1)"
+  sed "${upstairs}"'s/"heard":\["[a-zA-Z]* /"heard":["found /' "$kept" > heard-changed.jsonl
+  cp heard-changed.jsonl heard-before.jsonl
+  if ! cmp -s "$kept" heard-changed.jsonl && holds && cmp -s heard-changed.jsonl heard-before.jsonl
+  then echo "✔ another report at storey two in heard.jsonl: the run passes and leaves the file alone"
+  else echo "✘ another report at storey two in heard.jsonl: the run fails, or rewrites the file"; touch self-test-failed; fi
+  sed "${upstairs}d" "$kept" > heard-changed.jsonl
+  cp heard-changed.jsonl heard-before.jsonl
+  if ! cmp -s "$kept" heard-changed.jsonl && ! holds && ! cmp -s heard-changed.jsonl heard-before.jsonl && holds
+  then echo "✔ a story of storey two that heard.jsonl does not have: the run fails once, rewrites the file, and passes the next time"
+  else echo "✘ a story of storey two that heard.jsonl does not have goes unnoticed, or the file is not put right"; touch self-test-failed; fi
   # --- The net.
   # First the whole list: a list that cannot be had, or is empty, is no self-test that passed.
   "$here/mutants.py" --list > mutants.txt && [ -s mutants.txt ] || { echo "✘ scripts/mac-on-linux/mutants.py lists no change to make"; exit 1; }

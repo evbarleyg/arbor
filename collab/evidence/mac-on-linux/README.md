@@ -5,6 +5,8 @@ the seam: whoever keeps a fake `WindowSystem` can hold what it sends against wha
 
 Everything is a function of the sources and the stories, so the file is committed. **A run of everything holds it against what it hears; if it is out of date the run rewrites it and fails that once.** Look at the difference (it says what a change to the layer did to what the controller hears) and commit it. It goes out of date by what was reported, not by `ms`: the milliseconds move with every change to the controller's timing, and for
 them alone the file is left as it is, with a line that says so. To refresh them, delete the file and run again.
+The same goes for what was heard at storey two, where the controller decides what is asked of the layer: those lines move with changes made by people who never touched the layer, so they are as of the last time somebody
+who did refreshed the file. That a story is in the file, or is not, counts at both storeys.
 Runs with `--only`, `--seeds` or `REF=` leave it alone.
 
 One JSON object to a line. No frame, no title, no name of an app.
