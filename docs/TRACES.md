@@ -169,7 +169,7 @@ replay delivers it from inside the same call, so that Arbor meets it in the same
 | `{"call":"focus","id":7}` | |
 | `{"call":"showDropPreview","frame":[…]}` | `null` hides it. Scenes (tiles and seam handles at rest) follow from the layout and are not recorded |
 | `{"call":"focusedWindow"｜"cursorLocation"｜"isMouseButtonDown","result":…}` | Reads, with the answer |
-| `{"call":"allWindows"｜"displays","result":[…]}`, `{"call":"start"｜"stop"}` | |
+| `{"call":"allWindows"｜"displays","result":[…]}`, `{"call":"start"｜"stop"}` | At a change of displays macOS moves windows itself, and no app says so (a lid closes: every window has new coordinates). Arbor reads all frames anew, and a replay takes them from this answer |
 | `{"done":"dock 7 left","ok":true,"message":"…"}` | The command has been performed. A message that begins with `≈` is what was said, but not what a replay will say ("Known limits") |
 
 **For people**; replays skip them, except that the mouse lines tell them where the pointer and the button are:

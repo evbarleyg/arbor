@@ -60,6 +60,8 @@ import Foundation
 //   background-focus <id>        an app that is not frontmost changes its focused window
 //   displays <0|1|2>             unplug or plug in a 1920x1080 display to the right of the main one; 0: none at all
 //   display-size <WxH> [<bar>]   the main display is this large, with a menu bar that high (1440x900 and 25 to begin with)
+//   plug | unplug | make-main | move-display | quietly … | report-displays | max | where
+//                                displays that change, one step at a time, told to Arbor at once or later: see Displays.swift
 //   min <id> <WxH>               from now on the window refuses to be smaller (0x0: any size will do)
 //   wait <seconds>               let time pass, running the scheduled work that falls due
 //   watch [events…] [--titles]   from here on, print the lines `arborctl watch` would send after each step
@@ -225,7 +227,10 @@ func runSimulation() {
     for said in harness.overlays.messages.dropFirst(linesPrinted) { print("on screen: \(said.model.line)") }
     linesPrinted = harness.overlays.messages.count
     // Whatever the line did, a display whose arrangement or view changed has been laid out, or will be by a timer.
-    if harness.controller.isRunning, !harness.scheduler.pendingKeys.contains(where: { $0.hasPrefix("space-") }) {
+    // Not while macOS has displays that Arbor has not been told of (`quietly`): it cannot have laid them out.
+    if harness.controller.isRunning, !harness.scheduler.pendingKeys.contains(where: { $0.hasPrefix("space-") }),
+      harness.controller.displays == harness.system.displayList
+    {
       for problem in harness.staleLayouts() {
         staleLayouts += 1
         print("LAYOUT OUT OF DATE: \(problem)")
@@ -311,6 +316,7 @@ final class SimulatedWatcher {
 /// Runs one line and returns what to print and whether it succeeded.
 @MainActor
 func simulate(_ words: [String], harness: Harness, printLayout: inout Bool) -> (String, Bool) {
+  if let done = simulateDisplays(words, harness: harness) { return done }
   let system = harness.system
   func window(_ index: Int) -> WindowID? { words.count > index ? WindowID(word: words[index]) : nil }
   /// Bounded like the numbers in commands: real windows and pointers are never at infinity.

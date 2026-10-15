@@ -521,6 +521,13 @@ public final class TraceReplayer {
     case .displaysChanged(let displays):
       resetEnforcement()
       fake.displayList = displays.map { DisplaySnapshot($0) }
+      // macOS moves windows itself when the displays change, and when another display becomes the main one every window has new
+      // coordinates. No app says so: Arbor reads every frame anew, and the recording has what it read. Carried over like any move
+      // that came from outside Arbor (`translated`).
+      let answers = entries[min(index + 1, response.upperBound)..<response.upperBound]
+      if case .allWindows(let read)? = answers.first(where: { if case .allWindows = $0.line { true } else { false } })?.line {
+        for window in read where fake.frame(of: window.id) != nil { fake.moveSilently(window.id, to: translated(window).frame) }
+      }
       events?.displaysChanged()
 
     case .command(let text, let source):

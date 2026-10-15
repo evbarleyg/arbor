@@ -1,0 +1,61 @@
+# Proposed by the swarm (2026-10-15); the documenter may edit or drop it.
+# Story: a laptop at a desk, with a big display to its right. The editor and the browser are docked on the big display and a
+# chat floats between them, where its person put it. The lid closes: the laptop's display goes, the big one gets the menu bar,
+# and every window has new coordinates without one of them saying so. Arbor hears a moment later, as on a Mac. Nothing moves on the
+# glass, not then and not when the chat next leaves the view and comes back. Then the lid opens again, and all is as it was.
+# Spec: docs/features/F08-displays-and-spaces.md. Window ids start at 101.
+quiet
+plug desk right 2560x1440
+open Code
+open Safari
+open Chat 400x500
+move 101 1600 100 800 600
+move 102 1700 150 800 600
+cursor 2000 500
+dock 101 left
+dock 102 right
+move 103 2500 400 400 500
+wait 60
+loud
+expect docked 101
+expect docked 102
+expect floating 103
+expect at 103 2500 400
+# The lid closes. macOS has one display now, whose corner is 0,0; Arbor still believes in two.
+quietly unplug main
+expect at 103 1060 400
+# A second and a half later it is told.
+wait 2
+report-displays
+expect still
+expect docked 101
+expect docked 102
+expect left-of 101 102
+expect visible 101
+expect visible 102
+expect floating 103
+expect at 103 1060 400
+expect size 103 400x500
+# The editor is framed, and then everything is shown again: the chat is back where it was on the glass.
+zoom 101
+expect hidden 103
+home
+expect at 103 1060 400
+expect size 103 400x500
+# The lid opens: the laptop is back on the left and has the menu bar again.
+quietly plug main left 1440x900
+quietly make-main main
+expect at 103 2500 400
+wait 2
+report-displays
+expect still
+expect docked 101
+expect docked 102
+expect left-of 101 102
+expect at 103 2500 400
+cursor 2000 500
+zoom 101
+expect hidden 103
+home
+expect at 103 2500 400
+expect size 103 400x500

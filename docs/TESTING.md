@@ -140,6 +140,9 @@ at once, `set`, `bind`, `rule`, `exclude` and the like save to it, and `reload-s
 `background-focus <id>` is an app in the background changing its focused window, and
 `displays 2` / `displays 1` plug in or unplug a 1920×1080 display to the right of the main one.
 `display-size 1512x982 33` makes the main display that large, with a menu bar that high (1440×900 and 25 to begin with).
+`plug side left 1920x1080`, `unplug side`, `make-main side` (a lid closes or opens: every coordinate changes, and no window says so) and `move-display side 0 -1080` change the displays one step at
+a time. With `quietly` before it macOS has the new displays and Arbor has not heard, as on a Mac, where it hears only once they have settled; `report-displays` tells it. What apps report in between
+(`move`) is what it has to make sense of. `where <id>` prints a window's real frame and how much of it shows; `max <id> <WxH>` is `min`'s counterpart.
 `min <id> <WxH>` changes the size a window refuses to go below, and `wait <seconds>` lets time pass.
 `fullscreen <id> on` / `off` is the green button: the window gets a macOS Space to itself and comes back.
 `display <match> <key> <value>` adds an entry to the per-display options (`display ">=1900" gap 30`), and `displays` without a
