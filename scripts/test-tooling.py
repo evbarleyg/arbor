@@ -16,6 +16,7 @@ Exit code 1 when a row comes out wrong.
 
 import concurrent.futures
 import contextlib
+import fnmatch
 import importlib.util
 import io
 import json
@@ -971,6 +972,27 @@ kill $mine
                  ("somebody's" in exported, "a tool sees: nothing" in exported, "zelda" in exported), (True, True, False)),
                 ("lib.sh: on GitHub's own it does", ("thrown away" in real, "a tool sees: true" in real), (True, True))]
 
+    def which_build(mac):
+        for name in ("ARBOR_BIN", "ARBOR_BUILT"):
+            del mac.environment[name]
+        mac.environment["ARBOR_APPS"] = os.path.join(mac.folder, "apps")
+        mac.tool("swift", '#!/bin/bash\necho "$*" >> "$FAKE/swift-was-asked"\nexit 1\n')
+        for name in ("swiftc", "clang"):
+            mac.tool(name, "#!/bin/bash\nexit 0\n")
+        found = []
+        for configuration in (None, "debug", "release"):
+            mac.environment.pop("ARBOR_CONFIGURATION", None)
+            if configuration:
+                mac.environment["ARBOR_CONFIGURATION"] = configuration
+            mac.put("swift-was-asked", "")
+            _, output = mac.run('echo "drives: ${ARBOR_BIN#"$ARBOR_ROOT"/}"\narbor_build')
+            found.append((next((line[8:] for line in output.splitlines() if line.startswith("drives: ")), None), mac.read("swift-was-asked").split("\n")[1:-1]))
+        mac.environment["ARBOR_CONFIGURATION"] = "Release"
+        code, output = mac.run('echo "went on"')
+        return [("lib.sh: which build a script drives, and asks swift for: debug unless it is told release", found,
+                 [(".build/debug", ["build -c debug"])] * 2 + [(".build/release", ["build -c release"])]),
+                ("lib.sh: any other configuration is refused before anything happens", (code, "went on" in output, "debug or release, not 'Release'" in output), (64, False, True))]
+
     def stray_environment(mac):
         os.makedirs(os.path.join(mac.folder, "precious"))
         open(os.path.join(mac.folder, "precious", "empty.log"), "w", encoding="utf-8").close()
@@ -979,7 +1001,7 @@ kill $mine
         code, _ = mac.run("true")
         return [("lib.sh: ARBOR_OUT from a stray environment is not taken", (code, os.path.exists(os.path.join(mac.folder, "precious", "empty.log"))), (0, True))]
 
-    throwaway = [second_lock, folders, full_disk, disk_fills_up, strange_mktemp, refusals, strangers, limited, both_killed, supervisor_killed, two_at_once,
+    throwaway = [second_lock, which_build, folders, full_disk, disk_fills_up, strange_mktemp, refusals, strangers, limited, both_killed, supervisor_killed, two_at_once,
                  ended("the time limit"), ended("an interrupt"), ended("kill -9")]
     somebodys = [nets, pictures, discreet, nameless, curtain_down, stale_output, defaults_for_arbor, no_curtain, both_killed, supervisor_killed,
                  ended("the time limit", "on somebody's Mac, "), ended("an interrupt", "on somebody's Mac, "), ended("kill -9", "on somebody's Mac, "),
@@ -1609,6 +1631,14 @@ esac
         return done.returncode, [asked.get(key) for key in ("ref", "inputs[ref]", "inputs[script]", "inputs[macs]")], asked
 
     row("run.sh: one script", started("a.sh", "feat/x")[:2], (97, ["home", "feat/x", "a.sh", ""]))
+    row("run.sh: which build is not said unless it is the release build: an older workflow would refuse the start", "inputs[configuration]" in started("a.sh", "feat/x")[2], False)
+    row("run.sh: --release: said, and under a tag of its own", [started("--release", "a.sh", "feat/x")[2].get(key) for key in ("inputs[configuration]", "inputs[tag]")],
+        ["release", "feat-x.a-rel"])
+    row("run.sh: the plain run's tag is as it was", started("a.sh", "feat/x")[2].get("inputs[tag]"), "feat-x.a")
+    row("run.sh: ARBOR_CONFIGURATION=release says the same", (lambda noted: "inputs[configuration]=release" in open(noted, encoding="utf-8").read())(
+        ran("a.sh", "feat/x", ARBOR_CONFIGURATION="release")[1]), True)
+    row("run.sh: any other configuration starts nothing", (lambda done, noted, _: (done.returncode, os.path.exists(noted)))(*ran("a.sh", "feat/x", ARBOR_CONFIGURATION="fast")), (97, False))
+    row("run.sh: --bare builds nothing, so not with --release", started("--bare", "--release", "a.sh", "feat/x")[:2], (97, NOT_STARTED))
     row("run.sh: three scripts go to one Mac", started("a.sh", "./b.sh", "c.sh", "feat/x")[:2], (97, ["home", "feat/x", "a.sh b.sh c.sh", ""]))
     row("run.sh: five are too many for one", started("a.sh", "b.sh", "c.sh", "d.sh", "e.sh", "feat/x")[1][3], '["a.sh c.sh e.sh","b.sh d.sh"]')
     row("run.sh: --macs 3", started("--macs", "3", "a.sh", "b.sh", "c.sh", "d.sh", "feat/x")[1][3], '["a.sh d.sh","b.sh","c.sh"]')
@@ -1868,6 +1898,13 @@ def check_ci_build_key():
             lines = dict(line.split("=", 1) for line in done.stdout.splitlines() if "=" in line)
             return done.returncode, lines.get("key")
 
+        def takes(kind):
+            """What a job of that kind takes for all it needs (a pattern), and the beginnings of the names it would build upon."""
+            done = subprocess.run([BASH, os.path.join(HERE, "ci-build-key.sh"), kind], cwd=folder, capture_output=True, text=True, check=False,
+                                  env={**os.environ, "PATH": os.path.join(folder, "bin") + os.pathsep + os.environ["PATH"]})
+            lines = done.stdout.splitlines()
+            return next(line[7:] for line in lines if line.startswith("enough=")), lines[lines.index("or<<.") + 1:lines.index(".")]
+
         def changed(path, kind, text="two\n"):
             before = key(kind)[1]
             write(path, text)
@@ -1875,17 +1912,25 @@ def check_ci_build_key():
             git("commit", "--quiet", "--message", path)
             return key(kind)[1] != before
 
-        for kind in ("products", "tests"):
+        for kind in ("products", "tests", "release"):
             row(f"ci-build-key.sh: {kind}: there is a name", (key(kind)[0], bool(key(kind)[1])), (0, True))
             row(f"ci-build-key.sh: {kind}: the same twice", key(kind) == key(kind), True)
             for name in ("sw_vers", "xcodebuild", "swift"):
                 row(f"ci-build-key.sh: {kind}: another {name}, another name", key(kind) != key(kind, **{f"VERSION_OF_{name}": "2"}), True)
         row("ci-build-key.sh: with and without the tests are two names", key("products")[1] != key("tests")[1], True)
+        row("ci-build-key.sh: a release build has a name of its own", len({key(kind)[1] for kind in ("products", "tests", "release")}), 3)
+        row("ci-build-key.sh: it takes its own for all it needs; a build with the tests will do for one without, as it did",
+            [fnmatch.fnmatchcase(key(has)[1], takes(wants)[0]) for wants, has in (("release", "release"), ("products", "tests"), ("products", "products"))], [True] * 3)
+        row("ci-build-key.sh: neither a debug build passes for a release build nor the other way round, and neither is built upon the other",
+            [(wants, has) for wants, has in (("release", "products"), ("release", "tests"), ("products", "release"), ("tests", "release"))
+             if fnmatch.fnmatchcase(key(has)[1], takes(wants)[0]) or any(key(has)[1].startswith(start) for start in takes(wants)[1])], [])
+        row("ci-build-key.sh: the control: a build without the tests is built upon one with them", any(key("tests")[1].startswith(start) for start in takes("products")[1]), True)
         row("ci-build-key.sh: which test files are compiled is part of the name of a build with tests",
             key("tests") != key("tests", ARBOR_TEST_SOURCES_T="T.swift"), True)
         row("ci-build-key.sh: and no part of the name of one without", key("products") == key("products", ARBOR_TEST_SOURCES_T="T.swift"), True)
         for path in ("Package.swift", "Sources/A.swift", "scripts/mac-shell/pointer.swift", "scripts/mac-shell/compile-tools.sh"):
             row(f"ci-build-key.sh: {path} changes: another name, with the tests and without", (changed(path, "products"), changed(path, "tests", "three\n")), (True, True))
+            row(f"ci-build-key.sh: {path} changes: and of the release build", changed(path, "release", "four\n"), True)
         row("ci-build-key.sh: a test changes: another name with the tests, the same without", (changed("Tests/T.swift", "tests"), changed("Tests/T.swift", "products", "three\n")),
             (True, False))
         row("ci-build-key.sh: prose changes: the same name", (changed("docs/x.md", "products"), changed("docs/x.md", "tests", "three\n")), (False, False))
