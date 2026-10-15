@@ -220,7 +220,9 @@ focus are the same with any `animationDuration` (`windowsGoTheSameWayWithAndWith
 level above floating windows and below the Dock and the menu bar, covers the display with a picture of
 the desktop and one stand-in per item. It is up, and flushed to the window server, when `animate` returns.
 Core Animation then moves the stand-ins in the render server while the main thread waits on apps.
-A second transition on a stage that is up starts from where the stand-ins are on screen. The curve is
+A second transition on a stage that is up starts from where the stand-ins are on screen. One that corrects the first, because an app
+had the last word on its window's frame, gets what is left of the first one's time and at least 0.15 s (`Transition.timeLeft`): one act is one
+motion, and the time the apps took to answer is not added to it. (The main thread waits on the apps until then, so no timer has lifted the stage.) The curve is
 `Transition.curve`, an ease-out without overshoot. A stage must never stay up: a timer and the completion
 block both end a motion, and a mouse button going down anywhere, sleep, wake, a Space switch, a
 display change, `pause` and quitting take every stage down at once. The left button also comes by way of

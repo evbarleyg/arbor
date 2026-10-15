@@ -1,5 +1,6 @@
 import ArborCore
 import CoreGraphics
+import Foundation
 
 /// Showing changes as motion (docs/features/F02-animated-transitions.md).
 ///
@@ -25,6 +26,8 @@ extension Controller {
     var before: Keyframe
     var stack: [StackedWindow]
     var sent: Transition
+    /// When the stage was up and the stand-ins set off.
+    var began: Date
   }
 
   /// Called by `relayout` before it moves anything: plans the way from what the display shows now
@@ -65,7 +68,7 @@ extension Controller {
     fit(&transition, to: stack)
     overlays.animate(transition)
     rehearsalWaits(for: transition.duration)
-    return StagedTransition(before: before, stack: stack, sent: transition)
+    return StagedTransition(before: before, stack: stack, sent: transition, began: now())
   }
 
   /// Whether macOS has swept the windows aside to show its desktop, going by what the window server has just `listed`.
@@ -106,6 +109,8 @@ extension Controller {
       var actual = transition(on: display, from: staged.before, visible: framesInView(on: display), layout: layout)
     else { return }
     fit(&actual, to: staged.stack)
+    // One act is one motion: the apps' time to answer is not added to it.
+    actual.duration = Transition.timeLeft(of: actual.duration, after: now().timeIntervalSince(staged.began))
     guard !actual.endsLike(staged.sent) else { return }
     overlays.animate(actual)
     rehearsalWaits(for: actual.duration)
