@@ -1,0 +1,97 @@
+# 80-settings 2026-10-15T04:45Z on macOS 26.6.2, commit 8ea692f
+
+▸ add a shortcut to settings.json and reload: it works
+  ✔ before, ⌃⌥⌘H means nothing to Arbor
+  ✔ reload-settings succeeds
+  ✔ ⌃⌥⌘H runs dock left
+  ✔ the focused window docked at the left edge
+  ✔ the menu shows the new keys beside Left
+  ✔ windows match Arbor's layout
+
+▸ remove a default shortcut with null: Arbor no longer takes the key
+  ✔ ⌃⌥D does not reach Arbor
+  ✔ the app with the keyboard gets the key instead
+  ✔ the camera stayed
+  ✔ the menu no longer shows ⌃⌥D
+
+▸ give a default shortcut another command
+  ✔ ⌃⌥Space runs desktop now
+  ✔ the docked window left the screen
+  ✔ the menu shows ⌃⌥Space beside Show the Desktop
+  ✔ and no longer beside Show Everything
+
+▸ arborctl bindings lists the shortcuts in effect
+  ✔ the new one
+  ✔ the changed one
+  ✔ not the removed one
+
+▸ an entry that cannot be used is reported, and the rest still apply
+  ✔ arborctl bindings says which was skipped
+  ✔ and the one that would get in the way of typing
+  ✔ the log says so too
+  ✔ the good entry works
+  ✔ the focused window moved to the right edge
+  ✔ the default that had been removed is back
+
+▸ change the gap in settings.json and reload: the windows are laid out again
+  ✔ the docked window is 30 points from the edge
+  ✔ and from the top
+  ✔ windows match Arbor's layout
+
+▸ settings.json with a typo: reloading says where it is, and the settings in use stay
+  ✔ reload-settings fails
+  ✔ it says where the typo is
+  ✔ the gap stays as it was
+  ✔ the file is left as the person wrote it
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+
+▸ windows that were open when Arbor started are not touched by rules
+  ✔ the first floats, though a rule matches its title
+  ✔ the second too
+  ✔ nothing is docked
+
+▸ a new window whose title matches a dock rule docks at that edge
+  ✔ it is docked
+  ✔ at the left edge
+  ✔ the log says which rule
+  ✔ windows match Arbor's layout
+
+▸ a new window with a dock beside rule docks beside that app's docked window
+  ✔ it is docked
+  ✔ below the docked window
+  ✔ in its column
+  ✔ windows match Arbor's layout
+
+▸ a new window with an ignore rule is left alone
+  ✔ Arbor does not arrange it
+  ✔ arranging everything leaves it where it was
+
+▸ a new window with a float rule, or with no rule, floats
+  ✔ the one with the float rule floats
+  ✔ the one no rule matches floats
+
+▸ the first matching rule wins, and a later window of a kind open at launch is docked
+  ✔ it is docked
+  ✔ at the right edge
+  ✔ windows match Arbor's layout
+
+▸ arborctl rules lists the rules and what was skipped
+  ✔ the rules in order
+  ✔ the entry with an unknown action, and why
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+  ✔ window 5 is back on screen after quitting
+  ✔ window 6 is back on screen after quitting
+  ✔ window 7 is back on screen after quitting
+  ✔ window 8 is back on screen after quitting
+
+62 passed, 0 failed

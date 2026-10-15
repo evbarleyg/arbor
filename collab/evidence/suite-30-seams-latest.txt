@@ -1,0 +1,86 @@
+# 30-seams 2026-10-15T04:26Z on macOS 26.6.2, commit 8ea692f
+
+▸ drag the seam beside a column to the right: the whole column grows and the Desktop gives way
+  ✔ the window beside the seam is 80 points wider
+  ✔ so is the one below it
+  ✔ the window beyond the Desktop kept its width
+  ✔ it still reaches the right edge
+  ✔ nothing overlaps
+  ✔ windows match Arbor's layout
+
+▸ drag the seam between two stacked windows down: the upper grows and the lower shrinks
+  ✔ the upper window is 60 points taller
+  ✔ the lower one 60 points shorter
+  ✔ the lower one still reaches the bottom edge
+  ✔ windows match Arbor's layout
+
+▸ drag a seam back to the left: it follows the pointer both ways
+  ✔ the window beside the seam is 80 points narrower
+  ✔ windows match Arbor's layout
+
+▸ drag a docked window's inner edge: on release its neighbour gives up the space
+  ✔ the window is 40 points wider
+  ✔ it still reaches the right edge
+  ✔ it is in its slot: the layout followed the window
+  ✔ the Desktop is still between the columns
+  ✔ windows match Arbor's layout
+
+▸ drag a docked window's lower edge toward the window below: nothing else moves until the button is let go
+  ✔ the window grew under the pointer
+  ✔ the window below has not moved
+  ✔ nor the one beyond the Desktop
+  ✔ the window still has what it was given
+  ✔ released, it keeps the height it was given
+  ✔ the window below gives up that much
+  ✔ and still reaches the bottom edge
+  ✔ it is in its slot: the layout followed the window
+  ✔ nothing overlaps
+  ✔ windows match Arbor's layout
+
+▸ drag a docked window's outer edge, against the screen: it springs back on release
+  ✔ the window follows the pointer while the button is held
+  ✔ it has its width back
+  ✔ it reaches the right edge again
+  ✔ windows match Arbor's layout
+
+▸ drag a docked window's corner: both seams move
+  ✔ the window grew wider under the pointer
+  ✔ and shorter
+  ✔ released, it keeps the width it was given
+  ✔ and the height
+  ✔ it is in its slot: the layout followed the window
+  ✔ the window below took the height and the width
+  ✔ and reaches the bottom edge
+  ✔ nothing overlaps
+  ✔ windows match Arbor's layout
+
+▸ move a docked window without the mouse: Arbor puts it back
+  ✔ it is back in its slot
+  ✔ windows match Arbor's layout
+
+▸ resize a docked window by command
+  ✔ the command succeeds
+  ✔ the window is 40 points narrower
+  ✔ an edge with nothing beside it is refused
+  ✔ windows match Arbor's layout
+
+▸ drag a floating window across a gap and resize under it by command: it stays in front, and a press where the gap runs is the window's
+  ✔ the window floats
+  ✔ it lies across the gap
+  ✔ the first resize succeeds
+  ✔ and the one that takes it back
+  ✔ the floating window has stayed where it was put
+  ✔ the gap runs under it as before
+  ✔ it is in front of the gap's handle
+  ✔ the floating window got the press
+  ✔ and the drag that followed
+  ✔ no docked window was resized
+  ✔ windows match Arbor's layout
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+61 passed, 0 failed
