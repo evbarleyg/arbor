@@ -100,9 +100,13 @@ scene() {
   esac
 }
 
-# The line on screen is switched on for its own pictures only: it stays for seconds, over whatever is taken next.
+# The line on screen is switched on for its own pictures only: it stays for seconds, over whatever is taken next. What is an option
+# is said out loud, whatever ships: the tour is of everything Arbor can draw.
 SETTINGS='{
   "messages": "off",
+  "focusRing": true,
+  "menuBarControls": true,
+  "animationDuration": 0.46,
   "rules": [
     { "app": "com.example.mail", "title": "Inbox", "action": "dock left" },
     { "app": "com.example.player", "action": "float" }
