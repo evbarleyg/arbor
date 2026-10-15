@@ -106,31 +106,6 @@ extension ChaosRunner {
         zoom-node 1
         """),
     ChaosKnownFailure(
-      rule: "grown-while-hanging-making-way", owner: "the controller",
-      story: "Only with `floatingWindowsMakeWay` on, which ships off (F64). Its user leaves a floating window hanging over an edge and makes it smaller; the next layout that places floating windows gives it its remembered, larger size "
-        + "at the same corner. As much shows as its user left showing.",
-      script: """
-        settings {"floatingWindowsMakeWay":true}
-        launch
-        open 101 Terminal pid 1003 at 671 613 738 618
-        open 102 Music pid 1006 at -194 842 716 615
-        open 103 Terminal pid 1003 at -546 784 760 249
-        layout Terminal | Finder
-        move 101 1245 330 480 618
-        close 102
-        """,
-      """
-        settings {"floatingWindowsMakeWay":true}
-        open 101 Safari pid 1000 at 920 616 441 606 min 399 282
-        renumber 101 102
-        renumber 102 103
-        launch
-        open 106 Finder pid 1005 at -1037 63 1674 1034 max 735 631
-        dock 103 top
-        move 106 1208 777 735 431
-        undo
-        """),
-    ChaosKnownFailure(
       rule: "docked-partly-out", owner: "F61 and the core",
       story: "A docked window that will not shrink to its slot keeps its size at the slot's corner and hangs out of the display: it should be a tile or get room (F61).",
       script: """
@@ -520,24 +495,6 @@ extension ChaosRunner {
         key down float-all
         via menu move-to-display next
         way-back float-all
-        """),
-    ChaosKnownFailure(
-      rule: "home-not-whole", owner: "the ways home", severity: 3,
-      story: "(The script sets `floatingWindowsMakeWay`: as Arbor ships this road is closed, F64, and the walks have others.) After a way home a window Arbor placed hangs over an edge further than anybody left it: its own, larger size given back at the corner a hand gave.",
-      script: """
-        settings {"floatingWindowsMakeWay":true}
-        displays main:0,0,1728,1117:37,0,59,0* windows-never
-        open 101 Music pid 1006 at 240 65 1049 678 min 680 480
-        open 103 Notes pid 1001 at 454 516 927 534 min 709 300
-        launch
-        focus 103
-        key down dock right
-        advance 1
-        grab 101
-        carry 1304 619
-        release
-        advance 1
-        key down float-all
         """),
     ChaosKnownFailure(
       rule: "home-behind-the-dock", owner: "the ways home", severity: 4,
@@ -1278,5 +1235,6 @@ extension ChaosRunner {
   public nonisolated static let countedRules: Set<String> = [
     "eye-moved-twice", "eye-moved-twice-sizing", "eye-moved-again", "eye-moved-again-sizing",
     "floating-taken-out-of-view", "strayed-between", "dock-took-out-of-view", "displays-moved-the-untouched", "plain-drag-left-an-undo-step",
+    "parked-before-any-dock",
   ]
 }

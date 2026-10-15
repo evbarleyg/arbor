@@ -884,6 +884,40 @@ public final class ChaosRunner {
 
   // MARK: Shrinking
 
+  /// How many things in `script` are half a gesture: something done with a window still in the hand, a hand that moves or lets go of nothing, a key that
+  /// goes down and never comes up, or comes up without having gone down. A gesture that the script's end cuts off is whole: the rule broke in the middle of it.
+  public static func halfGestures(in script: [ChaosAction]) -> Int {
+    var (count, inHand, down) = (0, false, [String]())
+    for action in script {
+      switch action {
+      case .grab, .edge(_, _, hold: true):
+        if inHand { count += 1 }
+        inHand = true
+      case .carry: if !inHand { count += 1 }
+      case .release, .loseRelease:
+        if !inHand { count += 1 }
+        inHand = false
+      case .settle: inHand = false
+      case .cursor, .advance, .react, .flush, .commandKey, .save: break
+      case .key(let line, .pressed):
+        if inHand { count += 1 }
+        down.append(line)
+      case .key(let line, .released):
+        if let index = down.lastIndex(of: line) { down.remove(at: index) } else { count += 1 }
+      default: if inHand { count += 1 }
+      }
+    }
+    // The last key may still be down: the rule broke at the press, or in the moments after it.
+    let afterTheLastPress = script.lastIndex { if case .key(_, .pressed) = $0 { true } else { false } }.map { script[($0 + 1)...] } ?? []
+    let cutOff = afterTheLastPress.allSatisfy { action in
+      switch action {
+      case .advance, .react, .flush, .settle, .save: true
+      default: false
+      }
+    }
+    return count + max(down.count - (cutOff ? 1 : 0), 0)
+  }
+
   /// Deletes actions from a failing script for as long as the same rule still breaks (delta
   /// debugging: halves first, then smaller and smaller pieces, then single actions until none can
   /// go). `test` runs a script and returns the failure, if any; the default replays it in this
@@ -895,8 +929,10 @@ public final class ChaosRunner {
     let test = test ?? { replay($0, excusing: knownRules.subtracting([failure.rule])) }
     var best = failure
     var runs = 0
+    // A drag and a key go whole or not at all, where they were whole in the walk: a click with a window still in the hand is what no person does.
+    let halves = halfGestures(in: failure.script)
     func attempt(_ candidate: [ChaosAction]) -> Bool {
-      guard runs < budget else { return false }
+      guard runs < budget, halfGestures(in: candidate) <= halves else { return false }
       runs += 1
       guard let result = test(candidate), result.rule == failure.rule else { return false }
       best = ChaosFailure(seed: failure.seed, violations: result.violations, script: result.script)
@@ -917,10 +953,41 @@ public final class ChaosRunner {
       }
       if chunk > 1 {
         chunk = max(chunk / 2, 1)
-      } else if !removedAny {
-        break
+        continue
       }
+      // Piece by piece a gesture cannot go: without its beginning or its end it is half a gesture. So each is tried as a whole.
+      var index = 0
+      while index < best.script.count {
+        let gesture = Self.gesture(beginningAt: index, in: best.script)
+        if !gesture.isEmpty, attempt(best.script.enumerated().filter { !gesture.contains($0.offset) }.map(\.element)) {
+          removedAny = true
+        } else {
+          index += 1
+        }
+      }
+      if !removedAny { break }
     }
     return best
+  }
+
+  /// The places in `script` of the gesture that begins at `index`: a drag from the hand's taking hold to its letting go, with all between; a key's going down and
+  /// its coming up. Empty if none begins there, or it has no end.
+  private static func gesture(beginningAt index: Int, in script: [ChaosAction]) -> Set<Int> {
+    switch script[index] {
+    case .grab, .edge(_, _, hold: true):
+      guard
+        let end = script[(index + 1)...].firstIndex(where: { action in
+          switch action {
+          case .release, .loseRelease, .settle: true
+          default: false
+          }
+        })
+      else { return [] }
+      return Set(index...end)
+    case .key(let line, .pressed):
+      guard let end = script[(index + 1)...].firstIndex(of: .key(line, .released)) else { return [] }
+      return [index, end]
+    default: return []
+    }
   }
 }

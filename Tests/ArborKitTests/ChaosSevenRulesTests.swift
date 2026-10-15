@@ -708,6 +708,23 @@ private let b = WindowID(102)
     #expect(!numbers(after: onTheSide, then: "displays main:0,0,1440,900:25,0,0,0* windows-late", "settle").contains("displays-moved-the-untouched"))
   }
 
+  /// The decided case: its own size, at the corner the hand gave, no less showing than was left showing. Everything else about a window that hangs is a fault as before.
+  @Test func itsOwnSizeAtTheCornerAHandGaveIsWhereItWasLeft() {
+    func placed(_ back: CGRect) -> Set<String> {
+      let runner = ChaosRunner()
+      for line in oneDocked + ["move 102 1200 700 500 400", "settle"] { _ = runner.step(ChaosAction(text: line)) }
+      // Squeezed where it hangs, and given back.
+      runner.beforeTheNextCheck = { _ = $0.system.setFrame(self.rect(1200, 700, 300, 400), of: b) }
+      _ = runner.step(.flush)
+      runner.beforeTheNextCheck = { _ = $0.system.setFrame(back, of: b) }
+      return Set(runner.step(.flush).map(\.rule).filter { $0.hasPrefix("placed-") || $0.hasPrefix("grown-") })
+    }
+    #expect(placed(rect(1200, 700, 500, 400)).isEmpty)
+    // Larger than its own there, or at another corner where less shows.
+    #expect(!placed(rect(1200, 700, 600, 400)).isEmpty)
+    #expect(!placed(rect(1300, 700, 500, 400)).isEmpty)
+  }
+
   // MARK: Less by default
 
   @Test func aFloatingWindowIsNeverTakenOutOfView() {
@@ -732,6 +749,14 @@ private let b = WindowID(102)
     #expect(numbers(after: oneDocked, then: "dock 102 right") { _ = $0.setFrame(self.rect(1439, 868, 702, 851), of: a) }.contains("dock-took-out-of-view"))
     // A key that moves the view is what sends docked windows out of view.
     #expect(!numbers(after: oneDocked + ["dock 102 right", "settle"], then: "zoom 101").contains("dock-took-out-of-view"))
+  }
+
+  /// The fault itself is the control, for as long as it is there: nothing is docked, an app is hidden, its display is unplugged, and its window goes to the corner.
+  @Test func withNothingArrangedNoWindowCountsAsOutOfView() {
+    let desk = ["displays main:0,0,1512,982:37,0,0,0* side:1512,-200,2560,1440:25,0,0,0 windows-first", "launch", "open 101 Terminal pid 1003 at 2000 200 800 600 min 177 60", "settle"]
+    let unplugged = "displays main:0,0,1512,982:37,0,0,0* windows-late"
+    #expect(numbers(after: desk + ["hide 1003", "settle"], then: unplugged, "settle").contains("parked-before-any-dock"))
+    #expect(!numbers(after: desk, then: unplugged, "settle").contains("parked-before-any-dock"))
   }
 
   /// Plays `lines` and then `last`, with `fault` done as part of it, and returns what the nets for a plain drag said from there on.

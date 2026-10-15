@@ -201,7 +201,7 @@ extension ChaosGenerator {
       default: return .advance(1)
       }
     }
-    enum Kind { case open, close, minimize, hide, click, desktopClick, commandTab, drag, edge, seam, tile, key, hold, menu, time, fullScreen, displays, cursor, summon }
+    enum Kind { case open, close, minimize, hide, click, desktopClick, commandTab, drag, edge, seam, tile, key, hold, menu, time, fullScreen, displays, cursor, summon, doubleClick }
     let windows = system.windows.count
     let tiles = world.harness.overlays.tiles.values.reduce(0) { $0 + $1.count }
     let seams = world.harness.overlays.seams.values.reduce(0) { $0 + $1.count }
@@ -210,6 +210,8 @@ extension ChaosGenerator {
         (windows < 3 ? 100 : windows < 7 ? 30 : 4, Kind.open), (windows > 2 ? 14 : 2, .close), (14, .minimize), (5, .hide), (50, .click), (12, .desktopClick),
         (30, .commandTab), (40, .drag), (14, .edge), (seams > 0 ? 12 : 0, .seam), (tiles > 0 ? 24 : 0, .tile), (300, .key), (10, .hold),
         (30, .menu), (30, .time), (4, .fullScreen), (desk.kind == .both ? 10 : 0, .displays), (16, .cursor), (6, .summon),
+        // What came after the first frozen version (ChaosGenerator+Vocabulary.swift).
+        (light && drawsFromEverything ? 20 : 0, .doubleClick),
       ].map { weight, kind in
         guard light else { return (weight, kind) }
         // The mouse first. No key summons an app.
@@ -323,6 +325,11 @@ extension ChaosGenerator {
       thenAMoment([.settle])
       return .displays(desk.displays, random.pick([.late, .silent, .first])!)
     case .cursor: return .cursor(point(in: world))
+    case .doubleClick:
+      // On a title bar: macOS zooms the window. Half the time again: back.
+      guard let window = existing(world, .inView) else { return .flush }
+      if random.chance(50) { thenAMoment([.react, .advance(1), .react, .doubleClick(window)]) } else { thenAMoment() }
+      return .doubleClick(window)
     }
   }
 }

@@ -112,7 +112,7 @@ extension ChaosRunner {
   /// The detector of docs/VIABLE.md, section 5, that a rule of the walks stands for: one vocabulary on Linux and on a Mac.
   public nonisolated static func detector(for rule: String) -> String? {
     let table: [(prefix: String, detector: String)] = [
-      ("moved-twice", "jolt"), ("moved-again", "jolt"), ("sized-there-and-back", "jolt"), ("set-right-", "jolt"), ("strayed-between", "jolt"), ("eye-", "jolt"), ("flashed-", "flash"), ("flipped", "jolt"), ("moved-over-and-over", "stuck"), ("moved-", "moved-unasked"), ("fetched-", "moved-unasked"), ("there-and-back", "moved-unasked"), ("dragged-gap", "moved-unasked"), ("same-windows", "moved-unasked"), ("displays-out-and-back", "moved-unasked"), ("taken-", "moved-unasked"), ("floating-taken", "lost"), ("dock-took", "lost"), ("keyboard-taken", "focus"), ("plain-drag", "moved-unasked"), ("nothing-in-view", "lost"), ("docked-at-a-start", "moved-unasked"),
+      ("moved-twice", "jolt"), ("moved-again", "jolt"), ("sized-there-and-back", "jolt"), ("set-right-", "jolt"), ("strayed-between", "jolt"), ("eye-", "jolt"), ("flashed-", "flash"), ("flipped", "jolt"), ("moved-over-and-over", "stuck"), ("moved-", "moved-unasked"), ("fetched-", "moved-unasked"), ("there-and-back", "moved-unasked"), ("dragged-gap", "moved-unasked"), ("same-windows", "moved-unasked"), ("displays-out-and-back", "moved-unasked"), ("taken-", "moved-unasked"), ("floating-taken", "lost"), ("parked-before", "lost"), ("dock-took", "lost"), ("keyboard-taken", "focus"), ("plain-drag", "moved-unasked"), ("nothing-in-view", "lost"), ("docked-at-a-start", "moved-unasked"),
       ("pause-and-resume", "moved-unasked"), ("left-its-place", "moved-unasked"), ("start-took", "lost"), ("quit-left", "lost"), ("displays-left", "lost"), ("switched-to-behind", "behind"),
       ("switched-to", "focus"), ("app-switch", "focus"), ("keyboard-", "focus"), ("size-", "size-lost"), ("home-", "lost"), ("lost", "lost"), ("out-of-reach", "lost"),
       ("placed-", "lost"), ("vanished", "lost"), ("parked-on-the-desktop", "lost"), ("restless", "stuck"), ("given-up", "stuck"),
@@ -339,6 +339,16 @@ extension ChaosRunner {
 
   // MARK: What all the nets ask of a window
 
+  /// Decided (the product owner, 2026-10-15; what is found counts as left): a window that has its own size, at the corner a hand gave it, with no less showing than
+  /// was left showing, is where its person left it, however far it hangs over an edge. Arbor may put it there, and no switch fetches it from there.
+  func isWhereAHandLeftIt(_ window: WindowID, _ frame: CGRect) -> Bool {
+    guard let home = system.windows[window]?.home, abs(home.minX - frame.minX) <= 1, abs(home.minY - frame.minY) <= 1, let own = seven.ownSizes[window],
+      abs(own.width - frame.width) <= 1.5, abs(own.height - frame.height) <= 1.5
+    else { return false }
+    let showing = Self.area(of: frame, showingOn: system.displayList)
+    return (userPlaces[window] ?? []).contains { $0.showing <= showing + 1 }
+  }
+
   /// Arbor arranges it, its app does as it is asked, and a person can see it.
   private func isFairGame(_ window: WindowID) -> FakeWindowSystem.FakeWindow? {
     guard let fake = system.windows[window], fake.snapshot.isPresent, !fake.snapshot.isFullScreen, cooperates(fake),
@@ -380,6 +390,7 @@ extension ChaosRunner {
     homeDisplayViolations(after: action, &problems)
     emptyDeskViolations(after: action, &problems)
     floatingViolations(&problems)
+    parkedViolations(&problems)
     dockViolations(after: action, &problems)
     untouchedByTheChangeViolations(after: action, &problems)
     keyboardViolations(after: action, &problems)
@@ -540,9 +551,10 @@ extension ChaosRunner {
   /// How much of what the displays show `frame` covers that neither `old` nor `new` covers, in square points.
   private func strayed(_ frame: CGRect, between old: CGRect, and new: CGRect) -> CGFloat {
     system.displayList.reduce(0) { sum, display in
-      let seen = frame.intersection(display.frame)
+      // To whole points: macOS's own tile lies at half a point, and half a point along 1,500 is more than anybody sees.
+      let seen = frame.integral.intersection(display.frame)
       guard !seen.isNull else { return sum }
-      let (inOld, inNew) = (seen.intersection(old), seen.intersection(new))
+      let (inOld, inNew) = (seen.intersection(old.integral), seen.intersection(new.integral))
       return sum + seen.area - inOld.area - inNew.area + inOld.intersection(inNew).area
     }
   }
@@ -563,6 +575,16 @@ extension ChaosRunner {
       && workspaces.values.allSatisfy {
         $0.tree.allWindows.isEmpty && $0.stashedWindows.isEmpty && $0.pinnedWindows.isEmpty && $0.summoned == nil
       }
+  }
+
+  /// With nothing docked, kept in view, summoned or sent away there is no view that could leave a window out: none counts as out of view. (While one does, the
+  /// nets for "before any dock" are not asked, so this fault used to switch off the very nets that should have seen it.)
+  func parkedViolations(_ problems: inout [InvariantViolation]) {
+    guard isRunning, wasRunningBefore, Self.nothingIsArranged(workspacesBefore, []), Self.nothingIsArranged(controller.workspaces, []) else { return }
+    asked("parked-before-any-dock")
+    for window in controller.parked.subtracting(parkedBefore).sorted() where system.windows[window] != nil {
+      problems.append(.init("parked-before-any-dock", "nothing is docked, kept in view or summoned, and Arbor counts \(window) as out of view"))
+    }
   }
 
   /// The ways home, and the commands that lay everything out afresh or take an arrangement back.
@@ -591,8 +613,6 @@ extension ChaosRunner {
       let whatHappened = "Arbor moved \(window) from \(before.brief) to \(fake.snapshot.frame.brief)"
       let showedBefore = Self.area(of: before, showingOn: system.displayList)
       if untouched {
-        // Most of it shows: it may not be fetched, wherever its title bar is.
-        if showedBefore < 0.5 * before.area, !titleBarIsWithinReach(before) { continue }
         // A command that names a window is somebody asking, and so is one that asks for everything.
         // Timers finish what it began.
         // But with nothing arranged there is nothing to lay out or to give back.
@@ -601,7 +621,7 @@ extension ChaosRunner {
         if action.isACommand || seven.timeOnly, named || (seven.askedForEverything && (!seven.tookAWayHome || !titleBarIsWithinReach(before))) { continue }
         if seven.displaysChangedLast { continue }
         // What is found counts as left. The one thing Arbor may fetch is what nobody could get hold of: no 24 points of its title bar
-        // are on any display (docs/VIABLE.md, section 6).
+        // are on any display (docs/VIABLE.md, section 6). Where most of it shows it may not be fetched, wherever its title bar is.
         if showedBefore < 0.5 * before.area, !titleBarIsWithinReach(before) { continue }
         // And what is there because of Arbor: apps open a window beside the one they have, and one that no display shows Arbor takes for
         // one that it put out of view itself, in a run that was killed.
@@ -697,6 +717,8 @@ extension ChaosRunner {
       (.space(let a, false), .space(let b, true)):
       return a == b
     case (.hide(let a, true), .hide(let b, false)): return a == b
+    // macOS zooms a window at a double-click on its title bar, and takes it back at the next.
+    case (.doubleClick(let a), .doubleClick(let b)): return a == b
     default:
       // A key goes down and comes up: the command runs once.
       guard let first = there.parsedCommand, back.parsedCommand == .back, controller.holdLevel == nil
@@ -911,7 +933,8 @@ extension ChaosRunner {
     asked("switched-to")
     let frame = fake.snapshot.frame
     let showing = Self.area(of: frame, showingOn: system.displayList)
-    let arborPutItThere = fake.placeIsArborsDoing && fake.lastRequest?.took == frame && !fake.groundHasShifted && !seven.carriedByMacOS.contains(window)
+    let arborPutItThere =
+      fake.placeIsArborsDoing && fake.lastRequest?.took == frame && !fake.groundHasShifted && !seven.carriedByMacOS.contains(window) && !isWhereAHandLeftIt(window, frame)
     if controller.parked.contains(window)
       || (arborPutItThere && showing < 0.5 * min(frame.area, Self.display(showingMostOf: frame, among: system.displayList)?.visibleFrame.area ?? 0)
         && !(userPlaces[window] ?? []).contains { place in system.displayList.contains { place.allows(frame, on: $0) } })
@@ -1206,7 +1229,9 @@ extension ChaosRunner {
       }
       if !showsAll {
         // Where somebody left it hanging over an edge, it may go on hanging as far. And where Arbor never put it, it is its person's or macOS's.
-        if fits, fake.lastRequest?.took == frame, !(userPlaces[window] ?? []).contains(where: { place in system.displayList.contains { place.allows(frame, on: $0) } }) {
+        if fits, fake.lastRequest?.took == frame, !isWhereAHandLeftIt(window, frame),
+          !(userPlaces[window] ?? []).contains(where: { place in system.displayList.contains { place.allows(frame, on: $0) } })
+        {
           problems.append(.init("home-not-whole", "after \(name), \(window) is at \(frame.brief) and \(overhang())"))
         }
       } else if fits, movedNow.contains(window), fake.lastRequest?.took == frame, display.frame.contains(frame),

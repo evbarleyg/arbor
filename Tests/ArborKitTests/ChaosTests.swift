@@ -182,6 +182,29 @@ private let steps = environment("ARBOR_CHAOS_STEPS") ?? 200
     #expect(first.count == second.count)
   }
 
+  /// Light walks are mostly drags. Cut in half, a drag leaves a click with a window still in the hand, which no person does and which misleads whoever reads it.
+  @Test func aDragAndAKeyAreShrunkWholeOrNotAtAll() {
+    func halves(_ text: String) -> Int { ChaosRunner.halfGestures(in: ChaosAction.script(text)) }
+    #expect(halves("launch\ngrab 101\ncarry 5 5\nadvance 0.3\nrelease\nkey down zoom\nkey up zoom") == 0)
+    #expect(halves("launch\ngrab 101\ntile main 5\ncarry 5 5\nrelease") == 1)
+    #expect(halves("launch\ncarry 5 5\nrelease") == 2)
+    #expect(halves("launch\nkey down zoom\nfocus 101") == 1)
+    #expect(halves("launch\nkey up zoom") == 1)
+    // Cut off by the end of the script: the rule broke in the middle.
+    #expect(halves("launch\ngrab 101\ncarry 5 5") == 0)
+    #expect(halves("launch\nkey down zoom\nreact\nadvance 1") == 0)
+
+    // Whatever the rule needs, the shrunk script has no half that the walk had not.
+    let walk = ChaosAction.script("launch\nopen 101 Notes pid 1001 at 300 200 800 500\ngrab 101\ncarry 400 300\ncarry 700 896\nrelease\nkey down zoom\nkey up zoom\nsettle")
+    let failure = ChaosFailure(seed: nil, violations: [InvariantViolation("made-up", "")], script: walk)
+    // Breaks whenever the window has been carried to the foot of the display.
+    let shrunk = ChaosRunner.shrink(failure) { script in
+      script.contains(ChaosAction(text: "carry 700 896")) ? ChaosFailure(seed: nil, violations: failure.violations, script: script) : nil
+    }
+    #expect(ChaosRunner.halfGestures(in: shrunk.script) == 0)
+    #expect(shrunk.script.map(\.text) == ["grab 101", "carry 700 896"])
+  }
+
   @Test func shrinkingKeepsOnlyTheActionsThatMatter() {
     // A made-up rule: the script fails once 103 has been closed after 101 was docked.
     func test(_ script: [ChaosAction]) -> ChaosFailure? {

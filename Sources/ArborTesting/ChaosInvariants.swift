@@ -421,6 +421,7 @@ extension ChaosRunner {
         let display = Self.display(showingMostOf: frame, among: system.displayList),
         // It can be made to fit.
         fake.minimumSize.width <= display.visibleFrame.width, fake.minimumSize.height <= display.visibleFrame.height,
+        !isWhereAHandLeftIt(window, frame),
         // Left hanging over an edge, it may hang as far when Arbor makes room beside it or gives it another size.
         !(userPlaces[window] ?? []).contains(where: { place in system.displayList.contains { place.allows(frame, on: $0) } })
       else { continue }
