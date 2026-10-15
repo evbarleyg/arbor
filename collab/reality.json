@@ -7318,6 +7318,34 @@
    ]
   },
   {
+   "id": "macos-leaves-a-window-that-is-off-the-screen-where-its-display-was",
+   "kind": "second-actor",
+   "layer": "at the seam",
+   "expected": "When a display goes, macOS moves its windows onto the displays that remain at once (`macos-moves-windows-at-once-and-arbor-hears-of-the-displays-later`), those of a hidden app and those in the Dock too. The stand-ins move them all.",
+   "happened": "Not those. With Arbor not running, a window of a hidden app and one in the Dock stayed where their display had been when it went: at x 2560 and 2040 beside a display 1024 points wide, four seconds later. (Their y went by 312 points, with the main display's change of resolution.) macOS brought each in only when it was shown, and then to the frame it had last had on that display, not to the nearest place. Plugged in again while they were away, the display did not get them back. A window in sight was brought over within 0.3 s. The same numbers in two runs.",
+   "found": "The last step of `check-off-the-screen-at-an-unplug.sh`, without Arbor, on a hosted Mac on 2026-10-15 (macOS 26.6.2, a virtual second display, two test windows, two runs).",
+   "modelled": "partly",
+   "knobs": [
+    "FakeWindowSystem.moveSilently",
+    "FakeWindowSystem.displayList"
+   ],
+   "guards": [
+    "test: leftWhereItsDisplayWasItIsPutInViewWhileItIsAway",
+    "e2e: it is where it lay while it was away: nothing moved when it showed"
+   ],
+   "copes": "Sources/ArborKit/Controller/Controller+Displays.swift puts it where it floats on the display that takes it in, in one move, while it is away (`putWhereItFloats`): seen on that Mac, where nothing moved when it showed. The chaos lab's displays still take every window along; only the one test plays it as macOS does.",
+   "hurt": 2,
+   "touches": [
+    "moved-unasked",
+    "jolt"
+   ],
+   "sources": [
+    "scripts/mac-shell/check-off-the-screen-at-an-unplug.sh",
+    "Sources/ArborKit/Controller/Controller+Displays.swift",
+    "Tests/ArborKitTests/AwayWhenItsDisplayGoesTests.swift"
+   ]
+  },
+  {
    "id": "macos-leaves-out-a-menu-bar-item-that-does-not-fit",
    "kind": "missing-report",
    "layer": "at the seam",
@@ -9947,25 +9975,32 @@
    "kind": "late-or-partial-answer",
    "layer": "at the seam",
    "expected": "The fake moves a minimized window, or one of an app put away with ⌘H, like any other.",
-   "happened": "macOS is said to refuse or ignore such moves, so tests forgive moves that would fail on a Mac. Another measurement says that a minimized window can be given its place before it shows. Which of the two holds, and when, is not settled.",
-   "found": "A table that set the fake against macOS, row by row, in a review of what had been proved on real windows.",
-   "modelled": "no",
-   "knobs": [],
-   "guards": [],
-   "copes": "open",
+   "happened": "macOS was said to refuse or ignore such moves, so that tests would forgive moves that fail on a Mac. Measured, it obeys: a test window of an app put away with ⌘H, and one in the Dock, each asked for a frame by Accessibility, answered with that frame, echoed it, and the window server had them there while they were still away; shown, they were there. Four such moves in each of two runs. Of real apps nobody knows.",
+   "found": "A table that set the fake against macOS, row by row, in a review of what had been proved on real windows. Settled by `check-off-the-screen-at-an-unplug.sh` on a hosted Mac on 2026-10-15 (macOS 26.6.2, a virtual second display, two test apps, once with and once without the change it came with), in its traces.",
+   "modelled": "yes",
+   "knobs": [
+    "FakeWindowSystem.setFrame",
+    "FakeWindowSystem.setBehaviour"
+   ],
+   "guards": [
+    "test: whatIsOffTheScreenWhenItsDisplayGoesIsNotSentToTheCorner",
+    "test: anAppThatDoesNotObeyWhileHiddenIsFetchedWhenItShows"
+   ],
+   "copes": "Sources/ArborKit/Controller/Controller+Displays.swift puts such a window where it floats while it is away (`putWhereItFloats`), and one whose app does not obey goes on counting as out of view, which fetches it when it shows.",
    "hurt": 3,
    "touches": [
     "jolt"
    ],
    "sources": [
     "Sources/ArborTesting/FakeWindowSystem.swift",
-    "collab/BACKLOG.md"
+    "collab/BACKLOG.md",
+    "scripts/mac-shell/check-off-the-screen-at-an-unplug.sh",
+    "Tests/ArborKitTests/AwayWhenItsDisplayGoesTests.swift"
    ],
    "backlog": [
     "K180",
     "K1394"
-   ],
-   "certainty": "suspected"
+   ]
   },
   {
    "id": "the-fake-says-the-keyboard-moved-from-within-every-focus-call",
