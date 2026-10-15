@@ -62,6 +62,14 @@ import Testing
     #expect(budget.questions == 0 && budget.repeatMoves == 1, "nor one that comes after the move: \(budget)")
   }
 
+  /// The same measure as the detector on a Mac has, so that Linux lets nothing pass that a Mac would not: 4 points there and 4 back are 8.
+  @Test func theCheckMeasuresAsTheDetectorOnAMacDoes() {
+    func road(_ widths: CGFloat...) -> [CGRect] { widths.map { CGRect(x: 12, y: 37, width: $0, height: 851) } }
+    #expect(detour(road(700, 497, 500)) == nil, "3 and 3 are 6")
+    #expect(detour(road(700, 496, 500)) != nil)
+    #expect(detour(road(700, 500, 400)) == nil)
+  }
+
   @Test func theCheckItselfSeesADetour() {
     let start = CGRect(x: 300, y: 200, width: 640, height: 420)
     #expect(detour([start, CGRect(x: 300, y: 200, width: 700, height: 800), CGRect(x: 720, y: 33, width: 700, height: 800)]) == nil)

@@ -37,10 +37,11 @@ extension FakeWindowSystem {
       ("left edge", { $0.minX }), ("top edge", { $0.minY }), ("width", { $0.width }), ("height", { $0.height }),
     ]
     for (name, value) in coordinates {
-      let changes = steps.map { value($1) - value($0) }
-      // The way that was gone only to be taken back.
-      let back = min(changes.filter { $0 > 0 }.reduce(0, +), -changes.filter { $0 < 0 }.reduce(0, +))
-      if back > roadTolerance { return "its \(name) went \(Int(back)) points there and back: \(told)" }
+      // As the detector on a Mac measures it (scripts/mac-shell/jolts.py, `measure`): what it travelled beyond the straight way, which
+      // is there and back again.
+      let travelled = steps.map { abs(value($1) - value($0)) }.reduce(0, +)
+      let excess = travelled - abs(value(road[road.count - 1]) - value(road[0]))
+      if excess > roadTolerance { return "its \(name) went \(Int(excess)) points out of its way: \(told)" }
     }
     return nil
   }

@@ -182,7 +182,8 @@ extension Controller {
     }
     unplaced.remove(window)
     // One that was only moved, at the size it has, has been through this where it stood.
-    if asked.size == target.size { actual = askForLess(window, slot: target, took: actual) }
+    // Where it was asked, not by way of the slot's corner.
+    if asked.size == target.size { actual = askForLess(window, slot: asked, took: actual) }
     // A window that cannot grow to its slot (Calculator, System Settings) sits in the middle of it,
     // which looks meant, rather than in its top-left corner, which looks broken.
     if actual.width < target.width - 2 || actual.height < target.height - 2 {
