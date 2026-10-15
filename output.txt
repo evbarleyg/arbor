@@ -1,0 +1,650 @@
+# mac-shell: scripts/mac-shell/probe-finder-gets-the-keyboard.sh at df9cd5f, macOS 26.6.2, 2026-10-15T15:18Z
+built Arbor, the pointer tool and the app bundles in 9s
+> display_add 1280 800: display 2, 4DC26442-E162-4855-95DD-131C48B7A837
+> display_move right: now at 1920 0 1280 800
+> test windows: move 44 400 260 520 380
+> test windows: move 45 2320 260 520 380
+# probe-finder-gets-the-keyboard.sh 2026-10-15T15:20Z on macOS 26.6.2, commit df9cd5f. Arbor is not running.
+# keys-go-to is Accessibility's focused application, its-window that application's focused window, its-element the role of its focused element.
+# Frames: w1: 400 260 520 380; w2: 2320 260 520 380; f1: 120 120 560 400; f2: 2040 120 560 400; 
+# "switch to a Space with open windows for the application" (AppleSpacesSwitchOnActivate; unset means on): unset
+
+=== Finder covered; the keyboard begins on the main display; the wallpaper shows at 1860 540
+
+== Finder covered, from the main display: the control, a click on the wallpaper
+> click 2320 132
+> move 2320 252
+> click 400 132
+> move 400 252
+> click 2610 468
+> click 690 468
+  ✔ Finder covered, from the main display: the control, a click on the wallpaper: it begins with each test window over the Finder window of its display
+  ✘ Finder covered, from the main display: the control, a click on the wallpaper: and with the keyboard in w1 — front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+      picture: mac-shell/fail-probe-finder-gets-the-keyboard-1.png
+--- Finder covered, from the main display: the control, a click on the wallpaper
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+> click 1860 540
+  a second after: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+> key j
+  after a j: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  front to back: w1 w2 f1 f2 -> w1 w2 f1 f2 
+RESULT | Finder covered, from the main display: the control, a click on the wallpaper | rises: no | moves: YES: w1: 400 260 520 380; w2: 2320 260 520 380; f1: 120 120 560 400; f2: 2040 120 560 400;  -> w1: -508 159 520 380; w2: 3188 167 520 380; f1: -548 -10 560 400; f2: 3188 -254 560 400;  | Space: same | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+shot: mac-shell/01-covered-main-the-control--a-click-on-.png
+
+== Finder covered, from the main display: activate
+> click 3196 375
+> click 690 468
+  ✘ Finder covered, from the main display: activate: it begins with each test window over the Finder window of its display — the order is: w1 f1 f2 w2 
+      picture: mac-shell/fail-probe-finder-gets-the-keyboard-2.png
+  ✘ Finder covered, from the main display: activate: and with the keyboard in w1 — front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+      picture: mac-shell/fail-probe-finder-gets-the-keyboard-3.png
+--- Finder covered, from the main display: activate
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  a second after: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+> key j
+  after a j: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  front to back: w1 f1 f2 w2 -> f1 w1 f2 w2 
+RESULT | Finder covered, from the main display: activate | rises: YES | moves: no | Space: same | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+shot: mac-shell/02-covered-main-activate.png
+
+== Finder covered, from the main display: frontmost
+> click 2320 132
+> move 2320 252
+> click 400 132
+> move 400 252
+> click 2610 468
+> click 690 468
+  ✔ Finder covered, from the main display: frontmost: it begins with each test window over the Finder window of its display
+  ✘ Finder covered, from the main display: frontmost: and with the keyboard in w1 — front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+      picture: mac-shell/fail-probe-finder-gets-the-keyboard-4.png
+--- Finder covered, from the main display: frontmost
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  a second after: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+> key j
+  after a j: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  front to back: w1 w2 f1 f2 -> f1 f2 w1 w2 
+RESULT | Finder covered, from the main display: frontmost | rises: YES | moves: no | Space: same | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+shot: mac-shell/03-covered-main-frontmost.png
+
+== Finder covered, from the main display: element
+> click 2320 132
+> move 2320 252
+> click 400 132
+> move 400 252
+> click 2610 468
+> click 690 468
+  ✔ Finder covered, from the main display: element: it begins with each test window over the Finder window of its display
+  ✘ Finder covered, from the main display: element: and with the keyboard in w1 — front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+      picture: mac-shell/fail-probe-finder-gets-the-keyboard-5.png
+--- Finder covered, from the main display: element
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  a second after: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+> key j
+  after a j: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  front to back: w1 w2 f1 f2 -> w1 w2 f1 f2 
+RESULT | Finder covered, from the main display: element | rises: no | moves: no | Space: same | the j: w1 +1, w2 +0 | front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+shot: mac-shell/04-covered-main-element.png
+
+== Finder covered, from the main display: element+frontmost
+> click 2320 132
+> move 2320 252
+> click 400 132
+> move 400 252
+> click 2610 468
+> click 690 468
+  ✔ Finder covered, from the main display: element+frontmost: it begins with each test window over the Finder window of its display
+  ✘ Finder covered, from the main display: element+frontmost: and with the keyboard in w1 — front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+      picture: mac-shell/fail-probe-finder-gets-the-keyboard-6.png
+--- Finder covered, from the main display: element+frontmost
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  a second after: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+> key j
+  after a j: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  front to back: w1 w2 f1 f2 -> f1 f2 w1 w2 
+RESULT | Finder covered, from the main display: element+frontmost | rises: YES | moves: no | Space: same | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+shot: mac-shell/05-covered-main-element+frontmost.png
+
+== Finder covered, from the main display: element+activate
+> click 2320 132
+> move 2320 252
+> click 400 132
+> move 400 252
+> click 2610 468
+> click 690 468
+  ✔ Finder covered, from the main display: element+activate: it begins with each test window over the Finder window of its display
+  ✘ Finder covered, from the main display: element+activate: and with the keyboard in w1 — front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+      picture: mac-shell/fail-probe-finder-gets-the-keyboard-7.png
+--- Finder covered, from the main display: element+activate
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  a second after: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+> key j
+  after a j: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  front to back: w1 w2 f1 f2 -> f1 w1 w2 f2 
+RESULT | Finder covered, from the main display: element+activate | rises: YES | moves: no | Space: same | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+shot: mac-shell/06-covered-main-element+activate.png
+
+== Finder covered, from the main display: an accessory app activates itself
+> click 2320 132
+> move 2320 252
+> click 400 132
+> move 400 252
+> click 2610 468
+> click 690 468
+  ✔ Finder covered, from the main display: an accessory app activates itself: it begins with each test window over the Finder window of its display
+  ✘ Finder covered, from the main display: an accessory app activates itself: and with the keyboard in w1 — front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+      picture: mac-shell/fail-probe-finder-gets-the-keyboard-8.png
+--- Finder covered, from the main display: an accessory app activates itself
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  a second after: front=other menu-bar=test-windows keys-go-to=nobody (-25204)
+> key j
+  after a j: front=other menu-bar=test-windows keys-go-to=nobody (-25204)
+  front to back: w1 w2 f1 f2 -> w1 w2 f1 f2 
+RESULT | Finder covered, from the main display: an accessory app activates itself | rises: no | moves: no | Space: same | the j: w1 +0, w2 +0 | front=other menu-bar=test-windows keys-go-to=nobody (-25204)
+shot: mac-shell/07-covered-main-an-accessory-app-activat.png
+  once that app has ended: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+
+=== Finder covered; the keyboard begins on the second display; the wallpaper shows at 3140 400
+
+== Finder covered, from the second display: the control, a click on the wallpaper
+> click 2320 132
+> move 2320 252
+> click 400 132
+> move 400 252
+> click 690 468
+> click 2610 468
+  ✘ Finder covered, from the second display: the control, a click on the wallpaper: it begins with each test window over the Finder window of its display — the order is: w2 w1 f1 f2 
+      picture: mac-shell/fail-probe-finder-gets-the-keyboard-9.png
+  ✘ Finder covered, from the second display: the control, a click on the wallpaper: and with the keyboard in w2 — front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+      picture: mac-shell/fail-probe-finder-gets-the-keyboard-10.png
+--- Finder covered, from the second display: the control, a click on the wallpaper
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+> click 3140 400
+  a second after: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+> key j
+  after a j: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  front to back: w2 w1 f1 f2 -> w2 w1 f1 f2 
+RESULT | Finder covered, from the second display: the control, a click on the wallpaper | rises: no | moves: YES: w1: 400 260 520 380; w2: 2320 260 520 380; f1: 120 120 560 400; f2: 2040 120 560 400;  -> w1: -508 159 520 380; w2: 3188 167 520 380; f1: -548 -10 560 400; f2: 3188 -254 560 400;  | Space: same | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+
+== Finder covered, from the second display: activate
+> click 4 403
+> click 2610 468
+  ✘ Finder covered, from the second display: activate: it begins with each test window over the Finder window of its display — the order is: w2 f1 f2 w1 
+      picture: mac-shell/fail-probe-finder-gets-the-keyboard-11.png
+  ✘ Finder covered, from the second display: activate: and with the keyboard in w2 — front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+      picture: mac-shell/fail-probe-finder-gets-the-keyboard-12.png
+--- Finder covered, from the second display: activate
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  a second after: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+> key j
+  after a j: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  front to back: w2 f1 f2 w1 -> f1 w2 f2 w1 
+RESULT | Finder covered, from the second display: activate | rises: YES | moves: no | Space: same | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+shot: mac-shell/08-covered-second-activate.png
+
+== Finder covered, from the second display: frontmost
+> click 2320 132
+> move 2320 252
+> click 400 132
+> move 400 252
+> click 690 468
+> click 2610 468
+  ✘ Finder covered, from the second display: frontmost: it begins with each test window over the Finder window of its display — the order is: w2 w1 f1 f2 
+      picture: mac-shell/fail-probe-finder-gets-the-keyboard-13.png
+  ✘ Finder covered, from the second display: frontmost: and with the keyboard in w2 — front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+      picture: mac-shell/fail-probe-finder-gets-the-keyboard-14.png
+--- Finder covered, from the second display: frontmost
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  a second after: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+> key j
+  after a j: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  front to back: w2 w1 f1 f2 -> f2 f1 w2 w1 
+RESULT | Finder covered, from the second display: frontmost | rises: YES | moves: no | Space: same | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+shot: mac-shell/09-covered-second-frontmost.png
+
+== Finder covered, from the second display: element
+> click 2320 132
+> move 2320 252
+> click 400 132
+> move 400 252
+> click 690 468
+> click 2610 468
+  ✘ Finder covered, from the second display: element: it begins with each test window over the Finder window of its display — the order is: w2 w1 f1 f2 
+      picture: mac-shell/fail-probe-finder-gets-the-keyboard-15.png
+  ✘ Finder covered, from the second display: element: and with the keyboard in w2 — front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+      picture: mac-shell/fail-probe-finder-gets-the-keyboard-16.png
+--- Finder covered, from the second display: element
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  a second after: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+> key j
+  after a j: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  front to back: w2 w1 f1 f2 -> w2 w1 f1 f2 
+RESULT | Finder covered, from the second display: element | rises: no | moves: no | Space: same | the j: w1 +0, w2 +1 | front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+
+== Finder covered, from the second display: element+frontmost
+> click 2320 132
+> move 2320 252
+> click 400 132
+> move 400 252
+> click 690 468
+> click 2610 468
+  ✘ Finder covered, from the second display: element+frontmost: it begins with each test window over the Finder window of its display — the order is: w2 w1 f1 f2 
+      picture: mac-shell/fail-probe-finder-gets-the-keyboard-17.png
+  ✘ Finder covered, from the second display: element+frontmost: and with the keyboard in w2 — front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+      picture: mac-shell/fail-probe-finder-gets-the-keyboard-18.png
+--- Finder covered, from the second display: element+frontmost
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  a second after: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+> key j
+  after a j: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  front to back: w2 w1 f1 f2 -> f2 f1 w2 w1 
+RESULT | Finder covered, from the second display: element+frontmost | rises: YES | moves: no | Space: same | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+shot: mac-shell/10-covered-second-element+frontmost.png
+
+== Finder covered, from the second display: element+activate
+> click 2320 132
+> move 2320 252
+> click 400 132
+> move 400 252
+> click 690 468
+> click 2610 468
+  ✘ Finder covered, from the second display: element+activate: it begins with each test window over the Finder window of its display — the order is: w2 w1 f1 f2 
+      picture: mac-shell/fail-probe-finder-gets-the-keyboard-19.png
+  ✘ Finder covered, from the second display: element+activate: and with the keyboard in w2 — front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+      picture: mac-shell/fail-probe-finder-gets-the-keyboard-20.png
+--- Finder covered, from the second display: element+activate
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  a second after: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+> key j
+  after a j: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  front to back: w2 w1 f1 f2 -> f1 w2 w1 f2 
+RESULT | Finder covered, from the second display: element+activate | rises: YES | moves: no | Space: same | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+shot: mac-shell/11-covered-second-element+activate.png
+
+== Finder covered, from the second display: an accessory app activates itself
+> click 2320 132
+> move 2320 252
+> click 400 132
+> move 400 252
+> click 690 468
+> click 2610 468
+  ✘ Finder covered, from the second display: an accessory app activates itself: it begins with each test window over the Finder window of its display — the order is: w2 w1 f1 f2 
+      picture: mac-shell/fail-probe-finder-gets-the-keyboard-21.png
+  ✘ Finder covered, from the second display: an accessory app activates itself: and with the keyboard in w2 — front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+      picture: mac-shell/fail-probe-finder-gets-the-keyboard-22.png
+--- Finder covered, from the second display: an accessory app activates itself
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  a second after: front=other menu-bar=test-windows keys-go-to=nobody (-25204)
+> key j
+  after a j: front=other menu-bar=test-windows keys-go-to=nobody (-25204)
+  front to back: w2 w1 f1 f2 -> w2 w1 f1 f2 
+RESULT | Finder covered, from the second display: an accessory app activates itself | rises: no | moves: no | Space: same | the j: w1 +0, w2 +0 | front=other menu-bar=test-windows keys-go-to=nobody (-25204)
+  once that app has ended: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+
+=== Finder none; the keyboard begins on the main display; the wallpaper shows at 1860 540
+
+== Finder none, from the main display: the control, a click on the wallpaper
+> click 2580 468
+> click 660 468
+  ✔ Finder none, from the main display: the control, a click on the wallpaper: it begins with no window of Finder's on screen
+  ✘ Finder none, from the main display: the control, a click on the wallpaper: and with the keyboard in w1 — front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+      picture: mac-shell/fail-probe-finder-gets-the-keyboard-23.png
+--- Finder none, from the main display: the control, a click on the wallpaper
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+> click 1860 540
+  a second after: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+> key j
+  after a j: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  front to back: w1 w2 -> w1 w2 
+RESULT | Finder none, from the main display: the control, a click on the wallpaper | rises: no | moves: YES: w1: 400 260 520 380; w2: 2320 260 520 380;  -> w1: -508 159 520 380; w2: 3188 167 520 380;  | Space: same | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+
+== Finder none, from the main display: activate
+> click 3196 375
+> click 660 468
+  ✔ Finder none, from the main display: activate: it begins with no window of Finder's on screen
+  ✘ Finder none, from the main display: activate: and with the keyboard in w1 — front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+      picture: mac-shell/fail-probe-finder-gets-the-keyboard-24.png
+--- Finder none, from the main display: activate
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  a second after: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+> key j
+  after a j: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  front to back: w1 w2 -> w1 w2 
+RESULT | Finder none, from the main display: activate | rises: no | moves: no | Space: same | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+
+== Finder none, from the main display: frontmost
+> click 2580 468
+> click 660 468
+  ✔ Finder none, from the main display: frontmost: it begins with no window of Finder's on screen
+  ✘ Finder none, from the main display: frontmost: and with the keyboard in w1 — front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+      picture: mac-shell/fail-probe-finder-gets-the-keyboard-25.png
+--- Finder none, from the main display: frontmost
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  a second after: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+> key j
+  after a j: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  front to back: w1 w2 -> w1 w2 
+RESULT | Finder none, from the main display: frontmost | rises: no | moves: no | Space: same | the j: w1 +1, w2 +0 | front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+
+== Finder none, from the main display: element
+> click 2580 468
+> click 660 468
+  ✔ Finder none, from the main display: element: it begins with no window of Finder's on screen
+  ✘ Finder none, from the main display: element: and with the keyboard in w1 — front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+      picture: mac-shell/fail-probe-finder-gets-the-keyboard-26.png
+--- Finder none, from the main display: element
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  a second after: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+> key j
+  after a j: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  front to back: w1 w2 -> w1 w2 
+RESULT | Finder none, from the main display: element | rises: no | moves: no | Space: same | the j: w1 +1, w2 +0 | front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+
+== Finder none, from the main display: element+frontmost
+> click 2580 468
+> click 660 468
+  ✔ Finder none, from the main display: element+frontmost: it begins with no window of Finder's on screen
+  ✘ Finder none, from the main display: element+frontmost: and with the keyboard in w1 — front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+      picture: mac-shell/fail-probe-finder-gets-the-keyboard-27.png
+--- Finder none, from the main display: element+frontmost
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  a second after: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+> key j
+  after a j: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  front to back: w1 w2 -> w1 w2 
+RESULT | Finder none, from the main display: element+frontmost | rises: no | moves: no | Space: same | the j: w1 +1, w2 +0 | front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+
+== Finder none, from the main display: element+activate
+> click 2580 468
+> click 660 468
+  ✔ Finder none, from the main display: element+activate: it begins with no window of Finder's on screen
+  ✘ Finder none, from the main display: element+activate: and with the keyboard in w1 — front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+      picture: mac-shell/fail-probe-finder-gets-the-keyboard-28.png
+--- Finder none, from the main display: element+activate
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  a second after: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+> key j
+  after a j: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  front to back: w1 w2 -> w1 w2 
+RESULT | Finder none, from the main display: element+activate | rises: no | moves: no | Space: same | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+
+== Finder none, from the main display: an accessory app activates itself
+> click 2580 468
+> click 660 468
+  ✔ Finder none, from the main display: an accessory app activates itself: it begins with no window of Finder's on screen
+  ✘ Finder none, from the main display: an accessory app activates itself: and with the keyboard in w1 — front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+      picture: mac-shell/fail-probe-finder-gets-the-keyboard-29.png
+--- Finder none, from the main display: an accessory app activates itself
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  a second after: front=other menu-bar=test-windows keys-go-to=nobody (-25204)
+> key j
+  after a j: front=other menu-bar=test-windows keys-go-to=nobody (-25204)
+  front to back: w1 w2 -> w1 w2 
+RESULT | Finder none, from the main display: an accessory app activates itself | rises: no | moves: no | Space: same | the j: w1 +0, w2 +0 | front=other menu-bar=test-windows keys-go-to=nobody (-25204)
+  once that app has ended: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+
+=== Finder minimized; the keyboard begins on the main display; the wallpaper shows at 1860 540
+
+== Finder minimized, from the main display: the control, a click on the wallpaper
+> click 2580 468
+> click 660 468
+  ✔ Finder minimized, from the main display: the control, a click on the wallpaper: it begins with no window of Finder's on screen
+  ✘ Finder minimized, from the main display: the control, a click on the wallpaper: and with the keyboard in w1 — front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+      picture: mac-shell/fail-probe-finder-gets-the-keyboard-30.png
+--- Finder minimized, from the main display: the control, a click on the wallpaper
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+> click 1860 540
+  a second after: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+> key j
+  after a j: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  front to back: w1 w2 -> w1 w2 
+RESULT | Finder minimized, from the main display: the control, a click on the wallpaper | rises: no | moves: YES: w1: 400 260 520 380; w2: 2320 260 520 380; f1: 120 120 560 400;  -> w1: -508 159 520 380; w2: 3188 167 520 380; f1: 120 120 560 400;  | Space: same | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+
+== Finder minimized, from the main display: activate
+> click 3196 375
+> click 660 468
+  ✔ Finder minimized, from the main display: activate: it begins with no window of Finder's on screen
+  ✘ Finder minimized, from the main display: activate: and with the keyboard in w1 — front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+      picture: mac-shell/fail-probe-finder-gets-the-keyboard-31.png
+--- Finder minimized, from the main display: activate
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  a second after: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+> key j
+  after a j: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  front to back: w1 w2 -> w1 w2 
+RESULT | Finder minimized, from the main display: activate | rises: no | moves: no | Space: same | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+
+== Finder minimized, from the main display: frontmost
+> click 2580 468
+> click 660 468
+  ✔ Finder minimized, from the main display: frontmost: it begins with no window of Finder's on screen
+  ✘ Finder minimized, from the main display: frontmost: and with the keyboard in w1 — front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+      picture: mac-shell/fail-probe-finder-gets-the-keyboard-32.png
+--- Finder minimized, from the main display: frontmost
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  a second after: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+> key j
+  after a j: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  front to back: w1 w2 -> w1 w2 
+RESULT | Finder minimized, from the main display: frontmost | rises: no | moves: no | Space: same | the j: w1 +1, w2 +0 | front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+
+== Finder minimized, from the main display: element
+> click 2580 468
+> click 660 468
+  ✔ Finder minimized, from the main display: element: it begins with no window of Finder's on screen
+  ✘ Finder minimized, from the main display: element: and with the keyboard in w1 — front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+      picture: mac-shell/fail-probe-finder-gets-the-keyboard-33.png
+--- Finder minimized, from the main display: element
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  a second after: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+> key j
+  after a j: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  front to back: w1 w2 -> w1 w2 
+RESULT | Finder minimized, from the main display: element | rises: no | moves: no | Space: same | the j: w1 +1, w2 +0 | front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+
+== Finder minimized, from the main display: element+frontmost
+> click 2580 468
+> click 660 468
+  ✔ Finder minimized, from the main display: element+frontmost: it begins with no window of Finder's on screen
+  ✘ Finder minimized, from the main display: element+frontmost: and with the keyboard in w1 — front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+      picture: mac-shell/fail-probe-finder-gets-the-keyboard-34.png
+--- Finder minimized, from the main display: element+frontmost
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  a second after: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+> key j
+  after a j: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  front to back: w1 w2 -> w1 w2 
+RESULT | Finder minimized, from the main display: element+frontmost | rises: no | moves: no | Space: same | the j: w1 +1, w2 +0 | front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+
+== Finder minimized, from the main display: element+activate
+> click 2580 468
+> click 660 468
+  ✔ Finder minimized, from the main display: element+activate: it begins with no window of Finder's on screen
+  ✘ Finder minimized, from the main display: element+activate: and with the keyboard in w1 — front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+      picture: mac-shell/fail-probe-finder-gets-the-keyboard-35.png
+--- Finder minimized, from the main display: element+activate
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  a second after: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+> key j
+  after a j: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  front to back: w1 w2 -> w1 w2 
+RESULT | Finder minimized, from the main display: element+activate | rises: no | moves: no | Space: same | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+
+== Finder minimized, from the main display: an accessory app activates itself
+> click 2580 468
+> click 660 468
+  ✔ Finder minimized, from the main display: an accessory app activates itself: it begins with no window of Finder's on screen
+  ✘ Finder minimized, from the main display: an accessory app activates itself: and with the keyboard in w1 — front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+      picture: mac-shell/fail-probe-finder-gets-the-keyboard-36.png
+--- Finder minimized, from the main display: an accessory app activates itself
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  a second after: front=other menu-bar=test-windows keys-go-to=nobody (-25204)
+> key j
+  after a j: front=other menu-bar=test-windows keys-go-to=nobody (-25204)
+  front to back: w1 w2 -> w1 w2 
+RESULT | Finder minimized, from the main display: an accessory app activates itself | rises: no | moves: no | Space: same | the j: w1 +0, w2 +0 | front=other menu-bar=test-windows keys-go-to=nobody (-25204)
+  once that app has ended: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+> move 1860 540
+> space_add
+> move 1860 540
+> key ctrl+right
+  ✔ the main display shows a second Space
+# on the second Space: 2 of 2; 1 of 1;  on screen: f1 w2 
+  ✔ Finder's window is on it, and the test window of that display is not
+> move 1860 540
+> key ctrl+left
+  ✔ the first Space shows again
+
+=== Finder elsewhere; the keyboard begins on the main display; the wallpaper shows at 1860 540
+
+== Finder elsewhere, from the main display: the control, a click on the wallpaper
+> click 2580 468
+> click 660 468
+  ✔ Finder elsewhere, from the main display: the control, a click on the wallpaper: it begins with no window of Finder's on screen
+  ✘ Finder elsewhere, from the main display: the control, a click on the wallpaper: and with the keyboard in w1 — front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+      picture: mac-shell/fail-probe-finder-gets-the-keyboard-37.png
+--- Finder elsewhere, from the main display: the control, a click on the wallpaper
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+> click 1860 540
+  a second after: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+> key j
+  after a j: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  front to back: w1 w2 -> w1 w2 
+RESULT | Finder elsewhere, from the main display: the control, a click on the wallpaper | rises: no | moves: YES: w1: 400 260 520 380; w2: 2320 260 520 380; f1: 120 120 560 400;  -> w1: -508 159 520 380; w2: 3188 167 520 380; f1: 120 120 560 400;  | Space: same | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+
+== Finder elsewhere, from the main display: activate
+> click 3196 375
+> click 660 468
+  ✔ Finder elsewhere, from the main display: activate: it begins with no window of Finder's on screen
+  ✘ Finder elsewhere, from the main display: activate: and with the keyboard in w1 — front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+      picture: mac-shell/fail-probe-finder-gets-the-keyboard-38.png
+--- Finder elsewhere, from the main display: activate
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  a second after: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+> key j
+  after a j: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  front to back: w1 w2 -> w1 w2 
+RESULT | Finder elsewhere, from the main display: activate | rises: no | moves: no | Space: same | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+
+== Finder elsewhere, from the main display: frontmost
+> click 2580 468
+> click 660 468
+  ✔ Finder elsewhere, from the main display: frontmost: it begins with no window of Finder's on screen
+  ✘ Finder elsewhere, from the main display: frontmost: and with the keyboard in w1 — front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+      picture: mac-shell/fail-probe-finder-gets-the-keyboard-39.png
+--- Finder elsewhere, from the main display: frontmost
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  a second after: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+> key j
+  after a j: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  front to back: w1 w2 -> f1 w2 
+RESULT | Finder elsewhere, from the main display: frontmost | rises: YES | moves: no | Space: CHANGED: 1 of 2; 1 of 1;  -> 2 of 2; 1 of 1;  | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+shot: mac-shell/12-elsewhere-main-frontmost.png
+
+== Finder elsewhere, from the main display: element
+> move 1860 540
+> key ctrl+left
+> click 2580 468
+> click 660 468
+  ✔ Finder elsewhere, from the main display: element: it begins with no window of Finder's on screen
+  ✘ Finder elsewhere, from the main display: element: and with the keyboard in w1 — front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+      picture: mac-shell/fail-probe-finder-gets-the-keyboard-40.png
+--- Finder elsewhere, from the main display: element
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  a second after: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+> key j
+  after a j: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  front to back: w1 w2 -> w1 w2 
+RESULT | Finder elsewhere, from the main display: element | rises: no | moves: no | Space: same | the j: w1 +1, w2 +0 | front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+
+== Finder elsewhere, from the main display: element+frontmost
+> click 2580 468
+> click 660 468
+  ✔ Finder elsewhere, from the main display: element+frontmost: it begins with no window of Finder's on screen
+  ✘ Finder elsewhere, from the main display: element+frontmost: and with the keyboard in w1 — front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+      picture: mac-shell/fail-probe-finder-gets-the-keyboard-41.png
+--- Finder elsewhere, from the main display: element+frontmost
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  a second after: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+> key j
+  after a j: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  front to back: w1 w2 -> f1 w2 
+RESULT | Finder elsewhere, from the main display: element+frontmost | rises: YES | moves: no | Space: CHANGED: 1 of 2; 1 of 1;  -> 2 of 2; 1 of 1;  | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+shot: mac-shell/13-elsewhere-main-element+frontmost.png
+
+== Finder elsewhere, from the main display: element+activate
+> move 1860 540
+> key ctrl+left
+> click 2580 468
+> click 660 468
+  ✔ Finder elsewhere, from the main display: element+activate: it begins with no window of Finder's on screen
+  ✘ Finder elsewhere, from the main display: element+activate: and with the keyboard in w1 — front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+      picture: mac-shell/fail-probe-finder-gets-the-keyboard-42.png
+--- Finder elsewhere, from the main display: element+activate
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  a second after: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+> key j
+  after a j: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  front to back: w1 w2 -> w1 w2 
+RESULT | Finder elsewhere, from the main display: element+activate | rises: no | moves: no | Space: same | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+
+== Finder elsewhere, from the main display: an accessory app activates itself
+> click 2580 468
+> click 660 468
+  ✔ Finder elsewhere, from the main display: an accessory app activates itself: it begins with no window of Finder's on screen
+  ✘ Finder elsewhere, from the main display: an accessory app activates itself: and with the keyboard in w1 — front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+      picture: mac-shell/fail-probe-finder-gets-the-keyboard-43.png
+--- Finder elsewhere, from the main display: an accessory app activates itself
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  a second after: front=other menu-bar=test-windows keys-go-to=nobody (-25204)
+> key j
+  after a j: front=other menu-bar=test-windows keys-go-to=nobody (-25204)
+  front to back: w1 w2 -> w1 w2 
+RESULT | Finder elsewhere, from the main display: an accessory app activates itself | rises: no | moves: no | Space: same | the j: w1 +0, w2 +0 | front=other menu-bar=test-windows keys-go-to=nobody (-25204)
+  once that app has ended: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+
+== What it leaves
+> move 1860 540
+> key ctrl+right
+> move 1860 540
+> key ctrl+left
+
+=== finder-keyboard.txt, its RESULT lines
+RESULT | Finder covered, from the main display: the control, a click on the wallpaper | rises: no | moves: YES: w1: 400 260 520 380; w2: 2320 260 520 380; f1: 120 120 560 400; f2: 2040 120 560 400;  -> w1: -508 159 520 380; w2: 3188 167 520 380; f1: -548 -10 560 400; f2: 3188 -254 560 400;  | Space: same | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+RESULT | Finder covered, from the main display: activate | rises: YES | moves: no | Space: same | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+RESULT | Finder covered, from the main display: frontmost | rises: YES | moves: no | Space: same | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+RESULT | Finder covered, from the main display: element | rises: no | moves: no | Space: same | the j: w1 +1, w2 +0 | front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+RESULT | Finder covered, from the main display: element+frontmost | rises: YES | moves: no | Space: same | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+RESULT | Finder covered, from the main display: element+activate | rises: YES | moves: no | Space: same | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+RESULT | Finder covered, from the main display: an accessory app activates itself | rises: no | moves: no | Space: same | the j: w1 +0, w2 +0 | front=other menu-bar=test-windows keys-go-to=nobody (-25204)
+RESULT | Finder covered, from the second display: the control, a click on the wallpaper | rises: no | moves: YES: w1: 400 260 520 380; w2: 2320 260 520 380; f1: 120 120 560 400; f2: 2040 120 560 400;  -> w1: -508 159 520 380; w2: 3188 167 520 380; f1: -548 -10 560 400; f2: 3188 -254 560 400;  | Space: same | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+RESULT | Finder covered, from the second display: activate | rises: YES | moves: no | Space: same | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+RESULT | Finder covered, from the second display: frontmost | rises: YES | moves: no | Space: same | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+RESULT | Finder covered, from the second display: element | rises: no | moves: no | Space: same | the j: w1 +0, w2 +1 | front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+RESULT | Finder covered, from the second display: element+frontmost | rises: YES | moves: no | Space: same | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+RESULT | Finder covered, from the second display: element+activate | rises: YES | moves: no | Space: same | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+RESULT | Finder covered, from the second display: an accessory app activates itself | rises: no | moves: no | Space: same | the j: w1 +0, w2 +0 | front=other menu-bar=test-windows keys-go-to=nobody (-25204)
+RESULT | Finder none, from the main display: the control, a click on the wallpaper | rises: no | moves: YES: w1: 400 260 520 380; w2: 2320 260 520 380;  -> w1: -508 159 520 380; w2: 3188 167 520 380;  | Space: same | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+RESULT | Finder none, from the main display: activate | rises: no | moves: no | Space: same | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+RESULT | Finder none, from the main display: frontmost | rises: no | moves: no | Space: same | the j: w1 +1, w2 +0 | front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+RESULT | Finder none, from the main display: element | rises: no | moves: no | Space: same | the j: w1 +1, w2 +0 | front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+RESULT | Finder none, from the main display: element+frontmost | rises: no | moves: no | Space: same | the j: w1 +1, w2 +0 | front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+RESULT | Finder none, from the main display: element+activate | rises: no | moves: no | Space: same | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+RESULT | Finder none, from the main display: an accessory app activates itself | rises: no | moves: no | Space: same | the j: w1 +0, w2 +0 | front=other menu-bar=test-windows keys-go-to=nobody (-25204)
+RESULT | Finder minimized, from the main display: the control, a click on the wallpaper | rises: no | moves: YES: w1: 400 260 520 380; w2: 2320 260 520 380; f1: 120 120 560 400;  -> w1: -508 159 520 380; w2: 3188 167 520 380; f1: 120 120 560 400;  | Space: same | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+RESULT | Finder minimized, from the main display: activate | rises: no | moves: no | Space: same | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+RESULT | Finder minimized, from the main display: frontmost | rises: no | moves: no | Space: same | the j: w1 +1, w2 +0 | front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+RESULT | Finder minimized, from the main display: element | rises: no | moves: no | Space: same | the j: w1 +1, w2 +0 | front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+RESULT | Finder minimized, from the main display: element+frontmost | rises: no | moves: no | Space: same | the j: w1 +1, w2 +0 | front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+RESULT | Finder minimized, from the main display: element+activate | rises: no | moves: no | Space: same | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+RESULT | Finder minimized, from the main display: an accessory app activates itself | rises: no | moves: no | Space: same | the j: w1 +0, w2 +0 | front=other menu-bar=test-windows keys-go-to=nobody (-25204)
+RESULT | Finder elsewhere, from the main display: the control, a click on the wallpaper | rises: no | moves: YES: w1: 400 260 520 380; w2: 2320 260 520 380; f1: 120 120 560 400;  -> w1: -508 159 520 380; w2: 3188 167 520 380; f1: 120 120 560 400;  | Space: same | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+RESULT | Finder elsewhere, from the main display: activate | rises: no | moves: no | Space: same | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+RESULT | Finder elsewhere, from the main display: frontmost | rises: YES | moves: no | Space: CHANGED: 1 of 2; 1 of 1;  -> 2 of 2; 1 of 1;  | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+RESULT | Finder elsewhere, from the main display: element | rises: no | moves: no | Space: same | the j: w1 +1, w2 +0 | front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+RESULT | Finder elsewhere, from the main display: element+frontmost | rises: YES | moves: no | Space: CHANGED: 1 of 2; 1 of 1;  -> 2 of 2; 1 of 1;  | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+RESULT | Finder elsewhere, from the main display: element+activate | rises: no | moves: no | Space: same | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+RESULT | Finder elsewhere, from the main display: an accessory app activates itself | rises: no | moves: no | Space: same | the j: w1 +0, w2 +0 | front=other menu-bar=test-windows keys-go-to=nobody (-25204)
+> display_remove
+
+30 passed, 43 failed
+exit code 1

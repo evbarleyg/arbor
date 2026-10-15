@@ -1,0 +1,345 @@
+# probe-finder-gets-the-keyboard.sh 2026-10-15T15:20Z on macOS 26.6.2, commit df9cd5f. Arbor is not running.
+# keys-go-to is Accessibility's focused application, its-window that application's focused window, its-element the role of its focused element.
+# Frames: w1: 400 260 520 380; w2: 2320 260 520 380; f1: 120 120 560 400; f2: 2040 120 560 400; 
+# "switch to a Space with open windows for the application" (AppleSpacesSwitchOnActivate; unset means on): unset
+
+=== Finder covered; the keyboard begins on the main display; the wallpaper shows at 1860 540
+--- Finder covered, from the main display: the control, a click on the wallpaper
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  a second after: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  after a j: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  front to back: w1 w2 f1 f2 -> w1 w2 f1 f2 
+RESULT | Finder covered, from the main display: the control, a click on the wallpaper | rises: no | moves: YES: w1: 400 260 520 380; w2: 2320 260 520 380; f1: 120 120 560 400; f2: 2040 120 560 400;  -> w1: -508 159 520 380; w2: 3188 167 520 380; f1: -548 -10 560 400; f2: 3188 -254 560 400;  | Space: same | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+--- Finder covered, from the main display: activate
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  activate(options: []) answers true
+  a second after: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  after a j: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  front to back: w1 f1 f2 w2 -> f1 w1 f2 w2 
+RESULT | Finder covered, from the main display: activate | rises: YES | moves: no | Space: same | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+--- Finder covered, from the main display: frontmost
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  AXFrontmost answers 0
+  a second after: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  after a j: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  front to back: w1 w2 f1 f2 -> f1 f2 w1 w2 
+RESULT | Finder covered, from the main display: frontmost | rises: YES | moves: no | Space: same | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+--- Finder covered, from the main display: element
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  the element at 1860 540: AXError 0
+    AXGroup: AXFocused can be set: false (AXError 0)
+    AXScrollArea: AXFocused can be set: false (AXError 0)
+    AXApplication: AXFocused can be set: false (AXError -25205)
+  a second after: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  after a j: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  front to back: w1 w2 f1 f2 -> w1 w2 f1 f2 
+RESULT | Finder covered, from the main display: element | rises: no | moves: no | Space: same | the j: w1 +1, w2 +0 | front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+--- Finder covered, from the main display: element+frontmost
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  the element at 1860 540: AXError 0
+    AXGroup: AXFocused can be set: false (AXError 0)
+    AXScrollArea: AXFocused can be set: false (AXError 0)
+    AXApplication: AXFocused can be set: false (AXError -25205)
+  AXFrontmost answers 0
+  a second after: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  after a j: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  front to back: w1 w2 f1 f2 -> f1 f2 w1 w2 
+RESULT | Finder covered, from the main display: element+frontmost | rises: YES | moves: no | Space: same | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+--- Finder covered, from the main display: element+activate
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  the element at 1860 540: AXError 0
+    AXGroup: AXFocused can be set: false (AXError 0)
+    AXScrollArea: AXFocused can be set: false (AXError 0)
+    AXApplication: AXFocused can be set: false (AXError -25205)
+  activate(options: []) answers true
+  a second after: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  after a j: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  front to back: w1 w2 f1 f2 -> f1 w1 w2 f2 
+RESULT | Finder covered, from the main display: element+activate | rises: YES | moves: no | Space: same | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+--- Finder covered, from the main display: an accessory app activates itself
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  after 0.28 s: front=the-probe menu-bar=test-windows keys-go-to=the-probe its-window=none its-element=none active=true key-window=none
+  after 0.32 s: front=the-probe menu-bar=test-windows keys-go-to=the-probe its-window=none its-element=none active=true key-window=none
+  after 1.00 s: front=the-probe menu-bar=test-windows keys-go-to=the-probe its-window=none its-element=none active=true key-window=none
+  a second after: front=other menu-bar=test-windows keys-go-to=nobody (-25204)
+  after 2.02 s: front=the-probe menu-bar=test-windows keys-go-to=the-probe its-window=none its-element=none active=true key-window=none
+  after a j: front=other menu-bar=test-windows keys-go-to=nobody (-25204)
+  front to back: w1 w2 f1 f2 -> w1 w2 f1 f2 
+RESULT | Finder covered, from the main display: an accessory app activates itself | rises: no | moves: no | Space: same | the j: w1 +0, w2 +0 | front=other menu-bar=test-windows keys-go-to=nobody (-25204)
+  after 3.01 s: front=the-probe menu-bar=test-windows keys-go-to=the-probe its-window=none its-element=none active=true key-window=none
+  after 4.00 s: front=the-probe menu-bar=test-windows keys-go-to=the-probe its-window=none its-element=none active=true key-window=none
+  after 5.00 s: front=the-probe menu-bar=test-windows keys-go-to=the-probe its-window=none its-element=none active=true key-window=none
+  once that app has ended: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+
+=== Finder covered; the keyboard begins on the second display; the wallpaper shows at 3140 400
+--- Finder covered, from the second display: the control, a click on the wallpaper
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  a second after: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  after a j: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  front to back: w2 w1 f1 f2 -> w2 w1 f1 f2 
+RESULT | Finder covered, from the second display: the control, a click on the wallpaper | rises: no | moves: YES: w1: 400 260 520 380; w2: 2320 260 520 380; f1: 120 120 560 400; f2: 2040 120 560 400;  -> w1: -508 159 520 380; w2: 3188 167 520 380; f1: -548 -10 560 400; f2: 3188 -254 560 400;  | Space: same | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+--- Finder covered, from the second display: activate
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  activate(options: []) answers true
+  a second after: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  after a j: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  front to back: w2 f1 f2 w1 -> f1 w2 f2 w1 
+RESULT | Finder covered, from the second display: activate | rises: YES | moves: no | Space: same | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+--- Finder covered, from the second display: frontmost
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  AXFrontmost answers 0
+  a second after: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  after a j: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  front to back: w2 w1 f1 f2 -> f2 f1 w2 w1 
+RESULT | Finder covered, from the second display: frontmost | rises: YES | moves: no | Space: same | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+--- Finder covered, from the second display: element
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  the element at 3140 400: AXError 0
+    AXGroup: AXFocused can be set: false (AXError 0)
+    AXScrollArea: AXFocused can be set: false (AXError 0)
+    AXApplication: AXFocused can be set: false (AXError -25205)
+  a second after: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  after a j: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  front to back: w2 w1 f1 f2 -> w2 w1 f1 f2 
+RESULT | Finder covered, from the second display: element | rises: no | moves: no | Space: same | the j: w1 +0, w2 +1 | front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+--- Finder covered, from the second display: element+frontmost
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  the element at 3140 400: AXError 0
+    AXGroup: AXFocused can be set: false (AXError 0)
+    AXScrollArea: AXFocused can be set: false (AXError 0)
+    AXApplication: AXFocused can be set: false (AXError -25205)
+  AXFrontmost answers 0
+  a second after: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  after a j: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  front to back: w2 w1 f1 f2 -> f2 f1 w2 w1 
+RESULT | Finder covered, from the second display: element+frontmost | rises: YES | moves: no | Space: same | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+--- Finder covered, from the second display: element+activate
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  the element at 3140 400: AXError 0
+    AXGroup: AXFocused can be set: false (AXError 0)
+    AXScrollArea: AXFocused can be set: false (AXError 0)
+    AXApplication: AXFocused can be set: false (AXError -25205)
+  activate(options: []) answers true
+  a second after: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  after a j: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  front to back: w2 w1 f1 f2 -> f1 w2 w1 f2 
+RESULT | Finder covered, from the second display: element+activate | rises: YES | moves: no | Space: same | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+--- Finder covered, from the second display: an accessory app activates itself
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  after 0.20 s: front=the-probe menu-bar=test-windows keys-go-to=the-probe its-window=none its-element=none active=true key-window=none
+  after 0.30 s: front=the-probe menu-bar=test-windows keys-go-to=the-probe its-window=none its-element=none active=true key-window=none
+  after 1.00 s: front=the-probe menu-bar=test-windows keys-go-to=the-probe its-window=none its-element=none active=true key-window=none
+  a second after: front=other menu-bar=test-windows keys-go-to=nobody (-25204)
+  after 2.00 s: front=the-probe menu-bar=test-windows keys-go-to=the-probe its-window=none its-element=none active=true key-window=none
+  after a j: front=other menu-bar=test-windows keys-go-to=nobody (-25204)
+  front to back: w2 w1 f1 f2 -> w2 w1 f1 f2 
+RESULT | Finder covered, from the second display: an accessory app activates itself | rises: no | moves: no | Space: same | the j: w1 +0, w2 +0 | front=other menu-bar=test-windows keys-go-to=nobody (-25204)
+  after 3.00 s: front=the-probe menu-bar=test-windows keys-go-to=the-probe its-window=none its-element=none active=true key-window=none
+  after 4.03 s: front=the-probe menu-bar=test-windows keys-go-to=the-probe its-window=none its-element=none active=true key-window=none
+  after 5.02 s: front=the-probe menu-bar=test-windows keys-go-to=the-probe its-window=none its-element=none active=true key-window=none
+  once that app has ended: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+
+=== Finder none; the keyboard begins on the main display; the wallpaper shows at 1860 540
+--- Finder none, from the main display: the control, a click on the wallpaper
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  a second after: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  after a j: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  front to back: w1 w2 -> w1 w2 
+RESULT | Finder none, from the main display: the control, a click on the wallpaper | rises: no | moves: YES: w1: 400 260 520 380; w2: 2320 260 520 380;  -> w1: -508 159 520 380; w2: 3188 167 520 380;  | Space: same | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+--- Finder none, from the main display: activate
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  activate(options: []) answers true
+  a second after: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  after a j: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  front to back: w1 w2 -> w1 w2 
+RESULT | Finder none, from the main display: activate | rises: no | moves: no | Space: same | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+--- Finder none, from the main display: frontmost
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  AXFrontmost answers 0
+  a second after: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  after a j: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  front to back: w1 w2 -> w1 w2 
+RESULT | Finder none, from the main display: frontmost | rises: no | moves: no | Space: same | the j: w1 +1, w2 +0 | front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+--- Finder none, from the main display: element
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  the element at 1860 540: AXError 0
+    AXGroup: AXFocused can be set: false (AXError 0)
+    AXScrollArea: AXFocused can be set: false (AXError 0)
+    AXApplication: AXFocused can be set: false (AXError -25205)
+  a second after: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  after a j: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  front to back: w1 w2 -> w1 w2 
+RESULT | Finder none, from the main display: element | rises: no | moves: no | Space: same | the j: w1 +1, w2 +0 | front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+--- Finder none, from the main display: element+frontmost
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  the element at 1860 540: AXError 0
+    AXGroup: AXFocused can be set: false (AXError 0)
+    AXScrollArea: AXFocused can be set: false (AXError 0)
+    AXApplication: AXFocused can be set: false (AXError -25205)
+  AXFrontmost answers 0
+  a second after: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  after a j: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  front to back: w1 w2 -> w1 w2 
+RESULT | Finder none, from the main display: element+frontmost | rises: no | moves: no | Space: same | the j: w1 +1, w2 +0 | front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+--- Finder none, from the main display: element+activate
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  the element at 1860 540: AXError 0
+    AXGroup: AXFocused can be set: false (AXError 0)
+    AXScrollArea: AXFocused can be set: false (AXError 0)
+    AXApplication: AXFocused can be set: false (AXError -25205)
+  activate(options: []) answers true
+  a second after: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  after a j: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  front to back: w1 w2 -> w1 w2 
+RESULT | Finder none, from the main display: element+activate | rises: no | moves: no | Space: same | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+--- Finder none, from the main display: an accessory app activates itself
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  after 0.24 s: front=the-probe menu-bar=test-windows keys-go-to=the-probe its-window=none its-element=none active=true key-window=none
+  after 0.33 s: front=the-probe menu-bar=test-windows keys-go-to=the-probe its-window=none its-element=none active=true key-window=none
+  after 1.03 s: front=the-probe menu-bar=test-windows keys-go-to=the-probe its-window=none its-element=none active=true key-window=none
+  a second after: front=other menu-bar=test-windows keys-go-to=nobody (-25204)
+  after 2.03 s: front=the-probe menu-bar=test-windows keys-go-to=the-probe its-window=none its-element=none active=true key-window=none
+  after a j: front=other menu-bar=test-windows keys-go-to=nobody (-25204)
+  front to back: w1 w2 -> w1 w2 
+RESULT | Finder none, from the main display: an accessory app activates itself | rises: no | moves: no | Space: same | the j: w1 +0, w2 +0 | front=other menu-bar=test-windows keys-go-to=nobody (-25204)
+  after 3.03 s: front=the-probe menu-bar=test-windows keys-go-to=the-probe its-window=none its-element=none active=true key-window=none
+  after 4.01 s: front=the-probe menu-bar=test-windows keys-go-to=the-probe its-window=none its-element=none active=true key-window=none
+  after 5.01 s: front=the-probe menu-bar=test-windows keys-go-to=the-probe its-window=none its-element=none active=true key-window=none
+  once that app has ended: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+
+=== Finder minimized; the keyboard begins on the main display; the wallpaper shows at 1860 540
+--- Finder minimized, from the main display: the control, a click on the wallpaper
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  a second after: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  after a j: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  front to back: w1 w2 -> w1 w2 
+RESULT | Finder minimized, from the main display: the control, a click on the wallpaper | rises: no | moves: YES: w1: 400 260 520 380; w2: 2320 260 520 380; f1: 120 120 560 400;  -> w1: -508 159 520 380; w2: 3188 167 520 380; f1: 120 120 560 400;  | Space: same | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+--- Finder minimized, from the main display: activate
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  activate(options: []) answers true
+  a second after: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  after a j: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  front to back: w1 w2 -> w1 w2 
+RESULT | Finder minimized, from the main display: activate | rises: no | moves: no | Space: same | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+--- Finder minimized, from the main display: frontmost
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  AXFrontmost answers 0
+  a second after: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  after a j: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  front to back: w1 w2 -> w1 w2 
+RESULT | Finder minimized, from the main display: frontmost | rises: no | moves: no | Space: same | the j: w1 +1, w2 +0 | front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+--- Finder minimized, from the main display: element
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  the element at 1860 540: AXError 0
+    AXGroup: AXFocused can be set: false (AXError 0)
+    AXScrollArea: AXFocused can be set: false (AXError 0)
+    AXApplication: AXFocused can be set: false (AXError -25205)
+  a second after: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  after a j: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  front to back: w1 w2 -> w1 w2 
+RESULT | Finder minimized, from the main display: element | rises: no | moves: no | Space: same | the j: w1 +1, w2 +0 | front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+--- Finder minimized, from the main display: element+frontmost
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  the element at 1860 540: AXError 0
+    AXGroup: AXFocused can be set: false (AXError 0)
+    AXScrollArea: AXFocused can be set: false (AXError 0)
+    AXApplication: AXFocused can be set: false (AXError -25205)
+  AXFrontmost answers 0
+  a second after: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  after a j: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  front to back: w1 w2 -> w1 w2 
+RESULT | Finder minimized, from the main display: element+frontmost | rises: no | moves: no | Space: same | the j: w1 +1, w2 +0 | front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+--- Finder minimized, from the main display: element+activate
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  the element at 1860 540: AXError 0
+    AXGroup: AXFocused can be set: false (AXError 0)
+    AXScrollArea: AXFocused can be set: false (AXError 0)
+    AXApplication: AXFocused can be set: false (AXError -25205)
+  activate(options: []) answers true
+  a second after: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  after a j: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  front to back: w1 w2 -> w1 w2 
+RESULT | Finder minimized, from the main display: element+activate | rises: no | moves: no | Space: same | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+--- Finder minimized, from the main display: an accessory app activates itself
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  after 0.42 s: front=the-probe menu-bar=test-windows keys-go-to=the-probe its-window=none its-element=none active=true key-window=none
+  after 0.47 s: front=the-probe menu-bar=test-windows keys-go-to=the-probe its-window=none its-element=none active=true key-window=none
+  after 1.02 s: front=the-probe menu-bar=test-windows keys-go-to=the-probe its-window=none its-element=none active=true key-window=none
+  a second after: front=other menu-bar=test-windows keys-go-to=nobody (-25204)
+  after 2.02 s: front=the-probe menu-bar=test-windows keys-go-to=the-probe its-window=none its-element=none active=true key-window=none
+  after a j: front=other menu-bar=test-windows keys-go-to=nobody (-25204)
+  front to back: w1 w2 -> w1 w2 
+RESULT | Finder minimized, from the main display: an accessory app activates itself | rises: no | moves: no | Space: same | the j: w1 +0, w2 +0 | front=other menu-bar=test-windows keys-go-to=nobody (-25204)
+  after 3.01 s: front=the-probe menu-bar=test-windows keys-go-to=the-probe its-window=none its-element=none active=true key-window=none
+  after 4.04 s: front=the-probe menu-bar=test-windows keys-go-to=the-probe its-window=none its-element=none active=true key-window=none
+  after 5.04 s: front=the-probe menu-bar=test-windows keys-go-to=the-probe its-window=none its-element=none active=true key-window=none
+  once that app has ended: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+# on the second Space: 2 of 2; 1 of 1;  on screen: f1 w2 
+
+=== Finder elsewhere; the keyboard begins on the main display; the wallpaper shows at 1860 540
+--- Finder elsewhere, from the main display: the control, a click on the wallpaper
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  a second after: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  after a j: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  front to back: w1 w2 -> w1 w2 
+RESULT | Finder elsewhere, from the main display: the control, a click on the wallpaper | rises: no | moves: YES: w1: 400 260 520 380; w2: 2320 260 520 380; f1: 120 120 560 400;  -> w1: -508 159 520 380; w2: 3188 167 520 380; f1: 120 120 560 400;  | Space: same | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+--- Finder elsewhere, from the main display: activate
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  activate(options: []) answers true
+  a second after: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  after a j: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  front to back: w1 w2 -> w1 w2 
+RESULT | Finder elsewhere, from the main display: activate | rises: no | moves: no | Space: same | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+--- Finder elsewhere, from the main display: frontmost
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  AXFrontmost answers 0
+  a second after: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  after a j: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  front to back: w1 w2 -> f1 w2 
+RESULT | Finder elsewhere, from the main display: frontmost | rises: YES | moves: no | Space: CHANGED: 1 of 2; 1 of 1;  -> 2 of 2; 1 of 1;  | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+--- Finder elsewhere, from the main display: element
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  the element at 1860 540: AXError 0
+    AXGroup: AXFocused can be set: false (AXError 0)
+    AXScrollArea: AXFocused can be set: false (AXError 0)
+    AXApplication: AXFocused can be set: false (AXError -25205)
+  a second after: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  after a j: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  front to back: w1 w2 -> w1 w2 
+RESULT | Finder elsewhere, from the main display: element | rises: no | moves: no | Space: same | the j: w1 +1, w2 +0 | front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+--- Finder elsewhere, from the main display: element+frontmost
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  the element at 1860 540: AXError 0
+    AXGroup: AXFocused can be set: false (AXError 0)
+    AXScrollArea: AXFocused can be set: false (AXError 0)
+    AXApplication: AXFocused can be set: false (AXError -25205)
+  AXFrontmost answers 0
+  a second after: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  after a j: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  front to back: w1 w2 -> f1 w2 
+RESULT | Finder elsewhere, from the main display: element+frontmost | rises: YES | moves: no | Space: CHANGED: 1 of 2; 1 of 1;  -> 2 of 2; 1 of 1;  | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+--- Finder elsewhere, from the main display: element+activate
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  the element at 1860 540: AXError 0
+    AXGroup: AXFocused can be set: false (AXError 0)
+    AXScrollArea: AXFocused can be set: false (AXError 0)
+    AXApplication: AXFocused can be set: false (AXError -25205)
+  activate(options: []) answers true
+  a second after: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  after a j: front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+  front to back: w1 w2 -> w1 w2 
+RESULT | Finder elsewhere, from the main display: element+activate | rises: no | moves: no | Space: same | the j: w1 +0, w2 +0 | front=Finder menu-bar=Finder keys-go-to=nobody (-25204)
+--- Finder elsewhere, from the main display: an accessory app activates itself
+  before: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
+  after 0.26 s: front=the-probe menu-bar=test-windows keys-go-to=the-probe its-window=none its-element=none active=true key-window=none
+  after 0.30 s: front=the-probe menu-bar=test-windows keys-go-to=the-probe its-window=none its-element=none active=true key-window=none
+  after 1.04 s: front=the-probe menu-bar=test-windows keys-go-to=the-probe its-window=none its-element=none active=true key-window=none
+  a second after: front=other menu-bar=test-windows keys-go-to=nobody (-25204)
+  after 2.01 s: front=the-probe menu-bar=test-windows keys-go-to=the-probe its-window=none its-element=none active=true key-window=none
+  after a j: front=other menu-bar=test-windows keys-go-to=nobody (-25204)
+  front to back: w1 w2 -> w1 w2 
+RESULT | Finder elsewhere, from the main display: an accessory app activates itself | rises: no | moves: no | Space: same | the j: w1 +0, w2 +0 | front=other menu-bar=test-windows keys-go-to=nobody (-25204)
+  after 3.01 s: front=the-probe menu-bar=test-windows keys-go-to=the-probe its-window=none its-element=none active=true key-window=none
+  after 4.00 s: front=the-probe menu-bar=test-windows keys-go-to=the-probe its-window=none its-element=none active=true key-window=none
+  after 5.00 s: front=the-probe menu-bar=test-windows keys-go-to=the-probe its-window=none its-element=none active=true key-window=none
+  once that app has ended: front=test-windows menu-bar=test-windows keys-go-to=nobody (-25204)
