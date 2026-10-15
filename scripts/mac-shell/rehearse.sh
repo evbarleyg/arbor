@@ -23,6 +23,8 @@
 #   no daemon: a session's history is a text file next to its ARBOR_HOME, and every call replays it. The header of
 #   Sources/arbor-fakemac/main.swift says more.
 #   `trace on` records as in the app (docs/TRACES.md), on the fake clock. arbor-sim is the real one.
+# - Real apps, for a script in which Arbor does not run (probe-glide.sh): `open -g`, `swiftc` and the helper tools apptool, sampler, witness and
+#   picture-time are rehearse/real-apps, whose header says what an app is there. glide.swift is compiled and run as it is.
 # - screencapture, sips, sw_vers, defaults, killall, launchctl, system_profiler, and sysctl and bc where they
 #   are missing, are rehearse/mac-tools.
 # - `sleep`: the fake Mac's clock moves a second with everything that is done to it, not with the real one. So a
@@ -126,14 +128,16 @@ fi
 
 # The stand-ins under the names and in the places lib.sh expects them.
 stand_ins="$work/stand-ins"
-rm -rf "$stand_ins" "$work/out" "$work/worlds" "$work/defaults" "$work/home"
+rm -rf "$stand_ins" "$work/out" "$work/worlds" "$work/defaults" "$work/home" "$work/apps"
 mkdir -p "$stand_ins/bin" "$stand_ins/path" "$stand_ins/Arbor.app/Contents/MacOS" "$work/out" "$work/worlds" "$work/home"
 ln -s "$here/arbor" "$stand_ins/bin/Arbor"
 ln -s "$here/arbor" "$stand_ins/Arbor.app/Contents/MacOS/Arbor"
 ln -s "$here/fakemac" "$stand_ins/bin/arborctl"
 [ -x "$sim" ] && ln -s "$sim" "$stand_ins/bin/arbor-sim"
 ln -s "$here/fakemac" "$stand_ins/pointer"
-ln -s "$here/fakemac" "$stand_ins/path/open"
+# It hands on to arbor-fakemac whatever is not an app opened in the background.
+ln -s "$here/real-apps" "$stand_ins/path/open"
+ln -s "$here/real-apps" "$stand_ins/path/swiftc"
 ln -s "$here/fakemac" "$stand_ins/path/lsappinfo"
 ln -s "$here/test-windows" "$stand_ins/bin/ArborTestWindows"
 ln -s "$here/test-windows" "$stand_ins/ArborTestWindows"

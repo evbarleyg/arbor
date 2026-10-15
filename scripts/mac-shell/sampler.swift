@@ -6,7 +6,7 @@
 // the screen shows, and keeps every change with its time; jolts.py reads the file afterwards and says, for each step
 // of the script, which windows moved, how often, and by which road.
 //
-//   sampler <log file> <commands fifo> <replies fifo> [--hz n]
+//   sampler <log file> <commands fifo> <replies fifo> [--hz n] [--late ms]
 //
 // It only looks: no Accessibility, no events, nothing is moved. It never reads a window's title. It does write down which
 // apps have windows on the screen, so what it writes on a person's Mac is that person's. lib-day.sh compiles and wraps it.
@@ -24,7 +24,8 @@
 //   V x y w h                      the main display between the menu bar and the Dock
 //   Y id x y w h vx vy vw vh       another display: all of it, and the part of it between its menu bar and the Dock. `Y id` alone: it has gone
 //   M text                         a mark of the script's
-//   L ms                           this sample came late, over 100 ms after the one before (docs/VIABLE.md, sampler.late_ms): nothing was seen for that long
+//   L ms                           this sample came late, over 100 ms after the one before (docs/VIABLE.md, sampler.late_ms): nothing was seen for that long.
+//                                  --late: over that many ms instead, for a probe that has to know of shorter gaps than the gate does
 //   S …                            at the end: how many samples, how long one took, how many came late
 //
 // The grammar stays as it is: other tools write files in it that are merged with this one by time. A new kind is a new capital
@@ -55,7 +56,13 @@ if let index = arguments.firstIndex(of: "--hz") {
   hertz = value
   arguments.removeSubrange(index...(index + 1))
 }
-guard arguments.count == 3 else { fail("usage: sampler <log file> <commands fifo> <replies fifo> [--hz n]") }
+var lateAfter = Sampler.late
+if let index = arguments.firstIndex(of: "--late") {
+  guard arguments.count > index + 1, let value = Double(arguments[index + 1]), value >= 1 else { fail("--late takes a number of ms, 1 or more") }
+  lateAfter = value
+  arguments.removeSubrange(index...(index + 1))
+}
+guard arguments.count == 3 else { fail("usage: sampler <log file> <commands fifo> <replies fifo> [--hz n] [--late ms]") }
 /// Not `guard let`: what that binds at the top of a file is no global, and the class below could not use it.
 nonisolated(unsafe) let logFile: UnsafeMutablePointer<FILE> = {
   guard let file = fopen(arguments[0], "a") else { fail("cannot write to \(arguments[0])") }
@@ -116,7 +123,7 @@ final class Sampler {
 
   func sample(gap: Double, period: Double) {
     let started = now()
-    if gap > Sampler.late {
+    if gap > lateAfter {
       late += 1
       write(started, "L \(Int(gap))")
     }
