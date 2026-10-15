@@ -242,7 +242,8 @@ check "nothing overlaps" no_overlaps
 settled
 arbor_stop
 
-arbor_settings '{"soleFloatTakesDesktop": true}'
+# A window that floats alone takes the Desktop only where floating windows make way, which ships off too (F64): both are set.
+arbor_settings '{"soleFloatTakesDesktop": true, "floatingWindowsMakeWay": true}'
 arbor_start 3 ARBOR_NO_HOTKEYS=0
 own_w=$all_w
 own_h=$all_h
@@ -315,14 +316,14 @@ proves T21
 ctl dock "$W3" right
 ctl float "$W3"
 check "it has the Desktop's place and size" eventually takes_desktop "$W3"
-arbor_settings '{"soleFloatTakesDesktop": false}'
+arbor_settings '{"soleFloatTakesDesktop": false, "floatingWindowsMakeWay": true}'
 ctl reload-settings
 check "it has its own size back" eventually has_size "$W3" "$own_w" "$own_h"
 settled
 
 claim "quit Arbor while a window fills the Desktop: it has its own size back"
 proves T21
-arbor_settings '{"soleFloatTakesDesktop": true}'
+arbor_settings '{"soleFloatTakesDesktop": true, "floatingWindowsMakeWay": true}'
 ctl reload-settings
 check "it has the Desktop's place and size" eventually takes_desktop "$W3"
 arbor_quit

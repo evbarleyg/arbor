@@ -44,6 +44,12 @@ shared() {
 
 arbor_start 4
 ctl dock "$W1" left
+# Floating windows stay where they are when something is docked (F64), and a press on a tile or a gap that one of them lies over is
+# that window's. Their app moves them to the right edge of the Desktop's part, clear of both.
+take "dx dy dw _" arbor_ask desktop
+for id in "$W2" "$W4"; do
+  tw move "$id" "$((dx + dw - $(width_of "$id")))" "$((dy + 20))" "$(width_of "$id")" "$(height_of "$id")"
+done
 
 claim "drop a window that refuses to shrink into a slot too small for it: a tile takes its place"
 proves A05 T20 T50

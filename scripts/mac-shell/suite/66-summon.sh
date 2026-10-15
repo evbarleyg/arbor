@@ -48,17 +48,20 @@ docked_says() { there_to_summon "$W1" && says "is docked" arborctl summon "$ARBO
 arbor_settings "{\"bindings\": {\"ctrl+opt+\`\": \"summon $ARBOR_TEST_BUNDLE_2\"}}"
 arbor_start 2 ARBOR_NO_HOTKEYS=0
 # Half as wide as the screen: more than the third of it that the Desktop keeps between two docked windows.
-take "_ _ screen_w _" screen_of 1
-take "x y _ own_h" real_frame_of "$V1"
-own_w=$((screen_w / 2))
-tw2 move "$V1" "$x" "$y" "$own_w" "$own_h"
-eventually seen_where_it_is "$V1"
-ctl dock "$W1" left
-ctl dock "$W2" right
-click_window "$W1"
-squeezed_w=$(width_of "$V1")
-ctl zoom "$W1"
-summary
+between_two_docked_windows() {
+  take "_ _ screen_w _" screen_of 1
+  take "x y _ own_h" real_frame_of "$V1"
+  own_w=$((screen_w / 2))
+  tw2 move "$V1" "$x" "$y" "$own_w" "$own_h"
+  eventually seen_where_it_is "$V1"
+  ctl dock "$W1" left
+  ctl dock "$W2" right
+  click_window "$W1"
+  beside_them_w=$(width_of "$V1")
+  ctl zoom "$W1"
+  summary
+}
+between_two_docked_windows
 
 claim "press the shortcut bound to summon: the other app's window comes over the framed window with the keyboard in it"
 proves A53
@@ -75,9 +78,9 @@ check "the view has not moved" camera_on "$W1"
 check "the framed window still fills the screen" fills "$W1"
 check "the other docked window is still out of view" out_of_view "$W2"
 
-claim "summoned for the first time, a window that a narrow Desktop had squeezed comes at its own size"
-proves A53
-check "the Desktop between two docked windows had squeezed it" test "$squeezed_w" -lt "$((own_w - 40))"
+claim "summoned for the first time, a window wider than the Desktop between two docked windows comes at its own size"
+proves A53 A229
+check "the two docks had not made it narrower" about "$beside_them_w" "$own_w"
 check "over the view it is as wide as it was before anything was docked" width_is "$V1" "$own_w"
 check "and as high" height_is "$V1" "${own_h%.*}"
 
@@ -176,6 +179,25 @@ proves A53
 check "it fails" exits_with 1 arborctl summon dev.arbor.no-such-app
 check "and says why" says "no app called" arborctl summon dev.arbor.no-such-app
 check "the window in view is still in view" in_view "$W1"
+ctl home
+settled
+arbor_stop
+
+# The way back: with `floatingWindowsMakeWay`, which ships off, a narrow Desktop squeezes what floats on it, as until F64.
+arbor_settings "{\"floatingWindowsMakeWay\": true, \"bindings\": {\"ctrl+opt+\`\": \"summon $ARBOR_TEST_BUNDLE_2\"}}"
+arbor_start 2 ARBOR_NO_HOTKEYS=0
+between_two_docked_windows
+
+claim "with floatingWindowsMakeWay on: summoned for the first time, a window that a narrow Desktop had squeezed comes at its own size"
+proves A53
+check "the Desktop between two docked windows had squeezed it" test "$beside_them_w" -lt "$((own_w - 40))"
+check "the other app's window is out of view with the Desktop" eventually out_of_view "$V1"
+check "⌃⌥\` reaches Arbor" summon_key
+check "the other app's window is in view" eventually in_view "$V1"
+check "over the view it is as wide as it was before anything was docked" eventually width_is "$V1" "$own_w"
+check "and as high" height_is "$V1" "${own_h%.*}"
+check "⌃⌥\` reaches Arbor again" summon_key
+check "the other app's window is out of view" eventually out_of_view "$V1"
 ctl home
 settled
 arbor_stop
