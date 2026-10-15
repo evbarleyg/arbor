@@ -9948,7 +9948,7 @@
    "guards": [
     "tool: mac-shell/jolts.py"
    ],
-   "copes": "scripts/mac-shell/jolts.py gives a single release 100 ms and asks only while a process of Arbor's exists; what is systematic and smaller is compared with the run without Arbor.",
+   "copes": "scripts/mac-shell/jolts.py gives a single release 100 ms and asks only while a process of Arbor's exists, or in a run that never had one; what is systematic and smaller is asked by the median, in rounds of input.",
    "hurt": 4,
    "touches": [
     "input-held"
@@ -10012,10 +10012,9 @@
    "modelled": "cannot",
    "knobs": [],
    "guards": [
-    "tool: mac-shell/jolts.py",
-    "tool: mac-shell/viable.py"
+    "tool: mac-shell/jolts.py"
    ],
-   "copes": "scripts/mac-shell/jolts.py counts lateness by kind of event, with a kind of its own for such a press, and scripts/mac-shell/viable.py compares a journey only with its own control, kind by kind.",
+   "copes": "scripts/mac-shell/jolts.py counts lateness by kind of event, with a kind of its own for such a press, and judges only rounds of the same events played with and without Arbor on the same Mac, minutes apart (scripts/mac-shell/lib-walk.sh, input_round).",
    "hurt": 4,
    "touches": [
     "input-held"
@@ -10023,7 +10022,8 @@
    "sources": [
     "scripts/mac-shell/probe-presses.sh",
     "scripts/mac-shell/jolts.py",
-    "scripts/mac-shell/viable.py",
+    "scripts/mac-shell/lib-walk.sh",
+    "docs/VIABLE.md",
     "docs/TESTING.md"
    ]
   }
