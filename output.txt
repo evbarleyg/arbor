@@ -1,0 +1,662 @@
+# mac-shell: scripts/mac-shell/probe-tapper-questions.sh at fcefa9e, macOS 26.6.2, 2026-10-15T02:52Z
+built Arbor and the pointer tool in 7s
+the tools' own permission: true
+
+== the bundle
+session 1: Arbor pid 5216, test windows 30 31 (pid 5144)
+running: 1 display, 0 docked and 2 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+/Users/runner/Applications/ArborProbePermissionLoss.app: replacing existing signature
+cdhash H"a0486f751434a6522f89dbe04e2b443747fe9928"
+/Users/runner/Applications/ArborProbeBareTapper.app: replacing existing signature
+
+== round 1: by_tccutil, with bare-tapper
+tap 719885386 pid=5832 point=1 options=0 mask=0x2 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+Successfully reset Accessibility approval status for com.evbarleyg.arbor.probe-bare-tapper
+the permission was taken between 02:54:02.438 and 02:54:02.559
+02:53:58.298 stream begins
+02:54:10.311 stream ends: 1200 events posted
+the tools' own permission afterwards: true
+the tapper's own words:
+02:53:57.903 tap-ready pid=5832 manner=on
+02:53:57.908 question tapIsEnabled = yes
+02:53:57.914 question AXIsProcessTrusted = yes
+02:53:57.915 question CGPreflightListenEventAccess = yes
+02:53:57.916 question CGPreflightPostEventAccess = yes
+02:53:57.916 question a trial tapCreate = yes
+02:54:02.559 question a trial tapCreate = no
+02:54:14.417 cost tapIsEnabled: 1265 calls, µs: median 82, 99th 1510, worst 25855
+02:54:14.418 cost AXIsProcessTrusted: 1265 calls, µs: median 19, 99th 86, worst 5507
+02:54:14.418 cost CGPreflightListenEventAccess: 1265 calls, µs: median 18, 99th 109, worst 4799
+02:54:14.418 cost CGPreflightPostEventAccess: 1265 calls, µs: median 0, 99th 1, worst 5
+02:54:14.418 cost a trial tapCreate: 1265 calls, µs: median 453, 99th 4187, worst 42715
+02:54:14.908 the end: the tap is on
+its tap now, by the window server's list: none
+posted 1200, arrived 420, missing 780: [421, 422, 423, 424, 425, 426, 427, 428, 429, 430, 431, 432, 433, 434, 435, 436, 437, 438, 439, 440]
+arrived by kind: down 210, up 210, key-down 0, key-up 0, wheel 0
+before the loss: 414 arrived of 414 posted, longest hole 104 ms, worst lateness 44.0 ms, more than 10 ms late: 24
+from the loss until the taps were gone: 6 arrived of 14 posted, longest hole 25 ms, worst lateness 7.6 ms, more than 10 ms late: 0
+after the taps were gone: 0 arrived of 772 posted, longest hole 0 ms, worst lateness 0.0 ms, more than 10 ms late: 0
+median lateness in ms, before the loss / after the taps were gone: down 1.83 / 0.00, up 1.95 / 0.00
+  NOTHING ARRIVED from 02:54:02.481 to the end of the stream, 7830 ms: 780 events lost in it
+the first event that was lost (n=421) was due at 02:54:02.498, +60 ms from the beginning of the deed
+  question a trial tapCreate = no: +61 ms from the first lost event
+  cost tapIsEnabled: 1265 calls, µs: median 82, 99th 1510, worst 25855
+  cost AXIsProcessTrusted: 1265 calls, µs: median 19, 99th 86, worst 5507
+  cost CGPreflightListenEventAccess: 1265 calls, µs: median 18, 99th 109, worst 4799
+  cost CGPreflightPostEventAccess: 1265 calls, µs: median 0, 99th 1, worst 5
+  cost a trial tapCreate: 1265 calls, µs: median 453, 99th 4187, worst 42715
+the taps were gone 121 ms after the permission began to go
+THE LONGEST HOLE: 7830 ms
+  ✘ round 1: NOTHING LOST: every event that was posted arrived (780 did not)
+  ✔ round 1: the hole while the permission went (25 ms) is no longer than a second
+  ✔ round 1: AT THE MEDIAN, by kind of event, no more than 10 ms later after the taps were gone than before the loss (0 ms at most)
+  ✔ round 1: (at the worst) no later after the taps were gone (0 ms) than this Mac was before the loss (44 ms), or 10 ms
+  ✘ round 1: no longer a hole after the taps were gone (7830 ms) than before the loss (104 ms), or 150 ms
+  ✔ round 1: (the first bar) none more than 10 ms late once the taps were gone
+  ✘ round 1: (the first bar) input never stood still for a quarter of a second (7830 ms)
+shot: mac-shell/round-1-afterwards.png
+
+== round 2: by_tccutil, with bare-tapper-off
+tap 446340713 pid=6744 point=1 options=0 mask=0x2 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+Successfully reset Accessibility approval status for com.evbarleyg.arbor.probe-bare-tapper
+the permission was taken between 02:54:28.068 and 02:54:28.196
+02:54:24.018 stream begins
+02:54:36.040 stream ends: 1200 events posted
+the tools' own permission afterwards: true
+the tapper's own words:
+02:54:23.813 tap-ready pid=6744 manner=off
+02:54:23.819 question tapIsEnabled = no
+02:54:23.824 switched-off by user input
+02:54:23.826 question AXIsProcessTrusted = yes
+02:54:23.826 question CGPreflightListenEventAccess = yes
+02:54:23.826 question CGPreflightPostEventAccess = yes
+02:54:23.826 question a trial tapCreate = yes
+02:54:28.189 question a trial tapCreate = no
+02:54:40.321 cost tapIsEnabled: 1251 calls, µs: median 78, 99th 2831, worst 17221
+02:54:40.322 cost AXIsProcessTrusted: 1251 calls, µs: median 19, 99th 102, worst 6374
+02:54:40.322 cost CGPreflightListenEventAccess: 1251 calls, µs: median 17, 99th 71, worst 357
+02:54:40.322 cost CGPreflightPostEventAccess: 1251 calls, µs: median 0, 99th 1, worst 70
+02:54:40.322 cost a trial tapCreate: 1251 calls, µs: median 461, 99th 4629, worst 9276
+02:54:40.820 the end: the tap is off
+its tap now, by the window server's list: none
+posted 1200, arrived 1200, missing 0
+arrived by kind: down 600, up 600, key-down 0, key-up 0, wheel 0
+before the loss: 406 arrived of 406 posted, longest hole 98 ms, worst lateness 14.0 ms, more than 10 ms late: 2
+from the loss until the taps were gone: 0 arrived of 0 posted, longest hole 0 ms, worst lateness 0.0 ms, more than 10 ms late: 0
+after the taps were gone: 1200 arrived of 1200 posted, longest hole 100 ms, worst lateness 33.6 ms, more than 10 ms late: 7
+median lateness in ms, before the loss / after the taps were gone: down 0.85 / 0.65, up 0.85 / 0.73
+  question a trial tapCreate = no: +121 ms from the deed
+  cost tapIsEnabled: 1251 calls, µs: median 78, 99th 2831, worst 17221
+  cost AXIsProcessTrusted: 1251 calls, µs: median 19, 99th 102, worst 6374
+  cost CGPreflightListenEventAccess: 1251 calls, µs: median 17, 99th 71, worst 357
+  cost CGPreflightPostEventAccess: 1251 calls, µs: median 0, 99th 1, worst 70
+  cost a trial tapCreate: 1251 calls, µs: median 461, 99th 4629, worst 9276
+the taps were gone -4244 ms after the permission began to go
+THE LONGEST HOLE: 100 ms
+  ✔ round 2: NOTHING LOST: every event that was posted arrived (0 did not)
+  ✔ round 2: the hole while the permission went (0 ms) is no longer than a second
+  ✔ round 2: AT THE MEDIAN, by kind of event, no more than 10 ms later after the taps were gone than before the loss (0 ms at most)
+  ✘ round 2: (at the worst) no later after the taps were gone (34 ms) than this Mac was before the loss (14 ms), or 10 ms
+  ✔ round 2: no longer a hole after the taps were gone (100 ms) than before the loss (98 ms), or 150 ms
+  ✘ round 2: (the first bar) none more than 10 ms late once the taps were gone
+  ✔ round 2: (the first bar) input never stood still for a quarter of a second (100 ms)
+shot: mac-shell/round-2-afterwards.png
+
+== round 3: by_tccutil, with bare-tapper-off
+tap 1941727088 pid=7828 point=1 options=0 mask=0x2 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+Successfully reset Accessibility approval status for com.evbarleyg.arbor.probe-bare-tapper
+the permission was taken between 02:54:53.779 and 02:54:53.885
+02:54:49.677 stream begins
+02:55:01.680 stream ends: 1196 events posted
+the tools' own permission afterwards: true
+the tapper's own words:
+02:54:49.399 tap-ready pid=7828 manner=off
+02:54:49.406 question tapIsEnabled = no
+02:54:49.409 switched-off by user input
+02:54:49.413 question AXIsProcessTrusted = yes
+02:54:49.413 question CGPreflightListenEventAccess = yes
+02:54:49.413 question CGPreflightPostEventAccess = yes
+02:54:49.414 question a trial tapCreate = yes
+02:54:53.877 question a trial tapCreate = no
+02:55:05.917 cost tapIsEnabled: 1259 calls, µs: median 76, 99th 982, worst 8240
+02:55:05.917 cost AXIsProcessTrusted: 1259 calls, µs: median 18, 99th 97, worst 7152
+02:55:05.917 cost CGPreflightListenEventAccess: 1259 calls, µs: median 16, 99th 96, worst 692
+02:55:05.917 cost CGPreflightPostEventAccess: 1259 calls, µs: median 0, 99th 1, worst 5
+02:55:05.917 cost a trial tapCreate: 1259 calls, µs: median 432, 99th 4794, worst 10327
+02:55:06.407 the end: the tap is off
+its tap now, by the window server's list: none
+posted 1196, arrived 1196, missing 0
+arrived by kind: down 598, up 598, key-down 0, key-up 0, wheel 0
+before the loss: 412 arrived of 412 posted, longest hole 90 ms, worst lateness 3.3 ms, more than 10 ms late: 0
+from the loss until the taps were gone: 0 arrived of 0 posted, longest hole 0 ms, worst lateness 0.0 ms, more than 10 ms late: 0
+after the taps were gone: 1196 arrived of 1196 posted, longest hole 125 ms, worst lateness 82.9 ms, more than 10 ms late: 26
+median lateness in ms, before the loss / after the taps were gone: down 0.32 / 0.68, up 0.34 / 0.72
+  question a trial tapCreate = no: +98 ms from the deed
+  cost tapIsEnabled: 1259 calls, µs: median 76, 99th 982, worst 8240
+  cost AXIsProcessTrusted: 1259 calls, µs: median 18, 99th 97, worst 7152
+  cost CGPreflightListenEventAccess: 1259 calls, µs: median 16, 99th 96, worst 692
+  cost CGPreflightPostEventAccess: 1259 calls, µs: median 0, 99th 1, worst 5
+  cost a trial tapCreate: 1259 calls, µs: median 432, 99th 4794, worst 10327
+the taps were gone -4370 ms after the permission began to go
+THE LONGEST HOLE: 125 ms
+  ✔ round 3: NOTHING LOST: every event that was posted arrived (0 did not)
+  ✔ round 3: the hole while the permission went (0 ms) is no longer than a second
+  ✔ round 3: AT THE MEDIAN, by kind of event, no more than 10 ms later after the taps were gone than before the loss (0 ms at most)
+  ✘ round 3: (at the worst) no later after the taps were gone (83 ms) than this Mac was before the loss (3 ms), or 10 ms
+  ✔ round 3: no longer a hole after the taps were gone (125 ms) than before the loss (90 ms), or 150 ms
+  ✘ round 3: (the first bar) none more than 10 ms late once the taps were gone
+  ✔ round 3: (the first bar) input never stood still for a quarter of a second (125 ms)
+shot: mac-shell/round-3-afterwards.png
+
+== round 4: by_tccutil, with bare-tapper-off+idle
+tap 849725352 pid=9162 point=1 options=0 mask=0x1000000 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+tap 672563970 pid=9162 point=1 options=0 mask=0x2 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+Successfully reset Accessibility approval status for com.evbarleyg.arbor.probe-bare-tapper
+the permission was taken between 02:55:19.653 and 02:55:19.807
+02:55:15.524 stream begins
+02:55:27.529 stream ends: 1196 events posted
+the tools' own permission afterwards: true
+the tapper's own words:
+02:55:15.070 tap-ready pid=9162 manner=off+idle
+02:55:15.081 question tapIsEnabled = no
+02:55:15.087 switched-off by user input
+02:55:15.089 question AXIsProcessTrusted = yes
+02:55:15.090 question CGPreflightListenEventAccess = yes
+02:55:15.090 question CGPreflightPostEventAccess = yes
+02:55:15.090 question a trial tapCreate = yes
+02:55:19.803 question a trial tapCreate = no
+02:55:31.583 cost tapIsEnabled: 1229 calls, µs: median 80, 99th 1760, worst 10159
+02:55:31.583 cost AXIsProcessTrusted: 1229 calls, µs: median 20, 99th 108, worst 8230
+02:55:31.583 cost CGPreflightListenEventAccess: 1229 calls, µs: median 17, 99th 80, worst 2785
+02:55:31.583 cost CGPreflightPostEventAccess: 1229 calls, µs: median 0, 99th 1, worst 30
+02:55:31.583 cost a trial tapCreate: 1229 calls, µs: median 433, 99th 5269, worst 33499
+02:55:32.083 the end: the tap is off, the idle one on
+its tap now, by the window server's list: none
+posted 1196, arrived 1196, missing 0
+arrived by kind: down 598, up 598, key-down 0, key-up 0, wheel 0
+before the loss: 414 arrived of 414 posted, longest hole 144 ms, worst lateness 70.1 ms, more than 10 ms late: 19
+from the loss until the taps were gone: 0 arrived of 0 posted, longest hole 0 ms, worst lateness 0.0 ms, more than 10 ms late: 0
+after the taps were gone: 1196 arrived of 1196 posted, longest hole 150 ms, worst lateness 70.1 ms, more than 10 ms late: 40
+median lateness in ms, before the loss / after the taps were gone: down 0.91 / 0.82, up 0.88 / 0.84
+  question a trial tapCreate = no: +150 ms from the deed
+  cost tapIsEnabled: 1229 calls, µs: median 80, 99th 1760, worst 10159
+  cost AXIsProcessTrusted: 1229 calls, µs: median 20, 99th 108, worst 8230
+  cost CGPreflightListenEventAccess: 1229 calls, µs: median 17, 99th 80, worst 2785
+  cost CGPreflightPostEventAccess: 1229 calls, µs: median 0, 99th 1, worst 30
+  cost a trial tapCreate: 1229 calls, µs: median 433, 99th 5269, worst 33499
+the taps were gone -4566 ms after the permission began to go
+THE LONGEST HOLE: 150 ms
+  ✔ round 4: NOTHING LOST: every event that was posted arrived (0 did not)
+  ✔ round 4: the hole while the permission went (0 ms) is no longer than a second
+  ✔ round 4: AT THE MEDIAN, by kind of event, no more than 10 ms later after the taps were gone than before the loss (0 ms at most)
+  ✔ round 4: (at the worst) no later after the taps were gone (70 ms) than this Mac was before the loss (70 ms), or 10 ms
+  ✔ round 4: no longer a hole after the taps were gone (150 ms) than before the loss (144 ms), or 150 ms
+  ✘ round 4: (the first bar) none more than 10 ms late once the taps were gone
+  ✔ round 4: (the first bar) input never stood still for a quarter of a second (150 ms)
+shot: mac-shell/round-4-afterwards.png
+
+== round 5: by_tccutil, with bare-tapper-off+idle
+tap 832077645 pid=10200 point=1 options=0 mask=0x1000000 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+tap 1731190952 pid=10200 point=1 options=0 mask=0x2 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+Successfully reset Accessibility approval status for com.evbarleyg.arbor.probe-bare-tapper
+the permission was taken between 02:55:45.406 and 02:55:45.481
+02:55:41.297 stream begins
+02:55:53.298 stream ends: 1194 events posted
+the tools' own permission afterwards: true
+the tapper's own words:
+02:55:40.898 tap-ready pid=10200 manner=off+idle
+02:55:40.905 question tapIsEnabled = no
+02:55:40.909 switched-off by user input
+02:55:40.913 question AXIsProcessTrusted = yes
+02:55:40.914 question CGPreflightListenEventAccess = yes
+02:55:40.914 question CGPreflightPostEventAccess = yes
+02:55:40.914 question a trial tapCreate = yes
+02:55:45.472 question a trial tapCreate = no
+02:55:57.409 cost tapIsEnabled: 1247 calls, µs: median 78, 99th 1603, worst 5482
+02:55:57.409 cost AXIsProcessTrusted: 1247 calls, µs: median 18, 99th 89, worst 8030
+02:55:57.409 cost CGPreflightListenEventAccess: 1247 calls, µs: median 16, 99th 111, worst 763
+02:55:57.409 cost CGPreflightPostEventAccess: 1247 calls, µs: median 0, 99th 1, worst 19
+02:55:57.409 cost a trial tapCreate: 1247 calls, µs: median 453, 99th 4705, worst 19779
+02:55:57.906 the end: the tap is off, the idle one on
+its tap now, by the window server's list: none
+posted 1194, arrived 1194, missing 0
+arrived by kind: down 597, up 597, key-down 0, key-up 0, wheel 0
+before the loss: 412 arrived of 412 posted, longest hole 93 ms, worst lateness 4.0 ms, more than 10 ms late: 0
+from the loss until the taps were gone: 0 arrived of 0 posted, longest hole 0 ms, worst lateness 0.0 ms, more than 10 ms late: 0
+after the taps were gone: 1194 arrived of 1194 posted, longest hole 95 ms, worst lateness 16.1 ms, more than 10 ms late: 6
+median lateness in ms, before the loss / after the taps were gone: down 0.37 / 0.38, up 0.35 / 0.37
+  question a trial tapCreate = no: +66 ms from the deed
+  cost tapIsEnabled: 1247 calls, µs: median 78, 99th 1603, worst 5482
+  cost AXIsProcessTrusted: 1247 calls, µs: median 18, 99th 89, worst 8030
+  cost CGPreflightListenEventAccess: 1247 calls, µs: median 16, 99th 111, worst 763
+  cost CGPreflightPostEventAccess: 1247 calls, µs: median 0, 99th 1, worst 19
+  cost a trial tapCreate: 1247 calls, µs: median 453, 99th 4705, worst 19779
+the taps were gone -4497 ms after the permission began to go
+THE LONGEST HOLE: 95 ms
+  ✔ round 5: NOTHING LOST: every event that was posted arrived (0 did not)
+  ✔ round 5: the hole while the permission went (0 ms) is no longer than a second
+  ✔ round 5: AT THE MEDIAN, by kind of event, no more than 10 ms later after the taps were gone than before the loss (0 ms at most)
+  ✘ round 5: (at the worst) no later after the taps were gone (16 ms) than this Mac was before the loss (4 ms), or 10 ms
+  ✔ round 5: no longer a hole after the taps were gone (95 ms) than before the loss (93 ms), or 150 ms
+  ✘ round 5: (the first bar) none more than 10 ms late once the taps were gone
+  ✔ round 5: (the first bar) input never stood still for a quarter of a second (95 ms)
+shot: mac-shell/round-5-afterwards.png
+
+== round 6: by_tccutil, with bare-tapper-late
+tap 1004011520 pid=11176 point=1 options=0 mask=0x2 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+Successfully reset Accessibility approval status for com.evbarleyg.arbor.probe-bare-tapper
+the permission was taken between 02:56:10.635 and 02:56:10.748
+02:56:06.541 stream begins
+02:56:18.566 stream ends: 1200 events posted
+the tools' own permission afterwards: true
+the tapper's own words:
+02:56:06.276 tap-ready pid=11176 manner=late
+02:56:06.283 question tapIsEnabled = no
+02:56:06.285 switched-off by user input
+02:56:06.295 question AXIsProcessTrusted = yes
+02:56:06.295 question CGPreflightListenEventAccess = yes
+02:56:06.295 question CGPreflightPostEventAccess = yes
+02:56:06.299 question a trial tapCreate = yes
+02:56:10.732 question a trial tapCreate = no
+02:56:14.280 switched on by its owner; macOS now calls it on
+02:56:14.293 question tapIsEnabled = yes
+02:56:22.792 cost tapIsEnabled: 1262 calls, µs: median 73, 99th 979, worst 6628
+02:56:22.792 cost AXIsProcessTrusted: 1262 calls, µs: median 16, 99th 82, worst 12378
+02:56:22.792 cost CGPreflightListenEventAccess: 1262 calls, µs: median 15, 99th 74, worst 482
+02:56:22.792 cost CGPreflightPostEventAccess: 1262 calls, µs: median 0, 99th 1, worst 4
+02:56:22.792 cost a trial tapCreate: 1262 calls, µs: median 414, 99th 4426, worst 22612
+02:56:23.284 the end: the tap is on
+its tap now, by the window server's list: none
+posted 1200, arrived 770, missing 430: [771, 772, 773, 774, 775, 776, 777, 778, 779, 780, 781, 782, 783, 784, 785, 786, 787, 788, 789, 790]
+arrived by kind: down 385, up 385, key-down 0, key-up 0, wheel 0
+before the loss: 410 arrived of 410 posted, longest hole 81 ms, worst lateness 11.2 ms, more than 10 ms late: 1
+from the loss until the taps were gone: 0 arrived of 0 posted, longest hole 0 ms, worst lateness 0.0 ms, more than 10 ms late: 0
+after the taps were gone: 770 arrived of 1200 posted, longest hole 90 ms, worst lateness 11.2 ms, more than 10 ms late: 1
+median lateness in ms, before the loss / after the taps were gone: down 0.51 / 0.47, up 0.53 / 0.49
+  NOTHING ARRIVED from 02:56:14.226 to the end of the stream, 4340 ms: 430 events lost in it
+the first event that was lost (n=771) was due at 02:56:14.241, +3606 ms from the beginning of the deed
+  question a trial tapCreate = no: -3509 ms from the first lost event
+  switched on by its owner; macOS now calls it on: +39 ms from the first lost event
+  question tapIsEnabled = yes: +52 ms from the first lost event
+  cost tapIsEnabled: 1262 calls, µs: median 73, 99th 979, worst 6628
+  cost AXIsProcessTrusted: 1262 calls, µs: median 16, 99th 82, worst 12378
+  cost CGPreflightListenEventAccess: 1262 calls, µs: median 15, 99th 74, worst 482
+  cost CGPreflightPostEventAccess: 1262 calls, µs: median 0, 99th 1, worst 4
+  cost a trial tapCreate: 1262 calls, µs: median 414, 99th 4426, worst 22612
+the taps were gone -4350 ms after the permission began to go
+THE LONGEST HOLE: 4340 ms
+  ✘ round 6: NOTHING LOST: every event that was posted arrived (430 did not)
+  ✔ round 6: the hole while the permission went (0 ms) is no longer than a second
+  ✔ round 6: AT THE MEDIAN, by kind of event, no more than 10 ms later after the taps were gone than before the loss (0 ms at most)
+  ✔ round 6: (at the worst) no later after the taps were gone (11 ms) than this Mac was before the loss (11 ms), or 10 ms
+  ✘ round 6: no longer a hole after the taps were gone (4340 ms) than before the loss (81 ms), or 150 ms
+  ✘ round 6: (the first bar) none more than 10 ms late once the taps were gone
+  ✘ round 6: (the first bar) input never stood still for a quarter of a second (4340 ms)
+shot: mac-shell/round-6-afterwards.png
+
+== round 7: by_tccutil, with bare-tapper-late
+tap 1682367563 pid=12528 point=1 options=0 mask=0x2 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+Successfully reset Accessibility approval status for com.evbarleyg.arbor.probe-bare-tapper
+the permission was taken between 02:56:36.249 and 02:56:36.331
+02:56:32.197 stream begins
+02:56:44.222 stream ends: 1198 events posted
+the tools' own permission afterwards: true
+the tapper's own words:
+02:56:31.927 tap-ready pid=12528 manner=late
+02:56:31.941 question tapIsEnabled = no
+02:56:31.947 switched-off by user input
+02:56:31.957 question AXIsProcessTrusted = yes
+02:56:31.957 question CGPreflightListenEventAccess = yes
+02:56:31.957 question CGPreflightPostEventAccess = yes
+02:56:31.957 question a trial tapCreate = yes
+02:56:36.322 question a trial tapCreate = no
+02:56:39.929 switched on by its owner; macOS now calls it on
+02:56:39.937 question tapIsEnabled = yes
+02:56:48.447 cost tapIsEnabled: 1260 calls, µs: median 81, 99th 1102, worst 4268
+02:56:48.448 cost AXIsProcessTrusted: 1260 calls, µs: median 18, 99th 70, worst 16025
+02:56:48.448 cost CGPreflightListenEventAccess: 1260 calls, µs: median 16, 99th 79, worst 2959
+02:56:48.448 cost CGPreflightPostEventAccess: 1260 calls, µs: median 0, 99th 1, worst 4
+02:56:48.448 cost a trial tapCreate: 1260 calls, µs: median 447, 99th 3568, worst 7570
+02:56:48.941 the end: the tap is on
+its tap now, by the window server's list: none
+posted 1198, arrived 772, missing 426: [773, 774, 775, 776, 777, 778, 779, 780, 781, 782, 783, 784, 785, 786, 787, 788, 789, 790, 791, 792]
+arrived by kind: down 386, up 386, key-down 0, key-up 0, wheel 0
+before the loss: 406 arrived of 406 posted, longest hole 100 ms, worst lateness 32.1 ms, more than 10 ms late: 18
+from the loss until the taps were gone: 0 arrived of 0 posted, longest hole 0 ms, worst lateness 0.0 ms, more than 10 ms late: 0
+after the taps were gone: 772 arrived of 1198 posted, longest hole 100 ms, worst lateness 32.1 ms, more than 10 ms late: 18
+median lateness in ms, before the loss / after the taps were gone: down 0.57 / 0.41, up 0.61 / 0.46
+  NOTHING ARRIVED from 02:56:39.909 to the end of the stream, 4313 ms: 426 events lost in it
+the first event that was lost (n=773) was due at 02:56:39.917, +3668 ms from the beginning of the deed
+  question a trial tapCreate = no: -3595 ms from the first lost event
+  switched on by its owner; macOS now calls it on: +12 ms from the first lost event
+  question tapIsEnabled = yes: +20 ms from the first lost event
+  cost tapIsEnabled: 1260 calls, µs: median 81, 99th 1102, worst 4268
+  cost AXIsProcessTrusted: 1260 calls, µs: median 18, 99th 70, worst 16025
+  cost CGPreflightListenEventAccess: 1260 calls, µs: median 16, 99th 79, worst 2959
+  cost CGPreflightPostEventAccess: 1260 calls, µs: median 0, 99th 1, worst 4
+  cost a trial tapCreate: 1260 calls, µs: median 447, 99th 3568, worst 7570
+the taps were gone -4302 ms after the permission began to go
+THE LONGEST HOLE: 4313 ms
+  ✘ round 7: NOTHING LOST: every event that was posted arrived (426 did not)
+  ✔ round 7: the hole while the permission went (0 ms) is no longer than a second
+  ✔ round 7: AT THE MEDIAN, by kind of event, no more than 10 ms later after the taps were gone than before the loss (0 ms at most)
+  ✔ round 7: (at the worst) no later after the taps were gone (32 ms) than this Mac was before the loss (32 ms), or 10 ms
+  ✘ round 7: no longer a hole after the taps were gone (4313 ms) than before the loss (100 ms), or 150 ms
+  ✘ round 7: (the first bar) none more than 10 ms late once the taps were gone
+  ✘ round 7: (the first bar) input never stood still for a quarter of a second (4313 ms)
+shot: mac-shell/round-7-afterwards.png
+
+== round 8: by_tccutil, with bare-monitor
+02:56:57.350 monitor-ready pid=13649 in
+Successfully reset Accessibility approval status for com.evbarleyg.arbor.probe-bare-tapper
+the permission was taken between 02:57:01.624 and 02:57:01.713
+02:56:57.550 stream begins
+02:57:09.555 stream ends: 1200 events posted
+the tools' own permission afterwards: true
+the monitor's own words:
+02:56:57.350 monitor-ready pid=13649 in
+02:56:58.352 given 38 events so far
+02:56:59.352 given 90 events so far
+02:57:00.352 given 138 events so far
+02:57:01.353 given 190 events so far
+02:57:02.352 given 240 events so far
+02:57:03.352 given 289 events so far
+02:57:04.352 given 338 events so far
+02:57:05.352 given 390 events so far
+02:57:06.352 given 439 events so far
+02:57:07.352 given 487 events so far
+02:57:08.352 given 539 events so far
+02:57:09.351 given 590 events so far
+02:57:10.352 given 600 events so far
+posted 1200, arrived 1200, missing 0
+arrived by kind: down 600, up 600, key-down 0, key-up 0, wheel 0
+before the loss: 408 arrived of 408 posted, longest hole 99 ms, worst lateness 13.2 ms, more than 10 ms late: 2
+from the loss until the taps were gone: 10 arrived of 10 posted, longest hole 35 ms, worst lateness 3.0 ms, more than 10 ms late: 0
+after the taps were gone: 782 arrived of 782 posted, longest hole 97 ms, worst lateness 64.4 ms, more than 10 ms late: 16
+median lateness in ms, before the loss / after the taps were gone: down 0.45 / 0.52, up 0.40 / 0.47
+the taps were gone 89 ms after the permission began to go
+THE LONGEST HOLE: 99 ms
+  ✔ round 8: NOTHING LOST: every event that was posted arrived (0 did not)
+  ✔ round 8: the hole while the permission went (35 ms) is no longer than a second
+  ✔ round 8: AT THE MEDIAN, by kind of event, no more than 10 ms later after the taps were gone than before the loss (0 ms at most)
+  ✘ round 8: (at the worst) no later after the taps were gone (64 ms) than this Mac was before the loss (13 ms), or 10 ms
+  ✔ round 8: no longer a hole after the taps were gone (97 ms) than before the loss (99 ms), or 150 ms
+  ✘ round 8: (the first bar) none more than 10 ms late once the taps were gone
+  ✔ round 8: (the first bar) input never stood still for a quarter of a second (99 ms)
+shot: mac-shell/round-8-afterwards.png
+
+== round 9: by_tccutil, with bare-monitor
+02:57:18.805 monitor-ready pid=14370 in
+Successfully reset Accessibility approval status for com.evbarleyg.arbor.probe-bare-tapper
+the permission was taken between 02:57:23.233 and 02:57:23.287
+02:57:19.118 stream begins
+02:57:31.119 stream ends: 1200 events posted
+the tools' own permission afterwards: true
+the monitor's own words:
+02:57:18.805 monitor-ready pid=14370 in
+02:57:19.808 given 34 events so far
+02:57:20.808 given 84 events so far
+02:57:21.808 given 134 events so far
+02:57:22.808 given 184 events so far
+02:57:23.808 given 234 events so far
+02:57:24.808 given 284 events so far
+02:57:25.808 given 334 events so far
+02:57:26.808 given 383 events so far
+02:57:27.808 given 434 events so far
+02:57:28.808 given 484 events so far
+02:57:29.808 given 532 events so far
+02:57:30.808 given 584 events so far
+02:57:31.807 given 600 events so far
+posted 1200, arrived 1200, missing 0
+arrived by kind: down 600, up 600, key-down 0, key-up 0, wheel 0
+before the loss: 412 arrived of 412 posted, longest hole 93 ms, worst lateness 5.5 ms, more than 10 ms late: 0
+from the loss until the taps were gone: 6 arrived of 6 posted, longest hole 49 ms, worst lateness 1.0 ms, more than 10 ms late: 0
+after the taps were gone: 782 arrived of 782 posted, longest hole 107 ms, worst lateness 12.7 ms, more than 10 ms late: 4
+median lateness in ms, before the loss / after the taps were gone: down 0.53 / 0.50, up 0.58 / 0.49
+the taps were gone 54 ms after the permission began to go
+THE LONGEST HOLE: 107 ms
+  ✔ round 9: NOTHING LOST: every event that was posted arrived (0 did not)
+  ✔ round 9: the hole while the permission went (49 ms) is no longer than a second
+  ✔ round 9: AT THE MEDIAN, by kind of event, no more than 10 ms later after the taps were gone than before the loss (0 ms at most)
+  ✘ round 9: (at the worst) no later after the taps were gone (13 ms) than this Mac was before the loss (6 ms), or 10 ms
+  ✔ round 9: no longer a hole after the taps were gone (107 ms) than before the loss (93 ms), or 150 ms
+  ✘ round 9: (the first bar) none more than 10 ms late once the taps were gone
+  ✔ round 9: (the first bar) input never stood still for a quarter of a second (107 ms)
+shot: mac-shell/round-9-afterwards.png
+
+== round 10: by_tccutil, with bare-tapper
+tap 2025753319 pid=15666 point=1 options=0 mask=0x2 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+Successfully reset Accessibility approval status for com.evbarleyg.arbor.probe-bare-tapper
+the permission was taken between 02:57:44.295 and 02:57:44.376
+02:57:40.186 stream begins
+02:57:52.190 stream ends: 1198 events posted
+the tools' own permission afterwards: true
+the tapper's own words:
+02:57:39.965 tap-ready pid=15666 manner=on
+02:57:39.971 question tapIsEnabled = yes
+02:57:39.976 question AXIsProcessTrusted = yes
+02:57:39.978 question CGPreflightListenEventAccess = yes
+02:57:39.978 question CGPreflightPostEventAccess = yes
+02:57:39.978 question a trial tapCreate = yes
+02:57:44.378 question a trial tapCreate = no
+02:57:56.485 cost tapIsEnabled: 1226 calls, µs: median 108, 99th 1003, worst 21326
+02:57:56.485 cost AXIsProcessTrusted: 1226 calls, µs: median 26, 99th 83, worst 5012
+02:57:56.486 cost CGPreflightListenEventAccess: 1226 calls, µs: median 20, 99th 75, worst 1642
+02:57:56.486 cost CGPreflightPostEventAccess: 1226 calls, µs: median 0, 99th 1, worst 7
+02:57:56.486 cost a trial tapCreate: 1226 calls, µs: median 520, 99th 2513, worst 6060
+02:57:56.972 the end: the tap is on
+its tap now, by the window server's list: none
+posted 1198, arrived 416, missing 782: [417, 418, 419, 420, 421, 422, 423, 424, 425, 426, 427, 428, 429, 430, 431, 432, 433, 434, 435, 436]
+arrived by kind: down 208, up 208, key-down 0, key-up 0, wheel 0
+before the loss: 412 arrived of 412 posted, longest hole 91 ms, worst lateness 33.1 ms, more than 10 ms late: 8
+from the loss until the taps were gone: 4 arrived of 8 posted, longest hole 20 ms, worst lateness 2.5 ms, more than 10 ms late: 0
+after the taps were gone: 0 arrived of 778 posted, longest hole 0 ms, worst lateness 0.0 ms, more than 10 ms late: 0
+median lateness in ms, before the loss / after the taps were gone: down 0.89 / 0.00, up 1.14 / 0.00
+  NOTHING ARRIVED from 02:57:44.341 to the end of the stream, 7849 ms: 782 events lost in it
+the first event that was lost (n=417) was due at 02:57:44.346, +51 ms from the beginning of the deed
+  question a trial tapCreate = no: +32 ms from the first lost event
+  cost tapIsEnabled: 1226 calls, µs: median 108, 99th 1003, worst 21326
+  cost AXIsProcessTrusted: 1226 calls, µs: median 26, 99th 83, worst 5012
+  cost CGPreflightListenEventAccess: 1226 calls, µs: median 20, 99th 75, worst 1642
+  cost CGPreflightPostEventAccess: 1226 calls, µs: median 0, 99th 1, worst 7
+  cost a trial tapCreate: 1226 calls, µs: median 520, 99th 2513, worst 6060
+the taps were gone 81 ms after the permission began to go
+THE LONGEST HOLE: 7849 ms
+  ✘ round 10: NOTHING LOST: every event that was posted arrived (782 did not)
+  ✔ round 10: the hole while the permission went (20 ms) is no longer than a second
+  ✔ round 10: AT THE MEDIAN, by kind of event, no more than 10 ms later after the taps were gone than before the loss (0 ms at most)
+  ✔ round 10: (at the worst) no later after the taps were gone (0 ms) than this Mac was before the loss (33 ms), or 10 ms
+  ✘ round 10: no longer a hole after the taps were gone (7849 ms) than before the loss (91 ms), or 150 ms
+  ✔ round 10: (the first bar) none more than 10 ms late once the taps were gone
+  ✘ round 10: (the first bar) input never stood still for a quarter of a second (7849 ms)
+shot: mac-shell/round-10-afterwards.png
+
+== round 11: by_the_row_and_a_word, with bare-tapper
+tap 845997813 pid=16599 point=1 options=0 mask=0x2 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+02:58:10.269 announced com.apple.accessibility.api
+the permission was taken between 02:58:10.088 and 02:58:10.309
+02:58:05.958 stream begins
+02:58:17.960 stream ends: 1200 events posted
+the tools' own permission afterwards: true
+the tapper's own words:
+02:58:05.545 tap-ready pid=16599 manner=on
+02:58:05.554 question tapIsEnabled = yes
+02:58:05.560 question AXIsProcessTrusted = yes
+02:58:05.562 question CGPreflightListenEventAccess = yes
+02:58:05.562 question CGPreflightPostEventAccess = yes
+02:58:05.562 question a trial tapCreate = yes
+02:58:10.303 question AXIsProcessTrusted = no
+02:58:10.623 question a trial tapCreate = no
+02:58:22.061 cost tapIsEnabled: 1189 calls, µs: median 93, 99th 3170, worst 337453
+02:58:22.062 cost AXIsProcessTrusted: 1189 calls, µs: median 22, 99th 404, worst 41758
+02:58:22.062 cost CGPreflightListenEventAccess: 1189 calls, µs: median 18, 99th 171, worst 3893
+02:58:22.062 cost CGPreflightPostEventAccess: 1189 calls, µs: median 0, 99th 1, worst 13
+02:58:22.062 cost a trial tapCreate: 1189 calls, µs: median 509, 99th 4391, worst 13429
+02:58:22.555 the end: the tap is on
+its tap now, by the window server's list: none
+posted 1200, arrived 460, missing 740: [461, 462, 463, 464, 465, 466, 467, 468, 469, 470, 471, 472, 473, 474, 475, 476, 477, 478, 479, 480]
+arrived by kind: down 230, up 230, key-down 0, key-up 0, wheel 0
+before the loss: 414 arrived of 414 posted, longest hole 529 ms, worst lateness 417.3 ms, more than 10 ms late: 91
+from the loss until the taps were gone: 22 arrived of 22 posted, longest hole 78 ms, worst lateness 4.4 ms, more than 10 ms late: 0
+after the taps were gone: 24 arrived of 764 posted, longest hole 75 ms, worst lateness 7.7 ms, more than 10 ms late: 0
+median lateness in ms, before the loss / after the taps were gone: down 2.88 / 2.00, up 2.86 / 1.71
+  a hole of 529 ms from 02:58:06.666 (n=72) to 02:58:07.195 (n=73): 0 events lost in it
+  a hole of 359 ms from 02:58:07.196 (n=74) to 02:58:07.555 (n=75): 0 events lost in it
+  NOTHING ARRIVED from 02:58:10.544 to the end of the stream, 7416 ms: 740 events lost in it
+the first event that was lost (n=461) was due at 02:58:10.558, +470 ms from the beginning of the deed
+  question AXIsProcessTrusted = no: -255 ms from the first lost event
+  question a trial tapCreate = no: +65 ms from the first lost event
+  cost tapIsEnabled: 1189 calls, µs: median 93, 99th 3170, worst 337453
+  cost AXIsProcessTrusted: 1189 calls, µs: median 22, 99th 404, worst 41758
+  cost CGPreflightListenEventAccess: 1189 calls, µs: median 18, 99th 171, worst 3893
+  cost CGPreflightPostEventAccess: 1189 calls, µs: median 0, 99th 1, worst 13
+  cost a trial tapCreate: 1189 calls, µs: median 509, 99th 4391, worst 13429
+the taps were gone 221 ms after the permission began to go
+THE LONGEST HOLE: 7416 ms
+  ✘ round 11: NOTHING LOST: every event that was posted arrived (740 did not)
+  ✔ round 11: the hole while the permission went (78 ms) is no longer than a second
+  ✔ round 11: AT THE MEDIAN, by kind of event, no more than 10 ms later after the taps were gone than before the loss (0 ms at most)
+  ✔ round 11: (at the worst) no later after the taps were gone (8 ms) than this Mac was before the loss (417 ms), or 10 ms
+  ✘ round 11: no longer a hole after the taps were gone (7416 ms) than before the loss (529 ms), or 150 ms
+  ✔ round 11: (the first bar) none more than 10 ms late once the taps were gone
+  ✘ round 11: (the first bar) input never stood still for a quarter of a second (7416 ms)
+shot: mac-shell/round-11-afterwards.png
+
+== round 12: nothing, with bare-tapper
+tap 1268308970 pid=17677 point=1 options=0 mask=0x2 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+nothing is taken
+the permission was taken between 02:58:35.919 and 02:58:35.943
+02:58:31.776 stream begins
+02:58:43.784 stream ends: 1194 events posted
+the tools' own permission afterwards: true
+the tapper's own words:
+02:58:31.392 tap-ready pid=17677 manner=on
+02:58:31.397 question tapIsEnabled = yes
+02:58:31.411 question AXIsProcessTrusted = yes
+02:58:31.413 question CGPreflightListenEventAccess = yes
+02:58:31.413 question CGPreflightPostEventAccess = yes
+02:58:31.414 question a trial tapCreate = yes
+02:58:47.910 cost tapIsEnabled: 1171 calls, µs: median 106, 99th 1652, worst 3990
+02:58:47.911 cost AXIsProcessTrusted: 1171 calls, µs: median 25, 99th 88, worst 13041
+02:58:47.911 cost CGPreflightListenEventAccess: 1171 calls, µs: median 22, 99th 67, worst 2215
+02:58:47.911 cost CGPreflightPostEventAccess: 1171 calls, µs: median 0, 99th 1, worst 13
+02:58:47.911 cost a trial tapCreate: 1171 calls, µs: median 328, 99th 4681, worst 26440
+02:58:48.399 the end: the tap is on
+its tap now, by the window server's list: none
+posted 1194, arrived 1194, missing 0
+arrived by kind: down 597, up 597, key-down 0, key-up 0, wheel 0
+before the loss: 416 arrived of 416 posted, longest hole 95 ms, worst lateness 66.2 ms, more than 10 ms late: 10
+from the loss until the taps were gone: 2 arrived of 2 posted, longest hole 2 ms, worst lateness 4.2 ms, more than 10 ms late: 0
+after the taps were gone: 776 arrived of 776 posted, longest hole 101 ms, worst lateness 54.1 ms, more than 10 ms late: 10
+median lateness in ms, before the loss / after the taps were gone: down 1.27 / 0.83, up 1.35 / 1.06
+  cost tapIsEnabled: 1171 calls, µs: median 106, 99th 1652, worst 3990
+  cost AXIsProcessTrusted: 1171 calls, µs: median 25, 99th 88, worst 13041
+  cost CGPreflightListenEventAccess: 1171 calls, µs: median 22, 99th 67, worst 2215
+  cost CGPreflightPostEventAccess: 1171 calls, µs: median 0, 99th 1, worst 13
+  cost a trial tapCreate: 1171 calls, µs: median 328, 99th 4681, worst 26440
+the taps were gone 24 ms after the permission began to go
+THE LONGEST HOLE: 101 ms
+  ✔ round 12: NOTHING LOST: every event that was posted arrived (0 did not)
+  ✔ round 12: the hole while the permission went (2 ms) is no longer than a second
+  ✔ round 12: AT THE MEDIAN, by kind of event, no more than 10 ms later after the taps were gone than before the loss (0 ms at most)
+  ✔ round 12: (at the worst) no later after the taps were gone (54 ms) than this Mac was before the loss (66 ms), or 10 ms
+  ✔ round 12: no longer a hole after the taps were gone (101 ms) than before the loss (95 ms), or 150 ms
+  ✘ round 12: (the first bar) none more than 10 ms late once the taps were gone
+  ✔ round 12: (the first bar) input never stood still for a quarter of a second (101 ms)
+shot: mac-shell/round-12-afterwards.png
+
+== round 13: nothing, with bare-tapper-off
+tap 376990546 pid=19170 point=1 options=0 mask=0x2 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+nothing is taken
+the permission was taken between 02:59:01.025 and 02:59:01.050
+02:58:56.940 stream begins
+02:59:08.966 stream ends: 1198 events posted
+the tools' own permission afterwards: true
+the tapper's own words:
+02:58:56.689 tap-ready pid=19170 manner=off
+02:58:56.705 question tapIsEnabled = no
+02:58:56.709 switched-off by user input
+02:58:56.715 question AXIsProcessTrusted = yes
+02:58:56.716 question CGPreflightListenEventAccess = yes
+02:58:56.716 question CGPreflightPostEventAccess = yes
+02:58:56.716 question a trial tapCreate = yes
+02:59:13.206 cost tapIsEnabled: 1143 calls, µs: median 112, 99th 1727, worst 13795
+02:59:13.206 cost AXIsProcessTrusted: 1143 calls, µs: median 28, 99th 121, worst 10890
+02:59:13.206 cost CGPreflightListenEventAccess: 1143 calls, µs: median 22, 99th 67, worst 298
+02:59:13.206 cost CGPreflightPostEventAccess: 1143 calls, µs: median 0, 99th 1, worst 14
+02:59:13.207 cost a trial tapCreate: 1143 calls, µs: median 326, 99th 5237, worst 43774
+02:59:13.706 the end: the tap is off
+its tap now, by the window server's list: none
+posted 1198, arrived 1198, missing 0
+arrived by kind: down 599, up 599, key-down 0, key-up 0, wheel 0
+before the loss: 410 arrived of 410 posted, longest hole 100 ms, worst lateness 4.0 ms, more than 10 ms late: 0
+from the loss until the taps were gone: 0 arrived of 0 posted, longest hole 0 ms, worst lateness 0.0 ms, more than 10 ms late: 0
+after the taps were gone: 1198 arrived of 1198 posted, longest hole 247 ms, worst lateness 171.4 ms, more than 10 ms late: 57
+median lateness in ms, before the loss / after the taps were gone: down 0.42 / 0.42, up 0.37 / 0.39
+  a hole of 247 ms from 02:59:07.472 (n=1054) to 02:59:07.719 (n=1055): 0 events lost in it
+  cost tapIsEnabled: 1143 calls, µs: median 112, 99th 1727, worst 13795
+  cost AXIsProcessTrusted: 1143 calls, µs: median 28, 99th 121, worst 10890
+  cost CGPreflightListenEventAccess: 1143 calls, µs: median 22, 99th 67, worst 298
+  cost CGPreflightPostEventAccess: 1143 calls, µs: median 0, 99th 1, worst 14
+  cost a trial tapCreate: 1143 calls, µs: median 326, 99th 5237, worst 43774
+the taps were gone -4316 ms after the permission began to go
+THE LONGEST HOLE: 247 ms
+  ✔ round 13: NOTHING LOST: every event that was posted arrived (0 did not)
+  ✔ round 13: the hole while the permission went (0 ms) is no longer than a second
+  ✔ round 13: AT THE MEDIAN, by kind of event, no more than 10 ms later after the taps were gone than before the loss (0 ms at most)
+  ✘ round 13: (at the worst) no later after the taps were gone (171 ms) than this Mac was before the loss (4 ms), or 10 ms
+  ✘ round 13: no longer a hole after the taps were gone (247 ms) than before the loss (100 ms), or 150 ms
+  ✘ round 13: (the first bar) none more than 10 ms late once the taps were gone
+  ✔ round 13: (the first bar) input never stood still for a quarter of a second (247 ms)
+shot: mac-shell/round-13-afterwards.png
+
+== side by side
+== round 1: by_tccutil, with bare-tapper
+posted 1200, arrived 420, missing 780: [421, 422, 423, 424, 425, 426, 427, 428, 429, 430, 431, 432, 433, 434, 435, 436, 437, 438, 439, 440]
+THE LONGEST HOLE: 7830 ms
+== round 2: by_tccutil, with bare-tapper-off
+posted 1200, arrived 1200, missing 0
+THE LONGEST HOLE: 100 ms
+== round 3: by_tccutil, with bare-tapper-off
+posted 1196, arrived 1196, missing 0
+THE LONGEST HOLE: 125 ms
+== round 4: by_tccutil, with bare-tapper-off+idle
+posted 1196, arrived 1196, missing 0
+THE LONGEST HOLE: 150 ms
+== round 5: by_tccutil, with bare-tapper-off+idle
+posted 1194, arrived 1194, missing 0
+THE LONGEST HOLE: 95 ms
+== round 6: by_tccutil, with bare-tapper-late
+posted 1200, arrived 770, missing 430: [771, 772, 773, 774, 775, 776, 777, 778, 779, 780, 781, 782, 783, 784, 785, 786, 787, 788, 789, 790]
+THE LONGEST HOLE: 4340 ms
+== round 7: by_tccutil, with bare-tapper-late
+posted 1198, arrived 772, missing 426: [773, 774, 775, 776, 777, 778, 779, 780, 781, 782, 783, 784, 785, 786, 787, 788, 789, 790, 791, 792]
+THE LONGEST HOLE: 4313 ms
+== round 8: by_tccutil, with bare-monitor
+posted 1200, arrived 1200, missing 0
+THE LONGEST HOLE: 99 ms
+== round 9: by_tccutil, with bare-monitor
+posted 1200, arrived 1200, missing 0
+THE LONGEST HOLE: 107 ms
+== round 10: by_tccutil, with bare-tapper
+posted 1198, arrived 416, missing 782: [417, 418, 419, 420, 421, 422, 423, 424, 425, 426, 427, 428, 429, 430, 431, 432, 433, 434, 435, 436]
+THE LONGEST HOLE: 7849 ms
+== round 11: by_the_row_and_a_word, with bare-tapper
+posted 1200, arrived 460, missing 740: [461, 462, 463, 464, 465, 466, 467, 468, 469, 470, 471, 472, 473, 474, 475, 476, 477, 478, 479, 480]
+  a hole of 529 ms from 02:58:06.666 (n=72) to 02:58:07.195 (n=73): 0 events lost in it
+  a hole of 359 ms from 02:58:07.196 (n=74) to 02:58:07.555 (n=75): 0 events lost in it
+THE LONGEST HOLE: 7416 ms
+== round 12: nothing, with bare-tapper
+posted 1194, arrived 1194, missing 0
+THE LONGEST HOLE: 101 ms
+== round 13: nothing, with bare-tapper-off
+posted 1198, arrived 1198, missing 0
+  a hole of 247 ms from 02:59:07.472 (n=1054) to 02:59:07.719 (n=1055): 0 events lost in it
+THE LONGEST HOLE: 247 ms
+
+== the end
+
+59 passed, 32 failed
+exit code 1
