@@ -63,8 +63,13 @@ extension Controller {
 
   /// Stacks the stand-ins like the real windows. `Transition.leaveOpen` joins in with the change that teaches
   /// the stage to draw holes: a hole it does not draw is a window that vanishes for as long as the motion lasts.
+  ///
+  /// Windows that stay in view (pinned, summoned) go in front whatever the stacking says. The stack is read before anything moves, and one of
+  /// them that nothing covered yet may lie behind the window that is about to reach under it; Arbor raises the real one as soon as the move
+  /// is over (`raisePinnedWindows`), and for the time of the motion its stand-in must not be buried either.
   private func fit(_ transition: inout Transition, to stack: [StackedWindow]) {
-    transition.stack(frontToBack: stack.map(\.id))
+    let order = stack.map(\.id)
+    transition.stack(frontToBack: order.filter(staysInView) + order.filter { !staysInView($0) })
   }
 
   /// A click during a motion ends it (T42): the user wants their windows now. The click itself goes
