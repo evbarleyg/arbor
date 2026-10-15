@@ -1,0 +1,154 @@
+# mac-shell: scripts/mac-shell/check-fill-apps.sh at f8beeed, macOS 26.6.2, 2026-10-15T10:55Z
+built Arbor, the pointer tool and the app bundles in 5s
+> open -g -b com.apple.TextEdit /tmp/arbor-apps.csrITO/scratch/oak.txt
+pid 12063 lists (id role subrole x y w h flags):
+  56 AXWindow AXStandardWindow 79 56 673 439 main
+> open -g -b com.apple.Safari /tmp/arbor-apps.csrITO/scratch/page.html
+pid 12106 lists (id role subrole x y w h flags):
+  60 AXWindow AXStandardWindow 0 31 1024 677 main,toolbar
+> open -g -b com.apple.Terminal 
+pid 12232 lists (id role subrole x y w h flags):
+  63 AXWindow AXStandardWindow 40 51 877 499 main
+> open -g -b com.apple.systempreferences 
+pid 12547 lists (id role subrole x y w h flags):
+  72 AXWindow AXStandardWindow 150 56 723 625 main,toolbar
+session 1: Arbor pid 12598, ARBOR_ONLY_PIDS=12063,12106,12232,12547: running: 1 display, 0 docked and 4 floating, 0 out of view
+Arbor dev
+snap: mac-shell/00-as-found.jpg
+
+▸ TextEdit, never docked: the key fills the screen with it, keeps it there, and gives its frame back
+> click 415 68
+> move 415 188
+  ✔ a real click gives it the keyboard
+> key ctrl+opt+return
+  ✔ the real key runs the command
+FRAMES TextEdit before: 79 56 673 439 filled: 12 43 1000 655
+  ✔ Arbor knows that it fills
+  ✔ it still floats
+  ✔ it fills the view
+  ✔ nothing else has moved
+snap: mac-shell/11-TextEdit-filled.jpg
+  ✔ three seconds on it is where the fill left it
+  ✔ and Arbor still knows that it fills
+> key ctrl+opt+return
+  ✔ the real key runs the command
+  ✔ it is exactly where and as large as it was
+FRAMES TextEdit after: 79 56 673 439
+  ✔ Arbor knows that it no longer fills
+  ✔ nothing else has moved
+
+▸ Safari, never docked: the key fills the screen with it, keeps it there, and gives its frame back
+> click 770 43
+> move 770 163
+  ✔ a real click gives it the keyboard
+> key ctrl+opt+return
+  ✔ the real key runs the command
+FRAMES Safari before: 0 31 1024 677 filled: 0 31 1024 677
+  ✘ Arbor knows that it fills — it is managed at 0 31 1024 677
+      picture: mac-shell/fail-check-fill-apps-1.png
+      | display 0 0 1024 768, visible 0 31 1024 679, camera n0, back no
+      |   Desktop          12 43 1000 655
+      |   w56 79 56 673 439        floating
+      |   w60 0 31 1024 677        floating focused
+      |   w63 40 51 877 499        floating
+      |   w72 150 56 723 625       floating
+      log | DEBUG focus is on w60
+      log | DEBUG w60 has the keyboard
+      log | DEBUG the button went down at 770,43, the pointer is at 770,163: it is on w60
+      log | INFO  zoom: w60 fills the screen already
+      log | DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Safari fills the screen already
+  ✔ it still floats
+  ✘ it fills the view — it is at 0 31 1024 677, not 12 43 1000 655
+      picture: mac-shell/fail-check-fill-apps-2.png
+  ✔ nothing else has moved
+snap: mac-shell/21-Safari-filled.jpg
+  ✔ three seconds on it is where the fill left it
+  ✘ and Arbor still knows that it fills — it is managed at 0 31 1024 677
+      picture: mac-shell/fail-check-fill-apps-3.png
+> key ctrl+opt+return
+  ✔ the real key runs the command
+  ✔ it is exactly where and as large as it was
+FRAMES Safari after: 0 31 1024 677
+  ✔ Arbor knows that it no longer fills
+  ✔ nothing else has moved
+
+▸ Terminal, never docked: the key fills the screen with it, keeps it there, and gives its frame back
+  ✘ a real click gives it the keyboard
+      picture: mac-shell/fail-check-fill-apps-4.png
+      | display 0 0 1024 768, visible 0 31 1024 679, camera n0, back no
+      |   Desktop          12 43 1000 655
+      |   w56 79 56 673 439        floating
+      |   w60 0 31 1024 677        floating focused
+      |   w63 40 51 877 499        floating
+      |   w72 150 56 723 625       floating
+> key ctrl+opt+return
+  ✔ the real key runs the command
+FRAMES Terminal before: 40 51 877 499 filled: 40 51 877 499
+  ✘ Arbor knows that it fills — it is managed at 40 51 877 499
+      picture: mac-shell/fail-check-fill-apps-5.png
+  ✔ it still floats
+NOTE Terminal holds whole lines: it is at 40 51 877 499, not 12 43 1000 655
+  ✔ nothing else has moved
+snap: mac-shell/31-Terminal-filled.jpg
+  ✔ three seconds on it is where the fill left it
+  ✘ and Arbor still knows that it fills — it is managed at 40 51 877 499
+      picture: mac-shell/fail-check-fill-apps-6.png
+> key ctrl+opt+return
+  ✔ the real key runs the command
+  ✔ it is exactly where and as large as it was
+FRAMES Terminal after: 40 51 877 499
+  ✔ Arbor knows that it no longer fills
+  ✔ nothing else has moved
+
+▸ Settings, never docked: the key fills the screen with it, keeps it there, and gives its frame back
+  ✘ a real click gives it the keyboard
+      picture: mac-shell/fail-check-fill-apps-7.png
+      | display 0 0 1024 768, visible 0 31 1024 679, camera n0, back no
+      |   Desktop          12 43 1000 655
+      |   w56 79 56 673 439        floating
+      |   w60 0 31 1024 677        floating focused
+      |   w63 40 51 877 499        floating
+      |   w72 150 56 723 625       floating
+> key ctrl+opt+return
+  ✔ the real key runs the command
+FRAMES Settings before: 150 56 723 625 filled: 150 56 723 625
+  ✘ Arbor knows that it fills — it is managed at 150 56 723 625
+      picture: mac-shell/fail-check-fill-apps-8.png
+  ✔ it still floats
+NOTE Settings is expected not to grow as far as the view: it is at 150 56 723 625, not 12 43 1000 655
+  ✔ nothing else has moved
+snap: mac-shell/41-Settings-filled.jpg
+  ✔ three seconds on it is where the fill left it
+  ✘ and Arbor still knows that it fills — it is managed at 150 56 723 625
+      picture: mac-shell/fail-check-fill-apps-9.png
+> key ctrl+opt+return
+  ✔ the real key runs the command
+  ✔ it is exactly where and as large as it was
+FRAMES Settings after: 150 56 723 625
+  ✔ Arbor knows that it no longer fills
+  ✔ nothing else has moved
+snap: mac-shell/50-all-back.jpg
+
+▸ filled at Quit, each has its own frame back
+> zoom 56
+filled the screen with w56
+> zoom 60
+w60 fills the screen already
+> zoom 63
+filled the screen with w63
+> zoom 72
+w72 goes no larger than 723×655
+snap: mac-shell/60-all-filled.jpg
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+every window is where it was found
+  ✔ every window is where it was found
+snap: mac-shell/61-after-quit.jpg
+
+39 passed, 9 failed
+still running when the script had ended, and stopped now:
+  12060 sleep
+exit code 1

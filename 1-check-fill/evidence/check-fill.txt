@@ -1,0 +1,70 @@
+# check-fill 2026-10-15T10:54Z on macOS 26.6.2, commit f8beeed
+
+▸ the key fills the screen with a window that was never docked, and nothing else moves
+  ✔ the real key runs the command
+  ✔ it fills the view
+  ✔ it still floats
+  ✔ Arbor knows that it fills
+  ✔ the second window has not moved
+  ✔ nor the third
+
+▸ it stays filled: macOS's late reports of the move are not a hand's
+  ✔ it fills the view
+  ✔ Arbor knows that it fills
+  ✔ a window opened, and it fills the view
+  ✔ that window closed, and it fills the view
+
+▸ the same key again gives back exactly the frame it had
+  ✔ the real key runs the command
+  ✔ it is where and as large as it was
+  ✔ Arbor knows that it no longer fills
+  ✔ the second window has not moved
+
+▸ Show Everything means everything: it gives the window its own frame back
+  ✔ it fills the view
+  ✔ the real key runs the command
+  ✔ it is where and as large as it was
+  ✔ Arbor knows that it no longer fills
+  ✔ the second window has not moved
+
+▸ a window that will not grow that far goes as far as it can, in the middle, and back
+  ✔ it is as large as it goes
+  ✔ Arbor knows that it fills
+  ✔ it stays there
+  ✔ it is where and as large as it was
+
+▸ dragged by its title bar it comes out in its own size, under the pointer
+  ✔ it fills the view
+  ✔ it is its own size again
+  ✔ and still floats
+  ✔ Arbor knows that it no longer fills
+  ✘ with the pointer still on its title bar
+  ✔ the second window has not moved
+
+▸ after a slip of the hand it goes on filling
+  ✔ it fills the view
+  ✔ it fills the view
+  ✔ and stays
+  ✔ Arbor knows that it fills
+
+▸ a size given by hand is its own from then on
+  ✔ the bottom edge came up
+  ✔ it stays as the hand left it
+  ✔ Arbor knows that it no longer fills
+  ✔ the key fills again
+  ✔ and gives back what the hand made
+
+▸ a pause gives the own frame back, a resume fills again, Undo takes it back
+  ✔ it fills the view
+  ✔ paused, it has its own frame
+  ✔ resumed, it fills again
+  ✔ undone, it has its own frame
+  ✔ redone, it fills
+
+▸ Quit gives the own frame back
+  ✔ Arbor exits within 5 s of quit
+  ✔ it is where and as large as it was
+  ✔ the second window never moved
+  ✔ the third is where it was
+
+46 passed, 1 failed
