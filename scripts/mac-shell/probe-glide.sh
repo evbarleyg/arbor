@@ -79,19 +79,20 @@ place() {
 SMALL=60,80,560,400   LARGE=420,160,800,560
 RIGHT=640,80,560,400  WIDE=240,80,960,400
 
-# road <app> <frame> <frame> <order…>: there and back, 18 steps in each of these orders, then the control in either.
+# road <app> <frame> <frame> <order…>: there and back, first the control in either order, then 18 steps in each of these orders.
+# The controls come first so that no glide pays for a first time: the app has waited in the background for minutes, and has then drawn itself at both ends
+# of the road. On GitHub's Macs what is drawn again after a while away can hold the whole display for a second, which is the Mac's doing and no app's.
 road() {
   local app=$1 here=$2 there=$3 window order
   window=$(window_of "$1")
   shift 3
+  for order in place-first size-first; do
+    play "$app" 1 "$order" "$window:$there"
+    play "$app" 1 "$order" "$window:$here"
+  done
   for order in "$@"; do
     play "$app" 18 "$order" "$window:$there"
     play "$app" 18 "$order" "$window:$here"
-  done
-  set -- "$app" "$here" "$there"
-  for order in place-first size-first; do
-    play "$1" 1 "$order" "$window:$3"
-    play "$1" 1 "$order" "$window:$2"
   done
 }
 
