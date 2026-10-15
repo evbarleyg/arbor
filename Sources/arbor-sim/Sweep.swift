@@ -7,7 +7,7 @@ import Foundation
 //       every column of those sides (all three), one line each; exit code 1 if a window was hidden or out of reach anywhere,
 //       with --strict also if one jumped; 2 if the lab refused a step, so that the sweep was not the one it says it was
 //   arbor-sim sweep story <side> <x> <y> [untouched]
-//       one window through the lid, in every order of reports, stage by stage
+//       one window through the lid, in every order of reports in which no time passes, stage by stage
 
 private func say(_ line: String) { FileHandle.standardOutput.write(Data((line + "\n").utf8)) }
 
@@ -21,7 +21,7 @@ func runSweep(_ arguments: [String]) -> Int32 {
       say("usage: arbor-sim sweep story <right|left|above> <x> <y> [untouched]")
       return 2
     }
-    for order in ChaosAction.WindowsFollow.allCases {
+    for order in ChaosAction.WindowsFollow.inAnInstant {
       let column = LidSweep.Column(side: side, byHand: !arguments.contains("untouched"), order: order)
       say("\(column):")
       for line in LidSweep(column).story(x: x, y: y) { say("  \(line)") }
