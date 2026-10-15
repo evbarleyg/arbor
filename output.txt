@@ -1,0 +1,29 @@
+# mac-shell: scripts/mac-shell/probe-which-build.sh at a03ad27, macOS 26.6.2, 2026-10-15T07:29Z
+built Arbor (release), the pointer tool and the app bundles in 10s
+
+== which build
+configuration: release; drives .build/release
+Arbor: 12356424 bytes
+in .build: artifacts CACHEDIR.TAG checkouts ci-build.log ci-mtimes.tsv mac-shell manifest.pif out release repositories workspace-state.json 
+
+== a session
+session 1: Arbor pid 3706, test windows 31 32 (pid 3613)
+running: 1 display, 0 docked and 2 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 31 left
+docked w31 at the left edge
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          518 43 494 650
+  w31 12 126 494 484       docked focused
+  w32 518 180 480 348      floating
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+
+3 passed, 0 failed
+exit code 0
