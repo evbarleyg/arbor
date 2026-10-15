@@ -64,10 +64,10 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 | [permissions](#permissions) | 22 | 8 | 6 | 3 | 3 | 10 | 11 | 2 | 2 | 7 | 4 |
 | [timing](#timing) | 51 | 7 | 7 | 16 | 8 | 20 | 28 | 4 | 6 | 13 | 9 |
 | [input](#input) | 57 | 7 | 6 | 13 | 14 | 24 | 20 | 6 | 8 | 23 | 12 |
-| [looks](#looks) | 20 | 0 | 0 | 0 | 1 | 19 | 1 | 2 | 3 | 14 | 6 |
+| [looks](#looks) | 21 | 0 | 0 | 0 | 1 | 20 | 1 | 2 | 4 | 14 | 6 |
 | [never-exercised](#never-exercised) | 15 | 7 | 1 | 13 | 0 | 1 | 0 | 0 | 14 | 1 | 15 |
 | [toolchain](#toolchain) | 42 | 1 | 0 | 1 | 4 | 37 | 23 | 1 | 1 | 17 | 7 |
-| **all** | 451 | 61 | 89 | 121 | 71 | 170 | 224 | 19 | 58 | 150 | 110 |
+| **all** | 452 | 61 | 89 | 121 | 71 | 171 | 224 | 19 | 59 | 150 | 110 |
 
 **Where the difference bit**
 
@@ -76,8 +76,8 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 | below the seam | in the macOS-only code under the platform protocols (AX, Input, UI, App), which no test on Linux runs | 142 | 88 | 42 | 13 | 33 | 54 |
 | at the seam | in what crosses the platform protocols: a stand-in can play it to the controller | 162 | 96 | 121 | 0 | 11 | 30 |
 | controller | in the controller or the core, given reports that were right | 27 | 14 | 15 | 0 | 1 | 11 |
-| test | in a test, a script or a harness that expected the wrong thing | 79 | 0 | 23 | 5 | 10 | 41 |
-| machine | in the machine, the toolchain or the way things are built and installed | 41 | 3 | 23 | 1 | 3 | 14 |
+| test | in a test, a script or a harness that expected the wrong thing | 80 | 0 | 23 | 5 | 10 | 42 |
+| machine | in the machine, the toolchain or the way things are built and installed | 41 | 3 | 23 | 1 | 4 | 13 |
 
 Each case is counted under the best guard it has: one that goes red on any machine (a test, a scenario, a replayed trace, a tool that `make check` or CI runs), one that needs CI's Macs (a test for macOS alone, a step of a real-window run that CI starts), one that somebody has to start, or none.
 
@@ -4923,6 +4923,18 @@ Looks: what is on the screen is not what the model said.
 - **Arbor copes:** **not yet**
 - **Read in:** `collab/BACKLOG.md`
 
+### a-shot-of-a-large-display-is-made-smaller
+
+*hurt 4 · test*
+
+- **Expected:** A picture of a Retina display holds two pixels to the point, and edges in it can be measured.
+- **Happened:** `shot` resamples whatever is wider than 1600 pixels, to keep runs small: 2880 by 1800 came back as 1600 by 1000, 1.11 pixels to the point, and a display of 1920 at 0.84. No edge in such a picture can be asked anything, and three pictures "at 2x" were judged as if they were.
+- **Found by:** The judge of the stills, measuring the gallery's pictures.
+- **Stand-ins play it:** cannot: it lies below or beside the seam
+- **Guard:** **none**
+- **Arbor copes:** scripts/mac-shell/lib.sh: `closeup` crops with screencapture -R and never scales; the gallery takes every panel on a large display that way too.
+- **Read in:** `scripts/mac-shell/lib.sh`, `scripts/mac-shell/shots-gallery.sh`
+
 ### a-wrapped-line-does-not-make-the-panel-half-as-high-again
 
 *hurt 4 · test · K1610*
@@ -4935,17 +4947,17 @@ Looks: what is on the screen is not what the model said.
 - **Arbor copes:** Tests/ArborKitTests/HeadsUpPictureTests.swift compares the heights of the text, not of the panels.
 - **Read in:** `Tests/ArborKitTests/HeadsUpPictureTests.swift`, `collab/BACKLOG.md`
 
-### hosted-macs-draw-every-material-as-one-flat-colour
+### hosted-macs-come-with-reduce-transparency-on
 
 *hurt 4 · machine*
 
 - **Expected:** A picture from a hosted Mac shows a translucent panel as a person's Mac would: blurred, and tinted by what lies behind.
-- **Happened:** Every material of an effect view (HUD, popover, menu, sidebar, under the window's background; blending behind the window, state active) is one opaque colour there: exactly (228,228,228) in light and (38,38,38) in dark, over any wallpaper, in Arbor's panels and in the harness's own plain sheet alike. macOS's own menus and the Dock do tint. It was concluded that blur, translucency and `blurBehindArranged` cannot be judged on those Macs, and that is corrected: the runners come with Reduce Transparency on. Switched off before the app starts (`defaults write com.apple.universalaccess reduceTransparency -bool false`), materials blur and tint. Increase Contrast switches it on again by itself.
-- **Found by:** Pictures of Arbor's panels and of a sheet of the harness's own over several wallpapers, on hosted Macs. Then a run that takes pictures of everything Arbor draws, which asked the Mac for the setting at its start.
+- **Happened:** Every material of an effect view (HUD, popover, menu, sidebar, under the window's background; blending behind the window, state active) was one opaque colour there: exactly (228,228,228) in light and (38,38,38) in dark, over any wallpaper, in Arbor's panels and in the harness's own plain sheet alike. For a day that was taken for a limit of the virtual machine, and translucency was struck from what is judged. It is a setting: the hosted Macs come with Reduce Transparency switched on, as they come with Reduce Motion. Switched off before the app starts, materials blur and take on the colour of what lies behind them as on anybody's Mac. Increase Contrast switches it on again by itself. So until 2026-10-15 nobody had seen the look that ships, and it was where the faults were: words at 1.1 to 2.4 to 1.
+- **Found by:** The gallery's first lines, which print what the Mac says of itself before anything is changed: Reduce Transparency: true. Then the first pictures with it off.
 - **Stand-ins play it:** cannot: it lies below or beside the seam
-- **Guard:** **none**
-- **Arbor copes:** docs/VIABLE.md, section 8: translucency and blur are not scored. What is scored is the flat look, which a person with Reduce Transparency sees, and nothing in Arbor may rest on the rest. That page was written before the setting was found.
-- **Read in:** `scripts/mac-shell/scenery.swift`, `Sources/ArborKit/UI/BackdropPanel.swift`, `docs/features/F15-appearance-options.md`, `docs/VIABLE.md`
+- **Guard:** `tool: mac-shell/shots-gallery.sh` (by hand)
+- **Arbor copes:** scripts/mac-shell/lib.sh: `macos_reduce_transparency off` before `arbor_start`, as `macos_reduce_motion off` for motion; the setting is among the facts a run compares before and after. The gallery takes the panels both ways.
+- **Read in:** `scripts/mac-shell/lib.sh`, `scripts/mac-shell/pointer.swift`, `scripts/mac-shell/shots-gallery.sh`, `scripts/mac-shell/scenery.swift`, `docs/VIABLE.md`
 
 ### hosted-macs-have-a-black-wallpaper
 

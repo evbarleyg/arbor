@@ -6,7 +6,9 @@ A.. items are Arbor-only. Levels are explained in `collab/README.md`.
 
 **TrellisWM parity: 39 of 52 reference items shipped (75%), 18 verified on real windows.**
 
-Levels: verified 51, tested 62, partial 7, planned 7, missing 1, not-planned 3.
+Levels: verified 53, tested 62, partial 5, planned 7, missing 1, not-planned 3.
+
+Real-window evidence: mac-shell: scripts/mac-shell/shots-gallery.sh and its companions -moves and -looks at 886617e, macOS 26.6.2, 2026-10-15T05:16Z.
 
 Real-window evidence: mac-shell: scripts/mac-shell/proof.sh at ab40b20, macOS 26.6.2, 2026-10-14T06:48Z.
 
@@ -113,7 +115,7 @@ Real-window evidence: the real-window suite, 33 sections, the newest 2026-10-15T
 | A10 | Free, open source, no window limit |  | MIT licence | verified | nothing to test |  |
 | A11 | Resize docked windows by their own edges |  | Edge drags move the matching seams; outer edges spring back | verified | tests 7/7, real windows 6/6 | [F07](features/F07-resize-by-window-edges.md) |
 | A28 | Traces recorded on a Mac replay as tests anywhere |  | `arborctl trace on\|off\|status\|note`, `make trace`, `make replay`; never a window title; real traces in collab/evidence/traces replayed on macOS and Linux | tested | tests 41/41 | [F28](features/F28-traces.md) |
-| A29 | Minimap: where the view is in the whole arrangement |  | ⌃⌥M, `minimap`: the whole arrangement in small with the view marked; stays five seconds, a click in it frames that window; held, letting go frames what the pointer is over. By itself after each move of the view with `minimapDuration` (off by default). Proven headlessly and built on a Mac; nobody has seen the panel yet (`MinimapDrawingTests`' pictures, `shots-minimap.sh`) | partial | tests 108/108 | [F26](features/F26-minimap.md) |
+| A29 | Minimap: where the view is in the whole arrangement |  | ⌃⌥M, `minimap`: the whole arrangement in small with the view marked; stays five seconds, a click in it frames that window; held, letting go frames what the pointer is over. By itself after each move of the view with `minimapDuration` (off by default). Seen on a hosted Mac in the light look, the dark one, with Increase Contrast and with Reduce Transparency, over windows and over plain red, blue, white and black (the gallery) | verified | tests 108/108, real windows 1/1 | [F26](features/F26-minimap.md) |
 | A31 | Undo and redo for the arrangement |  | ⌃⌥Z / ⌃⌥⇧Z; `undo` / `redo`; 50 steps per display; commands, drops, gap drags and edge resizes; says once what it cannot take back | verified | tests 98/98, real windows 11/11 | [F19](features/F19-undo.md) |
 | A15 | Focus ring around the focused window |  | A line in the gap, in the accent colour; flashes when a command moved the focus; `focusRing…` settings | tested | tests 25/25 | [F37](features/F37-focus-ring.md) |
 | A69 | Room before tiles |  | Before a window becomes a tile for its minimum size the gaps around it move: the Desktop gives first, then neighbours that can spare it; `makeRoom` | verified | tests 45/45, real windows 1/1 | [F61](features/F61-room-before-tiles.md) |
@@ -158,7 +160,7 @@ Real-window evidence: the real-window suite, 33 sections, the newest 2026-10-15T
 | A53 | Summon an app over any view |  | `summon <app>`: its window over the view with the keyboard in it; again, or turning to another window, sends it out of view; remembers its place per display; opens the app if it has no window | tested | tests 110/110 | [F53](features/F53-summon.md) |
 | A20 | Named spaces: name a space, go to it by name |  | `name`, `unname`, `go <name>` (whole name, or a beginning that fits one; on any display), `spaces`; names in replies, `state`, `ascii`, tiles and the menu; `arbor://go/<name>` | verified | tests 36/36, real windows 4/4 | [F20](features/F20-named-spaces.md) |
 | A21 | A name stays with its windows |  | A named group is kept (F62), grows by what is docked at the edge of its view, follows its only window, goes with its last one; saved, and back after a relaunch, a pause or a display's return | verified | tests 30/30, real windows 1/1 | [F20](features/F20-named-spaces.md) |
-| A22 | ⌃⌥N: a field to type a space's name into |  | `ask-name`: one field over the space; the line under it says what ↩ will do; closes with ⎋, ⌃⌥N, when another window gets the keyboard, and when the view leaves. The model is tested; the panel has not run on a Mac yet (`check-F20.sh`) | partial | tests 17/17 | [F20](features/F20-named-spaces.md) |
+| A22 | ⌃⌥N: a field to type a space's name into |  | `ask-name`: one field over the space; the line under it says what ↩ will do; closes with ⎋, ⌃⌥N, when another window gets the keyboard, and when the view leaves. Seen on a hosted Mac, empty, typed into and with a name too long, in every look (the gallery); its keys are `check-F20.sh`'s | verified | tests 17/17, real windows 1/1 | [F20](features/F20-named-spaces.md) |
 | A154 | An arrangement as a line of text |  | `layout "Safari \| Desktop \| (Mail / Notes)"`; sizes, tab groups, `Safari*`, `@2`; from shortcuts and URLs; docs/LAYOUTS.md | tested | tests 30/30, real windows 0/2 | [F54](features/F54-layouts-as-text.md) |
 | A155 | Print the arrangement as a line that recreates it |  | `layout`, `layout --titles`, `layout --ids` | tested | tests 25/25, real windows 0/1 | [F54](features/F54-layouts-as-text.md) |
 | A156 | Errors in a line name the column and what was expected |  | "column 15: `\|` and `/` are mixed here: put brackets around one of them", with a `^` under it; no input traps | tested | tests 9/9 | [F54](features/F54-layouts-as-text.md) |

@@ -74,8 +74,8 @@ both() {
   done
 }
 
-# A newer release to be told about: one answer to one question. Not `python3 -m http.server`: as it starts it asks macOS for this
-# Mac's name, which brings up "Allow Python to find devices on local networks?", in front of everything for the rest of the job.
+# A newer release to be told about: one answer to one question, and gone. (Python's own web server, started as it is, brought up
+# "Allow Python to find devices on local networks?" in front of everything for the rest of the job: scripts/mac-shell/serve.py says why.)
 answer_about_releases() {
   local body='{"tag_name": "v9.9.9", "html_url": "https://example.invalid/ignored"}'
   [ -z "${ARBOR_REHEARSAL:-}" ] || return 0
