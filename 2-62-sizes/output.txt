@@ -1,0 +1,339 @@
+# mac-shell: scripts/mac-shell/suite/62-sizes.sh at 55b1190, macOS 26.6.2, 2026-10-15T14:05Z
+built Arbor, the pointer tool and the app bundles in 3s
+session 1: Arbor pid 7425, test windows 55 56 57 58 (pid 7279,7352)
+running: 1 display, 0 docked and 4 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> test windows: move 55 170 220 400 298
+> dock 55 left
+docked w55 at the left edge
+> dock 56 right
+docked w56 at the right edge
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          349 43 326 650
+  w55 12 43 325 650        docked
+  w56 687 43 325 650       docked focused
+  w57 270 140 480 348      floating
+  w58 170 220 480 348      floating
+
+▸ ⌃⌥F on a docked window: it floats at the size it had before it was docked
+  ✔ docked, it is taller than it was
+> click 176 383
+> key ctrl+opt+f
+  ✔ ⌃⌥F reaches Arbor
+  ✔ the window floats
+  ✔ it has its own size again
+  ✔ and its own place: it is where it was
+  ✔ all of it is in view
+  ✔ Arbor leaves it that size
+  ✔ the other docked window is in its slot
+  ✔ windows match Arbor's layout
+
+▸ ⌃⌥F on the window the camera frames: its own size again, in a view that shows the Desktop
+> dock 55 left
+docked w55 at the left edge
+> zoom 55
+framed w55
+  ✔ framed, it fills the screen
+  ✔ the floating windows left with the Desktop
+> key ctrl+opt+f
+  ✔ ⌃⌥F reaches Arbor
+  ✔ the window floats
+  ✔ it has its own size again
+  ✔ and its own place: it is where it was
+  ✔ all of it is in view
+  ✔ the Desktop is in view
+  ✔ and the windows that float on it
+  ✔ windows match Arbor's layout
+
+▸ arborctl float on a docked window while another is worked in: it is where it was, in front of the window that stays docked there
+> float 56
+w56 is floating
+> dock 58 left
+docked w58 at the left edge
+> dock 55 right
+docked w55 at the right edge
+  ✔ the other app's window is docked at the left edge, over the place the first window had
+> click 176 383
+  ✔ it has the keyboard
+> key x
+  ✔ what is typed arrives in it
+  ✔ and it lies in front
+> float 55
+w55 is floating
+  ✔ the window floats
+  ✔ it is where it was
+  ✔ what names a window gives it the keyboard
+> key x
+  ✔ what is typed arrives in it
+  ✔ and with the keyboard it has the front
+  ✔ the other app's window stays docked
+> float 58
+w58 is floating
+> dock 56 right
+docked w56 at the right edge
+  ✔ windows match Arbor's layout
+
+▸ drag a docked window out of its slot and drop it on the Desktop: it shrinks back to its own size under the pointer
+> dock 55 left
+docked w55 at the left edge
+  ✔ docked, it is taller than it was
+> drag 210 55 512 368 --no-release
+> release
+  ✔ the window floats
+  ✔ it has its own size again
+  ✔ the pointer is where it was on the window
+  ✔ the layout that follows the drop leaves it there
+  ✔ windows match Arbor's layout
+
+== where every window is before Arbor arranges them all
+> float-all
+floated 1 window
+186 308 400 298 | 220 180 480 348 | 270 140 480 348 | 170 220 480 348
+
+▸ Arrange Windows docks every window, ⌃⌥⇧F floats them all: each is back exactly where it was
+> click 462 298
+> arrange
+  ✔ arrange succeeds
+  ✔ all four are docked
+  ✔ the first window has left its place
+> key ctrl+opt+return
+  ✔ ⌃⌥↩ frames the focused window
+> key ctrl+opt+shift+f
+  ✔ ⌃⌥⇧F reaches Arbor
+  ✔ nothing is docked
+  ✔ the first window is exactly where it was, at its own size
+  ✔ the second
+  ✔ the third
+  ✔ the other app's
+
+▸ choose Arrange Windows and then Float All Windows from the menu: each window is back exactly where it was
+> click 782 15 --right
+> click 881.5 48
+  ✔ Arrange Windows can be clicked
+  ✔ all four are docked
+  ✔ the other app's window has left its place
+> click 732 15 --right
+> click 787.5 358
+  ✔ Float All Windows can be clicked
+  ✔ nothing is docked
+  ✔ the first window is exactly where it was, at its own size
+  ✔ the second
+  ✔ the third
+  ✔ the other app's
+
+▸ choose Don’t Arrange for an app whose window is docked: the window goes back to where it was
+> dock 55 left
+docked w55 at the left edge
+> dock 58 right
+docked w58 at the right edge
+  ✔ docked, it reaches the right edge of the screen
+> click 851 383
+> click 732 15 --right
+> click 787.5 275
+> move 524 275
+> click 524 310
+  ✔ the submenu's item can be clicked
+  ✔ Arbor ran exclude
+  ✔ Arbor no longer arranges it
+  ✔ it is exactly where it was, at its own size
+> include dev.arbor.testwindows2
+arranging ArborTestWindows2 again
+> float-all
+floated 1 window
+
+▸ choose Quit Arbor with every window docked and one framed: each is back exactly where it was
+> arrange
+arranged 4 windows
+> zoom 57
+framed w57
+  ✔ the framed window fills the screen
+  ✔ the others are out of view
+> click 732 15 --right
+> click 787.5 500
+  ✔ the item can be clicked
+  ✔ Arbor exits
+  ✔ the first window is exactly where it was, at its own size
+  ✔ the second
+  ✔ the third
+  ✔ the other app's
+
+▸ start Arbor again: the windows dock again, and ⌃⌥F still gives one its own size
+session 1: Arbor pid 9986, test windows 55 56 57 58 (pid 7279,7352)
+running: 1 display, 4 docked and 0 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+  ✔ all four are docked again
+> show-all
+showing everything
+> click 608 221
+> key ctrl+opt+f
+  ✔ ⌃⌥F reaches Arbor
+  ✔ the window floats
+  ✔ it has its own size
+  ✔ windows match Arbor's layout
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+session 2: Arbor pid 10594, test windows 86 87 88 (pid 10569)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 86 left
+docked w86 at the left edge
+> dock 87 beside 86 bottom
+docked w87 below w86
+> test windows: min-size 87 716 471
+> zoom 87
+framed w87
+> back
+back to everything
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          518 43 494 650
+  tile n3 window   12 374 494 319  holds w87
+  w86 12 43 494 319        docked focused
+  w87 1023 677 716 471     docked parked
+  w88 270 140 480 348      floating
+
+▸ a window that goes on refusing its slot is asked again out of view: it stays a tile, and nothing else moves
+  ✔ a tile stands in for it
+  ✔ the window itself is out of view
+> click 260 221
+> key ctrl+opt+0
+  ✔ ⌃⌥0, which lays the screen out again
+  ✔ Arbor asked it again
+  ✔ it is still a tile
+  ✔ and out of view
+  ✔ the window above it has not moved
+  ✔ windows match Arbor's layout
+
+▸ its app allows a smaller size: after tileRetryMinutes the next layout makes the tile a window in its slot again
+> test windows: min-size 87 200 150
+  ✔ time alone changes nothing
+> key ctrl+opt+0
+  ✔ ⌃⌥0, which lays the screen out again
+  ✔ no tile stands in for it
+  ✔ it is in its slot
+  ✔ in view
+  ✔ below the first window
+  ✔ which has not moved
+  ✔ nothing overlaps
+  ✔ windows match Arbor's layout
+
+▸ relayout by command asks at once: a tile whose app has relented is a window again without waiting
+> reload-settings
+settings reloaded
+> test windows: min-size 87 716 471
+> zoom 87
+framed w87
+> back
+back to everything
+  ✔ a tile stands in for it again
+> test windows: min-size 87 200 150
+> key ctrl+opt+0
+  ✔ ⌃⌥0, which lays the screen out again
+  ✔ it stays a tile
+> relayout
+  ✔ relayout succeeds
+  ✔ no tile stands in for it
+  ✔ it is in its slot
+  ✔ nothing overlaps
+  ✔ windows match Arbor's layout
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+session 3: Arbor pid 11503, test windows 96 97 98 (pid 11485)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+
+▸ dock every window but one: the one that floats alone takes the Desktop
+> click 412 536
+> drag 446 232 3 368
+  ✔ the first window is docked
+  ✔ with another floating beside it, the third keeps its size
+> click 760 496
+> drag 794 192 259 612
+  ✔ the second window is docked
+  ✔ alone, the third has the Desktop's place and size
+  ✔ it reaches the right edge of the screen
+  ✔ it still floats
+  ✔ nothing overlaps
+  ✔ windows match Arbor's layout
+
+▸ drag the gap beside the Desktop: the window that fills it follows
+> drag 512 202 432 202
+  ✔ the docked window is narrower
+  ✔ the window is wider
+  ✔ it has the Desktop's place and size
+  ✔ windows match Arbor's layout
+
+▸ frame a docked window and come back: the window that fills the Desktop leaves and returns with it
+> click 218 221
+> key ctrl+opt+return
+  ✔ ⌃⌥↩ reaches Arbor
+  ✔ the docked window fills the screen
+  ✔ the floating one is out of view
+> key ctrl+opt+0
+  ✔ ⌃⌥0 reaches Arbor
+  ✔ it has the Desktop's place and size again
+  ✔ windows match Arbor's layout
+
+▸ ⌃⌥F gives it company: it has its own size back, and takes the Desktop again once it is alone
+> click 218 552
+> key ctrl+opt+f
+  ✔ ⌃⌥F reaches Arbor
+  ✔ the second window floats
+  ✔ the third has its own size back
+  ✔ the second has its own too
+> drag 714 369 219 612
+  ✔ the second window is docked again
+  ✔ the third has the Desktop's place and size again
+  ✔ windows match Arbor's layout
+
+▸ drag the window that fills the Desktop by its title bar: its own size under the pointer, and it stays that size
+> drag 756 55 726 135 --no-release
+> release
+  ✔ it has its own size back
+  ✔ the pointer is where it was on the window
+  ✔ it still floats
+> key ctrl+opt+0
+  ✔ ⌃⌥0, which lays the screen out again
+  ✔ the hand wins: it keeps that size
+  ✔ windows match Arbor's layout
+
+▸ switch soleFloatTakesDesktop off in settings.json: the window has its own size back
+> dock 98 right
+docked w98 at the right edge
+> float 98
+w98 is floating
+  ✔ it has the Desktop's place and size
+> reload-settings
+settings reloaded
+  ✔ it has its own size back
+  ✔ windows match Arbor's layout
+
+▸ quit Arbor while a window fills the Desktop: it has its own size back
+> reload-settings
+settings reloaded
+  ✔ it has the Desktop's place and size
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ it has its own size back
+  ✔ all of it is in view
+
+145 passed, 0 failed
+mac-shell: put back after 62-sizes.sh: window-manager
+exit code 0

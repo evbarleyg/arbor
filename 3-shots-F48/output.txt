@@ -1,0 +1,251 @@
+# mac-shell: scripts/mac-shell/shots-F48.sh at 55b1190, macOS 26.6.2, 2026-10-15T14:07Z
+built Arbor, the pointer tool and the app bundles in 4s
+session 1: Arbor pid 14978, test windows 107 108 109 110 (pid 14953)
+running: 1 display, 0 docked and 4 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+before Arbor touched them: w107 170 220 480 348 | w108 220 180 480 348 | w109 270 140 300 196 | w110 320 100 480 348
+shot: mac-shell/01-before.png
+
+== float: the old size, in the old place
+> dock 107 left
+docked w107 at the left edge
+> dock 108 right
+docked w108 at the right edge
+shot: mac-shell/02-docked.png
+> float 107
+w107 is floating
+  ✔ the floated window has its old size
+  ✔ and is where it was
+its slot was 12 43 325 650; it floats at 170 220 480 348; the Desktop is 12 43 494 650
+shot: mac-shell/03-floated.png
+
+== float a framed window: the old size, and the Desktop in view
+> dock 107 left
+docked w107 at the left edge
+> zoom 107
+framed w107
+shot: mac-shell/04-framed.png
+> float 107
+w107 is floating; showing the Desktop
+  ✔ the floated window has its old size
+  ✔ the Desktop is in view
+  ✔ another floating window is back in view with it
+shot: mac-shell/05-framed-floated.png
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          12 43 494 650
+  w107 170 220 480 348      floating focused
+  w108 518 43 494 650       docked
+  w109 270 140 300 196      floating
+  w110 320 100 480 348      floating
+
+== drag it out of its slot, slowly, grabbed in the middle
+> dock 107 left
+docked w107 at the left edge
+> drag 174 55 512 300 --no-release
+held: the window server has it at 296 118 325 650, Arbor at 296 118 325 650, pointer 512 300 down
+shot: mac-shell/06-drag-held.png
+> release
+film: 3 pictures in .23 s
+shot: mac-shell/07-drag-released-1.png
+shot: mac-shell/07-drag-released-2.png
+shot: mac-shell/07-drag-released-3.png
+  ✔ it floats
+  ✔ it has its old size
+released: the window server has it at 192 240 480 348, pointer 512 300 up, 66/100 along
+  ✘ the pointer is still on its title bar
+      sample: mac-shell/sample-fail-shots-F48-1.txt
+      picture: mac-shell/fail-shots-F48-1.png
+      | display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+      |   Desktop          12 43 494 650
+      |   w107 192 240 480 348      floating focused
+      |   w108 518 43 494 650       docked
+      |   w109 270 140 300 196      floating
+      |   w110 320 100 480 348      floating
+      log | INFO  trace shots-F48-1-03 ended: 89 lines, another trace was started
+      log | INFO  trace shots-F48-1-04: recording to /tmp/arbor-shell.jVPnN4/home/traces/2026-10-15-140803-shots-F48-1-04.jsonl
+      log | DEBUG no stage: Reduce motion is on
+      log | INFO  dock 107 left: docked w107 at the left edge
+      log | DEBUG the button went down at 174,55, the pointer is at 174,55: it is on w107
+      log | DEBUG w107 is being dragged
+      log | DEBUG drag of w107: on none
+      log | DEBUG drag of w107: on none
+      log | DEBUG drag of w107: on float
+      log | DEBUG w107 was dropped out of its slot and took its own size, 480×348
+      log | INFO  dropped w107 on float, display 07230EFA-7A8D-4E37-845C-19CC8737EEF5
+      log | DEBUG no stage: Reduce motion is on
+  ✘ about half way along, as it was grabbed
+      sample: mac-shell/sample-fail-shots-F48-2.txt
+      picture: mac-shell/fail-shots-F48-2.png
+shot: mac-shell/08-drag-settled.png
+
+== drag it out fast, grabbed near the left end, released without a pause
+> dock 107 left
+docked w107 at the left edge
+> drag 112 55 620 420 --duration 0.25 --steps 12 --hold 0
+  ✔ it floats
+  ✘ it has its old size
+      sample: mac-shell/sample-fail-shots-F48-3.txt
+      picture: mac-shell/fail-shots-F48-3.png
+      | display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+      |   Desktop          12 43 494 650
+      |   w107 508 389 480 379      floating focused
+      |   w108 518 43 494 650       docked
+      |   w109 270 140 300 196      floating
+      |   w110 320 100 480 348      floating
+      log | INFO  trace shots-F48-1-04 ended: 260 lines, another trace was started
+      log | INFO  trace shots-F48-1-05: recording to /tmp/arbor-shell.jVPnN4/home/traces/2026-10-15-140826-shots-F48-1-05.jsonl
+      log | DEBUG no stage: Reduce motion is on
+      log | INFO  dock 107 left: docked w107 at the left edge
+      log | DEBUG the button went down at 112,55, the pointer is at 112,55: it is on w107
+      log | DEBUG the press on w107 has moved nothing so far: looking less often
+      log | DEBUG w107 is being dragged, which began late
+      log | DEBUG drag of w107: on none
+      log | DEBUG drag of w107: on float
+      log | DEBUG w107 was dropped out of its slot and took its own size, 480×379
+      log | INFO  dropped w107 on float, display 07230EFA-7A8D-4E37-845C-19CC8737EEF5
+      log | DEBUG no stage: Reduce motion is on
+released: the window server has it at 508 389 480 379, pointer 620 420 up, 23/100 along (grabbed at 30/100)
+  ✔ the pointer is still on its title bar
+  ✔ about as far along as it was grabbed
+shot: mac-shell/09-fast-drag-settled.png
+
+== arrange, frame one, float-all: everything exactly where it was
+> arrange
+arranged 4 windows
+shot: mac-shell/10-arranged.png
+> zoom 108
+framed w108
+> float-all
+floated 4 windows
+  ✔ w107 is where it was dropped
+  ✔ w108 is where it started
+  ✔ w109 (cannot grow) is where it started
+  ✔ w110 is where it started
+shot: mac-shell/11-float-all.png
+display 0 0 1024 768, visible 0 31 1024 674, camera n0, back no
+  Desktop          12 43 1000 650
+  w107 508 389 480 379      floating
+  w108 220 180 480 348      floating focused
+  w109 270 140 300 196      floating
+  w110 320 100 480 348      floating
+
+== framed on a window, a pause lets go as a quit does: every window is back where it was, at its own size
+> arrange
+arranged 4 windows
+> zoom 108
+framed w108
+> pause
+paused until `resume`; windows are back in view, in their own sizes
+film: 3 pictures in .37 s
+shot: mac-shell/12-pausing-1.png
+shot: mac-shell/12-pausing-2.png
+shot: mac-shell/12-pausing-3.png
+  ✔ the framed window is where it started
+  ✔ w107 is back where it was
+  ✔ w110 is back where it was
+shot: mac-shell/12-paused.png
+> resume
+resumed
+  ✔ the framed window is framed again
+  ✔ w107 is out of view again
+shot: mac-shell/13-resumed.png
+> show-all
+showing everything
+
+== a minimized window comes back as it was, not in the shape of its slot
+AXMinimized true: 0
+> float-all
+floated 4 windows
+minimized, after float-all: Arbor (Accessibility) has it at 320 100 480 348; it started at 320 100 480 348
+AXMinimized false: 0
+  ✔ restored, it is where it started
+restored: the window server has it at 320 100 480 348
+shot: mac-shell/13b-restored.png
+> arrange
+arranged 4 windows
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  tile n0 desktop  817 43 195 650  holds -
+  w107 414 314 391 379      docked
+  w108 12 43 390 319        docked
+  w109 57 434 300 200       docked
+  w110 414 43 391 259       docked focused
+
+== kill -9 with windows out of view, start again: the sizes are still known
+> zoom 108
+framed w108
+shot: mac-shell/14-killed.png
+  ✔ Arbor is back
+  ✔ w107 is still docked
+> show-all
+showing everything
+> float 107
+w107 is floating
+  ✘ floated after the relaunch, it has its old size
+      sample: mac-shell/sample-fail-shots-F48-4.txt
+      picture: mac-shell/fail-shots-F48-4.png
+      | display 0 0 1024 768, visible 0 31 1024 674, camera n2, back yes
+      |   tile n0 desktop  817 43 195 650  holds -
+      |   w107 370 314 480 379      floating focused
+      |   w108 12 43 390 319        docked
+      |   w109 57 434 300 200       docked
+      |   w110 414 43 391 650       docked
+      log | INFO  trace shots-F48-1-09 ended: 126 lines, another trace was started
+      log | INFO  trace shots-F48-1-10: recording to /tmp/arbor-shell.jVPnN4/home/traces/2026-10-15-140846-shots-F48-1-10.jsonl
+      log | DEBUG no stage: Reduce motion is on
+      log | INFO  zoom 108: framed w108
+      log | DEBUG focus is on w108
+      log | DEBUG w108 has the keyboard
+      log | INFO  Arbor dev starting, pid 17830, home /tmp/arbor-shell.jVPnN4/home
+      log | INFO  control socket at /tmp/arbor-shell.jVPnN4/home/arbor.sock
+      log | INFO  keyboard layout: U.S.
+      log | INFO  registered 0 shortcuts in 0 µs: 9 of the map's 9 are the apps' because ARBOR_NO_HOTKEYS is set
+      log | INFO  window w109 was left out of view
+      log | INFO  window w110 was left out of view
+      log | INFO  window w107 was left out of view
+      log | INFO  started: 1 display(s), 4 managed window(s)
+      log | DEBUG w108 has the keyboard
+      log | INFO  trace shots-F48-1-11: recording to /tmp/arbor-shell.jVPnN4/home/traces/2026-10-15-140848-shots-F48-1-11.jsonl
+      log | INFO  show-all: showing everything
+      log | DEBUG no stage: Reduce motion is on
+      log | INFO  float 107: w107 is floating
+      log | DEBUG focus is on w107
+      log | DEBUG w107 has the keyboard
+shot: mac-shell/15-relaunched-floated.png
+> arrange
+arranged 4 windows
+> desktop
+showing the Desktop
+shot: mac-shell/16-everything-out-of-view.png
+
+== quit: everything exactly where it was
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ w107 is where it floated last
+  ✔ w108 is where it started
+  ✔ w109 is where it started
+after quitting: w107 370 314 480 379 | w108 220 180 480 348 | w109 270 140 300 196 | w110 320 100 480 348
+shot: mac-shell/17-after-quit.png
+
+== quit during a pause: the pause has left no window in the shape of its slot, and the quit moves nothing
+session 2: Arbor pid 18919, test windows 147 148 149 (pid 18810)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> arrange
+arranged 3 windows
+shot: mac-shell/18-arranged.png
+> pause
+paused until `resume`; windows are back in view, in their own sizes
+  ✔ in view, w147 is where it started as soon as Arbor is paused
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ w147 is where it started
+  ✔ w148 is where it started
+  ✔ w149 is where it started
+shot: mac-shell/19-after-quit-while-paused.png
+
+31 passed, 4 failed
+exit code 1
