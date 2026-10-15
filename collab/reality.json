@@ -5618,7 +5618,7 @@
    "guards": [
     "e2e: codesign signs with the key, and asks nobody"
    ],
-   "copes": "open",
+   "copes": "scripts/mac-shell/lib-F13.sh puts its keychain on the search list of the throwaway HOME. The same fact, on three versions of macOS and with what the scripts now say of it, is codesign-looks-only-on-the-search-list, which came with the cure: the two are one case written down twice, and this one is to be folded into that.",
    "hurt": 4,
    "sources": [
     "scripts/mac-shell/check-F13.sh",
@@ -11006,7 +11006,7 @@
    "guards": [
     "e2e: codesign could use the key at once, without a dialog"
    ],
-   "copes": "open",
+   "copes": "scripts/make-signing-identity.sh looks for no key by name any more, asks for no password and takes none. The same fact, on three versions of macOS and with the whole cure, is macos-calls-every-imported-key-the-same, which came with it: the two are one case written down twice, and this one is to be folded into that.",
    "hurt": 3,
    "sources": [
     "scripts/make-signing-identity.sh",
