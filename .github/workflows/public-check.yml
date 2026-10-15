@@ -13,10 +13,10 @@ on:
     tags: ["**"]
   pull_request:
 
-# A newer push makes the run for the older one worthless, except where work is integrated: there each run reads only what
-# its own push added, so each must finish.
+# A newer push makes the run for the older one worthless, except on main: there each run reads only what its own push added, so each
+# must finish. The trunk is pushed once for every pull request that lands, twenty times in four minutes: it is read whole each time (below).
 concurrency:
-  group: public-check-${{ github.event_name }}-${{ github.ref }}-${{ contains(fromJSON('["refs/heads/main", "refs/heads/swarm/trunk"]'), github.ref) && github.sha || 'newest' }}
+  group: public-check-${{ github.event_name }}-${{ github.ref }}-${{ github.ref == 'refs/heads/main' && github.sha || 'newest' }}
   cancel-in-progress: true
 
 permissions:
@@ -24,6 +24,9 @@ permissions:
 
 jobs:
   public-check:
+    # A pull request from a branch of this repository: the run for the push has read that branch, whole. A second run would take a runner to read
+    # less. One from a fork has no other.
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -40,10 +43,11 @@ jobs:
       - name: Nothing private in what this adds
         env:
           GH_TOKEN: ${{ github.token }}
-          # A pull request is held against its base, and a push to a branch where work is integrated against what was there
-          # before; what main or the trunk has besides was read on its way there, and the check leaves it out (read_elsewhere).
+          # A pull request is held against its base, and a push to main against what was there before; what main or the trunk has besides
+          # was read on its way there, and the check leaves it out (read_elsewhere). The trunk is held against nothing, as if pushed anew:
+          # all that main does not hold is read, seventeen seconds for six hundred commits, so a run that made way for a newer one left nothing unread.
           # Any other branch is read whole at every push: it stays red until its history is clean.
-          BASE: ${{ github.event.pull_request.base.sha || (contains(fromJSON('["refs/heads/main", "refs/heads/swarm/trunk"]'), github.ref) && github.event.before) || '' }}
+          BASE: ${{ github.event.pull_request.base.sha || (github.ref == 'refs/heads/main' && github.event.before) || (github.ref == 'refs/heads/swarm/trunk' && '0000000000000000000000000000000000000000') || '' }}
           BRANCH: ${{ github.ref_type != 'tag' && (github.head_ref || github.ref_name) || '' }}
           TAG: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
         run: |
@@ -64,13 +68,25 @@ jobs:
         run: python3 scripts/public-check.py --tree
       # The reading comes first, and whatever becomes of one step the others still run: a test of the check that trips over the runner's git once
       # kept the check itself from reading anything, on every branch, for half an hour.
+      # What follows tries the tools, not the push: a minute of the runner where the reading takes seconds, and the same every time unless the push
+      # touches them. Hundreds of runs a day waited for one another to say it again. Where it cannot be told what the push touches, they run.
+      - name: Does this touch the tools that are tried below?
+        id: tools
+        if: ${{ !cancelled() }}
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || (github.ref == 'refs/heads/main' && github.event.before) || (github.ref == 'refs/heads/swarm/trunk' && '0000000000000000000000000000000000000000') || '' }}
+        run: |
+          since=${BASE:-$(git merge-base origin/swarm/trunk HEAD || true)}
+          if [ -n "$since" ] && git diff --quiet "$since" HEAD -- .github scripts/public-check.py scripts/public-check.allow scripts/test-public-check.py \
+            scripts/side_by_side.py scripts/git-hooks scripts/housekeeping.py scripts/lint-workflows.py
+          then echo "touched=no"; else echo "touched=yes"; fi | tee -a "$GITHUB_OUTPUT"
       # (A pull request takes this file from its trial merge with the base, and the branch itself may be from before there was a check.)
       - name: The check finds what it should, and leaves alone what it should
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.tools.outputs.touched != 'no' }}
         run: if [ -f scripts/test-public-check.py ]; then ./scripts/test-public-check.py; else echo "this branch is from before the check"; fi
       - name: So does the daily pruning of branches
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.tools.outputs.touched != 'no' }}
         run: if [ -f scripts/housekeeping.py ]; then ./scripts/housekeeping.py --self-test; fi
       - name: Every action is the commit its version names, going by the action's own repository
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.tools.outputs.touched != 'no' }}
         run: if [ -f scripts/lint-workflows.py ]; then ./scripts/lint-workflows.py --verify; fi

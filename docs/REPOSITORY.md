@@ -10,7 +10,7 @@ neither change these nor ask for them one at a time. The whole list is one sitti
 
 | Rule | Where |
 |---|---|
-| Every action is named by a commit's full id | `scripts/lint-workflows.py`, part of `make lint`; `--pin` rewrites; `--verify`, in the workflow `Public check`, asks the action's own repository |
+| Every action is named by a commit's full id | `scripts/lint-workflows.py`, part of `make lint`; `--pin` rewrites; `--verify`, in the workflow `Public check` wherever a push touches a workflow, asks the action's own repository |
 | The pins are kept current | `.github/dependabot.yml`: one pull request a week at most, against `swarm/trunk`. GitHub reads that file on `main` only, so it starts once it is there. The first pull request will jump several major versions at once: read it like any other |
 | Free hosted runners only, never `self-hosted` | `scripts/lint-workflows.py` |
 | Every job has a time limit | `scripts/lint-workflows.py` |
