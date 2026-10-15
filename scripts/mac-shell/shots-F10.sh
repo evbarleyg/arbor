@@ -396,13 +396,22 @@ echo "the welcome window is at: $(welcome_frame)"
 summary
 
 step "the four moves, for real"
-# shellcheck disable=SC2046
-drag $(titlebar_of "$W1") 3 400
-check "the dragged window docked" eventually is docked "$W1"
+# The moves are keys, and first-five-minutes.sh presses them as it reads them from the window. Here they are for the pictures. (This
+# used to be a drag to the left edge, which is macOS's while its tiling is on, as it is on a Mac as it comes.)
+ctl dock "$W1" left
+check "the first window docked" eventually is docked "$W1"
 shot 42-docked
 look_welcome 42-docked-own
 ctl dock "$W2" right
 check "the second window docked" eventually is docked "$W2"
+# The next move has more to say, and a hand has put the window low: it grows upward, not under the Dock.
+clear_of_the_dock() {
+  local vy vh wx wy ww wh
+  read -r _ vy _ vh <<< "$(arbor_ask screen)"
+  read -r wx wy ww wh <<< "$(welcome_frame)"
+  [ "$((wy + wh))" -le "$((vy + vh))" ]
+}
+check "grown by what the next move has to say, the welcome window is still clear of the Dock" eventually clear_of_the_dock
 shot 42-two-docked
 look_welcome 42-two-docked-own
 # A click on the welcome window must not take the focus from the window that was docked.

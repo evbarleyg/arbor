@@ -42,8 +42,10 @@ final class OnboardingWindow: NSObject, NSWindowDelegate {
   }
 
   /// Opens the window on `page`, or turns it to that page and brings it to the front.
-  /// - Parameter page: nil for no page in particular: an open window stays as it is, a new one opens where the session says.
-  func show(_ page: OnboardingFlow.Page?) {
+  /// - Parameters:
+  ///   - page: nil for no page in particular: an open window stays as it is, a new one opens where the session says.
+  ///   - takesTheKeyboard: somebody asked for the window (`Controller.welcome(at:)`).
+  func show(_ page: OnboardingFlow.Page?, takesTheKeyboard: Bool) {
     guard let session else { return }
     let window = self.window ?? makeWindow(session)
     self.window = window
@@ -57,7 +59,10 @@ final class OnboardingWindow: NSObject, NSWindowDelegate {
     }
     // In front of everything, without making Arbor the active app (see `makeWindow`).
     window.orderFrontRegardless()
-    window.makeKey()
+    if takesTheKeyboard {
+      (window as? WelcomeWindow)?.mayTakeTheKeyboard = true
+      window.makeKey()
+    }
     startTimer()
   }
 
@@ -110,6 +115,10 @@ final class OnboardingWindow: NSObject, NSWindowDelegate {
     guard let session, let window, let content else { return }
     let model = session.model
     let visible = (window.screen ?? NSScreen.main)?.visibleFrame
+    // Before the view is given anything new to say: a hosting view makes its window as tall as its content wants at the next layout, and
+    // a frame read after that has grown already, so that nothing would seem to grow (seen on a hosted Mac: pushed low by a hand, the
+    // window grew under the Dock).
+    let old = destination ?? window.frame
     // With much to say on a small display the rows scroll, so that the buttons below them stay in reach. Measured on
     // views of their own: the one on show is set once, or its scroll view would be made anew and jump back to the top
     // whenever a fact changes.
@@ -127,7 +136,7 @@ final class OnboardingWindow: NSObject, NSWindowDelegate {
     let size = window.frameRect(forContentRect: NSRect(origin: .zero, size: content.fittingSize)).size
     if let visible {
       let placement = OnboardingModel.placement(
-        page: model.page, previous: shown?.page, staysPut: staysPut, old: ScreenGeometry.global(fromAppKit: destination ?? window.frame),
+        page: model.page, previous: shown?.page, staysPut: staysPut, old: ScreenGeometry.global(fromAppKit: old),
         size: size, visible: ScreenGeometry.global(fromAppKit: visible), desktops: model.desktops)
       move(window, to: ScreenGeometry.appKit(fromGlobal: placement.frame), gliding: placement.glides)
     } else {
@@ -218,6 +227,25 @@ private final class ClickThroughHostingView<Content: View>: NSHostingView<Conten
 
 /// Arbor has no main menu to give ⌘W to its windows.
 private final class WelcomeWindow: NSPanel {
+  /// Somebody has asked for the window, or has pressed the mouse in it. Until it gives the keyboard up again.
+  ///
+  /// The window never makes Arbor the active app, so the app a person is in goes on looking in front, and what they type next would go into
+  /// a window that has no field (seen on a hosted Mac at the grant: both title bars lit). It turns its page, glides, changes its level and
+  /// comes forward by itself, and whichever of those it was: here no road of AppKit's gives it the keyboard unasked.
+  var mayTakeTheKeyboard = false
+
+  override var canBecomeKey: Bool { mayTakeTheKeyboard }
+
+  override func sendEvent(_ event: NSEvent) {
+    if event.type == .leftMouseDown { mayTakeTheKeyboard = true }
+    super.sendEvent(event)
+  }
+
+  override func resignKey() {
+    super.resignKey()
+    mayTakeTheKeyboard = false
+  }
+
   override func performKeyEquivalent(with event: NSEvent) -> Bool {
     if event.modifierFlags.intersection(.deviceIndependentFlagsMask) == .command,
       event.charactersIgnoringModifiers == "w"

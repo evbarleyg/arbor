@@ -388,7 +388,11 @@ public struct OnboardingModel: Equatable, Sendable {
   ) -> Placement {
     if page == .firstSteps, !staysPut {
       return Placement(
-        frame: CGRect(origin: restingPlace(size: size, visible: visible, desktops: desktops), size: size), glides: previous != nil)
+        frame: CGRect(
+          origin: restingPlace(
+            size: size, visible: visible, desktops: desktops, isAtTheLeft: previous == .firstSteps && old.midX < visible.midX),
+          size: size),
+        glides: previous != nil)
     }
     // Opening, or back from where it rested: where macOS centres a window, a little above the middle.
     if page != .firstSteps, previous == nil || (previous == .firstSteps && !staysPut) {
@@ -405,19 +409,31 @@ public struct OnboardingModel: Equatable, Sendable {
     return Placement(frame: frame, glides: false)
   }
 
-  /// Where the window waits during the moves: its top left corner. Low on the display, so that the title bars of the
-  /// windows the moves are made on stay in reach, with room below for the line that says what each move did. It keeps to the Desktop, as
-  /// every window does that is not docked: at the right while nothing is docked, because the first move goes to the left edge; then over
-  /// the Desktop, which lies beside the first docked window and between the two. Where the Desktop is narrower than the window, it lies
-  /// over the near edges of what is docked.
-  static func restingPlace(size: CGSize, visible: CGRect, desktops: [CGRect]) -> CGPoint {
-    let x =
-      desktops.first { $0.overlaps(visible) }.map { min(max($0.midX - size.width / 2, visible.minX), visible.maxX - size.width) }
-      ?? visible.maxX - size.width - 24
+  /// Where the window waits during the moves: its top left corner. Its promise is to keep out of the windows' way, and a dock touches only
+  /// what is docked: the others lie where they lay, and what shows of them shows in the free part of the display. So it rests in the
+  /// bottom corner on that side, farthest from what has been docked, a gap's width in: at the right while nothing is docked, because
+  /// the first move goes to the left. It crosses the display for nothing else: where the free part reaches both sides or neither (between two
+  /// docked windows, out of view, none at all) it stays on the side where it is. Where the line that says what each move did could reach
+  /// it, it gives way upward.
+  /// - Parameter isAtTheLeft: where it rests now.
+  static func restingPlace(size: CGSize, visible: CGRect, desktops: [CGRect], isAtTheLeft: Bool) -> CGPoint {
+    var isAtTheLeft = isAtTheLeft
+    if let free = desktops.first(where: { $0.overlaps(visible) }) {
+      // Within two gaps of the display's edge.
+      let (reachesLeft, reachesRight) = (free.minX - visible.minX <= 2 * inset, visible.maxX - free.maxX <= 2 * inset)
+      if reachesLeft != reachesRight { isAtTheLeft = reachesLeft }
+    }
+    let x = isAtTheLeft ? visible.minX + inset : visible.maxX - size.width - inset
+    // The line is centred, and as wide as its words, up to this.
+    let reach = HeadsUpModel(kind: .hint, text: "").placed(in: visible).maximumWidth / 2
+    let meetsTheLine = x < visible.midX + reach && x + size.width > visible.midX - reach
+    let y = visible.maxY - (meetsTheLine ? roomBelow : inset) - size.height
     // On whole points, or the window would be asked for a frame it cannot have, again at every look.
-    return CGPoint(x: x.rounded(), y: max(visible.maxY - roomBelow - size.height, visible.minY).rounded())
+    return CGPoint(x: x.rounded(), y: max(y, visible.minY).rounded())
   }
 
+  /// As wide as the gap between docked windows comes.
+  static let inset: CGFloat = 12
   /// The heads-up line and a little air.
   static let roomBelow = HeadsUpModel.bottomMargin + 48
 

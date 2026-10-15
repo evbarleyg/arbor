@@ -95,6 +95,7 @@ extension _KeyValueCodingAndObserving {
 public class NSAppleEventDescriptor: NSObject {
   public var stringValue: String? { nil }
   public var int32Value: Int32 { 0 }
+  public var enumCodeValue: OSType { 0 }
   public var eventClass: AEEventClass { 0 }
   public var eventID: AEEventID { 0 }
   public func paramDescriptor(forKeyword keyword: AEKeyword) -> NSAppleEventDescriptor? { nil }

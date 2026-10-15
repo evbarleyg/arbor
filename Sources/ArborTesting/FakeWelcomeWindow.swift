@@ -10,6 +10,8 @@ public final class FakeWelcomeWindow {
   public private(set) var timesComeForward = 0
   /// The panes of System Settings its buttons have opened, in order.
   public private(set) var panesOpened: [OnboardingModel.Row.ID] = []
+  /// How often it has made itself the window that is typed in.
+  public private(set) var timesItTookTheKeyboard = 0
   /// How often macOS has been asked to put Arbor in the list under Accessibility.
   public private(set) var timesMacOSWasAsked = 0
   /// macOS answers that with a dialog of its own. False: this once it does not.
@@ -27,8 +29,8 @@ public final class FakeWelcomeWindow {
   public init(controller: Controller) {
     self.controller = controller
     session = OnboardingSession(controller: controller) { [weak self] _ in self?.render() }
-    controller.openWelcomeWindow = { [weak self] page in self?.show(page) }
-    controller.askForAccessibility = { [weak self] in self?.show(nil) }
+    controller.openWelcomeWindow = { [weak self] page, takesTheKeyboard in self?.show(page, takesTheKeyboard: takesTheKeyboard) }
+    controller.askForAccessibility = { [weak controller] in controller?.welcome(at: .permissionLost) }
     controller.accessibilityErrand = AccessibilityErrand(
       askMacOS: { [weak self] in
         guard let self else { return }
@@ -44,7 +46,8 @@ public final class FakeWelcomeWindow {
   public var text: String? { isOpen ? model.text : nil }
 
   /// `ArborApp.showWelcomeWindow`: opens it on `page`, or turns it to that page. Nil: an open window stays as it is.
-  public func show(_ page: OnboardingFlow.Page?) {
+  private func show(_ page: OnboardingFlow.Page?, takesTheKeyboard: Bool) {
+    if takesTheKeyboard { timesItTookTheKeyboard += 1 }
     if isOpen {
       if let page { session.go(to: page) }
     } else {
@@ -124,7 +127,8 @@ extension Harness {
   /// A Mac as it comes and an Arbor that has never run on it: macOS's own switches are on, nothing is saved, and unless `permitted` Arbor
   /// has no Accessibility permission. Does what `ArborApp` does at launch: without the permission the welcome window opens and Arbor
   /// waits; with it Arbor starts, and the window opens because nobody has seen it. Open the windows first.
-  public func launchForTheFirstTime(permitted: Bool = false) {
+  /// - Parameter atLogin: macOS opened it, not a hand.
+  public func launchForTheFirstTime(permitted: Bool = false, atLogin: Bool = false) {
     controller.isFirstLaunch = true
     controller.systemFacts = { [unowned self] in
       SystemFacts(
@@ -133,7 +137,8 @@ extension Harness {
     }
     _ = welcome
     controller.accessibilityGranted = permitted
-    if permitted { startAsTheAppDoes() } else { welcome.show(nil) }
+    if permitted { startAsTheAppDoes() }
+    controller.welcome(at: .launch(byHand: !atLogin))
   }
 
   /// The switch under Privacy & Security → Accessibility is flipped. The app notices within a second and starts the controller.
@@ -147,6 +152,5 @@ extension Harness {
   private func startAsTheAppDoes() {
     start()
     controller.registeredBindings = controller.activeBindings
-    if let page = controller.pageToWelcomeOn() { welcome.show(page) }
   }
 }

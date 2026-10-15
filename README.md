@@ -163,8 +163,8 @@ minute asks for nothing else.** (If another window manager is running, or VoiceO
 
 When the permission arrives the window comes forward and goes on by itself to **four moves to try** on your own windows, all of them keys, ticked
 off as you make them: click a window and press ⌃⌥⌘←, click another and press ⌃⌥⌘→, ⌃⌥↩ to fill the screen with one, ⌃⌥↩ again to have the
-arrangement back. The window words them from the shortcuts in effect. For the moves it is small, explains only the next one, and waits low over the
-Desktop until you put it elsewhere. It names one way back: ⌃⌥⎋ pauses Arbor and every window is as it was; Quit does the same. After the moves the
+arrangement back. The window words them from the shortcuts in effect. For the moves it is small, explains only the next one, and waits in the
+bottom corner away from what you have docked, until you put it elsewhere. It names one way back: ⌃⌥⎋ pauses Arbor and every window is as it was; Quit does the same. After the moves the
 same page has the box for Open at Login, which is also in the settings window, under General.
 
 **Help → Check Setup…** is for whoever asks: everything on this Mac that matters to Arbor, with a live tick on what is in order and a button that

@@ -1670,7 +1670,7 @@ ANCHORS = [
     ("Sources/ArborKit/App/ArborApp.swift", r"controller\.shortcutsAreDisabled = environment\.noHotkeys"),
     ("Sources/ArborKit/App/ArborApp.swift", r"if !environment\.noStatusItem \{\s+statusMenu = StatusMenu\("),
     ("Sources/ArborKit/App/ArborApp.swift", r"if environment\.onlyPIDs == nil \{\s*callSensor = CallSensor"),
-    ("Sources/ArborKit/App/ArborApp.swift", r"if !environment\.noPrompt, let page = controller\.pageToWelcomeOn\(\)"),
+    ("Sources/ArborKit/App/ArborApp.swift", r"if !environment\.noPrompt, !hasWaitedForPermission \{ controller\.welcome\(at: \.launch"),
     ("Sources/ArborKit/App/ArborApp.swift", r"thoroughly \? EventTap\.isPermitted\(\)"),
     ("Sources/ArborKit/UI/StageDirector.swift", r"guard !NSWorkspace\.shared\.accessibilityDisplayShouldReduceMotion else"),
     ("Sources/arbor-e2e/main.swift", r'environment\["ARBOR_NO_HOTKEYS"\] = "1"'),

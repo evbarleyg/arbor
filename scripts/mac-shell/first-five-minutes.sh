@@ -88,6 +88,24 @@ inside_of() {
   x=${x%.*}; y=${y%.*}; h=${h%.*}
   echo "$((x + 60)) $((y + h / 2))"
 }
+# window_at <x> <y>: the frontmost window there that takes a click. Arbor's own panels but the welcome window let clicks through, and above
+# level 20 lie layers of macOS's own as large as the display (seen on a hosted Mac: with them counted, nothing is ever to be seen).
+window_at() {
+  pointer windows --on-screen | awk -v x="$1" -v y="$2" -v arbor="$ARBOR_PID" -v welcome="$(welcome_id)" \
+    '$3 >= 0 && $3 < 20 && ($2 != arbor || $1 == welcome) && $4 <= x && x < $4 + $6 && $5 <= y && y < $5 + $7 { print $1; exit }'
+}
+# seen_point_of <id>: a point of its title bar that nothing lies over.
+seen_point_of() {
+  local x y w h at
+  read -r x y w h <<< "$(real_frame_of "$1")"
+  for at in 110 $((w / 2)) $((w - 60)) $((w - 20)); do
+    if [ "$(window_at $((x + at)) $((y + 12)))" = "$1" ]; then
+      echo "$((x + at)) $((y + 12))"
+      return 0
+    fi
+  done
+  return 1
+}
 # uncover <x> <y>: on a small display the welcome window, which floats above everything, may lie over the point. A person would push it
 # aside, and so does this, to the top corner further from the point, and counts it: from then on the window stays where it was put.
 pushed=0
@@ -106,12 +124,11 @@ uncover() {
   sleep 0.5
 }
 # Where the window rests, while nobody has pushed it: it glides there.
-rests_right_of() {
-  local frame wx wy ww wh x y w h
+rests_in_the_right_corner() {
+  local frame wx wy ww wh
   frame=$(welcome_frame) || return 1
   read -r wx wy ww wh <<< "$frame"
-  read -r x y w h <<< "$(real_frame_of "$1")"
-  [ "$wx" -ge "$((${x%.*} + ${w%.*}))" ]
+  [ "$((wx + ww))" -eq "$((screen_width - 12))" ]
 }
 # The moves are made exactly as the window words them: the keys are read from the window, so they are whatever keys ship.
 ticks() { ax tree 2>/dev/null | grep AXImage | grep -c '"Done"'; }
@@ -166,6 +183,51 @@ cp Resources/Info.plist "$app/Contents/Info.plist"
 codesign --force --sign - --identifier "$BUNDLE_ID" "$app" || die "codesign failed"
 tcc "DELETE FROM access WHERE client = '$BUNDLE_ID';"
 at_exit "tcc \"DELETE FROM access WHERE client = '$BUNDLE_ID';\"; for name in $KEYS; do defaults delete $DOMAIN \$name 2>/dev/null; done; killall 'System Settings' 2>/dev/null"
+
+# The witness: an app that writes down the keys it is given (keys.swift). Low on the left: the welcome window comes up in the middle of the
+# display, System Settings beside it, the moves at the right.
+# (Not KEYS, which is the list of macOS's three settings above.)
+WITNESS="$ARBOR_ROOT/.build/mac-shell/keys" KEYS_APP="$ARBOR_SESSION_DIR/ArborKeys.app" KEYS_LOG="$ARBOR_OUT/keys.log" KEYS_PID=""
+# Where the other scripts that use it put it, so that whichever comes second on a Mac finds it made.
+if [ ! -x "$WITNESS" ] || [ "$ARBOR_ROOT/scripts/mac-shell/keys.swift" -nt "$WITNESS" ]; then
+  mkdir -p "${WITNESS%/*}"
+  swiftc -O -swift-version 5 "$ARBOR_ROOT/scripts/mac-shell/keys.swift" -o "$WITNESS" > "$ARBOR_OUT/build-keys.log" 2>&1 \
+    || die "scripts/mac-shell/keys.swift did not compile"
+fi
+mkdir -p "$KEYS_APP/Contents/MacOS"
+cp "$WITNESS" "$KEYS_APP/Contents/MacOS/keys"
+at_exit 'kill_started $KEYS_PID'
+cat > "$KEYS_APP/Contents/Info.plist" <<PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>CFBundleIdentifier</key><string>dev.arbor.test.keys</string>
+  <key>CFBundleExecutable</key><string>keys</string>
+  <key>CFBundleName</key><string>ArborKeys</string>
+  <key>CFBundlePackageType</key><string>APPL</string>
+</dict></plist>
+PLIST
+# How often the witness has been given a plain J (key code 38).
+js() { grep -c "^[0-9:.]* down code=38 " "$KEYS_LOG" 2>/dev/null || true; }
+# A J is typed once, and looked for for two seconds: a hosted Mac's window server stands still for a second now and then.
+j_arrives() {
+  local before tries
+  before=$(js)
+  key j || return 1
+  for tries in 1 2 3 4 5 6 7 8 9 10; do
+    [ "$(js)" -gt "$before" ] && return 0
+    sleep 0.2
+  done
+  return 1
+}
+# Typed, and not there after the same two seconds. That nothing could be typed at all, or the log not read, is no answer.
+j_does_not_arrive() {
+  local before
+  before=$(js)
+  [ -r "$KEYS_LOG" ] && key j || return 1
+  sleep 2
+  [ "$(js)" -eq "$before" ]
+}
 
 step "1  the launch"
 ARBOR_BUNDLE=$app ARBOR_MAY_LACK_PERMISSION=1 ARBOR_TEST_WINDOWS_ARGS="--regular" \
@@ -225,6 +287,17 @@ shot 21-system-settings
 check "its button opens System Settings" settings_are_open
 check "and the dialog is gone: nothing is left lying over the person's windows" eventually macos_asks_no_more
 echo "on the screen, front to back:"; pointer windows --on-screen | awk '$3 >= 0 && $3 < 20'
+# Whose the keyboard is. The person is in another app when the permission arrives: System Settings mostly, here one that writes down what
+# it is given. Arbor's window comes forward and turns its page by itself then, and what is typed goes on arriving where it did.
+# Without descriptor 9, the test windows' stdin: they quit when it closes, and would wait for this app as well.
+"$KEYS_APP/Contents/MacOS/keys" app "$KEYS_LOG" 20 520 260 160 9>&- &
+KEYS_PID=$!
+started "$KEYS_PID"
+keys_ready() { grep -q "ready pid=$KEYS_PID " "$KEYS_LOG" 2>/dev/null; }
+eventually keys_ready || die "the key-logging app did not start"
+click 80 620
+sleep 0.5
+check "typed before the grant, a plain J arrives in the app the person is in" j_arrives
 codesign --display --requirements - "$app" 2>/dev/null | sed -n 's/^\(# \)\{0,1\}designated => //p' | csreq -r- -b "$ARBOR_SESSION_DIR/requirement.bin"
 hex=$(xxd -p "$ARBOR_SESSION_DIR/requirement.bin" | tr -d '\n')
 tcc "INSERT OR REPLACE INTO access (service, client, client_type, auth_value, auth_reason, auth_version, csreq, indirect_object_identifier, flags, last_modified) VALUES ('kTCCServiceAccessibility', '$BUNDLE_ID', 0, 2, 3, 1, X'$hex', 'UNUSED', 0, strftime('%s', 'now'));" \
@@ -253,6 +326,7 @@ if ! noticed; then
   ctl check-setup
 fi
 echo "what it took for Arbor to see the grant: $took"
+[ "$took" = "a relaunch" ] || check "typed just after the grant, it arrives there" j_arrives
 sleep 1.5
 see 22-granted
 echo "on the screen, front to back:"; pointer windows --on-screen | awk '$3 >= 0 && $3 < 20'
@@ -265,6 +339,21 @@ else
 fi
 check "with nothing else to decide it has gone on to the moves" eventually says "Four moves to try"
 check "nothing has moved" nothing_moved
+if [ "$took" != "a relaunch" ]; then
+  check "typed after the page has turned, it arrives there still: the window has not taken the keyboard" j_arrives
+  shot 23-the-keyboard-stays
+  # The control, and the other half of the rule: whoever asks for the window gets the keyboard in it. By the command, which is what the
+  # menu's Welcome… runs; the menu itself is not opened here.
+  ctl welcome
+  sleep 0.6
+  check "after the window has been asked for, by the command welcome, it does not: the keyboard is in the window" j_does_not_arrive
+  shot 24-asked-for
+  # And the control's control: the tool still types and the witness still writes.
+  click 80 620
+  sleep 0.5
+  check "clicked again, the app has the keyboard back" j_arrives
+fi
+kill_started "$KEYS_PID"
 killall "System Settings" 2>/dev/null
 sleep 1
 
@@ -281,12 +370,15 @@ make_move "Click a window and press"
 check "the window docked" eventually is docked "$FIRST"
 check "the first move is ticked" eventually ticked 1
 see 31-docked
-[ "$pushed" -gt 0 ] || check "the welcome window has gone over the Desktop, beside the docked window" eventually rests_right_of "$FIRST"
+[ "$pushed" -gt 0 ] || check "the welcome window is in the corner away from the docked window" eventually rests_in_the_right_corner
 echo "the second window is at $(real_frame_of "$SECOND"), the welcome window at $(welcome_frame)"
-# shellcheck disable=SC2046
-uncover $(grab_of "$SECOND")
-# shellcheck disable=SC2046
-click $(grab_of "$SECOND")
+# A dock touches only what is docked, so the others lie where they lay, partly under the docked window. A person clicks what they see.
+if where=$(seen_point_of "$SECOND"); then
+  # shellcheck disable=SC2086
+  click $where
+else
+  check "something of the second window's title bar is to be seen, to click on" false
+fi
 make_move "Click another and press"
 check "the second window docked" eventually is docked "$SECOND"
 check "the second move is ticked" eventually ticked 2
@@ -382,6 +474,9 @@ release
 check "the window docked" eventually is docked "$FIRST"
 check "and is where Arbor put it" eventually is in_slot "$FIRST"
 shot 53-let-go
+# With something docked this is no newcomer's Mac any more: what Check Setup… says then.
+ctl check-setup
+see 53-check-setup-with-something-docked
 ctl float-all
 sleep 1
 # Only while Arbor arranges windows. A pause is a quit that comes back.
@@ -432,10 +527,12 @@ echo "after:  $(frames)"
 echo "found:  $found"
 # Arbor itself has moved them, onto the Desktop and out of view and back.
 check "the two windows that no hand touched are exactly where they were found" test "$(real_frame_of "$W1") | $(real_frame_of "$W2")" = "$(echo "$found" | cut -d '|' -f 1-2 | sed 's/ $//')"
-size_of() { real_frame_of "$1" | awk '{ print int($3), int($4) }'; }
-# All four were opened at one size.
+# All four were opened at one size. To a point: dragged off macOS's own tile, a window of 480 by 348 is left at 481 by 349 by macOS itself.
 own_size=$(echo "${found##* | }" | awk '{ print int($3), int($4) }')
+has_its_own_size() {
+  real_frame_of "$1" | awk -v own="$own_size" '{ split(own, o, " "); w = $3 - o[1]; h = $4 - o[2]; exit !(w >= -1 && w <= 1 && h >= -1 && h <= 1) }'
+}
 for id in "$FIRST" "$SECOND"; do
-  check "window $id, docked and dragged, has its own size back" test "$(size_of "$id")" = "$own_size"
+  check "window $id, docked and dragged, has its own size back — it is at $(real_frame_of "$id")" has_its_own_size "$id"
 done
 arbor_stop 70-after-quit

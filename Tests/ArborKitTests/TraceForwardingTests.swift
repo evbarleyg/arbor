@@ -227,7 +227,7 @@ import Testing
       // The same files' `MenuBarWatcher` and `OnboardingSession`, and `noteWelcomed`: they change only what Arbor knows about its own
       // face (how wide an item the menu bar has room for, which page is open, that the window has been seen). No window, view or
       // layout depends on it. Their scheduled work (`menu-bar`, `menu-bar-room`, a `save`) has no effect a replay would miss.
-      "update", "tryAgain", "begin", "end", "refresh", "go", "noteWelcomed",
+      "update", "tryAgain", "begin", "end", "refresh", "go", "noteWelcomed", "welcome",
       // F42. `OnboardingSession` is told how the command of a row's button ended, to say so in the window. The command itself went through `perform`.
       "actionEnded",
       // F42. macOS's own switches go back as they were. No window, view or layout depends on it; a drag asks `macTiling()`, which is recorded.

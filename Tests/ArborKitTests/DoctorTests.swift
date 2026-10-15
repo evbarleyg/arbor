@@ -496,8 +496,8 @@ import Testing
   @Test func theWelcomeWindowOpensEvenBeforeArborMayStart() {
     let h = Harness()
     h.controller.accessibilityGranted = false
-    var opened: [OnboardingFlow.Page] = []
-    h.controller.openWelcomeWindow = { opened.append($0) }
+    var opened: [OnboardingFlow.Page?] = []
+    h.controller.openWelcomeWindow = { page, _ in opened.append(page) }
     #expect(h.run("check-setup").ok)
     #expect(opened == [.setup])
     h.controller.accessibilityGranted = true

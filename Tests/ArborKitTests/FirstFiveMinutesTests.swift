@@ -273,17 +273,80 @@ import Testing
     let (h, windows, _) = makeDesk()
     h.launchForTheFirstTime(permitted: true)
     h.welcome.close()
-    h.welcome.show(nil)
+    h.controller.welcome(at: .openedAgain)
     #expect(h.welcome.model.page == .permissions, "nothing is docked yet: still a newcomer")
     h.welcome.close()
     h.run("fix-setup")
     h.run("dock \(windows[0].rawValue) left")
-    h.welcome.show(nil)
+    h.controller.welcome(at: .openedAgain)
     #expect(h.welcome.model.page == .setup && h.welcome.buttons.contains("Put Them Back"))
     // An open window stays as it is.
     h.run("welcome")
-    h.welcome.show(nil)
+    h.controller.welcome(at: .openedAgain)
     #expect(h.welcome.model.page == .firstSteps)
+  }
+
+  // MARK: Whose the keyboard is
+
+  /// The window takes the keyboard only in answer to an act on Arbor itself. Wherever Arbor shows or turns it by itself it comes forward,
+  /// and the keyboard stays where it is: or what is typed next goes into a window that has no field, while the app the person is in
+  /// still looks in front (seen on a hosted Mac: both title bars lit).
+  @Test func openedByAHandTheWindowTakesTheKeyboard() {
+    let (h, _, _) = makeDesk()
+    h.launchForTheFirstTime()
+    #expect(h.welcome.isOpen && h.welcome.timesItTookTheKeyboard == 1)
+    let (permitted, _, _) = makeDesk()
+    permitted.launchForTheFirstTime(permitted: true)
+    #expect(permitted.welcome.isOpen && permitted.welcome.timesItTookTheKeyboard == 1)
+  }
+
+  @Test func openedByMacOSAtLoginItDoesNot() {
+    let (h, _, _) = makeDesk()
+    h.launchForTheFirstTime(atLogin: true)
+    #expect(h.welcome.isOpen && h.welcome.timesItTookTheKeyboard == 0)
+    let (permitted, _, _) = makeDesk()
+    permitted.launchForTheFirstTime(permitted: true, atLogin: true)
+    #expect(permitted.welcome.isOpen && permitted.welcome.timesItTookTheKeyboard == 0)
+  }
+
+  /// The person is in System Settings then, mostly. Nothing asks for the window at that moment: it turns its page by itself. That the
+  /// panel takes no keyboard in doing so is AppKit's side of it, which `first-five-minutes.sh` asks of a real Mac with a witness.
+  @Test func whenThePermissionArrivesTheKeyboardStaysWhereItIs() {
+    let (h, _, _) = makeDesk()
+    h.launchForTheFirstTime()
+    h.permissionArrives()
+    #expect(h.welcome.model.page == .firstSteps && h.welcome.timesComeForward == 1, "it turns the page and comes forward")
+    #expect(h.welcome.timesItTookTheKeyboard == 1, "the once, at the launch")
+  }
+
+  @Test func whenThePermissionGoesTheKeyboardStaysWhereItIs() {
+    let (h, windows, _) = makeDesk()
+    h.watchAccessibility()
+    h.launchForTheFirstTime(permitted: true)
+    h.welcome.close()
+    h.run("dock \(windows[0].rawValue) left")
+    h.run("dock \(windows[1].rawValue) right")
+    h.run("zoom \(windows[0].rawValue)")
+    let before = h.welcome.timesItTookTheKeyboard
+    h.revokeAccessibility()
+    h.scheduler.advance(by: 3)
+    #expect(h.welcome.isOpen && h.welcome.model.title == "Arbor needs its permission back", "a window is out of view: it opens by itself")
+    #expect(h.welcome.timesItTookTheKeyboard == before)
+  }
+
+  @Test func whoeverAsksForTheWindowGetsTheKeyboardInIt() {
+    let (h, _, _) = makeDesk()
+    h.launchForTheFirstTime(permitted: true, atLogin: true)
+    for (times, ask) in ["welcome", "check-setup", "welcome"].enumerated() {
+      h.run(ask)
+      #expect(h.welcome.timesItTookTheKeyboard == times + 1, "\(ask), on an open window too")
+    }
+    h.welcome.close()
+    h.run("check-setup")
+    #expect(h.welcome.timesItTookTheKeyboard == 4)
+    // Arbor opened again while it runs is a hand's doing.
+    h.controller.welcome(at: .openedAgain)
+    #expect(h.welcome.timesItTookTheKeyboard == 5)
   }
 
   // MARK: The errand to System Settings

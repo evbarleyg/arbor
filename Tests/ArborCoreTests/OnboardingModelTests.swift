@@ -699,37 +699,63 @@ private let tuned = SystemFacts(accessibility: true, screenRecording: true, swit
     #expect(steps.dockedTwo)
   }
 
-  /// The window keeps to the Desktop, as every window does that is not docked, and low, clear of title bars and of the heads-up line.
-  @Test func duringTheMovesTheWindowWaitsOverTheDesktop() {
+  /// A dock touches only what is docked, so the other windows lie where they lay, and what shows of them shows in the free part of the
+  /// display. The window keeps out of their way: in the bottom corner on that side, farthest from what has been docked.
+  @Test func duringTheMovesTheWindowWaitsInTheCornerAwayFromWhatIsDocked() {
     let visible = CGRect(x: 0, y: 25, width: 1440, height: 875)
     let width = OnboardingModel.width(of: .firstSteps)
     func place(_ desktops: [CGRect], height: CGFloat = 400, in visible: CGRect = visible) -> CGPoint {
+      // From the first page, in the middle of the display.
       OnboardingModel.placement(
-        page: .firstSteps, previous: .firstSteps, staysPut: false, old: CGRect(x: 1, y: 2, width: 3, height: 4),
+        page: .firstSteps, previous: .permissions, staysPut: false, old: CGRect(x: 1, y: 2, width: 3, height: 4),
         size: CGSize(width: width, height: height), visible: visible, desktops: desktops
       ).frame.origin
     }
     #expect(width == 420)
-    #expect(place([]).x == 996, "at the right while nothing is docked: the first move goes to the left edge")
-    let beside = CGRect(x: 726, y: 37, width: 702, height: 851), between = CGRect(x: 488, y: 37, width: 464, height: 851)
-    #expect(place([beside]).x == 867, "beside the first docked window")
-    #expect(place([between]).x == 510, "between the two")
-    // Here it hides nothing of what the moves have made.
-    for desktop in [beside, between] {
-      #expect(desktop.contains(CGRect(origin: place([desktop]), size: CGSize(width: width, height: 400))))
+    #expect(place([]).x == 1008, "a gap's width from the right while nothing is docked: the first move goes to the left")
+    let atTheRight = CGRect(x: 726, y: 37, width: 702, height: 851), between = CGRect(x: 488, y: 37, width: 464, height: 851)
+    #expect(place([atTheRight]).x == 1008, "the first window is docked at the left")
+    let atTheLeft = CGRect(x: 12, y: 37, width: 702, height: 851)
+    #expect(place([atTheLeft]).x == 12, "whoever docks at the right first")
+    // By the free part of its own display, whichever comes first.
+    let elsewhere = CGRect(x: 1452, y: 37, width: 200, height: 851)
+    #expect(place([elsewhere]).x == 1008)
+    #expect(place([elsewhere, atTheLeft]).x == 12)
+
+    // It crosses the display only for that: a free part that reaches one side of the display and not the other. Between two docked windows,
+    // however far off the middle (apps have smallest widths), with the Desktop out of view (a window fills the screen), and with no
+    // Desktop at all, it stays on the side where it is.
+    func journey(_ steps: [[CGRect]]) -> [CGFloat] {
+      var old = CGRect(x: 440, y: 127, width: 560, height: 500)
+      var previous = OnboardingFlow.Page.permissions
+      return steps.map { desktops in
+        old = OnboardingModel.placement(
+          page: .firstSteps, previous: previous, staysPut: false, old: old, size: CGSize(width: width, height: 400), visible: visible,
+          desktops: desktops
+        ).frame
+        previous = .firstSteps
+        return old.minX
+      }
     }
-    // Never off the display, and over the Desktop of its own display, whichever comes first.
-    #expect(place([CGRect(x: 1200, y: 37, width: 228, height: 851)]).x == 1020)
-    #expect(place([CGRect(x: 12, y: 37, width: 200, height: 851)]).x == 0)
-    let elsewhere = CGRect(x: 1452, y: 37, width: 900, height: 851)
-    #expect(place([elsewhere]).x == 996)
-    #expect(place([elsewhere, between]).x == 510)
-    // The line that says what a move did shows under it, not over its buttons.
+    let offTheMiddle = CGRect(x: 525, y: 37, width: 317, height: 851), toTheRight = CGRect(x: 600, y: 37, width: 400, height: 851)
+    #expect(journey([[], [atTheRight], [between], [], [between]]) == [1008, 1008, 1008, 1008, 1008], "the four moves")
+    #expect(journey([[], [atTheRight], [offTheMiddle], [], [offTheMiddle]]) == [1008, 1008, 1008, 1008, 1008])
+    #expect(journey([[], [atTheLeft], [between], [], [toTheRight], []]) == [1008, 12, 12, 12, 12, 12], "the right first")
+    #expect(journey([[], [atTheRight], [], [atTheLeft]]) == [1008, 1008, 1008, 12], "undocked, and docked at the other side")
+    #expect(journey([[CGRect(x: 12, y: 37, width: 1416, height: 851)]]) == [1008], "nothing docked: the Desktop is the whole display")
+    // The line that says what a move did is centred at the bottom. Where it could reach the window, the window gives way upward,
     let line = HeadsUpModel(kind: .hint, text: "Docked").placed(in: visible)
+    #expect(line.anchor.x + line.maximumWidth / 2 > 1008)
     #expect(place([]).y + 400 <= line.anchor.y - 40, "its lower edge, and the top of a line of one row")
+    // and where it cannot, the window is in the very corner.
+    let wide = CGRect(x: 0, y: 25, width: 2560, height: 1415)
+    #expect(place([], in: wide) == CGPoint(x: 2560 - 12 - 420, y: 1440 - 12 - 400))
     #expect(place([], height: 2000).y == visible.minY, "taller than the display: its title bar stays in reach")
-    // On whole points, whatever the Desktop's width and the window's height.
-    let odd = place([CGRect(x: 349, y: 37, width: 325, height: 600)], height: 331.5, in: CGRect(x: 0, y: 25, width: 1024, height: 673))
+    // On the smallest display: 37 points further from the docked window than the middle of the free half.
+    let small = CGRect(x: 0, y: 31, width: 1024, height: 677)
+    #expect(place([CGRect(x: 518, y: 43, width: 494, height: 653)], height: 364, in: small) == CGPoint(x: 592, y: 240))
+    // On whole points, whatever the window's height.
+    let odd = place([], height: 331.5, in: CGRect(x: 0, y: 25, width: 1024.5, height: 673))
     #expect(odd == CGPoint(x: odd.x.rounded(), y: odd.y.rounded()))
   }
 
@@ -753,7 +779,7 @@ private let tuned = SystemFacts(accessibility: true, screenRecording: true, swit
     #expect(placement(.permissions, after: .permissions, old: low, size: first).frame.maxY == visible.maxY)
     // Continue: it glides to where it rests. Opened on the moves, it is there at once.
     let resting = placement(.firstSteps, after: .permissions, old: opened.frame, size: moves)
-    #expect(resting.glides && resting.frame == CGRect(x: 996, y: 326, width: 420, height: 400))
+    #expect(resting.glides && resting.frame == CGRect(x: 1008, y: 326, width: 420, height: 400))
     #expect(placement(.firstSteps, after: nil, old: .zero, size: moves) == .init(frame: resting.frame, glides: false))
     // Back: to the middle again.
     #expect(placement(.permissions, after: .firstSteps, old: resting.frame, size: first) == opened)
