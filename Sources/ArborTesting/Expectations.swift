@@ -242,7 +242,9 @@ public enum ScenarioExpectation {
     case ("replied", 2...):
       let wanted = words.dropFirst().joined(separator: " ")
       guard let lastReply else { return "`replied` looks at the line before, which only arbor-sim's scripts have" }
-      return lastReply.lowercased().contains(wanted.lowercased()) ? nil : "the reply does not say “\(wanted)”"
+      // A script's words come apart at every run of spaces, so a reply set in columns is read the same way, line by line.
+      let said = lastReply.lowercased().split(separator: "\n").map { $0.split(separator: " ").joined(separator: " ") }.joined(separator: "\n")
+      return said.contains(wanted.lowercased()) ? nil : "the reply does not say “\(wanted)”"
 
     case ("preview", 2):
       switch words[1].lowercased() {

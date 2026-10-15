@@ -32,7 +32,10 @@ import Testing
     #expect(
       h.run("menu").text == """
           ✓ Show Everything  ⌃⌥Space
-            Show the Desktop  ⌃⌥D
+            Windows ▸
+              ✓ Safari: Safari 101
+                Notes: Notes 102
+                Mail: Mail 103
             Frame Focused Window  ⌃⌥↩
             Go to…  ⌃⌥G
             Saved Views ▸
@@ -51,6 +54,7 @@ import Testing
                 -----
                     Name This Space…  ⌃⌥N
             View ▸
+                Show the Desktop  ⌃⌥D
                 Step Out  ⌃⌥↑  (gray)
                 Step In  ⌃⌥↓
                 Back  ⌃⌥[  (gray)
@@ -269,8 +273,8 @@ import Testing
         section.items.flatMap { item -> [String] in
           // Without the name of the app, or of the step, a row is about.
           let title = ["Keep", "Don’t Arrange", "Shortcuts Off", "Undo", "Redo"].first { item.title.hasPrefix($0 + " ") } ?? item.title
-          // Saved Views lists what there is, and what there is differs.
-          guard title != "Saved Views" else { return [title] }
+          // They list what there is, and what there is differs.
+          guard !["Saved Views", "Windows"].contains(title) else { return [title] }
           return [path + title] + titles(item.sections, under: path + title + " ▸ ").flatMap { $0 }
         }
       }

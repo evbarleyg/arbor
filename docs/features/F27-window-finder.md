@@ -144,7 +144,7 @@ Not yet: no key has been pressed in it on a Mac, and nobody has looked at a row 
 |---|---|
 | `find` (also `go-to`) | Opens the palette; closes it if it is open |
 | `find <text…>` | Goes straight to the best match, without the palette: `arborctl find safari docs`. Fails with "no window, space or saved view matches “…”" |
-| `reveal [window]` | Brings one window (default: the focused one) into view and focuses it |
+| `reveal [window]` | Brings one window (default: the focused one) into view and focuses it. A floating window that hangs over an edge of the screen comes in whole: moved the least that does it, never sized (2026-10-15, with the menu's list of windows: `docs/MENU.md`, Windows ▸) |
 
 The list itself is printed by F50's `windows`. This feature had a `windows` of its own; the product owner took it out before it could land: one command, one vocabulary.
 

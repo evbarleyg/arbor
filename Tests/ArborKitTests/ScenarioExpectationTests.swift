@@ -173,6 +173,8 @@ import Testing
       ScenarioExpectation.check(["replied"] + words.split(separator: " ").map(String.init), harness: h, lastCommandOK: true, lastReply: reply)
     }
     #expect(replied("none in the WAY", to: "✔ Desktop & Dock settings: none in the way") == nil)
+    #expect(replied("Mail: Inbox [out of view]", to: "    Windows ▸\n        Mail: Inbox  [out of view]") == nil, "set in columns")
+    #expect(replied("Windows ▸ Mail", to: "    Windows ▸\n        Mail: Inbox") != nil, "a line is a line")
     #expect(replied("a problem", to: "all is well") == "the reply does not say “a problem”")
     #expect(expect("replied anything", h)?.contains("looks at the line before") == true)
     #expect(expect("preview none", h) == nil)

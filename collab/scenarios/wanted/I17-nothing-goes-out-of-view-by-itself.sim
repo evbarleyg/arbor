@@ -25,10 +25,11 @@ close 101
 expect visible 102
 expect visible 103
 expect visible 104
-# The list the menu shows, as a command, by app: every open window, with what is out of view marked.
-windows
+# The list the menu shows under Windows, as `menu` prints it: every open window by app and title, with a mark for what cannot be seen.
+# (Answered: 67-every-open-window-is-in-the-menu.sim clicks a row of each kind.)
+menu
 expect ok
-expect replied Notes
-expect replied Mail
-expect replied Music
-expect replied Preview
+expect replied Notes: Notes 102
+expect replied Mail: Mail 103
+expect replied Music: Music 104
+expect replied Preview: Preview 105 [minimized]

@@ -1,0 +1,102 @@
+# Story: somebody has six windows open and cannot find one of them. They know no shortcut and no word of Arbor's. They open the one
+# thing of Arbor's that is always there, the menu, read the list under Windows and click: the window is in front and whole,
+# whatever kept it out of sight. (QUESTIONS Q29, point 8; IDEAS I17. Window ids start at 101; a window opens as "Mail 102".)
+quiet
+open Safari
+open Mail
+open Notes
+open Terminal 400x300
+open Music
+open Calendar 500x400
+dock 101 left
+dock 102 right
+dock 103 beside 102 bottom
+move 104 520 300 400 300
+focus 103
+focus 102
+focus 101
+# The window being typed in is ticked. (That it is first, the others in the order of use, and that a window in view has no mark, no `expect` can
+# say: OpenWindowsTests does.)
+menu
+expect replied ✓ Safari: Safari 101
+expect replied Mail: Mail 102
+# Framed on Safari, the others are out of view, and the list says so.
+zoom 101
+expect hidden 102
+menu
+expect replied Mail: Mail 102  [out of view]
+expect replied Notes: Notes 103  [out of view]
+# A docked window out of view.
+menu-choose Mail
+expect ok
+expect visible 102
+expect focused 102
+expect in-front 102
+expect moved-once
+menu
+expect replied ✓ Mail: Mail 102
+# A floating window, with another lying over it.
+show-all
+move 106 500 280 500 400
+focus 106
+menu-choose Terminal
+expect ok
+expect still
+expect focused 104
+expect in-front 104
+# One left hanging over the corner of the screen comes in whole, at its own size, by the shortest way.
+move 104 1300 780 400 300
+focus 101
+menu-choose Terminal
+expect ok
+expect at 104 1040 600
+expect size 104 400x300
+expect in-front 104
+# Out of the Dock, docked and floating.
+minimize 103
+minimize 106
+menu
+expect replied Notes: Notes 103  [minimized]
+menu-choose Notes
+expect ok
+expect visible 103
+expect focused 103
+expect in-front 103
+menu-choose Calendar
+expect ok
+expect visible 106
+expect focused 106
+expect in-front 106
+expect size 106 500x400
+# Out of ⌘H.
+hide Mail
+menu
+expect replied Mail: Mail 102  [hidden]
+menu-choose Mail
+expect ok
+expect visible 102
+expect focused 102
+expect in-front 102
+# A window too small to show is drawn as a tile. Whoever looks for it need not know the word.
+min 105 1000x700
+dock 105 beside 103 bottom
+expect tile 105
+menu
+expect replied Music: Music 105  [out of view]
+menu-choose Music
+expect ok
+expect visible 105
+expect focused 105
+expect in-front 105
+# An app Arbor was told not to arrange is in the list all the same, and is shown where it is.
+show-all
+exclude com.example.calendar
+focus 101
+menu-choose Calendar
+expect ok
+expect focused 106
+expect in-front 106
+# What has closed is no longer listed.
+close 104
+menu-choose Terminal
+expect fail

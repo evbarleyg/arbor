@@ -131,7 +131,8 @@ extension Controller {
     let map = minimapInMenu
     return Section {
       Item.command("Show Everything", .showAll).like(places.button(.everything))
-      Item.command("Show the Desktop", .desktop).like(places.button(.desktop))
+      // The second answer to "where has my window gone" (Controller+OpenWindows.swift).
+      Item.submenu("Windows") { windowListItems() }
       Item.command("Frame Focused Window", .zoom(nil)).enabled(focused.map(canFrame) ?? false).ticked(focused?.isFramed == true)
       Item.command("Go to…", .find(nil)).enabled(!finderRows().isEmpty)
       Item.submenu("Saved Views", sections: savedViewSections(places))
@@ -139,6 +140,7 @@ extension Controller {
         "View",
         sections: [
           Section {
+            Item.command("Show the Desktop", .desktop).like(places.button(.desktop))
             Item.command("Step Out", .stepOut).enabled(canStep.out)
             Item.command("Step In", .stepIn).enabled(canStep.in)
             Item.command("Back", .back).like(places.button(.back))

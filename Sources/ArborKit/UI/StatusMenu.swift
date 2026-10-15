@@ -213,6 +213,12 @@ final class StatusMenu: NSObject, NSMenuDelegate {
     item.isEnabled = model.isEnabled
     item.state = model.isTicked ? .on : .off
     item.toolTip = model.help
+    if let note = model.note { item.badge = NSMenuItemBadge(string: note) }
+    // A copy: the size is the image's own, and the image is its app's. 16 points, or the row grows (docs/MENU.md, rule 3).
+    if let pid = model.iconOfProcess, let icon = AppAppearance.icon(pid: pid)?.copy() as? NSImage {
+      icon.size = NSSize(width: 16, height: 16)
+      item.image = icon
+    }
     return item
   }
 

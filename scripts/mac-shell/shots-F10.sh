@@ -125,11 +125,16 @@ doctor() {
     my ($row, $name, $says) = ($1, $2, $3);
     print $name =~ /^(?:Accessibility|Shortcuts|Menu bar item|Version)$/ ? "$row:$says\n" : "$row\n"'
 }
-# `menu` names the app in front, in “ ”. On a person's Mac the names are left out, by bytes as above.
+# `menu` names the app in front, in “ ”, and under Windows every open window by app and title. On a person's Mac the names are left out, by
+# bytes as above, and of the list only how long it is stays: whatever is further in than Windows, up to the next row that is not.
 menu() {
   echo "> menu"
   if on_throwaway_mac; then "$ARBOR_BIN/arborctl" menu; return; fi
-  "$ARBOR_BIN/arborctl" menu | perl -pe 's/\xe2\x80\x9c.*\xe2\x80\x9d/\xe2\x80\x9c\xe2\x80\xa6\xe2\x80\x9d/'
+  "$ARBOR_BIN/arborctl" menu | perl -ne '
+    if ($list) { if (/^ {5}/) { $rows++; next } print "        ($rows rows)\n"; $list = 0 }
+    if (/^    Windows /) { $list = 1; $rows = 0 }
+    s/\xe2\x80\x9c.*\xe2\x80\x9d/\xe2\x80\x9c\xe2\x80\xa6\xe2\x80\x9d/;
+    print'
 }
 
 # On a person's Mac keys are let through only to an app this script started. An open menu must not be left behind for
@@ -297,8 +302,8 @@ check "neither ran the button" shows everything current
 
 step "an item of the menu, chosen with the keyboard"
 rightpress everything
-in_menu down down return
-check "the second item, Show the Desktop, showed the Desktop" eventually shows desktop current
+in_menu v i right s h return
+check "the first item under View, Show the Desktop, showed the Desktop" eventually shows desktop current
 ctl show-all
 
 step "Help, and About Arbor in it"
