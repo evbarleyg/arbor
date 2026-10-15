@@ -125,6 +125,8 @@ runs:
       env:
         FOUND: ${{ steps.build.outputs.cache-matched-key }}
         ENOUGH: ${{ steps.key.outputs.enough }}
+        KEY: ${{ steps.key.outputs.key }}
+        MADE: ${{ steps.key.outputs.made }}
       run: |
         keep=true
         if [ -n "$FOUND" ] && ! "$GITHUB_ACTION_PATH/../../../scripts/ci-mtimes.py" restore; then
@@ -134,7 +136,7 @@ runs:
         if [ -z "$FOUND" ]; then
           # Also what a restore that broke off half way has left.
           rm -rf .build
-          say="none: this job builds from nothing"
+          say="none: this job builds from nothing. Looked for $KEY ($MADE)"
         else
           # shellcheck disable=SC2254  # a pattern, and meant as one
           case "$FOUND" in

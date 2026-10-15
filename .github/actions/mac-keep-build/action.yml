@@ -13,9 +13,11 @@ runs:
   steps:
     - name: Note what the build was made of
       shell: bash
+      env:
+        KEY: ${{ inputs.key }}
       run: |
         "$GITHUB_ACTION_PATH/../../../scripts/ci-mtimes.py" record
-        echo "::notice title=build cache::keeping $(du -sm .build | cut -f1) MB"
+        echo "::notice title=build cache::keeping $(du -sm .build | cut -f1) MB as $KEY"
     - name: Keep it
       uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
       with:

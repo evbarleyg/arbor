@@ -6,6 +6,7 @@
 #   key=…      the name of what this job will have built
 #   enough=…   a cache whose name matches this pattern (as in the shell's `case`) holds all of it already
 #   or<<…      names to build upon if there is none, the most promising first
+#   made=…     what the first part of the name stands for, in plain words: why a build that was kept is not found shows when two runs are held side by side
 #
 #   build-v1-<system, Xcode, compiler>-<day>-<manifest>-t-<sources>-<tests>     after `swift build --build-tests`
 #   build-v1-<system, Xcode, compiler>-<day>-<manifest>-p-<sources>             after `swift build`
@@ -33,6 +34,7 @@ tests=$( { git rev-parse HEAD:Tests; env | { grep '^ARBOR_TEST_SOURCES_' || true
   || { echo "ci-build-key.sh: the checkout differs from its commit, so the commit's hashes do not name it" >&2; exit 2; }
 
 stem="build-v1-$made_with-$(date -u +%F)-$manifest"
+echo "made=macOS $(sw_vers -buildVersion), image ${ImageVersion:-?}, $(uname -m), $(xcodebuild -version | tr '\n' ' ' | sed 's/ $//'), $(swift --version 2>&1 | head -n 1 | cut -c 1-80)"
 case "$kind" in
   tests)
     echo "key=$stem-t-$sources-$tests"
