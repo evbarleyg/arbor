@@ -19,7 +19,8 @@
 #              macOS's tiling on, as a Mac comes, those edges are macOS's: Arbor stands aside, macOS tiles, and the question is whether the
 #              stand-ins tile as macOS does
 #   pointer    e2e-drag.sh's steps and a few more: to the bottom edge, a window's edge, onto another window, a double-click and another, a press inside, a
-#              seam, out onto the Desktop, a click on a tile
+#              seam where a floating window lies behind it (first of all, after a press on its handle, after a layout) and where nothing does, a click on that window in
+#              front of the gap, out onto the Desktop, a click on a tile
 #   keys       a click on a window, then shortcuts on the real keyboard
 # REALITY_JOURNEYS="commands keys" plays only those: for a rehearsal while working on one of them. A Mac plays them all.
 #
@@ -181,9 +182,39 @@ title_of() {
 }
 # meets <name> <window> <x> <y>: a check that a press there reaches that window and not one that lies over it. A press that takes hold of something else, or of
 # nothing, comes out the same in both worlds: no divergence, and nothing played.
-meets() {
-  check "a press at $3,$4 meets $1" test "$(in_order | awk -v x="$3" -v y="$4" 'x >= $2 && x < $2 + $4 && y >= $3 && y < $3 + $5 { print $1; exit }')" = "$2"
+top_at() { in_order | awk -v x="$1" -v y="$2" 'x >= $2 && x < $2 + $4 && y >= $3 && y < $3 + $5 { print $1; exit }'; }
+meets() { check "a press at $3,$4 meets $1" test "$(top_at "$3" "$4")" = "$2"; }
+# bare_seam_right_of <window>: a point in the gap on its right: the middle of the tallest stretch of the gap with no test window behind it. A floating window that lies
+# behind two docked ones shows through the gap between them, and a press there is a press on that window. Nothing, if the gap shows nowhere.
+bare_seam_right_of() {
+  in_order | awk -v id="$1" -v gap="$ARBOR_GAP" '
+    { n++; fx[n] = $2; fy[n] = $3; fw[n] = $4; fh[n] = $5; if ($1 == id) own = n }
+    END {
+      if (!own) exit
+      x = fx[own] + fw[own] + int(gap / 2)
+      for (y = fy[own]; y < fy[own] + fh[own]; y++) {
+        free = 1
+        for (i = 1; i <= n; i++) if (x >= fx[i] && x < fx[i] + fw[i] && y >= fy[i] && y < fy[i] + fh[i]) free = 0
+        run = free ? run + 1 : 0
+        if (run > best) { best = run; end = y }
+      }
+      if (best > 0) print x, end - int(best / 2)
+    }'
 }
+# w1_goes_behind "<what tells these steps from the last>": a click on W2's title bar and one on W3's, as a person would bring them forward, and a check that W1 lies
+# behind both. Played whether or not W1 came forward: a step played in one world only compares with nothing.
+w1_goes_behind() {
+  local name id
+  for name in W2 W3; do
+    id=${!name}
+    # shellcheck disable=SC2046
+    meets "$name" "$id" $(title_of "$id")
+    # shellcheck disable=SC2046
+    does "click $name's title bar$1" click $(title_of "$id")
+  done
+  check "W1 lies behind W3 and W2$1" test "$(in_order | tail -n 1 | cut -d ' ' -f 1)" = "$W1"
+}
+width_of() { at "$1" w h | cut -d ' ' -f 1; }
 # carried "<step>" <name> <window> <x> <y>: by its title bar to that point and let go, and a check that it went.
 carried() {
   local before
@@ -326,8 +357,43 @@ if wanted pointer; then
   # shellcheck disable=SC2046
   does "press inside W3 and move, held" drag $(middle_of "$W3") $(at "$W3" "x + w / 2 + 90" "y + h / 2 + 60") --no-release
   does "let go inside W3" release
+  # W1 floats behind W3 and W2 and shows through the gap between them. First the gap in its middle, over W1. As things are the press is W1's, which comes forward
+  # over both and takes the keyboard, and no seam moves. It is to become the seam's: so this step is played as a person would play it and nothing is claimed of it
+  # yet. It comes before any other press on this seam: played after a drag of it, on a hosted Mac, the same press went to the handle and not to W1, with nothing mended.
   # shellcheck disable=SC2046
   does "drag the seam right of W3 20 to the left" drag $(at "$W3" "x + w + $ARBOR_GAP / 2" "y + h / 2") $(at "$W3" "x + w + $ARBOR_GAP / 2 - 20" "y + h / 2")
+  w1_goes_behind ""
+  # Then the seam where no window lies behind the gap or in front of it. To the right: it gives W3 back what the step before may have taken.
+  read -r gx gy <<< "$(bare_seam_right_of "$W3")"
+  check "no test window lies under the seam at ${gx:-?},${gy:-?}" test -n "$gy" -a -z "$(top_at "${gx:-0}" "${gy:-0}")"
+  widths="$(width_of "$W3") $(width_of "$W2")"
+  # shellcheck disable=SC2086
+  does "drag the seam right of W3 20 to the right, where nothing lies behind it" drag $gx $gy ${gx:+$((gx + 20))} $gy
+  check "the seam moved: W3 is wider by what W2 is narrower" test "$(($(width_of "$W3") + $(width_of "$W2")))" = "$((${widths% *} + ${widths#* }))" -a "$(width_of "$W3")" -gt "${widths% *}"
+  # The middle of the gap again, now that its handle has been pressed. Whose the press is, is what the step is for: nothing is claimed of it.
+  # shellcheck disable=SC2046
+  does "drag the seam right of W3 20 to the left, its handle pressed before" \
+    drag $(at "$W3" "x + w + $ARBOR_GAP / 2" "y + h / 2") $(at "$W3" "x + w + $ARBOR_GAP / 2 - 20" "y + h / 2")
+  w1_goes_behind " again"
+  # And once more after a layout. Not any layout: one that leaves tiles and seams as they are touches no panel (AppKitOverlays.showTilesAndSeams), and one that moves
+  # the seam sends its handle behind where it stands, which every step of a drag of it does. In a zoom there is no seam: the handle is taken off the screen, and
+  # back puts it there anew, as the first layout did. It is also what a person does all day.
+  widths="$(width_of "$W3") $(width_of "$W2")"
+  does "zoom W3" ctl zoom "$W3"
+  does "back" ctl back
+  check "the arrangement is as it was" test "$(width_of "$W3") $(width_of "$W2")" = "$widths"
+  check "W1 lies behind W3 and W2 after the layout" test "$(in_order | tail -n 1 | cut -d ' ' -f 1)" = "$W1"
+  # shellcheck disable=SC2046
+  does "drag the seam right of W3 20 to the right, after a layout" \
+    drag $(at "$W3" "x + w + $ARBOR_GAP / 2" "y + h / 2") $(at "$W3" "x + w + $ARBOR_GAP / 2 + 20" "y + h / 2")
+  # The control: a floating window that lies in front of the gap keeps its clicks, whatever becomes of one that lies behind.
+  does "the app brings W1 forward" tw front "$W1"
+  widths="$(width_of "$W3") $(width_of "$W2")"
+  # shellcheck disable=SC2046
+  meets W1 "$W1" $(at "$W3" "x + w + $ARBOR_GAP / 2" "y + h / 2")
+  # shellcheck disable=SC2046
+  does "click W1 where it lies over the gap" click $(at "$W3" "x + w + $ARBOR_GAP / 2" "y + h / 2")
+  check "no seam moved" test "$(width_of "$W3") $(width_of "$W2")" = "$widths"
   # Near the top of the Desktop: a window as tall as its slot let go of half way down would hang off the display.
   read -r dx dy dw _ <<< "$(arbor_ask desktop)"
   carried "drag W2 out onto the Desktop" W2 "$W2" $((${dx:-0} + ${dw:-0} / 2)) $((${dy:-0} + 60))
