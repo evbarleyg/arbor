@@ -82,7 +82,7 @@ still_there() {
 
 claim "⌃⌥↩, ⌃⌥→ and ⌃⌥0 move the view: the pinned window keeps its place in front, other floating windows leave"
 proves A49
-known "a pinned window of another app stays behind the window that has the keyboard: the Accessibility raise does not lift it over that one; reported, nobody has it yet"
+known "a pinned window of another app stays behind the window that has the keyboard: the Accessibility raise does not lift it over that one; Q25 in collab/QUESTIONS.md decides what is to become of it"
 click_window "$W1"
 check "⌃⌥↩ reaches Arbor" pressed ctrl+opt+return zoom
 check "the first window fills the screen" eventually fills "$W1"
@@ -99,7 +99,7 @@ settled
 
 claim "click the docked window under a pinned one: the pinned window is in front again, the keyboard stays in the other"
 proves A49
-known "a pinned window of another app stays behind the window that has the keyboard: the Accessibility raise does not lift it over that one; reported, nobody has it yet"
+known "a pinned window of another app stays behind the window that has the keyboard: the Accessibility raise does not lift it over that one; Q25 in collab/QUESTIONS.md decides what is to become of it"
 click_window "$W1"
 check "the first window has the keyboard" eventually is focused "$W1"
 click_window "$W2"
@@ -135,7 +135,7 @@ settled
 
 claim "⌃⌥⇧D pins again; quit Arbor and start it again: the window is still pinned, in the same place"
 proves A49
-known "a pinned window of another app stays behind the window that has the keyboard: the Accessibility raise does not lift it over that one; reported, nobody has it yet"
+known "a pinned window of another app stays behind the window that has the keyboard: the Accessibility raise does not lift it over that one; Q25 in collab/QUESTIONS.md decides what is to become of it"
 click_window "$V1"
 check "⌃⌥⇧D reaches Arbor" pressed ctrl+opt+shift+d toggle-pin
 check "it is pinned" eventually is pinned "$V1"
