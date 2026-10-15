@@ -16,6 +16,7 @@
 # It measures; its few checks are about whether the measurement is worth anything. ask-<round>.txt are the raw lists.
 # What it cannot do is press the switch in System Settings, which is the road a person takes.
 source "$(dirname "$0")/lib.sh"
+source "$(dirname "$0")/lib-gestures.sh"
 needs_throwaway_mac "write to the permission database with sudo, restart tccd and reset two bundles' Accessibility permission"
 
 ASKER_ID=com.evbarleyg.arbor.probe-asker
@@ -123,6 +124,8 @@ step "who announced anything (com.apple.accessibility.api, as this script's own 
 cat "$ARBOR_OUT/heard.txt"
 
 step "Arbor itself, as a bundle, launched without the permission; then: written, tccd restarted, announced"
+# This is about the taps, so it asks for them, whatever Arbor ships with. The file stays in the session's home, which every Arbor of this run is given.
+arbor_settings "{$ARBOR_GESTURES_ON}"
 arbor_start 2
 "$ARBOR_BIN/arborctl" quit > /dev/null
 ended "$ARBOR_PID" || die "the session's own Arbor did not quit"

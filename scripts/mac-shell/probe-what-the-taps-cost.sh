@@ -17,6 +17,7 @@
 #
 # It clicks and types for four minutes: hosted Macs only.
 source "$(dirname "$0")/lib.sh"
+source "$(dirname "$0")/lib-gestures.sh"
 needs_throwaway_mac "click, type and scroll twenty times a second for four minutes"
 
 ASKER="$ARBOR_ROOT/.build/mac-shell/asker"
@@ -84,6 +85,8 @@ echo "THE BUILD: $BUILD, after $SECONDS s"
 # The test windows stay for the whole run; only Arbor comes and goes. Nothing is docked, so that they stay where they are whoever runs. The second is in front.
 # A press that missed would land on the wallpaper, at which macOS sweeps every window aside.
 macos_click_wallpaper off
+# This is about the taps, so it asks for them, whatever Arbor ships with. The file stays in the session's home, which every Arbor of this run is given.
+arbor_settings "{$ARBOR_GESTURES_ON}"
 arbor_start 2 ARBOR_NO_HOTKEYS=0
 # where <content|title-bar>: x y, by the window server, which is there in every turn.
 where() {

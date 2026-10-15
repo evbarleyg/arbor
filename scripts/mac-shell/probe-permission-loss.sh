@@ -29,6 +29,7 @@
 # What it does not try: see probe-loss-under-traffic.sh for the taps that are on only at times. The clicks here go through the tap on mouse-downs, which is
 # always on. Arbor runs with ARBOR_NO_PROMPT=1: no window of its own, and no question of macOS's, comes between the clicks and the test window.
 source "$(dirname "$0")/lib.sh"
+source "$(dirname "$0")/lib-gestures.sh"
 needs_throwaway_mac "write to the permission database with sudo, restart tccd and reset a bundle's Accessibility permission"
 
 BUNDLE_ID=com.evbarleyg.arbor.probe-permission-loss
@@ -55,6 +56,8 @@ echo "the tools' own permission: $(pointer ax-access)"
 
 step "the bundle"
 # The test windows come with a session; its Arbor, a child of this shell that shares the shell's permission, makes way for the bundle.
+# This is about the taps, so it asks for them, whatever Arbor ships with. The file stays in the session's home, which every Arbor of this run is given.
+arbor_settings "{$ARBOR_GESTURES_ON}"
 arbor_start 2
 "$ARBOR_BIN/arborctl" quit > /dev/null
 ended "$ARBOR_PID" || die "the session's own Arbor did not quit"

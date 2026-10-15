@@ -15,6 +15,7 @@
 # macOS may ask for a password or Touch ID, which a hosted Mac cannot give. Then this says so, with a picture, and stops: it does not try to get round it.
 # An experiment: it prints what it finds at each step and goes on as far as it gets.
 source "$(dirname "$0")/lib.sh"
+source "$(dirname "$0")/lib-gestures.sh"
 needs_throwaway_mac "write to the permission database with sudo, open System Settings and click switches in Privacy & Security"
 
 ARBOR_ID=com.evbarleyg.arbor.probe-the-switch
@@ -53,6 +54,8 @@ done
 tcc "SELECT count(*) FROM access;" > /dev/null 2>&1 || die "the permission database cannot be read here"
 
 step "the two bundles, granted"
+# This is about the taps, so it asks for them, whatever Arbor ships with. The file stays in the session's home, which every Arbor of this run is given.
+arbor_settings "{$ARBOR_GESTURES_ON}"
 arbor_start 1
 "$ARBOR_BIN/arborctl" quit > /dev/null
 ended "$ARBOR_PID" || die "the session's own Arbor did not quit"

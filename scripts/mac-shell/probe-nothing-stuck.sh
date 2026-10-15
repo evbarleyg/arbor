@@ -19,6 +19,7 @@
 # What a hosted Mac cannot say: whether real keys and buttons are dropped as posted ones are, and whether a real key whose up is lost goes on repeating
 # (the keyboard's repeat is made below where events are posted).
 source "$(dirname "$0")/lib.sh"
+source "$(dirname "$0")/lib-gestures.sh"
 needs_throwaway_mac "write to the permission database with sudo, restart tccd and reset a bundle's Accessibility permission"
 
 ARBOR_ID=com.evbarleyg.arbor.probe-nothing-stuck
@@ -51,6 +52,8 @@ requirement_of() {
 
 step "the bundles"
 # The test windows come with a session; its Arbor, a child of this shell that shares the shell's permission, makes way for the bundle.
+# This is about the taps, so it asks for them, whatever Arbor ships with. The file stays in the session's home, which every Arbor of this run is given.
+arbor_settings "{$ARBOR_GESTURES_ON}"
 arbor_start 1
 "$ARBOR_BIN/arborctl" quit > /dev/null
 ended "$ARBOR_PID" || die "the session's own Arbor did not quit"

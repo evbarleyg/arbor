@@ -11,12 +11,13 @@
 #   round c  the tap on drags and mouse-ups, in the middle of a ⌃⌥-drag: the button down, the band showing. Afterwards the button's release arrives
 #            somewhere, nothing of Arbor's is left on the screen, and the next plain click, drag and key arrive whole.
 # Each round by the roads of `take`, twice (README-permission-probes.md says how to read it). As in the other probe Arbor is a bundle under an identifier of its own, opened by Launch Services; only its
-# entry is taken, and this script's tools keep theirs. The settings are as they ship.
+# entry is taken, and this script's tools keep theirs. Every gesture that needs a tap is asked for (lib-gestures.sh).
 #
 # The bars: no hole longer than a second between the loss and the taps' going, none over 150 ms (three beats of the stream) after it, nothing more than
 # 10 ms late after it, nothing lost after it, nothing stuck. A round that could not post, saw nothing arrive before the loss, or did not have
 # the tap in question switched on at the loss proves nothing: it says INVALID and fails. arrivals-<round>.txt and stream-<round>.txt are the raw lists.
 source "$(dirname "$0")/lib.sh"
+source "$(dirname "$0")/lib-gestures.sh"
 needs_throwaway_mac "write to the permission database with sudo, restart tccd and reset a bundle's Accessibility permission"
 
 BUNDLE_ID=com.evbarleyg.arbor.probe-loss-under-traffic
@@ -45,6 +46,8 @@ tcc "SELECT count(*) FROM access;" > /dev/null 2>&1 || die "the permission datab
 
 step "the bundle"
 # The test windows come with a session; its Arbor, a child of this shell that shares the shell's permission, makes way for the bundle.
+# This is about the taps, so it asks for them, whatever Arbor ships with. The file stays in the session's home, which every Arbor of this run is given.
+arbor_settings "{$ARBOR_GESTURES_ON}"
 arbor_start 2
 "$ARBOR_BIN/arborctl" quit > /dev/null
 ended "$ARBOR_PID" || die "the session's own Arbor did not quit"
@@ -178,7 +181,7 @@ begin() {
   started "$ARBOR_PID"
   eventually status_starts running || { "$ARBOR_BIN/arborctl" status; invalid "Arbor has the permission at launch"; leave; return 1; }
   eventually has_taps || { arbor_taps; invalid "Arbor has its four event taps"; leave; return 1; }
-  for name in gesturesEnabled scrollZoom frameRectangleModifier frameRectangleOnDesktop guardDesktopClicks continuousZoom; do
+  for name in pointerGestures gesturesEnabled scrollZoom frameRectangleModifier frameRectangleOnDesktop guardDesktopClicks continuousZoom; do
     printf '%s ' "$("$ARBOR_BIN/arborctl" get "$name" 2>&1 | head -n 1)"
   done
   echo
