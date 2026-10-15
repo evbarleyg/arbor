@@ -179,6 +179,8 @@ play_many() {
   while [ "$round" -le "$ROUNDS" ]; do
     ctl float-all
     sleep 1.5
+    # On top of the pile, so that the click meets it and no other: the same window fills in every round.
+    [ "$TARGET" != "${W8:-}" ] || tell 8 "front $W8"
     front
     act "$p-$round-arrange" "arranges every window" arrange
     act "$p-$round-fill" "fills the screen with one of them" zoom
@@ -250,6 +252,17 @@ plays() { case " $PLAYS " in *" $1 "*) return 0 ;; esac; return 1; }
 scene ground bare "the bare desk"
 scene_end 0.3
 
+safari_opens() {
+  [ -z "$SAFARI" ] && [ -z "${ARBOR_REHEARSAL:-}" ] || return 0
+  scratch_dir arms-page PAGE_DIR
+  printf '<!doctype html><title>page</title><body style="margin:0;background:#ff8d28"></body>\n' > "$PAGE_DIR/page.html"
+  open_real com.apple.Safari "$PAGE_DIR/page.html" || die "no Safari"
+  SAFARI_PID=$REAL_PIDS
+  SAFARI=${REAL_WINDOWS# }
+  sleep 3
+}
+
+# In this order, so that nothing lies on the desk that is not played: a window that nobody manages would show where the others have left, and hide a hole.
 SAFARI="" SAFARI_PID="" TARGET="" REAL_PIDS="" REAL_WINDOWS=""
 if plays test; then
   for arm in $PLAYED; do
@@ -258,19 +271,18 @@ if plays test; then
   done
 fi
 
-if plays safari || plays apps; then
-  step "Safari, on a page of one colour"
-  if [ -z "${ARBOR_REHEARSAL:-}" ]; then
-    scratch_dir arms-page PAGE_DIR
-    printf '<!doctype html><title>page</title><body style="margin:0;background:#ff8d28"></body>\n' > "$PAGE_DIR/page.html"
-    open_real com.apple.Safari "$PAGE_DIR/page.html" || die "no Safari"
-    SAFARI_PID=$REAL_PIDS
-    SAFARI=${REAL_WINDOWS# }
-    sleep 3
-  fi
+if plays crowd; then
+  display_size 1920 1080
+  for arm in $PLAYED; do
+    step "arm $arm, eight test windows"
+    play_many "$arm" crowd
+  done
+  display_size 1024 768
 fi
 
 if plays safari; then
+  step "Safari, on a page of one colour"
+  safari_opens
   for arm in $PLAYED; do
     step "arm $arm, Safari"
     play "$arm" safari
@@ -288,17 +300,14 @@ if plays safari; then
   fi
 fi
 
-if plays crowd || plays apps; then display_size 1920 1080; fi
-
-if plays crowd; then
-  for arm in $PLAYED; do
-    step "arm $arm, eight test windows"
-    play_many "$arm" crowd
-  done
-fi
-
 if plays apps; then
-  step "five more real apps"
+  step "six real apps, on a ground that no app has"
+  display_size 1920 1080
+  # Black is what a dark window is made of, and grey what a light one is: on either a window could pass for the ground.
+  wallpaper "#ff00c8"
+  scene apps-ground bare "the bare desk"
+  scene_end 0.3
+  safari_opens
   if [ -z "${ARBOR_REHEARSAL:-}" ]; then
     printf 'An oak.\n' > "$PAGE_DIR/oak.txt"
     printf 'return 1\n' > "$PAGE_DIR/one.applescript"
@@ -319,9 +328,9 @@ open(sys.argv[1], "wb").write(b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(
     step "arm $arm, real apps"
     play_many "$arm" apps
   done
+  wallpaper "#000000"
+  display_size 1024 768
 fi
-
-if plays crowd || plays apps; then display_size 1024 768; fi
 
 for pid in $(echo "$REAL_PIDS" | tr ',' ' '); do
   "$FILM_APPTOOL" quit "$pid" > /dev/null 2>&1

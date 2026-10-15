@@ -26,6 +26,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import numpy as np  # noqa: E402
+from PIL import Image  # noqa: E402
 
 from film import Film  # noqa: E402
 from measure import TICK, cause_of  # noqa: E402
@@ -122,7 +123,8 @@ def set_right(film, sequence, samples):
 def many(film, ground, by=24):
     """One act on many windows: {"holes": display frames in which ground shows, over 1% of the room, where there is something both before the act and after it, "worst": the largest such share of the
     room, "empty": display frames with under 1% of the room taken, on a desk that had and has more than 5%, "first", "last": ms after the cause of the first and the last frame in which over 1% of the room
-    changes, "pieces": how many such frames, "wait": the longest wait from the cause to the last of them}. None if nothing changes."""
+    changes, "pieces": how many such frames, "wait": the longest wait from the cause to the last of them, "before", "after": the share of the room that is taken before and after, "early": the frames
+    in which over 1% of the room changes after Arbor's account of the windows was noted and before the cause: there should be none}. None if nothing changes."""
     cause = cause_of(film)[0]
     x, y, w, h = (int(value * film.scale) for value in film.visible)
     room = w * h
@@ -139,7 +141,8 @@ def many(film, ground, by=24):
         return None
     after = taken(after)
     times = [int(time) - cause for time in film.times]
-    found = {"holes": 0, "worst": 0.0, "empty": 0, "first": None, "last": None, "pieces": 0, "wait": 0}
+    found = {"holes": 0, "worst": 0.0, "empty": 0, "first": None, "last": None, "pieces": 0, "wait": 0, "before": float(before.sum()) / room, "after": float(after.sum()) / room, "early": []}
+    noted = [int(time) - cause for time, mark in film.marks if mark.startswith(("before ", "windows before", "action"))]
     previous, shown = None, []
     for index, time, picture, _ in film.frames():
         inside = picture[y:y + h, x:x + w]
@@ -149,13 +152,15 @@ def many(film, ground, by=24):
             share = float((before & after & ~now).sum()) / room
             # The last frame is the end itself; and a state that stays for good is no state on the way.
             if index + 1 < len(times):
+                found["worst"] = max(found["worst"], share)
                 if share > 0.01:
                     found["holes"] += lasts
-                    found["worst"] = max(found["worst"], share)
                 if now.sum() < room / 100 and min(before.sum(), after.sum()) > room / 20:
                     found["empty"] += lasts
             if (np.abs(inside.astype(np.int16) - previous.astype(np.int16)) > by).any(axis=2).sum() > room / 100:
                 shown.append(times[index])
+        elif previous is not None and noted and times[index] >= min(noted) and (np.abs(inside.astype(np.int16) - previous.astype(np.int16)) > by).any(axis=2).sum() > room / 100:
+            found["early"].append(index)
         previous = inside.copy()
     if not shown:
         return None
@@ -183,11 +188,14 @@ def waits(folder, since, until):
 
 def crowd(folder, cast, out=sys.stdout):
     films = os.path.join(folder, "films")
-    bare = os.path.join(films, "ground")
-    if not os.path.isfile(os.path.join(bare, "film.log")):
-        print("arms.py: the run has no film of the bare desk (`ground`)", file=sys.stderr)
+    # Each cast may have a wallpaper of its own, and then a film of the bare desk of its own.
+    bare = next((os.path.join(films, name, "0000.png") for name in (f"{cast}-ground", "ground") if os.path.isfile(os.path.join(films, name, "0000.png"))), None)
+    if bare is None:
+        print(f"arms.py: the run has no film of the bare desk (`{cast}-ground` or `ground`)", file=sys.stderr)
         return 2
-    ground = Film(os.path.join(films, next(name for name in os.listdir(films) if f"-{cast}-" in name))).ground()
+    with Image.open(bare) as image:
+        desk = np.asarray(image.convert("RGB"))
+    ground = tuple(int(value) for value in np.median(desk[desk.shape[0] // 4:desk.shape[0] // 2, desk.shape[1] // 4:3 * desk.shape[1] // 4].reshape(-1, 3), axis=0))
     acts, arms, notes = {}, [], []
 
     def began(name):
@@ -204,6 +212,10 @@ def crowd(folder, cast, out=sys.stdout):
         acts.setdefault(what, {}).setdefault(arm, {})[int(round_)] = said
         if said is None:
             notes.append(f"`{name}`: NOTHING CHANGED")
+        elif said["early"]:
+            notes.append(f"`{name}`: NOT TO BE BELIEVED: over 1% of the room changes in frame {said['early'][0]}, before the cause: the frame's time is wrong, or the scene was not at rest")
+        if film.kind == "told":
+            notes.append(f"`{name}`: by command, no key does it in this arm's map: its times are counted from a mark and are not to be held against an arm that has a key")
         cause = cause_of(film)[0]
         for line in waits(folder, cause - 50, cause + 1500):
             notes.append(f"`{name}`: holes in {said['holes'] if said else '?'} frames; Arbor's log: {line}")
@@ -213,8 +225,17 @@ def crowd(folder, cast, out=sys.stdout):
         values = [("·" if played.get(number) is None else str(played[number][key])) for number in rounds]
         return f"{values[0]}{unit} ‖ " + " ".join(values[1:])
 
-    print(f"The ground: {ground}. Each cell: the first round of the session ‖ the later ones.\n", file=out)
-    for key, title, unit in (("holes", "Display frames with a hole", ""), ("empty", "Display frames with the desk empty", ""), ("pieces", "Frames in which over 1% of the room changes", ""),
+    print(f"The ground: {ground}. Each cell: the first round of the session ‖ the later ones.", file=out)
+    if cast == "apps":
+        print("Real apps draw themselves again after they have arrived, and whatever changes over 1% of the room counts as a change: \"the last of them\" is no window's arriving here, and the mark of 100 ms is held on the test windows alone.", file=out)
+    print(file=out)
+    for by_arm in acts.values():
+        for played in by_arm.values():
+            for said in played.values():
+                if said:
+                    said["percent"], said["taken"] = f"{100 * said['worst']:.1f}", f"{100 * said['before']:.0f}→{100 * said['after']:.0f}"
+    for key, title, unit in (("holes", "Display frames with a hole", ""), ("percent", "The largest hole, % of the room, however small", ""), ("empty", "Display frames with the desk empty", ""),
+                             ("taken", "Of the room, % taken before → after: a window that passes for the ground would show here", ""), ("pieces", "Frames in which over 1% of the room changes", ""),
                              ("last", "The last of them, ms after the cause", ""), ("wait", "The longest wait up to it, ms", "")):
         print(f"**{title}**\n\n| Act | " + " | ".join(arms) + " |\n|---|" + "---|" * len(arms), file=out)
         for what, by_arm in acts.items():
@@ -329,7 +350,7 @@ def self_test():
     print(f"{'✔' if right else '✘'} what lies in neither of two boxes")
     failures += drawn()
     failures += drawn_many()
-    print(f"{len(cases) + 3 - failures} of {len(cases) + 3} as they should be")
+    print(f"{len(cases) + 4 - failures} of {len(cases) + 4} as they should be")
     return 1 if failures else 0
 
 
@@ -384,17 +405,18 @@ def drawn_many():
     grid = {(255, 56, 60): (12, 42, 494, 321), (0, 136, 255): (12, 375, 494, 321), (52, 199, 89): (518, 42, 494, 321), (255, 141, 40): (518, 375, 494, 321)}
     red = (255, 56, 60)
 
-    def picture(places):
+    def picture(places, ground=(0, 0, 0)):
         frame = np.zeros((768, 1024, 3), dtype=np.uint8)
+        frame[30:708] = ground
         frame[:30] = (230, 230, 230)
         frame[712:760, 300:700] = (70, 70, 74)
         for colour, (x, y, w, h) in places.items():
             frame[y:y + h, x:x + w] = colour
         return frame
 
-    def shoot(folder, states, later):
-        lines = [(began + 1, "M kind instant"), (began + 700, "M action"), (key, "K down"), (key + 40, "K up")]
-        write_film(folder, [picture(places) for _, places in states], [time + later for time, _ in states], [(time + later, line) for time, line in lines], visible=[0, 30, 1024, 678])
+    def shoot(folder, states, later, ground=(0, 0, 0), kind="instant"):
+        lines = [(began + 1, f"M kind {kind}"), (began + 700, "M action")] + ([(key, "K down"), (key + 40, "K up")] if kind == "instant" else [])
+        write_film(folder, [picture(places, ground) for _, places in states], [time + later for time, _ in states], [(time + later, line) for time, line in lines], visible=[0, 30, 1024, 678])
 
     full = {red: (12, 42, 1000, 654)}
     with tempfile.TemporaryDirectory() as folder:
@@ -409,15 +431,72 @@ def drawn_many():
         stamp = datetime.datetime.fromtimestamp((key + 30_060) / 1000, datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
         with open(os.path.join(folder, "arbor-films-arms.log"), "w", encoding="utf-8") as log:
             log.write(f"{stamp} INFO  waited 12 ms, 3 looks, for 1 windows to be listed as they answered\n")
-        said = io.StringIO()
+            # And one that belongs to no film: five seconds after the last.
+            late = datetime.datetime.fromtimestamp((key + 46_000) / 1000, datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+            log.write(f"{late} INFO  waited 50 ms, 9 looks, for 2 windows to be listed as they answered; not yet: w3\n")
+        # Another cast, on a wallpaper of its own, with a film of its own of the bare desk.
+        shoot(os.path.join(films, "apps-ground"), [(began, {})], 50_000, (240, 20, 190))
+        shoot(os.path.join(films, "dirty-apps-1-fill"), [(began, grid), (key + 50, {red: grid[red]}), (key + 83, full), (key + 1500, {**full, (90, 90, 90): (1000, 690, 2, 2)})], 60_000, (240, 20, 190), "told")
+        said, other = io.StringIO(), io.StringIO()
         crowd(folder, "crowd", said)
+        crowd(folder, "apps", other)
     wanted = ("| fill | 0 ‖ 0 | 2 ‖ 3 |", "| fill: frames with a hole; the largest hole, of the room | 0; 0% | 5; ", "| fill: first change to last, the longest | 0 ms | 50 ms |",
               "`dirty-crowd-1-fill`: holes in 2 frames; Arbor's log: waited 12 ms, 3 looks, for 1 windows to be listed as they answered")
     text = said.getvalue()
     empty = text[text.index("desk empty"):].split("\n")[4]
     missing = [line for line in wanted if line not in text] + ([] if empty == "| fill | 0 ‖ 0 | 0 ‖ 3 |" else [f"the desk empty: {empty}"])
+    if "The ground: (240, 20, 190)" not in other.getvalue() or "| fill | 2 ‖  |" not in other.getvalue() or "held on the test windows alone" not in other.getvalue() \
+            or "`dirty-apps-1-fill`: by command" not in other.getvalue() or "by command" in said.getvalue():
+        missing.append("the cast with a ground of its own: " + other.getvalue()[:400])
+    # The line of the log belongs to one film, not to its neighbours ten seconds off.
+    if text.count("Arbor's log:") != 1:
+        missing.append(f"the log's line beside one film: it stands beside {text.count(chr(39) + 's log:')}")
     print(f"{'✘' if missing else '✔'} two drawn arms with many windows through the table" + "".join(f"\n    not said: {line}" for line in missing) + (("\n" + text) if missing else ""))
-    return 1 if missing else 0
+
+    # One act at a time, on a ground that is not black: what must be counted and what must not.
+    pink = (240, 20, 190)
+    blue, green = (0, 136, 255), (52, 199, 89)
+    small = {**grid, red: (12, 42, 300, 190)}
+    # The room is 1024 by 678: a hundredth of it is 6,943 pixels.
+    cases = {
+        "at once": ([(began, grid), (key + 50, full)], {"holes": 0, "empty": 0, "pieces": 1, "first": 50, "last": 50, "wait": 50, "early": []}),
+        "ground left bare for good is no hole": ([(began, grid), (key + 50, small), (key + 67, {**small, blue: (12, 375, 300, 190)})], {"holes": 0, "pieces": 2, "wait": 50}),
+        "ground that is covered only afterwards is no hole": ([(began, {red: grid[red]}), (key + 50, {red: grid[red], blue: grid[blue]}), (key + 100, grid)], {"holes": 0, "pieces": 2, "last": 100}),
+        "a hole of under a hundredth is printed and not counted": ([(began, grid), (key + 50, {**grid, pink: (100, 100, 100, 60)}), (key + 350, {**grid, green: (518, 42, 494, 300)})], {"holes": 0, "percent": 0.9}),
+        "a hole of three hundredths for a frame": ([(began, grid), (key + 50, {**grid, pink: (100, 100, 200, 104)}), (key + 67, {**grid, green: (518, 42, 494, 300)})], {"holes": 1, "percent": 3.0}),
+        "a change of half a hundredth is no piece": ([(began, grid), (key + 50, full), (key + 400, {**full, (60, 60, 64): (400, 600, 90, 38)})], {"pieces": 1, "last": 50}),
+        "a long wait between two pieces": ([(began, grid), (key + 40, {red: grid[red], blue: grid[blue]}), (key + 340, full)], {"wait": 300, "holes": 18, "pieces": 2}),
+        "a frame that changes before its cause": ([(began, grid), (key - 150, {red: grid[red]}), (key + 50, full)], {"early": [1]}),
+        "nothing but a few dots on the desk is an empty desk": ([(began, grid), (key + 50, {blue: (500, 300, 60, 60)}), (key + 100, grid.copy() | {green: (518, 42, 494, 300)})], {"empty": 3}),
+        "a twentieth of the room taken is no empty desk": ([(began, grid), (key + 50, {blue: (400, 300, 200, 175)}), (key + 100, grid.copy() | {green: (518, 42, 494, 300)})], {"empty": 0}),
+        "a window sixty levels from the ground is a window": ([(began, {**grid, (180, 20, 190): grid[red]}), (key + 50, {colour: rect for colour, rect in grid.items() if colour != red}), (key + 67, {**grid, (180, 20, 190): grid[red], green: (518, 42, 494, 300)})],
+                                                              {"holes": 1}),
+        "ground five levels off is ground": ([(began, grid), (key + 50, {**grid, (235, 25, 185): grid[red]}), (key + 67, {**grid, green: (518, 42, 494, 300)})], {"holes": 1}),
+        "how things stood is the last frame before the cause, not the first": ([(began, {}), (began + 100, grid), (key + 50, {red: grid[red]}), (key + 83, full)], {"holes": 2, "early": []}),
+        "a desk that was all but empty before is not emptied": ([(began, {blue: (500, 300, 100, 100)}), (key + 50, {}), (key + 100, grid)], {"empty": 0}),
+    }
+    wrong = []
+    with tempfile.TemporaryDirectory() as folder:
+        for name, (states, wanted) in cases.items():
+            states = states + [(key + 1500, {**states[-1][1], (90, 90, 90): (1000, 690, 2, 2)})]
+            lines = [(began + 1, "M kind instant"), (began + 200, "M windows before"), (began + 700, "M action"), (key, "K down"), (key + 40, "K up")]
+            frames = []
+            for _, places in states:
+                frame = picture({})
+                frame[30:708] = pink
+                for colour, (x, y, w, h) in places.items():
+                    frame[y:y + h, x:x + w] = colour
+                frames.append(frame)
+            write_film(os.path.join(folder, "film"), frames, [time for time, _ in states], lines, visible=[0, 30, 1024, 678])
+            got = many(Film(os.path.join(folder, "film")), pink)
+            got["percent"] = round(100 * got["worst"], 1)
+            off = {what: got[what] for what, value in wanted.items() if got[what] != value}
+            if off:
+                wrong.append(f"{name}: {off}, wanted {wanted}")
+            for file in os.listdir(os.path.join(folder, "film")):
+                os.remove(os.path.join(folder, "film", file))
+    print(f"{'✘' if wrong else '✔'} {len(cases)} acts on many windows, one at a time, on a ground that is not black" + "".join(f"\n    {line}" for line in wrong))
+    return (1 if missing else 0) + (1 if wrong else 0)
 
 
 def main(arguments):
