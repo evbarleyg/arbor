@@ -2,7 +2,8 @@ import ArborTesting
 import Foundation
 
 // arbor-sim bench [sizes…]: what everyday commands cost, counted and timed on desks of 4, 10 and 30
-// windows (or the sizes given), then the pure parts on nested trees of 10, 50 and 150.
+// windows (or the sizes given), then what else each command asks of the window system, then the pure parts on nested trees of
+// 10, 50 and 150.
 //
 // The counts are what makes a command slow on a Mac, where each move is several round trips to the
 // window's app; the times are Arbor's own work, since the fake window system answers at once.
@@ -37,6 +38,18 @@ func runBenchmarks(_ arguments: [String]) {
     }
     print("")
   }
+
+  // On one desk: these counts hardly depend on its size.
+  let desk = desks.contains(10) ? 10 : desks[0]
+  let asked = BenchmarkCase.all.map { (name: $0.name, questions: $0.run(windows: desk, repetitions: 1).budget.asked) }
+  let names = Budget.windowListQuestions + Set(asked.flatMap(\.questions.keys)).subtracting(Budget.windowListQuestions).sorted()
+  print("what else is asked, \(desk) windows (the first three have the window server list every window)")
+  print("  \("command".padding(toLength: 24, withPad: " ", startingAt: 0))" + names.map { pad(String($0.prefix(14)), 15) }.joined())
+  for (name, questions) in asked {
+    print(
+      "  \(name.padding(toLength: 24, withPad: " ", startingAt: 0))" + names.map { pad(String(questions[$0, default: 0]), 15) }.joined())
+  }
+  print("")
 
   print("the pure parts, µs" + trees.map { pad("\($0)", 9) }.joined())
   let columns = trees.map { CoreBenchmark.run(windows: $0) }

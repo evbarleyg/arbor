@@ -3053,23 +3053,31 @@
       "area": "Arbor only",
       "title": "What commands cost is counted, pinned and shown",
       "trellis": "",
-      "arbor": "Budgets for every everyday command, pinned by tests; `arborctl stats` says what commands cost on this Mac",
+      "arbor": "Budgets for every everyday command, pinned by tests; `arborctl stats` says what commands cost on the Mac at hand",
       "status": "shipped",
       "priority": 2,
       "tests": [
         "aCameraMoveMakesNoDockedWindowWaitForAnother",
         "aCameraMoveTouchesEachWindowOnce",
+        "aCommandHasTheWindowServerListItsWindowsOnceAtMost",
+        "aDropThatIsOnlyTriedOutForetellsNothing",
+        "aLayoutReckonedAgainSendsNoFloatingWindowAnywhereTwice",
+        "aMoveAheadOfARequestThatNeverComesBreaksARule",
+        "aWindowThatHasAnsweredWhereItBelongsIsNotForetold",
         "anAppWithManyWindowsHidesAndShowsInOneLayout",
         "commandsAndLayoutsAreCounted",
         "commandsThatChangeNothingMoveAndSaveNothing",
         "everyCommandIsQuickOnABigDesk",
         "goingAwayAndComingBackMakesNothingNew",
         "nothingForetoldGoesUnclaimed",
+        "nothingForetoldGoesUnclaimedWhereWindowsShrinkOutOfView",
         "nothingIsDoneTwiceOrForNothing",
         "nothingIsEverInTwoPlaces",
+        "onRandomWalksTakingTheHintChangesNothingEither",
         "takingTheHintChangesNothingButTheCost",
         "theListOfKnownWasteIsCurrent",
-        "theStateIsWrittenOnlyWhenItChanged"
+        "theStateIsWrittenOnlyWhenItChanged",
+        "whatMayAskForMoreListsDoes"
       ]
     },
     {

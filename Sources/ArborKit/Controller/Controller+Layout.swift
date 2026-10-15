@@ -163,7 +163,7 @@ extension Controller {
     }
     // All that was foretold has been asked for by now, and this foretells anew.
     let moves = unknown.compactMap { window, slot, _ in
-      windows[window].flatMap { isStillToBePlaced($0, in: slot) ? (window: window, frame: request(for: $0, in: slot)) : nil }
+      windows[window].flatMap { whatPlaceAsksFirst(of: $0, in: slot) }.map { (window: window, frame: $0) }
     }
     if moves.count > 1 { system.moveTogether(moves) }
     // Whatever it answered: a window that is part of the layout is in its slot when the layout has been applied.
@@ -363,13 +363,18 @@ extension Controller {
   /// showing. A change of the arrangement (something else minimized, a seam, a dock) can turn the Desktop into
   /// a tile and back, and must not make the window someone is typing in shrink or vanish. Nor must a command that
   /// leaves the camera where it is (`home` at home, `back` to the same space): it changes nothing a person can see.
-  func placeFloatingWindows(on displayID: DisplayID, layout: Layout, reason: RelayoutReason) {
+  ///
+  /// `foretelling`: whether the window system is told ahead what is about to be asked of it (Controller+Together.swift).
+  func placeFloatingWindows(on displayID: DisplayID, layout: Layout, reason: RelayoutReason, foretelling: Bool = true) {
     workspaces[displayID]?.dropGuestsThatLeft()
     guard let workspace = workspaces[displayID], let display = display(displayID) else { return }
     letGoOfWindowsNoLongerInHand(on: displayID)
     // Paid with this layout, or owed again because the app has stopped answering again (`unplaced`).
     defer { owedMoves = owedMoves.filter { !workspace.contains($0) } }
-    for (window, move) in floatingMoves(on: displayID, layout: layout, reason: reason) {
+    let plan = floatingMoves(on: displayID, layout: layout, reason: reason)
+    // From the very plan that is walked below, so that nothing is foretold that is not asked for (Controller+Together.swift).
+    if foretelling { system.moveTogether(movesInSight(in: plan, on: display, reason: reason)) }
+    for (window, move) in plan {
       if case .fill(let desktop) = move {
         fill(desktop, with: window, on: display)
         continue

@@ -185,7 +185,8 @@ arrive first.
 `pull <id> <edge> <points>` drags a window's edge with the mouse (positive
 grows the window; give two edges for a corner): `pull 101 right 100 down 80`.
 
-`arbor-sim bench [sizes…]` prints those budgets and the time each command takes, then times for the pure parts
+`arbor-sim bench [sizes…]` prints those budgets and the time each command takes, then what else each command asks of the window
+system (`Budget.asked`; the first three columns have the window server list every window on the Mac), then times for the pure parts
 (layout, navigation, drop targets, encoding the state) on nested trees of 10, 50 and 150 windows. Build it with
 `swift build -c release --product arbor-sim` for times worth quoting.
 `press <command>` runs a command as its shortcut would (`press dock left`), so that Arbor answers on screen as well; whatever it
@@ -1289,7 +1290,7 @@ windows are out of view; nothing Arbor placed is lost beyond the displays; overl
 preview without a drag; one focus ring, around the window that has the keyboard; a floating window in view goes out of view only
 when the camera moves; a pinned window is always in view; Go to… is open only while Arbor runs, on a display that is there and with nothing being
 dragged, and the window chosen in it has the keyboard and is in view; a saved slot that waits for its window is in a tree and has a timer that ends the
-wait; Arbor gives up only on windows that something keeps moving; only known timers, and they run dry; windows Arbor does not arrange are never moved;
+wait; Arbor gives up only on windows that something keeps moving; only known timers, and they run dry; windows Arbor does not arrange are never moved; no window is moved ahead (`moveTogether`) of a request that never comes;
 `state` and state.json survive JSON; after `quit` or `pause` everything is back in view; a restart keeps the shape of every tree).
 
 **Running it**
@@ -1369,7 +1370,7 @@ whether the last move was Arbor's at all.
 
 **In `make check` a script nobody knows is reported, not failed on** (a "known issue" in the test's output, with the script and "send this to the
 chaos lab"), until hunts find fewer than one in 2000 seeds: any change to the controller leads the forty seeds down other paths, and whoever passes by should not have to
-pay for a bug that was there. What does fail: `aKnownFailureStillFails`, the regression tests, the harness's own tests, and a crash or a hang. Hunts, and `ARBOR_CHAOS_STRICT=1`, fail on everything.
+pay for a bug that was there. What does fail: `aKnownFailureStillFails`, the regression tests, the harness's own tests, a crash or a hang, and `onRandomWalksTakingTheHintChangesNothingEither` (`MoveTogetherTests`: the same walks on two Macs, one of which ignores `moveTogether`; over 3000 walks found no difference). Hunts, and `ARBOR_CHAOS_STRICT=1`, fail on everything.
 
 **When it fails** it prints the seed, the rule, the window or node, and the smallest script that still breaks the same rule
 (found by deleting actions: delta debugging). Decide whether the controller or the rule is wrong (read the

@@ -35,6 +35,30 @@ import Testing
     }
   }
 
+  /// `stackedWindows`, `windowsFrontToBack` and `existingWindowIDs` each have the window server list every window on the
+  /// Mac, Arbor's or not: milliseconds, on the main thread. The stage needs one list for a motion. Nothing needs two.
+  @Test(arguments: sizes) func aCommandHasTheWindowServerListItsWindowsOnceAtMost(windows: Int) {
+    for benchmark in BenchmarkCase.all {
+      let budget = benchmark.run(windows: windows).budget
+      #expect(
+        budget.windowLists <= Self.moreWindowLists[benchmark.name, default: 1], "\(benchmark.name) with \(windows) windows: \(budget)")
+    }
+    for name in ["seam step", "grid: seam step", "focus in view", "put back", "relayout", "echoes", "zoom again"] {
+      #expect(BenchmarkCase.named(name).run(windows: windows).budget.windowLists == 0, "\(name)")
+    }
+  }
+
+  /// An app that quits is a layout, and a motion, per window that closes. A start asks what still exists, twice.
+  static let moreWindowLists = ["quit app": 2, "restart": 2]
+
+  /// Like the list of known waste: leave that nobody takes any more would hide the next list too many.
+  @Test func whatMayAskForMoreListsDoes() {
+    for (name, most) in Self.moreWindowLists.sorted(by: { $0.key < $1.key }) {
+      let lists = Self.sizes.map { BenchmarkCase.named(name).run(windows: $0).budget.windowLists }
+      #expect(lists.max() == most, "\(name) may ask for \(most) and asks for \(lists)")
+    }
+  }
+
   @Test(arguments: sizes) func commandsThatChangeNothingMoveAndSaveNothing(windows: Int) {
     for name in ["zoom again", "show-all again", "relayout", "displays: no change"] {
       let budget = BenchmarkCase.named(name).run(windows: windows).budget

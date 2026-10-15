@@ -167,4 +167,17 @@ private let steps = environment("ARBOR_CHAOS_STEPS") ?? 200
     let text = "\(ChaosFailure(seed: 9, violations: violations, script: world.script))"
     #expect(text.contains("seed 9") && text.contains("w101") && text.contains("    dock 101 left"))
   }
+
+  /// The rule about forecasts can fail, for what the last forecast left and for what an earlier one had left when the next came.
+  @Test func aMoveAheadOfARequestThatNeverComesBreaksARule() {
+    let world = ChaosRunner()
+    for line in ["open 101 Safari pid 1000 at 100 100 600 400", "open 102 Notes pid 1001 at 300 200 600 400", "launch", "dock 101 left"] {
+      #expect(world.step(ChaosAction(text: line)).isEmpty)
+    }
+    world.system.moveTogether([(WindowID(102), CGRect(x: 760, y: 300, width: 300, height: 200))])
+    #expect(world.step(.cursor(CGPoint(x: 5, y: 5))).contains { $0.rule == "forecast" && $0.message.contains("w102") })
+    // The next layout's forecast drops it, which is when Arbor hears where the window went.
+    #expect(world.step(.command("relayout")).contains { $0.rule == "forecast" && $0.message.contains("w102") })
+    #expect(!world.step(.command("relayout")).contains { $0.rule == "forecast" })
+  }
 }

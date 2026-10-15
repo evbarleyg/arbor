@@ -48,14 +48,16 @@ extension ChaosRunner {
     if staleSinceADrop {
       for index in inside.indices where inside[index].rule == "stale-layout" { inside[index].rule = "stale-layout-after-drop" }
     }
+    var problems: [InvariantViolation] = []
+    // Also after a step that ends with Arbor paused or gone: the layouts before that end foretell like any other.
+    forecastViolations(&problems)
     guard isRunning else {
       // Quitting and pausing move more windows at once than anything else, each of them once.
-      var jolts: [InvariantViolation] = []
-      onceViolations(after: action, &jolts)
-      afterQuitViolations(after: action, &jolts)
-      return inside + jolts + (harness.overlays.finder == nil ? [] : [.init("palette", "Go to… is open and Arbor is paused or not running")])
+      onceViolations(after: action, &problems)
+      afterQuitViolations(after: action, &problems)
+      return inside + problems
+        + (harness.overlays.finder == nil ? [] : [.init("palette", "Go to… is open and Arbor is paused or not running")])
     }
-    var problems: [InvariantViolation] = []
     mirrorViolations(&problems)
     paletteViolations(after: action, &problems)
     // With `reflowWhileDragging` the other windows and the overlays try out the drop while the window is in the air (F09).
@@ -104,6 +106,14 @@ extension ChaosRunner {
   }
 
   // MARK: Rules
+
+  /// A move foretold with `moveTogether` is a move made. One that no `setFrame` asks for afterwards has taken a window where
+  /// nobody meant it to be (Controller+Together.swift), whether or not a later layout happens to fetch it.
+  func forecastViolations(_ problems: inout [InvariantViolation]) {
+    for window in system.forecastsNobodyClaimed[forecastsUnclaimedBefore...] + system.answersAhead.keys.sorted() {
+      problems.append(.init("forecast", "\(window) was moved ahead of a request that never came"))
+    }
+  }
 
   /// The controller's picture of the windows and displays is the window system's.
   func mirrorViolations(_ problems: inout [InvariantViolation]) {

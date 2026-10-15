@@ -82,7 +82,7 @@ extension FakeWindowSystem {
     id: WindowID, app: String, bundleID: String?, title: String, pid: Int32, frame: CGRect,
     minimumSize: CGSize = .zero, maximumSize: CGSize? = nil, behaviour: Behaviour = .normal
   ) {
-    guard !existingWindowIDs().contains(id) else { return }
+    guard !numbersInUse().contains(id) else { return }
     nextID = max(nextID, id.rawValue &+ 1)
     let snapshot = WindowSnapshot(id: id, pid: pid, bundleID: bundleID, appName: app, title: title, frame: frame)
     windows[id] = FakeWindow(
@@ -106,7 +106,7 @@ extension FakeWindowSystem {
   /// Gives a window a new number without telling anyone, as restarting its app (or the Mac) does
   /// between two runs of Arbor. Nothing happens if the new number is taken.
   public func renumber(_ window: WindowID, as new: WindowID) {
-    guard !existingWindowIDs().contains(new), var fake = windows.removeValue(forKey: window) else { return }
+    guard !numbersInUse().contains(new), var fake = windows.removeValue(forKey: window) else { return }
     fake.snapshot.id = new
     windows[new] = fake
     nextID = max(nextID, new.rawValue &+ 1)
@@ -148,7 +148,7 @@ extension FakeWindowSystem {
 
   /// `openTab(in:)` under a number of the caller's choice (nothing happens if it is taken).
   public func openTab(id: WindowID, in window: WindowID) {
-    guard !existingWindowIDs().contains(id), backgroundTabs[id] == nil, windows[window] != nil else { return }
+    guard !numbersInUse().contains(id), backgroundTabs[id] == nil, windows[window] != nil else { return }
     nextID = id.rawValue
     let front = windows[window]
     openTab(in: window)

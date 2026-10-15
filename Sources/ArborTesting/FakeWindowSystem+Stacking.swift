@@ -12,6 +12,11 @@ extension FakeWindowSystem {
   /// Focusing or raising a window brings it to the front. Windows that never were lie behind the
   /// ones that were, newest in front, as they do when apps open them one after another.
   public func windowsFrontToBack() -> [WindowID] {
+    asked["windowsFrontToBack", default: 0] += 1
+    return frontToBack()
+  }
+
+  func frontToBack() -> [WindowID] {
     guard !stackingIsUnknown else { return [] }
     let front = raised.filter { windows[$0] != nil }
     return front + windows.keys.filter { !front.contains($0) }.sorted(by: >)

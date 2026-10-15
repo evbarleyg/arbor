@@ -50,7 +50,13 @@ public struct Workload {
           groups.append([id])
         }
       }
-      for group in groups { Self.dock(group, in: &workspace) }
+      // The same every time, and in a debug build the longest part of making a big desk: a benchmark makes hundreds.
+      if let built = Self.builtWorkspaces[count] {
+        workspace = built
+      } else {
+        for group in groups { Self.dock(group, in: &workspace) }
+        Self.builtWorkspaces[count] = workspace
+      }
       // Known to the arrangement like the rest: a window it does not know opened while Arbor was not looking, and
       // stays in view whatever the view shows.
       for id in floating { workspace.floating[id] = Self.openingFrame(Int(id.rawValue) - 101) }
@@ -83,6 +89,9 @@ public struct Workload {
     self.groups = groups
     self.floating = floating
   }
+
+  /// The groups of a desk of so many windows, docked.
+  private static var builtWorkspaces: [Int: Workspace] = [:]
 
   /// Where the window with this index is before Arbor starts.
   private static func openingFrame(_ index: Int) -> CGRect {
