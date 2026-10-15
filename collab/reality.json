@@ -2219,7 +2219,7 @@
    "kind": "late-or-partial-answer",
    "layer": "below the seam",
    "expected": "A call to another app returns promptly. In the stand-ins a hung app's `setFrame` returns nil at once, so a hang costs no time.",
-   "happened": "Accessibility calls are synchronous on the main thread and wait for the app, up to the timeout of 1 s. Moving one window takes four to six calls. A hung app with three docked windows stopped Arbor for 19.5 s at every layout, and 8.8 s were measured for one window. Shortcuts, the menu and the socket were dead meanwhile, and events that were stuck arrived twenty seconds old, after later clicks. Today the first call to an app that has just hung still costs about a second (1.1 s on stopped test windows; 1.06 s, on the main thread, in a later script on a hosted Mac, where the stand-in's hung app answers nil at once).",
+   "happened": "Accessibility calls are synchronous on the main thread and wait for the app, up to the timeout of 1 s. Moving one window takes four to six calls. A hung app with three docked windows stopped Arbor for 19.5 s at every layout, and 8.8 s were measured for one window. Shortcuts, the menu and the socket were dead meanwhile, and events that were stuck arrived twenty seconds old, after later clicks. Today the first call to an app that has just hung still costs about a second (1.1 s on stopped test windows; 1.06 s, on the main thread, in a later script on a hosted Mac, where the stand-in's hung app answers nil at once). An app that is only busy costs otherwise. On a hosted Mac (macOS 26.6.2), on a build that gives each app a lane of its own and is not on the trunk yet, a test app that works 700 ms and attends 30 ms made no lane late: Arbor's main thread blocks on a read to it, returns the moment the app attends, and the moves that follow are all served within those 30 ms (38 calls, 28 ms). Blocking brings the two into step. What costs is the main thread's reads at notifications: `AXFullScreen` 1,004 ms at worst, `AXFocusedWindow` 660 ms.",
    "found": "A review of the Accessibility layer, and a measuring run of scripts/mac-shell/perf.sh with a test app stopped by a signal on a Mac. The real-window runner has its test app hang for six seconds while the view moves.",
    "modelled": "partly",
    "knobs": [
@@ -3837,7 +3837,7 @@
    "kind": "second-actor",
    "layer": "at the seam",
    "expected": "A window that moves without Arbor's doing was moved by its user. The controller hears that the displays changed, then of the moves macOS makes because of it. The stand-in's plain change of displays moves no window at all, which no Mac does.",
-   "happened": "When a display goes, macOS moves its windows onto the displays that remain at once. The Accessibility layer holds its report of the displays back until 1.5 s after the last of several notices, so the windows' own reports reach the controller first; it was feared that they are judged by the old displays. Taken for the person's own moves, they gave floating and pinned windows a new home, which did not go back with their display, and docked windows were sent to where no display was. After a display that only blinked there is no report at all, so nothing put the windows back. **Recorded since** (17 traces, one virtual display on a hosted Mac). A display comes: the active Space changes at 0.139 s, the screens' word at 0.178, all five windows' moves and resizes at 0.299 to 0.304, within 5 ms of one another, and Arbor's `displaysChanged` at 1.827. It goes: the word at 0.105, the windows one after another from 0.122 to 0.218, a second word at 0.215 in the midst of them, `displaysChanged` at 1.770. In all: the screens' word first; the windows 20 to 150 ms after it, within 5 to 100 ms of one another; all before the controller hears `displaysChanged`, 1.65 s after the word, which is Arbor's own wait; and every such report reaches the controller as a hand's. But macOS's own list of displays is already the new one at the first window's report, in all 17, so `Controller.knowsTheDisplays` sees that it does not know them and turns those reports away. That is none of the stand-ins' three guesses as they stand: their \"windows first\" reports while the stand-in's list is still the old one, which no recording has; what it finds beyond the recorded order (a shift made twice, a hop, a wrong display) is the lab's alone until a real cable, dock or lid says otherwise. Windows that never speak were not seen. What else macOS does then: macos-puts-windows-back-on-a-display-that-returns.",
+   "happened": "When a display goes, macOS moves its windows onto the displays that remain at once. The Accessibility layer holds its report of the displays back until 1.5 s after the last of several notices, so the windows' own reports reach the controller first; it was feared that they are judged by the old displays. Taken for the person's own moves, they gave floating and pinned windows a new home, which did not go back with their display, and docked windows were sent to where no display was. After a display that only blinked there is no report at all, so nothing put the windows back. **Recorded since** (17 traces, one virtual display on a hosted Mac). A display comes: the active Space changes at 0.139 s, the screens' word at 0.178, all five windows' moves and resizes at 0.299 to 0.304, within 5 ms of one another, and Arbor's `displaysChanged` at 1.827. It goes: the word at 0.105, the windows one after another from 0.122 to 0.218, a second word at 0.215 in the midst of them, `displaysChanged` at 1.770. In all: the screens' word first; the windows 20 to 150 ms after it, within 5 to 100 ms of one another; all before the controller hears `displaysChanged`, 1.65 s after the word, which is Arbor's own wait; and every such report reaches the controller as a hand's. But macOS's own list of displays is already the new one at the first window's report, in all 17, so `Controller.knowsTheDisplays` sees that it does not know them and turns those reports away. That is none of the stand-ins' three guesses as they stand: their \"windows first\" reports while the stand-in's list is still the old one, which no recording has; what it finds beyond the recorded order (a shift made twice, a hop, a wrong display) is the lab's alone until a real cable, dock or lid says otherwise. Windows that never speak were not seen. What else macOS does then: macos-puts-windows-back-on-a-display-that-returns. **A second recording**, by a session that did not know of the first: macOS's raw notice at 55.286 s, fourteen reports of a changed window, each as a hand's, from 55.302 to 55.373, and the settled report of the displays at 57.199.",
    "found": "Reading the Accessibility layer and the controller side by side, then rehearsals of two check scripts on the fake Mac and the chaos lab. On a hosted Mac plugging in the virtual display was seen to shuffle the windows. Then traces of each change, recorded by the script for two displays on a hosted Mac; they are to be committed. A real unplug has never been tried.",
    "modelled": "partly",
    "knobs": [
@@ -5690,7 +5690,7 @@
    "kind": "identity",
    "layer": "test",
    "expected": "Real-window tests exercise what real apps do.",
-   "happened": "The test windows come from a bare executable, which has no bundle id, so rules cannot be tried on real windows. They all belong to one app, so minimizing one gives the keyboard to the next.",
+   "happened": "The test windows come from a bare executable, which has no bundle id, so rules cannot be tried on real windows. They all belong to one app, so minimizing one gives the keyboard to the next. That is not the whole of it. In a script played on hosted Macs and in a rehearsal and compared line by line, 17 differences were put down to \"the real test app has none\", and that cause is withdrawn: on hosted Macs Arbor sometimes has a bundle id for the test apps and sometimes not. Why is open; an early nil that is kept for good would be a fault of Arbor's, and is a guess.",
    "found": "Real-window runs on a hosted Mac.",
    "modelled": "cannot",
    "knobs": [],
@@ -6319,7 +6319,7 @@
    "kind": "permissions",
    "layer": "below the seam",
    "expected": "Taking the permission away only disables Arbor, and its event taps are harmless until Arbor removes them.",
-   "happened": "With Arbor's event taps in and the right to tap withdrawn, the first event that matches a tap that is switched on is dropped, and from then until Arbor has removed its taps every event of every kind is dropped, for the whole Mac: clicks, keys, the wheel, also kinds that match no tap that is switched on. Lost, not late. **How often.** The first table, fourteen valid rounds: with nobody running nothing was lost (three rounds); with Arbor and no taps 0 of 3,400 events; with Arbor and its taps events were lost in 9 of 10 rounds, on all three roads: the row deleted and the daemon killed, in silence (95, 15, 5 and 65 events, and 10 of 1,360 key events in an older table); the same, and announced (5, 0); `tccutil reset` (90, 95, 5). Eight more rounds by `tccutil` since: 85, 10, 90, 100, 10, 10, 115, 55. Its holes were 994, 1,046, 126, 955, 218, 1,002, 1,091, 135, 194, 1,248 and 612 ms, the longest a second and the timer's tolerance; the shortest on any road 85. The controls stand at 0 lost in eight rounds with nobody and in three with Arbor without taps. **How long.** A hole ends 30 to 100 ms after Arbor's line in the log: its length is the wait for the next tick of `PointerInput.checkPermission`, a timer of one second. Arbor's main thread, looked at every 5 ms from the deed on, was idle in 998 of 1,005, 1,017 of 1,020 and 822 of 834 looks: nothing stalls. After the taps have gone nothing is lost. **Where it begins.** Not at the withdrawal: at the first event that matches a switched-on tap. Sixteen valid rounds on `tccutil`'s road: in all eleven with a loss the first event lost is a mouse-down, and what was posted between the deed and that press arrived, once 772 ms after the deed. Three rounds with Arbor lost nothing, because its tick came first. So whoever only types loses nothing until the next press or gesture. **Nothing stays stuck**, 16 rounds of 16, but each kind goes its own way after an up was lost whose down had arrived. A key is held to be down, by the window server's key state and by the app, for 6.8 to 6.9 s in the probe: it is put right by its own next press and release and by nothing before that, not silence, a move, a notch or a click. A modifier (⇧: key state, flags and AppKit's flags alike) stayed on for 3.2 to 3.4 s, which was the silence: it is put right by the next event of any kind, and not by itself. The button never sticks, its down being the first thing lost; an up without its down was seen nine times, nothing was held, and the next click was whole. No drag goes on: pressed on a title bar, the window stayed when the pointer moved. Nothing stayed stuck after a loss in the middle of a held ⌃⌥-drag with the band showing either (12 of 12 checks). Whether a real key's repeat runs on cannot be seen with posted keys. **Two separate things.** The flag turns at the distributed notification; the right to tap is withdrawn by the daemon's own doing (`tccutil`, or a daemon that has read its database again). On the gentlest road, the row deleted and the word given with the daemon left alone, Arbor took its taps out of its own accord within its second and nothing was lost, eight rounds of eight. It was first read as \"macOS had withdrawn nothing\", and that is corrected: with a tapper that asks, the flag said no 2 ms after the word and the right went too, 470 to 744 ms after the deed; one that asked nothing lost nothing in 8 s. It seems that asking is what makes the daemon look again. For Arbor the order there is the word, the flag at its next look, and two thirds of a second of grace. **Which question turns.** A bare tapper asked five every 10 ms, seven valid rounds. By `tccutil` the first event is dropped 30 to 46 ms after the deed, and only a trial `tapCreate`, an active tap made and thrown away, turns: no, 0 to 33 ms after the first dropped event. `CGEvent.tapIsEnabled` of its own tap never turns (yes to the end, 12 s on), nor `AXIsProcessTrusted`, `CGPreflightListenEventAccess` or `CGPreflightPostEventAccess`, and in a dense stream the callback is told nothing. One trial costs 254 to 481 µs at the median, 1.5 to 5.3 ms at the 99th percentile, at worst 6 to 24 ms and once 80; the others 0 to 96 µs. **What ends it.** Keys were dropped though Arbor has no tap for keys, and the wheel with its tap switched off: once begun the drop takes everything. But a tap that is in and switched off never starts it, nor one that is on and has no traffic (macos-drops-all-input-behind-any-tap-whose-owner-lost-the-right): switching taps off is enough to keep a lost right harmless while they are off. **What is not known.** A trackpad's touches as the event that starts the drop have not been tried: no hosted Mac has a trackpad. Whether real keys and buttons are dropped as posted ones are, nobody can know from a hosted Mac; nor in which order the word, the flag and the right go at the real switch (the-switch-in-system-settings-asks-a-script-for-a-password). And today, if the thread that keeps Arbor's clock slept at the wrong moment while the taps' thread went on answering, nobody would take the taps out and nothing would time out: every press would cost the Mac about a second (macos-drops-all-input-behind-any-tap-whose-owner-lost-the-right). Halting the whole process flatters, because then macOS mends it (a-tapper-that-hangs-costs-the-mac-a-second-and-macos-mends-it). A last net outside that thread is being asked about. Decided on the board (1.46): in doubt, all taps off. What is tested today is only that the taps go within three seconds. **As Arbor ships nobody meets it**: `Settings.pointerGestures` is false, the one switch that is asked before `gesturesEnabled`, `scrollZoom`, `frameRectangleModifier` and `frameRectangleOnDesktop`, and off it means that Arbor installs no event tap at all, whatever a settings.json of an earlier build says of the four. Whoever switches \"Trackpad and mouse gestures\" on has the hole.",
+   "happened": "With Arbor's event taps in and the right to tap withdrawn, the first event that matches a tap that is switched on is dropped, and from then until Arbor has removed its taps every event of every kind is dropped, for the whole Mac: clicks, keys, the wheel, also kinds that match no tap that is switched on. Lost, not late. **How often.** The first table, fourteen valid rounds: with nobody running nothing was lost (three rounds); with Arbor and no taps 0 of 3,400 events; with Arbor and its taps events were lost in 9 of 10 rounds, on all three roads: the row deleted and the daemon killed, in silence (95, 15, 5 and 65 events, and 10 of 1,360 key events in an older table); the same, and announced (5, 0); `tccutil reset` (90, 95, 5). Eight more rounds by `tccutil` since: 85, 10, 90, 100, 10, 10, 115, 55. Its holes were 994, 1,046, 126, 955, 218, 1,002, 1,091, 135, 194, 1,248 and 612 ms, the longest a second and the timer's tolerance; the shortest on any road 85. The controls stand at 0 lost in eight rounds with nobody and in three with Arbor without taps. **Under traffic**, on the trunk's Arbor with the gestures asked for (14 rounds, none invalid), by `tccutil`: with the scroll tap on, 4 of 480 key events lost (the taps out after 182 ms) and 0 (95 ms); with the gesture tap, 39 of 717 (a hole of 736 ms) and 54 of 720 (865 ms). At one event a second nothing was lost: 26 of 26 with the scroll tap on (301 ms) and 26 of 26 pinch events (770 ms): Arbor was out before the next event its taps had asked for. **How long.** A hole ends 30 to 100 ms after Arbor's line in the log: its length is the wait for the next tick of `PointerInput.checkPermission`, a timer of one second. Arbor's main thread, looked at every 5 ms from the deed on, was idle in 998 of 1,005, 1,017 of 1,020 and 822 of 834 looks: nothing stalls. After the taps have gone nothing is lost. **Where it begins.** Not at the withdrawal: at the first event that matches a switched-on tap. Sixteen valid rounds on `tccutil`'s road: in all eleven with a loss the first event lost is a mouse-down, and what was posted between the deed and that press arrived, once 772 ms after the deed. Three rounds with Arbor lost nothing, because its tick came first. So whoever only types loses nothing until the next press or gesture. **Nothing stays stuck**, 16 rounds of 16, but each kind goes its own way after an up was lost whose down had arrived. A key is held to be down, by the window server's key state and by the app, for 6.8 to 6.9 s in the probe: it is put right by its own next press and release and by nothing before that, not silence, a move, a notch or a click. A modifier (⇧: key state, flags and AppKit's flags alike) stayed on for 3.2 to 3.4 s, which was the silence: it is put right by the next event of any kind, and not by itself. The button never sticks, its down being the first thing lost; an up without its down was seen nine times, nothing was held, and the next click was whole. No drag goes on: pressed on a title bar, the window stayed when the pointer moved. Nothing stayed stuck after a loss in the middle of a held ⌃⌥-drag with the band showing either, five valid rounds of five, by `tccutil` and by the row and the word (12 checks in the first, nine in each of the others, all passed): no tap left, no band or panel left with the button still down, the release arrived, the next plain click and drag whole, no modifier stuck. Whether a real key's repeat runs on cannot be seen with posted keys. **Two separate things.** The flag turns at the distributed notification; the right to tap is withdrawn by the daemon's own doing (`tccutil`, or a daemon that has read its database again). On the gentlest road, the row deleted and the word given with the daemon left alone, Arbor took its taps out of its own accord within its second and nothing was lost, eight rounds of eight. Then the first loss on that road: 1 gesture event of 720, the taps out 563 ms after the deed; three more rounds of the same run lost nothing (0 of 478, 0 of 720, 0 of 480). The grace is not quite always enough for a clock of one second. It was first read as \"macOS had withdrawn nothing\", and that is corrected: with a tapper that asks, the flag said no 2 ms after the word and the right went too, 470 to 744 ms after the deed; one that asked nothing lost nothing in 8 s. It seems that asking is what makes the daemon look again. For Arbor the order there is the word, the flag at its next look, and two thirds of a second of grace. **Which question turns.** A bare tapper asked five every 10 ms, seven valid rounds. By `tccutil` the first event is dropped 30 to 46 ms after the deed, and only a trial `tapCreate`, an active tap made and thrown away, turns: no, 0 to 33 ms after the first dropped event. `CGEvent.tapIsEnabled` of its own tap never turns (yes to the end, 12 s on), nor `AXIsProcessTrusted`, `CGPreflightListenEventAccess` or `CGPreflightPostEventAccess`, and in a dense stream the callback is told nothing. One trial costs 254 to 481 µs at the median, 1.5 to 5.3 ms at the 99th percentile, at worst 6 to 24 ms and once 80; the others 0 to 96 µs. **What ends it.** Keys were dropped though Arbor has no tap for keys, and the wheel with its tap switched off: once begun the drop takes everything. But a tap that is in and switched off never starts it, nor one that is on and has no traffic (macos-drops-all-input-behind-any-tap-whose-owner-lost-the-right): switching taps off is enough to keep a lost right harmless while they are off. **What is not known.** A trackpad's touches as the event that starts the drop have not been tried: no hosted Mac has a trackpad. Whether real keys and buttons are dropped as posted ones are, nobody can know from a hosted Mac; nor in which order the word, the flag and the right go at the real switch (the-switch-in-system-settings-asks-a-script-for-a-password). And today, if the thread that keeps Arbor's clock slept at the wrong moment while the taps' thread went on answering, nobody would take the taps out and nothing would time out: every press would cost the Mac about a second (macos-drops-all-input-behind-any-tap-whose-owner-lost-the-right). Halting the whole process flatters, because then macOS mends it (a-tapper-that-hangs-costs-the-mac-a-second-and-macos-mends-it). A last net outside that thread is being asked about. Decided on the board (1.46): in doubt, all taps off. What is tested today is only that the taps go within three seconds. **As Arbor ships nobody meets it**: `Settings.pointerGestures` is false, the one switch that is asked before `gesturesEnabled`, `scrollZoom`, `frameRectangleModifier` and `frameRectangleOnDesktop`, and off it means that Arbor installs no event tap at all, whatever a settings.json of an earlier build says of the four. Whoever switches \"Trackpad and mouse gestures\" on has the hole.",
    "found": "Probes that are not on the trunk yet, on hosted Macs in the night of 2026-10-15 (macOS 26.6.2, posted events, a debug build): a stream of numbered events, a witness that counts them, the permission withdrawn on three roads, a control on both sides, nobody and Arbor without taps, and a bare tool with one tap of its own for the floor. Until then it was hearsay, quoted in the spec and in the code: \"macOS has been reported to stop all input\".",
    "modelled": "cannot",
    "knobs": [],
@@ -10431,6 +10431,28 @@
    "certainty": "suspected"
   },
   {
+   "id": "a-stale-read-back-makes-arbors-own-move-the-persons",
+   "kind": "late-or-partial-answer",
+   "layer": "below the seam",
+   "expected": "The frame read back after a move is where the window is, so it can be booked as where Arbor put it.",
+   "happened": "On a model of a Mac only. An app says yes at once and carries the move out later; a read in between gets the old frame. `AXWindowSystem.setFrame` books that stale frame as where Arbor put the window, so the look 0.3 s later finds the window \"strayed\" to the very place Arbor sent it, and reports Arbor's own move as the person's (\"did not stay where it was put\"). Docked windows come right. A floating window comes back moved and shrunk, (624,218 400×300) to (624,405 341×300), and a parked one can be taken for put in the corner by hand. The manner was seen of one app, Safari leaving full screen; that apps have it in general is a guess. A cure to consider: `EchoFilter.hasStrayed` against the frame that was asked for, not the one read back.",
+   "found": "Stories on a model of a Mac under the real Accessibility layer on Linux, while a change to that layer was judged. The story is not on the trunk yet. Never seen on a Mac.",
+   "modelled": "cannot",
+   "knobs": [],
+   "guards": [],
+   "copes": "open",
+   "hurt": 2,
+   "touches": [
+    "moved-unasked",
+    "size-lost"
+   ],
+   "sources": [
+    "Sources/ArborKit/AX/AXWindowSystem.swift",
+    "Sources/ArborCore/EchoFilter.swift"
+   ],
+   "certainty": "suspected"
+  },
+  {
    "id": "a-miniature-in-the-dock-is-not-always-called-what-its-window-is-called",
    "kind": "identity",
    "layer": "test",
@@ -10524,7 +10546,7 @@
    "id": "a-docked-window-let-go-in-macos-band-at-the-top-is-undocked",
    "kind": "second-actor",
    "layer": "controller",
-   "expected": "A docked window let go in the band that Arbor leaves to macOS belongs to whoever takes it: if macOS does not take it, it goes home to its slot, in one move, its neighbours untouched, at all three edges. The product owner's answer.",
+   "expected": "A docked window let go in the band that Arbor leaves to macOS belongs to whoever takes it: if macOS does not take it, it goes home to its slot, in one move, its neighbours untouched, at all three edges. The product owner's answer (board 1.56). **Turned round within the night** (Q29, board 0.4): a plain drag means out, wherever it ends: macOS takes the window, or it floats at its own size where it lies; home is for a ⌘-drag that found no target, and for a slip of under 24 points. By that the top does what is wanted and the sides do not.",
    "happened": "On the trunk it differs by edge. Left and right: back to its slot. At the top it is undocked and floats, and its neighbour takes the room.",
    "found": "The stories about the standing aside on a model of a Mac under the real Accessibility layer, then played by the product owner in arbor-sim. Not tried on a Mac.",
    "modelled": "yes",
@@ -10542,7 +10564,8 @@
    "sources": [
     "Sources/ArborKit/Controller/Controller+Drag.swift",
     "Sources/ArborCore/MacTiling.swift",
-    "collab/QUESTIONS.md"
+    "collab/QUESTIONS.md",
+    "collab/BOARD.md"
    ]
   },
   {
@@ -10844,17 +10867,22 @@
    "kind": "timing",
    "layer": "at the seam",
    "expected": "Quit brings every window into view on the displays that are there.",
-   "happened": "Arbor hears of a change of displays 1.65 s after macOS says it. A virtual display removed and `quit` 0.3 to 1.4 s later: Arbor says \"all windows returned to view\", and windows that had been on that display are partly off the display that is left, under 90 % on screen 5 s later, though Accessibility had reported them back on it before the quit. Seen on the code before the cure for late drags and after it. The product owner rules it a fault, of the first severity though narrow in time: a laptop pulled off its dock and shut down is no haste; and \"all windows returned to view\", said of a window that is not, is a second fault in it. The cause, read and reproduced on Linux beside a control: at a quit the frames are given back by the displays Arbor believes in. Ways back, played: Arbor started again fetches the windows; the display plugged in again has them.",
+   "happened": "Arbor hears of a change of displays 1.65 s after macOS says it. A virtual display removed and `quit` 0.3 to 1.4 s later: Arbor says \"all windows returned to view\", and windows that had been on that display are partly off the display that is left, under 90 % on screen 5 s later, though Accessibility had reported them back on it before the quit. Seen on the code before the cure for late drags and after it. The product owner rules it a fault, of the first severity though narrow in time: a laptop pulled off its dock and shut down is no haste; and \"all windows returned to view\", said of a window that is not, is a second fault in it. The cause, read and reproduced on Linux beside a control: at a quit the frames are given back by the displays Arbor believes in. Ways back, played: Arbor started again fetches the windows; the display plugged in again has them. **Cured since** (board 1.54). `shutdown`, the road of Quit and of a pause, reads the displays first if one that Arbor believes in is gone, is elsewhere or has another size. It brings its books up to date, moves nothing by that, and lets go by the displays that are, each window once. **Tried on real recordings beside a control**, by the cure's author; the recordings are not on the trunk yet. The test that tries every way back from every state of a trace, played over traces of a virtual display on a hosted Mac: with the cure's two calls taken out, 94 states leave a window out of view, 47 by `quit` and 47 by `float-all`, in the same five traces with the same counts; with them, none by `quit`. In its author's words: a trace cut between macOS's own moves and `displaysChanged` is the state in which letting go goes wrong. The 47 by `float-all` stand (float-all-inside-arbors-wait-for-the-displays-goes-by-the-old-ones). That a Mac has run the cure has not been reported.",
    "found": "Two runs of scripts with a virtual display on hosted Macs, by two sessions that did not know of each other.",
-   "modelled": "partly",
+   "modelled": "yes",
    "knobs": [
+    "FakeWindowSystem.unplug",
     "FakeWindowSystem.displayList",
     "FakeWindowSystem.moveSilently"
    ],
    "guards": [
+    "test: lettingGoBeforeArborHasHeardThatADisplayWentLeavesEveryWindowInView",
+    "test: whatMacOSShiftedIsNotTakenForThePausesDoing",
+    "test: aTraceOfItReplays",
+    "scenario: 52-pulled-off-the-dock-and-quit.sim",
     "e2e: quit with two displays, then unplug"
    ],
-   "copes": "open",
+   "copes": "Controller.lookAtTheDisplaysBeforeLettingGo: a quit and a pause look at the displays macOS has before they give any frame back. Not while there is no display at all; a display that has only just come takes nothing away. Float All does not look yet.",
    "hurt": 1,
    "touches": [
     "lost"
@@ -10862,7 +10890,59 @@
    "sources": [
     "Sources/ArborKit/AX/AXWindowSystem.swift",
     "Sources/ArborKit/Controller/Controller+Displays.swift",
-    "scripts/mac-shell/check-displays.sh"
+    "scripts/mac-shell/check-displays.sh",
+    "Tests/ArborKitTests/LookBeforeLettingGoTests.swift",
+    "collab/BOARD.md"
+   ]
+  },
+  {
+   "id": "float-all-inside-arbors-wait-for-the-displays-goes-by-the-old-ones",
+   "kind": "timing",
+   "layer": "at the seam",
+   "expected": "Float All gives every window its own earlier frame, on the displays that are there.",
+   "happened": "Inside the second and a half in which Arbor has not yet heard of a change of displays, Float All gives frames back by the displays Arbor believes in. Found when the replayer was mended (the-replayer-had-the-new-displays-only-when-arbor-was-told) and the test that tries every way back from every state of a trace really played that time: 47 states with a window out of view, all by `float-all`, none by `quit`, in five traces of a virtual display on a hosted Mac: the display moved above 8, to the left 8, low and to the right 8, unplugged 10, unplugged while arranged 13. By reading, not seen: in life Arbor hears a second and a half later and fetches them, which is a flash and a jolt; in a trace cut there nobody tells it. The cure for Quit and pause does not reach it (a-quit-inside-arbors-wait-for-the-displays-goes-by-the-old-ones).",
+   "found": "Traces recorded by a script for two displays on a hosted Mac, replayed on Linux by the author of the cure for the quit. The five traces wait for this cure and are not on the trunk yet.",
+   "modelled": "yes",
+   "knobs": [
+    "FakeWindowSystem.unplug",
+    "FakeWindowSystem.displayList",
+    "FakeWindowSystem.moveSilently"
+   ],
+   "guards": [],
+   "copes": "open",
+   "hurt": 3,
+   "touches": [
+    "lost",
+    "flash",
+    "jolt"
+   ],
+   "sources": [
+    "Sources/ArborKit/Controller/Controller+Displays.swift",
+    "Tests/ArborKitTests/TraceCorpusTests.swift",
+    "Sources/ArborTesting/TraceReplayer.swift"
+   ]
+  },
+  {
+   "id": "the-replayer-had-the-new-displays-only-when-arbor-was-told",
+   "kind": "timing",
+   "layer": "test",
+   "expected": "A replay gives Arbor what a Mac gave it, when the Mac gave it.",
+   "happened": "The replayer gave its fake the new displays only at the recorded `displaysChanged`. A Mac has them by the first window's report, a second and a half earlier, and Arbor asks in between (macos-moves-windows-at-once-and-arbor-hears-of-the-displays-later). Where the main display grows, at a first plugging-in from 1024×768 to 1920×1080, the windows that macOS had moved out over the larger display were judged against the small one: 17 states by `float-all` in two traces (11 and 6), none of them Arbor's fault. Mended, the 17 are 0. Replayed strictly by hand, eight traces of displays had 2 to 10 problems each with the old replayer and none with the new. And the test now plays the time in which letting go goes wrong, where it found a real fault at once (float-all-inside-arbors-wait-for-the-displays-goes-by-the-old-ones).",
+   "found": "The first traces of a display that comes, held against the test that tries every way back from every state of a trace. The traces are not on the trunk yet.",
+   "modelled": "yes",
+   "knobs": [
+    "TraceReplayer.displays"
+   ],
+   "guards": [
+    "test: aTraceOfItReplays",
+    "test: everyWayBackReturnsEveryWindowFromEveryStateOfATrace"
+   ],
+   "copes": "TraceReplayer.displays hands Arbor the recorded answer to its own question about the displays, at the place in the trace where it was asked.",
+   "hurt": 3,
+   "sources": [
+    "Sources/ArborTesting/TraceReplayer.swift",
+    "Tests/ArborKitTests/TraceCorpusTests.swift",
+    "Tests/ArborKitTests/LookBeforeLettingGoTests.swift"
    ]
   },
   {
