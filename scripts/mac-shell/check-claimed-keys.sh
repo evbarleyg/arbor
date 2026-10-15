@@ -255,12 +255,14 @@ DOWN=125
 early() { count "peek: ctrl+opt+down came before the hold counted" "$ARBOR_HOME/arbor.log"; }
 press "running, no peek: a key that is bound to nothing" ctrl+opt+down $DOWN
 check "the control: without a peek it is the app's" reached
+peek_rounds() {
+local kind=$1
 # The tool that presses a key takes half a second to start, give or take, so the two are started a little apart, not one after the other. Whether the arrow
 # did come before the hold counted is for Arbor's log to say: a round in which it came later would pass on any Arbor. So: several, and one at least early.
 got=0
 came=$(early)
 for wait in 0.1 0.15 0.2 0.25; do
-  check "the witness has the keyboard" come_forward
+  check "the witness has the keyboard ($kind)" come_forward
   downs=$(given down $DOWN)
   before=$(early)
   key ctrl+opt+space --down &
@@ -269,14 +271,14 @@ for wait in 0.1 0.15 0.2 0.25; do
   sleep 0.5
   REACHED=$(($(given down $DOWN) - downs))
   got=$((got + REACHED))
-  echo "RESULT | ⌃⌥↓ started $wait s after ⌃⌥Space | the app got: $REACHED down | early by Arbor's log: $(($(early) - before))" | tee -a "$RESULTS"
+  echo "RESULT | $kind: ⌃⌥↓ started $wait s after ⌃⌥Space | the app got: $REACHED down | early by Arbor's log: $(($(early) - before))" | tee -a "$RESULTS"
   key ctrl+opt+space --up
   sleep 0.6
 done
 REACHED=$got
-check "in none of the four did it reach the app" taken
-check "and in one at least it came before the hold counted, or these rounds prove nothing" test "$(early)" -gt "$came"
-check "the witness has the keyboard" come_forward
+check "in none of the four did it reach the app ($kind)" taken
+check "and in one at least it came before the hold counted, or these rounds prove nothing ($kind)" test "$(early)" -gt "$came"
+check "the witness has the keyboard ($kind)" come_forward
 downs=$(given down $DOWN)
 key ctrl+opt+space --down
 sleep 0.3
@@ -285,14 +287,90 @@ sleep 0.3
 key ctrl+opt+down --held
 sleep 0.5
 REACHED=$(($(given down $DOWN) - downs))
-echo "RESULT | ⌃⌥↓ after ⌃⌥⎋ has called the peek off, ⌃⌥Space still down | the app got: $REACHED down" | tee -a "$RESULTS"
-check "with the peek called off and its key still down it goes nowhere" taken
-check "and ⌃⌥⎋ meant the peek: Arbor is not paused" status_starts "running"
+echo "RESULT | $kind: ⌃⌥↓ after ⌃⌥⎋ has called the peek off, ⌃⌥Space still down | the app got: $REACHED down" | tee -a "$RESULTS"
+check "with the peek called off and its key still down it goes nowhere ($kind)" taken
+check "and ⌃⌥⎋ meant the peek: Arbor is not paused ($kind)" status_starts "running"
 key ctrl+opt+space --up
 sleep 0.6
-press "running, the peek over" ctrl+opt+down $DOWN
-check "and the app's again once the key is up" reached
+status_starts "paused" && "$ARBOR_BIN/arborctl" resume > /dev/null 2>&1
+press "$kind: running, the peek over" ctrl+opt+down $DOWN
+check "and the app's again once the key is up ($kind)" reached
 "$ARBOR_BIN/arborctl" show-all > /dev/null 2>&1
+}
+
+# What Arbor is told when it asks whether a shortcut is still held, and what another process is told at the same instant.
+HELD=0
+looks() {
+  local name=$1 chord=$2 code=$3 lines
+  come_forward
+  lines=$(arbor_log_lines)
+  "$KEYS" held "$code" 3.4 > "$ARBOR_OUT/held.txt" 2>&1 &
+  sleep 0.4
+  key "$chord" --down
+  sleep 1
+  key "$chord" --up
+  sleep 1.6
+  HELD=$(arbor_log_since "$lines" | grep -c "peek: held")
+  echo "RESULT | $name | held: $HELD | found up: $(arbor_log_since "$lines" | grep -c "found up")" | tee -a "$RESULTS"
+  echo "  Arbor's looks, the same ones counted:"
+  arbor_log_since "$lines" | grep "PROBE" | sed 's/^.*PROBE isHolding: //' | uniq -c | sed 's/^/    /'
+  echo "  Arbor's last two looks and the end:"
+  arbor_log_since "$lines" | grep "PROBE\|found up\|came up" | tail -n 3 | sed 's/^/    /'
+  echo "  from outside:"
+  sed 's/^/    /' "$ARBOR_OUT/held.txt"
+}
+# The control: a look must also say UP. A shortcut that is unbound while its key is down is let go of, and macOS then never reports its release.
+unreported() {
+  local kind=$1 lines early late
+  come_forward
+  lines=$(arbor_log_lines)
+  "$KEYS" held 49 4.2 > "$ARBOR_OUT/held.txt" 2>&1 &
+  sleep 0.4
+  key ctrl+opt+space --down
+  sleep 0.6
+  "$ARBOR_BIN/arborctl" unbind ctrl+opt+space 2>&1 | head -n 1
+  sleep 0.6
+  early=$(arbor_log_since "$lines" | grep -c "found up")
+  key ctrl+opt+space --up
+  sleep 0.8
+  late=$(arbor_log_since "$lines" | grep -c "found up")
+  echo "RESULT | $kind: a release that is never reported | found up while the key was down: $early | once it was up: $late | reported: $(arbor_log_since "$lines" | grep -c "the key came up")" | tee -a "$RESULTS"
+  echo "  Arbor's looks, the same ones counted:"
+  arbor_log_since "$lines" | grep "PROBE" | sed 's/^.*PROBE isHolding: //' | uniq -c | sed 's/^/    /'
+  # How long a peek stands after such a release: from when another process sees the key up to when Arbor says so.
+  echo "  Arbor's last three looks and what it made of them:"
+  arbor_log_since "$lines" | grep "PROBE\|found up\|came up" | tail -n 4 | sed 's/^/    /'
+  sleep 1.4
+  echo "  from outside:"
+  sed 's/^/    /' "$ARBOR_OUT/held.txt"
+  check "while the key was down no look found it up ($kind)" test "$early" -eq 0
+  check "and once it is up a look finds it up, with no release reported ($kind)" test "$late" -eq 1
+  "$ARBOR_BIN/arborctl" bind ctrl+opt+space show-all 2>&1 | head -n 1
+  sleep 0.4
+}
+both() {
+  local kind=$1 turn
+  peek_rounds "$kind"
+  for turn in 1 2; do
+    looks "$kind: ⌃⌥Space held, $turn" ctrl+opt+space 49
+    check "a held ⌃⌥Space is seen as held ($kind, $turn)" test "$HELD" -eq 1
+  done
+  "$ARBOR_BIN/arborctl" bind ctrl+opt+a show-all 2>&1 | head -n 1
+  sleep 0.4
+  for turn in 1 2; do
+    looks "$kind: ⌃⌥A held, bound to the same command, $turn" ctrl+opt+a "$A"
+    check "a held ⌃⌥A is seen as held ($kind, $turn)" test "$HELD" -eq 1
+  done
+  "$ARBOR_BIN/arborctl" unbind ctrl+opt+a 2>&1 | head -n 1
+  sleep 0.4
+  unreported "$kind"
+}
+both "granted while it waited"
+
+step "1r. the same in an Arbor that is started with the permission in place"
+leave
+launch
+both "started with the permission"
 
 step "2. with no event tap, as shipped: every default shortcut in turn"
 echo "event taps: $("$KEYS" taps "$ARBOR_PID")"

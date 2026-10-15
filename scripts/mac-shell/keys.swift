@@ -400,6 +400,20 @@ case "repost":
 case "taps":
   guard let pid = rest.first.flatMap({ pid_t($0) }) else { fail(usage) }
   taps(of: pid)
+case "held":
+  guard rest.count == 2, let code = UInt16(rest[0]), let seconds = Double(rest[1]) else { fail(usage) }
+  var last = ""
+  let end = Date().addingTimeInterval(seconds)
+  while Date() < end {
+    var now = "key combined=\(CGEventSource.keyState(.combinedSessionState, key: code)) hid=\(CGEventSource.keyState(.hidSystemState, key: code))"
+    now += " ctrl=\(CGEventSource.keyState(.combinedSessionState, key: 59)) opt=\(CGEventSource.keyState(.combinedSessionState, key: 58))"
+    now += " flags appkit=\(NSEvent.modifierFlags.rawValue)"
+    if now != last {
+      print("\(wallClock()) \(now)")
+      last = now
+    }
+    usleep(2000)
+  }
 case "frontmost":
   let front = NSWorkspace.shared.frontmostApplication
   print(front?.bundleIdentifier ?? "[\(front?.localizedName ?? "nobody")]")

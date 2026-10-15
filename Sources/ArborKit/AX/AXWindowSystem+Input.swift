@@ -20,7 +20,13 @@ extension AXWindowSystem {
   }
 
   public func isHolding(_ chord: KeyChord) -> Bool {
-    guard CGEventSource.keyState(.combinedSessionState, key: CGKeyCode(truncatingIfNeeded: chord.key.code)) else {
+    let code = CGKeyCode(truncatingIfNeeded: chord.key.code)
+    var seen = "PROBE isHolding: key combined=\(CGEventSource.keyState(.combinedSessionState, key: code))"
+    seen += " hid=\(CGEventSource.keyState(.hidSystemState, key: code))"
+    seen += " ctrl=\(CGEventSource.keyState(.combinedSessionState, key: 59)) opt=\(CGEventSource.keyState(.combinedSessionState, key: 58))"
+    seen += " flags appkit=\(NSEvent.modifierFlags.rawValue)"
+    Log.debug(seen)
+    guard CGEventSource.keyState(.hidSystemState, key: code) || CGEventSource.keyState(.combinedSessionState, key: code) else {
       return false
     }
     let (modifiers, flags) = (chord.modifiers, NSEvent.modifierFlags)
