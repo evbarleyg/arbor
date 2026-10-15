@@ -374,6 +374,30 @@ import Testing
 
   /// As hosted Macs were seen to: Calendar and Terminal fill the space between the menu bar and the Dock, a Finder window shrinks to what it holds, and the second double-click
   /// takes each back to the very frame.
+  /// The act says which window macOS zooms. On a Mac the clicks go to the free point of the title bar that `apptool grab` finds; so they do here, and not to the middle of the
+  /// bar, where whoever lies over it would get them and be zoomed.
+  @Test func aDoubleClickReachesTheWindowItNamesWhereverItsTitleBarShows() throws {
+    let player = WalkPlayer(WalkSetting(seed: "double"))
+    Log.silenced { player.begin() }
+    let (safari, notes) = (try #require(player.window(labelled: "safari")), try #require(player.window(labelled: "notes")))
+    func frames() -> [WindowID: CGRect] { player.runner.system.windows.mapValues(\.snapshot.frame) }
+    // Notes lies over the middle of Safari's title bar; to either side of it the bar shows.
+    for line in ["move \(safari.rawValue) 100 100 1400 600", "move \(notes.rawValue) 450 60 709 320", "focus \(safari.rawValue)", "focus \(notes.rawValue)"] {
+      _ = player.runner.step(ChaosAction(text: line))
+    }
+    let before = frames()
+    let outcome = Log.silenced { player.play(.titleDoubleClick("safari")) }
+    #expect(outcome.acts == 2 && !outcome.leftOut)
+    #expect(player.samples.lines.filter { $0.contains(" zooms=\(safari.rawValue) ") }.count == 2)
+    // There and back, and nobody else has stirred in between: Safari was seen as large as the screen, Notes never.
+    #expect(frames() == before)
+    #expect(player.samples.lines.contains { $0.contains(" W \(safari.rawValue) ") && $0.contains(" 0 31 1600 791 ") })
+    #expect(!player.samples.lines.contains { $0.contains(" W \(notes.rawValue) ") && $0.contains(" 1600 791 ") })
+    // The lab's own double-click, with the pointer elsewhere, goes to the middle as it did: there it is Notes that gets it.
+    for line in ["focus \(notes.rawValue)", "cursor 20 880", "double-click \(safari.rawValue)"] { _ = player.runner.step(ChaosAction(text: line)) }
+    #expect(frames()[safari] == before[safari] && frames()[notes] != before[notes])
+  }
+
   @Test func macOSZoomsAWindowAtADoubleClickOnItsTitleBarAndTakesItBack() {
     let runner = ChaosRunner()
     for line in [

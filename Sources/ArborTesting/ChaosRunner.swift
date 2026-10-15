@@ -407,7 +407,9 @@ public final class ChaosRunner {
       if !system.mouseDown, let snapshot = system.windows[window]?.snapshot, snapshot.isPresent, !snapshot.isFullScreen,
         isReachable(snapshot.frame), !system.displayList.isEmpty
       {
-        system.doubleClickTitleBar(of: window)
+        // Where the pointer is, if it is on that title bar already: whoever aimed at a part of it that shows gets the window they aimed at.
+        let bar = CGRect(x: snapshot.frame.minX, y: snapshot.frame.minY, width: snapshot.frame.width, height: system.windows[window]!.titleBar)
+        system.doubleClickTitleBar(of: window, at: bar.contains(system.cursor) ? system.cursor : nil)
       }
     case .carry(let point):
       // macOS does not let a title bar be dragged above the top of a display, under the menu bar.

@@ -17,11 +17,11 @@ extension FakeWindowSystem {
     mouseDown = false
   }
 
-  /// The user double-clicks the middle of `window`'s title bar, and macOS zooms the window that got the clicks, which is
+  /// The user double-clicks the middle of `window`'s title bar, or `hand`, and macOS zooms the window that got the clicks, which is
   /// the one in front there.
-  public func doubleClickTitleBar(of window: WindowID) {
+  public func doubleClickTitleBar(of window: WindowID, at hand: CGPoint? = nil) {
     guard let bar = windows[window]?.snapshot.frame else { return }
-    let point = CGPoint(x: bar.midX, y: bar.minY + 12)
+    let point = hand ?? CGPoint(x: bar.midX, y: bar.minY + 12)
     guard let got = self.window(under: point) else { return }
     doubleClick(at: point)
     // Whatever the clicks set off, the window may be elsewhere by now.

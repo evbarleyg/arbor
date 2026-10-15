@@ -243,6 +243,8 @@ def judged(with_arbor, without, within=2.0):
     seen, turned, fronts = {}, set(), set()
     # Of those, what a round of input left behind that the control has not: excused for as long as it lasts.
     excused = set()
+    # And of those, what still showed at the last look. Of two windows of which one has gone for good the excuse is never used up, and it is about nothing that can be seen.
+    alive = set()
     # The windows that stayed on the screen, or off it, because Arbor undid an act that takes windows away by the dozen: remembered until both playings show them again.
     stayed = {}
     # After the last Quit every app is called up once, to see that it still comes: that belongs to the Quit, which the control does not have.
@@ -312,6 +314,8 @@ def judged(with_arbor, without, within=2.0):
                 find("IN FRONT", here, here.front, f"with Arbor {here.front} of {here.app} ends in front, without {there.front} of {there.app}")
         elif new and blame and pile:
             find("IN FRONT", here, new[0][0], f"with Arbor {new[0][0]} lies over {new[0][1]}, without under it" + (f"; and {len(new) - 1} more pairs" if len(new) > 1 else ""))
+        alive.clear()
+        alive.update(old for old in excused if old == front or old in inverted)
 
     last = None
     for tag, a1, a2, b1, b2 in matcher.get_opcodes():
@@ -320,8 +324,11 @@ def judged(with_arbor, without, within=2.0):
                 performed = here.judged and there.judged
                 if not performed and not here.setup:
                     undone.append({"act": here.number, "slug": here.slug, "playing": "with" if not here.judged else "without"})
-                # The scene is nobody's doing. A round of input is no act, and what shows at its end Arbor did all the same: after the last Quit it is the one look there is.
-                look(here, there, performed and (here.instrument or not here.setup), set() if here.instrument else here.names | there.names)
+                # The scene is nobody's doing. A round of input is no act, and where it finds the windows Arbor put them all the same: after the last Quit it is the one look there is.
+                # Whom a round clicks on depends on who lies where when it begins. Begun over what an earlier round left, which the control has not had and which still shows, it ends as it does
+                # by the rounds' doing, if either pressed on anything. That is so in four walks of five: there nobody looks at who is in front after the last Quit, only at Quit itself.
+                look(here, there, performed and (here.instrument or not here.setup), set() if here.instrument else here.names | there.names,
+                     pile=not (here.instrument and alive and (here.presses or there.presses)))
                 last = there
         else:
             for here in with_arbor[a1:a2]:
@@ -524,6 +531,28 @@ def self_test():
     judge("what Quit brings to the front", start + step(1, "look") + step(2, "quit", "2500 Z 2,1", end="act=quit-and-start"), other + step(1, "look"), ("IN FRONT", 2, "two"))
     rounds = step(2, "input-last", "2500 Z 2,1", end="act=instrument round=last front=2")
     judge("what a round left is excused for as long as it lasts", start + step(1, "look") + rounds + step(3, "look-again") + step(4, "and-again"), other + step(1, "look") + step(2, "look-again") + step(3, "and-again"))
+    both = (start + ["1000 W 3 30 0 100 400 400 300 Three", "1000 Z 1,2,3", "1000 M label 3 three"] + step(1, "look"), other + ["5000 W 73 30 0 100 400 400 300 Three", "5000 Z 71,72,73", "5000 M label 73 three"] + step(1, "look"))
+    judge("a round that both have, begun over what a round of Arbor's alone left, ends as it does by the rounds' doing",
+          both[0] + rounds + step(3, "quit", end="act=quit-and-start") + step(4, "input-after", "2400 B down 10 10", "2500 Z 3,2,1", end="act=instrument round=after front=3"),
+          both[1] + step(2, "input-after", "6500 Z 72,71,73", end="act=instrument round=after front=72"))
+    judge("so if it was the control's that pressed",
+          both[0] + rounds + step(3, "quit", end="act=quit-and-start") + step(4, "input-after", "2500 Z 3,2,1", end="act=instrument round=after front=3"),
+          both[1] + step(2, "input-after", "6400 B down 10 10", "6500 Z 72,71,73", end="act=instrument round=after front=72"))
+    judge("a round in which nobody pressed on anything turned nothing round",
+          both[0] + rounds + step(3, "quit", end="act=quit-and-start") + step(4, "input-after", "2500 Z 3,2,1", end="act=instrument round=after front=3"),
+          both[1] + step(2, "input-after", "6500 Z 72,71,73", end="act=instrument round=after front=72"), ("IN FRONT", 4, "three"))
+    judge("nor does an excuse count that is about a window gone since: the two began alike",
+          both[0] + rounds + step(3, "close-two", "2500 G 2", "2500 Z 1,3", end="act=open-close leaves=2") + step(4, "quit", end="act=quit-and-start")
+          + step(5, "input-after", "2400 B down 10 10", "2500 Z 3,1", end="act=instrument round=after front=3"),
+          both[1] + step(2, "close-two", "6500 G 72", "6500 Z 71,73", end="act=open-close leaves=72") + step(3, "input-after", "6400 B down 10 10", end="act=instrument round=after front=71"), ("IN FRONT", 5, "three"))
+    judge("a window that it finds elsewhere Arbor moved all the same",
+          both[0] + rounds + step(3, "quit", end="act=quit-and-start") + step(4, "input-after", "2400 B down 10 10", "2500 Z 3,2,1", "2500 W 1 10 0 0 400 400 300 One", end="act=instrument round=after front=3"),
+          both[1] + step(2, "input-after", "6500 Z 72,71,73", end="act=instrument round=after front=72"), ("UNASKED", 4, "one"))
+    judge("an act is no round: what is new after it is somebody's doing, whatever is excused meanwhile",
+          both[0] + rounds + step(3, "press-somewhere", "2400 B down 10 10", "2500 Z 3,2,1"), both[1] + step(2, "press-somewhere", "6400 B down 10 10"), ("IN FRONT", 3, "three"))
+    judge("begun alike, it ends alike or it is Arbor's doing",
+          both[0] + step(2, "quit", end="act=quit-and-start") + step(3, "input-after", "2400 B down 10 10", "2500 Z 3,2,1", end="act=instrument round=after front=3"),
+          both[1] + step(2, "input-after", "6500 Z 72,71,73", end="act=instrument round=after front=72"), ("IN FRONT", 3, "three"))
     judge("and no longer: the same thing again, after the two have agreed, is somebody's doing",
           start + step(1, "look") + rounds + step(3, "click-one", "2500 Z 1,2", end="act=switch front=1") + step(4, "leave-alone", "2500 Z 2,1"),
           other + step(1, "look") + step(2, "click-one", end="act=switch front=71") + step(3, "leave-alone"), ("IN FRONT", 4, "two"))

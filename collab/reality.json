@@ -7401,7 +7401,7 @@
     "FakeWindowSystem.follow"
    ],
    "guards": [],
-   "copes": "scripts/mac-shell/walk-diff.py lays a playing with Arbor beside one without on real Macs, where both are held alike. Beside a playing on Linux nearly every later frame differs by this. How far the pointer goes before each edge lets go, slowly and fast, from inside and from across, nobody has measured.",
+   "copes": "scripts/mac-shell/walk-diff.py lays a playing with Arbor beside one without on real Macs, where both are held alike. Beside a playing on Linux nearly every later frame differs by this. Measured since, with one TextEdit window, every other app hidden and no Arbor (probe-held-at-the-edges.sh, read with held.py): going outwards across the left or the right edge the window stands with its edge on the screen's while the pointer goes 31 points, at 24 and at 45 points a second alike, so for some 1.3 to 1.5 seconds and for 0.75: a distance, not a time. Downwards it stands twice, with its lower edge a point above the Dock and again at the bottom of the screen: 63 points together. At some 145 points a second the right edge held for 31 all the same, the left for 9 and the two below for 10 and 9: what decides there is not known. In the walk the left edge held Terminal for 31 at some 90 and System Settings for 19 at 130 to 160. Coming back in nothing holds. Nothing holds a window that comes away from the menu bar; upwards it stops under the bar for as far as the pointer was taken: 10 points in the probe, 43 in the walk, where the pointer ends in the bar. Not explained by this: the 88 of Notes and the 64 of Mail above, with other windows in view. The probe asked for 50, 150 and 600 points a second and the pointer went at 24, 45 and some 150: a hand is faster, and nobody has measured a hand.",
    "hurt": 3,
    "touches": [
     "jolt",
@@ -7409,6 +7409,8 @@
    ],
    "sources": [
     "Sources/ArborTesting/FakeWindowSystem.swift",
+    "scripts/mac-shell/held.py",
+    "scripts/mac-shell/probe-held-at-the-edges.sh",
     "scripts/mac-shell/walk-diff.py"
    ]
   },

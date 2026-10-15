@@ -651,6 +651,8 @@ extension WalkPlayer {
     walkAct(.macOSOwn, "double-click-\(app)", "double-clicks \(app)'s title bar: macOS zooms the window")
     samples.click(point, at: clock)
     samples.click(point, at: clock)
+    // The clicks go where the pointer is: to the free point, not to the middle of the bar, over which another window may lie.
+    does(.cursor(point))
     does(.doubleClick(window))
     does(.cursor(CGPoint(x: point.x, y: point.y + 120)))
     // macOS's frame stays, and nobody else moves.
@@ -662,6 +664,7 @@ extension WalkPlayer {
     walkAct(.macOSOwn, "double-click-\(app)-again", "double-clicks it again: macOS takes the window back")
     samples.click(again, at: clock)
     samples.click(again, at: clock)
+    does(.cursor(again))
     does(.doubleClick(window))
     does(.cursor(CGPoint(x: again.x, y: again.y + 120)))
     acted(["zooms=\(id(window))", "front=\(id(window))", "returns=\(before)"])
