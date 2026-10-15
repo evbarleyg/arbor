@@ -1,0 +1,46 @@
+90 dock-down: presses ⌃⌥⌘ and the down arrow
+expected: {'act': 'dock-key', 'settled': 'quiet:832', 'moves': '709,703,709,', 'front': '703', 'floating': '685,688,697,702,710,714,715,898', 'docked': '703,709'}
+FAIL rule 2: finder (w685) a floating window, moved, and the step did not name it
+FAIL rule 2: safari (w688) a floating window, moved, and the step did not name it
+FAIL rule 2: textedit (w697) a floating window, moved, and the step did not name it
+FAIL rule 2: preview (w714) a floating window, moved, and the step did not name it
+FAIL rule 2: mail (w715) a floating window, moved, and the step did not name it
+FAIL rule 2: safari-new-87 (w898) a floating window, moved, and the step did not name it
+
+03:08:05.497 SCREEN -- begin 90 dock-down
+03:08:05.497 SCREEN -- text 90 presses ⌃⌥⌘ and the down arrow
+03:08:05.752 INFO  made room for w703, the Desktop
+03:08:05.756 DEBUG stage up on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: 10 stand-ins, 0.46 s
+03:08:05.765 SCREEN w886 of Arbor 0,0 1600×900 (level 4)
+03:08:05.779 MACOS pid 72241 AXResized w703 AXWindow/AXStandardWindow 12 490 1200 320
+03:08:05.800 MACOS pid 72241 AXMoved w703 AXWindow/AXStandardWindow 12 490 1576 320
+03:08:05.801 MACOS pid 72241 AXResized w703 AXWindow/AXStandardWindow 12 490 1576 320
+03:08:05.810 MACOS pid 72296 AXMoved w709 AXWindow/AXStandardWindow 1599 770 1576 503
+03:08:05.815 SCREEN notes (w703) 12,490 1576×320
+03:08:05.815 SCREEN calendar (w709) 1599,770 1576×503
+03:08:05.829 MACOS pid 70859 AXResized w685 AXWindow/AXStandardWindow 340 31 920 260
+03:08:05.848 MACOS pid 71693 AXResized w688 AXWindow/AXStandardWindow 799 31 801 260
+03:08:05.858 MACOS pid 71766 AXResized w697 AXWindow/AXStandardWindow 800 31 800 260
+03:08:05.870 SCREEN textedit (w697) 800,31 800×260
+03:08:05.870 SCREEN safari (w688) 799,31 801×260
+03:08:05.870 SCREEN finder (w685) 340,31 920×260
+03:08:05.874 MACOS pid 72468 AXResized w714 AXWindow/AXStandardWindow 800 31 800 260
+03:08:05.898 SCREEN preview (w714) 800,31 800×260
+03:08:05.932 MACOS pid 72852 AXResized w715 AXWindow/AXStandardWindow 240 31 1120 260
+03:08:05.961 MACOS pid 71693 AXResized w898 AXWindow/AXStandardWindow 0 31 801 260
+03:08:05.967 SCREEN safari-new-87 (w898) 0,31 801×260
+03:08:05.967 SCREEN mail (w715) 240,31 1120×260
+03:08:05.972 INFO  dock bottom: docked w703 at the bottom edge and it is no longer kept in view; that leaves too little room for 1 other window, which is a tile now
+03:08:05.973 DEBUG said on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: Docked Notes at the bottom edge and it is no longer kept in view; that leaves too little room for 1 other window, which is a tile now · ⌃⌥Z takes it back
+03:08:06.000 SCREEN front to back: notes w884 textedit safari-new-87 safari terminal settings finder w718 mail preview calendar w883
+03:08:06.006 SCREEN w884 of Arbor 3,481 1594×338
+03:08:06.006 SCREEN w883 of Arbor 12,291 1576×12
+03:08:06.006 SCREEN w882 of Arbor 12,478 1576×12
+03:08:06.006 SCREEN front to back: w884 notes textedit safari-new-87 safari terminal settings finder w718 mail preview calendar w883 w882
+03:08:06.035 SCREEN w880 of Arbor 444,710 713×56 (level 6)
+03:08:06.035 SCREEN w881 of Arbor 12,303 1576×175
+03:08:06.035 SCREEN front to back: w884 notes textedit safari-new-87 safari terminal settings finder w718 mail preview calendar w881 w883 w882
+03:08:06.439 DEBUG stage down
+03:08:06.449 SCREEN w886 of Arbor left the screen
+03:08:07.129 SCREEN -- end 90 act=dock-key settled=quiet:832 moves=709,703,709, front=703 floating=685,688,697,702,710,714,715,898 docked=703,709
+03:08:07.557 SCRIPT == 91 click-new-window

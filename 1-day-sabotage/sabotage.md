@@ -1,0 +1,46 @@
+| # | Step | Offence committed | Reported | |
+|---|---|---|---|---|
+| 13 | input-before | none | nothing | ✔ |
+| 16 | honest-switch | none | nothing | ✔ |
+| 17 | honest-click | none | nothing | ✔ |
+| 18 | honest-move | none | nothing | ✔ |
+| 19 | honest-resize | none | nothing | ✔ |
+| 20 | moved-twice | jolt | jolt | ✔ |
+| 21 | elsewhere-first | jolt | jolt | ✔ |
+| 22 | somebody-else | moved-unasked | moved-unasked | ✔ |
+| 23 | honest-park | none | nothing | ✔ |
+| 24 | flashes | flash | flash | ✔ |
+| 25 | honest-return | none | nothing | ✔ |
+| 26 | covered | behind | behind | ✔ |
+| 27 | honest-click-2 | none | nothing | ✔ |
+| 28 | honest-minimize | none | nothing | ✔ |
+| 29 | keyboard-taken | focus | focus | ✔ |
+| 30 | honest-click-3 | none | nothing | ✔ |
+| 31 | comes-forward | focus | focus | ✔ |
+| 32 | honest-click-4 | none | nothing | ✔ |
+| 33 | honest-drag | none | nothing | ✔ |
+| 34 | out-of-the-hand | pulled | pulled | ✔ |
+| 35 | dropped-elsewhere | stuck | stuck | ✔ |
+| 36 | honest-move-2 | none | nothing | ✔ |
+| 37 | answers-late | slow | slow | ✔ |
+| 38 | honest-idle | none | nothing | ✔ |
+| 39 | wrong-size | size-lost | size-lost | ✔ |
+| 40 | honest-give-back | none | nothing | ✔ |
+| 41 | left-out | lost | lost | ✔ |
+| 42 | honest-return-2 | none | nothing | ✔ |
+| 43 | vanishes | lost | lost | ✔ |
+| 44 | honest-click-5 | none | nothing | ✔ |
+| 45 | under-the-stage | none | nothing | ✔ |
+| 46 | under-no-stage | jolt | jolt | ✔ |
+| 47 | held-back | input-held | input-held | ✔ |
+| 48 | input-started | none | nothing | ✔ |
+| 49 | input-last | input-held | input-held | ✔ |
+| 50 | both-previews | fought | fought | ✔ |
+| 51 | honest-drag-back | none | nothing | ✔ |
+| 52 | busy-doing-nothing | busy | busy | ✔ |
+| 53 | honest-idle-2 | none | nothing | ✔ |
+| 54 | stays-behind | left-behind | left-behind | ✔ |
+| 55 | ends-unasked | crash | crash | ✔ |
+| 56 | tells | told | told | ✔ |
+
+16 kinds of offence committed: behind, busy, crash, flash, focus, fought, input-held, jolt, left-behind, lost, moved-unasked, pulled, size-lost, slow, stuck, told. Every one was reported by its own detector alone.

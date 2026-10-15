@@ -1,0 +1,75 @@
+88 restore-textedit: clicks its miniature in the Dock
+expected: {'act': 'open-close', 'settled': 'quiet:1009', 'moves': '709,709,', 'comes': '697', 'front': '697', 'floating': '685,688,697,702,703,710,714,715,898', 'docked': '709'}
+FAIL rule 2: safari-new-87 (w898) a floating window, moved, and the step did not name it
+
+03:08:00.521 SCREEN -- begin 88 restore-textedit
+03:08:00.521 SCREEN -- text 88 clicks its miniature in the Dock
+03:08:01.131 DEBUG raised w703, which stays in view
+03:08:01.132 SCREEN the button is down 1441 854
+03:08:01.136 MACOS pid 72241 AXFocusedWindowChanged w703 AXWindow/AXStandardWindow 400 31 800 790
+03:08:01.138 MACOS pid 72241 AXMainWindowChanged w703 AXWindow/AXStandardWindow 400 31 800 790
+03:08:01.264 SCREEN textedit (w697) 1417,838 49×25
+03:08:01.264 SCREEN front to back: textedit w884 safari-new-87 notes safari terminal settings finder w718 mail preview calendar w883
+03:08:01.264 SCREEN the button is up 1441 854
+03:08:01.270 SCREEN textedit (w697) 1417,835 49×28
+03:08:01.299 SCREEN textedit (w697) 1416,814 49×49
+03:08:01.308 SCREEN textedit (w697) 1415,805 50×58
+03:08:01.330 SCREEN textedit (w697) 1410,780 56×83
+03:08:01.343 DEBUG raised w703, which stays in view
+03:08:01.344 MACOS pid 72241 AXFocusedWindowChanged w703 AXWindow/AXStandardWindow 400 31 800 790
+03:08:01.345 MACOS pid 72241 AXMainWindowChanged w703 AXWindow/AXStandardWindow 400 31 800 790
+03:08:01.353 SCREEN textedit (w697) 1402,754 65×109
+03:08:01.370 SCREEN textedit (w697) 1388,723 81×140
+03:08:01.375 SCREEN textedit (w697) 1379,705 92×158
+03:08:01.395 SCREEN textedit (w697) 1354,667 122×196
+03:08:01.440 SCREEN textedit (w697) 1263,566 231×265
+03:08:01.508 SCREEN textedit (w697) 1040,401 504×265
+03:08:01.512 SCREEN textedit (w697) 1007,378 544×265
+03:08:01.565 SCREEN textedit (w697) 875,262 707×265
+03:08:01.570 SCREEN textedit (w697) 858,241 728×265
+03:08:01.607 SCREEN textedit (w697) 816,164 780×265
+03:08:01.610 DEBUG raised w703, which stays in view
+03:08:01.611 MACOS pid 72241 AXFocusedWindowChanged w703 AXWindow/AXStandardWindow 400 31 800 790
+03:08:01.612 MACOS pid 72241 AXMainWindowChanged w703 AXWindow/AXStandardWindow 400 31 800 790
+03:08:01.662 SCREEN textedit (w697) 800,79 800×265
+03:08:01.672 SCREEN textedit (w697) 800,68 800×265
+03:08:01.695 SCREEN textedit (w697) 800,51 800×265
+03:08:01.703 SCREEN textedit (w697) 800,44 800×265
+03:08:01.771 SCREEN textedit (w697) 800,31 800×264
+03:08:01.812 SCREEN in front: process 71766 com.apple.TextEdit
+03:08:01.818 MACOS pid 71766 AXApplicationActivated
+03:08:01.820 MACOS workspace didActivate pid 71766 com.apple.TextEdit regular
+03:08:01.820 MACOS workspace didDeactivate pid 71693 com.apple.Safari regular
+03:08:01.821 DEBUG focus is on w697
+03:08:01.821 MACOS pid 71766 AXFocusedWindowChanged w697 AXWindow/AXStandardWindow 800 31 800 264
+03:08:01.821 MACOS pid 71693 AXApplicationDeactivated
+03:08:01.822 DEBUG focus report for w697, which does not have the keyboard or takes no space; 4 checks left
+03:08:01.822 MACOS pid 71766 AXMainWindowChanged w697 AXWindow/AXStandardWindow 800 31 800 264
+03:08:01.822 MACOS pid 71766 AXWindowDeminiaturized w697 AXWindow/AXStandardWindow 800 31 800 264
+03:08:01.822 MACOS pid 71766 AXApplicationActivated
+03:08:01.837 DEBUG raised w703, which stays in view
+03:08:01.838 MACOS pid 72241 AXFocusedWindowChanged w703 AXWindow/AXStandardWindow 400 31 800 790
+03:08:01.838 MACOS pid 72241 AXMainWindowChanged w703 AXWindow/AXStandardWindow 400 31 800 790
+03:08:01.839 SCREEN w884 of Arbor left the screen
+03:08:01.839 SCREEN front to back: textedit safari-new-87 notes safari terminal settings finder w718 mail preview calendar w883
+03:08:01.853 SCREEN front to back: textedit notes safari-new-87 safari terminal settings finder w718 mail preview calendar w883
+03:08:01.864 DEBUG stage up on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: 10 stand-ins, 0.46 s
+03:08:01.868 SCREEN w886 of Arbor 0,0 1600×900 (level 4)
+03:08:01.873 MACOS pid 71693 AXMoved w898 AXWindow/AXStandardWindow 0 31 801 264
+03:08:01.875 DEBUG w697 has the keyboard
+03:08:01.891 DEBUG raised w703, which stays in view
+03:08:01.901 MACOS pid 72241 AXFocusedWindowChanged w703 AXWindow/AXStandardWindow 400 31 800 790
+03:08:01.901 MACOS pid 72241 AXMainWindowChanged w703 AXWindow/AXStandardWindow 400 31 800 790
+03:08:01.925 SCREEN w884 of Arbor 791,25 815×279
+03:08:01.925 SCREEN safari-new-87 (w898) 0,31 801×264
+03:08:01.925 SCREEN front to back: w884 textedit notes safari-new-87 safari terminal settings finder w718 mail preview calendar w883
+03:08:02.106 DEBUG raised w703, which stays in view
+03:08:02.107 MACOS pid 72241 AXFocusedWindowChanged w703 AXWindow/AXStandardWindow 400 31 800 790
+03:08:02.108 MACOS pid 72241 AXMainWindowChanged w703 AXWindow/AXStandardWindow 400 31 800 790
+03:08:02.358 DEBUG raised w703, which stays in view
+03:08:02.359 MACOS pid 72241 AXFocusedWindowChanged w703 AXWindow/AXStandardWindow 400 31 800 790
+03:08:02.360 MACOS pid 72241 AXMainWindowChanged w703 AXWindow/AXStandardWindow 400 31 800 790
+03:08:02.539 DEBUG stage down
+03:08:02.562 SCREEN w886 of Arbor left the screen
+03:08:03.013 SCREEN -- end 88 act=open-close settled=quiet:1009 moves=709,709, comes=697 front=697 floating=685,688,697,702,703,710,714,715,898 docked=709
+03:08:03.293 SCRIPT == 89 click-notes

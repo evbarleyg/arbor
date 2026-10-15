@@ -1,0 +1,11 @@
+75 drag-notes-to-left-edge: drags notes by its title bar against the left edge of the screen and lets go
+expected: {'act': 'drag-where-macos-tiles', 'settled': 'quiet:1025', 'judge': 'no', 'performed': 'no', 'undone': 'drag_window', 'drags': '490', 'moves': ',,', 'front': '490', 'own': '490'}
+ODD rule -: the act was not performed: drag_window could not be done
+
+03:00:20.810 SCREEN -- begin 75 drag-notes-to-left-edge
+03:00:20.810 SCREEN -- text 75 drags notes by its title bar against the left edge of the screen and lets go
+03:00:20.861 SCRIPT drag w490 from 420,43 to 0,450
+03:00:21.514 SCREEN the button is down 420 43
+03:00:24.447 SCREEN the button is up 0 450
+03:00:25.472 SCREEN -- end 75 act=drag-where-macos-tiles settled=quiet:1025 judge=no performed=no undone=drag_window drags=490 moves=,, front=490 own=490
+03:00:25.794 SCRIPT == 76 click-calendar

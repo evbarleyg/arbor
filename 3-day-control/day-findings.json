@@ -1,0 +1,1214 @@
+{
+ "sampler": "samples 9513 seconds 244.0 hz 39.0 cost-ms 2.04 late 9 longest-gap-ms 280 whole-samples 11351 whole-seconds 291.1 whole-late 29",
+ "input": {
+  "events": 232,
+  "p50_us": 496,
+  "p99_us": 48984,
+  "max_us": 73519,
+  "kinds": {
+   "down": {
+    "events": 53,
+    "p50_us": 565,
+    "p99_us": 3525,
+    "max_us": 3525
+   },
+   "dragged": {
+    "events": 99,
+    "p50_us": 494,
+    "p99_us": 1945,
+    "max_us": 1945
+   },
+   "forward": {
+    "events": 6,
+    "p50_us": 45604,
+    "p99_us": 73519,
+    "max_us": 73519
+   },
+   "key": {
+    "events": 15,
+    "p50_us": 348,
+    "p99_us": 544,
+    "max_us": 544
+   },
+   "up": {
+    "events": 59,
+    "p50_us": 471,
+    "p99_us": 63466,
+    "max_us": 63466
+   }
+  },
+  "rounds": {
+   "before": {
+    "forward": {
+     "events": 8,
+     "p50_us": 35795,
+     "p99_us": 92323,
+     "max_us": 92323
+    },
+    "up": {
+     "events": 8,
+     "p50_us": 948,
+     "p99_us": 8471,
+     "max_us": 8471
+    }
+   },
+   "after": {
+    "forward": {
+     "events": 7,
+     "p50_us": 43588,
+     "p99_us": 45514,
+     "max_us": 45514
+    },
+    "up": {
+     "events": 7,
+     "p50_us": 731,
+     "p99_us": 1357,
+     "max_us": 1357
+    }
+   }
+  },
+  "judged": [],
+  "silent": {
+   "down": "fewer than 10 such events in a round without Arbor",
+   "forward": "fewer than 10 such events in a round without Arbor",
+   "up": "fewer than 10 such events in a round without Arbor",
+   "key": "fewer than 10 such events in a round without Arbor",
+   "dragged": "fewer than 10 such events in a round without Arbor",
+   "scroll": "fewer than 10 such events in a round without Arbor"
+  }
+ },
+ "stage_seen": false,
+ "witnessed": true,
+ "steps": [
+  {
+   "number": 13,
+   "slug": "input-before",
+   "chapter": "Before Arbor: the apps are open already",
+   "text": "a round of input: presses on windows behind and in front, keys, a scroll, a drag inside a window",
+   "act": "instrument",
+   "judged": true,
+   "performed": true,
+   "began": 1792033049704,
+   "milliseconds": 10366,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 14,
+   "slug": "leave-alone",
+   "chapter": "The walk",
+   "text": "does nothing for half a minute",
+   "act": "idle",
+   "judged": true,
+   "performed": true,
+   "began": 1792033060346,
+   "milliseconds": 30389,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 15,
+   "slug": "dock-icon-finder",
+   "chapter": "Switching between apps, nothing docked yet",
+   "text": "clicks finder's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792033090991,
+   "milliseconds": 1881,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 16,
+   "slug": "dock-icon-safari",
+   "chapter": "Switching between apps, nothing docked yet",
+   "text": "clicks safari's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792033093106,
+   "milliseconds": 1732,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 17,
+   "slug": "dock-icon-textedit",
+   "chapter": "Switching between apps, nothing docked yet",
+   "text": "clicks textedit's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792033095045,
+   "milliseconds": 1843,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 18,
+   "slug": "dock-icon-terminal",
+   "chapter": "Switching between apps, nothing docked yet",
+   "text": "clicks terminal's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792033097112,
+   "milliseconds": 1745,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 19,
+   "slug": "dock-icon-notes",
+   "chapter": "Switching between apps, nothing docked yet",
+   "text": "clicks notes's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792033099078,
+   "milliseconds": 1837,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 20,
+   "slug": "dock-icon-calendar",
+   "chapter": "Switching between apps, nothing docked yet",
+   "text": "clicks calendar's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792033101109,
+   "milliseconds": 1767,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 21,
+   "slug": "dock-icon-settings",
+   "chapter": "Switching between apps, nothing docked yet",
+   "text": "clicks settings's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792033103098,
+   "milliseconds": 1953,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 22,
+   "slug": "dock-icon-preview",
+   "chapter": "Switching between apps, nothing docked yet",
+   "text": "clicks preview's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792033105250,
+   "milliseconds": 1755,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 23,
+   "slug": "dock-icon-mail",
+   "chapter": "Switching between apps, nothing docked yet",
+   "text": "clicks mail's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792033107233,
+   "milliseconds": 1827,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 24,
+   "slug": "cmd-tab-1",
+   "chapter": "Switching between apps, nothing docked yet",
+   "text": "holds ⌘ and presses Tab 1 time(s)",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792033109328,
+   "milliseconds": 1574,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 25,
+   "slug": "cmd-tab-2",
+   "chapter": "Switching between apps, nothing docked yet",
+   "text": "holds ⌘ and presses Tab 2 time(s)",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792033111173,
+   "milliseconds": 1973,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 26,
+   "slug": "dock-icon-finder",
+   "chapter": "The first docks, by key",
+   "text": "clicks finder's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792033113510,
+   "milliseconds": 1731,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 27,
+   "slug": "click-safari",
+   "chapter": "The first docks, by key",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792033115771,
+   "milliseconds": 1966,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 28,
+   "slug": "dock-icon-textedit",
+   "chapter": "The first docks, by key",
+   "text": "clicks textedit's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792033118020,
+   "milliseconds": 1774,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 29,
+   "slug": "dock-icon-terminal",
+   "chapter": "Docking by real drags",
+   "text": "clicks terminal's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792033120077,
+   "milliseconds": 1871,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 30,
+   "slug": "dock-icon-finder",
+   "chapter": "Sizes",
+   "text": "clicks finder's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792033122250,
+   "milliseconds": 1837,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 31,
+   "slug": "dock-icon-finder",
+   "chapter": "Switching between apps, with an arrangement",
+   "text": "clicks finder's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792033124359,
+   "milliseconds": 1589,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 32,
+   "slug": "dock-icon-safari",
+   "chapter": "Switching between apps, with an arrangement",
+   "text": "clicks safari's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792033126193,
+   "milliseconds": 1891,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 33,
+   "slug": "dock-icon-textedit",
+   "chapter": "Switching between apps, with an arrangement",
+   "text": "clicks textedit's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792033128273,
+   "milliseconds": 1726,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 34,
+   "slug": "dock-icon-terminal",
+   "chapter": "Switching between apps, with an arrangement",
+   "text": "clicks terminal's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792033130198,
+   "milliseconds": 1723,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 35,
+   "slug": "dock-icon-notes",
+   "chapter": "Switching between apps, with an arrangement",
+   "text": "clicks notes's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792033132160,
+   "milliseconds": 1839,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 36,
+   "slug": "dock-icon-calendar",
+   "chapter": "Switching between apps, with an arrangement",
+   "text": "clicks calendar's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792033134249,
+   "milliseconds": 1724,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 37,
+   "slug": "dock-icon-settings",
+   "chapter": "Switching between apps, with an arrangement",
+   "text": "clicks settings's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792033136248,
+   "milliseconds": 1931,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 38,
+   "slug": "dock-icon-preview",
+   "chapter": "Switching between apps, with an arrangement",
+   "text": "clicks preview's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792033138389,
+   "milliseconds": 1783,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 39,
+   "slug": "dock-icon-mail",
+   "chapter": "Switching between apps, with an arrangement",
+   "text": "clicks mail's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792033140470,
+   "milliseconds": 1851,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 40,
+   "slug": "cmd-tab-1",
+   "chapter": "Switching between apps, with an arrangement",
+   "text": "holds ⌘ and presses Tab 1 time(s)",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792033142605,
+   "milliseconds": 1611,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 41,
+   "slug": "dock-icon-finder",
+   "chapter": "The view goes in and out",
+   "text": "clicks finder's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792033144526,
+   "milliseconds": 1922,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 42,
+   "slug": "dock-icon-safari",
+   "chapter": "The view goes in and out",
+   "text": "clicks safari's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792033146718,
+   "milliseconds": 1770,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 43,
+   "slug": "cmd-tab-1",
+   "chapter": "The view goes in and out",
+   "text": "holds ⌘ and presses Tab 1 time(s)",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792033148711,
+   "milliseconds": 1566,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 44,
+   "slug": "dock-icon-calendar",
+   "chapter": "The view goes in and out",
+   "text": "clicks calendar's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792033150488,
+   "milliseconds": 1832,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 45,
+   "slug": "click-safari",
+   "chapter": "The view goes in and out",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792033152909,
+   "milliseconds": 1705,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 46,
+   "slug": "click-safari",
+   "chapter": "Windows come and go",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792033155024,
+   "milliseconds": 1795,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 47,
+   "slug": "new-window-safari",
+   "chapter": "Windows come and go",
+   "text": "presses ⌘N in safari",
+   "act": "open-close",
+   "judged": false,
+   "performed": true,
+   "began": 1792033157067,
+   "milliseconds": 1585,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 48,
+   "slug": "window-menu-safari",
+   "chapter": "Windows come and go",
+   "text": "chooses safari's first window in the Window menu",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792033158919,
+   "milliseconds": 3588,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 49,
+   "slug": "cmd-backtick",
+   "chapter": "Windows come and go",
+   "text": "presses ⌘` for the app's next window",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792033162777,
+   "milliseconds": 1198,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 50,
+   "slug": "close-window",
+   "chapter": "Windows come and go",
+   "text": "presses ⌘W",
+   "act": "open-close",
+   "judged": true,
+   "performed": true,
+   "began": 1792033164217,
+   "milliseconds": 1269,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 51,
+   "slug": "click-safari",
+   "chapter": "Windows come and go",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792033165966,
+   "milliseconds": 1850,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 52,
+   "slug": "new-window-safari",
+   "chapter": "Windows come and go",
+   "text": "presses ⌘N in safari",
+   "act": "open-close",
+   "judged": true,
+   "performed": true,
+   "began": 1792033168093,
+   "milliseconds": 1628,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 53,
+   "slug": "close-window",
+   "chapter": "Windows come and go",
+   "text": "presses ⌘W",
+   "act": "open-close",
+   "judged": true,
+   "performed": true,
+   "began": 1792033169972,
+   "milliseconds": 1284,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 54,
+   "slug": "click-safari",
+   "chapter": "Windows come and go",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792033171642,
+   "milliseconds": 2040,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 55,
+   "slug": "minimize-safari",
+   "chapter": "Windows come and go",
+   "text": "presses ⌘M",
+   "act": "open-close",
+   "judged": true,
+   "performed": true,
+   "began": 1792033173942,
+   "milliseconds": 1807,
+   "moved": {
+    "475": [
+     1,
+     8,
+     274
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 56,
+   "slug": "restore-safari",
+   "chapter": "Windows come and go",
+   "text": "clicks its miniature in the Dock",
+   "act": "open-close",
+   "judged": true,
+   "performed": true,
+   "began": 1792033176074,
+   "milliseconds": 1965,
+   "moved": {
+    "475": [
+     1,
+     6,
+     269
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 57,
+   "slug": "dock-icon-finder",
+   "chapter": "Windows come and go",
+   "text": "clicks finder's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792033178303,
+   "milliseconds": 1827,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 58,
+   "slug": "hide-finder",
+   "chapter": "Windows come and go",
+   "text": "presses ⌘H",
+   "act": "open-close",
+   "judged": true,
+   "performed": true,
+   "began": 1792033180455,
+   "milliseconds": 1308,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 59,
+   "slug": "unhide-finder",
+   "chapter": "Windows come and go",
+   "text": "clicks its icon in the Dock",
+   "act": "open-close",
+   "judged": true,
+   "performed": true,
+   "began": 1792033181985,
+   "milliseconds": 1686,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 60,
+   "slug": "dock-icon-textedit",
+   "chapter": "Windows come and go",
+   "text": "clicks textedit's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792033183934,
+   "milliseconds": 1770,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 61,
+   "slug": "quit-textedit",
+   "chapter": "Windows come and go",
+   "text": "presses ⌘Q in textedit",
+   "act": "open-close",
+   "judged": true,
+   "performed": true,
+   "began": 1792033185912,
+   "milliseconds": 1219,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 62,
+   "slug": "reopen-textedit",
+   "chapter": "Windows come and go",
+   "text": "opens textedit's document again",
+   "act": "open-close",
+   "judged": true,
+   "performed": true,
+   "began": 1792033187359,
+   "milliseconds": 2083,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 63,
+   "slug": "click-safari",
+   "chapter": "Full screen",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792033190363,
+   "milliseconds": 1898,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 64,
+   "slug": "full-screen",
+   "chapter": "Full screen",
+   "text": "presses ⌃⌘F in Safari",
+   "act": "macos-own",
+   "judged": true,
+   "performed": true,
+   "began": 1792033192479,
+   "milliseconds": 2975,
+   "moved": {
+    "475": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 65,
+   "slug": "leave-full-screen",
+   "chapter": "Full screen",
+   "text": "presses ⌃⌘F again",
+   "act": "macos-own",
+   "judged": true,
+   "performed": true,
+   "began": 1792033195644,
+   "milliseconds": 3011,
+   "moved": {
+    "475": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 66,
+   "slug": "click-wallpaper",
+   "chapter": "A click lands on the wallpaper, a double-click on a title bar",
+   "text": "clicks on the wallpaper",
+   "act": "macos-own",
+   "judged": true,
+   "performed": true,
+   "began": 1792033199376,
+   "milliseconds": 2154,
+   "moved": {
+    "472": [
+     1,
+     1,
+     0
+    ],
+    "475": [
+     1,
+     1,
+     0
+    ],
+    "489": [
+     1,
+     1,
+     0
+    ],
+    "490": [
+     1,
+     1,
+     0
+    ],
+    "496": [
+     1,
+     1,
+     0
+    ],
+    "497": [
+     1,
+     1,
+     0
+    ],
+    "499": [
+     1,
+     1,
+     0
+    ],
+    "500": [
+     1,
+     1,
+     0
+    ],
+    "503": [
+     1,
+     1,
+     0
+    ],
+    "619": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 67,
+   "slug": "click-wallpaper-again",
+   "chapter": "A click lands on the wallpaper, a double-click on a title bar",
+   "text": "clicks on the wallpaper again",
+   "act": "macos-own",
+   "judged": true,
+   "performed": true,
+   "began": 1792033201806,
+   "milliseconds": 1980,
+   "moved": {
+    "472": [
+     1,
+     1,
+     0
+    ],
+    "475": [
+     1,
+     1,
+     0
+    ],
+    "489": [
+     1,
+     1,
+     0
+    ],
+    "490": [
+     1,
+     1,
+     0
+    ],
+    "496": [
+     1,
+     1,
+     0
+    ],
+    "497": [
+     1,
+     1,
+     0
+    ],
+    "499": [
+     1,
+     1,
+     0
+    ],
+    "500": [
+     1,
+     1,
+     0
+    ],
+    "503": [
+     1,
+     1,
+     0
+    ],
+    "619": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 68,
+   "slug": "dock-icon-finder",
+   "chapter": "A click lands on the wallpaper, a double-click on a title bar",
+   "text": "clicks finder's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792033204043,
+   "milliseconds": 1689,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 69,
+   "slug": "double-click-finder",
+   "chapter": "A click lands on the wallpaper, a double-click on a title bar",
+   "text": "double-clicks finder's title bar: macOS zooms the window",
+   "act": "macos-own",
+   "judged": true,
+   "performed": true,
+   "began": 1792033206132,
+   "milliseconds": 2326,
+   "moved": {
+    "472": [
+     1,
+     12,
+     360
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 70,
+   "slug": "double-click-finder-again",
+   "chapter": "A click lands on the wallpaper, a double-click on a title bar",
+   "text": "double-clicks it again: macOS takes the window back",
+   "act": "macos-own",
+   "judged": true,
+   "performed": true,
+   "began": 1792033208775,
+   "milliseconds": 2250,
+   "moved": {
+    "472": [
+     1,
+     12,
+     286
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 71,
+   "slug": "dock-icon-calendar",
+   "chapter": "A click lands on the wallpaper, a double-click on a title bar",
+   "text": "clicks calendar's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792033211322,
+   "milliseconds": 1771,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 72,
+   "slug": "double-click-calendar",
+   "chapter": "A click lands on the wallpaper, a double-click on a title bar",
+   "text": "double-clicks calendar's title bar: macOS zooms the window",
+   "act": "macos-own",
+   "judged": true,
+   "performed": true,
+   "began": 1792033213577,
+   "milliseconds": 2175,
+   "moved": {
+    "496": [
+     1,
+     9,
+     330
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 73,
+   "slug": "double-click-calendar-again",
+   "chapter": "A click lands on the wallpaper, a double-click on a title bar",
+   "text": "double-clicks it again: macOS takes the window back",
+   "act": "macos-own",
+   "judged": true,
+   "performed": true,
+   "began": 1792033216039,
+   "milliseconds": 2311,
+   "moved": {
+    "496": [
+     1,
+     13,
+     367
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 74,
+   "slug": "dock-icon-notes",
+   "chapter": "Where macOS tiles too",
+   "text": "clicks notes's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792033218702,
+   "milliseconds": 1834,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 75,
+   "slug": "drag-notes-to-left-edge",
+   "chapter": "Where macOS tiles too",
+   "text": "drags notes by its title bar against the left edge of the screen and lets go",
+   "act": "drag-where-macos-tiles",
+   "judged": false,
+   "performed": false,
+   "began": 1792033220810,
+   "milliseconds": 4662,
+   "moved": {},
+   "findings": [
+    {
+     "rule": "-",
+     "detector": "script",
+     "level": "ODD",
+     "window": null,
+     "what": "the act was not performed: drag_window could not be done",
+     "trace": null,
+     "explained": "not performed, so not judged"
+    }
+   ]
+  },
+  {
+   "number": 76,
+   "slug": "click-calendar",
+   "chapter": "Where macOS tiles too",
+   "text": "clicks calendar's title bar",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792033225797,
+   "milliseconds": 1708,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 77,
+   "slug": "drag-calendar-to-top-edge",
+   "chapter": "Where macOS tiles too",
+   "text": "drags calendar by its title bar against the top edge of the screen and lets go",
+   "act": "drag-where-macos-tiles",
+   "judged": true,
+   "performed": true,
+   "began": 1792033227769,
+   "milliseconds": 5966,
+   "moved": {
+    "496": [
+     1,
+     7,
+     316
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 78,
+   "slug": "drag-calendar-by",
+   "chapter": "Where macOS tiles too",
+   "text": "drags calendar, which floats, by its title bar 0 across and 118 down, and clicks there 0.3 s after letting go",
+   "act": "drag",
+   "judged": true,
+   "performed": true,
+   "began": 1792033234070,
+   "milliseconds": 5791,
+   "moved": {
+    "496": [
+     1,
+     2,
+     40
+    ]
+   },
+   "findings": [
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "ODD",
+     "window": "calendar (w496)",
+     "what": "changed its size while it was being dragged",
+     "trace": "+0 ms 0,34 1600×791 · +33 ms 0,42 1600×791 · +107 ms 78,38 1414×740 · +157 ms 225,38 1063×645 · +200 ms 258,42 985×623 · +207 ms 267,42 962×617 · … 20 more … · +1691 ms 289,137 910×603 · +1758 ms 289,141 910×603 · +1853 ms 289,145 910×603 · +2117 ms 290,145 910×603 · +2182 ms 289,145 910×603"
+    }
+   ]
+  },
+  {
+   "number": 79,
+   "slug": "click-safari",
+   "chapter": "The ways out",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792033240177,
+   "milliseconds": 1739,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 80,
+   "slug": "dock-icon-calendar",
+   "chapter": "The ways out",
+   "text": "clicks calendar's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792033242142,
+   "milliseconds": 1904,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 81,
+   "slug": "drag-calendar-by",
+   "chapter": "The ways out",
+   "text": "drags calendar, which floats, by its title bar 60 across and 60 down",
+   "act": "drag",
+   "judged": true,
+   "performed": true,
+   "began": 1792033244347,
+   "milliseconds": 4825,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 82,
+   "slug": "dock-icon-finder",
+   "chapter": "The ways out",
+   "text": "clicks finder's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792033249472,
+   "milliseconds": 1809,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 83,
+   "slug": "click-safari",
+   "chapter": "The ways out",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792033251609,
+   "milliseconds": 1841,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 84,
+   "slug": "leave-alone",
+   "chapter": "Quit, and the next morning",
+   "text": "does nothing for half a minute",
+   "act": "idle",
+   "judged": true,
+   "performed": true,
+   "began": 1792033253647,
+   "milliseconds": 30434,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 85,
+   "slug": "input-after",
+   "chapter": "Quit, and the next morning",
+   "text": "a round of input: presses on windows behind and in front, keys, a scroll, a drag inside a window",
+   "act": "instrument",
+   "judged": true,
+   "performed": true,
+   "began": 1792033284329,
+   "milliseconds": 8822,
+   "moved": {},
+   "findings": []
+  }
+ ]
+}

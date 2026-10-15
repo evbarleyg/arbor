@@ -1,0 +1,31 @@
+79 dock-icon-mail: clicks mail's icon in the Dock
+expected: {'act': 'switch', 'settled': 'quiet:547', 'front': '718', 'floating': '685,688,697,702,703,710,714,715', 'docked': '709'}
+FAIL rule 4: w718 of Mail is not in front: terminal (w702), notes (w703), settings (w710), finder (w685) ahead of it, of which 6 cover part of it
+FAIL rule 4: w718 of Mail its app is not the one in front (process 72146 is)
+FAIL rule 4: w718 of Mail is not wholly in view: 51% of it, at 565,610 470×416 in 0,31 1600×791
+
+03:07:13.621 SCREEN -- begin 79 dock-icon-mail
+03:07:13.621 SCREEN -- text 79 clicks mail's icon in the Dock
+03:07:14.258 MACOS pid 72146 AXApplicationActivated
+03:07:14.265 SCREEN the button is down 355 809
+03:07:14.362 SCREEN front to back: terminal w884 notes settings finder safari textedit w718 mail preview calendar w883
+03:07:14.362 SCREEN the button is up 355 809
+03:07:14.392 SCREEN in front: process 72146 com.apple.Terminal
+03:07:14.396 MACOS pid 72241 AXApplicationDeactivated
+03:07:14.400 MACOS workspace didActivate pid 72146 com.apple.Terminal regular
+03:07:14.401 MACOS workspace didDeactivate pid 72241 com.apple.Notes regular
+03:07:14.403 DEBUG focus is on w702
+03:07:14.404 DEBUG w702 has the keyboard
+03:07:14.439 DEBUG raised w703, which stays in view
+03:07:14.440 MACOS pid 72241 AXFocusedWindowChanged w703 AXWindow/AXStandardWindow 400 31 800 790
+03:07:14.441 MACOS pid 72241 AXMainWindowChanged w703 AXWindow/AXStandardWindow 400 31 800 790
+03:07:14.458 SCREEN w884 of Arbor 88,549 895×277
+03:07:14.458 SCREEN front to back: w884 terminal notes settings finder safari textedit w718 mail preview calendar w883
+03:07:14.722 DEBUG raised w703, which stays in view
+03:07:14.723 MACOS pid 72241 AXFocusedWindowChanged w703 AXWindow/AXStandardWindow 400 31 800 790
+03:07:14.724 MACOS pid 72241 AXMainWindowChanged w703 AXWindow/AXStandardWindow 400 31 800 790
+03:07:14.953 DEBUG raised w703, which stays in view
+03:07:14.954 MACOS pid 72241 AXFocusedWindowChanged w703 AXWindow/AXStandardWindow 400 31 800 790
+03:07:14.954 MACOS pid 72241 AXMainWindowChanged w703 AXWindow/AXStandardWindow 400 31 800 790
+03:07:15.598 SCREEN -- end 79 act=switch settled=quiet:547 front=718 floating=685,688,697,702,703,710,714,715 docked=709
+03:07:15.858 SCRIPT == 80 mirror

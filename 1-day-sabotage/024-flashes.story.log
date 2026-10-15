@@ -1,0 +1,12 @@
+24 flashes: OFFENCE: a window that is out of view shows for a moment
+expected: {'act': 'view', 'settled': 'quiet:1019', 'moves': 'any', 'offence': 'flash'}
+FAIL rule 3: preview (w64) is out of view before and after, and 100% of it showed in between
+
+02:45:41.992 SCREEN -- begin 24 flashes
+02:45:41.992 SCREEN -- text 24 OFFENCE: a window that is out of view shows for a moment
+02:45:42.021 MACOS pid 7624 AXMoved w64 AXWindow/AXStandardWindow 400 300 708 320
+02:45:42.087 SCREEN preview (w64) 400,300 708×320
+02:45:42.235 MACOS pid 7624 AXMoved w64 AXWindow/AXStandardWindow 1599 770 708 320
+02:45:42.250 SCREEN preview (w64) 1599,770 708×320
+02:45:43.256 SCREEN -- end 24 act=view settled=quiet:1019 moves=any offence=flash
+02:45:43.427 SCRIPT == 25 honest-return

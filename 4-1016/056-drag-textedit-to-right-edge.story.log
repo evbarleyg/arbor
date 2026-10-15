@@ -1,0 +1,157 @@
+56 drag-textedit-to-right-edge: drags textedit by its title bar against the right edge of the screen and lets go
+expected: {'act': 'drag-where-macos-tiles', 'settled': 'quiet:370', 'drags': '697', 'moves': '697,703,709,703,709,', 'front': '697', 'own': '697', 'floating': '685,688,697,702,710,714,715', 'docked': '703,709'}
+FAIL rule 2: finder (w685) a floating window, moved, and the step did not name it
+FAIL rule 2: safari (w688) a floating window, moved, and the step did not name it
+FAIL rule 3: textedit (w697) moved 77 points further than the pointer did, 2456 ms into the step
+FAIL rule 1: textedit (w697) macOS's tiling preview and Arbor's drop preview were up at the same time
+FAIL rule 2: terminal (w702) a floating window, moved, and the step did not name it
+FAIL rule 2: settings (w710) a floating window, moved, and the step did not name it
+FAIL rule 2: preview (w714) a floating window, moved, and the step did not name it
+FAIL rule 2: mail (w715) a floating window, moved, and the step did not name it
+ODD rule 2: w718 of Mail moved along with a window of its app
+
+03:06:04.862 SCREEN -- begin 56 drag-textedit-to-right-edge
+03:06:04.862 SCREEN -- text 56 drags textedit by its title bar against the right edge of the screen and lets go
+03:06:04.924 SCRIPT drag w697 from 1198,610 to 1599,450
+03:06:05.553 SCREEN front to back: textedit w831 w718 mail settings notes preview calendar safari finder w743 terminal w827 w828 w829 w830
+03:06:05.553 SCREEN the button is down 1198 610
+03:06:05.739 SCREEN textedit (w697) 818,592 782×212
+03:06:05.820 SCREEN textedit (w697) 818,587 782×212
+03:06:05.820 DEBUG w697 is being dragged
+03:06:05.820 DEBUG drag of w697: on none
+03:06:05.837 MACOS pid 71766 AXMoved w697 AXWindow/AXStandardWindow 818 587 782 212
+03:06:05.898 SCREEN w831 of Arbor left the screen
+03:06:05.898 SCREEN front to back: textedit w718 mail settings notes preview calendar safari finder w743 terminal w827 w828 w829 w830
+03:06:05.908 DEBUG drag of w697: on none
+03:06:06.074 DEBUG drag of w697: waiting over beside(n3, ArborCore.Edge.bottom)
+03:06:06.124 SCREEN textedit (w697) 867,587 782×212
+03:06:06.189 MACOS pid 71766 AXMoved w697 AXWindow/AXStandardWindow 867 587 782 212
+03:06:06.196 SCREEN textedit (w697) 896,587 782×212
+03:06:06.260 DEBUG drag of w697: on beside(n3, ArborCore.Edge.bottom)
+03:06:06.301 MACOS pid 71766 AXMoved w697 AXWindow/AXStandardWindow 912 587 782 212
+03:06:06.318 SCREEN w836 of Arbor 12,527 1576×104 (level 3)
+03:06:06.318 SCREEN textedit (w697) 912,587 782×212
+03:06:06.327 SCREEN textedit (w697) 926,587 782×212
+03:06:06.371 SCREEN textedit (w697) 939,587 782×212
+03:06:06.388 DEBUG drag of w697: waiting over beside(n3, ArborCore.Edge.right)
+03:06:06.420 SCREEN textedit (w697) 953,587 782×212
+03:06:06.430 SCREEN textedit (w697) 966,587 782×212
+03:06:06.437 MACOS pid 71766 AXMoved w697 AXWindow/AXStandardWindow 966 587 782 212
+03:06:06.520 SCREEN textedit (w697) 979,587 782×212
+03:06:06.520 SCREEN w836 of Arbor left the screen
+03:06:06.526 SCREEN textedit (w697) 993,587 782×212
+03:06:06.526 MACOS pid 71766 AXMoved w697 AXWindow/AXStandardWindow 979 587 782 212
+03:06:06.556 DEBUG drag of w697: on beside(n3, ArborCore.Edge.right)
+03:06:06.565 SCREEN textedit (w697) 1006,587 782×212
+03:06:06.571 SCREEN w836 of Arbor 806,375 782×211 (level 3)
+03:06:06.587 SCREEN textedit (w697) 1019,587 782×212
+03:06:06.627 SCREEN textedit (w697) 1033,587 782×212
+03:06:06.635 MACOS pid 71766 AXMoved w697 AXWindow/AXStandardWindow 1033 587 782 212
+03:06:06.670 SCREEN textedit (w697) 1046,587 782×212
+03:06:06.726 SCREEN textedit (w697) 1059,587 782×212
+03:06:06.761 MACOS pid 71766 AXMoved w697 AXWindow/AXStandardWindow 1059 587 782 212
+03:06:06.770 SCREEN textedit (w697) 1073,587 782×212
+03:06:06.858 SCREEN textedit (w697) 1086,587 782×212
+03:06:06.868 MACOS pid 71766 AXMoved w697 AXWindow/AXStandardWindow 1086 587 782 212
+03:06:06.951 SCREEN textedit (w697) 1100,587 782×212
+03:06:07.041 SCREEN textedit (w697) 1113,587 782×212
+03:06:07.052 MACOS pid 71766 AXMoved w697 AXWindow/AXStandardWindow 1113 587 782 212
+03:06:07.075 SCREEN textedit (w697) 1126,587 782×212
+03:06:07.135 SCREEN textedit (w697) 1153,587 782×212
+03:06:07.140 SCREEN textedit (w697) 1166,587 782×212
+03:06:07.175 MACOS pid 71766 AXMoved w697 AXWindow/AXStandardWindow 1166 587 782 212
+03:06:07.195 SCREEN textedit (w697) 1180,587 782×212
+03:06:07.256 SCREEN textedit (w697) 1193,581 782×212
+03:06:07.303 DEBUG drag of w697: on float, left to macOS’s tiling
+03:06:07.303 MACOS pid 71766 AXMoved w697 AXWindow/AXStandardWindow 1193 581 782 212
+03:06:07.318 SCREEN w838 of WindowManager 785,16 830×821
+03:06:07.318 SCREEN textedit (w697) 1207,488 782×212
+03:06:07.318 SCREEN w837 of WindowManager 785,16 830×821
+03:06:07.318 SCREEN front to back: w838 textedit w837 w718 mail settings notes preview calendar safari finder w743 terminal w827 w828 w829 w830
+03:06:07.411 MACOS pid 71766 AXMoved w697 AXWindow/AXStandardWindow 1207 488 782 212
+03:06:07.447 SCREEN w836 of Arbor left the screen
+03:06:07.518 DEBUG drag of w697: on none
+03:06:07.536 SCREEN textedit (w697) 1208,438 782×212
+03:06:07.571 DEBUG drag of w697: on float, left to macOS’s tiling
+03:06:07.586 SCREEN textedit (w697) 1207,438 782×212
+03:06:07.626 MACOS pid 71766 AXMoved w697 AXWindow/AXStandardWindow 1207 438 782 212
+03:06:09.140 INFO  dropped w697 on float, display 5A42259C-47B8-4590-9762-97DBE4FE7F1B, left to macOS’s tiling
+03:06:09.145 SCREEN w837 of WindowManager left the screen
+03:06:09.145 SCREEN w838 of WindowManager left the screen
+03:06:09.145 SCREEN front to back: textedit w718 mail settings notes preview calendar safari finder w743 terminal w827 w828 w829 w830
+03:06:09.145 SCREEN the button is up 1599 450
+03:06:09.155 MACOS pid 71766 AXResized w697 AXWindow/AXStandardWindow 1205 437 783 214
+03:06:09.157 DEBUG stage up on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: 9 stand-ins, 0.46 s
+03:06:09.166 SCREEN w792 of Arbor 0,0 1600×900 (level 4)
+03:06:09.166 SCREEN textedit (w697) 1205,437 783×214
+03:06:09.169 MACOS pid 71766 AXResized w697 AXWindow/AXStandardWindow 1164 395 784 273
+03:06:09.190 MACOS pid 70859 AXResized w685 AXWindow/AXStandardWindow 340 570 920 252
+03:06:09.191 MACOS pid 70859 AXMoved w685 AXWindow/AXStandardWindow 340 570 920 252
+03:06:09.192 MACOS pid 71766 AXResized w697 AXWindow/AXStandardWindow 1098 330 787 366
+03:06:09.193 SCREEN textedit (w697) 1164,395 784×273
+03:06:09.193 SCREEN finder (w685) 0,570 920×252
+03:06:09.203 SCREEN textedit (w697) 1098,330 787×366
+03:06:09.203 SCREEN finder (w685) 340,570 920×252
+03:06:09.204 MACOS pid 71766 AXResized w697 AXWindow/AXStandardWindow 1032 263 790 461
+03:06:09.239 SCREEN textedit (w697) 974,205 793×544
+03:06:09.239 SCREEN safari (w688) 167,598 1324×224
+03:06:09.239 MACOS pid 71693 AXResized w688 AXWindow/AXStandardWindow 167 598 1324 224
+03:06:09.240 MACOS pid 71766 AXResized w697 AXWindow/AXStandardWindow 927 158 795 611
+03:06:09.241 MACOS pid 71693 AXMoved w688 AXWindow/AXStandardWindow 167 598 1324 224
+03:06:09.241 MACOS pid 71766 AXResized w697 AXWindow/AXStandardWindow 927 158 795 611
+03:06:09.245 SCREEN textedit (w697) 927,158 795×611
+03:06:09.246 MACOS pid 72146 AXTitleChanged w702 AXWindow/AXStandardWindow 97 598 877 229
+03:06:09.257 MACOS pid 72146 AXResized w702 AXWindow/AXStandardWindow 97 598 877 229
+03:06:09.257 MACOS pid 71766 AXResized w697 AXWindow/AXStandardWindow 891 122 796 662
+03:06:09.260 MACOS pid 72146 AXMoved w702 AXWindow/AXStandardWindow 97 598 877 214
+03:06:09.261 MACOS pid 72146 AXTitleChanged w702 AXWindow/AXStandardWindow 97 598 877 214
+03:06:09.261 MACOS pid 72146 AXResized w702 AXWindow/AXStandardWindow 97 598 877 214
+03:06:09.262 SCREEN textedit (w697) 891,122 796×662
+03:06:09.262 SCREEN terminal (w702) 97,598 877×229
+03:06:09.262 MACOS pid 72358 AXMoved w710 AXWindow/AXStandardWindow 437 352 723 470
+03:06:09.274 MACOS pid 71766 AXResized w697 AXWindow/AXStandardWindow 864 95 798 700
+03:06:09.278 MACOS pid 72468 AXResized w714 AXWindow/AXStandardWindow 800 598 800 224
+03:06:09.279 MACOS pid 72468 AXMoved w714 AXWindow/AXStandardWindow 800 598 800 224
+03:06:09.286 MACOS pid 71766 AXResized w697 AXWindow/AXStandardWindow 845 76 799 727
+03:06:09.301 SCREEN textedit (w697) 845,76 799×727
+03:06:09.301 SCREEN settings (w710) 437,352 723×470
+03:06:09.301 SCREEN preview (w714) 800,598 800×224
+03:06:09.301 SCREEN terminal (w702) 97,598 877×214
+03:06:09.308 MACOS pid 71766 AXResized w697 AXWindow/AXStandardWindow 831 62 799 747
+03:06:09.323 MACOS pid 71766 AXResized w697 AXWindow/AXStandardWindow 821 52 800 761
+03:06:09.337 SCREEN textedit (w697) 821,52 800×761
+03:06:09.357 MACOS pid 72852 AXResized w715 AXWindow/AXStandardWindow 240 586 1120 236
+03:06:09.358 MACOS pid 71766 AXResized w697 AXWindow/AXStandardWindow 809 41 800 777
+03:06:09.358 MACOS pid 72852 AXMoved w715 AXWindow/AXStandardWindow 240 586 1120 236
+03:06:09.359 MACOS pid 71766 AXResized w697 AXWindow/AXStandardWindow 809 41 800 777
+03:06:09.360 DEBUG stage retargeted on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: 9 stand-ins, 0.46 s
+03:06:09.366 SCREEN textedit (w697) 814,45 800×771
+03:06:09.371 MACOS pid 71766 AXResized w697 AXWindow/AXStandardWindow 806 38 800 782
+03:06:09.384 SCREEN w831 of Arbor 1198,429 797×230
+03:06:09.384 SCREEN textedit (w697) 806,38 800×782
+03:06:09.384 SCREEN w718 of Mail 565,638 470×416
+03:06:09.384 SCREEN mail (w715) 240,586 1120×236
+03:06:09.384 SCREEN w828 of Arbor 12,586 1576×12
+03:06:09.384 SCREEN w830 of Arbor left the screen
+03:06:09.384 SCREEN front to back: w831 textedit w718 mail settings notes preview calendar safari finder w743 terminal w827 w829 w828
+03:06:09.393 MACOS pid 71766 AXResized w697 AXWindow/AXStandardWindow 804 36 800 785
+03:06:09.399 SCREEN w831 of Arbor 797,29 815×799
+03:06:09.399 SCREEN textedit (w697) 804,36 800×785
+03:06:09.402 MACOS pid 71766 AXResized w697 AXWindow/AXStandardWindow 803 34 800 787
+03:06:09.420 MACOS pid 71766 AXResized w697 AXWindow/AXStandardWindow 802 33 800 789
+03:06:09.438 MACOS pid 71766 AXResized w697 AXWindow/AXStandardWindow 801 32 800 790
+03:06:09.440 SCREEN textedit (w697) 802,33 800×789
+03:06:09.450 SCREEN w831 of Arbor 793,25 815×803
+03:06:09.450 SCREEN textedit (w697) 800,32 800×790
+03:06:09.452 MACOS pid 71766 AXMoved w697 AXWindow/AXStandardWindow 800 32 800 790
+03:06:09.466 SCREEN w831 of Arbor 792,25 815×803
+03:06:09.468 MACOS pid 71766 AXResized w697 AXWindow/AXStandardWindow 800 31 800 791
+03:06:09.488 SCREEN w831 of Arbor 791,25 815×803
+03:06:09.488 SCREEN textedit (w697) 800,31 800×791
+03:06:09.999 DEBUG said on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: macOS tiled this window; Arbor stood aside · ⌃⌥⌘← docks it · Check Setup… in the menu
+03:06:10.038 DEBUG stage down
+03:06:10.073 SCREEN w822 of Arbor 465,728 670×38 (level 6)
+03:06:10.073 SCREEN w792 of Arbor left the screen
+03:06:15.461 SCREEN -- end 56 act=drag-where-macos-tiles settled=quiet:370 drags=697 moves=697,703,709,703,709, front=697 own=697 floating=685,688,697,702,710,714,715 docked=703,709
+03:06:15.502 SCREEN w822 of Arbor left the screen
+03:06:20.045 SCRIPT == 57 click-wallpaper

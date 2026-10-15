@@ -1,0 +1,50 @@
+101 float-all: presses ⌃⌥⇧F
+expected: {'act': 'way-out', 'settled': 'quiet:1085', 'moves': 'any', 'restores': 'all', 'places': '1', 'everything': '1', 'floating': '685,688,697,702,703,709,710,715,910', 'docked': ''}
+FAIL rule 5: notes (w703) has its size back but not its place: 400,31 800×790, it was at 0,31 800×791
+
+03:08:29.296 SCREEN -- begin 101 float-all
+03:08:29.296 SCREEN -- text 101 presses ⌃⌥⇧F
+03:08:29.513 DEBUG stage up on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: 8 stand-ins, 0.46 s
+03:08:29.529 SCREEN w886 of Arbor 0,0 1600×900 (level 4)
+03:08:29.576 SCREEN calendar (w709) 1599,770 911×604
+03:08:29.583 MACOS pid 72296 AXResized w709 AXWindow/AXStandardWindow 414 115 911 604
+03:08:29.583 MACOS pid 72296 AXMoved w709 AXWindow/AXStandardWindow 414 115 911 604
+03:08:29.624 MACOS pid 72241 AXResized w703 AXWindow/AXStandardWindow 400 31 800 790
+03:08:29.624 MACOS pid 72241 AXMoved w703 AXWindow/AXStandardWindow 400 31 800 790
+03:08:29.625 MACOS pid 72241 AXResized w703 AXWindow/AXStandardWindow 400 31 800 790
+03:08:29.628 SCREEN notes (w703) 400,31 800×790
+03:08:29.628 SCREEN calendar (w709) 414,115 911×604
+03:08:29.647 MACOS pid 70859 AXResized w685 AXWindow/AXStandardWindow 340 120 920 436
+03:08:29.647 MACOS pid 70859 AXMoved w685 AXWindow/AXStandardWindow 340 120 920 436
+03:08:29.678 MACOS pid 71693 AXResized w688 AXWindow/AXDialog 799 31 801 790 minimized
+03:08:29.690 SCREEN finder (w685) 340,120 920×436
+03:08:29.694 MACOS pid 71766 AXResized w697 AXWindow/AXStandardWindow 800 31 800 790
+03:08:29.708 MACOS pid 72146 AXTitleChanged w702 AXWindow/AXStandardWindow 97 238 877 499
+03:08:29.708 MACOS pid 72146 AXResized w702 AXWindow/AXStandardWindow 97 238 877 499
+03:08:29.709 MACOS pid 72146 AXMoved w702 AXWindow/AXStandardWindow 97 238 877 499
+03:08:29.737 SCREEN textedit (w697) 800,31 800×790
+03:08:29.737 SCREEN terminal (w702) 97,238 877×499
+03:08:29.738 MACOS pid 72358 AXResized w710 AXWindow/AXStandardWindow 437 85 723 625
+03:08:29.739 MACOS pid 72358 AXMoved w710 AXWindow/AXStandardWindow 437 85 723 625
+03:08:29.803 MACOS pid 72852 AXResized w715 AXWindow/AXStandardWindow 240 72 1120 630
+03:08:29.803 MACOS pid 72852 AXMoved w715 AXWindow/AXStandardWindow 240 72 1120 630
+03:08:29.812 MACOS pid 95350 AXResized w910 AXWindow/AXStandardWindow 4 35 708 424
+03:08:29.813 MACOS pid 95350 AXMoved w910 AXWindow/AXStandardWindow 4 35 708 424
+03:08:29.815 SCREEN preview (w910) 4,35 708×424
+03:08:29.815 SCREEN settings (w710) 437,85 723×625
+03:08:29.815 SCREEN w718 of Mail 565,179 470×416
+03:08:29.815 SCREEN mail (w715) 240,72 1120×630
+03:08:29.820 INFO  float-all: floated 2 windows; 1 saved view is gone
+03:08:29.821 DEBUG said on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: Floated 2 windows; 1 saved view is gone · ⌃⌥Z takes it back
+03:08:29.879 SCREEN w880 of Arbor 568,728 465×38 (level 6)
+03:08:29.879 SCREEN w883 of Arbor left the screen
+03:08:29.879 SCREEN w882 of Arbor left the screen
+03:08:29.879 SCREEN w884 of Arbor left the screen
+03:08:29.879 SCREEN front to back: notes preview settings textedit terminal finder w718 mail calendar w881
+03:08:30.012 SCREEN w881 of Arbor left the screen
+03:08:30.012 SCREEN front to back: notes preview settings textedit terminal finder w718 mail calendar
+03:08:30.073 SCREEN w885 of Arbor left the screen
+03:08:30.081 DEBUG stage down
+03:08:30.155 SCREEN w886 of Arbor left the screen
+03:08:31.121 SCREEN -- end 101 act=way-out settled=quiet:1085 moves=any restores=all places=1 everything=1 floating=685,688,697,702,703,709,710,715,910 docked=
+03:08:31.411 SCRIPT == 102 click-textedit

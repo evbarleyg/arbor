@@ -1,0 +1,14 @@
+39 wrong-size: OFFENCE: everything is given back, but one window keeps a size that is not its own
+expected: {'act': 'way-out', 'settled': 'quiet:1024', 'moves': 'any', 'restores': 'all', 'offence': 'size-lost'}
+FAIL rule 5: textedit (w45) is 119,79 640×460; its own size was 119,79 520×380
+
+02:46:23.691 SCREEN -- begin 39 wrong-size
+02:46:23.691 SCREEN -- text 39 OFFENCE: everything is given back, but one window keeps a size that is not its own
+02:46:23.721 MACOS pid 339 AXMoved w31 AXWindow/AXStandardWindow 700 80 560 380
+02:46:23.732 SCREEN finder (w31) 700,80 560×380
+02:46:23.809 MACOS pid 6562 AXResized w45 AXWindow/AXStandardWindow 119 79 640 460
+02:46:23.809 MACOS pid 6562 AXMoved w45 AXWindow/AXStandardWindow 119 79 640 460
+02:46:23.814 SCREEN textedit (w45) 140,100 640×460
+02:46:23.820 SCREEN textedit (w45) 119,79 640×460
+02:46:24.836 SCREEN -- end 39 act=way-out settled=quiet:1024 moves=any restores=all offence=size-lost
+02:46:25.081 SCRIPT == 40 honest-give-back

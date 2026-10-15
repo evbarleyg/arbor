@@ -1,0 +1,106 @@
+49 input-last: a round of input: presses on windows behind and in front, keys, a scroll, a drag inside a window
+expected: {'act': 'instrument', 'settled': 'quiet:819', 'round': 'last', 'front': '45', 'posted': 'press:22,up:22,key:13,scroll:28,dragged:20', 'offence': 'input-held', 'floating': '', 'docked': ''}
+FAIL rule 6: 1 of 13 events of the kind key never reached the apps
+
+02:47:20.801 SCREEN -- begin 49 input-last
+02:47:20.801 SCREEN -- text 49 a round of input: presses on windows behind and in front, keys, a scroll, a drag inside a window
+02:47:21.440 SCREEN the button is down 980 92
+02:47:21.449 MACOS pid 339 AXApplicationActivated
+02:47:21.516 SCREEN front to back: finder textedit preview
+02:47:21.516 SCREEN the button is up 980 92
+02:47:21.538 SCREEN in front: process 339 com.apple.finder
+02:47:21.541 MACOS pid 6562 AXApplicationDeactivated
+02:47:21.542 MACOS workspace didActivate pid 339 com.apple.finder regular
+02:47:21.542 MACOS workspace didDeactivate pid 6562 com.apple.TextEdit regular
+02:47:22.455 SCREEN front to back: preview finder textedit
+02:47:22.455 SCREEN the button is down 1068 512
+02:47:22.494 SCREEN in front: process 7624 com.apple.Preview
+02:47:22.494 MACOS pid 7624 AXApplicationActivated
+02:47:22.494 MACOS workspace didActivate pid 7624 com.apple.Preview regular
+02:47:22.494 MACOS workspace didDeactivate pid 339 com.apple.finder regular
+02:47:22.495 MACOS pid 339 AXApplicationDeactivated
+02:47:22.537 SCREEN the button is up 1068 512
+02:47:23.352 SCREEN the button is down 980 92
+02:47:23.379 MACOS pid 339 AXApplicationActivated
+02:47:23.396 SCREEN front to back: finder preview textedit
+02:47:23.396 SCREEN the button is up 980 92
+02:47:23.408 SCREEN in front: process 339 com.apple.finder
+02:47:23.435 MACOS workspace didActivate pid 339 com.apple.finder regular
+02:47:23.435 MACOS workspace didDeactivate pid 7624 com.apple.Preview regular
+02:47:23.435 MACOS pid 7624 AXApplicationDeactivated
+02:47:24.655 SCREEN front to back: preview finder textedit
+02:47:24.655 SCREEN the button is down 1068 512
+02:47:24.655 SCREEN in front: process 7624 com.apple.Preview
+02:47:24.655 MACOS pid 7624 AXApplicationActivated
+02:47:24.656 MACOS workspace didActivate pid 7624 com.apple.Preview regular
+02:47:24.656 MACOS workspace didDeactivate pid 339 com.apple.finder regular
+02:47:24.657 MACOS pid 339 AXApplicationDeactivated
+02:47:24.691 SCREEN the button is up 1068 512
+02:47:25.639 SCREEN the button is down 980 92
+02:47:25.662 MACOS pid 339 AXApplicationActivated
+02:47:25.698 SCREEN front to back: finder preview textedit
+02:47:25.698 SCREEN the button is up 980 92
+02:47:25.708 SCREEN in front: process 339 com.apple.finder
+02:47:25.724 MACOS pid 7624 AXApplicationDeactivated
+02:47:25.724 MACOS workspace didActivate pid 339 com.apple.finder regular
+02:47:25.724 MACOS workspace didDeactivate pid 7624 com.apple.Preview regular
+02:47:26.936 SCREEN front to back: preview finder textedit
+02:47:26.936 SCREEN the button is down 1068 512
+02:47:26.936 SCREEN the button is up 1068 512
+02:47:26.981 SCREEN in front: process 7624 com.apple.Preview
+02:47:26.981 MACOS pid 7624 AXApplicationActivated
+02:47:26.982 MACOS workspace didActivate pid 7624 com.apple.Preview regular
+02:47:26.984 MACOS workspace didDeactivate pid 339 com.apple.finder regular
+02:47:26.985 MACOS pid 339 AXApplicationDeactivated
+02:47:27.818 SCREEN the button is down 980 92
+02:47:27.830 MACOS pid 339 AXApplicationActivated
+02:47:27.906 SCREEN front to back: finder preview textedit
+02:47:27.906 SCREEN the button is up 980 92
+02:47:27.906 SCREEN in front: process 339 com.apple.finder
+02:47:27.921 MACOS workspace didActivate pid 339 com.apple.finder regular
+02:47:27.921 MACOS workspace didDeactivate pid 7624 com.apple.Preview regular
+02:47:27.927 MACOS pid 7624 AXApplicationDeactivated
+02:47:29.046 SCREEN in front: process 7624 com.apple.Preview
+02:47:29.047 MACOS workspace didActivate pid 7624 com.apple.Preview regular
+02:47:29.068 SCREEN front to back: preview finder textedit
+02:47:29.068 SCREEN the button is down 1068 512
+02:47:29.069 MACOS workspace didDeactivate pid 339 com.apple.finder regular
+02:47:29.079 MACOS pid 339 AXApplicationDeactivated
+02:47:29.079 MACOS pid 7624 AXApplicationActivated
+02:47:29.095 SCREEN the button is up 1068 512
+02:47:29.862 SCREEN front to back: textedit preview finder
+02:47:29.862 SCREEN the button is down 385 91
+02:47:29.900 SCREEN in front: process 6562 com.apple.TextEdit
+02:47:29.900 MACOS pid 6562 AXApplicationActivated
+02:47:29.901 MACOS workspace didActivate pid 6562 com.apple.TextEdit regular
+02:47:29.901 MACOS workspace didDeactivate pid 7624 com.apple.Preview regular
+02:47:29.901 MACOS pid 7624 AXApplicationDeactivated
+02:47:29.966 SCREEN the button is up 385 91
+02:47:30.967 SCREEN the button is down 379 91
+02:47:31.070 SCREEN the button is up 379 91
+02:47:31.897 SCREEN the button is down 391 91
+02:47:32.036 SCREEN the button is up 391 91
+02:47:32.739 SCREEN the button is down 379 91
+02:47:32.793 SCREEN the button is up 379 91
+02:47:33.497 SCREEN the button is down 391 91
+02:47:33.559 SCREEN the button is up 391 91
+02:47:34.268 SCREEN the button is down 379 91
+02:47:34.365 SCREEN the button is up 379 91
+02:47:35.220 SCREEN the button is down 391 91
+02:47:35.263 SCREEN the button is up 391 91
+02:47:36.021 SCREEN the button is down 379 91
+02:47:36.104 SCREEN the button is up 379 91
+02:47:36.962 SCREEN the button is down 391 91
+02:47:37.088 SCREEN the button is up 391 91
+02:47:37.812 SCREEN the button is down 379 91
+02:47:37.886 SCREEN the button is up 379 91
+02:47:38.712 SCREEN the button is down 391 91
+02:47:38.863 SCREEN the button is up 391 91
+02:47:39.536 SCREEN the button is down 379 91
+02:47:39.567 SCREEN the button is up 379 91
+02:47:40.275 SCREEN the button is down 391 91
+02:47:40.315 SCREEN the button is up 391 91
+02:47:45.324 SCREEN the button is down 379 269
+02:47:47.503 SCREEN the button is up 439 289
+02:47:48.630 SCREEN -- end 49 act=instrument settled=quiet:819 round=last front=45 posted=press:22,up:22,key:13,scroll:28,dragged:20 offence=input-held floating= docked=
+02:47:48.887 SCRIPT == 50 both-previews

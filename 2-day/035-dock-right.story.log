@@ -1,0 +1,36 @@
+35 dock-right: presses ⌃⌥⌘ and the right arrow
+expected: {'act': 'dock-key', 'settled': 'quiet:659', 'moves': '170,173,170,173,182,', 'front': '182', 'floating': '187,188,189,192,194,197', 'docked': '170,173,182'}
+ODD rule 3: the last window came to rest 745 ms after the key or the button
+
+02:51:22.862 SCREEN -- begin 35 dock-right
+02:51:22.862 SCREEN -- text 35 presses ⌃⌥⌘ and the right arrow
+02:51:23.083 INFO  made room for w173, the Desktop
+02:51:23.086 DEBUG stage up on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: 9 stand-ins, 0.46 s
+02:51:23.089 SCREEN w279 of Arbor 0,0 1600×900 (level 4)
+02:51:23.095 SCREEN finder (w170) 12,43 501×767
+02:51:23.099 MACOS pid 21266 AXResized w170 AXWindow/AXStandardWindow 12 43 501 767
+02:51:23.106 MACOS pid 22564 AXMoved w173 AXWindow/AXStandardWindow 712 43 574 767
+02:51:23.116 MACOS pid 22643 AXResized w182 AXWindow/AXStandardWindow 1298 43 290 756
+02:51:23.116 MACOS pid 22643 AXMoved w182 AXWindow/AXStandardWindow 1298 43 290 756
+02:51:23.122 INFO  made room for w173, the Desktop, w170
+02:51:23.122 MACOS pid 22643 AXResized w182 AXWindow/AXStandardWindow 1298 43 290 767
+02:51:23.125 DEBUG stage retargeted on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: 9 stand-ins, 0.46 s
+02:51:23.132 SCREEN textedit (w182) 1298,43 290×756
+02:51:23.132 SCREEN safari (w173) 712,43 574×767
+02:51:23.140 INFO  dock right: docked w182 at the right edge
+02:51:23.141 DEBUG said on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: Docked · ⌃⌥↩ frames it
+02:51:23.197 SCREEN w283 of Arbor 692,728 216×38 (level 6)
+02:51:23.197 SCREEN w281 of Arbor 1289,34 308×785
+02:51:23.197 SCREEN textedit (w182) 1298,43 290×767
+02:51:23.197 SCREEN w288 of Arbor 525,43 175×767
+02:51:23.197 SCREEN w280 of Arbor 513,43 12×767
+02:51:23.197 SCREEN w284 of Arbor 700,43 12×767
+02:51:23.197 SCREEN w289 of Arbor 1286,43 12×767
+02:51:23.197 SCREEN front to back: w281 textedit safari finder w200 mail preview settings calendar notes terminal w238 w288 w280 w284 w289
+02:51:23.805 DEBUG stage down
+02:51:23.834 SCREEN w279 of Arbor left the screen
+02:51:24.292 SCREEN -- end 35 act=dock-key settled=quiet:659 moves=170,173,170,173,182, front=182 floating=187,188,189,192,194,197 docked=170,173,182
+02:51:24.465 SCREEN -- chapter Docking by real drags
+02:51:24.473 INFO  trace day-3 ended: 371 lines, trace off
+02:51:24.499 INFO  trace day-4: recording to /tmp/arbor-shell.a8bXrr/home/traces/2026-10-15-025124-day-4.jsonl
+02:51:24.586 SCRIPT == 36 dock-icon-terminal

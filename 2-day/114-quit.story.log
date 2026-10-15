@@ -1,0 +1,48 @@
+114 quit: chooses Quit Arbor in Arbor's menu
+expected: {'act': 'quit-and-start', 'settled': 'quiet:882', 'moves': 'any', 'restores': 'all', 'places': '1', 'everything': '1'}
+FAIL rule 5: calendar (w189) has its size back but not its place: 385,145 683×601, it was at 445,205 683×601
+
+02:54:51.687 SCREEN -- begin 114 quit
+02:54:51.687 SCREEN -- text 114 chooses Quit Arbor in Arbor's menu
+02:54:52.321 DEBUG menu bar click: x 67.0 by the event, 67.0 by the screen, button 134.0 wide
+02:54:52.470 SCREEN w432 of Arbor 1227,31 286×785 (level 101)
+02:54:53.537 SCREEN w432 of Arbor left the screen
+02:54:53.639 MACOS pid 21266 AXResized w170 AXWindow/AXStandardWindow 340 120 920 436
+02:54:53.639 MACOS pid 21266 AXMoved w170 AXWindow/AXStandardWindow 340 120 920 436
+02:54:53.654 SCREEN finder (w170) 340,120 920×436
+02:54:53.704 MACOS pid 22564 AXResized w173 AXWindow/AXStandardWindow 138 31 1324 790
+02:54:53.705 MACOS pid 22564 AXMoved w173 AXWindow/AXStandardWindow 138 31 1324 790
+02:54:53.705 MACOS pid 22564 AXResized w173 AXWindow/AXStandardWindow 138 31 1324 790
+02:54:53.712 SCREEN safari (w173) 138,31 1324×790
+02:54:53.712 SCREEN terminal (w187) 1599,790 877×499
+02:54:53.718 MACOS pid 22702 AXTitleChanged w187 AXWindow/AXStandardWindow 97 238 877 499
+02:54:53.719 MACOS pid 22702 AXResized w187 AXWindow/AXStandardWindow 97 238 877 499
+02:54:53.720 MACOS pid 22702 AXMoved w187 AXWindow/AXStandardWindow 97 238 877 499
+02:54:53.739 MACOS pid 23136 AXResized w188 AXWindow/AXStandardWindow -1 32 800 791
+02:54:53.740 MACOS pid 23136 AXMoved w188 AXWindow/AXStandardWindow -1 32 800 791
+02:54:53.762 MACOS pid 23209 AXResized w189 AXWindow/AXStandardWindow 385 145 683 601
+02:54:53.766 MACOS pid 23209 AXMoved w189 AXWindow/AXStandardWindow 385 145 683 601
+02:54:53.773 MACOS pid 23267 AXMoved w192 AXWindow/AXStandardWindow 437 85 723 625
+02:54:53.775 MACOS pid 23339 AXMoved w194 AXWindow/AXStandardWindow 4 35 708 424
+02:54:53.787 SCREEN calendar (w189) 385,145 683×601
+02:54:53.787 SCREEN preview (w194) 4,35 708×424
+02:54:53.787 SCREEN settings (w192) 437,85 723×625
+02:54:53.787 SCREEN notes (w188) -1,32 800×791
+02:54:53.787 SCREEN terminal (w187) 97,238 877×499
+02:54:53.850 MACOS pid 23434 AXResized w197 AXWindow/AXStandardWindow 240 72 1120 630
+02:54:53.851 MACOS pid 23434 AXMoved w197 AXWindow/AXStandardWindow 240 72 1120 630
+02:54:53.857 MACOS pid 39180 AXResized w353 AXWindow/AXStandardWindow 165 65 673 439
+02:54:53.858 MACOS pid 39180 AXMoved w353 AXWindow/AXStandardWindow 165 65 673 439
+02:54:53.859 INFO  trace day-14 ended: 42 lines, Arbor stopped
+02:54:53.859 INFO  stopped; all windows returned to view
+02:54:53.860 INFO  Arbor quit
+02:54:53.865 SCREEN w200 of Mail 565,179 470×416
+02:54:53.865 SCREEN mail (w197) 240,72 1120×630
+02:54:53.865 SCREEN textedit (w353) 165,65 673×439
+02:54:53.865 SCREEN w238 of Arbor left the screen
+02:54:53.865 SCREEN w424 of Arbor left the screen
+02:54:53.865 SCREEN w423 of Arbor left the screen
+02:54:53.865 SCREEN front to back: safari finder calendar w200 mail preview settings notes textedit terminal
+02:54:53.924 SCREEN -- arbor gone
+02:54:54.893 SCREEN -- end 114 act=quit-and-start settled=quiet:882 moves=any restores=all places=1 everything=1
+02:54:55.083 SCRIPT == 115 dock-icon-finder

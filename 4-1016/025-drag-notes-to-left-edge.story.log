@@ -1,0 +1,115 @@
+25 drag-notes-to-left-edge: drags notes by its title bar against the left edge of the screen and lets go
+expected: {'act': 'drag-where-macos-tiles', 'settled': 'quiet:366', 'drags': '703', 'moves': ',,', 'front': '703', 'own': '703', 'floating': '685,688,697,702,703,709,710,714,715', 'docked': ''}
+FAIL rule 3: notes (w703) moved 70 points further than the pointer did, 4770 ms into the step
+
+03:03:23.649 SCREEN -- begin 25 drag-notes-to-left-edge
+03:03:23.649 SCREEN -- text 25 drags notes by its title bar against the left edge of the screen and lets go
+03:03:23.694 SCRIPT drag w703 from 112,43 to 0,450
+03:03:24.282 SCREEN front to back: notes safari finder preview w743 calendar textedit w718 mail settings terminal
+03:03:24.282 SCREEN the button is down 112 43
+03:03:24.353 MACOS pid 71693 AXApplicationDeactivated
+03:03:24.354 SCREEN in front: process 72241 com.apple.Notes
+03:03:24.356 MACOS workspace didActivate pid 72241 com.apple.Notes regular
+03:03:24.356 MACOS workspace didDeactivate pid 71693 com.apple.Safari regular
+03:03:24.362 DEBUG focus is on w703
+03:03:24.362 MACOS pid 72241 AXApplicationActivated
+03:03:24.363 DEBUG w703 has the keyboard
+03:03:24.515 SCREEN notes (w703) -4,44 800×791
+03:03:24.584 DEBUG w703 is being dragged
+03:03:24.585 DEBUG drag of w703: on float
+03:03:24.606 MACOS pid 72241 AXMoved w703 AXWindow/AXStandardWindow -11 72 800 791
+03:03:24.653 SCREEN notes (w703) -11,72 800×791
+03:03:24.687 SCREEN notes (w703) -15,85 800×791
+03:03:24.763 SCREEN notes (w703) -18,99 800×791
+03:03:24.771 MACOS pid 72241 AXMoved w703 AXWindow/AXStandardWindow -18 99 800 791
+03:03:24.847 SCREEN notes (w703) -22,109 800×791
+03:03:24.909 MACOS pid 72241 AXMoved w703 AXWindow/AXStandardWindow -26 109 800 791
+03:03:24.914 SCREEN notes (w703) -26,109 800×791
+03:03:24.924 SCREEN notes (w703) -30,109 800×791
+03:03:25.009 SCREEN notes (w703) -33,122 800×791
+03:03:25.023 MACOS pid 72241 AXMoved w703 AXWindow/AXStandardWindow -33 122 800 791
+03:03:25.139 SCREEN notes (w703) -37,150 800×791
+03:03:25.188 SCREEN notes (w703) -41,163 800×791
+03:03:25.216 MACOS pid 72241 AXMoved w703 AXWindow/AXStandardWindow -41 163 800 791
+03:03:25.253 SCREEN notes (w703) -45,177 800×791
+03:03:25.313 SCREEN notes (w703) -48,190 800×791
+03:03:25.329 MACOS pid 72241 AXMoved w703 AXWindow/AXStandardWindow -48 190 800 791
+03:03:25.410 SCREEN notes (w703) -52,204 800×791
+03:03:25.470 SCREEN notes (w703) -56,217 800×791
+03:03:25.509 MACOS pid 72241 AXMoved w703 AXWindow/AXStandardWindow -56 217 800 791
+03:03:25.553 SCREEN notes (w703) -59,231 800×791
+03:03:25.656 SCREEN notes (w703) -63,245 800×791
+03:03:25.659 MACOS pid 72241 AXMoved w703 AXWindow/AXStandardWindow -63 245 800 791
+03:03:25.713 SCREEN notes (w703) -67,258 800×791
+03:03:25.770 SCREEN notes (w703) -71,272 800×791
+03:03:25.814 MACOS pid 72241 AXMoved w703 AXWindow/AXStandardWindow -71 272 800 791
+03:03:25.826 SCREEN notes (w703) -74,285 800×791
+03:03:25.927 MACOS pid 72241 AXMoved w703 AXWindow/AXStandardWindow -78 299 800 791
+03:03:25.930 SCREEN notes (w703) -78,299 800×791
+03:03:25.937 SCREEN notes (w703) -82,312 800×791
+03:03:26.049 MACOS pid 72241 AXMoved w703 AXWindow/AXStandardWindow -86 326 800 791
+03:03:26.065 SCREEN notes (w703) -86,326 800×791
+03:03:26.119 SCREEN notes (w703) -89,340 800×791
+03:03:26.200 SCREEN notes (w703) -93,353 800×791
+03:03:26.215 MACOS pid 72241 AXMoved w703 AXWindow/AXStandardWindow -93 353 800 791
+03:03:26.237 SCREEN notes (w703) -97,367 800×791
+03:03:26.290 SCREEN notes (w703) -101,380 800×791
+03:03:26.335 MACOS pid 72241 AXMoved w703 AXWindow/AXStandardWindow -101 380 800 791
+03:03:26.353 SCREEN notes (w703) -104,394 800×791
+03:03:26.446 MACOS pid 72241 AXMoved w703 AXWindow/AXStandardWindow -108 407 800 791
+03:03:26.464 SCREEN notes (w703) -108,407 800×791
+03:03:26.475 SCREEN notes (w703) -112,421 800×791
+03:03:26.556 DEBUG drag of w703: on float, left to macOS’s tiling
+03:03:26.581 MACOS pid 72241 AXMoved w703 AXWindow/AXStandardWindow -115 435 800 791
+03:03:26.597 SCREEN w785 of WindowManager -15,16 830×821
+03:03:26.597 SCREEN notes (w703) -115,435 800×791
+03:03:26.597 SCREEN w784 of WindowManager -15,16 830×821
+03:03:26.597 SCREEN front to back: w785 notes w784 safari finder preview w743 calendar textedit w718 mail settings terminal
+03:03:26.839 DEBUG drag of w703: on float
+03:03:26.850 SCREEN notes (w703) -114,435 800×791
+03:03:26.943 DEBUG drag of w703: on float, left to macOS’s tiling
+03:03:26.946 MACOS pid 72241 AXMoved w703 AXWindow/AXStandardWindow -114 435 800 791
+03:03:28.370 SCREEN notes (w703) -115,435 800×791
+03:03:28.385 MACOS pid 72241 AXMoved w703 AXWindow/AXStandardWindow -115 435 800 791
+03:03:28.388 INFO  dropped w703 on float, display 5A42259C-47B8-4590-9762-97DBE4FE7F1B, left to macOS’s tiling
+03:03:28.406 MACOS pid 72241 AXMoved w703 AXWindow/AXStandardWindow -111 421 800 791
+03:03:28.417 MACOS pid 72241 AXMoved w703 AXWindow/AXStandardWindow -95 365 800 791
+03:03:28.419 SCREEN notes (w703) -95,365 800×791
+03:03:28.419 SCREEN w784 of WindowManager left the screen
+03:03:28.419 SCREEN w785 of WindowManager left the screen
+03:03:28.419 SCREEN front to back: notes safari finder preview w743 calendar textedit w718 mail settings terminal
+03:03:28.419 SCREEN the button is up 0 450
+03:03:28.431 MACOS pid 72241 AXMoved w703 AXWindow/AXStandardWindow -76 298 800 791
+03:03:28.439 SCREEN notes (w703) -76,298 800×791
+03:03:28.447 MACOS pid 72241 AXMoved w703 AXWindow/AXStandardWindow -58 235 800 791
+03:03:28.464 MACOS pid 72241 AXMoved w703 AXWindow/AXStandardWindow -43 182 800 791
+03:03:28.479 SCREEN notes (w703) -43,182 800×791
+03:03:28.480 MACOS pid 72241 AXMoved w703 AXWindow/AXStandardWindow -31 140 800 791
+03:03:28.486 SCREEN notes (w703) -31,140 800×791
+03:03:28.497 MACOS pid 72241 AXMoved w703 AXWindow/AXStandardWindow -22 109 800 791
+03:03:28.517 MACOS pid 72241 AXMoved w703 AXWindow/AXStandardWindow -16 86 800 791
+03:03:28.531 MACOS pid 72241 AXMoved w703 AXWindow/AXStandardWindow -11 69 800 791
+03:03:28.535 SCREEN notes (w703) -11,69 800×791
+03:03:28.547 MACOS pid 72241 AXMoved w703 AXWindow/AXStandardWindow -8 58 800 791
+03:03:28.567 MACOS pid 72241 AXMoved w703 AXWindow/AXStandardWindow -5 49 800 791
+03:03:28.583 MACOS pid 72241 AXMoved w703 AXWindow/AXStandardWindow -4 44 800 791
+03:03:28.600 MACOS pid 72241 AXMoved w703 AXWindow/AXStandardWindow -3 40 800 791
+03:03:28.601 SCREEN notes (w703) -3,40 800×791
+03:03:28.616 MACOS pid 72241 AXMoved w703 AXWindow/AXStandardWindow -2 37 800 791
+03:03:28.624 SCREEN notes (w703) -2,37 800×791
+03:03:28.633 MACOS pid 72241 AXMoved w703 AXWindow/AXStandardWindow -1 35 800 791
+03:03:28.638 SCREEN notes (w703) -1,35 800×791
+03:03:28.648 MACOS pid 72241 AXMoved w703 AXWindow/AXStandardWindow -1 34 800 791
+03:03:28.661 SCREEN notes (w703) -1,34 800×791
+03:03:28.664 MACOS pid 72241 AXMoved w703 AXWindow/AXStandardWindow -1 33 800 791
+03:03:28.680 MACOS pid 72241 AXMoved w703 AXWindow/AXStandardWindow -1 32 800 791
+03:03:28.703 SCREEN notes (w703) -1,32 800×791
+03:03:28.730 MACOS pid 72241 AXMoved w703 AXWindow/AXStandardWindow 0 32 800 791
+03:03:28.738 SCREEN notes (w703) 0,32 800×791
+03:03:28.780 MACOS pid 72241 AXMoved w703 AXWindow/AXStandardWindow 0 31 800 791
+03:03:28.787 SCREEN notes (w703) 0,31 800×791
+03:03:28.889 DEBUG said on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: macOS tiled this window; Arbor stood aside · ⌃⌥⌘← docks it · Check Setup… in the menu
+03:03:28.929 SCREEN w748 of Arbor 465,728 670×38 (level 6)
+03:03:34.115 SCREEN -- end 25 act=drag-where-macos-tiles settled=quiet:366 drags=703 moves=,, front=703 own=703 floating=685,688,697,702,703,709,710,714,715 docked=
+03:03:34.297 SCREEN w748 of Arbor left the screen
+03:03:34.399 SCRIPT == 26 view-all

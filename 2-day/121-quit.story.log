@@ -1,0 +1,29 @@
+121 quit: chooses Quit Arbor in Arbor's menu
+expected: {'act': 'quit-and-start', 'settled': 'quiet:845', 'moves': 'any', 'restores': 'all', 'places': '1', 'everything': '1'}
+FAIL rule 5: calendar (w189) has its size back but not its place: 385,145 683×601, it was at 445,205 683×601
+
+02:55:48.510 SCREEN -- begin 121 quit
+02:55:48.510 SCREEN -- text 121 chooses Quit Arbor in Arbor's menu
+02:55:49.210 DEBUG menu bar click: x 67.0 by the event, 67.0 by the screen, button 134.0 wide
+02:55:49.372 SCREEN w450 of Arbor 1227,31 337×785 (level 101)
+02:55:50.619 SCREEN w450 of Arbor left the screen
+02:55:50.733 SCREEN finder (w170) 12,43 920×436
+02:55:50.738 MACOS pid 21266 AXResized w170 AXWindow/AXStandardWindow 340 120 920 436
+02:55:50.738 MACOS pid 21266 AXMoved w170 AXWindow/AXStandardWindow 340 120 920 436
+02:55:50.762 SCREEN safari (w173) 1014,43 586×778
+02:55:50.762 SCREEN finder (w170) 340,120 920×436
+02:55:50.795 SCREEN safari (w173) 138,31 1324×790
+02:55:50.807 INFO  trace day-16 ended: 384 lines, Arbor stopped
+02:55:50.807 INFO  stopped; all windows returned to view
+02:55:50.807 MACOS pid 22564 AXResized w173 AXWindow/AXStandardWindow 138 31 1324 790
+02:55:50.808 MACOS pid 22564 AXMoved w173 AXWindow/AXStandardWindow 138 31 1324 790
+02:55:50.808 MACOS pid 22564 AXResized w173 AXWindow/AXStandardWindow 138 31 1324 790
+02:55:50.809 SCREEN w441 of Arbor left the screen
+02:55:50.809 SCREEN w442 of Arbor left the screen
+02:55:50.809 SCREEN w440 of Arbor left the screen
+02:55:50.809 SCREEN w443 of Arbor left the screen
+02:55:50.809 SCREEN front to back: settings notes safari finder terminal calendar w200 mail preview textedit
+02:55:50.809 INFO  Arbor quit
+02:55:50.890 SCREEN -- arbor gone
+02:55:51.817 SCREEN -- end 121 act=quit-and-start settled=quiet:845 moves=any restores=all places=1 everything=1
+02:55:52.023 SCRIPT == 122 input-after

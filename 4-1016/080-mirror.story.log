@@ -1,0 +1,50 @@
+80 mirror: presses ⌃⌥⇧R
+expected: {'act': 'dock-key', 'settled': 'quiet:797', 'moves': '709,709,', 'floating': '685,688,697,702,703,710,714,715', 'docked': '709'}
+FAIL rule 2: finder (w685) a floating window, moved, and the step did not name it
+FAIL rule 2: safari (w688) a floating window, moved, and the step did not name it
+FAIL rule 2: textedit (w697) a floating window, moved, and the step did not name it
+FAIL rule 2: terminal (w702) a floating window, moved, and the step did not name it
+FAIL rule 2: settings (w710) a floating window, moved, and the step did not name it
+FAIL rule 2: preview (w714) a floating window, moved, and the step did not name it
+FAIL rule 2: mail (w715) a floating window, moved, and the step did not name it
+ODD rule 2: w718 of Mail moved along with a window of its app
+ODD rule 3: the last window came to rest 721 ms after the key or the button
+
+03:07:15.874 SCREEN -- begin 80 mirror
+03:07:15.874 SCREEN -- text 80 presses ⌃⌥⇧R
+03:07:16.005 DEBUG stage up on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: 9 stand-ins, 0.46 s
+03:07:16.007 MACOS pid 72296 AXMoved w709 AXWindow/AXStandardWindow 12 307 1576 503
+03:07:16.009 MACOS pid 70859 AXMoved w685 AXWindow/AXStandardWindow 340 31 920 264
+03:07:16.012 MACOS pid 71693 AXMoved w688 AXWindow/AXStandardWindow 799 31 801 264
+03:07:16.014 SCREEN w886 of Arbor 0,0 1600×900 (level 4)
+03:07:16.014 SCREEN finder (w685) 340,31 920×264
+03:07:16.014 SCREEN safari (w688) 799,31 801×264
+03:07:16.014 SCREEN textedit (w697) 800,31 800×264
+03:07:16.014 SCREEN calendar (w709) 12,307 1576×503
+03:07:16.014 MACOS pid 71766 AXMoved w697 AXWindow/AXStandardWindow 800 31 800 264
+03:07:16.022 MACOS pid 72146 AXMoved w702 AXWindow/AXStandardWindow 97 31 877 259
+03:07:16.024 MACOS pid 72358 AXMoved w710 AXWindow/AXStandardWindow 437 31 723 470
+03:07:16.026 MACOS pid 72468 AXMoved w714 AXWindow/AXStandardWindow 800 31 800 264
+03:07:16.028 MACOS pid 72852 AXMoved w715 AXWindow/AXStandardWindow 240 31 1120 264
+03:07:16.035 DEBUG stage retargeted on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: 9 stand-ins, 0.46 s
+03:07:16.049 INFO  mirror: mirrored everything
+03:07:16.070 DEBUG raised w703, which stays in view
+03:07:16.071 MACOS pid 72241 AXFocusedWindowChanged w703 AXWindow/AXStandardWindow 400 31 800 790
+03:07:16.085 MACOS pid 72241 AXMainWindowChanged w703 AXWindow/AXStandardWindow 400 31 800 790
+03:07:16.086 SCREEN w884 of Arbor 88,25 895×274
+03:07:16.086 SCREEN terminal (w702) 97,31 877×259
+03:07:16.086 SCREEN settings (w710) 437,31 723×470
+03:07:16.086 SCREEN w718 of Mail 565,83 470×416
+03:07:16.086 SCREEN mail (w715) 240,31 1120×264
+03:07:16.086 SCREEN preview (w714) 800,31 800×264
+03:07:16.086 SCREEN w883 of Arbor 12,295 1576×12
+03:07:16.307 DEBUG raised w703, which stays in view
+03:07:16.309 MACOS pid 72241 AXFocusedWindowChanged w703 AXWindow/AXStandardWindow 400 31 800 790
+03:07:16.309 MACOS pid 72241 AXMainWindowChanged w703 AXWindow/AXStandardWindow 400 31 800 790
+03:07:16.528 DEBUG raised w703, which stays in view
+03:07:16.529 MACOS pid 72241 AXFocusedWindowChanged w703 AXWindow/AXStandardWindow 400 31 800 790
+03:07:16.531 MACOS pid 72241 AXMainWindowChanged w703 AXWindow/AXStandardWindow 400 31 800 790
+03:07:16.721 DEBUG stage down
+03:07:16.735 SCREEN w886 of Arbor left the screen
+03:07:17.237 SCREEN -- end 80 act=dock-key settled=quiet:797 moves=709,709, floating=685,688,697,702,703,710,714,715 docked=709
+03:07:17.620 SCRIPT == 81 view-all

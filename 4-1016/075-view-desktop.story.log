@@ -1,0 +1,23 @@
+75 view-desktop: presses ⌃⌥D
+expected: {'act': 'view', 'settled': 'quiet:1069', 'moves': 'any', 'floating': '685,688,697,702,710,714,715', 'docked': '703,709'}
+ODD rule 3: the last window came to rest 807 ms after the key or the button
+
+03:07:05.603 SCREEN -- begin 75 view-desktop
+03:07:05.603 SCREEN -- text 75 presses ⌃⌥D
+03:07:05.880 DEBUG stage up on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: 9 stand-ins, 0.46 s
+03:07:05.883 MACOS pid 72241 AXMoved w703 AXWindow/AXStandardWindow 1599 770 1576 320
+03:07:05.887 SCREEN w886 of Arbor 0,0 1600×900 (level 4)
+03:07:05.889 INFO  desktop: showing the Desktop
+03:07:05.890 DEBUG said on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: Your other windows are out of view, not closed · ⌃⌥Space shows everything
+03:07:05.932 SCREEN w880 of Arbor 512,728 576×38 (level 6)
+03:07:05.932 SCREEN notes (w703) 1599,770 1576×320
+03:07:05.932 SCREEN w883 of Arbor left the screen
+03:07:05.932 SCREEN w882 of Arbor left the screen
+03:07:05.932 SCREEN front to back: w884 settings terminal finder safari textedit w718 mail notes preview calendar w881
+03:07:06.084 SCREEN w881 of Arbor left the screen
+03:07:06.084 SCREEN front to back: w884 settings terminal finder safari textedit w718 mail notes preview calendar
+03:07:06.201 SCREEN w885 of Arbor left the screen
+03:07:06.572 DEBUG stage down
+03:07:06.631 SCREEN w886 of Arbor left the screen
+03:07:07.191 SCREEN -- end 75 act=view settled=quiet:1069 moves=any floating=685,688,697,702,710,714,715 docked=703,709
+03:07:07.469 SCRIPT == 76 dock-icon-notes

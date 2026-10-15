@@ -1,0 +1,101 @@
+38 drag-terminal-out: drags terminal out of the arrangement onto the Desktop and lets go
+expected: {'act': 'drag', 'settled': 'quiet:1092', 'drags': '187', 'moves': '170,173,182,187,170,173,182,', 'front': '187', 'restores': '187', 'place': '187', 'floating': '187,188,189,192,194,197', 'docked': '170,173,182'}
+FAIL rule 3: terminal (w187) moved 2 times
+ODD rule 3: the last window came to rest 789 ms after the key or the button
+
+02:51:32.744 SCREEN -- begin 38 drag-terminal-out
+02:51:32.744 SCREEN -- text 38 drags terminal out of the arrangement onto the Desktop and lets go
+02:51:32.808 SCRIPT drag w187 from 276,55 to 557,298
+02:51:33.328 SCREEN front to back: terminal w281 textedit safari finder w200 mail preview settings calendar notes w238 w288 w280 w294 w284 w289
+02:51:33.328 SCREEN the button is down 276 55
+02:51:33.603 SCREEN terminal (w187) 159,51 240×769
+02:51:33.650 DEBUG w187 is being dragged
+02:51:33.651 DEBUG drag of w187: on none
+02:51:33.661 SCREEN terminal (w187) 168,52 240×769
+02:51:33.668 MACOS pid 22702 AXMoved w187 AXWindow/AXStandardWindow 168 52 240 769
+02:51:33.682 SCREEN w281 of Arbor left the screen
+02:51:33.682 SCREEN front to back: terminal textedit safari finder w200 mail preview settings calendar notes w238 w288 w280 w294 w284 w289
+02:51:33.761 SCREEN terminal (w187) 178,52 240×769
+02:51:33.842 SCREEN terminal (w187) 187,52 240×769
+02:51:33.851 MACOS pid 22702 AXMoved w187 AXWindow/AXStandardWindow 187 52 240 769
+02:51:33.887 SCREEN terminal (w187) 196,52 240×769
+02:51:33.976 MACOS pid 22702 AXMoved w187 AXWindow/AXStandardWindow 206 52 240 769
+02:51:33.992 SCREEN terminal (w187) 206,52 240×769
+02:51:34.037 SCREEN terminal (w187) 215,52 240×769
+02:51:34.100 SCREEN terminal (w187) 224,52 240×769
+02:51:34.108 MACOS pid 22702 AXMoved w187 AXWindow/AXStandardWindow 224 52 240 769
+02:51:34.179 SCREEN terminal (w187) 234,52 240×769
+02:51:34.253 SCREEN terminal (w187) 243,52 240×769
+02:51:34.278 MACOS pid 22702 AXMoved w187 AXWindow/AXStandardWindow 243 52 240 769
+02:51:34.382 SCREEN terminal (w187) 253,52 240×769
+02:51:34.386 SCREEN terminal (w187) 262,52 240×769
+02:51:34.427 MACOS pid 22702 AXMoved w187 AXWindow/AXStandardWindow 262 52 240 769
+02:51:34.472 DEBUG drag of w187: on none
+02:51:34.512 SCREEN terminal (w187) 271,52 240×769
+02:51:34.566 DEBUG drag of w187: on float
+02:51:34.570 SCREEN terminal (w187) 281,52 240×769
+02:51:34.588 MACOS pid 22702 AXMoved w187 AXWindow/AXStandardWindow 281 52 240 769
+02:51:34.633 SCREEN terminal (w187) 290,60 240×769
+02:51:34.728 MACOS pid 22702 AXMoved w187 AXWindow/AXStandardWindow 299 76 240 769
+02:51:34.729 SCREEN terminal (w187) 299,76 240×769
+02:51:34.796 SCREEN terminal (w187) 309,84 240×769
+02:51:34.887 SCREEN terminal (w187) 318,92 240×769
+02:51:34.892 MACOS pid 22702 AXMoved w187 AXWindow/AXStandardWindow 318 92 240 769
+02:51:34.953 SCREEN terminal (w187) 327,100 240×769
+02:51:35.052 MACOS pid 22702 AXMoved w187 AXWindow/AXStandardWindow 337 109 240 769
+02:51:35.062 SCREEN terminal (w187) 337,109 240×769
+02:51:35.112 SCREEN terminal (w187) 346,117 240×769
+02:51:35.192 SCREEN terminal (w187) 356,125 240×769
+02:51:35.218 MACOS pid 22702 AXMoved w187 AXWindow/AXStandardWindow 356 125 240 769
+02:51:35.248 SCREEN terminal (w187) 365,131 240×769
+02:51:35.314 SCREEN terminal (w187) 374,131 240×769
+02:51:35.343 MACOS pid 22702 AXMoved w187 AXWindow/AXStandardWindow 374 131 240 769
+02:51:35.390 SCREEN terminal (w187) 384,131 240×769
+02:51:35.439 SCREEN w283 of Arbor left the screen
+02:51:35.446 SCREEN terminal (w187) 393,131 240×769
+02:51:35.495 SCREEN terminal (w187) 402,131 240×769
+02:51:35.502 MACOS pid 22702 AXMoved w187 AXWindow/AXStandardWindow 402 131 240 769
+02:51:35.581 SCREEN terminal (w187) 412,131 240×769
+02:51:35.592 MACOS pid 22702 AXMoved w187 AXWindow/AXStandardWindow 412 131 240 769
+02:51:35.631 SCREEN terminal (w187) 421,131 240×769
+02:51:35.736 MACOS pid 22702 AXMoved w187 AXWindow/AXStandardWindow 431 131 240 769
+02:51:35.765 SCREEN terminal (w187) 431,131 240×769
+02:51:35.940 SCREEN terminal (w187) 432,131 240×769
+02:51:36.010 MACOS pid 22702 AXMoved w187 AXWindow/AXStandardWindow 432 131 240 769
+02:51:36.604 SCREEN terminal (w187) 431,131 240×769
+02:51:36.693 MACOS pid 22702 AXMoved w187 AXWindow/AXStandardWindow 431 131 240 769
+02:51:36.694 SCREEN the button is up 557 298
+02:51:36.720 MACOS pid 22702 AXTitleChanged w187 AXWindow/AXStandardWindow 431 131 877 499
+02:51:36.721 MACOS pid 22702 AXResized w187 AXWindow/AXStandardWindow 97 238 877 499
+02:51:36.723 DEBUG w187 was dropped out of its slot and took its own size, 877×499
+02:51:36.723 INFO  dropped w187 on float, display 5A42259C-47B8-4590-9762-97DBE4FE7F1B
+02:51:36.723 MACOS pid 22702 AXMoved w187 AXWindow/AXStandardWindow 97 238 877 499
+02:51:36.724 INFO  made room for w170
+02:51:36.726 SCREEN terminal (w187) 431,131 877×499
+02:51:36.729 DEBUG stage up on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: 9 stand-ins, 0.46 s
+02:51:36.735 MACOS pid 21266 AXMoved w170 AXWindow/AXStandardWindow 12 43 501 767
+02:51:36.741 MACOS pid 22564 AXMoved w173 AXWindow/AXStandardWindow 617 43 574 767
+02:51:36.753 MACOS pid 22643 AXResized w182 AXWindow/AXStandardWindow 1203 43 292 767
+02:51:36.755 MACOS pid 22643 AXMoved w182 AXWindow/AXStandardWindow 1203 43 292 767
+02:51:36.758 MACOS pid 22643 AXResized w182 AXWindow/AXStandardWindow 1203 43 385 767
+02:51:36.782 SCREEN w279 of Arbor 0,0 1600×900 (level 4)
+02:51:36.782 SCREEN w281 of Arbor 88,229 895×517
+02:51:36.782 SCREEN terminal (w187) 97,238 877×499
+02:51:36.782 SCREEN textedit (w182) 1203,43 385×767
+02:51:36.782 SCREEN safari (w173) 617,43 574×767
+02:51:36.782 SCREEN finder (w170) 12,43 501×767
+02:51:36.782 SCREEN w294 of Arbor 513,43 12×767
+02:51:36.782 SCREEN w284 of Arbor 605,43 12×767
+02:51:36.782 SCREEN w289 of Arbor 1191,43 12×767
+02:51:36.782 SCREEN w280 of Arbor left the screen
+02:51:36.782 SCREEN w288 of Arbor left the screen
+02:51:36.782 SCREEN front to back: w281 terminal textedit safari finder w200 mail preview settings calendar notes w238 w294 w284 w289
+02:51:36.845 SCREEN w288 of Arbor 525,43 80×767
+02:51:36.845 SCREEN front to back: w281 terminal textedit safari finder w200 mail preview settings calendar notes w238 w288 w294 w284 w289
+02:51:37.419 DEBUG stage down
+02:51:37.483 SCREEN w279 of Arbor left the screen
+02:51:37.986 SCREEN -- end 38 act=drag settled=quiet:1092 drags=187 moves=170,173,182,187,170,173,182, front=187 restores=187 place=187 floating=187,188,189,192,194,197 docked=170,173,182
+02:51:38.187 SCREEN -- chapter Sizes
+02:51:38.195 INFO  trace day-4 ended: 614 lines, trace off
+02:51:38.211 INFO  trace day-5: recording to /tmp/arbor-shell.a8bXrr/home/traces/2026-10-15-025138-day-5.jsonl
+02:51:38.372 SCRIPT == 39 click-finder

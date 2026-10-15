@@ -1,0 +1,44 @@
+61 view-frame: presses ⌃⌥↩
+expected: {'act': 'view', 'settled': 'quiet:928', 'moves': 'any', 'front': '173', 'floating': '187,188,189,192,194,197', 'docked': '170,173,182'}
+ODD rule 3: the last window came to rest 735 ms after the key or the button
+
+02:52:22.367 SCREEN -- begin 61 view-frame
+02:52:22.367 SCREEN -- text 61 presses ⌃⌥↩
+02:52:22.537 DEBUG stage up on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: 9 stand-ins, 0.46 s
+02:52:22.570 SCREEN w279 of Arbor 0,0 1600×900 (level 4)
+02:52:22.576 SCREEN safari (w173) 617,43 983×767
+02:52:22.604 SCREEN safari (w173) 12,43 1576×767
+02:52:22.605 MACOS pid 22564 AXResized w173 AXWindow/AXStandardWindow 12 43 1576 767
+02:52:22.605 MACOS pid 22564 AXMoved w173 AXWindow/AXStandardWindow 12 43 1576 767
+02:52:22.605 MACOS pid 22564 AXResized w173 AXWindow/AXStandardWindow 12 43 1576 767
+02:52:22.608 MACOS pid 21266 AXMoved w170 AXWindow/AXStandardWindow 1599 770 501 767
+02:52:22.610 MACOS pid 22643 AXMoved w182 AXWindow/AXStandardWindow 1599 790 385 767
+02:52:22.611 MACOS pid 22702 AXMoved w187 AXWindow/AXStandardWindow 1599 790 877 499
+02:52:22.612 MACOS pid 23136 AXMoved w188 AXWindow/AXStandardWindow 1599 770 1000 660
+02:52:22.619 MACOS pid 23209 AXMoved w189 AXWindow/AXStandardWindow 1599 770 937 600
+02:52:22.622 MACOS pid 23267 AXMoved w192 AXWindow/AXStandardWindow 1599 770 723 625
+02:52:22.624 MACOS pid 23339 AXMoved w194 AXWindow/AXStandardWindow 1599 770 708 424
+02:52:22.628 MACOS pid 23434 AXMoved w197 AXWindow/AXStandardWindow 1599 770 1120 630
+02:52:22.632 SCREEN calendar (w189) 1599,770 937×600
+02:52:22.632 SCREEN finder (w170) 1599,770 501×767
+02:52:22.632 SCREEN preview (w194) 1599,770 708×424
+02:52:22.632 SCREEN w200 of Mail 1924,877 470×416
+02:52:22.632 SCREEN mail (w197) 1599,770 1120×630
+02:52:22.632 SCREEN settings (w192) 1599,770 723×625
+02:52:22.632 SCREEN notes (w188) 1599,770 1000×660
+02:52:22.632 SCREEN terminal (w187) 1599,790 877×499
+02:52:22.632 SCREEN textedit (w182) 1599,790 385×767
+02:52:22.639 INFO  zoom: framed w173
+02:52:22.640 DEBUG said on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: Your other windows are out of view, not closed · ⌃⌥Space shows everything
+02:52:22.645 SCREEN w281 of Arbor 3,34 1594×785
+02:52:22.645 SCREEN w289 of Arbor left the screen
+02:52:22.645 SCREEN w284 of Arbor left the screen
+02:52:22.645 SCREEN w294 of Arbor left the screen
+02:52:22.645 SCREEN front to back: safari w281 calendar finder preview w200 mail settings notes terminal textedit w238 w288
+02:52:22.677 SCREEN w283 of Arbor 512,728 576×38 (level 6)
+02:52:22.832 SCREEN w288 of Arbor left the screen
+02:52:22.832 SCREEN front to back: w281 safari calendar finder preview w200 mail settings notes terminal textedit w238
+02:52:23.223 DEBUG stage down
+02:52:23.264 SCREEN w279 of Arbor left the screen
+02:52:23.984 SCREEN -- end 61 act=view settled=quiet:928 moves=any front=173 floating=187,188,189,192,194,197 docked=170,173,182
+02:52:24.233 SCRIPT == 62 view-left

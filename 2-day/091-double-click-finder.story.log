@@ -1,0 +1,61 @@
+91 double-click-finder: double-clicks finder's title bar: macOS zooms the window
+expected: {'act': 'macos-own', 'settled': 'quiet:1180', 'zooms': '170', 'front': '170', 'floating': '187,188,189,192,194,197,353', 'docked': '170,173'}
+FAIL rule 1: finder (w170) macOS answered the double-click on its title bar, and it was moved again afterwards (2 moves)
+
+02:53:37.486 SCREEN -- begin 91 double-click-finder
+02:53:37.486 SCREEN -- text 91 double-clicks finder's title bar: macOS zooms the window
+02:53:38.128 DEBUG focus is on w170
+02:53:38.128 DEBUG w170 has the keyboard
+02:53:38.128 MACOS pid 21266 AXFocusedWindowChanged w170 AXWindow/AXStandardWindow 12 43 501 767
+02:53:38.128 MACOS pid 21266 AXFocusedWindowChanged
+02:53:38.129 MACOS pid 21266 AXMainWindowChanged w170 AXWindow/AXStandardWindow 12 43 501 767
+02:53:38.129 MACOS pid 21266 AXMainWindowChanged
+02:53:38.146 SCREEN w281 of Arbor 3,34 519×785
+02:53:38.146 SCREEN front to back: w281 finder safari textedit calendar terminal preview w200 mail notes settings w238 w289 w284
+02:53:38.146 SCREEN the button is down 264 55
+02:53:38.214 SCREEN the button is up 264 55
+02:53:38.315 SCREEN the button is down 264 55
+02:53:38.419 SCREEN the button is up 264 55
+02:53:38.440 SCREEN finder (w170) 12,43 501×766
+02:53:38.479 SCREEN finder (w170) 12,43 505×732
+02:53:38.525 SCREEN finder (w170) 12,43 509×684
+02:53:38.531 SCREEN finder (w170) 12,43 512×653
+02:53:38.549 SCREEN finder (w170) 12,43 516×620
+02:53:38.576 SCREEN finder (w170) 12,43 519×582
+02:53:38.603 SCREEN finder (w170) 12,43 523×546
+02:53:38.620 SCREEN finder (w170) 12,43 530×477
+02:53:38.635 SCREEN finder (w170) 12,43 533×444
+02:53:38.653 SCREEN finder (w170) 12,43 538×387
+02:53:38.670 SCREEN finder (w170) 12,43 542×353
+02:53:38.696 SCREEN finder (w170) 12,43 546×308
+02:53:38.753 SCREEN finder (w170) 12,43 551×258
+02:53:38.779 MACOS pid 21266 AXResized w170 AXWindow/AXStandardWindow 12 43 551 252
+02:53:38.781 MACOS pid 21266 AXResized w170 AXWindow/AXStandardWindow 12 43 551 252
+02:53:38.782 MACOS pid 21266 AXResized w170 AXWindow/AXStandardWindow 12 43 551 252
+02:53:38.782 MACOS pid 21266 AXResized w170 AXWindow/AXStandardWindow 12 43 551 252
+02:53:38.782 MACOS pid 21266 AXResized w170 AXWindow/AXStandardWindow 12 43 551 252
+02:53:38.783 MACOS pid 21266 AXResized w170 AXWindow/AXStandardWindow 12 43 551 252
+02:53:38.783 MACOS pid 21266 AXResized w170 AXWindow/AXStandardWindow 12 43 551 252
+02:53:38.784 SCREEN finder (w170) 12,43 551×252
+02:53:38.784 MACOS pid 21266 AXResized w170 AXWindow/AXStandardWindow 12 43 551 252
+02:53:38.785 MACOS pid 21266 AXResized w170 AXWindow/AXStandardWindow 12 43 551 252
+02:53:38.786 MACOS pid 21266 AXResized w170 AXWindow/AXStandardWindow 12 43 551 252
+02:53:38.786 MACOS pid 21266 AXResized w170 AXWindow/AXStandardWindow 12 43 551 252
+02:53:38.786 MACOS pid 21266 AXResized w170 AXWindow/AXStandardWindow 12 43 551 252
+02:53:38.787 MACOS pid 21266 AXResized w170 AXWindow/AXStandardWindow 12 43 551 252
+02:53:38.787 MACOS pid 21266 AXResized w170 AXWindow/AXStandardWindow 12 43 551 252
+02:53:38.788 MACOS pid 21266 AXResized w170 AXWindow/AXStandardWindow 12 43 551 252
+02:53:38.788 MACOS pid 21266 AXResized w170 AXWindow/AXStandardWindow 12 43 551 252
+02:53:38.788 MACOS pid 21266 AXResized w170 AXWindow/AXStandardWindow 12 43 551 252
+02:53:38.789 MACOS pid 21266 AXResized w170 AXWindow/AXStandardWindow 12 43 551 252
+02:53:38.789 MACOS pid 21266 AXResized w170 AXWindow/AXStandardWindow 12 43 551 252
+02:53:38.789 MACOS pid 21266 AXResized w170 AXWindow/AXStandardWindow 12 43 551 252
+02:53:38.789 MACOS pid 21266 AXResized w170 AXWindow/AXStandardWindow 12 43 551 252
+02:53:38.790 MACOS pid 21266 AXResized w170 AXWindow/AXStandardWindow 12 43 551 252
+02:53:38.802 DEBUG w170 was moved or resized while the button was down, and it was taken for neither a drag nor a resize
+02:53:38.812 SCREEN w281 of Arbor 3,34 569×270
+02:53:39.106 MACOS pid 21266 AXResized w170 AXWindow/AXStandardWindow 12 43 501 767
+02:53:39.139 SCREEN w281 of Arbor 3,34 519×785
+02:53:39.139 SCREEN finder (w170) 12,43 501×767
+02:53:40.280 SCREEN -- end 91 act=macos-own settled=quiet:1180 zooms=170 front=170 floating=187,188,189,192,194,197,353 docked=170,173
+02:53:40.548 SCRIPT == 92 double-click-finder-again

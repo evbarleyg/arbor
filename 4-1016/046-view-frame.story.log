@@ -1,0 +1,45 @@
+46 view-frame: presses ⌃⌥↩
+expected: {'act': 'view', 'settled': 'quiet:955', 'moves': 'any', 'front': '703', 'floating': '685,688,702,710,714,715', 'docked': '697,703,709'}
+ODD rule 3: the last window came to rest 1079 ms after the key or the button
+
+03:04:44.384 SCREEN -- begin 46 view-frame
+03:04:44.384 SCREEN -- text 46 presses ⌃⌥↩
+03:04:44.607 DEBUG stage up on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: 9 stand-ins, 0.46 s
+03:04:44.609 MACOS pid 71766 AXMoved w697 AXWindow/AXStandardWindow 806 598 782 212
+03:04:44.625 MACOS pid 72241 AXResized w703 AXWindow/AXStandardWindow 12 43 1576 320
+03:04:44.627 MACOS pid 70859 AXMoved w685 AXWindow/AXStandardWindow 0 570 794 252
+03:04:44.633 MACOS pid 71693 AXMoved w688 AXWindow/AXStandardWindow 0 598 794 224
+03:04:44.643 MACOS pid 72146 AXTitleChanged w702 AXWindow/AXStandardWindow 0 598 793 229
+03:04:44.648 MACOS pid 72146 AXResized w702 AXWindow/AXStandardWindow 0 598 793 214
+03:04:44.649 MACOS pid 72146 AXMoved w702 AXWindow/AXStandardWindow 0 598 793 214
+03:04:44.649 MACOS pid 72146 AXTitleChanged w702 AXWindow/AXStandardWindow 0 598 793 214
+03:04:44.652 MACOS pid 72146 AXResized w702 AXWindow/AXStandardWindow 0 598 793 214
+03:04:44.659 SCREEN w792 of Arbor 0,0 1600×900 (level 4)
+03:04:44.659 SCREEN notes (w703) 12,43 1576×320
+03:04:44.659 SCREEN safari (w688) 0,598 794×224
+03:04:44.659 SCREEN textedit (w697) 806,598 782×212
+03:04:44.659 SCREEN finder (w685) 0,570 794×252
+03:04:44.659 SCREEN terminal (w702) 1599,790 793×229
+03:04:44.659 MACOS pid 72358 AXMoved w710 AXWindow/AXStandardWindow 71 352 723 470
+03:04:44.661 MACOS pid 72468 AXMoved w714 AXWindow/AXStandardWindow 0 598 794 224
+03:04:44.661 MACOS pid 72852 AXMoved w715 AXWindow/AXStandardWindow 0 586 871 236
+03:04:44.665 SCREEN preview (w714) 0,598 794×224
+03:04:44.665 SCREEN settings (w710) 71,352 723×470
+03:04:44.665 SCREEN terminal (w702) 0,598 793×214
+03:04:44.672 DEBUG stage retargeted on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: 9 stand-ins, 0.46 s
+03:04:44.700 SCREEN w718 of Mail 201,638 470×416
+03:04:44.700 SCREEN mail (w715) 0,586 871×236
+03:04:44.712 INFO  zoom: back to everything
+03:04:44.713 DEBUG said on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: Too small to show: click the tile to zoom in · ⌃⌥G goes there too
+03:04:44.904 SCREEN w800 of Arbor 554,728 493×38 (level 6)
+03:04:44.904 SCREEN w802 of Arbor 3,34 1594×338
+03:04:44.904 SCREEN w811 of Arbor 12,375 1576×211
+03:04:44.904 SCREEN w812 of Arbor 794,598 12×212
+03:04:44.904 SCREEN w806 of Arbor 12,363 1576×12
+03:04:44.904 SCREEN w801 of Arbor 12,586 1576×12
+03:04:44.904 SCREEN front to back: w802 notes preview calendar w718 mail safari textedit finder w743 settings terminal w811 w812 w806 w801
+03:04:45.585 SCREEN (nothing was seen for 681 ms)
+03:04:45.651 DEBUG stage down
+03:04:45.682 SCREEN w792 of Arbor left the screen
+03:04:46.046 SCREEN -- end 46 act=view settled=quiet:955 moves=any front=703 floating=685,688,702,710,714,715 docked=697,703,709
+03:04:46.333 SCRIPT == 47 leave-alone

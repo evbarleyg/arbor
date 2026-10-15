@@ -1,0 +1,107 @@
+60 drag-safari-to-right-edge: drags safari by its title bar against the right edge of the screen and lets go
+expected: {'act': 'drag-where-macos-tiles', 'settled': 'quiet:404', 'drags': '688', 'moves': '703,709,703,709,', 'front': '688', 'own': '688', 'floating': '685,688,697,702,710,714,715', 'docked': '703,709'}
+FAIL rule 1: safari (w688) macOS's tiling preview and Arbor's drop preview were up at the same time
+
+03:06:27.557 SCREEN -- begin 60 drag-safari-to-right-edge
+03:06:27.557 SCREEN -- text 60 drags safari by its title bar against the right edge of the screen and lets go
+03:06:27.668 SCRIPT drag w688 from 1105,610 to 1599,450
+03:06:28.105 SCREEN the button is down 1105 610
+03:06:28.113 SCREEN front to back: safari w831 textedit w718 mail settings notes preview calendar finder w743 terminal w827 w829 w828
+03:06:28.275 SCREEN safari (w688) 183,592 1324×224
+03:06:28.377 DEBUG w688 is being dragged
+03:06:28.378 DEBUG drag of w688: on float
+03:06:28.379 SCREEN safari (w688) 199,587 1324×224
+03:06:28.385 MACOS pid 71693 AXMoved w688 AXWindow/AXStandardWindow 183 592 1324 224
+03:06:28.447 SCREEN safari (w688) 216,587 1324×224
+03:06:28.447 SCREEN w831 of Arbor left the screen
+03:06:28.447 SCREEN front to back: safari textedit w718 mail settings notes preview calendar finder w743 terminal w827 w829 w828
+03:06:28.481 MACOS pid 71693 AXMoved w688 AXWindow/AXStandardWindow 216 587 1324 224
+03:06:28.520 DEBUG drag of w688: waiting over beside(n3, ArborCore.Edge.bottom)
+03:06:28.532 SCREEN safari (w688) 249,587 1324×224
+03:06:28.592 MACOS pid 71693 AXMoved w688 AXWindow/AXStandardWindow 249 587 1324 224
+03:06:28.595 SCREEN safari (w688) 265,587 1324×224
+03:06:28.691 SCREEN safari (w688) 276,587 1324×224
+03:06:28.701 MACOS pid 71693 AXMoved w688 AXWindow/AXStandardWindow 276 587 1324 224
+03:06:28.747 DEBUG drag of w688: on beside(n3, ArborCore.Edge.bottom)
+03:06:28.795 SCREEN w836 of Arbor 12,527 1576×104 (level 3)
+03:06:28.795 SCREEN safari (w688) 292,587 1324×224
+03:06:28.905 MACOS pid 71693 AXMoved w688 AXWindow/AXStandardWindow 329 587 1324 224
+03:06:28.932 SCREEN safari (w688) 329,587 1324×224
+03:06:28.998 SCREEN safari (w688) 348,587 1324×224
+03:06:29.075 DEBUG drag of w688: waiting over beside(n3, ArborCore.Edge.right)
+03:06:29.089 MACOS pid 71693 AXMoved w688 AXWindow/AXStandardWindow 364 581 1324 224
+03:06:29.115 SCREEN safari (w688) 364,581 1324×224
+03:06:29.177 SCREEN safari (w688) 381,533 1324×224
+03:06:29.233 SCREEN w836 of Arbor left the screen
+03:06:29.268 SCREEN safari (w688) 397,518 1324×224
+03:06:29.278 MACOS pid 71693 AXMoved w688 AXWindow/AXStandardWindow 397 518 1324 224
+03:06:29.300 DEBUG drag of w688: on beside(n3, ArborCore.Edge.right)
+03:06:29.322 SCREEN w836 of Arbor 806,375 782×211 (level 3)
+03:06:29.330 SCREEN safari (w688) 414,513 1324×224
+03:06:29.434 MACOS pid 71693 AXMoved w688 AXWindow/AXStandardWindow 430 507 1324 224
+03:06:29.437 SCREEN safari (w688) 430,507 1324×224
+03:06:29.515 SCREEN safari (w688) 446,502 1324×224
+03:06:29.577 MACOS pid 71693 AXMoved w688 AXWindow/AXStandardWindow 446 502 1324 224
+03:06:29.593 SCREEN safari (w688) 463,497 1324×224
+03:06:29.683 MACOS pid 71693 AXMoved w688 AXWindow/AXStandardWindow 479 491 1324 224
+03:06:29.687 SCREEN safari (w688) 479,491 1324×224
+03:06:29.732 SCREEN safari (w688) 496,486 1324×224
+03:06:29.810 MACOS pid 71693 AXMoved w688 AXWindow/AXStandardWindow 512 481 1324 224
+03:06:29.830 SCREEN safari (w688) 512,481 1324×224
+03:06:29.920 SCREEN safari (w688) 529,475 1324×224
+03:06:29.972 SCREEN safari (w688) 545,470 1324×224
+03:06:29.991 MACOS pid 71693 AXMoved w688 AXWindow/AXStandardWindow 545 470 1324 224
+03:06:30.050 SCREEN safari (w688) 562,465 1324×224
+03:06:30.126 SCREEN safari (w688) 578,459 1324×224
+03:06:30.128 MACOS pid 71693 AXMoved w688 AXWindow/AXStandardWindow 578 459 1324 224
+03:06:30.221 SCREEN safari (w688) 595,454 1324×224
+03:06:30.228 MACOS pid 71693 AXMoved w688 AXWindow/AXStandardWindow 595 454 1324 224
+03:06:30.297 SCREEN safari (w688) 611,449 1324×224
+03:06:30.362 MACOS pid 71693 AXMoved w688 AXWindow/AXStandardWindow 628 443 1324 224
+03:06:30.412 SCREEN safari (w688) 644,438 1324×224
+03:06:30.456 DEBUG drag of w688: on float, left to macOS’s tiling
+03:06:30.467 SCREEN w851 of WindowManager 785,16 830×821
+03:06:30.467 SCREEN safari (w688) 661,433 1324×224
+03:06:30.467 SCREEN w850 of WindowManager 785,16 830×821
+03:06:30.467 SCREEN front to back: w851 safari w850 textedit w718 mail settings notes preview calendar finder w743 terminal w827 w829 w828
+03:06:30.475 MACOS pid 71693 AXMoved w688 AXWindow/AXStandardWindow 661 433 1324 224
+03:06:30.562 SCREEN w836 of Arbor left the screen
+03:06:30.754 DEBUG drag of w688: on float
+03:06:30.817 SCREEN safari (w688) 662,433 1324×224
+03:06:30.823 DEBUG drag of w688: on float, left to macOS’s tiling
+03:06:30.861 MACOS pid 71693 AXMoved w688 AXWindow/AXStandardWindow 662 433 1324 224
+03:06:32.212 SCREEN safari (w688) 661,433 1324×224
+03:06:32.316 SCREEN w850 of WindowManager left the screen
+03:06:32.316 SCREEN w851 of WindowManager left the screen
+03:06:32.316 SCREEN front to back: safari textedit w718 mail settings notes preview calendar finder w743 terminal w827 w829 w828
+03:06:32.316 SCREEN the button is up 1599 450
+03:06:32.390 MACOS pid 71693 AXMoved w688 AXWindow/AXStandardWindow 707 300 1151 412
+03:06:32.390 MACOS pid 71693 AXResized w688 AXWindow/AXStandardWindow 707 300 1151 412
+03:06:32.391 INFO  dropped w688 on float, display 5A42259C-47B8-4590-9762-97DBE4FE7F1B, left to macOS’s tiling
+03:06:32.391 MACOS pid 71693 AXResized w688 AXWindow/AXStandardWindow 707 300 1151 412
+03:06:32.399 SCREEN safari (w688) 707,300 1151×412
+03:06:32.462 SCREEN safari (w688) 769,119 915×667
+03:06:32.508 SCREEN safari (w688) 784,75 857×730
+03:06:32.512 SCREEN safari (w688) 793,51 827×763
+03:06:32.548 SCREEN safari (w688) 795,45 819×772
+03:06:32.613 SCREEN safari (w688) 798,36 806×785
+03:06:32.627 MACOS pid 71693 AXResized w688 AXWindow/AXStandardWindow 778 93 827 763
+03:06:32.628 MACOS pid 71693 AXResized w688 AXWindow/AXStandardWindow 799 33 803 789
+03:06:32.628 MACOS pid 71693 AXResized w688 AXWindow/AXStandardWindow 799 33 803 789
+03:06:32.653 SCREEN safari (w688) 799,32 802×790
+03:06:32.675 MACOS pid 71693 AXResized w688 AXWindow/AXStandardWindow 799 33 803 789
+03:06:32.677 MACOS pid 71693 AXResized w688 AXWindow/AXStandardWindow 799 31 801 791
+03:06:32.677 MACOS pid 71693 AXResized w688 AXWindow/AXStandardWindow 799 31 801 791
+03:06:32.679 MACOS pid 71693 AXResized w688 AXWindow/AXStandardWindow 799 31 801 791
+03:06:32.681 MACOS pid 71693 AXResized w688 AXWindow/AXStandardWindow 799 31 801 791
+03:06:32.681 MACOS pid 71693 AXResized w688 AXWindow/AXStandardWindow 799 31 801 791
+03:06:32.681 MACOS pid 71693 AXResized w688 AXWindow/AXStandardWindow 799 31 801 791
+03:06:32.682 MACOS pid 71693 AXResized w688 AXWindow/AXStandardWindow 799 31 801 791
+03:06:32.682 MACOS pid 71693 AXResized w688 AXWindow/AXStandardWindow 799 31 801 791
+03:06:32.683 MACOS pid 71693 AXResized w688 AXWindow/AXStandardWindow 799 31 801 791
+03:06:32.710 SCREEN w831 of Arbor 790,25 816×803
+03:06:32.710 SCREEN safari (w688) 799,31 801×791
+03:06:32.710 SCREEN front to back: w831 safari textedit w718 mail settings notes preview calendar finder w743 terminal w827 w829 w828
+03:06:38.596 SCREEN -- end 60 act=drag-where-macos-tiles settled=quiet:404 drags=688 moves=703,709,703,709, front=688 own=688 floating=685,688,697,702,710,714,715 docked=703,709
+03:06:38.786 SCREEN (nothing was seen for 138 ms)
+03:06:39.042 SCRIPT == 61 dock-icon-finder

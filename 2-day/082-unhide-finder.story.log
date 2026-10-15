@@ -1,0 +1,42 @@
+82 unhide-finder: clicks its icon in the Dock
+expected: {'act': 'open-close', 'settled': 'quiet:520', 'moves': '170,173,182,170,173,182,', 'comes': '170', 'front': '170', 'returns': '80', 'floating': '187,188,189,192,194,197', 'docked': '170,173,182'}
+FAIL rule 2: terminal (w187) is not back where it was after step 80: 0,238 324×499, it was at 525,238 429×499
+FAIL rule 2: notes (w188) is not back where it was after step 80: 0,105 709×660, it was at 386,105 709×660
+FAIL rule 2: calendar (w189) is not back where it was after step 80: 0,115 680×600, it was at 401,115 680×600
+FAIL rule 2: settings (w192) is not back where it was after step 80: 0,85 723×625, it was at 379,85 723×625
+FAIL rule 2: preview (w194) is not back where it was after step 80: 0,35 708×424, it was at 387,35 708×424
+FAIL rule 2: mail (w197) is not back where it was after step 80: 0,72 871×630, it was at 305,72 871×630
+FAIL rule 2: w200 of Mail is not back where it was after step 80: 201,179 470×416, it was at 506,179 470×416
+
+02:53:09.549 SCREEN -- begin 82 unhide-finder
+02:53:09.549 SCREEN -- text 82 clicks its icon in the Dock
+02:53:10.146 SCREEN the button is down 131 854
+02:53:10.287 SCREEN the button is up 131 854
+02:53:10.287 SCREEN in front: process 21266 com.apple.finder
+02:53:10.288 MACOS pid 22564 AXApplicationDeactivated
+02:53:10.288 MACOS workspace didActivate pid 21266 com.apple.finder regular
+02:53:10.289 MACOS workspace didDeactivate pid 22564 com.apple.Safari regular
+02:53:10.289 MACOS workspace didUnhide pid 21266 com.apple.finder regular
+02:53:10.307 DEBUG focus is on w170
+02:53:10.307 MACOS pid 21266 AXApplicationShown
+02:53:10.308 DEBUG focus report for w170, which does not have the keyboard or takes no space; 4 checks left
+02:53:10.308 MACOS pid 21266 AXApplicationActivated
+02:53:10.323 INFO  made room for w173
+02:53:10.329 MACOS pid 22564 AXMoved w173 AXWindow/AXStandardWindow 617 43 574 767
+02:53:10.338 SCREEN finder (w170) 12,43 501×767
+02:53:10.338 SCREEN safari (w173) 617,43 574×767
+02:53:10.338 SCREEN w281 of Arbor left the screen
+02:53:10.338 SCREEN front to back: finder safari calendar terminal preview w200 mail notes settings textedit w238 w284 w294
+02:53:10.345 MACOS pid 22643 AXResized w182 AXWindow/AXStandardWindow 1203 43 385 767
+02:53:10.346 MACOS pid 22643 AXMoved w182 AXWindow/AXStandardWindow 1203 43 385 767
+02:53:10.349 SCREEN textedit (w182) 922,43 385×767
+02:53:10.353 DEBUG w170 has the keyboard
+02:53:10.401 SCREEN w281 of Arbor 3,34 519×785
+02:53:10.401 SCREEN textedit (w182) 1203,43 385×767
+02:53:10.401 SCREEN w288 of Arbor 525,43 80×767
+02:53:10.401 SCREEN w289 of Arbor 513,43 12×767
+02:53:10.401 SCREEN w284 of Arbor 605,43 12×767
+02:53:10.401 SCREEN w294 of Arbor 1191,43 12×767
+02:53:10.401 SCREEN front to back: w281 finder safari calendar terminal preview w200 mail notes settings textedit w238 w288 w289 w284 w294
+02:53:11.564 SCREEN -- end 82 act=open-close settled=quiet:520 moves=170,173,182,170,173,182, comes=170 front=170 returns=80 floating=187,188,189,192,194,197 docked=170,173,182
+02:53:11.792 SCRIPT == 83 dock-icon-textedit
