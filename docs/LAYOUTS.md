@@ -224,7 +224,7 @@ $ arborctl layout
 Safari | Mail | Desktop:0.5
 ```
 
-A Desktop that is mentioned is as large as the line says. Either way `layout` never takes a floating window out of view; if some were out of view and there is still no usable
+A Desktop that is mentioned is as large as the line says. Either way `layout` never takes a floating window out of view. With `floatingWindowsMakeWay`, if some were out of view and there is still no usable
 Desktop for them to come back to, the reply says how many.
 
 `Desktop` alone undocks everything on the display. An app that is really called Desktop goes in quotes: `"Desktop"`.

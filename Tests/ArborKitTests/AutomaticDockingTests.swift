@@ -696,8 +696,8 @@ extension Harness {
     #expect(!h.system.isVisible(c))
   }
 
-  @Test func withOneWindowFramedTheNewOneFloatsOverItAndTheViewStays() throws {
-    let h = harness()
+  @Test(arguments: [false, true]) func withOneWindowFramedTheNewOneFloatsOverItAndTheViewStays(makingWay: Bool) throws {
+    let h = harness { $0.floatingWindowsMakeWay = makingWay }
     h.start()
     let (a, b) = (h.open("Safari"), h.open("Mail"))
     h.run("zoom \(a.rawValue)")
@@ -709,10 +709,11 @@ extension Harness {
     #expect(h.workspace.camera == camera)
     #expect(h.system.frameLog.isEmpty)
     #expect(h.workspace.tree.allWindows == [a, b])
-    // F57: it belongs to the view it opened over, and comes back with it.
+    // F57: it belongs to the view it opened over, and comes back with it. As Arbor ships it never leaves.
     #expect(h.workspace.guests?[n] == camera)
     h.run("neighbor right")
-    #expect(!h.system.isVisible(n))
+    #expect(h.system.isVisible(n) == !makingWay)
+    if !makingWay { #expect(h.frame(n) == opening) }
     h.run("back")
     #expect(h.frame(n) == opening)
   }

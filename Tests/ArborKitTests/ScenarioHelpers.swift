@@ -55,3 +55,10 @@ extension Settings {
     return settings
   }
 }
+
+extension Harness {
+  /// Whether floating windows leave the view with the Desktop and come back with it: only those that make way do (Q29, 4). For a test
+  /// that chooses no settings, holds either way, and has one step at which the two worlds differ: it runs as Arbor ships, and the
+  /// other way round in `make test-making-way`.
+  var floatingWindowsLeaveWithTheDesktop: Bool { controller.settings.floatingWindowsMakeWay }
+}

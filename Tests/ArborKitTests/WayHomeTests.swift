@@ -283,11 +283,12 @@ private let side = DisplaySnapshot(
     #expect(h.run("in").message.contains("Safari") && !h.run("in").ok)
   }
 
-  @Test func statusCountsInPlainWords() {
-    let (h, _, _, c) = nested()
+  @Test(arguments: [false, true]) func statusCountsInPlainWords(makingWay: Bool) {
+    let (h, _, _, c) = nested(settings: makingWay ? .makingWay : Settings())
     _ = h.system.open(app: "Slack")
     #expect(h.run("status").message == "running: 1 display, 3 docked and 1 floating, 0 out of view")
     h.run("zoom \(c.rawValue)")
-    #expect(h.run("status").message == "running: 1 display, 3 docked and 1 floating, 3 out of view")
+    // Safari and Mail. Slack floats: it leaves with the Desktop only if floating windows make way, and is in view as Arbor ships.
+    #expect(h.run("status").message == "running: 1 display, 3 docked and 1 floating, \(makingWay ? 3 : 2) out of view")
   }
 }

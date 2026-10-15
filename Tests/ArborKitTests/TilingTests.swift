@@ -239,14 +239,16 @@ private func columns(settings: Settings = Settings()) -> (Harness, WindowID, Win
     expectSound(h)
   }
 
-  @Test func aGuestStaysWithTheWindowItOpenedOver() {
-    let (h, a, b, _) = columns()
+  @Test(arguments: [false, true]) func aGuestStaysWithTheWindowItOpenedOver(makingWay: Bool) {
+    let (h, a, b, _) = columns(settings: makingWay ? .makingWay : Settings())
     runOK(h, "zoom \(a.rawValue)")
     let guest = h.system.open(app: "Safari", frame: CGRect(x: 500, y: 300, width: 300, height: 200))
     #expect(h.workspace.guests?[guest] != nil)
     runOK(h, "swap \(a.rawValue) \(b.rawValue)")
+    #expect(h.workspace.guests?[guest] == h.workspace.tree.leaf(containing: a))
     runOK(h, "zoom \(b.rawValue)")
-    #expect(!h.system.isVisible(guest))
+    // Where floating windows make way that shows: it leaves with its host. As Arbor ships a guest never leaves.
+    #expect(h.system.isVisible(guest) == !makingWay)
     runOK(h, "zoom \(a.rawValue)")
     #expect(h.system.isVisible(guest))
     expectSound(h)

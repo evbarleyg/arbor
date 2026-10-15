@@ -72,7 +72,7 @@ extension ChaosRunner {
       backdropViolations(&problems)
     }
     focusRingViolations(&problems)
-    // A trial that shows the Desktop brings floating windows into view. Called off, they go again.
+    // With `floatingWindowsMakeWay` a trial that shows the Desktop brings floating windows into view. Called off, they go again.
     // What a start takes out of view has a rule of its own, also where the start is part of a way back.
     if !isTryingOutADrop, !wasTryingOutADrop, action != .wayBack(.startAgain) { vanishedViolations(&problems) }
     ownFrameViolations(after: action, &problems)
@@ -356,13 +356,16 @@ extension ChaosRunner {
     }
   }
 
-  /// A floating window the user can see goes out of view only when the user looks elsewhere: the camera of its
-  /// display moves. Docking, closing, minimizing or restoring some other window must not take it away,
-  /// however small that leaves the Desktop.
+  /// With `floatingWindowsMakeWay` a floating window the user can see goes out of view only when the user looks elsewhere: the camera
+  /// of its display moves. Docking, closing, minimizing or restoring some other window must not take it away,
+  /// however small that leaves the Desktop. (As Arbor ships a move of the camera does not either: `floating-taken-out-of-view`.)
   func vanishedViolations(_ problems: inout [InvariantViolation]) {
-    // A window that comes back (from another Space, the Dock, a hidden app) while the Desktop is out of view is where it was when it
-    // went, and follows the Desktop out of view with the next layout, whenever that is.
-    for (id, fake) in system.windows where fake.snapshot.isPresent && !presentBefore.contains(id) { cameBack.insert(id) }
+    // With that setting a window that comes back (from another Space, the Dock, a hidden app) while the Desktop is out of view is where
+    // it was when it went, and follows the Desktop out of view with the next layout, whenever that is.
+    if !controller.settings.floatingWindowsMakeWay { cameBack = [] }
+    for (id, fake) in system.windows where controller.settings.floatingWindowsMakeWay && fake.snapshot.isPresent && !presentBefore.contains(id) {
+      cameBack.insert(id)
+    }
     if !cameBack.isEmpty {
       cameBack = cameBack.filter { window in
         guard system.windows[window] != nil, !controller.parked.contains(window) || !parkedBefore.contains(window),
@@ -558,7 +561,8 @@ extension ChaosRunner {
       }
     }
     // On the way the Desktop may have been more than a tile, and no change of the arrangement takes a floating window out of view again.
-    // A window that came back over a framed view follows the Desktop out of view with the next layout, whenever that is (`vanished`).
+    // A window that makes way and came back over a framed view follows the Desktop out of view with the next layout, whenever
+    // that is (`vanished`).
     let wentOut = controller.parked.subtracting(before.parked).subtracting(cameBack)
     let cameIn = before.parked.subtracting(controller.parked)
     let onlyFloatsCameIn = cameIn.allSatisfy { window in controller.workspaces.values.contains { $0.isFloating(window) } }

@@ -47,8 +47,9 @@ import Testing
   }
 
   /// `[a | Desktop]` beside such a display, with `f` floating, whose title bar is this high.
+  /// Floating windows that make way: only they leave with the Desktop, and they do so in a size that a test can choose.
   func besideADisplay(endingAbove above: CGFloat, titleBar: CGFloat) -> (Harness, a: WindowID, f: WindowID) {
-    let h = Harness(displays: [FakeWindowSystem.standardDisplay, Self.neighbour(endingAbove: above)])
+    let h = Harness(displays: [FakeWindowSystem.standardDisplay, Self.neighbour(endingAbove: above)], settings: .makingWay)
     let a = h.system.open(app: "Safari", pid: 11, frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     let f = h.system.open(app: "Editor", pid: 12, frame: CGRect(x: 560, y: 300, width: 640, height: 420))
     h.system.setTitleBar(f, titleBar)
@@ -69,6 +70,22 @@ import Testing
     let (h, a, f) = besideADisplay(endingAbove: CGFloat(above), titleBar: CGFloat(titleBar))
     h.run("zoom \(a.rawValue)")
     #expect(whatShows(h, of: f) <= CGFloat(titleBar), "\(h.frame(f)!) beside a display that ends \(above) points higher")
+  }
+
+  /// As Arbor ships only a docked window that the view leaves out is sent there, in the shape of its slot.
+  @Test(arguments: [28.0, 32.0, 52.0, 80.0], [20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 90.0])
+  func norDoesADockedWindowThatTheViewLeavesOut(titleBar: Double, above: Double) {
+    let h = Harness(
+      displays: [FakeWindowSystem.standardDisplay, Self.neighbour(endingAbove: CGFloat(above))], settings: Settings())
+    let a = h.system.open(app: "Safari", pid: 11, frame: CGRect(x: 100, y: 100, width: 600, height: 400))
+    let b = h.system.open(app: "Editor", pid: 12, frame: CGRect(x: 560, y: 300, width: 640, height: 420))
+    h.system.setTitleBar(b, CGFloat(titleBar))
+    h.start()
+    h.run("dock \(a.rawValue) left")
+    h.run("dock \(b.rawValue) right")
+    h.run("zoom \(a.rawValue)")
+    #expect(h.controller.parked.contains(b))
+    #expect(whatShows(h, of: b) <= CGFloat(titleBar), "\(h.frame(b)!) beside a display that ends \(above) points higher")
   }
 
   /// A title bar no higher than was reckoned with costs no second move: no less of the window would show elsewhere.
@@ -99,8 +116,9 @@ import Testing
   }
 
   /// `[a | Desktop]` framed on `a`, so that `f`, which floats, is out of view.
+  /// Floating windows that make way: only they leave with the Desktop, and they do so in a size that a test can choose.
   func withAWindowOutOfView(_ around: [CGRect], size: CGSize, titleBar: CGFloat) -> (Harness, f: WindowID) {
-    let h = Harness(displays: Self.displays(around))
+    let h = Harness(displays: Self.displays(around), settings: .makingWay)
     let a = h.system.open(app: "Safari", pid: 11, frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     let f = h.system.open(app: "Editor", bundleID: Self.editor, pid: 12, frame: CGRect(origin: CGPoint(x: 560, y: 300), size: size))
     h.system.setTitleBar(f, titleBar)
@@ -182,6 +200,8 @@ import Testing
     let f = h.system.open(app: "Finder", pid: 12)
     h.start()
     h.run("dock \(a.rawValue) left")
+    // Docked, so that the view leaves it out whether or not floating windows make way.
+    h.run("dock \(f.rawValue) right")
     h.run("zoom \(a.rawValue)")
     #expect(h.frame(f)?.minY == CGFloat(848))
     h.run("back")
@@ -204,20 +224,29 @@ import Testing
   @Test(arguments: [20.0, 28.0, 32.0, 52.0, 80.0], desks)
   func aReportOfTheDisplaysSendsNoWindowToTheCornerItIsIn(titleBar: Double, desk: Int) {
     let display = Self.desk(desk)
-    let h = Harness(displays: [display])
-    let a = h.system.open(app: "Safari", pid: 11)
-    let b = h.system.open(app: "Notes", pid: 12)
-    let f = h.system.open(app: "Mail", pid: 13)
-    for window in [b, f] { h.system.setTitleBar(window, CGFloat(titleBar)) }
-    h.start()
-    h.run("dock \(a.rawValue) left")
-    h.run("dock \(b.rawValue) right")
-    h.run("zoom \(a.rawValue)")
-    let stop = CGPoint(x: display.frame.maxX - 1, y: display.visibleFrame.maxY - CGFloat(titleBar))
-    #expect(h.frame(b)?.origin == stop && h.frame(f)?.origin == stop)
-    h.system.clearFrameLog()
-    h.system.setDisplays([display])
-    #expect(h.system.frameLog.isEmpty, "\(h.system.frameLog)")
+    // A floating window is in the corner only where floating windows make way. As Arbor ships it is where it floats, and stays.
+    for makingWay in [false, true] {
+      let h = Harness(displays: [display], settings: makingWay ? .makingWay : Settings())
+      let a = h.system.open(app: "Safari", pid: 11)
+      let b = h.system.open(app: "Notes", pid: 12)
+      let f = h.system.open(app: "Mail", pid: 13)
+      let floats = h.frame(f)
+      for window in [b, f] { h.system.setTitleBar(window, CGFloat(titleBar)) }
+      h.start()
+      h.run("dock \(a.rawValue) left")
+      h.run("dock \(b.rawValue) right")
+      h.run("zoom \(a.rawValue)")
+      let stop = CGPoint(x: display.frame.maxX - 1, y: display.visibleFrame.maxY - CGFloat(titleBar))
+      #expect(h.frame(b)?.origin == stop, "\(makingWay)")
+      if makingWay {
+        #expect(h.frame(f)?.origin == stop)
+      } else {
+        #expect(h.frame(f) == floats)
+      }
+      h.system.clearFrameLog()
+      h.system.setDisplays([display])
+      #expect(h.system.frameLog.isEmpty, "\(makingWay): \(h.system.frameLog)")
+    }
   }
 
   /// Found out of view by the Arbor that the watchdog starts after an accident, which keeps the view: how high their title bars are is

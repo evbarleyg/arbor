@@ -78,11 +78,28 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
   }
 
   @Test func otherFloatingWindowsStillLeaveWithTheDesktop() {
-    let (h, editor, _, call) = makeHarness()
+    // Floating windows that make way: only they leave with the Desktop.
+    let (h, editor, _, call) = makeHarness(settings: .makingWay)
     let notes = h.system.open(app: "Notes", frame: CGRect(x: 600, y: 300, width: 200, height: 200))
     h.run("zoom \(editor.rawValue)")
     #expect(h.controller.parked.contains(notes))
     #expect(h.system.isVisible(call) && !h.system.isVisible(notes))
+  }
+
+  /// As Arbor ships they stay as well, and nothing is asked of them: it is the pinned window alone that Arbor keeps in front.
+  @Test func otherFloatingWindowsStayWhereTheyAreAndAreNotRaised() {
+    let (h, editor, _, call) = makeHarness()
+    let frame = CGRect(x: 600, y: 300, width: 200, height: 200)
+    let notes = h.system.open(app: "Notes", frame: frame)
+    settle(h)
+    h.system.clearFrameLog()
+    h.system.clearRaiseLog()
+    h.run("zoom \(editor.rawValue)")
+    settle(h)
+    #expect(h.frame(notes) == frame && !h.controller.parked.contains(notes))
+    #expect(moves(of: notes, h).isEmpty)
+    #expect(!h.system.raiseLog.contains(notes), "\(h.system.raiseLog)")
+    #expect(h.frame(call) == corner)
   }
 
   @Test func dockedWindowsDoNotAvoidItAndDoNotPushIt() {
@@ -97,7 +114,8 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
   }
 
   @Test func pinningAWindowThatIsOutOfViewBringsItBackWithoutMovingTheCamera() {
-    let (h, editor, _, call) = makeHarness()
+    // Floating windows that make way: only they leave with the Desktop.
+    let (h, editor, _, call) = makeHarness(settings: .makingWay)
     h.run("unpin \(call.rawValue)")
     h.run("zoom \(editor.rawValue)")
     #expect(!h.system.isVisible(call))
@@ -683,7 +701,8 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
   }
 
   @Test func unpinningLeavesItWhereItIsUntilTheCameraNextMoves() {
-    let (h, editor, _, call) = makeHarness()
+    // Floating windows that make way: only they live on the Desktop, and leave with it.
+    let (h, editor, _, call) = makeHarness(settings: .makingWay)
     h.run("zoom \(editor.rawValue)")
     #expect(h.run("unpin \(call.rawValue)").ok)
     #expect(h.frame(call) == corner, "nothing jumps")
@@ -691,6 +710,20 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
     h.run("neighbor right")
     h.run("neighbor right")
     #expect(!h.system.isVisible(call), "it lives on the Desktop again")
+  }
+
+  /// As Arbor ships it is a floating window like any other, which no view takes away.
+  @Test func unpinningLeavesItWhereItIsWhereverTheCameraGoes() {
+    let (h, editor, _, call) = makeHarness()
+    h.run("zoom \(editor.rawValue)")
+    #expect(h.run("unpin \(call.rawValue)").ok)
+    #expect(h.workspace.isFloating(call) && !h.controller.isPinned(call))
+    for step in ["neighbor right", "back", "show-all", "desktop"] {
+      #expect(h.run(step).ok, "\(step)")
+      settle(h)
+      #expect(h.frame(call) == corner, "after \(step)")
+    }
+    #expect(moves(of: call, h).isEmpty, "Arbor never touched its frame")
   }
 
   @Test func togglePinGoesBothWaysAndActsOnTheFocusedWindow() {
@@ -718,8 +751,8 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
 
   // MARK: 4. Rules
 
-  @Test func thePinRuleAppliesToNewWindows() {
-    var settings = Settings()
+  @Test(arguments: [false, true]) func thePinRuleAppliesToNewWindows(makingWay: Bool) {
+    var settings = makingWay ? Settings.makingWay : Settings()
     settings.rules = [AppRule(app: "us.zoom.xos", title: "Meeting", action: .pin)]
     let (h, editor, _, _) = makeHarness(settings: settings)
     h.run("zoom \(editor.rawValue)")
@@ -731,7 +764,8 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
     h.run("neighbor right")
     h.run("neighbor right")
     #expect(h.frame(meeting) == frame)
-    #expect(!h.system.isVisible(home))
+    // Which shows where floating windows make way: the other one has left with the editor. As Arbor ships no view takes it away.
+    #expect(h.system.isVisible(home) == !makingWay)
   }
 
   @Test func aTitleThatArrivesLateStillPins() {
@@ -1053,8 +1087,8 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
     #expect(h.frame(call) == corner)
   }
 
-  @Test func pinningAWindowThatOpenedOverAFramedOneMakesItTheDisplaysNotThatSpaces() {
-    let (h, editor, browser, _) = makeHarness()
+  @Test(arguments: [false, true]) func pinningAWindowThatOpenedOverAFramedOneMakesItTheDisplaysNotThatSpaces(makingWay: Bool) {
+    let (h, editor, browser, _) = makeHarness(settings: makingWay ? .makingWay : Settings())
     h.run("zoom \(editor.rawValue)")
     let frame = CGRect(x: 300, y: 300, width: 300, height: 200)
     let palette = h.system.open(app: "Palette", pid: 1006, frame: frame)
@@ -1066,7 +1100,9 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
     // Unpinned, it is an ordinary floating window, not a guest again.
     h.run("unpin \(palette.rawValue)")
     h.run("zoom \(editor.rawValue)")
-    #expect(!h.system.isVisible(palette))
+    #expect(h.workspace.guests?[palette] != h.workspace.tree.leaf(containing: editor))
+    // Which shows where floating windows make way: its guest would be in view with the editor. As Arbor ships they all are.
+    #expect(h.system.isVisible(palette) == !makingWay)
   }
 
   @Test func closingItForgetsThePin() {

@@ -1,7 +1,8 @@
 # Proposed by the swarm (2026-10-15), from the product owner's decisions in collab/QUESTIONS.md (Q16, Q20, Q21; the note of 2026-10-15 on F48); the documenter may edit or drop it.
 # Story: a frame a person gives a window while Arbor is not running, or paused, is its own from then on. An editor is docked; the notes
 # were never docked. In the evening the person quits Arbor and pushes the notes somewhere else. In the morning Arbor starts: the notes are not moved,
-# and from now on that is their place: framing the editor and showing everything brings them back there, not to where they lay yesterday.
+# and from now on that is their place: framing the editor and showing everything leaves them there, and nothing takes them to
+# where they lay yesterday.
 # Reference: T60, issue #3 rule 2.
 open Editor 700x500
 open Notes 500x300
@@ -17,8 +18,12 @@ expect docked 101
 expect floating 102
 expect at 102 860 520
 zoom 101
-expect hidden 102
+expect fills 101
+expect still 102
+expect visible 102
+expect at 102 860 520 500x300
 show-all
+expect still 102
 expect at 102 860 520
 expect size 102 500x300
 # Made smaller while Arbor is away: the size is theirs too.
@@ -28,7 +33,9 @@ relaunch start
 expect still 102
 expect at 102 900 400
 zoom 101
+expect still 102
 show-all
+expect still 102
 expect at 102 900 400
 expect size 102 420x260
 # The same during a pause, which is as if Arbor had quit, and it comes back.
@@ -38,7 +45,9 @@ resume
 expect still 102
 expect at 102 820 200
 zoom 101
+expect still 102
 show-all
+expect still 102
 expect at 102 820 200
 # At the desk, with a second display to the right: the notes float there.
 displays 2
@@ -58,8 +67,21 @@ expect at 102 880 480
 expect size 102 420x260
 expect docked 101
 zoom 101
+expect still 102
 show-all
+expect still 102
 expect at 102 880 480
+# Only floating windows that make way leave with the Desktop. They come back to where their person put them while Arbor was away.
+set floatingWindowsMakeWay true
+expect still 102
+relaunch quit
+move 102 860 520 500 300
+relaunch start
+expect still 102
+zoom 101
+expect hidden 102
+show-all
+expect at 102 860 520 500x300
 # A start without a quit before it is a slip in the script, and says so.
 relaunch start
 expect fail

@@ -8,7 +8,7 @@ import Testing
 /// Accessibility permission taken away while Arbor runs (docs/features/F63-permission-taken-away.md).
 @Suite @MainActor struct PermissionLossTests {
   /// [Safari | Desktop | Mail / Notes] with Slack floating on the Desktop. Framed on Notes unless `framed` is
-  /// false: Safari, Mail and Slack are then out of view.
+  /// false: Safari and Mail are then out of view. Slack is not, as Arbor ships: no view takes a floating window away.
   func makeHarness(framed: Bool = true, settings: Settings = .withGestures)  // whose taps go with the permission
     -> (Harness, safari: WindowID, mail: WindowID, notes: WindowID, slack: WindowID)
   {
@@ -27,7 +27,7 @@ import Testing
   }
 
   var sentence: String {
-    "Arbor's Accessibility permission was taken away, so it cannot move windows. 3 windows (Mail, Safari and Slack) are out "
+    "Arbor's Accessibility permission was taken away, so it cannot move windows. 2 windows (Mail and Safari) are out "
       + "of view and come back as soon as it is granted again: System Settings → Privacy & Security → Accessibility"
   }
 
@@ -41,7 +41,7 @@ import Testing
     h.scheduler.advance(by: 3)
     #expect(!h.controller.isRunning)
     #expect(!h.controller.accessibilityGranted)
-    #expect(h.controller.permissionLoss?.windows == 3)
+    #expect(h.controller.permissionLoss?.windows == 2)
   }
 
   /// Arbor's probe can be ahead of macOS's own flag. The welcome window that opens because the permission went must not show a tick
@@ -59,7 +59,7 @@ import Testing
     #expect(session.model.page == .permissions, "there is nothing to try without it")
     let row = try #require(session.model.row(.accessibility))
     #expect(row.state == .required)
-    #expect(row.detail.hasPrefix("3 windows are out of view, not closed. Grant the permission again to get them back."))
+    #expect(row.detail.hasPrefix("2 windows are out of view, not closed. Grant the permission again to get them back."))
     #expect(h.controller.menuModel().sections.first?.items.first?.command == .checkSetup, "Help ▸ has one on any day")
     h.grantAccessibility()
     h.scheduler.advance(by: 3)
@@ -104,7 +104,7 @@ import Testing
     #expect(h.system.deniedCalls == 0, "it did not even try")
     #expect(!h.controller.isPeeking && !h.scheduler.pendingKeys.contains("peek"))
     h.keyUp("ctrl+opt+space")
-    #expect(h.controller.permissionLoss?.windows == 3)
+    #expect(h.controller.permissionLoss?.windows == 2)
   }
 
   @Test func aPeekInProgressEndsWithTheLoss() {
@@ -414,10 +414,32 @@ import Testing
   // MARK: Saying so
 
   @Test func theSentenceCountsWindowsAndNamesAppsNeverTitles() {
-    let (h, _, _, _, _) = makeHarness()
+    let (h, _, _, _, slack) = makeHarness()
+    #expect(h.system.isVisible(slack), "it floats, so it is within reach and nobody has to wait for it")
     h.revokeAccessibility()
     #expect(h.run("arrange").message == sentence)
     for title in ["Safari 101", "Mail 102", "Slack 104"] { #expect(!sentence.contains(title)) }
+    #expect(
+      h.controller.permissionMenuLines == [
+        "Arbor’s Accessibility permission was taken away",
+        "2 windows (Mail and Safari) are out of view",
+        "They come back as soon as you grant it again",
+      ])
+    #expect(h.controller.quitTitle == "Quit Arbor (2 windows stay out of view)")
+  }
+
+  /// Floating windows that make way: only they leave with the Desktop, and then they wait for the permission like the rest.
+  @Test func aFloatingWindowThatMadeWayIsCountedAndItsAppNamedWithTheRest() {
+    var settings = Settings.withGestures
+    settings.floatingWindowsMakeWay = true
+    let (h, _, _, _, slack) = makeHarness(settings: settings)
+    #expect(!h.system.isVisible(slack))
+    h.revokeAccessibility()
+    #expect(
+      h.run("arrange").message
+        == "Arbor's Accessibility permission was taken away, so it cannot move windows. 3 windows (Mail, Safari and Slack) "
+        + "are out of view and come back as soon as it is granted again: System Settings → Privacy & Security → Accessibility")
+    #expect(h.controller.permissionLoss?.windows == 3)
     #expect(
       h.controller.permissionMenuLines == [
         "Arbor’s Accessibility permission was taken away",
@@ -436,11 +458,11 @@ import Testing
       h.controller.menuModel().sections.map { $0.items.map(\.title) } == [
         [
           "Arbor’s Accessibility permission was taken away · Check Setup…",
-          "3 windows (Mail, Safari and Slack) are out of view",
+          "2 windows (Mail and Safari) are out of view",
           "They come back as soon as you grant it again",
         ],
         ["Settings…", "Help"],
-        ["Quit Arbor (3 windows stay out of view)"],
+        ["Quit Arbor (2 windows stay out of view)"],
       ])
     #expect(h.controller.menuBarModel().icon == .needsPermission)
     h.grantAccessibility()
@@ -768,7 +790,7 @@ import Testing
       h.scheduler.advance(by: 3)
       h.controller.askAboutAccessibility(beyondDoubt: true)
       h.scheduler.advance(by: 5)
-      #expect(h.controller.permissionLoss?.windows == 3)
+      #expect(h.controller.permissionLoss?.windows == 2)
       h.grantAccessibility()
       h.scheduler.advance(by: 1)
       h.controller.askAboutAccessibility(beyondDoubt: true)

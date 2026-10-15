@@ -137,11 +137,13 @@ check "both windows are out of view" eventually out_of_view "$W1"
 
 claim "click the group's tile: the camera goes into the group"
 proves T51
+beside=$(resting_frame_of "$W2")
 # shellcheck disable=SC2046
 click $(tile_of "$W1")
 check "the first window is in view" eventually in_view "$W1"
 check "it is as wide as the screen" eventually at_edge "$W1" right
-check "the floating windows left with the Desktop" eventually out_of_view "$W2"
+# shellcheck disable=SC2086
+check "the floating windows are where they were: no view takes them away" stays frame_is "$W2" ${beside:-0 0 0 0}
 ctl show-all
 
 claim "a floating window that cannot shrink stays on the screen when the Desktop gets narrow"

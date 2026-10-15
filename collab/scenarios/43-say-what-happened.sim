@@ -14,11 +14,27 @@ expect said Nothing is docked yet: hold ⌘ and drag a window to a screen edge, 
 drag 101 3 400 cmd
 expect docked 101
 expect said Docked · ⌃⌥↩ frames it
-# They press those keys. The other windows vanish: the sentence that keeps a newcomer.
+flush
+# They press those keys. Safari fills the screen. Mail and Notes float, so they are where they were, behind it: nothing has
+# gone out of view, and Arbor does not say that anything has.
+focus 101
+press zoom
+expect fills 101
+expect still 102
+expect visible 102
+expect visible 103
+expect silent
+press show-all
+# Mail and Notes go to the right edge, and they frame Safari again. Now the two vanish: the sentence that keeps a newcomer.
+drag 102 1437 400
+expect docked 102
+drag 103 1437 400
+expect docked 103
 focus 101
 press zoom
 expect fills 101
 expect hidden 102
+expect hidden 103
 expect said Your other windows are out of view, not closed · ⌃⌥Space shows everything
 press show-all
 expect visible 102

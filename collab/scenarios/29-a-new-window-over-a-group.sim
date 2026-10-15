@@ -1,7 +1,9 @@
 # Proposed by the swarm's review (2026-10-14), from the product owner's replay; the documenter may edit or drop it.
 # Story: Mail and Notes are a group, saved as view 2, as in the guide. Looking at it, someone opens a terminal, which floats
-# over the group. They frame Safari and come back with the shortcut for view 2: the terminal is there, in front, and
-# has the focus it had. (F57; before, only a single framed window kept its new windows.)
+# over the group. They frame Safari, and the terminal stays where it is, behind Safari: no view takes a floating window away
+# (Q29, 4). They come back with the shortcut for view 2: the terminal is in front and has the focus it had.
+# Where floating windows make way it goes and comes with the group it opened over: the second half. (F57; before, only a
+# single framed window kept its new windows.)
 # Reference: T34 T52.
 # The ring is an option (collab/QUESTIONS.md, Q29). Here it says where the keyboard is, and that the line is round that very window.
 set focusRing true
@@ -17,6 +19,30 @@ save-view 2
 open Term 500x400
 expect floating 104
 expect ring 104
+zoom 101
+expect fills 101
+expect focused 101
+expect in-front 101
+expect still 104
+expect visible 104
+expect at 104 300 200 500x400
+view 2
+expect still 104
+expect visible 104
+expect ring 104
+expect focused 104
+expect in-front 104
+# Inside the group only a part of what it opened over is showing. The terminal is there all the same.
+zoom 102
+expect still 104
+expect visible 104
+out
+expect still 104
+expect visible 104
+expect at 104 300 200 500x400
+# Only floating windows that make way leave with the view. There the terminal belongs to the group it opened over.
+focus 104
+set floatingWindowsMakeWay true
 zoom 101
 expect hidden 104
 view 2

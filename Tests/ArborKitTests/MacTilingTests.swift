@@ -505,7 +505,7 @@ import Testing
     #expect(h.frame(window) == tile, "from the left, and reaching lower than the tile")
     h.run("zoom \(docked.rawValue)")
     h.scheduler.advance(by: 3)
-    #expect(h.frame(window) != tile, "out of view")
+    #expect((h.frame(window) != tile) == h.floatingWindowsLeaveWithTheDesktop, "out of view, if it makes way")
     h.run("back")
     h.scheduler.advance(by: 3)
     // The point is what this is about. That it comes back narrower, squeezed off the docked window, is the board's 1.18.

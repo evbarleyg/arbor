@@ -13,8 +13,12 @@ dock 103 beside 102 bottom
 move 104 560 300 400 300
 zoom 101
 expect fills 101
+expect in-front 101
 expect hidden 102
-expect hidden 104
+# Notes floats: it is where it was, behind Safari.
+expect still 104
+expect visible 104
+expect at 104 560 300 400x300
 # To a docked window out of view: framed stays framed, and Back returns.
 focus 102
 expect fills 102
@@ -23,13 +27,15 @@ expect in-front 102
 expect hidden 101
 back
 expect fills 101
-# To a floating window out of view: the Desktop, with the window where it was.
+# To a floating window: it is in view already, behind the framed one. It comes to the front where it is, and no view moves.
 focus 104
-expect camera desktop
+expect still
+expect camera 101
+expect fills 101
 expect visible 104
 expect focused 104
 expect in-front 104
-expect size 104 400x300
+expect at 104 560 300 400x300
 # From a group the view steps out just far enough.
 focus 102
 out

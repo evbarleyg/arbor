@@ -243,11 +243,13 @@ private let side = sideDisplay
     }
   }
 
-  @Test func aFloatingWindowOnTheDesktopNextDoorGetsFocus() {
-    let (h, w) = harness(["Safari", "Notes", "Calculator"], ["dock $0 left", "dock $1 right"], settings: .withDesktopColumn)
+  @Test(arguments: [false, true]) func aFloatingWindowOnTheDesktopNextDoorGetsFocus(makingWay: Bool) {
+    let (h, w) = harness(
+      ["Safari", "Notes", "Calculator"], ["dock $0 left", "dock $1 right"], settings: (makingWay ? .makingWay : Settings()).withDesktopColumn)
     let (a, floating) = (w[0], w[2])
     expectOK(h, "zoom \(a.rawValue)")
-    #expect(!h.system.isVisible(floating))
+    // Away with the Desktop only if it makes way. As Arbor ships it lies over Safari, and the space next door is the Desktop as ever.
+    #expect(h.system.isVisible(floating) == !makingWay)
     #expect(go(h, "right") == floating)
     #expect(h.workspace.camera == h.workspace.tree.desktop)
     #expect(h.system.isVisible(floating) && h.layout!.desktopFrame!.contains(h.frame(floating)!), "back on its Desktop")
@@ -406,15 +408,18 @@ private let side = sideDisplay
     #expect(["previous", "previous", "previous", "previous", "previous"].map { go(h, $0) } == [f2, f1, b, c, a])
   }
 
-  @Test func cyclingVisitsOnlyWhatIsInView() {
+  @Test(arguments: [false, true]) func cyclingVisitsOnlyWhatIsInView(makingWay: Bool) {
     let (h, w) = harness(
-      ["A", "B", "C", "D", "F"], ["dock $0 left", "dock $1 right", "dock $2 beside $0 bottom", "dock $3 beside $1 bottom"])
-    let (a, c, d) = (w[0], w[2], w[3])
+      ["A", "B", "C", "D", "F"], ["dock $0 left", "dock $1 right", "dock $2 beside $0 bottom", "dock $3 beside $1 bottom"],
+      settings: makingWay ? .makingWay : Settings())
+    let (a, c, d, floating) = (w[0], w[2], w[3], w[4])
     h.system.setMinimized(d, true)
     expectOK(h, "zoom-node \(h.workspace.tree.parent(of: leaf(h, a)!)!.rawValue)")
     h.system.userFocus(a)
     #expect(go(h, "next") == c)
-    #expect(go(h, "next") == a, "not b (outside the view), d (minimized) or the floating window (away with the Desktop)")
+    // As Arbor ships what floats is in view wherever the view is, so it has its turn.
+    if !makingWay { #expect(go(h, "next") == floating) }
+    #expect(go(h, "next") == a, "not b (outside the view), d (minimized) or a floating window that is away with the Desktop")
     #expect(h.workspace.camera == h.workspace.tree.parent(of: leaf(h, a)!))
   }
 
@@ -428,16 +433,20 @@ private let side = sideDisplay
 
   // MARK: focus <window>
 
-  @Test func namingAWindowBringsItIntoView() {
-    let (h, w) = harness(["A", "B", "F"], ["dock $0 left", "dock $1 right", "zoom $0"])
+  @Test(arguments: [false, true]) func namingAWindowBringsItIntoView(makingWay: Bool) {
+    let (h, w) = harness(["A", "B", "F"], ["dock $0 left", "dock $1 right", "zoom $0"], settings: makingWay ? .makingWay : Settings())
     let (a, b, floating) = (w[0], w[1], w[2])
-    #expect(!h.system.isVisible(b) && !h.system.isVisible(floating))
+    #expect(!h.system.isVisible(b) && h.system.isVisible(floating) == !makingWay)
     expectOK(h, "focus \(b.rawValue)")
     #expect(h.system.focused == b && h.system.isVisible(b))
     expectOK(h, "zoom \(a.rawValue)")
     expectOK(h, "focus \(floating.rawValue)")
     #expect(h.system.focused == floating && h.system.isVisible(floating))
-    #expect(h.layout!.desktopFrame != nil)
+    if makingWay {
+      #expect(h.layout!.desktopFrame != nil)
+    } else {
+      #expect(h.workspace.camera == leaf(h, a), "as Arbor ships it is in view already, and the view stays")
+    }
 
     h.system.setMinimized(b, true)
     #expect(h.run("focus \(b.rawValue)").message == "\(b) is minimized, hidden (⌘H) or on another of the macOS Spaces")

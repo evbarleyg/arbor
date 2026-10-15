@@ -236,7 +236,7 @@ import Testing
     h.run("dock \(a.rawValue) left")
     h.run("dock \(b.rawValue) right")
     h.run("zoom \(a.rawValue)")
-    #expect(h.controller.parked == [b, c])
+    #expect(h.controller.parked == (h.floatingWindowsLeaveWithTheDesktop ? [b, c] : [b]))
     #expect(h.run("float-all").ok)
     #expect(h.workspace.tree.allWindows.isEmpty)
     #expect(h.controller.parked.isEmpty)

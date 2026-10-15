@@ -9,8 +9,8 @@ import Testing
 /// the journey: a window moved before it vanishes without a trace, one moved after it jumps when the stage lifts.
 @Suite @MainActor struct UndoMotionTests {
   /// Three floating windows, started.
-  func makeHarness() -> (Harness, WindowID, WindowID, WindowID) {
-    let h = Harness(settings: .withMotion)
+  func makeHarness(settings: Settings = Harness.settingsWhenNoneAreGiven) -> (Harness, WindowID, WindowID, WindowID) {
+    let h = Harness(settings: settings.withMotion)
     let a = h.system.open(app: "Safari", frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     let b = h.system.open(app: "Notes", frame: CGRect(x: 300, y: 200, width: 600, height: 400))
     let c = h.system.open(app: "Mail", frame: CGRect(x: 500, y: 300, width: 600, height: 400))
@@ -54,8 +54,9 @@ import Testing
     #expect(item.from == slot && item.to == place)
   }
 
+  /// Floating windows that make way: only they leave with the Desktop.
   @Test func aWindowThatGoesOutOfViewWithTheUndoIsSeenLeaving() throws {
-    let (h, a, b, _) = makeHarness()
+    let (h, a, b, _) = makeHarness(settings: .makingWay)
     h.run("dock \(a.rawValue) left")
     h.run("zoom \(a.rawValue)")
     #expect(h.controller.parked.contains(b), "out of view with the Desktop")
@@ -66,6 +67,22 @@ import Testing
     #expect(h.controller.parked.contains(b))
     #expect(item.from == slot && item.fromOpacity == 1, "it starts where it is seen")
     #expect(!item.to.overlaps(h.visibleFrame) || item.toOpacity == 0, "and leaves")
+  }
+
+  /// As Arbor ships the same undo frames a again, and b floats over it where it floated before.
+  @Test func aWindowThatFloatsAgainOverAFramedOneTravelsToWhereItWas() throws {
+    let (h, a, b, _) = makeHarness(settings: Settings())
+    let floated = try #require(h.frame(b))
+    h.run("dock \(a.rawValue) left")
+    h.run("zoom \(a.rawValue)")
+    #expect(h.frame(b) == floated && !h.controller.parked.contains(b), "no view takes it away")
+    h.run("dock \(b.rawValue) right")
+    let slot = try #require(h.frame(b))
+    let item = try #require(item(b, in: journey(h, "undo")))
+    #expect(h.workspace.camera == h.workspace.tree.leaf(containing: a))
+    #expect(h.frame(b) == floated && !h.controller.parked.contains(b))
+    #expect(item.from == slot && item.fromOpacity == 1, "it starts where it is seen")
+    #expect(item.to == floated && item.toOpacity == 1, "and ends where it is")
   }
 
   @Test func redoIsAJourneyToo() throws {

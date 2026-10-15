@@ -14,8 +14,8 @@ private let side = DisplaySnapshot(
 @MainActor private let main = FakeWindowSystem.standardDisplay
 private let small = CGSize(width: 320, height: 200)
 
-private func shrinking() -> Settings {
-  var settings = Settings()
+private func shrinking(makingWay: Bool = false) -> Settings {
+  var settings = makingWay ? Settings.makingWay : Settings()
   settings.shrinkOutOfView = true
   return settings
 }
@@ -84,8 +84,8 @@ private func echo(_ h: Harness, _ window: WindowID, from old: CGRect) {
 }
 
 @Suite @MainActor struct ReviewShrinkOutOfViewTests {
-  @Test func theEchoesOfGoingAndComingBackChangeNothing() {
-    let (h, a, b, c) = makeDesk(shrinking())
+  @Test(arguments: [false, true]) func theEchoesOfGoingAndComingBackChangeNothing(makingWay: Bool) {
+    let (h, a, b, c) = makeDesk(shrinking(makingWay: makingWay))
     let before = frames(h)
     let remembered = h.workspace.floating[c]
 
@@ -96,7 +96,8 @@ private func echo(_ h: Harness, _ window: WindowID, from old: CGRect) {
     h.scheduler.runPending()
     #expect(h.system.frameLog.isEmpty, "an echo of Arbor's own move made it move something: \(h.system.frameLog)")
     #expect(h.frame(b)!.size == small)
-    #expect(h.frame(c)!.size == small)
+    // Mail floats: it goes, and is made small, only if it makes way. As Arbor ships it is where it was.
+    if makingWay { #expect(h.frame(c)!.size == small) } else { #expect(h.frame(c) == before[c]) }
     #expect(h.workspace.floating[c] == remembered)
 
     h.run("back")
@@ -109,15 +110,16 @@ private func echo(_ h: Harness, _ window: WindowID, from old: CGRect) {
   }
 
   /// Minimizing a window makes macOS announce a display change although no display changed.
-  @Test func aDisplayChangeThatChangesNothingLeavesShrunkWindowsAlone() {
-    let (h, a, b, c) = makeDesk(shrinking())
+  @Test(arguments: [false, true]) func aDisplayChangeThatChangesNothingLeavesShrunkWindowsAlone(makingWay: Bool) {
+    let (h, a, b, c) = makeDesk(shrinking(makingWay: makingWay))
     let before = frames(h)
     h.run("zoom \(a.rawValue)")
     h.system.clearFrameLog()
     h.system.setDisplays(h.system.displayList)
     h.scheduler.runPending()
     #expect(h.system.frameLog.isEmpty, "\(h.system.frameLog)")
-    #expect(h.controller.parked == [b, c])
+    // Mail floats: it leaves with the Desktop only if it makes way.
+    #expect(h.controller.parked == (makingWay ? [b, c] : [b]))
     h.run("back")
     #expect(frames(h) == before)
   }

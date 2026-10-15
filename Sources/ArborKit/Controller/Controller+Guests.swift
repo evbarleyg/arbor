@@ -3,11 +3,15 @@ import CoreGraphics
 
 /// New windows that open over a view without the Desktop (docs/features/F57-new-windows-while-framed.md).
 ///
-/// Such a window floats over the docked ones, which looks right. But floating windows live on the Desktop, so at the
-/// next move of the view it was gone, and Back did not bring it back. As a guest it belongs to the space it
-/// opened over: it is in view whenever that space is, at the frame it has there, and with the Desktop in view
-/// it sits on the Desktop like any floating window. Docking it, closing its host, `arrange` and
-/// `float-all` end the visit.
+/// Such a window floats over the docked ones, which looks right. As a guest it belongs to the space it opened over. As Arbor
+/// ships that means one thing: it has the keyboard again when that space comes back into view, if it was used last there
+/// (`inFront`, `floatsBesideTheView`). No view takes it away, no more than any other floating window (Controller+OwnFrames.swift).
+///
+/// With `floatingWindowsMakeWay` floating windows live on the Desktop, so at the next move of the view it would be gone, and
+/// Back would not bring it back. There a guest leaves the view with its host and comes back with it: it is in view whenever that
+/// space is, at the frame it has there, and with the Desktop in view it sits on the Desktop like any floating window.
+///
+/// Docking it, closing its host, `arrange` and `float-all` end the visit.
 extension Controller {
   /// Called for a window that has just begun to float in view and that no rule claimed: a new one, or one found at
   /// launch or after a pause. It becomes a guest of the view, unless that shows the Desktop.
@@ -22,9 +26,10 @@ extension Controller {
   }
 
   /// Called at launch and on resume for a window the saved arrangement does not know: it opened while Arbor was not
-  /// looking. Floating windows go out of view with the Desktop, so with the view on something else the first layout would
-  /// sweep away a window somebody has just opened, perhaps to work in. It is treated as if Arbor had seen it open over
-  /// that view: it stays where it is, as a guest, or (if the setting says so) until the view next moves.
+  /// looking. It is treated as if Arbor had seen it open over that view: it is a guest there, if `newWindowsWhileFramed` says so.
+  /// As Arbor ships it stays where it is either way. With `floatingWindowsMakeWay` floating windows go out of view with the
+  /// Desktop, so with the view on something else the first layout would sweep away a window somebody has just opened, perhaps
+  /// to work in: there it stays as a guest, or (if it is to be none) until the view next moves.
   func receiveWhatOpenedUnseen(_ id: WindowID) {
     guard let display = workspaceID(containing: id), workspaces[display]?.isFloating(id) == true,
       windows[id]?.isPresent == true, let layout = layout(of: display), !showsWhatFloats(layout, in: workspaces[display]!)

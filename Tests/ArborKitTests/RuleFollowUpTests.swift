@@ -117,9 +117,10 @@ private let finder = "com.apple.finder"
     #expect(h.system.isVisible(f) && h.system.isVisible(a))
   }
 
-  /// A run that did not quit cleanly leaves its windows where it had put them.
+  /// A run that did not quit cleanly leaves its windows where it had put them. A floating one is out of view only if that run's
+  /// floating windows made way (or it was an earlier build): as Arbor ships none leaves the view.
   @Test(arguments: [true, false]) func aWindowLeftOutOfViewByACrashIsFetchedAndThenIgnored(wasDocked: Bool) {
-    let first = Harness()
+    let first = Harness(settings: wasDocked ? Harness.settingsWhenNoneAreGiven : .makingWay)
     let own = CGRect(x: 300, y: 200, width: 500, height: 350)
     let f = first.system.open(app: "Finder", bundleID: finder, frame: own)
     let m = first.system.open(app: "Mail", bundleID: mail)
@@ -154,13 +155,14 @@ private let finder = "com.apple.finder"
     visibleFrame: CGRect(x: 0, y: 25, width: 1280, height: 775), isMain: true)
 
   /// What a run that did not quit cleanly leaves: Finder docked (or floating), out of view in the corner, and saved
-  /// so. `change` is applied to the window as the next run finds it. `before` are the first run's displays.
+  /// so. `change` is applied to the window as the next run finds it. `before` are the first run's displays. Floating, it is
+  /// left by a run whose floating windows made way (or an earlier build): as Arbor ships none leaves the view.
   private func afterACrash(
     docked: Bool = true, before: [DisplaySnapshot] = [FakeWindowSystem.standardDisplay],
     displays: [DisplaySnapshot] = [FakeWindowSystem.standardDisplay], bundleID: String = finder,
     _ change: (FakeWindowSystem, WindowID) -> Void = { _, _ in }
   ) -> (Harness, WindowID) {
-    let first = Harness(displays: before)
+    let first = Harness(displays: before, settings: docked ? Harness.settingsWhenNoneAreGiven : .makingWay)
     let f = first.system.open(app: "Finder", bundleID: finder, pid: 2000, frame: Self.own)
     let m = first.system.open(app: "Mail", bundleID: mail)
     first.start()
@@ -168,6 +170,7 @@ private let finder = "com.apple.finder"
     first.run("dock \(m.rawValue) right")
     first.run("zoom \(m.rawValue)")
     first.controller.saveNow()
+    #expect(first.controller.parked.contains(f), "or nothing is left out of view")
     let again = harness([AppRule(app: bundleID, action: .ignore)], saved: first.store.saved)
     again.system.displayList = displays
     for window in [f, m] {
@@ -454,7 +457,7 @@ private let finder = "com.apple.finder"
 
   /// As `afterACrash`, with Finder excluded in settings.json instead of ignored by a rule.
   private func excludedAfterACrash(docked: Bool, _ change: (FakeWindowSystem, WindowID) -> Void = { _, _ in }) -> (Harness, WindowID) {
-    let first = Harness()
+    let first = Harness(settings: docked ? Harness.settingsWhenNoneAreGiven : .makingWay)
     let f = first.system.open(app: "Finder", bundleID: finder, pid: 2000, frame: Self.own)
     let m = first.system.open(app: "Mail", bundleID: mail)
     first.start()
@@ -727,8 +730,9 @@ private let finder = "com.apple.finder"
   }
 
   /// It floated while the camera was elsewhere and was parked when the camera moved.
+  /// Floating windows that make way: only they leave with the Desktop.
   @Test func aWindowThatWasParkedComesBackIntoViewWhenItIsIgnored() {
-    let h = harness([AppRule(app: finder, title: "Trash", action: .ignore)])
+    let h = harness([AppRule(app: finder, title: "Trash", action: .ignore)]) { $0.floatingWindowsMakeWay = true }
     let a = h.system.open(app: "Safari")
     let b = h.system.open(app: "Notes")
     h.start()
@@ -740,6 +744,23 @@ private let finder = "com.apple.finder"
     h.system.setTitle(f, "Trash")
     #expect(h.controller.filter.ignoredWindowIDs == [f])
     #expect(h.system.isVisible(f), "an ignored window must not be left out of view")
+  }
+
+  /// As Arbor ships the camera took it nowhere: it is ignored where it floats.
+  @Test func aWindowThatFloatsOverAFramedOneIsIgnoredWhereItIs() {
+    let h = harness([AppRule(app: finder, title: "Trash", action: .ignore)])
+    let a = h.system.open(app: "Safari")
+    let b = h.system.open(app: "Notes")
+    h.start()
+    h.run("dock \(a.rawValue) left")
+    h.run("dock \(b.rawValue) right")
+    let f = h.system.open(app: "Finder", bundleID: finder, title: "")
+    let place = h.frame(f)
+    h.run("zoom \(a.rawValue)")
+    #expect(h.frame(f) == place && !h.controller.parked.contains(f))
+    h.system.setTitle(f, "Trash")
+    #expect(h.controller.filter.ignoredWindowIDs == [f])
+    #expect(h.frame(f) == place)
   }
 
   /// The new window is docked and has the focus, so it is its app's most recently focused docked window.

@@ -258,8 +258,9 @@ private let side = DisplaySnapshot(
     expectNoRing(h)
   }
 
+  // Floating windows that make way: only they leave with the Desktop.
   @Test func aParkedFloatingWindowHasNoRing() {
-    let (h, a, _, _) = makeHarness()
+    let (h, a, _, _) = makeHarness(settings: .makingWay)
     let f = h.system.open(app: "Music", frame: CGRect(x: 760, y: 300, width: 200, height: 200))
     h.system.userFocus(f)
     expectRing(h, around: f)
@@ -268,6 +269,18 @@ private let side = DisplaySnapshot(
     h.run("relayout")
     #expect(h.controller.parked.contains(f))
     expectNoRing(h)
+  }
+
+  /// As Arbor ships no view takes it away. With the keyboard in it the ring is around it, where it lies over the framed window.
+  @Test func aFloatingWindowOverAFramedOneHasTheRing() {
+    let (h, a, _, _) = makeHarness()
+    let f = h.system.open(app: "Music", frame: CGRect(x: 760, y: 300, width: 200, height: 200))
+    h.system.userFocus(f)
+    h.run("zoom \(a.rawValue)")
+    h.system.focused = f
+    h.run("relayout")
+    #expect(!h.controller.parked.contains(f) && h.frame(f) == CGRect(x: 760, y: 300, width: 200, height: 200))
+    expectRing(h, around: f)
   }
 
   @Test func aWindowInsideATileHasNoRing() {

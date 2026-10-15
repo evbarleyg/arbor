@@ -30,6 +30,9 @@ ctl dock "$V1" right
 click_window "$W1"
 ctl zoom "$W1"
 summary
+# No view takes a floating window away (F64): the third lies where it was, behind the framed one. It is in view already, so a hold
+# has nothing to keep out there, and nothing to move.
+floating=$(resting_frame_of "$W3")
 
 claim "choose Hold This View from the menu with a window framed: no shortcut moves the view, and a line says why and what releases it"
 proves A58
@@ -45,7 +48,8 @@ check "⌃⌥D reaches Arbor" pressed ctrl+opt+d desktop
 check "⌃⌥⇧F reaches Arbor" pressed ctrl+opt+shift+f float-all
 check "the framed window still fills the screen" stays fills "$W1"
 check "the other app's window is still out of view" out_of_view "$V1"
-check "and so is the floating one" out_of_view "$W3"
+# shellcheck disable=SC2086
+check "the floating one is where it was" frame_is "$W3" $floating
 check "all three are still docked" count docked 3
 open_menu
 check "the menu's first line says that the view is held" eventually pointer menu-item "$ARBOR_PID" "The view is held · Release"
@@ -85,7 +89,8 @@ check "let go, it fills the screen again" eventually fills "$W1"
 check "it is still docked" is docked "$W1"
 check "the window below it stays out of view" stays out_of_view "$W2"
 check "and so does the other app's" out_of_view "$V1"
-check "and the floating one" out_of_view "$W3"
+# shellcheck disable=SC2086
+check "the one that floated all along has not moved" frame_is "$W3" $floating
 check "the dragged window is in view" in_view "$W1"
 check "the view is still held" held
 ctl release
@@ -112,7 +117,8 @@ check "over the lower part of the other window a preview shows" eventually has_o
 release
 check "it docks below the other" eventually above "$W2" "$W1"
 check "the other app's window is out of view as before" stays out_of_view "$V1"
-check "and so is the floating one" out_of_view "$W3"
+# shellcheck disable=SC2086
+check "the floating one is where it was" frame_is "$W3" $floating
 check "the view is still held" held
 settled
 ctl release
@@ -133,7 +139,8 @@ check "it is minimized" eventually is minimized "$W1"
 # Without a hold the view shows the nearest space around it that has something in it: the other window of its column.
 check "the other window of its column stays out of view" stays out_of_view "$W2"
 check "and so does the other app's" out_of_view "$V1"
-check "and the floating one" out_of_view "$W3"
+# shellcheck disable=SC2086
+check "the floating one is where it was" frame_is "$W3" $floating
 check "the view is still held" held
 open_menu
 check "the menu says that nothing is in the view" eventually pointer menu-item "$ARBOR_PID" "The view is held: nothing is in it"

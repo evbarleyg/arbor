@@ -91,12 +91,15 @@ settled
 
 claim "kill Arbor while zoomed in: the windows it had moved away are stranded"
 proves A06
+floating=$(resting_frame_of "$W4")
 ctl zoom "$W1"
 check "the others are out of view" eventually out_of_view "$W2"
-check "the floating one too" eventually out_of_view "$W4"
+# shellcheck disable=SC2086
+check "not the floating one, which no view takes away: it is where it was" stays frame_is "$W4" $floating
 sleep 1
 arbor_kill KILL
 check "nothing brought them back" stays out_of_view "$W2"
+check "the floating one is in view, Arbor or no Arbor" in_view "$W4"
 
 claim "start Arbor after the crash: every window is within reach again"
 proves A06
@@ -107,6 +110,8 @@ check "the first window is in view" eventually in_view "$W1"
 check "the second window is in view" eventually in_view "$W2"
 check "the third window is in view" eventually in_view "$W3"
 check "the floating window is in view" eventually in_view "$W4"
+# shellcheck disable=SC2086
+check "where it was all along" frame_is "$W4" $floating
 settled
 
 claim "kill Arbor the moment it zooms in, before it has saved: the next launch still strands nothing"
@@ -179,5 +184,27 @@ check "the first window is in view" eventually in_view "$W1"
 check "the second window is in view" eventually in_view "$W2"
 check "the third window is in view" eventually in_view "$W3"
 check "the fourth window is in view" eventually in_view "$W4"
+
+arbor_stop
+
+# The way back: with `floatingWindowsMakeWay`, which ships off, floating windows leave the view with the Desktop, as until F64, and a crash
+# strands them with the rest.
+arbor_settings '{"floatingWindowsMakeWay": true}'
+arbor_start 2
+ctl dock "$W1" left
+
+claim "with floatingWindowsMakeWay on: kill Arbor while zoomed in and start it again: the floating window it had moved away is within reach again"
+proves A06
+ctl zoom "$W1"
+check "the floating window left with the Desktop" eventually out_of_view "$W2"
+sleep 1
+arbor_kill KILL
+check "nothing brought it back" stays out_of_view "$W2"
+arbor_relaunch
+check "Arbor arranges both" count managed 2
+ctl show-all
+check "the docked window is in view" eventually in_view "$W1"
+check "the floating window is in view" eventually in_view "$W2"
+settled
 
 arbor_stop

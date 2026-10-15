@@ -352,7 +352,8 @@ public final class Controller {
   var undoScopeDepth = 0
   /// The window being dragged, and where the floating windows were when the drag began.
   var dragOrigin: (window: WindowID, frames: [DisplayID: [WindowID: CGRect]])?
-  /// Floating windows that the layout in progress takes out of view: an undo has put back an arrangement in which they were.
+  /// Floating windows that the layout in progress takes out of view: an undo has put back an arrangement in which they were. Only
+  /// with `floatingWindowsMakeWay` (`FloatingPlan.leaving`).
   var leavingView: Set<WindowID> = []
   /// Each display's tree as it was when Arbor first moved its gaps to make room (F61) during the change being recorded.
   var treesBeforeRoomWasMade: [DisplayID: LayoutTree] = [:]
@@ -1004,9 +1005,10 @@ public final class Controller {
       }
       claimed.formUnion(workspace.floating.keys)
       // A floating window of which no display shows more than a sliver was left parked by a run that did not
-      // quit cleanly. Counting it as parked sends it back to its frame when the Desktop is in view. One that
-      // merely hangs off an edge is in view: the first layout parks it properly if the Desktop is not.
-      // Nor is one that is in Arbor's own corner, of which the display next door can show a whole title bar.
+      // quit cleanly. Counting it as parked sends it back to its frame with the next layout, whatever the view shows (with
+      // `floatingWindowsMakeWay`, when the Desktop is in view). One that merely hangs off an edge is in view, and stays
+      // (with the setting on the first layout parks it properly if the Desktop is not in view).
+      // Nor is one in view that is in Arbor's own corner, of which the display next door can show a whole title bar.
       for window in workspace.floating.keys where showsOnlyASliver(window) || isInAParkingCorner(window) { parked.insert(window) }
       workspaces[id] = workspace
       // The note of a person's own hand is not saved. One that is found where it is remembered counts as left there, like one
@@ -1115,7 +1117,8 @@ public final class Controller {
         height: frame.height
       ).fitted(into: visible)
       if holdLeavesOutOfView(window) {
-        // It floats like any other window that is out of view, and comes to the middle with the Desktop.
+        // It floats, waits out of view, and comes to the middle when the view next moves (`holdLetsInWhatWaited`); with
+        // `floatingWindowsMakeWay`, once the Desktop is in view.
         workspaces[displayID]?.floating[window] = centred
         hints[window] = WindowHint(bundleID: snapshot.bundleID, title: snapshot.title)
         return park(window, on: display)

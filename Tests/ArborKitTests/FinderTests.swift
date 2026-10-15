@@ -132,14 +132,15 @@ private let side = DisplaySnapshot(
     #expect(row.note == "in view")
   }
 
-  @Test func notesSayWhereEachWindowIs() {
-    let (h, safari, notes, mail, terminal) = makeHarness()
+  @Test(arguments: [false, true]) func notesSayWhereEachWindowIs(makingWay: Bool) {
+    let (h, safari, notes, mail, terminal) = makeHarness(settings: makingWay ? .makingWay : Settings())
     #expect(note(h, safari) == "in view")
     #expect(note(h, terminal) == "floating")
     h.run("zoom \(safari.rawValue)")
     #expect(note(h, safari) == "in view")
     #expect(note(h, notes) == "out of view")
-    #expect(note(h, terminal) == "floating, out of view")
+    // It leaves with the Desktop only if it makes way. As Arbor ships it is where it was, in view.
+    #expect(note(h, terminal) == (makingWay ? "floating, out of view" : "floating"))
     h.run("show-all")
     h.system.setMinimized(mail, true)
     #expect(note(h, mail) == "minimized")
@@ -520,8 +521,9 @@ private let side = DisplaySnapshot(
   }
 
   /// `hold still` starts by itself during a call, and stops only what nobody asked for (F58).
-  @Test(arguments: ["find inbox", "reveal 103", "palette"]) func whileHoldingStillTheViewStillGoesWhereItIsAsked(how: String) {
-    let (h, safari, _, mail, terminal) = makeHarness()
+  @Test(arguments: ["find inbox", "reveal 103", "palette"], [false, true])
+  func whileHoldingStillTheViewStillGoesWhereItIsAsked(how: String, makingWay: Bool) {
+    let (h, safari, _, mail, terminal) = makeHarness(settings: makingWay ? .makingWay : Settings())
     h.system.userFocus(safari)
     h.run("zoom \(safari.rawValue)")
     h.run("hold still")
@@ -543,7 +545,8 @@ private let side = DisplaySnapshot(
     go("inbox", mail)
     #expect(h.workspace.camera == leaf(h, mail))
     go("zsh", terminal)
-    #expect(h.workspace.camera == h.workspace.tree.desktop)
+    // As Arbor ships what floats is in view already: it gets the keyboard, and there is nowhere for the view to go.
+    #expect(h.workspace.camera == (makingWay ? h.workspace.tree.desktop : leaf(h, mail)))
     h.system.setMinimized(mail, true)
     go("inbox", mail)
     h.system.setHidden(pid: 11, true)
@@ -659,8 +662,9 @@ private let side = DisplaySnapshot(
     #expect(h.system.focused == xcode)
   }
 
+  // Floating windows that make way, in this test and the next two: only they are out of view when the Desktop is.
   @Test func fromAGroupAFloatingWindowOutOfViewBringsTheDesktopBack() {
-    let (h, safari, notes, _, terminal) = makeHarness(settings: Settings())
+    let (h, safari, notes, _, terminal) = makeHarness(settings: .makingWay)
     h.run("zoom \(notes.rawValue)")
     h.run("out")
     #expect(h.workspace.camera == h.workspace.tree.parent(of: leaf(h, notes)!), "the premise: the column")
@@ -675,7 +679,7 @@ private let side = DisplaySnapshot(
 
   /// The level is kept: from one window to the Desktop alone.
   @Test func fromAFramedWindowAFloatingWindowFramesTheDesktop() {
-    let (h, safari, _, _, terminal) = makeHarness()
+    let (h, safari, _, _, terminal) = makeHarness(settings: .makingWay)
     h.run("zoom \(safari.rawValue)")
     #expect(!h.system.isVisible(terminal))
     #expect(h.run("reveal \(terminal.rawValue)").ok)
@@ -690,7 +694,7 @@ private let side = DisplaySnapshot(
     var tree = LayoutTree()
     for number in 101...107 { tree.dock(WindowID(UInt32(number)), beside: tree.root, edge: .left, desktopColumn: true) }
     // Plainly floating: found over a view without the Desktop, it would otherwise be a guest of that view, and be shown there.
-    var settings = Settings.withDesktopColumn
+    var settings = Settings.makingWay.withDesktopColumn
     settings.newWindowsWhileFramed = "float"
     let h = Harness(
       settings: settings, saved: PersistedState(workspaces: [main.id: Workspace(tree: tree)], hints: [:]))
@@ -703,6 +707,20 @@ private let side = DisplaySnapshot(
     #expect(h.run("reveal \(floating.rawValue)").ok)
     #expect(h.system.isVisible(floating))
     #expect(h.workspace.camera == h.workspace.tree.desktop)
+  }
+
+  /// As Arbor ships what floats is in view wherever the view is: it gets the keyboard and comes to the front, and nothing else moves.
+  @Test(arguments: [false, true]) func aFloatingWindowIsInViewAlreadySoTheViewStays(fromAGroup: Bool) {
+    let (h, _, notes, _, terminal) = makeHarness(settings: Settings())
+    h.run("zoom \(notes.rawValue)")
+    if fromAGroup { h.run("out") }
+    let (view, place) = (h.workspace.camera, h.frame(terminal))
+    #expect(view != h.workspace.tree.root && h.layout?.desktopFrame == nil, "the premise: a view without the Desktop")
+    h.system.clearFrameLog()
+    #expect(h.run("reveal \(terminal.rawValue)").ok)
+    #expect(h.workspace.camera == view)
+    #expect(h.frame(terminal) == place && h.system.frameLog.isEmpty, "\(h.system.frameLog)")
+    #expect(h.system.focused == terminal && h.system.windowsFrontToBack().first == terminal)
   }
 
   @Test func revealWithoutAWindowMeansTheFocusedOne() {

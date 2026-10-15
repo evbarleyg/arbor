@@ -101,9 +101,9 @@ A separator is written `|`. Rows show their shortcuts here as at the top level.
 - **In the order of use, not by app**: the window with the keyboard first, ticked, as in an app's own Window menu; then those that have had it,
   the latest first; then the rest as they are laid out. Windows of apps Arbor does not arrange come after the others, by app.
 - **A mark in words at the right end, grey, for what cannot be seen just now**, and nothing for what can: `out of view` (docked outside the view, too
-  small to show, behind the window its tab group shows, floating while the Desktop is out of view or with most of it beyond the edges of all displays, sent
-  away by `summon`), and macOS's own words for what macOS did: `minimized`, `hidden`, `full screen`, `another Space`; not for the window being typed
-  in, which is what is seen. No display's name.
+  small to show, behind the window its tab group shows, floating with most of it beyond the edges of all displays, kept out by a hold, sent
+  away by `summon`; with `floatingWindowsMakeWay` also floating while the Desktop is out of view), and macOS's own words for what macOS did: `minimized`, `hidden`, `full screen`, `another Space`; not for the window being typed
+  in, which is what is seen. No display's name. A floating window that lies behind what came forward has no mark: it is where it was.
 - **A click** runs `reveal` for that window, the road Go to… takes: it ends in front, with the keyboard, and whole. A floating window that hangs over an edge of the
   screen is moved the least that brings all of it in, on the display it belongs to. Moved, never sized: of one larger than its display the corner with the
   title bar comes in. One that lies across two displays, which show all of it between them, is let be.

@@ -362,7 +362,8 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
   }
 
   @Test func pinningAMinimizedWindowThatWasOutOfViewShowsItWhenItComesBack() {
-    let (h, editor, _, _) = makeHarness()
+    // Floating windows that make way: only they leave with the Desktop.
+    let (h, editor, _, _) = makeHarness(settings: .makingWay)
     let notes = h.system.open(app: "Notes", pid: 1005, frame: CGRect(x: 600, y: 300, width: 200, height: 200))
     h.run("zoom \(editor.rawValue)")
     #expect(h.controller.parked.contains(notes))
@@ -414,11 +415,13 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
     }
   }
 
-  @Test func unpinnedItIsAnOrdinaryFloatingWindowAgain() {
-    let (h, editor, _, call) = makeHarness()
+  @Test(arguments: [false, true]) func unpinnedItIsAnOrdinaryFloatingWindowAgain(makingWay: Bool) {
+    let (h, editor, _, call) = makeHarness(settings: makingWay ? .makingWay : Settings())
     h.run("unpin \(call.rawValue)")
     h.run("zoom \(editor.rawValue)")
-    #expect(h.controller.parked.contains(call))
+    // It leaves with the Desktop where floating windows make way. As Arbor ships it stays where it is, like the others.
+    #expect(h.controller.parked.contains(call) == makingWay)
+    if !makingWay { #expect(h.frame(call) == corner) }
     h.system.clearRaiseLog()
     h.scheduler.advance(by: 1)
     #expect(h.system.raiseLog.isEmpty)

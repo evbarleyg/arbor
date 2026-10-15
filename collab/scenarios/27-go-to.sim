@@ -1,5 +1,5 @@
-# Story: someone with five windows, four of them out of view, finds each by typing a few letters, whatever
-# keeps it out of view, and hops back to where they were with Return alone.
+# Story: someone with five windows, three of them out of view and one behind the window they look at, finds each by typing a
+# few letters, whatever keeps it from being seen, and hops back to where they were with Return alone.
 # Reference: A27 (docs/features/F27-window-finder.md). Window ids start at 101.
 # Written by the executor swarm, 2026-10-14; for the documenter to review.
 open Safari
@@ -11,12 +11,17 @@ dock 101 left
 dock 102 right
 dock 103 beside 102 bottom
 dock 105 beside 101 bottom
-# Terminal (104) floats on the Desktop in the middle. Framed on Safari, everything else is out of view.
+# Terminal (104) floats in the middle. Framed on Safari, what is docked is out of view; Terminal stays where it is, behind Safari.
 focus 101
 zoom 101
 expect fills 101
 expect hidden 102
-expect hidden 104
+expect hidden 103
+expect hidden 105
+expect still 104
+expect visible 104
+expect at 104 300 200 640x420
+expect in-front 101
 # ⌃⌥G, "no", Return: the level is kept, so Notes is framed as Safari was.
 find
 expect ok
@@ -51,13 +56,18 @@ find music
 expect ok
 expect visible 105
 expect visible 102
-# A floating window brings the Desktop back.
+# A floating window is in view already: it comes to the front and gets the keyboard, and no view moves.
 zoom 101
 find term
 expect ok
+expect still
 expect visible 104
 expect floating 104
-expect hidden 101
+expect focused 104
+expect in-front 104
+expect at 104 300 200 640x420
+expect camera 101
+expect fills 101
 # A minimised window comes back from the Dock to its own place.
 minimize 102
 zoom 101

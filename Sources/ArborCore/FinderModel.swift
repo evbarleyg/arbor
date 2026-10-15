@@ -38,7 +38,7 @@ public enum FinderPlace: String, Codable, Sendable, CaseIterable {
   /// Behind the window its tab group shows.
   case tab
   case floating
-  /// Floating, and out of view with the Desktop.
+  /// Floating, and out of view all the same: a hold keeps it out, or, with `floatingWindowsMakeWay`, it left with the Desktop.
   case floatingOutOfView = "floating, out of view"
   /// Pinned (F49): floating, and in view wherever the view goes.
   case keptInView = "kept in view"

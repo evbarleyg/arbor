@@ -1,7 +1,7 @@
 # Proposed by the swarm's review (2026-10-14), from the chaos harness's `vanished` rule; the documenter may edit or drop it.
 # Story: five windows arranged, so the Desktop is a tile, and a note floating over them. Out of habit the user presses the
 # shortcut for home, though home is what is showing. Nothing a person can see may change: the note stays.
-# Only when the view really moves does the note go with the Desktop, and it comes back with it.
+# When the view really moves the note stays as well: it floats, and no view takes a floating window away (Q29, 4).
 # Reference: T03 T52.
 open A
 open B
@@ -12,22 +12,32 @@ arrange
 open Note 500x400
 expect visible 106
 home
+expect still
 expect visible 106
 show-all
+expect still
 expect visible 106
 zoom 101
-expect hidden 106
+expect fills 101
+expect hidden 102
+expect still 106
+expect visible 106
+expect at 106 300 200 500x400
 desktop
+expect still 106
 expect visible 106
 # The Desktop is a tile in the widest view, and still part of it: after "show everything" nothing is out of view.
 zoom 101
-expect hidden 106
-home
+expect still 106
 expect visible 106
+home
+expect still 106
+expect visible 106
+expect visible 102
 # Where it was, to the point (Q20).
 expect at 106 300 200 500x400
 # Until 2026-10-15 this ended `expect in-front 106`, which took a raise. It is gone on purpose; putting it back is no fix. Arbor raises nothing but
-# a window kept in view, and going out of view and coming back changes no window's place in macOS's order (QUESTIONS Q20, Q25). Why: it is what
+# a window kept in view, and no move of the view changes a window's place in macOS's order (QUESTIONS Q20, Q25). Why: it is what
 # the Mac would do without Arbor. A window that gets the keyboard comes over whatever floated above it, so the note lies under the window somebody
 # has just worked in and over the other four as before: the order is what their own acts made it. The same raise put a guest over the
 # window its person had just switched to. "In view" is a place, not a promise that nothing covers it.

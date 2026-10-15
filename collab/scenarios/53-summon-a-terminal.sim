@@ -10,10 +10,15 @@ dock 102 right
 focus 101
 zoom
 expect fills 101
-expect hidden 103
+expect in-front 101
+# Terminal floats, so it is where it was, behind the editor. No view takes it away: only the key, which names it, does.
+expect still 103
+expect visible 103
+expect at 103 300 200 400x300
 # The key, pressed: Terminal is over the editor. Nothing else moved.
 summon Terminal
 expect ok
+expect still 101
 expect summoned 103
 expect visible 103
 expect in-front 103

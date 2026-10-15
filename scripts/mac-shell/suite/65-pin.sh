@@ -1,5 +1,5 @@
 #!/bin/bash
-# Windows that stay: a floating window that does not live on the Desktop.
+# Windows that stay in front: every floating window stays in view wherever the view goes (F64), and a pinned one is not left behind what arrives.
 # A49 pin a window so that it stays in view.
 # On a window of a second app: raising a window of the app that is in front anyway would prove little.
 source "$(dirname "$0")/../lib.sh"
@@ -82,13 +82,16 @@ still_there() {
   check "$1: it has not taken the keyboard" eventually is focused "$2"
 }
 
-claim "⌃⌥↩, ⌃⌥→ and ⌃⌥0 move the view: the pinned window keeps its place in front, other floating windows leave"
+claim "⌃⌥↩, ⌃⌥→ and ⌃⌥0 move the view: the pinned window keeps its place in front, another floating window keeps its place behind"
 proves A49
 known "a pinned window of another app stays behind the window that has the keyboard: the Accessibility raise does not lift it over that one; Q25 in collab/QUESTIONS.md decides what is to become of it"
 click_window "$W1"
+unpinned=$(real_frame_of "$W3")
 check "⌃⌥↩ reaches Arbor" pressed ctrl+opt+return zoom
 check "the first window fills the screen" eventually fills "$W1"
-check "the floating window that is not pinned left with the Desktop" eventually out_of_view "$W3"
+# shellcheck disable=SC2086
+check "the floating window that is not pinned is where it was" stays is_at "$W3" $unpinned
+check "behind the framed window: nothing brings it to the front" fails uncovered "$W3"
 still_there "framed on the first window" "$W1"
 check "⌃⌥→ reaches Arbor" pressed ctrl+opt+right neighbor right
 check "⌃⌥→ again" pressed ctrl+opt+right neighbor right
@@ -114,7 +117,7 @@ check "its app is still the one in front" front_is "$ARBOR_WINDOWS_PID"
 check "the pinned window has not moved" is_at "$V1" $place
 settled
 
-claim "⌃⌥⇧D, bound to toggle-pin in settings.json, unpins: the window leaves with the Desktop when the view next moves"
+claim "⌃⌥⇧D, bound to toggle-pin in settings.json, unpins: the window stays where it is, and nothing keeps it in front any more"
 proves A49
 click_window "$V1"
 check "the pinned window has the keyboard" eventually is focused "$V1"
@@ -131,9 +134,13 @@ check "a click on the docked window under it now leaves it covered" stays fails 
 click_window "$W1"
 check "⌃⌥↩ reaches Arbor" pressed ctrl+opt+return zoom
 check "the first window fills the screen" eventually fills "$W1"
-check "the window that was pinned is out of view" eventually out_of_view "$V1"
+# shellcheck disable=SC2086
+check "the window that was pinned is where it was" stays is_at "$V1" $place
+check "behind the framed window" fails uncovered "$V1"
 check "⌃⌥0 reaches Arbor" pressed ctrl+opt+0 home
-check "it comes back with the Desktop" eventually in_view "$V1"
+check "the camera is on everything" eventually camera_on root
+# shellcheck disable=SC2086
+check "it has not moved" is_at "$V1" $place
 settled
 
 claim "⌃⌥⇧D pins again; quit Arbor and start it again: the window is still pinned, in the same place"
@@ -173,5 +180,49 @@ check "at its own size" eventually width_is "$V1" 300
 check "its slot has closed: the window above has the whole column" eventually at_edge "$W2" bottom
 check "unpin succeeds" ctl unpin "$V1"
 check "it is no longer pinned" fails is pinned "$V1"
+settled
+arbor_stop
+
+# The way back: with `floatingWindowsMakeWay`, which ships off, floating windows live on the Desktop and leave the view with it, as until
+# F64. There a pin is also what keeps a window in view.
+arbor_settings '{"floatingWindowsMakeWay": true, "bindings": {"ctrl+opt+shift+d": "toggle-pin"}}'
+arbor_start 3 ARBOR_NO_HOTKEYS=0
+take "x y _ _" real_frame_of "$V1"
+tw2 move "$V1" "$x" "$y" 300 220
+eventually seen_where_it_is "$V1"
+ctl dock "$W1" left
+ctl dock "$W2" right
+
+claim "with floatingWindowsMakeWay on: ⌃⌥↩ moves the view: the pinned window keeps its place, other floating windows leave with the Desktop"
+proves A49
+click_window "$V1"
+check "the other app's window has the keyboard" eventually is focused "$V1"
+check "⌃⌥⇧D reaches Arbor" pressed ctrl+opt+shift+d toggle-pin
+check "it is pinned" eventually is pinned "$V1"
+place=$(resting_frame_of "$V1")
+click_window "$W1"
+check "⌃⌥↩ reaches Arbor" pressed ctrl+opt+return zoom
+check "the first window fills the screen" eventually fills "$W1"
+check "the floating window that is not pinned left with the Desktop" eventually out_of_view "$W3"
+# shellcheck disable=SC2086
+check "the pinned window has not moved" stays is_at "$V1" $place
+check "⌃⌥0 reaches Arbor" pressed ctrl+opt+0 home
+check "the one that left comes back with the Desktop" eventually in_view "$W3"
+settled
+
+claim "with floatingWindowsMakeWay on: ⌃⌥⇧D unpins: the window leaves with the Desktop when the view next moves"
+proves A49
+click_window "$V1"
+check "the pinned window has the keyboard" eventually is focused "$V1"
+check "⌃⌥⇧D reaches Arbor" pressed ctrl+opt+shift+d toggle-pin
+check "it is no longer pinned" eventually fails is pinned "$V1"
+# shellcheck disable=SC2086
+check "it has not moved" is_at "$V1" $place
+click_window "$W1"
+check "⌃⌥↩ reaches Arbor" pressed ctrl+opt+return zoom
+check "the first window fills the screen" eventually fills "$W1"
+check "the window that was pinned is out of view" eventually out_of_view "$V1"
+check "⌃⌥0 reaches Arbor" pressed ctrl+opt+0 home
+check "it comes back with the Desktop" eventually in_view "$V1"
 settled
 arbor_stop

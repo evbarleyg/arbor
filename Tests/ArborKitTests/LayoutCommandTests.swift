@@ -571,8 +571,9 @@ private func expectNothingLost(_ h: Harness, sourceLocation: SourceLocation = #_
     #expect(h.system.isVisible(w(103)) && h.system.focused == w(103))
   }
 
+  /// Floating windows that make way: only they leave with the Desktop.
   @Test func windowsThatWereOutOfViewComeBackAlsoToADesktopTooSmallToUse() {
-    let h = harness("Safari", "Chrome", "Mail", "Notes")
+    let h = harness("Safari", "Chrome", "Mail", "Notes", settings: .makingWay)
     h.run("layout Safari | Chrome | Desktop")
     h.run("zoom 101")
     #expect(!h.system.isVisible(w(103)) && !h.system.isVisible(w(104)))
@@ -580,6 +581,19 @@ private func expectNothingLost(_ h: Harness, sourceLocation: SourceLocation = #_
     #expect(h.run("layout Safari | Chrome | Desktop:0.01").message == "arranged 2 windows")
     #expect(h.layout?.desktopFrame == nil)
     #expect(h.system.isVisible(w(103)) && h.system.isVisible(w(104)))
+  }
+
+  /// As Arbor ships they never left, and the line asks nothing of them.
+  @Test func whatFloatsOverAFramedWindowIsLeftAloneByALineWhoseDesktopIsTooSmallToUse() {
+    let h = harness("Safari", "Chrome", "Mail", "Notes")
+    h.run("layout Safari | Chrome | Desktop")
+    h.run("zoom 101")
+    #expect(h.system.isVisible(w(103)) && h.system.isVisible(w(104)) && h.controller.parked == [w(102)])
+    h.system.clearFrameLog()
+    #expect(h.run("layout Safari | Chrome | Desktop:0.01").message == "arranged 2 windows")
+    #expect(h.layout?.desktopFrame == nil)
+    #expect(h.system.isVisible(w(103)) && h.system.isVisible(w(104)))
+    #expect(!h.system.frameLog.contains { $0.window == w(103) || $0.window == w(104) })
   }
 
   @Test func theSameLineAgainDoesNotSwapTwoWindowsOfOneApp() {

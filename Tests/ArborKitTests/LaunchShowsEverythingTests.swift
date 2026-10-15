@@ -16,13 +16,13 @@ private let side = DisplaySnapshot(
 /// nothing. One sentence covers both (collab/QUESTIONS.md, Q16): starting Arbor takes no window out of view that is in view.
 /// The end of a pause is no such start: it brings back the view that the pause interrupted.
 @Suite @MainActor struct LaunchShowsEverythingTests {
-  /// [editor | Desktop | browser], framed on the editor. The notes were never docked: they float, so they are out of view
-  /// with the Desktop, as the browser is.
+  /// [editor | Desktop | browser], framed on the editor. The notes were never docked: they float, so they stay where they are, beside
+  /// the editor. Only if floating windows make way are they out of view with the Desktop, as the browser is.
   func framedOnTheEditor(
-    displays: [DisplaySnapshot] = [main], at origin: CGPoint = .zero
+    displays: [DisplaySnapshot] = [main], at origin: CGPoint = .zero, settings: Settings = Harness.settingsWhenNoneAreGiven
   ) -> (h: Harness, editor: WindowID, browser: WindowID, notes: WindowID) {
     func frame(_ x: CGFloat, _ y: CGFloat) -> CGRect { CGRect(x: origin.x + x, y: origin.y + y, width: 500, height: 400) }
-    let h = Harness(displays: displays)
+    let h = Harness(displays: displays, settings: settings)
     let editor = h.system.open(app: "Editor", pid: 1001, frame: frame(60, 80))
     let browser = h.system.open(app: "Browser", pid: 1002, frame: frame(700, 120))
     let notes = h.system.open(app: "Notes", pid: 1003, frame: frame(420, 300))
@@ -34,7 +34,8 @@ private let side = DisplaySnapshot(
     h.system.userFocus(editor)
     h.run("zoom")
     settle(h)
-    #expect(!h.system.isVisible(browser) && !h.system.isVisible(notes), "the view is on the editor alone")
+    #expect(!h.system.isVisible(browser), "the view is on the editor alone")
+    #expect(h.system.isVisible(notes) == !h.floatingWindowsLeaveWithTheDesktop, "what floats stays, unless it makes way")
     return (h, editor, browser, notes)
   }
 
@@ -111,7 +112,8 @@ private let side = DisplaySnapshot(
     h.start()
     settle(h)
     expectEverythingShows(h)
-    for window in [editor, browser, notes] { #expect(moves(of: window, h) == 1, "\(window): \(h.system.frameLog)") }
+    for window in [editor, browser] { #expect(moves(of: window, h) == 1, "\(window): \(h.system.frameLog)") }
+    #expect(moves(of: notes, h) == (h.floatingWindowsLeaveWithTheDesktop ? 1 : 0), "they were where they are: \(h.system.frameLog)")
   }
 
   /// A quit during a pause leaves the file of the pause, with the view that `resume` would have brought back.
@@ -249,8 +251,9 @@ private let side = DisplaySnapshot(
   }
 
   /// Only the notes: somebody fetched them from Mission Control, or their app brought them forward.
+  /// (Floating windows that make way: only they leave with the Desktop, so only of them would the view that comes back take one away.)
   @Test func startedAgainByTheWatchdogWithAFloatingWindowBackInViewNothingGoesOutOfView() {
-    let (old, _, _, notes) = framedOnTheEditor()
+    let (old, _, _, notes) = framedOnTheEditor(settings: .makingWay)
     let place = CGRect(x: 420, y: 300, width: 500, height: 400)
     let h = newProcess(after: old, byTheWatchdog: true)
     h.system.userMove(notes, to: place)
@@ -258,6 +261,17 @@ private let side = DisplaySnapshot(
     settle(h)
     expectEverythingShows(h)
     #expect(h.frame(notes) == place && moves(of: notes, h) == 0)
+  }
+
+  /// As Arbor ships the notes were in view all along, and the view that comes back takes nothing away: it is kept, and nothing moves.
+  @Test func startedAgainByTheWatchdogWhatFloatsBesideTheFramedWindowIsNoReasonToWidenTheView() {
+    let (old, editor, browser, notes) = framedOnTheEditor(settings: Settings())
+    let place = old.frame(notes)
+    let h = newProcess(after: old, byTheWatchdog: true)
+    h.start()
+    settle(h)
+    #expect(h.workspace.camera == h.workspace.tree.leaf(containing: editor) && !h.system.isVisible(browser))
+    #expect(h.frame(notes) == place && h.system.frameLog.isEmpty, "\(h.system.frameLog)")
   }
 
   /// Everything shows, in the file too, which still has the notes as sent away: ⌃⌥0 fetched them, and Arbor died before the save.

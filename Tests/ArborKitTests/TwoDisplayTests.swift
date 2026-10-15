@@ -26,10 +26,11 @@ private let side = DisplaySnapshot(
 
   func workspace(_ h: Harness, _ display: DisplaySnapshot) -> Workspace { h.controller.workspaces[display.id]! }
 
-  @Test func aFloatingWindowEvacuatedWhileParkedKeepsItsSizeAndIsNotPiledInACorner() {
-    let (h, _, b, f) = makeHarness()
+  /// Only a floating window that makes way is out of view with the Desktop. One that does not lies beside the framed window.
+  @Test(arguments: [false, true]) func aFloatingWindowEvacuatedWhileAnotherIsFramedKeepsItsSizeAndIsNotPiledInACorner(makingWay: Bool) {
+    let (h, _, b, f) = makeHarness(settings: makingWay ? .makingWay : Settings())
     h.run("zoom \(b.rawValue)")
-    #expect(!h.system.isVisible(f))
+    #expect(h.system.isVisible(f) == !makingWay)
     h.system.setDisplays([main])
     #expect(h.system.isVisible(f))
     #expect(h.frame(f)!.size == CGSize(width: 320, height: 300))
@@ -59,14 +60,15 @@ private let side = DisplaySnapshot(
     expectWindowsMatchLayout(h, on: main.id)
   }
 
-  @Test(arguments: [false, true]) func theSameWindowStillFloatingWaitsOutOfViewForTheDesktop(makingWay: Bool) {
+  @Test(arguments: [false, true]) func theSameWindowStillFloatingWaitsForTheDesktopOnlyIfItMakesWay(makingWay: Bool) {
     let (h, a, _, f) = makeHarness(settings: makingWay ? .makingWay : Settings())
     h.system.setMinimized(f, true)
     unplugSide(h, macOSMoves: f)
     h.run("zoom \(a.rawValue)")
     h.system.echoes.keyboard = false
     h.system.setMinimized(f, false)
-    #expect(!h.system.isVisible(f), "\(h.frame(f)!) lies over the framed window")
+    // No view takes a floating window away, one that comes out of the Dock neither. Only one that makes way waits for the Desktop.
+    #expect(h.system.isVisible(f) == !makingWay, "\(h.frame(f)!)")
     h.run("show-all")
     if makingWay {
       #expect(h.layout!.desktopFrame!.contains(h.frame(f)!), "\(h.ascii())")

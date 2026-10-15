@@ -54,7 +54,7 @@ import Testing
     #expect(expect("visible \(a.rawValue)", h) == nil)
     #expect(expect("hidden \(b.rawValue)", h) == nil)
     #expect(expect("visible \(b.rawValue)", h)?.hasPrefix("w\(b.rawValue) is parked") == true)
-    #expect(expect("hidden \(c.rawValue)", h) == nil, "floating windows leave with the Desktop")
+    #expect(expect("\(h.floatingWindowsLeaveWithTheDesktop ? "hidden" : "visible") \(c.rawValue)", h) == nil, "only if they make way")
     #expect(expect("hidden \(a.rawValue)", h)?.contains("is visible") == true)
 
     h.run("desktop")

@@ -124,14 +124,15 @@ import Testing
     #expect(isInView(b, h))
   }
 
-  @Test func aFloatingWindowGoesWhereItFloated() {
-    let h = Harness()
+  @Test(arguments: [false, true]) func aFloatingWindowGoesWhereItFloated(makingWay: Bool) {
+    let h = Harness(settings: makingWay ? .makingWay : Settings())
     let a = h.system.open(app: "Safari", pid: 11)
     let f = h.system.open(app: "Notes", pid: 13, frame: CGRect(x: 800, y: 300, width: 500, height: 300))
     h.start()
     h.run("dock \(a.rawValue) left")
     h.run("zoom \(a.rawValue)")
-    #expect(!isInView(f, h))
+    // Out of view with the Desktop only if it makes way. As Arbor ships macOS remembers the very frame it floats at.
+    #expect(isInView(f, h) == !makingWay)
     h.system.setFullScreen(f, true)
     h.run("pause")
     h.system.setFullScreen(f, false)

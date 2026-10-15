@@ -22,7 +22,7 @@ extension Controller: WindowSystemEvents {
     }
     // New windows float where their app put them, unless a rule says
     // otherwise (Controller+Rules.swift). They stay visible even if the camera
-    // is away from the Desktop, until the camera next moves.
+    // is away from the Desktop; with `floatingWindowsMakeWay`, until the camera next moves.
     if !joinPendingLayout(window.id) { adoptNewWindow(window.id) }
     summonAwaitedWindow()
     floatingWindowArrived(window.id)

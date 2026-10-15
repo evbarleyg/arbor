@@ -179,7 +179,7 @@ click_window "$W4"
 check "it floats" is floating "$W4"
 check "the ring is around it" eventually ring_around "$W4"
 check "directly in front of it" eventually ring_in_front_of "$W4"
-# It would be in view with the Desktop, further down, and take the keyboard there.
+# It would be in view whatever is framed further down (F64), and with the Desktop it would take the keyboard.
 tw close "$W4"
 forget_window "$W4"
 

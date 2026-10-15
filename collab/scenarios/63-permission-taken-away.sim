@@ -1,15 +1,22 @@
 # Story: Arbor seems to misbehave, so its owner switches it off under Privacy & Security → Accessibility, with two windows
-# out of view. Arbor cannot fetch them. It stops pretending, says what happened and what to do, keeps its keys, so that
-# pressing one leads somewhere and none lands in another app, and puts everything right when the switch goes back on.
+# out of view and a third floating behind the one they look at. Arbor cannot fetch the two. It stops pretending, says what
+# happened and what to do, keeps its keys, so that pressing one leads somewhere and none lands in another app, and puts
+# everything right when the switch goes back on.
 # Written by the executor swarm (F63); for the documenter to review. Reference: A63.
 open Safari
 open Mail
 open Notes
+open Calculator 300x400
 dock 101 left
 dock 102 right
+dock 103 beside 102 bottom
 zoom 101
 expect hidden 102
 expect hidden 103
+# The Calculator floats: no view takes it away, so there is nothing to fetch.
+expect still 104
+expect visible 104
+expect in-front 101
 revoke
 # Nobody tells Arbor. It asks every two seconds, and does not believe the first "no".
 wait 3
@@ -24,9 +31,10 @@ float-all
 expect fail
 toggle-pause
 expect fail
-# Queries still answer.
+# Queries still answer, and count what is out of view: not what floats.
 status
 expect ok
+expect replied 2 windows (Mail and Notes) are out of view
 # It takes a while to find the switch.
 wait 20
 grant
@@ -37,8 +45,12 @@ expect ok
 expect visible 101
 expect visible 102
 expect visible 103
+expect visible 104
+expect at 104 300 200 300x400
 expect camera root
 expect shortcut ctrl+opt+return on
 back
 expect camera 101
 expect hidden 102
+expect still 104
+expect visible 104

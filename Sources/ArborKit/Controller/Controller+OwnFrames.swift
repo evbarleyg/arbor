@@ -1,67 +1,41 @@
 import ArborCore
 import CoreGraphics
 
-/// A floating window's frame is its person's (collab/QUESTIONS.md, Q20): **Arbor sets a floating window's frame only to take it
-/// out of view and to put it back exactly where it was.**
+/// A floating window's frame is its person's (collab/QUESTIONS.md, Q20), and **Arbor never takes a floating window out of view**
+/// (Q29, 4): it is moved, sized, raised or hidden only by a command that names it.
 ///
 /// That is how Arbor ships, with `floatingWindowsMakeWay` off. No layout places, shoves or squeezes a floating window; one
 /// that floats alone is not stretched over the Desktop (F18); and when room is made for docked windows the Desktop counts
-/// as not in use (F61). Floating and docked windows may overlap, as windows on a Mac do, and macOS's order says which
-/// is in front.
+/// as not in use (F61). Wherever the view goes, a window framed, another space, the Desktop left behind, what floats stays
+/// where it is. Floating and docked windows may overlap, as windows on a Mac do, and macOS's order says which is in front.
 ///
-/// With the setting on, floating windows are kept on the Desktop as they were until Q20: `floatingMoves` places them,
-/// and everything that follows from that (own sizes of squeezed windows, pushed windows going back) is at work.
+/// With the setting on, floating windows are kept on the Desktop as they were until Q20: `floatingMoves` places them, they leave
+/// the view with the Desktop and come back with it, and everything that follows from that (own sizes of squeezed windows,
+/// pushed windows going back) is at work.
 ///
 /// `Workspace.floating` holds the frame the window's person gave it, as ever, or macOS at a change of displays
-/// (`takeFloatingWindowsFromWhereTheyAre`). With the setting off that is also where the window is, for as long as it is in view.
+/// (`takeFloatingWindowsFromWhereTheyAre`). With the setting off that is also where the window is, unless something other than Arbor's
+/// view took it away: a change of displays, an Arbor that died.
 extension Controller {
-  // MARK: Out of view and back
+  // MARK: Back into view
 
-  /// What a layout does to a window that lives on the Desktop, or is the guest of a space: nothing, while it is where it
-  /// belongs. `reason` is `.camera` only if the view really moved (`floatingMoves`).
+  /// What a layout does to a window that lives on the Desktop, or is the guest of a space: nothing, whatever the view shows.
+  ///
+  /// But for one that is out of view all the same, and no view of Arbor's took it there: a change of displays
+  /// (`countAsOutOfViewWhatTheDisplaysDisplaced`), an Arbor that died with the setting on or was an earlier build
+  /// (`treatStrandedWindowsAsParked`), or whoever left it where no display shows it. That one comes back with the next layout.
   func moveKeepingItsFrame(
-    _ window: WindowID, floatingAt own: CGRect, in workspace: Workspace, layout: Layout, desktopIsInView: Bool,
-    reason: RelayoutReason, isTheFirstLayout: Bool, on display: DisplaySnapshot
+    _ window: WindowID, floatingAt own: CGRect, isTheFirstLayout: Bool, on display: DisplaySnapshot
   ) -> FloatingMove? {
-    // (In view as a tile too: however small the Desktop is drawn, its windows are in view with it.)
-    if desktopIsInView || hostInView(of: window, in: workspace, layout: layout) != nil {
-      // One that no display shows is out of view whoever put it there. And one that is nowhere a window can be used, where no hand
-      // is known to have left it, is what a change of displays made of it while Arbor could not act (its app hung, Arbor had
-      // crashed): never lost outranks never moved. Not at a start, which sets no frame (Q16): the next layout, ⌃⌥0 for one.
-      guard
-        parked.contains(window) || showsOnlyASliver(window)
-          || (!isTheFirstLayout && windows[window].map { !isAPlace($0.frame) && !wasLeftThereByItsUser($0.frame, of: window, on: display) } == true)
-      else { return nil }
-      // Nothing is raised: going out of view and coming back changes nobody's place in macOS's order.
-      return .putBack(whereItWas(own, of: window, on: display))
-    }
-    if parked.contains(window) { return hasLeftItsCorner(window) ? .park : nil }
-    // Only a move of the view takes it away. Or a display that shrank has left it where nothing shows it: parked, it
-    // comes back when it is switched to. Or its app did not answer when the view moved.
-    return reason == .camera || showsOnlyASliver(window) || owedMoves.contains(window) ? .park : nil
-  }
-
-  /// Called before a layout takes `window` out of view. Where it is at that moment is where it comes back to: whoever put
-  /// it there, and whether or not Arbor has heard of it (moved while Arbor was not running, say). That its person's own hand
-  /// left it there is not noted here: a frame of which less than half shows has to have that on record already
-  /// (`noteWhereItsUserLeftIt`), or it may be what a change of displays made of it, during a pause for one.
-  func noteWhereItLeavesFrom(_ window: WindowID, on displayID: DisplayID) {
-    guard !settings.floatingWindowsMakeWay, !parked.contains(window), !showsOnlyASliver(window),
-      // An undo that sends it out of view finds it in the shape of the slot it was docked in.
-      !leavingView.contains(window), workspaces[displayID]?.role(of: window) == nil, let frame = windows[window]?.frame,
-      let own = workspaces[displayID]?.floating[window], let display = display(displayID),
-      // (macOS puts windows on whole points, whatever was asked for. A whole point off is another place.)
-      !own.approximatelyEquals(frame, tolerance: 0.99)
-    else { return }
-    // Where Arbor fitted it, it is for the displays' sake, and its own frame is still its own, as long as it will be fitted
-    // to the same place again.
-    if fittedFrames[window] == frame, whereItWas(own, of: window, on: display).approximatelyEquals(frame, tolerance: 1) { return }
-    // Nor is the point its own that the screen keeps from a window which ends on the Dock's line (Controller+TheScreensAnswer.swift): it would
-    // lose one every time it went out of view.
-    if own.width - frame.width <= 2, own.height - frame.height <= 2, ownFrame(of: frame, askedFor: own.size).approximatelyEquals(own, tolerance: 0.99) {
-      return
-    }
-    workspaces[displayID]?.floating[window] = frame
+    // One that no display shows is out of view whoever put it there. And one that is nowhere a window can be used, where no hand
+    // is known to have left it, is what a change of displays made of it while Arbor could not act (its app hung, Arbor had
+    // crashed): never lost outranks never moved. Not at a start, which sets no frame (Q16): the next layout, ⌃⌥0 for one.
+    guard
+      parked.contains(window) || showsOnlyASliver(window)
+        || (!isTheFirstLayout && windows[window].map { !isAPlace($0.frame) && !wasLeftThereByItsUser($0.frame, of: window, on: display) } == true)
+    else { return nil }
+    // Nothing is raised: coming back changes nobody's place in macOS's order.
+    return .putBack(whereItWas(own, of: window, on: display))
   }
 
   /// Brings `window` back into view at `frame`, for `placeFloatingWindows`.
@@ -134,19 +108,19 @@ extension Controller {
   // MARK: A change of displays
 
   /// A change of displays moves windows that are in view, or the ground under them, and nobody chose where that leaves them.
-  /// Such a window counts as out of view, so that the layout that follows puts it where it belongs (`whereItWas`), or
-  /// out of view with the rest of its Desktop:
+  /// Such a window counts as out of view, so that the layout that follows puts it where it belongs (`whereItWas`), whatever
+  /// the view shows:
   /// - one that Arbor fitted for the displays as they were goes back to its own frame, if that is a place again, also if macOS has moved it on
   ///   since at the size Arbor gave it (`isAsArborFittedIt`);
   /// - one of which less than half shows now, or whose title bar is out of reach, is fitted. Not one that its person's own hand left
   ///   hanging, as long as its display is as it was then and no less of it shows than it left showing (`wasLeftThereByItsUser`).
-  /// Returns those that the layout is going to put in view.
+  /// Returns them: the layout is going to put them in view.
   func countAsOutOfViewWhatTheDisplaysDisplaced() -> Set<WindowID> {
     guard !settings.floatingWindowsMakeWay else { return [] }
     var displaced: Set<WindowID> = []
     for (id, workspace) in workspaces.sorted(by: { $0.key < $1.key }) {
-      guard let display = display(id) else { continue }
-      let desktopShows = layout(of: id).map { workspace.tree.subtree($0.camera, contains: workspace.tree.desktop) } ?? false
+      // (A held view that has emptied is not laid out: nothing would put them back, and `parkAgain` would take them away in earnest.)
+      guard let display = display(id), !displaysHeldEmpty.contains(id) else { continue }
       for (window, own) in workspace.floating.sorted(by: { $0.key < $1.key }) where workspace.role(of: window) == nil {
         guard !parked.contains(window), window != drag?.window, isManaged(window), let current = windows[window],
           current.isPresent
@@ -158,9 +132,9 @@ extension Controller {
           // Not one that is where it would be sent: a call to its app costs more than everything Arbor does itself.
           !whereItWas(own, of: window, on: display).approximatelyEquals(current.frame, tolerance: 0.99)
         else { continue }
-        if desktopShows { displaced.insert(window) }
+        displaced.insert(window)
         parked.insert(window)
-        // Where it is now is no corner it was sent to: if its Desktop is out of view, it has yet to go (`hasLeftItsCorner`).
+        // Where it is now is no corner it was sent to (`hasLeftItsCorner`).
         settled[window] = nil
       }
     }

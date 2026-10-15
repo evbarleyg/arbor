@@ -39,6 +39,16 @@ extension Controller {
       workspaces[display]!.pin(id)
       // Into view if it is not, and its own size if the Desktop had squeezed it (`frameBringingIntoView`), as a motion.
       if windows[id]?.isPresent == true { relayout(display, reason: .structure) }
+      // The pin names it. Behind a framed window, say, it comes to the front now, whoever has the keyboard. (One that came into
+      // view with that layout was raised as it came.) But not over a pinned window that is being typed in.
+      let pins = workspaces[display]!.pinnedWindows + [workspaces[display]!.summoned?.window].compactMap { $0 }
+      let typedIn = system.focusedWindow().flatMap { pins.contains($0) && $0 != id ? windows[$0]?.frame : nil }
+      if let frame = windows[id]?.frame, windows[id]?.isPresent == true, !parked.contains(id), typedIn?.overlaps(frame) != true,
+        isCovered(id, by: system.windowsFrontToBack(), apartFrom: pins)
+      {
+        // (Asked first: it may have landed in the Dock with nothing said yet, and a raise would fetch it out.)
+        raiseIfItIsThere(id)
+      }
       // Where it is pinned is where it stays, not where it was before docked windows pushed it aside: whatever
       // sends floating windows back to where the user left them (float-all, quitting) then leaves it alone.
       rememberWhereItIs(id, on: display)
@@ -61,8 +71,8 @@ extension Controller {
     noteFit(of: id, own: own, into: snapshot.frame.size, on: display)
   }
 
-  /// The window stays where it is for now, like a new window: it goes out of view with the Desktop
-  /// the next time the camera moves, so nothing jumps at the moment of unpinning.
+  /// The window stays where it is, like a new window. One that makes way goes out of view with the Desktop the next time the
+  /// camera moves, so nothing jumps at the moment of unpinning.
   func unpin(_ window: WindowID?) -> CommandResult {
     let (id, display): (WindowID, DisplayID)
     switch target(window) {
@@ -73,7 +83,7 @@ extension Controller {
       return .failure("\(id) is not kept in view; `pin \(id.rawValue)` does that")
     }
     workspaces[display]!.unpin(id)
-    // From now on it goes out of view with something: with this view, unless the Desktop is showing (F57).
+    // From now on it belongs to something: to this view, unless the Desktop is showing (F57).
     receiveAsGuestOfTheView(id)
     desktopCompanyChanged(on: display)
     notify(.layout(display))
@@ -303,7 +313,7 @@ extension Controller {
 
   /// Whether a window Arbor knows, other than `others`, lies over part of `window`. What Arbor does
   /// not know (menus, panels, its own overlays) does not count. True when the stacking cannot be told.
-  private func isCovered(_ window: WindowID, by frontToBack: [WindowID], apartFrom others: [WindowID]) -> Bool {
+  func isCovered(_ window: WindowID, by frontToBack: [WindowID], apartFrom others: [WindowID]) -> Bool {
     guard let frame = windows[window]?.frame, let place = frontToBack.firstIndex(of: window) else { return true }
     return frontToBack[..<place].contains { other in
       guard !others.contains(other), let above = windows[other], above.isPresent else { return false }

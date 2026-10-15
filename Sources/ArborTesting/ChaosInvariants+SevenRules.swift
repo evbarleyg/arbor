@@ -742,9 +742,10 @@ extension ChaosRunner {
       // What a crash left out of view is fetched. What was wholly in view and is not docked stays where it is.
       if action == .launch || resumed {
         asked("launch-or-resume")
-        // The view that comes back may not include the Desktop: then what floats goes out of view with it.
+        // With `floatingWindowsMakeWay` the view that comes back may not include the Desktop: then what floats goes out of view with it.
+        // (As Arbor ships no view takes it away.)
         if workspace.isFloating(window), !workspace.isStashed(window), showedBefore >= 0.995 * before.area, !parkedBefore.contains(window),
-          !controller.parked.contains(window), !(resumed && seven.movedByThePause.contains(window) && seven.displaysAtThePause == system.displayList)
+          !(controller.settings.floatingWindowsMakeWay && controller.parked.contains(window)), !(resumed && seven.movedByThePause.contains(window) && seven.displaysAtThePause == system.displayList)
         {
           let launch = seven.launchedAfterAQuit ? "moved-at-launch" : "moved-at-launch-after-a-crash"
           problems.append(.init(action == .launch ? launch : "moved-at-resume", "\(whatHappened), where it floats as it did"))
@@ -1072,9 +1073,12 @@ extension ChaosRunner {
   /// Arbor never takes a floating window out of view: not to fill the screen with another, not at a start, a resume or a change of displays, not when a
   /// window closes. An app's windows that were summoned go when they are sent away, which names them.
   func floatingViolations(_ problems: inout [InvariantViolation]) {
+    // Those that make way live on the Desktop, and leave and come back with it: that is what the setting is for.
+    guard !madeWayBefore, !controller.settings.floatingWindowsMakeWay else { return }
     for move in movesSeenInThisStep {
       let window = move.window
-      guard isFairGame(window) != nil, presentBefore.contains(window),
+      // A hold is its person's word that nothing comes into view: what a display that goes sends over waits out of view.
+      guard isFairGame(window) != nil, presentBefore.contains(window), !controller.arrivalsAHoldKeepsOut.contains(window),
         wasRunningBefore, workspacesBefore.values.contains(where: { $0.isFloating(window) && !$0.isStashed(window) && !$0.isSummoned(window) }),
         controller.workspaces.values.contains(where: { $0.isFloating(window) && !$0.isStashed(window) })
       else { continue }

@@ -654,15 +654,19 @@ private let side = DisplaySnapshot(
     #expect(timers(h).isEmpty)
   }
 
-  @Test func aClickOnTheDesktopsOutlineShowsTheDesktop() throws {
-    let (h, a, _, c) = makeHarness(settings: passing.withDesktopColumn)
+  @Test(arguments: [false, true]) func aClickOnTheDesktopsOutlineShowsTheDesktop(makingWay: Bool) throws {
+    var settings = passing.withDesktopColumn
+    settings.floatingWindowsMakeWay = makingWay
+    let (h, a, _, c) = makeHarness(settings: settings)
     h.run("zoom \(a.rawValue)")
-    #expect(h.controller.parked.contains(c))
+    // Only a floating window that makes way has left with the Desktop. As Arbor ships it was in view all along.
+    #expect(h.controller.parked.contains(c) == makingWay)
     h.run("minimap")
     let outline = try #require(map(h)?.desktop)
     h.overlays.clickMinimap(at: outline.center)
     #expect(h.workspace.camera == h.workspace.tree.desktop)
     #expect(!h.controller.parked.contains(c), "and the window floating on it")
+    #expect(h.system.isVisible(c))
   }
 
   @Test func aClickBesideTheMapPutsItAway() {

@@ -22,13 +22,19 @@ expect docked 101
 expect still 102
 expect at 102 -425 718 1017x584
 
-# Out of view with the Desktop and back: that Arbor took, and that it gives back, to the point.
+# Safari framed, a pause from there, and everything shown again: no view takes a floating window away (Q29, 4), so there is
+# nothing of Mail's to give back, and nobody touches it.
 zoom 101
-expect hidden 102
-press toggle-pause
+expect fills 101
+expect still 102
 expect at 102 -425 718 1017x584
 press toggle-pause
+expect still 102
+expect at 102 -425 718 1017x584
+press toggle-pause
+expect still 102
 show-all
+expect still 102
 expect at 102 -425 718 1017x584
 
 relaunch quit

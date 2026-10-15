@@ -1,7 +1,8 @@
 # Proposed by the swarm (2026-10-14), from the product owner's decision in collab/QUESTIONS.md (what a start may move); the documenter may edit or drop it.
-# Story: an editor and a browser are docked, the notes were never docked and float on the Desktop. Framed on the editor, the person
-# quits Arbor in the evening: every window comes back into view. In the morning they start it again. No surprises at start: what was docked
-# is docked, EVERYTHING shows, and the notes are where they were. The view of last night is one step back; the saved view and the name are kept.
+# Story: an editor and a browser are docked, the notes were never docked and float where their person put them, whatever the
+# view shows. Framed on the editor, the person quits Arbor in the evening: the browser comes back into view. In the morning they
+# start it again. No surprises at start: what was docked is docked, EVERYTHING shows, and nobody has touched the notes. The view
+# of last night is one step back; the saved view and the name are kept.
 # Reference: T60 T61, issue #3 rule 2.
 open Editor 900x700
 open Browser 1000x700
@@ -9,11 +10,13 @@ open Notes 400x300
 dock 101 left
 dock 102 right
 zoom 101
+expect still 103
 save-view 1
 name writing
 expect camera 101
 expect hidden 102
-expect hidden 103
+expect visible 103
+expect at 103 300 200 400x300
 relaunch
 expect ok
 expect camera root
@@ -25,10 +28,13 @@ expect visible 102
 expect floating 103
 expect visible 103
 expect size 103 400x300
+expect at 103 300 200 400x300
 # Nothing is lost: last night's view is where Back leads, and ⌃⌥1 and the name still know it.
 back
 expect camera 101
 expect hidden 102
+expect still 103
+expect visible 103
 show-all
 view 1
 expect camera 101
@@ -64,3 +70,14 @@ expect visible 101
 expect visible 102
 expect visible 103
 expect visible 104
+# Only floating windows that make way leave with the Desktop. A quit fetches those like every other window.
+set floatingWindowsMakeWay true
+zoom 101
+expect hidden 102
+expect hidden 103
+relaunch
+expect camera root
+expect visible 102
+expect floating 103
+expect visible 103
+expect size 103 400x300

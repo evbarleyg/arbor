@@ -4,8 +4,7 @@ import ArborTesting
 import CoreGraphics
 import Testing
 
-/// A floating window's frame is its person's (collab/QUESTIONS.md, Q20). **Arbor sets a floating window's frame only to take
-/// it out of view and to put it back exactly where it was.**
+/// A floating window's frame is its person's (collab/QUESTIONS.md, Q20), and no view takes it away (Q29, 4; `FloatsStayInViewTests`).
 ///
 /// The desk is the one of the first day played with real apps on a hosted Mac: a display 1600 points wide, nine apps,
 /// the frames and the smallest sizes they had there. On that day a dock squeezed Safari from 1324 to 794 points, ⌘M, ⌘H and
@@ -95,16 +94,13 @@ import Testing
 
   // MARK: There and back is nothing (steps 47 to 59)
 
-  @Test(arguments: [false, true]) func frameThenShowEverythingBringsEveryFloatingWindowBackToItsOwnFrame(desktopColumn: Bool) {
+  @Test(arguments: [false, true]) func frameThenShowEverythingTouchesNoFloatingWindow(desktopColumn: Bool) {
     let desk = makeArrangedDesk { $0.desktopColumn = desktopColumn }
     desk.h.run("zoom \(desk.safari.rawValue)")
-    for window in desk.own.keys.sorted() { #expect(!desk.h.system.isVisible(window), "\(window) leaves with the Desktop") }
+    expectUntouched(desk, "with Safari framed")
+    for window in desk.own.keys.sorted() { #expect(desk.h.system.isVisible(window), "\(window) stays, behind Safari") }
     desk.h.run("show-all")
-    for (window, frame) in desk.own.sorted(by: { $0.key < $1.key }) {
-      #expect(desk.h.frame(window) == frame, "\(window) is back where it was")
-      // One move out, one move back.
-      #expect(desk.h.system.frameLog.filter { $0.window == window }.count == 2, "\(window): \(desk.h.system.frameLog.filter { $0.window == window })")
-    }
+    expectUntouched(desk, "after Show Everything")
     expectWindowsMatchLayout(desk.h)
   }
 
@@ -112,15 +108,14 @@ import Testing
     for (out, back) in [("zoom", "back"), ("zoom", "home"), ("zoom", "show-all"), ("zoom", "desktop"), ("zoom", "out")] {
       let desk = makeArrangedDesk()
       desk.h.run("\(out) \(desk.finder.rawValue)")
+      expectUntouched(desk, "after \(out)")
       desk.h.run(back)
-      for (window, frame) in desk.own.sorted(by: { $0.key < $1.key }) {
-        #expect(desk.h.frame(window) == frame, "\(window) after \(out) and \(back)")
-      }
+      expectUntouched(desk, "after \(out) and \(back)")
     }
   }
 
-  /// Where it is when the view leaves is where it comes back to, whoever put it there and whether or not Arbor heard of it.
-  @Test func aWindowMovedByHandComesBackWhereTheHandLeftIt() {
+  /// Where a hand left it, it stays, whatever is docked under it and wherever the view goes.
+  @Test func aWindowMovedByHandStaysWhereTheHandLeftIt() {
     var desk = makeArrangedDesk()
     let notes = desk.own.keys.sorted()[1]
     // Over Finder and the gap, hanging over the left edge of the screen: all of that is its person's business.
@@ -131,7 +126,7 @@ import Testing
     expectUntouched(desk, "after a gap was moved")
     desk.h.run("zoom \(desk.safari.rawValue)")
     desk.h.run("show-all")
-    #expect(desk.h.frame(notes) == desk.own[notes], "overhang and all")
+    expectUntouched(desk, "overhang and all")
   }
 
   // MARK: ⌘M, ⌘H, ⌘Q and ⌘W of a docked window (steps 71 to 77)
@@ -227,11 +222,11 @@ import Testing
     }
   }
 
-  @Test func quittingWhileTheyAreOutOfViewPutsThemBackWhereTheyWere() {
+  @Test func quittingWhileAWindowIsFramedTouchesNoFloatingWindow() {
     let desk = makeArrangedDesk()
     desk.h.run("zoom \(desk.safari.rawValue)")
     desk.h.controller.shutdown()
-    for (window, frame) in desk.own.sorted(by: { $0.key < $1.key }) { #expect(desk.h.frame(window) == frame, "\(window)") }
+    expectUntouched(desk, "after a quit with Safari framed")
   }
 
   /// A window that floats by command is the window acted on: it takes its own size, around where it was docked, whatever
@@ -493,8 +488,8 @@ import Testing
 
   // MARK: Order
 
-  /// Out of view and back changes nobody's place in the order, and Arbor raises nothing but the window acted on.
-  @Test func nothingIsRaisedWhenFloatingWindowsComeBack() {
+  /// Arbor raises nothing but the window acted on (`FloatsStayInViewTests` holds every move of the view to that).
+  @Test func nothingIsRaisedWhenTheViewWidens() {
     let desk = makeArrangedDesk()
     desk.h.run("zoom \(desk.safari.rawValue)")
     desk.h.system.clearRaiseLog()
@@ -554,16 +549,5 @@ import Testing
       _ = system.setFrame(CGRect(x: 806, y: 51, width: 600, height: 499), of: WindowID(102))
     }
     #expect(world.step(.command("dock 101 left")).map(\.rule).contains("own-frame"))
-  }
-
-  /// And when one comes back somewhere else than it left from.
-  @Test func theRuleOfTheWalksSpeaksWhenAFloatingWindowComesBackElsewhere() {
-    let world = ChaosRunner()
-    for line in [
-      "open 101 Finder pid 1005 at 340 120 920 436", "open 102 Terminal pid 1004 at 40 51 877 499", "launch", "dock 101 left",
-      "zoom 101",
-    ] { #expect(world.step(ChaosAction(text: line)).isEmpty) }
-    world.beforeTheNextCheck = { _ = $0.system.setFrame(CGRect(x: 806, y: 51, width: 600, height: 499), of: WindowID(102)) }
-    #expect(world.step(.command("show-all")).map(\.rule).contains("own-frame-back"))
   }
 }

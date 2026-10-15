@@ -743,6 +743,7 @@ private func newSocketPath() -> String {
     async let watching = arborctlWatch("watch window layout view", f.path)
     #expect(await eventually { f.feed.subscriberCount == 1 })
     f.run("dock \(f.a.rawValue) left")
+    f.run("dock \(f.b.rawValue) right")
     f.run("zoom \(f.a.rawValue)")
     f.quit()
     let watched = await watching
@@ -750,9 +751,9 @@ private func newSocketPath() -> String {
     #expect(watched.end.exitCode == 0)
     #expect(watched.complaints.isEmpty)
     let events = try watched.lines.map { try ArborEvent(line: $0) }
-    // Docked; then framed, which takes the other window out of view.
-    #expect(events.map(\.kind) == [.hello, .window, .layout, .view, .window, .layout, .view, .quitting])
-    guard events.count > 6, case .view(let view) = events[6] else { return }
+    // Docked, both; then one is framed, which takes the other out of view.
+    #expect(events.map(\.kind) == [.hello, .window, .layout, .view, .window, .layout, .view, .window, .layout, .view, .quitting])
+    guard events.count > 9, case .view(let view) = events[9] else { return }
     #expect((view.kind, view.windows, view.label, view.outOfView) == (.window, [f.a], "Safari", 1))
     #expect(!watched.lines.contains { $0.contains("Private browsing") })
     #expect(f.feed.subscriberCount == 0)

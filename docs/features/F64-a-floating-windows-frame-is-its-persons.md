@@ -9,7 +9,10 @@ Rules of the product direction: 2 (nothing moves that the person did not move), 
 ## Shipped / Not shipped
 
 Shipped: everything under Behaviour; the setting `floatingWindowsMakeWay` (false); `Controller+OwnFrames.swift`; `FloatingFrameTests`, at the frames of the hosted day;
-scenarios 67 and 70; the rule of the walks (`ChaosInvariants+OwnFrames.swift`: `own-frame`, `own-frame-back`, `own-frame-jolt`, `own-frame-fit`); `expect at` for scenarios.
+scenarios 67 and 70; the rules of the walks (`ChaosInvariants+OwnFrames.swift`: `own-frame`, `own-frame-fit`; and `floating-taken-out-of-view`, a gate since Q29, 4); `expect at` for scenarios.
+
+Since Q29, 4 (`feat/a-floating-window-never-leaves-the-view`): **Arbor never takes a floating window out of view.** "Out of view and back" below is withdrawn with the
+setting as it ships, and goes on with it on; `FloatsStayInViewTests`, scenario `I20c`. What is left of putting back is for windows that something other than a view took away.
 
 Not shipped: nothing on real windows yet (see "How it is proven"). "Gather Floating Windows", a command that moves them onto the Desktop when asked, is an idea for
 later; the placing it would use is still there, behind the setting.
@@ -20,15 +23,17 @@ The first day played with nine real apps on a hosted Mac, at macOS's defaults, s
 points wide instead of 1324 and moved eight other windows. ⌘M, ⌘H and ⌘Q in a docked window moved seven floating ones each, and unhiding did not undo it. After Frame
 and Show Everything they came back somewhere else than they had been. All of it followed from one idea: that floating windows are kept on the Desktop.
 
-**Arbor sets a floating window's frame only to take it out of view and to put it back exactly where it was.**
+**Arbor sets a floating window's frame only to take it out of view and to put it back exactly where it was**, said Q20. Q29, 4 withdraws the exception: **it never takes one
+out of view.** A floating window is moved, sized, raised or hidden only by a command that names it.
 
 ## Behaviour
 
 - **A floating window in view is never moved and never resized by Arbor.** Not by a dock, however made; not when a docked window closes, is minimized, hidden or quit, or
   comes back; not when a gap moves; not by `arrange` or `layout` for the windows they leave floating; not at a start, a quit, Float All or a pause.
-- **It goes out of view when the view leaves the Desktop, and comes back exactly where it was** when the Desktop is part of the view again, as a tile too: same place,
-  same size, one move. "Where it was" is where it was on screen when it left, whoever put it there and whether or not Arbor had heard of it.
-- **The one exception**, because "never lost" outranks "never moved": if the displays have changed meanwhile and that frame would show less than half of the window (or
+- **Wherever the view goes, it stays** (Q29, 4): a docked window framed, another space, the Desktop left behind. It is where it was, behind whatever came forward, and
+  Arbor has not called its app. One that is out of view all the same (an Arbor that died with the setting on, or an earlier build, left it in its corner) comes back
+  with the next layout, whatever the view shows: same place, same size, one move.
+- **The one exception**, because "never lost" outranks "never moved": if the displays have changed and its frame would show less than half of the window (or
   leave its title bar out of reach), it is fitted: moved the least that brings it wholly into view, made smaller only if it is larger than the display. With its
   display as it was, a window pushed aside by hand until a strip shows goes back to that strip, if a hand could get hold of it there (24 points of its title bar, as
   ever). That the display has not changed under a frame Arbor knows only from the note it takes when a hand leaves a window somewhere; the note is not saved. Where
@@ -75,9 +80,9 @@ it", the Desktop's wish and its turn before the docked windows (F61). `keepPushe
 ## Acceptance criteria
 
 1. On the desk of the day (1600 points, the frames in `FloatingFrameTests`): docking Finder left, Safari right and TextEdit right sets the frame of no other window.
-2. Frame and Show Everything, and every other way out and back: each floating window is where it was, after exactly two moves.
+2. Frame and Show Everything, and every other way out and back: no frame is set on a floating window, none is raised, and each is in view throughout (Q29, 4).
 3. ⌘M and back, ⌘H and back, ⌘Q and ⌘W of a docked window set the frame of no floating window.
-4. A start, a quit, Float All: no frame is set on a floating window in view. Quitting while they are out of view puts them back where they were.
+4. A start, a quit, Float All, with a window framed too: no frame is set on a floating window in view.
 5. With `soleFloatTakesDesktop` on and nothing else changed, a lone floating window keeps its frame.
 6. Notes (709) and Safari (574) docked on 1440 points with a Calculator floating: both are in view, the Desktop is a tile, the Calculator has not moved.
 7. The displays change while a window is out of view: it comes back exactly if half of it shows, else wholly in view, moved the least, no smaller than it must be.

@@ -251,7 +251,7 @@ Frame a rectangle (with [the gestures switched on](#6-on-its-way)): hold **⇧**
 
 Calculator, a Finder window, a note: leave them floating. **Show the Desktop**, in the menu, gives the Desktop, and all of them, the whole screen; ⌃⌥[ returns. Small fixed-size windows can be docked too: they sit in the middle of their place.
 
-A floating window's place and size are yours. Arbor never moves or resizes one that is in view, whatever you dock, close, hide or minimize around it. It takes them out of view when the view leaves the Desktop, and puts each back exactly where it was. Only if the displays have changed meanwhile, so that less than half of a window would show, is it moved: the least that brings all of it into view. If you would rather have floating windows keep clear of docked ones, `arborctl set floatingWindowsMakeWay true`: docked windows then push them aside and squeeze them onto the Desktop, and they go back as room returns.
+A floating window's place and size are yours. Arbor never moves, resizes, raises or hides one, whatever you dock, close, hide or minimize around it, and wherever the view goes: frame a docked window and what floats is still there, behind it. Only if the displays change, so that less than half of a window would show, is it moved: the least that brings all of it into view. If you would rather have floating windows keep clear of docked ones, `arborctl set floatingWindowsMakeWay true`: docked windows then push them aside and squeeze them onto the Desktop, they go back as room returns, and they leave the view with the Desktop and come back with it.
 
 If, with that on, you would also rather see no wallpaper around a window that floats alone, `arborctl set soleFloatTakesDesktop true`: the only floating window then takes the whole Desktop, and has its own size back as soon as a second one floats. Drag it and it is its own size again where you drop it; resize it and it stays as you leave it; `arborctl float` makes it take the Desktop again.
 
@@ -262,7 +262,7 @@ you are looking at, with the keyboard in it; ⌃⌥` again, or a click on anythi
 
 ### A call comes in
 
-A call window should stay put while you look things up, and floating windows go out of view when the view leaves the Desktop. So pin it: with the call window in front, choose **Keep "zoom.us" in View** from the menu. It
+A call window should stay put, and stay to be seen, while you look things up. A floating window stays where it is wherever you zoom, but behind whatever you bring forward. So pin it: with the call window in front, choose **Keep "zoom.us" in View** from the menu. It
 keeps its place on the display wherever you zoom, and Arbor never gives it the keyboard by itself. Drag it where you like: a pinned window moves and never docks (to dock it, use ⌃⌥← or ⌃⌥→ or Dock Focused Window, or unpin it first). If you clicked in it and then move the view with a shortcut, the keyboard goes to the window that arrives. The same menu item, now with a tick, ends it.
 
 To have every call pinned as it opens, use a rule (below): `{ "app": "us.zoom.xos", "title": "Meeting", "action": "pin" }`. The same goes for a timer, a music player or a reference document. The README's "Pinned windows" has the details and the limits.

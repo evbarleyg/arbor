@@ -2,7 +2,9 @@
 # Story: a laptop at a desk, with a big display to its right. The editor and the browser are docked on the big display and a
 # chat floats between them, where its person put it. The lid closes: the laptop's display goes, the big one gets the menu bar,
 # and every window has new coordinates without one of them saying so. Arbor hears a moment later, as on a Mac. Nothing moves on the
-# glass, not then and not when the chat next leaves the view and comes back. Then the lid opens again, and all is as it was.
+# glass, not then and not when the editor is next framed: the chat floats, and no view takes it away (Q29, 4). Then the lid
+# opens again, and all is as it was. Where floating windows make way the chat leaves the view, and comes back to where it was
+# on the glass: the second half.
 # Spec: docs/features/F08-displays-and-spaces.md. Window ids start at 101.
 quiet
 plug desk right 2560x1440
@@ -36,10 +38,14 @@ expect visible 102
 expect floating 103
 expect at 103 1060 400
 expect size 103 400x500
-# The editor is framed, and then everything is shown again: the chat is back where it was on the glass.
+# The editor is framed, and then everything is shown again: the chat has stayed where it was on the glass.
 zoom 101
-expect hidden 103
+expect hidden 102
+expect still 103
+expect visible 103
+expect at 103 1060 400 400x500
 home
+expect still 103
 expect at 103 1060 400
 expect size 103 400x500
 # The lid opens: the laptop is back on the left and has the menu bar again.
@@ -52,6 +58,39 @@ expect still
 expect docked 101
 expect docked 102
 expect left-of 101 102
+expect at 103 2500 400
+cursor 2000 500
+zoom 101
+expect hidden 102
+expect still 103
+expect visible 103
+expect at 103 2500 400 400x500
+home
+expect still 103
+expect at 103 2500 400
+expect size 103 400x500
+# Only floating windows that make way leave with the Desktop. The same evening with those: wherever the chat is put back to, it is
+# where it was on the glass, though the numbers have changed since Arbor last saw it there.
+set floatingWindowsMakeWay true
+expect still 103
+wait 60
+quietly unplug main
+expect at 103 1060 400
+wait 2
+report-displays
+expect still
+expect at 103 1060 400
+zoom 101
+expect hidden 103
+home
+expect at 103 1060 400
+expect size 103 400x500
+quietly plug main left 1440x900
+quietly make-main main
+expect at 103 2500 400
+wait 2
+report-displays
+expect still
 expect at 103 2500 400
 cursor 2000 500
 zoom 101

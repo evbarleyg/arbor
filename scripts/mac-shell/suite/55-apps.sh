@@ -28,6 +28,7 @@ summary
 first=$(resting_frame_of "$W1")
 second=$(resting_frame_of "$W2")
 other=$(resting_frame_of "$V1")
+floating=$(resting_frame_of "$W3")
 width=$(width_of "$W1")
 
 claim "a docked window gets a new native tab: the tab has the window's slot and nothing else moves"
@@ -148,9 +149,11 @@ check "the second is out of view" eventually out_of_view "$W2"
 check "the other app's window still fills the screen" fills "$V1"
 settled
 
-claim "the app answers again: its floating window leaves the view too"
+claim "the app answers again: its floating window is owed no move, and is where it was"
 proves A71
-check "it is out of view" eventually out_of_view "$W3"
+# No view takes a floating window away (F64), so nothing was asked of it while its app hung, and nothing is now.
+# shellcheck disable=SC2086
+check "it has not moved" stays frame_is "$W3" $floating
 
 claim "⌃⌥0 after the hang: every window is back where it was"
 proves A71
@@ -161,7 +164,8 @@ check "the first" eventually frame_is "$W1" $first
 check "the second" eventually frame_is "$W2" $second
 # shellcheck disable=SC2086
 check "the other app's" eventually frame_is "$V1" $other
-check "the one that floats is in view" eventually in_view "$W3"
+# shellcheck disable=SC2086
+check "the one that floats, which never left" frame_is "$W3" $floating
 settled
 
 claim "an app hangs with its windows out of view and ⌃⌥⎋ pauses Arbor: once it answers, its windows are back in view"

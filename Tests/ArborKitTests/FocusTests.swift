@@ -358,8 +358,10 @@ import Testing
   // MARK: The level is kept
 
   /// `[Safari | Desktop | Slack]` over Mail, with Calculator floating; framed on Safari.
-  func livingFramed() -> (Harness, safari: WindowID, slack: WindowID, mail: WindowID, calculator: WindowID) {
-    let h = Harness()
+  func livingFramed(
+    settings: Settings = Harness.settingsWhenNoneAreGiven
+  ) -> (Harness, safari: WindowID, slack: WindowID, mail: WindowID, calculator: WindowID) {
+    let h = Harness(settings: settings)
     let safari = h.system.open(app: "Safari", pid: 11)
     let slack = h.system.open(app: "Slack", pid: 12)
     let mail = h.system.open(app: "Mail", pid: 13)
@@ -388,14 +390,28 @@ import Testing
     #expect(h.workspace.camera == h.workspace.tree.leaf(containing: safari))
   }
 
+  // Floating windows that make way: only they are out of view beside a framed window, and have to be brought in.
   @Test func switchingFromAFramedWindowToAFloatingOneShowsTheDesktopAlone() {
-    let (h, safari, _, _, calculator) = livingFramed()
+    let (h, safari, _, _, calculator) = livingFramed(settings: .makingWay)
     h.system.userFocus(calculator)
     #expect(h.workspace.camera == h.workspace.tree.desktop)
     #expect(h.system.isVisible(calculator) && !h.system.isVisible(safari))
     // And from there the level is still that of one space.
     h.system.userFocus(safari)
     #expect(h.workspace.camera == h.workspace.tree.leaf(containing: safari))
+  }
+
+  /// As Arbor ships it is in view already, over the framed window: macOS brings it to the front, and no view and no window moves.
+  @Test func switchingFromAFramedWindowToAFloatingOneMovesNoView() {
+    let (h, safari, _, _, calculator) = livingFramed(settings: Settings())
+    let place = h.frame(calculator)
+    h.system.clearFrameLog()
+    h.system.userFocus(calculator)
+    h.scheduler.advance(by: 1)
+    #expect(h.workspace.camera == h.workspace.tree.leaf(containing: safari))
+    #expect(h.system.isVisible(calculator) && h.system.isVisible(safari))
+    #expect(h.frame(calculator) == place && h.system.frameLog.isEmpty, "\(h.system.frameLog)")
+    #expect(h.system.windowsFrontToBack().first == calculator && h.system.focused == calculator)
   }
 
   @Test func fromAGroupOrEverythingTheViewStepsOutJustFarEnoughAsBefore() {

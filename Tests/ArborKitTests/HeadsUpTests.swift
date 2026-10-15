@@ -32,6 +32,14 @@ private let side = DisplaySnapshot(
     return (h, a, b, c)
   }
 
+  /// Mail above Notes at the right edge, docked as a script docks, which teaches nobody, and the keyboard back in Safari.
+  /// What floats is in view wherever the view goes, so "your other windows" are docked ones.
+  private func dockTheOtherTwo(_ h: Harness, _ a: WindowID, _ b: WindowID, _ c: WindowID) {
+    h.run("dock \(b.rawValue) right")
+    h.run("dock \(c.rawValue) beside \(b.rawValue) bottom")
+    h.system.userFocus(a)
+  }
+
   private func lines(_ h: Harness) -> [String] { h.overlays.messages.map(\.model.line) }
 
   // MARK: Acceptance 1: who is answered, and where
@@ -352,8 +360,9 @@ private let side = DisplaySnapshot(
   /// Seen on a hosted Mac: "Your other windows are out of view, not closed" with every window in view again. The product
   /// owner overruled it: a line answers the last thing asked, and after the next it may be a false statement on screen.
   @Test func theNextThingAPersonAsksForPutsTheLineAway() {
-    let (h, a, _, _) = makeHarness(taught: false)
+    let (h, a, b, c) = makeHarness(taught: false)
     h.run("dock \(a.rawValue) left")
+    dockTheOtherTwo(h, a, b, c)
     h.run("zoom", from: .shortcut)
     #expect(h.overlays.headsUp[h.display]?.text == "Your other windows are out of view, not closed")
     h.run("show-all", from: .shortcut)
@@ -460,9 +469,10 @@ private let side = DisplaySnapshot(
   // MARK: Acceptance 2: teaching moments
 
   @Test func theFirstDockTheFirstWindowsOutOfViewAndTheFirstTileAreExplained() {
-    let (h, _, b, _) = makeHarness(taught: false)
+    let (h, a, b, c) = makeHarness(taught: false)
     h.run("dock left", from: .shortcut)
     #expect(lines(h).last == "Docked · ⌃⌥↩ frames it")
+    dockTheOtherTwo(h, a, b, c)
     h.run("zoom", from: .shortcut)
     #expect(lines(h).last == "Your other windows are out of view, not closed · ⌃⌥Space shows everything")
     h.run("show-all", from: .shortcut)
@@ -474,7 +484,16 @@ private let side = DisplaySnapshot(
     h.run("dock right", from: .shortcut)
     #expect(lines(h).last == "Too small to show: click the tile to zoom in · ⌃⌥G goes there too")
     #expect(h.overlays.messages.allSatisfy { $0.model.kind == .hint })
-    _ = b
+  }
+
+  /// What floats stays in view when a docked window is framed: nothing seems to have gone, and there is nothing to explain.
+  @Test func framingAWindowBesideFloatingOnesSaysNothingOfWindowsOutOfView() {
+    let (h, _, b, c) = makeHarness(taught: false)
+    h.run("dock left", from: .shortcut)
+    h.run("zoom", from: .shortcut)
+    #expect(lines(h) == ["Docked · ⌃⌥↩ frames it"])
+    #expect(h.system.isVisible(b) && h.system.isVisible(c))
+    #expect(h.controller.headsUp.hintsShown[HeadsUpHint.outOfView.rawValue] == nil, "the hint keeps its showings")
   }
 
   /// Runs the moment `times` times and returns how often the hint was shown.
@@ -584,8 +603,9 @@ private let side = DisplaySnapshot(
   }
 
   @Test func eachHintIsShownThreeTimesAndNeverAgain() {
-    let (h, a, _, _) = makeHarness(taught: false)
+    let (h, a, b, c) = makeHarness(taught: false)
     h.run("dock \(a.rawValue) left")
+    dockTheOtherTwo(h, a, b, c)
     #expect(frameAndReturn(h, times: 5) == 3)
 
     var docks = 0
@@ -599,7 +619,9 @@ private let side = DisplaySnapshot(
   }
 
   @Test func theCountSurvivesARestart() throws {
-    let (first, a, _, _) = makeHarness(taught: false)
+    let (first, a, mail, _) = makeHarness(taught: false)
+    // Mail is docked, here and after the restart: what floats would stay in view, and there would be no moment to count.
+    first.run("dock \(mail.rawValue) right")
     first.run("dock \(a.rawValue) left")
     #expect(frameAndReturn(first, times: 2) == 2)
     first.controller.shutdown()
@@ -608,16 +630,18 @@ private let side = DisplaySnapshot(
     let file = try JSONEncoder().encode(try #require(first.store.saved))
     let h = Harness(saved: try JSONDecoder().decode(PersistedState.self, from: file))
     let b = h.system.open(app: "Safari")
-    h.system.open(app: "Mail")
+    let other = h.system.open(app: "Mail")
     h.start()
+    h.run("dock \(other.rawValue) right")
     h.run("dock \(b.rawValue) left")
     h.system.userFocus(b)
     #expect(frameAndReturn(h, times: 3) == 1)
   }
 
   @Test func theCountSurvivesAPause() {
-    let (h, a, _, _) = makeHarness(taught: false)
+    let (h, a, b, c) = makeHarness(taught: false)
     h.run("dock \(a.rawValue) left")
+    dockTheOtherTwo(h, a, b, c)
     #expect(frameAndReturn(h, times: 3) == 3)
     h.run("pause")
     h.run("resume")
@@ -633,8 +657,9 @@ private let side = DisplaySnapshot(
     let huge = #"{"version":1,"workspaces":{},"hints":{},"hintsShown":{"docked":9223372036854775807,"outOfView":-5,"else":1}}"#
     let h = Harness(saved: try JSONDecoder().decode(PersistedState.self, from: Data(huge.utf8)))
     let a = h.system.open(app: "Safari")
-    h.system.open(app: "Mail")
+    let mail = h.system.open(app: "Mail")
     h.start()
+    h.run("dock \(mail.rawValue) right")  // docked, it goes out of view when Safari is framed
     h.system.userFocus(a)
     h.run("dock left", from: .shortcut)
     #expect(h.overlays.messages.isEmpty)
@@ -643,12 +668,12 @@ private let side = DisplaySnapshot(
   }
 
   @Test func aDropAndAClickOnATileTeachToo() {
-    let (h, a, b, _) = makeHarness(taught: false)
+    let (h, a, b, c) = makeHarness(taught: false)
     h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
     h.system.drag(a, through: [CGPoint(x: 600, y: 210), CGPoint(x: 300, y: 400), CGPoint(x: 2, y: 400)])
     #expect(lines(h) == ["Docked · ⌃⌥↩ frames it"])
 
-    h.run("dock \(b.rawValue) right")
+    dockTheOtherTwo(h, a, b, c)
     h.overlays.clickTile(h.workspace.tree.leaf(containing: a)!)  // as a click on a tile would: the view moves there
     #expect(lines(h).last == "Your other windows are out of view, not closed · ⌃⌥Space shows everything")
   }
@@ -676,8 +701,9 @@ private let side = DisplaySnapshot(
   }
 
   @Test func whatArborRestoresAtLaunchIsNotAMoment() throws {
-    let (first, a, _, _) = makeHarness(taught: false)
+    let (first, a, mail, _) = makeHarness(taught: false)
     first.run("dock \(a.rawValue) left")
+    first.run("dock \(mail.rawValue) right")
     first.run("zoom \(a.rawValue)")
     first.controller.saveNow()
 
@@ -704,27 +730,30 @@ private let side = DisplaySnapshot(
 
   @Test func aReboundShortcutIsNamedByTheUsersKeys() {
     let own = settings { $0.bindings = ["ctrl+opt+e": "show-all", "ctrl+opt+cmd+h": "dock left", "ctrl+opt+shift+3": "save-view 3"] }
-    let (h, _, _, _) = makeHarness(settings: own, taught: false)
+    let (h, a, b, c) = makeHarness(settings: own, taught: false)
     h.run("in", from: .shortcut)
     #expect(lines(h).last == "Nothing is docked yet: hold ⌘ and drag a window to a screen edge, or try ⌃⌥⌘H")
     h.run("dock left", from: .shortcut)
+    dockTheOtherTwo(h, a, b, c)
     h.run("zoom", from: .shortcut)
     #expect(lines(h).last == "Your other windows are out of view, not closed · ⌃⌥E shows everything")
   }
 
   @Test func aRemovedShortcutIsLeftOutOfTheSentence() {
     let removed = settings { $0.bindings = ["ctrl+opt+return": nil, "ctrl+opt+space": nil, "ctrl+opt+0": nil] }
-    let (h, _, _, _) = makeHarness(settings: removed, taught: false)
+    let (h, a, b, c) = makeHarness(settings: removed, taught: false)
     h.run("dock left", from: .menu)
     #expect(h.overlays.messages.last?.model.line == "Docked")
+    dockTheOtherTwo(h, a, b, c)
     h.run("zoom", from: .menu)
     #expect(h.overlays.messages.last?.model.line == "Your other windows are out of view, not closed")
   }
 
   @Test func anotherShortcutThatDoesTheJobStandsIn() {
     // `home` has a key in the whole map only.
-    let (h, _, _, _) = makeHarness(settings: settings { $0.bindings = ["ctrl+opt+space": nil] }.withEveryKey, taught: false)
+    let (h, a, b, c) = makeHarness(settings: settings { $0.bindings = ["ctrl+opt+space": nil] }.withEveryKey, taught: false)
     h.run("dock left", from: .shortcut)
+    dockTheOtherTwo(h, a, b, c)
     h.run("zoom", from: .shortcut)
     #expect(lines(h).last == "Your other windows are out of view, not closed · ⌃⌥0 shows everything")
   }

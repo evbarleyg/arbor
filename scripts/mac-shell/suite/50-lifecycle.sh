@@ -1,7 +1,7 @@
 #!/bin/bash
 # What windows do on their own account: minimize, hide, close, open, and the kinds Arbor leaves alone.
 # T06 a leaving window's space goes to the row, T07 minimized (and hidden) windows come back to their spot,
-# T64 only standard windows are arranged, A45 a new window stays with the view it opened over,
+# T64 only standard windows are arranged, A45 a new window stays where it opened, over whatever the view shows,
 # A76 no dialog opens out of view.
 source "$(dirname "$0")/../lib.sh"
 arbor_build
@@ -121,7 +121,43 @@ forget_window "$P1"
 forget_window "$S1"
 settled
 
-claim "a window that opens while one window is framed stays with that view"
+claim "a window that opens while one window is framed stays where its app put it, wherever the view goes"
+proves A45
+ctl zoom "$W1"
+check "the framed window fills the screen" eventually fills "$W1"
+take "x y" center_of "$W1"
+open_window G1 size=320x220 "at=$((x - 160)),$((y - 110))" title=A guest
+check "it floats" eventually is floating "$G1"
+check "over the framed window, where its app put it" stays corner_is "$G1" "$((x - 160))" "$((y - 110))"
+ctl neighbor right
+check "the view moves on" eventually out_of_view "$W1"
+check "and the window stays where it is, in view" stays corner_is "$G1" "$((x - 160))" "$((y - 110))"
+ctl back
+check "the view comes back" eventually fills "$W1"
+check "the window is still in the same place" stays corner_is "$G1" "$((x - 160))" "$((y - 110))"
+
+claim "a dialog of a window that is out of view opens in the middle of the screen"
+proves A76
+check "the window it belongs to is out of view" eventually out_of_view "$W3"
+open_dialog D1 "$W3"
+check "the dialog is in view" eventually in_view "$D1"
+tw close "$D1"
+forget_window "$D1"
+ctl show-all
+settled
+
+arbor_stop
+
+# The way back: with `floatingWindowsMakeWay`, which ships off, a floating window belongs to the view it opened over, and leaves and
+# comes back with it, as until F64.
+arbor_settings '{"floatingWindowsMakeWay": true}'
+ARBOR_SECOND_APP=0
+arbor_start 2
+# Side by side, so that the view moves on to a window: on the Desktop every floating window shows.
+ctl dock "$W1" left
+ctl dock "$W2" beside "$W1" right
+
+claim "with floatingWindowsMakeWay on: a window that opens while one window is framed stays with that view"
 proves A45
 ctl zoom "$W1"
 check "the framed window fills the screen" eventually fills "$W1"
@@ -134,14 +170,6 @@ check "the view moves on and it goes out of view" eventually out_of_view "$G1"
 ctl back
 check "the view comes back" eventually fills "$W1"
 check "and the window with it, in the same place" eventually corner_is "$G1" "$((x - 160))" "$((y - 110))"
-
-claim "a dialog of a window that is out of view opens in the middle of the screen"
-proves A76
-check "the window it belongs to is out of view" eventually out_of_view "$W3"
-open_dialog D1 "$W3"
-check "the dialog is in view" eventually in_view "$D1"
-tw close "$D1"
-forget_window "$D1"
 ctl show-all
 settled
 

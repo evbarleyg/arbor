@@ -37,8 +37,8 @@ independent implementation and is not affiliated with it.
   let go of it, at the size it had before. (`arborctl set dragDocks always` has
   every drag dock, as in the first build; `never` leaves docking to the keys.)
 - **The Desktop stays**: windows you have not docked float exactly as they always have. Arbor never
-  moves or resizes one: it stays where you put it, over docked windows too, goes out of view when you
-  zoom in on something else, and comes back to the same place. Show the Desktop in the menu shows all that floats.
+  moves or resizes one, and no view takes it away: it stays where you put it, over docked windows too, and when you
+  zoom in on something else it is still there, behind what came forward. Show the Desktop in the menu shows all that floats.
 - **Zoom**: ⌃⌥↩ fills the screen with the focused window (again to return): a docked one is framed, a floating one
   grows to the same size, stays floating and has its own frame back afterwards, and nothing else moves. ⌃⌥Space shows everything, ⌃⌥[ goes back. In the menu, Step Out
   goes out a level, Step In goes in toward the window you are typing in (or pointing at), and Forward goes where Back came from.
@@ -59,7 +59,7 @@ independent implementation and is not affiliated with it.
   ⌃⌥ held the drag can start anywhere. Off for now, with the next: `arborctl set pointerGestures true` switches them on.
 - **Zoom with a mouse**: hold ⌃⌥ and scroll: up steps in toward the pointer, down steps out. One step per notch of a
   wheel.
-- **Nothing gets lost**: windows outside the view are out of view, not closed: they wait past a
+- **Nothing gets lost**: docked windows outside the view are out of view, not closed: they wait past a
   screen corner and come back when you zoom out or switch to them (⌘Tab). Windows too
   small to use show as tiles with their app's colour and icon, a group as a miniature of its windows; click one to zoom in.
   An app that will not shrink to its place first gets room from the Desktop and its neighbours.
@@ -409,7 +409,8 @@ The vi keys, and shortcuts for the commands that have none, are a few lines of `
 
 ## Pinned windows
 
-Floating windows live on the Desktop, so they go out of view when you zoom in on something else. That is
+A floating window stays where it is when you zoom in on something else, but behind what came forward: a framed window
+covers it. (With `floatingWindowsMakeWay` on it leaves the view with the Desktop.) Either is
 wrong for the few that accompany whatever you are doing. Pin those: focus the window and choose
 **Keep This Window in View** from the menu (a tick shows that it is on), or run `arborctl pin`, `unpin` or `toggle-pin`.
 
@@ -641,7 +642,7 @@ version changes one. [docs/SETTINGS.md](docs/SETTINGS.md) is the complete refere
 | `focusRingWidth` | 3 | Its thickness in points, 1 to 12 |
 | `focusRingColour` | "accent" | "accent" (from System Settings), "#RRGGBB" or "#RRGGBBAA" |
 | `focusRingRadius` | 0 | The radius of the window corners it follows; 0 picks 17 on macOS 26 and 10 before |
-| `newWindowsWhileFramed` | "guest" | A window that opens over a view that does not show the Desktop (a framed window, a group) stays with that view: it goes out of view and comes back with it. "float": it belongs to the Desktop like any floating window |
+| `newWindowsWhileFramed` | "guest" | A window that opens over a view that does not show the Desktop (a framed window, a group) belongs to that view: it has the keyboard again when the view comes back. With `floatingWindowsMakeWay` it also goes out of view and comes back with it. "float": it belongs to the Desktop like any floating window |
 | `shareRemovedSpace` | true | A window that leaves (closed, floated, dragged out, minimized, hidden with ⌘H) gives its space to everyone in its group; false gives it to the neighbour before it, and nothing else moves (except where `dock <edge>` has to take a little from everyone to keep a window usable) |
 | `shrinkOutOfView` | false | Windows out of view are also made small, 320 × 200 at most, until they come back (some apps rearrange their contents when they are made small) |
 | `ruleTitleWait` | 2 | Seconds (at most 60) a new window's title is checked against rules with a `title`; 0 checks only its first title |
@@ -671,7 +672,7 @@ version changes one. [docs/SETTINGS.md](docs/SETTINGS.md) is the complete refere
 | `menuBarFill` | 0.25 | How strongly the button for where you are is filled in, from 0 to 1 |
 | `makeRoom` | true | Before a window becomes a tile because its app will not shrink that far, move the gaps around it and take the room from the Desktop and from neighbours that can spare it. For the window being typed in the neighbours give more: they become the tiles |
 | `soleFloatTakesDesktop` | false | A window that floats alone beside docked windows takes the whole Desktop, and has its own size back as soon as a second one floats. Only with `floatingWindowsMakeWay` |
-| `floatingWindowsMakeWay` | false | Docked windows push floating windows aside and squeeze them, so that they stay on the Desktop. Off, a floating window stays exactly where you put it |
+| `floatingWindowsMakeWay` | false | Docked windows push floating windows aside and squeeze them, so that they stay on the Desktop, and they leave the view with the Desktop and come back with it. Off, a floating window stays exactly where you put it, wherever the view goes |
 | `resizeStep` | 40 | Points `grow` and `shrink` add or take when no amount is given |
 | `displays` | [] | Other values of `gap`, `minimumUsableWidth`, `minimumUsableHeight` and `screenEdgeBand` for particular displays (below) |
 | `messages` | "helpful" | What Arbor says on screen after a shortcut, a gesture or a menu item: "helpful" (problems, unseen changes, a few hints), "all" (every reply) or "off" |

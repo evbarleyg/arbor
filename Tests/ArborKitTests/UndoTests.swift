@@ -658,11 +658,12 @@ private func expectConsistent(_ h: Harness, _ note: String = "", sourceLocation:
     expectConsistent(h)
   }
 
-  @Test func floatAllFromAFramedWindowIsUndoneWithTheView() {
-    let (h, a, b, c, d) = makeArrangement()
+  @Test(arguments: [false, true]) func floatAllFromAFramedWindowIsUndoneWithTheView(makingWay: Bool) {
+    let (h, a, b, c, d) = makeArrangement(settings: makingWay ? .makingWay : Settings())
     h.run("zoom \(a.rawValue)")
     let before = Picture(h)
-    #expect(before.parked == [b, c, d])
+    // d floats: it leaves with the Desktop only if it makes way.
+    #expect(before.parked == (makingWay ? [b, c, d] : [b, c]))
     #expect(h.run("float-all").ok)
     #expect(h.controller.parked.isEmpty)
     #expect(h.run("undo").ok)
@@ -683,8 +684,9 @@ private func expectConsistent(_ h: Harness, _ note: String = "", sourceLocation:
     #expect(h.workspace.camera == h.workspace.tree.leaf(containing: a))
   }
 
+  /// Floating windows that make way: only they leave with the Desktop.
   @Test func focusMovesOffAWindowTheUndoPutOutOfView() {
-    let (h, a, b, _) = makeHarness()
+    let (h, a, b, _) = makeHarness(settings: .makingWay)
     h.run("dock \(a.rawValue) left")
     h.run("zoom \(a.rawValue)")
     // Docking widens the camera to show b; undoing narrows it again and b leaves with the Desktop.
@@ -694,6 +696,20 @@ private func expectConsistent(_ h: Harness, _ note: String = "", sourceLocation:
     #expect(h.workspace.camera == h.workspace.tree.leaf(containing: a))
     #expect(h.controller.parked.contains(b))
     #expect(h.system.focused == a)
+  }
+
+  /// As Arbor ships, the same undo takes nothing out of view, so the keyboard has no reason to move.
+  @Test func focusStaysOnAWindowThatFloatsAgainOverTheFramedOne() {
+    let (h, a, b, _) = makeHarness()
+    h.run("dock \(a.rawValue) left")
+    h.run("zoom \(a.rawValue)")
+    h.run("dock \(b.rawValue) right")
+    #expect(h.system.focused == b)
+    h.run("undo")
+    #expect(h.workspace.camera == h.workspace.tree.leaf(containing: a))
+    #expect(h.workspace.isFloating(b) && h.system.isVisible(b) && !h.controller.parked.contains(b))
+    #expect(h.frame(b) == CGRect(x: 300, y: 200, width: 600, height: 400), "exactly where it floated before it was docked")
+    #expect(h.system.focused == b)
   }
 
   // MARK: Changes that are not commands
@@ -1274,8 +1290,8 @@ private func expectConsistent(_ h: Harness, _ note: String = "", sourceLocation:
 
   // MARK: What other features keep in a workspace
 
-  @Test func aWindowThatOpenedOverAFramedWindowSinceStaysItsGuest() {
-    let (h, a, b, _) = makeHarness()
+  @Test(arguments: [false, true]) func aWindowThatOpenedOverAFramedWindowSinceStaysItsGuest(makingWay: Bool) {
+    let (h, a, b, _) = makeHarness(settings: makingWay ? .makingWay : Settings())
     h.run("dock \(a.rawValue) left")
     h.run("dock \(b.rawValue) right")
     h.run("resize \(a.rawValue) right 60")
@@ -1290,7 +1306,9 @@ private func expectConsistent(_ h: Harness, _ note: String = "", sourceLocation:
     #expect(h.workspace.guests == [guest: host], "an undo of something else does not end the visit")
     #expect(h.system.isVisible(guest))
     h.run("zoom \(b.rawValue)")
-    #expect(!h.system.isVisible(guest))
+    // A guest that makes way leaves with its host. As Arbor ships it never leaves.
+    #expect(h.system.isVisible(guest) == !makingWay)
+    if !makingWay { #expect(h.frame(guest) == spot) }
     h.run("zoom \(a.rawValue)")
     #expect(h.frame(guest) == spot, "it comes back with its host, where it was")
     expectConsistent(h)
@@ -1359,13 +1377,13 @@ private func expectConsistent(_ h: Harness, _ note: String = "", sourceLocation:
     expectConsistent(h)
   }
 
-  @Test func aWindowPinnedSinceIsNotTouchedWhenAnUndoMovesTheView() {
-    let (h, a, b, c) = makeHarness()
+  @Test(arguments: [false, true]) func aWindowPinnedSinceIsNotTouchedWhenAnUndoMovesTheView(makingWay: Bool) {
+    let (h, a, b, c) = makeHarness(settings: makingWay ? .makingWay : Settings())
     h.run("dock \(a.rawValue) left")
     h.run("zoom \(a.rawValue)")
-    #expect(h.controller.parked.contains(c), "out of view with the Desktop")
+    #expect(h.controller.parked.contains(c) == makingWay, "out of view with the Desktop, if it makes way")
     h.run("dock \(b.rawValue) right")
-    // When b was docked, c was out of view: the step knows no place for it.
+    // Where floating windows make way, c was out of view when b was docked: the step knows no place for it.
     h.run("pin \(c.rawValue)")
     let place = h.frame(c)
     h.system.clearFrameLog()

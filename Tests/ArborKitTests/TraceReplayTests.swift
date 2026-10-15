@@ -148,7 +148,8 @@ private let second = DisplaySnapshot(
   /// Found by replaying scenario 25 in a second process: with a framed window and its guest both under the pointer, which of them
   /// got the keyboard depended on the order of a dictionary, which differs from launch to launch. A replay is another launch.
   @Test func whichWindowGetsTheKeyboardDoesNotDependOnTheOrderOfADictionary() {
-    let h = Harness()
+    // Floating windows that make way: only they leave with the view they opened over, and hand the keyboard on.
+    let h = Harness(settings: .makingWay)
     let a = h.system.open(app: "Safari", pid: 11, frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     _ = h.system.open(app: "Notes", pid: 12, frame: CGRect(x: 800, y: 200, width: 500, height: 400))
     h.start()

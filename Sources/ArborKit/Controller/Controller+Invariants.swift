@@ -175,7 +175,8 @@ extension Controller {
     }
   }
 
-  /// A docked window is parked exactly when the layout hides it, and a floating one only while
+  /// A docked window is parked exactly when the layout hides it. A floating one is not, as Arbor ships, but for what `summon`
+  /// sent away and what a hold keeps out; with `floatingWindowsMakeWay`, only while
   /// the Desktop is out of view. Windows that are not present are left wherever they were.
   private func parkingViolations(
     _ docked: [DisplayID: [WindowID]], awaitingLayout: Set<DisplayID>, _ problems: inout [InvariantViolation]
@@ -207,8 +208,10 @@ extension Controller {
           problems.append(.init("parked", "\(window) on \(id) has a slot in view but is parked"))
         }
       }
-      // (Into a view that is held nothing is brought: there it is asked, as it always was, where the Desktop has a rectangle.)
-      guard isHeld ? layout.desktopFrame != nil : showsWhatFloats(layout, in: workspace), !parked.isEmpty else { continue }
+      // (Only floating windows that make way are out of view with the Desktop. Into a view that is held nothing is brought: there it is asked,
+      // as it always was, where the Desktop has a rectangle.)
+      guard isHeld ? layout.desktopFrame != nil : (!settings.floatingWindowsMakeWay || showsWhatFloats(layout, in: workspace)), !parked.isEmpty
+      else { continue }
       for window in workspace.floating.keys
       where parked.contains(window) && windows[window]?.isPresent == true && !workspace.isStashed(window)
         // One that opened off screen during a hold waits there until the view next moves (Controller+Hold.swift).
@@ -216,7 +219,7 @@ extension Controller {
         // Its app does not answer: it is placed when it does.
         && !unplaced.contains(window)
       {
-        problems.append(.init("parked-on-the-desktop", "\(window) floats on \(id), whose Desktop is in view, but is parked"))
+        problems.append(.init("parked-on-the-desktop", "\(window) floats on \(id), where what floats is in view, but is parked"))
       }
     }
   }
@@ -344,6 +347,9 @@ extension Controller {
 
   /// Windows whose app did not answer when they were to be moved, and have not been moved since.
   public var windowsOwedAMove: Set<WindowID> { unplaced.union(owedMoves) }
+
+  /// The floating windows that a display that went has sent over, and that wait out of view for the end of a hold (Controller+Hold.swift).
+  public var arrivalsAHoldKeepsOut: Set<WindowID> { hold.arrived.filter { holdKeepsOutAnArrival($0) } }
 
   /// The docked window being resized by its edges, if any.
   public var edgeResizedWindow: WindowID? { edgeResize?.window }

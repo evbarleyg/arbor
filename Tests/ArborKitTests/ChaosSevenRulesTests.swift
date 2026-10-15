@@ -19,7 +19,7 @@ private let b = WindowID(102)
     let runner = ChaosRunner()
     for line in lines { _ = runner.step(ChaosAction(text: line)) }
     if let fault { runner.beforeTheNextCheck = { fault($0.system) } }
-    let prefixes = ["plain-drag-", "flashed-", "flipped", "taken-", "nothing-", "moved-", "sized-", "set-right-", "fetched-", "switched-to-", "app-switch-", "size-", "home-", "there-and-back-", "start-", "pause-and-", "quit-", "displays-", "dragged-", "docked-", "same-"]
+    let prefixes = ["floating-", "plain-drag-", "flashed-", "flipped", "taken-", "nothing-", "moved-", "sized-", "set-right-", "fetched-", "switched-to-", "app-switch-", "size-", "home-", "there-and-back-", "start-", "pause-and-", "quit-", "displays-", "dragged-", "docked-", "same-"]
     return Set(([last] + later).flatMap { runner.step(ChaosAction(text: $0)) }.map(\.rule).filter { rule in prefixes.contains { rule.hasPrefix($0) } })
   }
 
@@ -122,7 +122,8 @@ private let b = WindowID(102)
   }
 
   @Test func aWindowThatShowsAndGoesAgainOrGoesAndComesBackIsAFlash() {
-    let framed = oneDocked + ["zoom 101", "settle"]
+    // (Floating windows that make way: only they leave with the Desktop.)
+    let framed = [#"settings {"floatingWindowsMakeWay":true}"#] + oneDocked + ["zoom 101", "settle"]
     let shown = nets(after: framed, then: "cursor 10 10") {
       _ = $0.setFrame(self.rect(800, 300, 500, 400), of: b)
       _ = $0.setFrame(self.rect(1439, 868, 500, 400), of: b)
@@ -346,9 +347,10 @@ private let b = WindowID(102)
 
   /// A window its person dragged two thirds over the bottom edge goes out with the view. On the way out of Arbor it is given back exactly
   /// there, and the rule about a quit has nothing to say. Left anywhere else with as little showing, it is lost.
+  /// (Floating windows that make way: only they leave with the Desktop.)
   @Test(arguments: ["quit", "pause"]) func whatWentOutWithTheViewMayComeBackAsFarOverTheEdgeAsItWasLeftAndNoFurther(way: String) {
     let story = [
-      "open 101 Notes pid 1001 at 30 26 738 624", "launch", "grab 101", "carry 426 689", "release", "open 102 Mail pid 1002 at 27 47 1196 685",
+      #"settings {"floatingWindowsMakeWay":true}"#, "open 101 Notes pid 1001 at 30 26 738 624", "launch", "grab 101", "carry 426 689", "release", "open 102 Mail pid 1002 at 27 47 1196 685",
       "dock 102 top", "zoom 102", "settle",
     ]
     func rules(fault: ((FakeWindowSystem) -> Void)? = nil) -> [String] {
@@ -764,10 +766,13 @@ private let b = WindowID(102)
   // MARK: Less by default
 
   @Test func aFloatingWindowIsNeverTakenOutOfView() {
-    #expect(!numbers(after: oneDocked, then: "focus 101", "react", "settle").contains("floating-taken-out-of-view"))
-    #expect(numbers(after: oneDocked, then: "flush") { _ = $0.setFrame(self.rect(1439, 868, 500, 400), of: b) }.contains("floating-taken-out-of-view"))
+    #expect(!nets(after: oneDocked, then: "focus 101", "react", "settle").contains("floating-taken-out-of-view"))
+    #expect(!nets(after: oneDocked, then: "zoom 101", "settle").contains("floating-taken-out-of-view"))
+    #expect(nets(after: oneDocked, then: "flush") { _ = $0.setFrame(self.rect(1439, 868, 500, 400), of: b) }.contains("floating-taken-out-of-view"))
     // A docked window that goes out of view is what a view is for.
-    #expect(!numbers(after: oneDocked, then: "flush") { _ = $0.setFrame(self.rect(1439, 868, 702, 851), of: a) }.contains("floating-taken-out-of-view"))
+    #expect(!nets(after: oneDocked, then: "flush") { _ = $0.setFrame(self.rect(1439, 868, 702, 851), of: a) }.contains("floating-taken-out-of-view"))
+    // And one that makes way leaves with the Desktop: that is what the setting is for.
+    #expect(!nets(after: [#"settings {"floatingWindowsMakeWay":true}"#] + oneDocked, then: "zoom 101", "settle").contains("floating-taken-out-of-view"))
   }
 
   @Test func withNothingDockedAndNothingAskedArborSendsTheKeyboardNowhere() {

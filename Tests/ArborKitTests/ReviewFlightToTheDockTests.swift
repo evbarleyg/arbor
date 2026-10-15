@@ -186,16 +186,16 @@ import Testing
     #expect(isInTheDock(keynote, h))
   }
 
-  /// Pinned while it is out of view a window comes into view and is raised, which is the raise at the pin. Not out of the Dock.
-  @Test func pinnedOutOfViewAWindowThatHasLandedIsNotRaisedOutOfTheDock() {
-    let h = Harness()
+  /// Pinned while it is out of view, or behind what is framed, a window is raised, which is the raise at the pin. Not out of the Dock.
+  @Test(arguments: [false, true]) func pinnedOutOfViewOrBehindWhatIsFramedAWindowThatHasLandedIsNotRaisedOutOfTheDock(makingWay: Bool) {
+    let h = Harness(settings: makingWay ? .makingWay : Settings())
     let keynote = h.system.open(app: "Keynote", pid: 11, frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     let chat = h.system.open(app: "Chat", pid: 14, frame: CGRect(x: 700, y: 200, width: 400, height: 300))
     h.start()
     h.run("dock \(keynote.rawValue) left")
     h.run("zoom \(keynote.rawValue)")
     h.scheduler.advance(by: 1)
-    #expect(!h.system.isVisible(chat), "it floats on the Desktop, which is out of view")
+    #expect(h.system.isVisible(chat) != makingWay, "making way it floats on the Desktop, which is out of view; or it lies behind what is framed")
     h.system.landInTheDock(chat)
     h.run("pin \(chat.rawValue)")
     h.scheduler.advance(by: 0.01)

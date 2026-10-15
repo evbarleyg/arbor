@@ -633,8 +633,10 @@ private let beside = DisplaySnapshot(
   // MARK: The displays are the same
 
   /// [editor | Desktop with the notes on it], the notes clear of the editor.
-  func editorDockedNotesFloating(displays: [DisplaySnapshot] = [lap]) -> (h: Harness, editor: WindowID, notes: WindowID) {
-    let h = Harness(displays: displays)
+  func editorDockedNotesFloating(
+    displays: [DisplaySnapshot] = [lap], settings: Settings = Harness.settingsWhenNoneAreGiven
+  ) -> (h: Harness, editor: WindowID, notes: WindowID) {
+    let h = Harness(displays: displays, settings: settings)
     let editor = h.system.open(app: "Editor", pid: 1001, frame: CGRect(x: 100, y: 100, width: 700, height: 500))
     let notes = h.system.open(app: "Notes", pid: 1002, frame: CGRect(x: 780, y: 100, width: 600, height: 420))
     h.start()
@@ -1338,8 +1340,9 @@ private let beside = DisplaySnapshot(
   }
 
   /// A run that ended without quitting left it in the corner, which nobody chose: it goes where it is remembered.
+  /// (Floating windows that make way: only they leave with the Desktop.)
   @Test func whatACrashLeftOutOfViewGoesWhereItIsRemembered() {
-    let (old, editor, notes) = editorDockedNotesFloating()
+    let (old, editor, notes) = editorDockedNotesFloating(settings: .makingWay)
     let place = old.frame(notes)
     old.system.userFocus(editor)
     old.run("zoom")
