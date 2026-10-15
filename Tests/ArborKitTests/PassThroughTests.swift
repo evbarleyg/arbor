@@ -390,8 +390,8 @@ import Testing
     expectWindowsMatchLayout(h, on: h.display)
   }
 
-  /// Whoever resumed by hand inside the app meant it: there Arbor is as it is in any app, at once.
-  @Test func resumedByHandInsideTheAppItsWindowsComeIntoViewAtOnce() {
+  /// Whoever resumed by hand inside the app meant it: there Arbor is as it is in any app, and waits for no pause.
+  @Test func resumedByHandInsideTheAppItsWindowsComeIntoViewWithoutThatWait() {
     let (h, _, _, game) = makeHarness()
     h.system.userFocus(game)
     #expect(h.controller.isPausedForApp)
@@ -404,6 +404,9 @@ import Testing
     #expect(h.controller.isRunning && !h.system.isVisible(lobby))
     h.system.focused = lobby
     h.controller.windowFocused(lobby)
+    // Well before the look that a pause on its way would be given. (Not "at once": the view may take a moment of its own to follow the
+    // keyboard from one window of an app to another.)
+    h.scheduler.advance(by: 0.1)
     #expect(h.system.isVisible(lobby))
   }
 
