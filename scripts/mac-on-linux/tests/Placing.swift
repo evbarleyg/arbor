@@ -35,6 +35,22 @@ func tellOfPlacing(_ book: Book) {
     story.check("and there is no echo of a move that changed nothing", one.heard.all.isEmpty, one.heard.texts)
   }
 
+  // The model held to the recordings (`FakeMac.roomToGrow` has the source): each frame here is one of theirs.
+  book.story("a window is asked to grow where it stands") { story in
+    let (one, window) = stage(story, frame: CGRect(x: 170, y: 220, width: 480, height: 348))
+    let id = WindowID(window.number)
+    @MainActor func took(_ frame: CGRect) -> String { one.layer.setFrame(frame, of: id)?.text ?? "no answer" }
+    story.check("it stops a point above the Dock", took(CGRect(x: 170, y: 220, width: 494, height: 650)) == "170,220 494×484", window.frame.text)
+    story.check("at the line it keeps its height, and may still get narrower", took(CGRect(x: 170, y: 220, width: 273, height: 650)) == "170,220 273×484", window.frame.text)
+    story.check("sent to a place where it fits, it takes the whole size: the last call comes there", took(CGRect(x: 12, y: 43, width: 494, height: 650)) == "12,43 494×650", window.frame.text)
+    story.check("it may shrink anywhere", took(CGRect(x: 687, y: 106, width: 325, height: 524)) == "687,106 325×524", window.frame.text)
+    story.check("to the right it stops at the display's edge", took(CGRect(x: 687, y: 106, width: 494, height: 524)) == "687,106 337×524", window.frame.text)
+    story.check("out of view, past both lines,", took(CGRect(x: 1023, y: 767, width: 337, height: 524)) == "1023,677 337×524", window.frame.text)
+    story.check("it grows whole", took(CGRect(x: 1023, y: 677, width: 1000, height: 650)) == "1023,677 1000×650", window.frame.text)
+    one.mac.pass(1)
+    story.check("none of the reports counts as the person's doing", !one.heard.all.contains(where: isByUser), one.heard.texts)
+  }
+
   // traces/README.md, rows 3 to 5.
   book.story("a window does not take the frame it is given") { story in
     let (one, window) = stage(story)
@@ -47,7 +63,7 @@ func tellOfPlacing(_ book: Book) {
       one.layer.setFrame(CGRect(x: 150.5, y: 46.5, width: 600, height: 400), of: WindowID(window.number)) == CGRect(x: 150, y: 47, width: 600, height: 400))
     story.check(
       "parked past the corner: the title bar stays above the Dock",
-      one.layer.setFrame(CGRect(x: 1023, y: 767, width: 600, height: 400), of: WindowID(window.number)) == CGRect(x: 1023, y: 673, width: 600, height: 400))
+      one.layer.setFrame(CGRect(x: 1023, y: 767, width: 600, height: 400), of: WindowID(window.number)) == CGRect(x: 1023, y: 677, width: 600, height: 400))
     one.mac.pass(1)
     story.check("none of the reports counts as the person's doing", !one.heard.all.contains(where: isByUser), one.heard.texts)
     window.isResizable = false
@@ -249,7 +265,7 @@ func tellOfPlacing(_ book: Book) {
 
   // An app centres a dialog over its window; with that window parked past the corner the dialog opens out of view and the app looks hung (F47).
   book.story("a dialog opens over a window that is out of view") { story in
-    let (one, window) = stage(story, frame: CGRect(x: 1023, y: 673, width: 600, height: 400))
+    let (one, window) = stage(story, frame: CGRect(x: 1023, y: 677, width: 600, height: 400))
     let dialog = one.mac.open("Save changes?", in: window.app, frame: CGRect(x: 1173, y: 773, width: 300, height: 200), subrole: "AXDialog")
     one.mac.pass(2)
     story.check("it is not announced as a window", !one.known.contains(dialog.number) && one.heard.about(dialog).isEmpty, one.heard.texts)

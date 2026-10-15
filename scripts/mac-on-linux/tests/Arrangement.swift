@@ -106,6 +106,22 @@ func tellOfArrangements(_ book: Book) {
     story.check("and the focus ring, with the keyboard", two.ring == left.number, "\(String(describing: two.ring))")
   }
 
+  // Where the three test windows of the hosted Macs' scripts stand when Arbor first sees them. Below the first there are 484 points to the Dock, and its slot is 650 high.
+  for (command, slots) in [
+    ("dock 101 left", [CGRect(x: 12, y: 43, width: 494, height: 650)]),
+    ("arrange", [CGRect(x: 12, y: 43, width: 390, height: 319), CGRect(x: 12, y: 374, width: 390, height: 319), CGRect(x: 414, y: 43, width: 391, height: 650)]),
+  ] {
+    book.story("windows that stand low on the screen: \(command)") { story in
+      var windows: [FakeMac.Window] = []
+      let two = StoreyTwo(story) { mac in
+        let app = mac.launch("Notes")
+        for (name, x, y) in [("a", 170, 220), ("b", 220, 180), ("c", 270, 140)] { windows.append(mac.open(name, in: app, frame: CGRect(x: x, y: y, width: 480, height: 348))) }
+      }
+      story.check("the command is taken", two.run(command, then: 3).ok)
+      story.check("each docked window fills its slot", zip(windows, slots).allSatisfy { two.isDocked($0) && $0.frame == $1 }, zip(windows, slots).map { "\(two.whereabouts($0)), its slot is \($1.text)" }.joined(separator: "; "))
+    }
+  }
+
   book.story("a docked window is minimized and restored") { story in
     let (two, left, right) = twoDocked(story)
     let (leftHome, rightHome) = (left.frame, right.frame)

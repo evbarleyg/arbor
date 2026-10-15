@@ -589,8 +589,9 @@ extension FakeMac {
     public var minimumSize = CGSize(width: 120, height: 80)
     public var maximumSize = CGSize(width: 20_000, height: 20_000)
     public var isResizable = true
-    /// traces/README.md, row 3: 32 for the test windows, 26 to 47 for real apps.
-    public var titleBarHeight: CGFloat = 32
+    /// The test windows': 28 on macOS 26.6.2 (asked for y 767 they took 677 with the visible frame's bottom at 705, 20 times of 20 in the recordings of one night, 2026-10-15); 32 in the older traces (673: traces/README.md,
+    /// row 3), where real apps had 26 to 47.
+    public var titleBarHeight: CGFloat = 28
     /// On screen or in the Dock. False once it has closed.
     public internal(set) var isOpen = true
     /// The window server still has its number: true for as long as it is open, and after that for one that was only put away.

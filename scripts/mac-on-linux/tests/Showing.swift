@@ -206,7 +206,7 @@ func tellOfShowing(_ book: Book) {
     let one = StoreyOne(story) { mac in
       mine = mac.open("mine", in: mac.launch("Mine"))
       let app = mac.launch("Shy")
-      parked = mac.open("parked", in: app, frame: CGRect(x: 1023, y: 673, width: 1000, height: 650))
+      parked = mac.open("parked", in: app, frame: CGRect(x: 1023, y: 677, width: 1000, height: 650))
       a = mac.open("a", in: app)
     }
     one.mac.hide(a.app)

@@ -4,7 +4,7 @@
 - Branch: test/the-real-ax-layer-on-linux, then test/mac-on-linux-round-2 and -round-3
 - What: `make mac-on-linux` (scripts/mac-on-linux/README.md; docs/TESTING.md, section 9)
 
-`Sources/ArborKit/AX` ran in no headless test. Now it is compiled as it is, linked with a model of a Mac and run on Linux: 336 stories (1,368 ✔, 111 ✘ known, on the trunk at f116af2; 181 stories at the end of round 1) and a random walk under four kinds of bad manners, at both storeys, five seconds to run. The run enters 92 % of the lines and 81 % of
+`Sources/ArborKit/AX` ran in no headless test. Now it is compiled as it is, linked with a model of a Mac and run on Linux: 339 stories (1,357 ✔, 134 ✘ known, on the trunk at f116af2; 181 stories at the end of round 1) and a random walk under four kinds of bad manners, at both storeys, five seconds to run. The run enters 92 % of the lines and 81 % of
 the regions of `AXWindowSystem.swift` (`COVERAGE=1`). Twenty-three changes that take known cures out of a copy of the layer all turn their stories red (`make mac-on-linux-selftest`).
 
 This report is what it found. Nothing in the layer was changed. Each finding says what a person would see, the lines concerned, and how sure the model is of the manners that bring it out: SEEN on a Mac, or GUESS. Every red check is listed in
@@ -205,6 +205,15 @@ TO CONSIDER: strike a window off only once its app has answered something since 
 ### For whoever keeps a request for the keyboard until an app answers again
 Six stories: "an app in front begins to hang, Arbor is asked to give the keyboard to another of its windows, and … before it wakes": nothing else happens (the window gets it); the person goes to another app with ⌘Tab; the same, and the workspace's notice of it is lost (a GUESS that this happens); clicks in another app's window; Arbor is asked for another app's window; the person asks the app for a third window with ⌘`. All
 green on the trunk, which keeps nothing: its request lies in the app's queue in its turn. Two are traps. The key lies in the queue too (a GUESS), is obeyed at the wake, and a request made afresh after that takes the keyboard back. And after an activation that Arbor never hears of, a kept request brings the app forward over the one the person went to.
+
+## Short of its slot (round 3): OPEN, SEVERITY 1, since 98206418
+WHAT A PERSON SEES: dock a window that stands low on the screen: it ends 494×484 in the middle of a slot of 494×650. Found on a hosted Mac by others, who read the rule off the recordings: **a size call that makes a window grow stops a point above the Dock, and at the display's right edge, from where the window stands when the call
+arrives.** The model did not play that: a window took any size anywhere. Now it does (`FakeMac.roomToGrow`, with its source, its circumstances, none of them varied, and what was not seen); "a window is asked to grow where it stands" holds it to seven frames of the recordings.
+STORIES: "windows that stand low on the screen: dock 101 left" (w101 at 12,126 494×484: the Mac's frames to the point) and "…: arrange" (w103 at 414,86 391×564 in a slot of 391×650). The windows stand where the hosted Macs' scripts put them.
+WHICH COMMIT: the same model and stories on three commits, each from nothing: 07b2bfc (the parent) 1,378 ✔, both stories green; **98206418 1,353 ✔, both red**; the trunk at f116af2 1,356 ✔, both red. With them 18 checks of older stories at storey two turn red, and the polite walk upstairs breaks "a docked window that Arbor has in view is in its place" in
+10 of 10 seeds (parent: none). All are listed under one heading in `known-failures.txt`, and fall off it when the cure lands.
+WHY: since 98206418 a window is asked for its slot's size where it stands (`Controller+AskFirst.swift`); the answer is the room below the window, not the app's limit; Arbor takes it for a refusal and lays the window out at that size in the middle of its slot. Before, the first size call was clipped as well, and the third, at the new place, made it good.
+HOW SURE: the rule is SEEN (23 answers of 23 at 704; my own reading of the 182 calls found none against it), for AppKit's plain test windows on one display of 1024×768 with the Dock at the bottom.
 
 ## The flight to the Dock (round 3; `tests/Flight.swift`)
 A probe without Arbor measured it on a hosted Mac (`origin/mac-shell-out/probe.flight`; what was varied and what was not stands with `FakeMac.minimize`). The model had it wrong by omission: nothing waited during a flight, and `AXRaise` left a minimized window in the Dock. Now the window's whole app is deaf for the 0.55 s, the window

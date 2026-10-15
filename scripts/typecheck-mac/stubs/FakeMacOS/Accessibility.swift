@@ -291,8 +291,8 @@ extension FakeMac {
 
   /// Where a window ends up that was asked to go to `point`.
   /// - Whole points: 150.5 became 150, 261.5 became 261 (x), 46.5 became 47 (y) (traces/README.md, row 4).
-  /// - A title bar never goes below the visible frame: asked for y 767 the test windows took 673, which is the visible frame's bottom less the
-  ///   title bar (row 3). x is not limited.
+  /// - A title bar never goes below the visible frame: asked for y 767 the test windows took 677 (673 in older traces), which is the visible frame's bottom less the
+  ///   title bar (row 3; `Window.titleBarHeight`). x is not limited.
   /// - Nor under the menu bar. Common knowledge about AppKit; not in a trace.
   func allowedOrigin(_ point: CGPoint, for window: Window) -> CGPoint {
     var origin = CGPoint(x: (point.x - 0.5).rounded(.up), y: (point.y + 0.5).rounded(.down))
@@ -328,7 +328,27 @@ extension FakeMac {
     window.timesAskedForAFrame += 1
     guard !window.isFullScreen, window.isOpen, window.isResizable else { return }
     let before = window.frame
-    change(window, to: CGRect(origin: before.origin, size: allowedSize(size, for: window, at: before.origin)), goingBackTo: before)
+    change(window, to: CGRect(origin: before.origin, size: roomToGrow(allowedSize(size, for: window, at: before.origin), for: window)), goingBackTo: before)
+  }
+
+  /// HOW FAR A WINDOW MAY GROW WHERE IT STANDS. A size call that makes a window grow stops where its bottom edge comes to the visible frame's bottom less 1, and its right edge to the display's right edge. The origin stays.
+  /// Read off 182 `setFrame` calls of Arbor's in the recordings of one run on a hosted Mac (macOS 26.6.2, 2026-10-15; collab/evidence/reality-mac/traces): bottom 704 with the visible bottom at 705, 23 answers of 23
+  /// (170,220 asked 494×650 took 494×484; 12,374 asked 1000×650 took 1000×330); right edge 1024, twice (687,106 asked 494 wide took 337).
+  /// - What decides is where the window IS when the call arrives: of size, position, size the last call comes at the new place and makes good what the first was denied.
+  /// - It holds back growth only. A window at the line keeps its height (249,356 ×348, bottom 704, asked ×650: ×348). An edge that is past the line already is not held: parked at 1023,677 a window took 1000×650 whole.
+  /// - It goes by the Dock as it is at that moment: 706 with a window just gone into the Dock, before Arbor had heard.
+  /// - The window's own minimum size beats it. Position calls know nothing of it.
+  /// CIRCUMSTANCES, none of them varied: AppKit's plain test windows; one display of 1024×768; the Dock at the bottom. NOT SEEN: one edge past its line and the other not (taken edge by edge here: a GUESS); the Dock at a
+  /// side; a second display; any other app, so whether AppKit does this or the window server. Why "less 1" at the bottom and not at the right, nobody knows.
+  private func roomToGrow(_ size: CGSize, for window: Window) -> CGSize {
+    let (before, screen) = (window.frame, screen(of: window.frame))
+    func held(_ wanted: CGFloat, has: CGFloat, from start: CGFloat, line: CGFloat, least: CGFloat) -> CGFloat {
+      guard wanted > has, start + has <= line else { return wanted }
+      return max(min(wanted, line - start), least)
+    }
+    return CGSize(
+      width: held(size.width, has: before.width, from: before.minX, line: screen.frame.maxX, least: window.minimumSize.width),
+      height: held(size.height, has: before.height, from: before.minY, line: screen.visibleFrame.maxY - 1, least: window.minimumSize.height))
   }
 
   /// Gives a window a frame on behalf of somebody outside its app, at once or, with "enhanced user interface", in steps.
