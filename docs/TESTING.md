@@ -704,6 +704,7 @@ copy from before the repository was public, and say what the script does once it
 | `rehearse.sh` | trunk | **never on a Mac**: ends with 77 | | It tells scripts that the Mac is thrown away; only what has a stand-in is fake. For Linux |
 | `run.sh` | trunk | safe for the Mac | none | Starts a run on GitHub |
 | `check-F13.sh` (`lib-F13.sh`) | trunk | safe | none | 10 to 25 minutes and 2 GB. Everything in a sandbox under `/tmp`: a throwaway `HOME`, `ARBOR_HOME`, keychain and clone. A small window takes the keyboard twice for seconds. Three copies run with their watchdog, which after a crash would use `open` |
+| `check-signing.sh` | trunk | **never**: ends with 77 | | Four minutes, `--bare`. Keychains of its own go on the account's search list and come off again; it answers macOS's dialog about a key; an identity goes into the login keychain and out again |
 | `check-F12.sh` | trunk | safe | none | |
 | `perf.sh` | trunk | safe, steps skip themselves | one drag | `footprint`, `heap`, `leaks` where developer mode is off (macOS would ask for a password) |
 | `check-F13-system.sh` | trunk | **never**: ends with 77 | | TCC.db as root, `tccutil`, login items, `make install` as a person runs it |
@@ -1176,8 +1177,9 @@ whether the tests you wrote since do their job. It is not part of `make check` o
 ## Installing, signing and releasing
 
 `scripts/release-tools-test.sh`, part of `make check` and of CI, tests what needs no Mac in a temporary copy: `version.sh`,
-`release-notes.sh`, and `publish-release.sh` against a stand-in for GitHub's API on the same machine (left out where
-there is no curl, as in the Swift image for Linux).
+`release-notes.sh`, `sign.sh` and `make-signing-identity.sh` against stand-ins for `security`, `codesign` and `openssl` (`at-a-terminal.py` is the terminal), and
+`publish-release.sh` against a stand-in for GitHub's API on the same machine (left out where there is no curl, as in the Swift image
+for Linux).
 
 `scripts/candidate-check.sh` builds a commit the way `make install` does (`make app`: `-c release`, bundled, stamped, signed, here ad hoc) and looks
 at the result: the signature, the stamps, and what the two binaries say to `--version`. Every other build, CI's
@@ -1193,6 +1195,13 @@ are only read, and compared before and after; the copies of Arbor it starts arra
 limit is stopped with everything it started; what might put one of macOS's dialogs on the screen is tried once, for
 twenty seconds, before anything depends on it. Its header says what you may notice, and names the one exception (three
 copies run with their watchdog).
+
+`scripts/mac-shell/check-signing.sh` is the signing identity alone, in four minutes and with nothing compiled, so that it can be asked
+of every macOS GitHub has (`run.sh --bare --on macos-14`): either openssl, a keychain off the search list, a throwaway `HOME`, somebody's
+key and a certificate with a name like ours in the same keychain (every attribute and access list compared before and after),
+`sign.sh`'s stamp against `codesign`, a terminal, with macOS's own dialog answered should one come, and the account's own login
+keychain, as a person runs it. What those Macs answered is what the stand-ins in `release-tools-test.sh` answer on Linux, where a Mac
+that does ask is played as well, and a run that is cut short: ⌃C at the dialog, a signal, a reader that leaves.
 
 `scripts/mac-shell/check-F13-system.sh` is for GitHub's throwaway Macs only (`needs_throwaway_mac`): it writes a grant into the
 permission database and shows that the next build inherits it and an ad-hoc build does not, tries launch at login,

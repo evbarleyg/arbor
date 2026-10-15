@@ -4,8 +4,8 @@
 #
 #   scripts/make-signing-identity.sh            make "Arbor Local Signing" in the login keychain
 #   scripts/make-signing-identity.sh --remove   delete it again
-#   … --keychain <file>                         another keychain, which must exist and be unlocked; if it is not on
-#                                               the search list, sign with ARBOR_SIGN_KEYCHAIN=<file>
+#   … --keychain <file>                         another keychain, which must exist, be unlocked and be on the search
+#                                               list: codesign finds no identity in any other, whatever --keychain says
 #   … --name <name>                             another name; sign with it through ARBOR_SIGN_IDENTITY
 #
 # It is a self-signed certificate that is good for code signing and nothing else, with a new private key that
@@ -13,10 +13,11 @@
 # administrator rights are needed: codesign signs with a certificate nobody trusts, and macOS's permission
 # database only asks whether the next build is signed with the same one. Running it again changes nothing.
 #
-# codesign may use the new key only with the owner's leave. The recommended way to give it is macOS's own dialog: press
-# Return at the one question this script asks, type the keychain's password into the dialog and choose Always Allow.
-# Typing the password here instead saves the dialog; it is then, for an instant, an argument of `security`, which `ps`
-# can show. $ARBOR_KEYCHAIN_PASSWORD answers the question for scripts.
+# This script asks for no password, takes none, and changes nothing about any key but its own. Whether codesign can use the new key is not
+# reasoned out but tried: the script ends by signing something, and goes by that. If macOS wants the owner's leave first it asks in a
+# dialog of its own: type the keychain's password THERE and choose Always Allow. (On GitHub's Macs with macOS 14, 15 and 26 none
+# came.) With nobody at a terminal the trial has $ARBOR_DIALOG_WAIT seconds (20), and a dialog goes with it. A run that fails or is
+# interrupted takes the certificate and the key out again.
 #
 # What goes into, or out of, a person's login keychain is theirs to decide: without a terminal on standard input (a script, a loop, an
 # agent that follows a page) it declines with exit code 77, unless --keychain names another keychain or ARBOR_UNATTENDED=1 says
@@ -68,19 +69,29 @@ fi
 # Without -v, which hides certificates that are not trusted. An identity that is valid is listed twice.
 identity_lines() { security find-identity -p codesigning "$keychain" 2>/dev/null | grep -F "\"$name\"" || true; }
 identity_hashes() { identity_lines | sed -n 's/^ *[0-9]*) \([0-9A-F]\{40\}\) .*/\1/p' | sort -u; }
+# The SHA-1 of every certificate called just that, with a key or without. -c alone will not do: it finds every name that contains the one
+# asked for, and "Arbor Local Signing 2" is somebody's too.
+certificate_hashes() {
+  { security find-certificate -a -Z -c "$name" "$keychain" 2>/dev/null || true; } | awk -v wanted="\"$name\"" '
+    /^SHA-1 hash: / { sha = $3 }
+    /^ *"labl"<blob>=/ { label = $0; sub(/^[^=]*=/, "", label); if (label == wanted) print sha }' | sort -u
+}
+# take_out <SHA-1>: the certificate and its key; the certificate alone where an import was cut short. Whether it has gone.
+take_out() {
+  security delete-identity -Z "$1" "$keychain" >/dev/null 2>&1 || security delete-certificate -Z "$1" "$keychain" >/dev/null 2>&1 || true
+  case "$(certificate_hashes)" in *"$1"*) return 1 ;; *) return 0 ;; esac
+}
 
 if [ "$action" = remove ]; then
   removed=0
-  for hash in $(identity_hashes); do
-    security delete-identity -Z "$hash" "$keychain" >/dev/null
-    echo "Deleted the certificate $hash and its private key from $keychain"
-    removed=$((removed + 1))
-  done
-  # A certificate left without its key, by an import that was interrupted.
-  for hash in $(security find-certificate -a -c "$name" -Z "$keychain" 2>/dev/null | sed -n 's/^SHA-1 hash: //p'); do
-    security delete-certificate -Z "$hash" "$keychain" >/dev/null
-    echo "Deleted the certificate $hash from $keychain"
-    removed=$((removed + 1))
+  for hash in $(certificate_hashes); do
+    if take_out "$hash"; then
+      echo "Deleted the certificate $hash and its private key from $keychain"
+      removed=$((removed + 1))
+    else
+      echo "make-signing-identity.sh: the certificate $hash could not be deleted from $keychain. Is the keychain locked?" >&2
+      exit 1
+    fi
   done
   if [ "$removed" -eq 0 ]; then
     echo "There is no \"$name\" in $keychain; nothing to remove"
@@ -90,6 +101,78 @@ if [ "$action" = remove ]; then
   fi
   exit 0
 fi
+
+# What this run has put into the keychain and has not yet seen to work. Whatever ends the run before that (a failure, ⌃C at macOS's dialog,
+# a closed window, a reader of the output that has left) takes it out again: a certificate that is there and of no use is worse than
+# none, because sign.sh finds it, and every build then fails or waits for a dialog.
+imported=""
+umask 077
+work=$(mktemp -d) || { echo "make-signing-identity.sh: no temporary folder" >&2; exit 1; }
+clean_up() {
+  if [ -n "$imported" ]; then
+    if take_out "$imported"; then
+      echo "  The certificate and its key were taken out of the keychain again: builds are signed ad hoc as before." >&2
+    else
+      echo "  The certificate could not be taken out of the keychain again: run this script with --remove." >&2
+    fi
+  fi
+  rm -rf "${work:?}"
+}
+trap clean_up EXIT
+trap 'exit 129' HUP
+trap 'exit 130' INT
+trap 'exit 141' PIPE
+trap 'exit 143' TERM
+
+# codesign looks for an identity in the keychains on the search list and nowhere else, whatever --keychain says: macOS 14, 15 and 26
+# alike. The list shows paths without symbolic links.
+on_the_search_list() {
+  local real listed
+  real=$(cd "$(dirname "$keychain")" && pwd -P)/$(basename "$keychain")
+  listed=$(security list-keychains 2>/dev/null || true)
+  case "$listed" in *"\"$real\""* | *"\"$keychain\""*) return 0 ;; *) return 1 ;; esac
+}
+
+patience=${ARBOR_DIALOG_WAIT:-20}
+# What perl reads as 0 would be no limit at all.
+case "$patience" in
+  "" | *[!0-9]* | 0) echo "make-signing-identity.sh: \$ARBOR_DIALOG_WAIT is a whole number of seconds, not \"$patience\"" >&2; exit 64 ;;
+esac
+# can_sign <SHA-1>: signs a copy of /usr/bin/true, now, so that a dialog, if there is going to be one, comes while someone is looking. With
+# nobody there it must not wait for an answer: it is gone again in seconds, dialog and all. 142: the time ran out.
+can_sign() {
+  local code=0 command=(codesign --force --sign "$1" --keychain "$keychain" --timestamp=none --identifier com.evbarleyg.arbor.probe "$work/probe")
+  cp /usr/bin/true "$work/probe"
+  if [ -t 0 ]; then
+    # macOS 15 and 26 call every key they import by the first name, whatever name came with it; macOS 14 uses the second.
+    echo "If macOS now asks whether codesign may use the key \"Imported Private Key\" or \"$name\": type the keychain's password"
+    echo "into ITS dialog and choose ALWAYS ALLOW. (Allow would ask again, twice for every build.)"
+    "${command[@]}" || code=$?
+  else
+    # perl waits and ends codesign itself: of a child that an alarm kills, bash prints a line of its own with all of this in it.
+    perl -e '$patience = shift; $child = fork; exec @ARGV or exit 127 unless $child;
+      $SIG{ALRM} = sub { kill "TERM", $child; waitpid $child, 0; exit 142 }; alarm $patience; waitpid $child, 0;
+      exit($? & 127 ? 128 + ($? & 127) : $? >> 8)' "$patience" "${command[@]}" || code=$?
+  fi
+  return "$code"
+}
+say_that_it_can() {
+  echo "codesign can sign with it. What macOS will remember about a build signed this way:"
+  { codesign --display --requirements - "$work/probe" 2>/dev/null || true; } | sed -n 's/^\(# \)\{0,1\}designated => /  /p'
+}
+# say_why_not <can_sign's exit code>: after codesign has said its own piece, if it had one. 0 if starting afresh could help.
+say_why_not() {
+  if ! on_the_search_list; then
+    echo "  $keychain is not on the keychain search list, and codesign finds an identity nowhere else, whatever --keychain says." >&2
+    echo "  \`security list-keychains -d user\` shows the list; with -s and every keychain that is to be on it, it sets it." >&2
+    return 1
+  elif [ "$1" -eq 142 ]; then
+    echo "  It had no answer in $patience seconds: macOS wants to ask in a dialog, and nobody is at a terminal here. Run this from a terminal" >&2
+    echo "  and answer it with Always Allow." >&2
+    return 1
+  fi
+  echo "  If a dialog came, it was answered Deny or closed. If the keychain is locked, as it is over ssh: \`security unlock-keychain\`." >&2
+}
 
 existing=$(identity_hashes)
 if [ -n "$existing" ]; then
@@ -102,6 +185,16 @@ if [ -n "$existing" ]; then
     echo "There is more than one, which codesign refuses as ambiguous. Run this script with --remove, then again."
     exit 1
   fi
+  # To be there is not to be of use: an earlier version of this script could leave a key behind that codesign had no leave to use.
+  code=0
+  can_sign "$existing" || code=$?
+  if [ "$code" -ne 0 ]; then
+    echo "make-signing-identity.sh: it is there, but codesign cannot sign with it, so builds fail or wait for a dialog." >&2
+    # It is left where it is: macOS's permission database may name it.
+    if say_why_not "$code"; then echo "  If neither: this script with --remove, then once more; Arbor will need its permission again." >&2; fi
+    exit 1
+  fi
+  say_that_it_can
   echo "Nothing to do."
   exit 0
 fi
@@ -109,10 +202,6 @@ fi
 # macOS's own openssl (LibreSSL) first, so that whatever else is on the PATH makes no difference.
 openssl=${ARBOR_OPENSSL:-/usr/bin/openssl}
 [ -x "$openssl" ] || openssl=$(command -v openssl) || { echo "make-signing-identity.sh: no openssl" >&2; exit 1; }
-
-umask 077
-work=$(mktemp -d) || { echo "make-signing-identity.sh: no temporary folder" >&2; exit 1; }
-trap 'rm -rf "${work:?}"' EXIT
 
 cat > "$work/openssl.cnf" <<CONFIG
 [ req ]
@@ -130,6 +219,11 @@ CONFIG
 "$openssl" req -x509 -newkey rsa:2048 -nodes -sha256 -days 3650 -config "$work/openssl.cnf" \
   -keyout "$work/key.pem" -out "$work/certificate.pem" 2>"$work/openssl.log" \
   || { cat "$work/openssl.log" >&2; echo "make-signing-identity.sh: $openssl could not make the certificate" >&2; exit 1; }
+# From the file, not from what the keychain lists afterwards: this is the one thing in there that is this run's to take out again.
+hash=$("$openssl" x509 -in "$work/certificate.pem" -noout -fingerprint -sha1 | sed 's/.*=//' | tr -d ':' | tr 'a-f' 'A-F')
+case "$hash" in
+  *[!0-9A-F]* | "") echo "make-signing-identity.sh: $openssl did not say the certificate's SHA-1" >&2; exit 1 ;;
+esac
 
 # `security import` reads only the old PKCS#12 algorithms. They are LibreSSL's defaults; OpenSSL 3 and later need
 # to be asked for them.
@@ -144,63 +238,26 @@ transport=$("$openssl" rand -hex 16)
   -out "$work/identity.p12" -passout "pass:$transport" 2>"$work/openssl.log" \
   || { cat "$work/openssl.log" >&2; echo "make-signing-identity.sh: $openssl could not pack the certificate" >&2; exit 1; }
 
-# -x: the key cannot be exported again. -T: codesign is on the key's list of applications.
+# -x: the key cannot be exported again. -T: codesign is on the key's list of applications, which on the Macs that were tried is all it takes.
+imported=$hash
 security import "$work/identity.p12" -k "$keychain" -f pkcs12 -P "$transport" -x -T /usr/bin/codesign >/dev/null
-hash=$(identity_hashes)
-[ -n "$hash" ] || { echo "make-signing-identity.sh: the import went through, but $keychain shows no identity" >&2; exit 1; }
+case "$(identity_hashes)" in
+  *"$hash"*) ;;
+  *) echo "make-signing-identity.sh: the import went through, but $keychain shows no identity" >&2; exit 1 ;;
+esac
 echo "Made the code-signing certificate \"$name\" in $keychain"
 echo "  SHA-1 $hash, $("$openssl" x509 -in "$work/certificate.pem" -noout -enddate | sed 's/notAfter=/valid until /')"
 
-# Being on the key's list of applications has not been enough since macOS 10.12: the key also has a "partition
-# list", and changing that takes the keychain's password. Only the key with our label is touched.
-allow_codesign() {
-  security set-key-partition-list -S apple-tool:,apple: -s -l "$name" -k "$1" "$keychain" >/dev/null 2>&1
-}
-
-silent=no
-if [ -n "${ARBOR_KEYCHAIN_PASSWORD:-}" ]; then
-  if allow_codesign "$ARBOR_KEYCHAIN_PASSWORD"; then silent=yes; else echo "\$ARBOR_KEYCHAIN_PASSWORD is not this keychain's password"; fi
-elif [ -t 0 ]; then
-  echo
-  echo "codesign may use the new key only with your leave."
-  echo "  Recommended: press Return. macOS then asks in a dialog of its own, in a moment."
-  echo "  Or type this keychain's password here (for the login keychain, the one you log in with) and there is no dialog."
-  echo "  It goes to macOS's \`security\` tool and nowhere else, as an argument that \`ps\` could show for an instant. A login"
-  echo "  password is not something to type into a script from a repository out of habit, however honest this one is."
-  tries=0
-  while [ "$tries" -lt 3 ]; do
-    tries=$((tries + 1))
-    password=""
-    IFS= read -r -s -p "Return, or the keychain's password: " password || true
-    echo
-    [ -n "$password" ] || break
-    if allow_codesign "$password"; then
-      silent=yes
-      break
-    fi
-    echo "That is not the keychain's password."
-  done
-  unset password
+code=0
+can_sign "$hash" || code=$?
+if [ "$code" -ne 0 ]; then
+  echo "make-signing-identity.sh: codesign cannot sign with the new certificate." >&2
+  say_why_not "$code" || true
+  exit 1
 fi
-
-# Sign something now, so that a dialog, if there is going to be one, comes while someone is looking.
-if [ "$silent" = yes ] || [ -t 0 ]; then
-  if [ "$silent" = no ]; then
-    echo
-    echo "macOS now asks whether codesign may use the key \"$name\". Type the keychain's password and choose"
-    echo "ALWAYS ALLOW. (Allow would ask again, twice for every build.)"
-  fi
-  cp /usr/bin/true "$work/probe"
-  if codesign --force --sign "$hash" --keychain "$keychain" --timestamp=none --identifier com.evbarleyg.arbor.probe "$work/probe"; then
-    echo "codesign can sign with it. What macOS will remember about a build signed this way:"
-    codesign --display --requirements - "$work/probe" 2>/dev/null | sed -n 's/^\(# \)\{0,1\}designated => /  /p'
-  else
-    echo "codesign could not use the key. Run this script with --remove, then again." >&2
-    exit 1
-  fi
-else
-  echo "The first build will make macOS ask whether codesign may use the key: choose Always Allow."
-fi
+# It works, so it stays, whatever becomes of the words that follow: their reader may have left.
+imported=""
+say_that_it_can
 
 echo
 if [ "$name" = "Arbor Local Signing" ]; then

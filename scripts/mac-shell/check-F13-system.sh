@@ -36,7 +36,7 @@ keychain="$HOME/Library/Keychains/login.keychain-db"
 f13_make_keychain
 security list-keychains -d user -s "$keychain"
 echo "the search list: $(security list-keychains -d user | tr -d '\n')"
-ARBOR_KEYCHAIN_PASSWORD=$password limit 120 ./scripts/make-signing-identity.sh < /dev/null 2>&1 | tee "$ARBOR_OUT/identity.txt"
+limit 120 ./scripts/make-signing-identity.sh < /dev/null 2>&1 | tee "$ARBOR_OUT/identity.txt"
 security find-identity -p codesigning
 check "told nothing, the script used the login keychain" says "$ARBOR_OUT/identity.txt" "in $keychain"
 check "codesign could use the key at once, without a dialog" says "$ARBOR_OUT/identity.txt" "codesign can sign with it"
