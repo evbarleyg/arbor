@@ -6,7 +6,7 @@ name: Linux
 #
 # A pull request waits for the slowest job, so what does not need one another's results runs side by side. The last
 # job, `linux-verdict`, passes only if all the others did. In ci.yml `needs: linux` waits for all of this; the checks
-# are called "linux / lint", "linux / tests-1" … "linux / verdict". scripts/test-ci-linux.py (`make lint`) holds this
+# are called "linux / lint", "linux / tests-1", "linux / rehearsal-1" … "linux / verdict". scripts/test-ci-linux.py (`make lint`) holds this
 # file to that.
 #
 # There are fifteen Linux runners for everybody (GitHub's twenty less the five Macs), so what a push costs in
@@ -100,6 +100,35 @@ jobs:
       - name: Real-window evidence is read as it is meant, and the suite's claims are in order
         run: ./scripts/ci-step.py evidence python3 scripts/test-parity.py
 
+  # The real-window suite against the fake Mac: what the change has made untrue of some 2,400 checks that otherwise wait for somebody to take two
+  # Macs. The script decides, before anything is built, whether a rehearsal can say anything about the change, and says why: so there is
+  # no condition here that could skip it unseen. Two machines, each with half of the sections on all of its cores: on one it would be the
+  # slowest job of all.
+  linux-rehearsal:
+    name: rehearsal-${{ matrix.part }}
+    if: ${{ inputs.all }}
+    strategy:
+      fail-fast: false
+      matrix:
+        part: [1, 2]
+    runs-on: ubuntu-24.04
+    container: swift:6.4-noble
+    timeout-minutes: 15
+    env:
+      PART: ${{ matrix.part }}
+      PARTS: ${{ strategy.job-total }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - name: Python and make for the scripts, and a git that trusts the checkout
+        # The checkout belongs to the runner's user and the container runs as root, which git refuses to work with.
+        run: |
+          apt-get update -qq && apt-get install -y -qq python3 make
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: Toolchain
+        run: ./scripts/ci-step.py toolchain swift --version
+      - name: The real-window suite, rehearsed
+        run: ./scripts/ci-step.py --summary '✘|▸|the suite' rehearsal ./scripts/rehearse-suite.sh
+
   # The tools that report all this can also report a failure. Two minutes, and but for the rows about scenarios and the fake Mac (in `linux-sim`) none
   # needs a build or Swift: at the end of that job, and then taking three, they made it the slowest of all.
   linux-tooling:
@@ -165,7 +194,7 @@ jobs:
   # that a slip in lint does not hide a stale FEATURES.md until the next push.
   linux-verdict:
     name: verdict
-    needs: [linux-lint, linux-typecheck-mac, linux-sim, linux-tooling, linux-tests]
+    needs: [linux-lint, linux-typecheck-mac, linux-sim, linux-rehearsal, linux-tooling, linux-tests]
     if: ${{ inputs.all && !cancelled() }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5

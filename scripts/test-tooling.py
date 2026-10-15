@@ -2881,6 +2881,112 @@ def check_reality_wrapper():
     row("reality.sh: REF, and the code here is not that branch's: no Mac is asked, nothing is rehearsed", at_a_ref(slip=True), (2, None, False, ""))
 
 
+# MARK: rehearse-suite.sh
+
+def check_rehearse_suite():
+    """It rehearses wherever that can say something and wherever nobody can tell, says why either way, and a ✘ shuts the gate."""
+    tool = os.path.join(HERE, "rehearse-suite.sh")
+
+    def decides(*paths):
+        done = subprocess.run([BASH, tool, "--decide"], input="".join(f"{path}\n" for path in paths), capture_output=True, text=True, check=False)
+        return done.returncode
+
+    for what, paths, expected in (
+            ("pages, scenarios, tests and tools", ["docs/TESTING.md", "collab/scenarios/a.sim", "Tests/ArborKitTests/ATests.swift", "scripts/parity.py", "Makefile"], 3),
+            ("the macOS-only code, which no rehearsal compiles", ["Sources/ArborKit/AX/AXWindowSystem.swift", "Sources/ArborKit/UI/StatusMenu.swift",
+             "Sources/ArborKit/Input/EventTap.swift", "Sources/ArborKit/App/ArborApp.swift", "Sources/Arbor/main.swift", "Sources/arborctl/main.swift",
+             "Sources/arbor-e2e/main.swift", "Sources/ArborTestWindows/main.swift"], 3),
+            ("a Mac shell script that is no part of the suite", ["scripts/mac-shell/check-F09.sh", "scripts/mac-shell/pointer.swift"], 3),
+            ("nothing at all", [], 3),
+            ("the controller, among pages", ["docs/GUIDE.md", "Sources/ArborKit/Controller/Controller+Drag.swift"], 0),
+            ("the core", ["Sources/ArborCore/Settings.swift"], 0), ("the stand-ins", ["Sources/ArborTesting/FakeWindowSystem.swift"], 0),
+            ("the fake Mac", ["Sources/arbor-fakemac/World.swift"], 0), ("the package", ["Package.swift"], 0),
+            ("a folder of sources nobody has heard of", ["Sources/ArborNew/New.swift"], 0),
+            ("a section", ["scripts/mac-shell/suite/10-edges.sh"], 0), ("the library", ["scripts/mac-shell/lib.sh"], 0),
+            ("what reads the state", ["scripts/mac-shell/state.py"], 0), ("a stand-in for a tool", ["scripts/mac-shell/rehearse/mac-tools"], 0),
+            ("itself", ["scripts/rehearse-suite.sh"], 0)):
+        row(f"rehearse-suite.sh: changed: {what}", decides(*paths), expected)
+
+    held = "=== 10-edges\n▸ a claim\n  ✔ x\n\nsuite: 3 passed, 0 failed (0 of them known), 0 section(s) unfinished, in 5 s\n"
+    broke = ("=== 10-edges\n▸ a claim\n  ✔ x\n▸ another\n  ✘ y — why\n=== 20-beside\n▸ a third\n  ✔ z\n\n"
+             "suite: 2 passed, 1 failed (0 of them known), 0 section(s) unfinished, in 5 s\n")
+    with tempfile.TemporaryDirectory(prefix="tooling-") as folder:
+        def git(*arguments):
+            return subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@example.com", *arguments], cwd=folder, capture_output=True,
+                                  text=True, check=True).stdout.strip()
+
+        def write(path, text, mode=0o644):
+            os.makedirs(os.path.dirname(os.path.join(folder, path)), exist_ok=True)
+            with open(os.path.join(folder, path), "w", encoding="utf-8") as handle:
+                handle.write(text)
+            os.chmod(os.path.join(folder, path), mode)
+
+        def played(*arguments, log=held, code=0, mac=False, **environment):
+            """The exit code, what rehearse.sh was asked for and with which share, and what was printed."""
+            write(".build/log", log)
+            write("scripts/mac-shell/rehearse.sh", '#!/bin/bash\necho "$* $MAC_SHELL_SHARE" > .build/asked\n'
+                  f'[ {code} -eq 2 ] || {{ mkdir -p .build/rehearsal-1; cp .build/log .build/rehearsal-1/log.txt; }}\nexit {code}\n', 0o755)
+            write("bin/nproc", "#!/bin/sh\necho 3\n", 0o755)
+            write("bin/uname", f"#!/bin/sh\necho {'Darwin' if mac else 'Linux'}\n", 0o755)
+            if os.path.exists(os.path.join(folder, ".build/asked")):
+                os.remove(os.path.join(folder, ".build/asked"))
+            kept = {key: value for key, value in os.environ.items() if not key.startswith("GITHUB_") and key not in ("PART", "PARTS", "ARBOR_NO_REHEARSAL")}
+            done = subprocess.run([BASH, "scripts/rehearse-suite.sh", *arguments], cwd=folder, capture_output=True, text=True, check=False,
+                                  env={**kept, "PATH": os.path.join(folder, "bin") + os.pathsep + os.environ["PATH"], **environment})
+            asked = None
+            if os.path.exists(os.path.join(folder, ".build/asked")):
+                with open(os.path.join(folder, ".build/asked"), encoding="utf-8") as handle:
+                    asked = handle.read().strip()
+            return done.returncode, asked, done.stdout
+
+        git("init", "--quiet", "--initial-branch", "work")
+        with open(tool, encoding="utf-8") as handle:
+            write("scripts/rehearse-suite.sh", handle.read(), 0o755)
+        write(".gitignore", ".build\nbin\nscripts/mac-shell/rehearse.sh\n")
+        write("Sources/ArborCore/A.swift", "a\n")
+        write("docs/A.md", "a\n")
+        git("add", "--all")
+        git("commit", "--quiet", "--message", "the trunk")
+        row("rehearse-suite.sh: no trunk to compare with: rehearsed", played()[:2], (0, "--jobs 3 1/1"))
+        git("update-ref", "refs/remotes/origin/swarm/trunk", "HEAD")
+        row("rehearse-suite.sh: the trunk itself: nothing is built or played", played()[:2], (0, None))
+        write("docs/A.md", "b\n")
+        git("commit", "--quiet", "--all", "--message", "words")
+        row("rehearse-suite.sh: a branch of words: nothing is built or played, and it says so",
+            (*played()[:2], "is not rehearsed" in played()[2]), (0, None, True))
+        row("rehearse-suite.sh: --always", played("--always")[:2], (0, "--jobs 3 1/1"))
+        row("rehearse-suite.sh: at GitHub, where no pull request says what it adds (a push, a train, the night): rehearsed",
+            played(GITHUB_EVENT_NAME="push")[:2], (0, "--jobs 3 1/1"))
+        row("rehearse-suite.sh: at GitHub, and the base cannot be fetched: rehearsed", played(GITHUB_EVENT_NAME="pull_request", GITHUB_BASE_REF="swarm/trunk")[:2],
+            (0, "--jobs 3 1/1"))
+        git("init", "--quiet", "--bare", ".build/origin.git")
+        git("push", "--quiet", ".build/origin.git", "refs/remotes/origin/swarm/trunk:refs/heads/swarm/trunk")
+        git("remote", "add", "origin", "file://" + os.path.join(folder, ".build/origin.git"))
+        pull_request = {"GITHUB_EVENT_NAME": "pull_request", "GITHUB_BASE_REF": "swarm/trunk"}
+        row("rehearse-suite.sh: at GitHub, a pull request of words: nothing is built or played", played(**pull_request)[:2], (0, None))
+        write("scripts/mac-shell/suite/99-new.sh", "new\n")
+        row("rehearse-suite.sh: a section nobody has committed yet: rehearsed", played()[:2], (0, "--jobs 3 1/1"))
+        os.remove(os.path.join(folder, "scripts/mac-shell/suite/99-new.sh"))
+        write("Sources/ArborCore/A.swift", "b\n")
+        row("rehearse-suite.sh: a change in the working tree: rehearsed", played()[:2], (0, "--jobs 3 1/1"))
+        row("rehearse-suite.sh: at GitHub what counts is what was committed", played(**pull_request)[:2], (0, None))
+        git("commit", "--quiet", "--all", "--message", "code")
+        row("rehearse-suite.sh: at GitHub, a pull request that changes the core: rehearsed", played(**pull_request)[:2], (0, "--jobs 3 1/1"))
+        code, asked, said = played(ARBOR_NO_REHEARSAL="1")
+        row("rehearse-suite.sh: told not to, it does not, and its one line says so in capitals", (code, asked, said.strip().count("\n"), said[:50]),
+            (0, None, 0, "THE SUITE IS NOT REHEARSED, BY ARBOR_NO_REHEARSAL:"))
+        row("rehearse-suite.sh: nor with --always", played("--always", ARBOR_NO_REHEARSAL="1")[:2], (0, None))
+        row("rehearse-suite.sh: at GitHub nobody hears that", played(ARBOR_NO_REHEARSAL="1", **pull_request)[:2], (0, "--jobs 3 1/1"))
+        row("rehearse-suite.sh: the second machine of two takes the second half", played(PART="2", PARTS="2")[:2], (0, "--jobs 3 2/2"))
+        row("rehearse-suite.sh: its last line has the sum", played()[2].strip().splitlines()[-1].split(", in ")[0],
+            "the suite, rehearsed on 3 fake Macs: 3 held, 0 failed (0 of them known), 0 sections unfinished")
+        code, _, said = played(log=broke, code=1)
+        row("rehearse-suite.sh: a ✘ shuts the gate, and stands under its section and its claim; what held is not printed",
+            (code, [line for line in said.splitlines()[1:-1] if line]), (1, ["10-edges", "▸ another", "  ✘ y — why"]))
+        row("rehearse-suite.sh: the fake Mac does not build", played(code=2)[0], 2)
+        row("rehearse-suite.sh: on a Mac it does nothing, and `make check` goes on", played(mac=True)[:2], (0, None))
+
+
 def chosen(arguments):
     """All the checks, in the order they stand in here, or those named after `--only`, or all but those named after `--but`. Whatever is called
     check_… is one: there is no list to forget it in. A name nobody knows would choose nothing, and is refused."""

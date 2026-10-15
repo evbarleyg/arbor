@@ -4,6 +4,7 @@
 #   scripts/mac-shell/rehearse.sh <script…>        without arguments: suite.sh, where there is one
 #   scripts/mac-shell/rehearse.sh --jobs 4         suite.sh on four fake Macs side by side, each with every fourth section, as `run.sh --macs 4`
 #                                                  shares them out among real ones. A rehearsal waits for nothing, so it takes a core.
+#                                                  With MAC_SHELL_SHARE=1/2: the first half of the sections among the four, for two machines.
 #
 # A run on a Mac takes minutes, or somebody's Mac. This takes seconds and catches what has nothing to do
 # with real windows: typos, bash mistakes, wrong geometry, and wrong expectations of the controller. Exits with the
@@ -54,7 +55,7 @@ if [ "$(uname -s)" != Linux ]; then
   exit 77
 fi
 
-side_by_side=1
+side_by_side=0
 if [ "${1:-}" = --jobs ]; then
   case "${2:-}" in
     [1-9] | [1-9][0-9]) side_by_side=$2 ;;
@@ -99,13 +100,15 @@ if [ ! -x "$fakemac" ]; then
   exit 2
 fi
 
-if [ "$side_by_side" -gt 1 ]; then
+if [ "$side_by_side" -gt 0 ]; then
   began=$SECONDS
   macs=""
   mac=1
+  # This machine's own share, of which each fake Mac takes its part: the second of two machines with four each has the fifth to the eighth of eight.
+  share=${MAC_SHELL_SHARE:-1/1}
   while [ "$mac" -le "$side_by_side" ]; do
     mkdir -p "$work-$mac"
-    ARBOR_REHEARSAL_MAC=$mac MAC_SHELL_SHARE=$mac/$side_by_side "$0" > "$work-$mac/log.txt" 2>&1 &
+    ARBOR_REHEARSAL_MAC=$mac MAC_SHELL_SHARE=$(((${share%/*} - 1) * side_by_side + mac))/$((${share#*/} * side_by_side)) "$0" > "$work-$mac/log.txt" 2>&1 &
     macs="$macs $!"
     mac=$((mac + 1))
   done

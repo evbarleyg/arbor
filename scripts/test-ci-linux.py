@@ -43,9 +43,10 @@ PREFIX, VERDICT = "linux-", "linux-verdict"
 CALLER, CALLED = "linux", "./.github/workflows/linux.yml"
 # Jobs of ci.yml on Linux runners that are not part of the verdict: `changes` decides about the Mac and proves nothing
 # about the code; `tests-whole` runs only where work is integrated, takes twelve minutes, and whoever integrates waits
-# for it by name; `oldest-swift` takes eleven, and whoever lands reads it by name.
+# for it by name; `oldest-swift` takes eleven, and whoever lands reads it by name; `suite-as-a-person` rehearses the real-window suite once more, as
+# somebody's own Mac would run it, where `tests-whole` runs.
 WHOLE_JOB, OLDEST_JOB = "tests-whole", "oldest-swift"
-NOT_A_CHECK = {"changes", WHOLE_JOB, OLDEST_JOB}
+NOT_A_CHECK = {"changes", WHOLE_JOB, OLDEST_JOB, "suite-as-a-person"}
 OLDEST_RUNS = ["swift build --build-tests", "make typecheck-mac"]
 # On Linux runners because they need no Mac, but what they say is about the macOS job, after which they run and with which they are
 # skipped. Each is a check of its own, by its own name: what real windows said there, whether every test ran there or here, that it

@@ -64,6 +64,7 @@ check: lint build test
 	@./scripts/sim-smoke.sh
 	@./scripts/privacy-smoke.sh
 	@./scripts/scenarios.sh
+	@./scripts/rehearse-suite.sh
 	@python3 scripts/test-tooling.py
 	@python3 scripts/test-parity.py
 	@./scripts/release-tools-test.sh

@@ -32,7 +32,7 @@ addresses, paths on a particular machine, internal hosts, cost, names of models,
 make build      # swift build (debug)
 make test       # swift test: core unit tests + controller scenario tests
 make test-making-way  # the same tests with floatingWindowsMakeWay on wherever a test does not choose its settings (F64)
-make check      # build + test + the arbor-sim smoke run + the scenarios + the tools' self-test; must pass before every commit
+make check      # build + test + the arbor-sim smoke run + the scenarios + on Linux the real-window suite, rehearsed + the tools' self-test; must pass before every commit
 make gate       # on Linux: check, scenarios, parity, typecheck-mac and lint, each once and on every core: 4 minutes instead of 9
 make sim ARGS='"open Safari" "dock 101 left"'   # drive the real controller headlessly
 make run        # run the debug Arbor binary from this terminal; like install and uninstall it declines without one: the Mac's owner decides

@@ -1214,7 +1214,19 @@ scripts/mac-shell/run.sh scripts/mac-shell/suite/30-seams.sh     # one section, 
 scripts/mac-shell/rehearse.sh                                    # all of it against stand-ins, on Linux, for nothing
 scripts/mac-shell/rehearse.sh --jobs 4                           # the same on four fake Macs side by side, in under half the time
 scripts/mac-shell/rehearse.sh scripts/mac-shell/suite/30-seams.sh
+scripts/rehearse-suite.sh                                        # what `make check`, `make gate` and CI say: all of it, if the change can make a claim untrue
 ```
+
+**Every change is held against it, on Linux.** The suite runs on real windows when somebody takes two Macs for it, and in between the product moves on: in one night
+twelve of its claims went out of date and nobody saw it. So `scripts/rehearse-suite.sh` is a step of `make check` (and so of `make gate`) and CI's
+`linux / rehearsal-1` and `-2`: all the sections against the real controller on the fake Mac, on every core, five minutes on four. It first says
+whether a rehearsal can say anything about the change, in a second and before anything is built: what the branch and the working tree add to the trunk has to touch `Package.swift`,
+`Sources/` less the macOS-only folders, the sections, `suite.sh`, `lib.sh`, `state.py` or the rehearsal's own stand-ins. Where nobody can tell, and wherever
+work is integrated, it rehearses. It prints every ✘ under its section and claim; all of it is in `.build/rehearsal-<n>/log.txt`. `ARBOR_NO_REHEARSAL=1 make gate` leaves
+it out, for a second gate after a mend of a line by whoever has seen it rehearsed on the change already; the row then says so in capitals, and at GitHub nobody hears it.
+**A ✘ there is yours**: either the change has brought a fault, or it has made a claim untrue, and then the claim is reworded in the same pull request. A claim that is
+reworded has not been on a Mac: run `scripts/mac-shell/suite-parity.py`, which takes its item off "verified" until it has. Where work is integrated
+and at night the job `suite-as-a-person` rehearses it once more as somebody's own Mac would run it, on a wide display with a notch.
 
 **On a person's Mac** it is one supervised run with one curtain ("On a person's own Mac", in section 5, says what that means and what
 `lib.sh` declines there). It needs Accessibility for the terminal, five quiet minutes before it starts (or `ARBOR_BUSY_OK=1`) and no Arbor or other window

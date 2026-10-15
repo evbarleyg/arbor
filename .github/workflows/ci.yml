@@ -278,6 +278,30 @@ jobs:
       - name: Whole and in parts, the same tests came out the same
         run: ./scripts/ci-step.py same ./scripts/fast-tests.py same whole.jsonl linux.tsv
 
+  # linux.yml rehearses the real-window suite as a hosted Mac would run it, on a hosted Mac's display. A person's own Mac is another world to the
+  # scripts: the gates stay shut, the nets look at every press and key, a curtain hangs behind the windows, macOS tiles at the screen's
+  # edges, and the display is wide, with a notch and no Dock in view. What a change breaks only there it breaks for whoever says `make suite` at a
+  # desk. Where work is integrated and at night, like `tests-whole`, and read by its name like that.
+  suite-as-a-person:
+    if: ${{ github.event.action != 'closed' && (github.event_name != 'pull_request' || (github.base_ref == 'main' && !github.event.pull_request.draft)) }}
+    runs-on: ubuntu-24.04
+    container: swift:6.4-noble
+    timeout-minutes: 20
+    env:
+      ARBOR_REHEARSAL_AS: person
+      ARBOR_REHEARSAL_DISPLAY: 1728x1117 33 0
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - name: Python and make for the scripts, and a git that trusts the checkout
+        # The checkout belongs to the runner's user and the container runs as root, which git refuses to work with.
+        run: |
+          apt-get update -qq && apt-get install -y -qq python3 make
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: Toolchain
+        run: ./scripts/ci-step.py toolchain swift --version
+      - name: The real-window suite, rehearsed as on somebody's own Mac
+        run: ./scripts/ci-step.py --summary '✘|▸|the suite' rehearsal ./scripts/rehearse-suite.sh --always
+
   # The oldest Swift that README.md and docs/INSTALL.md promise: what Xcode 26.0 to 26.3 come with. What it refuses and
   # the newest takes (a name it looks up otherwise, an expression it gives up on) it refuses here, without a Mac: the
   # headless stack and every test are compiled, and all the macOS-only code is type-checked against the stand-ins. The
