@@ -77,7 +77,24 @@ extension Controller {
       report.add(.ok, "Displays", "\(connected.count) (\(sizes.joined(separator: ", ")))")
     }
     report.add(.note, "Version", buildInfo.text)
+    checkSignature(into: &report)
     return report
+  }
+
+  /// What the next build or update will cost. Never a problem: this build works as well as any. Nothing where nobody stamped it.
+  private func checkSignature(into report: inout DoctorReport) {
+    let title = "Signature"
+    switch buildInfo.signature {
+    case .adHoc?:
+      report.add(
+        .note, title,
+        "ad hoc, so to macOS every build is a new app: after each `make install` or update it asks for the Accessibility "
+          + "permission again. `scripts/make-signing-identity.sh`, run once in a clone, ends that for builds made there "
+          + "(docs/INSTALL.md)")
+    case .local?: report.add(.ok, title, "this Mac’s own certificate: permissions carry over to the next build signed with it")
+    case .issued?: report.add(.ok, title, "a certificate: permissions carry over from build to build")
+    case nil: break
+    }
   }
 
   private static let unknown = "unknown here"

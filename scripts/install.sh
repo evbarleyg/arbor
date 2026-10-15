@@ -173,6 +173,22 @@ rm -rf "$installed"
 mv "$staged" "$installed"
 trap - EXIT HUP INT TERM
 echo "Installed $installed, version $(./scripts/version.sh)"
+# codesign is asked, not the build's log: that has scrolled away, and `make install` may be installing what an earlier `make app` built.
+# Read whole and matched here, not with grep -q: that stops reading at the match, codesign dies of it, and pipefail makes a no of the yes.
+ad_hoc() {
+  local said
+  said=$(codesign --display --verbose=2 "$installed" 2>&1) || return 1
+  case $'\n'"$said"$'\n' in *$'\nSignature=adhoc\n'*) return 0 ;; *) return 1 ;; esac
+}
+# Said last, and aloud: it is the one thing here that costs the person something, every time.
+say_what_the_signature_costs() {
+  ad_hoc || return 0
+  echo
+  echo "NOTE: THIS BUILD IS SIGNED AD HOC. To macOS it is a new app, so macOS will ask for the Accessibility permission again,"
+  echo "  now and after every \`make install\`. An entry an older build left under Accessibility looks switched on and does nothing:"
+  echo "    tccutil reset Accessibility com.evbarleyg.arbor     then switch Arbor on again"
+  echo "  To be asked once more and never again:  ./scripts/make-signing-identity.sh  then  make install  (docs/INSTALL.md)."
+}
 
 if [ -n "${BINDIR:-}" ]; then
   bindir=$BINDIR
@@ -192,11 +208,13 @@ fi
 
 if [ "${LAUNCH:-1}" = 0 ]; then
   echo "Not started (LAUNCH=0): open \"$installed\""
+  say_what_the_signature_costs
   exit 0
 fi
 
 if ! open "$installed"; then
   echo "Arbor could not be started from here (no login session?): open \"$installed\""
+  say_what_the_signature_costs
   exit 0
 fi
 answers() { "$installed/$tool" status >/dev/null 2>&1; }
@@ -212,3 +230,4 @@ if wait_until 100 answers; then
 else
   echo "Started Arbor, but it does not answer yet; see $HOME/Library/Application Support/Arbor/arbor.log"
 fi
+say_what_the_signature_costs
