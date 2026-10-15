@@ -10,8 +10,9 @@
 #
 # Each round: the entry is written, Arbor is opened and has its taps; asker.swift posts a click, a key and a notch of the wheel every
 # 50 ms, each with a number, for twelve seconds; four seconds in, the permission goes; a listener at the far end of the taps writes down
-# what arrived and when. Three rounds with `tccutil reset Accessibility <identifier>`, one with the entry deleted and tccd restarted, which a running
-# process feels only a quarter of a minute later, so that round's stream is longer.
+# what arrived and when. Three rounds with `tccutil reset Accessibility <identifier>`, two with the entry deleted and tccd restarted, which a running
+# process feels only a quarter of a minute later: meanwhile Arbor keeps its taps and is told yes. Those rounds' streams last until then. And two with
+# the notification com.apple.accessibility.api posted after that, which is probably what the switch in System Settings comes to.
 # What is asked: every event arrives; none is more than 10 ms late once the taps are gone; and THE NUMBER: the longest hole.
 #
 # A round in which nothing could be posted, nothing arrived before the loss, Arbor had no taps or did not lose them proves nothing: it
@@ -96,12 +97,21 @@ by_the_row() {
   echo "the entry deleted, tccd restarted"
 }
 
+# Probably what the switch in System Settings comes to: a process that is running goes by what it was told last until this notification is posted
+# (probe-permission-grant.sh).
+by_the_row_announced() {
+  by_the_row
+  "$ASKER" announce
+}
+
 # one_round <number> <how the permission goes>
 one_round() {
-  local how=$2 x y log_mark taken back length=12
+  local how=$2 x y log_mark taken back length=12 between
   round=$1
   # By that road the loss came 14 s after the deed, the first time this ran: the stream has to last until then.
   [ "$how" = by_the_row ] && length=34
+  between="from the loss until the taps were gone"
+  [ "$how" = by_the_row ] && between="FROM THE ROW'S DELETION UNTIL ARBOR NOTICED"
   step "round $round: $how"
   grant
   launch
@@ -140,14 +150,14 @@ one_round() {
   removed=$(tail -n "+$((log_mark + 1))" "$ARBOR_HOME/arbor.log" | grep -m 1 "permission is gone" | cut -c 12-23)
   [ -n "$removed" ] || invalid "Arbor's log says when the taps went"
 
-  python3 - "$ARBOR_OUT/arrivals-$round.txt" "$ARBOR_OUT/stream-$round.txt" "$taken" "${removed:-$back}" > "$ARBOR_SESSION_DIR/verdict" <<'PYTHON'
+  python3 - "$ARBOR_OUT/arrivals-$round.txt" "$ARBOR_OUT/stream-$round.txt" "$taken" "${removed:-$back}" "$between" > "$ARBOR_SESSION_DIR/verdict" <<'PYTHON'
 import re, sys
 
 def seconds(text):
     hours, minutes, rest = text.split(":")
     return int(hours) * 3600 + int(minutes) * 60 + float(rest)
 
-arrivals, stream, taken, removed = sys.argv[1:5]
+arrivals, stream, taken, removed, between = sys.argv[1:6]
 taken, removed = seconds(taken), seconds(removed)
 posted = re.search(r"stream ends: (\d+) events posted", open(stream).read())
 posted = int(posted.group(1)) if posted else 0
@@ -161,7 +171,7 @@ missing = [number for number in range(1, posted + 1) if number not in numbers]
 kinds = ["down", "up", "key-down", "key-up", "wheel"]
 print(f"posted {posted}, arrived {len(numbers)}, missing {len(missing)}" + (f": {missing[:20]}" if missing else ""))
 print("arrived by kind: " + ", ".join(f"{kind} {sum(1 for entry in found if entry[1] == kind)}" for kind in kinds))
-spans = [("before the loss", float("-inf"), taken), ("from the loss until the taps were gone", taken, removed), ("after the taps were gone", removed, float("inf"))]
+spans = [("before the loss", float("-inf"), taken), (between, taken, removed), ("after the taps were gone", removed, float("inf"))]
 worst = {}
 for name, start, end in spans:
     part = [entry for entry in found if start <= entry[0] < end]
@@ -170,13 +180,15 @@ for name, start, end in spans:
     late = max((entry[3] for entry in part), default=0)
     over = sum(1 for entry in part if entry[3] > 10000)
     worst[name] = (len(part), hole[0], late, over)
-    print(f"{name}: {len(part)} arrived, longest hole {hole[0] * 1000:.0f} ms, worst lateness {late / 1000:.1f} ms, more than 10 ms late: {over}")
+    # Every event has its number, so what was posted between the first and the last of a stretch is known.
+    due = max(entry[2] for entry in part) - min(entry[2] for entry in part) + 1 if part else 0
+    print(f"{name}: {len(part)} arrived of {due} posted, longest hole {hole[0] * 1000:.0f} ms, worst lateness {late / 1000:.1f} ms, more than 10 ms late: {over}")
 print(f"the taps were gone {(removed - taken) * 1000:.0f} ms after the permission began to go")
 holes = [(later[0] - earlier[0], earlier[0]) for earlier, later in zip(found, found[1:])]
 print(f"THE LONGEST HOLE: {max(holes)[0] * 1000:.0f} ms" if holes else "THE LONGEST HOLE: nothing arrived")
 print("facts", posted, len(missing), worst["before the loss"][0], worst["after the taps were gone"][0], worst["after the taps were gone"][3],
       round(max(holes)[0] * 1000) if holes else 999999, round(worst["before the loss"][2] / 1000), round(worst["after the taps were gone"][2] / 1000),
-      round(worst["before the loss"][1] * 1000), round(worst["from the loss until the taps were gone"][1] * 1000), round(worst["after the taps were gone"][1] * 1000))
+      round(worst["before the loss"][1] * 1000), round(worst[between][1] * 1000), round(worst["after the taps were gone"][1] * 1000))
 PYTHON
   grep -v "^facts " "$ARBOR_SESSION_DIR/verdict"
   read -r _ posted missing before after late hole late_before late_after hole_before hole_during hole_after <<< "$(grep "^facts " "$ARBOR_SESSION_DIR/verdict")"
@@ -199,6 +211,9 @@ one_round 1 by_tccutil
 one_round 2 by_tccutil
 one_round 3 by_tccutil
 one_round 4 by_the_row
+one_round 5 by_the_row
+one_round 6 by_the_row_announced
+one_round 7 by_the_row_announced
 
 step "the end"
 arbor_log
