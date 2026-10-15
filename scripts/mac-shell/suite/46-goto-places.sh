@@ -1,5 +1,5 @@
 #!/bin/bash
-# Where Go to… goes: to a window in the Dock, of a hidden app, floating out of view, to a saved view and a named space, each chosen in the
+# Where Go to… goes: to a window in the Dock, of a hidden app, floating behind a framed one, to a saved view and a named space, each chosen in the
 # palette with real keys; then the other ways to ask, the menu and the command line; and what the log keeps of it all.
 # 46-goto.sh has the typing and choosing itself. A section of its own, because each has a time limit.
 # A27 Go to…: find any window, named space or saved view by typing; with it A20, named spaces, as far as the palette goes to them.
@@ -29,6 +29,18 @@ only_shows() {
   local other=$W1
   [ "$1" = "$W1" ] && other=$W2
   fills "$1" && out_of_view "$other"
+}
+# uncovered <id>: of the windows the window server has in front of it, none that belongs to the test apps overlaps it.
+uncovered() {
+  local frame
+  frame=$(real_frame_of "$1") || { echo "the window server has no such window"; return 1; }
+  # shellcheck disable=SC2086
+  set -- "$1" $frame
+  pointer windows --on-screen | awk -v id="$1" -v x="$2" -v y="$3" -v w="$4" -v h="$5" \
+    -v apps=" $ARBOR_WINDOWS_PID $ARBOR_WINDOWS_PID_2 " '
+    $1 == id { found = 1; exit }
+    index(apps, " " $2 " ") && $4 < x + w && $4 + $6 > x && $5 < y + h && $5 + $7 > y { covered = 1 }
+    END { exit !found || covered }' || { echo "another window lies over it, or it is not on screen"; return 1; }
 }
 everything_shows() { camera_on root && layout_matches && in_view "$W1" && in_view "$W3"; }
 # Any command but a query closes a palette that was left open, which is one claim's failure and should not be the next one's.
@@ -116,16 +128,20 @@ settled
 if is hidden "$V1" > /dev/null 2>&1; then tw2 unhide; fi
 
 frame_the_first
-claim "go to a floating window from a framed one: the Desktop is framed, with the window on it and the keyboard in it"
+claim "go to a floating window from a framed one: the view stays, and the window comes to the front where it was, with the keyboard in it"
 proves A27
-check "the floating window is out of view" eventually out_of_view "$W4"
+# No view takes a floating window away (F64): it is in view already, behind the window that was clicked last.
+floating=$(resting_frame_of "$W4")
+check "the floating window lies behind the framed one" eventually fails uncovered "$W4"
 check "⌃⌥G opens the palette" opens_the_palette
 types 4
 key return
 check "the palette is gone" eventually palette_closed
-check "the camera is on the Desktop" eventually camera_on desktop
-check "the floating window is in view" eventually in_view "$W4"
-check "the framed window has left" eventually out_of_view "$W1"
+check "the floating window is in front" eventually uncovered "$W4"
+# shellcheck disable=SC2086
+check "where it was" stays frame_is "$W4" $floating
+check "the view has not moved" camera_on "$W1"
+check "the framed window still fills the screen" fills "$W1"
 check "the next letter goes to the floating window" reaches "$W4" x
 
 show_everything
@@ -195,6 +211,30 @@ check "the log has lines about Go to…" grep -q "find: " "$ARBOR_HOME/arbor.log
 check "none of the first app's titles" fails grep -q "Arbor Test" "$ARBOR_HOME/arbor.log"
 check "nor the other app's" fails grep -q -i "ledger" "$ARBOR_HOME/arbor.log"
 check "nor what was looked for by command" fails grep -q -e "find led" -e zebra "$ARBOR_HOME/arbor.log"
+
+ctl show-all
+arbor_stop
+
+# The way back: with `floatingWindowsMakeWay`, which ships off, floating windows live on the Desktop and leave the view with it, as until F64.
+arbor_settings '{"floatingWindowsMakeWay": true}'
+ARBOR_SECOND_APP=0
+arbor_start 4 ARBOR_NO_HOTKEYS=0
+ctl dock "$W1" left
+ctl dock "$W2" right
+ctl dock "$W3" beside "$W2" bottom
+
+frame_the_first
+claim "with floatingWindowsMakeWay on: go to a floating window from a framed one: the Desktop is framed, with the window on it and the keyboard in it"
+proves A27
+check "the floating window is out of view" eventually out_of_view "$W4"
+check "⌃⌥G opens the palette" opens_the_palette
+types 4
+key return
+check "the palette is gone" eventually palette_closed
+check "the camera is on the Desktop" eventually camera_on desktop
+check "the floating window is in view" eventually in_view "$W4"
+check "the framed window has left" eventually out_of_view "$W1"
+check "the next letter goes to the floating window" reaches "$W4" x
 
 ctl show-all
 arbor_stop

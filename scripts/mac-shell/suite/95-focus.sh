@@ -1,6 +1,6 @@
 #!/bin/bash
 # Giving the keyboard to a window that is out of view brings it into view: what ⌘Tab, the Dock, a notification
-# or `open` do all day. Part of T52 (windows outside the view).
+# or `open` do all day. A floating window is never out of view (F64): it only comes to the front. Part of T52 (windows outside the view).
 source "$(dirname "$0")/../lib.sh"
 arbor_build
 ARBOR_SECOND_APP=1
@@ -18,6 +18,18 @@ order_is() {
   local now
   now=$(order_of_docked)
   [ "$now" = "$1" ] || { echo "front to back they are $now, not $1"; return 1; }
+}
+# uncovered <id>: of the windows the window server has in front of it, none that belongs to the test apps overlaps it.
+uncovered() {
+  local frame
+  frame=$(real_frame_of "$1") || { echo "the window server has no such window"; return 1; }
+  # shellcheck disable=SC2086
+  set -- "$1" $frame
+  pointer windows --on-screen | awk -v id="$1" -v x="$2" -v y="$3" -v w="$4" -v h="$5" \
+    -v apps=" $ARBOR_WINDOWS_PID $ARBOR_WINDOWS_PID_2 " '
+    $1 == id { found = 1; exit }
+    index(apps, " " $2 " ") && $4 < x + w && $4 + $6 > x && $5 < y + h && $5 + $7 > y { covered = 1 }
+    END { exit !found || covered }' || { echo "another window lies over it, or it is not on screen"; return 1; }
 }
 
 arbor_start 3
@@ -57,11 +69,30 @@ check "together with the column the camera was on" eventually in_view "$W1"
 settled
 ctl show-all
 
-claim "a floating window out of view gets the keyboard: the camera steps out until the Desktop shows"
+claim "a floating window behind the framed one gets the keyboard: it comes to the front where it was, and the camera stays"
+click_window "$W1"
+floating=$(resting_frame_of "$W3")
 ctl zoom "$W1"
-check "the floating window is out of view" eventually out_of_view "$W3"
+check "the floating window lies behind the framed one" eventually fails uncovered "$W3"
 tw activate "$W3"
-check "it comes into view" eventually in_view "$W3"
+check "it has the keyboard" eventually is focused "$W3"
+check "nothing covers it" eventually uncovered "$W3"
+# shellcheck disable=SC2086
+check "it is where it was" stays frame_is "$W3" $floating
+check "the camera stayed on the framed window" camera_on "$W1"
+check "which still fills the screen" fills "$W1"
+settled
+
+claim "with the keyboard in a floating window, out only moves the view and leaves it there; zoom names a window and takes it along"
+ctl out
+check "the column is in view" eventually in_view "$W2"
+check "the keyboard is still in the floating window" stays is focused "$W3"
+check "nothing was raised over it" uncovered "$W3"
+ctl zoom "$W2"
+check "the window that was named fills the screen" eventually fills "$W2"
+check "it has the keyboard" eventually is focused "$W2"
+# shellcheck disable=SC2086
+check "the floating window has not moved" frame_is "$W3" $floating
 settled
 ctl show-all
 
@@ -112,5 +143,21 @@ claim "click a window in view: the camera stays"
 click_window "$W2"
 check "it has the keyboard" eventually is focused "$W2"
 check "the camera stayed" stays camera_on root
+
+arbor_stop
+
+# The way back: with `floatingWindowsMakeWay`, which ships off, floating windows live on the Desktop and leave the view with it, as until F64.
+arbor_settings '{"floatingWindowsMakeWay": true}'
+ARBOR_SECOND_APP=0
+arbor_start 2
+ctl dock "$W1" left
+
+claim "with floatingWindowsMakeWay on: a floating window out of view gets the keyboard: the camera steps out until the Desktop shows"
+ctl zoom "$W1"
+check "the floating window is out of view" eventually out_of_view "$W2"
+tw activate "$W2"
+check "it comes into view" eventually in_view "$W2"
+settled
+ctl show-all
 
 arbor_stop

@@ -66,7 +66,8 @@ between_two_docked_windows
 claim "press the shortcut bound to summon: the other app's window comes over the framed window with the keyboard in it"
 proves A53
 check "the framed window fills the screen" eventually fills "$W1"
-check "the other app's window is out of view with the Desktop" eventually out_of_view "$V1"
+# No view takes a floating window away (F64): it is where it was, behind the window that was clicked last.
+check "the other app's window lies behind it" eventually fails uncovered "$V1"
 check "the framed window has the keyboard" eventually is focused "$W1"
 check "⌃⌥\` reaches Arbor" summon_key
 check "the other app's window is in view" eventually in_view "$V1"
@@ -138,10 +139,11 @@ arbor_relaunch
 click_window "$W1"
 check "⌃⌥↩ reaches Arbor" pressed ctrl+opt+return zoom
 check "the first window fills the screen" eventually fills "$W1"
-check "the other app's window is out of view" eventually out_of_view "$V1"
+check "the other app's window lies behind it" eventually fails uncovered "$V1"
 check "⌃⌥\` reaches Arbor" summon_key
 # shellcheck disable=SC2086
 check "it is where it was put before" eventually is_at "$V1" $place
+check "nothing covers it" eventually uncovered "$V1"
 check "it has the keyboard" eventually is focused "$V1"
 check "the view has not moved" camera_on "$W1"
 

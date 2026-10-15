@@ -88,16 +88,19 @@ settled
 claim "⌃⌥F on the window the camera frames: its own size again, in a view that shows the Desktop"
 proves A48
 ctl dock "$W1" left
+beside=$(resting_frame_of "$W3")
 ctl zoom "$W1"
 check "framed, it fills the screen" eventually fills "$W1"
-check "the floating windows left with the Desktop" eventually out_of_view "$W3"
+# shellcheck disable=SC2086
+check "the floating windows are where they were: no view takes them away" stays is_at "$W3" $beside
 check "⌃⌥F reaches Arbor" pressed ctrl+opt+f toggle-float
 check "the window floats" eventually is floating "$W1"
 check "it has its own size again" eventually has_size "$W1" "$own_w" "$own_h"
 check "and its own place: it is where it was" eventually is_at "$W1" "$own_x" "$own_y" "$own_w" "$own_h"
 check "all of it is in view" in_view "$W1"
 check "the Desktop is in view" eventually desktop_point
-check "and the windows that float on it" eventually in_view "$W3"
+# shellcheck disable=SC2086
+check "and the windows that float on it have not moved" is_at "$W3" $beside
 settled
 
 claim "arborctl float on a docked window while another is worked in: it is where it was, in front of the window that stays docked there"
