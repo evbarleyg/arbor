@@ -559,6 +559,13 @@ public final class ChaosRunner {
         system.report(move.window, userInitiated: true)
       }
       system.setDisplays(displays)
+    case .between:
+      system.displayList = displays
+      for move in moves {
+        system.moveSilently(move.window, to: move.frame)
+        system.report(move.window, userInitiated: true)
+      }
+      system.setDisplays(displays)
     case .silent:
       for move in moves { system.moveSilently(move.window, to: move.frame) }
       system.setDisplays(displays)

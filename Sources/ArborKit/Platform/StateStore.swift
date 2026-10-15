@@ -20,7 +20,8 @@ public struct WindowHint: Codable, Equatable, Sendable {
 public struct DormantWorkspace: Codable, Equatable, Sendable {
   public var workspace: Workspace
   /// When the display went away (or, for a display missing at launch, when
-  /// Arbor noticed). Arbor discards dormant workspaces 30 days after this.
+  /// Arbor noticed). Arbor discards dormant workspaces 30 days after this. It also says which of two displays went first, so
+  /// it is a thousandth of a second later than that where it would otherwise tie (`dateToRemember`).
   public var since: Date
   /// The display's top-left corner when it went away, in the coordinates the workspace's frames are in. It may come
   /// back somewhere else, and the frames go with it. Nil if that is not known (older files, a display missing at launch).

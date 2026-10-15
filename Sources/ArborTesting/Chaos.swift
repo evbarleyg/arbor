@@ -201,8 +201,14 @@ public enum ChaosAction: Equatable, Sendable, CustomStringConvertible {
   /// display (or onto the main one if theirs is gone) in the same instant; only the order in
   /// which Arbor hears about it varies.
   public enum WindowsFollow: String, Sendable, CaseIterable {
-    /// Arbor hears about the windows first, then about the displays.
+    /// Arbor hears about the windows first, then about the displays, and macOS's own list of displays is still the old one while the
+    /// windows speak: nobody can know yet that anything is changing. Hosted Macs were recorded doing that for one window of a
+    /// change, not for all.
     case first
+    /// macOS has the new displays, the apps say where their windows are, and Arbor hears about the displays last, once they have
+    /// settled (`DisplayChange`). What hosted Macs were recorded doing for nearly every window: asked right after its
+    /// report, a second or two before the news, macOS's list was the new one already.
+    case between
     /// Arbor hears about the displays first.
     case late
     /// The windows have moved with their displays by the time Arbor hears about the displays, and no app ever says so.
