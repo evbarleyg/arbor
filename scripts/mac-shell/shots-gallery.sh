@@ -120,6 +120,9 @@ SETTINGS='{
   "animationDuration": 0.46,
   "pointerGestures": true,
   "shortcuts": "all",
+  "desktopColumn": true,
+  "dimBehindArranged": 0.25,
+  "desktopEdge": 0.05,
   "rules": [
     { "app": "com.example.mail", "title": "Inbox", "action": "dock left" },
     { "app": "com.example.player", "action": "float" }
@@ -129,6 +132,8 @@ SETTINGS='{
 
 # session <name> <windows> [settings]: Arbor as a person has it, with its shortcuts, its menu bar item and a newer release to be told about.
 session() {
+  # Nothing of the session before: an arrangement, or how often each hint has been given (three times, and not a fourth).
+  rm -f "$ARBOR_HOME/state.json"
   arbor_settings "${3:-$SETTINGS}"
   arbor_start "$2" ARBOR_NO_HOTKEYS=0 ARBOR_NO_STATUS_ITEM=0 ARBOR_PANELS_IN_PICTURES=1 \
     ARBOR_RELEASES_URL=http://127.0.0.1:8765/latest.json
@@ -532,18 +537,28 @@ tour() {
 # grounds <look>: every panel that holds words over a saturated red, a saturated blue, white and black, to be measured: words a
 # person must read to act at least 4.5 to 1, all others at least 3 (docs/POLISH.md). The Desktop is in view, so the wallpaper
 # is all there is behind them.
-grounds() {
-  local ground hex before
+# The two windows at the sides, and the Desktop's wallpaper between them.
+grounds_session() {
   session "grounds-$1" 2
   ctl dock "$W1" left
   ctl dock "$W2" right
-  # The field for a name is 380 points wide and stands over the middle: the Desktop's column has to be wider than that.
+  # The field for a name is 380 points wide and stands over the middle: what shows of the wallpaper has to be wider than that.
   ctl resize "$W1" right -80
   ctl resize "$W2" left -80
   ctl set messages helpful
+}
+
+grounds() {
+  local ground hex before
+  grounds_session "$1"
   for ground in red:ff383c blue:0088ff white:ffffff black:000000; do
     hex=${ground#*:}
     ground=${ground%:*}
+    # A hint is given three times: a fresh start for the second pair.
+    if [ "$ground" = white ]; then
+      session_over
+      grounds_session "$1"
+    fi
     claim "over $ground  ($1)"
     wallpaper "#$hex"
     ctl desktop
@@ -728,9 +743,10 @@ large() {
   claim "retina: the handle in a gap, peek's outline, the menu"
   read -r x y <<< "$(seam_right_of "$W1")"
   move "$x" "$((y - 70))"
-  closeup retina-13-handle-hovered "$((x - 60))" "$((y - 60))" 120 120
+  # The handle sits in the middle of the gap, which is as long as the column and not as the window: so the whole height of the display.
+  closeup retina-13-handle-hovered "$((x - 40))" "$dy" 80 "$dh"
   drag "$x" "$((y - 70))" "$((x + 20))" "$((y - 70))" --no-release
-  closeup retina-14-handle-dragged "$((x - 40))" "$((y - 60))" 120 120
+  closeup retina-14-handle-dragged "$((x - 20))" "$dy" 80 "$dh"
   release
   ctl zoom "$W1"
   key ctrl+opt+space --down
