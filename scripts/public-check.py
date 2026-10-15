@@ -31,6 +31,7 @@ Usage: scripts/public-check.py             what this branch adds to origin's mai
        … --text [FILE…]                    free text, from standard input without a file: read a pull request's body or a
                                            comment through this BEFORE posting it
        … --tree                            every file at HEAD, old and new: a row of `make lint`
+       … --unread [--begin] [--branch B]   which branches and tags of the public repository stand where no hook has read them (below)
        … --mask                            print findings without the words found (always so in GitHub Actions, whose
                                            logs and annotations are as public as the repository)
 
@@ -38,6 +39,14 @@ Rules that change. Agents who work to a brief kept outside the repository are de
 not reach them until they look up. So the change is enforced where the act happens. Beside the file of private words lies
 `rules-version.txt`; its first line is a number, a time, and a sentence on what changed and what to read again. The hook compares the
 number with `git config arbor.rulesRead` and refuses the push while they differ. No such file, as in a stranger's clone: not a word.
+
+Pushes nobody read. All of this guards only a clone in which `make hooks` has been said, and nothing in a push tells whether it came from one. So
+the hook leaves a note of each branch and tag it has read on its way to the public repository: a small file named after the commit and the ref, in
+the folder `pushes-read` beside the private words, which is to lie outside every clone: nothing goes into commits. Not of a push upon what stood there
+unread, which it does not read again. `--unread` asks the public repository where its branches and tags stand and names those for which there is no
+note, or tells of one with `--branch`. `--unread --begin` names them, writes them down as they stand and ends with 0: at the beginning, for what was pushed
+before there was a record, and later, with `--branch`, for what somebody has looked at. It is a way to notice, not a lock: whoever can write to
+the folder can write a note, a branch that is gone again before anybody asks is not seen, and what is called as workflows call theirs is left out.
 
 Exit code 0 when nothing was found, 1 when something was, 2 when it could not tell.
 scripts/test-public-check.py holds it to a table of situations; `make lint` runs that.
@@ -47,18 +56,20 @@ import argparse
 import bisect
 import datetime
 import fnmatch
+import hashlib
 import json
 import os
 import re
 import socket
 import subprocess
 import sys
+import urllib.parse
 import urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 # Raise it whenever the check gets stricter or a hole in it is mended. The hook has two copies to choose from, the one `make hooks` kept
 # and the one on the branch that is checked out, and lets the newer do the reading.
-VERSION = 7
+VERSION = 8
 # The first public commit. All history begins here.
 ROOT_COMMIT = "51b162d5f28c02846134c1f4a113c787f5164602"
 # Where work is integrated: what these hold on origin has been read before. In this order: see read_elsewhere.
@@ -534,6 +545,11 @@ HOLD_LASTS = datetime.timedelta(minutes=90)
 NOT_HELD = re.compile(r"(mac-shell-out|state)/")
 
 
+def address(top, url):
+    """Where a push goes, for whoever gave a remote's name."""
+    return url if "/" in url else git("remote", "get-url", "--push", url, cwd=top, check=False)[1].strip()
+
+
 def held(top, url=None, now=None):
     """Why nothing that starts checks is to be pushed just now; None when there is no such reason.
 
@@ -544,8 +560,7 @@ def held(top, url=None, now=None):
     code, words = git("config", "--get", "arbor.privateWords", cwd=top, check=False)
     if code != 0 or not words.strip():
         return None
-    if url and "/" not in url and ":" not in url:  # a remote's name
-        url = git("remote", "get-url", "--push", url, cwd=top, check=False)[1].strip()
+    url = url and address(top, url)
     if url and not UPSTREAM.search(url):
         return None
     for key in ("arbor.mayLand", "arbor.ignoreHold"):  # whoever lands has to push; the other is for a push that was asked for
@@ -596,26 +611,132 @@ def landing_problems(top, name, commit, there):
     return []
 
 
+READ = "pushes-read"
+# What workflows and GitHub's own helpers push: no hook of anybody's stands in their way.
+MADE_THERE = re.compile(r"refs/heads/(mac-shell-out/|dependabot/|state/github$)")
+# The public repository's address, and nothing that only ends like it: whoever is asked where the branches stand is taken at their word.
+ADDRESS = re.compile(r"(https://([^/@?#\\]*@)?|(ssh://)?git@)(ssh\.)?" + UPSTREAM.pattern, re.IGNORECASE)
+
+
+def record_of_pushes(top):
+    """The folder the notes lie in, beside the file of private words. None where there is no such file, as when a shared folder is not there just
+    now, and where that is inside a clone, this one or another: a commit might take the notes along."""
+    words = os.path.abspath(os.path.expanduser(git("config", "--get", "arbor.privateWords", cwd=top, check=False)[1].strip()))
+    if not os.path.isfile(words):
+        return None
+    folder = above = os.path.realpath(os.path.join(os.path.dirname(words), READ))
+    while above != os.path.dirname(above):
+        above = os.path.dirname(above)
+        if os.path.exists(os.path.join(above, ".git")):
+            return None
+    return folder
+
+
+def note(sha, ref):
+    """What the note of a push is called: nothing in it but what every file system takes, and no longer than one takes."""
+    name = f"{sha}-{urllib.parse.quote(ref.encode('utf-8', 'surrogateescape'), safe='')}"
+    return name if len(name) <= 200 else f"{name[:120]}-{hashlib.sha256(name.encode()).hexdigest()}"
+
+
+def write_down(top, how, refs):
+    """A note for each (object, ref): a file of its own, whose name says it all. The folder is shared by many machines over a network, where two that
+    add to one file at once lose each other's lines; a file that is only ever made, under a name nobody else would give it, cannot be lost so.
+    Whether all were written, or there was nowhere to write them."""
+    folder, done = record_of_pushes(top), True
+    now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    for sha, ref in refs if folder else []:
+        try:
+            os.makedirs(folder, exist_ok=True)
+            with open(os.path.join(folder, note(sha, ref)), "w", encoding="utf-8") as handle:
+                handle.write(f"{now} {how}\n")
+        except OSError:
+            done = False
+    return done
+
+
+def leave_notes(top, read):
+    """After a push that was read and let pass. `read`: what went, where to, and what stood there."""
+    folder = record_of_pushes(top)
+    # What stood there unread is not read now either: this clone has fetched it, so it counts as public already. The branch goes on being named.
+    upon = [(ref, there) for _, ref, there in read if folder and not ZERO.match(there) and not os.path.exists(os.path.join(folder, note(there, ref)))]
+    for ref, there in upon:
+        print(f"public-check: {fit_for_a_line(ref)} stood at {there[:8]}, of which no note says that a hook has read it, so there is none of this push either "
+              "(scripts/public-check.py --unread)", file=sys.stderr)
+    if not write_down(top, f"read-by-{VERSION}", [(sha, ref) for sha, ref, there in read if (ref, there) not in upon]):  # which is no reason not to push
+        print("public-check: it could not be written down that this push was read: it will be taken for one that no hook has seen", file=sys.stderr)
+
+
+def fit_for_a_line(ref):
+    return ref.replace("refs/heads/", "", 1).encode("utf-8", "surrogateescape").decode("utf-8", "replace")
+
+
+def unread_pushes(top, begin, only=None):
+    folder = record_of_pushes(top)
+    if not folder:
+        raise Unclear("there is no record of pushes to go by: it lies beside the file of private words, which is to be there and outside every clone (git config arbor.privateWords <path>)")
+    addresses = [url for name in git("remote", cwd=top).splitlines() for url in git("config", "--get-all", f"remote.{name}.url", cwd=top, check=False)[1].splitlines() if ADDRESS.match(url)]
+    if not addresses:
+        raise Unclear("no remote of this clone is the public repository")
+    try:
+        listed = subprocess.run(["git", "ls-remote", addresses[0]], cwd=top, capture_output=True, encoding="utf-8", errors="surrogateescape", timeout=60, check=False)
+    except subprocess.TimeoutExpired:
+        listed = None
+    # Not HEAD, not what a tag points at, which comes with the tag, and not what GitHub keeps of pull requests.
+    refs = [tuple(line.split("\t")) for line in listed.stdout.split("\n") if "\trefs/" in line and not line.endswith("^{}") and "\trefs/pull/" not in line] if listed and listed.returncode == 0 else []
+    if not any(ref == "refs/heads/main" for _, ref in refs):
+        raise Unclear(f"{addresses[0]} does not say where its branches stand")
+    if only:
+        refs = [(sha, ref) for sha, ref in refs if ref == f"refs/heads/{only}"]
+        if not refs:
+            raise Unclear(f"there is no branch {only} there")
+    try:
+        known = set(os.listdir(folder))
+    except FileNotFoundError:
+        if not begin:
+            raise Unclear("the record of pushes has not been begun: scripts/public-check.py --unread --begin") from None
+        known = set()
+    except OSError as error:
+        raise Unclear(f"the record of pushes cannot be read ({error.strerror})") from error
+    theirs = [ref for _, ref in refs if MADE_THERE.match(ref)]
+    unread = [(sha, ref) for sha, ref in refs if note(sha, ref) not in known and ref not in theirs]
+    for sha, ref in unread:
+        print(f"{'·' if begin else '✘'} {fit_for_a_line(ref)} stands at {sha[:8]}, and no note says that a hook has read that")
+    ours, rest = len(refs) - len(theirs), f"{len(theirs)} more are what workflows push, and are left out"
+    if begin:
+        if not write_down(top, "stood-there", unread):
+            raise Unclear("not all of that could be written down")
+        print(f"public-check: these {len(unread)} of {ours} branches and tags are written down as they stand, unread, and are not asked about again; {rest}")
+        return 0
+    if unread:
+        print(f"public-check: {len(unread)} of {ours} branches and tags stand where no hook has read them; {rest}. Such a push came past the hook (no `make hooks`, a scratch repository, "
+              "--no-verify), through a check older than version 8, from a clone that knows of no private words, upon one that was unread itself, or was made at GitHub; or its note has "
+              "not got here yet: the folder is shared over a network, so ask again in a few minutes. Read it (--base … --head …); --unread --begin --branch … then writes it off")
+    else:
+        print(f"public-check: all {ours} branches and tags stand where a hook has read them or where they were written down as they stood; {rest}")
+    return 1 if unread else 0
+
+
 def pre_push(top, lines, masked, url=None):
+    # At the one kind of space no ref can hold, a name may hold others; and from the right, what is pushed may be called `HEAD@{1 day ago}`. A line taken
+    # for something else would go unread.
+    pushed = [line.rsplit(" ", 3) for line in lines if line]
+    if any(len(fields) != 4 for fields in pushed):
+        raise Unclear("git says what is being pushed in a way this check does not know")
     unread = unread_rules(top)
     if unread:
         print(f"✘ {unread}\npublic-check: nothing was pushed.")
         return 1
     # A branch that is deleted, a tag, and a push that has nothing to send start nothing.
-    starts = [fields for fields in map(str.split, lines) if len(fields) == 4 and not ZERO.match(fields[1]) and fields[2].startswith("refs/heads/")
-              and not NOT_HELD.match(fields[2][len("refs/heads/"):])]
+    starts = [fields for fields in pushed if not ZERO.match(fields[1]) and fields[2].startswith("refs/heads/") and not NOT_HELD.match(fields[2][len("refs/heads/"):])]
     hold = held(top, url) if starts else None
     if hold:
         print(f"✘ {hold}\npublic-check: nothing was pushed.")
         return 1
-    code = 0
-    for line in lines:
-        fields = line.split()
-        if len(fields) != 4:
-            continue
-        _, sha, remote_ref, there = fields
+    code, read = 0, []
+    public = url is None or UPSTREAM.search(address(top, url))
+    for _, sha, remote_ref, there in pushed:
         # A fork's branches are its owner's business.
-        guarded = remote_ref.replace("refs/heads/", "", 1) if remote_ref.startswith("refs/heads/") and (url is None or UPSTREAM.search(url)) else None
+        guarded = remote_ref.replace("refs/heads/", "", 1) if remote_ref.startswith("refs/heads/") and public else None
         if ZERO.match(sha):  # a branch being deleted adds nothing
             if guarded in INTEGRATION:
                 code |= report(checker_for(top), landing_problems(top, guarded, None, there), [], f"branch {guarded}", masked)
@@ -632,10 +753,14 @@ def pre_push(top, lines, masked, url=None):
             findings += checker.check("branch", name, numbered=False)
             if guarded in INTEGRATION:
                 problems += landing_problems(top, guarded, commit, there)
+        if public:
+            read.append((sha, remote_ref, there))
         shown = checker.fit_to_print(kind, name) if masked else name
         code |= report(checker, problems, findings, f"{kind} {shown} ({new_commits(count)})", masked)
     if code:
         print("public-check: nothing was pushed.")
+    else:
+        leave_notes(top, read)
     return code
 
 
@@ -643,7 +768,7 @@ def main(arguments=None, cwd=None):
     parser = argparse.ArgumentParser(usage="see the top of scripts/public-check.py", add_help=False)
     for flag in ("--base", "--head", "--branch", "--tag", "--to"):
         parser.add_argument(flag)
-    for flag in ("--pre-push", "--rules", "--text", "--tree", "--mask", "--help"):
+    for flag in ("--pre-push", "--rules", "--text", "--tree", "--unread", "--begin", "--mask", "--help"):
         parser.add_argument(flag, action="store_true")
     parser.add_argument("files", nargs="*")
     options = parser.parse_args(arguments)
@@ -659,8 +784,12 @@ def main(arguments=None, cwd=None):
             unread = unread_rules(top) or held(top)
             print(f"✘ {unread}" if unread else "public-check: the rules are as this clone last read them, or there are none to read")
             return 1 if unread else 0
+        if options.unread:
+            return unread_pushes(top, options.begin, options.branch)
+        if options.begin:
+            raise Unclear("--begin goes with --unread")
         if options.pre_push:
-            return pre_push(top, sys.stdin.read().splitlines(), masked, options.to or os.environ.get("PUBLIC_CHECK_TO"))
+            return pre_push(top, sys.stdin.read().split("\n"), masked, options.to or os.environ.get("PUBLIC_CHECK_TO"))
         checker = checker_for(top) if options.text or options.tree else None
         if options.text:
             findings = []

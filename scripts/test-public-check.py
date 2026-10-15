@@ -794,7 +794,8 @@ def check_history():
                 r.git("config", "arbor.privateWords", os.path.join(os.path.dirname(r.path), "notes", "words.txt"))
             for key, value in settings.items():
                 r.git("config", f"arbor.{key}", value)
-            return {"standard_input": pushed.format(head=r.git("rev-parse", "HEAD"), none="0" * 40) + "\n" if pushed else ""}
+            lines = pushed(r) if callable(pushed) else pushed
+            return {"standard_input": lines.format(head=r.git("rev-parse", "HEAD"), none="0" * 40) + "\n" if lines else ""}
         return prepare
 
     @table.later
@@ -865,6 +866,279 @@ def check_history():
     stopped("a stranger's clone, which knows of no private words: not a word", FREE, hold(f"until {soon}{why}", words=False))
     stopped("--rules: the same question, for whoever is about to start a run on a Mac", HELD, hold(f"until {soon}{why}"), "--rules")
     stopped("--rules: nothing held", FREE, hold(f"until {past}{why}"), "--rules")
+
+    # The hook leaves a note of each branch and tag it has read, beside the private words; what stands where there is no note was pushed unread.
+    def notes(folder, **called):
+        """The notes' names, wherever under `folder` there is a folder of them, each commit called by what it is; what they say but for the time. None: no such folder."""
+        names, said = None, set()
+        for where, _, files in os.walk(folder):
+            if os.path.basename(where) == "pushes-read":
+                names = (names or []) + [os.path.join(os.path.relpath(where, folder), name).replace("notes/pushes-read/", "", 1) for name in files]
+                for name in files:
+                    with open(os.path.join(where, name), encoding="utf-8") as handle:
+                        said.add(re.sub(r"^(\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ|t) ", "when ", handle.read()))
+        for name, sha in called.items():
+            names = names and [one.replace(sha, name) for one in names]
+        return names and sorted(re.sub(r"-[0-9a-f]{64}$", "-AND-SO-ON", name) for name in names), sorted(said)
+
+    @table.later
+    def noted(what, expected, prepare, *arguments, inside=()):
+        """The exit code, the notes and what they say, what it says of them; and what lies in the clone that did not before."""
+        with tempfile.TemporaryDirectory() as folder:
+            repository = Repository(folder)
+            more = prepare(repository)
+            code, _, output = repository.run("--pre-push", *arguments, **more)
+            words = [word for word in ("could not be written down", "so there is none of this push either", "in a way this check does not know", "caf\ufffd stood at") if word in output]
+            called = {"HEAD": repository.git("rev-parse", "HEAD"), **({"THE-TAG": repository.git("rev-parse", "v9")} if repository.git("tag") else {})}
+            row(what, (code, *notes(folder, **called), words, repository.git("status", "--porcelain", "--untracked-files=all")), (*expected, "\n".join(inside)))
+    by = [f"when read-by-{check.VERSION}\n"]
+
+    def these(*names, code=0, says=by, words=()):
+        return (code, sorted(f"HEAD-refs%2F{name}" for name in names), says, list(words))
+    one, nothing, refused = these("heads%2Fx"), (0, None, [], []), (1, None, [], [])
+    noted("a push that was read: a note named after the commit and the branch, which says when and by which version", one, hold(None), "--to", HERE_URL)
+    noted("from a hook that does not say where to", one, hold(None))
+    noted("by the remote's name", one, hold(None, also=lambda r: r.git("remote", "add", "there", HERE_URL)), "--to", "there")
+    noted("by the name of a remote that is fetched from elsewhere", one,
+          hold(None, also=lambda r: (r.git("remote", "add", "there", FORK_URL), r.git("remote", "set-url", "--push", "there", HERE_URL))), "--to", "there")
+    noted("one that was refused leaves none", refused, hold(None, also=line), "--to", HERE_URL)
+    noted("two branches in one push", these("heads%2Ffix%2Fy", "heads%2Fx"), hold(None, pushed="refs/heads/x {head} refs/heads/x {none}\nrefs/heads/x {head} refs/heads/fix/y {none}"), "--to", HERE_URL)
+    noted("of two, one of which is refused, neither: nothing was pushed", refused,
+          hold(None, pushed="refs/heads/x {head} refs/heads/x {none}\nrefs/heads/x {head} refs/heads/robins-display {none}"), "--to", HERE_URL)
+    noted("a branch with nothing new in it", one, hold(None, also=lambda r: (r.git("push", "--quiet", "origin", "HEAD:refs/heads/w"), r.environment.update(PUBLIC_CHECK_REMOTE="origin"))), "--to", HERE_URL)
+    noted("a branch that is deleted: not even the folder", nothing, hold(None, pushed="(delete) {none} refs/heads/x {head}"), "--to", HERE_URL)
+    noted("a tag", these("tags%2Fv9"), hold(None, pushed="refs/tags/v9 {head} refs/tags/v9 {none}", also=lambda r: r.git("tag", "v9")), "--to", HERE_URL)
+    noted("a tag with words of its own goes by its own name, as the public repository will give it", (0, ["THE-TAG-refs%2Ftags%2Fv9"], by, []),
+          hold(None, also=lambda r: r.git("tag", "--annotate", "--message", "nine", "v9"),
+               pushed=lambda r: f"refs/tags/v9 {r.git('rev-parse', 'v9')} refs/tags/v9 {{none}}"), "--to", HERE_URL)
+    noted("a push to a fork", nothing, hold(None), "--to", FORK_URL)
+    noted("to a fork, by the remote's name", nothing, hold(None, also=lambda r: r.git("remote", "add", "mine", FORK_URL)), "--to", "mine")
+    noted("where there are no private words there are no notes either", nothing, hold(None, words=False), "--to", HERE_URL)
+    noted("beside what is there already", (0, ["0123-refs%2Fheads%2Fw", "HEAD-refs%2Fheads%2Fx"], sorted(["when stood-there\n", *by]), []),
+          hold(None, also=lambda r: r.write("../notes/pushes-read/0123-refs%2Fheads%2Fw", "2026-01-02T03:04:05Z stood-there\n")), "--to", HERE_URL)
+    noted("the same push once more: the same note", one, hold(None, also=lambda r: r.write(f"../notes/pushes-read/{r.git('rev-parse', 'HEAD')}-refs%2Fheads%2Fx", "")), "--to", HERE_URL)
+    noted("where it cannot be written down the push goes all the same, and a word is said", (0, None, [], ["could not be written down"]),
+          hold(None, also=lambda r: r.write("../notes/pushes-read", "")), "--to", HERE_URL)
+    noted("where one of two cannot be written down the other is", (0, ["HEAD-refs%2Fheads%2Fy"], by, ["could not be written down"]),
+          hold(None, pushed="refs/heads/x {head} refs/heads/x {none}\nrefs/heads/x {head} refs/heads/y {none}",
+               also=lambda r: os.makedirs(os.path.join(os.path.dirname(r.path), "notes", "pushes-read", r.git("rev-parse", "HEAD") + "-refs%2Fheads%2Fx"))), "--to", HERE_URL)
+    upon = "refs/heads/x {head} refs/heads/x " + "1" * 40
+    noted("upon what a hook has read", (0, sorted(["1" * 40 + "-refs%2Fheads%2Fx", "HEAD-refs%2Fheads%2Fx"]), sorted(["", *by]), []),
+          hold(None, pushed=upon, also=lambda r: r.write("../notes/pushes-read/" + "1" * 40 + "-refs%2Fheads%2Fx", "")), "--to", HERE_URL)
+    noted("upon what stood there unread, which is not read now either: no note, and it says so", (0, ["1" * 40 + "-refs%2Fheads%2Fy"], [""], ["so there is none of this push either"]),
+          hold(None, pushed=upon, also=lambda r: r.write("../notes/pushes-read/" + "1" * 40 + "-refs%2Fheads%2Fy", "")), "--to", HERE_URL)
+    noted("of two, one of which goes upon what is unread, the other has its note", (0, ["HEAD-refs%2Fheads%2Fy"], by, ["so there is none of this push either"]),
+          hold(None, pushed=upon + "\nrefs/heads/x {head} refs/heads/y {none}"), "--to", HERE_URL)
+    long = "a" * 200
+    noted("a name too long for a file's: as much of it as goes, and the rest told apart; those after it have their notes", these(f"heads%2F{long}"[:72] + "-AND-SO-ON", f"heads%2F{long}"[:72] + "-AND-SO-ON", "heads%2Fz"),
+          hold(None, pushed=f"refs/heads/x {{head}} refs/heads/{long}b {{none}}\nrefs/heads/x {{head}} refs/heads/{long}c {{none}}\nrefs/heads/x {{head}} refs/heads/z {{none}}"), "--to", HERE_URL)
+    for what, name, quoted in (("a space of another kind", "a\u00a0b", "a%C2%A0b"), ("what some take for the end of a line", "a\u2028b", "a%E2%80%A8b"), ("bytes that are no letters", "caf\udce9", "caf%E9"),
+                               ("a sign that stands for another", "a%2Fb", "a%252Fb")):
+        noted(f"a name that holds {what}", these(f"heads%2F{quoted}"), hold(None, pushed=f"refs/heads/x {{head}} refs/heads/{name} {{none}}"), "--to", HERE_URL)
+        noted(f"a name that holds {what}: it is read like any other", refused, hold(None, also=line, pushed=f"refs/heads/x {{head}} refs/heads/{name} {{none}}"), "--to", HERE_URL)
+    noted("and such a name can be said", (0, None, [], ["so there is none of this push either", "caf\ufffd stood at"]), hold(None, pushed="refs/heads/x {head} refs/heads/caf\udce9 " + "1" * 40), "--to", HERE_URL)
+    noted("what is pushed is called by words with spaces between them", one, hold(None, pushed="HEAD@{{1 day ago}} {head} refs/heads/x {none}"), "--to", HERE_URL)
+    noted("and is read like anything else", refused, hold(None, also=line, pushed="HEAD@{{1 day ago}} {head} refs/heads/x {none}"), "--to", HERE_URL)
+    noted("a line that is not as git writes them: it cannot tell", (2, None, [], ["in a way this check does not know"]), hold(None, pushed="refs/heads/x {head} refs/heads/x"), "--to", HERE_URL)
+
+    def words_at(path, also=None):
+        def more(r):
+            r.environment["HOME"] = os.path.dirname(r.path)
+            r.git("config", "arbor.privateWords", path(r))
+            r.write(path(r).replace("~", r.environment["HOME"]), "quux7\n")
+            if also:
+                also(r)
+        return hold(None, words=False, also=more)
+    noted("the private words by a path from the home folder", one, words_at(lambda r: "~/notes/words.txt"), "--to", HERE_URL)
+    noted("private words that lie in the clone itself: no notes, which a commit might take along", nothing, words_at(lambda r: os.path.join(r.path, "notes", "words.txt")),
+          "--to", HERE_URL, inside=["?? notes/words.txt"])
+    noted("or deep in another clone", nothing, words_at(lambda r: os.path.join(os.path.dirname(r.path), "other", "a", "b", "words.txt"), also=lambda r: r.write("../other/.git", "gitdir: elsewhere\n")), "--to", HERE_URL)
+    noted("or outside, with a link into the clone where the notes would go", nothing,
+          words_at(lambda r: "~/notes/words.txt", also=lambda r: (os.makedirs(os.path.join(r.path, "kept")), os.symlink(os.path.join(r.path, "kept"), os.path.join(os.path.dirname(r.path), "notes", "pushes-read")))),
+          "--to", HERE_URL)
+
+    @table.later
+    def asked(what, expected, prepare=None, record=(), words=True, public=True, swap=None, flags=("--unread",)):
+        """The exit code, what is named and how, the numbers it gives, a word of the reason where it cannot tell, and the notes afterwards and what they say."""
+        with tempfile.TemporaryDirectory() as folder:
+            r = Repository(folder)
+            clean(r)
+            for name in ("fix/read", "fix/unread", "mac-shell-out/a.b", "state/github", "dependabot/x"):
+                r.git("push", "--quiet", "origin", f"HEAD:refs/heads/{name}")
+            r.commit("fix: one more")
+            r.git("push", "--quiet", "origin", "HEAD:refs/heads/fix/unread")
+            subprocess.run(["git", "symbolic-ref", "HEAD", "refs/heads/main"], cwd=r.origin, check=True, env=r.environment)  # as at GitHub: it is listed too
+            called = {"first": r.git("rev-parse", "HEAD~1"), "second": r.git("rev-parse", "HEAD"), "main": r.git("rev-parse", "origin/main")}
+            if public:
+                r.git("config", f"url.{r.origin}.insteadOf", HERE_URL)
+                r.git("remote", "set-url", "origin", HERE_URL)
+            r.write("../notes/words.txt", "quux7\n")
+            if words:
+                r.git("config", "arbor.privateWords", os.path.join(folder, "notes", "words.txt"))
+            if record is not None:
+                os.makedirs(os.path.join(folder, "notes", "pushes-read"))
+            for name in record or ():
+                r.write("../notes/pushes-read/" + name.format(**called), "t read-by-8\n")
+            called.update(prepare(r) or {} if prepare else {})
+            saved = swap and getattr(swap[0], swap[1])
+            try:
+                if swap:
+                    setattr(*swap)
+                code, _, output = r.run(*flags)
+            finally:  # where the situations are played one after the other, the next is to find things as they were
+                if swap:
+                    setattr(swap[0], swap[1], saved)
+            for name, sha in called.items():
+                output = output.replace(sha[:8], name)
+            why = [word for word in ("no record of pushes", "not been begun", "cannot be read", "no remote of this clone", "does not say where", "could be written", "goes with", "there is no branch")
+                   if word in output]
+            numbers = re.findall(r"public-check: (?:these |all )?(\d+)(?: of (\d+))? branches and tags.*?; (\d+) more are what workflows push", output)
+            row(what, (code, re.findall(r"^([✘·]) (\S+) stands at (\w+)", output, re.MULTILINE), numbers, why, *notes(folder, **called)), expected)
+    stood = ["{main}-refs%2Fheads%2Fmain", "{first}-refs%2Fheads%2Ffix%2Fread"]
+    kept = ["first-refs%2Fheads%2Ffix%2Fread", "main-refs%2Fheads%2Fmain"]
+    this, its_note, read_by = [("✘", "fix/unread", "second")], "{second}-refs%2Fheads%2Ffix%2Funread", ["when read-by-8\n"]
+
+    def unread(*more, named=this, of=3, left=3, says=read_by):
+        names = sorted(kept + [one.format(first="first", second="second", main="main") for one in more])
+        return (1 if named else 0, list(named), [(str(len(named)), str(of), str(left)) if named else (str(of), "", str(left))], [], names, says)
+
+    def cannot(why, after=(), says=()):
+        return (2, [], [], [why], after if after is None else sorted(after), list(says))
+    asked("--unread: a branch for which there is no note; what workflows push is left out, wherever it stands, and counted", unread(), record=stood)
+    for what, more in (("an earlier push of that branch was read, this one was not", "{first}-refs%2Fheads%2Ffix%2Funread"),
+                       ("that commit was read on its way to another branch, whose name was read with it; this name was not", "{second}-refs%2Fheads%2Felsewhere"),
+                       ("a branch whose name begins alike", "{second}-refs%2Fheads%2Ffix%2Funread-2"), ("or ends alike", "{second}-refs%2Fheads%2Fa%2Ffix%2Funread"),
+                       ("a tag of that name", "{second}-refs%2Ftags%2Ffix%2Funread"), ("a note cut short", "{second}-refs%2Fheads%2Ffix%2Funrea"), ("a note without the branch", "{second}"),
+                       ("with the name as it stands, which no note has", "{second}-fix-unread"), ("something else altogether", ".DS_Store")):
+        asked(f"--unread: {what}", unread(more), record=stood + [more])
+    asked("--unread: all read", unread(its_note, named=[]), record=stood + [its_note])
+
+    def hook(line, really=None):
+        def prepare(r):
+            made = really(r) if really else {}
+            r.run("--pre-push", "--to", HERE_URL, standard_input=line.format(head=r.git("rev-parse", "HEAD"), before=r.git("rev-parse", "HEAD~1"), none="0" * 40, **(made or {})) + "\n")
+            return made
+        return prepare
+    asked("--unread: what the hook wrote is what is asked after", unread(its_note, named=[]), record=stood, prepare=hook("HEAD {head} refs/heads/fix/unread {none}"))
+
+    def one_more(r):
+        third = r.commit("fix: and one upon that")
+        r.git("fetch", "--quiet", "origin")
+        r.git("push", "--quiet", "origin", "HEAD:refs/heads/fix/unread")
+        return {"third": third}
+    asked("--unread: a push that was read, upon one that was not, does not hide it", unread(named=[("✘", "fix/unread", "third")]), record=stood,
+          prepare=hook("HEAD {head} refs/heads/fix/unread {before}", really=one_more))
+    asked("--unread: no notes at all: nothing has been read", (1, [("✘", "fix/read", "first"), ("✘", "fix/unread", "second"), ("✘", "main", "main")], [("3", "3", "3")], [], [], []))
+
+    def look_alikes(r):
+        for name in ("state/github-2", "state/other", "x/mac-shell-out/y", "mac-shell-outer", "dependabots", "x/refs/heads/dependabot/y"):
+            r.git("push", "--quiet", "origin", f"HEAD~1:refs/heads/{name}")
+    asked("--unread: what only looks like what workflows push", record=stood, prepare=look_alikes,
+          expected=unread(of=9, named=[("✘", "dependabots", "first"), *this, ("✘", "mac-shell-outer", "first"), ("✘", "state/github-2", "first"), ("✘", "state/other", "first"),
+                                       ("✘", "x/mac-shell-out/y", "first"), ("✘", "x/refs/heads/dependabot/y", "first")]))
+
+    def tagged(*how):
+        def prepare(r):
+            r.git("tag", *how, "v9")
+            r.git("push", "--quiet", "origin", "v9")
+            return {"tag": r.git("rev-parse", "v9")}
+        return prepare
+    annotated = ("--annotate", "--message", "nine")
+    asked("--unread: a tag is asked after like a branch", unread(of=4, named=[*this, ("✘", "refs/tags/v9", "second")]), record=stood, prepare=tagged())
+    asked("--unread: a tag with words of its own: once, by its own name", unread(of=4, named=[*this, ("✘", "refs/tags/v9", "tag")]), record=stood, prepare=tagged(*annotated))
+    asked("--unread: and what the hook wrote of it is what is asked after", unread("tag-refs%2Ftags%2Fv9", of=4), record=stood, prepare=hook("refs/tags/v9 {tag} refs/tags/v9 {none}", really=tagged(*annotated)))
+    asked("--unread: whatever else lies there, but for what GitHub keeps of pull requests", unread(of=4, named=[*this, ("✘", "refs/notes/x", "first")]), record=stood,
+          prepare=lambda r: r.git("push", "--quiet", "origin", "HEAD~1:refs/notes/x", "HEAD:refs/pull/7/head", "HEAD:refs/pull/7/merge"))
+    same = "b" * 200
+    asked("--unread: of two names too long for a file's that begin alike, one was read", unread("first-refs%2Fheads%2F" + same[:64] + "-AND-SO-ON", of=5, named=[(this[0][0], same + "d", "first"), *this]), record=stood,
+          prepare=hook(f"HEAD {{before}} refs/heads/{same}c {{none}}", really=lambda r: r.git("push", "--quiet", "origin", f"HEAD~1:refs/heads/{same}c", f"HEAD~1:refs/heads/{same}d") and None))
+
+    def others(r):
+        for name, path, address in (("a-fork", "fork.git", None), ("a-mirror", "x/github.com/evbarleyg/arbor", None), ("a-trick", "trick.git", "https://evil.net/?" + HERE_URL), ("z-fork", "last.git", None)):
+            there = os.path.join(os.path.dirname(r.path), path)
+            subprocess.run(["git", "init", "--quiet", "--bare", there], check=True, env=r.environment)
+            if address:
+                r.git("config", f"url.{there}.insteadOf", address)
+            r.git("remote", "add", name, address or there)
+            r.git("push", "--quiet", name, "HEAD~2:refs/heads/main")
+    asked("--unread: of several remotes the public one is asked, not one before it, after it, or whose address only ends like its own", unread(), record=stood, prepare=others)
+
+    def two_addresses(*order):
+        def prepare(r):
+            others(r)
+            r.git("config", "--unset-all", "remote.origin.url")
+            for address in order:
+                r.git("config", "--add", "remote.origin.url", address or os.path.join(os.path.dirname(r.path), "fork.git"))
+        return prepare
+    asked("--unread: of a remote's two addresses likewise", unread(), record=stood, prepare=two_addresses(None, HERE_URL))
+    asked("--unread: in either order", unread(), record=stood, prepare=two_addresses(HERE_URL, None))
+    asked("--unread: no folder of notes yet: it cannot tell, and says how one is begun", cannot("not been begun", None), record=None)
+    asked("--unread: something else lies where the folder should: it cannot tell", cannot("cannot be read", None), record=None, prepare=lambda r: r.write("../notes/pushes-read", ""))
+    asked("--unread: no private words: it cannot tell", cannot("no record of pushes"), words=False)
+    asked("--unread: private words in the clone itself: it cannot tell", cannot("no record of pushes"),
+          prepare=lambda r: (r.write("words.txt", "quux7\n"), r.git("config", "arbor.privateWords", os.path.join(r.path, "words.txt"))) and None)
+    away = lambda r: r.git("config", "arbor.privateWords", os.path.join(os.path.dirname(r.path), "shared", "deep", "words.txt")) and None
+    asked("--unread: the folder the private words lie in is not there just now: that is not a record yet to be begun", cannot("no record of pushes"), prepare=away)
+    asked("--unread --begin: nor is one begun where it would be", cannot("no record of pushes"), prepare=away, flags=("--unread", "--begin"))
+    asked("--unread: no remote is the public repository: it cannot tell", cannot("no remote of this clone"), public=False)
+    asked("--unread: the public repository does not answer: it cannot tell", cannot("does not say where", kept, read_by), record=stood, prepare=lambda r: shutil.rmtree(r.origin))
+    asked("--unread: it answers without a main, so with something else: it cannot tell", cannot("does not say where", kept, read_by), record=stood,
+          prepare=lambda r: subprocess.run(["git", "update-ref", "-d", "refs/heads/main"], cwd=r.origin, check=True, env=r.environment) and None)
+    really = subprocess.run
+
+    def never_answers(command, *arguments, **more):
+        if command[:2] == ["git", "ls-remote"]:
+            raise subprocess.TimeoutExpired(command, more["timeout"])
+        return really(command, *arguments, **more)
+
+    def breaks_off(command, *arguments, **more):
+        done = really(command, *arguments, **more)
+        if command[:2] == ["git", "ls-remote"]:
+            done.returncode, done.stdout = 128, "\n".join(line for line in done.stdout.split("\n") if "unread" not in line)
+        return done
+    asked("--unread: it never answers: it cannot tell, after a while", cannot("does not say where", kept, read_by), record=stood, swap=(subprocess, "run", never_answers))
+    asked("--unread: it breaks off in the middle of its answer: it cannot tell", cannot("does not say where", kept, read_by), record=stood, swap=(subprocess, "run", breaks_off))
+    asked("--unread --branch: one that was read", (0, [], [("1", "", "0")], [], kept, read_by), record=stood, flags=("--unread", "--branch", "fix/read"))
+    asked("--unread --branch: one that was not", (1, this, [("1", "1", "0")], [], kept, read_by), record=stood, flags=("--unread", "--branch", "fix/unread"))
+    asked("--unread --branch: one that is not there: it cannot tell", cannot("there is no branch", kept, read_by), record=stood, flags=("--unread", "--branch", "fix/un"))
+    everything, begin = [("·", "fix/read", "first"), ("·", "fix/unread", "second"), ("·", "main", "main")], ("--unread", "--begin")
+    asked("--unread --begin: each is named, and written down as it stands, but for what workflows push", (0, everything, [("3", "3", "3")], [], sorted(kept + ["second-refs%2Fheads%2Ffix%2Funread"]), ["when stood-there\n"]),
+          record=None, flags=begin)
+    asked("--unread --begin once more names and adds only what is new", (0, [("·", "fix/unread", "second")], [("1", "3", "3")], [], sorted(kept + ["second-refs%2Fheads%2Ffix%2Funread"]), sorted(read_by + ["when stood-there\n"])),
+          record=stood, flags=begin)
+    asked("--unread --begin --branch: that one, and not what came meanwhile", (0, [("·", "fix/unread", "second")], [("1", "1", "0")], [], ["main-refs%2Fheads%2Fmain", "second-refs%2Fheads%2Ffix%2Funread"], sorted(read_by + ["when stood-there\n"])),
+          record=stood[:1], flags=(*begin, "--branch", "fix/unread"))
+
+    def no_room(*_, **__):
+        raise OSError(28, "No space left on device")
+    asked("--unread --begin where nothing can be written: it says so", (2, everything, [], ["could be written"], None, []), record=None, flags=begin, swap=(os, "makedirs", no_room))
+    asked("--begin alone", cannot("goes with"), flags=("--begin",))
+
+    @table.later
+    def the_whole_way():
+        """git, the hook as `make hooks` puts it in, the check, the note, the question."""
+        with tempfile.TemporaryDirectory() as folder:
+            r = Repository(folder)
+            # What git tells the hook of where a push goes is the address after its own rewriting: one that ends as the public one does.
+            there = os.path.join(folder, "github.com", "evbarleyg", "arbor.git")
+            os.makedirs(os.path.dirname(there))
+            shutil.move(r.origin, there)
+            r.git("config", f"url.{there}.insteadOf", HERE_URL)
+            r.git("remote", "set-url", "origin", HERE_URL)
+            r.write("../notes/words.txt", "quux7\n")
+            r.git("config", "arbor.privateWords", os.path.join(folder, "notes", "words.txt"))
+            subprocess.run([os.path.join(HERE, "git-hooks", "install.sh")], cwd=r.path, env=r.environment, capture_output=True, check=False)
+            # The copy that was kept knows the real first commit. A newer one in the working tree does the reading: this one, which is told of this repository's.
+            with open(os.path.join(HERE, "public-check.py"), encoding="utf-8") as handle:
+                r.write("scripts/public-check.py", re.sub(r'(?m)^ROOT_COMMIT = .*', f'ROOT_COMMIT = "{r.root}"', re.sub(r"(?m)^VERSION = .*", f"VERSION = {check.VERSION + 1}", handle.read())))
+            shutil.copy(os.path.join(HERE, "public-check.allow"), os.path.join(r.path, "scripts"))
+            got = []
+            for flags in ([], ["--no-verify"], []):
+                r.git("commit", "--quiet", "--allow-empty", "--message", "fix: something")
+                pushed = subprocess.run(["git", "push", "--quiet", *flags, "origin", "fix/something"], cwd=r.path, env=r.environment, capture_output=True, text=True, check=False)
+                got.append((pushed.returncode, "so there is none of this push either" in pushed.stderr, r.run("--unread", "--branch", "fix/something")[0]))
+            row("the whole way: a push through the hook, one past it, and one through it upon that", (got, notes(folder)[1]), ([(0, False, 0), (0, False, 1), (0, True, 1)], [f"when read-by-{check.VERSION + 1}\n"]))
+    the_whole_way()
 
     situation("--text: what somebody is about to post", (1, ["person", "session"]),
               lambda r: {"standard_input": "It failed on his Mac.\n\nhttps://claude.ai/code/session_01AbCdEfGhIjKlMnOpQrStUv\n"}, "--text")
@@ -1098,7 +1372,7 @@ def main():
         except (Exception, SystemExit) as error:  # a git that behaves otherwise, say: that is one row red, and the other parts still have their say
             place = traceback.extract_tb(error.__traceback__)
             row(f"{part.__name__} gets to its end", f"line {[frame.lineno for frame in place if frame.name == part.__name__][-1]}: {type(error).__name__}: {error}", "it does")
-    wrong, rows = 0, table.finish(exactly=352)
+    wrong, rows = 0, table.finish(exactly=433)
     for what, got, expected in rows:
         if got != expected:
             wrong += 1

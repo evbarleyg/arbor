@@ -64,6 +64,17 @@ hold too: ask it before starting a run on a Mac.
 `scripts/make-way.py --for <branch> --until "main is <commit>"` writes the hold, cancels what stands in the way of that branch's checks and
 writes down what it cancelled; `--back` starts the Mac shell runs among them again and takes the hold away.
 
+All of this guards only a clone in which `make hooks` has been said, and nothing in a push tells whether it came from one. So the hook **leaves
+a note of each branch and tag it has read** on its way here: a small file named after the commit and the ref, in the folder `pushes-read` beside the
+private words, which is to lie outside every clone. Nothing goes into commits. `scripts/public-check.py --unread` asks the public repository where
+its branches and tags stand, by git and not through the API, and names those for which there is no note. Such a push came past the hook (no
+`make hooks`, a scratch repository, `--no-verify`), through a check from before there were notes, from a clone that knows of no private words,
+upon a push that was unread itself (the hook does not read that again, and says so), or was made at GitHub; or its note has not got there yet, the
+folder being shared over a network. `--unread --begin` names them and writes them down as they stand: once at the beginning, and later, with
+`--branch`, for what somebody has looked at. What is called as workflows call theirs (the output of Mac shell runs, `state/github`, Dependabot's
+branches) is left out, and counted. It is a way to notice, not a lock: whoever can write to the folder can write a note, and a branch that is
+gone again before anybody asks is not seen.
+
 ## The clone itself
 
 A clone is not always what it seems. A machine that is handed a prepared or cached copy, or a folder in use since before the
