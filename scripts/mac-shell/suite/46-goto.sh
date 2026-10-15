@@ -103,7 +103,7 @@ check "in the middle, a quarter of the way down" palette_in_its_place
 check "the app in front stays in front" front_is "$ARBOR_WINDOWS_PID"
 check "its window is still the focused window" is focused "$W1"
 tall=$(palette_height)
-types l e d
+types l e d g e r
 check "the list shrinks to what the letters match" eventually palette_is_lower_than "$tall"
 check "the palette's top stays where it was" palette_in_its_place
 check "the window saw none of the letters" received "$W1" key -eq "$keys"
