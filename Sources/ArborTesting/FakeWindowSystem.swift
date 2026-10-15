@@ -180,6 +180,8 @@ public final class FakeWindowSystem: WindowSystem {
   /// macOS, where the report follows a moment after the request and other reports can overtake it.
   public var restoresLate = false
   var lateRestores: [WindowID] = []
+  /// Those of them whose app shows again.
+  var shownLate: Set<WindowID> = []
 
   /// One `setFrame`, with where the window was before, so tests can tell moves that changed nothing.
   public struct Move: Equatable {
@@ -442,9 +444,11 @@ public final class FakeWindowSystem: WindowSystem {
       windows[id]!.snapshot.isHidden = hidden
       if restoresLate, !hidden {
         lateRestores.append(id)
+        shownLate.insert(id)
         continue
       }
-      events?.windowChanged(windows[id]!.snapshot, userInitiated: true)
+      // Like the Accessibility layer: an app that hides or shows has moved nothing, so nobody's hand is in it.
+      events?.windowChanged(windows[id]!.snapshot, userInitiated: false)
     }
     // Another app comes forward, which is reported as its focused window taking the keyboard.
     if hidden, echoes.keyboard, let holder = focused, windows[holder]?.snapshot.pid == pid {
@@ -478,7 +482,8 @@ public final class FakeWindowSystem: WindowSystem {
     unlisted[window]?.snapshot.title = title
     guard windows[window] != nil else { return }
     windows[window]!.snapshot.title = title
-    events?.windowChanged(windows[window]!.snapshot, userInitiated: true)
+    // Like the Accessibility layer: terminals and browsers change titles all the time, and nobody moved anything.
+    events?.windowChanged(windows[window]!.snapshot, userInitiated: false)
   }
 
   /// The user clicks a window or switches to it.

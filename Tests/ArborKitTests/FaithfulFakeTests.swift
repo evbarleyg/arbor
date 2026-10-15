@@ -89,8 +89,27 @@ private final class Recorder: WindowSystemEvents {
   @Test func hidingTheAppInFrontReportsItsWindowsThenTheAppThatComesForward() {
     let (system, recorder, a, b, c) = make()
     system.setHidden(pid: 1, true)
-    #expect(recorder.log == ["changed \(a) by hand hidden", "changed \(b) by hand hidden", "focused \(c)"])
+    #expect(recorder.log == ["changed \(a) echo hidden", "changed \(b) echo hidden", "focused \(c)"], "nobody moved anything")
     #expect(system.focused == c)
+    recorder.log.removeAll()
+    system.setHidden(pid: 1, false)
+    #expect(recorder.log == ["changed \(a) echo", "changed \(b) echo"])
+  }
+
+  /// What the Accessibility layer calls somebody's doing: a move, a resize, a window into the Dock or out of it. Not a title, which
+  /// terminals and browsers change all the time, nor an app that hides or shows, however late it says so.
+  @Test func aNewTitleAndAnAppThatShowsAgainAreNobodysDoing() {
+    let (system, recorder, a, b, _) = make()
+    system.setTitle(a, "another")
+    #expect(recorder.log == ["changed \(a) echo"])
+    system.setHidden(pid: 1, true)
+    system.setMinimized(b, true)
+    system.restoresLate = true
+    system.setHidden(pid: 1, false)
+    system.setMinimized(b, false)
+    recorder.log.removeAll()
+    system.finishRestoring()
+    #expect(recorder.log == ["changed \(a) echo", "changed \(b) echo", "changed \(b) by hand"], "shown, shown, and out of the Dock")
   }
 
   @Test func arborsOwnCallsAreAnsweredAfterTheyReturn() {

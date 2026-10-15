@@ -2075,9 +2075,9 @@
    "kind": "extra-report",
    "layer": "at the seam",
    "expected": "A change marked as somebody's own doing means that somebody moved or resized the window. The stand-in reports a new title, and an app hidden or shown, as such a change (`userInitiated: true`).",
-   "happened": "Terminals and browsers change titles all the time, and Terminal renames itself with every resize, before the resize is reported. When the traces were recorded the real layer read the whole window at a new title and reported it as somebody's doing: with the same frame, or for Terminal with the new frame, ahead of the echo of Arbor's own call. Today the real layer reads the title alone and reports it with `userInitiated: false`, as it does for an app hidden or shown. `FakeWindowSystem.setTitle` and `setHidden` still say true, so the fake disagrees with the real layer, and so do the traces. The first comparison of a hosted Mac with a rehearsal showed it at once: every window of an app that hides or shows again is nobody's doing on the Mac and the person's in the rehearsal.",
+   "happened": "Terminals and browsers change titles all the time, and Terminal renames itself with every resize, before the resize is reported. When the traces were recorded the real layer read the whole window at a new title and reported it as somebody's doing: with the same frame, or for Terminal with the new frame, ahead of the echo of Arbor's own call. Today the real layer reads the title alone and reports it with `userInitiated: false`, as it does for an app hidden or shown. `FakeWindowSystem.setTitle` and `setHidden` went on saying true, so the fake disagreed with the real layer, as the older traces still do: they stay as they were recorded. The first comparison of a hosted Mac with a rehearsal showed it at once: every window of an app that hides or shows again is nobody's doing on the Mac and the person's in the rehearsal. When the stand-in was made to say what the real layer says, one test of 5,810 fell, which pinned the words; no fault of Arbor's showed.",
    "found": "The traces title-change, terminal-commands and terminal-edge from a hosted Mac, then reading the real layer and the stand-in side by side.",
-   "modelled": "partly",
+   "modelled": "yes",
    "knobs": [
     "FakeWindowSystem.setTitle",
     "TraceReplayer",
@@ -2085,6 +2085,8 @@
    ],
    "guards": [
     "test: aTitleChangeIsNotAMove",
+    "test: aNewTitleAndAnAppThatShowsAgainAreNobodysDoing",
+    "test: hidingTheAppInFrontReportsItsWindowsThenTheAppThatComesForward",
     "test: everyCommittedTraceReplays",
     "trace: title-change.jsonl",
     "trace: terminal-commands.jsonl",
