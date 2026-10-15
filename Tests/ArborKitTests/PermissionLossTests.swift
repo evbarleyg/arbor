@@ -60,7 +60,7 @@ import Testing
     let row = try #require(session.model.row(.accessibility))
     #expect(row.state == .required)
     #expect(row.detail.hasPrefix("3 windows are out of view, not closed. Grant the permission again to get them back."))
-    #expect(h.controller.menuModel().item("Check Setup…") != nil)
+    #expect(h.controller.menuModel().sections.first?.items.first?.command == .checkSetup, "Help ▸ has one on any day")
     h.grantAccessibility()
     h.scheduler.advance(by: 3)
     session.refresh()
@@ -345,7 +345,7 @@ import Testing
     // Its item is in the menu bar, so its keys are its own: ClaimedKeysTests.
     #expect(h.controller.activeBindings == h.controller.effectiveBindings.bindings)
     #expect(h.run("status").message.hasPrefix("waiting for Accessibility permission"))
-    #expect(h.controller.menuModel().sections.first?.items.map(\.title) == ["Arbor needs Accessibility permission", "Check Setup…"])
+    #expect(h.controller.menuModel().sections.first?.items.map(\.title) == ["Arbor needs Accessibility permission · Check Setup…"])
     #expect(h.controller.quitTitle == "Quit Arbor")
     let refused = h.run("show-all")
     #expect(!refused.ok && refused.message.hasPrefix("waiting for Accessibility permission"), "\(refused.message)")
@@ -419,7 +419,7 @@ import Testing
     for title in ["Safari 101", "Mail 102", "Slack 104"] { #expect(!sentence.contains(title)) }
     #expect(
       h.controller.permissionMenuLines == [
-        "Arbor’s Accessibility permission was taken away, so it cannot move windows",
+        "Arbor’s Accessibility permission was taken away",
         "3 windows (Mail, Safari and Slack) are out of view",
         "They come back as soon as you grant it again",
       ])
@@ -434,10 +434,9 @@ import Testing
     #expect(
       h.controller.menuModel().sections.map { $0.items.map(\.title) } == [
         [
-          "Arbor’s Accessibility permission was taken away, so it cannot move windows",
+          "Arbor’s Accessibility permission was taken away · Check Setup…",
           "3 windows (Mail, Safari and Slack) are out of view",
           "They come back as soon as you grant it again",
-          "Check Setup…",
         ],
         ["Settings…", "Help"],
         ["Quit Arbor (3 windows stay out of view)"],
@@ -466,7 +465,9 @@ import Testing
       h.run("arrange").message
         == "Arbor's Accessibility permission was taken away, so it cannot move windows. Grant it again under "
         + "System Settings → Privacy & Security → Accessibility")
-    #expect(h.controller.permissionMenuLines == ["Arbor’s Accessibility permission was taken away, so it cannot move windows"])
+    #expect(h.controller.permissionMenuLines == ["Arbor’s Accessibility permission was taken away"])
+    #expect(
+      h.controller.menuModel().sections.first?.items.map(\.title) == ["Arbor’s Accessibility permission was taken away · Check Setup…"])
     #expect(h.controller.quitTitle == "Quit Arbor")
   }
 
@@ -659,12 +660,13 @@ import Testing
     expectWindowsMatchLayout(h, on: h.display)
   }
 
+  /// The menu has it as far as the comma: its row goes on with the way out, and the lines under it say what the rest would.
   @Test func theFirstSentenceIsTheSameInRepliesAndInTheMenu() {
     let (h, _, _, _, _) = makeHarness()
     h.revokeAccessibility()
     let first = h.run("home").message.components(separatedBy: ". ")[0]
     #expect(h.run("status").message.hasPrefix(first + ". "))
-    #expect(h.controller.permissionMenuLines[0].replacingOccurrences(of: "’", with: "'") == first)
+    #expect(h.controller.permissionMenuLines[0].replacingOccurrences(of: "’", with: "'") == first.components(separatedBy: ", ")[0])
   }
 
   @Test func theWaysHomeLeadToTheSettingsAtMostOnceInTenSeconds() {

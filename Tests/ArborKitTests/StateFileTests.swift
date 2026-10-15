@@ -388,7 +388,7 @@ import Testing
     h.run("pause")
     #expect(
       h.controller.menuModel().sections.first?.items.map(\.title)
-        == ["Arbor is paused: it leaves windows and shortcuts alone", "Resume", news])
+        == ["Arbor is paused · Resume", news])
   }
 
   @Test func afterARescueTheNextLaunchSaysWhereTheArrangementWent() throws {

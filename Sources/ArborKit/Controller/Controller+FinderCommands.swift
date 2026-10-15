@@ -28,7 +28,7 @@ extension Controller {
     var names = Set<String>()
     var texts = Set<String>()
     func add(_ command: Command, name: String, shortcut: String?, isOn: Bool, isAvailable: Bool) {
-      // A command the menu has under two names ("Release", "Hold Still") is found by either.
+      // A command the menu has under two names ("Holding still · Release", "View ▸ Hold Still") is found by either.
       guard isForThePalette(command), names.insert(name).inserted else { return }
       texts.insert(command.text)
       found.append(

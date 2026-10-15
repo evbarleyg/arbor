@@ -94,13 +94,16 @@ check "the listed app is in front" eventually front_is "$ARBOR_WINDOWS_PID" || e
 check "⌃⌥↩ goes to the app again" goes_to_app "$W1" ctrl+opt+return zoom
 settled
 
-claim "the menu says that the shortcuts are off in the app in front, and its ticked item switches them on again"
+claim "the menu's first row says that the shortcuts are off in the app in front, and switches them on again"
 proves A61
 open_menu
-check "the first line says so" eventually pointer menu-item "$ARBOR_PID" "Shortcuts are off in"
+check "the first row says so" eventually pointer menu-item "$ARBOR_PID" "Shortcuts are off in"
+key escape
+check "the submenu of the focused window opens" click_menu "Focused Window"
 check "Shortcuts Off in the app is ticked" marked "✓"
 key escape
-check "the item can be clicked" click_menu "Shortcuts Off in"
+key escape
+check "the first row can be clicked" click_menu "Shortcuts are off in"
 check "Arbor ran pass-through for the app" eventually ran pass-through "$ARBOR_TEST_BUNDLE"
 check "settings.json no longer lists it" eventually lists passThroughApps ""
 check "the app is still in front" front_is "$ARBOR_WINDOWS_PID"
@@ -113,12 +116,12 @@ proves A61
 # The item is about the app in front, whosever it is.
 click_window "$W1" || exit 1
 check "the first app is in front" eventually front_is "$ARBOR_WINDOWS_PID" || exit 1
-# While they are on the row is in its submenu alone; once off, it also stands under the line that says so, which is what is read below.
 check "the submenu's item can be clicked" click_menu "Focused Window" "Shortcuts Off in"
 check "settings.json lists the app" eventually lists passThroughApps "$ARBOR_TEST_BUNDLE"
 check "⌃⌥↩ goes to the app" goes_to_app "$W1" ctrl+opt+return zoom
-open_menu
+check "the submenu opens again" click_menu "Focused Window"
 check "the item is ticked" eventually marked "✓"
+key escape
 key escape
 settled
 

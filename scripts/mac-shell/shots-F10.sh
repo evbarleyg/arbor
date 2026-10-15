@@ -334,7 +334,7 @@ check "a click opens the menu" eventually menu_is_open
 menu
 shot 26-paused-menu
 look_menu 26-paused-menu-own
-# The line of words cannot be chosen, so the first press of ↓ lands on Resume.
+# The first row says that Arbor is paused, and resumes.
 in_menu down return
 check "Resume, chosen from the menu, brought the buttons back" eventually has_buttons
 menu_is_open && close_menu

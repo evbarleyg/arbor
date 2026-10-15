@@ -9,16 +9,16 @@ import Foundation
 ///     Item.command("Balance Sizes", .equalize(all: false))                      // runs a command, shows its shortcut
 ///     Item.command("Step In", .stepIn).enabled(canStep.in)                      // greyed out when it would fail
 ///     Item.command("Keep This Window in View", .togglePin(nil)).ticked(isPinned) // a switch
-///     Item.text("The view is held: nothing moves it")                           // says something, cannot be chosen
+///     Item.text("Arbor is starting…")                                           // says something, cannot be chosen
 ///     Item.submenu("Tab Group") { … }                                           // the same lines, one level down
 ///     if displays.count > 1 { … }                                               // for what may not exist at all
 ///
 /// Then add the line to `MenuTests.theWholeMenu`, which is the menu written out and fails until it agrees. Nothing in
 /// `StatusMenu` changes. A row that cannot act now is greyed out, not left out, so that it is found where it was.
 ///
-/// **The top level is full** (docs/MENU.md, rule 3): in the state with the most lines the menu is 593 points high, and
+/// **The top level stays at 18 rows** (docs/MENU.md, rule 3): in the state with the most lines the menu is 545 points high, and
 /// it may be 600, so that Pause Arbor and Quit Arbor are never below the fold of a small display. `MenuHeightTests`
-/// counts. A new row goes into the submenu that ends its group.
+/// counts. The room for two more rows is kept free. A new row goes into the submenu that ends its group.
 extension Controller {
   private typealias Item = MenuModel.Item
   private typealias Section = MenuModel.Section
@@ -64,7 +64,7 @@ extension Controller {
     guard let command = entry.command else { return Item.text(entry.title) }
     var item = Item.command(entry.title, command).ticked(entry.isOn).help(entry.help).enabled(entry.isEnabled)
     // The key that pauses lets go of a held view first.
-    if holdLevel == .view, entry.title == "Release", shortcut(for: command) == nil { item.shortcut = shortcut(for: .togglePause) }
+    if holdLevel == .view, entry.title.hasSuffix(Self.release), shortcut(for: command) == nil { item.shortcut = shortcut(for: .togglePause) }
     return item
   }
 
@@ -77,28 +77,30 @@ extension Controller {
 
   // MARK: States
 
-  /// What Arbor is doing that is out of the ordinary, each in a line of plain words with the command that ends it
-  /// under it. In the order of precedence of docs/MENU.md, "States"; empty on an ordinary day.
+  /// What Arbor is doing that is out of the ordinary, each in one row: plain words, and after " · " the command that ends it, which
+  /// choosing the row runs ("Arbor is paused · Resume"). macOS draws a line of text too faintly for what a person opened the menu to
+  /// find out. In the order of precedence of docs/MENU.md, "States"; empty on an ordinary day.
   private func stateSection() -> Section {
     var states: [[Item]] = []
     if !accessibilityGranted {
       // Taken away while Arbor ran (F63): what happened, how many windows are out of view, that they come back with it.
       let lines = permissionMenuLines.isEmpty ? ["Arbor needs Accessibility permission"] : permissionMenuLines
-      states.append(lines.map { Item.text($0) } + [Item.command("Check Setup…", .checkSetup)])
+      // Check Setup and not System Settings: with a new build over an old grant the switch there looks on, and only Check Setup says so.
+      states.append([Item.command(lines[0] + " · Check Setup…", .checkSetup)] + lines.dropFirst().map { Item.text($0) })
     } else if isPaused {
-      states.append([Item.text(pausedLine), Item.command("Resume", .togglePause)])
+      states.append([Item.command(pausedLine + " · Resume", .togglePause).help("While paused, Arbor leaves windows and shortcuts alone")])
     } else if !isRunning {
       states.append([Item.text("Arbor is starting…")])
     }
     if !holdState.isEmpty { states.append(holdState.map(item)) }
-    // The row that ends it, ticked, as it is in its usual place: that is a submenu, and in this state no key helps.
-    if let notice = passThroughNotice { states.append([Item.text(notice), shortcutsOffInThisApp]) }
+    // What the ticked row in Focused Window ▸ does: that is a submenu, and in this state no key helps.
+    if let notice = passThroughNotice {
+      states.append([shortcutsOffInThisApp.command.map { Item.command(notice + " · Turn On", $0).withoutShortcut() } ?? Item.text(notice)])
+    }
     if let problem = settingsFileProblem {
       // Where, not what: "line 3, column 3". The file's own editor and `doctor` have room for the rest.
       let place = problem.split(separator: ":", maxSplits: 1).first.map(String.init) ?? problem
-      states.append([
-        Item.text("Settings.json has a mistake: \(place)"), Item.app("Settings File…", .openSettingsFile),
-      ])
+      states.append([Item.app("Settings.json has a mistake: \(place) · Settings File…", .openSettingsFile)])
     }
     // What no command ends. The words before the brackets are the news, and as long as a menu's line should be; which file has the rest
     // is in the tooltip, and in `status`.
@@ -113,7 +115,7 @@ extension Controller {
   /// docs/MENU.md, state 3. In the words of `status` and the replies: "paused for Game".
   private var pausedLine: String {
     if isPausedForApp { return "Arbor is paused for “\(frontmostAppName)”" }
-    guard let pauseEnd else { return "Arbor is paused: it leaves windows and shortcuts alone" }
+    guard let pauseEnd else { return "Arbor is paused" }
     return "Arbor is paused until \(pauseEnd.formatted(date: .omitted, time: .shortened))"
   }
 
