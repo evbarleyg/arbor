@@ -37,13 +37,6 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
           persist-credentials: false
-      # A pull request takes this file from its trial merge with the base, and the branch itself may be from before there was a check.
-      - name: The check finds what it should, and leaves alone what it should
-        run: if [ -f scripts/test-public-check.py ]; then ./scripts/test-public-check.py; else echo "this branch is from before the check"; fi
-      - name: So does the daily pruning of branches
-        run: if [ -f scripts/housekeeping.py ]; then ./scripts/housekeeping.py --self-test; fi
-      - name: Every action is the commit its version names, going by the action's own repository
-        run: if [ -f scripts/lint-workflows.py ]; then ./scripts/lint-workflows.py --verify; fi
       - name: Nothing private in what this adds
         env:
           GH_TOKEN: ${{ github.token }}
@@ -65,7 +58,19 @@ jobs:
       # The step above reads what is new. This one holds the sum to the same: two changes that are each clean, an exception that was
       # taken away, a rule that learnt something. Only where work is integrated: a branch from before the tree read clean would stay red.
       - name: Nothing private in the whole tree
-        if: github.event_name == 'push' && contains(fromJSON('["refs/heads/main", "refs/heads/swarm/trunk"]'), github.ref)
+        if: ${{ !cancelled() && github.event_name == 'push' && contains(fromJSON('["refs/heads/main", "refs/heads/swarm/trunk"]'), github.ref) }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: python3 scripts/public-check.py --tree
+      # The reading comes first, and whatever becomes of one step the others still run: a test of the check that trips over the runner's git once
+      # kept the check itself from reading anything, on every branch, for half an hour.
+      # (A pull request takes this file from its trial merge with the base, and the branch itself may be from before there was a check.)
+      - name: The check finds what it should, and leaves alone what it should
+        if: ${{ !cancelled() }}
+        run: if [ -f scripts/test-public-check.py ]; then ./scripts/test-public-check.py; else echo "this branch is from before the check"; fi
+      - name: So does the daily pruning of branches
+        if: ${{ !cancelled() }}
+        run: if [ -f scripts/housekeeping.py ]; then ./scripts/housekeeping.py --self-test; fi
+      - name: Every action is the commit its version names, going by the action's own repository
+        if: ${{ !cancelled() }}
+        run: if [ -f scripts/lint-workflows.py ]; then ./scripts/lint-workflows.py --verify; fi
