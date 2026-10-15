@@ -1,7 +1,12 @@
 # Installing Arbor
 
-Arbor needs macOS 14 or later. Building it needs Swift 6.4 or later: Xcode 27 or later (or its Command Line Tools). Swift 6.3 crashes on one of its files.
+Arbor needs macOS 14 or later. Building it needs Swift 6.2 or later, which comes with Xcode 26. The Command Line Tools are
+enough, without Xcode itself: `xcode-select --install` fetches them. `swift --version` says what you have.
 Nothing else: only `make check` and the tools in `scripts/` want a `python3`, 3.9 or later.
+
+What stands behind that: every change is built and tested on GitHub's Macs with the Swift of their newest Xcode (6.3 today), and
+compiled on Linux with 6.2 and with the newest release; before anything reaches `main`, a Mac compiles all of it with Xcode 26.0 and
+with the newest Swift as well. An older Swift says so in one line (see Troubleshooting).
 
 ## From source, in three commands
 
@@ -231,6 +236,10 @@ both; then make one again.
 
 **`arborctl: command not found`.** The folder it was linked into is not on your `PATH`; `make install` prints the line
 that adds it. It is always at `~/Applications/Arbor.app/Contents/Helpers/arborctl`.
+
+**`package 'arbor' is using Swift tools version 6.2.0 but the installed version is …`.** Your Swift is older than Arbor can be built
+with. Update Xcode or the Command Line Tools to 26 or later (Software Update offers them; `xcode-select --install` where there are
+none). Where macOS is too old for those, a downloaded build is the way: see above.
 
 **`make install` stops with compiler errors.** `swift build` tells whether the sources compile at all. If they do, and only the
 optimized build fails, `ARBOR_CONFIGURATION=debug make install` installs the build that every test runs against; it is slower

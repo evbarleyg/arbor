@@ -114,7 +114,8 @@ written in Swift, says otherwise.
 - **`Binding(get:set:)`.** The SDK declares the closures `@Sendable @isolated(any)` under `@preconcurrency`, and so does the stand-in. A `@Sendable` closure is not on the main
   actor just because the view that makes it is, so `Binding(get: { model.text }, …)` draws *warnings* ("can not be referenced from a Sendable closure") and compiles.
   Whether the Mac gives the same warnings has not been looked up in a build log yet. If it does not, the SDK's parameters also inherit the actor
-  (`@_inheritActorContext`), and the two initialisers in `stubs/SwiftUI/Data.swift` should say so. `{ @MainActor in … }` is silent either way.
+  (`@_inheritActorContext`), and the two initialisers in `stubs/SwiftUI/Data.swift` should say so. `{ @MainActor in … }` is silent either way, but **crashes Swift 6.3
+  on the Mac**, where no stand-in can show it: write `Binding<…>.onMainActor(get:set:)` (`Sources/ArborKit/UI/SettingsListViews.swift`); `make lint` finds the other.
 - **SwiftUI, what is left out.** Macros, which a stand-in cannot be: `#Preview`, `@Entry` (`@Observable` is the toolchain's own and works). `Table`, `Canvas` and `GraphicsContext`, `OutlineGroup`,
   `NavigationView`, documents, `ShareLink` and everything about drag, drop, `Transferable`, item providers and file dialogues, `symbolEffect`, `visualEffect`, phase and keyframe animators,
   `sensoryFeedback`, the deprecated `Alert` and `ActionSheet`, and every overload that takes a `LocalizedStringResource`, an `ImageResource` or a `CTFont`, types Linux has no counterpart for.

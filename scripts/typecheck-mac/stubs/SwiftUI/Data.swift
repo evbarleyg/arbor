@@ -26,7 +26,7 @@ extension State where Value: ExpressibleByNilLiteral {
 
 /// The closures are `@Sendable` in the SDK, so they are not on the main actor merely because the view that makes them is. `@preconcurrency`
 /// turns what follows from that into warnings: reading a view's `@State` or a main-actor model in them is reported here as on the Mac,
-/// and compiles. `{ @MainActor in … }` is silent in both places.
+/// and compiles. `{ @MainActor in … }` is silent in both places and crashes Swift 6.3 on the Mac: Arbor's `Binding.onMainActor(get:set:)` is for that.
 @propertyWrapper @dynamicMemberLookup public struct Binding<Value> {
   public var transaction: Transaction
   @preconcurrency public init(get: @escaping @isolated(any) @Sendable () -> Value, set: @escaping @isolated(any) @Sendable (Value) -> Void) {
