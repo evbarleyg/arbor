@@ -63,6 +63,29 @@ MUTANTS = [
         ],
     },
     {
+        # Cured by a3c0281, after three of four long drags on a hosted Mac were never taken for drags.
+        "name": "a pointer that has gone far over a window that stands still settles the press",
+        "old": "    case .undecided, .neither:\n      break\n    case .drag:\n      draggingWindow = window\n",
+        "new": "    case .undecided, .neither:\n      if verdict == .neither { press?.isSettled = true }\n    case .drag:\n      draggingWindow = window\n",
+        "red": [
+            "the window server begins to move a dragged window 100 ms after the press, with the pointer 40 points away: the drag is reported to begin",
+            "a window is dragged in 30 steps of 66 points, the window server 50 ms late to start: the drag is reported to begin",
+            "with macOS's tiling off, a floating window is dragged briskly to the left edge of the screen, and the window server begins to move it 100 ms after the press, with the pointer 40 points away: let go, it is docked",
+        ],
+    },
+    {
+        # 531885f: with macOS's tiling on, the left, right and top edges of the screen are macOS's.
+        "name": "Arbor offers its band along the edges that are macOS's",
+        "file": "ArborKit/Controller/Controller+Drag.swift",
+        "old": "    dropOptions.silentEdges = (drag?.macTiling.edges ?? []).union(drag?.edgesNeverLeft ?? [])\n",
+        "new": "    dropOptions.silentEdges = (drag?.edgesNeverLeft ?? [])\n",
+        "red": [
+            "with macOS's tiling on, a floating window is dragged to the left edge of the screen: Arbor stands aside: no preview",
+            "with macOS's tiling on, a floating window is dragged to the right edge of the screen: let go, it is not docked",
+            "with macOS's tiling on, a docked window is dragged to the right edge of the screen: Arbor stands aside: no preview",
+        ],
+    },
+    {
         "name": "a second press does not end what the first began",
         "old": "      releaseWasLost()\n      press = makePress(at: cursorLocation())\n",
         "new": "      _ = 0\n      press = makePress(at: cursorLocation())\n",

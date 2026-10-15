@@ -180,11 +180,14 @@ func tellOfArrangements(_ book: Book) {
     }
   }
 
-  // Trace `drag-to-edge`.
+  // Trace `drag-to-edge`. The left, right and top edges of the screen are Arbor's only where macOS's own tiling is switched off.
   for silent in [false, true] {
-    book.story("a floating window is dragged to the left edge of the screen\(silent ? ", and its app says nothing until it is over" : "")") { story in
+    book.story("with macOS's tiling off, a floating window is dragged to the left edge of the screen\(silent ? ", and its app says nothing until it is over" : "")") { story in
       var window: FakeMac.Window!
-      let two = StoreyTwo(story) { mac in window = mac.open("window", in: mac.launch("Notes"), frame: CGRect(x: 300, y: 130, width: 400, height: 300)) }
+      let two = StoreyTwo(story) { mac in
+        mac.macOSTilesDraggedWindows = false
+        window = mac.open("window", in: mac.launch("Notes"), frame: CGRect(x: 300, y: 130, width: 400, height: 300))
+      }
       window.app.isSilentDuringDrags = silent
       two.mac.drag(from: CGPoint(x: 510, y: 148), to: CGPoint(x: 3, y: 368), steps: 25)
       story.check("a preview shows where it would go", two.overlays.preview != nil)
@@ -196,10 +199,59 @@ func tellOfArrangements(_ book: Book) {
     }
   }
 
-  book.story("a floating window is dragged to the edge and the release is never heard") { story in
+  // As a Mac comes, those edges are macOS's: it acts only at their last point, but a hand pushes a window against an edge, so Arbor leaves it the whole of its own band along them.
+  for edge in ["left", "right", "top"] {
+    let goal = ["left": CGPoint(x: 3, y: 368), "right": CGPoint(x: 1020, y: 368), "top": CGPoint(x: 512, y: 27)][edge]!
+    book.story("with macOS's tiling on, a floating window is dragged to the \(edge) edge of the screen") { story in
+      var window: FakeMac.Window!
+      let two = StoreyTwo(story) { mac in window = mac.open("window", in: mac.launch("Notes"), frame: CGRect(x: 300, y: 130, width: 400, height: 300)) }
+      two.mac.drag(from: CGPoint(x: 510, y: 148), to: goal, steps: 25)
+      two.mac.pass(0.3)
+      story.check("the drag is seen", two.heard.all.contains(.dragBegan(window.number)), two.heard.texts)
+      story.check("Arbor stands aside: no preview", two.overlays.preview == nil)
+      let letGo = window.frame
+      let asked = window.timesAskedForAFrame
+      two.mac.release()
+      two.mac.pass(2)
+      story.check("let go, it is not docked", !two.isDocked(window), two.whereabouts(window))
+      story.check("it stays where it was let go", window.frame == letGo && window.timesAskedForAFrame == asked, two.whereabouts(window))
+    }
+
+    book.story("with macOS's tiling on, a docked window is dragged to the \(edge) edge of the screen") { story in
+      let (two, left, right) = twoDocked(story)
+      // The one that is not at that edge already.
+      let window = edge == "left" ? right : left
+      let home = window.frame
+      two.mac.drag(from: CGPoint(x: home.midX, y: home.minY + 12), to: goal, steps: 25)
+      two.mac.pass(0.3)
+      story.check("Arbor stands aside: no preview", two.overlays.preview == nil)
+      two.mac.release()
+      two.mac.pass(2)
+      // What becomes of it is written down nowhere, and differs: back in its slot at the left and right, floating where it was let go at the top.
+      story.check("let go, it is docked nowhere new: back in its slot, or floating", two.isDocked(window) ? window.frame == home : true, "\(two.whereabouts(window)), its slot was \(home.text)")
+      story.check("and in view", two.visibleFraction(window) > 0.9, two.whereabouts(window))
+    }
+  }
+
+  book.story("with macOS's tiling on, a floating window is dragged to the bottom edge of the screen, which is nobody's but Arbor's") { story in
     var window: FakeMac.Window!
     let two = StoreyTwo(story) { mac in window = mac.open("window", in: mac.launch("Notes"), frame: CGRect(x: 300, y: 130, width: 400, height: 300)) }
+    two.mac.drag(from: CGPoint(x: 510, y: 148), to: CGPoint(x: 512, y: 765), steps: 25)
+    two.mac.pass(0.3)
+    story.check("a preview shows where it would go", two.overlays.preview != nil)
+    two.mac.release()
+    two.mac.pass(2)
+    story.check("let go, it is docked", two.isDocked(window), two.whereabouts(window))
+  }
+
+  book.story("a floating window is dragged to the edge and the release is never heard") { story in
+    var window: FakeMac.Window!
+    let two = StoreyTwo(story) { mac in
+      mac.macOSTilesDraggedWindows = false
+      window = mac.open("window", in: mac.launch("Notes"), frame: CGRect(x: 300, y: 130, width: 400, height: 300))
+    }
     two.mac.drag(from: CGPoint(x: 510, y: 148), to: CGPoint(x: 3, y: 368), steps: 25)
+    story.check("there is a preview", two.overlays.preview != nil)
     two.mac.release(.lost)
     two.mac.pass(3)
     story.check("the preview does not stay on screen for ever", two.overlays.preview == nil)

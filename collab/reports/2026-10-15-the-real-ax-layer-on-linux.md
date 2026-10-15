@@ -4,12 +4,12 @@
 - Branch: test/the-real-ax-layer-on-linux, then test/mac-on-linux-round-2
 - What: `make mac-on-linux` (scripts/mac-on-linux/README.md; docs/TESTING.md, section 9)
 
-`Sources/ArborKit/AX` ran in no headless test. Now it is compiled as it is, linked with a model of a Mac and run on Linux: 272 stories (1,001 ✔, 135 ✘ known, on the trunk at dd0e8da; 181 stories at the end of round 1) and a random walk under four kinds of bad manners, seven seconds to run. The run enters 92 % of the lines and 81 % of
-the regions of `AXWindowSystem.swift` (`COVERAGE=1`). Twenty-one changes that take known cures out of a copy of the layer all turn their stories red (`make mac-on-linux-selftest`).
+`Sources/ArborKit/AX` ran in no headless test. Now it is compiled as it is, linked with a model of a Mac and run on Linux: 279 stories (1,083 ✔, 80 ✘ known, on the trunk at 4091c0f; 181 stories at the end of round 1) and a random walk under four kinds of bad manners, seven seconds to run. The run enters 92 % of the lines and 81 % of
+the regions of `AXWindowSystem.swift` (`COVERAGE=1`). Twenty-three changes that take known cures out of a copy of the layer all turn their stories red (`make mac-on-linux-selftest`).
 
 This report is what it found. Nothing in the layer was changed. Each finding says what a person would see, the lines concerned, and how sure the model is of the manners that bring it out: SEEN on a Mac, or GUESS. Every red check is listed in
 `scripts/mac-on-linux/known-failures.txt`; whoever cures one deletes its lines. Line numbers are those of `Sources/ArborKit/AX/AXWindowSystem.swift` at f0d67cc, the trunk when the work began; two cures have landed in the file since (5726225, 37d0f05), and what comes after line 470 is some
-forty lines further down now. **The findings of round 2 (N9 to N15, the additions to L1) give the lines of the file at 37d0f05**, which is how it stands on the trunk at dd0e8da.
+forty lines further down now. **The findings of round 2 (N9 to N15, the additions to L1) give the lines of the file at 37d0f05**, which is how it stood on the trunk at dd0e8da; four commits have touched the file since (12d1835, a3c0281, 531885f, c0d13b9), and what comes after line 1140 is some forty lines further down.
 
 | | What a person sees | Needs | How sure |
 |---|---|---|---|
@@ -30,9 +30,10 @@ forty lines further down now. **The findings of round 2 (N9 to N15, the addition
 | N13 | **a window goes out of view seconds AFTER Arbor is gone** | a hang in the middle of a move out of view, a quit meanwhile | seen on a hosted Mac |
 | N14 | Arbor's request for the keyboard, held up by a slow app, takes the keyboard away from where the person has gone meanwhile | an app busy for less than the timeout | the layer's own logic |
 | N15 | a command answers after 3.3 s because one app is slow | an app that takes 0.1 s over a call | the layer's own logic; slow answers seen |
-| L1 | **a drag of any length is not seen at all; nothing is logged** | the window server a moment late, the pointer more than 24 points away | found on a guess; **since SEEN on a hosted Mac**: three of four drags of 1,244 to 1,991 points in 30 steps never taken for drags, nothing logged. A cure is proposed (`origin/fix/a-window-that-starts-late-is-still-dragged`) and was held against the stories twice before it was published |
+| L1 | **a drag of any length is not seen at all; nothing is logged** | the window server a moment late, the pointer more than 24 points away | found on a guess; **since SEEN on a hosted Mac**: three of four drags of 1,244 to 1,991 points in 30 steps never taken for drags, nothing logged. **CURED by a3c0281**, which was held against the stories twice before it was published: 61 listed lines deleted, 2 listed anew (what its author names as left), red again with the cure taken out |
 | L2 | a flick is not seen | the gesture over before Arbor hears of the press | the layer's own logic |
-| L3 | **(new with 37d0f05) a drag of a second is not seen** | the press heard half a second late | the layer's own logic; a regression |
+| L3 | **(new with 37d0f05) a drag of a second is not seen** | the press heard half a second late | the layer's own logic; a regression. **531885f meant to cure it, does not, and loses two drags more** (L4) |
+| L4 | **(new with 531885f) a drag of a second is not seen** | Arbor's main thread busy for 0.3 s from the press | the layer's own logic; a regression; shown by two changes, one at a time |
 
 ## Reproductions of what was already known
 
@@ -179,7 +180,7 @@ the layer's last word on the keyboard in the lenient sense (keyboardFocusMoved +
 Two ways to lose a drag. The first loses a drag of ANY length and is the likely one on the loaded hosted Macs. "Lost": no `dragBegan` for the whole drag, so no preview and no drop. The window has moved in every case, and Arbor knows where it ends up.
 Stories: `scripts/mac-on-linux/tests/LostDrags.swift`.
 
-### L1. The 24 points of patience: the window server is a moment late, the pointer is not
+### L1. The 24 points of patience: the window server is a moment late, the pointer is not   (CURED by a3c0281; what follows is how it stood)
 | the window server begins to move the window … after the press | pointer 10 points away by then | 24 points | 40 points |
 |---|---|---|---|
 | 0 ms | drag began 11 ms after the press | 11 ms | 11 ms |
@@ -214,6 +215,15 @@ has been dragged to 200,175 and no longer lies under it. No window is found (or 
 Before, both the point and the list were of the moment of serving, which agreed with each other, and the drag was picked up from there. At 0, 20 and 100 ms late, and with the main thread busy for 300 ms, it is still seen (there the belief is still the old one, and the second sign saves it).
 TO CONSIDER: look for the pressed window with the point of the event among the frames Arbor believed BEFORE the first report that came with the button down; or, if no window lies under the event's point, try once more with the pointer's place now.
 
+### L4. Since 531885f: the second look at a late press settles it
+Found at the rebase onto the trunk that has 531885f. "A window is dragged for a second while Arbor's main thread is busy for 300 ms from the press", with what queued up served by time or the mouse first, was green (drag began at 300 ms) and is RED: no drag, 6 reports that the window changed. With Accessibility served first it is green, and
+better than before (311 ms, was 412). L3 is as red as it was.
+WHY: five new lines in `handleMouse`: if `makePress` at the event's own place finds no window and settles nothing, `makePress` once more at the pointer's place of now. That is the pair L3 asked for. But `makePress` has since 12d1835 a test for macOS showing its desktop: `WindowGrab.isListedElsewhere(bounds, than: record.snapshot.frame)`, more than
+`lead` = 32 points between the window server and what Accessibility last said. Served late, that is just how a window in the hand looks: the window server has it where the hand has carried it (157,143 after 0.3 s), Arbor believes it where it was (100,100), 71 points apart. So the window is taken for the strip of one swept aside, and the press
+is SETTLED. Before, it stayed open (`window == nil`, not settled), and the app's next "moved" made the drag through `noteMoveWhilePressed`'s second branch. With Accessibility served first the belief is up to date and the test passes.
+SHOWN by two changes to a copy, one at a time, all 272 stories each: (A) without the second `makePress`: the four checks green as before (300, 412, 300 ms), L3 red. (B) with it, and not asking `isListedElsewhere` at that second look: the four green, **L3 green (551 ms)**, 311 ms with Accessibility first, and nothing else changes.
+TO CONSIDER: (B). It cannot let a swept window through: a press on a strip finds the strip under the event's OWN place, at the first look, which settles it, and there is no second look.
+
 ### L1, round 2: coarse steps, one leap, the controls for a cure, and another cause with the same face
 - **Coarse steps**, as `scripts/mac-shell/pointer.swift` makes them of a long drag (30 steps of 42 or 66 points, 0.1 s apart): window server on time: seen at 21 ms. 50 or 100 ms late to start, or 50 or 100 ms behind all the way: NO DRAG on the trunk, 27 or 28 reports that the window changed. This is the hosted Mac's picture.
 - **The hand is quick and rests, the window comes after it in one leap** (120 points in 80 ms, the leap 300 ms after the press): lost on the trunk.
@@ -221,7 +231,7 @@ TO CONSIDER: look for the pressed window with the point of the event among the f
 - **A system alert over the title bar** (SEEN late in a job on a hosted Mac: another process, the level of modal panels, 260 by 250): the alert gets the press, the window stays. The layer reports `pressed` and nothing else, and logs nothing. `makePress` 1207 skips whatever is not at level 0 (1217), so it takes the window UNDERNEATH for the one pressed: harmless while that
   window stands still. To a script this is L1's face from another cause: no drag, nothing logged. TO CONSIDER: a debug line in `makePress` when something of another process above level 0 lies over the point.
 
-**The proposed cure, held against these stories twice before it was published** (trunk | first form | mended form; ms after the press at which `dragBegan` comes; 42 and 66 points alike):
+**The cure (a3c0281, on the trunk), held against these stories twice before it was published** (trunk | first form | mended form; ms after the press at which `dragBegan` comes; 42 and 66 points alike):
 
 | | trunk | first form | mended |
 |---|---|---|---|
@@ -237,13 +247,13 @@ TO CONSIDER: look for the pressed window with the point of the event among the f
 | selection: against, across, aslant, resized | no drag | no drag | no drag |
 | L2, L3 | LOST | LOST | LOST: `press.window` is nil, so nobody is asked |
 
-Red on the trunk and green with the mended form: 61 checks. Green on the trunk and red with it: 2. Walk, 300 seeds × 6: nothing new. The commit as published (d2bec74, `REF=origin/fix/a-window-that-starts-late-is-still-dragged`) gives the same against all 272 stories: whoever lands it deletes 61 lines of `known-failures.txt` and lists 2. The first verdict (slack of 24 points is not enough for a window a step ahead; one jump cannot be told from a late start at one look, at two it can) is what the mended form was made from.
+Red on the trunk and green with the mended form: 61 checks. Green on the trunk and red with it: 2. Walk, 300 seeds × 6: nothing new. The commit as published (d2bec74, `REF=origin/fix/a-window-that-starts-late-is-still-dragged`) gave the same against all 272 stories, and so did the trunk once it had landed: 61 lines of `known-failures.txt` deleted, 2 listed. A change that takes it out again turns its stories red. The first verdict (slack of 24 points is not enough for a window a step ahead; one jump cannot be told from a late start at one look, at two it can) is what the mended form was made from.
 
-### Is anything logged? NO, at no level
+### Is anything logged? NO, at no level (as it was before a3c0281, which logs a late start, and at the release a window that moved and was taken for nothing)
 arbor.log with ARBOR_DEBUG=1: a drag that is seen logs `DEBUG w101 is being dragged`. A lost one logs NOTHING: `.neither` (1248) and `.undecided` are silent, and so is a mouse-up with no grab (1150-1152). A trace would show the raw mouse lines and the `changed` events and no `dragBegan`.
 CHEAP AND WORTH HAVING WHATEVER THE CURE: a debug line at 1249 ("the press on \(window) is settled as not about it: pointer N points away, window where it was"), and one at mouse-up when the pressed window's bounds differ from `press.frame` and no grab was open ("\(window) moved by dx, dy while the button was down and no drag was seen").
 
-### What a person sees (storey two: the real controller on top; brisk hand, window server 100 ms late)
+### What a person saw (storey two: the real controller on top; brisk hand, window server 100 ms late; macOS's tiling off, or the edge is macOS's since 531885f)
 | story | on time | 100 ms late |
 |---|---|---|
 | a floating window is dragged to the left edge of the screen | preview, docked | **no preview; let go, it is NOT docked**: it lies half off screen at -207,350 |
@@ -320,7 +330,7 @@ What a model says is worth what has been checked against Macs. So far:
 
 | | |
 |---|---|
-| **Right, before a Mac showed it** | **L1.** Found on a guess (the window server a moment late, the pointer more than 24 points away: no drag at all, nothing logged). Hours later SEEN on a hosted Mac: three of four long drags in coarse steps were never taken for drags, nothing logged; at the first look the pointer was 27 points out and the window still in its place. The stories in coarse steps give the same picture, and the cure proposed was shaped by two verdicts from them |
+| **Right, before a Mac showed it** | **L1.** Found on a guess (the window server a moment late, the pointer more than 24 points away: no drag at all, nothing logged). Hours later SEEN on a hosted Mac: three of four long drags in coarse steps were never taken for drags, nothing logged; at the first look the pointer was 27 points out and the window still in its place. The stories in coarse steps give the same picture, and the cure, which has landed (a3c0281), was shaped by two verdicts from them |
 | **Right, without having been built for it** | **Safari's and Finder's order at a close.** Told only that these apps drop a closing window from their list at once, the real layer on the model says `destroyed` and then `focused` of the sibling, 15 to 20 ms apart: the order, and about the gap, of recordings of hosted Macs (4 to 13 ms, once 91) |
 | **Right, afterwards** | **R2**: red at both storeys while it was open, green with 5726225, red again with the cure taken out. **N13**: the park carried out after Arbor is gone, measured on a hosted Mac, comes out of the model as told: "AXPosition = 1023,767", 7 s after the quit. **A repeat from nothing** of the verdict on the mended cure by another hand gave the same 61 and 2 |
 | **Wrong, and corrected by a recording** | **The order at a minimize.** The model posted "miniaturized" and then the sibling's focus. A recording has the focus 6.6 ms BEFORE, at the end of the flight. Swapped; no story changed its verdict |
@@ -379,7 +389,7 @@ Each is one script for `scripts/mac-shell/run.sh`, a minute or two of a hosted M
 | 4 | **N5** | the same | a window of the test app out of view; stop the app; bring it forward; it goes on after 2 s; wait 3 s | whether a `focused` line comes, and the window into view |
 | 5 | **N11** | the same | the test app sets its window's frame and sleeps 5 s in the same turn of its run loop; wait 10 s | `arborctl state` against the window server's bounds |
 | 6 | **N7** | whether `_AXUIElementGetWindow` waits for a hung app | get a window's element; stop the app; time one call | 1 s, or at once (four seconds dead, or three) |
-| 7 | **L3, L2** | how late a mouse-down reaches the monitor on a loaded Mac | `make e2e-drag` with every core busy, logging the event's own time stamp against the uptime in `handleMouse` | the distribution; L3 needs a quarter of a second |
+| 7 | **L3, L4, L2** | how late a mouse-down reaches the monitor on a loaded Mac | `make e2e-drag` with every core busy, logging the event's own time stamp against the uptime in `handleMouse` | the distribution; L3 needs a quarter of a second, L4 as long as the hand takes to carry the window 32 points |
 | 8 | **N4** | what a window on its way into full screen does with a frame it is given | the test app's window enters full screen; 100 ms later set its position and size | where it ends; whether it ends in full screen at all |
 | 9 | **N3** | the order of "focused window changed" and `activeSpaceDidChange` | two windows of one app at the same frame on two Spaces; switch ten times | the order of the two raw lines |
 | 10 | **N10** | both halves together | close Notes' window; start Arbor; show the window again from the Dock | `found` or `appeared` |

@@ -228,9 +228,12 @@ func tellOfLostDrags(_ book: Book) {
   // What a person sees of it.
   for wait in [0, 100] {
     let words = wait > 0 ? ", and the window server begins to move it \(wait) ms after the press, with the pointer 40 points away" : ""
-    book.story("a floating window is dragged briskly to the left edge of the screen\(words)") { story in
+    book.story("with macOS's tiling off, a floating window is dragged briskly to the left edge of the screen\(words)") { story in
       var window: FakeMac.Window!
-      let two = StoreyTwo(story) { mac in window = mac.open("window", in: mac.launch("Notes"), frame: CGRect(x: 300, y: 130, width: 400, height: 300)) }
+      let two = StoreyTwo(story) { mac in
+        mac.macOSTilesDraggedWindows = false
+        window = mac.open("window", in: mac.launch("Notes"), frame: CGRect(x: 300, y: 130, width: 400, height: 300))
+      }
       two.mac.serverFollowsPointerAfter = Double(wait) / 1000
       two.mac.drag(from: CGPoint(x: 510, y: 148), to: CGPoint(x: 3, y: 368), steps: 12, interval: 0.04, rest: 0.02)
       two.mac.pass(0.3)

@@ -322,6 +322,27 @@ public final class FakeMac: @unchecked Sendable {
 
   // MARK: Processes
 
+  // MARK: The person's settings
+
+  /// What other processes' preferences hold, by domain and key. A key that is not there has never been touched: the setting is as a Mac comes.
+  public var preferences: [String: [String: Any]] = [:]
+
+  /// Desktop & Dock: "Drag windows to left or right edge of screen to tile", "Drag windows to menu bar to fill screen", "Hold ⌥ key while dragging windows to tile". On, as a Mac comes, since macOS 15. The model
+  /// does not tile anything itself: macOS acts only at the last point of an edge, where no story lets go.
+  public var macOSTilesDraggedWindows: Bool {
+    get { preferences["com.apple.WindowManager"]?["EnableTilingByEdgeDrag"] as? Bool ?? true }
+    set {
+      for key in ["EnableTilingByEdgeDrag", "EnableTopTilingByEdgeDrag", "EnableTilingOptionAccelerator"] { preferences["com.apple.WindowManager", default: [:]][key] = newValue }
+    }
+  }
+
+  /// What `UserDefaults(suiteName:)` becomes in the copy: another process's domain, on the model and not on this machine.
+  public struct Defaults {
+    let domain: String
+    public func object(forKey key: String) -> Any? { FakeMac.current.preferences[domain]?[key] }
+  }
+  public static func defaults(suiteName: String) -> Defaults? { Defaults(domain: suiteName) }
+
   /// What `getpid()` becomes in the copy: Arbor's own number on the model. Not that of the process the test runs in, which in a fresh container may be any small number, one of the
   /// model's apps' among them.
   public static func getpid() -> pid_t { 400 }

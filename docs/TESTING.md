@@ -954,7 +954,7 @@ seconds to two minutes. `scripts/mac-on-linux/README.md` has all of it; in short
   a window server that is ahead of the app, or late. What is a guess is marked "Guess" in the model.
 - **Time is the model's**: `mac.pass(0.3)`, no waiting, no threads, no chance. A copy of the sources is rewritten in a few ways, line for line (`retime.py`), which fails the build if anything in ArborKit knows another clock.
 - **`known-failures.txt`**: the run fails when a check that is not listed fails and when one that is listed passes; a rule of the walk is listed with the number of seeds that break it, and another number is news. **Whoever lands a cure in the layer deletes its lines.**
-- **`make mac-on-linux-selftest`** takes twenty-one known cures out of the copy, one at a time, and expects the stories about them to go red.
+- **`make mac-on-linux-selftest`** takes twenty-three known cures out of the copy, one at a time, and expects the stories about them to go red.
 - **The rude walk**: seeded, under four kinds of bad manners in general and once politely as a control; a breach prints the shortest script, which `--replay` plays. `ARGS="--only walk --seeds 1-500"` is a hunt.
 - **`REF=origin/fix/some-cure make mac-on-linux`** holds another commit's layer against this checkout's stories: how a cure is tried before a Mac sees it, as the one for the app switch was. `COVERAGE=1` says which lines no story enters (92 % of `AXWindowSystem.swift`'s are entered).
 
