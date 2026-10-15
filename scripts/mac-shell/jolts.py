@@ -143,6 +143,8 @@ ROUNDS = (("started", "before"), ("last", "after"))
 NOT_PERFORMED = "not performed, so not judged"
 # Two previews at once are two promises for one drag. For this long it may be the grain of the samples: two of them.
 TOGETHER = of_the_gate("previews_together_ms_max", otherwise=60)
+# A change this shortly before Arbor's stage is seen to be up belongs to what the stage then shows: two samples, since the stage itself is seen a sample late.
+STAGE_MARGIN = of_the_gate("stage_margin_ms", otherwise=60)
 # A press brings its app forward within 70 ms, and a sample can be 100 ms late: which app was in front before a press is asked of this many milliseconds earlier.
 JUST_NOW = 150
 # With macOS's tiling on, this many points along the left, right and top edges of the screen are macOS's: Arbor offers nothing there.
@@ -704,7 +706,7 @@ def road(trace):
 def measure(trace, staged=()):
     """How a window travelled: (moves, frames seen, milliseconds, the worst detour in points, whether it ended elsewhere).
     `staged`: from when to when Arbor's stage was up. The stand-ins move meanwhile, so that time parts no two moves: a window that takes its size 3 ms before the stage goes up, and is
-    seen in its place when it comes down 700 ms later, has moved once."""
+    seen in its place when it comes down 700 ms later, has moved once. One that changes more than STAGE_MARGIN before the stage is seen has moved by itself, and then again."""
     seen = [entry for entry in trace if entry[1] is not None]
     changes = [
         (after[0], after[1]) for before, after in zip(seen, seen[1:]) if differs(before[1], after[1], by=0.6)
@@ -713,7 +715,8 @@ def measure(trace, staged=()):
         return 0, 0, 0, 0, False
     moves = 1
     for before, after in zip(changes, changes[1:]):
-        hidden = sum(max(0, min(after[0], down) - max(before[0], up)) for up, down in staged)
+        # Well before the stage goes up is another move, however long the stage then stays.
+        hidden = sum(min(after[0], down) - before[0] for up, down in staged if up - STAGE_MARGIN <= before[0] <= down and after[0] >= up)
         if after[0] - before[0] - hidden > EPISODE_GAP:
             moves += 1
     detour = 0
@@ -1576,7 +1579,12 @@ def self_test():
     before_the_stage = start + ["2000 M begin 2 dock", "2040 W 1 10 0 100 100 500 700 One"] + stage + ["2100 W 1 10 0 0 30 500 700 One", "2800 G 70", "3900 M end 2 moves=1"]
     detectors("its size just before the stage goes up, its place when it comes down: the stand-ins move meanwhile, and it has moved once", before_the_stage, [])
     detectors("… its size well before the stage goes up: twice", [line.replace("2000 M begin", "1500 M begin").replace("2040 W 1", "1700 W 1") for line in before_the_stage], ["jolt"])
-    detectors("… and what it does well after the stage is down is another move", before_the_stage[:-1] + ["3100 W 1 10 0 0 30 480 700 One", "4200 M end 2 moves=1"], ["jolt"])
+    detectors("… as long before it as still belongs to it", [line.replace("2000 M begin", "1500 M begin").replace("2040 W 1", f"{2050 - STAGE_MARGIN} W 1") for line in before_the_stage], [])
+    detectors("… and a millisecond longer", [line.replace("2000 M begin", "1500 M begin").replace("2040 W 1", f"{2049 - STAGE_MARGIN} W 1") for line in before_the_stage], ["jolt"])
+    detectors("… and what it does well after the stage is down is another move", before_the_stage[:-1] + [
+        # On in the same direction, so that it is no detour either: what tells is that it comes later.
+        "3100 W 1 10 0 -20 20 520 720 One", "4200 M end 2 moves=1"], ["jolt"])
+    detectors("… shortly after, it is the same move still", before_the_stage[:-1] + ["2900 W 1 10 0 -20 20 520 720 One", "4000 M end 2 moves=1"], [])
     away = start + ["1500 M begin 2 hide", "1600 G 1", "1900 M end 2 leaves=1", "2000 M begin 3 back"]
     detectors("a window comes back into sight where it belongs", away + ["2500 W 1 10 0 100 100 400 300 One", "3600 M end 3 moves=1 comes=1 lands=1"], [])
     detectors("… it pops open, as macOS has it", away + ["2500 W 1 10 0 110 108 380 284 One", "2560 W 1 10 0 100 100 400 300 One", "3600 M end 3 moves=1 comes=1 lands=1"], [])
@@ -1852,7 +1860,8 @@ def self_test():
     for name, mine, path in (("blind_ms_max", 250, ("sampler", "blind_ms_max")), ("late_ms", samplers and float(samplers.group(1)), ("sampler", "late_ms")),
                              ("release_ms_max", 100, ("input", "release_ms_max")), ("p50_more_ms_max", 10, ("input", "p50_more_ms_max")),
                              ("forward_p50_more_ms_max", 100, ("input", "forward_p50_more_ms_max")), ("events_per_kind_min", 10, ("input", "events_per_kind_min")),
-                             ("kinds", ["down", "forward", "up", "key", "dragged", "scroll"], ("input", "kinds")), ("previews_together_ms_max", 60, ("previews_together_ms_max",))):
+                             ("kinds", ["down", "forward", "up", "key", "dragged", "scroll"], ("input", "kinds")), ("previews_together_ms_max", 60, ("previews_together_ms_max",)),
+                             ("stage_margin_ms", 60, ("stage_margin_ms",))):
         if of_the_gate(*path, otherwise=None) != mine:
             failures.append(f"docs/VIABLE.md has {of_the_gate(*path, otherwise=None)!r} for {name}, and what judges by it has {mine!r}")
         # And it is the page that is read, with the copy to fall back on: a number written here alone would agree today and stay behind tomorrow.

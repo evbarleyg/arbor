@@ -26,16 +26,19 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import walk  # noqa: E402
 
-# What a walk is asked for. The beginning and the end add fifteen (Arbor is started, its welcome closed, it is quit, every app is called up once more).
-ACTS = 120
-JOURNEYS_PER_CELL = 4
-# Measured on hosted Macs (116 acts in 394 s, 101 in 324 s): the scene takes 50 s to set, an act 2.4 s, one in which nobody does anything 31 s. Four rounds of input, which are no
-# acts, take some 13 s each (reckoned, not measured yet).
-SCENE, ACT, IDLE = 50 + 4 * 13, 2.4, 31
+# What a walk is asked for. The beginning and the end add seventeen (Arbor is started, its welcome left open for half a minute and closed, everything is brought into view, it is quit,
+# every app is called up once more).
+ACTS = 100
+JOURNEYS_PER_CELL = 5
+# Measured on hosted Macs, over five journeys: the scene takes 62 s to set and the two desks a few more, an act 2.1 s and 0.6 s until the next, one in which nobody does anything 31 s.
+# Four rounds of input, which are no acts, take some 13 s each: reckoned, not measured, since one program posts a round (a program for each press took 31 s).
+SCENE, ACT, IDLE = 65 + 4 * 13, 2.7, 31
 # Of the acts a walk is written with, this share is played and judged, at the least. Measured: 101 of 116 applied when their turn came, and 96 % of those were
 # judged (the sampler is blind at times): 0.84.
-# One share for every kind of act, which is too simple: of the few drags onto a window and clicks on a tile that first walk was written with, none applied when its turn came.
-# To be measured by kind as runs come back.
+# **One share for every kind of act, which is wrong, and known to be.** Written and judged over two walks: drags 23 and 1, what is macOS's own 10 and 0, clicks on a tile 2 and 0, drags
+# where macOS tiles 9 and 4, resizes 15 and 6, opening and closing 30 and 17; views 49 and 43, docks by key 23 and 19. So this plan meets the page's numbers in what is written, not in what
+# is played: a gate by it would end short of acts (it could not pass falsely: viable.py counts what was judged). Not to be dispatched whole until the words reach what they need by
+# themselves and this is reckoned by kind.
 COUNTED = 0.8
 
 
@@ -96,10 +99,10 @@ KINDS = {"switch": "switch_ focus_key", "tile-click": "tile_click", "open-close"
          "way-out": "pause resume float_all float_all_here hold_view", "display-change": "display", "idle": "idle_act"}
 # Every app of the cast is called up once, to see that it still comes. The smallest cast has this many.
 ROLL_CALL = ["switch"] * min(len(cast["apps"]) for cast in walk.CASTS.values())
-# Words that are several acts, and what every journey begins and ends with: Arbor is started and its welcome closed; everything is brought into view, and it is quit.
+# Words that are several acts, and what every journey begins and ends with: Arbor is started, its welcome left open for half a minute and closed; everything is brought into view, and it is quit.
 SEVERAL = {"quit_and_start": ["quit-and-start"] + ROLL_CALL[::3] + ["quit-and-start", "open-close"], "wallpaper_click": ["macos-own"] * 2,
            "title_double_click": ["macos-own"] * 2, "hold_view": ["way-out", "view", "way-out"], "display": ["display-change", "view"]}
-AROUND = ["quit-and-start", "open-close", "view", "quit-and-start"] + ROLL_CALL
+AROUND = ["quit-and-start", "idle", "open-close", "view", "quit-and-start"] + ROLL_CALL
 
 
 def kinds_of(line):

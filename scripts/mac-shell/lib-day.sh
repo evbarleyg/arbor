@@ -297,6 +297,8 @@ day_cpu_seconds() {
 idle() {
   local seconds=$1 cpu lines share written
   arbor_answers || { sleep "$seconds"; return 0; }
+  # As it ships nothing is recorded. The next trace begins when this is over.
+  "$ARBOR_BIN/arborctl" trace off > /dev/null 2>&1
   cpu=$(day_cpu_seconds "$ARBOR_PID")
   lines=$(lines_of "$ARBOR_HOME/arbor.log")
   sleep "$seconds"
@@ -305,6 +307,7 @@ idle() {
   echo "  with nothing to do Arbor used $share % of a core and wrote $written lines a minute"
   if [ "$(echo "$share" | awk '{ print ($1 > 1) }')" = 1 ]; then note "finding $DAY_STEP -:busy FAIL with nothing to do Arbor used $share % of a core"; fi
   if [ "$written" -gt 20 ]; then note "finding $DAY_STEP -:busy FAIL with nothing to do Arbor wrote $written lines of log a minute"; fi
+  day_trace > /dev/null
 }
 
 must() {

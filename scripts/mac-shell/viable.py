@@ -60,6 +60,7 @@ READ_ELSEWHERE = {
     "input.forward_p50_more_ms_max": "jolts.py: the same for presses on a window of an app that is not in front, which macOS itself holds",
     "input.events_per_kind_min": "jolts.py: fewer events of a kind than this in a round say nothing",
     "previews_together_ms_max": "jolts.py: macOS's tiling preview and Arbor's drop preview up together for longer than this is fought",
+    "stage_margin_ms": "jolts.py: a change this shortly before Arbor's stage is seen belongs to what the stage then shows",
 }
 
 

@@ -852,6 +852,10 @@ walk_start() {
   # What Arbor has to say at its first start lies in the middle of the screen, over the windows. A person reads it and closes it.
   welcome=$(arbor_window)
   if [ -n "$welcome" ]; then
+    # First it is left open for half a minute, as by somebody who goes for a coffee: a window that only waits should cost nothing while it waits.
+    walk_act idle leave-alone-welcome-open "does nothing for half a minute, with Arbor's welcome window open"
+    idle 30
+    acted
     walk_act open-close close-welcome "closes Arbor's welcome window with its red button"
     # shellcheck disable=SC2046
     must click $(apptool button "$welcome" close)

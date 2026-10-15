@@ -906,13 +906,13 @@ The casts are those of `docs/VIABLE.md`: `stock`; `browsers` (Safari, Chrome, Fi
 half a laptop's screen and greet with a sheet, two that cannot be minimized, tabs, an open panel, an app without a window). A member that opens no window is left out; six are needed.
 
 **A whole gate** (`docs/VIABLE.md`). `gate.py plan` works its rows out of the numbers on that page: four journeys for each cell of macOS's tiling and the displays, the casts and Reduce Motion spread over
-them, a control for each cell, the sabotage run, two sits: 33 parts, some 230 minutes of Macs. `gate.sh` is one script that plays whichever part it is told: `run.sh` says only which part of how many a
+them, a control for each cell, the sabotage run, two sits: 39 parts, some 300 minutes of Macs. (It meets the page's numbers in what is written, not yet in what is played: see `COUNTED` in `gate.py`. Not to be dispatched whole until then.) `gate.sh` is one script that plays whichever part it is told: `run.sh` says only which part of how many a
 playing is (`$MAC_SHELL_PART`, `$MAC_SHELL_PARTS`), and how many there are says which dispatch it is.
 
 ```bash
-python3 scripts/mac-shell/gate.py plan first          # the two user-hours a commit is given first; `rest`: the other 31 parts; `whole`: all 33
+python3 scripts/mac-shell/gate.py plan first          # the two user-hours a commit is given first; `rest`: the other 37 parts; `whole`: all 39
 scripts/mac-shell/run.sh scripts/mac-shell/gate.sh scripts/mac-shell/gate.sh      # plays `first`: as many times gate.sh as the plan has rows
-python3 scripts/mac-shell/gate.py row <commit> 4 33   # what part 4 of 33 is on that commit; `gate.py acts <seed> <display> <acts> <cast>`: its walk
+python3 scripts/mac-shell/gate.py row <commit> 4 39   # what part 4 of 39 is on that commit; `gate.py acts <seed> <display> <acts> <cast>`: its walk
 python3 scripts/mac-shell/viable.py ledger <commit> <every directory with a run.json> -o ledger.json
 python3 scripts/mac-shell/viable.py check ledger.json --runs jobs.txt             # VIABLE, NOT VIABLE or INVALID, with the reasons
 ```

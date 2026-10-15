@@ -33,7 +33,7 @@ MIXTURE = [("switch", 90), ("tile-click", 22), ("open-close", 195), ("dock-key",
            ("resize", 120), ("macos-own", 62), ("way-out", 55), ("idle", 60)]
 
 
-IDLES = 4
+IDLES = 3
 
 
 class Dice:
