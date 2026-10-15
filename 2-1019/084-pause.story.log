@@ -1,0 +1,45 @@
+84 pause: presses ⌃⌥⎋
+expected: {'act': 'way-out', 'settled': 'quiet:907', 'moves': 'any', 'restores': 'all', 'places': '1', 'everything': '1', 'front': '256', 'floating': '', 'docked': '', 'first': '1'}
+FAIL rule 5: safari (w237) is 73,31 1324×791; its own size was 73,42 735×299
+FAIL rule 5: terminal (w251) is 369,177 863×499; its own size was 369,177 877×499
+
+04:55:21.333 SCREEN -- begin 84 pause
+04:55:21.333 SCREEN -- text 84 presses ⌃⌥⎋
+04:55:21.653 MACOS pid 25387 AXResized w234 AXWindow/AXStandardWindow 340 120 920 436
+04:55:21.654 MACOS pid 25387 AXMoved w234 AXWindow/AXStandardWindow 340 120 920 436
+04:55:21.688 SCREEN finder (w234) 340,120 920×436
+04:55:21.719 MACOS pid 26658 AXResized w237 AXWindow/AXStandardWindow 73 31 1324 791
+04:55:21.720 MACOS pid 26658 AXMoved w237 AXWindow/AXStandardWindow 73 31 1324 791
+04:55:21.751 MACOS pid 27133 AXTitleChanged w251 AXWindow/AXStandardWindow 369 177 863 499
+04:55:21.753 MACOS pid 27133 AXResized w251 AXWindow/AXStandardWindow 369 177 863 499
+04:55:21.754 MACOS pid 27133 AXMoved w251 AXWindow/AXStandardWindow 369 177 863 499
+04:55:21.761 SCREEN terminal (w251) 369,177 863×499
+04:55:21.761 SCREEN safari (w237) 73,31 1324×791
+04:55:21.785 MACOS pid 27585 AXResized w256 AXWindow/AXStandardWindow 437 85 723 625
+04:55:21.786 MACOS pid 27585 AXMoved w256 AXWindow/AXStandardWindow 437 85 723 625
+04:55:21.791 MACOS pid 26789 AXMoved w248 AXWindow/AXStandardWindow 165 65 673 439
+04:55:21.794 MACOS pid 27435 AXMoved w253 AXWindow/AXStandardWindow 0 31 1600 791
+04:55:21.796 MACOS pid 27985 AXMoved w260 AXWindow/AXStandardWindow 4 35 708 424
+04:55:21.803 MACOS pid 28227 AXMoved w262 AXWindow/AXStandardWindow 240 72 1120 630
+04:55:21.806 MACOS pid 30072 AXMoved w284 AXWindow/AXStandardWindow 40 70 300 190
+04:55:21.807 SCREEN settings (w256) 437,85 723×625
+04:55:21.807 SCREEN calendar (w253) 0,31 1600×791
+04:55:21.807 SCREEN textedit (w248) 165,65 673×439
+04:55:21.807 SCREEN w264 of Mail 565,179 470×416
+04:55:21.807 SCREEN mail (w262) 240,72 1120×630
+04:55:21.807 SCREEN preview (w260) 4,35 708×424
+04:55:21.815 MACOS pid 30092 AXMoved w286 AXWindow/AXStandardWindow 360 70 300 190
+04:55:21.819 INFO  trace day-4 ended: 74 lines, Arbor stopped
+04:55:21.833 INFO  registered 1 shortcuts in 13610 µs
+04:55:21.834 INFO  stopped; all windows returned to view
+04:55:21.834 INFO  paused
+04:55:21.836 DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Paused until ⌃⌥⎋; windows are back in view, in their own sizes
+04:55:21.882 SCREEN w787 of Arbor 559,728 482×38 (level 6)
+04:55:21.882 SCREEN desk-a (w284) 40,70 300×190
+04:55:21.882 SCREEN desk-b (w286) 360,70 300×190
+04:55:21.882 SCREEN w780 of Arbor left the screen
+04:55:21.882 SCREEN w781 of Arbor left the screen
+04:55:21.882 SCREEN w778 of Arbor left the screen
+04:55:21.882 SCREEN front to back: settings notes terminal finder safari calendar textedit desk-a desk-b w264 mail preview
+04:55:22.993 SCREEN -- end 84 act=way-out settled=quiet:907 moves=any restores=all places=1 everything=1 front=256 floating= docked= first=1
+04:55:23.342 SCRIPT == 85 dock-icon-terminal

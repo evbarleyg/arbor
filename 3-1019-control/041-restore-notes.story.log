@@ -1,0 +1,43 @@
+41 restore-notes: clicks notes's icon in the Dock, which brings its minimized window back
+expected: {'act': 'open-close', 'settled': 'quiet:978', 'moves': ',,', 'comes': '922', 'front': '922'}
+FAIL rule 2: calendar (w925) moved and came back, and the step did not name it
+
+05:01:42.973 SCREEN -- begin 41 restore-notes
+05:01:42.973 SCREEN -- text 41 clicks notes's icon in the Dock, which brings its minimized window back
+05:01:43.713 SCREEN the button is down 722 855
+05:01:43.787 SCREEN the button is up 722 855
+05:01:43.796 SCREEN in front: process 62282 com.apple.Notes
+05:01:43.797 MACOS workspace didActivate pid 62282 com.apple.Notes regular
+05:01:43.798 MACOS workspace didDeactivate pid 62217 com.apple.Terminal regular
+05:01:43.823 MACOS pid 62217 AXApplicationDeactivated
+05:01:43.933 SCREEN notes (w922) 1448,806 54×66
+05:01:43.933 SCREEN front to back: notes terminal finder settings calendar safari desk-a desk-b textedit w932 mail preview
+05:01:43.944 SCREEN notes (w922) 1448,791 63×81
+05:01:43.961 SCREEN notes (w922) 1449,750 107×122
+05:01:44.001 SCREEN notes (w922) 1451,698 201×174
+05:01:44.020 SCREEN notes (w922) 1453,604 462×268
+05:01:44.053 SCREEN notes (w922) 1458,434 1070×438
+05:01:44.086 SCREEN notes (w922) 1461,367 1285×505
+05:01:44.101 SCREEN notes (w922) 1464,283 1489×589
+05:01:44.119 SCREEN notes (w922) 1467,236 1555×636
+05:01:44.143 SCREEN notes (w922) 1470,202 1579×661
+05:01:44.180 SCREEN notes (w922) 1471,189 1583×661
+05:01:44.209 SCREEN notes (w922) 1473,180 1583×661
+05:01:44.236 SCREEN notes (w922) 1474,175 1582×661
+05:01:44.266 SCREEN notes (w922) 1475,173 1581×661
+05:01:44.320 SCREEN notes (w922) 1487,173 1569×661
+05:01:44.371 SCREEN notes (w922) 1540,175 1516×661
+05:01:44.420 SCREEN notes (w922) 1566,175 1490×661
+05:01:44.444 SCREEN notes (w922) 1628,177 1428×661
+05:01:44.460 MACOS pid 62282 AXApplicationActivated
+05:01:44.469 MACOS pid 62282 AXFocusedWindowChanged w922 AXWindow/AXStandardWindow 2056 192 1000 660
+05:01:44.471 MACOS pid 62282 AXMainWindowChanged w922 AXWindow/AXStandardWindow 2056 192 1000 660
+05:01:44.472 MACOS pid 62282 AXWindowDeminiaturized w922 AXWindow/AXStandardWindow 2056 192 1000 660
+05:01:44.473 MACOS pid 62282 AXWindowCreated w922 AXWindow/AXStandardWindow 2056 192 1000 660
+05:01:44.481 SCREEN notes (w922) 1700,180 1356×661
+05:01:44.718 SCREEN (nothing was seen for 236 ms)
+05:01:44.718 SCREEN notes (w922) 2056,192 1000×660
+05:01:44.718 SCREEN calendar (w925) 0,31 1600×791
+05:01:44.726 MACOS pid 62342 AXResized w925 AXWindow/AXStandardWindow 0 31 1600 791
+05:01:45.727 SCREEN -- end 41 act=open-close settled=quiet:978 moves=,, comes=922 front=922
+05:01:46.460 SCRIPT == 42 dock-icon-safari

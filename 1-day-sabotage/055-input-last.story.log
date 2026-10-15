@@ -1,0 +1,146 @@
+55 input-last: a round of input on two windows of its own: presses behind and in front, keys, a scroll, a drag inside the text
+expected: {'act': 'instrument', 'settled': 'quiet:880', 'round': 'last', 'front': '87', 'posted': 'press:25,up:25,key:13,scroll:28,dragged:20', 'offence': 'input-held', 'floating': '', 'docked': ''}
+FAIL rule 6: 1 of 13 events of the kind key never reached the apps
+
+04:47:27.546 SCREEN -- begin 55 input-last
+04:47:27.546 SCREEN -- text 55 a round of input on two windows of its own: presses behind and in front, keys, a scroll, a drag inside the text
+04:47:27.560 SCREEN in front: process 13986 ?
+04:47:27.561 MACOS workspace didActivate pid 13986 ? regular
+04:47:27.561 MACOS workspace didDeactivate pid 13964 ? regular
+04:47:27.565 MACOS pid 13986 AXFocusedWindowChanged w89 AXWindow/AXStandardWindow 360 70 300 190
+04:47:27.566 MACOS pid 13986 AXMainWindowChanged w89 AXWindow/AXStandardWindow 360 70 300 190
+04:47:27.566 MACOS pid 13964 AXApplicationDeactivated
+04:47:27.566 MACOS pid 13986 AXApplicationActivated
+04:47:27.574 SCREEN front to back: desk-b desk-a textedit preview finder
+04:47:28.014 SCREEN in front: process 13964 ?
+04:47:28.018 MACOS workspace didActivate pid 13964 ? regular
+04:47:28.019 MACOS workspace didDeactivate pid 13986 ? regular
+04:47:28.020 MACOS pid 13964 AXFocusedWindowChanged w87 AXWindow/AXStandardWindow 40 70 300 190
+04:47:28.023 SCREEN front to back: desk-a desk-b textedit preview finder
+04:47:28.028 MACOS pid 13964 AXMainWindowChanged w87 AXWindow/AXStandardWindow 40 70 300 190
+04:47:28.029 MACOS pid 13964 AXApplicationActivated
+04:47:28.029 MACOS pid 13986 AXApplicationDeactivated
+04:47:29.279 SCREEN in front: process 13986 ?
+04:47:29.280 MACOS workspace didActivate pid 13986 ? regular
+04:47:29.281 MACOS workspace didDeactivate pid 13964 ? regular
+04:47:29.285 MACOS pid 13986 AXApplicationActivated
+04:47:29.285 MACOS pid 13964 AXApplicationDeactivated
+04:47:29.314 SCREEN front to back: desk-b desk-a textedit preview finder
+04:47:29.314 SCREEN the button is down 510 84
+04:47:29.363 SCREEN the button is up 510 84
+04:47:29.797 SCREEN in front: process 13964 ?
+04:47:29.811 MACOS workspace didActivate pid 13964 ? regular
+04:47:29.813 MACOS workspace didDeactivate pid 13986 ? regular
+04:47:29.820 SCREEN front to back: desk-a desk-b textedit preview finder
+04:47:29.820 SCREEN the button is down 190 84
+04:47:29.820 MACOS pid 13964 AXApplicationActivated
+04:47:29.821 MACOS pid 13986 AXApplicationDeactivated
+04:47:29.936 SCREEN the button is up 190 84
+04:47:30.336 SCREEN in front: process 13986 ?
+04:47:30.352 MACOS workspace didActivate pid 13986 ? regular
+04:47:30.357 SCREEN front to back: desk-b desk-a textedit preview finder
+04:47:30.357 SCREEN the button is down 510 84
+04:47:30.358 MACOS workspace didDeactivate pid 13964 ? regular
+04:47:30.362 MACOS pid 13986 AXApplicationActivated
+04:47:30.362 MACOS pid 13964 AXApplicationDeactivated
+04:47:30.472 SCREEN the button is up 510 84
+04:47:30.780 SCREEN the button is down 190 84
+04:47:30.785 SCREEN in front: process 13964 ?
+04:47:30.795 MACOS workspace didActivate pid 13964 ? regular
+04:47:30.796 MACOS workspace didDeactivate pid 13986 ? regular
+04:47:30.800 SCREEN front to back: desk-a desk-b textedit preview finder
+04:47:30.803 MACOS pid 13964 AXApplicationActivated
+04:47:30.807 MACOS pid 13986 AXApplicationDeactivated
+04:47:30.888 SCREEN the button is up 190 84
+04:47:31.265 SCREEN in front: process 13986 ?
+04:47:31.266 SCREEN front to back: desk-b desk-a textedit preview finder
+04:47:31.266 SCREEN the button is down 510 84
+04:47:31.267 MACOS workspace didActivate pid 13986 ? regular
+04:47:31.268 MACOS workspace didDeactivate pid 13964 ? regular
+04:47:31.277 MACOS pid 13986 AXApplicationActivated
+04:47:31.278 MACOS pid 13964 AXApplicationDeactivated
+04:47:31.362 SCREEN the button is up 510 84
+04:47:31.820 SCREEN front to back: desk-a desk-b textedit preview finder
+04:47:31.820 SCREEN the button is down 190 84
+04:47:31.821 SCREEN in front: process 13964 ?
+04:47:31.840 MACOS workspace didActivate pid 13964 ? regular
+04:47:31.843 MACOS workspace didDeactivate pid 13986 ? regular
+04:47:31.847 MACOS pid 13986 AXApplicationDeactivated
+04:47:31.848 MACOS pid 13964 AXApplicationActivated
+04:47:31.962 SCREEN the button is up 190 84
+04:47:32.428 SCREEN in front: process 13986 ?
+04:47:32.430 MACOS workspace didActivate pid 13986 ? regular
+04:47:32.430 MACOS workspace didDeactivate pid 13964 ? regular
+04:47:32.434 MACOS pid 13986 AXApplicationActivated
+04:47:32.434 MACOS pid 13964 AXApplicationDeactivated
+04:47:32.457 SCREEN front to back: desk-b desk-a textedit preview finder
+04:47:32.457 SCREEN the button is down 510 84
+04:47:32.565 SCREEN the button is up 510 84
+04:47:32.957 SCREEN in front: process 13964 ?
+04:47:32.962 MACOS workspace didActivate pid 13964 ? regular
+04:47:32.963 MACOS workspace didDeactivate pid 13986 ? regular
+04:47:32.965 MACOS pid 13964 AXApplicationActivated
+04:47:32.965 MACOS pid 13986 AXApplicationDeactivated
+04:47:32.967 SCREEN front to back: desk-a desk-b textedit preview finder
+04:47:32.967 SCREEN the button is down 190 84
+04:47:33.105 SCREEN the button is up 190 84
+04:47:33.561 SCREEN in front: process 13986 ?
+04:47:33.563 MACOS workspace didActivate pid 13986 ? regular
+04:47:33.563 MACOS workspace didDeactivate pid 13964 ? regular
+04:47:33.567 MACOS pid 13986 AXApplicationActivated
+04:47:33.568 SCREEN front to back: desk-b desk-a textedit preview finder
+04:47:33.568 SCREEN the button is down 510 84
+04:47:33.568 MACOS pid 13964 AXApplicationDeactivated
+04:47:33.707 SCREEN the button is up 510 84
+04:47:34.181 SCREEN in front: process 13964 ?
+04:47:34.182 SCREEN front to back: desk-a desk-b textedit preview finder
+04:47:34.182 SCREEN the button is down 190 84
+04:47:34.184 MACOS workspace didActivate pid 13964 ? regular
+04:47:34.185 MACOS workspace didDeactivate pid 13986 ? regular
+04:47:34.193 MACOS pid 13964 AXApplicationActivated
+04:47:34.194 MACOS pid 13986 AXApplicationDeactivated
+04:47:34.312 SCREEN the button is up 190 84
+04:47:34.800 SCREEN in front: process 13986 ?
+04:47:34.811 SCREEN front to back: desk-b desk-a textedit preview finder
+04:47:34.811 SCREEN the button is down 510 84
+04:47:34.815 MACOS workspace didActivate pid 13986 ? regular
+04:47:34.816 MACOS workspace didDeactivate pid 13964 ? regular
+04:47:34.825 MACOS pid 13986 AXApplicationActivated
+04:47:34.826 MACOS pid 13964 AXApplicationDeactivated
+04:47:34.986 SCREEN the button is up 510 84
+04:47:35.351 SCREEN in front: process 13964 ?
+04:47:35.363 MACOS workspace didActivate pid 13964 ? regular
+04:47:35.363 MACOS workspace didDeactivate pid 13986 ? regular
+04:47:35.374 MACOS pid 13964 AXApplicationActivated
+04:47:35.374 MACOS pid 13986 AXApplicationDeactivated
+04:47:35.377 SCREEN front to back: desk-a desk-b textedit preview finder
+04:47:35.377 SCREEN the button is down 190 84
+04:47:35.475 SCREEN the button is up 190 84
+04:47:35.929 SCREEN the button is down 184 84
+04:47:35.998 SCREEN the button is up 184 84
+04:47:36.202 SCREEN the button is down 196 84
+04:47:36.327 SCREEN the button is up 196 84
+04:47:36.553 SCREEN the button is down 184 84
+04:47:36.637 SCREEN the button is up 184 84
+04:47:36.822 SCREEN the button is down 196 84
+04:47:36.995 SCREEN the button is up 196 84
+04:47:37.196 SCREEN the button is down 184 84
+04:47:37.325 SCREEN the button is up 184 84
+04:47:37.487 SCREEN the button is down 196 84
+04:47:37.616 SCREEN the button is up 196 84
+04:47:37.795 SCREEN the button is down 184 84
+04:47:37.846 SCREEN the button is up 184 84
+04:47:38.040 SCREEN the button is down 196 84
+04:47:38.128 SCREEN the button is up 196 84
+04:47:38.378 SCREEN the button is down 184 84
+04:47:38.461 SCREEN the button is up 184 84
+04:47:38.671 SCREEN the button is down 196 84
+04:47:38.817 SCREEN the button is up 196 84
+04:47:38.944 SCREEN the button is down 184 84
+04:47:39.045 SCREEN the button is up 184 84
+04:47:39.253 SCREEN the button is down 196 84
+04:47:39.361 SCREEN the button is up 196 84
+04:47:42.703 SCREEN the button is down 160 175
+04:47:44.111 SCREEN the button is up 220 195
+04:47:45.231 SCREEN -- end 55 act=instrument settled=quiet:880 round=last front=87 posted=press:25,up:25,key:13,scroll:28,dragged:20 offence=input-held floating= docked=
+04:47:45.448 SCRIPT == 56 honest-dock-icon

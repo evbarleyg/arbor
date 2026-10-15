@@ -1,0 +1,65 @@
+80 restore-safari: clicks its miniature in the Dock
+expected: {'act': 'open-close', 'settled': 'quiet:907', 'moves': '1395,1398,1409,1395,1398,1409,', 'comes': '1398', 'front': '1398', 'returns': '78', 'floating': '1412,1413,1416,1417,1421,1422,1439,1441', 'docked': '1395,1398,1409'}
+FAIL rule 2: terminal (w1412) is not back where it was after step 78: 525,238 429×500, it was at 106,238 863×500
+FAIL rule 2: notes (w1413) is not back where it was after step 78: 386,105 709×660, it was at 300,105 1000×660
+FAIL rule 2: calendar (w1416) is not back where it was after step 78: 401,33 680×791, it was at 0,31 1600×791
+FAIL rule 2: settings (w1417) is not back where it was after step 78: 379,85 723×625, it was at 437,85 723×625
+FAIL rule 2: preview (w1421) is not back where it was after step 78: 387,35 708×424, it was at 4,35 708×424
+FAIL rule 2: mail (w1422) is not back where it was after step 78: 305,72 871×630, it was at 240,72 1120×630
+FAIL rule 2: w1425 of Mail is not back where it was after step 78: 506,179 470×416, it was at 565,179 470×416
+FAIL rule 2: desk-a (w1439) is not back where it was after step 78: 525,70 300×190, it was at 40,70 300×190
+FAIL rule 2: desk-b (w1441) is not back where it was after step 78: 525,70 300×190, it was at 360,70 300×190
+
+05:09:08.511 SCREEN -- begin 80 restore-safari
+05:09:08.511 SCREEN -- text 80 clicks its miniature in the Dock
+05:09:09.007 SCREEN the button is down 1471 855
+05:09:09.161 SCREEN safari (w1398) 1447,777 42×104
+05:09:09.161 SCREEN front to back: safari w1540 calendar finder preview w1425 mail settings notes terminal textedit desk-a desk-b w1555 w1545
+05:09:09.161 SCREEN the button is up 1471 855
+05:09:09.188 SCREEN safari (w1398) 1410,708 79×173
+05:09:09.227 SCREEN safari (w1398) 1268,579 221×302
+05:09:09.254 SCREEN safari (w1398) 1091,465 398×416
+05:09:09.272 SCREEN safari (w1398) 959,386 531×495
+05:09:09.281 SCREEN safari (w1398) 896,347 594×534
+05:09:09.343 SCREEN safari (w1398) 652,145 838×736
+05:09:09.347 SCREEN safari (w1398) 637,120 854×761
+05:09:09.420 SCREEN safari (w1398) 617,43 854×767
+05:09:09.431 SCREEN safari (w1398) 617,43 844×767
+05:09:09.473 SCREEN safari (w1398) 617,43 767×767
+05:09:09.546 SCREEN safari (w1398) 617,43 629×767
+05:09:09.558 SCREEN safari (w1398) 617,43 617×767
+05:09:09.608 SCREEN safari (w1398) 617,43 577×767
+05:09:09.614 SCREEN safari (w1398) 617,43 575×767
+05:09:09.837 SCREEN (nothing was seen for 222 ms)
+05:09:09.837 SCREEN safari (w1398) 617,43 574×767
+05:09:09.838 SCREEN in front: process 79399 com.apple.Safari
+05:09:09.839 MACOS pid 79965 AXApplicationDeactivated
+05:09:09.849 MACOS workspace didActivate pid 79399 com.apple.Safari regular
+05:09:09.849 MACOS workspace didDeactivate pid 79965 com.apple.iCal regular
+05:09:09.849 MACOS pid 79399 AXApplicationActivated
+05:09:09.850 MACOS pid 79399 AXFocusedWindowChanged w1398 AXWindow/AXStandardWindow 617 43 574 767
+05:09:09.851 MACOS pid 79399 AXMainWindowChanged w1398 AXWindow/AXStandardWindow 617 43 574 767
+05:09:09.852 DEBUG focus is on w1398
+05:09:09.852 DEBUG focus report for w1398, which does not have the keyboard or takes no space; 4 checks left
+05:09:09.852 MACOS pid 79399 AXWindowDeminiaturized w1398 AXWindow/AXStandardWindow 617 43 574 767
+05:09:09.852 MACOS pid 79399 AXApplicationActivated
+05:09:09.873 INFO  made room for w1395
+05:09:09.885 SCREEN w1540 of Arbor left the screen
+05:09:09.885 SCREEN front to back: safari calendar finder preview w1425 mail settings notes terminal textedit desk-a desk-b w1555 w1545
+05:09:09.901 SCREEN finder (w1395) 12,43 501×767
+05:09:09.901 SCREEN textedit (w1409) 969,43 385×767
+05:09:09.902 MACOS pid 78491 AXResized w1395 AXWindow/AXStandardWindow 12 43 501 767
+05:09:09.915 MACOS pid 79618 AXResized w1409 AXWindow/AXStandardWindow 1203 43 385 767
+05:09:09.916 MACOS pid 79618 AXMoved w1409 AXWindow/AXStandardWindow 1203 43 385 767
+05:09:09.919 DEBUG w1398 has the keyboard
+05:09:09.937 SCREEN textedit (w1409) 1203,43 385×767
+05:09:09.987 SCREEN w1540 of Arbor 608,34 592×785
+05:09:09.987 SCREEN w1549 of Arbor 525,43 80×767
+05:09:09.987 SCREEN w1555 of Arbor 513,43 12×767
+05:09:09.987 SCREEN w1545 of Arbor 605,43 12×767
+05:09:09.987 SCREEN w1550 of Arbor 1191,43 12×767
+05:09:09.987 SCREEN w1541 of Arbor 0,31 1600×791 (level -2147483602)
+05:09:09.987 SCREEN front to back: w1540 safari calendar finder preview w1425 mail settings notes terminal textedit desk-a desk-b w1549 w1555 w1545 w1550
+05:09:10.248 INFO  displays changed: 1 display(s), 0 remembered
+05:09:11.149 SCREEN -- end 80 act=open-close settled=quiet:907 moves=1395,1398,1409,1395,1398,1409, comes=1398 front=1398 returns=78 floating=1412,1413,1416,1417,1421,1422,1439,1441 docked=1395,1398,1409
+05:09:11.668 SCRIPT == 81 click-finder

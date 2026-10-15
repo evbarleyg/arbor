@@ -1,0 +1,15 @@
+28 display-plug: the second display: plug
+expected: {'act': 'display-change', 'settled': 'quiet:389', 'moves': 'any', 'leaves': 'any'}
+FAIL rule 3: notes (w922) moved 2 times
+
+05:00:31.460 SCREEN -- begin 28 display-plug
+05:00:31.460 SCREEN -- text 28 the second display: plug
+05:00:31.485 SCREEN notes (w922) 2060,183 1000×660
+05:00:31.788 SCREEN (nothing was seen for 302 ms)
+05:00:31.788 SCREEN notes (w922) 2056,192 1000×660
+05:00:31.977 MACOS pid 62282 AXMoved w922 AXWindow/AXStandardWindow 2056 192 1000 660
+05:00:31.987 SCREEN (nothing was seen for 198 ms)
+05:00:31.987 SCREEN calendar (w925) 128,109 1600×791
+05:00:32.045 MACOS pid 62342 AXMoved w925 AXWindow/AXStandardWindow 128 109 1600 791
+05:00:37.807 SCREEN -- end 28 act=display-change settled=quiet:389 moves=any leaves=any
+05:00:38.454 SCRIPT == 29 click-notes

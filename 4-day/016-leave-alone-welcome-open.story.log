@@ -1,0 +1,11 @@
+16 leave-alone-welcome-open: does nothing for half a minute, with Arbor's welcome window open
+expected: {'act': 'idle', 'settled': 'quiet:369', 'floating': '1395,1398,1409,1412,1413,1416,1417,1421,1422,1439,1441', 'docked': ''}
+FAIL rule -: with nothing to do Arbor used 1.7 % of a core
+
+05:05:02.263 SCREEN -- begin 16 leave-alone-welcome-open
+05:05:02.263 SCREEN -- text 16 does nothing for half a minute, with Arbor's welcome window open
+05:05:02.271 INFO  trace day-1 ended: 29 lines, trace off
+05:05:32.353 SCREEN -- finding 16 -:busy FAIL with nothing to do Arbor used 1.7 % of a core
+05:05:32.375 INFO  trace day-2: recording to /tmp/arbor-shell.btKTV8/home/traces/2026-10-15-050532-day-2.jsonl
+05:05:32.864 SCREEN -- end 16 act=idle settled=quiet:369 floating=1395,1398,1409,1412,1413,1416,1417,1421,1422,1439,1441 docked=
+05:05:33.239 SCRIPT == 17 close-welcome

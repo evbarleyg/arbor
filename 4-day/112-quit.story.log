@@ -1,0 +1,60 @@
+112 quit: chooses Quit Arbor in Arbor's menu
+expected: {'act': 'quit-and-start', 'settled': 'quiet:808', 'moves': 'any', 'restores': 'all', 'places': '1', 'everything': '1'}
+FAIL rule -: Arbor's process ended, and nobody asked it to
+ODD rule 3: w1425 of Mail went 248 points out of its way before it ended up
+FAIL rule 5: terminal (w1412) is 106,238 863×500; its own size was 106,238 1600×791
+FAIL rule 5: calendar (w1416) has its size back but not its place: 385,145 682×791, it was at 445,205 681×791
+
+05:11:05.484 SCREEN -- begin 112 quit
+05:11:05.484 SCREEN -- text 112 chooses Quit Arbor in Arbor's menu
+05:11:06.260 DEBUG menu bar click: x 67.0 by the event, 67.0 by the screen, button 134.0 wide
+05:11:06.503 SCREEN w1697 of Arbor 1227,31 286×785 (level 101)
+05:11:07.806 SCREEN w1697 of Arbor left the screen
+05:11:07.983 MACOS pid 78491 AXResized w1395 AXWindow/AXStandardWindow 340 120 920 436
+05:11:07.984 MACOS pid 78491 AXMoved w1395 AXWindow/AXStandardWindow 340 120 920 436
+05:11:08.018 SCREEN finder (w1395) 340,120 920×436
+05:11:08.057 SCREEN safari (w1398) 12,43 1324×778
+05:11:08.061 SCREEN safari (w1398) 217,31 1324×778
+05:11:08.091 MACOS pid 79399 AXResized w1398 AXWindow/AXStandardWindow 217 31 1324 790
+05:11:08.091 MACOS pid 79399 AXMoved w1398 AXWindow/AXStandardWindow 217 31 1324 790
+05:11:08.093 MACOS pid 79399 AXResized w1398 AXWindow/AXStandardWindow 217 31 1324 790
+05:11:08.103 MACOS pid 79835 AXTitleChanged w1412 AXWindow/AXStandardWindow 106 238 863 500
+05:11:08.105 MACOS pid 79835 AXResized w1412 AXWindow/AXStandardWindow 106 238 863 500
+05:11:08.106 SCREEN safari (w1398) 217,31 1324×790
+05:11:08.106 MACOS pid 79835 AXMoved w1412 AXWindow/AXStandardWindow 106 238 863 500
+05:11:08.113 SCREEN terminal (w1412) 106,238 863×500
+05:11:08.165 SCREEN notes (w1413) 1599,770 800×791
+05:11:08.189 MACOS pid 79903 AXResized w1413 AXWindow/AXStandardWindow -1 32 800 791
+05:11:08.196 MACOS pid 79903 AXMoved w1413 AXWindow/AXStandardWindow -1 32 800 791
+05:11:08.204 SCREEN notes (w1413) -1,32 800×791
+05:11:08.261 SCREEN calendar (w1416) 1599,770 682×791
+05:11:08.261 MACOS pid 79965 AXResized w1416 AXWindow/AXStandardWindow 385 145 682 791
+05:11:08.261 MACOS pid 79965 AXMoved w1416 AXWindow/AXStandardWindow 385 145 682 791
+05:11:08.264 MACOS pid 80018 AXMoved w1417 AXWindow/AXStandardWindow 437 85 723 625
+05:11:08.268 MACOS pid 80435 AXMoved w1421 AXWindow/AXStandardWindow 4 35 708 424
+05:11:08.304 SCREEN calendar (w1416) 385,145 682×791
+05:11:08.304 SCREEN preview (w1421) 4,35 708×424
+05:11:08.304 SCREEN settings (w1417) 437,85 723×625
+05:11:08.385 SCREEN w1425 of Mail 1924,877 470×416
+05:11:08.385 SCREEN mail (w1422) 1599,770 1120×630
+05:11:08.409 MACOS pid 80501 AXResized w1422 AXWindow/AXStandardWindow 240 72 1120 630
+05:11:08.410 MACOS pid 80501 AXMoved w1422 AXWindow/AXStandardWindow 240 72 1120 630
+05:11:08.415 MACOS pid 82060 AXMoved w1439 AXWindow/AXStandardWindow 40 70 300 190
+05:11:08.416 MACOS pid 82090 AXMoved w1441 AXWindow/AXStandardWindow 360 70 300 190
+05:11:08.430 MACOS pid 98253 AXResized w1624 AXWindow/AXStandardWindow 165 65 673 439
+05:11:08.431 MACOS pid 98253 AXMoved w1624 AXWindow/AXStandardWindow 165 65 673 439
+05:11:08.444 INFO  trace day-16 ended: 47 lines, Arbor stopped
+05:11:08.445 INFO  stopped; all windows returned to view
+05:11:08.461 SCREEN textedit (w1624) 165,65 673×439
+05:11:08.461 SCREEN w1425 of Mail 565,179 470×416
+05:11:08.461 SCREEN mail (w1422) 240,72 1120×630
+05:11:08.461 SCREEN desk-a (w1439) 40,70 300×190
+05:11:08.461 SCREEN desk-b (w1441) 360,70 300×190
+05:11:08.465 INFO  Arbor quit
+05:11:08.481 SCREEN w1686 of Arbor left the screen
+05:11:08.481 SCREEN w1687 of Arbor left the screen
+05:11:08.481 SCREEN front to back: safari finder calendar notes textedit preview w1425 mail settings terminal desk-a desk-b
+05:11:08.519 SCREEN -- arbor gone
+05:11:09.511 SCREEN -- finding 112 -:crash FAIL Arbor's process ended, and nobody asked it to
+05:11:09.532 SCREEN -- end 112 act=quit-and-start settled=quiet:808 moves=any restores=all places=1 everything=1
+05:11:09.890 SCRIPT == 113 dock-icon-safari

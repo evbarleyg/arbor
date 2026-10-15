@@ -1,0 +1,42 @@
+66 view-desktop: presses ⌃⌥D
+expected: {'act': 'view', 'settled': 'quiet:899', 'moves': 'any', 'floating': '1412,1413,1416,1417,1421,1422,1439,1441', 'docked': '1395,1398,1409'}
+ODD rule 3: the last window came to rest 724 ms after the key or the button
+
+05:08:27.366 SCREEN -- begin 66 view-desktop
+05:08:27.366 SCREEN -- text 66 presses ⌃⌥D
+05:08:27.581 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 11 stand-ins, 0.46 s
+05:08:27.581 DEBUG the stage kept the windows waiting 4 ms: its panel 0, 11 costumes 0 (0 not ready), the desktop 1, going up 2
+05:08:27.584 MACOS pid 78491 AXMoved w1395 AXWindow/AXStandardWindow 1599 770 501 767
+05:08:27.586 SCREEN w1473 of Arbor 0,0 1600×900 (level 4)
+05:08:27.586 SCREEN safari (w1398) 1599,770 574×767
+05:08:27.586 SCREEN finder (w1395) 1599,770 501×767
+05:08:27.589 MACOS pid 79399 AXMoved w1398 AXWindow/AXStandardWindow 1599 770 574 767
+05:08:27.597 MACOS pid 79618 AXMoved w1409 AXWindow/AXStandardWindow 1599 790 385 767
+05:08:27.603 MACOS pid 79965 AXFocusedWindowChanged w1416 AXWindow/AXStandardWindow 0 31 1600 791
+05:08:27.651 SCREEN in front: process 79965 com.apple.iCal
+05:08:27.652 INFO  desktop: showing the Desktop
+05:08:27.653 DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Your other windows are out of view, not closed · ⌃⌥Space shows everything
+05:08:27.657 MACOS pid 79965 AXMainWindowChanged w1416 AXWindow/AXStandardWindow 0 31 1600 791
+05:08:27.658 SCREEN textedit (w1409) 1599,790 385×767
+05:08:27.658 MACOS workspace didActivate pid 79965 com.apple.iCal regular
+05:08:27.659 MACOS workspace didDeactivate pid 79399 com.apple.Safari regular
+05:08:27.660 MACOS pid 79965 AXFocusedWindowChanged w1416 AXWindow/AXStandardWindow 0 31 1600 791
+05:08:27.660 MACOS pid 79399 AXApplicationDeactivated
+05:08:27.660 MACOS pid 79965 AXMainWindowChanged w1416 AXWindow/AXStandardWindow 0 31 1600 791
+05:08:27.660 MACOS pid 79965 AXApplicationActivated
+05:08:27.665 DEBUG focus is on w1416
+05:08:27.666 SCREEN front to back: calendar w1540 safari finder preview w1425 mail settings notes terminal textedit desk-a desk-b w1549 w1555 w1545 w1550
+05:08:27.666 DEBUG w1416 has the keyboard
+05:08:27.725 SCREEN w1542 of Arbor 512,728 576×38 (level 6)
+05:08:27.725 SCREEN w1540 of Arbor -6,25 1612×803
+05:08:27.725 SCREEN w1545 of Arbor left the screen
+05:08:27.725 SCREEN w1555 of Arbor left the screen
+05:08:27.725 SCREEN w1550 of Arbor left the screen
+05:08:27.725 SCREEN front to back: w1540 calendar safari finder preview w1425 mail settings notes terminal textedit desk-a desk-b w1549
+05:08:27.823 SCREEN w1541 of Arbor left the screen
+05:08:27.857 SCREEN w1549 of Arbor left the screen
+05:08:27.857 SCREEN front to back: w1540 calendar safari finder preview w1425 mail settings notes terminal textedit desk-a desk-b
+05:08:28.262 DEBUG stage down
+05:08:28.293 SCREEN w1473 of Arbor left the screen
+05:08:29.040 SCREEN -- end 66 act=view settled=quiet:899 moves=any floating=1412,1413,1416,1417,1421,1422,1439,1441 docked=1395,1398,1409
+05:08:29.366 SCRIPT == 67 view-all

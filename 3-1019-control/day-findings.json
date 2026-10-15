@@ -1,0 +1,1393 @@
+{
+ "sampler": "samples 9936 seconds 249.1 hz 39.9 cost-ms 2.90 late 31 longest-gap-ms 630 whole-samples 11877 whole-seconds 297.8 whole-late 49",
+ "input": {
+  "events": 259,
+  "p50_us": 622,
+  "p99_us": 82839,
+  "max_us": 129933,
+  "kinds": {
+   "down": {
+    "events": 21,
+    "p50_us": 726,
+    "p99_us": 5443,
+    "max_us": 5443
+   },
+   "dragged": {
+    "events": 198,
+    "p50_us": 603,
+    "p99_us": 4973,
+    "max_us": 5830
+   },
+   "forward": {
+    "events": 7,
+    "p50_us": 881,
+    "p99_us": 129933,
+    "max_us": 129933
+   },
+   "key": {
+    "events": 5,
+    "p50_us": 653,
+    "p99_us": 1046,
+    "max_us": 1046
+   },
+   "up": {
+    "events": 28,
+    "p50_us": 664,
+    "p99_us": 123249,
+    "max_us": 123249
+   }
+  },
+  "rounds": {
+   "before": {
+    "down": {
+     "events": 13,
+     "p50_us": 671,
+     "p99_us": 1396,
+     "max_us": 1396
+    },
+    "dragged": {
+     "events": 20,
+     "p50_us": 455,
+     "p99_us": 1568,
+     "max_us": 1568
+    },
+    "forward": {
+     "events": 12,
+     "p50_us": 10378,
+     "p99_us": 16403,
+     "max_us": 16403
+    },
+    "key": {
+     "events": 13,
+     "p50_us": 599,
+     "p99_us": 860,
+     "max_us": 860
+    },
+    "scroll": {
+     "events": 28,
+     "p50_us": 340,
+     "p99_us": 661,
+     "max_us": 661
+    },
+    "up": {
+     "events": 25,
+     "p50_us": 463,
+     "p99_us": 2238,
+     "max_us": 2238
+    }
+   },
+   "after": {
+    "down": {
+     "events": 13,
+     "p50_us": 715,
+     "p99_us": 3845,
+     "max_us": 3845
+    },
+    "dragged": {
+     "events": 20,
+     "p50_us": 380,
+     "p99_us": 973,
+     "max_us": 973
+    },
+    "forward": {
+     "events": 12,
+     "p50_us": 8919,
+     "p99_us": 13821,
+     "max_us": 13821
+    },
+    "key": {
+     "events": 13,
+     "p50_us": 506,
+     "p99_us": 2507,
+     "max_us": 2507
+    },
+    "scroll": {
+     "events": 28,
+     "p50_us": 310,
+     "p99_us": 565,
+     "max_us": 565
+    },
+    "up": {
+     "events": 25,
+     "p50_us": 398,
+     "p99_us": 2525,
+     "max_us": 2525
+    }
+   }
+  },
+  "judged": [],
+  "silent": {
+   "down": "fewer than 10 such events in a round with Arbor",
+   "forward": "fewer than 10 such events in a round with Arbor",
+   "up": "fewer than 10 such events in a round with Arbor",
+   "key": "fewer than 10 such events in a round with Arbor",
+   "dragged": "fewer than 10 such events in a round with Arbor",
+   "scroll": "fewer than 10 such events in a round with Arbor"
+  }
+ },
+ "stage_seen": false,
+ "witnessed": true,
+ "steps": [
+  {
+   "number": 14,
+   "slug": "input-before",
+   "chapter": "Before Arbor: the apps are open already",
+   "text": "a round of input on two windows of its own: presses behind and in front, keys, a scroll, a drag inside the text",
+   "act": "instrument",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792040364504,
+   "milliseconds": 17017,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 15,
+   "slug": "display-plug",
+   "chapter": "The walk",
+   "text": "the second display: plug",
+   "act": "display-change",
+   "judged": false,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ],
+    [
+     1920,
+     1080
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792040381835,
+   "milliseconds": 6479,
+   "moved": {
+    "918": [
+     1,
+     1,
+     0
+    ],
+    "921": [
+     1,
+     1,
+     0
+    ],
+    "925": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 16,
+   "slug": "dock-icon-notes",
+   "chapter": "The walk",
+   "text": "clicks notes's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ],
+    [
+     1920,
+     1080
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792040389255,
+   "milliseconds": 2032,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 17,
+   "slug": "carry-notes-across",
+   "chapter": "The walk",
+   "text": "drags notes, which floats, by its title bar onto the other display and lets go",
+   "act": "drag",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ],
+    [
+     1920,
+     1080
+    ]
+   ],
+   "windows_elsewhere": 1,
+   "began": 1792040391778,
+   "milliseconds": 4817,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 18,
+   "slug": "display-unplug",
+   "chapter": "The walk",
+   "text": "the second display: unplug",
+   "act": "display-change",
+   "judged": false,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792040396969,
+   "milliseconds": 2985,
+   "moved": {
+    "922": [
+     2,
+     2,
+     520
+    ],
+    "925": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "notes (w922)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 2056,192 1000×660 · +10 ms 297,109 1000×660 · +530 ms 300,105 1000×660"
+    }
+   ]
+  },
+  {
+   "number": 19,
+   "slug": "display-plug",
+   "chapter": "The walk",
+   "text": "the second display: plug",
+   "act": "display-change",
+   "judged": false,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ],
+    [
+     1920,
+     1080
+    ]
+   ],
+   "windows_elsewhere": 1,
+   "began": 1792040400401,
+   "milliseconds": 6482,
+   "moved": {
+    "922": [
+     1,
+     1,
+     0
+    ],
+    "925": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 20,
+   "slug": "display-unplug",
+   "chapter": "The walk",
+   "text": "the second display: unplug",
+   "act": "display-change",
+   "judged": false,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792040407173,
+   "milliseconds": 3009,
+   "moved": {
+    "922": [
+     1,
+     1,
+     0
+    ],
+    "925": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 21,
+   "slug": "display-plug",
+   "chapter": "The walk",
+   "text": "the second display: plug",
+   "act": "display-change",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ],
+    [
+     1280,
+     800
+    ]
+   ],
+   "windows_elsewhere": 1,
+   "began": 1792040410411,
+   "milliseconds": 6402,
+   "moved": {
+    "922": [
+     2,
+     2,
+     426
+    ],
+    "925": [
+     2,
+     2,
+     426
+    ]
+   },
+   "findings": [
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "notes (w922)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 300,105 1000×660 · +252 ms -1140,70 1000×660 · +678 ms 1740,70 1000×660"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "calendar (w925)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 128,109 1600×791 · +252 ms 0,109 1600×791 · +678 ms 128,109 1600×791"
+    }
+   ]
+  },
+  {
+   "number": 22,
+   "slug": "click-wallpaper",
+   "chapter": "The walk",
+   "text": "clicks on the wallpaper",
+   "act": "macos-own",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ],
+    [
+     1280,
+     800
+    ]
+   ],
+   "windows_elsewhere": 1,
+   "began": 1792040417452,
+   "milliseconds": 2139,
+   "moved": {},
+   "findings": [
+    {
+     "rule": "6",
+     "detector": "input-held",
+     "level": "FAIL",
+     "window": null,
+     "what": "the button came up, and the apps heard of it 123 ms later",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 23,
+   "slug": "click-wallpaper-again",
+   "chapter": "The walk",
+   "text": "clicks on the wallpaper again",
+   "act": "macos-own",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ],
+    [
+     1280,
+     800
+    ]
+   ],
+   "windows_elsewhere": 1,
+   "began": 1792040419796,
+   "milliseconds": 2128,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 24,
+   "slug": "display-unplug",
+   "chapter": "The walk",
+   "text": "the second display: unplug",
+   "act": "display-change",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792040422188,
+   "milliseconds": 2757,
+   "moved": {
+    "922": [
+     1,
+     1,
+     0
+    ],
+    "925": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 25,
+   "slug": "dock-icon-settings",
+   "chapter": "The walk",
+   "text": "clicks settings's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792040425262,
+   "milliseconds": 1994,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 26,
+   "slug": "dock-icon-safari",
+   "chapter": "The walk",
+   "text": "clicks safari's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792040427640,
+   "milliseconds": 1956,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 27,
+   "slug": "hide-safari",
+   "chapter": "The walk",
+   "text": "presses ⌘H",
+   "act": "open-close",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792040429899,
+   "milliseconds": 1248,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 28,
+   "slug": "display-plug",
+   "chapter": "The walk",
+   "text": "the second display: plug",
+   "act": "display-change",
+   "judged": false,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ],
+    [
+     1920,
+     1080
+    ]
+   ],
+   "windows_elsewhere": 1,
+   "began": 1792040431460,
+   "milliseconds": 6347,
+   "moved": {
+    "922": [
+     2,
+     2,
+     303
+    ],
+    "925": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "notes (w922)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 300,105 1000×660 · +25 ms 2060,183 1000×660 · +328 ms 2056,192 1000×660"
+    }
+   ]
+  },
+  {
+   "number": 29,
+   "slug": "click-notes",
+   "chapter": "The walk",
+   "text": "clicks notes's title bar",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ],
+    [
+     1920,
+     1080
+    ]
+   ],
+   "windows_elsewhere": 1,
+   "began": 1792040438458,
+   "milliseconds": 1973,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 30,
+   "slug": "unhide-safari",
+   "chapter": "The walk",
+   "text": "clicks its icon in the Dock",
+   "act": "open-close",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ],
+    [
+     1920,
+     1080
+    ]
+   ],
+   "windows_elsewhere": 1,
+   "began": 1792040440793,
+   "milliseconds": 2110,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 31,
+   "slug": "dock-icon-safari",
+   "chapter": "The walk",
+   "text": "clicks safari's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ],
+    [
+     1920,
+     1080
+    ]
+   ],
+   "windows_elsewhere": 1,
+   "began": 1792040443389,
+   "milliseconds": 2032,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 32,
+   "slug": "full-screen",
+   "chapter": "The walk",
+   "text": "presses ⌃⌘F in Safari",
+   "act": "macos-own",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ],
+    [
+     1920,
+     1080
+    ]
+   ],
+   "windows_elsewhere": 1,
+   "began": 1792040445805,
+   "milliseconds": 3106,
+   "moved": {
+    "909": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 33,
+   "slug": "leave-full-screen",
+   "chapter": "The walk",
+   "text": "presses ⌃⌘F again",
+   "act": "macos-own",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ],
+    [
+     1920,
+     1080
+    ]
+   ],
+   "windows_elsewhere": 1,
+   "began": 1792040449311,
+   "milliseconds": 3086,
+   "moved": {
+    "909": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 34,
+   "slug": "drag-calendar-to-top-edge",
+   "chapter": "The walk",
+   "text": "drags calendar by its title bar against the top edge of the screen and lets go",
+   "act": "drag-where-macos-tiles",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ],
+    [
+     1920,
+     1080
+    ]
+   ],
+   "windows_elsewhere": 1,
+   "began": 1792040453013,
+   "milliseconds": 6174,
+   "moved": {
+    "925": [
+     1,
+     13,
+     382
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 35,
+   "slug": "leave-alone",
+   "chapter": "The walk",
+   "text": "does nothing for half a minute",
+   "act": "idle",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ],
+    [
+     1920,
+     1080
+    ]
+   ],
+   "windows_elsewhere": 1,
+   "began": 1792040459583,
+   "milliseconds": 30443,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 36,
+   "slug": "dock-icon-settings",
+   "chapter": "The walk",
+   "text": "clicks settings's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ],
+    [
+     1920,
+     1080
+    ]
+   ],
+   "windows_elsewhere": 1,
+   "began": 1792040490696,
+   "milliseconds": 2108,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 37,
+   "slug": "dock-icon-notes",
+   "chapter": "The walk",
+   "text": "clicks notes's icon in the Dock",
+   "act": "switch",
+   "judged": false,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ],
+    [
+     1920,
+     1080
+    ]
+   ],
+   "windows_elsewhere": 1,
+   "began": 1792040493098,
+   "milliseconds": 2106,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 38,
+   "slug": "minimize-notes",
+   "chapter": "The walk",
+   "text": "presses ⌘M",
+   "act": "open-close",
+   "judged": false,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ],
+    [
+     1920,
+     1080
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792040495611,
+   "milliseconds": 2011,
+   "moved": {
+    "922": [
+     1,
+     17,
+     481
+    ],
+    "925": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "calendar (w925)",
+     "what": "moved and came back, and the step did not name it",
+     "trace": "+0 ms 0,31 1600×791 · +1004 ms 0,31 1600×793"
+    }
+   ]
+  },
+  {
+   "number": 39,
+   "slug": "dock-icon-finder",
+   "chapter": "The walk",
+   "text": "clicks finder's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ],
+    [
+     1920,
+     1080
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792040497986,
+   "milliseconds": 2045,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 40,
+   "slug": "dock-icon-terminal",
+   "chapter": "The walk",
+   "text": "clicks terminal's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ],
+    [
+     1920,
+     1080
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792040500568,
+   "milliseconds": 2019,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 41,
+   "slug": "restore-notes",
+   "chapter": "The walk",
+   "text": "clicks notes's icon in the Dock, which brings its minimized window back",
+   "act": "open-close",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ],
+    [
+     1920,
+     1080
+    ]
+   ],
+   "windows_elsewhere": 1,
+   "began": 1792040502973,
+   "milliseconds": 2754,
+   "moved": {
+    "922": [
+     1,
+     19,
+     774
+    ],
+    "925": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "calendar (w925)",
+     "what": "moved and came back, and the step did not name it",
+     "trace": "+0 ms 0,31 1600×793 · +1745 ms 0,31 1600×791"
+    }
+   ]
+  },
+  {
+   "number": 42,
+   "slug": "dock-icon-safari",
+   "chapter": "The walk",
+   "text": "clicks safari's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ],
+    [
+     1920,
+     1080
+    ]
+   ],
+   "windows_elsewhere": 1,
+   "began": 1792040506462,
+   "milliseconds": 1980,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 43,
+   "slug": "drag-safari-by",
+   "chapter": "The walk",
+   "text": "drags safari, which floats, by its title bar 144 across and 116 down, and clicks there 0.3 s after letting go",
+   "act": "drag",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ],
+    [
+     1920,
+     1080
+    ]
+   ],
+   "windows_elsewhere": 1,
+   "began": 1792040508891,
+   "milliseconds": 5884,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 44,
+   "slug": "click-safari",
+   "chapter": "The walk",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ],
+    [
+     1920,
+     1080
+    ]
+   ],
+   "windows_elsewhere": 1,
+   "began": 1792040515385,
+   "milliseconds": 1786,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 45,
+   "slug": "dock-icon-terminal",
+   "chapter": "The walk",
+   "text": "clicks terminal's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ],
+    [
+     1920,
+     1080
+    ]
+   ],
+   "windows_elsewhere": 1,
+   "began": 1792040517501,
+   "milliseconds": 2198,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 46,
+   "slug": "drag-terminal-to-top-edge",
+   "chapter": "The walk",
+   "text": "drags terminal by its title bar against the top edge of the screen and lets go",
+   "act": "drag-where-macos-tiles",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ],
+    [
+     1920,
+     1080
+    ]
+   ],
+   "windows_elsewhere": 1,
+   "began": 1792040520082,
+   "milliseconds": 6276,
+   "moved": {
+    "921": [
+     1,
+     10,
+     314
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 47,
+   "slug": "dock-icon-textedit",
+   "chapter": "The walk",
+   "text": "clicks textedit's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ],
+    [
+     1920,
+     1080
+    ]
+   ],
+   "windows_elsewhere": 1,
+   "began": 1792040526776,
+   "milliseconds": 1998,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 48,
+   "slug": "quit-textedit",
+   "chapter": "The walk",
+   "text": "presses ⌘Q in textedit",
+   "act": "open-close",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ],
+    [
+     1920,
+     1080
+    ]
+   ],
+   "windows_elsewhere": 1,
+   "began": 1792040529177,
+   "milliseconds": 1242,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 49,
+   "slug": "reopen-textedit",
+   "chapter": "The walk",
+   "text": "opens textedit's document again",
+   "act": "open-close",
+   "judged": false,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ],
+    [
+     1920,
+     1080
+    ]
+   ],
+   "windows_elsewhere": 1,
+   "began": 1792040530694,
+   "milliseconds": 2247,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 50,
+   "slug": "dock-icon-settings",
+   "chapter": "The walk",
+   "text": "clicks settings's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ],
+    [
+     1920,
+     1080
+    ]
+   ],
+   "windows_elsewhere": 1,
+   "began": 1792040534228,
+   "milliseconds": 2061,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 51,
+   "slug": "click-settings",
+   "chapter": "The walk",
+   "text": "clicks settings's title bar",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ],
+    [
+     1920,
+     1080
+    ]
+   ],
+   "windows_elsewhere": 1,
+   "began": 1792040536700,
+   "milliseconds": 1787,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 52,
+   "slug": "dock-icon-calendar",
+   "chapter": "The walk",
+   "text": "clicks calendar's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ],
+    [
+     1920,
+     1080
+    ]
+   ],
+   "windows_elsewhere": 1,
+   "began": 1792040544765,
+   "milliseconds": 2176,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 53,
+   "slug": "carry-calendar-across",
+   "chapter": "The walk",
+   "text": "drags calendar, which floats, by its title bar onto the other display and lets go",
+   "act": "drag",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ],
+    [
+     1920,
+     1080
+    ]
+   ],
+   "windows_elsewhere": 2,
+   "began": 1792040547374,
+   "milliseconds": 5050,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 54,
+   "slug": "dock-icon-preview",
+   "chapter": "The walk",
+   "text": "clicks preview's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ],
+    [
+     1920,
+     1080
+    ]
+   ],
+   "windows_elsewhere": 2,
+   "began": 1792040553068,
+   "milliseconds": 2012,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 55,
+   "slug": "leave-alone",
+   "chapter": "The walk",
+   "text": "does nothing for half a minute",
+   "act": "idle",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ],
+    [
+     1920,
+     1080
+    ]
+   ],
+   "windows_elsewhere": 2,
+   "began": 1792040555472,
+   "milliseconds": 30371,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 56,
+   "slug": "drag-preview-to-top-edge",
+   "chapter": "The walk",
+   "text": "drags preview by its title bar against the top edge of the screen and lets go",
+   "act": "drag-where-macos-tiles",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ],
+    [
+     1920,
+     1080
+    ]
+   ],
+   "windows_elsewhere": 2,
+   "began": 1792040586282,
+   "milliseconds": 5883,
+   "moved": {
+    "928": [
+     1,
+     15,
+     334
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 57,
+   "slug": "display-unplug",
+   "chapter": "The walk",
+   "text": "the second display: unplug",
+   "act": "display-change",
+   "judged": false,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792040592577,
+   "milliseconds": 3185,
+   "moved": {
+    "921": [
+     1,
+     1,
+     0
+    ],
+    "922": [
+     1,
+     1,
+     0
+    ],
+    "925": [
+     1,
+     1,
+     0
+    ],
+    "1344": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 58,
+   "slug": "input-after",
+   "chapter": "The walk",
+   "text": "a round of input on two windows of its own: presses behind and in front, keys, a scroll, a drag inside the text",
+   "act": "instrument",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792040596018,
+   "milliseconds": 16996,
+   "moved": {},
+   "findings": []
+  }
+ ]
+}

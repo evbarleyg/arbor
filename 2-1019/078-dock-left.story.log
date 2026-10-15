@@ -1,0 +1,58 @@
+78 dock-left: presses ⌃⌥⌘ and the left arrow
+expected: {'act': 'dock-key', 'settled': 'quiet:967', 'moves': '234,251,256,234,237,251,256,', 'front': '237', 'floating': '248,252,253,260,262,284,286', 'docked': '234,237,251,256'}
+ODD rule 3: the last window came to rest 983 ms after the key or the button
+
+04:55:04.476 SCREEN -- begin 78 dock-left
+04:55:04.476 SCREEN -- text 78 presses ⌃⌥⌘ and the left arrow
+04:55:04.760 INFO  made room for w234
+04:55:04.767 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 11 stand-ins, 0.46 s
+04:55:04.767 DEBUG the stage kept the windows waiting 5 ms: its panel 0, 11 costumes 0 (0 not ready), the desktop 2, going up 3
+04:55:04.817 MACOS pid 25387 AXResized w234 AXWindow/AXStandardWindow 729 43 501 767
+04:55:04.818 MACOS pid 25387 AXMoved w234 AXWindow/AXStandardWindow 729 43 501 767
+04:55:04.839 SCREEN w317 of Arbor 0,0 1600×900 (level 4)
+04:55:04.839 SCREEN finder (w234) 729,43 501×767
+04:55:04.874 SCREEN safari (w237) 73,42 574×767
+04:55:04.882 MACOS pid 26658 AXResized w237 AXWindow/AXStandardWindow 12 43 574 767
+04:55:04.882 MACOS pid 26658 AXMoved w237 AXWindow/AXStandardWindow 12 43 574 767
+04:55:04.888 SCREEN safari (w237) 12,43 574×767
+04:55:04.919 SCREEN terminal (w251) 1242,43 338×769
+04:55:04.922 MACOS pid 27133 AXTitleChanged w251 AXWindow/AXStandardWindow 1242 43 338 769
+04:55:04.922 MACOS pid 27133 AXResized w251 AXWindow/AXStandardWindow 1242 43 338 769
+04:55:04.923 MACOS pid 27133 AXMoved w251 AXWindow/AXStandardWindow 1242 43 338 769
+04:55:04.934 MACOS pid 27133 AXTitleChanged w251 AXWindow/AXStandardWindow 1242 43 345 769
+04:55:04.935 MACOS pid 27133 AXResized w251 AXWindow/AXStandardWindow 1242 43 345 769
+04:55:04.936 MACOS pid 27585 AXMoved w256 AXWindow/AXStandardWindow -722 770 723 470
+04:55:04.948 INFO  made room for w237, w234
+04:55:04.950 MACOS pid 25387 AXMoved w234 AXWindow/AXStandardWindow 798 43 501 767
+04:55:04.953 SCREEN terminal (w251) 1242,43 345×769
+04:55:04.953 SCREEN finder (w234) 798,43 501×767
+04:55:04.953 SCREEN settings (w256) -722,770 723×470
+04:55:04.967 MACOS pid 27133 AXTitleChanged w251 AXWindow/AXStandardWindow 1311 43 275 769
+04:55:04.967 MACOS pid 27133 AXResized w251 AXWindow/AXStandardWindow 1311 43 275 769
+04:55:04.968 MACOS pid 27133 AXMoved w251 AXWindow/AXStandardWindow 1311 43 275 769
+04:55:04.976 DEBUG stage retargeted on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 11 stand-ins, 0.26038905143737795 s
+04:55:04.995 INFO  dock left: docked w237 at the left edge; that leaves too little room for 1 other window, which is a tile now
+04:55:04.997 DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Too small to show: click the tile to zoom in · ⌃⌥G goes there too
+04:55:05.013 SCREEN terminal (w251) 1311,43 275×769
+04:55:05.013 SCREEN front to back: safari w728 notes terminal finder settings calendar textedit desk-a desk-b w264 mail preview w727 w739 w745
+04:55:05.628 SCREEN w728 of Arbor 3,34 592×785
+04:55:05.628 SCREEN w727 of Arbor 586,43 12×767
+04:55:05.628 SCREEN w739 of Arbor 786,43 12×767
+04:55:05.628 SCREEN w745 of Arbor 1299,43 12×767
+04:55:05.628 SCREEN front to back: w728 safari notes terminal finder settings calendar textedit desk-a desk-b w264 mail preview w727 w739 w745
+04:55:05.677 SCREEN w422 of Arbor 554,728 493×38 (level 6)
+04:55:05.677 SCREEN w754 of Arbor 598,43 188×767
+04:55:05.677 SCREEN front to back: w728 safari notes terminal finder settings calendar textedit desk-a desk-b w264 mail preview w754 w727 w739 w745
+04:55:05.684 DEBUG raised w252, which stays in view
+04:55:05.684 MACOS pid 27274 AXFocusedWindowChanged w252 AXWindow/AXStandardWindow 300 105 1000 660
+04:55:05.685 MACOS pid 27274 AXMainWindowChanged w252 AXWindow/AXStandardWindow 300 105 1000 660
+04:55:05.729 DEBUG stage down
+04:55:05.744 SCREEN w317 of Arbor left the screen
+04:55:06.000 DEBUG raised w252, which stays in view
+04:55:06.001 MACOS pid 27274 AXFocusedWindowChanged w252 AXWindow/AXStandardWindow 300 105 1000 660
+04:55:06.006 MACOS pid 27274 AXMainWindowChanged w252 AXWindow/AXStandardWindow 300 105 1000 660
+04:55:06.281 DEBUG raised w252, which stays in view
+04:55:06.295 MACOS pid 27274 AXFocusedWindowChanged w252 AXWindow/AXStandardWindow 300 105 1000 660
+04:55:06.296 MACOS pid 27274 AXMainWindowChanged w252 AXWindow/AXStandardWindow 300 105 1000 660
+04:55:06.836 SCREEN -- end 78 act=dock-key settled=quiet:967 moves=234,251,256,234,237,251,256, front=237 floating=248,252,253,260,262,284,286 docked=234,237,251,256
+04:55:07.236 SCRIPT == 79 quit

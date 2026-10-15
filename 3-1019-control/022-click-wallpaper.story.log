@@ -1,0 +1,17 @@
+22 click-wallpaper: clicks on the wallpaper
+expected: {'act': 'macos-own', 'settled': 'quiet:370', 'moves': 'any', 'leaves': 'any'}
+FAIL rule 6: the button came up, and the apps heard of it 123 ms later
+
+05:00:17.452 SCREEN -- begin 22 click-wallpaper
+05:00:17.452 SCREEN -- text 22 clicks on the wallpaper
+05:00:17.957 SCREEN the button is down 1400 60
+05:00:18.061 SCREEN front to back: safari notes desk-a desk-b calendar textedit w932 mail preview settings terminal finder
+05:00:18.061 SCREEN the button is up 1400 60
+05:00:18.188 SCREEN in front: process 61629 com.apple.Safari
+05:00:18.196 MACOS pid 61629 AXApplicationActivated
+05:00:18.200 SCREEN (nothing was seen for 139 ms)
+05:00:18.200 MACOS workspace didActivate pid 61629 com.apple.Safari regular
+05:00:18.200 MACOS workspace didDeactivate pid 62282 com.apple.Notes regular
+05:00:18.201 MACOS pid 62282 AXApplicationDeactivated
+05:00:19.591 SCREEN -- end 22 act=macos-own settled=quiet:370 moves=any leaves=any
+05:00:19.794 SCRIPT == 23 click-wallpaper-again

@@ -1,0 +1,82 @@
+105 carry-calendar-across: drags calendar, which floats, by its title bar onto the other display and lets go
+expected: {'act': 'drag', 'settled': 'quiet:1052', 'drags': '253', 'front': '253', 'own': '253', 'floating': '234,237,251,252,253,256,260,262,284,286,816', 'docked': ''}
+FAIL rule 3: calendar (w253) was 64 points ahead of the pointer's travel and 0 behind it at the most
+
+04:56:20.898 SCREEN -- begin 105 carry-calendar-across
+04:56:20.899 SCREEN -- text 105 drags calendar, which floats, by its title bar onto the other display and lets go
+04:56:20.963 SCRIPT drag w253 from 672,43 to 2560,220
+04:56:21.158 SCREEN w787 of Arbor left the screen
+04:56:21.516 DEBUG raised w252, which stays in view
+04:56:21.521 SCREEN the button is down 672 43
+04:56:21.524 MACOS pid 27274 AXFocusedWindowChanged w252 AXWindow/AXStandardWindow 300 105 1000 660
+04:56:21.525 MACOS pid 27274 AXMainWindowChanged w252 AXWindow/AXStandardWindow 300 105 1000 660
+04:56:21.685 DEBUG the press on w253 has moved nothing so far: looking less often
+04:56:21.690 SCREEN calendar (w253) 62,36 1600×791
+04:56:21.798 SCREEN calendar (w253) 188,48 1600×791
+04:56:21.801 MACOS pid 27435 AXMoved w253 AXWindow/AXStandardWindow 188 48 1600 791
+04:56:21.802 DEBUG w253 is being dragged, which began late
+04:56:21.805 DEBUG drag of w253: on float
+04:56:21.806 SCREEN calendar (w253) 251,54 1600×791
+04:56:21.823 DEBUG raised w252, which stays in view
+04:56:21.834 MACOS pid 27274 AXFocusedWindowChanged w252 AXWindow/AXStandardWindow 300 105 1000 660
+04:56:21.835 MACOS pid 27274 AXMainWindowChanged w252 AXWindow/AXStandardWindow 300 105 1000 660
+04:56:21.861 SCREEN calendar (w253) 314,60 1600×791
+04:56:21.932 SCREEN calendar (w253) 377,66 1600×791
+04:56:21.947 MACOS pid 27435 AXMoved w253 AXWindow/AXStandardWindow 377 66 1600 791
+04:56:21.995 SCREEN calendar (w253) 440,72 1600×791
+04:56:22.027 SCREEN calendar (w253) 503,78 1600×791
+04:56:22.051 MACOS pid 27435 AXMoved w253 AXWindow/AXStandardWindow 503 78 1600 791
+04:56:22.077 SCREEN calendar (w253) 566,84 1600×791
+04:56:22.115 DEBUG raised w252, which stays in view
+04:56:22.118 MACOS pid 27274 AXFocusedWindowChanged w252 AXWindow/AXStandardWindow 300 105 1000 660
+04:56:22.118 MACOS pid 27274 AXMainWindowChanged w252 AXWindow/AXStandardWindow 300 105 1000 660
+04:56:22.134 SCREEN calendar (w253) 629,90 1600×791
+04:56:22.168 MACOS pid 27435 AXMoved w253 AXWindow/AXStandardWindow 629 90 1600 791
+04:56:22.261 SCREEN calendar (w253) 692,96 1600×791
+04:56:22.319 SCREEN calendar (w253) 755,101 1600×791
+04:56:22.335 MACOS pid 27435 AXMoved w253 AXWindow/AXStandardWindow 755 101 1600 791
+04:56:22.336 SCREEN calendar (w253) 818,107 1600×791
+04:56:22.361 DEBUG raised w252, which stays in view
+04:56:22.363 MACOS pid 27274 AXFocusedWindowChanged w252 AXWindow/AXStandardWindow 300 105 1000 660
+04:56:22.364 MACOS pid 27274 AXMainWindowChanged w252 AXWindow/AXStandardWindow 300 105 1000 660
+04:56:22.371 SCREEN calendar (w253) 881,109 1600×791
+04:56:22.422 SCREEN calendar (w253) 944,109 1600×791
+04:56:22.437 MACOS pid 27435 AXMoved w253 AXWindow/AXStandardWindow 944 109 1600 791
+04:56:22.464 DEBUG drag of w253: on float
+04:56:22.470 SCREEN calendar (w253) 1007,109 1600×791
+04:56:22.553 SCREEN calendar (w253) 1069,109 1600×791
+04:56:22.622 MACOS pid 27435 AXMoved w253 AXWindow/AXStandardWindow 1069 109 1600 791
+04:56:22.636 DEBUG raised w252, which stays in view
+04:56:22.636 MACOS pid 27274 AXFocusedWindowChanged w252 AXWindow/AXStandardWindow 300 105 1000 660
+04:56:22.645 MACOS pid 27274 AXMainWindowChanged w252 AXWindow/AXStandardWindow 300 105 1000 660
+04:56:22.664 SCREEN calendar (w253) 1132,109 1600×791
+04:56:22.744 SCREEN calendar (w253) 1195,109 1600×791
+04:56:22.761 MACOS pid 27435 AXMoved w253 AXWindow/AXStandardWindow 1195 109 1600 791
+04:56:22.832 SCREEN calendar (w253) 1258,109 1600×791
+04:56:22.871 DEBUG raised w252, which stays in view
+04:56:22.873 SCREEN calendar (w253) 1321,109 1600×791
+04:56:22.874 MACOS pid 27274 AXFocusedWindowChanged w252 AXWindow/AXStandardWindow 300 105 1000 660
+04:56:22.875 MACOS pid 27274 AXMainWindowChanged w252 AXWindow/AXStandardWindow 300 105 1000 660
+04:56:22.936 MACOS pid 27435 AXMoved w253 AXWindow/AXStandardWindow 1321 109 1600 791
+04:56:22.958 SCREEN calendar (w253) 1384,109 1600×791
+04:56:23.056 SCREEN calendar (w253) 1447,109 1600×791
+04:56:23.062 MACOS pid 27435 AXMoved w253 AXWindow/AXStandardWindow 1447 109 1600 791
+04:56:23.161 SCREEN calendar (w253) 1573,109 1600×791
+04:56:23.244 MACOS pid 27435 AXMoved w253 AXWindow/AXStandardWindow 1573 109 1600 791
+04:56:23.274 SCREEN calendar (w253) 1636,114 1600×791
+04:56:23.321 SCREEN calendar (w253) 1699,127 1600×791
+04:56:23.357 MACOS pid 27435 AXMoved w253 AXWindow/AXStandardWindow 1699 127 1600 791
+04:56:23.362 SCREEN calendar (w253) 1762,133 1600×791
+04:56:23.453 SCREEN calendar (w253) 1825,139 1600×791
+04:56:23.465 MACOS pid 27435 AXMoved w253 AXWindow/AXStandardWindow 1825 139 1600 791
+04:56:23.528 SCREEN calendar (w253) 1888,145 1600×791
+04:56:23.556 SCREEN calendar (w253) 1951,151 1600×791
+04:56:23.625 MACOS pid 27435 AXMoved w253 AXWindow/AXStandardWindow 1951 151 1600 791
+04:56:23.738 SCREEN calendar (w253) 1952,151 1600×791
+04:56:23.833 MACOS pid 27435 AXMoved w253 AXWindow/AXStandardWindow 1952 151 1600 791
+04:56:24.489 SCREEN calendar (w253) 1951,151 1600×791
+04:56:24.556 MACOS pid 27435 AXMoved w253 AXWindow/AXStandardWindow 1951 151 1600 791
+04:56:24.609 SCREEN the button is up 2560 220
+04:56:24.609 INFO  dropped w253 on float, display 0C05C705-7894-4B84-849F-1BFE6462A604
+04:56:25.689 SCREEN -- end 105 act=drag settled=quiet:1052 drags=253 front=253 own=253 floating=234,237,251,252,253,256,260,262,284,286,816 docked=
+04:56:26.591 SCRIPT == 106 dock-icon-preview

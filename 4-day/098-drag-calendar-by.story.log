@@ -1,0 +1,92 @@
+98 drag-calendar-by: drags calendar, which floats, by its title bar 0 across and 118 down, and clicks there 0.3 s after letting go
+expected: {'act': 'drag', 'settled': 'quiet:941', 'drags': '1416', 'front': '1416', 'own': '1416', 'floating': '1412,1413,1416,1417,1421,1422,1439,1441,1624', 'docked': '1395,1398'}
+ODD rule 3: calendar (w1416) changed its size while it was being dragged
+
+05:10:22.366 SCREEN -- begin 98 drag-calendar-by
+05:10:22.366 SCREEN -- text 98 drags calendar, which floats, by its title bar 0 across and 118 down, and clicks there 0.3 s after letting go
+05:10:22.459 SCRIPT drag w1416 from 672,43 to 672,161
+05:10:23.113 SCREEN front to back: calendar w1540 notes finder safari textedit preview w1425 mail settings terminal desk-a desk-b w1555 w1545
+05:10:23.113 SCREEN the button is down 672 43
+05:10:23.241 SCREEN w1542 of Arbor left the screen
+05:10:23.361 SCREEN calendar (w1416) 0,34 1600×791
+05:10:23.432 DEBUG w1416 is being dragged
+05:10:23.448 DEBUG drag of w1416: on float
+05:10:23.461 SCREEN calendar (w1416) 0,42 1600×791
+05:10:23.476 MACOS pid 79965 AXMoved w1416 AXWindow/AXStandardWindow 0 42 1531 791
+05:10:23.476 MACOS pid 79965 AXResized w1416 AXWindow/AXStandardWindow 0 42 1531 791
+05:10:23.480 SCREEN calendar (w1416) 28,38 1531×791
+05:10:23.553 SCREEN calendar (w1416) 257,38 987×791
+05:10:23.553 SCREEN w1540 of Arbor left the screen
+05:10:23.553 SCREEN front to back: calendar notes finder safari textedit preview w1425 mail settings terminal desk-a desk-b w1555 w1545
+05:10:23.566 SCREEN calendar (w1416) 257,42 987×791
+05:10:23.566 MACOS pid 79965 AXResized w1416 AXWindow/AXStandardWindow 0 42 901 791
+05:10:23.567 MACOS pid 79965 AXResized w1416 AXWindow/AXStandardWindow 0 42 901 791
+05:10:23.567 MACOS pid 79965 AXResized w1416 AXWindow/AXStandardWindow 0 42 901 791
+05:10:23.567 MACOS pid 79965 AXResized w1416 AXWindow/AXStandardWindow 0 42 901 791
+05:10:23.601 MACOS pid 79965 AXResized w1416 AXWindow/AXStandardWindow 257 42 757 791
+05:10:23.601 MACOS pid 79965 AXMoved w1416 AXWindow/AXStandardWindow 257 42 757 791
+05:10:23.601 MACOS pid 79965 AXResized w1416 AXWindow/AXStandardWindow 257 42 757 791
+05:10:23.613 SCREEN calendar (w1416) 354,42 757×791
+05:10:23.616 MACOS pid 79965 AXResized w1416 AXWindow/AXStandardWindow 257 42 733 791
+05:10:23.621 SCREEN calendar (w1416) 354,46 757×791
+05:10:23.633 MACOS pid 79965 AXResized w1416 AXWindow/AXStandardWindow 257 42 716 791
+05:10:23.650 MACOS pid 79965 AXResized w1416 AXWindow/AXStandardWindow 257 42 705 791
+05:10:23.661 SCREEN calendar (w1416) 375,46 705×791
+05:10:23.715 SCREEN calendar (w1416) 383,50 688×791
+05:10:23.730 MACOS pid 79965 AXResized w1416 AXWindow/AXStandardWindow 257 42 685 791
+05:10:23.733 MACOS pid 79965 AXResized w1416 AXWindow/AXStandardWindow 383 50 685 791
+05:10:23.734 MACOS pid 79965 AXResized w1416 AXWindow/AXStandardWindow 383 50 685 791
+05:10:23.735 MACOS pid 79965 AXResized w1416 AXWindow/AXStandardWindow 383 50 685 791
+05:10:23.736 MACOS pid 79965 AXMoved w1416 AXWindow/AXStandardWindow 383 50 685 791
+05:10:23.764 MACOS pid 79965 AXResized w1416 AXWindow/AXStandardWindow 383 50 682 791
+05:10:23.764 MACOS pid 79965 AXResized w1416 AXWindow/AXStandardWindow 383 50 682 791
+05:10:23.773 SCREEN calendar (w1416) 385,50 683×791
+05:10:23.782 SCREEN calendar (w1416) 385,50 682×791
+05:10:23.784 MACOS pid 79965 AXResized w1416 AXWindow/AXStandardWindow 383 50 681 791
+05:10:23.808 SCREEN calendar (w1416) 385,54 681×791
+05:10:23.857 SCREEN calendar (w1416) 385,58 681×791
+05:10:23.899 SCREEN calendar (w1416) 385,62 681×791
+05:10:23.908 MACOS pid 79965 AXMoved w1416 AXWindow/AXStandardWindow 385 62 681 791
+05:10:23.969 SCREEN calendar (w1416) 385,66 681×791
+05:10:24.013 SCREEN calendar (w1416) 385,70 681×791
+05:10:24.065 SCREEN calendar (w1416) 385,74 681×791
+05:10:24.099 MACOS pid 79965 AXMoved w1416 AXWindow/AXStandardWindow 385 74 681 791
+05:10:24.152 SCREEN calendar (w1416) 385,78 681×791
+05:10:24.175 MACOS pid 79965 AXMoved w1416 AXWindow/AXStandardWindow 385 78 681 791
+05:10:24.267 SCREEN calendar (w1416) 385,82 681×791
+05:10:24.270 SCREEN calendar (w1416) 385,86 681×791
+05:10:24.348 MACOS pid 79965 AXMoved w1416 AXWindow/AXStandardWindow 385 86 681 791
+05:10:24.354 SCREEN calendar (w1416) 385,90 681×791
+05:10:24.420 SCREEN calendar (w1416) 385,93 681×791
+05:10:24.427 SCREEN calendar (w1416) 385,97 681×791
+05:10:24.458 MACOS pid 79965 AXMoved w1416 AXWindow/AXStandardWindow 385 97 681 791
+05:10:24.461 SCREEN calendar (w1416) 385,101 681×791
+05:10:24.520 SCREEN calendar (w1416) 385,105 681×791
+05:10:24.563 MACOS pid 79965 AXMoved w1416 AXWindow/AXStandardWindow 385 105 681 791
+05:10:24.611 SCREEN calendar (w1416) 385,113 681×791
+05:10:24.680 SCREEN calendar (w1416) 385,117 681×791
+05:10:24.690 SCREEN calendar (w1416) 385,121 681×791
+05:10:24.691 MACOS pid 79965 AXMoved w1416 AXWindow/AXStandardWindow 385 117 681 791
+05:10:24.736 SCREEN calendar (w1416) 385,125 681×791
+05:10:24.792 MACOS pid 79965 AXMoved w1416 AXWindow/AXStandardWindow 385 129 681 791
+05:10:24.806 SCREEN calendar (w1416) 385,129 681×791
+05:10:24.849 SCREEN calendar (w1416) 385,133 681×791
+05:10:24.947 MACOS pid 79965 AXMoved w1416 AXWindow/AXStandardWindow 385 137 681 791
+05:10:24.970 SCREEN calendar (w1416) 385,137 681×791
+05:10:25.077 SCREEN calendar (w1416) 385,141 681×791
+05:10:25.133 MACOS pid 79965 AXMoved w1416 AXWindow/AXStandardWindow 385 145 681 791
+05:10:25.144 SCREEN calendar (w1416) 385,145 681×791
+05:10:25.435 SCREEN calendar (w1416) 386,145 681×791
+05:10:25.476 SCREEN calendar (w1416) 385,145 681×791
+05:10:26.134 SCREEN the button is up 672 161
+05:10:26.139 SCREEN calendar (w1416) 386,145 681×791
+05:10:26.141 INFO  dropped w1416 on float, display 07230EFA-7A8D-4E37-845C-19CC8737EEF5
+05:10:26.182 SCREEN calendar (w1416) 385,145 681×791
+05:10:26.244 SCREEN w1540 of Arbor 376,136 699×806
+05:10:26.244 SCREEN front to back: w1540 calendar notes finder safari textedit preview w1425 mail settings terminal desk-a desk-b w1555 w1545
+05:10:27.016 SCREEN the button is down 672 161
+05:10:27.024 SCREEN front to back: calendar w1540 notes finder safari textedit preview w1425 mail settings terminal desk-a desk-b w1555 w1545
+05:10:27.061 SCREEN the button is up 672 161
+05:10:27.113 SCREEN front to back: w1540 calendar notes finder safari textedit preview w1425 mail settings terminal desk-a desk-b w1555 w1545
+05:10:28.292 SCREEN -- end 98 act=drag settled=quiet:941 drags=1416 front=1416 own=1416 floating=1412,1413,1416,1417,1421,1422,1439,1441,1624 docked=1395,1398
+05:10:28.695 SCRIPT == 99 view-all

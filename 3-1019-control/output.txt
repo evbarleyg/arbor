@@ -1,0 +1,506 @@
+# mac-shell: scripts/mac-shell/1019-control.sh at 8569129, macOS 26.6.2, 2026-10-15T04:58Z
+
+== the Mac
+macOS 26.6.2 (25G83) on arm64
+built the tools in 9s
+1600 900 1600 900
+display: 1 0 0 1600 900 1600 900 1
+macOS's own window management, as it comes:
+com.apple.WindowManager EnableTilingByEdgeDrag: not set
+com.apple.WindowManager EnableTopTilingByEdgeDrag: not set
+com.apple.WindowManager EnableTilingOptionAccelerator: not set
+com.apple.WindowManager EnableTiledWindowMargins: not set
+com.apple.WindowManager EnableStandardClickToShowDesktop: not set
+Reduce Motion: false
+the sampler writes mac-shell/samples.log (pid 61393), the witness mac-shell/witness.log (pid 61408)
+
+== Before Arbor: the apps are open already
+
+-- 1 open-finder: opens finder
+> open -g -b com.apple.finder /tmp/arbor-apps.D2jX6X/scratch/told/…-grove
+pid 60479 lists (id role subrole x y w h flags):
+  906 AXWindow AXStandardWindow 340 120 920 436 main,toolbar
+  0 AXScrollArea - 0 0 1600 900 fixed-size,fixed-position,no-close,no-minimize,no-zoom
+  w906 is finder
+  (quiet:996 ms) setup=1
+
+-- 2 open-safari: opens safari
+> open -g -b com.apple.Safari /tmp/arbor-apps.D2jX6X/scratch/told/…-page.html
+pid 61629 lists (id role subrole x y w h flags):
+  909 AXWindow AXStandardWindow 73 31 1324 790 main,toolbar
+  w909 is safari
+  (quiet:759 ms) setup=1
+
+-- 3 open-textedit: opens textedit
+> open -g -b com.apple.TextEdit /tmp/arbor-apps.D2jX6X/scratch/told/…-oak.txt
+pid 61858 lists (id role subrole x y w h flags):
+  918 AXWindow AXStandardWindow 165 65 673 439 main
+  w918 is textedit
+  (quiet:1193 ms) setup=1
+
+-- 4 open-terminal: opens terminal
+> open -g -b com.apple.Terminal 
+pid 62217 lists (id role subrole x y w h flags):
+  921 AXWindow AXStandardWindow 369 177 877 499 main
+  w921 is terminal
+  (quiet:1289 ms) setup=1
+
+-- 5 open-notes: opens notes
+> open -g -b com.apple.Notes 
+pid 62282 lists (id role subrole x y w h flags):
+  922 AXWindow AXStandardWindow 300 105 1000 660 main,toolbar
+  w922 is notes
+  (quiet:980 ms) setup=1
+
+-- 6 open-calendar: opens calendar
+> open -g -b com.apple.iCal 
+pid 62342 lists (id role subrole x y w h flags):
+  925 AXWindow AXStandardWindow 0 31 1600 791 main,toolbar
+  w925 is calendar
+  (quiet:1389 ms) setup=1
+
+-- 7 open-settings: opens settings
+> open -g -b com.apple.systempreferences 
+pid 62400 lists (id role subrole x y w h flags):
+  926 AXWindow AXStandardWindow 437 85 723 625 main,toolbar
+  w926 is settings
+  (quiet:491 ms) setup=1
+
+-- 8 open-preview: opens preview
+> open -g -b com.apple.Preview /tmp/arbor-apps.D2jX6X/scratch/told/…-leaf.png
+pid 62648 lists (id role subrole x y w h flags):
+  928 AXWindow AXStandardWindow 4 35 708 424 main,toolbar
+  w928 is preview
+  (quiet:978 ms) setup=1
+
+-- 9 open-mail: opens mail
+> open -g -b com.apple.mail 
+pid 62899 lists (id role subrole x y w h flags):
+  929 AXWindow AXStandardWindow 240 72 1120 630 main,close-disabled,sheets=1,toolbar
+  w929 is mail
+  (quiet:673 ms) setup=1
+the cast: finder safari textedit terminal notes calendar settings preview mail
+
+-- 10 tiling-acts: without Arbor: drags a window by its title bar against the menu bar and lets go
+> click 635 854
+> move 635 654
+> drag 672 43 800 0 --no-release
+> release
+  (quiet:1037 ms) setup=1
+
+-- 11 tiling-acts-back: drags it away again, a hand's breadth down
+> drag 805 43 800 130 --no-release
+> release
+  (quiet:1060 ms) setup=1
+macOS's tiling was seen to act: true
+  ✔ macOS's own tiling acts
+
+-- 12 look-around: looks at the screen
+  (quiet:411 ms) setup=1 own=all
+
+-- 13 open-desks: opens the two windows that input is tried on
+  w946 is desk-a
+  w948 is desk-b
+  (quiet:433 ms) setup=1 own=all
+
+-- 14 input-before: a round of input on two windows of its own: presses behind and in front, keys, a scroll, a drag inside the text
+  posted press:25,up:25,key:13,scroll:28,dragged:20
+  (quiet:888 ms) round=before front=946 posted=press:25,up:25,key:13,scroll:28,dragged:20
+
+== The walk
+
+-- 15 display-plug: the second display: plug
+> display_add 1920 1080: display 6, 0C05C705-7894-4B84-849F-1BFE6462A604
+> display_move right: now at 1600 0 1920 1080
+  (quiet:396 ms) moves=any leaves=any
+
+-- left out: view home: Arbor is not acting
+
+-- 16 dock-icon-notes: clicks notes's icon in the Dock
+> click 747 854
+> move 747 654
+  (quiet:489 ms) front=922
+
+-- 17 carry-notes-across: drags notes, which floats, by its title bar onto the other display and lets go
+> drag 804 117 2560 220 --no-release
+> release
+  (quiet:1043 ms) drags=922 front=922 own=922 first=1
+
+-- 18 display-unplug: the second display: unplug
+> display_remove
+  (quiet:369 ms) moves=any leaves=any
+
+-- left out: view home: Arbor is not acting
+
+-- 19 display-plug: the second display: plug
+> display_add 1920 1080: display 7, 0C05C705-7894-4B84-849F-1BFE6462A604
+> display_move right: now at 1600 0 1920 1080
+  (quiet:443 ms) moves=any leaves=any
+
+-- left out: view home: Arbor is not acting
+
+-- 20 display-unplug: the second display: unplug
+> display_remove
+  (quiet:365 ms) moves=any leaves=any
+
+-- left out: view home: Arbor is not acting
+
+-- 21 display-plug: the second display: plug
+> display_add 1280 800: display 8, 0C05C705-7894-4B84-849F-1BFE6462A604
+> display_move right: now at 1600 0 1280 800
+  (quiet:368 ms) moves=any leaves=any
+
+-- left out: view home: Arbor is not acting
+
+-- 22 click-wallpaper: clicks on the wallpaper
+> click 1400 60
+  (quiet:370 ms) moves=any leaves=any
+
+-- 23 click-wallpaper-again: clicks on the wallpaper again
+> click 1400 60
+  (quiet:408 ms) moves=any leaves=any returns=21
+
+-- left out: resize_edge calendar bottom -30: Arbor is not acting
+
+-- 24 display-unplug: the second display: unplug
+> display_remove
+  (quiet:359 ms) moves=any leaves=any
+
+-- left out: view home: Arbor is not acting
+
+-- left out: view home: Arbor is not acting
+
+-- 25 dock-icon-settings: clicks settings's icon in the Dock
+> click 1082 854
+> move 1082 654
+  (quiet:426 ms) front=926
+
+-- left out: drag_by settings -188 -120 click: that would end at an edge
+
+-- left out: resize_key balance: Arbor is not acting
+
+-- 26 dock-icon-safari: clicks safari's icon in the Dock
+> click 189 854
+> move 189 654
+  (quiet:383 ms) front=909
+
+-- 27 hide-safari: presses ⌘H
+> key cmd+h
+  (quiet:886 ms) moves=,, leaves=909,
+
+-- 28 display-plug: the second display: plug
+> display_add 1920 1080: display 9, 0C05C705-7894-4B84-849F-1BFE6462A604
+> display_move right: now at 1600 0 1920 1080
+  (quiet:389 ms) moves=any leaves=any
+
+-- left out: view home: Arbor is not acting
+
+-- 29 click-notes: clicks notes's title bar
+> click 2560 204
+> move 2560 324
+  (quiet:366 ms) front=922
+
+-- left out: pin: Arbor is not acting
+
+-- left out: drag_onto safari terminal top: Arbor is not acting
+
+-- 30 unhide-safari: clicks its icon in the Dock
+> click 189 854
+> move 189 654
+  (quiet:367 ms) moves=,, comes=909 lands=909 front=909
+
+-- left out: view all: Arbor is not acting
+
+-- left out: resize_key balance: Arbor is not acting
+
+-- left out: view frame: Arbor is not acting
+
+-- 31 dock-icon-safari: clicks safari's icon in the Dock
+> click 189 854
+> move 189 654
+  (quiet:385 ms) front=909
+
+-- 32 full-screen: presses ⌃⌘F in Safari
+> key ctrl+cmd+f
+  (quiet:406 ms) moves=any leaves=any
+
+-- 33 leave-full-screen: presses ⌃⌘F again
+> key ctrl+cmd+f
+  (quiet:379 ms) moves=any leaves=any comes=909 lands=909 front=909 returns=31
+
+-- left out: view all: Arbor is not acting
+
+-- left out: save_view 1: Arbor is not acting
+
+-- left out: drag_out safari: Arbor is not acting
+
+-- left out: view in: Arbor is not acting
+
+-- left out: drag_out textedit: Arbor is not acting
+
+-- left out: resize_gap notes 80: Arbor is not acting
+
+-- left out: switch_click terminal: no free point of its title bar shows
+
+-- 34 drag-calendar-to-top-edge: drags calendar by its title bar against the top edge of the screen and lets go
+> drag 1416 121 800 0 --no-release
+> release
+  (quiet:1456 ms) drags=925 moves=,, front=925 own=925
+
+-- left out: view desktop: Arbor is not acting
+
+-- left out: drag_onto terminal textedit left: Arbor is not acting
+
+-- left out: send_across: there is no second display, or Arbor is not acting
+
+-- left out: view home: Arbor is not acting
+
+-- 35 leave-alone: does nothing for half a minute
+  (quiet:374 ms)
+
+-- left out: view all: Arbor is not acting
+
+-- left out: send_across: there is no second display, or Arbor is not acting
+
+-- left out: view in: Arbor is not acting
+
+-- 36 dock-icon-settings: clicks settings's icon in the Dock
+> click 1082 854
+> move 1082 654
+  (quiet:603 ms) front=926
+
+-- left out: dock_key down: Arbor is not acting
+
+-- 37 dock-icon-notes: clicks notes's icon in the Dock
+> click 747 854
+> move 747 654
+  (quiet:469 ms) front=922
+
+-- 38 minimize-notes: presses ⌘M
+> key cmd+m
+  (quiet:988 ms) moves=,, leaves=922
+
+-- 39 dock-icon-finder: clicks finder's icon in the Dock
+> click 75 855
+> move 75 655
+  (quiet:410 ms) front=906
+
+-- left out: dock_key right: Arbor is not acting
+
+-- 40 dock-icon-terminal: clicks terminal's icon in the Dock
+> click 1177 855
+> move 1177 655
+  (quiet:419 ms) front=921
+
+-- left out: dock_key right: Arbor is not acting
+
+-- 41 restore-notes: clicks notes's icon in the Dock, which brings its minimized window back
+> click 722 855
+> move 722 655
+  (quiet:978 ms) moves=,, comes=922 front=922
+
+-- 42 dock-icon-safari: clicks safari's icon in the Dock
+> click 189 854
+> move 189 654
+  (quiet:363 ms) front=909
+
+-- 43 drag-safari-by: drags safari, which floats, by its title bar 144 across and 116 down, and clicks there 0.3 s after letting go
+> drag 1011 43 1155 159 --no-release
+> release
+> click 1155 159
+  (quiet:919 ms) drags=909 front=909 own=909
+
+-- left out: drag_onto terminal terminal top: Arbor is not acting
+
+-- left out: drag_onto settings textedit bottom: Arbor is not acting
+
+-- 44 click-safari: clicks safari's title bar
+> click 1155 55
+> move 1155 175
+  (quiet:424 ms) front=909
+
+-- left out: dock_key left: Arbor is not acting
+
+-- left out: quit_and_start: Arbor is not running
+
+-- left out: pause: Arbor is not acting
+
+-- left out: save_view 3: Arbor is not acting
+
+-- 45 dock-icon-terminal: clicks terminal's icon in the Dock
+> click 1218 854
+> move 1218 654
+  (quiet:429 ms) front=921
+
+-- 46 drag-terminal-to-top-edge: drags terminal by its title bar against the top edge of the screen and lets go
+> drag 803 189 800 0 --no-release
+> release
+  (quiet:1395 ms) drags=921 moves=,, front=921 own=921
+
+-- left out: resize_edge preview left -30: Arbor is not acting
+
+-- left out: resume: Arbor is not paused
+
+-- left out: view in: Arbor is not acting
+
+-- left out: resize_gap mail -40: Arbor is not acting
+
+-- left out: switch_backtick: the app in front has one window
+
+-- 47 dock-icon-textedit: clicks textedit's icon in the Dock
+> click 1163 854
+> move 1163 654
+  (quiet:517 ms) front=918
+
+-- 48 quit-textedit: presses ⌘Q in textedit
+> key cmd+q
+  (quiet:833 ms) moves=,, leaves=918,
+
+-- 49 reopen-textedit: opens textedit's document again
+> open -g -b com.apple.TextEdit /tmp/arbor-apps.D2jX6X/scratch/told/…-oak.txt
+pid 73046 lists (id role subrole x y w h flags):
+  1344 AXWindow AXStandardWindow 165 65 673 439 main
+  w1344 is textedit
+  (quiet:909 ms) moves=,, front=1344
+
+-- left out: resize_edge notes right -60: Arbor is not acting
+
+-- left out: view left: Arbor is not acting
+
+-- left out: drag_onto settings finder left: Arbor is not acting
+
+-- 50 dock-icon-settings: clicks settings's icon in the Dock
+> click 1082 854
+> move 1082 654
+  (quiet:507 ms) front=926
+
+-- left out: undo: Arbor is not acting
+
+-- left out: view back: Arbor is not acting
+
+-- 51 click-settings: clicks settings's title bar
+> click 801 97
+> move 801 217
+  (quiet:494 ms) front=926
+
+-- left out: dock_key down: Arbor is not acting
+
+-- left out: save_view 2: Arbor is not acting
+
+-- left out: view forward: Arbor is not acting
+
+-- left out: drag_onto notes preview left: Arbor is not acting
+
+-- left out: switch_click calendar: no free point of its title bar shows
+
+-- left out: view forward: Arbor is not acting
+
+-- left out: drag_onto calendar mail left: Arbor is not acting
+
+-- left out: wallpaper_click: no bare spot of wallpaper shows
+
+-- left out: float_all_here: Arbor is not acting
+
+-- left out: view left: Arbor is not acting
+
+-- 52 dock-icon-calendar: clicks calendar's icon in the Dock
+> click 580 854
+> move 580 654
+  (quiet:514 ms) front=925
+
+-- 53 carry-calendar-across: drags calendar, which floats, by its title bar onto the other display and lets go
+> drag 672 43 2560 220 --no-release
+> release
+  (quiet:1049 ms) drags=925 front=925 own=925
+
+-- left out: close_new: no window that open_new opened is within reach
+
+-- left out: drag_out textedit: Arbor is not acting
+
+-- left out: close_new: no window that open_new opened is within reach
+
+-- left out: resize_key balance: Arbor is not acting
+
+-- left out: drag_by calendar -140 -117: that would end at an edge
+
+-- 54 dock-icon-preview: clicks preview's icon in the Dock
+> click 1274 854
+> move 1274 654
+  (quiet:505 ms) front=928
+
+-- left out: mirror: Arbor is not acting
+
+-- left out: switch_click notes: no free point of its title bar shows
+
+-- 55 leave-alone: does nothing for half a minute
+  (quiet:355 ms)
+
+-- 56 drag-preview-to-top-edge: drags preview by its title bar against the top edge of the screen and lets go
+> drag 312 47 800 0 --no-release
+> release
+  (quiet:1452 ms) drags=928 moves=,, front=928 own=928
+
+-- 57 display-unplug: the second display: unplug
+> display_remove
+  (quiet:352 ms) moves=any leaves=any
+
+-- left out: view home: Arbor is not acting
+
+-- 58 input-after: a round of input on two windows of its own: presses behind and in front, keys, a scroll, a drag inside the text
+  posted press:25,up:25,key:13,scroll:28,dragged:20
+  (quiet:915 ms) round=after front=946 posted=press:25,up:25,key:13,scroll:28,dragged:20
+
+43 acts, 67 left out because they did not apply
+
+== the report (all of it: mac-shell/day-report.md)
+58 steps in 297 s, 36 of them judged, 6 with a rule broken. The sampler: samples 9936 seconds 249.1 hz 39.9 cost-ms 2.90 late 31 longest-gap-ms 630 whole-samples 11877 whole-seconds 297.8 whole-late 49.
+Input: 259 presses, releases, keys and scrolls reached the apps, half of them within 622 µs, 99 in 100 within 82839 µs, the latest after 129933 µs.
+By kind, listed only (events, half within, 99 in 100 within, µs): down 21, 726, 5443; dragged 198, 603, 4973; forward 7, 881, 129933; key 5, 653, 1046; up 28, 664, 123249. `forward`: a press on a window of an app that was not in front.
+The round of input `before` (events, half within µs): down 13, 671; dragged 20, 455; forward 12, 10378; key 13, 599; scroll 28, 340; up 25, 463.
+The round of input `after` (events, half within µs): down 13, 715; dragged 20, 380; forward 12, 8919; key 13, 506; scroll 28, 310; up 25, 398.
+Judged: no kind. Not down: fewer than 10 such events in a round with Arbor. Not forward: fewer than 10 such events in a round with Arbor. Not up: fewer than 10 such events in a round with Arbor. Not key: fewer than 10 such events in a round with Arbor. Not dragged: fewer than 10 such events in a round with Arbor. Not scroll: fewer than 10 such events in a round with Arbor.
+
+## Per rule
+
+| Rule | | Steps that checked it | Steps that broke it | Which |
+|---|---|---|---|---|
+| 1 | never fight macOS: where it answers a drag, Arbor stands aside | 6 | 0 |  |
+| 2 | nothing moves that the person did not move | 35 | 2 | 38 minimize-notes, 41 restore-notes |
+| 3 | no jolts: a window moves once, to where it ends up | 45 | 3 | 18 display-unplug, 21 display-plug, 28 display-plug |
+| 4 | the window you switch to comes to the front and into view | 31 | 0 |  |
+| 5 | quitting, Float All and pause give windows their own sizes back | 0 | 0 |  |
+| 6 | what a person presses reaches the apps, at once | 29 | 1 | 22 click-wallpaper |
+| L | no window is lost or stuck | 45 | 0 |  |
+| - | what the script itself checked | 45 | 0 |  |
+
+## Findings
+
+### Rule 2: nothing moves that the person did not move
+
+- ✘ **38 minimize-notes** (presses ⌘M): calendar (w925) moved and came back, and the step did not name it [moved-unasked]
+  - +0 ms 0,31 1600×791 · +1004 ms 0,31 1600×793
+- ✘ **41 restore-notes** (clicks notes's icon in the Dock, which brings its minimized window back): calendar (w925) moved and came back, and the step did not name it [moved-unasked]
+  - +0 ms 0,31 1600×793 · +1745 ms 0,31 1600×791
+
+### Rule 3: no jolts: a window moves once, to where it ends up
+
+- ✘ **18 display-unplug** (the second display: unplug): notes (w922) moved 2 times [jolt]
+  - +0 ms 2056,192 1000×660 · +10 ms 297,109 1000×660 · +530 ms 300,105 1000×660
+- ✘ **21 display-plug** (the second display: plug): notes (w922) moved 2 times [jolt]
+  - +0 ms 300,105 1000×660 · +252 ms -1140,70 1000×660 · +678 ms 1740,70 1000×660
+- ✘ **21 display-plug** (the second display: plug): calendar (w925) moved 2 times [jolt]
+  - +0 ms 128,109 1600×791 · +252 ms 0,109 1600×791 · +678 ms 128,109 1600×791
+- ✘ **28 display-plug** (the second display: plug): notes (w922) moved 2 times [jolt]
+  - +0 ms 300,105 1000×660 · +25 ms 2060,183 1000×660 · +328 ms 2056,192 1000×660
+
+### Rule 6: what a person presses reaches the apps, at once
+
+- ✘ **22 click-wallpaper** (clicks on the wallpaper): the button came up, and the apps heard of it 123 ms later [input-held]
+
+
+1 passed, 1 failed
+still running when the script had ended, and stopped now:
+  60712 sleep
+  64057 desk
+  64076 desk
+exit code 1

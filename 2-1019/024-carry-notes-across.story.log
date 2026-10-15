@@ -1,0 +1,12 @@
+24 carry-notes-across: drags notes, which floats, by its title bar onto the other display and lets go
+expected: {'act': 'drag', 'settled': 'quiet:1078', 'judge': 'no', 'performed': 'no', 'undone': 'drag_window', 'drags': '252', 'front': '252', 'own': '252', 'floating': '234,237,248,251,252,253,256,260,262,284,286', 'docked': ''}
+ODD rule -: the act was not performed: drag_window could not be done
+
+04:51:26.635 SCREEN -- begin 24 carry-notes-across
+04:51:26.635 SCREEN -- text 24 drags notes, which floats, by its title bar onto the other display and lets go
+04:51:26.715 SCRIPT drag w252 from 804,117 to 2560,220
+04:51:27.286 SCREEN the button is down 804 117
+04:51:27.434 DEBUG the press on w252 has moved nothing so far: looking less often
+04:51:30.257 SCREEN the button is up 2560 220
+04:51:33.006 SCREEN -- end 24 act=drag settled=quiet:1078 judge=no performed=no undone=drag_window drags=252 front=252 own=252 floating=234,237,248,251,252,253,256,260,262,284,286 docked=
+04:51:33.270 SCRIPT == 25 display-unplug

@@ -1,0 +1,110 @@
+95 drag-notes-to-left-edge: drags notes by its title bar against the left edge of the screen and lets go
+expected: {'act': 'drag-where-macos-tiles', 'settled': 'quiet:426', 'drags': '1413', 'moves': '1395,1398,1395,1398,', 'front': '1413', 'own': '1413', 'floating': '1412,1413,1416,1417,1421,1422,1439,1441,1624', 'docked': '1395,1398'}
+FAIL rule 1: notes (w1413) macOS's tiling preview and Arbor's drop preview were up at the same time, for 84 ms
+
+05:10:00.685 SCREEN -- begin 95 drag-notes-to-left-edge
+05:10:00.685 SCREEN -- text 95 drags notes by its title bar against the left edge of the screen and lets go
+05:10:00.764 SCRIPT drag w1413 from 759,117 to 0,450
+05:10:01.329 SCREEN the button is down 759 117
+05:10:01.337 SCREEN front to back: notes w1540 calendar finder safari textedit preview w1425 mail settings terminal desk-a desk-b w1555 w1545
+05:10:01.556 DEBUG the press on w1413 has moved nothing so far: looking less often
+05:10:01.595 SCREEN notes (w1413) 383,116 709×660
+05:10:01.651 SCREEN notes (w1413) 358,127 709×660
+05:10:01.668 DEBUG w1413 is being dragged, which began late
+05:10:01.669 MACOS pid 79903 AXMoved w1413 AXWindow/AXStandardWindow 358 127 709 660
+05:10:01.672 DEBUG drag of w1413: on float
+05:10:01.681 SCREEN w1540 of Arbor left the screen
+05:10:01.681 SCREEN front to back: notes calendar finder safari textedit preview w1425 mail settings terminal desk-a desk-b w1555 w1545
+05:10:01.769 SCREEN notes (w1413) 333,138 709×660
+05:10:01.827 SCREEN notes (w1413) 307,149 709×660
+05:10:01.833 MACOS pid 79903 AXMoved w1413 AXWindow/AXStandardWindow 307 149 709 660
+05:10:01.894 SCREEN notes (w1413) 282,160 709×660
+05:10:01.958 SCREEN notes (w1413) 257,161 709×660
+05:10:01.975 MACOS pid 79903 AXMoved w1413 AXWindow/AXStandardWindow 257 161 709 660
+05:10:02.011 SCREEN notes (w1413) 231,172 709×660
+05:10:02.084 MACOS pid 79903 AXMoved w1413 AXWindow/AXStandardWindow 206 194 709 660
+05:10:02.086 SCREEN notes (w1413) 206,194 709×660
+05:10:02.150 SCREEN notes (w1413) 181,205 709×660
+05:10:02.198 DEBUG drag of w1413: waiting over beside(n1, ArborCore.Edge.right)
+05:10:02.200 SCREEN notes (w1413) 156,217 709×660
+05:10:02.250 MACOS pid 79903 AXMoved w1413 AXWindow/AXStandardWindow 156 217 709 660
+05:10:02.255 SCREEN notes (w1413) 130,228 709×660
+05:10:02.367 MACOS pid 79903 AXMoved w1413 AXWindow/AXStandardWindow 105 239 709 660
+05:10:02.372 DEBUG drag of w1413: on beside(n1, ArborCore.Edge.right)
+05:10:02.382 SCREEN notes (w1413) 105,239 709×660
+05:10:02.390 SCREEN w1554 of Arbor 201,43 709×767 (level 3)
+05:10:02.447 SCREEN notes (w1413) 54,240 709×660
+05:10:02.518 MACOS pid 79903 AXMoved w1413 AXWindow/AXStandardWindow 54 240 709 660
+05:10:02.528 SCREEN notes (w1413) 29,240 709×660
+05:10:02.609 DEBUG drag of w1413: on float
+05:10:02.628 SCREEN notes (w1413) 4,240 709×660
+05:10:02.633 MACOS pid 79903 AXMoved w1413 AXWindow/AXStandardWindow 4 240 709 660
+05:10:02.712 SCREEN notes (w1413) 0,240 709×660
+05:10:02.761 SCREEN w1554 of Arbor left the screen
+05:10:02.808 MACOS pid 79903 AXMoved w1413 AXWindow/AXStandardWindow 0 240 709 660
+05:10:02.933 SCREEN notes (w1413) -26,240 709×660
+05:10:02.994 SCREEN notes (w1413) -75,240 709×660
+05:10:02.997 MACOS pid 79903 AXMoved w1413 AXWindow/AXStandardWindow -75 240 709 660
+05:10:03.001 SCREEN notes (w1413) -101,240 709×660
+05:10:03.039 SCREEN notes (w1413) -126,240 709×660
+05:10:03.104 MACOS pid 79903 AXMoved w1413 AXWindow/AXStandardWindow -126 240 709 660
+05:10:03.171 SCREEN notes (w1413) -151,240 709×660
+05:10:03.191 DEBUG drag of w1413: waiting over beside(n1, ArborCore.Edge.left)
+05:10:03.219 SCREEN notes (w1413) -177,240 709×660
+05:10:03.224 MACOS pid 79903 AXMoved w1413 AXWindow/AXStandardWindow -177 240 709 660
+05:10:03.266 SCREEN notes (w1413) -202,251 709×660
+05:10:03.322 SCREEN notes (w1413) -227,273 709×660
+05:10:03.346 MACOS pid 79903 AXMoved w1413 AXWindow/AXStandardWindow -253 284 709 660
+05:10:03.403 SCREEN notes (w1413) -278,295 709×660
+05:10:03.413 DEBUG drag of w1413: on beside(n1, ArborCore.Edge.left)
+05:10:03.457 SCREEN w1554 of Arbor 12,43 709×767 (level 3)
+05:10:03.465 SCREEN notes (w1413) -303,306 709×660
+05:10:03.483 MACOS pid 79903 AXMoved w1413 AXWindow/AXStandardWindow -303 306 709 660
+05:10:03.547 DEBUG drag of w1413: on float, left to macOS’s tiling
+05:10:03.612 SCREEN w1667 of WindowManager -15,16 830×821
+05:10:03.612 SCREEN notes (w1413) -328,318 709×660
+05:10:03.612 SCREEN w1666 of WindowManager -15,16 830×821
+05:10:03.612 SCREEN front to back: w1667 notes w1666 calendar finder safari textedit preview w1425 mail settings terminal desk-a desk-b w1555 w1545
+05:10:03.689 MACOS pid 79903 AXMoved w1413 AXWindow/AXStandardWindow -328 318 709 660
+05:10:03.696 SCREEN w1554 of Arbor left the screen
+05:10:03.812 DEBUG drag of w1413: on float
+05:10:03.815 SCREEN notes (w1413) -327,318 709×660
+05:10:03.866 DEBUG drag of w1413: on float, left to macOS’s tiling
+05:10:03.926 MACOS pid 79903 AXMoved w1413 AXWindow/AXStandardWindow -327 318 709 660
+05:10:05.316 SCREEN notes (w1413) -328,318 709×660
+05:10:05.422 MACOS pid 79903 AXMoved w1413 AXWindow/AXStandardWindow -328 318 709 660
+05:10:05.443 INFO  dropped w1413 on float, display 07230EFA-7A8D-4E37-845C-19CC8737EEF5, left to macOS’s tiling
+05:10:05.457 SCREEN w1667 of WindowManager left the screen
+05:10:05.457 SCREEN w1666 of WindowManager left the screen
+05:10:05.457 SCREEN front to back: notes calendar finder safari textedit preview w1425 mail settings terminal desk-a desk-b w1555 w1545
+05:10:05.457 SCREEN the button is up 0 450
+05:10:05.477 MACOS pid 79903 AXResized w1413 AXWindow/AXStandardWindow -326 316 710 661
+05:10:05.506 MACOS pid 79903 AXResized w1413 AXWindow/AXStandardWindow -237 238 735 697
+05:10:05.512 SCREEN notes (w1413) -237,238 735×697
+05:10:05.559 MACOS pid 79903 AXResized w1413 AXWindow/AXStandardWindow -101 118 773 752
+05:10:05.559 MACOS pid 79903 AXResized w1413 AXWindow/AXStandardWindow -101 118 773 752
+05:10:05.574 SCREEN notes (w1413) -101,118 773×752
+05:10:05.581 SCREEN w1540 of Arbor -107,109 788×767
+05:10:05.581 SCREEN front to back: w1540 notes calendar finder safari textedit preview w1425 mail settings terminal desk-a desk-b w1555 w1545
+05:10:05.594 MACOS pid 79903 AXResized w1413 AXWindow/AXStandardWindow -51 76 786 771
+05:10:05.634 MACOS pid 79903 AXResized w1413 AXWindow/AXStandardWindow -25 52 794 782
+05:10:05.636 SCREEN w1540 of Arbor -57,67 801×786
+05:10:05.636 SCREEN notes (w1413) -51,76 786×771
+05:10:05.641 SCREEN notes (w1413) -25,52 794×782
+05:10:05.652 MACOS pid 79903 AXResized w1413 AXWindow/AXStandardWindow -12 41 797 787
+05:10:05.673 SCREEN w1540 of Arbor -18,32 812×802
+05:10:05.673 SCREEN notes (w1413) -12,41 797×787
+05:10:05.711 SCREEN notes (w1413) -8,38 798×788
+05:10:05.733 MACOS pid 79903 AXResized w1413 AXWindow/AXStandardWindow -3 33 800 791
+05:10:05.733 MACOS pid 79903 AXResized w1413 AXWindow/AXStandardWindow -3 33 800 791
+05:10:05.745 MACOS pid 79903 AXMoved w1413 AXWindow/AXStandardWindow -2 32 800 791
+05:10:05.761 MACOS pid 79903 AXMoved w1413 AXWindow/AXStandardWindow -1 32 800 791
+05:10:05.766 SCREEN notes (w1413) -2,32 800×791
+05:10:05.783 SCREEN w1540 of Arbor -9,25 815×805
+05:10:05.783 SCREEN notes (w1413) -1,32 800×791
+05:10:05.828 SCREEN w1540 of Arbor -7,25 815×804
+05:10:06.016 DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: macOS tiled this window; Arbor stood aside · ⌃⌥⌘← docks it · Check Setup… in the menu
+05:10:06.059 SCREEN w1542 of Arbor 465,728 670×38 (level 6)
+05:10:09.696 SCREEN -- end 95 act=drag-where-macos-tiles settled=quiet:426 drags=1413 moves=1395,1398,1395,1398, front=1413 own=1413 floating=1412,1413,1416,1417,1421,1422,1439,1441,1624 docked=1395,1398
+05:10:09.914 SCREEN (nothing was seen for 107 ms)
+05:10:10.331 SCRIPT == 96 click-calendar

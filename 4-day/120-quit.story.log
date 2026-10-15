@@ -1,0 +1,31 @@
+120 quit: chooses Quit Arbor in Arbor's menu
+expected: {'act': 'quit-and-start', 'settled': 'quiet:843', 'moves': 'any', 'restores': 'all', 'places': '1', 'everything': '1'}
+FAIL rule -: Arbor's process ended, and nobody asked it to
+FAIL rule 5: terminal (w1412) is 106,238 863×500; its own size was 106,238 1600×791
+FAIL rule 5: calendar (w1416) has its size back but not its place: 385,145 682×791, it was at 445,205 681×791
+
+05:12:10.984 SCREEN -- begin 120 quit
+05:12:10.984 SCREEN -- text 120 chooses Quit Arbor in Arbor's menu
+05:12:11.669 DEBUG menu bar click: x 67.0 by the event, 67.0 by the screen, button 134.0 wide
+05:12:11.894 SCREEN w1730 of Arbor 1227,31 286×785 (level 101)
+05:12:13.220 SCREEN w1730 of Arbor left the screen
+05:12:13.421 MACOS pid 78491 AXResized w1395 AXWindow/AXStandardWindow 340 120 920 436
+05:12:13.422 MACOS pid 78491 AXMoved w1395 AXWindow/AXStandardWindow 340 120 920 436
+05:12:13.430 SCREEN finder (w1395) 340,120 920×436
+05:12:13.480 SCREEN safari (w1398) 217,31 586×778
+05:12:13.564 SCREEN safari (w1398) 217,31 1324×790
+05:12:13.564 MACOS pid 79399 AXResized w1398 AXWindow/AXStandardWindow 217 31 1324 790
+05:12:13.566 MACOS pid 79399 AXMoved w1398 AXWindow/AXStandardWindow 217 31 1324 790
+05:12:13.578 MACOS pid 79399 AXResized w1398 AXWindow/AXStandardWindow 217 31 1324 790
+05:12:13.583 INFO  trace day-19 ended: 521 lines, Arbor stopped
+05:12:13.584 INFO  stopped; all windows returned to view
+05:12:13.585 INFO  Arbor quit
+05:12:13.599 SCREEN w1706 of Arbor left the screen
+05:12:13.599 SCREEN w1704 of Arbor left the screen
+05:12:13.599 SCREEN w1707 of Arbor left the screen
+05:12:13.599 SCREEN w1705 of Arbor left the screen
+05:12:13.599 SCREEN front to back: desk-a desk-b preview notes safari finder calendar textedit w1425 mail settings terminal
+05:12:13.625 SCREEN -- arbor gone
+05:12:14.607 SCREEN -- finding 120 -:crash FAIL Arbor's process ended, and nobody asked it to
+05:12:14.613 SCREEN -- end 120 act=quit-and-start settled=quiet:843 moves=any restores=all places=1 everything=1
+05:12:14.875 SCRIPT == 121 input-after

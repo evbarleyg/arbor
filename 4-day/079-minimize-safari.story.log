@@ -1,0 +1,103 @@
+79 minimize-safari: presses ⌘M
+expected: {'act': 'open-close', 'settled': 'quiet:1683', 'moves': '1395,1398,1409,1395,1398,1409,', 'leaves': '1398', 'floating': '1412,1413,1416,1417,1421,1422,1439,1441', 'docked': '1395,1398,1409'}
+FAIL rule 3: textedit (w1409) moved 2 times
+FAIL rule 2: terminal (w1412) a floating window, moved, and the step did not name it
+FAIL rule 2: notes (w1413) a floating window, moved, and the step did not name it
+FAIL rule 2: calendar (w1416) a floating window, moved, and the step did not name it
+FAIL rule 3: calendar (w1416) moved 2 times
+FAIL rule 2: settings (w1417) a floating window, moved, and the step did not name it
+FAIL rule 2: preview (w1421) a floating window, moved, and the step did not name it
+FAIL rule 2: mail (w1422) a floating window, moved, and the step did not name it
+ODD rule 2: w1425 of Mail moved along with a window of its app
+FAIL rule 2: desk-a (w1439) a floating window, moved, and the step did not name it
+FAIL rule 2: desk-b (w1441) a floating window, moved, and the step did not name it
+
+05:09:05.182 SCREEN -- begin 79 minimize-safari
+05:09:05.182 SCREEN -- text 79 presses ⌘M
+05:09:05.419 SCREEN safari (w1398) 617,43 576×767
+05:09:05.431 SCREEN safari (w1398) 617,43 579×767
+05:09:05.469 SCREEN safari (w1398) 617,43 614×767
+05:09:05.475 SCREEN safari (w1398) 617,43 628×767
+05:09:05.511 SCREEN safari (w1398) 617,43 677×767
+05:09:05.517 SCREEN safari (w1398) 617,43 695×767
+05:09:05.530 SCREEN safari (w1398) 617,43 733×767
+05:09:05.603 SCREEN safari (w1398) 617,43 855×767
+05:09:05.670 SCREEN safari (w1398) 629,102 862×768
+05:09:05.741 SCREEN safari (w1398) 848,316 642×565
+05:09:05.744 SCREEN safari (w1398) 905,353 585×528
+05:09:05.772 SCREEN safari (w1398) 1097,468 392×413
+05:09:05.790 SCREEN safari (w1398) 1220,546 269×335
+05:09:05.853 SCREEN safari (w1398) 1441,761 48×120
+05:09:05.915 SCREEN safari (w1398) 1454,825 35×56
+05:09:05.922 SCREEN safari (w1398) left the screen
+05:09:05.922 SCREEN front to back: w1540 calendar finder preview w1425 mail settings notes terminal textedit desk-a desk-b w1549 w1555 w1545 w1550
+05:09:06.146 SCREEN (nothing was seen for 224 ms)
+05:09:06.147 MACOS pid 79399 AXWindowMiniaturized w1398 AXWindow/AXDialog 617 43 574 767 minimized
+05:09:06.164 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 10 stand-ins, 0.46 s
+05:09:06.164 DEBUG the stage kept the windows waiting 8 ms: its panel 0, 10 costumes 0 (0 not ready), the desktop 3, going up 5
+05:09:06.176 SCREEN w1473 of Arbor 0,0 1600×900 (level 4)
+05:09:06.179 MACOS pid 79618 AXResized w1409 AXWindow/AXStandardWindow 969 43 619 767
+05:09:06.179 MACOS pid 79618 AXMoved w1409 AXWindow/AXStandardWindow 969 43 619 767
+05:09:06.179 MACOS pid 79618 AXResized w1409 AXWindow/AXStandardWindow 969 43 619 767
+05:09:06.184 SCREEN terminal (w1412) 525,238 429×500
+05:09:06.184 SCREEN textedit (w1409) 969,43 619×767
+05:09:06.203 MACOS pid 79835 AXTitleChanged w1412 AXWindow/AXStandardWindow 525 238 429 500
+05:09:06.203 MACOS pid 79835 AXResized w1412 AXWindow/AXStandardWindow 525 238 429 500
+05:09:06.209 MACOS pid 79835 AXMoved w1412 AXWindow/AXStandardWindow 525 238 429 500
+05:09:06.267 SCREEN notes (w1413) 300,105 709×660
+05:09:06.273 MACOS pid 79903 AXResized w1413 AXWindow/AXStandardWindow 386 105 709 660
+05:09:06.274 MACOS pid 79903 AXMoved w1413 AXWindow/AXStandardWindow 386 105 709 660
+05:09:06.312 MACOS pid 79965 AXResized w1416 AXWindow/AXStandardWindow 401 31 680 791
+05:09:06.314 MACOS pid 79965 AXMoved w1416 AXWindow/AXStandardWindow 401 31 680 791
+05:09:06.316 MACOS pid 80018 AXMoved w1417 AXWindow/AXStandardWindow 379 85 723 625
+05:09:06.317 MACOS pid 80435 AXMoved w1421 AXWindow/AXStandardWindow 387 35 708 424
+05:09:06.325 SCREEN calendar (w1416) 401,31 680×791
+05:09:06.325 SCREEN preview (w1421) 387,35 708×424
+05:09:06.325 SCREEN settings (w1417) 379,85 723×625
+05:09:06.325 SCREEN notes (w1413) 386,105 709×660
+05:09:06.397 MACOS pid 80501 AXResized w1422 AXWindow/AXStandardWindow 305 72 871 630
+05:09:06.397 MACOS pid 80501 AXMoved w1422 AXWindow/AXStandardWindow 305 72 871 630
+05:09:06.398 MACOS pid 82060 AXMoved w1439 AXWindow/AXStandardWindow 525 70 300 190
+05:09:06.399 MACOS pid 82090 AXMoved w1441 AXWindow/AXStandardWindow 525 70 300 190
+05:09:06.401 DEBUG stage retargeted on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 10 stand-ins, 0.22511609554290773 s
+05:09:06.410 DEBUG stage down
+05:09:06.412 SCREEN w1425 of Mail 441,179 470×416
+05:09:06.412 SCREEN mail (w1422) 240,72 871×630
+05:09:06.412 SCREEN desk-a (w1439) 525,70 300×190
+05:09:06.412 SCREEN desk-b (w1441) 525,70 300×190
+05:09:06.459 SCREEN w1425 of Mail 506,179 470×416
+05:09:06.459 SCREEN mail (w1422) 305,72 871×630
+05:09:06.459 SCREEN w1545 of Arbor 957,43 12×767
+05:09:06.459 SCREEN w1540 of Arbor left the screen
+05:09:06.459 SCREEN w1473 of Arbor left the screen
+05:09:06.459 SCREEN w1550 of Arbor left the screen
+05:09:06.459 SCREEN front to back: calendar finder preview w1425 mail settings notes terminal textedit desk-a desk-b w1549 w1555 w1545
+05:09:06.662 SCREEN w1549 of Arbor left the screen
+05:09:06.662 SCREEN front to back: calendar finder preview w1425 mail settings notes terminal textedit desk-a desk-b w1555 w1545
+05:09:06.707 MACOS pid 79965 AXFocusedWindowChanged w1416 AXWindow/AXStandardWindow 401 31 680 791
+05:09:06.708 MACOS pid 79965 AXMainWindowChanged w1416 AXWindow/AXStandardWindow 401 31 680 791
+05:09:06.731 SCREEN in front: process 79965 com.apple.iCal
+05:09:06.734 DEBUG pid 79965 came forward, and macOS still names another app as the one in front
+05:09:06.752 MACOS pid 79965 AXFocusedWindowChanged w1416 AXWindow/AXStandardWindow 401 31 680 791
+05:09:06.753 MACOS workspace didActivate pid 79965 com.apple.iCal regular
+05:09:06.753 MACOS workspace didDeactivate pid 79399 com.apple.Safari regular
+05:09:06.753 MACOS pid 79965 AXMainWindowChanged w1416 AXWindow/AXStandardWindow 401 31 680 791
+05:09:06.754 MACOS pid 79399 AXApplicationDeactivated
+05:09:06.756 DEBUG focus is on w1416
+05:09:06.756 MACOS pid 79965 AXApplicationActivated
+05:09:06.757 DEBUG w1416 has the keyboard
+05:09:06.773 SCREEN w1540 of Arbor 392,25 698×803
+05:09:06.773 SCREEN front to back: w1540 calendar finder preview w1425 mail settings notes terminal textedit desk-a desk-b w1555 w1545
+05:09:06.778 INFO  displays changed: 1 display(s), 0 remembered
+05:09:06.808 MACOS pid 78491 AXResized w1395 AXWindow/AXStandardWindow 12 43 501 769
+05:09:06.819 MACOS pid 79618 AXResized w1409 AXWindow/AXStandardWindow 969 43 619 769
+05:09:06.824 MACOS pid 79965 AXMoved w1416 AXWindow/AXStandardWindow 401 33 680 791
+05:09:06.839 SCREEN finder (w1395) 12,43 501×769
+05:09:06.839 SCREEN textedit (w1409) 969,43 619×769
+05:09:06.846 SCREEN w1540 of Arbor 392,25 698×805
+05:09:06.846 SCREEN calendar (w1416) 401,33 680×791
+05:09:06.846 SCREEN w1555 of Arbor 513,43 12×769
+05:09:06.846 SCREEN w1545 of Arbor 957,43 12×769
+05:09:06.846 SCREEN w1541 of Arbor 0,31 1600×793 (level -2147483602)
+05:09:08.073 SCREEN -- end 79 act=open-close settled=quiet:1683 moves=1395,1398,1409,1395,1398,1409, leaves=1398 floating=1412,1413,1416,1417,1421,1422,1439,1441 docked=1395,1398,1409
+05:09:08.494 SCRIPT == 80 restore-safari

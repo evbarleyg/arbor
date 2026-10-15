@@ -1,0 +1,20 @@
+21 display-plug: the second display: plug
+expected: {'act': 'display-change', 'settled': 'quiet:368', 'moves': 'any', 'leaves': 'any'}
+FAIL rule 3: notes (w922) moved 2 times
+FAIL rule 3: calendar (w925) moved 2 times
+
+05:00:10.411 SCREEN -- begin 21 display-plug
+05:00:10.411 SCREEN -- text 21 the second display: plug
+05:00:10.663 SCREEN (nothing was seen for 249 ms)
+05:00:10.663 SCREEN notes (w922) -1140,70 1000×660
+05:00:10.663 SCREEN calendar (w925) 0,109 1600×791
+05:00:10.666 MACOS pid 62282 AXMoved w922 AXWindow/AXStandardWindow -1140 70 1000 660
+05:00:10.666 MACOS pid 62342 AXMoved w925 AXWindow/AXStandardWindow 0 109 1600 791
+05:00:10.879 SCREEN (nothing was seen for 171 ms)
+05:00:11.089 SCREEN (nothing was seen for 106 ms)
+05:00:11.089 SCREEN notes (w922) 1740,70 1000×660
+05:00:11.089 SCREEN calendar (w925) 128,109 1600×791
+05:00:11.089 MACOS pid 62282 AXMoved w922 AXWindow/AXStandardWindow 1740 70 1000 660
+05:00:11.090 MACOS pid 62342 AXMoved w925 AXWindow/AXStandardWindow 128 109 1600 791
+05:00:16.813 SCREEN -- end 21 act=display-change settled=quiet:368 moves=any leaves=any
+05:00:17.450 SCRIPT == 22 click-wallpaper

@@ -1,0 +1,37 @@
+60 view-all: presses ⌃⌥Space
+expected: {'act': 'view', 'settled': 'quiet:886', 'moves': 'any', 'everything': '1', 'tiles': '', 'keyboard': '1416', 'returns': '44', 'floating': '1412,1413,1416,1417,1421,1422,1439,1441', 'docked': '1395,1398,1409'}
+FAIL rule 2: notes (w1413) is not back where it was after step 44: 300,105 1000×660, it was at 202,105 709×660
+FAIL rule 2: calendar (w1416) is not back where it was after step 44: 0,31 1600×791, it was at 217,31 680×791
+FAIL rule 2: settings (w1417) is not back where it was after step 44: 437,85 723×625, it was at 195,85 723×625
+FAIL rule 2: preview (w1421) is not back where it was after step 44: 4,35 708×424, it was at 203,35 708×424
+FAIL rule 2: mail (w1422) is not back where it was after step 44: 240,72 1120×630, it was at 121,72 871×630
+FAIL rule 2: w1425 of Mail is not back where it was after step 44: 565,179 470×416, it was at 322,179 470×416
+FAIL rule 2: desk-a (w1439) is not back where it was after step 44: 40,70 300×190, it was at 404,70 300×190
+FAIL rule 2: desk-b (w1441) is not back where it was after step 44: 360,70 300×190, it was at 404,70 300×190
+
+05:08:15.041 SCREEN -- begin 60 view-all
+05:08:15.041 SCREEN -- text 60 presses ⌃⌥Space
+05:08:15.244 DEBUG commands follow the pointer: a shortcut, pointer idle 1.8 s, keys 5.1 s, focus 1.8 s
+05:08:15.250 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 11 stand-ins, 0.46 s
+05:08:15.250 DEBUG the stage kept the windows waiting 3 ms: its panel 0, 11 costumes 0 (0 not ready), the desktop 2, going up 2
+05:08:15.294 SCREEN w1473 of Arbor 0,0 1600×900 (level 4)
+05:08:15.327 MACOS pid 78491 AXResized w1395 AXWindow/AXStandardWindow 12 43 501 767
+05:08:15.328 MACOS pid 78491 AXMoved w1395 AXWindow/AXStandardWindow 12 43 501 767
+05:08:15.359 SCREEN finder (w1395) 12,43 501×767
+05:08:15.385 MACOS pid 79399 AXResized w1398 AXWindow/AXStandardWindow 617 43 574 767
+05:08:15.385 MACOS pid 79399 AXMoved w1398 AXWindow/AXStandardWindow 617 43 574 767
+05:08:15.389 MACOS pid 79618 AXMoved w1409 AXWindow/AXStandardWindow 1203 43 385 767
+05:08:15.394 INFO  show-all: showing everything
+05:08:15.420 SCREEN safari (w1398) 617,43 574×767
+05:08:15.420 SCREEN textedit (w1409) 1203,43 385×767
+05:08:15.420 SCREEN w1549 of Arbor 525,43 80×767
+05:08:15.420 SCREEN w1555 of Arbor 513,43 12×767
+05:08:15.420 SCREEN w1545 of Arbor 605,43 12×767
+05:08:15.420 SCREEN w1550 of Arbor 1191,43 12×767
+05:08:15.420 SCREEN w1541 of Arbor 0,31 1600×791 (level -2147483602)
+05:08:15.420 SCREEN front to back: w1540 calendar finder safari preview w1425 mail settings notes terminal textedit desk-a desk-b w1549 w1555 w1545 w1550
+05:08:15.425 DEBUG peek: the key came up
+05:08:15.873 DEBUG stage down
+05:08:15.906 SCREEN w1473 of Arbor left the screen
+05:08:16.624 SCREEN -- end 60 act=view settled=quiet:886 moves=any everything=1 tiles= keyboard=1416 returns=44 floating=1412,1413,1416,1417,1421,1422,1439,1441 docked=1395,1398,1409
+05:08:16.994 SCRIPT == 61 dock-icon-safari

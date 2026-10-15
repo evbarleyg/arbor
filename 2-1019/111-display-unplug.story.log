@@ -1,0 +1,41 @@
+111 display-unplug: the second display: unplug
+expected: {'act': 'display-change', 'settled': 'quiet:650', 'moves': 'any', 'leaves': 'any', 'floating': '234,237,251,252,253,256,260,262,284,286,816', 'docked': ''}
+FAIL rule 3: safari (w237) moved 2 times
+FAIL rule 3: terminal (w251) moved 2 times
+
+04:57:12.902 SCREEN -- begin 111 display-unplug
+04:57:12.902 SCREEN -- text 111 the second display: unplug
+04:57:12.903 SCREEN calendar (w253) 0,31 1600×791
+04:57:12.903 SCREEN textedit (w816) 165,65 656×422
+04:57:12.903 SCREEN terminal (w251) 366,31 862×497
+04:57:12.903 SCREEN safari (w237) 73,42 735×299
+04:57:13.429 MACOS pid 49946 AXMoved w816 AXWindow/AXStandardWindow 165 65 656 422
+04:57:13.430 MACOS pid 27133 AXMoved w251 AXWindow/AXStandardWindow 366 31 862 497
+04:57:13.430 MACOS pid 27435 AXMoved w253 AXWindow/AXStandardWindow 0 31 1600 791
+04:57:13.431 MACOS pid 26658 AXResized w237 AXWindow/AXStandardWindow 73 42 735 299
+04:57:13.432 MACOS pid 49946 AXResized w816 AXWindow/AXStandardWindow 165 65 656 422
+04:57:13.432 MACOS pid 27133 AXMoved w251 AXWindow/AXStandardWindow 366 31 862 497
+04:57:13.441 SCREEN (nothing was seen for 537 ms)
+04:57:13.441 SCREEN w787 of Arbor 559,728 670×38 (level 6)
+04:57:14.269 SCREEN w787 of Arbor left the screen
+04:57:15.090 INFO  display 0C05C705-7894-4B84-849F-1BFE6462A604 disconnected; remembering 1 window(s)
+04:57:15.090 INFO  displays changed: 1 display(s), 1 remembered
+04:57:15.092 DEBUG w260 has the keyboard
+04:57:15.119 SCREEN safari (w237) 73,42 1324×779
+04:57:15.123 SCREEN safari (w237) 73,31 1324×790
+04:57:15.127 MACOS pid 26658 AXResized w237 AXWindow/AXStandardWindow 73 31 1324 790
+04:57:15.130 MACOS pid 26658 AXMoved w237 AXWindow/AXStandardWindow 73 31 1324 790
+04:57:15.131 MACOS pid 26658 AXResized w237 AXWindow/AXStandardWindow 73 31 1324 790
+04:57:15.134 MACOS pid 27133 AXMoved w251 AXWindow/AXStandardWindow 369 177 862 497
+04:57:15.149 DEBUG raised w252, which stays in view
+04:57:15.151 SCREEN terminal (w251) 369,177 862×497
+04:57:15.151 MACOS pid 27274 AXFocusedWindowChanged w252 AXWindow/AXStandardWindow 300 105 1000 660
+04:57:15.151 MACOS pid 27274 AXMainWindowChanged w252 AXWindow/AXStandardWindow 300 105 1000 660
+04:57:15.448 DEBUG raised w252, which stays in view
+04:57:15.449 MACOS pid 27274 AXFocusedWindowChanged w252 AXWindow/AXStandardWindow 300 105 1000 660
+04:57:15.450 MACOS pid 27274 AXMainWindowChanged w252 AXWindow/AXStandardWindow 300 105 1000 660
+04:57:15.676 DEBUG raised w252, which stays in view
+04:57:15.677 MACOS pid 27274 AXFocusedWindowChanged w252 AXWindow/AXStandardWindow 300 105 1000 660
+04:57:15.678 MACOS pid 27274 AXMainWindowChanged w252 AXWindow/AXStandardWindow 300 105 1000 660
+04:57:16.276 SCREEN -- end 111 act=display-change settled=quiet:650 moves=any leaves=any floating=234,237,251,252,253,256,260,262,284,286,816 docked=
+04:57:16.537 SCRIPT == 112 view-home

@@ -1,0 +1,31 @@
+38 minimize-notes: presses ⌘M
+expected: {'act': 'open-close', 'settled': 'quiet:988', 'moves': ',,', 'leaves': '922'}
+FAIL rule 2: calendar (w925) moved and came back, and the step did not name it
+
+05:01:35.611 SCREEN -- begin 38 minimize-notes
+05:01:35.611 SCREEN -- text 38 presses ⌘M
+05:01:35.867 SCREEN notes (w922) 2034,191 1022×661
+05:01:35.877 SCREEN notes (w922) 1972,189 1084×661
+05:01:35.904 SCREEN notes (w922) 1915,187 1141×661
+05:01:35.931 SCREEN notes (w922) 1843,184 1213×661
+05:01:35.982 SCREEN notes (w922) 1695,179 1361×661
+05:01:36.009 SCREEN notes (w922) 1624,177 1432×661
+05:01:36.041 SCREEN notes (w922) 1562,175 1494×661
+05:01:36.082 SCREEN notes (w922) 1515,174 1541×661
+05:01:36.129 SCREEN notes (w922) 1498,173 1558×661
+05:01:36.153 SCREEN notes (w922) 1478,173 1578×661
+05:01:36.186 SCREEN notes (w922) 1471,192 1582×661
+05:01:36.215 SCREEN notes (w922) 1468,222 1567×650
+05:01:36.244 SCREEN notes (w922) 1467,242 1548×630
+05:01:36.261 SCREEN notes (w922) 1464,291 1473×581
+05:01:36.283 SCREEN notes (w922) 1459,415 1137×457
+05:01:36.306 SCREEN notes (w922) 1456,516 774×356
+05:01:36.348 SCREEN notes (w922) 1447,834 48×38
+05:01:36.355 SCREEN notes (w922) left the screen
+05:01:36.355 SCREEN front to back: settings calendar safari desk-a desk-b textedit w932 mail preview terminal finder
+05:01:36.605 MACOS pid 62282 AXWindowMiniaturized w922 AXWindow/AXDialog 2056 192 1000 660 minimized
+05:01:36.606 MACOS pid 62342 AXResized w925 AXWindow/AXStandardWindow 0 31 1600 793
+05:01:36.615 SCREEN (nothing was seen for 259 ms)
+05:01:36.615 SCREEN calendar (w925) 0,31 1600×793
+05:01:37.622 SCREEN -- end 38 act=open-close settled=quiet:988 moves=,, leaves=922
+05:01:37.984 SCRIPT == 39 dock-icon-finder

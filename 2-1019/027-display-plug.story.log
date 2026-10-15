@@ -1,0 +1,25 @@
+27 display-plug: the second display: plug
+expected: {'act': 'display-change', 'settled': 'quiet:351', 'moves': 'any', 'leaves': 'any', 'floating': '234,237,248,251,252,253,256,260,262,284,286', 'docked': ''}
+FAIL rule 3: textedit (w248) moved 2 times
+FAIL rule 3: terminal (w251) moved 2 times
+
+04:51:38.455 SCREEN -- begin 27 display-plug
+04:51:38.455 SCREEN -- text 27 the second display: plug
+04:51:38.671 SCREEN (nothing was seen for 194 ms)
+04:51:38.671 SCREEN textedit (w248) 165,65 656×422
+04:51:38.671 SCREEN terminal (w251) 1000,300 863×499
+04:51:38.717 MACOS pid 27133 AXMoved w251 AXWindow/AXStandardWindow 1000 300 863 499
+04:51:38.718 MACOS pid 26789 AXMoved w248 AXWindow/AXStandardWindow 165 65 656 422
+04:51:38.718 MACOS pid 26789 AXResized w248 AXWindow/AXStandardWindow 165 65 656 422
+04:51:38.914 SCREEN (nothing was seen for 145 ms)
+04:51:38.914 SCREEN w422 of Arbor 654,728 175×38 (level 6)
+04:51:39.029 SCREEN w422 of Arbor left the screen
+04:51:40.577 INFO  displays changed: 2 display(s), 0 remembered
+04:51:40.579 DEBUG w252 has the keyboard
+04:51:40.598 MACOS pid 26789 AXResized w248 AXWindow/AXStandardWindow 165 65 673 439
+04:51:40.601 MACOS pid 27133 AXMoved w251 AXWindow/AXStandardWindow 737 300 863 499
+04:51:40.607 SCREEN textedit (w248) 165,65 673×439
+04:51:40.607 SCREEN terminal (w251) 737,300 863×499
+04:51:40.666 DEBUG got ready the stage of 0C05C705-7894-4B84-849F-1BFE6462A604 in 11 ms, the desktop 2 of them
+04:51:44.784 SCREEN -- end 27 act=display-change settled=quiet:351 moves=any leaves=any floating=234,237,248,251,252,253,256,260,262,284,286 docked=
+04:51:45.254 SCRIPT == 28 view-home

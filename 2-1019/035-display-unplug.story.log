@@ -1,0 +1,20 @@
+35 display-unplug: the second display: unplug
+expected: {'act': 'display-change', 'settled': 'quiet:628', 'moves': 'any', 'leaves': 'any', 'floating': '234,237,248,251,252,253,256,260,262,284,286', 'docked': ''}
+FAIL rule 3: textedit (w248) moved 2 times
+FAIL rule 3: terminal (w251) moved 2 times
+
+04:52:12.875 SCREEN -- begin 35 display-unplug
+04:52:12.875 SCREEN -- text 35 the second display: unplug
+04:52:13.283 MACOS pid 27133 AXMoved w251 AXWindow/AXStandardWindow 1000 300 863 499
+04:52:13.284 MACOS pid 26789 AXMoved w248 AXWindow/AXStandardWindow 165 65 656 422
+04:52:13.285 MACOS pid 26789 AXResized w248 AXWindow/AXStandardWindow 165 65 656 422
+04:52:13.363 SCREEN (nothing was seen for 465 ms)
+04:52:13.363 SCREEN textedit (w248) 165,65 656×422
+04:52:13.363 SCREEN terminal (w251) 1000,300 863×499
+04:52:15.067 INFO  displays changed: 1 display(s), 0 remembered
+04:52:15.085 MACOS pid 26789 AXResized w248 AXWindow/AXStandardWindow 165 65 673 439
+04:52:15.090 MACOS pid 27133 AXMoved w251 AXWindow/AXStandardWindow 737 300 863 499
+04:52:15.120 SCREEN textedit (w248) 165,65 673×439
+04:52:15.120 SCREEN terminal (w251) 737,300 863×499
+04:52:16.359 SCREEN -- end 35 act=display-change settled=quiet:628 moves=any leaves=any floating=234,237,248,251,252,253,256,260,262,284,286 docked=
+04:52:16.843 SCRIPT == 36 view-home

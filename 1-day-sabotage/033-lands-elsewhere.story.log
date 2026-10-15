@@ -1,0 +1,14 @@
+33 lands-elsewhere: OFFENCE: it is shown again where it was, and a tenth of a second later it is somewhere else: one burst, a straight road
+expected: {'act': 'open-close', 'settled': 'quiet:1084', 'comes': '67', 'lands': '67', 'moves': '67', 'offence': 'jolt'}
+FAIL rule 3: preview (w67) came into sight at 760,500 708×320 and was then moved to 460,500 708×320
+
+04:46:07.255 SCREEN -- begin 33 lands-elsewhere
+04:46:07.255 SCREEN -- text 33 OFFENCE: it is shown again where it was, and a tenth of a second later it is somewhere else: one burst, a straight road
+04:46:07.274 MACOS pid 12382 AXApplicationShown
+04:46:07.275 MACOS workspace didUnhide pid 12382 com.apple.Preview regular
+04:46:07.346 SCREEN preview (w67) 760,500 708×320
+04:46:07.346 SCREEN front to back: textedit preview elm desk-a desk-b finder
+04:46:07.469 MACOS pid 12382 AXMoved w67 AXWindow/AXStandardWindow 460 500 708 320
+04:46:07.487 SCREEN preview (w67) 460,500 708×320
+04:46:08.554 SCREEN -- end 33 act=open-close settled=quiet:1084 comes=67 lands=67 moves=67 offence=jolt
+04:46:08.814 SCRIPT == 34 honest-put-back

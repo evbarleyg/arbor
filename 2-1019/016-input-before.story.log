@@ -1,0 +1,145 @@
+16 input-before: a round of input on two windows of its own: presses behind and in front, keys, a scroll, a drag inside the text
+expected: {'act': 'instrument', 'settled': 'quiet:945', 'round': 'before', 'front': '284', 'posted': 'press:25,up:25,key:13,scroll:28,dragged:20'}
+FAIL rule 2: calendar (w253) moved, and the step did not name it
+
+04:49:57.484 SCREEN -- begin 16 input-before
+04:49:57.484 SCREEN -- text 16 a round of input on two windows of its own: presses behind and in front, keys, a scroll, a drag inside the text
+04:49:57.490 SCREEN in front: process 30092 ?
+04:49:57.518 MACOS workspace didActivate pid 30092 ? regular
+04:49:57.526 MACOS workspace didDeactivate pid 27435 com.apple.iCal regular
+04:49:57.617 MACOS pid 30092 AXFocusedWindowChanged w286 AXWindow/AXStandardWindow 360 70 300 190
+04:49:57.618 MACOS pid 27435 AXApplicationDeactivated
+04:49:57.620 MACOS pid 30092 AXMainWindowChanged w286 AXWindow/AXStandardWindow 360 70 300 190
+04:49:57.622 MACOS pid 30092 AXApplicationActivated
+04:49:57.986 SCREEN in front: process 30072 ?
+04:49:57.991 MACOS workspace didActivate pid 30072 ? regular
+04:49:58.006 MACOS workspace didDeactivate pid 30092 ? regular
+04:49:58.053 SCREEN front to back: desk-a desk-b calendar textedit w264 mail preview settings notes terminal finder safari
+04:49:58.066 MACOS pid 30072 AXFocusedWindowChanged w284 AXWindow/AXStandardWindow 40 70 300 190
+04:49:58.067 MACOS pid 30092 AXApplicationDeactivated
+04:49:58.068 MACOS pid 30072 AXMainWindowChanged w284 AXWindow/AXStandardWindow 40 70 300 190
+04:49:58.068 MACOS pid 30072 AXApplicationActivated
+04:49:59.308 SCREEN in front: process 30092 ?
+04:49:59.314 MACOS workspace didActivate pid 30092 ? regular
+04:49:59.315 MACOS workspace didDeactivate pid 30072 ? regular
+04:49:59.315 MACOS pid 30092 AXApplicationActivated
+04:49:59.321 MACOS pid 30072 AXApplicationDeactivated
+04:49:59.386 MACOS pid 27435 AXMoved w253 AXWindow/AXStandardWindow 113 69 937 600
+04:49:59.409 SCREEN calendar (w253) 113,69 937×600
+04:49:59.409 SCREEN the button is up 510 84
+04:49:59.746 SCREEN in front: process 30072 ?
+04:49:59.747 SCREEN the button is down 190 84
+04:49:59.752 MACOS workspace didActivate pid 30072 ? regular
+04:49:59.752 MACOS workspace didDeactivate pid 30092 ? regular
+04:49:59.752 MACOS pid 30092 AXApplicationDeactivated
+04:49:59.762 MACOS pid 30072 AXApplicationActivated
+04:49:59.873 SCREEN the button is up 190 84
+04:50:00.219 SCREEN in front: process 30092 ?
+04:50:00.227 MACOS workspace didActivate pid 30092 ? regular
+04:50:00.229 SCREEN front to back: desk-b desk-a calendar textedit w264 mail preview settings notes terminal finder safari
+04:50:00.229 SCREEN the button is down 510 84
+04:50:00.230 MACOS workspace didDeactivate pid 30072 ? regular
+04:50:00.231 MACOS pid 30092 AXApplicationActivated
+04:50:00.232 MACOS pid 30072 AXApplicationDeactivated
+04:50:00.332 SCREEN the button is up 510 84
+04:50:00.814 SCREEN in front: process 30072 ?
+04:50:00.816 MACOS workspace didActivate pid 30072 ? regular
+04:50:00.816 MACOS workspace didDeactivate pid 30092 ? regular
+04:50:00.826 MACOS pid 30072 AXApplicationActivated
+04:50:00.829 MACOS pid 30092 AXApplicationDeactivated
+04:50:00.874 SCREEN front to back: desk-a desk-b calendar textedit w264 mail preview settings notes terminal finder safari
+04:50:00.874 SCREEN the button is down 190 84
+04:50:00.910 SCREEN the button is up 190 84
+04:50:01.352 SCREEN in front: process 30092 ?
+04:50:01.362 MACOS workspace didActivate pid 30092 ? regular
+04:50:01.364 SCREEN front to back: desk-b desk-a calendar textedit w264 mail preview settings notes terminal finder safari
+04:50:01.364 SCREEN the button is down 510 84
+04:50:01.366 MACOS workspace didDeactivate pid 30072 ? regular
+04:50:01.367 MACOS pid 30092 AXApplicationActivated
+04:50:01.368 MACOS pid 30072 AXApplicationDeactivated
+04:50:01.441 SCREEN the button is up 510 84
+04:50:01.860 SCREEN the button is down 190 84
+04:50:01.862 SCREEN in front: process 30072 ?
+04:50:01.863 MACOS workspace didActivate pid 30072 ? regular
+04:50:01.864 MACOS workspace didDeactivate pid 30092 ? regular
+04:50:01.874 SCREEN front to back: desk-a desk-b calendar textedit w264 mail preview settings notes terminal finder safari
+04:50:01.876 MACOS pid 30072 AXApplicationActivated
+04:50:01.876 MACOS pid 30092 AXApplicationDeactivated
+04:50:02.055 SCREEN the button is up 190 84
+04:50:02.428 SCREEN front to back: desk-b desk-a calendar textedit w264 mail preview settings notes terminal finder safari
+04:50:02.428 SCREEN the button is down 510 84
+04:50:02.432 SCREEN in front: process 30092 ?
+04:50:02.445 MACOS workspace didActivate pid 30092 ? regular
+04:50:02.445 MACOS workspace didDeactivate pid 30072 ? regular
+04:50:02.454 MACOS pid 30092 AXApplicationActivated
+04:50:02.456 MACOS pid 30072 AXApplicationDeactivated
+04:50:02.572 SCREEN the button is up 510 84
+04:50:02.999 SCREEN in front: process 30072 ?
+04:50:03.008 SCREEN front to back: desk-a desk-b calendar textedit w264 mail preview settings notes terminal finder safari
+04:50:03.008 SCREEN the button is down 190 84
+04:50:03.015 MACOS workspace didActivate pid 30072 ? regular
+04:50:03.017 MACOS workspace didDeactivate pid 30092 ? regular
+04:50:03.019 MACOS pid 30072 AXApplicationActivated
+04:50:03.019 MACOS pid 30092 AXApplicationDeactivated
+04:50:03.139 SCREEN the button is up 190 84
+04:50:03.512 SCREEN in front: process 30092 ?
+04:50:03.518 MACOS workspace didActivate pid 30092 ? regular
+04:50:03.518 MACOS workspace didDeactivate pid 30072 ? regular
+04:50:03.522 SCREEN front to back: desk-b desk-a calendar textedit w264 mail preview settings notes terminal finder safari
+04:50:03.522 SCREEN the button is down 510 84
+04:50:03.527 MACOS pid 30092 AXApplicationActivated
+04:50:03.527 MACOS pid 30072 AXApplicationDeactivated
+04:50:03.680 SCREEN the button is up 510 84
+04:50:04.107 SCREEN in front: process 30072 ?
+04:50:04.109 MACOS workspace didActivate pid 30072 ? regular
+04:50:04.109 MACOS workspace didDeactivate pid 30092 ? regular
+04:50:04.126 MACOS pid 30072 AXApplicationActivated
+04:50:04.126 MACOS pid 30092 AXApplicationDeactivated
+04:50:04.155 SCREEN front to back: desk-a desk-b calendar textedit w264 mail preview settings notes terminal finder safari
+04:50:04.155 SCREEN the button is down 190 84
+04:50:04.276 SCREEN the button is up 190 84
+04:50:04.698 SCREEN in front: process 30092 ?
+04:50:04.709 SCREEN front to back: desk-b desk-a calendar textedit w264 mail preview settings notes terminal finder safari
+04:50:04.709 SCREEN the button is down 510 84
+04:50:04.712 MACOS workspace didActivate pid 30092 ? regular
+04:50:04.712 MACOS workspace didDeactivate pid 30072 ? regular
+04:50:04.715 MACOS pid 30092 AXApplicationActivated
+04:50:04.716 MACOS pid 30072 AXApplicationDeactivated
+04:50:04.853 SCREEN the button is up 510 84
+04:50:05.199 SCREEN in front: process 30072 ?
+04:50:05.209 MACOS workspace didActivate pid 30072 ? regular
+04:50:05.210 SCREEN front to back: desk-a desk-b calendar textedit w264 mail preview settings notes terminal finder safari
+04:50:05.210 SCREEN the button is down 190 84
+04:50:05.213 MACOS workspace didDeactivate pid 30092 ? regular
+04:50:05.215 MACOS pid 30072 AXApplicationActivated
+04:50:05.216 MACOS pid 30092 AXApplicationDeactivated
+04:50:05.281 SCREEN the button is up 190 84
+04:50:05.713 SCREEN the button is down 184 84
+04:50:05.836 SCREEN the button is up 184 84
+04:50:06.011 SCREEN the button is down 196 84
+04:50:06.154 SCREEN the button is up 196 84
+04:50:06.349 SCREEN the button is down 184 84
+04:50:06.430 SCREEN the button is up 184 84
+04:50:06.570 SCREEN the button is down 196 84
+04:50:06.681 SCREEN the button is up 196 84
+04:50:06.789 SCREEN the button is down 184 84
+04:50:06.958 SCREEN the button is up 184 84
+04:50:07.009 SCREEN the button is down 196 84
+04:50:07.160 SCREEN the button is up 196 84
+04:50:07.282 SCREEN the button is down 184 84
+04:50:07.378 SCREEN the button is up 184 84
+04:50:07.580 SCREEN the button is down 196 84
+04:50:07.692 SCREEN the button is up 196 84
+04:50:07.907 SCREEN the button is down 184 84
+04:50:08.061 SCREEN the button is up 184 84
+04:50:08.245 SCREEN the button is down 196 84
+04:50:08.374 SCREEN the button is up 196 84
+04:50:08.529 SCREEN the button is down 184 84
+04:50:08.704 SCREEN the button is up 184 84
+04:50:08.850 SCREEN the button is down 196 84
+04:50:08.978 SCREEN the button is up 196 84
+04:50:11.931 SCREEN the button is down 160 175
+04:50:13.422 SCREEN the button is up 220 195
+04:50:14.594 SCREEN -- end 16 act=instrument settled=quiet:945 round=before front=284 posted=press:25,up:25,key:13,scroll:28,dragged:20
+04:50:14.898 SCREEN -- chapter The walk
+04:50:14.949 SCRIPT == 17 launch

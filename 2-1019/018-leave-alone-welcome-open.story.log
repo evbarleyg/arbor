@@ -1,0 +1,11 @@
+18 leave-alone-welcome-open: does nothing for half a minute, with Arbor's welcome window open
+expected: {'act': 'idle', 'settled': 'quiet:382', 'floating': '234,237,248,251,252,253,256,260,262,284,286', 'docked': ''}
+FAIL rule -: with nothing to do Arbor used 1.6 % of a core
+
+04:50:17.636 SCREEN -- begin 18 leave-alone-welcome-open
+04:50:17.636 SCREEN -- text 18 does nothing for half a minute, with Arbor's welcome window open
+04:50:17.647 INFO  trace day-1 ended: 28 lines, trace off
+04:50:47.713 SCREEN -- finding 18 -:busy FAIL with nothing to do Arbor used 1.6 % of a core
+04:50:47.739 INFO  trace day-2: recording to /tmp/arbor-shell.NgFwTu/home/traces/2026-10-15-045047-day-2.jsonl
+04:50:48.235 SCREEN -- end 18 act=idle settled=quiet:382 floating=234,237,248,251,252,253,256,260,262,284,286 docked=
+04:50:48.619 SCRIPT == 19 close-welcome

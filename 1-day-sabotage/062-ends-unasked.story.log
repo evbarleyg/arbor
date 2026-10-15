@@ -1,0 +1,9 @@
+62 ends-unasked: OFFENCE: nobody does anything, and the process ends
+expected: {'act': 'idle', 'settled': 'quiet:382', 'offence': 'crash'}
+FAIL rule -: Arbor's process ended, and nobody asked it to
+
+04:48:19.995 SCREEN -- begin 62 ends-unasked
+04:48:19.995 SCREEN -- text 62 OFFENCE: nobody does anything, and the process ends
+04:48:21.393 SCREEN -- finding 62 -:crash FAIL Arbor's process ended, and nobody asked it to
+04:48:21.400 SCREEN -- end 62 act=idle settled=quiet:382 offence=crash
+04:48:21.625 SCRIPT == 63 tells

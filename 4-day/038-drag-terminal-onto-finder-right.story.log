@@ -1,0 +1,167 @@
+38 drag-terminal-onto-finder-right: drags terminal by its title bar onto the right part of finder and lets go
+expected: {'act': 'drag', 'settled': 'quiet:921', 'drags': '1412', 'moves': '1395,1398,1409,1395,1398,1409,1412,', 'front': '1412', 'floating': '1413,1416,1417,1421,1422,1439,1441', 'docked': '1395,1398,1409,1412'}
+ODD rule 3: terminal (w1412) changed its size while it was being dragged
+FAIL rule 2: notes (w1413) a floating window, moved, and the step did not name it
+FAIL rule 2: calendar (w1416) a floating window, moved, and the step did not name it
+FAIL rule 2: settings (w1417) a floating window, moved, and the step did not name it
+FAIL rule 2: preview (w1421) a floating window, moved, and the step did not name it
+FAIL rule 2: mail (w1422) a floating window, moved, and the step did not name it
+ODD rule 2: w1425 of Mail moved along with a window of its app
+FAIL rule 2: desk-a (w1439) a floating window, moved, and the step did not name it
+FAIL rule 2: desk-b (w1441) a floating window, moved, and the step did not name it
+ODD rule 3: the last window came to rest 1275 ms after the key or the button
+
+05:07:11.093 SCREEN -- begin 38 drag-terminal-onto-finder-right
+05:07:11.093 SCREEN -- text 38 drags terminal by its title bar onto the right part of finder and lets go
+05:07:11.174 SCRIPT drag w1412 from 765,43 to 429,426
+05:07:11.767 SCREEN the button is down 765 43
+05:07:11.820 SCREEN front to back: terminal w1540 textedit safari finder preview w1425 mail settings calendar notes desk-a desk-b w1549 w1539 w1545 w1550
+05:07:11.984 DEBUG w1412 is being dragged
+05:07:11.985 DEBUG drag of w1412: waiting over beside(n3, ArborCore.Edge.top)
+05:07:12.007 SCREEN terminal (w1412) 529,43 461×791
+05:07:12.076 SCREEN terminal (w1412) 518,69 461×791
+05:07:12.100 MACOS pid 79835 AXMoved w1412 AXWindow/AXStandardWindow 518 69 480 778
+05:07:12.101 MACOS pid 79835 AXTitleChanged w1412 AXWindow/AXStandardWindow 518 69 480 778
+05:07:12.101 MACOS pid 79835 AXResized w1412 AXWindow/AXStandardWindow 518 69 480 778
+05:07:12.110 MACOS pid 79835 AXTitleChanged w1412 AXWindow/AXStandardWindow 518 69 539 735
+05:07:12.112 MACOS pid 79835 AXResized w1412 AXWindow/AXStandardWindow 518 69 539 735
+05:07:12.128 SCREEN terminal (w1412) 518,69 539×735
+05:07:12.128 SCREEN w1540 of Arbor left the screen
+05:07:12.128 SCREEN front to back: terminal textedit safari finder preview w1425 mail settings calendar notes desk-a desk-b w1549 w1539 w1545 w1550
+05:07:12.132 MACOS pid 79835 AXTitleChanged w1412 AXWindow/AXStandardWindow 518 69 606 687
+05:07:12.133 MACOS pid 79835 AXResized w1412 AXWindow/AXStandardWindow 518 69 606 687
+05:07:12.147 MACOS pid 79835 AXTitleChanged w1412 AXWindow/AXStandardWindow 518 69 668 642
+05:07:12.148 MACOS pid 79835 AXResized w1412 AXWindow/AXStandardWindow 518 69 668 642
+05:07:12.149 DEBUG drag of w1412: on beside(n3, ArborCore.Edge.top)
+05:07:12.162 DEBUG drag of w1412: waiting over beside(n3, ArborCore.Edge.left)
+05:07:12.185 MACOS pid 79835 AXTitleChanged w1412 AXWindow/AXStandardWindow 518 69 719 604
+05:07:12.186 MACOS pid 79835 AXResized w1412 AXWindow/AXStandardWindow 518 69 759 575
+05:07:12.198 MACOS pid 79835 AXTitleChanged w1412 AXWindow/AXStandardWindow 518 69 759 575
+05:07:12.198 MACOS pid 79835 AXResized w1412 AXWindow/AXStandardWindow 518 69 789 554
+05:07:12.199 MACOS pid 79835 AXTitleChanged w1412 AXWindow/AXStandardWindow 518 69 789 554
+05:07:12.199 MACOS pid 79835 AXResized w1412 AXWindow/AXStandardWindow 518 69 789 554
+05:07:12.203 SCREEN terminal (w1412) 365,56 789×554
+05:07:12.214 SCREEN terminal (w1412) 354,69 789×554
+05:07:12.215 MACOS pid 79835 AXTitleChanged w1412 AXWindow/AXStandardWindow 518 69 811 537
+05:07:12.215 MACOS pid 79835 AXResized w1412 AXWindow/AXStandardWindow 518 69 811 537
+05:07:12.231 MACOS pid 79835 AXTitleChanged w1412 AXWindow/AXStandardWindow 518 69 827 526
+05:07:12.232 MACOS pid 79835 AXResized w1412 AXWindow/AXStandardWindow 518 69 827 526
+05:07:12.250 MACOS pid 79835 AXTitleChanged w1412 AXWindow/AXStandardWindow 518 69 838 518
+05:07:12.250 MACOS pid 79835 AXResized w1412 AXWindow/AXStandardWindow 518 69 838 518
+05:07:12.265 MACOS pid 79835 AXMoved w1412 AXWindow/AXStandardWindow 337 69 846 512
+05:07:12.265 MACOS pid 79835 AXTitleChanged w1412 AXWindow/AXStandardWindow 337 69 846 512
+05:07:12.266 MACOS pid 79835 AXResized w1412 AXWindow/AXStandardWindow 337 69 846 512
+05:07:12.270 DEBUG drag of w1412: on float
+05:07:12.271 SCREEN terminal (w1412) 317,82 846×512
+05:07:12.283 MACOS pid 79835 AXTitleChanged w1412 AXWindow/AXStandardWindow 337 69 852 508
+05:07:12.284 MACOS pid 79835 AXResized w1412 AXWindow/AXStandardWindow 337 69 852 508
+05:07:12.301 MACOS pid 79835 AXTitleChanged w1412 AXWindow/AXStandardWindow 337 69 856 505
+05:07:12.302 MACOS pid 79835 AXResized w1412 AXWindow/AXStandardWindow 337 69 856 505
+05:07:12.313 MACOS pid 79835 AXResized w1412 AXWindow/AXStandardWindow 337 69 858 503
+05:07:12.329 MACOS pid 79835 AXResized w1412 AXWindow/AXStandardWindow 337 69 860 502
+05:07:12.335 SCREEN terminal (w1412) 300,94 858×503
+05:07:12.348 MACOS pid 79835 AXResized w1412 AXWindow/AXStandardWindow 337 69 861 501
+05:07:12.360 SCREEN terminal (w1412) 298,94 861×501
+05:07:12.364 MACOS pid 79835 AXResized w1412 AXWindow/AXStandardWindow 337 69 862 501
+05:07:12.381 MACOS pid 79835 AXMoved w1412 AXWindow/AXStandardWindow 298 94 862 500
+05:07:12.383 MACOS pid 79835 AXResized w1412 AXWindow/AXStandardWindow 298 94 862 500
+05:07:12.390 SCREEN terminal (w1412) 287,107 862×500
+05:07:12.401 MACOS pid 79835 AXTitleChanged w1412 AXWindow/AXStandardWindow 298 94 863 500
+05:07:12.402 MACOS pid 79835 AXResized w1412 AXWindow/AXStandardWindow 298 94 863 500
+05:07:12.454 SCREEN terminal (w1412) 275,120 863×500
+05:07:12.474 MACOS pid 79835 AXMoved w1412 AXWindow/AXStandardWindow 275 120 863 500
+05:07:12.495 SCREEN terminal (w1412) 264,133 863×500
+05:07:12.553 SCREEN terminal (w1412) 253,145 863×500
+05:07:12.589 MACOS pid 79835 AXMoved w1412 AXWindow/AXStandardWindow 253 145 863 500
+05:07:12.680 SCREEN terminal (w1412) 241,158 863×500
+05:07:12.728 SCREEN terminal (w1412) 230,171 863×500
+05:07:12.740 MACOS pid 79835 AXMoved w1412 AXWindow/AXStandardWindow 230 171 863 500
+05:07:12.841 SCREEN terminal (w1412) 219,184 863×500
+05:07:12.849 SCREEN terminal (w1412) 208,196 863×500
+05:07:12.913 MACOS pid 79835 AXMoved w1412 AXWindow/AXStandardWindow 208 196 863 500
+05:07:12.961 SCREEN terminal (w1412) 197,209 863×500
+05:07:12.967 SCREEN terminal (w1412) 185,222 863×500
+05:07:13.036 MACOS pid 79835 AXMoved w1412 AXWindow/AXStandardWindow 185 222 863 500
+05:07:13.061 SCREEN terminal (w1412) 174,235 863×500
+05:07:13.165 MACOS pid 79835 AXMoved w1412 AXWindow/AXStandardWindow 163 248 863 500
+05:07:13.175 SCREEN terminal (w1412) 163,248 863×500
+05:07:13.240 SCREEN terminal (w1412) 152,260 863×500
+05:07:13.312 SCREEN terminal (w1412) 141,273 863×500
+05:07:13.328 MACOS pid 79835 AXMoved w1412 AXWindow/AXStandardWindow 141 273 863 500
+05:07:13.430 SCREEN terminal (w1412) 129,286 863×500
+05:07:13.486 SCREEN terminal (w1412) 118,299 863×500
+05:07:13.501 MACOS pid 79835 AXMoved w1412 AXWindow/AXStandardWindow 118 299 863 500
+05:07:13.526 DEBUG drag of w1412: waiting over beside(n1, ArborCore.Edge.right)
+05:07:13.536 SCREEN terminal (w1412) 107,311 863×500
+05:07:13.620 SCREEN terminal (w1412) 96,324 863×500
+05:07:13.631 MACOS pid 79835 AXMoved w1412 AXWindow/AXStandardWindow 96 324 863 500
+05:07:13.681 DEBUG drag of w1412: on beside(n1, ArborCore.Edge.right)
+05:07:13.686 SCREEN terminal (w1412) 85,337 863×500
+05:07:13.797 MACOS pid 79835 AXMoved w1412 AXWindow/AXStandardWindow 73 350 863 500
+05:07:13.806 SCREEN terminal (w1412) 73,350 863×500
+05:07:13.879 SCREEN terminal (w1412) 62,362 863×500
+05:07:13.930 SCREEN w1554 of Arbor 150,43 242×767 (level 3)
+05:07:13.930 SCREEN terminal (w1412) 51,375 863×500
+05:07:13.937 MACOS pid 79835 AXMoved w1412 AXWindow/AXStandardWindow 51 375 863 500
+05:07:13.984 SCREEN terminal (w1412) 40,388 863×500
+05:07:14.011 SCREEN terminal (w1412) 29,401 863×500
+05:07:14.085 MACOS pid 79835 AXMoved w1412 AXWindow/AXStandardWindow 29 401 863 500
+05:07:14.284 SCREEN terminal (w1412) 30,401 863×500
+05:07:14.380 MACOS pid 79835 AXMoved w1412 AXWindow/AXStandardWindow 30 401 863 500
+05:07:14.405 SCREEN terminal (w1412) 29,401 863×500
+05:07:14.486 MACOS pid 79835 AXMoved w1412 AXWindow/AXStandardWindow 29 401 863 500
+05:07:15.131 SCREEN the button is up 429 426
+05:07:15.138 INFO  dropped w1412 on beside(n1, ArborCore.Edge.right), display 07230EFA-7A8D-4E37-845C-19CC8737EEF5
+05:07:15.143 INFO  made room for w1398, the Desktop
+05:07:15.151 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 11 stand-ins, 0.46 s
+05:07:15.151 DEBUG the stage kept the windows waiting 4 ms: its panel 0, 11 costumes 0 (0 not ready), the desktop 2, going up 2
+05:07:15.163 SCREEN w1473 of Arbor 0,0 1600×900 (level 4)
+05:07:15.166 MACOS pid 79399 AXMoved w1398 AXWindow/AXStandardWindow 722 43 574 767
+05:07:15.173 SCREEN safari (w1398) 722,43 574×767
+05:07:15.182 MACOS pid 79618 AXResized w1409 AXWindow/AXStandardWindow 1308 43 280 767
+05:07:15.183 MACOS pid 79618 AXMoved w1409 AXWindow/AXStandardWindow 1308 43 280 767
+05:07:15.196 SCREEN textedit (w1409) 1298,43 280×767
+05:07:15.206 MACOS pid 79835 AXTitleChanged w1412 AXWindow/AXStandardWindow 150 43 240 770
+05:07:15.213 SCREEN terminal (w1412) 29,401 240×770
+05:07:15.213 SCREEN textedit (w1409) 1308,43 280×767
+05:07:15.218 MACOS pid 79835 AXResized w1412 AXWindow/AXStandardWindow 150 43 240 770
+05:07:15.220 MACOS pid 79835 AXMoved w1412 AXWindow/AXStandardWindow 150 43 240 770
+05:07:15.224 SCREEN terminal (w1412) 150,43 240×770
+05:07:15.235 MACOS pid 79835 AXTitleChanged w1412 AXWindow/AXStandardWindow 150 43 240 755
+05:07:15.235 MACOS pid 79835 AXResized w1412 AXWindow/AXStandardWindow 151 49 240 755
+05:07:15.236 MACOS pid 79835 AXMoved w1412 AXWindow/AXStandardWindow 151 49 240 755
+05:07:15.242 MACOS pid 78491 AXMoved w1395 AXWindow/AXStandardWindow 1599 770 501 767
+05:07:15.249 SCREEN finder (w1395) 1599,770 501×767
+05:07:15.253 MACOS pid 79903 AXMoved w1413 AXWindow/AXStandardWindow 202 105 709 660
+05:07:15.261 SCREEN terminal (w1412) 151,49 240×755
+05:07:15.261 SCREEN notes (w1413) 202,105 709×660
+05:07:15.261 MACOS pid 79965 AXMoved w1416 AXWindow/AXStandardWindow 217 31 680 791
+05:07:15.267 MACOS pid 80018 AXMoved w1417 AXWindow/AXStandardWindow 195 85 723 625
+05:07:15.269 MACOS pid 80435 AXMoved w1421 AXWindow/AXStandardWindow 203 35 708 424
+05:07:15.274 MACOS pid 80501 AXMoved w1422 AXWindow/AXStandardWindow 121 72 871 630
+05:07:15.284 MACOS pid 82060 AXMoved w1439 AXWindow/AXStandardWindow 404 70 300 190
+05:07:15.287 MACOS pid 82090 AXMoved w1441 AXWindow/AXStandardWindow 404 70 300 190
+05:07:15.289 DEBUG stage retargeted on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 11 stand-ins, 0.326786003112793 s
+05:07:15.292 SCREEN preview (w1421) 203,35 708×424
+05:07:15.292 SCREEN w1425 of Mail 322,179 470×416
+05:07:15.292 SCREEN mail (w1422) 121,72 871×630
+05:07:15.292 SCREEN settings (w1417) 195,85 723×625
+05:07:15.292 SCREEN calendar (w1416) 217,31 680×791
+05:07:15.292 SCREEN desk-a (w1439) 404,70 300×190
+05:07:15.292 SCREEN desk-b (w1441) 404,70 300×190
+05:07:15.298 DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Too small to show: click the tile to zoom in · ⌃⌥G goes there too
+05:07:16.311 SCREEN w1540 of Arbor 142,40 258×773
+05:07:16.311 SCREEN w1539 of Arbor 138,43 12×767
+05:07:16.311 SCREEN w1555 of Arbor 392,43 12×767
+05:07:16.311 SCREEN w1545 of Arbor 710,43 12×767
+05:07:16.311 SCREEN w1550 of Arbor 1296,43 12×767
+05:07:16.311 SCREEN w1549 of Arbor left the screen
+05:07:16.311 SCREEN front to back: w1540 terminal textedit safari finder preview w1425 mail settings calendar notes desk-a desk-b w1539 w1555 w1545 w1550
+05:07:16.348 SCREEN w1542 of Arbor 554,728 493×38 (level 6)
+05:07:16.348 SCREEN w1549 of Arbor 12,43 126×767
+05:07:16.348 SCREEN w1554 of Arbor left the screen
+05:07:16.348 SCREEN front to back: w1540 terminal textedit safari finder preview w1425 mail settings calendar notes desk-a desk-b w1549 w1539 w1555 w1545 w1550
+05:07:16.406 SCREEN w1473 of Arbor left the screen
+05:07:16.408 DEBUG stage down
+05:07:17.472 SCREEN -- end 38 act=drag settled=quiet:921 drags=1412 moves=1395,1398,1409,1395,1398,1409,1412, front=1412 floating=1413,1416,1417,1421,1422,1439,1441 docked=1395,1398,1409,1412
+05:07:18.204 SCRIPT == 39 drag-terminal-out

@@ -1,0 +1,52 @@
+105 resume: presses ⌃⌥⎋
+expected: {'act': 'way-out', 'settled': 'quiet:1345', 'moves': 'any', 'returns': '101', 'but': '1416', 'floating': '1412,1413,1416,1417,1421,1422,1439,1441,1624', 'docked': '1395,1398'}
+ODD rule 3: w1425 of Mail went 176 points out of its way before it ended up
+
+05:10:46.142 SCREEN -- begin 105 resume
+05:10:46.142 SCREEN -- text 105 presses ⌃⌥⎋
+05:10:46.432 INFO  started: 1 display(s), 11 managed window(s)
+05:10:46.558 MACOS pid 78491 AXResized w1395 AXWindow/AXStandardWindow 12 43 501 767
+05:10:46.563 SCREEN finder (w1395) 12,43 501×767
+05:10:46.565 MACOS pid 78491 AXMoved w1395 AXWindow/AXStandardWindow 12 43 501 767
+05:10:46.566 MACOS pid 78491 AXResized w1395 AXWindow/AXStandardWindow 12 43 501 767
+05:10:46.653 MACOS pid 79399 AXResized w1398 AXWindow/AXStandardWindow 1014 43 574 767
+05:10:46.659 SCREEN safari (w1398) 1014,43 574×767
+05:10:46.659 SCREEN terminal (w1412) 525,238 478×500
+05:10:46.659 MACOS pid 79399 AXMoved w1398 AXWindow/AXStandardWindow 1014 43 574 767
+05:10:46.728 MACOS pid 79835 AXTitleChanged w1412 AXWindow/AXStandardWindow 525 238 478 500
+05:10:46.730 MACOS pid 79835 AXResized w1412 AXWindow/AXStandardWindow 525 238 478 500
+05:10:46.731 MACOS pid 79835 AXMoved w1412 AXWindow/AXStandardWindow 525 238 478 500
+05:10:46.744 MACOS pid 80018 AXMoved w1417 AXWindow/AXStandardWindow 402 85 723 625
+05:10:46.751 MACOS pid 80435 AXMoved w1421 AXWindow/AXStandardWindow 409 35 708 424
+05:10:46.762 SCREEN preview (w1421) 409,35 708×424
+05:10:46.762 SCREEN settings (w1417) 402,85 723×625
+05:10:46.902 SCREEN w1425 of Mail 441,179 470×416
+05:10:46.902 SCREEN mail (w1422) 240,72 871×630
+05:10:46.909 MACOS pid 80501 AXResized w1422 AXWindow/AXStandardWindow 328 72 871 630
+05:10:46.910 MACOS pid 80501 AXMoved w1422 AXWindow/AXStandardWindow 328 72 871 630
+05:10:46.913 MACOS pid 82060 AXMoved w1439 AXWindow/AXStandardWindow 525 70 300 190
+05:10:46.916 MACOS pid 82090 AXMoved w1441 AXWindow/AXStandardWindow 525 70 300 190
+05:10:46.934 MACOS pid 98253 AXResized w1624 AXWindow/AXStandardWindow 525 65 477 439
+05:10:46.935 MACOS pid 98253 AXMoved w1624 AXWindow/AXStandardWindow 525 65 477 439
+05:10:46.938 SCREEN desk-a (w1439) 525,70 300×190
+05:10:46.938 SCREEN desk-b (w1441) 525,70 300×190
+05:10:46.944 SCREEN textedit (w1624) 525,65 477×439
+05:10:46.944 SCREEN w1425 of Mail 529,179 470×416
+05:10:46.944 SCREEN mail (w1422) 328,72 871×630
+05:10:46.968 INFO  registered 52 shortcuts in 2583 µs
+05:10:46.969 DEBUG w1416 has the keyboard
+05:10:46.970 INFO  resumed
+05:10:46.971 DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Resumed
+05:10:47.000 SCREEN w1679 of Arbor 749,728 102×38 (level 6)
+05:10:47.000 SCREEN w1686 of Arbor 436,196 699×806
+05:10:47.000 SCREEN w1684 of Arbor 513,43 12×767
+05:10:47.000 SCREEN w1685 of Arbor 1002,43 12×767
+05:10:47.000 SCREEN w1687 of Arbor 0,31 1600×791 (level -2147483602)
+05:10:47.000 SCREEN front to back: w1686 calendar safari notes finder textedit preview w1425 mail settings terminal desk-a desk-b w1684 w1685
+05:10:47.018 DEBUG got ready the stage of 07230EFA-7A8D-4E37-845C-19CC8737EEF5 in 23 ms, the desktop 23 of them
+05:10:47.260 DEBUG got ready the costume of pid 82060 in 5 ms
+05:10:47.306 DEBUG got ready the costume of pid 82090 in 2 ms
+05:10:48.800 SCREEN w1679 of Arbor left the screen
+05:10:49.839 SCREEN -- end 105 act=way-out settled=quiet:1345 moves=any returns=101 but=1416 floating=1412,1413,1416,1417,1421,1422,1439,1441,1624 docked=1395,1398
+05:10:50.276 INFO  trace day-15: recording to /tmp/arbor-shell.btKTV8/home/traces/2026-10-15-051050-day-15.jsonl
+05:10:50.349 SCRIPT == 106 float-all

@@ -1,0 +1,1464 @@
+{
+ "sampler": "samples 7001 seconds 187.0 hz 37.4 cost-ms 2.85 late 4 longest-gap-ms 177 whole-samples 9756 whole-seconds 260.6 whole-late 94",
+ "input": {
+  "events": 78,
+  "p50_us": 759,
+  "p99_us": 234835,
+  "max_us": 234835,
+  "kinds": {
+   "down": {
+    "events": 6,
+    "p50_us": 1753,
+    "p99_us": 2430,
+    "max_us": 2430
+   },
+   "dragged": {
+    "events": 66,
+    "p50_us": 711,
+    "p99_us": 4516,
+    "max_us": 4516
+   },
+   "up": {
+    "events": 6,
+    "p50_us": 1452,
+    "p99_us": 234835,
+    "max_us": 234835
+   }
+  },
+  "rounds": {
+   "before": {
+    "down": {
+     "events": 13,
+     "p50_us": 649,
+     "p99_us": 5794,
+     "max_us": 5794
+    },
+    "dragged": {
+     "events": 20,
+     "p50_us": 297,
+     "p99_us": 529,
+     "max_us": 529
+    },
+    "forward": {
+     "events": 12,
+     "p50_us": 11123,
+     "p99_us": 21491,
+     "max_us": 21491
+    },
+    "key": {
+     "events": 13,
+     "p50_us": 502,
+     "p99_us": 3903,
+     "max_us": 3903
+    },
+    "scroll": {
+     "events": 28,
+     "p50_us": 252,
+     "p99_us": 494,
+     "max_us": 494
+    },
+    "up": {
+     "events": 25,
+     "p50_us": 416,
+     "p99_us": 9171,
+     "max_us": 9171
+    }
+   },
+   "started": {
+    "down": {
+     "events": 13,
+     "p50_us": 637,
+     "p99_us": 2188,
+     "max_us": 2188
+    },
+    "dragged": {
+     "events": 20,
+     "p50_us": 371,
+     "p99_us": 614,
+     "max_us": 614
+    },
+    "forward": {
+     "events": 12,
+     "p50_us": 11762,
+     "p99_us": 18950,
+     "max_us": 18950
+    },
+    "key": {
+     "events": 13,
+     "p50_us": 354,
+     "p99_us": 828,
+     "max_us": 828
+    },
+    "scroll": {
+     "events": 28,
+     "p50_us": 319,
+     "p99_us": 1200,
+     "max_us": 1200
+    },
+    "up": {
+     "events": 25,
+     "p50_us": 301,
+     "p99_us": 2329,
+     "max_us": 2329
+    }
+   },
+   "last": {
+    "down": {
+     "events": 13,
+     "p50_us": 659,
+     "p99_us": 1820,
+     "max_us": 1820
+    },
+    "dragged": {
+     "events": 20,
+     "p50_us": 374,
+     "p99_us": 1014,
+     "max_us": 1014
+    },
+    "forward": {
+     "events": 12,
+     "p50_us": 14248,
+     "p99_us": 21540,
+     "max_us": 21540
+    },
+    "key": {
+     "events": 12,
+     "p50_us": 793,
+     "p99_us": 1651,
+     "max_us": 1651
+    },
+    "scroll": {
+     "events": 28,
+     "p50_us": 325,
+     "p99_us": 728,
+     "max_us": 728
+    },
+    "up": {
+     "events": 25,
+     "p50_us": 312,
+     "p99_us": 870,
+     "max_us": 870
+    }
+   }
+  },
+  "judged": [],
+  "silent": {
+   "down": "fewer than 10 such events in a round without Arbor",
+   "forward": "fewer than 10 such events in a round without Arbor",
+   "up": "fewer than 10 such events in a round without Arbor",
+   "key": "fewer than 10 such events in a round without Arbor",
+   "dragged": "fewer than 10 such events in a round without Arbor",
+   "scroll": "fewer than 10 such events in a round without Arbor"
+  }
+ },
+ "stage_seen": true,
+ "witnessed": true,
+ "steps": [
+  {
+   "number": 14,
+   "slug": "input-before",
+   "chapter": "Before Arbor: the apps are open already",
+   "text": "a round of input on two windows of its own: presses behind and in front, keys, a scroll, a drag inside the text",
+   "act": "instrument",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792039515547,
+   "milliseconds": 17040,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 17,
+   "slug": "honest-switch",
+   "chapter": "Honest steps and offences",
+   "text": "clicks TextEdit's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792039539963,
+   "milliseconds": 2026,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 18,
+   "slug": "honest-click",
+   "chapter": "Honest steps and offences",
+   "text": "clicks the first document's title bar",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792039542235,
+   "milliseconds": 1821,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 19,
+   "slug": "honest-move",
+   "chapter": "Honest steps and offences",
+   "text": "a window is moved once, straight to where it ends up",
+   "act": "dock-key",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792039544471,
+   "milliseconds": 1088,
+   "moved": {
+    "46": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 20,
+   "slug": "honest-resize",
+   "chapter": "Honest steps and offences",
+   "text": "a window is given another size and another place, which takes two stages",
+   "act": "dock-key",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792039545842,
+   "milliseconds": 1086,
+   "moved": {
+    "46": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 21,
+   "slug": "moved-twice",
+   "chapter": "Honest steps and offences",
+   "text": "OFFENCE: a window is moved, and half a second later moved again",
+   "act": "dock-key",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792039547309,
+   "milliseconds": 1722,
+   "moved": {
+    "46": [
+     2,
+     2,
+     607
+    ]
+   },
+   "findings": [
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "textedit (w46)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 60,60 600×420 · +70 ms 160,100 600×420 · +677 ms 220,100 600×420"
+    }
+   ]
+  },
+  {
+   "number": 22,
+   "slug": "elsewhere-first",
+   "chapter": "Honest steps and offences",
+   "text": "OFFENCE: a window goes somewhere else before it goes where it ends up",
+   "act": "dock-key",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792039549411,
+   "milliseconds": 1216,
+   "moved": {
+    "46": [
+     1,
+     2,
+     171
+    ]
+   },
+   "findings": [
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "textedit (w46)",
+     "what": "went 960 points out of its way before it ended up",
+     "trace": "+0 ms 220,100 600×420 · +43 ms 700,300 600×420 · +214 ms 100,100 600×420"
+    }
+   ]
+  },
+  {
+   "number": 23,
+   "slug": "somebody-else",
+   "chapter": "Honest steps and offences",
+   "text": "OFFENCE: a window that the step does not name is moved",
+   "act": "dock-key",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792039550843,
+   "milliseconds": 1102,
+   "moved": {
+    "32": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "finder (w32)",
+     "what": "moved, and the step did not name it",
+     "trace": "+0 ms 700,80 560×380 · +60 ms 720,120 560×380"
+    }
+   ]
+  },
+  {
+   "number": 24,
+   "slug": "honest-park",
+   "chapter": "Honest steps and offences",
+   "text": "a window is sent out of view, to the corner",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792039552186,
+   "milliseconds": 1070,
+   "moved": {
+    "67": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 25,
+   "slug": "flashes",
+   "chapter": "Honest steps and offences",
+   "text": "OFFENCE: a window that is out of view shows for a moment",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792039553482,
+   "milliseconds": 1279,
+   "moved": {
+    "67": [
+     1,
+     2,
+     120
+    ]
+   },
+   "findings": [
+    {
+     "rule": "3",
+     "detector": "flash",
+     "level": "FAIL",
+     "window": "preview (w67)",
+     "what": "is out of view before and after, and 100% of it showed in between",
+     "trace": "+0 ms 1599,770 708×320 · +72 ms 400,300 708×320 · +192 ms 1599,770 708×320"
+    }
+   ]
+  },
+  {
+   "number": 26,
+   "slug": "honest-return",
+   "chapter": "Honest steps and offences",
+   "text": "it comes back into view",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792039555021,
+   "milliseconds": 1057,
+   "moved": {
+    "67": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 27,
+   "slug": "covered",
+   "chapter": "Honest steps and offences",
+   "text": "OFFENCE: the window switched to is covered by another one at once",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792039556306,
+   "milliseconds": 2668,
+   "moved": {},
+   "findings": [
+    {
+     "rule": "4",
+     "detector": "behind",
+     "level": "FAIL",
+     "window": "textedit (w46)",
+     "what": "is not in front: elm (w119) ahead of it, of which 1 cover part of it",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 28,
+   "slug": "honest-click-2",
+   "chapter": "Honest steps and offences",
+   "text": "clicks the first document's title bar",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792039559315,
+   "milliseconds": 1693,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 29,
+   "slug": "honest-minimize",
+   "chapter": "Honest steps and offences",
+   "text": "Terminal's window is minimized",
+   "act": "open-close",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792039561185,
+   "milliseconds": 1628,
+   "moved": {
+    "51": [
+     1,
+     12,
+     470
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 30,
+   "slug": "honest-hide",
+   "chapter": "Honest steps and offences",
+   "text": "Preview is hidden",
+   "act": "open-close",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792039563183,
+   "milliseconds": 1045,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 31,
+   "slug": "honest-landing",
+   "chapter": "Honest steps and offences",
+   "text": "it is shown again, and is where it was",
+   "act": "open-close",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792039564542,
+   "milliseconds": 1055,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 32,
+   "slug": "honest-hide-2",
+   "chapter": "Honest steps and offences",
+   "text": "Preview is hidden again",
+   "act": "open-close",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792039565915,
+   "milliseconds": 1105,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 33,
+   "slug": "lands-elsewhere",
+   "chapter": "Honest steps and offences",
+   "text": "OFFENCE: it is shown again where it was, and a tenth of a second later it is somewhere else: one burst, a straight road",
+   "act": "open-close",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792039567255,
+   "milliseconds": 1299,
+   "moved": {
+    "67": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "preview (w67)",
+     "what": "came into sight at 760,500 708×320 and was then moved to 460,500 708×320",
+     "trace": "+0 ms 760,500 708×320 · +141 ms 460,500 708×320"
+    }
+   ]
+  },
+  {
+   "number": 34,
+   "slug": "honest-put-back",
+   "chapter": "Honest steps and offences",
+   "text": "it is put back",
+   "act": "idle",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792039568817,
+   "milliseconds": 1073,
+   "moved": {
+    "67": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 35,
+   "slug": "keyboard-taken",
+   "chapter": "Honest steps and offences",
+   "text": "OFFENCE: after the switch another app, with no window to show, takes the keyboard",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792039570131,
+   "milliseconds": 2219,
+   "moved": {},
+   "findings": [
+    {
+     "rule": "4",
+     "detector": "focus",
+     "level": "FAIL",
+     "window": "textedit (w46)",
+     "what": "its app is not the one in front (process 11481 is)",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 36,
+   "slug": "honest-click-3",
+   "chapter": "Honest steps and offences",
+   "text": "clicks the first document's title bar",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792039572533,
+   "milliseconds": 1812,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 37,
+   "slug": "comes-forward",
+   "chapter": "Honest steps and offences",
+   "text": "OFFENCE: nobody does anything, and an app comes forward by itself",
+   "act": "idle",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792039574534,
+   "milliseconds": 2580,
+   "moved": {},
+   "findings": [
+    {
+     "rule": "4",
+     "detector": "focus",
+     "level": "FAIL",
+     "window": null,
+     "what": "the app in front changed (to process 11481), and nobody switched",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 38,
+   "slug": "honest-click-4",
+   "chapter": "Honest steps and offences",
+   "text": "clicks the first document's title bar",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792039577423,
+   "milliseconds": 1775,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 39,
+   "slug": "honest-drag",
+   "chapter": "Honest steps and offences",
+   "text": "drags the first document a little way by its title bar",
+   "act": "drag",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792039579541,
+   "milliseconds": 4529,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 40,
+   "slug": "out-of-the-hand",
+   "chapter": "Honest steps and offences",
+   "text": "OFFENCE: while the button is down the dragged window is pulled away",
+   "act": "drag",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792039584563,
+   "milliseconds": 4801,
+   "moved": {},
+   "findings": [
+    {
+     "rule": "3",
+     "detector": "pulled",
+     "level": "FAIL",
+     "window": "textedit (w46)",
+     "what": "moved 401 points further than the pointer did, 3677 ms into the step",
+     "trace": "+0 ms 167,120 600×420 · +31 ms 163,120 600×420 · +73 ms 159,120 600×420 · +896 ms 155,120 600×420 · +968 ms 107,120 600×420 · +1009 ms 96,111 600×420 · … 8 more … · +1608 ms 55,62 600×420 · +1682 ms 51,60 600×420 · +1889 ms 52,60 600×420 · +2449 ms 452,260 600×420 · +2877 ms 51,60 600×420"
+    }
+   ]
+  },
+  {
+   "number": 41,
+   "slug": "dropped-elsewhere",
+   "chapter": "Honest steps and offences",
+   "text": "OFFENCE: a window is dragged and let go, and goes somewhere else altogether",
+   "act": "drag",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792039589854,
+   "milliseconds": 4558,
+   "moved": {
+    "46": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "3",
+     "detector": "stuck",
+     "level": "FAIL",
+     "window": "textedit (w46)",
+     "what": "ended neither where it was let go nor where the preview was: let go at 119,79 600×420, no preview, now at 539,339 600×420",
+     "trace": "+0 ms 119,79 600×420 · +1707 ms 539,339 600×420"
+    }
+   ]
+  },
+  {
+   "number": 42,
+   "slug": "honest-move-2",
+   "chapter": "Honest steps and offences",
+   "text": "it is moved back to where the hand left it, which is its own place from now on",
+   "act": "dock-key",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792039594701,
+   "milliseconds": 1075,
+   "moved": {
+    "46": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 43,
+   "slug": "answers-late",
+   "chapter": "Honest steps and offences",
+   "text": "OFFENCE: a key is pressed, and the window moves two seconds later",
+   "act": "dock-key",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792039596001,
+   "milliseconds": 3431,
+   "moved": {
+    "46": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "3",
+     "detector": "slow",
+     "level": "FAIL",
+     "window": null,
+     "what": "the last window came to rest 2306 ms after the key or the button",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 44,
+   "slug": "honest-idle",
+   "chapter": "Honest steps and offences",
+   "text": "nobody does anything for three seconds",
+   "act": "idle",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792039599644,
+   "milliseconds": 3400,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 45,
+   "slug": "wrong-size",
+   "chapter": "Honest steps and offences",
+   "text": "OFFENCE: everything is given back, but one window keeps a size that is not its own",
+   "act": "way-out",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792039603253,
+   "milliseconds": 1203,
+   "moved": {
+    "32": [
+     1,
+     1,
+     0
+    ],
+    "46": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "5",
+     "detector": "size-lost",
+     "level": "FAIL",
+     "window": "textedit (w46)",
+     "what": "is 119,79 640×460; its own size was 119,79 520×380",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 46,
+   "slug": "honest-give-back",
+   "chapter": "Honest steps and offences",
+   "text": "now it gets its own size and place back too",
+   "act": "way-out",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792039604655,
+   "milliseconds": 1073,
+   "moved": {
+    "46": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 47,
+   "slug": "left-out",
+   "chapter": "Honest steps and offences",
+   "text": "OFFENCE: everything should be in view, and one window is in the corner",
+   "act": "way-out",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792039605967,
+   "milliseconds": 1045,
+   "moved": {
+    "32": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "L",
+     "detector": "lost",
+     "level": "FAIL",
+     "window": "finder (w32)",
+     "what": "is out of view: 0% of it is on a display, at 1599,772 560×380",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 48,
+   "slug": "honest-return-2",
+   "chapter": "Honest steps and offences",
+   "text": "it comes back",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792039607189,
+   "milliseconds": 1089,
+   "moved": {
+    "32": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 49,
+   "slug": "vanishes",
+   "chapter": "Honest steps and offences",
+   "text": "OFFENCE: a window is closed, and nobody asked for that",
+   "act": "idle",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792039608465,
+   "milliseconds": 1415,
+   "moved": {},
+   "findings": [
+    {
+     "rule": "L",
+     "detector": "lost",
+     "level": "FAIL",
+     "window": "elm (w119)",
+     "what": "left the screen, and the step did not say it would",
+     "trace": "+0 ms 140,500 520×300 · +393 ms off the screen"
+    }
+   ]
+  },
+  {
+   "number": 50,
+   "slug": "honest-click-5",
+   "chapter": "What only Arbor's own process can do wrong",
+   "text": "clicks the first document's title bar, with something that passes for Arbor running",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792039615746,
+   "milliseconds": 1753,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 51,
+   "slug": "under-the-stage",
+   "chapter": "What only Arbor's own process can do wrong",
+   "text": "a panel covers the whole display, as Arbor's stage does, and under it a window goes about before it ends up: nobody sees that",
+   "act": "dock-key",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792039617727,
+   "milliseconds": 2125,
+   "moved": {
+    "46": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 52,
+   "slug": "under-no-stage",
+   "chapter": "What only Arbor's own process can do wrong",
+   "text": "OFFENCE: the same under a panel that is wholly transparent, as Arbor's is when it rehearses its stage: everybody sees the window go about",
+   "act": "dock-key",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792039620036,
+   "milliseconds": 2094,
+   "moved": {
+    "46": [
+     2,
+     2,
+     465
+    ]
+   },
+   "findings": [
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "textedit (w46)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 159,79 520×380 · +585 ms 459,279 520×380 · +1050 ms 119,79 520×380"
+    }
+   ]
+  },
+  {
+   "number": 53,
+   "slug": "held-back",
+   "chapter": "What only Arbor's own process can do wrong",
+   "text": "OFFENCE: the button comes up, and an event tap keeps that from the apps for a fifth of a second",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792039622399,
+   "milliseconds": 2573,
+   "moved": {},
+   "findings": [
+    {
+     "rule": "6",
+     "detector": "input-held",
+     "level": "FAIL",
+     "window": null,
+     "what": "the button came up, and the apps heard of it 234 ms later",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 54,
+   "slug": "input-started",
+   "chapter": "What only Arbor's own process can do wrong",
+   "text": "a round of input on two windows of its own: presses behind and in front, keys, a scroll, a drag inside the text",
+   "act": "instrument",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792039629257,
+   "milliseconds": 17514,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 55,
+   "slug": "input-last",
+   "chapter": "What only Arbor's own process can do wrong",
+   "text": "a round of input on two windows of its own: presses behind and in front, keys, a scroll, a drag inside the text",
+   "act": "instrument",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792039647546,
+   "milliseconds": 17685,
+   "moved": {},
+   "findings": [
+    {
+     "rule": "6",
+     "detector": "input-held",
+     "level": "FAIL",
+     "window": null,
+     "what": "1 of 13 events of the kind key never reached the apps",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 56,
+   "slug": "honest-dock-icon",
+   "chapter": "What only Arbor's own process can do wrong",
+   "text": "clicks TextEdit's icon in the Dock, and then the first document's title bar",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792039665450,
+   "milliseconds": 3690,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 57,
+   "slug": "both-previews",
+   "chapter": "What only Arbor's own process can do wrong",
+   "text": "OFFENCE: a window is dragged against the menu bar, and a drop preview comes up beside macOS's own",
+   "act": "drag-where-macos-tiles",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792039669325,
+   "milliseconds": 6696,
+   "moved": {
+    "46": [
+     1,
+     14,
+     350
+    ]
+   },
+   "findings": [
+    {
+     "rule": "1",
+     "detector": "fought",
+     "level": "FAIL",
+     "window": "textedit (w46)",
+     "what": "macOS's tiling preview and Arbor's drop preview were up at the same time, for 766 ms",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 58,
+   "slug": "honest-drag-back",
+   "chapter": "What only Arbor's own process can do wrong",
+   "text": "drags it away from the top again",
+   "act": "drag-where-macos-tiles",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792039676518,
+   "milliseconds": 4622,
+   "moved": {},
+   "findings": [
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "ODD",
+     "window": "textedit (w46)",
+     "what": "changed its size while it was being dragged",
+     "trace": "+0 ms 0,33 1600×793 · +7 ms 1,39 1600×793 · +63 ms 162,36 1275×669 · +98 ms 322,39 953×546 · +129 ms 426,39 746×467 · +149 ms 459,39 679×441 · … 27 more … · +1438 ms 539,109 521×381 · +1528 ms 540,112 521×381 · +1566 ms 540,115 521×381 · +1854 ms 541,115 521×381 · +1978 ms 540,115 521×381"
+    }
+   ]
+  },
+  {
+   "number": 59,
+   "slug": "busy-doing-nothing",
+   "chapter": "What only Arbor's own process can do wrong",
+   "text": "OFFENCE: nobody does anything, and the process keeps a core busy",
+   "act": "idle",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792039681401,
+   "milliseconds": 6463,
+   "moved": {},
+   "findings": [
+    {
+     "rule": "-",
+     "detector": "busy",
+     "level": "FAIL",
+     "window": null,
+     "what": "with nothing to do Arbor used 99.7 % of a core",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 60,
+   "slug": "honest-idle-2",
+   "chapter": "What only Arbor's own process can do wrong",
+   "text": "nobody does anything, and neither does it",
+   "act": "idle",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792039688369,
+   "milliseconds": 8631,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 61,
+   "slug": "stays-behind",
+   "chapter": "What only Arbor's own process can do wrong",
+   "text": "OFFENCE: it is asked to quit and does, but a second process of its stays",
+   "act": "quit-and-start",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792039697328,
+   "milliseconds": 1292,
+   "moved": {},
+   "findings": [
+    {
+     "rule": "-",
+     "detector": "left-behind",
+     "level": "FAIL",
+     "window": null,
+     "what": "after Quit a process of Arbor's is still there: 24263",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "detector": "crash",
+     "level": "FAIL",
+     "window": null,
+     "what": "Arbor's process ended, and nobody asked it to",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 62,
+   "slug": "ends-unasked",
+   "chapter": "What only Arbor's own process can do wrong",
+   "text": "OFFENCE: nobody does anything, and the process ends",
+   "act": "idle",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792039699995,
+   "milliseconds": 1405,
+   "moved": {},
+   "findings": [
+    {
+     "rule": "-",
+     "detector": "crash",
+     "level": "FAIL",
+     "window": null,
+     "what": "Arbor's process ended, and nobody asked it to",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 63,
+   "slug": "tells",
+   "chapter": "What only Arbor's own process can do wrong",
+   "text": "OFFENCE: a window's title is written into a log",
+   "act": "idle",
+   "judged": true,
+   "performed": true,
+   "displays": [
+    [
+     1600,
+     900
+    ]
+   ],
+   "windows_elsewhere": 0,
+   "began": 1792039701628,
+   "milliseconds": 367,
+   "moved": {},
+   "findings": [
+    {
+     "rule": "-",
+     "detector": "told",
+     "level": "FAIL",
+     "window": null,
+     "what": "a window's title is in what the run brings back: saboteur.log",
+     "trace": null
+    }
+   ]
+  }
+ ]
+}

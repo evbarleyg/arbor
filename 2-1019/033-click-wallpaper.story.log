@@ -1,0 +1,36 @@
+33 click-wallpaper: clicks on the wallpaper
+expected: {'act': 'macos-own', 'settled': 'quiet:640', 'moves': 'any', 'leaves': 'any', 'floating': '234,237,248,251,252,253,256,260,262,284,286', 'docked': ''}
+FAIL rule 6: the button came up, and the apps heard of it 155 ms later
+
+04:52:06.944 SCREEN -- begin 33 click-wallpaper
+04:52:06.944 SCREEN -- text 33 clicks on the wallpaper
+04:52:07.519 SCREEN the button is down 1520 60
+04:52:07.573 MACOS pid 25387 AXApplicationActivated
+04:52:07.575 MACOS pid 25387 AXFocusedWindowChanged
+04:52:07.575 MACOS pid 25387 AXMainWindowChanged
+04:52:07.735 MACOS pid 27274 AXApplicationDeactivated
+04:52:07.736 SCREEN (nothing was seen for 163 ms)
+04:52:07.736 SCREEN notes (w252) -988,45 1000×660
+04:52:07.736 SCREEN desk-a (w284) -288,-8 300×190
+04:52:07.736 SCREEN desk-b (w286) -288,-139 300×190
+04:52:07.736 SCREEN calendar (w253) -925,-47 937×600
+04:52:07.736 SCREEN textedit (w248) -661,-93 673×439
+04:52:07.736 SCREEN w264 of Mail -783,15 470×416
+04:52:07.736 SCREEN mail (w262) -1108,-92 1120×630
+04:52:07.736 SCREEN preview (w260) -696,-106 708×424
+04:52:07.736 SCREEN settings (w256) -711,-35 723×625
+04:52:07.736 SCREEN terminal (w251) -851,795 863×499
+04:52:07.736 SCREEN finder (w234) -908,-127 920×436
+04:52:07.736 SCREEN safari (w237) -1312,-56 1324×791
+04:52:07.736 SCREEN the button is up 1520 60
+04:52:07.736 MACOS workspace didActivate pid 25387 com.apple.finder regular
+04:52:07.736 MACOS workspace didDeactivate pid 27274 com.apple.Notes regular
+04:52:07.742 SCREEN in front: process 25387 com.apple.finder
+04:52:08.397 SCREEN w570 of WindowManagerShowDesktopEducati 304,41 384×146
+04:52:08.397 SCREEN front to back: notes w570 desk-a desk-b calendar textedit w264 mail preview settings terminal finder safari
+04:52:08.409 SCREEN w570 of WindowManagerShowDesktopEducati 303,41 386×146
+04:52:08.428 SCREEN w570 of WindowManagerShowDesktopEducati 302,41 388×146
+04:52:08.456 SCREEN w570 of WindowManagerShowDesktopEducati 301,40 390×148
+04:52:08.491 SCREEN w570 of WindowManagerShowDesktopEducati 300,40 392×148
+04:52:09.600 SCREEN -- end 33 act=macos-own settled=quiet:640 moves=any leaves=any floating=234,237,248,251,252,253,256,260,262,284,286 docked=
+04:52:10.159 SCRIPT == 34 click-wallpaper-again

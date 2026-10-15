@@ -1,0 +1,10 @@
+47 left-out: OFFENCE: everything should be in view, and one window is in the corner
+expected: {'act': 'way-out', 'settled': 'quiet:1017', 'moves': 'any', 'everything': '1', 'offence': 'lost'}
+FAIL rule L: finder (w32) is out of view: 0% of it is on a display, at 1599,772 560×380
+
+04:46:45.967 SCREEN -- begin 47 left-out
+04:46:45.967 SCREEN -- text 47 OFFENCE: everything should be in view, and one window is in the corner
+04:46:45.993 MACOS pid 401 AXMoved w32 AXWindow/AXStandardWindow 1599 772 560 380
+04:46:46.003 SCREEN finder (w32) 1599,772 560×380
+04:46:47.012 SCREEN -- end 47 act=way-out settled=quiet:1017 moves=any everything=1 offence=lost
+04:46:47.186 SCRIPT == 48 honest-return-2

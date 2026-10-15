@@ -1,0 +1,30 @@
+67 view-all: presses ⌃⌥Space
+expected: {'act': 'view', 'settled': 'quiet:713', 'moves': 'any', 'everything': '1', 'tiles': '', 'keyboard': '1416', 'returns': '60', 'floating': '1412,1413,1416,1417,1421,1422,1439,1441', 'docked': '1395,1398,1409'}
+ODD rule 3: the last window came to rest 723 ms after the key or the button
+
+05:08:29.383 SCREEN -- begin 67 view-all
+05:08:29.383 SCREEN -- text 67 presses ⌃⌥Space
+05:08:29.600 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 11 stand-ins, 0.46 s
+05:08:29.600 DEBUG the stage kept the windows waiting 6 ms: its panel 0, 11 costumes 0 (0 not ready), the desktop 3, going up 3
+05:08:29.603 MACOS pid 78491 AXMoved w1395 AXWindow/AXStandardWindow 12 43 501 767
+05:08:29.604 SCREEN w1473 of Arbor 0,0 1600×900 (level 4)
+05:08:29.604 SCREEN finder (w1395) 12,43 501×767
+05:08:29.619 MACOS pid 79399 AXMoved w1398 AXWindow/AXStandardWindow 617 43 574 767
+05:08:29.620 MACOS pid 79618 AXMoved w1409 AXWindow/AXStandardWindow 1203 43 385 767
+05:08:29.629 INFO  show-all: showing everything
+05:08:29.670 SCREEN safari (w1398) 617,43 574×767
+05:08:29.670 SCREEN textedit (w1409) 1203,43 385×767
+05:08:29.670 SCREEN w1549 of Arbor 525,43 80×767
+05:08:29.670 SCREEN w1555 of Arbor 513,43 12×767
+05:08:29.670 SCREEN w1545 of Arbor 605,43 12×767
+05:08:29.670 SCREEN w1550 of Arbor 1191,43 12×767
+05:08:29.670 SCREEN w1541 of Arbor 0,31 1600×791 (level -2147483602)
+05:08:29.670 SCREEN front to back: w1540 calendar safari finder preview w1425 mail settings notes terminal textedit desk-a desk-b w1549 w1555 w1545 w1550
+05:08:29.799 DEBUG peek: the key came up
+05:08:30.280 DEBUG stage down
+05:08:30.327 SCREEN w1473 of Arbor left the screen
+05:08:30.850 SCREEN -- end 67 act=view settled=quiet:713 moves=any everything=1 tiles= keyboard=1416 returns=60 floating=1412,1413,1416,1417,1421,1422,1439,1441 docked=1395,1398,1409
+05:08:31.074 SCREEN -- chapter Windows come and go
+05:08:31.082 INFO  trace day-9 ended: 871 lines, trace off
+05:08:31.098 INFO  trace day-10: recording to /tmp/arbor-shell.btKTV8/home/traces/2026-10-15-050831-day-10.jsonl
+05:08:31.233 SCRIPT == 68 dock-icon-safari

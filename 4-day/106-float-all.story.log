@@ -1,0 +1,55 @@
+106 float-all: presses ⌃⌥⇧F
+expected: {'act': 'way-out', 'settled': 'quiet:1126', 'moves': 'any', 'restores': 'all', 'places': '1', 'everything': '1', 'floating': '1395,1398,1412,1413,1416,1417,1421,1422,1439,1441,1624', 'docked': ''}
+FAIL rule 5: terminal (w1412) is 106,238 863×500; its own size was 106,238 1600×791
+FAIL rule 5: calendar (w1416) has its size back but not its place: 385,145 682×791, it was at 445,205 681×791
+
+05:10:50.369 SCREEN -- begin 106 float-all
+05:10:50.369 SCREEN -- text 106 presses ⌃⌥⇧F
+05:10:50.662 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 11 stand-ins, 0.46 s
+05:10:50.662 DEBUG the stage kept the windows waiting 9 ms: its panel 0, 11 costumes 0 (0 not ready), the desktop 1, going up 7
+05:10:50.665 SCREEN w1473 of Arbor 0,0 1600×900 (level 4)
+05:10:50.749 MACOS pid 78491 AXResized w1395 AXWindow/AXStandardWindow 340 120 920 436
+05:10:50.752 MACOS pid 78491 AXMoved w1395 AXWindow/AXStandardWindow 340 120 920 436
+05:10:50.771 SCREEN safari (w1398) 1014,43 586×778
+05:10:50.771 SCREEN finder (w1395) 340,120 920×436
+05:10:50.852 MACOS pid 79399 AXResized w1398 AXWindow/AXStandardWindow 217 31 1324 790
+05:10:50.853 MACOS pid 79399 AXMoved w1398 AXWindow/AXStandardWindow 217 31 1324 790
+05:10:50.855 MACOS pid 79399 AXResized w1398 AXWindow/AXStandardWindow 217 31 1324 790
+05:10:50.866 MACOS pid 79835 AXTitleChanged w1412 AXWindow/AXStandardWindow 106 238 863 500
+05:10:50.867 MACOS pid 79835 AXResized w1412 AXWindow/AXStandardWindow 106 238 863 500
+05:10:50.867 MACOS pid 79835 AXMoved w1412 AXWindow/AXStandardWindow 106 238 863 500
+05:10:50.877 SCREEN safari (w1398) 217,31 1324×790
+05:10:50.877 SCREEN terminal (w1412) 525,238 863×500
+05:10:50.911 SCREEN terminal (w1412) 106,238 863×500
+05:10:50.936 MACOS pid 79965 AXResized w1416 AXWindow/AXStandardWindow 385 145 682 791
+05:10:50.938 MACOS pid 79965 AXMoved w1416 AXWindow/AXStandardWindow 385 145 682 791
+05:10:50.940 SCREEN calendar (w1416) 385,145 682×791
+05:10:50.960 MACOS pid 80018 AXMoved w1417 AXWindow/AXStandardWindow 437 85 723 625
+05:10:50.963 MACOS pid 80435 AXMoved w1421 AXWindow/AXStandardWindow 4 35 708 424
+05:10:50.986 SCREEN preview (w1421) 4,35 708×424
+05:10:50.986 SCREEN settings (w1417) 437,85 723×625
+05:10:51.119 SCREEN w1425 of Mail 653,179 470×416
+05:10:51.119 SCREEN mail (w1422) 328,72 1120×630
+05:10:51.130 MACOS pid 80501 AXResized w1422 AXWindow/AXStandardWindow 240 72 1120 630
+05:10:51.130 MACOS pid 80501 AXMoved w1422 AXWindow/AXStandardWindow 240 72 1120 630
+05:10:51.134 SCREEN w1425 of Mail 565,179 470×416
+05:10:51.134 SCREEN mail (w1422) 240,72 1120×630
+05:10:51.140 MACOS pid 82060 AXMoved w1439 AXWindow/AXStandardWindow 40 70 300 190
+05:10:51.144 MACOS pid 82090 AXMoved w1441 AXWindow/AXStandardWindow 360 70 300 190
+05:10:51.156 MACOS pid 98253 AXResized w1624 AXWindow/AXStandardWindow 165 65 673 439
+05:10:51.159 MACOS pid 98253 AXMoved w1624 AXWindow/AXStandardWindow 165 65 673 439
+05:10:51.163 INFO  float-all: floated 2 windows
+05:10:51.165 DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Floated 2 windows
+05:10:51.196 SCREEN w1679 of Arbor 717,728 167×38 (level 6)
+05:10:51.196 SCREEN textedit (w1624) 165,65 673×439
+05:10:51.196 SCREEN desk-a (w1439) 40,70 300×190
+05:10:51.196 SCREEN desk-b (w1441) 360,70 300×190
+05:10:51.196 SCREEN w1684 of Arbor left the screen
+05:10:51.196 SCREEN w1686 of Arbor left the screen
+05:10:51.196 SCREEN w1685 of Arbor left the screen
+05:10:51.196 SCREEN front to back: calendar safari notes finder textedit preview w1425 mail settings terminal desk-a desk-b
+05:10:51.325 DEBUG stage down
+05:10:51.335 SCREEN w1473 of Arbor left the screen
+05:10:51.373 SCREEN w1687 of Arbor left the screen
+05:10:52.370 SCREEN -- end 106 act=way-out settled=quiet:1126 moves=any restores=all places=1 everything=1 floating=1395,1398,1412,1413,1416,1417,1421,1422,1439,1441,1624 docked=
+05:10:52.780 SCRIPT == 107 dock-icon-finder

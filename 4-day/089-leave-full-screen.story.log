@@ -1,0 +1,62 @@
+89 leave-full-screen: presses ⌃⌘F again
+expected: {'act': 'macos-own', 'settled': 'quiet:387', 'moves': 'any', 'leaves': 'any', 'comes': '1398', 'lands': '1398', 'front': '1398', 'returns': '87', 'floating': '1412,1413,1416,1417,1421,1422,1439,1441,1624', 'docked': '1395,1398'}
+FAIL rule 2: textedit (w1624) is not back where it was after step 87: 525,65 477×439, it was at 165,65 673×439
+
+05:09:34.054 SCREEN -- begin 89 leave-full-screen
+05:09:34.054 SCREEN -- text 89 presses ⌃⌘F again
+05:09:34.347 SCREEN w1649 of Safari 0,0 1600×900
+05:09:34.347 SCREEN safari (w1398) left the screen
+05:09:34.347 SCREEN w1630 of Safari left the screen
+05:09:34.347 SCREEN front to back: w1649
+05:09:34.348 MACOS pid 79399 AXWindowCreated w1649 AXWindow/AXUnknown 0 0 1600 900
+05:09:34.353 SCREEN textedit (w1624) 165,65 673×439
+05:09:34.353 SCREEN finder (w1395) 12,43 501×767
+05:09:34.353 SCREEN calendar (w1416) 423,31 680×791
+05:09:34.353 SCREEN preview (w1421) 409,35 708×424
+05:09:34.353 SCREEN w1425 of Mail 529,179 470×416
+05:09:34.353 SCREEN mail (w1422) 328,72 871×630
+05:09:34.353 SCREEN settings (w1417) 402,85 723×625
+05:09:34.353 SCREEN notes (w1413) 409,105 709×660
+05:09:34.353 SCREEN terminal (w1412) 525,238 478×500
+05:09:34.353 SCREEN desk-a (w1439) 525,70 300×190
+05:09:34.353 SCREEN desk-b (w1441) 525,70 300×190
+05:09:34.353 SCREEN front to back: w1649 textedit finder calendar preview w1425 mail settings notes terminal desk-a desk-b
+05:09:34.353 MACOS pid 79399 AXResized w1398 AXWindow/AXStandardWindow 217 31 1324 790
+05:09:34.361 DEBUG w1398 is no longer listed
+05:09:34.406 DEBUG w1398 left full screen
+05:09:34.406 MACOS pid 79399 AXMoved w1398 AXWindow/AXStandardWindow 217 31 1324 790
+05:09:34.407 MACOS pid 79399 AXMoved w1649 AXWindow/AXUnknown 0 0 1600 900
+05:09:34.535 DEBUG w1398 is on its way out of full screen; asked for (1014,43 574×767), it has (1014,43 574×767)
+05:09:34.535 MACOS pid 79399 AXResized w1398 AXWindow/AXStandardWindow 1014 43 574 767
+05:09:34.536 MACOS pid 79399 AXMoved w1398 AXWindow/AXStandardWindow 1014 43 574 767
+05:09:34.965 MACOS pid 79399 AXUIElementDestroyed w1649
+05:09:34.966 DEBUG w1395 is listed again
+05:09:34.967 DEBUG w1412 is listed again
+05:09:34.968 DEBUG w1413 is listed again
+05:09:34.968 DEBUG w1416 is listed again
+05:09:34.969 DEBUG w1417 is listed again
+05:09:34.969 DEBUG w1421 is listed again
+05:09:34.972 DEBUG w1422 is listed again
+05:09:34.974 DEBUG w1439 is listed again
+05:09:34.981 DEBUG w1441 is listed again
+05:09:34.982 DEBUG w1624 is listed again
+05:09:35.009 DEBUG the stand-in w1649 is gone: the way out of full screen is over
+05:09:35.016 DEBUG w1398 is listed again
+05:09:35.018 DEBUG focus is on w1398
+05:09:35.023 SCREEN safari (w1398) 1014,43 574×767
+05:09:35.023 SCREEN w1649 of Safari left the screen
+05:09:35.023 SCREEN front to back: safari textedit finder calendar preview w1425 mail settings notes terminal desk-a desk-b
+05:09:35.046 MACOS pid 98253 AXResized w1624 AXWindow/AXStandardWindow 525 65 477 439
+05:09:35.048 MACOS pid 98253 AXMoved w1624 AXWindow/AXStandardWindow 525 65 477 439
+05:09:35.051 DEBUG w1398 has the keyboard
+05:09:35.075 SCREEN w1540 of Arbor 1005,34 592×785
+05:09:35.075 SCREEN textedit (w1624) 525,65 477×439
+05:09:35.075 SCREEN w1555 of Arbor 513,43 12×767
+05:09:35.075 SCREEN w1545 of Arbor 1002,43 12×767
+05:09:35.075 SCREEN w1541 of Arbor 0,31 1600×791 (level -2147483602)
+05:09:35.075 SCREEN front to back: w1540 safari textedit finder calendar preview w1425 mail settings notes terminal desk-a desk-b w1555 w1545
+05:09:37.079 SCREEN -- end 89 act=macos-own settled=quiet:387 moves=any leaves=any comes=1398 lands=1398 front=1398 returns=87 floating=1412,1413,1416,1417,1421,1422,1439,1441,1624 docked=1395,1398
+05:09:37.348 SCREEN -- chapter A click lands on the wallpaper, a double-click on a title bar
+05:09:37.356 INFO  trace day-11 ended: 211 lines, trace off
+05:09:37.372 INFO  trace day-12: recording to /tmp/arbor-shell.btKTV8/home/traces/2026-10-15-050937-day-12.jsonl
+05:09:44.869 SCRIPT == 90 double-click-finder

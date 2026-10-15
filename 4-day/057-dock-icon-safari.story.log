@@ -1,0 +1,32 @@
+57 dock-icon-safari: clicks safari's icon in the Dock
+expected: {'act': 'switch', 'settled': 'quiet:564', 'front': '1398', 'floating': '1412,1413,1416,1417,1421,1422,1439,1441', 'docked': '1395,1398,1409'}
+FAIL rule 6: the button came up, and the apps heard of it 106 ms later
+
+05:08:06.573 SCREEN -- begin 57 dock-icon-safari
+05:08:06.573 SCREEN -- text 57 clicks safari's icon in the Dock
+05:08:07.410 SCREEN the button is down 189 854
+05:08:07.457 SCREEN front to back: safari w1540 finder preview w1425 mail settings calendar notes terminal textedit desk-a desk-b
+05:08:07.457 SCREEN the button is up 189 854
+05:08:07.565 SCREEN in front: process 79399 com.apple.Safari
+05:08:07.566 MACOS pid 78491 AXApplicationDeactivated
+05:08:07.569 MACOS workspace didActivate pid 79399 com.apple.Safari regular
+05:08:07.569 MACOS workspace didDeactivate pid 78491 com.apple.finder regular
+05:08:07.569 MACOS pid 79399 AXApplicationActivated
+05:08:07.578 SCREEN (nothing was seen for 120 ms)
+05:08:07.603 DEBUG focus is on w1398
+05:08:07.618 DEBUG w1398 has the keyboard
+05:08:07.660 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 2 stand-ins, 0.46 s
+05:08:07.660 DEBUG the stage kept the windows waiting 14 ms: its panel 0, 2 costumes 0 (0 not ready), the desktop 10, going up 5
+05:08:07.699 SCREEN w1473 of Arbor 0,0 1600×900 (level 4)
+05:08:07.747 MACOS pid 79399 AXResized w1398 AXWindow/AXStandardWindow 1599 770 1576 767
+05:08:07.765 SCREEN safari (w1398) 1599,770 1576×767
+05:08:07.816 MACOS pid 79399 AXMoved w1398 AXWindow/AXStandardWindow 12 43 1576 767
+05:08:07.819 SCREEN safari (w1398) 12,43 1576×767
+05:08:07.850 MACOS pid 78491 AXMoved w1395 AXWindow/AXStandardWindow 1599 770 1576 767
+05:08:07.855 SCREEN finder (w1395) 1599,770 1576×767
+05:08:07.888 SCREEN front to back: w1540 safari finder preview w1425 mail settings calendar notes terminal textedit desk-a desk-b
+05:08:08.285 DEBUG stage down
+05:08:08.304 SCREEN w1473 of Arbor left the screen
+05:08:09.094 SCREEN -- end 57 act=switch settled=quiet:564 front=1398 floating=1412,1413,1416,1417,1421,1422,1439,1441 docked=1395,1398,1409
+05:08:09.556 SCREEN w1542 of Arbor left the screen
+05:08:09.652 SCRIPT == 58 cmd-tab-1

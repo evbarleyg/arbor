@@ -1,0 +1,121 @@
+83 launch: starts Arbor
+expected: {'act': 'quit-and-start', 'settled': 'quiet:823', 'moves': ',234,237,251,256,', 'everything': '1', 'floating': '248,252,253,260,262,284,286', 'docked': '234,237,251,256'}
+FAIL rule 3: finder (w234) moved 2 times
+FAIL rule 3: safari (w237) moved 2 times
+FAIL rule 2: textedit (w248) a floating window, moved, and the step did not name it
+FAIL rule 3: terminal (w251) moved 2 times
+FAIL rule 2: calendar (w253) a floating window, moved, and the step did not name it
+FAIL rule 3: settings (w256) moved 2 times
+FAIL rule 2: preview (w260) a floating window, moved, and the step did not name it
+FAIL rule 2: mail (w262) a floating window, moved, and the step did not name it
+ODD rule 2: w264 of Mail moved along with a window of its app
+FAIL rule 2: desk-a (w284) a floating window, moved, and the step did not name it
+FAIL rule 2: desk-b (w286) a floating window, moved, and the step did not name it
+FAIL rule L: finder (w234) is out of view: 0% of it is on a display, at -500,770 501×767
+FAIL rule L: safari (w237) is out of view: 0% of it is on a display, at -573,770 574×767
+FAIL rule L: textedit (w248) is out of view: 0% of it is on a display, at -672,790 673×439
+FAIL rule L: terminal (w251) is out of view: 0% of it is on a display, at -274,790 275×769
+FAIL rule L: calendar (w253) is out of view: 0% of it is on a display, at -1599,770 1600×791
+FAIL rule L: preview (w260) is out of view: 0% of it is on a display, at -707,770 708×424
+FAIL rule L: mail (w262) is out of view: 0% of it is on a display, at -1119,770 1120×630
+FAIL rule L: desk-a (w284) is out of view: 0% of it is on a display, at -299,790 300×190
+FAIL rule L: desk-b (w286) is out of view: 0% of it is on a display, at -299,790 300×190
+
+04:55:18.457 SCREEN -- begin 83 launch
+04:55:18.457 SCREEN -- text 83 starts Arbor
+04:55:18.560 INFO  Arbor dev starting, pid 48502, home /tmp/arbor-shell.NgFwTu/home
+04:55:18.561 INFO  control socket at /tmp/arbor-shell.NgFwTu/home/arbor.sock
+04:55:18.606 INFO  keyboard layout: U.S.
+04:55:18.695 INFO  started: 2 display(s), 11 managed window(s)
+04:55:18.740 SCREEN finder (w234) 340,120 501×701
+04:55:18.741 MACOS pid 25387 AXResized w234 AXWindow/AXStandardWindow 798 43 501 701
+04:55:18.751 MACOS pid 25387 AXMoved w234 AXWindow/AXStandardWindow 798 43 501 767
+04:55:18.751 MACOS pid 25387 AXResized w234 AXWindow/AXStandardWindow 798 43 501 767
+04:55:18.784 SCREEN finder (w234) 798,43 501×767
+04:55:18.784 SCREEN safari (w237) 73,31 574×767
+04:55:18.841 SCREEN safari (w237) 12,43 574×767
+04:55:18.844 MACOS pid 26658 AXResized w237 AXWindow/AXStandardWindow 12 43 574 767
+04:55:18.845 MACOS pid 26658 AXMoved w237 AXWindow/AXStandardWindow 12 43 574 767
+04:55:18.863 SCREEN terminal (w251) 369,177 275×649
+04:55:18.923 MACOS pid 27133 AXTitleChanged w251 AXWindow/AXStandardWindow 1311 43 275 769
+04:55:18.924 MACOS pid 27133 AXResized w251 AXWindow/AXStandardWindow 1311 43 275 769
+04:55:18.924 MACOS pid 27133 AXMoved w251 AXWindow/AXStandardWindow 1311 43 275 769
+04:55:18.925 MACOS pid 27133 AXTitleChanged w251 AXWindow/AXStandardWindow 1311 43 275 769
+04:55:18.925 MACOS pid 27133 AXResized w251 AXWindow/AXStandardWindow 1311 43 275 769
+04:55:18.943 MACOS pid 27585 AXMoved w256 AXWindow/AXStandardWindow -722 770 723 625
+04:55:18.944 SCREEN terminal (w251) 1311,43 275×769
+04:55:18.989 SCREEN settings (w256) -722,770 723×625
+04:55:19.053 INFO  registered 52 shortcuts in 4584 µs
+04:55:19.054 DEBUG w256 has the keyboard
+04:55:19.099 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 11 stand-ins, 0.46 s
+04:55:19.100 DEBUG the stage kept the windows waiting 38 ms: its panel 1, 11 costumes 0 (11 not ready), the desktop 10, going up 27
+04:55:19.136 SCREEN w779 of Arbor 0,0 1600×900 (level 4)
+04:55:19.136 SCREEN w775 of Arbor 586,43 12×767
+04:55:19.136 SCREEN w776 of Arbor 786,43 12×767
+04:55:19.136 SCREEN w777 of Arbor 1299,43 12×767
+04:55:19.136 SCREEN w778 of Arbor 0,31 1600×791 (level -2147483602)
+04:55:19.136 SCREEN front to back: settings terminal finder safari notes calendar textedit desk-a desk-b w264 mail preview w775 w776 w777
+04:55:19.198 MACOS pid 27585 AXResized w256 AXWindow/AXStandardWindow 12 43 723 767
+04:55:19.199 MACOS pid 27585 AXMoved w256 AXWindow/AXStandardWindow 12 43 723 767
+04:55:19.203 MACOS pid 27585 AXMoved w256 AXWindow/AXStandardWindow 438 43 723 767
+04:55:19.214 SCREEN settings (w256) 12,43 723×767
+04:55:19.217 MACOS pid 25387 AXMoved w234 AXWindow/AXStandardWindow -500 770 501 767
+04:55:19.219 SCREEN settings (w256) 438,43 723×767
+04:55:19.219 SCREEN finder (w234) -500,770 501×767
+04:55:19.232 MACOS pid 26658 AXMoved w237 AXWindow/AXStandardWindow -573 770 574 767
+04:55:19.234 MACOS pid 27133 AXMoved w251 AXWindow/AXStandardWindow -274 790 275 769
+04:55:19.236 MACOS pid 26789 AXMoved w248 AXWindow/AXStandardWindow -672 790 673 439
+04:55:19.270 MACOS pid 27435 AXMoved w253 AXWindow/AXStandardWindow -1599 770 1600 791
+04:55:19.272 SCREEN terminal (w251) -274,790 275×769
+04:55:19.272 SCREEN safari (w237) -573,770 574×767
+04:55:19.272 SCREEN calendar (w253) -1599,770 1600×791
+04:55:19.272 SCREEN textedit (w248) -672,790 673×439
+04:55:19.272 SCREEN preview (w260) -707,770 708×424
+04:55:19.278 MACOS pid 27985 AXMoved w260 AXWindow/AXStandardWindow -707 770 708 424
+04:55:19.303 SCREEN w264 of Mail -794,877 470×416
+04:55:19.303 SCREEN mail (w262) -1119,770 1120×630
+04:55:19.303 MACOS pid 28227 AXMoved w262 AXWindow/AXStandardWindow -1119 770 1120 630
+04:55:19.319 MACOS pid 30072 AXMoved w284 AXWindow/AXStandardWindow -299 790 300 190
+04:55:19.326 MACOS pid 30092 AXMoved w286 AXWindow/AXStandardWindow -299 790 300 190
+04:55:19.344 SCREEN desk-a (w284) -299,790 300×190
+04:55:19.344 SCREEN desk-b (w286) -299,790 300×190
+04:55:19.386 DEBUG stage retargeted on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 11 stand-ins, 0.2352029895782471 s
+04:55:19.399 DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Your other windows are out of view, not closed · ⌃⌥Space shows everything
+04:55:19.448 ERROR setup: Desktop & Dock settings: as they stand, macOS reacts to the same clicks and drags as Arbor. In System Settings → Desktop & Dock: | “Click wallpaper to reveal desktop”: choose “Only in Stage Manager”. Otherwise a click on the Desktop sends every window away | “Drag windows to left or right edge of screen to tile”: switch it off | “Drag windows to menu bar to fill screen”: switch it off | “Hold ⌥ key while dragging windows to tile”: switch it off
+04:55:19.507 SCREEN w780 of Arbor 429,34 741×785
+04:55:19.507 SCREEN w776 of Arbor left the screen
+04:55:19.507 SCREEN w775 of Arbor left the screen
+04:55:19.507 SCREEN w777 of Arbor left the screen
+04:55:19.507 SCREEN front to back: w780 settings terminal finder safari notes calendar textedit desk-a desk-b w264 mail preview
+04:55:19.552 SCREEN w781 of Arbor 512,728 576×38 (level 6)
+04:55:19.557 DEBUG got ready the costume of com.apple.Preview in 6 ms
+04:55:19.565 DEBUG got ready the costume of com.apple.mail in 7 ms
+04:55:19.568 DEBUG got ready the costume of pid 30092 in 7 ms
+04:55:19.572 DEBUG got ready the costume of pid 30072 in 2 ms
+04:55:19.572 DEBUG got ready the costume of com.apple.TextEdit in 4 ms
+04:55:19.574 DEBUG got ready the costume of com.apple.iCal in 7 ms
+04:55:19.579 DEBUG got ready the costume of com.apple.Safari in 5 ms
+04:55:19.581 DEBUG got ready the costume of com.apple.finder in 36 ms
+04:55:19.584 DEBUG got ready the costume of com.apple.Terminal in 29 ms
+04:55:19.587 DEBUG got ready the costume of com.apple.systempreferences in 4 ms
+04:55:19.590 DEBUG got ready the costume of com.apple.Notes in 34 ms
+04:55:19.600 DEBUG raised w252, which stays in view
+04:55:19.602 MACOS pid 27274 AXFocusedWindowChanged w252 AXWindow/AXStandardWindow 300 105 1000 660
+04:55:19.603 SCREEN front to back: w780 settings notes terminal finder safari calendar textedit desk-a desk-b w264 mail preview
+04:55:19.603 MACOS pid 27274 AXMainWindowChanged w252 AXWindow/AXStandardWindow 300 105 1000 660
+04:55:19.708 SCREEN -- arbor 48502
+04:55:19.777 INFO  trace day-4: recording to /tmp/arbor-shell.NgFwTu/home/traces/2026-10-15-045519-day-4.jsonl
+04:55:19.791 DEBUG stage down
+04:55:19.823 SCREEN w779 of Arbor left the screen
+04:55:19.869 MACOS pid 27274 AXFocusedWindowChanged w252 AXWindow/AXStandardWindow 300 105 1000 660
+04:55:19.870 DEBUG raised w252, which stays in view
+04:55:19.870 MACOS pid 27274 AXMainWindowChanged w252 AXWindow/AXStandardWindow 300 105 1000 660
+04:55:20.034 DEBUG got ready the stage of 07230EFA-7A8D-4E37-845C-19CC8737EEF5 in 1 ms, the desktop 1 of them
+04:55:20.061 DEBUG got ready the stage of 0C05C705-7894-4B84-849F-1BFE6462A604 in 14 ms, the desktop 1 of them
+04:55:20.087 DEBUG raised w252, which stays in view
+04:55:20.091 MACOS pid 27274 AXFocusedWindowChanged w252 AXWindow/AXStandardWindow 300 105 1000 660
+04:55:20.092 MACOS pid 27274 AXMainWindowChanged w252 AXWindow/AXStandardWindow 300 105 1000 660
+04:55:20.221 DEBUG got ready the costume of pid 30072 in 4 ms
+04:55:20.245 DEBUG got ready the costume of pid 30092 in 4 ms
+04:55:20.694 SCREEN -- end 83 act=quit-and-start settled=quiet:823 moves=,234,237,251,256, everything=1 floating=248,252,253,260,262,284,286 docked=234,237,251,256
+04:55:21.314 SCRIPT == 84 pause

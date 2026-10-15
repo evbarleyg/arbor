@@ -1,0 +1,64 @@
+74 restore-notes: clicks notes's icon in the Dock, which brings its minimized window back
+expected: {'act': 'open-close', 'settled': 'quiet:1141', 'moves': '234,251,256,234,251,256,', 'comes': '252', 'front': '252', 'floating': '237,248,252,253,260,262,284,286', 'docked': '234,251,256'}
+FAIL rule 2: calendar (w253) a floating window, moved and came back, and the step did not name it
+
+04:54:49.481 SCREEN -- begin 74 restore-notes
+04:54:49.481 SCREEN -- text 74 clicks notes's icon in the Dock, which brings its minimized window back
+04:54:49.711 SCREEN w422 of Arbor left the screen
+04:54:50.253 SCREEN the button is down 722 855
+04:54:50.364 SCREEN the button is up 722 855
+04:54:50.364 SCREEN in front: process 27274 com.apple.Notes
+04:54:50.364 MACOS pid 27133 AXApplicationDeactivated
+04:54:50.366 MACOS workspace didActivate pid 27274 com.apple.Notes regular
+04:54:50.366 MACOS workspace didDeactivate pid 27133 com.apple.Terminal regular
+04:54:50.421 SCREEN notes (w252) 1447,820 48×52
+04:54:50.421 SCREEN front to back: notes w728 terminal finder settings calendar textedit safari desk-a desk-b w264 mail preview w727 w739 w745
+04:54:50.435 SCREEN notes (w252) 1445,809 50×63
+04:54:50.463 SCREEN notes (w252) 1419,758 76×114
+04:54:50.489 SCREEN notes (w252) 1292,656 203×216
+04:54:50.506 SCREEN notes (w252) 1237,626 258×246
+04:54:50.525 SCREEN notes (w252) 1101,561 394×311
+04:54:50.544 SCREEN notes (w252) 944,495 551×377
+04:54:50.570 SCREEN notes (w252) 692,393 802×479
+04:54:50.588 SCREEN notes (w252) 546,326 948×546
+04:54:50.603 SCREEN notes (w252) 485,295 1009×577
+04:54:50.621 SCREEN notes (w252) 391,236 1103×636
+04:54:50.639 SCREEN notes (w252) 336,187 1158×661
+04:54:50.668 SCREEN notes (w252) 304,133 1184×661
+04:54:50.673 SCREEN notes (w252) 301,121 1183×661
+04:54:50.711 SCREEN notes (w252) 300,105 1164×661
+04:54:50.715 SCREEN notes (w252) 300,105 1156×660
+04:54:50.737 SCREEN notes (w252) 300,105 1134×660
+04:54:50.753 SCREEN notes (w252) 300,105 1112×660
+04:54:50.770 SCREEN notes (w252) 300,105 1101×660
+04:54:50.794 SCREEN notes (w252) 300,105 1067×660
+04:54:50.806 SCREEN notes (w252) 300,105 1047×660
+04:54:50.820 SCREEN notes (w252) 300,105 1037×660
+04:54:50.844 SCREEN notes (w252) 300,105 1021×660
+04:54:50.852 SCREEN notes (w252) 300,105 1014×660
+04:54:50.888 SCREEN notes (w252) 300,105 1001×660
+04:54:50.898 SCREEN notes (w252) 300,105 1000×660
+04:54:50.918 DEBUG focus is on w252
+04:54:50.918 DEBUG focus report for w252, which does not have the keyboard or takes no space; 4 checks left
+04:54:50.918 MACOS pid 27274 AXApplicationActivated
+04:54:50.918 MACOS pid 27274 AXFocusedWindowChanged w252 AXWindow/AXStandardWindow 300 105 1000 660
+04:54:50.919 MACOS pid 27274 AXMainWindowChanged w252 AXWindow/AXStandardWindow 300 105 1000 660
+04:54:50.919 MACOS pid 27274 AXWindowDeminiaturized w252 AXWindow/AXStandardWindow 300 105 1000 660
+04:54:50.920 MACOS pid 27274 AXWindowCreated w252 AXWindow/AXStandardWindow 300 105 1000 660
+04:54:51.065 SCREEN (nothing was seen for 166 ms)
+04:54:51.065 SCREEN calendar (w253) 0,31 1600×791
+04:54:51.065 SCREEN w728 of Arbor left the screen
+04:54:51.065 SCREEN front to back: notes terminal finder settings calendar textedit safari desk-a desk-b w264 mail preview w727 w739 w745
+04:54:51.070 MACOS pid 27435 AXResized w253 AXWindow/AXStandardWindow 0 31 1600 791
+04:54:51.168 MACOS pid 25387 AXResized w234 AXWindow/AXStandardWindow 747 43 506 767
+04:54:51.186 SCREEN finder (w234) 747,43 506×767
+04:54:51.201 DEBUG w252 has the keyboard
+04:54:51.203 SCREEN w728 of Arbor 291,96 1018×678
+04:54:51.203 SCREEN w727 of Arbor 12,329 723×12
+04:54:51.203 SCREEN w739 of Arbor 735,43 12×767
+04:54:51.203 SCREEN w745 of Arbor 1253,43 12×767
+04:54:51.203 SCREEN w729 of Arbor 0,31 1600×791 (level -2147483602)
+04:54:51.203 SCREEN front to back: w728 notes terminal finder settings calendar textedit safari desk-a desk-b w264 mail preview w727 w739 w745
+04:54:51.440 INFO  displays changed: 2 display(s), 0 remembered
+04:54:52.368 SCREEN -- end 74 act=open-close settled=quiet:1141 moves=234,251,256,234,251,256, comes=252 front=252 floating=237,248,252,253,260,262,284,286 docked=234,251,256
+04:54:52.745 SCRIPT == 75 dock-icon-safari
