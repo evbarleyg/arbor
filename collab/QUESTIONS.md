@@ -465,7 +465,7 @@ product decisions) answers in place. Do not delete answered questions.
   the permission taken away with taps installed (F63), displays and Spaces (F08), pause by its key, the stage, which never plays in CI because hosted Macs reduce motion. CI's real-window job has never pressed a key.
 - **Answer** (product owner, 2026-10-15): **a deadline, not a pardon.**
   1. The census's table 4 is the queue for Mac runs at the first priority, from the top. The scripts exist; they need running and reading.
-  2. **No build is handed to a person while rank 1, 2 or 3 says "never".** What has not passed when a build is cut ships off in that build: `scrollZoom` false; by the result of `input-taps.sh`, `gesturesEnabled` false and `frameRectangleModifier` none; by that of `check-F51.sh`, `peek` false, so that ⌃⌥Space is plain Show Everything.
+  2. **No build is handed to a person while rank 1, 2 or 3 says "never".** What has not passed when a build is cut ships off in that build: `scrollZoom` false; by the result of `input-taps.sh`, `gesturesEnabled` false, `frameRectangleModifier` none and `frameRectangleOnDesktop` false (with the last one true the rectangle's taps stay installed: what is meant is no event tap at all at launch); by that of `check-F51.sh`, `peek` false, so that ⌃⌥Space is plain Show Everything.
      Each is a default of one line, flipped back by a commit of its own when its script is green. A click that vanishes looks like a broken Mac.
   3. From rank 4 down the deadline is the first attempt at the gate: then on and never run means off.
 - The census's column "Ever run?" is kept current, since it now decides defaults.

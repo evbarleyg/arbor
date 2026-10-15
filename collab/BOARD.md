@@ -58,7 +58,7 @@ Letters name the lane that has an item. "Archive" is the branch of patches issue
 
 | Rank | What | Script | If it is red, or has not run |
 |---|---|---|---|
-| 1 | The event taps: ⌃⌥ + scroll (F55, never run), pinch (F03), the ⌃⌥ rectangle (F05, never with these keys) | `input-taps.sh`, with the witness | `scrollZoom` false; `gesturesEnabled` false; `frameRectangleModifier` none |
+| 1 | The event taps: ⌃⌥ + scroll (F55, never run), pinch (F03), the ⌃⌥ rectangle (F05, never with these keys) | `input-taps.sh`, with the witness | `scrollZoom` false; `gesturesEnabled` false; `frameRectangleModifier` none; `frameRectangleOnDesktop` false. All four or none: what is meant is that Arbor installs no event tap at all at launch, and with the last one true the rectangle's taps stay in |
 | 2 | A hold of ⌃⌥Space (F51) | `check-F51.sh` | `peek` false: ⌃⌥Space is plain Show Everything |
 | 3 | The permission taken away while taps are installed (F63) | `check-F63.sh`; `input-taps.sh`, session 4 | the taps of rank 1 ship off |
 | 4 and down | Displays and Spaces, pause by its key, the stage, hold, the name field, keyboard tiling, … | as the census names them | off at the first attempt at the gate |
@@ -66,9 +66,9 @@ Letters name the lane that has an item. "Archive" is the branch of patches issue
 **First runs, 2026-10-15, 00:23 UTC, and what follows for the first build:**
 
 - **Rank 2: 35 of 35. `peek` stays on.**
-- **Rank 3 still says "never": unless its probe is green when the first build is cut, the three taps ship off in it.** `check-F63.sh`'s part that takes the permission away did not run: its sixteen reds all fell behind the first step. In `input-taps.sh`, session 4, with taps installed and the permission reset, Arbor removed its four taps within one second: seen.
+- **Rank 3 still says "never": unless its probe is green when the first build is cut, the taps ship off in it, by four defaults together.** `check-F63.sh`'s part that takes the permission away did not run: its sixteen reds all fell behind the first step. In `input-taps.sh`, session 4, with taps installed and the permission reset, Arbor removed its four taps within one second: seen.
   Whether keys and clicks reach anybody during and after the loss was not tried, because the script's own tools lose the permission too. The case is not exotic: the guide itself tells people to switch Accessibility off and on after installing a new build.
-  **The way back on:** the permission reset for Arbor's bundle id only; keys, clicks and scrolls posted before, during and after all reach the witness. Then three commits flip the defaults back.
+  **The way back on:** the permission reset for Arbor's bundle id only; keys, clicks and scrolls posted before, during and after all reach the witness. Then four commits flip the defaults back.
 - **Rank 1 is green**: 146 of 160; 13 of the reds are the Desktop guard, which ships off; the fourteenth is the script's own, an expectation older than a default. Every step of F55, F03 and F05 with ⌃⌥ passed, with posted events. `kill -9` in mid-drag leaves no tap, and the next click is whole. With Arbor hung, a click waited 1.8 s three times, then Arbor left all its taps off for 30 s. What Arbor costs every app: about a quarter of a millisecond a mouse-down. Unknown still: ⌃⌥ + scroll beside macOS's own zoom on ⌃ + scroll, which did not answer a posted scroll.
 - Rank 4: a virtual second display works on a hosted Mac, so the gate's cell `two` stands. 110 of 129: one family of reds, 1.33.
 - Launched without the permission and then granted by the script, Arbor did not notice within 12 s. Most likely the script's way of granting, which tells nobody as the switch in System Settings does; unproven; a probe settles it. Arbor's own in any case: the wait logs nothing.
