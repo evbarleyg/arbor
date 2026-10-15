@@ -683,7 +683,7 @@ holds for the commit named (second reading, 10:45 UTC) and says what the script 
 | `check-F12.sh` | trunk | safe | none | |
 | `perf.sh` | trunk | safe, steps skip themselves | one drag | `footprint`, `heap`, `leaks` where developer mode is off (macOS would ask for a password) |
 | `check-F13-system.sh` | trunk | **never**: ends with 77 | | TCC.db as root, `tccutil`, login items, `make install` as a person runs it |
-| `coverage.sh` | trunk | **never**: ends with 77 | | Leaves an instrumented build in `.build/debug`, which writes a profile wherever it is started; Reduce Motion |
+| `coverage.sh` | trunk | **never**: ends with 77 | | Points `.build/debug` at an instrumented build, which writes a profile wherever it is started; Reduce Motion |
 | `check-F58.sh` (`share-probe.swift`) | trunk | safe, steps skip themselves | 2 min | ⌘Tab, the second display, the grey wallpaper; the pictures of single test windows only where Screen Recording is granted already. Two test apps have an icon in the Dock. A test window is put at and beyond the display's edges, so with two displays it shows on the other for a moment |
 | `shots-finder.sh` | trunk | safe, steps skip themselves | 3 min, mostly keys | ⌘Tab, Mission Control, the swipe to another Space. Types digits and letters with the palette open or its own test app in front, which has an icon in the Dock |
 | `watch.sh` | trunk | **not this copy**: #233's | 6 s; 10 min in all | On the trunk: `arborctl watch` without a limit, more than 900 s, and the end-to-end runner under a time limit. #233 `cea45a10`: safe |
@@ -1155,7 +1155,7 @@ No test can run `Sources/ArborKit/{AX,UI,Input,App}`. What runs that code withou
 `e2e-drag.sh`. This measures how much of it the two execute, so that "a run gets into that file" does not pass for "that file is tried".
 
 ```bash
-scripts/mac-shell/run.sh scripts/mac-shell/coverage.sh                                  # NUMBER-OF-MINUTES on the Mac; with the queue give it 45
+scripts/mac-shell/run.sh scripts/mac-shell/coverage.sh                                  # seven minutes on the Mac; with the queue give it 45
 scripts/coverage-report.py .mac-shell/coverage-<run id>/coverage/both/coverage.json     # the tables again, from what came back
 ```
 
@@ -1183,7 +1183,8 @@ there. `lines/<file>.txt` is the source with a count before each line, and `0` m
 - **A check that fails or is cut off runs less.** The script exits with 1 then, and says which. Do not quote such a run's number as CI's.
 - It says nothing of `swift test` on a Mac, which draws some of the views in `UI` without a screen (`OffscreenPicture`), nor of the scripts somebody starts by hand.
 
-It runs on GitHub's Macs only (elsewhere it ends with 77): it leaves an instrumented build in `.build/debug`, which writes a profile wherever it is started. It is not part of CI.
+The instrumented build has a folder of its own, `.build/coverage`, and takes nothing from the plain build beside it nor changes it; `.build/debug` points there while the script runs.
+It runs on GitHub's Macs only (elsewhere, and in a rehearsal, it ends with 77). It is not part of CI.
 
 ## Installing, signing and releasing
 

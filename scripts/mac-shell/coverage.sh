@@ -1,7 +1,7 @@
 #!/bin/bash
 # How much of the macOS-only code do the automatic real-window checks execute? A measurement, not a check.
 #
-#   scripts/mac-shell/run.sh scripts/mac-shell/coverage.sh          about 15 minutes on the Mac
+#   scripts/mac-shell/run.sh scripts/mac-shell/coverage.sh          about seven minutes on the Mac
 #
 # Sources/ArborKit/AX, UI, Input and App cannot run in tests. What runs them without being asked is CI's job `real-windows`: arbor-e2e
 # (scripts/e2e.sh --full-screen) and e2e-drag.sh. This script builds everything with the compiler's coverage instrumentation, runs those
@@ -20,8 +20,12 @@
 #     export.json             the same with every function and region
 #   <part>/output.txt         what the part printed
 #
-# How every Arbor is caught. The scripts are run unchanged: a `swift` at the front of the PATH adds the flags to their `swift build`,
-# or they would build the instrumentation away again. Arbor is started many times, by the runner, by scripts and by its own watchdog, and all
+# The build has a folder of its own, .build/coverage: it takes nothing from the plain build beside it, which may have come out of a cache that
+# other runs share, and leaves it as it was. The scripts are run unchanged, and they look in .build/debug and call `swift build` themselves. So
+# .build/debug, a link that SwiftPM makes, points at the instrumented build while this runs, and a `swift` at the front of the PATH adds the
+# folder and the flags to every `swift build`.
+#
+# How every Arbor is caught. Arbor is started many times, by the runner, by scripts and by its own watchdog, and all
 # of them hand their environment on, so LLVM_PROFILE_FILE reaches each: %p gives every process a file of its own, %m names the program it
 # ran. Some Arbors are killed with -9 on purpose and never get to write. With %c the counters live in the file from the start,
 # which needs their sections aligned to pages; the script tries that first and says which way it went. `ps` is asked five times a second
@@ -31,9 +35,14 @@
 # 2: no build, or no tables.
 ARBOR_TIME_LIMIT=1150
 source "$(dirname "$0")/lib.sh"
-needs_throwaway_mac "leave an instrumented build in .build/debug, which writes a profile wherever it is started, and switch Reduce Motion off"
+needs_throwaway_mac "point .build/debug at an instrumented build, which writes a profile wherever it is started, and switch Reduce Motion off"
+if [ -n "${ARBOR_REHEARSAL:-}" ]; then
+  echo "skipped: the fake Mac's Arbor is a script, which no compiler instruments: there is nothing to measure in a rehearsal"
+  exit 77
+fi
 
 COVERAGE_OUT="$ARBOR_OUT/coverage"
+COVERAGE_BUILD="$ARBOR_ROOT/.build/coverage"
 COVERAGE_BINARY="$ARBOR_BIN/Arbor"
 COVERAGE_SOURCES="$ARBOR_ROOT/Sources/ArborKit/AX $ARBOR_ROOT/Sources/ArborKit/UI $ARBOR_ROOT/Sources/ArborKit/Input
   $ARBOR_ROOT/Sources/ArborKit/App $ARBOR_ROOT/Sources/ArborKit/IPC"
@@ -73,8 +82,9 @@ tables() {
 
 arbors_running() {
   while :; do
-    # By its path's end: the runner, the scripts and the watchdog spell the build folder differently (.build/debug is a link).
-    ps -A -o pid=,comm= | awk '$2 ~ /\/debug\/Arbor$/ { print $1 }'
+    # By its name alone. What ps shows is what the process was started as: a script gives the whole path, and of the eighteen Arbors that
+    # arbor-e2e and the watchdog start, a pattern that asked for the build folder found none. No other Arbor runs on a throwaway Mac.
+    ps -A -o pid=,comm= | awk '{ sub(/.*\//, "", $2) } $2 == "Arbor" { print $1 }'
     sleep 0.2
   done
 }
@@ -133,7 +143,7 @@ echo "$LLVM_PROFDATA"
 # MARK: The build
 
 step "an instrumented build"
-instrument="-Xswiftc -profile-generate -Xswiftc -profile-coverage-mapping"
+instrument="--scratch-path $COVERAGE_BUILD -Xswiftc -profile-generate -Xswiftc -profile-coverage-mapping"
 # What clang's own driver passes for -fprofile-instr-generate on a Mac, and the Swift driver does not: %c maps the counters onto the file,
 # page by page, and what follows them must not share their last page.
 align=""
@@ -163,6 +173,13 @@ if ! build_with "$instrument$align"; then
   build_with "$instrument"
 fi
 echo "$(tail -n 1 "$COVERAGE_OUT/build.log") ($SECONDS s so far)"
+# Should this script be killed before it puts the link back, the next plain `swift build` does: SwiftPM makes it anew every time.
+[ ! -e "$ARBOR_ROOT/.build/debug" ] || [ -L "$ARBOR_ROOT/.build/debug" ] || die ".build/debug is no link, so it cannot be pointed elsewhere"
+plain=$(readlink "$ARBOR_ROOT/.build/debug")
+at_exit "rm -f '$ARBOR_ROOT/.build/debug'; [ -z '$plain' ] || ln -s '$plain' '$ARBOR_ROOT/.build/debug'"
+rm -f "$ARBOR_ROOT/.build/debug"
+ln -s coverage/debug "$ARBOR_ROOT/.build/debug"
+echo ".build/debug pointed at '${plain:-nothing}' and points at $(readlink "$ARBOR_ROOT/.build/debug") until this script ends"
 # Finds nothing left to build, or says what failed and ends the script; compiles the pointer tool.
 arbor_build
 
