@@ -1,0 +1,63 @@
+AXWindow - "Arbor Settings" "" 122 57 780 568
+  AXGroup - "" "" 122 85 780 540
+    AXTextField search "Search the settings" "" 153 95 159 22
+    AXScrollArea - "" "" 122 127 200 469
+      AXOutline - "Sidebar" "" 122 127 200 469
+        AXRow - "" "" 122 137 200 28
+          AXCell - "" "" 132 137 180 28
+            AXStaticText pane.general "" "General" 141 143 69 16
+        AXRow - "" "" 122 165 200 28
+          AXCell - "" "" 132 165 180 28
+            AXStaticText pane.windows "" "Windows" 141 171 76 16
+        AXRow - "" "" 122 193 200 28
+          AXCell - "" "" 132 193 180 28
+            AXStaticText pane.dragging "" "Dragging" 141 198 77 16
+        AXRow - "" "" 122 221 200 28
+          AXCell - "" "" 132 221 180 28
+            AXStaticText pane.gestures "" "Gestures" 142 227 75 16
+        AXRow - "" "" 122 249 200 28
+          AXCell - "" "" 132 249 180 28
+            AXStaticText pane.calls "" "Calls" 141 255 51 16
+        AXRow - "" "" 122 277 200 28
+          AXCell - "" "" 132 277 180 28
+            AXStaticText pane.appearance "" "Appearance" 141 283 94 16
+        AXRow - "" "" 122 305 200 28
+          AXCell - "" "" 132 305 180 28
+            AXStaticText pane.menu-bar "" "Menu Bar" 141 311 79 16
+        AXRow - "" "" 122 333 200 28
+          AXCell - "" "" 132 333 180 28
+            AXStaticText pane.apps "" "Apps" 142 339 52 16
+        AXRow - "" "" 122 361 200 28
+          AXCell - "" "" 132 361 180 28
+            AXStaticText pane.scripting "" "Scripting" 141 367 76 16
+        AXRow - "" "" 122 389 200 28
+          AXCell - "" "" 132 389 180 28
+            AXStaticText pane.shortcuts "" "Shortcuts" 140 395 81 16
+        AXRow - "" "" 122 417 200 28
+          AXCell - "" "" 132 417 180 28
+            AXStaticText pane.rules "" "Rules" 142 423 54 16
+        AXColumn ListColumn "" "" 132 127 180 469
+    AXScrollArea - "" "" 323 85 579 499
+      AXGroup - "" "" 343 105 539 220
+        AXStaticText - "" "While a camera is on" 353 115 126 16
+        AXStaticText - "" "Hold still by itself during a call: the view moves only when you ask. Arbor reads from macOS that some app has a camera running, and opens none itself. Experimental; Hold Still in the menu does the same by hand." 353 133 470 39
+        AXCheckBox holdStillWhileCameraIsOn "" "0" 846 116 26 15
+        AXStaticText - "" "While a microphone is on" 353 193 152 16
+        AXStaticText - "" "The same for calls without a camera. Experimental: other things than calls may keep a microphone running." 353 211 417 26
+        AXCheckBox holdStillWhileMicrophoneIsOn "" "0" 846 194 26 15
+        AXStaticText - "" "While one of these is open" 353 258 161 16
+        AXStaticText - "" "Arbor also holds still while a window like one of these is open: an app's bundle id and, if you like, part of the window's title, such as "us.zoom.xos Zoom Meeting"." 353 276 381 39
+        AXStaticText holdStillFor "" "none" 752 259 30 16
+        AXButton holdStillFor "Open the File" "" 790 259 82 16
+    AXStaticText - "" "Arbor dev" 198 604 48 13
+    AXButton - "Restore Defaults" "" 765 595 117 20
+  AXButton - "" "" 130 64 12 14
+  AXButton - "" "" 170 64 12 14
+    AXGroup - "" "" 169 63 14 16
+      AXGroup - "" "" 169 63 14 16
+  AXButton - "" "" 150 64 12 14
+  AXStaticText - "" "Arbor Settings" 462 62 99 16
+AXWindow - "" "" 253 42 12 651
+AXWindow - "" "" 506 42 12 651
+AXWindow - "" "" 759 42 12 651
+AXWindow - "" "" 0 30 1024 675

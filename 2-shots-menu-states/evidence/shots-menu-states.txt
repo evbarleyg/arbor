@@ -1,0 +1,49 @@
+# shots-menu-states 2026-10-15T15:57Z on macOS 26.6.2, commit fc61f58
+
+== an ordinary day: what a row that can be chosen looks like, and one that cannot
+  ✔ 10-ordinary: the menu opens
+
+== the view is held
+  ✔ the first row says so and can be chosen
+  ✔ 20-held: the menu opens
+
+== holding still
+  ✔ the first row says so and can be chosen
+  ✔ 21-holding-still: the menu opens
+
+== paused
+  ✔ the first row says so and can be chosen
+  ✔ 30-paused: the menu opens
+
+== shortcuts are off in this app
+  ✔ the first row says so and can be chosen
+  ✔ 40-shortcuts-off: the menu opens
+
+== and settings.json has a mistake: the file's row first, and Turn On, which changes a setting, greyed out under it
+  ✔ the menu says that settings.json has a mistake
+  ✔ the file's row is the first
+  ✔ and can be chosen
+  ✔ Turn On cannot
+  ✔ 50-mistake-and-shortcuts-off: the menu opens
+  ✔ Don’t Arrange cannot be chosen
+  ✔ nor Shortcuts Off in
+  ✔ Focused Window opens a submenu
+  ✔ nor Dock New Windows
+  ✔ nor the app under Arrange Again
+  ✔ Reload Settings can
+  ✔ Arrangement opens a submenu
+  ✔ with the file mended Turn On is the first row again
+  ✔ and can be chosen
+
+== news that no command ends: the saved arrangement could not be read
+  ✔ Arbor exits within 5 s of quit
+  ✔ the menu's first row cannot be chosen
+  ✔ 60-news: the menu opens
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+30 passed, 0 failed

@@ -1,0 +1,310 @@
+{"arbor":"dev","cursor":[894,552],"displays":[{"frame":[0,0,1024,768],"id":"07230EFA-7A8D-4E37-845C-19CC8737EEF5","main":true,"name":"display-1","visible":[0,30,1024,675]}],"framePlan":2,"mouseDown":false,"name":"shots-F12-2-05","onlyPIDs":[32652],"os":"macOS Version 26.6.2 (Build 25G83)","recorded":"2026-10-15T16:00:00Z","settings":{"allowAllURLCommands":false,"animationDuration":0.46,"appColourAmount":0.25,"appColours":true,"arrangeDesktopWeight":0.5,"autoDockMinimumHeight":300,"autoDockMinimumWidth":400,"automaticUpdateChecks":false,"bindings":{"ctrl+opt+d":null,"ctrl+opt+shift+f6":"set gap 0","ctrl+opt+shift+f9":"desktop"},"blurBehindArranged":0,"continuousZoom":false,"desktopEdge":0.05,"dimBehindArranged":0.25,"displays":[],"dropDwell":0.15,"excludedBundleIDs":["com.example.music","com.example.game"],"floatingWindowsMakeWay":false,"focusRing":false,"focusRingColour":"accent","focusRingRadius":0,"focusRingWidth":3,"frameRectangleModifier":"ctrl+opt","frameRectangleOnDesktop":true,"gap":12,"gapHandles":"shown","gesturesEnabled":true,"guardDesktopClicks":false,"historyButtons":true,"holdStillFor":[],"holdStillWhileCameraIsOn":false,"holdStillWhileMicrophoneIsOn":false,"hotkeysEnabled":true,"keepPushed":true,"makeRoom":true,"menuBarControls":true,"menuBarFill":0.25,"messages":"helpful","minimapDuration":0,"minimumUsableHeight":160,"minimumUsableWidth":100,"newWindows":"float","newWindowsWhileFramed":"guest","passThroughApps":[],"pauseForApps":[],"peek":true,"pinchThreshold":0.25,"pointerGestures":false,"previewDrags":true,"reflowWhileDragging":false,"resizeStep":40,"ruleTitleWait":2,"rules":[{"action":"dock left","app":"com.example.mail","title":"[p1]"},{"action":"dock beside com.example.mail bottom","app":"com.example.terminal"},{"action":"float","app":"com.example.player"},{"action":"ignore","app":"com.example.palette"}],"screenEdgeBand":12,"scrollOnDesktopZooms":false,"scrollZoom":true,"scrollZoomThreshold":40,"shareRemovedSpace":true,"shortcutsFollowLayout":true,"shrinkOutOfView":false,"soleFloatTakesDesktop":false,"stepInToward":"auto","summonStays":false,"tabsEnabled":false,"tileFade":0.2,"tileRetryMinutes":10,"tileStyle":"icon","tintBehindArranged":0,"windowEdgeFraction":0.3,"windowPictures":false},"thinning":0.05,"trace":1,"windows":[{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[170,220,480,348],"id":123,"pid":32652,"title":"title[1]"},{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[220,180,480,348],"id":124,"pid":32652,"title":"title[2]"},{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[270,140,480,348],"id":125,"pid":32652,"title":"title[3]"}],"workspaces":{"07230EFA-7A8D-4E37-845C-19CC8737EEF5":{"back":[],"camera":0,"floating":{"123":[[170,220],[480,348]],"124":[[220,180],[480,348]],"125":[[270,140],[480,348]]},"forward":[],"names":{},"savedViews":{},"tree":{"desktop":0,"loans":[],"nextRawID":1,"nodes":{"0":{"id":0,"kind":{"desktop":{}},"weight":1}},"root":0,"visits":[]}}}}
+{"t":0.0017,"note":"session 2: Arbor has started"}
+{"t":0.0021,"event":"settingsFileMayHaveChanged"}
+{"t":0.0237,"command":"dock 123 left","from":"script"}
+{"t":0.0265,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":0.0271,"call":"displays","result":[{"frame":[0,0,1024,768],"id":"07230EFA-7A8D-4E37-845C-19CC8737EEF5","main":true,"name":"display-1","visible":[0,30,1024,675]}]}
+{"t":0.0280,"read":"stackedWindows","result":[{"frame":[[270,140],[480,348]],"id":125},{"frame":[[220,180],[480,348]],"id":124},{"frame":[[170,220],[480,348]],"id":123}]}
+{"t":0.0314,"call":"setFrame","frame":[12,42,494,651],"id":123,"result":[12,42,494,651],"took":0.0031}
+{"t":0.1158,"call":"focus","id":123}
+{"t":0.1273,"call":"focusedWindow","result":null}
+{"t":0.1288,"done":"dock 123 left","message":"docked w123 at the left edge","ok":true}
+{"t":0.1300,"args":["dev.arbor.testwindows","ArborTestWindows"],"event":"applicationActivated"}
+{"t":0.1306,"raw":"didActivateApplication pid 32652"}
+{"t":0.1309,"raw":"frontmostApplication still names pid 373"}
+{"t":0.1366,"raw":"screens 07230EFA-7A8D-4E37-845C-19CC8737EEF5 0,0 1024x768"}
+{"t":0.1369,"raw":"AXMoved w123"}
+{"t":0.1534,"event":"changed","user":false,"window":{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[12,42,494,651],"id":123,"pid":32652,"title":"title[1]"}}
+{"t":0.1539,"raw":"AXResized w123"}
+{"t":0.1541,"event":"changed","user":false,"window":{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[12,42,494,651],"id":123,"pid":32652,"title":"title[1]"}}
+{"t":0.1543,"raw":"AXFocusedWindowChanged"}
+{"t":0.1656,"event":"focused","id":123}
+{"t":0.1659,"call":"focusedWindow","result":123}
+{"t":0.1665,"call":"focusedWindow","result":123}
+{"t":0.1670,"call":"focusedWindow","result":123}
+{"t":0.1672,"raw":"AXMainWindowChanged"}
+{"t":0.1858,"raw":"AXFocusedWindowChanged"}
+{"t":0.1884,"raw":"AXMainWindowChanged"}
+{"t":0.1932,"raw":"AXApplicationActivated"}
+{"t":0.1934,"event":"keyboardFocusMoved"}
+{"t":0.1942,"call":"focusedWindow","result":123}
+{"t":0.2042,"command":"dock 124 right","from":"script"}
+{"t":0.2045,"args":[false],"read":"mayUseAccessibility","result":true}
+{"t":0.2063,"call":"displays","result":[{"frame":[0,0,1024,768],"id":"07230EFA-7A8D-4E37-845C-19CC8737EEF5","main":true,"name":"display-1","visible":[0,30,1024,675]}]}
+{"t":0.2080,"read":"stackedWindows","result":[{"frame":[[12,42],[494,651]],"id":123},{"frame":[[270,140],[480,348]],"id":125},{"frame":[[220,180],[480,348]],"id":124}]}
+{"t":0.2115,"call":"setFrame","frame":[220,180,325,348],"id":124,"result":[220,180,325,348],"took":0.0029}
+{"t":0.2132,"call":"setFrame","frame":[12,42,325,651],"id":123,"result":[12,42,325,651],"took":0.0015}
+{"t":0.2142,"call":"setFrame","frame":[687,42,325,651],"id":124,"result":[687,42,325,651]}
+{"t":0.2164,"call":"focus","id":124}
+{"t":0.2183,"call":"focusedWindow","result":124}
+{"t":0.2187,"done":"dock 124 right","message":"docked w124 at the right edge","ok":true}
+{"t":0.2198,"raw":"AXResized w124"}
+{"t":0.2200,"event":"changed","user":false,"window":{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[687,42,325,651],"id":124,"pid":32652,"title":"title[2]"}}
+{"t":0.2202,"raw":"AXResized w123"}
+{"t":0.2204,"event":"changed","user":false,"window":{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[12,42,325,651],"id":123,"pid":32652,"title":"title[1]"}}
+{"t":0.2205,"raw":"AXMoved w124"}
+{"t":0.2206,"event":"changed","user":false,"window":{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[687,42,325,651],"id":124,"pid":32652,"title":"title[2]"}}
+{"t":0.2207,"raw":"AXResized w124"}
+{"t":0.2209,"event":"changed","user":false,"window":{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[687,42,325,651],"id":124,"pid":32652,"title":"title[2]"}}
+{"t":0.2210,"raw":"AXFocusedWindowChanged"}
+{"t":0.2321,"event":"focused","id":124}
+{"t":0.2323,"call":"focusedWindow","result":124}
+{"t":0.2325,"call":"focusedWindow","result":124}
+{"t":0.2326,"raw":"AXMainWindowChanged"}
+{"t":0.2339,"raw":"frontmostApplication names pid 32652"}
+{"t":0.2424,"command":"dock 125 right","from":"script"}
+{"t":0.2429,"args":[false],"read":"mayUseAccessibility","result":true}
+{"t":0.2434,"call":"displays","result":[{"frame":[0,0,1024,768],"id":"07230EFA-7A8D-4E37-845C-19CC8737EEF5","main":true,"name":"display-1","visible":[0,30,1024,675]}]}
+{"t":0.2455,"read":"stackedWindows","result":[{"frame":[[687,42],[325,651]],"id":124},{"frame":[[12,42],[325,651]],"id":123},{"frame":[[270,140],[480,348]],"id":125}]}
+{"t":0.2527,"call":"setFrame","frame":[270,140,241,348],"id":125,"result":[270,140,241,348],"took":0.0064}
+{"t":0.2609,"call":"setFrame","frame":[12,42,241,651],"id":123,"result":[12,42,241,651],"took":0.0078}
+{"t":0.2644,"call":"setFrame","frame":[687,42,241,651],"id":124,"result":[687,42,241,651],"took":0.0032}
+{"t":0.2647,"note":"moveTogether, 2 windows, took 0.0 s"}
+{"t":0.2657,"call":"setFrame","frame":[518,42,241,651],"id":124,"result":[518,42,241,651]}
+{"t":0.2702,"call":"setFrame","frame":[771,42,241,651],"id":125,"result":[771,42,241,651],"took":0.0043}
+{"t":0.2849,"call":"focus","id":125}
+{"t":0.2983,"call":"focusedWindow","result":125}
+{"t":0.2994,"done":"dock 125 right","message":"docked w125 at the right edge","ok":true}
+{"t":0.3014,"raw":"AXResized w125"}
+{"t":0.3025,"event":"changed","user":false,"window":{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[771,42,241,651],"id":125,"pid":32652,"title":"title[3]"}}
+{"t":0.3114,"raw":"AXResized w123"}
+{"t":0.3126,"event":"changed","user":false,"window":{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[12,42,241,651],"id":123,"pid":32652,"title":"title[1]"}}
+{"t":0.3132,"raw":"AXResized w124"}
+{"t":0.3137,"event":"changed","user":false,"window":{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[518,42,241,651],"id":124,"pid":32652,"title":"title[2]"}}
+{"t":0.3153,"raw":"AXMoved w124"}
+{"t":0.3157,"event":"changed","user":false,"window":{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[518,42,241,651],"id":124,"pid":32652,"title":"title[2]"}}
+{"t":0.3164,"raw":"AXMoved w125"}
+{"t":0.3171,"event":"changed","user":false,"window":{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[771,42,241,651],"id":125,"pid":32652,"title":"title[3]"}}
+{"t":0.3178,"raw":"AXResized w125"}
+{"t":0.3187,"event":"changed","user":false,"window":{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[771,42,241,651],"id":125,"pid":32652,"title":"title[3]"}}
+{"t":0.3192,"raw":"AXFocusedWindowChanged"}
+{"t":0.3299,"event":"focused","id":125}
+{"t":0.3303,"call":"focusedWindow","result":125}
+{"t":0.3309,"call":"focusedWindow","result":125}
+{"t":0.3315,"raw":"AXMainWindowChanged"}
+{"t":0.3351,"timer":"settings-file"}
+{"t":0.3494,"command":"settings-window","from":"script"}
+{"t":0.3497,"args":[false],"read":"mayUseAccessibility","result":true}
+{"t":0.6532,"done":"settings-window","message":"the settings window is open","ok":true}
+{"t":0.6555,"args":[null,"Arbor"],"event":"applicationActivated"}
+{"t":0.6557,"raw":"didActivateApplication pid 32676"}
+{"t":0.6559,"raw":"frontmostApplication still names pid 32652"}
+{"t":0.7434,"raw":"AXApplicationDeactivated"}
+{"t":0.7444,"event":"keyboardFocusMoved"}
+{"t":0.7452,"call":"focusedWindow","result":null}
+{"t":0.9060,"timer":"save"}
+{"t":0.9143,"event":"settingsFileMayHaveChanged"}
+{"t":0.9320,"event":"settingsFileMayHaveChanged"}
+{"t":0.9324,"raw":"frontmostApplication names pid 32676"}
+{"t":0.9325,"event":"keyboardFocusMoved"}
+{"t":0.9326,"call":"focusedWindow","result":null}
+{"t":1.0032,"note":"✔ the settings window opens"}
+{"t":1.0790,"command":"settings-window rules","from":"script"}
+{"t":1.0804,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":1.0905,"done":"settings-window rules","message":"the settings window is open at Rules","ok":true}
+{"t":1.2398,"timer":"settings-file"}
+{"t":1.2543,"command":"settings-window general","from":"script"}
+{"t":1.2552,"args":[false],"read":"mayUseAccessibility","result":true}
+{"t":1.2650,"done":"settings-window general","message":"the settings window is open at General","ok":true}
+{"t":3.1765,"raw":"leftMouseDown on a tile or a handle of Arbor's"}
+{"t":3.1769,"event":"pointerPressed"}
+{"t":3.3585,"timer":"accessibility"}
+{"t":3.3589,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":3.4618,"command":"settings-window rules","from":"script"}
+{"t":3.4621,"args":[false],"read":"mayUseAccessibility","result":true}
+{"t":3.4669,"done":"settings-window rules","message":"the settings window is open at Rules","ok":true}
+{"t":3.5826,"command":"settings-window general","from":"script"}
+{"t":3.5830,"args":[false],"read":"mayUseAccessibility","result":true}
+{"t":3.5868,"done":"settings-window general","message":"the settings window is open at General","ok":true}
+{"t":4.7499,"command":"settings-window rules","from":"script"}
+{"t":4.7516,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":4.7595,"done":"settings-window rules","message":"the settings window is open at Rules","ok":true}
+{"t":5.0853,"command":"settings-window windows","from":"script"}
+{"t":5.0871,"args":[false],"read":"mayUseAccessibility","result":true}
+{"t":5.1024,"done":"settings-window windows","message":"the settings window is open at Windows","ok":true}
+{"t":7.2574,"raw":"leftMouseDown on a tile or a handle of Arbor's"}
+{"t":7.2585,"event":"pointerPressed"}
+{"t":7.6960,"timer":"accessibility"}
+{"t":7.6969,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":7.7410,"command":"settings-window rules","from":"script"}
+{"t":7.7416,"args":[false],"read":"mayUseAccessibility","result":true}
+{"t":7.7483,"done":"settings-window rules","message":"the settings window is open at Rules","ok":true}
+{"t":7.9693,"command":"settings-window windows","from":"script"}
+{"t":7.9697,"args":[false],"read":"mayUseAccessibility","result":true}
+{"t":7.9768,"done":"settings-window windows","message":"the settings window is open at Windows","ok":true}
+{"t":10.4807,"raw":"leftMouseDown on a tile or a handle of Arbor's"}
+{"t":10.4817,"event":"pointerPressed"}
+{"t":10.4907,"timer":"accessibility"}
+{"t":10.4915,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":12.5545,"timer":"accessibility"}
+{"t":12.5558,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":12.9109,"raw":"leftMouseDown on a tile or a handle of Arbor's"}
+{"t":12.9112,"event":"pointerPressed"}
+{"t":14.6879,"timer":"accessibility"}
+{"t":14.6913,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":15.0250,"command":"settings-window rules","from":"script"}
+{"t":15.0256,"args":[false],"read":"mayUseAccessibility","result":true}
+{"t":15.0346,"done":"settings-window rules","message":"the settings window is open at Rules","ok":true}
+{"t":15.3126,"command":"settings-window dragging","from":"script"}
+{"t":15.3140,"args":[false],"read":"mayUseAccessibility","result":true}
+{"t":15.3303,"done":"settings-window dragging","message":"the settings window is open at Dragging","ok":true}
+{"t":16.5939,"command":"settings-window rules","from":"script"}
+{"t":16.5946,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":16.5994,"done":"settings-window rules","message":"the settings window is open at Rules","ok":true}
+{"t":16.7635,"command":"settings-window rules","from":"script"}
+{"t":16.7638,"args":[false],"read":"mayUseAccessibility","result":true}
+{"t":16.7729,"done":"settings-window rules","message":"the settings window is open at Rules","ok":true}
+{"t":16.8133,"command":"settings-window gestures","from":"script"}
+{"t":16.8137,"args":[false],"read":"mayUseAccessibility","result":true}
+{"t":16.8178,"done":"settings-window gestures","message":"the settings window is open at Gestures","ok":true}
+{"t":18.8080,"raw":"leftMouseDown on a tile or a handle of Arbor's"}
+{"t":18.8087,"event":"pointerPressed"}
+{"t":19.0482,"timer":"accessibility"}
+{"t":19.0487,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":19.0510,"command":"settings-window rules","from":"script"}
+{"t":19.0519,"args":[false],"read":"mayUseAccessibility","result":true}
+{"t":19.0646,"done":"settings-window rules","message":"the settings window is open at Rules","ok":true}
+{"t":19.3690,"command":"settings-window gestures","from":"script"}
+{"t":19.3694,"args":[false],"read":"mayUseAccessibility","result":true}
+{"t":19.3799,"done":"settings-window gestures","message":"the settings window is open at Gestures","ok":true}
+{"t":21.5440,"raw":"leftMouseDown on a tile or a handle of Arbor's"}
+{"t":21.5452,"event":"pointerPressed"}
+{"t":21.6715,"timer":"accessibility"}
+{"t":21.6786,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":23.4167,"command":"settings-window rules","from":"script"}
+{"t":23.4177,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":23.4285,"done":"settings-window rules","message":"the settings window is open at Rules","ok":true}
+{"t":23.7511,"command":"settings-window calls","from":"script"}
+{"t":23.7523,"args":[false],"read":"mayUseAccessibility","result":true}
+{"t":23.7664,"done":"settings-window calls","message":"the settings window is open at Calls","ok":true}
+{"t":24.9915,"command":"settings-window rules","from":"script"}
+{"t":24.9921,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":24.9954,"done":"settings-window rules","message":"the settings window is open at Rules","ok":true}
+{"t":25.1819,"command":"settings-window appearance","from":"script"}
+{"t":25.1826,"args":[false],"read":"mayUseAccessibility","result":true}
+{"t":25.1928,"done":"settings-window appearance","message":"the settings window is open at Appearance","ok":true}
+{"t":27.4540,"raw":"leftMouseDown on a tile or a handle of Arbor's"}
+{"t":27.4553,"event":"pointerPressed"}
+{"t":27.5566,"timer":"accessibility"}
+{"t":27.5604,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":29.6409,"timer":"accessibility"}
+{"t":29.6420,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":30.0860,"raw":"leftMouseDown on a tile or a handle of Arbor's"}
+{"t":30.0864,"event":"pointerPressed"}
+{"t":30.4596,"command":"settings-window rules","from":"script"}
+{"t":30.4604,"args":[false],"read":"mayUseAccessibility","result":true}
+{"t":30.4854,"done":"settings-window rules","message":"the settings window is open at Rules","ok":true}
+{"t":30.7728,"command":"settings-window appearance","from":"script"}
+{"t":30.7760,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":30.7856,"done":"settings-window appearance","message":"the settings window is open at Appearance","ok":true}
+{"t":33.2123,"timer":"accessibility"}
+{"t":33.2136,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":33.2462,"raw":"leftMouseDown on a tile or a handle of Arbor's"}
+{"t":33.2467,"event":"pointerPressed"}
+{"t":35.2624,"timer":"accessibility"}
+{"t":35.2639,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":35.3188,"command":"settings-window rules","from":"script"}
+{"t":35.3199,"args":[false],"read":"mayUseAccessibility","result":true}
+{"t":35.3363,"done":"settings-window rules","message":"the settings window is open at Rules","ok":true}
+{"t":35.6253,"command":"settings-window menu-bar","from":"script"}
+{"t":35.6269,"args":[false],"read":"mayUseAccessibility","result":true}
+{"t":35.6372,"done":"settings-window menu-bar","message":"the settings window is open at Menu Bar","ok":true}
+{"t":37.7409,"raw":"leftMouseDown on a tile or a handle of Arbor's"}
+{"t":37.7417,"event":"pointerPressed"}
+{"t":37.7791,"timer":"accessibility"}
+{"t":37.7798,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":37.9924,"command":"settings-window rules","from":"script"}
+{"t":37.9928,"args":[false],"read":"mayUseAccessibility","result":true}
+{"t":37.9981,"done":"settings-window rules","message":"the settings window is open at Rules","ok":true}
+{"t":38.1955,"command":"settings-window menu-bar","from":"script"}
+{"t":38.1964,"args":[false],"read":"mayUseAccessibility","result":true}
+{"t":38.2057,"done":"settings-window menu-bar","message":"the settings window is open at Menu Bar","ok":true}
+{"t":39.5494,"command":"settings-window rules","from":"script"}
+{"t":39.5508,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":39.5587,"done":"settings-window rules","message":"the settings window is open at Rules","ok":true}
+{"t":39.7765,"command":"settings-window apps","from":"script"}
+{"t":39.7780,"args":[false],"read":"mayUseAccessibility","result":true}
+{"t":39.7927,"done":"settings-window apps","message":"the settings window is open at Apps","ok":true}
+{"t":41.8269,"raw":"leftMouseDown on a tile or a handle of Arbor's"}
+{"t":41.8338,"event":"pointerPressed"}
+{"t":42.0468,"timer":"accessibility"}
+{"t":42.0476,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":42.1195,"command":"settings-window rules","from":"script"}
+{"t":42.1207,"args":[false],"read":"mayUseAccessibility","result":true}
+{"t":42.1309,"done":"settings-window rules","message":"the settings window is open at Rules","ok":true}
+{"t":42.3428,"command":"settings-window apps","from":"script"}
+{"t":42.3441,"args":[false],"read":"mayUseAccessibility","result":true}
+{"t":42.3502,"done":"settings-window apps","message":"the settings window is open at Apps","ok":true}
+{"t":43.7229,"command":"settings-window rules","from":"script"}
+{"t":43.7244,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":43.7312,"done":"settings-window rules","message":"the settings window is open at Rules","ok":true}
+{"t":43.9201,"command":"settings-window scripting","from":"script"}
+{"t":43.9211,"args":[false],"read":"mayUseAccessibility","result":true}
+{"t":43.9337,"done":"settings-window scripting","message":"the settings window is open at Scripting","ok":true}
+{"t":45.2320,"command":"settings-window rules","from":"script"}
+{"t":45.2328,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":45.2419,"done":"settings-window rules","message":"the settings window is open at Rules","ok":true}
+{"t":45.4710,"command":"settings-window shortcuts","from":"script"}
+{"t":45.4715,"args":[false],"read":"mayUseAccessibility","result":true}
+{"t":45.4800,"done":"settings-window shortcuts","message":"the settings window is open at Shortcuts","ok":true}
+{"t":48.5143,"timer":"accessibility"}
+{"t":48.5151,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":48.6113,"raw":"leftMouseDown on a tile or a handle of Arbor's"}
+{"t":48.6116,"event":"pointerPressed"}
+{"t":50.5955,"timer":"accessibility"}
+{"t":50.5964,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":51.6102,"raw":"leftMouseDown on a tile or a handle of Arbor's"}
+{"t":51.6108,"event":"pointerPressed"}
+{"t":52.6122,"timer":"accessibility"}
+{"t":52.6127,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":54.1952,"raw":"leftMouseDown on a tile or a handle of Arbor's"}
+{"t":54.1958,"event":"pointerPressed"}
+{"t":54.6379,"timer":"accessibility"}
+{"t":54.6408,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":56.8301,"timer":"accessibility"}
+{"t":56.8309,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":57.0766,"raw":"leftMouseDown on a tile or a handle of Arbor's"}
+{"t":57.0770,"event":"pointerPressed"}
+{"t":58.8583,"timer":"accessibility"}
+{"t":58.8591,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":59.9305,"raw":"leftMouseDown on a tile or a handle of Arbor's"}
+{"t":59.9322,"event":"pointerPressed"}
+{"t":60.8609,"timer":"accessibility"}
+{"t":60.8617,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":62.3342,"command":"settings-window general","from":"script"}
+{"t":62.3353,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":62.3443,"done":"settings-window general","message":"the settings window is open at General","ok":true}
+{"t":62.6726,"command":"settings-window rules","from":"script"}
+{"t":62.6735,"args":[false],"read":"mayUseAccessibility","result":true}
+{"t":62.6924,"done":"settings-window rules","message":"the settings window is open at Rules","ok":true}
+{"t":64.1356,"command":"settings-window windows","from":"script"}
+{"t":64.1364,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":64.1429,"done":"settings-window windows","message":"the settings window is open at Windows","ok":true}
+{"t":65.0735,"raw":"leftMouseDown on a tile or a handle of Arbor's"}
+{"t":65.0738,"event":"pointerPressed"}
+{"t":66.4703,"command":"set …","from":"menu"}
+{"t":66.4776,"call":"focusedWindow","result":null}
+{"t":66.4783,"read":"inputActivity","result":{"keyPresses":12,"keyboardIdle":0.138007375,"pointerIdle":1.405289}}
+{"t":66.4785,"call":"cursorLocation","result":[808,124]}
+{"t":66.4793,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":66.4808,"call":"focusedWindow","result":null}
+{"t":66.4947,"done":"set …","message":"≈ `…` must be from 0 to 100 pt, got 500","ok":false}
+{"t":66.7652,"note":"✔ the reason stands in the window"}
+{"t":67.7049,"command":"settings-window shortcuts","from":"script"}
+{"t":67.7086,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":67.7149,"done":"settings-window shortcuts","message":"the settings window is open at Shortcuts","ok":true}
+{"t":68.8431,"timer":"heads-up"}
+{"t":69.4220,"raw":"leftMouseDown on a tile or a handle of Arbor's"}
+{"t":69.4226,"event":"pointerPressed"}
+{"t":70.2925,"note":"✔ the window says who has the keys"}
+{"t":70.8439,"timer":"accessibility"}
+{"t":70.8444,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":72.2015,"raw":"leftMouseDown on a tile or a handle of Arbor's"}
+{"t":72.2018,"event":"pointerPressed"}
+{"t":72.4707,"command":"settings-window general","from":"script"}
+{"t":72.4714,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":72.4760,"done":"settings-window general","message":"the settings window is open at General","ok":true}
+{"t":72.6480,"event":"settingsFileMayHaveChanged"}
+{"t":72.9584,"timer":"settings-file"}
+{"t":73.0936,"note":"✔ the banner is up"}
+{"t":73.9880,"end":"another trace was started","lines":309,"thinned":0}

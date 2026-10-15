@@ -1,0 +1,162 @@
+# mac-shell: scripts/mac-shell/shots-menu-states.sh at fc61f58, macOS 26.6.2, 2026-10-15T15:57Z
+built Arbor, the pointer tool and the app bundles in 6s
+Reduce Transparency: false
+session 1: Arbor pid 23527, test windows 53 54 55 (pid 23497)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> click 410 394
+> dock 53 left
+docked w53 at the left edge
+> dock 54 right
+docked w54 at the right edge
+
+== an ordinary day: what a row that can be chosen looks like, and one that cannot
+> click 732 15 --right
+  ✔ 10-ordinary: the menu opens
+10-ordinary: the menu is at 651 31, 273 wide and 486 high. Its first rows, as the model has them:
+    Arrange Windows  ⌃⌥A
+    Windows ▸
+      ✓ ArborTestWindows: Arbor Test 2
+shot: mac-shell/10-ordinary.png
+shot: mac-shell/10-ordinary-own.png
+10-ordinary: MEASURE 10-ordinary.png 674,468,213,16   Pause Arbor
+10-ordinary: MEASURE 10-ordinary.png 674,492,213,16   Quit Arbor
+> key escape
+
+== the view is held
+> hold
+holding this view until `release`
+  ✔ the first row says so and can be chosen
+> click 780 15 --right
+  ✔ 20-held: the menu opens
+20-held: the menu is at 735 31, 283 wide and 521 high. Its first rows, as the model has them:
+    The view is held · Release  ⌃⌥⎋
+-----
+    Arrange Windows  ⌃⌥A  (gray)
+shot: mac-shell/20-held.png
+shot: mac-shell/20-held-own.png
+20-held: MEASURE 20-held.png 758,40,223,16   The view is held
+> key escape
+> release
+released
+
+== holding still
+> hold still
+holding still until `release`: the view moves only when you ask
+  ✔ the first row says so and can be chosen
+> click 732 15 --right
+  ✔ 21-holding-still: the menu opens
+21-holding-still: the menu is at 651 31, 273 wide and 521 high. Its first rows, as the model has them:
+    Holding still · Release
+-----
+    Arrange Windows  ⌃⌥A
+shot: mac-shell/21-holding-still.png
+shot: mac-shell/21-holding-still-own.png
+21-holding-still: MEASURE 21-holding-still.png 674,40,213,16   Holding still
+> key escape
+> release
+released
+
+== paused
+> pause
+paused until `resume`; windows are back in view, in their own sizes
+  ✔ the first row says so and can be chosen
+> click 782 15 --right
+  ✔ 30-paused: the menu opens
+30-paused: the menu is at 761 31, 248 wide and 128 high. Its first rows, as the model has them:
+    Arbor is paused · Resume  ⌃⌥⎋
+-----
+    Settings…
+shot: mac-shell/30-paused.png
+shot: mac-shell/30-paused-own.png
+30-paused: MEASURE 30-paused.png 784,40,188,16   Arbor is paused
+> key escape
+> resume
+resumed
+
+== shortcuts are off in this app
+> pass-through dev.arbor.testwindows on
+shortcuts and gestures are off in ArborTestWindows, except ⌃⌥⎋
+  ✔ the first row says so and can be chosen
+> click 732 15 --right
+  ✔ 40-shortcuts-off: the menu opens
+40-shortcuts-off: the menu is at 614 31, 404 wide and 521 high. Its first rows, as the model has them:
+    Shortcuts are off in “ArborTestWindows” · Turn On
+-----
+    Arrange Windows
+shot: mac-shell/40-shortcuts-off.png
+shot: mac-shell/40-shortcuts-off-own.png
+40-shortcuts-off: MEASURE 40-shortcuts-off.png 637,40,344,16   Shortcuts are off in
+> key escape
+
+== and settings.json has a mistake: the file's row first, and Turn On, which changes a setting, greyed out under it
+> reload-settings
+arborctl: settings.json cannot be read, keeping the settings in use: line 2, column 3: expected a key in quotes, found `oops`
+  ✔ the menu says that settings.json has a mistake
+  ✔ the file's row is the first
+  ✔ and can be chosen
+  ✔ Turn On cannot
+> click 732 15 --right
+  ✔ 50-mistake-and-shortcuts-off: the menu opens
+50-mistake-and-shortcuts-off: the menu is at 554 31, 464 wide and 545 high. Its first rows, as the model has them:
+    Settings.json has a mistake: line 2, column 3 · Settings File…
+    Shortcuts are off in “ArborTestWindows” · Turn On  (gray)
+-----
+shot: mac-shell/50-mistake-and-shortcuts-off.png
+shot: mac-shell/50-mistake-and-shortcuts-off-own.png
+50-mistake-and-shortcuts-off: MEASURE 50-mistake-and-shortcuts-off.png 577,40,404,16   Settings.json has a mistake
+50-mistake-and-shortcuts-off: MEASURE 50-mistake-and-shortcuts-off.png 577,64,404,16   Shortcuts are off in
+  ✔ Don’t Arrange cannot be chosen
+  ✔ nor Shortcuts Off in
+> move 786 334
+  ✔ Focused Window opens a submenu
+51-mistake-focused-window: the submenu of Focused Window is at 296 317 263 93 (x y w h); rows of 24 from 5 below its top, words 23 in
+shot: mac-shell/51-mistake-focused-window.png
+  ✔ nor Dock New Windows
+  ✔ nor the app under Arrange Again
+  ✔ Reload Settings can
+> move 786 441
+  ✔ Arrangement opens a submenu
+52-mistake-arrangement: the submenu of Arrangement is at 406 424 153 270 (x y w h); rows of 24 from 5 below its top, words 23 in
+shot: mac-shell/52-mistake-arrangement.png
+> key escape
+> reload-settings
+settings reloaded
+  ✔ with the file mended Turn On is the first row again
+  ✔ and can be chosen
+> pass-through dev.arbor.testwindows off
+shortcuts and gestures work in ArborTestWindows again
+
+== news that no command ends: the saved arrangement could not be read
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+session 1: Arbor pid 25572, test windows 53 54 55 (pid 23497)
+running: 1 display, 0 docked and 3 floating, 0 out of view; the saved arrangement could not be read and was set aside (state.unreadable.json)
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+  ✔ the menu's first row cannot be chosen
+60-news: the model marks it (news)
+> click 782 15 --right
+  ✔ 60-news: the menu opens
+60-news: the menu is at 524 31, 494 wide and 521 high. Its first rows, as the model has them:
+    The saved arrangement could not be read and was set aside  (news)
+-----
+    Arrange Windows  ⌃⌥A
+shot: mac-shell/60-news.png
+shot: mac-shell/60-news-own.png
+60-news: MEASURE 60-news.png 547,40,434,16   The saved arrangement co
+> key escape
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+shot: mac-shell/70-the-end.png
+
+30 passed, 0 failed
+exit code 0

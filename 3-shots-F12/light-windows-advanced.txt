@@ -1,0 +1,128 @@
+AXWindow - "Arbor Settings" "" 122 57 780 568
+  AXGroup - "" "" 122 85 780 540
+    AXTextField search "Search the settings" "" 153 95 159 22
+    AXScrollArea - "" "" 122 127 200 469
+      AXOutline - "Sidebar" "" 122 127 200 469
+        AXRow - "" "" 122 137 200 28
+          AXCell - "" "" 132 137 180 28
+            AXStaticText pane.general "" "General" 141 143 69 16
+        AXRow - "" "" 122 165 200 28
+          AXCell - "" "" 132 165 180 28
+            AXStaticText pane.windows "" "Windows" 141 171 76 16
+        AXRow - "" "" 122 193 200 28
+          AXCell - "" "" 132 193 180 28
+            AXStaticText pane.dragging "" "Dragging" 141 198 77 16
+        AXRow - "" "" 122 221 200 28
+          AXCell - "" "" 132 221 180 28
+            AXStaticText pane.gestures "" "Gestures" 142 227 75 16
+        AXRow - "" "" 122 249 200 28
+          AXCell - "" "" 132 249 180 28
+            AXStaticText pane.calls "" "Calls" 141 255 51 16
+        AXRow - "" "" 122 277 200 28
+          AXCell - "" "" 132 277 180 28
+            AXStaticText pane.appearance "" "Appearance" 141 283 94 16
+        AXRow - "" "" 122 305 200 28
+          AXCell - "" "" 132 305 180 28
+            AXStaticText pane.menu-bar "" "Menu Bar" 141 311 79 16
+        AXRow - "" "" 122 333 200 28
+          AXCell - "" "" 132 333 180 28
+            AXStaticText pane.apps "" "Apps" 142 339 52 16
+        AXRow - "" "" 122 361 200 28
+          AXCell - "" "" 132 361 180 28
+            AXStaticText pane.scripting "" "Scripting" 141 367 76 16
+        AXRow - "" "" 122 389 200 28
+          AXCell - "" "" 132 389 180 28
+            AXStaticText pane.shortcuts "" "Shortcuts" 140 395 81 16
+        AXRow - "" "" 122 417 200 28
+          AXCell - "" "" 132 417 180 28
+            AXStaticText pane.rules "" "Rules" 142 423 54 16
+        AXColumn ListColumn "" "" 132 127 180 469
+    AXScrollArea - "" "" 323 85 579 499
+      AXGroup - "" "" 343 -547 539 363
+        AXStaticText - "" "Gap" 353 -537 25 16
+        AXStaticText - "" "Space between docked windows, and between them and the screen edges." 353 -519 255 26
+        AXSlider gap.slider "Gap" "12" 620 -538 150 20
+          AXValueIndicator - "" "12" 634 -540 24 28
+        AXTextField gap.field "Gap, pt" "12" 778 -538 60 21
+        AXStaticText - "" "pt" 846 -536 13 16
+        AXStaticText - "" "Smallest usable width" 353 -472 132 16
+        AXStaticText - "" "A space narrower than this shows a tile with the app's color and icon instead of its window." 353 -454 234 26
+        AXSlider minimumUsableWidth.slider "Smallest usable width" "100" 620 -473 150 20
+          AXValueIndicator - "" "100" 631 -475 24 28
+        AXTextField minimumUsableWidth.field "Smallest usable width, pt" "100" 778 -473 60 21
+        AXStaticText - "" "pt" 846 -471 13 16
+        AXStaticText - "" "Smallest usable height" 353 -407 137 16
+        AXStaticText - "" "A space shorter than this shows a tile instead of its window." 353 -389 235 26
+        AXSlider minimumUsableHeight.slider "Smallest usable height" "160" 620 -408 150 20
+          AXValueIndicator - "" "160" 639 -410 24 28
+        AXTextField minimumUsableHeight.field "Smallest usable height, pt" "160" 778 -408 60 21
+        AXStaticText - "" "pt" 846 -406 13 16
+        AXStaticText - "" "New windows" 353 -342 83 16
+        AXStaticText - "" "What a new window does when no rule matches it. Docked, it takes half the place of the docked window you were working in, if there is room; small windows and windows of a fixed size float. Dock New Windows in the menu is the same switch." 353 -324 328 52
+        AXPopUpButton newWindows "" "Float where they open" 705 -343 167 20
+        AXStaticText - "" "New windows while framed" 353 -251 165 16
+        AXStaticText - "" "A window that opens over a view that does not show the Desktop (a framed window, a group) can go out of view and come back with that view, or belong to the Desktop like any floating window." 353 -233 362 39
+        AXPopUpButton newWindowsWhileFramed "" "Stay with that view" 725 -252 147 20
+      AXGroup - "" "" 331 -174 551 738
+        AXDisclosureTriangle - "Advanced" "1" 331 -160 537 16
+        AXStaticText - "" "Narrowest window docked" 353 -122 160 16
+        AXStaticText - "" "Where new windows dock by themselves, one that opens narrower than this floats." 353 -104 246 26
+        AXSlider autoDockMinimumWidth.slider "Narrowest window docked" "400" 620 -123 150 20
+          AXValueIndicator - "" "400" 635 -125 24 28
+        AXTextField autoDockMinimumWidth.field "Narrowest window docked, pt" "400" 778 -123 60 21
+        AXStaticText - "" "pt" 846 -121 13 16
+        AXStaticText - "" "Shortest window docked" 353 -59 150 16
+        AXStaticText - "" "Where new windows dock by themselves, one that opens shorter than this floats." 353 -41 246 26
+        AXSlider autoDockMinimumHeight.slider "Shortest window docked" "300" 620 -60 150 20
+          AXValueIndicator - "" "300" 631 -62 24 28
+        AXTextField autoDockMinimumHeight.field "Shortest window docked, pt" "300" 778 -60 60 21
+        AXStaticText - "" "pt" 846 -58 13 16
+        AXStaticText - "" "Make room before making a tile" 353 4 190 16
+        AXStaticText - "" "Before a window becomes a tile because its app will not shrink that far, move the gaps around it and take the room from the Desktop and from neighbors that can spare it. For the window being typed in the neighbors give more: they become the tiles." 353 22 483 39
+        AXCheckBox makeRoom "" "1" 846 5 26 15
+        AXStaticText - "" "Floating windows make way" 353 80 168 16
+        AXStaticText - "" "Docked windows push floating windows aside and squeeze them, so that they stay on the Desktop. Off, a floating window stays exactly where you put it, over docked windows too: it only goes out of view with the Desktop and comes back to the same place." 353 98 481 39
+        AXCheckBox floatingWindowsMakeWay "" "0" 846 81 26 15
+        AXStaticText - "" "Lone window fills the Desktop" 353 156 181 16
+        AXStaticText - "" "Beside docked windows, the only floating window takes the whole Desktop and follows it. It has its own size back as soon as a second window floats. Moved or resized by hand, it stays as you leave it. Only with Floating windows make way." 353 174 478 39
+        AXCheckBox soleFloatTakesDesktop "" "0" 846 157 26 15
+        AXStaticText - "" "Summoned windows stay" 353 232 154 16
+        AXStaticText - "" "A summoned window stays over the view when another window gets the keyboard, until it is summoned away. Off, turning to another window sends it out of view." 353 250 446 26
+        AXCheckBox summonStays "" "0" 846 233 26 15
+        AXStaticText - "" "Share a leaving window's space" 353 295 192 16
+        AXStaticText - "" "The space of a window that leaves is shared by its whole group. Off, it goes to the neighbor before it and nothing else moves." 353 313 478 26
+        AXCheckBox shareRemovedSpace "" "1" 846 296 26 15
+        AXStaticText - "" "Desktop width in Arrange" 353 358 154 16
+        AXStaticText - "" "How wide Arrange Windows leaves the Desktop, relative to the windows beside it." 353 376 236 26
+        AXSlider arrangeDesktopWeight.slider "Desktop width in Arrange" "0.5" 620 357 150 20
+          AXValueIndicator - "" "0.5" 636 355 24 28
+        AXTextField arrangeDesktopWeight.field "Desktop width in Arrange" "0.5" 778 357 60 21
+        AXStaticText - "" "" 845 359 2 16
+        AXStaticText - "" "Grow and Shrink by" 353 421 118 16
+        AXStaticText - "" "How much bigger or smaller Grow and Shrink (⌃⌥⌘= and ⌃⌥⌘-) make the focused window at a time." 353 439 251 39
+        AXSlider resizeStep.slider "Grow and Shrink by" "40" 620 420 150 20
+          AXValueIndicator - "" "40" 623 418 24 28
+        AXTextField resizeStep.field "Grow and Shrink by, pt" "40" 778 420 60 21
+        AXStaticText - "" "pt" 846 422 13 16
+        AXStaticText - "" "Options per display" 353 497 118 16
+        AXStaticText - "" "Other values of the gap, the smallest usable size and the screen edge band for particular displays. The first entry that matches a display and sets a value gives it." 353 515 387 39
+        AXStaticText displays "" "none" 752 498 30 16
+        AXButton displays "Open the File" "" 790 498 82 16
+      AXScrollBar - "" "1" 886 84 17 501
+        AXValueIndicator - "" "1" 887 368 15 214
+        AXButton - "" "" 887 85 0 0
+        AXButton - "" "" 887 85 0 0
+        AXButton - "" "" 887 582 15 2
+        AXButton - "" "" 887 85 15 282
+    AXStaticText - "" "Arbor dev" 198 604 48 13
+    AXButton - "Restore Defaults" "" 765 595 117 20
+  AXButton - "" "" 130 64 12 14
+  AXButton - "" "" 170 64 12 14
+    AXGroup - "" "" 169 63 14 16
+      AXGroup - "" "" 169 63 14 16
+  AXButton - "" "" 150 64 12 14
+  AXStaticText - "" "Arbor Settings" 462 62 99 16
+AXWindow - "" "" 253 42 12 651
+AXWindow - "" "" 506 42 12 651
+AXWindow - "" "" 759 42 12 651
+AXWindow - "" "" 0 30 1024 675
