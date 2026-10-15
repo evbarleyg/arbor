@@ -1,0 +1,67 @@
+# check-a-key-in-the-wait 2026-10-15T13:08Z on macOS 26.6.2, commit 57fcd3e
+
+== two displays: two windows docked and one floating on the second, one docked on the main one
+  ✔ Arbor arranges two displays
+  ✔ window 32 went across
+  ✔ window 33 went across
+  ✔ window 34 went across
+  ✔ window 34 is docked on the second display
+  ✔ window 33 is docked on the second display
+
+== the display goes, and Float All is asked for at once
+  ✔ float-all-in-the-wait: at once it is refused
+  ✔ float-all-in-the-wait: refused, and window 30 is on the screen that is left
+  ✔ float-all-in-the-wait: refused, and window 31 is on the screen that is left
+  ✔ float-all-in-the-wait: refused, and window 32 is on the screen that is left
+  ✔ float-all-in-the-wait: refused, and window 33 is on the screen that is left
+  ✔ float-all-in-the-wait: refused, and window 34 is on the screen that is left
+  ✔ float-all-in-the-wait: within three and a half seconds it is refused no longer
+  ✔ float-all-in-the-wait: Arbor arranges one display
+  ✔ float-all-in-the-wait: in the end window 30 is on the screen that is left
+  ✔ float-all-in-the-wait: in the end window 31 is on the screen that is left
+  ✔ float-all-in-the-wait: in the end window 32 is on the screen that is left
+  ✔ float-all-in-the-wait: in the end window 33 is on the screen that is left
+  ✔ float-all-in-the-wait: in the end window 34 is on the screen that is left
+  ✔ window 30 has its own size
+
+== it comes back: what slept with it wakes
+  ✔ Arbor arranges two displays
+  ✔ window 34 is docked on the second display again
+
+== one window fills the second display; the display goes, and Show Everything is asked for at once
+  ✔ show-all-in-the-wait: at once it is refused
+  ✔ show-all-in-the-wait: refused, and window 30 is on the screen that is left
+  ✔ show-all-in-the-wait: refused, and window 31 is on the screen that is left
+  ✔ show-all-in-the-wait: refused, and window 32 is on the screen that is left
+  ✔ show-all-in-the-wait: refused, and window 33 is on the screen that is left
+  ✔ show-all-in-the-wait: refused, and window 34 is on the screen that is left
+  ✔ show-all-in-the-wait: within three and a half seconds it is refused no longer
+  ✔ show-all-in-the-wait: Arbor arranges one display
+  ✔ show-all-in-the-wait: in the end window 30 is on the screen that is left
+  ✔ show-all-in-the-wait: in the end window 31 is on the screen that is left
+  ✔ show-all-in-the-wait: in the end window 32 is on the screen that is left
+  ✔ show-all-in-the-wait: in the end window 33 is on the screen that is left
+  ✔ show-all-in-the-wait: in the end window 34 is on the screen that is left
+
+== it comes back; the display goes, and ⌃⌥Space is pressed at once, by a real key: the line is where it can be read
+  ✔ Arbor arranges two displays
+  ✔ the key is refused
+  ✔ the line is on screen
+  ✔ the line is on the display that is left
+  ✔ the line has gone
+  ✔ pressed again, it is refused no longer
+
+== a window goes to the Dock, which changes its size for it; a key half a second later is carried out
+  ✔ the key after the window went to the Dock is not refused
+
+== what Arbor's log says of the displays
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+  ✔ window 5 is back on screen after quitting
+
+48 passed, 0 failed

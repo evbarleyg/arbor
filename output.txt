@@ -1,0 +1,199 @@
+# mac-shell: scripts/mac-shell/check-a-key-in-the-wait.sh at 57fcd3e, macOS 26.6.2, 2026-10-15T13:08Z
+built Arbor, the pointer tool and the app bundles in 6s
+com.apple.WindowManager EnableTilingByEdgeDrag: 0
+com.apple.WindowManager EnableTopTilingByEdgeDrag: 0
+com.apple.WindowManager EnableTilingOptionAccelerator: not set
+com.apple.WindowManager EnableTiledWindowMargins: not set
+
+== two displays: two windows docked and one floating on the second, one docked on the main one
+session 1: Arbor pid 4048, test windows 30 31 32 33 34 (pid 4009)
+running: 1 display, 0 docked and 5 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> display_add 1280 800: display 2, E02A0AC7-79A9-4E81-9CBF-0E4992EEC0ED
+> display_move right: now at 1920 0 1280 800
+  ✔ Arbor arranges two displays
+> move-to-display 2 32
+moved w32 to display 2
+  ✔ window 32 went across
+> move-to-display 2 33
+moved w33 to display 2
+  ✔ window 33 went across
+> move-to-display 2 34
+moved w34 to display 2
+  ✔ window 34 went across
+> dock 34 left
+docked w34 at the left edge
+> dock 33 right
+docked w33 at the right edge
+> dock 30 left
+docked w30 at the left edge
+  ✔ window 34 is docked on the second display
+  ✔ window 33 is docked on the second display
+display 1 0 0 1920 1080, visible 0 31 1920 971, camera n2, back no
+  Desktop          966 43 942 947
+display 2 1920 0 1280 800, visible 1920 31 1280 769, camera n2, back no
+  Desktop          2355 43 410 745
+  w30 12 43 942 947        display 1, docked focused
+  w31 582 300 480 348      display 1, floating
+  w32 2320 242 480 348     display 2, floating
+  w33 2777 43 411 745      display 2, docked
+  w34 1932 43 411 745      display 2, docked
+shot: mac-shell/arranged.png and arranged-d2.png
+
+== the display goes, and Float All is asked for at once
+> display_remove
+> float-all at once: arborctl: the displays are still changing: nothing was done; ask again in a moment
+  ✔ float-all-in-the-wait: at once it is refused
+  ✔ float-all-in-the-wait: refused, and window 30 is on the screen that is left
+  ✔ float-all-in-the-wait: refused, and window 31 is on the screen that is left
+  ✔ float-all-in-the-wait: refused, and window 32 is on the screen that is left
+  ✔ float-all-in-the-wait: refused, and window 33 is on the screen that is left
+  ✔ float-all-in-the-wait: refused, and window 34 is on the screen that is left
+shot: mac-shell/float-all-in-the-wait-refused.png
+> float-all after 1 more tries, a quarter of a second apart: floated 1 window
+  ✔ float-all-in-the-wait: within three and a half seconds it is refused no longer
+  ✔ float-all-in-the-wait: Arbor arranges one display
+  ✔ float-all-in-the-wait: in the end window 30 is on the screen that is left
+  ✔ float-all-in-the-wait: in the end window 31 is on the screen that is left
+  ✔ float-all-in-the-wait: in the end window 32 is on the screen that is left
+  ✔ float-all-in-the-wait: in the end window 33 is on the screen that is left
+  ✔ float-all-in-the-wait: in the end window 34 is on the screen that is left
+display 0 0 1024 768, visible 0 31 1024 674, camera n0, back no
+  Desktop          12 43 1000 650
+  w30 170 220 480 348      floating focused
+  w31 220 180 480 348      floating
+  w32 400 242 480 348      floating
+  w33 400 242 480 348      floating
+  w34 400 242 480 348      floating
+  ✔ window 30 has its own size
+
+== it comes back: what slept with it wakes
+> display_add 1280 800: display 3, E02A0AC7-79A9-4E81-9CBF-0E4992EEC0ED
+> display_move right: now at 1920 0 1280 800
+  ✔ Arbor arranges two displays
+display 1 0 0 1920 1080, visible 0 31 1920 971, camera n0, back no
+  Desktop          12 43 1896 947
+display 2 1920 0 1280 800, visible 1920 31 1280 769, camera n2, back no
+  Desktop          2355 43 410 745
+  w30 450 372 480 348      display 1, floating focused
+  w31 582 300 480 348      display 1, floating
+  w32 2320 242 480 348     display 2, floating
+  w33 2777 43 411 745      display 2, docked
+  w34 1932 43 411 745      display 2, docked
+shot: mac-shell/back.png and back-d2.png
+  ✔ window 34 is docked on the second display again
+
+== one window fills the second display; the display goes, and Show Everything is asked for at once
+> zoom 34
+framed w34
+display 1 0 0 1920 1080, visible 0 31 1920 971, camera n0, back no
+  Desktop          12 43 1896 947
+display 2 1920 0 1280 800, visible 1920 31 1280 769, camera n1, back yes
+  w30 450 372 480 348      display 1, floating
+  w31 582 300 480 348      display 1, floating
+  w32 3199 772 480 348     display 2, floating parked
+  w33 3199 772 411 745     display 2, docked parked
+  w34 1932 43 1256 745     display 2, docked focused
+> display_remove
+> show-all at once: arborctl: the displays are still changing: nothing was done; ask again in a moment
+  ✔ show-all-in-the-wait: at once it is refused
+  ✔ show-all-in-the-wait: refused, and window 30 is on the screen that is left
+  ✔ show-all-in-the-wait: refused, and window 31 is on the screen that is left
+  ✔ show-all-in-the-wait: refused, and window 32 is on the screen that is left
+  ✔ show-all-in-the-wait: refused, and window 33 is on the screen that is left
+  ✔ show-all-in-the-wait: refused, and window 34 is on the screen that is left
+shot: mac-shell/show-all-in-the-wait-refused.png
+> show-all after 2 more tries, a quarter of a second apart: showing everything
+  ✔ show-all-in-the-wait: within three and a half seconds it is refused no longer
+  ✔ show-all-in-the-wait: Arbor arranges one display
+  ✔ show-all-in-the-wait: in the end window 30 is on the screen that is left
+  ✔ show-all-in-the-wait: in the end window 31 is on the screen that is left
+  ✔ show-all-in-the-wait: in the end window 32 is on the screen that is left
+  ✔ show-all-in-the-wait: in the end window 33 is on the screen that is left
+  ✔ show-all-in-the-wait: in the end window 34 is on the screen that is left
+display 0 0 1024 768, visible 0 31 1024 674, camera n0, back no
+  Desktop          12 43 1000 650
+  w30 170 220 480 348      floating
+  w31 220 180 480 348      floating
+  w32 400 242 480 348      floating
+  w33 400 242 480 348      floating
+  w34 400 242 480 348      floating focused
+
+== it comes back; the display goes, and ⌃⌥Space is pressed at once, by a real key: the line is where it can be read
+> display_add 1280 800: display 4, E02A0AC7-79A9-4E81-9CBF-0E4992EEC0ED
+> display_move right: now at 1920 0 1280 800
+  ✔ Arbor arranges two displays
+display 1 0 0 1920 1080, visible 0 31 1920 971, camera n0, back no
+  Desktop          12 43 1896 947
+display 2 1920 0 1280 800, visible 1920 31 1280 769, camera n1, back yes
+  w30 450 372 480 348      display 1, floating
+  w31 582 300 480 348      display 1, floating
+  w32 3199 772 480 348     display 2, floating parked
+  w33 3199 772 411 745     display 2, docked parked
+  w34 1932 43 1256 745     display 2, docked focused
+> display_remove
+> key ctrl+opt+space
+  ✔ the key is refused
+  ✔ the line is on screen
+the line is at 304 611 416 38; the display that is left is at 0 0 1024 768
+  ✔ the line is on the display that is left
+shot: mac-shell/key-refused.png
+  ✔ the line has gone
+> key ctrl+opt+space
+  ✔ pressed again, it is refused no longer
+display 0 0 1024 768, visible 0 31 1024 674, camera n0, back no
+  Desktop          12 43 1000 650
+  w30 170 220 480 348      floating
+  w31 220 180 480 348      floating
+  w32 400 242 480 348      floating
+  w33 400 242 480 348      floating
+  w34 400 242 480 348      floating focused
+
+== a window goes to the Dock, which changes its size for it; a key half a second later is carried out
+> test windows: minimize 31
+> key ctrl+opt+space
+  ✔ the key after the window went to the Dock is not refused
+> test windows: restore 31
+display 0 0 1024 768, visible 0 31 1024 674, camera n0, back no
+  Desktop          12 43 1000 650
+  w30 170 220 480 348      floating
+  w31 220 180 480 348      floating focused
+  w32 400 242 480 348      floating
+  w33 400 242 480 348      floating
+  w34 400 242 480 348      floating
+
+== what Arbor's log says of the displays
+   1 INFO  started: 1 display(s), 5 managed window(s)
+   1 INFO  displays changed: 2 display(s), 0 remembered
+   1 INFO  move-to-display 2 32: moved w32 to display 2
+   1 INFO  move-to-display 2 33: moved w33 to display 2
+   1 INFO  move-to-display 2 34: moved w34 to display 2
+   1 DEBUG float-all failed: the displays are still changing: nothing was done; ask again in a moment
+   1 INFO  display E02A0AC7-79A9-4E81-9CBF-0E4992EEC0ED disconnected; remembering 3 window(s)
+   1 INFO  displays changed: 1 display(s), 1 remembered
+   1 INFO  display E02A0AC7-79A9-4E81-9CBF-0E4992EEC0ED reconnected; 3 window(s) returned to it
+   1 INFO  displays changed: 2 display(s), 0 remembered
+   2 DEBUG show-all failed: the displays are still changing: nothing was done; ask again in a moment
+   1 INFO  display E02A0AC7-79A9-4E81-9CBF-0E4992EEC0ED disconnected; remembering 3 window(s)
+   1 INFO  displays changed: 1 display(s), 1 remembered
+   1 INFO  display E02A0AC7-79A9-4E81-9CBF-0E4992EEC0ED reconnected; 3 window(s) returned to it
+   1 INFO  displays changed: 2 display(s), 0 remembered
+   1 DEBUG show-all failed: the displays are still changing: nothing was done; ask again in a moment
+   1 DEBUG said on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: The displays are still changing · try again in a moment
+   1 INFO  display E02A0AC7-79A9-4E81-9CBF-0E4992EEC0ED disconnected; remembering 3 window(s)
+   3 INFO  displays changed: 1 display(s), 1 remembered
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+  ✔ window 5 is back on screen after quitting
+shot: mac-shell/after-quit.png
+
+48 passed, 0 failed
+exit code 0
