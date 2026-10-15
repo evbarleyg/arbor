@@ -3,11 +3,16 @@ extension LayoutTree {
   /// Whether both trees arrange the same windows the same way: the same nodes, nesting, order and
   /// weights. Which tab of a stack is showing does not count; switching tabs rearranges nothing.
   public func hasSameArrangement(as other: LayoutTree) -> Bool {
+    hasSameShape(as: other) && nodes.allSatisfy { $0.value.weight == other.nodes[$0.key]?.weight }
+  }
+
+  /// Whether both trees have the same windows in the same places: the same nodes, nesting and order. How large the
+  /// places are does not count: a gap that was moved, by a hand or by Arbor to make room (F61), leaves everybody
+  /// beside whom they were.
+  public func hasSameShape(as other: LayoutTree) -> Bool {
     guard root == other.root, nodes.count == other.nodes.count else { return false }
     for (id, node) in nodes {
-      guard let theirs = other.nodes[id], node.parent == theirs.parent, node.weight == theirs.weight else {
-        return false
-      }
+      guard let theirs = other.nodes[id], node.parent == theirs.parent else { return false }
       if case .stack(let mine, _) = node.kind, case .stack(let others, _) = theirs.kind {
         if mine != others { return false }
       } else if node.kind != theirs.kind {

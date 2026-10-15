@@ -75,6 +75,9 @@ public struct PersistedState: Codable, Equatable, Sendable {
   /// at the next start was moved by somebody else (Controller+FoundAtAStart.swift). Not in a file written while Arbor runs, nor in
   /// older ones: after those, nobody can tell. Without the windows that were in full screen, whose frame then is the display's.
   public var leftAt: [WindowID: CGRect]?
+  /// The leaves, by display, that were kept open for windows that were not there yet when this was written, in the
+  /// minutes after a login (Controller+KeptRoom.swift). Nearly always absent, and older files do not have it.
+  public var roomKept: [DisplayID: [NodeID]]?
 
   public init(
     workspaces: [DisplayID: Workspace], hints: [WindowID: WindowHint],
@@ -113,6 +116,7 @@ public struct PersistedState: Codable, Equatable, Sendable {
     case hintsShown
     case origins
     case leftAt
+    case roomKept
   }
 
   public init(from decoder: any Decoder) throws {
@@ -150,6 +154,8 @@ public struct PersistedState: Codable, Equatable, Sendable {
       leftAt = nil
       (decoder.userInfo[DecodingNotes.key] as? DecodingNotes)?.add("`leftAt` could not be read", isLoss: false)
     }
+    // Nor over this: those windows move once more than they had to.
+    roomKept = (try? c.decodeIfPresent(LossyDictionary<DisplayID, [NodeID]>.self, forKey: .roomKept))?.entries
     for id in dormant.keys where dormant[id]!.origin.map(DormantWorkspace.isPlaceForADisplay) == false {
       dormant[id]!.origin = nil
     }
@@ -196,7 +202,7 @@ extension PersistedState {
     // window has gone elsewhere) is the decoders' business, and most are not worth a word.
     let tables: Set = [
       "workspaces", "dormant", "hints", "nodes", "floating", "guests", "undockedFrames", "summonFrames", "names",
-      "savedViews", "hintsShown", "leftAt",
+      "savedViews", "hintsShown", "leftAt", "roomKept",
     ]
     guard let file = try? JSONSerialization.jsonObject(with: data),
       let written = try? JSONSerialization.jsonObject(with: JSONEncoder().encode(state))

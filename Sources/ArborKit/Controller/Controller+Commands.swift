@@ -119,6 +119,7 @@ extension Controller {
       // Asked for by hand, usually because something looks wrong: try every window again.
       misfits.removeAll()
       forgetLearnedMinimums()
+      for display in workspaces.keys.sorted() { dropOverdueSlots(on: display, askedFor: true) }
       relayoutAll(reason: .structure)
       result = .success("laid out again")
     case .reloadSettings: result = reloadSettings()
@@ -576,7 +577,7 @@ extension Controller {
 
   /// Returns how many windows it docked.
   private func arrange(on display: DisplayID) -> Int {
-    forgetPendingSlots(on: display)
+    let forgot = forgetPendingSlots(on: display)
     guard let workspace = workspaces[display] else { return 0 }
     // Pinned windows, and those that come and go with `summon`, accompany the arrangement; they are not part of it.
     let floatingPresent = workspace.floating.keys.filter { windows[$0]?.isPresent == true && workspace.role(of: $0) == nil }
@@ -599,7 +600,10 @@ extension Controller {
       let (fa, fb) = (place(a), place(b))
       return (fa.minX, fa.minY, turn[a]!) < (fb.minX, fb.minY, turn[b]!)
     }
-    guard !ordered.isEmpty else { return 0 }
+    guard !ordered.isEmpty else {
+      if forgot { relayout(display, reason: .structure) }
+      return 0
+    }
     stopWatchingTitles()
     var updated = workspace
     updated.reset(tree: .grid(of: ordered, desktopWeight: settings.arrangeDesktopWeight))
@@ -640,17 +644,21 @@ extension Controller {
 
   /// Returns how many windows it undocked.
   private func floatAll(on display: DisplayID) -> Int {
-    forgetPendingSlots(on: display)
+    var withoutTiles = options(for: display).layoutOptions
+    withoutTiles.minimumUsableSize = .zero
+    // As it is on screen, places that are kept open and all.
+    let overview = layout(of: display, camera: workspaces[display]?.tree.root, options: withoutTiles)
+    let forgot = forgetPendingSlots(on: display)
     guard let workspace = workspaces[display] else { return 0 }
     let docked = workspace.tree.allWindows
     var updated = workspace
     // "Back to a normal Mac": windows that come and go with `summon` are ordinary floating windows again.
     let released = updated.forgetSummons()
-    guard !docked.isEmpty || !released.isEmpty else { return 0 }
+    guard !docked.isEmpty || !released.isEmpty else {
+      if forgot { relayout(display, reason: .structure) }
+      return 0
+    }
     stopWatchingTitles()
-    var withoutTiles = options(for: display).layoutOptions
-    withoutTiles.minimumUsableSize = .zero
-    let overview = layout(of: display, camera: workspace.tree.root, options: withoutTiles)
     updated.reset(tree: LayoutTree())
     // Moved by the layout, once the stage is up (`relayout`), so that they fly back instead of appearing.
     var toPutBack: [(window: WindowID, frame: CGRect)] = []

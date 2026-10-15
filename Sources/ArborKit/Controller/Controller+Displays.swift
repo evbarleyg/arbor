@@ -548,7 +548,7 @@ extension Controller {
         }
         if let replacement, !workspace.contains(replacement) {
           workspace.replaceWindow(window, with: replacement)
-          undoHistory.renumber(window, as: replacement)
+          renumber(window, as: replacement)
         } else if replacement == nil, let hint = savedHints[window],
           // Not for a window that is here, the same app's as before, and no longer arranged.
           windows[window] == nil || windows[window]?.bundleID != hint.bundleID

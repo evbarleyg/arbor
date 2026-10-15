@@ -273,6 +273,17 @@ extension Controller {
       }
       if parked.contains(slot) { problems.append(.init("pending", "the waiting slot \(slot) is parked")) }
     }
+    if pendingSlots.isEmpty, provisionalSlots.isEmpty, !keptRoom.isEmpty {
+      problems.append(.init("leak", "room is kept on \(keptRoom.keys.sorted()), and no slot waits"))
+    }
+    // What is laid out as if it were there is left open: nothing that is drawn, moved or clicked goes by a window
+    // that does not exist.
+    for (display, layout) in layouts {
+      let named = Set(layout.windowFrames.keys).union(layout.hiddenWindows).union(layout.tiles.flatMap(\.windows))
+      for slot in named.intersection(pendingSlots).sorted() {
+        problems.append(.init("pending", "the layout of \(display) speaks of the waiting slot \(slot)"))
+      }
+    }
   }
 
   private static func difference(between old: Layout, and fresh: Layout) -> String {

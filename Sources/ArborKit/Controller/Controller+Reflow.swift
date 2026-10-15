@@ -74,11 +74,11 @@ extension Controller {
   /// its slot is kept open, but nothing is put in it.
   private func layout(ofTrial trial: Workspace, on displayID: DisplayID, without dragged: WindowID) -> Layout? {
     guard let display = display(displayID) else { return nil }
-    let present = presentWindowIDs().union([dragged])
-    let minimums = minimumSizes
-    var layout = LayoutEngine.layout(
-      trial.tree, camera: trial.camera, in: display.visibleFrame, options: options(for: displayID).layoutOptions,
-      isPresent: { present.contains($0) }, minimumSize: { minimums[$0] })
+    // A trial can be the real arrangement again: the window was carried over a target and away.
+    var layout = laidOut(
+      trial.tree, camera: trial.camera, on: display, options: options(for: displayID).layoutOptions,
+      present: presentWindowIDs().union([dragged])
+    ).layout
     layout.windowFrames[dragged] = nil
     layout.hiddenWindows.remove(dragged)
     layout.tiles.removeAll { $0.windows == [dragged] }

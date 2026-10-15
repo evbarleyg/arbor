@@ -297,6 +297,38 @@ private func change(_ before: UInt32, _ after: UInt32) -> UndoHistory.Change {
     #expect(!tree.hasSameArrangement(as: stacked))
   }
 
+  /// The shape is the arrangement without the sizes.
+  @Test func windowsOrderAndNestingMakeTheShapeAndWeightsDoNot() {
+    let tree = columns()
+    let leafA = tree.leaf(containing: a)!
+    let leafB = tree.leaf(containing: b)!
+    #expect(tree.hasSameShape(as: columns()))
+
+    var resized = tree
+    resized.moveBoundary(leading: leafA, trailing: tree.desktop, by: 50, pointsPerWeight: 400)
+    #expect(tree.hasSameShape(as: resized) && resized.hasSameShape(as: tree))
+
+    var docked = tree
+    docked.dock(c, beside: leafA, edge: .bottom)
+    var removed = tree
+    removed.remove(b)
+    var swapped = tree
+    swapped.swapSiblings(leafA, leafB)
+    var exchanged = tree
+    exchanged.swapLeaves(of: a, and: b)
+    var stacked = tree
+    stacked.addToStack(c, leaf: leafA)
+    var renumbered = tree
+    _ = renumbered.replaceWindow(a, with: c)
+    for other in [docked, removed, swapped, exchanged, stacked, renumbered] {
+      #expect(!tree.hasSameShape(as: other) && !other.hasSameShape(as: tree))
+    }
+
+    var switched = stacked
+    switched.activate(a)
+    #expect(stacked.hasSameShape(as: switched), "nor does the tab that is showing")
+  }
+
   @Test func theTabThatIsShowingDoesNotCount() {
     var tree = columns()
     tree.addToStack(c, leaf: tree.leaf(containing: a)!)

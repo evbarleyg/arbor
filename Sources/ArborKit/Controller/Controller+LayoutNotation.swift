@@ -106,7 +106,7 @@ extension Controller {
 
     forgetPendingLayout(on: display)
     // Places kept for windows that are not there yet (Controller+PendingSlots.swift) belong to the arrangement that is being replaced.
-    forgetPendingSlots(on: display)
+    _ = forgetPendingSlots(on: display)
     // As for `arrange`: what the user arranged is not for a rule to undo when a window's title arrives late.
     stopWatchingTitles()
     let isPlaced = Set(placed)

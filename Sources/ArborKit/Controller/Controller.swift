@@ -337,6 +337,13 @@ public final class Controller {
   var pendingSlots: Set<WindowID> = []
   /// Those of them whose wait is over and whose going would move a window: they go with the next layout.
   var overdueSlots: Set<WindowID> = []
+  /// Those that a layout dropped since `beginUndoStep`.
+  var slotsDroppedDuringUndoStep: [WindowID] = []
+  /// Waiting places that are laid out as if their windows were there (Controller+KeptRoom.swift).
+  var keptRoom: [DisplayID: KeptRoom] = [:]
+  /// Whether at the last start some saved window still existed under its own number: the Mac has not been restarted
+  /// since.
+  var startIsInTheSameLogin = false
   /// Windows that took a waiting slot on the strength of their app alone, until the wait is over.
   var provisionalSlots: [WindowID: ProvisionalSlot] = [:]
   // Controller+Economy.swift
@@ -479,6 +486,7 @@ public final class Controller {
     pendingSlots.removeAll()
     overdueSlots.removeAll()
     provisionalSlots.removeAll()
+    keptRoom.removeAll()
     drag = nil
     soleFloats.dragged = nil
     edgeResize = nil
@@ -546,6 +554,7 @@ public final class Controller {
     reconcile()
     noteWindowsLeftParked()
     resumeDormantWorkspaces(from: saved, hints: savedHints)
+    keepRoomForWhoIsLate(saved: saved?.roomKept)
     takeFloatingWindowsAsFound(leftAt: leftAt, ownSizes: ownSizesWhenArborStopped(saved, hints: savedHints))
     foundAtThisStart.removeAll()
     // A run that did not quit cleanly leaves its parked windows out of view.
@@ -599,6 +608,7 @@ public final class Controller {
     if movingWindows { cancelDragLettingGo() } else { cancelDrag() }
     appsDoubleClick = nil
     if movingWindows { lookAtTheDisplaysBeforeLettingGo() }
+    dropOverdueSlotsBeforeAStop()
     scheduler.cancel("save")
     overlays.finishAnimations()
     stopWatchingTitles()
@@ -620,9 +630,15 @@ public final class Controller {
       guard let workspace = workspaces[id], let display = display(id) else { continue }
       var withoutTiles = options(for: id).layoutOptions
       withoutTiles.minimumUsableSize = .zero
+      // With the places that are kept open, so that whoever stays in its slot stays where it is
+      // (Controller+KeptRoom.swift).
+      let late = laidOut(
+        workspace.tree, camera: workspace.tree.root, on: display, options: withoutTiles, present: present
+      ).late
       let layout = LayoutEngine.layout(
         workspace.tree, camera: workspace.tree.root, in: display.visibleFrame, options: withoutTiles,
-        isPresent: { present.contains($0) })
+        isPresent: { present.contains($0) || late.contains($0) }
+      ).leavingOpen(late, in: workspace.tree)
       // Each goes back to where it floated before it was docked (Controller+UndockedFrames.swift), or
       // stays in its slot if that is not known.
       for (window, frame) in layout.windowFrames.sorted(by: { $0.key < $1.key }) {
@@ -671,6 +687,7 @@ public final class Controller {
     if movingWindows { leftAt = windows.filter { !$0.value.isFullScreen }.mapValues(\.frame) }
     saveNow()
     // Saved with their hints; the next start finds them again.
+    keptRoom.removeAll()
     pendingSlots.removeAll()
     overdueSlots.removeAll()
     provisionalSlots.removeAll()
@@ -786,6 +803,7 @@ public final class Controller {
     var state = PersistedState(
       workspaces: workspaces, hints: hints.filter { known.contains($0.key) }, dormant: dormant, welcomed: hasWelcomed)
     state.hintsShown = headsUp.hintsShown
+    state.roomKept = leavesThatKeepRoom()
     // With the keys of a peek down the view is only visiting, and history is kept by where it belongs. Whoever reads this
     // (a start after a crash or a quit, the end of a pause) finds nobody peeking, so what is written is what the look would
     // become then: everything shows, and Back leads to where its user was.
@@ -813,6 +831,12 @@ public final class Controller {
     // Windows that are still where some display's saved arrangement has them stay there. They
     // must not stand in for a window with the same app and title that has closed since.
     let inPlace = Set(workspaces.values.flatMap(\.allWindows).filter { managed.contains($0) && !isStale($0) })
+    // Of a display that is connected or not. Only what is listed, so that its app can be asked for: a bare number
+    // that exists proves little, because the low numbers windows get at a login are the ones they got at the login
+    // before.
+    startIsInTheSameLogin = hints.contains { window, hint in
+      !Self.isStandIn(window) && hint.bundleID != nil && windows[window]?.bundleID == hint.bundleID
+    }
     for id in workspaces.keys.sorted() {
       var workspace = workspaces[id]!
       for window in workspace.tree.allWindows
@@ -827,7 +851,7 @@ public final class Controller {
           let replacement = rematch(hint, managed: managed, claimed: claimed.union(inPlace), workspace: workspace)
         {
           workspace.replaceWindow(window, with: replacement)
-          undoHistory.renumber(window, as: replacement)
+          renumber(window, as: replacement)
           hints[replacement] = hint
           claimed.insert(replacement)
         } else if let hint, windows[window] == nil || windows[window]?.bundleID != hint.bundleID {

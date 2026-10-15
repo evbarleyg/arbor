@@ -1031,9 +1031,16 @@ while (`Controller+PendingSlots.swift`): for three minutes, to be claimed by a w
 app and title (or of the same app, if it has one slot and one window), because at login Arbor
 starts long before the apps have restored their windows; or for as long as the window system says its number exists, because a window on
 a Space that is not showing is not listed. **So a tree can hold a window number that has no
-`WindowSnapshot`** (`controller.windows[id]` is nil, `pendingSlots` contains it); like a minimized window it
-takes no space, and whatever draws or lists a tree's windows must skip it; `state` lists them under `waiting`, and
-`status` counts the ones whose window is not open yet. A window that got a slot by its app alone holds it
+`WindowSnapshot`** (`controller.windows[id]` is nil, `pendingSlots` contains it), and whatever draws or lists a tree's windows must
+skip it; `state` lists them under `waiting`, and `status` counts the ones whose window is not open yet. A slot whose window is on another
+Space takes no space, like a minimized window. **After a restart of the Mac, one whose window does not exist yet keeps its room from the
+start on** (`Controller+KeptRoom.swift`), so that whoever is restored early goes straight to its final place. `laidOut` is the one place where that
+is decided, and whatever lays out an arrangement that is or may be the real one goes through it (`layout(of:)`, `roomyLayout`, a trial of
+live reflow): it counts the slot as present and leaves its place open (`Layout.leavingOpen`), so no `Layout` ever names it. Room is kept while
+the display's tree has the shape it had at the start (`hasSameShape`), which each layout asks afresh: whatever tries out or makes another
+arrangement sees no hole. `treeView` and `presentWindowIDs()` go by who is there; what pairs a tree with a layout's seams asks the layout what it
+placed (`seam(on:of:in:layout:)`). Which leaves kept their room is saved (`roomKept` in `state.json`), for a start in the same login.
+A window that got a slot by its app alone holds it
 provisionally until the wait is over (`provisionalSlots`): what an app shows first is often a welcome window, so a window
 with the saved title takes the slot over, and if the holder closes the slot waits again. After `resume` only windows
 that still exist keep a slot: what is missing was closed by the user, not by a reboot. Slots wait in the

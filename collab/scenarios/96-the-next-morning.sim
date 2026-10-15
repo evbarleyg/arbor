@@ -1,0 +1,107 @@
+# Proposed by the swarm (2026-10-15), from the product owner's decision in collab/QUESTIONS.md (Q16: at a start a waiting place keeps its room); the documenter may edit or drop it.
+# Story: a browser, an editor and a mail window are docked side by side, the notes float on the Desktop. In the evening the Mac is shut down. In the
+# morning Arbor is up at the login long before the apps, and they bring their windows back one after the other, the one in the middle first.
+# Nobody moves twice because somebody else is late: whoever comes goes straight to the place it had, and a hole waits for the others.
+# A restart of the Mac is: Arbor quits, every window closes, Arbor starts, and `open` brings the windows back under new numbers.
+# Reference: T60, issue #3 rule 3 (a window moves once, to where it ends up).
+display-size 2560x1440
+open Browser 1000x700
+open Editor 900x700
+open Mail 800x600
+open Notes 200x150
+title 101 News
+title 102 Draft
+title 103 Inbox
+dock 101 left
+dock 102 beside 101 right
+dock 103 beside 102 right
+balance all
+expect left-of 101 102
+expect left-of 102 103
+expect at 102 738 37
+expect size 102 715x1391
+relaunch quit
+close 101
+close 102
+close 103
+close 104
+relaunch start
+expect ok
+status
+expect replied 3 places kept for windows that are not open yet
+# The editor is first. It takes the place in the middle at once, with room on both sides for who is still to come.
+open Editor 900x700
+expect moved-once
+expect docked 105
+expect at 105 738 37
+expect size 105 715x1391
+title 105 Draft
+expect still
+# Looking around changes nothing: there and back, and the holes are still kept.
+zoom 105
+show-all
+expect at 105 738 37
+expect size 105 715x1391
+# The mail window comes, then the browser. Whoever is there already stays where it is.
+open Mail 800x600
+expect moved-once
+expect still 105
+expect docked 106
+expect left-of 105 106
+title 106 Inbox
+open Browser 1000x700
+expect moved-once
+expect still 105
+expect still 106
+expect docked 107
+expect left-of 107 105
+title 107 News
+expect size 105 715x1391
+expect size 106 714x1391
+expect size 107 714x1391
+status
+expect ok
+
+# Another morning, and the browser does not come. For three minutes its place is kept, and when they are over nothing moves by itself.
+relaunch quit
+close 105
+close 106
+close 107
+relaunch start
+open Editor 900x700
+title 108 Draft
+open Mail 800x600
+expect still 108
+title 109 Inbox
+wait 400
+expect still
+expect at 108 738 37
+status
+expect replied 1 place kept
+# The room goes back with the next layout that the person causes.
+relayout
+expect moved-once
+expect at 108 12 37
+status
+expect ok
+
+# A third morning: whoever changes the arrangement meanwhile has taken it in hand, and the hole closes in the same move.
+relaunch quit
+close 108
+close 109
+relaunch start
+open Mail 800x600
+title 110 Inbox
+open Notes 200x150
+expect still 110
+dock 111 right
+expect moved-once
+expect docked 111
+expect at 110 12 37
+# The editor's place still waits, without room, as a minimized window's does.
+status
+expect replied 1 place kept
+open Editor 900x700
+title 112 Draft
+expect docked 112
+expect left-of 112 110

@@ -324,7 +324,7 @@ import Testing
     let welcome = lifecycle.reopen(safari, in: h, title: "Welcome")
     #expect(h.workspace.isDocked(welcome))
     h.system.close(welcome)
-    #expect(h.layout?.windowFrames.keys.sorted() == [notes], "a waiting place takes no space")
+    #expect(h.layout?.windowFrames.keys.sorted() == [notes], "nobody is in a waiting place")
     #expect(h.run("status").message.contains("1 place kept"))
     #expect(h.workspace.tree.invariantViolations().isEmpty)
     let real = lifecycle.reopen(safari, in: h)
@@ -337,6 +337,8 @@ import Testing
     late.scheduler.advance(by: 100)
     late.system.close(other)
     late.scheduler.advance(by: 100)
+    // Its time is up. The room it has kept goes back with the next layout somebody causes (Q16).
+    late.run("relayout")
     #expect(late.controller.snapshot().waiting.isEmpty)
     #expect(!late.scheduler.pendingKeys.contains("pending-slots"))
   }
@@ -370,7 +372,10 @@ import Testing
     #expect(h.system.moveLog.count == moves)
     #expect(h.system.focusLog.count == focuses)
     #expect(Dictionary(uniqueKeysWithValues: h.system.allWindows().map { ($0.id, $0.frame) }) == frames)
-    // It took no space, so it could go all the same.
+    // After a restart of the Mac it has kept its room (Q16), which Notes would move into: it goes with the next layout somebody causes.
+    #expect(h.run("status").message.contains("1 place kept"))
+    #expect(h.controller.invariantViolations().isEmpty, "\(h.controller.invariantViolations())")
+    h.run("relayout")
     #expect(h.workspace.tree.allWindows == [notes])
     #expect(!h.run("status").message.contains("kept"))
     #expect(!h.scheduler.pendingKeys.contains("pending-slots"))

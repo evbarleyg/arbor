@@ -15,7 +15,7 @@ extension Controller {
     if node == tree.root { return "everything" }
     if node == tree.desktop { return "the Desktop" }
     // Only what can be seen there is named: a minimized window, a hidden app, a window on another of
-    // macOS's Spaces and a place kept for a window that does not exist (yet) take no room.
+    // macOS's Spaces and a place kept for a window that does not exist (yet) are not there.
     var apps: [(name: String, windows: Int)] = []
     var desktopComesAfter: Int?
     for leaf in tree.preorder(from: node) {

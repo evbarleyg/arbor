@@ -19,14 +19,19 @@ extension Controller {
   func layout(
     of displayID: DisplayID, camera: NodeID? = nil, options: LayoutOptions? = nil, including: WindowID? = nil
   ) -> Layout? {
+    layoutAndWhoIsLate(of: displayID, camera: camera, options: options, including: including)?.layout
+  }
+
+  /// The same, and the places in it that keep their room for windows that are not open yet (Controller+KeptRoom.swift).
+  func layoutAndWhoIsLate(
+    of displayID: DisplayID, camera: NodeID? = nil, options: LayoutOptions? = nil, including: WindowID? = nil
+  ) -> (layout: Layout, late: Set<WindowID>, atAWindowsCost: Bool)? {
     guard let workspace = workspaces[displayID], let display = display(displayID) else { return nil }
     var present = presentWindowIDs()
     if let including { present.insert(including) }
-    let minimums = minimumSizes
-    return LayoutEngine.layout(
-      workspace.tree, camera: camera ?? workspace.camera, in: display.visibleFrame,
-      options: options ?? self.options(for: displayID).layoutOptions, isPresent: { present.contains($0) },
-      minimumSize: { minimums[$0] })
+    return laidOut(
+      workspace.tree, camera: camera ?? workspace.camera, on: display,
+      options: options ?? self.options(for: displayID).layoutOptions, present: present)
   }
 
   /// What `displayID` should look like, worked out now from the arrangement, the view, the windows that take space, the
@@ -65,9 +70,9 @@ extension Controller {
     guard isRunning, holdFences(displayID) else { return }
     lettingBeEndsIfItNoLongerApplies()
     aLayoutSomebodyAskedForEndsLettingBe(on: displayID)
+    refreshVisibleFrame(of: displayID)
     // Not when a window is only put back where it was: that moves nothing else.
     if reason != .enforce { dropOverdueSlots(on: displayID) }
-    refreshVisibleFrame(of: displayID)
     // Before anything goes by what is known of the windows' sizes.
     noteFixedSizes(of: workspaces[displayID]?.tree.allWindows ?? [])
     let stood = startFromTheGapsThatStood(on: displayID, for: reason)
@@ -107,6 +112,10 @@ extension Controller {
       else { break }
       layout = retry
       again = apply(layout, on: displayID)
+    }
+    // The last rounds do not make room, and do not say what it costs.
+    if keptRoom[displayID] != nil, layoutAndWhoIsLate(of: displayID)?.atAWindowsCost == true {
+      giveUpRoom(on: displayID)
     }
     rememberSqueezes(in: layout, on: displayID)
     noteWhereTheGapsStand(in: layout, on: displayID, for: reason)

@@ -54,6 +54,7 @@ extension Controller {
     // Inside a change that is already being recorded, which will cover this one.
     guard undoScopeDepth == 1 else { return nil }
     treesBeforeRoomWasMade = [:]
+    slotsDroppedDuringUndoStep = []
     undoHistory.forgetRenumberings()
     return UndoScope(
       label: label(), title: title, before: workspaces, framesBefore: floatingFramesOnScreen(),
@@ -92,6 +93,10 @@ extension Controller {
     for (display, var before) in scope.before {
       // A window that changed its number meanwhile (its slot waits again under a stand-in's) is still the same window.
       for change in undoHistory.renumberings { before.renumber(change.old, as: change.new) }
+      // A place whose time was up went with this change's layout (`dropOverdueSlots`). That is Arbor giving up its
+      // waiting, not a change anybody made: a move of the view would otherwise be a step, and one that cannot be
+      // taken back.
+      for slot in slotsDroppedDuringUndoStep { before.forget(slot, shareSpace: settings.shareRemovedSpace) }
       guard let after = workspaces[display], !before.hasSameArrangement(as: after) else { continue }
       // Nothing happened but that Arbor moved the gaps to make room for a window (F61): the view moved, say. That is
       // not a change anybody made, and taking it back would only make Arbor do it again.

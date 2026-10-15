@@ -19,7 +19,8 @@ extension Controller {
       workspaces[displayID]?.tree = before.tree
       workspaces[displayID]?.desktopIsOwedRoom = before.desktopIsOwedRoom
     }
-    guard let plain = layout(of: displayID) else { return nil }
+    guard let (plain, late, atAWindowsCost) = layoutAndWhoIsLate(of: displayID) else { return nil }
+    if atAWindowsCost { giveUpRoom(on: displayID) }
     // Framed on its own the Desktop has the whole display, which says nothing about its share beside the others.
     let tree = workspaces[displayID]?.tree
     if plain.desktopFrame != nil, plain.camera != tree?.desktop || tree?.root == tree?.desktop {
@@ -30,7 +31,7 @@ extension Controller {
     guard settings.makeRoom, !gapsInHand, drag == nil, edgeResize == nil, var workspace = workspaces[displayID],
       !plain.tiles.isEmpty || (workspace.tree.hasLoans && reason != .enforce), let display = display(displayID)
     else { return plain }
-    let present = presentWindowIDs()
+    let present = presentWindowIDs().union(late)
     let minimums = minimumSizes
     var terms = roomTerms(on: displayID)
     // What the Desktop is owed it gets when something moves anyway, not because an app has moved its own window. (An app that makes
@@ -41,10 +42,18 @@ extension Controller {
     }
     // A move of the view includes a launch, when nobody's minimum is known, and a change of displays.
     terms.emptyDesktopAsksNobody = reason == .camera
-    let (served, layout, gaveBack) = MakeRoom.serve(
-      &workspace.tree, camera: workspace.camera, in: display.visibleFrame, options: options(for: displayID).layoutOptions,
-      isPresent: { present.contains($0) }, minimumSize: { minimums[$0] }, terms: terms)
+    // `plain` has looked for the view among the windows that are there.
+    let (served, roomy, gaveBack) = MakeRoom.serve(
+      &workspace.tree, camera: late.isEmpty ? workspace.camera : plain.camera, in: display.visibleFrame,
+      options: options(for: displayID).layoutOptions, isPresent: { present.contains($0) },
+      minimumSize: { minimums[$0] }, terms: terms)
     guard !served.isEmpty || gaveBack else { return plain }
+    let layout = roomy.leavingOpen(late, in: workspace.tree)
+    // Moving the gaps has cost somebody their place beside a hole (Controller+KeptRoom.swift). Once more, without.
+    if !late.isEmpty, !layout.tiles.allSatisfy({ $0.kind == .desktop }) {
+      giveUpRoom(on: displayID)
+      return roomyLayout(of: displayID, for: reason, startingFrom: before)
+    }
     if plain.desktopFrame != nil, layout.desktopFrame == nil { workspace.desktopIsOwedRoom = true }
     if layout.desktopFrame != nil { workspace.desktopIsOwedRoom = nil }
     noteThatRoomIsMade(on: displayID)

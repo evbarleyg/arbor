@@ -87,6 +87,8 @@ extension Controller {
   ) -> CGRect? {
     let (asItIs, noted, known) = (workspaces[displayID], treesBeforeRoomWasMade[displayID], windows)
     defer { (workspaces[displayID], treesBeforeRoomWasMade[displayID], windows) = (asItIs, noted, known) }
+    let kept = keptRoom[displayID]
+    defer { keptRoom[displayID] = kept }
     var back = known
     let all = asItIs?.allWindows ?? []
     // If none of them is on record, Arbor heard of the full screen only when the Space had gone: then all that are away count.

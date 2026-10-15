@@ -38,7 +38,10 @@ extension Controller {
   }
 
   private func dockedWindowsThatTakeSpace(on displayID: DisplayID) -> Set<WindowID> {
+    // Also the places that are kept open for windows that are not there yet (Controller+KeptRoom.swift): one that is given
+    // up has gone like anybody else.
     Set(workspaces[displayID]?.tree.allWindows ?? []).intersection(presentWindowIDs())
+      .union(layoutAndWhoIsLate(of: displayID)?.late ?? [])
   }
 
   private func sizesKnownOfDockedWindows(on displayID: DisplayID) -> [WindowID: CGSize] {

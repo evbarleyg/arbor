@@ -161,7 +161,7 @@ extension Controller {
       workspaces[display]!.setRole(role, of: window.id)
       if let host { workspaces[display]!.receive(window.id, asGuestOf: host) }
     }
-    undoHistory.renumber(old, as: window.id)
+    renumber(old, as: window.id)
     // Tabs of a group share their frame, so what is known about the one holds for the other.
     if parked.remove(old) != nil { parked.insert(window.id) } else { parked.remove(window.id) }
     settled[window.id] = settled.removeValue(forKey: old)

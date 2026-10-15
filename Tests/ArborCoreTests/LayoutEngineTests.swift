@@ -65,6 +65,48 @@ private func threeWindowTree() -> (LayoutTree, NodeID, NodeID, NodeID) {
     #expect(without.windowFrames[a]!.width == full.windowFrames[a]!.width)
   }
 
+  /// A place that keeps its room for a window that is not there: laid out as if it were, then left open.
+  @Test func aPlaceLeftOpenKeepsItsRoomAndHoldsNobody() {
+    let (tree, _, _, leafC) = threeWindowTree()
+    let full = LayoutEngine.layout(tree, camera: tree.root, in: screen, isPresent: everyone)
+    let open = full.leavingOpen([c], in: tree)
+    #expect(open.windowFrames == [a: full.windowFrames[a]!, b: full.windowFrames[b]!])
+    #expect(open.openPlaces == [leafC: full.windowFrames[c]!])
+    #expect(open.nodeFrames == full.nodeFrames.filter { $0.key != leafC })
+    #expect(open.seams == full.seams && open.desktopFrame == full.desktopFrame && open.camera == full.camera)
+    #expect(open.leafOrTile(at: full.windowFrames[c]!.center, in: tree) == nil, "there is nothing to point at")
+    #expect(Navigation.bestFit(for: full.windowFrames[c]!, in: open, tree: tree) != leafC, "nor to draw a rectangle round")
+    #expect(full.leavingOpen([], in: tree) == full)
+    #expect(Set(BackdropShape.slots(of: open, in: tree).map(\.origin.y)) == Set(BackdropShape.slots(of: full, in: tree).map(\.origin.y)))
+
+    // A group of nobody is one open place, by its outermost node.
+    let column = tree.parent(of: leafC)!
+    let both = full.leavingOpen([a, c], in: tree)
+    #expect(both.openPlaces == [column: full.nodeFrames[column]!])
+    #expect(both.nodeFrames[column] == nil && both.nodeFrames[leafC] == nil)
+
+    // Outside the view there is nobody to take out of it.
+    let framed = LayoutEngine.layout(tree, camera: tree.leaf(containing: a)!, in: screen, isPresent: everyone)
+    #expect(framed.leavingOpen([c], in: tree).hiddenWindows == [b] && framed.leavingOpen([c], in: tree).openPlaces.isEmpty)
+  }
+
+  @Test func aPlaceLeftOpenIsNoTileAndIsInNone() throws {
+    let (tree, leafA, _, _) = threeWindowTree()
+    let narrow = CGRect(x: 0, y: 0, width: 500, height: 800)
+    let layout = LayoutEngine.layout(tree, camera: tree.root, in: narrow, isPresent: everyone)
+    let column = try #require(tree.parent(of: leafA))
+    #expect(Set(layout.tiles.map(\.kind)) == [.group, .desktop, .window])
+    // Alone in its tile: the tile goes. The Desktop's holds no window at the best of times, and stays.
+    #expect(layout.leavingOpen([b], in: tree).tiles.map(\.kind).sorted { $0.rawValue < $1.rawValue } == [.desktop, .group])
+    // One of a group: the other is still drawn.
+    let group = try #require(layout.leavingOpen([c], in: tree).tiles.first { $0.node == column })
+    #expect(group.windows == [a] && Array(group.miniature.keys) == [a])
+    #expect(group.frame == layout.nodeFrames[column])
+    // A group of nobody.
+    #expect(!layout.leavingOpen([a, c], in: tree).tiles.contains { $0.node == column })
+    #expect(layout.leavingOpen([a, c], in: tree).openPlaces[column] == layout.nodeFrames[column])
+  }
+
   @Test func aMissingCameraFallsBackToAnEffectiveAncestor() {
     let (tree, _, _, leafC) = threeWindowTree()
     let layout = LayoutEngine.layout(tree, camera: leafC, in: screen, isPresent: { $0 != c })

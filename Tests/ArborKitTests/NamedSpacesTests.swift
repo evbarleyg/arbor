@@ -742,6 +742,7 @@ private let third = DisplaySnapshot(
     // It never comes: the place is given up, and the name with it.
     let (late, _, _) = launch()
     late.scheduler.advance(by: Controller.pendingSlotLifetime + 1)
+    late.run("relayout")  // the room it has kept goes back with the next layout somebody causes (Q16)
     #expect(windows(late, named: "Web") == nil)
     #expect(windows(late, named: "Writing") != nil)
   }

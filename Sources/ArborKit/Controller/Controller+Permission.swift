@@ -114,6 +114,7 @@ extension Controller {
       notify(.lifecycle)
     } else if isRunning {
       overlays.showDropPreview(nil)
+      dropOverdueSlotsBeforeAStop()
       // Kept in memory as well, so that coming back does not depend on the file having been written.
       resumeState = persistedState()
       shutdown(movingWindows: false)

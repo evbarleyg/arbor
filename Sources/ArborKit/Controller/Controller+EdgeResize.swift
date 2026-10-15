@@ -131,7 +131,8 @@ extension Controller {
     while let parent = tree.parent(of: current) {
       defer { current = parent }
       guard case .split(let axis, _) = tree[parent]?.kind, axis == edge.axis else { continue }
-      let siblings = view.effectiveChildren(of: parent)
+      // Also a place that is kept open for a window that is not there yet (Controller+KeptRoom.swift).
+      let siblings = tree.children(of: parent).filter { view.isEffective($0) || layout.openPlaces[$0] != nil }
       guard let index = siblings.firstIndex(of: current) else { continue }
       let neighborIndex = edge.isLeading ? index - 1 : index + 1
       guard siblings.indices.contains(neighborIndex) else { continue }

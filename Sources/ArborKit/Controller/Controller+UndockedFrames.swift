@@ -83,8 +83,8 @@ extension Controller {
   /// What `relayout` is about to start from, which is more than `layout(of:)`: the room the window's slot took can go
   /// to a Desktop that was a tile till now (Controller+MakeRoom.swift). Only a look: the gaps are the layout's to move.
   func layoutToCome(on displayID: DisplayID, for reason: RelayoutReason = .structure) -> Layout? {
-    let (asItIs, noted) = (workspaces[displayID], treesBeforeRoomWasMade[displayID])
-    defer { (workspaces[displayID], treesBeforeRoomWasMade[displayID]) = (asItIs, noted) }
+    let (asItIs, noted, kept) = (workspaces[displayID], treesBeforeRoomWasMade[displayID], keptRoom[displayID])
+    defer { (workspaces[displayID], treesBeforeRoomWasMade[displayID], keptRoom[displayID]) = (asItIs, noted, kept) }
     return roomyLayout(of: displayID, for: reason)
   }
 

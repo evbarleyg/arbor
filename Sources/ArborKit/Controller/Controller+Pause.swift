@@ -30,6 +30,7 @@ extension Controller {
       // Set first: observers of the `.lifecycle` change that `shutdown` sends read it.
       isPaused = true
       endSummonsWithoutMoving()
+      dropOverdueSlotsBeforeAStop()
       // Kept in memory as well, so that resuming does not depend on the file having been written.
       resumeState = persistedState()
       // First, so that what macOS has shifted meanwhile does not pass for the pause's doing, which the resume undoes.

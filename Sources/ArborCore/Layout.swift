@@ -164,6 +164,9 @@ public struct Layout: Equatable, Sendable {
   /// Present docked windows that must be moved out of view: outside the
   /// camera, inactive tabs, or inside tiles.
   public var hiddenWindows: Set<WindowID> = []
+  /// Places that have their room and nobody in them (`leavingOpen`), each by the outermost node that holds nothing
+  /// else. They are not in `nodeFrames`: there is nothing to point at, to frame or to walk to.
+  public var openPlaces: [NodeID: CGRect] = [:]
 
   public init(camera: NodeID, frame: CGRect) {
     self.camera = camera
@@ -178,6 +181,33 @@ public struct Layout: Equatable, Sendable {
     }
     if let desktopFrame, desktopFrame.contains(point) { return tree.desktop }
     return nil
+  }
+
+  /// This layout of `tree` with nobody in the places of `windows`, which were counted as present so that they got
+  /// their room and are not there: no frame for them, nothing to take out of view, no tile that holds nothing else,
+  /// no node to point at. Where they would be is in `openPlaces`. Every other rectangle stays, and the gaps around
+  /// them can be dragged.
+  public func leavingOpen(_ windows: Set<WindowID>, in tree: LayoutTree) -> Layout {
+    guard !windows.isEmpty else { return self }
+    var layout = self
+    layout.windowFrames = windowFrames.filter { !windows.contains($0.key) }
+    layout.hiddenWindows.subtract(windows)
+    layout.tiles = tiles.compactMap { tile in
+      var tile = tile
+      tile.windows.removeAll(where: windows.contains)
+      tile.miniature = tile.miniature.filter { !windows.contains($0.key) }
+      return tile.windows.isEmpty && tile.kind != .desktop ? nil : tile
+    }
+    let empty = Set(
+      nodeFrames.keys.filter { node in
+        let inside = tree.windows(under: node)
+        return !inside.isEmpty && inside.allSatisfy(windows.contains)
+      })
+    for node in empty {
+      layout.nodeFrames[node] = nil
+      if tree.parent(of: node).map(empty.contains) != true { layout.openPlaces[node] = nodeFrames[node] }
+    }
+    return layout
   }
 }
 

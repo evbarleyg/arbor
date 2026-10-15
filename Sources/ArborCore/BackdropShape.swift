@@ -7,12 +7,12 @@ import CoreGraphics
 /// surface stops half a gap short of the screen edges and of the Desktop. What is left is a
 /// shape made of rectangles, with a hole wherever docked windows surround the Desktop.
 public enum BackdropShape {
-  /// The rectangles of everything docked and in view: the slots of visible windows, and tiles.
+  /// The rectangles of everything docked and in view: the slots of visible windows, tiles, and places kept open.
   ///
   /// A slot is its leaf's rectangle, not the window's. A window may sit a few points inside its slot (a
   /// terminal snaps to whole characters) or share it with a tab strip, and neither should leave a hole.
   public static func slots(of layout: Layout, in tree: LayoutTree) -> [CGRect] {
-    var slots = layout.tiles.map(\.frame)
+    var slots = layout.tiles.map(\.frame) + layout.openPlaces.values
     for (window, frame) in layout.windowFrames {
       slots.append(tree.leaf(containing: window).flatMap { layout.nodeFrames[$0] } ?? frame)
     }

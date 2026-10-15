@@ -18,9 +18,10 @@ import CoreGraphics
 ///   window system says the number still exists (`existingWindowIDs()`), the slot waits under its own
 ///   number for as long as it does, and the window takes it back when its Space shows.
 ///
-/// Like a minimized window, a waiting slot keeps its place in the tree and takes no space. The tree can be
-/// that of a display that is not connected: the window then floats where it appears, and returns to the
-/// slot with the display.
+/// Like a minimized window, a waiting slot keeps its place in the tree. One that waits for a window on another Space
+/// takes no space either; after a restart of the Mac, one whose window does not exist yet keeps its room from the start
+/// on, so that nobody moves twice because somebody else is late (Controller+KeptRoom.swift). The tree can be that of a
+/// display that is not connected: the window then floats where it appears, and returns to the slot with the display.
 ///
 /// `resume` is a launch in all but this: what is missing after a pause was closed by the user, not by a
 /// reboot, so only windows that still exist keep a slot.
@@ -70,7 +71,7 @@ extension Controller {
       return
     }
     workspace.replaceWindow(window, with: standIn)
-    undoHistory.renumber(window, as: standIn)
+    renumber(window, as: standIn)
     pendingSlots.remove(window)
     pendingSlots.insert(standIn)
     hints[standIn] = hint
@@ -94,14 +95,15 @@ extension Controller {
       self.provisionalSlots.removeAll()
       self.expireSlots { !existing.contains($0) }
       if !self.pendingSlots.isEmpty { self.scheduleCheckOfPendingSlots() }
+      self.endWaitIfOver()
     }
   }
 
   /// The wait of these slots is over. **Nothing moves by a timer**: a layout three minutes after login, with nobody touching
-  /// anything, pushed the window somebody was typing in onto the Desktop. A waiting slot takes no space, so as a rule it
-  /// can go without a window having to move, and then it goes now, without a layout. Where its going would move
-  /// something (its room was shared out otherwise than its removal shares it), it stays, overdue, and
-  /// goes with the next layout that somebody causes (`dropOverdueSlots`); until then it waits like any other.
+  /// anything, pushed the window somebody was typing in onto the Desktop. A waiting slot that takes no space can as a
+  /// rule go without a window having to move, and then it goes now, without a layout. Where its going would move
+  /// something (it has kept its room, or its room was shared out otherwise than its removal shares it), it stays,
+  /// overdue, and goes with the next layout that somebody causes (`dropOverdueSlots`); until then it waits like any other.
   private func expireSlots(where isOver: (WindowID) -> Bool) {
     let over = pendingSlots.filter(isOver)
     // In what is remembered of a display that is not connected there is nothing to move.
@@ -132,18 +134,39 @@ extension Controller {
     }
   }
 
-  /// At the head of a layout that a person or an app has caused.
-  func dropOverdueSlots(on display: DisplayID) {
+  /// At the head of a layout that a person or an app has caused. Not of one that would otherwise leave everybody
+  /// where they are (a floating window opened or closed, perhaps by its app's own doing; a late window that takes
+  /// its own place after all): docked windows would jump for something that is not about them. Nor under a hand
+  /// that holds a gap, an edge or a window: what it holds would jump away from the pointer. `relayout` asks for it
+  /// in so many words.
+  func dropOverdueSlots(on display: DisplayID, askedFor: Bool = false) {
     guard !overdueSlots.isEmpty else { return }
+    if !askedFor {
+      guard !gapsInHand, drag == nil, edgeResize == nil else { return }
+      if let shown = layouts[display], let fresh = layout(of: display), fresh.camera == shown.camera,
+        fresh.tiles == shown.tiles, fresh.desktopFrame == shown.desktopFrame, fresh.hiddenWindows == shown.hiddenWindows,
+        shown.windowFrames.allSatisfy({ fresh.windowFrames[$0.key] == $0.value })
+      {
+        return
+      }
+    }
     for slot in overdueSlots.sorted() where workspaces[display]?.isDocked(slot) == true {
       overdueSlots.remove(slot)
       guard pendingSlots.remove(slot) != nil else { continue }
       hints[slot] = nil
       parked.remove(slot)
       workspaces[display]!.forget(slot, shareSpace: settings.shareRemovedSpace)
+      // Not the doing of whatever command this layout belongs to (`endUndoStep`).
+      slotsDroppedDuringUndoStep.append(slot)
       scheduleSave()
     }
     endWaitIfOver()
+  }
+
+  /// Before Arbor stops, or notes what to come back to: a place whose time is up is not written down, to be waited
+  /// for all over again at the next start, and the one after. Every window is about to be let go of anyway.
+  func dropOverdueSlotsBeforeAStop() {
+    for display in workspaces.keys.sorted() { dropOverdueSlots(on: display, askedFor: true) }
   }
 
   /// Gives `window`, which just appeared or changed its title, the saved slot that waits for it.
@@ -156,6 +179,7 @@ extension Controller {
       let remembered = dormant.keys.sorted().first { dormant[$0]!.workspace.isDocked(window.id) }
       if hints[window.id]?.bundleID == window.bundleID {
         // The window itself, back in sight. Its title may have changed while it was away.
+        theMacWasNotRestarted(settling: connected)
         if let connected {
           settle(window, on: connected)
           return true
@@ -203,7 +227,7 @@ extension Controller {
         holdProvisionally(in: dormant[id]!.workspace.tree)
         break
       }
-      undoHistory.renumber(slot, as: window.id)
+      renumber(slot, as: window.id)
       hints[slot] = nil
       pendingSlots.remove(slot)
       endWaitIfOver()
@@ -212,10 +236,11 @@ extension Controller {
     }
     for id in workspaces.keys.sorted() { workspaces[id]!.floating[window.id] = nil }
     workspaces[display]!.replaceWindow(slot, with: window.id)
-    undoHistory.renumber(slot, as: window.id)
+    renumber(slot, as: window.id)
     holdProvisionally(in: workspaces[display]!.tree)
     hints[slot] = nil
     pendingSlots.remove(slot)
+    overdueSlots.remove(slot)
     settle(window, on: display)
     return true
   }
@@ -265,11 +290,14 @@ extension Controller {
     endWaitIfOver()
   }
 
-  /// Drops the slots waiting on `display`: the user has rearranged everything there.
-  func forgetPendingSlots(on display: DisplayID) {
-    forgetPendingSlots { [self] in workspaceID(containing: $0) == display }
+  /// Drops the slots waiting on `display`: the user is rearranging everything there. Lays nothing out: a slot that
+  /// kept its room would give it to its neighbours, who are about to be moved by the command itself, and nobody
+  /// moves twice. Returns whether there is something to lay out, for a caller that finds nothing to do after all.
+  func forgetPendingSlots(on display: DisplayID) -> Bool {
+    let changed = forgetPendingSlots(layingOut: false) { [self] in workspaceID(containing: $0) == display }
     provisionalSlots = provisionalSlots.filter { workspaceID(containing: $0.key) != display }
     endWaitIfOver()
+    return changed
   }
 
   /// Drops the slots that are in no tree any more: `undo` has put back an arrangement from before they were there.
@@ -279,7 +307,8 @@ extension Controller {
     endWaitIfOver()
   }
 
-  private func forgetPendingSlots(where isOver: (WindowID) -> Bool) {
+  @discardableResult
+  private func forgetPendingSlots(layingOut: Bool = true, where isOver: (WindowID) -> Bool) -> Bool {
     var changed = Set<DisplayID>()
     for slot in pendingSlots.sorted() where isOver(slot) {
       pendingSlots.remove(slot)
@@ -293,7 +322,8 @@ extension Controller {
       }
       scheduleSave()
     }
-    for id in changed.sorted() { relayout(id, reason: .structure) }
+    if layingOut { for id in changed.sorted() { relayout(id, reason: .structure) } }
+    return !changed.isEmpty
   }
 
   // MARK: Slots held provisionally
@@ -310,7 +340,9 @@ extension Controller {
   private var isWaitOver: Bool { pendingSlots.isEmpty && provisionalSlots.isEmpty }
 
   private func endWaitIfOver() {
-    if isWaitOver { scheduler.cancel("pending-slots") }
+    guard isWaitOver else { return }
+    scheduler.cancel("pending-slots")
+    giveUpAllRoom()
   }
 
   /// Gives `window`, which has the title a slot was waiting for, that slot in place of the window that
@@ -326,7 +358,7 @@ extension Controller {
     if let display = workspaces.keys.sorted().first(where: { workspaces[$0]!.tree.leaf(containing: holder) == held.leaf }) {
       for id in workspaces.keys.sorted() { workspaces[id]!.floating[window.id] = nil }
       workspaces[display]!.replaceWindow(holder, with: window.id)
-      undoHistory.renumber(holder, as: window.id)
+      renumber(holder, as: window.id)
       // The one that came first is a new window after all. It floats where its app had put it.
       let home = displayID(at: held.openedAt.center).flatMap { workspaces[$0] == nil ? nil : $0 } ?? display
       workspaces[home]!.floating[holder] = held.openedAt
@@ -341,7 +373,7 @@ extension Controller {
     for id in dormant.keys.sorted() where dormant[id]!.workspace.tree.leaf(containing: holder) == held.leaf {
       dormant[id]!.workspace.floating[window.id] = nil
       dormant[id]!.workspace.replaceWindow(holder, with: window.id)
-      undoHistory.renumber(holder, as: window.id)
+      renumber(holder, as: window.id)
       scheduleSave()
       return false
     }

@@ -270,8 +270,13 @@ import Testing
     let newNotes = reopen(notes, in: h)
     h.start()
     #expect(h.workspace.tree.allWindows.count == 2, "Safari's slot is kept")
-    #expect(h.layout?.windowFrames.count == 1, "but takes no space")
+    #expect(h.layout?.windowFrames.count == 1, "with nobody in it")
+    let moves = h.system.moveLog.count
     h.scheduler.advance(by: Controller.pendingSlotLifetime + 1)
+    // It has kept its room (Q16), and nothing moves by a timer: it goes with the next layout somebody causes.
+    #expect(h.system.moveLog.count == moves)
+    h.run("relayout")
+    h.scheduler.advance(by: 1)
     #expect(h.workspace.tree.allWindows == [newNotes])
     #expect(h.workspace.tree.invariantViolations().isEmpty)
     #expect(h.store.saved?.workspaces[h.display]?.tree.allWindows == [newNotes])
