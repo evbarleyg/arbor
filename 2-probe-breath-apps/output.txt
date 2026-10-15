@@ -1,0 +1,105 @@
+# mac-shell: scripts/mac-shell/probe-breath-apps.sh at dcc022f, macOS 26.6.2, 2026-10-15T09:48Z
+
+== the Mac
+macOS 26.6.2 (25G83) on arm64, 3 cores
+built Arbor, the pointer tool and the app bundles in 6s
+1920 1080 1920 1080
+display: 1 0 0 1920 1080 1920 1080 1
+
+== seven apps, a window each
+> open -g -b com.apple.finder /tmp/arbor-apps.lozwOq/scratch/grove
+pid 364 lists (id role subrole x y w h flags):
+  60 AXWindow AXStandardWindow 500 165 920 436 main,toolbar
+  0 AXScrollArea - 0 0 1920 1080 fixed-size,fixed-position,no-close,no-minimize,no-zoom
+com.apple.finder: pid 364, windows 60 
+> open -g -b com.apple.Safari /tmp/arbor-apps.lozwOq/scratch/page.html
+pid 18072 lists (id role subrole x y w h flags):
+  61 AXWindow AXStandardWindow 298 47 1324 940 main,toolbar
+com.apple.Safari: pid 18072, windows 61 
+> open -g -b com.apple.TextEdit /tmp/arbor-apps.lozwOq/scratch/oak.txt
+pid 18242 lists (id role subrole x y w h flags):
+  69 AXWindow AXStandardWindow 213 78 673 439 main
+com.apple.TextEdit: pid 18242, windows 69 
+> open -g -b com.apple.Terminal 
+pid 18286 lists (id role subrole x y w h flags):
+  73 AXWindow AXStandardWindow 40 51 877 499 main
+com.apple.Terminal: pid 18286, windows 73 
+> open -g -b com.apple.Notes 
+pid 18557 lists (id role subrole x y w h flags):
+  74 AXWindow AXStandardWindow 460 195 1000 660 main,close-disabled,sheets=1
+something is in the way:
+  AXWindow/AXStandardWindow 460 195 1000 660
+    AXButton/AXCloseButton 468 203 16 16
+    AXButton/AXZoomButton 514 203 16 16
+    AXButton/AXMinimizeButton 491 203 16 16
+    AXSheet/- 723 225 475 600
+      AXButton/- 1094 776 85 30 "Continue"
+pressed "Continue": 0
+pressed "Cancel": 0
+com.apple.Notes: pid 18557, windows 74 
+> open -g -b com.apple.iCal 
+pid 18801 lists (id role subrole x y w h flags):
+  78 AXWindow AXStandardWindow 200 266 935 598 main,toolbar
+com.apple.iCal: pid 18801, windows 78 
+> open -g -b com.apple.Preview /tmp/arbor-apps.lozwOq/scratch/leaf.png
+pid 18844 lists (id role subrole x y w h flags):
+  79 AXWindow AXStandardWindow 4 35 708 424 main,toolbar
+com.apple.Preview: pid 18844, windows 79 
+processes: 364 18072 18242 18286 18557 18801 18844
+
+== one-by-one, turn 1
+one-by-one, nobody listening: 7 windows of 7 apps, cells of 640×323
+  round 1 to the grid: answered 384.0 ms, first change 103.9, last 388.2, span 284.2 ms, 7 pieces, 8 changes, 3 of 7 arrived, 496 looks, 0 heard
+    each window, ms: 68.5 57.4 13.6 70.2 64.5 69.5 40.3
+  round 2 to the pile: answered 307.7 ms, first change 61.5, last 310.6, span 249.1 ms, 11 pieces, 14 changes, 6 of 7 arrived, 716 looks, 0 heard
+    each window, ms: 47.7 61.8 21.1 16.1 58.7 56.4 45.9
+  round 3 to the grid: answered 269.8 ms, first change 34.3, last 282.1, span 247.8 ms, 8 pieces, 13 changes, 3 of 7 arrived, 830 looks, 0 heard
+    each window, ms: 31.6 49.5 15.1 19.9 66.8 52.3 34.6
+  round 4 to the pile: answered 621.2 ms, first change 52.5, last 629.1, span 576.6 ms, 12 pieces, 13 changes, 6 of 7 arrived, 806 looks, 0 heard
+    each window, ms: 50.8 374.3 22.7 15.5 57.3 54.7 46.0
+
+== side-by-side, turn 1
+side-by-side, nobody listening: 7 windows of 7 apps, cells of 640×323
+  round 1 to the grid: answered 139.7 ms, first change 52.4, last 163.5, span 111.1 ms, 3 pieces, 8 changes, 3 of 7 arrived, 789 looks, 0 heard
+  round 2 to the pile: answered 185.3 ms, first change 59.9, last 215.4, span 155.5 ms, 5 pieces, 12 changes, 6 of 7 arrived, 750 looks, 0 heard
+  round 3 to the grid: answered 158.3 ms, first change 123.1, last 209.5, span 86.4 ms, 2 pieces, 8 changes, 3 of 7 arrived, 882 looks, 0 heard
+  round 4 to the pile: answered 159.3 ms, first change 114.3, last 173.7, span 59.4 ms, 5 pieces, 11 changes, 6 of 7 arrived, 923 looks, 0 heard
+
+== one-by-one, turn 2
+one-by-one, nobody listening: 7 windows of 7 apps, cells of 640×323
+  round 1 to the grid: answered 289.3 ms, first change 33.3, last 300.4, span 267.0 ms, 10 pieces, 11 changes, 3 of 7 arrived, 949 looks, 0 heard
+    each window, ms: 33.2 59.4 16.0 29.4 79.3 45.0 27.0
+  round 2 to the pile: answered 219.5 ms, first change 35.9, last 243.0, span 207.1 ms, 9 pieces, 13 changes, 6 of 7 arrived, 1199 looks, 0 heard
+    each window, ms: 34.4 41.3 9.7 10.9 40.0 46.3 37.0
+  round 3 to the grid: answered 188.0 ms, first change 38.8, last 199.2, span 160.4 ms, 8 pieces, 12 changes, 3 of 7 arrived, 1127 looks, 0 heard
+    each window, ms: 30.7 35.1 7.8 12.7 39.0 45.4 17.4
+  round 4 to the pile: answered 245.2 ms, first change 33.0, last 269.2, span 236.2 ms, 11 pieces, 13 changes, 6 of 7 arrived, 1111 looks, 0 heard
+    each window, ms: 32.3 41.8 14.0 7.6 56.5 41.9 51.1
+
+== side-by-side, turn 2
+side-by-side, nobody listening: 7 windows of 7 apps, cells of 640×323
+  round 1 to the grid: answered 74.8 ms, first change 40.1, last 106.7, span 66.6 ms, 4 pieces, 13 changes, 3 of 7 arrived, 741 looks, 0 heard
+  round 2 to the pile: answered 141.0 ms, first change 59.4, last 155.8, span 96.4 ms, 4 pieces, 11 changes, 6 of 7 arrived, 846 looks, 0 heard
+  round 3 to the grid: answered 147.0 ms, first change 76.9, last 192.1, span 115.2 ms, 3 pieces, 9 changes, 3 of 7 arrived, 552 looks, 0 heard
+  round 4 to the pile: answered 268.6 ms, first change 199.6, last 270.3, span 70.7 ms, 3 pieces, 11 changes, 6 of 7 arrived, 641 looks, 0 heard
+
+== one-by-one, turn 3
+one-by-one, nobody listening: 7 windows of 7 apps, cells of 640×323
+  round 1 to the grid: answered 257.2 ms, first change 36.3, last 274.6, span 238.2 ms, 9 pieces, 13 changes, 3 of 7 arrived, 1015 looks, 0 heard
+    each window, ms: 36.2 36.1 10.9 26.3 61.1 55.2 31.4
+  round 2 to the pile: answered 249.8 ms, first change 57.6, last 265.2, span 207.6 ms, 11 pieces, 13 changes, 6 of 7 arrived, 1087 looks, 0 heard
+    each window, ms: 56.8 45.5 13.7 7.6 45.3 52.6 28.1
+  round 3 to the grid: answered 294.4 ms, first change 56.2, last 304.3, span 248.0 ms, 12 pieces, 13 changes, 3 of 7 arrived, 803 looks, 0 heard
+    each window, ms: 57.8 53.1 11.7 18.7 46.4 83.6 23.2
+  round 4 to the pile: answered 341.3 ms, first change 71.0, last 360.0, span 289.0 ms, 11 pieces, 11 changes, 6 of 7 arrived, 1089 looks, 0 heard
+    each window, ms: 71.1 65.3 16.3 17.6 63.0 59.2 48.8
+
+== side-by-side, turn 3
+side-by-side, nobody listening: 7 windows of 7 apps, cells of 640×323
+  round 1 to the grid: answered 124.6 ms, first change 79.0, last 156.2, span 77.2 ms, 4 pieces, 10 changes, 3 of 7 arrived, 1094 looks, 0 heard
+  round 2 to the pile: answered 87.1 ms, first change 25.2, last 105.2, span 80.0 ms, 4 pieces, 10 changes, 6 of 7 arrived, 891 looks, 0 heard
+  round 3 to the grid: answered 177.7 ms, first change 121.2, last 173.8, span 52.6 ms, 3 pieces, 10 changes, 3 of 7 arrived, 1040 looks, 0 heard
+  round 4 to the pile: answered 145.6 ms, first change 87.0, last 160.4, span 73.4 ms, 3 pieces, 10 changes, 6 of 7 arrived, 946 looks, 0 heard
+still running when the script had ended, and stopped now:
+  17266 sleep
+exit code 0

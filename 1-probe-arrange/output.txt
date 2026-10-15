@@ -1,0 +1,90 @@
+# mac-shell: scripts/mac-shell/probe-arrange.sh at dcc022f, macOS 26.6.2, 2026-10-15T09:46Z
+
+== the Mac
+macOS 26.6.2 (25G83) on arm64, 3 cores
+built Arbor, the pointer tool and the app bundles in 7s
+
+== three processes of two windows, and Arbor's own two
+session 1: Arbor pid 12228, test windows 35 36 (pid 12207,12131,12164,12183)
+running: 1 display, 0 docked and 8 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+processes: 12131 12164 12183 12207
+
+== Arbor arranges and lets go, six times: first
+recording /tmp/arbor-shell.boYVMl/home/traces/2026-10-15-094637-arrange-first.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+trace saved: /tmp/arbor-shell.boYVMl/home/traces/2026-10-15-094637-arrange-first.jsonl: 691 lines, trace off
+
+== the bare tool, with Arbor paused
+paused until `resume`; windows are back in view, in their own sizes
+one-by-one, nobody listening: 8 windows of 4 apps, cells of 341×224
+  round 1 to the grid: answered 27.6 ms, first change 10.8, last 97.2, span 86.4 ms, 5 pieces, 12 changes, 8 of 8 arrived, 416 looks, 0 heard
+    each window, ms: 9.4 1.9 2.5 1.2 3.3 1.6 5.8 1.8
+  round 2 to the pile: answered 25.3 ms, first change 12.8, last 168.1, span 155.3 ms, 5 pieces, 12 changes, 8 of 8 arrived, 373 looks, 0 heard
+    each window, ms: 7.4 3.7 3.4 1.9 2.8 2.2 2.3 1.6
+  round 3 to the grid: answered 18.0 ms, first change 8.4, last 82.1, span 73.6 ms, 5 pieces, 12 changes, 8 of 8 arrived, 416 looks, 0 heard
+    each window, ms: 3.0 1.6 4.8 1.3 2.2 1.7 2.2 1.2
+  round 4 to the pile: answered 18.3 ms, first change 8.1, last 119.3, span 111.3 ms, 6 pieces, 12 changes, 8 of 8 arrived, 527 looks, 0 heard
+    each window, ms: 2.6 3.1 3.1 1.2 2.0 2.1 2.9 1.3
+  round 5 to the grid: answered 18.0 ms, first change 8.2, last 119.4, span 111.1 ms, 6 pieces, 11 changes, 8 of 8 arrived, 630 looks, 0 heard
+    each window, ms: 3.3 4.0 2.3 1.1 2.6 1.7 2.1 1.0
+  round 6 to the pile: answered 25.0 ms, first change 10.1, last 150.1, span 140.0 ms, 6 pieces, 12 changes, 8 of 8 arrived, 454 looks, 0 heard
+    each window, ms: 2.7 1.4 4.9 1.8 3.5 5.3 3.0 2.5
+one-by-one, nobody listening: 8 windows of 4 apps, cells of 341×224
+  round 1 to the grid: answered 27.3 ms, first change 16.1, last 84.1, span 68.1 ms, 5 pieces, 12 changes, 8 of 8 arrived, 1456 looks, 0 heard
+    each window, ms: 4.2 5.9 5.0 3.5 3.7 1.5 2.0 1.4
+  round 2 to the pile: answered 36.5 ms, first change 12.3, last 93.6, span 81.3 ms, 6 pieces, 14 changes, 8 of 8 arrived, 1201 looks, 0 heard
+    each window, ms: 3.6 5.8 7.1 2.2 3.4 3.6 8.3 2.4
+  round 3 to the grid: answered 35.9 ms, first change 16.4, last 86.9, span 70.5 ms, 6 pieces, 12 changes, 8 of 8 arrived, 1451 looks, 0 heard
+    each window, ms: 2.5 7.5 8.0 2.5 2.5 1.9 8.5 2.6
+  round 4 to the pile: answered 30.3 ms, first change 17.2, last 60.4, span 43.2 ms, 3 pieces, 12 changes, 8 of 8 arrived, 1252 looks, 0 heard
+    each window, ms: 4.7 2.3 7.6 2.2 4.8 2.3 3.9 2.5
+  round 5 to the grid: answered 61.3 ms, first change 24.0, last 145.3, span 121.2 ms, 5 pieces, 12 changes, 8 of 8 arrived, 1122 looks, 0 heard
+    each window, ms: 9.0 12.8 8.2 3.3 14.2 2.7 4.1 7.0
+  round 6 to the pile: answered 72.1 ms, first change 34.6, last 100.7, span 66.1 ms, 5 pieces, 13 changes, 8 of 8 arrived, 745 looks, 0 heard
+    each window, ms: 11.5 13.3 12.0 6.4 13.7 5.0 5.7 4.5
+one-by-one, nobody listening: 8 windows of 4 apps, cells of 341×224
+  round 1 to the grid: answered 54.8 ms, first change 21.9, last 108.3, span 86.4 ms, 6 pieces, 14 changes, 8 of 8 arrived, 742 looks, 0 heard
+    each window, ms: 7.3 2.2 13.6 3.1 4.2 11.9 5.3 7.3
+    of that the question to its app: 0.2 0.0 0.2 0.0 0.5 0.1 0.4 0.1
+  round 2 to the pile: answered 76.6 ms, first change 41.5, last 205.6, span 164.1 ms, 7 pieces, 11 changes, 8 of 8 arrived, 795 looks, 0 heard
+    each window, ms: 18.7 4.0 18.7 2.7 14.1 3.5 11.9 2.9
+    of that the question to its app: 0.9 0.1 0.2 0.1 0.5 0.4 0.2 0.1
+  round 3 to the grid: answered 93.8 ms, first change 53.1, last 194.0, span 140.9 ms, 6 pieces, 12 changes, 8 of 8 arrived, 897 looks, 0 heard
+    each window, ms: 20.2 15.2 29.8 4.2 10.5 1.7 4.4 7.8
+    of that the question to its app: 0.8 0.1 4.9 0.2 2.3 0.1 0.6 0.0
+  round 4 to the pile: answered 94.1 ms, first change 17.3, last 122.9, span 105.6 ms, 7 pieces, 12 changes, 8 of 8 arrived, 988 looks, 0 heard
+    each window, ms: 8.8 5.6 11.0 27.4 16.4 6.2 16.0 2.7
+    of that the question to its app: 2.1 0.1 0.3 1.6 1.1 0.2 0.2 0.1
+  round 5 to the grid: answered 77.9 ms, first change 56.3, last 166.6, span 110.3 ms, 5 pieces, 11 changes, 8 of 8 arrived, 906 looks, 0 heard
+    each window, ms: 25.7 1.3 4.7 6.1 19.6 9.1 9.3 2.1
+    of that the question to its app: 0.7 0.1 0.3 0.0 0.6 2.0 0.4 0.1
+  round 6 to the pile: answered 80.0 ms, first change 43.5, last 150.0, span 106.6 ms, 6 pieces, 11 changes, 8 of 8 arrived, 964 looks, 0 heard
+    each window, ms: 10.9 1.6 21.1 8.7 16.3 5.9 12.6 2.9
+    of that the question to its app: 0.5 0.1 0.2 0.1 0.2 0.1 0.2 0.1
+side-by-side, nobody listening: 8 windows of 4 apps, cells of 341×224
+  round 1 to the grid: answered 43.5 ms, first change 36.7, last 74.7, span 38.0 ms, 3 pieces, 12 changes, 8 of 8 arrived, 1085 looks, 0 heard
+  round 2 to the pile: answered 97.8 ms, first change 77.1, last 126.2, span 49.1 ms, 4 pieces, 12 changes, 8 of 8 arrived, 705 looks, 0 heard
+  round 3 to the grid: answered 109.1 ms, first change 59.4, last 119.2, span 59.8 ms, 5 pieces, 13 changes, 8 of 8 arrived, 849 looks, 0 heard
+  round 4 to the pile: answered 19.2 ms, first change 13.8, last 128.6, span 114.8 ms, 5 pieces, 13 changes, 8 of 8 arrived, 1089 looks, 0 heard
+  round 5 to the grid: answered 38.3 ms, first change 25.3, last 63.7, span 38.3 ms, 3 pieces, 15 changes, 8 of 8 arrived, 1203 looks, 0 heard
+  round 6 to the pile: answered 46.2 ms, first change 43.1, last 76.9, span 33.8 ms, 3 pieces, 11 changes, 8 of 8 arrived, 1044 looks, 0 heard
+resumed
+
+== Arbor arranges and lets go, six times: again
+recording /tmp/arbor-shell.boYVMl/home/traces/2026-10-15-094801-arrange-again.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+trace saved: /tmp/arbor-shell.boYVMl/home/traces/2026-10-15-094801-arrange-again.jsonl: 665 lines, trace off
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+
+3 passed, 0 failed
+still running when the script had ended, and stopped now:
+  12131 ArborTestWindows
+  12164 ArborTestWindows
+  12183 ArborTestWindows
+exit code 0
