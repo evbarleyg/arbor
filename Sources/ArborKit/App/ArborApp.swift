@@ -449,7 +449,7 @@ public final class ArborApp: NSObject, NSApplicationDelegate {
       .paragraphStyle: paragraph,
     ]
     let credits = NSMutableAttributedString(
-      string: "Dock windows side by side,\nthen zoom between them.\n\nFree and open source (MIT)\n", attributes: attributes)
+      string: "Dock windows side by side,\nthen zoom between them.\n\nFree and open source\n", attributes: attributes)
     let repository = "https://github.com/evbarleyg/arbor"
     if let url = URL(string: repository) {
       credits.append(
