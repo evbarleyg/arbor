@@ -117,7 +117,9 @@ extension Controller {
     }
     workspaces[displayID] = lent
     if let shown = drag?.reflow.trials[displayID] { layouts[displayID] = shown }
-    placeFloatingWindows(on: displayID, layout: layout, reason: .structure)
+    // Nothing is foretold: a forecast begins with the window system reporting what was left of the one before, and whoever hears
+    // that report would take what is lent for real.
+    placeFloatingWindows(on: displayID, layout: layout, reason: .structure, foretelling: false)
     if layout.desktopFrame == nil {
       // A change of the arrangement takes no floating window out of view. But the ones an earlier trial
       // brought in with the Desktop were out of view before the drag, and leave with the Desktop.

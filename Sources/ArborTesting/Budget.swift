@@ -31,8 +31,10 @@ public struct Budget: Equatable, Sendable, CustomStringConvertible {
   /// Times the window server was asked to list every window there is (`stackedWindows`, `windowsFrontToBack`,
   /// `existingWindowIDs`). Milliseconds each, and more the more windows are open, Arbor's or not.
   public var windowLists = 0
-  /// Everything else that was asked of the window system and moves nothing, by name.
+  /// Everything else that was asked of the window system and moves nothing, by name, those three among them. Not who has the
+  /// focus, which has a count of its own (`focusReads`).
   public var asked: [String: Int] = [:]
+  public static let windowListQuestions = ["stackedWindows", "windowsFrontToBack", "existingWindowIDs"]
 
   public init(
     moves: Int = 0, idleMoves: Int = 0, repeatMoves: Int = 0, movesAlone: Int = 0, unclaimedMoves: Int = 0,
@@ -93,8 +95,7 @@ extension Harness {
     for (name, count) in system.asked where count > asked[name, default: 0] {
       budget.asked[name] = count - asked[name, default: 0]
     }
-    budget.windowLists = ["stackedWindows", "windowsFrontToBack", "existingWindowIDs"]
-      .map { budget.asked[$0, default: 0] }.reduce(0, +)
+    budget.windowLists = Budget.windowListQuestions.map { budget.asked[$0, default: 0] }.reduce(0, +)
     return budget
   }
 }

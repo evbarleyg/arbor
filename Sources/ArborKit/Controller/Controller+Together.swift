@@ -10,10 +10,11 @@ import CoreGraphics
 /// first `apply` of that very layout; floating windows by `placeFloatingWindows` itself, from the plan it is about to walk.
 /// So a layout moves its windows in two breaths. One would not do: floating windows are placed last, after the rounds in which
 /// a window that refuses its slot has the layout reckoned again, and the Desktop may be elsewhere by then. Putting windows
-/// back has reasons of its own and is not foretold. A move that is not foretold costs a wait of its own and nothing else.
+/// back has reasons of its own and is not foretold, nor is a drop that is only tried out (Controller+Reflow.swift). A move that is
+/// not foretold costs a wait of its own and nothing else.
 ///
-/// `BudgetTests` and `MoveTogetherTests` fail on a move that goes unclaimed. Whoever gives `apply` or `park` a new reason to
-/// leave a docked window alone gives it here as well.
+/// `BudgetTests`, `MoveTogetherTests` and the chaos test's rule `forecast` fail on a move that goes unclaimed. Whoever gives `apply`,
+/// `park` or the walk in `placeFloatingWindows` a new reason to leave a window alone gives it here as well.
 extension Controller {
   func movesInSight(
     for layout: Layout, on displayID: DisplayID, reason: RelayoutReason

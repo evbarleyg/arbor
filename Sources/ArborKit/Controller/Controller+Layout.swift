@@ -363,7 +363,9 @@ extension Controller {
   /// showing. A change of the arrangement (something else minimized, a seam, a dock) can turn the Desktop into
   /// a tile and back, and must not make the window someone is typing in shrink or vanish. Nor must a command that
   /// leaves the camera where it is (`home` at home, `back` to the same space): it changes nothing a person can see.
-  func placeFloatingWindows(on displayID: DisplayID, layout: Layout, reason: RelayoutReason) {
+  ///
+  /// `foretelling`: whether the window system is told ahead what is about to be asked of it (Controller+Together.swift).
+  func placeFloatingWindows(on displayID: DisplayID, layout: Layout, reason: RelayoutReason, foretelling: Bool = true) {
     workspaces[displayID]?.dropGuestsThatLeft()
     guard let workspace = workspaces[displayID], let display = display(displayID) else { return }
     letGoOfWindowsNoLongerInHand(on: displayID)
@@ -371,7 +373,7 @@ extension Controller {
     defer { owedMoves = owedMoves.filter { !workspace.contains($0) } }
     let plan = floatingMoves(on: displayID, layout: layout, reason: reason)
     // From the very plan that is walked below, so that nothing is foretold that is not asked for (Controller+Together.swift).
-    system.moveTogether(movesInSight(in: plan, on: display, reason: reason))
+    if foretelling { system.moveTogether(movesInSight(in: plan, on: display, reason: reason)) }
     for (window, move) in plan {
       if case .fill(let desktop) = move {
         fill(desktop, with: window, on: display)

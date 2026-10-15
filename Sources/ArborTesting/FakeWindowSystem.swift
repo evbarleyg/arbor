@@ -222,9 +222,10 @@ public final class FakeWindowSystem: WindowSystem {
   public var ignoresMoveTogether = false
   /// What came of the moves announced with `moveTogether`, until `setFrame` asks for it.
   public private(set) var answersAhead: [WindowID: (requested: CGRect, answer: CGRect?)] = [:]
-  /// How many of them were still there when the next forecast came. A layout makes two, so looking at what is left of the last
-  /// would miss what was left of the first.
-  public private(set) var answersNobodyClaimed = 0
+  /// The windows whose answers were still there when the next forecast came, or that were then asked to go elsewhere, in the order
+  /// they were found. A layout makes two forecasts, so looking at what is left of the last would miss what was left of the first.
+  public private(set) var forecastsNobodyClaimed: [WindowID] = []
+  public var answersNobodyClaimed: Int { forecastsNobodyClaimed.count }
 
   /// A 1440×900 display with a 25-point menu bar.
   public static let standardDisplay = DisplaySnapshot(
@@ -266,7 +267,11 @@ public final class FakeWindowSystem: WindowSystem {
   }
 
   public func setFrame(_ frame: CGRect, of window: WindowID) -> CGRect? {
-    if let ahead = answersAhead.removeValue(forKey: window), ahead.requested == frame { return ahead.answer }
+    if let ahead = answersAhead.removeValue(forKey: window) {
+      if ahead.requested == frame { return ahead.answer }
+      // Moved ahead to one place and now asked to another: nobody claims the first move either, and it could be seen.
+      forecastsNobodyClaimed.append(window)
+    }
     return move(window, to: frame, together: false)
   }
 
@@ -275,7 +280,7 @@ public final class FakeWindowSystem: WindowSystem {
     // Like the Accessibility layer: what nobody asked for is reported, so that nobody believes an old frame.
     let unclaimed = answersAhead.keys.sorted()
     answersAhead.removeAll()
-    answersNobodyClaimed += unclaimed.count
+    forecastsNobodyClaimed += unclaimed
     for window in unclaimed {
       if let snapshot = windows[window]?.snapshot { events?.windowChanged(snapshot, userInitiated: false) }
     }
@@ -456,7 +461,8 @@ public final class FakeWindowSystem: WindowSystem {
   }
 
   public func isHolding(_ chord: KeyChord) -> Bool {
-    heldKeys.contains(chord.key) && heldModifiers.isSuperset(of: chord.modifiers)
+    asked["isHolding", default: 0] += 1
+    return heldKeys.contains(chord.key) && heldModifiers.isSuperset(of: chord.modifiers)
   }
 
   // MARK: Simulation
@@ -675,8 +681,11 @@ public final class FakeWindowSystem: WindowSystem {
 
   public func existingWindowIDs() -> Set<WindowID> {
     asked["existingWindowIDs", default: 0] += 1
-    return Set(windows.keys).union(unlisted.keys)
+    return numbersInUse()
   }
+
+  /// The same for the fake's own use, which is nobody's question.
+  func numbersInUse() -> Set<WindowID> { Set(windows.keys).union(unlisted.keys) }
 
   /// Takes a window off the list before Arbor starts (its Space is not showing), or puts it back
   /// (the user switched to its Space), which announces it as a window that was open all along.

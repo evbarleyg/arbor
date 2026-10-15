@@ -121,6 +121,8 @@ public final class ChaosRunner {
   var wasTryingOutADrop = false
   /// `desktopGuardZones()` as the mouse-down tap has it: a copy, refreshed as ArborApp refreshes it.
   var guardZonesCopy = DesktopGuardZones()
+  /// How many forecasts had gone unclaimed before the current action (`FakeWindowSystem.forecastsNobodyClaimed`).
+  var forecastsUnclaimedBefore = 0
 
   public init() {
     system.holdsEchoes = true
@@ -201,6 +203,7 @@ public final class ChaosRunner {
     refusals = []
     filterBefore = controller.filter
     frameLogMark = system.frameLog.count
+    forecastsUnclaimedBefore = system.forecastsNobodyClaimed.count
     owedAPlaceBefore = controller.windowsOwedAPlace
     owedTheWayBackBefore = controller.windowsOwedTheWayBack
     (parkedBefore, workspacesBefore, displaysBefore, wasRunningBefore) = (
@@ -385,7 +388,7 @@ public final class ChaosRunner {
       // An app that wakes up has something to report about its windows, and Arbor then places what it could not.
       system.setUnresponsive(pid: pid, hung)
     case .openTab(let new, let front):
-      guard canChangeTabs(of: front), !system.existingWindowIDs().contains(new), system.backgroundTabs[new] == nil else { return }
+      guard canChangeTabs(of: front), !system.numbersInUse().contains(new), system.backgroundTabs[new] == nil else { return }
       system.openTab(id: new, in: front)
       bringToFront(new, insteadOf: front)
     case .selectTab(let tab, let front):

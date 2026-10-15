@@ -90,7 +90,7 @@ SYSTEM_OPEN = ["open"]
 SYSTEM_NEUTRAL = """
 events windows resizing started frameLog slowFocus afterEvents unresponsive backgroundTabs deniedCalls questions
 mayUseAccessibility unlisted clock frontmost raiseLog leavesStrayDialogs strayDialogs appWhoseDialogsNeverWait
-focusRequests openRequests launchedApps moveLog focusLog focusedWindowReads passTime answersAhead standardDisplay start stop
+focusRequests openRequests launchedApps moveLog focusLog focusedWindowReads asked passTime answersAhead forecastsNobodyClaimed answersNobodyClaimed standardDisplay start stop
 starts setFrameOnce allWindows displays setFrame moveTogether whereMacOSPuts focus focusedWindow cursorLocation
 isMouseButtonDown secondsSinceClickOrModifierKey leaveStrayDialogs bringInStrayDialogs strayDialogsWaiting modifierKeysDown
 inputActivity isHolding frame isVisible clearFrameLog existingWindowIDs launchApp deliverEchoes reportFocus stackedWindows
