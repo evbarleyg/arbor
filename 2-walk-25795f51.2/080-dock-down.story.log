@@ -1,0 +1,58 @@
+80 dock-down: presses ⌃⌥⌘ and the down arrow
+expected: {'act': 'dock-key', 'settled': 'quiet:1203', 'moves': '309,326,329,330,333,338,402,462,309,326,329,330,333,338,402,462,', 'front': '462', 'floating': '527,538', 'docked': '309,326,329,330,333,338,402,462'}
+ODD rule 3: the last window came to rest 1230 ms after the key or the button
+
+04:05:06.276 SCREEN -- begin 80 dock-down
+04:05:06.276 SCREEN -- text 80 presses ⌃⌥⌘ and the down arrow
+04:05:06.622 INFO  made room for w402, w309
+04:05:06.664 DEBUG stage up on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: 10 stand-ins, 0.46 s
+04:05:06.706 MACOS pid 38618 AXResized w309 AXWindow/AXStandardWindow 275 275 501 252
+04:05:06.707 MACOS pid 38618 AXMoved w309 AXWindow/AXStandardWindow 275 275 501 252
+04:05:06.709 SCREEN w522 of Arbor 0,0 1600×900 (level 4)
+04:05:06.709 SCREEN finder (w309) 275,275 501×252
+04:05:06.727 MACOS pid 40327 AXTitleChanged w326 AXWindow/AXStandardWindow 12 43 254 229
+04:05:06.730 MACOS pid 40327 AXResized w326 AXWindow/AXStandardWindow 12 43 254 229
+04:05:06.732 SCREEN terminal (w326) 12,43 254×229
+04:05:06.765 MACOS pid 40327 AXMoved w326 AXWindow/AXStandardWindow 12 43 254 229
+04:05:06.782 MACOS pid 40327 AXTitleChanged w326 AXWindow/AXStandardWindow 12 43 247 229
+04:05:06.783 MACOS pid 40327 AXResized w326 AXWindow/AXStandardWindow 12 43 247 229
+04:05:06.797 MACOS pid 40327 AXMoved w326 AXWindow/AXStandardWindow 14 47 247 229
+04:05:06.807 SCREEN terminal (w326) 14,47 247×229
+04:05:06.880 MACOS pid 51463 AXResized w402 AXWindow/AXStandardWindow 788 303 708 224
+04:05:06.881 MACOS pid 51463 AXMoved w402 AXWindow/AXStandardWindow 788 303 708 224
+04:05:06.890 SCREEN preview (w402) 788,303 708×224
+04:05:06.956 SCREEN finder-new-60 (w462) 400,558 1200×263
+04:05:07.005 SCREEN finder-new-60 (w462) 12,539 1200×263
+04:05:07.165 MACOS pid 38618 AXResized w462 AXWindow/AXStandardWindow 12 539 1576 271
+04:05:07.166 MACOS pid 38618 AXMoved w462 AXWindow/AXStandardWindow 12 539 1576 271
+04:05:07.167 MACOS pid 38618 AXResized w462 AXWindow/AXStandardWindow 12 539 1576 271
+04:05:07.168 SCREEN finder-new-60 (w462) 12,539 1576×271
+04:05:07.174 MACOS pid 40486 AXMoved w329 AXWindow/AXStandardWindow 1599 770 709 320
+04:05:07.180 SCREEN notes (w329) 1599,770 709×320
+04:05:07.195 DEBUG stage retargeted on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: 10 stand-ins, 0.46 s
+04:05:07.231 INFO  dock bottom: moved w462 down; that leaves too little room for 1 other window, which is a tile now
+04:05:07.254 SCREEN front to back: finder-new-60 w517 textedit safari finder w341 mail calendar settings preview notes terminal w504 w502 w498 w499 w503 w501 w505 w511 w508 w509 w506 w507 w510 w512
+04:05:07.276 SCREEN w517 of Arbor 3,530 1594×289
+04:05:07.276 SCREEN w504 of Arbor 12,291 251×236
+04:05:07.276 SCREEN w498 of Arbor 788,43 708×118
+04:05:07.276 SCREEN w499 of Arbor 788,173 708×118
+04:05:07.276 SCREEN w501 of Arbor 1508,43 80×484
+04:05:07.276 SCREEN w505 of Arbor 12,279 251×12
+04:05:07.276 SCREEN w511 of Arbor 275,263 501×12
+04:05:07.276 SCREEN w509 of Arbor 788,161 708×12
+04:05:07.276 SCREEN w506 of Arbor 788,291 708×12
+04:05:07.276 SCREEN w507 of Arbor 263,43 12×484
+04:05:07.276 SCREEN w510 of Arbor 776,43 12×484
+04:05:07.276 SCREEN w512 of Arbor 1496,43 12×484
+04:05:07.276 SCREEN w508 of Arbor 12,527 1576×12
+04:05:07.276 SCREEN w503 of Arbor left the screen
+04:05:07.276 SCREEN front to back: w517 finder-new-60 textedit safari finder w341 mail calendar settings preview notes terminal w502 w504 w498 w499 w501 w505 w511 w509 w506 w507 w510 w512 w508
+04:05:07.322 SCREEN w503 of Arbor 275,43 501×220
+04:05:07.322 SCREEN front to back: w517 finder-new-60 textedit safari finder w341 mail calendar settings preview notes terminal w502 w504 w503 w498 w499 w501 w505 w511 w509 w506 w507 w510 w512 w508
+04:05:07.510 SCREEN w502 of Arbor left the screen
+04:05:07.510 SCREEN w542 of Arbor left the screen
+04:05:07.510 SCREEN front to back: w517 finder-new-60 textedit safari finder w341 mail calendar settings preview notes terminal w504 w503 w498 w499 w501 w505 w511 w509 w506 w507 w510 w512 w508
+04:05:07.828 DEBUG stage down
+04:05:07.844 SCREEN w522 of Arbor left the screen
+04:05:08.607 SCREEN -- end 80 act=dock-key settled=quiet:1203 moves=309,326,329,330,333,338,402,462,309,326,329,330,333,338,402,462, front=462 floating=527,538 docked=309,326,329,330,333,338,402,462
+04:05:09.389 SCRIPT == 81 drag-safari-to-left-edge

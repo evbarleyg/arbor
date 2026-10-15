@@ -1,0 +1,11 @@
+55 view-all: presses ⌃⌥Space
+expected: {'act': 'view', 'settled': 'quiet:737', 'moves': 'any', 'everything': '1', 'tiles': '', 'keyboard': '341', 'returns': '51', 'floating': '309,312,323,326,329,330,333,338,402', 'docked': ''}
+FAIL rule L: preview (w402) is out of view: 41% of it is on a display, at 1022,688 708×424
+
+04:03:41.911 SCREEN -- begin 55 view-all
+04:03:41.911 SCREEN -- text 55 presses ⌃⌥Space
+04:03:42.118 DEBUG commands follow the pointer: a shortcut, pointer idle 3.0 s, keys 7.6 s, focus 3.4 s
+04:03:42.121 INFO  show-all: showing everything
+04:03:42.232 DEBUG peek: the key came up
+04:03:44.955 SCREEN -- end 55 act=view settled=quiet:737 moves=any everything=1 tiles= keyboard=341 returns=51 floating=309,312,323,326,329,330,333,338,402 docked=
+04:03:45.294 SCRIPT == 56 dock-icon-finder

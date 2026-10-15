@@ -1,0 +1,86 @@
+65 drag-settings-by: drags settings, which floats, by its title bar 54 across and 102 down, and clicks there 0.3 s after letting go
+expected: {'act': 'drag', 'settled': 'quiet:979', 'drags': '61', 'front': '61', 'own': '61', 'floating': '34,51,54,60,61,67,128,169', 'docked': '31'}
+ODD rule 3: settings (w61) changed its size while it was being dragged
+
+03:55:31.112 SCREEN -- begin 65 drag-settings-by
+03:55:31.112 SCREEN -- text 65 drags settings, which floats, by its title bar 54 across and 102 down, and clicks there 0.3 s after letting go
+03:55:31.158 SCRIPT drag w61 from 1241,44 to 1295,146
+03:55:31.546 SCREEN the button is down 1241 44
+03:55:31.556 SCREEN front to back: settings w152 finder textedit-new-52 w69 mail textedit notes terminal calendar safari w94
+03:55:31.785 SCREEN settings (w61) 877,35 723×790
+03:55:31.785 DEBUG w61 is being dragged
+03:55:31.786 DEBUG drag of w61: on float
+03:55:31.877 SCREEN settings (w61) 877,42 723×790
+03:55:31.931 MACOS pid 12145 AXMoved w61 AXWindow/AXStandardWindow 877 42 723 745
+03:55:31.931 MACOS pid 12145 AXResized w61 AXWindow/AXStandardWindow 877 42 723 745
+03:55:31.932 MACOS pid 12145 AXResized w61 AXWindow/AXStandardWindow 877 42 723 745
+03:55:31.934 SCREEN settings (w61) 878,38 723×772
+03:55:31.936 SCREEN settings (w61) 878,38 723×745
+03:55:31.936 SCREEN w152 of Arbor left the screen
+03:55:31.936 SCREEN front to back: settings finder textedit-new-52 w69 mail textedit notes terminal calendar safari w94
+03:55:31.949 MACOS pid 12145 AXResized w61 AXWindow/AXStandardWindow 877 42 723 695
+03:55:31.965 MACOS pid 12145 AXResized w61 AXWindow/AXStandardWindow 877 42 723 676
+03:55:31.969 SCREEN settings (w61) 878,38 723×695
+03:55:31.979 SCREEN settings (w61) 878,38 723×676
+03:55:31.982 MACOS pid 12145 AXResized w61 AXWindow/AXStandardWindow 877 42 723 662
+03:55:31.999 MACOS pid 12145 AXResized w61 AXWindow/AXStandardWindow 877 42 723 651
+03:55:32.015 MACOS pid 12145 AXResized w61 AXWindow/AXStandardWindow 877 42 723 643
+03:55:32.031 MACOS pid 12145 AXResized w61 AXWindow/AXStandardWindow 877 42 723 638
+03:55:32.037 SCREEN settings (w61) 880,42 723×638
+03:55:32.049 MACOS pid 12145 AXMoved w61 AXWindow/AXStandardWindow 880 42 723 634
+03:55:32.049 MACOS pid 12145 AXResized w61 AXWindow/AXStandardWindow 880 42 723 634
+03:55:32.064 MACOS pid 12145 AXResized w61 AXWindow/AXStandardWindow 880 42 723 631
+03:55:32.080 MACOS pid 12145 AXResized w61 AXWindow/AXStandardWindow 880 42 723 629
+03:55:32.096 MACOS pid 12145 AXResized w61 AXWindow/AXStandardWindow 880 42 723 628
+03:55:32.104 SCREEN settings (w61) 882,45 723×628
+03:55:32.114 MACOS pid 12145 AXResized w61 AXWindow/AXStandardWindow 880 42 723 627
+03:55:32.149 MACOS pid 12145 AXResized w61 AXWindow/AXStandardWindow 880 42 723 626
+03:55:32.152 SCREEN settings (w61) 882,45 723×626
+03:55:32.157 SCREEN settings (w61) 884,49 723×626
+03:55:32.190 MACOS pid 12145 AXMoved w61 AXWindow/AXStandardWindow 884 49 723 626
+03:55:32.216 SCREEN settings (w61) 886,52 723×626
+03:55:32.255 SCREEN settings (w61) 887,55 723×626
+03:55:32.323 MACOS pid 12145 AXMoved w61 AXWindow/AXStandardWindow 887 55 723 626
+03:55:32.355 SCREEN settings (w61) 889,59 723×626
+03:55:32.365 SCREEN settings (w61) 891,62 723×626
+03:55:32.444 SCREEN settings (w61) 893,66 723×626
+03:55:32.445 MACOS pid 12145 AXMoved w61 AXWindow/AXStandardWindow 893 66 723 626
+03:55:32.502 SCREEN settings (w61) 895,69 723×626
+03:55:32.567 SCREEN settings (w61) 896,72 723×626
+03:55:32.606 MACOS pid 12145 AXMoved w61 AXWindow/AXStandardWindow 896 72 723 626
+03:55:32.610 SCREEN settings (w61) 898,76 723×626
+03:55:32.678 SCREEN settings (w61) 902,83 723×626
+03:55:32.710 MACOS pid 12145 AXMoved w61 AXWindow/AXStandardWindow 904 86 723 626
+03:55:32.727 SCREEN settings (w61) 904,86 723×626
+03:55:32.777 SCREEN settings (w61) 905,89 723×626
+03:55:32.836 SCREEN settings (w61) 907,93 723×626
+03:55:32.844 MACOS pid 12145 AXMoved w61 AXWindow/AXStandardWindow 907 93 723 626
+03:55:32.885 SCREEN settings (w61) 909,96 723×626
+03:55:32.991 MACOS pid 12145 AXMoved w61 AXWindow/AXStandardWindow 911 100 723 626
+03:55:33.001 SCREEN settings (w61) 911,100 723×626
+03:55:33.005 SCREEN settings (w61) 913,103 723×626
+03:55:33.119 MACOS pid 12145 AXMoved w61 AXWindow/AXStandardWindow 914 106 723 626
+03:55:33.129 SCREEN settings (w61) 914,106 723×626
+03:55:33.137 SCREEN settings (w61) 916,110 723×626
+03:55:33.171 SCREEN settings (w61) 918,113 723×626
+03:55:33.238 MACOS pid 12145 AXMoved w61 AXWindow/AXStandardWindow 918 113 723 626
+03:55:33.260 SCREEN settings (w61) 920,116 723×626
+03:55:33.344 SCREEN settings (w61) 922,120 723×626
+03:55:33.371 MACOS pid 12145 AXMoved w61 AXWindow/AXStandardWindow 922 120 723 626
+03:55:33.419 SCREEN settings (w61) 923,123 723×626
+03:55:33.458 SCREEN settings (w61) 925,127 723×626
+03:55:33.475 MACOS pid 12145 AXMoved w61 AXWindow/AXStandardWindow 925 127 723 626
+03:55:33.512 SCREEN settings (w61) 927,130 723×626
+03:55:33.617 MACOS pid 12145 AXMoved w61 AXWindow/AXStandardWindow 927 130 723 626
+03:55:33.783 SCREEN settings (w61) 928,130 723×626
+03:55:33.872 SCREEN settings (w61) 927,130 723×626
+03:55:34.521 INFO  dropped w61 on float, display 5A42259C-47B8-4590-9762-97DBE4FE7F1B
+03:55:34.560 SCREEN w152 of Arbor 918,121 738×644
+03:55:34.560 SCREEN front to back: w152 settings finder textedit-new-52 w69 mail textedit notes terminal calendar safari w94
+03:55:34.560 SCREEN the button is up 1295 146
+03:55:35.438 SCREEN front to back: settings w152 finder textedit-new-52 w69 mail textedit notes terminal calendar safari w94
+03:55:35.438 SCREEN the button is down 1295 146
+03:55:35.438 SCREEN the button is up 1295 146
+03:55:35.478 SCREEN front to back: w152 settings finder textedit-new-52 w69 mail textedit notes terminal calendar safari w94
+03:55:36.626 SCREEN -- end 65 act=drag settled=quiet:979 drags=61 front=61 own=61 floating=34,51,54,60,61,67,128,169 docked=31
+03:55:36.798 SCRIPT == 66 reopen-preview

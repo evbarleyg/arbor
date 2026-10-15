@@ -1,0 +1,73 @@
+44 drag-preview-onto-textedit-bottom: drags preview by its title bar onto the bottom part of textedit and lets go
+expected: {'act': 'drag', 'settled': 'quiet:397', 'drags': '402', 'moves': '312,323,329,330,312,323,329,330,', 'front': '402', 'floating': '309,326,333,338,402', 'docked': '312,323,329,330'}
+FAIL rule -: not so: it is docked
+FAIL rule 3: preview (w402) was 43 points ahead of the pointer's travel and 0 behind it at the most
+
+04:02:44.751 SCREEN -- begin 44 drag-preview-onto-textedit-bottom
+04:02:44.751 SCREEN -- text 44 drags preview by its title bar onto the bottom part of textedit and lets go
+04:02:44.849 SCRIPT drag w402 from 308,47 to 1329,682
+04:02:45.423 SCREEN in front: process 51463 com.apple.Preview
+04:02:45.423 SCREEN front to back: preview w382 textedit calendar finder notes w341 mail safari terminal w419 w415 w381 w420
+04:02:45.423 SCREEN the button is down 308 47
+04:02:45.434 DEBUG focus is on w402
+04:02:45.434 MACOS pid 51463 AXApplicationActivated
+04:02:45.435 DEBUG w402 has the keyboard
+04:02:45.435 MACOS workspace didActivate pid 51463 com.apple.Preview regular
+04:02:45.436 MACOS workspace didDeactivate pid 40167 com.apple.TextEdit regular
+04:02:45.436 MACOS pid 40167 AXApplicationDeactivated
+04:02:45.470 SCREEN w382 of Arbor -6,26 723×442
+04:02:45.470 SCREEN front to back: w382 preview textedit calendar finder notes w341 mail safari terminal w419 w415 w381 w420
+04:02:45.615 SCREEN preview (w402) 0,56 708×424
+04:02:45.729 MACOS pid 51463 AXMoved w402 AXWindow/AXStandardWindow 34 77 708 424
+04:02:45.752 SCREEN preview (w402) 34,77 708×424
+04:02:45.752 SCREEN w382 of Arbor left the screen
+04:02:45.752 SCREEN front to back: preview textedit calendar finder notes w341 mail safari terminal w419 w415 w381 w420
+04:02:45.820 SCREEN preview (w402) 103,98 708×424
+04:02:45.896 SCREEN preview (w402) 137,119 708×424
+04:02:45.899 MACOS pid 51463 AXMoved w402 AXWindow/AXStandardWindow 137 119 708 424
+04:02:45.977 SCREEN preview (w402) 171,140 708×424
+04:02:46.049 SCREEN preview (w402) 205,162 708×424
+04:02:46.081 MACOS pid 51463 AXMoved w402 AXWindow/AXStandardWindow 239 183 708 424
+04:02:46.094 SCREEN preview (w402) 239,183 708×424
+04:02:46.146 SCREEN preview (w402) 273,204 708×424
+04:02:46.175 SCREEN preview (w402) 307,225 708×424
+04:02:46.218 MACOS pid 51463 AXMoved w402 AXWindow/AXStandardWindow 307 225 708 424
+04:02:46.261 SCREEN preview (w402) 341,246 708×424
+04:02:46.302 SCREEN preview (w402) 375,267 708×424
+04:02:46.364 MACOS pid 51463 AXMoved w402 AXWindow/AXStandardWindow 375 267 708 424
+04:02:46.402 SCREEN preview (w402) 409,289 708×424
+04:02:46.412 SCREEN preview (w402) 443,310 708×424
+04:02:46.484 MACOS pid 51463 AXMoved w402 AXWindow/AXStandardWindow 443 310 708 424
+04:02:46.505 SCREEN preview (w402) 477,331 708×424
+04:02:46.613 MACOS pid 51463 AXMoved w402 AXWindow/AXStandardWindow 511 352 708 424
+04:02:46.657 SCREEN preview (w402) 545,373 708×424
+04:02:46.732 SCREEN preview (w402) 579,394 708×424
+04:02:46.743 MACOS pid 51463 AXMoved w402 AXWindow/AXStandardWindow 579 394 708 424
+04:02:46.833 SCREEN preview (w402) 613,397 708×424
+04:02:46.853 SCREEN preview (w402) 647,418 708×424
+04:02:46.917 MACOS pid 51463 AXMoved w402 AXWindow/AXStandardWindow 647 418 708 424
+04:02:46.969 SCREEN preview (w402) 681,461 708×424
+04:02:47.015 SCREEN preview (w402) 715,476 708×424
+04:02:47.032 MACOS pid 51463 AXMoved w402 AXWindow/AXStandardWindow 715 476 708 424
+04:02:47.036 SCREEN preview (w402) 749,497 708×424
+04:02:47.119 SCREEN preview (w402) 783,539 708×424
+04:02:47.135 MACOS pid 51463 AXMoved w402 AXWindow/AXStandardWindow 783 539 708 424
+04:02:47.185 SCREEN preview (w402) 817,561 708×424
+04:02:47.231 SCREEN preview (w402) 851,582 708×424
+04:02:47.249 MACOS pid 51463 AXMoved w402 AXWindow/AXStandardWindow 851 582 708 424
+04:02:47.335 SCREEN preview (w402) 885,603 708×424
+04:02:47.402 SCREEN preview (w402) 892,624 708×424
+04:02:47.418 MACOS pid 51463 AXMoved w402 AXWindow/AXStandardWindow 892 624 708 424
+04:02:47.430 SCREEN preview (w402) 926,645 708×424
+04:02:47.525 SCREEN preview (w402) 988,666 708×424
+04:02:47.532 MACOS pid 51463 AXMoved w402 AXWindow/AXStandardWindow 988 666 708 424
+04:02:47.593 SCREEN preview (w402) 1023,688 708×424
+04:02:47.647 MACOS pid 51463 AXMoved w402 AXWindow/AXStandardWindow 1023 688 708 424
+04:02:47.977 SCREEN preview (w402) 1022,688 708×424
+04:02:48.066 MACOS pid 51463 AXMoved w402 AXWindow/AXStandardWindow 1022 688 708 424
+04:02:48.636 SCREEN the button is up 1329 682
+04:02:48.717 SCREEN w382 of Arbor 1013,679 723×439
+04:02:48.717 SCREEN front to back: w382 preview textedit calendar finder notes w341 mail safari terminal w419 w415 w381 w420
+04:02:54.292 SCREEN -- finding 44 - FAIL not so: it is docked
+04:02:56.368 SCREEN -- end 44 act=drag settled=quiet:397 drags=402 moves=312,323,329,330,312,323,329,330, front=402 floating=309,326,333,338,402 docked=312,323,329,330
+04:02:56.895 SCRIPT == 45 restore-settings

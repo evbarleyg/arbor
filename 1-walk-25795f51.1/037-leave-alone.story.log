@@ -1,0 +1,10 @@
+37 leave-alone: does nothing for half a minute
+expected: {'act': 'idle', 'settled': 'quiet:365', 'floating': '31,34,51,54,60,61,63,67,128', 'docked': ''}
+FAIL rule -: with nothing to do Arbor used 1.5 % of a core
+
+03:53:59.860 SCREEN -- begin 37 leave-alone
+03:53:59.860 SCREEN -- text 37 does nothing for half a minute
+03:54:00.254 SCREEN w99 of Arbor left the screen
+03:54:29.894 SCREEN -- finding 37 -:busy FAIL with nothing to do Arbor used 1.5 % of a core
+03:54:30.388 SCREEN -- end 37 act=idle settled=quiet:365 floating=31,34,51,54,60,61,63,67,128 docked=
+03:54:30.717 SCRIPT == 38 view-in

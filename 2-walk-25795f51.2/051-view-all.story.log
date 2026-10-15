@@ -1,0 +1,11 @@
+51 view-all: presses ⌃⌥Space
+expected: {'act': 'view', 'settled': 'quiet:684', 'moves': 'any', 'everything': '1', 'tiles': '', 'keyboard': '309', 'returns': '49', 'floating': '309,312,323,326,329,330,333,338,402', 'docked': ''}
+FAIL rule L: preview (w402) is out of view: 41% of it is on a display, at 1022,688 708×424
+
+04:03:26.334 SCREEN -- begin 51 view-all
+04:03:26.334 SCREEN -- text 51 presses ⌃⌥Space
+04:03:26.483 SCREEN w380 of Arbor left the screen
+04:03:26.571 INFO  show-all: showing everything
+04:03:26.762 DEBUG peek: the key came up
+04:03:29.315 SCREEN -- end 51 act=view settled=quiet:684 moves=any everything=1 tiles= keyboard=309 returns=49 floating=309,312,323,326,329,330,333,338,402 docked=
+04:03:29.538 SCRIPT == 52 cmd-tab-2

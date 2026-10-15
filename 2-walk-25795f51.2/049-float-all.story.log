@@ -1,0 +1,62 @@
+49 float-all: presses ⌃⌥⇧F
+expected: {'act': 'way-out', 'settled': 'quiet:1631', 'moves': 'any', 'restores': 'all', 'places': '1', 'everything': '1', 'floating': '309,312,323,326,329,330,333,338,402', 'docked': ''}
+ODD rule 3: the last window came to rest 996 ms after the key or the button
+FAIL rule 5: preview (w402) has its size back but not its place: 1022,688 708×424, it was at 4,35 708×424
+FAIL rule L: preview (w402) is out of view: 41% of it is on a display, at 1022,688 708×424
+
+04:03:18.562 SCREEN -- begin 49 float-all
+04:03:18.562 SCREEN -- text 49 presses ⌃⌥⇧F
+04:03:18.830 DEBUG stage up on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: 9 stand-ins, 0.46 s
+04:03:18.835 SCREEN w373 of Arbor 0,0 1600×900 (level 4)
+04:03:18.933 MACOS pid 39820 AXResized w312 AXWindow/AXStandardWindow 138 105 1306 316
+04:03:18.934 MACOS pid 39820 AXMoved w312 AXWindow/AXStandardWindow 138 105 1306 316
+04:03:18.935 SCREEN safari (w312) 138,105 1306×316
+04:03:19.018 SCREEN finder (w309) 12,43 920×436
+04:03:19.031 MACOS pid 38618 AXResized w309 AXWindow/AXStandardWindow 340 120 920 436
+04:03:19.032 MACOS pid 38618 AXMoved w309 AXWindow/AXStandardWindow 340 120 920 436
+04:03:19.035 SCREEN finder (w309) 340,120 920×436
+04:03:19.131 MACOS pid 40486 AXResized w329 AXWindow/AXStandardWindow 300 105 1000 660
+04:03:19.132 MACOS pid 40486 AXMoved w329 AXWindow/AXStandardWindow 300 105 1000 660
+04:03:19.155 SCREEN calendar (w330) 653,307 936×514
+04:03:19.155 SCREEN notes (w329) 300,105 1000×660
+04:03:19.296 MACOS pid 40544 AXResized w330 AXWindow/AXStandardWindow 464 118 936 599
+04:03:19.297 MACOS pid 40544 AXMoved w330 AXWindow/AXStandardWindow 464 118 936 599
+04:03:19.298 SCREEN calendar (w330) 464,118 936×599
+04:03:19.298 MACOS pid 40544 AXResized w330 AXWindow/AXStandardWindow 464 118 936 599
+04:03:19.310 MACOS pid 40167 AXResized w323 AXWindow/AXStandardWindow 1345 43 255 439
+04:03:19.316 MACOS pid 40167 AXMoved w323 AXWindow/AXStandardWindow 165 65 255 439
+04:03:19.317 MACOS pid 40167 AXResized w323 AXWindow/AXStandardWindow 165 65 673 439
+04:03:19.352 MACOS pid 40327 AXTitleChanged w326 AXWindow/AXStandardWindow 40 51 877 499
+04:03:19.353 MACOS pid 40327 AXResized w326 AXWindow/AXStandardWindow 40 51 877 499
+04:03:19.356 SCREEN textedit (w323) 165,65 673×439
+04:03:19.357 MACOS pid 40327 AXMoved w326 AXWindow/AXStandardWindow 40 51 877 499
+04:03:19.366 SCREEN terminal (w326) 40,51 877×499
+04:03:19.394 MACOS pid 40697 AXMoved w333 AXWindow/AXStandardWindow 877 140 723 629
+04:03:19.407 SCREEN settings (w333) 877,140 723×504
+04:03:19.408 MACOS pid 40697 AXResized w333 AXWindow/AXStandardWindow 877 140 723 629
+04:03:19.417 SCREEN settings (w333) 877,140 723×629
+04:03:19.528 SCREEN w341 of Mail 325,370 470×416
+04:03:19.528 SCREEN mail (w338) 0,318 1120×504
+04:03:19.593 MACOS pid 41101 AXResized w338 AXWindow/AXStandardWindow 240 72 1120 630
+04:03:19.594 MACOS pid 41101 AXMoved w338 AXWindow/AXStandardWindow 240 72 1120 630
+04:03:19.594 MACOS pid 41101 AXResized w338 AXWindow/AXStandardWindow 240 72 1120 630
+04:03:19.597 SCREEN w341 of Mail 565,179 470×416
+04:03:19.597 SCREEN mail (w338) 240,72 1120×630
+04:03:19.598 INFO  float-all: floated 5 windows
+04:03:19.600 DEBUG said on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: Floated 5 windows
+04:03:19.617 SCREEN w382 of Arbor left the screen
+04:03:19.617 SCREEN w381 of Arbor left the screen
+04:03:19.617 SCREEN w433 of Arbor left the screen
+04:03:19.617 SCREEN w415 of Arbor left the screen
+04:03:19.617 SCREEN w420 of Arbor left the screen
+04:03:19.617 SCREEN front to back: finder w341 mail settings preview textedit calendar notes safari terminal w419 w436
+04:03:19.703 SCREEN w380 of Arbor 717,728 167×38 (level 6)
+04:03:19.814 DEBUG stage down
+04:03:19.819 SCREEN w436 of Arbor left the screen
+04:03:19.819 SCREEN w419 of Arbor left the screen
+04:03:19.819 SCREEN front to back: finder w341 mail settings preview textedit calendar notes safari terminal
+04:03:19.831 SCREEN w383 of Arbor left the screen
+04:03:19.831 SCREEN w373 of Arbor left the screen
+04:03:21.502 SCREEN w380 of Arbor left the screen
+04:03:22.599 SCREEN -- end 49 act=way-out settled=quiet:1631 moves=any restores=all places=1 everything=1 floating=309,312,323,326,329,330,333,338,402 docked=
+04:03:23.016 SCRIPT == 50 view-frame

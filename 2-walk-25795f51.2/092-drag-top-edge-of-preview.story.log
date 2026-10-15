@@ -1,0 +1,44 @@
+92 drag-top-edge-of-preview: drags the top edge of preview's window by 30 points
+expected: {'act': 'resize', 'settled': 'quiet:1063', 'moves': '309,326,329,330,333,338,402,462,309,326,329,330,333,338,402,462,', 'floating': '538,559', 'docked': '309,326,329,330,333,338,402,462'}
+FAIL rule 4: the app in front changed (to process 51463), and nobody switched
+
+04:05:59.027 SCREEN -- begin 92 drag-top-edge-of-preview
+04:05:59.027 SCREEN -- text 92 drags the top edge of preview's window by 30 points
+04:05:59.631 SCREEN front to back: preview w517 safari finder-new-60 finder textedit w341 mail calendar settings notes terminal w501 w498 w503 w499 w504 w509 w511 w505 w506 w507 w510 w512 w508
+04:05:59.631 SCREEN the button is down 1142 304
+04:05:59.632 SCREEN in front: process 51463 com.apple.Preview
+04:05:59.632 MACOS pid 51463 AXApplicationActivated
+04:05:59.633 MACOS workspace didActivate pid 51463 com.apple.Preview regular
+04:05:59.634 MACOS workspace didDeactivate pid 63410 com.apple.Safari regular
+04:05:59.652 DEBUG focus is on w402
+04:05:59.653 DEBUG w402 has the keyboard
+04:05:59.675 SCREEN w517 of Arbor 779,294 726×242
+04:05:59.675 SCREEN front to back: w517 preview safari finder-new-60 finder textedit w341 mail calendar settings notes terminal w501 w498 w503 w499 w504 w509 w511 w505 w506 w507 w510 w512 w508
+04:05:59.694 MACOS pid 63410 AXApplicationDeactivated
+04:06:00.253 MACOS pid 51463 AXResized w402 AXWindow/AXStandardWindow 788 297 708 230
+04:06:00.254 DEBUG w402 is being resized by its edges
+04:06:00.263 SCREEN preview (w402) 788,297 708×230
+04:06:00.293 SCREEN w517 of Arbor left the screen
+04:06:00.293 SCREEN front to back: preview safari finder-new-60 finder textedit w341 mail calendar settings notes terminal w501 w498 w503 w499 w504 w509 w511 w505 w506 w507 w510 w512 w508
+04:06:00.324 MACOS pid 51463 AXResized w402 AXWindow/AXStandardWindow 788 296 708 231
+04:06:00.338 SCREEN preview (w402) 788,296 708×231
+04:06:00.392 MACOS pid 51463 AXResized w402 AXWindow/AXStandardWindow 788 295 708 232
+04:06:00.422 SCREEN preview (w402) 788,295 708×232
+04:06:00.493 MACOS pid 51463 AXResized w402 AXWindow/AXStandardWindow 788 294 708 233
+04:06:00.537 SCREEN preview (w402) 788,294 708×233
+04:06:00.575 MACOS pid 51463 AXResized w402 AXWindow/AXStandardWindow 788 293 708 234
+04:06:00.591 SCREEN preview (w402) 788,293 708×234
+04:06:00.659 MACOS pid 51463 AXResized w402 AXWindow/AXStandardWindow 788 292 708 235
+04:06:00.709 SCREEN preview (w402) 788,292 708×235
+04:06:02.593 SCREEN the button is up 1142 274
+04:06:02.605 DEBUG stage up on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: 10 stand-ins, 0.46 s
+04:06:02.614 DEBUG edge resize of w402: edges ["top"], seams beside ["top"]
+04:06:02.627 SCREEN w522 of Arbor 0,0 1600×900 (level 4)
+04:06:02.636 SCREEN w517 of Arbor 779,283 726×253
+04:06:02.636 SCREEN w504 of Arbor 788,171 708×109
+04:06:02.636 SCREEN w506 of Arbor 788,280 708×12
+04:06:02.636 SCREEN front to back: w517 preview safari finder-new-60 finder textedit w341 mail calendar settings notes terminal w501 w498 w503 w499 w509 w511 w505 w507 w510 w512 w508 w504 w506
+04:06:03.280 DEBUG stage down
+04:06:03.335 SCREEN w522 of Arbor left the screen
+04:06:05.344 SCREEN -- end 92 act=resize settled=quiet:1063 moves=309,326,329,330,333,338,402,462,309,326,329,330,333,338,402,462, floating=538,559 docked=309,326,329,330,333,338,402,462
+04:06:05.786 SCRIPT == 93 click-preview

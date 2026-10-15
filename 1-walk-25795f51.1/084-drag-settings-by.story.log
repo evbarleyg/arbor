@@ -1,0 +1,97 @@
+84 drag-settings-by: drags settings, which floats, by its title bar 106 across and -30 down, and clicks there 0.3 s after letting go
+expected: {'act': 'drag', 'settled': 'quiet:945', 'drags': '61', 'front': '61', 'own': '61', 'floating': '61', 'docked': '31,34,51,54,60,67,128,169,198'}
+FAIL rule 4: settings (w61) is not in front: notes (w54) ahead of it, of which 1 cover part of it
+FAIL rule 4: settings (w61) its app is not the one in front (process 11465 is)
+
+03:56:23.055 SCREEN -- begin 84 drag-settings-by
+03:56:23.055 SCREEN -- text 84 drags settings, which floats, by its title bar 106 across and -30 down, and clicks there 0.3 s after letting go
+03:56:23.125 SCRIPT drag w61 from 1263,152 to 1369,122
+03:56:23.714 SCREEN in front: process 12145 com.apple.systempreferences
+03:56:23.723 MACOS pid 17767 AXApplicationDeactivated
+03:56:23.724 MACOS workspace didActivate pid 12145 com.apple.systempreferences regular
+03:56:23.724 MACOS workspace didDeactivate pid 17767 com.apple.TextEdit regular
+03:56:23.727 SCREEN front to back: settings w209 textedit textedit-new-52 terminal preview w69 mail notes calendar safari w214 w213 w216 w217 w208 w222 w225 w223 w221 w224 w220 w215 w219
+03:56:23.727 SCREEN the button is down 1263 152
+03:56:23.833 MACOS pid 12145 AXApplicationActivated
+03:56:23.834 DEBUG focus is on w61
+03:56:23.837 DEBUG w61 has the keyboard
+03:56:23.919 SCREEN w209 of Arbor 890,131 738×647
+03:56:23.919 SCREEN settings (w61) 906,140 723×629
+03:56:23.919 SCREEN front to back: w209 settings textedit textedit-new-52 terminal preview w69 mail notes calendar safari w214 w213 w216 w217 w208 w222 w225 w223 w221 w224 w220 w215 w219
+03:56:23.965 DEBUG w61 is being dragged
+03:56:23.966 SCREEN settings (w61) 909,140 723×629
+03:56:23.966 DEBUG drag of w61: on float
+03:56:23.966 MACOS pid 12145 AXMoved w61 AXWindow/AXStandardWindow 906 140 723 629
+03:56:24.003 SCREEN w209 of Arbor left the screen
+03:56:24.003 SCREEN front to back: settings textedit textedit-new-52 terminal preview w69 mail notes calendar safari w214 w213 w216 w217 w208 w222 w225 w223 w221 w224 w220 w215 w219
+03:56:24.015 SCREEN settings (w61) 913,140 723×629
+03:56:24.067 MACOS pid 12145 AXMoved w61 AXWindow/AXStandardWindow 913 140 723 629
+03:56:24.102 SCREEN settings (w61) 916,140 723×629
+03:56:24.156 SCREEN settings (w61) 920,140 723×629
+03:56:24.210 SCREEN settings (w61) 923,140 723×629
+03:56:24.210 MACOS pid 12145 AXMoved w61 AXWindow/AXStandardWindow 923 140 723 629
+03:56:24.281 SCREEN settings (w61) 927,140 723×629
+03:56:24.337 SCREEN settings (w61) 930,140 723×629
+03:56:24.384 MACOS pid 12145 AXMoved w61 AXWindow/AXStandardWindow 930 140 723 629
+03:56:24.403 SCREEN settings (w61) 934,140 723×629
+03:56:24.413 SCREEN settings (w61) 937,140 723×629
+03:56:24.493 MACOS pid 12145 AXMoved w61 AXWindow/AXStandardWindow 937 140 723 629
+03:56:24.554 SCREEN settings (w61) 944,140 723×629
+03:56:24.611 MACOS pid 12145 AXMoved w61 AXWindow/AXStandardWindow 944 140 723 629
+03:56:24.628 SCREEN settings (w61) 948,140 723×629
+03:56:24.726 SCREEN settings (w61) 952,140 723×629
+03:56:24.733 MACOS pid 12145 AXMoved w61 AXWindow/AXStandardWindow 952 140 723 629
+03:56:24.787 SCREEN settings (w61) 955,140 723×629
+03:56:24.832 SCREEN settings (w61) 959,140 723×629
+03:56:24.862 MACOS pid 12145 AXMoved w61 AXWindow/AXStandardWindow 959 140 723 629
+03:56:24.884 SCREEN settings (w61) 962,140 723×629
+03:56:24.943 SCREEN settings (w61) 966,140 723×629
+03:56:24.966 MACOS pid 12145 AXMoved w61 AXWindow/AXStandardWindow 966 140 723 629
+03:56:24.984 SCREEN settings (w61) 969,140 723×629
+03:56:25.079 SCREEN settings (w61) 973,140 723×629
+03:56:25.095 MACOS pid 12145 AXMoved w61 AXWindow/AXStandardWindow 973 140 723 629
+03:56:25.130 SCREEN settings (w61) 976,140 723×629
+03:56:25.228 SCREEN settings (w61) 980,140 723×629
+03:56:25.245 MACOS pid 12145 AXMoved w61 AXWindow/AXStandardWindow 980 140 723 629
+03:56:25.304 SCREEN settings (w61) 983,140 723×629
+03:56:25.379 SCREEN settings (w61) 987,140 723×629
+03:56:25.384 MACOS pid 12145 AXMoved w61 AXWindow/AXStandardWindow 987 140 723 629
+03:56:25.422 SCREEN settings (w61) 990,140 723×629
+03:56:25.528 MACOS pid 12145 AXMoved w61 AXWindow/AXStandardWindow 994 140 723 629
+03:56:25.554 SCREEN settings (w61) 994,140 723×629
+03:56:25.597 SCREEN settings (w61) 997,140 723×629
+03:56:25.643 SCREEN settings (w61) 1001,140 723×629
+03:56:25.700 MACOS pid 12145 AXMoved w61 AXWindow/AXStandardWindow 1001 140 723 629
+03:56:25.736 SCREEN settings (w61) 1005,140 723×629
+03:56:25.832 MACOS pid 12145 AXMoved w61 AXWindow/AXStandardWindow 1005 140 723 629
+03:56:26.007 SCREEN settings (w61) 1006,140 723×629
+03:56:26.083 MACOS pid 12145 AXMoved w61 AXWindow/AXStandardWindow 1006 140 723 629
+03:56:26.763 SCREEN settings (w61) 1005,140 723×629
+03:56:26.791 MACOS pid 12145 AXMoved w61 AXWindow/AXStandardWindow 1005 140 723 629
+03:56:26.792 INFO  dropped w61 on float, display 5A42259C-47B8-4590-9762-97DBE4FE7F1B
+03:56:26.811 SCREEN the button is up 1369 122
+03:56:26.851 SCREEN w209 of Arbor 996,131 738×647
+03:56:26.851 SCREEN front to back: w209 settings textedit textedit-new-52 terminal preview w69 mail notes calendar safari w214 w213 w216 w217 w208 w222 w225 w223 w221 w224 w220 w215 w219
+03:56:27.691 SCREEN the button is down 1369 122
+03:56:27.700 MACOS pid 11465 AXApplicationActivated
+03:56:27.757 SCREEN in front: process 11465 com.apple.Notes
+03:56:27.762 SCREEN front to back: notes w209 settings textedit textedit-new-52 terminal preview w69 mail calendar safari w214 w213 w216 w217 w208 w222 w225 w223 w221 w224 w220 w215 w219
+03:56:27.762 SCREEN the button is up 1369 122
+03:56:27.762 DEBUG focus is on w54
+03:56:27.762 DEBUG w54 has the keyboard
+03:56:27.772 SCREEN w209 of Arbor 778,34 727×396
+03:56:27.772 SCREEN front to back: w209 notes settings textedit textedit-new-52 terminal preview w69 mail calendar safari w214 w213 w216 w217 w208 w222 w225 w223 w221 w224 w220 w215 w219
+03:56:27.823 MACOS pid 12145 AXApplicationDeactivated
+03:56:27.823 MACOS workspace didActivate pid 11465 com.apple.Notes regular
+03:56:27.823 MACOS workspace didDeactivate pid 12145 com.apple.systempreferences regular
+03:56:27.824 DEBUG raised w61, which stays in view
+03:56:27.824 MACOS pid 12145 AXFocusedWindowChanged w61 AXWindow/AXStandardWindow 1005 140 723 629
+03:56:27.824 MACOS pid 12145 AXMainWindowChanged w61 AXWindow/AXStandardWindow 1005 140 723 629
+03:56:28.070 DEBUG raised w61, which stays in view
+03:56:28.073 MACOS pid 12145 AXFocusedWindowChanged w61 AXWindow/AXStandardWindow 1005 140 723 629
+03:56:28.083 MACOS pid 12145 AXMainWindowChanged w61 AXWindow/AXStandardWindow 1005 140 723 629
+03:56:28.354 DEBUG raised w61, which stays in view
+03:56:28.355 MACOS pid 12145 AXFocusedWindowChanged w61 AXWindow/AXStandardWindow 1005 140 723 629
+03:56:28.356 MACOS pid 12145 AXMainWindowChanged w61 AXWindow/AXStandardWindow 1005 140 723 629
+03:56:30.545 SCREEN -- end 84 act=drag settled=quiet:945 drags=61 front=61 own=61 floating=61 docked=31,34,51,54,60,67,128,169,198
+03:56:30.924 SCRIPT == 85 restore-finder

@@ -1,0 +1,109 @@
+42 drag-preview-out: drags preview out of the arrangement onto the Desktop and lets go
+expected: {'act': 'drag', 'settled': 'quiet:1012', 'drags': '63', 'moves': '63,,', 'front': '63', 'restores': '63', 'place': '63', 'floating': '31,34,51,54,60,61,63,67,128', 'docked': ''}
+FAIL rule 2: finder (w31) a floating window, moved, and the step did not name it
+FAIL rule 2: safari (w34) a floating window, moved, and the step did not name it
+FAIL rule 2: terminal (w51) a floating window, moved, and the step did not name it
+FAIL rule 2: notes (w54) a floating window, moved, and the step did not name it
+FAIL rule 2: calendar (w60) a floating window, moved, and the step did not name it
+FAIL rule 2: settings (w61) a floating window, moved, and the step did not name it
+FAIL rule 2: mail (w67) a floating window, moved, and the step did not name it
+ODD rule 2: w69 of Mail moved along with a window of its app
+FAIL rule 2: textedit (w128) a floating window, moved, and the step did not name it
+ODD rule 3: the last window came to rest 711 ms after the key or the button
+
+03:54:40.262 SCREEN -- begin 42 drag-preview-out
+03:54:40.262 SCREEN -- text 42 drags preview out of the arrangement onto the Desktop and lets go
+03:54:40.332 SCRIPT drag w63 from 768,445 to 800,169
+03:54:40.912 SCREEN the button is down 768 445
+03:54:40.952 SCREEN front to back: preview w152 terminal textedit notes calendar settings safari w94 w69 mail finder w151
+03:54:41.163 SCREEN preview (w63) 13,423 1576×377
+03:54:41.173 SCREEN preview (w63) 14,422 1576×377
+03:54:41.174 DEBUG w63 is being dragged
+03:54:41.176 DEBUG drag of w63: on none
+03:54:41.245 MACOS pid 12227 AXMoved w63 AXWindow/AXStandardWindow 14 422 1576 377
+03:54:41.261 DEBUG drag of w63: on float
+03:54:41.280 SCREEN preview (w63) 15,422 1576×377
+03:54:41.280 SCREEN w152 of Arbor left the screen
+03:54:41.280 SCREEN front to back: preview terminal textedit notes calendar settings safari w94 w69 mail finder w151
+03:54:41.344 SCREEN preview (w63) 16,422 1576×377
+03:54:41.368 MACOS pid 12227 AXMoved w63 AXWindow/AXStandardWindow 16 422 1576 377
+03:54:41.447 SCREEN preview (w63) 17,422 1576×377
+03:54:41.502 SCREEN preview (w63) 18,412 1576×377
+03:54:41.520 MACOS pid 12227 AXMoved w63 AXWindow/AXStandardWindow 18 412 1576 377
+03:54:41.566 SCREEN preview (w63) 19,386 1576×377
+03:54:41.622 SCREEN preview (w63) 20,361 1576×377
+03:54:41.631 MACOS pid 12227 AXMoved w63 AXWindow/AXStandardWindow 20 361 1576 377
+03:54:41.694 SCREEN preview (w63) 21,350 1576×377
+03:54:41.753 SCREEN preview (w63) 22,341 1576×377
+03:54:41.776 MACOS pid 12227 AXMoved w63 AXWindow/AXStandardWindow 22 341 1576 377
+03:54:41.821 SCREEN preview (w63) 23,331 1576×377
+03:54:41.886 SCREEN preview (w63) 24,322 1576×377
+03:54:41.901 MACOS pid 12227 AXMoved w63 AXWindow/AXStandardWindow 24 322 1576 377
+03:54:41.911 SCREEN preview (w63) 24,313 1576×377
+03:54:42.028 MACOS pid 12227 AXMoved w63 AXWindow/AXStandardWindow 24 304 1576 377
+03:54:42.071 SCREEN preview (w63) 24,304 1576×377
+03:54:42.129 SCREEN preview (w63) 24,295 1576×377
+03:54:42.209 MACOS pid 12227 AXMoved w63 AXWindow/AXStandardWindow 24 285 1576 377
+03:54:42.255 SCREEN preview (w63) 24,285 1576×377
+03:54:42.294 SCREEN preview (w63) 24,276 1576×377
+03:54:42.378 SCREEN preview (w63) 24,267 1576×377
+03:54:42.395 MACOS pid 12227 AXMoved w63 AXWindow/AXStandardWindow 24 267 1576 377
+03:54:42.455 SCREEN preview (w63) 24,258 1576×377
+03:54:42.527 SCREEN preview (w63) 24,249 1576×377
+03:54:42.546 MACOS pid 12227 AXMoved w63 AXWindow/AXStandardWindow 24 249 1576 377
+03:54:42.625 SCREEN preview (w63) 24,239 1576×377
+03:54:42.637 SCREEN preview (w63) 24,230 1576×377
+03:54:42.714 MACOS pid 12227 AXMoved w63 AXWindow/AXStandardWindow 24 230 1576 377
+03:54:42.737 SCREEN preview (w63) 24,221 1576×377
+03:54:42.831 SCREEN preview (w63) 24,212 1576×377
+03:54:42.835 MACOS pid 12227 AXMoved w63 AXWindow/AXStandardWindow 24 212 1576 377
+03:54:42.904 SCREEN preview (w63) 24,203 1576×377
+03:54:43.005 SCREEN preview (w63) 24,193 1576×377
+03:54:43.012 MACOS pid 12227 AXMoved w63 AXWindow/AXStandardWindow 24 193 1576 377
+03:54:43.053 SCREEN preview (w63) 24,184 1576×377
+03:54:43.089 SCREEN preview (w63) 24,175 1576×377
+03:54:43.103 SCREEN preview (w63) 24,166 1576×377
+03:54:43.119 SCREEN preview (w63) 24,157 1576×377
+03:54:43.132 MACOS pid 12227 AXMoved w63 AXWindow/AXStandardWindow 24 157 1576 377
+03:54:44.196 SCREEN the button is up 800 169
+03:54:44.262 DEBUG w63 was dropped out of its slot and took its own size, 708×424
+03:54:44.262 MACOS pid 12227 AXResized w63 AXWindow/AXStandardWindow 451 157 708 424
+03:54:44.263 INFO  dropped w63 on float, display 5A42259C-47B8-4590-9762-97DBE4FE7F1B
+03:54:44.263 MACOS pid 12227 AXMoved w63 AXWindow/AXStandardWindow 451 157 708 424
+03:54:44.270 SCREEN w150 of Arbor 0,0 1600×900 (level 4)
+03:54:44.270 SCREEN preview (w63) 24,157 708×424
+03:54:44.270 DEBUG stage up on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: 9 stand-ins, 0.46 s
+03:54:44.293 MACOS pid 350 AXResized w31 AXWindow/AXStandardWindow 340 120 920 436
+03:54:44.294 MACOS pid 350 AXMoved w31 AXWindow/AXStandardWindow 340 120 920 436
+03:54:44.309 SCREEN preview (w63) 451,157 708×424
+03:54:44.309 SCREEN safari (w34) 138,31 1324×790
+03:54:44.309 SCREEN finder (w31) 340,120 920×436
+03:54:44.309 MACOS pid 10596 AXResized w34 AXWindow/AXStandardWindow 138 31 1324 790
+03:54:44.331 MACOS pid 11143 AXTitleChanged w51 AXWindow/AXStandardWindow 40 51 877 499
+03:54:44.333 MACOS pid 11143 AXResized w51 AXWindow/AXStandardWindow 40 51 877 499
+03:54:44.333 MACOS pid 11143 AXMoved w51 AXWindow/AXStandardWindow 40 51 877 499
+03:54:44.349 MACOS pid 11465 AXResized w54 AXWindow/AXStandardWindow 300 105 1000 660
+03:54:44.349 MACOS pid 11465 AXMoved w54 AXWindow/AXStandardWindow 300 105 1000 660
+03:54:44.361 SCREEN terminal (w51) 40,51 877×499
+03:54:44.361 SCREEN notes (w54) 300,31 1000×660
+03:54:44.377 MACOS pid 11835 AXResized w60 AXWindow/AXStandardWindow 404 115 936 599
+03:54:44.377 MACOS pid 11835 AXMoved w60 AXWindow/AXStandardWindow 404 115 936 599
+03:54:44.394 MACOS pid 12145 AXResized w61 AXWindow/AXStandardWindow 877 32 723 790
+03:54:44.396 MACOS pid 12145 AXMoved w61 AXWindow/AXStandardWindow 877 32 723 790
+03:54:44.422 SCREEN notes (w54) 300,105 1000×660
+03:54:44.422 SCREEN calendar (w60) 404,115 936×599
+03:54:44.422 SCREEN settings (w61) 877,32 723×790
+03:54:44.430 MACOS pid 12334 AXResized w67 AXWindow/AXStandardWindow 240 72 1120 630
+03:54:44.430 MACOS pid 12334 AXMoved w67 AXWindow/AXStandardWindow 240 72 1120 630
+03:54:44.440 MACOS pid 17767 AXResized w128 AXWindow/AXStandardWindow 165 65 673 439
+03:54:44.441 MACOS pid 17767 AXMoved w128 AXWindow/AXStandardWindow 165 65 673 439
+03:54:44.455 SCREEN textedit (w128) 165,65 673×439
+03:54:44.455 SCREEN w69 of Mail 565,179 470×416
+03:54:44.455 SCREEN mail (w67) 240,72 1120×630
+03:54:44.455 SCREEN w151 of Arbor left the screen
+03:54:44.455 SCREEN front to back: preview terminal textedit notes calendar settings safari w94 w69 mail finder
+03:54:44.715 SCREEN w153 of Arbor left the screen
+03:54:44.904 DEBUG stage down
+03:54:44.907 SCREEN w150 of Arbor left the screen
+03:54:45.587 SCREEN -- end 42 act=drag settled=quiet:1012 drags=63 moves=63,, front=63 restores=63 place=63 floating=31,34,51,54,60,61,63,67,128 docked=
+03:54:45.783 SCRIPT == 43 focus-down

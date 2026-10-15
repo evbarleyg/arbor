@@ -1,0 +1,137 @@
+93 drag-safari-by: drags safari, which floats, by its title bar -19 across and 74 down
+expected: {'act': 'drag', 'settled': 'quiet:1191', 'drags': '34', 'front': '34', 'own': '34', 'floating': '34,51,54,60,61,67,169,198', 'docked': '31,128'}
+ODD rule 3: safari (w34) changed its size while it was being dragged
+
+03:56:59.941 SCREEN -- begin 93 drag-safari-by
+03:56:59.941 SCREEN -- text 93 drags safari, which floats, by its title bar -19 across and 74 down
+03:57:00.025 SCRIPT drag w34 from 1440,38 to 1421,112
+03:57:00.565 SCREEN in front: process 10596 com.apple.Safari
+03:57:00.565 SCREEN front to back: safari w209 textedit settings textedit-new-52 terminal finder notes preview w69 mail calendar w208
+03:57:00.565 SCREEN the button is down 1440 38
+03:57:00.565 MACOS pid 10596 AXApplicationActivated
+03:57:00.566 MACOS workspace didActivate pid 10596 com.apple.Safari regular
+03:57:00.566 MACOS workspace didDeactivate pid 17767 com.apple.TextEdit regular
+03:57:00.566 MACOS pid 17767 AXApplicationDeactivated
+03:57:00.567 DEBUG focus is on w34
+03:57:00.568 DEBUG w34 has the keyboard
+03:57:00.602 DEBUG raised w61, which stays in view
+03:57:00.603 SCREEN w209 of Arbor 129,25 1342×405
+03:57:00.603 SCREEN front to back: w209 safari settings textedit textedit-new-52 terminal finder notes preview w69 mail calendar w208
+03:57:00.610 MACOS pid 12145 AXFocusedWindowChanged w61 AXWindow/AXStandardWindow 1005 140 723 629
+03:57:00.610 MACOS pid 12145 AXMainWindowChanged w61 AXWindow/AXStandardWindow 1005 140 723 629
+03:57:00.870 DEBUG raised w61, which stays in view
+03:57:00.871 MACOS pid 12145 AXFocusedWindowChanged w61 AXWindow/AXStandardWindow 1005 140 723 629
+03:57:00.872 MACOS pid 12145 AXMainWindowChanged w61 AXWindow/AXStandardWindow 1005 140 723 629
+03:57:00.893 DEBUG w34 is being resized by its edges
+03:57:00.893 MACOS pid 10596 AXResized w34 AXWindow/AXStandardWindow 138 41 1321 380
+03:57:00.921 SCREEN safari (w34) 138,41 1321×380
+03:57:00.921 SCREEN w209 of Arbor left the screen
+03:57:00.921 SCREEN front to back: safari settings textedit textedit-new-52 terminal finder notes preview w69 mail calendar w208
+03:57:00.933 MACOS pid 10596 AXResized w34 AXWindow/AXStandardWindow 138 43 1321 378
+03:57:00.988 SCREEN safari (w34) 138,43 1321×378
+03:57:01.027 MACOS pid 10596 AXResized w34 AXWindow/AXStandardWindow 138 46 1320 375
+03:57:01.034 SCREEN safari (w34) 138,46 1320×375
+03:57:01.115 MACOS pid 10596 AXResized w34 AXWindow/AXStandardWindow 138 48 1320 373
+03:57:01.117 DEBUG raised w61, which stays in view
+03:57:01.118 MACOS pid 12145 AXFocusedWindowChanged w61 AXWindow/AXStandardWindow 1005 140 723 629
+03:57:01.124 MACOS pid 12145 AXMainWindowChanged w61 AXWindow/AXStandardWindow 1005 140 723 629
+03:57:01.179 SCREEN safari (w34) 138,48 1320×373
+03:57:01.212 MACOS pid 10596 AXResized w34 AXWindow/AXStandardWindow 138 51 1319 370
+03:57:01.227 SCREEN safari (w34) 138,51 1319×370
+03:57:01.267 MACOS pid 10596 AXResized w34 AXWindow/AXStandardWindow 138 53 1318 368
+03:57:01.313 SCREEN safari (w34) 138,53 1318×368
+03:57:01.355 DEBUG raised w61, which stays in view
+03:57:01.355 MACOS pid 10596 AXResized w34 AXWindow/AXStandardWindow 138 56 1318 365
+03:57:01.357 MACOS pid 12145 AXFocusedWindowChanged w61 AXWindow/AXStandardWindow 1005 140 723 629
+03:57:01.358 MACOS pid 12145 AXMainWindowChanged w61 AXWindow/AXStandardWindow 1005 140 723 629
+03:57:01.379 SCREEN safari (w34) 138,56 1318×365
+03:57:01.426 MACOS pid 10596 AXResized w34 AXWindow/AXStandardWindow 138 58 1317 363
+03:57:01.444 SCREEN safari (w34) 138,58 1317×363
+03:57:01.518 MACOS pid 10596 AXResized w34 AXWindow/AXStandardWindow 138 61 1316 360
+03:57:01.537 MACOS pid 10596 AXResized w34 AXWindow/AXStandardWindow 138 63 1316 358
+03:57:01.544 SCREEN safari (w34) 138,63 1316×358
+03:57:01.626 MACOS pid 10596 AXResized w34 AXWindow/AXStandardWindow 138 66 1315 355
+03:57:01.629 DEBUG raised w61, which stays in view
+03:57:01.642 SCREEN safari (w34) 138,66 1315×355
+03:57:01.642 MACOS pid 12145 AXFocusedWindowChanged w61 AXWindow/AXStandardWindow 1005 140 723 629
+03:57:01.642 MACOS pid 12145 AXMainWindowChanged w61 AXWindow/AXStandardWindow 1005 140 723 629
+03:57:01.707 MACOS pid 10596 AXResized w34 AXWindow/AXStandardWindow 138 68 1315 353
+03:57:01.722 SCREEN safari (w34) 138,68 1315×353
+03:57:01.804 MACOS pid 10596 AXResized w34 AXWindow/AXStandardWindow 138 70 1314 351
+03:57:01.822 SCREEN safari (w34) 138,70 1314×351
+03:57:01.875 DEBUG raised w61, which stays in view
+03:57:01.877 MACOS pid 12145 AXFocusedWindowChanged w61 AXWindow/AXStandardWindow 1005 140 723 629
+03:57:01.878 MACOS pid 12145 AXMainWindowChanged w61 AXWindow/AXStandardWindow 1005 140 723 629
+03:57:01.897 MACOS pid 10596 AXResized w34 AXWindow/AXStandardWindow 138 73 1313 348
+03:57:01.922 SCREEN safari (w34) 138,73 1313×348
+03:57:01.983 MACOS pid 10596 AXResized w34 AXWindow/AXStandardWindow 138 75 1313 346
+03:57:02.006 SCREEN safari (w34) 138,75 1313×346
+03:57:02.057 MACOS pid 10596 AXResized w34 AXWindow/AXStandardWindow 138 78 1312 343
+03:57:02.072 SCREEN safari (w34) 138,78 1312×343
+03:57:02.104 DEBUG raised w61, which stays in view
+03:57:02.106 MACOS pid 12145 AXFocusedWindowChanged w61 AXWindow/AXStandardWindow 1005 140 723 629
+03:57:02.106 MACOS pid 12145 AXMainWindowChanged w61 AXWindow/AXStandardWindow 1005 140 723 629
+03:57:02.140 MACOS pid 10596 AXResized w34 AXWindow/AXStandardWindow 138 80 1311 341
+03:57:02.155 SCREEN safari (w34) 138,80 1311×341
+03:57:02.186 MACOS pid 10596 AXResized w34 AXWindow/AXStandardWindow 138 83 1311 338
+03:57:02.239 SCREEN safari (w34) 138,83 1311×338
+03:57:02.290 MACOS pid 10596 AXResized w34 AXWindow/AXStandardWindow 138 85 1310 336
+03:57:02.305 SCREEN safari (w34) 138,85 1310×336
+03:57:02.359 DEBUG raised w61, which stays in view
+03:57:02.361 MACOS pid 12145 AXFocusedWindowChanged w61 AXWindow/AXStandardWindow 1005 140 723 629
+03:57:02.362 MACOS pid 12145 AXMainWindowChanged w61 AXWindow/AXStandardWindow 1005 140 723 629
+03:57:02.373 MACOS pid 10596 AXResized w34 AXWindow/AXStandardWindow 138 88 1309 333
+03:57:02.375 SCREEN safari (w34) 138,88 1309×333
+03:57:02.467 MACOS pid 10596 AXResized w34 AXWindow/AXStandardWindow 138 90 1309 331
+03:57:02.472 SCREEN safari (w34) 138,90 1309×331
+03:57:02.564 MACOS pid 10596 AXResized w34 AXWindow/AXStandardWindow 138 93 1308 328
+03:57:02.567 DEBUG raised w61, which stays in view
+03:57:02.568 MACOS pid 12145 AXFocusedWindowChanged w61 AXWindow/AXStandardWindow 1005 140 723 629
+03:57:02.569 MACOS pid 12145 AXMainWindowChanged w61 AXWindow/AXStandardWindow 1005 140 723 629
+03:57:02.613 SCREEN safari (w34) 138,93 1308×328
+03:57:02.656 SCREEN safari (w34) 138,95 1308×326
+03:57:02.658 MACOS pid 10596 AXResized w34 AXWindow/AXStandardWindow 138 95 1308 326
+03:57:02.751 MACOS pid 10596 AXResized w34 AXWindow/AXStandardWindow 138 98 1307 323
+03:57:02.752 SCREEN safari (w34) 138,98 1307×323
+03:57:02.768 MACOS pid 10596 AXResized w34 AXWindow/AXStandardWindow 138 100 1306 321
+03:57:02.771 DEBUG raised w61, which stays in view
+03:57:02.774 MACOS pid 12145 AXFocusedWindowChanged w61 AXWindow/AXStandardWindow 1005 140 723 629
+03:57:02.775 MACOS pid 12145 AXMainWindowChanged w61 AXWindow/AXStandardWindow 1005 140 723 629
+03:57:02.822 SCREEN safari (w34) 138,100 1306×321
+03:57:02.863 MACOS pid 10596 AXResized w34 AXWindow/AXStandardWindow 138 103 1306 318
+03:57:02.885 SCREEN safari (w34) 138,103 1306×318
+03:57:02.897 MACOS pid 10596 AXResized w34 AXWindow/AXStandardWindow 138 105 1305 316
+03:57:02.944 SCREEN safari (w34) 138,105 1305×316
+03:57:03.008 DEBUG raised w61, which stays in view
+03:57:03.010 MACOS pid 12145 AXFocusedWindowChanged w61 AXWindow/AXStandardWindow 1005 140 723 629
+03:57:03.011 MACOS pid 12145 AXMainWindowChanged w61 AXWindow/AXStandardWindow 1005 140 723 629
+03:57:03.212 MACOS pid 10596 AXResized w34 AXWindow/AXStandardWindow 138 105 1306 316
+03:57:03.216 DEBUG raised w61, which stays in view
+03:57:03.227 MACOS pid 12145 AXFocusedWindowChanged w61 AXWindow/AXStandardWindow 1005 140 723 629
+03:57:03.228 MACOS pid 12145 AXMainWindowChanged w61 AXWindow/AXStandardWindow 1005 140 723 629
+03:57:03.255 SCREEN safari (w34) 138,105 1306×316
+03:57:03.340 MACOS pid 10596 AXResized w34 AXWindow/AXStandardWindow 138 105 1305 316
+03:57:03.362 SCREEN safari (w34) 138,105 1305×316
+03:57:03.443 DEBUG raised w61, which stays in view
+03:57:03.447 MACOS pid 12145 AXFocusedWindowChanged w61 AXWindow/AXStandardWindow 1005 140 723 629
+03:57:03.448 MACOS pid 12145 AXMainWindowChanged w61 AXWindow/AXStandardWindow 1005 140 723 629
+03:57:03.694 DEBUG raised w61, which stays in view
+03:57:03.699 MACOS pid 12145 AXFocusedWindowChanged w61 AXWindow/AXStandardWindow 1005 140 723 629
+03:57:03.700 MACOS pid 12145 AXMainWindowChanged w61 AXWindow/AXStandardWindow 1005 140 723 629
+03:57:03.975 DEBUG raised w61, which stays in view
+03:57:03.977 MACOS pid 12145 AXFocusedWindowChanged w61 AXWindow/AXStandardWindow 1005 140 723 629
+03:57:03.984 MACOS pid 12145 AXMainWindowChanged w61 AXWindow/AXStandardWindow 1005 140 723 629
+03:57:04.205 SCREEN the button is up 1421 112
+03:57:04.262 DEBUG raised w61, which stays in view
+03:57:04.264 MACOS pid 12145 AXFocusedWindowChanged w61 AXWindow/AXStandardWindow 1005 140 723 629
+03:57:04.265 MACOS pid 12145 AXMainWindowChanged w61 AXWindow/AXStandardWindow 1005 140 723 629
+03:57:04.314 SCREEN w209 of Arbor 129,96 1323×334
+03:57:04.314 SCREEN front to back: w209 safari settings textedit textedit-new-52 terminal finder notes preview w69 mail calendar w208
+03:57:04.525 DEBUG raised w61, which stays in view
+03:57:04.530 MACOS pid 12145 AXFocusedWindowChanged w61 AXWindow/AXStandardWindow 1005 140 723 629
+03:57:04.531 MACOS pid 12145 AXMainWindowChanged w61 AXWindow/AXStandardWindow 1005 140 723 629
+03:57:04.761 DEBUG raised w61, which stays in view
+03:57:04.762 MACOS pid 12145 AXFocusedWindowChanged w61 AXWindow/AXStandardWindow 1005 140 723 629
+03:57:04.762 MACOS pid 12145 AXMainWindowChanged w61 AXWindow/AXStandardWindow 1005 140 723 629
+03:57:07.069 SCREEN -- end 93 act=drag settled=quiet:1191 drags=34 front=34 own=34 floating=34,51,54,60,61,67,169,198 docked=31,128
+03:57:07.279 SCRIPT == 94 view-left

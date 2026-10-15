@@ -1,0 +1,44 @@
+76 view-frame: presses ⌃⌥↩
+expected: {'act': 'view', 'settled': 'quiet:907', 'moves': 'any', 'front': '128', 'floating': '61', 'docked': '31,34,51,54,60,67,128,169,198'}
+ODD rule 3: the last window came to rest 720 ms after the key or the button
+
+03:56:02.032 SCREEN -- begin 76 view-frame
+03:56:02.032 SCREEN -- text 76 presses ⌃⌥↩
+03:56:02.188 DEBUG stage up on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: 10 stand-ins, 0.46 s
+03:56:02.190 MACOS pid 350 AXMoved w31 AXWindow/AXStandardWindow 787 558 709 252
+03:56:02.192 MACOS pid 11143 AXMoved w51 AXWindow/AXStandardWindow 12 303 373 244
+03:56:02.193 MACOS pid 11143 AXMoved w51 AXWindow/AXStandardWindow 13 305 373 244
+03:56:02.194 MACOS pid 11465 AXMoved w54 AXWindow/AXStandardWindow 787 43 709 300
+03:56:02.200 MACOS pid 17767 AXResized w128 AXWindow/AXStandardWindow 400 43 375 248
+03:56:02.201 MACOS pid 17767 AXMoved w128 AXWindow/AXStandardWindow 400 43 375 248
+03:56:02.201 MACOS pid 17767 AXMoved w169 AXWindow/AXStandardWindow 400 303 375 247
+03:56:02.208 INFO  zoom: back to everything
+03:56:02.209 DEBUG said on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: Too small to show: click the tile to zoom in · ⌃⌥G goes there too
+03:56:02.227 SCREEN w226 of Arbor 554,728 493×38 (level 6)
+03:56:02.227 SCREEN w212 of Arbor 0,0 1600×900 (level 4)
+03:56:02.227 SCREEN w209 of Arbor 391,34 393×266
+03:56:02.227 SCREEN textedit (w128) 400,43 375×248
+03:56:02.227 SCREEN terminal (w51) 13,305 373×244
+03:56:02.227 SCREEN finder (w31) 787,558 709×252
+03:56:02.227 SCREEN textedit-new-52 (w169) 400,303 375×247
+03:56:02.227 SCREEN notes (w54) 787,43 709×300
+03:56:02.227 SCREEN w208 of Arbor 12,291 376×12
+03:56:02.227 SCREEN w222 of Arbor 12,550 376×12
+03:56:02.227 SCREEN w225 of Arbor 400,291 375×12
+03:56:02.227 SCREEN w223 of Arbor 400,550 375×12
+03:56:02.227 SCREEN w219 of Arbor 787,343 709×12
+03:56:02.227 SCREEN w218 of Arbor 787,546 709×12
+03:56:02.227 SCREEN w221 of Arbor 388,43 12×767
+03:56:02.227 SCREEN w224 of Arbor 775,43 12×767
+03:56:02.227 SCREEN w220 of Arbor 1496,43 12×767
+03:56:02.227 SCREEN front to back: w209 textedit settings terminal finder preview textedit-new-52 w69 mail notes calendar safari w208 w222 w225 w223 w219 w218 w221 w224 w220
+03:56:02.277 SCREEN w214 of Arbor 12,43 376×248
+03:56:02.277 SCREEN w213 of Arbor 12,562 376×248
+03:56:02.277 SCREEN w216 of Arbor 400,562 375×248
+03:56:02.277 SCREEN w215 of Arbor 787,355 709×191
+03:56:02.277 SCREEN w217 of Arbor 1508,43 80×767
+03:56:02.277 SCREEN front to back: w209 textedit settings terminal finder preview textedit-new-52 w69 mail notes calendar safari w214 w213 w216 w215 w217 w208 w222 w225 w223 w219 w218 w221 w224 w220
+03:56:02.876 DEBUG stage down
+03:56:02.947 SCREEN w212 of Arbor left the screen
+03:56:03.426 SCREEN -- end 76 act=view settled=quiet:907 moves=any front=128 floating=61 docked=31,34,51,54,60,67,128,169,198
+03:56:03.704 SCRIPT == 77 dock-icon-textedit

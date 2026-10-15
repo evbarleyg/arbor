@@ -1,0 +1,11 @@
+19 click-calendar: clicks calendar's title bar
+expected: {'act': 'switch', 'settled': 'quiet:451', 'front': '330', 'floating': '309,312,323,326,329,330,333,335,338', 'docked': ''}
+FAIL rule 4: calendar (w330) is not in front: textedit (w323), preview (w335) ahead of it, of which 2 cover part of it
+FAIL rule 4: calendar (w330) its app is not the one in front (process 40167 is)
+
+04:01:43.557 SCREEN -- begin 19 click-calendar
+04:01:43.557 SCREEN -- text 19 clicks calendar's title bar
+04:01:44.227 SCREEN the button is down 1066 130
+04:01:44.332 SCREEN the button is up 1066 130
+04:01:45.543 SCREEN -- end 19 act=switch settled=quiet:451 front=330 floating=309,312,323,326,329,330,333,335,338 docked=
+04:01:45.877 SCRIPT == 20 dock-up

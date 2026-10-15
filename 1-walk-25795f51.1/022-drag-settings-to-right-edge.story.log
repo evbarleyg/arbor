@@ -1,0 +1,95 @@
+22 drag-settings-to-right-edge: drags settings by its title bar against the right edge of the screen and lets go
+expected: {'act': 'drag-where-macos-tiles', 'settled': 'quiet:381', 'drags': '61', 'moves': ',,', 'front': '61', 'own': '61', 'floating': '31,34,45,51,54,60,61,63,67', 'docked': ''}
+FAIL rule 1: settings (w61) macOS's tiling preview and Arbor's drop preview were up at the same time
+
+03:53:11.861 SCREEN -- begin 22 drag-settings-to-right-edge
+03:53:11.861 SCREEN -- text 22 drags settings by its title bar against the right edge of the screen and lets go
+03:53:11.931 SCRIPT drag w61 from 801,97 to 1599,450
+03:53:12.627 SCREEN the button is down 801 97
+03:53:12.828 DEBUG w61 is being dragged
+03:53:12.830 DEBUG drag of w61: on float
+03:53:12.834 SCREEN settings (w61) 463,96 723×625
+03:53:12.919 SCREEN settings (w61) 490,108 723×625
+03:53:12.932 MACOS pid 12145 AXMoved w61 AXWindow/AXStandardWindow 490 108 723 625
+03:53:12.988 SCREEN settings (w61) 516,120 723×625
+03:53:13.003 SCREEN settings (w61) 543,132 723×625
+03:53:13.027 SCREEN settings (w61) 570,143 723×625
+03:53:13.067 SCREEN settings (w61) 596,155 723×625
+03:53:13.082 MACOS pid 12145 AXMoved w61 AXWindow/AXStandardWindow 596 155 723 625
+03:53:13.211 SCREEN settings (w61) 623,167 723×625
+03:53:13.218 SCREEN settings (w61) 649,179 723×625
+03:53:13.252 MACOS pid 12145 AXMoved w61 AXWindow/AXStandardWindow 649 179 723 625
+03:53:13.330 SCREEN settings (w61) 676,190 723×625
+03:53:13.390 MACOS pid 12145 AXMoved w61 AXWindow/AXStandardWindow 703 196 723 625
+03:53:13.394 SCREEN settings (w61) 703,196 723×625
+03:53:13.431 SCREEN settings (w61) 729,196 723×625
+03:53:13.528 SCREEN settings (w61) 756,196 723×625
+03:53:13.537 MACOS pid 12145 AXMoved w61 AXWindow/AXStandardWindow 756 196 723 625
+03:53:13.572 SCREEN settings (w61) 782,196 723×625
+03:53:13.599 SCREEN settings (w61) 809,207 723×625
+03:53:13.653 SCREEN settings (w61) 836,231 723×625
+03:53:13.685 MACOS pid 12145 AXMoved w61 AXWindow/AXStandardWindow 836 231 723 625
+03:53:13.710 SCREEN settings (w61) 862,243 723×625
+03:53:13.758 SCREEN settings (w61) 889,255 723×625
+03:53:13.803 MACOS pid 12145 AXMoved w61 AXWindow/AXStandardWindow 889 255 723 625
+03:53:13.842 SCREEN settings (w61) 915,266 723×625
+03:53:13.902 SCREEN settings (w61) 942,275 723×625
+03:53:13.945 MACOS pid 12145 AXMoved w61 AXWindow/AXStandardWindow 969 275 723 625
+03:53:13.971 SCREEN settings (w61) 969,275 723×625
+03:53:14.028 SCREEN settings (w61) 995,275 723×625
+03:53:14.102 SCREEN settings (w61) 1022,275 723×625
+03:53:14.119 MACOS pid 12145 AXMoved w61 AXWindow/AXStandardWindow 1022 275 723 625
+03:53:14.204 SCREEN settings (w61) 1048,275 723×625
+03:53:14.272 SCREEN settings (w61) 1075,275 723×625
+03:53:14.294 MACOS pid 12145 AXMoved w61 AXWindow/AXStandardWindow 1075 275 723 625
+03:53:14.335 SCREEN settings (w61) 1102,275 723×625
+03:53:14.435 SCREEN settings (w61) 1128,275 723×625
+03:53:14.444 MACOS pid 12145 AXMoved w61 AXWindow/AXStandardWindow 1128 275 723 625
+03:53:14.575 SCREEN settings (w61) 1155,275 723×625
+03:53:14.629 MACOS pid 12145 AXMoved w61 AXWindow/AXStandardWindow 1181 275 723 625
+03:53:14.637 SCREEN settings (w61) 1181,275 723×625
+03:53:14.693 SCREEN settings (w61) 1208,275 723×625
+03:53:14.733 DEBUG drag of w61: on float, left to macOS’s tiling
+03:53:14.754 SCREEN w107 of WindowManager 785,16 830×821
+03:53:14.754 SCREEN settings (w61) 1235,275 723×625
+03:53:14.754 SCREEN w106 of WindowManager 785,16 830×821
+03:53:14.754 SCREEN front to back: w107 settings w106 textedit preview safari w94 calendar w69 mail notes terminal finder
+03:53:14.796 MACOS pid 12145 AXMoved w61 AXWindow/AXStandardWindow 1235 275 723 625
+03:53:15.012 DEBUG drag of w61: on cameraEdge(ArborCore.Edge.right)
+03:53:15.032 SCREEN settings (w61) 1236,275 723×625
+03:53:15.055 SCREEN w108 of Arbor 806,43 782×767 (level 3)
+03:53:15.075 DEBUG drag of w61: on float, left to macOS’s tiling
+03:53:15.117 MACOS pid 12145 AXMoved w61 AXWindow/AXStandardWindow 1236 275 723 625
+03:53:15.218 SCREEN w108 of Arbor left the screen
+03:53:16.528 SCREEN settings (w61) 1235,275 723×625
+03:53:16.625 MACOS pid 12145 AXMoved w61 AXWindow/AXStandardWindow 1235 275 723 625
+03:53:16.646 SCREEN w107 of WindowManager left the screen
+03:53:16.646 SCREEN w106 of WindowManager left the screen
+03:53:16.646 SCREEN front to back: settings textedit preview safari w94 calendar w69 mail notes terminal finder
+03:53:16.646 SCREEN the button is up 1599 450
+03:53:16.646 INFO  dropped w61 on float, display 5A42259C-47B8-4590-9762-97DBE4FE7F1B, left to macOS’s tiling
+03:53:16.702 MACOS pid 12145 AXResized w61 AXWindow/AXStandardWindow 1180 238 723 651
+03:53:16.709 SCREEN settings (w61) 1226,270 723×629
+03:53:16.770 SCREEN settings (w61) 1063,158 723×705
+03:53:16.802 MACOS pid 12145 AXResized w61 AXWindow/AXStandardWindow 926 65 723 768
+03:53:16.802 MACOS pid 12145 AXResized w61 AXWindow/AXStandardWindow 926 65 723 768
+03:53:16.822 SCREEN settings (w61) 926,65 723×768
+03:53:16.831 MACOS pid 12145 AXResized w61 AXWindow/AXStandardWindow 901 48 723 780
+03:53:16.831 MACOS pid 12145 AXResized w61 AXWindow/AXStandardWindow 901 48 723 780
+03:53:16.831 MACOS pid 12145 AXResized w61 AXWindow/AXStandardWindow 901 48 723 780
+03:53:16.850 SCREEN settings (w61) 901,48 723×780
+03:53:16.851 MACOS pid 12145 AXResized w61 AXWindow/AXStandardWindow 888 39 723 786
+03:53:16.883 SCREEN settings (w61) 888,39 723×786
+03:53:16.896 SCREEN settings (w61) 884,36 723×788
+03:53:16.900 MACOS pid 12145 AXResized w61 AXWindow/AXStandardWindow 882 35 723 789
+03:53:16.900 MACOS pid 12145 AXResized w61 AXWindow/AXStandardWindow 882 35 723 789
+03:53:16.916 MACOS pid 12145 AXResized w61 AXWindow/AXStandardWindow 879 33 723 790
+03:53:16.928 SCREEN settings (w61) 879,33 723×790
+03:53:16.935 MACOS pid 12145 AXResized w61 AXWindow/AXStandardWindow 878 32 723 791
+03:53:16.958 MACOS pid 12145 AXMoved w61 AXWindow/AXStandardWindow 877 32 723 791
+03:53:16.994 SCREEN settings (w61) 877,32 723×791
+03:53:17.166 DEBUG said on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: macOS tiles windows let go here, so Arbor stood aside · Check Setup… in the menu
+03:53:17.207 SCREEN w99 of Arbor 489,728 622×38 (level 6)
+03:53:22.356 SCREEN w99 of Arbor left the screen
+03:53:22.797 SCREEN -- end 22 act=drag-where-macos-tiles settled=quiet:381 drags=61 moves=,, front=61 own=61 floating=31,34,45,51,54,60,61,63,67 docked=
+03:53:23.034 SCRIPT == 23 dock-icon-calendar

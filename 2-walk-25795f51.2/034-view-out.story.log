@@ -1,0 +1,44 @@
+34 view-out: presses ⌃⌥↑
+expected: {'act': 'view', 'settled': 'quiet:1211', 'moves': 'any', 'floating': '309,323,326,329,330,333,338,402', 'docked': '312'}
+ODD rule 3: the last window came to rest 1247 ms after the key or the button
+
+04:02:16.914 SCREEN -- begin 34 view-out
+04:02:16.914 SCREEN -- text 34 presses ⌃⌥↑
+04:02:17.168 SCREEN (nothing was seen for 151 ms)
+04:02:17.175 SCREEN w380 of Arbor left the screen
+04:02:17.243 DEBUG commands follow the keyboard: a shortcut, pointer idle 8.6 s, keys 4.9 s, focus 2.0 s
+04:02:17.259 DEBUG stage up on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: 9 stand-ins, 0.46 s
+04:02:17.295 SCREEN w373 of Arbor 0,0 1600×900 (level 4)
+04:02:17.295 SCREEN safari (w312) 12,43 782×767
+04:02:17.298 MACOS pid 39820 AXResized w312 AXWindow/AXStandardWindow 12 43 782 767
+04:02:17.795 SCREEN (nothing was seen for 499 ms)
+04:02:17.795 SCREEN finder (w309) 806,120 794×436
+04:02:18.060 MACOS pid 38618 AXMoved w309 AXWindow/AXStandardWindow 806 120 794 436
+04:02:18.061 SCREEN (nothing was seen for 265 ms)
+04:02:18.090 SCREEN textedit (w323) 806,65 673×439
+04:02:18.090 MACOS pid 40167 AXMoved w323 AXWindow/AXStandardWindow 806 65 673 439
+04:02:18.101 SCREEN terminal (w326) 806,51 793×499
+04:02:18.113 MACOS pid 40327 AXMoved w326 AXWindow/AXStandardWindow 806 51 793 499
+04:02:18.142 SCREEN notes (w329) 806,105 794×660
+04:02:18.159 MACOS pid 40486 AXMoved w329 AXWindow/AXStandardWindow 806 105 794 660
+04:02:18.176 MACOS pid 40544 AXMoved w330 AXWindow/AXStandardWindow 806 118 794 599
+04:02:18.186 MACOS pid 40697 AXMoved w333 AXWindow/AXStandardWindow 877 140 723 629
+04:02:18.231 MACOS pid 41101 AXMoved w338 AXWindow/AXStandardWindow 729 72 871 630
+04:02:18.232 SCREEN calendar (w330) 806,118 794×599
+04:02:18.232 SCREEN settings (w333) 877,140 723×629
+04:02:18.232 SCREEN w341 of Mail 930,179 470×416
+04:02:18.232 SCREEN mail (w338) 729,72 871×630
+04:02:18.239 DEBUG raised w338, which was left hanging over docked windows
+04:02:18.240 MACOS pid 41101 AXFocusedWindowChanged w341 AXSheet/- 930 179 470 416
+04:02:18.241 MACOS pid 41101 AXMainWindowChanged w338 AXWindow/AXStandardWindow 729 72 871 630
+04:02:18.241 MACOS pid 51463 AXMoved w402 AXWindow/AXStandardWindow 806 35 708 424
+04:02:18.269 SCREEN preview (w402) 806,35 708×424
+04:02:18.269 SCREEN front to back: w382 preview w341 mail safari calendar textedit settings notes terminal finder
+04:02:18.281 INFO  out: stepped out to everything
+04:02:18.335 SCREEN w382 of Arbor 797,26 726×442
+04:02:18.335 SCREEN w381 of Arbor 794,43 12×767
+04:02:18.335 SCREEN front to back: w382 preview w341 mail safari calendar textedit settings notes terminal finder w381
+04:02:18.455 DEBUG stage down
+04:02:18.490 SCREEN w373 of Arbor left the screen
+04:02:19.498 SCREEN -- end 34 act=view settled=quiet:1211 moves=any floating=309,323,326,329,330,333,338,402 docked=312
+04:02:19.818 SCRIPT == 35 view-back

@@ -1,0 +1,9 @@
+18 leave-alone: does nothing for half a minute
+expected: {'act': 'idle', 'settled': 'quiet:379', 'floating': '309,312,323,326,329,330,333,335,338', 'docked': ''}
+FAIL rule -: with nothing to do Arbor used 1.4 % of a core
+
+04:01:12.324 SCREEN -- begin 18 leave-alone
+04:01:12.324 SCREEN -- text 18 does nothing for half a minute
+04:01:42.398 SCREEN -- finding 18 -:busy FAIL with nothing to do Arbor used 1.4 % of a core
+04:01:42.909 SCREEN -- end 18 act=idle settled=quiet:379 floating=309,312,323,326,329,330,333,335,338 docked=
+04:01:43.542 SCRIPT == 19 click-calendar

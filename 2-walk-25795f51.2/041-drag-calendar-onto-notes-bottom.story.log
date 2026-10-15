@@ -1,0 +1,91 @@
+41 drag-calendar-onto-notes-bottom: drags calendar by its title bar onto the bottom part of notes and lets go
+expected: {'act': 'drag', 'settled': 'quiet:1035', 'drags': '330', 'moves': '312,323,329,312,323,329,330,', 'front': '330', 'floating': '309,326,333,338,402', 'docked': '312,323,329,330'}
+FAIL rule 3: calendar (w330) ended neither where it was let go nor where the preview was: let go at 86,669 680×599, the preview at 350,307 709×503, now at 1599,770 709×503
+ODD rule 3: the last window came to rest 856 ms after the key or the button
+
+04:02:33.684 SCREEN -- begin 41 drag-calendar-onto-notes-bottom
+04:02:33.684 SCREEN -- text 41 drags calendar by its title bar onto the bottom part of notes and lets go
+04:02:33.783 SCRIPT drag w330 from 490,130 to 704,682
+04:02:34.368 SCREEN front to back: calendar w382 textedit preview settings finder notes w341 mail safari terminal w381 w415
+04:02:34.368 SCREEN the button is down 490 130
+04:02:34.582 SCREEN calendar (w330) 0,136 680×599
+04:02:34.647 DEBUG w330 is being dragged
+04:02:34.648 SCREEN calendar (w330) 0,154 680×599
+04:02:34.649 DEBUG drag of w330: waiting over beside(n3, ArborCore.Edge.top)
+04:02:34.661 MACOS pid 40544 AXMoved w330 AXWindow/AXStandardWindow 0 154 680 599
+04:02:34.674 SCREEN w382 of Arbor left the screen
+04:02:34.674 SCREEN front to back: calendar textedit preview settings finder notes w341 mail safari terminal w381 w415
+04:02:34.736 SCREEN calendar (w330) 0,173 680×599
+04:02:34.785 SCREEN calendar (w330) 0,191 680×599
+04:02:34.786 MACOS pid 40544 AXMoved w330 AXWindow/AXStandardWindow 0 191 680 599
+04:02:34.841 DEBUG drag of w330: on beside(n3, ArborCore.Edge.top)
+04:02:34.853 SCREEN w418 of Arbor 350,43 709×503 (level 3)
+04:02:34.862 SCREEN calendar (w330) 0,210 680×599
+04:02:34.915 DEBUG drag of w330: waiting over beside(n3, ArborCore.Edge.left)
+04:02:34.937 SCREEN calendar (w330) 0,246 680×599
+04:02:34.967 MACOS pid 40544 AXMoved w330 AXWindow/AXStandardWindow 0 246 680 599
+04:02:35.010 SCREEN calendar (w330) 0,265 680×599
+04:02:35.027 SCREEN w418 of Arbor left the screen
+04:02:35.077 DEBUG drag of w330: on beside(n3, ArborCore.Edge.left)
+04:02:35.114 MACOS pid 40544 AXMoved w330 AXWindow/AXStandardWindow 0 283 680 599
+04:02:35.115 SCREEN calendar (w330) 0,283 680×599
+04:02:35.205 SCREEN calendar (w330) 0,301 680×599
+04:02:35.291 SCREEN calendar (w330) 0,319 680×599
+04:02:35.314 DEBUG drag of w330: on float
+04:02:35.314 MACOS pid 40544 AXMoved w330 AXWindow/AXStandardWindow 0 319 680 599
+04:02:35.340 SCREEN calendar (w330) 0,356 680×599
+04:02:35.351 SCREEN calendar (w330) 0,374 680×599
+04:02:35.391 MACOS pid 40544 AXMoved w330 AXWindow/AXStandardWindow 0 374 680 599
+04:02:35.413 SCREEN calendar (w330) 0,393 680×599
+04:02:35.452 SCREEN calendar (w330) 0,411 680×599
+04:02:35.514 SCREEN calendar (w330) 0,429 680×599
+04:02:35.525 MACOS pid 40544 AXMoved w330 AXWindow/AXStandardWindow 0 429 680 599
+04:02:35.561 SCREEN calendar (w330) 0,448 680×599
+04:02:35.627 SCREEN calendar (w330) 0,466 680×599
+04:02:35.642 MACOS pid 40544 AXMoved w330 AXWindow/AXStandardWindow 0 466 680 599
+04:02:35.719 SCREEN calendar (w330) 21,503 680×599
+04:02:35.789 SCREEN calendar (w330) 28,521 680×599
+04:02:35.791 MACOS pid 40544 AXMoved w330 AXWindow/AXStandardWindow 21 503 680 599
+04:02:35.895 MACOS pid 40544 AXMoved w330 AXWindow/AXStandardWindow 36 540 680 599
+04:02:35.903 SCREEN calendar (w330) 36,540 680×599
+04:02:35.945 SCREEN calendar (w330) 50,577 680×599
+04:02:35.946 DEBUG drag of w330: waiting over beside(n3, ArborCore.Edge.bottom)
+04:02:36.021 SCREEN calendar (w330) 64,613 680×599
+04:02:36.027 SCREEN calendar (w330) 71,632 680×599
+04:02:36.045 MACOS pid 40544 AXMoved w330 AXWindow/AXStandardWindow 71 632 680 599
+04:02:36.073 SCREEN calendar (w330) 78,650 680×599
+04:02:36.135 MACOS pid 40544 AXMoved w330 AXWindow/AXStandardWindow 86 669 680 599
+04:02:36.142 SCREEN calendar (w330) 86,669 680×599
+04:02:36.159 DEBUG drag of w330: on beside(n3, ArborCore.Edge.bottom)
+04:02:36.206 SCREEN w418 of Arbor 350,307 709×503 (level 3)
+04:02:36.287 SCREEN calendar (w330) 87,669 680×599
+04:02:36.395 MACOS pid 40544 AXMoved w330 AXWindow/AXStandardWindow 87 669 680 599
+04:02:36.993 SCREEN calendar (w330) 86,669 680×599
+04:02:37.080 SCREEN the button is up 704 682
+04:02:37.086 MACOS pid 40544 AXMoved w330 AXWindow/AXStandardWindow 86 669 680 599
+04:02:37.089 INFO  dropped w330 on beside(n3, ArborCore.Edge.bottom), display 5A42259C-47B8-4590-9762-97DBE4FE7F1B
+04:02:37.090 INFO  made room for w330
+04:02:37.098 DEBUG stage up on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: 8 stand-ins, 0.46 s
+04:02:37.115 MACOS pid 40486 AXResized w329 AXWindow/AXStandardWindow 350 43 709 320
+04:02:37.148 SCREEN w373 of Arbor 0,0 1600×900 (level 4)
+04:02:37.148 SCREEN notes (w329) 350,43 709×320
+04:02:37.172 SCREEN calendar (w330) 350,307 709×503
+04:02:37.188 MACOS pid 40544 AXResized w330 AXWindow/AXStandardWindow 350 307 709 503
+04:02:37.188 MACOS pid 40544 AXMoved w330 AXWindow/AXStandardWindow 350 307 709 503
+04:02:37.217 MACOS pid 40486 AXResized w329 AXWindow/AXStandardWindow 350 43 709 378
+04:02:37.218 SCREEN notes (w329) 350,43 709×378
+04:02:37.234 SCREEN calendar (w330) 1599,770 709×503
+04:02:37.234 MACOS pid 40544 AXMoved w330 AXWindow/AXStandardWindow 1599 770 709 503
+04:02:37.240 DEBUG stage retargeted on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: 8 stand-ins, 0.46 s
+04:02:37.263 DEBUG said on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: Too small to show: click the tile to zoom in · ⌃⌥G goes there too
+04:02:37.308 SCREEN w415 of Arbor 350,421 709×12
+04:02:37.308 SCREEN w420 of Arbor 1059,43 12×767
+04:02:37.308 SCREEN front to back: calendar textedit preview settings finder notes w341 mail safari terminal w415 w381 w420
+04:02:37.333 SCREEN w380 of Arbor 554,728 493×38 (level 6)
+04:02:37.333 SCREEN w419 of Arbor 350,433 709×377
+04:02:37.333 SCREEN w418 of Arbor left the screen
+04:02:37.333 SCREEN front to back: calendar textedit preview settings finder notes w341 mail safari terminal w419 w415 w381 w420
+04:02:37.922 DEBUG stage down
+04:02:37.936 SCREEN w373 of Arbor left the screen
+04:02:38.486 SCREEN -- end 41 act=drag settled=quiet:1035 drags=330 moves=312,323,329,312,323,329,330, front=330 floating=309,326,333,338,402 docked=312,323,329,330
+04:02:39.005 SCRIPT == 42 dock-icon-settings

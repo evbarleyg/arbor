@@ -1,0 +1,125 @@
+47 drag-finder-to-top-edge: drags finder by its title bar against the top edge of the screen and lets go
+expected: {'act': 'drag-where-macos-tiles', 'settled': 'quiet:969', 'drags': '309', 'moves': '312,323,329,330,309,312,323,329,330,', 'front': '309', 'floating': '326,333,338,402', 'docked': '309,312,323,329,330'}
+FAIL rule 3: finder (w309) ended neither where it was let go nor where the preview was: let go at 530,31 501×436, the preview at 12,43 1576×160, now at 12,43 1576×263
+FAIL rule 2: terminal (w326) a floating window, moved, and the step did not name it
+FAIL rule 2: settings (w333) a floating window, moved, and the step did not name it
+FAIL rule 2: mail (w338) a floating window, moved, and the step did not name it
+ODD rule 2: w341 of Mail moved along with a window of its app
+
+04:03:06.477 SCREEN -- begin 47 drag-finder-to-top-edge
+04:03:06.477 SCREEN -- text 47 drags finder by its title bar against the top edge of the screen and lets go
+04:03:06.553 SCRIPT drag w309 from 252,132 to 800,0
+04:03:07.159 SCREEN the button is down 252 132
+04:03:07.168 SCREEN front to back: finder w382 settings preview textedit calendar notes w341 mail safari terminal w419 w415 w381 w420
+04:03:07.367 SCREEN finder (w309) 0,115 501×436
+04:03:07.462 DEBUG w309 is being dragged
+04:03:07.464 DEBUG drag of w309: on float
+04:03:07.468 SCREEN finder (w309) 0,111 501×436
+04:03:07.480 MACOS pid 38618 AXMoved w309 AXWindow/AXStandardWindow 0 111 501 436
+04:03:07.544 SCREEN w382 of Arbor left the screen
+04:03:07.544 SCREEN front to back: finder settings preview textedit calendar notes w341 mail safari terminal w419 w415 w381 w420
+04:03:07.554 SCREEN finder (w309) 18,106 501×436
+04:03:07.583 SCREEN finder (w309) 55,102 501×436
+04:03:07.651 MACOS pid 38618 AXMoved w309 AXWindow/AXStandardWindow 55 102 501 436
+04:03:07.662 SCREEN finder (w309) 73,98 501×436
+04:03:07.746 DEBUG drag of w309: waiting over beside(n3, ArborCore.Edge.left)
+04:03:07.753 SCREEN finder (w309) 91,93 501×436
+04:03:07.762 MACOS pid 38618 AXMoved w309 AXWindow/AXStandardWindow 91 93 501 436
+04:03:07.785 SCREEN finder (w309) 109,89 501×436
+04:03:07.820 SCREEN finder (w309) 128,84 501×436
+04:03:07.885 MACOS pid 38618 AXMoved w309 AXWindow/AXStandardWindow 146 80 501 436
+04:03:07.893 SCREEN finder (w309) 146,80 501×436
+04:03:07.912 DEBUG drag of w309: waiting over beside(n3, ArborCore.Edge.top)
+04:03:07.924 SCREEN finder (w309) 164,76 501×436
+04:03:07.952 SCREEN finder (w309) 182,71 501×436
+04:03:07.974 SCREEN finder (w309) 201,67 501×436
+04:03:08.018 SCREEN finder (w309) 219,62 501×436
+04:03:08.027 MACOS pid 38618 AXMoved w309 AXWindow/AXStandardWindow 219 62 501 436
+04:03:08.067 SCREEN finder (w309) 237,58 501×436
+04:03:08.121 DEBUG drag of w309: on beside(n3, ArborCore.Edge.top)
+04:03:08.128 MACOS pid 38618 AXMoved w309 AXWindow/AXStandardWindow 237 58 501 436
+04:03:08.146 SCREEN w418 of Arbor 350,43 709×160 (level 3)
+04:03:08.146 SCREEN finder (w309) 256,54 501×436
+04:03:08.235 SCREEN finder (w309) 274,49 501×436
+04:03:08.244 MACOS pid 38618 AXMoved w309 AXWindow/AXStandardWindow 274 49 501 436
+04:03:08.301 SCREEN finder (w309) 292,45 501×436
+04:03:08.383 SCREEN finder (w309) 310,40 501×436
+04:03:08.401 MACOS pid 38618 AXMoved w309 AXWindow/AXStandardWindow 310 40 501 436
+04:03:08.432 SCREEN finder (w309) 329,36 501×436
+04:03:08.545 MACOS pid 38618 AXMoved w309 AXWindow/AXStandardWindow 347 32 501 436
+04:03:08.569 SCREEN finder (w309) 365,31 501×436
+04:03:08.570 DEBUG drag of w309: on cameraEdge(ArborCore.Edge.top)
+04:03:08.595 SCREEN w418 of Arbor 214,43 1056×160 (level 3)
+04:03:08.652 SCREEN w418 of Arbor 20,43 1556×160 (level 3)
+04:03:08.652 SCREEN finder (w309) 383,31 501×436
+04:03:08.667 SCREEN finder (w309) 402,31 501×436
+04:03:08.679 MACOS pid 38618 AXMoved w309 AXWindow/AXStandardWindow 402 31 501 436
+04:03:08.719 SCREEN w418 of Arbor 12,43 1576×160 (level 3)
+04:03:08.719 SCREEN finder (w309) 420,31 501×436
+04:03:08.799 SCREEN finder (w309) 456,31 501×436
+04:03:08.801 MACOS pid 38618 AXMoved w309 AXWindow/AXStandardWindow 456 31 501 436
+04:03:08.831 SCREEN finder (w309) 475,31 501×436
+04:03:08.898 SCREEN finder (w309) 493,31 501×436
+04:03:08.942 MACOS pid 38618 AXMoved w309 AXWindow/AXStandardWindow 493 31 501 436
+04:03:08.943 SCREEN finder (w309) 511,31 501×436
+04:03:09.036 SCREEN finder (w309) 530,31 501×436
+04:03:09.045 MACOS pid 38618 AXMoved w309 AXWindow/AXStandardWindow 530 31 501 436
+04:03:09.394 SCREEN finder (w309) 531,31 501×436
+04:03:09.444 MACOS pid 38618 AXMoved w309 AXWindow/AXStandardWindow 531 31 501 436
+04:03:10.927 SCREEN finder (w309) 530,31 501×436
+04:03:11.006 SCREEN the button is up 800 0
+04:03:11.017 MACOS pid 38618 AXMoved w309 AXWindow/AXStandardWindow 530 31 501 436
+04:03:11.018 INFO  dropped w309 on cameraEdge(ArborCore.Edge.top), display 5A42259C-47B8-4590-9762-97DBE4FE7F1B
+04:03:11.018 INFO  made room for w330
+04:03:11.027 DEBUG stage up on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: 8 stand-ins, 0.46 s
+04:03:11.054 SCREEN w373 of Arbor 0,0 1600×900 (level 4)
+04:03:11.148 SCREEN finder (w309) 530,31 1070×252
+04:03:11.148 MACOS pid 38618 AXResized w309 AXWindow/AXStandardWindow 12 43 1070 252
+04:03:11.149 MACOS pid 38618 AXMoved w309 AXWindow/AXStandardWindow 12 43 1070 252
+04:03:11.180 MACOS pid 38618 AXResized w309 AXWindow/AXStandardWindow 12 43 1576 252
+04:03:11.189 SCREEN finder (w309) 12,43 1576×252
+04:03:11.211 MACOS pid 40167 AXResized w323 AXWindow/AXStandardWindow 1071 215 517 595
+04:03:11.212 MACOS pid 40167 AXMoved w323 AXWindow/AXStandardWindow 1071 215 517 595
+04:03:11.222 MACOS pid 40544 AXMoved w330 AXWindow/AXStandardWindow 350 307 709 503
+04:03:11.232 MACOS pid 40486 AXMoved w329 AXWindow/AXStandardWindow 1599 770 709 378
+04:03:11.233 INFO  made room for w329
+04:03:11.256 MACOS pid 38618 AXResized w309 AXWindow/AXStandardWindow 12 43 1576 263
+04:03:11.269 SCREEN finder (w309) 12,43 1576×263
+04:03:11.269 SCREEN textedit (w323) 1071,215 517×595
+04:03:11.269 SCREEN calendar (w330) 350,307 709×503
+04:03:11.269 SCREEN notes (w329) 1599,770 709×378
+04:03:11.277 MACOS pid 40167 AXResized w323 AXWindow/AXStandardWindow 1071 318 517 492
+04:03:11.278 MACOS pid 40167 AXMoved w323 AXWindow/AXStandardWindow 1071 318 517 492
+04:03:11.283 SCREEN textedit (w323) 1071,215 517×492
+04:03:11.305 SCREEN textedit (w323) 1071,318 517×492
+04:03:11.314 MACOS pid 40486 AXResized w329 AXWindow/AXStandardWindow 350 318 709 320
+04:03:11.315 MACOS pid 40486 AXMoved w329 AXWindow/AXStandardWindow 350 318 709 320
+04:03:11.322 MACOS pid 40544 AXMoved w330 AXWindow/AXStandardWindow 1599 770 709 503
+04:03:11.332 MACOS pid 40327 AXMoved w326 AXWindow/AXStandardWindow 0 318 338 499
+04:03:11.346 SCREEN calendar (w330) 1599,770 709×503
+04:03:11.346 SCREEN notes (w329) 350,318 709×320
+04:03:11.346 SCREEN terminal (w326) 0,318 338×499
+04:03:11.383 MACOS pid 40697 AXResized w333 AXWindow/AXStandardWindow 0 318 723 504
+04:03:11.383 MACOS pid 40697 AXMoved w333 AXWindow/AXStandardWindow 0 318 723 504
+04:03:11.393 SCREEN settings (w333) 0,318 723×504
+04:03:11.482 MACOS pid 41101 AXResized w338 AXWindow/AXStandardWindow 0 318 871 504
+04:03:11.483 MACOS pid 41101 AXMoved w338 AXWindow/AXStandardWindow 0 318 871 504
+04:03:11.493 DEBUG raised w338, which was left hanging over docked windows
+04:03:11.493 MACOS pid 41101 AXFocusedWindowChanged w341 AXSheet/- 201 370 470 416
+04:03:11.494 SCREEN w341 of Mail 201,370 470×416
+04:03:11.494 SCREEN mail (w338) 0,318 871×504
+04:03:11.495 MACOS pid 41101 AXMainWindowChanged w338 AXWindow/AXStandardWindow 0 318 871 504
+04:03:11.509 SCREEN front to back: finder w341 mail settings preview textedit calendar notes safari terminal w419 w415 w381 w420
+04:03:11.509 DEBUG stage retargeted on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: 8 stand-ins, 0.46 s
+04:03:11.578 SCREEN w382 of Arbor 3,34 1594×281
+04:03:11.578 SCREEN w419 of Arbor 350,650 709×160
+04:03:11.578 SCREEN w415 of Arbor 350,638 709×12
+04:03:11.578 SCREEN w381 of Arbor 338,318 12×492
+04:03:11.578 SCREEN w420 of Arbor 1059,318 12×492
+04:03:11.578 SCREEN w433 of Arbor 12,306 1576×12
+04:03:11.578 SCREEN front to back: w382 finder w341 mail settings preview textedit calendar notes safari terminal w419 w415 w381 w420 w433
+04:03:11.624 SCREEN w418 of Arbor left the screen
+04:03:12.078 DEBUG stage down
+04:03:12.139 SCREEN w373 of Arbor left the screen
+04:03:14.390 SCREEN -- end 47 act=drag-where-macos-tiles settled=quiet:969 drags=309 moves=312,323,329,330,309,312,323,329,330, front=309 floating=326,333,338,402 docked=309,312,323,329,330
+04:03:14.916 SCRIPT == 48 dock-left

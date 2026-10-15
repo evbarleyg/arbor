@@ -1,0 +1,23 @@
+74 drag-left-edge-of-textedit: drags the left edge of textedit's window by 30 points
+expected: {'act': 'resize', 'settled': 'quiet:1085', 'moves': '31,34,51,54,60,67,128,169,198,31,34,51,54,60,67,128,169,198,', 'floating': '61', 'docked': '31,34,51,54,60,67,128,169,198'}
+FAIL rule 4: the app in front changed (to process 17767), and nobody switched
+
+03:55:55.637 SCREEN -- begin 74 drag-left-edge-of-textedit
+03:55:55.637 SCREEN -- text 74 drags the left edge of textedit's window by 30 points
+03:55:55.955 SCREEN w226 of Arbor left the screen
+03:55:56.128 SCREEN the button is down 401 167
+03:55:56.575 MACOS pid 17767 AXApplicationActivated
+03:55:56.582 MACOS pid 17767 AXFocusedWindowChanged w128 AXWindow/AXStandardWindow 400 43 375 248
+03:55:56.583 MACOS pid 17767 AXMainWindowChanged w128 AXWindow/AXStandardWindow 400 43 375 248
+03:55:58.790 SCREEN front to back: textedit w209 settings terminal finder preview textedit-new-52 w69 mail notes calendar safari w213 w214 w215 w216 w217 w208 w218 w219 w220 w221 w222 w223 w224 w225
+03:55:58.790 SCREEN the button is up 371 167
+03:55:58.791 SCREEN in front: process 17767 com.apple.TextEdit
+03:55:58.797 DEBUG focus is on w128
+03:55:58.798 DEBUG w128 has the keyboard
+03:55:58.827 SCREEN w209 of Arbor 391,34 393×266
+03:55:58.827 SCREEN front to back: w209 textedit settings terminal finder preview textedit-new-52 w69 mail notes calendar safari w213 w214 w215 w216 w217 w208 w218 w219 w220 w221 w222 w223 w224 w225
+03:55:58.855 MACOS pid 12145 AXApplicationDeactivated
+03:55:58.855 MACOS workspace didActivate pid 17767 com.apple.TextEdit regular
+03:55:58.855 MACOS workspace didDeactivate pid 12145 com.apple.systempreferences regular
+03:55:59.984 SCREEN -- end 74 act=resize settled=quiet:1085 moves=31,34,51,54,60,67,128,169,198,31,34,51,54,60,67,128,169,198, floating=61 docked=31,34,51,54,60,67,128,169,198
+03:56:00.265 SCRIPT == 75 view-frame

@@ -1,0 +1,11 @@
+33 drag-notes-to-left-edge: drags notes by its title bar against the left edge of the screen and lets go
+expected: {'act': 'drag-where-macos-tiles', 'settled': 'quiet:406', 'judge': 'no', 'performed': 'no', 'undone': 'drag_window', 'drags': '54', 'moves': ',,', 'front': '54', 'own': '54', 'floating': '31,34,51,54,60,61,63,67,128,133', 'docked': ''}
+ODD rule -: the act was not performed: drag_window could not be done
+
+03:53:43.911 SCREEN -- begin 33 drag-notes-to-left-edge
+03:53:43.911 SCREEN -- text 33 drags notes by its title bar against the left edge of the screen and lets go
+03:53:43.963 SCRIPT drag w54 from 804,117 to 0,450
+03:53:44.549 SCREEN the button is down 804 117
+03:53:47.635 SCREEN the button is up 0 450
+03:53:53.869 SCREEN -- end 33 act=drag-where-macos-tiles settled=quiet:406 judge=no performed=no undone=drag_window drags=54 moves=,, front=54 own=54 floating=31,34,51,54,60,61,63,67,128,133 docked=
+03:53:54.163 SCRIPT == 34 click-new-window
