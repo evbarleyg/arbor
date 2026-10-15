@@ -341,7 +341,7 @@ private final class FileFixture {
   @Test func reloadSettingsWithoutAFileStartsFromTheDefaultsAsALaunchDoes() throws {
     let f = try FileFixture(#"{"gap": 40}"#)
     try FileManager.default.removeItem(at: f.file)
-    #expect(f.h.run("reload-settings").message == "there was no settings.json; wrote one with the defaults")
+    #expect(f.h.run("reload-settings").message == "there was no settings.json; back to the defaults, and wrote a new one")
     #expect(f.settings == Settings() && f.inset == 12)
     #expect(try SettingsFile.read(from: f.file) == Settings())
   }

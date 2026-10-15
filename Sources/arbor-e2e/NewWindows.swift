@@ -116,7 +116,8 @@ extension Runner {
       check("the first window has its slot back", layoutReturns(to: [w1: whole]), mismatch())
     }
     try step("switch automatic docking off", "toggle-auto-dock") { _ in
-      check("settings.json says so", settingsText().contains("\"newWindows\": \"float\""), settingsText())
+      // Back at the default, which the file does not hold (Q27).
+      check("settings.json says so", !settingsText().contains("\"newWindows\""), settingsText())
     }
     try step("a new window floats again", by: "the app opens a window") {
       let last = try openWindow(place)

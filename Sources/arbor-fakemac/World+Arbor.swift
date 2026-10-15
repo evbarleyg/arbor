@@ -111,6 +111,17 @@ extension World {
 
   /// `SettingsFile.load`
   private func loadSettings() -> Settings {
+    // `SettingsFile.upgrade`
+    if let data = settingsData, String(data: data, encoding: .utf8) != nil,
+      let upgraded = try? Settings.upgradedFile(String(decoding: data, as: UTF8.self))
+    {
+      let copy = "settings.before-format-\(Settings.format).json"
+      if file(copy) == nil { put(data, in: copy) }
+      put(Data(upgraded.text.utf8), in: "settings.json")
+      Log.info(
+        "settings.json now holds only what differs from the defaults; taken out, to follow the defaults from now on: "
+          + (upgraded.stripped.isEmpty ? "nothing" : upgraded.stripped.joined(separator: ", ")))
+    }
     do {
       return try readSettings()
     } catch {

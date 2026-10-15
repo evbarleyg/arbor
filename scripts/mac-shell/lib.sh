@@ -1104,7 +1104,9 @@ arbor_build() {
 arbor_settings() {
   ARBOR_GAP=$(python3 -c 'import json, sys; print(round(json.loads(sys.argv[1]).get("gap", 12)))' "$1") \
     || die "arbor_settings: not a JSON object: $1"
-  printf '%s\n' "$1" > "$ARBOR_HOME/settings.json"
+  # With the mark of a file that holds only what somebody chose (Q27). Without it a launch would take out of it whatever equals the default of
+  # an earlier day, and what the script asks for would come to depend on what Arbor ships with.
+  python3 -c 'import json, sys; print(json.dumps({"format": 2, **json.loads(sys.argv[1])}))' "$1" > "$ARBOR_HOME/settings.json"
 }
 
 # Several scripts can leave their logs in one folder, as the suite's sections do.

@@ -394,7 +394,7 @@ private func w(_ raw: UInt32) -> WindowID { WindowID(raw) }
     #expect(try Settings.read(written).docksNewWindows)
     #expect(written.contains("\"gap\": 8"))
     #expect(!written.contains("autoDockMinimumWidth"))
-    #expect(try Settings.rewrite(written, from: updated, to: old).contains("\"newWindows\": \"float\""))
+    #expect(try Settings.rewrite(written, from: updated, to: old) == text, "back at the default, the key leaves the file (Q27)")
   }
 
   @Test func theCommandHasATextFormAndIsNotForURLs() throws {

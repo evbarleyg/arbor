@@ -86,7 +86,10 @@ private let handEdited = """
 
   /// Every key there is, found by looking, so that a key added to `Settings` later is covered too.
   @Test func aFileOfArborsOwnRoundTripsThroughAChangeToEveryKey() throws {
-    let text = try Settings().fileText
+    // A file with every key in it, as somebody might write one who copied the reference. (Arbor's own holds only what differs.)
+    let encoder = JSONEncoder()
+    encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
+    let text = String(decoding: try encoder.encode(Settings()), as: UTF8.self) + "\n"
     var values = try #require(try JSONSerialization.jsonObject(with: Data(text.utf8)) as? [String: Any])
     for (key, value) in values {
       switch value {
@@ -591,14 +594,15 @@ private let handEdited = """
     #expect(Settings.FileError("the file is read-only").forTheLog == "the file is read-only")
   }
 
-  @Test func aNewFileListsEveryKeyAndEndsWithANewline() throws {
-    let text = try Settings().fileText
+  @Test func aNewFileListsWhatDiffersInOrderAndEndsWithANewline() throws {
+    var changed = Settings()
+    (changed.gap, changed.excludedBundleIDs, changed.frameRectangleModifier) = (20, ["com.apple.Music"], "shift+cmd")
+    changed.rules = [AppRule(app: "com.apple.Terminal", action: .dock(.right))]
+    let text = try changed.fileText
     #expect(text.hasSuffix("}\n"))
-    #expect(try Settings.read(text) == Settings())
+    #expect(try Settings.read(text) == changed)
     let keys = try #require(try JSONText(text).keys(at: []))
-    #expect(keys == keys.sorted())
-    #expect(
-      Set(["gap", "rules", "bindings", "excludedBundleIDs", "frameRectangleModifier"]).isSubset(of: keys))
+    #expect(keys == ["format", "excludedBundleIDs", "frameRectangleModifier", "gap", "rules"], "the mark, then by the alphabet")
     var slashed = Settings()
     slashed.bindings = ["ctrl+opt+/": "arrange"]
     #expect(try slashed.fileText.contains(#""ctrl+opt+/""#), "no \\/ in a file people read")

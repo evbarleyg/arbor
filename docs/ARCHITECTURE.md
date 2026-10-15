@@ -940,7 +940,9 @@ manual is `docs/TRACES.md`.
 every other program that links `ArborPaths` (the tests, arbor-sim, arbor-e2e) uses `arbor-guests-<uid>` in the temporary
 directory unless it is given an `ARBOR_HOME`, so that a test run on a Mac where Arbor is in use leaves its log alone:
 
-- `settings.json`: `Settings`, written with defaults on first launch;
+- `settings.json`: `Settings`, but only what differs from the defaults, and the mark `"format": 2` (`ArborCore/SettingsFileFormat.swift`, Q27): a written
+  default cannot be told from a choice, and would keep a changed default from ever arriving. A file from before the mark is stripped once, at a launch, of
+  what equals the defaults of its day (a frozen table), with a copy kept beside it;
   unknown keys are ignored, missing keys take defaults. See "Settings" below.
 - `state.json`: `PersistedState`: every workspace (tree, camera, history,
   saved views, names, floating frames, the frames docked windows floated at) keyed by display UUID, plus `WindowHint`s

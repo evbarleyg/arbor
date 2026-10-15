@@ -15,8 +15,10 @@ File). There are four ways to change one, and each takes effect at once and show
   those too. Keys ignore case, and `on`/`off`, `yes`/`no` and `1`/`0` also mean true and false. A value
   outside what the table allows is refused, with the reason, and changes nothing. A command changes only its
   own setting in the file; the rest stays as you wrote it, keys Arbor does not know included.
-- **The file**: Arbor watches it and applies an edit as soon as it is saved. Missing keys take their
-  defaults. A number outside its range is moved to the nearest end of it, and any other value Arbor cannot
+- **The file**: Arbor watches it and applies an edit as soon as it is saved. **It holds only what differs from
+  the defaults**, and `"format": 2`, which says so and should stay: after a first launch there is nothing else in it, and
+  `reset` takes a value out again. So add the key you want to change; the tables below have them all. Missing keys take their
+  defaults, also when a later version changes one. A number outside its range is moved to the nearest end of it, and any other value Arbor cannot
   use goes back to its default; `arborctl settings` and the log say which, and the file keeps what you wrote
   until you `set` or `reset` that key. While the file is not valid JSON Arbor keeps the settings it has and
   refuses commands that change settings; `arborctl reload-settings` says where the typo is. `arborctl reset

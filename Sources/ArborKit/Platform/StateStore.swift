@@ -372,8 +372,8 @@ public final class FileStateStore: StateStore {
   }
 }
 
-/// Loads and saves `settings.json`, writing the defaults on first launch so
-/// there is a file to edit. People do edit it, so Arbor writes a whole file only
+/// Loads and saves `settings.json`, which holds only what differs from the defaults (SettingsFileFormat.swift). The
+/// first launch writes one, so there is a file to edit. People do edit it, so Arbor writes a whole file only
 /// where there is none, changes an existing one key by key (`update`), and
 /// never writes to one it cannot read, unless it is asked to replace it (`replace`).
 public enum SettingsFile {
@@ -386,6 +386,7 @@ public enum SettingsFile {
   /// What Arbor starts with: the file's settings, or the defaults if there is no file (one is
   /// written) or it cannot be read (it is left alone).
   public static func load(from url: URL = ArborPaths.settingsFile) -> Settings {
+    upgrade(at: url)
     do {
       let settings = try read(from: url)
       logProblems(in: settings)
@@ -396,6 +397,38 @@ public enum SettingsFile {
     } catch {
       Log.error("settings.json cannot be read, using the defaults: \(forTheLog(error))")
       return Settings()
+    }
+  }
+
+  /// Once, at a launch: a file from the days when the first launch wrote every default down is stripped of what nobody chose, and
+  /// marked (`Settings.upgradedFile`). It is somebody's file, so a copy stays beside it as settings.before-format-2.json. A file that
+  /// cannot be read, copied or written is left as it is, and looked at again at the next launch.
+  static func upgrade(at url: URL) {
+    do {
+      guard let data = try contents(of: url), String(data: data, encoding: .utf8) != nil,
+        let upgraded = try Settings.upgradedFile(String(decoding: data, as: UTF8.self))
+      else { return }
+      // Asked before the copy is made, or a file that may not be written would get a new copy at every launch.
+      guard FileManager.default.isWritableFile(atPath: destination(of: url).path) else {
+        throw Settings.FileError("the file is read-only")
+      }
+      // What was read, not what lies there by now. And the first copy stays: it is the one with the whole old file. (Somebody who later puts
+      // a file without the mark in its place has that one upgraded too.)
+      let copy = url.deletingPathExtension().appendingPathExtension("before-format-\(Settings.format).json")
+      if !FileManager.default.fileExists(atPath: copy.path) {
+        do {
+          try data.write(to: copy, options: .atomic)
+        } catch {
+          throw Settings.FileError("no copy could be kept as \(copy.lastPathComponent) (\(error.localizedDescription))")
+        }
+      }
+      try write(upgraded.text, to: url)
+      // The names of settings, never their values.
+      Log.info(
+        "settings.json now holds only what differs from the defaults; taken out, to follow the defaults from now on: "
+          + (upgraded.stripped.isEmpty ? "nothing" : upgraded.stripped.joined(separator: ", ")))
+    } catch {
+      Log.error("settings.json stays as an earlier build wrote it: \(forTheLog(error))")
     }
   }
 

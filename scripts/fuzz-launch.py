@@ -442,6 +442,13 @@ def build_bases(rig):
     settings_path = os.path.join(base, "settings.json")
     session([], ["settings-file " + settings_path] + SETTINGS_SESSION, "settings.json")
     settings = json.load(open(settings_path))
+    # The file holds only what differs from the defaults (Q27). Here every key is wanted, as in a file somebody wrote out in full, so that every
+    # number, switch and choice gets damaged.
+    code, output = rig.run(["quiet", "settings-file " + settings_path, "settings --json"])
+    listed = json.loads(output[output.index("\n[\n"):output.rindex("]") + 1])
+    settings = {**{entry["key"]: entry["value"] for entry in listed}, **settings}
+    if len(settings) < 60:
+        sys.exit("settings.json for the fuzzer has only %d keys: `settings --json` no longer lists them all?" % len(settings))
     settings["pauseForApps"] = ["com.example.game"]  # no command writes this list
     rig.copy_of_state = lambda: os.path.join(base, "stateA.json")
     check_bases(states)

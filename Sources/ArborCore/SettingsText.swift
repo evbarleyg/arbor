@@ -54,15 +54,6 @@ extension Settings {
 
   public static func read(_ text: String) throws -> Settings { try read(Data(text.utf8)) }
 
-  /// The text of a new `settings.json`: every key, so there is something to edit.
-  public var fileText: String {
-    get throws {
-      let encoder = JSONEncoder()
-      encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
-      return String(decoding: try encoder.encode(self), as: UTF8.self) + "\n"
-    }
-  }
-
   // MARK: Rewriting
 
   /// `text`, the contents of `settings.json`, with what changed between `old` and `new` written into
@@ -75,6 +66,9 @@ extension Settings {
   /// same in `old` and `new` is not touched, whatever the file says: not even a value Arbor could not
   /// use (`valueProblems`), which stays for whoever wrote it to put right. Giving that key a value
   /// puts it right, even the value Arbor was using instead: `new` then no longer lists the problem.
+  ///
+  /// A single value that is changed to the default is taken out of the file, which holds only what differs from the
+  /// defaults (SettingsFileFormat.swift).
   ///
   /// Within a changed key:
   /// - an object (`bindings`) is changed entry by entry;
@@ -94,6 +88,7 @@ extension Settings {
     let unusable = file.valueProblems.map { $0.prefix { $0 != ":" } }
     let before = try canonical(old)
     let after = try canonical(new)
+    let defaults = try canonical(Settings())
     var replaced: [String] = []
     let putRight = Set(old.valueProblems).subtracting(new.valueProblems).map { $0.prefix { $0 != ":" } }
 
@@ -138,6 +133,9 @@ extension Settings {
           }
           if document.value(at: [key]) == "null" { document = try document.setting([key], to: "{}") }
           document = try patching(document, at: [key], from: before, to: after)
+        } else if after.value(at: [key]) == defaults.value(at: [key]) {
+          document = try document.removing([key])
+          replaced.append(key)
         } else {
           document = try document.setting([key], to: after.value(at: [key])!)
           replaced.append(key)
@@ -300,7 +298,7 @@ extension Settings {
   // MARK: Helpers
 
   /// A value in one fixed form, so that two values are equal exactly when their text is.
-  private static func canonical(_ value: some Encodable) throws -> JSONText {
+  static func canonical(_ value: some Encodable) throws -> JSONText {
     let encoder = JSONEncoder()
     encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
     do {
@@ -310,7 +308,7 @@ extension Settings {
     }
   }
 
-  private static func describingEditErrors<T>(_ body: () throws -> T) throws -> T {
+  static func describingEditErrors<T>(_ body: () throws -> T) throws -> T {
     do {
       return try body()
     } catch let error as JSONText.SyntaxError {

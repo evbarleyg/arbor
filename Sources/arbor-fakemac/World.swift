@@ -180,7 +180,8 @@ final class World {
   static let tilingSettings = ["EnableTilingByEdgeDrag", "EnableTopTilingByEdgeDrag", "EnableTilingOptionAccelerator"].map {
     "defaults/com.apple.WindowManager.\($0)"
   }
-  static let filesWritten = filesRead + ["state.unreadable.json", "state.before-repair.json", "arbor.lock"]
+  static let filesWritten =
+    filesRead + ["settings.before-format-\(Settings.format).json", "state.unreadable.json", "state.before-repair.json", "arbor.lock"]
 
   init(socket: String, display: DisplaySnapshot) {
     self.socket = socket

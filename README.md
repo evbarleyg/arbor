@@ -531,7 +531,8 @@ The window changes nothing that a command cannot: `arborctl set gap 16` does the
 `~/Library/Application Support/Arbor/settings.json` (menu → Help → Settings File…). Whichever way, it
 applies at once and shows in the other two. `arborctl settings` lists every setting with its value, range and default, `arborctl get gap`
 prints one, and `arborctl reset gap` goes back to the default. A value Arbor cannot use is refused by `set`, and
-in the file it costs only its own key. [docs/SETTINGS.md](docs/SETTINGS.md) is the complete reference; these are the main ones:
+in the file it costs only its own key. The file holds only what differs from the defaults, so what you have not changed follows them when a later
+version changes one. [docs/SETTINGS.md](docs/SETTINGS.md) is the complete reference; these are the main ones:
 
 | Key | Default | Meaning |
 |---|---|---|

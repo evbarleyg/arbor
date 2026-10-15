@@ -85,6 +85,8 @@ Second half, the window and what the product owner asked of the commands:
   name of an app with a window open; "did you mean" also searches labels (`set shortcuts off`); a choice's values are explained
   where they are typed.
 
+- 2026-10-15 (Q27): `settings.json` holds only what differs from the defaults, and `"format": 2` (`ArborCore/SettingsFileFormat.swift`). A first launch writes no default; `set` writes one key; `reset`, and `set` to the very default, take the key out. A file from before the mark is stripped once, at a launch, of what equals the defaults of its day (a frozen table), with a copy kept. `SettingsFileFormatTests`, `SettingsFileUpgradeTests`; on a Mac `check-F12.sh`.
+
 ## Not shipped
 
 - Criterion 3: nobody has seen the window. It compiles and its tests pass on a Mac; the script that clicks through it and takes its

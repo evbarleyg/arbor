@@ -35,6 +35,10 @@ noticed() {
 arbor_build
 arbor_start 3
 file="$ARBOR_HOME/settings.json"
+# keys_of <file>: its keys, in the order of the alphabet, on one line.
+keys_of() { python3 -c 'import json, sys; print(" ".join(sorted(json.load(open(sys.argv[1])))))' "$1"; }
+cat "$file"
+check "after a first launch the file holds the mark and no default (Q27)" [ "$(keys_of "$file")" = "format" ]
 ctl dock "$W1" left
 ctl dock "$W2" right
 check "the window starts at the default gap" eventually inset_is 12
@@ -43,6 +47,7 @@ step "set moves real windows at once and saves"
 ctl set gap 40
 check "the real window starts 40 points from the edge" eventually inset_is 40
 check "settings.json has the new gap" grep -Eq '"gap" ?: ?40' "$file"
+check "and nothing else that is new" [ "$(keys_of "$file")" = "format gap" ]
 ctl get gap
 ctl set gap 500
 check "a value out of range is refused" not "$ARBOR_BIN/arborctl" set gap 500
@@ -110,7 +115,7 @@ check "the gap in use stays" gap_is 0
 check "no file was written" not test -e "$file"
 ctl set gap 36
 check "set wrote a new file" test -s "$file"
-printf '{"gap": 12}\n' > "$file"
+printf '{"format": 2, "gap": 12}\n' > "$file"
 noticed 12
 
 step "the other files in the folder cost nothing"
@@ -132,5 +137,20 @@ check "no part of a title is in the log" not grep -q "Build log" "$ARBOR_HOME/ar
 cat "$file"
 ctl reset everything
 check "everything is back to the default" setting_is rules "[]"
+cat "$file"
+# The gap was written by hand as 12, which is the default: nothing changed, so it stays. An emptied list or object may stay too.
+check "and the file holds no value that differs from a default" [ "$(keys_of "$file")" = "bindings format gap rules" ]
 
+arbor_stop
+
+step "an upgrade: launched on a file in which an earlier build wrote its defaults down"
+file="$ARBOR_HOME/settings.json"
+printf '%s\n' '{' '  "animationDuration" : 0.46,' '  "gap" : 40,' '  "gesturesEnabled" : true,' '  "noteToSelf" : "hello",' '  "peek" : true' '}' > "$file"
+cp "$file" "$ARBOR_OUT/settings-of-an-earlier-build.json"
+arbor_start 1
+cat "$file"
+check "what nobody chose is out, what somebody chose stays, and the file is marked" [ "$(keys_of "$file")" = "format gap noteToSelf" ]
+check "Arbor uses the gap that was chosen" gap_is 40
+check "a copy of the file as it was lies beside it" cmp -s "$ARBOR_OUT/settings-of-an-earlier-build.json" "$ARBOR_HOME/settings.before-format-2.json"
+check "the log names the keys and no value" grep -q "taken out, to follow the defaults from now on: animationDuration, gesturesEnabled, peek" "$ARBOR_HOME/arbor.log"
 arbor_stop

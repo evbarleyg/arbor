@@ -604,7 +604,7 @@ public final class ChaosRunner {
     controller.now = { start.addingTimeInterval(before + scheduler.now) }
     controller.loadSettings = { [unowned self] in self.settings() }
     controller.saveSettings = { [unowned self] _, settings in
-      // What SettingsFile.update leaves in the file, comments and order aside.
+      // What reading the file SettingsFile.update leaves would give. (That file holds only what differs from the defaults; this one all of it.)
       guard let data = try? JSONEncoder().encode(settings),
         let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
       else { return }

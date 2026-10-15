@@ -43,7 +43,7 @@ import Foundation
 //   display <match> <key> <value>  add an entry to the per-display options, e.g. display main gap 30
 //   title <id> <text>            the app changes a window's title (it opens as "Terminal 101")
 //   settings-file <path>         use this settings.json as the app uses its own: load it now
-//                                (writing the defaults if there is none), save changes to it
+//                                (writing one if there is none), save changes to it
 //                                (set, bind, rule, exclude…), and read it again on reload-settings
 //   revoke | grant               take Accessibility permission away from Arbor, give it back; nobody tells it:
 //                                it finds out at the next command, or within three seconds of `wait`. A loss of

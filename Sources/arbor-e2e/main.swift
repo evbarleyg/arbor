@@ -90,9 +90,11 @@ final class Runner {
   // MARK: Settings
 
   /// A settings file somebody has worked on: a number written their way, a key Arbor does not
-  /// know, and a rule it cannot read. Arbor starts on it, so its gap has to be `gap`.
+  /// know, and a rule it cannot read. Arbor starts on it, so its gap has to be `gap`. It has the mark of a file that holds only what
+  /// somebody chose (Q27): without it the launch would take the gap out, which is the default's.
   static let handEditedSettings = """
     {
+      "format": 2,
       "gap": 12.0,
       "myNote": "kept by arbor-e2e",
       "excludedBundleIDs": ["com.example.first"],

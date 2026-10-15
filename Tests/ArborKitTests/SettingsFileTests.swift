@@ -7,6 +7,7 @@ import Testing
 
 private let handEdited = """
   {
+    "format": 2,
     "gap": 8.0,
     "myNote": "ask Sam about the gap",
     "excludedBundleIDs": ["com.apple.Music"],
@@ -94,7 +95,7 @@ private let handEdited = """
     #expect(
       result.message
         == "settings.json cannot be read, so nothing was changed: "
-        + "line 3, column 3: expected `,` or `}` after the value of `gap`, found `\"`. "
+        + "line 4, column 3: expected `,` or `}` after the value of `gap`, found `\"`. "
         + "Mend the file, or run `reset everything` to replace it with the defaults")
     #expect(h.workspace.contains(window) && h.controller.settings == Settings())
     #expect(try folder.read() == typo)
@@ -129,7 +130,7 @@ private let handEdited = """
     #expect(!failed.ok)
     #expect(
       failed.message
-        == "settings.json cannot be read, keeping the settings in use: line 2, column 10: expected a value, found `wide`"
+        == "settings.json cannot be read, keeping the settings in use: line 3, column 10: expected a value, found `wide`"
     )
     #expect(h.controller.settings == loaded)
 
@@ -157,10 +158,10 @@ private let handEdited = """
           of: #""com.apple.mail"]"#, with: #""com.apple.mail", "com.apple.Notes"]"#))
   }
 
-  @Test func withoutAFileTheWholeOfTheSettingsIsWritten() throws {
+  @Test func withoutAFileOneIsWrittenThatHoldsOnlyWhatDiffersFromTheDefaults() throws {
     let folder = try Folder()
     #expect(SettingsFile.load(from: folder.file) == Settings())
-    #expect(try folder.read() == (try Settings().fileText), "the defaults, so there is something to edit")
+    #expect(try folder.read() == "{\n  \"format\": 2\n}\n", "a file to edit, and no default in it (Q27)")
 
     try FileManager.default.removeItem(at: folder.file)
     var changed = Settings()
@@ -325,7 +326,7 @@ private let handEdited = """
   @Test(arguments: [
     ("set gap 20", #""gap": 8.0,"#, #""gap": 20,"#),
     ("set tabsEnabled on", "\"dock left\" }\n", "\"dock left\" },\n  \"tabsEnabled\": true\n"),
-    ("reset gap", #""gap": 8.0,"#, #""gap": 12,"#),
+    ("reset gap", "\"gap\": 8.0,\n  ", ""),  // the file holds only what differs from the defaults (Q27)
     ("bind ctrl+opt+j dock right", #""dock left" }"#, #""dock left", "ctrl+opt+j": "dock right" }"#),
     ("bind ctrl+opt+h dock right", #""ctrl+opt+h": "dock left""#, #""ctrl+opt+h": "dock right""#),
     ("unbind ctrl+opt+h", #"{ "ctrl+opt+x": 5, "ctrl+opt+h": "dock left" }"#, #"{ "ctrl+opt+x": 5 }"#),
@@ -352,11 +353,11 @@ private let handEdited = """
   @Test func reportsOnWhatCouldNotBeReadFollowTheFile() throws {
     let folder = try Folder()
     try folder.write(
-      #"{"rules": [{"app": "com.a", "action": "float"}, {"app": "com.b", "action": "dock sideways"}]}"#)
+      #"{"format": 2, "rules": [{"app": "com.a", "action": "float"}, {"app": "com.b", "action": "dock sideways"}]}"#)
     let h = harness(folder)
     #expect(h.controller.settings.skippedRules.first?.hasPrefix("entry 2 (com.b): ") == true)
     #expect(h.run("rule remove 1").ok)
-    #expect(try folder.read() == #"{"rules": [{"app": "com.b", "action": "dock sideways"}]}"#)
+    #expect(try folder.read() == #"{"format": 2, "rules": [{"app": "com.b", "action": "dock sideways"}]}"#)
     #expect(h.controller.settings.skippedRules.first?.hasPrefix("entry 1 (com.b): ") == true)
     #expect(h.controller.takeInSettingsFile() == .unchanged)
   }
@@ -366,12 +367,12 @@ private let handEdited = """
     try folder.write(handEdited)
     let h = harness(folder)
     #expect(h.run("reset all").ok)
-    #expect(try folder.read() == handEdited.replacingOccurrences(of: "8.0", with: "12"))
+    #expect(try folder.read() == handEdited.replacingOccurrences(of: "\"gap\": 8.0,\n  ", with: ""))
     #expect(h.run("reset everything").ok)
     #expect(
       try folder.read() == """
         {
-          "gap": 12,
+          "format": 2,
           "myNote": "ask Sam about the gap",
           "excludedBundleIDs": [],
           "rules": [
@@ -386,25 +387,23 @@ private let handEdited = """
 
   @Test func resettingAlsoPutsRightWhatArborCouldNotUse() throws {
     let folder = try Folder()
-    try folder.write(#"{"gap": "wide", "tabsEnabled": 1, "focusRingRadius": 99, "excludedBundleIDs": ["a", 5], "myNote": 1}"#)
+    try folder.write(
+      #"{"format": 2, "gap": "wide", "tabsEnabled": 1, "focusRingRadius": 99, "excludedBundleIDs": ["a", 5], "myNote": 1}"#)
     let h = harness(folder)
     #expect(h.controller.settings.valueProblems.count == 4)
     #expect(h.run("reset all") == .success("back to the default: gap, tabsEnabled, focusRingRadius"))
-    #expect(
-      try folder.read()
-        == #"{"gap": 12, "tabsEnabled": false, "focusRingRadius": 0, "excludedBundleIDs": ["a", 5], "myNote": 1}"#)
+    #expect(try folder.read() == #"{"format": 2, "excludedBundleIDs": ["a", 5], "myNote": 1}"#)
     #expect(h.run("reset all") == .success("every setting is already the default"))
     #expect(h.run("exclude com.b").message.hasSuffix("is not a list Arbor can read, so it cannot be changed; fix it first"))
     #expect(h.run("reset everything") == .success("back to the default: excludedBundleIDs"))
-    #expect(
-      try folder.read() == #"{"gap": 12, "tabsEnabled": false, "focusRingRadius": 0, "excludedBundleIDs": [], "myNote": 1}"#)
+    #expect(try folder.read() == #"{"format": 2, "excludedBundleIDs": [], "myNote": 1}"#)
     #expect(h.controller.settings == Settings())
     #expect(h.run("exclude com.b").ok)
   }
 
   @Test func anEntryIsNotWrittenIntoShortcutsArborCouldNotRead() throws {
     let folder = try Folder()
-    let text = #"{"bindings": {"\x": "desktop", "ctrl+opt+h": "dock left"}}"#
+    let text = #"{"format": 2, "bindings": {"\x": "desktop", "ctrl+opt+h": "dock left"}}"#
     try folder.write(text)
     let h = harness(folder)
     #expect(
@@ -414,7 +413,7 @@ private let handEdited = """
             + "`bindings` is not an object Arbor can read, so it cannot be changed; fix it first"))
     #expect(try folder.read() == text)
     #expect(h.run("reset bindings").ok)
-    #expect(try folder.read() == #"{"bindings": {}}"#)
+    #expect(try folder.read() == #"{"format": 2, "bindings": {}}"#)
     #expect(h.run("bind ctrl+opt+j dock right").ok && h.run("get bindings").text == #"{"ctrl+opt+j":"dock right"}"#)
   }
 
@@ -569,14 +568,16 @@ private let handEdited = """
 
   /// "gap is already 12" would leave the slip in the file and the complaint in `settings`.
   @Test(arguments: [
-    (#""wide""#, "set gap 12", "12"), ("500", "set gap 100", "100"), (#""wide""#, "reset gap", "12"), ("-3", "set gap 0", "0"),
-  ]) func givingAKeyTheValueInUsePutsTheFileRight(written: String, command: String, saved: String) throws {
+    (#""wide""#, "set gap 12", nil), ("500", "set gap 100", "100"), (#""wide""#, "reset gap", nil), ("-3", "set gap 0", "0"),
+  ]) func givingAKeyTheValueInUsePutsTheFileRight(written: String, command: String, saved: String?) throws {
     let folder = try Folder()
     try folder.write(handEdited.replacingOccurrences(of: "8.0", with: written))
     let h = harness(folder)
     #expect(h.controller.settings.valueProblems.count == 1)
     #expect(h.run(command).ok)
-    #expect(try folder.read() == handEdited.replacingOccurrences(of: "8.0", with: saved))
+    // Nil: it is the default, which the file does not hold.
+    let expected = saved.map { handEdited.replacingOccurrences(of: "8.0", with: $0) }
+    #expect(try folder.read() == expected ?? handEdited.replacingOccurrences(of: "\"gap\": 8.0,\n  ", with: ""))
     #expect(h.controller.settings.valueProblems.isEmpty)
     // Now there is nothing left to put right.
     let number = try folder.fileNumber()

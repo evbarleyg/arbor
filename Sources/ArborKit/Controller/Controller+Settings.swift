@@ -422,11 +422,11 @@ extension Controller {
       let places = settings.skippedDisplays.isEmpty ? "`settings` and `rules`" : "`settings`, `rules` and `displays`"
       return .success("settings reloaded" + (problems == 0 ? "" : "; \(problems) problem(s), see \(places)"))
     case .missing:
-      // As at launch: with no file, start from the defaults and write them so there is a file to edit.
+      // As at launch: with no file, start from the defaults and write one, so there is a file to edit.
       if let reason = change(settings: Settings()) {
         return .failure("there is no settings.json, and none could be written: \(reason)")
       }
-      return .success("there was no settings.json; wrote one with the defaults")
+      return .success("there was no settings.json; back to the defaults, and wrote a new one")
     case .invalid(let reason, _):
       return .failure("settings.json cannot be read, keeping the settings in use: \(reason)")
     }

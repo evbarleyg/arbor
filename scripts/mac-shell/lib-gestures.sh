@@ -9,6 +9,6 @@
 # the switch above them (`pointerGestures`), and so goes on asking the same of Arbor whatever it ships with. Every session has a home of
 # its own: every session asks again.
 
-# To go between the braces of a settings.json.
+# To go between the braces of a settings.json. With the mark of a file that holds only what somebody chose (Q27): a launch takes nothing out of it.
 # shellcheck disable=SC2034
-ARBOR_GESTURES_ON='"pointerGestures": true, "gesturesEnabled": true, "scrollZoom": true, "frameRectangleModifier": "ctrl+opt", "frameRectangleOnDesktop": true'
+ARBOR_GESTURES_ON='"format": 2, "pointerGestures": true, "gesturesEnabled": true, "scrollZoom": true, "frameRectangleModifier": "ctrl+opt", "frameRectangleOnDesktop": true'
