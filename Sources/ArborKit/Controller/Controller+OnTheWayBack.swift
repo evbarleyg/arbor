@@ -78,9 +78,10 @@ extension Controller {
     let (asItIs, noted, known) = (workspaces[displayID], treesBeforeRoomWasMade[displayID], windows)
     defer { (workspaces[displayID], treesBeforeRoomWasMade[displayID], windows) = (asItIs, noted, known) }
     var back = known
-    for id in asItIs?.allWindows ?? [] where id == window || companions?.contains(id) != false {
-      back[id]?.isOnActiveSpace = true
-    }
+    let all = asItIs?.allWindows ?? []
+    // If none of them is on record, Arbor heard of the full screen only when the Space had gone: then all that are away count.
+    let isKnown = companions.map { !$0.isDisjoint(with: all.filter { $0 != window }) } ?? false
+    for id in all where id == window || !isKnown || companions?.contains(id) == true { back[id]?.isOnActiveSpace = true }
     windows = back
     return roomyLayout(of: displayID, for: .structure)?.windowFrames[window]
   }

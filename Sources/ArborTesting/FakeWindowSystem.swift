@@ -788,11 +788,12 @@ extension FakeWindowSystem {
   ///     0 ms    macOS puts a stand-in on the app's list, which shows the animation. The window is off the list, and off the screen.
   ///     2 ms    the window reports a resize: no longer in full screen, and already at the frame macOS gives it back. That is
   ///             not the one it had last, its slot: it is the one it had before Arbor ever moved it
-  ///     690 ms  the stand-in goes
+  ///     690 ms  the stand-in goes, and the apps list their windows again, this one too
   ///     720 ms  the window is on the screen
-  ///     830 ms  the Space is reported to have changed. Only now do the apps list their windows again, this one too
+  ///     830 ms  the Space is reported to have changed, which is when Arbor read the lists
   ///
-  /// So "it has left" comes when the way out begins, and "it is back" a tenth of a second after everybody has seen it.
+  /// So "it has left" comes when the way out begins, and "it is back" a tenth of a second after everybody has seen it. (Since then the
+  /// Accessibility layer reads the lists when the stand-in goes. The order stays: seen first, reported afterwards.)
   ///
   /// `whereItWas`: it lands at the frame it had last after all, be it a corner out of view. Nobody has seen a Mac do that, and
   /// nobody has seen that it never does; what Arbor does about it (Controller+LeftInFullScreen.swift) is tried with this.
@@ -821,6 +822,9 @@ extension FakeWindowSystem {
     inSightUnlisted.remove(window)
     // One list after the other, in the order of the Accessibility layer's scan.
     for id in (others + [window]).sorted() { setOnActiveSpace(id, true) }
+    // On a Mac the focus report comes in the same breath, before the layout that was put off. Not here: a strict replay runs what
+    // is due between two reports of the same instant, and would part from the recording (docs/TRACES.md).
+    afterEvents?()
     if echoes.keyboard { giveKeyboard(to: window) }
     afterEvents?()
     deliverEchoes()
