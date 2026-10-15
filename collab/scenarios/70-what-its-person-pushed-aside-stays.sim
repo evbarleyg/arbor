@@ -1,0 +1,40 @@
+# Proposed by the swarm (2026-10-15, from a hunt in walks of ordinary acts); the documenter may edit or drop it.
+# Story: somebody works with Safari docked on the left and pushes Mail aside by hand, low and to the left, until a corner of it
+# shows: under a third, its title bar within reach. ⌃⌥⎋ to show a colleague the Mac as it is, ⌃⌥⎋ again, Quit in the evening, a
+# start in the morning. At a pause and at a quit Arbor gives back what ARBOR has put out of view, and nothing else: Mail
+# stays where it was left, however little of it shows, as long as somebody can get hold of it.
+# Reference: F64; collab/QUESTIONS.md, Q20 and "what is found counts as left".
+quiet
+open Safari 1100x700 min 574x240
+open Mail 1017x584
+dock 101 left
+move 102 -425 718 1017 584
+wait 5
+expect still 102
+
+press toggle-pause
+expect still 102
+expect at 102 -425 718 1017x584
+wait 5
+expect still 102
+press toggle-pause
+expect docked 101
+expect still 102
+expect at 102 -425 718 1017x584
+
+# Out of view with the Desktop and back: that Arbor took, and that it gives back, to the point.
+zoom 101
+expect hidden 102
+press toggle-pause
+expect at 102 -425 718 1017x584
+press toggle-pause
+show-all
+expect at 102 -425 718 1017x584
+
+relaunch quit
+expect at 102 -425 718 1017x584
+relaunch start
+expect still 102
+press home
+expect still 102
+expect at 102 -425 718 1017x584

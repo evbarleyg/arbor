@@ -93,9 +93,10 @@ extension Controller {
       }
   }
 
-  /// Called where a net for lost windows has brought a floating window into view (quitting, a pause): no window is left with less
-  /// than half of it showing when Arbor is not there to fetch it, whoever left it so. If Arbor comes back, what is remembered
-  /// is still the window's own frame, and this one counts as fitted.
+  /// Called where Arbor, letting go (quitting, a pause), has brought a floating window into view somewhere else than at its own frame:
+  /// it was out of view and its own frame is no place now, nobody could have got hold of it where it lay, or most of it was off screen
+  /// and nobody is known to have left it so. (What its person pushed aside stays, however little of it shows: `isWhereItWasLeft`.) If
+  /// Arbor comes back, what is remembered is still the window's own frame, and this one counts as fitted.
   func noteThatItWasFetched(_ window: WindowID) {
     guard !settings.floatingWindowsMakeWay, let frame = windows[window]?.frame,
       let own = workspaceID(containing: window).flatMap({ workspaces[$0]?.floating[window] }), own != frame

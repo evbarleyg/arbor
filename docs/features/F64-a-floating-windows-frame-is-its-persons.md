@@ -9,7 +9,7 @@ Rules of the product direction: 2 (nothing moves that the person did not move), 
 ## Shipped / Not shipped
 
 Shipped: everything under Behaviour; the setting `floatingWindowsMakeWay` (false); `Controller+OwnFrames.swift`; `FloatingFrameTests`, at the frames of the hosted day;
-scenario 67; the rule of the walks (`ChaosInvariants+OwnFrames.swift`: `own-frame`, `own-frame-back`, `own-frame-jolt`, `own-frame-fit`); `expect at` for scenarios.
+scenarios 67 and 70; the rule of the walks (`ChaosInvariants+OwnFrames.swift`: `own-frame`, `own-frame-back`, `own-frame-jolt`, `own-frame-fit`); `expect at` for scenarios.
 
 Not shipped: nothing on real windows yet (see "How it is proven"). "Gather Floating Windows", a command that moves them onto the Desktop when asked, is an idea for
 later; the placing it would use is still there, behind the setting.
@@ -32,13 +32,16 @@ and Show Everything they came back somewhere else than they had been. All of it 
   leave its title bar out of reach), it is fitted: moved the least that brings it wholly into view, made smaller only if it is larger than the display. With its
   display as it was, a window pushed aside by hand until a strip shows goes back to that strip, if a hand could get hold of it there (24 points of its title bar, as
   ever). That the display has not changed under a frame Arbor knows only from the note it takes when a hand leaves a window somewhere; the note is not saved. Where
-  in doubt, after a restart say, a window of which less than half would show is brought in.
+  in doubt, after an accident say, a window of which less than half would show is brought in.
 - **A place** is where some display shows half of the window and a hand could get hold of its title bar (24 points of it on some display, the one measure of that), not behind a menu bar.
 - **A start takes floating windows in view as it finds them**: what happened while Arbor was not looking is nobody's to undo. One that it finds where no window can be
   used (no place, below), and where no hand is known to have left it, is fitted by the next layout, ⌃⌥0 for one: a start itself sets no frame (Q16). An undo or a redo moves a floating window in
   view only if the step changes what is remembered of it.
-- **Quitting and a pause leave no window with less than half of it showing**, as ever, whoever left it so: Arbor will not be there to fetch it. After a pause its own frame
-  is still remembered.
+- **At a pause and at a quit Arbor gives back what Arbor has put out of view, and nothing else.** A window its person pushed aside stays where it was left, however little of it
+  shows, as long as somebody can get hold of it (the title bar within reach, the one measure of that): the same at a pause, a quit, a start and a resume. (Product
+  owner, 2026-10-15. A first wording had every window of which less than half shows fetched, whoever left it so.) Still fetched, because Arbor will not be there to do
+  it later: one that nobody could get hold of, and one of which less than half shows where nobody is known to have left it (a change of displays, an app or a tool
+  that took it across a border, an accident before anything was saved). After a pause its own frame is still remembered.
 - **A change of displays** also displaces windows that are in view. One that macOS shuffled before Arbor heard goes back where it was. One of which less than half shows
   now is fitted, unless its person's own hand left it hanging, its display is as it was then and no less of it shows than it left showing. One that Arbor fitted goes back to its own frame when that is a place
   again: a lid that closes and opens, a resolution that shrinks and grows back, add up to nothing.
