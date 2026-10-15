@@ -1,0 +1,139 @@
+# shots-finder 2026-10-15T10:59Z on macOS 26.6.2, commit 658138c
+
+== five windows: [1 / 5 | Desktop with 4 | 2 / 3], shortcuts and the menu bar item on
+  ✔ the test app is the active one
+  ✔ window 1 is focused
+  ✔ framed on 1: window 3 is out of view
+
+== open it with the command
+  ✔ the palette is on screen
+  ✔ the test app is still the active one: Arbor did not activate
+  ✔ window 1 is still what macOS calls focused
+
+== type with real keys: 3 finds Arbor Test 3
+  ✔ Return closed the palette
+  ✔ window 3 is in view
+  ✔ window 3 is focused
+  ✔ window 1 is out of view: window 3 is framed as window 1 was
+
+== ⌃⌥G, then Return at once: back to the window before
+  ✔ the shortcut opened the palette
+  ✔ window 1 is focused again
+  ✔ the palette closed
+
+== arrows, Tab, Escape
+  ✔ framed on 1
+  ✔ open
+  ✔ Escape closed the palette
+  ✔ and the view did not move
+  ✔ and window 1 still has the keyboard
+
+== the shortcut again closes it
+  ✔ open
+  ✔ closed
+
+== a click on another window closes it
+  ✔ open
+  ✔ the click elsewhere closed the palette
+  ✔ and reached the window
+
+== does it ALWAYS close? a click on one of Arbor's own tiles or gap handles
+  ✔ open
+  ✔ a click on a gap handle closed the palette
+
+== does it ALWAYS close? pause
+  ✔ open
+  ✔ pausing closed the palette
+
+== does it ALWAYS close? ⌘Tab
+  ✔ the test app is the active one
+  ✔ open
+  ✔ ⌘Tab closed the palette
+  ✔ the test app is the active one again
+
+== does it ALWAYS close? Mission Control
+  ✔ open
+  ✘ no palette after Mission Control
+
+== does it ALWAYS close? a swipe to another macOS Space
+  ✔ open
+  ✔ the palette did not come along
+  ✔ and is not waiting here
+
+== ⌘2, and a click on a row
+  ✔ window 1 is focused
+  ✔ open
+  ✔ ⌘2 closed the palette
+  ✔ and went to the second row's window
+  ✔ open
+  ✔ a click on the third row closed the palette
+  ✔ and went to its window
+
+== nothing matches
+  ✔ open
+  ✔ Return with nothing to choose leaves it open
+  ✔ closed
+
+== saved views, and a list longer than the palette
+  ✔ open
+  ✔ the view moved to saved view 2
+  ✔ closed
+
+== a window in the Dock
+  ✔ open
+  ✔ window 2 is no longer minimised
+  ✔ it is in view
+  ✔ it is focused
+  ✔ window 1 is out of view: window 2 is framed as window 1 was
+  ✔ it is back in its own place
+  ✔ it did not become a tile
+
+== a title longer than its row
+  ✔ open
+  ✔ closed
+
+== without the palette
+  ✔ find <text> brought the floating window into view
+  ✔ and focused it
+  ✔ reveal focused window 3
+
+== it finds commands: real keys spell one, ↓ picks it, Return runs it on the window behind the palette (board 0.14)
+  ✔ the floating window has the keyboard
+  ✔ open
+  ✔ window 4 is still what macOS calls focused, with the palette up
+  ✔ Return alone runs nothing: the palette stays up
+  ✔ and the window still floats
+  ✔ picked with ↓, Return closed the palette
+  ✔ the window behind it was docked
+  ✔ and still has the keyboard
+  ✔ open
+  ✔ closed
+  ✔ Undo, by its name, took it back
+
+== the menu
+
+== quitting with the palette open
+  ✔ open
+  ✔ no window title reached the log
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+  ✔ window 5 is back on screen after quitting
+
+== the palette drawn dark
+  ✘ open
+  ✔ closed
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+  ✔ window 5 is back on screen after quitting
+
+86 passed, 2 failed
