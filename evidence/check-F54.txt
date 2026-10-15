@@ -1,0 +1,42 @@
+# check-F54 2026-10-15T15:54Z on macOS 26.6.2, commit baa1148
+
+== a line of text, by window number
+  ✔ 2 is left of 3
+  ✔ 3 is above 1
+  ✔ every docked window is in its slot
+  ✔ 4 was not mentioned and floats
+  ✔ it prints what was typed
+
+== the line that is printed puts things back
+  ✔ the same arrangement again
+  ✔ and the windows are there
+
+== by app name: the most recent window, the rest as tabs
+  ✔ all four are docked
+
+== errors come back whole
+  ✔ and the command fails
+
+== parts of titles stay out of the log
+  ✔ the command is logged
+  ✔ without the title
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+
+== layout --open, with Arbor arranging everything
+  ✔ Arbor runs
+  ✔ Terminal's window took its place
+  ✘ the app in front is the one that was
+
+== an app that does not exist
+  ✔ the log says that macOS found none
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+
+20 passed, 1 failed
