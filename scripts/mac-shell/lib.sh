@@ -65,6 +65,8 @@
 #   arbor_build                     swift build, the pointer tool, and app bundles for the test windows and Arbor;
 #                                     exits 2 with the errors
 #   arbor_settings '<json>'         settings.json for the next arbor_start (or `ctl reload-settings`)
+#                                   In a section of the suite $ARBOR_EVERYTHING_ON goes under it, which switches on what ships off
+#                                   ("Which Arbor", below); ARBOR_SWITCHES=shipped above arbor_start: Arbor as a person gets it
 #   arbor_start [count] [NAME=v…]   test windows W1…Wcount (default 4), then Arbor limited to them
 #   arbor_stop [name]               quit Arbor, check that every test window is back on screen (and take the
 #                                     picture <name> of that), close the test windows
@@ -612,6 +614,31 @@ limit() { arbor_within "$@"; }
 ARBOR_AT_EXIT=""
 at_exit() { ARBOR_AT_EXIT="$1"$'\n'"$ARBOR_AT_EXIT"; }
 
+# MARK: Which Arbor
+#
+# A session is Arbor as it ships, with no settings.json in its home: what the day, the walks and the checks of a first launch find is what a
+# person gets. The sections of the suite are the exception. They hold some 330 claims about what Arbor CAN do, and what it does by itself as it
+# ships changes while what a claim is about does not. So THEIR sessions begin with whatever ships off switched on.
+#
+# WHOEVER TURNS A DEFAULT OFF ADDS THE KEY THAT TURNS IT ON AGAIN HERE, a line, and no section has to change for it. What is new, that Arbor as it
+# ships does NOT do the thing, wants a claim of its own, in a session begun with ARBOR_SWITCHES=shipped.
+#
+#   ARBOR_SWITCHES=all       what ships off is switched on. What a section of the suite (suite/NN-….sh) gets if nothing is said.
+#   ARBOR_SWITCHES=shipped   nothing is added. What every other script gets if nothing is said. Above `arbor_start` for one session of a section, or in
+#                            the environment for a whole run (`ARBOR_SWITCHES=shipped make suite`): what leans on a switch that ships off is red then.
+#
+# To go between the braces of a settings.json; what a script passes to arbor_settings comes after it and wins. Empty: no file is written
+# for a session that asks for none.
+ARBOR_EVERYTHING_ON=''
+
+arbor_switches() {
+  local which=${ARBOR_SWITCHES:-}
+  if [ -z "$which" ]; then
+    case "$0" in */suite/[0-9]*.sh) which=all ;; *) which=shipped ;; esac
+  fi
+  [ "$which" != all ] || printf '%s' "$ARBOR_EVERYTHING_ON"
+}
+
 arbor_new_home() {
   scratch_dir shell ARBOR_SESSION_DIR
   ARBOR_SESSION_DIRS="$ARBOR_SESSION_DIRS $ARBOR_SESSION_DIR"
@@ -619,6 +646,7 @@ arbor_new_home() {
   export ARBOR_SOCKET="$ARBOR_HOME/arbor.sock"
   mkdir -p "$ARBOR_HOME" || die "cannot make $ARBOR_HOME"
   ARBOR_GAP=12
+  [ -z "$(arbor_switches)" ] || arbor_settings '{}'
 }
 
 # MARK: Supervision
@@ -1103,11 +1131,13 @@ arbor_build() {
 # MARK: Sessions
 
 arbor_settings() {
-  ARBOR_GAP=$(python3 -c 'import json, sys; print(round(json.loads(sys.argv[1]).get("gap", 12)))' "$1") \
-    || die "arbor_settings: not a JSON object: $1"
+  local merged
   # With the mark of a file that holds only what somebody chose (Q27). Without it a launch would take out of it whatever equals the default of
   # an earlier day, and what the script asks for would come to depend on what Arbor ships with.
-  python3 -c 'import json, sys; print(json.dumps({"format": 2, **json.loads(sys.argv[1])}))' "$1" > "$ARBOR_HOME/settings.json"
+  merged=$(python3 -c 'import json, sys; print(json.dumps({"format": 2, **json.loads("{" + sys.argv[2] + "}"), **json.loads(sys.argv[1])}))' \
+    "$1" "$(arbor_switches)") || die "arbor_settings: not a JSON object: $1 (or what goes under it: $(arbor_switches))"
+  ARBOR_GAP=$(python3 -c 'import json, sys; print(round(json.loads(sys.argv[1]).get("gap", 12)))' "$merged")
+  printf '%s\n' "$merged" > "$ARBOR_HOME/settings.json"
 }
 
 # Several scripts can leave their logs in one folder, as the suite's sections do.

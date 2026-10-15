@@ -1108,6 +1108,10 @@ run gets none, and the script says which and why. Commit the evidence, `parity.j
 - **The way a user does it.** `ctl` is for setting the stage and cleaning up. If only a command can reach the feature,
   say so in the title ("by command").
 - **No window ids, times or counts that vary in titles and check names**: say "the first window".
+- **A claim is about what Arbor can do, whatever it ships with.** A section's sessions begin with what ships off switched on: `ARBOR_EVERYTHING_ON` in
+  `lib.sh` goes under every settings.json of theirs (every other script gets Arbor as it ships). Whoever turns a default off adds the key that turns it on
+  again there, a line, and no section changes. That Arbor as it ships does NOT do the thing is a claim of its own, in a session begun with
+  `ARBOR_SWITCHES=shipped`. `ARBOR_SWITCHES=shipped make suite` runs all of it at the switches that ship: what is red then leans on a switch that is off.
 - **Wait with `eventually`, never with `sleep`**, and prove absence with `stays` (`stays fails ran desktop`).
 - **Leave the session as you found it**, or start your own (`arbor_stop`; `arbor_start 3`): a session costs three seconds.
 - **A claim that fails because Arbor is wrong stays**, goes into a report, and gets `known "<what happens; who is on it>"` on the line
