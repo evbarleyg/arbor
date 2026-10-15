@@ -21,19 +21,6 @@ turned_away() { arbor_log_since "$ARBOR_STEP_MARK" | grep -c -F "took the keyboa
 turned_away_more_than() {
   [ "$(turned_away)" -gt "$1" ] || { echo "Arbor has sent the keyboard back $(turned_away) times, not more than $1"; return 1; }
 }
-# Left out of a rehearsal.
-real() { [ -n "${ARBOR_REHEARSAL:-}" ] || "$@"; }
-# comes_forward <id>: the other app brings its window forward and nobody has touched anything, as a chat does for a mention. The fake
-# Mac takes `activate` for the person's own click, which holding still lets through. There the window flies out of the Dock
-# instead, which it reports as nobody's doing.
-comes_forward() {
-  if [ -n "${ARBOR_REHEARSAL:-}" ]; then
-    tw2 minimize "$1" && tw2 restore "$1"
-  else
-    tw2 activate "$1"
-  fi
-}
-
 ARBOR_SECOND_APP=1
 arbor_start 3 ARBOR_NO_HOTKEYS=0 ARBOR_NO_STATUS_ITEM=0
 # A column of the first app's first two windows, the Desktop with its third window floating on it, and the other app's window.
@@ -70,8 +57,7 @@ proves A58
 tw2 activate "$V1"
 check "Arbor saw it take the keyboard" eventually logged "took the keyboard out of view; sending it back"
 check "the keyboard is back in the framed window" eventually is focused "$W1"
-# The fake Mac leaves the app that pushed itself forward in front when Arbor hands the keyboard back.
-real check "its app is in front again" eventually front_is "$ARBOR_WINDOWS_PID"
+check "its app is in front again" eventually front_is "$ARBOR_WINDOWS_PID"
 check "the window that came forward stays out of view" stays out_of_view "$V1"
 check "the framed window still fills the screen" fills "$W1"
 check "nothing is said about it on the shared screen" fails logged "said on "
@@ -175,7 +161,7 @@ check "Arbor ran hold still" eventually ran hold still
 check "status says that Arbor holds still" eventually still
 # What takes the keyboard within half a second of a click or a modifier key counts as the person's own doing: let that run out.
 sleep 1
-comes_forward "$V1"
+tw2 activate "$V1"
 check "Arbor saw it take the keyboard" eventually logged "took the keyboard out of view; sending it back"
 check "the keyboard is back in the framed window" eventually is focused "$W1"
 check "the window that came forward stays out of view" stays out_of_view "$V1"
@@ -183,7 +169,7 @@ check "Arbor says on screen what it turned away" eventually said_times "is out o
 # An app that takes the keyboard again and again within five seconds is left with it in the end: this is not that.
 sleep 5
 times=$(turned_away)
-comes_forward "$V1"
+tw2 activate "$V1"
 check "it comes forward again, and is turned away again" eventually turned_away_more_than "$times"
 check "the keyboard goes back once more" eventually is focused "$W1"
 check "it still is out of view" stays out_of_view "$V1"

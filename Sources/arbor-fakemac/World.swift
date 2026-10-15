@@ -465,15 +465,19 @@ final class World {
   }
 
   /// The user, or the window's own app while it is in front, gives a window the keyboard. Arbor hears of it
-  /// when that is news.
-  func giveKeyboard(to window: WindowID) {
+  /// when that is news. `byItself`: an app in the background took it and nobody had touched anything.
+  func giveKeyboard(to window: WindowID, byItself: Bool = false) {
     guard let pid = system.windows[window]?.snapshot.pid else { return }
     raise(.window(window.rawValue))
     bringForward(app: pid)
     apps[pid]?.focused = window.rawValue
     isSwept = false
-    if system.focused != window { system.userFocus(window) }
-    keyboardSeen = system.focused
+    keyboardSeen = window
+    if system.focused != window {
+      if byItself { system.comesForward(window) } else { system.userFocus(window) }
+    }
+    // Arbor may have sent the keyboard back while it was told, and then that window and its app are in front.
+    followKeyboard()
   }
 
   /// The keyboard goes to something Arbor knows no window for: the Desktop, a panel, a sheet, a dialog.
