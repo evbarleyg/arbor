@@ -17,12 +17,12 @@ import Testing
   enum Change: String, CaseIterable, CustomTestStringConvertible {
     case theSideGoes, theLidShuts, theSideChangesSides, theSideGoesBelow
     var testDescription: String { rawValue }
-    var aDisplayGoes: Bool { self == .theSideGoes || self == .theLidShuts }
   }
 
   /// Where every display stays, a floating window in view is taken from where it is once Arbor is told, and whatever an early report booked is
   /// overtaken. Where one goes that is not enough: the early report has filed the window under a display chosen by the old geometry, so it has left
-  /// the arrangement that goes to sleep, or joined it. Strict: whoever cures a case is told so.
+  /// the arrangement that goes to sleep, or joined it. (Joined it, as when the lid shuts, it is not remembered there any more:
+  /// `retireWorkspace`.) Strict: whoever cures a case is told so.
   static let notYet: Comment = "board 0.23: who speaks before the list is new is filed by the old geometry, and a display goes"
 
   /// Three windows that float on each display: 101 to 103 on the laptop, 104 to 106 on the side.
@@ -91,7 +91,7 @@ import Testing
     let (early, late) = (make(), make())
     play(change, ahead: [window], on: early)
     play(change, ahead: [], on: late)
-    withKnownIssue(Self.notYet) { expectTheSameEnd(early, late, "\(change), \(window) first") } when: { change.aDisplayGoes }
+    withKnownIssue(Self.notYet) { expectTheSameEnd(early, late, "\(change), \(window) first") } when: { change == .theSideGoes }
     expectWindowsMatchLayout(early)
   }
 
@@ -100,7 +100,7 @@ import Testing
     let (early, late) = (make(), make())
     play(change, ahead: [WindowID(105)], lead: lead, on: early)
     play(change, ahead: [], lead: lead, on: late)
-    withKnownIssue(Self.notYet) { expectTheSameEnd(early, late, "\(change), \(lead) s before") } when: { change.aDisplayGoes }
+    withKnownIssue(Self.notYet) { expectTheSameEnd(early, late, "\(change), \(lead) s before") } when: { change == .theSideGoes }
   }
 
   @Test(arguments: Change.allCases)
@@ -108,7 +108,7 @@ import Testing
     let (early, late) = (make(), make())
     play(change, ahead: Set((101...106).map { WindowID($0) }), on: early)
     play(change, ahead: [], on: late)
-    withKnownIssue(Self.notYet) { expectTheSameEnd(early, late, "\(change)") } when: { change.aDisplayGoes }
+    withKnownIssue(Self.notYet) { expectTheSameEnd(early, late, "\(change)") } when: { change == .theSideGoes }
   }
 
   /// A display comes, and none goes: the case that was recorded. macOS leaves a window of the laptop astride the border, its centre on the newcomer.

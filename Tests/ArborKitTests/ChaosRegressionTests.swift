@@ -1088,6 +1088,57 @@ private let c = WindowID(103)
     #expect(runner.harness.system.frameLog.isEmpty, "\(runner.harness.system.frameLog)")
   }
 
+  /// The rule `displays-moved-the-untouched` (board 0.23). A strip at the left edge; the display grows, gets smaller on its other sides, is turned. As much
+  /// shows as before, and Arbor pulled the window wholly into view because its display had another size: 64 of 463 stories.
+  @Test(arguments: ["1728,1117", "1280,800", "900,1440"], ["windows-first", "windows-late", "windows-silent"])
+  func aChangeOfDisplaysThatTakesNothingFromAWindowMovesItNowhere(size: String, order: String) {
+    let runner = ChaosRunner()
+    let script = """
+      launch
+      open 101 Safari pid 1000 at 100 100 900 600 min 100 100
+      open 102 Chat pid 1001 at 800 200 400 400 min 100 100
+      move 102 -250 300 400 400
+      settle
+      advance 60
+      displays main:0,0,\(size):25,0,0,0* \(order)
+      settle
+      """
+    for action in ChaosAction.script(script) {
+      #expect(runner.step(action).isEmpty, "\(action.text)")
+      #expect(runner.counted.isEmpty, "\(action.text)")
+    }
+    #expect(runner.harness.system.frameLog.isEmpty, "\(runner.harness.system.frameLog)")
+  }
+
+  /// A payment at the wake (board 0.23). Its app hangs while the display shrinks and grows back; minutes later it wakes, and Arbor asked the window to be
+  /// where it was, or moved it by hundreds of points.
+  @Test(arguments: ["displays main:0,0,1440,900:25,0,0,0* windows-never\nsettle\nadvance 120", "advance 120"])
+  func nothingIsOwedToAWindowWhoseAppHungAtAChangeOfDisplays(then: String) {
+    let runner = ChaosRunner()
+    let script = """
+      launch
+      open 101 Safari pid 1000 at 100 100 900 600 min 100 100
+      open 102 Chat pid 1001 at 800 200 400 400 min 100 100
+      dock 101 left
+      settle
+      move 102 1280 300 400 400
+      settle
+      advance 60
+      hang 1001
+      displays main:0,0,1340,840:25,0,0,0* windows-never
+      settle
+      \(then)
+      wake 1001
+      settle
+      advance 10
+      title 102 a
+      settle
+      """
+    for action in ChaosAction.script(script) { #expect(runner.step(action).isEmpty, "\(action.text)") }
+    #expect(runner.harness.system.frame(of: WindowID(102)) == CGRect(x: 1280, y: 300, width: 400, height: 400))
+    #expect(!runner.harness.system.frameLog.contains { $0.window == WindowID(102) }, "\(runner.harness.system.frameLog)")
+  }
+
   /// The rule `start-took-out-of-view`. Two docked, one framed, one that was never docked: the second start brought the framed view back and sent the
   /// other two to the corner, from where the quit had just fetched them. After a summon too, whatever the view.
   @Test(arguments: ["zoom 101", "summon Mail\nfocus 101\nshow-all"]) func aLaunchTakesNothingOutOfView(before: String) {

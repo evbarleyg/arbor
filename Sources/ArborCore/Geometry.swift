@@ -84,6 +84,27 @@ extension CGRect {
   /// Less than half of it shows, on all of `screens` together: a window that is as good as out of view.
   public func showsLessThanHalf(on screens: [CGRect]) -> Bool { area <= 0 || areaShowing(on: screens) * 2 < area }
 
+  /// Where a window that is here now may have been before the screens changed. What a change of displays took from a window is
+  /// what it had there and has no more: its title bar within reach, so much of it showing.
+  ///
+  /// Worked out afterwards, from the screens alone. Not noted beforehand: an app may say where its window is now before
+  /// anybody can know that the displays are changing, or say nothing, and new numbers on old screens read as all or as nothing.
+  ///
+  /// macOS takes a window along with its display: the one that shows most of it. Which one that was cannot be read off afterwards:
+  /// the one that shows most of it now may be a neighbour it was carried onto, or that has moved under it. So each screen that is
+  /// there before and after is asked: had the window been yours, it was where it is, moved back as far as your corner has
+  /// moved; did you show most of it there? All that did are answers. Not a screen that has gone: its windows have been
+  /// taken elsewhere. And nobody may have taken it anywhere, if its app hangs for one: where it is is always an answer.
+  public func whereItMayHaveBeen<ID: Hashable>(on earlier: [ID: CGRect], whichAreNow now: [ID: CGRect]) -> [CGRect] {
+    [self]
+      + earlier.compactMap { id, old -> CGRect? in
+        guard let new = now[id], new.origin != old.origin else { return nil }
+        let there = offsetBy(dx: old.minX - new.minX, dy: old.minY - new.minY)
+        let own = there.areaShowing(on: [old])
+        return own > 0 && earlier.values.allSatisfy({ there.areaShowing(on: [$0]) <= own }) ? there : nil
+      }
+  }
+
   /// Whether a hand could get hold of a window with this frame: the other question, with a measure of its own. However much
   /// of a window shows, nobody moves it but by its title bar, and that has to be on one screen: parts do not add up.
   ///

@@ -84,6 +84,48 @@ import Testing
     #expect(square.areaShowing(on: [square, square.insetBy(dx: -5, dy: -5)]) == square.area, "never more than all of it")
   }
 
+  // MARK: Where it may have been before the screens changed
+
+  private static func rect(_ x: CGFloat, _ y: CGFloat, _ width: CGFloat, _ height: CGFloat) -> CGRect {
+    CGRect(x: x, y: y, width: width, height: height)
+  }
+
+  @Test func itWasWhereItIsMovedBackAsFarAsItsScreensCornerHasMoved() {
+    // The lid shuts: the monitor's corner goes from 1440 to 0, and macOS takes its windows along.
+    let earlier = ["laptop": Self.rect(0, 0, 1440, 900), "monitor": Self.rect(1440, 0, 2560, 1440)]
+    let window = Self.rect(2460, 300, 400, 400)
+    #expect(window.whereItMayHaveBeen(on: earlier, whichAreNow: ["monitor": Self.rect(0, 0, 2560, 1440)]) == [window, Self.rect(3900, 300, 400, 400)])
+    // A screen that only changes its size moves no corner.
+    let one = ["laptop": Self.rect(0, 0, 1440, 900)]
+    #expect(Self.rect(-250, 300, 400, 400).whereItMayHaveBeen(on: one, whichAreNow: ["laptop": Self.rect(0, 0, 1728, 1117)]) == [Self.rect(-250, 300, 400, 400)])
+  }
+
+  @Test func aScreenThatDidNotShowMostOfItThereIsNoAnswer() {
+    // The monitor on the left takes a lower resolution, its corner goes from -2560 to -1920, and its window is carried onto the laptop.
+    let earlier = ["laptop": Self.rect(0, 0, 1440, 900), "monitor": Self.rect(-2560, 0, 2560, 1440)]
+    let now = ["laptop": Self.rect(0, 0, 1440, 900), "monitor": Self.rect(-1920, 0, 1920, 1080)]
+    // Or nobody carried it. Both are answers.
+    let places = Self.rect(140, 720, 400, 400).whereItMayHaveBeen(on: earlier, whichAreNow: now)
+    #expect(Set(places.map(\.minX)) == [140, -500])
+    // Moved back with the monitor this one lay on the laptop, which is no window of the monitor's.
+    #expect(Self.rect(900, 300, 400, 400).whereItMayHaveBeen(on: earlier, whichAreNow: now) == [Self.rect(900, 300, 400, 400)])
+  }
+
+  @Test func aScreenThatHasGoneIsNotAsked() {
+    // The monitor with the menu bar is unplugged; the laptop's corner goes from -1440,540 to 0,0.
+    let earlier = ["monitor": Self.rect(0, 0, 2560, 1440), "laptop": Self.rect(-1440, 540, 1440, 900)]
+    let window = Self.rect(-300, 260, 400, 400)
+    #expect(window.whereItMayHaveBeen(on: earlier, whichAreNow: ["laptop": Self.rect(0, 0, 1440, 900)]) == [window, Self.rect(-1740, 800, 400, 400)])
+  }
+
+  @Test func whereItIsIsAlwaysAnAnswer() {
+    // Its title bar on the upper screen, its body on the lower one, which goes; and nobody has brought it over.
+    let earlier = ["upper": Self.rect(0, 0, 1440, 900), "lower": Self.rect(0, 900, 1920, 1080)]
+    let window = Self.rect(300, 870, 800, 600)
+    #expect(window.whereItMayHaveBeen(on: earlier, whichAreNow: ["upper": Self.rect(0, 0, 1440, 900)]) == [window])
+    #expect(window.whereItMayHaveBeen(on: [String: CGRect](), whichAreNow: [:]) == [window])
+  }
+
   // MARK: Whether a hand could get hold of it
 
   @Test func twentyFourPointsOfTheTitleBarAreWithinReachAndTwentyThreeAreNot() {

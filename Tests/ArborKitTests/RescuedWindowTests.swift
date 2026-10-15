@@ -221,12 +221,15 @@ private func rect(_ x: CGFloat, _ y: CGFloat, _ width: CGFloat, _ height: CGFloa
     #expect(h.controller.workspaces[upper.id]?.guests?[guest] != nil)
   }
 
-  // MARK: What macOS did not rescue is fitted (QUESTIONS, Q20: the one exception)
+  // MARK: What macOS did not rescue
 
-  /// No Mac leaves it there, and Arbor copes anyway: the least move that brings it wholly into view, once. Before, 4 % of it showed and
-  /// nothing was said.
-  @Test func whatNobodyRescuedIsFittedInOneMove() {
-    let world = played(Self.straddling, then: Self.theLidShuts("never") + "\nsettle")
+  /// No Mac leaves it there. 4 % of it shows, and its title bar is within reach. It used to be fitted at once; decided otherwise (board 0.23):
+  /// Arbor acts only where nobody could get hold of the window. The key that brings windows back fetches it: the least move that
+  /// brings it wholly into view, once.
+  @Test func whatNobodyRescuedStaysUntilItsPersonAsks() {
+    var world = played(Self.straddling, then: Self.theLidShuts("never") + "\nsettle")
+    #expect(world.moves(of: a) == [])
+    world.play("key down home")
     #expect(world.frame(a) == rect(800, 840, 800, 600))
     #expect(world.moves(of: a).count == 1)
     #expect(world.lost == [])

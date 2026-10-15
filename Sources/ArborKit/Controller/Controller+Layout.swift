@@ -716,6 +716,10 @@ extension Controller {
   /// may lie on the one next to it: let go with its title bar here and its body there, all of it was to be seen. When that
   /// neighbour goes, this display is as it was, and of the window a strip is left that nobody chose. One that only reached
   /// over a little stays, lid shut or open: nothing is fitted of which half shows (QUESTIONS, Q20).
+  ///
+  /// On a display shaped otherwise the note is good for one thing: as much shows as the hand left showing, and a hand can get hold of it. Then a
+  /// display that grew, turned or shrank on its other sides has taken nothing, and what nothing of Arbor's touched before nothing touches after.
+  /// (As Arbor ships. Where floating windows make way the layout places them, and shoves a frame to where the note says nothing.)
   func noteWhereItsUserLeftIt(_ window: WindowID) {
     forgetFitUnlessItStillHolds(window)
     guard let home = workspaceID(containing: window), let frame = workspaces[home]?.floating[window],
@@ -729,8 +733,12 @@ extension Controller {
   }
 
   func wasLeftThereByItsUser(_ preferred: CGRect, of window: WindowID, on display: DisplaySnapshot) -> Bool {
-    guard let chosen = chosenOnShape[window], chosen.frame == preferred, chosen.display == display.frame else { return false }
+    guard let chosen = chosenOnShape[window], chosen.frame == preferred else { return false }
     let showing = areaShowing(of: preferred)
+    // (A hundredth: a display a few points narrower takes nothing that anybody would miss.)
+    guard chosen.display == display.frame else {
+      return !settings.floatingWindowsMakeWay && showing >= chosen.showing - 0.01 * preferred.area && aHandCanTakeIt(at: preferred, on: displays)
+    }
     return showing >= chosen.showing - 1 || showing * 2 >= preferred.area
   }
 

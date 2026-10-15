@@ -361,7 +361,7 @@ private let side = DisplaySnapshot(
     small.id = DisplayID("small")
     h.system.setDisplays([small])
     h.scheduler.advance(by: 3)
-    #expect(small.frame.contains(h.frame(notes)!), "\(h.frame(notes)!)")
+    // (The change itself moves nothing that a hand can get hold of, board 0.23. No Mac leaves it there.)
     for way in ["home", "relayout", "desktop", "home"] { h.run(way) }
     #expect(small.frame.contains(h.frame(notes)!), "\(h.frame(notes)!)")
   }
@@ -377,6 +377,9 @@ private let side = DisplaySnapshot(
     h.system.userMove(notes, to: CGRect(x: 1410, y: 300, width: 500, height: 400))
     h.system.setDisplays([main])
     h.scheduler.advance(by: 3)
+    // A hand can get hold of it, so the change moves nothing (board 0.23). But nobody left it so: the key that brings windows back fetches it.
+    #expect(h.frame(notes) == CGRect(x: 1410, y: 300, width: 500, height: 400))
+    h.run("home")
     #expect(main.frame.contains(h.frame(notes)!), "\(h.frame(notes)!)")
   }
 

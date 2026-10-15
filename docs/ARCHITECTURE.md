@@ -110,7 +110,16 @@ remembered stays its own frame (`fittedFrames`), so that it goes back when the d
 also displaces windows that are in view, and macOS itself moves and resizes some on the display that stays. What macOS does to a
 floating window then is macOS's: once Arbor is told, and after a blink, `takeFloatingWindowsFromWhereTheyAre` takes each one in view
 from where it is, by the displays that are (its place, its size, the display it belongs to), and sets no frame.
-`countAsOutOfViewWhatTheDisplaysDisplaced` says which the layout then fetches all the same: what Arbor had fitted, and what is no place.
+`countAsOutOfViewWhatTheDisplaysDisplaced` says which the layout then fetches all the same: what Arbor had fitted, and what the change
+took out of reach (`theChangeTookOutOfReach`). However little of it shows, a window that a hand can get hold of stays
+(`aHandCanTakeIt`: the one measure of reach, by what the menu bars leave of the displays). Whether the change is why is worked out
+afterwards, from the displays alone: `CGRect.whereItMayHaveBeen` says where a window was before the screens changed. What is fitted
+for that and nobody chose is in the books at the fitted frame, but for a size that the fit took, which is given back. That layout and
+no other: a window that could not be moved then, because its app hung or it was in the Dock, is owed nothing
+(`leaveAsItIsWhatCouldNotBeMoved`). What lies where nobody left it (`liesWhereNobodyLeftIt`: out of reach, or less than half shows) is
+fetched when its person asks, with ⌃⌥0, Show Everything, the Desktop or `relayout` (`isLookingForWindows`); what no display shows at
+all is fetched by any layout, as ever. A hand's note (`wasLeftThereByItsUser`) is good on the display as it was shaped, and on any
+other shape for as long as no less shows than the hand left showing and a hand can get hold of the window.
 For F61 the Desktop counts as not in use (`roomTerms`), and F18 is off (`soleFloatIsOn`). A command that is about a floating
 window (`float`, `grow`, `move-to-display`, `undo`) may put it anywhere on the display (`roomToFloat`).
 

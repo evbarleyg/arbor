@@ -829,7 +829,8 @@ extension ChaosRunner {
       let isWhereItWasLeft = (userPlaces[id] ?? []).contains { place in
         system.displayList.contains { place.allows(frame, on: $0) || (place.isOn($0) && showing >= place.showing - 1) }
       }
-      if (best < 0.5 && !isWhereItWasLeft) || !titleBarIsOnADisplay {
+      // Or on a display shaped otherwise, with no less showing than was left showing (board 0.23).
+      if (best < 0.5 && !isWhereItWasLeft && !isWhereAHandLeftIt(id, frame)) || !titleBarIsOnADisplay {
         problems.append(.init("shutdown", "\(id) was left at \(frame.brief), \(Int(best * 100))% in view"))
       }
     }

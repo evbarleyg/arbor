@@ -707,19 +707,20 @@ extension ChaosRunner {
         """),
     ChaosKnownFailure(
       rule: "displays-out-and-back-moved", owner: "displays: a window's report is never judged by displays that are no more", severity: 3,
-      story: "A window on the monitor. The lid is shut and opened, and each time the window speaks before macOS's list of displays has changed: it ends on the laptop. (That one window speaks so is "
-        + "common on a Mac; that all do, as here, has not been recorded.)",
+      story: "A window on the monitor, which has the menu bar. The monitor goes and comes back, and each time the window speaks before macOS's list of displays has changed: it ends 65 points "
+        + "from where it was. (That one window speaks so is common on a Mac; that all do, as here, has not been recorded. With the lid shut and opened it ended on the laptop, until a place "
+        + "said early was no longer remembered for the display that goes.)",
       script: """
-        displays main:0,0,1440,900:25,0,70,0* side:1440,0,2560,1440:25,0,0,0 windows-never
-        open 103 Mail pid 1002 at 1540 85 1100 700 min 760 400
+        displays main:-1512,200,1512,982:37,0,0,0 side:0,0,2560,1440:25,0,70,0* windows-never
+        open 104 Terminal pid 1003 at 700 325 877 499 min 177 60
         launch
         settle
-        displays side:0,0,2560,1440:25,0,70,0* windows-first
+        displays main:0,0,1512,982:37,0,70,0* windows-first
         settle
         react
         advance 1
         react
-        displays main:0,0,1440,900:25,0,70,0* side:1440,0,2560,1440:25,0,0,0 windows-first
+        displays main:-1512,200,1512,982:37,0,0,0 side:0,0,2560,1440:25,0,70,0* windows-first
         settle
         """),
     ChaosKnownFailure(
@@ -727,20 +728,17 @@ extension ChaosRunner {
       story: "As `displays-out-and-back-moved`, asked at the move itself: when displays come and go Arbor takes a floating window to a display that it only visited, while the one "
         + "somebody put it on is there.",
       script: """
-        displays main:-1512,0,1512,982:37,0,0,0 side:0,0,2560,1440:25,0,59,0* windows-never
-        open 102 Finder pid 1005 at -1099 342 1067 467 min 501 252
+        open 102 Finder pid 1005 at 1326 611 509 265 min 459 265 title Untitled
         launch
-        displays main:0,0,1512,982:37,0,59,0* windows-first
-        displays main:-1512,0,1512,982:37,0,0,0 side:0,0,2560,1440:25,0,59,0* windows-late
+        displays third:0,0,1920,1080:0,0,0,70* side:-800,-198,800,600:25,0,0,0 windows-silent
+        displays third:0,0,1920,1080:37,0,0,0* side:-800,-51,800,600:25,0,0,56 main:-1600,-235,800,600:0,0,0,0 windows-late
         """,
       """
-        displays main:0,0,1512,982:37,70,0,0* side:1512,323,1920,1080:25,0,0,0 windows-never
-        open 104 Music pid 1006 at 1802 719 980 600 min 980 600
         launch
-        toggle-pause
-        toggle-pause
-        displays side:0,0,1920,1080:25,70,0,0* windows-first
-        displays main:0,0,1512,982:37,70,0,0* side:1512,323,1920,1080:25,0,0,0 windows-silent
+        displays side:1440,3,1080,1920:0,0,96,0 main:0,0,1440,900:0,0,0,0* windows-late
+        open 109 Mail pid 1002 at 1137 1500 1112 758 min 1112 758 title Draft
+        displays main:0,0,1440,900:0,0,0,0* windows-silent
+        displays main:0,0,1440,900:25,0,64,0* side:225,900,1080,1920:25,0,75,0 third:-132,2820,1440,900:25,0,0,0 windows-silent
         """),
     ChaosKnownFailure(
       rule: "taken-back-from-where-it-was-put", owner: "displays: a display claims only what is its own", severity: 3,
@@ -767,17 +765,19 @@ extension ChaosRunner {
         """),
     ChaosKnownFailure(
       rule: "taken-out-of-view-with-another-display", owner: "displays: a display claims only what is its own", severity: 2,
-      story: "A browser window on the monitor, another arranged and framed on the laptop. The lid is shut and opened: the monitor's window is out of view, with the laptop's framed view, "
-        + "and the monitor is empty.",
+      story: "Two large windows. The displays change twice, one window is framed, the other is moved by hand; the first display comes back beside the second, and the window that was moved goes "
+        + "out of view with a display's framed view that is not its own.",
       script: """
-        displays main:0,0,1512,982:37,0,48,0* side:-1920,-200,1920,1080:25,0,0,0 windows-never
-        open 104 Safari pid 1000 at -1318 -171 1152 816 min 574 240
-        open 103 Safari pid 1000 at 89 107 1416 784 min 574 240
         launch
-        via shortcut arrange
-        key down zoom
-        displays side:0,0,1920,1080:25,0,48,0* windows-first
-        displays main:0,0,1512,982:37,0,48,0* side:-1920,-200,1920,1080:25,0,0,0 windows-silent
+        open 108 Xcode pid 1004 at 2050 356 2243 1375 min 2243 1375 title Untitled
+        open 110 Safari pid 1000 at 1568 937 2576 1479 min 2576 1479
+        displays side:0,0,800,600:0,0,0,0* windows-late
+        edge 108 305 78 2245 1350
+        toggle-float 110
+        displays main:0,0,1080,1920:0,0,0,62* windows-silent
+        zoom 110
+        move 108 -1250 100 2444 1416
+        displays side:0,0,800,600:25,0,0,0* main:800,-116,1080,1920:25,0,0,81 windows-silent
         """),
     ChaosKnownFailure(
       rule: "taken-back-out-of-view-from-where-it-was-put", owner: "displays: a display claims only what is its own", severity: 2,
@@ -877,21 +877,15 @@ extension ChaosRunner {
         key down zoom
         """),
     ChaosKnownFailure(
-      rule: "fetched-before-any-dock", owner: "what is found counts as left, in every state: out of the Dock it comes back where macOS puts it", severity: 3,
-      story: "Nothing was ever docked. A window hangs at the foot of the monitor where a hand left it, its title bar in reach. Arbor is paused, the laptop goes, Arbor is resumed. ⌘M and back out "
-        + "of the Dock: Arbor pulls it 595 points up.",
+      rule: "fetched-before-any-dock", owner: "what is found counts as left, in every state: what came across a border in nobody's hand", severity: 3,
+      story: "Nothing was ever docked. A window goes over to the small display beside the main one, by its app's or a tool's doing, and hangs over that display's foot, its title bar in reach. "
+        + "At Quit Arbor pulls it 446 points up and makes it lower.",
       script: """
-        displays main:0,0,1512,982:37,0,59,0* side:-2560,323,2560,1440:25,0,0,0 windows-never
-        open 102 Settings pid 1007 at -947 979 723 774 min 723 470 max 723 2000
         launch
-        grab 102
-        carry -1590 1535
-        release
-        toggle-pause
-        displays side:0,0,2560,1440:25,0,59,0* windows-first
-        toggle-pause
-        minimize 102
-        restore 102
+        displays side:0,0,1440,900:25,0,0,0* main:1440,-142,800,600:25,0,88,0 windows-late
+        open 109 Notes pid 1001 at 351 123 896 447
+        move 109 1799 329 714 514
+        quit
         """),
     ChaosKnownFailure(
       rule: "home-not-whole", owner: "who takes a waiting place; and a size is given back whole where the window hangs over an edge (board 0.22)", severity: 3,
@@ -1138,6 +1132,7 @@ extension ChaosRunner {
         launch
         open 109 Preview pid 1007 at 1222 256 3257 1451 min 3257 1451
         displays main:0,0,2560,1440:25,0,0,50* side:130,1440,1920,1080:0,0,0,0 windows-late
+        shrink 46
         shrink 46
         """),
     ChaosKnownFailure(

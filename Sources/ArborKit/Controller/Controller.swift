@@ -505,6 +505,12 @@ public final class Controller {
   /// (Controller+OwnFrames.swift). An entry counts for as long as its window is at that frame.
   var fittedFrames: [WindowID: CGRect] = [:]
 
+  /// The command under way is one that people reach for when a window is missing (`moveKeepingItsFrame`).
+  var isLookingForWindows = false
+
+  /// What a layout has written over since the last report about the displays (`refreshVisibleFrame`).
+  var visibleFramesLastReported: [DisplayID: CGRect] = [:]
+
   /// The window ⌃⌥F floated last, and where it was docked (Controller+FloatAndBack.swift).
   var floatedOut: FloatedOut?
 

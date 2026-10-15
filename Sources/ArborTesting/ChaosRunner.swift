@@ -138,6 +138,11 @@ public final class ChaosRunner {
   /// action whether floating windows made way.
   var departures: [WindowID: Departure] = [:]
   var leftByHand: [WindowID: HandNote] = [:]
+  /// The last command was one that asks for one's windows (`asksForItsWindows`).
+  var lookedForWindowsLast = false
+  var askedSomethingLast = false
+  /// Windows a hand did leave where they are, which Arbor cannot know: see where `leftByHand` forgets them at a change of displays.
+  var handsInDoubt: Set<WindowID> = []
   var movedByUndo: Set<WindowID> = []
   var madeWayBefore = false
   /// `desktopGuardZones()` as the mouse-down tap has it: a copy, refreshed as ArborApp refreshes it.

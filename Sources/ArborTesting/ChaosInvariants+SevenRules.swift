@@ -72,6 +72,9 @@ extension ChaosRunner {
     var timeOnly = false
     var askedForEverything = false
     var tookAWayHome = false
+    /// ⌃⌥0, Show Everything, the Desktop, `relayout`: the keys that mean "bring my windows back" (board 0.23).
+    var lookedForWindows = false
+    var foundByAWord = false
     /// Where every window was before the last thing somebody did, kept through a pause in which nobody does anything.
     var beforeThePause: [WindowID: CGRect]?
     /// Where everything was, at rest, before the last thing somebody did, and what that was.
@@ -169,6 +172,8 @@ extension ChaosRunner {
     seven.concerned = windowsConcerned(by: action)
     seven.askedForEverything = asksForEverything(action)
     seven.tookAWayHome = action.parsedCommand.map { $0.bringsWindowsBack && !isPaused || $0 == .quit || $0 == .relayout } ?? false
+    seven.lookedForWindows = action.parsedCommand.map { [.home, .showAll, .desktop, .relayout].contains($0) && !isPaused } ?? false
+    if case .find? = action.parsedCommand { seven.foundByAWord = true } else { seven.foundByAWord = false }
     seven.switchedTo = nil
     switch action {
     case .open(let new): seven.arrived = new.id
@@ -398,7 +403,8 @@ extension ChaosRunner {
       abs(own.width - frame.width) <= 1.5, abs(own.height - frame.height) <= 1.5
     else { return false }
     let showing = Self.area(of: frame, showingOn: system.displayList)
-    return (userPlaces[window] ?? []).contains { $0.showing <= showing + 1 }
+    // (A hundredth: a display a few points narrower takes nothing that anybody would miss.)
+    return (userPlaces[window] ?? []).contains { $0.showing <= showing + max(1, 0.01 * frame.area) }
   }
 
   /// Arbor arranges it, its app does as it is asked, and a person can see it.
@@ -712,6 +718,13 @@ extension ChaosRunner {
         // Undo, redo and a resume take back what was done, which is another matter.
         // And what is found counts as left: only what nobody could get hold of is fetched.
         if action.isACommand || seven.timeOnly, named || (seven.askedForEverything && (!seven.tookAWayHome || !titleBarIsWithinReach(before))) { continue }
+        // A key that means "bring my windows back" fetches what shows less than half, unless a hand left it so (board 0.23).
+        // So does one that names a window by a word, of the window it finds.
+        if action.isACommand || seven.timeOnly, showedBefore < 0.5 * before.area,
+          seven.lookedForWindows ? !isWhereAHandLeftIt(window, before) || handsInDoubt.contains(window) : seven.foundByAWord && window == system.focused
+        {
+          continue
+        }
         if seven.displaysChangedLast { continue }
         // What is found counts as left. The one thing Arbor may fetch is what nobody could get hold of: no 24 points of its title bar
         // are on any display (docs/VIABLE.md, section 6). Where most of it shows it may not be fetched, wherever its title bar is.
@@ -964,7 +977,8 @@ extension ChaosRunner {
       else { continue }
       let frame = fake.snapshot.frame
       let showing = Self.area(of: frame, showingOn: system.displayList)
-      guard showing < 0.5 * min(frame.area, largest),
+      // As Arbor ships, what somebody can get hold of stays, however little of it shows: Arbor acts only where nobody could (board 0.23).
+      guard showing < 0.5 * min(frame.area, largest), controller.settings.floatingWindowsMakeWay || !titleBarIsWithinReach(frame),
         !(userPlaces[window] ?? []).contains(where: { place in system.displayList.contains { place.allows(frame, on: $0) } }),
         // What the change took nothing from stays as it is (Q20).
         showing < (seven.showedBeforeTheDisplaysChanged[window] ?? .infinity) - 0.01 * frame.area
