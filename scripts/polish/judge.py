@@ -12,6 +12,11 @@ verdicts (collab/polish/eyes-run-<n>.json) it counts like its own.
   judge.py measure <film folder>        everything that was measured of one film
   judge.py sheet <film folder> <png> [--from <ms>] [--to <ms>] [--columns n] [--crop x,y,w,h] [--zoom n]
                                         its frames side by side, each with its number and its time after the cause
+  judge.py briefs <run folder> <score.json> <sheets folder> <folder> [n]
+                                        for n (6) reviewers with eyes: brief-<k>.md, each with its share of the scenes, their sheets and the misses the
+                                        ruler claims, to confirm or refute. REVIEWERS.md, beside this file, is what each reviewer is told
+  judge.py eyes <run id> <commit> <verdicts.json>… > eyes-run-<n>.json
+                                        the reviewers' files as one, in the form `score --eyes` reads
   judge.py frame <film folder> <n> <png>    one frame, whole
   judge.py curve <film folder>          time and progress, one line per frame: the easing curve as it was seen
   judge.py --self-test                  films drawn by studio.py, each wrong in one known way: every check must catch its own
@@ -836,6 +841,40 @@ def main(arguments):
             for part, chosen in parts.items():
                 sheet(film, os.path.join(arguments[1], f"{name}-{part}.png"), columns=4, zoom=480 / film.size[0], cause=cause, only=set(chosen))
             print(f"{name}: {len(every)} frames from the cause on")
+        return 0
+    if command == "briefs":
+        run, scored, sheets, out = arguments[:4]
+        count = int(arguments[4]) if len(arguments) > 4 else 6
+        with open(scored, encoding="utf-8") as file:
+            cells = json.load(file)["cells"]
+        films = os.path.join(run, "films")
+        names = [name for name in sorted(os.listdir(films))
+                 if os.path.isfile(os.path.join(films, name, "film.log")) and not name.startswith("metronome-") and Film(os.path.join(films, name)).kind != "bare"]
+        os.makedirs(out, exist_ok=True)
+        for share in range(count):
+            with open(os.path.join(out, f"brief-{share}.md"), "w", encoding="utf-8") as brief:
+                for name in names[share::count]:
+                    film = Film(os.path.join(films, name))
+                    brief.write(f"## {name}\nKind: {film.kind}. The person {film.text}. {len(film)} frames.\n")
+                    brief.write("Sheets: " + ", ".join(os.path.abspath(os.path.join(sheets, f"{name}-{part}.png")) for part in ("begins", "whole", "ends")) + "\n")
+                    brief.write(f"Film folder: {os.path.abspath(os.path.join(films, name))}\nThe ruler's claims to confirm or refute by looking:\n")
+                    claims = [cell for cell in cells if cell["where"] == name and cell["status"] == MISS and not cell["check"].startswith("E")]
+                    for cell in claims:
+                        brief.write(f"- {cell['check']}: {cell['said']}" + (f" (frames {cell['frames']})" if cell["frames"] else "") + "\n")
+                    brief.write("\n" if claims else "- (none)\n\n")
+        print(f"{len(names)} scenes for {count} reviewers in {out}")
+        return 0
+    if command == "eyes":
+        scenes = {}
+        for path in arguments[2:]:
+            with open(path, encoding="utf-8") as file:
+                for name, said in json.load(file)["scenes"].items():
+                    entry = {check: {"status": said[check]["status"], "said": said[check]["said"], "frames": said[check].get("frames", [])}
+                             for check, _, _ in EYES if check in said}
+                    refuted = {claim["claim"].split(":")[0].strip(): claim["why"] for claim in said.get("claims", []) if claim["verdict"].startswith("refute")}
+                    entry.update({key: value for key, value in (("refuted", refuted), ("other", said.get("other")), ("void", said.get("void"))) if value})
+                    scenes[name] = entry
+        json.dump({"run": arguments[0], "commit": arguments[1], "scenes": scenes}, sys.stdout, indent=1, ensure_ascii=False)
         return 0
     if command == "frame":
         Image.fromarray(Film(arguments[0]).frame(int(arguments[1]))).save(arguments[2])
