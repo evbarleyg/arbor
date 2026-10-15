@@ -55,7 +55,7 @@ The script says what it is doing in marks (lib-day.sh writes them):
     tiles=<id>@x:y:w:h,…   with everything=1, after Show Everything alone: for these windows a tile of Arbor's stands in, there. It counts as in view if a
                            panel of Arbor's is seen at that frame. keyboard=<id>: the window that has the keyboard, which is never one of them
     first=1                Arbor's first act of its own since it started
-    returns=<n>            every window is where it was at the end of step n
+    returns=<n>            every window is where it was at the end of step n; but=<ids>: except these, which the person moved meanwhile
     floating=<ids>         for the report: these float, so no arrangement explains a move of theirs
     docked=<ids>           these are docked at the end
     offence=<detector>     the script committed this offence itself during the step, to see whether it is found (`jolts.py sabotage`)
@@ -781,6 +781,8 @@ def judge(step, world, by_number, own):
     if wants.get("returns", "").isdigit() and int(wants["returns"]) in by_number:
         before = by_number[int(wants["returns"])].at_end
         for window, frame in sorted(frames.items()):
+            if window in ids(wants.get("but", "")):
+                continue
             if before and window in before["frames"] and differs(before["frames"][window], frame):
                 step.find(
                     "2", "FAIL", window,
@@ -1141,6 +1143,12 @@ def self_test():
     expect("there and not quite back", docked + [
         "4000 M begin 3 zoom", "4100 W 2 20 0 999 799 400 300 Two", "5000 M end 3 moves=any",
         "6000 M begin 4 back", "6100 W 2 20 0 520 100 400 300 Two", "7000 M end 4 moves=any returns=2"], [("2", "FAIL")])
+    expect("there and back, but for the window its person moved meanwhile", docked + [
+        "4000 M begin 3 pause", "4100 W 1 10 0 100 100 400 300 One", "4600 W 2 20 0 700 400 400 300 Two", "5000 M end 3 moves=any",
+        "6000 M begin 4 resume", "6100 W 1 10 0 0 30 500 700 One", "7000 M end 4 moves=any returns=2 but=2"], [])
+    expect("the window its person moved excuses no other", docked + [
+        "4000 M begin 3 pause", "4100 W 1 10 0 100 100 400 300 One", "4600 W 2 20 0 700 400 400 300 Two", "5000 M end 3 moves=any",
+        "6000 M begin 4 resume", "6100 W 1 10 0 0 30 480 700 One", "7000 M end 4 moves=any returns=2 but=2"], [("2", "FAIL")])
     drag = start + ["2000 M begin 2 drag", "2050 B down 300 110"] + [
         line for i in range(1, 9) for line in (
             f"{2100 + 16 * i} W 1 10 0 {100 + (-1) ** i * 20 * i} 100 400 300 One", f"{2100 + 16 * i} P {300 + (-1) ** i * 20 * i} 110")] + [
