@@ -1,22 +1,24 @@
 #!/bin/bash
-# How "at once" looks: Arbor without motion, without the ring and with one icon, filmed act by act; and macOS's own tiling of the same windows.
+# The films of the first column of docs/POLISH.md: what ships, act by act; and macOS's own tiling of the same windows, which is the bar.
 #
 #   scripts/mac-shell/rehearse.sh scripts/mac-shell/films-light.sh    on Linux, first, for nothing
-#   scripts/mac-shell/run.sh scripts/mac-shell/films-light.sh         about six minutes on a hosted Mac
-#   scripts/polish/judge.py acts .mac-shell/films-light-<run id>      anywhere, afterwards
+#   scripts/mac-shell/run.sh scripts/mac-shell/films-light.sh         about ten minutes on a hosted Mac
+#   scripts/polish/judge.py acts .mac-shell/films-light-<run id>      anywhere, afterwards: the numbers of every act
+#   scripts/polish/judge.py score .mac-shell/films-light-<run id>     the table and the score
 #
-# While windows move Arbor used to cover the display with a stage. Without one the real windows are seen going to their places: each is another app's, is
-# asked for its place and its size one after the other, and obeys when it gets round to it. What only a Mac can answer: how long one act takes
-# from the first change on the display to the last, and whether any window is ever seen at a place or size that is neither its old nor its new one.
-# The bar is macOS alone: its own tiling, chosen from the Window menu, of the same windows, with Arbor not running.
+# Arbor ships without motion: windows go to their places at once, and nothing stands in for them. So the real windows are seen going: each is another app's, is
+# asked for its place and its size one after the other, and obeys when it gets round to it. What only a Mac can answer: in how many pieces an act
+# arrives, how long it takes from the first change on the display to the last, and whether anything is seen on the way that is worse than a frame's delay: a hole, an empty desk,
+# a window over what neither its old frame nor its new one covers. The bar is macOS alone: its own tiling, chosen from the Window menu, of the same windows, with Arbor not running.
 #
-# The settings are written out, so that the films mean the same whatever ships. The keys are the whole map's: it is the acts that are filmed, not the keys.
-ARBOR_TIME_LIMIT=700
+# UNTIL THE SECOND BUILD'S DEFAULTS ARE ON THE TRUNK its switches are written out here (LIGHT): take a key out of LIGHT the day its default lands, so that what is filmed is what ships.
+# The keys are asked of Arbor (`bindings`), so the films follow the map in effect.
+ARBOR_TIME_LIMIT=1000
 source "$(dirname "$0")/lib-film.sh"
-needs_throwaway_mac "film the whole display, and change Reduce Motion, the wallpaper and the display's size"
+needs_throwaway_mac "film the whole display, and change Reduce Motion, the appearance, the wallpaper and the display's size"
 
 LIGHT='{"animationDuration": 0, "focusRing": false, "menuBarControls": false}'
-FACE="ARBOR_NO_HOTKEYS=0 ARBOR_NO_STATUS_ITEM=0"
+FACE="ARBOR_NO_HOTKEYS=0 ARBOR_NO_STATUS_ITEM=0 ARBOR_PANELS_IN_PICTURES=1"
 
 press() {
   # shellcheck disable=SC2046
@@ -24,15 +26,21 @@ press() {
   sleep 0.6
 }
 
-# act <name> "<what the person does>" <key>: one key, one film.
+# key_for <command…>: the shortcut that runs it in the map in effect, or nothing.
+key_for() { "$ARBOR_BIN/arborctl" bindings 2>/dev/null | awk -v command="$*" '{ key = $1; $1 = ""; $2 = ""; sub(/^ +/, ""); if ($0 == command) { print key; exit } }'; }
+
+# act <name> "<what the person does>" <key>: one key, one film. Without a key there is no such act as it ships, and no film.
 act() {
-  scene "$1" instant "$2"
+  [ -n "$3" ] || { echo "act $1: no key does that in the map in effect"; return 0; }
+  scene "$1" instant "$2 ($3)"
   key "$3"
   scene_end 1.6
 }
 
 # Floating windows that lie beside one another.
 spread() {
+  ctl float-all
+  sleep 1
   tell 4 "move $W4 40 70 300 200"
   tell 1 "move $W1 400 70 300 190"
   tell 2 "move $W2 400 285 300 190"
@@ -49,6 +57,83 @@ arrange() {
   ctl dock "$W2" beside "$W4" bottom
   ctl dock "$W1" beside "$W3" bottom
   sleep 1.5
+}
+
+# acts <prefix>: what the gate asks for, from four floating windows.
+acts() {
+  local p=$1 x y w h
+  spread
+  press "$W4"
+  act "${p}dock-first" "docks a floating window at the left: the first dock" "$(key_for dock left)"
+  press "$W3"
+  act "${p}dock-second" "docks a second window at the right" "$(key_for dock right)"
+
+  arrange
+  press "$W4"
+  act "${p}fill" "fills the screen with a docked window" "$(key_for zoom)"
+  act "${p}everything" "shows everything again" "$(key_for show-all)"
+  key "$(key_for zoom)"
+  sleep 1.3
+  act "${p}back" "goes back" "$(key_for back)"
+  press "$W1"
+  act "${p}float" "floats a docked window" "$(key_for toggle-float)"
+  act "${p}undo" "undoes that" "$(key_for undo)"
+  key "$(key_for toggle-float)"
+  sleep 1.3
+  act "${p}float-back" "takes the floating window back in" "$(key_for toggle-float)"
+  act "${p}pause" "pauses Arbor: every window gets its own size back" "$(key_for toggle-pause)"
+  act "${p}resume" "resumes" "$(key_for toggle-pause)"
+
+  scene "${p}go-to" panel "opens Go to…, then ⎋"
+  key "$(key_for find)"
+  sleep 1.5
+  key escape
+  scene_end 1.5
+  press "$W4"
+  key "$(key_for zoom)"
+  sleep 1.3
+  key "$(key_for find)"
+  sleep 1
+  key down
+  sleep 0.3
+  scene "${p}go-to-choose" instant "in Go to…, with another window chosen, presses ↩"
+  key return
+  scene_end 1.6
+  key "$(key_for show-all)"
+  sleep 1.3
+
+  scene "${p}menu" panel "clicks Arbor's icon in the menu bar, then ⎋"
+  open_menu
+  sleep 1.2
+  key escape
+  scene_end 1.5
+  spread
+  scene "${p}menu-arrange" instant "chooses Arrange Windows from the menu: four floating windows at once"
+  click_menu "Arrange Windows"
+  scene_end 1.6
+
+  # One docked window at the left, three floating ones.
+  spread
+  ctl dock "$W4" left
+  sleep 1.5
+  read -r x y w h <<< "$(frame_of "$W4")"
+  scene "${p}drag-plain" plain "drags a floating window over a docked one, waits, lets go: a plain drag"
+  # shellcheck disable=SC2046
+  hold_drag $(titlebar_of "$W1") $((x + w - 100)) $((y + h / 2)) --duration 0.8
+  scene_end 1.6
+  spread
+  ctl dock "$W4" left
+  sleep 1.5
+  read -r x y w h <<< "$(frame_of "$W4")"
+  scene "${p}drag-held" drop "does the same with ⌘ held: asks Arbor to dock it there"
+  # shellcheck disable=SC2046
+  hold_drag $(titlebar_of "$W1") $((x + w - 100)) $((y + h / 2)) --duration 0.8 --mods cmd
+  scene_end 1.6
+  arrange
+  scene "${p}drag-out" drop "drags a docked window out by its title bar and lets go over the middle: a plain drag"
+  # shellcheck disable=SC2046
+  hold_drag $(titlebar_of "$W1") 512 300 --duration 0.8
+  scene_end 1.6
 }
 
 # macos <name> <n> "<what the person does>" <item> [<item of its submenu>]: macOS's own tiling of the nth window, from its app's Window menu. System Events presses the item,
@@ -84,63 +169,51 @@ ARBOR_TEST_WINDOWS_ARGS="--regular"
 [ -n "${ARBOR_REHEARSAL:-}" ] || ARBOR_TEST_WINDOWS_ARGS="--regular --window-menu"
 wallpaper "#000000"
 
-step "1. the camera's own square: what this camera on this Mac is worth"
-metronome good
+step "1. the camera's own square, right and wrong: whether the judge may be believed"
+for kind in good linear slow twice hop flash; do metronome "$kind"; done
 
 step "2. four windows, each another app's"
 arbor_settings "$LIGHT"
 cast_start 4 $FACE
 sleep 3
-spread
-press "$W4"
-act light-dock-first "docks a floating window at the left (⌃⌥⌘←): the first dock" ctrl+opt+cmd+left
-press "$W3"
-act light-dock-second "docks a second window at the right (⌃⌥⌘→)" ctrl+opt+cmd+right
-press "$W2"
-act light-dock-third "docks a third window at the right (⌃⌥⌘→)" ctrl+opt+cmd+right
-press "$W1"
-act light-dock-fourth "docks a fourth window at the left (⌃⌥⌘←)" ctrl+opt+cmd+left
+ctl bindings
+acts ""
 summary
 
-arrange
+# More docks than the display has room for: every window becomes a tile.
+spread
 press "$W4"
-act light-fill "fills the screen with a docked window (⌃⌥↩)" ctrl+opt+return
-act light-everything "shows everything again (⌃⌥Space)" ctrl+opt+space
-key ctrl+opt+return
+key "$(key_for dock left)"
 sleep 1.3
-act light-back "goes back (⌃⌥[)" "ctrl+opt+["
+press "$W3"
+key "$(key_for dock right)"
+sleep 1.3
+press "$W2"
+act dock-third "docks a third window at the right" "$(key_for dock right)"
 press "$W1"
-act light-float "floats a docked window (⌃⌥F)" ctrl+opt+f
-act light-undo "undoes that (⌃⌥Z)" ctrl+opt+z
-act light-pause "pauses Arbor (⌃⌥⎋): every window gets its own size back" ctrl+opt+escape
-act light-resume "resumes (⌃⌥⎋)" ctrl+opt+escape
-
-ctl float-all
-sleep 1
-spread
-press "$W4"
-scene light-arrange instant "chooses Arrange Windows: four floating windows at once"
-ctl arrange
-scene_end 1.6
+act dock-fourth "docks a fourth window at the left" "$(key_for dock left)"
 summary
+# What is made for the first time takes longer than it ever will again in this session: the same once more.
+spread
+ctl dock "$W4" left
+ctl dock "$W3" right
+ctl dock "$W2" right
+sleep 1.5
+press "$W1"
+act dock-fourth-again "docks a fourth window at the left, for the second time in this session" "$(key_for dock left)"
 
 arrange
-scene light-close instant "closes a docked window"
+scene close instant "closes a docked window"
 tell 1 "close $W1"
 scene_end 1.6
 ARBOR_WINDOW_IDS="$W2 $W3 $W4"
 
 trace_ends
-scene light-quit instant "quits Arbor: every window gets its own size back"
+scene quit instant "quits Arbor: every window gets its own size back"
 ctl quit
 scene_end 1.6
 
 step "3. macOS alone, the same windows: Arbor is not running"
-if [ -z "${ARBOR_REHEARSAL:-}" ]; then
-  echo "the Window menu of $(cast_name 4):"
-  arbor_within 10 osascript -e "tell application \"System Events\" to tell process \"$(cast_name 4)\" to get name of menu items of menu \"Window\" of menu bar 1"
-  arbor_within 10 osascript -e "tell application \"System Events\" to tell process \"$(cast_name 4)\" to get name of menu items of menu 1 of menu item \"Move & Resize\" of menu \"Window\" of menu bar 1"
-fi
 tell 4 "move $W4 40 70 300 200"
 tell 2 "move $W2 400 285 300 190"
 tell 3 "move $W3 400 500 300 190"
@@ -150,22 +223,32 @@ macos macos-right 3 "chooses Window ▸ Move & Resize ▸ Right" "Move & Resize"
 macos macos-fill 4 "chooses Window ▸ Fill" "Fill"
 macos macos-previous 4 "chooses Window ▸ Move & Resize ▸ Return to Previous Size" "Move & Resize" "Return to Previous Size"
 macos macos-left-and-right 4 "chooses Window ▸ Move & Resize ▸ Left & Right: two windows at once" "Move & Resize" "Left & Right"
-macos macos-quarters 4 "chooses Window ▸ Move & Resize ▸ Quarters: several windows at once" "Move & Resize" "Quarters"
 cast_stop
 
-step "4. eight windows on a large display"
+step "4. in dark mode, on a light wallpaper"
+appearance dark
+wallpaper "#b9bec6"
+arbor_settings "$LIGHT"
+cast_start 4 $FACE
+sleep 3
+acts dark-
+cast_stop
+appearance light
+wallpaper "#000000"
+
+step "5. eight windows on a large display"
 display_size 1920 1080
 arbor_settings "$LIGHT"
 cast_start 8 $FACE
 sleep 3
 press "$W8"
-scene light-eight-arrange instant "chooses Arrange Windows: eight floating windows at once"
-ctl arrange
+scene eight-arrange instant "chooses Arrange Windows: eight floating windows at once"
+click_menu "Arrange Windows"
 scene_end 2
 summary
 press "$W8"
-act light-eight-fill "fills the screen with one of eight (⌃⌥↩)" ctrl+opt+return
-act light-eight-everything "shows everything again (⌃⌥Space)" ctrl+opt+space
+act eight-fill "fills the screen with one of eight" "$(key_for zoom)"
+act eight-everything "shows everything again" "$(key_for show-all)"
 cast_stop
 display_size 1024 768
 

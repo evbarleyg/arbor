@@ -283,7 +283,7 @@ def cause_of(film):
                        + [time for time, what, _, _ in film.buttons if what == "down" and time >= action])
         if first:
             return first[0], "exact"
-    if film.kind == "drag" and ups:
+    if film.kind in ("drag", "drop", "plain") and ups:
         return ups[-1], "exact"
     downs = [time for time, what in film.keys if what == "down" and time >= action]
     if downs:

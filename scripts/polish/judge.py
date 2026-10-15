@@ -5,9 +5,9 @@ Nobody is asked to look at Arbor and say whether it feels right. A hosted Mac fi
 ruler can settle it measures, and for the rest it lays the frames out on sheets that an agent with eyes goes through, whose
 verdicts (collab/polish/eyes-run-<n>.json) it counts like its own.
 
-  judge.py score <run folder> [--json <file>] [--eyes <file>] [--stills <file> [--without "<panel>, <panel>"]]
-                                        every film in <run folder>/films: the table, the findings with the frames that show
-                                        them, the score. Exit code 1 when the instruments fail their own test (the metronome)
+  judge.py score <run folder> [--options] [--json <file>] [--eyes <file>] [--stills <file> [--without "<panel>, <panel>"]]
+                                        every film in <run folder>/films (a run of films-light.sh; with --options, of films.sh, against the second column's table):
+                                        the table, the findings with the frames that show them, the score. Exit code 1 when the instruments fail their own test (the metronome)
   judge.py sheets <run folder> <folder> three sheets per scene: how it begins, the whole, how it ends; of a drag also what happens while the button is down
   judge.py measure <film folder>        everything that was measured of one film
   judge.py sheet <film folder> <png> [--from <ms>] [--to <ms>] [--columns n] [--crop x,y,w,h] [--zoom n]
@@ -53,7 +53,9 @@ WEIGHT = {1: 5, 2: 3, 3: 1}
 MOVES = ("camera", "structure", "control")
 SETTLES = MOVES + ("drag", "follow")
 # aside: macOS acts and Arbor stands aside. What moves is macOS's to answer for; Arbor's part is to add nothing, and to say what happened.
-ALL = SETTLES + ("hold", "instant", "panel", "aside")
+# instant: windows go to their places at once. drop: a drag that ends so. plain: a drag that asks nothing of Arbor.
+ALL = SETTLES + ("hold", "instant", "panel", "aside", "drop", "plain")
+AT_ONCE = ("instant", "drop")
 # Of Arbor's own windows, the levels of those that have no business on screen once things are at rest: the drop preview, the stage.
 PASSING = (3, 4)
 
@@ -514,6 +516,30 @@ def preview_true(m, allow):
     return Verdict(PASS if off <= 2 * film.scale else MISS, f"the window rests up to {off:.0f} px from where the preview was (at most 2)")
 
 
+def nothing_shown(m, allow):
+    """While the button is down: no preview, no stage, no line of words."""
+    held = [(level, frame) for when, level, frame in m["film"].overlays if when == "held"]
+    if not any(mark.startswith("overlays held") for _, mark in m["film"].marks):
+        return Verdict(UNSEEN, "the film does not say which panels were up while the drag was held")
+    shown = sorted({level for level, _ in held if level in PASSING + (6,)})
+    return Verdict(MISS if shown else PASS, f"while the button is down Arbor shows panels at the levels {shown}" if shown else "while the button is down Arbor shows nothing that was not there before")
+
+
+def let_be(m, allow):
+    film = m["film"]
+    downs, ups = ([(x, y) for _, what, x, y in film.buttons if what == which] for which in ("down", "up"))
+    moved = [window for window in film.after if window in film.before and max(abs(a - b) for a, b in zip(film.after[window], film.before[window])) > 2]
+    if not downs or not ups or not film.before:
+        return Verdict(UNSEEN, "the film does not say where the windows were, or where the button went down and came up")
+    if len(moved) != 1:
+        return Verdict(MISS, f"{len(moved)} windows are elsewhere after the drag than before it (one: the one that was dragged)")
+    window = moved[0]
+    (x, y, w, h), (x2, y2, w2, h2) = film.before[window], film.after[window]
+    off = max(abs((x2 - x) - (ups[-1][0] - downs[0][0])), abs((y2 - y) - (ups[-1][1] - downs[0][1])), abs(w2 - w), abs(h2 - h))
+    right = off <= 2 and film.how.get(window) == "floating"
+    return Verdict(PASS if right else MISS, f"the window is {off:.0f} px from where the pointer took it, size counted in (at most 2), and is {film.how.get(window)}")
+
+
 def spells_after_keys(m):
     """For every key or click of the scene: (its time, the first spell of change after it, before the next one)."""
     film = m["film"]
@@ -609,7 +635,7 @@ def nothing_left(m, allow):
 
 CHECKS = [
     # id, what it asks, how bad a miss is, the kinds of scene it is asked of, the function
-    ("M1", "answers at once", 2, ALL, answers),
+    ("M1", "answers at once", 2, tuple(kind for kind in ALL if kind != "plain"), answers),
     ("M2", "lasts about 460 ms", 2, SETTLES, lasts),
     ("M3", "eased: quick off the mark, gentle at the end, never past it", 2, SETTLES, eased),
     ("M4", "one motion per action", 1, SETTLES, one_motion),
@@ -622,16 +648,18 @@ CHECKS = [
     ("M11", "the menu bar and the Dock are left alone", 2, ALL, bars),
     ("M12", "a window looks like itself all the way", 3, SETTLES, itself),
     ("M13", "nothing is left behind", 1, tuple(kind for kind in ALL if kind != "control"), nothing_left),
-    ("S8", "even gaps", 3, MOVES[:2] + ("drag", "instant"), even_gaps),
-    ("R1", "without motion: the end at once, nothing in between", 1, ("instant",), at_once),
-    ("R2", "without motion: the same end", 2, ("instant",), not_yet),
-    ("R3", "without motion: no slide anywhere", 2, ("instant",), few_places),
-    ("R4", "without motion: every window is where it was or where it belongs", 2, ("instant",), old_or_new),
-    ("R5", "without motion: in one piece: no hole, no empty desk, nothing covered that neither frame covers", 1, ("instant",), whole),
-    ("D1", "Arbor never pulls what is being dragged", 1, ("drag",), not_pulled),
-    ("D2", "the preview tells the truth", 2, ("drag",), preview_true),
-    ("D3", "the preview comes and goes softly, once", 2, ("drag",), not_yet),
-    ("D4", "others make room in one motion", 1, ("drag",), not_yet),
+    ("S8", "even gaps", 3, MOVES[:2] + ("drag",) + AT_ONCE, even_gaps),
+    ("R1", "at once: from the first window to the last", 1, AT_ONCE, at_once),
+    ("R2", "at once: the same end as with motion", 2, ("instant",), not_yet),
+    ("R3", "at once: no slide anywhere", 2, AT_ONCE, few_places),
+    ("R4", "at once: every window is where it was or where it belongs", 2, AT_ONCE, old_or_new),
+    ("R5", "at once: in one piece: no hole, no empty desk, nothing covered that neither frame covers", 1, AT_ONCE, whole),
+    ("D1", "Arbor never pulls what is being dragged", 1, ("drag", "drop", "plain"), not_pulled),
+    ("D2", "the preview tells the truth", 2, ("drag", "drop"), preview_true),
+    ("D3", "the preview comes and goes softly, once", 2, ("drag", "drop"), not_yet),
+    ("D4", "others make room in one motion", 1, ("drag", "drop"), not_yet),
+    ("D5", "in a plain drag nothing of Arbor's is on screen", 1, ("plain",), nothing_shown),
+    ("D6", "after a plain drag the window is where it was let go, floating, at its own size", 1, ("plain",), let_be),
     ("G1", "what follows the fingers follows them closely", 1, ("follow",), follows),
     ("P1", "a panel is there at once and gone at once", 2, ("panel",), panel_prompt),
     ("P2", "a panel fades or is there; it does not jump", 2, ("panel",), panel_still),
@@ -644,6 +672,7 @@ EYES = [
     ("E2", "no frame is ugly", 2),
     ("E3", "it could be macOS's own", 3),
     ("E4", "it says what is needed and no more", 3),
+    ("E5", "nothing is drawn that was not asked for: whatever Arbor draws here would be missed", 2),
 ]
 
 # The scenes that count: name, kind, which of the five moves it stands for (0: none). One that was not filmed, because the script
@@ -667,6 +696,18 @@ SCENES = MOVES_FILMED_TWICE + [("dark-" + name, kind, move) for name, kind, move
     ("eight-frame", "camera", 0), ("eight-show-everything", "camera", 0),
 ]
 
+# What ships: name, kind, whether the gate asks for it. The nine keys, Go to…, the menu with its one icon, a plain drag, a drag with the key held; in light and in dark.
+GATE_FILMED_TWICE = [
+    ("dock-first", "instant", 1), ("dock-second", "instant", 1), ("fill", "instant", 1), ("everything", "instant", 1), ("back", "instant", 1),
+    ("float", "instant", 1), ("undo", "instant", 1), ("float-back", "instant", 1), ("pause", "instant", 1), ("resume", "instant", 1),
+    ("go-to", "panel", 1), ("go-to-choose", "instant", 1), ("menu", "panel", 1), ("menu-arrange", "instant", 1),
+    ("drag-plain", "plain", 1), ("drag-held", "drop", 1), ("drag-out", "drop", 1),
+]
+SHIPS = GATE_FILMED_TWICE + [("dark-" + name, kind, gate) for name, kind, gate in GATE_FILMED_TWICE] + [
+    ("dock-third", "instant", 0), ("dock-fourth", "instant", 0), ("dock-fourth-again", "instant", 0), ("close", "instant", 0), ("quit", "instant", 0),
+    ("eight-arrange", "instant", 0), ("eight-fill", "instant", 0), ("eight-everything", "instant", 0),
+]
+
 # The laboratory's own column: the same table, with every scene of the moves taken from the session in which Arbor's gestures are on and
 # macOS's own tiling is off (`on-…`), where it was filmed. There the drag to an edge is Arbor's.
 ON = {"dock-drag-edge": "drag"}
@@ -676,6 +717,9 @@ PANELS = ["heads-up line", "drop preview", "tile", "seam", "focus ring", "peek o
           "name field", "menu", "settings", "coach", "setup check", "tab strip"]
 STILLS = [("S1 at 1x", 2), ("S1 at 2x", 2), ("S2", 3), ("S3", 1), ("S4 light", 2), ("S4 dark", 2), ("S4 light on glass", 2), ("S4 dark on glass", 2),
           ("S6", 2), ("S7", 3)]
+# What is on screen as Arbor ships; the rest is there for whoever switches it on.
+SHIPPED = ["menu", "drop preview", "tile", "go to", "heads-up line", "coach", "setup check", "settings"]
+TABLES = {"ships": (SHIPS, SHIPPED), "options": (SCENES, [panel for panel in PANELS if panel not in SHIPPED])}
 # These have no ground of their own, so nothing to see through; and these no words, so nothing to clip or to read.
 GROUNDLESS = ("drop preview", "seam", "focus ring", "peek outline", "rectangle")
 WORDLESS = GROUNDLESS + ("minimap",)
@@ -714,7 +758,8 @@ def judge(folder, allow=None):
             # Of a film in which nothing happens, or whose end is missing, nothing good can be said either.
             if film.dropped:
                 verdicts[identifier] = Verdict(UNSEEN, f"the camera ran out of room: the film's last {film.dropped} frames are missing")
-            elif not m["episodes"] and verdicts[identifier].status == PASS:
+            # After a plain drag nothing is what should happen.
+            elif not m["episodes"] and verdicts[identifier].status == PASS and film.kind != "plain":
                 verdicts[identifier] = Verdict(UNSEEN, "nothing happens in the film")
             # A line of words that comes and goes is a change too. Where windows were to move, none could be followed and little of the room ever changed, the key did nothing.
             elif film.kind in SETTLES and not m["motion"].seen and not much(m) and verdicts[identifier].status == PASS:
@@ -775,7 +820,8 @@ def judged(task):
     return {"film": types.SimpleNamespace(kind=m["film"].kind), "rests": rests_of(m)}, verdicts
 
 
-def score(folder, eyes_path=None, stills_path=None, out=sys.stdout, without=()):
+def score(folder, eyes_path=None, stills_path=None, out=sys.stdout, without=(), which="ships"):
+    scenes, panels = TABLES[which]
     films = os.path.join(folder, "films")
     filmed = sorted(name for name in os.listdir(films) if os.path.isfile(os.path.join(films, name, "film.log")))
     results = {}
@@ -838,14 +884,15 @@ def score(folder, eyes_path=None, stills_path=None, out=sys.stdout, without=()):
     def column(everything_on):
         """(cells, table): a cell is (scene or panel, check, title, severity, move, Verdict)."""
         cells, table = [], []
-        for name, kind, move in SCENES:
+        for name, kind, move in scenes:
             plain = name[5:] if name.startswith("dark-") else name
             twin = ("on-dark-" if name.startswith("dark-") else "on-") + plain
             if everything_on and twin in results:
                 name, kind = twin, ON.get(plain, kind)
             row = {}
             for identifier, title, severity, kinds, _ in CHECKS:
-                if kind not in kinds:
+                # With no motion to hold it against there is no "same end"; and whether anything slides is looked at more closely by the check after it.
+                if kind not in kinds or which == "ships" and identifier in ("R2", "R3"):
                     continue
                 verdict = results[name][1].get(identifier) if name in results else Verdict(UNSEEN, "not filmed")
                 if verdict is None:
@@ -868,7 +915,7 @@ def score(folder, eyes_path=None, stills_path=None, out=sys.stdout, without=()):
                 cells.append((name, identifier, title, severity, move, verdict))
                 row[identifier] = verdict.status
             table.append((name, kind, move, row))
-        for panel in PANELS:
+        for panel in panels:
             for identifier, severity in STILLS:
                 if panel in WORDLESS and identifier.split()[0] in ("S3", "S4") or panel in GROUNDLESS and identifier == "S7":
                     continue
@@ -879,8 +926,9 @@ def score(folder, eyes_path=None, stills_path=None, out=sys.stdout, without=()):
                 cells.append((panel, identifier, "", severity, 0, verdict))
         return cells, table
 
-    cells, table = column(False)
-    lab_cells, lab_table = column(True)
+    # Of the options, each move is taken from the session in which it is switched on.
+    cells, table = column(which == "options")
+    lab_cells, lab_table = cells, table
     total = sum(WEIGHT[cell[3]] for cell in cells)
     earned = sum(WEIGHT[cell[3]] for cell in cells if cell[5].status == PASS)
     seen = sum(WEIGHT[cell[3]] for cell in cells if cell[5].status != UNSEEN)
@@ -892,10 +940,10 @@ def score(folder, eyes_path=None, stills_path=None, out=sys.stdout, without=()):
     print("## The table (✔ passes, ✘ misses, · could not be seen, which counts as a miss)\n", file=out)
     print("| scene | kind | move | " + " | ".join(identifiers) + " |", file=out)
     print("|---|---|---|" + "---|" * len(identifiers), file=out)
-    for name, kind, move, row in table + [line for line in lab_table if line[0].startswith("on-")]:
+    for name, kind, move, row in table:
         print(f"| {name} | {kind} | {move or ''} | " + " | ".join(sign[row.get(identifier)] for identifier in identifiers) + " |", file=out)
 
-    trials = [name for name in filmed if name not in {scene[0] for scene in SCENES} and not name.startswith(("metronome-", "on-"))]
+    trials = [name for name in filmed if name not in {line[0] for line in table} and not name.startswith("metronome-")]
     if trials:
         print("\n## Judged, not counted\n", file=out)
         for name in trials:
@@ -920,10 +968,10 @@ def score(folder, eyes_path=None, stills_path=None, out=sys.stdout, without=()):
     gate = [cell for cell in cells if cell[4] and cell[3] <= 2 and cell[5].status != PASS]
     worst = sum(1 for cell in cells if cell[5].status == MISS and cell[3] == 1)
     print(f"\n## Score: {number:.1f} of 100 ({earned} of {total} points); seen {100 * seen / total:.0f}%; {worst} misses of severity 1", file=out)
-    print(f"That is Arbor as it ships, on a Mac as it comes. With everything on (the laboratory's own column, which no gate reads): {lab_number:.1f}.", file=out)
+    print("That is Arbor as it ships, on a Mac as it comes." if which == "ships" else "That is the options, each switched on: the second column, which no gate reads.", file=out)
     if pictures:
         print(f"The pictures at rest are of {pictures['commit']}: {pictures['from']}." + (f" Left out, because what draws them has changed since: {', '.join(without)}." if without else ""), file=out)
-    print(f"The rubric {'PASSES' if not gate and number >= 90 else 'does not pass'}: {len(gate)} cells of severity 1 or 2 in the five moves "
+    print(f"The rubric {'PASSES' if not gate and number >= 90 else 'does not pass'}: {len(gate)} cells of severity 1 or 2 in what the gate asks for "
           "miss or are unseen.", file=out)
     if not trusted:
         print("\nTHE INSTRUMENTS FAILED THEIR OWN TEST: the score above is not to be believed.", file=out)
@@ -932,7 +980,7 @@ def score(folder, eyes_path=None, stills_path=None, out=sys.stdout, without=()):
         "leeway": allow, "gate": len(gate), "severity1": worst, "pictures": pictures.get("commit"),
         "cells": [{"where": name, "check": identifier, "severity": severity, "move": move, "status": verdict.status, "said": verdict.said,
                    "frames": [int(frame) for frame in verdict.frames]}
-                  for name, identifier, _, severity, move, verdict in cells + [cell for cell in lab_cells if cell[0].startswith("on-")]],
+                  for name, identifier, _, severity, move, verdict in cells],
     }
 
 
@@ -1085,6 +1133,10 @@ def self_test():
         "drag-under-a-tint": (studio.shoot_drag, {"tint": True}, [], []),
         "drag-pulled": (studio.shoot_drag, {"pull": 30}, ["D1"], []),
         "drag-preview-lies": (studio.shoot_drag, {"preview_off": 8}, ["D2"], []),
+        "plain-drag": (studio.shoot_plain, {}, [], []),
+        "plain-drag-with-a-preview": (studio.shoot_plain, {"preview": True}, ["D5"], ["M9"]),
+        "plain-drag-that-docks": (studio.shoot_plain, {"docks": True}, ["D6"], []),
+        "plain-drag-put-right": (studio.shoot_plain, {"nudged": 9}, ["D6"], []),
         "fingers": (studio.shoot_follow, {}, [], []),
         "fingers-far-ahead": (studio.shoot_follow, {"lag": 6}, ["G1"], []),
         "fingers-and-a-step": (studio.shoot_follow, {"step": 30}, ["G1"], []),
@@ -1159,10 +1211,12 @@ def main(arguments):
         return self_test()
     if command == "score":
         path, eyes, stills = option(arguments, "--json"), option(arguments, "--eyes"), option(arguments, "--stills")
+        options = "--options" in arguments
+        arguments = [argument for argument in arguments if argument != "--options"]
         without = [panel.strip() for panel in (option(arguments, "--without") or "").split(",") if panel.strip()]
         if set(without) - set(PANELS):
             raise SystemExit(f"judge.py: no panels of docs/POLISH.md: {', '.join(sorted(set(without) - set(PANELS)))}")
-        summary = score(arguments[0], eyes, stills, without=without)
+        summary = score(arguments[0], eyes, stills, without=without, which="options" if options else "ships")
         if path:
             with open(path, "w", encoding="utf-8") as file:
                 json.dump(summary, file, indent=1)

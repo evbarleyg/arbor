@@ -36,6 +36,7 @@ class Film:
         self.ends = 0
         self.kind = ""
         self.text = ""
+        self.before = {}
         self.after = {}
         self.how = {}
         self.overlays = []
@@ -90,6 +91,8 @@ class Film:
             self.kind = words[1]
         elif words[0] == "text":
             self.text = " ".join(words[1:])
+        elif words[0] == "before" and len(words) in (6, 7):
+            self.before[int(words[1])] = [float(word) for word in words[2:6]]
         elif words[0] == "after" and len(words) in (6, 7):
             self.after[int(words[1])] = [float(word) for word in words[2:6]]
             if len(words) == 7:

@@ -208,6 +208,51 @@ def shoot_drag(folder, pull=0, preview_off=0, drop=(1021, 368), tint=False):
     write_film(folder, frames, times, lines, visible=[0, 31, 1024, 674])
 
 
+def shoot_plain(folder, preview=False, docks=False, nudged=0):
+    """A floating window dragged over a docked one, held there, let go. Nothing was asked of Arbor: nothing shows, and the window stays where it was let go."""
+    slot, begin, press, drop = (518, 43, 494, 650), (560, 300, 300, 200), (700, 312), (300, 212)
+    frames, times = [], []
+    down = BEGAN + LEAD
+    lines = [(BEGAN + 1, "M kind plain"), (BEGAN + 2, "M before 1 560 300 300 200 floating"), (BEGAN + 2, "M before 2 12 374 494 319 docked"),
+             (BEGAN + LEAD - 20, "M action"), (down, f"B down {press[0]} {press[1]}")]
+
+    def take(time, rect, shown=False):
+        picture = desk()
+        window(picture, GRID[BLUE], BLUE)
+        if shown:
+            paint(picture, slot, (24, 62, 118))
+        window(picture, rect, RED)
+        if not frames or (picture != frames[-1]).any():
+            frames.append(picture)
+            times.append(int(round(time)))
+
+    take(BEGAN, begin)
+    steps = 48
+    for step in range(1, steps + 1):
+        pointer = between(press, drop, step / steps)
+        lines.append((int(down + step * TICK), f"P {pointer[0]:.0f} {pointer[1]:.0f}"))
+        behind = between(press, drop, (step - 1) / steps)
+        take(down + step * TICK, (begin[0] + behind[0] - press[0], begin[1] + behind[1] - press[1], begin[2], begin[3]))
+    held = (begin[0] + drop[0] - press[0], begin[1] + drop[1] - press[1], begin[2], begin[3])
+    rested = down + (steps + 1) * TICK
+    take(rested, held)
+    if preview:
+        take(rested + 120, held, shown=True)
+        lines.append((int(rested + 500), f"M overlay held 3 {slot[0]} {slot[1]} {slot[2]} {slot[3]}"))
+    lines.append((int(rested + 501), "M overlays held"))
+    up = int(rested + 800)
+    lines.append((up, f"B up {drop[0]} {drop[1]}"))
+    rest = slot if docks else (held[0] + nudged, held[1], held[2], held[3])
+    take(up + 34, rest)
+    lines.append((up + 1500, f"M after 1 {rest[0]} {rest[1]} {rest[2]} {rest[3]} {'docked' if docks else 'floating'}"))
+    lines.append((up + 1500, "M after 2 12 374 494 319 docked"))
+    lines.append((up + 1500, "M overlays after"))
+    frames.append(frames[-1].copy())
+    paint(frames[-1], (1000, 690, 4, 4), (60, 60, 64))
+    times.append(up + 1600)
+    write_film(folder, frames, times, lines, visible=[0, 31, 1024, 674])
+
+
 def shoot_panel(folder, late=34, fade=5, slide=0, click=False):
     """A panel that a key brings and the same key sends away."""
     frames, times = [], []

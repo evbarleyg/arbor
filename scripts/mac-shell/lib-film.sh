@@ -206,6 +206,8 @@ for window in state["windows"]:
 film_overlays() {
   [ -n "$ARBOR_PID" ] || return 0
   overlays | awk -v when="$1" '$8 == "on" { print "overlay", when, $3, $4, $5, $6, $7 }' | while read -r line; do note "$line"; done
+  # So that "none" can be told from "nobody looked".
+  note "overlays $1"
 }
 
 hold_drag() {
