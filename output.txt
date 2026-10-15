@@ -1,0 +1,312 @@
+# mac-shell: scripts/mac-shell/check-late-report.sh at f788b84, macOS 26.6.2, 2026-10-15T12:16Z
+built Arbor, the pointer tool and the app bundles in 8s
+
+== [1 | Desktop | 2], window 1 squeezed until it is a tile, and no room is made for it
+session 1: Arbor pid 9762, test windows 29 30 (pid 9729)
+running: 1 display, 0 docked and 2 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 29 left
+docked w29 at the left edge
+> dock 30 right
+docked w30 at the right edge
+> resize 29 right -250
+resized w29; its space is too small to show it, so it is a tile
+  ✔ window 1 is a tile
+display 0 0 1024 768, visible 0 31 1024 677, camera n2, back no
+  Desktop          104 43 571 653
+  tile n1 window   12 43 80 653  holds w29
+  w29 1023 680 325 653     docked parked
+  w30 687 43 325 653       docked focused
+shot: mac-shell/0-the-tile.png
+
+▸ a start with the keyboard in the window that would be a tile lets it be (1 of 5)
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+> click 412 536
+> key x
+  ✔ before the start: an x reaches it
+session 1: Arbor pid 10502, test windows 29 30 (pid 9729)
+running: 1 display, 2 docked and 0 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+late: round 1 (in-time): the log since the start, about the keyboard and window 29:
+late:   2026-10-15T12:17:20.198Z INFO  started: 1 display(s), 2 managed window(s)
+late:   2026-10-15T12:17:20.283Z INFO  w29 has the keyboard and would be a tile: let be where it stands
+late:   2026-10-15T12:17:20.284Z DEBUG w29 has the keyboard
+  ✔ it is where the start found it
+  ✔ it is in view
+  ✔ it is still a tile
+  ✔ the view is on everything
+  ✔ its neighbour is in its place
+  ✔ the test windows' app is in front
+> key x
+  ✔ after the start: an x reaches it
+  ✔ it was named in time
+shot: mac-shell/round-1-in-time.png
+
+▸ a start with the keyboard in the window that would be a tile lets it be (2 of 5)
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+> click 412 410
+> key x
+  ✔ before the start: an x reaches it
+session 1: Arbor pid 11018, test windows 29 30 (pid 9729)
+running: 1 display, 2 docked and 0 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+late: round 2 (in-time): the log since the start, about the keyboard and window 29:
+late:   2026-10-15T12:17:27.822Z INFO  started: 1 display(s), 2 managed window(s)
+late:   2026-10-15T12:17:27.967Z INFO  w29 has the keyboard and would be a tile: let be where it stands
+late:   2026-10-15T12:17:27.969Z DEBUG w29 has the keyboard
+  ✔ it is where the start found it
+  ✔ it is in view
+  ✔ it is still a tile
+  ✔ the view is on everything
+  ✔ its neighbour is in its place
+  ✔ the test windows' app is in front
+> key x
+  ✔ after the start: an x reaches it
+  ✔ it was named in time
+shot: mac-shell/round-2-in-time.png
+
+▸ a start with the keyboard in the window that would be a tile lets it be (3 of 5)
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+> click 412 410
+> key x
+  ✔ before the start: an x reaches it
+session 1: Arbor pid 11455, test windows 29 30 (pid 9729)
+running: 1 display, 2 docked and 0 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+late: round 3 (in-time): the log since the start, about the keyboard and window 29:
+late:   2026-10-15T12:17:36.119Z INFO  started: 1 display(s), 2 managed window(s)
+late:   2026-10-15T12:17:36.180Z INFO  w29 has the keyboard and would be a tile: let be where it stands
+late:   2026-10-15T12:17:36.181Z DEBUG w29 has the keyboard
+  ✔ it is where the start found it
+  ✔ it is in view
+  ✔ it is still a tile
+  ✔ the view is on everything
+  ✔ its neighbour is in its place
+  ✔ the test windows' app is in front
+> key x
+  ✔ after the start: an x reaches it
+  ✔ it was named in time
+shot: mac-shell/round-3-in-time.png
+
+▸ a start with the keyboard in the window that would be a tile lets it be (4 of 5)
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+> click 412 410
+> key x
+  ✔ before the start: an x reaches it
+session 1: Arbor pid 11976, test windows 29 30 (pid 9729)
+running: 1 display, 2 docked and 0 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+late: round 4 (in-time): the log since the start, about the keyboard and window 29:
+late:   2026-10-15T12:17:43.398Z INFO  started: 1 display(s), 2 managed window(s)
+late:   2026-10-15T12:17:43.466Z INFO  w29 has the keyboard and would be a tile: let be where it stands
+late:   2026-10-15T12:17:43.468Z DEBUG w29 has the keyboard
+  ✔ it is where the start found it
+  ✔ it is in view
+  ✔ it is still a tile
+  ✔ the view is on everything
+  ✔ its neighbour is in its place
+  ✔ the test windows' app is in front
+> key x
+  ✔ after the start: an x reaches it
+  ✔ it was named in time
+shot: mac-shell/round-4-in-time.png
+
+▸ a start with the keyboard in the window that would be a tile lets it be (5 of 5)
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+> click 412 410
+> key x
+  ✔ before the start: an x reaches it
+session 1: Arbor pid 12222, test windows 29 30 (pid 9729)
+running: 1 display, 2 docked and 0 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+late: round 5 (in-time): the log since the start, about the keyboard and window 29:
+late:   2026-10-15T12:17:50.680Z INFO  started: 1 display(s), 2 managed window(s)
+late:   2026-10-15T12:17:50.748Z INFO  w29 has the keyboard and would be a tile: let be where it stands
+late:   2026-10-15T12:17:50.749Z DEBUG w29 has the keyboard
+  ✔ it is where the start found it
+  ✔ it is in view
+  ✔ it is still a tile
+  ✔ the view is on everything
+  ✔ its neighbour is in its place
+  ✔ the test windows' app is in front
+> key x
+  ✔ after the start: an x reaches it
+  ✔ it was named in time
+shot: mac-shell/round-5-in-time.png
+
+▸ a launcher gives the keyboard back just after the start: the window is put back and let be (1 of 5)
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+> click 412 410
+> key x
+  ✔ before the start: an x reaches it
+> click 868 634
+  ✔ the launcher is in front
+session 1: Arbor pid 12819, test windows 29 30 (pid 9729)
+running: 1 display, 2 docked and 0 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+late: round 6 (late): the log since the start, about the keyboard and window 29:
+late:   2026-10-15T12:18:01.357Z INFO  started: 1 display(s), 2 managed window(s)
+late:   2026-10-15T12:18:01.467Z DEBUG focus is on w29
+late:   2026-10-15T12:18:01.468Z DEBUG w29 has the keyboard
+late:   2026-10-15T12:18:01.471Z INFO  w29 had the keyboard when Arbor started, which macOS says only now: back from (1023.0, 682.0, 480.0, 348.0) to (170.0, 220.0, 480.0, 348.0)
+late:   2026-10-15T12:18:01.471Z INFO  w29 has the keyboard and is a tile: let be where it stands
+  ✔ it is where the start found it
+  ✔ it is in view
+  ✔ it is still a tile
+  ✔ the view is on everything
+  ✔ its neighbour is in its place
+  ✔ the test windows' app is in front
+> key x
+  ✔ after the start: an x reaches it
+  ✔ the report came late, and it was put back once
+shot: mac-shell/round-6-late.png
+
+▸ a launcher gives the keyboard back just after the start: the window is put back and let be (2 of 5)
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+> click 412 410
+> key x
+  ✔ before the start: an x reaches it
+> click 868 634
+  ✔ the launcher is in front
+session 1: Arbor pid 13417, test windows 29 30 (pid 9729)
+running: 1 display, 2 docked and 0 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+late: round 7 (late): the log since the start, about the keyboard and window 29:
+late:   2026-10-15T12:18:11.702Z INFO  started: 1 display(s), 2 managed window(s)
+late:   2026-10-15T12:18:11.837Z DEBUG focus is on w29
+late:   2026-10-15T12:18:11.840Z DEBUG w29 has the keyboard
+late:   2026-10-15T12:18:11.844Z INFO  w29 had the keyboard when Arbor started, which macOS says only now: back from (1023.0, 682.0, 480.0, 348.0) to (170.0, 220.0, 480.0, 348.0)
+late:   2026-10-15T12:18:11.844Z INFO  w29 has the keyboard and is a tile: let be where it stands
+  ✔ it is where the start found it
+  ✔ it is in view
+  ✔ it is still a tile
+  ✔ the view is on everything
+  ✔ its neighbour is in its place
+  ✔ the test windows' app is in front
+> key x
+  ✔ after the start: an x reaches it
+  ✔ the report came late, and it was put back once
+shot: mac-shell/round-7-late.png
+
+▸ a launcher gives the keyboard back just after the start: the window is put back and let be (3 of 5)
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+> click 412 410
+> key x
+  ✔ before the start: an x reaches it
+> click 868 634
+  ✔ the launcher is in front
+session 1: Arbor pid 14014, test windows 29 30 (pid 9729)
+running: 1 display, 2 docked and 0 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+late: round 8 (late): the log since the start, about the keyboard and window 29:
+late:   2026-10-15T12:18:21.618Z INFO  started: 1 display(s), 2 managed window(s)
+late:   2026-10-15T12:18:21.732Z DEBUG focus is on w29
+late:   2026-10-15T12:18:21.733Z DEBUG w29 has the keyboard
+late:   2026-10-15T12:18:21.735Z INFO  w29 had the keyboard when Arbor started, which macOS says only now: back from (1023.0, 682.0, 480.0, 348.0) to (170.0, 220.0, 480.0, 348.0)
+late:   2026-10-15T12:18:21.735Z INFO  w29 has the keyboard and is a tile: let be where it stands
+  ✔ it is where the start found it
+  ✔ it is in view
+  ✔ it is still a tile
+  ✔ the view is on everything
+  ✔ its neighbour is in its place
+  ✔ the test windows' app is in front
+> key x
+  ✔ after the start: an x reaches it
+  ✔ the report came late, and it was put back once
+shot: mac-shell/round-8-late.png
+
+▸ a launcher gives the keyboard back just after the start: the window is put back and let be (4 of 5)
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+> click 412 410
+> key x
+  ✔ before the start: an x reaches it
+> click 868 634
+  ✔ the launcher is in front
+session 1: Arbor pid 14931, test windows 29 30 (pid 9729)
+running: 1 display, 2 docked and 0 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+late: round 9 (late): the log since the start, about the keyboard and window 29:
+late:   2026-10-15T12:18:31.856Z INFO  started: 1 display(s), 2 managed window(s)
+late:   2026-10-15T12:18:31.973Z DEBUG focus is on w29
+late:   2026-10-15T12:18:31.973Z DEBUG w29 has the keyboard
+late:   2026-10-15T12:18:31.978Z INFO  w29 had the keyboard when Arbor started, which macOS says only now: back from (1023.0, 682.0, 480.0, 348.0) to (170.0, 220.0, 480.0, 348.0)
+late:   2026-10-15T12:18:31.978Z INFO  w29 has the keyboard and is a tile: let be where it stands
+  ✔ it is where the start found it
+  ✔ it is in view
+  ✔ it is still a tile
+  ✔ the view is on everything
+  ✔ its neighbour is in its place
+  ✔ the test windows' app is in front
+> key x
+  ✔ after the start: an x reaches it
+  ✔ the report came late, and it was put back once
+shot: mac-shell/round-9-late.png
+
+▸ a launcher gives the keyboard back just after the start: the window is put back and let be (5 of 5)
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+> click 412 410
+> key x
+  ✔ before the start: an x reaches it
+> click 868 634
+  ✔ the launcher is in front
+session 1: Arbor pid 15631, test windows 29 30 (pid 9729)
+running: 1 display, 2 docked and 0 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+late: round 10 (late): the log since the start, about the keyboard and window 29:
+late:   2026-10-15T12:18:41.894Z INFO  started: 1 display(s), 2 managed window(s)
+late:   2026-10-15T12:18:41.983Z DEBUG focus is on w29
+late:   2026-10-15T12:18:41.983Z DEBUG w29 has the keyboard
+late:   2026-10-15T12:18:41.986Z INFO  w29 had the keyboard when Arbor started, which macOS says only now: back from (1023.0, 682.0, 480.0, 348.0) to (170.0, 220.0, 480.0, 348.0)
+late:   2026-10-15T12:18:41.986Z INFO  w29 has the keyboard and is a tile: let be where it stands
+  ✔ it is where the start found it
+  ✔ it is in view
+  ✔ it is still a tile
+  ✔ the view is on everything
+  ✔ its neighbour is in its place
+  ✔ the test windows' app is in front
+> key x
+  ✔ after the start: an x reaches it
+  ✔ the report came late, and it was put back once
+shot: mac-shell/round-10-late.png
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+shot: mac-shell/quit.png
+
+109 passed, 0 failed
+exit code 0
