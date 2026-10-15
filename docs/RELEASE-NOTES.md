@@ -3,7 +3,7 @@
 A running draft of what the first release can honestly say. A line moves up only when its code has merged, and changes its mark only when there is evidence.
 `docs/FEATURES.md` (generated) has the item-by-item comparison; `CHANGELOG.md` is the documenter's.
 
-Last brought up to date: 2026-10-14; the head section at the third freeze of that day.
+Last brought up to date: 2026-10-15, the section "Build 1". The rest is as it stood at the third freeze of 2026-10-14.
 
 **How sure we are**
 
@@ -14,6 +14,49 @@ Last brought up to date: 2026-10-14; the head section at the third freeze of tha
 | ○ | Built, with no test that reaches it. Treat as unproven |
 
 Nothing here has been used by a person for a working day yet. All real-Mac evidence is from test windows on macOS 26.6; none is from Safari, Slack, Terminal or Zoom.
+
+## Build 1, cut on 2026-10-15 at about 03:00 UTC
+
+For whoever tries it first, in plain words. It is a build to try, not a release: `docs/VIABLE.md` says what a release takes, and this build has not been put to that gate.
+
+**What Arbor is for.** Arrange windows side by side once. Fill the screen with any one, and one key brings the arrangement back. Your Mac's own tiling forgets an arrangement; Arbor keeps it.
+
+**Who has tried it.** Programs only: random walks over simulated windows, well over a hundred thousand of them, and scripts that drive the real app with real apps, a real pointer and real keys on GitHub's hosted Macs. No person has used this build. No lid, no second physical display and no trackpad have met it.
+
+### Better than the build before
+
+- **A start takes nothing away.** The first start moves nothing. A later start puts back what was docked and ends showing everything; no window that was in view when Arbor started leaves it.
+- **A pause is as good as a Quit.** Every window gets its own size back, and comes back into the arrangement when the pause ends.
+- **Arbor stands aside for macOS's own tiling.** Where macOS itself would tile a window you drag, Arbor shows no preview and docks nothing.
+- **The app you switch to comes forward**, however late macOS says so.
+- **A click on the wallpaper** sweeps the windows aside, as macOS does out of the box. A click on a window's strip brings them back, and Arbor no longer takes that click for a drag.
+- A window kept in view stays in front while the others move. ⌃⌥Space fetches what a hold kept out. The welcome window waits at what is still in the way. The settings window speaks the menu's words.
+
+### Switched off in this build, and why
+
+**The gestures of mouse and trackpad are off**: zooming with ⌃⌥ and the scroll wheel or a pinch, and drawing a rectangle with ⌃⌥ held. Dragging windows to dock them, every key, the menu and `arborctl` work as before.
+
+Why: to see those gestures Arbor has to listen in on the pointer and the keyboard of the whole Mac. On hosted Macs we took Arbor's permission away while it was listening. From the instant macOS withdrew it until Arbor noticed and stopped listening, a tenth of a second to a whole second, every click, key and scroll on the Mac was lost: in eight rounds of nine. With no Arbor running, and with Arbor not listening, nothing was lost in any round: so it is the listening. Before that instant and after it all was well, and in the one round that tried it nothing stayed stuck. It can only happen when the permission is taken away while Arbor runs, which few people ever do; but a second in which the Mac hears nothing is not ours to risk. The cure, noticing at once, is being built. Until it has passed on real Macs, Arbor does not listen.
+
+To switch them on all the same: `arborctl set pointerGestures true`. In ordinary use Arbor as a whole, the listening included, made a click about two thousandths of a second later on a hosted Mac.
+
+### Known faults, worst first, each with its way back
+
+| What you may meet | How likely | The way back |
+|---|---|---|
+| **Two displays, one above the other.** A floating window lies across both; the lower display goes (its lid shuts, its cable is pulled). macOS rescues the window, and Arbor pushes it down again until only its title bar shows at the bottom edge. No key fetches it | rare: it takes displays arranged one above the other and a window across the border | Drag it up by its title bar |
+| **An app that does not answer while you quit Arbor.** Its windows that were out of view stay past the corner of the screen when the app wakes, although Arbor's log says all windows came back | rare: an app has to hang in the very second of the Quit, with windows out of view | Open Arbor again and press ⌃⌥0 |
+| **Back at the desk.** Nothing need be docked. A window lives on the laptop's own screen. You work with the lid shut at the monitor, then away with the laptop alone, then come back and open both: Arbor moves that window over to the monitor | likely for whoever carries a laptop to and from a desk | Drag it back. It happens once for each such round |
+| **Quit, drag, start.** You quit Arbor, move a floating window by hand, and start Arbor again. The first ⌃⌥0 throws the window back to where it was before the Quit | likely for whoever quits and starts Arbor often | Drag it again; the second time it stays |
+| **A start with the keyboard in a docked window that fits nowhere but alone**: the view goes to that window and the rest leaves the view | takes a small screen and many docked windows | ⌃⌥0 |
+| **Windows that make way.** A floating window may still be moved or made smaller to make room for docked ones, and gets its size back only later. Decided against; the change is not in this build | everyday | ⌃⌥⎋, or Quit: it gets its own size and place back |
+| **Two moves where one would do.** A window docked for the first time is often sized first and moved after; at a login a docked window may move twice as its neighbours arrive | everyday; costs nothing but calm | none needed |
+
+The last two are what the random walks count most often; the board (`collab/BOARD.md`, section 1) has every known fault with who is at it.
+
+### If anything goes wrong
+
+⌃⌥0 shows everything. ⌃⌥⎋ pauses Arbor: every window gets its own size and place back. Quit does the same for good. None of the three needs the pointer.
 
 ## Frozen on 2026-10-14 at 17:35 UTC to become release candidate 1, not tagged, and mended once more
 
