@@ -1,0 +1,76 @@
+# check-fill-apps 2026-10-15T16:39Z on macOS 26.6.2, commit 25b7e4f
+
+▸ TextEdit, never docked: the key fills the screen with it, keeps it there, and gives its frame back
+  ✔ a real click gives it the keyboard
+  ✔ the real key runs the command
+  ✔ Arbor knows that it fills
+  ✔ it still floats
+  ✔ it fills the view
+  ✔ and went there in one call
+  ✔ nothing else has moved
+  ✔ three seconds on it is where the fill left it
+  ✔ and Arbor still knows that it fills
+  ✔ the real key runs the command
+  ✔ it is exactly where and as large as it was
+  ✔ and went there in one call
+  ✔ Arbor knows that it no longer fills
+  ✔ nothing else has moved
+
+▸ Safari, never docked: the key fills the screen with it, keeps it there, and gives its frame back
+  ✔ a real click gives it the keyboard
+  ✔ the real key runs the command
+  ✔ Arbor knows that it fills
+  ✔ it still floats
+  ✔ it fills the view
+  ✔ and went there in one call
+  ✔ nothing else has moved
+  ✔ three seconds on it is where the fill left it
+  ✔ and Arbor still knows that it fills
+  ✔ the real key runs the command
+  ✔ it is exactly where and as large as it was
+  ✔ and went there in one call
+  ✔ Arbor knows that it no longer fills
+  ✔ nothing else has moved
+
+▸ Terminal, never docked: the key fills the screen with it, keeps it there, and gives its frame back
+  ✔ a real click gives it the keyboard
+  ✔ the real key runs the command
+  ✔ Arbor knows that it fills
+  ✔ it still floats
+  ✔ nothing else has moved
+  ✔ three seconds on it is where the fill left it
+  ✔ and Arbor still knows that it fills
+  ✔ the real key runs the command
+  ✔ it is exactly where and as large as it was
+  ✔ and went there in one call
+  ✔ Arbor knows that it no longer fills
+  ✔ nothing else has moved
+
+▸ Settings, never docked: the key fills the screen with it, keeps it there, and gives its frame back
+  ✔ a real click gives it the keyboard
+  ✔ the real key runs the command
+  ✔ Arbor knows that it fills
+  ✔ it still floats
+  ✔ nothing else has moved
+  ✔ three seconds on it is where the fill left it
+  ✔ and Arbor still knows that it fills
+  ✔ the real key runs the command
+  ✔ it is exactly where and as large as it was
+  ✔ and went there in one call
+  ✔ Arbor knows that it no longer fills
+  ✔ nothing else has moved
+
+▸ the first time, too, a window that does not take the view's size goes to its place in one call
+  ✘ Terminal — 3 calls in 47 ms: 12 43 1000 655 > 12 43 1003 649; 12 43 994 655 > 12 43 996 649; 14 46 996 649 > 14 46 996 649 (known: board 1.120: how large a window goes is learned by offering it the whole view in the view's corner; after the cut)
+  ✘ Settings — 2 calls in 31 ms: 12 43 1000 655 > 12 43 723 655; 150.5 43 723 655 > 150 43 723 655 (known: board 1.120: how large a window goes is learned by offering it the whole view in the view's corner; after the cut)
+
+▸ filled at Quit, each has its own frame back
+  ✔ TextEdit went there in one call
+  ✔ Safari went there in one call
+  ✔ Settings went there in one call
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ every window is where it was found
+
+57 passed, 2 failed

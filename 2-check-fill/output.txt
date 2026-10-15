@@ -1,0 +1,154 @@
+# mac-shell: scripts/mac-shell/check-fill.sh at 25b7e4f, macOS 26.6.2, 2026-10-15T16:38Z
+built Arbor, the pointer tool and the app bundles in 4s
+session 1: Arbor pid 8832, test windows 47 48 49 (pid 8755)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+before Arbor touches anything: W1 170 220 480 348, W2 220 180 480 348, W3 270 140 480 348
+
+▸ the key fills the screen with a window that was never docked, and nothing else moves
+> click 412 536
+> key ctrl+opt+return
+  ✔ the real key runs the command
+  ✔ it fills the view
+  ✔ and went there in one call
+  ✔ it still floats
+  ✔ Arbor knows that it fills
+  ✔ the second window has not moved
+  ✔ nor the third
+shot: mac-shell/01-filled.png
+
+▸ it stays filled: macOS's late reports of the move are not a hand's
+  ✔ it fills the view
+  ✔ Arbor knows that it fills
+> click 512 389
+> test windows: title 47 Another title
+> test windows: open size=300x200
+  ✔ a window opened, and it fills the view
+> test windows: close 56
+  ✔ that window closed, and it fills the view
+
+▸ the same key again gives back exactly the frame it had
+> click 512 389
+> key ctrl+opt+return
+  ✔ the real key runs the command
+  ✔ it is where and as large as it was
+  ✔ and went there in one call
+  ✔ Arbor knows that it no longer fills
+  ✔ the second window has not moved
+shot: mac-shell/02-back.png
+
+▸ Show Everything means everything: it gives the window its own frame back
+> key ctrl+opt+return
+  ✔ it fills the view
+> key ctrl+opt+space
+  ✔ the real key runs the command
+  ✔ it is where and as large as it was
+  ✔ Arbor knows that it no longer fills
+  ✔ the second window has not moved
+
+▸ a window that will not grow that far goes as far as it can, in the middle, and back
+> click 512 210
+> key ctrl+opt+return
+  ✔ it is as large as it goes
+W3 is at 262 171 500 400
+CALLS W3, the first time: 2 calls in 19 ms: 12 43 1000 655 > 12 43 500 400; 262 170.5 500 400 > 262 171 500 400
+  ✔ Arbor knows that it fills
+shot: mac-shell/03-no-larger.png
+  ✔ it stays there
+> key ctrl+opt+return
+  ✔ it is where and as large as it was
+  ✔ and went there in one call
+> key ctrl+opt+return
+  ✔ the key once more, and it is in the middle again
+  ✔ known not to grow, it went straight there: one call
+> key ctrl+opt+return
+  ✔ it is where and as large as it was
+
+▸ the first time, too, a window that will not grow that far goes to the middle in one call
+  ✘ it did — 2 calls in 19 ms: 12 43 1000 655 > 12 43 500 400; 262 170.5 500 400 > 262 171 500 400 (known: board 1.120: how large a window goes is learned by offering it the whole view in the view's corner; after the cut)
+      picture: mac-shell/fail-check-fill-1.png
+      | display 0 0 1024 768, visible 0 31 1024 679, camera n0, back no
+      |   Desktop          12 43 1000 655
+      |   w47 170 220 480 348      floating
+      |   w48 220 180 480 348      floating
+      |   w49 270 140 480 348      floating focused
+      log | INFO  trace check-fill-1-06 ended: 129 lines, another trace was started
+      log | INFO  trace check-fill-1-07: recording to /tmp/arbor-shell.VViRea/home/traces/2026-10-15-163855-check-fill-1-07.jsonl
+
+▸ dragged by its title bar it comes out in its own size, under the pointer
+> click 412 500
+> key ctrl+opt+return
+  ✔ it fills the view
+> drag 546 55 486 205
+  ✔ it is its own size again
+  ✔ and still floats
+  ✔ Arbor knows that it no longer fills
+  ✘ with the pointer still on its title bar
+      picture: mac-shell/fail-check-fill-2.png
+      | display 0 0 1024 768, visible 0 31 1024 679, camera n0, back no
+      |   Desktop          12 43 1000 655
+      |   w47 253 145 480 348      floating focused
+      |   w48 220 180 480 348      floating
+      |   w49 270 140 480 348      floating
+      log | INFO  trace check-fill-1-07 ended: 10 lines, another trace was started
+      log | INFO  trace check-fill-1-08: recording to /tmp/arbor-shell.VViRea/home/traces/2026-10-15-163856-check-fill-1-08.jsonl
+      log | DEBUG the button went down at 412,500, the pointer is at 412,500: it is on w47
+      log | DEBUG focus is on w47
+      log | DEBUG w47 has the keyboard
+      log | INFO  zoom: filled the screen with w47
+      log | DEBUG the button went down at 546,55, the pointer is at 546,55: it is on w47
+      log | DEBUG w47 is being dragged
+      log | DEBUG drag of w47: on float
+      log | DEBUG w47 was dropped out of its slot and took its own size, 480×348
+      log | INFO  dropped w47 on float, display 5A42259C-47B8-4590-9762-97DBE4FE7F1B
+  ✔ the second window has not moved
+shot: mac-shell/04-dropped.png
+
+▸ after a slip of the hand it goes on filling
+> key ctrl+opt+return
+  ✔ it fills the view
+> drag 546 55 556 63
+  ✔ it fills the view
+  ✔ and stays
+  ✔ Arbor knows that it fills
+
+▸ a size given by hand is its own from then on
+> drag 512 697 512 497
+  ✔ the bottom edge came up
+  ✔ it stays as the hand left it
+  ✔ Arbor knows that it no longer fills
+> click 512 287
+> key ctrl+opt+return
+  ✔ the key fills again
+> key ctrl+opt+return
+  ✔ and gives back what the hand made
+
+▸ a pause gives the own frame back, a resume fills again, Undo takes it back
+> key ctrl+opt+return
+  ✔ it fills the view
+> pause
+paused until `resume`; windows are back in view, in their own sizes
+  ✔ paused, it has its own frame
+> resume
+resumed
+  ✔ resumed, it fills again
+> undo
+undid fill the screen with w47
+  ✔ undone, it has its own frame
+> redo
+redid fill the screen with w47
+  ✔ redone, it fills
+
+▸ Quit gives the own frame back
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+shot: mac-shell/05-after-quit.png
+  ✔ it is where and as large as it was
+  ✔ the second window never moved
+  ✔ the third is where it was
+
+52 passed, 2 failed
+1 of the failures are known
+exit code 1

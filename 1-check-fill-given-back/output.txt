@@ -1,0 +1,71 @@
+# mac-shell: scripts/mac-shell/check-fill-given-back.sh at 25b7e4f, macOS 26.6.2, 2026-10-15T16:36Z
+built Arbor, the pointer tool and the app bundles in 8s
+AppleActionOnDoubleClick: not set
+> open -g -b com.apple.TextEdit /tmp/arbor-apps.jrimMg/scratch/oak.txt
+pid 6191 lists (id role subrole x y w h flags):
+  34 AXWindow AXStandardWindow 79 56 673 439 main
+session 1: Arbor pid 6245, ARBOR_ONLY_PIDS=6191: running: 1 display, 0 docked and 1 floating, 0 out of view
+Arbor dev
+
+▸ filled, zoomed by macOS and given back: the key gives the window its own frame
+> click 415 68
+> move 415 188
+  ✔ a real click gives it the keyboard
+> key ctrl+opt+return
+  ✔ the real key runs the command
+FRAMES key own: 79 56 673 439 filled: 12 43 1000 653
+  ✔ it fills the view
+> click 516 55 2
+> move 516 215
+  ✔ a real double-click on its title bar
+FRAMES key after the first double-click: 0 31 1024 677
+  ✔ macOS has given it another frame
+snap: mac-shell/key-1-zoomed-by-macos.jpg
+> click 518 43 2
+> move 518 203
+  ✔ a second real double-click
+FRAMES key after the second double-click: 12 43 1000 653
+  ✔ macOS has given it back what it had before: the fill's frame
+  ✔ which is not its own: Arbor knows that it fills
+snap: mac-shell/key-2-given-back.jpg
+> key ctrl+opt+return
+  ✔ the real key runs the command
+  ✔ it is exactly where and as large as it was
+FRAMES key after the key: 79 56 673 439
+  ✔ Arbor knows that it no longer fills
+snap: mac-shell/key-3-back.jpg
+
+▸ filled, zoomed by macOS and given back: Quit gives the window its own frame
+> click 415 68
+> move 415 188
+  ✔ a real click gives it the keyboard
+> key ctrl+opt+return
+  ✔ the real key runs the command
+FRAMES quit own: 79 56 673 439 filled: 12 43 1000 653
+  ✔ it fills the view
+> click 516 55 2
+> move 516 215
+  ✔ a real double-click on its title bar
+FRAMES quit after the first double-click: 0 31 1024 677
+  ✔ macOS has given it another frame
+snap: mac-shell/quit-1-zoomed-by-macos.jpg
+> click 518 43 2
+> move 518 203
+  ✔ a second real double-click
+FRAMES quit after the second double-click: 12 43 1000 653
+  ✔ macOS has given it back what it had before: the fill's frame
+  ✔ which is not its own: Arbor knows that it fills
+snap: mac-shell/quit-2-given-back.jpg
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+FRAMES quit after Quit: 79 56 673 439
+  ✔ it is exactly where and as large as it was
+snap: mac-shell/quit-3-after-quit.jpg
+
+21 passed, 0 failed
+still running when the script had ended, and stopped now:
+  6180 sleep
+exit code 0
