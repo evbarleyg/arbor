@@ -1,6 +1,6 @@
 #!/bin/bash
 # Giving the keyboard to a window that is out of view brings it into view: what ⌘Tab, the Dock, a notification
-# or `open` do all day. Part of T52 (windows outside the view) and of the manual checks in docs/TESTING.md.
+# or `open` do all day. Part of T52 (windows outside the view).
 source "$(dirname "$0")/../lib.sh"
 arbor_build
 ARBOR_SECOND_APP=1
@@ -10,6 +10,16 @@ if on_throwaway_mac; then
   ARBOR_TEST_WINDOWS_ARGS="--regular"
   ARBOR_SECOND_APP_ARGS="--regular"
 fi
+# The three docked windows as the window server lists them, which is from front to back.
+order_of_docked() {
+  "$ARBOR_POINTER" windows --on-screen | awk -v ids=" $W1 $W2 $V1 " 'index(ids, " " $1 " ") { printf "%s ", $1 }'
+}
+order_is() {
+  local now
+  now=$(order_of_docked)
+  [ "$now" = "$1" ] || { echo "front to back they are $now, not $1"; return 1; }
+}
+
 arbor_start 3
 ctl dock "$W1" left
 ctl dock "$W2" beside "$W1" bottom
@@ -63,6 +73,23 @@ check "the other app has the keyboard" eventually front_is "$ARBOR_WINDOWS_PID_2
 check "its window comes into view" eventually in_view "$V1"
 settled
 ctl show-all
+
+claim "frame a window and show everything again: the docked windows lie in the order they had, front to back"
+# Arbor raises none of them. What is asked is whether macOS keeps a window's place in its order while Accessibility moves it out of
+# view and back.
+click_window "$V1"
+click_window "$W2"
+click_window "$W1"
+check "the first window has the keyboard" eventually is focused "$W1"
+order=$(order_of_docked)
+echo "front to back: $order"
+ctl zoom "$W1"
+check "the others are out of view" eventually out_of_view "$V1"
+check "out of view they are in the same order" order_is "$order"
+ctl show-all
+check "everything is back in view" eventually in_view "$V1"
+check "and in the same order" stays order_is "$order"
+settled
 
 # On a person's Mac ⌘Tab leads to whichever app of theirs was in front last.
 if on_throwaway_mac; then
