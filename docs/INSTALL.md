@@ -58,15 +58,19 @@ the signature's *designated requirement*: the test a program must pass to count 
   designated => cdhash H"4d1c0f8e…"
   ```
 
-  The next build has another hash, so to macOS it is a stranger: System Settings still shows Arbor switched on, and
-  Arbor is told it has no permission.
+  The next build has another hash, so to macOS it is a stranger, and Arbor is told it has no permission, whatever the list in
+  System Settings shows. (A tester saw Arbor still switched on there. On macOS 26.6.2 the entry itself read "denied" once the new
+  build had asked; what the switch shows then, nobody has looked at yet.)
 - A build signed with a certificate has a requirement that names the app and the certificate:
 
   ```
   designated => identifier "com.evbarleyg.arbor" and certificate leaf = H"9b7e52a1…"
   ```
 
-  Every build signed with that certificate passes it. **The permission is given once and stays.**
+  Every build signed with that certificate passes it. **The permission is given once and stays**: on a Mac with macOS 26.6.2 the
+  next build, different code, ran without being granted anything. **One ad-hoc build in between costs it**: when a build without
+  the certificate asks, macOS rewrites the entry to denied, and the next build with the certificate has to be given the
+  permission again.
 
 A Developer ID from Apple is such a certificate, and costs a yearly fee. For your own Mac, one you make yourself does
 the same job. `scripts/make-signing-identity.sh` makes it:

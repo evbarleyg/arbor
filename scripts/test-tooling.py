@@ -1420,6 +1420,8 @@ def check_install():
     row("install.sh: an ad-hoc signature is said aloud, last, with what it costs and what ends it",
         (code, output.count("SIGNED AD HOC"), "macOS will ask for the Accessibility permission again" in output,
          "make-signing-identity.sh" in output.splitlines()[-1], output.find("SIGNED AD HOC") > output.find("Not started") >= 0), (0, 1, True, True, True))
+    row("install.sh: of an older build's entry it says what to do, and not how the switch looks, which nobody has seen",
+        ("switch it off and on again, or" in output, "looks switched on" in output), (True, False))
     # As the real one writes: a line at a time. A reader that leaves at the match kills it, and under pipefail that made a no of the yes.
     slowly = "for line in Executable=/x Identifier=com.evbarleyg.arbor Signature=adhoc 'Info.plist entries=24' 'TeamIdentifier=not set' 'Sealed Resources version=2'; do echo \"$line\" >&2 || exit 1; sleep 0.02; done"
     row("install.sh: however slowly codesign writes what follows", "SIGNED AD HOC" in installed('exec /bin/cp "$@"', codesign=slowly, said=True)[1], True)

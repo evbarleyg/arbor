@@ -188,7 +188,8 @@ say_what_the_signature_costs() {
   ad_hoc || return 0
   echo
   echo "NOTE: THIS BUILD IS SIGNED AD HOC. To macOS it is a new app, so macOS will ask for the Accessibility permission again,"
-  echo "  now and after every \`make install\`. An entry an older build left under Accessibility looks switched on and does nothing:"
+  echo "  now and after every \`make install\`. An entry an older build left under Accessibility does nothing for this one:"
+  echo "  switch it off and on again, or"
   echo "    tccutil reset Accessibility com.evbarleyg.arbor     then switch Arbor on again"
   echo "  To be asked once more and never again:  ./scripts/make-signing-identity.sh  then  make install  (docs/INSTALL.md)."
 }
