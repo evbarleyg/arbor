@@ -122,8 +122,9 @@ SKEW = (150, 60)
 RESIZING = 300
 # After a drop a window is where it was let go, or where the preview was, to within this many points (a gap, a size its app rounds).
 DROPPED = 24
-# The button is up for the apps this many microseconds after it came up, at the latest.
-HELD = 50000
+# The button is up for the apps this many microseconds after it came up, at the latest. It was 50,000, which a hosted Mac without Arbor broke once in 118 presses and
+# releases (57 ms): a limit like that measures the Mac. What is systematic and smaller is for the next number.
+HELD = 100000
 # Of a hundred events that are not Arbor's own, the latest but one reaches the apps at most this many microseconds later than without Arbor.
 HELD_MORE = 10000
 # With macOS's tiling on, this many points along the left, right and top edges of the screen are macOS's: Arbor offers nothing there.
@@ -319,18 +320,22 @@ class World:
 
 def since_the_scene_was_set(said, ended, steps):
     """The sampler's account of itself, for the time in which something is judged. Nine apps started cold keep every core busy, and nearly all late samples of
-    a run fall there (71 of 72 in one), where the script only sets the scene. How many samples came since is not written down: the run's own rate is
-    taken for it, which is on the strict side, because the rate was lower while the Mac was busy. What the sampler said of the whole run follows, as `whole-…`."""
+    a run fall there (71 of 72 in one), where the script only sets the scene. **One stretch**, from the first act that counts to the last, with everything between,
+    whatever it is called: otherwise this would be a sieve. How many samples came in it is not written down: the run's own rate is taken for it, which is on the
+    strict side, because the rate was lower while the Mac was busy. What the sampler said of the whole run follows, as `whole-…` (docs/VIABLE.md, section 7)."""
     told = dict(zip(said[::2], said[1::2]))
-    acts = [step for step in steps if step.wants.get("setup") != "1"]
+    counting = [index for index, step in enumerate(steps) if step.wants.get("setup") != "1"]
     try:
         samples, seconds = int(told["samples"]), float(told["seconds"])
     except (KeyError, ValueError):
         return " ".join(said)
-    if len(acts) == len(steps) or not acts or seconds <= 0:
+    if not counting or seconds <= 0 or (counting[0] == 0 and counting[-1] == len(steps) - 1):
         return " ".join(said)
-    span = min(seconds, (ended - acts[0].began) / 1000)
-    gaps = [gap for step in acts for gap in step.late_samples]
+    stretch = steps[counting[0]:counting[-1] + 1]
+    # What comes between a step's end and the next one's beginning counts for the step that ended.
+    until = steps[counting[-1] + 1].began if counting[-1] + 1 < len(steps) else ended
+    span = min(seconds, (until - stretch[0].began) / 1000)
+    gaps = [gap for step in stretch for gap in step.late_samples]
     told.update({"samples": str(int(samples * span / seconds)), "seconds": f"{span:.1f}", "late": str(len(gaps)), "longest-gap-ms": str(max(gaps, default=0)),
                  "whole-samples": told["samples"], "whole-seconds": told["seconds"], "whole-late": told.get("late", "?")})
     return " ".join(f"{key} {value}" for key, value in told.items())
@@ -1370,6 +1375,10 @@ def self_test():
     said = "S samples 100 seconds 10.0 hz 10.0 late 3 longest-gap-ms 300"
     for name, lines, wanted in (
             ("counts from the first act", scene + [f"11000 {said}"], "samples 80 seconds 8.0 hz 10.0 late 1 longest-gap-ms 120 whole-samples 100 whole-seconds 10.0 whole-late 3"),
+            ("leaves out nothing in the middle, whatever it is called", scene + ["5000 M begin 3 open", "5100 L 400", "6000 M end 3 setup=1", "7000 M begin 4 idle", "8000 M end 4", f"11000 {said}"],
+             "samples 80 seconds 8.0 hz 10.0 late 2 longest-gap-ms 400 whole-samples 100 whole-seconds 10.0 whole-late 3"),
+            ("ends with the last act", scene + ["5000 M begin 3 tidy", "5100 L 400", "6000 M end 3 setup=1", f"11000 {said}"],
+             "samples 20 seconds 2.0 hz 10.0 late 1 longest-gap-ms 120 whole-samples 100 whole-seconds 10.0 whole-late 3"),
             ("is left as it is where no scene was set", [line.replace(" setup=1", "") for line in scene] + [f"11000 {said}"], said[2:]),
             ("is left as it is where nothing but the scene was set", scene[:4] + [f"11000 {said}"], said[2:]),
             ("is left as it is where it cannot be read", scene + ["11000 S samples many"], "samples many")):
@@ -1397,6 +1406,12 @@ def self_test():
             failures.append(f"a mouse-up that is held back for 210 ms is input-held, in its own step and no other: {got}")
         if lateness(heard) != {"events": 5, "p50_us": 400, "p99_us": 210000, "max_us": 210000}:
             failures.append(f"the lateness of five events: {lateness(heard)}")
+        with open(os.path.join(folder, "witness.log"), "w", encoding="utf-8") as handle:
+            handle.write("4100 E down 300 none\n4350 E up 90000 none\n")
+        if any(step.findings for step in read(samples)[1]):
+            failures.append("a mouse-up that takes 90 ms is what a hosted Mac does by itself now and then")
+        with open(os.path.join(folder, "witness.log"), "w", encoding="utf-8") as handle:
+            handle.write("4100 E down 300 none\n4350 E up 210000 none\n")
         for name, marks, wanted in (("after Arbor has gone nobody holds anything back", ["3500 M arbor gone"], []),
                                     ("Arbor started again holds it back", ["3400 M arbor gone", "3500 M arbor 98"], ["input-held"]),
                                     ("it ends during the step, and was there", ["4600 M arbor gone"], ["input-held"])):
