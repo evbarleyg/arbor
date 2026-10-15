@@ -27,10 +27,13 @@ For whoever tries it first, in plain words. It is a build to try, not a release:
 
 - **A start takes nothing away.** The first start moves nothing. A later start puts back what was docked and ends showing everything; no window that was in view when Arbor started leaves it.
 - **A pause is as good as a Quit.** Every window gets its own size back, and comes back into the arrangement when the pause ends.
-- **Arbor stands aside for macOS's own tiling.** Where macOS itself would tile a window you drag, Arbor shows no preview and docks nothing.
+- **Arbor stands aside for macOS's own tiling.** While macOS's tiling is on, the left, right and top edges of the screen are macOS's: Arbor shows no preview there and docks nothing. ⌃⌥⌘← and its fellows dock at every setting, and the bottom edge and the edges of docked windows stay Arbor's. Check Setup… in the menu names the switches of macOS to turn off; with them off every edge is Arbor's.
+- **A brisk drag is seen.** A window dragged quickly, above all one of an app that was not in front, used to go unnoticed: no preview, nothing docked, and a docked window dragged out was put back. Now it is a drag like any other.
+- **Leaving full screen is one move.** A docked window used to land where it once was and jump to its place a quarter of a second later. Now it lands in its place.
 - **The app you switch to comes forward**, however late macOS says so.
 - **A click on the wallpaper** sweeps the windows aside, as macOS does out of the box. A click on a window's strip brings them back, and Arbor no longer takes that click for a drag.
 - A window kept in view stays in front while the others move. ⌃⌥Space fetches what a hold kept out. The welcome window waits at what is still in the way. The settings window speaks the menu's words.
+- **What you type stays with you.** A name, a shortcut or a rule that Arbor cannot read is no longer written into its log or into a trace as you typed it. Traces recorded before 2026-10-15 can hold such words: run `make trace-check FILE=…` on each before you pass it on.
 
 ### Switched off in this build, and why
 
