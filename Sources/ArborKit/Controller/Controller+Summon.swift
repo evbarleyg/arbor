@@ -27,6 +27,8 @@ extension Controller {
       guard window.isPresent else {
         // Minimized or hidden since: there is nothing to send away, and the press means "bring it".
         workspaces[display]!.dismissSummon()
+        // No layout follows, which would bring this up.
+        summonKeysMayHaveChanged()
         continue
       }
       dismissSummon(on: display)

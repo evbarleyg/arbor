@@ -521,8 +521,6 @@ public final class SettingsPanelModel {
     /// `chord` as menus show it on the keyboard layout in use.
     public let label: String
     public let holder: Command
-    /// What the holder's shortcut is written as, which can be another name for the same key (`us:z` and `y`).
-    public let holderChord: KeyChord
     public var message: String { "\(label) runs \(holder.title) now." }
   }
 
@@ -571,8 +569,7 @@ public final class SettingsPanelModel {
       $0.keyCode == chord.code(in: layout) && $0.modifiers == chord.modifiers
     }
     if let holder, holder.command != row.command {
-      clash = Clash(
-        row: row, chord: chord, label: chord.label(in: layout), holder: holder.command, holderChord: holder.chord)
+      clash = Clash(row: row, chord: chord, label: chord.label(in: layout), holder: holder.command)
       return changed()
     }
     give(chord, to: row)
@@ -582,14 +579,13 @@ public final class SettingsPanelModel {
   public func replaceHolder() {
     guard let clash else { return }
     self.clash = nil
-    give(clash.chord, to: clash.row, takingFrom: clash.holderChord)
+    give(clash.chord, to: clash.row)
   }
 
-  /// First the new shortcut, which can be refused, and only then away with the old one, and with the holder's if that
-  /// is written otherwise (written the same, `bind` has replaced it).
-  private func give(_ chord: KeyChord, to row: ShortcutRow, takingFrom holder: KeyChord? = nil) {
+  /// First the new shortcut, which can be refused, and only then away with the old one. `bind` takes the key from whatever
+  /// has it, however that is written; `unbind` goes by the key as well, so unbinding the holder's spelling would undo this.
+  private func give(_ chord: KeyChord, to row: ShortcutRow) {
     var commands: [SettingsCommand] = [.bind(chord: chord.text, command: row.command.text)]
-    if let holder, holder != chord { commands.append(.unbind(chord: holder.text)) }
     if let old = row.chord { commands.append(.unbind(chord: old.text)) }
     perform(commands, at: place(of: row))
   }
@@ -604,7 +600,13 @@ public final class SettingsPanelModel {
   public func restoreShortcut(_ row: ShortcutRow) {
     var commands: [SettingsCommand] = []
     if let standard = row.standard { commands.append(.bind(chord: standard.text, command: row.command.text)) }
-    if let chord = row.chord, chord != row.standard { commands.append(.unbind(chord: chord.text)) }
+    // `unbind` goes by the key: where the shortcut it has is the default's key under another name, `bind` has seen to it.
+    let layout = controller.layoutInEffect
+    func isOneKey(_ a: KeyChord, _ b: KeyChord?) -> Bool {
+      guard let b else { return false }
+      return a.modifiers == b.modifiers && a.code(in: layout) == b.code(in: layout)
+    }
+    if let chord = row.chord, !isOneKey(chord, row.standard) { commands.append(.unbind(chord: chord.text)) }
     perform(commands, at: row.id)
   }
 

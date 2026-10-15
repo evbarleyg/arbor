@@ -65,10 +65,15 @@ public struct GestureRouter: Equatable, Sendable {
   }
   /// What the scroll in progress does, if it is Arbor's.
   private var scrollKind = ScrollKind.undecided
+  /// For a wheel on the Desktop, whose every notch would otherwise ask anew.
+  private var surface = SurfaceMemo()
+  /// Goes up whenever what is under the pointer may have changed. Whoever looks with the lock released takes it along and hands
+  /// it back to `scroll`, which believes no finding from before the news.
+  public private(set) var newsOfTheWindows = 0
 
   /// The setting `scrollZoom`: a scroll with ⌃⌥ held zooms.
   public var zoomsWithScroll = false
-  /// The setting `scrollOnDesktopZooms`: so does one, without the keys, that no app's window is under.
+  /// The setting `scrollOnDesktopZooms`: so does one, without the keys, that `overDesktop` says yes to.
   public var zoomsOnDesktop = false
 
   public init() {}
@@ -138,21 +143,64 @@ public struct GestureRouter: Equatable, Sendable {
     scrollTapIsWanted(keys: keys)
   }
 
+  /// Whether it matters for this event what is under the pointer: only with `scrollOnDesktopZooms`, without any key, and
+  /// when a scroll begins or has no phases.
+  private func surfaceMatters(_ phase: ScrollClaim.Phase, momentum: ScrollClaim.Momentum, keys: Keys) -> Bool {
+    guard zoomsWithScroll, zoomsOnDesktop, keys == .none else { return false }
+    return phase == .began || (phase == .none && momentum == .none)
+  }
+
+  /// Whether `scroll` would have to find out what is under the pointer for this event. Finding out takes
+  /// milliseconds, so whoever holds this value under a lock asks first, finds out with the lock released, and hands
+  /// `scroll` the answer.
+  ///
+  /// A scroll that begins always asks. An answer out of date costs a wheel one notch; it would cost fingers the whole scroll
+  /// and its coasting, swallowed over an app's window. And beginnings come a few a second at most.
+  public func scrollAsksWhatIsUnder(
+    _ phase: ScrollClaim.Phase, momentum: ScrollClaim.Momentum = .none, at point: CGPoint, keys: Keys, now: Double
+  ) -> Bool {
+    surfaceMatters(phase, momentum: momentum, keys: keys) && (phase != .none || surface.isBare(at: point, now: now) == nil)
+  }
+
+  /// The windows have moved, Arbor's own step among the reasons: what was found under the pointer may no longer be there.
+  public mutating func forgetWhatIsUnder() {
+    surface.forget()
+    newsOfTheWindows &+= 1
+  }
+
   /// A scroll is Arbor's if, as it begins, ⌃⌥ and nothing else is held or, with `continuousZoom`, a pinch of Arbor's is in
   /// progress. A wheel has no beginning: each notch is on its own, and only zooms.
   ///
   /// - Parameters:
   ///   - hasNotches: the event is one notch of a wheel, not points of travel.
-  ///   - overDesktop: whether no app's window is under the pointer. Evaluated only with `zoomsOnDesktop`, without
-  ///     the keys, and when a scroll begins or has no phases.
+  ///   - now: the time, in seconds on a clock of the caller's own that does not go backwards. Never the event's time stamp,
+  ///     which is whatever the event's maker wrote there. Without it nothing is remembered from one notch to the next
+  ///     about what is under the pointer.
+  ///   - news: `newsOfTheWindows` as it was when `scrollAsksWhatIsUnder` was asked. If it has gone up since, `overDesktop` is from
+  ///     before the news, or nobody looked because an answer was still there: the scroll is the app's, and nothing is kept.
+  ///   - overDesktop: whether no app's window is under the pointer. Evaluated only if `scrollAsksWhatIsUnder`: with
+  ///     `zoomsOnDesktop`, without the keys, and when a scroll begins or has no phases.
   public mutating func scroll(
     _ phase: ScrollClaim.Phase, momentum: ScrollClaim.Momentum = .none, pan: CGSize, at point: CGPoint,
-    keys: Keys, hasNotches: Bool = false, overDesktop: @autoclosure () -> Bool = false
+    keys: Keys, hasNotches: Bool = false, now: Double? = nil, asOf news: Int? = nil,
+    overDesktop: @autoclosure () -> Bool = false
   ) -> Answer {
     let height = Double(pan.height)
+    var isOverDesktop = false
+    if surfaceMatters(phase, momentum: momentum, keys: keys) {
+      if phase == .none, let now, let remembered = surface.isBare(at: point, now: now) {
+        isOverDesktop = remembered
+      } else if let news, news != newsOfTheWindows {
+        isOverDesktop = false
+      } else {
+        isOverDesktop = overDesktop()
+        // Kept from when it was found out, not from when it was last of use.
+        if phase == .none, let now { surface.remember(isOverDesktop, at: point, now: now) }
+      }
+    }
     if phase == .none, momentum == .none {
       // A wheel, or a driver that smooths one: no beginning, no end, no momentum.
-      guard zoomsWithScroll, keys.makeANotchArbors || (keys == .none && zoomsOnDesktop && overDesktop()) else {
+      guard zoomsWithScroll, keys.makeANotchArbors || isOverDesktop else {
         return Answer(swallow: false)
       }
       let steps = hasNotches ? scrollZoom.notch(height) : scrollZoom.move(by: height)
@@ -170,7 +218,7 @@ public struct GestureRouter: Equatable, Sendable {
         // Where only one of the two can be had there is nothing to decide.
         scrollKind = !zoomsWithScroll ? .pan : !isContinuous ? .zoom : .undecided
         claim = zoomsWithScroll || isContinuous
-      } else if keys == .none, zoomsWithScroll, zoomsOnDesktop, overDesktop() {
+      } else if isOverDesktop {
         scrollKind = .zoom
         claim = true
       } else {
@@ -216,6 +264,7 @@ public struct GestureRouter: Equatable, Sendable {
     scrollClaim.reset()
     scrollZoom.reset()
     scrollKind = .undecided
+    forgetWhatIsUnder()
     return stream.cancel()
   }
 

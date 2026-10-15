@@ -40,6 +40,7 @@ final class PointerInput {
   /// Where a plain click might land on bare Desktop (F60). Call after every change of the layout.
   func publish(_ zones: DesktopGuardZones) {
     framer.publish(zones)
+    gestures.publish(zones)
   }
 
   func stop() {

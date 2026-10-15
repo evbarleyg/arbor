@@ -26,6 +26,8 @@ final class GestureTap {
     let router = OSAllocatedUnfairLock(initialState: GestureRouter())
     /// The scroll tap, for the handlers, which switch it on and off.
     let scrollTap = OSAllocatedUnfairLock<EventTap?>(initialState: nil)
+    /// Where bare Desktop might be, by the controller's latest word.
+    let zones = OSAllocatedUnfairLock(initialState: DesktopGuardZones())
     let onCommand: @MainActor (Command) -> Void
     let onGesture: @MainActor (GestureUpdate) -> Void
 
@@ -111,6 +113,16 @@ final class GestureTap {
       // The settings may have changed what is wanted.
       Self.switchScrollTap(context, Keys(NSEvent.modifierFlags))
     }
+  }
+
+  /// Hands the callbacks the controller's latest word on where bare Desktop might be (`scrollOnDesktopZooms`). If it is news,
+  /// what a notch found under the pointer a moment ago is forgotten: a step of Arbor's own may have put a window there.
+  func publish(_ zones: DesktopGuardZones) {
+    let isNews = context.zones.withLock { held in
+      defer { held = zones }
+      return held != zones
+    }
+    if isNews { context.router.withLock { $0.forgetWhatIsUnder() } }
   }
 
   func stop() {
@@ -224,10 +236,21 @@ final class GestureTap {
       width: event.getDoubleValueField(.scrollWheelEventPointDeltaAxis2),
       height: hasNotches && points == 0 ? lines : points)
     let pointer = event.location
+    // Arbor's own clock. The event's time stamp is its maker's: a tool that posts events may leave it 0 or copy it, and an answer
+    // would then never grow old.
+    let now = ProcessInfo.processInfo.systemUptime
+    // The window list is read with the lock released: the main actor must not wait for the window server.
+    let (asks, news) = context.router.withLock {
+      ($0.scrollAsksWhatIsUnder(phase, momentum: momentum, at: pointer, keys: keys, now: now), $0.newsOfTheWindows)
+    }
+    // Over a window Arbor knows, and where nothing is docked, a few rectangles say no and the list is not read at all.
+    let overDesktop =
+      asks && context.zones.withLock({ $0.mayBeBare(pointer, throughPanels: true) })
+      && !WindowList.appWindowIsUnder(pointer)
     let answer = context.router.withLock {
       $0.scroll(
-        phase, momentum: momentum, pan: pan, at: pointer, keys: keys,
-        hasNotches: hasNotches, overDesktop: !WindowList.appWindowIsUnder(pointer))
+        phase, momentum: momentum, pan: pan, at: pointer, keys: keys, hasNotches: hasNotches, now: now, asOf: news,
+        overDesktop: overDesktop)
     }
     if phase != .changed, phase != .none {
       TapLog.debug("scroll \(phase): \(answer.swallow ? "Arbor's" : "the app's")")

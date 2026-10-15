@@ -139,6 +139,11 @@ public final class ArborApp: NSObject, NSApplicationDelegate {
     }
     guards.start(environment: environment) { [weak self] in self?.controller.sessionIsEnding() }
     if let dark = environment.darkAppearance { NSApp.appearance = NSAppearance(named: dark ? .darkAqua : .aqua) }
+    // Before anybody can ask anything of Arbor: `bind` and `unbind` work while it still waits for the permission, and go by the
+    // keyboard layout in use. And so that the first registration is already on the right keys.
+    let layouts = KeyboardLayoutWatcher { [weak self] layout in self?.controller.keyboardLayoutChanged(layout) }
+    layouts.start()
+    keyboardLayout = layouts
     startServer()
     watchSettingsFile()
     installSignalHandlers()
@@ -214,10 +219,6 @@ public final class ArborApp: NSObject, NSApplicationDelegate {
     let watcher = FrontmostAppWatcher { [weak self] app in self?.controller.applicationActivated(app) }
     watcher.start()
     frontmostApp = watcher
-    // And so that the first registration is already on the right keys.
-    let layouts = KeyboardLayoutWatcher { [weak self] layout in self?.controller.keyboardLayoutChanged(layout) }
-    layouts.start()
-    keyboardLayout = layouts
     controller.restartedAfterAccident = environment.restarted
     controller.start()
     registerHotKeys()
@@ -281,7 +282,8 @@ public final class ArborApp: NSObject, NSApplicationDelegate {
       // Only without the permission. Why any other key did nothing is said on screen, and `handle` has the beep for those who
       // switched that off, and knows when to keep quiet.
       guard result?.ok == false, !self.controller.accessibilityGranted else { return }
-      NSSound.beep()
+      // With messages switched off `handle` has beeped already.
+      if self.controller.settings.messageLevel != .off { NSSound.beep() }
       // The ways home are held without the permission only to lead to where it is granted.
       if self.controller.shouldOpenAccessibilitySettings() { self.openAccessibilitySettings() }
     }

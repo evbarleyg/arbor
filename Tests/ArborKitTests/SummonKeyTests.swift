@@ -92,6 +92,30 @@ import Testing
     #expect(held(s.h) == ["toggle-pause"])
   }
 
+  /// With `summonStays` the terminal lies there while another app has the keyboard. If that app keeps its keys, it keeps all.
+  @Test func anotherListedAppInFrontKeepsTheKeyOfTheAppThatIsSummoned() {
+    let s = makeHarness()
+    #expect(s.h.run("set summonStays true").ok)
+    let machine = s.h.system.open(app: "Machine", bundleID: "com.example.machine", pid: 1005)
+    #expect(s.h.run("pass-through com.example.machine on").ok)
+    s.h.system.userFocus(s.editor)
+    s.h.key("ctrl+opt+t")
+    #expect(held(s.h) == ["summon Terminal", "toggle-pause"])
+    var told = 0
+    s.h.controller.observe { if $0 == .input { told += 1 } }
+
+    s.h.system.userFocus(machine)
+    #expect(s.h.workspace.isSummoned(s.terminal), "it stays")
+    #expect(s.h.controller.isPassingThrough)
+    #expect(held(s.h) == ["toggle-pause"])
+    #expect(told == 1, "shortcuts were off and are off; the app has to hear of the one key all the same")
+
+    s.h.system.userFocus(s.terminal)
+    #expect(held(s.h) == ["summon Terminal", "toggle-pause"])
+    #expect(told == 2)
+    #expect(s.h.key("ctrl+opt+t")?.message.hasPrefix("sent Terminal away") == true)
+  }
+
   @Test func whenTheSummonEndsSomeOtherWayTheKeyGoesBackToTheApp() {
     for command in ["dock left", "pin", "float"] {
       let s = makeHarness()
@@ -105,6 +129,35 @@ import Testing
       #expect(held(s.h) == ["toggle-pause"], "\(command)")
       #expect(told == 1, "\(command)")
     }
+  }
+
+  /// The lid is closed with no other display: nothing is laid out, so no layout brings the news. Found by chaos.
+  @Test func whatTheAppWasToldIsWhatArborWantsAlsoWhenEveryDisplayGoesAndComesBack() {
+    let s = makeHarness()
+    var told = s.h.controller.activeBindings
+    s.h.controller.observe { [unowned controller = s.h.controller] change in
+      if change == .input || change == .lifecycle || change == .hold { told = controller.activeBindings }
+    }
+    s.h.key("ctrl+opt+t")
+    #expect(held(s.h) == ["summon Terminal", "toggle-pause"] && told == s.h.controller.activeBindings)
+    s.h.system.setDisplays([])
+    #expect(told == s.h.controller.activeBindings, "\(told.map(\.command.text)) against \(held(s.h))")
+    s.h.system.setDisplays([FakeWindowSystem.standardDisplay])
+    #expect(told == s.h.controller.activeBindings, "\(told.map(\.command.text)) against \(held(s.h))")
+  }
+
+  /// ⌘M in the summoned terminal, then its key: that means "bring it", and the summon that was is over. Found by chaos.
+  @Test func whatTheAppWasToldIsWhatArborWantsAlsoWhenTheKeyFindsTheWindowMinimized() {
+    let s = makeHarness()
+    var told = s.h.controller.activeBindings
+    s.h.controller.observe { [unowned controller = s.h.controller] change in
+      if change == .input || change == .lifecycle || change == .hold { told = controller.activeBindings }
+    }
+    s.h.key("ctrl+opt+t")
+    s.h.system.setMinimized(s.terminal, true)
+    #expect(told == s.h.controller.activeBindings)
+    s.h.key("ctrl+opt+t")
+    #expect(told == s.h.controller.activeBindings, "\(told.map(\.command.text)) against \(held(s.h))")
   }
 
   @Test func observersAreToldOnceForEachChangeAndNotWithEveryLayout() {

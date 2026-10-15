@@ -68,6 +68,8 @@ extension Controller {
     relayoutAll(reason: .camera, motion: .instant)
     parkAgain()
     scheduleSave()
+    // With the last display gone nothing is laid out, so no layout brings this up.
+    summonKeysMayHaveChanged()
   }
 
   // MARK: A display that moved

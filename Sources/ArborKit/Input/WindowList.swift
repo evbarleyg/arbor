@@ -5,7 +5,7 @@ import Foundation
 /// The window server's list of what is on screen, read for `PointerSurface`, which decides.
 ///
 /// Safe on any thread. Reading the list takes a few milliseconds, so a tap's handler asks only for
-/// the rare event that needs it (a pinch beginning), never for every event.
+/// the rare event that needs it (a pinch or a scroll beginning, a notch now and then), never for every event.
 enum WindowList {
   /// Whether an app's window is under `point` (global, top-left origin, like the list's bounds).
   static func appWindowIsUnder(_ point: CGPoint) -> Bool {

@@ -33,7 +33,8 @@ press() {
 leaves() {
   local before
   before=$(ran "$2:")
-  key "$1"
+  # A key that the harness's nets declined ran nothing either.
+  key "$1" || return 1
   sleep 0.5
   ran_is "$2:" "$before"
 }
@@ -77,6 +78,13 @@ read -r item_x item_y <<< "$(status_item)"
 click "$item_x" "$item_y"
 shot 01-menu-german
 key escape
+echo "bind and unbind go by the layout in use"
+ctl bind ctrl+opt+ö relayout
+check "the key labelled Ö (where a US keyboard has ;) runs what it was bound to" press "ctrl+opt+;" relayout
+ctl unbind ctrl+opt+ö
+check "unbound, the key is not Arbor's" leaves "ctrl+opt+;" relayout
+ctl unbind ctrl+opt+ü
+check "the key labelled Ü, freed, is not Arbor's either" leaves "ctrl+opt+[" back
 arbor_stop
 
 step "going by the French layout: letters move, digits stay"
@@ -117,7 +125,9 @@ echo "K126, on this Mac as it is:"
 arbor_stop
 
 step "K126, for the record: macOS's own shortcuts, raw (which bits come with arrow keys, and with the Globe key?)"
-"$KEYS" hotkeys
+# All of them say how a person has set up their Mac, and this gets pasted into pull requests. The ones on the four arrows are the question:
+# macOS's tiling is there with the Globe key, Mission Control without, and nobody has seen whether the bits tell them apart.
+if on_throwaway_mac; then "$KEYS" hotkeys; else "$KEYS" hotkeys | grep -E "^key 12[3-6] " || echo "none on the arrows"; fi
 
 step "for the record: what the layouts' keys type"
 "$KEYS" dump com.apple.keylayout.US com.apple.keylayout.ABC com.apple.keylayout.British com.apple.keylayout.German \

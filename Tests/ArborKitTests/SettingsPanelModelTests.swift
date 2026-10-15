@@ -644,9 +644,44 @@ private final class Panel {
     let clash = try #require(p.model.clash)
     #expect(clash.holder == .floatAll && clash.chord.text == "ctrl+opt+y" && clash.label == "⌃⌥Y")
     p.model.replaceHolder()
-    #expect(p.commands == ["bind ctrl+opt+y desktop", "unbind ctrl+opt+us:z", "unbind ctrl+opt+d"])
+    // `bind` takes the key from whatever has it, however that is written.
+    #expect(p.commands == ["bind ctrl+opt+y desktop", "unbind ctrl+opt+d"])
+    #expect(p.h.controller.settings.bindings["ctrl+opt+us:z"] == nil)
     #expect(p.h.controller.effectiveBindings.problems.isEmpty)
     #expect(p.h.controller.effectiveBindings.bindings.filter { $0.keyCode == 6 }.map(\.command) == [.desktop])
+  }
+
+  /// `unbind` goes by the key, so restoring must not unbind the key it has just given back.
+  @Test func restoreWorksWhenTheShortcutIsTheDefaultsKeyUnderAnotherName() throws {
+    var settings = Settings()
+    settings.bindings = ["ctrl+opt+us:d": "desktop"]
+    let p = Panel(settings: settings)
+    p.model.restoreShortcut(try #require(p.shortcut("desktop")))
+    #expect(p.shortcut("desktop")?.chord?.text == "ctrl+opt+d" && p.shortcut("desktop")?.isChanged == false)
+    #expect(p.settings.bindings.isEmpty, "\(p.settings.bindings)")
+
+    let g = Panel()
+    g.h.controller.keyboardLayoutChanged(SampleKeyLayouts.german)
+    g.h.run("unbind ctrl+opt+ü")
+    g.h.run("bind ctrl+opt+ü back")
+    g.model.restoreShortcut(try #require(g.shortcut("back")))
+    #expect(g.shortcut("back")?.label == "⌃⌥Ü" && g.settings.bindings.isEmpty, "\(g.settings.bindings)")
+  }
+
+  /// A layout on which the key right of P types `, which is a US key's name, and Back (`[`) falls back onto it.
+  @Test func takingAKeyFromADefaultThatFellBackOntoItLeavesNoComplaint() throws {
+    var plain: [UInt32: String] = [:]
+    for (codes, text) in zip(SampleKeyLayouts.rows, ["1234567890'¡", "qwertyuiop`+", "asdfghjklñ´ç", "zxcvbnm,.-"]) {
+      for (code, character) in zip(codes, text) { plain[code] = String(character) }
+    }
+    let p = Panel()
+    p.h.controller.keyboardLayoutChanged(KeyLayout(name: "Made up", plain: plain, shifted: [:]))
+    p.model.startRecording(try #require(p.shortcut("desktop")))
+    #expect(p.model.keyPressed(code: 33, modifiers: [.control, .option]))
+    #expect(p.model.clash?.holder == .back)
+    p.model.replaceHolder()
+    #expect(p.h.controller.effectiveBindings.bindings.filter { $0.keyCode == 33 }.map(\.command) == [.desktop])
+    #expect(p.h.controller.effectiveBindings.problems.isEmpty, "\(p.h.controller.effectiveBindings.problems)")
   }
 
   @Test func arborHoldsNoShortcutWhileOneIsRecorded() throws {

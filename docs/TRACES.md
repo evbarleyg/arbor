@@ -403,6 +403,7 @@ gave the keyboard to either. Sort, or take a `min(by:)` whose last key is the wi
 - The undo history is not in the header (up to a hundred steps of two arrangements each, for every display). So an `undo` of a step from *before* the recording finds nothing to undo in a replay, and the replay goes on from another arrangement. A strict replay says so
   ("`undo` succeeded … now it fails with "nothing to undo""). **A free replay reports no problem** and simply ends elsewhere: give such a trace an `.expect` file, or start recording before the step. Steps taken while recording are undone in a replay as they were.
 - `go <text>` that several names begin with changes nothing and lists them. The tokens all begin alike, so a replay says something else. The recorded reply then begins with `≈`, and a strict replay compares only whether the command succeeded.
+- The keyboard layout is not in a trace: a replay has a US keyboard. `bind` and `unbind` go by the layout in use, so a trace from another keyboard with `bind ctrl+opt+ö …` in it, or with a reply that says what a key ran before, says something else in a strict replay.
 - A command that changes settings reads settings.json first. If it finds news there (somebody saved the file within the last 0.3 s), the replay does not.
 - Saved slots still waiting for their windows when recording starts (`Controller+PendingSlots.swift`, the first three minutes after a launch) are not in the
   header either. They take no space, so frames replay the same; a window that would have claimed one floats in the replay.

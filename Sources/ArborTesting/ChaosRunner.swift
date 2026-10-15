@@ -49,12 +49,22 @@ public final class ChaosRunner {
   public private(set) var script: [ChaosAction] = []
   /// Whether `state` and state.json are read back after every step, rather than now and then.
   public var checksFilesAtEveryStep = false
+  /// What the app would have registered, and what its taps would follow: taken when it is told that they changed.
+  var toldBindings: [KeyBinding]?
+  var toldInput = Settings()
   /// Called with every action of every runner before it is applied. arbor-sim's watchdog listens.
   public static var beforeEachStep: ((ChaosAction) -> Void)?
 
   /// settings.json, as the object in the file. A walk begins with the gestures switched on, though they ship off: the net over the zones of
   /// the Desktop (`guard-zones`) catches nothing where nobody asks for zones. `set pointerGestures` is among a walk's steps.
-  private var settingsFile: [String: Any] = ["pointerGestures": true]
+  /// And with keys that summon: which of them Arbor holds depends on what is summoned and on who is in front (the rule `registered`).
+  private var settingsFile: [String: Any] = [
+    "pointerGestures": true,
+    "bindings": [
+      "ctrl+opt+cmd+s": "summon Safari", "ctrl+opt+cmd+n": "summon Notes", "ctrl+opt+cmd+m": "summon com.example.mail",
+      "ctrl+opt+cmd+t": "summon Terminal", "ctrl+opt+cmd+x": "summon Xcode", "ctrl+opt+cmd+p": "summon Preview",
+    ],
+  ]
   /// state.json, and what was written to it, as of the last save.
   private var stateFile: Data?
   private var stateWritten: PersistedState?
@@ -597,6 +607,18 @@ public final class ChaosRunner {
     }
     harness = Harness(settings: settings(), saved: saved, system: system)
     let (controller, scheduler, before) = (harness.controller, harness.scheduler, elapsed)
+    // As ArborApp does: what it registers and what its taps follow, taken when it is told that they changed.
+    toldBindings = nil
+    let note: () -> Void = { [unowned self, unowned controller] in
+      self.toldBindings = controller.activeBindings
+      self.toldInput = controller.inputSettings
+    }
+    controller.onSettingsApplied = { _ in note() }
+    controller.observe { [unowned controller] change in
+      guard change == .lifecycle || change == .input || change == .hold else { return }
+      guard controller.isInBusiness else { return }
+      note()
+    }
     let start = Date(timeIntervalSinceReferenceDate: 800_000_000)
     controller.now = { start.addingTimeInterval(before + scheduler.now) }
     controller.loadSettings = { [unowned self] in self.settings() }

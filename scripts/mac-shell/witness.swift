@@ -17,7 +17,40 @@ import Foundation
 
 setvbuf(stdout, nil, _IOLBF, 0)
 
+/// What ends what this process has begun and not yet ended: a key that is down, a pinch or a scroll in progress. Whatever
+/// ends the process first runs these, the last first: the Mac must not be left with ⌃⌥ down or half a gesture.
+var unfinished: [(name: String, end: () -> Void)] = []
+
+/// Whoever holds this may post events and touch the list. A signal is seen to on a thread of its own, which takes it and never
+/// gives it back: from then on the main thread posts nothing more, so nothing is begun behind the back of what ends everything.
+let hands = NSRecursiveLock()
+
+func begun(_ name: String, endsWith end: @escaping () -> Void) {
+  hands.lock()
+  defer { hands.unlock() }
+  unfinished.append((name, end))
+}
+
+func ended(_ name: String) {
+  hands.lock()
+  defer { hands.unlock() }
+  if let index = unfinished.lastIndex(where: { $0.name == name }) { unfinished.remove(at: index) }
+}
+
+func endEverything() {
+  hands.lock()
+  defer { hands.unlock() }
+  while let last = unfinished.popLast() { last.end() }
+}
+
+func send(_ event: CGEvent, at tap: CGEventTapLocation) {
+  hands.lock()
+  defer { hands.unlock() }
+  event.post(tap: tap)
+}
+
 func fail(_ message: String) -> Never {
+  endEverything()
   FileHandle.standardError.write(Data("witness: \(message)\n".utf8))
   exit(64)
 }
@@ -34,10 +67,10 @@ let usage = """
     taps                                every event tap on the Mac, as the window server lists them
     pinch x y <total> [--steps n] [--opt] [--rotate] [--tap hid|session]
                                         a pinch of that much magnification, with ⌥ held, with a rotation inside it
-    scroll x y <dx> <dy> [--steps n] [--opt] [--ctrl] [--momentum n] [--tap hid|session]
+    scroll x y <dx> <dy> [--steps n] [--ctrl] [--opt] [--shift] [--cmd] [--momentum n] [--tap hid|session]
                                         a two-finger scroll of that many points in all, with ⌥ or ⌃ held, then coasting for n events
-    hold <seconds> [--opt] [--ctrl]     keep ⌥ or ⌃ down that long
-    wheel x y <notches> [--opt] [--ctrl] [--tap hid|session]
+    hold <seconds> [--ctrl] [--opt] [--shift] [--cmd]     keep those keys down that long
+    wheel x y <notches> [--ctrl] [--opt] [--shift] [--cmd] [--tap hid|session]
                                         a mouse wheel turned that many notches, up if positive, with ⌥ or ⌃ held
     hold-space <repeats>                ⌃⌥Space held down: one key-down, then that many auto-repeats, then key-up
   """
@@ -202,7 +235,7 @@ func gesture(subtype: Double, amountField: UInt32, amount: Double, phase: Phase,
   event.setDoubleValueField(field(amountField), value: amount)
   event.location = point
   event.flags = flags
-  event.post(tap: postAt)
+  send(event, at: postAt)
 }
 
 func magnify(_ amount: Double, _ phase: Phase, at point: CGPoint, flags: CGEventFlags) {
@@ -225,7 +258,7 @@ func scroll(dx: Int32, dy: Int32, phase: Int64, momentum: Int64, at point: CGPoi
   event.setIntegerValueField(.scrollWheelEventMomentumPhase, value: momentum)
   event.location = point
   event.flags = flags
-  event.post(tap: postAt)
+  send(event, at: postAt)
 }
 
 /// One notch of a mouse wheel: counted in lines, not continuous, no phases.
@@ -235,17 +268,64 @@ func notch(up: Bool, at point: CGPoint, flags: CGEventFlags) {
   else { fail("could not create a scroll event") }
   event.location = point
   event.flags = flags
-  event.post(tap: postAt)
+  send(event, at: postAt)
 }
 
-/// Presses or lets go of ⌃ (59) and ⌥ (58), and answers with the flags events carry meanwhile.
-func hold(control: Bool, option: Bool, down: Bool) -> CGEventFlags {
-  var flags: CGEventFlags = []
-  if control { flags.insert(.maskControl) }
-  if option { flags.insert(.maskAlternate) }
-  if control { key(59, down: down, flags: down ? .maskControl : []) }
-  if option { key(58, down: down, flags: down ? flags : []) }
-  return flags
+typealias ModifierKey = (name: String, code: CGKeyCode, mask: CGEventFlags)
+let modifierKeys: [ModifierKey] = [
+  ("--ctrl", 59, .maskControl), ("--opt", 58, .maskAlternate), ("--shift", 56, .maskShift), ("--cmd", 55, .maskCommand),
+]
+
+/// The modifier keys named on the command line.
+func modifiersAskedFor() -> [ModifierKey] { modifierKeys.filter { flag($0.name) } }
+
+var signalSources: [DispatchSourceSignal] = []
+
+/// Killed in the middle, this process ends what it has begun first. Every command that posts input calls this before it does.
+func endEverythingWhenKilled() {
+  guard signalSources.isEmpty else { return }
+  for number in [SIGINT, SIGTERM, SIGHUP] {
+    // A handler that does nothing, not SIG_IGN, which children would inherit: the source below does the work.
+    signal(number) { _ in }
+    let source = DispatchSource.makeSignalSource(signal: number, queue: .global(qos: .userInteractive))
+    source.setEventHandler {
+      hands.lock()
+      endEverything()
+      exit(128 + number)
+    }
+    source.resume()
+    signalSources.append(source)
+  }
+}
+
+/// Presses a key that `endEverything` lets go of, or lets go of it.
+func press(_ code: CGKeyCode, flags: CGEventFlags) {
+  begun("key \(code)") { key(code, down: false, flags: []) }
+  key(code, down: true, flags: flags)
+}
+
+func letGo(_ code: CGKeyCode, flags: CGEventFlags) {
+  key(code, down: false, flags: flags)
+  ended("key \(code)")
+}
+
+/// Presses or lets go of these keys, and answers with the flags events carry meanwhile.
+func hold(_ keys: [ModifierKey], down: Bool) -> CGEventFlags {
+  let all = keys.reduce(into: CGEventFlags()) { $0.insert($1.mask) }
+  if down {
+    var flags: CGEventFlags = []
+    for modifier in keys {
+      flags.insert(modifier.mask)
+      press(modifier.code, flags: flags)
+    }
+  } else {
+    var flags = all
+    for modifier in keys.reversed() {
+      flags.remove(modifier.mask)
+      letGo(modifier.code, flags: flags)
+    }
+  }
+  return all
 }
 
 func key(_ code: CGKeyCode, down: Bool, flags: CGEventFlags, repeating: Bool = false) {
@@ -255,7 +335,7 @@ func key(_ code: CGKeyCode, down: Bool, flags: CGEventFlags, repeating: Bool = f
   }
   event.flags = flags
   if repeating { event.setIntegerValueField(.keyboardEventAutorepeat, value: 1) }
-  event.post(tap: .cghidEventTap)
+  send(event, at: .cghidEventTap)
   rest(0.03)
 }
 
@@ -285,31 +365,41 @@ case "pinch":
   let withRotation = flag("--rotate")
   let point = CGPoint(x: number(0), y: number(1))
   let total = number(2)
-  let flags: CGEventFlags = withOption ? .maskAlternate : []
-  if withOption { key(58, down: true, flags: .maskAlternate) }
+  let optionKey = modifierKeys.filter { withOption && $0.name == "--opt" }
+  endEverythingWhenKilled()
+  let flags = hold(optionKey, down: true)
+  begun("pinch") { magnify(0, .ended, at: point, flags: flags) }
   magnify(0, .began, at: point, flags: flags)
   rest(0.01)
-  if withRotation { rotate(0, .began, at: point, flags: flags) }
+  if withRotation {
+    begun("rotation") { rotate(0, .ended, at: point, flags: flags) }
+    rotate(0, .began, at: point, flags: flags)
+  }
   for _ in 1...steps {
     magnify(total / Double(steps), .changed, at: point, flags: flags)
     if withRotation { rotate(1, .changed, at: point, flags: flags) }
     rest(0.01)
   }
   magnify(0, .ended, at: point, flags: flags)
+  ended("pinch")
   rest(0.01)
   // After the pinch, as fingers that are still turning would.
-  if withRotation { rotate(0, .ended, at: point, flags: flags) }
-  if withOption { key(58, down: false, flags: []) }
+  if withRotation {
+    rotate(0, .ended, at: point, flags: flags)
+    ended("rotation")
+  }
+  _ = hold(optionKey, down: false)
 
 case "scroll":
   let steps = max(1, min(500, Int(option("--steps").flatMap(Double.init) ?? 10)))
   let coasting = max(0, min(500, Int(option("--momentum").flatMap(Double.init) ?? 0)))
-  let withOption = flag("--opt")
-  let withControl = flag("--ctrl")
+  let keys = modifiersAskedFor()
   let point = CGPoint(x: number(0), y: number(1))
   let dx = Int32(max(-10_000, min(10_000, number(2) / Double(steps))))
   let dy = Int32(max(-10_000, min(10_000, number(3) / Double(steps))))
-  let flags = hold(control: withControl, option: withOption, down: true)
+  endEverythingWhenKilled()
+  let flags = hold(keys, down: true)
+  begun("scroll") { scroll(dx: 0, dy: 0, phase: 4, momentum: 0, at: point, flags: flags) }
   scroll(dx: 0, dy: 0, phase: 1, momentum: 0, at: point, flags: flags)
   rest(0.01)
   for _ in 1...steps {
@@ -317,45 +407,51 @@ case "scroll":
     rest(0.01)
   }
   scroll(dx: 0, dy: 0, phase: 4, momentum: 0, at: point, flags: flags)
+  ended("scroll")
   // The keys are let go with the fingers; what coasts on carries none.
-  _ = hold(control: withControl, option: withOption, down: false)
+  _ = hold(keys, down: false)
   if coasting > 0 {
+    begun("momentum") { scroll(dx: 0, dy: 0, phase: 0, momentum: 3, at: point, flags: []) }
     for index in 1...coasting {
       scroll(dx: dx, dy: dy, phase: 0, momentum: index == 1 ? 1 : 2, at: point, flags: [])
       rest(0.01)
     }
     scroll(dx: 0, dy: 0, phase: 0, momentum: 3, at: point, flags: [])
+    ended("momentum")
   }
 
 case "hold":
-  let withOption = flag("--opt")
-  let withControl = flag("--ctrl")
-  _ = hold(control: withControl, option: withOption, down: true)
-  rest(max(0, min(30, number(0))))
-  _ = hold(control: withControl, option: withOption, down: false)
+  let keys = modifiersAskedFor()
+  // Read before anything is pressed: a number that is missing ends the process.
+  let seconds = max(0, min(30, number(0)))
+  endEverythingWhenKilled()
+  _ = hold(keys, down: true)
+  rest(seconds)
+  _ = hold(keys, down: false)
 
 case "wheel":
-  let withOption = flag("--opt")
-  let withControl = flag("--ctrl")
+  let keys = modifiersAskedFor()
   let point = CGPoint(x: number(0), y: number(1))
   let notches = max(-50, min(50, Int(number(2))))
-  let flags = hold(control: withControl, option: withOption, down: true)
+  endEverythingWhenKilled()
+  let flags = hold(keys, down: true)
   for _ in 0..<abs(notches) {
     notch(up: notches > 0, at: point, flags: flags)
     rest(0.05)
   }
-  _ = hold(control: withControl, option: withOption, down: false)
+  _ = hold(keys, down: false)
 
 case "hold-space":
   let repeats = max(0, min(50, Int(number(0))))
   let flags: CGEventFlags = [.maskControl, .maskAlternate]
-  key(59, down: true, flags: .maskControl)
-  key(58, down: true, flags: flags)
-  key(49, down: true, flags: flags)
+  endEverythingWhenKilled()
+  press(59, flags: .maskControl)
+  press(58, flags: flags)
+  press(49, flags: flags)
   for _ in 0..<repeats { key(49, down: true, flags: flags, repeating: true) }
-  key(49, down: false, flags: flags)
-  key(58, down: false, flags: .maskControl)
-  key(59, down: false, flags: [])
+  letGo(49, flags: flags)
+  letGo(58, flags: .maskControl)
+  letGo(59, flags: [])
 
 default:
   fail("unknown command \(command)\n\(usage)")

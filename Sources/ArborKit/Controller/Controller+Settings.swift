@@ -152,47 +152,105 @@ extension Controller {
 
   // MARK: Shortcuts
 
-  private func bind(_ chordText: String, to commandText: String) throws -> CommandResult {
-    let chord = try KeyChord(text: chordText)
-    let command = try Command.parse(commandText)
-    let before = KeyBindings.effective(settings: settings).bindings.first { $0.chord == chord }?.command
-    guard before != command else { return .success("\(chord.text) already runs `\(command.text)`") }
-    let message =
-      "\(chord.text) runs `\(command.text)`" + (before.map { " (it ran `\($0.text)`)" } ?? "")
-      + (chord.caution.map { "; mind that \($0)" } ?? "")
-    // The command is left out of the log: it can be `rule add …` with part of a window title in it.
-    return change(message: message, log: "bound \(chord.text)") { updated in
-      updated.removeBindings(for: chord)
-      // No entry is needed to say what the defaults already say.
-      if !KeyBindings.defaults.contains(KeyBinding(chord, command)) {
-        updated.bindings[chord.text] = command.text
+  /// A shortcut as `bind` and `unbind` were given it, read as settings.json's are: on the keyboard layout in use, where a key
+  /// can also be named by what it types (`ctrl+opt+ö`).
+  private struct NamedChord {
+    let chord: KeyChord
+    /// How to write it, in replies and in the file: tidied, and with the key as the person named it. `ö` is a place to Arbor
+    /// (`us:;` on a German keyboard), which is not what anybody typed or would look for.
+    let text: String
+
+    init(_ text: String, layout: KeyLayout) throws {
+      do {
+        chord = try KeyChord(text: text, layout: layout)
+      } catch {
+        throw Refusal(SettingsCommand.notAShortcut(text, error))
       }
-      // One set of rules for shortcuts wherever they come from: what settings.json may not bind (a
-      // query, a key that would no longer type), `bind` may not either.
-      let problems = KeyBindings.effective(settings: updated).problems
-      if let problem = problems.first(where: { $0.hasPrefix("\(chord.text): ") }) { throw Refusal(problem) }
+      if (try? KeyChord(text: text)) == nil, let named = KeyChord.modifiersAndOneCharacter(in: text) {
+        self.text = KeyChord.text(named.modifiers, typing: named.character)
+      } else {
+        self.text = chord.text
+      }
     }
   }
 
-  private func unbind(_ chordText: String) throws -> CommandResult {
-    let chord = try KeyChord(text: chordText)
-    guard let before = KeyBindings.effective(settings: settings).bindings.first(where: { $0.chord == chord })
-    else {
-      return .success("\(chord.text) already runs nothing")
+  /// What runs when the keys of `chord` are pressed, whichever way its shortcut is written: now, or with other settings.
+  private func binding(on chord: KeyChord, with other: Settings? = nil) -> KeyBinding? {
+    let layout = layoutInEffect
+    let bindings = other.map { KeyBindings.effective(settings: $0, layout: layout).bindings } ?? effectiveBindings.bindings
+    return bindings.first { $0.modifiers == chord.modifiers && $0.keyCode == chord.code(in: layout) }
+  }
+
+  /// Takes from `updated` the defaults that sit on the key of `chord`, each under its own name. That name frees it whatever the
+  /// key's own name is (`'` is where ⌃⌥4 falls back to on a French keyboard, and is no place), and on every other layout too.
+  private func freeTheKey(of chord: KeyChord, in updated: inout Settings) {
+    // One default at a time: each gone may uncover another that had lost the key to it.
+    while let standing = binding(on: chord, with: updated), updated.bindings[standing.chord.text] == nil {
+      updated.bindings.updateValue(nil, forKey: standing.chord.text)
     }
-    let others = KeyBindings.effective(settings: settings).bindings.filter {
-      $0.command == before.command && $0.chord != chord
+  }
+
+  private func bind(_ chordText: String, to commandText: String) throws -> CommandResult {
+    let layout = layoutInEffect
+    let named = try NamedChord(chordText, layout: layout)
+    let chord = named.chord
+    let command = try Command.parse(commandText)
+    let before = binding(on: chord)?.command
+    var updated = settings
+    // The key is taken from whatever has it, however that is written: `us:z` and `y` are one key on a German keyboard. What
+    // freed it goes too.
+    updated.removeBindings(onTheKeyOf: chord, layout: layout)
+    // No entry is needed to say what the defaults already say. Unless a place was asked for outright (`us:z`): that is to hold
+    // on every layout, and the default moves with the letter.
+    let asksForThePlace = chord.isPositional && named.text == chord.text
+    if asksForThePlace || binding(on: chord, with: updated)?.command != command {
+      // A default under another name goes under its own: this entry may not stand in for it (`'` is no place, and the default
+      // would be reported for ever as having lost the key), or not everywhere (`ü` cannot be read on a US keyboard, and the
+      // default would be back there).
+      if !asksForThePlace, binding(on: chord, with: updated)?.chord != chord { freeTheKey(of: chord, in: &updated) }
+      updated.bindings[named.text] = command.text
     }
+    // One set of rules for shortcuts wherever they come from: what settings.json may not bind (a
+    // query, a key that would no longer type), `bind` may not either.
+    let problems = KeyBindings.effective(settings: updated, layout: layout).problems
+    if let problem = problems.first(where: { $0.hasPrefix("\(named.text): ") }) { throw Refusal(problem) }
+    // What is said has to be what has happened.
+    guard binding(on: chord, with: updated)?.command == command else {
+      throw Refusal("\(named.text) could not be given to `\(command.text)`; `bindings` shows what has that key")
+    }
+    guard updated != settings else { return .success("\(named.text) already runs `\(command.text)`") }
     let message =
-      "\(chord.text) no longer runs `\(before.command.text)`"
-      + (others.first.map { "; \($0.chord.text) still does" } ?? "; no shortcut does now")
-    return change(message: message, log: "unbound \(chord.text)") { updated in
-      updated.removeBindings(for: chord)
-      // A default comes back when settings.json says nothing about its shortcut; null is what removes it.
-      if KeyBindings.defaults.contains(where: { $0.chord == chord }) {
-        updated.bindings.updateValue(nil, forKey: chord.text)
-      }
+      "\(named.text) runs `\(command.text)`" + (before.flatMap { $0 == command ? nil : " (it ran `\($0.text)`)" } ?? "")
+      + (chord.caution(shownAs: chord.label(in: layout)).map { "; mind that \($0)" } ?? "")
+    // The command is left out of the log: it can be `rule add …` with part of a window title in it.
+    return change(message: message, log: "bound \(named.text)") { $0 = updated }
+  }
+
+  private func unbind(_ chordText: String) throws -> CommandResult {
+    let layout = layoutInEffect
+    let named = try NamedChord(chordText, layout: layout)
+    let chord = named.chord
+    guard let before = binding(on: chord) else { return .success("\(named.text) already runs nothing") }
+    // Two entries meant one key, and this is the one that lost (`bindings` says so). The one that works stays. (An entry that
+    // frees a shortcut has lost nothing: taking it away would give Arbor the key back.)
+    let isWritten = settings.bindings.contains { $0.value != nil && (try? KeyChord(text: $0.key, layout: layout)) == chord }
+    if before.chord != chord, isWritten {
+      let message = "\(named.text) ran nothing: \(before.chord.text) has that key, and still runs `\(before.command.text)`"
+      return change(message: message, log: "unbound \(named.text)") { $0.removeBindings(for: chord, layout: layout) }
     }
+    let others = effectiveBindings.bindings.filter { $0.command == before.command && $0.chord != before.chord }
+    let message =
+      "\(named.text) no longer runs `\(before.command.text)`"
+      + (others.first.map { "; \($0.chord.text) still does" } ?? "; no shortcut does now")
+    var updated = settings
+    updated.removeBindings(onTheKeyOf: chord, layout: layout)
+    // A default comes back when settings.json says nothing about its shortcut; null is what removes it.
+    freeTheKey(of: chord, in: &updated)
+    // What is said has to be what has happened: Arbor must not go on holding a key it says it has let go of.
+    guard binding(on: chord, with: updated) == nil else {
+      throw Refusal("\(named.text) could not be freed; `bindings` shows what has that key")
+    }
+    return change(message: message, log: "unbound \(named.text)") { $0 = updated }
   }
 
   // MARK: Rules

@@ -201,6 +201,74 @@ import Testing
     #expect(!h.controller.desktopGuardZones().isEmpty)
   }
 
+  /// F55's `scrollOnDesktopZooms` asks the same question of a scroll.
+  @Test func theZonesAreThereForAScrollOnTheDesktopToo() {
+    let (h, a, _) = makeHarness()
+    var settings = h.controller.settings
+    settings.guardDesktopClicks = false
+    settings.frameRectangleOnDesktop = false
+    settings.scrollOnDesktopZooms = true
+    h.controller.apply(settings: settings)
+    let zones = h.controller.desktopGuardZones()
+    #expect(zones.mayBeBare(h.layout!.desktopFrame!.center, throughPanels: true))
+    #expect(!zones.mayBeBare(h.frame(a)!.center, throughPanels: true), "a window Arbor knows: nobody need read the window list")
+    // Not if a scroll cannot zoom anyway.
+    for off in [\Settings.scrollZoom, \Settings.gesturesEnabled, \Settings.pointerGestures] {
+      var without = settings
+      without[keyPath: off] = false
+      h.controller.apply(settings: without)
+      #expect(h.controller.desktopGuardZones().isEmpty)
+    }
+    h.controller.apply(settings: settings)
+    h.run("pause")
+    #expect(h.controller.desktopGuardZones().isEmpty)
+  }
+
+  /// The tap decides from a copy. Whatever switches the scroll on or off has to bring a new one.
+  @Test func switchedOnAndOffByCommandTheTapsCopyFollows() {
+    let (h, _, _) = makeHarness()
+    var settings = h.controller.settings
+    settings.guardDesktopClicks = false
+    settings.frameRectangleOnDesktop = false
+    h.controller.apply(settings: settings)
+    var published = h.controller.desktopGuardZones()
+    h.controller.observe { [unowned controller = h.controller] in
+      if $0.mayChangeDesktopGuardZones { published = controller.desktopGuardZones() }
+    }
+    #expect(published.isEmpty)
+    #expect(h.run("set scrollOnDesktopZooms true").ok)
+    #expect(!published.isEmpty)
+    for command in [
+      "set scrollZoom false", "set scrollZoom true", "set gesturesEnabled false", "set gesturesEnabled true", "pause", "resume",
+      "set pointerGestures false", "set pointerGestures true",
+      "set scrollOnDesktopZooms false",
+    ] {
+      h.run(command)
+      #expect(published == h.controller.desktopGuardZones(), "after \(command)")
+    }
+    #expect(published.isEmpty)
+  }
+
+  /// Arbor runs, and gestures are the app's: `inputSettings` decides, not the settings as they are written.
+  @Test func inAnAppThatKeepsItsKeysThereAreNoZonesForAScrollEither() {
+    var settings = Settings.withGestures
+    settings.passThroughApps = ["com.example.emacs"]
+    settings.guardDesktopClicks = false
+    settings.frameRectangleOnDesktop = false
+    settings.scrollOnDesktopZooms = true
+    let h = Harness(settings: settings)
+    let emacs = h.system.open(app: "Emacs")
+    let safari = h.system.open(app: "Safari")
+    h.start()
+    h.run("dock \(emacs.rawValue) left")
+    h.run("dock \(safari.rawValue) right")
+    h.system.userFocus(safari)
+    #expect(!h.controller.desktopGuardZones().isEmpty)
+    h.system.userFocus(emacs)
+    #expect(h.controller.isRunning && h.controller.isPassingThrough)
+    #expect(h.controller.desktopGuardZones().isEmpty)
+  }
+
   @Test func beforeTheStartNothingIsGuarded() {
     #expect(Harness(settings: .withGestures).controller.desktopGuardZones().isEmpty)
   }

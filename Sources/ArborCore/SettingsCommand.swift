@@ -4,7 +4,8 @@
 ///
 /// Keys, values, shortcuts and rules are checked when the text is parsed, against `SettingsSchema`,
 /// `KeyChord` and `RuleAction`, and stored in their canonical spelling. A typo is therefore reported
-/// wherever the text is read, including in the `bindings` of settings.json.
+/// wherever the text is read, including in the `bindings` of settings.json. The one thing left to the controller: whether a
+/// single character names a key (`ctrl+opt+ö`), which depends on the keyboard layout in use.
 public enum SettingsCommand: Equatable, Sendable, Codable {
   /// `set gap 16`: changes one setting, at once, and saves it. `set focusRing toggle` flips a switch, for a
   /// shortcut that turns something on and off.
@@ -87,7 +88,10 @@ public enum SettingsCommand: Equatable, Sendable, Codable {
         let chord = try KeyChord(text: written)
         return chord.text
       } catch {
-        throw ParseError("\(SettingError.quoted(written)) is not a shortcut: \(error)")
+        // It may name a key by what it types (`ctrl+opt+ö`). Whether it does depends on the keyboard layout in use, which
+        // only the controller knows: it goes on tidied, and is judged there.
+        if let tidied = withAKeyNamedByACharacter(written) { return tidied }
+        throw ParseError(notAShortcut(written, error))
       }
     }
 
@@ -158,6 +162,21 @@ public enum SettingsCommand: Equatable, Sendable, Codable {
     default:
       throw ParseError("unknown command `\(verb)`; try `help`")
     }
+  }
+
+  public static func notAShortcut(_ written: String, _ error: any Error) -> String {
+    "\(SettingError.quoted(written)) is not a shortcut: \(error)"
+  }
+
+  /// `Opt + Ctrl + Ö` as `ctrl+opt+ö`, if the text is modifiers and one single character besides. Nil otherwise.
+  static func withAKeyNamedByACharacter(_ written: String) -> String? {
+    guard let (modifiers, character) = KeyChord.modifiersAndOneCharacter(in: written) else { return nil }
+    if character == "+" {
+      // `ctrl+opt+` is a shortcut somebody has not finished typing. The key for + is `ctrl+opt++`, or `⌃⌥+` as a menu shows it.
+      let compact = written.filter { !$0.isWhitespace }.dropLast()
+      guard let last = compact.last, last == "+" || KeyChord.modifierNames[String(last)] != nil else { return nil }
+    }
+    return KeyChord.text(modifiers, typing: character)
   }
 
   private static let ruleUsage =
@@ -250,8 +269,22 @@ public enum SettingsCommand: Equatable, Sendable, Codable {
 extension Settings {
   /// Drops everything `bindings` says about `chord`, however the user spelt it (`opt+ctrl+Space`),
   /// including an entry that could not be read. What `bind` and `unbind` do first.
-  public mutating func removeBindings(for chord: KeyChord) {
-    for text in bindings.keys where (try? KeyChord(text: text)) == chord { bindings.removeValue(forKey: text) }
-    unreadableBindings.removeAll { (try? KeyChord(text: $0)) == chord }
+  /// On `layout`, where a key can also be named by what it types: `ü` and `us:[` are one shortcut on a German keyboard.
+  public mutating func removeBindings(for chord: KeyChord, layout: KeyLayout = .us) {
+    for text in bindings.keys where (try? KeyChord(text: text, layout: layout)) == chord {
+      bindings.removeValue(forKey: text)
+    }
+    unreadableBindings.removeAll { (try? KeyChord(text: $0, layout: layout)) == chord }
+  }
+
+  /// Drops everything `bindings` says about the key that `chord` means on `layout`, under whichever of its names: `z` and
+  /// `us:y`, `ü` and `[` and `us:[` are one key on a German keyboard. Entries that free the key (null) go as well.
+  public mutating func removeBindings(onTheKeyOf chord: KeyChord, layout: KeyLayout) {
+    func isOnTheKey(_ text: String) -> Bool {
+      guard let other = try? KeyChord(text: text, layout: layout) else { return false }
+      return other.modifiers == chord.modifiers && other.code(in: layout) == chord.code(in: layout)
+    }
+    for text in bindings.keys where isOnTheKey(text) { bindings.removeValue(forKey: text) }
+    unreadableBindings.removeAll(where: isOnTheKey)
   }
 }

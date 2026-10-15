@@ -81,5 +81,5 @@ Not shipped:
 - `pass-through [bundle-id] on|off`, for files that must say which; repeating it changes and saves nothing. ✔ `onAndOffSayWhichAndCanBeRepeated`
 - People read "shortcuts are off **in** Emacs" and "paused **for** Game", not "while … is frontmost". "pass-through" is the command's name only.
 - **The key that summoned the app stays** (the product owner's day on the trunk; F53): with `"ctrl+opt+t": "summon Terminal"` and shortcuts off in Terminal, the key brought the terminal and could not send it away. While an app's window is summoned,
-  the `summon` shortcut of that app is held besides ⌃⌥⎋; no other, and not while the app is in front without being summoned. `Change.input` is sent when that changes, also when the summon begins after the app came to the front (⌘Tab) or
+  the `summon` shortcut of that app is held besides ⌃⌥⎋; no other, not while the app is in front without being summoned, and not while another listed app is in front of a summoned window that stays (`summonStays`). `Change.input` is sent when that changes, also when the summon begins after the app came to the front (⌘Tab) or
   ends while it is still there (docked, pinned, floated). ✔ `SummonKeyTests`
