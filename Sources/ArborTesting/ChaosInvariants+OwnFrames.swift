@@ -2,10 +2,11 @@ import ArborCore
 import ArborKit
 import CoreGraphics
 
-/// A floating window's frame is its person's (collab/QUESTIONS.md, Q20), as a rule of the walks: with `floatingWindowsMakeWay`
-/// off, as it ships, **Arbor sets a floating window's frame only to take it out of view and to put it back exactly where
-/// it was.** The runner keeps the record itself, from where the windows really were: what the controller remembers
-/// is what is being tested.
+/// A floating window's frame is its person's (collab/QUESTIONS.md, Q20 and Q29, 4), as a rule of the walks: with
+/// `floatingWindowsMakeWay` off, as it ships, **Arbor sets no frame on a floating window that nothing that happened was about.** That no
+/// view takes one away is `floating-taken-out-of-view` (ChaosInvariants+SevenRules.swift). What is left of going and coming back is
+/// what a change of displays does. The runner keeps the record itself, from where the windows really were: what the controller
+/// remembers is what is being tested.
 extension ChaosRunner {
   /// Where a floating window was when it went out of view, by the window system's own account.
   struct Departure {
@@ -15,8 +16,6 @@ extension ChaosRunner {
     /// A hand left it there while Arbor was looking, without carrying it to another display otherwise than by a drag. Only then does
     /// Arbor know that a frame of which little shows is a place somebody chose; where in doubt it brings the window in.
     var wasLeftByHand = false
-    /// And its display was then where and as large as it was when the window left.
-    var onTheDisplayAsItWas = false
   }
 
   /// Where a hand left a window, and the frame its display had.
@@ -27,7 +26,6 @@ extension ChaosRunner {
 
   func ownFrameViolations(after action: ChaosAction, _ problems: inout [InvariantViolation]) {
     departures = departures.filter { system.windows[$0.key] != nil }
-    movedByUndo = movedByUndo.filter { system.windows[$0] != nil }
     noteWhatAHandLeft(after: action)
     // Once this step has been judged: a window that has just left is no longer where the hand left it.
     defer {
@@ -66,30 +64,15 @@ extension ChaosRunner {
         window != system.dragging, window != system.resizing, window != inHandBefore
       else { continue }
       let now = fake.snapshot.frame
-      // A rule name of its own for a known failure (ChaosKnownFailures.swift): what an undo or a redo has moved or sent away.
-      if isUndoOrRedo(action), now != before { movedByUndo.insert(window) }
       switch (parkedBefore.contains(window), controller.parked.contains(window)) {
       case (false, true):
         if isInView(before) {
-          let note = leftByHand[window].flatMap { isWhere($0.frame, before, of: window) ? $0 : nil }
-          // A hand's choice holds on the window's own display, for as long as that is where and as large as it was.
-          departures[window] = Departure(
-            frame: before, displaysStayed: !displaysChanged, wasLeftByHand: note != nil,
-            onTheDisplayAsItWas: note != nil && note?.display == controller.workspaceID(containing: window).flatMap { controller.display($0)?.frame })
+          let wasLeftByHand = leftByHand[window].map { isWhere($0.frame, before, of: window) } == true
+          departures[window] = Departure(frame: before, displaysStayed: !displaysChanged, wasLeftByHand: wasLeftByHand)
         }
       case (true, false):
         guard let left = departures.removeValue(forKey: window), !isAbout(window, action) else { continue }
-        let requests = system.moveLog[seven.moveLogMark...].filter { $0.window == window }
-        if left.displaysStayed, showsHalf(left.frame) || (left.onTheDisplayAsItWas && showsEnoughToGrab(left.frame)) {
-          guard let first = requests.first else { continue }
-          // There, or asked to be there: an app has the last word on its window's frame (whole cells, a minimum that has grown).
-          let theAppWouldNot = isWhere(first.requested, left.frame, of: window) && first.after != whereMacOSPuts(first.requested, window)
-          if !isWhere(now, left.frame, of: window), !theAppWouldNot {
-            problems.append(.init(movedByUndo.contains(window) ? "own-frame-back-after-undo" : "own-frame-back", "\(window) floated at \(left.frame.brief), went out of view, was asked back to \(first.requested.brief) and is at \(now.brief)"))
-          } else if requests.filter({ $0.after != $0.before }).count > 1, first.after == whereMacOSPuts(first.requested, window) {
-            problems.append(.init("own-frame-jolt", "\(window) came back to \(now.brief) in \(requests.count) moves"))
-          }
-        } else if left.wasLeftByHand, now.size == left.frame.size, showsEnoughToGrab(now) {
+        if left.wasLeftByHand, now.size == left.frame.size, showsEnoughToGrab(now) {
           // Its display has only moved, and has taken the window and the hand's choice along; or is again as it was then.
         } else if left.displaysStayed, isWhere(now, left.frame, of: window) {
           // Where it was. Whether a hand once left it there Arbor may know better than this record, which an undo and a redo escape.
@@ -98,7 +81,7 @@ extension ChaosRunner {
         }
       case (false, false):
         // The one exception: a change of displays that cut it off. One that was nowhere a window can be used, and that no hand is known
-        // to have left there, is fetched whenever Arbor comes by. And a view can leave and come back within one step.
+        // to have left there, is fetched whenever Arbor comes by.
         if now != before, now != whereMacOSPuts(before, window), moved.contains(window), !displaysChanged, !isAbout(window, action),
           showsHalf(before) || (leftByHand[window].map { isWhere($0.frame, before, of: window) } == true && showsEnoughToGrab(before))
         {
@@ -150,7 +133,6 @@ extension ChaosRunner {
     default: (window, wasDragged) = (nil, false)
     }
     guard let window, let frame = system.windows[window]?.snapshot.frame, let home = controller.workspaceID(containing: window) else { return }
-    movedByUndo.remove(window)
     // No hand takes a window across a border without a drag, of the window or of one of its edges.
     if wasDragged || workspacesBefore[home]?.contains(window) == true {
       leftByHand[window] = HandNote(frame: frame, display: controller.display(home)?.frame)
@@ -187,6 +169,9 @@ extension ChaosRunner {
     "moved-unasked", "moved-before-any-dock", "grown-while-hanging", "left-its-place", "parked-beside-another-display",
     "displays-left-mostly-out", "moved-at-launch-after-a-crash", "moved-twice-floating-windows-first", "plain-drag-moved-another",
     "plain-drag-across-displays-moved-another",
+    // And those that only a floating window that leaves with the Desktop breaks (Q29, 4).
+    "there-and-back-moved", "app-switch-out-of-view", "taken-out-of-view-with-another-display",
+    "taken-back-out-of-view-from-where-it-was-put",
   ]
 
   func nameWhatComesOfMakingWay(_ problems: inout [InvariantViolation]) {
@@ -216,6 +201,8 @@ extension ChaosRunner {
     if words.contains("\(window.rawValue)") { return true }
     // By app, whichever of its windows that turns out to be.
     if words.contains("summon") || words.contains("layout") { return true }
+    // By whatever it finds: the one it went to has the keyboard.
+    if words.contains("find") { return system.focused == window }
     // "Back to a normal Mac": every window wholly within reach, as at a quit.
     return words.contains("float-all")
   }

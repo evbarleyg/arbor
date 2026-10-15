@@ -129,7 +129,8 @@ public final class ChaosRunner {
   var wasPeekingBefore = false
   /// For each background tab of a native tab group, the window that stands for the group.
   public private(set) var frontOfTab: [WindowID: WindowID] = [:]
-  /// Windows that came back into sight while the Desktop of their display was out of view, and have not followed it yet.
+  /// Windows that came back into sight while the Desktop of their display was out of view, and have not followed it yet, as those
+  /// that make way do (`vanishedViolations`).
   var cameBack: Set<WindowID> = []
   var wasRunningBefore = false
   /// Before the current action the windows were trying out a drop (F09, `reflowWhileDragging`).
@@ -138,7 +139,6 @@ public final class ChaosRunner {
   /// action whether floating windows made way.
   var departures: [WindowID: Departure] = [:]
   var leftByHand: [WindowID: HandNote] = [:]
-  var movedByUndo: Set<WindowID> = []
   var madeWayBefore = false
   /// `desktopGuardZones()` as the mouse-down tap has it: a copy, refreshed as ArborApp refreshes it.
   var guardZonesCopy = DesktopGuardZones()

@@ -515,9 +515,44 @@ extension ChaosRunner {
         """),
     ChaosKnownFailure(
       rule: "there-and-back-moved", owner: "rule 2: there and back is nothing", severity: 2,
-      story: "Into the Dock and out again, or a look at one window and Back: a window is not where it was. One that hung over an edge is pulled in; one that lay "
+      story: "Into the Dock and out again, or a look at one window and Back: a window is not where it was. None of them an ordinary floating window since no "
+        + "view takes those away: a window that `summon` had fetched is sent away; one that was out of view is in view.",
+      script: """
+        launch
+        open 103 Settings pid 1007 at 1464 288 723 663 min 723 470 max 723 2000
+        toggle-pause
+        toggle-pause
+        open 104 Terminal pid 1003 at 1032 92 851 379 min 177 64 cells 7 15 2 4
+        via shortcut summon Terminal
+        toggle-pause
+        toggle-pause
+        minimize 103
+        restore 103
+        react
+        """,
+      """
+        launch
+        open 102 Xcode pid 1004 at 424 166 1188 784 min 1188 685
+        toggle-pause
+        toggle-pause
+        open 104 Notes pid 1001 at 22 371 709 672 min 709 320
+        focus 102
+        key down dock top
+        focus 104
+        key down dock left
+        seam main 1 -163
+        react
+        key down zoom
+        key down back
+        react
+        """),
+    ChaosKnownFailure(
+      rule: "there-and-back-moved-making-way", owner: "rule 2: there and back is nothing", severity: 2,
+      story: "With floating windows that make way, which alone leave with the Desktop. "
+        + "Into the Dock and out again, or a look at one window and Back: a window is not where it was. One that hung over an edge is pulled in; one that lay "
         + "over docked windows is shoved; a view framed on the window that went does not come back.",
       script: """
+        settings {"floatingWindowsMakeWay":true}
         launch
         open 102 Terminal pid 1003 at 771 559 824 374 min 177 60
         advance 0.3
@@ -527,6 +562,7 @@ extension ChaosRunner {
         advance 1
         """,
       """
+        settings {"floatingWindowsMakeWay":true}
         launch
         open 103 Notes pid 1001 at 784 678 792 708 min 709 300
         key down dock left
@@ -538,6 +574,7 @@ extension ChaosRunner {
         react
         """,
       """
+        settings {"floatingWindowsMakeWay":true}
         open 101 Safari pid 1000 at 349 116 864 744 min 574 240
         launch
         open 102 Safari pid 1000 at 165 78 1116 824 min 574 240
@@ -553,8 +590,23 @@ extension ChaosRunner {
     ChaosKnownFailure(
       rule: "app-switch-out-of-view", owner: "rule 4: the window you switch to", severity: 3,
       story: "Another app comes forward and nobody says which of its windows has the keyboard (`keyboardFocusMoved` alone). The controller does not ask, and the "
+        + "docked window stays out of view with the keyboard in it. The Accessibility layer is meant to say; where it misses, this is what a person sees.",
+      script: """
+        launch
+        open 104 Safari pid 1000 at 346 581 628 635 min 353 83
+        dock 104 right
+        desktop
+        open 106 Finder pid 1005 at 558 791 353 303 min 353 303 max 357 1049
+        switch-app 104
+        react
+        """),
+    ChaosKnownFailure(
+      rule: "app-switch-out-of-view-making-way", owner: "rule 4: the window you switch to", severity: 3,
+      story: "With floating windows that make way, which alone leave with the Desktop. "
+        + "Another app comes forward and nobody says which of its windows has the keyboard (`keyboardFocusMoved` alone). The controller does not ask, and the "
         + "window stays out of view with the keyboard in it. The Accessibility layer is meant to say; where it misses, this is what a person sees.",
       script: """
+        settings {"floatingWindowsMakeWay":true}
         launch
         open 104 Music pid 1006 at 786 116 513 637
         open 105 Terminal pid 1003 at 842 40 354 368
@@ -788,10 +840,28 @@ extension ChaosRunner {
         displays main:0,0,1728,1117:37,0,70,0* side:-200,-1440,2560,1440:25,0,0,0 windows-silent
         """),
     ChaosKnownFailure(
-      rule: "taken-out-of-view-with-another-display", owner: "displays: a display claims only what is its own", severity: 2,
-      story: "A browser window on the monitor, another arranged and framed on the laptop. The lid is shut and opened: the monitor's window is out of view, with the laptop's framed view, "
+      rule: "taken-out-of-view-with-another-display", owner: "displays: a display claims only what is its own", severity: 3,
+      story: "During a hold, with a window larger than every display: the displays change twice, and the window that opened on the one that was left waits out of "
+        + "view with another display than the one somebody had put it on.",
+      script: """
+        displays main:0,0,800,600:25,0,60,0* side:800,145,1920,1080:0,79,0,0 third:2720,11,1080,1920:0,0,0,0 windows-never
+        open 101 Music pid 1006 at 2402 905 566 582 min 336 276 max 580 1281
+        renumber 101 102
+        launch
+        tab-open 103 in 102
+        hold
+        space 103 off
+        displays main:0,0,1080,1920:0,0,0,0* windows-never
+        open 107 Music pid 1006 at -397 1006 2548 1390 min 2548 1390 max 2548 1390
+        displays main:0,0,800,600:37,0,0,47* side:800,-41,2560,1440:25,66,0,0 third:-2560,44,2560,1440:37,66,0,0 windows-late
+        """),
+    ChaosKnownFailure(
+      rule: "taken-out-of-view-with-another-display-making-way", owner: "displays: a display claims only what is its own", severity: 2,
+      story: "With floating windows that make way, which alone leave with the Desktop. "
+        + "A browser window on the monitor, another arranged and framed on the laptop. The lid is shut and opened: the monitor's window is out of view, with the laptop's framed view, "
         + "and the monitor is empty.",
       script: """
+        settings {"floatingWindowsMakeWay":true}
         displays main:0,0,1512,982:37,0,48,0* side:-1920,-200,1920,1080:25,0,0,0 windows-never
         open 104 Safari pid 1000 at -1318 -171 1152 816 min 574 240
         open 103 Safari pid 1000 at 89 107 1416 784 min 574 240
@@ -802,10 +872,12 @@ extension ChaosRunner {
         displays main:0,0,1512,982:37,0,48,0* side:-1920,-200,1920,1080:25,0,0,0 windows-silent
         """),
     ChaosKnownFailure(
-      rule: "taken-back-out-of-view-from-where-it-was-put", owner: "displays: a display claims only what is its own", severity: 2,
-      story: "The monitor's view is framed on a browser, and the player that floated there is out of view. The monitor is unplugged, the player comes to the laptop, and its person drags it to "
+      rule: "taken-back-out-of-view-from-where-it-was-put-making-way", owner: "displays: a display claims only what is its own", severity: 2,
+      story: "With floating windows that make way, which alone leave with the Desktop. "
+        + "The monitor's view is framed on a browser, and the player that floated there is out of view. The monitor is unplugged, the player comes to the laptop, and its person drags it to "
         + "where they want it. The monitor comes back: the player goes from the laptop out of view.",
       script: """
+        settings {"floatingWindowsMakeWay":true}
         displays main:0,0,1512,982:37,0,59,0* side:323,-1440,2560,1440:25,0,0,0 windows-never
         launch
         open 101 Safari pid 1000 at 1394 -1241 1440 880 min 574 240
@@ -820,6 +892,7 @@ extension ChaosRunner {
         displays main:0,0,1512,982:37,0,59,0* side:323,-1440,2560,1440:25,0,0,0 windows-silent
         """,
       """
+        settings {"floatingWindowsMakeWay":true}
         displays main:-1280,-323,1280,800:25,0,0,0 side:0,0,1920,1080:25,0,0,59* windows-never
         open 103 Terminal pid 1003 at 228 315 693 539 min 177 60
         launch
@@ -864,39 +937,6 @@ extension ChaosRunner {
         release
         displays main:0,0,1440,900:25,0,48,0* windows-late
         settle
-        """),
-    ChaosKnownFailure(
-      rule: "own-frame-back", owner: "a floating window's frame is its person's: what macOS answers to \"back where it was\" is where it was", severity: 3,
-      story: "A floating window is pushed down by hand until less than its title bar shows. It goes out of view with the view and comes back a little short, because macOS puts no window there "
-        + "by request. The second time it comes back 140 points to the left and 319 up, fitted in: for the place it was stopped at no hand is on record. New since floating windows "
-        + "make way for nobody; it goes when they are no longer taken out of view.",
-      script: """
-        displays main:0,0,1440,900:25,0,48,0* windows-never
-        launch
-        open 104 Finder pid 1005 at 248 440 745 371 min 501 252
-        open 105 Notes pid 1001 at 381 133 760 560 min 709 300
-        grab 104
-        carry 1208 830
-        release
-        focus 105
-        key down dock left
-        key down zoom
-        key down zoom
-        key down zoom
-        key down zoom
-        """),
-    ChaosKnownFailure(
-      rule: "moved-twice-floating", owner: "less by default (Q29, board 0.5): Arbor never takes a floating window out of view", severity: 4,
-      story: "The corner where windows wait out of view lies beside a monitor that reaches lower than the laptop: a strip would show there. So a floating window is sent to the laptop's bottom "
-        + "right and, in the same breath, to its bottom left.",
-      script: """
-        displays main:0,0,1512,982:37,0,70,0* side:1512,-200,1920,1080:25,0,0,0 windows-never
-        open 101 Finder pid 1005 at 317 65 810 493 min 501 252
-        open 102 Finder pid 1005 at 61 67 1086 453 min 501 252
-        launch
-        focus 101
-        key down dock right
-        key down zoom
         """),
     ChaosKnownFailure(
       rule: "fetched-before-any-dock", owner: "what is found counts as left, in every state: out of the Dock it comes back where macOS puts it", severity: 3,
@@ -1034,6 +1074,67 @@ extension ChaosRunner {
         resume
         """),
     ChaosKnownFailure(
+      rule: "moved-twice-floating", owner: "rule 3: a window moves once", severity: 4,
+      story: "A floating window that a command names, or that was sent away by name, is moved twice for one thing that happened. None of them by a view: a window that "
+        + "`summon` had away comes back from another Space and is fetched and sent away again; a fill is taken back and made again; out of a tile under a hold, by way of "
+        + "its slot; out of the Dock, brought wholly in and then made to fill the view.",
+      script: """
+        launch
+        open 103 Mail pid 1002 at -124 42 665 431 min 420 103
+        space 103 off
+        summon Mail
+        space 103 on
+        open 115 Xcode pid 1004 at 274 339 634 539
+        """,
+      """
+        open 102 Preview pid 1007 at 942 616 521 458 min 521 458 max 541 811
+        launch
+        via menu zoom 102
+        limits 102 min 0 0
+        url arbor://undo
+        redo
+        """,
+      """
+        open 101 Safari pid 1000 at 100 100 700 500 min 574 240
+        open 104 Mail pid 1002 at 2300 300 800 600 min 500 400
+        launch
+        dock 101 left
+        dock 104 beside 101 right
+        tile main 1
+        toggle-hold
+        hide 1000
+        float-all
+        """,
+      """
+        displays side:0,0,1280,800:25,0,0,0* main:-1280,-120,1280,800:25,0,52,0 third:-2792,148,1512,982:0,47,0,0 windows-never
+        open 101 Finder pid 1005 at 832 85 176 137 min 176 101 title main.swift
+        launch
+        grab 101
+        carry 1216 247
+        release
+        minimize 101
+        zoom 101
+        find
+        palette choose
+        """),
+    ChaosKnownFailure(
+      rule: "fetched-before-any-dock", owner: "the fit: a floating window that somebody can get hold of is not to be fitted (board 0.23)", severity: 4,
+      story: "Nothing was ever docked. A window lies where less than half of it shows and no hand is on record: its app or a tool took it across a border, or it "
+        + "is larger than every display. A pause, or the layout after it opened, pulls it in.",
+      script: """
+        displays main:0,0,1512,982:25,0,82,0* side:-1440,-260,1440,900:0,0,0,0 third:-2240,-231,800,600:25,0,0,0 windows-never
+        launch
+        open 104 Mail pid 1002 at 1020 874 851 563 min 851 563
+        move 104 -2347 286 851 563
+        pause 0.001
+        """,
+      """
+        launch
+        settings {"soleFloatTakesDesktop":false,"makeRoom":true,"newWindows":"dock","newWindowsWhileFramed":"float","floatingWindowsMakeWay":false}
+        displays main:0,0,1280,800:0,0,0,0* side:149,800,1512,982:25,0,0,0 third:-1440,-201,1440,900:25,0,0,71 windows-silent
+        open 108 Mail pid 1002 at -1349 1243 2926 1294 min 2926 1294 grid
+        """),
+    ChaosKnownFailure(
       rule: "quit-left-out-of-reach", owner: "the ways home: quitting while an app hangs (K003)", severity: 1,
       story: "Arbor is quit while an app with a window out of view does not answer. The window is still past the corner when the app wakes, and Arbor is gone. "
         + "Opening Arbor again does not fetch it by itself; ⌃⌥0, Show Everything, Float All or turning to the window then do.",
@@ -1042,6 +1143,7 @@ extension ChaosRunner {
         open 101 Safari pid 1000 at 100 100 700 500
         open 102 Notes pid 2000 at 300 200 600 400
         dock 101 left
+        dock 102 right
         zoom 101
         hang 2000
         quit
@@ -1204,41 +1306,6 @@ extension ChaosRunner {
         shrink
         """),
     ChaosKnownFailure(
-      rule: "own-frame-back-after-undo", owner: "nobody yet (F64)", severity: 4,
-      story: "With two displays: a floating window is carried or sent from one to the other, and an undo or a redo takes that back while the "
-        + "window, or the Desktop it goes to, is out of view. It is in view afterwards, wholly, but when it next goes out of view and "
-        + "comes back it is at the frame remembered on that display, not where the undo had left it. About once in a thousand walks.",
-      script: """
-        displays third:1327,12,1920,1080:0,0,0,0 main:-113,1920,1440,900:25,0,63,0 side:0,0,1080,1920:25,77,0,0* windows-never
-        launch
-        settings {"desktopColumn":true,"rules":[{"app":"com.example.music","action":"dock beside com.example.safari right"}]}
-        open 104 Music pid 1006 at 579 373 480 538 min 462 126
-        open 105 Mail pid 1002 at -1202 644 356 460 no-bundle
-        pinch began 0
-        pinch changed 0.3
-        open 111 Music pid 1006 at -734 567 2096 1634 min 2096 1634 title Untitled
-        move-to-display previous 105
-        undo
-        focus 105
-        """,
-      """
-        settings {"desktopColumn":true}
-        open 107 Xcode pid 1004 at 897 515 899 718 min 696 718
-        open 110 Terminal pid 1003 at 70 476 700 240 title main.swift
-        launch
-        arrange
-        displays main:0,0,1080,1920:37,0,0,0* side:202,1920,1512,982:0,0,58,0 windows-late
-        float 110
-        edge 107 301 926 696 20
-        grab 110
-        carry 960 2169
-        settle
-        zoom 107
-        cursor 540 961
-        undo
-        key down show-all
-        """),
-    ChaosKnownFailure(
       rule: "plain-drag-moved-another", owner: "the chaos lab: what was owed before the drag comes due during it; Keep in View", severity: 4,
       story: "What is left since a plain drag docks nothing: a move that Arbor owed another window for something that happened before (an app that woke, a "
         + "window gone into full screen, a Space) falls into the drag. And a window kept in view that its person left hanging over the edge is fetched at the "
@@ -1334,7 +1401,7 @@ extension ChaosRunner {
   /// read 0; whoever brings one there takes it out of this set, and from then on it ends walks like any other rule.
   public nonisolated static let countedRules: Set<String> = [
     "eye-moved-twice", "eye-moved-twice-sizing", "eye-moved-again", "eye-moved-again-sizing",
-    "floating-taken-out-of-view", "strayed-between", "displays-moved-the-untouched",
+    "strayed-between", "displays-moved-the-untouched",
     "parked-before-any-dock", "arrival-moved-a-neighbour", "arrival-took-a-neighbour-out-of-view",
     "displays-fetched-what-was-in-reach",
   ]
