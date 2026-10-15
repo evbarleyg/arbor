@@ -282,7 +282,8 @@ public final class ArborApp: NSObject, NSApplicationDelegate {
       // Only without the permission. Why any other key did nothing is said on screen, and `handle` has the beep for those who
       // switched that off, and knows when to keep quiet.
       guard result?.ok == false, !self.controller.accessibilityGranted else { return }
-      NSSound.beep()
+      // With messages switched off `handle` has beeped already.
+      if self.controller.settings.messageLevel != .off { NSSound.beep() }
       // The ways home are held without the permission only to lead to where it is granted.
       if self.controller.shouldOpenAccessibilitySettings() { self.openAccessibilitySettings() }
     }
