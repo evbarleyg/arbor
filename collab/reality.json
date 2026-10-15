@@ -155,7 +155,7 @@
    "kind": "order-of-reports",
    "layer": "at the seam",
    "expected": "When a display's corner moves, every remembered frame is shifted once. A report of a window's new place cannot come before the list of displays that Arbor can ask for has changed.",
-   "happened": "Where a window's own report has brought Arbor's memory up to date before even that list changes, no guard has anything to see, and the frame was shifted a second time. The lid opens, macOS takes a window from 590,429 to 2318,106, and Arbor sent it on to 4046,-217: a fifth of it showing, and ⌃⌥0 did not fetch it. Whether a Mac can produce that order is not measured: the Accessibility observer and AppKit's news of the screens come through different ports of one run loop, whose order of service is not specified.",
+   "happened": "Where a window's own report has brought Arbor's memory up to date before even that list changes, no guard has anything to see, and the frame was shifted a second time. The lid opens, macOS takes a window from 590,429 to 2318,106, and Arbor sent it on to 4046,-217: a fifth of it showing, and ⌃⌥0 did not fetch it. Whether a Mac can produce that order is not measured: the Accessibility observer and AppKit's news of the screens come through different ports of one run loop, whose order of service is not specified. In which order macOS gives the list of displays, the notice that the screens changed and the windows' own moves when a display comes, goes or changes size has never been recorded: the stand-in's three orders (windows first, late, never) are a guess. That order decides three faults found in one night: the double shift, a hop, and a strip of 32 points that no key fetches. A raw line for it in the traces is on its way, and a hosted Mac with a virtual display can record it.",
    "found": "A random walk in the chaos lab and a replay of a person's day in the simulator, each display story played in both orders. Never seen on a Mac.",
    "modelled": "yes",
    "knobs": [
@@ -1839,6 +1839,44 @@
     "docs/features/F38-focus-as-macos-reports-it.md",
     "scripts/mac-on-linux/known-failures.txt",
     "collab/reports/2026-10-15-the-real-ax-layer-on-linux.md"
+   ],
+   "certainty": "suspected"
+  },
+  {
+   "id": "a-replay-could-not-play-a-closing-lid",
+   "kind": "missing-report",
+   "layer": "test",
+   "expected": "A replay answers the controller's questions with what the recording holds.",
+   "happened": "macOS moves windows at a change of displays and no app says so. In a replay `allWindows()` is answered from the replay's own fake, whose windows were never shifted, although the recording held the right frames in its answer. So the replayed Arbor \"corrected\" every window: six divergences in strict mode, none of them Arbor's. A mend of seven lines in the replayer is on its way.",
+   "found": "Replaying a lid that closes, while porting the work on displays that change.",
+   "modelled": "no",
+   "knobs": [],
+   "guards": [],
+   "copes": "open",
+   "hurt": 4,
+   "sources": [
+    "Sources/ArborTesting/TraceReplayer.swift",
+    "docs/TRACES.md"
+   ]
+  },
+  {
+   "id": "a-move-that-a-hang-swallows-is-never-read-again",
+   "kind": "missing-report",
+   "layer": "below the seam",
+   "expected": "What an app did to its window just before it hung is known once it wakes.",
+   "happened": "An app moves its own window 1 ms before it hangs for 5 s. \"Resized\" and \"moved\" arrive while it hangs, each read waits a second and fails, and when the app wakes nobody reads the frame again: Arbor goes on believing the old frame, and no change is ever reported. At 50 ms before the hang all is well.",
+   "found": "The real Accessibility layer run on Linux against a model of a Mac (`make mac-on-linux`). On the model only: nobody has seen it on a Mac. A random walk that went on past listed faults met it; its story is in a follow-up that is not on the trunk yet.",
+   "modelled": "cannot",
+   "knobs": [],
+   "guards": [],
+   "copes": "open",
+   "hurt": 2,
+   "touches": [
+    "size-lost"
+   ],
+   "sources": [
+    "Sources/ArborKit/AX/AXWindowSystem.swift",
+    "docs/ARCHITECTURE.md"
    ],
    "certainty": "suspected"
   },
@@ -6118,7 +6156,7 @@
    "kind": "permissions",
    "layer": "at the seam",
    "expected": "`AXIsProcessTrusted()` says whether Arbor may use Accessibility.",
-   "happened": "The flag can go on saying yes after Arbor is removed from the list with the − button, and one no out of the blue may only be the privacy daemon restarting. Seen since, on macOS 26.6.2: under a second after `sudo tccutil reset Accessibility` a running Arbor logged \"Accessibility permission is gone (AXIsProcessTrusted says yes, but macOS refused a tap)\". The thorough question caught it, and the four taps were gone within one second. The stand-in's comment still calls `flagLags` unseen. Measured since: behind the daemon's back (the row deleted, the daemon restarted, nothing announced) the loss reached a running process after 3.95, 4.7, 6.9, 9.97, 13.8, 14.3, 15.97 and more than 30 s, and it showed by a refused tap while the flag still said yes. With `tccutil reset` the withdrawal is immediate.",
+   "happened": "The flag can go on saying yes after Arbor is removed from the list with the − button, and one no out of the blue may only be the privacy daemon restarting. Seen since, on macOS 26.6.2: under a second after `sudo tccutil reset Accessibility` a running Arbor logged \"Accessibility permission is gone (AXIsProcessTrusted says yes, but macOS refused a tap)\". The thorough question caught it, and the four taps were gone within one second. The stand-in's comment still calls `flagLags` unseen. Measured since: behind the daemon's back (the row deleted, the daemon restarted, nothing announced) the loss reached a running process after 3.95, 4.7, 6.9, 9.97, 13.8, 14.3, 15.97 and more than 30 s, and it showed by a refused tap while the flag still said yes. With `tccutil reset` the withdrawal is immediate. The longest yet on the silent road: 21.65 s. And after `tccutil reset` a bare tapper's flag never turned at all, in 12 s: only a trial tap said no (all-input-is-dropped-from-the-loss-of-the-permission-until-arbors-taps-are-gone).",
    "found": "Reading and documentation; then the first run of the session of `input-taps.sh` that takes the permission away, on a hosted Mac on 2026-10-15. Taking it away by hand in System Settings is still on the list of manual checks.",
    "modelled": "yes",
    "knobs": [
@@ -6241,8 +6279,8 @@
    "kind": "permissions",
    "layer": "below the seam",
    "expected": "Taking the permission away only disables Arbor, and its event taps are harmless until Arbor removes them.",
-   "happened": "With Arbor's event taps in, from the instant macOS withdraws the right until Arbor has removed its taps, every event of every kind is dropped, for the whole Mac: clicks, keys, the wheel, also kinds that match no tap that is switched on. Lost, not late. Fourteen valid rounds. With nobody running nothing was lost (three rounds); with Arbor and no taps 0 of 3,400 events; with Arbor and its taps events were lost in 9 of 10 rounds, on all three roads: the row deleted and the daemon killed, in silence (95, 15, 5 and 65 events, and 10 of 1,360 key events in an older table); the same, and announced (5, 0); `tccutil reset` (90, 95, 5). The holes were 85 to 1,046 ms long. A hole ends 30 to 100 ms after Arbor's line in the log: its length is the wait for the next tick of `PointerInput.checkPermission`, a timer of one second. Before the withdrawal (up to 16 s with the row already gone) and after the taps have gone nothing is lost. Nothing stayed stuck after a loss in the middle of a held ⌃⌥-drag with the band showing (12 of 12 checks, one valid round); whether an up can be lost whose down arrived has not been shown. No tap's callback was told that it had been disabled, as far as the logs say. Keys were dropped though Arbor has no tap for keys, and the wheel with its tap switched off: so whether switching a tap off would help is unproven, and only removal is known to end the hole. Whether real keys and buttons are dropped as posted ones are, nobody can know from a hosted Mac. What is tested today is only that the taps go within three seconds. As Arbor ships nobody meets it: `Settings.pointerGestures` is false, the one switch that is asked before `gesturesEnabled`, `scrollZoom`, `frameRectangleModifier` and `frameRectangleOnDesktop`, and off it means that Arbor installs no event tap at all, whatever a settings.json of an earlier build says of the four. Whoever switches \"Trackpad and mouse gestures\" on has the hole.",
-   "found": "Probes that are not on the trunk yet, on hosted Macs in the night of 2026-10-15 (macOS 26.6.2, posted events, a debug build): a stream of numbered events, a witness that counts them, the permission withdrawn on three roads, and a control on both sides, nobody and Arbor without taps. Until then it was hearsay, quoted in the spec and in the code: \"macOS has been reported to stop all input\".",
+   "happened": "With Arbor's event taps in and the right to tap withdrawn, the first event that matches a tap that is switched on is dropped, and from then until Arbor has removed its taps every event of every kind is dropped, for the whole Mac: clicks, keys, the wheel, also kinds that match no tap that is switched on. Lost, not late. **How often.** The first table, fourteen valid rounds: with nobody running nothing was lost (three rounds); with Arbor and no taps 0 of 3,400 events; with Arbor and its taps events were lost in 9 of 10 rounds, on all three roads: the row deleted and the daemon killed, in silence (95, 15, 5 and 65 events, and 10 of 1,360 key events in an older table); the same, and announced (5, 0); `tccutil reset` (90, 95, 5). Four more rounds by `tccutil` since: 85, 10, 90, 100. The holes of its seven rounds were 994, 1,046, 126, 955, 218, 1,002 and 1,091 ms; the shortest on any road 85. The controls stand at 0 lost in eight rounds with nobody and in three with Arbor without taps. **How long.** A hole ends 30 to 100 ms after Arbor's line in the log: its length is the wait for the next tick of `PointerInput.checkPermission`, a timer of one second. Arbor's main thread, looked at every 5 ms from the deed on, was idle in 998 of 1,005, 1,017 of 1,020 and 822 of 834 looks: nothing stalls. After the taps have gone nothing is lost. **Where it begins.** Not at the withdrawal: at the first event that matches a switched-on tap. Sixteen valid rounds on `tccutil`'s road: in all eleven with a loss the first event lost is a mouse-down, and what was posted between the deed and that press arrived, once 772 ms after the deed. Three rounds with Arbor lost nothing, because its tick came first. So whoever only types loses nothing until the next press or gesture. **What can stick.** Not the button by this road: its down is the first thing lost. An up without its down was seen nine times, nothing was held, and the next click was whole. Nothing stayed stuck after a loss in the middle of a held ⌃⌥-drag with the band showing (12 of 12 checks, one valid round). A key or a modifier held at that press could: that is being tried. **Two separate things.** The flag turns at the distributed notification; the right to tap is withdrawn by the daemon's own doing (`tccutil`, or a daemon that has read its database again). On the gentlest road, the row deleted and the word given with the daemon left alone, Arbor took its taps out of its own accord within its second and nothing was lost, four rounds of four. It was first read as \"macOS had withdrawn nothing\", and that is corrected: with a tapper that asks, the flag said no 2 ms after the word and the right went too, 744 ms after the deed; one that asked nothing lost nothing in 8 s. It seems that asking is what makes the daemon look again. For Arbor the order there is the word, the flag at its next look, and two thirds of a second of grace. **Which question turns.** A bare tapper asked five every 10 ms, seven valid rounds. By `tccutil` the first event is dropped 30 to 46 ms after the deed, and only a trial `tapCreate`, an active tap made and thrown away, turns: no, 0 to 33 ms after the first dropped event. `CGEvent.tapIsEnabled` of its own tap never turns (yes to the end, 12 s on), nor `AXIsProcessTrusted`, `CGPreflightListenEventAccess` or `CGPreflightPostEventAccess`, and the callback is told nothing. One trial costs 254 to 481 µs at the median, 1.5 to 5.3 ms at the 99th percentile, at worst 6 to 24 ms and once 80; the others 0 to 96 µs. **What is not known.** Keys were dropped though Arbor has no tap for keys, and the wheel with its tap switched off: whether switching a tap off would help is unproven, and only removal is known to end the hole. Whether real keys and buttons are dropped as posted ones are, nobody can know from a hosted Mac; nor in which order the word, the flag and the right go at the real switch (the-switch-in-system-settings-asks-a-script-for-a-password). And today one stuck thread of Arbor's at the wrong moment would leave a Mac deaf, with no key to kill Arbor by (macos-drops-all-input-behind-any-tap-whose-owner-lost-the-right): a last net outside that thread is being asked about. Decided on the board (1.46): in doubt, all taps off. What is tested today is only that the taps go within three seconds. **As Arbor ships nobody meets it**: `Settings.pointerGestures` is false, the one switch that is asked before `gesturesEnabled`, `scrollZoom`, `frameRectangleModifier` and `frameRectangleOnDesktop`, and off it means that Arbor installs no event tap at all, whatever a settings.json of an earlier build says of the four. Whoever switches \"Trackpad and mouse gestures\" on has the hole.",
+   "found": "Probes that are not on the trunk yet, on hosted Macs in the night of 2026-10-15 (macOS 26.6.2, posted events, a debug build): a stream of numbered events, a witness that counts them, the permission withdrawn on three roads, a control on both sides, nobody and Arbor without taps, and a bare tool with one tap of its own for the floor. Until then it was hearsay, quoted in the spec and in the code: \"macOS has been reported to stop all input\".",
    "modelled": "cannot",
    "knobs": [],
    "guards": [],
@@ -6294,6 +6332,49 @@
     "scripts/mac-shell/check-F63.sh",
     "scripts/mac-shell/input-taps.sh",
     "scripts/mac-shell/check-F13-system.sh"
+   ]
+  },
+  {
+   "id": "macos-drops-all-input-behind-any-tap-whose-owner-lost-the-right",
+   "kind": "permissions",
+   "layer": "below the seam",
+   "expected": "A tap whose owner has lost the right to tap is switched off by macOS, or timed out, or at least told.",
+   "happened": "A fact about macOS that every author of a tap should know: macOS drops all input behind any active tap whose owner lost the right, says nothing, times nothing out, for ever. A bare tool with one active tap on mouse-downs and an identity of its own, which passes everything on and never lets go, lost its permission (by `tccutil` at once; with the row deleted and the daemon killed in silence 5.8 s later): all input of the Mac, of all kinds, was dropped for as long as the tool lived, 785 of 785 events to the end of a stream 8 s later, 2,400 of 2,400 for 24 s. Killed, its tap goes and the next stream arrives whole. Its callback was never told anything, neither \"disabled by timeout\" nor \"by user input\", and the window server's list still shows the tap as enabled. Arbor's removal of its taps is what gives the Mac back, and the second that takes is the whole of the damage (all-input-is-dropped-from-the-loss-of-the-permission-until-arbors-taps-are-gone).",
+   "found": "Probes that are not on the trunk yet, on hosted Macs in the night of 2026-10-15 (macOS 26.6.2, posted events): the floor under the measurements of Arbor's own taps.",
+   "modelled": "cannot",
+   "knobs": [],
+   "guards": [
+    "e2e: Arbor removes its taps within three seconds",
+    "test: theTapsWatchdogCountsAsASecondOpinion"
+   ],
+   "copes": "PointerInput.checkPermission asks with a trial tap once a second while a tap is installed, and removes the taps at the first no.",
+   "hurt": 1,
+   "touches": [
+    "input-held"
+   ],
+   "sources": [
+    "Sources/ArborKit/Input/PointerInput.swift",
+    "Sources/ArborKit/Input/EventTap.swift",
+    "docs/ARCHITECTURE.md",
+    "collab/BOARD.md"
+   ]
+  },
+  {
+   "id": "the-switch-in-system-settings-asks-a-script-for-a-password",
+   "kind": "permissions",
+   "layer": "machine",
+   "expected": "A script on a hosted Mac can take the permission away as a person does, by the switch in System Settings.",
+   "happened": "One click on the switch brings a sheet: \"Privacy & Security is trying to modify your system settings. Enter your password to allow this.\" So the switch cannot be moved by a script there, and in which order the word, the flag and the right to tap go for a person, with a hole or without, cannot be seen on a hosted Mac. By hand only.",
+   "found": "Probes that are not on the trunk yet, on hosted Macs in the night of 2026-10-15 (macOS 26.6.2, posted events).",
+   "modelled": "cannot",
+   "knobs": [],
+   "guards": [],
+   "copes": "open",
+   "hurt": 4,
+   "sources": [
+    "docs/features/F63-permission-taken-away.md",
+    "scripts/mac-shell/check-F63.sh",
+    "docs/TESTING.md"
    ]
   },
   {
@@ -8803,7 +8884,7 @@
    "id": "f55-no-wheel-and-no-trackpad-has-scrolled",
    "kind": "never-exercised",
    "layer": "below the seam",
-   "expected": "F55: with ⌃⌥ held a scroll steps the view in and out, and every other scroll is left alone. It ships on (`scrollZoom`): the tap goes in at launch.",
+   "expected": "F55: with ⌃⌥ held a scroll steps the view in and out, and every other scroll is left alone. `scrollZoom` ships true, but `pointerGestures`, which is asked first, ships false: no tap goes in at launch until somebody switches the gestures on.",
    "happened": "Nobody knows: what a wheel, a Magic Mouse or two fingers on a trackpad do. `input-taps.sh`, of which only a first version had run before (70 of 70), ran as it stands for the first time on a hosted Mac on 2026-10-15 (the trunk at `8aa9e10`, macOS 26.6.2, once, started by hand, every key, click and scroll a posted event; its output is not in the repository). Every step of F55 was green: ⌃⌥ and a scroll zoom and every other scroll is left alone, 13 of 13, and with `continuousZoom` on, where the scroll is streamed, 17 of 17. A click took no longer to reach a docked window than the script allows. Whose ⌃⌥ + scroll is with macOS's own zoom on ⌃ + scroll is still unknown: macOS did not zoom for a posted ⌃-scroll, so the two checks after it prove nothing. Nothing automatic starts the script: both of CI's real-window runs set `ARBOR_NO_HOTKEYS=1`. The spec still says \"neither compiled nor tried on a Mac yet\". macOS holds every scroll of the Mac until the tap's callback returns, so a fault here is everybody's.",
    "found": "A census of the tests and specs, then the script's first run.",
    "modelled": "cannot",
@@ -9252,7 +9333,7 @@
    "kind": "never-exercised",
    "layer": "below the seam",
    "expected": "F63: when Accessibility is taken from a running Arbor, within three seconds the icon changes and a window asks for the permission back, mouse and keyboard keep working, and once it is given back every window is in view.",
-   "happened": "Nobody knows: whether real keys and buttons fare as posted ones do at the loss, and whether the icon, the window that asks and the windows that come back after the grant do what the spec says. Half of it ran for the first time on a hosted Mac on 2026-10-15 (the trunk at `8aa9e10`, macOS 26.6.2, once, started by hand, every key, click and scroll a posted event; its output is not in the repository). Session 4 of `input-taps.sh`, 5 of 5: under a second after `tccutil reset Accessibility` Arbor said that the permission was gone and had let go of its four taps, caught by the thorough question while the flag still said yes (the-trusted-flag-may-go-on-saying-yes). No input was tried after the loss there. Probes have tried it since, and the spec's \"mouse and keyboard keep working\" does not hold: until Arbor has let go of its taps every posted event of the whole Mac is dropped, for 85 to 1,046 ms, and none after that (all-input-is-dropped-from-the-loss-of-the-permission-until-arbors-taps-are-gone). `check-F63.sh` passed 15 and failed 16, all for one reason, explained since: launched without the permission and then granted it by a write to the database, which announces nothing, Arbor never heard yes (a-process-started-without-the-permission-goes-on-hearing-no), so its part that takes the permission away has still never run. The spec still says \"the switch itself has not been tried\". The probes also showed a grant that comes late and allows no tap (a-late-grant-may-not-allow-event-taps), and a loss behind the daemon's back that reaches a running process after 4 to more than 30 s (the-trusted-flag-may-go-on-saying-yes). They are not the feature's own check, and are not on the trunk yet.",
+   "happened": "Nobody knows: whether real keys and buttons fare as posted ones do at the loss, and whether the icon, the window that asks and the windows that come back after the grant do what the spec says. Half of it ran for the first time on a hosted Mac on 2026-10-15 (the trunk at `8aa9e10`, macOS 26.6.2, once, started by hand, every key, click and scroll a posted event; its output is not in the repository). Session 4 of `input-taps.sh`, 5 of 5: under a second after `tccutil reset Accessibility` Arbor said that the permission was gone and had let go of its four taps, caught by the thorough question while the flag still said yes (the-trusted-flag-may-go-on-saying-yes). No input was tried after the loss there. Probes have tried it since, and the spec's \"mouse and keyboard keep working\" does not hold: until Arbor has let go of its taps every posted event of the whole Mac is dropped from the next press on, for 85 to 1,091 ms, and none after that (all-input-is-dropped-from-the-loss-of-the-permission-until-arbors-taps-are-gone). `check-F63.sh` passed 15 and failed 16, all for one reason, explained since: launched without the permission and then granted it by a write to the database, which announces nothing, Arbor never heard yes (a-process-started-without-the-permission-goes-on-hearing-no), so its part that takes the permission away has still never run. The spec still says \"the switch itself has not been tried\". The probes also showed a grant that comes late and allows no tap (a-late-grant-may-not-allow-event-taps), and a loss behind the daemon's back that reaches a running process after 4 to more than 30 s (the-trusted-flag-may-go-on-saying-yes). They are not the feature's own check, and are not on the trunk yet.",
    "found": "A census of the tests and specs, then the two scripts' first run. Then probes of the loss and of the grant on hosted Macs.",
    "modelled": "partly",
    "knobs": [
@@ -10240,6 +10321,27 @@
    ]
   },
   {
+   "id": "a-window-put-away-before-arbor-started-and-shown-again-counts-as-open-all-along",
+   "kind": "identity",
+   "layer": "below the seam",
+   "expected": "A window that an app shows again is announced as one that has just opened.",
+   "happened": "A window put away before Arbor started (Music, Notes: closed, and the window server keeps its number) and shown again is reported as found, open all along, if its app reports the focus before the creation. What Arbor does for new windows does not happen. Put away while Arbor runs it is told rightly (one-window-apps-show-the-same-number-again).",
+   "found": "The real Accessibility layer run on Linux against a model of a Mac (`make mac-on-linux`). On the model only: nobody has seen it on a Mac. A random walk that went on past listed faults met it; its story is in a follow-up that is not on the trunk yet.",
+   "modelled": "cannot",
+   "knobs": [],
+   "guards": [],
+   "copes": "open",
+   "hurt": 3,
+   "touches": [
+    "lost"
+   ],
+   "sources": [
+    "Sources/ArborKit/AX/AXWindowSystem.swift",
+    "docs/features/F57-new-windows-while-framed.md"
+   ],
+   "certainty": "suspected"
+  },
+  {
    "id": "a-closing-window-shrinks-a-few-points-first",
    "kind": "second-actor",
    "layer": "test",
@@ -10420,7 +10522,7 @@
    "kind": "timing",
    "layer": "below the seam",
    "expected": "A press is judged by where the button went down.",
-   "happened": "Since Arbor stands aside where macOS tiles, a mouse-down is taken at the event's own place, and the window under it is looked for in the window server's list as it is when the event is served. Heard 500 ms late in a drag of a second, the window has been dragged away from under that point: no window, no drag, six reports that a window changed. Before, place and list were both of the moment of serving and agreed, and the drag began at 551 ms. At 0, 20 and 100 ms late it is still seen.",
+   "happened": "Since Arbor stands aside where macOS tiles, a mouse-down is taken at the event's own place, and the window under it is looked for in the window server's list as it is when the event is served. Heard 500 ms late in a drag of a second, the window has been dragged away from under that point: no window, no drag, six reports that a window changed. Before, place and list were both of the moment of serving and agreed, and the drag began at 551 ms. At 0, 20 and 100 ms late it is still seen. A sibling since: two-cures-that-each-pass-alone-lose-a-drag-together.",
    "found": "The real Accessibility layer run on Linux against a model of a Mac (`make mac-on-linux`). On the model only: nobody has seen it on a Mac. Its stories are red and listed as known failures: the run demands that the lines go when a cure lands, and from then on they guard it.",
    "modelled": "cannot",
    "knobs": [],
@@ -10437,6 +10539,52 @@
     "Sources/ArborCore/MacTiling.swift",
     "scripts/mac-on-linux/known-failures.txt",
     "collab/reports/2026-10-15-the-real-ax-layer-on-linux.md"
+   ],
+   "certainty": "suspected"
+  },
+  {
+   "id": "two-cures-that-each-pass-alone-lose-a-drag-together",
+   "kind": "timing",
+   "layer": "below the seam",
+   "expected": "A cure that is green by itself stays green beside another that is green by itself.",
+   "happened": "Since the edges became macOS's while its tiling is on (531885f), a drag of a second whose press is served 300 ms late, Arbor's main thread being busy, is not seen at all. Each of the cures that met there passes alone. Suspected: a second look for the pressed window, at the pointer's place of now, meets `WindowGrab.isListedElsewhere`, for which a window more than 32 points from where Accessibility last had it is swept aside and in nobody's hand. Those lines did not cure its sibling either (a-press-heard-late-finds-no-window-under-the-events-own-place).",
+   "found": "The real Accessibility layer run on Linux against a model of a Mac (`make mac-on-linux`). On the model only: nobody has seen it on a Mac. Its stories caught it on the trunk, and the commit was found by bisecting.",
+   "modelled": "cannot",
+   "knobs": [],
+   "guards": [
+    "tool: mac-on-linux/build.sh"
+   ],
+   "copes": "open",
+   "hurt": 2,
+   "touches": [
+    "stuck"
+   ],
+   "sources": [
+    "Sources/ArborCore/WindowGrab.swift",
+    "Sources/ArborKit/AX/AXWindowSystem.swift",
+    "scripts/mac-on-linux/tests/LostDrags.swift"
+   ],
+   "certainty": "suspected"
+  },
+  {
+   "id": "arbor-starts-while-an-app-hangs-and-each-try-to-observe-it-waits-a-second",
+   "kind": "timing",
+   "layer": "below the seam",
+   "expected": "An app that is not ready refuses an observer at once, so trying again costs nothing.",
+   "happened": "Arbor starts, or resumes, while an app hangs. Each try to observe it waits out a second on the main thread, and the tries come 0.25, 0.5, 1, 2, 4, 8, 8 and 8 s apart: four seconds of standing still for a hang of 5 s, nine for one of 60 s. After the hang of 60 s the tries are spent, and its window is never known until the app happens to come forward.",
+   "found": "The real Accessibility layer run on Linux against a model of a Mac (`make mac-on-linux`). On the model only: nobody has seen it on a Mac. A random walk that went on past listed faults met it; its story is in a follow-up that is not on the trunk yet.",
+   "modelled": "cannot",
+   "knobs": [],
+   "guards": [],
+   "copes": "open",
+   "hurt": 2,
+   "touches": [
+    "lost",
+    "slow"
+   ],
+   "sources": [
+    "Sources/ArborKit/AX/AXWindowSystem.swift",
+    "Sources/ArborCore/RetrySchedule.swift"
    ],
    "certainty": "suspected"
   },
@@ -10493,24 +10641,19 @@
   {
    "id": "a-press-that-brings-another-app-forward-reaches-it-late",
    "kind": "input",
-   "layer": "below the seam",
-   "expected": "A press on the title bar of another app's window reaches that app as soon with Arbor running as without.",
-   "happened": "A day with real apps had reported presses on title bars 35 to 68 ms late; that compared mixtures of presses and is taken back on the board (1.37). What is left there: with Arbor running a press on a title bar that brings another app forward reaches that app late, with all four settings off and no tap of Arbor's listed just the same, so it is no tap. macOS itself takes some 19 ms over such a press (two measurements), which leaves Arbor a share of some 15 to 20 ms, unproven until the probe has a fair baseline. The gate allows 10, by kind of event, against the journey's own control.",
-   "found": "A day with real apps on a hosted Mac and its control without Arbor, then a probe of such presses. The share is unproven, by the board's own words.",
+   "layer": "test",
+   "expected": "Presses on title bars are all alike, so how late they arrive with Arbor running can be held against how late they arrive without.",
+   "happened": "A press on a title bar that brings another app forward reaches that app late whoever runs: macOS brings the app forward first and hands the press on afterwards. 112 such presses in seven rounds on one hosted Mac: half were there within 41 to 61 ms with Arbor in five settings, and within 76 ms without Arbor, the slowest round of all. Arbor adds nothing that can be measured. A day with real apps had reported presses 35 to 68 ms late \"with Arbor running\", and a probe then gave Arbor a share of 15 to 20 ms: both compared mixtures of presses, and the finder has taken the fault back with a fair baseline (the board, 1.37).",
+   "found": "A day with real apps on a hosted Mac and its control, then a probe of such presses with a fair baseline: before Arbor starts, as shipped, paused, and with settings off.",
    "modelled": "cannot",
    "knobs": [],
    "guards": [],
-   "copes": "open",
-   "hurt": 3,
-   "touches": [
-    "input-held"
-   ],
+   "copes": "docs/VIABLE.md, section 5, compares lateness by kind of event, and a journey only with its own control, where the same presses are made. No fault of Arbor's.",
+   "hurt": 4,
    "sources": [
     "collab/BOARD.md",
-    "docs/VIABLE.md",
-    "Sources/ArborKit/AX/AXWindowSystem.swift"
-   ],
-   "certainty": "suspected"
+    "docs/VIABLE.md"
+   ]
   }
  ],
  "afterword": [
@@ -10731,7 +10874,7 @@
   "- The chaos lab is polite too. Apps that fight back or hang appear only in the 30 % of runs that allow misbehaviour (`Sources/ArborTesting/ChaosGenerator.swift`). It never takes the permission away and never sets a size step, `stackingIsUnknown`, `flagLags` or `refusesTaps`. A failing script it does not know is only printed unless `ARBOR_CHAOS_STRICT=1`. Three of its rules are red by name today (`Sources/ArborTesting/ChaosKnownFailures.swift`).",
   "- A new member of a seam that has a default implementation falls on that default behind the trace recorder, the replayer and the fake Mac until somebody forwards it, and nothing fails to compile. `TraceForwardingTests` is the net.",
   "- **Once a stand-in has said the same as a Mac without being told.** Drags had been seen to go unnoticed on hosted Macs, and a run of the real-window suite had shown one with the pointer 27 points away at the first look. A model of a Mac under the real Accessibility layer (`make mac-on-linux`), asked only how a drag can be lost, came to the same lines of the layer by its own road, on Linux, and said more: a drag of any length is lost for good once the pointer is far away at the first look (a-dragged-window-may-stand-still-until-the-pointer-is-24-points-away). The first run of `check-displays.sh`, made in the same hour by somebody who did not know of either, lost three of four long drags. Every other case on this page is a stand-in corrected by a Mac; here one agreed with a Mac beforehand. What share the script's coarse steps had in that run is for its trace to say.",
-  "- **The model of a Mac guards by hand.** `scripts/mac-on-linux/build.sh` tells its stories about the real Accessibility layer and walks a rude walk, on Linux, in seconds. Its self-test takes 21 known cures out of a copy, one at a time, and the stories about them must go red: 18 cases above name it as a guard for that reason. Nine open cases name it because their stories are red and listed, and the run demands that a line goes when its story turns green. Neither `make check` nor CI starts it yet, so the page marks it \"by hand\"; the day one of them does, 27 cases are guarded without a Mac.",
+  "- **The model of a Mac guards by hand.** `scripts/mac-on-linux/build.sh` tells its stories about the real Accessibility layer and walks a rude walk, on Linux, in seconds. Its self-test takes 21 known cures out of a copy, one at a time, and the stories about them must go red: 18 cases above name it as a guard for that reason. Ten open cases name it because their stories are red, nine of them listed, and the run demands that a line goes when its story turns green. Neither `make check` nor CI starts it yet, so the page marks it \"by hand\"; the day one of them does, those cases are guarded without a Mac. It plays below the seam what the stand-ins cannot. *Stand-ins play it* stays about what the controller's tests meet, so such a case goes on saying \"cannot\".",
   "- **A stand-in made as rude as a Mac** (on its way to the trunk) ends all 49 scenarios and 70 replayed walks in the same state as the polite one. Of the 41 lines of tests that fail under it, 26 pin a courtesy of the stand-in's; five are faults of Arbor's, entered above as found by a rude stand-in only.",
   "- **What the night of 2026-10-15 taught about method.** A probe that is invalid has to say so loudly: a round whose own premises did not hold was called invalid and counted for nothing, neither green nor red. And a control on both sides, nobody running and Arbor without taps, told two kinds of hole apart, the poster's and the tapper's, and took back two sentences that had been reported as findings within the hour before: that holes of three seconds and more were Arbor's, and that its main thread had stood still meanwhile. Both had been read out of a log that was merely silent.",
   "",
