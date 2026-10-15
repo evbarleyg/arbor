@@ -692,10 +692,10 @@ public final class FakeWindowSystem: WindowSystem {
 
   public func frame(of window: WindowID) -> CGRect? { windows[window]?.snapshot.frame }
 
-  /// Whether at least half of the window is on some display.
+  /// Whether at least half of the window shows, on all displays together.
   public func isVisible(_ window: WindowID) -> Bool {
     guard let frame = frame(of: window) else { return false }
-    return displayList.contains { frame.fractionInside($0.frame) >= 0.5 }
+    return !frame.showsLessThanHalf(on: displayList.map(\.frame))
   }
 
   public func clearFrameLog() {

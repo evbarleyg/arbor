@@ -592,7 +592,7 @@ extension ChaosRunner {
         if seven.displaysChangedLast { continue }
         // What is found counts as left. The one thing Arbor may fetch is what nobody could get hold of: no 24 points of its title bar
         // are on any display (docs/VIABLE.md, section 6).
-        if showedBefore < 0.5 * before.area, !isReachable(before, by: 24) { continue }
+        if showedBefore < 0.5 * before.area, !titleBarIsWithinReach(before) { continue }
         // And what is there because of Arbor: apps open a window beside the one they have, and one that no display shows Arbor takes for
         // one that it put out of view itself, in a run that was killed.
         if showedBefore < 0.5 * before.area,

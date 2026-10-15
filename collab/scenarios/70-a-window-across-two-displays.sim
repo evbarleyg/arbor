@@ -1,0 +1,47 @@
+# Proposed by the swarm (2026-10-15, board 0.9); the documenter may edit or drop it.
+# Story: a laptop beside a larger monitor. Somebody has Notes lying across the two, low down, so that its left part also reaches
+# below the laptop's lower edge: two fifths of it on the laptop, nearly half on the monitor, 85 % in view. They start Arbor.
+# Nothing is docked, so nothing moves. Arbor used to ask each display by itself whether it showed half of the window, heard
+# no twice, took it for lost and brought it to the middle of the laptop's display: at the start, and again at Quit.
+# They dock it, think better of it, and Float All takes it back exactly where it was.
+# Reference: "nothing moves until the person docks something"; collab/QUESTIONS.md, "two questions, two measures".
+quiet
+displays 2
+relaunch quit
+open Notes 800x600 at 1000 460
+relaunch start
+expect ok
+expect still
+expect at 101 1000 460
+expect floating 101
+wait 5
+expect still
+
+# Another window opens the same way, a little higher.
+open Calendar 800x600 at 1010 440
+expect still
+expect at 102 1010 440
+wait 5
+expect still
+
+# The keys that show everything have nothing to fetch.
+press home
+expect still
+press show-all
+expect still
+
+# Docked, and given back.
+dock 101 left
+expect docked 101
+float-all
+expect at 101 1000 460
+expect size 101 800x600
+expect at 102 1010 440
+
+# In the evening they quit Arbor, and in the morning it finds them there again.
+relaunch quit
+expect still
+relaunch start
+expect still
+expect at 101 1000 460
+expect at 102 1010 440

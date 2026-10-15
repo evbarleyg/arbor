@@ -1123,7 +1123,10 @@ camera shows, and floating windows nobody remembers are moved to the middle of t
 of which under half shows, at a start and when one opens, only these are fetched, once: one that nobody could get hold of
 (`titleBarIsWithinReach`: no 24 points of its title bar on any display), one in Arbor's own corner, which between two displays
 shows a whole title bar next door, and one whose app has a window out of view by Arbor's doing, beside which apps
-open the next. Every other stays, and gets the note a person's own hand leaves (`noteWhereItsUserLeftIt`), which is not saved: a
+open the next.
+**How much shows is asked of all displays together**, in one place (`CGRect.areaShowing(on:)`, `showsLessThanHalf(on:)`; the
+controller's `areaShowing(of:)` and `isMostlyOffScreen`, and the lab's nets, ask there): a window across the border of two displays
+shows on both. Every other stays, and gets the note a person's own hand leaves (`noteWhereItsUserLeftIt`), which is not saved: a
 later start writes it again for a window it finds where it remembers it. A layout lets a noted window go on hanging by the same
 measure (`reach`), so what stays when it is found is not fitted in later.
 The size such a window is found at may be the small one of `shrinkOutOfView`, so it is not taken for the size it has in view

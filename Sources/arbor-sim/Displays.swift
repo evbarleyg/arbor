@@ -81,7 +81,7 @@ func simulateDisplays(_ words: [String], harness: Harness) -> (String, Bool)? {
     return ("\(id.rawValue) is at most \(words[2])", true)
   case "where":
     guard words.count == 2, let id = WindowID(word: words[1]), let frame = system.frame(of: id) else { return usage("where <id>") }
-    let showing = system.displayList.map { frame.fractionInside($0.frame) }.reduce(0, +)
+    let showing = frame.area > 0 ? frame.areaShowing(on: system.displayList.map(\.frame)) / frame.area : 0
     let place = "\(Int(frame.minX)),\(Int(frame.minY)) \(Int(frame.width))x\(Int(frame.height))"
     return ("\(id.rawValue) is at \(place), \(Int((showing * 100).rounded())) % of it on a display", true)
   default:

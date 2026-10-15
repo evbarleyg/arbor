@@ -156,18 +156,25 @@ extension Controller {
     guard let frame = workspaces[displayID]?.undockedFrame(of: window), let display = display(displayID) else {
       return nil
     }
-    return asItWas(frame, on: display)
+    // The note goes by the window's own display. What hung over to the next one shows less if that one has changed since.
+    let showsAsMuch = chosenOnShape[window].map { areaShowing(of: frame) >= $0.showing - 1 } ?? false
+    return asItWas(frame, on: display, leftThereByItsUser: showsAsMuch && wasLeftThereByItsUser(frame, of: window, on: display))
   }
 
   /// `frame`, where a window used to be, if that is still a place for a window on `display`. People leave
   /// windows hanging over a screen edge on purpose, so that alone is no reason to move one. If the
   /// display has changed since, so that the window would be larger than it, mostly off it, or have its
-  /// title bar under the menu bar, the frame is fitted into the display.
-  func asItWas(_ frame: CGRect, on display: DisplaySnapshot) -> CGRect {
+  /// title bar under the menu bar, the frame is fitted into the display. Off *it*: the question is whether the frame still
+  /// belongs to this display, not how much of it can be seen.
+  ///
+  /// Unless its person's own hand left it there and as much of it shows as then (`wasLeftThereByItsUser`): across the border of two
+  /// displays less than half of a window can be on its own, and it is in view all the same. Only with that note: a layout would
+  /// fit any other in again (`floatingMoves`), and a pause and the resume after it would take the window there and back.
+  func asItWas(_ frame: CGRect, on display: DisplaySnapshot, leftThereByItsUser: Bool = false) -> CGRect {
     let visible = display.visibleFrame
     let isStillGood =
       frame.width <= visible.width && frame.height <= visible.height && frame.minY >= visible.minY
-      && frame.fractionInside(display.frame) >= 0.5
+      && (frame.fractionInside(display.frame) >= 0.5 || leftThereByItsUser && !showsLessThanHalf(frame))
     return isStillGood ? frame : frame.fitted(into: visible)
   }
 
@@ -235,7 +242,7 @@ extension Controller {
     // One that took the frame it was asked to is where its user had it, however little of it shows.
     let isSmaller = actual.width < frame.width - 2 || actual.height < frame.height - 2
     if actual.width > frame.width + 2 || actual.height > frame.height + 2
-      || (isSmaller && displays.allSatisfy({ actual.fractionInside($0.frame) < 0.5 }))
+      || (isSmaller && showsLessThanHalf(actual))
     {
       actual = system.setFrame(actual.fitted(into: display.visibleFrame), of: window) ?? actual
       // That is where it floats from now on, or the next layout would send it back to a frame it cannot take. Only if

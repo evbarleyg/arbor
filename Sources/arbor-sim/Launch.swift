@@ -149,10 +149,8 @@ private func isSane(_ frame: CGRect) -> Bool {
 @MainActor
 func quitCheck(_ harness: Harness) -> String {
   harness.controller.shutdown()
-  let displays = harness.system.displayList
-  let lost = harness.system.allWindows().filter { window in
-    window.isPresent && !displays.isEmpty && !displays.contains { window.frame.fractionInside($0.frame) >= 0.5 }
-  }
+  let displays = harness.system.displayList.map(\.frame)
+  let lost = harness.system.allWindows().filter { $0.isPresent && !displays.isEmpty && $0.frame.showsLessThanHalf(on: displays) }
   guard !lost.isEmpty else { return "QUIT ok" }
   return "QUIT \(lost.count) out of view: " + lost.prefix(3).map { "\($0.id)" }.joined(separator: " ")
 }

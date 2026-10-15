@@ -60,6 +60,51 @@ extension CGRect {
     return overlap.isNull ? 0 : overlap.area / area
   }
 
+  /// How much of this rectangle `screens` show, all together, in square points. **The one measure of how much of a window
+  /// shows**, for Arbor, the lab's nets and the stand-ins alike. A window across the border of two displays shows on both, so
+  /// no display is asked by itself: 37 % here and 42 % there are 79 % in view, not "less than half".
+  ///
+  /// `screens` are the displays' whole frames. What lies behind the menu bar or the Dock is where macOS lets a person put a
+  /// window, and counts as showing (QUESTIONS, 2026-10-15). What two screens both show, should they ever overlap, counts once.
+  public func areaShowing(on screens: [CGRect]) -> CGFloat {
+    let parts = screens.map { intersection($0) }.filter { $0.area > 0 }
+    guard parts.count > 1 else { return parts.first?.area ?? 0 }
+    let columns = Set(parts.flatMap { [$0.minX, $0.maxX] }).sorted()
+    let rows = Set(parts.flatMap { [$0.minY, $0.maxY] }).sorted()
+    var showing: CGFloat = 0
+    for (left, right) in zip(columns, columns.dropFirst()) {
+      for (top, bottom) in zip(rows, rows.dropFirst())
+      where parts.contains(where: { $0.contains(CGPoint(x: (left + right) / 2, y: (top + bottom) / 2)) }) {
+        showing += (right - left) * (bottom - top)
+      }
+    }
+    return showing
+  }
+
+  /// Less than half of it shows, on all of `screens` together: a window that is as good as out of view.
+  public func showsLessThanHalf(on screens: [CGRect]) -> Bool { area <= 0 || areaShowing(on: screens) * 2 < area }
+
+  /// Whether a hand could get hold of a window with this frame: the other question, with a measure of its own. However much
+  /// of a window shows, nobody moves it but by its title bar, and that has to be on one screen: parts do not add up.
+  ///
+  /// 24 points of the title bar's length, or all of a window narrower than that. The strip asked about is the window's top
+  /// 24 points, less than the lowest title bar there is (28, 32 and 52 points were measured), so nobody needs to know how
+  /// high this one's is; half of that is enough to hit.
+  ///
+  /// `screens` are the whole frames here too. By what the menu bar and the Dock leave, a window some apps open at the very top
+  /// would be out of reach at every start, and so would one parked over the edge above or below a Dock at the side, which a
+  /// hand can take. In doubt Arbor moves less (QUESTIONS, 2026-10-15).
+  public func titleBarIsWithinReach(on screens: [CGRect]) -> Bool {
+    let bar = CGRect(x: minX, y: minY, width: width, height: Swift.min(height, Self.titleBarToHold))
+    return screens.contains {
+      let showing = bar.intersection($0)
+      return !showing.isNull && showing.width >= Swift.min(bar.width, Self.titleBarToHold) && showing.height >= bar.height / 2
+    }
+  }
+
+  /// The least of a title bar that a hand can take hold of, in points.
+  public static let titleBarToHold: CGFloat = 24
+
   /// Intersection area divided by union area, from 0 to 1.
   public func intersectionOverUnion(_ other: CGRect) -> CGFloat {
     let overlap = intersection(other)

@@ -298,7 +298,7 @@ public final class ChaosRunner {
     // its title bar are within reach: what is found counts as left (the product owner). What shows less is fetched.
     if case .open(let new) = action {
       let frame = Self.within(new.frame, minimum: new.minimum, maximum: new.maximum)
-      if Self.area(of: frame, showingOn: system.displayList) > 0.5 * frame.area || isReachable(frame, by: 24) {
+      if Self.area(of: frame, showingOn: system.displayList) > 0.5 * frame.area || titleBarIsWithinReach(frame) {
         note(new.id, frame)
       } else {
         leftAcrossAnEdge.insert(new.id)
@@ -549,17 +549,22 @@ public final class ChaosRunner {
   }
 
   /// Nobody moves or resizes a window to where they could not get hold of it again.
-  /// With `points` 24, the least that counts when a window is found or opens, the bar is the window's top 24 points too.
-  func isReachable(_ frame: CGRect, by points: CGFloat = 40) -> Bool { Self.isReachable(frame, by: points, on: system.displayList) }
+  func isReachable(_ frame: CGRect) -> Bool { Self.isReachable(frame, on: system.displayList) }
 
-  private static func isReachable(_ frame: CGRect, by points: CGFloat, on displays: [DisplaySnapshot]) -> Bool {
+  private static func isReachable(_ frame: CGRect, on displays: [DisplaySnapshot]) -> Bool {
     displays.isEmpty
       || displays.contains { display in
-        // That many points of title bar, forty if nothing else is said, or half of a window narrower than that, and enough of its height to hit.
-        let bar = CGRect(x: frame.minX, y: frame.minY, width: frame.width, height: min(frame.height, min(points, 28)))
+        // Forty points of title bar, or half of a window narrower than that, and enough of its height to hit.
+        let bar = CGRect(x: frame.minX, y: frame.minY, width: frame.width, height: min(frame.height, 28))
         let showing = bar.intersection(display.frame)
-        return !showing.isNull && showing.width >= min(frame.width / 2, points) && showing.height >= min(bar.height, 12)
+        return !showing.isNull && showing.width >= min(frame.width / 2, 40) && showing.height >= min(bar.height, 12)
       }
+  }
+
+  /// The least that counts when a window is found or opens, by Arbor's own measure: a hand puts no window where so little is left to
+  /// take hold of, but what is there stays.
+  func titleBarIsWithinReach(_ frame: CGRect) -> Bool {
+    system.displayList.isEmpty || frame.titleBarIsWithinReach(on: system.displayList.map(\.frame))
   }
 
   /// Lets go of the mouse, then lets apps react and timers fire until nothing is left to do. An app
@@ -599,7 +604,7 @@ public final class ChaosRunner {
         let destination = displays.first { $0.id == home.id } ?? main
         var moved = frame.offsetBy(dx: destination.frame.minX - home.frame.minX, dy: destination.frame.minY - home.frame.minY)
         // It does not leave a window where nobody could get hold of it, on a display that shrank, say.
-        if destination.id != home.id || !Self.isReachable(moved, by: 40, on: displays) { moved = moved.fitted(into: destination.visibleFrame) }
+        if destination.id != home.id || !Self.isReachable(moved, on: displays) { moved = moved.fitted(into: destination.visibleFrame) }
         if moved != frame { moves.append((id, moved)) }
         // On a display that is as large as it was, only elsewhere, the window is where it was on it, and there it stays.
         if destination.id == home.id, destination.frame.size == home.frame.size,

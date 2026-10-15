@@ -26,7 +26,7 @@ public enum StrayDialog {
   ///   - siblings: the frames of its app's ordinary windows. Only if one of them is out of view is the dialog's place
   ///     Arbor's doing; what apps that Arbor leaves alone do with their windows is their business.
   public static func home(for frame: CGRect, siblings: [CGRect], displays: [Display]) -> CGPoint? {
-    func isOutOfView(_ rect: CGRect) -> Bool { displays.allSatisfy { rect.fractionInside($0.frame) < 0.5 } }
+    func isOutOfView(_ rect: CGRect) -> Bool { rect.showsLessThanHalf(on: displays.map(\.frame)) }
     guard frame.width >= smallestSide, frame.height >= smallestSide, isOutOfView(frame),
       siblings.contains(where: isOutOfView),
       // Windows out of view wait at a corner of their own display, so the nearest one is the app's.

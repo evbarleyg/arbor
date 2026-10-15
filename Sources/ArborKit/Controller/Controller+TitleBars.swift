@@ -48,8 +48,8 @@ extension Controller {
     return titleBars[window].map { abs(origin.y - whereItStops(place, titleBar: $0).y) <= 1 } ?? false
   }
 
-  /// How many square points of `frame` the displays show. They do not overlap, so what they show adds up.
+  /// How many square points of `frame` the displays show, all together: another name for `areaShowing(of:)`.
   func whatShows(of frame: CGRect) -> CGFloat {
-    displays.map { frame.intersection($0.frame).area }.reduce(0, +)
+    areaShowing(of: frame)
   }
 }

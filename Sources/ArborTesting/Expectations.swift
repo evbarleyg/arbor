@@ -52,8 +52,8 @@ public enum ScenarioExpectation {
       guard let snapshot = controller.windows[id] else { return "there is no window \(id)" }
       guard whyNotVisible(id, controller, h.system) != nil else { return "\(place(id)) is visible" }
       // Arbor thinking it is out of view is not enough: no more than a sliver may show on any display.
-      let showing = h.system.displayList.map { snapshot.frame.fractionInside($0.frame) }.reduce(0, +)
-      return snapshot.isPresent && showing > 0.02 ? "\(place(id)) should be out of view but shows on a display" : nil
+      let showing = snapshot.frame.areaShowing(on: h.system.displayList.map(\.frame))
+      return snapshot.isPresent && showing > 0.02 * snapshot.frame.area ? "\(place(id)) should be out of view but shows on a display" : nil
 
     case ("tile", 2):
       guard let id = window(1) else { return usage(words) }
