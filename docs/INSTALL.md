@@ -1,6 +1,11 @@
 # Installing Arbor
 
-Arbor needs macOS 14 or later. Building it needs Swift 6.4 or later: Xcode 27 or later (or its Command Line Tools). Swift 6.3 crashes on one of its files.
+Arbor needs macOS 14 or later. Building it needs Swift 6.2 or later, which comes with Xcode 26. The Command Line Tools are
+enough, without Xcode itself: `xcode-select --install` fetches them. `swift --version` says what you have.
+
+What stands behind that: every change is built and tested on GitHub's Macs with the Swift of their newest Xcode (6.3 today), and
+compiled on Linux with 6.2 and with the newest release; before anything reaches `main`, a Mac compiles all of it with Xcode 26.0 and
+with the newest Swift as well. An older Swift says so in one line (see Troubleshooting).
 
 ## From source, in three commands
 
@@ -114,8 +119,8 @@ latest release, compares versions, and offers to open the release page if there 
 installs nothing. Nothing is asked unless you ask: with `"automaticUpdateChecks": true` in `settings.json` Arbor also asks
 a minute after it starts and once a week from then on. Such a check never opens a window; when it finds a newer
 release the menu item reads *Update Available…*, and `arborctl version` says which. The request is one unauthenticated
-GET that carries Arbor's version and nothing about you. While the repository is private GitHub answers as if it did
-not exist, and Arbor says "no update information".
+GET that carries Arbor's version and nothing about you. As long as no release has been published GitHub has nothing to
+answer with, and Arbor says "no update information".
 
 ## Launch at login
 
@@ -159,25 +164,58 @@ It leaves, and lists:
 
 ## A downloaded build
 
-Releases carry a disk image and a zip for Apple silicon and Intel. Until the project has an Apple Developer ID they are
-signed ad hoc and not notarized, which costs two detours that building from source does not have:
+Releases carry a disk image and a zip, for Apple silicon and Intel alike. Open the disk image and drag Arbor onto Applications, or
+unpack the zip and move Arbor there.
 
-1. **The first launch is blocked.** macOS marks downloads as quarantined and refuses one that Apple has not checked:
-   "Apple could not verify "Arbor" is free of malware". Click **Done**, open System Settings → Privacy & Security, scroll
-   down to "Arbor was blocked to protect your Mac" and click **Open Anyway**. Right-click → Open no longer gets past
-   this on current macOS. Or take the mark off in Terminal:
+Until the project has an Apple Developer ID, which costs a yearly fee, they are signed ad hoc and **not notarized**: Apple has not looked at
+them. macOS says so in strong words, to everybody and about every app of that kind, and it costs two detours that building from source
+does not have. What follows is what macOS 26 does and says, seen on a Mac that had never met Arbor. The Release workflow goes
+through it on such a Mac for every release: the way with the mouse up to the password in step 4, which no script can give there, and
+the way through Terminal to its end, two windows docked side by side.
 
-   ```bash
-   xattr -dr com.apple.quarantine /Applications/Arbor.app
-   ```
+### 1. The first launch is refused
 
-2. **Every update needs the permission again**, because every release has a signature of its own: see the next section.
+It makes no difference whether Arbor came out of the zip, off the disk image or through Homebrew. There are two ways past it.
+
+**With the mouse: four steps, once.**
+
+1. Open Arbor. **Click Done, not the blue button**, which is Move to Trash, and which Return presses too. What macOS says there is
+   **“Arbor” Not Opened**: "Apple could not verify “Arbor” is free of malware that may harm your Mac or compromise your privacy."
+2. Open System Settings → **Privacy & Security** and scroll down to *Security*. There it says "“Arbor” was blocked to protect your Mac."
+   Click **Open Anyway** beside it. (By Apple's account the button stays for about an hour after step 1. If it has gone, open Arbor once more.)
+3. macOS asks again: **Open “Arbor”?** "Apple is not able to verify that it is free from malware that could harm your Mac or compromise your
+   privacy. Don’t open this unless you are certain it is from a trustworthy source." Click **Open Anyway**, the middle button. The blue one
+   is Move to Trash here too.
+4. A last dialog, *Privacy & Security*, says "You are attempting to open an app that may cause harm to your Mac or compromise your privacy"
+   and wants an administrator's name and password. It can take some seconds to come up. After that, by Apple's account, Arbor opens
+   and this copy is not asked about again.
+
+A right click and Open, which used to be the short cut, no longer gets past this on current macOS.
+
+**In Terminal: one line.** macOS marks what is downloaded, and refuses only what bears the mark. This takes it off:
+
+```bash
+xattr -dr com.apple.quarantine /Applications/Arbor.app
+```
+
+Then Arbor opens like any other app, and none of the four dialogs appears.
+
+Either way you are overruling a check that is there for your protection, on the project's word alone. If you would rather not: the
+sources are all here, and building them takes three commands and no Xcode (the top of this page).
+
+### 2. Every update needs the permission again
+
+macOS ties the Accessibility permission to the signature, and each release has a signature of its own: see "Arbor says it has no
+permission" below, after every update.
+
+### Checking, and Homebrew
 
 To check a download: `shasum -a 256 -c Arbor-<version>-checksums.txt`.
 
-**Homebrew.** `packaging/arbor.rb` is a cask; `make release` fills in the version and the checksum. It goes live when
-the repository is public, because Homebrew downloads without credentials: then
-`brew install --cask evbarleyg/tap/arbor`.
+**Homebrew.** `packaging/arbor.rb` is a cask; `make release` fills in the version and the checksum. It is not offered anywhere
+yet: that takes a published release to download and a tap to list it in, and then `brew install --cask evbarleyg/tap/arbor`.
+Tried from a tap on the spot, it installs the app and links `arborctl`. It spares nobody the detour: Homebrew marks what it
+installs as downloaded too, and the first launch is blocked just the same.
 
 ## Troubleshooting
 
@@ -204,6 +242,10 @@ both; then make one again.
 **`arborctl: command not found`.** The folder it was linked into is not on your `PATH`; `make install` prints the line
 that adds it. It is always at `~/Applications/Arbor.app/Contents/Helpers/arborctl`.
 
+**`package 'arbor' is using Swift tools version 6.2.0 but the installed version is …`.** Your Swift is older than Arbor can be built
+with. Update Xcode or the Command Line Tools to 26 or later (Software Update offers them; `xcode-select --install` where there are
+none). Where macOS is too old for those, a downloaded build is the way: see above.
+
 **`make install` stops with compiler errors.** `swift build` tells whether the sources compile at all. If they do, and only the
 optimized build fails, `ARBOR_CONFIGURATION=debug make install` installs the build that every test runs against; it is slower
 in ways nobody is likely to notice in a window manager. Please report the errors.
@@ -217,8 +259,13 @@ in ways nobody is likely to notice in a window manager. Please report the errors
 2. Run the **Release** workflow (Actions → Release → Run workflow, or `gh workflow run release.yml`), on a branch or on the
    tag `v<version>`. A suffix makes a pre-release of the version in `VERSION`, which update checks do not offer:
    `v0.9.0-rc.1`. The workflow starts only by hand: pushing a tag marks a commit and does nothing else.
-3. It runs `make check` and `make release` on a Mac and leaves a **draft** on the releases page with the disk image, the
-   zip, the checksums, the cask and the notes. Read it, then publish it; publishing creates the tag if there is none.
+3. It runs `make check` and `make release` on a Mac. A second Mac, which has built nothing, then takes the files as a person
+   who downloads them would (`scripts/mac-shell/check-download.sh`): checksums, signature, both kinds of Mac, what macOS says to the
+   first launch, the way past it, the first run, two windows docked side by side. What does not get that far goes nowhere.
+4. It leaves a **draft** on the releases page with the disk image, the zip, the checksums, the cask and the notes. Read it,
+   then publish it; publishing creates the tag if there is none.
+
+With "rehearsal" ticked it does all of that except the last step: nothing is sent to the releases page.
 
 `make release` does the same build locally, into `build/`: universal binaries, `Arbor-<version>.zip` and `.dmg`,
 `Arbor-<version>-checksums.txt`, `Arbor-<version>-notes.md` and `arbor.rb`.

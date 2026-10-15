@@ -66,13 +66,14 @@ jobs:
   shell:
     runs-on: ${{ inputs.runner || 'macos-26' }}
     # Each script has twenty minutes (scripts/ci-mac-shell.sh); this is for a Mac on which nothing moves any more.
-    timeout-minutes: 100
+    timeout-minutes: 14 # this probe only
     strategy:
       fail-fast: false
       matrix:
         scripts: ${{ fromJSON(inputs.macs || format('["{0}"]', inputs.script)) }}
     permissions:
       contents: write # to push mac-shell-out/<tag>; nothing else is written
+      actions: read # this probe only: to fetch what the Release workflow's rehearsal built
     env:
       SCRIPT: ${{ matrix.scripts }}
       REF: ${{ inputs.ref }}
@@ -154,9 +155,17 @@ jobs:
         with:
           key: ${{ steps.setup.outputs.build-key }}
 
+      - name: "This probe only: what the Release workflow's rehearsal built on another Mac"
+        uses: actions/download-artifact@v4
+        with:
+          name: arbor-release
+          path: build
+          run-id: 38648944591
+          github-token: ${{ github.token }}
+
       - name: Run the scripts from the repository
         # Shorter than the job's limit, so that whatever happens the output gets pushed.
-        timeout-minutes: 90
+        timeout-minutes: 10 # this probe only
         run: |
           set -f
           .ci/scripts/ci-mac-shell.sh $SCRIPT
