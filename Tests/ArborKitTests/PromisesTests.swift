@@ -138,8 +138,8 @@ import Testing
     }
   }
 
-  /// Nothing is docked. A window is moved by hand while Arbor is paused, and at the next thing that happens after the resume
-  /// Arbor takes it back to where it was before the pause.
+  /// Nothing is docked. A window is moved by hand while Arbor is paused. Until 2026-10-15, at the next thing that happened after the
+  /// resume, Arbor took it back to where it was before the pause (`FoundAtAStartTests`).
   @Test func aWindowMovedByHandDuringAPauseStaysWhereTheHandPutIt() {
     let (h, windows) = mac()
     h.start()
@@ -151,9 +151,7 @@ import Testing
     #expect(h.frame(windows[1]) == chosen)
     h.system.close(windows[2])
     settle(h)
-    withKnownIssue("board 1.18: a floating window's frame is its person's") {
-      #expect(h.frame(windows[1]) == chosen)
-    }
+    #expect(h.frame(windows[1]) == chosen)
   }
 
   // MARK: 3. A window moves once, to where it ends up

@@ -158,7 +158,7 @@ Browser on the left, terminal on the right, chat under the terminal, the Desktop
 
 **⌘H and ⌘M work as ever.** A docked window that is hidden or minimized keeps its place; its docked neighbours close up meanwhile, and when it comes back it has its place again and they their exact sizes, in whatever order several went and came. If you change the arrangement yourself meanwhile (a gap, a dock, a window closed), that is the arrangement from then on.
 
-Arbor remembers the arrangement, per display, across restarts of Arbor and across a login, when apps bring their windows back. Starting Arbor puts what was docked back in its places and shows everything, whatever the view was when you quit, and a window you never docked is not moved. (A docked window too large for its place shows as a tile, as always when everything shows.) The view you quit in is one step back (**⌃⌥[**). An app that you quit and open again while Arbor runs does not get its places back yet: its windows float, and you dock them again.
+Arbor remembers the arrangement, per display, across restarts of Arbor and across a login, when apps bring their windows back. Starting Arbor puts what was docked back in its places and shows everything, whatever the view was when you quit, and a window you never docked is not moved: where you put it after quitting Arbor is its place from then on. (A docked window too large for its place shows as a tile, as always when everything shows.) The view you quit in is one step back (**⌃⌥[**). An app that you quit and open again while Arbor runs does not get its places back yet: its windows float, and you dock them again.
 
 In a hurry? **⌃⌥A** docks every window on the display in a grid. It replaces whatever arrangement was there.
 

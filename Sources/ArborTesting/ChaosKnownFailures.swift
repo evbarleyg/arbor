@@ -664,25 +664,28 @@ extension ChaosRunner {
         advance 1
         """),
     ChaosKnownFailure(
-      rule: "moved-at-launch", owner: "rule 2: nothing moves at a start", severity: 2,
-      story: "Quit at the desk, started on the lap: the displays change while Arbor is away, its person puts a floating window where they want it, and the start "
-        + "sends it to where it lay on this display the last time Arbor saw it.",
+      rule: "moved-at-launch-after-a-crash", owner: "rule 2: nothing moves at a start, after a run that did not quit", severity: 3,
+      story: "Arbor is killed and nothing starts it again. Its person makes a window that is kept in view smaller, and starts Arbor: the window is blown up to the "
+        + "size remembered for it. Only a quit and a pause write down where they left each window; after a crash Arbor cannot tell a size its person chose from "
+        + "one it had squeezed the window to itself. (After a quit or a pause the size is learnt.)",
       script: """
-        displays main:0,0,1512,982:37,0,0,0* windows-never
         launch
-        open 101 Safari pid 1000 at 100 100 700 500 min 574 240
-        open 102 Notes pid 1001 at 300 200 720 420 min 709 300
-        dock 101 left
+        open 106 Xcode pid 1004 at 300 150 840 440
+        pin 106
         settle
-        displays side:0,0,2560,1440:25,0,0,0* windows-late
-        settle
-        move 102 1500 700 720 420
-        settle
-        quit
-        displays main:0,0,1512,982:37,0,0,0* windows-first
-        move 102 500 400 720 420
+        crash
+        edge 106 300 150 600 440
         launch
         settle
+        """,
+      """
+        launch
+        open 116 Preview pid 1007 at 2059 599 822 562 min 369 88
+        pin 116
+        flush
+        crash
+        move 116 326 132 635 221
+        launch
         """),
     ChaosKnownFailure(
       rule: "quit-left-out-of-reach", owner: "the ways home: quitting while an app hangs (K003)", severity: 1,

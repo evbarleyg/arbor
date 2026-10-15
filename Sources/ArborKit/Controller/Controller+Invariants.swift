@@ -58,6 +58,7 @@ extension Controller {
       }
       bookkeepingViolations(&problems)
       pendingSlotViolations(&problems)
+      foundAtAStartViolations(&problems)
     }
     return problems.isEmpty ? problems : problems.sorted { ($0.rule, $0.message) < ($1.rule, $1.message) }
   }

@@ -71,6 +71,10 @@ public struct PersistedState: Codable, Equatable, Sendable {
   /// in. The next launch may find the displays arranged otherwise (the lid shut, say), and the frames go with their
   /// display. Older files do not have it, and nothing is moved on their account.
   public var origins: [DisplayID: CGPoint]?
+  /// Where Arbor left each window when it let go of them all, a quit or a pause, if it has not taken one since. A window found elsewhere
+  /// at the next start was moved by somebody else (Controller+FoundAtAStart.swift). Not in a file written while Arbor runs, nor in
+  /// older ones: after those, nobody can tell. Without the windows that were in full screen, whose frame then is the display's.
+  public var leftAt: [WindowID: CGRect]?
 
   public init(
     workspaces: [DisplayID: Workspace], hints: [WindowID: WindowHint],
@@ -108,6 +112,7 @@ public struct PersistedState: Codable, Equatable, Sendable {
     case version, workspaces, hints, dormant, welcomed, pause
     case hintsShown
     case origins
+    case leftAt
   }
 
   public init(from decoder: any Decoder) throws {
@@ -138,6 +143,13 @@ public struct PersistedState: Codable, Equatable, Sendable {
     // Nor over this. A corner that is no place for a display would send every frame to no place for a window.
     let corners = (try? c.decodeIfPresent(LossyDictionary<DisplayID, CGPoint>.self, forKey: .origins))?.entries
     origins = corners?.filter { DormantWorkspace.isPlaceForADisplay($0.value) }
+    // Unreadable is as good as absent: then what is remembered is trusted, as it always was. All or nothing, and nothing a person made.
+    do {
+      leftAt = try c.decodeIfPresent([WindowID: CGRect].self, forKey: .leftAt)
+    } catch {
+      leftAt = nil
+      (decoder.userInfo[DecodingNotes.key] as? DecodingNotes)?.add("`leftAt` could not be read", isLoss: false)
+    }
     for id in dormant.keys where dormant[id]!.origin.map(DormantWorkspace.isPlaceForADisplay) == false {
       dormant[id]!.origin = nil
     }
@@ -184,7 +196,7 @@ extension PersistedState {
     // window has gone elsewhere) is the decoders' business, and most are not worth a word.
     let tables: Set = [
       "workspaces", "dormant", "hints", "nodes", "floating", "guests", "undockedFrames", "summonFrames", "names",
-      "savedViews", "hintsShown",
+      "savedViews", "hintsShown", "leftAt",
     ]
     guard let file = try? JSONSerialization.jsonObject(with: data),
       let written = try? JSONSerialization.jsonObject(with: JSONEncoder().encode(state))

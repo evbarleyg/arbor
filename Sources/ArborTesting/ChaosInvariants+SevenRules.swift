@@ -8,7 +8,7 @@ import Foundation
 ///
 /// | Rule | Net |
 /// |---|---|
-/// | Nothing moves until the person docks something | `moved-before-any-dock`, `fetched-before-any-dock`, `moved-at-launch`, `moved-at-resume`, `start-took-out-of-view`, `pause-and-resume-moved`, `there-and-back-moved`, `moved-unasked` |
+/// | Nothing moves until the person docks something | `moved-before-any-dock`, `fetched-before-any-dock`, `moved-at-launch`, `moved-at-launch-after-a-crash`, `moved-at-resume`, `start-took-out-of-view`, `pause-and-resume-moved`, `there-and-back-moved`, `moved-unasked` |
 /// | No jolts: a window moves once, to where it ends up | `moved-twice`, `moved-again`; both with `-sizing` where its app refused a size, `-sizing-again` where it had refused before; `flashed-into-view`, `flashed-out-of-view`, `moved-over-and-over` |
 /// | The window you switch to comes to the front and into view | `switched-to-out-of-view`, `app-switch-out-of-view`, `switched-to-partly-out`, `switched-to-behind` |
 /// | Quitting, Float All and pause give windows their own earlier sizes back | `size-not-given-back` |
@@ -37,6 +37,8 @@ extension ChaosRunner {
     var afterTheGapWasDragged: (display: DisplayID, view: NodeID, frames: [WindowID: CGRect])?
     /// Arbor was quit, not killed, and has not been started since: it had its chance to bring everything back.
     var hasQuit = false
+    /// The launch of this step came after a quit. After a run that did not quit Arbor cannot tell what its person has done since.
+    var launchedAfterAQuit = false
     /// In the current step nobody does anything; and the last thing somebody did was a command that asks for everything.
     var timeOnly = false
     var askedForEverything = false
@@ -163,7 +165,9 @@ extension ChaosRunner {
         (seven.ownSizes[new], seven.earlierOwnSizes[new]) = (seven.ownSizes[old], seven.earlierOwnSizes[old])
       }
     // What Arbor learnt about sizes it learnt in a process that is gone.
-    case .launch, .crash: (seven.refusedLess, seven.refusedMore, seven.hasQuit) = ([], [], false)
+    case .launch, .crash:
+      seven.launchedAfterAQuit = action == .launch && seven.hasQuit
+      (seven.refusedLess, seven.refusedMore, seven.hasQuit) = ([], [], false)
     // A native tab has the size of its group.
     case .openTab(let new, let front): if framesBefore[new] == nil, let size = seven.ownSizes[front] { seven.ownSizes[new] = size }
     case .selectTab(let new, let front): if let size = seven.ownSizes[front] { seven.ownSizes[new] = size }
@@ -381,7 +385,8 @@ extension ChaosRunner {
         if workspace.isFloating(window), !workspace.isStashed(window), showedBefore >= 0.995 * before.area, !parkedBefore.contains(window),
           !controller.parked.contains(window), !(resumed && seven.movedByThePause.contains(window))
         {
-          problems.append(.init(action == .launch ? "moved-at-launch" : "moved-at-resume", "\(whatHappened), where it floats as it did"))
+          let launch = seven.launchedAfterAQuit ? "moved-at-launch" : "moved-at-launch-after-a-crash"
+          problems.append(.init(action == .launch ? launch : "moved-at-resume", "\(whatHappened), where it floats as it did"))
         }
         continue
       }

@@ -278,6 +278,10 @@ public final class Controller {
   var callSignals = CallSignals()
   /// Where the pause left each window it moved, to tell at the resume which of them nobody has touched since.
   var pausedFrames: [WindowID: CGRect] = [:]
+  /// Where Arbor left each window when it let go of them all. Nil once it has started again (Controller+FoundAtAStart.swift).
+  var leftAt: [WindowID: CGRect]?
+  /// Only during a start: where it found each window.
+  var foundAtThisStart: [WindowID: CGRect] = [:]
   /// The window that had the keyboard before `summon` took it (Controller+Summon.swift).
   var keyboardBeforeSummon: WindowID?
   /// Where `summon` came from when it went to a docked window, until the next press (Controller+Summon.swift).
@@ -486,6 +490,9 @@ public final class Controller {
       noteHowLoadingWent()
     }
     resumeState = nil
+    // After a quit and a pause. After an accident, or without the permission, the windows are as Arbor had them, and nothing says where.
+    var leftAt = saved?.leftAt ?? [:]
+    self.leftAt = nil
     hints = saved?.hints ?? [:]
     // Or just now, before this start: a launch without the permission begins with the welcome window.
     // Or in an earlier run whose file could not be used: whoever had a state file has been here before.
@@ -495,7 +502,10 @@ public final class Controller {
       var workspace = saved?.workspaces[display.id] ?? Workspace()
       // The displays may be arranged otherwise than when that was written (Controller+Displays.swift, "A display that moved").
       if let old = saved?.origins?[display.id] {
-        workspace.shift(by: CGPoint(x: display.frame.minX - old.x, y: display.frame.minY - old.y))
+        let offset = CGPoint(x: display.frame.minX - old.x, y: display.frame.minY - old.y)
+        workspace.shift(by: offset)
+        // macOS takes the windows along, which is nobody touching them.
+        for window in workspace.allWindows { leftAt[window] = leftAt[window]?.offsetBy(dx: offset.x, dy: offset.y) }
       }
       workspaces[display.id] = workspace
     }
@@ -503,6 +513,7 @@ public final class Controller {
     // The file has the corners only; what the displays were like when Arbor stopped is still in memory.
     endUndoHistoryIfDisplaysMoved(since: saved?.origins ?? [:], sizes: shapes.mapValues(\.size))
     for window in system.allWindows() { windows[window.id] = window }
+    foundAtThisStart = windows.mapValues(\.frame)
     if let saved, saved.origins == nil {
       for display in displays where saved.workspaces[display.id] != nil { healFramesOfUnknownOrigin(on: display) }
     }
@@ -530,6 +541,8 @@ public final class Controller {
     reconcile()
     noteWindowsLeftParked()
     resumeDormantWorkspaces(from: saved, hints: savedHints)
+    takeFloatingWindowsAsFound(leftAt: leftAt, ownSizes: ownSizesWhenArborStopped(saved, hints: savedHints))
+    foundAtThisStart.removeAll()
     // A run that did not quit cleanly leaves its parked windows out of view.
     treatStrandedWindowsAsParked()
     if afterAccident { showEverythingWhereTheViewWouldTakeAWindowOutOfView() }
@@ -537,6 +550,11 @@ public final class Controller {
     Log.info("started: \(displays.count) display(s), \(managedWindowIDs.count) managed window(s)")
     letTheViewFollowTheKeyboardBeforeTheFirstLayout()
     letTheWindowWithTheKeyboardBe()
+    // Before the first window is taken: from here on the file must not say where Arbor left them.
+    if !leftAt.isEmpty {
+      saveNow()
+      store.flush()
+    }
     relayoutAll(reason: .camera, motion: .instant)
     theStartHasLaidOut()
     placedOnPurpose.removeAll()
@@ -644,6 +662,7 @@ public final class Controller {
     namePrompt = nil
     closeFinder()
     overlays.removeAll()
+    if movingWindows { leftAt = windows.filter { !$0.value.isFullScreen }.mapValues(\.frame) }
     saveNow()
     // Saved with their hints; the next start finds them again.
     pendingSlots.removeAll()
@@ -766,6 +785,7 @@ public final class Controller {
     // become then: everything shows, and Back leads to where its user was.
     state = state.withEveryLookOver()
     state = state.written(with: displays)
+    state.leftAt = leftAt
     if isPaused { state.pause = PersistedState.Pause(until: pauseEnd, forApp: isPausedForApp) }
     return state
   }

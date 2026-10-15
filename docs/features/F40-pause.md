@@ -66,8 +66,8 @@ Shipped: everything above. Not shipped, and worth doing next:
 - **With no display at all** a pause, like a quit, moves only what was out of view.
 - **Floating windows go back on the Desktop in the resume's one layout, or not at all.** One that is minimized, hidden or hung at that moment, one whose app settled on another size after the pause had stopped listening, and all of them after a
   pause that ended otherwise (the watchdog brought it back after a crash; Accessibility was taken away and given back) stay where their user had left them, over the docked windows if need be.
-- **A floating window moved during the pause** is left there by the resume, but what is remembered for it is still the frame of before (F48: "a move during a pause, which Arbor does not see"), so a later layout can take it back there; one that
-  floats alone takes the Desktop again two seconds later (F18).
+- **A floating window moved or resized during the pause** has that frame for its own from the resume on. One that floats alone takes the Desktop again two seconds after the resume (F18). One that was summoned when the pause began goes where
+  `summon` remembers it.
 - **Two layouts are left** at a resume where the plan cannot tell whether the view will follow the keyboard: to a window of the saved view that is too small there and becomes a tile, and during a call, where the hold decides (F58).
 - **One after the other.** A pause asks each app in turn, as a quit does, where a layout lets the apps work side by side (`moveTogether`).
 - Nobody has watched the new pause on a Mac yet. The day with real apps that found the fault checks sizes, places and the number of moves at its steps "pause" and "resume"; `scripts/mac-shell/check-F18.sh` checks the window that fills the Desktop.

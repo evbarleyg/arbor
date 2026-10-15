@@ -72,7 +72,9 @@ private let side = DisplaySnapshot(
     old.run("back")
     let slots = old.layout?.windowFrames
     old.controller.shutdown()
-    let saved = old.store.saved
+    // But for where the quit left the windows, which only a quit's file says.
+    var saved = old.store.saved
+    saved?.leftAt = nil
 
     let h = relaunch(old)
     h.start()

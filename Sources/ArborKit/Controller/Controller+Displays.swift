@@ -500,6 +500,7 @@ extension Controller {
     restoreRoles(of: withRolesOnMissingDisplays)
     var returning: [WindowID] = []
     for id in connected.sorted() where dormant[id] != nil {
+      forgetWhatFloatsInView(inTheArrangementRememberedFor: id)
       returning += restoreDormantWorkspace(of: id)
     }
     placeArrivingWindows(returning)

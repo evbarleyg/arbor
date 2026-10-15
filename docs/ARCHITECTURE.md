@@ -1055,6 +1055,25 @@ stays behind its tile and a window in view gets the keyboard (`keyboardAfterASta
 The end of a pause and the return of the permission are no launches: they run `start()` from `resumeState`, and bring back
 the view they interrupted (the permission's return then shows everything if windows were stranded, F63).
 
+**What a start finds counts as left there** (`Controller+FoundAtAStart.swift`; `collab/QUESTIONS.md`: Q16, Q20, Q21 and the product owner's note
+of 2026-10-15 on F48): a frame a person gives a window while Arbor is paused, or not running, is its own from then on. For floating windows two rules
+come of it.
+**A display that is back fetches no floating window that is in view**, whoever ended the last run. Its arrangement used to fetch what had floated on
+it; now such a window floats on the display it is on, with its role (kept in view, say), as a guest if the view that comes back there leaves the
+Desktop out.
+**A floating window that somebody has touched since Arbor let go of it has the frame it is found at for its own.** Where a window is found does not say
+who put it there: it may be as Arbor had it, squeezed onto a narrow Desktop. So `shutdown()` writes down where it left each window
+(`PersistedState.leftAt`), at a quit and at a pause, and the next start takes that out of the file before it takes the first window; no file written
+while Arbor runs has it. Found where it was left, nobody has touched the window, and what is remembered stands, whatever became of the attempt to give it
+back (its app did not answer, or did not obey). Found elsewhere, somebody has: a new size is its own; moved only, it keeps its own size to go
+back to (`frameToRemember`), which is the one remembered when Arbor stopped, not what an earlier display remembers (`sizesOfFloatingWindows`).
+With nothing written (the watchdog's start, the permission's return, a person's launch after a run that did not quit) nobody can tell, and what is
+saved stands, as it always did. Only for a window found on another display than the one that remembers it, that display and the place are put
+right; the size remembered stands there too, for the file can be half a second behind, and the window in the shape of a slot it knows nothing of.
+Neither rule is for a window found in a corner or in full screen, or for one this start itself had to fetch.
+What was **docked** is docked again, one move each, on a display that is back as well; what was docked on a display that is missing floats where
+it is found, and goes back with that display.
+
 ## Ending, and starting again
 
 Arbor parks windows out of view, so every way it can end has to account for them.

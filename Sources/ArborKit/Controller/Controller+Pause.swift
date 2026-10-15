@@ -100,6 +100,8 @@ extension Controller {
   func savePause() {
     guard isPaused, var state = resumeState else { return }
     state.pause = PersistedState.Pause(until: pauseEnd, forApp: isPausedForApp)
+    // Taken before the pause let go, so it does not say.
+    state.leftAt = leftAt
     resumeState = state
     guard state != lastSaved else { return }
     lastSaved = state
@@ -126,6 +128,7 @@ extension Controller {
     isPaused = true
     isPausedForApp = pause.forApp
     pauseEnd = pause.until
+    leftAt = saved.leftAt
     // What `state` shows during a pause: the arrangement that will come back.
     displays = system.displays()
     hints = saved.hints

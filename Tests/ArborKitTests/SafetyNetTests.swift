@@ -458,17 +458,31 @@ import Testing
     #expect(none.controller.workspaces[Self.side.id]?.allWindows.isEmpty == true)
   }
 
-  @Test func floatingWindowsOfADisplayThatIsBackAtLaunchGoBackToIt() {
+  /// A display goes, Arbor ends, the display is back, Arbor starts. What floats and is in view is left where it is found, on the
+  /// display it is on: a start moves no floating window (collab/QUESTIONS.md, Q16; `FoundAtAStartTests`). Until 2026-10-15 it was
+  /// fetched to where it had floated before the display went. That is still where it goes if the run before left it out of view.
+  @Test(arguments: [false, true])
+  func floatingWindowsOfADisplayThatIsBackAtLaunchGoBackToItOnlyFromOutOfView(leftOutOfView: Bool) {
     let h = Harness(displays: [FakeWindowSystem.standardDisplay, Self.side])
     let a = h.system.open(app: "Safari", frame: CGRect(x: 1500, y: 100, width: 500, height: 400))
     let f = h.system.open(app: "Notes", frame: CGRect(x: 2100, y: 300, width: 400, height: 300))
+    let m = h.system.open(app: "Mail", frame: CGRect(x: 100, y: 100, width: 500, height: 400))
     h.start()
     h.system.cursor = CGPoint(x: 2000, y: 400)
     h.run("dock \(a.rawValue) left")
     let floated = h.frame(f)!
     h.system.setDisplays([FakeWindowSystem.standardDisplay])
     #expect(FakeWindowSystem.standardDisplay.frame.contains(h.frame(f)!), "it waits on the main display")
-    h.controller.saveNow()
+    if leftOutOfView {
+      // The view goes to a docked window, and Arbor ends without quitting.
+      h.system.cursor = CGPoint(x: 400, y: 400)
+      h.run("dock \(m.rawValue) left")
+      h.run("zoom \(m.rawValue)")
+      #expect(!h.system.isVisible(f))
+    }
+    // In view, Arbor quits; out of view, it ends without quitting.
+    if leftOutOfView { h.controller.saveNow() } else { h.controller.shutdown() }
+    let waiting = h.frame(f)!
 
     let again = Harness(displays: [FakeWindowSystem.standardDisplay, Self.side], saved: h.store.saved)
     for window in h.system.allWindows() {
@@ -476,8 +490,15 @@ import Testing
         app: window.appName, bundleID: window.bundleID, title: window.title, pid: window.pid, frame: window.frame)
     }
     again.start()
-    #expect(again.controller.workspaces[Self.side.id]!.isFloating(f))
-    #expect(again.frame(f) == floated, "where it floated before the display went away")
+    #expect(again.controller.workspaces[Self.side.id]!.isDocked(a), "what was docked there is docked there")
+    if leftOutOfView {
+      #expect(again.controller.workspaces[Self.side.id]!.isFloating(f))
+      #expect(again.frame(f) == floated, "where it floated before the display went away")
+    } else {
+      #expect(again.controller.workspaces[FakeWindowSystem.standardDisplay.id]!.isFloating(f))
+      #expect(again.frame(f) == waiting, "where it was found")
+      #expect(!again.system.frameLog.contains { $0.window == f }, "\(again.system.frameLog)")
+    }
   }
 
   // MARK: Words

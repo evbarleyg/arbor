@@ -70,7 +70,7 @@ Beyond the list above:
   view with the Desktop, at its own size, in one move. Should a layout ever show the Desktop against that forecast, it places the window like any other floating one.
 - **An app that does not answer** when its window is to be put back: a window that was out of view still counts as out of view and is placed as soon as the app answers. One that was in view stays where it is, at its slot's size.
 - **A move is not a resize.** A floating window that Arbor squeezed to keep it on the Desktop, and that its user then only moves (by the title bar or otherwise), keeps its own size to go back to, from where it is now. Only a resize by its user changes the size that is remembered.
-  Not built: a move during a pause, which Arbor does not see.
+  A move or a resize during a pause, or after a quit, which Arbor does not see, is learnt at the resume or the start: Arbor wrote down where it left the window. After a run that did not quit it cannot tell.
 - **Exactly** means exactly: a window that hung over a screen edge goes back there. A frame is fitted into its display only when it is no longer a place for a window (larger than the display, less than half
   on it, its title bar under the menu bar).
 - **Other displays**: a window docked on another display than the one it floated on keeps its size and its distance from the display's corner. When a display goes away, its docked windows float on the

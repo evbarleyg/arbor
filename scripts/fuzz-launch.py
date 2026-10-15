@@ -51,7 +51,7 @@ BASE_SESSIONS = {
 # Every key a workspace, a tree, a node or the file can have, so that none goes unfuzzed because no session made one.
 EXPECTED_KEYS = {"back", "camera", "floating", "forward", "guests", "names", "pinned", "savedViews", "stashed", "summonFrames",
                  "summoned", "tree", "undockedFrames", "dormant", "hints", "pause", "version", "workspaces", "keeps", "visits",
-                 "desktopIsOwedRoom", "welcomed", "hintsShown"}
+                 "desktopIsOwedRoom", "welcomed", "hintsShown", "leftAt"}
 
 SETTINGS_SESSION = [
     "rule add com.example.notes dock left title Inbox", "rule add com.example.maps dock beside com.example.safari right",
@@ -129,7 +129,7 @@ SETTINGS_STRINGS = ["bind f1 " * 3000 + "desktop", "set gap 1e999", "quit", "res
                     "layout " + "(" * 5000, "layout " + "[ " * 3000, "go " + "x" * 100000]
 DELETE, DOUBLE = object(), object()
 # Fields whose keys are windows, spaces, apps or names rather than fields: reports lump their entries together.
-TABLES = ("nodes", "floating", "hints", "savedViews", "guests", "names", "undockedFrames", "summonFrames", "hintsShown", "bindings")
+TABLES = ("nodes", "floating", "hints", "savedViews", "guests", "names", "undockedFrames", "summonFrames", "hintsShown", "bindings", "leftAt")
 
 
 def places(node, path=()):

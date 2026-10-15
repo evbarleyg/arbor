@@ -791,6 +791,7 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
     h.system.userMove(notes, to: chosen)
     h.run("resume")
     #expect(h.frame(notes) == chosen)
+    #expect(h.workspace.floating[notes] == chosen, "and that is its place from then on")
   }
 
   @Test func aPauseBringsBackTilesMinimizedWindowsAndFloatingWindowsThatWereOutOfView() {

@@ -235,9 +235,10 @@ extension Controller {
   /// What to remember of a floating window that its user has moved from `before` to `frame`. A move is not a resize:
   /// a window Arbor squeezed to keep it on the Desktop has not become its user's idea of its size by being pushed a
   /// little further. It keeps its own size to go back to, from where it is now, on the display as far as `frame` is.
-  func frameToRemember(of window: WindowID, movedFrom before: CGRect?, to frame: CGRect) -> CGRect {
+  /// `ownSize`: if that is not the size remembered where it floats now.
+  func frameToRemember(of window: WindowID, movedFrom before: CGRect?, to frame: CGRect, ownSize: CGSize? = nil) -> CGRect {
     guard let before, abs(before.width - frame.width) <= 1, abs(before.height - frame.height) <= 1,
-      let own = workspaceID(containing: window).flatMap({ workspaces[$0]?.floating[window]?.size }), own != frame.size,
+      let own = ownSize ?? workspaceID(containing: window).flatMap({ workspaces[$0]?.floating[window]?.size }), own != frame.size,
       // Squeezed, not stretched: one that fills the Desktop and is taken in hand stays as it is (Controller+SoleFloat.swift).
       own.width >= frame.width, own.height >= frame.height
     else { return frame }

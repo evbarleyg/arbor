@@ -171,6 +171,7 @@ func runSimulation() {
   var watcher = SimulatedWatcher(harness: harness)
   var staleLayouts = 0
   var linesPrinted = 0
+  var hasQuit = false
   var minimapsPrinted = 0
 
   for rawLine in lines {
@@ -220,13 +221,22 @@ func runSimulation() {
       print("")
       continue
     }
-    if words == ["relaunch"] {
+    if words == ["relaunch"] || words == ["relaunch", "quit"] {
       // As the app does: `quit` is answered, then the app ends, which shuts the controller down. Then somebody starts Arbor.
       _ = harness.run("quit")
       harness.controller.shutdown()
       watcher.printLines()
+      // The process is gone, its timers with it. The next one is not started yet, and nobody hears what happens to the windows meanwhile.
+      harness = successor(of: harness)
+      harness.system.events = nil
+      hasQuit = true
+    }
+    let startsAgain = hasQuit && (words == ["relaunch"] || words == ["relaunch", "start"])
+    if startsAgain {
+      hasQuit = false
       // The step that is judged is the start (`begin`): the quit before it is an act of its own.
-      harness = relaunched(harness)
+      harness.system.events = harness.controller
+      begin(harness)
       watcher = SimulatedWatcher(harness: harness)
       // The new process has stages of its own.
       if rehearsedStage != nil {
@@ -244,7 +254,8 @@ func runSimulation() {
       watcher = SimulatedWatcher(harness: harness)
       (linesPrinted, minimapsPrinted) = (0, 0)
     }
-    let (message, ok) = simulate(words, harness: harness, printLayout: &printLayout)
+    var (message, ok) = simulate(words, harness: harness, printLayout: &printLayout)
+    if words == ["relaunch", "start"], !startsAgain { (message, ok) = ("Arbor has not been quit with `relaunch quit`", false) }
     // macOS reports the focus changes Arbor asked for back to it.
     harness.system.deliverEchoes()
     // What Arbor puts off only until the command or event is over (raising pinned windows) happens now.
@@ -304,16 +315,23 @@ func begin(_ harness: Harness) {
   harness.launch()
 }
 
-/// The new process of `relaunch` and `crash`, started. It uses the settings file the old one used (`settings-file`).
+/// The new process of `relaunch` and `crash`, not started yet. It uses the settings file the old one used (`settings-file`).
 /// `meanwhile` is what happens to the windows while no Arbor runs.
 @MainActor
-func relaunched(_ old: Harness, meanwhile: (FakeWindowSystem) -> Void = { _ in }) -> Harness {
+func successor(of old: Harness, meanwhile: (FakeWindowSystem) -> Void = { _ in }) -> Harness {
   let new = old.newProcess()
   meanwhile(new.system)
   new.controller.saveSettings = old.controller.saveSettings
   new.controller.loadSettings = old.controller.loadSettings
   new.controller.replaceSettingsFile = old.controller.replaceSettingsFile
   new.controller.keepCopyOfSettingsFile = old.controller.keepCopyOfSettingsFile
+  return new
+}
+
+/// The same, started.
+@MainActor
+func relaunched(_ old: Harness, meanwhile: (FakeWindowSystem) -> Void = { _ in }) -> Harness {
+  let new = successor(of: old, meanwhile: meanwhile)
   begin(new)
   return new
 }
@@ -574,6 +592,10 @@ func simulate(_ words: [String], harness: Harness, printLayout: inout Bool) -> (
     guard let windows = reopened else { return usage("crash [<id>…]: windows that are open") }
     reopened = nil
     return ((["died, and started again"] + windows.map { "\($0.old) is \($0.new) now" }).joined(separator: "; "), harness.controller.isRunning)
+  case "relaunch" where words == ["relaunch", "quit"]:
+    return ("quit", !harness.controller.isRunning)
+  case "relaunch" where words == ["relaunch", "start"]:
+    return ("started", harness.controller.isRunning)
   case "revoke":
     harness.revokeAccessibility()
     return ("Accessibility permission taken away", true)
