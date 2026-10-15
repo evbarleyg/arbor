@@ -2966,7 +2966,7 @@ def check_rehearse_suite():
             write("bin/uname", f"#!/bin/sh\necho {'Darwin' if mac else 'Linux'}\n", 0o755)
             if os.path.exists(os.path.join(folder, ".build/asked")):
                 os.remove(os.path.join(folder, ".build/asked"))
-            kept = {key: value for key, value in os.environ.items() if not key.startswith("GITHUB_") and key not in ("PART", "PARTS", "ARBOR_NO_REHEARSAL")}
+            kept = {key: value for key, value in os.environ.items() if not key.startswith("GITHUB_") and key not in ("PART", "PARTS", "ARBOR_NO_REHEARSAL", "ARBOR_NO_SUITE_REHEARSAL")}
             done = subprocess.run([BASH, "scripts/rehearse-suite.sh", *arguments], cwd=folder, capture_output=True, text=True, check=False,
                                   env={**kept, "PATH": os.path.join(folder, "bin") + os.pathsep + os.environ["PATH"], **environment})
             asked = None
@@ -3008,11 +3008,14 @@ def check_rehearse_suite():
         row("rehearse-suite.sh: at GitHub what counts is what was committed", played(**pull_request)[:2], (0, None))
         git("commit", "--quiet", "--all", "--message", "code")
         row("rehearse-suite.sh: at GitHub, a pull request that changes the core: rehearsed", played(**pull_request)[:2], (0, "--jobs 3 1/1"))
+        code, asked, said = played(ARBOR_NO_SUITE_REHEARSAL="1")
+        row("rehearse-suite.sh: told not to, it does not, and its one line says so in capitals", (code, asked, said.strip().count("\n"), said[:56]),
+            (0, None, 0, "THE SUITE IS NOT REHEARSED, BY ARBOR_NO_SUITE_REHEARSAL:"))
+        row("rehearse-suite.sh: nor with --always", played("--always", ARBOR_NO_SUITE_REHEARSAL="1")[:2], (0, None))
+        row("rehearse-suite.sh: at GitHub nobody hears that", played(ARBOR_NO_SUITE_REHEARSAL="1", **pull_request)[:2], (0, "--jobs 3 1/1"))
         code, asked, said = played(ARBOR_NO_REHEARSAL="1")
-        row("rehearse-suite.sh: told not to, it does not, and its one line says so in capitals", (code, asked, said.strip().count("\n"), said[:50]),
-            (0, None, 0, "THE SUITE IS NOT REHEARSED, BY ARBOR_NO_REHEARSAL:"))
-        row("rehearse-suite.sh: nor with --always", played("--always", ARBOR_NO_REHEARSAL="1")[:2], (0, None))
-        row("rehearse-suite.sh: at GitHub nobody hears that", played(ARBOR_NO_REHEARSAL="1", **pull_request)[:2], (0, "--jobs 3 1/1"))
+        row("rehearse-suite.sh: the app's word for something else leaves nothing out, and whoever says it is told the name",
+            (code, asked, "ARBOR_NO_SUITE_REHEARSAL=1" in said.splitlines()[0]), (0, "--jobs 3 1/1", True))
         row("rehearse-suite.sh: the second machine of two takes the second half", played(PART="2", PARTS="2")[:2], (0, "--jobs 3 2/2"))
         row("rehearse-suite.sh: its last line has the sum", played()[2].strip().splitlines()[-1].split(", in ")[0],
             "the suite, rehearsed on 3 fake Macs: 3 held, 0 failed (0 of them known), 0 sections unfinished")

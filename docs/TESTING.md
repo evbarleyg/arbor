@@ -1269,7 +1269,7 @@ twelve of its claims went out of date and nobody saw it. So `scripts/rehearse-su
 `linux / rehearsal-1` and `-2`: all the sections against the real controller on the fake Mac, on every core, five minutes on four. It first says
 whether a rehearsal can say anything about the change, in a second and before anything is built: what the branch and the working tree add to the trunk has to touch `Package.swift`,
 `Sources/` less the macOS-only folders, the sections, `suite.sh`, `lib.sh`, `state.py` or the rehearsal's own stand-ins. Where nobody can tell, and wherever
-work is integrated, it rehearses. It prints every ✘ under its section and claim; all of it is in `.build/rehearsal-<n>/log.txt`. `ARBOR_NO_REHEARSAL=1 make gate` leaves
+work is integrated, it rehearses. It prints every ✘ under its section and claim; all of it is in `.build/rehearsal-<n>/log.txt`. `ARBOR_NO_SUITE_REHEARSAL=1 make gate` leaves
 it out, for a second gate after a mend of a line by whoever has seen it rehearsed on the change already; the row then says so in capitals, and at GitHub nobody hears it.
 **A ✘ there is yours**: either the change has brought a fault, or it has made a claim untrue, and then the claim is reworded in the same pull request. A claim that is
 reworded has not been on a Mac: run `scripts/mac-shell/suite-parity.py`, which takes its item off "verified" until it has. Where work is integrated

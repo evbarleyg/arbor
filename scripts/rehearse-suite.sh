@@ -20,8 +20,9 @@
 #   PART, PARTS           "1" of "2": this machine's share of the sections, as CI's two divide them
 #   ARBOR_REHEARSAL_AS, ARBOR_REHEARSAL_DISPLAY, ARBOR_REHEARSAL_BASH    as for rehearse.sh: a person's Mac, another display, macOS's own bash
 #   ARBOR_TRACE=1         record traces all the same, as a run on a Mac does
-#   ARBOR_NO_REHEARSAL=1  not this time: for a second gate after a mend of a line, by whoever has seen the suite rehearsed on the change already. It says so in
-#                         capitals in its one line, which is the row's line in `make gate`. At GitHub nobody hears it
+#   ARBOR_NO_SUITE_REHEARSAL=1  not this time: for a second gate after a mend of a line, by whoever has seen the suite rehearsed on the change already. It says so in
+#                         capitals in its one line, which is the row's line in `make gate`. At GitHub nobody hears it. (ARBOR_NO_REHEARSAL, its name for an
+#                         afternoon, is the app's own and older: get nothing ready for the first motion. Whoever says it here is told the name)
 #
 # Prints every ✘ under its section and claim, and a last line with the sum. All of it: .build/rehearsal-<n>/log.txt.
 # Exit code 0: nothing to say, or every check held (or is known to fail). 1: a ✘. 2: the fake Mac does not build.
@@ -89,10 +90,11 @@ if [ "$(uname -s)" != Linux ]; then
   exit 0
 fi
 # A run at GitHub names the event it is for, and is what others go by.
-if [ -n "${ARBOR_NO_REHEARSAL:-}" ] && [ -z "${GITHUB_EVENT_NAME:-}" ]; then
-  echo "THE SUITE IS NOT REHEARSED, BY ARBOR_NO_REHEARSAL: this says nothing about the real-window suite's claims"
+if [ -n "${ARBOR_NO_SUITE_REHEARSAL:-}" ] && [ -z "${GITHUB_EVENT_NAME:-}" ]; then
+  echo "THE SUITE IS NOT REHEARSED, BY ARBOR_NO_SUITE_REHEARSAL: this says nothing about the real-window suite's claims"
   exit 0
 fi
+[ -z "${ARBOR_NO_REHEARSAL:-}" ] || echo "ARBOR_NO_REHEARSAL is a word to the app (docs/ARCHITECTURE.md). To leave this step out: ARBOR_NO_SUITE_REHEARSAL=1"
 # Before anything is built.
 if [ "${1:-}" = --always ]; then
   echo "the suite is rehearsed: asked for"
