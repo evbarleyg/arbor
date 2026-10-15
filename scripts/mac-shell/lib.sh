@@ -1165,12 +1165,25 @@ arbor_build() {
 
 arbor_settings() {
   local merged
-  # With the mark of a file that holds only what somebody chose (Q27). Without it a launch would take out of it whatever equals the default of
-  # an earlier day, and what the script asks for would come to depend on what Arbor ships with.
+  # With the mark of a file that holds only what somebody chose (Q27). Without it a launch would take a file of many keys for an early build's, and
+  # take out of it whatever equals the default of an earlier day: what the script asks for would come to depend on what Arbor ships with.
   merged=$(python3 -c 'import json, sys; print(json.dumps({"format": 2, **json.loads("{" + sys.argv[2] + "}"), **json.loads(sys.argv[1])}))' \
     "$1" "$(arbor_switches)") || die "arbor_settings: not a JSON object: $1 (or what goes under it: $(arbor_switches))"
   ARBOR_GAP=$(python3 -c 'import json, sys; print(round(json.loads(sys.argv[1]).get("gap", 12)))' "$merged")
   printf '%s\n' "$merged" > "$ARBOR_HOME/settings.json"
+}
+
+# Prints the settings.json an early build wrote at its first launch: all its settings, each at the default of its day, without the mark, from the
+# table Arbor itself goes by. All of it, because only a file that looks whole is taken for an early build's (Q27).
+# $1: what somebody changed in it or added to it, as a JSON object; the rest: keys that it does not hold.
+arbor_file_of_an_early_build() {
+  python3 - "$ARBOR_ROOT/Sources/ArborCore/SettingsFileFormat.swift" "$@" << 'END'
+import json, re, sys
+table = json.loads(re.search(r'defaultsOfOldFiles = #"""\n(.*?)"""#', open(sys.argv[1]).read(), re.S).group(1))
+whole = {key: values[0] for key, values in table.items() if key not in sys.argv[3:]}
+whole.update(json.loads(sys.argv[2]))
+print(json.dumps(whole, indent=2, sort_keys=True))
+END
 }
 
 # Several scripts can leave their logs in one folder, as the suite's sections do.

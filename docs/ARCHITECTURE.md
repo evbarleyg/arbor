@@ -1112,8 +1112,9 @@ every other program that links `ArborPaths` (the tests, arbor-sim, arbor-e2e) us
 directory unless it is given an `ARBOR_HOME`, so that a test run on a Mac where Arbor is in use leaves its log alone:
 
 - `settings.json`: `Settings`, but only what differs from the defaults, and the mark `"format": 2` (`ArborCore/SettingsFileFormat.swift`, Q27): a written
-  default cannot be told from a choice, and would keep a changed default from ever arriving. A file from before the mark is stripped once, at a launch, of
-  what equals the defaults of its day (a frozen table), with a copy kept beside it;
+  default cannot be told from a choice, and would keep a changed default from ever arriving. A file from before the mark, which is known by its holding sixteen or
+  more of the keys such files held, is stripped once, at a launch, of what equals the defaults of its day (a frozen table), with a copy kept
+  beside it; a file of fewer keys without the mark is somebody's own, and only gets the mark, at a launch or with the first command that writes into it;
   unknown keys are ignored, missing keys take defaults. See "Settings" below.
 - `state.json`: `PersistedState`: every workspace (tree, camera, history,
   saved views, names, floating frames, the frames docked windows floated at) keyed by display UUID, plus `WindowHint`s
@@ -1743,10 +1744,10 @@ Everything else is a view of it:
   is now and refuses while it cannot be read; works out the new settings; and returns
   `reply("…", unsaved: change(settings: updated))`, which saves, then applies. A change that cannot be saved (a
   read-only file) is refused as a whole.
-- **Saving**: people edit the file by hand, so `saveSettings` → `SettingsFile.update` → `Settings.rewrite` is a three-way
-  merge: what changed between the settings in use and the new ones is written into the file's text (`JSONText`), and
-  every other byte stays, including unknown keys and the values and entries Arbor could not use. What is added is laid
-  out like what is there. Arbor never writes to a file it cannot read; only `reset everything` replaces one
+- **Saving**: people edit the file by hand, so `saveSettings` → `SettingsFile.update` → `Settings.rewriteAndMark` is a
+  three-way merge: what changed between the settings in use and the new ones is written into the file's text (`JSONText`),
+  and every other byte stays, including unknown keys and the values and entries Arbor could not use. What is added is laid
+  out like what is there. Somebody's own file that has no mark yet gets it with the first such change. Arbor never writes to a file it cannot read; only `reset everything` replaces one
   (`SettingsFile.replace`), keeping the old one as settings.unreadable.json.
 - **Decoding**: `Settings.init(from:)` keeps the default for a value of the wrong type and then runs
   `SettingsSchema.sanitize`, which moves numbers into their ranges. What it changed is in `valueProblems` (logged,

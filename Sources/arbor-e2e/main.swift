@@ -99,7 +99,7 @@ final class Runner {
 
   /// A settings file somebody has worked on: a number written their way, a key Arbor does not
   /// know, and a rule it cannot read. Arbor starts on it, so its gap has to be `gap`. It has the mark of a file that holds only what
-  /// somebody chose (Q27): without it the launch would take the gap out, which is the default's. And the darkening behind docked windows,
+  /// somebody chose (Q27), as a file has that Arbor has started on once. And the darkening behind docked windows,
   /// an option (Q29), which two steps look for on the screen.
   static let handEditedSettings = """
     {

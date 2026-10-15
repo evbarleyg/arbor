@@ -106,8 +106,7 @@ echo "posted pinches arrive: $PINCHES (posted at the $PINCH_TAP tap)"
 step "session 1: three windows, taps and shortcuts on"
 # Launched as on a Mac that has run an earlier build: its settings.json holds the four gestures switched on, as the first launch wrote them
 # down (and the guard, which shipped on for a while), and cannot hold the switch above them, which ships off (Q26). Only then are the gestures asked for.
-printf '%s\n' '{"gesturesEnabled": true, "scrollZoom": true, "frameRectangleModifier": "ctrl+opt", "frameRectangleOnDesktop": true, "guardDesktopClicks": true}' \
-  > "$ARBOR_HOME/settings.json"
+arbor_file_of_an_early_build '{"guardDesktopClicks": true}' pointerGestures > "$ARBOR_HOME/settings.json"
 arbor_start 3 ARBOR_NO_HOTKEYS=0
 sleep 1
 arbor_taps

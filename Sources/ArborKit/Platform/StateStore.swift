@@ -449,7 +449,8 @@ public enum SettingsFile {
 
   /// Once, at a launch: a file from the days when the first launch wrote every default down is stripped of what nobody chose, and
   /// marked (`Settings.upgradedFile`). It is somebody's file, so a copy stays beside it as settings.before-format-2.json. A file that
-  /// cannot be read, copied or written is left as it is, and looked at again at the next launch.
+  /// cannot be read, copied or written is left as it is, and looked at again at the next launch. A file of a few keys, which somebody wrote
+  /// by hand, only gets the mark.
   static func upgrade(at url: URL) {
     do {
       guard let data = try contents(of: url), String(data: data, encoding: .utf8) != nil,
@@ -461,8 +462,9 @@ public enum SettingsFile {
       }
       // What was read, not what lies there by now. And the first copy stays: it is the one with the whole old file. (Somebody who later puts
       // a file without the mark in its place has that one upgraded too.)
+      // No copy where nothing is taken out: nothing is lost, and the name would be taken when a whole old file comes after all.
       let copy = url.deletingPathExtension().appendingPathExtension("before-format-\(Settings.format).json")
-      if !FileManager.default.fileExists(atPath: copy.path) {
+      if !upgraded.stripped.isEmpty, !FileManager.default.fileExists(atPath: copy.path) {
         do {
           try data.write(to: copy, options: .atomic)
         } catch {
@@ -472,10 +474,12 @@ public enum SettingsFile {
       try write(upgraded.text, to: url)
       // The names of settings, never their values.
       Log.info(
-        "settings.json now holds only what differs from the defaults; taken out, to follow the defaults from now on: "
-          + (upgraded.stripped.isEmpty ? "nothing" : upgraded.stripped.joined(separator: ", ")))
+        upgraded.stripped.isEmpty
+          ? "settings.json has the mark now; nothing was taken out of it"
+          : "settings.json now holds only what differs from the defaults; taken out, to follow the defaults from now on: "
+            + upgraded.stripped.joined(separator: ", "))
     } catch {
-      Log.error("settings.json stays as an earlier build wrote it: \(forTheLog(error))")
+      Log.error("settings.json stays as it is, without the mark: \(forTheLog(error))")
     }
   }
 
@@ -506,8 +510,8 @@ public enum SettingsFile {
   }
 
   /// Writes what changed between `old` and `new` into the file and leaves the rest of it as it is
-  /// (see `Settings.rewrite` for what `old` should be). Throws a `Settings.FileError`, without
-  /// touching the file, if Arbor cannot read it.
+  /// (see `Settings.rewrite` for what `old` should be), but for the mark, which somebody's own file gets with it
+  /// (`Settings.rewriteAndMark`). Throws a `Settings.FileError`, without touching the file, if Arbor cannot read it.
   public static func update(from old: Settings, to new: Settings, at url: URL = ArborPaths.settingsFile) throws {
     guard let data = try contents(of: url) else { return try write(try new.fileText, to: url) }
     // Checked, then decoded without a check: that way a byte order mark stays in the text.
@@ -515,7 +519,7 @@ public enum SettingsFile {
       throw Settings.FileError("the file is not UTF-8 text, so Arbor cannot change it")
     }
     let text = String(decoding: data, as: UTF8.self)
-    let rewritten = try Settings.rewrite(text, from: old, to: new)
+    let rewritten = try Settings.rewriteAndMark(text, from: old, to: new)
     if rewritten != text { try write(rewritten, to: url) }
   }
 

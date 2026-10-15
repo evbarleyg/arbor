@@ -162,21 +162,8 @@ import Testing
 
   // MARK: On a Mac that has run the first build (collab/QUESTIONS.md, Q27)
 
-  /// Out of the file the first build's first launch wrote: the three keys and what goes with them, as they were then.
-  static let untouched = """
-    {
-      "animationDuration" : 0.46,
-      "desktopEdge" : 0.05,
-      "dimBehindArranged" : 0.25,
-      "focusRing" : true,
-      "focusRingWidth" : 3,
-      "gap" : 12,
-      "historyButtons" : true,
-      "menuBarControls" : true,
-      "menuBarFill" : 0.25
-    }
-
-    """
+  /// The file the first build's first launch wrote, all of it: only a whole one is taken for that build's.
+  static let untouched = Settings.fileOfTheFirstBuild()
 
   /// A launch on `folder`'s file, wired as the app wires it, and one dock.
   func launch(_ folder: Folder) -> (Harness, WindowID, WindowID) {
@@ -207,9 +194,7 @@ import Testing
   @Test func aFileThatSetThemKeepsItsOwn() throws {
     // Whoever made the motion slower wanted motion. The line's width was chosen too, and waits for the line.
     let folder = try Folder()
-    try folder.write(
-      Self.untouched.replacingOccurrences(of: "0.46", with: "0.8").replacingOccurrences(of: "\"focusRingWidth\" : 3", with: "\"focusRingWidth\" : 6")
-        .replacingOccurrences(of: "0.25,", with: "0.4,"))
+    try folder.write(Settings.fileOfTheFirstBuild(["animationDuration": "0.8", "focusRingWidth": "6", "dimBehindArranged": "0.4"]))
     let (h, _, b) = launch(folder)
     #expect(h.overlays.transitions.last?.duration == 0.8)
     #expect(h.overlays.scenes[h.display]?.backdrop?.dim == 0.4)
@@ -222,9 +207,7 @@ import Testing
 
   @Test func whoeverHadSwitchedThemOffFindsNothingChanged() throws {
     let folder = try Folder()
-    let chosen = Self.untouched.replacingOccurrences(of: "0.46", with: "0").replacingOccurrences(of: "\"focusRing\" : true", with: "\"focusRing\" : false")
-      .replacingOccurrences(of: "\"menuBarControls\" : true", with: "\"menuBarControls\" : false")
-    try folder.write(chosen)
+    try folder.write(Settings.fileOfTheFirstBuild(["animationDuration": "0", "focusRing": "false", "menuBarControls": "false"]))
     let (h, _, _) = launch(folder)
     #expect(h.controller.settings == Settings())
     #expect(try JSONText(try folder.read()).keys(at: []) == ["animationDuration", "focusRing", "menuBarControls", "format"])

@@ -9,17 +9,9 @@ import Testing
 @Suite @MainActor struct SettingsFileUpgradeTests {
   typealias Folder = SettingsFileTests.Folder
 
-  /// Out of such a file: three defaults of its day, one choice, one key Arbor does not know.
-  static let old = """
-    {
-      "animationDuration" : 0.46,
-      "gap" : 20,
-      "gesturesEnabled" : true,
-      "mine" : "a note",
-      "pointerGestures" : false
-    }
-
-    """
+  /// Such a file, whole, as only a whole one is taken for one (`OnlyAWholeFileIsStrippedTests`): the defaults of its day, one choice, one key
+  /// Arbor does not know.
+  static let old = Settings.fileOfTheFirstBuild(["gap": "20"], and: [#""mine" : "a note""#])
   static let upgraded = """
     {
       "gap" : 20,
@@ -67,9 +59,9 @@ import Testing
     let folder = try Folder()
     try folder.write(Self.old)
     _ = SettingsFile.load(from: folder.file)
-    try folder.write(#"{"gap": 12, "peek": false}"#)
+    try folder.write(Settings.fileOfTheFirstBuild(["peek": "false"]))
     #expect(!SettingsFile.load(from: folder.file).peek)
-    #expect(try folder.read() == #"{"peek": false, "format": 2}"#)
+    #expect(try folder.read() == "{\n  \"peek\" : false,\n  \"format\" : 2\n}\n")
     #expect(try String(contentsOf: copy(in: folder), encoding: .utf8) == Self.old)
   }
 
@@ -157,9 +149,77 @@ import Testing
   @Test func aDefaultThatHasChangedSinceReachesAnOldFile() throws {
     // The point of it all, on the one key whose default has changed since whole files were written: ⇧⌘ were the rectangle's keys.
     let folder = try Folder()
-    try folder.write(#"{"frameRectangleModifier": "shift+cmd", "gap": 20}"#)
+    try folder.write(Settings.fileOfTheFirstBuild(["frameRectangleModifier": #""shift+cmd""#, "gap": "20"]))
     let settings = SettingsFile.load(from: folder.file)
     #expect(settings.frameRectangleModifier == Settings().frameRectangleModifier && settings.gap == 20)
-    #expect(try folder.read() == #"{"gap": 20, "format": 2}"#)
+    #expect(try folder.read() == "{\n  \"gap\" : 20,\n  \"format\" : 2\n}\n")
+  }
+
+  // MARK: A file somebody wrote by hand
+
+  /// It holds what an early build wrote down too, and means it. A launch takes nothing out of it.
+  @Test func aFileOfAFewKeysWrittenByHandKeepsThemAtALaunch() throws {
+    let folder = try Folder()
+    try folder.write(#"{"focusRing": true, "animationDuration": 0.46}"#)
+    let settings = SettingsFile.load(from: folder.file)
+    #expect(settings.focusRing && settings.animationDuration == 0.46)
+    #expect(try folder.read() == #"{"focusRing": true, "animationDuration": 0.46, "format": 2}"#, "it only gets the mark")
+    #expect(SettingsFile.load(from: folder.file) == settings, "and at the launch after that")
+  }
+
+  @Test func aReloadAndALaunchEndTheSame() throws {
+    let text = #"{"focusRing": true, "menuBarControls": true, "dimBehindArranged": 0.25, "desktopEdge": 0.05, "gap": 12}"#
+    let (reloaded, launched) = (try Folder(), try Folder())
+    try reloaded.write(#"{"format": 2}"#)
+    let h = harness(reloaded)
+    try reloaded.write(text)
+    #expect(h.run("reload-settings").ok)
+    try launched.write(text)
+    #expect(SettingsFile.load(from: launched.file) == h.controller.settings)
+    #expect(h.controller.settings.focusRing && h.controller.settings.dimBehindArranged == 0.25)
+  }
+
+  /// Nothing is lost, so there is nothing to keep. And the name stays free for the copy of a whole old file, should one come after all:
+  /// the first copy stays, and this would have been the first.
+  @Test func noCopyIsKeptOfAFileThatOnlyGetsTheMark() throws {
+    let folder = try Folder()
+    try folder.write(#"{"focusRing": true}"#)
+    _ = SettingsFile.load(from: folder.file)
+    #expect(!FileManager.default.fileExists(atPath: copy(in: folder).path))
+    try folder.write(Self.old)
+    _ = SettingsFile.load(from: folder.file)
+    #expect(try String(contentsOf: copy(in: folder), encoding: .utf8) == Self.old)
+  }
+
+  /// A whole file in which no value is a default of its day: nothing goes, and there is nothing to keep.
+  @Test func noCopyIsKeptOfAWholeFileOutOfWhichNothingGoes() throws {
+    let folder = try Folder()
+    let keys = try #require(try JSONText(Settings.defaultsOfOldFiles).keys(at: []))
+    try folder.write(Settings.fileOfTheFirstBuild(Dictionary(uniqueKeysWithValues: keys.map { ($0, "null") })))
+    _ = SettingsFile.load(from: folder.file)
+    #expect(try JSONText(try folder.read()).keys(at: []) == keys.sorted() + ["format"])
+    #expect(!FileManager.default.fileExists(atPath: copy(in: folder).path))
+  }
+
+  /// Put there while Arbor runs, so no launch has marked it: the first `set` does.
+  @Test func aCommandMarksAFileThatWasPutThereWhileArborRuns() throws {
+    let folder = try Folder()
+    try folder.write(#"{"format": 2}"#)
+    let h = harness(folder)
+    try folder.write(#"{"focusRing": true}"#)
+    #expect(h.run("set animationDuration 0.46").ok)
+    #expect(try folder.read() == #"{"focusRing": true, "format": 2, "animationDuration": 0.46}"#)
+    let next = SettingsFile.load(from: folder.file)
+    #expect(next.focusRing && next.animationDuration == 0.46, "at the next launch both are there")
+  }
+
+  /// The copy from before the upgrade, put back by hand, is whole, and is upgraded again. docs/SETTINGS.md says what to do instead.
+  @Test func theCopyPutBackIsUpgradedAgain() throws {
+    let folder = try Folder()
+    try folder.write(Self.old)
+    _ = SettingsFile.load(from: folder.file)
+    try folder.write(try String(contentsOf: copy(in: folder), encoding: .utf8))
+    #expect(!SettingsFile.load(from: folder.file).focusRing)
+    #expect(try folder.read() == Self.upgraded)
   }
 }
