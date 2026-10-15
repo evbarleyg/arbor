@@ -68,6 +68,10 @@ extension Controller {
     var owedAWord: (window: WindowID, from: WindowID?)?
     /// When what was owed was last dealt with, in words or by keeping quiet.
     var answeredAt = Date.distantPast
+    /// The window out of view in which the last look found the keyboard, with nothing heard since (`holdWillLookWhereTheKeyboardIs`), and
+    /// whether the look before had found it there too, which is when the line says so.
+    var keyboardSeenIn: WindowID?
+    var keyboardRests = false
   }
 
   /// The docked windows of the space a held view is on, showing or not (tabs, tiles, minimized), and
@@ -94,6 +98,11 @@ extension Controller {
   /// One arrival is reported two or three times within 0.04 s (the window, its app, the window again), and
   /// macOS takes about as long to give the keyboard back once asked. Within this span it is all one event.
   static let arrivalSpan: TimeInterval = 0.2
+  /// A keyboard found out of view, in the same window, by two looks this far apart, the first as long after the last that was heard, rests
+  /// there (`holdWillLookWhereTheKeyboardIs`).
+  /// Twice as long as it takes Arbor to look again at a window that was reported before it had the keyboard (`focusCheckInterval`), or to
+  /// give the keyboard to a window in view after a loss: what is left is for macOS to do as it was asked.
+  static let restSpan: TimeInterval = 0.5
 
   /// A camera or microphone that goes off counts as off after this long. Changing devices in the middle of a call
   /// switches one off before the other is on.
@@ -124,8 +133,8 @@ extension Controller {
   /// are refused anyway until `Command.isAllowedWhileHeld` lists them; this is for whatever is not a command.
   public var mayShowPanels: Bool { holdLevel != .view }
 
-  /// Whether Arbor may put something on screen **by itself** (a hint, the minimap after a move, a message that is not
-  /// the reason why a key did nothing) or make a sound. Not during a call either.
+  /// Whether Arbor may put something on screen **by itself** (a hint, the minimap after a move, a message that is neither
+  /// the reason why a key did nothing nor that keys go where nobody sees them) or make a sound. Not during a call either.
   public var mayShowUnasked: Bool { !isHeld }
 
   /// The displays whose held view has nothing in it now: all of it is minimized, hidden, closed or away.
@@ -542,8 +551,9 @@ extension Controller {
   /// are the person's own doing and are turned away like a chat that pushes itself forward. Never in silence: the second try would
   /// end the same, and nothing would say why. Once for each app and hold.
   ///
-  /// On a held view nothing of Arbor's appears but the reason why a key did nothing. A pick in Mission Control, ⌘Tab and a click in
-  /// the Dock are such keys: there no way leads to the window but the end of the hold, so that is what the line names.
+  /// On a held view nothing of Arbor's appears but the reason why a key did nothing (and `holdWillLookWhereTheKeyboardIs`). A pick in
+  /// Mission Control, ⌘Tab and a click in the Dock are such keys: there no way leads to the window but the end of the hold, so that is
+  /// what the line names.
   private func holdSaysThatItTurnedAway(_ id: WindowID) {
     guard settings.messageLevel != .off, let level = holdLevel, let window = windows[id], let display = workspaceID(containing: id),
       self.display(display) != nil, hold.saidOf.insert("\(level.rawValue) \(window.bundleID ?? window.appName)").inserted
@@ -557,6 +567,66 @@ extension Controller {
       HeadsUpModel(
         kind: .problem, text: "\(window.appName) is out of view: holding still", hint: "\(ways.joined(separator: " or ")) goes there"),
       on: display)
+  }
+
+  /// On a held view the keyboard can end up in a window out of view and stay there: the only window in view went and macOS picked the
+  /// app's next one, with nobody in view to give it to; or an app took it more often than Arbor fights for it. Nothing moves and the
+  /// hold is kept (`collab/QUESTIONS.md`, "F58, a held view that is empty"). But what is typed now goes where nobody sees it,
+  /// so the line says so, by the app's name, for as long as it is so.
+  ///
+  /// Call this whenever that may have changed. It only makes an appointment, in place of the last, and the line comes when two looks have
+  /// found the keyboard in the same window with nothing heard before or between them. On a Mac the keyboard is said to have moved some
+  /// 20 ms before the window is reported, or the window is reported a quarter of a second before it has the keyboard, which may come in
+  /// silence: either way every app that comes forward has the keyboard out of view for a moment, with nobody turned away yet. One look
+  /// can fall into that moment, and two can fall into two such moments. The line would flash an app's name at the audience. (While Arbor
+  /// asks the keyboard back it says so every fifth of a second, `holdLooksAgain`, so no look falls into that.)
+  /// And one look serves however many reports came: it is a question to the app in front, which answers on its main thread or, if
+  /// it hangs, not for a second. So nothing looks by the clock either: while the line stands Arbor asks nobody.
+  func holdWillLookWhereTheKeyboardIs() {
+    guard isRunning, holdLevel == .view, settings.messageLevel != .off else {
+      scheduler.cancel("focus-out-of-view")
+      return theKeyboardRests(in: nil)
+    }
+    if !hold.keyboardRests { hold.keyboardSeenIn = nil }
+    holdLooksWhereTheKeyboardIsSoon()
+  }
+
+  private func holdLooksWhereTheKeyboardIsSoon() {
+    scheduler.schedule("focus-out-of-view", after: Self.restSpan) { [weak self] in self?.holdLooksWhereTheKeyboardIs() }
+  }
+
+  private func holdLooksWhereTheKeyboardIs() {
+    guard isRunning, holdLevel == .view, settings.messageLevel != .off else { return holdWillLookWhereTheKeyboardIs() }
+    guard let id = windowOutOfViewWithTheKeyboard() else { return theKeyboardRests(in: nil) }
+    guard hold.keyboardSeenIn == id else {
+      theKeyboardRests(in: nil)
+      hold.keyboardSeenIn = id
+      return holdLooksWhereTheKeyboardIsSoon()
+    }
+    theKeyboardRests(in: id)
+  }
+
+  private func theKeyboardRests(in id: WindowID?) {
+    guard let id, let window = windows[id], let display = workspaceID(containing: id) else {
+      (hold.keyboardSeenIn, hold.keyboardRests) = (nil, false)
+      return letStand(nil)
+    }
+    (hold.keyboardSeenIn, hold.keyboardRests) = (id, true)
+    letStand(
+      HeadsUpModel(kind: .problem, text: "\(window.appName) has the keyboard, out of view", hint: wayOutOfAHold(called: "the view")),
+      on: display)
+  }
+
+  private func windowOutOfViewWithTheKeyboard() -> WindowID? {
+    func rests(_ id: WindowID) -> Bool { windows[id]?.isPresent == true && isOutOfView(id) }
+    let focused = system.focusedWindow()
+    if let focused, isManaged(focused) { return rests(focused) ? focused : nil }
+    // Nobody Arbor knows. If the app the line names is still in front, that is a dialog of its own (⌘W typed blind asks whether to save),
+    // or the app is too busy to answer. What is typed still goes to that app, whose windows nobody sees.
+    guard hold.keyboardRests, let seen = hold.keyboardSeenIn, rests(seen), let window = windows[seen], let front = frontmostApp,
+      front.bundleID.map({ $0 == window.bundleID }) ?? (front.name == window.appName)
+    else { return nil }
+    return seen
   }
 
   /// Not at once. ⌘W, ⌘M, ⌘H and ⌘Q are keys as well, and macOS names the window it hands the keyboard to a moment before it says that
@@ -685,6 +755,7 @@ extension Controller {
   /// follows and the view does not move. So going to an app brings in that app's dialogs; those of other apps go on
   /// waiting. Not on a held view, and holding still only if the person did it.
   func holdNotesActivation(of app: FrontmostApp?) {
+    holdWillLookWhereTheKeyboardIs()
     guard hold.dialogsWait, let app, holdLevel != .view else { return }
     if holdLevel == .still, system.secondsSinceClickOrModifierKey() > Self.askedWithin { return }
     system.bringInStrayDialogs(ofApp: app.bundleID)
@@ -711,6 +782,8 @@ extension Controller {
     hold.keptOut.remove(id)
     if hold.home == id { hold.home = nil }
     if hold.askedFor == id { hold.askedFor = nil }
+    // A floating window out of view that closes changes no layout, and perhaps nobody says where the keyboard went.
+    holdWillLookWhereTheKeyboardIs()
     refreshHoldCaller()
   }
 
