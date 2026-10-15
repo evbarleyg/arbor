@@ -57,6 +57,9 @@ shows it; `submitName(_:)` types into it and presses ↩ exactly as the panel do
 (`Controller.freshLayout(of:)`) and compared with the controller's record of its last layout and with where the windows really are. Comparing the windows with
 `controller.layouts` alone proves nothing about a command that forgets to lay out: they still match the layout from before it. `Harness.staleLayouts()` is the first half on its own, which holds
 whatever apps do with the frames they are given; arbor-sim asks it after every line and fails with LAYOUT OUT OF DATE, so every scenario checks it.
+**A window moves once** (`ArborTesting/Jolts.swift`): `h.beginStep()` before a step, then `h.movesInStep` (how often Arbor really moved each window) and `h.jolts` (the windows it moved twice where once would
+have done: the app had done as it was asked, nobody else touched the window, and a person could see the place in between). arbor-sim asks after every line and fails with MOVED TWICE, so every scenario checks that too.
+`PromisesTests` has an example for each of the seven rules of issue #3; a promise the trunk breaks stands there as a known issue that names its row on the board.
 
 Echoes: macOS does a good deal without being asked, and the fake does the same, in
 the order recorded on macOS 26 (`collab/evidence/ax-events.txt`). Arbor's own `focus(_:)`

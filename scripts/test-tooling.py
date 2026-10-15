@@ -163,6 +163,8 @@ def check_ci_step():
 
 # MARK: scenarios.sh and arbor-sim
 
+# One line in which a window goes somewhere and on from there.
+TWICE = "shove 101 10 40 then 500 40\n"
 SCENARIOS = [
     (0, "a scenario that holds", "open A\ndock 101 left\nexpect docked 101\n"),
     (1, "an expectation that does not hold", "open A\nexpect docked 101\n"),
@@ -174,6 +176,12 @@ SCENARIOS = [
     (1, "`Expect` is not `expect`", "open A\nExpect floating 101\n"),
     (1, "an expectation nobody knows", "open A\nexpect dcked 101\n"),
     (1, "a number the simulator refuses", "open A\nexpect floating 101\nseam 1e300 5\n"),
+    (0, "a window that is moved once", "open A\nshove 101 10 40\nexpect moved-once\n"),
+    (1, "a window that is moved twice in one line, and nothing answers for it", "open A\n" + TWICE + "expect floating 101\n"),
+    (0, "a window that is moved twice, which is known", "open A\n" + TWICE + "expect jolt 101\n"),
+    (1, "a window that is moved twice in the last line", "open A\nexpect floating 101\n" + TWICE),
+    (1, "a known fault that has been mended", "open A\nshove 101 10 40\nexpect jolt 101\n"),
+    (1, "another window answers for it", "open A\nopen B\n" + TWICE + "expect jolt 102\n"),
 ]
 
 

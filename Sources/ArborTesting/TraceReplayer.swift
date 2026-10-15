@@ -628,7 +628,8 @@ public final class TraceReplayer {
       let numbers = words[1].split(separator: ",").compactMap { Double($0) }
       if numbers.count == 2 { fake.cursor = CGPoint(x: numbers[0], y: numbers[1]) }
     case .done(let text, let ok, let message):
-      guard let result = lastResult, mode == .strict else { break }
+      // What `doctor` finds is about the Mac it ran on (switches, taps, other apps), of which a trace holds nothing.
+      guard let result = lastResult, mode == .strict, text != "doctor" else { break }
       if result.ok != ok || (result.message != message && !message.hasPrefix(TraceLine.aboutMark)) {
         diverged(
           at: current,

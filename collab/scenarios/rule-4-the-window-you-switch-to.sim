@@ -1,0 +1,65 @@
+# Rule 4 of the product direction (issue #3): focus and order are sacred. The window you switch to comes to the front and
+# into view, and is never left behind another.
+# Story: somebody lives framed on one window and switches with ⌘Tab, the Dock and the Window menu, which all reach Arbor
+# as "this window has the keyboard now". This is the half that needs no Mac; that macOS's reports arrive is board 1.2.
+quiet
+open Safari
+open Terminal
+open Mail
+open Notes 400x300
+dock 101 left
+dock 102 right
+dock 103 beside 102 bottom
+move 104 560 300 400 300
+zoom 101
+expect fills 101
+expect hidden 102
+expect hidden 104
+# To a docked window out of view: framed stays framed, and Back returns.
+focus 102
+expect fills 102
+expect focused 102
+expect in-front 102
+expect hidden 101
+back
+expect fills 101
+# To a floating window out of view: the Desktop, with the window where it was.
+focus 104
+expect camera desktop
+expect visible 104
+expect focused 104
+expect in-front 104
+expect size 104 400x300
+# From a group the view steps out just far enough.
+focus 102
+out
+expect visible 103
+expect hidden 101
+focus 101
+expect visible 101
+expect visible 102
+expect focused 101
+expect in-front 101
+# To a window in view: nothing moves.
+focus 103
+expect still
+expect focused 103
+expect in-front 103
+# Out of the Dock, and out of ⌘H.
+zoom 101
+minimize 102
+restore 102
+expect visible 102
+expect focused 102
+expect in-front 102
+hide Mail
+unhide Mail
+focus 103
+expect visible 103
+expect in-front 103
+# An app that only reports a window of its own, in the background, moves no view.
+zoom 101
+background-focus 103
+wait 2
+expect fills 101
+expect focused 101

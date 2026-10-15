@@ -2,7 +2,8 @@
 # Runs every user-journey scenario in collab/scenarios through arbor-sim.
 # A scenario fails when arbor-sim exits non-zero, which it does when an
 # `expect` line does not hold (each one prints EXPECTATION FAILED) or a command
-# fails that no `expect fail` answers for, and when it expects nothing at all.
+# fails that no `expect fail` answers for, a window is moved twice where once would have done (MOVED TWICE) and no
+# `expect jolt` answers for it, or a display is not laid out again, and when it expects nothing at all.
 #
 # Each scenario is then run once more while a trace is recorded, and the trace is replayed in strict mode
 # (docs/TRACES.md): the replayed controller must do exactly what the recorded one did. That fails when
@@ -35,7 +36,7 @@ for file in "${ARBOR_SCENARIOS:-collab/scenarios}"/*.sim; do
     failed=1
     echo "✘ $name (exit $code)"
     grep -B1 "EXPECTATION FAILED" <<<"$output" | grep -v '^--$' | sed 's/^/    /'
-    grep "COMMAND FAILED" <<<"$output" | sed 's/^/    /'
+    grep -E "COMMAND FAILED|MOVED TWICE|LAYOUT OUT OF DATE" <<<"$output" | sed 's/^/    /'
     continue
   elif [ "$expectations" -eq 0 ]; then
     failed=1

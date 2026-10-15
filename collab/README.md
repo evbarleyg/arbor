@@ -153,6 +153,9 @@ around that window, where the window is; there is none), `outline <id>|desktop|n
 `field open` / `field closed` (the field of `ask-name`; `field-type [text]` types into it and presses ↩, `field-cancel` presses ⎋), `minimap <id>|desktop|everything|none` (what the minimap marks as filling the view; there is none;
 `map <id>|desktop|beside` clicks in it),
 `held view|still|no` (F58), `focused <id>` (that window has the keyboard),
+`still` / `still <id>` (during the line before, Arbor moved no window, or not that one), `moved-once` (it moved something, and nothing twice),
+`at <id> <x> <y>` (the window's top-left corner), `replied <words>` (what the line before printed contains those words, ignoring case),
+`preview none|showing` (the drop preview), `jolt <id>` (see below),
 `said <words>` / `silent` (the heads-up line on screen now contains those words, ignoring
 case; there is none. A line stays until `flush` or `wait`). `press <command>` runs a command as its shortcut would, which is what
 makes Arbor answer on screen; arbor-sim prints each line as `on screen: …`. `relaunch` quits Arbor and starts it again. Failed expectations print
@@ -163,6 +166,12 @@ ArborTesting). A line that does not hold prints `EXPECTATION FAILED: <why>`,
 and arbor-sim exits with code 1 at the end, so `make scenarios` (part of
 `make check` and of CI) fails when a user journey breaks. `expect ok` and
 `expect fail` refer to the last command, not to earlier expectations.
+
+**A window moves once.** After every line of every scenario arbor-sim looks at what Arbor asked of the windows. A window that did
+as it was asked and was then asked for another frame before the line was over has been moved twice where once would have done
+(`ArborTesting/Jolts.swift`): arbor-sim prints `MOVED TWICE` and the scenario fails. Asking again because an app answered with another size
+than it was asked for does not count. `expect jolt <id>` on the next line answers for a fault that is known, beside a remark that names its row on
+the board; it fails once the fault is mended, so it cannot outlive it.
 
 A command that fails (a misspelt verb, a window that is not there) fails the
 scenario too, unless the very next line is `expect fail`; so does a scenario

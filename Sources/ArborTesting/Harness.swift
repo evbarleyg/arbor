@@ -59,6 +59,7 @@ public final class Harness {
     controller.loginItem = loginItem
     // Time also passes while a simulated drag rests at a point.
     system.passTime = { [scheduler] in scheduler.advance(by: $0) }
+    firstMark = system.moveLog.count
   }
 
   public func start() { controller.start() }
@@ -173,6 +174,28 @@ public final class Harness {
   public func ascii(columns: Int = 72, rows: Int = 22) -> String {
     controller.asciiDrawing(columns: columns, rows: rows)
   }
+
+  /// How long the fake's `moveLog` was when the step that is being judged began. Nil until somebody says where a step begins.
+  public private(set) var stepMark: Int?
+  /// Where this harness found the log: a window system taken over from an earlier run of Arbor has that run's moves in it.
+  private var firstMark = 0
+
+  /// Call before a step whose moves are to be judged: `expect still`, `expect moved-once` and `jolts` look at what came after.
+  public func beginStep() { stepMark = system.moveLog.count }
+
+  /// How often Arbor has really moved each window since `beginStep()`, or since this harness was made. A request that left
+  /// the window where it was is no move.
+  public var movesInStep: [WindowID: Int] {
+    var counts: [WindowID: Int] = [:]
+    for move in system.moveLog[min(stepMark ?? firstMark, system.moveLog.count)...] where move.before != move.after {
+      counts[move.window, default: 0] += 1
+    }
+    return counts
+  }
+
+  /// The windows Arbor has moved twice since then where once would have done (Jolts.swift). Those `whileLearning` are
+  /// among them: whoever asks whether Arbor changed its mind for nothing leaves them out.
+  public var jolts: [Jolt] { system.jolts(since: stepMark ?? firstMark) }
 
   /// The text of the trace being recorded or last recorded.
   public var lastTrace: String? { (recorder.sink as? MemoryTraceSink)?.text }

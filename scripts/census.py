@@ -97,7 +97,7 @@ inputActivity isHolding frame isVisible clearFrameLog existingWindowIDs launchAp
 install place remove hasHeldEchoes dragging frameAfterResizing openApplication raise windowsFrontToBack clearRaiseLog
 snapshot minimumSize maximumSize sizeStep behaviour lastRequest placeIsArborsDoing groundHasShifted movesNotArbors
 changedItsWays window requested before after together wasFocused focus frames keyboard wholePoints
-titleBarStaysReachable flightFromTheDock flightFromFullScreen none
+titleBarStaysReachable flightFromTheDock flightFromFullScreen none jolts
 """.split()
 
 # A hand on one of Arbor's own panels: the fake calls the action the real panel would call.
@@ -115,7 +115,7 @@ showHeadsUp showCheatSheet finder finderBeeps showFinder showMinimap display cha
 HARNESS_REPORTS = "keyDown keyUp keyRepeat revokeAccessibility grantAccessibility watchAccessibility".split()
 HARNESS_NEUTRAL = """
 system overlays store scheduler controller releases loginItem recorder start run press registeredShortcuts key display
-workspace layout visibleFrame frame ascii lastTrace layoutProblems staleLayouts measure
+workspace layout visibleFrame frame ascii lastTrace layoutProblems staleLayouts measure beginStep stepMark movesInStep jolts
 """.split()
 
 # What the stand-ins for GitHub's releases and macOS's login items are told to answer.

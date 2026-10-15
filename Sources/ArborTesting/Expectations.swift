@@ -15,12 +15,14 @@ public enum ScenarioExpectation {
     + "ring <id>|none, outline <id>|desktop|none, shortcut <keys> on|off, shortcut <keys> shows <label>, "
     + "shortcut <keys> key <code>, pinned <id>, in-front <id>, size <id> <w>x<h>, summoned <id>, space <name>, no-space <name>, "
     + "field open|closed, held view|still|no, focused <id>, said <words>, silent, "
-    + "minimap none|everything|desktop|<id>"
+    + "minimap none|everything|desktop|<id>, still [<id>], moved-once, jolt <id>, at <id> <x> <y>, "
+    + "replied <words>, preview none|showing"
 
   /// Checks the words after `expect`. `lastCommandOK` is whether the previous
   /// command succeeded, for `ok` and `fail`. Returns nil when the expectation
   /// holds, otherwise a sentence saying why it does not.
-  public static func check(_ words: [String], harness h: Harness, lastCommandOK: Bool) -> String? {
+  /// `lastReply` is what the previous line printed, for `replied`.
+  public static func check(_ words: [String], harness h: Harness, lastCommandOK: Bool, lastReply: String? = nil) -> String? {
     let controller = h.controller
     func window(_ index: Int) -> WindowID? {
       words.indices.contains(index) ? WindowID(word: words[index]) : nil
@@ -195,6 +197,50 @@ public enum ScenarioExpectation {
       return abs(frame.width - width) <= 1 && abs(frame.height - height) <= 1
         ? nil : "\(place(id)) is not \(words[2]) in size"
 
+    case ("still", 1...2) where h.stepMark == nil, ("moved-once", 1) where h.stepMark == nil,
+      ("jolt", 2) where h.stepMark == nil:
+      // A replay answers Arbor's requests from the trace, so the stand-in's log of moves says nothing there.
+      return "`\(words[0])` looks at the line before, which only arbor-sim's scripts have: not for the `.expect` file of a trace"
+
+    case ("still", 1):
+      // What Arbor did during the line before: a window it asked to be where it was already has not moved.
+      let moved = h.movesInStep.keys.sorted()
+      return moved.isEmpty ? nil : "Arbor moved \(moved.map { "\($0)" }.joined(separator: ", "))"
+
+    case ("still", 2):
+      guard let id = window(1) else { return usage(words) }
+      guard frame(id) != nil else { return "there is no window \(id)" }
+      return h.movesInStep[id] == nil ? nil : "Arbor moved \(place(id))"
+
+    case ("moved-once", 1):
+      let moves = h.movesInStep
+      guard !moves.isEmpty else { return "Arbor moved nothing" }
+      let twice = moves.filter { $0.value > 1 }.sorted { $0.key < $1.key }
+      return twice.isEmpty ? nil : twice.map { "Arbor moved \($0.key) \($0.value) times" }.joined(separator: ", ")
+
+    case ("jolt", 2):
+      guard let id = window(1) else { return usage(words) }
+      // Also one that an app's refusal excuses: it is the same fault on a desk where some app happens to refuse a size.
+      return h.jolts.contains { $0.window == id }
+        ? nil : "\(id) was not moved twice: if the known fault has been mended, this line can go, and its row on the board"
+
+    case ("at", 4):
+      guard let id = window(1), let x = Double(words[2]), let y = Double(words[3]) else { return usage(words) }
+      guard let frame = frame(id) else { return "there is no window \(id)" }
+      return abs(frame.minX - x) <= 1 && abs(frame.minY - y) <= 1 ? nil : "\(place(id)) is not at \(words[2]),\(words[3])"
+
+    case ("replied", 2...):
+      let wanted = words.dropFirst().joined(separator: " ")
+      guard let lastReply else { return "`replied` looks at the line before, which only arbor-sim's scripts have" }
+      return lastReply.lowercased().contains(wanted.lowercased()) ? nil : "the reply does not say “\(wanted)”"
+
+    case ("preview", 2):
+      switch words[1].lowercased() {
+      case "none": return h.overlays.preview.map { "a drop preview is showing at \(describe($0))" }
+      case "showing": return h.overlays.preview == nil ? "no drop preview is showing" : nil
+      default: return usage(words)
+      }
+
     case ("said", 2...):
       // The heads-up line on screen now, on any display. It stays until its time is up (`flush`).
       let wanted = words.dropFirst().joined(separator: " ").lowercased()
@@ -250,7 +296,7 @@ public enum ScenarioExpectation {
       let verbs = [
         "docked", "floating", "visible", "hidden", "tile", "fills", "left-of", "above", "camera", "count", "ok", "fail", "ring", "minimap", "outline", "shortcut", "pinned", "in-front", "size",
         "summoned", "space", "no-space", "field", "said", "silent",
-        "held", "focused",
+        "held", "focused", "still", "moved-once", "jolt", "at", "replied", "preview",
       ]
       if let verb = words.first?.lowercased(), verbs.contains(verb) { return usage(words) }
       return "unknown expectation `\(words.joined(separator: " "))`; the forms are: \(forms)"

@@ -25,6 +25,8 @@ dock 102 left
 expect fail
 expect docked 102
 fullscreen 102 off
+# Known (board 1.21): it is laid out as if alone before its neighbours are reported back, and then again.
+expect jolt 102
 expect visible 101
 expect visible 102
 expect visible 103

@@ -72,6 +72,22 @@ Arbor was inspired by TrellisWM and is not a copy of it. Three things are differ
 - **Show Everything shows your real windows**, laid out smaller, not pictures of them. You can read, click and type in them at once, and Arbor needs no permission to record your screen. A window that cannot be that small shows as a tile with its app's colour and icon.
 - **Nothing of Arbor's lies between your pointer and your windows.** While you drag, the preview is a picture that lets the mouse through: no layer of Arbor's covers the screen, so letting go always reaches the window.
 
+### What Arbor promises
+
+Seven things you can hold Arbor to. Each has a story of its own that is played after every change to Arbor (`collab/scenarios/rule-1…` to `rule-7…`), and examples beside it. Where today's build is known to fall short, it says so here; the whole list is section 1 of `collab/BOARD.md`.
+
+1. **It does not fight macOS.** macOS has tiling of its own, and as it comes it wants the same screen edges and the same drags. Arbor looks before it arranges anything and tells you what it found (the welcome window; menu → Help → Check Setup…; `arborctl doctor`). While macOS's own tiling is on, Arbor stands aside wherever macOS acts: one preview at a time, and what it shows is what happens.
+   *Not yet:* putting the switches right is still a walk through System Settings; Arbor will offer to do it in one step, and to put them back.
+2. **Nothing moves until you dock something.** Starting Arbor for the first time moves nothing; a later start puts back what you had docked, shows everything, and takes nothing out of view. Nor does a window that opens, closes, goes to the Dock or comes back, an app that is hidden, or time that passes. A window you have not docked is yours: it floats where you left it, at the size you gave it.
+   *Not yet:* a dock still pushes floating windows out of its way and can make them narrower, and a window that hangs over the edge of the screen is pulled in the first time anything else changes.
+3. **No jolts.** A window moves once, straight to where it ends up. Arbor never pulls at a window you are dragging. Out of view means out of view: nothing flashes.
+   *Not yet:* a window whose app refuses the size it is asked for takes a second move the first time Arbor meets it, and so does one that leaves full screen.
+4. **The window you switch to is the window you get.** ⌘Tab, a click in the Dock, the Window menu: it comes to the front and into view, and the keyboard is in it. The view moves to it; it is never left behind another window.
+5. **It leaves things as it found them.** Float All, Quit and a pause give every window back the size and the place it had before you docked it.
+6. **A drag is yours from the press to the release.** The preview is a picture that lets the mouse through. Nothing of Arbor's can take the release, and however a drag ends, nothing is left on the screen that could take your next click.
+7. **There is always a way back.** ⌃⌥Space shows everything on this display, ⌃⌥0 on all of them, ⌃⌥D whatever floats, ⌃⌥[ where you were, ⌃⌥Z takes the last change back, ⌃⌥⇧F makes it a normal Mac again, and so does quitting. No window is ever closed, hidden or minimised by Arbor.
+   *Not yet:* ⌃⌥⇧F answers "nothing is docked" and does nothing while a floating window hangs out of view.
+
 ## 2. The first ten minutes
 
 ### Before you start: four switches

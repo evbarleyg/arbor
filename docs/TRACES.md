@@ -388,6 +388,7 @@ gave the keyboard to either. Sort, or take a `min(by:)` whose last key is the wi
   recorded again (`stubborn-fast`, `stubborn-slow`).
 - Beyond echoes and answers to `focus`, what macOS did because of a call the replayed Arbor no longer makes is still delivered.
 
+- What the app finds out about the Mac (`SystemFacts`: macOS's switches, event taps, other window managers) is not in a trace, so a strict replay does not compare `doctor`'s reply.
 - Of what is above the seams only shortcuts are recorded (`shortcut` lines): menu clicks, pinches and ⌃⌥-drags appear as the commands they end as.
 - What the controller remembers about the hands (which of pointer and keyboard led last, when the focus last moved: `Controller+Lead.swift`) is not in the header. The first command
   of a trace started in the middle of a session may choose differently in a replay.
