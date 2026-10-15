@@ -6,7 +6,7 @@ This page says what each of those words means in numbers, so that a program give
 
 - The verdict is about **one commit**. It is `VIABLE`, `NOT VIABLE`, or `INVALID` where nothing shows that the detectors catch anything (section 5), with the reasons and the ledger of runs it rests on.
 - The numbers are in the block in section 1. `scripts/mac-shell/viable.py` reads them **from this page**: there is no second copy.
-- Kept by the product owner. A number changes only by a pull request that says why, never in the same pull request as a fix it would excuse.
+- Kept by the product owner; the checker is kept by the lane that keeps the detectors, which feeds it real runs. A number changes only by a pull request that says why, never in the same pull request as a fix it would excuse.
 - It replaces the half hour on one person's Mac that issue #3 ends with (`collab/QUESTIONS.md`, Q19). Its measure is the same: no jolt, no lost or stuck window, nothing moved that the person did not move.
 
 **State, 2026-10-15: agreed** by the four lanes it rests on (the detectors, the walks, the stand-ins, the rubric). The sampler, the day and most detectors are in a pull request (`scripts/mac-shell/day.sh`, `sampler.swift`, `jolts.py`) and have played their first days on hosted Macs. Section 9 lists what is still to be built, and by which lane.
@@ -156,7 +156,7 @@ Distances are in points. "Changes" means by more than 2, because apps round and 
 | `stuck` | 3, 4 | a window is moved by Arbor more than three times in two seconds with nobody acting; or a window a real drag let go of is, within 24 points, in none of five places: where it was let go, where Arbor's preview was, in macOS's own tile where macOS answered the drag, under the pointer by its title bar at its own size (F48), back where it was taken from (a drag called off); or after Quit a click on an app's Dock icon does not bring its window to the front | samples | partly |
 | `behind` | 4 | the window switched to does not end in front of every other ordinary window; or a window kept in view that has its strip (Q25) is overlapped by a window Arbor arranges. One for which there was no room, and of which Arbor says so, may be covered | samples (order) | `jolts.py`, rule 4 |
 | `focus` | 4 | the window switched to does not end wholly in view with its app in front and itself its app's focused window; a key typed into a witness window arrives elsewhere; or the app in front changes during an act that is no switch | samples, `apptool`, the witness | partly |
-| `size-lost` | 5 | after pause, Float All or Quit a window's size differs from its own: the last size it had while nobody but its person and its app decided it. After Float All and Quit its place too | samples | `jolts.py`, rule 5 (place: today `ODD`) |
+| `size-lost` | 5 | after pause, Float All or Quit a window's size differs from its own: the last size it had while nobody but its person and its app decided it. After pause, Float All and Quit its place too, and nothing is raised (Q21) | samples | `jolts.py`, rule 5 (place: today `ODD`) |
 | `input-held` | 6 | the button is not up within 50 ms of the posted mouse-up; a click 300 ms after a drop does not arrive in the window that lies there; a key, click or scroll that is not Arbor's does not reach the witness, or reaches it more than 10 ms later (99th percentile) than in the run without Arbor | the witness, samples | to build |
 | `slow` | 3 | a window Arbor moves is not at rest 1,500 ms after the act's event was posted; the first act after a start has 3,000. From 700 ms (1,500 after a start) it is listed, as a class that explains itself, and goes on the scoreboard: the motion takes 460. Hosted Macs get no numbers of their own: release and debug builds were measured within 50 ms of each other there, and with the icons out of the way docks and frames take 580 to 710 ms | samples | partly: `settled=` |
 | `crash` | severity 2 | Arbor's process ends unasked; a crash report of Arbor's appears; `arborctl status` takes longer than a second; Quit takes longer than five | the script | partly |
@@ -223,6 +223,14 @@ If more than a fifth of a gate's runs do not count, the gate is `INVALID`: too m
 
 **No run is left out and none is repeated until it passes.** `viable.py check --runs` is given every run of the gate's workflow on that commit as GitHub lists them, with how often each was started. One that the ledger lacks is a reason; one that GitHub does not know, or that is there twice, makes the gate `INVALID`;
 without the list the verdict is never `VIABLE`. A run that was started again counts with every attempt. A run that ended before its report is in the ledger too: it was started, so it is accounted for.
+
+**A hosted Mac's failure does not sink a commit, and who says that a part never ran is GitHub or the batch, never an absence** (decided 2026-10-15; the checker does not do this yet):
+
+1. Whoever starts a gate fixes its parts and which job, that is which Mac, plays which.
+2. A job that gets a Mac writes, before its first script, a stub of a manifest for each of its parts (`"started": false`). A script overwrites its own as it begins (`"started": true`). So a batch that is stopped because its Mac is spoilt leaves stubs, not holes.
+3. `--runs` is GitHub's own list of the jobs that got a Mac: a line for each job and attempt, with the parts it was given.
+4. Every part of every listed job has a manifest in that attempt, stub or real: one that is missing is a reason, and a manifest of a part that no listed job covers makes the gate `INVALID`. A manifest that was started counts with every attempt and is never replaced.
+   A stub, or a part whose job never got a Mac, may be supplied by a later attempt of the same run under the same number. A part that no attempt played is a reason.
 
 **The manifest** (`run.json`, written by the script):
 
