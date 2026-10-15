@@ -17,7 +17,7 @@ ARBOR_TIME_LIMIT=1000
 source "$(dirname "$0")/lib-film.sh"
 needs_throwaway_mac "film the whole display, and change Reduce Motion, the appearance, the wallpaper and the display's size"
 
-LIGHT='{"animationDuration": 0, "focusRing": false, "menuBarControls": false}'
+LIGHT='{"animationDuration": 0, "focusRing": false, "menuBarControls": false, "dimBehindArranged": 0}'
 FACE="ARBOR_NO_HOTKEYS=0 ARBOR_NO_STATUS_ITEM=0 ARBOR_PANELS_IN_PICTURES=1"
 
 press() {

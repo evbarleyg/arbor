@@ -189,8 +189,8 @@ sampler_start
 ARBOR_TEST_WINDOWS_ARGS="--regular"
 # Shortcuts on, as a person has them; and the two panels that keep out of shared screens let the camera see them.
 FACE="ARBOR_NO_HOTKEYS=0 ARBOR_PANELS_IN_PICTURES=1"
-# The options these films are about, in so many words, whatever ships: motion, the ring, the menu bar's buttons.
-OPTIONS='"animationDuration": 0.46, "focusRing": true, "menuBarControls": true'
+# The options these films are about, in so many words, whatever ships: motion, the ring, the menu bar's buttons, the ground darkened behind docked windows.
+OPTIONS='"animationDuration": 0.46, "focusRing": true, "menuBarControls": true, "dimBehindArranged": 0.25'
 
 step "1. the metronome"
 for kind in good linear slow twice hop flash; do metronome "$kind"; done
