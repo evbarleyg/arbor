@@ -12,7 +12,16 @@
 # and the place of the start, or anywhere outside what its old frame and its new one cover.
 #
 # ARMS: name=commit, in the order they are played. `head` is the commit under test, whose build the harness has made anyway. A commit must be given in full: the Mac's clone is one commit deep.
-ARMS="before=07b2bfc5da482ddcbfc25156abfddffc49f605ba head"
+# name=commit+commit is the first with, laid over it, the files that the second changed, those of the stand-ins (Sources/ArborTesting) left out, which are no part of the app: for two cures that have
+# not been put together yet. It is played only if each of those files is the same in the first commit as in the second's parent, so that it is what any merge of the two would build the app from.
+#   before  the trunk before sizes were asked for where a window stands
+#   head    the trunk
+#   asks    nobody in view is asked to grow where it stands (the controller)
+#   order   between size and place a window lies within its old frame or its new one (the layer's order of calls)
+#   both    the two together
+ASKS=cc9df278a708ecf06c2237cee8e0fab6479e3a13
+ORDER=1cab79797b5c216d8314dfaaaf40b3932fed13e9
+ARMS="before=07b2bfc5da482ddcbfc25156abfddffc49f605ba head asks=$ASKS order=$ORDER both=$ASKS+$ORDER"
 ARBOR_TIME_LIMIT=1150
 source "$(dirname "$0")/lib-film.sh"
 needs_throwaway_mac "film the whole display, open Safari, and build other commits in this clone"
@@ -24,17 +33,26 @@ HEAD_BIN=$ARBOR_BIN
 
 # arm_build <name> <commit>: Arbor and arborctl as that commit has them, into $ARMS_DIR/<name>. In place, upon the build that is there: only what differs is compiled.
 arm_build() {
-  local name=$1 commit=$2 started=$SECONDS file
+  local name=$1 commit=${2%%+*} over="" started=$SECONDS file
   [ "$commit" != head ] || return 0
+  case "$2" in *+*) over=${2#*+} ;; esac
   mkdir -p "$ARMS_DIR/$name"
   arms_restore
   git -C "$ARBOR_ROOT" fetch --quiet --depth 1 origin "$commit" || { echo "arm $name: $commit cannot be fetched"; return 1; }
   # Exactly that commit's sources: what has come since would not compile against them. Files that are the same keep their dates, so they are not compiled again.
   git -C "$ARBOR_ROOT" diff --name-only --diff-filter=A "$commit" HEAD -- Sources | while IFS= read -r file; do rm -f "$ARBOR_ROOT/$file"; done
   git -C "$ARBOR_ROOT" checkout --quiet "$commit" -- Sources Package.swift || { echo "arm $name: $commit cannot be checked out"; return 1; }
+  if [ -n "$over" ]; then
+    git -C "$ARBOR_ROOT" fetch --quiet --depth 2 origin "$over" || { echo "arm $name: $over cannot be fetched"; return 1; }
+    for file in $(git -C "$ARBOR_ROOT" diff --name-only "$over~1" "$over" -- Sources ':!Sources/ArborTesting'); do
+      git -C "$ARBOR_ROOT" diff --quiet "$commit" "$over~1" -- "$file" || { echo "arm $name: both commits change $file: they are for their authors to put together"; return 1; }
+      git -C "$ARBOR_ROOT" checkout --quiet "$over" -- "$file" || { echo "arm $name: $file of $over cannot be checked out"; return 1; }
+      echo "arm $name: $file is ${over:0:8}'s"
+    done
+  fi
   if (cd "$ARBOR_ROOT" && swift build --product Arbor && swift build --product arborctl) > "$ARBOR_OUT/build-arm-$name.log" 2>&1; then
     cp "$HEAD_BIN/Arbor" "$HEAD_BIN/arborctl" "$ARMS_DIR/$name/"
-    echo "arm $name: built ${commit:0:8} in $((SECONDS - started))s"
+    echo "arm $name: built ${commit:0:8}${over:+ with ${over:0:8}} in $((SECONDS - started))s"
   else
     grep "error:" "$ARBOR_OUT/build-arm-$name.log" | sort -u | head -n 10
     echo "arm $name: ${commit:0:8} did not build"
@@ -87,6 +105,8 @@ home() {
 # and the first side again.
 play() {
   local arm=$1 cast=$2 p="$1-$2"
+  # A playing takes about a minute. One that is cut off by the time limit would take the films of all the others with it.
+  if [ "$SECONDS" -gt $((ARBOR_TIME_LIMIT - 130)) ]; then echo "arm $arm, $cast: NOT PLAYED, no time left"; return 0; fi
   ARBOR_BIN="$ARMS_DIR/$arm"
   [ -n "${ARBOR_REHEARSAL:-}" ] && ARBOR_BIN=$HEAD_BIN
   arbor_settings "$LIGHT"
@@ -146,8 +166,8 @@ for arm in $ARMS; do
     [ "$commit" = head ] && PLAYED="$PLAYED $name"
     continue
   fi
-  # The films need five minutes: an arm that could not be built in time is left out, and said to be.
-  if [ "$SECONDS" -gt 620 ] && [ "$commit" != head ]; then echo "arm $name: no time left to build it"; continue; fi
+  # The films need a minute for each playing: an arm that could not be built in time is left out, and said to be.
+  if [ "$SECONDS" -gt 480 ] && [ "$commit" != head ]; then echo "arm $name: NOT BUILT, no time left"; continue; fi
   arm_build "$name" "$commit"
   [ -x "$ARMS_DIR/$name/Arbor" ] && PLAYED="$PLAYED $name"
 done

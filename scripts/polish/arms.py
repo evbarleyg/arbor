@@ -77,7 +77,13 @@ CAST = {"test": (255, 56, 60), "safari": (255, 141, 40)}
 
 def table(folder, cast, out=sys.stdout):
     films, acts, arms, colour = os.path.join(folder, "films"), {}, [], CAST[cast]
-    for name in sorted(os.listdir(films)):
+
+    def began(name):
+        with open(os.path.join(films, name, "film.log"), encoding="utf-8") as log:
+            return int(log.readline().split()[0])
+
+    # In the order they were played, which is the order the script names the arms in.
+    for name in sorted((name for name in os.listdir(films) if os.path.isfile(os.path.join(films, name, "film.log"))), key=began):
         if not os.path.isfile(os.path.join(films, name, "film.log")) or name.startswith(("metronome-", "ground")):
             continue
         arm, _, what = name.partition("-")
