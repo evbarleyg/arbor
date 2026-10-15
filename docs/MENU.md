@@ -25,13 +25,13 @@ would fail, and whatever would do something else than its title says.
 
 1. **The ways back are always at the top level, always in the same place, never greyed out while Arbor runs, and never below a fold**: Show
    Everything is the first command, Float All Windows is in the third group, Pause Arbor and Quit Arbor are the last two rows. (A held
-   view is the one exception: nothing moves it, so Show Everything is greyed out, and Release, right under the line that says so, takes its place.)
-2. **A state line comes first, and the command that ends the state comes right under it.** At most two states are shown; the order of
-   precedence is in [States](#states).
-3. **The menu is at most 600 points high, in every state, and the top level is full at 18 rows: a new feature goes into a submenu.** A
+   view is the one exception: nothing moves it, so Show Everything is greyed out, and the row that says so, which releases, takes its place.)
+2. **A state comes first, in one row: the sentence, and after " · " the command that ends the state, which choosing the row runs.** At most
+   two states are shown; the order of precedence is in [States](#states).
+3. **The menu is at most 600 points high, in every state, and the top level stays at 18 rows: a new feature goes into a submenu.** A
    display 768 points high shows 668 points of a menu, between the menu bar and the Dock; what is longer scrolls, and its last rows are the
    ways out. macOS 26 gives a row 24 points, a separator 11, a heading 24, and 5 above and below. So 18 rows and four separators are 486 points on
-   an ordinary day, and with the two states that take the most lines (four rows and a separator) 593: a row more would be 617. That is why the top level has no
+   an ordinary day, and with two states (two rows and a separator) 545. The room for two more rows is kept free (decided by the product owner, 2026-10-15). That is why the top level has no
    headings: **each group ends in a submenu that bears the group's name** and holds what is not wanted every day. There is no third
    level. **A list that a person makes longer** (saved views, named spaces, apps that are not arranged) **is never at the top level**; in its
    submenu it has no limit, and comes last where it can: no way out is in there. `MenuHeightTests` counts rows and separators in every state,
@@ -39,7 +39,7 @@ would fail, and whatever would do something else than its title says.
    `scripts/mac-shell/check-menu-height.sh` holds them against the open menu and clicks the ways out.
 4. **Greyed out, not hidden.** A row that cannot act now keeps its place, so that hands and eyes find it where it was. Hidden only when
    the thing it is about does not exist: a second display, an app that is not arranged, an update, a feature switched off in settings.
-5. **Titles**: a verb first, Title Case, words from the glossary. `…` only when a window or a panel opens and asks for more. An app's name
+5. **Titles**: a verb first, Title Case, words from the glossary (a state's row is a sentence, and its command after the " · " is a title). `…` only when a window or a panel opens and asks for more. An app's name
    in curly quotes, never a bundle id, never a window's title. A state that is on or off is a tick on one row, not two rows.
 6. **Shortcuts shown are the ones in effect** (rebound, moved by the keyboard layout, off in this app), from the same list the hot keys
    are registered from. A row whose shortcut is off shows none.
@@ -110,19 +110,29 @@ version line in the menu). `Open at Login` ✓ (macOS's own words) lives in the 
 
 ## States
 
-A state is a line of plain words, greyed out as text is, followed by the command that ends it. Shown first in the menu, above Show
-Everything, with a separator under them. When several hold, the first two in this order are shown: while Arbor runs that is four rows at the
-most, which rule 3 counts on.
+A state is **one row that can be chosen: a sentence in plain words, and after " · " the command that ends it**, in the manner of the
+lines on screen. It is what a person opened the menu to find out, and macOS draws a line of text at a contrast of 1.86 to 1
+(measured in a picture from a hosted Mac; decided by the product owner, 2026-10-15). Only news that no command ends is a line of text:
+state 2, state 8, and what comes under the row of a permission that was taken away.
 
-| # | State | Line | Then | What else changes |
+States are shown first in the menu, above Show Everything, with a separator under them. When several hold, the first two in this order
+are shown: while Arbor runs that is two rows, which rule 3 counts on. **The topmost state's way out is never greyed out.** One below it may
+wait for it, if it is one choice away: with the view held and a mistake in the file, Release is at full strength and the file's row,
+which would open a window over what is being shown (F58), follows it.
+
+The first row under the icon can thus be chosen. Whoever presses on the icon, lets the pointer drift down some twenty points with the button
+held and lets go has chosen it, as in every menu of macOS whose first row can be chosen; a plain click does not do that. Known and
+accepted: the one place where it could hurt is Release on a shared screen.
+
+| # | State | Row | About it | What else changes |
 |---|---|---|---|---|
-| 1 | No Accessibility permission (never given, or taken away: F63) | `Arbor needs Accessibility permission`, and if windows were out of view when it went, how many and that they come back with it | `Check Setup…` | nothing else but `Settings…`, **Help ▸** and `Quit Arbor` |
+| 1 | No Accessibility permission (never given, or taken away: F63) | `Arbor needs Accessibility permission · Check Setup…`, one row; taken away: `Arbor’s Accessibility permission was taken away · Check Setup…`, and under it, as text, how many windows were out of view and that they come back with it | It opens Check Setup, not System Settings: with a new build over an old grant the switch there looks on, and only Check Setup says to switch Arbor off and on again in the list | nothing else but `Settings…`, **Help ▸** and `Quit Arbor` |
 | 2 | Starting | `Arbor is starting…` | | as above |
-| 3 | Paused | `Arbor is paused: it leaves windows and shortcuts alone`; begun for an app: `Arbor is paused for “Game”`; timed: `… until 14:30` | `Resume` ⌃⌥⎋ | nothing else but `Settings…`, **Help ▸** and `Quit Arbor` |
-| 4 | The view is held (F58) | `The view is held: nothing moves it` | `Release` | rows that would move the view are greyed out |
-| 5 | Holding still (F58) | `Holding still while the camera is on` (or the microphone, or “Keynote” is open) | `Release` when begun by hand | |
-| 6 | Shortcuts off in this app (F41) | `Shortcuts are off in “Emacs”` | `Shortcuts Off in “Emacs”` ✓, the same row as in **Focused Window ▸**: in this state no key helps | shortcuts are shown on no row but Pause Arbor |
-| 7 | `settings.json` cannot be read | `Settings.json has a mistake: line 3` | `Settings File…` | |
+| 3 | Paused | `Arbor is paused · Resume` ⌃⌥⎋, one row; begun for an app: `Arbor is paused for “Game” · Resume`; timed: `… until 14:30 · Resume` | That it leaves windows and shortcuts alone is the row's tooltip; what the pause did is said by the line on screen at the pause | nothing else but `Settings…`, **Help ▸** and `Quit Arbor` |
+| 4 | The view is held (F58) | `The view is held · Release`, with the key that releases; `The view is held: nothing is in it · Release` | That nothing moves the view is the tooltip | rows that would move the view are greyed out, and those that open a window over what is being shown (F58), state 7's among them |
+| 5 | Holding still (F58) | `Holding still while the camera is on · Release` (or the microphone, or “Keynote” is open); begun by hand: `Holding still · Release` | That the view moves only when asked is the tooltip | |
+| 6 | Shortcuts off in this app (F41) | `Shortcuts are off in “Emacs” · Turn On` | It does what the ticked `Shortcuts Off in “Emacs”` in **Focused Window ▸** does: in this state no key helps | shortcuts are shown on no row but Pause Arbor |
+| 7 | `settings.json` cannot be read | `Settings.json has a mistake: line 3, column 3 · Settings File…` | | |
 | 8 | A place is kept, or an arrangement was set aside | one line, as in `status` | | |
 
 macOS's own tiling being on is not a state either (Q23): nobody is reminded of it by the menu or the icon. **Help ▸** `Check Setup…` has the

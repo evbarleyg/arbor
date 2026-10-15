@@ -825,24 +825,26 @@ extension Controller {
   /// The menu's lines about holding, for a menu that shows them in one block.
   public var holdMenu: [HoldMenuEntry] { holdState + holdRows }
 
-  /// What is going on and the command that ends it (docs/MENU.md, states 4 and 5), or nothing. First in the menu.
+  /// What is going on and the command that ends it, in one row (docs/MENU.md, states 4 and 5), or nothing. First in the menu.
   public var holdState: [HoldMenuEntry] {
-    let level = holdLevel
-    var entries: [HoldMenuEntry] = []
-    switch level {
+    let sentence: String
+    switch holdLevel {
     case .view:
       // On every display, or one of them still shows what it showed.
       let isEmpty = !hold.empty.isEmpty && workspaces.keys.allSatisfy { hold.empty.contains($0) || heldWindows(on: $0).isEmpty }
-      entries.append(HoldMenuEntry(title: "The view is held: nothing \(isEmpty ? "is in" : "moves") it", command: nil))
+      sentence = "The view is held" + (isEmpty ? ": nothing is in it" : "")
     case .still:
       let reason = hold.chosen == nil ? hold.caller.map { " while \($0)" } : nil
-      entries.append(HoldMenuEntry(title: "Holding still" + (reason ?? ": the view moves only when you ask"), command: nil))
+      sentence = "Holding still" + (reason ?? "")
     case nil:
-      break
+      return []
     }
-    if level != nil { entries.append(HoldMenuEntry(title: "Release", command: .release, help: "Arbor goes back to following you.")) }
-    return entries
+    let now = holdLevel == .view ? "Nothing moves the view now. " : "The view moves only when you ask. "
+    return [HoldMenuEntry(title: sentence + Self.release, command: .release, help: now + "Released, Arbor goes back to following you.")]
   }
+
+  /// How the row of `holdState` ends.
+  static let release = " · Release"
 
   /// The two rows (docs/MENU.md, View ▸). Choosing the ticked one releases too.
   public var holdRows: [HoldMenuEntry] {

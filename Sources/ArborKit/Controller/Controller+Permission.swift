@@ -204,8 +204,8 @@ extension Controller {
   /// The same in lines short enough for a menu; empty unless the permission was taken away.
   public var permissionMenuLines: [String] {
     guard let loss = permissionLoss else { return [] }
-    // Menus have typographic apostrophes, replies plain ones.
-    let first = Self.whatHappened.replacingOccurrences(of: "'", with: "’")
+    // Menus have typographic apostrophes, replies plain ones. What follows the comma the lines under it say better.
+    let first = Self.whatHappened.replacingOccurrences(of: "'", with: "’").split(separator: ",")[0].description
     guard loss.windows > 0 else { return [first] }
     return [
       first,

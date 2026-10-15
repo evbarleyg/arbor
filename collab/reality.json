@@ -1195,6 +1195,28 @@
    ]
   },
   {
+   "id": "a-line-of-text-in-a-menu-can-hardly-be-read",
+   "kind": "looks",
+   "layer": "below the seam",
+   "expected": "A row that cannot be chosen is a fit place for a sentence: \"Arbor is paused: it leaves windows and shortcuts alone\", with the command that ends it under it.",
+   "happened": "macOS 26 draws such a row at a contrast of 1.86 to 1 on the menu's material. The sentences that say why Arbor does nothing (paused, no permission, the view is held, a mistake in settings.json) were the faintest thing in the menu, and they are what a person opens it to find out.",
+   "found": "Measured in pictures of the open menu from a hosted Mac, by the judge of polish.",
+   "modelled": "cannot",
+   "knobs": [],
+   "guards": [
+    "test: theSentenceThatSaysWhyArborDoesNothingIsTheWayOut",
+    "test: choosingTheRowThatSaysSoEndsTheState",
+    "test: onlyNewsIsALineOfText"
+   ],
+   "copes": "Sources/ArborKit/Controller/Controller+Menu.swift, `stateSection`: a state is one row that can be chosen: the sentence, and after \" · \" the command that ends it (docs/MENU.md, States). Only news that no command ends is still a line of text, and is as faint as before.",
+   "hurt": 3,
+   "sources": [
+    "docs/MENU.md",
+    "Sources/ArborKit/Controller/Controller+Menu.swift"
+   ],
+   "backlog": []
+  },
+  {
    "id": "a-lock-screen-sends-neither-sleep-nor-wake",
    "kind": "missing-report",
    "layer": "below the seam",

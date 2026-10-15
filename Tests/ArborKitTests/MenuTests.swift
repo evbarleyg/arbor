@@ -109,14 +109,13 @@ import Testing
         """)
   }
 
-  /// A state comes first, in plain words, with the command that ends it right under it.
+  /// A state comes first, in plain words, with the command that ends it.
   @Test func aPausedArborOffersOnlyTheWaysOut() {
     let (h, _, _, _) = makeHarness()
     h.run("pause")
     #expect(
       h.run("menu").text == """
-            Arbor is paused: it leaves windows and shortcuts alone  (gray)
-            Resume  ⌃⌥⎋
+            Arbor is paused · Resume  ⌃⌥⎋
         -----
             Settings…
             Help ▸
@@ -134,17 +133,89 @@ import Testing
             Quit Arbor  ⌘Q
         """)
     // Choosing Resume does what it says.
-    let resume = h.controller.menuModel().item("Resume")?.command
+    let row = h.controller.menuModel().item("Arbor is paused · Resume")
+    #expect(row?.help == "While paused, Arbor leaves windows and shortcuts alone")
+    let resume = row?.command
     #expect(resume.map { h.controller.perform($0).ok } == true)
     #expect(h.controller.isRunning)
     #expect(h.controller.menuModel().item("Pause Arbor") != nil)
+  }
+
+  /// Why Arbor does nothing is what a person opens the menu to find out, and macOS draws a line of text at 1.86 to 1 (measured in a
+  /// picture from a hosted Mac). So the sentence is a row that can be chosen, and choosing it is the way out.
+  @Test(arguments: [
+    "no permission", "paused", "paused and settings.json has a mistake",
+    "the permission was taken away and settings.json has a mistake",
+  ])
+  func theSentenceThatSaysWhyArborDoesNothingIsTheWayOut(state: String) {
+    let rows = MenuHeightTests().harness(in: state).controller.menuModel().sections.first?.items ?? []
+    #expect(rows.first?.isEnabled == true, "\(rows.map(\.title))")
+    #expect(rows.first?.command == (state.hasPrefix("paused") ? .togglePause : .checkSetup))
+    #expect(rows.first?.title.hasPrefix("Arbor") == true && rows.first?.title.contains(" · ") == true, "the sentence, then the way out")
+    // Once: the row that was under it has gone into it.
+    #expect(rows.filter { $0.command == rows.first?.command }.count == 1)
+  }
+
+  /// And so in every state that a command ends: one row, which can be chosen, and choosing it ends the state.
+  @Test(arguments: [
+    ("paused", "Arbor is paused · Resume"),
+    ("the view is held and settings.json has a mistake", "The view is held · Release"),
+    ("holding still and settings.json has a mistake", "Holding still · Release"),
+    // Without the mistake, with which no setting can be changed, from whichever row.
+    ("shortcuts are off here", "Shortcuts are off in “Safari” · Turn On"),
+  ])
+  func choosingTheRowThatSaysSoEndsTheState(state: String, title: String) throws {
+    let h = MenuHeightTests().harness(in: state)
+    let row = try #require(h.controller.menuModel().sections.first?.items.first)
+    #expect(row.title == title && row.isEnabled)
+    #expect(h.controller.perform(try #require(row.command), from: .menu).ok)
+    #expect(!h.controller.menuModel().allItems.contains { $0.title == title })
+    #expect(h.controller.isRunning)
+  }
+
+  /// docs/MENU.md, States: the topmost state's way out is never greyed out. One below it may wait for it.
+  @Test(arguments: MenuHeightTests.running + MenuHeightTests.notRunning) func theTopmostStatesWayOutIsNeverGreyedOut(state: String) {
+    let model = MenuHeightTests().harness(in: state).controller.menuModel()
+    guard let first = model.sections.first?.items.first, first.title.contains(" · ") else { return }
+    #expect(first.isEnabled, "\(state): \(first.title)")
+    if state.hasPrefix("the view is held") {
+      #expect(model.sections.first?.items.last?.isEnabled == false, "it would open a window over what is being shown: after Release")
+    }
+  }
+
+  /// A pause for an app and one with an end are ended by their rows as well.
+  @Test(arguments: ["for an hour", "for an app"]) func everyKindOfPauseIsEndedByItsRow(how: String) throws {
+    var settings = Settings()
+    settings.pauseForApps = ["com.example.game"]
+    let (h, _, _, _) = makeHarness(settings: settings)
+    if how == "for an app" {
+      h.system.activate(bundleID: "com.example.game", name: "Game")
+    } else {
+      h.run("pause 60")
+    }
+    #expect(h.controller.isPaused)
+    let row = try #require(h.controller.menuModel().sections.first?.items.first)
+    #expect(row.title.hasPrefix("Arbor is paused ") && row.title.hasSuffix(" · Resume") && row.isEnabled, "\(row.title)")
+    #expect(h.controller.perform(try #require(row.command), from: .menu).ok)
+    #expect(h.controller.isRunning)
+  }
+
+  /// What no command ends stays a line of text, and the only rows of a state that are text are those.
+  @Test(arguments: MenuHeightTests.running + MenuHeightTests.notRunning) func onlyNewsIsALineOfText(state: String) {
+    let model = MenuHeightTests().harness(in: state).controller.menuModel()
+    guard model.sections.first?.items.first?.title != "Show Everything" else { return }
+    for row in model.sections.first?.items ?? [] where row.action == .text {
+      #expect(!row.title.contains(" · "), "\(row.title)")
+      let news = ["Arbor is starting…", "out of view", "come back as soon as", "comes back as soon as", "The saved arrangement needed"]
+      #expect(news.contains { row.title.contains($0) }, "\(state): \(row.title)")
+    }
   }
 
   @Test func withoutThePermissionTheMenuLeadsToIt() {
     let h = Harness()
     h.controller.accessibilityGranted = false
     let top = h.controller.menuModel().sections.map { $0.items.map(\.title) }
-    #expect(top == [["Arbor needs Accessibility permission", "Check Setup…"], ["Settings…", "Help"], ["Quit Arbor"]])
+    #expect(top == [["Arbor needs Accessibility permission · Check Setup…"], ["Settings…", "Help"], ["Quit Arbor"]])
     // Paused as well, by whatever route: the permission is what is wanted first.
     let (paused, _, _, _) = makeHarness()
     paused.run("pause")
@@ -401,15 +472,15 @@ import Testing
     #expect(h.controller.menuModel().item("Keep This Window in View")?.isTicked == true)
   }
 
-  /// docs/MENU.md, state 6: a line says so, the row that ends it carries the tick, and no row shows a shortcut that is off.
+  /// docs/MENU.md, state 6: a row says so and ends it, its usual row carries the tick, and no row shows a shortcut that is off.
   @Test func anAppThatKeepsItsOwnShortcutsIsSaidAndTicked() {
     let (h, _, _, _) = makeHarness()
     let row = h.controller.menuModel().item("Shortcuts Off in “Safari”")
     #expect(row?.isTicked == false && row?.shortcut == nil)
     #expect(row?.command.map { h.controller.perform($0, from: .menu).ok } == true)
     let menu = h.controller.menuModel()
-    #expect(menu.sections.first?.items.map(\.title) == ["Shortcuts are off in “Safari”", "Shortcuts Off in “Safari”"])
-    #expect(menu.sections.first?.items.last?.isTicked == true, "the row that ends it, right under the line: no key helps here")
+    #expect(menu.sections.first?.items.map(\.title) == ["Shortcuts are off in “Safari” · Turn On"])
+    #expect(menu.sections.first?.items.first?.command == row?.command, "it does what the ticked row does: no key helps here")
     #expect(menu.sections.dropFirst().first?.items.first?.title == "Show Everything", "and the rest is where it was")
     #expect(menu.item("Shortcuts Off in “Safari”")?.isTicked == true)
     #expect(menu.allItems.compactMap(\.shortcut?.label) == ["⌃⌥⎋", "⌘Q"], "the one that still works, and the menu's own")
@@ -422,7 +493,7 @@ import Testing
     h.system.activate(bundleID: "com.example.game", name: "Game")
     #expect(h.controller.isPaused)
     #expect(
-      h.controller.menuModel().sections.first?.items.map(\.title) == ["Arbor is paused for “Game”", "Resume"])
+      h.controller.menuModel().sections.first?.items.map(\.title) == ["Arbor is paused for “Game” · Resume"])
   }
 
   /// Back is ⌃⌥[ where a keyboard has that key, and the key in its place elsewhere (F44).
@@ -510,8 +581,8 @@ import Testing
     h.controller.loadSettings = { throw Broken() }
     #expect(!h.run("reload-settings").ok)
     let problem = try #require(h.controller.settingsFileProblem)
-    let line = "Settings.json has a mistake: " + String(problem.split(separator: ":", maxSplits: 1)[0])
-    #expect(h.controller.menuModel().sections.first?.items.map(\.title) == [line, "Settings File…"])
+    let line = "Settings.json has a mistake: " + String(problem.split(separator: ":", maxSplits: 1)[0]) + " · Settings File…"
+    #expect(h.controller.menuModel().sections.first?.items.map(\.title) == [line])
     #expect(h.controller.menuModel().sections.dropFirst().first?.items.first?.title == "Show Everything")
 
     // After another state it is the second…
@@ -521,12 +592,12 @@ import Testing
     other.run("reload-settings")
     #expect(
       other.controller.menuModel().sections.first?.items.map(\.title)
-        == ["Shortcuts are off in “Safari”", "Shortcuts Off in “Safari”", line, "Settings File…"])
+        == ["Shortcuts are off in “Safari” · Turn On", line])
     // …and so it is during a pause, when shortcuts are off everywhere and that line has nothing to add.
     other.run("pause")
     #expect(
       other.controller.menuModel().sections.first?.items.map(\.title)
-        == ["Arbor is paused: it leaves windows and shortcuts alone", "Resume", line, "Settings File…"])
+        == ["Arbor is paused · Resume", line])
   }
 
   /// docs/MENU.md, state 3: a pause with an end says when.
@@ -536,11 +607,11 @@ import Testing
     h.controller.now = { begun }
     h.run("pause 60")
     let line = try #require(h.controller.menuModel().sections.first?.items.first?.title)
-    #expect(line == "Arbor is paused until \(begun.addingTimeInterval(3600).formatted(date: .omitted, time: .shortened))")
-    #expect(line != "Arbor is paused until \(begun.formatted(date: .omitted, time: .shortened))" && line.contains { $0.isNumber })
+    #expect(line == "Arbor is paused until \(begun.addingTimeInterval(3600).formatted(date: .omitted, time: .shortened)) · Resume")
+    #expect(line != "Arbor is paused until \(begun.formatted(date: .omitted, time: .shortened)) · Resume" && line.contains { $0.isNumber })
     // A plain pause replaces it, and has no end to tell.
     h.run("pause")
-    #expect(h.controller.menuModel().sections.first?.items.first?.title == "Arbor is paused: it leaves windows and shortcuts alone")
+    #expect(h.controller.menuModel().sections.first?.items.first?.title == "Arbor is paused · Resume")
   }
 
   /// docs/MENU.md, state 8: what no command ends comes last, in a line short enough for a menu.
@@ -559,7 +630,7 @@ import Testing
     h.run("pause")
     #expect(
       h.controller.menuModel().sections.first?.items.map(\.title)
-        == ["Arbor is paused: it leaves windows and shortcuts alone", "Resume", news])
+        == ["Arbor is paused · Resume", news])
   }
 
   /// Found by `MenuChaosTests`. A window kept in view has no place to frame: the key un-frames what lies beneath it, if that is framed.

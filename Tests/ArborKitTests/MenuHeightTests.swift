@@ -99,8 +99,8 @@ import Testing
     let h = harness(in: state)
     #expect(h.controller.isRunning)
     let top = h.controller.menuModel().sections.flatMap(\.items)
-    // Nothing moves a held view (docs/MENU.md, state 4): the way out of that is Release, right under the line that says so.
-    let first = state.hasPrefix("the view is held") ? "Release" : "Show Everything"
+    // Nothing moves a held view (docs/MENU.md, state 4): the way out of that is the row that says so.
+    let first = state.hasPrefix("the view is held") ? "The view is held · Release" : "Show Everything"
     for title in [first, "Float All Windows", "Pause Arbor", "Quit Arbor"] {
       #expect(top.first { $0.title == title }?.isEnabled == true, "\(state): \(title)")
     }
@@ -113,25 +113,25 @@ import Testing
     #expect(!h.controller.isRunning)
     let top = h.controller.menuModel().sections.flatMap(\.items)
     #expect(top.last?.title.hasPrefix("Quit Arbor") == true && top.last?.isEnabled == true)
-    if state.hasPrefix("paused") { #expect(top.first { $0.title == "Resume" }?.isEnabled == true) }
+    if state.hasPrefix("paused") { #expect(top.first { $0.title.hasSuffix(" · Resume") }?.isEnabled == true) }
   }
 
   /// The states above are what they say: otherwise the heights prove nothing.
   @Test func theStatesAreTheStates() {
     func lines(_ state: String) -> [String] { harness(in: state).controller.menuModel().sections.first?.items.map(\.title) ?? [] }
-    let mistake = ["Settings.json has a mistake: line 3, column 3", "Settings File…"]
-    #expect(lines("the view is held and settings.json has a mistake") == ["The view is held: nothing moves it", "Release"] + mistake)
+    let mistake = ["Settings.json has a mistake: line 3, column 3 · Settings File…"]
+    #expect(lines("the view is held and settings.json has a mistake") == ["The view is held · Release"] + mistake)
     #expect(
       lines("holding still and settings.json has a mistake")
-        == ["Holding still: the view moves only when you ask", "Release"] + mistake)
+        == ["Holding still · Release"] + mistake)
     #expect(
       lines("shortcuts are off here and settings.json has a mistake")
-        == ["Shortcuts are off in “Safari”", "Shortcuts Off in “Safari”"] + mistake)
+        == ["Shortcuts are off in “Safari” · Turn On"] + mistake)
     #expect(
       lines("the arrangement was repaired and settings.json has a mistake")
         == mistake + ["The saved arrangement needed 1 repair when it was read"])
-    #expect(lines("paused and settings.json has a mistake").count == 4)
-    #expect(lines("the permission was taken away and settings.json has a mistake").count == 6, "three lines, Check Setup…, and the file")
+    #expect(lines("paused and settings.json has a mistake").count == 2)
+    #expect(lines("the permission was taken away and settings.json has a mistake").count == 4, "three lines, and the file")
     #expect(harness(in: "an update waits").controller.menuModel().item("Update Available…") != nil)
 
     let much = harness(in: "much of everything").controller.menuModel()

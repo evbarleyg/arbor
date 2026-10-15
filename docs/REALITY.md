@@ -64,16 +64,16 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 | [permissions](#permissions) | 22 | 8 | 6 | 3 | 3 | 10 | 11 | 2 | 2 | 7 | 4 |
 | [timing](#timing) | 51 | 7 | 7 | 16 | 8 | 20 | 28 | 4 | 6 | 13 | 9 |
 | [input](#input) | 57 | 7 | 6 | 13 | 14 | 24 | 20 | 6 | 8 | 23 | 12 |
-| [looks](#looks) | 20 | 0 | 0 | 0 | 1 | 19 | 1 | 2 | 3 | 14 | 6 |
+| [looks](#looks) | 21 | 0 | 0 | 0 | 1 | 20 | 2 | 2 | 3 | 14 | 6 |
 | [never-exercised](#never-exercised) | 15 | 7 | 1 | 13 | 0 | 1 | 0 | 0 | 14 | 1 | 15 |
 | [toolchain](#toolchain) | 42 | 1 | 0 | 1 | 4 | 37 | 23 | 1 | 1 | 17 | 7 |
-| **all** | 451 | 61 | 89 | 121 | 71 | 170 | 224 | 19 | 58 | 150 | 110 |
+| **all** | 452 | 61 | 89 | 121 | 71 | 171 | 225 | 19 | 58 | 150 | 110 |
 
 **Where the difference bit**
 
 | Where | That is | Cases | Hurt 1 or 2 | Guarded without a Mac | Guarded only on CI's Macs | Only when somebody starts a script | Not guarded |
 |---|---|---|---|---|---|---|---|
-| below the seam | in the macOS-only code under the platform protocols (AX, Input, UI, App), which no test on Linux runs | 142 | 88 | 42 | 13 | 33 | 54 |
+| below the seam | in the macOS-only code under the platform protocols (AX, Input, UI, App), which no test on Linux runs | 143 | 88 | 43 | 13 | 33 | 54 |
 | at the seam | in what crosses the platform protocols: a stand-in can play it to the controller | 162 | 96 | 121 | 0 | 11 | 30 |
 | controller | in the controller or the core, given reports that were right | 27 | 14 | 15 | 0 | 1 | 11 |
 | test | in a test, a script or a harness that expected the wrong thing | 79 | 0 | 23 | 5 | 10 | 41 |
@@ -4802,6 +4802,18 @@ Looks: what is on the screen is not what the model said.
 - **Guard:** **none**
 - **Arbor copes:** Sources/ArborKit/UI/BackdropPanel.swift uses a mask image; less than full blur is that blur, faded.
 - **Read in:** `Sources/ArborKit/UI/BackdropPanel.swift`, `Sources/ArborKit/UI/FinderPanel.swift`, `Sources/ArborKit/UI/HeadsUpPanel.swift`, `docs/features/F15-appearance-options.md`
+
+### a-line-of-text-in-a-menu-can-hardly-be-read
+
+*hurt 3 · below the seam*
+
+- **Expected:** A row that cannot be chosen is a fit place for a sentence: "Arbor is paused: it leaves windows and shortcuts alone", with the command that ends it under it.
+- **Happened:** macOS 26 draws such a row at a contrast of 1.86 to 1 on the menu's material. The sentences that say why Arbor does nothing (paused, no permission, the view is held, a mistake in settings.json) were the faintest thing in the menu, and they are what a person opens it to find out.
+- **Found by:** Measured in pictures of the open menu from a hosted Mac, by the judge of polish.
+- **Stand-ins play it:** cannot: it lies below or beside the seam
+- **Guard:** `test: theSentenceThatSaysWhyArborDoesNothingIsTheWayOut`; `test: choosingTheRowThatSaysSoEndsTheState`; `test: onlyNewsIsALineOfText`
+- **Arbor copes:** Sources/ArborKit/Controller/Controller+Menu.swift, `stateSection`: a state is one row that can be chosen: the sentence, and after " · " the command that ends it (docs/MENU.md, States). Only news that no command ends is still a line of text, and is as faint as before.
+- **Read in:** `docs/MENU.md`, `Sources/ArborKit/Controller/Controller+Menu.swift`
 
 ### a-panel-stays-on-the-space-it-was-first-shown-on
 

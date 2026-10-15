@@ -645,7 +645,7 @@ private let cameraCommands = [
     var nothing = OverlayScene()
     nothing.tileFade = h.controller.settings.appearanceOptions.tileFade
     #expect(h.overlays.scenes[h.display] == nothing, "and Arbor draws nothing")
-    #expect(h.controller.holdMenu.first?.title == "The view is held: nothing is in it")
+    #expect(h.controller.holdMenu.first?.title == "The view is held: nothing is in it · Release")
     for text in cameraCommands { #expect(!h.run(text).ok, "\(text)") }
     h.system.comesForward(s.mail)
     #expect(!h.system.isVisible(s.mail))
@@ -667,13 +667,13 @@ private let cameraCommands = [
     h.scheduler.runPending()
     #expect(h.controller.holdLevel == .view)
     for window in [s.mail, s.slack, s.notes] { #expect(h.frame(window) == before.frames[window], "\(window)") }
-    #expect(h.controller.holdMenu.first?.title == "The view is held: nothing is in it")
+    #expect(h.controller.holdMenu.first?.title == "The view is held: nothing is in it · Release")
     h.system.setMinimized(s.keynote, false)
     h.system.userFocus(s.keynote)
     h.scheduler.runPending()
     #expect(picture(h) == before)
     #expect(h.controller.displaysHeldEmpty.isEmpty)
-    #expect(h.controller.holdMenu.first?.title == "The view is held: nothing moves it")
+    #expect(h.controller.holdMenu.first?.title == "The view is held · Release")
   }
 
   /// A review's question, "was a layout forgotten?", has an answer on a held display too: it should look empty, and does.
@@ -1343,12 +1343,12 @@ private let cameraCommands = [
     #expect(s.h.controller.holdLevel == .view)
     #expect(s.h.controller.displaysHeldEmpty == [Self.side.id])
     #expect(!s.h.system.isVisible(safari), "which display is being shared is not for Arbor to know")
-    #expect(s.h.controller.holdMenu.first?.title == "The view is held: nothing moves it", "the other one still shows what it showed")
+    #expect(s.h.controller.holdMenu.first?.title == "The view is held · Release", "the other one still shows what it showed")
     s.h.system.comesForward(s.slack)
     #expect(s.h.workspace.camera == s.h.workspace.tree.leaf(containing: s.keynote))
     s.h.system.close(s.keynote)
     #expect(s.h.controller.holdLevel == .view)
-    #expect(s.h.controller.holdMenu.first?.title == "The view is held: nothing is in it")
+    #expect(s.h.controller.holdMenu.first?.title == "The view is held: nothing is in it · Release")
     for window in [safari, s.mail, s.slack, s.notes] { #expect(!s.h.system.isVisible(window), "\(window)") }
   }
 
@@ -1775,7 +1775,7 @@ private let cameraCommands = [
     let s = stage()
     s.h.controller.callSignalsChanged(CallSignals(cameraIsOn: true))
     #expect(s.h.controller.holdLevel == .still)
-    #expect(s.h.controller.holdMenu.first?.title == "Holding still while the camera is on")
+    #expect(s.h.controller.holdMenu.first?.title == "Holding still while the camera is on · Release")
     s.h.system.comesForward(s.slack)
     #expect(s.h.system.focused == s.keynote)
     #expect(!s.h.system.isVisible(s.slack))
@@ -1812,7 +1812,7 @@ private let cameraCommands = [
     let s = stage { $0.holdStillWhileMicrophoneIsOn = true }
     s.h.controller.callSignalsChanged(CallSignals(microphoneIsOn: true))
     #expect(s.h.controller.holdLevel == .still)
-    #expect(s.h.controller.holdMenu.first?.title == "Holding still while the microphone is on")
+    #expect(s.h.controller.holdMenu.first?.title == "Holding still while the microphone is on · Release")
   }
 
   @Test func eachCanBeSwitchedOffAlsoInTheMiddleOfACall() {
@@ -1826,7 +1826,7 @@ private let cameraCommands = [
     settings.holdStillWhileMicrophoneIsOn = true
     s.h.controller.apply(settings: settings)
     #expect(s.h.controller.holdLevel == .still)
-    #expect(s.h.controller.holdMenu.first?.title == "Holding still while the microphone is on")
+    #expect(s.h.controller.holdMenu.first?.title == "Holding still while the microphone is on · Release")
     settings.holdStillWhileMicrophoneIsOn = false
     s.h.controller.apply(settings: settings)
     #expect(s.h.controller.holdLevel == nil)
@@ -1879,7 +1879,7 @@ private let cameraCommands = [
     let s = stage()
     s.h.controller.callSignalsChanged(CallSignals(cameraIsOn: true))
     s.h.system.open(app: "Zoom", bundleID: zoom, title: "Zoom Meeting")
-    #expect(s.h.controller.holdMenu.first?.title == "Holding still while Zoom is open")
+    #expect(s.h.controller.holdMenu.first?.title == "Holding still while Zoom is open · Release")
   }
 
   /// What makes a false alarm (a microphone some app never lets go of) nearly harmless.
@@ -1912,23 +1912,23 @@ private let cameraCommands = [
     #expect(s.h.run("status").message.contains("the view is held"))
     #expect(s.h.run("state").state?.held == .view)
     #expect(ticks() == ["Hold This View"])
-    // docs/MENU.md: a line of plain words, then the command that ends it.
-    #expect(s.h.controller.holdMenu.map(\.title) == ["The view is held: nothing moves it", "Release", "Hold This View", "Hold Still"])
-    #expect(s.h.controller.holdMenu.map(\.command) == [nil, .release, .release, .holdStill(minutes: nil)], "the ticked one releases too")
+    // docs/MENU.md: plain words and the command that ends it, in one row.
+    #expect(s.h.controller.holdMenu.map(\.title) == ["The view is held · Release", "Hold This View", "Hold Still"])
+    #expect(s.h.controller.holdMenu.map(\.command) == [.release, .release, .holdStill(minutes: nil)], "the ticked one releases too")
 
     s.h.run("hold still")
     #expect(s.h.run("status").message.contains("holding still"))
     #expect(s.h.run("state").state?.held == .still)
     #expect(ticks() == ["Hold Still"])
     #expect(
-      s.h.controller.holdMenu.map(\.title) == ["Holding still: the view moves only when you ask", "Release", "Hold This View", "Hold Still"])
+      s.h.controller.holdMenu.map(\.title) == ["Holding still · Release", "Hold This View", "Hold Still"])
 
     s.h.run("release")
     #expect(!s.h.run("status").message.contains("held"))
     s.h.system.open(app: "Zoom", bundleID: zoom, title: "Zoom Meeting")
     #expect(ticks() == ["Hold Still"])
-    #expect(s.h.controller.holdMenu.first?.title == "Holding still while Zoom is open", "and why")
-    #expect(s.h.controller.holdMenu.first?.command == nil, "a remark, not something to choose")
+    #expect(s.h.controller.holdMenu.first?.title == "Holding still while Zoom is open · Release", "and why")
+    #expect(s.h.controller.holdMenu.first?.command == .release, "begun by a call, it can be ended by hand")
   }
 
   @Test func whyAndForHowLongArborHoldsStillCanAlwaysBeFoundOut() {
@@ -1998,9 +1998,9 @@ private let cameraCommands = [
     let s = stage()
     s.h.run("hold")
     let menu = s.h.controller.menuModel()
-    #expect(menu.sections[0].items.map(\.title) == ["The view is held: nothing moves it", "Release"])
-    #expect(menu.sections[0].items.map(\.isEnabled) == [false, true])
-    #expect(try #require(menu.item("Release")).shortcut == s.h.controller.shortcut(for: .togglePause), "the key that pauses releases first")
+    #expect(menu.sections[0].items.map(\.title) == ["The view is held · Release"])
+    #expect(menu.sections[0].items.map(\.isEnabled) == [true])
+    #expect(try #require(menu.item("The view is held · Release")).shortcut == s.h.controller.shortcut(for: .togglePause), "the key that pauses releases first")
     for title in ["Show Everything", "Step Out", "Back", "Arrange Windows", "Reload Settings", "Check for Updates…"] {
       #expect(try #require(menu.item(title), "\(title)").isEnabled == false, "\(title)")
     }
@@ -2015,10 +2015,10 @@ private let cameraCommands = [
     #expect(try #require(menu.item("Quit Arbor")).isEnabled)
 
     s.h.system.setMinimized(s.keynote, true)
-    #expect(s.h.controller.menuModel().sections[0].items.first?.title == "The view is held: nothing is in it")
+    #expect(s.h.controller.menuModel().sections[0].items.first?.title == "The view is held: nothing is in it · Release")
     s.h.run("release")
     let after = s.h.controller.menuModel()
-    #expect(after.item("Release") == nil)
+    #expect(!after.allItems.contains { $0.title.hasSuffix(" · Release") })
     #expect(try #require(after.item("Pause Arbor")).shortcut != nil)
     #expect(try #require(after.item("Show Everything")).isEnabled)
   }
@@ -2083,11 +2083,11 @@ private let cameraCommands = [
     let s = stage()
     s.h.controller.callSignalsChanged(CallSignals(cameraIsOn: true))
     let menu = s.h.controller.menuModel()
-    #expect(menu.sections[0].items.map(\.title) == ["Holding still while the camera is on", "Release"])
+    #expect(menu.sections[0].items.map(\.title) == ["Holding still while the camera is on · Release"])
     #expect(try #require(menu.item("Hold Still")).isTicked)
     #expect(try #require(menu.item("Show Everything")).isEnabled)
     #expect(try #require(menu.item("Pause Arbor")).shortcut != nil)
-    #expect(try #require(menu.item("Release")).shortcut == nil, "here that key pauses")
+    #expect(try #require(menu.item("Holding still while the camera is on · Release")).shortcut == nil, "here that key pauses")
   }
 
   /// Every button in the menu bar moves the view. With the menu closed a lock says why none is there, and opens the menu.
@@ -2116,7 +2116,7 @@ private let cameraCommands = [
     #expect(s.h.controller.holdState.isEmpty)
     #expect(s.h.controller.holdRows.map(\.title) == ["Hold This View", "Hold Still"])
     s.h.run("hold")
-    #expect(s.h.controller.holdState.map(\.title) == ["The view is held: nothing moves it", "Release"])
+    #expect(s.h.controller.holdState.map(\.title) == ["The view is held · Release"])
     #expect(s.h.controller.holdRows.map(\.isOn) == [true, false])
     #expect(s.h.controller.holdMenu == s.h.controller.holdState + s.h.controller.holdRows)
   }

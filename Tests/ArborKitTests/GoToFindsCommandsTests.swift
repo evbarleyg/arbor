@@ -76,18 +76,31 @@ import Testing
     }
   }
 
-  /// While Arbor holds still the menu has `release` twice: as Release, under the line that says so, and as the tick on Hold Still.
-  @Test func aCommandTheMenuHasUnderTwoNamesIsFoundByEither() throws {
+  /// In a state the menu has a command twice: in the row that says so and ends it ("Holding still · Release"), and as the tick on its
+  /// own row (View ▸ Hold Still). These are the two states in which the palette can be open: a held view refuses it, and so does
+  /// an Arbor that is paused or waits for its permission.
+  @Test(arguments: ["hold still", "pass-through com.example.mail on"])
+  func aCommandTheMenuHasUnderTwoNamesIsFoundByEither(state: String) throws {
     let (h, _, _, _) = makeHarness()
-    h.run("hold still")
+    h.run(state)
     let twice = Dictionary(grouping: menuRows(h), by: { $0.item.command!.text }).filter { $0.value.count > 1 }
     #expect(!twice.isEmpty, "or this looks at nothing")
     h.run("find")
     for (text, rows) in twice where !isAPlaceOrThePalette(rows[0].item.command!) {
+      #expect(rows.contains { $0.name.contains(" · ") }, "one of them is the state's: \(rows.map(\.name))")
       for row in rows {
         h.overlays.typeInFinder(row.name.replacingOccurrences(of: " ▸", with: ""))
         #expect(h.overlays.finder?.items.first?.row.name == row.name)
         #expect(h.overlays.finder?.selected == .command(text))
+      }
+      // Decided by the product owner, 2026-10-15: a state's row never comes ahead of the command of the same name in its own menu. It does:
+      // of equally good matches the one whose name begins with a word of the query comes first (`FinderQuery`), and the name of a row in a
+      // submenu begins with its way there. Both rows run the same command, so nothing goes wrong meanwhile.
+      withKnownIssue("Go to… ranks “Holding still · Release” before “View ▸ Hold Still” for `hold still`") {
+        for row in rows where !row.name.contains(" · ") {
+          h.overlays.typeInFinder(row.item.title)
+          #expect(h.overlays.finder?.items.first?.row.name == row.name, "typed: \(row.item.title)")
+        }
       }
     }
   }

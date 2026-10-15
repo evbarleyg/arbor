@@ -166,7 +166,7 @@ ctl hold
 check "and that the view is held" eventually says_menu "The view is held"
 measure 40-most-lines
 close_menu
-choose "Release"
+choose "The view is held"
 check "Release let go of the view" eventually says_menu "Hold This View"
 check "and the line is gone" eventually not_held
 cp "$ARBOR_HOME/settings.good" "$ARBOR_HOME/settings.json"
@@ -193,7 +193,7 @@ choose "Pause Arbor"
 check "Arbor is paused" eventually says_status "^paused"
 measure 50-paused
 close_menu
-choose "Resume"
+choose "Arbor is paused"
 check "Arbor runs again" eventually says_status "^running"
 
 step "the fourth: Quit Arbor, with a window out of view"

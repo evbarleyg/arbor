@@ -207,7 +207,7 @@ a full menu bar has no room for, and a notch takes room too: when Arbor finds it
 itself, and `arborctl doctor` says so ("Menu bar item"). If even that is left out, open Arbor again: the welcome window comes.
 
 The icon also says how Arbor is: dimmed while it is paused, a warning sign while it waits for Accessibility permission. The menu
-then begins with a line that says so and the command that ends it. What cannot act at the moment is greyed out, in its usual
+then begins with a row that says so, and choosing it ends it ("Arbor is paused · Resume"). What cannot act at the moment is greyed out, in its usual
 place; Show Everything, Float All Windows, Pause Arbor and Quit Arbor never are. `arborctl menu` prints the menu as it would open.
 
 **Screen Recording** permission is not needed yet. While they move, windows show their app's colour and

@@ -48,7 +48,7 @@ check "the other app's window is still out of view" out_of_view "$V1"
 check "and so is the floating one" out_of_view "$W3"
 check "all three are still docked" count docked 3
 open_menu
-check "the menu's first line says that the view is held" eventually pointer menu-item "$ARBOR_PID" "The view is held: nothing moves it"
+check "the menu's first line says that the view is held" eventually pointer menu-item "$ARBOR_PID" "The view is held · Release"
 key escape
 check "its submenu opens" click_menu "View"
 check "Hold This View is ticked" eventually marked "Hold This View" "✓"
@@ -184,7 +184,7 @@ check "its submenu opens" click_menu "View"
 check "Hold Still is ticked" eventually marked "Hold Still" "✓"
 key escape
 key escape
-check "Release can be clicked" click_menu "Release"
+check "Release can be clicked" click_menu "Holding still"
 check "it ends" eventually fails still
 settled
 
