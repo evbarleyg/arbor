@@ -690,9 +690,10 @@ Everything in sections 1 to 3, and every rehearsal, runs on stand-ins (`Sources/
 tests pass on them while the serious faults are found on real Macs. `make reality` says how far the two are apart, as **one number to bring down to zero**:
 
 ```bash
-make reality                                  # on Linux: rehearse reality.sh, run it on a hosted Mac (push first), compare. A quarter of an hour
-make reality MAC=.mac-shell/reality-<run id>  # compare with an earlier run on a Mac: a minute and a half, and no Mac
-make reality MAC="<run> <another run>"        # what differs between the Macs' own runs is counted apart, as unstable
+make reality MAC=collab/evidence/reality-mac  # on Linux: rehearse reality.sh and compare with the last run on a Mac that was committed. A minute and a half, no Mac
+make reality                                  # the same against a fresh run on a hosted Mac (push first): a quarter of an hour
+make reality MAC=.mac-shell/reality-<run id>  # against an earlier run
+make reality MAC="<run> <another run>"        # what not every one of the Macs' runs shows is counted apart, as unstable
 ```
 
 **`scripts/mac-shell/reality.sh`** runs unchanged in both worlds and checks nothing. It plays five journeys, each in an Arbor session of its own: `commands` (what `arbor-e2e`'s first session does
@@ -713,8 +714,8 @@ come back in `reality/traces/`.
 (`journey/step/field/window`, the same from run to run) and both values. Then a table by class and the number:
 
 ```
-✘ new      answers         commands/zoom-W1/answers/W2/1023767-480x352   mac: 1023,737 480x352 | linux: 1023,673 480x352
-reality: 41 divergences in 66 steps of 5 journeys (new: 1, known: 40, gone: 0)
+✘ new      answers         commands/zoom-W1/answers/W2/1023,767-325x650   mac: took 1023,677 325x650 | linux: took 1023,673 325x650
+reality: 307 divergences in 66 steps of 5 journeys (new: 1, known: 306, gone: 0)
 ```
 
 | Class | | Whose |
@@ -731,14 +732,21 @@ reality: 41 divergences in 66 steps of 5 journeys (new: 1, known: 40, gone: 0)
 A difference in belief or truth that stays the same from one step to the next is one divergence, under the step where it began. During a drag, a resize or a seam drag the number of moves is a matter of timing (a
 trace thins them by the clock), so a run of moves counts as one of each kind, written `~dragMoved:W3`.
 
-**The ratchet** is `collab/evidence/reality-known.txt`: every known key with a word on whose it is. With `--check` (`make reality MAC=… CHECK=1`, and CI) the tool fails for a key the list does not have *and* for a key of the list that is gone, so the
-list shrinks with every cure and never grows unseen. `~` before a key: it comes and goes. `make reality MAC=… KNOWN=1` writes the list anew and keeps the words it has.
+**The ratchet** is `collab/evidence/reality-known.txt`: every known key with the cause it is put down to, and at its top every cause with a reading: whose it is, which file would have to change, what a person would see. With
+`--check` (`make reality MAC=… CHECK=1`, and CI) the tool fails for a key the list does not have *and* for a key of the list that is gone, so the list shrinks with every cure and never grows unseen. `~` before a key: not every run on a Mac
+shows it. `make reality MAC=… KNOWN=1` writes the keys anew and keeps the words it has. One lie shows at many steps: the first count, 2026-10-14, was some three hundred keys from some twenty causes, nearly half of them one constant, and the
+report ends with the causes by how many keys each would take along.
 
-**To bring the number down**: pick a key, read both lines of that step (`.build/reality/report.md` has everything as tables, `reality/traces/` what macOS really sent), teach the stand-in to be as rude as the Mac was, give the lesson a test of its own in
-`Tests/ArborKitTests`, run `make reality MAC=<the last run>`, and take the keys that are gone off the list. If it is Arbor that is wrong, report it: the key stays until Arbor is cured. One lie usually shows at many steps, so one cure takes many keys.
+**To bring the number down**: take a cause from the top of that table, read both lines of one of its steps (`.build/reality/report.md` has everything as tables; a run's `reality/traces/` holds what macOS really sent), teach the stand-in to be as rude as
+the Mac was, give the lesson a test of its own in `Tests/ArborKitTests`, run `make reality MAC=collab/evidence/reality-mac`, and take the keys it calls gone off the list. No Mac is needed for that: what the Mac did is on file. If it is Arbor that is
+wrong, report it: the key stays until Arbor is cured, and then the Mac's side has to be played again.
+
+**`collab/evidence/reality-mac/`** is that file: the observations of one run on a hosted Mac, as they came back. Play it again (`make reality`, then copy the run's `reality/*.jsonl` there) after a change to `reality.sh` or `reality.py`, to Arbor's macOS-only code, or to
+what the controller does in these journeys; a step the file does not have counts as `unplayed`.
 
 **CI** reports the number whenever the Mac jobs run: `real-windows` plays the journeys on real windows, `linux` rehearses them, and the small job `reality` compares the two with `--check`. The number and whatever is new or gone come out as
-check annotations. A pull request that touches the list gets its Mac (`scripts/ci-changes.py`): only a Mac can say that a divergence is gone.
+check annotations. A pull request that touches the list gets its Mac (`scripts/ci-changes.py`): only a Mac can say that a divergence is gone. Without a Mac the `linux` job still reports the number, against the committed run and without `--check`.
+A key that comes and goes and is not yet marked `~` makes the `reality` job fail once: mark it.
 
 **What it does not cover yet**: one display of one size, test windows only (section 7 has real apps), no timers, no pinches, no menu, no Spaces or full screen, and only what shows once things have come to rest.
 

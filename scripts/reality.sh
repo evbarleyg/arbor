@@ -2,7 +2,8 @@
 # `make reality`: how far are the stand-ins from a real Mac? One number, to bring down to zero (docs/TESTING.md, "Reality").
 #
 #   make reality                              rehearse scripts/mac-shell/reality.sh here, run it on a hosted Mac, compare
-#   make reality MAC=.mac-shell/reality-123   compare with an earlier run on a Mac: seconds instead of a quarter of an hour
+#   make reality MAC=collab/evidence/reality-mac   compare with the run that was committed: a minute and a half instead of a quarter of an hour
+#   make reality MAC=.mac-shell/reality-123   or with any earlier run
 #   make reality MAC="<run> <another run>"    with several: what differs between the Macs' own runs is counted apart, as unstable
 #   make reality MAC=… CHECK=1                exit code 1 for a divergence that collab/evidence/reality-known.txt does not have, or has and is gone
 #   make reality MAC=… KNOWN=1                write that list anew, keeping the words of the keys it has

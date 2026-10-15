@@ -111,7 +111,7 @@ rehearse:
 	@./scripts/mac-shell/rehearse.sh $(SCRIPTS)
 
 # How far the stand-ins are from a real Mac: the same script rehearsed here and run on a hosted Mac, step by step, and the differences counted.
-# On Linux only. make reality MAC=.mac-shell/reality-<run id> compares with an earlier run (docs/TESTING.md, "Reality"; scripts/reality.sh has the rest).
+# On Linux only. make reality MAC=collab/evidence/reality-mac compares with the run that was committed, without a Mac (docs/TESTING.md, section 9; scripts/reality.sh has the rest).
 reality:
 	@MAC="$(MAC)" CHECK="$(CHECK)" KNOWN="$(KNOWN)" ./scripts/reality.sh
 
