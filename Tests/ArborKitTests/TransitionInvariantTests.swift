@@ -159,7 +159,8 @@ import Testing
       }
     }
     // That the walk is not idle. Most seeds play 140 and more; the leanest of sixty played 102, and any change of behaviour shifts that a little.
-    #expect(played > 80)
+    // (Since nothing is kept for the Desktop, `desktop` from an arrangement that fills the display has no rectangle to fly to, and plays none: 80.)
+    #expect(played > 70)
     h.controller.shutdown()
   }
 }

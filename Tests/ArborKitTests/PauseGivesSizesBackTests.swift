@@ -39,7 +39,7 @@ import Testing
     }
   }
 
-  func makeDesk(settings: Settings = .makingWay, watchingThePermission: Bool = false) -> Desk {
+  func makeDesk(settings: Settings = .makingWay.withDesktopColumn, watchingThePermission: Bool = false) -> Desk {
     let h = Harness(displays: [Self.display], settings: settings)
     if watchingThePermission { h.watchAccessibility() }
     var own: [WindowID: CGRect] = [:]
@@ -269,7 +269,7 @@ import Testing
 
   /// Holding still, the view does not follow a window nobody asked for. Whether somebody did is the hold's to say, once it is on again.
   @Test func duringACallTheHoldDecidesAsBefore() {
-    var settings = Settings()
+    var settings = Settings.withDesktopColumn
     settings.holdStillFor = ["com.example.calendar"]
     let desk = makeDesk(settings: settings)
     desk.h.run("zoom \(desk.safari.rawValue)")
@@ -309,7 +309,7 @@ import Testing
 
   /// With guests switched off, a window that opened during the pause stays over the view until that next moves.
   @Test func aWindowThatOpenedDuringThePauseAndStaysInViewDoesNotMoveTheView() {
-    var settings = Settings()
+    var settings = Settings.withDesktopColumn
     settings.newWindowsWhileFramed = "float"
     let desk = makeDesk(settings: settings)
     desk.h.run("zoom \(desk.safari.rawValue)")
@@ -376,7 +376,7 @@ import Testing
   }
 
   @Test func soDoesThePauseArborBeginsForAnApp() {
-    var settings = Settings.makingWay
+    var settings = Settings.makingWay.withDesktopColumn
     settings.pauseForApps = ["com.example.game"]
     let desk = makeDesk(settings: settings)
     let frames = desk.frames()

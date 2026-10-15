@@ -7,7 +7,9 @@ import Testing
 /// F09 (docs/features/F09-drag-polish.md): holding over a target, ⌘ to suppress docking, the
 /// preview setting, live reflow, pushed windows staying pushed, and drags that end oddly.
 ///
-/// The arrangement in most tests is [a | Desktop | b] with c floating on the Desktop.
+/// The arrangement in most tests is [a | b], a half each, with c floating over the two. Where a test is about the Desktop between
+/// docked windows (a window dragged out onto it, what floats on it pushed about) it is [a | Desktop | b], thirds, with c floating on
+/// the Desktop: `DragScene(settings: .withDesktopColumn)`.
 @MainActor
 struct DragScene {
   let h: Harness
@@ -16,9 +18,10 @@ struct DragScene {
   let c: WindowID
 
   init(
-    _ configure: (inout Settings) -> Void = { _ in }, displays: [DisplaySnapshot] = [FakeWindowSystem.standardDisplay]
+    settings: Settings = Settings(), _ configure: (inout Settings) -> Void = { _ in },
+    displays: [DisplaySnapshot] = [FakeWindowSystem.standardDisplay]
   ) {
-    var settings = Settings()
+    var settings = settings
     configure(&settings)
     h = Harness(displays: displays, settings: settings)
     a = h.system.open(app: "Safari", frame: CGRect(x: 100, y: 100, width: 600, height: 400))
@@ -32,9 +35,12 @@ struct DragScene {
   }
 
   func frame(_ window: WindowID) -> CGRect { h.frame(window)! }
+  /// With a column for the Desktop only: two halves leave it no room.
   var desktop: CGRect { h.layout!.desktopFrame! }
   /// A point on the Desktop, also as it is with live reflow once a has left its slot and the others have closed up.
   var onDesktop: CGPoint { CGPoint(x: desktop.minX + 60, y: desktop.midY) }
+  /// A point in the gap left of b: in nobody's slot and no place to dock. Let go there a docked window goes back, a floating one stays.
+  var inTheGap: CGPoint { CGPoint(x: h.layout!.windowFrames[b]!.minX - 6, y: 450) }
 
   /// A point in the band along one edge of a docked window's slot.
   func edge(_ edge: Edge, of window: WindowID) -> CGPoint {
@@ -100,7 +106,7 @@ private let side = DisplaySnapshot(
   @Test(arguments: both) func aDockedWindowLetGoBeforeTheHoldIsOverGoesBackToItsSlot(reflow: Bool) {
     let s = DragScene { $0.reflowWhileDragging = reflow }
     let before = s.outcome
-    s.h.system.drag(s.a, through: [s.frame(s.a).center, s.onDesktop, s.edge(.bottom, of: s.b)], holding: 0)
+    s.h.system.drag(s.a, through: [s.frame(s.a).center, s.inTheGap, s.edge(.bottom, of: s.b)], holding: 0)
     #expect(s.outcome == before, "not undocked and left lying over the others")
     #expect(s.h.overlays.previewHistory.allSatisfy { $0 == nil })
     s.expectNothingLeftBehind()
@@ -108,7 +114,7 @@ private let side = DisplaySnapshot(
 
   /// Only the Desktop, or ⌘, takes a docked window out of the arrangement (the product owner's decision).
   @Test(arguments: both, [0, 0.5]) func aDockedWindowLetGoWhereNothingIsPreviewedGoesBackToItsSlot(reflow: Bool, held: Double) {
-    let s = DragScene { $0.reflowWhileDragging = reflow }
+    let s = DragScene(settings: .withDesktopColumn) { $0.reflowWhileDragging = reflow }
     let before = s.outcome
     let gap = CGPoint(x: s.frame(s.b).minX - 6, y: 450)
     for nowhere in [s.frame(s.b).center, gap] {
@@ -127,13 +133,13 @@ private let side = DisplaySnapshot(
     s.h.system.cursor = CGPoint(x: 1800, y: 300)
     s.h.run("dock \(d.rawValue) left")
     let before = s.outcome
-    s.h.system.drag(s.a, through: [s.frame(s.a).center, s.onDesktop, s.frame(d).center])
+    s.h.system.drag(s.a, through: [s.frame(s.a).center, s.inTheGap, s.frame(d).center])
     #expect(s.outcome == before)
     s.expectNothingLeftBehind()
   }
 
   @Test func theDesktopTakesADockedWindowAlsoWhenItIsATile() {
-    let s = DragScene()
+    let s = DragScene(settings: .withDesktopColumn)
     // With nothing on it, the Desktop is not kept at a usable size.
     s.h.system.close(s.c)
     // The window itself stays in view: nobody can take hold of one that is a tile.
@@ -212,7 +218,7 @@ private let side = DisplaySnapshot(
     #expect(s.frame(s.c).minX == s.h.visibleFrame.minX + 12)
 
     let slot = s.frame(s.a)
-    s.h.system.drag(s.a, through: [slot.center, s.onDesktop, slot.center], holding: 0)
+    s.h.system.drag(s.a, through: [slot.center, s.inTheGap, slot.center], holding: 0)
     #expect(s.h.workspace.isDocked(s.a))
     #expect(s.frame(s.a) == slot)
     s.expectNothingLeftBehind()
@@ -304,7 +310,7 @@ private let side = DisplaySnapshot(
     let middle = s.frame(s.b).center
     s.h.system.drag(s.c, through: [s.frame(s.c).center, middle], holding: 0)
     #expect(s.h.workspace.isFloating(s.c))
-    s.h.system.drag(s.c, through: [s.frame(s.c).center, s.onDesktop, middle])
+    s.h.system.drag(s.c, through: [s.frame(s.c).center, s.inTheGap, middle])
     #expect(s.h.workspace.tree.leaf(containing: s.c) == s.h.workspace.tree.leaf(containing: s.b))
     s.expectNothingLeftBehind()
   }
@@ -461,13 +467,13 @@ private let side = DisplaySnapshot(
   @Test func withoutReflowNothingMovesUntilTheDrop() {
     let s = DragScene()
     s.h.system.beginDrag(s.a)
-    s.h.system.moveDrag(to: s.onDesktop, holding: 0.3)
+    s.h.system.moveDrag(to: s.inTheGap, holding: 0.3)
     s.h.system.moveDrag(to: s.edge(.bottom, of: s.b), holding: 0.3)
     #expect(s.h.system.frameLog.isEmpty)
   }
 
   @Test func neighboursTakeTheSpaceOfADockedWindowThatLeavesItsSlot() {
-    let s = DragScene(Self.reflow)
+    let s = DragScene(settings: .withDesktopColumn, Self.reflow)
     let before = s.h.workspace
     let layout = s.h.layout
     let slotB = s.frame(s.b)
@@ -501,7 +507,7 @@ private let side = DisplaySnapshot(
     let slot = s.frame(s.a)
 
     s.h.system.beginDrag(s.a)
-    s.h.system.moveDrag(to: s.onDesktop, holding: 0.3)
+    s.h.system.moveDrag(to: s.inTheGap, holding: 0.3)
     s.h.system.moveDrag(to: s.edge(.top, of: s.b), holding: 0.3)
     #expect(s.frame(s.b) != before.frames[s.b])
     s.h.system.moveDrag(to: slot.center)
@@ -536,13 +542,13 @@ private let side = DisplaySnapshot(
     s.h.system.beginDrag(s.c)
     s.h.system.moveDrag(to: s.edge(.bottom, of: s.b), holding: 0.3)
     #expect(s.frame(s.b) != before.frames[s.b])
-    s.h.system.moveDrag(to: s.onDesktop)
+    s.h.system.moveDrag(to: s.inTheGap)
     #expect(s.frame(s.b) == before.frames[s.b])
     #expect(s.h.overlays.seams[s.h.display] == s.h.layout?.seams)
   }
 
   @Test func theOldSlotStaysClosedWhereNothingCanBeDropped() {
-    let s = DragScene(Self.reflow)
+    let s = DragScene(settings: .withDesktopColumn, Self.reflow)
     let before = s.outcome
     s.h.system.beginDrag(s.a)
     s.h.system.moveDrag(to: s.onDesktop)
@@ -572,7 +578,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func targetsAreWhatTheUserSeesOnceTheWindowHasLeft() {
-    let s = DragScene(Self.reflow)
+    let s = DragScene(settings: .withDesktopColumn, Self.reflow)
     let desktopBefore = s.desktop
     s.h.system.beginDrag(s.a)
     s.h.system.moveDrag(to: s.onDesktop)
@@ -613,7 +619,7 @@ private let side = DisplaySnapshot(
     #expect(s.h.overlays.tiles[s.h.display]?.first?.items.first?.window == s.b)
     #expect(!s.h.system.isVisible(s.b))
     s.h.system.moveDrag(to: s.frame(s.c).center)
-    s.h.system.moveDrag(to: s.onDesktop)
+    s.h.system.moveDrag(to: s.inTheGap)
     #expect(s.frame(s.b) == before.frames[s.b])
     #expect(s.h.overlays.tiles[s.h.display] == [])
   }
@@ -622,18 +628,26 @@ private let side = DisplaySnapshot(
   /// and on without `keepPushed` leaves every window and every workspace the same. (A journey ends
   /// on the same target each time. The same point can be another target with reflow, because the
   /// pointer is matched against what is on screen: `targetsAreWhatTheUserSeesOnceTheWindowHasLeft`.)
-  @Test(arguments: [
-    "back", "nothing", "beside", "edge", "quick", "wander", "command", "across", "across-float", "zoomed-back",
-    "zoomed-beside", "zoomed-out", "zoomed-edge", "zoomed-edge-back", "tab", "tab-away", "guest-edge", "guest-back",
-    "beside-a-host", "framed-command", "framed-command-back",
-  ])
-  func everyJourneyEndsAsItDoesWithoutReflow(journey: String) {
+  ///
+  /// As it ships, and with a column for the Desktop, where a docked window let go on the Desktop floats ("nothing").
+  /// (All but one of them both ways. "nothing" ends aside of everything, and two halves have no such place: the gap between them is gone
+  /// while the trial shows the one above the other.)
+  @Test(
+    arguments: [
+      "back", "nothing", "beside", "edge", "quick", "wander", "command", "across", "across-float", "zoomed-back",
+      "zoomed-beside", "zoomed-out", "zoomed-edge", "zoomed-edge-back", "tab", "tab-away", "guest-edge", "guest-back",
+      "beside-a-host", "framed-command", "framed-command-back",
+    ].flatMap { journey in both.filter { $0 || journey != "nothing" }.map { (journey, $0) } })
+  func everyJourneyEndsAsItDoesWithoutReflow(journey: String, column: Bool) {
     func run(_ configure: (inout Settings) -> Void) -> DragScene.Outcome {
       let s = DragScene(
+        settings: column ? .withDesktopColumn : Settings(),
         {
           $0.tabsEnabled = journey.hasPrefix("tab")
           configure(&$0)
         }, displays: [FakeWindowSystem.standardDisplay, side])
+      // Where nothing is docked: the Desktop, or between two halves the gap, where a docked window let go goes back to its slot.
+      let aside = column ? s.onDesktop : s.inTheGap
       let d = s.h.system.open(app: "Terminal", frame: CGRect(x: 1600, y: 100, width: 500, height: 300))
       let e = s.h.system.open(app: "Music", frame: CGRect(x: 1900, y: 300, width: 500, height: 300))
       s.h.system.cursor = CGPoint(x: 1800, y: 300)
@@ -644,21 +658,21 @@ private let side = DisplaySnapshot(
       let sideSlot = s.h.controller.layouts[side.id]!.windowFrames[d]!
       switch journey {
       case "back":
-        system.drag(s.a, through: [s.frame(s.a).center, s.onDesktop, s.edge(.top, of: s.b), s.frame(s.a).center])
+        system.drag(s.a, through: [s.frame(s.a).center, aside, s.edge(.top, of: s.b), s.frame(s.a).center])
       case "nothing":
-        system.drag(s.a, through: [s.frame(s.a).center, s.edge(.top, of: s.b), s.onDesktop])
+        system.drag(s.a, through: [s.frame(s.a).center, s.edge(.top, of: s.b), aside])
       case "beside":
-        system.drag(s.a, through: [s.frame(s.a).center, s.onDesktop, s.edge(.right, of: s.b)])
+        system.drag(s.a, through: [s.frame(s.a).center, aside, s.edge(.right, of: s.b)])
       case "edge":
         system.drag(s.c, through: [s.frame(s.c).center, s.edge(.top, of: s.a), CGPoint(x: 720, y: 28)])
       case "quick":
-        system.drag(s.a, through: [s.frame(s.a).center, s.onDesktop, s.edge(.right, of: s.b)], holding: 0)
+        system.drag(s.a, through: [s.frame(s.a).center, aside, s.edge(.right, of: s.b)], holding: 0)
       case "wander":
         system.drag(
           s.c,
           through: [
             s.frame(s.c).center, CGPoint(x: 3, y: 450), s.edge(.bottom, of: s.b), CGPoint(x: 1437, y: 450),
-            s.edge(.left, of: s.a), s.onDesktop,
+            s.edge(.left, of: s.a), aside,
           ])
       case "command":
         system.beginDrag(s.a)
@@ -667,7 +681,7 @@ private let side = DisplaySnapshot(
         system.endDrag()
       case "across":
         system.drag(
-          s.a, through: [s.frame(s.a).center, s.onDesktop, CGPoint(x: sideSlot.midX, y: sideSlot.maxY - 20)])
+          s.a, through: [s.frame(s.a).center, aside, CGPoint(x: sideSlot.midX, y: sideSlot.maxY - 20)])
       case "across-float":
         system.drag(
           s.a,
@@ -716,7 +730,7 @@ private let side = DisplaySnapshot(
       case "tab":
         system.drag(s.c, through: [s.frame(s.c).center, s.edge(.top, of: s.b), s.frame(s.b).center])
       case "tab-away":
-        system.drag(s.c, through: [s.frame(s.c).center, s.frame(s.b).center, s.frame(s.a).center, s.onDesktop])
+        system.drag(s.c, through: [s.frame(s.c).center, s.frame(s.b).center, s.frame(s.a).center, aside])
       default:
         Issue.record("no such journey")
       }
@@ -739,12 +753,12 @@ private let side = DisplaySnapshot(
 /// Floating windows make way here, as until Q20 (`floatingWindowsMakeWay`): as Arbor ships, the trial layouts of a drag move
 /// no floating window that is in view, so none is pushed.
 @Suite @MainActor struct DragKeepPushedTests {
-  /// c rests in the middle of the Desktop. Another window is dragged to the top screen edge and then
-  /// away: while it is at the edge the Desktop has given up its top half, which pushes c down.
+  /// c rests in the middle of the Desktop, which has a column of its own between a and b. Another window is dragged to the top
+  /// screen edge and then away: while it is at the edge the Desktop has given up its top half, which pushes c down.
   func pushAndRelease(
     _ configure: @escaping (inout Settings) -> Void
   ) -> (DragScene, rest: CGRect, pushed: CGRect, after: CGRect) {
-    let s = DragScene {
+    let s = DragScene(settings: .withDesktopColumn) {
       $0.reflowWhileDragging = true
       $0.floatingWindowsMakeWay = true
       configure(&$0)
@@ -791,7 +805,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func aPushedWindowWhoseAppDoesNotAnswerAtTheEndKeepsThePlaceItsUserGaveIt() {
-    let s = DragScene {
+    let s = DragScene(settings: .withDesktopColumn) {
       $0.reflowWhileDragging = true
       $0.floatingWindowsMakeWay = true
     }
@@ -816,7 +830,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func aPushThatTheDropConfirmsIsNotMadeTwice() {
-    let s = DragScene {
+    let s = DragScene(settings: .withDesktopColumn) {
       $0.reflowWhileDragging = true
       $0.floatingWindowsMakeWay = true
     }
@@ -868,7 +882,7 @@ private let side = DisplaySnapshot(
   @Test(arguments: ["float 101", "toggle-float 101", "float-all"], both)
   func aWindowFloatedByCommandWhileInTheHandTakesItsOwnSizeWhenLetGo(command: String, lost: Bool) {
     let s = DragScene()
-    let pointer = s.onDesktop
+    let pointer = s.inTheGap
     s.h.system.beginDrag(s.a)
     s.h.system.moveDrag(to: pointer, holding: 0.3)
     let held = s.frame(s.a)
@@ -962,7 +976,9 @@ private let side = DisplaySnapshot(
   }
 
   @Test(arguments: both, both) func aDisplayThatDisappearsMidDragTakesItsTargetWithIt(reflow: Bool, active: Bool) {
-    let s = DragScene({ $0.reflowWhileDragging = reflow }, displays: [FakeWindowSystem.standardDisplay, side])
+    // With a column for the Desktop: that is where a is let go in the end, to float.
+    let s = DragScene(
+      settings: .withDesktopColumn, { $0.reflowWhileDragging = reflow }, displays: [FakeWindowSystem.standardDisplay, side])
     let d = s.h.system.open(app: "Terminal", frame: CGRect(x: 1600, y: 100, width: 500, height: 300))
     let e = s.h.system.open(app: "Music", frame: CGRect(x: 2000, y: 100, width: 500, height: 300))
     s.h.system.cursor = CGPoint(x: 1800, y: 300)
@@ -1003,10 +1019,11 @@ private let side = DisplaySnapshot(
     let s = DragScene()
     s.h.system.userFocus(s.a)
     s.h.run("summon Mail")
+    let middle = s.frame(s.b).center  // nothing docks there
     s.h.system.beginDrag(s.c)
-    s.h.system.moveDrag(to: CGPoint(x: 900, y: 600), holding: 0.3)
+    s.h.system.moveDrag(to: middle, holding: 0.3)
     if byItsKey { s.h.run("summon Mail") } else { s.h.system.userFocus(s.b) }
-    s.h.system.moveDrag(to: CGPoint(x: 880, y: 580), holding: 0.3)
+    s.h.system.moveDrag(to: CGPoint(x: middle.x - 20, y: middle.y - 20), holding: 0.3)
     #expect(s.h.system.isVisible(s.c), "it is in the hand")
     if lost { s.h.system.loseTheReleaseOfTheDrag() } else { s.h.system.endDrag() }
     #expect(s.h.workspace.isStashed(s.c))
@@ -1051,11 +1068,13 @@ private let side = DisplaySnapshot(
   @Test(arguments: both, both) func aSecondDragWithoutAnEndToTheFirstStartsClean(reflow: Bool, active: Bool) {
     let s = DragScene { $0.reflowWhileDragging = reflow }
     let before = s.outcome
+    // Where c rests, which is over the gap, where nothing docks. (With live reflow it is pushed aside while a is out of its slot.)
+    let grab = s.frame(s.c).center
     s.h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
     s.h.system.beginDrag(s.a)
     s.h.system.moveDrag(to: s.edge(.bottom, of: s.b), holding: active ? 0.3 : 0.05)
     // The mouse-up was lost; the next thing Arbor hears is another drag.
-    s.h.controller.dragBegan(s.c, at: s.frame(s.c).center)
+    s.h.controller.dragBegan(s.c, at: grab)
     #expect(s.outcome == before, "a is back in its slot and nothing else has moved")
     s.expectNothingLeftBehind()
     s.h.controller.dragMoved(s.a, to: s.edge(.top, of: s.b))
@@ -1172,7 +1191,7 @@ private let side = DisplaySnapshot(
     #expect(s.frame(s.c).size != small)
     s.h.system.userResize(s.c, to: CGRect(origin: s.frame(s.c).origin, size: small))
     s.h.system.beginDrag(s.c)
-    s.h.system.moveDrag(to: CGPoint(x: 700, y: 400), holding: 0.3)
+    s.h.system.moveDrag(to: s.frame(s.b).center, holding: 0.3)  // nothing docks there
     s.h.system.endDrag()
     #expect(s.frame(s.c).size == small)
     s.expectNothingLeftBehind()
@@ -1243,7 +1262,7 @@ private let side = DisplaySnapshot(
     let s = DragScene { $0.reflowWhileDragging = reflow }
     s.h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
     s.h.system.beginDrag(s.a)
-    s.h.system.moveDrag(to: s.onDesktop, holding: 0.3)
+    s.h.system.moveDrag(to: s.inTheGap, holding: 0.3)
     let held = s.frame(s.a)
     s.h.run("zoom \(s.b.rawValue)")
     #expect(s.frame(s.a) == held)
@@ -1260,7 +1279,7 @@ private let side = DisplaySnapshot(
     var settings = s.h.controller.settings
     settings.reflowWhileDragging = reflow
     s.h.controller.apply(settings: settings)
-    s.h.system.moveDrag(to: s.onDesktop)
+    s.h.system.moveDrag(to: s.inTheGap)
     s.h.system.endDrag()
     s.expectNothingLeftBehind()
     #expect(s.h.workspace.isFloating(s.c))

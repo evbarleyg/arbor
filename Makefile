@@ -70,7 +70,7 @@ check: lint build test
 
 # On Linux: all that a change must pass before it is pushed (check, scenarios, parity, typecheck-mac, lint), each thing once and
 # on every core: four minutes where those take fourteen. CHECK=1: fail if docs/FEATURES.md is out of date, as CI does.
-.PHONY: gate check-fast test-fast
+.PHONY: gate check-fast test-fast test-classic
 gate:
 	@./scripts/gate.sh $(if $(CHECK),--check)
 check-fast: gate
@@ -84,6 +84,11 @@ unplayed:
 # On Linux: the tests alone, a process to a file, as many at a time as there are cores (scripts/fast-tests.py).
 test-fast:
 	@./scripts/fast-tests.py run
+
+# On Linux: the tests once more, arranged as the first build arranged (a column for the Desktop, floating windows making way) wherever
+# a test names no settings (Sources/ArborTesting/Harness.swift): what went off by default stays in the app, and must not rot there.
+test-classic:
+	@ARBOR_TEST_CLASSIC=1 ./scripts/fast-tests.py run
 
 # make sim ARGS='"open Safari" "dock 101 left"'
 sim: build

@@ -16,7 +16,8 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
 
 /// Pinned windows (docs/features/F49-pin.md).
 @Suite @MainActor struct PinTests {
-  /// [editor | Desktop | browser] with a video call pinned in the top right corner, over the browser.
+  /// [editor | Desktop | browser] with a video call pinned in the top right corner, over the browser. As Arbor ships: two halves, and
+  /// the Desktop between them has no room.
   func makeHarness(
     displays: [DisplaySnapshot] = [FakeWindowSystem.standardDisplay], settings: Settings = Settings()
   ) -> (Harness, editor: WindowID, browser: WindowID, call: WindowID) {
@@ -64,7 +65,7 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
   @Test func aPinnedWindowKeepsItsPlaceThroughEveryCameraMove() {
     let (h, editor, _, call) = makeHarness()
     let journey = [
-      "zoom \(editor.rawValue)", "neighbor right", "neighbor right", "show-all", "desktop", "back", "forward",
+      "zoom \(editor.rawValue)", "neighbor right", "neighbor left", "show-all", "desktop", "back", "forward",
       "out", "in", "home", "save-view 1", "zoom \(editor.rawValue)", "view 1",
     ]
     for step in journey {
@@ -110,7 +111,7 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
   }
 
   @Test func itStaysWhenTheDesktopIsSqueezedIntoATile() {
-    let (h, editor, browser, call) = makeHarness()
+    let (h, editor, browser, call) = makeHarness(settings: .withDesktopColumn)
     // The Desktop column shrinks below the smallest usable width.
     h.run("resize \(editor.rawValue) right 150")
     h.run("resize \(browser.rawValue) left 150")
@@ -129,7 +130,7 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
     let (h, editor, browser, call) = makeHarness()
     h.system.userFocus(editor)
     let steps: [(String, WindowID)] = [
-      ("zoom \(editor.rawValue)", editor), ("neighbor right", editor), ("neighbor right", browser),
+      ("zoom \(editor.rawValue)", editor), ("desktop", editor), ("neighbor right", browser),
       ("show-all", browser), ("zoom \(browser.rawValue)", browser), ("back", browser), ("zoom \(editor.rawValue)", editor),
     ]
     for (step, keyboard) in steps {
@@ -307,11 +308,11 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
   }
 
   @Test func aMoveOfTheViewTakesTheKeyboardAlongAlsoOutOfAPinnedWindow() {
-    // Click mute in the call, ⌃⌥→ twice, type: the keys are meant for the window that arrived.
+    // Click mute in the call, ⌃⌥D, ⌃⌥→, type: the keys are meant for the window that arrived.
     let (h, editor, browser, call) = makeHarness()
     h.run("zoom \(editor.rawValue)")
     h.system.userFocus(call)
-    h.run("neighbor right")
+    h.run("desktop")
     #expect(h.workspace.camera == h.workspace.tree.desktop)
     #expect(h.system.focused == call, "nothing has arrived on the empty Desktop")
     h.run("neighbor right")
@@ -363,7 +364,7 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
   @Test func pinnedWhereDockedWindowsHadPushedItThatIsItsPlaceFromNowOn() {
     // Or whatever sends floating windows back to where the user left them (float-all, quitting) would move it.
     // Floating windows make way here, as until Q20 (`floatingWindowsMakeWay`): otherwise nothing pushes one.
-    let h = Harness(settings: .makingWay)
+    let h = Harness(settings: .makingWay.withDesktopColumn)
     let editor = h.system.open(app: "Editor", pid: 1001)
     let browser = h.system.open(app: "Browser", pid: 1002)
     // Small enough for the Desktop, so it is pushed and not squeezed (`aWindowTheDesktopSqueezedIsItsOwnSizeOncePinned`).
@@ -393,7 +394,7 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
     h.system.userFocus(editor)
     h.run("zoom \(browser.rawValue)")
     h.system.userFocus(browser)
-    h.run("neighbor left")
+    h.run("desktop")
     settle(h)
     #expect(h.workspace.camera == h.workspace.tree.desktop)
     #expect(h.system.focused == browser, "with nothing else in view the keyboard stays where it was")
@@ -518,7 +519,7 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
   /// [a | Desktop | b] with a terminal 900 points wide on a Desktop that is narrower, so Arbor has squeezed it. Floating
   /// windows make way here, as until Q20 (`floatingWindowsMakeWay`): as Arbor ships nothing is squeezed.
   func makeHarnessWithASqueezedWindow() -> (Harness, a: WindowID, terminal: WindowID, own: CGSize) {
-    let h = Harness(settings: .makingWay)
+    let h = Harness(settings: .makingWay.withDesktopColumn)
     let a = h.system.open(app: "A", pid: 1001)
     let b = h.system.open(app: "B", pid: 1002)
     let terminal = h.system.open(app: "Term", pid: 1003, frame: CGRect(x: 200, y: 200, width: 900, height: 400))
@@ -564,7 +565,7 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
   }
 
   @Test func squeezedInHeightItIsItsOwnSizeOncePinnedToo() {
-    let h = Harness(settings: .makingWay)  // squeezed: only while floating windows make way
+    let h = Harness(settings: .makingWay.withDesktopColumn)  // squeezed: only while floating windows make way
     let a = h.system.open(app: "A", pid: 1001)
     let b = h.system.open(app: "B", pid: 1002)
     let notes = h.system.open(app: "Notes", pid: 1003, frame: CGRect(x: 500, y: 60, width: 400, height: 760))
@@ -580,7 +581,7 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
 
   @Test func squeezedAtTheEdgeOfTheScreenItGrowsInward() {
     // [a | b | Desktop]: around where it is would be half off the screen. Squeezed: only while floating windows make way.
-    let h = Harness(settings: .makingWay)
+    let h = Harness(settings: .makingWay.withDesktopColumn)
     let a = h.system.open(app: "A", pid: 1001)
     let b = h.system.open(app: "B", pid: 1002)
     let terminal = h.system.open(app: "Term", pid: 1003, frame: CGRect(x: 500, y: 200, width: 900, height: 400))

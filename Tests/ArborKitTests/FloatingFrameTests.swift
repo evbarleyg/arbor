@@ -46,7 +46,8 @@ import Testing
     return desk
   }
 
-  /// `[Finder | Desktop | Safari over… ]` as the day had it by noon: Finder left, Safari right, TextEdit right of that.
+  /// Finder left, Safari right, TextEdit right of that, as the day had it by noon. That day there was a column for the Desktop between
+  /// Finder and Safari (`desktopColumn`); as Arbor ships the three have the display to themselves, and what floats lies over them.
   func makeArrangedDesk(_ change: (inout Settings) -> Void = { _ in }) -> Desk {
     let desk = makeDesk(change)
     desk.h.run("dock \(desk.finder.rawValue) left")
@@ -94,8 +95,8 @@ import Testing
 
   // MARK: There and back is nothing (steps 47 to 59)
 
-  @Test func frameThenShowEverythingBringsEveryFloatingWindowBackToItsOwnFrame() {
-    let desk = makeArrangedDesk()
+  @Test(arguments: [false, true]) func frameThenShowEverythingBringsEveryFloatingWindowBackToItsOwnFrame(desktopColumn: Bool) {
+    let desk = makeArrangedDesk { $0.desktopColumn = desktopColumn }
     desk.h.run("zoom \(desk.safari.rawValue)")
     for window in desk.own.keys.sorted() { #expect(!desk.h.system.isVisible(window), "\(window) leaves with the Desktop") }
     desk.h.run("show-all")
@@ -135,8 +136,8 @@ import Testing
 
   // MARK: ⌘M, ⌘H, ⌘Q and ⌘W of a docked window (steps 71 to 77)
 
-  @Test func minimizingADockedWindowAndRestoringItTouchesNoFloatingWindow() {
-    let desk = makeArrangedDesk()
+  @Test(arguments: [false, true]) func minimizingADockedWindowAndRestoringItTouchesNoFloatingWindow(desktopColumn: Bool) {
+    let desk = makeArrangedDesk { $0.desktopColumn = desktopColumn }
     desk.h.system.setMinimized(desk.safari, true)
     expectUntouched(desk, "after ⌘M in Safari")
     desk.h.system.setMinimized(desk.safari, false)
@@ -144,8 +145,8 @@ import Testing
     expectWindowsMatchLayout(desk.h)
   }
 
-  @Test func hidingADockedWindowsAppAndShowingItTouchesNoFloatingWindow() {
-    let desk = makeArrangedDesk()
+  @Test(arguments: [false, true]) func hidingADockedWindowsAppAndShowingItTouchesNoFloatingWindow(desktopColumn: Bool) {
+    let desk = makeArrangedDesk { $0.desktopColumn = desktopColumn }
     desk.h.system.setHidden(pid: 2001, true)
     desk.h.scheduler.advance(by: 1)
     expectUntouched(desk, "after ⌘H in Finder")
@@ -155,8 +156,8 @@ import Testing
     expectWindowsMatchLayout(desk.h)
   }
 
-  @Test func quittingADockedWindowsAppTouchesNoFloatingWindow() {
-    let desk = makeArrangedDesk()
+  @Test(arguments: [false, true]) func quittingADockedWindowsAppTouchesNoFloatingWindow(desktopColumn: Bool) {
+    let desk = makeArrangedDesk { $0.desktopColumn = desktopColumn }
     desk.h.system.quit(pid: 2003)
     expectUntouched(desk, "after ⌘Q in TextEdit")
     desk.h.system.close(desk.safari)
@@ -165,10 +166,11 @@ import Testing
   }
 
   /// The control for all of the above: with the setting on, each of those steps sets the frame of a floating window nobody touched, as
-  /// on the day. If one of them stops doing so, the test of that step proves nothing any more.
+  /// on the day. If one of them stops doing so, the test of that step proves nothing any more. With a column for the Desktop, as on the
+  /// day: it is onto the Desktop that they are pushed, and with no room of its own there is nowhere to push them.
   @Test(arguments: ["⌘M", "⌘H", "⌘Q", "Frame and Show Everything"])
   func withTheSettingOnEachOfThoseStepsMovesFloatingWindows(step: String) {
-    let desk = makeArrangedDesk { $0.floatingWindowsMakeWay = true }
+    let desk = makeArrangedDesk { $0 = .makingWay.withDesktopColumn }
     let before = desk.own.keys.reduce(into: [WindowID: CGRect]()) { $0[$1] = desk.h.frame($1)! }
     switch step {
     case "⌘M": desk.h.system.setMinimized(desk.safari, true)
@@ -264,7 +266,7 @@ import Testing
   /// F61's own example, with a Calculator floating: both docked windows are in view, the Desktop is the tile, and what floats
   /// shows over the arrangement, where it was.
   @Test func dockedWindowsComeBeforeADesktopWithAWindowOnIt() {
-    let h = Harness(settings: Settings())
+    let h = Harness(settings: .withDesktopColumn)
     let notes = h.system.open(app: "Notes", frame: CGRect(x: 100, y: 100, width: 1000, height: 660), minimumSize: CGSize(width: 709, height: 300))
     let safari = h.system.open(app: "Safari", frame: CGRect(x: 60, y: 60, width: 1324, height: 800), minimumSize: CGSize(width: 574, height: 240))
     let calculator = h.system.open(app: "Calculator", frame: CGRect(x: 600, y: 300, width: 230, height: 408), isResizable: false)
@@ -292,8 +294,7 @@ import Testing
 
   /// So a window that docks by itself may leave the Desktop a tile, though something floats: nobody needs the Desktop's points.
   @Test(arguments: [false, true]) func aNewWindowThatDocksByItselfMayLeaveTheDesktopATile(makingWay: Bool) {
-    var settings = Settings()
-    settings.floatingWindowsMakeWay = makingWay
+    var settings = (makingWay ? Settings.makingWay : Settings()).withDesktopColumn
     settings.newWindows = "dock"
     let h = Harness(settings: settings)
     let least = CGSize(width: 640, height: 600)

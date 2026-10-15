@@ -31,7 +31,7 @@ public enum SettingsSchema {
       "hotkeysEnabled", "shortcuts", "peek", "messages", "automaticUpdateChecks", "stepInToward", "shortcutsFollowLayout", "bindings",
     ],
     .windows: [
-      "gap", "minimumUsableWidth", "minimumUsableHeight", "newWindows", "newWindowsWhileFramed", "rules",
+      "gap", "minimumUsableWidth", "minimumUsableHeight", "newWindows", "newWindowsWhileFramed", "desktopColumn", "rules",
       "autoDockMinimumWidth", "autoDockMinimumHeight", "makeRoom", "floatingWindowsMakeWay", "soleFloatTakesDesktop", "summonStays",
       "shareRemovedSpace", "arrangeDesktopWeight", "resizeStep", "displays", "ruleTitleWait", "tileRetryMinutes", "shrinkOutOfView",
     ],
@@ -109,7 +109,8 @@ public enum SettingsSchema {
       .number(
         "arrangeDesktopWeight", \.arrangeDesktopWeight, min: 0.1, max: 3, step: 0.1, unit: "",
         "Desktop width in Arrange",
-        "How wide Arrange Windows leaves the Desktop, relative to the windows beside it.", advanced: true),
+        "How wide Arrange Windows leaves the Desktop, relative to the windows beside it. Only with a column for the "
+          + "Desktop.", advanced: true),
       .list(
         "rules", \.rules, shape: "a list of rules",
         editedWith: "`rule add`, `rule change`, `rule remove` and `rule move`", counts: "rule", "Rules",
@@ -179,6 +180,11 @@ public enum SettingsSchema {
         "Docked windows push floating windows aside and squeeze them, so that they stay on the Desktop. Off, a floating "
           + "window stays exactly where you put it, over docked windows too: it only goes out of view with the Desktop and "
           + "comes back to the same place.", advanced: true),
+      .toggle(
+        "desktopColumn", \.desktopColumn, "A column for the Desktop",
+        "The Desktop keeps a share of the display among docked windows: two docked windows and the Desktop are thirds, and "
+          + "Arrange Windows leaves a column free. Off, docked windows take what is left over first: two are two halves, and "
+          + "Arrange Windows leaves nothing over."),
     ])
 
   private static let dragging = section(

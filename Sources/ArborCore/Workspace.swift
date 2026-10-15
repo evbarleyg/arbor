@@ -170,29 +170,29 @@ public struct Workspace: Codable, Sendable, Equatable {
   // MARK: Docking
 
   /// Removes `window` from the tree and from floating, fixing up references. Here and below,
-  /// `shareSpace` says who gets a docked window's space (`LayoutTree.remove`).
-  public mutating func forget(_ window: WindowID, shareSpace: Bool = true) {
+  /// `shareSpace` says who gets a docked window's space, and `away` that it takes up none just now (`LayoutTree.remove`).
+  public mutating func forget(_ window: WindowID, shareSpace: Bool = true, away: Bool = false) {
     floating[window] = nil
     endVisit(of: window)
-    changeStructure { $0.remove(window, shareSpace: shareSpace) }
+    changeStructure { $0.remove(window, shareSpace: shareSpace, away: away) }
     setUndockedFrame(nil, of: window)
   }
 
   /// Undocks `window` and makes it float at `frame`.
-  public mutating func undock(_ window: WindowID, floatingAt frame: CGRect, shareSpace: Bool = true) {
-    changeStructure { $0.remove(window, shareSpace: shareSpace) }
+  public mutating func undock(_ window: WindowID, floatingAt frame: CGRect, shareSpace: Bool = true, away: Bool = false) {
+    changeStructure { $0.remove(window, shareSpace: shareSpace, away: away) }
     floating[window] = frame
     setUndockedFrame(nil, of: window)
   }
 
   /// Docks `window` according to `target`, removing it from wherever it was in
   /// this workspace first. Returns false for `.float` and `.none`, which do
-  /// not dock. `evenShare` is `LayoutTree.dock`'s, for `.beside`.
+  /// not dock. `evenShare` is `LayoutTree.dock`'s, for `.beside`, and so is `desktopColumn`.
   @discardableResult
   public mutating func dock(
-    _ window: WindowID, at target: DropTarget, evenShare: Bool = false, shareSpace: Bool = true
+    _ window: WindowID, at target: DropTarget, evenShare: Bool = false, shareSpace: Bool = true, desktopColumn: Bool = false
   ) -> Bool {
-    tryDock(window, at: target, evenShare: evenShare, shareSpace: shareSpace) == .docked
+    tryDock(window, at: target, evenShare: evenShare, shareSpace: shareSpace, desktopColumn: desktopColumn) == .docked
   }
 
   /// What became of a dock. Anything but `docked` has changed nothing.
@@ -209,7 +209,7 @@ public struct Workspace: Codable, Sendable, Equatable {
 
   /// `dock`, saying why not.
   public mutating func tryDock(
-    _ window: WindowID, at target: DropTarget, evenShare: Bool = false, shareSpace: Bool = true
+    _ window: WindowID, at target: DropTarget, evenShare: Bool = false, shareSpace: Bool = true, desktopColumn: Bool = false
   ) -> DockOutcome {
     switch target {
     case .float, .none:
@@ -223,7 +223,7 @@ public struct Workspace: Codable, Sendable, Equatable {
     }
     // On a copy, because how deep it ends up depends on what taking the window out collapses first.
     var trial = self
-    trial.place(window, at: target, evenShare: evenShare, shareSpace: shareSpace)
+    trial.place(window, at: target, evenShare: evenShare, shareSpace: shareSpace, desktopColumn: desktopColumn)
     guard trial.tree.nesting <= LayoutTree.maximumDepth else { return .tooDeep }
     self = trial
     return .docked
@@ -235,7 +235,9 @@ public struct Workspace: Codable, Sendable, Equatable {
     return copy.tryDock(window, at: target)
   }
 
-  private mutating func place(_ window: WindowID, at target: DropTarget, evenShare: Bool, shareSpace: Bool) {
+  private mutating func place(
+    _ window: WindowID, at target: DropTarget, evenShare: Bool, shareSpace: Bool, desktopColumn: Bool
+  ) {
     // History and saved views that frame this window on its own should still frame it where it
     // lands, not whatever closes over the slot it leaves.
     let ownLeaf = tree.leaf(containing: window).flatMap { tree.windows(under: $0) == [window] ? $0 : nil }
@@ -253,7 +255,11 @@ public struct Workspace: Codable, Sendable, Equatable {
       for group in held { apply(tree.stopKeeping(group, for: .move)) }
       keepWhatIsViewed(done: true)
     }
-    let remap = tree.remove(window, shareSpace: shareSpace)
+    // A docked window that is only moving brings its share along: nothing is left over where it was (`away`), and where it goes it takes
+    // a share like the others', not what is left over. The Desktop neither opens nor closes because a window has changed places.
+    // (A tab that leaves its group leaves the group its room, and brings none.)
+    let desktopColumn = desktopColumn || ownLeaf != nil
+    let remap = tree.remove(window, shareSpace: shareSpace, away: true)
     apply(remap, except: ownLeaf)
     // A docked window that is only moving is not in `floating`, and keeps what is remembered.
     if let frame = floating.removeValue(forKey: window) { setUndockedFrame(frame, of: window) }
@@ -263,16 +269,17 @@ public struct Workspace: Codable, Sendable, Equatable {
     switch target {
     case .cameraEdge(let edge):
       // Beside everything in view (T01) and nothing else: as a group with it, which the view then is on.
-      leaf = tree.dock(window, beside: camera, edge: edge, groupingFor: .view)
+      leaf = tree.dock(window, beside: camera, edge: edge, groupingFor: .view, desktopColumn: desktopColumn)
     case .beside(let node, let edge):
-      leaf = tree.dock(window, beside: remap.resolve(node, in: tree), edge: edge, evenShare: evenShare)
+      leaf = tree.dock(
+        window, beside: remap.resolve(node, in: tree), edge: edge, evenShare: evenShare, desktopColumn: desktopColumn)
     case .stack(let node):
       let stack = remap.resolve(node, in: tree)
       if tree.isStack(stack) {
         tree.addToStack(window, leaf: stack)
         leaf = stack
       } else {
-        leaf = tree.dock(window, beside: stack, edge: .right)
+        leaf = tree.dock(window, beside: stack, edge: .right, desktopColumn: desktopColumn)
       }
     case .float, .none:
       return
@@ -575,7 +582,9 @@ public struct Workspace: Codable, Sendable, Equatable {
     makingRoom terms: MakeRoom.Terms? = nil
   ) -> CGRect? {
     var copy = self
-    guard copy.dock(window, at: target, shareSpace: options.shareRemovedSpace) else { return nil }
+    guard copy.dock(window, at: target, shareSpace: options.shareRemovedSpace, desktopColumn: options.desktopColumn) else {
+      return nil
+    }
     var layout = LayoutEngine.layout(
       copy.tree, camera: copy.camera, in: frame, options: options,
       isPresent: { $0 == window || isPresent($0) }, minimumSize: minimumSize)

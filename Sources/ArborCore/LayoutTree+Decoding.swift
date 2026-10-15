@@ -21,7 +21,7 @@ extension LayoutTree {
   /// parents) are dropped, as are windows already seen, empty stacks, extra Desktops and nodes
   /// nothing refers to; splits left with one child collapse and same-axis nesting is flattened,
   /// as in `remove`, which spares the splits that are kept (LayoutTree+Keeps.swift); weights that
-  /// are not positive numbers, or are beyond `maximumWeight`, become 1; a missing Desktop is added at
+  /// are not positive numbers, or are beyond `maximumWeight`, become 1 (a Desktop beside others may have 0: no room); a missing Desktop is added at
   /// the right. Windows that lose their place this way are simply not docked any more: the
   /// controller finds them floating. Each repair is noted in the decoder's `DecodingNotes`, if it has one.
   ///
@@ -69,6 +69,10 @@ extension LayoutTree {
     let (finalRoot, desktop) = repair.ensureDesktop(root: newRoot)
     self.init(checkedNodes: repair.kept, root: finalRoot, desktop: desktop, nextRawID: repair.nextRawID)
     for id in preorder() where isSplit(id) { steadyWeights(of: id) }
+    // No room is for a Desktop beside others that have some.
+    if !hasRoom(desktop), parent(of: desktop).map({ children(of: $0).contains(where: hasRoom) }) != true {
+      nodes[desktop]!.weight = 1
+    }
     // Not checked against the tree: they are whenever they are used.
     do {
       visits = Array((try container.decodeIfPresent([Visit].self, forKey: .visits) ?? []).suffix(Self.mostVisits))
@@ -149,7 +153,7 @@ extension LayoutTree {
       }
       var weight = node.weight
       // Also of a root, which has no siblings for `steadyWeights` to measure it against.
-      if !(weight > 0 && weight <= LayoutTree.maximumWeight) {
+      if !(weight > 0 && weight <= LayoutTree.maximumWeight), !(weight == 0 && id == desktop && parent != nil) {
         notes.append("\(id) has weight \(weight)")
         weight = 1
       }

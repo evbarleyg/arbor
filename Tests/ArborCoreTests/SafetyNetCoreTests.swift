@@ -105,20 +105,21 @@ private func everyone(_: WindowID) -> Bool { true }
 
   // MARK: The tree
 
+  /// With a column for the Desktop, which counts like a window. (Without one the newcomer first takes what is left.)
   @Test func aWindowDockedAtTheEdgeOfARowIsAsWideAsTheAverage() {
     var tree = LayoutTree()
-    let first = tree.dock(a, beside: tree.root, edge: .left)
+    let first = tree.dock(a, beside: tree.root, edge: .left, desktopColumn: true)
     tree.moveBoundary(leading: first, trailing: tree.desktop, by: 300, pointsPerWeight: 500)
     // 1.6 and 0.4: the newcomer gets their mean, not a fixed share.
-    let added = tree.dock(b, beside: tree.root, edge: .right)
+    let added = tree.dock(b, beside: tree.root, edge: .right, desktopColumn: true)
     #expect(abs(tree[added]!.weight - 1) < 1e-9)
     tree.moveBoundary(leading: tree.desktop, trailing: added, by: -100, pointsPerWeight: 500)
-    let third = tree.dock(c, beside: tree.root, edge: .left)
+    let third = tree.dock(c, beside: tree.root, edge: .left, desktopColumn: true)
     #expect(abs(tree[third]!.weight - 1) < 1e-9)
     var narrow = LayoutTree()
-    let only = narrow.dock(a, beside: narrow.root, edge: .left)
-    narrow.dock(b, beside: only, edge: .right)  // 0.5, 0.5, Desktop 1
-    let last = narrow.dock(c, beside: narrow.root, edge: .right)
+    let only = narrow.dock(a, beside: narrow.root, edge: .left, desktopColumn: true)
+    narrow.dock(b, beside: only, edge: .right, desktopColumn: true)  // 0.5, 0.5, Desktop 1
+    let last = narrow.dock(c, beside: narrow.root, edge: .right, desktopColumn: true)
     #expect(abs(narrow[last]!.weight - 2.0 / 3) < 1e-9)
   }
 
@@ -142,17 +143,18 @@ private func everyone(_: WindowID) -> Bool { true }
 
   // MARK: Navigation
 
-  /// root(h)[ column(v)[a, c], Desktop, b ]
-  private func columns() -> (LayoutTree, NodeID, NodeID, NodeID) {
+  /// root(h)[ column(v)[a, c], Desktop, b ]. As it ships b took all that was left: two halves and a Desktop without room. With
+  /// `desktopColumn` thirds.
+  private func columns(desktopColumn: Bool = false) -> (LayoutTree, NodeID, NodeID, NodeID) {
     var tree = LayoutTree()
-    let leafA = tree.dock(a, beside: tree.root, edge: .left)
-    let leafB = tree.dock(b, beside: tree.root, edge: .right)
+    let leafA = tree.dock(a, beside: tree.root, edge: .left, desktopColumn: desktopColumn)
+    let leafB = tree.dock(b, beside: tree.root, edge: .right, desktopColumn: desktopColumn)
     let leafC = tree.dock(c, beside: leafA, edge: .bottom)
     return (tree, leafA, leafB, leafC)
   }
 
   @Test func neighboursAreOneStepAwayInBothDirections() {
-    let (tree, leafA, leafB, leafC) = columns()
+    let (tree, leafA, leafB, leafC) = columns(desktopColumn: true)
     let view = TreeView(tree: tree, isPresent: everyone)
     #expect(Navigation.neighbor(of: leafB, toward: .left, in: view) == tree.desktop)
     #expect(Navigation.neighbor(of: tree.desktop, toward: .left, in: view) == tree.parent(of: leafA))

@@ -149,8 +149,9 @@ import Testing
     let leaf = tree.dock(a, beside: tree.root, edge: .left)
     tree.dock(b, beside: leaf, edge: .bottom)
     tree.dock(c, beside: tree.root, edge: .right)
+    // Two halves of 222 points: too narrow for windows.
     let layout = LayoutEngine.layout(
-      tree, camera: tree.root, in: CGRect(x: 0, y: 25, width: 700, height: 875), isPresent: { _ in true })
+      tree, camera: tree.root, in: CGRect(x: 0, y: 25, width: 480, height: 875), isPresent: { _ in true })
     let tile = layout.tiles.first { $0.kind == .group }!
     let union = tile.miniature.values.reduce(CGRect.null) { $0.union($1) }
     #expect(union == tile.frame.insetBy(dx: 8, dy: 8))

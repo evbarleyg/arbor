@@ -356,14 +356,16 @@ private let oneLayout: Set<String> = [
     """,
   ]) func theWalksOwnScripts(_ script: String) { expectOneLayoutAtTheEnd(of: script) }
 
-  /// Seen on a hosted Mac first: one press, six frames, one of them out of view. A display of 1024 by 768 points.
-  @Test func onASmallDisplay() {
+  /// Seen on a hosted Mac first: one press, six frames, one of them out of view. A display of 1024 by 768 points, in thirds then, with a
+  /// column for the Desktop; in halves as Arbor ships. Either way the press runs into the window's smallest size.
+  @Test(arguments: [true, false]) func onASmallDisplay(desktopColumn: Bool) {
     let small = DisplaySnapshot(
       id: DisplayID("main"), frame: CGRect(x: 0, y: 0, width: 1024, height: 768),
       visibleFrame: CGRect(x: 0, y: 31, width: 1024, height: 737), isMain: true)
-    let h = Harness(displays: [small])
+    let h = Harness(displays: [small], settings: desktopColumn ? .withDesktopColumn : Settings())
+    let least: CGFloat = desktopColumn ? 300 : 470
     let a = h.system.open(app: "A", pid: 1001)
-    let b = h.system.open(app: "B", pid: 1002, minimumSize: CGSize(width: 300, height: 200))
+    let b = h.system.open(app: "B", pid: 1002, minimumSize: CGSize(width: least, height: 200))
     h.start()
     runOK(h, "dock \(a.rawValue) left")
     runOK(h, "dock \(b.rawValue) right")
@@ -371,7 +373,7 @@ private let oneLayout: Set<String> = [
     h.scheduler.runPending()
     let roads = Roads(h) { runOK(h, "shrink") }
     roads.expectOneRoadEach()
-    #expect((300...302).contains(h.frame(b)!.width) && h.frame(b)!.maxX == h.layout!.windowFrames[b]!.maxX, "\(h.frame(b)!.brief)")
+    #expect((least...least + 2).contains(h.frame(b)!.width) && h.frame(b)!.maxX == h.layout!.windowFrames[b]!.maxX, "\(h.frame(b)!.brief)")
     expectSound(h)
   }
 }
@@ -1006,8 +1008,9 @@ private let oneLayout: Set<String> = [
 
   /// And it comes to the front after the gaps that stood have come back, which are known by the arrangement, of which the tab in front is a
   /// part. Safari beside three tabs, room made for Notes; Mail's app is hidden and Mail fetched by name: Safari is as wide as it was.
+  /// With a column for the Desktop: it has lent so much that it is a tile, and what it is owed is what moves the gaps meanwhile.
   @Test func aTabFetchedByNameLeavesTheGapsAsTheyStood() {
-    let h = Harness()
+    let h = Harness(settings: .withDesktopColumn)
     h.start()
     runOK(h, "set tabsEnabled true")
     let safari = h.system.open(app: "Safari", pid: 1000)

@@ -27,13 +27,16 @@ public final class Harness {
   /// Records traces into memory (`trace on`, then `lastTrace`).
   public let recorder: TraceRecorder
 
-  /// As Arbor ships. With `ARBOR_TEST_MAKING_WAY=1` in the environment (`make test-making-way`), with `floatingWindowsMakeWay` on: every
-  /// test that does not choose its settings then runs as it did until Q20 (collab/QUESTIONS.md), when floating windows were kept
-  /// on the Desktop. That is how the setting is known to be the way back it is meant to be. A test of how Arbor ships
-  /// gives its settings, `Settings()`, in so many words.
+  /// As Arbor ships. With `ARBOR_TEST_CLASSIC=1` in the environment (`make test-classic`), arranged as the first build arranged: a
+  /// column for the Desktop, and floating windows making way. Every test that does not choose its settings then runs with those options on
+  /// that have gone off since, so that they do not rot. (Not every key, the third of `Settings.classic`: the tests of the keys take a plain
+  /// `Harness()` for the nine.) With `ARBOR_TEST_MAKING_WAY=1` (`make test-making-way`), with `floatingWindowsMakeWay` on alone: as until Q20
+  /// (collab/QUESTIONS.md), when floating windows were kept on the Desktop. A test of how Arbor ships gives its settings,
+  /// `Settings()`, in so many words.
   public nonisolated static var settingsWhenNoneAreGiven: Settings {
     var settings = Settings()
-    settings.floatingWindowsMakeWay = ProcessInfo.processInfo.environment["ARBOR_TEST_MAKING_WAY"] == "1"
+    if ProcessInfo.processInfo.environment["ARBOR_TEST_CLASSIC"] == "1" { settings = settings.withDesktopColumn.withFloatsMakingWay }
+    if ProcessInfo.processInfo.environment["ARBOR_TEST_MAKING_WAY"] == "1" { settings.floatingWindowsMakeWay = true }
     return settings
   }
 

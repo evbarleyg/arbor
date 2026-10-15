@@ -8,8 +8,9 @@ import Testing
 /// gets its place back and its neighbours their exact sizes (Controller+ThereAndBack.swift).
 @MainActor @Suite struct ThereAndBackTests {
   /// Finder, Safari and TextEdit docked on a display of 1600 × 900 with a Terminal floating, as on the hosted Mac where it was
-  /// seen. The smallest sizes are the real apps'. Safari has borrowed from the Desktop and from TextEdit; as Arbor ships (F64) from the
-  /// Desktop alone, which does not count as in use for the Terminal's sake. `make test-making-way` runs all of this on the desk as it was seen.
+  /// seen. The smallest sizes are the real apps'. With a column for the Desktop and floating windows making way, as it was seen, Safari has
+  /// borrowed from the Desktop and from TextEdit; without the column the three have the display to themselves, and it has borrowed from Finder
+  /// and from TextEdit. `make test-classic` runs all of this on the desk as it was seen.
   private struct Desk {
     let h: Harness
     let finder, safari, textEdit, terminal: WindowID
@@ -49,16 +50,19 @@ import Testing
 
   /// That day floating windows made way (`floatingWindowsMakeWay`).
   @Test func theDeskIsTheOneThatWasSeen() {
-    let desk = Desk(settings: .makingWay)
+    let desk = Desk(settings: .makingWay.withDesktopColumn)
     #expect(desk.h.frame(desk.finder) == CGRect(x: 12, y: 43, width: 501, height: 845))
     #expect(desk.h.frame(desk.safari) == CGRect(x: 712, y: 43, width: 574, height: 845))
     #expect(desk.h.frame(desk.textEdit) == CGRect(x: 1298, y: 43, width: 290, height: 845))
     expectWindowsMatchLayout(desk.h)
   }
 
+  /// Thirds of 1552 points are 517, 518 and 517, and Safari lacks 56. Finder can spare 16 (it goes down to 501) and TextEdit 277 (down to
+  /// the smallest usable width, 240): each gives in proportion, 3 and 53.
   @Test func theDeskAsArborShips() {
     let desk = Desk(settings: Settings())
-    #expect(desk.docked.map { desk.h.frame($0)?.size } == [501, 574, 385].map { CGSize(width: $0, height: 845) })
+    #expect(desk.docked.map { desk.h.frame($0)?.size } == [514, 574, 464].map { CGSize(width: $0, height: 845) })
+    #expect(desk.h.layout?.desktopFrame == nil, "the three have the display to themselves")
     #expect(desk.h.frame(desk.terminal) == CGRect(x: 140, y: 60, width: 877, height: 499), "nobody touched it")
     expectWindowsMatchLayout(desk.h)
   }
@@ -186,7 +190,7 @@ import Testing
   /// A gap moved by hand while a window is away is the person's. The window that comes back takes its share of the row as
   /// it stands, and nothing goes back to where it was before the hand.
   @Test(arguments: [false, true]) func aGapMovedByHandMeanwhileIsThePersons(makingWay: Bool) {
-    let desk = Desk(settings: makingWay ? .makingWay : Settings())
+    let desk = Desk(settings: (makingWay ? Settings.makingWay : Settings()).withDesktopColumn)
     let before = desk.places
     desk.hide(desk.finder)
     desk.h.run("resize \(desk.textEdit.rawValue) left 100")
@@ -203,8 +207,10 @@ import Testing
     #expect(desk.places == standing)
   }
 
+  /// (On the desk that was seen. Finder is a tile once it is back, and `places` also tells how large a window is that is out of view: there
+  /// Finder shows at its smallest size while Safari is away, which is the size it went out of view with before.)
   @Test func aWindowDockedOrClosedMeanwhileStartsAfresh() {
-    let desk = Desk()
+    let desk = Desk(settings: .withDesktopColumn)
     desk.hide(desk.finder)
     desk.h.run("dock \(desk.terminal.rawValue) right")
     desk.hide(desk.finder, false)
@@ -238,12 +244,14 @@ import Testing
 
   /// Two windows are tiles, and Arbor has never asked how small they go. With another away they show, and of one it learns. That
   /// is an occasion to make room (F61): when the other is back, that one is not sent back into its tile.
+  /// (They are tiles because the Desktop has half of their column: `(104 / ((101 / 103 / Desktop:2) | 102)) | 105`.)
   @Test func whatArborLearnsMeanwhileIsAnOccasionToMakeRoom() {
-    let h = Harness(displays: [
-      DisplaySnapshot(
-        id: FakeWindowSystem.standardDisplay.id, frame: CGRect(x: 0, y: 0, width: 1280, height: 900),
-        visibleFrame: CGRect(x: 0, y: 25, width: 1280, height: 875), isMain: true)
-    ])
+    let h = Harness(
+      displays: [
+        DisplaySnapshot(
+          id: FakeWindowSystem.standardDisplay.id, frame: CGRect(x: 0, y: 0, width: 1280, height: 900),
+          visibleFrame: CGRect(x: 0, y: 25, width: 1280, height: 875), isMain: true)
+      ], settings: .withDesktopColumn)
     let windows = [(501, 100), (0, 240), (501, 0), (574, 0), (334, 240)].enumerated().map {
       h.system.open(app: "App\($0.offset)", pid: Int32(3000 + $0.offset), minimumSize: CGSize(width: $0.element.0, height: $0.element.1))
     }
@@ -294,11 +302,11 @@ import Testing
 
   /// The next layout after the drop is the one for whoever went during the drag: it looks as it would have without a drag.
   @Test(arguments: [false, true]) func whoWentDuringADragIsAwayAfterTheDrop(makingWay: Bool) {
-    let plain = Desk(settings: makingWay ? .makingWay : Settings())
+    let plain = Desk(settings: (makingWay ? Settings.makingWay : Settings()).withDesktopColumn)
     plain.hide(plain.finder)
     plain.h.system.setMinimized(plain.textEdit, true)
 
-    let desk = Desk(settings: makingWay ? .makingWay : Settings())
+    let desk = Desk(settings: (makingWay ? Settings.makingWay : Settings()).withDesktopColumn)
     desk.hide(desk.finder)
     desk.h.system.beginDrag(desk.terminal)
     desk.h.system.moveDrag(to: CGPoint(x: 140, y: 500), holding: 0.1)
@@ -319,7 +327,7 @@ import Testing
 
   /// An undo settles what the Desktop is owed after it has laid out.
   @Test func whatTheDesktopIsOwedAfterAnUndoOutlivesThereAndBack() {
-    let h = Harness()
+    let h = Harness(settings: .withDesktopColumn)
     let notes = h.system.open(app: "Notes", pid: 2001, minimumSize: CGSize(width: 709, height: 300))
     let safari = h.system.open(app: "Safari", pid: 2002, minimumSize: CGSize(width: 574, height: 240))
     h.start()
@@ -364,7 +372,7 @@ import Testing
   /// A window put back in its place between the report that Finder went and the layout for it sees a wide Desktop, to which
   /// nothing is owed. That is not what stood.
   @Test func whatTheDesktopIsOwedOutlivesALayoutThatComesInBetween() {
-    let desk = Desk()
+    let desk = Desk(settings: .withDesktopColumn)
     #expect(desk.h.workspace.desktopIsOwedRoom == true)
     let (before, tree) = (desk.places, desk.h.workspace.tree)
     desk.h.system.setOnActiveSpace(desk.finder, false)
@@ -410,8 +418,10 @@ import Testing
     expectWindowsMatchLayout(desk.h)
   }
 
+  /// (On the desk that was seen, where Safari is a tile with Finder there and with Finder away. Without the column it shows meanwhile, and goes
+  /// out of view again at another size than before, which `places` tells.)
   @Test func withoutRoomBeforeTilesItHeldAllAlong() {
-    var settings = Settings()
+    var settings = Settings.withDesktopColumn
     settings.makeRoom = false
     let desk = Desk(settings: settings)
     let before = desk.places

@@ -273,10 +273,12 @@ private final class Listener {
     expectWindowsMatchLayout(h)
   }
 
-  @Test func aFloatingWindowOfWhichAStripShowsIsStillInViewAfterUndoAndRedo() {
-    // From the chaos lab. The Desktop is a tile, so no layout places the window: it is in view because it was. Pushed aside
-    // until a strip shows, which is a place like any other (`Controller.reach`), it went out of view with the redo.
+  @Test(arguments: [false, true]) func aFloatingWindowOfWhichAStripShowsIsStillInViewAfterUndoAndRedo(desktopColumn: Bool) {
+    // From the chaos lab. The Desktop is a tile (without a column of its own it has no room at all), so no layout places the
+    // window: it is in view because it was. Pushed aside until a strip shows, which is a place like any other
+    // (`Controller.reach`), it went out of view with the redo.
     var settings = Settings()
+    settings.desktopColumn = desktopColumn
     settings.minimumUsableWidth = 800
     settings.minimumUsableHeight = 1
     let h = Harness(settings: settings)
@@ -284,7 +286,7 @@ private final class Listener {
     let b = h.system.open(app: "Safari", pid: 1000, frame: CGRect(x: 500, y: 300, width: 397, height: 296))
     h.start()
     #expect(h.run("layout Preview | Xcode").ok)
-    #expect(h.layout!.desktopFrame == nil, "the Desktop is a tile")
+    #expect(h.layout!.desktopFrame == nil, "the Desktop is a tile, or has no room")
     let aside = CGRect(x: -350, y: 224, width: 397, height: 296)
     h.system.userMove(b, to: aside)
     let before = (h.workspace, frames(h))
@@ -319,7 +321,7 @@ private final class Listener {
     expectWindowsMatchLayout(h)
   }
 
-  /// Five columns leave the Desktop too narrow to use. It is a tile, and part of the view.
+  /// Five columns leave the Desktop too narrow to use. It is a tile (without a column of its own it has no room), and part of the view.
   func makeFiveColumns() -> (Harness, floating: WindowID) {
     let h = Harness()
     for (index, app) in ["Safari", "Notes", "Mail", "Terminal", "Xcode"].enumerated() {
@@ -442,8 +444,8 @@ private final class Listener {
   }
 
   /// Safari docked on the left, Notes alone on the Desktop, which it takes.
-  func makeSoleFloat() -> (Harness, WindowID, WindowID) {
-    var settings = Settings.makingWay
+  func makeSoleFloat(settings: Settings = .makingWay) -> (Harness, WindowID, WindowID) {
+    var settings = settings
     settings.soleFloatTakesDesktop = true
     let h = Harness(settings: settings)
     h.start()
@@ -468,7 +470,8 @@ private final class Listener {
   }
 
   @Test func aWindowDraggedOutOntoTheEmptyDesktopIsNotStretchedByUndoAndRedo() {
-    let (h, _, b) = makeSoleFloat()
+    // [a | Desktop | b]: with a column of its own there is a Desktop to drag b out onto.
+    let (h, _, b) = makeSoleFloat(settings: .makingWay.withDesktopColumn)
     h.run("dock \(b.rawValue) right")
     let slot = h.frame(b)!
     h.system.drag(b, through: [CGPoint(x: slot.midX, y: slot.minY + 10), CGPoint(x: 1000, y: 300), CGPoint(x: 900, y: 300)])

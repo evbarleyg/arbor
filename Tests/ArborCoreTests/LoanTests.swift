@@ -17,13 +17,15 @@ private let minimums = [
 
 /// Room that was made for a window goes back where it came from (F61, LayoutTree+Loans.swift).
 @Suite struct LoanTests {
+  /// With a column for the Desktop unless told otherwise: it is the Desktop between two windows that lends here, and is owed.
   @discardableResult
   func serve(
-    _ tree: inout LayoutTree, in frame: CGRect = screen, known: [WindowID: CGSize] = minimums, leaving: Set<NodeID> = []
+    _ tree: inout LayoutTree, in frame: CGRect = screen, known: [WindowID: CGSize] = minimums, leaving: Set<NodeID> = [],
+    desktopColumn: Bool = true
   ) -> Layout {
     MakeRoom.serve(
-      &tree, camera: tree.root, in: frame, options: LayoutOptions(), isPresent: { _ in true }, minimumSize: { known[$0] },
-      terms: MakeRoom.Terms(desktopIsInUse: false, leaving: leaving)
+      &tree, camera: tree.root, in: frame, options: LayoutOptions(desktopColumn: desktopColumn), isPresent: { _ in true },
+      minimumSize: { known[$0] }, terms: MakeRoom.Terms(desktopIsInUse: false, leaving: leaving)
     ).layout
   }
 
@@ -39,12 +41,12 @@ private let minimums = [
     for (part, wanted) in zip(parts, expected) { #expect(abs(part - wanted) < 1e-9, "\(parts)", sourceLocation: sourceLocation) }
   }
 
-  /// [Notes | Desktop | Safari], both served: 709, 109, 574.
-  func served() -> LayoutTree {
+  /// [Notes | Desktop | Safari], both served: 709, 109, 574. Without a column for the Desktop [Notes | Safari]: 709 and 695.
+  func served(desktopColumn: Bool = true) -> LayoutTree {
     var tree = LayoutTree()
-    tree.dock(notes, beside: tree.root, edge: .left)
-    tree.dock(safari, beside: tree.root, edge: .right)
-    let layout = serve(&tree)
+    tree.dock(notes, beside: tree.root, edge: .left, desktopColumn: desktopColumn)
+    tree.dock(safari, beside: tree.root, edge: .right, desktopColumn: desktopColumn)
+    let layout = serve(&tree, desktopColumn: desktopColumn)
     #expect(layout.windowFrames.count == 2)
     #expect(tree.hasLoans)
     return tree
@@ -60,12 +62,13 @@ private let minimums = [
     #expect(!tree.hasLoans)
   }
 
-  @Test func aColumnThatGrewForAWindowInItShrinksAgainWhenThatWindowLeaves() throws {
+  @Test(arguments: [true, false])
+  func aColumnThatGrewForAWindowInItShrinksAgainWhenThatWindowLeaves(desktopColumn: Bool) throws {
     var tree = LayoutTree()
-    let first = tree.dock(safari, beside: tree.root, edge: .left)
+    let first = tree.dock(safari, beside: tree.root, edge: .left, desktopColumn: desktopColumn)
     expectParts(tree, [0.5, 0.5])
-    tree.dock(mail, beside: first, edge: .bottom)
-    #expect(serve(&tree).windowFrames[mail]!.width == 864)
+    tree.dock(mail, beside: first, edge: .bottom, desktopColumn: desktopColumn)
+    #expect(serve(&tree, desktopColumn: desktopColumn).windowFrames[mail]!.width == 864)
     #expect(parts(tree)[0] > 0.6)
     tree.remove(mail)
     expectParts(tree, [0.5, 0.5])
@@ -85,22 +88,22 @@ private let minimums = [
     for (now, then) in zip(parts(tree), parts(small)) { #expect(abs(now - then) < 1e-9) }
   }
 
-  @Test func framedOnItsOwnAWindowGivesNothingBack() throws {
-    var tree = served()
+  @Test(arguments: [true, false]) func framedOnItsOwnAWindowGivesNothingBack(desktopColumn: Bool) throws {
+    var tree = served(desktopColumn: desktopColumn)
     let before = tree
     for window in [notes, safari] {
       _ = MakeRoom.serve(
-        &tree, camera: try #require(tree.leaf(containing: window)), in: screen, options: LayoutOptions(), isPresent: { _ in true },
-        minimumSize: { minimums[$0] }, terms: MakeRoom.Terms(desktopIsInUse: false))
+        &tree, camera: try #require(tree.leaf(containing: window)), in: screen, options: LayoutOptions(desktopColumn: desktopColumn),
+        isPresent: { _ in true }, minimumSize: { minimums[$0] }, terms: MakeRoom.Terms(desktopIsInUse: false))
       #expect(tree == before, "it has the whole display, which says nothing about what it can spare beside the others")
     }
   }
 
-  @Test func aWindowNothingIsKnownAboutGivesNothingBack() {
+  @Test(arguments: [true, false]) func aWindowNothingIsKnownAboutGivesNothingBack(desktopColumn: Bool) {
     // After a launch: what it can spare could only be found out by asking it.
-    var tree = served()
+    var tree = served(desktopColumn: desktopColumn)
     let before = tree
-    serve(&tree, in: CGRect(x: 0, y: 25, width: 1920, height: 1055), known: [:])
+    serve(&tree, in: CGRect(x: 0, y: 25, width: 1920, height: 1055), known: [:], desktopColumn: desktopColumn)
     #expect(tree == before)
   }
 
@@ -123,11 +126,12 @@ private let minimums = [
     try #require(layout.seams.first { $0.leading == leading && $0.trailing == trailing })
   }
 
-  /// [plain | Notes | Desktop]: Notes stands at its 709 on what the Desktop lent it, on the side away from `plain`.
+  /// [plain | Notes | Desktop]: Notes stands at its 709 on what the Desktop lent it, on the side away from `plain`. (With a column for the
+  /// Desktop: it has to have a share to lend of.)
   func lentFromTheFarSide() -> (LayoutTree, Layout) {
     var tree = LayoutTree()
     let first = tree.dock(plain, beside: tree.root, edge: .left)
-    tree.dock(notes, beside: first, edge: .right)
+    tree.dock(notes, beside: first, edge: .right, desktopColumn: true)
     let layout = serve(&tree)
     #expect(layout.windowFrames[notes]?.width == 709)
     #expect(tree.hasLoans)
@@ -267,8 +271,8 @@ private let minimums = [
     let known = [notes: CGSize(width: 800, height: 300), safari: CGSize(width: 700, height: 240)]
     var tree = LayoutTree()
     tree.dock(plain, beside: tree.root, edge: .left)
-    tree.dock(notes, beside: tree.root, edge: .left)
-    tree.dock(safari, beside: tree.root, edge: .right)
+    tree.dock(notes, beside: tree.root, edge: .left, desktopColumn: true)
+    tree.dock(safari, beside: tree.root, edge: .right, desktopColumn: true)
     let layout = serve(&tree, in: wide, known: known)
     #expect(layout.windowFrames[notes]?.width == 800 && layout.windowFrames[safari]?.width == 700 && layout.desktopFrame != nil)
     tree.moveBoundary(at: try seam(layout, tree.leaf(containing: notes), tree.leaf(containing: plain)), by: 10)
@@ -317,7 +321,7 @@ private let minimums = [
   @Test func aGapThatDidNotMoveSettlesNothing() throws {
     var tree = LayoutTree()
     let first = tree.dock(plain, beside: tree.root, edge: .left)
-    let leaf = tree.dock(notes, beside: first, edge: .right)
+    let leaf = tree.dock(notes, beside: first, edge: .right, desktopColumn: true)
     let known = [notes: CGSize(width: 1000, height: 300)]
     let layout = serve(&tree, known: known)
     #expect(layout.nodeFrames[tree.desktop]?.width == 80, "as far as a gap can be dragged")

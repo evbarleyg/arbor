@@ -12,7 +12,7 @@ private let side = DisplaySnapshot(
 
 /// The line around the window that has the keyboard (docs/features/F37-focus-ring.md).
 @Suite @MainActor struct FocusRingScenarioTests {
-  /// [a | b | Desktop | c], with the keyboard on c, the window docked last, and long enough ago that
+  /// [a | b | c], thirds, with the keyboard on c, the window docked last, and long enough ago that
   /// nothing that happens next counts as caused by those commands.
   /// `apart`: each app is a process of its own, as a story about ⌘Tab needs. Otherwise they are one, and a switch among them is ⌘`.
   func makeHarness(settings: Settings = Settings(), apart: Bool = false) -> (Harness, WindowID, WindowID, WindowID) {
@@ -378,11 +378,11 @@ private let side = DisplaySnapshot(
   }
 
   @Test func theRingReturnsAfterAFloatingWindowIsDropped() {
-    // Dropping a floating window on the Desktop lays nothing out again.
+    // Dropping a floating window where it goes on floating, over the middle of b, lays nothing out again.
     let (h, _, _, _) = makeHarness()
-    let f = h.system.open(app: "Music", frame: CGRect(x: 760, y: 300, width: 200, height: 200))
+    let f = h.system.open(app: "Music", frame: CGRect(x: 600, y: 300, width: 200, height: 200))
     h.system.userFocus(f)
-    h.system.drag(f, through: [CGPoint(x: 860, y: 310), CGPoint(x: 870, y: 350), CGPoint(x: 880, y: 400)])
+    h.system.drag(f, through: [CGPoint(x: 700, y: 310), CGPoint(x: 710, y: 350), CGPoint(x: 720, y: 400)])
     h.scheduler.advance(by: 0.1)
     expectRing(h, around: f)
   }

@@ -24,7 +24,7 @@ public struct Settings: Codable, Equatable, Sendable {
   public var excludedBundleIDs: [String] = []
   /// Global keyboard shortcuts (⌃⌥ by default; see KeyBindings.swift).
   public var hotkeysEnabled: Bool = true
-  /// Width of the Desktop column created by `arrange`, relative to a window column.
+  /// Width of the Desktop column created by `arrange`, relative to a window column. Read only with `desktopColumn` on.
   public var arrangeDesktopWeight: Double = 0.5
   /// Changes to the keyboard shortcuts, chord to command text: `"ctrl+opt+h": "dock left"`. A null
   /// command removes that chord's default. See `KeyBindings.effective(settings:)`.
@@ -227,6 +227,12 @@ public struct Settings: Codable, Equatable, Sendable {
   /// returns. Off, as it ships, a floating window's frame is its person's: Arbor sets it only to take the window out
   /// of view and to put it back exactly where it was (collab/QUESTIONS.md, Q20).
   public var floatingWindowsMakeWay: Bool = false
+  /// The Desktop has a share of its own among docked windows, as in the first build: a second dock makes thirds (window, Desktop,
+  /// window), Arrange Windows leaves a column `arrangeDesktopWeight` wide, and room taken from the Desktop is owed to it. Off, the
+  /// Desktop is what is left over: a dock takes that first, all of it, and docked windows give only when nothing is left; two
+  /// docks are two halves and Arrange Windows leaves nothing over (collab/QUESTIONS.md, Q28 and Q29). A key of its own because a
+  /// settings.json may hold the old width at its floor as somebody's choice, and would keep the column they wanted to be rid of.
+  public var desktopColumn: Bool = false
 
   public init() {}
 
@@ -247,8 +253,12 @@ public struct Settings: Codable, Equatable, Sendable {
     LayoutOptions(
       gap: CGFloat(gap),
       minimumUsableSize: CGSize(width: minimumUsableWidth, height: minimumUsableHeight),
-      shareRemovedSpace: shareRemovedSpace)
+      shareRemovedSpace: shareRemovedSpace, desktopColumn: desktopColumn)
   }
+
+  /// How wide Arrange Windows, `balance` and a `layout` line that does not mention it leave the Desktop, counted in windows. Nil: it
+  /// has no room.
+  public var desktopWeightWhenArranged: Double? { desktopColumn ? arrangeDesktopWeight : nil }
 
   /// `animationDuration` kept between 0 and 2 seconds. A value that is not a number counts as the default.
   public var motionDuration: Double {
@@ -303,6 +313,7 @@ public struct Settings: Codable, Equatable, Sendable {
     case shareRemovedSpace, shrinkOutOfView
     case pointerGestures
     case floatingWindowsMakeWay
+    case desktopColumn
   }
 
   public init(from decoder: any Decoder) throws {
@@ -411,5 +422,6 @@ public struct Settings: Codable, Equatable, Sendable {
     try read(.shrinkOutOfView, into: &shrinkOutOfView)
     try read(.pointerGestures, into: &pointerGestures)
     try read(.floatingWindowsMakeWay, into: &floatingWindowsMakeWay)
+    try read(.desktopColumn, into: &desktopColumn)
   }
 }

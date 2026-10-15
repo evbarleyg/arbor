@@ -7,9 +7,10 @@ import Testing
 /// F22 on a held view (F58): the keyboard goes on working among the windows an audience sees, and nothing else comes in.
 @Suite @MainActor struct TilingWhileHeldTests {
   /// A | (B over C) framed as B over C, with A out of view.
-  private func framedPair() -> (Harness, [WindowID]) {
+  private func framedPair(settings: Settings = Settings()) -> (Harness, [WindowID]) {
     tilingScenario(
-      ["A", "B", "C"], ["dock $0 left", "dock $1 right", "dock $2 beside $1 bottom", "zoom $1", "out", "focus $1", "hold"])
+      ["A", "B", "C"], ["dock $0 left", "dock $1 right", "dock $2 beside $1 bottom", "zoom $1", "out", "focus $1", "hold"],
+      settings: settings)
   }
 
   @Test func focusGoesFromWindowToWindowInView() {
@@ -102,7 +103,7 @@ import Testing
 
   /// `hold still` refuses nothing a person asks for.
   @Test func holdingStillTheViewFollowsTheKeyboardAsEver() {
-    let (h, w) = framedPair()
+    let (h, w) = framedPair(settings: .withDesktopColumn)
     runOK(h, "release")
     runOK(h, "hold still")
     // The Desktop lies between them and is a stop, as for `neighbor`.

@@ -13,8 +13,8 @@ import Testing
 /// click, says what they do, and offers the fix in one step, with the way back; then the first dock is invited.
 @Suite @MainActor struct FirstFiveMinutesTests {
   /// Three windows of the person's own, and what has been done to them.
-  func makeDesk() -> (Harness, [WindowID], [CGRect?]) {
-    let h = Harness()
+  func makeDesk(settings: Settings = Harness.settingsWhenNoneAreGiven) -> (Harness, [WindowID], [CGRect?]) {
+    let h = Harness(settings: settings)
     let windows = [
       h.system.open(app: "Safari", frame: CGRect(x: 200, y: 120, width: 800, height: 600)),
       h.system.open(app: "Mail", frame: CGRect(x: 420, y: 200, width: 700, height: 500)),
@@ -51,7 +51,7 @@ import Testing
   /// The way most will go: the permission, then the four moves as they are worded, on a Mac as it comes. Nothing of macOS's is touched or
   /// spoken of.
   @Test func thePermissionAndTheFourMoves() throws {
-    let (h, windows, found) = makeDesk()
+    let (h, windows, found) = makeDesk(settings: Settings())
     h.launchForTheFirstTime()
     #expect(h.welcome.isOpen && !h.controller.isRunning)
     #expect(nothingHasMoved(h, windows, found))
@@ -82,12 +82,14 @@ import Testing
     h.key("ctrl+opt+left")
     #expect(h.workspace.isDocked(windows[2]))
     #expect(h.welcome.model.steps.map(\.isDone) == [true, false, false, false])
+    // The window keeps to the Desktop, which is the half beside the first. It follows at once.
+    #expect(h.welcome.model.desktops == [CGRect(x: 726, y: 37, width: 702, height: 851)] && h.welcome.model.desktops == [h.layout?.desktopFrame])
     h.system.userFocus(windows[1])
     h.key("ctrl+opt+right")
     #expect(h.workspace.isDocked(windows[1]) && h.workspace.isFloating(windows[0]))
     #expect(h.welcome.model.steps.map(\.isDone) == [true, true, false, false])
-    // The window keeps to the Desktop, which lies between the two, where the third window is. It follows at once.
-    #expect(h.welcome.model.desktops == [h.layout?.desktopFrame])
+    // The second takes all that is left: there is no Desktop to keep to any more, which the window hears of at once, too.
+    #expect(h.welcome.model.desktops.isEmpty && h.layout != nil && h.layout?.desktopFrame == nil)
     let arranged = windows.map { h.frame($0) }
     let framed = h.key("ctrl+opt+return")
     #expect(framed?.ok == true, "\(framed?.message ?? "no such shortcut")")
@@ -128,6 +130,19 @@ import Testing
     h.permissionArrives()
     h.system.userFocus(windows[2])
     #expect(h.key("ctrl+opt+left")?.ok == true && h.workspace.isDocked(windows[2]))
+  }
+
+  /// With a column for the Desktop it lies between the two, where the third window is, and the welcome window keeps to it there.
+  @Test func withAColumnForTheDesktopTheWindowKeepsBetweenTheTwo() {
+    let (h, windows, _) = makeDesk(settings: .withDesktopColumn)
+    h.launchForTheFirstTime(permitted: true)
+    h.welcome.click("Continue")
+    h.system.userFocus(windows[2])
+    h.key("ctrl+opt+left")
+    h.system.userFocus(windows[1])
+    h.key("ctrl+opt+right")
+    #expect(h.welcome.model.page == .firstSteps)
+    #expect(h.welcome.model.desktops == [CGRect(x: 488, y: 37, width: 464, height: 851)] && h.welcome.model.desktops == [h.layout?.desktopFrame])
   }
 
   /// The one way back the coach names does what it says.

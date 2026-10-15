@@ -9,16 +9,17 @@ private let c = WindowID(3)
 private let d = WindowID(4)
 private let dragged = WindowID(9)
 
-/// root(h)[ column(v)[ a, row(h)[c, d] ], desktop, b ]
+/// root(h)[ column(v)[ a, row(h)[c, d] ], desktop, b ]. As it ships b took all that was left: two halves and a Desktop without
+/// room. With `desktopColumn` thirds, for the tests that go to the Desktop between the windows or see it as a tile.
 private struct Fixture {
   var tree = LayoutTree()
   let leafA: NodeID, leafB: NodeID, leafC: NodeID, leafD: NodeID
   var column: NodeID { tree.parent(of: leafA)! }
   var row: NodeID { tree.parent(of: leafC)! }
 
-  init() {
-    leafA = tree.dock(a, beside: tree.root, edge: .left)
-    leafB = tree.dock(b, beside: tree.root, edge: .right)
+  init(desktopColumn: Bool = false) {
+    leafA = tree.dock(a, beside: tree.root, edge: .left, desktopColumn: desktopColumn)
+    leafB = tree.dock(b, beside: tree.root, edge: .right, desktopColumn: desktopColumn)
     leafC = tree.dock(c, beside: leafA, edge: .bottom)
     leafD = tree.dock(d, beside: leafC, edge: .right)
   }
@@ -71,7 +72,7 @@ private struct Fixture {
   }
 
   @Test func steppingInNeverChoosesAnAbsentWindow() {
-    let f = Fixture()
+    let f = Fixture(desktopColumn: true)
     let absent: Set<WindowID> = [b]
     let layout = f.layout(without: absent)
     let view = f.view(without: absent)
@@ -82,7 +83,7 @@ private struct Fixture {
   }
 
   @Test func neighboursSkipAbsentWindows() {
-    let f = Fixture()
+    let f = Fixture(desktopColumn: true)
     #expect(Navigation.neighbor(of: f.leafC, toward: .right, in: f.view()) == f.leafD)
     #expect(Navigation.neighbor(of: f.leafC, toward: .right, in: f.view(without: [d])) == f.tree.desktop)
     #expect(Navigation.neighbor(of: f.leafB, toward: .left, in: f.view()) == f.tree.desktop)
@@ -129,17 +130,19 @@ private struct Fixture {
   }
 
   /// T06: the space a window leaves is shared along its whole row, in proportion, not handed to one neighbour.
-  @Test func theSpaceAWindowLeavesIsSharedWithTheWholeRow() {
+  /// A Desktop with a column of its own is one of the row; without one nothing was left over, and nothing is afterwards.
+  @Test(arguments: [false, true]) func theSpaceAWindowLeavesIsSharedWithTheWholeRow(desktopColumn: Bool) {
     var tree = LayoutTree()
-    let leaves = (1...4).map { tree.dock(WindowID($0), beside: tree.root, edge: .left) }
+    let leaves = (1...4).map { tree.dock(WindowID($0), beside: tree.root, edge: .left, desktopColumn: desktopColumn) }
     func widths(_ tree: LayoutTree) -> [NodeID: CGFloat] {
       LayoutEngine.layout(tree, camera: tree.root, in: screen, isPresent: { _ in true }).nodeFrames.mapValues(\.width)
     }
     let before = widths(tree)
     tree.remove(WindowID(2))
     let after = widths(tree)
-    let survivors = leaves.filter(tree.contains) + [tree.desktop]
-    #expect(survivors.count == 4)
+    let survivors = leaves.filter(tree.contains) + (desktopColumn ? [tree.desktop] : [])
+    #expect(survivors.count == (desktopColumn ? 4 : 3))
+    #expect((before[tree.desktop] != nil) == desktopColumn && (after[tree.desktop] != nil) == desktopColumn)
     let gains = survivors.map { after[$0]! - before[$0]! }
     #expect(gains.allSatisfy { $0 > 0 })
     #expect(gains.max()! - gains.min()! <= 1, "equal windows gain equally: \(gains)")
@@ -177,7 +180,7 @@ private struct Fixture {
 
   @Test func aWindowCornerBelongsToTheEdgeThatIsNearerInProportion() {
     let f = Fixture()
-    let frame = f.layout().windowFrames[b]!  // about 464 wide and 851 tall
+    let frame = f.layout().windowFrames[b]!  // 702 wide and 851 tall
     #expect(resolve(CGPoint(x: frame.minX + 40, y: frame.minY + 40), f) == .beside(f.leafB, .top))
     #expect(resolve(CGPoint(x: frame.minX + 10, y: frame.minY + 40), f) == .beside(f.leafB, .left))
     #expect(resolve(CGPoint(x: frame.midX, y: frame.maxY - 20), f) == .beside(f.leafB, .bottom))
@@ -207,7 +210,7 @@ private struct Fixture {
   }
 
   @Test func droppingOnATileDocksBesideWhatItStandsFor() {
-    let f = Fixture()
+    let f = Fixture(desktopColumn: true)
     let layout = f.layout(options: LayoutOptions(minimumUsableSize: CGSize(width: 500, height: 300)))
     let group = layout.tiles.first { $0.node == f.column }!
     #expect(group.kind == .group)
@@ -225,7 +228,7 @@ private struct Fixture {
   /// A window inside a group tile has no slot of its own in view, so the tile is a target like any other.
   @Test func aWindowDraggedOutOfAGroupTileCanDockBesideTheGroup() {
     let f = Fixture()
-    let layout = f.layout(options: LayoutOptions(minimumUsableSize: CGSize(width: 500, height: 300)))
+    let layout = f.layout(options: LayoutOptions(minimumUsableSize: CGSize(width: 750, height: 300)))
     let group = layout.tiles.first { $0.node == f.column }!
     let target = resolve(CGPoint(x: group.frame.maxX - 5, y: group.frame.midY), f, layout: layout, window: a)
     #expect(target == .beside(f.column, .right))

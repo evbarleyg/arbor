@@ -10,8 +10,8 @@ import Testing
   let yellow = RGBA(red: 0.98, green: 0.85, blue: 0.3)
 
   /// [a / b | Desktop | c] on a display of `size`, which decides how large the tiles are. Each window
-  /// belongs to its own app.
-  func makeHarness(size: CGSize = CGSize(width: 700, height: 500), settings: Settings = Settings()) -> Harness {
+  /// belongs to its own app. With a column for the Desktop, so that there is a tile of each kind, the Desktop's too.
+  func makeHarness(size: CGSize = CGSize(width: 700, height: 500), settings: Settings = .withDesktopColumn) -> Harness {
     let frame = CGRect(origin: .zero, size: size)
     let h = Harness(
       displays: [DisplaySnapshot(id: DisplayID("main"), frame: frame, visibleFrame: frame, isMain: true)],
@@ -51,7 +51,7 @@ import Testing
     #expect(Set(standard.map(\.kind)) == [.group, .desktop, .window])
     #expect(standard.allSatisfy { $0.usesAppColour && $0.colourAmount == 0.25 && $0.style == .icon })
 
-    var settings = Settings()
+    var settings = Settings.withDesktopColumn
     settings.appColours = false
     settings.appColourAmount = 0.7
     settings.tileStyle = "name"
@@ -59,13 +59,13 @@ import Testing
     #expect(h.overlays.tiles[h.display]?.count == 3)
     #expect(h.overlays.tiles[h.display]?.allSatisfy { !$0.usesAppColour && $0.colourAmount == 0.7 && $0.style == .name } == true)
 
-    h.controller.loadSettings = { Settings() }
+    h.controller.loadSettings = { .withDesktopColumn }
     h.run("reload-settings")
     #expect(h.overlays.tiles[h.display] == standard)
   }
 
   @Test func settingsArborCannotUseReachTheTilesMadeSafe() {
-    var settings = Settings()
+    var settings = Settings.withDesktopColumn
     settings.appColourAmount = 12
     settings.tileStyle = "hologram"
     let h = makeHarness(settings: settings)
@@ -74,7 +74,7 @@ import Testing
 
   @Test func gapsShowTheirHandleHideItOrAreNoHandlesAtAll() {
     func harness(_ gapHandles: String) -> Harness {
-      var settings = Settings()
+      var settings = Settings.withDesktopColumn
       settings.gapHandles = gapHandles
       return makeHarness(size: CGSize(width: 1440, height: 900), settings: settings)
     }
@@ -99,7 +99,7 @@ import Testing
     #expect(off.layout?.windowFrames == shown.layout?.windowFrames)
     #expect(off.run("resize 101 right 40").ok, "the command still resizes")
 
-    off.controller.loadSettings = { Settings() }
+    off.controller.loadSettings = { .withDesktopColumn }
     off.run("reload-settings")
     #expect(off.overlays.seams[off.display]?.count == 3)
   }
@@ -161,7 +161,7 @@ import Testing
     #expect(window.icons.isEmpty && window.caption == nil && window.glyph == nil)
     #expect(window.plate == art(try windowTile(200, 300), colour: blue).plate, "the colour is the same")
 
-    var settings = Settings()
+    var settings = Settings.withDesktopColumn
     settings.tileStyle = "plain"
     let h = makeHarness(settings: settings)
     let desktop = art(try #require(tile(.desktop, h)))
@@ -376,7 +376,7 @@ import Testing
     for width in stride(from: CGFloat(60), through: 760, by: 70) {
       for height in stride(from: CGFloat(50), through: 500, by: 45) {
         for style in ["icon", "name", "plain"] {
-          var settings = Settings()
+          var settings = Settings.withDesktopColumn
           settings.tileStyle = style
           let h = makeHarness(size: CGSize(width: width, height: height), settings: settings)
           for model in h.overlays.tiles[h.display] ?? [] {

@@ -48,7 +48,7 @@ private let studio = DisplaySnapshot(
       let (second, first) = (h.frame(windows[1])!, h.frame(windows[0])!)
       #expect(second.minX == content.minX && second.minY == content.minY && second.maxY == content.maxY, "\(display.name)")
       #expect(first.minX - second.maxX == gap, "between neighbours on \(display.name)")
-      #expect(h.controller.layouts[display.id]!.desktopFrame!.maxX == content.maxX)
+      #expect(first.maxX == content.maxX, "the second took all that was left on \(display.name)")
       expectWindowsMatchLayout(h, on: display.id)
     }
   }
@@ -67,13 +67,17 @@ private let studio = DisplaySnapshot(
 
   @Test func tilesStartAtTheDisplaysOwnSize() {
     let (h, small, large) = makeHarness()
-    // Three columns: about 470 points each on the laptop, about 830 on the large display.
+    // Two columns: about 710 points each on the laptop, about 1250 on the large display.
     for window in small + large { h.run("dock \(window.rawValue) left") }
-    #expect(h.controller.layouts[laptop.id]!.tiles.isEmpty, "470 is plenty where the limit is 240")
+    #expect(h.controller.layouts[laptop.id]!.tiles.isEmpty, "710 is plenty where the limit is 240")
+    #expect(h.controller.layouts[studio.id]!.tiles.isEmpty, "1250 is enough where it is 700")
+    // A third: about 830 each.
+    let third = h.system.open(app: "Terminal", frame: CGRect(x: 2000, y: 300, width: 500, height: 400))
+    h.run("dock \(third.rawValue) left")
     #expect(h.controller.layouts[studio.id]!.tiles.isEmpty, "830 is enough where it is 700")
     // A fourth: about 620 each.
-    let extra = h.system.open(app: "Terminal", frame: CGRect(x: 2000, y: 300, width: 500, height: 400))
-    h.run("dock \(extra.rawValue) left")
+    let fourth = h.system.open(app: "Music", frame: CGRect(x: 2200, y: 400, width: 500, height: 400))
+    h.run("dock \(fourth.rawValue) left")
     let tiles = h.controller.layouts[studio.id]!.tiles
     #expect(tiles.count == 4, "a size that would be fine on the laptop is a tile here")
     #expect(tiles.allSatisfy { $0.frame.width > 240 && $0.frame.width < 700 })

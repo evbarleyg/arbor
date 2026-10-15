@@ -7,7 +7,7 @@ import Testing
 
 /// New windows that open while one window is framed (docs/features/F57-new-windows-while-framed.md).
 @Suite @MainActor struct GuestWindowTests {
-  /// `[a | b | Desktop]`, framed on `a`.
+  /// `[a | b | Desktop]`, framed on `a`. As Arbor ships, the two are arranged in halves and the Desktop has no room.
   func framed(settings: Settings = Settings()) -> (Harness, a: WindowID, b: WindowID) {
     let h = Harness(settings: settings)
     let a = h.system.open(app: "Safari", pid: 11, frame: CGRect(x: 100, y: 100, width: 600, height: 400))
@@ -35,7 +35,7 @@ import Testing
   }
 
   @Test(arguments: [false, true]) func itIsInViewWheneverItsHostIs(makingWay: Bool) {
-    let (h, _, b) = framed(settings: makingWay ? .makingWay : Settings())
+    let (h, _, b) = framed(settings: (makingWay ? Settings.makingWay : Settings()).withDesktopColumn)
     let new = openGuest(h)
     h.run("show-all")
     #expect(h.system.isVisible(new))

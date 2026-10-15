@@ -38,9 +38,9 @@ import Testing
 
     // The next change of the layout is worth another try, and an app that has calmed down stays put.
     h.system.stubbornFrames[a] = nil
-    h.run("float \(b.rawValue)")
+    h.system.setMinimized(b, true)
     #expect(h.frame(a) == h.layout!.windowFrames[a])
-    #expect(h.frame(a) != slot, "the slot grew when Notes left")
+    #expect(h.frame(a) != slot, "the slot grew when Notes left for the Dock")
   }
 
   @Test func aWindowMovedNowAndThenIsAlwaysPutBack() {

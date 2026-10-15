@@ -14,7 +14,7 @@ private let side = DisplaySnapshot(
 /// Summoning (docs/features/F53-summon.md).
 @Suite @MainActor struct SummonTests {
   /// [editor | Desktop | browser], framed on the editor, which has the keyboard. The terminal floats, so it is
-  /// out of view with the Desktop.
+  /// out of view with the Desktop. As Arbor ships: two halves, and the Desktop between them has no room.
   func makeHarness(
     displays: [DisplaySnapshot] = [FakeWindowSystem.standardDisplay], settings: Settings = Settings()
   ) -> (Harness, editor: WindowID, browser: WindowID, terminal: WindowID) {
@@ -203,7 +203,7 @@ private let side = DisplaySnapshot(
 
   @Test func homeBringsItBackToTheDesktopAsAnOrdinaryWindow() {
     // "A window is gone: ⌃⌥0" has no exception.
-    let (h, editor, _, terminal) = makeHarness(displays: [main, side])
+    let (h, editor, _, terminal) = makeHarness(displays: [main, side], settings: .withDesktopColumn)
     let notes = h.system.open(app: "Notes", pid: 1004, frame: CGRect(x: 1600, y: 100, width: 300, height: 400))
     // A new window takes the keyboard, and commands act on the display that has it (F56): back to the main one.
     h.system.userFocus(editor)
@@ -373,7 +373,7 @@ private let side = DisplaySnapshot(
     // As for a pinned window: a command that moves the view says where the attention goes.
     let (h, _, browser, terminal) = makeHarness()
     h.run("summon Terminal")
-    h.run("neighbor right")
+    h.run("desktop")
     #expect(h.workspace.isSummoned(terminal) && h.system.focused == terminal, "nothing has arrived on the empty Desktop")
     h.run("neighbor right")
     #expect(h.system.focused == browser)
@@ -845,7 +845,7 @@ private let side = DisplaySnapshot(
   // MARK: Tiles
 
   @Test func withTheDesktopSqueezedIntoATileItComesAndGoesAllTheSame() {
-    let (h, editor, browser, terminal) = makeHarness()
+    let (h, editor, browser, terminal) = makeHarness(settings: .withDesktopColumn)
     h.run("show-all")
     h.run("resize \(editor.rawValue) right 150")
     h.run("resize \(browser.rawValue) left 150")
@@ -1430,7 +1430,7 @@ private let side = DisplaySnapshot(
   @Test func aWindowTheDesktopSqueezedIsSummonedAtItsOwnSize() {
     // Found by the real-window suite: "the first time: centred, its own size". The Desktop squeezes a window only where
     // floating windows make way, as until Q20.
-    let h = Harness(settings: .makingWay)
+    let h = Harness(settings: .makingWay.withDesktopColumn)
     // Not pid 1, which the harness takes for Arbor's own.
     let a = h.system.open(app: "A", pid: 1001)
     let b = h.system.open(app: "B", pid: 1002)
@@ -1453,7 +1453,7 @@ private let side = DisplaySnapshot(
   @Test func squeezedInViewWithTheKeyboardInItItIsSummonedThereAtItsOwnSize() {
     // Summoned where it is, so that it does not jump; but as small as the Desktop made it is not its size. It makes it small
     // only where floating windows make way, as until Q20.
-    let h = Harness(settings: .makingWay)
+    let h = Harness(settings: .makingWay.withDesktopColumn)
     let a = h.system.open(app: "A", pid: 1001)
     let b = h.system.open(app: "B", pid: 1002)
     let term = h.system.open(app: "Term", pid: 1003, frame: CGRect(x: 200, y: 200, width: 900, height: 400))
@@ -1479,7 +1479,7 @@ private let side = DisplaySnapshot(
   /// [editor | Desktop | browser], everything in view, the editor has the keyboard, and the terminal, alone on the
   /// Desktop, fills it. That takes `floatingWindowsMakeWay` as well since Q20.
   func makeHarnessWhereTheTerminalFillsTheDesktop() -> (Harness, editor: WindowID, terminal: WindowID, own: CGSize) {
-    var settings = Settings.makingWay
+    var settings = Settings.makingWay.withDesktopColumn
     settings.soleFloatTakesDesktop = true
     let (h, editor, _, terminal) = makeHarness(settings: settings)
     h.run("show-all")

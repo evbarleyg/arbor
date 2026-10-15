@@ -5,6 +5,16 @@ import ArborCore
 ///
 /// One chaining property for each option, named for the thing, in alphabetical order, and its line in `classic`.
 extension Settings {
+  /// The Desktop has a share of its own among docked windows: thirds at the second dock, a column after Arrange Windows.
+  public var withDesktopColumn: Settings {
+    var settings = self
+    settings.desktopColumn = true
+    return settings
+  }
+
+  /// The same, from what ships.
+  public static var withDesktopColumn: Settings { Settings().withDesktopColumn }
+
   /// The whole map of shortcuts instead of the nine (`shortcuts`; docs/KEYBOARD.md).
   public var withEveryKey: Settings {
     var settings = self
@@ -15,9 +25,21 @@ extension Settings {
   /// The same, from what ships.
   public static var withEveryKey: Settings { Settings().withEveryKey }
 
+  /// Floating windows are kept on the Desktop, where docked windows push them aside and squeeze them, as until Q20.
+  public var withFloatsMakingWay: Settings {
+    var settings = self
+    settings.floatingWindowsMakeWay = true
+    return settings
+  }
+
+  /// The same, from what ships.
+  public static var withFloatsMakingWay: Settings { Settings().withFloatsMakingWay }
+
   /// Arbor as the first build shipped it: all of them.
   public static var classic: Settings {
     Settings()
+      .withDesktopColumn
       .withEveryKey
+      .withFloatsMakingWay
   }
 }

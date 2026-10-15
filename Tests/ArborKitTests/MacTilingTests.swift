@@ -8,7 +8,7 @@ import Testing
 /// edge of the display, in the menu bar or with ⌥ held is macOS's: it takes the window to a tile of its own, asking nobody, or leaves it.
 /// Seen on a Mac before this: two previews, and the window went into Arbor's slot, to macOS's tile and back into the slot.
 ///
-/// The fake tiles as the Mac was seen to (`FakeWindowSystem.tiling`). The arrangement is [a | Desktop | b] with c floating.
+/// The fake tiles as the Mac was seen to (`FakeWindowSystem.tiling`). The arrangement is [a | b] with c floating over the two.
 @Suite @MainActor struct MacTilingTests {
   func scene(_ tiling: MacTiling = .on) -> DragScene {
     let s = DragScene()
@@ -17,7 +17,7 @@ import Testing
   }
 
   /// The places where macOS acts on the standard display, 1440×900 with a menu bar of 25, and what it makes of the floating
-  /// window, 400×300, and of a docked one, 464×851. They rest a hair short of the tile: a point to the left where they come
+  /// window, 400×300, and of a docked one, 702×851. They rest a hair short of the tile: a point to the left where they come
   /// from the left, a point lower where they reached lower than the tile (`sightings`).
   nonisolated static let places: [(CGPoint, CGRect, CGRect)] = [
     (CGPoint(x: 0, y: 450), CGRect(x: -1, y: 25, width: 720, height: 875), CGRect(x: -1, y: 26, width: 720, height: 875)),
@@ -51,7 +51,7 @@ import Testing
     let (point, _, tile) = Self.places[index]
     let s = scene()
     s.h.system.beginDrag(s.a)
-    s.h.system.moveDrag(to: s.onDesktop, holding: 0.3)
+    s.h.system.moveDrag(to: s.inTheGap, holding: 0.3)
     s.h.system.moveDrag(to: point, holding: 1)
     #expect(s.h.overlays.preview == nil)
     s.h.system.endDrag()
@@ -67,8 +67,8 @@ import Testing
   @Test(arguments: [CGPoint(x: 0, y: 450), CGPoint(x: 1439, y: 450), CGPoint(x: 700, y: 0), CGPoint(x: 0, y: 25), CGPoint(x: 1439, y: 899)])
   func onItsWayToTheEdgePointByPointNoPreviewEverShows(end: CGPoint) {
     let s = scene()
-    // From the middle of the Desktop, where nothing is offered either.
-    let start = CGPoint(x: s.desktop.midX, y: s.desktop.midY)
+    // From the gap between a and b, where nothing is offered either.
+    let start = s.inTheGap
     s.h.system.beginDrag(s.c, at: start)
     let steps = Int(max(abs(end.x - start.x), abs(end.y - start.y)))
     for step in 1...steps {
@@ -110,7 +110,7 @@ import Testing
     let s = scene()
     let slot = s.frame(s.b)
     s.h.system.beginDrag(s.b)
-    s.h.system.moveDrag(to: s.onDesktop, holding: 0.3)
+    s.h.system.moveDrag(to: s.inTheGap, holding: 0.3)
     s.h.system.moveDrag(to: CGPoint(x: 5, y: 450), holding: 1)
     #expect(s.h.overlays.preview == nil)
     s.h.system.endDrag()
@@ -266,13 +266,13 @@ import Testing
     let s = scene()
     s.h.system.optionAloneTiles = true
     s.h.system.beginDrag(s.a)
-    s.h.system.moveDrag(to: s.onDesktop, holding: 0.3)
+    s.h.system.moveDrag(to: s.inTheGap, holding: 0.3)
     s.h.system.holdModifierKeys(.option)
     s.h.system.holdDrag(for: 1)
     s.h.system.endDrag()
     s.h.system.holdModifierKeys([])
     s.h.scheduler.advance(by: 3)
-    #expect(s.frame(s.a) == CGRect(x: 0, y: 26, width: 720, height: 875))
+    #expect(s.frame(s.a) == CGRect(x: 719, y: 26, width: 720, height: 875), "the right half, come to from the left and from below")
     #expect(s.h.workspace.isFloating(s.a))
     #expect(!s.h.system.frameLog.contains { $0.window == s.a }, "\(s.h.system.frameLog)")
     s.expectNothingLeftBehind()
@@ -288,7 +288,7 @@ import Testing
     let slot = s.frame(s.a).size
     #expect(slot != own)
     s.h.system.beginDrag(s.a)
-    s.h.system.moveDrag(to: s.onDesktop, holding: 0.3)
+    s.h.system.moveDrag(to: s.inTheGap, holding: 0.3)
     s.h.system.holdModifierKeys(.option)
     s.h.system.holdDrag(for: 1)
     s.h.system.endDrag()
@@ -315,7 +315,7 @@ import Testing
   @Test func aReleaseThatArborNeverSawIsNoReasonToPullTheWindowBack() {
     let s = scene()
     s.h.system.beginDrag(s.a)
-    s.h.system.moveDrag(to: s.onDesktop, holding: 0.3)
+    s.h.system.moveDrag(to: s.inTheGap, holding: 0.3)
     s.h.system.moveDrag(to: CGPoint(x: 700, y: 0), holding: 0.3)
     s.h.system.loseTheReleaseOfTheDrag()
     s.h.scheduler.advance(by: 3)
@@ -332,7 +332,7 @@ import Testing
       let s = scene()
       let window = docked ? s.a : s.c
       s.h.system.beginDrag(window)
-      s.h.system.moveDrag(to: s.onDesktop)
+      s.h.system.moveDrag(to: s.inTheGap)
       s.h.system.moveDrag(to: CGPoint(x: 700, y: 10), holding: 0.05)
       let letGo = s.frame(window)
       s.h.system.endDrag()
@@ -574,7 +574,7 @@ import Testing
     let s = scene()
     let slot = s.frame(s.a)
     s.h.system.beginDrag(s.a)
-    s.h.system.moveDrag(to: s.onDesktop, holding: 0.3)
+    s.h.system.moveDrag(to: s.inTheGap, holding: 0.3)
     s.h.system.holdModifierKeys([.control, .option])
     s.h.run("pause")
     #expect(s.h.overlays.messages.allSatisfy { !$0.model.line.hasPrefix("macOS tiled") })
@@ -619,7 +619,7 @@ import Testing
     s.h.system.drag(s.c, through: [s.frame(s.c).center, CGPoint(x: 700, y: 0)])
     s.h.scheduler.advance(by: 3)
     #expect(s.frame(s.c) == s.h.visibleFrame)
-    s.h.system.drag(s.c, through: [CGPoint(x: 720, y: 35), s.onDesktop])
+    s.h.system.drag(s.c, through: [CGPoint(x: 720, y: 35), s.inTheGap])
     s.h.scheduler.advance(by: 3)
     #expect(s.frame(s.c).size == own)
     #expect(s.h.workspace.floating[s.c]?.size == own, "what is remembered: \(String(describing: s.h.workspace.floating[s.c]))")
@@ -651,7 +651,7 @@ import Testing
   /// With `soleFloatTakesDesktop` a lone floating window fills the Desktop and gets its own size back when it is dragged off. Not
   /// from Arbor where macOS is about to size it.
   @Test func aWindowThatFilledTheDesktopIsNotSizedByBoth() {
-    let s = DragScene { ($0.soleFloatTakesDesktop, $0.floatingWindowsMakeWay) = (true, true) }  // it takes both (F64)
+    let s = DragScene(settings: .withDesktopColumn) { ($0.soleFloatTakesDesktop, $0.floatingWindowsMakeWay) = (true, true) }  // it takes both (F64)
     s.h.system.tiling = .on
     s.h.scheduler.advance(by: 3)
     s.h.system.clearFrameLog()

@@ -555,7 +555,7 @@ private let side = DisplaySnapshot(
       visibleFrame: CGRect(x: 0, y: 25, width: 900, height: 575), isMain: true)
     var saved = PersistedState(workspaces: [:], hints: [:])
     for hint in [HeadsUpHint.docked, .outOfView] { saved.hintsShown[hint.rawValue] = HeadsUpHint.timesShown }
-    let h = Harness(displays: [small], saved: saved)
+    let h = Harness(displays: [small], settings: .withDesktopColumn, saved: saved)
     let a = h.system.open(app: "Safari", minimumSize: CGSize(width: 380, height: 300))
     let b = h.system.open(app: "Mail", minimumSize: CGSize(width: 380, height: 300))
     h.start()

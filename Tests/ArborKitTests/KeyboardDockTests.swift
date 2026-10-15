@@ -6,8 +6,8 @@ import Testing
 
 /// Walking a docked window around with `dock <edge>` (⌃⌥⌘ + arrow).
 @Suite @MainActor struct KeyboardDockTests {
-  /// Four windows arranged as `[a / b | c / d | Desktop]`.
-  func grid(settings: Settings = Settings()) -> (Harness, [WindowID]) {
+  /// Four windows arranged as `[a / b | c / d]`; with a column for the Desktop, `[a / b | c / d | Desktop]`.
+  func grid(settings: Settings = Harness.settingsWhenNoneAreGiven) -> (Harness, [WindowID]) {
     let h = Harness(settings: settings)
     let ids = ["A", "B", "C", "D"].enumerated().map { index, app in
       // Each a process of its own, so that one of them can be hidden.
@@ -71,7 +71,7 @@ import Testing
   /// While floating windows make way, as until Q20 (`floatingWindowsMakeWay`), they need a Desktop to be on. As Arbor ships they
   /// keep their frames whatever its size, and a `dock` keeps no room for their sake.
   @Test func walkingAWindowDoesNotSqueezeADesktopThatHoldsWindowsIntoATile() {
-    let (h, ids) = grid(settings: .makingWay)
+    let (h, ids) = grid(settings: .makingWay.withDesktopColumn)
     // A call window on the narrow Desktop column.
     let call = h.system.open(app: "Zoom", frame: CGRect(x: 1150, y: 200, width: 260, height: 300))
     h.system.userMove(call, to: CGRect(x: 1150, y: 200, width: 260, height: 300))
@@ -99,7 +99,7 @@ import Testing
   }
 
   @Test func steppingTowardsANarrowDesktopSharesTheRowInsteadOfHalvingTheDesktop() {
-    let (h, ids) = grid()
+    let (h, ids) = grid(settings: .withDesktopColumn)
     // c is at the top of the column next to the Desktop, which `arrange` keeps narrow.
     #expect(h.run("dock \(ids[2].rawValue) right").ok)
     #expect(h.layout!.windowFrames[ids[2]] != nil, "\(h.ascii())")
@@ -107,8 +107,9 @@ import Testing
     #expect(h.frame(ids[2])!.minX > h.frame(ids[3])!.maxX)
   }
 
+  /// The wide neighbour is the Desktop, which keeps a share: that takes a column for it.
   @Test func steppingBesideAWideNeighbourTakesHalfOfItAndMovesNothingElse() {
-    let h = Harness()
+    let h = Harness(settings: .withDesktopColumn)
     let a = h.system.open(app: "A")
     let c = h.system.open(app: "C")
     h.start()
@@ -130,8 +131,8 @@ import Testing
     case minimized, hidden
   }
 
-  /// `[safari / terminal | chrome | Desktop]`, as `arrange` makes it of three, each app a process of its own, and `terminal` away:
-  /// `safari` fills the column, and to the eye there is no group.
+  /// `[safari / terminal | chrome]`, as `arrange` makes it of three (with a column for the Desktop, `[safari / terminal | chrome | Desktop]`),
+  /// each app a process of its own, and `terminal` away: `safari` fills the column, and to the eye there is no group.
   func aColumnOfWhichOneIsAway(_ away: Away) -> (h: Harness, safari: WindowID, terminal: WindowID, chrome: WindowID) {
     let h = Harness()
     let safari = h.system.open(app: "Safari", pid: 11, frame: CGRect(x: 100, y: 100, width: 900, height: 700))
@@ -163,11 +164,11 @@ import Testing
   /// key took it out of a group that nobody could see: the same picture, both windows narrower, and "moved" for an answer.
   @Test(arguments: Away.allCases) func theKeyMovesTheWindowPastItsNeighbourAtTheFirstPress(away: Away) {
     let (h, safari, _, chrome) = aColumnOfWhichOneIsAway(away)
-    let (safariWas, chromeWas, desktopWas) = (h.frame(safari)!, h.frame(chrome)!, h.layout!.desktopFrame!)
+    let (safariWas, chromeWas, desktopWas) = (h.frame(safari)!, h.frame(chrome)!, h.layout!.desktopFrame)
     h.system.clearFrameLog()
     #expect(h.run("dock right").message == "moved \(safari) right")
     #expect(h.frame(chrome)!.maxX < h.frame(safari)!.minX, "\(h.ascii())")
-    // They trade places, and that is all: sizes travel with the windows, the Desktop is as it was, each moves once.
+    // They trade places, and that is all: sizes travel with the windows, the Desktop is as it was (a column, or none), each moves once.
     #expect(h.frame(safari)!.size == safariWas.size && h.frame(chrome)!.size == chromeWas.size, "\(h.ascii())")
     #expect(h.layout!.desktopFrame == desktopWas)
     #expect(h.system.frameLog.map(\.window).sorted() == [safari, chrome].sorted(), "\(h.system.frameLog)")
@@ -329,8 +330,10 @@ import Testing
   }
 
   /// `b | (c, away, over (d | a)) | Desktop`: to the eye `b | d | a | Desktop`, one row. `a` and `d` are a row that shows in a column that does not.
-  func aRowThatShowsInAColumnThatDoesNot(_ away: Away, desktopBeyond: Bool) -> (h: Harness, a: WindowID, b: WindowID, c: WindowID, d: WindowID) {
-    let (h, ids) = grid()
+  func aRowThatShowsInAColumnThatDoesNot(
+    _ away: Away, desktopBeyond: Bool, settings: Settings = Harness.settingsWhenNoneAreGiven
+  ) -> (h: Harness, a: WindowID, b: WindowID, c: WindowID, d: WindowID) {
+    let (h, ids) = grid(settings: settings)
     let (a, b, c, d) = (ids[0], ids[1], ids[2], ids[3])
     switch away {
     case .minimized: h.system.setMinimized(c, true)
@@ -344,9 +347,10 @@ import Testing
   }
 
   /// Taking it out of its row alone would leave the order as it is and resize all three under a "moved": no step. The press goes on until
-  /// something shows: out of the row and past its neighbour.
+  /// something shows: out of the row and past its neighbour. That is the Desktop, which keeps a share beside whoever is docked next to it: with
+  /// a column for it.
   @Test(arguments: Away.allCases) func aPressGoesOnUntilSomethingShows(away: Away) {
-    let (h, a, b, _, d) = aRowThatShowsInAColumnThatDoesNot(away, desktopBeyond: true)
+    let (h, a, b, _, d) = aRowThatShowsInAColumnThatDoesNot(away, desktopBeyond: true, settings: .withDesktopColumn)
     h.system.clearFrameLog()
     #expect(h.run("dock right").message.hasPrefix("moved \(a) right"))
     let desktop = picture(h)[WindowID(0)] ?? .zero
@@ -413,9 +417,10 @@ import Testing
   }
 
   /// Below the row lie two windows that have nothing to do with it. Other sizes in the row part one of them from the one that lay above it:
-  /// nobody who walks a window along the row calls that a step.
+  /// nobody who walks a window along the row calls that a step. (The step that only changes sizes is the one beside a Desktop that keeps a share:
+  /// with a column for it.)
   @Test(arguments: Away.allCases) func whatBecomesOfBystandersIsNoStep(away: Away) {
-    let (h, ids) = grid()
+    let (h, ids) = grid(settings: .withDesktopColumn)
     let (a, b, c, d) = (ids[0], ids[1], ids[2], ids[3])
     let (e, f) = (h.system.open(app: "E", pid: 1004), h.system.open(app: "F", pid: 1005))
     switch away {

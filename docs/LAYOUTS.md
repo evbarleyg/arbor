@@ -52,7 +52,7 @@ Every example on this page is run by the tests (`DocTranscriptTests`), against t
 | `A / B` | one above the other |
 | `( … )` | a group: `A \| (B / C)` |
 | `[A B]` | a tab group: the windows share one place |
-| `A:2` | a relative size: twice as large as a neighbour without one. From 0.001 to 1000, on anything: `(B / C):0.5`, `[A B]:2`, `Desktop:0.25` |
+| `A:2` | a relative size: twice as large as a neighbour without one. From 0.001 to 1000, on anything: `(B / C):0.5`, `[A B]:2`, `Desktop:0.25`. `Desktop:0`, and only that, is a Desktop without room in that place |
 | `Desktop` | the Desktop, where floating windows live |
 | `Safari` | an app, by name or bundle id |
 | `"Visual Studio Code"` | a name with spaces or punctuation goes in quotes, single or double |
@@ -111,33 +111,152 @@ something like `:1.373`.
 
 ## The Desktop
 
-Every display has one Desktop. If the line does not mention it, it is added at the right, `arrangeDesktopWeight` (0.5) times as
-wide as the average place beside it, as `arrange` does:
+Every display has one Desktop. It is what the docked windows leave over. A line that does not mention it gives it no room, and what is
+mentioned fills the display:
 
 <!-- windows: Safari, Mail -->
 ```console
 $ arborctl layout "Safari | Mail"
 arranged 2 windows
+$ arborctl ascii
+display main
++----------------------------------++----------------------------------+
+|w101 Safari                       ||w102 Mail                         |
+|                                  ||                                  |
+|                                  ||                                  |
+|                                  ||                                  |
+|                                  ||                                  |
+|                                  ||                                  |
+|                                  ||                                  |
+|                                  ||                                  |
+|                                  ||                                  |
+|                                  ||                                  |
+|                                  ||                                  |
+|                                  ||                                  |
+|                                  ||                                  |
+|                                  ||                                  |
+|                                  ||                                  |
+|                                  ||                                  |
+|                                  ||                                  |
+|                                  ||                                  |
+|                                  ||                                  |
+|                                  ||                                  |
++----------------------------------++----------------------------------+
+camera n1
 $ arborctl layout
-Safari | Mail | Desktop:0.5
+Safari | Mail
 ```
 
-While windows float on it, a Desktop that was added is made wide enough to use (`minimumUsableWidth`), so that the windows the line does not mention, the
-Terminal it was typed in among them, have somewhere to be:
+A Desktop without room is not written. It is still there: `arborctl desktop` shows it, and `back` returns. One exception: where it lies inside a group, which a
+line that leaves it out could not say, Arbor prints `Desktop:0`, as in `(Safari | Desktop:0 | Mail) / Notes` after docks left, right and bottom. It takes no room there
+either. It says that a view of those two shows what floats as well, and read back the line costs no saved view and no name.
+
+The windows the line does not mention, the Terminal it was typed in among them, stay in view. They float where they were, over the docked ones:
 
 <!-- windows: Safari, Mail, Notes, Terminal -->
 <!-- focuses: 104 -->
 ```console
 $ arborctl layout "Safari | Mail | Notes"
 arranged 3 windows
+$ arborctl ascii
+display main
++----------------------++----------------------++----------------------+
+|w101 Safari           ||w102 Mail             ||w103 Notes            |
+|                      ||                      ||                      |
+|                      ||                      ||                      |
+|              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~||                      |
+|              ~w104 Terminal                 ~||                      |
+|              ~       ||                     ~||                      |
+|              ~       ||                     ~||                      |
+|              ~       ||                     ~||                      |
+|              ~       ||                     ~||                      |
+|              ~       ||                     ~||                      |
+|              ~       ||                     ~||                      |
+|              ~       ||                     ~||                      |
+|              ~       ||                     ~||                      |
+|              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~||                      |
+|                      ||                      ||                      |
+|                      ||                      ||                      |
+|                      ||                      ||                      |
+|                      ||                      ||                      |
+|                      ||                      ||                      |
+|                      ||                      ||                      |
++----------------------++----------------------++----------------------+
+camera n1
 $ arborctl layout
-Safari | Mail | Notes | Desktop:0.638
+Safari | Mail | Notes
+```
+
+To give the Desktop room, write it. `Desktop` is as large as a window without a size, `Desktop:0.5` half as large, and it goes where the line puts it.
+Floating windows stay where they are:
+
+<!-- windows: Safari, Mail, Terminal -->
+<!-- focuses: 103 -->
+```console
+$ arborctl layout "Safari | Mail | Desktop:0.5"
+arranged 2 windows
+$ arborctl ascii
+display main
++---------------------------++--------------------------+...............
+|w101 Safari                ||w102 Mail                 |.desktop      .
+|                           ||                          |.             .
+|                           ||                          |.             .
+|              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~         |.             .
+|              ~w103 Terminal|                ~         |.             .
+|              ~            ||                ~         |.             .
+|              ~            ||                ~         |.             .
+|              ~            ||                ~         |.             .
+|              ~            ||                ~         |.             .
+|              ~            ||                ~         |.             .
+|              ~            ||                ~         |.             .
+|              ~            ||                ~         |.             .
+|              ~            ||                ~         |.             .
+|              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~         |.             .
+|                           ||                          |.             .
+|                           ||                          |.             .
+|                           ||                          |.             .
+|                           ||                          |.             .
+|                           ||                          |.             .
+|                           ||                          |.             .
++---------------------------++--------------------------+...............
+camera n1
+$ arborctl layout
+Safari | Mail | Desktop:0.5
 ```
 
 A Desktop that is mentioned is as large as the line says. Either way `layout` never takes a floating window out of view; if some were out of view and there is still no usable
 Desktop for them to come back to, the reply says how many.
 
 `Desktop` alone undocks everything on the display. An app that is really called Desktop goes in quotes: `"Desktop"`.
+
+### With a column for the Desktop
+
+With the setting `desktopColumn` on, a Desktop that is not mentioned is added at the right, `arrangeDesktopWeight` (0.5) times as
+wide as the average space beside it, as `arrange` does then:
+
+<!-- windows: Safari, Mail -->
+```console
+$ arborctl set desktopColumn true
+desktopColumn = true (was false)
+$ arborctl layout "Safari | Mail"
+arranged 2 windows
+$ arborctl layout
+Safari | Mail | Desktop:0.5
+```
+
+While windows float on it, a Desktop that was added is made wide enough to use (`minimumUsableWidth`), so that the windows the line does not mention have
+somewhere to be:
+
+<!-- windows: Safari, Mail, Notes, Terminal -->
+<!-- focuses: 104 -->
+```console
+$ arborctl set desktopColumn true
+desktopColumn = true (was false)
+$ arborctl layout "Safari | Mail | Notes"
+arranged 3 windows
+$ arborctl layout
+Safari | Mail | Notes | Desktop:0.638
+```
 
 ## Names
 
@@ -150,7 +269,7 @@ Studio Code, but not `Vis`).
 $ arborctl layout "'Visual Studio Code' | [Chrome com.tinyspeck.slackmacgap]"
 arranged 3 windows; 1 window is behind a tab: ⌘Tab or ⌘` brings one forward
 $ arborctl layout
-"Visual Studio Code" | ["Google Chrome" Slack] | Desktop:0.5
+"Visual Studio Code" | ["Google Chrome" Slack]
 ```
 
 Plain names are letters, digits, `.`, `-` and `_`. Anything else needs quotes, and the error says so:
@@ -177,11 +296,11 @@ remain, as tabs:
 $ arborctl layout "Safari | Mail | Safari"
 arranged 3 windows
 $ arborctl layout --ids
-103 | 104 | 101 | Desktop:0.638
+103 | 104 | 101
 $ arborctl layout "Safari | Mail | Safari*"
 arranged 4 windows; 1 window is behind a tab: ⌘Tab or ⌘` brings one forward
 $ arborctl layout --ids
-103 | 104 | [101 102] | Desktop:0.5
+103 | 104 | [101 102]
 ```
 
 Until tab groups have their strips, nothing on screen shows the windows behind a tab, so the reply counts them. ⌘Tab, or ⌘` within an app, brings one forward.
@@ -198,7 +317,7 @@ no window has the title, the place goes to another window of the app.
 $ arborctl layout "Safari~inbox | Safari | Mail"
 arranged 3 windows
 $ arborctl layout --ids
-102 | 101 | 103 | Desktop:0.5
+102 | 101 | 103
 ```
 
 The text is looked for anywhere in a title, and the whole of one title can be part of another's. So the closest wins: a window whose whole title it is, then one whose title
@@ -209,7 +328,7 @@ begins with it, then one that has it somewhere; and what one place names exactly
 $ arborctl layout "Mail~Inbox | Mail~'Inbox (2)' | Mail~Re"
 arranged 3 windows
 $ arborctl layout --ids
-103 | 102 | 101 | Desktop:0.5
+103 | 102 | 101
 ```
 
 ## What is missing, and what is not mentioned
@@ -256,7 +375,7 @@ to right and top to bottom. A display's id from `arborctl state` works too. Wind
 $ arborctl layout @2 "Mail / Notes"
 arranged 2 windows
 $ arborctl layout @2
-(Mail / Notes) | Desktop:0.5
+Mail / Notes
 $ arborctl layout @3 Safari
 no display 3; there are 2 displays, counted from @1
 ```
@@ -274,11 +393,11 @@ no display 3; there are 2 displays, counted from @1
 $ arborctl layout "102 | (101 / Mail)"
 arranged 3 windows
 $ arborctl layout
-Safari | (Safari / Mail) | Desktop:0.5
+Safari | (Safari / Mail)
 $ arborctl layout --titles
-Safari~"Inbox (3)" | (Safari~"Hacker News" / Mail~Drafts) | Desktop:0.5
+Safari~"Inbox (3)" | (Safari~"Hacker News" / Mail~Drafts)
 $ arborctl layout --ids
-102 | (101 / 103) | Desktop:0.5
+102 | (101 / 103)
 ```
 
 Titles are never printed unless you ask, and never reach the log. Two apps with the same name are written by bundle id.
@@ -306,7 +425,7 @@ A line works wherever a command does. In `settings.json`, single quotes save esc
 ```console
 $ open "arbor://layout/Safari%20%7C%20(Mail%20%2F%20Notes)"
 $ arborctl layout
-Safari | (Mail / Notes) | Desktop:0.5
+Safari | (Mail / Notes)
 ```
 
 Any web page can ask macOS to open a URL, so from a URL `layout` only arranges: `--open`, printing, and a line that names no window (`layout Desktop` is

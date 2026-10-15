@@ -113,22 +113,39 @@ extension LayoutTree {
 
   /// Puts right a split whose children have just changed: without any it is deleted, with one it gives
   /// way to that child unless it is kept firmly.
-  mutating func settle(_ split: NodeID, shareSpace: Bool = true, remap: inout Remap) {
+  mutating func settle(_ split: NodeID, shareSpace: Bool = true, away: Bool = false, remap: inout Remap) {
     guard let node = nodes[split], case .split(_, let children) = node.kind else { return }
     guard let only = children.first else {
-      detach(split, shareSpace: shareSpace, remap: &remap)
+      detach(split, shareSpace: shareSpace, away: away, remap: &remap)
       return
     }
     guard children.count == 1, !isKeptFirmly(split) else {
+      // Alone in a group that is kept, the Desktop has all of it.
+      if children == [desktop], !hasRoom(desktop) { nodes[desktop]!.weight = 1 }
       steadyWeights(of: split)
       return
     }
-    // The child takes the split's place.
+    // The child takes the split's place. A Desktop without room takes it without the room, which the others share: no column opens. But
+    // where everything is this and one other place it does take it, so that the other stays as it is (`detach`), unless what left was
+    // away, and the other has the room already. So it does where there are no others (a group that is kept, down to this).
+    let opensNoColumn =
+      only == desktop && !hasRoom(only) && node.parent.map { self.children(of: $0).contains { $0 != split && hasRoom($0) } } == true
+      && (away || !(node.parent == everything && self.children(of: everything).count == 2))
+    if opensNoColumn, !shareSpace, let row = node.parent.map({ self.children(of: $0) }), let index = row.firstIndex(of: split),
+      let heir = row[..<index].last(where: hasRoom) ?? row[(index + 1)...].first(where: hasRoom)
+    {
+      nodes[heir]!.weight += node.weight
+    }
     nodes[only]!.parent = node.parent
-    nodes[only]!.weight = node.weight
+    nodes[only]!.weight = opensNoColumn ? 0 : node.weight
     replaceChild(of: node.parent, old: split, new: only)
     nodes[split] = nil
     remap.record(split, movedTo: only)
+    // What was lent to the split, or by it, is the child's affair now: it has all of its room.
+    for index in loans.indices {
+      if loans[index].receiver == split { loans[index].receiver = only }
+      if loans[index].giver == split { loans[index].giver = only }
+    }
     // What pointed at the split points at the child now, which must not dissolve under it either.
     if let keeps = node.keeps { keep(only, for: keeps) }
     if let grandparent = node.parent { flattenIfSameAxis(only, into: grandparent, remap: &remap) }

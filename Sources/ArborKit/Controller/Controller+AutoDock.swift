@@ -71,7 +71,7 @@ extension Controller {
           before: before, after: after, adding: id, covering: placement.covers,
           desktopMayGo: terms.map {
             AutoDock.desktopMayBecomeATile(on: $0, options: options(for: display).layoutOptions)
-          } ?? false)
+          } ?? !settings.desktopColumn)
       {
         // A neighbour would not shrink to its share. What was learned about it stays.
         Log.info("docking \(id) left something too small to show; taking it back")

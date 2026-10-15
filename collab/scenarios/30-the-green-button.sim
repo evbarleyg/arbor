@@ -1,5 +1,5 @@
 # Proposed by the swarm (2026-10-14, F30); the documenter may edit or drop it.
-# Story: Safari is docked between Notes and the Desktop, where a calculator floats. A video goes full
+# Story: Notes and Safari are docked side by side, and a calculator floats. A video goes full
 # screen with the green button. Arbor leaves it to macOS: it keeps its place, is not turned into a tile,
 # and commands on it are refused. When it comes back, everything is where it was.
 # Reference: T63.
@@ -43,7 +43,8 @@ expect floating 103
 expect hidden 103
 fullscreen 103 off
 expect visible 103
-expect left-of 102 103
+expect at 103 1000 300
+expect size 103 300x400
 # Misspelt, it says how.
 fullscreen 103 maybe
 expect fail

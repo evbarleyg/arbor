@@ -18,24 +18,26 @@ private let notes = "com.example.notes"
 /// to it. It went there in two layouts: the window became a tile and was sent to its corner, then it was fetched; and from a view
 /// on one window everybody else came into view in between and left again. `make fuzz` found it, under the name of a crash.
 @Suite @MainActor struct ANewWindowIsDockedInOneActTests {
-  /// Safari, the Desktop and Mail, a third of the display each, at the sizes that ship. Half of Safari's third is too narrow to
+  /// Safari, Maps and Mail, a third of the display each, at the sizes that ship. Half of Safari's third is too narrow to
   /// show a window.
-  private func thirdsAndARuleThatHalvesOne(theOther: String = "Mail") -> (Harness, WindowID, WindowID) {
+  private func thirdsAndARuleThatHalvesOne(theOther: String = "Mail") -> (Harness, WindowID, WindowID, between: WindowID) {
     let h = harness([AppRule(app: notes, action: .dockBeside(bundleID: "com.example.safari", .right))])
     let a = h.system.open(app: "Safari")
     let b = h.system.open(app: theOther)
+    let between = h.system.open(app: "Maps")
     h.start()
     h.run("dock \(a.rawValue) left")
+    h.run("dock \(between.rawValue) right")
     h.run("dock \(b.rawValue) right")
-    return (h, a, b)
+    return (h, a, b, between)
   }
 
   @Test func itGoesStraightToWhereItEndsUp() throws {
-    let (h, a, b) = thirdsAndARuleThatHalvesOne()
+    let (h, a, b, between) = thirdsAndARuleThatHalvesOne()
     h.beginStep()
     let new = h.system.open(app: "Notes")
     #expect(h.jolts.isEmpty, "\(h.jolts)")
-    #expect(h.movesInStep == [new: 1, a: 1, b: 1], "it comes, they leave")
+    #expect(h.movesInStep == [new: 1, a: 1, between: 1, b: 1], "it comes, they leave")
     #expect(h.workspace.camera == h.workspace.tree.leaf(containing: new), "the view is on it, as it was before")
     #expect(try #require(h.layout).windowFrames[new] == h.frame(new))
     #expect(h.system.isVisible(new) && h.system.focused == new)
@@ -44,11 +46,11 @@ private let notes = "com.example.notes"
 
   /// The view is on Mail. What is out of view stays there: it came into view for the layout in between, and left again.
   @Test func fromAViewOnOneWindowNobodyElseComesAndGoes() throws {
-    let (h, a, b) = thirdsAndARuleThatHalvesOne()
+    let (h, a, b, between) = thirdsAndARuleThatHalvesOne()
     let c = h.system.open(app: "Music")
     h.run("dock \(c.rawValue) beside \(b.rawValue) bottom")
     h.run("zoom \(b.rawValue)")
-    let outOfView = [a: h.frame(a), c: h.frame(c)]
+    let outOfView = [a: h.frame(a), between: h.frame(between), c: h.frame(c)]
     h.beginStep()
     let new = h.system.open(app: "Notes")
     #expect(h.jolts.isEmpty, "\(h.jolts)")
@@ -75,7 +77,7 @@ private let notes = "com.example.notes"
   /// macOS says beforehand that its size cannot be changed, so nobody has to ask: larger than its slot and than what the
   /// neighbours can spare, it is not sent to a slot first.
   @Test func aWindowOfAFixedSizeThatFitsNowhereBesideTheOthersGoesStraightToo() {
-    let (h, _, _) = thirdsAndARuleThatHalvesOne()
+    let (h, _, _, _) = thirdsAndARuleThatHalvesOne()
     h.beginStep()
     let new = h.system.open(app: "Notes", frame: CGRect(x: 100, y: 100, width: 1300, height: 600), isResizable: false)
     #expect(h.jolts.isEmpty, "\(h.jolts)")
@@ -94,7 +96,7 @@ private let notes = "com.example.notes"
   /// back. The longer way is the one a window still goes whose keyboard comes after it.
   @Test(arguments: Before.allCases) func itEndsAsItDoesWhenTheKeyboardComesLater(before: Before) throws {
     func played(keyboardAtOnce: Bool) -> (Harness, WindowID) {
-      let (h, a, b) = thirdsAndARuleThatHalvesOne()
+      let (h, a, b, _) = thirdsAndARuleThatHalvesOne()
       switch before {
       case .nothing: break
       case .aViewOnOneWindow: h.run("zoom \(b.rawValue)")
@@ -154,7 +156,7 @@ private let notes = "com.example.notes"
   /// to see it: the move is taken back, as after any report that moved the view (`keyboardLeft`). Both are one app's, which puts one
   /// window in the place of another: macOS hands the keyboard on within an app.
   @Test func theMoveIsTakenBackIfTheWindowThatHadTheKeyboardGoesInTheSameMoment() {
-    let (h, a, b) = thirdsAndARuleThatHalvesOne(theOther: "Notes")
+    let (h, a, b, _) = thirdsAndARuleThatHalvesOne(theOther: "Notes")
     h.system.userFocus(b)
     let view = h.workspace.camera
     let new = h.system.open(app: "Notes")
@@ -169,7 +171,7 @@ private let notes = "com.example.notes"
 
   /// One undo takes the docking back, and the view with it.
   @Test func oneUndoTakesItBack() {
-    let (h, a, b) = thirdsAndARuleThatHalvesOne()
+    let (h, a, b, _) = thirdsAndARuleThatHalvesOne()
     let before = h.workspace
     let new = h.system.open(app: "Notes")
     #expect(h.run("undo").ok)
@@ -197,7 +199,7 @@ private let notes = "com.example.notes"
   /// Wider than half of Safari's third by what the neighbours can spare (F61), and known to be: the layout makes room for it.
   /// Going by the slot alone the view would have gone to it, and Mail would have left.
   @Test func whereRoomWillBeMadeTheViewStays() {
-    let (h, _, b) = thirdsAndARuleThatHalvesOne()
+    let (h, _, b, _) = thirdsAndARuleThatHalvesOne()
     let view = h.workspace.camera
     h.beginStep()
     let new = h.system.open(app: "Notes", frame: CGRect(x: 300, y: 200, width: 300, height: 400), isResizable: false)
@@ -208,7 +210,7 @@ private let notes = "com.example.notes"
 
   /// A window that opens in the background has no keyboard, and pulls no view: a tile, as before.
   @Test func withoutTheKeyboardItIsATileAndTheViewStays() {
-    let (h, _, b) = thirdsAndARuleThatHalvesOne()
+    let (h, _, b, _) = thirdsAndARuleThatHalvesOne()
     h.system.userFocus(b)
     let view = h.workspace.camera
     h.system.echoes.keyboard = false
@@ -224,7 +226,7 @@ private let notes = "com.example.notes"
   /// A rule that waited for the end of a hold docks a window that has had the keyboard for a while. The end of a hold moves the
   /// view no more than the hold did: it can come by itself, with the screen still shared (F58).
   @Test(arguments: ["hold", "hold still"]) func theEndOfAHoldStillMovesNoView(hold: String) {
-    let (h, _, _) = thirdsAndARuleThatHalvesOne()
+    let (h, _, _, _) = thirdsAndARuleThatHalvesOne()
     h.run(hold)
     let view = h.workspace.camera
     let new = h.system.open(app: "Notes")

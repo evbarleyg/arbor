@@ -9,7 +9,7 @@ open Safari
 open Terminal
 open Slack
 open Notes
-# 1. Dock: drag Safari to the left edge of the screen and Terminal to the right one. The rest floats on the Desktop.
+# 1. Dock: drag Safari to the left edge of the screen and Terminal to the right one: two halves. The rest floats, over them.
 drag 101 2 400
 expect docked 101
 drag 102 1438 400
@@ -29,13 +29,10 @@ key ctrl+opt+return
 expect camera root
 expect visible 102
 expect visible 103
-# 3. Walk: framed again, ⌃⌥→ twice goes over the Desktop to Terminal; ⌃⌥[ goes back like a browser.
+# 3. Walk: framed again, ⌃⌥→ goes to Terminal; ⌃⌥[ goes back like a browser.
 key ctrl+opt+return
 key ctrl+opt+right
-expect camera desktop
-key ctrl+opt+right
 expect camera 102
-key ctrl+opt+[
 key ctrl+opt+[
 expect camera 101
 key ctrl+opt+space

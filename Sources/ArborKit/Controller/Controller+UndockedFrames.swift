@@ -43,7 +43,8 @@ extension Controller {
     let standsWhereItFloats = isLetBe(window)
     let camera = workspace.camera
     let wasFramed = workspace.tree.leaf(containing: window) == camera && workspace.tree.windows(under: camera) == [window]
-    workspace.undock(window, floatingAt: frame, shareSpace: settings.shareRemovedSpace)
+    workspace.undock(
+      window, floatingAt: frame, shareSpace: settings.shareRemovedSpace, away: windows[window]?.isPresent != true)
     workspaces[displayID] = workspace
     misfits[window] = nil
     // The space the view was on is gone. The window lives on the Desktop now, so look there, rather
@@ -91,9 +92,13 @@ extension Controller {
   /// A window that starts to float while the Desktop is out of view would be gone at the next move of the view, and
   /// Back would not bring it back. Like a new window that opens over a framed one, it is a guest of the
   /// view it floats over (Controller+Guests.swift), unless the setting for those says that floating windows belong to the Desktop.
+  ///
+  /// A Desktop without room is not out of view for having no rectangle: where it is part of the view, what floats is in view with it.
   func stayWithTheView(_ window: WindowID, on displayID: DisplayID) {
-    guard settings.newWindowsWhileFramed != "float", let camera = workspaces[displayID]?.camera else { return }
-    workspaces[displayID]?.receive(window, asGuestOf: camera)
+    guard settings.newWindowsWhileFramed != "float", let workspace = workspaces[displayID],
+      workspace.tree.desktopHasRoom || !workspace.tree.subtree(workspace.camera, contains: workspace.tree.desktop)
+    else { return }
+    workspaces[displayID]?.receive(window, asGuestOf: workspace.camera)
   }
 
   /// The closest view to the current one that shows the Desktop: just wide enough to include it, or
@@ -102,7 +107,8 @@ extension Controller {
     guard let workspace = workspaces[displayID] else { return NodeID(0) }
     let desktop = workspace.tree.desktop
     let common = Navigation.commonAncestor(workspace.camera, desktop, in: workspace.tree)
-    return layout(of: displayID, camera: common)?.desktopFrame != nil ? common : desktop
+    // (A Desktop without room is no tile: what floats shows wherever it is part of the view.)
+    return !workspace.tree.desktopHasRoom || layout(of: displayID, camera: common)?.desktopFrame != nil ? common : desktop
   }
 
   /// Where a docked window dropped at `pointer` to float should be: the size it floated at, with
@@ -301,7 +307,7 @@ extension Controller {
   func transfer(_ window: WindowID, from source: DisplayID, to destination: DisplayID) {
     let frame = frameAfterTransfer(of: window, from: source, to: destination)
     noteTransfer(of: window, from: source, to: destination, arrivingAt: frame)
-    workspaces[source]?.forget(window, shareSpace: settings.shareRemovedSpace)
+    workspaces[source]?.forget(window, shareSpace: settings.shareRemovedSpace, away: windows[window]?.isPresent != true)
     if let frame { workspaces[destination]?.floating[window] = frame }
   }
 

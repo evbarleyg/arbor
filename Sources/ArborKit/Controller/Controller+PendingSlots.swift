@@ -42,13 +42,13 @@ extension Controller {
       // It waits under its own number in another tree already. One window, one place: the first keeps it, as for a
       // listed window that a file has twice. (The caller has taken the hint out to hand it over; the first still needs it.)
       hints[window] = hint
-      workspace.forget(window, shareSpace: settings.shareRemovedSpace)
+      workspace.forget(window, shareSpace: settings.shareRemovedSpace, away: true)
     } else if existing.contains(window), windows[window] == nil, !Self.isStandIn(window) {
       hints[window] = hint
       pendingSlots.insert(window)
     } else if isResuming, !Self.isStandIn(window) {
       // Closed during the pause. (A stand-in was already waiting when the pause began, and goes on waiting.)
-      workspace.forget(window, shareSpace: settings.shareRemovedSpace)
+      workspace.forget(window, shareSpace: settings.shareRemovedSpace, away: true)
     } else {
       moveToStandIn(window, hint: hint, in: &workspace)
     }
@@ -66,7 +66,7 @@ extension Controller {
     let standIn = WindowID(candidate)
     guard !isTaken(standIn) else {
       // Tens of thousands are waiting already; only a damaged file gets here.
-      workspace.forget(window, shareSpace: settings.shareRemovedSpace)
+      workspace.forget(window, shareSpace: settings.shareRemovedSpace, away: true)
       pendingSlots.remove(window)
       return
     }
@@ -111,7 +111,9 @@ extension Controller {
     for display in Set(over.compactMap { workspaceID(containing: $0) }).sorted() {
       let slots = over.filter { workspaceID(containing: $0) == display }.sorted()
       guard let now = workspaces[display], let shown = layouts[display] else { continue }
-      for slot in slots { workspaces[display]!.forget(slot, shareSpace: settings.shareRemovedSpace) }
+      // (Asked of all before the first goes: with it the nodes change.)
+      let open = slots.filter { isAnOpenPlace($0, on: display) }
+      for slot in slots { workspaces[display]!.forget(slot, shareSpace: settings.shareRemovedSpace, away: !open.contains(slot)) }
       // The same picture, whatever the nodes are called by now (with the last slot the row around the Desktop goes too).
       guard let fresh = layout(of: display), fresh.windowFrames == shown.windowFrames, fresh.tiles == shown.tiles,
         fresh.desktopFrame == shown.desktopFrame, fresh.hiddenWindows == shown.hiddenWindows
@@ -134,6 +136,19 @@ extension Controller {
     }
   }
 
+  /// Whether the room of this waiting place is kept open on screen (Controller+KeptRoom.swift). Then it has lent it to nobody, and is
+  /// no more away than a window that closes: beside one other place alone, that one stays as it is.
+  private func isAnOpenPlace(_ slot: WindowID, on display: DisplayID) -> Bool {
+    guard let tree = workspaces[display]?.tree, let open = layouts[display]?.openPlaces else { return false }
+    // Places that wait side by side are kept open as one.
+    var node = tree.leaf(containing: slot)
+    while let here = node {
+      if open[here] != nil { return true }
+      node = tree.parent(of: here)
+    }
+    return false
+  }
+
   /// At the head of a layout that a person or an app has caused. Not of one that would otherwise leave everybody
   /// where they are (a floating window opened or closed, perhaps by its app's own doing; a late window that takes
   /// its own place after all): docked windows would jump for something that is not about them. Nor under a hand
@@ -150,14 +165,15 @@ extension Controller {
         return
       }
     }
+    let open = overdueSlots.filter { isAnOpenPlace($0, on: display) }
     for slot in overdueSlots.sorted() where workspaces[display]?.isDocked(slot) == true {
       overdueSlots.remove(slot)
       guard pendingSlots.remove(slot) != nil else { continue }
       hints[slot] = nil
       parked.remove(slot)
-      workspaces[display]!.forget(slot, shareSpace: settings.shareRemovedSpace)
+      workspaces[display]!.forget(slot, shareSpace: settings.shareRemovedSpace, away: !open.contains(slot))
       // Not the doing of whatever command this layout belongs to (`endUndoStep`).
-      slotsDroppedDuringUndoStep.append(slot)
+      slotsDroppedDuringUndoStep.append((slot, away: !open.contains(slot)))
       scheduleSave()
     }
     endWaitIfOver()
@@ -340,7 +356,7 @@ extension Controller {
       parked.remove(slot)
       forgetInDormantWorkspaces(slot)
       if let home = workspaceID(containing: slot) {
-        workspaces[home]!.forget(slot, shareSpace: settings.shareRemovedSpace)
+        workspaces[home]!.forget(slot, shareSpace: settings.shareRemovedSpace, away: true)
         changed.insert(home)
       }
       scheduleSave()

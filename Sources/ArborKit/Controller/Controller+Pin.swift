@@ -25,7 +25,8 @@ extension Controller {
     if workspaces[display]!.isDocked(id) {
       // Where `float` would put it, at its own size however large (F48; QUESTIONS Q20): Arbor picks no size for a floating window.
       let frame = floatingFrame(for: id, on: display)
-      workspaces[display]!.undock(id, floatingAt: frame, shareSpace: settings.shareRemovedSpace)
+      workspaces[display]!.undock(
+        id, floatingAt: frame, shareSpace: settings.shareRemovedSpace, away: windows[id]?.isPresent != true)
       workspaces[display]!.pin(id)
       place(id, at: frame, on: display)
       // What macOS and the app made of it (whole points, a minimum size) is where it is.

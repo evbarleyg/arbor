@@ -14,7 +14,8 @@ private let side = DisplaySnapshot(
 /// Windows Arbor has moved out of view must stay out of view while they are meant to be, and must
 /// never be left there.
 @Suite @MainActor struct OutOfViewTests {
-  /// `[a | Desktop | b]` with `f` floating, zoomed onto `a`: `b` and `f` are parked.
+  /// `[a | b]` with `f` floating in the middle, zoomed onto `a`: `b` and `f` are parked. (With a column for the Desktop
+  /// `[a | Desktop | b]`.)
   func zoomedIn(displays: [DisplaySnapshot] = [main]) -> (Harness, a: WindowID, b: WindowID, f: WindowID) {
     let h = Harness(displays: displays)
     let a = h.system.open(app: "Safari", pid: 11, frame: CGRect(x: 100, y: 100, width: 600, height: 400))
@@ -111,7 +112,7 @@ private let side = DisplaySnapshot(
     h.system.setUnresponsive(pid: 13, false)
     h.scheduler.advance(by: 1)
     #expect(h.system.isVisible(f), "it comes back when its app answers")
-    #expect(h.layout!.desktopFrame!.contains(h.frame(f)!))
+    #expect(h.frame(f) == CGRect(x: 560, y: 300, width: 320, height: 300), "where the user had it")
   }
 
   // MARK: No display at all (asleep, or unplugged with the lid closed)
@@ -261,8 +262,9 @@ private let side = DisplaySnapshot(
 
   // MARK: What a relaunch and a smaller display must not take away
 
-  /// Five windows arranged, so the Desktop is a tile, and two floating windows in view over them.
-  func overATiledDesktop(settings: Settings = Settings()) -> (Harness, note: WindowID, call: WindowID) {
+  /// Five windows arranged, and two floating windows in view over them: the Desktop has no room, or with a column of its own
+  /// is a tile.
+  func overDockedWindows(settings: Settings) -> (Harness, note: WindowID, call: WindowID) {
     let h = Harness(settings: settings)
     for name in ["A", "B", "C", "D", "E"] { h.system.open(app: name) }
     h.start()
@@ -274,20 +276,23 @@ private let side = DisplaySnapshot(
     return (h, note, call)
   }
 
-  @Test(arguments: ["guest", "float"]) func aRelaunchTakesNothingOutOfViewThatWasInView(mode: String) {
+  @Test(arguments: ["guest", "float"], [false, true])
+  func aRelaunchTakesNothingOutOfViewThatWasInView(mode: String, desktopColumn: Bool) {
     var settings = Settings()
+    settings.desktopColumn = desktopColumn
     settings.newWindowsWhileFramed = mode
-    let (h, note, call) = overATiledDesktop(settings: settings)
+    let (h, note, call) = overDockedWindows(settings: settings)
     let before = [note, call].map { h.frame($0)! }
     h.controller.shutdown()
     h.controller.start()
     #expect([note, call].map { h.frame($0)! } == before, "\(mode)")
   }
 
-  @Test func norDoesAPauseAndResume() {
+  @Test(arguments: [false, true]) func norDoesAPauseAndResume(desktopColumn: Bool) {
     var settings = Settings()
+    settings.desktopColumn = desktopColumn
     settings.newWindowsWhileFramed = "float"
-    let (h, note, call) = overATiledDesktop(settings: settings)
+    let (h, note, call) = overDockedWindows(settings: settings)
     let before = [note, call].map { h.frame($0)! }
     h.run("pause")
     h.run("resume")

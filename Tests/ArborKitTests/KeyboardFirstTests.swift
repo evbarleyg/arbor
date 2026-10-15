@@ -9,8 +9,8 @@ import Testing
 /// if that is not enough they lend. The one exception to "nobody in view pays with their place", so these are about how far it reaches.
 extension RoomBeforeTilesTests {
   /// Mail and a chat, floating, started. They do not both fit on 1440 points.
-  func mailAndChat() -> (Harness, mail: WindowID, chat: WindowID) {
-    let h = Harness()
+  func mailAndChat(settings: Settings = Harness.settingsWhenNoneAreGiven) -> (Harness, mail: WindowID, chat: WindowID) {
+    let h = Harness(settings: settings)
     let mail = h.system.open(
       app: "Mail", pid: 1001, frame: CGRect(x: 100, y: 100, width: 900, height: 700), minimumSize: CGSize(width: 820, height: 400))
     let chat = h.system.open(
@@ -172,8 +172,10 @@ extension RoomBeforeTilesTests {
 
   /// The person has moved the gap beside the chat, by ten points. That gap is theirs, so Arbor has nothing to take back across it.
   /// The window being typed in shows all the same, and when the chat is typed in again the gap is where the person put it.
+  /// (The gap between the Desktop and the chat. Without the column the only gap is that of Mail's tile, which the same hand makes shorter:
+  /// then Mail stays as it was left, T20.)
   @Test func aGapMovedByHandDoesNotMakeATileOfTheWindowBeingTypedIn() throws {
-    let (h, mail, chat) = mailAndChat()
+    let (h, mail, chat) = mailAndChat(settings: .withDesktopColumn)
     h.system.userFocus(mail)
     h.run("dock \(mail.rawValue) left")
     h.system.userFocus(chat)
@@ -202,12 +204,12 @@ extension RoomBeforeTilesTests {
     expectWindowsMatchLayout(h)
   }
 
-  /// Mail will not go below 1100 points. Typed in, it leaves the column of the chat and Notes 212, too narrow for anything, so the column is
-  /// one tile. Whoever is typed in next in there shows again, and everything is where it was.
+  /// Mail will not go below 1200 points. Typed in, it leaves the column of the chat and Notes 204 (112 beside a column for the Desktop), too
+  /// narrow for anything, so the column is one tile. Whoever is typed in next in there shows again, and everything is where it was.
   @Test func outOfAColumnThatHasBecomeOneTile() throws {
     let h = Harness()
     let mail = h.system.open(
-      app: "Mail", pid: 1001, frame: CGRect(x: 100, y: 100, width: 1200, height: 700), minimumSize: CGSize(width: 1100, height: 400))
+      app: "Mail", pid: 1001, frame: CGRect(x: 100, y: 100, width: 1200, height: 700), minimumSize: CGSize(width: 1200, height: 400))
     let chat = h.system.open(
       app: "Chat", pid: 1002, frame: CGRect(x: 300, y: 100, width: 600, height: 400), minimumSize: CGSize(width: 400, height: 300))
     let notes = h.system.open(
@@ -242,10 +244,12 @@ extension RoomBeforeTilesTests {
 
   /// Notes has never refused a size, so Arbor does not know what it needs. It lends Mail its place and is a tile too small for any window.
   /// Typed in, it shows again where it was. After a restart too, when Arbor has forgotten what it had learned about anybody.
+  /// (Mail needs 1200 points, which leave Notes 204, or 112 beside a column for the Desktop. On the 254 that 1150 would leave it without
+  /// one it would show.)
   @Test(arguments: [false, true]) func aNeighbourThatLentItsPlaceComesBackThoughNothingIsKnownAboutIt(restart: Bool) throws {
     func open(_ h: Harness) -> (mail: WindowID, notes: WindowID) {
       let mail = h.system.open(
-        app: "Mail", pid: 1001, frame: CGRect(x: 100, y: 100, width: 1200, height: 700), minimumSize: CGSize(width: 1150, height: 400))
+        app: "Mail", pid: 1001, frame: CGRect(x: 100, y: 100, width: 1200, height: 700), minimumSize: CGSize(width: 1200, height: 400))
       return (mail, h.system.open(app: "Notes", pid: 1003, frame: CGRect(x: 200, y: 100, width: 500, height: 500)))
     }
     func showAll(_ h: Harness, typingIn window: WindowID) {
@@ -280,9 +284,9 @@ extension RoomBeforeTilesTests {
   }
 
   /// The person drags the gap until the column of the chat and Notes is one tile. They get the tile they asked for (T20): nothing in it is
-  /// fetched out of it, whoever has the keyboard, and the Desktop that they made wider stays as wide.
-  @Test func aColumnSqueezedIntoOneTileByHandStaysAsItWasLeft() throws {
-    let h = Harness()
+  /// fetched out of it, whoever has the keyboard, and what they made wider stays as wide: the Desktop where it has a column, or else Mail.
+  @Test(arguments: [false, true]) func aColumnSqueezedIntoOneTileByHandStaysAsItWasLeft(desktopColumn: Bool) throws {
+    let h = Harness(settings: desktopColumn ? .withDesktopColumn : Settings())
     let mail = h.system.open(
       app: "Mail", pid: 1001, frame: CGRect(x: 100, y: 100, width: 1000, height: 700), minimumSize: CGSize(width: 900, height: 400))
     let chat = h.system.open(
@@ -298,9 +302,13 @@ extension RoomBeforeTilesTests {
     h.run("dock \(notes.rawValue) beside \(chat.rawValue) bottom")
     expectInView(h, mail, chat, notes)
     let seam = try #require(h.overlays.seams[h.display]?.last { $0.axis == .horizontal })
-    h.overlays.dragSeam(seam, by: 250)
+    // Beside Mail's 900 points the column has 412 with a Desktop of 80 between them, and 504 without.
+    h.overlays.dragSeam(seam, by: desktopColumn ? 250 : 300)
     let tile = try #require(h.layout?.tiles.first { $0.kind == .group && $0.windows.contains(chat) })
     let desktop = h.layout?.nodeFrames[h.workspace.tree.desktop]
+    #expect((desktop != nil) == desktopColumn)
+    let place = try #require(h.frame(mail))
+    #expect(place.width == (desktopColumn ? 900 : 1200))
 
     h.system.userFocus(chat)
     h.scheduler.runPending()
@@ -309,6 +317,7 @@ extension RoomBeforeTilesTests {
     #expect(h.layout?.tiles.first { $0.node == tile.node }?.frame == tile.frame)
     #expect(h.layout?.nodeFrames[h.workspace.tree.desktop] == desktop)
     expectInView(h, mail)
+    #expect(h.frame(mail) == place)
     expectWindowsMatchLayout(h)
   }
 
@@ -576,7 +585,7 @@ extension RoomBeforeTilesTests {
   /// The window in the hand has the keyboard, and its slot is one that the drop makes. Notes, the Desktop and Mail, which is 600 points
   /// wide on 136 of the Desktop's; the chat is let go on the lower half of Notes, whose column has to be 760 wide for it.
   @Test func thePreviewOfTheWindowInTheHandIsWhereItLandsThoughANeighbourGivesBackWhatItWasLent() throws {
-    let h = Harness()
+    let h = Harness(settings: .withDesktopColumn)
     let notes = h.system.open(app: "Notes", frame: CGRect(x: 200, y: 100, width: 500, height: 500))
     let mail = h.system.open(
       app: "Mail", frame: CGRect(x: 100, y: 100, width: 700, height: 600), minimumSize: CGSize(width: 600, height: 400))
@@ -641,16 +650,19 @@ extension RoomBeforeTilesTests {
     expectWindowsMatchLayout(h)
   }
 
-  /// Mail and the chat side by side on 1728 points, both on lent room, the keyboard in `typingIn`.
+  /// Mail and the chat side by side on 1728 points, the keyboard in `typingIn`. With a column for the Desktop both are on lent room;
+  /// without, each has a half of its own.
   func sideBySide(typingIn: (_ mail: WindowID, _ chat: WindowID) -> WindowID) -> (Harness, mail: WindowID, chat: WindowID) {
     let (h, mail, chat) = mailAndChat()
+    // On 1440 points Mail refuses a half as it refuses a third: from here on Arbor knows how small it goes.
+    h.system.userFocus(mail)
+    h.run("dock \(mail.rawValue) left")
     h.system.setDisplays([
       DisplaySnapshot(
         id: h.display, frame: CGRect(x: 0, y: 0, width: 1728, height: 1117), visibleFrame: CGRect(x: 0, y: 33, width: 1728, height: 1084),
         isMain: true)
     ])
-    h.system.userFocus(mail)
-    h.run("dock \(mail.rawValue) left")
+    h.scheduler.advance(by: 5)
     h.system.userFocus(chat)
     h.run("dock \(chat.rawValue) right")
     h.system.userFocus(typingIn(mail, chat))
@@ -672,10 +684,11 @@ extension RoomBeforeTilesTests {
   /// The two no longer fit, and something has to give. The window being typed in is the last that may (decided by the product owner).
   @Test func theWindowBeingTypedInStaysInViewWhenItsAppMakesItLarger() throws {
     let (h, mail, chat) = sideBySide { _, chat in chat }
+    let width = try #require(h.frame(chat)).width
     h.system.clearFrameLog()
     try chatGrows(h, chat)
     expectInView(h, chat)
-    #expect(h.frame(chat)?.width == 900)
+    #expect(h.frame(chat)?.width == width + 140)
     #expect(isTile(h, mail))
     #expect(h.system.focused == chat)
     #expect(h.system.frameLog.filter { $0.window == mail }.count == 1, "it leaves the view in one move: \(h.system.frameLog)")

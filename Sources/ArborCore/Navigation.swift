@@ -5,11 +5,13 @@ import CoreGraphics
 /// or nil when the move is not possible.
 public enum Navigation {
   /// The nearest ancestor that shows more than the camera does now. Splits
-  /// with a single effective child are skipped because they look identical.
+  /// with a single effective child are skipped because they look identical. Not from a Desktop without room: it is
+  /// no part of what the splits around it show, so the first that shows anything shows something else.
   public static func stepOut(from camera: NodeID, in view: TreeView) -> NodeID? {
     var current = view.effectiveAncestor(of: camera)
+    let least = view.isEffective(current) ? 2 : 1
     while let parent = view.tree.parent(of: current) {
-      if view.effectiveChildren(of: parent).count >= 2 { return parent }
+      if view.effectiveChildren(of: parent).count >= least { return parent }
       current = parent
     }
     return nil
@@ -46,10 +48,14 @@ public enum Navigation {
   }
 
   /// The child of the camera that is or holds `node`: one step toward it, wherever the pointer is.
-  /// Nil when the camera is a leaf or `node` is not inside it.
+  /// Nil when the camera is a leaf or `node` is not inside it. A Desktop without room shows in nothing, and is still a step away
+  /// from whatever it lies in.
   public static func stepIn(from camera: NodeID, toward node: NodeID, in view: TreeView) -> NodeID? {
-    let start = view.passThrough(view.effectiveAncestor(of: camera))
-    return view.effectiveChildren(of: start).first { view.tree.subtree($0, contains: node) }
+    let camera = view.effectiveAncestor(of: camera)
+    let start = view.passThrough(camera)
+    if let child = view.effectiveChildren(of: start).first(where: { view.tree.subtree($0, contains: node) }) { return child }
+    let desktop = view.tree.desktop
+    return node == desktop && camera != desktop && !view.isEffective(desktop) && view.tree.subtree(camera, contains: desktop) ? desktop : nil
   }
 
   /// The sibling space next to the camera in `direction`, found by walking up
@@ -60,10 +66,11 @@ public enum Navigation {
     var current = view.effectiveAncestor(of: camera)
     while let parent = view.tree.parent(of: current) {
       if case .split(let axis, _) = view.tree[parent]?.kind, axis == direction.axis {
-        let siblings = view.effectiveChildren(of: parent)
+        // Counted among all the children: the view can be on a Desktop without room, which still has its place among them.
+        let siblings = view.tree.children(of: parent)
         if let index = siblings.firstIndex(of: current) {
-          let next = direction.isLeading ? index - 1 : index + 1
-          if siblings.indices.contains(next) { return siblings[next] }
+          let beyond = direction.isLeading ? Array(siblings[..<index].reversed()) : Array(siblings[(index + 1)...])
+          if let next = beyond.first(where: view.isEffective) { return next }
         }
       }
       current = parent

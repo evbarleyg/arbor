@@ -260,6 +260,8 @@ public final class Controller {
   var layingOutUnasked = false
   /// The window that is being docked as it opens (`asItOpens`): with the keyboard in it, it costs nobody their place either.
   var dockingAsItOpens: WindowID?
+  /// Those of them that were squeezed with nothing left over, so against another docked window (`roomTerms`).
+  var squeezedAgainstWindows: [DisplayID: Set<NodeID>] = [:]
 
   /// True between `pause` and `resume` (Controller+Pause.swift). `isRunning` is false meanwhile.
   public internal(set) var isPaused = false
@@ -375,7 +377,7 @@ public final class Controller {
   /// Those of them whose wait is over and whose going would move a window: they go with the next layout.
   var overdueSlots: Set<WindowID> = []
   /// Those that a layout dropped since `beginUndoStep`.
-  var slotsDroppedDuringUndoStep: [WindowID] = []
+  var slotsDroppedDuringUndoStep: [(slot: WindowID, away: Bool)] = []
   /// What the file said of the windows it knew under real numbers, docked or floating, on whatever display. One that is met
   /// again under its own number, with its own app, is itself, and not the window that a slot waits for, unless its title
   /// says otherwise (`isItselfAsTheFileKnewIt`). Kept while slots wait.
@@ -1127,7 +1129,7 @@ public final class Controller {
             wasParked || wasPushedAside(window, from: $0) ? asItWas($0, on: display) : nil
           }
         if wasParked { noteIfInFullScreen(window, belongsAt: frame, on: display) }
-        workspace.forget(window, shareSpace: settings.shareRemovedSpace)
+        workspace.forget(window, shareSpace: settings.shareRemovedSpace, away: windows[window]?.isPresent != true)
         parked.remove(window)
         var place = frame
         if let frame {

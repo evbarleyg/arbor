@@ -152,9 +152,13 @@ extension Controller {
 
   /// Where `in` goes when it steps toward the focused window: the space inside `camera` that holds it,
   /// or the Desktop if it floats. Nil when `in` follows the pointer, or the window is not inside `camera`.
-  func stepTowardFocus(from camera: NodeID, on display: DisplayID, in view: TreeView) -> NodeID? {
+  /// `chosenFromTheMenu`: where it would go from there, for the menu to say before anything is chosen.
+  func stepTowardFocus(from camera: NodeID, on display: DisplayID, in view: TreeView, chosenFromTheMenu: Bool = false) -> NodeID? {
     let rule = stepInTowardRule()
-    guard InputLead.stepsTowardFocus(lead: currentLead(), source: following.source, rule: rule),
+    guard
+      chosenFromTheMenu
+        ? InputLead.stepsTowardFocus(lead: .pointer, source: .menu, rule: rule)
+        : InputLead.stepsTowardFocus(lead: currentLead(), source: following.source, rule: rule),
       let place = focusedPlace, place.display == display
     else { return nil }
     return Navigation.stepIn(

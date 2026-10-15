@@ -24,7 +24,7 @@ import Testing
     return (h, a, b, c)
   }
 
-  /// [ [a / c] | Desktop | b ]
+  /// [ [a / c] | b ], a half each; with a column for the Desktop, [ [a / c] | Desktop | b ], thirds.
   func dockThree(_ h: Harness, _ a: WindowID, _ b: WindowID, _ c: WindowID) {
     h.run("dock \(a.rawValue) left")
     h.run("dock \(b.rawValue) right")
@@ -48,12 +48,12 @@ import Testing
     #expect(h.workspace.camera == h.workspace.tree.root)
     #expect([a, b, c].map { h.frame($0)! } == overview)
     #expect(h.controller.parked.isEmpty)
-    #expect(h.layout?.desktopFrame != nil)
+    #expect(h.layout?.desktopFrame == nil, "the three fill the display: nothing is left over for the Desktop")
   }
 
   /// T33
   @Test func theNeighbourCommandWalksSidewaysAndStopsAtTheEnds() {
-    let (h, a, b, c) = makeHarness()
+    let (h, a, b, c) = makeHarness(settings: .withDesktopColumn)
     dockThree(h, a, b, c)
     let full = h.visibleFrame.insetBy(dx: 12, dy: 12)
     h.run("zoom \(a.rawValue)")
@@ -168,11 +168,13 @@ import Testing
     h.run("dock \(a.rawValue) left")
     h.run("dock \(b.rawValue) beside \(a.rawValue) right")
     h.run("dock \(c.rawValue) beside \(b.rawValue) right")
-    // [a | b | c | Desktop], of different widths.
-    let before = [h.frame(a)!.width, h.frame(c)!.width, h.layout!.desktopFrame!.width]
+    let d = h.system.open(app: "Xcode", pid: 1004, frame: CGRect(x: 700, y: 400, width: 600, height: 400))
+    h.run("dock \(d.rawValue) beside \(c.rawValue) right")
+    // [a | b | c | d], of different widths.
+    let before = [h.frame(a)!.width, h.frame(c)!.width, h.frame(d)!.width]
     #expect(Set(before).count > 1)
     h.system.close(b)
-    let after = [h.frame(a)!.width, h.frame(c)!.width, h.layout!.desktopFrame!.width]
+    let after = [h.frame(a)!.width, h.frame(c)!.width, h.frame(d)!.width]
     let growth = zip(after, before).map { $0 / $1 }
     for factor in growth {
       #expect(factor > 1.1, "everyone in the row gains, not only the neighbour")
@@ -214,15 +216,18 @@ import Testing
   @Test func aSeamDragMovesNothingButItsTwoNeighbours() throws {
     let (h, a, b, c) = makeHarness()
     dockThree(h, a, b, c)
+    // [ [a / c] | b | d ]
+    let d = h.system.open(app: "Xcode", pid: 1004, frame: CGRect(x: 700, y: 400, width: 600, height: 400))
+    h.run("dock \(d.rawValue) right")
     let column = h.workspace.tree.parent(of: leaf(h, a)!)!
     let seam = try #require(h.overlays.seams[h.display]?.first { $0.leading == column })
-    let (oldA, oldB, oldC, oldDesktop) = (h.frame(a)!, h.frame(b)!, h.frame(c)!, h.layout!.desktopFrame!)
+    let (oldA, oldB, oldC, oldD) = (h.frame(a)!, h.frame(b)!, h.frame(c)!, h.frame(d)!)
     h.overlays.dragSeam(seam, by: 70)
-    #expect(h.frame(b) == oldB)
+    #expect(h.frame(d) == oldD)
     #expect(h.frame(a)!.width == oldA.width + 70 && h.frame(c)!.width == oldC.width + 70)
     #expect(h.frame(a)!.height == oldA.height && h.frame(c)!.height == oldC.height)
-    #expect(h.layout!.desktopFrame!.width == oldDesktop.width - 70)
-    #expect(h.layout!.desktopFrame!.maxX == oldDesktop.maxX)
+    #expect(h.frame(b)!.width == oldB.width - 70)
+    #expect(h.frame(b)!.maxX == oldB.maxX)
   }
 
   /// T17, T62: the way out has to work from wherever the camera is.
@@ -290,19 +295,19 @@ import Testing
     expectWindowsMatchLayout(h, on: h.display)
     expectWindowsMatchLayout(h, on: side.id)
 
-    // A floating window, dropped beside it.
-    let target = h.frame(b)!
-    let from = h.frame(c)!
-    h.system.drag(c, through: [CGPoint(x: from.midX, y: from.minY + 10), CGPoint(x: target.minX + 20, y: target.midY)])
-    #expect(h.controller.workspaces[side.id]!.tree.allWindows == [c, b])
-    #expect(h.frame(c)!.maxX < h.frame(b)!.minX)
-
-    // And onto the other display's Desktop: it floats there.
+    // Onto the other display's Desktop, the half that is left over there: it floats there.
     let slot = h.frame(a)!
     let desktop = h.controller.layouts[side.id]!.desktopFrame!
     h.system.drag(a, through: [CGPoint(x: slot.midX, y: slot.minY + 10), desktop.center])
     #expect(h.controller.workspaces[side.id]!.isFloating(a))
     #expect(!h.workspace.contains(a))
+
+    // And a floating window, dropped beside the docked one.
+    let target = h.frame(b)!
+    let from = h.frame(c)!
+    h.system.drag(c, through: [CGPoint(x: from.midX, y: from.minY + 10), CGPoint(x: target.minX + 20, y: target.midY)])
+    #expect(h.controller.workspaces[side.id]!.tree.allWindows == [c, b])
+    #expect(h.frame(c)!.maxX < h.frame(b)!.minX)
   }
 
   /// T44 and T35: "each display keeps its own spaces and camera", "nine per display"

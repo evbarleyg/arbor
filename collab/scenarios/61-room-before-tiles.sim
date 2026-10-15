@@ -1,7 +1,7 @@
 # Proposed by the swarm (2026-10-14); the documenter may edit or drop it.
 # Story: on a MacBook Air someone docks Notes on the left and Safari on the right. Neither will go as narrow as a
-# third of the screen (709 and 574 points, measured on the real apps), and a third of the screen lies empty between
-# them. Arbor moves the gaps itself: both are in view, with the empty Desktop as a tile between.
+# third of the screen (709 and 574 points, measured on the real apps). They get halves: nothing is kept for the Desktop. A half is seven
+# points short for Notes, so Arbor moves the gap itself: both are in view.
 # Reference: T03 T20 A05, F61.
 open Notes 1000x660 min 709x300
 open Safari 1324x800 min 574x240
@@ -16,7 +16,7 @@ open Terminal 585x366
 expect visible 101
 expect visible 102
 expect visible 103
-# It is on a Desktop that is a tile, so it shows over the arrangement, in Show Everything too. No docked window becomes a tile for
+# The Desktop has no room, so it shows over the arrangement, in Show Everything too. No docked window becomes a tile for
 # the Desktop's sake: somebody has asked for each of them.
 zoom 101
 show-all
@@ -58,7 +58,6 @@ show-all
 close 105
 expect visible 101
 expect visible 102
-# Notes closes: Safari keeps no more than its half, and the Desktop has the other.
+# Notes closes: what Safari had lent for its sake goes back to Safari, and what was Notes' own is left over.
 close 101
 expect visible 102
-expect size 102 702x851

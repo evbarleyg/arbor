@@ -11,8 +11,8 @@ import Testing
   let notesMinimum = CGSize(width: 709, height: 300)
   let safariMinimum = CGSize(width: 574, height: 240)
 
-  /// Notes and Safari, floating, started.
-  func makeHarness(settings: Settings = Settings()) -> (Harness, notes: WindowID, safari: WindowID) {
+  /// Notes and Safari, floating, started. A test of what the Desktop between them gives, gets back or looks like names the column.
+  func makeHarness(settings: Settings = Harness.settingsWhenNoneAreGiven) -> (Harness, notes: WindowID, safari: WindowID) {
     let h = Harness(settings: settings)
     let notes = h.system.open(
       app: "Notes", frame: CGRect(x: 200, y: 100, width: 1000, height: 660), minimumSize: notesMinimum)
@@ -48,7 +48,7 @@ import Testing
   // MARK: Acceptance criteria
 
   @Test func notesOnTheLeftAndSafariOnTheRightAreBothInView() throws {
-    let (h, notes, safari) = makeHarness()
+    let (h, notes, safari) = makeHarness(settings: .withDesktopColumn)
     h.run("dock \(notes.rawValue) left")
     h.run("dock \(safari.rawValue) right")
     expectInView(h, notes, safari)
@@ -61,7 +61,7 @@ import Testing
   /// Somebody has asked for each docked window, nobody for the Desktop's points. Whether the Calculator was there first makes no
   /// difference: it shows over the arrangement.
   @Test(arguments: [true, false]) func dockedWindowsComeBeforeTheDesktopWhateverFloatsOnIt(calculatorFirst: Bool) {
-    let (h, notes, safari) = makeHarness()
+    let (h, notes, safari) = makeHarness(settings: .withDesktopColumn)
     func open() -> WindowID { h.system.open(app: "Calculator", frame: CGRect(x: 600, y: 300, width: 230, height: 408)) }
     var calculator = calculatorFirst ? open() : nil
     h.run("dock \(notes.rawValue) left")
@@ -75,7 +75,7 @@ import Testing
   }
 
   @Test func withoutTheSettingBothAreTilesAsBefore() {
-    var settings = Settings()
+    var settings = Settings.withDesktopColumn
     settings.makeRoom = false
     let (h, notes, safari) = makeHarness(settings: settings)
     h.run("dock \(notes.rawValue) left")
@@ -226,7 +226,7 @@ import Testing
 
   @Test func aNeighbourThatWasAskedForTooMuchGetsItsPlaceBack() throws {
     // Arbor has not met Safari's minimum yet when Xcode asks for room, so it takes more from Safari than Safari will give.
-    let (h, _, safari) = makeHarness()
+    let (h, _, safari) = makeHarness(settings: .withDesktopColumn)
     let mail = h.system.open(app: "Mail")
     let xcode = h.system.open(
       app: "Xcode", frame: CGRect(x: 100, y: 100, width: 1000, height: 700), minimumSize: CGSize(width: 900, height: 600))
@@ -293,7 +293,7 @@ import Testing
 
   // MARK: A window that comes to float on a Desktop Arbor has squeezed
 
-  /// Notes and Safari docked, the empty Desktop a tile between them, and then the first ⌘N of the day.
+  /// Notes and Safari docked, the empty Desktop a tile between them or left with nothing, and then the first ⌘N of the day.
   func squeezedThenOpened() -> (Harness, notes: WindowID, safari: WindowID, terminal: WindowID) {
     let (h, notes, safari) = makeHarness()
     h.run("dock \(notes.rawValue) left")
@@ -340,8 +340,10 @@ import Testing
   // MARK: Room goes back where it came from
 
   /// A window of 864 points is docked under one that has half the display, and the column grows for it.
-  func columnThatGrew() throws -> (Harness, first: WindowID, large: WindowID) {
-    let h = Harness()
+  func columnThatGrew(
+    settings: Settings = Harness.settingsWhenNoneAreGiven
+  ) throws -> (Harness, first: WindowID, large: WindowID) {
+    let h = Harness(settings: settings)
     let first = h.system.open(app: "Safari", frame: CGRect(x: 100, y: 100, width: 500, height: 400))
     let size = CGSize(width: 864, height: 525)
     let large = h.system.open(app: "Logic", frame: CGRect(origin: CGPoint(x: 300, y: 200), size: size), minimumSize: size)
@@ -355,7 +357,9 @@ import Testing
   }
 
   @Test(arguments: ["close", "float", "dock elsewhere"]) func whenTheWindowHasGoneTheGapIsWhereItWas(_ how: String) throws {
-    let (h, first, large) = try columnThatGrew()
+    // Elsewhere is a place between the first window and the Desktop, which takes a column for the Desktop.
+    let settings = how == "dock elsewhere" ? .withDesktopColumn : Harness.settingsWhenNoneAreGiven
+    let (h, first, large) = try columnThatGrew(settings: settings)
     switch how {
     case "close": h.system.close(large)
     case "float": h.run("float \(large.rawValue)")
@@ -372,7 +376,7 @@ import Testing
 
   @Test func whoeverOfTwoLeavesTheOtherKeepsNoMoreThanItsShare() throws {
     for leaver in 0...1 {
-      let (h, notes, safari) = makeHarness()
+      let (h, notes, safari) = makeHarness(settings: .withDesktopColumn)
       h.run("dock \(notes.rawValue) left")
       h.run("dock \(safari.rawValue) right")
       h.system.close([notes, safari][leaver])
@@ -424,7 +428,7 @@ import Testing
   /// Tiles give down to 80 points only if it takes that. A column of tiles too narrow for any window would swallow what is docked
   /// into it later.
   @Test func aWindowDockedBesideATileIsInView() {
-    let (h, notes, safari) = makeHarness()
+    let (h, notes, safari) = makeHarness(settings: .withDesktopColumn)
     let maps = h.system.open(
       app: "Maps", frame: CGRect(x: 100, y: 60, width: 1024, height: 768), minimumSize: CGSize(width: 660, height: 360))
     let terminal = h.system.open(app: "Terminal", frame: CGRect(x: 40, y: 51, width: 877, height: 499))
@@ -480,7 +484,7 @@ import Testing
   /// A pinned or summoned window is in view wherever the view goes, and a guest comes and goes with its space. None of them
   /// is on the Desktop, so none of them is a reason for the Desktop to take a docked window's place.
   @Test(arguments: ["pin", "summon", "guest"]) func aFloatingWindowThatIsNotOnTheDesktopCostsNobodyTheirPlace(_ how: String) {
-    let (h, notes, safari) = makeHarness()
+    let (h, notes, safari) = makeHarness(settings: .withDesktopColumn)
     h.run("dock \(notes.rawValue) left")
     h.run("dock \(safari.rawValue) right")
     if how == "guest" { h.run("zoom \(notes.rawValue)") }
@@ -500,7 +504,7 @@ import Testing
 
   /// Notes, which room was made for, floats: it has its own 1000 points back and lives on the Desktop now.
   @Test func theDesktopThatAWideWindowComesToFloatOnGetsAnEvenShare() throws {
-    let (h, notes, safari) = makeHarness()
+    let (h, notes, safari) = makeHarness(settings: .withDesktopColumn)
     h.run("dock \(notes.rawValue) left")
     h.run("dock \(safari.rawValue) right")
     h.run("float \(notes.rawValue)")
@@ -512,7 +516,7 @@ import Testing
 
   /// Plugged into a monitor, both windows have room to spare. The Desktop is not left a sliver between them.
   @Test func onALargerDisplayTheEmptyDesktopGetsBackWhatTheOthersCanSpare() throws {
-    let (h, notes, safari) = makeHarness()
+    let (h, notes, safari) = makeHarness(settings: .withDesktopColumn)
     h.run("dock \(notes.rawValue) left")
     h.run("dock \(safari.rawValue) right")
     #expect(h.layout?.desktopFrame == nil)
@@ -561,13 +565,14 @@ import Testing
     let large = DisplaySnapshot(
       id: FakeWindowSystem.standardDisplay.id, frame: CGRect(x: 0, y: 0, width: 2560, height: 1440),
       visibleFrame: CGRect(x: 0, y: 25, width: 2560, height: 1415), isMain: true)
-    let h = Harness(displays: [large])
+    let h = Harness(displays: [large], settings: Settings())
     let notes = h.system.open(app: "Notes", minimumSize: notesMinimum)
     let safari = h.system.open(app: "Safari", minimumSize: safariMinimum)
     h.start()
     h.run("dock \(notes.rawValue) left")
     h.run("dock \(safari.rawValue) right")
-    #expect(h.workspace.tree.children(of: h.workspace.tree.root).map { h.workspace.tree[$0]!.weight } == [1, 1, 1])
+    // Halves, with nothing left for the Desktop between them. On the smaller display a half is seven points short for Notes.
+    #expect(h.workspace.tree.children(of: h.workspace.tree.root).map { h.workspace.tree[$0]!.weight } == [1, 0, 1])
     h.system.setDisplays([FakeWindowSystem.standardDisplay])
     h.scheduler.runPending()
     expectInView(h, notes, safari)
@@ -641,14 +646,15 @@ import Testing
   }
 
   @Test func aTerminalsCellsAreNoReasonToMoveGaps() {
-    let h = Harness()
+    let h = Harness(settings: Settings())
     let terminal = h.system.open(app: "Terminal", frame: CGRect(x: 300, y: 200, width: 560, height: 340))
     let mail = h.system.open(app: "Mail")
     h.system.setSizeStep(terminal, CGSize(width: 7, height: 17))
     h.start()
     h.run("dock \(terminal.rawValue) left")
     h.run("dock \(mail.rawValue) right")
-    #expect(h.workspace.tree.children(of: h.workspace.tree.root).map { h.workspace.tree[$0]!.weight } == [1, 1, 1])
+    // Still halves, around a Desktop that nothing is left for.
+    #expect(h.workspace.tree.children(of: h.workspace.tree.root).map { h.workspace.tree[$0]!.weight } == [1, 0, 1])
   }
 
   /// Whatever people do with windows that resist: the tree stays sound, what is in view fits its slot, nothing lies over
@@ -709,7 +715,13 @@ import Testing
           Issue.record("\(tree.invariantViolations()) after \(told)")
           return
         }
-        #expect(tree.preorder().allSatisfy { tree[$0]!.weight.isFinite && tree[$0]!.weight > 0 }, "\(told)")
+        // Without a column of its own the Desktop may be left with nothing. Nobody else ever is.
+        let mayHaveNothing = h.controller.settings.desktopColumn ? nil : tree.desktop
+        #expect(
+          tree.preorder().allSatisfy { id in
+            let weight = tree[id]!.weight
+            return weight.isFinite && (weight > 0 || id == mayHaveNothing && weight == 0)
+          }, "\(told)")
         let shown = layout.windowFrames.keys.sorted()
         for id in shown {
           let slot = layout.windowFrames[id]!.insetBy(dx: -2, dy: -2)

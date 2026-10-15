@@ -19,7 +19,9 @@ private let side = DisplaySnapshot(
   let notesFrame = CGRect(x: 820, y: 300, width: 400, height: 300)
 
   /// Safari (101), Mail (102) and Notes (103), floating, each at a size of its own.
-  func harness(displays: [DisplaySnapshot] = [FakeWindowSystem.standardDisplay], settings: Settings = Settings()) -> Harness {
+  func harness(
+    displays: [DisplaySnapshot] = [FakeWindowSystem.standardDisplay], settings: Settings = Harness.settingsWhenNoneAreGiven
+  ) -> Harness {
     let h = Harness(displays: displays, settings: settings)
     h.system.open(app: "Safari", frame: safariFrame)
     h.system.open(app: "Mail", frame: mailFrame)
@@ -264,7 +266,7 @@ private let side = DisplaySnapshot(
   /// was Arbor that put it there tells later layouts that it is not there on purpose. Floating windows make way here, as until
   /// Q20 (`floatingWindowsMakeWay`): as Arbor ships a line pushes nothing aside.
   @Test func aWindowThatALinePushedAsideGoesBackWhenThereIsRoomAgain() {
-    let h = harness(settings: .makingWay)
+    let h = harness(settings: .makingWay.withDesktopColumn)
     let terminal = h.system.open(
       app: "Terminal", frame: CGRect(x: 300, y: 200, width: 900, height: 500), minimumSize: CGSize(width: 600, height: 300))
     let own = CGRect(x: 100, y: 150, width: 900, height: 500)

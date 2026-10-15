@@ -27,7 +27,7 @@ extension Controller {
   /// that view: it stays where it is, as a guest, or (if the setting says so) until the view next moves.
   func receiveWhatOpenedUnseen(_ id: WindowID) {
     guard let display = workspaceID(containing: id), workspaces[display]?.isFloating(id) == true,
-      windows[id]?.isPresent == true, layout(of: display)?.desktopFrame == nil
+      windows[id]?.isPresent == true, let layout = layout(of: display), !showsWhatFloats(layout, in: workspaces[display]!)
     else { return }
     // `start()` lifts this after the first layout.
     placedOnPurpose.insert(id)

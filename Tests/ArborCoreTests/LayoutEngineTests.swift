@@ -11,12 +11,13 @@ private let c = WindowID(3)
 
 private func everyone(_: WindowID) -> Bool { true }
 
-/// [a | desktop | b] with c docked below a.
-private func threeWindowTree() -> (LayoutTree, NodeID, NodeID, NodeID) {
+/// [a | desktop | b], thirds, with c docked below a: with a column for the Desktop, so that there is one of everything to lay out.
+/// Without one the Desktop is in the same place and has no room.
+private func threeWindowTree(desktopColumn: Bool = true) -> (LayoutTree, NodeID, NodeID, NodeID) {
   var tree = LayoutTree()
-  let leafA = tree.dock(a, beside: tree.root, edge: .left)
-  let leafB = tree.dock(b, beside: tree.root, edge: .right)
-  let leafC = tree.dock(c, beside: leafA, edge: .bottom)
+  let leafA = tree.dock(a, beside: tree.root, edge: .left, desktopColumn: desktopColumn)
+  let leafB = tree.dock(b, beside: tree.root, edge: .right, desktopColumn: desktopColumn)
+  let leafC = tree.dock(c, beside: leafA, edge: .bottom, desktopColumn: desktopColumn)
   return (tree, leafA, leafB, leafC)
 }
 
@@ -29,9 +30,10 @@ private func threeWindowTree() -> (LayoutTree, NodeID, NodeID, NodeID) {
   }
 
   @Test func equalWeightsSplitEvenlyWithExactGaps() {
+    // [a | desktop | b]: three in a row, with a column for the Desktop.
     var tree = LayoutTree()
-    tree.dock(a, beside: tree.root, edge: .left)
-    tree.dock(b, beside: tree.root, edge: .right)
+    tree.dock(a, beside: tree.root, edge: .left, desktopColumn: true)
+    tree.dock(b, beside: tree.root, edge: .right, desktopColumn: true)
     let layout = LayoutEngine.layout(tree, camera: tree.root, in: screen, isPresent: everyone)
     let left = layout.windowFrames[a]!
     let right = layout.windowFrames[b]!
@@ -47,16 +49,16 @@ private func threeWindowTree() -> (LayoutTree, NodeID, NodeID, NodeID) {
     }
   }
 
-  @Test func aCameraOnALeafFillsTheScreenAndHidesTheRest() {
-    let (tree, leafA, _, _) = threeWindowTree()
+  @Test(arguments: [true, false]) func aCameraOnALeafFillsTheScreenAndHidesTheRest(desktopColumn: Bool) {
+    let (tree, leafA, _, _) = threeWindowTree(desktopColumn: desktopColumn)
     let layout = LayoutEngine.layout(tree, camera: leafA, in: screen, isPresent: everyone)
     #expect(layout.windowFrames == [a: content])
     #expect(layout.hiddenWindows == [b, c])
     #expect(layout.desktopFrame == nil)
   }
 
-  @Test func absentWindowsGiveTheirSpaceToNeighbours() {
-    let (tree, _, _, _) = threeWindowTree()
+  @Test(arguments: [true, false]) func absentWindowsGiveTheirSpaceToNeighbours(desktopColumn: Bool) {
+    let (tree, _, _, _) = threeWindowTree(desktopColumn: desktopColumn)
     let full = LayoutEngine.layout(tree, camera: tree.root, in: screen, isPresent: everyone)
     let without = LayoutEngine.layout(tree, camera: tree.root, in: screen, isPresent: { $0 != c })
     #expect(without.windowFrames[c] == nil)
@@ -107,8 +109,8 @@ private func threeWindowTree() -> (LayoutTree, NodeID, NodeID, NodeID) {
     #expect(layout.leavingOpen([a, c], in: tree).openPlaces[column] == layout.nodeFrames[column])
   }
 
-  @Test func aMissingCameraFallsBackToAnEffectiveAncestor() {
-    let (tree, _, _, leafC) = threeWindowTree()
+  @Test(arguments: [true, false]) func aMissingCameraFallsBackToAnEffectiveAncestor(desktopColumn: Bool) {
+    let (tree, _, _, leafC) = threeWindowTree(desktopColumn: desktopColumn)
     let layout = LayoutEngine.layout(tree, camera: leafC, in: screen, isPresent: { $0 != c })
     #expect(layout.camera != leafC)
     #expect(layout.windowFrames[a] != nil)
@@ -128,8 +130,8 @@ private func threeWindowTree() -> (LayoutTree, NodeID, NodeID, NodeID) {
     #expect(layout.windowFrames.isEmpty)
   }
 
-  @Test func aLearnedMinimumSizeMakesATile() {
-    let (tree, leafA, _, _) = threeWindowTree()
+  @Test(arguments: [true, false]) func aLearnedMinimumSizeMakesATile(desktopColumn: Bool) {
+    let (tree, leafA, _, _) = threeWindowTree(desktopColumn: desktopColumn)
     let layout = LayoutEngine.layout(
       tree, camera: tree.root, in: screen, isPresent: everyone,
       minimumSize: { $0 == a ? CGSize(width: 900, height: 600) : nil })
@@ -189,8 +191,8 @@ private func threeWindowTree() -> (LayoutTree, NodeID, NodeID, NodeID) {
     #expect(away.hasSuffix("let be: \(a)") && !away.contains(":\(a) "), "\(away)")
   }
 
-  @Test func asciiRendererSurvivesFramesThatAreNotOnTheScreen() {
-    let (tree, _, _, _) = threeWindowTree()
+  @Test(arguments: [true, false]) func asciiRendererSurvivesFramesThatAreNotOnTheScreen(desktopColumn: Bool) {
+    let (tree, _, _, _) = threeWindowTree(desktopColumn: desktopColumn)
     var layout = LayoutEngine.layout(tree, camera: tree.root, in: screen, isPresent: everyone)
     let windows = layout.windowFrames.keys.sorted()
     layout.windowFrames[windows[0]] = CGRect(x: CGFloat.infinity, y: .infinity, width: 0, height: 0)
@@ -218,19 +220,21 @@ private func threeWindowTree() -> (LayoutTree, NodeID, NodeID, NodeID) {
     400, 437, 438, 500, 5000, 1e300, CGFloat.greatestFiniteMagnitude, CGFloat.infinity, 0, -5, -1e300, -CGFloat.infinity,
     CGFloat.nan,
   ]) func noGapPutsAFrameOffTheScreen(gap: CGFloat) throws {
-    let (tree, _, _, _) = threeWindowTree()
-    for camera in tree.preorder() {
-      let layout = LayoutEngine.layout(
-        tree, camera: camera, in: screen, options: LayoutOptions(gap: gap), isPresent: everyone)
-      for rect in rectangles(of: layout) { #expect(isSound(rect, in: screen), "\(rect) with the camera on \(camera)") }
-      for seam in layout.seams { #expect(seam.pointsPerWeight.isFinite) }
-      _ = try JSONEncoder().encode(layout.tiles)  // throws on a number that is not finite
-      #expect(!AsciiRenderer.render(layout, tree: tree).isEmpty)
+    for desktopColumn in [true, false] {
+      let (tree, _, _, _) = threeWindowTree(desktopColumn: desktopColumn)
+      for camera in tree.preorder() {
+        let layout = LayoutEngine.layout(
+          tree, camera: camera, in: screen, options: LayoutOptions(gap: gap), isPresent: everyone)
+        for rect in rectangles(of: layout) { #expect(isSound(rect, in: screen), "\(rect) with the camera on \(camera)") }
+        for seam in layout.seams { #expect(seam.pointsPerWeight.isFinite) }
+        _ = try JSONEncoder().encode(layout.tiles)  // throws on a number that is not finite
+        #expect(!AsciiRenderer.render(layout, tree: tree).isEmpty)
+      }
     }
   }
 
-  @Test func aSensibleGapIsUntouched() {
-    let (tree, _, _, _) = threeWindowTree()
+  @Test(arguments: [true, false]) func aSensibleGapIsUntouched(desktopColumn: Bool) {
+    let (tree, _, _, _) = threeWindowTree(desktopColumn: desktopColumn)
     let layout = LayoutEngine.layout(tree, camera: tree.root, in: screen, options: LayoutOptions(gap: 40), isPresent: everyone)
     #expect(layout.nodeFrames[tree.root] == screen.insetBy(dx: 40, dy: 40))
     #expect(layout.seams.allSatisfy { min($0.frame.width, $0.frame.height) == 40 })

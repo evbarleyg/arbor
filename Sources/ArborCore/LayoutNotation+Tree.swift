@@ -102,20 +102,21 @@ extension LayoutNotation.Spec {
   ///   it so, and what is printed, read back, costs nothing. It is marked as one that was turned is (`Keeps.turned`).
   /// - If the Desktop is not mentioned it is added at the right, `desktopSize` times as wide as the
   ///   average place beside it. A group in written brackets that runs like the row counts for the places it shows, so that
-  ///   the brackets change nobody's share of the room.
+  ///   the brackets change nobody's share of the room. With nil the Desktop has no room there
+  ///   (`LayoutTree.desktopHasRoom`), and what is mentioned fills the display.
   /// - A tab group shows the window that comes first in `recent`.
   /// - **Node ids depend only on the text**: each space has the number of its place in the line,
   ///   filled or not. A window that arrives later (`layout --open`) is added by building the tree again,
   ///   and everything that was there keeps its id, so the view, its history and saved views hold.
   public func tree(
-    filling windows: [[WindowID]], recent: [WindowID] = [], desktopSize: Double = 0.5
+    filling windows: [[WindowID]], recent: [WindowID] = [], desktopSize: Double? = nil
   ) -> LayoutTree {
     var builder = TreeBuilder(windows: windows)
     let built = builder.build(root)
     // Taken whether or not it is used, so that the numbers do not depend on what was found.
     let wrapperID = builder.takeID()
     // As in `LayoutTree.grid`: the number comes from settings.json, where it can be anything.
-    let desktopSize = desktopSize.isNaN ? 0.5 : min(max(desktopSize, 0.05), 20)
+    let desktopSize = desktopSize.map { $0.isNaN ? 0.5 : min(max($0, 0.05), 20) } ?? 0
     var desktop = TreeBuilder.Part(id: TreeBuilder.desktopID, weight: desktopSize, kind: .desktop)
     let whole: TreeBuilder.Part
     if var top = built, !mentionsDesktop {
@@ -133,7 +134,14 @@ extension LayoutNotation.Spec {
         whole = TreeBuilder.Part(id: line, weight: 1, kind: .split(.horizontal, [top, desktop]))
       }
     } else {
-      whole = built ?? desktop
+      // Alone it has everything.
+      if desktop.weight == 0 { desktop.weight = 1 }
+      if var alone = built, case .desktop = alone.kind {
+        alone.weight = 1
+        whole = alone
+      } else {
+        whole = built ?? desktop
+      }
     }
     var rank: [WindowID: Int] = [:]
     for (index, window) in recent.enumerated() where rank[window] == nil { rank[window] = index }
@@ -154,7 +162,8 @@ extension LayoutNotation.Spec {
         // Groups that joined their parent can leave shares far too small to lay out or to drag.
         let floor = parts.reduce(0) { max($0, $1.weight) } * 1e-6
         for var child in parts {
-          child.weight = max(child.weight, floor)
+          // (The Desktop that was added without room stays without.)
+          if child.weight > 0 { child.weight = max(child.weight, floor) }
           emit(child, parent: part.id, along: axis)
         }
       }
@@ -167,13 +176,24 @@ extension LayoutNotation.Spec {
   /// Reads `tree` back. `slot` says how to write each window.
   ///
   /// Sizes are written relative to the smallest window or group of each group, to three decimals, so
-  /// `Safari:2 | Mail | Desktop:0.5` comes back as it was typed and a gap dragged by hand becomes `:1.373`.
-  public init(_ tree: LayoutTree, slot: (WindowID) -> WindowSlot) {
+  /// `Safari:2 | Mail | Desktop:0.5` comes back as it was typed and a gap dragged by hand becomes `:1.373`. A Desktop without room
+  /// is not written: a line that does not mention it is how one is made. Unless it lies where such a line would not put it, inside a
+  /// group or beside brackets that would be lost: there it is `Desktop:0`, so that what is printed, read back, costs nothing (a view of
+  /// "these two and the Desktop" shows what floats).
+  /// `desktopColumn`: a line that does not mention the Desktop gives it a column (the setting is on, over an arrangement made without).
+  public init(_ tree: LayoutTree, desktopColumn: Bool = false, slot: (WindowID) -> WindowSlot) {
+    let others = tree.children(of: tree.root).filter { $0 != tree.desktop }
+    var goesWithoutSaying = tree.parent(of: tree.desktop) == tree.root && !desktopColumn
+    if others.count == 1 {
+      if case .split(.horizontal, _) = tree[tree.root]?.kind, case .split(.horizontal, _) = tree[others[0]]?.kind { goesWithoutSaying = false }
+      if case .split(.vertical, _) = tree[tree.root]?.kind, tree.isSplit(others[0]) { goesWithoutSaying = false }
+    }
     func space(_ id: NodeID, size: Double) -> LayoutNotation.Space? {
       switch tree[id]?.kind {
       case nil:
         return nil
       case .desktop:
+        if !tree.desktopHasRoom { return goesWithoutSaying ? nil : LayoutNotation.Space(.desktop, size: 0) }
         return LayoutNotation.Space(.desktop, size: size)
       case .stack(let windows, _):
         return LayoutNotation.Space(.windows(windows.map(slot)), size: size)
@@ -294,7 +314,9 @@ private struct TreeBuilder {
         // Brackets that are all that is left of their row go by the row's number, as the row did when they still joined it: what
         // points at the row goes on pointing at it when a window that was missing arrives (`layout --open`).
         guard only.isWrittenSo, case .split(axis, _) = only.kind else {
-          return Part(id: only.id, weight: space.size, kind: only.kind, isWrittenSo: only.isWrittenSo, ownID: only.ownID)
+          // (A Desktop without room gets none because the others of its group are missing.)
+          return Part(
+            id: only.id, weight: only.weight == 0 ? 0 : space.size, kind: only.kind, isWrittenSo: only.isWrittenSo, ownID: only.ownID)
         }
         return Part(id: id, weight: space.size, kind: only.kind, isWrittenSo: true, ownID: only.ownID ?? only.id)
       }

@@ -213,8 +213,8 @@ private let side = DisplaySnapshot(
 
 /// Replies name spaces in words a person would use (docs/GLOSSARY.md).
 @Suite @MainActor struct ReplyWordingTests {
-  func nested() -> (Harness, WindowID, WindowID, WindowID) {
-    let h = Harness()
+  func nested(settings: Settings = Harness.settingsWhenNoneAreGiven) -> (Harness, WindowID, WindowID, WindowID) {
+    let h = Harness(settings: settings)
     let a = h.system.open(app: "Safari", title: "Secret plans")
     let b = h.system.open(app: "Mail")
     let c = h.system.open(app: "Notes")
@@ -226,7 +226,8 @@ private let side = DisplaySnapshot(
   }
 
   @Test func cameraRepliesNameWhatIsInView() {
-    let (h, a, _, c) = nested()
+    // [Safari | Desktop | Mail / Notes]: with a column of its own the Desktop is a neighbour to go to, and has its name.
+    let (h, a, _, c) = nested(settings: .withDesktopColumn)
     h.run("zoom \(c.rawValue)")
     #expect(h.run("out").message.hasPrefix("stepped out to Mail and Notes (n"))
     #expect(h.run("out").message == "stepped out to everything")

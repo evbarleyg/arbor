@@ -16,11 +16,11 @@ import Testing
     let model: SettingsPanelModel
     var commands: [String] = []
 
-    /// Safari | Desktop | (Notes / Mail), Music floating, Safari with the keyboard, and everything at rest. Music has room on the
-    /// Desktop whatever the gap, unless it is `wide`: then it is as wide as the Desktop, where Arbor keeps it, which takes
-    /// `floatingWindowsMakeWay`: as Arbor ships it keeps no floating window anywhere (F64).
-    init(wide: Bool = false) {
-      let h = wide ? Harness(settings: .makingWay) : Harness()
+    /// Safari | (Notes / Mail), Music floating, Safari with the keyboard, and everything at rest. With a column for the Desktop, which
+    /// then lies between the two, Music has room on it whatever the gap, unless it is `wide`: then it is as wide as the Desktop,
+    /// where Arbor keeps it, which takes `floatingWindowsMakeWay` as well: as Arbor ships it keeps no floating window anywhere (F64).
+    init(wide: Bool = false, settings: Settings = Harness.settingsWhenNoneAreGiven) {
+      let h = Harness(settings: settings)
       self.h = h
       var windows = ["Safari", "Notes", "Mail"].enumerated().map { index, app in
         h.system.open(app: app, frame: CGRect(x: 100 + 60 * index, y: 100 + 40 * index, width: 600, height: 400))
@@ -123,7 +123,7 @@ import Testing
 
   /// A floating window that is as wide as the Desktop goes with it, and that is one move too.
   @Test func aWindowAsWideAsTheDesktopFollowsItOnce() throws {
-    let w = World(wide: true)
+    let w = World(wide: true, settings: .makingWay.withDesktopColumn)
     #expect(w.h.frame(w.floating)?.width == w.h.layout?.desktopFrame?.width)
     w.model.set("gap", to: 40.0)
     #expect(w.moves() == Dictionary(uniqueKeysWithValues: (w.docked + [w.floating]).map { ($0, 1) }), "\(w.h.system.frameLog)")

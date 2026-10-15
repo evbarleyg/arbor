@@ -12,12 +12,13 @@ public struct TreeView {
     self.isPresent = isPresent
   }
 
-  /// Whether a node takes up space: the Desktop always does, a stack does if
-  /// any of its windows is present, a split does if any child does.
+  /// Whether a node takes up space: a stack does if any of its windows is present, a split does if any child
+  /// does. The Desktop does if it has room (`LayoutTree.desktopHasRoom`). It is what is left over, so it also does, whatever
+  /// its share, while no docked window is present anywhere: then everything is left over.
   public func isEffective(_ id: NodeID) -> Bool {
     guard let node = tree[id] else { return false }
     switch node.kind {
-    case .desktop: return true
+    case .desktop: return node.weight > 0 || !tree.allWindows.contains(where: isPresent)
     case .stack(let windows, _): return windows.contains(where: isPresent)
     case .split(_, let children): return children.contains(where: isEffective)
     }
@@ -39,9 +40,11 @@ public struct TreeView {
     tree.windows(under: id).filter(isPresent)
   }
 
-  /// `id` if it is effective, else its nearest effective ancestor (the root's
-  /// subtree always contains the Desktop, so this always succeeds).
+  /// `id` if it is effective, else its nearest effective ancestor (if no window is present the Desktop is effective, and
+  /// with it the root, so this always succeeds). The Desktop stands for itself: a view can be on it whether or not it
+  /// has room beside the others.
   public func effectiveAncestor(of id: NodeID) -> NodeID {
+    guard id != tree.desktop else { return id }
     var current = tree.contains(id) ? id : tree.root
     while !isEffective(current), let parent = tree.parent(of: current) {
       current = parent
@@ -73,15 +76,20 @@ public struct LayoutOptions: Equatable, Sendable {
   /// the weights) or goes to one neighbour: the nearest child before it that takes up space, or
   /// after it if there is none. See `Builder.keptExtents`.
   public var shareRemovedSpace: Bool
+  /// Whether the Desktop has a share of its own among docked windows (`Settings.desktopColumn`). A layout does not ask: it goes by
+  /// the tree. Whoever rehearses a dock or makes room with these options does (`LayoutTree.dock`, `MakeRoom`).
+  public var desktopColumn: Bool
 
   public init(
     gap: CGFloat = 12, outerGap: CGFloat? = nil,
-    minimumUsableSize: CGSize = CGSize(width: 240, height: 160), shareRemovedSpace: Bool = true
+    minimumUsableSize: CGSize = CGSize(width: 240, height: 160), shareRemovedSpace: Bool = true,
+    desktopColumn: Bool = false
   ) {
     self.gap = gap
     self.outerGap = outerGap ?? gap
     self.minimumUsableSize = minimumUsableSize
     self.shareRemovedSpace = shareRemovedSpace
+    self.desktopColumn = desktopColumn
   }
 }
 

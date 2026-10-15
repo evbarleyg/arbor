@@ -17,11 +17,9 @@ expect camera root
 dock right
 expect visible 101
 dock right
-# Next to the narrow Desktop column it gets a fair share of the row, not half of the Desktop.
+# At the end of the row it has a column of its own.
 expect visible 101
 expect camera root
-dock right
-expect visible 101
 dock right
 expect fail
 # And back again.
@@ -29,6 +27,6 @@ dock left
 expect visible 101
 dock left
 expect visible 101
-dock left
-expect visible 101
 expect camera root
+dock left
+expect fail

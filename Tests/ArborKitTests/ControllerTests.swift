@@ -25,8 +25,30 @@ import Testing
     #expect(h.system.frameLog.isEmpty, "starting must not move anything")
   }
 
-  @Test func dockingBuildsColumnsWithTheDesktopBetween() {
+  @Test func dockingBuildsColumnsAndTheDesktopIsWhatIsLeftOver() {
     let (h, a, b, c) = makeHarness()
+    let content = h.visibleFrame.insetBy(dx: 12, dy: 12)
+    #expect(h.run("dock \(a.rawValue) left").ok)
+    // The first has a half. The other half is left over: the Desktop.
+    let desktop = h.layout!.desktopFrame!
+    #expect(desktop.minX - h.frame(a)!.maxX == 12 && desktop.maxX == content.maxX)
+    #expect(desktop.width == h.frame(a)!.width)
+    // The second takes all of that, and the first stays as it is.
+    let half = h.frame(a)!
+    #expect(h.run("dock \(b.rawValue) right").ok)
+    #expect(h.frame(b) == desktop)
+    #expect(h.frame(a) == half)
+    #expect(h.layout!.desktopFrame == nil)
+    #expect(h.run("dock \(c.rawValue) beside \(a.rawValue) bottom").ok)
+    expectWindowsMatchLayout(h)
+    #expect(h.frame(a)!.minX == content.minX)
+    #expect(h.frame(b)!.maxX == content.maxX)
+    #expect(h.frame(c)!.minY > h.frame(a)!.maxY)
+  }
+
+  /// With the option on: the Desktop has a share of its own among docked windows.
+  @Test func dockingBuildsColumnsWithTheDesktopBetween() {
+    let (h, a, b, c) = makeHarness(settings: .withDesktopColumn)
     #expect(h.run("dock \(a.rawValue) left").ok)
     #expect(h.run("dock \(b.rawValue) right").ok)
     #expect(h.run("dock \(c.rawValue) beside \(a.rawValue) bottom").ok)
@@ -59,7 +81,8 @@ import Testing
     let (h, a, b, _) = makeHarness()
     h.run("dock \(a.rawValue) left")
     h.run("dock \(b.rawValue) right")
-    h.system.cursor = h.frame(b)!.center
+    // (In a corner of b: over its middle lies c, which floats, and over a floating window the pointer means that.)
+    h.system.cursor = CGPoint(x: h.frame(b)!.maxX - 20, y: h.frame(b)!.maxY - 20)
     #expect(h.run("in").ok)
     #expect(h.workspace.camera == h.workspace.tree.leaf(containing: b))
     #expect(h.run("out").ok)
@@ -141,8 +164,9 @@ import Testing
 
   @Test func draggingADockedWindowOntoTheDesktopFloatsIt() {
     let (h, a, b, _) = makeHarness()
+    // [a / b] | Desktop: a second dock in the row would leave no Desktop to drop a window on.
     h.run("dock \(a.rawValue) left")
-    h.run("dock \(b.rawValue) right")
+    h.run("dock \(b.rawValue) beside \(a.rawValue) bottom")
     let desktop = h.layout!.desktopFrame!
     let start = h.frame(a)!
     h.system.drag(a, through: [CGPoint(x: start.midX, y: start.minY + 10), desktop.center])
@@ -206,8 +230,8 @@ import Testing
     let (h, a, b, c) = makeHarness()
     h.run("dock \(a.rawValue) left")
     h.run("dock \(b.rawValue) right")
-    let desktop = h.layout!.desktopFrame!
-    let placed = CGRect(x: desktop.minX + 20, y: desktop.minY + 20, width: 300, height: 200)
+    // Nothing is left over for the Desktop: what floats lies over the docked windows, here across the gap between the two.
+    let placed = CGRect(x: h.frame(a)!.maxX - 150, y: h.frame(a)!.minY + 20, width: 300, height: 200)
     h.system.userMove(c, to: placed)
     h.run("zoom \(a.rawValue)")
     #expect(!h.system.isVisible(c))
@@ -218,11 +242,14 @@ import Testing
   @Test func dockingPushesOverlappingFloatingWindowsOntoTheDesktop() {
     // While floating windows make way, as until Q20. As Arbor ships they stay where they are (`FloatingFrameTests`).
     let (h, a, b, c) = makeHarness(settings: .makingWay)
-    h.system.userMove(c, to: CGRect(x: 20, y: 300, width: 500, height: 300))
+    let left = CGRect(x: 20, y: 300, width: 500, height: 300)
+    h.system.userMove(c, to: left)
     h.run("dock \(a.rawValue) left")
-    h.run("dock \(b.rawValue) right")
     let desktop = h.layout!.desktopFrame!
     #expect(desktop.contains(h.frame(c)!))
+    // b takes all that is left. With no Desktop to lie on, c is back where it was left, over the docked windows.
+    h.run("dock \(b.rawValue) right")
+    #expect(h.frame(c) == left)
   }
 
   @Test func savedViews() {
@@ -238,21 +265,26 @@ import Testing
   }
 
   @Test func keyboardDockMovesADockedWindowOnePlaceAtATime() {
-    let (h, a, b, _) = makeHarness()
+    let (h, a, b, c) = makeHarness()
     h.run("dock \(a.rawValue) left")
     h.run("dock \(b.rawValue) right")
+    h.run("dock \(c.rawValue) right")
     let tree = { h.workspace.tree }
     let leafA = tree().leaf(containing: a)!
     let leafB = tree().leaf(containing: b)!
-    // [a, Desktop, b] → [Desktop, a, b] → [Desktop, b, a] → already at the edge.
+    let leafC = tree().leaf(containing: c)!
+    // [a, b, c] → [b, a, c] → [b, c, a] → already at the edge.
+    // The Desktop has no room: it is nobody's neighbour, and stays where it is.
+    #expect(tree().children(of: tree().root) == [leafA, tree().desktop, leafB, leafC])
     #expect(h.run("dock \(a.rawValue) right").ok)
-    #expect(tree().children(of: tree().root) == [tree().desktop, leafA, leafB])
+    #expect(tree().children(of: tree().root) == [leafB, tree().desktop, leafA, leafC])
     #expect(h.run("dock \(a.rawValue) right").ok)
-    #expect(tree().children(of: tree().root) == [tree().desktop, leafB, leafA])
+    #expect(tree().children(of: tree().root) == [leafB, tree().desktop, leafC, leafA])
     #expect(!h.run("dock \(a.rawValue) right").ok)
     expectWindowsMatchLayout(h)
     // Sizes travel with the windows.
     #expect(abs(h.frame(a)!.width - h.frame(b)!.width) <= 1)
+    #expect(abs(h.frame(a)!.width - h.frame(c)!.width) <= 1)
   }
 
   @Test func keyboardDockStepsOutOfAColumn() {
@@ -260,10 +292,11 @@ import Testing
     h.run("dock \(a.rawValue) left")
     h.run("dock \(c.rawValue) beside \(a.rawValue) bottom")
     h.run("dock \(b.rawValue) right")
-    // c leaves the column [a / c] and sits between it and the Desktop.
+    // c leaves the column [a / c] and sits between it and b, its neighbour on that side.
+    // (The empty place is the Desktop's, which has no room.)
     #expect(h.run("dock \(c.rawValue) right").ok)
     let tree = h.workspace.tree
-    #expect(tree.children(of: tree.root).map { tree.windows(under: $0) } == [[a], [c], [], [b]])
+    #expect(tree.children(of: tree.root).map { tree.windows(under: $0) } == [[a], [], [c], [b]])
     expectWindowsMatchLayout(h)
   }
 
@@ -348,7 +381,7 @@ import Testing
   }
 
   @Test(arguments: [0, -1, -2, 1.7e308]) func anAbsurdDesktopWeightStillArranges(weight: Double) throws {
-    var settings = Settings()
+    var settings = Settings.withDesktopColumn  // the weight is that column's
     settings.arrangeDesktopWeight = weight
     let h = Harness(settings: settings)
     let windows = (0..<3).map { _ in h.system.open(app: "App") }

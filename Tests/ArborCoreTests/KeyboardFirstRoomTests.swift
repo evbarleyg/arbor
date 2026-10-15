@@ -20,6 +20,12 @@ private let tall = [
 /// Where room is short, whoever has the keyboard is served first, and what was lent to the others goes back for it (F61, second
 /// round, 3). The one exception to "nobody in view pays with their place": how far it reaches.
 @Suite struct KeyboardFirstRoomTests {
+  /// Whether the Desktop has a column of its own (`Settings.desktopColumn`): in the docks that build a story, and where room is made. Most
+  /// of these stories were written with one, and some need it: a Desktop between two windows that has lent, or whose gap a person moves.
+  /// A story that holds without as well, as Arbor ships, is told both ways.
+  var desktopColumn = true
+  var options: LayoutOptions { LayoutOptions(desktopColumn: desktopColumn) }
+
   @discardableResult
   func serve(
     _ tree: inout LayoutTree, keyboard: WindowID?, camera: NodeID? = nil, known: [WindowID: CGSize] = wide, givesBack: Bool = true
@@ -27,7 +33,7 @@ private let tall = [
     var terms = MakeRoom.Terms(desktopIsInUse: false, keyboard: keyboard)
     terms.givesBack = givesBack
     return MakeRoom.serve(
-      &tree, camera: camera ?? tree.root, in: screen, options: LayoutOptions(), isPresent: { _ in true }, minimumSize: { known[$0] },
+      &tree, camera: camera ?? tree.root, in: screen, options: options, isPresent: { _ in true }, minimumSize: { known[$0] },
       terms: terms
     ).layout
   }
@@ -43,24 +49,25 @@ private let tall = [
     for (part, wanted) in zip(parts, expected) { #expect(abs(part - wanted) < 1e-9, "\(parts)", sourceLocation: sourceLocation) }
   }
 
-  /// [Mail | Desktop | Chat], a third each: 820 and 760 do not both fit on 1440 points.
+  /// [Mail | Desktop | Chat], a third each; without the column [Mail | Chat], a half each. 820 and 760 do not both fit on 1440 points.
   func columns() -> LayoutTree {
     var tree = LayoutTree()
-    tree.dock(mail, beside: tree.root, edge: .left)
-    tree.dock(chat, beside: tree.root, edge: .right)
+    tree.dock(mail, beside: tree.root, edge: .left, desktopColumn: desktopColumn)
+    tree.dock(chat, beside: tree.root, edge: .right, desktopColumn: desktopColumn)
     return tree
   }
 
-  /// [Notes | Desktop | Mail over Chat]: 500 and 450 do not both fit into 875 points of height.
+  /// [Notes | Desktop | Mail over Chat], or [Notes | Mail over Chat] without the column: 500 and 450 do not both fit into 875 points.
   func columnBesideNotes() -> (tree: LayoutTree, column: NodeID) {
     var tree = LayoutTree()
-    tree.dock(notes, beside: tree.root, edge: .left)
-    let top = tree.dock(mail, beside: tree.root, edge: .right)
-    tree.dock(chat, beside: top, edge: .bottom)
+    tree.dock(notes, beside: tree.root, edge: .left, desktopColumn: desktopColumn)
+    let top = tree.dock(mail, beside: tree.root, edge: .right, desktopColumn: desktopColumn)
+    tree.dock(chat, beside: top, edge: .bottom, desktopColumn: desktopColumn)
     return (tree, tree.parent(of: top)!)
   }
 
-  @Test func whatWasLentToTheOtherGoesBackForTheWindowWithTheKeyboard() throws {
+  @Test(arguments: [false, true]) mutating func whatWasLentToTheOtherGoesBackForTheWindowWithTheKeyboard(desktopColumn: Bool) throws {
+    self.desktopColumn = desktopColumn
     var tree = columns()
     let sum = tree.children(of: tree.root).reduce(0) { $0 + tree[$1]!.weight }
     var layout = serve(&tree, keyboard: chat)
@@ -83,7 +90,8 @@ private let tall = [
     #expect(tree.loans.map(\.borrower) == first.loans.map(\.borrower), "there and back is nothing")
   }
 
-  @Test func withoutTheKeyboardNobodyPaysWithTheirPlace() {
+  @Test(arguments: [false, true]) mutating func withoutTheKeyboardNobodyPaysWithTheirPlace(desktopColumn: Bool) {
+    self.desktopColumn = desktopColumn
     var tree = columns()
     serve(&tree, keyboard: chat)
     let before = tree
@@ -93,7 +101,8 @@ private let tall = [
 
   /// Zooming never rearranges what is out of view. There it could not help the window with the keyboard, and nobody would be served
   /// again from what is left.
-  @Test func whatWasLentOutOfViewStaysLent() throws {
+  @Test(arguments: [false, true]) mutating func whatWasLentOutOfViewStaysLent(desktopColumn: Bool) throws {
+    self.desktopColumn = desktopColumn
     var (tree, column) = columnBesideNotes()
     var layout = serve(&tree, keyboard: mail, known: tall)
     #expect(layout.windowFrames[notes]?.width == 709)
@@ -112,7 +121,8 @@ private let tall = [
   }
 
   /// In view, whoever gave back more than it took is served again at once from what is left.
-  @Test func whoeverInViewNeedNotHavePaidIsServedAgain() {
+  @Test(arguments: [false, true]) mutating func whoeverInViewNeedNotHavePaidIsServedAgain(desktopColumn: Bool) {
+    self.desktopColumn = desktopColumn
     var (tree, _) = columnBesideNotes()
     serve(&tree, keyboard: mail, known: tall)
     let row = parts(of: tree.root, tree)
@@ -123,7 +133,8 @@ private let tall = [
     expectSame(parts(of: tree.root, tree), row)
   }
 
-  @Test func aWindowThatFitsNowhereCostsNobodyTheirPlace() {
+  @Test(arguments: [false, true]) mutating func aWindowThatFitsNowhereCostsNobodyTheirPlace(desktopColumn: Bool) {
+    self.desktopColumn = desktopColumn
     var tree = columns()
     serve(&tree, keyboard: chat)
     let before = tree
@@ -135,7 +146,8 @@ private let tall = [
   }
 
   /// `RelayoutReason.enforce`: nothing goes back because an app has moved its own window, but for the window being typed in.
-  @Test func whereNothingElseGoesBackTheWindowWithTheKeyboardIsStillServed() {
+  @Test(arguments: [false, true]) mutating func whereNothingElseGoesBackTheWindowWithTheKeyboardIsStillServed(desktopColumn: Bool) {
+    self.desktopColumn = desktopColumn
     var tree = columns()
     serve(&tree, keyboard: chat)
     let before = tree
@@ -147,7 +159,8 @@ private let tall = [
   }
 
   /// A gap that a person has moved is theirs, so nothing is owed across it that could go back. The window with the keyboard borrows
-  /// across it then, at the cost of the neighbour's place, and the ledger knows where the person had put the gap.
+  /// across it then, at the cost of the neighbour's place, and the ledger knows where the person had put the gap. (The gap between the
+  /// Desktop and the chat. Without the column the only gap there is is that of Mail's tile, which the same hand would make shorter: T20.)
   @Test func acrossAGapThatAPersonHasMovedItBorrowsAndTheGapComesBack() throws {
     var tree = columns()
     serve(&tree, keyboard: chat)
@@ -174,10 +187,11 @@ private let tall = [
 
   /// [Desktop 80 | Mail 490 | Chat 490 | Notes 320] by hand, nothing lent, the two in the middle with ten points to spare each. Both
   /// have to give more than that, and no more leave the view than must.
-  @Test func ofTwoNeighboursThatPayTheNewerIsServedAgainFromWhatIsLeft() {
+  @Test(arguments: [false, true]) mutating func ofTwoNeighboursThatPayTheNewerIsServedAgainFromWhatIsLeft(desktopColumn: Bool) {
+    self.desktopColumn = desktopColumn
     let known = [mail: CGSize(width: 480, height: 400), chat: CGSize(width: 480, height: 400), notes: CGSize(width: 700, height: 300)]
     var tree = LayoutTree()
-    let leaves = [mail, chat, notes].map { tree.dock($0, beside: tree.root, edge: .right) }
+    let leaves = [mail, chat, notes].map { tree.dock($0, beside: tree.root, edge: .right, desktopColumn: desktopColumn) }
     tree.setShares([tree.desktop: 80, leaves[0]: 490, leaves[1]: 490, leaves[2]: 320])
     let before = tree
     let plain = serve(&tree, keyboard: nil, known: known)
@@ -198,14 +212,15 @@ private let tall = [
   }
 
   /// A slot that the person's own hand has made short stays as they left it, whoever has the keyboard (T20).
-  @Test func aSlotSqueezedByHandIsLeftAloneWhoeverHasTheKeyboard() throws {
+  @Test(arguments: [false, true]) mutating func aSlotSqueezedByHandIsLeftAloneWhoeverHasTheKeyboard(desktopColumn: Bool) throws {
+    self.desktopColumn = desktopColumn
     var tree = columns()
     serve(&tree, keyboard: chat)
     let before = tree
     var terms = MakeRoom.Terms(desktopIsInUse: false, keyboard: mail)
     terms.leaving = [try #require(tree.leaf(containing: mail))]
     let layout = MakeRoom.serve(
-      &tree, camera: tree.root, in: screen, options: LayoutOptions(), isPresent: { _ in true }, minimumSize: { wide[$0] }, terms: terms
+      &tree, camera: tree.root, in: screen, options: options, isPresent: { _ in true }, minimumSize: { wide[$0] }, terms: terms
     ).layout
     #expect(layout.windowFrames[mail] == nil)
     #expect(tree == before)
@@ -213,14 +228,15 @@ private let tall = [
 
   /// [Mail over Chat | Desktop | Notes over Safari], neither column tall enough for both of its windows. Notes holds its place beside
   /// the tile of Safari, which is the newer. What was lent in that column could never help a window in the other.
-  @Test func aColumnThatTheWindowIsNotInIsLeftAlone() throws {
+  @Test(arguments: [false, true]) mutating func aColumnThatTheWindowIsNotInIsLeftAlone(desktopColumn: Bool) throws {
+    self.desktopColumn = desktopColumn
     var known = tall
     known[notes] = CGSize(width: 300, height: 500)
     var tree = LayoutTree()
-    let left = tree.dock(mail, beside: tree.root, edge: .left)
-    tree.dock(chat, beside: left, edge: .bottom)
-    let right = tree.dock(notes, beside: tree.root, edge: .right)
-    tree.dock(safari, beside: right, edge: .bottom)
+    let left = tree.dock(mail, beside: tree.root, edge: .left, desktopColumn: desktopColumn)
+    tree.dock(chat, beside: left, edge: .bottom, desktopColumn: desktopColumn)
+    let right = tree.dock(notes, beside: tree.root, edge: .right, desktopColumn: desktopColumn)
+    tree.dock(safari, beside: right, edge: .bottom, desktopColumn: desktopColumn)
     var layout = serve(&tree, keyboard: notes, known: known)
     #expect(Set(layout.windowFrames.keys) == [chat, notes])
     let column = try #require(tree.parent(of: right))
@@ -236,7 +252,7 @@ private let tall = [
     var tree = LayoutTree()
     var lengths: [NodeID: Double] = [:]
     for (window, length) in own {
-      lengths[window.map { tree.dock($0, beside: tree.root, edge: .right) } ?? tree.desktop] = length
+      lengths[window.map { tree.dock($0, beside: tree.root, edge: .right, desktopColumn: desktopColumn) } ?? tree.desktop] = length
     }
     tree.setShares(lengths)
     for (window, points) in lent.sorted(by: { $0.key < $1.key }) {
@@ -250,14 +266,15 @@ private let tall = [
 
   /// [Desktop 100 | Chat 240 | Safari 500 | Mail 540]. The chat is a tile that the person's hand has made 240 points wide, and owes the
   /// Desktop 100 of them; Safari shows, on 200 of the Desktop's. Mail needs 200 more, which is what Safari gives back.
-  @Test func aSlotSqueezedByHandGivesNothingBackForTheKeyboard() throws {
+  @Test(arguments: [false, true]) mutating func aSlotSqueezedByHandGivesNothingBackForTheKeyboard(desktopColumn: Bool) throws {
+    self.desktopColumn = desktopColumn
     let known = [chat: CGSize(width: 650, height: 400), safari: CGSize(width: 500, height: 300), mail: CGSize(width: 740, height: 400)]
     var tree = row([(nil, 400), (chat, 140), (safari, 300), (mail, 540)], lent: [chat: 100, safari: 200])
     let squeezed = try #require(tree.leaf(containing: chat))
     var terms = MakeRoom.Terms(desktopIsInUse: false, keyboard: mail)
     terms.leaving = [squeezed]
     let layout = MakeRoom.serve(
-      &tree, camera: tree.root, in: screen, options: LayoutOptions(), isPresent: { _ in true }, minimumSize: { known[$0] }, terms: terms
+      &tree, camera: tree.root, in: screen, options: options, isPresent: { _ in true }, minimumSize: { known[$0] }, terms: terms
     ).layout
     #expect(layout.windowFrames[mail]?.width == 740)
     #expect(layout.windowFrames[safari] == nil)
@@ -265,7 +282,8 @@ private let tall = [
   }
 
   /// [Desktop 392 | Safari 500 | Mail 500]. The ledger says that Safari owes 480 of its 500 points: more than leaves it a tile.
-  @Test func nobodyIsLeftWithLessThanATileAndWhatCannotGoBackStaysOwed() throws {
+  @Test(arguments: [false, true]) mutating func nobodyIsLeftWithLessThanATileAndWhatCannotGoBackStaysOwed(desktopColumn: Bool) throws {
+    self.desktopColumn = desktopColumn
     let known = [safari: CGSize(width: 500, height: 300), mail: CGSize(width: 1000, height: 400)]
     var tree = row([(nil, 872), (safari, 20), (mail, 500)], lent: [safari: 480])
     let slot = try #require(tree.leaf(containing: safari))
@@ -283,12 +301,12 @@ private let tall = [
   @Test func whatIsOwedBetweenNodesThatAreNoLongerNeighboursIsNotForgotten() throws {
     var known = [notes: CGSize(width: 709, height: 300), chat: CGSize(width: 574, height: 240)]
     var tree = LayoutTree()
-    tree.dock(notes, beside: tree.root, edge: .left)
-    let upper = tree.dock(chat, beside: tree.root, edge: .right)
+    tree.dock(notes, beside: tree.root, edge: .left, desktopColumn: desktopColumn)
+    let upper = tree.dock(chat, beside: tree.root, edge: .right, desktopColumn: desktopColumn)
     #expect(serve(&tree, keyboard: nil, known: known).windowFrames.count == 2)
     let owed = tree.loans.filter { $0.borrower == upper }
     #expect(!owed.isEmpty)
-    tree.dock(safari, beside: upper, edge: .bottom)
+    tree.dock(safari, beside: upper, edge: .bottom, desktopColumn: desktopColumn)
     #expect(tree.parent(of: upper) != tree.root)
 
     known[safari] = CGSize(width: 900, height: 240)
@@ -301,12 +319,13 @@ private let tall = [
   /// [Mail over Desktop | Notes]. Notes stands on 7 points that the Desktop lent it while the two were neighbours; Mail, docked above the
   /// Desktop since, has put that into a column, so they cannot go back. And they would not be enough. Mail comes back out of the Dock
   /// with the keyboard, into a column 65 points too narrow for it.
-  @Test func whereNothingThatWasLentCanGoBackTheNeighbourLends() throws {
+  @Test(arguments: [false, true]) mutating func whereNothingThatWasLentCanGoBackTheNeighbourLends(desktopColumn: Bool) throws {
+    self.desktopColumn = desktopColumn
     let known = [notes: CGSize(width: 709, height: 300), mail: CGSize(width: 760, height: 400)]
     var tree = LayoutTree()
-    tree.dock(notes, beside: tree.root, edge: .right)
+    tree.dock(notes, beside: tree.root, edge: .right, desktopColumn: desktopColumn)
     #expect(serve(&tree, keyboard: notes, known: known).windowFrames[notes]?.width == 709)
-    tree.dock(mail, beside: tree.desktop, edge: .top)
+    tree.dock(mail, beside: tree.desktop, edge: .top, desktopColumn: desktopColumn)
     #expect(serve(&tree, keyboard: notes, known: known).windowFrames[mail] == nil, "in the background it is the tile")
     let layout = serve(&tree, keyboard: mail, known: known, givesBack: false)
     #expect(layout.windowFrames[mail]?.width == 760)
@@ -314,20 +333,23 @@ private let tall = [
   }
 
   /// [Mail | Desktop | Chat over Notes], and Mail will not go below 1100 points: typed in, it leaves the column 212, which is too narrow
-  /// for anything, so the column is one tile. A window in there is served like any other that has the keyboard.
-  @Test func outOfTheTileOfAGroupToo() throws {
-    let known = [mail: CGSize(width: 1100, height: 400), chat: CGSize(width: 400, height: 300), notes: CGSize(width: 400, height: 300)]
+  /// for anything, so the column is one tile. A window in there is served like any other that has the keyboard. (Where the Desktop has
+  /// no column there are 92 points more for the two: 1200 points, which leave 204.)
+  @Test(arguments: [false, true]) mutating func outOfTheTileOfAGroupToo(desktopColumn: Bool) throws {
+    self.desktopColumn = desktopColumn
+    let least: CGFloat = desktopColumn ? 1100 : 1200
+    let known = [mail: CGSize(width: least, height: 400), chat: CGSize(width: 400, height: 300), notes: CGSize(width: 400, height: 300)]
     var tree = LayoutTree()
-    tree.dock(mail, beside: tree.root, edge: .left)
-    let upper = tree.dock(chat, beside: tree.root, edge: .right)
-    tree.dock(notes, beside: upper, edge: .bottom)
+    tree.dock(mail, beside: tree.root, edge: .left, desktopColumn: desktopColumn)
+    let upper = tree.dock(chat, beside: tree.root, edge: .right, desktopColumn: desktopColumn)
+    tree.dock(notes, beside: upper, edge: .bottom, desktopColumn: desktopColumn)
     let column = try #require(tree.parent(of: upper))
     var layout = serve(&tree, keyboard: chat, known: known)
     #expect(Set(layout.windowFrames.keys) == [chat, notes])
     let first = tree
 
     layout = serve(&tree, keyboard: mail, known: known)
-    #expect(layout.windowFrames[mail]?.width == 1100)
+    #expect(layout.windowFrames[mail]?.width == least)
     #expect(layout.tiles.contains { $0.node == column && $0.kind == .group })
 
     layout = serve(&tree, keyboard: chat, known: known)
@@ -339,12 +361,13 @@ private let tall = [
   }
 
   /// The same with the gaps put there by hand, so that nothing is owed: the column is grown until it is laid out again, then the window.
-  @Test func outOfTheTileOfAGroupThatNothingWasLentFor() throws {
+  @Test(arguments: [false, true]) mutating func outOfTheTileOfAGroupThatNothingWasLentFor(desktopColumn: Bool) throws {
+    self.desktopColumn = desktopColumn
     let known = [mail: CGSize(width: 1100, height: 400), chat: CGSize(width: 500, height: 600), notes: CGSize(width: 400, height: 300)]
     var tree = LayoutTree()
-    let left = tree.dock(mail, beside: tree.root, edge: .left)
-    let upper = tree.dock(chat, beside: tree.root, edge: .right)
-    tree.dock(notes, beside: upper, edge: .bottom)
+    let left = tree.dock(mail, beside: tree.root, edge: .left, desktopColumn: desktopColumn)
+    let upper = tree.dock(chat, beside: tree.root, edge: .right, desktopColumn: desktopColumn)
+    tree.dock(notes, beside: upper, edge: .bottom, desktopColumn: desktopColumn)
     let column = try #require(tree.parent(of: upper))
     tree.setShares([left: 1100, tree.desktop: 80, column: 212])
     let theirs = tree
@@ -363,36 +386,44 @@ private let tall = [
   }
 
   /// Notes has never refused a size, so Arbor does not know what it needs. It lends Mail its place and is a tile of 162 points, too small for
-  /// any window. Typed in, it is back: that it is so small is Arbor's doing.
-  @Test func aNeighbourThatLentItsPlaceComesBackThoughNothingIsKnownAboutIt() {
-    let known = [mail: CGSize(width: 1150, height: 400)]
+  /// any window. Typed in, it is back: that it is so small is Arbor's doing. (Without the column Notes has a half, and beside 1150 points
+  /// it would still show, on 254: there Mail needs 1200, and the tile has 204.)
+  @Test(arguments: [false, true]) mutating func aNeighbourThatLentItsPlaceComesBackThoughNothingIsKnownAboutIt(desktopColumn: Bool) {
+    self.desktopColumn = desktopColumn
+    let (least, own): (CGFloat, CGFloat) = desktopColumn ? (1150, 464) : (1200, 702)
+    let known = [mail: CGSize(width: least, height: 400)]
     var tree = LayoutTree()
-    tree.dock(mail, beside: tree.root, edge: .left)
-    tree.dock(notes, beside: tree.root, edge: .right)
+    tree.dock(mail, beside: tree.root, edge: .left, desktopColumn: desktopColumn)
+    tree.dock(notes, beside: tree.root, edge: .right, desktopColumn: desktopColumn)
     let first = tree
-    #expect(serve(&tree, keyboard: notes, known: known).windowFrames[notes]?.width == 464)
+    #expect(serve(&tree, keyboard: notes, known: known).windowFrames[notes]?.width == own)
     #expect(tree == first)
     var layout = serve(&tree, keyboard: mail, known: known)
-    #expect(layout.windowFrames[mail]?.width == 1150)
+    #expect(layout.windowFrames[mail]?.width == least)
     #expect(layout.windowFrames[notes] == nil)
     layout = serve(&tree, keyboard: notes, known: known)
-    #expect(layout.windowFrames[notes]?.width == 464)
+    #expect(layout.windowFrames[notes]?.width == own)
     #expect(layout.windowFrames[mail] == nil)
     expectSame(parts(of: tree.root, tree), parts(of: first.root, first))
   }
 
   /// Six columns on 1440 points are 220 each, too small for any window, and nobody made them so but the person. As ever, they are tiles.
-  @Test func aSlotTooSmallForAnyWindowIsLeftAloneWhereNothingIsKnownAndNothingWasLent() {
+  /// (One of the six is the Desktop's, where it has one.)
+  @Test(arguments: [false, true])
+  mutating func aSlotTooSmallForAnyWindowIsLeftAloneWhereNothingIsKnownAndNothingWasLent(desktopColumn: Bool) {
+    self.desktopColumn = desktopColumn
     var tree = LayoutTree()
-    let windows = (1...5).map { WindowID(UInt32($0)) }
-    for window in windows { tree.dock(window, beside: tree.root, edge: .right) }
+    let windows = (1...(desktopColumn ? 5 : 6)).map { WindowID(UInt32($0)) }
+    for window in windows { tree.dock(window, beside: tree.root, edge: .right, desktopColumn: desktopColumn) }
     let before = tree
     #expect(serve(&tree, keyboard: windows[2], known: [:]).windowFrames.isEmpty)
     #expect(tree == before)
   }
 
   /// At a start, and while the window is let be where it stands since (Q16): nothing goes back for it and nobody lends.
-  @Test(arguments: [false, true]) func whereTheNeighboursDoNotPayItIsTheTile(nudged: Bool) throws {
+  @Test(arguments: [(false, false), (false, true), (true, true)])
+  mutating func whereTheNeighboursDoNotPayItIsTheTile(nudged: Bool, desktopColumn: Bool) throws {
+    self.desktopColumn = desktopColumn
     var tree = columns()
     serve(&tree, keyboard: chat)
     if nudged {
@@ -402,7 +433,7 @@ private let tall = [
     var terms = MakeRoom.Terms(desktopIsInUse: false, keyboard: mail)
     terms.neighboursPay = false
     let layout = MakeRoom.serve(
-      &tree, camera: tree.root, in: screen, options: LayoutOptions(), isPresent: { _ in true }, minimumSize: { wide[$0] }, terms: terms
+      &tree, camera: tree.root, in: screen, options: options, isPresent: { _ in true }, minimumSize: { wide[$0] }, terms: terms
     ).layout
     #expect(layout.windowFrames[mail] == nil)
     #expect(layout.windowFrames[chat]?.width == (nudged ? 770 : 760))
@@ -412,7 +443,8 @@ private let tall = [
   // MARK: Anything
 
   /// Whatever the arrangement, the minimums and whoever has the keyboard.
-  @Test func anyTreeAnyMinimumsAnyKeyboard() {
+  @Test(arguments: [false, true]) mutating func anyTreeAnyMinimumsAnyKeyboard(desktopColumn: Bool) {
+    self.desktopColumn = desktopColumn
     let (exceptions, missed) = walk(0..<1500)
     #expect(exceptions > 20, "the walk has to meet what it is about: \(exceptions)")
     #expect(missed <= 12, "beside a group that cannot shrink any further it is still the tile; that has become more common: \(missed)")
@@ -420,12 +452,16 @@ private let tall = [
 
   /// Found by longer walks than the one above, each with one thing taken out of `MakeRoom`: twelve rounds (debts in a circle); a group laid
   /// out again large enough for all that is in it; the tile of a group giving like a window's; a layout after each loan that goes back.
-  @Test(arguments: [
-    13951, 33480, 37293, 42820, 55008, 57915,
-    4388, 49686, 59304,
-    5560, 11163, 16693,
-    35037,
-  ]) func roundsThatOnceBrokeARule(round: Int) {
+  /// (With the column, which is how they were found. Without, each is another story with the same number, and holds as well.)
+  @Test(
+    arguments: [
+      13951, 33480, 37293, 42820, 55008, 57915,
+      4388, 49686, 59304,
+      5560, 11163, 16693,
+      35037,
+    ], [false, true]
+  ) mutating func roundsThatOnceBrokeARule(round: Int, desktopColumn: Bool) {
+    self.desktopColumn = desktopColumn
     _ = walk(round..<(round + 1))
   }
 
@@ -447,12 +483,12 @@ private let tall = [
       var known: [WindowID: CGSize] = [:]
       for window in windows {
         let nodes = tree.preorder()
-        tree.dock(window, beside: nodes[random(nodes.count)], edge: Edge.allCases[random(4)])
+        tree.dock(window, beside: nodes[random(nodes.count)], edge: Edge.allCases[random(4)], desktopColumn: desktopColumn)
         if random(4) > 0 { known[window] = CGSize(width: 200 + random(14) * 50, height: 150 + random(10) * 50) }
       }
       func lay(_ tree: inout LayoutTree, keyboard: WindowID?, camera: NodeID) -> Layout {
         MakeRoom.serve(
-          &tree, camera: camera, in: screen, options: LayoutOptions(), isPresent: { _ in true }, minimumSize: { known[$0] },
+          &tree, camera: camera, in: screen, options: options, isPresent: { _ in true }, minimumSize: { known[$0] },
           terms: MakeRoom.Terms(desktopIsInUse: false, keyboard: keyboard)
         ).layout
       }
@@ -463,9 +499,9 @@ private let tall = [
       let keyboard = windows[random(windows.count)]
       let before = tree
       let shown = LayoutEngine.layout(
-        tree, camera: camera, in: screen, options: LayoutOptions(), isPresent: { _ in true }, minimumSize: { known[$0] })
+        tree, camera: camera, in: screen, options: options, isPresent: { _ in true }, minimumSize: { known[$0] })
       let after = lay(&tree, keyboard: keyboard, camera: camera)
-      let story = "round \(round), keyboard \(keyboard), camera \(camera)"
+      let story = "round \(round), keyboard \(keyboard), camera \(camera), desktopColumn \(desktopColumn)"
 
       #expect(tree.invariantViolations().isEmpty, "\(story)")
       for id in tree.preorder() where tree.isSplit(id) {
@@ -494,7 +530,7 @@ private let tall = [
         var alone = before
         let others = windows.filter { $0 != keyboard }
         let roomiest = MakeRoom.serve(
-          &alone, camera: camera, in: screen, options: LayoutOptions(), isPresent: { _ in true },
+          &alone, camera: camera, in: screen, options: options, isPresent: { _ in true },
           minimumSize: { $0 == keyboard ? minimum : others.contains($0) ? CGSize(width: 10_000, height: 10_000) : nil },
           terms: MakeRoom.Terms(desktopIsInUse: false, keyboard: keyboard)
         ).layout
@@ -540,22 +576,22 @@ private let tall = [
     let known = [mail: CGSize(width: 600, height: 400), chat: CGSize(width: 760, height: 500)]
     var workspace = Workspace()
     workspace.undock(chat, floatingAt: CGRect(x: 300, y: 100, width: 800, height: 520))
-    workspace.dock(notes, at: .cameraEdge(.left))
-    workspace.dock(mail, at: .cameraEdge(.right))
+    workspace.dock(notes, at: .cameraEdge(.left), desktopColumn: desktopColumn)
+    workspace.dock(mail, at: .cameraEdge(.right), desktopColumn: desktopColumn)
     #expect(serve(&workspace.tree, keyboard: chat, known: known).windowFrames[mail]?.width == 600)
     if dockedAlready {
-      workspace.dock(chat, at: .beside(try #require(workspace.tree.leaf(containing: mail)), .bottom))
+      workspace.dock(chat, at: .beside(try #require(workspace.tree.leaf(containing: mail)), .bottom), desktopColumn: desktopColumn)
       #expect(serve(&workspace.tree, keyboard: notes, known: known).windowFrames[chat] == nil)
     }
     let target = DropTarget.beside(try #require(workspace.tree.leaf(containing: notes)), .bottom)
 
     func preview(keyboard: WindowID?) -> CGRect? {
       workspace.previewFrame(
-        for: chat, at: target, in: screen, options: LayoutOptions(), isPresent: { _ in true }, minimumSize: { known[$0] },
+        for: chat, at: target, in: screen, options: options, isPresent: { _ in true }, minimumSize: { known[$0] },
         makingRoom: MakeRoom.Terms(desktopIsInUse: false, keyboard: keyboard))
     }
     var dropped = workspace
-    dropped.dock(chat, at: target)
+    dropped.dock(chat, at: target, desktopColumn: desktopColumn)
     let landed = try #require(serve(&dropped.tree, keyboard: chat, known: known).windowFrames[chat])
     #expect(landed.size == CGSize(width: 760, height: 500))
     #expect(preview(keyboard: chat) == landed)

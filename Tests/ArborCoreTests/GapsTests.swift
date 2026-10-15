@@ -12,15 +12,15 @@ private let minimums = [notes: CGSize(width: 709, height: 300), safari: CGSize(w
 @Suite struct GapsTests {
   private func serve(_ tree: inout LayoutTree, without absent: WindowID? = nil) {
     _ = MakeRoom.serve(
-      &tree, camera: tree.root, in: screen, options: LayoutOptions(), isPresent: { $0 != absent },
+      &tree, camera: tree.root, in: screen, options: LayoutOptions(desktopColumn: true), isPresent: { $0 != absent },
       minimumSize: { minimums[$0] }, terms: MakeRoom.Terms(desktopIsInUse: false))
   }
 
-  /// [Notes | Desktop | Safari], with room made for both.
+  /// [Notes | Desktop | Safari], thirds, with room made for both: with a column for the Desktop, which lends it.
   private func served() -> LayoutTree {
     var tree = LayoutTree()
-    tree.dock(notes, beside: tree.root, edge: .left)
-    tree.dock(safari, beside: tree.root, edge: .right)
+    tree.dock(notes, beside: tree.root, edge: .left, desktopColumn: true)
+    tree.dock(safari, beside: tree.root, edge: .right, desktopColumn: true)
     serve(&tree)
     #expect(tree.hasLoans)
     return tree

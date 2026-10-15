@@ -276,8 +276,12 @@ extension Controller {
       for window in workspaces[display]?.allWindows ?? [] { drag?.reflow.minimumsBefore?[window] = minimumSizes[window] }
     }
     // That layout has placed the display's floating windows for real. Unless it only put docked windows back: then
-    // the ones that trials pushed aside are still there, and `settle` still has to know where from.
-    guard reason != .enforce else { return }
+    // the ones that trials pushed aside are still there, and `settle` still has to know where from. The same where nothing is kept for
+    // the Desktop: what floats lies over the docked windows there and no layout places it, while a trial, with the window
+    // in the hand out of its slot, had a Desktop to push it onto.
+    guard reason != .enforce, let layout = layouts[display], let workspace = workspaces[display],
+      layout.desktopFrame != nil || !showsWhatFloats(layout, in: workspace)
+    else { return }
     for window in workspaces[display]?.floating.keys.sorted() ?? [] { drag?.reflow.floatsBefore[window] = nil }
   }
 
@@ -286,8 +290,10 @@ extension Controller {
     forgetHover()
     drag?.reflow.trials.removeAll()
     // The windows of a display that went away have been given new places. Where they were
-    // before the drag may not be on any display now.
-    drag?.reflow.floatsBefore.removeAll()
+    // before the drag may not be on any display now. (The rest is for the layouts that follow: `arrangementChangedDuringDrag`.)
+    let visible = displays.map(\.visibleFrame)
+    let still = drag?.reflow.floatsBefore.filter { _, was in visible.contains { $0.contains(was.frame) } }
+    drag?.reflow.floatsBefore = still ?? [:]
   }
 
   // MARK: The end
@@ -403,7 +409,7 @@ extension Controller {
     guard let current = windows[window]?.frame else { return nil }
     let home = workspaceID(containing: window)
     var drop = Drop(
-      window: window, target: target, display: display, frame: current, shareSpace: settings.shareRemovedSpace)
+      window: window, target: target, display: display, frame: current, shareSpace: settings.shareRemovedSpace, desktopColumn: settings.desktopColumn)
     switch target {
     case .float where leftToMacOS: break
     case .float:

@@ -21,6 +21,15 @@ extension Controller {
     }
     guard let (plain, late, atAWindowsCost) = layoutAndWhoIsLate(of: displayID) else { return nil }
     if atAWindowsCost { giveUpRoom(on: displayID) }
+    // Which `MakeRoom.serve` sees to otherwise.
+    if !settings.makeRoom, !plain.tiles.isEmpty, !gapsInHand, drag == nil, edgeResize == nil, var tree = workspaces[displayID]?.tree,
+      MakeRoom.shareWhereTooLittleWasLeft(
+        &tree, laidOutAs: plain, options: options(for: displayID).layoutOptions, leaving: squeezedByHand[displayID] ?? [])
+    {
+      workspaces[displayID]?.tree = tree
+      scheduleSave()
+      return roomyLayout(of: displayID, for: reason)
+    }
     // Framed on its own the Desktop has the whole display, which says nothing about its share beside the others.
     let tree = workspaces[displayID]?.tree
     if plain.desktopFrame != nil, plain.camera != tree?.desktop || tree?.root == tree?.desktop {
@@ -96,7 +105,16 @@ extension Controller {
     var terms = MakeRoom.Terms(
       desktopIsInUse: !onDesktop.isEmpty,
       keyboard: keyboard,
-      leaving: squeezedByHand[displayID] ?? [], desktopIsOwed: workspaces[displayID]?.desktopIsOwedRoom == true,
+      // (Squeezed against a neighbour that has left since, with everything else left over, it is squeezed by nobody. Squeezed against the
+      // Desktop it is as narrow as its person wants it.)
+      leaving: (squeezedByHand[displayID] ?? []).filter { node in
+        guard squeezedAgainstWindows[displayID]?.contains(node) == true, let tree = workspaces[displayID]?.tree,
+          let row = tree.parent(of: node)
+        else { return true }
+        return Set(tree.children(of: row)) != [node, tree.desktop]
+      },
+      // What is left over is owed nothing (Q28).
+      desktopIsOwed: settings.desktopColumn && workspaces[displayID]?.desktopIsOwedRoom == true,
       desktopWish: CGSize(width: frames.map(\.width).max() ?? 0, height: frames.map(\.height).max() ?? 0))
     // Only at a layout that follows a person's act. Not at a start, nor while the window is let be since, until a person asks
     // for a layout (Controller+LetBe.swift); not for a report of the displays; not for the window that is docked as it
@@ -141,6 +159,7 @@ extension Controller {
   /// For whatever replaces a display's tree with another (`arrange`): node ids start again, and would be mistaken.
   func forgetSqueezes(on displayID: DisplayID) {
     squeezedByHand[displayID] = nil
+    squeezedAgainstWindows[displayID] = nil
     workspaces[displayID]?.desktopIsOwedRoom = nil
   }
 
@@ -170,14 +189,19 @@ extension Controller {
       // Only what the hand has made short, or shorter. A window that was a tile for want of room before, somewhere else
       // in the view, is still waiting for room.
       let shown = layouts[displayID]
-      squeezed.formUnion(
-        short.filter { slot in
-          guard let window = slot.window else { return false }
-          guard let shown, shown.windowFrames[window] == nil, let was = shown.nodeFrames[slot.node],
-            let now = layout.nodeFrames[slot.node]
-          else { return true }
-          return now.width < was.width - 0.5 || now.height < was.height - 0.5
-        }.map(\.node))
+      let byThisHand = short.filter { slot in
+        guard let window = slot.window else { return false }
+        guard let shown, shown.windowFrames[window] == nil, let was = shown.nodeFrames[slot.node],
+          let now = layout.nodeFrames[slot.node]
+        else { return true }
+        return now.width < was.width - 0.5 || now.height < was.height - 0.5
+      }.map(\.node)
+      squeezed.formUnion(byThisHand)
+      if view.tree.desktopHasRoom {
+        squeezedAgainstWindows[displayID]?.subtract(byThisHand)
+      } else {
+        squeezedAgainstWindows[displayID, default: []].formUnion(byThisHand)
+      }
       for window in layout.windowFrames.keys {
         if let leaf = view.tree.leaf(containing: window) { squeezed.remove(leaf) }
       }
@@ -193,5 +217,6 @@ extension Controller {
         }.map(\.node))
     }
     squeezedByHand[displayID] = squeezed.isEmpty ? nil : squeezed
+    squeezedAgainstWindows[displayID]?.formIntersection(squeezed)
   }
 }

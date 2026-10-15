@@ -2,6 +2,8 @@
 # The simulated display is 1440x900 with a 25-point menu bar.
 # Reference: T01 T02 T11 T17.
 # The three tiling switches of the guide's section 2 are off: with macOS's own tiling on, the left, right and top edges of the screen are macOS's (Q23).
+# As the first build shipped it: a docked window is dragged out onto the Desktop beside another.
+set desktopColumn true
 mac-tiling off
 open Safari
 open Notes

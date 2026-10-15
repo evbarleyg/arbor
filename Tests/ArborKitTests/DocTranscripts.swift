@@ -93,7 +93,8 @@ struct DocTranscript {
         let frame = CGRect(x: 1440, y: 0, width: 1280, height: 800)
         list.append(DisplaySnapshot(id: DisplayID("side"), frame: frame, visibleFrame: frame, isMain: false))
       }
-      let h = Harness(displays: list)
+      // The documentation shows what ships; an example of an option turns it on itself, with `arborctl set`.
+      let h = Harness(displays: list, settings: Settings())
       for item in value.components(separatedBy: ",") where !item.trimmingCharacters(in: .whitespaces).isEmpty { open(item, in: h) }
       h.start()
       harness = h
@@ -266,7 +267,7 @@ struct DocTranscript {
         $ arborctl layout "Safari | Chrome"   # a comment
         arranged 3 windows
         $ arborctl layout --titles
-        Safari~"Safari 101" | "Google Chrome"~"Google Chrome 103" | Desktop:0.5
+        Safari~"Safari 101" | "Google Chrome"~"Google Chrome 103"
         $ open "arbor://quit"
         $ rm -rf /
         ```

@@ -15,7 +15,7 @@ private let above = DisplaySnapshot(
 @Suite @MainActor struct DisplayCommandTests {
   /// Main: [ a | Desktop | b ] and a floating f. Side: [ Desktop | c ]. The pointer is on the main display.
   func makeHarness(
-    displays: [DisplaySnapshot]? = nil, settings: Settings = Settings()
+    displays: [DisplaySnapshot]? = nil, settings: Settings = Harness.settingsWhenNoneAreGiven
   ) -> (Harness, a: WindowID, b: WindowID, c: WindowID, f: WindowID) {
     let h = Harness(displays: displays ?? [main, side], settings: settings)
     let a = h.system.open(app: "A", frame: CGRect(x: 100, y: 100, width: 500, height: 400))
@@ -97,10 +97,11 @@ private let above = DisplaySnapshot(
     let (h, _, _, c, _) = makeHarness(settings: makingWay ? .makingWay : Settings())
     let big = h.system.open(
       app: "Big", frame: CGRect(x: 300, y: 150, width: 720, height: 520), minimumSize: CGSize(width: 700, height: 500))
-    // Side: [ c / Desktop ] on the right half would do; make the Desktop a small corner at the bottom right.
+    // Side: [ d | [ c / Desktop ] ]: the Desktop is a small corner at the bottom right. (c goes up first: a second window in the
+    // Desktop's row would take all that is left.)
     let d = h.system.open(app: "D", frame: CGRect(x: 1700, y: 200, width: 500, height: 400))
-    runOK(h, "dock \(d.rawValue) left")
     runOK(h, "dock \(c.rawValue) up")
+    runOK(h, "dock \(d.rawValue) left")
     let desktop = h.controller.layouts[side.id]!.desktopFrame!
     #expect(desktop.width < 700 && desktop.height < 500 && desktop.maxX > side.frame.maxX - 20 && desktop.maxY > side.frame.maxY - 20)
     runOK(h, "move-to-display 2 \(big.rawValue)")
@@ -149,7 +150,7 @@ private let above = DisplaySnapshot(
   /// As for every `dock` command: a call or a note on a narrow Desktop does not end up over a tile. That is for the sake of
   /// windows that are kept on the Desktop: where floating windows make way, as until Q20.
   @Test func theDesktopThereStaysUsableWhileSomethingFloatsOnIt() {
-    let (h, a, _, c, _) = makeHarness(settings: .makingWay)
+    let (h, a, _, c, _) = makeHarness(settings: .makingWay.withDesktopColumn)
     let others = (0..<3).map { h.system.open(app: "D\($0)", frame: CGRect(x: 1700 + 20 * CGFloat($0), y: 200, width: 500, height: 400)) }
     h.system.cursor = side.visibleFrame.center
     runOK(h, "arrange")
@@ -247,10 +248,10 @@ private let above = DisplaySnapshot(
 
   @Test func aWindowTooBigForItsNewSlotIsFramedRatherThanLeftAsATile() {
     let (h, _, _, _, _) = makeHarness()
-    // Too wide for the side display beside anything at all, even two tiles (1232 points less 160). With less, the window with the
-    // keyboard would be served at its neighbours' cost (F61) and need no frame.
+    // Too wide for the side display beside anything at all, even c as a tile (1244 points less 80; with a column for the Desktop, two
+    // tiles: 1232 less 160). With less, the window with the keyboard would be served at its neighbours' cost (F61) and need no frame.
     let big = h.system.open(
-      app: "Xcode", frame: CGRect(x: 100, y: 100, width: 1150, height: 700), minimumSize: CGSize(width: 1150, height: 700))
+      app: "Xcode", frame: CGRect(x: 100, y: 100, width: 1200, height: 700), minimumSize: CGSize(width: 1200, height: 700))
     runOK(h, "dock \(big.rawValue) left")
     h.system.userFocus(big)
     runOK(h, "move-to-display next")

@@ -651,7 +651,7 @@ at_exit() { ARBOR_AT_EXIT="$1"$'\n'"$ARBOR_AT_EXIT"; }
 #
 # To go between the braces of a settings.json; what a script passes to arbor_settings comes after it and wins. Empty: no file is written
 # for a session that asks for none.
-ARBOR_EVERYTHING_ON='"shortcuts": "all"'
+ARBOR_EVERYTHING_ON='"desktopColumn": true, "shortcuts": "all"'
 
 arbor_switches() {
   local which=${ARBOR_SWITCHES:-}

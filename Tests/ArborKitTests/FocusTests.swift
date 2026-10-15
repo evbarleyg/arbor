@@ -334,7 +334,9 @@ import Testing
   /// macOS names the app's next window before it reports the minimize, so the view has followed already. Taking that
   /// back only to find nothing in view, and following again, would show as three motions.
   @Test func aViewThatWouldHaveToFollowAnywayIsNotTakenBackFirst() {
-    let h = Harness()
+    // With a column for the Desktop: it shares what the small one leaves, and half the display is too narrow for the big one.
+    // Without, the big one would have everything and be in view.
+    let h = Harness(settings: .withDesktopColumn)
     let big = h.system.open(app: "Xcode", pid: 11, minimumSize: CGSize(width: 1000, height: 400))
     let small = h.system.open(app: "Xcode", pid: 11)
     h.start()

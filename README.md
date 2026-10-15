@@ -543,7 +543,7 @@ names or bundle ids. On its own, `layout` prints the arrangement you have, in th
 $ arborctl layout "Safari:2 | (Mail / Notes)"
 arranged 3 windows
 $ arborctl layout
-Safari:2 | (Mail / Notes) | Desktop:0.75
+Safari:2 | (Mail / Notes)
 $ arborctl layout "Safari | Mail / Notes"
 layout, column 15: `|` and `/` are mixed here: put brackets around one of them
   Safari | Mail / Notes
@@ -621,7 +621,8 @@ version changes one. [docs/SETTINGS.md](docs/SETTINGS.md) is the complete refere
 | `excludedBundleIDs` | [] | Apps Arbor never arranges |
 | `hotkeysEnabled` | true | Global shortcuts |
 | `shortcuts` | "core" | Which shortcuts Arbor binds itself. "core": the nine, each ⌃⌥ and one key. "all": the whole map, some fifty, with ⇧ and ⌘ as well. `bindings` changes single keys on top of either (see [Keyboard](#keyboard)) |
-| `arrangeDesktopWeight` | 0.5 | Width of the Desktop column made by Arrange, in window columns; also by `layout` when the line does not mention the Desktop |
+| `desktopColumn` | false | The Desktop keeps a share of the display among docked windows: two docks make thirds, Arrange leaves a column free. Off, docked windows take what is left over first: two are two halves, and Arrange leaves nothing over |
+| `arrangeDesktopWeight` | 0.5 | With `desktopColumn`: width of the Desktop column made by Arrange, in window columns; also by `layout` when the line does not mention the Desktop |
 | `bindings` | {} | Changes to the keyboard shortcuts (see [Keyboard](#keyboard)) |
 | `rules` | [] | What happens to new windows of an app (below) |
 | `gesturesEnabled` | true | Trackpad pinch with ⌥, or over the Desktop, steps the camera |
@@ -755,8 +756,8 @@ any app.
 so your own rules come first: a `float` rule keeps an app out of it. `dock auto` puts the window **beside the docked
 window you were last working in** on that display, in half of its place: to its right if that place is wide, below it if it is tall.
 If that window is too small to share, the largest window in view shares instead (with `tabsEnabled`, the new window first tries to join the one you
-were in as a tab). With nothing docked it takes the right edge of the view, and leaves an empty Desktop the share "Arrange Windows" gives it
-(`arrangeDesktopWeight`).
+were in as a tab). What is left over goes first: beside one docked window and the Desktop it takes the Desktop's room, and nobody moves for it. With nothing docked it
+fills the display (with `desktopColumn`: the right edge of the view, and an empty Desktop keeps the share "Arrange Windows" gives it).
 
 What it never does:
 

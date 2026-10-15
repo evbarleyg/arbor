@@ -10,7 +10,8 @@ open Mail
 dock 101 left
 dock 102 right
 dock 104 beside 102 bottom
-resize 101 right -300
+# Of its half of 702 points 202 are left: too narrow to show any window in.
+resize 101 right -500
 wait 3
 expect tile 101
 expect hidden 101

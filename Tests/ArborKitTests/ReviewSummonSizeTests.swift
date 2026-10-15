@@ -12,9 +12,10 @@ import Testing
 /// the whole suite.
 @Suite @MainActor struct ReviewSummonSizeTests {
   /// [editor | Desktop | browser], framed on the editor, which has the keyboard. The terminal floats, so it is out of
-  /// view with the Desktop. So does a note, so that the terminal is not alone there.
+  /// view with the Desktop. So does a note, so that the terminal is not alone there. Thirds: with a column for the Desktop, on which
+  /// these tests have the terminal squeezed or stretched.
   func makeHarness(
-    terminal size: CGSize = CGSize(width: 400, height: 300), company: Bool = true, settings: Settings = .makingWay
+    terminal size: CGSize = CGSize(width: 400, height: 300), company: Bool = true, settings: Settings = .makingWay.withDesktopColumn
   ) -> (Harness, editor: WindowID, browser: WindowID, terminal: WindowID) {
     let h = Harness(settings: settings)
     let editor = h.system.open(app: "Editor", pid: 1001)
@@ -86,7 +87,7 @@ import Testing
   }
 
   @Test func stretchedOverTheDesktopItIsSummonedAtItsOwnSize() {
-    var settings = Settings.makingWay
+    var settings = Settings.makingWay.withDesktopColumn
     settings.soleFloatTakesDesktop = true
     let own = CGSize(width: 400, height: 300)
     let (h, editor, _, terminal) = makeHarness(company: false, settings: settings)

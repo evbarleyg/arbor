@@ -277,8 +277,8 @@ private func near(_ a: CGRect, _ b: CGRect, within tolerance: CGFloat = 0.01) ->
     var director: FilmDirector
   }
 
-  private func film(_ script: String, fps: Int = 60) throws -> Film {
-    let director = FilmDirector(fps: fps)
+  private func film(_ script: String, fps: Int = 60, settings: Settings = Harness.settingsWhenNoneAreGiven) throws -> Film {
+    let director = FilmDirector(harness: Harness(settings: settings), fps: fps)
     var lines: [String] = []
     var failures: [String] = []
     director.write = { lines.append($0) }
@@ -419,7 +419,10 @@ private func near(_ a: CGRect, _ b: CGRect, within tolerance: CGFloat = 0.01) ->
   }
 
   @Test func thePointerFindsTheGapBetweenTwoNeighbours() throws {
-    let film = try film(dragToTheLeftEdge + "\nopen Mail 500x400 600,200\ndock 102 right\ndock 103 beside 102 bottom\nwait 1")
+    // 101 at the left, 102 over 103, 104 at the right.
+    let film = try film(
+      dragToTheLeftEdge
+        + "\nopen Mail 500x400 600,200\nopen Photos 500x400 640,240\ndock 102 right\ndock 103 beside 102 bottom\ndock 104 right\nwait 1")
     #expect(film.failures.isEmpty)
     let (director, system) = (film.director, film.director.harness.system)
     let (upper, lower) = (try #require(system.frame(of: WindowID(102))), try #require(system.frame(of: WindowID(103))))
@@ -434,7 +437,7 @@ private func near(_ a: CGRect, _ b: CGRect, within tolerance: CGFloat = 0.01) ->
     #expect(system.frame(of: WindowID(102))?.height == upper.height + 60 && system.frame(of: WindowID(103))?.height == lower.height - 60)
 
     // Who are no neighbours have none; nor is there one to reach under a window that lies over it.
-    #expect(!director.run("glide gap 101 101").ok && !director.run("glide gap 101 103").ok && !director.run("glide gap 101 109").ok && !director.run("glide gap 101").ok)
+    #expect(!director.run("glide gap 101 101").ok && !director.run("glide gap 101 104").ok && !director.run("glide gap 101 109").ok && !director.run("glide gap 101").ok)
     let over = system.open(app: "Call", pid: 2009, frame: CGRect(x: upper.midX - 100, y: upper.maxY, width: 200, height: 200))
     system.userFocus(over)
     #expect(!director.run("glide gap 102 103").ok)
@@ -653,13 +656,13 @@ private func near(_ a: CGRect, _ b: CGRect, within tolerance: CGFloat = 0.01) ->
       dock 102 right
       float 102
       dock 102 right
-      pointer 482 400
+      pointer 720 400
       wait 0.1
       press
-      glide 700 400 in 0.4
+      glide 940 400 in 0.4
       wait 0.1
       lift
-      """)
+      """, settings: Settings())  // two halves: the gap is in the middle
     #expect(film.failures.isEmpty)
     let dragged = film.frames.filter { ($0["gapHandle"] as? [String: Any])?["dragged"] as? Bool == true }
     #expect(dragged.count > 20)

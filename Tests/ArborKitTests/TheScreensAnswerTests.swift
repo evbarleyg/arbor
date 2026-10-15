@@ -188,19 +188,20 @@ import Testing
   }
 
   /// The same at the side. Seen on a hosted Mac with the Dock at the right: floated, 480 wide and ending on the visible frame's right edge, it
-  /// came out 479, and after the quit it was a point less for good.
-  @Test func thePointShortOfADockAtTheRightIsNotWrittenDown() throws {
+  /// came out 479, and after the quit it was a point less for good. (In thirds then, with a column for the Desktop; in halves, as Arbor ships,
+  /// it has eleven points to grow.)
+  @Test(arguments: [true, false]) func thePointShortOfADockAtTheRightIsNotWrittenDown(desktopColumn: Bool) throws {
     let display = DisplaySnapshot(
       id: DisplayID("dock-at-the-right"), frame: CGRect(x: 0, y: 0, width: 1024, height: 768),
       visibleFrame: CGRect(x: 0, y: 31, width: 974, height: 737), isMain: true)
     let own = CGRect(x: 494, y: 226, width: 480, height: 348)
-    let h = Harness(displays: [display])
+    let h = Harness(displays: [display], settings: desktopColumn ? .withDesktopColumn : Settings())
     let a = h.system.open(app: "A", frame: CGRect(x: 100, y: 100, width: 400, height: 348))
     let w = h.system.open(app: "W", frame: own)
     h.start()
     h.run("dock \(a.rawValue) left")
     h.run("dock \(w.rawValue) right")
-    try #require(h.frame(w) == h.layout?.windowFrames[w] && (h.frame(w)?.width ?? 480) < 400, "the case: it has to grow: \(h.frame(w) as Any)")
+    try #require(h.frame(w) == h.layout?.windowFrames[w] && (h.frame(w)?.width ?? 480) < (desktopColumn ? 400 : 480), "the case: it has to grow: \(h.frame(w) as Any)")
     let mark = h.system.moveLog.count
     h.run("float-all")
     #expect(h.frame(w) == CGRect(x: 494, y: 226, width: 479, height: 348), "\(h.frame(w) as Any)")

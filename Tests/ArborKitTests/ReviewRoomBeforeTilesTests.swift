@@ -8,8 +8,10 @@ import Testing
 /// An independent review of F61 (room before tiles) as it stands on the trunk, beside pins, summons, guests and views.
 @Suite @MainActor struct ReviewRoomBeforeTilesTests {
   /// Notes (709), Safari (574) and Mail (500) on 1440 points, floating, started.
-  func makeHarness() -> (Harness, notes: WindowID, safari: WindowID, mail: WindowID) {
-    let h = Harness()
+  func makeHarness(
+    settings: Settings = Harness.settingsWhenNoneAreGiven
+  ) -> (Harness, notes: WindowID, safari: WindowID, mail: WindowID) {
+    let h = Harness(settings: settings)
     let notes = h.system.open(
       app: "Notes", pid: 101, frame: CGRect(x: 200, y: 100, width: 1000, height: 660),
       minimumSize: CGSize(width: 709, height: 300))
@@ -75,12 +77,12 @@ import Testing
     #expect(isInView(h, notes) && isInView(h, safari), "\(line(h))")
   }
 
-  // MARK: What the Desktop is owed
+  // MARK: What the Desktop is owed: only one with a column of its own ever is
 
   /// The spec tells people that an empty Desktop squeezed into a tile is one click away. The click must not cost it what it is owed.
   @Test(arguments: [["desktop", "show-all"], ["desktop", "back"], ["desktop", "home"]])
   func lookingAtTheDesktopDoesNotCancelWhatItIsOwed(_ visit: [String]) {
-    let (h, notes, safari, mail) = makeHarness()
+    let (h, notes, safari, mail) = makeHarness(settings: .withDesktopColumn)
     h.system.close(mail)
     h.run("dock \(notes.rawValue) left")
     h.run("dock \(safari.rawValue) right")
@@ -94,7 +96,7 @@ import Testing
 
   /// Moving one of its own does, as before.
   @Test func movingTheDesktopsOwnGapStillDoes() {
-    let (h, notes, safari, mail) = makeHarness()
+    let (h, notes, safari, mail) = makeHarness(settings: .withDesktopColumn)
     h.system.close(mail)
     h.run("dock \(notes.rawValue) left")
     h.run("dock \(safari.rawValue) right")

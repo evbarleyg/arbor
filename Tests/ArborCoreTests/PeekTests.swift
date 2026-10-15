@@ -399,21 +399,22 @@ import Testing
 
   private let screen = CGRect(x: 0, y: 25, width: 1440, height: 875)
 
-  /// root(h)[ column(v)[a, c], desktop, b ]
+  /// root(h)[ column(v)[a, c], desktop, b ]. As it ships b took all that was left: two halves and a Desktop without room. With
+  /// `desktopColumn` thirds, for the arrows that lead onto the Desktop and off it.
   private struct Fixture {
     var tree = LayoutTree()
     let a, b, c: NodeID
     var column: NodeID { tree.parent(of: a)! }
 
-    init() {
-      a = tree.dock(WindowID(1), beside: tree.root, edge: .left)
-      b = tree.dock(WindowID(2), beside: tree.root, edge: .right)
+    init(desktopColumn: Bool = false) {
+      a = tree.dock(WindowID(1), beside: tree.root, edge: .left, desktopColumn: desktopColumn)
+      b = tree.dock(WindowID(2), beside: tree.root, edge: .right, desktopColumn: desktopColumn)
       c = tree.dock(WindowID(3), beside: a, edge: .bottom)
     }
   }
 
   @Test func arrowsGoToTheNearestSpaceBeyondThatEdge() {
-    let f = Fixture()
+    let f = Fixture(desktopColumn: true)
     let layout = LayoutEngine.layout(f.tree, camera: f.tree.root, in: screen, isPresent: { _ in true })
     func step(_ from: NodeID?, _ edge: Edge, focused: WindowID? = nil) -> NodeID? {
       Peek.step(from: from, toward: edge, focused: focused, in: layout, tree: f.tree)
@@ -454,8 +455,8 @@ import Testing
 
   @Test func aSpaceInsideATileIsOutlinedAsThatTile() {
     let f = Fixture()
-    // Too narrow for the column's windows: the column is one tile.
-    let options = LayoutOptions(minimumUsableSize: CGSize(width: 500, height: 160))
+    // Too narrow for the column's windows, at 702 points: the column is one tile.
+    let options = LayoutOptions(minimumUsableSize: CGSize(width: 750, height: 160))
     let layout = LayoutEngine.layout(f.tree, camera: f.tree.root, in: screen, options: options, isPresent: { _ in true })
     let tile = layout.tiles.first { f.tree.subtree($0.node, contains: f.a) }
     #expect(tile != nil)

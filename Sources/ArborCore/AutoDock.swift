@@ -31,8 +31,10 @@ public enum AutoDock {
 
     /// Docks `window` there.
     @discardableResult
-    public func apply(to workspace: inout Workspace, docking window: WindowID, shareSpace: Bool = true) -> Bool {
-      guard workspace.dock(window, at: target, shareSpace: shareSpace) else { return false }
+    public func apply(
+      to workspace: inout Workspace, docking window: WindowID, shareSpace: Bool = true, desktopColumn: Bool = false
+    ) -> Bool {
+      guard workspace.dock(window, at: target, shareSpace: shareSpace, desktopColumn: desktopColumn) else { return false }
       let tree = workspace.tree
       if let desktopWeight, let leaf = tree.leaf(containing: window), let a = tree[tree.desktop]?.weight,
         let b = tree[leaf]?.weight
@@ -70,7 +72,8 @@ public enum AutoDock {
   ///   - frame: the display's visible frame.
   ///   - minimumSize: sizes apps have refused to go below, `window`'s own included once it is known.
   ///   - emptyDesktopWeight: the share of a Desktop nothing floats on, next to the first window docked, counted
-  ///     in windows (`arrangeDesktopWeight`). Nil if something floats on it: it then keeps half, as after `dock right`.
+  ///     in windows (`arrangeDesktopWeight`; none at all unless `options.desktopColumn`). Nil if something floats on it: it then
+  ///     keeps half, as after `dock right`.
   ///   - terms: on what terms the layout that follows will make room before it makes a tile (F61), or nil if it will
   ///     not. The rehearsal does what that layout will do.
   public static func plan(
@@ -117,15 +120,25 @@ public enum AutoDock {
       candidates = [Edge.right, .bottom].map { (view == workspace.camera ? .cameraEdge($0) : .beside(view, $0), nil) }
     }
 
+    // What is left over goes first here too: nobody gives half of a slot while there is room that nobody has.
+    if !options.desktopColumn, before.desktopFrame != nil, tree.root != tree.desktop {
+      // (In its row or column, so that it is all of it: across, the window would get half.)
+      var along = Edge.left
+      if let row = tree.parent(of: tree.desktop), case .split(.vertical, _) = tree[row]?.kind { along = .top }
+      candidates.insert((.beside(tree.desktop, along), nil), at: 0)
+    }
+
     // Whoever wants windows to dock by themselves wants them to fill the display. With nothing docked yet and nothing
     // on the Desktop, the first window leaves it what Arrange Windows would.
-    let desktopWeight = tree.root == tree.desktop ? emptyDesktopWeight.map { $0.isNaN ? 0.5 : min(max($0, 0.05), 20) } : nil
+    let desktopWeight =
+      tree.root == tree.desktop
+      ? emptyDesktopWeight.map { !options.desktopColumn ? 0 : $0.isNaN ? 0.5 : min(max($0, 0.05), 20) } : nil
     let inView = Set(tree.windows(under: view))
     let desktopInView = tree.subtree(view, contains: tree.desktop)
     for candidate in candidates {
       var rehearsal = workspace
       var placement = Placement(target: candidate.target, covers: candidate.covers, desktopWeight: desktopWeight)
-      guard placement.apply(to: &rehearsal, docking: window) else { continue }
+      guard placement.apply(to: &rehearsal, docking: window, desktopColumn: options.desktopColumn) else { continue }
       let after = layout(rehearsal)
       // Docking at the edge of a view can put the window beside it in the row or column around it, and
       // the view then widens to that whole row.
@@ -133,7 +146,7 @@ public enum AutoDock {
         rehearsal.tree.subtree(after.camera, contains: rehearsal.tree.desktop) == desktopInView,
         keepsEverythingShowing(
           before: before, after: after, adding: window, covering: candidate.covers,
-          desktopMayGo: terms.map { desktopMayBecomeATile(on: $0, options: options) } ?? false),
+          desktopMayGo: terms.map { desktopMayBecomeATile(on: $0, options: options) } ?? !options.desktopColumn),
         let slot = after.windowFrames[window]
       else { continue }
       placement.slot = slot
@@ -145,9 +158,10 @@ public enum AutoDock {
   private static func area(_ frame: CGRect?) -> CGFloat { (frame?.width ?? 0) * (frame?.height ?? 0) }
 
   /// Whether a window that nobody has asked to be docked may leave the Desktop a tile: while nothing floats on it. It is one
-  /// click away. (For a window somebody docks, F61 lets it either way.)
+  /// click away. (For a window somebody docks, F61 lets it either way.) Or lose its room altogether, where it is only what is left
+  /// over: what floats stays in view, over the docked windows.
   public static func desktopMayBecomeATile(on terms: MakeRoom.Terms, options: LayoutOptions) -> Bool {
-    !terms.desktopIsInUse
+    !terms.desktopIsInUse || !options.desktopColumn
   }
 
   /// Whether `window` shows in `after`, along with everything that showed in `before`: each window (but

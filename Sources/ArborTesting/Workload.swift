@@ -40,7 +40,7 @@ public struct Workload {
     var floating: [WindowID] = []
     var workspace = Workspace()
     if grid {
-      workspace.reset(tree: .grid(of: ids, desktopWeight: settings.arrangeDesktopWeight))
+      workspace.reset(tree: .grid(of: ids, desktopWeight: settings.desktopWeightWhenArranged))
       groups = ids.map { [$0] }
     } else {
       for (index, id) in ids.enumerated() {

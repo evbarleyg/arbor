@@ -17,7 +17,8 @@ import Testing
   /// Where `float` puts it: its own size, over the docked column for what the Desktop has no room for.
   let floated = CGRect(x: 544, y: 194, width: 480, height: 348)
 
-  /// `[(a / c) | Desktop]`, the column 100 points wider than it was docked, and `b` just floated out of the right edge.
+  /// `[(a / c) | Desktop]`, the column 100 points wider than the half it was docked with, and `b` just floated out of the other
+  /// half: the column stays as it is, and what `b` had is the Desktop's.
   /// `makingWay`: floating windows are kept on the Desktop, as until Q20 (`floatingWindowsMakeWay`).
   func makeHarness(makingWay: Bool = false) -> (Harness, a: WindowID, b: WindowID, c: WindowID) {
     let h = Harness(displays: [Self.display], settings: makingWay ? .makingWay : Settings())
@@ -39,7 +40,7 @@ import Testing
   /// F48, "its own size, also beside a narrow Desktop". Whether or not floating windows make way: `float` is about this window.
   @Test(arguments: [false, true]) func aWindowFloatedBesideADesktopNarrowerThanItselfHasItsOwnSize(makingWay: Bool) {
     let (h, _, b, _) = makeHarness(makingWay: makingWay)
-    #expect(h.layout!.desktopFrame == CGRect(x: 670, y: 43, width: 342, height: 650), "\(h.ascii())")
+    #expect(h.layout!.desktopFrame == CGRect(x: 618, y: 43, width: 394, height: 650), "\(h.ascii())")
     #expect(h.frame(b) == floated, "as on the real display")
     #expect(moves(of: b, h) == [floated], "in one move")
   }
@@ -54,7 +55,7 @@ import Testing
     h.scheduler.advance(by: 1.5)
     h.system.clearFrameLog()
     h.run("set soleFloatTakesDesktop false")
-    #expect(h.frame(b) == CGRect(x: 670, y: 194, width: 354, height: 348), "as on the real display")
+    #expect(h.frame(b) == CGRect(x: 618, y: 194, width: 406, height: 348), "from the Desktop's left edge to the display's right one")
     #expect(moves(of: b, h).count == 1, "in one move")
     #expect(h.workspace.floating[b] == floated, "its own frame is still the one remembered")
   }
@@ -65,7 +66,7 @@ import Testing
     let (h, _, b, _) = makeHarness(makingWay: true)
     h.run("set soleFloatTakesDesktop true")
     h.run("set soleFloatTakesDesktop false")
-    #expect(h.frame(b)!.width == 354)
+    #expect(h.frame(b)!.width == 406)
     h.system.clearFrameLog()
     if byQuitting { h.controller.shutdown() } else { h.run("float-all") }
     #expect(h.frame(b) == floated)

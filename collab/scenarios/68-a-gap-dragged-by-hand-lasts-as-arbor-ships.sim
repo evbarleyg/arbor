@@ -1,0 +1,109 @@
+# Proposed by the executor of F68 (2026-10-15); the documenter may edit or drop it.
+# Story: 68-a-gap-dragged-by-hand-lasts.sim as Arbor ships, step for step. Mail and Notes have the display to themselves, 1404 points and a
+# gap (F68). Notes will not go under 709 points, seven more than its half, which Mail has lent it (F61). Its person wants Notes wider
+# still and drags the gap between the two 60 points to the left. That is their word on the arrangement: nothing Arbor does by itself takes it back.
+# Whatever Notes has, Mail has the rest.
+# Reference: T05 T20, F61, F68; rules 2 and 7 of issue #3.
+open Mail 900x600
+open Notes 1000x660 min 709x300
+dock 101 left
+dock 102 beside 101 right
+expect size 101 695x851
+expect size 102 709x851
+seam 0 -60
+expect size 101 635x851
+expect size 102 769x851
+# ⌃⌥0 at home, Show Everything, a look at one window and back, a look at the Desktop and back.
+press home
+expect size 102 769x851
+press show-all
+expect size 102 769x851
+zoom 101
+back
+expect size 101 635x851
+expect size 102 769x851
+desktop
+show-all
+expect size 102 769x851
+# A window opens and closes.
+open Calculator 230x408
+expect size 102 769x851
+close 103
+expect size 102 769x851
+# Mail goes into the Dock and comes back; it is hidden and shown.
+minimize 101
+restore 101
+expect size 101 635x851
+expect size 102 769x851
+hide Mail
+unhide Mail
+expect size 101 635x851
+expect size 102 769x851
+# A pause gives both their own sizes back, and the end of it the arrangement as it was left.
+pause
+expect size 102 1000x660
+resume
+expect size 101 635x851
+expect size 102 769x851
+# Quit, and start again.
+relaunch
+expect size 101 635x851
+expect size 102 769x851
+home
+expect size 102 769x851
+# The next drag starts where the last one ended, by the window's own edge and by command as by the gap.
+pull 101 right -20
+expect size 102 789x851
+home
+expect size 102 789x851
+resize 102 left 11
+home
+expect size 101 604x851
+expect size 102 800x851
+# The other way: squeezed below its smallest size on purpose, Notes is the tile they asked for, as wide as they left it.
+focus 101
+seam 0 200
+expect tile 102
+expect size 101 804x851
+home
+show-all
+zoom 101
+back
+expect tile 102
+expect size 101 804x851
+# The same hand lets it out again, and there it stays.
+seam 0 -150
+expect visible 102
+expect size 102 750x851
+home
+expect size 102 750x851
+# What ends it: the windows in the arrangement change.
+close 102
+expect visible 101
+expect count docked 1
+# Another desk. Mail will not go under 400 points and a wide table not under 900, which Mail has lent it. They want the table wider still,
+# and pay for it with Mail, which becomes the tile they asked for.
+close 101
+open Mail 900x600 min 400x300
+open Numbers 1000x660 min 900x300
+dock 104 left
+dock 105 beside 104 right
+expect size 104 504x851
+expect size 105 900x851
+focus 105
+seam 0 -160
+expect tile 104
+expect size 105 1060x851
+# The points they gave to the table are not Mail's to take back.
+press home
+expect size 105 1060x851
+press show-all
+expect size 105 1060x851
+zoom 105
+back
+expect tile 104
+expect size 105 1060x851
+pause
+resume
+expect tile 104
+expect size 105 1060x851

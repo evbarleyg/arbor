@@ -19,8 +19,9 @@ private let side = DisplaySnapshot(
   /// The frame `f`'s user gave it.
   let own = CGRect(x: 900, y: 300, width: 320, height: 300)
 
+  /// With a column for the Desktop: these tests are about a Desktop that has room, also beside two docked windows and after `arrange`.
   static func settings(on: Bool = true) -> Settings {
-    var settings = Settings.makingWay
+    var settings = Settings.makingWay.withDesktopColumn
     settings.soleFloatTakesDesktop = on
     return settings
   }

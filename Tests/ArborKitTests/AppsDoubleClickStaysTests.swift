@@ -136,7 +136,9 @@ import Testing
 
   /// Click a title bar and at once drag it: the press counts as a second click, and the drop is Arbor's as ever.
   @Test func aSecondPressThatDragsIsADrag() {
-    let (h, a, _) = makeHarness()
+    let (h, a, b) = makeHarness()
+    // Beside one docked window there is a Desktop to let go over.
+    h.run("float \(b.rawValue)")
     let bar = titleBar(h, a)
     h.system.doubleClick(at: bar)
     h.system.drag(a, through: [bar, h.layout!.desktopFrame!.center])

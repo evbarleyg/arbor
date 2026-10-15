@@ -8,7 +8,7 @@ import Testing
 /// Every way Arbor can end, and what it finds when it starts again: no window may stay out of view.
 @Suite @MainActor struct LifecycleTests {
   /// Three floating windows, started.
-  func makeHarness(settings: Settings = Settings()) -> (Harness, WindowID, WindowID, WindowID) {
+  func makeHarness(settings: Settings = Harness.settingsWhenNoneAreGiven) -> (Harness, WindowID, WindowID, WindowID) {
     let h = Harness(settings: settings)
     let a = h.system.open(app: "Safari", frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     let b = h.system.open(app: "Notes", frame: CGRect(x: 300, y: 200, width: 600, height: 400))
@@ -18,7 +18,7 @@ import Testing
   }
 
   /// A new Arbor process that finds the windows of `h` exactly where they are now, under the same
-  /// numbers, as after a crash or `kill -9`.
+  /// numbers, and the same settings, as after a crash or `kill -9`.
   func relaunch(after h: Harness, saved: PersistedState?) -> Harness {
     let again = Harness(displays: h.system.displayList, settings: h.controller.settings, saved: saved)
     for window in h.system.allWindows() {
@@ -136,9 +136,9 @@ import Testing
     #expect(again.system.isVisible(a))
     again.run("show-all")
     for window in [a, b, c] { #expect(again.system.isVisible(window), "\(window)") }
-    // Where it was, to the point; or, where floating windows make way, as near to that as the Desktop allows.
-    let own = CGRect(x: 500, y: 300, width: 600, height: 400)
-    #expect(again.frame(c) == (makingWay ? own.fitted(into: again.layout!.desktopFrame!) : own))
+    // The two halves leave the Desktop no room: what floats lies where it was before anything was docked, to the point, and has nowhere to
+    // make way to either.
+    #expect(again.frame(c) == CGRect(x: 500, y: 300, width: 600, height: 400))
   }
 
   @Test func aCrashIsRecoveredFromEvenIfADisplayWentAwayMeanwhile() {

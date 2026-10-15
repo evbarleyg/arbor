@@ -1,0 +1,63 @@
+# Proposed by the swarm (2026-10-15); the documenter may edit or drop it.
+# Story: the desk of 66-there-and-back-is-nothing.sim with a column for the Desktop, and floating windows left where they are, as Arbor
+# ships. A floating window's frame is its person's (F64), so the Desktop does not count as in use for the Terminal's sake: Safari
+# borrows from the Desktop alone, TextEdit keeps its share, and the Terminal is not touched. There and back is nothing all the same:
+# everybody has the place and the size they had.
+# Reference: T07, F61, F64, F68.
+display-size 1600x900 31
+# The Desktop has a share of its own between the docked windows, as in the first build.
+set desktopColumn true
+open Finder 920x436 min 501x300
+open Safari 1324x791 min 574x240
+open TextEdit 673x439 min 115x100
+open Terminal 877x499
+dock 101 left
+dock 102 right
+dock 103 right
+expect size 101 501x845
+expect size 102 574x845
+expect size 103 385x845
+expect still 104
+# ⌘H in Finder. The neighbours close up meanwhile.
+focus 101
+hide Finder
+flush
+expect hidden 101
+expect still 104
+unhide Finder
+flush
+expect visible 101
+expect size 101 501x845
+expect size 102 574x845
+expect size 103 385x845
+expect left-of 101 102
+expect left-of 102 103
+expect still 104
+# ⌘M in Safari, and back out of the Dock.
+minimize 102
+expect hidden 102
+restore 102
+expect size 101 501x845
+expect size 102 574x845
+expect size 103 385x845
+expect still 104
+# Two of them, and the one that went first comes back first.
+hide Finder
+flush
+minimize 102
+unhide Finder
+flush
+restore 102
+expect size 101 501x845
+expect size 102 574x845
+expect size 103 385x845
+# Looking around meanwhile changes nothing: the view is not the arrangement.
+minimize 103
+zoom 102
+show-all
+restore 103
+show-all
+expect size 101 501x845
+expect size 102 574x845
+expect size 103 385x845
+expect size 104 877x499

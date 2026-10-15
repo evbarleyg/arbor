@@ -6,7 +6,7 @@ import Testing
 
 /// `Harness.layoutProblems`, which `expectWindowsMatchLayout` reports: it has to notice what it is there to notice.
 @Suite @MainActor struct LayoutCheckTests {
-  /// `[Safari | Desktop | Mail]`.
+  /// `[Safari | Mail]`; with a column for the Desktop `[Safari | Desktop | Mail]`.
   private func desk() -> (Harness, safari: WindowID, mail: WindowID) {
     let h = Harness()
     let safari = h.system.open(app: "Safari")
@@ -38,6 +38,9 @@ import Testing
 
   @Test func anArrangementThatChangedWithoutALayoutIsNoticed() {
     let (h, safari, mail) = desk()
+    // A third place: of two the one that is left would stay as it is, of three the others share.
+    let notes = h.system.open(app: "Notes")
+    h.run("dock \(notes.rawValue) right")
     h.controller.workspaces[h.display]!.forget(safari)
     #expect(h.layoutProblems().contains { $0.hasPrefix("main was not laid out again: the place of \(safari) was") })
     #expect(h.layoutProblems().contains { $0.hasPrefix("\(mail) is at") })

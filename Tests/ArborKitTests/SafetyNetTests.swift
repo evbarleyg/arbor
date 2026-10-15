@@ -56,7 +56,7 @@ import Testing
     expectSave("showing everything") { h.run("show-all") }
     expectSave("floating a window") { h.run("float \(c.rawValue)") }
     expectSave("moving a floating window") {
-      h.system.userMove(c, to: h.layout!.desktopFrame!.insetBy(dx: 30, dy: 200))
+      h.system.userMove(c, to: h.visibleFrame.insetBy(dx: 500, dy: 200))
     }
     expectSave("a drag that docks") { h.system.drag(c, through: [titleBar(h, c), CGPoint(x: 720, y: 897)]) }
     expectSave("a new window") { _ = h.system.open(app: "Terminal") }
@@ -103,10 +103,10 @@ import Testing
     h.run("dock \(a.rawValue) top")
     h.run("dock \(b.rawValue) bottom")
     h.run("dock \(c.rawValue) beside \(a.rawValue) right")
-    // root(v)[ row(h)[a, c], Desktop, b ]: c steps down, out of the row, to sit above the Desktop.
+    // root(v)[ row(h)[a, c], b ]: c steps down, out of the row, to sit above b. (Where a Desktop without room is nobody sees.)
     #expect(h.run("dock \(c.rawValue) down").ok)
     let tree = h.workspace.tree
-    #expect(tree.children(of: tree.root).map { tree.windows(under: $0) } == [[a], [c], [], [b]])
+    #expect(tree.children(of: tree.root).filter { $0 != tree.desktop }.map { tree.windows(under: $0) } == [[a], [c], [b]])
     #expect(h.run("dock \(c.rawValue) up").ok)
     #expect(h.workspace.tree.children(of: h.workspace.tree.root).first.map { h.workspace.tree.windows(under: $0) } == [c])
   }
@@ -169,7 +169,7 @@ import Testing
 
   @Test func revealingAWindowThatWouldBeATileFramesIt() {
     let (h, a, b, _) = makeHarness()
-    // More than its neighbour and the Desktop could spare between them (F61).
+    // More than its neighbour could spare (F61).
     h.system.setMinimumSize(b, CGSize(width: 1200, height: 600))
     h.run("dock \(a.rawValue) left")
     h.run("dock \(b.rawValue) right")
@@ -215,7 +215,7 @@ import Testing
 
   @Test func openingATileFocusesWhatIsInside() {
     var settings = Settings()
-    settings.minimumUsableWidth = 500
+    settings.minimumUsableWidth = 750  // more than half the display
     let (h, a, b, _) = makeHarness(settings: settings)
     h.run("dock \(a.rawValue) left")
     h.run("dock \(b.rawValue) right")
@@ -250,7 +250,7 @@ import Testing
     let (h, a, b, c) = makeHarness(apart: true)
     h.run("dock \(a.rawValue) left")
     h.run("dock \(b.rawValue) right")
-    h.system.drag(c, through: [titleBar(h, c), h.layout!.desktopFrame!.center])
+    h.system.drag(c, through: [titleBar(h, c), h.frame(b)!.center])  // over the middle of a docked window it goes on floating
     h.run("zoom \(a.rawValue)")
     h.system.userFocus(b)
     #expect(h.system.isVisible(b))

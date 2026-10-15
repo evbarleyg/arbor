@@ -317,7 +317,7 @@ extension LayoutNotation {
       default:
         throw ParseError(column: token.column, message: Self.expectedSpace)
       }
-      if take(.size) { space.size = try parseSize() }
+      if take(.size) { space.size = try parseSize(orNone: space.kind == .desktop) }
       return space
     }
 
@@ -385,9 +385,14 @@ extension LayoutNotation {
     }
 
     /// Digits with at most one full stop. `Double` alone would also read `1e5`, `inf`, `nan` and `0x10`.
-    mutating func parseSize() throws(ParseError) -> Double {
+    /// `orNone`: `Desktop:0` is a Desktop without room, in that place.
+    mutating func parseSize(orNone: Bool = false) throws(ParseError) -> Double {
       let message = Self.expectedSize
       guard case .word(let word) = next?.kind else { throw ParseError(column: column, message: message) }
+      if orNone, word == "0" {
+        position += 1
+        return 0
+      }
       let digits = word.utf8.filter { (UInt8(ascii: "0")...UInt8(ascii: "9")).contains($0) }.count
       let stops = word.utf8.filter { $0 == UInt8(ascii: ".") }.count
       guard digits > 0, stops <= 1, digits + stops == word.utf8.count, word.utf8.count <= 12,

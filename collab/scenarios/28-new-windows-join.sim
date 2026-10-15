@@ -1,6 +1,6 @@
 # Proposed by the swarm (2026-10-14, F23); the documenter may edit or drop it.
-# Story: someone who comes from yabai ticks "Dock New Windows". From then on each window they open takes half of the
-# window they were working in. Small windows, windows of a fixed size and windows there is no room for float
+# Story: someone who comes from yabai ticks "Dock New Windows". From then on each window they open takes what is left over, or with
+# nothing left half of the window they were working in. Small windows, windows of a fixed size and windows there is no room for float
 # as they always did, and nothing ever turns into a tile because a window opened.
 # Reference: T16 T18 T19 (inferred), Q13.
 open Safari
@@ -10,14 +10,15 @@ expect ok
 # Windows that are open already stay as they are.
 expect floating 101
 dock 101 left
-# The window being worked in is tall, so the new one goes below it.
+# Half of the screen is left over: the new window takes that, and Safari stays as it is.
 open Notes
 expect docked 102
-expect above 101 102
-# That half is wide, so the next one goes to its right.
+expect still 101
+expect left-of 101 102
+# Nothing is left. The window being worked in is tall, so the next one goes below it.
 open Terminal
 expect docked 103
-expect left-of 102 103
+expect above 102 103
 expect camera root
 # An inspector and a calculator are not worth a place.
 open Finder 265x520
@@ -38,14 +39,14 @@ close 104
 close 105
 close 106
 # Looking at Notes and Terminal only: the new window joins them, and the view stays where it is.
-cursor 200 700
-in
+cursor 1000 700
 in
 expect hidden 101
 focus 102
+# That half is wide, so the new one goes to its right.
 open Music
 expect docked 107
-expect above 102 107
+expect left-of 102 107
 expect visible 103
 expect hidden 101
 # Framed on one window, a new one floats over it and stays with that view (F57).

@@ -276,10 +276,10 @@ private final class Heard: WindowSystemEvents {
     }
   }
 
-  /// [a | Desktop | b] on the main display and c floating on the one to its right.
-  /// Windows of one app, as in the recording whose numbers these are, or of three.
+  /// [a | Desktop | b] on the main display, in thirds, and c floating on the one to its right: with a column for the Desktop, which Arbor had
+  /// when the recording was made. Windows of one app, as in the recording whose numbers these are, or of three.
   func desk(apps: Bool = false) -> (Harness, WindowID, WindowID, WindowID) {
-    let h = Harness(displays: [Self.main, Self.side(at: CGPoint(x: 1920, y: 0))])
+    let h = Harness(displays: [Self.main, Self.side(at: CGPoint(x: 1920, y: 0))], settings: .withDesktopColumn)
     let a = h.system.open(app: "Notes", pid: apps ? 11 : 1000, frame: CGRect(x: 170, y: 220, width: 480, height: 348))
     let b = h.system.open(app: "Mail", pid: apps ? 12 : 1000, frame: CGRect(x: 220, y: 180, width: 480, height: 348))
     let c = h.system.open(app: "Safari", pid: apps ? 13 : 1000, frame: CGRect(x: 1932, y: 288, width: 700, height: 500))

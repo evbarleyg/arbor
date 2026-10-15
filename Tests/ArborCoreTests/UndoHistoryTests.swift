@@ -285,7 +285,7 @@ private func change(_ before: UInt32, _ after: UInt32) -> UndoHistory.Change {
     #expect(!tree.hasSameArrangement(as: swapped))
 
     var resized = tree
-    resized.moveBoundary(leading: leafA, trailing: tree.desktop, by: 50, pointsPerWeight: 400)
+    resized.moveBoundary(leading: leafA, trailing: leafB, by: 50, pointsPerWeight: 400)
     #expect(!tree.hasSameArrangement(as: resized))
 
     var exchanged = tree

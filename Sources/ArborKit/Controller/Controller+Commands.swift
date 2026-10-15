@@ -309,8 +309,20 @@ extension Controller {
     else { return .failure("no display") }
     let cursor = system.cursorLocation()
     let point = self.display(display)?.frame.contains(cursor) == true ? cursor : nil
+    // Over a window that floats on the Desktop the pointer means that window, whatever is docked under it: with nothing left over that is
+    // where they lie. Not one that lies behind what is docked there: nobody points at what they cannot see.
+    let overWhatFloats = point.map { point in
+      let underThePointer = Set(
+        windows.values.filter { $0.isPresent && !parked.contains($0.id) && $0.frame.contains(point) }.map(\.id))
+      let floating = underThePointer.filter {
+        workspace.floating[$0] != nil && workspace.role(of: $0) == nil && workspace.guests?[$0] == nil
+      }
+      guard !floating.isEmpty else { return false }
+      return system.windowsFrontToBack().first(where: underThePointer.contains).map(floating.contains) ?? true
+    }
     guard
       let node = stepTowardFocus(from: workspace.camera, on: display, in: view)
+        ?? (overWhatFloats == true ? Navigation.stepIn(from: workspace.camera, toward: workspace.tree.desktop, in: view) : nil)
         ?? Navigation.stepIn(
           from: workspace.camera, toward: point, focused: system.focusedWindow(), in: view,
           layout: layout)
@@ -482,7 +494,7 @@ extension Controller {
 
     guard let leaf = workspace.tree.leaf(containing: id) else {
       let pinNote = endOfPinNote(id)
-      let outcome = workspace.tryDock(id, at: .cameraEdge(edge), shareSpace: settings.shareRemovedSpace)
+      let outcome = workspace.tryDock(id, at: .cameraEdge(edge), shareSpace: settings.shareRemovedSpace, desktopColumn: settings.desktopColumn)
       if let why = outcome.refusal(of: id) { return .failure(why) }
       workspaces[display] = keepingDesktopUsable(workspace, on: display)
       relayout(display, reason: .structure)
@@ -529,7 +541,7 @@ extension Controller {
       transfer(id, from: source, to: display)
       relayout(source, reason: .structure)
     }
-    workspaces[display]!.dock(id, at: .beside(leaf, edge), shareSpace: settings.shareRemovedSpace)
+    workspaces[display]!.dock(id, at: .beside(leaf, edge), shareSpace: settings.shareRemovedSpace, desktopColumn: settings.desktopColumn)
     workspaces[display] = keepingDesktopUsable(workspaces[display]!, on: display)
     relayout(display, reason: .structure)
     focusIfShown(id, on: display)
@@ -561,7 +573,7 @@ extension Controller {
   }
 
   /// Docks every window on one display (`commandDisplayID()`) in a grid, in
-  /// reading order, with a narrow Desktop column at the end.
+  /// reading order. Nothing is left over, or with `desktopColumn` a narrow Desktop column at the end.
   func arrange() -> CommandResult {
     guard let (display, _) = cameraDisplay() else { return .failure("no display") }
     let arranged = arrange(on: display)
@@ -609,7 +621,7 @@ extension Controller {
     }
     stopWatchingTitles()
     var updated = workspace
-    updated.reset(tree: .grid(of: ordered, desktopWeight: settings.arrangeDesktopWeight))
+    updated.reset(tree: .grid(of: ordered, desktopWeight: settings.desktopWeightWhenArranged))
     for window in ordered { updated.floating[window] = nil }
     workspaces[display] = updated
     forgetSqueezes(on: display)

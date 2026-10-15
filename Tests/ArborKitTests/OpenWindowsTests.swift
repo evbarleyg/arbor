@@ -9,7 +9,7 @@ import Testing
 /// The menu lists every open window (docs/MENU.md, Windows ▸; Controller+OpenWindows.swift): what is open, in the order of use, with a mark
 /// for what cannot be seen, and a click ends with the window in front and whole.
 @Suite @MainActor struct OpenWindowsTests {
-  /// Safari | Desktop | Notes over Mail, with Terminal floating in the middle. Nobody has had the keyboard yet.
+  /// Safari | Notes over Mail, two halves, with Terminal floating over the middle. Nobody has had the keyboard yet.
   func desk(settings: Settings = Settings()) -> (Harness, safari: WindowID, notes: WindowID, mail: WindowID, terminal: WindowID) {
     let (safari, notes, mail, terminal) = (WindowID(101), WindowID(102), WindowID(103), WindowID(104))
     var tree = LayoutTree()

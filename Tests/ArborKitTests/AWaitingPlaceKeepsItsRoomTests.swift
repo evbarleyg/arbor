@@ -11,17 +11,18 @@ import Testing
 @Suite @MainActor struct AWaitingPlaceKeepsItsRoomTests {
   // MARK: The evening before, and the next morning
 
-  /// What a person had docked when the Mac was shut down.
+  /// What a person had docked when the Mac was shut down. `(Desktop)`: it has room there with a column of its own (`desktopColumn`). As
+  /// Arbor ships the docked windows have taken all that was left over, and these tests hold both ways.
   enum Shape: String, CaseIterable {
-    /// `[ A | B | C | Desktop ]`
+    /// `[ A | B | C | (Desktop) ]`
     case aRowOfThree
-    /// `[ A over B | Desktop | C ]`
+    /// `[ A over B | (Desktop) | C ]`
     case twoOverEachOtherAndOne
-    /// `[ A | B | C | D | Desktop ]`
+    /// `[ A | B | C | D | (Desktop) ]`
     case aRowOfFour
-    /// `[ A over B | C over D | Desktop ]`
+    /// `[ (A | C over D) over B | Desktop ]`
     case twoByTwo
-    /// `[ A | B over (C | D) | Desktop ]`
+    /// `[ A | B over (C | D) | (Desktop) ]`
     case nested
 
     var count: Int { self == .aRowOfThree || self == .twoOverEachOtherAndOne ? 3 : 4 }
@@ -81,8 +82,8 @@ import Testing
     let loose = h.system.open(app: "Music", pid: 600, frame: CGRect(x: 1700, y: 700, width: 200, height: 150))
     h.start()
     for line in shape.docks(ids) { #expect(h.run(line).ok, "\(line)") }
-    // On the Desktop, where its person wants it.
-    let desktop = h.layout!.desktopFrame!
+    // On the Desktop, where its person wants it; where nothing is left over for the Desktop, over the last of the docked windows.
+    let desktop = h.layout!.desktopFrame ?? h.frame(ids[shape.count - 1])!
     h.system.userMove(loose, to: CGRect(x: (desktop.midX - 100).rounded(), y: (desktop.midY - 75).rounded(), width: 200, height: 150))
     h.scheduler.advance(by: 5)
     let places = ids.map { h.frame($0)! }
@@ -403,7 +404,7 @@ import Testing
     #expect(h.run("show-all").ok)
     h.scheduler.advance(by: 2)
     #expect(h.frame(notes) == evening.places[1] && h.frame(mail) == evening.places[2])
-    #expect(h.frame(loose) == looseAt, "\(h.frame(loose)!) and not \(looseAt!), Desktop \(h.layout!.desktopFrame!)")
+    #expect(h.frame(loose) == looseAt, "\(h.frame(loose)!) and not \(looseAt!), Desktop \(String(describing: h.layout!.desktopFrame))")
 
     // It comes while the view is elsewhere, and is in its place when the view is back.
     #expect(h.run("zoom \(notes.rawValue)").ok)
@@ -749,16 +750,18 @@ import Testing
 
   // MARK: Apps that refuse a size
 
-  /// In the evening Mail, which will not go under 600 points, was a tile under Notes. In the morning it comes first. With holes Arbor does no
-  /// worse than without: Mail shows, everything shows, and the holes of that display are given up for good, also in the file.
+  /// In the evening Mail, which will not go under 700 points, was a tile under Notes, which could not have given it that much and stayed
+  /// of use. In the morning it comes first. With holes Arbor does no worse than without: Mail shows, everything shows, and the holes of
+  /// that display are given up for good, also in the file.
   @Test func aWindowThatWillNotFitBesideAHoleShowsAllTheSame() throws {
     let first = Harness()
     let notes = first.system.open(app: "Notes", pid: 501, frame: CGRect(x: 190, y: 140, width: 600, height: 400))
     let mail = first.system.open(
-      app: "Mail", pid: 502, frame: CGRect(x: 280, y: 180, width: 600, height: 600), minimumSize: CGSize(width: 300, height: 600))
+      app: "Mail", pid: 502, frame: CGRect(x: 280, y: 180, width: 600, height: 700), minimumSize: CGSize(width: 300, height: 700))
     first.start()
     #expect(first.run("dock \(notes.rawValue) top").ok && first.run("dock \(mail.rawValue) beside \(notes.rawValue) bottom").ok)
     first.scheduler.advance(by: 5)
+    #expect(first.layout?.tiles.contains { $0.windows == [mail] } == true, "the situation: Mail was a tile in the evening")
     let windows = [notes, mail].map { id in first.system.allWindows().first { $0.id == id }! }
     first.controller.shutdown()
 
@@ -768,7 +771,7 @@ import Testing
     h.scheduler.advance(by: 2)
     let back = h.system.open(
       app: "Mail", bundleID: windows[1].bundleID, title: windows[1].title, pid: 502, frame: windows[1].frame,
-      minimumSize: CGSize(width: 300, height: 600))
+      minimumSize: CGSize(width: 300, height: 700))
     h.scheduler.advance(by: 2)
     #expect(h.system.isVisible(back) && h.layout?.windowFrames[back] != nil, "\(h.frame(back)!)")
     #expect(h.workspace.camera == h.workspace.tree.root, "the view has not left everything")
@@ -821,12 +824,13 @@ import Testing
   /// doing, is not that: docked windows do not jump for something that is not about them.
   @Test func anOverdueHoleDoesNotCloseForSomethingThatMovesNothing() throws {
     let evening = evening(.aRowOfThree)
-    let (h, ids, _) = morningSoFar(evening, back: [1, 2])
+    let (h, ids, loose) = morningSoFar(evening, back: [1, 2])
     let (notes, mail) = (try #require(ids[1]), try #require(ids[2]))
     h.scheduler.advance(by: Controller.pendingSlotLifetime * 2)
     let mark = h.system.moveLog.count
-    let desktop = try #require(h.layout?.desktopFrame)
-    let splash = h.system.open(app: "Splash", pid: 801, frame: CGRect(x: desktop.minX + 20, y: 300, width: 200, height: 150))
+    // Where the other floating window is.
+    let x = try #require(h.frame(loose)).minX + 20
+    let splash = h.system.open(app: "Splash", pid: 801, frame: CGRect(x: x, y: 300, width: 200, height: 150))
     h.scheduler.advance(by: 1)
     h.system.close(splash)
     h.scheduler.advance(by: 1)
@@ -843,20 +847,24 @@ import Testing
 
   /// Nor under a hand. Its time is up, and the first touch of a gap or an edge does not make the thing in the hand jump away.
   @Test(arguments: ["gap", "edge"]) func anOverdueHoleDoesNotCloseUnderAHand(how: String) throws {
-    let evening = evening(.aRowOfThree)
-    let (h, ids, _) = morningSoFar(evening, back: [0, 2])
-    let (safari, mail) = (try #require(ids[0]), try #require(ids[2]))
+    let evening = evening(.aRowOfFour)
+    let (h, ids, _) = morningSoFar(evening, back: [0, 2, 3])
+    let (safari, mail, terminal) = (try #require(ids[0]), try #require(ids[2]), try #require(ids[3]))
     h.scheduler.advance(by: Controller.pendingSlotLifetime * 2)
-    var wider = evening.places[2]
+    // Between Mail and Terminal, on the far side of Mail from the hole.
+    var (wider, narrower) = (evening.places[2], evening.places[3])
     wider.size.width += 30
+    narrower.origin.x += 30
+    narrower.size.width -= 30
     if how == "gap" {
-      let seam = try #require(h.overlays.seams[h.display]?.first { $0.frame.minX >= evening.places[2].maxX - 1 })
+      let seam = try #require(h.overlays.seams[h.display]?.first { abs($0.frame.minX - evening.places[2].maxX) <= 1 })
       h.overlays.dragSeam(seam, by: 30)
     } else {
       h.system.userResize(mail, to: wider)
     }
     h.scheduler.advance(by: 2)
     #expect(h.frame(mail) == wider, "\(h.frame(mail)!)")
+    #expect(h.frame(terminal) == narrower, "\(h.frame(terminal)!)")
     #expect(h.frame(safari) == evening.places[0])
     #expect(h.run("status").message.contains("1 place kept"))
     expectWindowsMatchLayout(h)

@@ -1,5 +1,5 @@
 # Proposed by the swarm (2026-10-15), from the product owner's decision in collab/QUESTIONS.md (Q16: at a start a waiting place keeps its room); the documenter may edit or drop it.
-# Story: a browser, an editor and a mail window are docked side by side, the notes float on the Desktop. In the evening the Mac is shut down. In the
+# Story: a browser, an editor and a mail window are docked side by side, the notes float. In the evening the Mac is shut down. In the
 # morning Arbor is up at the login long before the apps, and they bring their windows back one after the other, the one in the middle first.
 # Nobody moves twice because somebody else is late: whoever comes goes straight to the place it had, and a hole waits for the others.
 # A restart of the Mac is: Arbor quits, every window closes, Arbor starts, and `open` brings the windows back under new numbers.
@@ -18,8 +18,8 @@ dock 103 beside 102 right
 balance all
 expect left-of 101 102
 expect left-of 102 103
-expect at 102 738 37
-expect size 102 715x1391
+expect at 102 861 37
+expect size 102 838x1391
 relaunch quit
 close 101
 close 102
@@ -33,15 +33,15 @@ expect replied 3 places kept for windows that are not open yet
 open Editor 900x700
 expect moved-once
 expect docked 105
-expect at 105 738 37
-expect size 105 715x1391
+expect at 105 861 37
+expect size 105 838x1391
 title 105 Draft
 expect still
 # Looking around changes nothing: there and back, and the holes are still kept.
 zoom 105
 show-all
-expect at 105 738 37
-expect size 105 715x1391
+expect at 105 861 37
+expect size 105 838x1391
 # The mail window comes, then the browser. Whoever is there already stays where it is.
 open Mail 800x600
 expect moved-once
@@ -56,9 +56,9 @@ expect still 106
 expect docked 107
 expect left-of 107 105
 title 107 News
-expect size 105 715x1391
-expect size 106 714x1391
-expect size 107 714x1391
+expect size 105 838x1391
+expect size 106 837x1391
+expect size 107 837x1391
 status
 expect ok
 
@@ -75,7 +75,7 @@ expect still 108
 title 109 Inbox
 wait 400
 expect still
-expect at 108 738 37
+expect at 108 861 37
 status
 expect replied 1 place kept
 # The room goes back with the next layout that the person causes.

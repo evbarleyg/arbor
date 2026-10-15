@@ -141,7 +141,7 @@ extension Controller {
     guard splits > 0 else {
       return .failure(workspace.tree.allWindows.isEmpty ? "nothing is docked" : "the view holds one space; step out first")
     }
-    workspace.tree.equalize(under: start, desktopWeight: settings.arrangeDesktopWeight)
+    workspace.tree.equalize(under: start, desktopWeight: settings.desktopWeightWhenArranged)
     workspaces[display] = workspace
     // The sizes start afresh, also where a gap was once dragged until a window became a tile (F61).
     forgetSqueezes(on: display)
@@ -456,7 +456,7 @@ extension Controller {
       parked.remove(id)
       // With the frame it goes back to when it floats again (F48).
       transfer(id, from: source, to: destination.id)
-      workspaces[destination.id]!.dock(id, at: .cameraEdge(edge), shareSpace: settings.shareRemovedSpace)
+      workspaces[destination.id]!.dock(id, at: .cameraEdge(edge), shareSpace: settings.shareRemovedSpace, desktopColumn: settings.desktopColumn)
       workspaces[destination.id] = keepingDesktopUsable(workspaces[destination.id]!, on: destination.id)
       relayout(source, reason: .structure)
       relayout(destination.id, reason: .structure)
@@ -477,7 +477,7 @@ extension Controller {
         return .failure("\(id) stays where it is: its app does not answer")
       }
       parked.remove(id)
-      workspaces[source]!.forget(id, shareSpace: settings.shareRemovedSpace)
+      workspaces[source]!.forget(id, shareSpace: settings.shareRemovedSpace, away: windows[id]?.isPresent != true)
       if actual.width > wanted.width + 2 || actual.height > wanted.height + 2 {
         // Its app will not make it that small. From the Desktop's far corner it would hang off the display.
         minimumSizes[id] = CGSize(

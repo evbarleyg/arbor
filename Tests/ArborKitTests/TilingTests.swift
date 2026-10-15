@@ -19,7 +19,7 @@ private func parent(_ h: Harness, of window: WindowID) -> NodeID {
 
 private func near(_ a: CGFloat, _ b: CGFloat) -> Bool { abs(a - b) <= 1 }
 
-/// [ a / c | Desktop | b ]
+/// [ a / c | b ], halves. With a column for the Desktop: [ a / c | Desktop | b ], thirds.
 @MainActor
 private func columns(settings: Settings = Settings()) -> (Harness, WindowID, WindowID, WindowID) {
   let (h, w) = tilingScenario(
@@ -29,11 +29,12 @@ private func columns(settings: Settings = Settings()) -> (Harness, WindowID, Win
 
 /// Scenario tests for `swap` (docs/features/F22-keyboard-tiling-tools.md).
 @Suite @MainActor struct SwapTests {
-  @Test func swapTradesPlacesAndTheSlotsKeepTheirSizes() {
-    let (h, w) = tilingScenario(["A", "B"], ["dock $0 left", "dock $1 right", "resize $0 right 100"])
+  @Test(arguments: [false, true]) func swapTradesPlacesAndTheSlotsKeepTheirSizes(desktopColumn: Bool) {
+    let settings = desktopColumn ? .withDesktopColumn : Settings()
+    let (h, w) = tilingScenario(["A", "B"], ["dock $0 left", "dock $1 right", "resize $0 right 100"], settings: settings)
     let (a, b) = (w[0], w[1])
     let (wide, narrow) = (h.frame(a)!, h.frame(b)!)
-    #expect(wide.width == narrow.width + 100)
+    #expect(wide.width == narrow.width + (desktopColumn ? 100 : 200), "the Desktop between them gave the 100, or the other window")
     h.system.userFocus(a)
     #expect(runOK(h, "swap right").message == "swapped \(a) with \(b)")
     #expect(h.frame(a) == narrow && h.frame(b) == wide, "over the Desktop, which holds nothing to trade with")
@@ -138,8 +139,8 @@ private func columns(settings: Settings = Settings()) -> (Harness, WindowID, Win
 
   @Test func aGroupShownAsATileIsNotSwappedWith() {
     let (h, w) = tilingScenario(
-      ["A", "B", "C"], ["dock $0 left", "dock $1 right", "dock $2 beside $1 bottom", "resize $1 left -250"])
-    #expect(h.layout!.tiles.map(\.kind) == [.group])
+      ["A", "B", "C"], ["dock $0 left", "dock $1 right", "dock $2 beside $1 bottom", "resize $1 left -500"])
+    #expect(h.layout!.tiles.map(\.kind) == [.group], "202 points of its 702")
     let before = h.workspace
     h.system.userFocus(w[0])
     let result = h.run("swap right")
@@ -326,7 +327,7 @@ private func columns(settings: Settings = Settings()) -> (Harness, WindowID, Win
     runOK(h, "resize \(a.rawValue) bottom -120")
     h.system.userFocus(a)
     #expect(runOK(h, "balance").message == "balanced 2 groups")
-    #expect(near(h.frame(a)!.width, h.frame(b)!.width) && near(h.frame(a)!.width, h.layout!.desktopFrame!.width))
+    #expect(near(h.frame(a)!.width, h.frame(b)!.width) && h.layout!.desktopFrame == nil, "a Desktop that had no room gets none")
     #expect(near(h.frame(a)!.height, h.frame(c)!.height))
     expectSound(h)
     // Doing it again changes nothing.
@@ -357,7 +358,7 @@ private func columns(settings: Settings = Settings()) -> (Harness, WindowID, Win
   }
 
   @Test func afterArrangeTheDesktopKeepsItsNarrowColumn() {
-    let (h, w) = tilingScenario(["A", "B", "C", "D"], ["arrange"])
+    let (h, w) = tilingScenario(["A", "B", "C", "D"], ["arrange"], settings: .withDesktopColumn)
     let arranged = h.workspace.tree
     let frames = w.map { h.frame($0)! }
     runOK(h, "resize \(w[0].rawValue) right 120")
@@ -373,7 +374,7 @@ private func columns(settings: Settings = Settings()) -> (Harness, WindowID, Win
   /// `arrange` keeps the setting between 0.05 and 20, whatever the file says. So must the way back to what it made.
   @Test(arguments: [2, 0.001, 0, -3, Double.nan])
   func anAbsurdDesktopWeightIsBoundedAsArrangeBoundsIt(weight: Double) {
-    var settings = Settings()
+    var settings = Settings.withDesktopColumn
     settings.arrangeDesktopWeight = weight
     let (h, w) = tilingScenario(["A", "B", "C", "D"], ["arrange"], settings: settings)
     let arranged = h.workspace.tree
@@ -422,7 +423,7 @@ private func columns(settings: Settings = Settings()) -> (Harness, WindowID, Win
       runOK(h, command)
     }
     #expect(h.system.isVisible(b))
-    runOK(h, "resize \(b.rawValue) left -300")
+    runOK(h, "resize \(b.rawValue) left -400")
     #expect(h.layout!.tiles.contains { $0.windows == [b] }, "squeezed on purpose, and left so")
     h.system.userFocus(a)
     runOK(h, "balance")
@@ -434,8 +435,9 @@ private func columns(settings: Settings = Settings()) -> (Harness, WindowID, Win
   @Test func theKeyboardDoesNotStayWithAWindowWhoseEqualShareIsTooSmall() {
     let h = Harness(settings: noRoomMade)
     let a = h.system.open(app: "A", frame: CGRect(x: 100, y: 100, width: 400, height: 300))
+    // Half the display is 702 points.
     let b = h.system.open(
-      app: "B", frame: CGRect(x: 300, y: 100, width: 720, height: 520), minimumSize: CGSize(width: 700, height: 300))
+      app: "B", frame: CGRect(x: 300, y: 100, width: 740, height: 520), minimumSize: CGSize(width: 720, height: 300))
     h.start()
     runOK(h, "dock \(a.rawValue) left")
     runOK(h, "dock \(b.rawValue) right")
@@ -490,10 +492,10 @@ private func columns(settings: Settings = Settings()) -> (Harness, WindowID, Win
     let before = h.workspace
     h.system.userFocus(b)
     #expect(runOK(h, "rotate").message == "rotated everything")
-    // [ a | c ] above the Desktop above b.
+    // [ a | c ] above b, and still nothing for the Desktop.
     #expect(children(h) == [[a, c], [], [b]])
     #expect(h.frame(a)!.maxX < h.frame(c)!.minX && h.frame(a)!.minY == h.frame(c)!.minY, "the group inside turned too")
-    #expect(h.frame(a)!.maxY < h.layout!.desktopFrame!.minY && h.layout!.desktopFrame!.maxY < h.frame(b)!.minY)
+    #expect(h.frame(a)!.maxY < h.frame(b)!.minY && h.layout!.desktopFrame == nil)
     #expect(h.frame(b)!.width == h.visibleFrame.width - 24)
     #expect(h.system.focused == b)
     expectSound(h)
@@ -508,7 +510,7 @@ private func columns(settings: Settings = Settings()) -> (Harness, WindowID, Win
     let (before, column) = (h.workspace, parent(h, of: a))
     let room = h.frame(a)!.union(h.frame(c)!)
     let frames = [a, b, c].map { h.frame($0)! }
-    let desktop = h.layout!.desktopFrame!
+    let desktop = h.layout!.desktopFrame
     h.system.userFocus(a)
     #expect(runOK(h, "rotate").message == "rotated Safari and Mail (\(column))")
     #expect(h.frame(a)!.union(h.frame(c)!) == room, "to the point")
@@ -578,8 +580,9 @@ private func columns(settings: Settings = Settings()) -> (Harness, WindowID, Win
   }
 
   @Test func rotateRefusesWhenTheWindowsWouldBecomeTiles() {
-    // Side by side in a column 464 points wide, a and c would be 226 points each: tiles.
+    // Side by side in a column 462 points wide, a and c would be 225 points each: tiles.
     let (h, a, _, _) = columns()
+    runOK(h, "resize \(a.rawValue) right -240")
     let before = h.workspace
     h.system.userFocus(a)
     h.system.clearFrameLog()
@@ -739,7 +742,9 @@ private func columns(settings: Settings = Settings()) -> (Harness, WindowID, Win
     h.system.userFocus(a)
     #expect(runOK(h, "grow").message == "\(a) grew")
     #expect(h.frame(a) == CGRect(x: before.minX, y: before.minY, width: before.width + 40, height: before.height))
-    #expect(h.frame(b) == other, "the room comes from the Desktop beside it")
+    #expect(
+      h.frame(b) == CGRect(x: other.minX + 40, y: other.minY, width: other.width - 40, height: other.height),
+      "the room comes from the window beside it")
     #expect(runOK(h, "shrink").message == "\(a) shrank")
     #expect(h.frame(a) == before)
     runOK(h, "grow 100")
@@ -772,11 +777,11 @@ private func columns(settings: Settings = Settings()) -> (Harness, WindowID, Win
     #expect(h.frame(a)!.approximatelyEquals(
       CGRect(x: before.minX, y: before.minY, width: before.width + 40, height: before.height + 40)))
     #expect(near(h.frame(c)!.height, below.height - 40) && near(h.frame(c)!.width, below.width + 40))
-    #expect(h.frame(b) == other)
+    #expect(near(h.frame(b)!.width, other.width - 40) && h.frame(b)!.maxX == other.maxX)
     expectSound(h)
   }
 
-  /// [ x | Desktop | ( y | w ) / z | q ]: w's left seam is two levels below its right one, and moving the outer
+  /// [ x | ( y | w ) / z | q ]: w's left seam is two levels below its right one, and moving the outer
   /// seam rescales the inner split.
   @Test func seamsAtDifferentDepthsStillGiveTheExactAmount() {
     var settings = Settings()
@@ -800,8 +805,8 @@ private func columns(settings: Settings = Settings()) -> (Harness, WindowID, Win
     let a = w[0]
     h.system.userFocus(a)
     runOK(h, "grow 1000000")
-    let desktop = h.layout!.tiles.first { $0.kind == .desktop }
-    #expect(near(desktop?.frame.width ?? 0, 80), "the limit every seam keeps")
+    let neighbour = h.layout!.tiles.first { $0.windows == [w[1]] }
+    #expect(near(neighbour?.frame.width ?? 0, 80), "the limit every seam keeps")
     let (frame, before) = (h.frame(a)!, h.workspace)
     let result = h.run("grow")
     #expect(!result.ok && result.message == "\(a) cannot grow any further")
@@ -913,7 +918,7 @@ private func columns(settings: Settings = Settings()) -> (Harness, WindowID, Win
   /// Where floating windows make way, as until Q20, they live on the Desktop. One that grew over its docked neighbours would be
   /// squeezed back at the next change of the arrangement, so it stops at the Desktop's edge.
   @Test func aFloatingWindowOnTheDesktopGrowsNoFurtherThanTheDesktop() {
-    let (h, w) = tilingScenario(["A", "B", "F"], ["dock $0 left", "dock $1 right"], settings: .makingWay)
+    let (h, w) = tilingScenario(["A", "B", "F"], ["dock $0 left", "dock $1 right"], settings: .makingWay.withDesktopColumn)
     let f = w[2]
     h.system.userFocus(f)
     let desktop = h.layout!.desktopFrame!

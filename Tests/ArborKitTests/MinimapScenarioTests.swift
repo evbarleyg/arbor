@@ -12,7 +12,7 @@ private let side = DisplaySnapshot(
 
 /// The minimap (docs/features/F26-minimap.md): when it shows, what it holds, what a click does, when it goes.
 @Suite @MainActor struct MinimapScenarioTests {
-  /// Safari and Notes docked left and right of the Desktop, Mail floating. The passing minimap is on, unless `settings` say otherwise.
+  /// Safari and Notes docked left and right, a half each, Mail floating. The passing minimap is on, unless `settings` say otherwise.
   func makeHarness(settings: Settings? = nil) -> (Harness, WindowID, WindowID, WindowID) {
     let h = Harness(settings: settings ?? passing)
     // Each app a process of its own: when a window closes, macOS gives the keyboard to another of the same app first.
@@ -46,7 +46,7 @@ private let side = DisplaySnapshot(
     #expect(model.items.map(\.bundleID) == ["com.example.safari", "com.example.notes"])
     #expect(model.items.map(\.isInView) == [true, false])
     #expect(model.highlight == model.items[0].frame)
-    #expect(model.desktop != nil)
+    #expect(model.desktop == nil, "it has no room")
     #expect(model.caption == nil)
     #expect(!model.takesClicks)
 
@@ -57,7 +57,7 @@ private let side = DisplaySnapshot(
     #expect(timers(h).isEmpty)
   }
 
-  /// [Safari / Xcode | Desktop | Notes], Mail floating: with a column, so that one level out is a group and not everything.
+  /// [Safari / Xcode | Notes], Mail floating: with a column, so that one level out is a group and not everything.
   func makeColumn(settings: Settings? = nil) -> (Harness, WindowID, WindowID, WindowID, WindowID) {
     let (h, a, b, c) = makeHarness(settings: settings)
     let d = h.system.open(app: "Xcode", pid: 1004, frame: CGRect(x: 200, y: 300, width: 500, height: 300))
@@ -655,7 +655,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func aClickOnTheDesktopsOutlineShowsTheDesktop() throws {
-    let (h, a, _, c) = makeHarness()
+    let (h, a, _, c) = makeHarness(settings: passing.withDesktopColumn)
     h.run("zoom \(a.rawValue)")
     #expect(h.controller.parked.contains(c))
     h.run("minimap")
@@ -728,7 +728,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func theSpaceUnderThePointerIsOutlined() throws {
-    let (h, a, _, _) = makeHarness()
+    let (h, a, _, _) = makeHarness(settings: passing.withDesktopColumn)
     h.run("zoom \(a.rawValue)")
     h.run("minimap")
     let model = try #require(map(h))

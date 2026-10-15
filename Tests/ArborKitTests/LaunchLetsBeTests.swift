@@ -8,7 +8,7 @@ import Testing
 /// A person starts Arbor with the keyboard in a docked window for which there is no room when everything shows
 /// (`collab/QUESTIONS.md`, Q16; `Controller+LetBe.swift`). The view used to go to it, and every other window left.
 @Suite @MainActor struct LaunchLetsBeTests {
-  /// `[player | Desktop | browser / mail]` and loose notes. Somebody has squeezed the player's slot to under what
+  /// `[player | browser / mail]` and loose notes. Somebody has squeezed the player's slot to under what
   /// Arbor uses, and has switched off that Arbor makes room: the player is a tile wherever it is not alone, and no
   /// room can be made for it. Arbor has quit, so every window is in view at its own frame, and somebody has clicked
   /// the player since.
@@ -24,7 +24,7 @@ import Testing
     old.run("dock \(player.rawValue) left")
     old.run("dock \(browser.rawValue) right")
     old.run("dock \(mail.rawValue) beside \(browser.rawValue) bottom")
-    old.run("resize \(player.rawValue) right -300")
+    old.run("resize \(player.rawValue) right -538")
     settle(old)
     #expect(old.layout?.hiddenWindows == [player] && old.layout?.windowFrames[browser] != nil, "\(old.ascii())")
     old.controller.shutdown()
@@ -84,14 +84,14 @@ import Testing
     #expect(h.system.raiseLog.isEmpty, "nothing is raised over it: \(h.system.raiseLog)")
   }
 
-  /// `[editor | Desktop | browser]` and loose notes. The editor goes no narrower than 1300 points, which beside
-  /// anything, even two tiles, is more than the display has: it is a tile, also while it is typed in (F61). Arbor has
-  /// quit, and somebody has clicked it since.
+  /// `[editor | browser]`, with or without a column for the Desktop between them, and loose notes. The editor goes no
+  /// narrower than 1350 points, which beside anything, even one tile at its narrowest (1404 points less 80), is more than
+  /// the display has: it is a tile, also while it is typed in (F61). Arbor has quit, and somebody has clicked it since.
   func quitWithTheKeyboardInAWindowThatIsTooWide(on side: String = "left") -> (Harness, tooWide: WindowID, others: [WindowID]) {
     let old = Harness()
     old.start()
-    let editor = old.system.open(app: "Xcode", pid: 11, frame: CGRect(x: 100, y: 100, width: 1300, height: 600))
-    old.system.setMinimumSize(editor, CGSize(width: 1300, height: 500))
+    let editor = old.system.open(app: "Xcode", pid: 11, frame: CGRect(x: 40, y: 100, width: 1350, height: 600))
+    old.system.setMinimumSize(editor, CGSize(width: 1350, height: 500))
     let browser = old.system.open(app: "Safari", pid: 12, frame: CGRect(x: 700, y: 100, width: 600, height: 500))
     let notes = old.system.open(app: "Notes", pid: 13, frame: CGRect(x: 300, y: 300, width: 500, height: 400))
     old.run("dock \(editor.rawValue) \(side)")

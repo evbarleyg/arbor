@@ -250,8 +250,7 @@ private let far = DisplaySnapshot(
   @Test func theEchoOfArborsOwnFocusChangeKeepsShortcutsOnOneDisplay() {
     let desk = Desk([main, side])
     desk.restPointer(on: 0, typeIn: desk.left[1])
-    // Past the Desktop. The framed window goes out of view, so Arbor hands the keyboard to its neighbour.
-    #expect(desk.h.press("neighbor right").ok)
+    // The framed window goes out of view, so Arbor hands the keyboard to its neighbour.
     #expect(desk.h.press("neighbor right").ok)
     #expect(desk.h.system.focused == desk.right[1])
     #expect(desk.h.system.reportFocus() == 0, "the echo has been played")

@@ -10,7 +10,7 @@ private let d = WindowID(4)
 private let e = WindowID(5)
 
 /// root(h)[ column(v)[ a, row(h)[c, d] ], desktop, b ]. Taking `a` away leaves the column with one
-/// child, so the row takes its place, inside a root that runs the same way.
+/// child, so the row takes its place, inside a root that runs the same way. (`b` took all that was left: the Desktop has no room.)
 private struct Fixture {
   var workspace = Workspace()
   let leafA: NodeID, leafB: NodeID, leafC: NodeID, leafD: NodeID
@@ -471,15 +471,15 @@ extension Workspace {
     let layout = LayoutEngine.layout(tree, camera: f.root, in: Self.screen, options: Self.untiled, isPresent: { _ in true })
     let (group, left, right) = (layout.nodeFrames[f.row]!, layout.windowFrames[c]!, layout.windowFrames[d]!)
     #expect(left.minX == group.minX && right.maxX == group.maxX && right.minX - left.maxX == 12)
-    #expect(layout.desktopFrame!.minX - group.maxX == 12)
-    #expect(layout.seams.map(\.leading) == [f.leafC, f.row, tree.desktop], "one gap inside the group, two in the row")
+    #expect(layout.windowFrames[b]!.minX - group.maxX == 12)
+    #expect(layout.seams.map(\.leading) == [f.leafC, f.row], "one gap inside the group, one in the row")
     // Framed, it fills the display.
     let framed = LayoutEngine.layout(tree, camera: f.row, in: Self.screen, isPresent: { _ in true })
     #expect(framed.nodeFrames[f.row] == Self.screen.insetBy(dx: 12, dy: 12))
     #expect(framed.hiddenWindows == [b])
-    // Too small to use, it is one tile.
+    // Too small to use (it has half, 702 points), it is one tile.
     let tiles = LayoutEngine.layout(
-      tree, camera: f.root, in: Self.screen, options: LayoutOptions(minimumUsableSize: CGSize(width: 500, height: 100)),
+      tree, camera: f.root, in: Self.screen, options: LayoutOptions(minimumUsableSize: CGSize(width: 720, height: 100)),
       isPresent: { _ in true })
     #expect(tiles.tiles.first { $0.node == f.row }?.kind == .group)
   }
@@ -505,10 +505,11 @@ extension Workspace {
     #expect(Navigation.stepOut(from: f.row, in: view) == f.root)
     #expect(Navigation.stepIn(from: f.root, toward: layout.windowFrames[d]!.center, focused: nil, in: view, layout: layout) == f.row)
     #expect(Navigation.neighbor(of: f.leafC, toward: .right, in: view) == f.leafD)
-    #expect(Navigation.neighbor(of: f.leafD, toward: .right, in: view) == tree.desktop, "out of the group, along the row")
+    #expect(Navigation.neighbor(of: f.leafD, toward: .right, in: view) == f.leafB, "out of the group, along the row")
+    #expect(Navigation.neighbor(of: f.leafB, toward: .left, in: view) == f.row)
     #expect(Navigation.neighbor(of: tree.desktop, toward: .left, in: view) == f.row)
-    #expect(Navigation.neighbor(of: f.row, toward: .right, in: view) == tree.desktop)
-    #expect(Navigation.adjacentLeaf(to: f.leafD, toward: .right, in: layout, tree: tree) == tree.desktop)
+    #expect(Navigation.neighbor(of: f.row, toward: .right, in: view) == f.leafB)
+    #expect(Navigation.adjacentLeaf(to: f.leafD, toward: .right, in: layout, tree: tree) == f.leafB)
     #expect(Navigation.bestFit(for: layout.nodeFrames[f.row]!, in: layout, tree: tree) == f.row)
   }
 
@@ -525,7 +526,8 @@ extension Workspace {
 
   /// The promise, over random sessions: what the view and each saved view show never grows because
   /// something else left, and a firmly kept group lives exactly as long as it has a window.
-  @Test(arguments: Array<UInt64>(1...30)) func noReferenceEverComesToMeanMore(seed: UInt64) throws {
+  @Test(arguments: Array<UInt64>(1...30), [false, true])
+  func noReferenceEverComesToMeanMore(seed: UInt64, desktopColumn: Bool) throws {
     var random = SeededRandom(seed: seed)
     var workspace = Workspace()
     var next: UInt32 = 1
@@ -555,11 +557,11 @@ extension Workspace {
         arrived = WindowID(next)
         next += 1
         atTheEdgeOfTheView = Bool.random(using: &random)
-        workspace.dock(arrived!, at: atTheEdgeOfTheView ? .cameraEdge(edge) : .beside(node, edge))
+        workspace.dock(arrived!, at: atTheEdgeOfTheView ? .cameraEdge(edge) : .beside(node, edge), desktopColumn: desktopColumn)
       case 4, 5:
         guard let window = docked.randomElement(using: &random) else { continue }
         (arrived, left) = (window, window)
-        workspace.dock(window, at: .beside(node, edge))
+        workspace.dock(window, at: .beside(node, edge), desktopColumn: desktopColumn)
       case 6...9:
         guard let window = docked.randomElement(using: &random) else { continue }
         left = window

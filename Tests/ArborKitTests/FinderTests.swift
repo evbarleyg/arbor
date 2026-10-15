@@ -16,16 +16,16 @@ private let side = DisplaySnapshot(
 
 /// "Go to…", `find` and `reveal` (docs/features/F27-window-finder.md).
 @Suite @MainActor struct FinderTests {
-  /// Safari | Desktop | Notes over Mail, with Terminal floating on the Desktop. The arrangement comes from a saved
-  /// state rather than from commands, so no window has had the keyboard yet.
+  /// Safari | Notes over Mail, a half each (thirds, with the Desktop between them, where `settings` give it a column), with Terminal
+  /// floating. The arrangement comes from a saved state rather than from commands, so no window has had the keyboard yet.
   func makeHarness(
-    displays: [DisplaySnapshot] = [main], settings: Settings = Settings()
+    displays: [DisplaySnapshot] = [main], settings: Settings = Harness.settingsWhenNoneAreGiven
   ) -> (Harness, WindowID, WindowID, WindowID, WindowID) {
     let (safari, notes, mail, terminal) = (WindowID(101), WindowID(102), WindowID(103), WindowID(104))
     var tree = LayoutTree()
-    tree.dock(safari, beside: tree.root, edge: .left)
-    let right = tree.dock(notes, beside: tree.root, edge: .right)
-    tree.dock(mail, beside: right, edge: .bottom)
+    tree.dock(safari, beside: tree.root, edge: .left, desktopColumn: settings.desktopColumn)
+    let right = tree.dock(notes, beside: tree.root, edge: .right, desktopColumn: settings.desktopColumn)
+    tree.dock(mail, beside: right, edge: .bottom, desktopColumn: settings.desktopColumn)
     let h = Harness(
       displays: displays, settings: settings, saved: PersistedState(workspaces: [main.id: Workspace(tree: tree)], hints: [:]))
     h.system.open(app: "Safari", title: "Arbor docs", pid: 11, frame: CGRect(x: 100, y: 100, width: 600, height: 400))
@@ -657,13 +657,15 @@ private let side = DisplaySnapshot(
   }
 
   @Test func fromAGroupAFloatingWindowOutOfViewBringsTheDesktopBack() {
-    let (h, safari, notes, _, terminal) = makeHarness()
+    let (h, safari, notes, _, terminal) = makeHarness(settings: Settings())
     h.run("zoom \(notes.rawValue)")
     h.run("out")
     #expect(h.workspace.camera == h.workspace.tree.parent(of: leaf(h, notes)!), "the premise: the column")
     #expect(!h.system.isVisible(terminal))
     #expect(h.run("reveal \(terminal.rawValue)").ok)
-    #expect(h.layout?.desktopFrame?.contains(h.frame(terminal)!) == true, "back on the Desktop")
+    #expect(h.workspace.tree.subtree(h.workspace.camera, contains: h.workspace.tree.desktop))
+    #expect(h.system.isVisible(terminal))
+    #expect(h.frame(terminal) == CGRect(x: 560, y: 300, width: 300, height: 200), "back where it was left, over the docked windows")
     #expect(h.system.isVisible(safari) && h.system.isVisible(notes), "zoomed out, not away")
     #expect(h.system.focused == terminal)
   }
@@ -683,9 +685,9 @@ private let side = DisplaySnapshot(
   @Test func aFloatingWindowIsShownEvenWhenTheDesktopIsTooSmallToShow() {
     // From a saved state: `dock` would keep a Desktop with a window on it at a usable size.
     var tree = LayoutTree()
-    for number in 101...107 { tree.dock(WindowID(UInt32(number)), beside: tree.root, edge: .left) }
+    for number in 101...107 { tree.dock(WindowID(UInt32(number)), beside: tree.root, edge: .left, desktopColumn: true) }
     // Plainly floating: found over a view without the Desktop, it would otherwise be a guest of that view, and be shown there.
-    var settings = Settings()
+    var settings = Settings.withDesktopColumn
     settings.newWindowsWhileFramed = "float"
     let h = Harness(
       settings: settings, saved: PersistedState(workspaces: [main.id: Workspace(tree: tree)], hints: [:]))

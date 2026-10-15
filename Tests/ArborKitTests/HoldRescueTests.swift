@@ -9,7 +9,7 @@ import Testing
 /// view. During a hold (docs/features/F58-hold-the-view.md) that would put them in front of an audience, and so it would at
 /// the end of one, which can come by itself. They come in when the view next moves.
 @Suite @MainActor struct HoldRescueTests {
-  /// [keynote | Desktop | mail], framed on keynote, which has the keyboard.
+  /// [keynote | mail], framed on keynote, which has the keyboard.
   /// `apart`: Keynote is a process of its own, as a story about ⌘Tab needs. Otherwise they are one, and a switch among them is ⌘`.
   func stage(makingWay: Bool = false, apart: Bool = false) -> (h: Harness, keynote: WindowID, mail: WindowID) {
     var settings = Settings()
@@ -135,13 +135,10 @@ import Testing
     #expect(!h.system.isVisible(note), "the end of a hold brings nothing into view")
     h.run("show-all")
     #expect(h.system.isVisible(note), "the next move of the view does")
-    if makingWay {
-      #expect(h.layout!.desktopFrame!.contains(h.frame(note)!.center))
-    } else {
-      // Where it would have been brought at once without a hold, whatever is docked there.
-      #expect(h.frame(note)!.center.x == h.visibleFrame.midX)
-      #expect(h.visibleFrame.contains(h.frame(note)!))
-    }
+    // Where it would have been brought at once without a hold, whatever is docked there: Mail has everything, and no room is the Desktop's
+    // alone, so that floating windows have nowhere to make way to either.
+    #expect(h.frame(note)!.center.x == h.visibleFrame.midX)
+    #expect(h.visibleFrame.contains(h.frame(note)!))
   }
 
   /// Found by HoldFuzzTests. The rule would leave the view where it is, and put a window into it that nobody has seen.

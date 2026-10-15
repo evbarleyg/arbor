@@ -26,11 +26,12 @@ private func frames(_ tree: LayoutTree, camera: NodeID? = nil) -> [WindowID: CGR
 
 /// F22: the tree operations behind `equalize`, `rotate`, `mirror` and `swap` across displays.
 @Suite struct TilingTreeTests {
-  /// root(h)[ column(v)[a, c], desktop, b ]
-  func fixture() -> (tree: LayoutTree, column: NodeID) {
+  /// root(h)[ column(v)[a, c], desktop, b ]. As it ships b took all that was left: two halves and a Desktop without room. With
+  /// `desktopColumn` thirds, for the tests that drag the gap beside the Desktop, which is only there if the Desktop is.
+  func fixture(desktopColumn: Bool = false) -> (tree: LayoutTree, column: NodeID) {
     var tree = LayoutTree()
-    let leafA = tree.dock(a, beside: tree.root, edge: .left)
-    tree.dock(b, beside: tree.root, edge: .right)
+    let leafA = tree.dock(a, beside: tree.root, edge: .left, desktopColumn: desktopColumn)
+    tree.dock(b, beside: tree.root, edge: .right, desktopColumn: desktopColumn)
     tree.dock(c, beside: leafA, edge: .bottom)
     return (tree, tree.parent(of: leafA)!)
   }
@@ -38,8 +39,8 @@ private func frames(_ tree: LayoutTree, camera: NodeID? = nil) -> [WindowID: CGR
   // MARK: equalize
 
   @Test func equalizeGivesEveryChildOfEverySplitTheSameWeight() {
-    let column = fixture().column
-    var tree = fixture().tree
+    let column = fixture(desktopColumn: true).column
+    var tree = fixture(desktopColumn: true).tree
     let root = tree.root
     tree.moveBoundary(leading: column, trailing: tree.desktop, by: 200, pointsPerWeight: 400)
     tree.moveBoundary(
@@ -65,7 +66,7 @@ private func frames(_ tree: LayoutTree, camera: NodeID? = nil) -> [WindowID: CGR
   /// A group that runs along the row around it (a turned pair, F62) looks like part of the row: what cannot be seen does not
   /// change what a command does. It counts for as many places as it shows.
   @Test func aGroupThatRunsAlongItsRowCountsForAsManyPlacesAsItShows() {
-    // root(h)[ a, pair(h, turned)[c, d], b, desktop ]
+    // root(h)[ a, pair(h, turned)[c, d], b, desktop ]: c took all that was left, and evening out leaves the Desktop without room.
     var tree = LayoutTree()
     tree.dock(a, beside: tree.root, edge: .left)
     let leafC = tree.dock(c, beside: tree.leaf(containing: a)!, edge: .right)
@@ -75,19 +76,19 @@ private func frames(_ tree: LayoutTree, camera: NodeID? = nil) -> [WindowID: CGR
     tree.rotate(pair)
     #expect(tree.children(of: tree.root).count == 4 && axis(of: pair, in: tree) == .horizontal)
     tree.equalize(under: tree.root)
-    #expect(weights(of: tree.root, in: tree) == [1, 2, 1, 1] && weights(of: pair, in: tree) == [1, 1])
+    #expect(weights(of: tree.root, in: tree) == [1, 2, 1, 0] && weights(of: pair, in: tree) == [1, 1])
     let widths = [a, c, d, b].map { frames(tree)[$0]!.width }
     #expect(Set(widths).count == 1, "\(widths)")
     // Turned back it is one place again, with two windows one above the other.
     tree.rotate(pair)
     tree.equalize(under: tree.root)
-    #expect(weights(of: tree.root, in: tree) == [1, 1, 1, 1])
+    #expect(weights(of: tree.root, in: tree) == [1, 1, 1, 0])
     #expect(tree.invariantViolations().isEmpty)
   }
 
   @Test func equalizeLeavesEverythingOutsideTheSubtreeAlone() {
-    let column = fixture().column
-    var tree = fixture().tree
+    let column = fixture(desktopColumn: true).column
+    var tree = fixture(desktopColumn: true).tree
     tree.moveBoundary(leading: column, trailing: tree.desktop, by: 200, pointsPerWeight: 400)
     tree.moveBoundary(
       leading: tree.children(of: column)[0], trailing: tree.children(of: column)[1], by: -100, pointsPerWeight: 400)
@@ -207,7 +208,7 @@ private func frames(_ tree: LayoutTree, camera: NodeID? = nil) -> [WindowID: CGR
       leading: tree.children(of: column)[0], trailing: tree.children(of: column)[1], by: 100, pointsPerWeight: 400)
     #expect(weights(of: column, in: tree) == [1.25, 0.75])
     tree.rotate(column)
-    #expect(weights(of: column, in: tree) == [1.25, 0.75] && weights(of: tree.root, in: tree) == [1, 1, 1])
+    #expect(weights(of: column, in: tree) == [1.25, 0.75] && weights(of: tree.root, in: tree) == [1, 0, 1])
   }
 
   @Test func groupsInsideATurnedGroupTurnToo() {
@@ -236,8 +237,8 @@ private func frames(_ tree: LayoutTree, camera: NodeID? = nil) -> [WindowID: CGR
   // MARK: mirror
 
   @Test func mirrorReversesTheChildrenAndNothingInsideThem() {
-    let column = fixture().column
-    var tree = fixture().tree
+    let column = fixture(desktopColumn: true).column
+    var tree = fixture(desktopColumn: true).tree
     tree.moveBoundary(leading: column, trailing: tree.desktop, by: 200, pointsPerWeight: 400)
     let original = tree
     tree.mirror(tree.root)
@@ -255,8 +256,8 @@ private func frames(_ tree: LayoutTree, camera: NodeID? = nil) -> [WindowID: CGR
   // MARK: trading places
 
   @Test func leavesTradePlacesAndTheSlotsKeepTheirSizes() {
-    let column = fixture().column
-    var tree = fixture().tree
+    let column = fixture(desktopColumn: true).column
+    var tree = fixture(desktopColumn: true).tree
     tree.moveBoundary(leading: tree.desktop, trailing: tree.leaf(containing: b)!, by: -150, pointsPerWeight: 400)
     tree.moveBoundary(
       leading: tree.children(of: column)[0], trailing: tree.children(of: column)[1], by: -100, pointsPerWeight: 400)

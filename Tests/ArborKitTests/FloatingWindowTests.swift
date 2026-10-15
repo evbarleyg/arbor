@@ -14,7 +14,7 @@ import Testing
   /// `[a | Desktop | b]` with `f` floating in the middle of the Desktop. As Arbor ships, unless `makingWay`.
   /// `apart`: each app is a process of its own, as a story about ⌘Tab needs. Otherwise they are one, and a switch among them is ⌘`.
   func makeHarness(makingWay: Bool = false, apart: Bool = false) -> (Harness, a: WindowID, b: WindowID, f: WindowID) {
-    let h = Harness(settings: makingWay ? .makingWay : Settings())
+    let h = Harness(settings: (makingWay ? Settings.makingWay : Settings()).withDesktopColumn)
     let a = h.system.open(app: "Safari", pid: apart ? 11 : 1000, frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     let b = h.system.open(app: "Notes", pid: apart ? 12 : 1000, frame: CGRect(x: 300, y: 200, width: 600, height: 400))
     let f = h.system.open(app: "Calculator", pid: apart ? 13 : 1000, frame: CGRect(x: 560, y: 300, width: 320, height: 300))
@@ -311,7 +311,7 @@ import Testing
   func withAWindowTooWideForTheDesktop(
     makingWay: Bool = true, focused: (WindowID, WindowID, WindowID) -> WindowID
   ) -> (Harness, a: WindowID, b: WindowID, c: WindowID, f: WindowID) {
-    let h = Harness(settings: makingWay ? .makingWay : Settings())
+    let h = Harness(settings: (makingWay ? Settings.makingWay : Settings()).withDesktopColumn)
     let a = h.system.open(app: "Safari", pid: 11, frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     let b = h.system.open(app: "Notes", pid: 12, frame: CGRect(x: 300, y: 200, width: 600, height: 400))
     let c = h.system.open(app: "Mail", pid: 14, frame: CGRect(x: 300, y: 200, width: 600, height: 400))
@@ -583,7 +583,7 @@ import Testing
   }
 
   @Test func aWindowTooWideForTheDesktopCoversBothNeighboursAlikeAndNeitherWhollyNeedlessly() {
-    let h = Harness(settings: .makingWay)  // it is Arbor that places it: only while floating windows make way
+    let h = Harness(settings: .makingWay.withDesktopColumn)  // it is Arbor that places it: only while floating windows make way
     let a = h.system.open(app: "Safari")
     let b = h.system.open(app: "Mail")
     let f = h.system.open(

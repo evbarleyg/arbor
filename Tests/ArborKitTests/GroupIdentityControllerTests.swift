@@ -6,9 +6,12 @@ import Testing
 
 /// F62 through the real controller: commands, events and frames.
 @MainActor @Suite struct GroupIdentityControllerTests {
-  /// [ (Mail / (Notes | Safari)) | Desktop | Slack ], nothing small enough to be a tile.
-  private func harness() -> (h: Harness, mail: WindowID, notes: WindowID, safari: WindowID, slack: WindowID) {
+  /// [ (Mail / (Notes | Safari)) | Slack ], nothing small enough to be a tile. A column for the Desktop lies before Slack.
+  private func harness(
+    desktopColumn: Bool = false
+  ) -> (h: Harness, mail: WindowID, notes: WindowID, safari: WindowID, slack: WindowID) {
     var settings = Settings()
+    settings.desktopColumn = desktopColumn
     settings.minimumUsableWidth = 40
     settings.minimumUsableHeight = 40
     let h = Harness(settings: settings)
@@ -177,8 +180,8 @@ import Testing
 
   /// Seen from outside, the end of a kept group and the next place along the row are the same place. Taking the window out of the group
   /// alone would show in sizes and in nothing else: no step (QUESTIONS, IDEAS I21). The press goes on, past the neighbor.
-  @Test func everyKeyboardMoveAlongARowChangesSomethingToSee() {
-    let (h, mail, notes, safari, slack) = harness()
+  @Test(arguments: [false, true]) func everyKeyboardMoveAlongARowChangesSomethingToSee(desktopColumn: Bool) {
+    let (h, mail, notes, safari, slack) = harness(desktopColumn: desktopColumn)
     let pair = h.workspace.tree.parent(of: h.workspace.tree.leaf(containing: notes)!)!
     h.run("zoom-node \(pair.rawValue)")
     h.run("save-view 1")
@@ -187,10 +190,10 @@ import Testing
     #expect(h.workspace.tree.windows(under: pair) == [notes, safari])
     h.system.userFocus(safari)
 
-    /// The row from left to right, the Desktop as nil.
+    /// The row from left to right, the Desktop as nil where it has room.
     func row() -> [WindowID?] {
       var places: [(WindowID?, CGFloat)] = [notes, safari, slack].map { ($0, h.frame($0)!.minX) }
-      places.append((nil, h.layout!.desktopFrame!.minX))
+      if let desktop = h.layout!.desktopFrame { places.append((nil, desktop.minX)) }
       return places.sorted { $0.1 < $1.1 }.map(\.0)
     }
     var rows: [[WindowID?]] = []
@@ -201,7 +204,11 @@ import Testing
       #expect(h.workspace.tree.invariantViolations() == [])
       rows.append(row())
     }
-    #expect(rows == [[notes, nil, safari, slack], [notes, nil, slack, safari]])
+    #expect(
+      rows
+        == (desktopColumn
+          ? [[notes, nil, safari, slack], [notes, nil, slack, safari]]
+          : [[notes, slack, safari]]))
     // The group is down to Notes, and the saved view with it.
     #expect(h.run("view 1").ok)
     #expect(inView(h) == [notes])

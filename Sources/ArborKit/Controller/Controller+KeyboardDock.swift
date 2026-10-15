@@ -93,10 +93,12 @@ extension Controller {
       // Nothing visible beyond that edge. If the window is already the
       // outermost thing that shows in the view along that axis there is nowhere
       // to go; otherwise it becomes the outermost child.
-      if isOutermostThatShows(leaf, toward: edge, in: view, of: workspace) {
+      // (Alone beside a Desktop without room it has everything, and goes to that half: a first dock again.)
+      if isOutermostThatShows(leaf, toward: edge, in: view, of: workspace), !workspace.tree.isAloneBesideADesktopWithoutRoom(leaf) {
         return .refused("\(id) is already at the \(edge.rawValue) edge")
       }
-      let outcome = workspace.tryDock(id, at: .cameraEdge(edge), shareSpace: settings.shareRemovedSpace)
+      let outcome = workspace.tryDock(
+        id, at: .cameraEdge(edge), shareSpace: settings.shareRemovedSpace, desktopColumn: settings.desktopColumn)
       if let why = outcome.refusal(of: id) { return .refused(why) }
     }
     return .moved(keepingDesktopUsable(workspace, on: display))
@@ -156,7 +158,7 @@ extension Controller {
 
     var copy = workspace
     let halved =
-      copy.dock(window, at: .beside(neighbour, edge.opposite), shareSpace: settings.shareRemovedSpace) ? copy : nil
+      copy.dock(window, at: .beside(neighbour, edge.opposite), shareSpace: settings.shareRemovedSpace, desktopColumn: settings.desktopColumn) ? copy : nil
     let half = halved.map(outcome) ?? (false, .max)
     if half.shown, half.tiles <= layouts[display]?.tiles.count ?? 0 { return halved }
 
@@ -170,7 +172,7 @@ extension Controller {
     var evened = workspace
     guard
       evened.dock(
-        window, at: .beside(branch, edge.opposite), evenShare: true, shareSpace: settings.shareRemovedSpace)
+        window, at: .beside(branch, edge.opposite), evenShare: true, shareSpace: settings.shareRemovedSpace, desktopColumn: settings.desktopColumn)
     else { return halved }
     let even = outcome(evened)
     return halved == nil || even.shown && (!half.shown || even.tiles < half.tiles) ? evened : halved
@@ -182,7 +184,9 @@ extension Controller {
   /// it lacks is taken from the neighbour that has most to give.
   func keepingDesktopUsable(_ candidate: Workspace, on display: DisplayID) -> Workspace {
     let holdsWindows = candidate.floating.keys.contains { windows[$0]?.isPresent == true && !parked.contains($0) }
-    guard settings.floatingWindowsMakeWay, holdsWindows, layouts[display]?.desktopFrame != nil, let trial = trialLayout(of: candidate, on: display),
+    // Without a share of its own the Desktop is what is left over, and what floats is in view wherever it lies.
+    guard settings.floatingWindowsMakeWay, settings.desktopColumn, holdsWindows, layouts[display]?.desktopFrame != nil,
+      let trial = trialLayout(of: candidate, on: display),
       let tile = trial.tiles.first(where: { $0.kind == .desktop })
     else { return candidate }
     let desktop = candidate.tree.desktop

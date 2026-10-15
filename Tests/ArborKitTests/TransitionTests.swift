@@ -9,7 +9,8 @@ import Testing
   let screen = FakeWindowSystem.standardDisplay.frame
   let content = FakeWindowSystem.standardDisplay.visibleFrame.insetBy(dx: 12, dy: 12)
 
-  /// [a | Desktop | b] with c floating on the Desktop. The transitions of the set-up are forgotten.
+  /// [a | b] with c floating over the middle. The transitions of the set-up are forgotten.
+  /// With `.withDesktopColumn`: [a | Desktop | b] with c floating on the Desktop.
   func makeHarness(settings: Settings = Settings()) -> (Harness, WindowID, WindowID, WindowID) {
     let h = Harness(settings: settings)
     let a = h.system.open(app: "Safari", pid: 11, frame: CGRect(x: 100, y: 100, width: 600, height: 400))
@@ -24,6 +25,13 @@ import Testing
     return (h, a, b, c)
   }
 
+  /// A third place, [a | b | d]: of two the one that is left stays as it is, of three the others share what the third had.
+  func dockAThird(_ h: Harness) {
+    let d = h.system.open(app: "Terminal", pid: 14, frame: CGRect(x: 700, y: 400, width: 600, height: 400))
+    h.run("dock \(d.rawValue) right")
+    h.overlays.clearTransitions()
+  }
+
   /// The only transition since the last `clearTransitions()`.
   func only(_ h: Harness, sourceLocation: SourceLocation = #_sourceLocation) -> Transition? {
     #expect(h.overlays.transitions.count == 1, sourceLocation: sourceLocation)
@@ -33,7 +41,7 @@ import Testing
   // MARK: Acceptance criterion 1: zoom, back, dock and close
 
   @Test func zoomingMovesEveryWindowThatIsDrawn() throws {
-    let (h, a, b, c) = makeHarness()
+    let (h, a, b, c) = makeHarness(settings: .withDesktopColumn)  // c rides on the Desktop, which has a place on the plane
     let (slotA, slotB, restC) = (h.frame(a)!, h.frame(b)!, h.frame(c)!)
     h.run("zoom \(a.rawValue)")
     let transition = try #require(only(h))
@@ -81,6 +89,7 @@ import Testing
 
   @Test func closingAWindowLetsTheOthersGlideIntoItsSpace() throws {
     let (h, a, b, c) = makeHarness()
+    dockAThird(h)
     let before = [a: h.frame(a)!, c: h.frame(c)!]
     h.system.close(b)
     let transition = try #require(only(h))
@@ -245,7 +254,7 @@ import Testing
     let dropped = h.overlays.finishedAnimations
     h.system.setOnActiveSpace(b, false)
     h.scheduler.runPending()
-    #expect(h.frame(a)!.width > 464)
+    #expect(h.frame(a)!.width > 702)
     #expect(h.overlays.transitions.isEmpty)
     #expect(h.overlays.finishedAnimations > dropped)
   }
@@ -352,6 +361,8 @@ import Testing
 
   @Test func nothingIsPlayedWhileTheUserHoldsAWindow() {
     let (h, a, b, c) = makeHarness()
+    dockAThird(h)
+    #expect(h.frame(a)!.width == 464)
     // b closes while c is being dragged: a takes the space at once, under the window in the user's hand.
     h.system.mouseDown = true
     h.controller.dragBegan(c, at: h.frame(c)!.center)
@@ -359,7 +370,7 @@ import Testing
     #expect(h.frame(a)!.width > 464)
     #expect(h.overlays.transitions.isEmpty)
     h.system.mouseDown = false
-    h.controller.dragEnded(c, at: h.layout!.desktopFrame!.center)
+    h.controller.dragEnded(c, at: h.frame(a)!.center)  // over the middle of a docked window it goes on floating
 
     // The same while a docked window is being resized by its edge.
     var wider = h.frame(a)!
@@ -423,7 +434,7 @@ import Testing
   }
 
   @Test func floatingEverythingBringsBackWhatWasOutOfView() throws {
-    let (h, a, b, c) = makeHarness()
+    let (h, a, b, c) = makeHarness(settings: .withDesktopColumn)  // c comes in with the Desktop, from where the plane has it
     h.run("zoom \(a.rawValue)")
     h.overlays.clearTransitions()
     h.run("float-all")
@@ -452,7 +463,7 @@ import Testing
     let (h, _, b, _) = makeHarness()
     let opened = CGRect(x: 400, y: 200, width: 700, height: 500)
     let big = h.system.open(app: "Xcode", frame: opened)
-    h.system.setMinimumSize(big, CGSize(width: 1250, height: 700))
+    h.system.setMinimumSize(big, CGSize(width: 1400, height: 700))  // more than its neighbour could spare as a tile (F61)
     h.run("dock \(big.rawValue) beside \(b.rawValue) bottom")
     try #require(h.overlays.transitions.count == 2)
     let (hoped, corrected) = (h.overlays.transitions[0], h.overlays.transitions[1])
@@ -505,7 +516,7 @@ import Testing
 
   @Test func clickingATileUnfoldsIt() throws {
     var settings = Settings()
-    settings.minimumUsableWidth = 500
+    settings.minimumUsableWidth = 750  // more than half the display
     let (h, a, b, c) = makeHarness(settings: settings)
     h.run("dock \(c.rawValue) beside \(a.rawValue) bottom")
     let group = try #require(h.layout?.tiles.first { $0.kind == .group })
@@ -532,7 +543,7 @@ import Testing
   }
 
   @Test func standInsAreStackedLikeTheWindows() throws {
-    let (h, a, b, c) = makeHarness()
+    let (h, a, b, c) = makeHarness(settings: .withDesktopColumn)  // the way to the Desktop is played: it has a place on the plane
     h.system.userFocus(c)
     h.system.userFocus(a)
     h.run("out")  // fails: nothing to step out to, so nothing is focused or moved

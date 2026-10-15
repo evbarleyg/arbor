@@ -35,7 +35,7 @@ private func makeHarness(
   return (h, a, b, c)
 }
 
-/// The same, docked as the row [a | b | c | Desktop] with equal widths.
+/// The same, docked as the row [a | b | c] with equal widths. With a column for the Desktop: [a | b | c | Desktop].
 @MainActor
 private func makeRow(
   _ settings: Settings = Settings(), displays: [DisplaySnapshot] = [FakeWindowSystem.standardDisplay]
@@ -141,7 +141,7 @@ private func withNothingRemembered(_ old: Harness) -> Harness {
   @Test func withHandlesOffTheGapsAreNotHandles() {
     let (h, _, _, _) = makeRow(settings { $0.gapHandles = "off" })
     #expect(h.overlays.seams[h.display] == [])
-    #expect(h.layout!.seams.count == 3, "the layout still knows where the seams are")
+    #expect(h.layout!.seams.count == 2, "the layout still knows where the seams are")
   }
 
   @Test func theResizeCommandStillWorksWithHandlesOff() {
@@ -190,7 +190,7 @@ private func withNothingRemembered(_ old: Harness) -> Harness {
     let (h, _, _, _) = makeRow(settings { $0.gapHandles = "off" })
     h.controller.apply(settings: Settings())
     #expect(h.overlays.seams[h.display] == h.layout!.seams)
-    #expect(h.overlays.seams[h.display]!.count == 3)
+    #expect(h.overlays.seams[h.display]!.count == 2)
   }
 
   @Test func hiddenHandlesStillWorkButAreNotDrawn() {
@@ -206,7 +206,7 @@ private func withNothingRemembered(_ old: Harness) -> Harness {
   @Test func byDefaultHandlesAreShown() {
     let (h, _, _, _) = makeRow()
     #expect(h.overlays.scenes[h.display]?.showsSeamHandles == true)
-    #expect(h.overlays.seams[h.display]!.count == 3)
+    #expect(h.overlays.seams[h.display]!.count == 2)
   }
 
   @Test func theFramesAreTheSameWhateverTheHandlesDo() {
@@ -251,7 +251,7 @@ private func withNothingRemembered(_ old: Harness) -> Harness {
   }
 
   @Test func byDefaultTheWholeRowSharesTheSpace() {
-    let (h, a, b, c) = makeRow()
+    let (h, a, b, c) = makeRow(.withDesktopColumn)
     let (before, desktop) = (frames(h), h.layout!.desktopFrame!)
     h.system.close(b)
     #expect(h.frame(a)!.width > before[a]!.width)
@@ -300,7 +300,7 @@ private func withNothingRemembered(_ old: Harness) -> Harness {
   }
 
   @Test func draggingAWindowOutWidensOnlyTheNeighbour() {
-    let (h, a, b, c) = makeRow(keep)
+    let (h, a, b, c) = makeRow(keep.withDesktopColumn)
     let (before, desktop) = (frames(h), h.layout!.desktopFrame)
     h.system.drag(b, through: [CGPoint(x: before[b]!.midX, y: before[b]!.minY + 10), desktop!.center])
     #expect(h.workspace.isFloating(b))
@@ -382,7 +382,7 @@ private func withNothingRemembered(_ old: Harness) -> Harness {
   }
 
   @Test func movingAWindowOutOfAColumnWithTheKeyboardGrowsOnlyTheNeighbour() {
-    // [a | [c / b / x] | Desktop]: ⌃⌥⌘← takes b out of the column, next to a.
+    // [a | [c / b / x]]: ⌃⌥⌘← takes b out of the column, next to a.
     let (h, a, b, c) = makeHarness(keep)
     for window in [c, a] { h.run("dock \(window.rawValue) left") }
     h.run("dock \(b.rawValue) beside \(c.rawValue) bottom")
@@ -397,7 +397,7 @@ private func withNothingRemembered(_ old: Harness) -> Harness {
 
   @Test func movingAWindowToTheEdgeOfTheViewWithTheKeyboardWidensOnlyTheNeighbour() {
     // ⌃⌥⌘↑ finds nothing above b, so b leaves the row for the top of the view.
-    let (h, a, b, c) = makeRow(keep)
+    let (h, a, b, c) = makeRow(keep.withDesktopColumn)
     let (before, desktop) = (frames(h), h.layout!.desktopFrame!)
     #expect(h.run("dock \(b.rawValue) top").ok)
     #expect(h.frame(b)!.maxY < h.frame(a)!.minY)
@@ -541,7 +541,7 @@ private func withNothingRemembered(_ old: Harness) -> Harness {
 @Suite @MainActor struct ParkSmallTests {
   let shrinking = settings { $0.shrinkOutOfView = true }
 
-  /// [a | Desktop | b] with c floating on the Desktop.
+  /// [a | b], two halves, with c floating over the two of them.
   func makeDesk(
     _ settings: Settings, displays: [DisplaySnapshot] = [FakeWindowSystem.standardDisplay]
   ) -> (Harness, WindowID, WindowID, WindowID) {
@@ -809,7 +809,8 @@ private func withNothingRemembered(_ old: Harness) -> Harness {
   }
 
   @Test func tabsAndTilesParkSmallToo() {
-    let (h, a, b, c) = makeRow(settings { $0.shrinkOutOfView = true; $0.minimumUsableWidth = 400 })
+    // Each of the three is 464 points wide.
+    let (h, a, b, c) = makeRow(settings { $0.shrinkOutOfView = true; $0.minimumUsableWidth = 500 })
     for window in [a, b, c] {
       #expect(h.frame(window)!.size == small, "\(window) is inside a tile")
       expectOutOfSight(h, window)

@@ -19,8 +19,10 @@ private let third = DisplaySnapshot(
   let h: Harness
   let safari: WindowID, notes: WindowID, mail: WindowID
 
-  init(displays: [DisplaySnapshot] = [main], saved: PersistedState? = nil) {
-    h = Harness(displays: displays, saved: saved)
+  init(
+    displays: [DisplaySnapshot] = [main], settings: Settings = Harness.settingsWhenNoneAreGiven, saved: PersistedState? = nil
+  ) {
+    h = Harness(displays: displays, settings: settings, saved: saved)
     safari = h.system.open(app: "Safari", title: "Apple", frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     notes = h.system.open(app: "Notes", title: "Shopping", frame: CGRect(x: 300, y: 200, width: 600, height: 400))
     mail = h.system.open(app: "Mail", title: "Inbox", frame: CGRect(x: 400, y: 200, width: 600, height: 400))
@@ -223,10 +225,10 @@ private let third = DisplaySnapshot(
   }
 
   @Test func aDirectionStillMeansTheNeighbour() {
-    let d = Desk()
+    let d = Desk(settings: Settings())
     d.h.run("zoom \(d.safari.rawValue)")
     d.h.run("go right")
-    #expect(d.workspace.camera == d.workspace.tree.desktop)
+    #expect(d.workspace.camera == d.column)
   }
 
   @Test func goBringsTheKeyboardAlong() {
@@ -814,11 +816,11 @@ private let third = DisplaySnapshot(
   }
 
   @Test func aTileThatStandsForANamedSpaceIsCaptionedWithTheName() {
-    let d = Desk()
+    let d = Desk(settings: Settings())
     d.nameColumn()
     #expect(d.h.overlays.tiles[d.h.display]?.isEmpty == true)
-    // Squeeze the column until it is too narrow to use.
-    d.h.run("resize \(d.notes.rawValue) left -400")
+    // Squeeze the column, half of the display, until it is too narrow to use.
+    d.h.run("resize \(d.notes.rawValue) left -640")
     guard let tile = d.h.overlays.tiles[d.h.display]?.first(where: { $0.node == d.column }) else {
       Issue.record("the column should be a tile: \(d.h.ascii())")
       return

@@ -9,11 +9,11 @@ import Testing
   let c = WindowID(3)
   let laptop = CGSize(width: 1440, height: 875)
 
-  /// [a / c | Desktop | b]
+  /// [a / c | Desktop | b], thirds: with a column for the Desktop, so that the Desktop is on the map too.
   func makeTree() -> LayoutTree {
     var tree = LayoutTree()
-    let left = tree.dock(a, beside: tree.desktop, edge: .left)
-    tree.dock(b, beside: tree.desktop, edge: .right)
+    let left = tree.dock(a, beside: tree.desktop, edge: .left, desktopColumn: true)
+    tree.dock(b, beside: tree.desktop, edge: .right, desktopColumn: true)
     tree.dock(c, beside: left, edge: .bottom)
     return tree
   }

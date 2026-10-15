@@ -46,23 +46,25 @@ private func noOverlaps(_ layout: Layout) -> Bool {
   return true
 }
 
+/// With a column for the Desktop: who gives first, how far, and what is owed is about a Desktop with a share of its own. What is not
+/// about the Desktop is tried both ways.
 @Suite struct MakeRoomTests {
   func serve(
     _ tree: inout LayoutTree, in frame: CGRect = screen, camera: NodeID? = nil, minimums: [WindowID: CGSize],
-    inUse: Bool = false, leaving: Set<NodeID> = [], owed: Bool = false
+    inUse: Bool = false, leaving: Set<NodeID> = [], owed: Bool = false, desktopColumn: Bool = true
   ) -> (served: [WindowID], layout: Layout) {
     let (served, layout, _) = MakeRoom.serve(
-      &tree, camera: camera ?? tree.root, in: frame, options: LayoutOptions(), isPresent: everyone,
+      &tree, camera: camera ?? tree.root, in: frame, options: LayoutOptions(desktopColumn: desktopColumn), isPresent: everyone,
       minimumSize: { minimums[$0] },
       terms: MakeRoom.Terms(desktopIsInUse: inUse, leaving: leaving, desktopIsOwed: owed))
     return (served.compactMap(\.window), layout)
   }
 
-  /// [a | Desktop | b]: 464 points each on 1440.
-  func columns() -> LayoutTree {
+  /// [a | Desktop | b]: 464 points each on 1440. Without a column for the Desktop [a | b]: 702 each.
+  func columns(desktopColumn: Bool = true) -> LayoutTree {
     var tree = LayoutTree()
-    tree.dock(a, beside: tree.root, edge: .left)
-    tree.dock(b, beside: tree.root, edge: .right)
+    tree.dock(a, beside: tree.root, edge: .left, desktopColumn: desktopColumn)
+    tree.dock(b, beside: tree.root, edge: .right, desktopColumn: desktopColumn)
     return tree
   }
 
@@ -106,8 +108,8 @@ private func noOverlaps(_ layout: Layout) -> Bool {
     let minimums = [a: CGSize(width: 709, height: 300), b: CGSize(width: 650, height: 240)]
     for (earlier, later) in [(a, b), (b, a)] {
       var tree = LayoutTree()
-      tree.dock(earlier, beside: tree.root, edge: .left)
-      tree.dock(later, beside: tree.root, edge: .right)
+      tree.dock(earlier, beside: tree.root, edge: .left, desktopColumn: true)
+      tree.dock(later, beside: tree.root, edge: .right, desktopColumn: true)
       let (served, layout) = serve(&tree, minimums: minimums)
       #expect(served == [later])
       #expect(layout.tiles.filter { $0.kind == .window }.map(\.windows) == [[earlier]])
@@ -141,7 +143,7 @@ private func noOverlaps(_ layout: Layout) -> Bool {
   /// Three that cannot all fit: the two docked last are served, and the tile and the empty Desktop go as narrow as it takes.
   @Test func tilesGiveAllTheyCanSoThatAsManyAsPossibleFit() throws {
     var tree = columns()
-    tree.dock(c, beside: tree.root, edge: .right)
+    tree.dock(c, beside: tree.root, edge: .right, desktopColumn: true)
     let minimums = [
       a: CGSize(width: 709, height: 300), b: CGSize(width: 574, height: 240), c: CGSize(width: 500, height: 300),
     ]
@@ -156,9 +158,9 @@ private func noOverlaps(_ layout: Layout) -> Bool {
   @Test func neighboursGiveInProportionToWhatTheyCanSpare() throws {
     // [a | b | c | Desktop] on 1920 points, the Desktop with nothing to give.
     var tree = LayoutTree()
-    let leafC = tree.dock(c, beside: tree.root, edge: .left)
-    let leafB = tree.dock(b, beside: leafC, edge: .left)
-    let leafA = tree.dock(a, beside: leafB, edge: .left)
+    let leafC = tree.dock(c, beside: tree.root, edge: .left, desktopColumn: true)
+    let leafB = tree.dock(b, beside: leafC, edge: .left, desktopColumn: true)
+    let leafA = tree.dock(a, beside: leafB, edge: .left, desktopColumn: true)
     tree.setShares([leafA: 400, leafB: 940, leafC: 440, tree.desktop: 80])
     let before = tree
     let old = LayoutEngine.layout(tree, camera: tree.root, in: wide, isPresent: everyone)
@@ -186,25 +188,25 @@ private func noOverlaps(_ layout: Layout) -> Bool {
     #expect(layout.tiles.map(\.windows) == [[a]])
   }
 
-  @Test func inAColumnTheOneAboveGivesHeight() throws {
-    var tree = columns()
+  @Test(arguments: [true, false]) func inAColumnTheOneAboveGivesHeight(desktopColumn: Bool) throws {
+    var tree = columns(desktopColumn: desktopColumn)
     let leafB = try #require(tree.leaf(containing: b))
-    tree.dock(c, beside: leafB, edge: .bottom)
+    tree.dock(c, beside: leafB, edge: .bottom, desktopColumn: desktopColumn)
     let before = tree
-    let (served, layout) = serve(&tree, minimums: [c: CGSize(width: 300, height: 600)])
+    let (served, layout) = serve(&tree, minimums: [c: CGSize(width: 300, height: 600)], desktopColumn: desktopColumn)
     #expect(served == [c])
     #expect(layout.height(of: c) >= 600)
     #expect(layout.height(of: b) >= 160)
-    #expect(layout.windowFrames[a]?.width == 464, "nothing changed across")
+    #expect(layout.windowFrames[a]?.width == (desktopColumn ? 464 : 702), "nothing changed across")
     #expect(noOverlaps(layout))
     expectSameSums(before, tree)
   }
 
-  @Test func bothWaysAtOnce() throws {
-    var tree = columns()
+  @Test(arguments: [true, false]) func bothWaysAtOnce(desktopColumn: Bool) throws {
+    var tree = columns(desktopColumn: desktopColumn)
     let leafB = try #require(tree.leaf(containing: b))
-    tree.dock(c, beside: leafB, edge: .bottom)
-    let (served, layout) = serve(&tree, minimums: [c: CGSize(width: 900, height: 600)])
+    tree.dock(c, beside: leafB, edge: .bottom, desktopColumn: desktopColumn)
+    let (served, layout) = serve(&tree, minimums: [c: CGSize(width: 900, height: 600)], desktopColumn: desktopColumn)
     #expect(served == [c])
     let frame = try #require(layout.windowFrames[c])
     #expect(frame.width >= 900 && frame.height >= 600)
@@ -212,23 +214,23 @@ private func noOverlaps(_ layout: Layout) -> Bool {
     #expect(noOverlaps(layout))
   }
 
-  @Test func wideEnoughButNeverTallEnoughChangesNothing() throws {
-    var tree = columns()
+  @Test(arguments: [true, false]) func wideEnoughButNeverTallEnoughChangesNothing(desktopColumn: Bool) throws {
+    var tree = columns(desktopColumn: desktopColumn)
     let leafB = try #require(tree.leaf(containing: b))
-    tree.dock(c, beside: leafB, edge: .bottom)
+    tree.dock(c, beside: leafB, edge: .bottom, desktopColumn: desktopColumn)
     let before = tree
     // The width could be found, the height could not: b needs 160 of the 839 the two share.
-    let (served, _) = serve(&tree, minimums: [c: CGSize(width: 600, height: 700)])
+    let (served, _) = serve(&tree, minimums: [c: CGSize(width: 600, height: 700)], desktopColumn: desktopColumn)
     #expect(served.isEmpty)
     #expect(tree == before)
   }
 
   /// [a | Desktop | [[c | d] over b]]: the row c and d share lies inside the right-hand column.
-  func nested() throws -> LayoutTree {
-    var tree = columns()
+  func nested(desktopColumn: Bool = true) throws -> LayoutTree {
+    var tree = columns(desktopColumn: desktopColumn)
     let leafB = try #require(tree.leaf(containing: b))
-    let leafC = tree.dock(c, beside: leafB, edge: .top)
-    tree.dock(d, beside: leafC, edge: .right)
+    let leafC = tree.dock(c, beside: leafB, edge: .top, desktopColumn: desktopColumn)
+    tree.dock(d, beside: leafC, edge: .right, desktopColumn: desktopColumn)
     return tree
   }
 
@@ -260,14 +262,14 @@ private func noOverlaps(_ layout: Layout) -> Bool {
     #expect(tree == before)
   }
 
-  @Test func onlyWhatIsInViewTakesPart() throws {
-    var tree = try nested()
+  @Test(arguments: [true, false]) func onlyWhatIsInViewTakesPart(desktopColumn: Bool) throws {
+    var tree = try nested(desktopColumn: desktopColumn)
     let leafA = try #require(tree.leaf(containing: a))
     let leafB = try #require(tree.leaf(containing: b))
     let column = try #require(tree.parent(of: leafB))
     let outside = [tree.root, leafA, tree.desktop].map { tree[$0]!.weight }
     // Framed on the column, 1416 points wide: d gets what it needs from c alone.
-    let (served, layout) = serve(&tree, camera: column, minimums: [d: CGSize(width: 900, height: 200)])
+    let (served, layout) = serve(&tree, camera: column, minimums: [d: CGSize(width: 900, height: 200)], desktopColumn: desktopColumn)
     #expect(served == [d])
     #expect(layout.width(of: d) >= 900)
     #expect([tree.root, leafA, tree.desktop].map { tree[$0]!.weight } == outside)
@@ -276,13 +278,13 @@ private func noOverlaps(_ layout: Layout) -> Bool {
   @Test func aDesktopThatGaveGetsBackWhatOthersCanSpareByNow() throws {
     // What is left when Notes has closed: a Desktop of 220 points beside a Safari of 1184.
     var tree = LayoutTree()
-    let leafB = tree.dock(b, beside: tree.root, edge: .right)
+    let leafB = tree.dock(b, beside: tree.root, edge: .right, desktopColumn: true)
     tree.setShares([tree.desktop: 220, leafB: 1184])
     let narrow = tree
     func terms(owed: Bool) -> MakeRoom.Terms { MakeRoom.Terms(desktopIsInUse: false, desktopIsOwed: owed) }
     func serve(_ tree: inout LayoutTree, owed: Bool) -> (served: [MakeRoom.Short], layout: Layout, gaveBack: Bool) {
       MakeRoom.serve(
-        &tree, camera: tree.root, in: screen, options: LayoutOptions(), isPresent: everyone,
+        &tree, camera: tree.root, in: screen, options: LayoutOptions(desktopColumn: true), isPresent: everyone,
         minimumSize: { _ in CGSize(width: 574, height: 240) }, terms: terms(owed: owed))
     }
     #expect(serve(&tree, owed: false).served.isEmpty, "somebody may want it narrow")
@@ -304,7 +306,8 @@ private func noOverlaps(_ layout: Layout) -> Bool {
     func width(wish: CGFloat) -> CGFloat {
       var tree = start
       let layout = MakeRoom.serve(
-        &tree, camera: tree.root, in: screen, options: LayoutOptions(), isPresent: everyone, minimumSize: { minimums[$0] },
+        &tree, camera: tree.root, in: screen, options: LayoutOptions(desktopColumn: true), isPresent: everyone,
+        minimumSize: { minimums[$0] },
         terms: MakeRoom.Terms(desktopIsInUse: true, desktopIsOwed: true, desktopWish: CGSize(width: wish, height: 300))
       ).layout
       expectSameSums(start, tree)
@@ -324,7 +327,8 @@ private func noOverlaps(_ layout: Layout) -> Bool {
     tree.setShares([leafA: 646, tree.desktop: 100, leafB: 646])
     func serve(_ tree: inout LayoutTree, known: [WindowID: CGSize]) -> Layout {
       MakeRoom.serve(
-        &tree, camera: tree.root, in: screen, options: LayoutOptions(), isPresent: everyone, minimumSize: { known[$0] },
+        &tree, camera: tree.root, in: screen, options: LayoutOptions(desktopColumn: true), isPresent: everyone,
+        minimumSize: { known[$0] },
         terms: MakeRoom.Terms(desktopIsInUse: false, desktopIsOwed: true, emptyDesktopAsksNobody: true)
       ).layout
     }
@@ -360,17 +364,17 @@ private func noOverlaps(_ layout: Layout) -> Bool {
     #expect(layout.width(of: a) >= 240, "no window shows in less, whatever it would put up with")
   }
 
-  @Test func nothingShortNothingChanges() {
-    var tree = columns()
+  @Test(arguments: [true, false]) func nothingShortNothingChanges(desktopColumn: Bool) {
+    var tree = columns(desktopColumn: desktopColumn)
     let before = tree
-    let (served, layout) = serve(&tree, minimums: [a: CGSize(width: 300, height: 200)])
+    let (served, layout) = serve(&tree, minimums: [a: CGSize(width: 300, height: 200)], desktopColumn: desktopColumn)
     #expect(served.isEmpty)
     #expect(tree == before)
     #expect(layout == LayoutEngine.layout(before, camera: before.root, in: screen, isPresent: everyone))
   }
 
-  @Test func sharesKeepTheSumAndRefuseNonsense() throws {
-    var tree = columns()
+  @Test(arguments: [true, false]) func sharesKeepTheSumAndRefuseNonsense(desktopColumn: Bool) throws {
+    var tree = columns(desktopColumn: desktopColumn)
     let leafA = try #require(tree.leaf(containing: a))
     let leafB = try #require(tree.leaf(containing: b))
     let before = tree
@@ -388,7 +392,7 @@ private func noOverlaps(_ layout: Layout) -> Bool {
   }
 
   /// Any tree, any minimums: nobody in view loses their place, whoever is served fits, no weight appears or is lost.
-  @Test func anyTreeAnyMinimums() {
+  @Test(arguments: [true, false]) func anyTreeAnyMinimums(desktopColumn: Bool) {
     var seed: UInt64 = 0x5EED_F061
     func random(_ bound: Int) -> Int {
       seed = seed &* 6_364_136_223_846_793_005 &+ 1_442_695_040_888_963_407
@@ -401,7 +405,8 @@ private func noOverlaps(_ layout: Layout) -> Bool {
       let count = 2 + random(6)
       for number in 1...count {
         let window = WindowID(UInt32(number))
-        leaves.append(tree.dock(window, beside: leaves[random(leaves.count)], edge: Edge.allCases[random(4)]))
+        leaves.append(
+          tree.dock(window, beside: leaves[random(leaves.count)], edge: Edge.allCases[random(4)], desktopColumn: desktopColumn))
         if random(2) == 0 { minimums[window] = CGSize(width: 100 + random(900), height: 100 + random(600)) }
       }
       let before = tree
@@ -409,7 +414,7 @@ private func noOverlaps(_ layout: Layout) -> Bool {
         tree, camera: tree.root, in: screen, isPresent: everyone, minimumSize: { minimums[$0] })
       let inUse = random(2) == 0
       let owed = random(3) == 0
-      let (served, layout) = serve(&tree, minimums: minimums, inUse: inUse, owed: owed)
+      let (served, layout) = serve(&tree, minimums: minimums, inUse: inUse, owed: owed, desktopColumn: desktopColumn)
       #expect(tree.invariantViolations().isEmpty)
       expectSameSums(before, tree)
       #expect(noOverlaps(layout))
@@ -422,7 +427,7 @@ private func noOverlaps(_ layout: Layout) -> Bool {
       if served.isEmpty, old.desktopFrame != nil || layout.desktopFrame == nil { #expect(tree == before) }
       // Once is enough: asked again, it finds nothing to do.
       let settled = tree
-      #expect(serve(&tree, minimums: minimums, inUse: inUse, owed: owed).served.isEmpty)
+      #expect(serve(&tree, minimums: minimums, inUse: inUse, owed: owed, desktopColumn: desktopColumn).served.isEmpty)
       #expect(tree == settled)
 
       // What is saved reads back as it was written.
@@ -430,7 +435,7 @@ private func noOverlaps(_ layout: Layout) -> Bool {
       // Framed on its own, a window has the whole display. That is no reason to give anything back.
       for leaf in tree.preorder() where !tree.isSplit(leaf) {
         var framed = tree
-        _ = serve(&framed, camera: leaf, minimums: minimums, inUse: inUse, owed: owed)
+        _ = serve(&framed, camera: leaf, minimums: minimums, inUse: inUse, owed: owed, desktopColumn: desktopColumn)
         #expect(framed == tree)
       }
       // Everybody leaves, in any order: the ledger never breaks the tree, and ends empty.
@@ -438,7 +443,9 @@ private func noOverlaps(_ layout: Layout) -> Bool {
       while !windows.isEmpty {
         tree.remove(windows.remove(at: random(windows.count)))
         #expect(tree.invariantViolations().isEmpty)
-        #expect(tree.preorder().allSatisfy { tree[$0]!.weight.isFinite && tree[$0]!.weight > 0 })
+        // (A Desktop without room weighs nothing, on purpose.)
+        let weightless = tree.preorder().filter { !(tree[$0]!.weight.isFinite && tree[$0]!.weight > 0) }
+        #expect(weightless.isEmpty || !desktopColumn && weightless == [tree.desktop] && tree[tree.desktop]!.weight == 0)
       }
       #expect(!tree.hasLoans)
     }

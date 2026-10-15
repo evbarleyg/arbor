@@ -244,7 +244,7 @@ import Testing
     }
   }
 
-  /// [Safari | Desktop | Notes], Mail floating, each an app of its own.
+  /// [(Safari / Notes) | Desktop], Mail floating on the Desktop, each an app of its own.
   func scene(reflow: Bool) -> (h: Harness, safari: WindowID, mail: WindowID) {
     var settings = Settings()
     settings.reflowWhileDragging = reflow
@@ -254,7 +254,7 @@ import Testing
     let mail = h.system.open(app: "Mail", pid: 2003, frame: CGRect(x: 520, y: 300, width: 400, height: 300))
     h.start()
     h.run("dock \(safari.rawValue) left")
-    h.run("dock \(notes.rawValue) right")
+    h.run("dock \(notes.rawValue) beside \(safari.rawValue) bottom")
     h.scheduler.runPending()
     return (h, safari, mail)
   }
@@ -268,7 +268,7 @@ import Testing
       let before = h.controller.workspaces
       let size = try #require(h.frame(window)).size
       h.system.beginDrag(window)
-      h.system.moveDrag(to: CGPoint(x: 700, y: 500), holding: 0.3)
+      h.system.moveDrag(to: CGPoint(x: 1000, y: 500), holding: 0.3)  // over the Desktop
       set(leaving, true, window, h)
       h.system.endDrag()
       h.scheduler.runPending()
@@ -291,24 +291,25 @@ import Testing
     let (h, safari, mail) = scene(reflow: false)
     let window = docked ? safari : mail
     h.system.beginDrag(window)
-    h.system.moveDrag(to: CGPoint(x: 700, y: 500), holding: 0.3)
+    h.system.moveDrag(to: CGPoint(x: 1000, y: 500), holding: 0.3)  // over the Desktop
     for other in h.system.allWindows() { h.system.setOnActiveSpace(other.id, false) }
-    h.system.moveDrag(to: CGPoint(x: 740, y: 520), holding: 0.3)
+    h.system.moveDrag(to: CGPoint(x: 1040, y: 520), holding: 0.3)
     h.system.endDrag()
     h.system.setOnActiveSpace(window, true)
     h.scheduler.runPending()
     #expect(h.workspace.isFloating(window))
     #expect(h.workspace.floating[window] == h.frame(window))
-    #expect(try #require(h.frame(window)).insetBy(dx: -1, dy: -1).contains(CGPoint(x: 740, y: 520)), "under the pointer")
+    #expect(try #require(h.frame(window)).insetBy(dx: -1, dy: -1).contains(CGPoint(x: 1040, y: 520)), "under the pointer")
   }
 }
 
 /// What live reflow asks of other apps. Every move is several round trips to another process while the main thread,
 /// and with it the drag, waits (`BudgetTests`).
 @Suite @MainActor struct ReviewReflowBudgetTests {
-  /// Six docked windows in a row and a column, one floating.
+  /// Six docked windows in a row and two columns, one floating, and at the end of the row a column for the Desktop: where the
+  /// window in the hand is taken in these tests, for the others to close up.
   func scene() -> (h: Harness, docked: [WindowID]) {
-    var settings = Settings()
+    var settings = Settings.withDesktopColumn
     settings.reflowWhileDragging = true
     let h = Harness(settings: settings)
     let windows = (0..<7).map { h.system.open(app: "App\($0)", frame: CGRect(x: 500 + $0 * 10, y: 300, width: 300, height: 200)) }
@@ -385,12 +386,13 @@ import Testing
   /// that `float` undocks, and takes that size when it is let go.
   @Test(arguments: [false, true]) func pinningADockedWindowInTheHandLeavesItThere(reflow: Bool) {
     let s = DragScene { $0.reflowWhileDragging = reflow }
+    let gap = s.inTheGap
     s.h.system.beginDrag(s.a)
-    s.h.system.moveDrag(to: s.onDesktop, holding: 0.3)
+    s.h.system.moveDrag(to: gap, holding: 0.3)
     let held = s.frame(s.a)
     s.h.run("pin \(s.a.rawValue)")
     #expect(s.frame(s.a) == held, "it was taken out of the hand")
-    s.h.system.moveDrag(to: CGPoint(x: s.onDesktop.x + 40, y: s.onDesktop.y), holding: 0.3)
+    s.h.system.moveDrag(to: CGPoint(x: gap.x, y: gap.y + 40), holding: 0.3)
     s.h.system.endDrag()
     #expect(s.h.workspace.isPinned(s.a))
     #expect(s.frame(s.a).size == CGSize(width: 600, height: 400), "the size it floated at before it was docked")
@@ -411,7 +413,7 @@ import Testing
     s.h.run("exclude \(app)")
     s.h.run("include \(app)")
     #expect(s.frame(window) == held, "it was taken out of the hand")
-    s.h.system.moveDrag(to: s.onDesktop, holding: 0.3)
+    s.h.system.moveDrag(to: s.inTheGap, holding: 0.3)
     s.h.system.endDrag()
     #expect(s.h.workspace.isFloating(window))
     #expect(s.h.system.isVisible(window))

@@ -1,0 +1,77 @@
+# Proposed by the executor of F68 (2026-10-15), from what a second reading of the code found; the documenter may edit or drop it.
+# Story: rules that give room unasked ("too little left over is nothing", "squeezed by nobody") are about what Arbor found, never about
+# what a hand has made since. And whoever is away when it leaves for good has lent its room already: no column opens under whoever is there.
+# Reference: F68, F61.
+quiet
+# Mail took what was left, a half. Its person drags it down to a tile. Looking around brings no share back.
+open Safari 900x600
+open Mail 900x600
+dock 101 left
+dock 102 right
+resize 102 left -560
+expect tile 102
+expect size 101 1262x851
+zoom 101
+show-all
+expect tile 102
+expect size 101 1262x851
+close 101
+close 102
+
+# Squeezed against the Desktop a window is as narrow as its person wants it.
+open Safari 800x600 min 500x300
+dock 103 left
+resize 103 right -400
+expect tile 103
+zoom 103
+show-all
+expect tile 103
+close 103
+
+# Squeezed against a neighbour that has left since, it is squeezed by nobody: everything else is left over.
+open Safari 800x600 min 500x300
+open Mail 900x600
+dock 104 left
+dock 105 right
+resize 104 right -400
+expect tile 104
+close 105
+expect visible 104
+expect size 104 500x851
+close 104
+
+# In the Dock when its app is taken out of Arbor's hands: Safari has the room already, and keeps it.
+open Safari 900x600
+open Mail 900x600
+dock 106 left
+dock 107 right
+minimize 107
+expect size 106 1416x851
+exclude com.example.mail
+expect still 106
+expect size 106 1416x851
+include com.example.mail
+close 106
+close 107
+
+# The pointer means what it is seen on. A note that lies behind Safari is not that.
+open Safari 900x600
+open Mail 900x600
+open Notes 300x200
+open Music 200x200
+move 110 100 100 300 200
+move 111 900 500 200 200
+dock 108 left
+dock 109 right
+focus 108
+focus 111
+cursor 150 150
+in
+expect fills 108
+show-all
+# On top of Safari it is.
+focus 110
+focus 111
+cursor 150 150
+in
+expect camera desktop

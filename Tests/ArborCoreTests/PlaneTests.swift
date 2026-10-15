@@ -14,7 +14,8 @@ private let roomy = LayoutOptions(minimumUsableSize: CGSize(width: 120, height: 
 
 private func everyone(_: WindowID) -> Bool { true }
 
-/// root(h)[ column(v)[a, row(h)[c, d]], desktop, b ]: three levels below the root.
+/// root(h)[ column(v)[a, row(h)[c, d]], desktop, b ]: three levels below the root. As it ships b took all that was left: two halves
+/// and a Desktop without room. With `desktopColumn` thirds, for the tests that look for the Desktop on the plane or need a third.
 private struct Fixture {
   var tree = LayoutTree()
   let leafA: NodeID
@@ -24,9 +25,9 @@ private struct Fixture {
   var column: NodeID { tree.parent(of: leafA)! }
   var row: NodeID { tree.parent(of: leafC)! }
 
-  init() {
-    leafA = tree.dock(a, beside: tree.root, edge: .left)
-    leafB = tree.dock(b, beside: tree.root, edge: .right)
+  init(desktopColumn: Bool = false) {
+    leafA = tree.dock(a, beside: tree.root, edge: .left, desktopColumn: desktopColumn)
+    leafB = tree.dock(b, beside: tree.root, edge: .right, desktopColumn: desktopColumn)
     leafC = tree.dock(c, beside: leafA, edge: .bottom)
     leafD = tree.dock(d, beside: leafC, edge: .right)
   }
@@ -76,7 +77,7 @@ private struct Fixture {
   }
 
   @Test func zoomedOnALeafTheRestLiesWhereTheSameZoomPutsIt() throws {
-    let f = Fixture()
+    let f = Fixture(desktopColumn: true)
     let base = f.layout(camera: f.tree.root)
     let plane = f.plane(camera: f.leafA, ancestor: f.tree.root)
     let map = try #require(PlaneMap(carrying: base.windowFrames[a]!, onto: content))
@@ -99,7 +100,7 @@ private struct Fixture {
   }
 
   @Test func nodesAreOnThePlaneToo() throws {
-    let f = Fixture()
+    let f = Fixture(desktopColumn: true)
     let base = f.layout(camera: f.tree.root)
     let plane = f.plane(camera: f.leafA, ancestor: f.tree.root)
     let map = try #require(PlaneMap(carrying: base.nodeFrames[f.leafA]!, onto: content))
@@ -126,7 +127,7 @@ private struct Fixture {
   }
 
   @Test func aNearerAncestorHoldsLessOfTheTree() {
-    let f = Fixture()
+    let f = Fixture(desktopColumn: true)
     // From c, three levels down, with the row as the ancestor: only d is on the plane with it.
     let near = f.plane(camera: f.leafC, ancestor: f.row)
     #expect(Set(near.windows.keys) == [c, d])
@@ -170,8 +171,8 @@ private struct Fixture {
 
   @Test func windowsInTilesAreCoversWhereTheTileDrawsThem() throws {
     let f = Fixture()
-    // Columns are 464 wide: with a minimum of 500 the column is a group's tile and b a window's.
-    let options = LayoutOptions(minimumUsableSize: CGSize(width: 500, height: 300))
+    // Columns are 702 wide: with a minimum of 750 the column is a group's tile and b a window's.
+    let options = LayoutOptions(minimumUsableSize: CGSize(width: 750, height: 300))
     let layout = f.layout(camera: f.tree.root, options: options)
     let plane = f.plane(camera: f.tree.root, ancestor: f.tree.root, options: options)
     let group = try #require(layout.tiles.first { $0.node == f.column })

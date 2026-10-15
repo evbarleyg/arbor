@@ -81,7 +81,8 @@ extension Controller {
     case .float, .pin, .ignore:  // `ignore` returned above
       if let dockedOn {
         workspaces[dockedOn]!.undock(
-          id, floatingAt: floatingFrame(for: id, on: dockedOn), shareSpace: settings.shareRemovedSpace)
+          id, floatingAt: floatingFrame(for: id, on: dockedOn), shareSpace: settings.shareRemovedSpace,
+          away: windows[id]?.isPresent != true)
         if let frame = returnToOpeningFrame(id) { workspaces[dockedOn]!.floating[id] = frame }
       }
       // Before the layout, which moves a floating window onto the Desktop and leaves a pinned one where it is.
@@ -333,7 +334,7 @@ extension Controller {
     // Undoing it leaves the window floating. Nobody asked for it just now, so redo stays.
     recordingUndo("dock \(id) as it opened", title: "Dock", keepingRedo: true) {
       AutoDock.Placement(target: target, desktopWeight: desktopWeight)
-        .apply(to: &workspace, docking: id, shareSpace: settings.shareRemovedSpace)
+        .apply(to: &workspace, docking: id, shareSpace: settings.shareRemovedSpace, desktopColumn: settings.desktopColumn)
       workspaces[display] = workspace
       if !(theViewMayFollow && theViewGoesStraightTo(id, dockedOn: display)) { relayout(display, reason: .structure) }
     }

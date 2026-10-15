@@ -64,11 +64,15 @@ extension LayoutTree {
     loans.removeFirst(max(0, loans.count - Self.mostLoans))
   }
 
-  /// `id` is about to leave the tree: what was taken for it goes back to whom it was taken from.
+  /// `id` is about to leave the tree: what was taken for it goes back to whom it was taken from. And what it lent itself comes back to it
+  /// first, so that what it leaves behind is all that was its own, and goes the way of all room that is left: otherwise whoever had
+  /// borrowed from it would keep that for good.
   mutating func repayLoans(of id: NodeID) {
-    for loan in loans where loan.borrower == id {
+    for loan in loans where loan.borrower == id || loan.giver == id {
       guard let giver = nodes[loan.giver], let receiver = nodes[loan.receiver], giver.parent == receiver.parent,
-        giver.parent != nil, loan.weight.isFinite, loan.weight > 0
+        giver.parent != nil, loan.weight.isFinite, loan.weight > 0,
+        // A Desktop without room is owed nothing: a few points given back would open a sliver between docked windows.
+        giver.weight > 0
       else { continue }
       // Whatever has happened since, the receiver is left with something.
       let back = min(loan.weight, receiver.weight * 0.9)
@@ -78,12 +82,21 @@ extension LayoutTree {
     loans.removeAll { $0.borrower == id || $0.giver == id || $0.receiver == id }
   }
 
+  /// What was owed to `old` is owed to `new` from now on: `new` has taken over all of its room.
+  mutating func passClaims(from old: NodeID, to new: NodeID) {
+    guard loans.contains(where: { $0.giver == old }) else { return }
+    for index in loans.indices where loans[index].giver == old { loans[index].giver = new }
+    // Nobody owes themselves.
+    loans.removeAll { $0.giver == $0.receiver }
+    tidyLoans()
+  }
+
   public var hasLoans: Bool { !loans.isEmpty }
 
   /// Gives `weight` of the loan at `index` back now, because the receiver can spare it.
   mutating func repay(_ weight: Double, ofLoanAt index: Int) {
     let loan = loans[index]
-    guard weight > 0, nodes[loan.giver] != nil, let receiver = nodes[loan.receiver] else { return }
+    guard weight > 0, hasRoom(loan.giver), let receiver = nodes[loan.receiver] else { return }
     let back = min(weight, loan.weight, receiver.weight * 0.9)
     nodes[loan.giver]!.weight += back
     nodes[loan.receiver]!.weight -= back

@@ -6,7 +6,7 @@ import Testing
 
 /// F60: where the controller says a plain click might land on bare Desktop inside Arbor's view.
 @Suite @MainActor struct DesktopGuardTests {
-  /// root(h)[a, desktop, b], showing everything.
+  /// root(h)[(a / b), desktop], showing everything: a column of two, and the half that is left over.
   func makeHarness() -> (Harness, WindowID, WindowID) {
     // ⇧-drag on the Desktop asks the same question as the guard, and is what asks it in most of these tests.
     let h = Harness(settings: .withGestures)
@@ -14,7 +14,7 @@ import Testing
     let b = h.system.open(app: "Notes", frame: CGRect(x: 300, y: 200, width: 600, height: 400))
     h.start()
     h.run("dock \(a.rawValue) left")
-    h.run("dock \(b.rawValue) right")
+    h.run("dock \(b.rawValue) beside \(a.rawValue) bottom")
     return (h, a, b)
   }
 

@@ -16,7 +16,7 @@ private let tenMinutes = 600.0
 /// What Arbor learns about a window's size can be unlearned (docs/features/F45-learned-sizes-expire.md).
 /// `TileTests` has the parts that need no clock: evidence from the window itself, and `relayout`.
 @Suite @MainActor struct LearnedSizeTests {
-  /// `[a | Desktop | b / c]`, where c refused its slot and is a tile.
+  /// `[a | b / c]`, halves, where c refused its slot and is a tile.
   func makeHarness(
     displays: [DisplaySnapshot] = [FakeWindowSystem.standardDisplay], settings: Settings = Settings()
   ) -> (Harness, a: WindowID, b: WindowID, c: WindowID) {
@@ -154,15 +154,16 @@ private let tenMinutes = 600.0
   }
 
   @Test func parkedOnTheLeftAWindowThatShrinksSomewhatIsParkedAgainAtItsNewSize() {
-    // (Without F61, which would find room for 700 × 500: see aTileThatWillGoSmallerWhenAskedAgainGetsRoom.)
+    // Still wider and higher than its slot of 702 × 419.
+    // (Without F61, which would find room for it: see aTileThatWillGoSmallerWhenAskedAgainGetsRoom.)
     let (h, _, _, c) = makeHarness(displays: [main, side], settings: noRoomMade)
     let sliver = sliver(h, c)
-    h.system.setMinimumSize(c, CGSize(width: 700, height: 500))
+    h.system.setMinimumSize(c, CGSize(width: 720, height: 500))
     h.scheduler.advance(by: tenMinutes)
     layOutAgain(h)
     for move in h.system.frameLog { #expect(pointsInView(move.frame, h) <= sliver, "\(move.frame)") }
     #expect(isTile(h, c))
-    #expect(h.frame(c)?.size == CGSize(width: 700, height: 500))
+    #expect(h.frame(c)?.size == CGSize(width: 720, height: 500))
     #expect(pointsInView(h.frame(c)!, h) == sliver)
   }
 
@@ -262,7 +263,7 @@ private let tenMinutes = 600.0
 
   @Test func aTileThatIsOnlyTooSmallToUseIsNotAsked() {
     let (h, a, _, _) = makeHarness()
-    h.run("resize \(a.rawValue) right -300")
+    h.run("resize \(a.rawValue) right -500")  // from 702 points to 202
     #expect(isTile(h, a))
     h.system.clearFrameLog()
     h.scheduler.advance(by: tenMinutes * 3)
@@ -294,7 +295,7 @@ private let tenMinutes = 600.0
   }
 
   @Test func withAnOldWrongRecordItGoesFromWhereItIsToItsSlotAndNeverOutOfView() throws {
-    let (h, c, framed) = framedWithAnOldRecord()
+    let (h, c, framed) = framedWithAnOldRecord(settings: noRoomMade)
     h.system.setMinimumSize(c, .zero)
     h.run("show-all")
     #expect(!isTile(h, c))
@@ -384,7 +385,7 @@ private let tenMinutes = 600.0
   }
 
   @Test func aRecordThatIsFreshIsBelieved() {
-    let (h, _, _, c) = makeHarness()
+    let (h, _, _, c) = makeHarness(settings: noRoomMade)
     h.run("zoom \(c.rawValue)")
     // Nobody types in it: the window with the keyboard would be served at its neighbours' cost (F61).
     h.system.userFocusesNothing()
@@ -397,7 +398,7 @@ private let tenMinutes = 600.0
 
   @Test func itIsNeverAskedToGrowWhereItIs() throws {
     // Framed, c is as wide as it will go, 1000 points, in the middle of the display. Its slot is narrower and less tall.
-    let (h, _, _, c) = makeHarness()
+    let (h, _, _, c) = makeHarness(settings: noRoomMade)
     h.system.setMaximumSize(c, CGSize(width: 1000, height: 750))
     h.run("zoom \(c.rawValue)")
     let framed = try #require(h.frame(c))
@@ -412,7 +413,7 @@ private let tenMinutes = 600.0
   }
 
   @Test func neverMeansNotInViewEither() {
-    var settings = Settings()
+    var settings = noRoomMade
     settings.tileRetryMinutes = 0
     let (h, c, _) = framedWithAnOldRecord(settings: settings, typedIn: false)
     h.system.setMinimumSize(c, .zero)

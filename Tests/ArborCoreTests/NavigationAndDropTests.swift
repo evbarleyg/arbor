@@ -9,7 +9,8 @@ private let c = WindowID(3)
 
 private func everyone(_: WindowID) -> Bool { true }
 
-/// root(h)[ column(v)[a, c], desktop, b ]
+/// root(h)[ column(v)[a, c], desktop, b ]. As it ships b took all that was left, two halves and a Desktop without room; with
+/// `desktopColumn` thirds, for the tests that go to the Desktop between the windows or drop on it.
 private struct Fixture {
   var tree = LayoutTree()
   let leafA: NodeID
@@ -17,9 +18,9 @@ private struct Fixture {
   let leafC: NodeID
   var column: NodeID { tree.parent(of: leafA)! }
 
-  init() {
-    leafA = tree.dock(a, beside: tree.root, edge: .left)
-    leafB = tree.dock(b, beside: tree.root, edge: .right)
+  init(desktopColumn: Bool = false) {
+    leafA = tree.dock(a, beside: tree.root, edge: .left, desktopColumn: desktopColumn)
+    leafB = tree.dock(b, beside: tree.root, edge: .right, desktopColumn: desktopColumn)
     leafC = tree.dock(c, beside: leafA, edge: .bottom)
   }
 
@@ -62,7 +63,7 @@ private struct Fixture {
   }
 
   @Test func neighborWalksUpToASplitOnTheRightAxis() {
-    let f = Fixture()
+    let f = Fixture(desktopColumn: true)
     #expect(Navigation.neighbor(of: f.leafA, toward: .right, in: f.view) == f.tree.desktop)
     #expect(Navigation.neighbor(of: f.leafA, toward: .bottom, in: f.view) == f.leafC)
     #expect(Navigation.neighbor(of: f.leafC, toward: .right, in: f.view) == f.tree.desktop)
@@ -87,7 +88,7 @@ private struct Fixture {
   }
 
   @Test func adjacentLeafUsesGeometry() {
-    let f = Fixture()
+    let f = Fixture(desktopColumn: true)
     let layout = f.layout()
     #expect(Navigation.adjacentLeaf(to: f.leafA, toward: .bottom, in: layout, tree: f.tree) == f.leafC)
     #expect(Navigation.adjacentLeaf(to: f.leafC, toward: .top, in: layout, tree: f.tree) == f.leafA)
@@ -134,7 +135,7 @@ private struct Fixture {
   }
 
   @Test func theDesktopFloats() {
-    let f = Fixture()
+    let f = Fixture(desktopColumn: true)
     let layout = f.layout()
     let target = DropResolver.resolve(
       point: layout.desktopFrame!.center, window: WindowID(9), layout: layout, tree: f.tree, visibleFrame: screen)

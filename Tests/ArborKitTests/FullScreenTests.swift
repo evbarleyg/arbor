@@ -6,9 +6,9 @@ import Testing
 
 /// macOS's own full screen is left to macOS (T63), also for a window Arbor already arranges.
 @Suite @MainActor struct FullScreenTests {
-  /// `[a | Desktop | b]` with `f` floating.
-  func makeHarness() -> (Harness, a: WindowID, b: WindowID, f: WindowID) {
-    let h = Harness()
+  /// `[a | b]`, two halves (with a column for the Desktop `[a | Desktop | b]`, thirds), with `f` floating in the middle.
+  func makeHarness(settings: Settings = Harness.settingsWhenNoneAreGiven) -> (Harness, a: WindowID, b: WindowID, f: WindowID) {
+    let h = Harness(settings: settings)
     let a = h.system.open(app: "Safari", frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     let b = h.system.open(app: "Notes", frame: CGRect(x: 300, y: 200, width: 600, height: 400))
     let f = h.system.open(app: "Calculator", frame: CGRect(x: 560, y: 300, width: 320, height: 300))
@@ -53,7 +53,7 @@ import Testing
   }
 
   @Test func theNeighboursOfAFullScreenWindowTakeItsSpaceOnTheirOwnSpace() {
-    let (h, a, b, f) = makeHarness()
+    let (h, a, b, f) = makeHarness(settings: Settings())
     enterFullScreen(h, a, others: [b, f])
     // Back to the first Space with a swipe; Safari stays full screen on its own.
     h.system.setOnActiveSpace(a, false)
@@ -61,7 +61,7 @@ import Testing
     h.scheduler.advance(by: 2)
     #expect(h.layout!.windowFrames[a] == nil)
     #expect(h.layout!.windowFrames[b] != nil)
-    #expect(h.layout!.desktopFrame!.minX == h.visibleFrame.minX + 12, "the Desktop has Safari's space")
+    #expect(h.layout!.windowFrames[b]?.minX == h.visibleFrame.minX + 12, "Notes has Safari's space")
   }
 
   @Test func aFloatingWindowThatGoesFullScreenKeepsTheFrameTheUserGaveIt() {
@@ -151,12 +151,15 @@ import Testing
 
   @Test func itsSlotIsTheOneItWillHaveNotTheOneItHad() {
     let (h, a, b, f) = makeHarness()
+    // A third place: whoever is left alone would stay as it is, and of three the two that are left share.
+    let c = h.system.open(app: "Mail", frame: CGRect(x: 200, y: 150, width: 600, height: 400))
+    h.run("dock \(c.rawValue) right")
     let before = h.frame(a)!
-    enterFullScreen(h, a, others: [b, f])
+    enterFullScreen(h, a, others: [b, c, f])
     // Its neighbour closes meanwhile, on the Space that does not show.
     h.system.close(b)
     h.system.clearSightings()
-    h.system.leaveFullScreen(a, with: [f])
+    h.system.leaveFullScreen(a, with: [c, f])
     h.scheduler.advance(by: 2)
     #expect(h.frame(a) != before)
     #expect(h.system.sightings(of: a) == [h.frame(a)!], "\(h.system.sightings(of: a))")
@@ -242,7 +245,8 @@ import Testing
 
   // MARK: The neighbours
 
-  /// `[a | c | Desktop]` with `f` floating: with `a` away `c` and the Desktop would have its room.
+  /// `[a | c]` with `f` floating: with `a` away `c` would have its room. (With a column for the Desktop, `[a | c | Desktop]`,
+  /// both would.)
   func makeRow() -> (Harness, a: WindowID, others: [WindowID]) {
     let h = Harness()
     let a = h.system.open(app: "Safari", frame: own)
@@ -253,6 +257,13 @@ import Testing
     h.run("dock \(c.rawValue) beside \(a.rawValue) right")
     #expect(h.layout!.tiles.isEmpty)
     return (h, a, [c, f])
+  }
+
+  /// `window` has been as large as everything there is, so nobody has to ask it where it stands whether it can grow that far
+  /// (Controller+AskFirst.swift): whatever is seen of it from here on is a move.
+  func frameOnce(_ h: Harness, _ window: WindowID) {
+    h.run("zoom \(window.rawValue)")
+    h.run("back")
   }
 
   /// On a Mac they took its room while the way in played over them, and gave it back when it had returned: two moves each, for nothing.
@@ -316,6 +327,7 @@ import Testing
 
   @Test func whoeverComesBackToTheirSpaceWithoutItFindsThemClosingUpOnce() {
     let (h, a, others) = makeRow()
+    frameOnce(h, others[0])
     h.system.enterFullScreen(a, leaving: others)
     h.scheduler.advance(by: 3)
     h.system.clearSightings()
@@ -331,6 +343,7 @@ import Testing
 
   @Test func closedInFullScreenItsNeighboursCloseUpOnce() {
     let (h, a, others) = makeRow()
+    frameOnce(h, others[0])
     h.system.enterFullScreen(a, leaving: others)
     h.scheduler.advance(by: 3)
     h.system.clearSightings()

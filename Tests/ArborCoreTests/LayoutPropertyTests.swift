@@ -221,11 +221,11 @@ private func expectSound(
     }
   }
 
-  /// Sizes follow weights to within a point.
+  /// Sizes follow weights to within a point. Three places: with a column for the Desktop.
   @Test func sharesAreProportionalToWeights() {
     var tree = LayoutTree()
-    let one = tree.dock(WindowID(1), beside: tree.root, edge: .left)
-    let two = tree.dock(WindowID(2), beside: tree.root, edge: .right)
+    let one = tree.dock(WindowID(1), beside: tree.root, edge: .left, desktopColumn: true)
+    let two = tree.dock(WindowID(2), beside: tree.root, edge: .right, desktopColumn: true)
     tree.moveBoundary(leading: one, trailing: tree.desktop, by: 211, pointsPerWeight: 464)
     let layout = LayoutEngine.layout(tree, camera: tree.root, in: Self.displays[0], isPresent: everyone)
     let available: CGFloat = 1440 - 24 - 24

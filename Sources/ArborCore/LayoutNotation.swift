@@ -27,7 +27,7 @@ public enum LayoutNotation {
     }
 
     public var kind: Kind
-    /// Size among its neighbours. Only ratios matter; 1 is not written.
+    /// Size among its neighbours. Only ratios matter; 1 is not written. 0, for the Desktop alone: it has no room there.
     public var size: Double
 
     public init(_ kind: Kind, size: Double = 1) {
@@ -67,7 +67,7 @@ public enum LayoutNotation {
       case .desktop:
         guard !seen.desktop else { return nil }
         seen.desktop = true
-        return Space(.desktop, size: size)
+        return Space(.desktop, size: space.size == 0 ? 0 : size)
       case .windows(let slots):
         let kept = slots.compactMap(tidied).filter { slot in
           if case .window(let id) = slot.owner { return seen.windows.insert(id).inserted }
@@ -223,7 +223,7 @@ extension LayoutNotation.Spec {
         .joined(separator: axis == .horizontal ? " | " : " / ")
       text = isOutermost ? inner : "(" + inner + ")"
     }
-    if space.size != 1, !isOutermost { text += ":" + LayoutNotation.text(ofSize: space.size) }
+    if space.size != 1, !isOutermost { text += ":" + (space.size == 0 ? "0" : LayoutNotation.text(ofSize: space.size)) }
     return text
   }
 

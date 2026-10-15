@@ -7,19 +7,34 @@ import Testing
 /// Scenario tests for resizing docked windows by their own edges
 /// (docs/features/F07-resize-by-window-edges.md).
 @Suite @MainActor struct EdgeResizeTests {
-  /// `[a | Desktop | b]`, every column 464 points wide, with c floating on the Desktop.
-  func columns(configure: (Harness, WindowID, WindowID, WindowID) -> Void = { _, _, _, _ in })
-    -> (Harness, WindowID, WindowID, WindowID)
-  {
+  /// `[a | b]`, a half of the display each, with c floating over them.
+  func columns() -> (Harness, WindowID, WindowID, WindowID) {
     let h = Harness()
     let a = h.system.open(app: "Safari", frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     let b = h.system.open(app: "Notes", frame: CGRect(x: 300, y: 200, width: 600, height: 400))
     let c = h.system.open(app: "Mail", frame: CGRect(x: 500, y: 300, width: 600, height: 400))
-    configure(h, a, b, c)
     h.start()
     h.run("dock \(a.rawValue) left")
     h.run("dock \(b.rawValue) right")
     return (h, a, b, c)
+  }
+
+  /// `[a | m | b]`, every column 464 points wide, with c floating over them: three, to see that the one beyond the neighbour stays.
+  func thirds(configure: (Harness, WindowID) -> Void = { _, _ in })
+    -> (Harness, a: WindowID, m: WindowID, b: WindowID, c: WindowID)
+  {
+    let h = Harness(settings: Settings())
+    let a = h.system.open(app: "Safari", frame: CGRect(x: 100, y: 100, width: 600, height: 400))
+    let m = h.system.open(app: "Music", frame: CGRect(x: 200, y: 150, width: 600, height: 400))
+    let b = h.system.open(app: "Notes", frame: CGRect(x: 300, y: 200, width: 600, height: 400))
+    let c = h.system.open(app: "Mail", frame: CGRect(x: 500, y: 300, width: 600, height: 400))
+    configure(h, a)
+    h.start()
+    // The second takes all that the first left over; for the third, at the edge of everything, all give.
+    h.run("dock \(a.rawValue) left")
+    h.run("dock \(m.rawValue) right")
+    h.run("dock \(b.rawValue) right")
+    return (h, a, m, b, c)
   }
 
   /// `frame` with one edge moved by `points` (positive is right or down).
@@ -58,15 +73,15 @@ import Testing
   // MARK: Acceptance criteria
 
   @Test func draggingAnEdgeMovesTheSeamOnThatSide() {
-    let (h, a, b, _) = columns()
+    let (h, a, m, b, _) = thirds()
     let slotA = h.frame(a)!
+    let slotM = h.frame(m)!
     let slotB = h.frame(b)!
-    let desktop = h.layout!.desktopFrame!
 
-    // a's right edge 100 to the right: a is 100 wider, the Desktop 100 narrower.
+    // a's right edge 100 to the right: a is 100 wider, m beside it 100 narrower.
     h.system.userResize(a, to: dragging(slotA, .right, by: 100))
     expectFrame(h.frame(a), dragging(slotA, .right, by: 100))
-    expectFrame(h.layout!.desktopFrame, dragging(desktop, .left, by: 100))
+    expectFrame(h.frame(m), dragging(slotM, .left, by: 100))
     #expect(h.frame(b) == slotB)
     expectWindowsMatchLayout(h)
     #expect(noEnforcePending(h), "the resize is not put back")
@@ -75,7 +90,7 @@ import Testing
     // b's left edge 50 to the left: the seam on b's leading side moves too.
     h.system.userResize(b, to: dragging(slotB, .left, by: -50))
     expectFrame(h.frame(b), dragging(slotB, .left, by: -50))
-    expectFrame(h.layout!.desktopFrame, dragging(dragging(desktop, .left, by: 100), .right, by: -50))
+    expectFrame(h.frame(m), dragging(dragging(slotM, .left, by: 100), .right, by: -50))
     expectFrame(h.frame(a), dragging(slotA, .right, by: 100))
   }
 
@@ -99,18 +114,18 @@ import Testing
   }
 
   @Test func draggingACornerMovesBothSeams() {
-    let (h, a, b, c) = columns()
-    // [a / c] | Desktop | b: a's right edge belongs to the column, its bottom edge to a and c.
+    let (h, a, m, b, c) = thirds()
+    // [a / c] | m | b: a's right edge belongs to the column, its bottom edge to a and c.
     h.run("dock \(c.rawValue) beside \(a.rawValue) bottom")
     let slotA = h.frame(a)!
+    let slotM = h.frame(m)!
     let slotB = h.frame(b)!
     let slotC = h.frame(c)!
-    let desktop = h.layout!.desktopFrame!
 
     h.system.userResize(a, to: dragging(dragging(slotA, .right, by: 100), .bottom, by: 80))
     expectFrame(h.frame(a), dragging(dragging(slotA, .right, by: 100), .bottom, by: 80))
     expectFrame(h.frame(c), dragging(dragging(slotC, .right, by: 100), .top, by: 80))
-    expectFrame(h.layout!.desktopFrame, dragging(desktop, .left, by: 100))
+    expectFrame(h.frame(m), dragging(slotM, .left, by: 100))
     #expect(h.frame(b) == slotB)
     expectWindowsMatchLayout(h)
   }
@@ -151,7 +166,7 @@ import Testing
   }
 
   @Test func aResizeTheAppClampsUsesTheFrameTheWindowEndedAt() {
-    let (h, a, b, _) = columns()
+    let (h, a, m, b, _) = thirds()
     h.system.setMinimumSize(a, CGSize(width: 400, height: 0))
     h.system.setMaximumSize(b, CGSize(width: 500, height: 2000))
     let slotA = h.frame(a)!
@@ -161,12 +176,12 @@ import Testing
     // stops after 64, and the seam follows the window, not the pointer.
     h.system.userResize(a, to: dragging(slotA, .right, by: -200))
     expectFrame(h.frame(a), dragging(slotA, .right, by: -64))
-    #expect(h.layout!.desktopFrame!.minX - h.frame(a)!.maxX == 12)
+    #expect(h.frame(m)!.minX - h.frame(a)!.maxX == 12)
 
     // b will not grow past 500 wide: dragging its left edge 150 to the left stops after 36.
     h.system.userResize(b, to: dragging(slotB, .left, by: -150))
     expectFrame(h.frame(b), dragging(slotB, .left, by: -36))
-    #expect(h.frame(b)!.minX - h.layout!.desktopFrame!.maxX == 12)
+    #expect(h.frame(b)!.minX - h.frame(m)!.maxX == 12)
     expectWindowsMatchLayout(h)
   }
 
@@ -185,14 +200,14 @@ import Testing
   }
 
   @Test func seamsStopAtTheMinimumOf80Points() {
-    let (h, a, b, _) = columns()
+    let (h, a, m, b, _) = thirds()
     let slotA = h.frame(a)!
     let slotB = h.frame(b)!
     let tree = { h.workspace.tree }
 
-    // Dragging a's right edge across the Desktop and over b leaves the Desktop 80 points.
+    // Dragging a's right edge across m and over b leaves m 80 points.
     h.system.userResize(a, to: dragging(slotA, .right, by: 900))
-    #expect(abs(h.layout!.nodeFrames[tree().desktop]!.width - 80) <= 1)
+    #expect(abs(h.layout!.nodeFrames[tree().leaf(containing: m)!]!.width - 80) <= 1)
     #expect(h.frame(b) == slotB)
 
     // Squeezing a to 28 points leaves it 80 (too small to use, so a tile).
@@ -207,10 +222,10 @@ import Testing
   // MARK: While the mouse is down
 
   @Test func nothingElseMovesWhileTheEdgeIsDragged() {
-    let (h, a, b, c) = columns()
+    let (h, a, m, b, c) = thirds()
     let slotA = h.frame(a)!
+    let slotM = h.frame(m)!
     let others = [h.frame(b), h.frame(c)]
-    let desktop = h.layout!.desktopFrame!
     h.system.clearFrameLog()
 
     h.system.userResize(a, to: dragging(slotA, .right, by: 50), release: false)
@@ -218,17 +233,18 @@ import Testing
     h.scheduler.runPending()  // timers that fire mid-drag change nothing
     #expect(h.system.frameLog.isEmpty)
     #expect(h.frame(a) == dragging(slotA, .right, by: 100))
+    #expect(h.frame(m) == slotM)
     #expect([h.frame(b), h.frame(c)] == others)
 
     h.system.releaseMouse()
     expectFrame(h.frame(a), dragging(slotA, .right, by: 100))
-    expectFrame(h.layout!.desktopFrame, dragging(desktop, .left, by: 100))
+    expectFrame(h.frame(m), dragging(slotM, .left, by: 100))
   }
 
   @Test func aPutBackDueJustAfterTheButtonGoesUpWaitsForTheRelease() {
-    let (h, a, _, _) = columns()
+    let (h, a, m, _, _) = thirds()
     let slotA = h.frame(a)!
-    let desktop = h.layout!.desktopFrame!
+    let slotM = h.frame(m)!
     let wider = dragging(slotA, .right, by: 100)
     h.system.userResize(a, to: wider, release: false)
 
@@ -239,7 +255,7 @@ import Testing
 
     h.system.releaseMouse()
     expectFrame(h.frame(a), wider)
-    expectFrame(h.layout!.desktopFrame, dragging(desktop, .left, by: 100))
+    expectFrame(h.frame(m), dragging(slotM, .left, by: 100))
     #expect(noEnforcePending(h))
   }
 
@@ -294,7 +310,7 @@ import Testing
 
   /// A terminal sits some points inside its slot, on its grid of cells. A hand that lets go where it took hold has changed nothing.
   @Test func aHandThatChangesNothingMovesNothing() {
-    let (h, a, _, _) = columns { h, a, _, _ in h.system.setMaximumSize(a, CGSize(width: 461, height: 2000)) }
+    let (h, a, _, _, _) = thirds { h, a in h.system.setMaximumSize(a, CGSize(width: 461, height: 2000)) }
     let sitting = h.frame(a)!
     #expect(sitting.width == 461)
     h.system.clearFrameLog()
@@ -306,19 +322,19 @@ import Testing
   @Test func anEdgeTheAppKeepsInsideItsSlotDoesNotCountAsMoved() {
     // a will not grow past 400 wide, so it sits 64 points inside the right
     // side of its 464-point column, like a terminal snapping to its character grid.
-    let (h, a, b, c) = columns { h, a, _, _ in h.system.setMaximumSize(a, CGSize(width: 400, height: 2000)) }
+    let (h, a, m, b, c) = thirds { h, a in h.system.setMaximumSize(a, CGSize(width: 400, height: 2000)) }
     h.run("dock \(c.rawValue) beside \(a.rawValue) bottom")
     let sitting = h.frame(a)!
     #expect(sitting.width == 400)
+    let slotM = h.frame(m)!
     let slotB = h.frame(b)!
     let slotC = h.frame(c)!
-    let desktop = h.layout!.desktopFrame!
 
     // Dragging a's bottom edge moves only the seam below a; the column keeps its width.
     h.system.userResize(a, to: dragging(sitting, .bottom, by: 80))
     expectFrame(h.frame(a), dragging(sitting, .bottom, by: 80))
     expectFrame(h.frame(c), dragging(slotC, .top, by: 80))
-    #expect(h.layout!.desktopFrame == desktop)
+    #expect(h.frame(m) == slotM)
     #expect(h.frame(b) == slotB)
   }
 

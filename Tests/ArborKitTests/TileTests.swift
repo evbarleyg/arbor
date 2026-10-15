@@ -6,7 +6,7 @@ import Testing
 
 /// Tiles: windows too small to use, and windows whose app would not take the slot.
 @Suite @MainActor struct TileTests {
-  /// `[a | Desktop | b / c]`.
+  /// `[a | b]`, two halves (thirds, where the Desktop has a column between them), and `c` to dock below one of them.
   func makeHarness() -> (Harness, a: WindowID, b: WindowID, c: WindowID) {
     let h = Harness()
     let a = h.system.open(app: "Safari", frame: CGRect(x: 100, y: 100, width: 600, height: 400))
@@ -100,12 +100,12 @@ import Testing
     h.start()
     h.run("dock \(a.rawValue) left")
     h.run("dock \(b.rawValue) beside \(a.rawValue) right")
-    h.system.setMinimumSize(b, CGSize(width: 320, height: 200))
     let slot = h.frame(b)!
+    h.system.setMinimumSize(b, CGSize(width: slot.width - 25, height: 200))
     var pulled = h.frame(a)!
     pulled.size.width += 60
     h.system.userResize(a, to: pulled)
-    #expect(isTile(h, b), "it cannot be that narrow, and must not overlap the Desktop")
+    #expect(isTile(h, b), "it cannot be that narrow, and must not hang over what is to its right")
     #expect(!h.system.isVisible(b))
     pulled.size.width -= 60
     h.system.userResize(a, to: pulled)
@@ -115,11 +115,13 @@ import Testing
 
   @Test func aSeamDraggedBackAndForthAcrossTheThresholdLeavesNoWindowBehind() {
     let (h, a, _, _) = makeHarness()
+    // Down to 224 points, which is too narrow to use.
+    let distance = Int(h.frame(a)!.width) - 224
     for _ in 0..<3 {
-      h.run("resize \(a.rawValue) right -240")
+      h.run("resize \(a.rawValue) right -\(distance)")
       #expect(isTile(h, a))
       #expect(!h.system.isVisible(a))
-      h.run("resize \(a.rawValue) right 240")
+      h.run("resize \(a.rawValue) right \(distance)")
       #expect(!isTile(h, a))
       #expect(h.frame(a) == h.layout!.windowFrames[a])
     }
@@ -127,7 +129,7 @@ import Testing
 
   // MARK: The shortcut for framing, pressed again and again
 
-  /// `[big | b | c | Desktop]`, where `big` is too wide for its place and is a tile; framed on `big`.
+  /// Three windows arranged, of which `big` is too wide for its place and is a tile; framed on `big`.
   func framedOnATile() -> (Harness, big: WindowID) {
     let h = Harness()
     let big = h.system.open(app: "Xcode", pid: 11, minimumSize: CGSize(width: 1000, height: 600))

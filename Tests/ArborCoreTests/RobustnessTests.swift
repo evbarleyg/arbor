@@ -11,11 +11,11 @@ private let screen = CGRect(x: 0, y: 25, width: 1440, height: 875)
 /// Values nobody meant: slips in settings.json, damaged state.json files, ties. Found by the chaos test
 /// and the sweep that went with it (collab/reports/2026-10-14-chaos.md).
 @Suite struct RobustnessTests {
-  /// [a / c | Desktop | b]
-  func tree() -> LayoutTree {
+  /// [a / c | Desktop | b]. As it ships b took all that was left: two halves and a Desktop without room. With `desktopColumn` thirds.
+  func tree(desktopColumn: Bool = false) -> LayoutTree {
     var tree = LayoutTree()
-    let first = tree.dock(a, beside: tree.root, edge: .left)
-    tree.dock(b, beside: tree.root, edge: .right)
+    let first = tree.dock(a, beside: tree.root, edge: .left, desktopColumn: desktopColumn)
+    tree.dock(b, beside: tree.root, edge: .right, desktopColumn: desktopColumn)
     tree.dock(c, beside: first, edge: .bottom)
     return tree
   }
@@ -67,7 +67,7 @@ private let screen = CGRect(x: 0, y: 25, width: 1440, height: 875)
   }
 
   @Test func theMiniatureOfAVerySmallGroupTileIsFinite() {
-    var tree = tree()
+    var tree = tree(desktopColumn: true)
     // The column [a / c] is squeezed to a sliver, so it is drawn as a group tile 4 points wide.
     let column = tree.parent(of: tree.leaf(containing: a)!)!
     tree.moveBoundary(leading: column, trailing: tree.desktop, by: -5000, pointsPerWeight: 460, minimumPoints: 4)
@@ -110,7 +110,8 @@ private let screen = CGRect(x: 0, y: 25, width: 1440, height: 875)
     let tree = tree()
     for _ in 0..<20 {
       let layout = LayoutEngine.layout(tree, camera: tree.root, in: screen, isPresent: { _ in true })
-      #expect(Navigation.adjacentLeaf(to: tree.desktop, toward: .left, in: layout, tree: tree) == tree.leaf(containing: a))
+      let beside = Navigation.adjacentLeaf(to: tree.leaf(containing: b)!, toward: .left, in: layout, tree: tree)
+      #expect(beside == tree.leaf(containing: a))
     }
   }
 }

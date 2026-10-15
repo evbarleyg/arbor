@@ -10,9 +10,11 @@ private let upperDisplay = DisplaySnapshot(
   id: DisplayID("upper"), frame: CGRect(x: -1000, y: -1100, width: 1900, height: 1100),
   visibleFrame: CGRect(x: -1000, y: -1075, width: 1900, height: 1075), isMain: false)
 
+/// Every weight but that of a Desktop that nothing is left for: that one is 0 to the digit, and it is in nobody's sum.
 @MainActor private func weights(_ h: Harness) -> [Double] {
   h.controller.workspaces.values.flatMap { workspace in
-    workspace.tree.preorder(from: workspace.tree.root).map { workspace.tree[$0]!.weight }
+    workspace.tree.preorder(from: workspace.tree.root).filter { $0 != workspace.tree.desktop || workspace.tree[$0]!.weight != 0 }
+      .map { workspace.tree[$0]!.weight }
   }
 }
 
@@ -289,6 +291,8 @@ private let upperDisplay = DisplaySnapshot(
         for node in referred where !workspace.tree.contains(node) { return "\(display): something refers to \(node), which is gone" }
         for node in workspace.tree.preorder(from: workspace.tree.root) {
           let weight = workspace.tree[node]!.weight
+          // The Desktop may be left with nothing, which is 0 to the digit. Nobody else may.
+          if node == workspace.tree.desktop, weight == 0 { continue }
           if !(weight.isFinite && weight > 1e-6 && weight < 1e6) { return "\(display): \(node) weighs \(weight)" }
         }
         for window in (workspace.undockedFrames ?? [:]).keys.sorted() where !workspace.isDocked(window) {

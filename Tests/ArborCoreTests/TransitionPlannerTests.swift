@@ -17,7 +17,8 @@ private let f2 = WindowID(12)
 /// Small enough that nothing is a tile unless a test asks for it.
 private let roomy = LayoutOptions(minimumUsableSize: CGSize(width: 120, height: 120))
 
-/// root(h)[ column(v)[a, row(h)[c, d]], desktop, b ]: three levels below the root.
+/// root(h)[ column(v)[a, row(h)[c, d]], desktop, b ]: three levels below the root. As it ships b took all that was left: two halves
+/// and a Desktop without room. With `desktopColumn` thirds, for the tests in which the Desktop between the windows takes part.
 private struct Fixture {
   var tree = LayoutTree()
   let leafA: NodeID
@@ -28,9 +29,9 @@ private struct Fixture {
   var row: NodeID { tree.parent(of: leafC)! }
   var root: NodeID { tree.root }
 
-  init() {
-    leafA = tree.dock(a, beside: tree.root, edge: .left)
-    leafB = tree.dock(b, beside: tree.root, edge: .right)
+  init(desktopColumn: Bool = false) {
+    leafA = tree.dock(a, beside: tree.root, edge: .left, desktopColumn: desktopColumn)
+    leafB = tree.dock(b, beside: tree.root, edge: .right, desktopColumn: desktopColumn)
     leafC = tree.dock(c, beside: leafA, edge: .bottom)
     leafD = tree.dock(d, beside: leafC, edge: .right)
   }
@@ -184,7 +185,7 @@ private func byWindow(_ transition: Transition) -> [WindowID: Transition.Item] {
   }
 
   @Test func showingTheDesktopPartsTheWindowsBesideIt() {
-    let f = Fixture()
+    let f = Fixture(desktopColumn: true)
     let resting = CGRect(x: 520, y: 200, width: 300, height: 200)
     let before = keyframe(f.tree, camera: f.root, floating: [f1: resting])
     let transition = plan(before, keyframe(f.tree, camera: f.tree.desktop, floating: [f1: resting]))
@@ -222,11 +223,12 @@ private func byWindow(_ transition: Transition) -> [WindowID: Transition.Item] {
 }
 
 @Suite struct TileTransitionTests {
-  /// Columns are 464 wide, so the column is a group's tile and b a window's.
+  /// With a column for the Desktop columns are 464 wide, so the column is a group's tile and b a window's. (Halves will not do:
+  /// c and d are as wide in a view of the column as the column is in a view of everything, and they are to unfold.)
   let cramped = LayoutOptions(minimumUsableSize: CGSize(width: 500, height: 300))
 
   @Test func zoomingInOnAGroupsTileUnfoldsItsMiniature() throws {
-    let f = Fixture()
+    let f = Fixture(desktopColumn: true)
     let before = keyframe(f.tree, camera: f.root, options: cramped)
     let after = keyframe(f.tree, camera: f.column, options: LayoutOptions(minimumUsableSize: CGSize(width: 500, height: 300)))
     let tile = try #require(before.layout.tiles.first { $0.node == f.column })
@@ -249,7 +251,7 @@ private func byWindow(_ transition: Transition) -> [WindowID: Transition.Item] {
   }
 
   @Test func zoomingOutFoldsThemBackIntoTiles() {
-    let f = Fixture()
+    let f = Fixture(desktopColumn: true)
     let overview = keyframe(f.tree, camera: f.root, options: cramped)
     for node in [f.column, f.leafB, f.leafA] {
       let zoomed = keyframe(f.tree, camera: node, options: cramped)
@@ -260,7 +262,7 @@ private func byWindow(_ transition: Transition) -> [WindowID: Transition.Item] {
   }
 
   @Test func aWindowsTileGrowsIntoTheWindow() {
-    let f = Fixture()
+    let f = Fixture(desktopColumn: true)
     let before = keyframe(f.tree, camera: f.root, options: cramped)
     let transition = plan(before, keyframe(f.tree, camera: f.leafB, options: cramped), options: cramped)
     #expect(
@@ -281,8 +283,8 @@ private func byWindow(_ transition: Transition) -> [WindowID: Transition.Item] {
   @Test func floatingWindowsGrowOutOfTheDesktopsTile() throws {
     // A Desktop squeezed to a tile between two wide windows.
     var tree = LayoutTree()
-    let left = tree.dock(a, beside: tree.root, edge: .left)
-    _ = tree.dock(b, beside: tree.root, edge: .right)
+    let left = tree.dock(a, beside: tree.root, edge: .left, desktopColumn: true)
+    _ = tree.dock(b, beside: tree.root, edge: .right, desktopColumn: true)
     tree.moveBoundary(leading: left, trailing: tree.desktop, by: 300, pointsPerWeight: 464)
     let before = keyframe(tree, camera: tree.root, parked: [f1], options: .init())
     let tile = try #require(before.layout.tiles.first { $0.kind == .desktop })
@@ -298,7 +300,7 @@ private func byWindow(_ transition: Transition) -> [WindowID: Transition.Item] {
 
 @Suite struct FloatingTransitionTests {
   @Test func floatingWindowsRideOutOfViewOnTheDesktop() throws {
-    let f = Fixture()
+    let f = Fixture(desktopColumn: true)
     let resting = CGRect(x: 520, y: 200, width: 300, height: 200)
     let before = keyframe(f.tree, camera: f.root, floating: [f1: resting])
     let after = keyframe(f.tree, camera: f.leafA, parked: [f1])

@@ -30,7 +30,7 @@ extension Controller {
         }
       }
       // How wide the Desktop comes out is decided later, and makes no difference to which spaces there are.
-      let tree = spec.tree(filling: resolution.windows, recent: candidates.map(\.id), desktopSize: settings.arrangeDesktopWeight)
+      let tree = spec.tree(filling: resolution.windows, recent: candidates.map(\.id), desktopSize: settings.desktopWeightWhenArranged)
       after[display]?.reset(tree: tree, carrying: workspace.tree.counterparts(in: tree))
     default: break
     }

@@ -163,8 +163,10 @@ extension Controller {
     }
     return (
       Navigation.stepOut(from: workspace.camera, in: view) != nil,
-      Navigation.stepIn(
-        from: workspace.camera, toward: nil, focused: system.focusedWindow(), in: view, layout: layout) != nil
+      // (Toward a floating window with the keyboard the step can lead onto a Desktop without room, which is nobody's child to look at.)
+      stepTowardFocus(from: workspace.camera, on: display, in: view, chosenFromTheMenu: true) != nil
+        || Navigation.stepIn(
+          from: workspace.camera, toward: nil, focused: system.focusedWindow(), in: view, layout: layout) != nil
     )
   }
 

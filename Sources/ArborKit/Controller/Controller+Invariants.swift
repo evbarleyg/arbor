@@ -207,7 +207,8 @@ extension Controller {
           problems.append(.init("parked", "\(window) on \(id) has a slot in view but is parked"))
         }
       }
-      guard layout.desktopFrame != nil, !parked.isEmpty else { continue }
+      // (Into a view that is held nothing is brought: there it is asked, as it always was, where the Desktop has a rectangle.)
+      guard isHeld ? layout.desktopFrame != nil : showsWhatFloats(layout, in: workspace), !parked.isEmpty else { continue }
       for window in workspace.floating.keys
       where parked.contains(window) && windows[window]?.isPresent == true && !workspace.isStashed(window)
         // One that opened off screen during a hold waits there until the view next moves (Controller+Hold.swift).

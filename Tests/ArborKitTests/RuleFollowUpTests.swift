@@ -705,15 +705,17 @@ private let finder = "com.apple.finder"
     let h = harness([
       AppRule(app: finder, title: "Trash", action: .ignore), AppRule(app: finder, action: .dock(.right)),
     ])
-    let a = h.system.open(app: "Safari")
+    let (a, b) = (h.system.open(app: "Safari"), h.system.open(app: "Notes"))
     h.start()
     h.run("dock \(a.rawValue) left")
+    h.run("dock \(b.rawValue) right")
     let f = h.system.open(app: "Finder", bundleID: finder, title: "")
-    #expect(columns(h) == [[a], [], [f]])
+    #expect(columns(h) == [[a], [], [b], [f]])
     let narrow = h.frame(a)!.width
     h.system.setTitle(f, "Trash")
     #expect(h.controller.filter.ignoredWindowIDs == [f])
-    #expect(columns(h) == [[a], []])
+    #expect(columns(h) == [[a], [], [b]])
+    // Two are left. (One left alone would stay as it is, and the room would be the Desktop's.)
     #expect(
       h.frame(a)!.width > narrow && h.frame(a) == h.layout?.windowFrames[a],
       "the others take its space at once")
@@ -826,15 +828,18 @@ private let finder = "com.apple.finder"
   /// The usual case: the new window is focused, so the view went to it before its title came.
   @Test func aLateFloatOfAWindowTheViewWentToIsBackWhereItOpened() {
     let h = harness([
-      AppRule(app: mail, title: "Compose", action: .float), AppRule(app: mail, action: .dock(.left)),
+      AppRule(app: mail, title: "Compose", action: .float),
+      AppRule(app: mail, action: .dockBeside(bundleID: "com.example.safari", .right)),
     ])
-    let a = h.system.open(app: "Safari")
+    let docked = ["Safari", "Notes", "Maps"].map { h.system.open(app: $0) }
     h.start()
-    h.run("dock \(a.rawValue) right")
-    // More than Safari and the Desktop could spare between them (F61).
+    h.run("dock \(docked[0].rawValue) left")
+    for window in docked[1...] { h.run("dock \(window.rawValue) right") }
+    // Three thirds. Half of Safari's is too narrow to show a window.
     let opened = CGRect(x: 200, y: 200, width: 1200, height: 600)
-    let m = h.system.open(app: "Mail", bundleID: mail, title: "", frame: opened, minimumSize: opened.size)
+    let m = h.system.open(app: "Mail", bundleID: mail, title: "", frame: opened)
     #expect(h.system.isVisible(m))
+    #expect(h.workspace.camera == h.workspace.tree.leaf(containing: m) && h.frame(m) != opened)
     h.system.setTitle(m, "Compose")
     #expect(h.system.isVisible(m))
     #expect(h.frame(m) == opened, "\(h.ascii())")

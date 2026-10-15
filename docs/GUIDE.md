@@ -15,19 +15,20 @@ is in [KEYBOARD.md](KEYBOARD.md). Pictures will replace the drawings.
 
 **Arrange windows side by side once. Fill the screen with any one, and one key brings the arrangement back. Your Mac's own tiling forgets an arrangement; Arbor keeps it.**
 
-A Mac's windows pile up. Arbor lets you give some of them a *place*: drag a window to a screen edge and it **docks** there, sharing the screen with whatever else is docked. Nothing overlaps. What is left
-between the docked windows is **the Desktop**, where all your other windows **float** exactly as they always have.
+A Mac's windows pile up. Arbor lets you give some of them a *place*: drag a window to a screen edge and it **docks** there, sharing the screen with whatever else is docked. Nothing docked overlaps. What the docked
+windows leave over is **the Desktop**: one docked window takes a half and leaves the other half, two take it all. All your other windows **float** exactly as they always
+have: on the Desktop and, where nothing is left over, in front of what is docked or behind it, like any two windows on a Mac.
 
 ```
-+--------------------+....................+--------------------+
-| Safari             | the Desktop        | Terminal           |
-|                    |   ~~~~~~~~~~~~~~   |                    |
-|                    |   ~ a floating ~   |                    |
-|                    |   ~ window     ~   +--------------------+
-|                    |   ~~~~~~~~~~~~~~   +--------------------+
-|                    |                    | Slack              |
-|                    |                    |                    |
-+--------------------+....................+--------------------+
++------------------------------++------------------------------+
+| Safari                       || Terminal                     |
+|                 ~~~~~~~~~~~~~~~~~~                           |
+|                 ~ a floating     ~                           |
+|                 ~ window         ~---------------------------+
+|                 ~~~~~~~~~~~~~~~~~~---------------------------+
+|                              || Slack                        |
+|                              ||                              |
++------------------------------++------------------------------+
 ```
 
 Three windows on a laptop screen are each too small to work in. That is what the second half is for. Think of a camera over this arrangement: it can show **everything**, as above, or move in until one part fills the screen.
@@ -35,12 +36,12 @@ Each part the view can fill is a **space**: a single window, a **group** of wind
 
 ```
  everything                     the group                       one window
-+------+......+------+         +--------------------+          +--------------------+
-|Safari|      | Term |  step   | Terminal           |   step   | Terminal           |
-|      |      +------+   in    |                    |    in    |                    |
-|      |      +------+  ---->  +--------------------+   ---->  |                    |
-|      |      | Slack|         | Slack              |          |                    |
-+------+......+------+         +--------------------+          +--------------------+
++---------++---------+         +--------------------+          +--------------------+
+| Safari  || Terminal|  step   | Terminal           |   step   | Terminal           |
+|         |+---------+   in    |                    |    in    |                    |
+|         |+---------+  ---->  +--------------------+   ---->  |                    |
+|         || Slack   |         | Slack              |          |                    |
++---------++---------+         +--------------------+          +--------------------+
 ```
 
 The real windows are resized to fit, so what you see is always the live app at a size you can use.
@@ -124,7 +125,7 @@ Nothing moves when permission arrives. Arbor arranges nothing until you ask.
 ### Four moves
 
 1. **Dock.** Click any window and press **⌃⌥⌘←**. (Or drag it by its title bar to the left edge of the screen; a preview shows where it will land. With macOS's own tiling on, that edge is macOS's: the key works at every setting.)
-2. **Dock a second.** Click another and press **⌃⌥⌘→**. No other window moves: what floated where the docked ones now sit is still there, behind them, exactly as you left it.
+2. **Dock a second.** Click another and press **⌃⌥⌘→**. It takes the other half, and the first does not move. Nor does any other window: what floated where the docked ones now sit is still there, exactly as you left it.
 3. **Frame.** Click one of the docked windows and press **⌃⌥↩**. It fills the screen. **Your other windows are out of view, not closed.**
 4. **And back.** Press **⌃⌥↩** again (or ⌃⌥Space). The arrangement is back.
 
@@ -142,7 +143,7 @@ Safari fills the view"), and confirms what you cannot see, such as a saved view.
 From the first dock on, a thin line in your accent colour runs round the **focused window**, in the gap, so that you can see where the keyboard is after windows have changed places. It goes away again when nothing is docked. `"focusRing": false` in the settings
 switches it off.
 
-Behind what is docked the wallpaper is a shade darker, so that the docked windows read as one surface and the Desktop between them as another. Icons on the Desktop can be clicked and dragged as always, also where it is darker.
+Behind what is docked the wallpaper is a shade darker, so that the docked windows read as one surface and the Desktop beside them as another. Icons on the Desktop can be clicked and dragged as always, also where it is darker.
 
 ### If you get lost
 
@@ -156,7 +157,7 @@ Always in this order:
 
 ### Morning: set the table once
 
-Browser on the left, terminal on the right, chat under the terminal, the Desktop in the middle for everything else.
+Browser on the left, terminal on the right, chat under the terminal. Everything else floats where you left it, and **Show the Desktop**, in the menu, shows the Desktop with all of it.
 
 - Click the browser, **⌃⌥←**. Click the terminal, **⌃⌥→**.
 - Drag the chat window onto the lower part of the terminal and let go when the preview covers its bottom half.
@@ -176,12 +177,12 @@ Frame the browser (⌃⌥↩) and press **⌃⌥⇧1**. Frame the terminal, pres
 
 ```
  ⌃⌥1                            ⌃⌥2                             ⌃⌥Space
-+--------------------+         +--------------------+          +------+......+------+
-| Safari             |         | Terminal           |          |Safari|      | Term |
-|                    |         |                    |          |      |      +------+
-|                    |         +--------------------+          |      |      +------+
-|                    |         | Slack              |          |      |      | Slack|
-+--------------------+         +--------------------+          +------+......+------+
++--------------------+         +--------------------+          +---------++---------+
+| Safari             |         | Terminal           |          | Safari  || Terminal|
+|                    |         |                    |          |         |+---------+
+|                    |         +--------------------+          |         |+---------+
+|                    |         | Slack              |          |         || Slack   |
++--------------------+         +--------------------+          +---------++---------+
 ```
 
 ### Or a name
@@ -234,7 +235,7 @@ one, so **⌃⌥G ↩** hops back and forth between two windows wherever they ar
 
 ### Where am I?
 
-**Show Minimap**, in the menu, brings up the **minimap**, low on the display: the whole arrangement in small, each window in its app's colour, the Desktop as an outline, and a frame in your accent colour around what you are looking at. A saved view's number stands above it.
+**Show Minimap**, in the menu, brings up the **minimap**, low on the display: the whole arrangement in small, each window in its app's colour, the Desktop, where it has room, as an outline, and a frame in your accent colour around what you are looking at. A saved view's number stands above it.
 
 It stays for five seconds, longer while the pointer is on it, and it takes clicks: click a window in it and that window is framed, from wherever you were. Show Minimap again, or a click beside the picture, puts it away. Keep moving the view and it stays with you. In the whole map it has a key, ⌃⌥M (`arborctl bind ctrl+opt+m minimap` gives it that key alone), and with a key it is one gesture, as with ⌃⌥Space: **hold** ⌃⌥M, move the pointer onto a window in the minimap, and let go. ⎋ while you hold gives up.
 

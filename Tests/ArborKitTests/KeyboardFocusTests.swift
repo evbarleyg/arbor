@@ -29,16 +29,17 @@ private let side = sideDisplay
 
   func leaf(_ h: Harness, _ window: WindowID) -> NodeID? { h.workspace.tree.leaf(containing: window) }
 
-  /// [ a / c | Desktop | b ]
-  func columns() -> (Harness, WindowID, WindowID, WindowID) {
-    let (h, w) = harness(["Safari", "Notes", "Mail"], ["dock $0 left", "dock $1 right", "dock $2 beside $0 bottom"])
+  /// [ a / c | b ]. With a column for the Desktop: [ a / c | Desktop | b ].
+  func columns(settings: Settings = Settings()) -> (Harness, WindowID, WindowID, WindowID) {
+    let (h, w) = harness(
+      ["Safari", "Notes", "Mail"], ["dock $0 left", "dock $1 right", "dock $2 beside $0 bottom"], settings: settings)
     return (h, w[0], w[1], w[2])
   }
 
   // MARK: In view
 
-  @Test func focusGoesToTheNearestWindowInEachDirection() {
-    let (h, a, b, c) = columns()
+  @Test(arguments: [false, true]) func focusGoesToTheNearestWindowInEachDirection(desktopColumn: Bool) {
+    let (h, a, b, c) = columns(settings: desktopColumn ? .withDesktopColumn : Settings())
     h.system.userFocus(a)
     h.system.clearFrameLog()
     let camera = h.workspace.camera
@@ -54,7 +55,7 @@ private let side = sideDisplay
   }
 
   @Test func aFloatingWindowInBetweenIsAStop() {
-    let (h, w) = harness(["Safari", "Notes", "Calculator"], ["dock $0 left", "dock $1 right"])
+    let (h, w) = harness(["Safari", "Notes", "Calculator"], ["dock $0 left", "dock $1 right"], settings: .withDesktopColumn)
     let (a, b, floating) = (w[0], w[1], w[2])
     #expect(h.layout!.desktopFrame!.contains(h.frame(floating)!))
     h.system.userFocus(a)
@@ -104,13 +105,12 @@ private let side = sideDisplay
     #expect(go(h, "right") == a)
     #expect(h.workspace.camera == camera && h.system.isVisible(middle), "the view has not moved")
     // From the window beneath the same key goes on, as it always has.
-    expectOK(h, "focus right")
     #expect(go(h, "right") == b)
   }
 
   /// On the Desktop nothing is beneath it, and the arrows do what they did.
   @Test func aWindowFloatingOnTheDesktopHasNothingBeneathIt() {
-    let (h, w) = harness(["Safari", "Notes"], ["dock $0 left", "dock $1 right"])
+    let (h, w) = harness(["Safari", "Notes"], ["dock $0 left", "dock $1 right"], settings: .withDesktopColumn)
     let desktop = h.layout!.desktopFrame!
     let f = h.system.open(app: "Calculator", frame: CGRect(x: desktop.midX - 100, y: desktop.midY - 100, width: 200, height: 200))
     #expect(h.system.focused == f)
@@ -170,7 +170,7 @@ private let side = sideDisplay
     h.system.cursor = h.frame(c)!.center
     #expect(go(h, "right") == c, "whatever the direction")
     h.system.focused = nil
-    h.system.cursor = h.layout!.desktopFrame!.center
+    h.system.cursor = CGPoint(x: (h.frame(a)!.maxX + h.frame(b)!.minX) / 2, y: h.frame(b)!.midY)  // in the gap
     #expect(go(h, "left") == a, "nothing under the pointer: the top left")
     h.system.focused = nil
     h.system.cursor = h.frame(b)!.center
@@ -204,7 +204,7 @@ private let side = sideDisplay
   // MARK: The edge of the view
 
   @Test func framedOnOneWindowFocusDoesWhatNeighborDoes() {
-    let (h, a, b, c) = columns()
+    let (h, a, b, c) = columns(settings: .withDesktopColumn)
     expectOK(h, "zoom \(a.rawValue)")
     #expect(go(h, "down") == c)
     #expect(h.workspace.camera == leaf(h, c))
@@ -244,7 +244,7 @@ private let side = sideDisplay
   }
 
   @Test func aFloatingWindowOnTheDesktopNextDoorGetsFocus() {
-    let (h, w) = harness(["Safari", "Notes", "Calculator"], ["dock $0 left", "dock $1 right"])
+    let (h, w) = harness(["Safari", "Notes", "Calculator"], ["dock $0 left", "dock $1 right"], settings: .withDesktopColumn)
     let (a, floating) = (w[0], w[2])
     expectOK(h, "zoom \(a.rawValue)")
     #expect(!h.system.isVisible(floating))
@@ -262,10 +262,7 @@ private let side = sideDisplay
     let middle = h.workspace.tree.parent(of: leaf(h, d)!)!
     #expect(Set(h.workspace.tree.windows(under: middle)) == [b, c, d])
 
-    // The Desktop sits between a and the middle space; step over it first.
     expectOK(h, "zoom \(a.rawValue)")
-    expectOK(h, "focus right")
-    #expect(h.workspace.camera == h.workspace.tree.desktop)
     #expect([b, d].contains(go(h, "right")), "something on the left edge, not c")
     #expect(h.workspace.camera == middle)
 
@@ -304,11 +301,11 @@ private let side = sideDisplay
   }
 
   @Test func aGroupTileInTheWayIsEnteredAtTheNearSide() {
-    // [ a | Desktop | b / c ], with the column squeezed until it is a tile.
+    // [ a | b / c ], with the column squeezed until it is a tile: 202 points of its 702.
     let (h, w) = harness(["A", "B", "C"], ["dock $0 left", "dock $1 right", "dock $2 beside $1 bottom"])
     let (a, b, c) = (w[0], w[1], w[2])
     let group = h.workspace.tree.parent(of: leaf(h, b)!)!
-    expectOK(h, "resize \(b.rawValue) left -250")
+    expectOK(h, "resize \(b.rawValue) left -500")
     #expect(h.layout!.tiles.map(\.node) == [group])
     h.system.userFocus(b)
     h.system.userFocus(a)
@@ -319,7 +316,7 @@ private let side = sideDisplay
   }
 
   @Test func aTileInsideATileIsEnteredToo() {
-    // [ a | Desktop | x1 / x2 ], the column squeezed into a tile. Framed, the column is still too low for
+    // [ a | x1 / x2 ], the column squeezed into a tile. Framed, the column is still too low for
     // either window, so they are tiles again, and focus goes on into the top one.
     let h = Harness(settings: noRoomMade)
     let a = h.system.open(app: "A", frame: CGRect(x: 100, y: 100, width: 500, height: 400))
@@ -331,7 +328,7 @@ private let side = sideDisplay
     h.start()
     for command in [
       "dock \(a.rawValue) left", "dock \(x1.rawValue) right", "dock \(x2.rawValue) beside \(x1.rawValue) bottom",
-      "resize \(x1.rawValue) left -250",
+      "resize \(x1.rawValue) left -500",
     ] { expectOK(h, command) }
     #expect(h.layout!.tiles.map(\.kind) == [.group])
     h.system.userFocus(a)
@@ -344,7 +341,7 @@ private let side = sideDisplay
   /// The Desktop as a tile is still part of the view: what floats on it is in view, over the docked windows, and is a
   /// stop itself. The tile holds nothing more to focus and is passed over.
   @Test func aDesktopTileIsNoStopWhatFloatsOnItIs() {
-    let (h, w) = harness(["A", "B"], ["dock $0 left", "dock $1 right", "resize $0 right 250"])
+    let (h, w) = harness(["A", "B"], ["dock $0 left", "dock $1 right", "resize $0 right 250"], settings: .withDesktopColumn)
     let (a, b) = (w[0], w[1])
     #expect(h.layout!.tiles.map(\.kind) == [.desktop])
     h.system.userFocus(a)
@@ -369,7 +366,7 @@ private let side = sideDisplay
     var settings = Settings()
     settings.minimumUsableHeight = 500
     let (h, w) = harness(["A", "B"], ["dock $0 top", "dock $1 bottom"], settings: settings)
-    #expect(h.layout!.windowFrames.isEmpty && h.layout!.tiles.count == 3)
+    #expect(h.layout!.windowFrames.isEmpty && h.layout!.tiles.count == 2, "halves of 419 points")
     h.system.focused = nil
     h.system.cursor = h.layout!.tiles.first { $0.windows == [w[1]] }!.frame.center
     #expect(go(h, "left") == w[1])
@@ -450,9 +447,9 @@ private let side = sideDisplay
 
   // MARK: Two displays
 
-  /// Main: [ a | Desktop | b ]. Side: [ c | Desktop ].
-  func twoDisplays() -> (Harness, WindowID, WindowID, WindowID) {
-    let h = Harness(displays: [FakeWindowSystem.standardDisplay, side])
+  /// Main: [ a | b ], with the Desktop between them where it has a column. Side: [ c | Desktop ].
+  func twoDisplays(settings: Settings = Harness.settingsWhenNoneAreGiven) -> (Harness, WindowID, WindowID, WindowID) {
+    let h = Harness(displays: [FakeWindowSystem.standardDisplay, side], settings: settings)
     let a = h.system.open(app: "A", frame: CGRect(x: 100, y: 100, width: 500, height: 400))
     let b = h.system.open(app: "B", frame: CGRect(x: 300, y: 200, width: 500, height: 400))
     let c = h.system.open(app: "C", frame: CGRect(x: 1600, y: 100, width: 500, height: 400))
@@ -480,9 +477,8 @@ private let side = sideDisplay
   }
 
   @Test func theCameraMovesBeforeFocusLeavesTheDisplay() {
-    let (h, a, b, c) = twoDisplays()
+    let (h, a, b, c) = twoDisplays(settings: Settings())
     expectOK(h, "zoom \(a.rawValue)")
-    expectOK(h, "focus right")
     #expect(go(h, "right") == b)
     #expect(go(h, "right") == c)
   }
@@ -602,10 +598,10 @@ private let side = sideDisplay
     h.system.userFocus(a)
     h.system.focusIsSlow = true
     expectOK(h, "focus right")
-    expectOK(h, "dock \(c.rawValue) right")
+    expectOK(h, "dock \(c.rawValue) left")
     #expect(h.system.slowFocus == c)
     h.system.finishSlowFocus()
-    #expect(expectOK(h, "swap left").message == "swapped \(c) with \(b)")
+    #expect(expectOK(h, "swap right").message == "swapped \(c) with \(b)", "b is on the right now")
   }
 
   /// macOS reports every change it was asked for, in order. Word of an earlier request says nothing about the latest.

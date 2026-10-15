@@ -172,8 +172,8 @@ extension Controller {
   private func tree(
     for spec: LayoutNotation.Spec, filling windows: [[WindowID]], recent: [WindowID], roomOnDesktop: Bool, on displayID: DisplayID
   ) -> LayoutTree {
-    let usual = spec.tree(filling: windows, recent: recent, desktopSize: settings.arrangeDesktopWeight)
-    guard roomOnDesktop, !spec.mentionsDesktop, let display = display(displayID) else { return usual }
+    let usual = spec.tree(filling: windows, recent: recent, desktopSize: settings.desktopWeightWhenArranged)
+    guard roomOnDesktop, settings.desktopColumn, !spec.mentionsDesktop, let display = display(displayID) else { return usual }
     let present = presentWindowIDs()
     let minimums = minimumSizes
     let here = options(for: displayID)
@@ -279,12 +279,12 @@ extension Controller {
 
   /// Called from `windowDestroyed`. A window that joined and closed again (a splash screen) leaves its
   /// slot free for the next one.
-  func releasePendingSlot(of id: WindowID) {
+  func releasePendingSlot(of id: WindowID, away: Bool) {
     for display in pendingLayouts.keys.sorted() {
       guard var pending = pendingLayouts[display], let index = pending.windows.firstIndex(where: { $0.contains(id) })
       else { continue }
       pending.windows[index].removeAll { $0 == id }
-      pending.tree.remove(id, shareSpace: settings.shareRemovedSpace)
+      pending.tree.remove(id, shareSpace: settings.shareRemovedSpace, away: away)
       pendingLayouts[display] = pending
     }
   }
@@ -356,7 +356,9 @@ extension Controller {
     if naming == .titles { ways = [60, 40, 24, 12, 6].map { (.titles, $0) } + ways }
     if naming == .ids { ways = [(.ids, 0)] }
     for way in ways {
-      let text = LayoutNotation.Spec(tree) { slot(for: $0, naming: way.naming, titleLength: way.title, among: candidates) }.text
+      let text = LayoutNotation.Spec(tree, desktopColumn: settings.desktopColumn) {
+        slot(for: $0, naming: way.naming, titleLength: way.title, among: candidates)
+      }.text
       guard (try? LayoutNotation.parse(text)) != nil else { continue }
       return CommandResult(ok: true, message: "display \(number(of: display) ?? 1): \(docked)", text: text)
     }

@@ -77,8 +77,10 @@ expect camera desktop
 expect at 104 40 51 877x499
 expect at 105 -300 200 1000x560
 back
-# Whoever liked it better before can have it back: the next time the Desktop comes into view its windows are gathered on it.
+# Whoever liked it better before can have it back: the next time the Desktop comes into view its windows are gathered on it. Finder and
+# Safari have left it no room (F68), and where there is none there is nowhere to gather them: Safari floats, and what it had is left over.
 set floatingWindowsMakeWay true
+float 102
 zoom 101
 show-all
 expect left-of 101 104

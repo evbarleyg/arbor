@@ -101,10 +101,13 @@ import Testing
   /// A first meeting: the newcomer will not be as narrow or as low as the slot it is offered, on each side of the window
   /// that gives it room. To the right of the gap that gives, and below it, its slot ends up beginning elsewhere than planned.
   @Test(arguments: ["left", "right", "top", "bottom"]) func aWindowThatRefusesItsSlotCostsNobodyADetour(side: String) throws {
-    let h = Harness()
+    let h = Harness(settings: Settings())
     let a = h.system.open(app: "A")
+    let b = h.system.open(app: "B")
     h.start()
     h.run("dock \(a.rawValue) left")
+    // Nothing is left over for a newcomer to take: it is offered half of A's place.
+    h.run("dock \(b.rawValue) right")
     // Opened now, so that nothing has been asked of it yet.
     let large = h.system.open(
       app: "Large", frame: CGRect(x: 200, y: 60, width: 1000, height: 760), minimumSize: CGSize(width: 560, height: 560))
@@ -332,16 +335,22 @@ import Testing
 
   /// A gap dragged with the pointer: a quick hand takes it far in one step.
   @Test func aGapDraggedFarCostsNobodyADetour() throws {
-    let h = Harness()
+    let h = Harness(settings: Settings())
     let a = h.system.open(app: "A", minimumSize: CGSize(width: 500, height: 300))
     let preview = h.system.open(app: "Preview", frame: CGRect(x: 300, y: 100, width: 600, height: 600))
     h.system.setMaximumSize(preview, CGSize(width: 720, height: 2000))
     h.start()
     h.run("dock \(a.rawValue) left")
+    // It takes all that is left: two halves of 702.
     h.run("dock \(preview.rawValue) beside \(a.rawValue) right")
     let seam = try #require(h.overlays.seams[h.display]?.first)
     // The one grows further than it can, the other is to be smaller than it goes.
-    expectStraightRoads(roads(h) { h.overlays.dragSeam(seam, by: -150) })
+    var roads = roads(h) { h.overlays.dragSeam(seam, by: -250) }
+    let slot = try #require(h.layout?.windowFrames[preview])
+    #expect(slot.width == 952 && h.frame(preview)?.width == 720 && h.layout?.tiles.contains { $0.windows.contains(a) } == true, "the case: \(slot)")
+    // That it cannot shows in its slot, where it grows: corner, then middle, both within the slot.
+    roads[preview] = try #require(withoutTheWayToTheMiddle(roads[preview] ?? [], of: slot), "\(roads)")
+    expectStraightRoads(roads)
     #expect(h.staleLayouts() == [])
   }
 
@@ -412,12 +421,15 @@ import Testing
   /// It is a few points short of any slot, so a slot that only becomes narrower is higher than it is. The width it has answered for where it stood
   /// is not offered again with the height, or it would round up and be talked down a second time.
   @Test func aSideThatHasAnsweredIsNotOfferedAgain() throws {
-    let h = Harness()
+    let h = Harness(settings: Settings())
     let terminal = h.system.open(app: "Terminal")
     let a = h.system.open(app: "A")
+    let b = h.system.open(app: "B")
     h.system.setSizeStep(terminal, CGSize(width: 7, height: 15))
     h.start()
     h.run("dock \(terminal.rawValue) left")
+    // Nothing is left over for a newcomer to take: it is offered half of the terminal's place.
+    h.run("dock \(b.rawValue) right")
     let mark = h.system.moveLog.count
     let road = try #require(roads(h) { h.run("dock \(a.rawValue) beside \(terminal.rawValue) right") }[terminal])
     let slot = try #require(h.layout?.windowFrames[terminal])
@@ -726,12 +738,15 @@ import Testing
   /// What was learnt can stop being true by half: it grows further than it did, far from any line, and that is its answer. It is not sent
   /// to the slot's corner to be asked again.
   @Test func oneThatCanGrowALittleFurtherIsBelievedWhereItIsAsked() throws {
-    let h = Harness()
+    let h = Harness(settings: Settings())
     let editor = h.system.open(app: "Editor", frame: CGRect(x: 400, y: 100, width: 500, height: 300))
     let notes = h.system.open(app: "Notes")
+    let b = h.system.open(app: "B")
     h.system.setMaximumSize(editor, CGSize(width: 2000, height: 300))
     h.start()
     h.run("dock \(editor.rawValue) left")
+    // Nothing is left over for a newcomer to take: it is offered half of the editor's place.
+    h.run("dock \(b.rawValue) right")
     h.system.setMaximumSize(editor, CGSize(width: 2000, height: 400))
     let road = try #require(roads(h) { h.run("dock \(notes.rawValue) beside \(editor.rawValue) right") }[editor])
     let slot = try #require(h.layout?.windowFrames[editor])

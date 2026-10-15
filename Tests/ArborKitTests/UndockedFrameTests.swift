@@ -70,9 +70,12 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
   /// Criterion 2.
   @Test func floatingAFramedWindowShowsTheDesktop() throws {
     let (h, notes, safari, mail) = makeHarness()
+    // `[(safari / notes / mail) | Desktop]`: one column, 402 points wide, and the Desktop has what is left, the middle of the display with
+    // it. A window that floats takes its own size around where it was, whatever is docked there (F64), and framed it was everywhere.
     h.run("dock \(safari.rawValue) left")
-    h.run("dock \(notes.rawValue) right")
+    h.run("dock \(notes.rawValue) beside \(safari.rawValue) bottom")
     h.run("dock \(mail.rawValue) beside \(notes.rawValue) bottom")
+    h.run("resize \(safari.rawValue) right -300")
     h.run("zoom \(notes.rawValue)")
     #expect(h.frame(notes)?.width == h.visibleFrame.width - 24, "framed, it fills the display")
     var cameraChanges = 0
@@ -88,7 +91,7 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
   }
 
   @Test func floatingAFramedWindowFramesTheDesktopIfItWouldBeATile() throws {
-    let (h, notes, safari, mail) = makeHarness()
+    let (h, notes, safari, mail) = makeHarness(settings: .withDesktopColumn)
     h.run("dock \(notes.rawValue) left")
     h.run("dock \(safari.rawValue) right")
     h.run("dock \(mail.rawValue) right")
@@ -157,7 +160,7 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
 
   /// The product owner's replay: ⌃⌥A then ⌃⌥F, a newcomer's likeliest route.
   @Test func afterArrangeAFloatedWindowHasItsOwnSizeThoughTheDesktopIsNarrow() throws {
-    let (h, notes, safari, _) = makeHarness()
+    let (h, notes, safari, _) = makeHarness(settings: .withDesktopColumn)
     h.system.open(app: "Slack")
     h.run("arrange")
     let desktop = try #require(h.layout?.desktopFrame)
@@ -226,7 +229,10 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
     #expect(h.system.isVisible(music))
     #expect(h.frame(music)?.size == musicFrame.size)
     #expect(h.visibleFrame.contains(try #require(h.frame(music))))
-    #expect(h.layout?.desktopFrame != nil)
+    // The Desktop is part of the view: with its rectangle, where it has room at all.
+    let tree = h.workspace.tree
+    #expect(tree.subtree(try #require(h.layout).camera, contains: tree.desktop))
+    #expect(h.layout?.desktopFrame != nil || !tree.desktopHasRoom)
   }
 
   @Test func theTwoWaysToFloatAgreeOnTheSize() throws {
@@ -238,6 +244,8 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
         h.run("float \(safari.rawValue)")
       } else {
         let slot = try #require(h.frame(safari))
+        // Arranged, the windows leave the Desktop no room to drop it on: only ⌘ takes a docked window out (F09).
+        h.system.heldModifiers = .command
         h.system.drag(safari, through: [CGPoint(x: slot.midX, y: slot.minY + 10), CGPoint(x: 1380, y: 300)])
       }
       #expect(h.workspace.isFloating(safari), "\(way)")
@@ -397,6 +405,8 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
     let wide = h.system.open(
       app: "Xcode", frame: CGRect(x: 100, y: 100, width: 1250, height: 700),
       minimumSize: CGSize(width: 1250, height: 700))
+    // Not in the new window: for the one with the keyboard the others would lend of their own room, and be the tiles.
+    h.system.userFocus(notes)
     h.run("arrange")
     #expect(h.layout?.tiles.contains { $0.windows == [wide] } == true, "it refused its slot")
     h.system.setMinimized(mail, true)
@@ -425,8 +435,8 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
   @Test func aWindowDraggedOutOfItsSlotShrinksBackUnderThePointer() throws {
     let (h, notes, safari, _) = makeHarness()
     h.run("dock \(notes.rawValue) left")
-    h.run("dock \(safari.rawValue) right")
-    let drop = CGPoint(x: 720, y: 300)
+    h.run("dock \(safari.rawValue) beside \(notes.rawValue) bottom")
+    let drop = CGPoint(x: 1000, y: 300)
     h.system.clearFrameLog()
     // The fake grabs the title bar in the middle, 10 points below the top.
     h.system.drag(notes, through: [CGPoint(x: 300, y: 60), CGPoint(x: 500, y: 200), drop])
@@ -444,11 +454,11 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
   @Test func aWindowGrabbedNearItsCornerKeepsThePointerNearThatCorner() throws {
     let (h, notes, safari, _) = makeHarness()
     h.run("dock \(notes.rawValue) left")
-    h.run("dock \(safari.rawValue) right")
+    h.run("dock \(safari.rawValue) beside \(notes.rawValue) bottom")
     let slot = try #require(h.frame(notes))
     // By hand, because the fake's `drag` always grabs the middle: pressed a tenth of the way along.
     let grab = CGPoint(x: slot.minX + slot.width / 10, y: slot.minY + 14)
-    let drop = CGPoint(x: 700, y: 400)
+    let drop = CGPoint(x: 900, y: 400)
     h.system.mouseDown = true
     h.controller.dragBegan(notes, at: grab)
     h.system.cursor = drop
@@ -466,8 +476,7 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
   /// The product owner's replay: a slot narrower than the window, dropped near the right edge.
   @Test func aWindowThatGrowsAtTheDropSlidesBackOntoTheDisplayUnderThePointer() throws {
     let (h, _, safari, _) = makeHarness()
-    h.system.open(app: "Slack")
-    h.run("arrange")
+    h.run("dock \(safari.rawValue) left")
     let slot = try #require(h.frame(safari))
     #expect(slot.width < safariFrame.width)
     let drop = CGPoint(x: 1300, y: 300)
@@ -482,8 +491,8 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
   @Test func droppedLowItSlidesUpOnlyAsFarAsThePointerStaysOnTheTitleBar() throws {
     let (h, notes, safari, _) = makeHarness()
     h.run("dock \(notes.rawValue) left")
-    h.run("dock \(safari.rawValue) right")
-    let drop = CGPoint(x: 720, y: 800)
+    h.run("dock \(safari.rawValue) beside \(notes.rawValue) bottom")
+    let drop = CGPoint(x: 1000, y: 800)
     h.system.drag(notes, through: [CGPoint(x: 300, y: 60), drop])
     let frame = try #require(h.frame(notes))
     #expect(frame.size == notesFrame.size)
@@ -493,7 +502,7 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
   @Test func aStaleFrameNeverPutsTheWindowAwayFromThePointer() throws {
     let (h, notes, safari, _) = makeHarness()
     h.run("dock \(notes.rawValue) left")
-    h.run("dock \(safari.rawValue) right")
+    h.run("dock \(safari.rawValue) beside \(notes.rawValue) bottom")
     // macOS reports moves a few times a second: here, none since the drag began.
     let drop = CGPoint(x: 760, y: 500)
     h.controller.dragBegan(notes, at: CGPoint(x: 200, y: 50))
@@ -518,7 +527,7 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
   }
 
   @Test(arguments: [false, true]) func aDroppedWindowStaysUnderThePointerThoughTheDesktopMovesAway(makingWay: Bool) throws {
-    let (h, notes, safari, mail) = makeHarness(settings: makingWay ? .makingWay : Settings())
+    let (h, notes, safari, mail) = makeHarness(settings: (makingWay ? Settings.makingWay : Settings()).withDesktopColumn)
     h.run("dock \(notes.rawValue) left")
     h.run("dock \(safari.rawValue) right")
     let before = try #require(h.layout?.desktopFrame)
@@ -589,14 +598,14 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
     }
     let (h, notes, safari, _) = makeHarness()
     h.run("dock \(notes.rawValue) left")
-    h.run("dock \(safari.rawValue) right")
+    h.run("dock \(safari.rawValue) beside \(notes.rawValue) bottom")
     h.system.userFocus(notes)
     h.run("float")
     #expect(h.frame(notes)?.size == notesFrame.size)
     #expect(ringProblem(h, notes) == nil)
 
-    h.run("dock left")
-    h.system.drag(notes, through: [CGPoint(x: 300, y: 60), CGPoint(x: 720, y: 300)])
+    h.run("dock beside \(safari.rawValue) top")
+    h.system.drag(notes, through: [CGPoint(x: 300, y: 60), CGPoint(x: 1000, y: 300)])
     h.scheduler.advance(by: 1)
     #expect(h.frame(notes)?.size == notesFrame.size)
     #expect(ringProblem(h, notes) == nil)
@@ -620,8 +629,8 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
     #expect(h.system.isVisible(mail))
     #expect(abs(try #require(h.frame(mail)).midY - place.midY) <= 1, "it comes out where its group is")
     // Torn off with the mouse.
-    h.run("dock \(mail.rawValue) right")
-    h.system.drag(notes, through: [CGPoint(x: 300, y: 60), CGPoint(x: 720, y: 300)])
+    h.run("dock \(mail.rawValue) beside \(notes.rawValue) bottom")
+    h.system.drag(notes, through: [CGPoint(x: 300, y: 60), CGPoint(x: 1000, y: 300)])
     #expect(h.workspace.isFloating(notes))
     #expect(h.frame(notes)?.size == notesFrame.size)
   }
@@ -922,7 +931,7 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
   /// Safari and Mail docked either side of a Desktop too narrow for Notes, which was squeezed onto it. Floating windows make
   /// way here, as until Q20 (`floatingWindowsMakeWay`): as Arbor ships nothing is squeezed, and there is nothing to undo.
   func harnessWithASqueezedWindow() throws -> (Harness, WindowID) {
-    let (h, notes, safari, mail) = makeHarness(settings: .makingWay)
+    let (h, notes, safari, mail) = makeHarness(settings: .makingWay.withDesktopColumn)
     h.run("dock \(safari.rawValue) left")
     h.run("dock \(mail.rawValue) right")
     h.run("resize \(safari.rawValue) right 150")
@@ -959,7 +968,7 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
   /// Squeezed by Arbor to keep it on the Desktop, then merely moved: a move is not a resize. Taken for "this is how I
   /// want it", size included, it left the window at the squeezed size for good. Floating windows make way here too.
   func harnessWithASqueezedWindow() throws -> (Harness, zoom: WindowID, own: CGSize, squeezed: CGRect) {
-    let h = Harness(settings: .makingWay)
+    let h = Harness(settings: .makingWay.withDesktopColumn)
     let chrome = h.system.open(app: "Chrome", pid: 2001, frame: CGRect(x: 20, y: 60, width: 1200, height: 760))
     let ghostty = h.system.open(app: "Ghostty", pid: 2002, frame: CGRect(x: 300, y: 100, width: 800, height: 600))
     let own = CGSize(width: 900, height: 600)
@@ -1229,6 +1238,8 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
   @Test func withNothingRememberedADraggedWindowKeepsItsSizeAndPlace() throws {
     let (h, notes, _) = try harnessWithNothingRemembered()
     let slot = try #require(h.frame(notes))
+    // Two halves leave the Desktop no room to drop it on: only ⌘ takes a docked window out (F09).
+    h.system.heldModifiers = .command
     h.system.drag(notes, through: [CGPoint(x: 300, y: 60), CGPoint(x: 720, y: 200)])
     #expect(h.workspace.isFloating(notes))
     #expect(h.frame(notes)?.height == slot.height)
@@ -1326,7 +1337,7 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
       id: DisplayID("below"), frame: CGRect(x: 289, y: 900, width: 1080, height: 1920),
       visibleFrame: CGRect(x: 289, y: 900, width: 1080, height: 1920), isMain: false)
     for command in ["float", "toggle-float", "float-all"] {
-      let h = Harness(displays: [main, below])
+      let h = Harness(displays: [main, below], settings: .withDesktopColumn)
       h.start()
       let xcode = h.system.open(app: "Xcode", pid: 1004, frame: CGRect(x: 321, y: 1529, width: 355, height: 316))
       h.system.setMinimumSize(xcode, CGSize(width: 1004, height: 773))

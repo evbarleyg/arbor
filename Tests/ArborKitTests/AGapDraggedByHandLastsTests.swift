@@ -14,10 +14,12 @@ import Testing
 @Suite @MainActor struct AGapDraggedByHandLastsTests {
   nonisolated static let notesMinimum = CGSize(width: 709, height: 300)
   nonisolated static let mailPID: Int32 = 1001
+  /// With a column for the Desktop, the lender on the far side that these stories are about; the rest as the run has it.
+  nonisolated static var settings: Settings { Harness.settingsWhenNoneAreGiven.withDesktopColumn }
 
   /// [Mail | Notes | Desktop] on 1440 points. A third is 464: Notes stands at its 709 on what the Desktop lent it.
   func makeHarness(saved: PersistedState? = nil) -> (Harness, mail: WindowID, notes: WindowID) {
-    let h = Harness(saved: saved)
+    let h = Harness(settings: Self.settings, saved: saved)
     let mail = h.system.open(app: "Mail", pid: Self.mailPID, frame: CGRect(x: 100, y: 100, width: 900, height: 600))
     let notes = h.system.open(
       app: "Notes", pid: 1002, frame: CGRect(x: 200, y: 100, width: 1000, height: 660), minimumSize: Self.notesMinimum)
@@ -227,7 +229,7 @@ import Testing
 
   /// The desk's windows, floating, and Arbor started. The window whose `turn` it is is Mail's.
   func open(_ desk: Desk, turn: Int = 0, saved: PersistedState? = nil) -> Harness {
-    let h = Harness(saved: saved)
+    let h = Harness(settings: Self.settings, saved: saved)
     for (index, window) in desk.windows.enumerated() {
       h.system.open(
         app: index == turn ? "Mail" : "App\(index)", pid: index == turn ? Self.mailPID : 2000 + Int32(index),

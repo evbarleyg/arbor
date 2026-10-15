@@ -5,9 +5,10 @@ import CoreGraphics
 import Testing
 
 @MainActor @Suite struct RoomGivenBackControllerTests {
-  /// `[ a | b | Desktop ]` on the standard display: one more beside `a` and both are tiles.
+  /// `[ a | b | Desktop ]`, thirds, on the standard display: one more beside `a` and both are tiles. With a column for the Desktop,
+  /// which gives the room that these tests see given back.
   private func pair() -> (h: Harness, a: WindowID, b: WindowID) {
-    let h = Harness()
+    let h = Harness(settings: .withDesktopColumn)
     let (a, b) = (h.system.open(app: "A"), h.system.open(app: "B"))
     h.start()
     h.run("dock \(a.rawValue) left")
@@ -66,7 +67,7 @@ import Testing
     h.run("dock \(visitor.rawValue) beside \(a.rawValue) right")
     h.controller.saveNow()
 
-    let again = Harness(saved: h.store.saved)
+    let again = Harness(settings: .withDesktopColumn, saved: h.store.saved)
     for app in ["A", "B", "Visitor"] { again.system.open(app: app) }
     again.start()
     #expect(again.workspace.tree == h.workspace.tree)

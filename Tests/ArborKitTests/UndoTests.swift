@@ -45,9 +45,17 @@ private func expectConsistent(_ h: Harness, _ note: String = "", sourceLocation:
       continue
     }
     for (window, frame) in layout.windowFrames {
-      // A window within a point of its slot is left alone.
+      // A window within a point of its slot is left alone. So is one that stops two points short of it: that is no refusal (`SeenSizes.slack`).
+      // (Seed 22, as Arbor ships: a slot 448 points high for a window that goes no lower than 450.)
+      let stops = h.system.windows[window]?.minimumSize ?? .zero
+      let stopsJustShort =
+        h.frame(window).map {
+          $0.origin == frame.origin && $0.size == CGSize(width: max(frame.width, stops.width), height: max(frame.height, stops.height))
+            && $0.width - frame.width <= 2 && $0.height - frame.height <= 2
+        } == true
       #expect(
-        h.frame(window)?.approximatelyEquals(frame, tolerance: 1) == true, "\(window) is not in its slot \(note)",
+        h.frame(window)?.approximatelyEquals(frame, tolerance: 1) == true || stopsJustShort,
+        "\(window) is not in its slot \(note): at \(String(describing: h.frame(window))), the slot is \(frame)",
         sourceLocation: sourceLocation)
       #expect(!h.controller.parked.contains(window), "\(window) counts as parked \(note)", sourceLocation: sourceLocation)
     }
@@ -86,15 +94,13 @@ private func expectConsistent(_ h: Harness, _ note: String = "", sourceLocation:
     return (h, a, b, c)
   }
 
-  /// [a / c | Desktop | b] with d floating on the Desktop.
+  /// [a / c | b], two halves, with d floating over the middle.
   func makeArrangement(settings: Settings = Settings()) -> (Harness, WindowID, WindowID, WindowID, WindowID) {
     let (h, a, b, c) = makeHarness(settings: settings)
     h.run("dock \(a.rawValue) left")
     h.run("dock \(b.rawValue) right")
     h.run("dock \(c.rawValue) beside \(a.rawValue) bottom")
-    let desktop = h.layout!.desktopFrame!
-    let d = h.system.open(
-      app: "Terminal", frame: CGRect(x: desktop.minX + 20, y: desktop.minY + 40, width: 300, height: 200))
+    let d = h.system.open(app: "Terminal", frame: CGRect(x: 508, y: 77, width: 300, height: 200))
     return (h, a, b, c, d)
   }
 
@@ -546,7 +552,7 @@ private func expectConsistent(_ h: Harness, _ note: String = "", sourceLocation:
   }
 
   @Test(arguments: [false, true]) func theViewStepsOutUntilTheWindowThatFloatsAgainIsInView(makingWay: Bool) {
-    // [a | Desktop | b / (c | e)], framed on c.
+    // [a | b / (c | e)], framed on c.
     let (h, a, b, c) = makeHarness(settings: makingWay ? .makingWay : Settings())
     let e = h.system.open(app: "Terminal", frame: CGRect(x: 600, y: 300, width: 400, height: 300))
     h.run("dock \(a.rawValue) left")
@@ -555,14 +561,12 @@ private func expectConsistent(_ h: Harness, _ note: String = "", sourceLocation:
     h.run("dock \(e.rawValue) beside \(c.rawValue) right")
     h.run("zoom \(c.rawValue)")
     #expect(h.run("undo").message == "undid dock \(e) beside \(c) right")
-    // The column b / c would show that e has left. It went to the Desktop.
+    // The column b / c would show that e has left. It floats again, which shows where the Desktop is part of the view.
     #expect(h.workspace.isFloating(e))
     #expect(h.system.isVisible(e))
-    if makingWay {
-      #expect(h.layout!.desktopFrame!.contains(h.frame(e)!))
-    } else {
-      #expect(h.frame(e) == CGRect(x: 600, y: 300, width: 400, height: 300), "exactly where it floated before it was docked")
-    }
+    #expect(h.workspace.camera == h.workspace.tree.root)
+    // (Nothing is left over, so that it has nowhere to make way to either.)
+    #expect(h.frame(e) == CGRect(x: 600, y: 300, width: 400, height: 300), "exactly where it floated before it was docked")
     expectConsistent(h)
   }
 
@@ -718,7 +722,9 @@ private func expectConsistent(_ h: Harness, _ note: String = "", sourceLocation:
   }
 
   @Test func draggingADockedWindowOutIsAStep() {
-    let (h, a, _, _, _) = makeArrangement()
+    // [a | Desktop]: a docked window is dragged out onto a Desktop that has room.
+    let (h, a, _, _) = makeHarness()
+    h.run("dock \(a.rawValue) left")
     let before = Picture(h)
     let slot = h.frame(a)!
     h.system.drag(a, through: [CGPoint(x: slot.midX, y: slot.minY + 10), h.layout!.desktopFrame!.center])
@@ -728,14 +734,14 @@ private func expectConsistent(_ h: Harness, _ note: String = "", sourceLocation:
   }
 
   @Test func dropsThatRearrangeNothingAreNotSteps() {
-    let (h, a, _, _, d) = makeArrangement()
+    let (h, a, b, _, d) = makeArrangement()
     let steps = undoLabels(h)
     let slot = h.frame(a)!
     h.system.drag(a, through: [CGPoint(x: slot.midX, y: slot.minY + 10), CGPoint(x: slot.midX + 30, y: slot.midY)])
     #expect(h.frame(a) == slot, "dropped on its own slot")
     let floating = h.frame(d)!
-    h.system.drag(d, through: [CGPoint(x: floating.midX, y: floating.minY + 10), CGPoint(x: floating.midX + 40, y: floating.minY + 60)])
-    #expect(h.frame(d) != floating, "moved on the Desktop")
+    h.system.drag(d, through: [CGPoint(x: floating.midX, y: floating.minY + 10), h.frame(b)!.center])
+    #expect(h.frame(d) != floating && h.workspace.isFloating(d), "moved: over the middle of a docked window it goes on floating")
     #expect(undoLabels(h) == steps)
   }
 
@@ -773,8 +779,10 @@ private func expectConsistent(_ h: Harness, _ note: String = "", sourceLocation:
 
   @Test func draggingAnotherSeamOrDoingSomethingElseStartsANewStep() throws {
     let (h, a, b, c) = makeHarness()
+    let e = h.system.open(app: "Terminal", frame: CGRect(x: 600, y: 300, width: 400, height: 300))
     h.run("dock \(a.rawValue) left")
     h.run("dock \(b.rawValue) right")
+    h.run("dock \(e.rawValue) right")  // [a | b | e]: two gaps
     let steps = undoLabels(h).count
     let seams = try #require(h.overlays.seams[h.display])
     #expect(seams.count == 2)
@@ -987,8 +995,7 @@ private func expectConsistent(_ h: Harness, _ note: String = "", sourceLocation:
     let (h, a, b, _) = makeHarness()
     h.run("dock \(a.rawValue) left")
     h.run("dock \(b.rawValue) right")
-    let desktop = h.layout!.desktopFrame!
-    let spot = CGRect(x: desktop.minX + 10, y: desktop.minY + 10, width: 200, height: 150)
+    let spot = CGRect(x: 498, y: 47, width: 200, height: 150)
     let fresh = h.system.open(app: "Terminal", frame: spot)
     h.run("undo")
     h.run("undo")
@@ -1170,7 +1177,8 @@ private func expectConsistent(_ h: Harness, _ note: String = "", sourceLocation:
 
   /// Floating windows make way here, as until Q20 (`floatingWindowsMakeWay`).
   @Test func floatingWindowsThatWerePushedAsideGoBack() {
-    let (h, a, b, c) = makeHarness(settings: .makingWay)
+    // With a column for the Desktop: it has room beside two docked windows too, less of it, and what floats is kept on it.
+    let (h, a, b, c) = makeHarness(settings: .makingWay.withDesktopColumn)
     let spot = CGRect(x: 420, y: 300, width: 500, height: 300)
     h.system.userMove(c, to: spot)
     h.run("dock \(a.rawValue) left")
@@ -1212,7 +1220,7 @@ private func expectConsistent(_ h: Harness, _ note: String = "", sourceLocation:
     h.run("redo")
     #expect(Picture(h) == after)
     h.run("show-all")
-    if makingWay { #expect(h.layout!.desktopFrame!.contains(h.frame(c)!)) } else { #expect(h.frame(c) == after.frames[c], "it stays") }
+    #expect(h.frame(c) == after.frames[c], "over the two halves now, where it came to float")
     expectConsistent(h)
   }
 
@@ -1319,6 +1327,8 @@ private func expectConsistent(_ h: Harness, _ note: String = "", sourceLocation:
 
   @Test func pinningAFloatingWindowIsNotAStepAndSurvivesTheUndoOfSomethingOlder() {
     let (h, a, b, c) = makeHarness()
+    // In the half that is left over after the first dock: neither dock moves it, so taking one back has nothing to put back.
+    h.system.userMove(c, to: CGRect(x: 780, y: 300, width: 600, height: 400))
     h.run("dock \(a.rawValue) left")
     h.run("dock \(b.rawValue) right")
     #expect(h.run("pin \(c.rawValue)").ok)

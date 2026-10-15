@@ -14,8 +14,8 @@ private let cameraCommands = [
 /// Holding the view (docs/features/F58-hold-the-view.md), as the person sharing their screen meets it: nothing may
 /// jump, appear or change size unless they asked for it.
 @Suite @MainActor struct HoldTests {
-  /// [keynote | Desktop | mail / slack] with notes floating on the Desktop, framed on keynote, which has the
-  /// keyboard: mail, slack and notes are out of view.
+  /// [keynote | mail / slack] with notes floating, framed on keynote, which has the keyboard: mail, slack and notes
+  /// are out of view.
   struct Stage {
     let h: Harness
     let keynote, mail, slack, notes: WindowID
@@ -243,10 +243,10 @@ private let cameraCommands = [
   }
 
   @Test func aClickOnATileDoesNothing() throws {
-    let s = stage { $0.minimumUsableWidth = 500 }
+    let s = stage { $0.minimumUsableWidth = 750 }
     let h = s.h
     h.run("show-all")
-    let tile = try #require(h.layout?.tiles.first, "at 500 points something is too narrow to show")
+    let tile = try #require(h.layout?.tiles.first, "at 750 points half the display is too narrow to show")
     h.run("hold")
     let before = picture(h)
     let said = h.overlays.messages.count
@@ -906,7 +906,7 @@ private let cameraCommands = [
     #expect(h.controller.holdLevel == .view)
   }
 
-  /// [keynote | Desktop | (mail / (slack | xcode))], held on the last column. When Mail closes, Slack and Xcode stay a
+  /// [keynote | (mail / (slack | xcode))], held on the last column. When Mail closes, Slack and Xcode stay a
   /// group of their own instead of joining Keynote's row (F62), and the view stays on them.
   @Test func aWindowThatClosesNeverWidensTheView() {
     let s = stage()

@@ -116,6 +116,9 @@ private let second = DisplaySnapshot(
     h.scheduler.advance(by: 0.3)
     h.system.setHidden(pid: 1000, true)
     h.system.setHidden(pid: 1000, false)
+    // They land. Until then nothing is made of what a window answers, so every layout asks the Calculator anew
+    // (Controller+OnTheWayBack.swift): five commands in that half second that leave its slot as it is would be asking in vain.
+    h.scheduler.advance(by: 0.6)
     h.run("save-view 1")
     h.run("desktop")
     h.run("view 1")
@@ -572,9 +575,14 @@ private let second = DisplaySnapshot(
   }
 
   @Test func strictModeReportsCallsInADifferentOrder() {
-    var trace = dockingTrace()
-    let first = trace.entries.firstIndex { $0.line.window == WindowID(101) && $0.line.isEffect && $0.t > 0 || $0.line == .command("dock 102 right") }!
-    // `dock 102 right` moves both windows, lower id first. Swap the two recorded calls.
+    var trace = record(before: { h in
+      for app in ["Safari", "Notes", "Mail"] { h.system.open(app: app) }
+    }) { h in
+      for command in ["dock 101 left", "dock 102 right", "dock 103 right"] { h.run(command) }
+      h.scheduler.advance(by: 1)
+    }.trace
+    let first = trace.entries.firstIndex { $0.line == .command("dock 103 right") }!
+    // Nothing is left over, so `dock 103 right` moves all three windows, lower id first. Swap the first two recorded calls.
     let calls = trace.entries.indices.filter { $0 > first && trace.entries[$0].line.description.hasPrefix("setFrame") }
     #expect(calls.count >= 2)
     trace.entries.swapAt(calls[0], calls[1])
@@ -1157,9 +1165,10 @@ private let second = DisplaySnapshot(
 
   // MARK: What Arbor did on the way
 
-  /// Safari is docked left, then Notes right, which makes Safari narrower; then the view goes to Notes and back.
+  /// Safari is docked left, then Notes right, which makes Safari narrower (with a column for the Desktop: these tests want a window that
+  /// is moved twice); then the view goes to Notes and back.
   private func courseTrace() -> Trace {
-    record(before: { h in
+    record(settings: .withDesktopColumn, before: { h in
       h.system.open(app: "Safari")
       h.system.open(app: "Notes")
       h.system.open(app: "Mail")

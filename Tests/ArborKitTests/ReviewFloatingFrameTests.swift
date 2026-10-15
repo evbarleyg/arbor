@@ -116,9 +116,9 @@ import Testing
 
   // MARK: The setting goes off
 
-  /// Its own frame is the one its person's hand gave it, hanging or not.
+  /// Its own frame is the one its person's hand gave it, hanging or not. With a column for the Desktop: there is one to be pushed onto.
   @Test func whenTheSettingGoesOffAWindowThatWasPushedAsideGoesBackToTheStripItsPersonLeft() {
-    let h = Harness(settings: .makingWay)
+    let h = Harness(settings: .makingWay.withDesktopColumn)
     let a = h.system.open(app: "Safari", pid: 11, frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     let f = h.system.open(app: "Mail", pid: 13, frame: CGRect(x: 800, y: 300, width: 400, height: 300))
     let b = h.system.open(app: "Notes", pid: 12, frame: CGRect(x: 300, y: 200, width: 600, height: 400))

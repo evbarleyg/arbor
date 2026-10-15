@@ -1,0 +1,87 @@
+# Proposed by the executor of F68 (2026-10-15), from what two adversarial readers played; the documenter may edit or drop it.
+# Story: somebody who wanted no column for the Desktop does not want a hole for it either. "Whoever is left alone stays as it is" is about the two
+# places that everything consists of, however the picture was made. Inside a group the others share; a docked window that is only moved leaves
+# nothing over where it was; visitors to the Desktop's view leave no column behind.
+# Reference: F68.
+quiet
+open A
+open B
+open C
+open D
+dock 101 left
+dock 102 right
+# One of two halves is moved: above, and back. No quarter is left empty, and there and back is nothing.
+dock 101 top
+expect size 101 1416x420
+expect size 102 1416x419
+expect above 101 102
+dock 101 left
+expect size 101 702x851
+expect size 102 702x851
+expect at 102 726 37
+# One above the other, whichever way that was made: the one that is left stays.
+dock 102 beside 101 bottom
+expect size 102 1416x419
+float 101
+expect still 102
+expect at 102 12 469
+dock 101 left
+float 102
+float 101
+
+# Three: a column of two and a third. The column's own close up; no hole opens.
+dock 101 left
+dock 102 right
+dock 102 bottom
+dock 103 right
+expect size 101 702x420
+expect size 102 702x419
+float 101
+expect size 102 702x851
+expect size 103 702x851
+float-all
+
+# One that was in the Dock when it closed takes nothing from whoever is there.
+dock 101 left
+dock 102 right
+dock 102 bottom
+minimize 101
+expect size 102 1416x851
+close 101
+expect still 102
+expect size 102 1416x851
+float-all
+
+# Visitors to the Desktop's view: two of them come and go, and the halves are halves.
+dock 102 left
+dock 103 right
+desktop
+dock 104 left
+open E
+dock 105 right
+float 104
+float 105
+show-all
+expect size 102 702x851
+expect size 103 702x851
+# At the edge of that view already, a second press says so.
+desktop
+dock 104 left
+dock 104 left
+expect fail
+float 104
+show-all
+expect size 102 702x851
+expect size 103 702x851
+float-all
+
+# Evening out counts what shows: a Desktop without room is no place.
+dock 103 left
+dock 104 right
+dock 102 top
+focus 103
+rotate
+balance
+expect size 102 1416x280
+expect size 103 1416x274
+expect size 104 1416x273

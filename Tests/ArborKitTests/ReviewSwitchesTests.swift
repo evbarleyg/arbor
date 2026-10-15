@@ -20,7 +20,7 @@ private func shrinking() -> Settings {
   return settings
 }
 
-/// [a | Desktop | b] with c floating on the Desktop where the user put it.
+/// [a | b], two halves, with c floating over the two of them where the user put it.
 @MainActor
 private func makeDesk(_ settings: Settings) -> (Harness, WindowID, WindowID, WindowID) {
   let h = Harness(settings: settings)
@@ -206,7 +206,8 @@ private func echo(_ h: Harness, _ window: WindowID, from old: CGRect) {
   @Test func floatAllAndQuittingPutWindowsThatWereInTilesWhereTheirTilesWere() {
     for leave in ["float-all", "quit"] {
       var settings = shrinking()
-      settings.minimumUsableWidth = 400
+      // Three in a row are 464 points wide each.
+      settings.minimumUsableWidth = 500
       let docked = Harness(settings: settings)
       let windows = (0..<3).map { docked.system.open(app: "App\($0)", pid: Int32(1001 + $0)) }
       docked.start()
@@ -228,7 +229,8 @@ private func echo(_ h: Harness, _ window: WindowID, from old: CGRect) {
   @Test func floatAllAndQuittingBringBackTheWindowsOfAGroupTile() {
     for leave in ["float-all", "quit"] {
       var settings = shrinking()
-      settings.minimumUsableWidth = 500
+      // Two columns are 702 points wide each.
+      settings.minimumUsableWidth = 750
       let docked = Harness(settings: settings)
       let a = docked.system.open(app: "Safari", pid: 1001)
       let b = docked.system.open(app: "Notes", pid: 1002)

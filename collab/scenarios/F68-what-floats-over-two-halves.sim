@@ -1,0 +1,68 @@
+# Proposed by the executor of F68 (2026-10-15), from what two adversarial readers played; the documenter may edit or drop it.
+# Story: with nothing left over, what floats lies over the docked windows, and is still its person's.
+# Reference: F68.
+quiet
+open Safari
+open Terminal
+open Notes
+dock 101 left
+dock 102 right
+# A click on the floating window, and ⌃⌥↓ at once: the pointer is on Notes, so the step goes to the Desktop, not to what is docked under it.
+cursor 500 400
+focus 103
+press in
+expect camera desktop
+expect visible 103
+show-all
+# Undo while the view on record is on a window that is in the Dock: everything shows, and so does what floats.
+zoom 102
+float 102
+minimize 102
+undo
+expect visible 103
+restore 102
+show-all
+float-all
+# ⌃⌥F on a framed window among three: the other two stay in view.
+arrange
+zoom 101
+float 101
+expect visible 101
+expect visible 102
+expect visible 103
+float-all
+close 103
+
+# What the others lent for the keyboard's sake is not forgotten when the lender leaves: the gap is where it was.
+close 101
+close 102
+open Safari 700x500 min 574x240
+open Mail 800x500 min 760x400
+open Notes 749x420 min 709x300
+focus 104
+dock left
+focus 105
+dock right
+expect size 104 644x851
+expect size 105 760x851
+focus 106
+dock right
+focus 105
+home
+close 106
+expect size 104 644x851
+expect size 105 760x851
+close 104
+close 105
+
+# The setting switched on over an arrangement made without the column: what `layout` prints is still what is there, and `balance` brings the column.
+open A
+open B
+dock 107 left
+dock 108 right
+set desktopColumn true
+layout --ids
+expect replied 107 | Desktop:0 | 108
+balance
+expect size 107 464x851
+expect size 108 464x851

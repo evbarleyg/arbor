@@ -28,29 +28,36 @@ private let d = WindowID(4)
     #expect(tree.invariantViolations().isEmpty)
   }
 
+  /// With a column for the Desktop, which keeps its share. (Without one the window takes that, and the mean only once nothing is left.)
   @Test func dockingAtTheEdgeOfASameAxisSplitAppendsWithTheMeanWeight() {
     var tree = LayoutTree()
-    tree.dock(a, beside: tree.root, edge: .left)
-    let leaf = tree.dock(b, beside: tree.root, edge: .right)
+    let first = tree.dock(a, beside: tree.root, edge: .left, desktopColumn: true)
+    tree.moveBoundary(leading: first, trailing: tree.desktop, by: 50, pointsPerWeight: 100, minimumPoints: 10)
+    let leaf = tree.dock(b, beside: tree.root, edge: .right, desktopColumn: true)
     #expect(tree.children(of: tree.root).last == leaf)
     #expect(tree.children(of: tree.root).count == 3)
     #expect(tree[leaf]?.weight == 1)
+    #expect(tree[first]?.weight == 1.5 && tree[tree.desktop]?.weight == 0.5)
   }
 
   @Test func dockingBesideALeafInASameAxisSplitTakesHalfItsShare() {
+    // [a | b], and nothing is left over.
     var tree = LayoutTree()
     let first = tree.dock(a, beside: tree.root, edge: .left)
-    let second = tree.dock(b, beside: first, edge: .right)
-    #expect(tree.children(of: tree.root) == [first, second, tree.desktop])
+    let last = tree.dock(b, beside: tree.root, edge: .right)
+    let second = tree.dock(c, beside: first, edge: .right)
+    #expect(tree.children(of: tree.root) == [first, second, tree.desktop, last])
     #expect(tree[first]?.weight == 0.5)
     #expect(tree[second]?.weight == 0.5)
+    #expect(tree[last]?.weight == 1)
   }
 
+  /// With a column for the Desktop, which it is docked beside.
   @Test func dockingBesideALeafWithAnEvenShareLeavesItsWeightAlone() {
     var tree = LayoutTree()
-    let first = tree.dock(a, beside: tree.root, edge: .left)
+    let first = tree.dock(a, beside: tree.root, edge: .left, desktopColumn: true)
     tree.moveBoundary(leading: first, trailing: tree.desktop, by: 50, pointsPerWeight: 100, minimumPoints: 10)
-    let second = tree.dock(b, beside: tree.desktop, edge: .left, evenShare: true)
+    let second = tree.dock(b, beside: tree.desktop, edge: .left, evenShare: true, desktopColumn: true)
     #expect(tree.children(of: tree.root) == [first, second, tree.desktop])
     #expect(tree[first]?.weight == 1.5)
     #expect(tree[tree.desktop]?.weight == 0.5)
@@ -199,7 +206,7 @@ private let d = WindowID(4)
   }
 
   /// Random docks, removals, swaps, resizes, turns, mirrorings and evenings-out must never break the invariants.
-  @Test(arguments: Array<UInt64>(1...25)) func randomOperationsKeepInvariants(seed: UInt64) {
+  @Test(arguments: Array<UInt64>(1...25), [false, true]) func randomOperationsKeepInvariants(seed: UInt64, desktopColumn: Bool) {
     var random = SeededRandom(seed: seed)
     var tree = LayoutTree()
     var docked: [WindowID] = []
@@ -215,7 +222,7 @@ private let d = WindowID(4)
         if Bool.random(using: &random), tree.isStack(target) {
           tree.addToStack(window, leaf: target)
         } else {
-          tree.dock(window, beside: target, edge: edge)
+          tree.dock(window, beside: target, edge: edge, desktopColumn: desktopColumn)
         }
         docked.append(window)
       case 5..<8:

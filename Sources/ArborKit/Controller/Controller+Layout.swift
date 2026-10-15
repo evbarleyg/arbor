@@ -577,8 +577,10 @@ extension Controller {
         || previous?.desktopFrame.map {
           (!showed.isEmpty && $0.insetBy(dx: -slack, dy: -slack).contains(showed)) || whereArborPutIt || whereItsAppPutIt
         }
-        // The Desktop was a tile, and it was Arbor that laid the window over the docked ones.
-        ?? (whereArborPutIt && previous.map { workspace.tree.subtree($0.camera, contains: workspace.tree.desktop) } == true)
+        // The Desktop was a tile, and it was Arbor that laid the window over the docked ones. Or it had no room at all: then one that
+        // lies where its app opened it has been waiting for a Desktop to be moved onto as well.
+        ?? ((whereArborPutIt || (whereItsAppPutIt && previous?.tiles.contains { $0.kind == .desktop } == false))
+          && previous.map { workspace.tree.subtree($0.camera, contains: workspace.tree.desktop) } == true)
       // Alone on the Desktop, it takes all of it (Controller+SoleFloat.swift).
       if window == alone, let desktop = layout.desktopFrame {
         // At launch, and when windows are only being put back, just one that is out of view is touched, as below.
@@ -629,6 +631,8 @@ extension Controller {
         guard drag?.window != window,
           parked.contains(window) || showsOnlyASliver(window) || isBackFromThePause(window)
             || (reason == .camera && whereArborPutIt)
+            // The Desktop has just lost all its room. What Arbor had pushed or squeezed onto it has no reason to lie there any more.
+            || (reason != .enforce && whereArborPutIt && previous?.desktopFrame != nil && !workspace.tree.desktopHasRoom)
         else { continue }
         // Exactly there, if a hand left it hanging over an edge.
         let isLeftThere = isWhereItWasLeft(window, preferred, on: display)
@@ -649,6 +653,13 @@ extension Controller {
       moves.append((window, .putBack(own)))
     }
     return moves
+  }
+
+  /// Whether what floats on the Desktop is in view with `layout`: the Desktop has a rectangle in it, or is part of the view without
+  /// any room, when its windows lie over the docked ones.
+  func showsWhatFloats(_ layout: Layout, in workspace: Workspace) -> Bool {
+    layout.desktopFrame != nil
+      || (!workspace.tree.desktopHasRoom && workspace.tree.subtree(layout.camera, contains: workspace.tree.desktop))
   }
 
   /// Where floating windows may be: the Desktop, out to the edge of the screen on the sides where nothing is docked

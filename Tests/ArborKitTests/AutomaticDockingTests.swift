@@ -14,12 +14,13 @@ private let opening = CGRect(x: 300, y: 200, width: 640, height: 420)
 
 @MainActor private func harness(
   newWindows: String = "dock", rules: [AppRule] = [], displays: [DisplaySnapshot] = [FakeWindowSystem.standardDisplay],
-  saved: PersistedState? = nil, configure: (inout Settings) -> Void = { _ in }
+  saved: PersistedState? = nil, desktopColumn: Bool = false, configure: (inout Settings) -> Void = { _ in }
 ) -> Harness {
-  var settings = Settings()
+  var settings = desktopColumn ? Settings.withDesktopColumn : Settings()
   settings.newWindows = newWindows
   settings.rules = rules
-  // The first window takes half of the display, which makes for round numbers. "The Desktop's share" has the default.
+  // With a column for the Desktop the first window takes half of the display, which makes for round numbers. "The Desktop's
+  // share" has the default. Without, as Arbor ships, the first window fills the display and the second takes half of it.
   settings.arrangeDesktopWeight = 1
   // What automatic docking does when there is no room is seen best while nobody makes any. "With room made" has the default.
   settings.makeRoom = false
@@ -137,7 +138,8 @@ extension Harness {
     let h = harness()
     h.start()
     let a = h.open("Safari")
-    let b = h.open("Mail")  // below a
+    h.open("Calendar")  // the right half of the display
+    let b = h.open("Mail")  // below it
     let slotB = h.rect(b)
     #expect(slotB.width > slotB.height)
     let n = h.open("Notes")
@@ -160,7 +162,7 @@ extension Harness {
     h.system.focused = n
     #expect(h.system.open(app: "Notes") == n)
     #expect(h.group(of: n) == h.group(of: a))
-    #expect(h.rect(n).minX > h.rect(a).maxX)
+    #expect(h.rect(n).minY > h.rect(a).maxY)
   }
 
   @Test func aFloatingWindowWithTheKeyboardIsPassedOverForTheLastDockedOne() throws {
@@ -170,7 +172,7 @@ extension Harness {
     let palette = h.open("Colours", frame: CGRect(x: 100, y: 300, width: 220, height: 300))
     #expect(h.isFloating(palette))
     let n = h.open("Notes")
-    #expect(h.rect(n).minY > h.rect(a).maxY)
+    #expect(h.rect(n).minX > h.rect(a).maxX)
   }
 
   // MARK: 3. Nothing docked
@@ -181,14 +183,14 @@ extension Harness {
     let a = h.open("Safari")
     let tree = h.workspace.tree
     #expect(tree.children(of: tree.root).map { tree.windows(under: $0) } == [[], [a]])
-    #expect(h.frame(a) == CGRect(x: 726, y: 37, width: 702, height: 851))
-    #expect(h.layout?.desktopFrame != nil)
+    #expect(h.frame(a) == CGRect(x: 12, y: 37, width: 1416, height: 851))
+    #expect(h.layout?.desktopFrame == nil, "it leaves the Desktop what Arrange Windows would: nothing")
   }
 
   // MARK: The Desktop's share
 
   @Test func theFirstWindowLeavesAnEmptyDesktopWhatArrangeWindowsWould() {
-    let h = harness { $0.arrangeDesktopWeight = Settings().arrangeDesktopWeight }
+    let h = harness(desktopColumn: true) { $0.arrangeDesktopWeight = Settings().arrangeDesktopWeight }
     h.start()
     let a = h.open("Safari")
     #expect(h.layout?.desktopFrame == CGRect(x: 12, y: 37, width: 468, height: 851))
@@ -211,17 +213,37 @@ extension Harness {
     #expect(h.frame(note) == CGRect(x: 60, y: 100, width: 300, height: 200))
   }
 
+  /// Nobody gives half of a slot while there is room that nobody has. What floats there goes on floating, over the docked windows.
+  @Test func whatIsLeftOverGoesBeforeHalfOfAnybodysSlot() {
+    let h = harness(newWindows: "float")
+    h.start()
+    let note = h.open("Stickies", frame: CGRect(x: 800, y: 100, width: 300, height: 200))
+    let a = h.open("Safari")
+    h.run("dock \(a.rawValue) left")
+    h.run("toggle-auto-dock")
+    let left = h.layout?.desktopFrame
+    #expect(left == CGRect(x: 726, y: 37, width: 702, height: 851))
+    h.system.clearFrameLog()
+    let n = h.open("Notes")
+    #expect(h.slot(n) == left)
+    #expect(h.system.frameLog.map(\.window) == [n], "one move, and nobody else's")
+    #expect(h.layout?.desktopFrame == nil)
+    #expect(h.isFloating(note) && h.system.isVisible(note) && h.frame(note) == CGRect(x: 800, y: 100, width: 300, height: 200))
+    h.expectAllInPlace()
+  }
+
   @Test func windowsThatFloatOutOfSightDoNotCount() {
-    let h = harness(newWindows: "float") { $0.arrangeDesktopWeight = 0.5 }
+    let h = harness(newWindows: "float")
     h.start()
     let note = h.open("Stickies", frame: CGRect(x: 60, y: 100, width: 300, height: 200))
     h.system.setMinimized(note, true)
     h.run("toggle-auto-dock")
-    #expect(h.rect(h.open("Safari")).width == 936)
+    // All of it, as on an empty Desktop. One with a window on it keeps half.
+    #expect(h.rect(h.open("Safari")).width == 1416)
   }
 
   @Test func aWindowTooWideForTheRightEdgeTakesTheBottomAndTheDesktopAThirdOfTheHeight() {
-    let h = harness { $0.arrangeDesktopWeight = 0.5 }
+    let h = harness(desktopColumn: true) { $0.arrangeDesktopWeight = 0.5 }
     h.start()
     let a = h.open("Numbers", frame: CGRect(x: 100, y: 60, width: 1200, height: 700), minimumSize: CGSize(width: 1000, height: 300))
     #expect(h.rect(a).width == 1416)
@@ -232,7 +254,7 @@ extension Harness {
   @Test(arguments: [(0.0, 0.05), (1e300, 20.0), (-3.0, 0.05)]) func anAbsurdShareIsBoundedAsArrangeBoundsIt(
     weight: Double, bounded: Double
   ) {
-    let h = harness { $0.arrangeDesktopWeight = weight }
+    let h = harness(desktopColumn: true) { $0.arrangeDesktopWeight = weight }
     h.start()
     let a = h.open("Safari")
     // Too narrow a Desktop, or too narrow a window, would be a tile: then there is no room on that side.
@@ -256,11 +278,9 @@ extension Harness {
   // MARK: With room made before tiles (F61)
 
   @Test func aNewWindowThatNeedsMoreThanHalfGetsItFromItsNeighbour() {
-    let h = harness(newWindows: "float") { $0.makeRoom = true }
+    let h = harness { $0.makeRoom = true }
     h.start()
     let a = h.open("Safari")
-    h.run("dock \(a.rawValue) top")
-    h.run("toggle-auto-dock")
     h.system.clearFrameLog()
     // Half of the slot is 702 points wide, and Notes stops at 709.
     let n = h.open("Notes", frame: CGRect(x: 100, y: 100, width: 900, height: 600), minimumSize: CGSize(width: 709, height: 100))
@@ -271,11 +291,9 @@ extension Harness {
   }
 
   @Test func aNeighbourThatNeedsMoreThanHalfKeepsIt() {
-    let h = harness(newWindows: "float") { $0.makeRoom = true }
+    let h = harness { $0.makeRoom = true }
     h.start()
     let a = h.open("Safari", minimumSize: CGSize(width: 800, height: 100))
-    h.run("dock \(a.rawValue) top")
-    h.run("toggle-auto-dock")
     let n = h.open("Notes")
     #expect(h.rect(n).minX > h.rect(a).maxX)
     #expect(h.rect(a).width >= 800)
@@ -283,7 +301,7 @@ extension Harness {
   }
 
   @Test func anEmptyDesktopGivesWayToWindowsThatNeedTheRoom() {
-    let h = harness { $0.makeRoom = true }
+    let h = harness(desktopColumn: true) { $0.makeRoom = true }
     h.start()
     // Each stops at 574 points, as Safari does: two of them do not fit side by side in half the display.
     let a = h.open("Safari", minimumSize: CGSize(width: 574, height: 500))
@@ -294,7 +312,7 @@ extension Harness {
   }
 
   @Test func aDesktopWithAWindowOnItStaysUsable() {
-    let h = harness(newWindows: "float") { $0.makeRoom = true }
+    let h = harness(newWindows: "float", desktopColumn: true) { $0.makeRoom = true }
     h.start()
     let note = h.open("Stickies", frame: CGRect(x: 60, y: 100, width: 300, height: 200))
     h.run("toggle-auto-dock")
@@ -314,7 +332,7 @@ extension Harness {
   /// The Desktop became a tile while it was empty, and a window floats on it since. The next layout gives it a usable
   /// size back, at the price of a docked window's place. That is F61's to decide, and not to be set off by a window that opens.
   @Test func aDesktopThatIsOwedRoomIsNotPaidBecauseAWindowOpened() {
-    let h = harness { $0.makeRoom = true }
+    let h = harness(desktopColumn: true) { $0.makeRoom = true }
     h.start()
     let b = h.open("Safari", frame: CGRect(x: 100, y: 100, width: 700, height: 500))
     let c = h.open("Mail", frame: CGRect(x: 100, y: 100, width: 740, height: 612))
@@ -331,7 +349,7 @@ extension Harness {
   }
 
   @Test func takingADockingBackCostsNobodyTheirPlace() {
-    let h = harness(newWindows: "float") { $0.makeRoom = true }
+    let h = harness(newWindows: "float", desktopColumn: true) { $0.makeRoom = true }
     h.start()
     let a = h.open("Settings", frame: CGRect(x: 100, y: 60, width: 697, height: 760), isResizable: false)
     h.run("dock \(a.rawValue) left")
@@ -476,12 +494,12 @@ extension Harness {
 
   // MARK: 6. No room
 
-  /// Four windows in the right half of the display, the last of them a sixteenth of it, and the first made to
+  /// Five windows, each in half of what the one before had, the last two a sixteenth of the display each, and the first made to
   /// insist on its size, so that nobody has anything to give.
   func crowded(_ h: Harness) -> [WindowID] {
     h.start()
-    let windows = ["Safari", "Mail", "Notes", "Terminal"].map { h.open($0) }
-    h.system.setMinimumSize(windows[0], CGSize(width: 700, height: 400))
+    let windows = ["Safari", "Mail", "Notes", "Terminal", "Calendar"].map { h.open($0) }
+    h.system.setMinimumSize(windows[0], CGSize(width: 700, height: 500))
     h.system.setMinimumSize(windows[1], CGSize(width: 340, height: 400))
     return windows
   }
@@ -502,35 +520,33 @@ extension Harness {
   @Test func withTabsOnItJoinsTheFocusedWindowAsTheSelectedTab() throws {
     let h = harness { $0.tabsEnabled = true }
     let windows = crowded(h)
-    let slot = h.rect(windows[3])
+    let slot = h.rect(windows[4])
     let n = h.open("Music")
     let tree = h.workspace.tree
     let leaf = try #require(tree.leaf(containing: n))
-    #expect(tree.windows(under: leaf) == [windows[3], n])
+    #expect(tree.windows(under: leaf) == [windows[4], n])
     #expect(tree.activeWindow(of: leaf) == n)
     #expect(h.frame(n) == slot)
-    #expect(!h.system.isVisible(windows[3]))
+    #expect(!h.system.isVisible(windows[4]))
     #expect(h.layout?.tiles.isEmpty == true)
   }
 
   @Test func whenTheFocusedWindowIsTooSmallToShareTheLargestOneDoes() throws {
     let h = harness()
     h.start()
-    let windows = ["Safari", "Mail", "Notes", "Terminal"].map { h.open($0) }
+    let windows = ["Safari", "Mail", "Notes", "Terminal", "Calendar"].map { h.open($0) }
     let n = h.open("Music")
-    #expect(h.rect(n).minX > h.rect(windows[0]).maxX)
-    #expect(h.rect(n).minY == h.rect(windows[0]).minY)
+    #expect(h.rect(n).minY > h.rect(windows[0]).maxY)
+    #expect(h.rect(n).minX == h.rect(windows[0]).minX)
     h.expectAllInPlace()
   }
 
   // MARK: 7. A new window that refuses its slot
 
   @Test func aNewWindowIsOfferedItsSlotBeforeAnyoneMakesRoom() throws {
-    let h = harness(newWindows: "float")
+    let h = harness()
     h.start()
     let a = h.open("Safari")
-    h.run("dock \(a.rawValue) top")
-    h.run("toggle-auto-dock")
     let wide = h.rect(a)
     h.system.clearFrameLog()
 
@@ -545,11 +561,9 @@ extension Harness {
 
   /// Apps round sizes (terminals to whole characters). Two points over is a fit, as it is for any docked window.
   @Test(arguments: [(704.0, true), (705.0, false)]) func twoPointsOverTheSlotStillFit(width: Double, fits: Bool) {
-    let h = harness(newWindows: "float")
+    let h = harness()
     h.start()
     let a = h.open("Safari")
-    h.run("dock \(a.rawValue) top")
-    h.run("toggle-auto-dock")
     // Half of the slot is 702 points wide.
     let n = h.open("Terminal", frame: CGRect(x: 100, y: 100, width: 900, height: 600), minimumSize: CGSize(width: width, height: 100))
     #expect((h.rect(n).minX > h.rect(a).maxX) == fits)
@@ -560,8 +574,9 @@ extension Harness {
   @Test(arguments: [(421.0, true), (422.0, false)]) func twoPointsOverTheSlotStillFitInHeight(height: Double, fits: Bool) {
     let h = harness()
     h.start()
-    let a = h.open("Safari")
-    // The lower half of the slot is 419 points tall.
+    h.open("Safari")
+    let a = h.open("Mail")
+    // It has the right half of the display. The lower half of that is 419 points tall.
     let n = h.open("Terminal", frame: CGRect(x: 100, y: 100, width: 900, height: 600), minimumSize: CGSize(width: 100, height: height))
     #expect((h.rect(n).minY > h.rect(a).maxY) == fits)
     #expect((h.rect(n).minX > h.rect(a).maxX) == !fits)
@@ -574,14 +589,13 @@ extension Harness {
     CGSize(width: 11, height: 23), CGSize(width: 13, height: 27)], [8.0, 9, 10, 11, 12, 13])
   func aWindowThatComesInCharacterCellsDocksAllTheSame(cell: CGSize, gap: Double) {
     for makeRoom in [false, true] {
-      let h = harness(newWindows: "float") {
+      let h = harness {
         $0.gap = gap
         $0.makeRoom = makeRoom
       }
       h.start()
-      let a = h.open("Safari")
-      h.run("dock \(a.rawValue) left")
-      h.run("toggle-auto-dock")
+      h.open("Mail")
+      let a = h.open("Safari")  // the right half of the display
       // `open` announces the window at once, so it gets its cells the first time it is asked for a size.
       let n = WindowID(a.rawValue + 1)
       h.system.willSetFrame = { [system = h.system] window, _ in
@@ -595,15 +609,13 @@ extension Harness {
   }
 
   @Test func aNewWindowThatFitsNowhereIsBackWhereItOpenedAndNobodyMoved() {
-    let h = harness(newWindows: "float")
+    let h = harness()
     h.start()
     let a = h.open("Safari")
-    h.run("dock \(a.rawValue) top")
-    h.run("toggle-auto-dock")
     h.system.clearFrameLog()
     let frame = CGRect(x: 100, y: 100, width: 900, height: 600)
-    // Too far over half of the slot (702 points) to be a matter of character cells, so it is asked once.
-    let n = h.open("Notes", frame: frame, minimumSize: CGSize(width: 760, height: 300))
+    // Too far over half of the slot (702 points, or 419) to be a matter of character cells, so it is asked once.
+    let n = h.open("Notes", frame: frame, minimumSize: CGSize(width: 760, height: 500))
     #expect(h.isFloating(n))
     #expect(h.frame(n) == frame)
     #expect(h.moved(a).isEmpty)
@@ -615,23 +627,19 @@ extension Harness {
   // MARK: 8. A neighbour that refuses its half
 
   @Test func aDockingThatSqueezesTheNeighbourIntoATileIsTakenBackAndTriedTheOtherWay() throws {
-    let h = harness(newWindows: "float")
+    let h = harness()
     h.start()
     // Nothing has asked Safari to be narrow yet, so Arbor does not know that it stops at 800.
     let a = h.open("Safari", minimumSize: CGSize(width: 800, height: 100))
-    h.run("dock \(a.rawValue) top")
-    h.run("toggle-auto-dock")
     let n = h.open("Notes")
     #expect(h.rect(n).minY > h.rect(a).maxY)
     h.expectAllInPlace()
   }
 
   @Test func aDockingThatCannotWorkEitherWayLeavesEverythingAsItWas() throws {
-    let h = harness(newWindows: "float")
+    let h = harness()
     h.start()
-    let a = h.open("Safari", minimumSize: CGSize(width: 800, height: 300))
-    h.run("dock \(a.rawValue) top")
-    h.run("toggle-auto-dock")
+    let a = h.open("Safari", minimumSize: CGSize(width: 800, height: 500))
     let (workspace, slot) = (h.workspace, h.rect(a))
     let n = h.open("Notes")
     #expect(h.isFloating(n))
@@ -703,7 +711,7 @@ extension Harness {
     #expect(h.workspace.tree.allWindows == [a, b])
     // F57: it belongs to the view it opened over, and comes back with it.
     #expect(h.workspace.guests?[n] == camera)
-    h.run("neighbor down")
+    h.run("neighbor right")
     #expect(!h.system.isVisible(n))
     h.run("back")
     #expect(h.frame(n) == opening)
@@ -772,22 +780,25 @@ extension Harness {
     }
     #expect(h.workspace.tree.allWindows.count == 5)
     h.expectAllInPlace()
-    // Each of the first four halved the slot of the one before.
-    for (earlier, later) in zip(windows, windows.dropFirst()).prefix(3) {
+    // Each halved the slot of the one before.
+    for (earlier, later) in zip(windows, windows.dropFirst()) {
       let (a, b) = (h.rect(earlier), h.rect(later))
       #expect(b.minX >= a.minX && b.minY >= a.minY && (b.minX > a.maxX || b.minY > a.maxY), "\(later) after \(earlier)")
     }
-    // The fourth had nothing left to give, so the fifth went to the largest.
-    #expect(h.rect(windows[4]).minY == h.rect(windows[0]).minY)
+    // The fifth has nothing left to give, so a sixth goes to the largest.
+    let sixth = focusReports ? h.open("Safari", title: "Tab 6") : h.openQuietly("Safari", title: "Tab 6")
+    #expect(h.rect(sixth).minX == h.rect(windows[0]).minX && h.rect(sixth).minY > h.rect(windows[0]).maxY)
+    h.expectAllInPlace()
   }
 
   @Test func aBurstLargerThanTheDisplayLeavesTheRestFloating() {
     let h = harness()
     h.start()
-    let windows = (1...14).map { _ in h.openQuietly("Safari") }
+    let windows = (1...28).map { _ in h.openQuietly("Safari") }
     let docked = windows.filter(h.isDocked)
-    #expect(docked.count >= 8)
-    #expect(docked.count < 14)
+    // A sixteenth of the display, 345 by 203 points, is the smallest slot: half of it would be a tile.
+    #expect(docked.count >= 16)
+    #expect(docked.count < 28)
     for window in windows where !h.isDocked(window) { #expect(h.frame(window) == opening) }
     h.expectAllInPlace()
   }
@@ -800,9 +811,9 @@ extension Harness {
     let b = h.openQuietly("Mail")
     h.scheduler.advance(by: 1)
     let n = h.openQuietly("Notes")
-    #expect(h.rect(b).minY > h.rect(a).maxY)
+    #expect(h.rect(b).minX > h.rect(a).maxX)
     #expect(h.group(of: n) == h.group(of: a))
-    #expect(h.rect(n).minX > h.rect(a).maxX)
+    #expect(h.rect(n).minY > h.rect(a).maxY)
   }
 
   // MARK: 12. Windows nobody just opened
@@ -944,7 +955,7 @@ extension Harness {
   // MARK: 14. Late titles
 
   @Test(arguments: [false, true]) func aLateTitleThatMatchesAFloatRuleTakesTheWindowBackOut(makingWay: Bool) throws {
-    let h = harness(rules: [AppRule(app: "com.example.safari", title: "Picture in Picture", action: .float)]) {
+    let h = harness(rules: [AppRule(app: "com.example.safari", title: "Picture in Picture", action: .float)], desktopColumn: true) {
       $0.floatingWindowsMakeWay = makingWay
     }
     h.start()
@@ -1197,14 +1208,19 @@ extension Harness {
   // MARK: Anything goes
 
   /// Opening a window never costs a window its place in view, whatever came before.
-  /// The seeds after the twelfth found something once: a Desktop that was owed room (F61), paid when a window opened.
-  @Test(arguments: Array(1...12) + [164, 332, 385, 565]) func noSequenceOfEventsMakesAnOpeningWindowHideAnother(seed: UInt64) {
+  /// The seeds after the twelfth found something once: a Desktop that was owed room (F61), paid when a window opened. That was
+  /// with a column for the Desktop, so each sequence is played with and without.
+  @Test(arguments: Array(1...12) + [164, 332, 385, 565], [false, true])
+  func noSequenceOfEventsMakesAnOpeningWindowHideAnother(seed: UInt64, desktopColumn: Bool) {
     var state = seed &* 0x9E37_79B9_7F4A_7C15
     func random(_ bound: Int) -> Int {
       state = state &* 6_364_136_223_846_793_005 &+ 1_442_695_040_888_963_407
       return Int((state >> 33) % UInt64(bound))
     }
-    let h = harness(displays: seed % 2 == 0 ? [FakeWindowSystem.standardDisplay, side] : [FakeWindowSystem.standardDisplay]) {
+    let h = harness(
+      displays: seed % 2 == 0 ? [FakeWindowSystem.standardDisplay, side] : [FakeWindowSystem.standardDisplay],
+      desktopColumn: desktopColumn
+    ) {
       $0.tabsEnabled = seed % 3 == 0
       $0.makeRoom = seed % 4 < 2
     }
@@ -1234,7 +1250,10 @@ extension Harness {
           #expect(
             layout.tiles.filter { $0.kind != .desktop }.count <= tiles[display] ?? 0,
             "step \(step): a tile appeared when \(id) opened")
-          if !h.controller.settings.makeRoom, desktops[display] == true {
+          // Where the Desktop is only what is left over, the window may have taken all of it: then there is no tile for it either.
+          if !h.controller.settings.makeRoom, desktops[display] == true,
+            h.controller.workspaces[display]?.tree.desktopHasRoom == true
+          {
             #expect(layout.desktopFrame != nil, "step \(step): the Desktop became a tile when \(id) opened")
           }
         }

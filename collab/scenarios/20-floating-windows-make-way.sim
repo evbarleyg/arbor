@@ -5,6 +5,8 @@
 # Reference: T03 T08 T50.
 # Floating windows make way here, as they did until Q20 (collab/QUESTIONS.md); as Arbor ships they keep their frames (scenario 67).
 set floatingWindowsMakeWay true
+# As the first build shipped it: the story is about a Desktop that has room between docked windows.
+set desktopColumn true
 open Safari 440x400
 open Preview 1000x500
 dock 101 left

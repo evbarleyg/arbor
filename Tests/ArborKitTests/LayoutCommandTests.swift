@@ -84,7 +84,7 @@ private func expectNothingLost(_ h: Harness, sourceLocation: SourceLocation = #_
   }
 
   @Test func theDesktopIsAddedAtTheRightAtTheWidthArrangeGivesIt() throws {
-    var settings = Settings()
+    var settings = Settings.withDesktopColumn
     settings.arrangeDesktopWeight = 0.75
     let h = harness("Safari", "Mail", settings: settings)
     #expect(h.run("layout Safari | Mail").ok)
@@ -279,7 +279,7 @@ private func expectNothingLost(_ h: Harness, sourceLocation: SourceLocation = #_
   }
 
   @Test func aPinnedWindowKeepsItsPlaceUnlessTheLineNamesIt() throws {
-    let h = harness("Safari", "Mail", "Zoom")
+    let h = harness("Safari", "Mail", "Zoom", settings: .withDesktopColumn)
     h.system.userMove(w(103), to: CGRect(x: 40, y: 60, width: 320, height: 200))
     h.run("pin 103")
     let frame = h.frame(w(103))
@@ -524,7 +524,7 @@ private func expectNothingLost(_ h: Harness, sourceLocation: SourceLocation = #_
 
   @Test(arguments: [false, true]) func theWindowItWasTypedInStaysInView(makingWay: Bool) throws {
     // The first line a laptop user types, in a Terminal that the line does not mention.
-    let h = harness("Safari", "Mail", "Notes", "Terminal", settings: makingWay ? .makingWay : Settings())
+    let h = harness("Safari", "Mail", "Notes", "Terminal", settings: (makingWay ? Settings.makingWay : Settings()).withDesktopColumn)
     let before = h.frame(w(104))
     h.system.userFocus(w(104))
     #expect(h.run("layout Safari | Mail | Notes").message == "arranged 3 windows")
@@ -546,7 +546,7 @@ private func expectNothingLost(_ h: Harness, sourceLocation: SourceLocation = #_
   }
 
   @Test func withNothingFloatingTheDesktopIsAsNarrowAsArrangeMakesIt() {
-    let h = harness("Safari", "Mail", "Notes")
+    let h = harness("Safari", "Mail", "Notes", settings: .withDesktopColumn)
     h.run("layout Safari | Mail | Notes")
     #expect(h.run("layout").text == "Safari | Mail | Notes | Desktop:0.5")
     #expect(h.layout?.desktopFrame == nil)
@@ -554,7 +554,7 @@ private func expectNothingLost(_ h: Harness, sourceLocation: SourceLocation = #_
 
   @Test func theDesktopIsNotWidenedAtThePriceOfADockedWindow() {
     // Five columns on 1440 points are just usable; a usable Desktop beside them would make tiles of them.
-    let h = harness("A", "B", "C", "D", "E", "Terminal")
+    let h = harness("A", "B", "C", "D", "E", "Terminal", settings: .withDesktopColumn)
     h.system.userFocus(w(106))
     let result = h.run("layout A | B | C | D | E")
     #expect(result.ok)
@@ -642,8 +642,8 @@ private func expectNothingLost(_ h: Harness, sourceLocation: SourceLocation = #_
 
   // MARK: Displays
 
-  func twoDisplays() -> Harness {
-    let h = Harness(displays: [FakeWindowSystem.standardDisplay, side])
+  func twoDisplays(settings: Settings = Harness.settingsWhenNoneAreGiven) -> Harness {
+    let h = Harness(displays: [FakeWindowSystem.standardDisplay, side], settings: settings)
     h.system.open(app: "Safari", frame: CGRect(x: 100, y: 100, width: 500, height: 400))
     h.system.open(app: "Mail", frame: CGRect(x: 300, y: 150, width: 500, height: 400))
     h.system.open(app: "Notes", frame: CGRect(x: 1600, y: 100, width: 500, height: 400))
@@ -787,7 +787,7 @@ private func expectNothingLost(_ h: Harness, sourceLocation: SourceLocation = #_
     #expect(h.run("name Post").ok)
     #expect(h.run("layout (Mail / Notes) | Safari").ok && h.run("go Post").ok && h.run("name Letters").ok)
     #expect(h.run("undo").ok)
-    #expect(h.run("layout").text == "Safari | (Mail / Notes) | Desktop:0.5")
+    #expect(h.run("layout").text == "Safari | (Mail / Notes)")
     #expect(Array(h.workspace.names.keys) == ["Letters"], "\(h.workspace.names)")
     #expect(h.run("go Letters").ok && Set(h.workspace.tree.windows(under: h.workspace.camera)) == [w(102), w(103)])
     // Put back, the line has it too.
@@ -802,7 +802,7 @@ private func expectNothingLost(_ h: Harness, sourceLocation: SourceLocation = #_
     #expect(h.run("layout Safari | (Mail / Notes)").ok && h.run("layout Safari | (Notes / Mail)").ok)
     h.run("zoom 103")
     #expect(h.run("name N").ok && h.run("undo").ok)
-    #expect(h.run("layout").text == "Safari | (Mail / Notes) | Desktop:0.5")
+    #expect(h.run("layout").text == "Safari | (Mail / Notes)")
     #expect(h.run("go N").ok && h.workspace.tree.windows(under: h.workspace.camera) == [w(103)], "\(h.workspace.names)")
   }
 
@@ -865,7 +865,7 @@ private func expectNothingLost(_ h: Harness, sourceLocation: SourceLocation = #_
     #expect(h.run("name Writing").ok && h.run("save-view 1").ok && h.run("rotate").ok)
     h.run("home")
     let line = h.run("layout").text
-    #expect(line == "Safari | (Notes | Mail) | Desktop:0.5")
+    #expect(line == "Safari | (Notes | Mail)")
     #expect(h.run("layout \(line ?? "")").message == "arranged 3 windows")
     #expect(h.run("layout").text == line)
     #expect(h.run("go Writing").ok && h.workspace.tree.windows(under: h.workspace.camera) == [w(102), w(103)])
@@ -892,7 +892,7 @@ private func expectNothingLost(_ h: Harness, sourceLocation: SourceLocation = #_
 
   /// Also where the line leaves the Desktop to Arbor, which makes it as wide as it would without the brackets.
   @Test func bracketsChangeNoFrameWhereTheDesktopIsNotWritten() {
-    let h = harness("A", "B", "C")
+    let h = harness("A", "B", "C", settings: .withDesktopColumn)
     #expect(h.run("layout A:2 | B | C").ok)
     let (frames, desktop) = ([w(101), w(102), w(103)].map { h.frame($0) }, h.layout?.nodeFrames[h.workspace.tree.desktop])
     #expect(h.run("layout A | (B | C)").ok)
@@ -904,7 +904,7 @@ private func expectNothingLost(_ h: Harness, sourceLocation: SourceLocation = #_
 
   /// The Desktop that is made wide enough for a window that floats counts the places as well.
   @Test(arguments: [false, true]) func besideAWrittenPairTheDesktopIsMadeWideEnoughToUse(makingWay: Bool) throws {
-    let h = harness("A", "B", "C", "Terminal", settings: makingWay ? .makingWay : Settings())
+    let h = harness("A", "B", "C", "Terminal", settings: (makingWay ? Settings.makingWay : Settings()).withDesktopColumn)
     let own = h.frame(w(104))
     h.system.userFocus(w(104))
     #expect(h.run("layout A | (B | C)").ok)
@@ -918,7 +918,7 @@ private func expectNothingLost(_ h: Harness, sourceLocation: SourceLocation = #_
   /// beside the pair, not into it. So the line costs the pair's name nothing, with the Desktop written or not.
   @Test(arguments: ["C | (A | B)", "(A | B) | C", "C | (A | B) | Desktop"])
   func aWrittenPairThatIsAllThereIsOfTheLineIsStillAPair(line: String) {
-    let h = harness("A", "B", "C")
+    let h = harness("A", "B", "C", settings: .withDesktopColumn)
     #expect(h.run("layout C | (A | B) | Desktop").ok)
     h.run("zoom 101")
     h.run("out")
@@ -984,8 +984,8 @@ private func expectNothingLost(_ h: Harness, sourceLocation: SourceLocation = #_
     #expect(h.run("name Post").ok)
     h.run("home")
     #expect(h.run("float 103").ok)
-    #expect(h.run("layout --ids").text == "101 | 102 | Desktop:0.5")
-    #expect(h.run("layout 101 | 102 | Desktop:0.5").message == "arranged 2 windows")
+    #expect(h.run("layout --ids").text == "101 | 102")
+    #expect(h.run("layout 101 | 102").message == "arranged 2 windows")
     #expect(h.workspace.node(named: "Post").map { h.workspace.tree.windows(under: $0) } == [w(102)])
     // Two names for what the line can write as one place only.
     #expect(h.run("layout Safari | (Mail / Notes)").ok)
@@ -995,19 +995,19 @@ private func expectNothingLost(_ h: Harness, sourceLocation: SourceLocation = #_
     #expect(h.run("name Both").ok)
     h.run("home")
     #expect(h.run("float 103").ok && h.workspace.names.count == 2)
-    #expect(h.run("layout 101 | 102 | Desktop:0.5").message == "arranged 2 windows; 1 name is gone")
+    #expect(h.run("layout 101 | 102").message == "arranged 2 windows; 1 name is gone")
   }
 
   /// A group that only comes to run like the one around it, because the place of an app that is not open closed up, still joins it.
   @Test func aGroupLeftRunningLikeTheOneAroundItByAMissingAppJoinsIt() {
     var h = harness("A", "B", "C")
     #expect(h.run("layout A | ((B | C) / Missing)").ok)
-    #expect(h.run("layout").text == "A:2 | B | C | Desktop:0.667")
+    #expect(h.run("layout").text == "A:2 | B | C")
     #expect(h.workspace.tree.invariantViolations().isEmpty)
     // Brackets written inside it rise with it, and are still brackets.
     h = harness("A", "B", "C", "D")
     #expect(h.run("layout A | ((B | (C | D)) / Missing)").ok)
-    #expect(h.run("layout").text == "A:2 | B | (C | D) | Desktop:0.5")
+    #expect(h.run("layout").text == "A:2 | B | (C | D)")
     #expect(h.workspace.tree.invariantViolations().isEmpty)
   }
 
@@ -1233,13 +1233,15 @@ private func expectNothingLost(_ h: Harness, sourceLocation: SourceLocation = #_
     h.run("dock 103 beside 102 bottom")
     let result = h.run("layout")
     #expect(result.ok)
-    #expect(result.text == "Safari | Desktop | (Mail / Notes)")
+    #expect(result.text == "Safari | (Mail / Notes)")
     #expect(result.message == "display 1: 3 docked windows")
   }
 
   @Test(arguments: [
     "Safari | Desktop | (Mail / Notes)", "Xcode:2 | (Mail / Terminal) | Desktop:0.75", "[Safari Chrome] | Slack | Desktop:0.5", "Desktop | Safari",
     "(Safari / Mail) | Desktop:0.5", "Safari / Desktop / Mail", "Safari | (Mail / (Notes | (Slack / Xcode))) | Desktop:3",
+    // A Desktop that is not mentioned has no room, and one without room is not written.
+    "Safari | (Mail / Notes)", "Safari / Mail", "Safari",
   ]) func whatItPrintsIsWhatWasTyped(line: String) {
     let h = harness("Safari", "Mail", "Notes", "Xcode", "Terminal", "Chrome", "Slack")
     #expect(h.run("layout \(line)").ok)
@@ -1267,16 +1269,16 @@ private func expectNothingLost(_ h: Harness, sourceLocation: SourceLocation = #_
   }
 
   @Test func namesThatNeedQuotesGetThem() {
-    let h = Harness()
+    let h = Harness(settings: Settings())
     h.system.open(app: "Visual Studio Code")
     h.system.open(app: "Desktop")
     h.system.open(app: "2048")
     h.start()
     h.run("arrange")
-    #expect(h.run("layout").text == "(\"Visual Studio Code\" / \"Desktop\") | \"2048\" | Desktop:0.5")
+    #expect(h.run("layout").text == "(\"Visual Studio Code\" / \"Desktop\") | \"2048\"")
     let tree = h.workspace.tree.allWindows
     h.run("float-all")
-    h.run("layout (\"Visual Studio Code\" / \"Desktop\") | \"2048\" | Desktop:0.5")
+    h.run("layout (\"Visual Studio Code\" / \"Desktop\") | \"2048\"")
     #expect(h.workspace.tree.allWindows == tree)
   }
 
@@ -1349,19 +1351,19 @@ private func expectNothingLost(_ h: Harness, sourceLocation: SourceLocation = #_
   }
 
   @Test func eachDisplayPrintsItsOwn() {
-    let h = twoDisplays()
+    let h = twoDisplays(settings: Settings())
     h.run("layout @1 Safari | Mail")
     h.run("layout @2 Notes / Slack")
-    #expect(h.run("layout").text == "Safari | Mail | Desktop:0.5")
-    #expect(h.run("layout @2").text == "(Notes / Slack) | Desktop:0.5")
+    #expect(h.run("layout").text == "Safari | Mail")
+    #expect(h.run("layout @2").text == "Notes / Slack")
     h.system.cursor = CGPoint(x: 2000, y: 400)
-    #expect(h.run("layout").text == "(Notes / Slack) | Desktop:0.5")
+    #expect(h.run("layout").text == "Notes / Slack")
   }
 
   // MARK: When it cannot act
 
   @Test func beforeArborRunsAndWhilePausedItSaysSo() {
-    let h = Harness()
+    let h = Harness(settings: Settings())
     h.system.open(app: "Safari")
     #expect(!h.run("layout Safari").ok)
     #expect(!h.run("layout").ok)
@@ -1374,7 +1376,7 @@ private func expectNothingLost(_ h: Harness, sourceLocation: SourceLocation = #_
       #expect(result.message.hasPrefix("paused"))
     }
     h.run("resume")
-    #expect(h.run("layout").text == "Safari | Desktop:0.5")
+    #expect(h.run("layout").text == "Safari")
   }
 
   @Test func notWhileAWindowIsInTheHand() {
@@ -1394,7 +1396,8 @@ private func expectNothingLost(_ h: Harness, sourceLocation: SourceLocation = #_
     h.run("layout Safari | (Mail / Notes)")
     h.system.close(w(102))
     h.system.close(w(101))
-    #expect(h.run("layout").text == "Notes | Desktop:0.5")
+    // Left alone, Notes stays as it is, and what Safari leaves is the Desktop's.
+    #expect(h.run("layout").text == "Desktop | Notes")
     expectNothingLost(h)
   }
 
@@ -1416,7 +1419,7 @@ private func expectNothingLost(_ h: Harness, sourceLocation: SourceLocation = #_
     let h = harness("Safari", "Mail", "Notes")
     let command = try h.controller.admit(url: "arbor://layout/Safari%20%7C%20(Mail%20%2F%20Notes)").get()
     #expect(h.controller.perform(command).ok)
-    #expect(h.run("layout").text == "Safari | (Mail / Notes) | Desktop:0.5")
+    #expect(h.run("layout").text == "Safari | (Mail / Notes)")
   }
 
   @Test(arguments: ["arbor://layout/--open%20Safari", "arbor://layout", "arbor://layout/--ids"])
@@ -1469,7 +1472,7 @@ private func expectNothingLost(_ h: Harness, sourceLocation: SourceLocation = #_
     let first = harness("Safari", "Mail")
     first.run("layout Safari | Mail")
     first.controller.saveNow()
-    let h = Harness(saved: first.store.saved)
+    let h = Harness(settings: Settings(), saved: first.store.saved)
     h.system.open(app: "Safari", title: "Safari 101")
     h.start()
     return h
@@ -1477,16 +1480,16 @@ private func expectNothingLost(_ h: Harness, sourceLocation: SourceLocation = #_
 
   @Test func aKeptPlaceIsPrintedByItsApp() {
     let h = afterALogin()
-    #expect(h.run("layout").text == "Safari | com.example.mail | Desktop:0.5")
-    #expect(h.run("layout --ids").text == "101 | com.example.mail | Desktop:0.5")
-    #expect(h.run("layout --titles").text == "Safari~\"Safari 101\" | com.example.mail | Desktop:0.5")
+    #expect(h.run("layout").text == "Safari | com.example.mail")
+    #expect(h.run("layout --ids").text == "101 | com.example.mail")
+    #expect(h.run("layout --titles").text == "Safari~\"Safari 101\" | com.example.mail")
   }
 
   @Test func arrangingDropsThePlacesThatWereKept() {
     let h = afterALogin()
     #expect(h.run("layout Safari").message == "arranged 1 window")
     #expect(h.workspace.allWindows == [w(101)])
-    #expect(h.run("layout").text == "Safari | Desktop:0.5")
+    #expect(h.run("layout").text == "Safari")
     expectNothingLost(h)
     // But not when the line finds nothing and nothing changes.
     let other = afterALogin()
@@ -1540,7 +1543,7 @@ private func expectNothingLost(_ h: Harness, sourceLocation: SourceLocation = #_
     h.system.open(app: "Notes")
     h.system.open(app: "Safari")
     h.system.open(app: "Mail")
-    #expect(h.run("layout").text == "Safari | (Mail / Notes) | Desktop:0.5")
+    #expect(h.run("layout").text == "Safari | (Mail / Notes)")
   }
 
   @Test func anAppThatCannotBeOpenedIsReportedAsMissing() {
@@ -1578,7 +1581,7 @@ private func expectNothingLost(_ h: Harness, sourceLocation: SourceLocation = #_
     #expect(h.run("back").ok)
     #expect(h.workspace.camera == h.workspace.tree.root)
     #expect(h.workspace.savedView(slot: 2) == h.workspace.tree.root)
-    #expect(h.run("layout").text == "Safari | (Mail / Notes) | Desktop:0.5")
+    #expect(h.run("layout").text == "Safari | (Mail / Notes)")
   }
 
   @Test func aLatecomerThatTakesTheKeyboardIsFollowedLikeAnyWindow() {
@@ -1588,7 +1591,7 @@ private func expectNothingLost(_ h: Harness, sourceLocation: SourceLocation = #_
     h.run("zoom 101")
     let mail = h.system.open(app: "Mail")
     #expect(h.workspace.isDocked(mail) && h.system.isVisible(mail))
-    #expect(h.run("layout").text == "Safari | (Mail / Notes) | Desktop:0.5")
+    #expect(h.run("layout").text == "Safari | (Mail / Notes)")
   }
 
   @Test func aLatecomerJoinsItsTabGroupWithoutTakingItOver() throws {

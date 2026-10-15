@@ -14,7 +14,8 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
 
 /// Pinned windows (docs/features/F49-pin.md) in the situations an independent review went looking for.
 @Suite @MainActor struct ReviewPinTests {
-  /// [editor | Desktop | browser] with a video call pinned in the top right corner, over the browser.
+  /// [editor | Desktop | browser] with a video call pinned in the top right corner, over the browser. As Arbor ships: two halves, and
+  /// the Desktop between them has no room.
   func makeHarness(
     displays: [DisplaySnapshot] = [FakeWindowSystem.standardDisplay], settings: Settings = Settings()
   ) -> (Harness, editor: WindowID, browser: WindowID, call: WindowID) {
@@ -429,6 +430,9 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
 
   @Test func pinningADockedWindowLetsItsNeighboursCloseOverItsSlotAtOnce() {
     let (h, editor, browser, _) = makeHarness()
+    // Thirds. (Of two docked windows the one that is left alone stays as it is, and the Desktop has the slot.)
+    let mail = h.system.open(app: "Mail", pid: 1004)
+    h.run("dock \(mail.rawValue) right")
     let before = h.frame(editor)!
     h.run("pin \(browser.rawValue)")
     #expect(h.frame(editor)!.width > before.width + 100, "not only at the next layout")

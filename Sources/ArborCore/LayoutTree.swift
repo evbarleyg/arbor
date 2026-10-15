@@ -5,7 +5,7 @@
 /// - A **stack** holds one or more windows; only the active one is shown. A
 ///   stack with one window is an ordinary docked window; more is a tab group.
 /// - The **desktop** leaf is the space where floating windows live. It is never
-///   removed.
+///   removed. It is what is left over, which can be nothing: see `desktopHasRoom`.
 ///
 /// The tree is a value type, so callers can copy it, try an operation and lay
 /// out the result (drop previews do exactly that).
@@ -15,7 +15,7 @@
 /// - no split has a child split on the same axis (same-axis nesting is flattened) unless the
 ///   child is kept;
 /// - every stack has at least one window, and each window appears once;
-/// - parent links match child lists; weights are positive.
+/// - parent links match child lists; weights are positive, but for a Desktop without room.
 public struct LayoutTree: Codable, Sendable, Equatable {
   public enum Kind: Codable, Sendable, Equatable {
     case split(axis: Axis, children: [NodeID])
@@ -132,6 +132,50 @@ public struct LayoutTree: Codable, Sendable, Equatable {
 
   public func depth(of id: NodeID) -> Int { ancestors(of: id).count }
 
+  /// Whether the Desktop has a share of the row or column it is in. Without one (weight 0) it is still there, in its place, for
+  /// the view to go to and for names, history and saved views to mean. But beside docked windows it takes no room: no
+  /// rectangle, no tile, no gap (`TreeView.isEffective`). Docked windows have taken all there was (`dock`), or Arrange
+  /// Windows left nothing over (`grid`). Alone in the tree it has everything.
+  public var desktopHasRoom: Bool { hasRoom(desktop) }
+
+  /// The row or column that everything consists of: the root, or, where that holds one group and a Desktop without room, which is the
+  /// group to look at, that group.
+  var everything: NodeID {
+    guard !desktopHasRoom else { return root }
+    var top = root
+    while case let others = children(of: top).filter({ $0 != desktop }), others.count == 1, isSplit(others[0]) { top = others[0] }
+    return top
+  }
+
+  /// Whether `id` has everything to itself but for a Desktop without room, as after Arrange Windows with one window.
+  public func isAloneBesideADesktopWithoutRoom(_ id: NodeID) -> Bool {
+    guard !desktopHasRoom, id != desktop, let parent = nodes[id]?.parent, parent == root else { return false }
+    return Set(children(of: parent)) == [id, desktop]
+  }
+
+  /// False only for a Desktop without room.
+  func hasRoom(_ id: NodeID) -> Bool { (nodes[id]?.weight ?? 0) > 0 }
+
+  /// What one of `row` weighs on average, counting those that have a share at all.
+  private func meanWeight(of row: [NodeID]) -> Double {
+    let sharing = row.filter(hasRoom)
+    return sharing.reduce(0) { $0 + nodes[$1]!.weight } / Double(max(sharing.count, 1))
+  }
+
+  /// All that is left over in `row`, for `leaf`; from now on that is nothing. Nil if the Desktop is not in it, or has nothing.
+  /// With the room goes what the Desktop is owed (LayoutTree+Loans.swift). Alone in its row the Desktop is all there is in it, and a dock
+  /// there is a first dock: it takes a half.
+  private mutating func takeWhatIsLeft(in row: [NodeID], for leaf: NodeID) -> Double? {
+    guard row.contains(desktop), let left = nodes[desktop]?.weight, left > 0 else { return nil }
+    guard row.contains(where: { $0 != desktop && hasRoom($0) }) else {
+      nodes[desktop]!.weight = left / 2
+      return left / 2
+    }
+    nodes[desktop]!.weight = 0
+    passClaims(from: desktop, to: leaf)
+    return left
+  }
+
   /// How deep the deepest node is; 0 for a tree that is only the Desktop.
   public var nesting: Int {
     var deepest = 0
@@ -160,12 +204,18 @@ public struct LayoutTree: Codable, Sendable, Equatable {
   /// axis, and the new split (the leaf's parent) is kept for that reason (LayoutTree+Keeps.swift).
   /// It takes the same room either way: half of what `target` had.
   ///
+  /// **What is left over goes first** (QUESTIONS Q28). In the first two cases, if the Desktop is in that row and has room, the
+  /// window takes that, all of it, and nobody else gives anything: the second of two docks takes the other half, and
+  /// the first stays as it is. Docked windows give only when nothing is left. The room is left over again when one of two
+  /// leaves (`detach`), or when the window leaves a row that is still as it found it (LayoutTree+Room.swift). With `desktopColumn` the
+  /// Desktop has a share of its own like any window's, as in the first build.
+  ///
   /// A `target` that is not in the tree stands for the root. A window that is already docked stays
   /// where it is, and its leaf is returned: remove it first to move it (`Workspace.dock` does).
   @discardableResult
   public mutating func dock(
     _ window: WindowID, beside target: NodeID, edge: Edge, evenShare: Bool = false,
-    groupingFor reason: Keeps? = nil
+    groupingFor reason: Keeps? = nil, desktopColumn: Bool = false
   ) -> NodeID {
     if let existing = leaf(containing: window) { return existing }
     var host: NodeID?
@@ -180,8 +230,12 @@ public struct LayoutTree: Codable, Sendable, Equatable {
     let leafID = makeNode(kind: .stack(windows: [window], active: 0), parent: nil, weight: 1)
 
     if case .split(let splitAxis, var children) = nodes[target]!.kind, splitAxis == axis {
-      let mean = children.map { nodes[$0]!.weight }.reduce(0, +) / Double(children.count)
-      nodes[leafID]!.weight = mean
+      if !desktopColumn, let left = takeWhatIsLeft(in: children, for: leafID) {
+        nodes[leafID]!.weight = left
+        host = desktop
+      } else {
+        nodes[leafID]!.weight = meanWeight(of: children)
+      }
       nodes[leafID]!.parent = target
       if edge.isLeading { children.insert(leafID, at: 0) } else { children.append(leafID) }
       nodes[target]!.kind = .split(axis: axis, children: children)
@@ -192,8 +246,12 @@ public struct LayoutTree: Codable, Sendable, Equatable {
       case .split(let parentAxis, var siblings) = nodes[parent]!.kind, parentAxis == axis
     {
       let index = siblings.firstIndex(of: target)!
-      if evenShare {
-        nodes[leafID]!.weight = siblings.map { nodes[$0]!.weight }.reduce(0, +) / Double(siblings.count)
+      if !desktopColumn, let left = takeWhatIsLeft(in: siblings, for: leafID) {
+        nodes[leafID]!.weight = left
+        host = desktop
+      } else if evenShare || !hasRoom(target) {
+        // (Half of nothing is no share.)
+        nodes[leafID]!.weight = meanWeight(of: siblings)
       } else {
         let half = nodes[target]!.weight / 2
         nodes[target]!.weight = half
@@ -207,12 +265,16 @@ public struct LayoutTree: Codable, Sendable, Equatable {
     }
 
     let oldParent = nodes[target]!.parent
+    // Beside a Desktop without room, which only the view on it shows: the window gets a share like the others', and the Desktop goes on
+    // without, so that no column is left when the window goes again (`settle`).
+    let hadRoom = hasRoom(target)
+    let share = hadRoom ? nodes[target]!.weight : meanWeight(of: oldParent.map(children(of:)) ?? [])
     let splitID = makeNode(
       kind: .split(axis: axis, children: edge.isLeading ? [leafID, target] : [target, leafID]),
-      parent: oldParent, weight: nodes[target]!.weight)
+      parent: oldParent, weight: share > 0 ? share : 1)
     replaceChild(of: oldParent, old: target, new: splitID)
     nodes[target]!.parent = splitID
-    nodes[target]!.weight = 1
+    nodes[target]!.weight = hadRoom ? 1 : 0
     nodes[leafID]!.parent = splitID
     nodes[leafID]!.weight = 1
     if let reason { keep(splitID, for: reason) }
@@ -254,9 +316,13 @@ public struct LayoutTree: Codable, Sendable, Equatable {
   ///
   /// The leaf's siblings share its space in proportion to their weights. With `shareSpace` false
   /// its weight goes to the sibling before it (after it, if it was the first) instead, which under
-  /// `LayoutOptions.shareRemovedSpace` false leaves the other siblings exactly where they were.
+  /// `LayoutOptions.shareRemovedSpace` false leaves the other siblings exactly where they were. Either way, if that leaves one
+  /// sibling alone beside a Desktop without room, it stays as it is and the space is left over (`detach`).
+  ///
+  /// `away`: the window takes up no space just now (it is minimized or hidden, or a place kept for one that is not open). Whoever is
+  /// there has its space already, and staying as it is means keeping that.
   @discardableResult
-  public mutating func remove(_ window: WindowID, shareSpace: Bool = true) -> Remap {
+  public mutating func remove(_ window: WindowID, shareSpace: Bool = true, away: Bool = false) -> Remap {
     var remap = Remap()
     guard let leaf = leaf(containing: window),
       case .stack(var windows, var active) = nodes[leaf]!.kind,
@@ -269,7 +335,7 @@ public struct LayoutTree: Codable, Sendable, Equatable {
       nodes[leaf]!.kind = .stack(windows: windows, active: active)
       return remap
     }
-    detach(leaf, shareSpace: shareSpace, remap: &remap)
+    detach(leaf, shareSpace: shareSpace, away: away, remap: &remap)
     return remap
   }
 
@@ -320,7 +386,7 @@ public struct LayoutTree: Codable, Sendable, Equatable {
   /// points to weight units for this split; layouts report it on each seam.
   /// Neither child shrinks below `minimumPoints`. Nothing moves if the two are not children of
   /// the same split (a seam from a layout the tree has since left behind), if they are already too
-  /// small to give anything up, or if a number is not one.
+  /// small to give anything up, if one is a Desktop without room (which has no boundary), or if a number is not one.
   /// `byHand`: a person has moved it, by whatever means, and what Arbor has lent around it is forgotten
   /// (`forgetLoans`). False where Arbor moves it for ends of its own.
   public mutating func moveBoundary(
@@ -331,7 +397,7 @@ public struct LayoutTree: Codable, Sendable, Equatable {
     guard !deltaPoints.isNaN, pointsPerWeight > 0, let a = nodes[leading]?.weight,
       let b = nodes[trailing]?.weight
     else { return }
-    guard pointsPerWeight.isFinite, minimumPoints >= 0, leading != trailing,
+    guard pointsPerWeight.isFinite, minimumPoints >= 0, leading != trailing, a > 0, b > 0,
       let parent = nodes[leading]?.parent, parent == nodes[trailing]?.parent
     else { return }
     let total = a + b
@@ -400,16 +466,17 @@ public struct LayoutTree: Codable, Sendable, Equatable {
   // MARK: Construction helpers
 
   /// A fresh tree that docks `windows` in columns of equal height, give or take one window (the
-  /// taller columns come first), followed by a Desktop column of `desktopWeight`. Windows fill
+  /// taller columns come first), followed by a Desktop column of `desktopWeight`, or with nil by a Desktop without room: nothing
+  /// is left over. Windows fill
   /// the first column from top to bottom, then the next. A window listed twice is docked once.
-  public static func grid(of windows: [WindowID], desktopWeight: Double = 0.5) -> LayoutTree {
+  public static func grid(of windows: [WindowID], desktopWeight: Double? = nil) -> LayoutTree {
     var seen = Set<WindowID>()
     let windows = windows.filter { seen.insert($0).inserted }
     var tree = LayoutTree()
     guard !windows.isEmpty else { return tree }
     // The weight comes from settings.json, where it can be any number, and is saved with the tree.
     // Zero or less breaks the layout for good, and a huge one overflows when weights are added up.
-    let desktopWeight = desktopWeight.isNaN ? 0.5 : min(max(desktopWeight, 0.05), 20)
+    let desktopWeight = desktopWeight.map { $0.isNaN ? 0.5 : min(max($0, 0.05), 20) } ?? 0
     let columns = Int(Double(windows.count).squareRoot().rounded(.up))
     var remaining = windows[...]
     // Each column is docked to the left of the Desktop, so the Desktop ends up last.
@@ -418,7 +485,7 @@ public struct LayoutTree: Codable, Sendable, Equatable {
       let slice = remaining.prefix((remaining.count + columnsLeft - 1) / columnsLeft)
       remaining = remaining.dropFirst(slice.count)
       guard let first = slice.first else { break }
-      var below = tree.dock(first, beside: tree.desktop, edge: .left)
+      var below = tree.dock(first, beside: tree.desktop, edge: .left, desktopColumn: true)
       for window in slice.dropFirst() {
         below = tree.dock(window, beside: below, edge: .bottom)
       }
@@ -459,7 +526,8 @@ public struct LayoutTree: Codable, Sendable, Equatable {
       if node.id != id { problems.append("\(id) calls itself \(node.id)") }
       if depth > Self.maximumDepth { return problems + ["nested deeper than \(Self.maximumDepth) levels"] }
       // Written so that not-a-number fails too.
-      if !(node.weight > 0 && node.weight <= Self.maximumWeight) {
+      let isDesktopWithoutRoom = id == desktop && node.weight == 0 && node.parent.map { children(of: $0).contains(where: hasRoom) } == true
+      if !(node.weight > 0 && node.weight <= Self.maximumWeight), !isDesktopWithoutRoom {
         problems.append("\(id) has weight \(node.weight)")
       }
       if node.keeps != nil, !isSplit(id) || node.keeps!.isEmpty { problems.append("\(id) is kept for nothing") }
@@ -523,23 +591,55 @@ public struct LayoutTree: Codable, Sendable, Equatable {
   }
 
   /// Deletes a leaf (or a split that has lost its last child) and repairs the tree above it.
-  mutating func detach(_ id: NodeID, shareSpace: Bool, remap: inout Remap) {
+  mutating func detach(_ id: NodeID, shareSpace: Bool, away: Bool = false, remap: inout Remap) {
     guard let parent = nodes[id]?.parent,
       case .split(let axis, var children) = nodes[parent]!.kind
     else { return }
+    // Whoever is left alone stays as it is (QUESTIONS Q28): of the two places that everything consists of one leaves, and the other
+    // has what it had, however it came to be alone. The room that is freed is left over, where it was freed. A Desktop without room
+    // can lie anywhere and nobody sees the difference, so it takes the place of what leaves, with what that is owed. What the one
+    // that stays had lent for its sake goes back first (F61): that is its own, and a gap its person dragged is where they left it.
+    // (From three or more down the others share. So they do inside a group: no hole opens among docked windows.)
+    if !away, !hasRoom(desktop), parent == everything, id != desktop, nodes[id] != nil, children.filter({ $0 != desktop }).count == 2 {
+      passClaims(from: id, to: desktop)
+      repayLoans(of: id)
+      let freed = nodes[id]!.weight
+      visits.removeAll { $0.guest == id || $0.host == id }
+      let home = nodes[desktop]!.parent!
+      if home != parent, case .split(let inner, var others) = nodes[home]!.kind {
+        others.removeAll { $0 == desktop }
+        nodes[home]!.kind = .split(axis: inner, children: others)
+      }
+      children.removeAll { $0 == desktop }
+      children[children.firstIndex(of: id)!] = desktop
+      nodes[desktop]!.parent = parent
+      nodes[desktop]!.weight = freed
+      nodes[id] = nil
+      remap.recordDeletion(of: id, nearest: parent)
+      nodes[parent]!.kind = .split(axis: axis, children: children)
+      steadyWeights(of: parent)
+      if home != parent { settle(home, shareSpace: shareSpace, remap: &remap) }
+      return
+    }
+    // Whoever took all that was left over hands back what came with it.
+    if visits.contains(where: { $0.guest == id && $0.host == desktop }) { passClaims(from: id, to: desktop) }
+    // (One that is away has lent its room to whoever is there, who keep it: no column opens under them.)
+    if away { visits.removeAll { $0.guest == id && $0.host == desktop } }
     repayLoans(of: id)
     // A visitor's room goes back to its host either way, and only once. With two children the one that stays
     // takes the whole split.
     if !endVisit(of: id, leaving: parent), !shareSpace, children.count > 2,
-      let index = children.firstIndex(of: id), let freed = nodes[id]?.weight
+      let index = children.firstIndex(of: id), let freed = nodes[id]?.weight,
+      // Not to a Desktop without room: no column opens because a window has left.
+      let heir = children[..<index].last(where: hasRoom) ?? children[(index + 1)...].first(where: hasRoom)
     {
-      nodes[children[index > 0 ? index - 1 : index + 1]]?.weight += freed
+      nodes[heir]?.weight += freed
     }
     children.removeAll { $0 == id }
     nodes[id] = nil
     remap.recordDeletion(of: id, nearest: parent)
     nodes[parent]!.kind = .split(axis: axis, children: children)
-    settle(parent, shareSpace: shareSpace, remap: &remap)
+    settle(parent, shareSpace: shareSpace, away: away, remap: &remap)
   }
 
   /// If `child` is a split on the same axis as `parent`, splices its children
@@ -554,7 +654,8 @@ public struct LayoutTree: Codable, Sendable, Equatable {
     let share = nodes[child]!.weight
     let total = grandchildren.map { nodes[$0]!.weight }.reduce(0, +)
     for grandchild in grandchildren {
-      nodes[grandchild]!.weight = nodes[grandchild]!.weight / total * share
+      // (A group that is down to a Desktop without room: it has the group's.)
+      nodes[grandchild]!.weight = total > 0 ? nodes[grandchild]!.weight / total * share : share / Double(grandchildren.count)
       nodes[grandchild]!.parent = parent
     }
     siblings.replaceSubrange(index...index, with: grandchildren)
@@ -573,8 +674,10 @@ public struct LayoutTree: Codable, Sendable, Equatable {
   /// the number itself, so without this a long session (or a script) walks weights down to zero,
   /// where the layout divides by them. Weights a person could tell apart are left exactly as they
   /// are, and doing this twice changes nothing more.
+  ///
+  /// A Desktop without room has none on purpose, and takes no part.
   mutating func steadyWeights(of split: NodeID) {
-    let children = children(of: split)
+    let children = children(of: split).filter { $0 != desktop || nodes[$0]!.weight != 0 }
     guard !children.isEmpty else { return }
     let mean = children.reduce(0) { $0 + nodes[$1]!.weight } / Double(children.count)
     if !(mean > 1.0 / 1024 && mean < 1024) {
@@ -647,15 +750,16 @@ public struct Remap: Sendable, Equatable {
 extension LayoutTree {
   /// Gives the children of `start` and of every split inside it equal shares: what looks like one place gets one. The Desktop counts
   /// as `desktopWeight` of a window where `grid` puts it (last in a root that runs left to right), so
-  /// evening out an arranged display gives what `arrange` made; anywhere else it counts as one.
-  public mutating func equalize(under start: NodeID, desktopWeight: Double = 1) {
+  /// evening out an arranged display gives what `arrange` made; anywhere else, and with nil everywhere, it counts as one.
+  /// A Desktop without room, which is what `arrange` makes with nil, looks like no place and with nil stays without.
+  public mutating func equalize(under start: NodeID, desktopWeight: Double? = nil) {
     // Bounded exactly as `grid` bounds it: the number comes from settings.json, where it can be anything.
-    let narrow = desktopWeight.isNaN ? 0.5 : min(max(desktopWeight, 0.05), 20)
+    let narrow = desktopWeight.map { $0.isNaN ? 0.5 : min(max($0, 0.05), 20) }
     for id in preorder(from: start) {
       guard case .split(let axis, let children) = nodes[id]!.kind else { continue }
       let isArranged = id == root && axis == .horizontal && children.last == desktop
-      for child in children {
-        nodes[child]!.weight = isArranged && child == desktop ? narrow : Double(places(in: child, along: axis))
+      for child in children where hasRoom(child) || narrow != nil {
+        nodes[child]!.weight = (isArranged && child == desktop ? narrow : nil) ?? Double(places(in: child, along: axis))
       }
     }
   }
@@ -664,7 +768,7 @@ extension LayoutTree {
   /// the row around it, as many as its children show. (With gaps that is a point or two off; the tree does not know the gap.)
   public func places(in id: NodeID, along axis: Axis) -> Int {
     guard case .split(axis, let children) = nodes[id]?.kind else { return 1 }
-    return max(children.reduce(0) { $0 + places(in: $1, along: axis) }, 1)
+    return max(children.filter(hasRoom).reduce(0) { $0 + places(in: $1, along: axis) }, 1)
   }
 
   /// Turns the split `id` the other way: a row becomes a column and a column a row, keeping the

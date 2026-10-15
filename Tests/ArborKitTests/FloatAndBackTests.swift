@@ -6,9 +6,9 @@ import Testing
 
 /// ⌃⌥F twice is a return: the window docks again where it was, if nothing has changed meanwhile.
 @Suite @MainActor struct FloatAndBackTests {
-  /// `[a | (b over c) | Desktop]`, with uneven shares.
-  func makeHarness() -> (Harness, a: WindowID, b: WindowID, c: WindowID) {
-    let h = Harness()
+  /// `[a | (b over c) | Desktop]`, with uneven shares. As Arbor ships, `b` took all that was left and the Desktop has no room.
+  func makeHarness(settings: Settings = Harness.settingsWhenNoneAreGiven) -> (Harness, a: WindowID, b: WindowID, c: WindowID) {
+    let h = Harness(settings: settings)
     let a = h.system.open(app: "Safari", pid: 11, frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     let b = h.system.open(app: "Mail", pid: 12, frame: CGRect(x: 300, y: 200, width: 640, height: 420))
     let c = h.system.open(app: "Notes", pid: 13, frame: CGRect(x: 500, y: 300, width: 500, height: 300))
@@ -49,7 +49,10 @@ import Testing
   }
 
   @Test func aHeldViewIsNotMovedByTheWayBack() {
-    let (h, _, b, _) = makeHarness()
+    // With a column for the Desktop: floated, it is shown with everything, a view that a dock at its edge leaves as it is.
+    // (With no room for the Desktop it is the Desktop that is framed, and what is docked there gets a group around the two,
+    // which is the view from then on.)
+    let (h, _, b, _) = makeHarness(settings: .withDesktopColumn)
     h.run("zoom \(b.rawValue)")
     h.run("toggle-float \(b.rawValue)")
     let view = h.workspace.camera

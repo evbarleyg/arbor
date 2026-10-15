@@ -17,11 +17,13 @@ private struct Dice {
 }
 
 /// `count` windows docked beside nodes picked at random, then every boundary moved at random.
-private func randomTree(_ dice: inout Dice, windows count: Int) -> LayoutTree {
+private func randomTree(_ dice: inout Dice, windows count: Int, desktopColumn: Bool = false) -> LayoutTree {
   var tree = LayoutTree()
   for raw in 1...count {
     let nodes = tree.preorder()
-    tree.dock(WindowID(UInt32(raw)), beside: nodes[dice.roll(nodes.count)], edge: Edge.allCases[dice.roll(4)])
+    tree.dock(
+      WindowID(UInt32(raw)), beside: nodes[dice.roll(nodes.count)], edge: Edge.allCases[dice.roll(4)],
+      desktopColumn: desktopColumn)
   }
   for split in tree.preorder() where tree.isSplit(split) {
     let children = tree.children(of: split)
@@ -101,9 +103,10 @@ private func near(_ a: CGRect?, _ b: CGRect?, _ tolerance: CGFloat) -> Bool {
       for (other, frame) in places(before) where other != window && !inside.contains(other) {
         #expect(places(after)[other] == frame, "seed \(seed): \(other) moved when \(window) left")
       }
-      // The heir covers what it had, what the branch had, and the gap between them: nothing more or less.
+      // The heir covers what it had, what the branch had, and the gap between them: nothing more or less. (A Desktop without room, which
+      // inherits when the last window goes, had nothing.)
       #expect(
-        near(after.nodeFrames[heir], before.nodeFrames[heir]!.union(before.nodeFrames[gone]!), 0),
+        near(after.nodeFrames[heir], (before.nodeFrames[heir] ?? before.nodeFrames[gone]!).union(before.nodeFrames[gone]!), 0),
         "seed \(seed): \(heir) after \(window) left")
     }
   }
@@ -119,6 +122,9 @@ private func near(_ a: CGRect?, _ b: CGRect?, _ tolerance: CGFloat) -> Bool {
     // borrows among its members; once a collapse has made those members part of the row, only the nearest does.)
     for raw in 1...count {
       let window = WindowID(UInt32(raw))
+      // All but one: whoever is left alone beside a Desktop without room stays as it is when the other leaves for good, and borrows while
+      // the other is only away (`DesktopWithoutRoomTests`).
+      guard tree.placeLeftAloneBesideTheDesktop(without: window) == nil else { continue }
       let away = places(layout(tree, gap: gap, without: [window]))
       var smaller = tree
       smaller.remove(window, shareSpace: false)
@@ -133,7 +139,9 @@ private func near(_ a: CGRect?, _ b: CGRect?, _ tolerance: CGFloat) -> Bool {
   @Test(arguments: 1...40) func slotsFillTheScreenWithExactGapsAndNeverOverlap(seed: Int) {
     var dice = Dice(state: UInt64(seed) &+ 2000)
     let count = 1 + dice.roll(9)
-    let tree = randomTree(&dice, windows: count)
+    // The trees these seeds always made, with a column for the Desktop. Docked as it ships, seed 1 makes a column 40 points high
+    // for two windows and a gap of 30, where gaps give way before windows do (`boundedGap`): another rule than the one tried here.
+    let tree = randomTree(&dice, windows: count, desktopColumn: true)
     let gap = CGFloat([0, 12, 30][dice.roll(3)])
     var absent = Set<WindowID>()
     for raw in 1...count where dice.roll(3) == 0 { absent.insert(WindowID(UInt32(raw))) }
@@ -203,9 +211,10 @@ private func near(_ a: CGRect?, _ b: CGRect?, _ tolerance: CGFloat) -> Bool {
   /// weights can add up to one or less by the time the switch is turned off.
   @Test func weightsThatAddUpToLittleStillFillTheScreen() {
     var tree = LayoutTree()
-    tree.dock(WindowID(1), beside: tree.desktop, edge: .left)
-    tree.dock(WindowID(2), beside: tree.desktop, edge: .right)
-    tree.dock(WindowID(3), beside: tree.desktop, edge: .right)
+    // With a column for the Desktop, of which window 3 takes half.
+    tree.dock(WindowID(1), beside: tree.desktop, edge: .left, desktopColumn: true)
+    tree.dock(WindowID(2), beside: tree.desktop, edge: .right, desktopColumn: true)
+    tree.dock(WindowID(3), beside: tree.desktop, edge: .right, desktopColumn: true)
     tree.remove(WindowID(1))
     #expect(tree.children(of: tree.root).map { tree[$0]!.weight }.reduce(0, +) <= 1)
     let result = layout(tree, gap: 12, without: [])
@@ -245,13 +254,14 @@ private func near(_ a: CGRect?, _ b: CGRect?, _ tolerance: CGFloat) -> Bool {
     func weights(_ workspace: Workspace) -> [Double] {
       workspace.tree.children(of: workspace.tree.root).map { workspace.tree[$0]!.weight }
     }
-    #expect(weights(workspace) == [1, 1, 1, 1])
+    // The Desktop is last. The second window took all that was left, so it has no room, and gets none while two windows stay.
+    #expect(weights(workspace) == [1, 1, 1, 0])
     var forgotten = workspace
     forgotten.forget(WindowID(2))
-    #expect(weights(forgotten) == [1, 1, 1])
+    #expect(weights(forgotten) == [1, 1, 0])
     var undocked = workspace
     undocked.undock(WindowID(2), floatingAt: CGRect(x: 0, y: 0, width: 400, height: 300))
-    #expect(weights(undocked) == [1, 1, 1])
+    #expect(weights(undocked) == [1, 1, 0])
     var moved = workspace
     moved.dock(WindowID(2), at: .beside(workspace.tree.desktop, .bottom))
     #expect(weights(moved) == [1, 1, 1])

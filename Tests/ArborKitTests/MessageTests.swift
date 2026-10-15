@@ -7,7 +7,7 @@ import Testing
 
 /// What commands say. A failure tells the user what to do next; a success says what happened.
 @Suite @MainActor struct MessageTests {
-  /// `[a / c | Desktop | b]` with `f` floating.
+  /// `[a / c | b]`, a half each, with `f` floating.
   func makeHarness(settings: Settings = Settings()) -> (Harness, a: WindowID, b: WindowID, c: WindowID, f: WindowID) {
     let h = Harness(settings: settings)
     let a = h.system.open(app: "Safari", frame: CGRect(x: 100, y: 100, width: 600, height: 400))
@@ -85,7 +85,7 @@ import Testing
     let (h, _, b, _, _) = makeHarness()
     let big = h.system.open(
       app: "Xcode", frame: CGRect(x: 400, y: 200, width: 700, height: 500),
-      // More than its neighbours and the Desktop could spare between them (F61).
+      // More than its neighbours could spare between them (F61).
       minimumSize: CGSize(width: 1200, height: 600))
     let result = h.run("dock \(big.rawValue) beside \(b.rawValue) bottom")
     #expect(result.ok)
@@ -103,32 +103,34 @@ import Testing
   func tiled(_ h: Harness) -> Set<WindowID> { Set(h.layout!.tiles.flatMap(\.windows)) }
 
   @Test func aDockThatLeavesOthersTooSmallSaysHowMany() {
-    let (h, w) = floating(5)
+    let (h, w) = floating(6)
+    // A half for the first, a quarter each for the two beside it.
     #expect(h.run("dock \(w[0].rawValue) left") == .success("docked \(w[0]) at the left edge"))
-    #expect(h.run("dock \(w[1].rawValue) beside \(w[0].rawValue) right") == .success("docked \(w[1]) right of \(w[0])"))
-    #expect(h.run("dock \(w[2].rawValue) left") == .success("docked \(w[2]) at the left edge"))
+    #expect(h.run("dock \(w[1].rawValue) right") == .success("docked \(w[1]) at the right edge"))
+    #expect(h.run("dock \(w[2].rawValue) beside \(w[1].rawValue) right") == .success("docked \(w[2]) right of \(w[1])"))
+    #expect(h.run("dock \(w[3].rawValue) left") == .success("docked \(w[3]) at the left edge"))
 
     // The newcomer is shown; the two it pushed together are not any more.
     #expect(
-      h.run("dock \(w[3].rawValue) left")
-        == .success(
-          "docked \(w[3]) at the left edge; that leaves too little room for 2 other windows, which are tiles now"))
-    #expect(tiled(h) == [w[0], w[1]])
-
-    // Everything is a tile now. Only the windows that this command put out of view are counted.
-    #expect(
       h.run("dock \(w[4].rawValue) left")
         == .success(
-          "docked \(w[4]) at the left edge; its space is too small to show it, so it is a tile, "
+          "docked \(w[4]) at the left edge; that leaves too little room for 2 other windows, which are tiles now"))
+    #expect(tiled(h) == [w[1], w[2]])
+
+    // All but the widest are tiles now. Only the windows that this command put out of view are counted.
+    #expect(
+      h.run("dock \(w[5].rawValue) left")
+        == .success(
+          "docked \(w[5]) at the left edge; its space is too small to show it, so it is a tile, "
             + "and so are 2 other windows now"))
-    #expect(tiled(h) == Set(w))
-    #expect(h.layout!.windowFrames.isEmpty)
+    #expect(tiled(h) == Set(w.dropFirst()))
+    #expect(Set(h.layout!.windowFrames.keys) == [w[0]])
   }
 
   @Test func oneOtherWindowIsSpokenOfAsOne() {
     let (h, w) = floating(4)
     h.run("dock \(w[0].rawValue) left")
-    h.run("resize \(w[0].rawValue) right -300")
+    h.run("resize \(w[0].rawValue) right -400")
     #expect(h.run("dock \(w[1].rawValue) right") == .success("docked \(w[1]) at the right edge"))
     #expect(
       h.run("dock \(w[2].rawValue) right")
@@ -140,30 +142,33 @@ import Testing
   }
 
   @Test func dockingBesideAWindowCountsTheNeighbourItSqueezed() {
-    let (h, w) = floating(3)
+    let (h, w) = floating(4)
     h.run("dock \(w[0].rawValue) left")
     h.run("dock \(w[1].rawValue) beside \(w[0].rawValue) right")
+    h.run("dock \(w[2].rawValue) beside \(w[1].rawValue) right")
+    #expect(tiled(h).isEmpty, "a half and two quarters")
     #expect(
-      h.run("dock \(w[2].rawValue) beside \(w[1].rawValue) right")
+      h.run("dock \(w[3].rawValue) beside \(w[2].rawValue) right")
         == .success(
-          "docked \(w[2]) right of \(w[1]); its space is too small to show it, so it is a tile, "
+          "docked \(w[3]) right of \(w[2]); its space is too small to show it, so it is a tile, "
             + "and so is 1 other window now"))
-    #expect(tiled(h) == [w[1], w[2]])
+    #expect(tiled(h) == [w[2], w[3]])
   }
 
   @Test func movingADockedWindowCountsOnlyTheOthers() {
     let (h, w) = floating(6)
     h.run("arrange")
+    // Out of their columns: five columns where there were three.
     h.run("dock \(w[0].rawValue) left")
-    h.run("dock \(w[1].rawValue) left")
+    h.run("dock \(w[2].rawValue) left")
     let before = Set(h.layout!.windowFrames.keys)
-    #expect(before.contains(w[2]), "it is shown, and about to become a tile itself")
-    let result = h.run("dock \(w[2].rawValue) left")
+    #expect(before.contains(w[4]), "it is shown, and about to become a tile itself")
+    let result = h.run("dock \(w[4].rawValue) left")
     let lost = before.intersection(tiled(h))
-    #expect(lost.count == 2 && lost.contains(w[2]), "\(lost)")
+    #expect(lost.count == 2 && lost.contains(w[4]), "\(lost)")
     #expect(
       result
-        == .success("moved \(w[2]) left; its space is too small to show it, so it is a tile, and so is 1 other window now"))
+        == .success("moved \(w[4]) left; its space is too small to show it, so it is a tile, and so is 1 other window now"))
   }
 
   @Test func tabsBehindTheFrontOneWereNotShownAndAreNotCounted() {
@@ -171,7 +176,7 @@ import Testing
     settings.tabsEnabled = true
     let (h, w) = floating(4, settings: settings)
     h.run("dock \(w[0].rawValue) left")
-    h.run("resize \(w[0].rawValue) right -300")
+    h.run("resize \(w[0].rawValue) right -400")
     let centre = CGPoint(x: h.frame(w[0])!.midX, y: h.frame(w[0])!.midY)
     h.system.drag(w[1], through: [CGPoint(x: h.frame(w[1])!.midX, y: h.frame(w[1])!.minY + 10), centre])
     #expect(h.workspace.tree.leaf(containing: w[0]) == h.workspace.tree.leaf(containing: w[1]))
@@ -207,12 +212,12 @@ import Testing
     h.run("dock \(w[1].rawValue) beside \(w[0].rawValue) right")
     #expect(h.run("resize \(w[0].rawValue) right 20") == .success("resized \(w[0])"))
     #expect(
-      h.run("resize \(w[0].rawValue) right 150")
+      h.run("resize \(w[0].rawValue) right 450")
         == .success("resized \(w[0]); that leaves too little room for 1 other window, which is a tile now"))
     #expect(tiled(h) == [w[1]])
     // Made smaller than it can be shown, it is the resized window itself.
     #expect(
-      h.run("resize \(w[0].rawValue) right -400")
+      h.run("resize \(w[0].rawValue) right -1000")
         == .success("resized \(w[0]); its space is too small to show it, so it is a tile"))
     #expect(tiled(h) == [w[0]])
   }

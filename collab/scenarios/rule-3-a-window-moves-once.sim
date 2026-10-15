@@ -47,8 +47,9 @@ expect moved-once
 float 103
 expect moved-once
 expect size 103 700x500
+# Safari is left alone, and stays as it is.
 close 102
-expect moved-once
+expect still
 # All at once.
 arrange
 expect moved-once

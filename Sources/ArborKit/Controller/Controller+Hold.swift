@@ -357,7 +357,7 @@ extension Controller {
       return false
     }
     var rehearsal = workspace
-    rehearsal.dock(id, at: target, shareSpace: settings.shareRemovedSpace)
+    rehearsal.dock(id, at: target, shareSpace: settings.shareRemovedSpace, desktopColumn: settings.desktopColumn)
     // Both where the view is and what it shows. They differ while what the view is on takes up no room: minimized, or
     // on another macOS Space, where "what it shows" is everything or nothing and proves nothing.
     var (viewed, shown) = (fence(around: workspace.camera, of: workspace), fence(around: shownNode(of: workspace), of: workspace))
@@ -502,7 +502,7 @@ extension Controller {
   /// Whether a layout made now would show `id`, whatever is on record about where it is.
   private func landsInView(_ id: WindowID) -> Bool {
     guard let display = workspaceID(containing: id), let workspace = workspaces[display], let fresh = freshLayout(of: display) else { return false }
-    return fresh.windowFrames[id] != nil || (workspace.isFloating(id) && fresh.desktopFrame != nil)
+    return fresh.windowFrames[id] != nil || (workspace.isFloating(id) && showsWhatFloats(fresh, in: workspace))
   }
 
   /// Holding still goes by time and can be wrong: a launcher, `open` in a terminal, or a link whose browser takes more than half a second
@@ -790,7 +790,7 @@ extension Controller {
       switch target {
       case .none: break
       case .float: workspace.forget(id, shareSpace: settings.shareRemovedSpace)
-      case .cameraEdge, .beside, .stack: workspace.dock(id, at: target, shareSpace: settings.shareRemovedSpace)
+      case .cameraEdge, .beside, .stack: workspace.dock(id, at: target, shareSpace: settings.shareRemovedSpace, desktopColumn: settings.desktopColumn)
       }
     }
   }

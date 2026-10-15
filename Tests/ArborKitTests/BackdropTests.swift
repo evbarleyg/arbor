@@ -71,7 +71,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func neighboursShareOneSurfaceAndTheDesktopStaysClear() {
-    let (h, a, b, c) = makeHarness()
+    let (h, a, b, c) = makeHarness(settings: .withDesktopColumn)
     h.run("dock \(a.rawValue) left")
     h.run("dock \(c.rawValue) beside \(a.rawValue) bottom")
     #expect(backdrop(h)?.rects == [grown(h.frame(a)!.union(h.frame(c)!))], "the gap between them is covered")
@@ -112,7 +112,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func draggingAWindowOntoTheDesktopTakesItOffTheSurface() {
-    let (h, a, b, _) = makeHarness()
+    let (h, a, b, _) = makeHarness(settings: .withDesktopColumn)
     h.run("dock \(a.rawValue) left")
     h.run("dock \(b.rawValue) right")
     let start = h.frame(a)!
@@ -170,12 +170,13 @@ private let side = DisplaySnapshot(
     h.run("dock \(big.rawValue) beside \(b.rawValue) bottom")
     let tile = h.overlays.tiles[h.display]![0]
     #expect(tile.items.first?.window == big)
-    #expect(backdrop(h)?.rects == [grown(h.frame(a)), grown(h.frame(b)!.union(tile.frame))])
+    // The two columns have only a gap between them, so it is one surface.
+    #expect(backdrop(h)?.rects == [grown(h.frame(a)!.union(h.frame(b)!).union(tile.frame))])
     expectBackdropMatchesLayout(h)
   }
 
   @Test func whenTheDesktopIsATileTheSurfaceRunsUnderIt() {
-    let (h, a, b, _) = makeHarness()
+    let (h, a, b, _) = makeHarness(settings: .withDesktopColumn)
     h.run("dock \(a.rawValue) left")
     h.run("dock \(b.rawValue) right")
     // The two columns squeeze the Desktop between them until it is too narrow to use.
@@ -279,7 +280,7 @@ private let side = DisplaySnapshot(
   // MARK: The Desktop's edge
 
   @Test func theDesktopBetweenDockedWindowsHasALineAroundIt() {
-    let (h, a, b, _) = makeHarness()
+    let (h, a, b, _) = makeHarness(settings: .withDesktopColumn)
     #expect(backdrop(h) == nil, "nothing is docked: the Desktop is the whole display and needs no line")
     h.run("dock \(a.rawValue) left")
     h.run("dock \(b.rawValue) right")
@@ -303,7 +304,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func whereTheDesktopIsNotInViewThereIsNoLine() {
-    let (h, a, b, _) = makeHarness()
+    let (h, a, b, _) = makeHarness(settings: .withDesktopColumn)
     h.run("dock \(a.rawValue) left")
     h.run("dock \(b.rawValue) right")
     h.run("zoom \(a.rawValue)")

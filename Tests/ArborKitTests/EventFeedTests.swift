@@ -41,7 +41,7 @@ private final class Listener {
 /// The events of `arborctl watch` (docs/features/F24-events.md): the real controller and feed, with
 /// the scheduler standing in for the main loop.
 @Suite @MainActor struct EventFeedTests {
-  /// Safari and Notes docked left and right of the Desktop, Mail floating, Notes focused, and a feed.
+  /// Safari and Notes docked left and right, a half each, Mail floating, Notes focused, and a feed.
   func makeHarness(settings: Settings = Settings()) -> (Harness, EventFeed, WindowID, WindowID, WindowID) {
     let h = Harness(settings: settings)
     let a = h.system.open(app: "Safari", frame: CGRect(x: 100, y: 100, width: 600, height: 400))
@@ -660,8 +660,9 @@ private final class Listener {
     let (h, feed, _, b, _) = makeHarness()
     let listener = try Listener(feed, "watch layout window")
     _ = try listener.take()
+    // Wider than what the two others can spare and still be of use themselves (F61): 1392 points less 240 each, 912.
     let big = h.system.open(
-      app: "Xcode", frame: CGRect(x: 400, y: 200, width: 900, height: 500), minimumSize: CGSize(width: 900, height: 500))
+      app: "Xcode", frame: CGRect(x: 400, y: 200, width: 1000, height: 500), minimumSize: CGSize(width: 1000, height: 500))
     // Somebody else is being typed in: the window with the keyboard would be served at its neighbours' cost (F61).
     h.system.userFocus(b)
     h.run("dock \(big.rawValue) right")

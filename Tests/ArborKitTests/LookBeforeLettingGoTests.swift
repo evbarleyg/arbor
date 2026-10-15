@@ -145,12 +145,14 @@ import Testing
     quietly(h) { h.system.plug(larger) }
     h.scheduler.advance(by: 1)
     h.system.clearFrameLog()
+    let stood = there.map { h.frame($0) }
     letGo(h, way)
-    // The fourth floats. Where floating windows make way the docked ones had pushed it aside, and it too gets its own place back. As
-    // Arbor ships nothing ever moved it (F64), and nothing does now.
+    // The fourth floats. Where the docked ones had pushed it aside (onto a column for the Desktop) it too gets its own place back; where
+    // nothing is kept for the Desktop it never left it.
     for (index, window) in there.enumerated() {
       let own = CGRect(x: 1600 + 100 * CGFloat(index), y: 100 + 50 * CGFloat(index), width: 480, height: 348)
-      #expect(moves(of: window, h) == (index == 3 && !makingWay ? [] : [own]))
+      #expect(moves(of: window, h) == (stood[index] == own ? [] : [own]))
+      #expect(index == 3 || stood[index] != own)
       #expect(h.frame(window) == own)
     }
   }

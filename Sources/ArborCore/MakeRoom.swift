@@ -82,7 +82,9 @@ public enum MakeRoom {
         tree, camera: camera, in: frame, options: options, isPresent: isPresent, minimumSize: minimumSize)
     }
     var layout = layOut(tree)
-    var gaveBack = false
+    let shared = shareWhereTooLittleWasLeft(&tree, laidOutAs: layout, options: options, leaving: terms.leaving)
+    if shared { layout = layOut(tree) }
+    var gaveBack = shared
     var hadDesktop = false
     let desktopIsInUse = terms.desktopIsInUse
     // Making room moves weights and no window.
@@ -241,10 +243,13 @@ public enum MakeRoom {
     // back to it, and each lap moves no gap and pays a little of each off, until one is settled and the circle is
     // open.
     for _ in 0..<12 {
+      // Where nothing goes back because nothing but an app's own window has moved, whoever has just been served is moving anyway:
+      // it gets what it is owed in the same move, and not its bare minimum now and the rest at the next occasion.
       let back =
-        terms.givesBack
+        (terms.givesBack || !served.isEmpty)
         && giveBackWhatCanBeSpared(
-          &tree, &layout, options: options, isPresent: isPresent, minimumSize: minimumSize, leaving: terms.leaving, layOut)
+          &tree, &layout, to: terms.givesBack ? nil : Set(served.map(\.node)), options: options, isPresent: isPresent,
+          minimumSize: minimumSize, leaving: terms.leaving, layOut)
       gaveBack = gaveBack || back
       hadDesktop = hadDesktop || layout.desktopFrame != nil
       let servedBefore = served.count
@@ -258,7 +263,8 @@ public enum MakeRoom {
     while true {
       let view = TreeView(tree: tree, isPresent: isPresent)
       // A Desktop that has just given so much that it is a tile is owed at once: the others top it up if they can.
-      let desktopIsOwed = terms.desktopIsOwed || (hadDesktop && layout.desktopFrame == nil)
+      // Only where it has a share of its own: what is left over is owed nothing.
+      let desktopIsOwed = options.desktopColumn && (terms.desktopIsOwed || (hadDesktop && layout.desktopFrame == nil))
       var short = shortSlots(in: layout, view: view, options: options, minimumSize: minimumSize)
       if let slot = slotOfTheKeyboard(in: view) {
         short.removeAll { $0.node == slot.node }
@@ -294,11 +300,33 @@ public enum MakeRoom {
     }
   }
 
+  /// Whoever took what was left over (`LayoutTree.dock`) took it however much it was. Too little to show any window in is nothing: then
+  /// everybody in the row gives, as with nothing left. This is no making of room, and holds with `makeRoom` off as well. Says whether
+  /// the tree has changed, so that `layout` no longer holds.
+  public static func shareWhereTooLittleWasLeft(
+    _ tree: inout LayoutTree, laidOutAs layout: Layout, options: LayoutOptions, leaving: Set<NodeID> = []
+  ) -> Bool {
+    guard !options.desktopColumn else { return false }
+    var shared = false
+    for tile in layout.tiles where tile.kind == .window && !leaving.contains(tile.node) {
+      // Along the row, which is where it took what was left. Across it a share like the others' would be no help.
+      guard let row = tree.parent(of: tile.node), case .split(let axis, _) = tree[row]?.kind,
+        axis == .horizontal
+          ? tile.frame.width < options.minimumUsableSize.width : tile.frame.height < options.minimumUsableSize.height,
+        tree.shareWithWhoTookWhatWasLeft(tile.node)
+      else { continue }
+      shared = true
+    }
+    return shared
+  }
+
   /// What was taken for a window goes back as soon as the window can spare it: its neighbour has closed, the display is
   /// larger. So the arrangement stays what the person made it, plus the least that the windows in it need. Only
   /// windows whose minimum is known give back: what the others can spare could only be found out by asking them.
+  /// `to`: only to these, or to everybody.
   private static func giveBackWhatCanBeSpared(
-    _ tree: inout LayoutTree, _ layout: inout Layout, options: LayoutOptions, isPresent: @escaping (WindowID) -> Bool,
+    _ tree: inout LayoutTree, _ layout: inout Layout, to givers: Set<NodeID>?, options: LayoutOptions,
+    isPresent: @escaping (WindowID) -> Bool,
     minimumSize: @escaping (WindowID) -> CGSize?, leaving: Set<NodeID>, _ layOut: (LayoutTree) -> Layout
   ) -> Bool {
     // (With `shareRemovedSpace` off a weight covers a slot and the gap after it, which the sums below do not know. There room
@@ -317,8 +345,8 @@ public enum MakeRoom {
         else { continue }
         // Only in a row that is in view as a whole. Framed on its own a window has the whole display, which says nothing about
         // what it can spare beside the others.
-        guard let parent = tree.parent(of: loan.receiver), parent == tree.parent(of: loan.giver),
-          case .split(axis, _) = tree[parent]?.kind, layout.nodeFrames[parent] != nil
+        guard givers?.contains(loan.giver) != false, let parent = tree.parent(of: loan.receiver),
+          parent == tree.parent(of: loan.giver), case .split(axis, _) = tree[parent]?.kind, layout.nodeFrames[parent] != nil
         else { continue }
         let view = TreeView(tree: tree, isPresent: isPresent)
         let giver = Giver(

@@ -16,8 +16,8 @@ private let side = DisplaySnapshot(
 /// Peek: hold to look, let go to land (docs/features/F51-peek.md), with the real controller and keys that go
 /// down and come up.
 @Suite @MainActor struct PeekControllerTests {
-  /// [a / c | Desktop | b] with a framed and focused, after a little history: everything, b, a; and
-  /// `back` then `forward` so that neither list is empty… the last move was `back` from c to a.
+  /// [a / c | b], a half each, or what `settings` make of it, with a framed and focused, after a little history:
+  /// everything, b, a; and `back` then `forward` so that neither list is empty… the last move was `back` from c to a.
   struct Desk {
     let h: Harness
     let a, b, c: WindowID
@@ -213,7 +213,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func theOutlineFollowsThePointerFromWindowToWindow() {
-    let desk = Desk()
+    let desk = Desk(settings: .withDesktopColumn)
     desk.hold()
     for window in [desk.b, desk.c, desk.a, desk.b] {
       desk.point(at: window)
@@ -280,7 +280,7 @@ private let side = DisplaySnapshot(
   // MARK: The arrow keys
 
   @Test func theArrowKeysMoveTheOutlineInsteadOfTheView() {
-    let desk = Desk(settings: .withEveryKey)
+    let desk = Desk(settings: .withEveryKey.withDesktopColumn)
     let before = desk.h.workspace
     desk.hold()
     desk.h.key("ctrl+opt+down")
@@ -305,7 +305,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func everyArrowGoesItsOwnWay() {
-    let desk = Desk()
+    let desk = Desk(settings: .withDesktopColumn)
     desk.hold()
     desk.h.key("ctrl+opt+down")
     #expect(desk.outline == desk.place(desk.c))
@@ -394,7 +394,7 @@ private let side = DisplaySnapshot(
   @Test func landingOnAGroupGivesTheKeyboardToTheWindowUsedLastThere() {
     // Too narrow for the column's windows when everything shows: the column [a / c] is one tile.
     var settings = Settings()
-    settings.minimumUsableWidth = 500
+    settings.minimumUsableWidth = 750
     let desk = Desk(settings: settings)
     desk.h.system.userFocus(desk.c)
     desk.h.system.userFocus(desk.a)
@@ -491,7 +491,7 @@ private let side = DisplaySnapshot(
   @Test func aClickedTileAddsOneEntryOnTopOfIt() {
     // The move is not the peek's own: `moveCamera` is told to yield first.
     var settings = Settings()
-    settings.minimumUsableWidth = 500
+    settings.minimumUsableWidth = 750
     let desk = Desk(settings: settings)
     desk.h.run("show-all")
     desk.h.run("zoom \(desk.a.rawValue)")
@@ -607,7 +607,7 @@ private let side = DisplaySnapshot(
 
   @Test func aClickedTileIsALandingToo() {
     var settings = Settings()
-    settings.minimumUsableWidth = 500
+    settings.minimumUsableWidth = 750
     let desk = Desk(settings: settings)
     let before = desk.h.workspace
     desk.hold()
@@ -640,7 +640,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func chordsBoundToNothingAreRegisteredForAsLongAsTheHoldLasts() {
-    let desk = Desk(settings: sparse.withEveryKey)
+    let desk = Desk(settings: sparse.withEveryKey.withDesktopColumn)
     #expect(desk.h.key("ctrl+opt+left") == nil, "not Arbor's")
     desk.h.keyDown(space)
     desk.h.scheduler.advance(by: 0.2)
@@ -1055,7 +1055,7 @@ private let side = DisplaySnapshot(
     #expect(h.system.focused == b, "c is still in view on its display, so nothing else would have moved the keyboard")
   }
 
-  /// main: [ column [a / x] | Desktop | b ], the column too narrow to show as windows; side: c, which has the keyboard.
+  /// main: [ column [a / x] | b ], the column too narrow to show as windows; side: c, which has the keyboard.
   /// The view on main is on b, the pointer moved last and lies at `pointer`, and ⌃⌥Space is held. `used` had the
   /// keyboard before, in that order. The windows were open before Arbor started, so it has seen no other use of them.
   private func peekBesideTheKeyboard(
@@ -1071,6 +1071,7 @@ private let side = DisplaySnapshot(
     h.start()
     for (window, edge) in [(a, "left"), (b, "right"), (c, "left")] { h.run("dock \(window.rawValue) \(edge)") }
     h.run("dock \(x.rawValue) beside \(a.rawValue) bottom")
+    h.run("resize \(a.rawValue) right -300")
     for window in used(a, x) { h.system.userFocus(window) }
     h.run("zoom \(b.rawValue)")
     h.system.userFocus(c)

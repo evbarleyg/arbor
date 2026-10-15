@@ -5,7 +5,7 @@ import CoreGraphics
 import Foundation
 import Testing
 
-/// A started harness with two windows docked left and right of the Desktop, which records what
+/// A started harness with two windows docked left and right, a half each, which records what
 /// is handed over to be saved and how often settings are applied.
 @MainActor
 private final class Fixture {
@@ -41,7 +41,7 @@ private final class Fixture {
     #expect(f.h.frame(f.a)!.minX == f.h.visibleFrame.minX + 30)
     #expect(f.h.frame(f.a)!.minY == f.h.visibleFrame.minY + 30)
     #expect(f.h.frame(f.b)!.maxX == f.h.visibleFrame.maxX - 30)
-    #expect(f.h.layout!.desktopFrame!.minX - f.h.frame(f.a)!.maxX == 30)
+    #expect(f.h.frame(f.b)!.minX - f.h.frame(f.a)!.maxX == 30)
     expectWindowsMatchLayout(f.h, on: f.h.display)
     #expect(f.saved.map(\.gap) == [30])
     #expect(f.saved.last == f.settings)

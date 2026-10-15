@@ -19,15 +19,15 @@ finder-choose
 expect docked 103
 expect left-of 103 101
 # "Arrangement ▸ Balance Sizes" by three letters, after Mail was made wider.
-expect size 103 345x851
+expect size 103 464x851
 grow
 grow
 find
 finder-type bal
 finder-move 1
 finder-choose
-expect size 103 345x851
-expect size 101 345x851
+expect size 103 464x851
+expect size 101 464x851
 # "Undo…", whatever it is called just now: the balancing, the growing, the dock.
 find
 finder-type undo
@@ -38,7 +38,7 @@ finder-type undo
 finder-move 1
 finder-choose
 expect docked 103
-expect size 103 345x851
+expect size 103 464x851
 find
 finder-type undo
 finder-move 1

@@ -7,7 +7,7 @@ import Testing
 /// Windows that cannot take the size of their slot. Those that cannot shrink become tiles (A05);
 /// these are the ones that cannot grow: Calculator, System Settings, most utility windows.
 @Suite @MainActor struct ResistingWindowTests {
-  /// [calculator | Desktop | notes]; the calculator cannot be larger than 300 × 400.
+  /// [calculator | notes], with the Desktop between them where it has a column; the calculator cannot be larger than 300 × 400.
   func makeHarness() -> (Harness, WindowID, WindowID) {
     let h = Harness()
     let calculator = h.system.open(app: "Calculator", frame: CGRect(x: 500, y: 300, width: 300, height: 400))
@@ -28,10 +28,13 @@ import Testing
   }
 
   @Test func itIsNotMovedAgainWhenNothingAboutItsSlotChanged() {
-    let (h, calculator, notes) = makeHarness()
+    let (h, calculator, _) = makeHarness()
+    // A gap that is not the calculator's: the one between Notes and a third window.
+    let mail = h.system.open(app: "Mail")
+    h.run("dock \(mail.rawValue) right")
     let moves = h.system.frameLog.filter { $0.window == calculator }.count
-    #expect(h.run("resize \(notes.rawValue) left 40").ok)
-    #expect(h.run("resize \(notes.rawValue) left -40").ok)
+    #expect(h.run("resize \(mail.rawValue) left 40").ok)
+    #expect(h.run("resize \(mail.rawValue) left -40").ok)
     #expect(h.system.frameLog.filter { $0.window == calculator }.count == moves, "no flicker through the corner")
   }
 

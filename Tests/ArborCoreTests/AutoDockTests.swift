@@ -19,12 +19,22 @@ private func w(_ raw: UInt32) -> WindowID { WindowID(raw) }
   func plan(
     _ workspace: Workspace, recent: [WindowID], tabs: Bool = false, minimums: [WindowID: CGSize] = [:],
     absent: Set<WindowID> = [], on frame: CGRect = display, emptyDesktopWeight: Double? = nil,
-    makingRoom terms: MakeRoom.Terms? = nil
+    makingRoom terms: MakeRoom.Terms? = nil, desktopColumn: Bool = false
   ) -> AutoDock.Plan {
     AutoDock.plan(
-      for: w(900), in: workspace, recent: recent, frame: frame, options: LayoutOptions(), tabsEnabled: tabs,
-      isPresent: { !absent.contains($0) }, minimumSize: { minimums[$0] }, emptyDesktopWeight: emptyDesktopWeight,
-      makingRoom: terms)
+      for: w(900), in: workspace, recent: recent, frame: frame, options: LayoutOptions(desktopColumn: desktopColumn),
+      tabsEnabled: tabs, isPresent: { !absent.contains($0) }, minimumSize: { minimums[$0] },
+      emptyDesktopWeight: emptyDesktopWeight, makingRoom: terms)
+  }
+
+  /// 1 has the right half of the display and 9 the left (with `rows`, the upper and the lower), then whatever `dock` adds. So nothing
+  /// is left over, which would go first (`whatIsLeftOverGoesFirst`), and somebody has to share.
+  func halves(rows: Bool = false, _ dock: (inout Workspace) -> Void = { _ in }) -> Workspace {
+    workspace {
+      $0.dock(w(1), at: .cameraEdge(rows ? .top : .right))
+      $0.dock(w(9), at: .cameraEdge(rows ? .bottom : .left))
+      dock(&$0)
+    }
   }
 
   func target(_ plan: AutoDock.Plan) -> DropTarget? {
@@ -44,16 +54,17 @@ private func w(_ raw: UInt32) -> WindowID { WindowID(raw) }
     #expect(placement.covers == nil)
   }
 
+  /// With a column for the Desktop: without one an empty Desktop has no share to be left.
   @Test func theFirstWindowLeavesAnEmptyDesktopItsShare() {
     var empty = workspace { _ in }
-    guard case .dock(let placement) = plan(empty, recent: [], emptyDesktopWeight: 0.5) else {
+    guard case .dock(let placement) = plan(empty, recent: [], emptyDesktopWeight: 0.5, desktopColumn: true) else {
       Issue.record("not docked")
       return
     }
     #expect(placement.target == .cameraEdge(.right))
     #expect(placement.desktopWeight == 0.5)
     #expect(placement.slot == CGRect(x: 492, y: 37, width: 936, height: 851))
-    placement.apply(to: &empty, docking: w(900))
+    placement.apply(to: &empty, docking: w(900), desktopColumn: true)
     let tree = empty.tree
     #expect(abs(tree[tree.desktop]!.weight * 2 - tree[leaf(900, empty)]!.weight) < 1e-9)
     #expect(abs(tree[tree.desktop]!.weight + tree[leaf(900, empty)]!.weight - 2) < 1e-9)
@@ -79,15 +90,23 @@ private func w(_ raw: UInt32) -> WindowID { WindowID(raw) }
     #expect(abs(tree[tree.desktop]!.weight * 4 - tree[leaf(900, empty)]!.weight) < 1e-9)
   }
 
+  @Test func whatIsLeftOverGoesFirst() {
+    // 1 has the right half. Nobody has the left one, so 1 does not give half of its own.
+    let one = workspace { $0.dock(w(1), at: .cameraEdge(.right)) }
+    guard case .dock(let placement) = plan(one, recent: [w(1)]) else {
+      Issue.record("not docked")
+      return
+    }
+    #expect(placement.target == .beside(one.tree.desktop, .left))
+    #expect(placement.slot == CGRect(x: 12, y: 37, width: 702, height: 851))
+  }
+
   @Test func aTallSlotIsSplitBelowAndAWideOneToTheRight() {
     // Half the display: 702 x 851.
-    let tall = workspace { $0.dock(w(1), at: .cameraEdge(.right)) }
+    let tall = halves()
     #expect(target(plan(tall, recent: [w(1)])) == .beside(leaf(1, tall), .bottom))
     // A quarter: 702 x 419 or so.
-    let wide = workspace {
-      $0.dock(w(1), at: .cameraEdge(.right))
-      $0.dock(w(2), at: .beside($0.tree.leaf(containing: w(1))!, .bottom))
-    }
+    let wide = halves { $0.dock(w(2), at: .beside($0.tree.leaf(containing: w(1))!, .bottom)) }
     guard case .dock(let placement) = plan(wide, recent: [w(2), w(1)]) else {
       Issue.record("not docked")
       return
@@ -99,7 +118,7 @@ private func w(_ raw: UInt32) -> WindowID { WindowID(raw) }
 
   @Test func aSquareSlotIsSplitToTheRight() {
     // Half of 1036 x 524, less the gaps: 500 x 500.
-    let square = workspace { $0.dock(w(1), at: .cameraEdge(.right)) }
+    let square = halves()
     let placed = plan(square, recent: [w(1)], on: CGRect(x: 0, y: 0, width: 1036, height: 524))
     #expect(target(placed) == .beside(leaf(1, square), .right))
   }
@@ -112,8 +131,8 @@ private func w(_ raw: UInt32) -> WindowID { WindowID(raw) }
     // 7 floats, 8 is unknown, the new window itself already has the keyboard.
     both.floating[w(7)] = CGRect(x: 0, y: 100, width: 500, height: 400)
     #expect(target(plan(both, recent: [w(900), w(7), w(8), w(2), w(1)])) == .beside(leaf(2, both), .bottom))
-    // 2 is minimized.
-    #expect(target(plan(both, recent: [w(2), w(1)], absent: [w(2)])) == .beside(leaf(1, both), .bottom))
+    // 2 is minimized, and 1 has its room as well: it is wider than tall.
+    #expect(target(plan(both, recent: [w(2), w(1)], absent: [w(2)])) == .beside(leaf(1, both), .right))
   }
 
   @Test func aNeighbourOutOfViewIsPassedOverAndTheViewStays() {
@@ -160,8 +179,7 @@ private func w(_ raw: UInt32) -> WindowID { WindowID(raw) }
 
   /// A quarter of the display cut in four: 345 x 203 or so, which halves to less than 240 x 160 both ways.
   func crowded() -> Workspace {
-    workspace {
-      $0.dock(w(1), at: .cameraEdge(.right))
+    halves {
       $0.dock(w(2), at: .beside($0.tree.leaf(containing: w(1))!, .bottom))
       $0.dock(w(3), at: .beside($0.tree.leaf(containing: w(2))!, .right))
       $0.dock(w(4), at: .beside($0.tree.leaf(containing: w(3))!, .bottom))
@@ -170,7 +188,7 @@ private func w(_ raw: UInt32) -> WindowID { WindowID(raw) }
 
   @Test func whenTheNeighbourIsTooSmallToShareTheLargestWindowDoes() {
     let crowded = crowded()
-    #expect(target(plan(crowded, recent: [w(4)])) == .beside(leaf(1, crowded), .right))
+    #expect(target(plan(crowded, recent: [w(4)])) == .beside(leaf(9, crowded), .bottom))
   }
 
   @Test func withTabsOnATabComesBeforeAPlaceFurtherAway() {
@@ -188,14 +206,13 @@ private func w(_ raw: UInt32) -> WindowID { WindowID(raw) }
     let crowded = crowded()
     var fixed = Dictionary(uniqueKeysWithValues: (2...4).map { (w($0), CGSize(width: 340, height: 200)) })
     fixed[w(1)] = CGSize(width: 700, height: 400)
+    fixed[w(9)] = CGSize(width: 700, height: 800)
     #expect(plan(crowded, recent: [w(4)], minimums: fixed) == .float(.noRoom))
   }
 
   @Test func aNeighbourKnownNotToShrinkThatFarIsSplitTheOtherWay() {
     // 1416 x 419 or so: wide, so to the right first. But 1 is Safari-like and will not go below 800.
-    let rows = workspace {
-      $0.dock(w(1), at: .cameraEdge(.top))
-    }
+    let rows = halves(rows: true)
     #expect(target(plan(rows, recent: [w(1)])) == .beside(leaf(1, rows), .right))
     #expect(
       target(plan(rows, recent: [w(1)], minimums: [w(1): CGSize(width: 800, height: 0)]))
@@ -203,32 +220,30 @@ private func w(_ raw: UInt32) -> WindowID { WindowID(raw) }
   }
 
   @Test func aTallNeighbourKnownNotToGetThatShortIsSplitToTheRight() {
-    let tall = workspace { $0.dock(w(1), at: .cameraEdge(.right)) }
+    let tall = halves()
     #expect(
       target(plan(tall, recent: [w(1)], minimums: [w(1): CGSize(width: 0, height: 500)]))
         == .beside(leaf(1, tall), .right))
   }
 
   @Test func whenTheNeighbourIsTheLargestAndCannotShareTheNextLargestDoes() {
-    let halves = workspace {
-      $0.dock(w(1), at: .cameraEdge(.right))
-      $0.dock(w(2), at: .beside($0.tree.leaf(containing: w(1))!, .bottom))
-    }
+    // 9 has half the display, 1 and 2 a quarter each.
+    let three = halves { $0.dock(w(2), at: .beside($0.tree.leaf(containing: w(1))!, .bottom)) }
     #expect(
-      target(plan(halves, recent: [w(1)], minimums: [w(1): CGSize(width: 700, height: 400)]))
-        == .beside(leaf(2, halves), .right))
+      target(plan(three, recent: [w(9)], minimums: [w(9): CGSize(width: 700, height: 800)]))
+        == .beside(leaf(1, three), .right))
   }
 
   @Test func ofWindowsOfTheSameSizeTheFirstShares() {
-    // 1, 5 and 2 are 345 x 419 or so; 3 and 4 half as tall, too small to share.
+    // 9, 5 and 1 are 702 x 419 or so; 3 and 4 a quarter of that, too small to share.
     var crowded = crowded()
-    crowded.dock(w(5), at: .beside(leaf(1, crowded), .right))
-    #expect(target(plan(crowded, recent: [w(4)])) == .beside(leaf(1, crowded), .bottom))
+    crowded.dock(w(5), at: .beside(leaf(9, crowded), .bottom))
+    #expect(target(plan(crowded, recent: [w(4)])) == .beside(leaf(9, crowded), .right))
   }
 
   @Test func whereRoomWillBeMadeThePlanReckonsWithIt() {
     // 1416 x 419 or so. Half is 702, and the new window is known to stop at 800.
-    let rows = workspace { $0.dock(w(1), at: .cameraEdge(.top)) }
+    let rows = halves(rows: true)
     let minimums = [w(900): CGSize(width: 800, height: 0)]
     #expect(target(plan(rows, recent: [w(1)], minimums: minimums)) == .beside(leaf(1, rows), .bottom))
     guard
@@ -242,33 +257,38 @@ private func w(_ raw: UInt32) -> WindowID { WindowID(raw) }
     #expect(placement.slot.width >= 800 && placement.slot.maxX == 1428)
   }
 
+  /// With a column for the Desktop. Without one it is only what is left over, and a new window takes that first.
   @Test func onlyAnEmptyDesktopMayBecomeATile() {
     // Half the display each. Both windows stop at 640 points, so side by side they leave the Desktop 112.
     let half = workspace { $0.dock(w(1), at: .cameraEdge(.right)) }
     let minimums = [w(1): CGSize(width: 640, height: 600), w(900): CGSize(width: 640, height: 600)]
     let empty = MakeRoom.Terms(desktopIsInUse: false)
     let inUse = MakeRoom.Terms(desktopIsInUse: true)
-    #expect(AutoDock.desktopMayBecomeATile(on: empty, options: LayoutOptions()))
-    #expect(!AutoDock.desktopMayBecomeATile(on: inUse, options: LayoutOptions()))
-    #expect(target(plan(half, recent: [w(1)], minimums: minimums, makingRoom: empty)) == .beside(leaf(1, half), .right))
-    #expect(plan(half, recent: [w(1)], minimums: minimums, makingRoom: inUse) == .float(.noRoom))
-    #expect(plan(half, recent: [w(1)], minimums: minimums) == .float(.noRoom))
+    #expect(AutoDock.desktopMayBecomeATile(on: empty, options: LayoutOptions(desktopColumn: true)))
+    #expect(!AutoDock.desktopMayBecomeATile(on: inUse, options: LayoutOptions(desktopColumn: true)))
+    func plan(makingRoom terms: MakeRoom.Terms?) -> AutoDock.Plan {
+      self.plan(half, recent: [w(1)], minimums: minimums, makingRoom: terms, desktopColumn: true)
+    }
+    #expect(target(plan(makingRoom: empty)) == .beside(leaf(1, half), .right))
+    #expect(plan(makingRoom: inUse) == .float(.noRoom))
+    #expect(plan(makingRoom: nil) == .float(.noRoom))
   }
 
   @Test func theNewWindowsOwnMinimumCountsOnceItIsKnown() {
-    let rows = workspace { $0.dock(w(1), at: .cameraEdge(.top)) }
+    let rows = halves(rows: true)
     #expect(
       target(plan(rows, recent: [w(1)], minimums: [w(900): CGSize(width: 800, height: 0)]))
         == .beside(leaf(1, rows), .bottom))
     #expect(plan(rows, recent: [w(1)], minimums: [w(900): CGSize(width: 800, height: 300)]) == .float(.noRoom))
   }
 
+  /// With a column for the Desktop.
   @Test func theDesktopIsNotSqueezedIntoATile() {
     // The Desktop is 300 points wide. A window at the right edge of the row would take a share of it.
     var narrow = workspace { $0.dock(w(1), at: .cameraEdge(.right)) }
     narrow.tree.moveBoundary(
       leading: narrow.tree.desktop, trailing: leaf(1, narrow), by: -402, pointsPerWeight: 702)
-    #expect(target(plan(narrow, recent: [])) == .cameraEdge(.bottom))
+    #expect(target(plan(narrow, recent: [], desktopColumn: true)) == .cameraEdge(.bottom))
   }
 
   @Test func tilesThatWereThereBeforeDoNotCount() {

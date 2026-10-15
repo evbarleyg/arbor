@@ -302,7 +302,7 @@ extension TraceHeader: Codable {
     recorded = try c.decodeIfPresent(String.self, forKey: .recorded) ?? ""
     displays = try c.decode([TraceDisplay].self, forKey: .displays)
     windows = try c.decodeIfPresent([TraceWindow].self, forKey: .windows) ?? []
-    settings = try c.decodeIfPresent(Settings.self, forKey: .settings) ?? Settings()
+    settings = try c.decodeIfPresent(RecordedSettings.self, forKey: .settings)?.settings ?? Settings()
     workspaces = try c.decodeIfPresent([DisplayID: Workspace].self, forKey: .workspaces) ?? [:]
     dormant = try c.decodeIfPresent([DisplayID: Workspace].self, forKey: .dormant) ?? [:]
     parked = try c.decodeIfPresent([WindowID].self, forKey: .parked) ?? []
@@ -609,7 +609,7 @@ extension TraceLine: Codable {
       }
     } else if let key = try c.decodeIfPresent(String.self, forKey: .timer) {
       self = .timer(key)
-    } else if let settings = try c.decodeIfPresent(Settings.self, forKey: .settings) {
+    } else if let settings = try c.decodeIfPresent(RecordedSettings.self, forKey: .settings)?.settings {
       self = .settings(settings)
     } else if let text = try c.decodeIfPresent(String.self, forKey: .raw) {
       self = .raw(text)
@@ -1173,5 +1173,19 @@ extension TitleTokens {
       index += 1
     }
     return result
+  }
+}
+
+/// Settings as a trace holds them. A recorder writes down every key there is, so a key that is missing did not exist when the trace
+/// was recorded, and Arbor did then what it did before there was a choice. Where that is not today's default it is said here, one line
+/// for each such key, or old recordings would be replayed against another Arbor than the one that made them.
+private struct RecordedSettings: Decodable {
+  var settings: Settings
+
+  init(from decoder: any Decoder) throws {
+    settings = try Settings(from: decoder)
+    let written = try decoder.container(keyedBy: StringKey.self)
+    func isMissing(_ key: String) -> Bool { !written.contains(StringKey(key)) }
+    if isMissing("desktopColumn") { settings.desktopColumn = true }
   }
 }

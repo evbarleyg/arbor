@@ -856,18 +856,20 @@ private let b = WindowID(102)
 
   // MARK: The nets are cast
 
-  /// A net that never asks its question catches nothing. The floors are about half of what forty ordinary walks gave when this was written.
+  /// A net that never asks its question catches nothing. The floors are about half of what forty ordinary walks gave when this was written,
+  /// and are asked of eighty walks twice over: the rarest question comes some three times in forty, and a change that shuffles the
+  /// walks can leave forty without it.
   @Test func ordinaryWalksReachEveryQuestion() {
     let before = ChaosRunner.questionsAsked
     // Past every rule: what is counted is how far the walks get, not what they find.
-    for seed in UInt64(1)...40 {
+    for seed in UInt64(1)...80 {
       let runner = ChaosRunner()
       var generator = ChaosGenerator(seed: seed, ordinary: true)
       for _ in 0..<200 { _ = runner.step(generator.next(runner)) }
       for way in ChaosRunner.WayBack.allCases { _ = runner.step(.wayBack(way)) }
     }
     func asked(_ net: String) -> Int { (ChaosRunner.questionsAsked[net] ?? 0) - (before[net] ?? 0) }
-    for (net, floor) in Self.floors { #expect(asked(net) >= floor, "\(net) was asked \(asked(net)) times") }
+    for (net, floor) in Self.floors { #expect(asked(net) >= 2 * floor, "\(net) was asked \(asked(net)) times") }
   }
 
   /// The walks of a person who knows nine keys and the mouse: they begin as Arbor ships, drag more than they do anything else, and press no other key.

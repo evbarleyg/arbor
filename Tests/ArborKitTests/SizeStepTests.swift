@@ -7,9 +7,9 @@ import Testing
 /// Windows that take sizes only in steps, as Terminal does with its character cells, and take the step nearest
 /// to what they are asked for. Seen on real windows.
 @Suite @MainActor struct SizeStepTests {
-  /// [terminal | Desktop | notes]
-  func makeHarness(step: CGSize) -> (Harness, WindowID, WindowID) {
-    let h = Harness()
+  /// [terminal | Desktop | notes]. As Arbor ships, notes took all that was left: two halves, and the Desktop has no room.
+  func makeHarness(step: CGSize, settings: Settings = Harness.settingsWhenNoneAreGiven) -> (Harness, WindowID, WindowID) {
+    let h = Harness(settings: settings)
     let terminal = h.system.open(app: "Terminal", frame: CGRect(x: 300, y: 200, width: 560, height: 340))
     let notes = h.system.open(app: "Notes")
     h.system.setSizeStep(terminal, step)
@@ -41,7 +41,10 @@ import Testing
     CGSize(width: 13, height: 29), CGSize(width: 17, height: 35),
   ])
   func aWindowThatRoundsToTheNearestStepStaysInsideItsSlot(step: CGSize) throws {
-    let (h, terminal, notes) = makeHarness(step: step)
+    // From a third of the display, 464 points, as this walk always went. From a half, two of these steps meet a slot in which the window,
+    // asked for its size where it stands a point inside the old slot, takes two points more and is left there: three over, where two
+    // are allowed. That is so with a column as without (one docked window, `resize right 3`), and is for whoever keeps "ask first".
+    let (h, terminal, notes) = makeHarness(step: step, settings: .withDesktopColumn)
     try expectFits(h, terminal, step: step)
     // Every width a seam can give it, so that both roundings are met.
     for _ in 0..<12 {
@@ -89,9 +92,12 @@ import Testing
 
   @Test func itIsNotAskedAgainWhileItsSlotStaysTheSame() throws {
     let (h, terminal, notes) = makeHarness(step: CGSize(width: 7, height: 17))
+    // A gap that is not the terminal's, whether or not the Desktop lies between the two.
+    let mail = h.system.open(app: "Mail")
+    h.run("dock \(mail.rawValue) beside \(notes.rawValue) bottom")
     h.system.clearFrameLog()
-    h.run("resize \(notes.rawValue) left 40")
-    h.run("resize \(notes.rawValue) left -40")
+    h.run("resize \(notes.rawValue) bottom 40")
+    h.run("resize \(notes.rawValue) bottom -40")
     #expect(h.system.frameLog.filter { $0.window == terminal }.isEmpty, "no growing and shrinking on every layout")
   }
 
@@ -118,7 +124,8 @@ import Testing
 
   /// Squeezed onto the Desktop, a floating Terminal takes the cell nearest to what it is asked for, which can be the
   /// larger one. Read as "it will not be made that small", that was a minimum of 861 points for a window that goes
-  /// down to 177, and when it was docked next, room was made for it: browser 574, Desktop 245, Terminal 861.
+  /// down to 177, and when it was docked next, room was made for it (then, with a column for the Desktop: browser 574, Desktop 245,
+  /// Terminal 861).
   @Test func aFloatingTerminalSqueezedOntoTheDesktopTeachesNoMinimum() throws {
     let (h, safari, terminal) = firstMinute()
     h.run("dock \(safari.rawValue) left")
@@ -127,10 +134,11 @@ import Testing
     #expect(h.visibleFrame.contains(floating))
 
     h.run("dock \(terminal.rawValue) right")
-    // Thirds, but for the browser's own minimum, which is real.
-    #expect(h.frame(safari)?.width == 574)
-    #expect(h.frame(terminal)?.width == 560)
-    #expect(try #require(h.layout?.desktopFrame).width > 500, "\(h.layout!.desktopFrame!)")
+    // It takes all that is left, the other half of 846, to the nearest cell (a point over, which any window is allowed). The browser
+    // keeps its half: nothing is taken from it for a minimum of 861.
+    #expect(h.frame(safari)?.width == 846)
+    #expect(h.frame(terminal)?.width == 847)
+    #expect(h.layout?.windowFrames[terminal]?.width == 846 && h.layout?.desktopFrame == nil)
     #expect(!isTile(h, terminal) && !isTile(h, safari))
   }
 
@@ -170,7 +178,8 @@ import Testing
     let filling = try #require(h.frame(terminal))
     #expect(desktop.insetBy(dx: -2, dy: -2).contains(filling), "\(filling) on \(desktop)")
     h.run("dock \(terminal.rawValue) right")
-    #expect(h.frame(safari)?.width == 574)
-    #expect(h.frame(terminal)?.width == 560)
+    // Two halves of 846, the terminal's to the nearest cell.
+    #expect(h.frame(safari)?.width == 846)
+    #expect(h.frame(terminal)?.width == 847)
   }
 }

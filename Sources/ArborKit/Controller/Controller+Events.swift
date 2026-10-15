@@ -32,6 +32,7 @@ extension Controller: WindowSystemEvents {
     defer { holdForgets(id) }
     let app = windows[id]?.pid
     let appName = windows[id]?.appName
+    let wasAway = windows[id]?.isPresent != true
     windows[id] = nil
     lettingBeEndsIfItNoLongerApplies()
     parked.remove(id)
@@ -72,7 +73,7 @@ extension Controller: WindowSystemEvents {
     if appsDoubleClick?.window == id { appsDoubleClick = nil }
     whereAZoomBegan[id] = nil
     forgetRuleState(of: id)
-    releasePendingSlot(of: id)
+    releasePendingSlot(of: id, away: wasAway)
     if drag?.window == id { cancelDrag() }
     guard isRunning else { return }
     // Before the step begins: the way back is no part of what the closing changed.
@@ -82,7 +83,7 @@ extension Controller: WindowSystemEvents {
     defer { endUndoStep(undoScope) }
     for display in workspaces.keys.sorted() where workspaces[display]!.contains(id) {
       if !slotWaitsAgain(after: id, on: display) {
-        workspaces[display]!.forget(id, shareSpace: settings.shareRemovedSpace)
+        workspaces[display]!.forget(id, shareSpace: settings.shareRemovedSpace, away: wasAway)
       }
       if wentBack?.display != display { relayout(display, reason: .structure) }
       if hadKeyboard { keyboardLeft(id, of: app, on: display, wentBack: wentBack) }

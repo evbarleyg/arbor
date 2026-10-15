@@ -112,7 +112,7 @@ extension Controller {
       // A place whose time was up went with this change's layout (`dropOverdueSlots`). That is Arbor giving up its
       // waiting, not a change anybody made: a move of the view would otherwise be a step, and one that cannot be
       // taken back.
-      for slot in slotsDroppedDuringUndoStep { before.forget(slot, shareSpace: settings.shareRemovedSpace) }
+      for (slot, away) in slotsDroppedDuringUndoStep { before.forget(slot, shareSpace: settings.shareRemovedSpace, away: away) }
       guard let after = workspaces[display], !before.hasSameArrangement(as: after) else { continue }
       // Nothing happened but that Arbor moved the gaps to make room for a window (F61): the view moved, say. That is
       // not a change anybody made, and taking it back would only make Arbor do it again.
@@ -521,7 +521,8 @@ extension Controller {
     let workspace = restoration.workspace
     let layout = layout(of: displayID)
     let desktop = layout?.desktopFrame.map { floatingRegion($0, on: display) }
-    let desktopIsPartOfTheView = workspace.tree.subtree(workspace.camera, contains: workspace.tree.desktop)
+    // By what shows: the view on record can be on a window that is away, and then what is around it shows.
+    let desktopIsPartOfTheView = workspace.tree.subtree(layout?.camera ?? workspace.camera, contains: workspace.tree.desktop)
     let alone = windowThatTakesDesktop(of: displayID)
     let cameraStayed =
       previous.map { $0.camera == workspace.camera && $0.tree.isSameNode($0.camera, in: workspace.tree) } ?? false

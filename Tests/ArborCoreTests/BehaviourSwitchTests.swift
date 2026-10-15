@@ -12,12 +12,12 @@ private let d = WindowID(4)
 private let share = LayoutOptions(minimumUsableSize: .zero)
 private let keep = LayoutOptions(minimumUsableSize: .zero, shareRemovedSpace: false)
 
-/// A row [a | b | c | desktop] whose children have the given weights.
+/// A row [a | b | c | desktop] whose children have the given weights: with a column for the Desktop, one more that must not move.
 private func row(weights: [Double] = [1, 1, 1, 1]) -> LayoutTree {
   var tree = LayoutTree()
-  let leafC = tree.dock(c, beside: tree.desktop, edge: .left)
-  let leafB = tree.dock(b, beside: leafC, edge: .left)
-  let leafA = tree.dock(a, beside: leafB, edge: .left)
+  let leafC = tree.dock(c, beside: tree.desktop, edge: .left, desktopColumn: true)
+  let leafB = tree.dock(b, beside: leafC, edge: .left, desktopColumn: true)
+  let leafA = tree.dock(a, beside: leafB, edge: .left, desktopColumn: true)
   // Docking halves shares. Move the boundaries until the weights are the ones asked for. A boundary
   // can only hand over what its two neighbours hold, so sweep both ways, more than once.
   let nodes = [leafA, leafB, leafC, tree.desktop]
@@ -221,7 +221,7 @@ private func layout(_ tree: LayoutTree, _ options: LayoutOptions, without absent
   @Test func dockingBesideAWindowMovesNobodyElse() {
     var tree = row(weights: [3, 1, 0.7, 2])
     let before = layout(tree, keep)
-    tree.dock(d, beside: tree.leaf(containing: b)!, edge: .right)
+    tree.dock(d, beside: tree.leaf(containing: b)!, edge: .right, desktopColumn: true)
     let after = layout(tree, keep)
     #expect(after.windowFrames[a] == before.windowFrames[a])
     #expect(after.windowFrames[c] == before.windowFrames[c])
@@ -234,9 +234,10 @@ private func layout(_ tree: LayoutTree, _ options: LayoutOptions, without absent
   @Test(arguments: [Edge.left, .right]) func aVisitorsRoomIsGivenBackOnlyOnce(edge: Edge) {
     let before = row(weights: [1, 2, 1, 3])
     var tree = before
-    tree.dock(d, beside: tree.leaf(containing: b)!, edge: edge)
+    tree.dock(d, beside: tree.leaf(containing: b)!, edge: edge, desktopColumn: true)
     tree.remove(d, shareSpace: false)
     #expect(layout(tree, keep).windowFrames == layout(before, keep).windowFrames)
+    #expect(layout(tree, keep).desktopFrame == layout(before, keep).desktopFrame)
     for window in [a, b, c] {
       #expect(tree[tree.leaf(containing: window)!]!.weight == before[before.leaf(containing: window)!]!.weight)
     }
@@ -245,7 +246,7 @@ private func layout(_ tree: LayoutTree, _ options: LayoutOptions, without absent
   /// Once something else in the row has changed it is no visit any more, and the switch decides.
   @Test func afterAnotherChangeAVisitorsRoomGoesToTheNeighbourBefore() {
     var tree = row()
-    tree.dock(d, beside: tree.leaf(containing: b)!, edge: .left)
+    tree.dock(d, beside: tree.leaf(containing: b)!, edge: .left, desktopColumn: true)
     tree.moveBoundary(
       leading: tree.leaf(containing: c)!, trailing: tree.desktop, by: 20, pointsPerWeight: 100, minimumPoints: 0)
     let before = layout(tree, keep).windowFrames
@@ -258,12 +259,13 @@ private func layout(_ tree: LayoutTree, _ options: LayoutOptions, without absent
   }
 
   /// Making room (F61) says how long each slot should be. With the switch off a weight covers the gap as well.
+  /// [a | Desktop | b], thirds: with a column for the Desktop, which gives.
   @Test func makingRoomGivesAWindowExactlyWhatItNeedsWithEitherValue() {
     for shareRemovedSpace in [true, false] {
-      let options = LayoutOptions(shareRemovedSpace: shareRemovedSpace)
+      let options = LayoutOptions(shareRemovedSpace: shareRemovedSpace, desktopColumn: true)
       var tree = LayoutTree()
-      tree.dock(a, beside: tree.root, edge: .left)
-      tree.dock(b, beside: tree.root, edge: .right)
+      tree.dock(a, beside: tree.root, edge: .left, desktopColumn: true)
+      tree.dock(b, beside: tree.root, edge: .right, desktopColumn: true)
       let old = LayoutEngine.layout(tree, camera: tree.root, in: screen, options: options, isPresent: { _ in true })
       let (served, layout, _) = MakeRoom.serve(
         &tree, camera: tree.root, in: screen, options: options, isPresent: { _ in true },
@@ -278,9 +280,9 @@ private func layout(_ tree: LayoutTree, _ options: LayoutOptions, without absent
   /// What is seen of 1 includes the place reserved for 2, which is not 1's to give or to keep.
   @Test func roomIsMadeBesideAMinimizedWindowAsWellAndItsSlotIsLeftAlone() {
     var tree = LayoutTree()
-    for raw in [3, 2, 1] as [UInt32] { tree.dock(WindowID(raw), beside: tree.root, edge: .left) }
-    let options = LayoutOptions(shareRemovedSpace: false)
-    // [1 and the slot of 2 | 3 | Desktop]: 702, 345 and 345 points. 3 needs 700.
+    for raw in [3, 2, 1] as [UInt32] { tree.dock(WindowID(raw), beside: tree.root, edge: .left, desktopColumn: true) }
+    let options = LayoutOptions(shareRemovedSpace: false, desktopColumn: true)
+    // With a column for the Desktop. [1 and the slot of 2 | 3 | Desktop]: 702, 345 and 345 points. 3 needs 700.
     let (served, layout, _) = MakeRoom.serve(
       &tree, camera: tree.root, in: screen, options: options, isPresent: { $0 != WindowID(2) },
       minimumSize: { $0 == WindowID(3) ? CGSize(width: 700, height: 240) : nil },
@@ -298,11 +300,11 @@ private func layout(_ tree: LayoutTree, _ options: LayoutOptions, without absent
   /// It gives of its own slot only, and keeps a usable width of that: when 2 comes back, 1 is still a window.
   @Test func aWindowBesideAReservedPlaceGivesNoMoreThanItsOwnSlot() {
     var tree = LayoutTree()
-    for raw in [3, 2, 1] as [UInt32] { tree.dock(WindowID(raw), beside: tree.root, edge: .left) }
+    for raw in [3, 2, 1] as [UInt32] { tree.dock(WindowID(raw), beside: tree.root, edge: .left, desktopColumn: true) }
     let before = tree
-    // 3 wants 345 + 265 from the Desktop + more than the 105 that 1 can spare of its own 345.
+    // The same row. 3 wants 345 + 265 from the Desktop + more than the 105 that 1 can spare of its own 345.
     let (served, _, _) = MakeRoom.serve(
-      &tree, camera: tree.root, in: screen, options: LayoutOptions(shareRemovedSpace: false),
+      &tree, camera: tree.root, in: screen, options: LayoutOptions(shareRemovedSpace: false, desktopColumn: true),
       isPresent: { $0 != WindowID(2) }, minimumSize: { $0 == WindowID(3) ? CGSize(width: 730, height: 240) : nil },
       terms: MakeRoom.Terms(desktopIsInUse: true))
     #expect(served.isEmpty)
@@ -310,7 +312,7 @@ private func layout(_ tree: LayoutTree, _ options: LayoutOptions, without absent
   }
 
   /// Any tree, any minimums, one window perhaps minimized, the switch off: whoever is served fits, and nobody pays with their place.
-  @Test func makingRoomHoldsItsPromisesWithTheSwitchOff() {
+  @Test(arguments: [false, true]) func makingRoomHoldsItsPromisesWithTheSwitchOff(desktopColumn: Bool) {
     var seed: UInt64 = 0x5EED_F033
     func random(_ bound: Int) -> Int {
       seed = seed &* 6_364_136_223_846_793_005 &+ 1_442_695_040_888_963_407
@@ -324,11 +326,12 @@ private func layout(_ tree: LayoutTree, _ options: LayoutOptions, without absent
       let count = 2 + random(6)
       for number in 1...count {
         let window = WindowID(UInt32(number))
-        leaves.append(tree.dock(window, beside: leaves[random(leaves.count)], edge: Edge.allCases[random(4)]))
+        leaves.append(
+          tree.dock(window, beside: leaves[random(leaves.count)], edge: Edge.allCases[random(4)], desktopColumn: desktopColumn))
         if random(2) == 0 { minimums[window] = CGSize(width: 100 + random(900), height: 100 + random(600)) }
       }
       let gone = WindowID(UInt32(random(2 * count)))
-      let options = LayoutOptions(shareRemovedSpace: false)
+      let options = LayoutOptions(shareRemovedSpace: false, desktopColumn: desktopColumn)
       func serve(_ tree: inout LayoutTree) -> (served: [MakeRoom.Short], layout: Layout, gaveBack: Bool) {
         MakeRoom.serve(
           &tree, camera: tree.root, in: screen, options: options, isPresent: { $0 != gone },
@@ -352,11 +355,11 @@ private func layout(_ tree: LayoutTree, _ options: LayoutOptions, without absent
     #expect(servedInAll > 100, "only \(servedInAll) were served: the test tests little")
   }
 
-  @Test func aCollapsingColumnThatJoinsTheRowMovesNobodyElse() {
-    // [a | [d over [b | c]] | desktop]: when d leaves, b and c join the row.
+  @Test(arguments: [true, false]) func aCollapsingColumnThatJoinsTheRowMovesNobodyElse(desktopColumn: Bool) {
+    // [a | [d over [b | c]] | desktop], the Desktop with room or without: when d leaves, b and c join the row.
     var tree = LayoutTree()
-    tree.dock(a, beside: tree.desktop, edge: .left)
-    let leafB = tree.dock(b, beside: tree.desktop, edge: .left)
+    tree.dock(a, beside: tree.desktop, edge: .left, desktopColumn: desktopColumn)
+    let leafB = tree.dock(b, beside: tree.desktop, edge: .left, desktopColumn: desktopColumn)
     tree.dock(d, beside: leafB, edge: .top)
     tree.dock(c, beside: leafB, edge: .right)
     let before = layout(tree, keep)

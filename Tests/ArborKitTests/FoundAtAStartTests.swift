@@ -322,7 +322,7 @@ private let beside = DisplaySnapshot(
   /// A display beside the laptop goes, Arbor squeezes what came over from it onto a narrow Desktop and is killed. The display is back
   /// when a person starts Arbor. The window is not fetched, it floats where it is, and its own size is still known there.
   @Test func afterARunThatDidNotQuitADisplayThatIsBackFetchesNothingAndWhatIsRememberedStands() throws {
-    let old = Harness(displays: [lap, beside], settings: .makingWay)  // as Arbor ships it squeezes none (F64)
+    let old = Harness(displays: [lap, beside], settings: .makingWay.withDesktopColumn)  // as Arbor ships it squeezes none (F64)
     let editor = old.system.open(app: "Editor", pid: 1001, frame: CGRect(x: 100, y: 100, width: 700, height: 500))
     let browser = old.system.open(app: "Browser", pid: 1003, frame: CGRect(x: 200, y: 100, width: 700, height: 500))
     let notes = old.system.open(app: "Notes", pid: 1002, frame: CGRect(x: 1800, y: 200, width: 900, height: 420))
@@ -390,7 +390,7 @@ private let beside = DisplaySnapshot(
   /// Squeezed at the desk, where Arbor is killed; started on the lap. The display it floated on is not there, so it is taken in afresh where it
   /// is found, but its own size is not forgotten.
   @Test func squeezedOnADisplayThatIsGoneItsOwnSizeIsStillKnown() throws {
-    let old = Harness(displays: [desk], settings: .makingWay)  // as Arbor ships it squeezes none (F64)
+    let old = Harness(displays: [desk], settings: .makingWay.withDesktopColumn)  // as Arbor ships it squeezes none (F64)
     let editor = old.system.open(app: "Editor", pid: 1001, frame: CGRect(x: 100, y: 100, width: 700, height: 500))
     let browser = old.system.open(app: "Browser", pid: 1003, frame: CGRect(x: 200, y: 100, width: 700, height: 500))
     let own = CGRect(x: 300, y: 200, width: 1200, height: 420)
@@ -779,7 +779,7 @@ private let beside = DisplaySnapshot(
   /// [editor | Desktop | browser] leaves a Desktop narrower than the notes.
   /// Where floating windows make way (`floatingWindowsMakeWay`): as Arbor ships it squeezes none (F64).
   func squeezed(watchingThePermission: Bool = false) -> (h: Harness, notes: WindowID, own: CGRect) {
-    let h = Harness(displays: [lap], settings: .makingWay)
+    let h = Harness(displays: [lap], settings: .makingWay.withDesktopColumn)
     if watchingThePermission { h.watchAccessibility() }
     let editor = h.system.open(app: "Editor", pid: 1001, frame: CGRect(x: 100, y: 100, width: 700, height: 500))
     let browser = h.system.open(app: "Browser", pid: 1003, frame: CGRect(x: 200, y: 100, width: 700, height: 500))
@@ -1165,7 +1165,7 @@ private let beside = DisplaySnapshot(
     let runner = ChaosRunner()
     var narrowest = CGFloat.infinity
     // Where floating windows make way: as Arbor ships it squeezes none (F64).
-    for action in ChaosAction.script("settings {\"floatingWindowsMakeWay\":true}\n" + script) {
+    for action in ChaosAction.script("settings {\"desktopColumn\":true,\"floatingWindowsMakeWay\":true}\n" + script) {
       let broken = runner.step(action).filter { !ChaosRunner.knownRules.contains($0.rule) || $0.rule == "size-not-given-back" }
       #expect(broken.isEmpty, "\(action.text): \(broken)")
       narrowest = min(narrowest, runner.system.frame(of: WindowID(102))?.width ?? .infinity)

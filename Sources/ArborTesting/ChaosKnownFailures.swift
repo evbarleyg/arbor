@@ -32,7 +32,7 @@ extension ChaosRunner {
       story: "Only with `floatingWindowsMakeWay` on, which ships off (F64). A window out of view beside one display is docked on another display, out of view there too. It stays where it was, where "
         + "part of it shows, though the other display has a better place.",
       script: """
-        settings {"floatingWindowsMakeWay":true}
+        settings {"desktopColumn":true,"floatingWindowsMakeWay":true}
         launch
         mac-tiling off
         open 107 Xcode pid 1004 at 1201 365 2201 2311 min 2201 2311
@@ -42,7 +42,7 @@ extension ChaosRunner {
         layout Preview | Notes | Xcode
         """,
       """
-        settings {"floatingWindowsMakeWay":true}
+        settings {"desktopColumn":true,"floatingWindowsMakeWay":true}
         launch
         mac-tiling off
         open 103 Mail pid 1002 at -3344 467 2048 1725 min 192 328
@@ -292,6 +292,7 @@ extension ChaosRunner {
       story: "A window its person has left lower than macOS lets anybody put one cannot be asked where it stands, for it would not stay there. That it will not be "
         + "as narrow as its slot shows in the slot, and it is a tile a moment later. Once per window.",
       script: """
+        settings {"desktopColumn":true}
         displays main:0,0,1512,982:37,0,0,70* side:0,-1440,2560,1440:25,0,0,0 windows-never
         open 101 Mail pid 1002 at 130 202 1298 700 min 760 400
         open 104 Safari pid 1000 at 17 209 1380 664 min 574 240
@@ -1017,6 +1018,7 @@ extension ChaosRunner {
       rule: "plain-drag-started-a-timer", owner: "less by default (Q29, board 0.4): a plain drag docks nothing", severity: 3,
       story: "A window is dragged over another with no key held, and Arbor begins to wait for it to rest there.",
       script: """
+        settings {"desktopColumn":true}
         launch
         open 101 Notes pid 1001 at 300 200 800 500 min 709 300
         open 102 Safari pid 1000 at 100 100 900 600 min 574 240
@@ -1099,6 +1101,7 @@ extension ChaosRunner {
       story: "An editor, a browser and a terminal on a desk 1920 wide, ⌃⌥A. The terminal is 604 wide. Lay Out Again, any window that opens and closes, or the browser into the Dock and "
         + "out: the terminal, which nobody touched, is 444 wide, for good. What is lent to a window that will not shrink is worked out otherwise by a fresh layout.",
       script: """
+        settings {"desktopColumn":true}
         displays side:0,0,1920,1080:25,0,70,0* windows-never
         launch
         open 101 Xcode pid 1004 at 150 100 1300 800 min 1188 685
@@ -1219,6 +1222,7 @@ extension ChaosRunner {
       story: "A window out of view beside one display is docked on another display, out of view there too. It stays where it was, where part of "
         + "it shows, though the other display has a better place.",
       script: """
+        settings {"desktopColumn":true}
         launch
         displays main:0,0,800,600:25,0,0,0* side:-223,600,2560,1440:0,50,0,0 windows-first
         open 113 Notes pid 1001 at 1521 1197 1678 1696 min 1678 1696
@@ -1229,6 +1233,7 @@ extension ChaosRunner {
         layout Finder | Notes | Preview
         """,
       """
+        settings {"desktopColumn":true}
         launch
         displays main:0,0,1280,800:25,0,97,0* side:-53,800,1440,900:0,0,0,0 windows-late
         open 105 Preview pid 1007 at 85 41 3955 1815 min 3955 1815 max 3955 1815
@@ -1272,7 +1277,7 @@ extension ChaosRunner {
       script: """
         displays third:1327,12,1920,1080:0,0,0,0 main:-113,1920,1440,900:25,0,63,0 side:0,0,1080,1920:25,77,0,0* windows-never
         launch
-        settings {"rules":[{"app":"com.example.music","action":"dock beside com.example.safari right"}]}
+        settings {"desktopColumn":true,"rules":[{"app":"com.example.music","action":"dock beside com.example.safari right"}]}
         open 104 Music pid 1006 at 579 373 480 538 min 462 126
         open 105 Mail pid 1002 at -1202 644 356 460 no-bundle
         pinch began 0
@@ -1283,6 +1288,7 @@ extension ChaosRunner {
         focus 105
         """,
       """
+        settings {"desktopColumn":true}
         open 107 Xcode pid 1004 at 897 515 899 718 min 696 718
         open 110 Terminal pid 1003 at 70 476 700 240 title main.swift
         launch

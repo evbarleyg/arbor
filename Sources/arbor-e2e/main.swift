@@ -546,18 +546,21 @@ final class Runner {
     let untouched = actualFrames()
 
     var columnFrame = CGRect.zero
+    var firstHalf = CGRect.zero
     try step("dock the first window on the left", "dock \(w1.rawValue) left") { state in
       let frame = state.displays[0].windowFrames[w1]
+      firstHalf = frame ?? .zero
       check("\(w1) is docked", frame != nil)
       check("\(w1) sits at the left edge", abs((frame?.minX ?? 0) - (visible.minX + gap)) <= 3)
+      check("what is left over is the Desktop", state.displays[0].desktopFrame != nil)
     }
     try step("dock the second window on the right", "dock \(w2.rawValue) right") { state in
       let frames = state.displays[0].windowFrames
-      let desktop = state.displays[0].desktopFrame
       check("\(w2) sits at the right edge", abs((frames[w2]?.maxX ?? 0) - (visible.maxX - gap)) <= 3)
-      check(
-        "the Desktop stays between them",
-        (desktop?.minX ?? 0) > (frames[w1]?.maxX ?? .infinity) && (desktop?.maxX ?? .infinity) < (frames[w2]?.minX ?? 0))
+      // Two docks are two halves (Q28): the second takes all that is left, and the first stays as it is.
+      check("nothing is kept for the Desktop", state.displays[0].desktopFrame == nil, describe(state.displays[0].desktopFrame ?? .zero))
+      check("one gap lies between them", abs((frames[w2]?.minX ?? 0) - (frames[w1]?.maxX ?? 0) - gap) <= 3)
+      check("\(w1) has the place it had", frames[w1] == firstHalf, describe(frames[w1] ?? .zero))
     }
     try step("dock the third window below the first", "dock \(w3.rawValue) beside \(w1.rawValue) bottom") { state in
       let frames = state.displays[0].windowFrames

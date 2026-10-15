@@ -118,7 +118,7 @@ extension Controller {
     workspaces[displayID] = lent
     if let shown = drag?.reflow.trials[displayID] { layouts[displayID] = shown }
     placeFloatingWindows(on: displayID, layout: layout, reason: .structure)
-    if layout.desktopFrame == nil {
+    if !showsWhatFloats(layout, in: lent) {
       // A change of the arrangement takes no floating window out of view. But the ones an earlier trial
       // brought in with the Desktop were out of view before the drag, and leave with the Desktop.
       for window in lent.floating.keys.sorted()

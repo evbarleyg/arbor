@@ -297,13 +297,12 @@ private let side = DisplaySnapshot(
   }
 
   @Test func inStepsTowardTheDesktopWhenTheFocusedWindowFloats() {
+    // [a | Desktop]: the Desktop has the half that is left over, and is a place to step into.
     let h = Harness()
     let a = h.system.open(app: "Safari")
-    let b = h.system.open(app: "Notes")
-    let note = h.system.open(app: "Stickies", frame: CGRect(x: 650, y: 300, width: 140, height: 120))
+    let note = h.system.open(app: "Stickies", frame: CGRect(x: 1000, y: 300, width: 140, height: 120))
     h.start()
     h.run("dock \(a.rawValue) left")
-    h.run("dock \(b.rawValue) right")
     h.system.cursor = h.frame(a)!.center
     h.scheduler.advance(by: 5)
     h.system.userFocus(note)

@@ -1,0 +1,61 @@
+# Proposed by the executor of F68 (2026-10-15), from what two adversarial readers played; the documenter may edit or drop it.
+# Story: the next dock takes all that is left over, however much that is. But too little to show any window in is nothing: then everybody in
+# the row gives, as with nothing left, and the window that was just docked, with the keyboard in it, is not typed into unseen.
+# Reference: F68, F61.
+quiet
+# Xcode will not go under 1200 points, which leaves 204 of 1416. Terminal gets a half, and Xcode is the tile.
+open Xcode 1300x800 min 1200x600
+open Terminal 584x366 min 177x100
+dock 101 left
+focus 102
+press dock right
+expect visible 102
+expect size 102 702x851
+expect at 102 726 37
+expect tile 101
+expect focused 102
+# Xcode closes: Terminal stays as it is. (It is not paid on top what the Desktop had lent to Xcode.)
+close 101
+expect still 102
+expect size 102 702x851
+close 102
+
+# A gap dragged by hand until a sliver is left over. Safari has 700 points to spare.
+open Safari 900x600 min 574x240
+open Terminal 584x366 min 177x100
+dock 103 left
+seam 0 600
+focus 104
+dock 104 right
+expect visible 103
+expect visible 104
+expect size 103 702x851
+expect size 104 702x851
+close 103
+close 104
+
+# The same with `makeRoom` off: it is no making of room.
+set makeRoom false
+open Safari 500x400
+open Notes 500x400
+dock 105 left
+seam 0 500
+focus 106
+dock 106 right
+expect visible 106
+expect size 106 702x851
+set makeRoom true
+close 105
+close 106
+
+# Squeezed by hand against a neighbour until it is a tile, and the neighbour closes: with everything else left over nobody squeezes it.
+open Safari 900x600 min 574x240
+open Terminal 584x366 min 177x100
+dock 107 left
+dock 108 right
+seam 0 -200
+expect tile 107
+focus 108
+close 108
+expect visible 107
+expect size 107 574x851

@@ -26,7 +26,7 @@ private func shape(_ tree: LayoutTree, _ id: NodeID? = nil) -> String {
   }
 }
 
-/// Parses, matches and builds in one go.
+/// Parses, matches and builds in one go. With a column for the Desktop: one that is not mentioned is added, half as wide as a space.
 private func build(
   _ line: String, _ windows: [WindowCandidate], desktopSize: Double = 0.5
 ) throws -> (tree: LayoutTree, resolution: LayoutNotation.Resolution) {
@@ -322,14 +322,17 @@ private let everyone = [
 
   // MARK: Reading a tree back
 
-  @Test func aTreeIsWrittenWithTheNamesGiven() throws {
+  /// With a column for the Desktop Mail took half of it; without one all of it, and a Desktop without room is not written.
+  @Test(arguments: [
+    (true, "[Safari Chrome]:2 | Desktop | (Mail / \"Visual Studio Code\")"), (false, "[Safari Chrome] | (Mail / \"Visual Studio Code\")"),
+  ]) func aTreeIsWrittenWithTheNamesGiven(desktopColumn: Bool, line: String) throws {
     var tree = LayoutTree()
-    let safari = tree.dock(WindowID(1), beside: tree.desktop, edge: .left)
-    let mail = tree.dock(WindowID(2), beside: tree.desktop, edge: .right)
-    tree.dock(WindowID(3), beside: mail, edge: .bottom)
+    let safari = tree.dock(WindowID(1), beside: tree.desktop, edge: .left, desktopColumn: desktopColumn)
+    let mail = tree.dock(WindowID(2), beside: tree.desktop, edge: .right, desktopColumn: desktopColumn)
+    tree.dock(WindowID(3), beside: mail, edge: .bottom, desktopColumn: desktopColumn)
     tree.addToStack(WindowID(4), leaf: safari)
     let names: [UInt32: String] = [1: "Safari", 2: "Mail", 3: "Visual Studio Code", 4: "Chrome"]
-    #expect(tree.notation { names[$0.rawValue]! } == "[Safari Chrome]:2 | Desktop | (Mail / \"Visual Studio Code\")")
+    #expect(tree.notation { names[$0.rawValue]! } == line)
     #expect(LayoutTree().notation { _ in "x" } == "Desktop")
   }
 
@@ -344,20 +347,21 @@ private let everyone = [
     #expect(try written("Safari | (Mail:3 / Notes:2):1.5 | Desktop") == "Safari | (Mail:1.5 / Notes):1.5 | Desktop")
   }
 
-  @Test func sharesTooLopsidedToWriteAreBounded() throws {
+  @Test(arguments: [(true, "\"w1\":1000 | \"w2\" | Desktop:1000"), (false, "\"w1\":1000 | \"w2\"")])
+  func sharesTooLopsidedToWriteAreBounded(desktopColumn: Bool, expected: String) throws {
     var tree = LayoutTree()
-    let a = tree.dock(WindowID(1), beside: tree.desktop, edge: .left)
-    let b = tree.dock(WindowID(2), beside: a, edge: .right)
+    let a = tree.dock(WindowID(1), beside: tree.desktop, edge: .left, desktopColumn: desktopColumn)
+    let b = tree.dock(WindowID(2), beside: a, edge: .right, desktopColumn: desktopColumn)
     tree.moveBoundary(leading: a, trailing: b, by: 1e9, pointsPerWeight: 1e6, minimumPoints: 1e-3)
     let line = tree.notation { "\($0)" }
-    #expect(line == "\"w1\":1000 | \"w2\" | Desktop:1000")
+    #expect(line == expected)
     #expect(throws: Never.self) { try LayoutNotation.parse(line) }
   }
 
   // MARK: Round trips
 
   /// A tree grown the way people grow them: docking, tabbing, closing, dragging gaps.
-  static func randomTree(_ random: inout NotationRandom) -> LayoutTree {
+  static func randomTree(_ random: inout NotationRandom, desktopColumn: Bool) -> LayoutTree {
     var tree = LayoutTree()
     var next: UInt32 = 1
     for _ in 0..<Int.random(in: 0...24, using: &random) {
@@ -365,7 +369,7 @@ private let everyone = [
       let target = nodes.randomElement(using: &random)!
       switch Int.random(in: 0..<10, using: &random) {
       case 0...4:
-        tree.dock(WindowID(next), beside: target, edge: Edge.allCases.randomElement(using: &random)!)
+        tree.dock(WindowID(next), beside: target, edge: Edge.allCases.randomElement(using: &random)!, desktopColumn: desktopColumn)
         next += 1
       case 5 where tree.isStack(target):
         tree.addToStack(WindowID(next), leaf: target)
@@ -397,17 +401,27 @@ private let everyone = [
     return frames
   }
 
-  @Test func anyTreeComesBackFromItsLine() throws {
+  @Test(arguments: [true, false]) func anyTreeComesBackFromItsLine(desktopColumn: Bool) throws {
     var random = NotationRandom(seed: 540)
+    // A Desktop without room is not written. It comes back at the right of everything, wherever it was, without room: in a row of
+    // its own with everything, if that is a column. Inside a group it is written, `Desktop:0`, and comes back there.
+    func depths(_ tree: LayoutTree) -> [Int] {
+      guard !tree.desktopHasRoom else { return tree.preorder().map { tree.depth(of: $0) } }
+      let others = tree.children(of: tree.root).filter { $0 != tree.desktop }
+      let top = others.count == 1 ? others[0] : tree.root
+      return tree.preorder(from: top).filter { $0 != tree.desktop }.map { tree.depth(of: $0) - tree.depth(of: top) }
+    }
+    var withoutRoom = 0
     for round in 0..<1500 {
-      let tree = Self.randomTree(&random)
+      let tree = Self.randomTree(&random, desktopColumn: desktopColumn)
       #expect(tree.invariantViolations().isEmpty)
       // A share a thousand times its neighbour's cannot be written (`sharesTooLopsidedToWriteAreBounded`).
       let lopsided = tree.preorder().contains { id in
-        let weights = tree.children(of: id).map { tree[$0]!.weight }
+        let weights = tree.children(of: id).filter { $0 != tree.desktop || tree.desktopHasRoom }.map { tree[$0]!.weight }
         return !weights.isEmpty && weights.max()! / weights.min()! > 999
       }
       if lopsided { continue }
+      if !tree.desktopHasRoom { withoutRoom += 1 }
       // Each window is its own app, so the line says exactly which window goes where.
       let line = tree.notation { "App\($0.rawValue)" }
       let windows = tree.allWindows.shuffled(using: &random).map { window($0.rawValue, "App\($0.rawValue)") }
@@ -422,7 +436,8 @@ private let everyone = [
       // The same windows in the same order and groups, showing the same tabs…
       #expect(back.allWindows == tree.allWindows, "round \(round): \(line)")
       #expect(back.preorder().compactMap { back.activeWindow(of: $0) } == shown, "round \(round): \(line)")
-      #expect(back.preorder().map { back.depth(of: $0) } == tree.preorder().map { tree.depth(of: $0) }, "round \(round): \(line)")
+      #expect(depths(back) == depths(tree), "round \(round): \(line)")
+      #expect(back.desktopHasRoom == tree.desktopHasRoom, "round \(round): \(line)")
       // …in the same places, give or take the third decimal of a size…
       let (before, after) = (Self.frames(tree), Self.frames(back))
       #expect(before.keys == after.keys)
@@ -432,6 +447,7 @@ private let everyone = [
       // …and from then on the line does not change any more.
       #expect(back.notation { "App\($0.rawValue)" } == line, "round \(round)")
     }
+    #expect(desktopColumn ? withoutRoom == 0 : withoutRoom > 300, "the walk has to meet what it is about: \(withoutRoom)")
   }
 
   @Test func aLineBuiltAndWrittenAgainIsStable() throws {
@@ -482,7 +498,7 @@ private let everyone = [
       filling: joined.slots.map { slot in
         next += 1
         return slot == .app("Gone") ? [] : [WindowID(next)]
-      })
+      }, desktopSize: 0.5)
     #expect(tree.invariantViolations().isEmpty)
     #expect(tree.children(of: tree.root).count == levels + 2)
     let weights = tree.children(of: tree.root).map { tree[$0]!.weight }

@@ -151,10 +151,12 @@ public struct Drop: Equatable, Sendable {
   public var arrivingFrame: CGRect?
   /// Who gets the space it leaves: its whole group, or the neighbour before it (`Settings.shareRemovedSpace`).
   public var shareSpace: Bool
+  /// Whether the Desktop keeps its share when the window is docked in its row (`Settings.desktopColumn`).
+  public var desktopColumn: Bool
 
   public init(
     window: WindowID, target: DropTarget, display: DisplayID, frame: CGRect, arrivingFrame: CGRect? = nil,
-    shareSpace: Bool = true
+    shareSpace: Bool = true, desktopColumn: Bool = false
   ) {
     self.window = window
     self.target = target
@@ -162,6 +164,7 @@ public struct Drop: Equatable, Sendable {
     self.frame = frame
     self.arrivingFrame = arrivingFrame
     self.shareSpace = shareSpace
+    self.desktopColumn = desktopColumn
   }
 
   /// Moves `window` to where the drop puts it, taking it out of wherever it was, on any display.
@@ -205,7 +208,7 @@ public struct Drop: Equatable, Sendable {
         changed.append(holder)
       }
       if let arrivingFrame, !holders.contains(display) { workspaces[display]?.floating[window] = arrivingFrame }
-      workspaces[display]?.dock(window, at: target, shareSpace: shareSpace)
+      workspaces[display]?.dock(window, at: target, shareSpace: shareSpace, desktopColumn: desktopColumn)
       changed.append(display)
     }
     return changed
