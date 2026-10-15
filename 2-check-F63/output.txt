@@ -1,0 +1,175 @@
+# mac-shell: scripts/mac-shell/check-F63.sh at cb99ee0, macOS 26.6.2, 2026-10-15T05:52Z
+built Arbor, the pointer tool and the app bundles in 5s
+3|/bin/bash|2
+4|/opt/hca/hosted-compute-agent|2
+5|/opt/hca/start_hca.sh|2
+6|/usr/bin/osascript|2
+7|/usr/libexec/sshd-keygen-wrapper|2
+8|/usr/local/opt/runner/provisioner/provisioner|2
+9|/usr/local/opt/runner/runprovisioner.sh|2
+10|com.apple.Terminal|2
+11|com.apple.dt.Xcode-Helper|2
+
+== the first minute: launched without the permission, then granted
+1792043539.63 Accessibility set to 0 for entries 3,4,5,6,7,8,9,10,11
+session 1: Arbor pid 57012, launched without the permission
+  after .03 s
+  ✔ Arbor waits for the permission
+  ✔ it holds no event tap
+  ✔ it has not spoken of a loss
+shot: mac-shell/00-waiting.png
+1792043543.19 Accessibility set to 2 for entries 3,4,5,6,7,8,9,10,11
+  nothing after 6 s: restarting tccd
+  ✘ it starts by itself when the permission arrives
+      picture: mac-shell/fail-check-F63-1.png
+      | 
+      log | INFO  Arbor dev starting, pid 57012, home /tmp/arbor-shell.xahaRN/home
+      log | INFO  control socket at /tmp/arbor-shell.xahaRN/home/arbor.sock
+      log | INFO  keyboard layout: U.S.
+      log | INFO  registered 52 shortcuts in 2460 µs
+      log | INFO  waiting for Accessibility permission
+  ✔ no window has moved
+
+  NEWS: no event tap in a process that was given the permission while it ran
+  ✘ ten seconds later it is still running: no false alarm in front of the welcome window
+      picture: mac-shell/fail-check-F63-2.png
+  ✔ and has still not spoken of a loss
+shot: mac-shell/00-granted.png
+
+== [1 | Desktop with 3 | 2], framed on 1: 2 and 3 are out of view
+> dock 137 left
+arborctl: waiting for Accessibility permission (System Settings → Privacy & Security → Accessibility)
+> dock 138 right
+arborctl: waiting for Accessibility permission (System Settings → Privacy & Security → Accessibility)
+> zoom 137
+arborctl: waiting for Accessibility permission (System Settings → Privacy & Security → Accessibility)
+  ✘ 2 is out of view
+      picture: mac-shell/fail-check-F63-3.png
+      | 
+  ✘ 3 is out of view
+      picture: mac-shell/fail-check-F63-4.png
+  ✘ the event taps are installed
+      picture: mac-shell/fail-check-F63-5.png
+shot: mac-shell/01-framed.png
+
+== the permission goes
+1792043591.03 Accessibility set to 0 for entries 3,4,5,6,7,8,9,10,11
+  nothing after 6 s: restarting tccd
+  ✘ Arbor notices
+      picture: mac-shell/fail-check-F63-6.png
+      | 
+> status
+waiting for Accessibility permission (System Settings → Privacy & Security → Accessibility)
+Arbor dev
+  ✘ it counts the windows out of view
+      picture: mac-shell/fail-check-F63-7.png
+  ✔ no event tap is left
+  ✔ every shortcut is still registered: none of them reaches another app
+  ✘ none of Arbor's own windows is on screen
+      picture: mac-shell/fail-check-F63-8.png
+> show-all
+arborctl: waiting for Accessibility permission (System Settings → Privacy & Security → Accessibility)
+  ✔ a command fails
+  ✘ 2 is still out of view: nothing could be done
+      picture: mac-shell/fail-check-F63-9.png
+state: accessibility False running False windows 0
+shot: mac-shell/02-lost.png
+2026-10-15T05:52:21.723Z INFO  registered 52 shortcuts in 2460 µs
+2026-10-15T05:52:21.786Z INFO  waiting for Accessibility permission
+
+== the permission returns
+1792043611.90 Accessibility set to 2 for entries 3,4,5,6,7,8,9,10,11
+  nothing after 6 s: restarting tccd
+  ✘ Arbor starts again
+      picture: mac-shell/fail-check-F63-10.png
+      | 
+  ✔ every window is in view
+  ✘ the event taps are back
+      picture: mac-shell/fail-check-F63-11.png
+  ✔ all the shortcuts are registered again
+
+shot: mac-shell/03-back.png
+> back
+arborctl: waiting for Accessibility permission (System Settings → Privacy & Security → Accessibility)
+  ✘ Back returns to the view it had: 2 is out of view
+      picture: mac-shell/fail-check-F63-12.png
+state.py: Arbor knows no window 137
+> click
+pointer: expected x and y
+usage: pointer <command>
+  move x y                      glide the pointer there
+  click x y [count] [--right]   click (count 2 is a double-click), with the right button if asked
+      [--quick]                 the button comes up at once, as with tap to click (otherwise after 0.04 s)
+  drag x1 y1 x2 y2              press at the first point, drag to the second, release
+      [--steps n]               intermediate events (default 30)
+      [--duration s]            how long the movement takes (default 0.6)
+      [--hold s]                wait at the end before releasing (default 0.2)
+      [--no-release]            leave the button down; finish with `release`
+      [--no-settle]             without the small movement at the end that lets Arbor catch up
+  release [x y]                 release the button there (default: where the pointer is)
+  key <chord>                   press a shortcut, e.g. ctrl+opt+space, cmd+shift+f5, escape
+      [--down]                  press the modifiers and the key, and leave them all down
+      [--up]                    release the key, then the modifiers (modifiers alone, or a key alone, work too)
+      [--held]                  press and release the key only: its modifiers are down already, and stay down
+      [--repeat n]              n more key-down events marked as auto-repeat, as a key that is held sends
+  calm                          let go of every mouse button and key that is down, and say which, if any: for the end of a run
+  pinch x y <amount>            spread two fingers there (negative: pinch them together) by that much
+      [--steps n]               magnification, in that many events (default 10)
+  where                         the pointer's position and whether the left button is down
+  activity                      seconds since the pointer was used, seconds since a key was released, and the count
+                                of key presses, as Arbor reads them (AXWindowSystem+Input.swift)
+  displays                      id x y w h pixel-width pixel-height scale, one line per display
+  windows [--pid n]             id pid layer x y w h on|off owner, as the window server sees them
+      [--on-screen]             only those on screen, from the frontmost to the one at the back
+  frame <window id>             x y w h, as the window server sees it
+  visible <window id>           the share of the window that is on some display, 0 to 1; 0 when the window
+                                server does not show it (minimized, hidden, on another Space)
+  grab <window id>              x y: a point on its title bar that no other window covers
+  spot <window id>              x y: a point on its content that no other window covers
+  button <window id> <which>    x y: the middle of its close, minimize or zoom button
+  ax <window id>                its Accessibility role and subrole, e.g. AXWindow AXStandardWindow
+  front                         the process id of the app in front, which has the keyboard
+  status-item <pid> [--frame]   x y: the middle of that process's menu bar item (--frame: x y w h)
+  menu-item <pid> <title>       x y: the middle of the item of its open menu whose title starts so
+  menu-mark <pid> <title>       that item's mark, e.g. ✓, or - when it has none
+  button <pid> x y <name>       x y: the middle of the close, minimize or zoom button of that process's
+                                window whose top-left corner is nearest the point
+  screen-access | ax-access     true or false: Screen Recording, Accessibility
+  reduce-motion                 true or false: what an app launched now is told about Reduce Motion
+  asleep                        true or false: whether the main display is asleep
+  picture <file> <w> <h> <#rrggbb> [<#rrggbb>]
+                                write a PNG: one colour, or a gradient between two under a grid
+  wallpaper [file]              show that picture on the desktop of every display; print what each shows
+click, drag, release and pinch take --mods <chord of modifiers>, e.g. --mods shift+cmd, held meanwhile.
+Every command that posts events takes --tap session, to post them after the window server's own handling.
+> key ctrl+opt+space
+  ✔ ⌃⌥Space shows everything, with a real key
+
+== with nothing out of view Arbor keeps quiet
+1792043640.92 Accessibility set to 0 for entries 3,4,5,6,7,8,9,10,11
+  nothing after 6 s: restarting tccd
+  ✘ Arbor notices
+      picture: mac-shell/fail-check-F63-13.png
+      | 
+  ✔ the shortcuts are still Arbor's
+shot: mac-shell/04-lost-with-nothing-missing.png
+1792043661.66 Accessibility set to 2 for entries 3,4,5,6,7,8,9,10,11
+  nothing after 6 s: restarting tccd
+  ✘ Arbor starts again
+      picture: mac-shell/fail-check-F63-14.png
+  ✔ the windows are where they were
+2026-10-15T05:52:21.723Z INFO  registered 52 shortcuts in 2460 µs
+2026-10-15T05:52:21.786Z INFO  waiting for Accessibility permission
+2026-10-15T05:54:00.530Z DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Arbor needs the Accessibility permission · System Settings → Privacy & Security → Accessibility
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+shot: mac-shell/05-after-quit.png
+
+17 passed, 14 failed
+exit code 1

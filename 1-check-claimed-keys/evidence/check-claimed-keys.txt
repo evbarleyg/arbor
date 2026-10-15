@@ -1,0 +1,58 @@
+# check-claimed-keys 2026-10-15T05:47Z on macOS 26.6.2, commit cb99ee0
+
+== 0. the control: no Arbor at all
+  ✔ with nobody to take it, the key reaches the app: the witness works
+
+== 1. waiting for the permission: a first launch
+  ✔ Arbor waits for the permission
+  ✔ its item is in the menu bar
+  ✔ the key is taken all the same
+  ✔ and the line says why
+  ✔ a second time too
+
+== 1b. the permission arrives: the control for 1
+  ✔ Arbor starts by itself
+  ✔ the key is Arbor's, and works
+
+== 2. with no event tap, as shipped: every default shortcut in turn
+  ✔ none of them reaches the app
+
+== 2b. the key held down: its repeats and its release
+  ✔ neither a repeat nor the release reaches the app
+
+== 5. what the person said themselves, and what changes nothing
+  ✔ a pause says whose the keys are now
+  ✘ in a pause the key is the app's: the person said so
+  ✔ the key is Arbor's again
+  ✔ a held view keeps the key
+  ✔ holding still keeps the key
+  ✔ in an app on the list the key is the app's: the person said so
+  ✔ with shortcuts off the key is the app's: the person said so
+  ✔ the key is Arbor's again
+
+== 6. while the hot keys are registered anew
+  ✔ no press gets through
+
+== 4. the key is Arbor's, and the app has roads of its own
+
+== 3. another program holds the same chord
+
+== 1c. the permission is taken away while Arbor runs
+  ✔ Arbor notices
+  ✔ its item is in the menu bar
+  ✔ the key is taken all the same
+  ✔ and the line says why
+  ✔ Arbor starts again
+  ✔ the key is Arbor's again, and works
+
+== 1d. a new build over an old grant: the switch in System Settings stays on
+  ✔ the build the grant was made for runs: the control
+  ✔ its key is its own
+  ✔ the new build waits for a permission it seems to have
+  ✔ its item is in the menu bar
+  ✔ the key is taken all the same
+  ✔ and the line says why
+
+== the table
+
+30 passed, 1 failed
