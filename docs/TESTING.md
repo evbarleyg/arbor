@@ -423,6 +423,8 @@ it prints the same frames and the same log.
 - A script that uses a command, an option or a tool the stand-ins lack fails loudly: a message that names it, exit
   code 64. Teach it to `Sources/arbor-fakemac/World*.swift` (or `scripts/mac-shell/rehearse/mac-tools`) then. A script that compiles a tool
   of its own against AppKit, or plugs in a display (`vdisplay.m`), stops there with exit code 2.
+- The fake Mac knows test windows. Real apps are `scripts/mac-shell/rehearse/real-apps`: `open -g`, `swiftc`, and as much of `apptool`, `sampler`, `witness` and `picture-time` as `probe-glide.sh` uses, over
+  windows that are files, in real time. Arbor cannot be started on them. `glide.swift` is compiled and run as it is. `apps_watchdog` ends a rehearsal at once, because its `sleep` takes no time there: set `ARBOR_TIME_LIMIT`.
 - The fake Mac stops the pointer at the edge of the display, as a hand's is stopped. On a Mac a posted pointer goes on: `drag … -40 368` ends at x -40
   there and at x 0 here, which is macOS's point of the edge.
 - **What it cannot prove**: anything about AppKit's and Accessibility's timing and order of events, animations,
@@ -518,6 +520,12 @@ window, how long it was until the first move, how much of that the stage took, w
 `scene zoom camera "presses ⌃⌥↩"; key ctrl+opt+return; scene_end` leaves `mac-shell/films/zoom/`. `scripts/mac-shell/films.sh` films everything of Arbor's that moves,
 and `scripts/polish/judge.py` measures the films anywhere (how long, how eased, how many motions, what hopped, flickered or flashed), lays them out on sheets to look
 at, and scores them against `docs/POLISH.md`. `make polish-selftest` tries the judge on films drawn wrong in known ways.
+
+`scripts/mac-shell/probe-glide.sh` asks whether a real window can be seen moving if it is moved in steps through Accessibility, in place of a card on the stage: Arbor does not run.
+`glide.swift` gives a window its final size, then moves it along a straight road on Arbor's curve, 8 or 12 steps in 0.2 s, and writes down what every call took and how late it began; one step is the
+control. Each of the day's nine apps plays alone, then two and four together, from one thread and from a thread for each app, while the sampler looks 120 times a second. `judge-glide.py <folder>`, which needs
+no Mac, reads both logs into a table for each app and each set, and says by limits that its header states and its options change which apps stutter; its last two lines are made to grep for,
+`stutter: 1 of 9 apps` and `verdict: alive` (`dead` from two apps on). `picture-time.swift` times the other road beside it: pictures of 1, 4 and 8 windows from ScreenCaptureKit. Never run on a Mac yet.
 
 **Only compiling.** `scripts/mac-shell/run.sh scripts/mac-shell/compile.sh` runs `swift build` on the Mac at your branch's
 head and brings back `build.log`, with the errors and warnings at the end of the output: for macOS-only code, or for a
@@ -735,6 +743,7 @@ copy from before the repository was public, and say what the script does once it
 | `check-resume.sh` | trunk | **never**: ends with 77 | | Calculator and TextEdit opened, brought forward in turn, and quit; `ARBOR_APPS_HERE=1` does not open it |
 | `shots-F15-apps.sh` | trunk | **never**: ends with 77 | | Ten real apps opened for their icons, and killed |
 | `first-dock.sh` (`first-dock.py`) | trunk | **never**: ends with 77 | | Nine real apps opened and quit, every window arranged, Reduce Motion, the display's size |
+| `probe-glide.sh` (`glide.swift`, `picture-time.swift`, `judge-glide.py`) | trunk | **never**: ends with 77 | | Nine real apps opened and quit, their windows moved and resized some 150 times through Accessibility, Reduce Motion, the display's size. Arbor does not run. `picture-time` takes pictures of the apps' windows to time them, and keeps none |
 | `check-F52.sh`, `check-F63.sh` | not landed, trunk | **never**: end with 77 | | Virtual displays, Accessibility taken from every app |
 | `check-F59.sh` | not landed | safe | 30 s | During a carry nobody's app gets arrows, ↩ or ⎋ |
 | `shots-F04.sh`, `shots-F34.sh` | not landed | safe | 3 min, 60 s | Test windows go to the Dock and come back; one is closed by its tab's button |
