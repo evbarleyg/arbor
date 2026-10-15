@@ -17,11 +17,15 @@ public struct FinderCandidate: Equatable, Sendable {
   let nameCount: Int
   /// The name is one a person gave: a query that spells it out in full means this and nothing else.
   let isAName: Bool
+  /// It does something instead of being somewhere. Go to… is about places, and whoever types a few letters of a title and presses Return
+  /// must not have run something: see `FinderQuery`.
+  let isACommand: Bool
 
-  public init(name: String, detail: String, isAName: Bool = false) {
+  public init(name: String, detail: String, isAName: Bool = false, isACommand: Bool = false) {
     self.name = name
     self.detail = detail
     self.isAName = isAName
+    self.isACommand = isACommand
     var text = FinderText(name, limit: Self.nameLimit)
     nameCount = text.units.count
     // No word of a query holds a space, so this one is never matched. It keeps a run of matches from
@@ -97,6 +101,12 @@ public struct FinderMatch: Equatable, Sendable {
 /// Between equally good matches the one with less left over wins (`mail` prefers Mail to Mailplane). Only
 /// the texts that matched count, so that three Safari windows are equal for `saf` whatever their titles. What
 /// is still equal stays in the order it was given, which for the finder is most recently used first.
+///
+/// **A command never comes before a place that matches as well.** All of a command is its name, so its letters count as a title's do, not as
+/// an app's; and between equally good matches every place comes before every command, whatever is left over (`3` is the window called
+/// Report 3, not Save This View As ▸ View 3). Among such commands those whose name begins with a word of the query come first (`dock`
+/// prefers Dock New Windows to Undo Dock), and then the order they were given in decides, which is the menu's: the ways back and what is
+/// used most come first there (`float` prefers Float Focused Window to Float All Windows, which is shorter).
 public struct FinderQuery: Equatable, Sendable {
   /// Bounds on the work one query can ask for. What goes beyond them is ignored.
   static let wordLimit = 8
@@ -151,11 +161,18 @@ public struct FinderQuery: Equatable, Sendable {
     var leftOver = 0
     if !inName.isEmpty { leftOver += nameCount - inName.count }
     if !inDetail.isEmpty { leftOver += candidate.text.units.count - nameCount - 1 - inDetail.count }
+    // Only decides between equal qualities. What is left over of a place is below 512 (see the limits).
+    var handicap = min(leftOver, 1023)
+    if candidate.isACommand { handicap = 512 + (matched.contains(0) ? 0 : 256) }
     return FinderMatch(
-      // What is left over only decides between equal qualities; it is far below 1024 (see the limits).
-      index: index, score: quality * 1024 - min(leftOver, 1023),
+      index: index, score: quality * 1024 - handicap,
       nameRanges: Self.ranges(inName.map { candidate.text.sources[$0] }),
       detailRanges: Self.ranges(inDetail.map { candidate.text.sources[$0] }))
+  }
+
+  /// Whether each word of the query was found with its letters together, going by what `match` sets off: no more pieces than words.
+  public func foundInOnePiece(_ match: FinderMatch) -> Bool {
+    !words.isEmpty && match.nameRanges.count + match.detailRanges.count <= words.count
   }
 
   /// Ascending offsets, possibly repeated, as the fewest ranges that cover them.
@@ -224,7 +241,7 @@ public struct FinderQuery: Equatable, Sendable {
       case .inner: bonus = Points.innerStart
       case .word: bonus = Points.wordStart
       }
-      return Points.match + (first ? 2 * bonus : bonus) + (j < candidate.nameCount ? Points.inName : 0)
+      return Points.match + (first ? 2 * bonus : bonus) + (j < candidate.nameCount && !candidate.isACommand ? Points.inName : 0)
     }
 
     let impossible = Int.min / 2

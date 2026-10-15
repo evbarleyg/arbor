@@ -422,23 +422,27 @@ extension TraceJSON {
 
 // MARK: Conversions
 
-/// `FinderDestination` as a trace holds it: `{"window":101}`, `{"display":"main","view":3}`, `{"display":"main","space":4}`.
+/// `FinderDestination` as a trace holds it: `{"window":101}`, `{"display":"main","view":3}`, `{"display":"main","space":4}`,
+/// `{"command":"dock left"}`.
 public struct TraceFinderDestination: Codable, Equatable, Sendable {
   public var window: WindowID?
   public var display: DisplayID?
   public var view: Int?
   public var space: NodeID?
+  public var command: String?
 
   public init(_ destination: FinderDestination) {
     switch destination {
     case .window(let id): window = id
     case .view(let id, let slot): (display, view) = (id, slot)
     case .space(let id, let node): (display, space) = (id, node)
+    case .command(let text): command = text
     }
   }
 
   public var destination: FinderDestination? {
     if let window { return .window(window) }
+    if let command { return .command(command) }
     guard let display else { return nil }
     if let view { return .view(display, slot: view) }
     return space.map { .space(display, $0) }

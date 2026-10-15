@@ -539,7 +539,9 @@ private func near(_ a: CGRect, _ b: CGRect, within tolerance: CGFloat = 0.01) ->
     #expect(Set(texts) == ["", "n", "no"])
     let typed = try #require(film.frames.last { $0["goTo"] != nil })
     let rows = try #require((typed["goTo"] as? [String: Any])?["rows"] as? [[String: Any]])
-    #expect(rows.map { $0["name"] as? String } == ["Notes"])
+    // Of the places. Commands that hold the two letters come after it.
+    #expect(rows.filter { ($0["note"] as? String)?.hasPrefix("command") != true }.map { $0["name"] as? String } == ["Notes"])
+    #expect(rows[0]["name"] as? String == "Notes")
     #expect(rows[0]["selected"] as? Bool == true)
     #expect(try #require(film.frames.last)["goTo"] == nil)
   }

@@ -271,6 +271,14 @@ public final class TraceReplayer {
       "finderChose": { [unowned self] arguments in
         guard let destination = arguments.first?.decoded(as: TraceFinderDestination.self)?.destination else { return }
         resetEnforcement()
+        // The command a row runs follows as a nested line with its reply. Nobody hands this run's reply over, so the two are not held
+        // against each other, and least of all the recorded one against the reply of the command before. What it did is.
+        if case .command(let text) = destination {
+          lastResult = nil
+          // As for a command of the trace's own (`perform`): one that changes settings reads the file first, and finds what is in use.
+          readsNewSettings = text == Command.reloadSettings.text
+        }
+        defer { readsNewSettings = true }
         harness.overlays.actions?.finderChose(destination)
       },
       "finderDismissed": { [unowned self] _ in harness.overlays.actions?.finderDismissed() },

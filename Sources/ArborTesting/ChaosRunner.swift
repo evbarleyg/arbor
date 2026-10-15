@@ -194,9 +194,16 @@ public final class ChaosRunner {
   public static func replay(_ text: String) -> ChaosFailure? { replay(ChaosAction.script(text)) }
 
   /// Applies one action and returns the rules that do not hold afterwards.
-  public func step(_ action: ChaosAction) -> [InvariantViolation] {
-    Self.beforeEachStep?(action)
-    script.append(action)
+  public func step(_ done: ChaosAction) -> [InvariantViolation] {
+    Self.beforeEachStep?(done)
+    script.append(done)
+    // A row of Go to… that runs a command is that command, asked for as by its key: the rules judge it as such.
+    var action = done
+    if case .palette(.choose(let row)) = done, let session = harness.overlays.finder,
+      case .command(let text)? = row.map({ $0 >= 1 ? session.destination(atVisible: $0 - 1) : nil }) ?? session.selected
+    {
+      action = .via(.shortcut, text)
+    }
     found = []
     refusals = []
     filterBefore = controller.filter
@@ -218,7 +225,7 @@ public final class ChaosRunner {
     inHandBefore = system.dragging ?? system.resizing
     noteBeforeTheSevenRules(action)
     raiseLogMark = system.raiseLog.count
-    perform(action)
+    perform(done)
     listen()
     beforeTheNextCheck?(self)
     beforeTheNextCheck = nil

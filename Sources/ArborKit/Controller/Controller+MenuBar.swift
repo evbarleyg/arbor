@@ -43,7 +43,8 @@ extension Controller {
   /// from the menu acts on (F56). Not `cameraDisplay()`: that decides for a command and remembers what it decided, and
   /// drawing the item is no command.
   var menuDisplay: (DisplayID, Workspace)? {
-    guard let id = pointerDisplayID, let workspace = workspaces[id] else { return nil }
+    // Or the one that whoever reads the rows says they are about (Controller+FinderCommands.swift).
+    guard let id = following.display.flatMap({ display($0)?.id }) ?? pointerDisplayID, let workspace = workspaces[id] else { return nil }
     return (id, workspace)
   }
 
