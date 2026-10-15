@@ -690,6 +690,139 @@ import Testing
     expectWindowsMatchLayout(h, on: h.display)
   }
 
+  /// The same display with the Dock `points` higher than it comes.
+  static func withTheDock(higherBy points: CGFloat) -> [DisplaySnapshot] {
+    let display = FakeWindowSystem.standardDisplay
+    var visible = display.visibleFrame
+    visible.size.height -= points
+    return [DisplaySnapshot(id: display.id, frame: display.frame, visibleFrame: visible, isMain: true)]
+  }
+
+  static let side = DisplaySnapshot(
+    id: DisplayID("side"), frame: CGRect(x: FakeWindowSystem.standardDisplay.frame.maxX, y: 0, width: 1920, height: 1080),
+    visibleFrame: CGRect(x: FakeWindowSystem.standardDisplay.frame.maxX, y: 25, width: 1920, height: 1055), isMain: false)
+
+  /// Seen on a Mac: a neighbour goes to the Dock, which gets another picture and changes its size by two points, and a third of a second later
+  /// macOS reports a change of the displays. They are the displays they were. Nobody asked for anything, least of all about this window.
+  @Test(arguments: [2, -2, 40] as [CGFloat]) func theDockThatChangesItsSizeIsNoChangeOfDisplays(_ points: CGFloat) {
+    let (h, windows) = arranged()
+    h.system.doubleClickTitleBar(of: windows[0])
+    h.scheduler.advance(by: 3)
+    let filled = h.frame(windows[0])!
+    h.system.clearFrameLog()
+    h.system.setMinimized(windows[1], true)
+    h.scheduler.advance(by: 0.3)
+    h.system.setDisplays(Self.withTheDock(higherBy: points))
+    h.scheduler.advance(by: 10)
+    #expect(h.frame(windows[0]) == filled, "where macOS put it")
+    #expect(h.system.frameLog.filter { $0.window == windows[0] }.isEmpty, "Arbor never moved it")
+    #expect(h.controller.windowsLeftWhereADoubleClickPutThem == [windows[0]])
+    // And back.
+    h.system.setMinimized(windows[1], false)
+    h.scheduler.advance(by: 0.3)
+    h.system.setDisplays([FakeWindowSystem.standardDisplay])
+    h.scheduler.advance(by: 10)
+    #expect(h.frame(windows[0]) == filled)
+    #expect(h.controller.windowsLeftWhereADoubleClickPutThem == [windows[0]])
+    // One key from home, into the slot as it is now.
+    #expect(h.run("show-all").ok)
+    h.scheduler.advance(by: 2)
+    expectWindowsMatchLayout(h, on: h.display)
+  }
+
+  /// A second display is plugged in beside it, and unplugged: that takes nothing from a window on a display that stands as it stood.
+  @Test func aDisplayThatComesAndGoesBesideItTakesNothingFromIt() {
+    let (h, windows) = arranged()
+    h.system.doubleClickTitleBar(of: windows[0])
+    h.scheduler.advance(by: 3)
+    let filled = h.frame(windows[0])!
+    h.system.clearFrameLog()
+    let main = FakeWindowSystem.standardDisplay
+    for displays in [[main, Self.side], [main]] {
+      h.system.setDisplays(displays)
+      h.scheduler.advance(by: 10)
+      #expect(h.frame(windows[0]) == filled, "with \(displays.count) display(s)")
+      #expect(h.controller.windowsLeftWhereADoubleClickPutThem == [windows[0]], "with \(displays.count) display(s)")
+    }
+    #expect(h.system.frameLog.filter { $0.window == windows[0] }.isEmpty, "Arbor never moved it")
+  }
+
+  /// Its own display moves, because another one has become the main one: that ends it, as ever.
+  @Test func itsOwnDisplayThatMovesEndsIt() {
+    let (h, windows) = arranged()
+    h.system.doubleClickTitleBar(of: windows[0])
+    h.scheduler.advance(by: 3)
+    let main = FakeWindowSystem.standardDisplay
+    h.system.setDisplays([
+      DisplaySnapshot(
+        id: DisplayID("desk"), frame: CGRect(x: 0, y: 0, width: 1920, height: 1080),
+        visibleFrame: CGRect(x: 0, y: 25, width: 1920, height: 1055), isMain: true),
+      DisplaySnapshot(
+        id: main.id, frame: main.frame.offsetBy(dx: 1920, dy: 0), visibleFrame: main.visibleFrame.offsetBy(dx: 1920, dy: 0), isMain: false),
+    ])
+    h.scheduler.advance(by: 10)
+    #expect(h.controller.windowsLeftWhereADoubleClickPutThem.isEmpty, "\(windows[0])")
+    expectWindowsMatchLayout(h, on: main.id)
+  }
+
+  /// macOS takes windows along when displays change. Where it took this one is nobody's zoom.
+  @Test func takenAlongByMacOSWithTheChangeItIsAnOrdinaryDockedWindow() {
+    let (h, windows) = arranged()
+    h.system.doubleClickTitleBar(of: windows[0])
+    h.scheduler.advance(by: 3)
+    // In silence, as macOS does it: the report of the displays is all Arbor hears.
+    h.system.moveSilently(windows[0], to: CGRect(x: Self.side.frame.minX + 100, y: 100, width: 900, height: 700))
+    h.system.setDisplays([FakeWindowSystem.standardDisplay, Self.side])
+    h.scheduler.advance(by: 10)
+    #expect(h.controller.windowsLeftWhereADoubleClickPutThem.isEmpty, "\(windows[0])")
+    expectWindowsMatchLayout(h, on: h.display)
+  }
+
+  /// The menu bar stops hiding: the display is what it was, and the window's title bar is under the menu bar now. Nothing is let be where
+  /// nobody can get hold of it.
+  @Test func withItsTitleBarUnderTheMenuBarItIsTakenBack() {
+    let standard = FakeWindowSystem.standardDisplay
+    let hidden = DisplaySnapshot(id: standard.id, frame: standard.frame, visibleFrame: standard.frame, isMain: true)
+    let h = Harness(displays: [hidden])
+    let windows = ["Safari", "Mail"].enumerated().map { index, app in
+      h.system.open(app: app, pid: 1000 + Int32(index), frame: CGRect(x: 80 + 60 * CGFloat(index), y: 90, width: 640, height: 420))
+    }
+    h.start()
+    #expect(h.run("arrange").ok)
+    h.scheduler.advance(by: 5)
+    h.system.doubleClickTitleBar(of: windows[0])
+    h.scheduler.advance(by: 3)
+    #expect(h.frame(windows[0])?.minY == 0 && h.controller.windowsLeftWhereADoubleClickPutThem == [windows[0]], "the test's own premise")
+    h.system.setDisplays([standard])
+    h.scheduler.advance(by: 10)
+    #expect(h.controller.windowsLeftWhereADoubleClickPutThem.isEmpty)
+    expectWindowsMatchLayout(h, on: h.display)
+  }
+
+  /// An app that stands some points short of its slot, like a terminal with its grid; the Dock changes its size meanwhile, and the slot by two
+  /// points; and the window goes back to where it stood without a double-click that Arbor hears. It is home.
+  @Test func backWhereItStoodAfterTheDockChangedItIsHome() {
+    let h = Harness()
+    let windows = ["Terminal", "Mail"].enumerated().map { index, app in
+      h.system.open(app: app, pid: 1000 + Int32(index), frame: CGRect(x: 80 + 60 * CGFloat(index), y: 90, width: 400, height: 420))
+    }
+    h.system.setMaximumSize(windows[0], CGSize(width: 2000, height: 845))
+    h.start()
+    #expect(h.run("layout Terminal | Mail").ok)
+    h.scheduler.advance(by: 5)
+    h.system.setMaximumSize(windows[0], nil)
+    let stood = h.frame(windows[0])!
+    h.system.doubleClickTitleBar(of: windows[0])
+    h.scheduler.advance(by: 3)
+    #expect(h.controller.windowsLeftWhereADoubleClickPutThem == [windows[0]], "the test's own premise")
+    h.system.setDisplays(Self.withTheDock(higherBy: -2))
+    h.scheduler.advance(by: 5)
+    #expect(h.layout?.windowFrames[windows[0]]?.approximatelyEquals(stood, tolerance: 4) == false, "the test's own premise: \(stood)")
+    h.system.userMove(windows[0], to: stood)
+    h.scheduler.advance(by: 5)
+    #expect(h.controller.windowsLeftWhereADoubleClickPutThem.isEmpty, "home")
+  }
+
   /// What happens to the window itself, and is no word about its size: there and back it is as it was.
   @Test(arguments: ["another Space", "the Dock", "its app is hidden"]) func goneAndBackItIsStillWhereMacOSPutIt(_ whereTo: String) {
     let (h, windows) = arranged()
@@ -1008,6 +1141,39 @@ import Testing
     h.scheduler.advance(by: 10)
     #expect(h.controller.windowsLeftWhereADoubleClickPutThem.isEmpty, "\(windows[0])")
     expectWindowsMatchLayout(h, on: h.display)
+  }
+
+  /// Nor is the Dock's size a change of the displays here: something was minimized during the pause.
+  @Test func theDockThatChangedItsSizeDuringThePauseEndsNothing() {
+    let (h, windows) = zoomed()
+    #expect(h.run("pause").ok)
+    h.system.setDisplays(AZoomAfterArrangeStaysTests.withTheDock(higherBy: 2))
+    #expect(h.run("resume").ok)
+    h.scheduler.advance(by: 10)
+    #expect(h.system.frameLog.filter { $0.window == windows[0] }.isEmpty, "Arbor never moved it")
+    #expect(h.controller.windowsLeftWhereADoubleClickPutThem == [windows[0]])
+  }
+
+  /// A second display is plugged in during the pause, or three come back in another order: its own stands as it stood.
+  @Test(arguments: ["one comes", "another order"]) func aDisplayBesideItThatChangedDuringThePauseEndsNothing(_ what: String) {
+    let main = FakeWindowSystem.standardDisplay
+    let side = AZoomAfterArrangeStaysTests.side
+    let third = DisplaySnapshot(
+      id: DisplayID("third"), frame: CGRect(x: -1280, y: 0, width: 1280, height: 800),
+      visibleFrame: CGRect(x: -1280, y: 25, width: 1280, height: 775), isMain: false)
+    let (h, windows) = zoomed()
+    if what == "another order" {
+      h.system.setDisplays([main, side, third])
+      h.scheduler.advance(by: 10)
+      h.system.clearFrameLog()
+    }
+    #expect(h.controller.windowsLeftWhereADoubleClickPutThem == [windows[0]], "the test's own premise")
+    #expect(h.run("pause").ok)
+    h.system.setDisplays(what == "another order" ? [main, third, side] : [main, side])
+    #expect(h.run("resume").ok)
+    h.scheduler.advance(by: 10)
+    #expect(h.system.frameLog.filter { $0.window == windows[0] }.isEmpty, "Arbor never moved it")
+    #expect(h.controller.windowsLeftWhereADoubleClickPutThem == [windows[0]])
   }
 
   /// `shutdown`'s last net goes by the measure the window is let be by.

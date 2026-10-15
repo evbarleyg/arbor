@@ -405,7 +405,9 @@ A layout that nobody asked for leaves such a window where it is (`stillLetBe`, a
 closes or is minimized or hidden, a rule docks a new window. The others share the room behind it. `aPersonAsks` is what tells the
 two apart: a command is being performed, from wherever it came, or one of the ways in that a hand has (a drag, an edge, a gap, a tile,
 a gesture, a key, Go to…, the settings) is on the stack. Whatever says nothing, a timer too, counts as not asked. Two things end it
-whoever asked: the window leaves the view, and the displays change. macOS's second double-click returns the window to
+whoever asked: the window leaves the view, and its display comes, goes, moves or changes its size (`displaysThatStand`: not what the Dock and
+the menu bar leave of it, because the Dock changes its size at every minimize and macOS reports that as a change of the displays; and not a display
+that is plugged in beside it). macOS's second double-click returns the window to
 the frame it had (`whereAZoomBegan`), which was its slot then; if the slot is another by now, the window is a docked window that something
 has moved from the first report of its way back, and is put into its slot a quarter of a second after the last (`noteWhetherItIsBackInItsSlot`).
 In the Dock, hidden or on another Space it stays let be, and so does another tab of its group in its stead. A pause and Quit leave it where
