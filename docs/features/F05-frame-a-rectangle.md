@@ -55,6 +55,7 @@ fits it (`Navigation.bestFit`, already written and tested).
   moves 4 points or less) is handed back. The mouse-down is held until the
   button comes up, then sent on ahead of the mouse-up, so ⇧⌘-click keeps
   working in apps (Safari opens a link in a new tab with it).
+- 2026-10-15 (Q26): `pointerGestures` is the one switch above this and every other gesture that needs an event tap. Off, `Controller.inputSettings` leaves the taps nothing to ask for.
 - Setting `frameRectangleModifier` (default `shift+cmd`), applied at launch
   and on every settings change (`reload-settings`). `none` or `off` turns
   rectangle framing off and removes its tap. An unreadable value is logged

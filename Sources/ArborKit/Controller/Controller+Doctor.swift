@@ -116,7 +116,7 @@ extension Controller {
 
     if let switches = facts.switches {
       // Arbor keeps those clicks from macOS itself (F60), so that switch is nothing to put right, only something to know.
-      let isGuarded = settings.guardDesktopClicks && switches.contains(.clickWallpaper)
+      let isGuarded = guardsDesktopClicks && switches.contains(.clickWallpaper)
       let inTheWay = switches.filter { !(isGuarded && $0 == .clickWallpaper) }
       let guardNote =
         isGuarded

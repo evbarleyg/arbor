@@ -175,6 +175,11 @@ public enum SettingsSchema {
   private static let gestures = section(
     .gestures,
     [
+      // First, not last: it is the switch above the others.
+      .toggle(
+        "pointerGestures", \.pointerGestures, "Trackpad and mouse gestures",
+        "The pinch, ⌃⌥ and scroll, and rectangles drawn with the pointer. Off, Arbor holds back no click, scroll or pinch of the "
+          + "Mac, whatever the switches below say. Dragging windows, gaps and tiles works either way."),
       .toggle(
         "gesturesEnabled", \.gesturesEnabled, "Pinch to zoom",
         "A trackpad pinch with ⌥ held, or over the Desktop, zooms the view in and out."),

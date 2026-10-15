@@ -53,7 +53,7 @@ public struct ChaosGenerator {
         .settings(
           "{\"tabsEnabled\":true,\"summonStays\":true,\"continuousZoom\":true,\"guardDesktopClicks\":true,"
             + "\"reflowWhileDragging\":true,\"soleFloatTakesDesktop\":true,\"windowPictures\":true,\"scrollOnDesktopZooms\":true,"
-            + "\"holdStillWhileMicrophoneIsOn\":true,\"allowAllURLCommands\":true,\"newWindows\":\"dock\"}"))
+            + "\"holdStillWhileMicrophoneIsOn\":true,\"allowAllURLCommands\":true,\"newWindows\":\"dock\",\"pointerGestures\":true}"))
     }
   }
 

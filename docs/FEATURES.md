@@ -6,7 +6,7 @@ A.. items are Arbor-only. Levels are explained in `collab/README.md`.
 
 **TrellisWM parity: 39 of 52 reference items shipped (75%), 15 verified on real windows.**
 
-Levels: verified 18, tested 91, partial 7, planned 7, missing 1, not-planned 3.
+Levels: verified 18, tested 92, partial 7, planned 7, missing 1, not-planned 3.
 
 Real-window evidence: mac-shell: scripts/mac-shell/proof.sh at ab40b20, macOS 26.6.2, 2026-10-14T06:48Z.
 
@@ -171,3 +171,4 @@ Real-window evidence: mac-shell: scripts/mac-shell/proof.sh at ab40b20, macOS 26
 | A18 | Shortcuts that macOS uses as well are pointed out |  | `bindings` and the log list each shortcut macOS has ticked for itself (⌃⌥Space with several input sources), by key, on any layout, and say where to change either | tested | tests 10/10 | [F42](features/F42-setup-check.md) |
 | A30 | Says on screen what happened |  | A line low on the display after a shortcut, gesture or menu item: why nothing happened, what changed unseen, three hints for newcomers three times each; `messages`: helpful, all, off | tested | tests 51/51 | [F43](features/F43-say-what-happened.md) |
 | A66 | The shortcuts on screen |  | ⌃⌥⇧/; `show-shortcuts`; Keyboard Shortcuts… in the menu: the shortcuts in effect by name, grouped as the help is; any key, click or command puts them away | tested | tests 20/20, real windows 0/2 | [F43](features/F43-say-what-happened.md) |
+| A227 | One switch for every event tap |  | `pointerGestures`, "Trackpad and mouse gestures" in the settings window: off, Arbor installs no event tap, whatever the pinch's, the scroll's and the rectangle's own settings say; keys, the menu and dragging windows stay | tested | tests 8/8 | [F03](features/F03-trackpad-gestures.md) |

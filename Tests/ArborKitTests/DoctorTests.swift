@@ -174,7 +174,7 @@ import Testing
   @Test func theWallpaperClickIsOnlyNotedWhileArborGuardsAgainstIt() {
     var facts = Self.healthy
     facts.switches = [.clickWallpaper]
-    var guarded = Settings()
+    var guarded = Settings.withGestures
     guarded.guardDesktopClicks = true
     let alone = check(makeHarness(facts, settings: guarded), "Desktop & Dock settings")
     #expect(alone?.mark == .ok && alone?.detail == "none in the way")
@@ -195,6 +195,12 @@ import Testing
     unguarded.guardDesktopClicks = false
     let row = makeHarness(facts, settings: unguarded).controller.onboardingModel(facts).row(.desktopAndDock)
     #expect(row?.points == [MacSwitch.clickWallpaper.advice])
+
+    // The guard works through an event tap. With `pointerGestures` off there is none, and nobody may be told that Arbor guards.
+    guarded.pointerGestures = false
+    #expect(check(makeHarness(facts, settings: guarded), "Desktop & Dock settings")?.mark == .problem)
+    #expect(
+      makeHarness(facts, settings: guarded).controller.onboardingModel(facts).row(.desktopAndDock)?.points == [MacSwitch.clickWallpaper.advice])
   }
 
   @Test func aPauseIsSaidAndIsNotAProblem() {

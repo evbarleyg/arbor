@@ -75,6 +75,7 @@ private let side = DisplaySnapshot(
 
   @Test func thePointersPartFollowsTheSettings() {
     let h = makeHarness {
+      $0.pointerGestures = true
       $0.gesturesEnabled = false
       $0.frameRectangleModifier = "ctrl+opt"
     }

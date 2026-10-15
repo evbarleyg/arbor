@@ -51,6 +51,8 @@ Today three gestures start with that press and each treats it differently: F05's
 
 Shipped (headless parts tested; nothing below has been seen at work on a Mac):
 
+- 2026-10-15 (Q26): the guard works through an event tap, so it goes with `pointerGestures`. With that off there is no guard whatever `guardDesktopClicks` says, and `doctor` and the welcome window name macOS's switch again.
+
 - The behaviour above for a click, a drag, an icon or widget, nothing docked, a pause, a pass-through app in front (F41) and the setting.
 - "Inside the view" is turned inside out, as the product owner asked: the zone is the whole view of a display with something docked, and the cheap exit is the real frame of a window Arbor knows to be in view
   (docked, floating, pinned, a guest). So the wallpaper around a docked window that cannot fill its slot is guarded too.

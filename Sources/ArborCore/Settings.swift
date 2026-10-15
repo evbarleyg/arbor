@@ -212,6 +212,11 @@ public struct Settings: Codable, Equatable, Sendable {
   public var shareRemovedSpace: Bool = true
   /// Windows moved out of view are also shrunk (to 320 × 200 at most) until they come back.
   public var shrinkOutOfView: Bool = false
+  /// The one switch for whatever needs an event tap: the pinch, ⌃⌥ + scroll, the ⌃⌥ rectangle, ⇧-drag on the Desktop, the guard of
+  /// the wallpaper click. Off, Arbor installs no event tap, whatever their own settings say (`Controller.inputSettings`). A key of
+  /// its own because a settings.json written by an earlier build holds theirs as they were then, and cannot hold this one
+  /// (collab/QUESTIONS.md, Q26).
+  public var pointerGestures: Bool = true
 
   public init() {}
 
@@ -286,6 +291,7 @@ public struct Settings: Codable, Equatable, Sendable {
     case newWindows, autoDockMinimumWidth, autoDockMinimumHeight
     case minimapDuration
     case shareRemovedSpace, shrinkOutOfView
+    case pointerGestures
   }
 
   public init(from decoder: any Decoder) throws {
@@ -391,5 +397,6 @@ public struct Settings: Codable, Equatable, Sendable {
     try read(.minimapDuration, into: &minimapDuration)
     try read(.shareRemovedSpace, into: &shareRemovedSpace)
     try read(.shrinkOutOfView, into: &shrinkOutOfView)
+    try read(.pointerGestures, into: &pointerGestures)
   }
 }
