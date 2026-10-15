@@ -120,11 +120,17 @@ extension Controller {
   /// Keeps track of the slots the person squeezed into tiles, so that no later layout widens them again. Their hand
   /// undoes it, and so does giving the window another place, which gives it another slot.
   func rememberSqueezes(in layout: Layout, on displayID: DisplayID) {
-    // However wide the Desktop is after the person has moved one of its gaps, that is how wide they want it.
-    if gapsInHand, let desktop = workspaces[displayID]?.tree.desktop,
-      layout.nodeFrames[desktop] != layouts[displayID]?.nodeFrames[desktop]
-    {
-      workspaces[displayID]?.desktopIsOwedRoom = nil
+    // However wide the Desktop is after the person has moved one of its gaps, that is how wide they want it. And after they have moved
+    // another gap of its row, or one that runs the same way inside what is in that row: they have seen the row and set it, and the
+    // points they gave to a window are not for the Desktop to take.
+    if gapsInHand, let tree = workspaces[displayID]?.tree, let shown = layouts[displayID] {
+      var isSet = layout.nodeFrames[tree.desktop] != shown.nodeFrames[tree.desktop]
+      if !isSet, let row = tree.parent(of: tree.desktop), case .split(let axis, _) = tree[row]?.kind {
+        isSet = tree.preorder(from: row).contains {
+          layout.nodeFrames[$0]?.length(along: axis) != shown.nodeFrames[$0]?.length(along: axis)
+        }
+      }
+      if isSet { workspaces[displayID]?.desktopIsOwedRoom = nil }
     }
     guard settings.makeRoom, gapsInHand || squeezedByHand[displayID] != nil, let view = treeView(displayID) else {
       return

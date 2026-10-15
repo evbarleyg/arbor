@@ -647,34 +647,6 @@ extension ChaosRunner {
         settle
         """),
     ChaosKnownFailure(
-      rule: "dragged-gap-did-not-last", owner: "the arrangement is its person's: a gap dragged by hand", severity: 2,
-      story: "A docked window stands at its app's smallest size, on room lent to it. Its person drags the gap to make it larger. ⌃⌥0 at home, Show Everything, a "
-        + "look elsewhere and back, any window opening and closing take the drag back.",
-      script: """
-        displays side:0,0,2560,1440:25,0,86,0* windows-never
-        launch
-        open 101 Mail pid 1002 at 932 442 913 595 min 760 400
-        focus 101
-        key down dock top
-        key up dock top
-        settle
-        open 103 Music pid 1006 at 69 256 1117 564 min 680 480
-        focus 103
-        settle
-        grab 103
-        advance 0.5
-        release
-        settle
-        key down dock bottom
-        key up dock bottom
-        settle
-        seam side 0 -145
-        settle
-        key down home
-        key up home
-        settle
-        """),
-    ChaosKnownFailure(
       rule: "pause-and-resume-moved", owner: "rule 3: a resume is one move each, to the view there was", severity: 3,
       story: "The keyboard is in a window that is out of view. A pause and a resume with nothing between end with the view on that window: the resume lays the old "
         + "view out and then follows the keyboard, so every window moves twice as well.",

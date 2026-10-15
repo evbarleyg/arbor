@@ -20,7 +20,7 @@ public enum MakeRoom {
     /// into a window that nobody can see has lost it. The window, not its slot: whoever rehearses a dock (a drop's preview) does
     /// so on a copy of the tree, and the slot of the window in the hand is one that only the copy has.
     public var keyboard: WindowID?
-    /// Slots that stay as they are: the person squeezed them by hand.
+    /// Slots that stay as they are: the person squeezed them by hand. They are not served, and while they are tiles pay nothing back.
     public var leaving: Set<NodeID>
     /// The Desktop is a tile because room was taken from it, not because somebody wanted it narrow. Then it is served
     /// too, from what others can spare by now: last of all while it is empty, first of all with a window floating on it.
@@ -171,7 +171,8 @@ public enum MakeRoom {
     for _ in 0..<3 {
       let back =
         terms.givesBack
-        && giveBackWhatCanBeSpared(&tree, &layout, options: options, isPresent: isPresent, minimumSize: minimumSize, layOut)
+        && giveBackWhatCanBeSpared(
+          &tree, &layout, options: options, isPresent: isPresent, minimumSize: minimumSize, leaving: terms.leaving, layOut)
       gaveBack = gaveBack || back
       hadDesktop = hadDesktop || layout.desktopFrame != nil
       let servedBefore = served.count
@@ -215,7 +216,7 @@ public enum MakeRoom {
   /// windows whose minimum is known give back: what the others can spare could only be found out by asking them.
   private static func giveBackWhatCanBeSpared(
     _ tree: inout LayoutTree, _ layout: inout Layout, options: LayoutOptions, isPresent: @escaping (WindowID) -> Bool,
-    minimumSize: @escaping (WindowID) -> CGSize?, _ layOut: (LayoutTree) -> Layout
+    minimumSize: @escaping (WindowID) -> CGSize?, leaving: Set<NodeID>, _ layOut: (LayoutTree) -> Layout
   ) -> Bool {
     // (With `shareRemovedSpace` off a weight covers a slot and the gap after it, which the sums below do not know. There room
     // goes back when the window leaves, and not before.)
@@ -226,6 +227,11 @@ public enum MakeRoom {
       // The newest first: what was taken last goes back first.
       for index in tree.loans.indices.reversed() {
         let loan = tree.loans[index]
+        // A window squeezed into a tile by hand, in height say, could spare as a tile nearly all the width it was lent, or its column
+        // was for its sake. But then it would not fit when the same hand lets it out again. (One that is a window again, because
+        // a neighbour has left, pays like anybody.)
+        guard !layout.tiles.contains(where: { leaving.contains($0.node) && [loan.receiver, loan.borrower].contains($0.node) })
+        else { continue }
         // Only in a row that is in view as a whole. Framed on its own a window has the whole display, which says nothing about
         // what it can spare beside the others.
         guard let parent = tree.parent(of: loan.receiver), parent == tree.parent(of: loan.giver),
