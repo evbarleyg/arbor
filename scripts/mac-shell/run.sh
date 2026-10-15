@@ -49,6 +49,7 @@
 # instead of adding a branch. Starting the same scripts for the same ref again cancels the run that is still under way.
 #
 # Environment: MAC_SHELL_TIMEOUT  seconds to wait for the run (default 2700 for one script; 1200 more for each further one on the Mac that has most)
+#              MAC_SHELL_ASK      seconds between two questions to GitHub whether the run has ended without any output (default 600)
 #              MAC_SHELL_TAIL     lines of output.txt to print (default 40; of each of several Macs 12)
 #              MAC_SHELL_POLL     seconds between two looks at the queue while it holds back (default 120, and up to a quarter more)
 #              ARBOR_MAC_QUEUE_CACHE   a file in which several checkouts share one look at the queue (scripts/mac-queue.py)
@@ -239,7 +240,8 @@ done
 echo "run $run: https://github.com/$repo/actions/runs/$run"
 
 # Every Mac pushes its output as its last deed, so Git tells when they have finished. GitHub itself is asked only now and then, for the run
-# that ends without any output: cancelled while it waited, or stopped before its first step.
+# that ends without any output: cancelled while it waited, or stopped before its first step. Every ten minutes: at three, a run that waited twenty for
+# its Mac cost eight of the hour's calls to be told eight times that nothing had happened, and such an end is rare and can wait to be noticed.
 status="" asked=$(date +%s)
 while [ "$status" != completed ]; do
   if [ $(($(date +%s) - start)) -gt "$limit" ]; then
@@ -252,7 +254,7 @@ while [ "$status" != completed ]; do
     sleep 10
     break
   fi
-  if [ $(($(date +%s) - asked)) -ge 180 ]; then
+  if [ $(($(date +%s) - asked)) -ge "${MAC_SHELL_ASK:-600}" ]; then
     asked=$(date +%s)
     status=$(api "repos/$repo/actions/runs/$run" --jq .status 2>/dev/null)
   fi
