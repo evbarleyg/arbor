@@ -1,0 +1,392 @@
+# mac-shell: scripts/mac-shell/probe-an-app-that-is-ended.sh at 382f859, macOS 26.6.2, 2026-10-15T16:20Z
+
+== TextEdit, ended by kill
+session 1: Arbor pid 7897, test windows 110 (pid 7879,7821)
+running: 1 display, 0 docked and 2 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 107 left
+docked w107 at the left edge
+> dock 110 right
+docked w110 at the right edge
+display 0 0 1024 768, visible 0 31 1024 677, camera n2, back no
+  w107 12 43 494 653        docked
+  w110 518 43 494 653       docked focused
+> trace on an-app-ended-kill
+recording /tmp/arbor-shell.nN3YsX/home/traces/2026-10-15-162103-an-app-ended-kill.jsonl: 1 lines, 2 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+  kill: the process is gone; Arbor forgot the window after: 0.3 s
+  kill: the neighbour was at 518 43 494 653 and is at 518 43 494 653
+display 0 0 1024 768, visible 0 31 1024 677, camera n2, back no
+  Desktop          12 43 494 653
+  w110 518 43 494 653       docked focused
+> show-all
+  kill: after Show Everything Arbor does not know it
+> trace off
+trace saved: /tmp/arbor-shell.nN3YsX/home/traces/2026-10-15-162103-an-app-ended-kill.jsonl: 30 lines, trace off
+shot: mac-shell/ended-by-kill.png
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+
+== TextEdit, ended by term
+session 2: Arbor pid 8478, test windows 125 (pid 8454,8396)
+running: 1 display, 0 docked and 2 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 122 left
+docked w122 at the left edge
+> dock 125 right
+docked w125 at the right edge
+display 0 0 1024 768, visible 0 31 1024 677, camera n2, back no
+  w122 12 43 494 653        docked
+  w125 518 43 494 653       docked focused
+> trace on an-app-ended-term
+recording /tmp/arbor-shell.xe1ypq/home/traces/2026-10-15-162119-an-app-ended-term.jsonl: 1 lines, 2 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+  term: the process is gone; Arbor forgot the window after: 0.2 s
+  term: the neighbour was at 518 43 494 653 and is at 518 43 494 653
+display 0 0 1024 768, visible 0 31 1024 677, camera n2, back no
+  Desktop          12 43 494 653
+  w125 518 43 494 653       docked focused
+> show-all
+  term: after Show Everything Arbor does not know it
+> trace off
+trace saved: /tmp/arbor-shell.xe1ypq/home/traces/2026-10-15-162119-an-app-ended-term.jsonl: 32 lines, trace off
+shot: mac-shell/ended-by-term.png
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+
+== TextEdit, ended by quit
+session 3: Arbor pid 9410, test windows 140 (pid 9381,8987)
+running: 1 display, 0 docked and 2 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 137 left
+docked w137 at the left edge
+> dock 140 right
+docked w140 at the right edge
+display 0 0 1024 768, visible 0 31 1024 677, camera n2, back no
+  w137 12 43 494 653        docked
+  w140 518 43 494 653       docked focused
+> trace on an-app-ended-quit
+recording /tmp/arbor-shell.GKM091/home/traces/2026-10-15-162136-an-app-ended-quit.jsonl: 1 lines, 2 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+  quit: the process is gone; Arbor forgot the window after: 1.7 s
+  quit: the neighbour was at 518 43 494 653 and is at 518 43 494 653
+display 0 0 1024 768, visible 0 31 1024 677, camera n2, back no
+  Desktop          12 43 494 653
+  w140 518 43 494 653       docked focused
+> show-all
+  quit: after Show Everything Arbor does not know it
+> trace off
+trace saved: /tmp/arbor-shell.GKM091/home/traces/2026-10-15-162136-an-app-ended-quit.jsonl: 32 lines, trace off
+shot: mac-shell/ended-by-quit.png
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+
+== the second test app, accessory, ended by term
+session 4: Arbor pid 10258, test windows 147 148 (pid 10227,10244)
+running: 1 display, 0 docked and 2 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 148 left
+docked w148 at the left edge
+> dock 147 right
+docked w147 at the right edge
+display 0 0 1024 768, visible 0 31 1024 677, camera n2, back no
+  w147 518 43 494 653       docked focused
+  w148 12 43 494 653        docked
+> trace on an-app-ended-test-accessory
+recording /tmp/arbor-shell.MevpmU/home/traces/2026-10-15-162149-an-app-ended-test-accessory.jsonl: 1 lines, 2 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+  accessory: the process is gone; Arbor forgot the window after: gave-up s
+  accessory: the neighbour was at 518 43 494 653 and is at 518 43 494 653
+display 0 0 1024 768, visible 0 31 1024 677, camera n2, back no
+  w147 518 43 494 653       docked focused
+  w148 12 43 494 653        docked
+> show-all
+  accessory: after Show Everything Arbor still knows it
+> relayout
+  accessory: after a layout Arbor still knows it
+> trace off
+trace saved: /tmp/arbor-shell.MevpmU/home/traces/2026-10-15-162149-an-app-ended-test-accessory.jsonl: 360 lines, trace off
+shot: mac-shell/the-test-app-accessory-ended.png
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+
+== the second test app, regular, ended by term
+session 5: Arbor pid 12390, test windows 155 156 (pid 12269,12342)
+running: 1 display, 0 docked and 2 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 156 left
+docked w156 at the left edge
+> dock 155 right
+docked w155 at the right edge
+display 0 0 1024 768, visible 0 31 1024 679, camera n2, back no
+  w155 518 43 494 655       docked focused
+  w156 12 43 494 655        docked
+> trace on an-app-ended-test-regular
+recording /tmp/arbor-shell.5t1kFS/home/traces/2026-10-15-162230-an-app-ended-test-regular.jsonl: 1 lines, 2 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+  regular: the process is gone; Arbor forgot the window after: 0.2 s
+  regular: the neighbour was at 518 43 494 655 and is at 518 43 494 655
+display 0 0 1024 768, visible 0 31 1024 679, camera n2, back no
+  Desktop          12 43 494 655
+  w155 518 43 494 655       docked focused
+> show-all
+  regular: after Show Everything Arbor does not know it
+> relayout
+  regular: after a layout Arbor does not know it
+> trace off
+trace saved: /tmp/arbor-shell.5t1kFS/home/traces/2026-10-15-162230-an-app-ended-test-regular.jsonl: 51 lines, trace off
+shot: mac-shell/the-test-app-regular-ended.png
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+
+== what Arbor was told
+an-app-ended-kill.jsonl
+  +  0.08  {"t": 0.0841, "event": "destroyed", "id": 107}
+  +  0.08  {"t": 0.0845, "call": "displays", "result": [{"frame": [0, 0, 1024, 768], "id": "07230EFA-7A8D-4E37-845C-19CC8737EEF5", "main": true, "name": "display-1", "visible": [0, 
+  +  0.08  {"t": 0.085, "call": "isMouseButtonDown", "result": false}
+  +  0.08  {"t": 0.0854, "call": "focusedWindow", "result": 110}
+  +  0.10  {"t": 0.1076, "call": "focusedWindow", "result": 110}
+  +  0.33  {"t": 0.3411, "call": "focusedWindow", "result": 110}
+  +  0.40  {"t": 0.4089, "command": "show-all", "from": "script"}
+  +  0.40  {"t": 0.4093, "call": "displays", "result": [{"frame": [0, 0, 1024, 768], "id": "07230EFA-7A8D-4E37-845C-19CC8737EEF5", "main": true, "name": "display-1", "visible": [0, 
+  +  0.40  {"t": 0.4103, "read": "inputActivity", "result": {"keyPresses": 1, "keyboardIdle": 21.855165625, "pointerIdle": 8.341831167}}
+  +  0.40  {"t": 0.4124, "call": "focusedWindow", "result": 110}
+  +  0.40  {"t": 0.4129, "call": "displays", "result": [{"frame": [0, 0, 1024, 768], "id": "07230EFA-7A8D-4E37-845C-19CC8737EEF5", "main": true, "name": "display-1", "visible": [0, 
+  +  0.41  {"t": 0.4142, "call": "isMouseButtonDown", "result": false}
+  +  0.41  {"t": 0.4144, "call": "focusedWindow", "result": 110}
+  +  0.41  {"t": 0.4153, "call": "focusedWindow", "result": 110}
+  +  0.41  {"t": 0.4159, "done": "show-all", "message": "showing everything", "ok": true}
+  +  0.92  {"t": 0.9312, "timer": "save"}
+  +  0.92  {"t": 0.9323, "event": "settingsFileMayHaveChanged"}
+  +  0.92  {"t": 0.9331, "event": "settingsFileMayHaveChanged"}
+  +  1.23  {"t": 1.2343, "timer": "settings-file"}
+  +  1.49  {"t": 1.4991, "call": "focusedWindow", "result": 110}
+  +  1.54  {"t": 1.5473, "end": "trace off", "lines": 29, "thinned": 0}
+an-app-ended-quit.jsonl
+  +  1.51  {"t": 1.5274, "event": "destroyed", "id": 137}
+  +  1.51  {"t": 1.5279, "call": "displays", "result": [{"frame": [0, 0, 1024, 768], "id": "07230EFA-7A8D-4E37-845C-19CC8737EEF5", "main": true, "name": "display-1", "visible": [0, 
+  +  1.51  {"t": 1.5282, "call": "isMouseButtonDown", "result": false}
+  +  1.52  {"t": 1.5304, "call": "focusedWindow", "result": 140}
+  +  1.54  {"t": 1.5581, "call": "focusedWindow", "result": 140}
+  +  1.83  {"t": 1.8413, "call": "focusedWindow", "result": 140}
+  +  1.89  {"t": 1.9038, "command": "show-all", "from": "script"}
+  +  1.89  {"t": 1.9041, "call": "displays", "result": [{"frame": [0, 0, 1024, 768], "id": "07230EFA-7A8D-4E37-845C-19CC8737EEF5", "main": true, "name": "display-1", "visible": [0, 
+  +  1.89  {"t": 1.9047, "read": "inputActivity", "result": {"keyPresses": 1, "keyboardIdle": 55.879906625, "pointerIdle": 42.366574959}}
+  +  1.89  {"t": 1.9052, "call": "focusedWindow", "result": 140}
+  +  1.89  {"t": 1.9053, "call": "displays", "result": [{"frame": [0, 0, 1024, 768], "id": "07230EFA-7A8D-4E37-845C-19CC8737EEF5", "main": true, "name": "display-1", "visible": [0, 
+  +  1.89  {"t": 1.9056, "call": "isMouseButtonDown", "result": false}
+  +  1.89  {"t": 1.9057, "call": "focusedWindow", "result": 140}
+  +  1.89  {"t": 1.9089, "call": "focusedWindow", "result": 140}
+  +  1.90  {"t": 1.9104, "done": "show-all", "message": "showing everything", "ok": true}
+  +  2.40  {"t": 2.4192, "timer": "save"}
+  +  2.41  {"t": 2.4214, "event": "settingsFileMayHaveChanged"}
+  +  2.41  {"t": 2.4266, "event": "settingsFileMayHaveChanged"}
+  +  2.72  {"t": 2.7364, "timer": "settings-file"}
+  +  2.92  {"t": 2.9369, "call": "focusedWindow", "result": 140}
+  +  2.96  {"t": 2.9789, "end": "trace off", "lines": 31, "thinned": 0}
+an-app-ended-term.jsonl
+  +  0.11  {"t": 0.1183, "event": "destroyed", "id": 122}
+  +  0.11  {"t": 0.1191, "call": "displays", "result": [{"frame": [0, 0, 1024, 768], "id": "07230EFA-7A8D-4E37-845C-19CC8737EEF5", "main": true, "name": "display-1", "visible": [0, 
+  +  0.11  {"t": 0.1196, "call": "isMouseButtonDown", "result": false}
+  +  0.11  {"t": 0.1202, "call": "focusedWindow", "result": 125}
+  +  0.14  {"t": 0.1565, "call": "focusedWindow", "result": 125}
+  +  0.32  {"t": 0.3298, "call": "focusedWindow", "result": 125}
+  +  0.40  {"t": 0.4159, "command": "show-all", "from": "script"}
+  +  0.40  {"t": 0.4174, "call": "displays", "result": [{"frame": [0, 0, 1024, 768], "id": "07230EFA-7A8D-4E37-845C-19CC8737EEF5", "main": true, "name": "display-1", "visible": [0, 
+  +  0.41  {"t": 0.4181, "read": "inputActivity", "result": {"keyPresses": 1, "keyboardIdle": 38.148501125, "pointerIdle": 24.6351685}}
+  +  0.41  {"t": 0.4187, "call": "focusedWindow", "result": 125}
+  +  0.41  {"t": 0.4188, "call": "displays", "result": [{"frame": [0, 0, 1024, 768], "id": "07230EFA-7A8D-4E37-845C-19CC8737EEF5", "main": true, "name": "display-1", "visible": [0, 
+  +  0.41  {"t": 0.4193, "call": "isMouseButtonDown", "result": false}
+  +  0.41  {"t": 0.4194, "call": "focusedWindow", "result": 125}
+  +  0.41  {"t": 0.4205, "call": "focusedWindow", "result": 125}
+  +  0.41  {"t": 0.421, "done": "show-all", "message": "showing everything", "ok": true}
+  +  0.92  {"t": 0.9318, "timer": "save"}
+  +  0.92  {"t": 0.9332, "event": "settingsFileMayHaveChanged"}
+  +  0.92  {"t": 0.9339, "event": "settingsFileMayHaveChanged"}
+  +  1.22  {"t": 1.2353, "timer": "settings-file"}
+  +  1.50  {"t": 1.5082, "call": "focusedWindow", "result": 125}
+  +  1.53  {"t": 1.5452, "end": "trace off", "lines": 31, "thinned": 0}
+an-app-ended-test-accessory.jsonl
+  +  0.13  {"t": 0.1472, "call": "focusedWindow", "result": 147}
+  +  0.45  {"t": 0.4619, "call": "focusedWindow", "result": 147}
+  +  0.70  {"t": 0.716, "call": "focusedWindow", "result": 147}
+  +  0.96  {"t": 0.971, "call": "focusedWindow", "result": 147}
+  +  1.29  {"t": 1.2986, "call": "focusedWindow", "result": 147}
+  +  1.61  {"t": 1.6234, "call": "focusedWindow", "result": 147}
+  +  1.93  {"t": 1.939, "call": "focusedWindow", "result": 147}
+  +  2.25  {"t": 2.2614, "call": "focusedWindow", "result": 147}
+  +  2.58  {"t": 2.5926, "call": "focusedWindow", "result": 147}
+  +  2.85  {"t": 2.8667, "call": "focusedWindow", "result": 147}
+  +  3.17  {"t": 3.1849, "call": "focusedWindow", "result": 147}
+  +  3.45  {"t": 3.4623, "call": "focusedWindow", "result": 147}
+  +  3.71  {"t": 3.7262, "call": "focusedWindow", "result": 147}
+  +  4.04  {"t": 4.0531, "call": "focusedWindow", "result": 147}
+  +  4.36  {"t": 4.3695, "call": "focusedWindow", "result": 147}
+  +  4.68  {"t": 4.6888, "call": "focusedWindow", "result": 147}
+  +  4.99  {"t": 5.007, "call": "focusedWindow", "result": 147}
+  +  5.27  {"t": 5.2786, "call": "focusedWindow", "result": 147}
+  +  5.57  {"t": 5.585, "call": "focusedWindow", "result": 147}
+  +  5.82  {"t": 5.838, "call": "focusedWindow", "result": 147}
+  +  6.14  {"t": 6.1563, "call": "focusedWindow", "result": 147}
+  +  6.46  {"t": 6.4758, "call": "focusedWindow", "result": 147}
+  +  6.78  {"t": 6.7959, "call": "focusedWindow", "result": 147}
+  +  7.09  {"t": 7.1054, "call": "focusedWindow", "result": 147}
+  +  7.42  {"t": 7.4301, "call": "focusedWindow", "result": 147}
+  +  7.72  {"t": 7.7341, "call": "focusedWindow", "result": 147}
+  +  7.99  {"t": 7.9987, "call": "focusedWindow", "result": 147}
+  +  8.27  {"t": 8.2852, "call": "focusedWindow", "result": 147}
+  +  8.51  {"t": 8.5277, "call": "focusedWindow", "result": 147}
+  +  8.84  {"t": 8.8576, "call": "focusedWindow", "result": 147}
+  +  9.11  {"t": 9.1225, "call": "focusedWindow", "result": 147}
+  +  9.36  {"t": 9.3773, "call": "focusedWindow", "result": 147}
+  +  9.71  {"t": 9.7199, "call": "focusedWindow", "result": 147}
+  + 10.02  {"t": 10.0319, "call": "focusedWindow", "result": 147}
+  + 10.37  {"t": 10.3884, "call": "focusedWindow", "result": 147}
+  + 10.64  {"t": 10.6522, "call": "focusedWindow", "result": 147}
+  + 10.97  {"t": 10.9876, "call": "focusedWindow", "result": 147}
+  + 11.24  {"t": 11.2505, "call": "focusedWindow", "result": 147}
+  + 11.56  {"t": 11.5755, "call": "focusedWindow", "result": 147}
+  + 11.84  {"t": 11.8572, "call": "focusedWindow", "result": 147}
+  + 12.12  {"t": 12.1307, "call": "focusedWindow", "result": 147}
+  + 12.40  {"t": 12.4168, "call": "focusedWindow", "result": 147}
+  + 12.70  {"t": 12.7105, "call": "focusedWindow", "result": 147}
+  + 13.00  {"t": 13.0171, "call": "focusedWindow", "result": 147}
+  + 13.32  {"t": 13.3286, "call": "focusedWindow", "result": 147}
+  + 13.58  {"t": 13.5928, "call": "focusedWindow", "result": 147}
+  + 13.88  {"t": 13.8958, "call": "focusedWindow", "result": 147}
+  + 14.16  {"t": 14.1733, "call": "focusedWindow", "result": 147}
+  + 14.45  {"t": 14.4617, "call": "focusedWindow", "result": 147}
+  + 14.77  {"t": 14.783, "call": "focusedWindow", "result": 147}
+  + 15.08  {"t": 15.0893, "call": "focusedWindow", "result": 147}
+  + 15.33  {"t": 15.3476, "call": "focusedWindow", "result": 147}
+  + 15.59  {"t": 15.6012, "call": "focusedWindow", "result": 147}
+  + 15.86  {"t": 15.8777, "call": "focusedWindow", "result": 147}
+  + 16.10  {"t": 16.1179, "call": "focusedWindow", "result": 147}
+  + 16.40  {"t": 16.4155, "call": "focusedWindow", "result": 147}
+  + 16.68  {"t": 16.6975, "call": "focusedWindow", "result": 147}
+  + 17.00  {"t": 17.0183, "call": "focusedWindow", "result": 147}
+  + 17.32  {"t": 17.3322, "call": "focusedWindow", "result": 147}
+  + 17.62  {"t": 17.6378, "call": "focusedWindow", "result": 147}
+  + 17.91  {"t": 17.9236, "call": "focusedWindow", "result": 147}
+  + 18.18  {"t": 18.1907, "call": "focusedWindow", "result": 147}
+  + 18.46  {"t": 18.4727, "call": "focusedWindow", "result": 147}
+  + 18.79  {"t": 18.803, "call": "focusedWindow", "result": 147}
+  + 19.12  {"t": 19.1304, "call": "focusedWindow", "result": 147}
+  + 19.38  {"t": 19.394, "call": "focusedWindow", "result": 147}
+  + 19.64  {"t": 19.6576, "call": "focusedWindow", "result": 147}
+  + 19.95  {"t": 19.9665, "call": "focusedWindow", "result": 147}
+  + 20.22  {"t": 20.237, "call": "focusedWindow", "result": 147}
+  + 20.56  {"t": 20.5705, "call": "focusedWindow", "result": 147}
+  + 20.81  {"t": 20.8258, "call": "focusedWindow", "result": 147}
+  + 21.06  {"t": 21.0698, "call": "focusedWindow", "result": 147}
+  + 21.32  {"t": 21.3354, "call": "focusedWindow", "result": 147}
+  + 21.62  {"t": 21.6329, "call": "focusedWindow", "result": 147}
+  + 21.93  {"t": 21.9469, "call": "focusedWindow", "result": 147}
+  + 22.18  {"t": 22.1971, "call": "focusedWindow", "result": 147}
+  + 22.45  {"t": 22.4631, "call": "focusedWindow", "result": 147}
+  + 22.74  {"t": 22.7561, "call": "focusedWindow", "result": 147}
+  + 23.03  {"t": 23.0388, "call": "focusedWindow", "result": 147}
+  + 23.31  {"t": 23.3275, "call": "focusedWindow", "result": 147}
+  + 23.57  {"t": 23.5873, "call": "focusedWindow", "result": 147}
+  + 23.90  {"t": 23.9115, "call": "focusedWindow", "result": 147}
+  + 24.21  {"t": 24.221, "call": "focusedWindow", "result": 147}
+  + 24.50  {"t": 24.5128, "call": "focusedWindow", "result": 147}
+  + 24.82  {"t": 24.835, "call": "focusedWindow", "result": 147}
+  + 25.08  {"t": 25.0889, "call": "focusedWindow", "result": 147}
+  + 25.34  {"t": 25.3559, "call": "focusedWindow", "result": 147}
+  + 25.60  {"t": 25.6155, "call": "focusedWindow", "result": 147}
+  + 25.90  {"t": 25.9093, "call": "focusedWindow", "result": 147}
+  + 26.20  {"t": 26.21, "call": "focusedWindow", "result": 147}
+  + 26.46  {"t": 26.4772, "call": "focusedWindow", "result": 147}
+  + 26.76  {"t": 26.7698, "call": "focusedWindow", "result": 147}
+  + 27.07  {"t": 27.0797, "call": "focusedWindow", "result": 147}
+  + 27.35  {"t": 27.3673, "call": "focusedWindow", "result": 147}
+  + 27.64  {"t": 27.6508, "call": "focusedWindow", "result": 147}
+  + 27.91  {"t": 27.9242, "call": "focusedWindow", "result": 147}
+  + 28.20  {"t": 28.2121, "call": "focusedWindow", "result": 147}
+  + 28.52  {"t": 28.5348, "call": "focusedWindow", "result": 147}
+  + 28.81  {"t": 28.8261, "call": "focusedWindow", "result": 147}
+  + 29.12  {"t": 29.1381, "call": "focusedWindow", "result": 147}
+  + 29.46  {"t": 29.4712, "call": "focusedWindow", "result": 147}
+  + 29.52  {"t": 29.5296, "command": "show-all", "from": "script"}
+  + 29.52  {"t": 29.5308, "call": "displays", "result": [{"frame": [0, 0, 1024, 768], "id": "07230EFA-7A8D-4E37-845C-19CC8737EEF5", "main": true, "name": "display-1", "visible": [0,
+  + 29.52  {"t": 29.533, "read": "inputActivity", "result": {"keyPresses": 1, "keyboardIdle": 97.010183875, "pointerIdle": 83.496839959}}
+  + 29.52  {"t": 29.5335, "call": "focusedWindow", "result": 147}
+  + 29.52  {"t": 29.5337, "call": "displays", "result": [{"frame": [0, 0, 1024, 768], "id": "07230EFA-7A8D-4E37-845C-19CC8737EEF5", "main": true, "name": "display-1", "visible": [0,
+  + 29.52  {"t": 29.5352, "call": "isMouseButtonDown", "result": false}
+  + 29.52  {"t": 29.5356, "call": "focusedWindow", "result": 147}
+  + 29.52  {"t": 29.5383, "call": "focusedWindow", "result": 147}
+  + 29.53  {"t": 29.5419, "done": "show-all", "message": "showing everything", "ok": true}
+  + 30.10  {"t": 30.1181, "timer": "save"}
+  + 30.60  {"t": 30.6128, "call": "focusedWindow", "result": 147}
+  + 30.64  {"t": 30.6531, "command": "relayout", "from": "script"}
+  + 30.64  {"t": 30.6535, "call": "displays", "result": [{"frame": [0, 0, 1024, 768], "id": "07230EFA-7A8D-4E37-845C-19CC8737EEF5", "main": true, "name": "display-1", "visible": [0,
+  + 30.64  {"t": 30.6541, "call": "displays", "result": [{"frame": [0, 0, 1024, 768], "id": "07230EFA-7A8D-4E37-845C-19CC8737EEF5", "main": true, "name": "display-1", "visible": [0,
+  + 30.64  {"t": 30.6547, "call": "isMouseButtonDown", "result": false}
+  + 30.64  {"t": 30.6551, "call": "focusedWindow", "result": 147}
+  + 30.64  {"t": 30.6563, "done": "relayout", "message": "laid out again", "ok": true}
+  + 31.74  {"t": 31.7535, "call": "focusedWindow", "result": 147}
+  + 31.81  {"t": 31.8193, "end": "trace off", "lines": 359, "thinned": 0}
+an-app-ended-test-regular.jsonl
+  +  0.06  {"t": 0.077, "event": "destroyed", "id": 156}
+  +  0.06  {"t": 0.0776, "call": "displays", "result": [{"frame": [0, 0, 1024, 768], "id": "07230EFA-7A8D-4E37-845C-19CC8737EEF5", "main": true, "name": "display-1", "visible": [0, 
+  +  0.06  {"t": 0.0789, "call": "isMouseButtonDown", "result": false}
+  +  0.07  {"t": 0.0806, "call": "focusedWindow", "result": 155}
+  +  0.11  {"t": 0.1197, "call": "focusedWindow", "result": 155}
+  +  0.24  {"t": 0.2551, "call": "focusedWindow", "result": 155}
+  +  0.31  {"t": 0.3229, "command": "show-all", "from": "script"}
+  +  0.31  {"t": 0.3234, "call": "displays", "result": [{"frame": [0, 0, 1024, 768], "id": "07230EFA-7A8D-4E37-845C-19CC8737EEF5", "main": true, "name": "display-1", "visible": [0, 
+  +  0.31  {"t": 0.3264, "read": "inputActivity", "result": {"keyPresses": 1, "keyboardIdle": 109.12049525, "pointerIdle": 95.607162375}}
+  +  0.31  {"t": 0.3272, "call": "focusedWindow", "result": 155}
+  +  0.31  {"t": 0.3274, "call": "displays", "result": [{"frame": [0, 0, 1024, 768], "id": "07230EFA-7A8D-4E37-845C-19CC8737EEF5", "main": true, "name": "display-1", "visible": [0, 
+  +  0.31  {"t": 0.3277, "call": "isMouseButtonDown", "result": false}
+  +  0.31  {"t": 0.3279, "call": "focusedWindow", "result": 155}
+  +  0.32  {"t": 0.3295, "call": "focusedWindow", "result": 155}
+  +  0.32  {"t": 0.3299, "done": "show-all", "message": "showing everything", "ok": true}
+  +  0.63  {"t": 0.6476, "raw": "didChangeScreenParameters"}
+  +  0.82  {"t": 0.8355, "timer": "save"}
+  +  0.82  {"t": 0.8366, "event": "settingsFileMayHaveChanged"}
+  +  0.82  {"t": 0.837, "event": "settingsFileMayHaveChanged"}
+  +  0.94  {"t": 0.9563, "event": "displaysChanged", "to": [{"frame": [0, 0, 1024, 768], "id": "07230EFA-7A8D-4E37-845C-19CC8737EEF5", "main": true, "name": "display-1", "visible": 
+  +  0.94  {"t": 0.9567, "call": "displays", "result": [{"frame": [0, 0, 1024, 768], "id": "07230EFA-7A8D-4E37-845C-19CC8737EEF5", "main": true, "name": "display-1", "visible": [0, 
+  +  0.94  {"t": 0.9571, "call": "allWindows", "result": [{"app": "ArborTestWindows", "bundle": "dev.arbor.testwindows", "frame": [518, 43, 494, 655], "id": 155, "pid": 12269, "titl
+  +  0.94  {"t": 0.9581, "call": "displays", "result": [{"frame": [0, 0, 1024, 768], "id": "07230EFA-7A8D-4E37-845C-19CC8737EEF5", "main": true, "name": "display-1", "visible": [0, 
+  +  0.95  {"t": 0.9651, "call": "setFrame", "frame": [518, 43, 494, 653], "id": 155, "result": [518, 43, 494, 653], "took": 0.0063}
+  +  0.95  {"t": 0.9658, "call": "isMouseButtonDown", "result": false}
+  +  0.95  {"t": 0.9668, "call": "focusedWindow", "result": 155}
+  +  0.96  {"t": 0.9764, "raw": "AXResized w155"}
+  +  0.96  {"t": 0.9773, "event": "changed", "user": false, "window": {"app": "ArborTestWindows", "bundle": "dev.arbor.testwindows", "frame": [518, 43, 494, 653], "id": 155, "pid": 
+  +  1.13  {"t": 1.1457, "timer": "settings-file"}
+  +  1.38  {"t": 1.3988, "call": "focusedWindow", "result": 155}
+  +  1.44  {"t": 1.4534, "command": "relayout", "from": "script"}
+  +  1.44  {"t": 1.4541, "call": "displays", "result": [{"frame": [0, 0, 1024, 768], "id": "07230EFA-7A8D-4E37-845C-19CC8737EEF5", "main": true, "name": "display-1", "visible": [0, 
+  +  1.44  {"t": 1.4547, "call": "displays", "result": [{"frame": [0, 0, 1024, 768], "id": "07230EFA-7A8D-4E37-845C-19CC8737EEF5", "main": true, "name": "display-1", "visible": [0, 
+  +  1.44  {"t": 1.4551, "call": "isMouseButtonDown", "result": false}
+  +  1.44  {"t": 1.4556, "call": "focusedWindow", "result": 155}
+  +  1.44  {"t": 1.4566, "done": "relayout", "message": "laid out again", "ok": true}
+  +  1.47  {"t": 1.482, "timer": "save"}
+  +  2.49  {"t": 2.5064, "call": "focusedWindow", "result": 155}
+  +  2.54  {"t": 2.5496, "end": "trace off", "lines": 50, "thinned": 0}
+
+10 passed, 0 failed
+exit code 0

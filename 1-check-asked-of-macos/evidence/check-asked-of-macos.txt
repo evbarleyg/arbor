@@ -1,0 +1,49 @@
+# check-asked-of-macos 2026-10-15T16:18Z on macOS 26.6.2, commit 382f859
+
+== session: Center, and Quit
+  ✔ its slot's size is not its own, or this says nothing
+  ✔ TextEdit is in front
+
+== Window ▸ Center
+  ✔ macOS moved it
+  ✔ and gave it no size
+  ✔ five seconds later it is where macOS put it
+  ✔ docked as before
+  ✔ and let be
+  ✔ the neighbour did not move
+  ✔ Arbor set no frame on it
+
+== Quit
+  ✔ Arbor exits within 5 s of quit
+  ✔ it has its own size again
+  ✔ where it lies: the middle of its title bar is where it was
+  ✔ the neighbour has its own size again
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+
+== session: Move to the other display
+  ✔ its slot's size is not its own, or this says nothing
+  ✔ TextEdit is in front
+
+== Window ▸ Move to Arbor Test Display
+  ✔ it is on the other display
+  ✔ it has left the arrangement
+  ✔ and floats
+  ✔ nobody is let be there
+  ✔ in its own size
+  ✔ Arbor set one frame on it at the most
+  ✔ the neighbour is in its slot
+  ✔ and was moved once at the most
+
+== a key that names another window
+  ✔ the other window is docked
+  ✔ and this one is where its person sent it
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+
+30 passed, 0 failed

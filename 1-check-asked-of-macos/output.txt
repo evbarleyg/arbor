@@ -1,0 +1,124 @@
+# mac-shell: scripts/mac-shell/check-asked-of-macos.sh at 382f859, macOS 26.6.2, 2026-10-15T16:18Z
+built Arbor, the pointer tool and the app bundles in 5s
+
+== session: Center, and Quit
+session 1: Arbor pid 4212, test windows 37 (pid 4162,4091)
+running: 1 display, 0 docked and 2 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+its own frame, before Arbor has touched it: 79 56 603 505
+> dock 34 left
+docked w34 at the left edge
+> dock 37 right
+docked w37 at the right edge
+in its slot: 12 43 494 653
+  ✔ its slot's size is not its own, or this says nothing
+> click 264 55
+> move 264 175
+  ✔ TextEdit is in front
+
+== Window ▸ Center
+> trace on asked-center
+recording /tmp/arbor-shell.HhH7et/home/traces/2026-10-15-161953-asked-center.jsonl: 1 lines, 2 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+> click 350 15
+> click 441 120
+macOS put it at: 265 44 494 653
+  ✔ macOS moved it
+  ✔ and gave it no size
+  ✔ five seconds later it is where macOS put it
+  ✔ docked as before
+  ✔ and let be
+  ✔ the neighbour did not move
+> trace off
+trace saved: /tmp/arbor-shell.HhH7et/home/traces/2026-10-15-161953-asked-center.jsonl: 122 lines, trace off
+  ✔ Arbor set no frame on it
+shot: mac-shell/centred.png
+
+== Quit
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+after Quit: 211 44 603 505
+  ✔ it has its own size again
+  ✔ where it lies: the middle of its title bar is where it was
+  ✔ the neighbour has its own size again
+shot: mac-shell/after-quit.png
+session 1: Arbor pid 5127, test windows 37 (pid 4162,4091)
+running: 1 display, 2 docked and 0 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+
+== session: Move to the other display
+session 2: Arbor pid 5699, test windows 60 61 (pid 5662,5526)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> display_add 1280 600: display 2, E2331988-7E41-49DD-82DA-4C6664757C2B
+> display_move right: now at 1920 0 1280 600
+its own frame, before Arbor has touched it: 241 87 586 488
+> dock 57 left
+docked w57 at the left edge
+> dock 60 right
+docked w60 at the right edge
+in its slot: 12 43 942 947; the other display shows 1920 31 1280 569
+  ✔ its slot's size is not its own, or this says nothing
+> click 488 55
+> move 488 175
+  ✔ TextEdit is in front
+
+== Window ▸ Move to Arbor Test Display
+> trace on asked-move-to
+recording /tmp/arbor-shell.en1Kma/home/traces/2026-10-15-162031-asked-move-to.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+> click 350 15
+> click 444 249
+0.2 s after the click: 12 43 942 947
+three seconds later: 2102 31 586 488
+> trace off
+trace saved: /tmp/arbor-shell.en1Kma/home/traces/2026-10-15-162031-asked-move-to.jsonl: 36 lines, trace off
+display 1 0 0 1920 1080, visible 0 31 1920 971, camera n2, back no
+  Desktop          12 43 942 947
+display 2 1920 0 1280 600, visible 1920 31 1280 569, camera n0, back no
+  Desktop          1932 43 1256 545
+  w57 2102 31 586 488      display 2, floating focused
+  w60 966 43 942 947       display 1, docked
+  w61 582 300 480 348      display 1, floating
+  ✔ it is on the other display
+  ✔ it has left the arrangement
+  ✔ and floats
+  ✔ nobody is let be there
+  ✔ in its own size
+  ✔ Arbor set one frame on it at the most
+the neighbour was at 966 43 942 947 and is at 966 43 942 947
+  ✔ the neighbour is in its slot
+  ✔ and was moved once at the most
+what macOS reported of it, and what Arbor asked of it:
+{"t":2.9974,"event":"changed","user":true,"window":{"app":"TextEdit","bundle":"com.apple.TextEdit","frame":[1924,31,942,569],"id":57,"pid":5526,"title":"title[1]"}}
+{"t":3.3461,"call":"setFrame","frame":[2102,31,586,488],"id":57,"result":[2102,31,586,488],"took":0.0284}
+{"t":3.3568,"event":"changed","user":false,"window":{"app":"TextEdit","bundle":"com.apple.TextEdit","frame":[2102,31,586,488],"id":57,"pid":5526,"title":"title[1]"}}
+{"t":3.3572,"event":"changed","user":false,"window":{"app":"TextEdit","bundle":"com.apple.TextEdit","frame":[2102,31,586,488],"id":57,"pid":5526,"title":"title[1]"}}
+shot: mac-shell/moved-to-the-other-display.png and moved-to-the-other-display-d2.png
+
+== a key that names another window
+> click 820 312
+> move 820 432
+> key ctrl+opt+left
+  ✔ the other window is docked
+  ✔ and this one is where its person sent it
+shot: mac-shell/after-the-key.png and after-the-key-d2.png
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+> display_remove
+
+30 passed, 0 failed
+exit code 0
