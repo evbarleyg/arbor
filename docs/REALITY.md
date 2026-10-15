@@ -58,7 +58,7 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 | [missing-report](#missing-report) | 42 | 7 | 12 | 7 | 4 | 19 | 22 | 1 | 5 | 14 | 11 |
 | [extra-report](#extra-report) | 9 | 0 | 3 | 3 | 1 | 2 | 6 | 0 | 0 | 3 | 1 |
 | [late-or-partial-answer](#late-or-partial-answer) | 46 | 9 | 11 | 16 | 6 | 13 | 28 | 0 | 6 | 12 | 15 |
-| [second-actor](#second-actor) | 53 | 6 | 16 | 20 | 10 | 7 | 34 | 0 | 4 | 15 | 10 |
+| [second-actor](#second-actor) | 54 | 6 | 17 | 20 | 10 | 7 | 35 | 0 | 4 | 15 | 10 |
 | [geometry](#geometry) | 35 | 2 | 11 | 15 | 7 | 2 | 24 | 1 | 2 | 8 | 6 |
 | [identity](#identity) | 31 | 4 | 7 | 6 | 7 | 11 | 12 | 1 | 4 | 14 | 9 |
 | [permissions](#permissions) | 23 | 8 | 6 | 3 | 3 | 11 | 12 | 2 | 2 | 7 | 4 |
@@ -67,14 +67,14 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 | [looks](#looks) | 21 | 0 | 0 | 0 | 1 | 20 | 2 | 2 | 3 | 14 | 6 |
 | [never-exercised](#never-exercised) | 15 | 7 | 1 | 13 | 0 | 1 | 0 | 0 | 14 | 1 | 15 |
 | [toolchain](#toolchain) | 45 | 1 | 0 | 1 | 4 | 40 | 26 | 1 | 2 | 16 | 7 |
-| **all** | 461 | 62 | 90 | 124 | 70 | 177 | 234 | 19 | 60 | 148 | 109 |
+| **all** | 462 | 62 | 91 | 124 | 70 | 177 | 235 | 19 | 60 | 148 | 109 |
 
 **Where the difference bit**
 
 | Where | That is | Cases | Hurt 1 or 2 | Guarded without a Mac | Guarded only on CI's Macs | Only when somebody starts a script | Not guarded |
 |---|---|---|---|---|---|---|---|
 | below the seam | in the macOS-only code under the platform protocols (AX, Input, UI, App), which no test on Linux runs | 144 | 89 | 46 | 13 | 33 | 52 |
-| at the seam | in what crosses the platform protocols: a stand-in can play it to the controller | 163 | 97 | 121 | 0 | 11 | 31 |
+| at the seam | in what crosses the platform protocols: a stand-in can play it to the controller | 164 | 98 | 122 | 0 | 11 | 31 |
 | controller | in the controller or the core, given reports that were right | 27 | 14 | 15 | 0 | 1 | 11 |
 | test | in a test, a script or a harness that expected the wrong thing | 81 | 0 | 25 | 5 | 11 | 40 |
 | machine | in the machine, the toolchain or the way things are built and installed | 46 | 3 | 27 | 1 | 4 | 14 |
@@ -1944,6 +1944,18 @@ A second actor: macOS, an app or another tool moves things too.
 - **Guard:** `test: aBackgroundAppChangingItsFocusedWindowDoesNotMoveTheCamera`; `test: aBackgroundAppsReportDoesNotPutOffTheLookAfterALoss`; `test: aBackgroundAppsReportDoesNotPutOffTheSecondLookAtTheWindowTakingTheKeyboard`; `test: aFocusReportFromTheBackgroundDoesNotTakeTheLeadFromThePointer`; `e2e: an app in the background changes its focused window` (on CI's Macs); `e2e: the camera stays where the user is` (on CI's Macs); `tool: mac-on-linux/build.sh` (by hand)
 - **Arbor copes:** AXWindowSystem.reportFocus passes on only what the app in front says; the controller asks `focusedWindow()` before it believes a report, and each look waits under a key of its own (`focus-after-loss`, `focus-again-<window>`).
 - **Read in:** `Sources/ArborKit/AX/AXWindowSystem.swift`, `Sources/ArborTesting/FakeWindowSystem.swift`, `docs/ARCHITECTURE.md`, `collab/QUESTIONS.md`, `docs/features/F37-focus-ring.md`, `scripts/mac-on-linux/mutants.py`
+
+### at-a-plug-and-an-unplug-macos-moves-windows-on-the-display-that-stays
+
+*hurt 2 · at the seam · touches `moved-unasked`, `jolt`*
+
+- **Expected:** A change of displays moves the windows of the display that comes or goes. Those on the display that stays lie still, and one that is found elsewhere afterwards has been shuffled by accident and belongs where its person left it.
+- **Happened:** With nothing docked and eleven windows of real apps floating, macOS itself moved or resized windows on the display that stays at every plug and unplug of a virtual second display, on two hosted Macs: a terminal 737,300 to 1000,300 and back, a calendar 937x790 to 937x600, an editor 673x439 to 656x422, a mail window 872x791 to 1576x767. Nobody touched them. Arbor set them back to the frame it remembered if their report came after macOS's word about its screens, 22 of 24, and took macOS's frame for the person's own if it came before, 0 of 8 set back: ten windows were where they had been and one was not, by a toss of some hundredths of a second. Two controls with no Arbor running, the window server sampled at 40 Hz: macOS alone is not still either. For windows that have to do with the second display it keeps a place for each set of displays (back to the point it had with that set 5 of 6 times at a plug, 10 of 14 at an unplug, within a second), so a put-back works against that. Windows wholly on the display that stays it shuffles without such a memory: a calendar as wide as the display flips between x 128 and x 0 at most changes, the editor shrinks once and stays. All displays were virtual; no cable, dock or lid has been recorded.
+- **Found by:** Reading the recorded changes of displays of two journeys with real apps on hosted Macs (macOS 26.6.2), step by step, beside two controls without Arbor.
+- **Stand-ins play it:** yes (`FakeWindowSystem.changeDisplaysAsAMacDoes`)
+- **Guard:** `test: whatMacOSDoesToAFloatingWindowAtAChangeOfDisplaysIsMacOSs`; `test: oneWindowSpeaksBeforeTheListIsNew`; `test: inABlinkTooTheEndIsTheSame`
+- **Arbor copes:** Controller.takeFloatingWindowsFromWhereTheyAre, since it is decided that none is put back: once Arbor is told of the displays, and after a blink, a floating window in view that has no part to play, that Arbor has not fitted, and whose title bar is within reach is taken from where it is, by the displays that are: its place, its size and the display it belongs to. No frame is set. Whoever speaks first, the end is the same wherever no display goes. Where one goes, a window that speaks before macOS's list is new is still filed by the old geometry: known issues in SpokeAheadTests.
+- **Read in:** `Sources/ArborKit/Controller/Controller+Displays.swift`, `Sources/ArborTesting/FakeWindowSystem+Displays.swift`, `Tests/ArborKitTests/DisplaysAsRecordedTests.swift`, `Tests/ArborKitTests/SpokeAheadTests.swift`
 
 ### enhanced-user-interface-animates-every-move
 

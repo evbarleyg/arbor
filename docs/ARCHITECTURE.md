@@ -106,7 +106,10 @@ is no longer part of the view, the window is parked, and where it is at that mom
 one move, and nothing is raised (`putBackWhereItWas`). The one exception is `whereItWas`: if the displays have changed meanwhile and
 less than half of the window would show, or its title bar would be out of reach, it is fitted into its display; what is
 remembered stays its own frame (`fittedFrames`), so that it goes back when the displays are as they were. A change of displays
-also displaces windows that are in view; `countAsOutOfViewWhatTheDisplaysDisplaced` says which of them the layout then fetches.
+also displaces windows that are in view, and macOS itself moves and resizes some on the display that stays. What macOS does to a
+floating window then is macOS's: once Arbor is told, and after a blink, `takeFloatingWindowsFromWhereTheyAre` takes each one in view
+from where it is, by the displays that are (its place, its size, the display it belongs to), and sets no frame.
+`countAsOutOfViewWhatTheDisplaysDisplaced` says which the layout then fetches all the same: what Arbor had fitted, and what is no place.
 For F61 the Desktop counts as not in use (`roomTerms`), and F18 is off (`soleFloatIsOn`). A command that is about a floating
 window (`float`, `grow`, `move-to-display`, `undo`) may put it anywhere on the display (`roomToFloat`).
 

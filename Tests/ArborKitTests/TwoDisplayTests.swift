@@ -76,18 +76,27 @@ private let side = DisplaySnapshot(
     }
   }
 
+  /// Frames are global: when another display becomes the main one the origin moves, and every window has other numbers where it lies. The stand-in's plain
+  /// change leaves the numbers as they are, which would be macOS shoving every window across the screen. That used to come out right all the
+  /// same, because Arbor carried a floating window after its display. It no longer sets a floating window in view a frame at a change of
+  /// displays (board 0.23), so the lid is played as a Mac does it.
   @Test func theLidClosesAndOpens() {
     let (h, a, b, f) = makeHarness()
     let before = (h.frame(a)!, h.frame(b)!, h.frame(f)!)
+    func theOriginMoves(by dx: CGFloat) {
+      for window in h.system.allWindows() { h.system.moveSilently(window.id, to: window.frame.offsetBy(dx: dx, dy: 0)) }
+    }
     var alone = side
     alone.isMain = true
     alone.frame.origin = .zero
     alone.visibleFrame = CGRect(x: 0, y: 25, width: 1280, height: 775)
+    theOriginMoves(by: -1440)
     h.system.setDisplays([alone])
     #expect(h.system.isVisible(a) && h.system.isVisible(b) && h.system.isVisible(f))
     #expect(workspace(h, side).isDocked(b))
     #expect(workspace(h, side).isFloating(a))
     expectWindowsMatchLayout(h, on: side.id)
+    theOriginMoves(by: 1440)
     h.system.setDisplays([main, side])
     #expect(h.frame(a) == before.0)
     #expect(h.frame(b) == before.1)
