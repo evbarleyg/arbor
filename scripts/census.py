@@ -76,7 +76,7 @@ setListed openUnlisted finishSlowFocus userResize releaseMouse backgroundFocus s
 userSwitchesApp appsSettle setUnresponsive openTab selectTab closeTab dragAndLoseTheRelease quit quitApp comesForward
 settleFocus click userClick userClickBringsAppForward beginDrag moveDrag holdDrag holdModifierKeys endDrag loseTheReleaseOfTheDrag appsReact grab
 carry letGo loseTheRelease moveSilently report renumber finishRestoring openStrayDialog forgetSession type keyDown keyUp
-hold clickOnTheWallpaper pressShowDesktopKey clickOnTheStrip letMacOSTile doubleClick doubleClickTitleBar zoomAsMacOSDoes bringForward
+hold clickOnTheWallpaper pressShowDesktopKey clickOnTheStrip letMacOSTile doubleClick doubleClickTitleBar zoomAsMacOSDoes bringForward landInTheDock reportTheLanding
 changeDisplaysAsAMacDoes press sayWhereItIs
 """.split()
 # The test tells the fake what macOS or an app will answer when Arbor asks or acts. Methods, then properties that are set.
@@ -100,15 +100,16 @@ inputActivity isHolding frame isVisible clearFrameLog existingWindowIDs launchAp
 install place remove hasHeldEchoes dragging frameAfterResizing openApplication raise windowsFrontToBack clearRaiseLog
 snapshot minimumSize maximumSize sizeStep behaviour lastRequest placeIsArborsDoing groundHasShifted movesNotArbors
 changedItsWays window requested before after together wasFocused focus frames keyboard wholePoints
-titleBarStaysReachable growsNoFurtherThanTheScreen movesLate flightFromTheDock flightFromFullScreen none jolts titleBar usualTitleBar
+titleBarStaysReachable growsNoFurtherThanTheScreen movesLate flightFromTheDock flightFromFullScreen listIsBehind none jolts titleBar usualTitleBar
 measuredTitleBars reports
 sightings clearSightings macTiling macTile takeSizeBeforeTile isSweptAside
 whereItWaits movesWhenTheFrameLogWasCleared road roadTolerance changesOfPlace detour giveToTheAppInFront keysTheAppInFrontGot doubleClicks idealSize sizeMargin framePlan process whereItOpens displaysLastTold
+hasStillToReportThatItCameBack isSizedWhereItFits whereabouts whereaboutsAsked
 """.split()
 
 # A hand on one of Arbor's own panels: the fake calls the action the real panel would call.
 OVERLAY_ACTIONS = """
-clickTile clickOutline dragSeam dismissCheatSheet submitName cancelName typeInFinder moveFinderSelection pageFinderSelection chooseInFinder
+clickTile clickOutline dragSeam dismissCheatSheet submitName cancelName typeInFinder moveFinderSelection pageFinderSelection chooseInFinder tickInFinder
 dismissFinder clickMinimap
 """.split()
 OVERLAY_NEUTRAL = """
@@ -1302,6 +1303,8 @@ EVIDENCE = {
     "system.quitApp": (["event destroyed"], ""),
     "system.setMinimized": (["changed, minimized"], "row 13: on the small display the Dock grows and `displaysChanged` follows (at 1600×900 it "
                             "does not); the fake sends one `changed`"),
+    "system.landInTheDock": (["changed, minimized"], ""),
+    "system.reportTheLanding": (["changed, minimized"], ""),
     "system.setHidden": (["changed, hidden"], "row 11: on a Mac unhiding first moves windows that were nearly off screen; the fake changes "
                          "the flag only"),
     "system.unhideApp": (["changed, hidden"], ""),
@@ -1423,6 +1426,7 @@ EVIDENCE = {
     "overlays.submitName": ([], ""),
     "overlays.cancelName": ([], ""),
     "overlays.typeInFinder": ([], ""),
+    "overlays.tickInFinder": ([], ""),
     "overlays.moveFinderSelection": ([], ""),
     "overlays.pageFinderSelection": ([], ""),
     "overlays.chooseInFinder": (["action finderChose"], ""),
@@ -1960,7 +1964,7 @@ def show(t):
 # Section 4 is prose in the template: a person ranked the features. These are the facts of the sources it goes by. If one has
 # changed the script stops, so that the ranking is read again and not merely printed again.
 RANKING_DEFAULTS = {
-    "hotkeysEnabled": "true", "gesturesEnabled": "true", "scrollZoom": "true", "peek": "true", "frameRectangleModifier": '"ctrl+opt"',
+    "hotkeysEnabled": "true", "shortcuts": '"core"', "pointerGestures": "false", "gesturesEnabled": "true", "scrollZoom": "true", "peek": "true", "frameRectangleModifier": '"ctrl+opt"',
     "animationDuration": "0.46", "focusRing": "true", "makeRoom": "true", "messages": '"helpful"', "menuBarControls": "true",
     "newWindowsWhileFramed": '"guest"', "dimBehindArranged": "0.25",
     "guardDesktopClicks": "false", "continuousZoom": "false", "windowPictures": "false", "minimapDuration": "0",
@@ -1968,9 +1972,10 @@ RANKING_DEFAULTS = {
     "newWindows": '"float"', "reflowWhileDragging": "false", "tabsEnabled": "false", "automaticUpdateChecks": "false",
     "shrinkOutOfView": "false", "passThroughApps": "[]", "pauseForApps": "[]",
 }
-RANKING_HAS_A_KEY = [".showAll", ".togglePause", ".askName", ".find", ".minimap", ".undo", ".focus(", ".grow(", ".rotate", ".home",
-                     ".floatAll", ".showShortcuts", ".settings("]
-RANKING_HAS_NO_KEY = [".pin", ".hold", ".summon"]
+# As Arbor ships: `KeyBindings.core`. What has a key only in the whole map (`shortcuts` "all") has none here.
+RANKING_HAS_A_KEY = [".showAll", ".togglePause", ".find", ".undo"]
+RANKING_HAS_NO_KEY = [".pin", ".hold", ".summon", ".askName", ".minimap", ".focus(", ".grow(", ".rotate", ".home", ".floatAll",
+                      ".showShortcuts", ".settings("]
 
 
 def check_ranking(root, template):
@@ -1981,7 +1986,10 @@ def check_ranking(root, template):
         if not m or m.group(1).strip() != value:
             wrong.append(f"the setting {name} is {m.group(1).strip() if m else 'gone'}, not {value}")
     source = Source(os.path.join(root, "Sources/ArborKit/Controller/KeyBindings.swift"), "KeyBindings.swift")
-    keys = "\n".join(line for line in source.bare.split("\n") if "KeyBinding(" in line)
+    core = re.search(r"static let core: \[KeyBinding\] = \[\n(.*?)\n  \]", source.bare, re.S)
+    if not core:
+        wrong.append("KeyBindings.core, the shortcuts as Arbor ships, is gone or is written otherwise")
+    keys = "\n".join(line for line in (core.group(1) if core else "").split("\n") if "KeyBinding(" in line)
     wrong += [f"{c} has no default shortcut any more" for c in RANKING_HAS_A_KEY if c not in keys]
     wrong += [f"{c} has a default shortcut now" for c in RANKING_HAS_NO_KEY if c in keys]
     for name in sorted(set(re.findall(r"`(?:scripts/(?:mac-shell/)?)?([\w-]+\.(?:sh|py))`", template))):
