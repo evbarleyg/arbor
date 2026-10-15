@@ -23,6 +23,14 @@ For whoever tries it first, in plain words. It is a build to try, not a release:
 
 **Who has tried it.** Programs only: random walks over simulated windows, well over a hundred thousand of them, and scripts that drive the real app with real apps, a real pointer and real keys on GitHub's hosted Macs. No person has used this build. No lid, no second physical display and no trackpad have met it.
 
+### Since the cut: what came to `main` the same night, at about 03:25 UTC
+
+- **The first dock of the day is as quick as the next.** It used to wait two to five seconds on a Mac that had not yet drawn the apps' icons; now the first window moves within three hundredths of a second.
+- One act is one motion: where an app has the last word on its size, the correction gets what is left of the motion, not the whole time again.
+- The key that fills the screen, pressed again, goes back to its own window. Nothing is sent to a display that is gone. An install that is broken off leaves neither a hidden copy nor no app.
+- Of what you typed, the log holds only what is one of Arbor's own words.
+- Taken out again: five lines of the cut that, on a very busy Mac, could lose a drag that used to be seen.
+
 ### Opening it for the first time
 
 **Built from source** (`make install`, `docs/INSTALL.md`): macOS asks nothing but the Accessibility permission.
