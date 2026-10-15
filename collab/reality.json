@@ -1206,13 +1206,16 @@
    "guards": [
     "test: theSentenceThatSaysWhyArborDoesNothingIsTheWayOut",
     "test: choosingTheRowThatSaysSoEndsTheState",
-    "test: onlyNewsIsALineOfText"
+    "test: onlyNewsIsALineOfText",
+    "test: newsIsMarkedAndNothingElseIs",
+    "e2e: the menu has the news"
    ],
-   "copes": "Sources/ArborKit/Controller/Controller+Menu.swift, `stateSection`: a state is one row that can be chosen: the sentence, and after \" · \" the command that ends it (docs/MENU.md, States). Only news that no command ends is still a line of text, and is as faint as before.",
+   "copes": "Sources/ArborKit/Controller/Controller+Menu.swift, `stateSection`: a state is one row that can be chosen: the sentence, and after \" · \" the command that ends it (docs/MENU.md, States). Only news that no command ends is still a line of text; its title has a colour of its own (`StatusMenu.news`), so that macOS draws it at full strength.",
    "hurt": 3,
    "sources": [
     "docs/MENU.md",
-    "Sources/ArborKit/Controller/Controller+Menu.swift"
+    "Sources/ArborKit/Controller/Controller+Menu.swift",
+    "Sources/ArborKit/UI/StatusMenu.swift"
    ],
    "backlog": []
   },

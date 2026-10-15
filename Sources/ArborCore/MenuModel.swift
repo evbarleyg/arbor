@@ -39,7 +39,7 @@ public struct MenuModel: Equatable, Sendable {
 
     public var title: String
     public var action: Action
-    /// False greys the item out. A line of text always is.
+    /// False: it cannot be chosen, and is greyed out unless it `isNews`. A line of text never can.
     public var isEnabled: Bool
     public var isTicked = false
     /// Shown right-aligned, as macOS shows shortcuts. `showingShortcuts` fills it in for commands.
@@ -48,6 +48,8 @@ public struct MenuModel: Equatable, Sendable {
     public var showsShortcut = true
     /// The tooltip.
     public var help: String?
+    /// A line of text that is there to be read: drawn at full strength, though it cannot be chosen. See `news`.
+    public var isNews = false
 
     init(_ title: String, _ action: Action) {
       self.title = title
@@ -61,6 +63,8 @@ public struct MenuModel: Equatable, Sendable {
     public static func command(_ title: String, _ command: Command) -> Item { Item(title, .run(command)) }
     public static func app(_ title: String, _ action: AppAction) -> Item { Item(title, .app(action)) }
     public static func text(_ title: String) -> Item { Item(title, .text) }
+    /// A line of text that tells something no command ends. `text` alone looks greyed out, as a row does that cannot act now.
+    public static func news(_ title: String) -> Item { text(title).with { $0.isNews = true } }
     public static func submenu(_ title: String, @MenuBuilder _ items: () -> [Item]) -> Item {
       Item(title, .submenu([Section(items: items)]))
     }
@@ -209,7 +213,7 @@ public struct MenuModel: Equatable, Sendable {
   // MARK: As text
 
   /// What `menu` prints: a line per item, indented under its section or parent, with ✓ for a tick, the shortcut
-  /// after two spaces, ▸ for a submenu and "(grey)" for what cannot be chosen. A line of dashes stands for the separator
+  /// after two spaces, ▸ for a submenu, "(gray)" for what cannot be chosen and "(news)" for news. A line of dashes stands for the separator
   /// above a section without a title.
   public var text: String {
     func lines(_ sections: [Section], indent: String) -> [String] {
@@ -224,7 +228,7 @@ public struct MenuModel: Equatable, Sendable {
           var line = indent + (item.isTicked ? "  ✓ " : "    ") + item.title
           if !item.sections.isEmpty { line += " ▸" }
           if let shortcut = item.shortcut { line += "  " + shortcut.label }
-          if !item.isEnabled { line += "  (gray)" }
+          if !item.isEnabled { line += item.isNews ? "  (news)" : "  (gray)" }
           out.append(line)
           // Under the item's title; a step further where the submenu has titles of its own.
           let titled = item.sections.contains { $0.title != nil }

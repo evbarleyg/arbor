@@ -1,6 +1,7 @@
 #if os(macOS)
   import AppKit
   import ArborCore
+  @testable import ArborKit
   import ArborTesting
   import Testing
 
@@ -14,7 +15,12 @@
       for (index, section) in sections.enumerated() {
         if index > 0 { menu.addItem(.separator()) }
         if let title = section.title { menu.addItem(.sectionHeader(title: title)) }
-        for item in section.items { menu.addItem(NSMenuItem(title: item.title, action: nil, keyEquivalent: "")) }
+        for item in section.items {
+          let row = NSMenuItem(title: item.title, action: nil, keyEquivalent: "")
+          // A title with attributes of its own could come out higher.
+          if item.isNews { row.attributedTitle = StatusMenu.news(item.title) }
+          menu.addItem(row)
+        }
       }
       return menu
     }

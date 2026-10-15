@@ -13,7 +13,7 @@ struct Menu {
     case quit
     /// Opens `children`.
     case submenu
-    /// Greyed out: there to be read.
+    /// A line of text: there to be read.
     case nothing
   }
 

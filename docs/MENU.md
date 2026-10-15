@@ -113,7 +113,9 @@ version line in the menu). `Open at Login` ✓ (macOS's own words) lives in the 
 A state is **one row that can be chosen: a sentence in plain words, and after " · " the command that ends it**, in the manner of the
 lines on screen. It is what a person opened the menu to find out, and macOS draws a line of text at a contrast of 1.86 to 1
 (measured in a picture from a hosted Mac; decided by the product owner, 2026-10-15). Only news that no command ends is a line of text:
-state 2, state 8, and what comes under the row of a permission that was taken away.
+state 2, state 8, and what comes under the row of a permission that was taken away. **News is drawn at full strength too**, though it cannot
+be chosen: its title has a colour of its own (`Item.news`, `StatusMenu.news`; `menu` prints "(news)"). A line of text that stands in for a row which cannot act
+now ("Shortcuts Off in This App") is meant to look greyed out, and does.
 
 States are shown first in the menu, above Show Everything, with a separator under them. When several hold, the first two in this order
 are shown: while Arbor runs that is two rows, which rule 3 counts on. **The topmost state's way out is never greyed out.** One below it may

@@ -203,7 +203,8 @@ final class StatusMenu: NSObject, NSMenuDelegate {
       fill(submenu, with: sections)
       item.submenu = submenu
     case .text:
-      break
+      // macOS draws the title of a row that cannot be chosen at 1.86 to 1. A title with a color of its own keeps it.
+      if model.isNews { item.attributedTitle = Self.news(model.title) }
     }
     // Only for show where it is one of Arbor's own: Carbon takes those keys before any menu sees them.
     if let shortcut = model.shortcut {
@@ -214,6 +215,11 @@ final class StatusMenu: NSObject, NSMenuDelegate {
     item.state = model.isTicked ? .on : .off
     item.toolTip = model.help
     return item
+  }
+
+  /// In the menu's own font, so that the row is as high as any other (`MenuHeightAppKitTests`).
+  static func news(_ title: String) -> NSAttributedString {
+    NSAttributedString(string: title, attributes: [.foregroundColor: NSColor.labelColor, .font: NSFont.menuFont(ofSize: 0)])
   }
 
   private func choose(_ item: NSMenuItem, _ perform: @escaping @MainActor () -> Void) {

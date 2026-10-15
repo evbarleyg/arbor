@@ -4811,9 +4811,9 @@ Looks: what is on the screen is not what the model said.
 - **Happened:** macOS 26 draws such a row at a contrast of 1.86 to 1 on the menu's material. The sentences that say why Arbor does nothing (paused, no permission, the view is held, a mistake in settings.json) were the faintest thing in the menu, and they are what a person opens it to find out.
 - **Found by:** Measured in pictures of the open menu from a hosted Mac, by the judge of polish.
 - **Stand-ins play it:** cannot: it lies below or beside the seam
-- **Guard:** `test: theSentenceThatSaysWhyArborDoesNothingIsTheWayOut`; `test: choosingTheRowThatSaysSoEndsTheState`; `test: onlyNewsIsALineOfText`
-- **Arbor copes:** Sources/ArborKit/Controller/Controller+Menu.swift, `stateSection`: a state is one row that can be chosen: the sentence, and after " · " the command that ends it (docs/MENU.md, States). Only news that no command ends is still a line of text, and is as faint as before.
-- **Read in:** `docs/MENU.md`, `Sources/ArborKit/Controller/Controller+Menu.swift`
+- **Guard:** `test: theSentenceThatSaysWhyArborDoesNothingIsTheWayOut`; `test: choosingTheRowThatSaysSoEndsTheState`; `test: onlyNewsIsALineOfText`; `test: newsIsMarkedAndNothingElseIs`; `e2e: the menu has the news` (by hand)
+- **Arbor copes:** Sources/ArborKit/Controller/Controller+Menu.swift, `stateSection`: a state is one row that can be chosen: the sentence, and after " · " the command that ends it (docs/MENU.md, States). Only news that no command ends is still a line of text; its title has a colour of its own (`StatusMenu.news`), so that macOS draws it at full strength.
+- **Read in:** `docs/MENU.md`, `Sources/ArborKit/Controller/Controller+Menu.swift`, `Sources/ArborKit/UI/StatusMenu.swift`
 
 ### a-panel-stays-on-the-space-it-was-first-shown-on
 

@@ -500,6 +500,7 @@ import Testing
     // docs/MENU.md, state 8. A tooltip only where it says more than the line.
     let line = h.controller.menuModel().sections.first?.items.first
     #expect(line?.title == "1 place kept for a window that is not open yet" && line?.isEnabled == false && line?.help == nil)
+    #expect(line?.isNews == true, "there to be read")
     let state = h.controller.snapshot()
     #expect(state.waiting.count == 1)
     let slot = try #require(state.waiting.first)

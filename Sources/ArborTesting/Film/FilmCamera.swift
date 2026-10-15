@@ -361,6 +361,7 @@ public final class FilmCamera {
         if let shortcut = row.shortcut { entry["shortcut"] = shortcut }
         if row.isTicked { entry["ticked"] = true }
         if row.opensSubmenu { entry["submenu"] = true }
+        if row.isNews { entry["news"] = true }
         if menu.highlighted == index { entry["highlighted"] = true }
         return entry
       },
