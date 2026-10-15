@@ -142,7 +142,9 @@ sampler_start() {
   DAY_SAMPLER_PID=$!
   started "$DAY_SAMPLER_PID"
   exec 6> "$APPS_TEMP/sampler-in" 5< "$APPS_TEMP/sampler-out"
-  "$DAY_WITNESS" log "$ARBOR_OUT/witness.log" 2>> "$ARBOR_OUT/sampler.log" 5<&- 6>&- 8>&- 9>&- &
+  # The same tiers: what it writes down is how late an event reached it, and its own waking up late would count as the event's.
+  # shellcheck disable=SC2086
+  $tiers "$DAY_WITNESS" log "$ARBOR_OUT/witness.log" 2>> "$ARBOR_OUT/sampler.log" 5<&- 6>&- 8>&- 9>&- &
   DAY_WITNESS_PID=$!
   started "$DAY_WITNESS_PID"
   echo "the sampler writes mac-shell/samples.log (pid $DAY_SAMPLER_PID), the witness mac-shell/witness.log (pid $DAY_WITNESS_PID)"
@@ -531,6 +533,8 @@ day_report() {
     note "finding $DAY_STEP -:crash FAIL macOS wrote a crash report of Arbor's"
   fi
   # -I: not the pictures, which show the titles as the screen did.
+  # A witness that macOS refused, or that died, would leave a rule unchecked and nobody the wiser.
+  [ -s "$ARBOR_OUT/witness.log" ] || note "finding $DAY_STEP - FAIL the witness at the end of the event taps saw nothing all day"
   told=$(grep -rIl "$APPS_CANARY" "$ARBOR_OUT" 2>/dev/null | sed "s|$ARBOR_OUT/||" | tr '\n' ' ')
   [ -z "$told" ] || note "finding $DAY_STEP -:told FAIL a window's title is in what the run brings back: $told"
   sampler_stop

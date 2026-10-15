@@ -58,6 +58,7 @@ The script says what it is doing in marks (lib-day.sh writes them):
     floating=<ids>         for the report: these float, so no arrangement explains a move of theirs
     docked=<ids>           these are docked at the end
     offence=<detector>     the script committed this offence itself during the step, to see whether it is found (`jolts.py sabotage`)
+    setup=1                no act at all: the script sets the scene (opens an app, lays windows out) before anything counts. Nothing is judged
     judge=no               nothing is judged: Arbor is not running yet, and apps place their own windows as they open
     settled=<quiet|restless>:<ms>
 
@@ -183,6 +184,8 @@ class Step:
         self.both_previews = False
         self.arbor_previewed = False
         self.stages_up = {}
+        self.staged = []
+        self.staged_since = None
         self.all_displays = []
         self.under_the_stage = 0
         # Where Arbor's drop preview was when the button came up, if it was up.
@@ -194,26 +197,29 @@ class Step:
         self.moved = {}
 
     def stage_went_up(self, stage, time, display):
-        self.stages_up[stage] = (time, display)
+        self.stages_up[stage] = display
+        self.staged.append(display)
+        if self.staged_since is None:
+            self.staged_since = time
 
     def stage_came_down(self, stage, time):
         """Under the stage the real windows go to their places where nobody sees them. A person sees each where the stage found it, and
-        then, when the stage comes down, where it is by then. What the stand-ins do meanwhile is on the film, not in the samples."""
-        since, display = self.stages_up.pop(stage, (None, None))
-        if since is None:
+        then, when the stage comes down, where it is by then. What the stand-ins do meanwhile is on the film, not in the samples.
+        Each display has a stage of its own; a window that crosses from one covered display to another is seen on neither. So it is looked at
+        when the last of them has come down."""
+        if self.stages_up.pop(stage, None) is None or self.stages_up:
             return
+        since, covered, self.staged_since, self.staged = self.staged_since, self.staged, None, []
+        bare = [display for display in self.all_displays if display not in covered]
         for window, trace in self.traces.items():
             hidden = [index for index, entry in enumerate(trace) if entry[0] >= since and index > 0]
-            # Each display has a stage of its own, which hides what is on that display. What shows on another display meanwhile is seen.
+            # What shows on a display without a stage meanwhile is seen.
             frames = [trace[index][1] for index in [hidden[0] - 1] + hidden if trace[index][1]] if hidden else []
-            if hidden and all(showing(frame, self.other_displays(display)) <= STRIP for frame in frames):
+            if hidden and all(showing(frame, bare) <= STRIP for frame in frames):
                 last = trace[hidden[-1]]
                 del trace[hidden[0]:]
                 trace.append((time, last[1], last[2]))
         self.under_the_stage += 1
-
-    def other_displays(self, display):
-        return [other for other in self.all_displays if other != display]
 
     def find(self, rule, level, window, what, trace=None, detector=None, explained=None):
         self.findings.append({
@@ -248,6 +254,7 @@ class World:
         self.stages = set()
         self.stage_seen = False
         self.labels = {}
+        self.witnessed = False
 
     def displays(self):
         return ([self.display] if self.display else []) + [frame for frame, _ in self.others.values()]
@@ -414,6 +421,8 @@ def read(path):
                     step = by_number[int(rest[0])]
                     step.ended = time
                     step.wants = dict(word.split("=", 1) for word in rest[1:] if "=" in word)
+                    if step.wants.get("setup") == "1":
+                        step.wants["judge"] = "no"
                     step.at_end = world.snapshot()
     world.witnessed = hear(os.path.join(os.path.dirname(os.path.abspath(path)), "witness.log"), steps)
     for step in steps:
@@ -860,6 +869,8 @@ def as_json(world, steps, account):
         "sampler": account,
         "input": lateness(steps),
         "stage_seen": world.stage_seen,
+        "witnessed": world.witnessed and any(step.arrived for step in steps),
+        # Setting the scene is no act: it is in the report, and not in what is counted.
         "steps": [
             {
                 "number": step.number,
@@ -876,7 +887,7 @@ def as_json(world, steps, account):
                     for finding in step.findings
                 ],
             }
-            for step in steps
+            for step in steps if step.wants.get("setup") != "1"
         ],
     }
 
@@ -887,7 +898,7 @@ def sabotage(steps):
     out.append("| # | Step | Offence committed | Reported | |")
     out.append("|---|---|---|---|---|")
     for step in steps:
-        if step.wants.get("judge") == "no":
+        if step.wants.get("setup") == "1":
             continue
         committed = step.wants.get("offence", "")
         reported = sorted({finding["detector"] for finding in step.findings if finding["level"] == "FAIL"})
@@ -1095,6 +1106,9 @@ def self_test():
     expect("a stage hides its own display", start + second + ["1500 M begin 2 move", "1600 W 2 20 0 1200 100 400 300 Two", "1900 M end 2 moves=2",
         "2000 M begin 3 dock", "2050 W 70 99 4 1000 0 800 600 Arbor",
         "2100 W 2 20 0 1500 100 300 300 Two", "2140 W 2 20 0 1000 25 400 575 Two", "2600 G 70", "3700 M end 3 moves=2"], [])
+    expect("a window that crosses from one covered display to another is seen on neither", start + second + [
+        "2000 M begin 2 across", "2050 W 70 99 4 0 0 1000 800 Arbor", "2050 W 71 99 4 1000 0 800 600 Arbor", "2100 W 1 10 0 1100 100 400 300 One",
+        "2450 W 1 10 0 1200 100 400 300 One", "2600 G 70", "2620 G 71", "3700 M end 2 moves=1"], [])
     expect("and not the other one", start + second + ["2000 M begin 2 dock", "2050 W 70 99 4 1000 0 800 600 Arbor",
         "2100 W 1 10 0 600 30 400 300 One", "2140 W 1 10 0 0 30 400 300 One", "2600 G 70", "3700 M end 2 moves=1"], [("3", "FAIL")])
     expect("a window leaves the screen", start + ["2000 M begin 2 idle", "2100 G 2", "2100 Z 1", "3000 M end 2"], [("L", "FAIL")])
@@ -1221,6 +1235,9 @@ def self_test():
     expect("before Arbor runs nothing is judged", start + [
         "2000 M begin 2 open", "2100 W 2 20 0 600 100 400 300 Two", "2600 W 2 20 0 500 100 400 300 Two", "2700 G 1",
         "3700 M end 2 judge=no"], [])
+    _, scene, _ = play(start + ["2000 M begin 2 open", "3000 M end 2 setup=1", "4000 M begin 3 undone", "5000 M end 3 judge=no"])
+    if [step["slug"] for step in as_json(World(), scene, "")["steps"]] != ["start", "undone"]:
+        failures.append("setting the scene is no act, and an act that was not performed is one")
     expect("what the script found", start + [
         "2000 M begin 2 idle", "2500 M finding 2 - FAIL Arbor believes otherwise", "3000 M end 2"], [("-", "FAIL")])
     expect("a step that never ended", start + ["2000 M begin 2 idle"], [("-", "FAIL")])
