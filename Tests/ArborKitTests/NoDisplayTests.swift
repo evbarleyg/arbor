@@ -13,20 +13,22 @@ import Testing
     id: DisplayID("other"), frame: CGRect(x: 0, y: 0, width: 1920, height: 1080),
     visibleFrame: CGRect(x: 0, y: 25, width: 1920, height: 1055), isMain: true)
 
-  /// `[ a | b | Desktop ]` with `f` floating, and the view on `a`: `b` and `f` are out of view.
-  private func zoomedIn() -> (h: Harness, a: WindowID, b: WindowID, f: WindowID) {
-    let h = Harness()
+  /// `[ a | b | Desktop ]` with `f` floating, and the view on `a`: `b` is out of view. So is `f` where floating windows make way:
+  /// as Arbor ships no view takes it away. Nothing may be lost in the dark either way, so what begins here is tried both ways.
+  private func zoomedIn(makingWay: Bool) -> (h: Harness, a: WindowID, b: WindowID, f: WindowID) {
+    let h = Harness(settings: makingWay ? .makingWay : Settings())
     let (a, b) = (h.system.open(app: "A"), h.system.open(app: "B"))
     let f = h.system.open(app: "F", frame: CGRect(x: 900, y: 300, width: 400, height: 300))
     h.start()
     h.run("dock \(a.rawValue) left")
     h.run("dock \(b.rawValue) beside \(a.rawValue) right")
     h.run("zoom \(a.rawValue)")
-    #expect(!h.system.isVisible(b) && !h.system.isVisible(f))
+    #expect(!h.system.isVisible(b) && h.system.isVisible(f) == !makingWay)
     return (h, a, b, f)
   }
 
-  /// Every window is somebody's, and one that is out of view is so because its workspace says so.
+  /// Every window is somebody's, and one that is out of view is so because its workspace says so. Of a floating window it says
+  /// so only where floating windows make way.
   private func expectNothingIsLost(
     _ h: Harness, _ comment: Comment, at location: SourceLocation = #_sourceLocation
   ) {
@@ -36,25 +38,29 @@ import Testing
       #expect(home != nil, "\(window) is in no workspace: \(comment)", sourceLocation: location)
       guard let home, !h.system.isVisible(window), snapshot.isPresent else { continue }
       let workspace = h.controller.workspaces[home]!, layout = h.controller.layouts[home]
-      let hidden = workspace.isDocked(window) ? layout?.windowFrames[window] == nil : layout?.desktopFrame == nil
+      let hidden =
+        workspace.isDocked(window)
+        ? layout?.windowFrames[window] == nil : h.controller.settings.floatingWindowsMakeWay && layout?.desktopFrame == nil
       #expect(
         hidden, "\(window) is out of view at \(snapshot.frame) for no reason: \(comment)", sourceLocation: location)
     }
   }
 
-  @Test func theSameDisplayComesBack() {
-    let (h, a, _, _) = zoomedIn()
+  @Test(arguments: [false, true]) func theSameDisplayComesBack(makingWay: Bool) {
+    let (h, a, _, f) = zoomedIn(makingWay: makingWay)
     let before = h.workspace
     h.system.setDisplays([])
     h.system.setDisplays([Self.main])
     #expect(h.workspace == before && h.system.isVisible(a))
+    #expect(h.system.isVisible(f) == !makingWay, "as before the dark")
     expectNothingIsLost(h, "back on the same display")
     h.run("home")
     for window in h.system.allWindows() { #expect(h.system.isVisible(window.id), "\(window.id)") }
   }
 
-  @Test(arguments: [true, false]) func aWindowMinimizedOutOfViewComesBackInView(sameDisplay: Bool) {
-    let (h, _, b, f) = zoomedIn()
+  @Test(arguments: [true, false], [false, true])
+  func aWindowMinimizedOutOfViewComesBackInView(sameDisplay: Bool, makingWay: Bool) {
+    let (h, _, b, f) = zoomedIn(makingWay: makingWay)
     h.system.setMinimized(b, true)
     h.system.setMinimized(f, true)
     h.system.setDisplays([])
@@ -66,8 +72,8 @@ import Testing
     #expect(h.system.isVisible(b) && h.system.isVisible(f), "\(h.frame(b)!) \(h.frame(f)!)")
   }
 
-  @Test func aWindowThatClosesInTheDarkIsForgotten() {
-    let (h, _, b, _) = zoomedIn()
+  @Test(arguments: [false, true]) func aWindowThatClosesInTheDarkIsForgotten(makingWay: Bool) {
+    let (h, _, b, _) = zoomedIn(makingWay: makingWay)
     h.system.setDisplays([])
     h.system.close(b)
     h.system.setDisplays([Self.main])
@@ -77,8 +83,9 @@ import Testing
 
   /// Nothing can be in view with no display. What matters is where the windows are when there is one
   /// again and Arbor is not there to put them right.
-  @Test(arguments: [true, false]) func quittingInTheDarkLeavesNothingInTheCorner(sameDisplay: Bool) {
-    let (h, _, _, _) = zoomedIn()
+  @Test(arguments: [true, false], [false, true])
+  func quittingInTheDarkLeavesNothingInTheCorner(sameDisplay: Bool, makingWay: Bool) {
+    let (h, _, _, _) = zoomedIn(makingWay: makingWay)
     h.system.setDisplays([])
     h.controller.shutdown()
     h.system.setDisplays([sameDisplay ? Self.main : Self.other])
@@ -117,22 +124,24 @@ import Testing
     #expect(h.frame(b) == own, "it used to go to the middle, in the shape of its slot")
   }
 
-  @Test func pausingInTheDarkLeavesNothingInTheCorner() {
-    let (h, _, _, _) = zoomedIn()
+  @Test(arguments: [false, true]) func pausingInTheDarkLeavesNothingInTheCorner(makingWay: Bool) {
+    let (h, _, _, _) = zoomedIn(makingWay: makingWay)
     h.system.setDisplays([])
     h.run("pause")
     h.system.setDisplays([Self.main])
     for window in h.system.allWindows() { #expect(h.system.isVisible(window.id), "\(window.id) at \(window.frame)") }
   }
 
-  @Test func aPauseInTheDarkLeavesWhatWasInViewAloneAndResumingBringsTheArrangementBack() {
-    let (h, a, _, _) = zoomedIn()
+  @Test(arguments: [false, true])
+  func aPauseInTheDarkLeavesWhatWasInViewAloneAndResumingBringsTheArrangementBack(makingWay: Bool) {
+    let (h, a, _, f) = zoomedIn(makingWay: makingWay)
     let (before, slot) = (h.workspace, h.frame(a)!)
     h.system.setDisplays([])
     let moves = h.system.frameLog.count
     h.run("pause")
     #expect(h.frame(a) == slot)
     #expect(!h.system.frameLog.dropFirst(moves).contains { $0.window == a }, "it was in view, and is not touched")
+    if !makingWay { #expect(!h.system.frameLog.dropFirst(moves).contains { $0.window == f }, "so was what floats") }
     h.system.setDisplays([Self.main])
     h.run("resume")
     #expect(h.workspace.tree == before.tree && h.workspace.camera == before.camera)
@@ -160,8 +169,8 @@ import Testing
     #expect(h.system.isVisible(b), "\(h.frame(b)!)")
   }
 
-  @Test func commandsInTheDarkDoNoHarm() {
-    let (h, a, b, f) = zoomedIn()
+  @Test(arguments: [false, true]) func commandsInTheDarkDoNoHarm(makingWay: Bool) {
+    let (h, a, b, f) = zoomedIn(makingWay: makingWay)
     h.system.setDisplays([])
     for command in [
       "home", "out", "in", "back", "float-all", "arrange", "dock \(f.rawValue) left", "float \(b.rawValue)",
@@ -174,8 +183,8 @@ import Testing
     expectNothingIsLost(h, "after commands with no display")
   }
 
-  @Test func anAppExcludedInTheDarkGetsItsWindowBack() {
-    let (h, _, b, _) = zoomedIn()
+  @Test(arguments: [false, true]) func anAppExcludedInTheDarkGetsItsWindowBack(makingWay: Bool) {
+    let (h, _, b, _) = zoomedIn(makingWay: makingWay)
     h.system.setDisplays([])
     let app = h.system.allWindows().first { $0.id == b }!.bundleID!
     #expect(h.run("exclude \(app)").ok)

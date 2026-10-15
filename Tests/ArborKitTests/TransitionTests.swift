@@ -40,8 +40,8 @@ import Testing
 
   // MARK: Acceptance criterion 1: zoom, back, dock and close
 
-  @Test func zoomingMovesEveryWindowThatIsDrawn() throws {
-    let (h, a, b, c) = makeHarness(settings: .withDesktopColumn.withMotion)  // c rides on the Desktop, which has a place on the plane
+  @Test(arguments: [false, true]) func zoomingMovesEveryWindowThatLeavesAndDrawsTheRest(makingWay: Bool) throws {
+    let (h, a, b, c) = makeHarness(settings: (makingWay ? .makingWay : Settings()).withDesktopColumn.withMotion)  // c rides on the Desktop, which has a place on the plane
     let (slotA, slotB, restC) = (h.frame(a)!, h.frame(b)!, h.frame(c)!)
     h.run("zoom \(a.rawValue)")
     let transition = try #require(only(h))
@@ -52,12 +52,17 @@ import Testing
     #expect(transition[a]!.to == h.frame(a), "the stand-in ends where the real window is")
     // The others leave the way the plane goes: to the right, stretched as a is, not to the parking corner.
     #expect(transition[b]!.from == slotB && transition[c]!.from == restC)
-    for window in [b, c] {
+    // c floats: it leaves with the Desktop only if it makes way.
+    for window in makingWay ? [b, c] : [b] {
       let item = transition[window]!
       #expect(item.to.minX >= screen.maxX, "\(window)")
       #expect(abs(item.to.width - item.from.width * content.width / slotA.width) <= 1, "\(window)")
       #expect(item.to.minY == item.from.minY && item.to.height == item.from.height, "\(window)")
       #expect(h.controller.parked.contains(window))
+    }
+    if !makingWay {
+      #expect(!transition[c]!.moves && transition[c]!.to == restC, "c stays, but the stage covers it, so it is drawn")
+      #expect(h.frame(c) == restC && !h.controller.parked.contains(c))
     }
     #expect(transition[c]!.to.minX < transition[b]!.to.minX, "the Desktop is between a and b")
   }
@@ -434,14 +439,19 @@ import Testing
     #expect(transition[c]!.to.minY == below.minY + 80)
   }
 
-  @Test func floatingEverythingBringsBackWhatWasOutOfView() throws {
-    let (h, a, b, c) = makeHarness(settings: .withDesktopColumn.withMotion)  // c comes in with the Desktop, from where the plane has it
+  @Test(arguments: [false, true]) func floatingEverythingBringsBackWhatWasOutOfView(makingWay: Bool) throws {
+    let (h, a, b, c) = makeHarness(settings: (makingWay ? .makingWay : Settings()).withDesktopColumn.withMotion)  // c comes in with the Desktop, from where the plane has it
     h.run("zoom \(a.rawValue)")
     h.overlays.clearTransitions()
     h.run("float-all")
     let transition = try #require(only(h))
     for window in [b, c] {
-      #expect(transition[window]!.from.minX >= screen.maxX, "\(window)")
+      // c floats: it was out of view only if it makes way. As Arbor ships it is drawn where it has been all along.
+      if window == b || makingWay {
+        #expect(transition[window]!.from.minX >= screen.maxX, "\(window)")
+      } else {
+        #expect(!transition[window]!.moves, "\(window)")
+      }
       #expect(transition[window]!.to == h.frame(window) && h.system.isVisible(window), "\(window)")
     }
     #expect(h.controller.parked.isEmpty)

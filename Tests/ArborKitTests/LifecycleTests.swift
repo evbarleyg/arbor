@@ -18,9 +18,9 @@ import Testing
   }
 
   /// A new Arbor process that finds the windows of `h` exactly where they are now, under the same
-  /// numbers, and the same settings, as after a crash or `kill -9`.
-  func relaunch(after h: Harness, saved: PersistedState?) -> Harness {
-    let again = Harness(displays: h.system.displayList, settings: h.controller.settings, saved: saved)
+  /// numbers, as after a crash or `kill -9`. With the settings of `h`, unless others are given.
+  func relaunch(after h: Harness, saved: PersistedState?, settings: Settings? = nil) -> Harness {
+    let again = Harness(displays: h.system.displayList, settings: settings ?? h.controller.settings, saved: saved)
     for window in h.system.allWindows() {
       let id = again.system.open(
         app: window.appName, bundleID: window.bundleID, title: window.title, pid: window.pid, frame: window.frame)
@@ -46,12 +46,13 @@ import Testing
     #expect(h.system.isVisible(b), "it would come out of the Dock off screen: \(h.frame(b)!)")
   }
 
-  @Test func quittingBringsBackParkedWindowsOnOtherSpaces() {
-    let (h, a, b, c) = makeHarness()
+  @Test(arguments: [false, true]) func quittingBringsBackParkedWindowsOnOtherSpaces(makingWay: Bool) {
+    let (h, a, b, c) = makeHarness(settings: makingWay ? .makingWay : Settings())
     h.run("dock \(a.rawValue) left")
     h.run("dock \(b.rawValue) right")
     h.run("zoom \(a.rawValue)")
-    #expect(!h.system.isVisible(b) && !h.system.isVisible(c))
+    // Mail floats: it leaves with the Desktop only if it makes way.
+    #expect(!h.system.isVisible(b) && h.system.isVisible(c) == !makingWay)
     for window in [a, b, c] { h.system.setOnActiveSpace(window, false) }
     h.scheduler.runPending()
     h.controller.shutdown()
@@ -108,8 +109,10 @@ import Testing
 
   // MARK: Starting after an unclean exit
 
-  @Test func floatingWindowsLeftParkedByACrashComeBackWhenTheDesktopIsInView() {
-    let (h, a, _, c) = makeHarness()
+  /// The run that dies lets floating windows make way (or is an earlier build): only there do they leave with the Desktop.
+  /// The run that finds them does the same, or is as Arbor ships.
+  @Test(arguments: [false, true]) func floatingWindowsLeftParkedByACrashComeBackWhenTheDesktopIsInView(makingWay: Bool) {
+    let (h, a, _, c) = makeHarness(settings: .makingWay)
     h.run("dock \(a.rawValue) left")
     h.controller.saveNow()
     let saved = h.store.saved
@@ -117,7 +120,7 @@ import Testing
     h.run("zoom \(a.rawValue)")
     #expect(!h.system.isVisible(c))
 
-    let again = relaunch(after: h, saved: saved)
+    let again = relaunch(after: h, saved: saved, settings: makingWay ? Settings.makingWay : Settings())
     again.start()
     #expect(again.layout?.desktopFrame != nil)
     #expect(again.system.isVisible(c), "\(again.frame(c)!)")

@@ -257,9 +257,10 @@ import Testing
 
   /// What an app answers for reasons of its own is its own, though the window is then fetched down to the very line: judged where it
   /// answered. Taken for the screen's, the height it will not have was written down, and the next layout moved it for that.
+  /// (Told with floating windows making way: as Arbor ships no view takes one out of view, so nothing fetches it.)
   @Test(arguments: [["behave 102 grid"], ["limits 102 min 0 0 max 400 450"]]) func anAppsOwnAnswerFetchedOntoTheLineIsStillItsOwn(ways: [String]) {
     let runner = play(
-      ["displays main:0,0,1024,768:31,0,63,0* windows-never", "open 101 A pid 1001 at 100 100 380 348", "open 102 Tall pid 1002 at 560 60 400 590", "launch",
+      [#"settings {"floatingWindowsMakeWay":true}"#, "displays main:0,0,1024,768:31,0,63,0* windows-never", "open 101 A pid 1001 at 100 100 380 348", "open 102 Tall pid 1002 at 560 60 400 590", "launch",
        "dock 101 left", "settle", "grab 102", "carry 760 300", "carry 760 610", "release", "settle", "zoom 101", "settle"] + ways + ["float-all", "settle"])
     let fetched = runner.system.frame(of: Self.b)
     #expect(fetched?.maxY == 705 && (fetched?.height ?? 590) < 590, "the case: \(fetched as Any)")

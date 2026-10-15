@@ -120,7 +120,8 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
   }
 
   @Test func aWindowFloatedWhileOutOfViewWaitsForTheDesktopAtItsOldSize() {
-    let (h, notes, safari, _) = makeHarness()
+    // Floating windows that make way: only they live on the Desktop and are out of view with it.
+    let (h, notes, safari, _) = makeHarness(settings: .makingWay)
     h.run("dock \(notes.rawValue) left")
     h.run("dock \(safari.rawValue) right")
     h.run("zoom \(safari.rawValue)")
@@ -131,6 +132,25 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
     h.run("show-all")
     #expect(h.system.isVisible(notes))
     #expect(h.frame(notes)?.size == notesFrame.size)
+  }
+
+  /// As Arbor ships no view keeps a floating window away: it comes at once, at its old size, and the view stays as it is.
+  @Test func aWindowFloatedWhileOutOfViewComesIntoViewAtItsOldSize() throws {
+    let (h, notes, safari, _) = makeHarness(settings: Settings())
+    h.run("dock \(notes.rawValue) left")
+    h.run("dock \(safari.rawValue) right")
+    h.run("zoom \(safari.rawValue)")
+    #expect(!h.system.isVisible(notes))
+    let view = h.workspace.camera
+
+    h.run("float \(notes.rawValue)")
+    let frame = try #require(h.frame(notes))
+    #expect(h.visibleFrame.contains(frame), "\(frame)")
+    #expect(frame.size == notesFrame.size)
+    #expect(!h.controller.parked.contains(notes))
+    #expect(h.workspace.camera == view)
+    h.run("show-all")
+    #expect(h.frame(notes) == frame, "and there it stays, wherever the view goes")
   }
 
   @Test func togglingTwiceGivesTheSizeBack() {
@@ -259,8 +279,9 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
   // MARK: With the Desktop out of view
 
   /// The product owner's replay: float out of a group view, walk away, come back.
-  @Test func aWindowFloatedOutOfAGroupViewComesBackWithThatView() throws {
-    let (h, notes, _, _) = makeHarness()
+  /// Where floating windows make way it leaves with that view and comes back with it. As Arbor ships it never leaves.
+  @Test(arguments: [false, true]) func aWindowFloatedOutOfAGroupViewIsThereWhenThatViewComesBack(makingWay: Bool) throws {
+    let (h, notes, _, _) = makeHarness(settings: makingWay ? .makingWay : Settings())
     h.system.open(app: "Slack")
     h.run("arrange")
     h.run("zoom \(notes.rawValue)")
@@ -272,7 +293,11 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
     #expect(h.workspace.guests?[notes] != nil, "it belongs to the view it floats over")
 
     #expect(h.run("neighbor right").ok)
-    #expect(!h.system.isVisible(notes))
+    if makingWay {
+      #expect(!h.system.isVisible(notes))
+    } else {
+      #expect(h.frame(notes) == frame, "no view takes it away")
+    }
     #expect(h.run("back").ok)
     #expect(h.frame(notes) == frame)
   }
@@ -317,7 +342,7 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
     h.run("out")
     h.run("float \(notes.rawValue)")
     #expect(h.workspace.guests == nil)
-    #expect(h.system.isVisible(notes), "it stays until the view next moves, like a new window")
+    #expect(h.system.isVisible(notes), "it stays, like a new window")
   }
 
   // MARK: Moving a docked window
@@ -806,8 +831,9 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
     #expect(h.workspace.floating[notes] == chosen, "and that is its place from then on")
   }
 
-  @Test(.withTiles) func aPauseBringsBackTilesMinimizedWindowsAndFloatingWindowsThatWereOutOfView() {
-    let (h, notes, safari, mail) = makeHarness()
+  /// A floating window is out of view only where floating windows make way. As Arbor ships it has stayed, and a pause leaves it.
+  @Test(.withTiles, arguments: [false, true]) func aPauseBringsBackTilesMinimizedWindowsAndFloatingWindowsThatWereOutOfView(makingWay: Bool) {
+    let (h, notes, safari, mail) = makeHarness(settings: makingWay ? .makingWay : Settings())
     let wideFrame = CGRect(x: 100, y: 100, width: 1250, height: 700)
     let wide = h.system.open(app: "Xcode", frame: wideFrame, minimumSize: CGSize(width: 1250, height: 700))
     h.run("dock \(safari.rawValue) left")
@@ -815,7 +841,11 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
     h.run("dock \(wide.rawValue) beside \(mail.rawValue) bottom")
     #expect(h.layout?.tiles.contains { $0.windows == [wide] } == true)
     h.run("zoom \(safari.rawValue)")
-    #expect(!h.system.isVisible(notes), "it floats on the Desktop, which is out of view")
+    if makingWay {
+      #expect(!h.system.isVisible(notes), "it floats on the Desktop, which is out of view")
+    } else {
+      #expect(h.frame(notes) == notesFrame, "no view takes it away")
+    }
     h.system.setMinimized(mail, true)
 
     h.run("pause")
@@ -902,7 +932,8 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
   }
 
   @Test func anExcludedAppsFloatingWindowOutOfViewGoesBackToWhereItFloated() {
-    let (h, notes, safari, _) = makeHarness()
+    // Floating windows that make way: only they leave with the Desktop.
+    let (h, notes, safari, _) = makeHarness(settings: .makingWay)
     h.run("dock \(safari.rawValue) left")
     h.run("zoom \(safari.rawValue)")
     #expect(!h.system.isVisible(notes))
@@ -1017,9 +1048,12 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
 
   // MARK: Guests (docs/features/F57-new-windows-while-framed.md)
 
-  /// Safari framed, with a dialog that opened over it; then Notes framed, so both are out of view.
-  func harnessWithAGuestOutOfView() -> (Harness, safari: WindowID, guest: WindowID, guestFrame: CGRect) {
-    let (h, notes, safari, _) = makeHarness()
+  /// Safari framed, with a dialog that opened over it; then Notes framed, so Safari is out of view. Where floating windows
+  /// make way the dialog has left with it. As Arbor ships it has stayed.
+  func harnessWithAGuestWhoseHostIsOutOfView(
+    makingWay: Bool
+  ) -> (Harness, safari: WindowID, guest: WindowID, guestFrame: CGRect) {
+    let (h, notes, safari, _) = makeHarness(settings: makingWay ? .makingWay : Settings())
     h.run("dock \(notes.rawValue) left")
     h.run("dock \(safari.rawValue) right")
     h.run("zoom \(safari.rawValue)")
@@ -1027,13 +1061,18 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
     let guest = h.system.open(app: "Dialog", frame: guestFrame)
     #expect(h.workspace.guests?[guest] != nil)
     h.run("zoom \(notes.rawValue)")
-    #expect(!h.system.isVisible(guest), "it left with its host")
+    #expect(!h.system.isVisible(safari))
+    if makingWay {
+      #expect(!h.system.isVisible(guest), "it left with its host")
+    } else {
+      #expect(h.frame(guest) == guestFrame, "no view takes it away")
+    }
     return (h, safari, guest, guestFrame)
   }
 
-  @Test(arguments: ["float-all", "pause", "quit", "pause, quit"])
-  func aGuestOutOfViewComesBackWhereItWasHoweverArborLetsGo(_ way: String) {
-    let (h, safari, guest, guestFrame) = harnessWithAGuestOutOfView()
+  @Test(arguments: ["float-all", "pause", "quit", "pause, quit"], [false, true])
+  func aGuestWhoseHostIsOutOfViewIsWhereItWasHoweverArborLetsGo(_ way: String, makingWay: Bool) {
+    let (h, safari, guest, guestFrame) = harnessWithAGuestWhoseHostIsOutOfView(makingWay: makingWay)
     if way == "float-all" { h.run("float-all") }
     if way.hasPrefix("pause") { h.run("pause") }
     if way.hasSuffix("quit") { h.controller.shutdown() }
@@ -1373,8 +1412,9 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
   /// The other way round: its app no longer allows the size it had. A window shrinks towards its top-left corner, so
   /// one that hung over the left edge of the screen can end beyond it, on no display.
   /// Here the layout gives the frame back (the Desktop comes into view again), not `putBack`.
+  /// Floating windows that make way: only they leave with the Desktop, to come back with it.
   @Test func aWindowLeftHangingOverTheLeftEdgeThatComesBackNarrowerIsNotLost() throws {
-    let (h, notes, safari, mail) = makeHarness()
+    let (h, notes, safari, mail) = makeHarness(settings: .makingWay)
     h.run("close \(mail.rawValue)")
     h.run("dock \(safari.rawValue) right")
     let hanging = CGRect(x: -386, y: 133, width: 853, height: 206)
@@ -1443,8 +1483,9 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
   }
 
   /// Only an answer smaller than asked is a reason: pushed aside until a strip shows, a window goes on hanging there.
-  @Test func aWindowLeftWithAStripShowingGoesOnHangingThere() throws {
-    let (h, notes, safari, mail) = makeHarness()
+  /// (Out of view and back where floating windows make way. As Arbor ships it never leaves.)
+  @Test(arguments: [false, true]) func aWindowLeftWithAStripShowingGoesOnHangingThere(makingWay: Bool) throws {
+    let (h, notes, safari, mail) = makeHarness(settings: makingWay ? .makingWay : Settings())
     h.run("close \(mail.rawValue)")
     h.run("dock \(safari.rawValue) right")
     let hanging = CGRect(x: -700, y: 133, width: 853, height: 206)

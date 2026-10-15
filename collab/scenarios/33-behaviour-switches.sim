@@ -28,17 +28,22 @@ set gapHandles hidden
 seam 0 -40
 expect ok
 
-# Small while out of view: windows leave and come back as before.
+# Small while out of view: docked windows leave and come back as before. The Calculator floats, so it neither leaves nor shrinks.
 set shrinkOutOfView true
 zoom 102
 expect fills 102
 expect hidden 101
-expect hidden 104
+expect hidden 103
+expect still 104
+expect visible 104
+expect at 104 300 200 300x400
 back
 expect visible 101
 expect visible 103
 expect floating 104
+expect still 104
 expect visible 104
+expect at 104 300 200 300x400
 
 # A leaving window's space goes to its neighbour; a minimized one still gets its spot back.
 set shareRemovedSpace false

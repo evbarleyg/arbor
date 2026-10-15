@@ -598,7 +598,11 @@ private let side = DisplaySnapshot(
   }
 
   @Test func floatingWindowsComeIntoViewWithTheDesktopAndGoOutAgain() {
-    let s = DragScene(Self.reflow)
+    // Floating windows that make way: only they leave with the Desktop.
+    let s = DragScene {
+      $0.reflowWhileDragging = true
+      $0.floatingWindowsMakeWay = true
+    }
     s.h.run("zoom \(s.a.rawValue)")
     let before = s.outcome
     #expect(!s.h.system.isVisible(s.c))
@@ -610,6 +614,27 @@ private let side = DisplaySnapshot(
     s.h.system.holdModifierKeys(.command)
     #expect(!s.h.system.isVisible(s.c) && !s.h.system.isVisible(s.b), "they leave again while a is still held")
     s.h.system.endDrag()
+    #expect(s.outcome == before)
+    s.expectNothingLeftBehind()
+  }
+
+  /// As Arbor ships, what floats never left. The same trials fetch what is docked and send it away again, and ask nothing of c.
+  @Test func theTrialsThatShowTheDesktopAndLeaveItAgainTouchNothingThatFloats() {
+    let s = DragScene(Self.reflow)
+    s.h.run("zoom \(s.a.rawValue)")
+    let before = s.outcome
+    let own = s.frame(s.c)
+    #expect(s.h.system.isVisible(s.c) && !s.h.system.isVisible(s.b))
+    s.h.system.clearFrameLog()
+
+    s.h.system.beginDrag(s.a, plainly: true)
+    s.h.system.moveDrag(to: CGPoint(x: s.h.system.cursor.x + 30, y: s.h.system.cursor.y + 30))
+    #expect(s.h.system.isVisible(s.b), "let go now, a would leave the view it fills, which falls back to everything")
+    s.h.system.holdModifierKeys(.command)
+    #expect(!s.h.system.isVisible(s.b), "it leaves again while a is still held")
+    s.h.system.endDrag()
+    #expect(s.frame(s.c) == own)
+    #expect(!s.h.system.frameLog.contains { $0.window == s.c }, "Arbor set no frame on it: \(s.h.system.frameLog)")
     #expect(s.outcome == before)
     s.expectNothingLeftBehind()
   }
@@ -636,18 +661,20 @@ private let side = DisplaySnapshot(
   /// As it ships, and with a column for the Desktop, where a docked window let go on the Desktop floats ("nothing").
   /// (All but one of them both ways. "nothing" ends aside of everything, and two halves have no such place: the gap between them is gone
   /// while the trial shows the one above the other.)
+  /// Each with floating windows that make way too, which the trials of a drag fetch and send away.
   @Test(
     arguments: [
       "back", "nothing", "beside", "edge", "quick", "wander", "command", "across", "across-float", "zoomed-back",
       "zoomed-beside", "zoomed-out", "zoomed-edge", "zoomed-edge-back", "tab", "tab-away", "guest-edge", "guest-back",
       "beside-a-host", "framed-command", "framed-command-back",
-    ].flatMap { journey in both.filter { $0 || journey != "nothing" }.map { (journey, $0) } })
-  func everyJourneyEndsAsItDoesWithoutReflow(journey: String, column: Bool) {
+    ].flatMap { journey in both.filter { $0 || journey != "nothing" }.flatMap { column in both.map { (journey, column, $0) } } })
+  func everyJourneyEndsAsItDoesWithoutReflow(journey: String, column: Bool, makingWay: Bool) {
     func run(_ configure: (inout Settings) -> Void) -> DragScene.Outcome {
       let s = DragScene(
         settings: column ? .withDesktopColumn : Settings(),
         {
           $0.tabsEnabled = journey.hasPrefix("tab")
+          $0.floatingWindowsMakeWay = makingWay
           configure(&$0)
         }, displays: [FakeWindowSystem.standardDisplay, side])
       // Where nothing is docked: the Desktop, or between two halves the gap, where a docked window let go goes back to its slot.
@@ -691,11 +718,12 @@ private let side = DisplaySnapshot(
           s.a,
           through: [s.frame(s.a).center, CGPoint(x: sideSlot.midX, y: sideSlot.maxY - 20), CGPoint(x: 2300, y: 600)])
       case "zoomed-back", "zoomed-beside", "zoomed-out", "zoomed-edge", "zoomed-edge-back":
-        // The view is the column [a / c]: the Desktop and the floating windows are out of view.
+        // The view is the column [a / c]: the Desktop is out of view, and with it b, and the floating windows that make way.
         let f = system.open(app: "Finder", frame: CGRect(x: 520, y: 100, width: 300, height: 200))
         s.h.run("dock \(s.c.rawValue) beside \(s.a.rawValue) bottom")
         s.h.run("zoom-node \(s.h.workspace.tree.parent(of: s.h.workspace.tree.leaf(containing: s.a)!)!.rawValue)")
-        #expect(s.h.controller.parked.contains(f))
+        #expect(s.h.controller.parked.contains(s.b))
+        #expect(s.h.controller.parked.contains(f) == makingWay)
         let own = s.frame(s.a).center
         // With reflow c fills the view once a has left, so a point can come to mean something else. The
         // last one has to mean the same either way: between a and c it is the gap, in c alone the middle.
@@ -1039,7 +1067,12 @@ private let side = DisplaySnapshot(
   @Test(arguments: ["summon Mail", "pin c"], both) func aWindowATrialBroughtInAndACommandGaveARoleStaysWhereThatPutIt(
     command: String, lost: Bool
   ) {
-    let s = DragScene({ $0.reflowWhileDragging = true }, displays: [FakeWindowSystem.standardDisplay, side])
+    // Floating windows that make way: only they leave with the Desktop, for a trial to bring in.
+    let s = DragScene(
+      {
+        $0.reflowWhileDragging = true
+        $0.floatingWindowsMakeWay = true
+      }, displays: [FakeWindowSystem.standardDisplay, side])
     s.h.run("zoom \(s.a.rawValue)")
     #expect(s.h.controller.parked.contains(s.c))
     s.h.system.beginDrag(s.a)
@@ -1130,9 +1163,15 @@ private let side = DisplaySnapshot(
     s.expectNothingLeftBehind()
   }
 
+  /// Out of view, windows are made small, and floating windows make way: only they leave with the Desktop.
+  static let smallOutOfView: (inout Settings) -> Void = {
+    $0.shrinkOutOfView = true
+    $0.floatingWindowsMakeWay = true
+  }
+
   /// With `shrinkOutOfView` what is taken by its sliver is small.
   @Test(arguments: both) func aWindowMadeSmallOutOfViewHasItsOwnSizeWhenItIsDraggedBack(lost: Bool) {
-    let s = DragScene { $0.shrinkOutOfView = true }
+    let s = DragScene(Self.smallOutOfView)
     let own = s.frame(s.c).size
     s.h.run("zoom \(s.a.rawValue)")
     #expect(s.frame(s.c).size != own)
@@ -1151,7 +1190,7 @@ private let side = DisplaySnapshot(
   /// Let go where macOS tiles, it is macOS's, which is about to give it a frame: Arbor keeps its hands off. What it owed the window it has
   /// paid by then: the press on what shows of it gives it the keyboard, and what has the keyboard comes into view at its own size.
   @Test func letGoWhereMacOSTilesAWindowMadeSmallIsLeftToMacOS() {
-    let s = DragScene { $0.shrinkOutOfView = true }
+    let s = DragScene(Self.smallOutOfView)
     s.h.system.tiling = .on
     let own = s.frame(s.c).size
     s.h.run("zoom \(s.a.rawValue)")
@@ -1170,7 +1209,7 @@ private let side = DisplaySnapshot(
   /// A few points further in macOS does not act, and with its tiling on Arbor offers nothing along that edge either: the window
   /// floats where it is let go, and nobody but Arbor is there to give it its size.
   @Test func letGoInTheBandWhereNobodyActsAWindowMadeSmallHasItsOwnSize() {
-    let s = DragScene { $0.shrinkOutOfView = true }
+    let s = DragScene(Self.smallOutOfView)
     s.h.system.tiling = .on
     let own = s.frame(s.c).size
     s.h.run("zoom \(s.a.rawValue)")
@@ -1187,7 +1226,7 @@ private let side = DisplaySnapshot(
 
   /// In view again and made as small by hand as it was out of view, it is as small as its person made it.
   @Test func aWindowInViewIsNotGivenAnOlderSizeWhenItIsDragged() {
-    let s = DragScene { $0.shrinkOutOfView = true }
+    let s = DragScene(Self.smallOutOfView)
     s.h.run("zoom \(s.a.rawValue)")
     let small = s.frame(s.c).size
     s.h.run("show-all")
@@ -1202,7 +1241,11 @@ private let side = DisplaySnapshot(
 
   /// A window out of view shows a sliver, and Mission Control shows all of it.
   @Test(arguments: both) func aWindowDraggedBackFromOutOfViewStaysWhereItIsDropped(reflow: Bool) {
-    let s = DragScene { $0.reflowWhileDragging = reflow }
+    // Floating windows that make way: only they leave with the Desktop.
+    let s = DragScene {
+      $0.reflowWhileDragging = reflow
+      $0.floatingWindowsMakeWay = true
+    }
     s.h.run("zoom \(s.a.rawValue)")
     #expect(s.h.controller.parked.contains(s.c))
     s.h.system.drag(s.c, through: [s.frame(s.c).center, CGPoint(x: 700, y: 400)])

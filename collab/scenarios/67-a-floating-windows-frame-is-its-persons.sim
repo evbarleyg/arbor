@@ -2,7 +2,7 @@
 # Story: an ordinary desk, as it stood on the first day played with real apps on a hosted Mac: a display 1600 points wide, Finder,
 # Safari and TextEdit to be docked, and Terminal, Notes, Calendar and Mail floating where their person left them. On that day a
 # dock squeezed Safari from 1324 to 794 points, and ⌘M, ⌘H and ⌘Q of a docked window shoved the others about.
-# Arbor sets a floating window's frame only to take it out of view and to put it back exactly where it was.
+# A floating window's frame is its person's, and no view takes it away (Q29, 4).
 # Reference: rules 2, 3 and 5 of the product direction.
 display-size 1600x822 31
 open Finder 920x436 min 501x200
@@ -33,13 +33,18 @@ expect at 104 40 51 877x499
 expect at 105 300 105 1000x660
 expect at 106 200 86 935x598
 expect at 107 240 72 1120x630
-# Frame, then Show Everything: there and back is nothing.
+# Frame, then Show Everything: what floats stays where it is, behind Safari, and nobody touches it.
 zoom 102
-expect hidden 104
-expect hidden 105
-expect hidden 106
-expect hidden 107
+expect fills 102
+expect still 104
+expect still 105
+expect at 104 40 51 877x499
+expect at 105 300 105 1000x660
+expect at 106 200 86 935x598
+expect at 107 240 72 1120x630
 show-all
+expect still 104
+expect still 107
 expect at 104 40 51 877x499
 expect at 105 300 105 1000x660
 expect at 106 200 86 935x598
@@ -66,7 +71,7 @@ expect at 104 40 51 877x499
 expect at 105 300 105 1000x660
 expect at 106 200 86 935x598
 expect at 107 240 72 1120x630
-# Left hanging over the edge of the screen and over Finder by hand, it comes back to that.
+# Left hanging over the edge of the screen and over Finder by hand, it stays so.
 move 105 -300 200 1000 560
 zoom 102
 show-all

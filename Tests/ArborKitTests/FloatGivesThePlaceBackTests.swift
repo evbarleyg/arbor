@@ -165,16 +165,22 @@ enum WayOut: String, CaseIterable, Sendable {
     #expect(h.controller.workspaces[side.id]?.floating[notes] == remembered)
   }
 
-  /// With the Desktop and itself out of view it waits, and is where it was when the Desktop comes back.
-  @Test func floatedWhileOutOfViewItIsWhereItWasWhenTheDesktopComesBack() {
-    let (h, notes, safari) = makeHarness()
+  /// Out of view, with the Desktop out of view too: it is where it was at once, since no view keeps a floating window away. One that makes way
+  /// waits, and is where it was when the Desktop comes back.
+  @Test(arguments: [false, true]) func floatedWhileOutOfViewItIsWhereItWas(makingWay: Bool) {
+    let (h, notes, safari) = makeHarness(settings: makingWay ? .makingWay : Settings())
     h.run("dock \(notes.rawValue) left")
     h.run("dock \(safari.rawValue) right")
     h.run("zoom \(safari.rawValue)")
     h.run("float \(notes.rawValue)")
-    #expect(!h.system.isVisible(notes), "floating windows live on the Desktop, which is out of view")
+    if makingWay {
+      #expect(!h.system.isVisible(notes), "floating windows that make way live on the Desktop, which is out of view")
+    } else {
+      #expect(h.frame(notes) == notesFrame)
+    }
     h.run("show-all")
-    #expect(h.frame(notes) == notesFrame)
+    // (On the Desktop beside Safari, if it makes way: at its own size, pushed aside.)
+    #expect(makingWay ? h.system.isVisible(notes) && h.frame(notes)?.size == notesFrame.size : h.frame(notes) == notesFrame)
   }
 
   // MARK: In front
@@ -207,9 +213,9 @@ enum WayOut: String, CaseIterable, Sendable {
     #expect(h.system.focusRequests.count == asked)
   }
 
-  /// It waits for the Desktop out of view: whoever has the keyboard keeps it, and the view stays.
+  /// One that makes way waits for the Desktop out of view: whoever has the keyboard keeps it, and the view stays.
   @Test func outOfViewItIsNotGivenTheKeyboard() {
-    let (h, notes, safari) = makeHarness()
+    let (h, notes, safari) = makeHarness(settings: .makingWay)
     h.run("dock \(notes.rawValue) left")
     h.run("dock \(safari.rawValue) right")
     h.run("zoom \(safari.rawValue)")
@@ -219,6 +225,19 @@ enum WayOut: String, CaseIterable, Sendable {
     #expect(h.system.focusedWindow() == safari)
     #expect(h.workspace.camera == camera)
     #expect(!h.system.isVisible(notes))
+  }
+
+  /// As Arbor ships it comes into view over the framed window, which the command named it for: in front, with the keyboard, and the view stays.
+  @Test func floatedFromOutOfViewItComesToTheFrontOfTheFramedWindow() {
+    let (h, notes, safari) = makeHarness()
+    h.run("dock \(notes.rawValue) left")
+    h.run("dock \(safari.rawValue) right")
+    h.run("zoom \(safari.rawValue)")
+    let camera = h.workspace.camera
+    h.run("float \(notes.rawValue)")
+    h.scheduler.runPending()
+    #expect(h.frame(notes) == notesFrame && h.workspace.camera == camera)
+    #expect(h.system.focusedWindow() == notes && h.system.windowsFrontToBack().first == notes)
   }
 
   /// Floating the framed window moves the view. The keyboard goes to the window named, and to nobody else on the way. Across apps a

@@ -1,6 +1,7 @@
 # Proposed by the swarm's review (2026-10-14); the documenter may edit or drop it.
 # Story: a laptop user is zoomed in on Safari when they plug in a monitor to the
-# right. The windows parked past the right edge must not show up on it.
+# right. Notes, docked and parked past the right edge, must not show up on it. The Calculator floats: no view
+# takes it away and no monitor moves it.
 # Reference: T44 T52 T61.
 # The three tiling switches of the guide's section 2 are off: with macOS's own tiling on, the left, right and top edges of the screen are macOS's (Q23).
 mac-tiling off
@@ -11,14 +12,20 @@ dock 101 left
 dock 102 right
 zoom 101
 expect hidden 102
-expect hidden 103
+expect still 103
+expect visible 103
+expect at 103 300 200 300x400
 displays 2
 expect hidden 102
-expect hidden 103
+expect still 103
+expect visible 103
+expect at 103 300 200 300x400
 expect fills 101
 back
 expect visible 102
+expect still 103
 expect visible 103
+expect at 103 300 200 300x400
 # Notes moves to the monitor, which is then unplugged and plugged back in.
 drag 102 1445 500 cmd
 expect docked 102
@@ -28,3 +35,14 @@ expect visible 102
 displays 2
 expect docked 102
 expect visible 102
+# Only floating windows that make way leave with the Desktop. Out of view, the Calculator must not show up on the monitor either.
+displays 1
+cursor 400 400
+set floatingWindowsMakeWay true
+zoom 101
+expect hidden 103
+displays 2
+expect hidden 103
+expect fills 101
+back
+expect visible 103

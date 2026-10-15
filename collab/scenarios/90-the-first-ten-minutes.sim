@@ -19,15 +19,24 @@ expect floating 103
 expect floating 104
 expect visible 103
 expect visible 104
-# 2. Frame: ⌃⌥↩ on Safari. The others are out of view, not closed. The same keys again return.
+# 2. Frame: ⌃⌥↩ on Safari. Terminal, which is docked, is out of view, not closed. What floats stays where it is, behind Safari.
+#    The same keys again return.
 focus 101
 key ctrl+opt+return
 expect fills 101
+expect in-front 101
 expect hidden 102
-expect hidden 103
+expect still 103
+expect still 104
+expect visible 103
+expect visible 104
+expect at 103 300 200 640x420
+expect at 104 300 200 640x420
 key ctrl+opt+return
 expect camera root
 expect visible 102
+expect still 103
+expect still 104
 expect visible 103
 # 3. Walk: framed again, ⌃⌥→ goes to Terminal; ⌃⌥[ goes back like a browser.
 key ctrl+opt+return

@@ -435,12 +435,13 @@ import Testing
 
   // MARK: Out of view
 
-  /// Everything that can be out of view, when its app goes on the Don't arrange list.
-  @Test func windowsOutOfViewComeBackWhenTheirAppIsNoLongerArranged() throws {
-    let (h, a, b, c) = desk()
+  /// Everything that can be out of view, when its app goes on the Don't arrange list: a docked window, and a floating one
+  /// where floating windows make way.
+  @Test(arguments: [false, true]) func windowsOutOfViewComeBackWhenTheirAppIsNoLongerArranged(makingWay: Bool) throws {
+    let (h, a, b, c) = desk(makingWay ? .makingWay : Settings())
     h.run("zoom \(a.rawValue)")
     h.scheduler.advance(by: 2)
-    #expect(!h.system.isVisible(b) && !h.system.isVisible(c))
+    #expect(!h.system.isVisible(b) && h.system.isVisible(c) == !makingWay)
     #expect(h.run("set excludedBundleIDs add com.example.notes").ok)
     #expect(h.run("set excludedBundleIDs add com.example.mail").ok)
     h.scheduler.advance(by: 2)

@@ -13,27 +13,37 @@ dock 103 beside 102 bottom
 zoom 103
 expect fills 103
 expect hidden 101
-expect hidden 104
+expect hidden 102
+# Notes floats, and needs no way back: no view takes it away. It is behind Mail.
+expect still 104
+expect visible 104
+expect at 104 300 200 400x300
+expect in-front 103
 # ⌃⌥Space, tapped: everything on this display.
 key ctrl+opt+space
 expect camera root
 expect visible 101
 expect visible 102
 expect visible 103
+expect still 104
 expect visible 104
 # ⌃⌥[ goes back like a browser.
 key ctrl+opt+[
 expect fills 103
+expect still 104
 # `arborctl home`: everything on every display, from anywhere.
 home
 expect camera root
 expect visible 101
 expect visible 104
-# Show the Desktop, in the menu: whatever floats.
+# Show the Desktop, in the menu: whatever floats, with nothing docked over it.
 zoom 101
 from menu desktop
 expect camera desktop
+expect hidden 101
+expect still 104
 expect visible 104
+expect in-front 104
 # Float All Windows, in the menu: back to a normal Mac, each window at its own size. ⌃⌥Z takes even that back.
 from menu float-all
 expect count docked 0

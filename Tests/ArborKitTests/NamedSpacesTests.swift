@@ -244,8 +244,10 @@ private let third = DisplaySnapshot(
   // MARK: 6. Several displays
 
   /// The desk, and `[Desktop | Music]` on the side display, each with the pointer's help.
-  private func twoDisplays(_ displays: [DisplaySnapshot] = [main, side]) -> (Desk, music: WindowID) {
-    let d = Desk(displays: displays)
+  private func twoDisplays(
+    _ displays: [DisplaySnapshot] = [main, side], settings: Settings = Harness.settingsWhenNoneAreGiven
+  ) -> (Desk, music: WindowID) {
+    let d = Desk(displays: displays, settings: settings)
     let music = d.h.system.open(app: "Music", title: "Library", frame: CGRect(x: 1600, y: 200, width: 600, height: 400))
     d.h.run("dock \(music.rawValue) right")
     return (d, music)
@@ -353,14 +355,15 @@ private let third = DisplaySnapshot(
     #expect(d.h.controller.following.lead == before)
   }
 
-  @Test func goingToTheDesktopOfAnotherDisplayGivesAFloatingWindowThereTheKeyboard() {
-    let (d, music) = twoDisplays()
+  @Test(arguments: [false, true]) func goingToTheDesktopOfAnotherDisplayGivesAFloatingWindowThereTheKeyboard(makingWay: Bool) {
+    let (d, music) = twoDisplays(settings: makingWay ? .makingWay : Settings())
     let calculator = d.h.system.open(app: "Calculator", frame: CGRect(x: 1500, y: 300, width: 300, height: 300))
     point(d, at: side)
     d.h.run("desktop")
     d.h.run("name Scratch")
     d.h.run("zoom \(music.rawValue)")
-    #expect(!d.h.system.isVisible(calculator))
+    // Only a floating window that makes way leaves with the Desktop. As Arbor ships it stays, and still gets the keyboard below.
+    #expect(d.h.system.isVisible(calculator) == !makingWay)
     point(d, at: main)
     d.h.system.userFocus(d.safari)
     d.h.run("go scratch")

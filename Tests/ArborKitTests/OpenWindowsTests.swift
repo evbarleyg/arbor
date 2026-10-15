@@ -230,6 +230,8 @@ import Testing
     let (h, _, notes, _, _) = desk()
     let xcode = h.system.open(app: "Xcode", frame: CGRect(x: 400, y: 200, width: 700, height: 500))
     h.system.setMinimumSize(xcode, CGSize(width: 900, height: 600))
+    // Somebody else is being typed in: the window with the keyboard would be served at its neighbours' cost (F61).
+    h.system.userFocus(notes)
     h.run("dock \(xcode.rawValue) beside \(notes.rawValue) bottom")
     // The window with the keyboard is never the tile: its person types in a neighbour and looks at everything again.
     h.system.userFocus(notes)
@@ -251,8 +253,10 @@ import Testing
 
   /// The number IDEAS I17 is about: how often, over an ordinary day's acts with Arbor as it comes, a row says `out of view`. Nobody sent those
   /// windows away. **It may only fall**: whoever keeps more in view lowers the bound to what they reach.
+  ///
+  /// Twelve while floating windows left with the Desktop. Three since no view takes one away: the docked window beside a framed one.
   @Test func overAnOrdinaryDayFewRowsSayOutOfView() {
-    let h = Harness()
+    let h = Harness(settings: Settings())
     let apps = ["Safari", "Mail", "Notes", "Terminal", "Music", "Calendar"]
     let windows = apps.enumerated().map { index, app in
       h.system.open(app: app, pid: Int32(11 + index), frame: CGRect(x: 80 + 90 * index, y: 60 + 50 * index, width: 640, height: 420))
@@ -292,7 +296,7 @@ import Testing
     look()
     act("float-all")
     #expect(read == 83, "the day has changed: count again")
-    #expect(marked <= 12, "\(marked) of \(read) rows read said `out of view`")
+    #expect(marked <= 3, "\(marked) of \(read) rows read said `out of view`")
   }
 
   // MARK: A click on each kind
@@ -306,15 +310,22 @@ import Testing
     case hiddenDocked, hiddenFloating, hiddenAndMinimized, hiddenOverTheEdge, hiddenWhileFramedElsewhere
     case keptInView, keptInViewOverTheEdge, sentAwayBySummon
     case leftAlone, leftAloneMinimized, leftAloneHidden
+    case floatingBehindAFramedWindow, guestWhoseHostIsOutOfView, floatingOverTheEdgeBehindAFramedWindow
   }
+
+  /// The kinds whose story is that a floating window left with the Desktop, or with its host. They are told where floating windows
+  /// are set to make way. As Arbor ships no view takes one away: the same acts make the last three kinds, in this order.
+  nonisolated static let awayWithTheView: [Kind] = [.floatingOutOfView, .guest, .floatingOutOfViewOverTheEdge]
 
   /// What the window's row says before the click: that the story is the story its name tells.
   func markBefore(_ kind: Kind) -> String? {
     switch kind {
-    case .dockedInView, .dockedUnderAFloatingWindow, .floating, .floatingBehindAnother, .keptInView, .leftAlone: nil
-    // The first three are in view as Arbor counts, with most of them beyond the edge.
-    case .squeezedOverTheEdge, .floatingOverTheEdge, .keptInViewOverTheEdge, .dockedOutOfView, .tile, .tab, .guest, .floatingOutOfView, .floatingOutOfViewOverTheEdge, .floatingBeyondEveryDisplay,
-      .sentAwayBySummon:
+    case .dockedInView, .dockedUnderAFloatingWindow, .floating, .floatingBehindAnother, .keptInView, .leftAlone,
+      .floatingBehindAFramedWindow, .guestWhoseHostIsOutOfView:
+      nil
+    // The first four are in view as Arbor counts, with most of them beyond the edge.
+    case .squeezedOverTheEdge, .floatingOverTheEdge, .keptInViewOverTheEdge, .floatingOverTheEdgeBehindAFramedWindow, .dockedOutOfView,
+      .tile, .tab, .guest, .floatingOutOfView, .floatingOutOfViewOverTheEdge, .floatingBeyondEveryDisplay, .sentAwayBySummon:
       "out of view"
     case .minimizedDocked, .minimizedFloating, .minimizedWhileFramedElsewhere, .minimizedOverTheEdge, .hiddenAndMinimized,
       .leftAloneMinimized:
@@ -325,7 +336,7 @@ import Testing
 
   /// Brings about one window of the kind, with the keyboard elsewhere, and names it.
   func make(_ kind: Kind) -> (Harness, WindowID) {
-    let (h, safari, notes, mail, terminal) = desk()
+    let (h, safari, notes, mail, terminal) = desk(settings: Self.awayWithTheView.contains(kind) ? .makingWay : Settings())
     h.system.userFocus(safari)
     switch kind {
     case .dockedInView:
@@ -340,6 +351,8 @@ import Testing
     case .tile:
       let xcode = h.system.open(app: "Xcode", frame: CGRect(x: 400, y: 200, width: 700, height: 500))
       h.system.setMinimumSize(xcode, CGSize(width: 900, height: 600))
+      // Somebody else is being typed in: the window with the keyboard would be served at its neighbours' cost (F61).
+      h.system.userFocus(notes)
       h.run("dock \(xcode.rawValue) beside \(notes.rawValue) bottom")
       // The window with the keyboard is never the tile: its person types in a neighbour and looks at everything again.
       h.system.userFocus(notes)
@@ -352,7 +365,7 @@ import Testing
       let music = h.system.open(app: "Music", frame: CGRect(x: 520, y: 260, width: 400, height: 300))
       h.system.userFocus(music)
       return (h, terminal)
-    case .floatingOutOfView:
+    case .floatingOutOfView, .floatingBehindAFramedWindow:
       h.run("zoom \(safari.rawValue)")
       return (h, terminal)
     case .floatingOverTheEdge:
@@ -377,7 +390,7 @@ import Testing
       tabs.start()
       tabs.system.userFocus(mail)
       return (tabs, safari)
-    case .guest:
+    case .guest, .guestWhoseHostIsOutOfView:
       h.run("zoom \(safari.rawValue)")
       let guest = h.system.open(app: "Preview", frame: CGRect(x: 400, y: 200, width: 500, height: 400))
       h.system.userFocus(guest)
@@ -385,7 +398,7 @@ import Testing
       h.run("show-all")
       h.run("zoom \(mail.rawValue)")
       return (h, guest)
-    case .floatingOutOfViewOverTheEdge:
+    case .floatingOutOfViewOverTheEdge, .floatingOverTheEdgeBehindAFramedWindow:
       h.system.userMove(terminal, to: CGRect(x: 1300, y: 780, width: 300, height: 200))
       h.system.userFocus(safari)
       h.run("zoom \(safari.rawValue)")
@@ -502,6 +515,7 @@ import Testing
     Kind.floating, .floatingBehindAnother, .floatingOutOfView, .floatingOverTheEdge, .floatingOutOfViewOverTheEdge, .minimizedFloating,
     .floatingBeyondEveryDisplay, .squeezedOverTheEdge,
     .minimizedOverTheEdge, .hiddenFloating, .hiddenOverTheEdge, .keptInView, .keptInViewOverTheEdge,
+    .floatingBehindAFramedWindow, .guestWhoseHostIsOutOfView, .floatingOverTheEdgeBehindAFramedWindow,
   ])
   func aFloatingWindowKeepsItsSize(kind: Kind) {
     let (h, window) = make(kind)
@@ -659,8 +673,11 @@ import Testing
     #expect(h.store.saved?.workspaces[h.display]?.floating[terminal] == h.system.frame(of: terminal))
   }
 
-  /// Whole already, it stays where it is.
-  @Test(arguments: [Kind.floating, .floatingBehindAnother, .dockedInView, .dockedUnderAFloatingWindow, .leftAlone])
+  /// Whole already, it stays where it is. So does everything else: behind a framed window too it is in view, and the view stays.
+  @Test(arguments: [
+    Kind.floating, .floatingBehindAnother, .dockedInView, .dockedUnderAFloatingWindow, .leftAlone, .floatingBehindAFramedWindow,
+    .guestWhoseHostIsOutOfView,
+  ])
   func aWindowThatIsWholeInViewIsNotMoved(kind: Kind) {
     let (h, window) = make(kind)
     h.scheduler.advance(by: 2)

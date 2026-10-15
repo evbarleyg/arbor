@@ -458,14 +458,15 @@ private func reopen(_ old: Harness, in new: Harness) {
   }
 
   /// The same the other way round: the display is back, macOS carries its windows home, and Arbor has not heard yet.
-  @Test func windowsOutOfViewThatMacOSCarriesHomeAreNotFetchedBack() {
-    let (h, a, b, c) = makeHarness()
+  /// Meanwhile they float on the main display: out of view with its Desktop where they make way, and in view as Arbor ships.
+  @Test(arguments: [false, true]) func windowsThatMacOSCarriesHomeAreNotFetchedBack(makingWay: Bool) {
+    let (h, a, b, c) = makeHarness(settings: makingWay ? .makingWay : Settings())
     let code = h.system.open(app: "Code", frame: CGRect(x: 100, y: 100, width: 500, height: 400))
     h.system.setDisplays([main])
     h.system.cursor = CGPoint(x: 700, y: 400)
     h.run("dock \(code.rawValue) left")
     h.run("zoom \(code.rawValue)")
-    for window in [a, b, c] { #expect(h.controller.parked.contains(window)) }
+    for window in [a, b, c] { #expect(h.controller.parked.contains(window) == makingWay) }
     h.system.clearFrameLog()
 
     h.system.displayList = [main, side]
@@ -546,8 +547,9 @@ private func reopen(_ old: Harness, in new: Harness) {
     #expect(sideWorkspace(h)!.floating[d] == chosen)
   }
 
+  /// Floating windows that make way: only they leave with the Desktop.
   @Test func returningFloatingWindowsStayOutOfViewWhileTheirDesktopIs() {
-    let (h, a, _, _) = makeHarness()
+    let (h, a, _, _) = makeHarness(settings: .makingWay)
     let spot = CGRect(x: 1900, y: 100, width: 300, height: 200)
     let d = h.system.open(app: "Terminal", frame: spot)
     h.run("zoom \(a.rawValue)")
@@ -563,7 +565,26 @@ private func reopen(_ old: Harness, in new: Harness) {
     #expect(h.frame(d) == spot)
   }
 
-  @Test(arguments: [false, true]) func evacuatedWindowsStayOutOfViewWhileTheMainDesktopIs(makingWay: Bool) {
+  /// As Arbor ships no view takes a floating window away, so it goes home to where it floated, over the framed window.
+  @Test func returningFloatingWindowsGoBackToWhereTheyFloatedOverAFramedWindow() {
+    let (h, a, _, _) = makeHarness()
+    let spot = CGRect(x: 1900, y: 100, width: 300, height: 200)
+    let d = h.system.open(app: "Terminal", frame: spot)
+    h.run("zoom \(a.rawValue)")
+    #expect(h.frame(d) == spot && !h.controller.parked.contains(d))
+
+    h.system.setDisplays([main])
+    #expect(h.system.isVisible(d))
+
+    h.system.setDisplays([main, side])
+    #expect(sideWorkspace(h)!.camera == sideWorkspace(h)!.tree.leaf(containing: a), "the side display is still zoomed in on a")
+    #expect(h.frame(d) == spot && !h.controller.parked.contains(d))
+    h.run("show-all")
+    #expect(h.frame(d) == spot)
+  }
+
+  /// Where they make way they wait on the Desktop, which is out of view. As Arbor ships they arrive over the framed window.
+  @Test(arguments: [false, true]) func evacuatedWindowsAreNotLostWhileTheMainDesktopIsOutOfView(makingWay: Bool) {
     let (h, a, b, c) = makeHarness(settings: makingWay ? .makingWay : Settings())
     let m = h.system.open(app: "Finder", frame: CGRect(x: 200, y: 200, width: 600, height: 400))
     h.system.cursor = CGPoint(x: 700, y: 450)
@@ -578,8 +599,8 @@ private func reopen(_ old: Harness, in new: Harness) {
     h.scheduler.runPending()
     for window in [a, b, c] {
       #expect(h.workspace.isFloating(window))
-      #expect(!h.system.isVisible(window), "\(window) waits on the Desktop, which is out of view")
-      #expect(h.controller.parked.contains(window))
+      #expect(h.system.isVisible(window) == !makingWay, "\(window) waits on a Desktop out of view only if it makes way")
+      #expect(h.controller.parked.contains(window) == makingWay)
     }
     h.run("show-all")
     let desktop = h.layout!.desktopFrame!

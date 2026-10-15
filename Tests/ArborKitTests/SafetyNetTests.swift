@@ -133,12 +133,13 @@ import Testing
     #expect(!h.run("back").ok && !h.run("forward").ok && !h.run("view 1").ok)
   }
 
-  /// It used to show the Desktop. Since QUESTIONS Q29 it is the window that comes, and the view stays.
-  @Test func framingAFloatingWindowThatIsOutOfViewBringsItInToFillTheView() {
-    let (h, a, _, c) = makeHarness()
+  /// It used to show the Desktop. Since QUESTIONS Q29 it is the window that comes, and the view stays. (Only one that makes way had left
+  /// with the Desktop.)
+  @Test(arguments: [false, true]) func framingAFloatingWindowWhileAnotherIsFramedFillsTheViewWithIt(makingWay: Bool) {
+    let (h, a, _, c) = makeHarness(settings: makingWay ? .makingWay : Settings())
     h.run("dock \(a.rawValue) left")
     h.run("zoom \(a.rawValue)")
-    #expect(!h.system.isVisible(c))
+    #expect(h.system.isVisible(c) == !makingWay)
     let own = h.workspace.floating[c]
     #expect(h.run("zoom \(c.rawValue)").ok)
     #expect(h.workspace.camera == h.workspace.tree.leaf(containing: a))
@@ -182,8 +183,11 @@ import Testing
 
   // MARK: Focus
 
-  @Test func keyboardFocusLeavesAWindowThatGoesOutOfView() {
-    let (h, a, b, c) = makeHarness()
+  /// Arbor takes the keyboard only from a window that it takes out of view, and what names a window or a space gives it the keyboard. A
+  /// floating window leaves the view only if it makes way. One that stays keeps the keyboard when a key only moves the view, a direction
+  /// too, which is no name.
+  @Test(arguments: [false, true]) func keyboardFocusLeavesAWindowThatGoesOutOfView(makingWay: Bool) {
+    let (h, a, b, c) = makeHarness(settings: makingWay ? .makingWay : Settings())
     h.run("dock \(a.rawValue) left")
     h.run("dock \(b.rawValue) right")
     h.system.userFocus(a)
@@ -191,11 +195,11 @@ import Testing
     h.run("desktop")
     #expect(h.system.focused == c, "the floating window is all there is to see")
     h.run("neighbor right")
-    #expect(h.system.focused == b)
+    #expect(h.system.focused == (makingWay ? b : c))
     h.run("back")
     #expect(h.system.focused == c)
     h.run("forward")
-    #expect(h.system.focused == b)
+    #expect(h.system.focused == (makingWay ? b : c))
     // With several in view: the one under the pointer.
     h.run("zoom \(b.rawValue)")
     h.system.setMinimized(c, true)
@@ -269,15 +273,19 @@ import Testing
     #expect(h.overlays.previewHistory.compactMap { $0 }.count == 1)
   }
 
-  @Test func aFloatingWindowStaysWhereItWasDropped() {
-    let (h, a, _, c) = makeHarness()
+  @Test(arguments: [false, true]) func aFloatingWindowStaysWhereItWasDropped(makingWay: Bool) {
+    let (h, a, _, c) = makeHarness(settings: makingWay ? .makingWay : Settings())
     h.run("dock \(a.rawValue) left")
     let desktop = h.layout!.desktopFrame!
     h.system.drag(c, through: [titleBar(h, c), CGPoint(x: desktop.midX + 20, y: desktop.minY + 60)])
     let dropped = h.frame(c)!
     #expect(desktop.contains(dropped))
     h.run("zoom \(a.rawValue)")
-    #expect(!h.system.isVisible(c))
+    if makingWay {
+      #expect(!h.system.isVisible(c))
+    } else {
+      #expect(h.frame(c) == dropped, "no view takes it away")
+    }
     h.run("back")
     #expect(h.frame(c) == dropped)
   }
@@ -293,41 +301,48 @@ import Testing
 
   // MARK: Out of view
 
-  /// A parked window keeps one point on its own display and none on the neighbour.
-  @Test func parkedWindowsDoNotShowUpOnTheDisplayNextDoor() {
+  /// A parked window keeps one point on its own display and none on the neighbour. A docked one the view leaves out is parked,
+  /// and a floating one where floating windows make way: as Arbor ships it stays where it floats.
+  @Test(arguments: [false, true]) func parkedWindowsDoNotShowUpOnTheDisplayNextDoor(makingWay: Bool) {
+    let settings = makingWay ? Settings.makingWay : Settings()
+    let whereMailFloats = CGRect(x: 500, y: 300, width: 600, height: 400)
     // Taller than the main display, so that its bottom-right corner is not free.
     let tall = DisplaySnapshot(
       id: DisplayID("tall"), frame: CGRect(x: 1440, y: -100, width: 1280, height: 1200),
       visibleFrame: CGRect(x: 1440, y: -75, width: 1280, height: 1175), isMain: false)
-    let (t, ta, tb, tc) = makeHarness(displays: [FakeWindowSystem.standardDisplay, tall])
+    let (t, ta, tb, tc) = makeHarness(displays: [FakeWindowSystem.standardDisplay, tall], settings: settings)
     // This test is about the corners Arbor asks for. macOS stops a window its title bar higher (OutOfViewTests, TitleBarTests).
     t.system.echoes.titleBarStaysReachable = false
     t.run("dock \(ta.rawValue) left")
     t.run("dock \(tb.rawValue) right")
     t.run("zoom \(ta.rawValue)")
-    for window in [tb, tc] {
+    for window in makingWay ? [tb, tc] : [tb] {
       let frame = t.frame(window)!
       #expect(!frame.overlaps(tall.frame), "\(window) at \(frame) shows on the other display")
       #expect(frame.maxX == 1 && frame.minY == 899, "one point in the bottom-left corner instead: \(frame)")
     }
+    if !makingWay { #expect(t.frame(tc) == whereMailFloats) }
 
-    let (h, a, b, c) = makeHarness(displays: [FakeWindowSystem.standardDisplay, Self.side])
+    let (h, a, b, c) = makeHarness(displays: [FakeWindowSystem.standardDisplay, Self.side], settings: settings)
     h.system.echoes.titleBarStaysReachable = false
     h.run("dock \(a.rawValue) left")
     h.run("dock \(b.rawValue) right")
     h.run("zoom \(a.rawValue)")
     let main = FakeWindowSystem.standardDisplay.frame
-    for window in [b, c] {
+    for window in makingWay ? [b, c] : [b] {
       let frame = h.frame(window)!
       #expect(!frame.overlaps(Self.side.frame), "\(window) at \(frame) shows on the other display")
       #expect(frame.overlaps(main), "macOS moves windows that are wholly off screen")
       #expect(frame.intersection(main).width <= 1 && frame.intersection(main).height <= 1)
     }
+    if !makingWay { #expect(h.frame(c) == whereMailFloats) }
     // On the right-hand display the right-hand corner is free.
     let d = h.system.open(app: "Xcode", frame: CGRect(x: 1600, y: 100, width: 600, height: 400))
     let e = h.system.open(app: "Terminal", frame: CGRect(x: 1700, y: 200, width: 600, height: 400))
     h.system.cursor = CGPoint(x: 1800, y: 300)
     h.run("dock \(d.rawValue) left")
+    // As Arbor ships only a docked window goes there.
+    if !makingWay { h.run("dock \(e.rawValue) right") }
     h.run("zoom \(d.rawValue)")
     #expect(h.frame(e)!.origin == CGPoint(x: Self.side.frame.maxX - 1, y: Self.side.frame.maxY - 1))
   }
@@ -349,18 +364,23 @@ import Testing
 
   // MARK: Floating windows
 
-  @Test func aFloatingWindowMovedToAnotherDisplayBelongsThere() {
-    let (h, _, _, c) = makeHarness(displays: [FakeWindowSystem.standardDisplay, Self.side])
+  @Test(arguments: [false, true]) func aFloatingWindowMovedToAnotherDisplayBelongsThere(makingWay: Bool) {
+    let (h, _, _, c) = makeHarness(
+      displays: [FakeWindowSystem.standardDisplay, Self.side], settings: makingWay ? .makingWay : Settings())
     let placed = CGRect(x: 1700, y: 200, width: 500, height: 300)
     h.system.userMove(c, to: placed)
     #expect(!h.workspace.contains(c))
     #expect(h.controller.workspaces[Self.side.id]!.floating[c] == placed)
-    // So it leaves and returns with that display's Desktop, not with the first one's.
+    // So where floating windows make way it leaves and returns with that display's Desktop, not with the first one's.
     let d = h.system.open(app: "Xcode", frame: CGRect(x: 1600, y: 100, width: 600, height: 400))
     h.system.cursor = CGPoint(x: 1800, y: 300)
     h.run("dock \(d.rawValue) left")
     h.run("zoom \(d.rawValue)")
-    #expect(!h.system.isVisible(c))
+    if makingWay {
+      #expect(!h.system.isVisible(c))
+    } else {
+      #expect(h.frame(c) == placed, "no view takes it away, on this display or that")
+    }
     h.run("back")
     #expect(h.system.isVisible(c))
   }
@@ -465,10 +485,13 @@ import Testing
 
   /// A display goes, Arbor ends, the display is back, Arbor starts. What floats and is in view is left where it is found, on the
   /// display it is on: a start moves no floating window (collab/QUESTIONS.md, Q16; `FoundAtAStartTests`). Until 2026-10-15 it was
-  /// fetched to where it had floated before the display went. That is still where it goes if the run before left it out of view.
-  @Test(arguments: [false, true])
-  func floatingWindowsOfADisplayThatIsBackAtLaunchGoBackToItOnlyFromOutOfView(leftOutOfView: Bool) {
-    let h = Harness(displays: [FakeWindowSystem.standardDisplay, Self.side])
+  /// fetched to where it had floated before the display went. That is still where it goes if the run before left it out of view:
+  /// one whose floating windows made way, or an earlier build, since no view takes one away as Arbor ships. `makingWay` is
+  /// the setting of the run that finds it.
+  @Test(arguments: [false, true], [false, true])
+  func floatingWindowsOfADisplayThatIsBackAtLaunchGoBackToItOnlyFromOutOfView(leftOutOfView: Bool, makingWay: Bool) {
+    let h = Harness(
+      displays: [FakeWindowSystem.standardDisplay, Self.side], settings: leftOutOfView || makingWay ? .makingWay : Settings())
     let a = h.system.open(app: "Safari", frame: CGRect(x: 1500, y: 100, width: 500, height: 400))
     let f = h.system.open(app: "Notes", frame: CGRect(x: 2100, y: 300, width: 400, height: 300))
     let m = h.system.open(app: "Mail", frame: CGRect(x: 100, y: 100, width: 500, height: 400))
@@ -489,7 +512,9 @@ import Testing
     if leftOutOfView { h.controller.saveNow() } else { h.controller.shutdown() }
     let waiting = h.frame(f)!
 
-    let again = Harness(displays: [FakeWindowSystem.standardDisplay, Self.side], saved: h.store.saved)
+    let again = Harness(
+      displays: [FakeWindowSystem.standardDisplay, Self.side], settings: makingWay ? .makingWay : Settings(),
+      saved: h.store.saved)
     for window in h.system.allWindows() {
       again.system.open(
         app: window.appName, bundleID: window.bundleID, title: window.title, pid: window.pid, frame: window.frame)

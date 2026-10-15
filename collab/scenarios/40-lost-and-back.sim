@@ -8,7 +8,7 @@ open Slack
 dock 101 left
 dock 102 right
 dock 103 beside 102 bottom
-# Slack (104) floats on the Desktop between them.
+# Slack (104) floats between them. Whatever the view does, it stays where it is.
 expect floating 104
 expect count docked 3
 # ⌃⌥↩ frames the focused window; the same keys again return to where the view came from.
@@ -16,11 +16,16 @@ focus 103
 zoom
 expect fills 103
 expect hidden 101
-expect hidden 104
+expect hidden 102
+expect still 104
+expect visible 104
+expect at 104 300 200 640x420
 zoom
 expect camera root
 expect visible 101
+expect still 104
 expect visible 104
+expect at 104 300 200 640x420
 # Wandering: frame Mail, walk to its neighbour, step in where there is nothing to step into.
 zoom 102
 neighbor down
@@ -38,10 +43,12 @@ expect visible 104
 # A call starts. Framed on Notes, pause brings every window into view and Arbor lets go.
 zoom 103
 expect hidden 101
+expect visible 104
 pause
 expect ok
 expect visible 101
 expect visible 102
+expect still 104
 expect visible 104
 dock 104 left
 expect fail
@@ -52,6 +59,8 @@ expect ok
 expect camera 103
 expect fills 103
 expect hidden 101
+expect still 104
+expect visible 104
 expect count docked 2
 # Enough: back to a normal Mac.
 float-all

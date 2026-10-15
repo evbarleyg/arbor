@@ -14,10 +14,12 @@ private let side = DisplaySnapshot(
 /// Windows Arbor has moved out of view must stay out of view while they are meant to be, and must
 /// never be left there.
 @Suite @MainActor struct OutOfViewTests {
-  /// `[a | b]` with `f` floating in the middle, zoomed onto `a`: `b` and `f` are parked. (With a column for the Desktop
-  /// `[a | Desktop | b]`.)
-  func zoomedIn(displays: [DisplaySnapshot] = [main]) -> (Harness, a: WindowID, b: WindowID, f: WindowID) {
-    let h = Harness(displays: displays)
+  /// `[a | b]` (with a column for the Desktop `[a | Desktop | b]`) with `f` floating in the middle, zoomed onto `a`: `b` is parked. So is `f` where floating windows make way: as Arbor
+  /// ships no view takes it from `whereItFloats`.
+  func zoomedIn(
+    displays: [DisplaySnapshot] = [main], settings: Settings = Harness.settingsWhenNoneAreGiven
+  ) -> (Harness, a: WindowID, b: WindowID, f: WindowID) {
+    let h = Harness(displays: displays, settings: settings)
     let a = h.system.open(app: "Safari", pid: 11, frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     let b = h.system.open(app: "Notes", pid: 12, frame: CGRect(x: 300, y: 200, width: 600, height: 400))
     let f = h.system.open(app: "Calculator", pid: 13, frame: CGRect(x: 560, y: 300, width: 320, height: 300))
@@ -28,6 +30,8 @@ private let side = DisplaySnapshot(
     return (h, a, b, f)
   }
 
+  let whereItFloats = CGRect(x: 560, y: 300, width: 320, height: 300)
+
   /// What may show of a parked window: one point across, and its title bar, which macOS keeps on screen and which is the window's own.
   func sliver(_ h: Harness, _ window: WindowID) -> CGFloat { h.system.windows[window]!.titleBar }
 
@@ -37,41 +41,57 @@ private let side = DisplaySnapshot(
     return h.system.displayList.map { frame.intersection($0.frame).area }.reduce(0, +)
   }
 
-  @Test func parkedWindowsStayOutOfViewWhenADisplayIsPluggedInBesideThem() {
-    let (h, _, b, f) = zoomedIn()
+  @Test(arguments: [false, true]) func parkedWindowsStayOutOfViewWhenADisplayIsPluggedInBesideThem(makingWay: Bool) {
+    let (h, _, b, f) = zoomedIn(settings: makingWay ? .makingWay : Settings())
     h.system.setDisplays([main, side])
     #expect(visibleArea(h, b) <= sliver(h, b), "\(h.frame(b)!) shows on the new display")
-    #expect(visibleArea(h, f) <= sliver(h, f), "\(h.frame(f)!) shows on the new display")
+    if makingWay {
+      #expect(visibleArea(h, f) <= sliver(h, f), "\(h.frame(f)!) shows on the new display")
+    } else {
+      #expect(h.frame(f) == whereItFloats, "it never left")
+    }
   }
 
-  @Test func parkedWindowsDoNotShowOnANeighbourThatEndsJustAboveTheBottom() {
+  @Test(arguments: [false, true]) func parkedWindowsDoNotShowOnANeighbourThatEndsJustAboveTheBottom(makingWay: Bool) {
     // The neighbour ends 20 points above this display's bottom. A window parked at the very corner would clear it,
     // but macOS stops the window its title bar's height up, where it would show along the neighbour's bottom edge.
     let shorter = DisplaySnapshot(
       id: DisplayID("shorter"), frame: CGRect(x: 1440, y: 0, width: 1280, height: 880),
       visibleFrame: CGRect(x: 1440, y: 0, width: 1280, height: 880), isMain: false)
-    let (h, _, b, f) = zoomedIn(displays: [main, shorter])
+    let (h, _, b, f) = zoomedIn(displays: [main, shorter], settings: makingWay ? .makingWay : Settings())
     #expect(visibleArea(h, b) <= sliver(h, b), "\(h.frame(b)!)")
-    #expect(visibleArea(h, f) <= sliver(h, f), "\(h.frame(f)!)")
+    if makingWay {
+      #expect(visibleArea(h, f) <= sliver(h, f), "\(h.frame(f)!)")
+    } else {
+      #expect(h.frame(f) == whereItFloats, "it never left")
+    }
   }
 
-  @Test func parkedWindowsStayOutOfViewBetweenTwoTallerDisplays() {
+  @Test(arguments: [false, true]) func parkedWindowsStayOutOfViewBetweenTwoTallerDisplays(makingWay: Bool) {
     let left = DisplaySnapshot(
       id: DisplayID("left"), frame: CGRect(x: -1920, y: 0, width: 1920, height: 1080),
       visibleFrame: CGRect(x: -1920, y: 0, width: 1920, height: 1080), isMain: false)
-    let (h, _, b, f) = zoomedIn(displays: [main, side, left])
+    let (h, _, b, f) = zoomedIn(displays: [main, side, left], settings: makingWay ? .makingWay : Settings())
     #expect(visibleArea(h, b) <= h.frame(b)!.width * sliver(h, b), "\(h.frame(b)!) shows on a neighbouring display")
-    #expect(visibleArea(h, f) <= h.frame(f)!.width * sliver(h, f), "\(h.frame(f)!) shows on a neighbouring display")
+    if makingWay {
+      #expect(visibleArea(h, f) <= h.frame(f)!.width * sliver(h, f), "\(h.frame(f)!) shows on a neighbouring display")
+    } else {
+      #expect(h.frame(f) == whereItFloats, "it never left")
+    }
   }
 
-  @Test func parkedWindowsStayOutOfViewWhenTheResolutionGrows() {
-    let (h, _, b, f) = zoomedIn()
+  @Test(arguments: [false, true]) func parkedWindowsStayOutOfViewWhenTheResolutionGrows(makingWay: Bool) {
+    let (h, _, b, f) = zoomedIn(settings: makingWay ? .makingWay : Settings())
     let larger = DisplaySnapshot(
       id: main.id, frame: CGRect(x: 0, y: 0, width: 1920, height: 1200),
       visibleFrame: CGRect(x: 0, y: 25, width: 1920, height: 1175), isMain: true)
     h.system.setDisplays([larger])
     #expect(visibleArea(h, b) <= sliver(h, b), "\(h.frame(b)!)")
-    #expect(visibleArea(h, f) <= sliver(h, f), "\(h.frame(f)!)")
+    if makingWay {
+      #expect(visibleArea(h, f) <= sliver(h, f), "\(h.frame(f)!)")
+    } else {
+      #expect(h.frame(f) == whereItFloats, "it never left")
+    }
     h.run("back")
     #expect(h.system.isVisible(b) && h.system.isVisible(f))
   }
@@ -94,7 +114,8 @@ private let side = DisplaySnapshot(
     let below = DisplaySnapshot(
       id: DisplayID("below"), frame: CGRect(x: 269, y: 900, width: 2560, height: 1440),
       visibleFrame: CGRect(x: 269, y: 900, width: 2560, height: 1440), isMain: false)
-    let h = Harness(displays: [main, left, below])
+    // Floating windows that make way: only they leave with the Desktop, and this one has the size the fault was found with.
+    let h = Harness(displays: [main, left, below], settings: .makingWay)
     let a = h.system.open(app: "Safari", pid: 11, frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     let b = h.system.open(app: "Notes", pid: 12, frame: CGRect(x: 300, y: 100, width: 600, height: 648))
     h.start()
@@ -104,7 +125,8 @@ private let side = DisplaySnapshot(
   }
 
   @Test func aFloatingWindowWhoseAppDoesNotAnswerStillCountsAsOutOfView() {
-    let (h, _, _, f) = zoomedIn()
+    // Floating windows that make way: only they leave with the Desktop.
+    let (h, _, _, f) = zoomedIn(settings: .makingWay)
     h.system.setUnresponsive(pid: 13, true)
     h.run("show-all")
     #expect(!h.system.isVisible(f), "it could not be moved")
@@ -153,17 +175,26 @@ private let side = DisplaySnapshot(
     #expect(h.frame(f) == CGRect(x: 560, y: 300, width: 320, height: 300), "where the user had it")
   }
 
-  @Test func aParkedWindowThatMacOSPullsBackIntoViewIsParkedAgain() {
+  @Test(arguments: [false, true]) func aParkedWindowThatMacOSPullsBackIntoViewIsParkedAgain(makingWay: Bool) {
     // Seen on macOS 26: when a window leaves full screen, the app's parked windows are moved onto the screen.
-    let (h, _, b, f) = zoomedIn()
+    let (h, _, b, f) = zoomedIn(settings: makingWay ? .makingWay : Settings())
+    let moved = CGRect(x: 300, y: 100, width: 320, height: 300)
     h.system.userMove(b, to: CGRect(x: 270, y: 31, width: 464, height: 851))
-    h.system.userMove(f, to: CGRect(x: 300, y: 100, width: 320, height: 300))
+    h.system.userMove(f, to: moved)
     h.scheduler.advance(by: 1)
     #expect(visibleArea(h, b) <= sliver(h, b), "\(h.frame(b)!)")
-    #expect(visibleArea(h, f) <= sliver(h, f), "\(h.frame(f)!)")
+    if makingWay {
+      #expect(visibleArea(h, f) <= sliver(h, f), "\(h.frame(f)!)")
+    } else {
+      #expect(h.frame(f) == moved, "it was in view, so this is a move like any other and nothing of Arbor's")
+    }
     h.run("back")
     #expect(h.frame(b) == h.layout!.windowFrames[b])
-    #expect(h.frame(f) == CGRect(x: 560, y: 300, width: 320, height: 300), "where the user had it, not where macOS put it")
+    if makingWay {
+      #expect(h.frame(f) == whereItFloats, "where the user had it, not where macOS put it")
+    } else {
+      #expect(h.frame(f) == moved)
+    }
   }
 
   @Test func arborDoesNotFightOverAParkedWindowForEver() {
@@ -218,8 +249,9 @@ private let side = DisplaySnapshot(
     #expect(h.system.isVisible(f), "\(h.frame(f)!)")
   }
 
-  @Test func aFloatingWindowLeftParkedByACrashComesBack() {
-    let (old, _, _, f) = zoomedIn()
+  /// Only an Arbor whose floating windows made way, or an earlier build, leaves one there. Whichever starts next fetches it.
+  @Test(arguments: [false, true]) func aFloatingWindowLeftParkedByACrashComesBack(makingWay: Bool) {
+    let (old, _, _, f) = zoomedIn(settings: .makingWay)
     // The state on disk is from just before the zoom; then Arbor is killed.
     old.run("back")
     old.controller.saveNow()
@@ -227,7 +259,7 @@ private let side = DisplaySnapshot(
     old.run("forward")
     #expect(!old.system.isVisible(f))
 
-    let h = Harness(saved: saved)
+    let h = Harness(settings: makingWay ? .makingWay : Settings(), saved: saved)
     for window in old.system.allWindows() {
       h.system.open(
         app: window.appName, bundleID: window.bundleID, title: window.title, pid: window.pid, frame: window.frame)
@@ -474,10 +506,11 @@ private let side = DisplaySnapshot(
   }
 
   /// After a crash Arbor finds the window in the corner but does not know that it put it there.
+  /// Floating windows that make way: only they leave with the Desktop, and stay away until it is back.
   @Test func aWindowFoundInItsCornerAtLaunchIsSentBackIfSomethingPullsItIntoView() {
-    let (old, _, _, f) = zoomedIn()
+    let (old, _, _, f) = zoomedIn(settings: .makingWay)
     old.controller.saveNow()
-    let h = Harness(saved: old.store.saved)
+    let h = Harness(settings: .makingWay, saved: old.store.saved)
     for window in old.system.allWindows() {
       h.system.open(
         app: window.appName, bundleID: window.bundleID, title: window.title, pid: window.pid, frame: window.frame)
@@ -489,6 +522,23 @@ private let side = DisplaySnapshot(
     h.system.userMove(f, to: CGRect(x: 500, y: 300, width: 320, height: 300))
     h.run("relayout")
     #expect(!h.system.isVisible(f), "\(h.frame(f)!)")
+  }
+
+  /// As Arbor ships, the same corner is nowhere a floating window belongs, whatever the view is on.
+  @Test func aFloatingWindowFoundInItsCornerAtLaunchIsFetchedThoughTheViewIsStillOnAnother() {
+    let (old, a, b, f) = zoomedIn(settings: .makingWay)
+    old.controller.saveNow()
+    let h = Harness(settings: Settings(), saved: old.store.saved)
+    for window in old.system.allWindows() {
+      h.system.open(
+        app: window.appName, bundleID: window.bundleID, title: window.title, pid: window.pid, frame: window.frame)
+    }
+    h.controller.restartedAfterAccident = true
+    h.start()
+    #expect(h.workspace.camera == h.workspace.tree.leaf(containing: a) && !h.system.isVisible(b), "the view is still on Safari")
+    #expect(h.frame(f) == whereItFloats)
+    h.run("relayout")
+    #expect(h.frame(f) == whereItFloats, "and it stays")
   }
 
   @Test(arguments: [false, true]) func aWindowHangingOffTheScreenAtLaunchIsNotCountedAsOutOfView(makingWay: Bool) {
@@ -515,12 +565,16 @@ private let side = DisplaySnapshot(
   }
 
   /// Arbor lets go of a window that is out of view while its app does not answer. It still owes it the way back.
-  @Test func aWindowLetGoOfWhileItsAppDoesNotAnswerIsBroughtBackWhenItDoes() {
-    let (h, _, b, f) = zoomedIn()
+  @Test(arguments: [false, true]) func aWindowLetGoOfWhileItsAppDoesNotAnswerIsBroughtBackWhenItDoes(makingWay: Bool) {
+    let (h, _, b, f) = zoomedIn(settings: makingWay ? .makingWay : Settings())
     for (window, pid, bundle) in [(b, Int32(12), "com.example.notes"), (f, Int32(13), "com.example.calculator")] {
       h.system.setUnresponsive(pid: pid, true)
       h.run("exclude \(bundle)")
-      #expect(!h.system.isVisible(window), "it could not be moved")
+      if window == b || makingWay {
+        #expect(!h.system.isVisible(window), "it could not be moved")
+      } else {
+        #expect(h.frame(window) == whereItFloats, "it never left, so nothing is owed")
+      }
       h.system.setUnresponsive(pid: pid, false)
       h.scheduler.runPending()
       #expect(main.frame.contains(h.frame(window)!), "\(window) is still at \(h.frame(window)!)")

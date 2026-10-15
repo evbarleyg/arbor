@@ -14,11 +14,21 @@ private let cameraCommands = [
 /// Holding the view (docs/features/F58-hold-the-view.md), as the person sharing their screen meets it: nothing may
 /// jump, appear or change size unless they asked for it.
 @Suite @MainActor struct HoldTests {
-  /// [keynote | mail / slack] with notes floating, framed on keynote, which has the keyboard: mail, slack and notes
-  /// are out of view.
+  /// [keynote | mail / slack] with notes floating, framed on keynote, which has the keyboard: mail and slack are out
+  /// of view. Notes is not: as Arbor ships no view takes a floating window away, so it lies over keynote, where it opened.
+  /// A test of floating windows that make way, which leave with the Desktop, says `$0.floatingWindowsMakeWay = true`.
   struct Stage {
     let h: Harness
     let keynote, mail, slack, notes: WindowID
+    /// Where notes was when the stage was set.
+    let whereNotesLay: CGRect?
+  }
+
+  /// What floats over a view was in view before the hold and is no part of what the hold keeps out. It is held to more: nothing
+  /// that happens on a held view moves it. Only as Arbor ships.
+  func expectNotesLiesWhereItDid(_ s: Stage, _ comment: Comment? = nil, sourceLocation: SourceLocation = #_sourceLocation) {
+    #expect(s.h.frame(s.notes) == s.whereNotesLay, comment, sourceLocation: sourceLocation)
+    #expect(s.h.system.isVisible(s.notes), comment, sourceLocation: sourceLocation)
   }
 
   /// `apart`: each app is a process of its own, as a story about ⌘Tab needs. Otherwise they are one, and a switch among them is ⌘`.
@@ -43,7 +53,7 @@ private let cameraCommands = [
     h.run("dock \(slack.rawValue) beside \(mail.rawValue) bottom")
     h.run("zoom \(keynote.rawValue)")
     h.system.userFocus(keynote)
-    return Stage(h: h, keynote: keynote, mail: mail, slack: slack, notes: notes)
+    return Stage(h: h, keynote: keynote, mail: mail, slack: slack, notes: notes, whereNotesLay: h.frame(notes))
   }
 
   /// Everything an audience could notice.
@@ -62,8 +72,8 @@ private let cameraCommands = [
 
   // MARK: 1. A window out of view that takes the keyboard
 
-  @Test func aWindowOutOfViewThatTakesTheKeyboardStaysThereAndTheKeyboardGoesBack() {
-    let s = stage()
+  @Test(arguments: [false, true]) func aWindowOutOfViewThatTakesTheKeyboardStaysThereAndTheKeyboardGoesBack(makingWay: Bool) {
+    let s = stage { $0.floatingWindowsMakeWay = makingWay }
     #expect(s.h.run("hold").ok)
     let before = picture(s.h)
     s.h.system.clearFrameLog()
@@ -73,12 +83,32 @@ private let cameraCommands = [
     #expect(s.h.system.focused == s.keynote)
     s.h.system.comesForward(s.mail)
     #expect(s.h.system.focused == s.keynote)
-    s.h.system.comesForward(s.notes)
-    #expect(s.h.system.focused == s.keynote, "a floating window out of view is turned away as well")
+    // Only a floating window that makes way has left with the Desktop. As Arbor ships it is in view: the next test.
+    if makingWay {
+      s.h.system.comesForward(s.notes)
+      #expect(s.h.system.focused == s.keynote, "a floating window out of view is turned away as well")
+    }
 
     s.h.scheduler.advance(by: 2)
     #expect(picture(s.h) == before)
     #expect(s.h.system.frameLog.isEmpty, "no window was moved, not even to where it already was")
+  }
+
+  /// As Arbor ships no view takes a floating window away, so it was in front of the audience before the hold began. There is
+  /// nobody to turn away, and nothing to move.
+  @Test func aFloatingWindowOverAHeldViewKeepsTheKeyboardItTakes() {
+    let s = stage()
+    #expect(s.h.run("hold").ok)
+    let before = picture(s.h)
+    s.h.system.clearFrameLog()
+    s.h.system.comesForward(s.notes)
+    s.h.scheduler.advance(by: 2)
+    #expect(s.h.system.focused == s.notes, "it is in view")
+    #expect(picture(s.h).frames == before.frames)
+    #expect(picture(s.h).workspaces == before.workspaces, "and the view is where it was")
+    #expect(s.h.system.frameLog.isEmpty, "no window was moved, not even to where it already was")
+    s.h.system.comesForward(s.slack)
+    #expect(s.h.system.focused == s.notes, "the window in view that had the keyboard is the one it goes back to")
   }
 
   @Test func theKeyboardGoesBackToTheWindowThatHadItNotJustAnyWindowInView() {
@@ -527,7 +557,8 @@ private let cameraCommands = [
     #expect(result.message == "released; Terminal was left floating")
     #expect(picture(h) == before, "nothing an audience could notice")
     #expect(h.workspace.isFloating(t))
-    for window in [s.mail, s.slack, s.notes] { #expect(!h.system.isVisible(window), "\(window)") }
+    for window in [s.mail, s.slack] { #expect(!h.system.isVisible(window), "\(window)") }
+    expectNotesLiesWhereItDid(s)
     // It is not kept for later either.
     h.run("hold")
     #expect(h.run("release").message == "released")
@@ -757,7 +788,8 @@ private let cameraCommands = [
     h.run("dock \(t.rawValue) left")
     h.system.drag(t, through: [h.frame(t)!.center, CGPoint(x: 700, y: 450), CGPoint(x: 1438, y: 450)])
     h.scheduler.runPending()
-    for window in [s.mail, s.slack, s.notes] { #expect(!h.system.isVisible(window), "\(window)") }
+    for window in [s.mail, s.slack] { #expect(!h.system.isVisible(window), "\(window)") }
+    expectNotesLiesWhereItDid(s)
     #expect(h.controller.holdLevel == .view)
   }
 
@@ -853,7 +885,8 @@ private let cameraCommands = [
     h.run("hold")
     func onlyTheTwo(_ comment: Comment) {
       #expect(Set(h.layout!.windowFrames.keys) == [s.mail, s.slack], comment)
-      #expect(!h.system.isVisible(s.keynote) && !h.system.isVisible(s.notes), comment)
+      #expect(!h.system.isVisible(s.keynote), comment)
+      expectNotesLiesWhereItDid(s, comment)
       #expect(h.controller.holdLevel == .view, comment)
     }
     #expect(h.run("dock \(s.slack.rawValue) left").ok)
@@ -884,7 +917,8 @@ private let cameraCommands = [
     #expect(result.ok, "\(result.message)")
     #expect(h.frame(s.mail)!.maxX <= h.frame(s.slack)!.minX)
     #expect(Set(h.layout!.windowFrames.keys) == [s.mail, s.slack])
-    #expect(!h.system.isVisible(s.keynote) && !h.system.isVisible(s.notes))
+    #expect(!h.system.isVisible(s.keynote))
+    expectNotesLiesWhereItDid(s)
     #expect(h.controller.holdLevel == .view)
     expectWindowsMatchLayout(h, on: h.display)
   }
@@ -900,11 +934,13 @@ private let cameraCommands = [
     #expect(h.workspace.isDocked(t))
     #expect(h.frame(s.keynote)!.maxX <= h.frame(t)!.minX)
     #expect(Set(h.layout!.windowFrames.keys) == [s.keynote, t])
-    #expect(!h.system.isVisible(s.mail) && !h.system.isVisible(s.notes))
+    #expect(!h.system.isVisible(s.mail))
+    expectNotesLiesWhereItDid(s)
     h.system.drag(t, through: [h.frame(t)!.center, CGPoint(x: 700, y: 898)])
     #expect(h.frame(s.keynote)!.maxY <= h.frame(t)!.minY)
     #expect(Set(h.layout!.windowFrames.keys) == [s.keynote, t])
-    #expect(!h.system.isVisible(s.mail) && !h.system.isVisible(s.notes))
+    #expect(!h.system.isVisible(s.mail))
+    expectNotesLiesWhereItDid(s)
     #expect(h.controller.holdLevel == .view)
   }
 
@@ -925,7 +961,7 @@ private let cameraCommands = [
     h.system.close(s.mail)
     #expect(h.workspace.tree.invariantViolations().isEmpty)
     #expect(!h.system.isVisible(s.keynote), "nothing that was out of view comes in")
-    #expect(!h.system.isVisible(s.notes))
+    expectNotesLiesWhereItDid(s)
     #expect(Set(h.layout!.windowFrames.keys) == [s.slack, xcode], "and nothing that was in view goes")
     #expect(h.controller.holdLevel == .view)
     expectWindowsMatchLayout(h, on: h.display)
@@ -999,11 +1035,13 @@ private let cameraCommands = [
     h.system.beginDrag(s.keynote)
     for point in [CGPoint(x: 700, y: 300), CGPoint(x: 900, y: 500), CGPoint(x: 1438, y: 450), CGPoint(x: 2, y: 450)] {
       h.system.moveDrag(to: point, holding: 0.5)
-      for window in [s.mail, s.slack, s.notes] { #expect(!h.system.isVisible(window), "\(window) at \(point)") }
+      for window in [s.mail, s.slack] { #expect(!h.system.isVisible(window), "\(window) at \(point)") }
+      expectNotesLiesWhereItDid(s, "at \(point)")
     }
     h.system.endDrag()
     h.scheduler.runPending()
-    for window in [s.mail, s.slack, s.notes] { #expect(!h.system.isVisible(window), "\(window)") }
+    for window in [s.mail, s.slack] { #expect(!h.system.isVisible(window), "\(window)") }
+    expectNotesLiesWhereItDid(s)
     #expect(h.frame(s.keynote) == h.visibleFrame.insetBy(dx: 12, dy: 12), "and it goes back to its place")
   }
 
@@ -1042,25 +1080,41 @@ private let cameraCommands = [
     #expect(h.system.isVisible(s.slack), "it floats over the view")
     #expect(Set(h.layout!.windowFrames.keys) == [s.mail])
     #expect(!h.system.isVisible(s.keynote))
-    #expect(!h.system.isVisible(s.notes))
+    expectNotesLiesWhereItDid(s)
     #expect(h.controller.holdLevel == .view)
     expectWindowsMatchLayout(h, on: h.display)
   }
 
-  @Test func windowsOutOfViewCannotBeBroughtInByArrangingThem() {
-    let s = stage()
+  @Test(arguments: [false, true]) func windowsOutOfViewCannotBeBroughtInByArrangingThem(makingWay: Bool) {
+    let s = stage { $0.floatingWindowsMakeWay = makingWay }
     s.h.run("hold")
     let before = picture(s.h)
+    // Only a floating window that makes way has left with the Desktop. As Arbor ships it is in view: the next test.
+    let aboutNotes = makingWay ? ["toggle-float \(s.notes.rawValue)", "dock \(s.notes.rawValue) right"] : []
     for text in [
-      "dock \(s.mail.rawValue) left", "float \(s.mail.rawValue)", "toggle-float \(s.notes.rawValue)",
-      "dock \(s.notes.rawValue) right", "dock \(s.mail.rawValue) beside \(s.keynote.rawValue) left",
+      "dock \(s.mail.rawValue) left", "float \(s.mail.rawValue)", "dock \(s.mail.rawValue) beside \(s.keynote.rawValue) left",
       "resize \(s.mail.rawValue) left 20",
-    ] {
+    ] + aboutNotes {
       let result = s.h.run(text)
       #expect(!result.ok, "\(text)")
       #expect(result.message.contains("out of view") && result.message.contains("held"), "\(result.message)")
     }
     #expect(picture(s.h) == before)
+  }
+
+  /// As Arbor ships it lies over the view, like a window that opened there: it is one of the windows in view, and those can be
+  /// arranged among themselves.
+  @Test func aFloatingWindowOverAHeldViewCanBeDockedAtItsEdgeAndNothingElseComesIn() {
+    let s = stage()
+    let h = s.h
+    h.run("hold")
+    let result = h.run("dock \(s.notes.rawValue) right")
+    #expect(result.ok, "\(result.message)")
+    #expect(h.frame(s.keynote)!.maxX <= h.frame(s.notes)!.minX)
+    #expect(Set(h.layout!.windowFrames.keys) == [s.keynote, s.notes])
+    for window in [s.mail, s.slack] { #expect(!h.system.isVisible(window), "\(window)") }
+    #expect(h.controller.holdLevel == .view)
+    expectWindowsMatchLayout(h, on: h.display)
   }
 
   // MARK: 5. The ways out
@@ -1269,11 +1323,13 @@ private let cameraCommands = [
     h.system.beginDrag(xcode)
     for point in [CGPoint(x: 1500, y: 450), CGPoint(x: 700, y: 450), CGPoint(x: 300, y: 450), CGPoint(x: 2, y: 450)] {
       h.system.moveDrag(to: point, holding: 0.5)
-      for window in [safari, s.mail, s.slack, s.notes] { #expect(!h.system.isVisible(window), "\(window) at \(point)") }
+      for window in [safari, s.mail, s.slack] { #expect(!h.system.isVisible(window), "\(window) at \(point)") }
+      expectNotesLiesWhereItDid(s, "at \(point)")
     }
     h.system.endDrag()
     h.scheduler.runPending()
-    for window in [safari, s.mail, s.slack, s.notes] { #expect(!h.system.isVisible(window), "\(window)") }
+    for window in [safari, s.mail, s.slack] { #expect(!h.system.isVisible(window), "\(window)") }
+    expectNotesLiesWhereItDid(s)
   }
 
   // MARK: A display goes while its window is being typed in
@@ -1353,7 +1409,8 @@ private let cameraCommands = [
     s.h.system.close(s.keynote)
     #expect(s.h.controller.holdLevel == .view)
     #expect(s.h.controller.holdMenu.first?.title == "The view is held: nothing is in it · Release")
-    for window in [safari, s.mail, s.slack, s.notes] { #expect(!s.h.system.isVisible(window), "\(window)") }
+    for window in [safari, s.mail, s.slack] { #expect(!s.h.system.isVisible(window), "\(window)") }
+    expectNotesLiesWhereItDid(s)
   }
 
   @Test func aFloatingWindowCanBeDockedOnAnotherDisplaysHeldViewAndNothingElseComesIn() {
@@ -1378,10 +1435,12 @@ private let cameraCommands = [
     s.h.system.setDisplays([FakeWindowSystem.standardDisplay])
     #expect(s.h.controller.holdLevel == .view)
     #expect(s.h.frame(s.keynote) == framed)
-    for window in [xcode, safari, s.mail, s.slack, s.notes] { #expect(!s.h.system.isVisible(window), "\(window)") }
+    for window in [xcode, safari, s.mail, s.slack] { #expect(!s.h.system.isVisible(window), "\(window)") }
+    expectNotesLiesWhereItDid(s)
     s.h.system.close(s.keynote)
     #expect(s.h.controller.holdLevel == .view)
-    for window in [xcode, safari, s.mail, s.slack, s.notes] { #expect(!s.h.system.isVisible(window), "\(window)") }
+    for window in [xcode, safari, s.mail, s.slack] { #expect(!s.h.system.isVisible(window), "\(window)") }
+    expectNotesLiesWhereItDid(s)
     #expect(s.h.run("release").ok)
     expectWindowsMatchLayout(s.h, on: s.h.display)
   }
@@ -1480,7 +1539,8 @@ private let cameraCommands = [
     let t = h.system.open(app: "Terminal", bundleID: terminal)
     h.system.userFocus(s.keynote)
     h.run("release")
-    for window in [s.mail, s.slack, s.notes] { #expect(!h.system.isVisible(window), "\(window)") }
+    for window in [s.mail, s.slack] { #expect(!h.system.isVisible(window), "\(window)") }
+    expectNotesLiesWhereItDid(s)
     #expect(h.system.isVisible(t))
     #expect(h.system.isVisible(s.keynote))
   }
@@ -1980,6 +2040,9 @@ private let cameraCommands = [
   /// Keynote alone in view, held. It closes, and macOS gives the keyboard to Mail, which is out of view.
   private func heldAndEmptyWithTheKeyboardInMail(apart: Bool = false, configure: (inout Settings) -> Void = { _ in }) -> Stage {
     let s = stage(apart: apart, configure: configure)
+    // Notes is in the Dock: floating, it would lie in view, somebody to give the keyboard to.
+    s.h.system.setMinimized(s.notes, true)
+    s.h.scheduler.advance(by: 1)
     s.h.run("hold")
     s.h.system.echoes.keyboard = false
     s.h.system.close(s.keynote)
@@ -2086,7 +2149,8 @@ private let cameraCommands = [
   /// A floating window out of view that goes changes no layout, least of all that of a view with nothing in it, and here nobody says
   /// where the keyboard went.
   @Test(arguments: ["closes", "is minimized", "is hidden"]) func theLineDoesNotOutliveAWindowWhoseEndChangesNothing(end: String) {
-    let s = stage(apart: true)
+    // One that makes way: only those are out of view with the Desktop.
+    let s = stage(apart: true) { $0.floatingWindowsMakeWay = true }
     let h = s.h
     h.run("hold")
     #expect(h.workspace.isFloating(s.notes) && !h.system.isVisible(s.notes), "the premise")

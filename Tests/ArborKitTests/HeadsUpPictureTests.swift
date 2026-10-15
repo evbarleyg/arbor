@@ -114,7 +114,11 @@
         ("1-nothing-there", "back"), ("2-problem", "out"), ("3-names-keys", "view 9"), ("4-docked", "dock left"), ("5-out-of-view", "zoom"),
         ("6-change", "save-view 2"),
       ] {
+        // Mail is docked too by then, or nothing would go out of view: what floats stays wherever the view goes.
+        if name == "5-out-of-view" { for quietly in ["dock 102 right", "focus 101"] { h.run(quietly) } }
+        let said = h.overlays.messages.count
         h.run(command, from: .shortcut)
+        #expect(h.overlays.messages.count > said, "\(command) says something")
         lines.append((name, try #require(h.overlays.messages.last?.model, "\(command) says something")))
       }
       var narrow = lines[4].model

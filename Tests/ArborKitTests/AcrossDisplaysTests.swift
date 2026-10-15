@@ -213,9 +213,9 @@ import Testing
     #expect(h.frame(c) == twin.frame(c), "\(String(describing: h.frame(c))), the twin \(String(describing: twin.frame(c)))")
   }
 
-  /// Let go of right after a journey, and out of view within the same moment: where a window leaves from is where it comes back to, but not at
-  /// the size another display has made of it for the moment.
-  @Test func outOfViewWithinTheMomentTheShortSizeIsNotWrittenDown() {
+  /// Let go of right after a journey, and the view goes elsewhere within the same moment. It stays, since no view takes a floating window out of view,
+  /// and the size another display has made of it for the moment is not written down.
+  @Test func withTheViewElsewhereWithinTheMomentTheShortSizeIsNotWrittenDown() {
     let (h, c) = aLargeWindowDockedOnTheSmallDisplay()
     let other = h.system.open(app: "Notes 2", pid: 14, frame: CGRect(x: 2400, y: 200, width: 500, height: 400))
     h.run("dock \(other.rawValue) right")
@@ -226,7 +226,7 @@ import Testing
     #expect(h.frame(c)!.height < Self.own.height - 2, "or this proves nothing: it was cut: \(h.frame(c)!)")
     h.run("dock \(other.rawValue) right")
     h.run("zoom \(other.rawValue)")
-    #expect(h.controller.parked.contains(c), "or this proves nothing: it went out of view")
+    #expect(h.controller.parked.contains(c) == h.floatingWindowsLeaveWithTheDesktop)
     #expect(h.controller.workspaces[Self.large.id]?.floating[c]?.size == Self.own.size, "\(String(describing: h.controller.workspaces[Self.large.id]?.floating[c]))")
     h.scheduler.advance(by: 5)
     h.run("show-all")

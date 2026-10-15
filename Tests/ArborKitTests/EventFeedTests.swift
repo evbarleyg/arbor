@@ -106,18 +106,19 @@ private final class Listener {
 
   // MARK: view
 
-  @Test func aMoveOfTheViewSaysWhereItIsAndWhatIsInView() throws {
-    let (h, feed, a, b, _) = makeHarness()
+  @Test(arguments: [false, true]) func aMoveOfTheViewSaysWhereItIsAndWhatIsInView(makingWay: Bool) throws {
+    let (h, feed, a, b, _) = makeHarness(settings: makingWay ? .makingWay : Settings())
     let listener = try Listener(feed, "watch view")
     _ = try listener.take()
 
     h.run("zoom \(a.rawValue)")
     turn(h)
+    // Notes, and Mail only if floating windows make way: as Arbor ships it floats where it did, in view.
     #expect(try listener.take() == [
       .view(
         ArborEvent.View(
           display: h.display, node: leaf(h, a), kind: .window, label: "Safari", depth: 1, windows: [a], apps: ["Safari"],
-          outOfView: 2, canGoBack: true, canGoForward: false))
+          outOfView: makingWay ? 2 : 1, canGoBack: true, canGoForward: false))
     ])
 
     h.run("desktop")
@@ -264,8 +265,8 @@ private final class Listener {
     #expect(!listener.lines.isEmpty)
   }
 
-  @Test func aBurstIsReportedAsTheDifferenceItMade() throws {
-    let (h, feed, a, b, c) = makeHarness()
+  @Test(arguments: [false, true]) func aBurstIsReportedAsTheDifferenceItMade(makingWay: Bool) throws {
+    let (h, feed, a, b, c) = makeHarness(settings: makingWay ? .makingWay : Settings())
     let listener = try Listener(feed, "watch window layout view")
     _ = try listener.take()
     // There and back again, in one go: nobody could have seen it.
@@ -276,10 +277,13 @@ private final class Listener {
     h.run("zoom \(b.rawValue)")
     turn(h)
     let events = try listener.take()
-    #expect(events.map(\.kind) == [.window, .window, .layout, .view], "one layout and one view")
+    // Mail floats again at the end. Making way it has left with the Desktop. As Arbor ships it is in view, as it was: no news at all.
+    let kinds: [ArborEvent.Kind] = makingWay ? [.window, .window, .layout, .view] : [.window, .layout, .view]
+    #expect(events.map(\.kind) == kinds, "one layout and one view")
     let changes = events.compactMap { if case .window(let change) = $0 { change } else { nil } }
-    #expect(changes.map(\.change) == [.state, .state], "nothing about docking the window that ended as it began")
-    #expect(changes.map(\.window.id) == [a, c])
+    #expect(
+      changes.map(\.change) == (makingWay ? [.state, .state] : [.state]), "nothing about docking the window that ended as it began")
+    #expect(changes.map(\.window.id) == (makingWay ? [a, c] : [a]))
     #expect(changes.allSatisfy { $0.window.state == .outOfView })
     guard case .view(let view)? = events.last else { return }
     #expect(view.windows == [b])
@@ -571,8 +575,8 @@ private final class Listener {
     #expect(floated.map(\.window.id) == [a, b, c])
   }
 
-  @Test func aWindowsStateSaysWhereItIs() throws {
-    let (h, feed, a, b, c) = makeHarness()
+  @Test(arguments: [false, true]) func aWindowsStateSaysWhereItIs(makingWay: Bool) throws {
+    let (h, feed, a, b, c) = makeHarness(settings: makingWay ? .makingWay : Settings())
     let listener = try Listener(feed, "watch window layout")
     _ = try listener.take()
     func states() throws -> [WindowID: ArborEvent.Window.State] {
@@ -582,9 +586,10 @@ private final class Listener {
       return Dictionary(uniqueKeysWithValues: changes.map { ($0.window.id, $0.window.state) })
     }
     h.run("zoom \(a.rawValue)")
-    #expect(try states() == [b: .outOfView, c: .outOfView], "floating windows leave with the Desktop")
+    // Floating windows that make way leave with the Desktop. As Arbor ships Mail stays in view, and nothing is said of it.
+    #expect(try states() == (makingWay ? [b: .outOfView, c: .outOfView] : [b: .outOfView]))
     h.run("show-all")
-    #expect(try states() == [b: .inView, c: .inView])
+    #expect(try states() == (makingWay ? [b: .inView, c: .inView] : [b: .inView]))
     h.system.setMinimized(b, true)
     #expect(try states() == [b: .minimized])
     h.system.setMinimized(b, false)

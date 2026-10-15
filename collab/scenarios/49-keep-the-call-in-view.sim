@@ -8,10 +8,15 @@ open Zoom 320x240
 move 103 1090 50 320 240
 dock 101 left
 dock 102 right
-# Without a pin the call leaves with the Desktop.
+# Without a pin the call stays where it is, as all that floats does, but behind whatever comes forward: the editor covers it.
 zoom 101
-expect hidden 103
+expect fills 101
+expect in-front 101
+expect still 103
+expect visible 103
+expect at 103 1090 50 320x240
 show-all
+expect still 103
 expect visible 103
 # Keep "Zoom" in View.
 move 103 1090 50 320 240

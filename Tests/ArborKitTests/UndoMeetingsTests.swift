@@ -700,8 +700,8 @@ private final class Listener {
     #expect(widths[true] != widths[false], "or this has tested nothing")
   }
 
-  @Test func windowsThatWereMadeSmallOutOfViewComeBackAtTheirSizes() {
-    var settings = Settings()
+  @Test(arguments: [false, true]) func windowsThatWereMadeSmallOutOfViewComeBackAtTheirSizes(makingWay: Bool) {
+    var settings = makingWay ? Settings.makingWay : Settings()
     settings.shrinkOutOfView = true
     let (h, a, b, c) = makeHarness(settings: settings)
     h.run("dock \(a.rawValue) left")
@@ -709,7 +709,8 @@ private final class Listener {
     let before = frames(h)
     h.run("resize \(b.rawValue) left 60")
     h.run("zoom \(a.rawValue)")
-    #expect(!h.system.isVisible(b) && !h.system.isVisible(c))
+    // Mail floats: it leaves with the Desktop only if it makes way.
+    #expect(!h.system.isVisible(b) && h.system.isVisible(c) == !makingWay)
     // Nothing of the resize shows while Safari is framed, so the view steps out, and everything comes back into view.
     #expect(h.run("undo").message == "undid resize \(b) left")
     #expect(frames(h) == before)
@@ -820,8 +821,9 @@ private final class Listener {
     expectWindowsMatchLayout(h)
   }
 
+  /// Floating windows that make way: only they leave with the Desktop.
   @Test func aWindowOutOfViewWhoseAppDoesNotAnswerIsNotLostByAnUndoThatBringsItBack() {
-    let (h, a, b, _) = makeHarness()
+    let (h, a, b, _) = makeHarness(settings: .makingWay)
     // Safari floats on the Desktop; Notes is docked and framed, which takes the Desktop out of view.
     h.run("dock \(b.rawValue) left")
     h.run("zoom \(b.rawValue)")
@@ -835,6 +837,25 @@ private final class Listener {
     h.scheduler.advance(by: 5)
     #expect(h.system.isVisible(a), "fetched as soon as its app answers")
     #expect(!h.controller.parked.contains(a))
+    expectWindowsMatchLayout(h)
+  }
+
+  /// As Arbor ships Safari never left, so the undo has nothing to ask of an app that does not answer.
+  @Test func aFloatingWindowWhoseAppDoesNotAnswerIsLeftWhereItIsByAnUndoThatMovesTheView() {
+    let (h, a, b, _) = makeHarness(settings: Settings())
+    let place = h.frame(a)
+    h.run("dock \(b.rawValue) left")
+    h.run("zoom \(b.rawValue)")
+    #expect(h.system.isVisible(a) && h.frame(a) == place)
+
+    h.system.setUnresponsive(pid: 1000, true)
+    h.system.clearFrameLog()
+    #expect(h.run("undo").message == "undid dock \(b) left")
+    #expect(h.workspace.isFloating(a) && h.workspace.isFloating(b))
+    #expect(h.frame(a) == place && !h.controller.parked.contains(a))
+    h.system.setUnresponsive(pid: 1000, false)
+    h.scheduler.advance(by: 5)
+    #expect(h.frame(a) == place && !h.system.frameLog.contains { $0.window == a }, "nor is anything owed to it")
     expectWindowsMatchLayout(h)
   }
 

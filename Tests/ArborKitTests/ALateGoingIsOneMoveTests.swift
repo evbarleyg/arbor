@@ -115,8 +115,9 @@ import Testing
 
   // MARK: What floats
 
-  /// `[a / c | Desktop | b / a2]` or the group, the keyboard in `a`, and Music floating on the Desktop, out of view.
-  func aFloatOutOfView(group: Bool) -> (Harness, a: WindowID, a2: WindowID, music: WindowID) {
+  /// `[a / c | Desktop | b / a2]` or the group, the keyboard in `a`, and Music floating on the Desktop. Where floating windows make way it
+  /// is out of view with the Desktop. As Arbor ships it lies where it opened.
+  func aFloatOnTheDesktop(group: Bool, makingWay: Bool) -> (Harness, a: WindowID, a2: WindowID, music: WindowID) {
     let (h, a, a2): (Harness, WindowID, WindowID)
     if group {
       let s = AGoingIsOneActTests().aGroupInView()
@@ -125,6 +126,9 @@ import Testing
       let s = AGoingIsOneActTests().aColumnInView()
       (h, a, a2) = (s.0, s.a, s.a2)
     }
+    // Said here, with everything docked and nothing floating yet: the desks are another suite's and take no settings.
+    #expect(h.run("set floatingWindowsMakeWay \(makingWay)").ok)
+    h.scheduler.advance(by: 2)
     let view = h.workspace.camera
     h.run("show-all")
     let music = h.system.open(app: "Music", pid: 14, frame: CGRect(x: 620, y: 300, width: 200, height: 200))
@@ -134,21 +138,40 @@ import Testing
     h.run("out")
     h.scheduler.advance(by: 2)
     #expect(h.workspace.camera == view && h.system.focused == a)
-    #expect(!h.system.isVisible(a2) && !h.system.isVisible(music), "\(h.ascii())")
+    #expect(!h.system.isVisible(a2) && h.system.isVisible(music) == !makingWay, "\(h.ascii())")
     return (h, a, a2, music)
   }
 
   /// The view goes out, the Desktop comes into view and the float with it, and back. A layout that only follows a change of the arrangement
   /// sends nothing out of view: the float stayed lying over a view it had never been in.
+  ///
+  /// Floating windows that make way: only they leave with the Desktop.
   @Test(arguments: [false, true], [Going.close, .minimize]) func aFloatThatWasOutOfViewIsOutOfViewAgain(group: Bool, going: Going) {
-    let (h, a, a2, music) = aFloatOutOfView(group: group)
+    let (h, a, a2, music) = aFloatOnTheDesktop(group: group, makingWay: true)
     name(a2, in: h, late: 0.06)
     #expect(h.system.isVisible(a2) && h.system.isVisible(music))
     go(going, a, in: h)
     #expect(!h.system.isVisible(a2))
     #expect(!h.system.isVisible(music) && h.controller.parked.contains(music), "\(String(describing: h.frame(music)))\n\(h.ascii())")
     bothOrdersEndAlike(going) {
-      let s = aFloatOutOfView(group: group)
+      let s = aFloatOnTheDesktop(group: group, makingWay: true)
+      return (s.0, s.a, s.a2)
+    }
+  }
+
+  /// As Arbor ships it never left. The view goes out and comes back around it, and nobody sets its frame.
+  @Test(arguments: [false, true], [Going.close, .minimize]) func aFloatThatWasInViewLiesWhereItLay(group: Bool, going: Going) {
+    let (h, a, a2, music) = aFloatOnTheDesktop(group: group, makingWay: false)
+    let place = h.frame(music)
+    h.system.clearFrameLog()
+    name(a2, in: h, late: 0.06)
+    #expect(h.system.isVisible(a2), "the view has followed")
+    go(going, a, in: h)
+    #expect(!h.system.isVisible(a2))
+    #expect(h.frame(music) == place && !h.controller.parked.contains(music), "\(String(describing: h.frame(music)))\n\(h.ascii())")
+    #expect(!h.system.frameLog.contains { $0.window == music }, "\(h.system.frameLog)")
+    bothOrdersEndAlike(going) {
+      let s = aFloatOnTheDesktop(group: group, makingWay: false)
       return (s.0, s.a, s.a2)
     }
   }
@@ -174,9 +197,10 @@ import Testing
   }
 
   /// The window macOS picks floats itself, and went out of view with the Desktop when Safari was framed. It stayed over Safari and kept the keyboard.
-  @Test(arguments: [Going.close, .minimize]) func theHeirFloats(going: Going) {
+  /// So where floating windows make way. As Arbor ships it has lain over Safari all along, and both orders end alike there too.
+  @Test(arguments: [Going.close, .minimize], [false, true]) func theHeirFloats(going: Going, makingWay: Bool) {
     bothOrdersEndAlike(going) {
-      let h = Harness()
+      let h = Harness(settings: makingWay ? .makingWay : Settings())
       let safari = h.system.open(app: "Safari", pid: 11, frame: CGRect(x: 100, y: 100, width: 700, height: 500))
       let a2 = h.system.open(app: "Music", pid: 16, frame: CGRect(x: 300, y: 200, width: 700, height: 480))
       h.start()
@@ -186,7 +210,7 @@ import Testing
       h.scheduler.advance(by: 2)
       let a = h.system.open(app: "Music", pid: 16, frame: CGRect(x: 400, y: 300, width: 600, height: 400))
       h.scheduler.advance(by: 2)
-      #expect(h.system.focused == a && !h.system.isVisible(a2) && h.system.isVisible(safari))
+      #expect(h.system.focused == a && h.system.isVisible(a2) == !makingWay && h.system.isVisible(safari))
       return (h, a, a2)
     }
   }

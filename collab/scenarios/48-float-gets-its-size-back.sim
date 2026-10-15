@@ -42,18 +42,32 @@ expect floating 102
 expect size 102 800x600
 expect visible 102
 
-# Floated out of a view without the Desktop, it belongs to that view: walk away, come back, and it is there.
+# Floated out of a view without the Desktop, it floats where it is: walk away, come back, and nobody has touched it.
 open Slack
 arrange
 zoom 101
 out
 float 101
 expect visible 101
+expect at 101 520 290 400x300
+neighbor right
+expect hidden 103
+expect still 101
+expect visible 101
+back
+expect still 101
+expect visible 101
+expect at 101 520 290 400x300
+# Only floating windows that make way leave with the view. There it belongs to the view it was floated out of, and goes and
+# comes with that.
+set floatingWindowsMakeWay true
 neighbor right
 expect hidden 101
 back
 expect visible 101
 expect size 101 400x300
+set floatingWindowsMakeWay false
+expect still 101
 close 104
 
 # Walking a docked window about changes nothing.

@@ -542,6 +542,8 @@ private func withNothingRemembered(_ old: Harness) -> Harness {
 
 @Suite @MainActor struct ParkSmallTests {
   let shrinking = settings { $0.shrinkOutOfView = true }
+  /// And floating windows make way: only then does a floating window leave the view, with the Desktop, to be made small.
+  let shrinkingAndMakingWay = settings { $0.shrinkOutOfView = true; $0.floatingWindowsMakeWay = true }
 
   /// [a | b], two halves, with c floating over the two of them.
   func makeDesk(
@@ -562,14 +564,15 @@ private func withNothingRemembered(_ old: Harness) -> Harness {
     }
   }
 
-  @Test func windowsOutOfViewAreShrunkAndComeBackExactly() {
-    let (h, a, b, c) = makeDesk(shrinking)
+  @Test(arguments: [false, true]) func windowsOutOfViewAreShrunkAndComeBackExactly(makingWay: Bool) {
+    let (h, a, b, c) = makeDesk(makingWay ? shrinkingAndMakingWay : shrinking)
     let before = frames(h)
     #expect(h.run("zoom \(a.rawValue)").ok)
-    for window in [b, c] {
+    for window in makingWay ? [b, c] : [b] {
       #expect(h.frame(window)!.size == small)
       expectOutOfSight(h, window)
     }
+    if !makingWay { #expect(h.frame(c) == before[c] && h.system.isVisible(c), "what floats stays in view, at its size") }
     #expect(h.run("back").ok)
     #expect(frames(h) == before)
     #expect(h.controller.parked.isEmpty)
@@ -584,7 +587,8 @@ private func withNothingRemembered(_ old: Harness) -> Harness {
   }
 
   @Test func aWindowAlreadySmallerIsNotMadeLarger() {
-    let (h, a, _, c) = makeDesk(shrinking)
+    // Floating windows that make way: a docked window is as large as its slot, and only these float out of view.
+    let (h, a, _, c) = makeDesk(shrinkingAndMakingWay)
     h.system.userMove(c, to: CGRect(x: 520, y: 300, width: 250, height: 500))
     h.run("zoom \(a.rawValue)")
     #expect(h.frame(c)!.size == CGSize(width: 250, height: 200))
@@ -598,26 +602,33 @@ private func withNothingRemembered(_ old: Harness) -> Harness {
   }
 
   @Test func theFloatingFrameTheUserChoseSurvivesParking() {
-    let (h, a, _, c) = makeDesk(shrinking)
+    // Floating windows that make way: only they leave with the Desktop.
+    let (h, a, _, c) = makeDesk(shrinkingAndMakingWay)
     let chosen = h.workspace.floating[c]
     h.run("zoom \(a.rawValue)")
+    #expect(h.frame(c)!.size == small, "or nothing was parked")
     // What the real window system reports a moment after Arbor shrinks a window.
     h.controller.windowChanged(h.system.windows[c]!.snapshot, userInitiated: true)
     #expect(h.workspace.floating[c] == chosen)
   }
 
-  @Test func anAppThatRefusesToShrinkIsStillOutOfSightAndIsNotTakenForATile() {
+  @Test(arguments: [false, true]) func anAppThatRefusesToShrinkIsStillOutOfSightAndIsNotTakenForATile(makingWay: Bool) {
     // With a display beside the bottom-right corner, windows park bottom-left, where width shows.
-    let (h, a, b, c) = makeDesk(shrinking, displays: [main, tallSide])
+    let (h, a, b, c) = makeDesk(makingWay ? shrinkingAndMakingWay : shrinking, displays: [main, tallSide])
     h.system.setMinimumSize(b, CGSize(width: 450, height: 300))
     h.system.setMinimumSize(c, CGSize(width: 400, height: 150))
     let before = frames(h)
     h.run("zoom \(a.rawValue)")
     #expect(h.frame(b)!.size == CGSize(width: 450, height: 300))
-    #expect(h.frame(c)!.size == CGSize(width: 400, height: 200))
-    #expect(h.frame(b)!.maxX == 1 && h.frame(c)!.maxX == 1, "bottom-left")
+    #expect(h.frame(b)!.maxX == 1, "bottom-left")
     expectOutOfSight(h, b)
-    expectOutOfSight(h, c)
+    if makingWay {
+      #expect(h.frame(c)!.size == CGSize(width: 400, height: 200))
+      #expect(h.frame(c)!.maxX == 1, "bottom-left")
+      expectOutOfSight(h, c)
+    } else {
+      #expect(h.frame(c) == before[c], "what floats stays in view, and is asked nothing")
+    }
     h.run("back")
     #expect(frames(h) == before)
     #expect(h.layout!.tiles.isEmpty, "a size refused in the corner says nothing about the slot")
@@ -663,8 +674,8 @@ private func withNothingRemembered(_ old: Harness) -> Harness {
     #expect(h.system.isVisible(b))
   }
 
-  @Test func aDisplayGoingAwayGivesItsParkedWindowsTheirSizesBack() {
-    let first = Harness(displays: [main, side], settings: shrinking)
+  @Test(arguments: [false, true]) func aDisplayGoingAwayGivesItsParkedWindowsTheirSizesBack(makingWay: Bool) {
+    let first = Harness(displays: [main, side], settings: makingWay ? shrinkingAndMakingWay : shrinking)
     let a = first.system.open(app: "Safari", frame: CGRect(x: 1500, y: 100, width: 500, height: 400))
     let b = first.system.open(app: "Notes", frame: CGRect(x: 1700, y: 150, width: 510, height: 410))
     let c = first.system.open(app: "Mail", frame: CGRect(x: 1900, y: 200, width: 520, height: 420))
@@ -675,7 +686,8 @@ private func withNothingRemembered(_ old: Harness) -> Harness {
     let h = withNothingRemembered(first)
     let before = frames(h)
     h.run("zoom \(a.rawValue)")
-    #expect(h.frame(b)!.size == small && h.frame(c)!.size == small)
+    // What floats leaves the view, and is made small, only where floating windows make way.
+    #expect(h.frame(b)!.size == small && h.frame(c)!.size == (makingWay ? small : before[c]!.size))
     h.system.setDisplays([main])
     #expect(h.frame(b)!.size == before[b]!.size)
     #expect(h.frame(c)!.size == CGSize(width: 520, height: 420), "the size the user gave it, now that there is room")
@@ -712,10 +724,10 @@ private func withNothingRemembered(_ old: Harness) -> Harness {
     #expect(h.system.isVisible(b))
   }
 
-  @Test func aWindowParkedAgainOnAnotherDisplayKeepsTheSizeItHadInView() {
-    // b is parked small on the side display; the display goes away while the main display's
-    // Desktop is out of view, so b is parked again, still small.
-    let first = Harness(displays: [main, side], settings: shrinking)
+  /// b is parked small on the side display, and the display goes away while the main display's Desktop is out of view.
+  /// Returns b and the size it had in view.
+  func makeTheDisplayOfAParkedWindowGoAway(_ settings: Settings) -> (Harness, WindowID, CGSize) {
+    let first = Harness(displays: [main, side], settings: settings)
     let m = first.system.open(app: "Xcode", frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     let a = first.system.open(app: "Safari", frame: CGRect(x: 1500, y: 100, width: 500, height: 400))
     let b = first.system.open(app: "Notes", frame: CGRect(x: 1700, y: 150, width: 510, height: 410))
@@ -729,14 +741,30 @@ private func withNothingRemembered(_ old: Harness) -> Harness {
     let h = withNothingRemembered(first)
     let size = h.frame(b)!.size
     h.run("zoom \(a.rawValue)")
+    #expect(h.frame(b)!.size == small)
     // The keyboard is on the display that stays: a change of displays ends with the focused window in view, and
     // one that arrives floating would bring the Desktop, and b with it.
     h.system.userFocus(m)
     h.system.setDisplays([main])
+    return (h, b, size)
+  }
+
+  @Test func aWindowParkedAgainOnAnotherDisplayKeepsTheSizeItHadInView() {
+    // Floating windows that make way: b arrives floating, on a Desktop that is out of view, so it is parked again, still small.
+    let (h, b, size) = makeTheDisplayOfAParkedWindowGoAway(shrinkingAndMakingWay)
     #expect(h.frame(b)!.size == small)
     #expect(h.controller.parked.contains(b))
     #expect(h.run("exclude com.example.notes").ok)
     #expect(h.frame(b)!.size == size)
+    #expect(h.system.isVisible(b))
+  }
+
+  /// As Arbor ships it arrives floating too, and what floats is in view whatever the view shows.
+  @Test func aParkedWindowWhoseDisplayGoesAwayArrivesInViewAtTheSizeItHadInView() {
+    let (h, b, size) = makeTheDisplayOfAParkedWindowGoAway(shrinking)
+    #expect(h.workspace.isFloating(b))
+    #expect(h.frame(b)!.size == size)
+    #expect(!h.controller.parked.contains(b))
     #expect(h.system.isVisible(b))
   }
 
@@ -759,14 +787,15 @@ private func withNothingRemembered(_ old: Harness) -> Harness {
     #expect(frames(h) == before)
   }
 
-  @Test func pausingBringsEveryWindowBackAtItsSizeAndResumingCarriesOn() {
-    let (h, a, b, c) = makeDesk(shrinking)
+  @Test(arguments: [false, true]) func pausingBringsEveryWindowBackAtItsSizeAndResumingCarriesOn(makingWay: Bool) {
+    let (h, a, b, c) = makeDesk(makingWay ? shrinkingAndMakingWay : shrinking)
     let before = frames(h)
     h.run("zoom \(a.rawValue)")
     #expect(h.run("pause").ok)
     #expect(h.frame(b) == before[b] && h.frame(c) == before[c])
     #expect(h.run("resume").ok)
-    #expect(h.frame(b)!.size == small && h.frame(c)!.size == small)
+    // What floats leaves the view again only where floating windows make way.
+    #expect(h.frame(b)!.size == small && (makingWay ? h.frame(c)!.size == small : h.frame(c) == before[c]))
     h.run("show-all")
     #expect(frames(h) == before)
   }
@@ -837,12 +866,14 @@ private func withNothingRemembered(_ old: Harness) -> Harness {
 
   @Test func afterACrashAFloatingWindowLeftInTheCornerReturnsToTheDesktop() {
     // Without the switch too: the saved arrangement lists it as floating where the user left it.
-    for settings in [Settings(), shrinking] {
+    // Floating windows that make way: only they leave with the Desktop.
+    for settings in [Settings.makingWay, shrinkingAndMakingWay] {
       let (old, a, _, c) = makeDesk(settings)
       let before = frames(old)
       // The state on disk is from before the zoom, so the Desktop is in view at the next launch.
       old.controller.saveNow()
       old.run("zoom \(a.rawValue)")
+      #expect(old.controller.parked.contains(c), "or nothing was left in the corner")
       let h = relaunchAfterCrash(old, settings: settings, savingFirst: false)
       #expect(h.workspace.camera == h.workspace.tree.root)
       #expect(h.frame(c) == before[c])
@@ -866,7 +897,8 @@ private func withNothingRemembered(_ old: Harness) -> Harness {
   }
 
   @Test func afterACrashAWindowNobodyRemembersIsRescuedAtAUsableSize() {
-    let (old, a, b, c) = makeDesk(shrinking)
+    // The Arbor that died had floating windows make way: only they leave with the Desktop, and only so is c cut on one side.
+    let (old, a, b, c) = makeDesk(shrinkingAndMakingWay)
     old.system.userMove(c, to: CGRect(x: 520, y: 300, width: 250, height: 500))
     old.run("zoom \(a.rawValue)")
     let h = relaunchAfterCrash(old, forgetState: true)
@@ -888,10 +920,11 @@ private func withNothingRemembered(_ old: Harness) -> Harness {
   }
 
   @Test func afterACrashAFloatingWindowStillOutOfViewIsKnownByTheSizeTheUserGaveIt() {
-    let (old, a, _, c) = makeDesk(shrinking)
+    // Floating windows that make way: only they leave with the Desktop.
+    let (old, a, _, c) = makeDesk(shrinkingAndMakingWay)
     let size = old.frame(c)!.size
     old.run("zoom \(a.rawValue)")
-    let h = relaunchAfterCrash(old, settings: shrinking)
+    let h = relaunchAfterCrash(old, settings: shrinkingAndMakingWay)
     #expect(h.controller.parked.contains(c))
     #expect(h.frame(c)!.size == small)
     #expect(h.run("exclude com.example.mail").ok)

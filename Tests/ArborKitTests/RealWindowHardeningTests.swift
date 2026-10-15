@@ -138,8 +138,9 @@ import Testing
 
   /// The floating half of a layout takes a window out of view only when the camera moves, and the layout that follows
   /// an app's waking up is not such a move. The move is still owed.
+  /// Floating windows that make way: only they leave with the Desktop.
   @Test func aHungAppsFloatingWindowGoesOutOfViewWhenTheAppWakesUp() {
-    let (h, a, b) = makeHarness()
+    let (h, a, b) = makeHarness(settings: .makingWay)
     let c = h.system.open(app: "Notes", pid: 2000, frame: CGRect(x: 400, y: 300, width: 300, height: 200))
     #expect(h.workspace.isFloating(c))
     h.system.setUnresponsive(pid: 2000, true)
@@ -154,13 +155,30 @@ import Testing
     #expect(h.system.isVisible(c))
   }
 
+  /// As Arbor ships nothing is owed to it: only the docked window leaves when the app wakes up.
+  @Test func aHungAppsFloatingWindowStaysWhereItIsWhenTheAppWakesUp() {
+    let (h, a, b) = makeHarness(settings: Settings())
+    let place = CGRect(x: 400, y: 300, width: 300, height: 200)
+    let c = h.system.open(app: "Notes", pid: 2000, frame: place)
+    #expect(h.workspace.isFloating(c))
+    h.system.setUnresponsive(pid: 2000, true)
+    h.system.clearFrameLog()
+    h.run("zoom \(a.rawValue)")
+    h.system.setUnresponsive(pid: 2000, false)
+    h.scheduler.advance(by: 0.5)
+    #expect(!h.system.isVisible(b))
+    #expect(h.frame(c) == place && !h.controller.parked.contains(c))
+    #expect(!h.system.frameLog.contains { $0.window == c })
+  }
+
   /// What is owed is that one move. A floating window that was moved as asked is not touched by the same layout.
-  @Test func anotherAppsFloatingWindowStaysWhereItsUserPutItWhenAHungAppWakesUp() {
-    let (h, a, _) = makeHarness()
+  @Test(arguments: [false, true]) func anotherAppsFloatingWindowStaysWhereItsUserPutItWhenAHungAppWakesUp(makingWay: Bool) {
+    let (h, a, _) = makeHarness(settings: makingWay ? .makingWay : Settings())
     let c = h.system.open(app: "Safari", pid: 1000, frame: CGRect(x: 400, y: 300, width: 300, height: 200))
     h.system.setUnresponsive(pid: 2000, true)
     h.run("zoom \(a.rawValue)")
-    #expect(!h.system.isVisible(c))
+    // It leaves with the Desktop only if it makes way.
+    #expect(h.system.isVisible(c) == !makingWay)
     // Its user fetches it, as with ⌘` or Mission Control, and puts it somewhere.
     let chosen = CGRect(x: 500, y: 350, width: 300, height: 200)
     h.system.userMove(c, to: chosen)
@@ -390,14 +408,17 @@ import Testing
     expectWindowsMatchLayout(h, on: h.display)
   }
 
-  @Test func quittingWhileAnAppHangsDoesNotStopTheOthersFromComingBack() {
-    let (h, a, b) = makeHarness()
+  @Test(arguments: [false, true]) func quittingWhileAnAppHangsDoesNotStopTheOthersFromComingBack(makingWay: Bool) {
+    let (h, a, b) = makeHarness(settings: makingWay ? .makingWay : Settings())
     let c = h.system.open(app: "Mail", pid: 3000, frame: CGRect(x: 620, y: 300, width: 200, height: 150))
+    let d = h.system.open(app: "Terminal", pid: 4000, frame: CGRect(x: 640, y: 340, width: 200, height: 150))
+    h.run("dock \(d.rawValue) beside \(b.rawValue) bottom")
     h.run("zoom \(a.rawValue)")
-    #expect(!h.system.isVisible(b) && !h.system.isVisible(c))
+    // Mail floats: it leaves with the Desktop only if it makes way. Terminal is docked and leaves as ever.
+    #expect(!h.system.isVisible(b) && !h.system.isVisible(d) && h.system.isVisible(c) == !makingWay)
     h.system.setUnresponsive(pid: 2000, true)
     h.controller.shutdown()
-    #expect(h.system.isVisible(a) && h.system.isVisible(c))
+    #expect(h.system.isVisible(a) && h.system.isVisible(c) && h.system.isVisible(d))
   }
 
   // MARK: A pause while an app hangs (K003, the half that Arbor lives to see)
@@ -507,10 +528,12 @@ import Testing
 
   /// A move that is not answered is owed, whoever asked for it. Summon and pin took the window off the list of what is out of
   /// view before they knew that it had come back (bug bash 1).
-  @Test func aWindowSummonedWhileItsAppHangsArrivesWhenItWakes() {
-    let (h, a, _) = makeHarness()
+  @Test(arguments: [false, true]) func aWindowSummonedWhileItsAppHangsArrivesWhenItWakes(makingWay: Bool) {
+    let (h, a, _) = makeHarness(settings: makingWay ? .makingWay : Settings())
     let c = h.system.open(app: "Mail", pid: 3000, frame: CGRect(x: 500, y: 300, width: 400, height: 300))
     h.run("zoom \(a.rawValue)")
+    // As Arbor ships no view takes a floating window away: it is fetched and sent away by name.
+    if !makingWay { for _ in 0..<2 { #expect(h.run("summon Mail").ok) } }
     #expect(!h.system.isVisible(c))
     h.system.setUnresponsive(pid: 3000, true)
     h.run("summon Mail")

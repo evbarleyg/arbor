@@ -117,9 +117,10 @@ private let pairs = Side.allCases.flatMap { a in Side.allCases.map { (a, $0) } }
     #expect(h.frame(n) == spot.offsetBy(dx: -1440, dy: 0))
   }
 
-  /// The view goes away from the Desktop and comes back, which is when floating windows are sent to their frames.
-  @Test func afterTheLidClosedFloatingWindowsComeBackToTheDesktopWhereTheyWere() {
-    let h = Harness(displays: [laptop, studio])
+  /// The view goes away from the Desktop and comes back, which is when floating windows that make way are sent to their frames. One that
+  /// does not make way stays where the lid left it.
+  @Test(arguments: [false, true]) func afterTheLidClosedFloatingWindowsAreOnTheDesktopWhereTheyWere(makingWay: Bool) {
+    let h = Harness(displays: [laptop, studio], settings: makingWay ? .makingWay : Settings())
     let n = h.system.open(app: "Notes", frame: CGRect(x: 2900, y: 500, width: 600, height: 400))
     let a = h.system.open(app: "Safari", frame: CGRect(x: 1600, y: 100, width: 500, height: 400))
     h.start()
@@ -129,7 +130,7 @@ private let pairs = Side.allCases.flatMap { a in Side.allCases.map { (a, $0) } }
     closeTheLid(h)
     h.system.cursor = CGPoint(x: 600, y: 400)
     h.run("zoom \(a.rawValue)")
-    #expect(!h.system.isVisible(n))
+    #expect(h.system.isVisible(n) == !makingWay)
     h.run("show-all")
     #expect(h.frame(n) == spot.offsetBy(dx: -1440, dy: 0))
   }

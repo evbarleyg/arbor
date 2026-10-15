@@ -201,17 +201,19 @@ import Testing
     }
   }
 
-  /// It comes back where macOS left it when the view has been away.
-  @Test func thatIsWhereItComesBackTo() {
+  /// It stays where macOS left it when the view goes away and comes back: no view takes a floating window out of view.
+  @Test func thatIsWhereItStaysWhereverTheViewGoes() {
     let (h, terminal, editor) = desk()
     change(h, terminal, editor)
     h.run("dock \(editor.rawValue) left")
+    h.system.clearFrameLog()
     h.run("zoom \(editor.rawValue)")
     h.scheduler.advance(by: 2)
-    #expect(!h.system.isVisible(terminal))
+    #expect(h.frame(terminal) == Self.macOSs)
     h.run("show-all")
     h.scheduler.advance(by: 2)
     #expect(h.frame(terminal) == Self.macOSs)
+    #expect(!h.system.frameLog.contains { $0.window == terminal }, "\(h.system.frameLog)")
   }
 
   /// macOS goes on about its screens for so long that Arbor's own look-out for a display that blinked comes before the news (one recording of 37).
@@ -323,20 +325,37 @@ import Testing
 
   // MARK: What stays Arbor's
 
-  /// Out of view is Arbor's doing, and so is the way back: its own frame is what its person gave it.
+  /// Out of view is Arbor's doing, and so is the way back: its own frame is what its person gave it. Sent away by name, that is: no view
+  /// takes a floating window out of view.
   @Test func whatArborHasOutOfViewKeepsItsPlace() {
     let (h, terminal, editor) = desk()
-    h.run("dock \(editor.rawValue) left")
-    h.run("zoom \(editor.rawValue)")
+    h.run("summon Terminal")
+    h.scheduler.advance(by: 2)
+    let own = h.frame(terminal)!
+    h.run("summon Terminal")
     h.scheduler.advance(by: 2)
     #expect(!h.system.isVisible(terminal))
     // macOS pulls it into view, as it was seen to do with windows past the corner.
     change(h, terminal, editor, to: Self.macOSs)
-    #expect(place(of: terminal, h) == [Self.main.id: Self.own])
-    #expect(!h.system.isVisible(terminal), "the view is on the editor")
+    #expect(place(of: terminal, h) == [Self.main.id: own])
+    #expect(!h.system.isVisible(terminal), "it was sent away")
+    h.run("summon Terminal")
+    h.scheduler.advance(by: 2)
+    #expect(h.frame(terminal) == own)
+  }
+
+  /// Behind a framed window it is in view like any other, and taken from where macOS left it like any other.
+  @Test func behindAFramedWindowItIsTakenFromWhereItIsLikeAnyOther() {
+    let (h, terminal, editor) = desk()
+    h.run("dock \(editor.rawValue) left")
+    h.run("zoom \(editor.rawValue)")
+    h.scheduler.advance(by: 2)
+    change(h, terminal, editor, to: Self.macOSs)
+    #expect(place(of: terminal, h) == [Self.main.id: Self.macOSs])
     h.run("show-all")
     h.scheduler.advance(by: 2)
-    #expect(h.frame(terminal) == Self.own)
+    #expect(h.frame(terminal) == Self.macOSs)
+    #expect(!h.system.frameLog.contains { $0.window == terminal }, "\(h.system.frameLog)")
   }
 
   /// A docked window goes back to its slot.

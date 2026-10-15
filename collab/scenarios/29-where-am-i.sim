@@ -83,12 +83,16 @@ minimap
 map beside
 expect minimap none
 expect camera 101
-# The Desktop can be clicked too, and the window floating on it comes back into view.
-expect hidden 103
+# The Desktop can be clicked too. What is docked leaves the view; the window that floats was there all the time, and stays.
+expect visible 103
+expect at 103 300 200 640x420
 minimap
 map desktop
 expect camera desktop
+expect hidden 101
+expect still 103
 expect visible 103
+expect at 103 300 200 640x420
 # Held, ⌃⌥M is like a held ⌃⌥Space: hold to look, let go to land. The panel is at 600,690, 240 by 154, on this display.
 wait 1
 zoom 101

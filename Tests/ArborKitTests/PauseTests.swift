@@ -6,9 +6,12 @@ import Testing
 
 /// Pausing and resuming (docs/features/F40-pause.md).
 @Suite @MainActor struct PauseTests {
-  /// [a | Desktop | b / c] with d floating on the Desktop, framed on c: a, b and d are out of view.
-  func makeHarness() -> (Harness, WindowID, WindowID, WindowID, WindowID) {
-    let h = Harness(settings: .withGestures)  // which a pause switches off
+  /// [a | Desktop | b / c] with d floating, framed on c: a and b are out of view. As Arbor ships d stays where it floats.
+  /// `makingWay`: floating windows make way, so d is on the Desktop and out of view with it.
+  func makeHarness(makingWay: Bool = false) -> (Harness, WindowID, WindowID, WindowID, WindowID) {
+    var settings = Settings.withGestures  // which a pause switches off
+    settings.floatingWindowsMakeWay = makingWay
+    let h = Harness(settings: settings)
     let a = h.system.open(app: "Safari")
     let b = h.system.open(app: "Mail")
     let c = h.system.open(app: "Notes")
@@ -21,9 +24,10 @@ import Testing
     return (h, a, b, c, d)
   }
 
-  @Test func pausingBringsEveryWindowBackIntoView() {
-    let (h, a, b, c, d) = makeHarness()
-    for window in [a, b, d] { #expect(!h.system.isVisible(window), "\(window) starts out of view") }
+  @Test(arguments: [false, true]) func pausingBringsEveryWindowBackIntoView(makingWay: Bool) {
+    let (h, a, b, c, d) = makeHarness(makingWay: makingWay)
+    for window in makingWay ? [a, b, d] : [a, b] { #expect(!h.system.isVisible(window), "\(window) starts out of view") }
+    if !makingWay { #expect(h.system.isVisible(d), "what floats never left") }
 
     #expect(h.run("pause").ok)
     for window in [a, b, c, d] {
@@ -76,10 +80,11 @@ import Testing
     #expect(state.displays[0].tree.leaf(containing: c) != nil, "the arrangement that will come back is still listed")
   }
 
-  @Test func resumingRestoresTheArrangementAndTheCamera() {
-    let (h, a, b, c, d) = makeHarness()
+  @Test(arguments: [false, true]) func resumingRestoresTheArrangementAndTheCamera(makingWay: Bool) {
+    let (h, a, b, c, d) = makeHarness(makingWay: makingWay)
     let before = h.workspace
     let frame = h.frame(c)
+    let floating = h.frame(d)
     h.run("pause")
     #expect(h.run("resume").ok)
 
@@ -87,7 +92,8 @@ import Testing
     #expect(!h.controller.isPaused)
     #expect(h.workspace == before)
     #expect(h.frame(c) == frame)
-    for window in [a, b, d] { #expect(!h.system.isVisible(window), "\(window) is out of view again") }
+    for window in makingWay ? [a, b, d] : [a, b] { #expect(!h.system.isVisible(window), "\(window) is out of view again") }
+    if !makingWay { #expect(h.frame(d) == floating && h.system.isVisible(d), "what floats is where it was, in view") }
     expectWindowsMatchLayout(h, on: h.display)
     #expect(h.run("back").ok, "history survives")
   }
@@ -144,8 +150,9 @@ import Testing
     #expect(h.frame(note) == place, "and comes back with it")
   }
 
-  @Test func withGuestsOffItStaysInViewUntilTheViewNextMoves() {
-    let (h, _, _, _, _) = makeHarness()
+  /// Where floating windows make way that is one that stays in view until the view next moves. As Arbor ships it stays for good.
+  @Test(arguments: [false, true]) func withGuestsOffItIsAFloatingWindowLikeAnyOther(makingWay: Bool) {
+    let (h, _, _, _, _) = makeHarness(makingWay: makingWay)
     var settings = h.controller.settings
     settings.newWindowsWhileFramed = "float"
     h.controller.apply(settings: settings)
@@ -157,11 +164,16 @@ import Testing
     #expect(h.workspace.guests?[note] == nil)
     h.run("out")
     h.run("back")
-    #expect(!h.system.isVisible(note), "it belongs to the Desktop")
+    if makingWay {
+      #expect(!h.system.isVisible(note), "it belongs to the Desktop")
+    } else {
+      #expect(h.frame(note) == place, "no view takes it away")
+    }
   }
 
   @Test func theFloatingWindowsArborKnewStillGoOutOfViewWithTheDesktop() {
-    let (h, _, _, _, d) = makeHarness()
+    // Floating windows that make way: only they leave with the Desktop.
+    let (h, _, _, _, d) = makeHarness(makingWay: true)
     h.run("pause")
     #expect(h.system.isVisible(d))
     h.run("resume")
@@ -191,10 +203,11 @@ import Testing
     #expect(h.system.isVisible(d))
   }
 
-  @Test func aWindowOpenedWhileArborWasDownStaysInViewWhenTheWatchdogBringsTheViewBack() {
-    let (first, _, _, c, d) = makeHarness()
+  @Test(arguments: [false, true])
+  func aWindowOpenedWhileArborWasDownStaysInViewWhenTheWatchdogBringsTheViewBack(makingWay: Bool) {
+    let (first, _, _, c, d) = makeHarness(makingWay: makingWay)
     first.controller.saveNow()
-    let h = Harness(saved: first.store.saved)
+    let h = Harness(settings: makingWay ? .makingWay : Settings(), saved: first.store.saved)
     for window in first.system.allWindows() {
       h.system.open(
         app: window.appName, bundleID: window.bundleID, title: window.title, pid: window.pid, frame: window.frame)
@@ -205,7 +218,13 @@ import Testing
     h.start()
     #expect(h.workspace.camera == h.workspace.tree.leaf(containing: c), "the view of a moment ago")
     #expect(h.frame(note) == place)
-    #expect(!h.system.isVisible(d), "what the arrangement knows is where the arrangement has it")
+    // What the arrangement knows is where the arrangement has it: out of view with the Desktop where floating windows make way,
+    // and where it floats as Arbor ships.
+    if makingWay {
+      #expect(!h.system.isVisible(d))
+    } else {
+      #expect(h.frame(d) == first.frame(d) && h.system.isVisible(d))
+    }
   }
 
   @Test func resumingDoesNotDependOnTheSavedFile() {

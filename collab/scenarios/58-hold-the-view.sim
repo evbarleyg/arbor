@@ -1,7 +1,7 @@
 # Proposed by the executor who built F58 (2026-10-14); for the documenter to adopt or change.
 #
-# Someone presents Keynote on a shared screen. Mail and Slack are docked out of view, Notes floats on the
-# Desktop. Nothing may jump, appear or change size that they did not ask for.
+# Someone presents Keynote on a shared screen. Mail and Slack are docked out of view, Notes floats where its person
+# left it, behind Keynote. Nothing may jump, appear or change size that they did not ask for.
 # As the first build shipped it: the whole map of shortcuts, of which nine ship now (22-nine-keys.sim).
 set shortcuts all
 quiet
@@ -14,11 +14,14 @@ dock 102 right
 dock 103 beside 102 bottom
 rule com.example.terminal dock bottom
 zoom 101
+expect still 104
 focus 101
 expect fills 101
+expect in-front 101
 expect hidden 102
 expect hidden 103
-expect hidden 104
+expect visible 104
+expect at 104 300 200 640x420
 
 # Hold This View, from the menu.
 hold
@@ -135,7 +138,8 @@ expect fills 101
 expect hidden 102
 expect hidden 103
 
-# 2. ⌘M on the window being shown, by habit. The wallpaper gives nothing away, and the view is still held.
+# 2. ⌘M on the window being shown, by habit. Nothing that was out of view comes into it, and the view is still held. What
+# floats was behind Keynote all the time and is seen now, as on any Mac: Arbor neither hides it nor moves it (Q29, 4).
 # (A rule for later, now: settings wait while the view is held.)
 rule com.example.console dock beside com.example.mail bottom
 hold
@@ -143,9 +147,11 @@ set gap 40
 expect fail
 minimize 101
 expect held view
+expect still
 expect hidden 102
 expect hidden 103
-expect hidden 104
+expect visible 104
+expect at 104 300 200 640x420
 show-all
 expect fail
 restore 101
@@ -162,3 +168,23 @@ expect floating 107
 expect fills 101
 expect hidden 102
 expect hidden 103
+
+# Only floating windows that make way leave with the Desktop. Somebody who presents with those has Notes out of view as well, and
+# after ⌘M on Keynote the wallpaper gives nothing of it away.
+show-all
+set floatingWindowsMakeWay true
+zoom 101
+focus 101
+expect fills 101
+expect hidden 104
+hold
+minimize 101
+expect held view
+expect hidden 102
+expect hidden 103
+expect hidden 104
+restore 101
+expect fills 101
+expect hidden 104
+release
+expect ok

@@ -726,7 +726,8 @@ private func near(_ a: CGRect, _ b: CGRect, within tolerance: CGFloat = 0.01) ->
   }
 
   @Test func thePointerStaysOnTheDisplay() throws {
-    let film = try film(dragToTheLeftEdge + "\ntap ctrl+opt+return\nwait 0.6\nglide window 102 middle in 0.3\nclick")
+    // Docked too, or framing the other would not take it out of view: what floats stays.
+    let film = try film(dragToTheLeftEdge + "\ndock 102 right\nfocus 101\ntap ctrl+opt+return\nwait 0.6\nglide window 102 middle in 0.3\nclick")
     #expect(film.failures.isEmpty)
     let end = try #require(film.frames.last)
     let at = try #require((end["pointer"] as? [String: Any])?["at"] as? [NSNumber])

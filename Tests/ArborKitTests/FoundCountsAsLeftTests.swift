@@ -154,7 +154,8 @@ import Testing
 
   /// Over a framed window, where there is no Desktop: it is a guest of that view, goes when the view goes, and comes back exactly there.
   @Test func whatOpensOverTheEdgeOfAFramedViewComesBackExactlyThere() {
-    let h = Harness()
+    // Floating windows that make way: only they leave with the Desktop.
+    let h = Harness(settings: .makingWay)
     let (safari, mail) = (h.system.open(app: "Safari"), h.system.open(app: "Mail"))
     h.start()
     h.run("dock \(safari.rawValue) left")
@@ -440,7 +441,8 @@ import Testing
         visibleFrame: CGRect(x: x, y: 25, width: 1440, height: 875), isMain: isMain)
     }
     let three = [display("left", x: -1440), display("main", x: 0, isMain: true), display("right", x: 1440)]
-    let old = Harness(displays: three)
+    // Floating windows that make way: only they leave with the Desktop.
+    let old = Harness(displays: three, settings: .makingWay)
     let own = CGRect(x: 780, y: 200, width: 600, height: 400)
     let (safari, mail) = (old.system.open(app: "Safari"), old.system.open(app: "Mail", frame: own))
     old.start()
@@ -514,7 +516,8 @@ import Testing
 
   /// What Arbor took it gives back as it was: found over the edge, out of view with the Desktop, and back exactly there, in one move.
   @Test(arguments: waysOut, parkedByHand) func whatWasFoundOverTheEdgeAndWentOutWithTheViewIsGivenBackAsItWas(way: String, frame: CGRect) {
-    let h = Harness()
+    // Floating windows that make way: only they leave with the Desktop.
+    let h = Harness(settings: .makingWay)
     let notes = h.system.open(app: "Notes", frame: frame)
     let safari = h.system.open(app: "Safari")
     h.start()
@@ -530,7 +533,8 @@ import Testing
 
   /// Dropped where nobody could get hold of it again, it is not given back there: the next layout would fetch it, a second move.
   @Test(arguments: waysOut, outOfReach) func whatWasLeftOutOfReachAndWentOutWithTheViewComesBackIntoViewInOneMove(way: String, frame: CGRect) {
-    let h = Harness()
+    // Floating windows that make way: only they leave with the Desktop.
+    let h = Harness(settings: .makingWay)
     let notes = h.system.open(app: "Notes", frame: CGRect(x: 700, y: 200, width: 600, height: 400))
     let (safari, mail) = (h.system.open(app: "Safari"), h.system.open(app: "Mail"))
     h.start()
@@ -553,7 +557,8 @@ import Testing
     let above = DisplaySnapshot(
       id: DisplayID("above"), frame: CGRect(x: 0, y: -1080, width: 1920, height: 1080),
       visibleFrame: CGRect(x: 0, y: -1080, width: 1920, height: 1080), isMain: false)
-    let h = Harness(displays: [FakeWindowSystem.standardDisplay, above])
+    // Floating windows that make way: only they leave with the Desktop.
+    let h = Harness(displays: [FakeWindowSystem.standardDisplay, above], settings: .makingWay)
     let frame = CGRect(x: 100, y: -60, width: 800, height: 700)
     let notes = h.system.open(app: "Notes", frame: frame)
     let safari = h.system.open(app: "Safari")
@@ -616,7 +621,8 @@ import Testing
   /// Found by the random walks. Left lower than macOS lets Arbor put a window: it keeps a title bar above the bottom edge, and stops the
   /// window 12 points short. That is as near as it can be given back, and the net has no reason to fetch it from there: one move.
   @Test(arguments: ["quit", "pause"]) func givenBackAsNearAsMacOSAllowsItIsNotFetchedFromThere(way: String) {
-    let h = Harness()
+    // Floating windows that make way: only they leave with the Desktop.
+    let h = Harness(settings: .makingWay)
     let notes = h.system.open(app: "Notes", frame: CGRect(x: 700, y: 200, width: 600, height: 400))
     let safari = h.system.open(app: "Safari")
     h.start()

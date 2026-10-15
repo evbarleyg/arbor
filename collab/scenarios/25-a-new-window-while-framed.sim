@@ -1,7 +1,8 @@
 # Proposed by the swarm's review (2026-10-14); the documenter may edit or drop it.
 # Story: framed on Safari, someone presses ⌘N. The new window floats over the framed one. They look at the
-# neighbouring window and come back: the new window is still there. (F57; before, it was gone and Back did
-# not bring it back.)
+# neighbouring window and come back: the new window has not gone anywhere, for no view takes a floating window away
+# (Q29, 4). (F57; before, it was gone and Back did not bring it back.)
+# Where floating windows make way it goes and comes with the window it opened over: the second half.
 # Reference: T34 T52.
 open Safari
 open Notes
@@ -12,23 +13,64 @@ expect floating 103
 expect visible 103
 expect camera 101
 neighbor right
-expect hidden 103
+expect camera 102
+expect still 103
+expect visible 103
+expect at 103 300 200 500x400
 back
 expect camera 101
+expect still 103
 expect visible 103
 # With everything in view it is where it was, like any floating window (Q20).
 show-all
+expect still 103
 expect visible 103
 expect at 103 300 200 500x400
-# ⌘Tab to it from somewhere else frames the window it belongs to.
+# ⌘Tab to it from somewhere else moves no view: it is in view already, and macOS brings it to the front.
 zoom 102
-expect hidden 103
+expect still 103
+expect visible 103
 flush
 focus 103
-expect camera 101
+expect still
+expect camera 102
 expect visible 103
-# Closing its host makes it an ordinary floating window.
+expect focused 103
+# Closing the window it opened over changes nothing for it.
 close 101
 flush
+expect still 103
 desktop
+expect still 103
 expect visible 103
+expect at 103 300 200 500x400
+close 103
+show-all
+# Only floating windows that make way leave with the view. There a window that opens over a framed one belongs to it.
+set floatingWindowsMakeWay true
+open Safari
+dock 104 left
+zoom 104
+open Safari 500x400
+expect floating 105
+expect visible 105
+expect camera 104
+neighbor right
+expect hidden 105
+back
+expect camera 104
+expect visible 105
+show-all
+expect visible 105
+# ⌘Tab to it from somewhere else frames the window it belongs to.
+zoom 102
+expect hidden 105
+flush
+focus 105
+expect camera 104
+expect visible 105
+# Closing its host makes it an ordinary floating window.
+close 104
+flush
+desktop
+expect visible 105

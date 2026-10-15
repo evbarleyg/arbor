@@ -68,6 +68,8 @@ all=$!
 "$ctl" watch view | grep --line-buffered '^{"event":"view"' > "$dir/view.jsonl" &
 check "hello arrives at once, in a file" eventually has "$dir/all.jsonl" '^{"event":"hello","protocol":1,'
 "$ctl" dock 101 left > /dev/null
+# (Docked too: what floats stays in view wherever the view goes.)
+"$ctl" dock 102 right > /dev/null
 "$ctl" zoom 101 > /dev/null
 check "a move of the view arrives while arborctl is still running" eventually has "$dir/all.jsonl" '"kind":"window","label":"Safari","node":1,"outOfView":1,"windows":\[101\]'
 check "and through a pipe" eventually has "$dir/view.jsonl" '"kind":"window","label":"Safari","node":1,"outOfView":1,"windows":\[101\]'

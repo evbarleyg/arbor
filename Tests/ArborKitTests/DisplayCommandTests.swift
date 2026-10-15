@@ -127,9 +127,10 @@ private let above = DisplaySnapshot(
   }
 
   /// F57: a floating window that arrives over a framed window would be gone at the next move of the view, and Back would
-  /// not bring it back. It stays with that view, as one that opened there does.
-  @Test func aFloatingWindowSentOverAFramedWindowStaysWithThatView() {
-    let (h, _, _, c, f) = makeHarness()
+  /// not bring it back. It stays with that view, as one that opened there does. That is where floating windows make way: as
+  /// Arbor ships it is that view's guest all the same, and no move of the view takes it away.
+  @Test(arguments: [false, true]) func aFloatingWindowSentOverAFramedWindowStaysWithThatView(makingWay: Bool) {
+    let (h, _, _, c, f) = makeHarness(settings: makingWay ? .makingWay : Settings())
     let d = h.system.open(app: "D", frame: CGRect(x: 1700, y: 200, width: 500, height: 400))
     runOK(h, "dock \(d.rawValue) left")
     runOK(h, "zoom \(c.rawValue)")
@@ -138,7 +139,7 @@ private let above = DisplaySnapshot(
     #expect(workspace(h, side).guests?[f] == workspace(h, side).tree.leaf(containing: c))
     h.scheduler.advance(by: 1)
     runOK(h, "zoom \(d.rawValue)")
-    #expect(!h.system.isVisible(f))
+    #expect(h.system.isVisible(f) == !makingWay)
     #expect(h.press("back").ok, "on the display the keyboard is on")
     #expect(h.system.isVisible(f))
     // And it is nobody's guest any more once it has left.
@@ -180,11 +181,12 @@ private let above = DisplaySnapshot(
     expectSound(h)
   }
 
-  @Test func aFloatingWindowThatWasTuckedAwayArrivesInViewToo() {
-    let (h, a, _, c, f) = makeHarness()
+  /// Tucked away with its Desktop, where floating windows make way. As Arbor ships it floats over the framed window.
+  @Test(arguments: [false, true]) func aFloatingWindowWhoseDesktopIsOutOfViewArrivesInViewToo(makingWay: Bool) {
+    let (h, a, _, c, f) = makeHarness(settings: makingWay ? .makingWay : Settings())
     runOK(h, "zoom \(a.rawValue)")
     runOK(h, "zoom \(c.rawValue)")
-    #expect(h.controller.parked.contains(f))
+    #expect(h.controller.parked.contains(f) == makingWay)
     runOK(h, "move-to-display next \(f.rawValue)")
     #expect(h.system.isVisible(f) && !h.controller.parked.contains(f))
     #expect(side.visibleFrame.contains(h.frame(f)!))
@@ -205,10 +207,11 @@ private let above = DisplaySnapshot(
     expectSound(h)
   }
 
-  @Test func aNamedWindowOutOfViewCanBeSent() {
-    let (h, a, b, c, f) = makeHarness()
+  @Test(arguments: [false, true]) func aNamedWindowOutOfViewCanBeSent(makingWay: Bool) {
+    let (h, a, b, c, f) = makeHarness(settings: makingWay ? .makingWay : Settings())
     runOK(h, "zoom \(a.rawValue)")
-    #expect(h.controller.parked.isSuperset(of: [b, f]))
+    // f floats: it leaves with the Desktop only if it makes way.
+    #expect(h.controller.parked.contains(b) && h.controller.parked.contains(f) == makingWay)
     runOK(h, "move-to-display next \(b.rawValue)")
     runOK(h, "move-to-display next \(f.rawValue)")
     #expect(columns(h, side) == [[b], [], [c]])
@@ -358,8 +361,8 @@ private let above = DisplaySnapshot(
 
   // MARK: focus-display
 
-  @Test func focusDisplayFocusesTheLastFocusedWindowInViewThere() {
-    let (h, a, b, c, _) = makeHarness()
+  @Test(arguments: [false, true]) func focusDisplayFocusesTheLastFocusedWindowInViewThere(makingWay: Bool) {
+    let (h, a, b, c, _) = makeHarness(settings: makingWay ? .makingWay : Settings())
     let d = h.system.open(app: "D", frame: CGRect(x: 1700, y: 200, width: 400, height: 300))
     h.system.userFocus(c)
     h.system.userFocus(d)
@@ -380,8 +383,8 @@ private let above = DisplaySnapshot(
     #expect(h.workspace.camera == h.workspace.tree.root)
 
     #expect(runOK(h, "focus-display previous").message == "focused \(a) on display 1")
-    // d has gone out of view with the Desktop.
-    #expect(!h.system.isVisible(d))
+    // d has gone out of view with the Desktop, if it makes way.
+    #expect(h.system.isVisible(d) == !makingWay)
     #expect(runOK(h, "focus-display 2").message == "focused \(c) on display 2")
     expectSound(h)
   }

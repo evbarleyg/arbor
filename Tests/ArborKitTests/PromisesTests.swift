@@ -317,7 +317,8 @@ import Testing
     h.run("dock \(windows[0].rawValue) left")
     h.run("dock \(windows[1].rawValue) right")
     h.run("zoom \(windows[1].rawValue)")
-    #expect(!h.system.isVisible(windows[0]) && !h.system.isVisible(windows[2]), "the control")
+    #expect(!h.system.isVisible(windows[0]), "the control")
+    #expect(h.system.isVisible(windows[2]) == !h.floatingWindowsLeaveWithTheDesktop, "what floats stays, unless it makes way")
     h.key(key)
     settle(h)
     for window in windows { #expect(h.system.isVisible(window), "\(window) at \(h.frame(window)!)") }

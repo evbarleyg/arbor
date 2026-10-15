@@ -207,7 +207,7 @@ struct TwoScreens: CustomTestStringConvertible, Sendable {
   }
 
   /// Its app will not make it as wide any more. It shrinks towards its top-left corner, and three quarters of it still show:
-  /// one move, not a second one onto the display.
+  /// one move, not a second one onto the display. (In the second story floating windows make way: only they leave with the Desktop.)
   @Test(arguments: [
     "dock 101 left\nsettle\nlimits 101 min 300 300 max 800 600\nsettle|float-all",
     "open 102 Mail pid 1002 at 100 100 700 500\nsettle\ndock 102 left\nzoom 102\nsettle\nadvance 1\nlimits 101 min 300 300 max 800 600\nsettle|home",
@@ -215,6 +215,7 @@ struct TwoScreens: CustomTestStringConvertible, Sendable {
     let acts = story.split(separator: "|").map(String.init)
     let world = played(
       """
+      settings {"floatingWindowsMakeWay":\(acts[1] == "home")}
       displays \(TwoScreens.found.displays) windows-never
       launch
       open 101 Notes pid 1001 at 300 200 1000 600 min 300 300

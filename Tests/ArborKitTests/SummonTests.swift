@@ -13,8 +13,8 @@ private let side = DisplaySnapshot(
 
 /// Summoning (docs/features/F53-summon.md).
 @Suite @MainActor struct SummonTests {
-  /// [editor | Desktop | browser], framed on the editor, which has the keyboard. The terminal floats, so it is
-  /// out of view with the Desktop. As Arbor ships: two halves, and the Desktop between them has no room.
+  /// [editor | Desktop | browser], framed on the editor, which has the keyboard. The terminal floats: where it was, as Arbor
+  /// ships, and out of view with the Desktop where floating windows make way (`.makingWay`). Two halves: the Desktop between them has no room.
   func makeHarness(
     displays: [DisplaySnapshot] = [FakeWindowSystem.standardDisplay], settings: Settings = Harness.settingsWhenNoneAreGiven
   ) -> (Harness, editor: WindowID, browser: WindowID, terminal: WindowID) {
@@ -59,9 +59,9 @@ private let side = DisplaySnapshot(
 
   // MARK: 1. Over the view
 
-  @Test func summoningBringsTheAppsWindowOverTheViewWithTheKeyboardInIt() {
-    let (h, editor, browser, terminal) = makeHarness()
-    #expect(isOutOfView(terminal, h))
+  @Test(arguments: [false, true]) func summoningBringsTheAppsWindowOverTheViewWithTheKeyboardInIt(makingWay: Bool) {
+    let (h, editor, browser, terminal) = makeHarness(settings: makingWay ? .makingWay : Settings())
+    #expect(isOutOfView(terminal, h) == makingWay, "it comes from its corner, or from where it floats")
     let camera = h.workspace.camera
     let others = [editor, browser].map { h.frame($0) }
 
@@ -84,17 +84,20 @@ private let side = DisplaySnapshot(
     }
   }
 
-  @Test func ofSeveralWindowsTheOneUsedLastComes() {
-    let (h, editor, _, terminal) = makeHarness()
+  @Test(arguments: [false, true]) func ofSeveralWindowsTheOneUsedLastComes(makingWay: Bool) {
+    let (h, editor, _, terminal) = makeHarness(settings: makingWay ? .makingWay : Settings())
     h.run("show-all")
     let second = h.system.open(app: "Terminal", bundleID: "com.apple.Terminal", pid: 1003)
     h.system.userFocus(second)
     h.system.userFocus(terminal)
     h.system.userFocus(editor)
     h.run("zoom \(editor.rawValue)")
+    let place = h.frame(second)
     h.run("summon Terminal")
     #expect(h.workspace.isSummoned(terminal))
-    #expect(isOutOfView(second, h))
+    // The other one is where it was: out of view with the Desktop where floating windows make way, and else where it floats.
+    #expect(isOutOfView(second, h) == makingWay)
+    #expect(h.workspace.role(of: second) == nil && h.frame(second) == place)
   }
 
   @Test func inViewWithTheKeyboardInItItIsSummonedWhereItIs() {
@@ -202,9 +205,9 @@ private let side = DisplaySnapshot(
     #expect(h.system.frameLog.dropFirst(moved).filter { $0.window == terminal }.count == 1, "and it is moved once")
   }
 
-  @Test func homeBringsItBackToTheDesktopAsAnOrdinaryWindow() {
+  @Test(arguments: [false, true]) func homeBringsItBackToTheDesktopAsAnOrdinaryWindow(makingWay: Bool) {
     // "A window is gone: ⌃⌥0" has no exception.
-    let (h, editor, _, terminal) = makeHarness(displays: [main, side], settings: .withDesktopColumn)
+    let (h, editor, _, terminal) = makeHarness(displays: [main, side], settings: (makingWay ? .makingWay : Settings()).withDesktopColumn)
     let notes = h.system.open(app: "Notes", pid: 1004, frame: CGRect(x: 1600, y: 100, width: 300, height: 400))
     // A new window takes the keyboard, and commands act on the display that has it (F56): back to the main one.
     h.system.userFocus(editor)
@@ -224,10 +227,13 @@ private let side = DisplaySnapshot(
     }
     #expect(h.layout!.desktopFrame!.contains(h.frame(terminal)!), "on the Desktop, like any floating window")
 
-    // It leaves with the Desktop again, and can be summoned again, to the place it had.
+    // It does as any floating window does again: it leaves with the Desktop where they make way, and else it stays where it is.
+    // And it can be summoned again, to the place it had.
     h.system.cursor = CGPoint(x: 700, y: 400)
+    let onTheDesktop = h.frame(terminal)
     h.run("zoom \(editor.rawValue)")
-    #expect(isOutOfView(terminal, h))
+    #expect(isOutOfView(terminal, h) == makingWay)
+    if !makingWay { #expect(h.frame(terminal) == onTheDesktop) }
     h.run("summon Terminal")
     #expect(h.frame(terminal) == middle)
   }
@@ -768,8 +774,8 @@ private let side = DisplaySnapshot(
     #expect(h.frame(tab) == middle)
   }
 
-  @Test func aWindowThatOpenedOverAFramedOneStopsBelongingToThatSpaceOnceItIsSummoned() {
-    let (h, editor, _, _) = makeHarness()
+  @Test(arguments: [false, true]) func aWindowThatOpenedOverAFramedOneStopsBelongingToThatSpaceOnceItIsSummoned(makingWay: Bool) {
+    let (h, editor, _, _) = makeHarness(settings: makingWay ? .makingWay : Settings())
     let notes = h.system.open(app: "Notes", pid: 1004, frame: CGRect(x: 100, y: 100, width: 300, height: 400))
     #expect(h.workspace.guests?[notes] != nil, "a guest of the editor (F57)")
     h.system.userFocus(editor)
@@ -779,7 +785,9 @@ private let side = DisplaySnapshot(
     #expect(isOutOfView(notes, h), "though the editor, its host until then, is in view")
     h.run("home")
     h.run("zoom \(editor.rawValue)")
-    #expect(isOutOfView(notes, h), "an ordinary floating window now")
+    #expect(h.workspace.guests == nil && h.workspace.role(of: notes) == nil, "an ordinary floating window now")
+    // Which shows where floating windows make way: a guest of the editor would be in view with it. As Arbor ships they all are.
+    #expect(isOutOfView(notes, h) == makingWay)
   }
 
   @Test func framingAWindowThatWasSentAwaySummonsIt() {
@@ -796,14 +804,18 @@ private let side = DisplaySnapshot(
     #expect(h.system.focused == editor)
   }
 
-  @Test func floatMakesItAnOrdinaryFloatingWindowAgain() {
-    let (h, editor, _, terminal) = makeHarness()
+  @Test(arguments: [false, true]) func floatMakesItAnOrdinaryFloatingWindowAgain(makingWay: Bool) {
+    let (h, editor, _, terminal) = makeHarness(settings: makingWay ? .makingWay : Settings())
     h.run("summon Terminal")
     h.run("summon Terminal")
     let reply = "\(terminal) floats on the Desktop again and no longer comes and goes with `summon`"
     #expect(h.run("float \(terminal.rawValue)").message == reply)
     #expect(h.workspace.role(of: terminal) == nil)
-    #expect(isOutOfView(terminal, h), "with the Desktop, which is not in view")
+    if makingWay {
+      #expect(isOutOfView(terminal, h), "with the Desktop, which is not in view")
+    } else {
+      #expect(h.system.isVisible(terminal) && !h.controller.parked.contains(terminal), "what floats is in view, whatever shows")
+    }
     h.run("show-all")
     #expect(h.system.isVisible(terminal))
     #expect(h.run("float \(terminal.rawValue)").message == "\(terminal) is already floating")

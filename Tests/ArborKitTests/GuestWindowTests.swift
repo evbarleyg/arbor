@@ -6,6 +6,10 @@ import Foundation
 import Testing
 
 /// New windows that open while one window is framed (docs/features/F57-new-windows-while-framed.md).
+///
+/// As Arbor ships no view takes a floating window away, a guest no more than any other (collab/QUESTIONS.md, Q29, 4).
+/// Leaving with its host and coming back with it is what a guest does where floating windows make way. Each test here
+/// says which it means, or runs both ways.
 @Suite @MainActor struct GuestWindowTests {
   /// `[a | b | Desktop]`, framed on `a`. As Arbor ships, the two are arranged in halves and the Desktop has no room.
   func framed(settings: Settings = Settings()) -> (Harness, a: WindowID, b: WindowID) {
@@ -22,8 +26,9 @@ import Testing
 
   func openGuest(_ h: Harness) -> WindowID { h.system.open(app: "Safari", pid: 11, frame: place) }
 
+  // Floating windows that make way: only they leave with a view.
   @Test func aNewWindowLeavesAndComesBackWithTheViewItOpenedOver() {
-    let (h, a, _) = framed()
+    let (h, a, _) = framed(settings: .makingWay)
     let new = openGuest(h)
     #expect(h.frame(new) == place)
     #expect(h.workspace.isFloating(new))
@@ -32,6 +37,18 @@ import Testing
     h.run("back")
     #expect(h.workspace.camera == h.workspace.tree.leaf(containing: a))
     #expect(h.frame(new) == place, "Back brings it back, where it was")
+  }
+
+  /// As Arbor ships it goes nowhere: wherever the view goes it lies where its app opened it, and nobody sets its frame.
+  @Test func aNewWindowStaysWhereItOpenedWhereverTheViewGoes() {
+    let (h, a, b) = framed()
+    let new = openGuest(h)
+    h.system.clearFrameLog()
+    for command in ["neighbor right", "back", "zoom \(b.rawValue)", "show-all", "desktop", "zoom \(a.rawValue)"] {
+      h.run(command)
+      #expect(h.frame(new) == place && h.system.isVisible(new), "after \(command)")
+    }
+    #expect(!h.system.frameLog.contains { $0.window == new }, "\(h.system.frameLog)")
   }
 
   @Test(arguments: [false, true]) func itIsInViewWheneverItsHostIs(makingWay: Bool) {
@@ -45,14 +62,15 @@ import Testing
       #expect(h.frame(new) == place, "it was in view and is in view: like any floating window, it is not moved")
     }
     h.run("zoom \(b.rawValue)")
-    #expect(!h.system.isVisible(new))
+    #expect(h.system.isVisible(new) == !makingWay, "only one that makes way leaves with its host")
     h.run("desktop")
     #expect(h.system.isVisible(new), "and the Desktop still shows every floating window")
     if !makingWay { #expect(h.frame(new) == place, "where it was") }
   }
 
+  // Floating windows that make way: only they are out of view with their host.
   @Test func switchingToAGuestOutOfViewGoesToItsHost() {
-    let (h, a, b) = framed()
+    let (h, a, b) = framed(settings: .makingWay)
     let new = openGuest(h)
     h.run("zoom \(b.rawValue)")
     h.scheduler.advance(by: 1)
@@ -61,8 +79,22 @@ import Testing
     #expect(h.frame(new) == place)
   }
 
-  @Test func movingItKeepsItAGuestAtItsNewPlace() {
-    let (h, _, _) = framed()
+  /// As Arbor ships it is in view, over whatever is framed: macOS brings it to the front, and no view and no window moves.
+  @Test func switchingToAGuestWhoseHostIsOutOfViewMovesNoView() {
+    let (h, _, b) = framed()
+    let new = openGuest(h)
+    h.run("zoom \(b.rawValue)")
+    h.scheduler.advance(by: 1)
+    h.system.clearFrameLog()
+    h.system.userFocus(new)
+    h.scheduler.advance(by: 1)
+    #expect(h.workspace.camera == h.workspace.tree.leaf(containing: b))
+    #expect(h.frame(new) == place && h.system.frameLog.isEmpty, "\(h.system.frameLog)")
+    #expect(h.system.windowsFrontToBack().first == new && h.system.focusedWindow() == new)
+  }
+
+  @Test(arguments: [false, true]) func movingItKeepsItAGuestAtItsNewPlace(makingWay: Bool) {
+    let (h, _, _) = framed(settings: makingWay ? .makingWay : Settings())
     let new = openGuest(h)
     let moved = place.offsetBy(dx: 120, dy: 60)
     h.system.userMove(new, to: moved)
@@ -79,8 +111,8 @@ import Testing
     #expect(h.workspace.guests?[new] == nil)
   }
 
-  @Test func closingTheHostMakesItAnOrdinaryFloatingWindow() {
-    let (h, a, b) = framed()
+  @Test(arguments: [false, true]) func closingTheHostMakesItAnOrdinaryFloatingWindow(makingWay: Bool) {
+    let (h, a, b) = framed(settings: makingWay ? .makingWay : Settings())
     let new = openGuest(h)
     h.system.close(a)
     h.scheduler.advance(by: 1)
@@ -88,13 +120,14 @@ import Testing
     #expect(h.workspace.isFloating(new))
     #expect(h.workspace.tree.invariantViolations().isEmpty)
     h.run("zoom \(b.rawValue)")
-    #expect(!h.system.isVisible(new))
+    // What an ordinary one does: it leaves with the Desktop if it makes way, and stays as Arbor ships.
+    #expect(h.system.isVisible(new) == !makingWay)
     h.run("desktop")
     #expect(h.system.isVisible(new))
   }
 
-  @Test func itFollowsAHostThatIsMovedInTheArrangement() {
-    let (h, a, _) = framed()
+  @Test(arguments: [false, true]) func itFollowsAHostThatIsMovedInTheArrangement(makingWay: Bool) {
+    let (h, a, _) = framed(settings: makingWay ? .makingWay : Settings())
     let new = openGuest(h)
     h.run("show-all")
     h.run("dock \(a.rawValue) down")
@@ -124,8 +157,8 @@ import Testing
   // MARK: Any view without the Desktop has guests
 
   /// `[a | b over c]`... with the Desktop between; the view is on the group of `b` and `c`, saved as view 2.
-  func onAGroup() -> (Harness, a: WindowID, b: WindowID, c: WindowID) {
-    let h = Harness()
+  func onAGroup(makingWay: Bool) -> (Harness, a: WindowID, b: WindowID, c: WindowID) {
+    let h = Harness(settings: makingWay ? .makingWay : Settings())
     let a = h.system.open(app: "Safari", pid: 11)
     let b = h.system.open(app: "Notes", pid: 12)
     let c = h.system.open(app: "Mail", pid: 13)
@@ -139,73 +172,74 @@ import Testing
     return (h, a, b, c)
   }
 
-  @Test func aWindowOpenedOverAGroupComesBackWithTheGroup() {
-    let (h, a, b, _) = onAGroup()
+  /// As Arbor ships it never leaves, so it is there when the group is back all the same.
+  @Test(arguments: [false, true]) func aWindowOpenedOverAGroupComesBackWithTheGroup(makingWay: Bool) {
+    let (h, a, b, _) = onAGroup(makingWay: makingWay)
     #expect(h.layout!.desktopFrame == nil)
     let new = h.system.open(app: "Terminal", pid: 14, frame: place)
     h.run("zoom \(a.rawValue)")
-    #expect(!h.system.isVisible(new))
+    #expect(h.system.isVisible(new) == !makingWay)
     h.run("view 2")
     #expect(h.frame(new) == place)
     // Inside the group only a part of what it opened over is showing.
     h.run("zoom \(b.rawValue)")
-    #expect(!h.system.isVisible(new))
+    #expect(h.system.isVisible(new) == !makingWay)
     h.run("out")
     #expect(h.frame(new) == place)
   }
 
-  @Test func aGroupThatShrinksToOneWindowKeepsItsGuests() {
-    let (h, a, b, c) = onAGroup()
+  @Test(arguments: [false, true]) func aGroupThatShrinksToOneWindowKeepsItsGuests(makingWay: Bool) {
+    let (h, a, b, c) = onAGroup(makingWay: makingWay)
     let new = h.system.open(app: "Terminal", pid: 14, frame: place)
     h.system.close(c)
     #expect(h.workspace.guests?[new] == h.workspace.tree.leaf(containing: b))
     h.run("zoom \(a.rawValue)")
-    #expect(!h.system.isVisible(new))
+    #expect(h.system.isVisible(new) == !makingWay)
     h.run("zoom \(b.rawValue)")
     #expect(h.frame(new) == place)
   }
 
-  @Test func aWindowOpenedWhileTheDesktopIsATileBelongsToThatView() {
-    let h = Harness()
+  @Test(arguments: [false, true]) func aWindowOpenedWhileTheDesktopIsATileBelongsToThatView(makingWay: Bool) {
+    let h = Harness(settings: makingWay ? .makingWay : Settings())
     let ids = ["A", "B", "C", "D", "E"].map { h.system.open(app: $0) }
     h.start()
     h.run("arrange")
     #expect(h.layout!.desktopFrame == nil)
     let new = h.system.open(app: "Terminal", pid: 14, frame: place)
     h.run("zoom \(ids[0].rawValue)")
-    #expect(!h.system.isVisible(new))
+    #expect(h.system.isVisible(new) == !makingWay)
     h.run("back")
     #expect(h.frame(new) == place)
   }
 
-  @Test func aWindowOpenedDuringAPauseOverAFramedWindowStaysWithIt() {
-    let (h, a, _) = framed()
+  @Test(arguments: [false, true]) func aWindowOpenedDuringAPauseOverAFramedWindowStaysWithIt(makingWay: Bool) {
+    let (h, a, _) = framed(settings: makingWay ? .makingWay : Settings())
     h.run("pause")
     let new = openGuest(h)
     h.run("resume")
     #expect(h.workspace.camera == h.workspace.tree.leaf(containing: a))
     #expect(h.frame(new) == place, "resuming must not take away what opened meanwhile")
     h.run("neighbor right")
-    #expect(!h.system.isVisible(new))
+    #expect(h.system.isVisible(new) == !makingWay)
     h.run("back")
     #expect(h.frame(new) == place)
   }
 
   /// To macOS each native tab is a window of its own. To a person, and to Arbor, the group is one window.
-  @Test func aGuestWithNativeTabsStaysAGuestWhenItsTabChanges() throws {
-    let (h, a, _) = framed()
+  @Test(arguments: [false, true]) func aGuestWithNativeTabsStaysAGuestWhenItsTabChanges(makingWay: Bool) throws {
+    let (h, a, _) = framed(settings: makingWay ? .makingWay : Settings())
     let new = openGuest(h)
     let tab = try #require(h.system.openTab(in: new))
     #expect(h.workspace.guests?[tab] == h.workspace.tree.leaf(containing: a))
     h.run("neighbor right")
-    #expect(!h.system.isVisible(tab))
+    #expect(h.system.isVisible(tab) == !makingWay)
     h.run("back")
     #expect(h.frame(tab) == place)
   }
 
   /// Unpinned over a framed window it is where it was a moment ago, and must not be gone after the next move.
-  @Test func aWindowUnpinnedOverAViewWithoutTheDesktopStaysWithThatView() {
-    let (h, _, _) = framed()
+  @Test(arguments: [false, true]) func aWindowUnpinnedOverAViewWithoutTheDesktopStaysWithThatView(makingWay: Bool) {
+    let (h, _, _) = framed(settings: makingWay ? .makingWay : Settings())
     let call = openGuest(h)
     h.run("pin \(call.rawValue)")
     h.run("neighbor right")
@@ -214,7 +248,7 @@ import Testing
     h.run("unpin \(call.rawValue)")
     let left = h.frame(call)!
     h.run("neighbor right")
-    #expect(!h.system.isVisible(call))
+    #expect(h.system.isVisible(call) == !makingWay)
     h.run("back")
     #expect(h.frame(call) == left)
   }
@@ -229,9 +263,9 @@ import Testing
 
   // MARK: Who is in front
 
-  @Test func comingBackTheGuestHasTheFocusItHadSoItIsInFrontOfItsHost() {
+  @Test(arguments: [false, true]) func comingBackTheGuestHasTheFocusItHadSoItIsInFrontOfItsHost(makingWay: Bool) {
     for command in ["back", "view 1", "zoom %a"] {
-      let (h, a, _) = framed()
+      let (h, a, _) = framed(settings: makingWay ? .makingWay : Settings())
       h.run("save-view 1")
       let new = openGuest(h)
       // Over the host only: the pointer must not decide who covers whom.
@@ -244,12 +278,13 @@ import Testing
   }
 
   /// ⌘Tab or a click in the Dock: macOS has raised the host before Arbor hears of it and brings the guest back.
+  /// As Arbor ships the guest has not left, and the front is the host's all the same.
   ///
   /// Rewritten to the decision. This test said that the guest ends in front, which took a raise over the very window its person had just
   /// switched to. QUESTIONS Q20 and Q25: the window switched to comes to the front, Arbor raises nothing else, and going out of view
   /// and coming back changes no window's place in the order. The ways to the guest are in `RaisesNothingElseTests`.
-  @Test func switchingToTheHostFromElsewhereLeavesTheHostInFront() {
-    let h = Harness()
+  @Test(arguments: [false, true]) func switchingToTheHostFromElsewhereLeavesTheHostInFront(makingWay: Bool) {
+    let h = Harness(settings: makingWay ? .makingWay : Settings())
     let ids = ["A", "B", "C", "D", "E"].enumerated().map { h.system.open(app: $1, pid: 21 + Int32($0)) }
     h.start()
     h.run("arrange")
@@ -257,7 +292,7 @@ import Testing
     let new = h.system.open(app: "Terminal", pid: 14, frame: CGRect(x: 40, y: 60, width: 500, height: 400))
     h.run("zoom \(ids[4].rawValue)")
     h.scheduler.advance(by: 1)
-    #expect(!h.system.isVisible(new))
+    #expect(h.system.isVisible(new) == !makingWay)
     h.system.clearRaiseLog()
     h.system.userFocus(ids[0])
     #expect(h.system.isVisible(new))
@@ -296,15 +331,16 @@ import Testing
     #expect(h.system.focusedWindow() == new)
   }
 
-  @Test func theSettingTurnsItOff() {
-    var settings = Settings()
+  @Test(arguments: [false, true]) func theSettingTurnsItOff(makingWay: Bool) {
+    var settings = makingWay ? Settings.makingWay : Settings()
     settings.newWindowsWhileFramed = "float"
     let (h, _, _) = framed(settings: settings)
     let new = openGuest(h)
     h.run("neighbor right")
     h.run("back")
     #expect(h.workspace.guests?[new] == nil)
-    #expect(!h.system.isVisible(new), "as before: it waits on the Desktop")
+    // As Arbor ships no view took it away.
+    #expect(h.system.isVisible(new) == !makingWay, "made to make way it waits on the Desktop, as before")
   }
 
   @Test func guestsSurviveARestartAndOldStateStillLoads() throws {
@@ -321,10 +357,12 @@ import Testing
     #expect(bare.guests == nil)
   }
 
+  // Floating windows that make way: only they are out of view with their host.
   @Test func quittingPutsAGuestOutOfViewBackOnScreen() {
-    let (h, _, b) = framed()
+    let (h, _, b) = framed(settings: .makingWay)
     let new = openGuest(h)
     h.run("zoom \(b.rawValue)")
+    #expect(!h.system.isVisible(new), "or there is nothing to put back")
     h.controller.shutdown()
     #expect(h.system.isVisible(new))
   }

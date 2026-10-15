@@ -61,18 +61,19 @@ import Testing
     #expect(desktop.minX > h.frame(a)!.maxX && desktop.maxX < h.frame(b)!.minX)
   }
 
-  @Test func zoomParksTheOthersAndBackRestoresThem() {
-    let (h, a, b, c) = makeHarness()
+  @Test(arguments: [false, true]) func zoomParksTheOthersAndBackRestoresThem(makingWay: Bool) {
+    let (h, a, b, c) = makeHarness(settings: makingWay ? .makingWay : Settings())
     h.run("dock \(a.rawValue) left")
     h.run("dock \(b.rawValue) right")
-    let before = h.frame(a)!
+    let (before, floated) = (h.frame(a)!, h.frame(c)!)
     #expect(h.run("zoom \(a.rawValue)").ok)
     #expect(h.frame(a) == h.visibleFrame.insetBy(dx: 12, dy: 12))
     #expect(!h.system.isVisible(b))
-    #expect(!h.system.isVisible(c), "floating windows leave with the Desktop")
-    #expect(h.controller.parked == [b, c])
+    #expect(h.system.isVisible(c) == !makingWay, "floating windows leave with the Desktop only if they make way")
+    if !makingWay { #expect(h.frame(c) == floated, "as Arbor ships no view takes one away, or moves it") }
+    #expect(h.controller.parked == (makingWay ? [b, c] : [b]))
     #expect(h.run("back").ok)
-    #expect(h.frame(a) == before)
+    #expect(h.frame(a) == before && h.frame(c) == floated)
     #expect(h.system.isVisible(b) && h.system.isVisible(c))
     #expect(h.controller.parked.isEmpty)
   }
@@ -226,15 +227,17 @@ import Testing
     #expect(!h.scheduler.pendingKeys.contains { $0.hasPrefix("enforce") })
   }
 
-  @Test func floatingWindowsRememberWhereTheUserPutThem() {
-    let (h, a, b, c) = makeHarness()
+  @Test(arguments: [false, true]) func floatingWindowsRememberWhereTheUserPutThem(makingWay: Bool) {
+    let (h, a, b, c) = makeHarness(settings: makingWay ? .makingWay : Settings())
     h.run("dock \(a.rawValue) left")
     h.run("dock \(b.rawValue) right")
     // Nothing is left over for the Desktop: what floats lies over the docked windows, here across the gap between the two.
     let placed = CGRect(x: h.frame(a)!.maxX - 150, y: h.frame(a)!.minY + 20, width: 300, height: 200)
     h.system.userMove(c, to: placed)
     h.run("zoom \(a.rawValue)")
-    #expect(!h.system.isVisible(c))
+    // It leaves with the Desktop only if it makes way. As Arbor ships it stays there.
+    #expect(h.system.isVisible(c) == !makingWay)
+    if !makingWay { #expect(h.frame(c) == placed) }
     h.run("back")
     #expect(h.frame(c) == placed)
   }
@@ -535,13 +538,14 @@ import Testing
   @Test func stateSnapshotDescribesEverything() {
     let (h, a, b, c) = makeHarness()
     h.run("dock \(a.rawValue) left")
+    h.run("dock \(b.rawValue) right")
     h.run("zoom \(a.rawValue)")
     let state = h.run("state").state!
     #expect(state.running)
     #expect(state.displays.count == 1)
     #expect(state.displays[0].windowFrames[a] != nil)
     #expect(state.window(b)?.parked == true)
-    #expect(state.window(c)?.docked == false)
+    #expect(state.window(c)?.docked == false && state.window(c)?.parked == false, "what floats stays in view")
     #expect(state.displays[0].canGoBack)
   }
 }

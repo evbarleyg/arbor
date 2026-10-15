@@ -11,10 +11,12 @@ import Testing
 
   /// [Emacs | Desktop | Safari], Game floating, Safari in front.
   /// `apart`: each app is a process of its own, as a story about ⌘Tab needs. Otherwise they are one, and a switch among them is ⌘`.
-  func makeHarness(passThrough: [String] = [emacsID], pauseFor: [String] = [gameID], apart: Bool = false)
+  /// `makingWay`: floating windows leave the view with the Desktop. As Arbor ships they stay.
+  func makeHarness(passThrough: [String] = [emacsID], pauseFor: [String] = [gameID], apart: Bool = false, makingWay: Bool = false)
     -> (Harness, emacs: WindowID, safari: WindowID, game: WindowID)
   {
     var settings = Settings.withGestures  // what a listed app takes away
+    settings.floatingWindowsMakeWay = makingWay
     settings.passThroughApps = passThrough
     settings.pauseForApps = pauseFor
     let h = Harness(settings: settings)
@@ -355,8 +357,9 @@ import Testing
   /// That an app has come to the front and that one of its windows has the keyboard reach Arbor by different roads, in either order.
   /// With the window first Arbor was still running: the view went off to show it, and then came the pause, which shows
   /// everything anyway. Afterwards all looked as before, but `back` led to the Desktop.
-  @Test func alsoWhenItsWindowSpeaksBeforeTheAppIsSaidToBeInFront() {
-    let (h, emacs, safari, game) = makeHarness()
+  /// (The view has somewhere to go off to where floating windows make way. As Arbor ships the window is in view already.)
+  @Test(arguments: [false, true]) func alsoWhenItsWindowSpeaksBeforeTheAppIsSaidToBeInFront(makingWay: Bool) {
+    let (h, emacs, safari, game) = makeHarness(makingWay: makingWay)
     h.run("zoom \(safari.rawValue)")
     let before = h.workspace
     h.system.clearFrameLog()
@@ -378,10 +381,11 @@ import Testing
   }
 
   /// Nothing says that the word must come. A window that has the keyboard is not left out of view for it.
-  @Test func ifNobodyEverSaysThatTheAppIsInFrontItsWindowComesIntoViewAllTheSame() {
-    let (h, _, safari, game) = makeHarness()
+  /// (Out of view it is where floating windows make way. As Arbor ships it has not left, and the wait harms nothing either.)
+  @Test(arguments: [false, true]) func ifNobodyEverSaysThatTheAppIsInFrontItsWindowComesIntoViewAllTheSame(makingWay: Bool) {
+    let (h, _, safari, game) = makeHarness(makingWay: makingWay)
     h.run("zoom \(safari.rawValue)")
-    #expect(!h.system.isVisible(game))
+    #expect(h.system.isVisible(game) == !makingWay)
     h.system.focused = game
     h.controller.windowFocused(game)
     h.scheduler.advance(by: 1)
@@ -391,17 +395,17 @@ import Testing
   }
 
   /// Whoever resumed by hand inside the app meant it: there Arbor is as it is in any app, and waits for no pause.
-  @Test func resumedByHandInsideTheAppItsWindowsComeIntoViewWithoutThatWait() {
-    let (h, _, _, game) = makeHarness()
+  @Test(arguments: [false, true]) func resumedByHandInsideTheAppItsWindowsComeIntoViewWithoutThatWait(makingWay: Bool) {
+    let (h, _, _, game) = makeHarness(makingWay: makingWay)
     h.system.userFocus(game)
     #expect(h.controller.isPausedForApp)
     h.run("resume")
-    // All within the app, which stays in front: one of its windows is framed, the other floats and goes out of view.
+    // All within the app, which stays in front: one of its windows is framed, the other floats and, if it makes way, goes out of view.
     let lobby = h.system.open(app: "Game")
     h.system.userFocus(game)
     h.run("dock \(game.rawValue) top")
     h.run("zoom \(game.rawValue)")
-    #expect(h.controller.isRunning && !h.system.isVisible(lobby))
+    #expect(h.controller.isRunning && h.system.isVisible(lobby) == !makingWay)
     h.system.focused = lobby
     h.controller.windowFocused(lobby)
     // Well before the look that a pause on its way would be given. (Not "at once": the view may take a moment of its own to follow the

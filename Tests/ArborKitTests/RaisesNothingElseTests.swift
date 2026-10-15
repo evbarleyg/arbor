@@ -77,8 +77,9 @@ import Testing
     react
     advance 1
     """,
-  ]) func aGuestThatComesBackIsNotRaisedOverTheHostItsPersonSwitchedTo(script: String) {
-    #expect(timesTheWindowSwitchedToEndedBehind(script) == [])
+  ], [false, true]) func aGuestThatComesBackIsNotRaisedOverTheHostItsPersonSwitchedTo(script: String, makingWay: Bool) {
+    // Only a guest that makes way leaves and comes back. As Arbor ships it lies there all along, and the host ends in front all the same.
+    #expect(timesTheWindowSwitchedToEndedBehind((makingWay ? "settings {\"floatingWindowsMakeWay\":true}\n" : "") + script) == [])
   }
 
   @Test(arguments: [
@@ -116,9 +117,10 @@ import Testing
 
   // MARK: Told as a person would
 
-  /// `[a | b | Desktop]`, framed on `a`, with a guest over it; then the view goes to `b`, and the guest out of view with its host.
-  func aGuestOutOfViewWithItsHost() -> (Harness, host: WindowID, other: WindowID, guest: WindowID) {
-    let h = Harness()
+  /// `[a | b | Desktop]`, framed on `a`, with a guest over it; then the view goes to `b`. A guest that makes way goes out of view with its
+  /// host. As Arbor ships it stays where it is, over `b`.
+  func aGuestWhoseHostIsOutOfView(makingWay: Bool) -> (Harness, host: WindowID, other: WindowID, guest: WindowID) {
+    let h = Harness(settings: makingWay ? .makingWay : Settings())
     let a = h.system.open(app: "Safari", pid: 11, frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     let b = h.system.open(app: "Notes", pid: 12, frame: CGRect(x: 800, y: 200, width: 500, height: 400))
     h.start()
@@ -127,13 +129,13 @@ import Testing
     let guest = h.system.open(app: "Finder", pid: 13, frame: CGRect(x: 400, y: 200, width: 500, height: 400))
     h.system.userFocus(b)
     h.scheduler.advance(by: 1)
-    #expect(h.workspace.camera == h.workspace.tree.leaf(containing: b) && !h.system.isVisible(guest))
+    #expect(h.workspace.camera == h.workspace.tree.leaf(containing: b) && h.system.isVisible(guest) == !makingWay)
     h.system.clearRaiseLog()
     return (h, a, b, guest)
   }
 
-  @Test func theHostSwitchedToIsInFrontOfItsGuestAndTheGuestIsBackWhereItWas() {
-    let (h, host, _, guest) = aGuestOutOfViewWithItsHost()
+  @Test(arguments: [false, true]) func theHostSwitchedToIsInFrontOfItsGuestAndTheGuestIsBackWhereItWas(makingWay: Bool) {
+    let (h, host, _, guest) = aGuestWhoseHostIsOutOfView(makingWay: makingWay)
     h.system.userFocus(host)
     h.scheduler.advance(by: 1)
     #expect(h.workspace.camera == h.workspace.tree.leaf(containing: host))
@@ -144,8 +146,9 @@ import Testing
   }
 
   /// What the raise was there for: a guest behind a host that fills the view cannot be seen. These are the ways to it that remain.
-  @Test(arguments: ["desktop", "focus %guest", "zoom %guest", "a switch", "Go to…"]) func aGuestBehindItsHostCanBeReached(way: String) {
-    let (h, host, _, guest) = aGuestOutOfViewWithItsHost()
+  @Test(arguments: ["desktop", "focus %guest", "zoom %guest", "a switch", "Go to…"], [false, true])
+  func aGuestBehindItsHostCanBeReached(way: String, makingWay: Bool) {
+    let (h, host, _, guest) = aGuestWhoseHostIsOutOfView(makingWay: makingWay)
     h.system.userFocus(host)
     h.scheduler.advance(by: 1)
     #expect(h.frame(host)!.contains(h.frame(guest)!) && h.system.windowsFrontToBack().first == host, "wholly covered")
@@ -168,10 +171,11 @@ import Testing
   }
 
   /// There and back changes no window's place in the order. Two guests, one in front of the host and one behind it: raised as they came
-  /// back, both ended in front of the host.
-  @Test(arguments: ["back", "zoom %host", "view 1"]) func outOfViewAndBackLeavesTheOrderAsItWas(command: String) {
+  /// back, both ended in front of the host. As Arbor ships only the host goes and comes back, between the two that stay.
+  @Test(arguments: ["back", "zoom %host", "view 1"], [false, true])
+  func outOfViewAndBackLeavesTheOrderAsItWas(command: String, makingWay: Bool) {
     for hostWasInFront in [false, true] {
-      let h = Harness()
+      let h = Harness(settings: makingWay ? .makingWay : Settings())
       let a = h.system.open(app: "Safari", pid: 11, frame: CGRect(x: 100, y: 100, width: 600, height: 400))
       let b = h.system.open(app: "Notes", pid: 12, frame: CGRect(x: 800, y: 200, width: 500, height: 400))
       h.start()
@@ -188,7 +192,7 @@ import Testing
       #expect(before == (hostWasInFront ? [a, inFront, behind] : [inFront, a, behind]))
       h.system.clearRaiseLog()
       h.run("zoom \(b.rawValue)")
-      #expect(!h.system.isVisible(behind) && !h.system.isVisible(inFront))
+      #expect(!h.system.isVisible(a) && h.system.isVisible(behind) == !makingWay && h.system.isVisible(inFront) == !makingWay)
       h.run(command.replacingOccurrences(of: "%host", with: String(a.rawValue)))
       h.scheduler.advance(by: 1)
       #expect(h.system.isVisible(behind) && h.system.isVisible(inFront))
@@ -200,8 +204,10 @@ import Testing
   /// The view is on two docked windows, so both floating windows are out of view. Their person switches to one of them. The view steps out, both
   /// come back, and the other one is too wide for the Desktop and hangs over a docked window: raised for that, it ended in front of the window
   /// that was switched to.
-  @Test func aWideFloatingWindowThatComesBackTooStaysBehindTheFloatingWindowSwitchedTo() {
-    let h = Harness()
+  ///
+  /// So it goes where floating windows make way. As Arbor ships neither has left and no view moves, and the order is held to the same.
+  @Test(arguments: [false, true]) func aWideFloatingWindowThatComesBackTooStaysBehindTheFloatingWindowSwitchedTo(makingWay: Bool) {
+    let h = Harness(settings: makingWay ? .makingWay : Settings())
     let a = h.system.open(app: "Safari", pid: 11, frame: CGRect(x: 100, y: 100, width: 700, height: 500))
     let wide = h.system.open(
       app: "Preview", pid: 12, frame: CGRect(x: 500, y: 38, width: 800, height: 689), minimumSize: CGSize(width: 800, height: 400))
@@ -211,7 +217,7 @@ import Testing
     h.run("zoom \(a.rawValue)")
     let b = h.system.open(app: "Terminal", pid: 14, frame: CGRect(x: 279, y: 190, width: 600, height: 354))
     h.run("dock \(b.rawValue) right")
-    #expect(h.controller.parked.isSuperset(of: [wide, wanted]), "\(h.ascii())")
+    #expect(h.controller.parked.intersection([wide, wanted]) == (makingWay ? [wide, wanted] : []), "\(h.ascii())")
     h.system.clearRaiseLog()
     h.system.userFocus(wanted)
     #expect(h.controller.parked.isDisjoint(with: [wide, wanted]), "\(h.ascii())")
@@ -224,9 +230,10 @@ import Testing
   // MARK: What is still raised
 
   /// "The raise: one, when the pin is set" (Q25). A window pinned while it is out of view is raised as it comes in, also while another pinned
-  /// window has the keyboard, when the looks that follow raise nothing (Controller+Pin.swift).
-  @Test func aWindowPinnedWhileOutOfViewIsRaisedAsItComesIn() {
-    let h = Harness()
+  /// window has the keyboard, when the looks that follow raise nothing (Controller+Pin.swift). As Arbor ships it is not out of view
+  /// but behind the framed window, which is as good as: the pin names it, and it comes to the front.
+  @Test(arguments: [false, true]) func aWindowPinnedWhileOutOfViewOrBehindWhatIsFramedIsRaised(makingWay: Bool) {
+    let h = Harness(settings: makingWay ? .makingWay : Settings())
     let a = h.system.open(app: "Safari", pid: 11, frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     let b = h.system.open(app: "Notes", pid: 12, frame: CGRect(x: 800, y: 200, width: 500, height: 400))
     let call = h.system.open(app: "Zoom", pid: 13, frame: CGRect(x: 60, y: 60, width: 300, height: 200))
@@ -238,7 +245,7 @@ import Testing
     h.run("pin \(call.rawValue)")
     h.system.userFocus(call)
     h.scheduler.advance(by: 1)
-    #expect(!h.system.isVisible(timer))
+    #expect(h.system.isVisible(timer) == !makingWay)
     h.system.clearRaiseLog()
     #expect(h.run("pin \(timer.rawValue)").ok)
     h.scheduler.advance(by: 1)
@@ -378,19 +385,23 @@ import Testing
   }
 
   /// Walks a person could take find nothing. A net that never comes to its question catches nothing: counted is how often a floating window
-  /// that nothing keeps in view came back into view, which is where the raises were. With either raise put back these forty walks find it;
-  /// the next forty do not find the guest's.
-  @Test(.withTiles) func ordinaryWalksRaiseNothingUnasked() {
+  /// that nothing keeps in view came back into view, which is where the raises were. With either raise put back these forty walks found it,
+  /// when every view without the Desktop still took what floats away; the next forty did not find the guest's.
+  ///
+  /// Where floating windows make way that is still so. As Arbor ships one comes back only from where something else took it, a change of
+  /// displays for one, which is rare: there the walks go on past the fortieth until the question has been asked as often.
+  @Test(.withTiles, arguments: [false, true]) func ordinaryWalksRaiseNothingUnasked(makingWay: Bool) {
     let askedBefore = ChaosRunner.questionsAsked["raised", default: 0]
-    for seed in UInt64(1)...40 {
+    func asked() -> Int { ChaosRunner.questionsAsked["raised", default: 0] - askedBefore }
+    for seed in UInt64(1)...200 where seed <= 40 || asked() < 30 {
       let runner = ChaosRunner()
-      var generator = ChaosGenerator(seed: seed, ordinary: true)
       var found: [InvariantViolation] = []
+      if makingWay { found += runner.step(ChaosAction(text: "settings {\"floatingWindowsMakeWay\":true}")) }
+      var generator = ChaosGenerator(seed: seed, ordinary: true)
       for _ in 0..<200 { found += runner.step(generator.next(runner)) }
       for way in ChaosRunner.WayBack.allCases { found += runner.step(.wayBack(way)) }
       #expect(found.filter { $0.rule == "raised-unasked" }.map { "\($0)" } == [], "seed \(seed)")
     }
-    let asked = ChaosRunner.questionsAsked["raised", default: 0] - askedBefore
-    #expect(asked >= 30, "a floating window came back into view \(asked) times")
+    #expect(asked() >= 30, "a floating window came back into view \(asked()) times")
   }
 }

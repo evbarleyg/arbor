@@ -293,8 +293,16 @@ import Testing
     h.run("float \(b.rawValue)")
     h.system.close(b)
     h.system.userMove(f, to: CGRect(x: h.visibleFrame.maxX - 10, y: 200, width: 600, height: 400))
-    h.run("zoom \(a.rawValue)")
-    h.run("back")
+    if makingWay {
+      h.run("zoom \(a.rawValue)")
+      h.run("back")
+    } else {
+      // As Arbor ships no view takes it away, to put it anywhere again. A display that changes and changes back does.
+      h.system.setDisplays([small(1200, 800)])
+      h.scheduler.advance(by: 1)
+      h.system.setDisplays([FakeWindowSystem.standardDisplay])
+      h.scheduler.advance(by: 1)
+    }
     #expect(h.visibleFrame.contains(h.frame(f)!), "ten points are too little to see and grab: \(h.frame(f)!)")
   }
 
@@ -495,8 +503,8 @@ import Testing
     #expect(h.frame(f) == place, "`\(command)` sent it out of view")
   }
 
-  @Test func framingTheFramedWindowAgainTakesNothingAway() {
-    var settings = Settings()
+  @Test(arguments: [false, true]) func framingTheFramedWindowAgainTakesNothingAway(makingWay: Bool) {
+    var settings = makingWay ? Settings.makingWay : Settings()
     settings.newWindowsWhileFramed = "float"
     let h = Harness(settings: settings)
     let a = h.system.open(app: "Safari")
@@ -510,7 +518,11 @@ import Testing
     h.run("zoom \(a.rawValue)")
     #expect(h.frame(f) == place)
     h.run("zoom \(b.rawValue)")
-    #expect(!h.system.isVisible(f), "the view moved, so it went with the Desktop")
+    if makingWay {
+      #expect(!h.system.isVisible(f), "the view moved, so it went with the Desktop")
+    } else {
+      #expect(h.frame(f) == place, "nor does a view that moves")
+    }
   }
 
   /// On a Mac, minimizing anything nudges the Dock, which is reported as a change of the displays.
@@ -607,7 +619,11 @@ import Testing
       h.run("resize \(a.rawValue) right 300")
       #expect(h.layout!.desktopFrame == nil && h.layout!.tiles.map(\.kind) == [.desktop])
       h.run("zoom \(a.rawValue)")
-      #expect(!h.system.isVisible(f), "the Desktop is not part of this view")
+      if makingWay {
+        #expect(!h.system.isVisible(f), "the Desktop is not part of this view")
+      } else {
+        #expect(h.frame(f) == place, "no view takes it away")
+      }
       let order = h.system.windowsFrontToBack()
       h.system.clearRaiseLog()
       h.run(command)
@@ -639,8 +655,8 @@ import Testing
   }
 
   /// Docking while looking at the Desktop nests it in a group. That group is a view the Desktop is part of.
-  @Test func aGroupThatHoldsTheDesktopShowsItsWindowsToo() {
-    let (h, a, b, f) = makeHarness()
+  @Test(arguments: [false, true]) func aGroupThatHoldsTheDesktopShowsItsWindowsToo(makingWay: Bool) {
+    let (h, a, b, f) = makeHarness(makingWay: makingWay)
     h.run("desktop")
     let c = h.system.open(app: "Mail", frame: CGRect(x: 500, y: 300, width: 400, height: 300))
     h.run("dock \(c.rawValue) left")
@@ -648,7 +664,7 @@ import Testing
     #expect(group != h.workspace.tree.root && h.workspace.tree.subtree(group, contains: h.workspace.tree.desktop))
     h.run("resize \(c.rawValue) right 2000")
     h.run("zoom \(a.rawValue)")
-    #expect(!h.system.isVisible(f))
+    #expect(h.system.isVisible(f) == !makingWay, "it leaves with the Desktop only where floating windows make way")
     h.run("zoom-node \(group.rawValue)")
     #expect(h.layout!.desktopFrame == nil, "\(h.ascii())")
     #expect(h.system.isVisible(f))
@@ -666,7 +682,8 @@ import Testing
   }
 
   @Test func switchingToAFloatingWindowWhoseDesktopIsATileShowsIt() {
-    let (h, a, b, f) = makeHarness(apart: true)
+    // Floating windows that make way: only they leave with the Desktop, for a switch to bring it back.
+    let (h, a, b, f) = makeHarness(makingWay: true, apart: true)
     let c = h.system.open(app: "Mail")
     h.run("dock \(c.rawValue) beside \(b.rawValue) bottom")
     h.run("resize \(a.rawValue) right 300")
@@ -684,6 +701,29 @@ import Testing
     h.system.userFocus(f)
     #expect(h.system.isVisible(f))
     #expect(h.workspace.camera == h.workspace.tree.root)
+  }
+
+  /// As Arbor ships it is in view already, whatever the view shows: the switch moves no view and no window.
+  @Test func switchingToAFloatingWindowBesideWhatIsFramedMovesNoView() {
+    let (h, a, b, f) = makeHarness(apart: true)
+    let c = h.system.open(app: "Mail")
+    h.run("dock \(c.rawValue) beside \(b.rawValue) bottom")
+    h.run("resize \(a.rawValue) right 300")
+    #expect(h.layout!.desktopFrame == nil)
+    let place = h.frame(f)!
+    // One window framed, then a group.
+    for commands in [["zoom \(a.rawValue)"], ["zoom \(b.rawValue)", "out"]] {
+      for command in commands { h.run(command) }
+      h.scheduler.advance(by: 1)
+      let view = h.workspace.camera
+      #expect(view != h.workspace.tree.root && h.frame(f) == place, "\(commands)")
+      h.system.clearFrameLog()
+      h.system.userFocus(f)
+      h.scheduler.advance(by: 1)
+      #expect(h.workspace.camera == view, "\(commands)")
+      #expect(h.system.frameLog.isEmpty, "\(commands): \(h.system.frameLog)")
+      #expect(h.system.focused == f, "\(commands)")
+    }
   }
 
   @Test func aTitleChangeIsNotAMove() {
