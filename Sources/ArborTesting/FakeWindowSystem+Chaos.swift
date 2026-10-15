@@ -88,6 +88,11 @@ extension FakeWindowSystem {
     windows[id] = FakeWindow(
       snapshot: snapshot, minimumSize: minimumSize, maximumSize: maximumSize, behaviour: behaviour)
     guard started else { return }
+    // As in `open(app:)`.
+    if echoes.keyboard {
+      focused = id
+      bringToFront(id)
+    }
     events?.windowAppeared(snapshot)
     if echoes.keyboard { giveKeyboard(to: id) }
     deliverEchoes()

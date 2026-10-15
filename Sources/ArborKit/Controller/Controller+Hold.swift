@@ -328,7 +328,7 @@ extension Controller {
           leftFloating.append(window)
           continue
         }
-        apply(ruleAt: index, to: window)
+        apply(ruleAt: index, to: window, theViewMayFollow: false)
       }
       if !putOff.isEmpty { scheduleSave() }
     }

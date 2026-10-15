@@ -85,7 +85,7 @@
    "id": "a-new-window-has-the-keyboard-before-arbor-hears-of-it",
    "kind": "order-of-reports",
    "layer": "at the seam",
-   "expected": "At the moment a new window is reported, \"the focused window\" is the one the person was working in. The stand-in reports a new window first and gives it the keyboard and the front place afterwards.",
+   "expected": "At the moment a new window is reported, \"the focused window\" is the one the person was working in. The stand-in reported a new window first and gave it the keyboard and the front place afterwards; now it gives both first, and the reports come in the order they came in.",
    "happened": "\"Created\" and \"focused window changed\" arrive in the same millisecond. By the time Arbor hears of a new window it has the keyboard already, so \"focused\" has to mean \"focused until a moment ago\". In a burst of new windows the focus reports lag behind the windows.",
    "found": "A recording of Accessibility notifications on a hosted Mac, and building automatic docking against the real-window run's session on new windows. That the stand-in raises a new window only after reporting it came out of random walks.",
    "modelled": "partly",
@@ -99,9 +99,11 @@
     "test: afterTheBurstTheFocusedWindowCountsAgain",
     "test: aBurstLargerThanTheDisplayLeavesTheRestFloating",
     "test: aNewWindowIsCreatedThenFocused",
+    "test: aNewWindowHasTheKeyboardBeforeAnybodyHearsOfIt",
+    "test: itGoesStraightToWhereItEndsUp",
     "e2e: a new window docks beside the focused one"
    ],
-   "copes": "Sources/ArborKit/Controller/Controller+AutoDock.swift reads \"focused\" from the focus history: the docked window showing in the view that had the keyboard last. For a second a window docked this way heads that history.",
+   "copes": "Sources/ArborKit/Controller/Controller+AutoDock.swift reads \"focused\" from the focus history: the docked window showing in the view that had the keyboard last. For a second a window docked this way heads that history. Sources/ArborKit/Controller/Controller+Rules.swift makes use of it: a window that a rule docks where it is too small to show, and that has the keyboard already, gets the view before the one layout and not after a first.",
    "hurt": 2,
    "touches": [
     "focus"
@@ -3433,7 +3435,8 @@
    ],
    "guards": [
     "test: aNewWindowIsCreatedThenFocused",
-    "test: aLateFloatOfAWindowTheViewWentToIsBackWhereItOpened"
+    "test: aLateFloatOfAWindowTheViewWentToIsBackWhereItOpened",
+    "test: fromAViewOnOneWindowNobodyElseComesAndGoes"
    ],
    "copes": "Controller.bringIntoViewIfFocused: the view follows a window that really has the keyboard, by decision; docking by command does not pull the view.",
    "hurt": 2,

@@ -1,5 +1,6 @@
 import ArborCore
 import CoreGraphics
+import Foundation
 
 /// Per-app rules (docs/features/F11-app-rules.md): `settings.rules` decides
 /// what happens to a window that appears while Arbor is running. Windows
@@ -37,8 +38,8 @@ extension Controller {
   }
 
   /// Does what a rule says with a new window, whatever an earlier rule did with it. Without a
-  /// rule the window floats.
-  func apply(ruleAt index: Int?, to id: WindowID) {
+  /// rule the window floats. `theViewMayFollow`: see `dockNewWindow`.
+  func apply(ruleAt index: Int?, to id: WindowID, theViewMayFollow: Bool = true) {
     let rule = index.map { settings.newWindowRules[$0] }
     let dockedOn = workspaces.first { $0.value.isDocked(id) }?.key
     // (A window in a workspace is brought into view by `releaseUnmanagedWindows`. One that cannot be ignored yet
@@ -89,16 +90,16 @@ extension Controller {
       }
       if let dockedOn { relayout(dockedOn, reason: .structure) } else { notify(.layout(display)) }
     case .dock(let edge):
-      dockNewWindow(id, at: .cameraEdge(edge), on: display)
+      dockNewWindow(id, at: .cameraEdge(edge), on: display, theViewMayFollow: theViewMayFollow)
       logRule(index, "docked \(id) at the \(edge.rawValue) edge of the view")
     case .dockBeside(let app, let edge):
       if let neighbour = recentlyFocusedDockedWindow(of: app, on: display, except: id),
         let leaf = workspaces[display]?.tree.leaf(containing: neighbour)
       {
-        dockNewWindow(id, at: .beside(leaf, edge), on: display)
+        dockNewWindow(id, at: .beside(leaf, edge), on: display, theViewMayFollow: theViewMayFollow)
         logRule(index, "docked \(id) \(edge.rawValue) of \(neighbour)")
       } else {
-        dockNewWindow(id, at: .cameraEdge(edge), on: display)
+        dockNewWindow(id, at: .cameraEdge(edge), on: display, theViewMayFollow: theViewMayFollow)
         let outcome = "docked \(id) at the \(edge.rawValue) edge of the view"
         logRule(index, "no docked \(app) window on this display; \(outcome)")
       }
@@ -316,17 +317,48 @@ extension Controller {
 
   /// Docks a window that was just adopted. Docking widens the camera just
   /// enough to show it (`Workspace.dock`). It is not focused here; its app
-  /// usually focuses it, and if it is too small to show and became a tile,
-  /// `windowFocused` zooms in on it as it does for any window. `desktopWeight` is `AutoDock.Placement`'s.
-  func dockNewWindow(_ id: WindowID, at target: DropTarget, on display: DisplayID, desktopWeight: Double? = nil) {
+  /// usually focuses it, and if it is too small to show, the view goes to it
+  /// as to any window that has the keyboard: when `windowFocused` says so, or, if
+  /// `theViewMayFollow`, at once (`theViewGoesStraightTo`). `desktopWeight` is `AutoDock.Placement`'s.
+  func dockNewWindow(
+    _ id: WindowID, at target: DropTarget, on display: DisplayID, desktopWeight: Double? = nil, theViewMayFollow: Bool = false
+  ) {
     guard var workspace = workspaces[display] else { return }
     // Undoing it leaves the window floating. Nobody asked for it just now, so redo stays.
     recordingUndo("dock \(id) as it opened", title: "Dock", keepingRedo: true) {
       AutoDock.Placement(target: target, desktopWeight: desktopWeight)
         .apply(to: &workspace, docking: id, shareSpace: settings.shareRemovedSpace)
       workspaces[display] = workspace
-      relayout(display, reason: .structure)
+      if !(theViewMayFollow && theViewGoesStraightTo(id, dockedOn: display)) { relayout(display, reason: .structure) }
     }
+  }
+
+  /// A new window has the keyboard by the time Arbor hears of it, and the view follows the keyboard. Docked where it is
+  /// too small to show, it was laid out as a tile, which sent it to its corner, and fetched when its focus was reported;
+  /// its neighbours moved for the one layout and left for the other, and from a view on one window everybody else came
+  /// into view in between. So where the layout to come would leave it out, the view goes to it first, and there is one
+  /// layout. Says whether it did.
+  ///
+  /// For a rule that names a place. Automatic docking takes back what does not show, and the end of a hold moves no view.
+  /// Not during a hold either, where it depends on who asked whether the view follows (Controller+Hold.swift), nor when
+  /// macOS has just handed the keyboard on (`bringIntoViewIfFocused`): both are seen to when the focus is reported, as
+  /// before. So is a window that turns out to refuse its slot, which only asking it can tell.
+  private func theViewGoesStraightTo(_ id: WindowID, dockedOn display: DisplayID) -> Bool {
+    let handedOn = keyboardHandOver.loss.map { now().timeIntervalSince($0.time) < Self.handOverTime } ?? false
+    guard holdLevel == nil, drag == nil, !handedOn, windows[id]?.isPresent == true, let workspace = workspaces[display],
+      let leaf = workspace.tree.leaf(containing: id)
+    else { return false }
+    // What macOS says beforehand, as the layout would note it.
+    noteFixedSizes(of: [id])
+    // The question to the window system last: most windows show where they are docked.
+    guard !theNextLayoutShows(id, on: display), system.focusedWindow() == id else { return false }
+    let floatingInView = workspace.floating.keys.sorted().filter { !parked.contains($0) }
+      .compactMap { window in windows[window].map { (window: window, frame: $0.frame) } }
+    reveal(id, leaf: leaf, on: display)
+    // As after every move that followed the keyboard (`bringIntoViewIfFocused`).
+    keyboardHandOver.reveal = .init(
+      window: id, holder: focusHistory.first { $0 != id }, display: display, time: now(), floatingInView: floatingInView)
+    return true
   }
 
   /// The docked window of the app `bundleID` on `display` that was focused

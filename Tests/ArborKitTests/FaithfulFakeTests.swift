@@ -9,7 +9,12 @@ import Testing
 @MainActor
 private final class Recorder: WindowSystemEvents {
   var log: [String] = []
-  func windowAppeared(_ window: WindowSnapshot) { log.append("appeared \(window.id)") }
+  /// Asked at the moment a window is reported.
+  var whenAWindowAppears: (() -> Void)?
+  func windowAppeared(_ window: WindowSnapshot) {
+    log.append("appeared \(window.id)")
+    whenAWindowAppears?()
+  }
   func windowDestroyed(_ id: WindowID) { log.append("destroyed \(id)") }
   func windowChanged(_ window: WindowSnapshot, userInitiated: Bool) {
     var traits: [String] = []
@@ -53,6 +58,29 @@ private final class Recorder: WindowSystemEvents {
     let new = system.open(app: "Safari", pid: 1)
     #expect(recorder.log == ["appeared \(new)", "focused \(new)"])
     #expect(system.focused == new)
+  }
+
+  /// The reports lag behind the Mac: by the time anybody hears of a new window it has the keyboard and is in front.
+  @Test(arguments: [false, true]) func aNewWindowHasTheKeyboardBeforeAnybodyHearsOfIt(underANumberOfTheCallersChoice: Bool) {
+    let (system, recorder, a, _, _) = make()
+    var met: [(keyboard: WindowID?, front: WindowID?)] = []
+    recorder.whenAWindowAppears = { met.append((system.focusedWindow(), system.windowsFrontToBack().first)) }
+    let new: WindowID
+    if underANumberOfTheCallersChoice {
+      new = WindowID(900)
+      system.open(id: new, app: "Safari", bundleID: nil, title: "", pid: 1, frame: CGRect(x: 0, y: 25, width: 400, height: 300))
+    } else {
+      new = system.open(app: "Safari", pid: 1)
+    }
+    #expect(met.map(\.keyboard) == [new] && met.map(\.front) == [new])
+    #expect(recorder.log == ["appeared \(new)", "focused \(new)"], "and what is reported is what it was")
+
+    // One that opens in the background has neither.
+    met = []
+    system.echoes.keyboard = false
+    system.userFocus(a)
+    let quiet = system.open(app: "Mail", pid: 2)
+    #expect(met.map(\.keyboard) == [a] && system.focused == a && quiet != a)
   }
 
   @Test func closingTheFocusedWindowFocusesTheAppsNextWindowBeforeItIsReportedGone() {

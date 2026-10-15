@@ -451,6 +451,11 @@ public final class FakeWindowSystem: WindowSystem {
     windows[id] = FakeWindow(
       snapshot: snapshot, minimumSize: isResizable ? minimumSize : frame.size, maximumSize: isResizable ? nil : frame.size)
     guard started else { return id }
+    // By the time anybody hears of a new window it has the keyboard and is in front.
+    if echoes.keyboard {
+      focused = id
+      bringToFront(id)
+    }
     events?.windowAppeared(snapshot)
     // Created, then focused, in the same millisecond.
     if echoes.keyboard { giveKeyboard(to: id) }
