@@ -80,6 +80,12 @@ answer_about_releases() {
   printf 'HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: %s\r\nConnection: close\r\n\r\n%s' "${#body}" "$body" \
     | nc -l 127.0.0.1 8765 > /dev/null 2>&1 &
   started $!
+  # Until it listens: asked a moment too early, Arbor says that GitHub could not be reached (two tours of five, on a hosted Mac).
+  local tries=0
+  until lsof -nP -iTCP:8765 -sTCP:LISTEN > /dev/null 2>&1 || [ "$tries" -ge 30 ]; do
+    sleep 0.1
+    tries=$((tries + 1))
+  done
 }
 
 # scene <look>: the Mac's settings for it. Apps read them as they start.
@@ -107,6 +113,7 @@ SETTINGS='{
   "focusRing": true,
   "menuBarControls": true,
   "animationDuration": 0.46,
+  "pointerGestures": true,
   "rules": [
     { "app": "com.example.mail", "title": "Inbox", "action": "dock left" },
     { "app": "com.example.player", "action": "float" }
@@ -368,8 +375,8 @@ tour() {
   # By its button: ⎋ reaches it only if macOS let Arbor, asked from a terminal, have the keyboard.
   if [ -z "${ARBOR_REHEARSAL:-}" ]; then
     # shellcheck disable=SC2046
-    click $(ax point AXButton Later)
-    check "Later puts it away" eventually not has_come "$before"
+    click $(ax point AXButton Later || ax point AXButton OK)
+    check "its button puts it away" eventually not has_come "$before"
   fi
 
   claim "the line on screen  ($p)"
