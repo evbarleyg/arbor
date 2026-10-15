@@ -2037,8 +2037,13 @@ esac""",
         process = subprocess.Popen([BASH, runner, "fine.sh", "hangs.sh", "fine.sh", "fine.sh"], cwd=folder, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
         # Until the script has said its word, which it does once it is ready to be interrupted. A line of its own: the heading above it names the script.
         for _ in range(200):
-            if os.path.exists(os.path.join(folder, "mac-shell", "output.txt")) and "\nhangs\n" in open(os.path.join(folder, "mac-shell", "output.txt"), encoding="utf-8").read():
-                break
+            # The runner empties mac-shell/ between two scripts: the file may go between a look and the reading.
+            try:
+                with open(os.path.join(folder, "mac-shell", "output.txt"), encoding="utf-8") as handle:
+                    if "\nhangs\n" in handle.read():
+                        break
+            except FileNotFoundError:
+                pass
             time.sleep(0.05)
         process.terminate()
         process.communicate(timeout=30)
