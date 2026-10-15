@@ -204,6 +204,9 @@ if wanted commands; then
     does "dock W1 left again" ctl dock "$W1" left
     does "move W1 to the next display" ctl move-to-display next "$W1"
     does "move W1 to the next display again" ctl move-to-display next "$W1"
+    # On a Mac it arrived short: a size call right after the change of display is judged by the display the window came from. Does a trip out of view and back mend it?
+    does "zoom W2, so that W1 goes out of view" ctl zoom "$W2"
+    does "back, so that W1 comes into view again" ctl back
   fi
   journey_ends
 fi
