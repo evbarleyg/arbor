@@ -267,40 +267,60 @@ extension Controller {
       let view = treeView(display)
     else { return .failure("\(id) is out of view") }
 
-    // Where each edge with a seam beside it should end up.
-    var wanted: [(edge: Edge, coordinate: CGFloat)] = []
+    // Moves the gaps beside it as far as is wanted, and as far as is known that its app lets it go. From the arrangement as it was.
     var hasSeams = false
-    for axis in Axis.allCases {
-      let sides = (axis == .horizontal ? [Edge.left, .right] : [.top, .bottom]).filter { edge in
-        if case .seam = Self.seam(on: edge, of: leaf, in: view, layout: layout) { return true }
-        return false
+    func moveTheGaps() -> Bool {
+      let asTheyAre = workspaces[display]?.tree
+      // Where each edge with a seam beside it should end up.
+      var wanted: [(edge: Edge, coordinate: CGFloat)] = []
+      for axis in Axis.allCases {
+        let sides = (axis == .horizontal ? [Edge.left, .right] : [.top, .bottom]).filter { edge in
+          if case .seam = Self.seam(on: edge, of: leaf, in: view, layout: layout) { return true }
+          return false
+        }
+        guard !sides.isEmpty else { continue }
+        hasSeams = true
+        var change = amount
+        if !growing {
+          // It stops while it can still be shown: a window shrunk into a tile could not be grown back.
+          let usable = options(for: display).layoutOptions.minimumUsableSize
+          let learned = minimumSizes[id] ?? .zero
+          let floor = axis == .horizontal ? max(usable.width, learned.width) : max(usable.height, learned.height)
+          change = -min(-amount, max(slot.length(along: axis) - floor - 1, 0))
+        }
+        guard change != 0 else { continue }
+        let share = change / CGFloat(sides.count)
+        for edge in sides { wanted.append((edge, slot.coordinate(of: edge) + (edge.isLeading ? -share : share))) }
       }
-      guard !sides.isEmpty else { continue }
-      hasSeams = true
-      var change = amount
-      if !growing {
-        // It stops while it can still be shown: a window shrunk into a tile could not be grown back.
-        let usable = options(for: display).layoutOptions.minimumUsableSize
-        let learned = minimumSizes[id] ?? .zero
-        let floor = axis == .horizontal ? max(usable.width, learned.width) : max(usable.height, learned.height)
-        change = -min(-amount, max(slot.length(along: axis) - floor - 1, 0))
-      }
-      guard change != 0 else { continue }
-      let share = change / CGFloat(sides.count)
-      for edge in sides { wanted.append((edge, slot.coordinate(of: edge) + (edge.isLeading ? -share : share))) }
-    }
-    guard hasSeams else { return .failure("\(id) has nothing beside it in view to trade room with") }
-    guard moveSeams(beside: leaf, on: display, toward: wanted) else {
+      if hasSeams, moveSeams(beside: leaf, on: display, toward: wanted) { return true }
       // To the last digit: a command that fails has changed nothing.
-      workspaces[display]?.tree = before
-      return .failure("\(id) cannot \(verb) any further")
+      if let asTheyAre { workspaces[display]?.tree = asTheyAre }
+      return false
+    }
+    guard moveTheGaps() else {
+      return .failure(hasSeams ? "\(id) cannot \(verb) any further" : "\(id) has nothing beside it in view to trade room with")
     }
     // The person's own hand, like `resize` and a drag of the gap: Arbor does not push back (F61).
-    byHand { relayout(display, reason: .structure) }
+    var movedAtAll = true
+    // The whole tree may be put back: under a hand that holds the gaps no layout gives up a place (`dropOverdueSlots`).
+    func putTheGapsBack() { workspaces[display]?.tree = before }
+    byHand {
+      // How small its app lets it get is known only once it has been asked, which the layout does where the window stands, before
+      // a neighbour has moved. It will not be that small: the gaps go as far as it does, on paper. Laid out first, it was
+      // a tile, out of view, until the gaps had been put back and everybody had moved twice.
+      relayout(
+        display, reason: .structure, about: growing ? nil : id,
+        thinkingAgain: growing
+          ? nil
+          : {
+            putTheGapsBack()
+            movedAtAll = moveTheGaps()
+          })
+    }
     if layouts[display]?.windowFrames[id] == nil {
-      // Its app refused the smaller slot, so it became a tile. Put the seams back, and now that Arbor
-      // has learned how small the window can get, go as far as that.
-      workspaces[display]?.tree = before
+      // It is a tile all the same: it will not even be as small as it was, or asks for more every time it is asked. Put the
+      // seams back, and now that Arbor has learned how small the window can get, go as far as that.
+      putTheGapsBack()
       byHand { relayout(display, reason: .structure) }
       if !isSecondTry, layouts[display]?.windowFrames[id] != nil {
         return resizeFocusedWindow(by: points, growing: growing, isSecondTry: true)
@@ -308,6 +328,7 @@ extension Controller {
       ensureFocusIsVisible(on: display)
       return .failure("\(id) cannot \(verb) any further")
     }
+    guard movedAtAll else { return .failure("\(id) cannot \(verb) any further") }
     scheduleSave()
     return .success(growing ? "\(id) grew" : "\(id) shrank")
   }

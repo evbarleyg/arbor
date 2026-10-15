@@ -610,15 +610,17 @@ extension ChaosRunner {
         """),
     ChaosKnownFailure(
       rule: "flashed-out-of-view", owner: "rule 3: one thing that happens is one layout", severity: 2,
-      story: "One command sends a window out of view and fetches it again. `shrink` takes a docked window below what its app allows: it becomes a tile, the gaps are put back, "
-        + "and the command tries again with what it has learnt. A docked window becomes a tile, and a moment later the view follows the keyboard onto it. A summoned window at the end of a pause.",
+      story: "One command sends a window out of view and fetches it again. `rotate` turns the group, a window will not be as small as its new slot and is a tile, "
+        + "and the command takes itself back: every window has gone there and back for \"not enough room\". Also: a docked window becomes a tile, and a moment "
+        + "later the view follows the keyboard onto it.",
       script: """
+        displays side:0,0,2560,1440:25,0,0,70* windows-never
+        open 101 Safari pid 1000 at 861 153 972 864 min 574 240
+        open 102 Notes pid 1001 at 157 794 819 516 min 709 300
+        open 103 Xcode pid 1004 at 677 463 1188 744 min 1188 685
         launch
-        open 102 Xcode pid 1004 at 76 25 1248 875 min 1188 685
-        open 103 Mail pid 1002 at 138 215 1166 511 min 760 400
         key down arrange
-        key down dock top
-        key down shrink
+        key down rotate
         """,
       """
         open 102 Music pid 1006 at 858 56 882 708 min 680 480
@@ -629,13 +631,6 @@ extension ChaosRunner {
         key down focus down
         key down dock right
         react
-        """,
-      """
-        open 103 Xcode pid 1004 at 120 658 1430 685 min 1188 685
-        launch
-        via shortcut summon Xcode
-        toggle-pause
-        toggle-pause
         """),
     ChaosKnownFailure(
       rule: "displays-left-mostly-out-making-way", owner: "displays: afterwards nothing is lost", severity: 4,

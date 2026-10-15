@@ -27,7 +27,11 @@ extension Controller {
       // Let be through this layout (`stillLetBe`), as `apply` lets it be.
       if enforcement.givenUp.contains(window) { continue }
       // The first frame `apply` asks for.
-      moves.append((window, questionBeforePlacing(current, in: target, on: displayID) ?? request(for: current, in: target)))
+      if let question = questionBeforePlacing(current, in: target, on: displayID) {
+        moves.append((window, question))
+      } else if case let asked = request(for: current, in: target), !isWhereItsAnswerBelongs(current, asked: asked, in: target) {
+        moves.append((window, asked))
+      }
     }
     // With `shrinkOutOfView` a window is parked at another size, which `parkingSize` works out and remembers in one
     // go: not for a forecast. Those moves wait on their own.
