@@ -11,8 +11,13 @@
 #                   exit-code.txt, the first exit code that is not 0
 #
 # Each script finds in $MAC_SHELL_PART which playing of the whole dispatch it is, and in $MAC_SHELL_PARTS how many there are, over all its Macs: its place
-# among run.sh's arguments, whichever Mac plays it (they are dealt out like cards: Mac i of M, which is $MAC_SHELL_SHARE, plays places i, i+M, …). Both
-# are settled before the first script begins, so that a playing that is left out, cut off or lost shows as a gap. One script: 1 and 1.
+# among run.sh's arguments. A Mac plays a block of them, one after the other, from $MAC_SHELL_FIRST_PART on. All of it is settled before the first
+# script begins, and so that a playing that never began shows as that and not as a gap, each one's folder holds a run.json from the start:
+#   {"gate": 1, "started": false, "run": "<GitHub's run>", "attempt": n, "part": k, "parts": N, "commit": "<40 hex>"}
+# A script that leaves a run.json of its own in mac-shell/ replaces it. One script: 1 and 1.
+#
+# What has been gathered comes back also if the job is cut off in the middle of the list: the scripts that have run whole, the one that was
+# running as far as it got, the rest with their run.json. There is no exit-code.txt at the top then.
 #
 # Every script gets its turn, whatever became of the one before: they are separate questions. One that is still running after
 # MAC_SHELL_LIMIT seconds (1200) is stopped as the job's own time limit would stop it, only that the others still get to run: TERM, which
@@ -93,21 +98,49 @@ mac_put_back() {
 }
 
 # The job was cancelled or has run out of time: the script that is running gets the chance to clean up and to leave its logs.
-running=""
-trap '[ -n "$running" ] && kill -TERM "$running" 2>/dev/null' TERM INT HUP
+running="" cut_off=""
+trap 'cut_off=yes; [ -n "$running" ] && kill -TERM "$running" 2>/dev/null' TERM INT HUP
 
-share=${MAC_SHELL_SHARE:-1/1}
-case "$share" in [1-9]*/[1-9]*) ;; *) share=1/1 ;; esac
-# The workflow knows how many there are in all. Without it: what this Mac was given.
+# The workflow knows how many there are in all, and where this Mac's begin. Without it: what this Mac was given, from 1.
 export MAC_SHELL_PARTS=${MAC_SHELL_PARTS:-$#}
+first_part=${MAC_SHELL_FIRST_PART:-1}
+case "$first_part" in "" | *[!0-9]*) first_part=1 ;; esac
+
+folder_of() { if [ "$total" -eq 1 ]; then echo "$kept"; else echo "$kept/$1-$(basename "$2" .sh)"; fi; }
+total=$# number=0
+for script in "$@"; do
+  number=$((number + 1))
+  mkdir -p "$(folder_of "$number" "$script")"
+  printf '{"gate": 1, "started": false, "run": "%s", "attempt": %d, "part": %d, "parts": %d, "commit": "%s"}\n' "${GITHUB_RUN_ID:-}" \
+    "${GITHUB_RUN_ATTEMPT:-1}" "$((first_part + number - 1))" "$MAC_SHELL_PARTS" "$(git rev-parse HEAD 2>/dev/null)" > "$(folder_of "$number" "$script")/run.json"
+done
+
+# gather <number> <script>: what the script said and left goes to its folder, over what lay there.
+gather() {
+  [ -d "$out" ] || return 0
+  cp -R "$out/." "$(folder_of "$1" "$2")/"
+  rm -rf "$out"
+}
+# However this ends, mac-shell/ holds all there is.
+finish() {
+  [ -d "$kept" ] || return 0
+  [ -z "$now_playing" ] || gather "$number" "$now_playing"
+  rm -f "$kept/.settings" "$kept/.for-good" "$kept/.window-manager.plist"
+  rm -rf "$out"
+  mv "$kept" "$out"
+}
+now_playing=""
+trap finish EXIT
 
 [ $# -eq 1 ] || mac_note
 spoilt=""
 
 first=0 number=0
 for script in "$@"; do
+  [ -z "$cut_off" ] || break
   number=$((number + 1))
-  export MAC_SHELL_PART=$((${share%/*} + (number - 1) * ${share#*/}))
+  now_playing=$script
+  export MAC_SHELL_PART=$((first_part + number - 1))
   rm -rf "$out"
   mkdir -p "$out"
   header="# mac-shell: $script at $commit, macOS $system, $(date -u +%Y-%m-%dT%H:%MZ)"
@@ -143,7 +176,7 @@ for script in "$@"; do
     running=""
     [ -z "$stopped" ] || code=124
   fi
-  if [ -z "$spoilt" ] && [ "$number" -lt $# ] && ! mac_put_back "$(basename "$script")" >> "$out/output.txt" 2>&1; then
+  if [ -z "$spoilt" ] && [ -z "$cut_off" ] && [ "$number" -lt $# ] && ! mac_put_back "$(basename "$script")" >> "$out/output.txt" 2>&1; then
     spoilt=$(basename "$script")
     echo "::warning title=mac-shell::$spoilt left a Mac that cannot be made what it was: the scripts after it do not run"
   fi
@@ -170,19 +203,19 @@ for script in "$@"; do
   if [ $# -gt 1 ]; then
     counts=$(grep -E "^[0-9]+ passed, [0-9]+ failed" "$out/output.txt" | tail -n 1)
     printf '%2d %-32s exit %-3s %4d s  %s\n' "$number" "$(basename "$script")" "$code" "$((SECONDS - began))" "$counts" >> "$kept/summary.txt"
-    mv "$out" "$kept/$number-$(basename "$script" .sh)"
   fi
+  gather "$number" "$script"
+  now_playing=""
 done
 
+if [ -n "$cut_off" ]; then
+  echo "::warning title=mac-shell::cut off after $number of $# scripts"
+  exit 130
+fi
 if [ $# -gt 1 ]; then
-  rm -rf "$out"
-  rm -f "$kept/.settings" "$kept/.for-good" "$kept/.window-manager.plist"
-  mv "$kept" "$out"
-  echo "$first" > "$out/exit-code.txt"
-  cat "$out/summary.txt"
-  awk '{ gsub(/%/, "%25"); printf "%s%%0A", $0 }' "$out/summary.txt" | sed 's/^/::notice title=mac-shell summary::/'
+  echo "$first" > "$kept/exit-code.txt"
+  cat "$kept/summary.txt"
+  awk '{ gsub(/%/, "%25"); printf "%s%%0A", $0 }' "$kept/summary.txt" | sed 's/^/::notice title=mac-shell summary::/'
   echo
-else
-  rmdir "$kept" 2>/dev/null
 fi
 exit "$first"

@@ -1700,6 +1700,8 @@ def check_mac_shell_batch():
         "hangs.sh": "trap 'echo cleaned up; exit 143' TERM\necho hangs\nsleep 60 & wait\n",
         "leaves.sh": "(sleep 20 &)\necho left\n",
         "part.sh": "echo part $MAC_SHELL_PART of $MAC_SHELL_PARTS\n",
+        "own.sh": """echo '{"started": true, "part": '$MAC_SHELL_PART'}' > mac-shell/run.json\n""",
+        "lists.sh": "ls mac-shell\n",
     }
 
     def tried(*names, limit="60", **more):
@@ -1719,7 +1721,7 @@ def check_mac_shell_batch():
 
     code, left, said, _ = tried("fails.sh")
     row("ci-mac-shell.sh: one script: its exit code, and the files where they have always been",
-        (code, sorted(left), left["exit-code.txt"]), (1, ["exit-code.txt", "fails.log", "output.txt"], "1\n"))
+        (code, sorted(left), left["exit-code.txt"]), (1, ["exit-code.txt", "fails.log", "output.txt", "run.json"], "1\n"))
     row("ci-mac-shell.sh: one script: what it said, between the header and the exit code",
         (left["output.txt"].splitlines()[0][:25], left["output.txt"].splitlines()[1:]), ("# mac-shell: fails.sh at ", ["fails", "0", "exit code 1"]))
     row("ci-mac-shell.sh: the exit code is an annotation", "::notice title=mac-shell exit code::fails.sh exited with 1" in said, True)
@@ -1729,7 +1731,7 @@ def check_mac_shell_batch():
     row("ci-mac-shell.sh: several: a folder for each, also for one that ran twice, failed, or is not there", sorted(left), sorted(
         ["exit-code.txt", "summary.txt", "1-fine/exit-code.txt", "1-fine/output.txt", "1-fine/fine.png", "2-fails/exit-code.txt", "2-fails/output.txt",
          "2-fails/fails.log", "3-nothing/exit-code.txt", "3-nothing/output.txt", "4-worse/exit-code.txt", "4-worse/output.txt",
-         "5-fine/exit-code.txt", "5-fine/output.txt", "5-fine/fine.png"]))
+         "5-fine/exit-code.txt", "5-fine/output.txt", "5-fine/fine.png", *[f"{name}/run.json" for name in ("1-fine", "2-fails", "3-nothing", "4-worse", "5-fine")]]))
     row("ci-mac-shell.sh: several: a script finds nothing of the one before in mac-shell/", left["2-fails/output.txt"].splitlines()[1:3], ["fails", "0"])
     row("ci-mac-shell.sh: several: each one's own exit code",
         [left[f"{name}/exit-code.txt"].strip() for name in ("1-fine", "2-fails", "3-nothing", "4-worse", "5-fine")], ["0", "1", "2", "7", "0"])
@@ -1820,12 +1822,45 @@ esac""",
     row("ci-mac-shell.sh: one script is part 1 of 1", parts("part.sh"), ["part 1 of 1"])
     row("ci-mac-shell.sh: three on one Mac", parts("part.sh", "part.sh", "part.sh"), ["part 1 of 3", "part 2 of 3", "part 3 of 3"])
     row("ci-mac-shell.sh: one that is not there keeps its number", parts("part.sh", "nothing.sh", "part.sh")[::2], ["part 1 of 3", "part 3 of 3"])
-    row("ci-mac-shell.sh: the second of two Macs with five scripts between them plays places 2 and 4",
-        parts("part.sh", "part.sh", MAC_SHELL_SHARE="2/2", MAC_SHELL_PARTS="5"), ["part 2 of 5", "part 4 of 5"])
-    row("ci-mac-shell.sh: the first plays 1, 3 and 5",
-        parts("part.sh", "part.sh", "part.sh", MAC_SHELL_SHARE="1/2", MAC_SHELL_PARTS="5"), ["part 1 of 5", "part 3 of 5", "part 5 of 5"])
-    row("ci-mac-shell.sh: one script given to three Macs: the third", parts("part.sh", MAC_SHELL_SHARE="3/3", MAC_SHELL_PARTS="3"), ["part 3 of 3"])
-    row("ci-mac-shell.sh: a share that is none", parts("part.sh", MAC_SHELL_SHARE="x"), ["part 1 of 1"])
+    row("ci-mac-shell.sh: the second of two Macs with five scripts between them plays places 4 and 5",
+        parts("part.sh", "part.sh", MAC_SHELL_FIRST_PART="4", MAC_SHELL_PARTS="5"), ["part 4 of 5", "part 5 of 5"])
+    row("ci-mac-shell.sh: one script given to three Macs: the third", parts("part.sh", MAC_SHELL_FIRST_PART="3", MAC_SHELL_PARTS="3"), ["part 3 of 3"])
+    row("ci-mac-shell.sh: a first part that is none", parts("part.sh", MAC_SHELL_FIRST_PART="x"), ["part 1 of 1"])
+
+    # The run.json of every playing, there before the first script begins.
+    def manifests(*names, **more):
+        left = tried(*names, GITHUB_RUN_ID="77", GITHUB_RUN_ATTEMPT="2", **more)[1]
+        return {path: json.loads(text) for path, text in left.items() if path.endswith("run.json")}
+
+    stub = lambda part, parts: {"gate": 1, "started": False, "run": "77", "attempt": 2, "part": part, "parts": parts, "commit": ""}
+    row("ci-mac-shell.sh: run.json: of one script", manifests("fine.sh"), {"run.json": stub(1, 1)})
+    row("ci-mac-shell.sh: run.json: of each of a Mac's playings, also of one that is not there",
+        manifests("fine.sh", "nothing.sh", "fails.sh", MAC_SHELL_FIRST_PART="5", MAC_SHELL_PARTS="12"),
+        {"1-fine/run.json": stub(5, 12), "2-nothing/run.json": stub(6, 12), "3-fails/run.json": stub(7, 12)})
+    row("ci-mac-shell.sh: run.json: a script's own replaces it", manifests("fine.sh", "own.sh"),
+        {"1-fine/run.json": stub(1, 2), "2-own/run.json": {"started": True, "part": 2}})
+    row("ci-mac-shell.sh: run.json: it does not lie in mac-shell/ while the script runs, which may empty that folder", "run.json" in tried("lists.sh")[1]["output.txt"], False)
+
+    # The job is cancelled while the second of four is running.
+    with tempfile.TemporaryDirectory(prefix="tooling-") as folder:
+        for name, text in scripts.items():
+            with open(os.path.join(folder, name), "w", encoding="utf-8") as handle:
+                handle.write(text)
+        process = subprocess.Popen([BASH, runner, "fine.sh", "hangs.sh", "fine.sh", "fine.sh"], cwd=folder, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        for _ in range(200):
+            if os.path.exists(os.path.join(folder, "mac-shell", "output.txt")) and "hangs" in open(os.path.join(folder, "mac-shell", "output.txt"), encoding="utf-8").read():
+                break
+            time.sleep(0.05)
+        process.terminate()
+        process.communicate(timeout=30)
+        back = sorted(os.path.relpath(os.path.join(where, name), os.path.join(folder, "mac-shell"))
+                      for where, _folders, files in os.walk(os.path.join(folder, "mac-shell")) for name in files)
+        with open(os.path.join(folder, "mac-shell", "2-hangs", "output.txt"), encoding="utf-8") as handle:
+            second = handle.read().splitlines()[1:]
+    row("ci-mac-shell.sh: cut off in the middle: what ran comes back whole, what was running as far as it got, the rest with their run.json, and no verdict on the whole",
+        (process.returncode, back), (130, ["1-fine/exit-code.txt", "1-fine/fine.png", "1-fine/output.txt", "1-fine/run.json", "2-hangs/exit-code.txt",
+                                           "2-hangs/output.txt", "2-hangs/run.json", "3-fine/run.json", "4-fine/run.json", "summary.txt"]))
+    row("ci-mac-shell.sh: cut off in the middle: the script that was running could clean up", second, ["hangs", "cleaned up", "exit code 143"])
 
     # run.sh in a checkout of its own whose origin is a folder beside it, with a stand-in for `gh` that notes every call. GitHub allows an account
     # 5,000 calls an hour, and copies of this script have used them up: how many it makes is part of what it does.
@@ -1899,11 +1934,11 @@ esac
             asked = dict(line.strip().split("=", 1) for line in handle if "=" in line)
         return done.returncode, [asked.get(key) for key in ("ref", "inputs[ref]", "inputs[script]", "inputs[macs]")], asked
 
-    row("run.sh: one script", started("a.sh", "feat/x")[:2], (97, ["home", "feat/x", "a.sh", ""]))
+    row("run.sh: one script", started("a.sh", "feat/x")[:2], (97, ["home", "feat/x", "a.sh", '[{"parts":"1-1","of":1,"scripts":"a.sh"}]']))
     row("run.sh: which build is not said unless it is the release build: an older workflow would refuse the start", "inputs[configuration]" in started("a.sh", "feat/x")[2], False)
-    row("run.sh: --release: said, and under a tag of its own", [started("--release", "a.sh", "feat/x")[2].get(key) for key in ("inputs[configuration]", "inputs[tag]")],
-        ["release", "feat-x.a-rel"])
-    row("run.sh: the plain run's tag is as it was", started("a.sh", "feat/x")[2].get("inputs[tag]"), "feat-x.a")
+    row("run.sh: --release: said, and under a tag that shows it", (lambda asked: (asked.get("inputs[configuration]"), asked.get("inputs[tag]", "")[:13]))(started("--release", "a.sh", "feat/x")[2]),
+        ("release", "feat-x.a-rel."))
+    row("run.sh: the two builds differ in the letters at the tag's end too", started("--release", "a.sh", "feat/x")[2].get("inputs[tag]", "")[-5:] != started("a.sh", "feat/x")[2].get("inputs[tag]", "")[-5:], True)
     row("run.sh: ARBOR_CONFIGURATION=release says the same", (lambda noted: "inputs[configuration]=release" in open(noted, encoding="utf-8").read())(
         ran("a.sh", "feat/x", ARBOR_CONFIGURATION="release")[1]), True)
     row("run.sh: any other configuration starts nothing", (lambda done, noted, _: (done.returncode, os.path.exists(noted)))(*ran("a.sh", "feat/x", ARBOR_CONFIGURATION="fast")), (97, False))
@@ -1913,11 +1948,11 @@ esac
         [started("--release", "a.sh", branch)[2].get("inputs[configuration]") for branch in ("feat/new-lib", "feat/x")], ["release", "release"])
     row("run.sh: the debug build of the old branch is nobody's business", started("a.sh", "feat/old-lib")[1][1], "feat/old-lib")
     row("run.sh: --bare builds nothing, so not with --release", started("--bare", "--release", "a.sh", "feat/x")[:2], (97, NOT_STARTED))
-    row("run.sh: three scripts go to one Mac", started("a.sh", "./b.sh", "c.sh", "feat/x")[:2], (97, ["home", "feat/x", "a.sh b.sh c.sh", ""]))
-    row("run.sh: five are too many for one", started("a.sh", "b.sh", "c.sh", "d.sh", "e.sh", "feat/x")[1][3], '["a.sh c.sh e.sh","b.sh d.sh"]')
-    row("run.sh: --macs 3", started("--macs", "3", "a.sh", "b.sh", "c.sh", "d.sh", "feat/x")[1][3], '["a.sh d.sh","b.sh","c.sh"]')
-    row("run.sh: more Macs than scripts", started("--macs", "9", "a.sh", "b.sh", "feat/x")[1][3], '["a.sh","b.sh"]')
-    row("run.sh: one script for three Macs to share", started("--macs", "3", "a.sh", "feat/x")[1][3], '["a.sh","a.sh","a.sh"]')
+    row("run.sh: three scripts go to one Mac", started("a.sh", "./b.sh", "c.sh", "feat/x")[:2], (97, ["home", "feat/x", "a.sh b.sh c.sh", '[{"parts":"1-3","of":3,"scripts":"a.sh b.sh c.sh"}]']))
+    row("run.sh: five are too many for one", started("a.sh", "b.sh", "c.sh", "d.sh", "e.sh", "feat/x")[1][3], '[{"parts":"1-3","of":5,"scripts":"a.sh b.sh c.sh"},{"parts":"4-5","of":5,"scripts":"d.sh e.sh"}]')
+    row("run.sh: --macs 3", started("--macs", "3", "a.sh", "b.sh", "c.sh", "d.sh", "feat/x")[1][3], '[{"parts":"1-2","of":4,"scripts":"a.sh b.sh"},{"parts":"3-3","of":4,"scripts":"c.sh"},{"parts":"4-4","of":4,"scripts":"d.sh"}]')
+    row("run.sh: more Macs than scripts", started("--macs", "9", "a.sh", "b.sh", "feat/x")[1][3], '[{"parts":"1-1","of":2,"scripts":"a.sh"},{"parts":"2-2","of":2,"scripts":"b.sh"}]')
+    row("run.sh: one script for three Macs to share", started("--macs", "3", "a.sh", "feat/x")[1][3], '[{"parts":"1-1","of":3,"scripts":"a.sh"},{"parts":"2-2","of":3,"scripts":"a.sh"},{"parts":"3-3","of":3,"scripts":"a.sh"}]')
     row("run.sh: the ordinary Mac, set up, unless something else is asked for",
         [started("a.sh", "feat/x")[2].get(key) for key in ("inputs[runner]", "inputs[bare]")], ["macos-26", "false"])
     row("run.sh: --on and --bare, and a tag of its own for another kind of Mac",

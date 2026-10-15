@@ -593,10 +593,13 @@ They run one after the other. Each gets its turn and its own twenty minutes, wha
 back, and `output.txt` says so. What cannot be put back (Accessibility gone after a `tccutil reset`, another number of Spaces or displays) ends the list: the scripts
 that are left do not run, say why, and end with exit code 75. Give a script that does such a thing the last place, or a run of its own. The desktop picture is not looked at. What comes back is `.mac-shell/<first script>-x3-<run id>/` with a folder for each, `1-shots-F10/`, `2-shots-F12/`, …, holding what a
 run of that script alone would have brought (`output.txt`, `exit-code.txt`, pictures, logs), and `summary.txt` with a line for each. `run.sh` exits with the
-first exit code that is not 0. At most four to a Mac; more are shared out among as many Macs as that takes, or among `--macs N`, whose
+first exit code that is not 0. At most four to a Mac; more are shared out, a block of the list each, among as many Macs as that takes, or among `--macs N`, whose
 output lies in `mac-1/`, `mac-2/`, …; `--at-once 2` lets a long list hold two Macs at a time and leaves the others to everybody else. A script that is given to several Macs by itself finds in `$MAC_SHELL_SHARE` which part is its own
 (`2/3`: the second of three); `compat.sh` takes every Nth app. Every script finds in `$MAC_SHELL_PART` and `$MAC_SHELL_PARTS` which playing of the whole
-dispatch it is and how many there are, over all its Macs, settled before the first begins: its place among `run.sh`'s arguments, so a playing that is lost shows as a gap. All kinds of Mac come out of the same five at a time.
+dispatch it is and how many there are, over all its Macs: its place among `run.sh`'s arguments. A Mac plays a block of the list, and the name of its job says which
+(`shell (parts 5-8, …)`). All of it is settled before the first script begins, and each playing's folder holds a `run.json` from then on that says `"started": false`,
+until the script leaves one of its own in `mac-shell/`: so a playing that never began shows as that, not as a gap. What has been gathered comes back also when the job is cut
+off in the middle of the list. All kinds of Mac come out of the same five at a time.
 
 **Whose turn it is.** GitHub hands its Macs out in no particular order: a job has been seen to wait eight minutes while later ones started. So
 `run.sh` keeps the order itself, before it starts the run, where waiting takes nobody's place. `--priority 1` (or `ARBOR_MAC_PRIORITY=1`) waits for nobody's ordinary run: a

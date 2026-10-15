@@ -16,7 +16,7 @@
 # run one after the other, each gets its turn whatever became of the one before, and what each said and left comes back in a folder of
 # its own: .mac-shell/<first script>-<run id>/1-<script>/, 2-<script>/, …, with a line for each in summary.txt. At most four to a Mac
 # (each may take twenty minutes); more are shared out among as many Macs as that takes.
-#   --macs N    share the scripts out among N Macs, which work side by side: for scripts that take long. What the second Mac brings
+#   --macs N    share the scripts out among N Macs, a block of the list each, which work side by side: for scripts that take long. What the second Mac brings
 #               back is in …/mac-2/. ONE script and --macs N: every Mac runs it, and finds in $MAC_SHELL_SHARE which part is
 #               its own, "2/3" on the second of three; only for a script that looks there (compat.sh does).
 #   --at-once N   of the Macs of --macs, at most N at a time: for a long list that must not take every Mac there is from everybody else.
@@ -108,11 +108,20 @@ else
   [ "$macs" -le ${#scripts[@]} ] || macs=${#scripts[@]}
   [ $(((${#scripts[@]} + macs - 1) / macs)) -le $PER_MAC ] \
     || { echo "run.sh: ${#scripts[@]} scripts are more than $PER_MAC each for $macs Macs" >&2; exit 97; }
-  # Dealt out like cards, so that neighbours in the list, which tend to be alike, do not all land on one Mac.
-  shares=$(for ((mac = 0; mac < macs; mac++)); do
-    for ((index = mac; index < ${#scripts[@]}; index += macs)); do printf '%s ' "${scripts[index]}"; done; echo
-  done | sed 's/ $//')
+  # Each Mac gets a block of the list, so that its playings have numbers that follow one another; the first Macs one more where it does not come out even.
+  shares=$(index=0
+    for ((mac = 0; mac < macs; mac++)); do
+      for ((count = ${#scripts[@]} / macs + (mac < ${#scripts[@]} % macs ? 1 : 0); count > 0; count--)); do
+        printf '%s ' "${scripts[index]}"
+        index=$((index + 1))
+      done
+      echo
+    done | sed 's/ $//')
 fi
+# As the workflow wants it: for each Mac its scripts, and which playings of how many they are.
+plan=$(echo "$shares" | awk -v total="$([ ${#scripts[@]} -eq 1 ] && echo "$macs" || echo ${#scripts[@]})" '
+  { printf "%s{\"parts\":\"%d-%d\",\"of\":%d,\"scripts\":\"%s\"}", (NR > 1 ? "," : ""), first + 1, first + NF, total, $0; first += NF }
+  END { print "" }' | sed 's/.*/[&]/')
 
 repo=$(git remote get-url origin | sed -E 's#^(https://[^/]*/|git@[^:]*:|ssh://[^/]*/)##; s#\.git$##; s#/$##')
 api() { gh api "$@"; }
@@ -271,7 +280,7 @@ other=()
 api -X POST "repos/$repo/actions/workflows/mac-shell.yml/dispatches" \
   -f ref="$home" -f "inputs[ref]=$ref" -f "inputs[script]=${scripts[*]}" -f "inputs[tag]=$tag" ${other[@]+"${other[@]}"} \
   -f "inputs[at-once]=${at_once:-5}" -f "inputs[runner]=$kind" -F "inputs[bare]=$bare" -f "inputs[unchecked]=$(printf '%s' "$unchecked" | tr -c 'A-Za-z0-9 .,:_/-' ' ' | cut -c 1-80)" \
-  -f "inputs[macs]=$([ "$macs" -eq 1 ] || echo "$shares" | sed 's/.*/"&"/' | paste -sd, - | sed 's/.*/[&]/')" >/dev/null \
+  -f "inputs[macs]=$plan" >/dev/null \
   || fail "could not start the workflow of $home for $ref"
 echo "started ${scripts[*]} at $ref (${remote:0:7}), tag $tag$([ "$macs" -eq 1 ] || echo ", on $macs Macs")$([ "$configuration" = debug ] || echo ", the $configuration build")"
 # For whoever shares a look at the queue: there is one more waiting now. Costs no call.
