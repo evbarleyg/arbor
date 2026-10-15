@@ -300,7 +300,8 @@ func begin(_ harness: Harness) {
   harness.recorder.openSink = TraceRecorder.openFile
   harness.watchAccessibility()
   harness.beginStep()
-  harness.start()
+  // After `revoke`, a `relaunch` is a start without the permission.
+  harness.launch()
 }
 
 /// The new process of `relaunch` and `crash`, started. It uses the settings file the old one used (`settings-file`).
@@ -566,7 +567,8 @@ func simulate(_ words: [String], harness: Harness, printLayout: inout Bool) -> (
     return saveState(of: harness, to: words[1])
   case "relaunch" where words.count == 1:
     // The loop has done it: this is the new process.
-    return ("quit, and started again", harness.controller.isRunning)
+    return harness.controller.accessibilityGranted
+      ? ("quit, and started again", harness.controller.isRunning) : ("quit, and started again: \(harness.run("status").message)", true)
   case "crash":
     // The loop has done it: this is the new process.
     guard let windows = reopened else { return usage("crash [<id>…]: windows that are open") }

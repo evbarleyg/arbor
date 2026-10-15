@@ -341,7 +341,9 @@ import Testing
     h.controller.accessibilityGranted = false
     h.scheduler.advance(by: 30)
     #expect(h.system.questions.thorough == 0 && h.system.questions.byTheFlag == 0, "the controller does not watch yet")
-    #expect(h.controller.permissionLoss == nil && !h.controller.isInBusiness && h.controller.activeBindings.isEmpty)
+    #expect(h.controller.permissionLoss == nil && !h.controller.isInBusiness)
+    // Its item is in the menu bar, so its keys are its own: ClaimedKeysTests.
+    #expect(h.controller.activeBindings == h.controller.effectiveBindings.bindings)
     #expect(h.run("status").message.hasPrefix("waiting for Accessibility permission"))
     #expect(h.controller.menuModel().sections.first?.items.map(\.title) == ["Arbor needs Accessibility permission", "Check Setup…"])
     #expect(h.controller.quitTitle == "Quit Arbor")
@@ -556,28 +558,44 @@ import Testing
 
   // MARK: Keys and taps
 
-  @Test func withWindowsOutOfViewOnlyTheWaysHomeAreHeld() {
+  /// Nobody said that the keys are the apps' again, and the icon is still there (collab/IDEAS.md, I16; ClaimedKeysTests). The taps do go: macOS
+  /// drops every event while a tap outlives the right to tap.
+  @Test func withWindowsOutOfViewEveryShortcutIsStillHeldAndNoneWorks() {
     let (h, _, _, _, _) = makeHarness()
     h.revokeAccessibility()
     h.scheduler.advance(by: 3)
-    #expect(
-      h.controller.activeBindings.map(\.command.text).sorted() == ["float-all", "home", "show-all", "toggle-pause"])
+    #expect(h.controller.activeBindings == h.controller.effectiveBindings.bindings)
     #expect(!h.controller.inputSettings.gesturesEnabled)
     #expect(h.controller.inputSettings.frameRectangleModifier == "none")
-    #expect(h.run("bindings").message.hasSuffix(", all but 4 off without Accessibility permission"))
-    for binding in h.controller.activeBindings {
+    #expect(h.run("bindings").message.hasSuffix(", Arbor takes them and can move nothing without Accessibility permission"))
+    let moves = h.system.frameLog.count
+    // But for Settings…, which needs no permission and has no window here.
+    for binding in h.controller.activeBindings where binding.command.text != "settings-window" {
       let result = h.controller.perform(binding.command)
-      #expect(!result.ok && result.message == sentence, "\(binding.command.text)")
+      #expect(!result.ok && result.message == sentence, "\(binding.command.text): \(result.message)")
     }
+    #expect(h.system.frameLog.count == moves)
   }
 
-  @Test func withNothingOutOfViewNoShortcutIsHeld() {
+  @Test func withNothingOutOfViewEveryShortcutIsStillHeld() {
     let (h, _, _, _, _) = makeHarness(framed: false)
     h.revokeAccessibility()
     h.scheduler.advance(by: 3)
-    #expect(h.controller.activeBindings.isEmpty)
+    #expect(h.controller.activeBindings == h.controller.effectiveBindings.bindings)
     #expect(!h.controller.inputSettings.gesturesEnabled)
-    #expect(h.run("bindings").message.hasSuffix(", all off without Accessibility permission"))
+    #expect(h.run("bindings").message.hasSuffix(", Arbor takes them and can move nothing without Accessibility permission"))
+  }
+
+  /// In an app that keeps its own ⌃⌥ by the person's word, only the keys of someone who misses a window.
+  @Test func inAnAppThatKeepsItsOwnKeysOnlyTheWaysHomeAreHeld() {
+    let (h, _, _, _, _) = makeHarness()
+    h.run("pass-through com.example.editor on")
+    h.revokeAccessibility()
+    h.scheduler.advance(by: 3)
+    h.controller.applicationActivated(FrontmostApp(bundleID: "com.example.editor", name: "Editor"))
+    #expect(
+      h.controller.activeBindings.map(\.command.text).sorted() == ["float-all", "home", "show-all", "toggle-pause"])
+    #expect(h.run("bindings").message.hasSuffix(", all but 4 off in Editor"))
   }
 
   @Test func everythingIsHeldAgainAfterwards() {
@@ -666,6 +684,8 @@ import Testing
     h.grantAccessibility()
     h.scheduler.advance(by: 1)
     #expect(!h.controller.shouldOpenAccessibilitySettings())
+    // Everything came into view with the permission. Back is the view in which something is missing.
+    h.run("back")
     h.revokeAccessibility()
     h.run("show-all")
     #expect(h.controller.shouldOpenAccessibilitySettings())

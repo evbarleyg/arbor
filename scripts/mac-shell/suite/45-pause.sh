@@ -7,7 +7,7 @@ arbor_build
 
 paused() { "$ARBOR_BIN/arborctl" status | grep "^paused" > /dev/null || { echo "Arbor is not paused"; return 1; }; }
 running() { "$ARBOR_BIN/arborctl" status | grep "^running" > /dev/null || { echo "Arbor is not running"; return 1; }; }
-# But for the line that says what happened (F43, level 6: "Paused until ⌃⌥⎋…"), which stays four seconds and goes by itself.
+# But for the line that says what happened (F43, level 6: "Arbor is paused: its keys are the apps’ again · ⌃⌥⎋ resumes"), which stays four seconds and goes by itself.
 no_overlays() {
   local shown
   shown=$(overlays | awk '$8 == "on" && $3 != 6')

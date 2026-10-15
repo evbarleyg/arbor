@@ -6314,7 +6314,7 @@
    "guards": [
     "test: itIsNoticedWithinThreeSecondsWithoutAnybodyDoingAnything",
     "test: aCommandGivenAfterwardsFailsTheFirstTimeAndMovesNothing",
-    "test: withWindowsOutOfViewOnlyTheWaysHomeAreHeld",
+    "test: withWindowsOutOfViewEveryShortcutIsStillHeldAndNoneWorks",
     "test: itComesBackWithinASecondWithEverythingInViewAndTheOldViewOneBackAway",
     "scenario: 63-permission-taken-away.sim",
     "e2e: 2 is still out of view: nothing could be done"
@@ -6335,6 +6335,34 @@
     "K002",
     "K920",
     "M1052"
+   ]
+  },
+  {
+   "id": "a-key-arbor-does-not-hold-runs-what-the-app-in-front-has-on-it",
+   "kind": "permissions",
+   "layer": "at the seam",
+   "expected": "While Arbor's item is in the menu bar its shortcuts are its own: a press is Arbor's or nobody's. No stand-in did anything with a shortcut that nobody held.",
+   "happened": "On a tester's Mac a shortcut of Arbor's ran what the app in front has on that key, twice, and that could not be taken back. On a hosted Mac (macOS 26.6.2), with an app in front that writes down every key it is given, the key reached the app in three states in which nobody had given it away, each with Arbor alive and its item in the menu bar: waiting for the permission at a first launch; started as another ad-hoc build over a grant made for the old one, the entry in the privacy database still saying allowed; and after the permission was taken away. Arbor registered no hot key in any of them. While it ran the key was taken, its repeats and its release too, with no event tap, under secure input and during a hold; none of the other 51 defaults reached the app either.",
+   "found": "A probe with a witness on a hosted Mac, every round with its control: Arbor started through Launch Services, so that it answers for its own permission while the tools that press the keys keep theirs.",
+   "modelled": "yes",
+   "knobs": [
+    "FakeWindowSystem.giveToTheAppInFront",
+    "FakeWindowSystem.keysTheAppInFrontGot",
+    "Harness.launch"
+   ],
+   "guards": [
+    "test: whileItWaitsForThePermissionNoKeyOfItsReachesTheApp",
+    "test: afterThePermissionWasTakenAwayNoKeyOfItsReachesTheApp",
+    "test: aFalseAlarmLetsGoOfNothing",
+    "scenario: I16-arbor-keeps-its-keys-where-nobody-gave-them-away.sim"
+   ],
+   "copes": "Sources/ArborKit/Controller/Controller+PassThrough.swift: `activeBindings` gives a key away only on the person's own word (an app on a list, shortcuts off, a pause); the app registers the keys before it makes the menu bar item, whatever the permission says; a key that is taken and can do nothing is answered by a line on screen.",
+   "hurt": 1,
+   "sources": [
+    "collab/IDEAS.md",
+    "scripts/mac-shell/check-claimed-keys.sh",
+    "docs/features/F63-permission-taken-away.md",
+    "Sources/ArborKit/App/ArborApp.swift"
    ]
   },
   {

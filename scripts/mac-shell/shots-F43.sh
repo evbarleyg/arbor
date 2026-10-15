@@ -171,7 +171,7 @@ check "the panel is up" eventually has_overlay $PANEL
 key ctrl+opt+escape
 shot_after 0.5 21-paused
 check "pausing puts the panel away" not has_overlay $PANEL
-check "and says how to come back" said "Paused until ⌃⌥⎋"
+check "and says whose the keys are now, and how to come back" said "Arbor is paused: its keys are the apps’ again · ⌃⌥⎋ resumes"
 sleep 4
 check "then nothing of Arbor's is left on screen" not has_overlay $LINE
 key ctrl+opt+escape

@@ -134,6 +134,8 @@ public final class FakeWindowSystem: WindowSystem {
   private var pointerUsedAt = 0.0
   private var keyReleasedAt = -Double.infinity
   private var keyPresses: UInt32 = 0
+  /// The shortcuts that were pressed and that Arbor did not take, in order (`giveToTheAppInFront`).
+  public private(set) var keysTheAppInFrontGot: [KeyChord] = []
   /// macOS's own tiling of dragged windows, which `endDrag` carries out as macOS does. On, as a Mac comes: what holds only with
   /// the switches off does not hold for most people.
   public var tiling = MacTiling.on
@@ -565,6 +567,10 @@ public final class FakeWindowSystem: WindowSystem {
     keyUp()
     if heldKeys.isEmpty, !keepingModifiers { heldModifiers = [] }
   }
+
+  /// A shortcut nobody holds as a hot key goes where every key goes: to the app in front, which does with it whatever it does with that
+  /// shortcut. On a tester's Mac that was something that could not be taken back.
+  public func giveToTheAppInFront(_ chord: KeyChord) { keysTheAppInFrontGot.append(chord) }
 
   /// The user types a few characters into the focused window.
   public func type(keys: Int = 3) {

@@ -24,16 +24,17 @@ Arbor cannot prevent this. It can notice at once, stop pretending, say what is g
 - So does a call that macOS refuses because Accessibility is disabled: not everything that moves windows is a command (a drop, a window that closes, a gap that is dragged).
 
 **Stopping.** Nothing is moved: it could not be, and if the alarm was false nothing shows. Arbor saves the arrangement and the view, removes its own tiles, gap handles, previews and focus ring (they would
-soon be wrong), stops observing, removes both pointer taps, and gives the shortcuts back to the apps. A pause in progress is over: granting the permission again means wanting Arbor, as launching it does.
+soon be wrong), stops observing and removes both pointer taps. **It keeps its shortcuts** (QUESTIONS Q29, 2, after IDEAS I16; until then it gave them back to the apps): its item is still in the menu bar, nobody said that the keys are the apps' again, and a key of Arbor's that lands in the app in front can do there what cannot be taken back. A pause in progress is over: granting the permission again means wanting Arbor, as launching it does.
 
 **Saying so.**
 
 - `status`, and every command that is not a query, in two sentences, the first of which is also the menu's first line: what happened, how many windows of which apps are out of view, that they come back with the permission, and where to grant it.
 - The menu bar icon changes to a warning sign. The menu (state 1 in `docs/MENU.md`) has that sentence, Check Setup…, Help, and Quit, which says what quitting would leave behind: "Quit Arbor (3 windows stay out of view)".
 - **If windows are out of view** Arbor also speaks up by itself, once: F10's welcome window, titled "Arbor needs its permission back", which counts them and has the button to the switch. If none is, nothing appears: whoever switched Arbor off on purpose is not nagged.
-- **If windows are out of view the ways home stay registered**: Show Everything, `home`, Float All Windows and ⌃⌥⎋. They are what a person who misses a window presses. They cannot help, so they beep and open the place where the switch is, at most once in ten seconds however hard they are hammered. All other shortcuts are given back.
+- **Every shortcut is taken, moves nothing, beeps, and is answered by one line on screen** (all but ⌃⌥, which opens Settings… and needs no permission), the same each time and short-lived: "Arbor needs the Accessibility permission · System Settings → Privacy & Security → Accessibility". Nobody is taken out of the app they are in. The same while Arbor waits for the permission at a launch, a first one or that of a new build whose signature an old grant does not fit: the keys are registered before the menu bar item is made. The keys are the app's only by the person's own word: in an app on `passThroughApps` or `pauseForApps`, and if the permission went while they had paused Arbor. The line goes when the permission comes.
+- **If windows are out of view the ways home do more**: Show Everything, `home`, Float All Windows and ⌃⌥⎋ are what a person who misses a window presses. They cannot help, so they also open the place where the switch is, at most once in ten seconds however hard they are hammered. They are held in an app on `passThroughApps` too.
 - `state` has `"accessibility": false`, `"running": false`, no window list and no frames, and still shows the arrangement that will come back.
-- Later: a row in `doctor` (F10), the heads-up line (F43).
+- Later: a row in `doctor` (F10).
 
 **Recovering.** When the permission returns Arbor starts as at launch: the saved arrangement and view are matched against the windows and displays that exist by then, and whatever is off screen is put where it belongs. **If windows
 were out of view when the permission went, and it was gone for three seconds or more, Arbor then shows everything on every display** (as `home` does; Back returns to the old view): the person was promised their windows back, and after a fright they want to see them, not to be told that they are reachable again. A shorter loss is a false alarm or a slip of the finger: the view stays as it was.
@@ -51,7 +52,7 @@ For the guide and the welcome window, not for Arbor to do: ⌘Tab to the app and
 - `PermissionWatch` (ArborCore, a value): samples in, `lost` / `returned` / nothing out.
 - `shutdown(movingWindows: false)` is the stop (the same function to the line; `placeVisibly` and `putBack`, through which it moves windows, do nothing meanwhile, and `nothingIsMovedAndEveryOverlayGoes` fails if a third way is added); `start()` is the recovery. Both ends are paths that quitting, pausing and launching already exercise.
 - `PermissionLoss`: how many windows were out of view and whose. `activeBindings` and `inputSettings` read it; the app registers and installs what they say on `.lifecycle`, as for a pause.
-- **The first minute is the old road.** Launched without the permission, the app waits by itself (`ArborApp.waitForAccessibility`: a timer on `AXIsProcessTrusted()`, F10's welcome window) and calls `start()` when the flag turns. Until that first `start()` the controller does not
+- **The first minute is the old road, but for the keys.** Launched without the permission, the app registers its shortcuts (`ArborApp.startKeys`, before the menu bar item is made) and waits by itself (`ArborApp.waitForAccessibility`: a timer on `AXIsProcessTrusted()`, F10's welcome window) and calls `start()` when the flag turns. Until that first `start()` the controller does not
   watch: `askAboutAccessibility` and `accessibilityWasRefused` return at `isWatchingPermission`, there is no `permissionLoss`, and status, menu and Quit read as before F63.
 - **The thorough way's no counts against the flag's yes only once it has said yes in this process.** Nobody has seen whether macOS lets a process make an event tap that was given the permission while it ran. If it does not, the taps stay away until the next launch, as before F63, and
   Arbor goes on arranging windows instead of announcing a loss in front of the welcome window.
@@ -62,7 +63,7 @@ For the guide and the welcome window, not for Arbor to do: ⌘Tab to the app and
 2. A command given after the permission went fails the first time, with the sentence, and moves nothing.
 3. No `setFrame` is made while stopping or while stopped; every overlay is removed; drags, moves, new and closed windows cause nothing.
 4. The sentence counts the windows that were out of view and names their apps, never their titles; with none out of view it says so by leaving them out.
-5. With windows out of view only the ways home are held; with none, no shortcut; the taps' settings are off in both cases.
+5. Every shortcut in effect is held, with windows out of view and with none, and while Arbor waits at a launch; none of them moves anything; each but Settings… is answered by the line; only a way home pressed with windows out of view opens System Settings. In an app on `passThroughApps` or `pauseForApps`: the ways home with windows out of view, otherwise none. After a pause by the person: only what ends a pause. The taps' settings are off in every case.
 6. When the permission returns, arrangement, history and saved views are as they were; windows closed, opened and moved meanwhile are coped with; everything is in view if windows had been out of view, and the old view is one Back away; otherwise the view is as it was.
 7. A pause, by hand, timed or for an app, ends with the loss and does not come back with the permission.
 8. Losing it twice, losing it while it is already lost, and getting it back while running are harmless.
@@ -80,7 +81,7 @@ warning sign in F10's menu model (`Controller+Menu.swift`, `MenuBarModel.Icon.ne
 | 2 | `aCommandGivenAfterwardsFailsTheFirstTimeAndMovesNothing`, `theFlagAloneIsEnoughForANo`, `ifTheFlagLagsTheRefusedCallsTellTheTruthAndTheyAreBelievedThoroughly`, `commandsInQuickSuccessionAskThoroughlyOnceASecondAndOtherwiseReadTheFlag`, `theShowEverythingKeyPressedAfterwardsFailsTheFirstTimeTooInsteadOfPeeking`, `aRefusedCallIsASecondOpinionTooAndIsActedOnOnceTheCallerHasReturned` |
 | 3 | `nothingIsMovedAndEveryOverlayGoes`, `whileItIsGoneArborReactsToNothing`, `aDragInProgressIsForgotten`, `aPeekInProgressEndsWithTheLoss` |
 | 4 | `theSentenceCountsWindowsAndNamesAppsNeverTitles`, `withNothingOutOfViewItLeavesThemOut`, `oneWindowAndManyAppsReadWell` |
-| 5 | `withWindowsOutOfViewOnlyTheWaysHomeAreHeld`, `theWaysHomeLeadToTheSettingsAtMostOnceInTenSeconds`, `withNothingOutOfViewNoShortcutIsHeld`, `everythingIsHeldAgainAfterwards` |
+| 5 | `withWindowsOutOfViewEveryShortcutIsStillHeldAndNoneWorks`, `withNothingOutOfViewEveryShortcutIsStillHeld`, `inAnAppThatKeepsItsOwnKeysOnlyTheWaysHomeAreHeld`, `theWaysHomeLeadToTheSettingsAtMostOnceInTenSeconds`, `everythingIsHeldAgainAfterwards`; `ClaimedKeysTests`; scenario `I16-arbor-keeps-its-keys-where-nobody-gave-them-away.sim`; on a Mac: `check-claimed-keys.sh` |
 | 6 | `itComesBackWithinASecondWithEverythingInViewAndTheOldViewOneBackAway`, `aLossThatIsOverInAMomentLeavesTheViewAsItWas`, `withNothingOutOfViewTheViewIsAsItWas`, `itCopesWithWhatChangedMeanwhile`, `twoDisplaysBothShowEverythingAfterwards` |
 | 7 | `aPauseEndsWithTheLossAndDoesNotComeBack`, `aTimedPauseDoesNotResumeIntoTheLoss`, `aPauseForAnAppEndsTooAndBeginsAgainAfterwardsIfTheAppIsStillInFront` |
 | 8 | `losingItAgainAndAgainIsHarmless`, `itIsLostOnceHoweverOftenTheAnswerIsNo` |
@@ -91,7 +92,6 @@ warning sign in F10's menu model (`Controller+Menu.swift`, `MenuBarModel.Icon.ne
 Not shipped:
 
 - `AXWindowSystem` sends `accessibilityWasRefused()` from `setFrame` and `focus`; other reads that answer `.apiDisabled` say nothing.
-- F43's line.
 - A view moved by something that is not a command (a clicked tile, a drop) in the second or two before the loss is noticed counts as moved: the windows it would have brought into view are missing from the
   count, though not from what comes back with the permission.
 - Arbor does not watch, while it may not move windows, whether the person fetched them by other means (the window server would tell without the permission): the count is the one from the moment of the loss.

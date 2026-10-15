@@ -178,7 +178,8 @@ gaps), `left-of <a> <b>`, `above <a> <b>`, `camera root|desktop|<id>`
 (the previous command's result), `ring <id>` / `ring none` (the focus ring is
 around that window, where the window is; there is none), `outline <id>|desktop|none` (what a peek outlines), `shortcut <keys> on|off`
 (whether Arbor holds that shortcut right now, e.g. `shortcut ctrl+opt+space off`), `shortcut <keys> shows <label>` and
-`shortcut <keys> key <code>` (how menus show it, and which key it is, on the layout chosen with `keyboard german`), `pinned <id>`,
+`shortcut <keys> key <code>` (how menus show it, and which key it is, on the layout chosen with `keyboard german`),
+`app-got <keys>` / `app-got nothing` (the last shortcut pressed with `key` that Arbor did not hold, so that the app in front got it; there was none), `pinned <id>`,
 `in-front <id>` (no window covers it), `size <id> <w>x<h>`, `summoned <id>`, `space <name>` (some display's view is on the space of that name), `no-space <name>`,
 `field open` / `field closed` (the field of `ask-name`; `field-type [text]` types into it and presses ↩, `field-cancel` presses ⎋), `minimap <id>|desktop|everything|none` (what the minimap marks as filling the view; there is none;
 `map <id>|desktop|beside` clicks in it),

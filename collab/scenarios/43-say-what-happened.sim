@@ -58,9 +58,9 @@ expect silent
 press out
 expect fail
 expect said Already showing everything
-# Pausing clears the screen, then says how to come back.
+# Pausing clears the screen, then says whose the keys are now and how to come back.
 press toggle-pause
-expect said Paused until ⌃⌥⎋; windows are back in view, in their own sizes
+expect said Arbor is paused: its keys are the apps’ again · ⌃⌥⎋ resumes
 flush
 expect silent
 press toggle-pause

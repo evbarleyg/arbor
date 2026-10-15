@@ -366,6 +366,8 @@ public final class Controller {
   public internal(set) var frontmostApp: FrontmostApp?
   /// True while the pause is one Arbor began by itself because of `pauseForApps`, and will end by itself.
   public internal(set) var isPausedForApp = false
+  /// Whether the pause is one that nobody asked for: Arbor's own, at a logout (`sessionIsEnding`). It lets go of the windows and of no key.
+  var pauseIsArborsOwn = false
   /// What `followFrontmostApp` last told observers.
   var wasPassingThrough = false
   /// The shortcuts kept in an app that keeps its own ⌃⌥ because they send away what is summoned, as last told.

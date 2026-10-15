@@ -61,20 +61,20 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 | [second-actor](#second-actor) | 44 | 6 | 12 | 16 | 9 | 7 | 26 | 0 | 4 | 14 | 8 |
 | [geometry](#geometry) | 29 | 1 | 7 | 12 | 8 | 2 | 16 | 1 | 2 | 10 | 7 |
 | [identity](#identity) | 28 | 4 | 6 | 5 | 6 | 11 | 11 | 1 | 2 | 14 | 7 |
-| [permissions](#permissions) | 21 | 7 | 5 | 3 | 3 | 10 | 10 | 2 | 2 | 7 | 4 |
+| [permissions](#permissions) | 22 | 8 | 6 | 3 | 3 | 10 | 11 | 2 | 2 | 7 | 4 |
 | [timing](#timing) | 50 | 7 | 7 | 15 | 8 | 20 | 27 | 4 | 6 | 13 | 9 |
 | [input](#input) | 56 | 7 | 6 | 13 | 13 | 24 | 20 | 6 | 7 | 23 | 11 |
 | [looks](#looks) | 18 | 0 | 0 | 0 | 1 | 17 | 1 | 2 | 3 | 12 | 4 |
 | [never-exercised](#never-exercised) | 16 | 7 | 2 | 13 | 0 | 1 | 0 | 0 | 15 | 1 | 16 |
 | [toolchain](#toolchain) | 41 | 1 | 0 | 1 | 4 | 36 | 23 | 1 | 0 | 17 | 6 |
-| **all** | 421 | 58 | 79 | 109 | 67 | 166 | 203 | 19 | 53 | 146 | 99 |
+| **all** | 422 | 59 | 80 | 109 | 67 | 166 | 204 | 19 | 53 | 146 | 99 |
 
 **Where the difference bit**
 
 | Where | That is | Cases | Hurt 1 or 2 | Guarded without a Mac | Guarded only on CI's Macs | Only when somebody starts a script | Not guarded |
 |---|---|---|---|---|---|---|---|
 | below the seam | in the macOS-only code under the platform protocols (AX, Input, UI, App), which no test on Linux runs | 137 | 88 | 41 | 13 | 32 | 51 |
-| at the seam | in what crosses the platform protocols: a stand-in can play it to the controller | 145 | 90 | 107 | 0 | 10 | 28 |
+| at the seam | in what crosses the platform protocols: a stand-in can play it to the controller | 146 | 91 | 108 | 0 | 10 | 28 |
 | controller | in the controller or the core, given reports that were right | 25 | 13 | 13 | 0 | 1 | 11 |
 | test | in a test, a script or a harness that expected the wrong thing | 74 | 0 | 19 | 5 | 8 | 42 |
 | machine | in the machine, the toolchain or the way things are built and installed | 40 | 3 | 23 | 1 | 2 | 14 |
@@ -2907,6 +2907,18 @@ Permissions: what macOS allows, to whom, and how it says no.
 - **Arbor copes:** Watchdog.run starts a bundled Arbor again through `open -n --env`, so that macOS sees the app itself asking.
 - **Read in:** `Sources/ArborKit/App/Watchdog.swift`, `scripts/mac-shell/watchdog-bundle.sh`, `scripts/mac-shell/shots-F10.sh`, `Sources/arbor-e2e/main.swift`, `Sources/arbor-fakemac/World+Arbor.swift`
 
+### a-key-arbor-does-not-hold-runs-what-the-app-in-front-has-on-it
+
+*hurt 1 · at the seam*
+
+- **Expected:** While Arbor's item is in the menu bar its shortcuts are its own: a press is Arbor's or nobody's. No stand-in did anything with a shortcut that nobody held.
+- **Happened:** On a tester's Mac a shortcut of Arbor's ran what the app in front has on that key, twice, and that could not be taken back. On a hosted Mac (macOS 26.6.2), with an app in front that writes down every key it is given, the key reached the app in three states in which nobody had given it away, each with Arbor alive and its item in the menu bar: waiting for the permission at a first launch; started as another ad-hoc build over a grant made for the old one, the entry in the privacy database still saying allowed; and after the permission was taken away. Arbor registered no hot key in any of them. While it ran the key was taken, its repeats and its release too, with no event tap, under secure input and during a hold; none of the other 51 defaults reached the app either.
+- **Found by:** A probe with a witness on a hosted Mac, every round with its control: Arbor started through Launch Services, so that it answers for its own permission while the tools that press the keys keep theirs.
+- **Stand-ins play it:** yes (`FakeWindowSystem.giveToTheAppInFront`, `FakeWindowSystem.keysTheAppInFrontGot`, `Harness.launch`)
+- **Guard:** `test: whileItWaitsForThePermissionNoKeyOfItsReachesTheApp`; `test: afterThePermissionWasTakenAwayNoKeyOfItsReachesTheApp`; `test: aFalseAlarmLetsGoOfNothing`; `scenario: I16-arbor-keeps-its-keys-where-nobody-gave-them-away.sim`
+- **Arbor copes:** Sources/ArborKit/Controller/Controller+PassThrough.swift: `activeBindings` gives a key away only on the person's own word (an app on a list, shortcuts off, a pause); the app registers the keys before it makes the menu bar item, whatever the permission says; a key that is taken and can do nothing is answered by a line on screen.
+- **Read in:** `collab/IDEAS.md`, `scripts/mac-shell/check-claimed-keys.sh`, `docs/features/F63-permission-taken-away.md`, `Sources/ArborKit/App/ArborApp.swift`
+
 ### a-refusal-comes-from-inside-a-call
 
 *hurt 1 · at the seam · suspected · K848 · M1052 · touches `lost`*
@@ -2975,7 +2987,7 @@ Permissions: what macOS allows, to whom, and how it says no.
 - **Happened:** With Accessibility switched off while Arbor runs, shortcuts still swallowed their keys, commands succeeded in words and nothing moved, and windows out of view could not be fetched. The real window system has been known to answer with the frame it was asked for, the worse of the two things it could say.
 - **Found by:** Reviews of the app's shell and of the Accessibility layer. The switch itself has not been tried on a Mac.
 - **Stand-ins play it:** yes (`FakeWindowSystem.isDenied`, `FakeWindowSystem.deniedCalls`, `Harness.revokeAccessibility`, `Harness.grantAccessibility`)
-- **Guard:** `test: itIsNoticedWithinThreeSecondsWithoutAnybodyDoingAnything`; `test: aCommandGivenAfterwardsFailsTheFirstTimeAndMovesNothing`; `test: withWindowsOutOfViewOnlyTheWaysHomeAreHeld`; `test: itComesBackWithinASecondWithEverythingInViewAndTheOldViewOneBackAway`; `scenario: 63-permission-taken-away.sim`; `e2e: 2 is still out of view: nothing could be done` (by hand)
+- **Guard:** `test: itIsNoticedWithinThreeSecondsWithoutAnybodyDoingAnything`; `test: aCommandGivenAfterwardsFailsTheFirstTimeAndMovesNothing`; `test: withWindowsOutOfViewEveryShortcutIsStillHeldAndNoneWorks`; `test: itComesBackWithinASecondWithEverythingInViewAndTheOldViewOneBackAway`; `scenario: 63-permission-taken-away.sim`; `e2e: 2 is still out of view: nothing could be done` (by hand)
 - **Arbor copes:** Sources/ArborKit/Controller/Controller+Permission.swift notices within three seconds, stops, says what is out of view, and brings it back when the permission returns.
 - **Read in:** `docs/features/F63-permission-taken-away.md`, `docs/ARCHITECTURE.md`, `Sources/ArborTesting/FakeWindowSystem.swift`, `collab/BACKLOG.md`
 

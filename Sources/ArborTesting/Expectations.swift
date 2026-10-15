@@ -13,7 +13,7 @@ public enum ScenarioExpectation {
     "docked <id>, floating <id>, visible <id>, hidden <id>, tile <id>, fills <id>, "
     + "left-of <a> <b>, above <a> <b>, camera root|desktop|<id>, count docked <n>, ok, fail, "
     + "ring <id>|none, outline <id>|desktop|none, shortcut <keys> on|off, shortcut <keys> shows <label>, "
-    + "shortcut <keys> key <code>, pinned <id>, in-front <id>, size <id> <w>x<h>, summoned <id>, space <name>, no-space <name>, "
+    + "shortcut <keys> key <code>, app-got <keys>|nothing, pinned <id>, in-front <id>, size <id> <w>x<h>, summoned <id>, space <name>, no-space <name>, "
     + "field open|closed, held view|still|no, focused <id>, said <words>, silent, "
     + "minimap none|everything|desktop|<id>, still [<id>], moved-once, jolt <id>, at <id> <x> <y>, "
     + "replied <words>, preview none|showing"
@@ -131,6 +131,16 @@ public enum ScenarioExpectation {
       let held = controller.activeBindings.contains { $0.chord == chord }
       if held == (words[2].lowercased() == "on") { return nil }
       return held ? "Arbor holds \(chord.text)" : "Arbor does not hold \(chord.text): the app in front gets it"
+
+    case ("app-got", 2):
+      // The shortcuts pressed so far (`key`, `keydown`) that nobody held, so that they went to the app in front.
+      let got = h.system.keysTheAppInFrontGot.map(\.text)
+      if words[1].lowercased() == "nothing" {
+        return got.isEmpty ? nil : "the app in front got \(got.joined(separator: ", "))"
+      }
+      guard let chord = try? KeyChord(text: words[1]) else { return usage(words) }
+      if got.last == chord.text { return nil }
+      return got.isEmpty ? "the app in front got nothing" : "the last key the app in front got is \(got[got.count - 1])"
 
     case ("pinned", 2):
       guard let id = window(1) else { return usage(words) }
@@ -294,7 +304,7 @@ public enum ScenarioExpectation {
 
     default:
       let verbs = [
-        "docked", "floating", "visible", "hidden", "tile", "fills", "left-of", "above", "camera", "count", "ok", "fail", "ring", "minimap", "outline", "shortcut", "pinned", "in-front", "size",
+        "docked", "floating", "visible", "hidden", "tile", "fills", "left-of", "above", "camera", "count", "ok", "fail", "ring", "minimap", "outline", "shortcut", "app-got", "pinned", "in-front", "size",
         "summoned", "space", "no-space", "field", "said", "silent",
         "held", "focused", "still", "moved-once", "jolt", "at", "replied", "preview",
       ]

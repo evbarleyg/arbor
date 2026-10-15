@@ -20,7 +20,7 @@ everything and `resume` takes it back. (For a shared screen, where bringing ever
   only wants ⌃⌥ back has Shortcuts Off in “App” (F41), which moves nothing.)
 - Windows come into view **because** nothing reacts to ⌘Tab during a pause: a window left out of view would be lost. They end up behind the window in use, as on any Mac.
 - **Quitting during a pause** has nothing left to do, and asks no app anything.
-- Every shortcut is handed back to the apps except those bound to `toggle-pause` or `resume`. The pinch and rectangle event taps are removed.
+- Every shortcut is handed back to the apps except those bound to `toggle-pause` or `resume`. The pinch and rectangle event taps are removed. Since a key that lands in another app can do there what cannot be taken back (IDEAS I16), the line on screen at the pause says whose the keys are now: "Arbor is paused: its keys are the apps’ again · ⌃⌥⎋ resumes" (QUESTIONS Q29, 2). A pause is one of the few ways in which a person gives Arbor's keys away; where nobody did, Arbor keeps them (F63): also in the pause it takes by itself when a logout begins, which any app can cancel.
 - `pause <minutes>` (up to 1440) resumes by itself. A second `pause` replaces the first one's end; `pause` without a number has no end.
 - `resume`: the saved arrangement, view, history and saved views come back, matched against the windows and displays that exist by then, as at
   launch: windows closed meanwhile leave no empty slot, new ones float, windows moved by hand return to their slots. Each window moves once, also when the keyboard has gone to a window that the saved view leaves out: a resume ends with that window in view (F41), so the view is worked out first and everything is laid out

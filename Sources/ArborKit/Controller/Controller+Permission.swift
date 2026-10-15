@@ -15,6 +15,8 @@ extension Controller {
     public var apps: [String]
     /// When it went.
     public var since: Date
+    /// Whether the person had paused Arbor, and so given its keys away.
+    public var duringAPause = false
   }
 
   /// A loss shorter than this is taken for a false alarm, or for a slip of the finger: the view stays as it was.
@@ -24,7 +26,8 @@ extension Controller {
   static let secondsAThoroughYesHolds: TimeInterval = 1
 
   /// Whether Arbor is in business: running, paused, or waiting to get its permission back. False before the first
-  /// start and after quitting. While it is true the app holds what `activeBindings` and `inputSettings` say.
+  /// start and after quitting. While it is true the app follows `inputSettings`. What `activeBindings` says it holds for longer: from before
+  /// its menu bar item is made until it quits.
   public var isInBusiness: Bool { isRunning || isPaused || permissionLoss != nil }
 
   // MARK: Noticing
@@ -93,7 +96,8 @@ extension Controller {
 
   private func loseAccessibility() {
     let apps = Set(parked.compactMap { windows[$0]?.appName }).sorted()
-    let loss = PermissionLoss(windows: parked.count, apps: apps, since: now())
+    let loss = PermissionLoss(
+      windows: parked.count, apps: apps, since: now(), duringAPause: isPaused && !isPausedForApp && !pauseIsArborsOwn)
     // Set first: observers of the `.lifecycle` change read them.
     accessibilityGranted = false
     permissionLoss = loss
@@ -101,6 +105,7 @@ extension Controller {
     // Granting it again means wanting Arbor, as launching it does: a pause does not outlive this.
     scheduler.cancel("resume")
     isPausedForApp = false
+    pauseIsArborsOwn = false
     // If an app Arbor pauses for is still in front when it starts again, that is a new pause.
     frontmostAppPaused = false
     if isPaused {
@@ -137,10 +142,11 @@ extension Controller {
     if isRunning, let focused = system.focusedWindow() { keyboardIs(in: focused, saysMacOS: false) }
   }
 
-  /// Whether a shortcut that failed for want of the permission should open the Accessibility pane now. Someone
-  /// hammering ⌃⌥Space in a fright must not get a stack of System Settings coming forward.
-  public func shouldOpenAccessibilitySettings() -> Bool {
-    guard !accessibilityGranted else { return false }
+  /// Whether a shortcut that failed for want of the permission should open the Accessibility pane now. Only one of the ways home, pressed by
+  /// someone who misses a window: every other key is answered by the line on screen, which takes nobody out of the app they are
+  /// in (`whyAKeyDidNothing`). And someone hammering ⌃⌥Space in a fright must not get a stack of System Settings coming forward.
+  public func shouldOpenAccessibilitySettings(after command: Command = .showAll) -> Bool {
+    guard !accessibilityGranted, command.bringsWindowsBack, (permissionLoss?.windows ?? 0) > 0 else { return false }
     if let last = lastVisitToSettings, abs(now().timeIntervalSince(last)) < Self.secondsBetweenVisitsToSettings {
       return false
     }
@@ -163,6 +169,13 @@ extension Controller {
     guard loss.windows > 0 else { return start + "Grant it again under \(Self.whereToGrantAccessibility)" }
     return start + "\(Self.strandedWindows(loss)) and \(loss.windows == 1 ? "comes" : "come") back as soon as it is "
       + "granted again: \(Self.whereToGrantAccessibility)"
+  }
+
+  /// What the line on screen says when a key was taken and nothing could be done, or nil while Arbor has the permission. The same each
+  /// time, and short-lived: never a dialog, and nobody is taken out of the app they are in.
+  var whyAKeyDidNothing: HeadsUpModel? {
+    guard !accessibilityGranted else { return nil }
+    return HeadsUpModel(kind: .problem, text: "Arbor needs the Accessibility permission", hint: Self.whereToGrantAccessibility)
   }
 
   /// The same in lines short enough for a menu; empty unless the permission was taken away.

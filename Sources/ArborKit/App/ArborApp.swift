@@ -36,6 +36,9 @@ public final class ArborApp: NSObject, NSApplicationDelegate {
   /// were (`exclude`, say) neither registers them all again nor repeats the log lines. Shortcuts
   /// that failed to register (another app holds them) are tried again.
   private var lastBindings: (bindings: [KeyBinding], problems: [String])?
+  /// True for as long as Arbor's item may be in the menu bar: from before it is made until Arbor quits. All that time Arbor holds what
+  /// `Controller.activeBindings` says, whether or not it can act on a press.
+  private var holdsKeys = false
   private var permissionTimer: Timer?
   private var signalSources: [DispatchSourceSignal] = []
   private var pointerInput: PointerInput?
@@ -89,8 +92,8 @@ public final class ArborApp: NSObject, NSApplicationDelegate {
     // controller: the taps are already gone then and must stay gone.
     controller.observe { [weak self] change in
       guard change == .lifecycle || change == .input || change == .hold, let self else { return }
-      guard self.controller.isInBusiness else { return }
       self.registerHotKeys()
+      guard self.controller.isInBusiness else { return }
       self.pointerInput?.update()
     }
     // The controller belongs to this object, so it cannot outlive it.
@@ -149,7 +152,14 @@ public final class ArborApp: NSObject, NSApplicationDelegate {
     // Said before the menu bar item is made, which shows it: nothing announces a change of this.
     let permitted = AXIsProcessTrusted()
     controller.accessibilityGranted = permitted
-    if !environment.noStatusItem { statusMenu = StatusMenu(app: self) }
+    // Before the item: from the moment the icon says that Arbor is there, none of its keys reaches another app (collab/IDEAS.md, I16). Not after
+    // `controller.start()`, which talks to every app and can take seconds; and not only with the permission, which a hot key does not need.
+    startKeys()
+    if !environment.noStatusItem {
+      statusMenu = StatusMenu(app: self)
+      // After "registered N shortcuts": scripts/mac-shell/check-claimed-keys.sh holds the two to that order.
+      Log.info("the menu bar item is up")
+    }
 
     if permitted {
       startController()
@@ -173,6 +183,7 @@ public final class ArborApp: NSObject, NSApplicationDelegate {
     callSensor?.stop()
     settingsWatcher?.stop()
     controller.shutdown()
+    holdsKeys = false
     hotKeys?.unregisterAll()
     // Last, so that a script that waits for `quitting` finds every window back in view.
     feed.stop()
@@ -209,8 +220,8 @@ public final class ArborApp: NSObject, NSApplicationDelegate {
     NSApp.terminate(nil)
   }
 
-  private func startController() {
-    controller.accessibilityGranted = true
+  /// Takes the shortcuts, once, at launch. None of this needs a permission.
+  private func startKeys() {
     // First, so that launching behind an app that keeps its own ⌃⌥ takes nothing from it even for a moment.
     let watcher = FrontmostAppWatcher { [weak self] app in self?.controller.applicationActivated(app) }
     watcher.start()
@@ -219,8 +230,15 @@ public final class ArborApp: NSObject, NSApplicationDelegate {
     let layouts = KeyboardLayoutWatcher { [weak self] layout in self?.controller.keyboardLayoutChanged(layout) }
     layouts.start()
     keyboardLayout = layouts
+    holdsKeys = true
+    registerHotKeys()
+  }
+
+  private func startController() {
+    controller.accessibilityGranted = true
     controller.restartedAfterAccident = environment.restarted
     controller.start()
+    // A pause that outlived the last run, or an app Arbor pauses for in front, changes the answer.
     registerHotKeys()
     if !environment.noHotkeys {
       let input = PointerInput(
@@ -258,7 +276,7 @@ public final class ArborApp: NSObject, NSApplicationDelegate {
   /// every settings change, which is how `reload-settings` picks up edited bindings, and when a
   /// pause, the frontmost app or another keyboard layout changes the answer.
   private func registerHotKeys() {
-    guard controller.isInBusiness else { return }
+    guard holdsKeys else { return }
     let bindings = environment.noHotkeys ? [] : controller.activeBindings
     let problems = controller.effectiveBindings.problems
     if let last = lastBindings, last.bindings == bindings, last.problems == problems,
@@ -282,9 +300,10 @@ public final class ArborApp: NSObject, NSApplicationDelegate {
       // Only without the permission. Why any other key did nothing is said on screen, and `handle` has the beep for those who
       // switched that off, and knows when to keep quiet.
       guard result?.ok == false, !self.controller.accessibilityGranted else { return }
-      NSSound.beep()
-      // The ways home are held without the permission only to lead to where it is granted.
-      if self.controller.shouldOpenAccessibilitySettings() { self.openAccessibilitySettings() }
+      // With the line switched off `handle` has beeped already.
+      if self.controller.settings.messageLevel != .off { NSSound.beep() }
+      // The ways home lead someone who misses a window to where the permission is granted.
+      if self.controller.shouldOpenAccessibilitySettings(after: binding.command) { self.openAccessibilitySettings() }
     }
     hotKeys = center
     let began = DispatchTime.now().uptimeNanoseconds
