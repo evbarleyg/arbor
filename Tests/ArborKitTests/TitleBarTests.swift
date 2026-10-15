@@ -417,7 +417,7 @@ import Testing
     #expect(h.controller.filter.ignoredWindowIDs == [e])
     #expect(h.frame(e) == frame)
     let later = h.system.open(app: "Editor", bundleID: Self.editor, frame: frame)
-    #expect(h.frame(later) == frame, "nor one that opens there")
+    #expect(h.frame(later) == h.system.whereItOpens(frame), "nor one that opens there, which under a menu bar none does")
   }
 
   /// Hemmed in on both sides, every place shows as much of a window as any other, so Arbor's choice says little. What shows whole is in

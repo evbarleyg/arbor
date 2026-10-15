@@ -500,6 +500,16 @@ public final class FakeWindowSystem: WindowSystem {
 
   // MARK: Simulation
 
+  /// Where a window opens that is asked for at `frame` (`echoes.titleBarStaysReachable`). AppKit keeps a new window's title bar from hiding under the
+  /// menu bar: a test window whose app asked for y 20 opened at the top of the visible frame, with its x and its size, ten times out of ten in
+  /// two runs on hosted Macs. What real apps asked for is in no recording. While nobody listens, before the start and after a stop, a window
+  /// is not opened but simply there, and lies where the caller says. Guesses: that it is the menu bar of the display the corner is on, and that a corner on no display is left
+  /// as asked. Not played: what AppKit makes of a window taller than the visible frame, which is pushed down here like any other.
+  public func whereItOpens(_ frame: CGRect) -> CGRect {
+    guard started, echoes.titleBarStaysReachable, let display = displayList.first(where: { $0.frame.contains(frame.origin) }) else { return frame }
+    return CGRect(origin: CGPoint(x: frame.minX, y: max(frame.minY, display.visibleFrame.minY)), size: frame.size)
+  }
+
   /// Opens a window and announces it (unless the system has not started, in
   /// which case it is simply there when the controller starts).
   ///
@@ -514,6 +524,7 @@ public final class FakeWindowSystem: WindowSystem {
   ) -> WindowID {
     let id = WindowID(nextID)
     nextID += 1
+    let frame = whereItOpens(frame)
     let snapshot = WindowSnapshot(
       id: id, pid: pid, bundleID: bundleID ?? "com.example.\(app.lowercased())", appName: app,
       title: title ?? "\(app) \(id.rawValue)", frame: frame, isResizable: isResizable)
@@ -735,7 +746,7 @@ public final class FakeWindowSystem: WindowSystem {
     let id = WindowID(nextTabID())
     let snapshot = WindowSnapshot(
       id: id, pid: pid, bundleID: bundleID ?? "com.example.\(app.lowercased())", appName: app,
-      title: "\(app) \(id.rawValue)", frame: frame)
+      title: "\(app) \(id.rawValue)", frame: whereItOpens(frame))
     unlisted[id] = FakeWindow(snapshot: snapshot, minimumSize: .zero)
     return id
   }
@@ -851,6 +862,7 @@ extension FakeWindowSystem {
     public var wholePoints = true
     /// A window cannot be moved so low that its title bar is under the Dock or below the display: asked for
     /// 1023,767 on a display whose visible frame ends at 705, it stops at 1023,677, its title bar's 28 points above (`setTitleBar`).
+    /// Nor does a new window open with its title bar under the menu bar (`whereItOpens`).
     public var titleBarStaysReachable = true
     /// A window whose size is set grows no further than to the bottom of the visible frame, less a point, and to the right edge
     /// of its display: at 170,220 on a display whose visible frame ends at 705, asked to be 650 high, it becomes 484 high;
@@ -1153,7 +1165,8 @@ extension FakeWindowSystem {
     cursor = point
     events?.pointerPressed()
     events?.dragBegan(window, at: CGPoint(x: start.midX, y: start.minY + 10))
-    windows[window]!.snapshot.frame.origin = CGPoint(x: point.x - start.width / 2, y: point.y - 10)
+    windows[window]!.snapshot.frame.origin = CGPoint(
+      x: point.x - start.width / 2, y: max(point.y - 10, highestTop(heldAt: point)))
     events?.windowChanged(windows[window]!.snapshot, userInitiated: true)
     events?.dragMoved(window, to: point)
     mouseDown = false
@@ -1275,7 +1288,7 @@ extension FakeWindowSystem {
     inHand = (window, start, grab)
     mouseDown = true
     events?.pointerPressed()
-    follow(point ?? grab)
+    follow(point ?? grab, pressing: point == nil)
     events?.dragBegan(window, at: point ?? grab)
     // Its app reports the size it has again, a moment after the window server has shown that it is being dragged.
     if ownSize != nil, let snapshot = windows[window]?.snapshot { events?.windowChanged(snapshot, userInitiated: true) }
@@ -1419,14 +1432,22 @@ extension FakeWindowSystem {
     events?.dragCancelled(window)
   }
 
-  private func follow(_ point: CGPoint) {
+  /// The window in the hand goes along with the pointer, but for its title bar (`highestTop`). The press alone moves nothing, of which nobody would
+  /// hear: a window that lies higher, which nobody has recorded being taken, comes down with the pointer's first movement.
+  private func follow(_ point: CGPoint, pressing: Bool = false) {
     cursor = point
     guard let (window, start, grab) = inHand, windows[window] != nil else { return }
-    windows[window]!.snapshot.frame.origin = CGPoint(
-      x: start.minX + point.x - grab.x, y: start.minY + point.y - grab.y)
-    // The pointer goes up to the menu bar and into it. The window it holds stays below.
-    if let top = displayList.first(where: { $0.frame.contains(point) })?.visibleFrame.minY {
-      windows[window]!.snapshot.frame.origin.y = max(windows[window]!.snapshot.frame.minY, top)
-    }
+    var origin = CGPoint(x: start.minX + point.x - grab.x, y: start.minY + point.y - grab.y)
+    if !pressing { origin.y = max(origin.y, highestTop(heldAt: point)) }
+    windows[window]!.snapshot.frame.origin = origin
   }
+
+  /// How high the top of a window in a hand goes: the window server does not let a title bar under the menu bar. In 71 recorded drags whose pointer
+  /// went higher than the title bar could follow, of six real apps and of test windows, no frame lay above the top of the visible frame.
+  /// In 69 the window's top stopped exactly there and x went on following. Not played: in the other two it hardly rose at all, from y 109
+  /// to 103 and from 35 not a point, with x following.
+  ///
+  /// All 71 had one display, so that it is the menu bar of the display the pointer is on, or of the nearest, is a guess. Nobody has recorded the
+  /// pointer coming down again with the button held: here the window waits for it where it took hold.
+  private func highestTop(heldAt point: CGPoint) -> CGFloat { display(stopping: point)?.visibleFrame.minY ?? -.infinity }
 }

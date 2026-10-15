@@ -297,7 +297,7 @@ public final class ChaosRunner {
     // Where its app opened it, or where it is when Arbor starts, counts as a place given it, if more than half of it shows there or 24 points of
     // its title bar are within reach: what is found counts as left (the product owner). What shows less is fetched.
     if case .open(let new) = action {
-      let frame = Self.within(new.frame, minimum: new.minimum, maximum: new.maximum)
+      let frame = Self.within(system.whereItOpens(new.frame), minimum: new.minimum, maximum: new.maximum)
       if Self.area(of: frame, showingOn: system.displayList) > 0.5 * frame.area || titleBarIsWithinReach(frame) {
         note(new.id, frame)
       } else {

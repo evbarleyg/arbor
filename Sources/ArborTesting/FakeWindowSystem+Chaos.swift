@@ -85,7 +85,7 @@ extension FakeWindowSystem {
   ) {
     guard !existingWindowIDs().contains(id) else { return }
     nextID = max(nextID, id.rawValue &+ 1)
-    var frame = frame
+    var frame = whereItOpens(frame)
     // It opens with whole steps, as it has them ever after.
     if let cells { frame.size = Self.rounded(frame.size, toStepsOf: cells.step, margin: cells.margin) }
     let snapshot = WindowSnapshot(id: id, pid: pid, bundleID: bundleID, appName: app, title: title, frame: frame)
