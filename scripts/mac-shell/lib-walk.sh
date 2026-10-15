@@ -84,6 +84,28 @@ bundle_of() {
     settings) echo com.apple.systempreferences ;;
     preview) echo com.apple.Preview ;;
     mail) echo com.apple.mail ;;
+    chrome) echo com.google.Chrome ;;
+    firefox) echo org.mozilla.firefox ;;
+    edge) echo com.microsoft.edgemac ;;
+    calculator) echo com.apple.calculator ;;
+    books) echo com.apple.iBooksX ;;
+    music) echo com.apple.Music ;;
+    stickies) echo com.apple.Stickies ;;
+    reminders) echo com.apple.reminders ;;
+    quicktime) echo com.apple.QuickTimePlayerX ;;
+    *) return 1 ;;
+  esac
+}
+
+# The casts of docs/VIABLE.md, section 4. What a hosted Mac has, as survey-casts.sh found it.
+members_of() {
+  case "$1" in
+    stock) echo finder safari textedit terminal notes calendar settings preview mail ;;
+    # Toolkits that are not Apple's, and many windows of one app.
+    browsers) echo safari chrome firefox edge finder textedit ;;
+    # Manners. One size only (Calculator); no narrower than 1001 and 980 points, over half a laptop's screen, each with a sheet (Books, Music); none smaller than
+    # 768×692 (Reminders); two windows that cannot be minimized (Stickies). What walk_scene adds: tabs, an open panel, an app without a window.
+    awkward) echo finder terminal textedit safari calculator books music stickies reminders ;;
     *) return 1 ;;
   esac
 }
@@ -91,7 +113,7 @@ bundle_of() {
 document_of() {
   case "$1" in
     finder) echo "$DAY_DOCUMENTS/$APPS_CANARY-grove" ;;
-    safari) echo "$DAY_DOCUMENTS/$APPS_CANARY-page.html" ;;
+    safari | chrome | firefox | edge) echo "$DAY_DOCUMENTS/$APPS_CANARY-page.html" ;;
     textedit) echo "$DAY_DOCUMENTS/$APPS_CANARY-oak.txt" ;;
     preview) echo "$DAY_DOCUMENTS/$APPS_CANARY-leaf.png" ;;
   esac
@@ -238,7 +260,7 @@ open_new() {
   local pid known name
   pid=$(front_pid)
   name=$(name_of_pid "$pid") || { left_out "open_new: the app in front is not of the cast"; return; }
-  case "$name" in safari | textedit | finder | terminal) ;; *) left_out "open_new: ⌘N in $name is no new window"; return ;; esac
+  case "$name" in safari | textedit | finder | terminal | chrome | firefox | edge | stickies) ;; *) left_out "open_new: ⌘N in $name is no new window"; return ;; esac
   known=$(app_windows "$pid")
   walk_act open-close "new-window-$name" "presses ⌘N in $name"
   key cmd+n
@@ -828,16 +850,63 @@ walk_open() {
   local name=$1 document
   document=$(document_of "$name")
   act open-close "open-$name" "opens $name"
-  # shellcheck disable=SC2086
-  if APP_WAIT=25 meet "$name" "$(bundle_of "$name")" ${document:+"$document"}; then
-    # Mail without an account asks for one in a sheet, and swaps its windows for others when the sheet is answered. It is left alone: a window with a sheet.
-    [ "$name" = mail ] || app_dismiss "$APP_PID" || echo "a sheet or dialog stayed in the way"
+  case "$name" in
+    # Neither a welcome nor the question which browser is to be the Mac's own: nobody has an account here to answer with.
+    chrome | edge) set -- --args --no-first-run --no-default-browser-check "file://$document" ;;
+    *) set -- ${document:+"$document"} ;;
+  esac
+  if APP_WAIT=25 meet "$name" "$(bundle_of "$name")" "$@"; then
+    # Mail without an account asks for one in a sheet, and swaps its windows for others when the sheet is answered. It is left alone: a window with a sheet. So
+    # are the sheets Books and Music greet with, which is what they are in their cast for.
+    case "$name" in mail | books | music) ;; *) app_dismiss "$APP_PID" || echo "a sheet or dialog stayed in the way" ;; esac
     WALK_CAST="$WALK_CAST $name"
   else
     echo "$name opened no standard window: the walk goes on without it"
     eval "W_$name= P_$name="
   fi
   acted setup=1
+}
+
+# What a cast has besides its apps' first windows. All of it before anything counts.
+walk_scene() {
+  local name pid known
+  case "$1" in
+    browsers)
+      # Several windows each.
+      for name in safari chrome firefox edge; do
+        present "$name" || continue
+        pid=$(pid_of "$name") known=$(app_windows "$pid")
+        act open-close "second-window-$name" "brings $name forward and presses ⌘N"
+        must dock_click "$(bundle_of "$name")"
+        sleep 0.5
+        key cmd+n
+        if app_await_window "$pid" "$known" 8; then label "$NEW_WINDOW" "$name-2"; fi
+        acted setup=1
+      done ;;
+    awkward)
+      # Native tabs: two windows to Accessibility, one on the screen.
+      for name in finder terminal; do
+        present "$name" || continue
+        act open-close "tab-$name" "brings $name forward and presses ⌘T"
+        must dock_click "$(bundle_of "$name")"
+        sleep 0.5
+        key cmd+t
+        acted setup=1
+      done
+      # An app with no window at all: it has a place in the Dock and under ⌘Tab, and nothing to arrange.
+      act open-close open-quicktime "opens QuickTime Player, which puts up no window"
+      APP_WAIT=3 app_open "$(bundle_of quicktime)" > /dev/null 2>&1
+      acted setup=1
+      # An open panel, which belongs to its app and to no window.
+      if present textedit; then
+        act open-close panel-textedit "brings TextEdit forward and presses ⌘O"
+        must dock_click "$(bundle_of textedit)"
+        sleep 0.5
+        key cmd+o
+        sleep 1
+        acted setup=1
+      fi ;;
+  esac
 }
 
 fills_the_display() {
@@ -889,9 +958,10 @@ walk_begin() {
 
   chapter "Before Arbor: the apps are open already"
   case "$cast" in
-    stock) for name in finder safari textedit terminal notes calendar settings preview mail; do walk_open "$name"; done ;;
+    stock | browsers | awkward) for name in $(members_of "$cast"); do walk_open "$name"; done ;;
     *) die "walk_begin: no cast called $cast" ;;
   esac
+  walk_scene "$cast"
   # The Dock grows with every app that joins it, and the space between it and the menu bar shrinks.
   sleep 3
   # An app may have swapped the window it opened with for another meanwhile: Mail's first one gives way to its real one.
@@ -907,6 +977,7 @@ walk_begin() {
 
   # A switch that is written and not obeyed proves nothing: before anything counts, macOS is seen to fill the screen, or not to.
   probe=$(window_of calendar)
+  [ -n "$probe" ] || probe=$(window_of textedit)
   [ -n "$probe" ] || probe=$(window_of "${WALK_CAST##* }")
   # macOS does not answer every drag: its preview has been seen to come, to go within 3 ms and to stay away, with the pointer at rest in the menu bar. So that it acts
   # is said by one drag of three, and that it does not by two of two.

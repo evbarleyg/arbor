@@ -3,7 +3,7 @@
 
   gate.py plan [first|rest|whole]          the rows, one playing of gate.sh each, as a table
   gate.py row <commit> <part> <parts>      what gate.sh plays as part <part> of <parts>: `name=value` lines for the shell
-  gate.py acts <seed> <display> <acts>     the acts of a walk, one word a line (walk.py's)
+  gate.py acts <seed> <display> <acts> <cast>   the acts of a walk, one word a line (walk.py's)
   gate.py --self-test
 
 The numbers are not here. They are in the first block of JSON in docs/VIABLE.md, and the plan is worked out from them: every cell (macOS's tiling, the
@@ -82,8 +82,8 @@ def asked(display):
     return ACTS - 16 if display == "two" else ACTS
 
 
-def acts_of(seed, display, acts=None):
-    return walk.walk(seed, acts or asked(display), display == "two")
+def acts_of(seed, display, acts=None, cast="stock"):
+    return walk.walk(seed, acts or asked(display), display == "two", cast)
 
 
 # The kind of act each word counts as (lib-walk.sh). A name that ends in _ stands for every word that begins so.
@@ -91,8 +91,8 @@ KINDS = {"switch": "switch_ focus_key", "tile-click": "tile_click", "open-close"
          "dock-key": "dock_key float_key arrange_key undo redo rotate mirror pin", "drag": "drag_onto drag_out drag_by", "drag-where-macos-tiles": "drag_edge",
          "view": "view peek save_view view_n", "resize": "resize_", "macos-own": "full_screen wallpaper_click title_double_click",
          "way-out": "pause resume float_all float_all_here hold_view", "display-change": "display send_across", "idle": "idle_act"}
-# Every app of the cast is called up once, to see that it still comes.
-ROLL_CALL = ["switch"] * len(walk.APPS)
+# Every app of the cast is called up once, to see that it still comes. The smallest cast has this many.
+ROLL_CALL = ["switch"] * min(len(cast["apps"]) for cast in walk.CASTS.values())
 # Words that are several acts, and what every journey begins and ends with: Arbor is started and its welcome closed; it is quit.
 SEVERAL = {"quit_and_start": ["quit-and-start"] + ROLL_CALL[::3] + ["quit-and-start", "open-close"], "wallpaper_click": ["macos-own"] * 2,
            "title_double_click": ["macos-own"] * 2, "hold_view": ["way-out"] * 3, "display": ["display-change", "view"]}
@@ -108,7 +108,7 @@ def kinds_of(line):
 
 
 def written(commit, row, salt):
-    return AROUND + [kind for line in acts_of(seed_of(commit, row, salt), row["display"]) for kind in kinds_of(line)]
+    return AROUND + [kind for line in acts_of(seed_of(commit, row, salt), row["display"], cast=row["cast"]) for kind in kinds_of(line)]
 
 
 def short_of(gate, commit, salt):
@@ -176,6 +176,8 @@ def self_test():
         for display in gate["display"]:
             want(f"controls at {tiling}, {display}", len([row for row in whole if (row["tiling"], row["display"], row["kind"]) == (tiling, display, "control")]),
                  gate["controls"]["without_arbor_per_cell_min"])
+    if set(gate["cast"]) != set(walk.CASTS):
+        failures.append(f"docs/VIABLE.md has the casts {gate['cast']}, walk.py {sorted(walk.CASTS)}")
     if any(None in written("0" * 40, row, 0) for row in journeys):
         failures.append("a word of walk.py's has no kind here")
     want("the share of acts from walks", len([row for row in journeys if row["kind"] == "walk"]) / len(journeys), gate["share_of_acts_from_walks_min"])
@@ -230,8 +232,8 @@ def main(arguments):
         print(f"seed={seed_of(commit, row, salt) if row['script'] == 'gate.sh' else ''}")
         print(f"acts={asked(row['display'])}")
         return 0
-    if arguments[:1] == ["acts"] and len(arguments) == 4 and arguments[3].isdigit():
-        print("\n".join(acts_of(arguments[1], arguments[2], int(arguments[3]))))
+    if arguments[:1] == ["acts"] and len(arguments) == 5 and arguments[3].isdigit() and arguments[4] in walk.CASTS:
+        print("\n".join(acts_of(arguments[1], arguments[2], int(arguments[3]), arguments[4])))
         return 0
     print(__doc__)
     return 64

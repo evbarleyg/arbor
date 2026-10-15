@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Writes a walk: a journey for a real Mac, made from a seed, in the words of lib-walk.sh.
 
-  walk.py <seed> [--acts n] [--display laptop|desk|two] [--tiling defaults|off] [--reduce-motion on]   prints the script, to be saved as <seed>.sh
+  walk.py <seed> [--acts n] [--display laptop|desk|two] [--tiling defaults|off] [--cast stock|browsers|awkward] [--reduce-motion on]   prints the script, to be saved as <seed>.sh
   walk.py <seed> --control                                   prints its control, which plays <seed>.sh beside it without Arbor
   walk.py --self-test
 
@@ -15,7 +15,17 @@ A plain random walk, until the generator of the Linux walks writes these words t
 
 import sys
 
-APPS = ["finder", "safari", "textedit", "terminal", "notes", "calendar", "settings", "preview", "mail"]
+# The casts of docs/VIABLE.md, as lib-walk.sh opens them (members_of). new: where ⌘N opens a window; menu: whose Window menu lists its windows; quit: whose document can
+# be opened again after ⌘Q.
+CASTS = {
+    "stock": {"apps": ["finder", "safari", "textedit", "terminal", "notes", "calendar", "settings", "preview", "mail"],
+              "new": ["safari", "textedit", "finder", "terminal"], "menu": ["safari", "finder", "textedit", "terminal"], "quit": ["textedit", "preview", "safari"]},
+    "browsers": {"apps": ["safari", "chrome", "firefox", "edge", "finder", "textedit"],
+                 "new": ["safari", "chrome", "firefox", "edge"], "menu": ["safari", "chrome", "firefox", "edge"], "quit": ["textedit", "safari"]},
+    "awkward": {"apps": ["finder", "terminal", "textedit", "safari", "calculator", "books", "music", "stickies", "reminders"],
+                "new": ["finder", "terminal", "stickies", "safari"], "menu": ["finder", "terminal", "safari", "stickies"], "quit": ["safari"]},
+}
+APPS = CASTS["stock"]["apps"]
 # How often each kind of thing is chosen. Not docs/VIABLE.md's acts_min itself, but what makes the acts of a whole gate come out above it (gate.py's
 # self-test counts them): a dock, a new window and full screen each begin with a switch of their own, every journey calls its apps up after each quit, what
 # is opened is closed again, and drags and resizes are what a real screen most often has no room for when their turn comes.
@@ -52,11 +62,12 @@ class Dice:
         return pairs[-1][0]
 
 
-def walk(seed, acts, two=False):
+def walk(seed, acts, two=False, cast="stock"):
     """The lines of a walk of about that many acts. Some words are two acts (a click on the wallpaper and a second one), one is half a dozen.
     `two`: with a second display that comes, goes, moves and changes size; the dice are rolled as without it, so the rest of the walk is the same."""
     dice = Dice(seed)
     changes = Dice(f"{seed} displays")
+    apps, new, menu, quit_ = (CASTS[cast][key] for key in ("apps", "new", "menu", "quit"))
     lines, owed, count = [], [], 0
     restart_at = acts // 2
 
@@ -90,11 +101,11 @@ def walk(seed, acts, two=False):
         # Half a minute each: by chance a walk would have eight, and take longer than a run may.
         if kind == "idle" and lines.count("idle_act") >= IDLES:
             continue
-        app, other = dice.pick(APPS), dice.pick(APPS)
+        app, other = dice.pick(apps), dice.pick(apps)
         if kind == "switch":
             say(dice.weighted([(f"switch_dock {app}", 4), (f"switch_click {app}", 4), (f"switch_cmdtab {1 + dice.roll(3)}", 3),
                                ("switch_backtick", 1), (f"focus_key {dice.pick(['left', 'right', 'up', 'down'])}", 2),
-                               (f"switch_menu {dice.pick(['safari', 'finder', 'textedit', 'terminal'])}", 1)]))
+                               (f"switch_menu {dice.pick(menu)}", 1)]))
         elif kind == "tile-click":
             # A tile stands only where everything is shown and did not fit.
             say("view all")
@@ -102,7 +113,7 @@ def walk(seed, acts, two=False):
         elif kind == "open-close":
             what = dice.roll(5)
             if what == 0:
-                say(f"switch_dock {dice.pick(['safari', 'textedit', 'finder', 'terminal'])}")
+                say(f"switch_dock {dice.pick(new)}")
                 say("open_new")
                 later("close_new")
             elif what == 1:
@@ -114,7 +125,7 @@ def walk(seed, acts, two=False):
                 say("hide")
                 later(f"unhide {app}")
             elif what == 3:
-                quits = dice.pick(["textedit", "preview", "safari"])
+                quits = dice.pick(quit_)
                 say(f"quit_app {quits}")
                 later(f"reopen {quits}")
             else:
@@ -162,11 +173,11 @@ def walk(seed, acts, two=False):
     return lines
 
 
-def script(seed, acts, display, tiling, control, still=False):
+def script(seed, acts, display, tiling, control, still=False, cast="stock"):
     head = [
         "#!/bin/bash",
         f"# A walk from the seed {seed}: scripts/mac-shell/walk.py {seed} --acts {acts} --display {display} --tiling {tiling}"
-        + (" --reduce-motion on" if still else "") + (" --control" if control else ""),
+        + (f" --cast {cast}" if cast != "stock" else "") + (" --reduce-motion on" if still else "") + (" --control" if control else ""),
         "# Written by a program. Change the program, not this file.",
     ]
     if control:
@@ -174,8 +185,8 @@ def script(seed, acts, display, tiling, control, still=False):
         return "\n".join(head + ["export WALK_WITHOUT_ARBOR=1", f'exec "$BASH" "$(dirname "${{BASH_SOURCE[0]}}")/{seed}.sh"']) + "\n"
     # With Reduce Motion on Arbor puts up no stage, and every move of every window shows.
     head += ["WALK_REDUCE_MOTION=on"] if still else []
-    head += ['source "$(dirname "${BASH_SOURCE[0]}")/lib-walk.sh"', f"walk_begin stock {display} {tiling} {seed}"]
-    return "\n".join(head + walk(seed, acts, display == "two") + ["walk_end"]) + "\n"
+    head += ['source "$(dirname "${BASH_SOURCE[0]}")/lib-walk.sh"', f"walk_begin {cast} {display} {tiling} {seed}"]
+    return "\n".join(head + walk(seed, acts, display == "two", cast) + ["walk_end"]) + "\n"
 
 
 def self_test():
@@ -203,6 +214,13 @@ def self_test():
     moving, still = script("4711", 110, "laptop", "off", False).split("\n"), script("4711", 110, "laptop", "off", False, still=True).split("\n")
     if [line for line in still[2:] if line != "WALK_REDUCE_MOTION=on"] != moving[2:] or still.index("WALK_REDUCE_MOTION=on") > still.index(moving[3]):
         failures.append("with Reduce Motion on it is another walk, or the library hears of it too late")
+    for cast, lists in CASTS.items():
+        strangers = {word for seed in range(40) for line in walk(seed, 110, cast=cast) for word in line.split()[1:]
+                     if word in {app for other in CASTS.values() for app in other["apps"]} and word not in lists["apps"]}
+        if strangers:
+            failures.append(f"a walk with the cast {cast} names {sorted(strangers)}, who are not in it")
+        if not all(set(lists[key]) <= set(lists["apps"]) for key in ("new", "menu", "quit")):
+            failures.append(f"the cast {cast} lists somebody who is not in it")
     words = {line.split()[0] for seed in range(200) for line in walk(seed, 110, two=True)}
     missing = WORDS - words
     if missing:
@@ -229,7 +247,7 @@ def main(arguments):
         print(__doc__)
         return 64
     seed, rest = arguments[0], arguments[1:]
-    options = {"--acts": "110", "--display": "laptop", "--tiling": "defaults", "--reduce-motion": "off"}
+    options = {"--acts": "110", "--display": "laptop", "--tiling": "defaults", "--reduce-motion": "off", "--cast": "stock"}
     control = "--control" in rest
     rest = [word for word in rest if word != "--control"]
     for name, value in zip(rest[::2], rest[1::2]):
@@ -237,7 +255,7 @@ def main(arguments):
             print(f"walk.py: no option {name}", file=sys.stderr)
             return 64
         options[name] = value
-    print(script(seed, int(options["--acts"]), options["--display"], options["--tiling"], control, options["--reduce-motion"] == "on"), end="")
+    print(script(seed, int(options["--acts"]), options["--display"], options["--tiling"], control, options["--reduce-motion"] == "on", options["--cast"]), end="")
     return 0
 
 
