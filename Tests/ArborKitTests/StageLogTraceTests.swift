@@ -104,6 +104,9 @@ import Testing
       h.run("zoom \(windows[2].rawValue)")
       h.scheduler.advance(by: 1)
       h.run("back")
+      // Long enough for the window server's list to have the windows where `back` put them. Sooner, Arbor takes them for swept aside
+      // and raises no stage (`theWindowServersListIsBehindForAMoment`).
+      h.scheduler.advance(by: 0.2)
       h.run("float \(windows[0].rawValue)")
     }
     #expect(stageLines(trace).count > 60)

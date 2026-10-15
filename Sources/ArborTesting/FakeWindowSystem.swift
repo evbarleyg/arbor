@@ -150,6 +150,8 @@ public final class FakeWindowSystem: WindowSystem {
   public private(set) var unlisted: [WindowID: FakeWindow] = [:]
   /// The time in seconds, for `inputActivity()`. The harness points it at its scheduler's clock.
   public var clock: () -> Double = { 0 }
+  /// Where the window server still has a window that Arbor has just moved (`echoes.listIsBehind`).
+  var listedAsBefore: [WindowID: (frame: CGRect, arbors: CGRect, until: Double)] = [:]
   private var pointerUsedAt = 0.0
   private var keyReleasedAt = -Double.infinity
   private var keyPresses: UInt32 = 0
@@ -357,6 +359,11 @@ public final class FakeWindowSystem: WindowSystem {
     fake.changedItsWays = false
     windows[window] = fake
     frameLog.append((window, applied))
+    // Of calls back to back the list has the frame from before the first of them.
+    if changed, echoes.listIsBehind > 0 {
+      let still = listedAsBefore[window].flatMap { clock() < $0.until && $0.arbors == before ? $0.frame : nil }
+      listedAsBefore[window] = (still ?? before, applied, clock() + echoes.listIsBehind)
+    }
     if changed, fake.snapshot.isPresent || inSightUnlisted.contains(window) { sightings.append((window, applied)) }
     if changed, echoes.frames {
       undelivered += Array(repeating: .frame(window), count: reports(ofTheWayFrom: before, to: applied, asked: frame, atLeast: fake.minimumSize))
@@ -912,6 +919,10 @@ extension FakeWindowSystem {
     /// The same for the way back from full screen, which takes macOS longer. All the way it has not been seen either: see
     /// `leaveFullScreen`, which plays what has.
     public var flightFromFullScreen = 0.0
+    /// For this many seconds after Arbor has set a frame the window server still lists the window as it was before (`stackedWindows`).
+    /// Measured without Arbor: read right after Accessibility's answer, the list was behind in 143 results of 170; after 62 to 146 ms it
+    /// had caught up in 165, after 200 ms in all.
+    public var listIsBehind = 0.15
 
     public init() {}
     /// Nothing happens that a test did not ask for.
@@ -919,6 +930,7 @@ extension FakeWindowSystem {
       var echoes = Echoes()
       (echoes.focus, echoes.frames, echoes.keyboard, echoes.wholePoints) = (false, false, false, false)
       (echoes.titleBarStaysReachable, echoes.growsNoFurtherThanTheScreen) = (false, false)
+      echoes.listIsBehind = 0
       return echoes
     }
   }
@@ -1292,7 +1304,9 @@ extension FakeWindowSystem {
     strangers
       + windowsFrontToBack().compactMap { id in
         guard let snapshot = windows[id]?.snapshot, snapshot.isPresent else { return nil }
-        return StackedWindow(id: id, frame: sweptAside?[id] ?? snapshot.frame)
+        // What a hand or an app has done since, the window server did itself.
+        let listed = listedAsBefore[id].flatMap { clock() < $0.until && $0.arbors == snapshot.frame ? $0.frame : nil }
+        return StackedWindow(id: id, frame: sweptAside?[id] ?? listed ?? snapshot.frame)
       }
   }
 

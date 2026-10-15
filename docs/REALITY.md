@@ -57,7 +57,7 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 | [order-of-reports](#order-of-reports) | 28 | 3 | 9 | 11 | 3 | 5 | 18 | 1 | 3 | 6 | 4 |
 | [missing-report](#missing-report) | 44 | 7 | 14 | 7 | 4 | 19 | 24 | 1 | 5 | 14 | 11 |
 | [extra-report](#extra-report) | 9 | 0 | 3 | 3 | 1 | 2 | 6 | 0 | 0 | 3 | 1 |
-| [late-or-partial-answer](#late-or-partial-answer) | 46 | 9 | 11 | 16 | 6 | 13 | 28 | 0 | 6 | 12 | 15 |
+| [late-or-partial-answer](#late-or-partial-answer) | 46 | 9 | 12 | 16 | 5 | 13 | 29 | 0 | 6 | 11 | 15 |
 | [second-actor](#second-actor) | 54 | 6 | 18 | 20 | 9 | 7 | 35 | 0 | 4 | 15 | 10 |
 | [geometry](#geometry) | 35 | 2 | 11 | 15 | 7 | 2 | 24 | 1 | 2 | 8 | 6 |
 | [identity](#identity) | 31 | 4 | 7 | 6 | 7 | 11 | 13 | 1 | 4 | 13 | 9 |
@@ -67,7 +67,7 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 | [looks](#looks) | 21 | 0 | 0 | 0 | 1 | 20 | 2 | 2 | 3 | 14 | 6 |
 | [never-exercised](#never-exercised) | 15 | 7 | 1 | 13 | 0 | 1 | 0 | 0 | 14 | 1 | 15 |
 | [toolchain](#toolchain) | 45 | 1 | 0 | 1 | 4 | 40 | 26 | 1 | 2 | 16 | 7 |
-| **all** | 465 | 62 | 94 | 126 | 68 | 177 | 242 | 19 | 60 | 144 | 109 |
+| **all** | 465 | 62 | 95 | 126 | 67 | 177 | 243 | 19 | 60 | 143 | 109 |
 
 **Where the difference bit**
 
@@ -76,7 +76,7 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 | below the seam | in the macOS-only code under the platform protocols (AX, Input, UI, App), which no test on Linux runs | 144 | 89 | 46 | 13 | 33 | 52 |
 | at the seam | in what crosses the platform protocols: a stand-in can play it to the controller | 164 | 98 | 125 | 0 | 11 | 28 |
 | controller | in the controller or the core, given reports that were right | 28 | 15 | 16 | 0 | 1 | 11 |
-| test | in a test, a script or a harness that expected the wrong thing | 83 | 0 | 28 | 5 | 11 | 39 |
+| test | in a test, a script or a harness that expected the wrong thing | 83 | 0 | 29 | 5 | 11 | 38 |
 | machine | in the machine, the toolchain or the way things are built and installed | 46 | 3 | 27 | 1 | 4 | 14 |
 
 Each case is counted under the best guard it has: one that goes red on any machine (a test, a scenario, a replayed trace, a tool that `make check` or CI runs), one that needs CI's Macs (a test for macOS alone, a step of a real-window run that CI starts), one that somebody has to start, or none.
@@ -1764,15 +1764,15 @@ Late or partial answers: a call returns before the deed, after it, with half of 
 
 ### the-window-server-applies-a-move-after-the-call-returns
 
-*hurt 4 · test*
+*hurt 4 · test · touches `jolt`*
 
 - **Expected:** Once the Accessibility call has returned, or arborctl has answered, the window server's list shows the window at its new place.
-- **Happened:** The window server applies moves a moment later, so a check that looks at once fails. The first real-window run passed 40 of 42: both failures were the runner reading windows sent out of view too early. Rectangles are compared to within three points since.
+- **Happened:** The window server applies moves a moment later, so a check that looks at once fails. The first real-window run passed 40 of 42: both failures were the runner reading windows sent out of view too early. Rectangles are compared to within three points since. Measured since, without Arbor, on eleven apps and the test window: read right after Accessibility's answer the list differed from it in 143 results of 170. Of 615 calls that changed a frame it still had the frame from before the call after 475, something older after 94, the new one after 46. 62 to 146 ms later it had caught up in 165 of 170, after 200 ms in all. `FakeWindowSystem.stackedWindows` was never behind. Made to be, for 0.15 s, one test of 7,398 fell, and it showed a fault: of two commands within that time the second finds the windows that the first fetched still listed in their corner, takes that for macOS showing its desktop (`SweptAside.isSwept`) and raises no stage, so with motion on it jumps. The Accessibility layer asks the same question at a press.
 - **Found by:** The first real-window run on a hosted Mac, and the Mac shell sessions after it.
-- **Stand-ins play it:** **no**
-- **Guard:** **none**
-- **Arbor copes:** Sources/arbor-e2e/main.swift polls every check: up to three seconds for windows that leave or come into view, four for slots. The Mac shell scripts do the same with `eventually`. Arbor itself goes by the frame read back through Accessibility.
-- **Read in:** `docs/TESTING.md`, `Sources/arbor-e2e/main.swift`, `collab/QUESTIONS.md`, `scripts/mac-shell/lib.sh`, `scripts/mac-shell/lib-apps.sh`
+- **Stand-ins play it:** yes (`Echoes.listIsBehind`, `FakeWindowSystem.stackedWindows`)
+- **Guard:** `test: theWindowServersListIsBehindForAMoment`
+- **Arbor copes:** Sources/arbor-e2e/main.swift polls every check: up to three seconds for windows that leave or come into view, four for slots. The Mac shell scripts do the same with `eventually`. Arbor itself goes by the frame read back through Accessibility. Open: `SweptAside.isSwept` does not know what Arbor itself has just moved.
+- **Read in:** `docs/TESTING.md`, `Sources/arbor-e2e/main.swift`, `collab/QUESTIONS.md`, `scripts/mac-shell/lib.sh`, `scripts/mac-shell/lib-apps.sh`, `Sources/ArborTesting/FakeWindowSystem.swift`, `Sources/ArborCore/SweptAside.swift`
 
 ## second-actor
 

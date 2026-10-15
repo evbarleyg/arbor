@@ -332,6 +332,31 @@ private final class Recorder: WindowSystemEvents {
     #expect(system.allWindows().count == 4)
   }
 
+  /// Right after Arbor has set a frame Accessibility has the window there and the window server's list has it where it was. Of calls back
+  /// to back the list has the frame from before the first. A fifth of a second later the two agree.
+  @Test func theWindowServersListIsBehindForAMoment() {
+    var now = 0.0
+    let system = FakeWindowSystem()
+    system.clock = { now }
+    let first = CGRect(x: 100, y: 100, width: 600, height: 400)
+    let a = system.open(app: "Safari", frame: first)
+    system.start()
+    func listed() -> CGRect? { system.stackedWindows().first { $0.id == a }?.frame }
+    let second = CGRect(x: 12, y: 37, width: 700, height: 500)
+    system.setFrame(second, of: a)
+    #expect(system.frame(of: a) == second && listed() == first)
+    now = 0.1
+    let third = CGRect(x: 40, y: 60, width: 700, height: 500)
+    system.setFrame(third, of: a)
+    #expect(system.frame(of: a) == third && listed() == first)
+    now = 0.3
+    #expect(listed() == third)
+    // What a hand or an app does, the window server does itself: it is never behind with that.
+    system.setFrame(second, of: a)
+    system.userMove(a, to: first)
+    #expect(listed() == first)
+  }
+
   @Test func everySwitchCanBeTurnedOff() {
     let (system, recorder, a, b, _) = make(.none)
     system.focus(b)

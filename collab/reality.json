@@ -11368,19 +11368,29 @@
    "kind": "late-or-partial-answer",
    "layer": "test",
    "expected": "Once the Accessibility call has returned, or arborctl has answered, the window server's list shows the window at its new place.",
-   "happened": "The window server applies moves a moment later, so a check that looks at once fails. The first real-window run passed 40 of 42: both failures were the runner reading windows sent out of view too early. Rectangles are compared to within three points since.",
+   "happened": "The window server applies moves a moment later, so a check that looks at once fails. The first real-window run passed 40 of 42: both failures were the runner reading windows sent out of view too early. Rectangles are compared to within three points since. Measured since, without Arbor, on eleven apps and the test window: read right after Accessibility's answer the list differed from it in 143 results of 170. Of 615 calls that changed a frame it still had the frame from before the call after 475, something older after 94, the new one after 46. 62 to 146 ms later it had caught up in 165 of 170, after 200 ms in all. `FakeWindowSystem.stackedWindows` was never behind. Made to be, for 0.15 s, one test of 7,398 fell, and it showed a fault: of two commands within that time the second finds the windows that the first fetched still listed in their corner, takes that for macOS showing its desktop (`SweptAside.isSwept`) and raises no stage, so with motion on it jumps. The Accessibility layer asks the same question at a press.",
    "found": "The first real-window run on a hosted Mac, and the Mac shell sessions after it.",
-   "modelled": "no",
-   "knobs": [],
-   "guards": [],
-   "copes": "Sources/arbor-e2e/main.swift polls every check: up to three seconds for windows that leave or come into view, four for slots. The Mac shell scripts do the same with `eventually`. Arbor itself goes by the frame read back through Accessibility.",
+   "modelled": "yes",
+   "knobs": [
+    "Echoes.listIsBehind",
+    "FakeWindowSystem.stackedWindows"
+   ],
+   "guards": [
+    "test: theWindowServersListIsBehindForAMoment"
+   ],
+   "copes": "Sources/arbor-e2e/main.swift polls every check: up to three seconds for windows that leave or come into view, four for slots. The Mac shell scripts do the same with `eventually`. Arbor itself goes by the frame read back through Accessibility. Open: `SweptAside.isSwept` does not know what Arbor itself has just moved.",
    "hurt": 4,
+   "touches": [
+    "jolt"
+   ],
    "sources": [
     "docs/TESTING.md",
     "Sources/arbor-e2e/main.swift",
     "collab/QUESTIONS.md",
     "scripts/mac-shell/lib.sh",
-    "scripts/mac-shell/lib-apps.sh"
+    "scripts/mac-shell/lib-apps.sh",
+    "Sources/ArborTesting/FakeWindowSystem.swift",
+    "Sources/ArborCore/SweptAside.swift"
    ]
   },
   {
