@@ -538,7 +538,8 @@ day_report() {
   if arbor_answers; then "$ARBOR_BIN/arborctl" trace off > /dev/null 2>&1; fi
   # One home for the whole day, so one log, whatever the number of the session.
   if [ -f "$ARBOR_HOME/arbor.log" ]; then cp "$ARBOR_HOME/arbor.log" "$ARBOR_OUT/arbor.log"; fi
-  if [ -d "$ARBOR_HOME/traces" ]; then cp -R "$ARBOR_HOME/traces" "$ARBOR_OUT/traces"; fi
+  # What is in it, not the folder: somebody else may have made mac-shell/traces already, and then the folder would come to lie inside it.
+  if [ -d "$ARBOR_HOME/traces" ]; then mkdir -p "$ARBOR_OUT/traces" && cp -R "$ARBOR_HOME/traces/." "$ARBOR_OUT/traces/"; fi
   # While the sampler still takes marks: what only shows once everything has been gathered counts for the last step.
   if on_throwaway_mac && cp "$HOME"/Library/Logs/DiagnosticReports/Arbor*.ips "$ARBOR_OUT/" 2>/dev/null; then
     note "finding $DAY_STEP -:crash FAIL macOS wrote a crash report of Arbor's"
