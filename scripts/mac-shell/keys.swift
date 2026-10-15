@@ -16,7 +16,9 @@ setvbuf(stdout, nil, _IOLBF, 0)
 let usage = """
   usage: keys <command>
     app <log> [x y w h]           an app with one window (global top-left coordinates) that appends every key event it
-                                  receives to <log>, and when it comes to the front and leaves it; SIGUSR1 brings it forward
+                                  receives to <log>, and when it comes to the front and leaves it; SIGUSR1 brings it forward.
+                                  KEYS_ROADS=menu,hotkey,monitor,tap,secure: other roads by which an app hears of ⌃⌥A, each written down
+    claim <log> <seconds> [exclusive]   another program that holds ⌃⌥A as a Carbon hot key: what macOS answered, and every press it is given
     bench <keys> <rounds>         how long registering and unregistering that many Carbon hot keys takes
     repost <seconds>              hold ⌃⌥J as a hot key and pass each press on to the frontmost app with postToPid
     taps <pid>                    how many event taps that process has
@@ -85,8 +87,10 @@ final class Witness: NSObject, NSApplicationDelegate {
       self?.write(
         "\(event.type == .keyDown ? "down" : "up") code=\(event.keyCode) mods=\(modifiers(event.modifierFlags)) "
           + "chars=\(text.joined(separator: ",")) repeat=\(event.isARepeat)")
-      return nil
+      // On to the menu bar, where there is one to ask.
+      return self?.roads.contains("menu") == true ? event : nil
     }
+    takeOtherRoads()
     signal(SIGUSR1, SIG_IGN)
     let source = DispatchSource.makeSignalSource(signal: SIGUSR1, queue: .main)
     source.setEventHandler { NSApp.activate(ignoringOtherApps: true) }
@@ -95,6 +99,55 @@ final class Witness: NSObject, NSApplicationDelegate {
     NSApp.activate(ignoringOtherApps: true)
     write("ready pid=\(getpid()) bundle=\(Bundle.main.bundleIdentifier ?? "none")")
   }
+
+  /// The window server hands an app the keys nobody else has claimed. An app can hear of a key in other ways, and whether any of them
+  /// gets round somebody else's hot key is what scripts/mac-shell/check-claimed-keys.sh asks. Each writes down what it hears under a name of its own.
+  lazy var roads = Set((ProcessInfo.processInfo.environment["KEYS_ROADS"] ?? "").split(separator: ",").map(String.init))
+  var tapPort: CFMachPort?
+
+  func takeOtherRoads() {
+    if roads.contains("menu") {
+      // What most apps have: an item in the menu bar with ⌃⌥A beside it.
+      let bar = NSMenu()
+      let top = NSMenuItem()
+      bar.addItem(top)
+      let menu = NSMenu(title: "Witness")
+      let item = NSMenuItem(title: "Witness", action: #selector(menuItemChosen), keyEquivalent: "a")
+      item.keyEquivalentModifierMask = [.control, .option]
+      item.target = self
+      menu.addItem(item)
+      top.submenu = menu
+      NSApp.mainMenu = bar
+      write("road menu: an item with ctrl+opt+a")
+    }
+    if roads.contains("hotkey") {
+      // What an app's "global shortcut" is made of.
+      hotKeyHeard = { [weak self] in self?.write("road hotkey: \($0)") }
+      write("road hotkey: RegisterEventHotKey answered \(claimControlOptionA(exclusive: false))")
+    }
+    if roads.contains("monitor") {
+      let monitor = NSEvent.addGlobalMonitorForEvents(matching: [.keyDown]) { [weak self] event in
+        self?.write("road monitor: down code=\(event.keyCode) mods=\(modifiers(event.modifierFlags))")
+      }
+      write("road monitor: \(monitor == nil ? "refused" : "installed")")
+    }
+    if roads.contains("tap") {
+      tapHeard = { [weak self] in self?.write("road tap: \($0)") }
+      tapPort = CGEvent.tapCreate(
+        tap: .cgSessionEventTap, place: .headInsertEventTap, options: .listenOnly,
+        eventsOfInterest: CGEventMask(1 << CGEventType.keyDown.rawValue), callback: listeningTap, userInfo: nil)
+      if let tapPort {
+        CFRunLoopAddSource(CFRunLoopGetMain(), CFMachPortCreateRunLoopSource(nil, tapPort, 0), .commonModes)
+      }
+      write("road tap: \(tapPort == nil ? "refused" : "installed")")
+    }
+    if roads.contains("secure") {
+      // What a password field switches on, and what some apps leave on.
+      write("road secure: EnableSecureEventInput answered \(EnableSecureEventInput()), on=\(IsSecureEventInputEnabled())")
+    }
+  }
+
+  @objc func menuItemChosen() { write("road menu: the item ran") }
 
   func applicationDidBecomeActive(_ notification: Notification) { write("active") }
   func applicationDidResignActive(_ notification: Notification) { write("resigned") }
@@ -113,6 +166,51 @@ func runWitness(_ arguments: [String]) -> Never {
   application.setActivationPolicy(.regular)
   withExtendedLifetime(delegate) { application.run() }
   exit(0)
+}
+
+// MARK: Other roads to a key
+
+var hotKeyHeard: ((String) -> Void)?
+var tapHeard: ((String) -> Void)?
+
+func claimedHotKeyHandler(_ next: EventHandlerCallRef?, _ event: EventRef?, _ userData: UnsafeMutableRawPointer?) -> OSStatus {
+  guard let event else { return OSStatus(eventNotHandledErr) }
+  hotKeyHeard?(GetEventKind(event) == UInt32(kEventHotKeyPressed) ? "pressed" : "released")
+  return noErr
+}
+
+func listeningTap(
+  _ proxy: CGEventTapProxy, _ type: CGEventType, _ event: CGEvent, _ userInfo: UnsafeMutableRawPointer?
+) -> Unmanaged<CGEvent>? {
+  if type == .keyDown {
+    let flags = NSEvent.ModifierFlags(rawValue: UInt(event.flags.rawValue))
+    tapHeard?("down code=\(event.getIntegerValueField(.keyboardEventKeycode)) mods=\(modifiers(flags))")
+  }
+  return Unmanaged.passUnretained(event)
+}
+
+/// ⌃⌥A as a Carbon hot key of this process, as Arbor registers its own. Returns what macOS answered: 0 is yes.
+func claimControlOptionA(exclusive: Bool) -> OSStatus {
+  var specs = [
+    EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventHotKeyPressed)),
+    EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventHotKeyReleased)),
+  ]
+  InstallEventHandler(GetEventDispatcherTarget(), claimedHotKeyHandler, 2, &specs, nil, nil)
+  var ref: EventHotKeyRef?
+  return RegisterEventHotKey(
+    0, UInt32(controlKey | optionKey), EventHotKeyID(signature: 0x4B45_5953, id: 900), GetEventDispatcherTarget(),
+    OptionBits(exclusive ? kEventHotKeyExclusive : kEventHotKeyNoOptions), &ref)
+}
+
+func claim(log path: String, seconds: Double, exclusive: Bool) {
+  FileManager.default.createFile(atPath: path, contents: nil)
+  guard let log = FileHandle(forWritingAtPath: path) else { fail("cannot write \(path)") }
+  let application = NSApplication.shared
+  application.setActivationPolicy(.accessory)
+  hotKeyHeard = { log.write(Data("\(wallClock()) \($0)\n".utf8)) }
+  hotKeyHeard?("claimed pid=\(getpid()) exclusive=\(exclusive) answer=\(claimControlOptionA(exclusive: exclusive))")
+  DispatchQueue.main.asyncAfter(deadline: .now() + seconds) { exit(0) }
+  application.run()
 }
 
 // MARK: What hot keys cost
@@ -290,6 +388,9 @@ let rest = Array(arguments.dropFirst())
 switch command {
 case "app":
   runWitness(rest)
+case "claim":
+  guard rest.count >= 2, let seconds = Double(rest[1]) else { fail(usage) }
+  claim(log: rest[0], seconds: seconds, exclusive: rest.dropFirst(2).first == "exclusive")
 case "bench":
   guard rest.count == 2, let keys = Int(rest[0]), let rounds = Int(rest[1]), (1...94).contains(keys), rounds > 0 else { fail(usage) }
   bench(keys: keys, rounds: rounds)

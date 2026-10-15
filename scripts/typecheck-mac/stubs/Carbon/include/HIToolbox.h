@@ -36,6 +36,9 @@ UInt32 GetEventKind(EventRef inEvent);
 UInt32 GetCurrentKeyModifiers(void);
 UInt32 GetCurrentEventKeyModifiers(void);
 UInt8 LMGetKbdType(void);
+OSStatus EnableSecureEventInput(void);
+OSStatus DisableSecureEventInput(void);
+Boolean IsSecureEventInputEnabled(void);
 
 enum { kEventClassKeyboard = 0x6B657962, kEventClassMouse = 0x6D6F7573, kEventClassApplication = 0x6170706C };
 enum { kEventRawKeyDown = 1, kEventRawKeyRepeat = 2, kEventRawKeyUp = 3, kEventRawKeyModifiersChanged = 4, kEventHotKeyPressed = 5,
