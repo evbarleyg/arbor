@@ -10760,7 +10760,7 @@
    "kind": "timing",
    "layer": "at the seam",
    "expected": "Quit brings every window into view on the displays that are there.",
-   "happened": "Arbor hears of a change of displays 1.65 s after macOS says it. A virtual display removed and `quit` 0.3 to 1.4 s later: Arbor says \"all windows returned to view\", and windows that had been on that display are partly off the display that is left, under 90 % on screen 5 s later, though Accessibility had reported them back on it before the quit. Seen on the code before the cure for late drags and after it. Whether it is a fault or the script's haste is to be ruled.",
+   "happened": "Arbor hears of a change of displays 1.65 s after macOS says it. A virtual display removed and `quit` 0.3 to 1.4 s later: Arbor says \"all windows returned to view\", and windows that had been on that display are partly off the display that is left, under 90 % on screen 5 s later, though Accessibility had reported them back on it before the quit. Seen on the code before the cure for late drags and after it. The product owner rules it a fault, of the first severity though narrow in time: a laptop pulled off its dock and shut down is no haste; and \"all windows returned to view\", said of a window that is not, is a second fault in it. The cause, read and reproduced on Linux beside a control: at a quit the frames are given back by the displays Arbor believes in. Ways back, played: Arbor started again fetches the windows; the display plugged in again has them.",
    "found": "Two runs of scripts with a virtual display on hosted Macs, by two sessions that did not know of each other.",
    "modelled": "partly",
    "knobs": [
@@ -10771,7 +10771,7 @@
     "e2e: quit with two displays, then unplug"
    ],
    "copes": "open",
-   "hurt": 3,
+   "hurt": 1,
    "touches": [
     "lost"
    ],
