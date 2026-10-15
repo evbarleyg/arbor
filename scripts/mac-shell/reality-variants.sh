@@ -1,7 +1,7 @@
-# What reality-dock-left.sh and reality-second-display.sh share. Read in before reality.sh, which reads lib.sh in; nothing here runs until reality.sh calls reality_before. Do not run it.
+# What reality-dock-left.sh, reality-dock-right.sh and reality-second-display.sh share. Read in before reality.sh, which reads lib.sh in; nothing here runs until reality.sh calls reality_before. Do not run it.
 #
 # reality.sh plays its journeys on a hosted Mac as it comes: one display, the Dock at the bottom. That a docked window fills its slot again (the board, 0.19) was seen there. These ask
-# the same of a Mac with the Dock at the left, and of one with a second display. Compare Mac with Mac: reality.sh plain, first, in the same run; a rehearsal has one display and the Dock at the bottom.
+# the same of a Mac with the Dock at the left, of one with it at the right, and of one with a second display. Compare Mac with Mac: reality.sh plain, first, in the same run; a rehearsal has one display and the Dock at the bottom.
 
 # the_mac_now <when>: each display's frame and what the menu bar and the Dock leave of it, in AppKit's coordinates (y up, from the main display's lower left corner), and the settings that matter.
 the_mac_now() {
@@ -16,7 +16,7 @@ screens_tool() {
   mkdir -p "$ARBOR_ROOT/.build/mac-shell"
   if [ -n "${ARBOR_REHEARSAL:-}" ]; then
     # No AppKit there, and a Dock that stays at the bottom: a rehearsal proves the bash of this file and nothing else.
-    printf '%s\n' '#!/bin/bash' 'case "$(defaults read com.apple.dock orientation 2>/dev/null)" in left) echo "screen 0 0 1024 768 visible 63 0 961 737" ;; *) echo "screen 0 0 1024 768 visible 0 63 1024 674" ;; esac' \
+    printf '%s\n' '#!/bin/bash' 'case "$(defaults read com.apple.dock orientation 2>/dev/null)" in left) echo "screen 0 0 1024 768 visible 63 0 961 737" ;; right) echo "screen 0 0 1024 768 visible 0 0 961 737" ;; *) echo "screen 0 0 1024 768 visible 0 63 1024 674" ;; esac' \
       > "$REALITY_SCREENS"
     chmod +x "$REALITY_SCREENS"
     return
@@ -30,24 +30,30 @@ for screen in NSScreen.screens {
 SWIFT
   swiftc -O -swift-version 5 "$ARBOR_OUT/screens.swift" -o "$REALITY_SCREENS" > "$ARBOR_OUT/build-screens.log" 2>&1 || die "the few lines that print the screens did not compile: build-screens.log"
 }
-# Whether the main screen's visible frame begins right of the screen's left edge: the Dock stands there.
-dock_stands_left() { "$REALITY_SCREENS" | awk 'NR == 1 { exit !($7 > $2) }'; }
+# Whether the main screen's visible frame begins right of the screen's left edge, or ends left of its right edge: the Dock stands there.
+dock_stands() {
+  case "$1" in
+    left) "$REALITY_SCREENS" | awk 'NR == 1 { exit !($7 > $2) }' ;;
+    right) "$REALITY_SCREENS" | awk 'NR == 1 { exit !($7 + $9 < $2 + $4) }' ;;
+  esac
+}
 
-dock_to_the_left() {
-  needs_throwaway_mac "move the Dock to the left and restart it"
-  step "the Dock goes to the left"
+# dock_to left|right
+dock_to() {
+  needs_throwaway_mac "move the Dock to the $1 and restart it"
+  step "the Dock goes to the $1"
   screens_tool
   the_mac_now "as it comes"
   if on_throwaway_mac; then
     # As it comes the key is not set, which means the bottom.
     at_exit 'defaults delete com.apple.dock orientation 2>/dev/null; killall Dock 2>/dev/null'
-    defaults write com.apple.dock orientation -string left
+    defaults write com.apple.dock orientation -string "$1"
     killall Dock
   fi
-  check "the Dock stands at the left: the visible frame begins right of the screen's edge" eventually dock_stands_left
+  check "the Dock stands at the $1: the visible frame leaves room at that edge of the screen" eventually dock_stands "$1"
   sleep 3
-  the_mac_now "with the Dock at the left"
-  shot 00-dock-left
+  the_mac_now "with the Dock at the $1"
+  shot "00-dock-$1"
 }
 
 # lib.sh's display_add wants a session's folder, and here no session has begun: the display is to be there when Arbor starts. The variables are lib.sh's, so that display_move and display_remove work.
