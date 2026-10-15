@@ -1,0 +1,61 @@
+17 dock-left: presses ⌃⌥⌘ and the left arrow
+expected: {'act': 'dock-key', 'settled': 'quiet:942', 'moves': ',61,', 'front': '61', 'floating': '30,33,43,49,52,58,59,65', 'docked': '61', 'first': '1'}
+FAIL rule 2: finder (w30) a floating window, moved, and the step did not name it
+FAIL rule 2: safari (w33) a floating window, moved, and the step did not name it
+FAIL rule 2: textedit (w43) a floating window, moved, and the step did not name it
+FAIL rule 2: terminal (w49) a floating window, moved, and the step did not name it
+FAIL rule 2: notes (w52) a floating window, moved, and the step did not name it
+FAIL rule 2: calendar (w58) a floating window, moved, and the step did not name it
+FAIL rule 2: settings (w59) a floating window, moved, and the step did not name it
+FAIL rule 2: mail (w65) a floating window, moved, and the step did not name it
+ODD rule 2: w67 of Mail moved along with a window of its app
+
+07:05:22.700 SCREEN -- begin 17 dock-left
+07:05:22.700 SCREEN -- text 17 presses ⌃⌥⌘ and the left arrow
+07:05:23.016 SCREEN (nothing was seen for 161 ms)
+07:05:23.253 DEBUG stage up on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: 9 stand-ins, 0.46 s
+07:05:23.254 DEBUG the stage kept the windows waiting 57 ms: its panel 0, 9 costumes 0 (0 not ready), the desktop 3, going up 55
+07:05:23.328 SCREEN (nothing was seen for 103 ms)
+07:05:23.328 SCREEN w95 of Arbor 0,0 1600×900 (level 4)
+07:05:23.328 SCREEN preview (w61) 12,43 782×767
+07:05:23.332 MACOS pid 7506 AXResized w61 AXWindow/AXStandardWindow 4 35 782 767
+07:05:23.346 MACOS pid 7506 AXMoved w61 AXWindow/AXStandardWindow 12 43 782 767
+07:05:23.453 SCREEN finder (w30) 340,120 794×436
+07:05:23.458 MACOS pid 349 AXResized w30 AXWindow/AXStandardWindow 806 120 794 436
+07:05:23.462 MACOS pid 349 AXMoved w30 AXWindow/AXStandardWindow 806 120 794 436
+07:05:23.483 SCREEN finder (w30) 806,120 794×436
+07:05:23.548 MACOS pid 6191 AXResized w33 AXWindow/AXStandardWindow 806 31 794 791
+07:05:23.550 MACOS pid 6191 AXMoved w33 AXWindow/AXStandardWindow 806 31 794 791
+07:05:23.557 MACOS pid 6421 AXMoved w43 AXWindow/AXStandardWindow 806 65 673 439
+07:05:23.577 SCREEN safari (w33) 806,31 794×791
+07:05:23.577 SCREEN textedit (w43) 806,65 673×439
+07:05:23.597 MACOS pid 6590 AXTitleChanged w49 AXWindow/AXStandardWindow 806 51 793 499
+07:05:23.597 MACOS pid 6590 AXResized w49 AXWindow/AXStandardWindow 806 51 793 499
+07:05:23.598 MACOS pid 6590 AXMoved w49 AXWindow/AXStandardWindow 806 51 793 499
+07:05:23.599 SCREEN terminal (w49) 40,51 793×499
+07:05:23.605 SCREEN terminal (w49) 806,51 793×499
+07:05:23.692 MACOS pid 6684 AXResized w52 AXWindow/AXStandardWindow 806 105 794 660
+07:05:23.693 MACOS pid 6684 AXMoved w52 AXWindow/AXStandardWindow 806 105 794 660
+07:05:23.724 SCREEN notes (w52) 806,105 794×660
+07:05:23.741 MACOS pid 7089 AXResized w58 AXWindow/AXStandardWindow 806 115 794 599
+07:05:23.741 MACOS pid 7089 AXMoved w58 AXWindow/AXStandardWindow 806 115 794 599
+07:05:23.761 MACOS pid 7366 AXMoved w59 AXWindow/AXStandardWindow 806 85 723 625
+07:05:23.778 SCREEN calendar (w58) 806,115 794×599
+07:05:23.778 SCREEN settings (w59) 806,85 723×625
+07:05:23.922 MACOS pid 7685 AXResized w65 AXWindow/AXStandardWindow 806 72 881 630
+07:05:23.924 MACOS pid 7685 AXMoved w65 AXWindow/AXStandardWindow 806 72 881 630
+07:05:23.924 MACOS pid 7685 AXMoved w65 AXWindow/AXStandardWindow 719 72 881 630
+07:05:23.930 DEBUG stage retargeted on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: 9 stand-ins, 0.15 s
+07:05:23.959 SCREEN w67 of Mail 925,179 470×416
+07:05:23.959 SCREEN mail (w65) 719,72 881×630
+07:05:23.976 INFO  dock left: docked w61 at the left edge
+07:05:23.981 DEBUG said on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: Docked · ⌃⌥↩ frames it
+07:05:24.058 SCREEN w99 of Arbor 3,34 800×785
+07:05:24.058 SCREEN w98 of Arbor 794,43 12×767
+07:05:24.058 SCREEN w100 of Arbor 0,31 1600×791 (level -2147483602)
+07:05:24.058 SCREEN front to back: w99 preview safari w94 calendar textedit w67 mail settings notes terminal finder w98
+07:05:24.065 SCREEN w101 of Arbor 692,728 216×38 (level 6)
+07:05:24.252 DEBUG stage down
+07:05:24.286 SCREEN w95 of Arbor left the screen
+07:05:25.238 SCREEN -- end 17 act=dock-key settled=quiet:942 moves=,61, front=61 floating=30,33,43,49,52,58,59,65 docked=61 first=1
+07:05:25.661 SCRIPT == 18 dock-icon-notes

@@ -1,0 +1,77 @@
+32 drag-safari-by: drags safari, which floats, by its title bar 143 across and 156 down
+expected: {'act': 'drag', 'settled': 'quiet:1120', 'drags': '33', 'front': '33', 'own': '33', 'floating': '30,43,49,58,59,65', 'docked': '33,52,61'}
+FAIL rule 2: notes (w52) moved, and the step did not name it
+ODD rule 3: the last window came to rest 719 ms after the key or the button
+
+07:05:54.494 SCREEN -- begin 32 drag-safari-by
+07:05:54.494 SCREEN -- text 32 drags safari, which floats, by its title bar 143 across and 156 down
+07:05:54.574 SCRIPT drag w33 from 1058,43 to 1201,199
+07:05:54.992 SCREEN the button is down 1058 43
+07:05:55.060 SCREEN front to back: safari w99 calendar terminal notes preview w94 textedit w67 mail settings finder w108 w98 w109
+07:05:55.198 SCREEN safari (w33) 806,36 794×791
+07:05:55.239 DEBUG w33 is being dragged
+07:05:55.241 DEBUG drag of w33: waiting over beside(n3, ArborCore.Edge.top)
+07:05:55.248 SCREEN safari (w33) 806,47 794×791
+07:05:55.306 MACOS pid 6191 AXMoved w33 AXWindow/AXStandardWindow 806 47 794 791
+07:05:55.354 SCREEN safari (w33) 806,52 794×791
+07:05:55.354 SCREEN w99 of Arbor left the screen
+07:05:55.354 SCREEN front to back: safari calendar terminal notes preview w94 textedit w67 mail settings finder w108 w98 w109
+07:05:55.406 DEBUG drag of w33: on beside(n3, ArborCore.Edge.top)
+07:05:55.416 SCREEN safari (w33) 806,57 794×791
+07:05:55.431 MACOS pid 6191 AXMoved w33 AXWindow/AXStandardWindow 806 57 794 791
+07:05:55.458 SCREEN w136 of Arbor 879,43 709×378 (level 3)
+07:05:55.458 SCREEN safari (w33) 806,63 794×791
+07:05:55.559 SCREEN safari (w33) 806,68 794×791
+07:05:55.563 MACOS pid 6191 AXMoved w33 AXWindow/AXStandardWindow 806 68 794 791
+07:05:55.674 SCREEN safari (w33) 806,73 794×791
+07:05:55.738 SCREEN safari (w33) 806,78 794×791
+07:05:55.756 MACOS pid 6191 AXMoved w33 AXWindow/AXStandardWindow 806 78 794 791
+07:05:55.770 SCREEN safari (w33) 806,83 794×791
+07:05:55.787 SCREEN safari (w33) 806,89 794×791
+07:05:55.867 MACOS pid 6191 AXMoved w33 AXWindow/AXStandardWindow 806 89 794 791
+07:05:55.879 SCREEN safari (w33) 806,94 794×791
+07:05:55.977 MACOS pid 6191 AXMoved w33 AXWindow/AXStandardWindow 806 99 794 791
+07:05:55.987 SCREEN safari (w33) 806,99 794×791
+07:05:56.041 SCREEN safari (w33) 806,104 794×791
+07:05:56.136 SCREEN safari (w33) 806,109 794×791
+07:05:56.150 MACOS pid 6191 AXMoved w33 AXWindow/AXStandardWindow 806 109 794 791
+07:05:56.667 SCREEN safari (w33) 810,109 794×791
+07:05:56.763 MACOS pid 6191 AXMoved w33 AXWindow/AXStandardWindow 820 109 794 791
+07:05:56.769 SCREEN safari (w33) 820,109 794×791
+07:05:56.826 SCREEN safari (w33) 825,109 794×791
+07:05:56.908 MACOS pid 6191 AXMoved w33 AXWindow/AXStandardWindow 830 109 794 791
+07:05:56.910 SCREEN safari (w33) 830,109 794×791
+07:05:56.951 SCREEN safari (w33) 834,109 794×791
+07:05:57.042 SCREEN safari (w33) 839,109 794×791
+07:05:57.072 MACOS pid 6191 AXMoved w33 AXWindow/AXStandardWindow 839 109 794 791
+07:05:57.191 SCREEN safari (w33) 844,109 794×791
+07:05:57.233 SCREEN safari (w33) 849,109 794×791
+07:05:57.249 MACOS pid 6191 AXMoved w33 AXWindow/AXStandardWindow 849 109 794 791
+07:05:57.295 SCREEN safari (w33) 854,109 794×791
+07:05:57.409 MACOS pid 6191 AXMoved w33 AXWindow/AXStandardWindow 854 109 794 791
+07:05:57.617 SCREEN safari (w33) 855,109 794×791
+07:05:57.728 MACOS pid 6191 AXMoved w33 AXWindow/AXStandardWindow 855 109 794 791
+07:05:58.340 SCREEN safari (w33) 854,109 794×791
+07:05:58.400 SCREEN the button is up 1201 199
+07:05:58.402 INFO  dropped w33 on beside(n3, ArborCore.Edge.top), display 5A42259C-47B8-4590-9762-97DBE4FE7F1B
+07:05:58.405 MACOS pid 6191 AXMoved w33 AXWindow/AXStandardWindow 854 109 794 791
+07:05:58.408 DEBUG stage up on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: 9 stand-ins, 0.46 s
+07:05:58.408 DEBUG the stage kept the windows waiting 2 ms: its panel 0, 9 costumes 0 (0 not ready), the desktop 1, going up 1
+07:05:58.436 MACOS pid 6191 AXResized w33 AXWindow/AXStandardWindow 879 43 709 378
+07:05:58.437 MACOS pid 6191 AXMoved w33 AXWindow/AXStandardWindow 879 43 709 378
+07:05:58.452 MACOS pid 6684 AXResized w52 AXWindow/AXStandardWindow 879 433 709 377
+07:05:58.452 MACOS pid 6684 AXMoved w52 AXWindow/AXStandardWindow 879 433 709 377
+07:05:58.454 SCREEN w95 of Arbor 0,0 1600×900 (level 4)
+07:05:58.454 SCREEN safari (w33) 879,43 709×378
+07:05:58.454 SCREEN notes (w52) 879,433 709×377
+07:05:58.459 DEBUG said on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: Docked · ⌃⌥↩ frames it
+07:05:58.508 SCREEN w101 of Arbor 692,728 216×38 (level 6)
+07:05:58.508 SCREEN w99 of Arbor 870,34 727×396
+07:05:58.508 SCREEN w109 of Arbor 879,421 709×12
+07:05:58.508 SCREEN w137 of Arbor 867,43 12×767
+07:05:58.508 SCREEN front to back: w99 safari calendar terminal notes preview w94 textedit w67 mail settings finder w108 w98 w109 w137
+07:05:58.568 SCREEN w136 of Arbor left the screen
+07:05:59.104 DEBUG stage down
+07:05:59.119 SCREEN w95 of Arbor left the screen
+07:05:59.593 SCREEN -- end 32 act=drag settled=quiet:1120 drags=33 front=33 own=33 floating=30,43,49,58,59,65 docked=33,52,61
+07:05:59.858 SCRIPT == 33 dock-icon-settings

@@ -1,0 +1,47 @@
+85 minimize-textedit: presses ⌘M
+expected: {'act': 'open-close', 'settled': 'quiet:1436', 'moves': '30,52,59,30,52,59,', 'leaves': '212', 'floating': '49,58,61,65,194,212', 'docked': '30,52,59'}
+FAIL rule 2: safari (w194) a floating window, moved, and the step did not name it
+
+07:09:32.316 SCREEN -- begin 85 minimize-textedit
+07:09:32.316 SCREEN -- text 85 presses ⌘M
+07:09:32.739 SCREEN textedit (w212) 13,80 1586×787
+07:09:32.749 SCREEN textedit (w212) 25,100 1573×767
+07:09:32.764 SCREEN textedit (w212) 44,122 1552×745
+07:09:32.785 SCREEN textedit (w212) 159,205 1425×662
+07:09:32.807 SCREEN textedit (w212) 303,277 1267×590
+07:09:32.820 SCREEN textedit (w212) 419,325 1140×542
+07:09:32.829 SCREEN textedit (w212) 514,361 1035×506
+07:09:32.891 SCREEN textedit (w212) 1141,601 349×266
+07:09:32.939 SCREEN textedit (w212) 1380,753 88×114
+07:09:32.987 SCREEN textedit (w212) 1416,823 50×44
+07:09:32.996 SCREEN textedit (w212) 1416,831 50×36
+07:09:33.019 SCREEN textedit (w212) 1416,837 50×30
+07:09:33.075 SCREEN textedit (w212) left the screen
+07:09:33.075 SCREEN front to back: w99 preview w67 mail calendar safari finder terminal settings notes w94 w144 w109 w264 w145
+07:09:33.075 MACOS pid 19605 AXWindowMiniaturized w212 AXWindow/AXDialog 0 31 1600 791 minimized
+07:09:33.089 DEBUG stage up on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: 8 stand-ins, 0.46 s
+07:09:33.089 DEBUG the stage kept the windows waiting 8 ms: its panel 0, 8 costumes 0 (0 not ready), the desktop 2, going up 5
+07:09:33.115 MACOS pid 17238 AXMoved w194 AXWindow/AXStandardWindow 0 43 574 378
+07:09:33.116 SCREEN w95 of Arbor 0,0 1600×900 (level 4)
+07:09:33.116 SCREEN safari (w194) 0,43 574×378
+07:09:33.130 DEBUG stage retargeted on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: 8 stand-ins, 0.42385598182678225 s
+07:09:33.158 SCREEN w99 of Arbor left the screen
+07:09:33.158 SCREEN front to back: preview w67 mail calendar safari finder terminal settings notes w94 w144 w109 w264 w145
+07:09:33.397 MACOS pid 7506 AXFocusedWindowChanged w61 AXWindow/AXStandardWindow 800 31 800 791
+07:09:33.421 SCREEN in front: process 7506 com.apple.Preview
+07:09:33.423 DEBUG pid 7506 came forward, and macOS still names another app as the one in front
+07:09:33.447 DEBUG focus is on w61
+07:09:33.447 MACOS pid 7506 AXMainWindowChanged w61 AXWindow/AXStandardWindow 800 31 800 791
+07:09:33.447 MACOS workspace didActivate pid 7506 com.apple.Preview regular
+07:09:33.447 MACOS workspace didDeactivate pid 19605 com.apple.TextEdit regular
+07:09:33.448 DEBUG w61 has the keyboard
+07:09:33.448 MACOS pid 7506 AXFocusedWindowChanged w61 AXWindow/AXStandardWindow 800 31 800 791
+07:09:33.449 MACOS pid 19605 AXApplicationDeactivated
+07:09:33.449 MACOS pid 7506 AXMainWindowChanged w61 AXWindow/AXStandardWindow 800 31 800 791
+07:09:33.449 MACOS pid 7506 AXApplicationActivated
+07:09:33.451 SCREEN w99 of Arbor 791,25 815×803
+07:09:33.451 SCREEN front to back: w99 preview w67 mail calendar safari finder terminal settings notes w94 w144 w109 w264 w145
+07:09:33.709 DEBUG stage down
+07:09:33.744 SCREEN w95 of Arbor left the screen
+07:09:34.614 SCREEN -- end 85 act=open-close settled=quiet:1436 moves=30,52,59,30,52,59, leaves=212 floating=49,58,61,65,194,212 docked=30,52,59
+07:09:34.942 SCRIPT == 86 restore-textedit

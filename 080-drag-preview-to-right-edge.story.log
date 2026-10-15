@@ -1,0 +1,123 @@
+80 drag-preview-to-right-edge: drags preview by its title bar against the right edge of the screen and lets go
+expected: {'act': 'drag-where-macos-tiles', 'settled': 'quiet:392', 'drags': '61', 'moves': '30,52,59,61,212,30,52,59,212,', 'front': '61', 'own': '61', 'floating': '49,58,61,65,194', 'docked': '30,52,59,212'}
+FAIL rule 3: preview (w61) was 43 points ahead of the pointer's travel and 0 behind it at the most
+FAIL rule 1: preview (w61) macOS's tiling preview and Arbor's drop preview were up at the same time
+FAIL rule 1: preview (w61) macOS answered the drag and tiled the window, and it was moved again afterwards
+FAIL rule 3: preview (w61) moved 2 times
+
+07:09:00.731 SCREEN -- begin 80 drag-preview-to-right-edge
+07:09:00.731 SCREEN -- text 80 drags preview by its title bar against the right edge of the screen and lets go
+07:09:00.809 SCRIPT drag w61 from 320,445 to 1599,450
+07:09:01.388 SCREEN the button is down 320 445
+07:09:01.400 SCREEN front to back: preview w99 safari textedit finder terminal w67 mail calendar settings notes w94 w108 w144 w109 w264 w137 w145 w98
+07:09:01.615 DEBUG the press on w61 has moved nothing so far: looking less often
+07:09:01.646 SCREEN preview (w61) 23,433 708×377
+07:09:01.712 SCREEN preview (w61) 65,433 708×377
+07:09:01.730 MACOS pid 7506 AXMoved w61 AXWindow/AXStandardWindow 65 433 708 377
+07:09:01.766 SCREEN w99 of Arbor left the screen
+07:09:01.766 SCREEN front to back: preview safari textedit finder terminal w67 mail calendar settings notes w94 w108 w144 w109 w264 w137 w145 w98
+07:09:01.775 SCREEN preview (w61) 150,433 708×377
+07:09:01.878 DEBUG w61 is being dragged, which began late
+07:09:01.878 MACOS pid 7506 AXMoved w61 AXWindow/AXStandardWindow 193 433 708 377
+07:09:01.879 DEBUG drag of w61: on none
+07:09:01.908 SCREEN preview (w61) 193,433 708×377
+07:09:01.967 SCREEN preview (w61) 236,433 708×377
+07:09:02.008 SCREEN preview (w61) 278,434 708×377
+07:09:02.065 MACOS pid 7506 AXMoved w61 AXWindow/AXStandardWindow 278 434 708 377
+07:09:02.125 SCREEN preview (w61) 364,434 708×377
+07:09:02.211 MACOS pid 7506 AXMoved w61 AXWindow/AXStandardWindow 406 434 708 377
+07:09:02.237 SCREEN preview (w61) 406,434 708×377
+07:09:02.287 DEBUG drag of w61: on float
+07:09:02.302 SCREEN preview (w61) 449,434 708×377
+07:09:02.369 SCREEN preview (w61) 491,434 708×377
+07:09:02.413 MACOS pid 7506 AXMoved w61 AXWindow/AXStandardWindow 534 435 708 377
+07:09:02.428 SCREEN preview (w61) 534,435 708×377
+07:09:02.462 DEBUG drag of w61: on none
+07:09:02.491 MACOS pid 7506 AXMoved w61 AXWindow/AXStandardWindow 577 435 708 377
+07:09:02.494 DEBUG drag of w61: waiting over beside(n6, ArborCore.Edge.left)
+07:09:02.501 SCREEN preview (w61) 619,435 708×377
+07:09:02.596 SCREEN preview (w61) 662,435 708×377
+07:09:02.603 MACOS pid 7506 AXMoved w61 AXWindow/AXStandardWindow 662 435 708 377
+07:09:02.682 DEBUG drag of w61: waiting over beside(n6, ArborCore.Edge.bottom)
+07:09:02.758 SCREEN preview (w61) 747,435 708×377
+07:09:02.784 SCREEN preview (w61) 790,436 708×377
+07:09:02.793 MACOS pid 7506 AXMoved w61 AXWindow/AXStandardWindow 790 436 708 377
+07:09:02.864 DEBUG drag of w61: on beside(n6, ArborCore.Edge.bottom)
+07:09:02.875 SCREEN preview (w61) 833,436 708×377
+07:09:02.883 SCREEN w136 of Arbor 879,330 709×160 (level 3)
+07:09:02.941 SCREEN preview (w61) 875,436 708×377
+07:09:02.975 MACOS pid 7506 AXMoved w61 AXWindow/AXStandardWindow 875 436 708 377
+07:09:03.041 SCREEN preview (w61) 918,436 708×377
+07:09:03.118 SCREEN preview (w61) 960,436 708×377
+07:09:03.125 MACOS pid 7506 AXMoved w61 AXWindow/AXStandardWindow 960 436 708 377
+07:09:03.197 SCREEN preview (w61) 1003,436 708×377
+07:09:03.227 SCREEN preview (w61) 1046,437 708×377
+07:09:03.229 MACOS pid 7506 AXMoved w61 AXWindow/AXStandardWindow 1046 437 708 377
+07:09:03.291 SCREEN preview (w61) 1088,437 708×377
+07:09:03.382 SCREEN preview (w61) 1131,437 708×377
+07:09:03.391 MACOS pid 7506 AXMoved w61 AXWindow/AXStandardWindow 1131 437 708 377
+07:09:03.491 SCREEN preview (w61) 1174,437 708×377
+07:09:03.560 DEBUG drag of w61: waiting over beside(n6, ArborCore.Edge.right)
+07:09:03.576 MACOS pid 7506 AXMoved w61 AXWindow/AXStandardWindow 1216 437 708 377
+07:09:03.601 SCREEN preview (w61) 1216,437 708×377
+07:09:03.612 SCREEN preview (w61) 1259,437 708×377
+07:09:03.628 DEBUG drag of w61: on float, left to macOS’s tiling
+07:09:03.666 SCREEN w308 of WindowManager 785,16 830×821
+07:09:03.666 SCREEN preview (w61) 1302,438 708×377
+07:09:03.666 SCREEN w307 of WindowManager 785,16 830×821
+07:09:03.666 SCREEN w136 of Arbor left the screen
+07:09:03.666 SCREEN front to back: w308 preview w307 safari textedit finder terminal w67 mail calendar settings notes w94 w108 w144 w109 w264 w137 w145 w98
+07:09:03.731 MACOS pid 7506 AXMoved w61 AXWindow/AXStandardWindow 1302 438 708 377
+07:09:03.870 SCREEN preview (w61) 1303,438 708×377
+07:09:03.870 DEBUG drag of w61: on none
+07:09:03.978 MACOS pid 7506 AXMoved w61 AXWindow/AXStandardWindow 1303 438 708 377
+07:09:03.991 DEBUG drag of w61: on float, left to macOS’s tiling
+07:09:03.999 SCREEN preview (w61) 1302,438 708×377
+07:09:04.099 MACOS pid 7506 AXMoved w61 AXWindow/AXStandardWindow 1302 438 708 377
+07:09:05.488 SCREEN the button is up 1599 450
+07:09:05.496 SCREEN w307 of WindowManager left the screen
+07:09:05.496 SCREEN w308 of WindowManager left the screen
+07:09:05.496 SCREEN front to back: preview safari textedit finder terminal w67 mail calendar settings notes w94 w108 w144 w109 w264 w137 w145 w98
+07:09:05.498 INFO  dropped w61 on float, display 5A42259C-47B8-4590-9762-97DBE4FE7F1B, left to macOS’s tiling
+07:09:05.527 SCREEN preview (w61) 1299,436 709×380
+07:09:05.531 DEBUG stage up on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: 9 stand-ins, 0.46 s
+07:09:05.532 DEBUG the stage kept the windows waiting 23 ms: its panel 0, 9 costumes 0 (0 not ready), the desktop 11, going up 11
+07:09:05.532 MACOS pid 7506 AXResized w61 AXWindow/AXStandardWindow 1246 393 719 423
+07:09:05.533 MACOS pid 7506 AXResized w61 AXWindow/AXStandardWindow 1246 393 719 423
+07:09:05.547 SCREEN w95 of Arbor 0,0 1600×900 (level 4)
+07:09:05.547 SCREEN preview (w61) 1246,393 719×423
+07:09:05.547 SCREEN textedit (w212) 12,43 708×767
+07:09:05.561 MACOS pid 19605 AXResized w212 AXWindow/AXStandardWindow 12 43 708 767
+07:09:05.575 SCREEN preview (w61) 1164,326 734×491
+07:09:05.587 MACOS pid 7506 AXResized w61 AXWindow/AXStandardWindow 998 192 764 628
+07:09:05.588 MACOS pid 7506 AXResized w61 AXWindow/AXStandardWindow 998 192 764 628
+07:09:05.616 SCREEN w99 of Arbor 1293,429 723×395
+07:09:05.616 SCREEN preview (w61) 998,192 764×628
+07:09:05.616 SCREEN w98 of Arbor left the screen
+07:09:05.616 SCREEN front to back: w99 preview safari textedit finder terminal w67 mail calendar settings notes w94 w108 w144 w109 w264 w145 w137
+07:09:05.626 MACOS pid 7506 AXResized w61 AXWindow/AXStandardWindow 910 121 780 700
+07:09:05.646 SCREEN w99 of Arbor 901,112 795×716
+07:09:05.646 SCREEN preview (w61) 910,121 780×700
+07:09:05.656 MACOS pid 7506 AXResized w61 AXWindow/AXStandardWindow 854 76 790 746
+07:09:05.691 SCREEN w99 of Arbor 845,67 805×761
+07:09:05.691 SCREEN preview (w61) 854,76 790×746
+07:09:05.728 MACOS pid 7506 AXResized w61 AXWindow/AXStandardWindow 812 40 798 782
+07:09:05.729 MACOS pid 7506 AXResized w61 AXWindow/AXStandardWindow 812 40 798 782
+07:09:05.729 MACOS pid 7506 AXResized w61 AXWindow/AXStandardWindow 812 40 798 782
+07:09:05.754 MACOS pid 7506 AXResized w61 AXWindow/AXStandardWindow 805 35 799 787
+07:09:05.758 SCREEN preview (w61) 805,35 799×787
+07:09:05.804 SCREEN w99 of Arbor 796,26 814×802
+07:09:05.814 MACOS pid 7506 AXResized w61 AXWindow/AXStandardWindow 801 31 800 791
+07:09:05.815 MACOS pid 7506 AXResized w61 AXWindow/AXStandardWindow 801 31 800 791
+07:09:05.815 MACOS pid 7506 AXResized w61 AXWindow/AXStandardWindow 801 31 800 791
+07:09:05.821 SCREEN w99 of Arbor 793,25 815×805
+07:09:05.821 SCREEN preview (w61) 801,31 800×791
+07:09:05.823 MACOS pid 7506 AXMoved w61 AXWindow/AXStandardWindow 800 31 800 791
+07:09:05.841 SCREEN preview (w61) 800,31 800×791
+07:09:05.868 SCREEN w99 of Arbor 791,25 815×803
+07:09:06.156 DEBUG stage down
+07:09:06.157 DEBUG said on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: macOS tiled this window; Arbor stood aside · ⌃⌥⌘← docks it · Check Setup… in the menu
+07:09:06.210 SCREEN w101 of Arbor 465,728 670×38 (level 6)
+07:09:06.210 SCREEN w95 of Arbor left the screen
+07:09:09.554 SCREEN -- end 80 act=drag-where-macos-tiles settled=quiet:392 drags=61 moves=30,52,59,61,212,30,52,59,212, front=61 own=61 floating=49,58,61,65,194 docked=30,52,59,212
+07:09:10.211 SCRIPT == 81 drag-textedit-to-top-edge

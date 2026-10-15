@@ -1,0 +1,90 @@
+34 drag-settings-by: drags settings, which floats, by its title bar -175 across and 148 down
+expected: {'act': 'drag', 'settled': 'quiet:1528', 'drags': '59', 'front': '59', 'own': '59', 'floating': '30,43,49,58,65', 'docked': '33,52,59,61'}
+FAIL rule 2: safari (w33) moved, and the step did not name it
+FAIL rule 3: settings (w59) ended neither where it was let go nor where the preview was: let go at 704,185 723×625, the preview at 879,43 349×378, now at 1599,770 723×470
+
+07:06:02.572 SCREEN -- begin 34 drag-settings-by
+07:06:02.572 SCREEN -- text 34 drags settings, which floats, by its title bar -175 across and 148 down
+07:06:02.636 SCRIPT drag w59 from 1170,97 to 995,245
+07:06:03.291 SCREEN the button is down 1170 97
+07:06:03.318 SCREEN front to back: settings w99 safari calendar terminal notes preview w94 textedit w67 mail finder w108 w98 w109 w137
+07:06:03.456 SCREEN settings (w59) 800,89 723×625
+07:06:03.495 DEBUG w59 is being dragged
+07:06:03.496 DEBUG drag of w59: waiting over beside(n4, ArborCore.Edge.top)
+07:06:03.517 SCREEN settings (w59) 794,94 723×625
+07:06:03.560 MACOS pid 7366 AXMoved w59 AXWindow/AXStandardWindow 794 94 723 625
+07:06:03.619 SCREEN settings (w59) 788,99 723×625
+07:06:03.619 SCREEN w99 of Arbor left the screen
+07:06:03.619 SCREEN front to back: settings safari calendar terminal notes preview w94 textedit w67 mail finder w108 w98 w109 w137
+07:06:03.675 DEBUG drag of w59: on beside(n4, ArborCore.Edge.top)
+07:06:03.676 SCREEN settings (w59) 782,104 723×625
+07:06:03.696 MACOS pid 7366 AXMoved w59 AXWindow/AXStandardWindow 782 104 723 625
+07:06:03.720 SCREEN w136 of Arbor 879,43 709×186 (level 3)
+07:06:03.786 SCREEN settings (w59) 776,109 723×625
+07:06:03.846 MACOS pid 7366 AXMoved w59 AXWindow/AXStandardWindow 771 114 723 625
+07:06:03.863 SCREEN settings (w59) 771,114 723×625
+07:06:03.969 SCREEN settings (w59) 765,119 723×625
+07:06:04.026 SCREEN settings (w59) 759,124 723×625
+07:06:04.032 MACOS pid 7366 AXMoved w59 AXWindow/AXStandardWindow 759 124 723 625
+07:06:04.093 SCREEN settings (w59) 753,129 723×625
+07:06:04.141 SCREEN settings (w59) 747,134 723×625
+07:06:04.174 MACOS pid 7366 AXMoved w59 AXWindow/AXStandardWindow 747 134 723 625
+07:06:04.217 SCREEN settings (w59) 741,139 723×625
+07:06:04.267 SCREEN settings (w59) 736,144 723×625
+07:06:04.325 MACOS pid 7366 AXMoved w59 AXWindow/AXStandardWindow 736 144 723 625
+07:06:04.327 DEBUG drag of w59: on float
+07:06:04.367 DEBUG drag of w59: waiting over beside(n4, ArborCore.Edge.left)
+07:06:04.374 SCREEN settings (w59) 733,154 723×625
+07:06:04.434 SCREEN w136 of Arbor left the screen
+07:06:04.443 MACOS pid 7366 AXMoved w59 AXWindow/AXStandardWindow 733 154 723 625
+07:06:04.458 SCREEN settings (w59) 733,159 723×625
+07:06:04.533 DEBUG drag of w59: on beside(n4, ArborCore.Edge.left)
+07:06:04.537 SCREEN settings (w59) 733,163 723×625
+07:06:04.549 MACOS pid 7366 AXMoved w59 AXWindow/AXStandardWindow 733 163 723 625
+07:06:04.590 SCREEN w136 of Arbor 879,43 349×378 (level 3)
+07:06:04.643 SCREEN settings (w59) 733,168 723×625
+07:06:04.722 MACOS pid 7366 AXMoved w59 AXWindow/AXStandardWindow 733 168 723 625
+07:06:04.737 SCREEN settings (w59) 733,173 723×625
+07:06:04.743 SCREEN settings (w59) 733,178 723×625
+07:06:04.778 SCREEN settings (w59) 733,183 723×625
+07:06:04.822 MACOS pid 7366 AXMoved w59 AXWindow/AXStandardWindow 733 183 723 625
+07:06:04.919 SCREEN settings (w59) 733,185 723×625
+07:06:04.967 MACOS pid 7366 AXMoved w59 AXWindow/AXStandardWindow 733 185 723 625
+07:06:05.237 SCREEN settings (w59) 727,185 723×625
+07:06:05.259 SCREEN settings (w59) 715,185 723×625
+07:06:05.299 SCREEN settings (w59) 709,185 723×625
+07:06:05.334 MACOS pid 7366 AXMoved w59 AXWindow/AXStandardWindow 709 185 723 625
+07:06:05.416 SCREEN settings (w59) 704,185 723×625
+07:06:05.479 MACOS pid 7366 AXMoved w59 AXWindow/AXStandardWindow 704 185 723 625
+07:06:05.658 SCREEN settings (w59) 705,185 723×625
+07:06:05.720 MACOS pid 7366 AXMoved w59 AXWindow/AXStandardWindow 705 185 723 625
+07:06:06.362 SCREEN settings (w59) 704,185 723×625
+07:06:06.434 SCREEN the button is up 995 245
+07:06:06.448 MACOS pid 7366 AXMoved w59 AXWindow/AXStandardWindow 704 185 723 625
+07:06:06.449 INFO  dropped w59 on beside(n4, ArborCore.Edge.left), display 5A42259C-47B8-4590-9762-97DBE4FE7F1B
+07:06:06.456 DEBUG stage up on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: 9 stand-ins, 0.46 s
+07:06:06.456 DEBUG the stage kept the windows waiting 4 ms: its panel 0, 9 costumes 0 (0 not ready), the desktop 2, going up 2
+07:06:06.484 SCREEN w95 of Arbor 0,0 1600×900 (level 4)
+07:06:06.484 SCREEN safari (w33) 879,43 574×378
+07:06:06.496 MACOS pid 6191 AXResized w33 AXWindow/AXStandardWindow 1240 43 574 378
+07:06:06.496 MACOS pid 6191 AXMoved w33 AXWindow/AXStandardWindow 1240 43 574 378
+07:06:06.511 MACOS pid 7366 AXResized w59 AXWindow/AXStandardWindow 879 43 723 470
+07:06:06.511 MACOS pid 7366 AXMoved w59 AXWindow/AXStandardWindow 879 43 723 470
+07:06:06.513 INFO  made room for w33
+07:06:06.515 MACOS pid 6191 AXMoved w33 AXWindow/AXStandardWindow 1014 43 574 378
+07:06:06.517 MACOS pid 7366 AXMoved w59 AXWindow/AXStandardWindow 1599 770 723 470
+07:06:06.524 DEBUG stage retargeted on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: 9 stand-ins, 0.3998319721221924 s
+07:06:06.531 DEBUG said on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: Too small to show: click the tile to zoom in · ⌃⌥G goes there too
+07:06:06.550 SCREEN settings (w59) 1599,770 723×470
+07:06:06.550 SCREEN safari (w33) 1014,43 574×378
+07:06:06.869 SCREEN w109 of Arbor 1002,43 12×378
+07:06:06.869 SCREEN w145 of Arbor 879,421 709×12
+07:06:06.869 SCREEN front to back: settings safari calendar terminal notes preview w94 textedit w67 mail finder w108 w98 w137 w109 w145
+07:06:06.938 SCREEN w101 of Arbor 554,728 493×38 (level 6)
+07:06:06.938 SCREEN w144 of Arbor 879,43 123×378
+07:06:06.938 SCREEN w136 of Arbor left the screen
+07:06:06.938 SCREEN front to back: settings safari calendar terminal notes preview w94 textedit w67 mail finder w108 w98 w137 w144 w109 w145
+07:06:07.115 DEBUG stage down
+07:06:07.120 SCREEN w95 of Arbor left the screen
+07:06:08.046 SCREEN -- end 34 act=drag settled=quiet:1528 drags=59 front=59 own=59 floating=30,43,49,58,65 docked=33,52,59,61
+07:06:08.246 SCRIPT == 35 cmd-tab-1

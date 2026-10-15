@@ -1,0 +1,39 @@
+42 double-click-mail-again: double-clicks it again: macOS takes the window back
+expected: {'act': 'macos-own', 'settled': 'quiet:791', 'zooms': '65', 'front': '65', 'returns': '39', 'floating': '30,43,49,58,65', 'docked': '33,52,59,61'}
+ODD rule 2: w67 of Mail moved along with a window of its app
+
+07:06:29.959 SCREEN -- begin 42 double-click-mail-again
+07:06:29.959 SCREEN -- text 42 double-clicks it again: macOS takes the window back
+07:06:30.556 SCREEN the button is down 714 43
+07:06:30.556 SCREEN the button is up 714 43
+07:06:30.676 SCREEN the button is down 714 43
+07:06:30.724 SCREEN the button is up 714 43
+07:06:30.775 SCREEN w67 of Mail 566,218 470×416
+07:06:30.775 SCREEN mail (w65) 1,31 1599×791
+07:06:30.815 SCREEN w67 of Mail 576,217 470×416
+07:06:30.815 SCREEN mail (w65) 22,32 1578×787
+07:06:30.875 SCREEN w67 of Mail 613,213 470×416
+07:06:30.875 SCREEN mail (w65) 96,36 1504×770
+07:06:30.908 SCREEN w67 of Mail 679,206 470×416
+07:06:30.908 SCREEN mail (w65) 227,44 1373×740
+07:06:30.948 SCREEN w67 of Mail 744,199 470×416
+07:06:30.948 SCREEN mail (w65) 358,51 1242×712
+07:06:31.001 SCREEN w67 of Mail 811,191 470×416
+07:06:31.001 SCREEN mail (w65) 491,59 1109×681
+07:06:31.075 SCREEN w67 of Mail 867,185 470×416
+07:06:31.075 SCREEN mail (w65) 603,65 997×657
+07:06:31.104 SCREEN w67 of Mail 913,180 470×416
+07:06:31.104 SCREEN mail (w65) 695,70 905×636
+07:06:31.153 MACOS pid 7685 AXResized w65 AXWindow/AXStandardWindow 719 72 881 630
+07:06:31.155 MACOS pid 7685 AXResized w65 AXWindow/AXStandardWindow 719 72 881 630
+07:06:31.156 MACOS pid 7685 AXResized w65 AXWindow/AXStandardWindow 719 72 881 630
+07:06:31.157 MACOS pid 7685 AXResized w65 AXWindow/AXStandardWindow 719 72 881 630
+07:06:31.158 SCREEN w67 of Mail 925,179 470×416
+07:06:31.158 SCREEN mail (w65) 719,72 881×630
+07:06:31.158 MACOS pid 7685 AXResized w65 AXWindow/AXStandardWindow 719 72 881 630
+07:06:31.158 MACOS pid 7685 AXResized w65 AXWindow/AXStandardWindow 719 72 881 630
+07:06:31.159 MACOS pid 7685 AXResized w65 AXWindow/AXStandardWindow 719 72 881 630
+07:06:31.159 MACOS pid 7685 AXResized w65 AXWindow/AXStandardWindow 719 72 881 630
+07:06:31.159 MACOS pid 7685 AXResized w65 AXWindow/AXStandardWindow 719 72 881 630
+07:06:32.317 SCREEN -- end 42 act=macos-own settled=quiet:791 zooms=65 front=65 returns=39 floating=30,43,49,58,65 docked=33,52,59,61
+07:06:32.545 SCRIPT == 43 dock-icon-safari

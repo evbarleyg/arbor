@@ -1,0 +1,36 @@
+86 restore-textedit: clicks its miniature in the Dock
+expected: {'act': 'open-close', 'settled': 'quiet:954', 'moves': '30,52,59,30,52,59,', 'comes': '212', 'front': '212', 'returns': '84', 'floating': '49,58,61,65,194,212', 'docked': '30,52,59'}
+FAIL rule 2: safari (w194) is not back where it was after step 84: 0,43 574×378, it was at 1014,43 574×378
+
+07:09:34.956 SCREEN -- begin 86 restore-textedit
+07:09:34.956 SCREEN -- text 86 clicks its miniature in the Dock
+07:09:35.501 SCREEN the button is down 1441 854
+07:09:35.580 SCREEN textedit (w212) 1413,810 53×57
+07:09:35.580 SCREEN front to back: textedit w99 preview w67 mail calendar safari finder terminal settings notes w94 w144 w109 w264 w145
+07:09:35.580 SCREEN the button is up 1441 854
+07:09:35.586 SCREEN textedit (w212) 1408,795 58×72
+07:09:35.627 SCREEN textedit (w212) 1329,707 144×160
+07:09:35.631 SCREEN textedit (w212) 1287,678 189×189
+07:09:35.702 SCREEN textedit (w212) 618,400 921×467
+07:09:35.710 SCREEN textedit (w212) 518,363 1031×504
+07:09:35.757 SCREEN textedit (w212) 140,194 1446×673
+07:09:35.793 SCREEN textedit (w212) 23,97 1575×770
+07:09:35.866 SCREEN textedit (w212) 0,31 1600×791
+07:09:36.097 SCREEN in front: process 19605 com.apple.TextEdit
+07:09:36.099 MACOS workspace didActivate pid 19605 com.apple.TextEdit regular
+07:09:36.100 MACOS workspace didDeactivate pid 7506 com.apple.Preview regular
+07:09:36.100 MACOS pid 19605 AXApplicationActivated
+07:09:36.100 MACOS pid 7506 AXApplicationDeactivated
+07:09:36.109 MACOS pid 19605 AXFocusedWindowChanged w212 AXWindow/AXStandardWindow 0 31 1600 791
+07:09:36.110 DEBUG focus is on w212
+07:09:36.110 MACOS pid 19605 AXMainWindowChanged w212 AXWindow/AXStandardWindow 0 31 1600 791
+07:09:36.110 MACOS pid 19605 AXWindowDeminiaturized w212 AXWindow/AXStandardWindow 0 31 1600 791
+07:09:36.110 MACOS pid 19605 AXApplicationActivated
+07:09:36.111 DEBUG focus report for w212, which does not have the keyboard or takes no space; 4 checks left
+07:09:36.141 SCREEN w99 of Arbor left the screen
+07:09:36.141 SCREEN front to back: textedit preview w67 mail calendar safari finder terminal settings notes w94 w144 w109 w264 w145
+07:09:36.141 DEBUG w212 has the keyboard
+07:09:36.208 SCREEN w99 of Arbor -6,25 1612×803
+07:09:36.208 SCREEN front to back: w99 textedit preview w67 mail calendar safari finder terminal settings notes w94 w144 w109 w264 w145
+07:09:37.358 SCREEN -- end 86 act=open-close settled=quiet:954 moves=30,52,59,30,52,59, comes=212 front=212 returns=84 floating=49,58,61,65,194,212 docked=30,52,59
+07:09:37.867 SCRIPT == 87 drag-textedit-by

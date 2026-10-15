@@ -1,0 +1,10 @@
+53 leave-alone: does nothing for half a minute
+expected: {'act': 'idle', 'settled': 'quiet:366', 'floating': '30,43,49,58,65,194', 'docked': '52,59,61'}
+FAIL rule -: with nothing to do Arbor used 1.4 % of a core
+
+07:07:05.943 SCREEN -- begin 53 leave-alone
+07:07:05.943 SCREEN -- text 53 does nothing for half a minute
+07:07:36.035 SCREEN -- finding 53 -:busy FAIL with nothing to do Arbor used 1.4 % of a core
+07:07:36.518 SCREEN -- end 53 act=idle settled=quiet:366 floating=30,43,49,58,65,194 docked=52,59,61
+07:07:36.715 SCREEN (nothing was seen for 103 ms)
+07:07:37.174 SCRIPT == 54 dock-icon-calendar

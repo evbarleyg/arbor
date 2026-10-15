@@ -1,0 +1,12 @@
+68 drag-mail-by: drags mail, which floats, by its title bar -106 across and 8 down, and clicks there 0.3 s after letting go
+expected: {'act': 'drag', 'settled': 'quiet:1063', 'judge': 'no', 'performed': 'no', 'undone': 'drag_window', 'drags': '65', 'front': '65', 'own': '65', 'floating': '30,49,58,65,194', 'docked': '52,59,61,212'}
+ODD rule -: the act was not performed: drag_window could not be done
+
+07:08:20.692 SCREEN -- begin 68 drag-mail-by
+07:08:20.692 SCREEN -- text 68 drags mail, which floats, by its title bar -106 across and 8 down, and clicks there 0.3 s after letting go
+07:08:20.783 SCRIPT drag w65 from 1181,84 to 1075,92
+07:08:21.338 SCREEN the button is down 1181 84
+07:08:21.741 DEBUG the press on w65 has moved nothing so far: looking less often
+07:08:23.558 SCREEN the button is up 1075 92
+07:08:24.725 SCREEN -- end 68 act=drag settled=quiet:1063 judge=no performed=no undone=drag_window drags=65 front=65 own=65 floating=30,49,58,65,194 docked=52,59,61,212
+07:08:25.090 SCRIPT == 69 cmd-tab-1
