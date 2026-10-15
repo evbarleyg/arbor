@@ -22,6 +22,7 @@ lint:
 	@python3 scripts/mergeable.py --self-test && python3 scripts/mergeable.py --check
 	@python3 scripts/reality-ledger.py --self-test && python3 scripts/reality-ledger.py --check
 	@python3 scripts/mac-shell/jolts.py --self-test > /dev/null || python3 scripts/mac-shell/jolts.py --self-test
+	@python3 scripts/mac-shell/standstill.py --self-test > /dev/null || python3 scripts/mac-shell/standstill.py --self-test
 	@python3 scripts/mac-shell/viable.py --self-test > /dev/null || python3 scripts/mac-shell/viable.py --self-test
 	@python3 scripts/mac-shell/walk.py --self-test > /dev/null || python3 scripts/mac-shell/walk.py --self-test
 	@python3 scripts/mac-shell/gate.py --self-test > /dev/null || python3 scripts/mac-shell/gate.py --self-test
