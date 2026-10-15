@@ -1,7 +1,7 @@
 #!/bin/bash
 # Runs a script from this repository on a real Mac and brings back what it produced. Or several scripts.
 #
-#   scripts/mac-shell/run.sh [--macs N] [--on macos-15] [--bare] [--release] [--priority N] [--no-preflight "<why>"] <script>… [ref]
+#   scripts/mac-shell/run.sh [--macs N] [--at-once N] [--on macos-15] [--bare] [--release] [--priority N] [--no-preflight "<why>"] <script>… [ref]
 #   scripts/mac-shell/run.sh scripts/mac-shell/shots-demo.sh
 #   scripts/mac-shell/run.sh scripts/mac-shell/shots-F10.sh scripts/mac-shell/shots-F12.sh scripts/mac-shell/shots-F43.sh
 #
@@ -19,6 +19,7 @@
 #   --macs N    share the scripts out among N Macs, which work side by side: for scripts that take long. What the second Mac brings
 #               back is in …/mac-2/. ONE script and --macs N: every Mac runs it, and finds in $MAC_SHELL_SHARE which part is
 #               its own, "2/3" on the second of three; only for a script that looks there (compat.sh does).
+#   --at-once N   of the Macs of --macs, at most N at a time: for a long list that must not take every Mac there is from everybody else.
 #   --on KIND   another of GitHub's Macs than macos-26: macos-15, macos-14 or macos-15-intel. They come out of the same five.
 #   --bare      no toolchain and no build: half a minute saved for a script that only asks the Mac something.
 #   --release   the scripts drive the release build, the program people get (ARBOR_CONFIGURATION=release says the same): for whatever is measured,
@@ -45,7 +46,7 @@
 # the run has ended, which is when its output branch appears. A run costs about ten calls, however long it waits.
 # See "Seeing the real app from anywhere" in docs/TESTING.md.
 #
-# The output branch is mac-shell-out/<tag>, and the tag names the ref and the script, not the run: some
+# The output branch is mac-shell-out/<tag>, and the tag names the ref and the scripts, not the run: some
 # environments may push but not delete branches, and there each run replaces the last one's output
 # instead of adding a branch. Starting the same scripts for the same ref again cancels the run that is still under way.
 #
@@ -67,12 +68,13 @@
 set -uo pipefail
 cd "$(dirname "$0")/../.." || exit 97
 
-usage="usage: scripts/mac-shell/run.sh [--macs N] [--on macos-15] [--bare] [--release] [--priority N] [--no-preflight \"<why>\"] <script>… [ref]"
-macs="" ref="" kind=macos-26 bare=false priority=${ARBOR_MAC_PRIORITY:-3} unchecked="" configuration=${ARBOR_CONFIGURATION:-debug}
+usage="usage: scripts/mac-shell/run.sh [--macs N] [--at-once N] [--on macos-15] [--bare] [--release] [--priority N] [--no-preflight \"<why>\"] <script>… [ref]"
+macs="" at_once="" ref="" kind=macos-26 bare=false priority=${ARBOR_MAC_PRIORITY:-3} unchecked="" configuration=${ARBOR_CONFIGURATION:-debug}
 scripts=()
 while [ $# -gt 0 ]; do
   case "$1" in
     --macs) macs=${2:?$usage}; shift ;;
+    --at-once) at_once=${2:?$usage}; shift ;;
     --on) kind=${2:?$usage}; shift ;;
     --release) configuration=release ;;
     --bare) bare=true ;;
@@ -87,6 +89,7 @@ while [ $# -gt 0 ]; do
 done
 [ ${#scripts[@]} -gt 0 ] || { echo "$usage" >&2; exit 97; }
 case "$macs" in *[!0-9]* | 0) echo "run.sh: --macs takes a number, 1 or more" >&2; exit 97 ;; esac
+case "$at_once" in *[!0-9]* | 0) echo "run.sh: --at-once takes a number, 1 or more" >&2; exit 97 ;; esac
 case "$priority" in 1 | 2 | 3) ;; *) echo "run.sh: --priority takes 1, 2 or 3" >&2; exit 97 ;; esac
 case "$configuration" in debug | release) ;; *) echo "run.sh: ARBOR_CONFIGURATION is debug or release, not '$configuration'" >&2; exit 97 ;; esac
 [ "$configuration" = debug ] || [ "$bare" = false ] || { echo "run.sh: --bare builds nothing, so there is no release build to drive" >&2; exit 97; }
@@ -152,9 +155,12 @@ slug() { printf '%s' "$1" | tr -c 'A-Za-z0-9_-' '-' | cut -c "1-$2"; }
 name=$(slug "$(basename "$script" .sh)" 16)
 [ ${#scripts[@]} -eq 1 ] || name=$(slug "$name" 13)-x${#scripts[@]}
 [ "$kind" = macos-26 ] || name=$(slug "$name" 9)-${kind#macos-}
-# A tag of its own: the same script on the other build is another question, and must not cancel this one.
+# To be read at a glance: the same script on the other build is another question.
 [ "$configuration" = debug ] || name=$(slug "$name" 12)-rel
-tag=${MAC_SHELL_TAG:-$(slug "$ref" 21).$name}
+# Names are cut short to fit, and a run started under the tag of one that is under way replaces it: so whatever is cut off has its say in a few
+# letters at the end. The same scripts for the same ref on the same kind of Mac and the same build get the same tag again, and nothing else does.
+whole=$(printf '%s\n' "$ref" "$kind" "$configuration" "${scripts[@]}" | git hash-object --stdin | cut -c 1-5)
+tag=${MAC_SHELL_TAG:-$(slug "$ref" 15).$name.$whole}
 
 # What Linux can say, it says first.
 if [ -n "$unchecked" ]; then
@@ -264,7 +270,7 @@ other=()
 [ "$configuration" = debug ] || other=(-f "inputs[configuration]=$configuration")
 api -X POST "repos/$repo/actions/workflows/mac-shell.yml/dispatches" \
   -f ref="$home" -f "inputs[ref]=$ref" -f "inputs[script]=${scripts[*]}" -f "inputs[tag]=$tag" ${other[@]+"${other[@]}"} \
-  -f "inputs[runner]=$kind" -F "inputs[bare]=$bare" -f "inputs[unchecked]=$(printf '%s' "$unchecked" | tr -c 'A-Za-z0-9 .,:_/-' ' ' | cut -c 1-80)" \
+  -f "inputs[at-once]=${at_once:-5}" -f "inputs[runner]=$kind" -F "inputs[bare]=$bare" -f "inputs[unchecked]=$(printf '%s' "$unchecked" | tr -c 'A-Za-z0-9 .,:_/-' ' ' | cut -c 1-80)" \
   -f "inputs[macs]=$([ "$macs" -eq 1 ] || echo "$shares" | sed 's/.*/"&"/' | paste -sd, - | sed 's/.*/[&]/')" >/dev/null \
   || fail "could not start the workflow of $home for $ref"
 echo "started ${scripts[*]} at $ref (${remote:0:7}), tag $tag$([ "$macs" -eq 1 ] || echo ", on $macs Macs")$([ "$configuration" = debug ] || echo ", the $configuration build")"

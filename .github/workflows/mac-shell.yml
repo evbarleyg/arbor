@@ -35,6 +35,11 @@ on:
         required: false
         default: ""
         type: string
+      at-once:
+        description: Of several Macs, at most so many at a time (run.sh --at-once), so that a long list leaves some to everybody else
+        required: false
+        default: "5"
+        type: string
       runner:
         description: Which of GitHub's Macs. Arbor claims macOS 14 and later; all of these count towards the same five at a time
         required: false
@@ -75,6 +80,7 @@ jobs:
     timeout-minutes: 100
     strategy:
       fail-fast: false
+      max-parallel: ${{ fromJSON(inputs.at-once || '5') }}
       matrix:
         scripts: ${{ fromJSON(inputs.macs || format('["{0}"]', inputs.script)) }}
     permissions:

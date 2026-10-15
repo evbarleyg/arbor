@@ -1921,8 +1921,28 @@ esac
     row("run.sh: the ordinary Mac, set up, unless something else is asked for",
         [started("a.sh", "feat/x")[2].get(key) for key in ("inputs[runner]", "inputs[bare]")], ["macos-26", "false"])
     row("run.sh: --on and --bare, and a tag of its own for another kind of Mac",
-        [started("--on", "macos-15-intel", "--bare", "e2e-drag.sh", "feat/x")[2].get(key) for key in ("inputs[runner]", "inputs[bare]", "inputs[tag]")],
-        ["macos-15-intel", "true", "feat-x.e2e-drag-15-intel"])
+        [(started("--on", "macos-15-intel", "--bare", "e2e-drag.sh", "feat/x")[2].get(key) or "")[:25] for key in ("inputs[runner]", "inputs[bare]", "inputs[tag]")],
+        ["macos-15-intel", "true", "feat-x.e2e-drag-15-intel."])
+    tag = lambda *arguments: started(*arguments)[2].get("inputs[tag]") or ""
+    long_a, long_b = "a-name-that-is-long-one.sh", "a-name-that-is-long-two.sh"
+    for name in (long_a, long_b):
+        with open(os.path.join(checkout, name), "w", encoding="utf-8") as handle:
+            handle.write("echo hello\n")
+    git("add", "--all")
+    git("commit", "--quiet", "--message", "long names")
+    git("push", "--quiet", "origin", "HEAD:refs/heads/feat/x", "HEAD:refs/heads/feat/a-branch-with-a-long-name-one", "HEAD:refs/heads/feat/a-branch-with-a-long-name-two")
+    row("run.sh: the tag: two scripts whose names begin alike do not share one, or the second run would replace the first", tag(long_a, "feat/x") != tag(long_b, "feat/x"), True)
+    row("run.sh: the tag: nor two lists that begin alike and are as long", tag("a.sh", "b.sh", "feat/x") != tag("a.sh", "c.sh", "feat/x"), True)
+    row("run.sh: the tag: nor two branches whose names begin alike",
+        tag("a.sh", "feat/a-branch-with-a-long-name-one") != tag("a.sh", "feat/a-branch-with-a-long-name-two"), True)
+    row("run.sh: the tag: the same scripts for the same branch get the same one again", tag(long_a, "b.sh", "feat/x") == tag(long_a, "b.sh", "feat/x") != "", True)
+    row("run.sh: the tag: it fits into the forty characters the workflow allows, and can be read",
+        [(len(found) <= 40, found.startswith(begins)) for found, begins in [
+            (tag(long_a, long_b, "c.sh", "feat/a-branch-with-a-long-name-one"), "feat-a-branch-w.a-name-that-i-x3."),
+            (tag("--on", "macos-15-intel", long_a, "feat/a-branch-with-a-long-name-one"), "feat-a-branch-w.a-name-th-15-intel.")]], [(True, True)] * 2)
+    row("run.sh: all Macs at once unless something else is asked for, then so many",
+        [started("a.sh", "feat/x")[2].get("inputs[at-once]"), started("--macs", "3", "--at-once", "2", "a.sh", "b.sh", "c.sh", "feat/x")[2].get("inputs[at-once]")], ["5", "2"])
+    row("run.sh: --at-once 0", started("--at-once", "0", "a.sh", "feat/x")[:2], (97, NOT_STARTED))
     row("run.sh: too few Macs", started("--macs", "2", *[f"{n}.sh" for n in range(9)], "feat/x")[:2], (97, NOT_STARTED))
     row("run.sh: a slip in a script's name does not pass for a branch", started("a.sh", "b.sj", "c.sh")[:2], (97, NOT_STARTED))
     row("run.sh: no script", started("feat/x")[:2], (97, NOT_STARTED))

@@ -589,10 +589,12 @@ ever taken for the other or built upon it. The line "built Arbor (release), …"
 `debug`, which every test runs against and which is nearly always built already.
 
 They run one after the other. Each gets its turn and its own twenty minutes, whatever became of the one before, and starts with an empty
-`mac-shell/`. What comes back is `.mac-shell/<first script>-x3-<run id>/` with a folder for each, `1-shots-F10/`, `2-shots-F12/`, …, holding what a
+`mac-shell/` **on the Mac as the first one found it**: after every script macOS's own tiling, the click on the wallpaper, Reduce Motion and light or dark are put
+back, and `output.txt` says so. What cannot be put back (Accessibility gone after a `tccutil reset`, another number of Spaces or displays) ends the list: the scripts
+that are left do not run, say why, and end with exit code 75. Give a script that does such a thing the last place, or a run of its own. The desktop picture is not looked at. What comes back is `.mac-shell/<first script>-x3-<run id>/` with a folder for each, `1-shots-F10/`, `2-shots-F12/`, …, holding what a
 run of that script alone would have brought (`output.txt`, `exit-code.txt`, pictures, logs), and `summary.txt` with a line for each. `run.sh` exits with the
 first exit code that is not 0. At most four to a Mac; more are shared out among as many Macs as that takes, or among `--macs N`, whose
-output lies in `mac-1/`, `mac-2/`, …. A script that is given to several Macs by itself finds in `$MAC_SHELL_SHARE` which part is its own
+output lies in `mac-1/`, `mac-2/`, …; `--at-once 2` lets a long list hold two Macs at a time and leaves the others to everybody else. A script that is given to several Macs by itself finds in `$MAC_SHELL_SHARE` which part is its own
 (`2/3`: the second of three); `compat.sh` takes every Nth app. Every script finds in `$MAC_SHELL_PART` and `$MAC_SHELL_PARTS` which playing of the whole
 dispatch it is and how many there are, over all its Macs, settled before the first begins: its place among `run.sh`'s arguments, so a playing that is lost shows as a gap. All kinds of Mac come out of the same five at a time.
 
