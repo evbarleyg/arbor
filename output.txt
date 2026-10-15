@@ -1,0 +1,74 @@
+# mac-shell: scripts/mac-shell/probe-signing.sh at 9e7a353, macOS 26.6.2, 2026-10-15T04:38Z
+
+== the Mac
+macOS 26.6.2 on arm64; /usr/bin/openssl: LibreSSL 3.3.6
+another openssl: /opt/homebrew/opt/openssl@3/bin/openssl OpenSSL 3.6.4 25 Aug 2026 (Library: OpenSSL 3.6.4 25 Aug 2026)
+the search list: /Users/runner/Library/Keychains/login.keychain-db 
+the default keychain:     "/Users/runner/Library/Keychains/login.keychain-db"
+
+== as the script does it, and one thing changed at a time
+
+-- 1  as make-signing-identity.sh does it
+     the key's label: "Imported Private Key"; the identity: CDDAE56DF410CC026F5B6CD50C08DD19B0847F40
+     set-key-partition-list -S apple-tool:,apple:, label Arbor Local Signing: exit code 1; it says: security: SecItemCopyMatching: The specified item could not be found in the keychain. 
+     NOT SIGNED: CDDAE56DF410CC026F5B6CD50C08DD19B0847F40: no identity found 
+
+-- 2  no partition list at all: what does macOS ask?
+     the key's label: "Imported Private Key"; the identity: 6AA757F01ED74742927E92645CB78F4378933232
+     NOT SIGNED: 6AA757F01ED74742927E92645CB78F4378933232: no identity found 
+
+-- 3  every signing key of the keychain, no label
+     the key's label: "Imported Private Key"; the identity: 470FC8710BC7FACE31D2917592682E08AC7D090F
+     set-key-partition-list -S apple-tool:,apple:, label none: exit code 0; it says: 
+     NOT SIGNED: 470FC8710BC7FACE31D2917592682E08AC7D090F: no identity found 
+
+-- 4  by the label the key really has
+     the key's label: "Imported Private Key"; the identity: 5D60651C3E67CDBF9976D1CA2BAC98FCF7BD5F2D
+     set-key-partition-list -S apple-tool:,apple:, label own: exit code 0; it says: 
+     NOT SIGNED: 5D60651C3E67CDBF9976D1CA2BAC98FCF7BD5F2D: no identity found 
+
+-- 5  no label, and codesign: among the partitions
+     the key's label: "Imported Private Key"; the identity: AD8C20FC902E07698CA6DB59F11806195C3258C9
+     set-key-partition-list -S apple-tool:,apple:,codesign:, label none: exit code 0; it says: 
+     NOT SIGNED: AD8C20FC902E07698CA6DB59F11806195C3258C9: no identity found 
+
+-- 6  no label, the keychain on the search list
+     the key's label: "Imported Private Key"; the identity: 324580F51C33CC713FD0185CC3B15D03CBF1961A
+     set-key-partition-list -S apple-tool:,apple:, label none: exit code 0; it says: 
+     SIGNED: identifier "com.evbarleyg.arbor.probe" and certificate leaf = H"324580f51c33cc713fd0185cc3b15d03cbf1961a"
+
+-- 7  no label, codesign:, on the search list
+     the key's label: "Imported Private Key"; the identity: B34A303CAD641AA5F5A758E18CFEE339E0DEA57B
+     set-key-partition-list -S apple-tool:,apple:,codesign:, label none: exit code 0; it says: 
+     SIGNED: identifier "com.evbarleyg.arbor.probe" and certificate leaf = H"b34a303cad641aa5f5a758e18cfee339e0dea57b"
+
+-- 8  the same, the key exportable (no -x)
+     the key's label: "Imported Private Key"; the identity: 500C010661B0F2887D2D562F1B1F09183DA091ED
+     set-key-partition-list -S apple-tool:,apple:,codesign:, label none: exit code 0; it says: 
+     SIGNED: identifier "com.evbarleyg.arbor.probe" and certificate leaf = H"500c010661b0f2887d2d562f1b1f09183da091ed"
+
+-- 9  the same, any application (-A)
+     the key's label: "Imported Private Key"; the identity: E27DCA5B7F53EC8F6408BA9706768205C41F803B
+     set-key-partition-list -S apple-tool:,apple:,codesign:, label none: exit code 0; it says: 
+     SIGNED: identifier "com.evbarleyg.arbor.probe" and certificate leaf = H"e27dca5b7f53ec8f6408ba9706768205c41f803b"
+
+-- 10  OpenSSL 3: which label? as the script does it
+     the key's label: "Imported Private Key"; the identity: EF4BED0FE572CD496AFBFCA9E07998D15E5FABFF
+     set-key-partition-list -S apple-tool:,apple:, label Arbor Local Signing: exit code 1; it says: security: SecItemCopyMatching: The specified item could not be found in the keychain. 
+     NOT SIGNED: EF4BED0FE572CD496AFBFCA9E07998D15E5FABFF: no identity found 
+
+-- 11  OpenSSL 3, no label, on the search list
+     the key's label: "Imported Private Key"; the identity: 4A806A5AFD158F81397B434CD7371CFA9B359B24
+     set-key-partition-list -S apple-tool:,apple:, label none: exit code 0; it says: 
+     SIGNED: identifier "com.evbarleyg.arbor.probe" and certificate leaf = H"4a806a5afd158f81397b434cd7371cfa9b359b24"
+
+== what security says to a wrong password, to no matching key, and to a locked keychain
+a wrong password: exit code 1: security: SecKeychainUnlock: The user name or passphrase you entered is not correct. 
+no key of that label: exit code 1: security: SecItemCopyMatching: The specified item could not be found in the keychain. 
+unlock-keychain, a wrong password: exit code 51: security: SecKeychainUnlock /private/tmp/arbor-signing.eE0YFD/t11.keychain-db: The user name or passphrase you entered is not correct.
+unlock-keychain, the right one: exit code 0: 
+
+== locked, unlocked again, off the search list: does the leave last?
+locked: 4A806A5AFD158F81397B434CD7371CFA9B359B24: no identity found 
+unlocked again: exit code 1: 4A806A5AFD158F81397B434CD7371CFA9B359B24: no identity found 
+exit code 0
