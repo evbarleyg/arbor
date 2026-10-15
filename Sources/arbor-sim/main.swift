@@ -664,7 +664,7 @@ func describe(_ state: StateSnapshot) -> String {
     for id in display.tree.preorder() {
       guard let node = display.tree[id] else { continue }
       let indent = String(repeating: "  ", count: display.tree.depth(of: id) + 1)
-      let name = display.names.first { $0.value == id }.map { " \"\($0.key)\"" } ?? ""
+      let name = display.names?.first { $0.value == id }.map { " \"\($0.key)\"" } ?? ""
       switch node.kind {
       case .split(let axis, _):
         let kept = node.keeps.map { " kept for \($0)" } ?? ""

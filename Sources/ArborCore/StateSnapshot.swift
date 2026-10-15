@@ -16,8 +16,11 @@ public struct StateSnapshot: Codable, Sendable, Equatable {
     public var canGoBack: Bool
     public var canGoForward: Bool
     public var savedViews: [String: NodeID]
-    /// The names of this display's spaces (F20).
-    public var names: [String: NodeID] = [:]
+    /// The names of this display's spaces (F20). They are the person's own words, as titles are: only for whoever asked
+    /// (`state --titles`).
+    public var names: [String: NodeID]? = [:]
+    /// The spaces that have a name, told or not, so that a script that goes by names can tell "none" from "not told".
+    public var named: [NodeID] = []
     /// What `undo` and `redo` would take back or put back on this display (`dock w101 left`);
     /// nil when there is nothing to undo or redo.
     public var undo: String?
@@ -124,10 +127,12 @@ public struct StateSnapshot: Codable, Sendable, Equatable {
   /// `"view"` after `hold`, `"still"` after `hold still` or while a call's window is open; otherwise absent.
   public var held: HoldLevel?
 
-  /// The same without any window title: what `state` says unless it is asked for them. A title can hold anything a person is
-  /// reading or writing, and `state` is what people paste into a report.
+  /// The same without any window's title or space's name: what `state` says unless it is asked for them. A title can hold
+  /// anything a person is reading or writing, a name is their own word, and `state` is what people paste into a report. What is
+  /// left are Arbor's own words, apps' names and bundle ids.
   public var withoutTitles: StateSnapshot {
     var copy = self
+    for index in copy.displays.indices { copy.displays[index].names = nil }
     for index in copy.windows.indices { copy.windows[index].title = nil }
     for index in copy.waiting.indices { copy.waiting[index].title = nil }
     return copy

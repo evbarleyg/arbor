@@ -943,6 +943,7 @@ public final class Controller {
         floating: workspace.floating.keys.sorted(), canGoBack: workspace.canGoBack,
         canGoForward: workspace.canGoForward, savedViews: workspace.savedViews)
       state.names = workspace.names
+      state.named = workspace.names.values.sorted()
       state.undo = nextStepLabel(.undo, on: display.id)
       state.redo = nextStepLabel(.redo, on: display.id)
       return state

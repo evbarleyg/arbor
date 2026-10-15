@@ -5,8 +5,8 @@ import CoreGraphics
 import Foundation
 import Testing
 
-/// `state` is what people paste into a report, and a title can hold anything they are reading or writing: it lists none
-/// unless it is asked to (`state --titles`), as `watch` and `layout` do.
+/// `state` is what people paste into a report. A title can hold anything they are reading or writing, and the name of a space is
+/// their own word: it lists neither unless it is asked to (`state --titles`).
 @MainActor @Suite struct StateTitlesTests {
   func makeHarness() -> (Harness, docked: WindowID, floating: WindowID) {
     let h = Harness()
@@ -33,6 +33,31 @@ import Testing
     let reply = h.run("state --titles")
     #expect(reply.state?.window(docked)?.title == "quokkadoo: my bank")
     #expect(reply.state?.window(floating)?.title == "quokkadoo: a letter")
+  }
+
+  @Test func theNamesOfSpacesAreThePersonsWordsToo() throws {
+    let (h, docked, _) = makeHarness()
+    h.run("zoom \(docked.rawValue)")
+    #expect(h.run("name quokkadoo taxes").ok)
+    let space = try #require(h.workspace.names["quokkadoo taxes"])
+
+    let plain = h.run("state")
+    #expect(try !line(plain).contains("quokkadoo"))
+    #expect(plain.state?.displays[0].names == nil, "not told, which is not the same as none")
+    #expect(plain.state?.displays[0].named == [space], "a script can tell that there is a name to ask for")
+
+    let asked = h.run("state --titles")
+    #expect(asked.state?.displays[0].names == ["quokkadoo taxes": space])
+    #expect(asked.state?.displays[0].named == [space])
+    // Going there by name needs no flag.
+    h.run("show-all")
+    #expect(h.run("go quokkadoo taxes").ok)
+  }
+
+  @Test func withoutANameThereIsNoneToAskFor() throws {
+    let (h, _, _) = makeHarness()
+    #expect(h.run("state").state?.displays[0].named == [])
+    #expect(h.run("state --titles").state?.displays[0].names == [:])
   }
 
   @Test func titlesAreAllThatIsLeftOut() throws {

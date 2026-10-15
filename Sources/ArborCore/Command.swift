@@ -703,7 +703,7 @@ public enum Command: Equatable, Sendable, Codable {
                                                  themselves; again, or `off`, to have them back
       relayout | reload-settings | quit
       status | state | ascii | help              one line | everything as JSON | the layout as text | this
-      state --titles                             with the windows' titles, which `state` leaves out
+      state --titles                             with windows' titles and spaces' names, which `state` leaves out
       bindings                                   list the keyboard shortcuts in effect
       rules                                      per-app rules and which one the focused window matches
       watch [events…] [--titles]                 stream changes as lines of JSON (docs/SCRIPTING.md)

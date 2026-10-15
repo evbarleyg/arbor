@@ -96,7 +96,7 @@ One line of JSON with everything Arbor knows: `{"ok":true,"message":"…","state
 arborctl state | jq -r '.state.windows[] | select(.docked) | "\(.id) \(.app)"'   # docked windows
 arborctl state | jq '.state.displays[0].windowFrames'                          # where they are
 arborctl state | jq '[.state.windows[] | select(.parked)] | length'            # how many are out of view
-arborctl state --titles | jq -r '.state.windows[] | "\(.id) \(.title)"'          # with window titles
+arborctl state --titles | jq -r '.state.windows[] | "\(.id) \(.title)"'          # with window titles and the names of spaces
 ```
 
 | `state.` | |
@@ -109,8 +109,10 @@ arborctl state --titles | jq -r '.state.windows[] | "\(.id) \(.title)"'         
 
 Rectangles are in points, with the origin at the top-left corner of the main display and y growing downward. In `state`
 they are `[[x, y], [width, height]]`; events spell them out, `{"x": …, "y": …, "width": …, "height": …}`.
-**Neither `state` nor the events hold a window title unless you ask** (`--titles`): a title can be anything you are reading or
-writing, and `state` is what gets pasted into a report. The names you gave to spaces are in `displays[].names`.
+**`state` holds no words but Arbor's own, apps' names and bundle ids unless you ask** (`--titles`): a title can be anything you are
+reading or writing, the name of a space is your own word, and `state` is what gets pasted into a report. Without the flag
+`displays[].named` lists the numbers of the spaces that have a name; with it `displays[].names` has the names too
+(`{"Writing": 7}`). **A script that goes by titles or names asks with the flag.** `go <name>` needs none. Events hold no title unless you ask.
 
 ## `arborctl watch`
 
