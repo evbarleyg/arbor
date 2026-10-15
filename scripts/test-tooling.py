@@ -1899,6 +1899,11 @@ def check_ci_build_key():
             lines = dict(line.split("=", 1) for line in done.stdout.splitlines() if "=" in line)
             return done.returncode, lines.get("key")
 
+        def made(kind, **more):
+            done = subprocess.run([BASH, os.path.join(HERE, "ci-build-key.sh"), kind], cwd=folder, capture_output=True, text=True, check=False,
+                                  env={**os.environ, "PATH": os.path.join(folder, "bin") + os.pathsep + os.environ["PATH"], **more})
+            return next((line[5:] for line in done.stdout.splitlines() if line.startswith("made=")), "")
+
         def takes(kind):
             """What a job of that kind takes for all it needs (a pattern), and the beginnings of the names it would build upon."""
             done = subprocess.run([BASH, os.path.join(HERE, "ci-build-key.sh"), kind], cwd=folder, capture_output=True, text=True, check=False,
@@ -1919,6 +1924,9 @@ def check_ci_build_key():
             for name in ("sw_vers", "xcodebuild", "swift"):
                 row(f"ci-build-key.sh: {kind}: another {name}, another name", key(kind) != key(kind, **{f"VERSION_OF_{name}": "2"}), True)
         row("ci-build-key.sh: with and without the tests are two names", key("products")[1] != key("tests")[1], True)
+        row("ci-build-key.sh: it says in plain words what the first part of the name stands for, so that two runs can be held side by side",
+            [made("products") == made("release"), made("products") != made("products", VERSION_OF_xcodebuild="2"), made("products") != made("products", ImageVersion="20261015.2"),
+             "image 20261015.2" in made("products", ImageVersion="20261015.2"), "\n" in made("products")], [True, True, True, True, False])
         row("ci-build-key.sh: a release build has a name of its own", len({key(kind)[1] for kind in ("products", "tests", "release")}), 3)
         row("ci-build-key.sh: it takes its own for all it needs; a build with the tests will do for one without, as it did",
             [fnmatch.fnmatchcase(key(has)[1], takes(wants)[0]) for wants, has in (("release", "release"), ("products", "tests"), ("products", "products"))], [True] * 3)
