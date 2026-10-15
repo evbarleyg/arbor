@@ -316,7 +316,7 @@ extension FakeMac {
         appDoes(window.app, after: timing.animation * Double(part), "w\(window.number) is animated on its way") { [self] in take(stage, window) }
       }
     } else {
-      take(frame, window)
+      take(frame, window, listedAfter: serverListsACallAfter)
     }
     if let delay = window.goesBackAfter {
       appDoes(window.app, after: delay, "w\(window.number) goes back to where it was") { [self] in take(before, window) }
@@ -324,11 +324,15 @@ extension FakeMac {
   }
 
   /// The window has this frame now, and its app says so: "resized" if the size changed, "moved" if the place did.
-  func take(_ frame: CGRect, _ window: Window) {
+  func take(_ frame: CGRect, _ window: Window, listedAfter lag: TimeInterval = 0) {
     guard window.isOpen else { return }
     let before = window.frame
     window.frame = frame
-    window.bounds = frame
+    if lag > 0 {
+      send(after: lag, from: .system, "") { if window.frame == frame { window.bounds = frame } }
+    } else {
+      window.bounds = frame
+    }
     if before.size != frame.size { report("AXResized", about: window) }
     if before.origin != frame.origin { report("AXMoved", about: window) }
   }

@@ -203,7 +203,7 @@ MUTANTS = [
     {
         "name": "a press on the strip of a window that was swept aside takes hold of it",
         "file": "ArborCore/WindowGrab.swift",
-        "old": "    case .known(let window, let listed, let believed)? where !isListedElsewhere(listed, than: believed):\n",
+        "old": "    case .known(let window, let listed, let believed)? where !(desktopIsShown && isListedElsewhere(listed, than: believed)):\n",
         "new": "    case .known(let window, let listed, let believed)? where believed != .null:\n",
         "red": [
             "macOS shows its desktop, a window is given another frame meanwhile, and a click on its strip slips, heard 0 ms late: "
@@ -218,8 +218,6 @@ MUTANTS = [
         "new": "      pressedAt: point, pointerNow: point, underPress: underPress, underPointer: underPress,\n",
         "red": [
             "a window is dragged for a second, and the monitor hears of the press 500 ms late: the drag is reported to begin",
-            "a window is dragged sideways for a second while Arbor's main thread is busy for 300 ms from the press, and what queued up comes byTime: "
-            "the drag is reported to begin",
             "a window that lies over another is dragged for a second, and the monitor hears of the press 500 ms late: the drag is reported to begin",
             "a window is made wider by its left edge for a second while Arbor's main thread is busy for 300 ms from the press, and what queued up comes byTime: "
             "it is not taken for a drag",
@@ -300,6 +298,15 @@ MUTANTS = [
         "old": "      if isNearEdge(pointerNow, of: listed), !isNearEdge(pressedAt, of: believed), pressedAt.y >= believed.minY + top {\n",
         "new": "      if isNearEdge(pointerNow, of: listed), !isNearEdge(pressedAt, of: believed) {\n",
         "red": ["judge2: R 1746: it comes out right", "judge2: R 1048: it comes out right"],
+    },
+    {
+        "name": "a window that is listed elsewhere than its app has it is a picture, whether or not the desktop is shown",
+        "file": "ArborCore/WindowGrab.swift",
+        "old": "    case .known(let window, let listed, let believed)? where !(desktopIsShown && isListedElsewhere(listed, than: believed)):\n",
+        "new": "    case .known(let window, let listed, let believed)? where !isListedElsewhere(listed, than: believed):\n",
+        "red": [
+            "Arbor moves a window 80 points, 20 ms later the button goes down on its title bar and the pointer goes across, served on time: the drag is reported to begin",
+        ],
     },
 ]
 

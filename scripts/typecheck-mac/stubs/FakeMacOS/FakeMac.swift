@@ -77,6 +77,12 @@ public final class FakeMac: @unchecked Sendable {
   /// The window server has a dragged window one movement further than the pointer has gone, and leaves it there. (A hosted Mac: the window ended 67 points further than
   /// the pointer travelled, which was one step of that drag. Why is not known.)
   public var serverRunsAStepAhead = false
+  /// The window server lists a frame that was set through Accessibility so much later; Accessibility has it at once. On a hosted Mac (macOS 26, 2026-10-15; 615 calls that changed a frame) the list
+  /// read right after the call still had the frame before it in 475, something older in 94; at the first later look, 60 ms or more, it had caught up in 165 of 170; 62 to 146 ms after calls back to back it
+  /// had a half-way frame five times; from 200 ms on it was right, 170 of 170. So as a rule it is behind for less than some 60 ms, at worst for 146 to 200. Half-way frames are not played: after
+  /// one move from 518,43 494×650 to 220,180 480×348 the list gave 518,43 480×348, the old place with the new size. What shows on screen meanwhile, and from which frame a drag begun
+  /// meanwhile starts, nobody has looked at: here it starts from the listed one. GUESS.
+  public var serverListsACallAfter: TimeInterval = 0
   /// While macOS shows its desktop: where the window server lists each window it swept aside, by number (DesktopShown.swift).
   public internal(set) var sweptTo: [UInt32: CGRect]?
   /// How long after the button went down on a strip the window server lists the windows where they are again, with the button still down. 27 ms on a hosted

@@ -332,9 +332,26 @@ extension Box where Value == EchoFilter {
     for (x, y) in [(-25, 25), (0, 30), (-30, 0)] as [(CGFloat, CGFloat)] {
       #expect(hold(pressedAt: wallpaper, pointerWent: 300, -300, listed: frame.offsetBy(dx: x, dy: y)) == .init(point: wallpaper))
     }
-    // Still under the press, and listed far from its app's word: that is what a swept window looks like.
-    #expect(hold(pointerWent: 60, 0, listed: frame.offsetBy(dx: 200, dy: 0)) == .init(point: titleBar, isSettled: true))
-    #expect(hold(pointerWent: 60, 0, listed: frame.offsetBy(dx: -60, dy: 0)) == .init(point: titleBar, isSettled: true))
+    // Still under the press, it is taken hold of as it is listed, like any window.
+    for listed in [frame.offsetBy(dx: 200, dy: 0), frame.offsetBy(dx: -60, dy: 0)] {
+      #expect(hold(pointerWent: 60, 0, listed: listed) == .init(window: window, point: titleBar, frame: listed))
+    }
+  }
+
+  @Test func aWindowThatIsListedWhereItWasBeforeArborMovedItIsAWindow() {
+    // The window server's list is behind for a moment after a frame was set through Accessibility. A press on time.
+    let was = frame.offsetBy(dx: -80, dy: 0)
+    #expect(hold(pointerWent: 0, 0, listed: was) == .init(window: window, point: titleBar, frame: was))
+    #expect(hold(pointerWent: 2, 1, listed: was) == .init(window: window, point: titleBar, frame: was))
+    // The control: with the desktop shown that is a picture.
+    #expect(hold(pointerWent: 0, 0, listed: was, desktopIsShown: true) == .init(point: titleBar, isSettled: true))
+  }
+
+  @Test func aWindowThatOpenedWhileTheDesktopIsShownIsAWindow() {
+    // It is listed where it is, in view among the strips, and can be taken like any other.
+    #expect(hold(pointerWent: 0, 0, listed: frame, desktopIsShown: true) == .init(window: window, point: titleBar, frame: frame))
+    let step = frame.offsetBy(dx: 9, dy: -4)
+    #expect(hold(pointerWent: 2, 1, listed: step, desktopIsShown: true) == .init(window: window, point: titleBar, frame: step))
   }
 
   @Test func aPressOnAStripTakesHoldOfNothingHoweverFarItIsPulledAndHoweverLateItIsServed() {
@@ -344,14 +361,15 @@ extension Box where Value == EchoFilter {
     let strip = CGPoint(x: 6, y: 350)
     for pull in [0, 3, 150, 325, 600] as [CGFloat] {
       #expect(
-        hold(pressedAt: strip, pointerWent: pull, 3, listed: swept, believed: docked) == .init(point: strip, isSettled: true),
+        hold(pressedAt: strip, pointerWent: pull, 3, listed: swept, believed: docked, desktopIsShown: true)
+          == .init(point: strip, isSettled: true),
         "\(pull) points")
     }
     // Under the menu bar, where the window's own place reaches as far as the strip.
     let above = CGRect(x: 349, y: -306, width: 326, height: 348)
     let top = CGPoint(x: 500, y: 36)
     #expect(
-      hold(pressedAt: top, pointerWent: 0, 400, listed: above, believed: above.offsetBy(dx: 0, dy: 340))
+      hold(pressedAt: top, pointerWent: 0, 400, listed: above, believed: above.offsetBy(dx: 0, dy: 340), desktopIsShown: true)
         == .init(point: top, isSettled: true))
   }
 

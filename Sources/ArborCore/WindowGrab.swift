@@ -28,9 +28,9 @@ public enum WindowGrab {
   /// server and Accessibility may have a window that is at rest: they are read a moment apart.
   public static let lead: CGFloat = 32
 
-  /// Whether the window server lists a window somewhere else than its app has it. That is macOS showing its desktop
-  /// (`SweptAside`): what is under the pointer is a picture of the window, and a press on it brings the window back,
-  /// with the button still down. Such a press takes hold of nothing.
+  /// Whether the window server lists a window somewhere else than its app has it. While macOS shows its desktop
+  /// (`SweptAside`) what is under the pointer is then a picture of the window, and a press on it brings the window
+  /// back, with the button still down. Such a press takes hold of nothing (`hold`).
   /// - Parameters:
   ///   - listed: the window's frame by the window server, as the button goes down.
   ///   - believed: what Accessibility last said.
@@ -99,7 +99,10 @@ public enum WindowGrab {
     switch underPress {
     case nil:
       return Hold(point: pressedAt)
-    case .known(let window, let listed, let believed)? where !isListedElsewhere(listed, than: believed):
+    // Listed elsewhere than its app has it, a window is a picture only while the desktop is shown. The list is also behind for a
+    // moment after a frame was set through Accessibility, by Arbor as by anybody (up to 0.2 s on a Mac at rest), and then the
+    // window is a window. So is one that opened while the desktop is shown: it is listed where it is.
+    case .known(let window, let listed, let believed)? where !(desktopIsShown && isListedElsewhere(listed, than: believed)):
       // The same for an edge whose app has been heard all along. Not for a press at the top: that is a window held by its
       // title bar which has not stirred yet, with the pointer gone along the bar as far as a corner.
       if case .known(window, _, _)? = underPointer, isNearEdge(pointerNow, of: listed), !isNearEdge(pressedAt, of: listed),

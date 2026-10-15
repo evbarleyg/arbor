@@ -167,6 +167,32 @@ double-clicked and the window zoomed with the button still down) that its author
 
 The facts are gone by the time a late press is served. The cure is to note the window under the press when it happens, off the main thread.
 
+## Afterwards: a picture only while the desktop is shown (2026-10-15)
+
+The same night a probe on a hosted Mac showed that **the window server's list is behind after a call through Accessibility**: of 615 calls that changed a frame, the list read right after still had the
+frame before the call in 475 and something older in 94; at the first later look (60 ms or more) it had caught up in 165 of 170, the other five (62 to 146 ms) were half-way frames; from 200 ms on it was
+right, 170 looks of 170. Accessibility's own frame was right at once. The product owner asked whether a window that Arbor has
+just laid out, listed where it was, could be taken for one in the hand.
+
+- **It is not.** 18 stories: Arbor moves a window 80 points, 20 ms later the button goes down in a field of its toolbar, and the pointer goes towards where the window was, away from it, across; on time,
+  60 and 100 ms late, with the main thread busy for 100 ms (late, but served while the list is still behind). No drag, before and after.
+- **But a real drag begun then was not seen at all**: by the title bar, 8 stories of 18, served on time among them. Listed 80 points from its app's word, the window was "listed elsewhere", which since the first
+  change above meant a picture of a swept window: the press took hold of nothing. A docked window grabbed a moment after a layout would have been put back under the hand.
+- **The cure is one line** in `WindowGrab.hold`, now that the press knows whether the desktop is shown: listed elsewhere, a window is a picture **only while the desktop is shown**. That is what Q24 says; "listed
+  elsewhere" was only the way of telling a sweep, and said more.
+- **The prices.** "Listed elsewhere" caught more than sweeps, by accident. The judge's 906 stories found four things red with the line and green before, each rare and mild:
+  1. **a sweep that neither sign tells** (a macOS without the Dock's window at level 18, and as many windows opened since as were swept) leaves a slipped click on a strip to the second net alone, the one that
+     takes a window that leaps for none in the hand; a window given another size meanwhile is then taken for resized by hand: 8 of 120, needing all four conditions; with the controller nothing moves or shows;
+  2. **a window in flight to the Dock**: the button down 300 to 500 ms after a minimize, under the box the list gives, in the window below, a slip of 3 points: a drag of the flying window: 15 of 108; the time
+     in which it can happen grows from some 50 to some 250 ms of the 0.55 s; the window ends in the Dock and comes out where it was. Who gets such a press on a Mac nobody has measured;
+  3. **a stubborn window** going back under a selection right after Arbor moved it: 24 of 96 a false drag that the old rule hid for as long as the list was behind: the listed fault (4), no new one;
+  4. **half-way frames**: none of 168 within what was measured; beyond it 5 of 48 a false resize. What protects is the echo filter's 0.15 s against a worst measured 146 ms: 4 ms, on a Mac at rest.
+  By reading only: Mission Control, App Exposé and Stage Manager's strip are in no model; if the list has the pictures' places there, "listed elsewhere" was the only net.
+- **It buys more than the 36 say** (the judge's): moved 40, 80, 200 points, the list 30 to 200 ms behind, the press 5, 20, 100 ms after the call, by the title bar: 0 of 180 drags seen before, 180 of 180 after; with the
+  real controller a tile taken 20 ms after `arrange`: before no drag, no preview, no swap; after, all three. All of it rests on a guess: that a drag begun meanwhile starts from the listed frame.
+- Measured by the older nets too: `make mac-on-linux` 922 stories, 2656 ✔, 0 new; 18 more listed checks cured (a bar of 90 points taken below the upper 60); the two lots of 4,000 random gestures against the layer
+  before: 4 and 15 better, none worse, none false; 34 changes noticed. The model's window server can lag behind a call (`serverListsACallAfter`; half-way frames are not played).
+
 ## Not done, and why
 
 - **A leap of less than 32 points.** A window that hangs off its display with 40 points showing is swept until 12 show. A click on its strip that slips is
