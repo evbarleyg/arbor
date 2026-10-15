@@ -166,7 +166,7 @@ one_round() {
   grant
   if [ "$who" = bare-tapper ]; then
     : > "$ARBOR_OUT/tapper-$round.txt"
-    limit 20 open -n "$tapper" --args tap "$((length + 12))" "$ARBOR_OUT/tapper-$round.txt"
+    limit 20 open -n "$tapper" --args tap "$((length + 5))" "$ARBOR_OUT/tapper-$round.txt"
     eventually grep -q tap-ready "$ARBOR_OUT/tapper-$round.txt" || { cat "$ARBOR_OUT/tapper-$round.txt"; invalid "the bare tapper has its tap"; return; }
     TAPPER_PID=$(sed -n 's/.*tap-ready pid=//p' "$ARBOR_OUT/tapper-$round.txt")
     started "$TAPPER_PID"
@@ -214,6 +214,8 @@ one_round() {
   echo "the tools' own permission afterwards: $(pointer ax-access)"
   removed=""
   if [ "$who" = bare-tapper ]; then
+    # It ends by itself a few seconds after the stream, and says then what its questions cost.
+    for _ in 1 2 3 4 5 6 7 8 9 10; do grep -q "the end" "$ARBOR_OUT/tapper-$round.txt" && break; sleep 1; done
     echo "the tapper's own words:"; cat "$ARBOR_OUT/tapper-$round.txt"
     echo "its tap now, by the window server's list: $("$WITNESS" taps | grep "pid=$TAPPER_PID " || echo none)"
     removed=$(grep -m 1 switched-off "$ARBOR_OUT/tapper-$round.txt" | cut -c 1-12)
@@ -221,7 +223,11 @@ one_round() {
   elif [ "$who" != nobody ]; then
     "$ARBOR_BIN/arborctl" status | head -n 1 | cut -c 1-100
     # Whichever noticed first: the taps' own check, or the controller.
-    removed=$(tail -n "+$((log_mark + 1))" "$ARBOR_HOME/arbor.log" | grep -m 1 -E "permission is gone|permission was taken away" | cut -c 12-23)
+    # Not before the deed: an Arbor that takes its taps out when macOS is slow to answer (a doubt) writes the same line.
+    removed=$(tail -n "+$((log_mark + 1))" "$ARBOR_HOME/arbor.log" \
+      | awk -v taken="$taken" 'substr($0, 12, 12) >= taken && /permission is gone|permission was taken away/ { print substr($0, 12, 12); exit }')
+    echo "doubts (\"macOS has not said for …\"): $(tail -n "+$((log_mark + 1))" "$ARBOR_HOME/arbor.log" | grep -c "macOS has not said for"); \"permission is back\": $(tail -n "+$((log_mark + 1))" "$ARBOR_HOME/arbor.log" | grep -c "permission is back"); of them before the deed: $(tail -n "+$((log_mark + 1))" "$ARBOR_HOME/arbor.log" | awk -v taken="$taken" 'substr($0, 12, 12) < taken && /macOS has not said for/' | wc -l | tr -d ' ')"
+    tail -n "+$((log_mark + 1))" "$ARBOR_HOME/arbor.log" | grep -E "macOS was asked|permission is back" | cut -c 12-200 | head -n 4
     echo "lines about a tap that macOS switched off: $(tail -n "+$((log_mark + 1))" "$ARBOR_HOME/arbor.log" | grep -c -E "event tap was off|switched (it|them) back on|too slow|of user input")"
     tail -n "+$((log_mark + 1))" "$ARBOR_HOME/arbor.log" | grep -E "event tap was off|switched (it|them) back on|too slow|of user input" | cut -c 12-200 | head -n 5
     [ -z "$removed" ] || check "round $round: Arbor has no event tap left" eventually no_taps

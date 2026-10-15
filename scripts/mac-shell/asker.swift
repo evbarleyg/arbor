@@ -29,8 +29,13 @@ let usage = """
                                     unless told otherwise), a whole small pinch. ⌃⌥ go down <from> seconds in and up at <until>
     arrivals <seconds>              print each of those that reaches the end of the taps: the time, its kind, its number, how late, its modifiers;
                                     and every other press, drag, key, scroll and gesture, as other=…
+    pairs <seconds> <x> <y>         the button, the key F19 and ⇧, each down for 400 ms and up for 400 ms, a third of that apart from one another, numbered: so that
+                                    at any moment something is down. Ends with everything up
+    window <seconds> <file> x y w h an app with one window there (global top-left coordinates) that appends to <file> every press, release, drag, key and change of
+                                    modifiers IT is given, and, whenever one of them changes, what the window server holds to be down
     tap <seconds> <file>            install one active tap on mouse-downs, at the head of the session's taps as Arbor's are, pass everything on, and never let
-                                    go of it; append to <file> when it is in, and whenever macOS switches it off
+                                    go of it; append to <file> when it is in, whenever macOS switches it off, and, asked every 10 ms on another thread, whenever one
+                                    of the cheap questions changes its answer; at the end what one call of each costs
     now                             the time as all of these write it, and as arbor.log does
   """
 
@@ -183,6 +188,49 @@ func stream(seconds: Double, every milliseconds: Double, at point: CGPoint, kind
   print("\(now()) stream ends: \(number) events posted")
 }
 
+/// Downs and ups far apart, so that whatever happens in between falls between them.
+func pairs(seconds: Double, at point: CGPoint) {
+  let source = CGEventSource(stateID: .hidSystemState)
+  var number: Int64 = 0
+  func post(_ event: CGEvent?, _ what: String) {
+    guard let event else { fail("macOS made no event") }
+    number += 1
+    event.setIntegerValueField(.eventSourceUserData, value: streamMark + number)
+    event.post(tap: .cghidEventTap)
+    print("\(now()) posted n=\(number) \(what)")
+  }
+  let f19: CGKeyCode = 80
+  let shift: CGKeyCode = 56
+  func button(_ down: Bool) {
+    post(CGEvent(mouseEventSource: source, mouseType: down ? .leftMouseDown : .leftMouseUp, mouseCursorPosition: point, mouseButton: .left), down ? "down" : "up")
+  }
+  func key(_ down: Bool) { post(CGEvent(keyboardEventSource: source, virtualKey: f19, keyDown: down), down ? "key-down" : "key-up") }
+  func modifier(_ down: Bool) {
+    let event = CGEvent(keyboardEventSource: source, virtualKey: shift, keyDown: down)
+    let flags: CGEventFlags = down ? .maskShift : []
+    event?.flags = flags
+    post(event, down ? "shift-down" : "shift-up")
+  }
+  // In sixths of a cycle of 800 ms: the button goes down at 0 and up at 3, the key at 1 and 4, ⇧ at 2 and 5.
+  let began = Date()
+  var step = 0
+  print("\(now()) stream begins")
+  while Date().timeIntervalSince(began) < seconds || step % 6 != 0 {
+    switch step % 6 {
+    case 0: button(true)
+    case 1: key(true)
+    case 2: modifier(true)
+    case 3: button(false)
+    case 4: key(false)
+    default: modifier(false)
+    }
+    step += 1
+    let wait = began.addingTimeInterval(Double(step) * 0.8 / 6).timeIntervalSinceNow
+    if wait > 0 { Thread.sleep(forTimeInterval: wait) }
+  }
+  print("\(now()) stream ends: \(number) events posted")
+}
+
 var arrivalsPort: CFMachPort?
 
 func arrivals(seconds: Double) {
@@ -218,6 +266,75 @@ func arrivals(seconds: Double) {
   CFRunLoopRunInMode(.defaultMode, seconds, false)
 }
 
+// MARK: What an app sees
+
+final class Onlooker: NSObject, NSApplicationDelegate {
+  let log: FileHandle
+  let frame: CGRect
+  var window: NSWindow?
+  var held = ""
+
+  init(log: FileHandle, frame: CGRect) {
+    self.log = log
+    self.frame = frame
+  }
+
+  func write(_ line: String) { log.write(Data("\(now()) \(line)\n".utf8)) }
+
+  /// What is down, by AppKit's word in this app and by the window server's for the whole session.
+  func look() {
+    let server = CGEventSourceStateID.combinedSessionState
+    let state =
+      "button=\(CGEventSource.buttonState(server, button: .left) ? "down" : "up") appkit-button=\(NSEvent.pressedMouseButtons & 1 != 0 ? "down" : "up")"
+      + " f19=\(CGEventSource.keyState(server, key: 80) ? "down" : "up") shift-key=\(CGEventSource.keyState(server, key: 56) ? "down" : "up")"
+      + " shift-flag=\(CGEventSource.flagsState(server).contains(.maskShift) ? "on" : "off") appkit-shift=\(NSEvent.modifierFlags.contains(.shift) ? "on" : "off")"
+    if state != held {
+      held = state
+      write("held \(state)")
+    }
+  }
+
+  func applicationDidFinishLaunching(_ notification: Notification) {
+    let height = NSScreen.screens.first?.frame.height ?? 768
+    let rect = NSRect(x: frame.minX, y: height - frame.maxY, width: frame.width, height: frame.height)
+    let window = NSWindow(contentRect: rect, styleMask: [.titled], backing: .buffered, defer: false)
+    window.title = "Onlooker"
+    window.setFrame(rect, display: true)
+    window.makeKeyAndOrderFront(nil)
+    self.window = window
+    let kinds: NSEvent.EventTypeMask = [.leftMouseDown, .leftMouseUp, .leftMouseDragged, .keyDown, .keyUp, .flagsChanged]
+    NSEvent.addLocalMonitorForEvents(matching: kinds) { [weak self] event in
+      let names: [NSEvent.EventType: String] = [
+        .leftMouseDown: "down", .leftMouseUp: "up", .leftMouseDragged: "dragged", .keyDown: "key-down", .keyUp: "key-up", .flagsChanged: "modifiers",
+      ]
+      let data = event.cgEvent?.getIntegerValueField(.eventSourceUserData) ?? 0
+      var line = "saw \(names[event.type] ?? "?") \(data > streamMark ? "n=\(data - streamMark)" : "other")"
+      if event.type == .keyDown { line += " repeat=\(event.isARepeat)" }
+      line += " shift=\(event.modifierFlags.contains(.shift) ? "on" : "off")"
+      self?.write(line)
+      // Keys are swallowed, so that nothing beeps; the mouse's events go on to the window.
+      return event.type == .keyDown || event.type == .keyUp ? nil : event
+    }
+    let timer = Timer(timeInterval: 0.02, repeats: true) { [weak self] _ in MainActor.assumeIsolated { self?.look() } }
+    RunLoop.main.add(timer, forMode: .common)
+    NSApp.activate(ignoringOtherApps: true)
+    write("window-ready pid=\(getpid())")
+  }
+}
+
+func onlook(seconds: Double, into path: String, frame: CGRect) -> Never {
+  if !FileManager.default.fileExists(atPath: path) { FileManager.default.createFile(atPath: path, contents: nil) }
+  guard let log = FileHandle(forWritingAtPath: path) else { fail("cannot write \(path)") }
+  log.seekToEndOfFile()
+  let delegate = Onlooker(log: log, frame: frame)
+  let application = NSApplication.shared
+  application.delegate = delegate
+  application.setActivationPolicy(.accessory)
+  DispatchQueue.main.asyncAfter(deadline: .now() + seconds) { exit(0) }
+  withExtendedLifetime(delegate) { application.run() }
+  exit(0)
+}
+
 // MARK: A bare tapper
 
 var bareTap: CFMachPort?
@@ -245,6 +362,39 @@ func tap(seconds: Double, into path: String) {
   CFRunLoopAddSource(CFRunLoopGetCurrent(), CFMachPortCreateRunLoopSource(kCFAllocatorDefault, port, 0), .commonModes)
   CGEvent.tapEnable(tap: port, enable: true)
   file.write(Data("\(now()) tap-ready pid=\(getpid())\n".utf8))
+
+  // Which question turns at the instant of the withdrawal, and what does asking cost? On a thread of its own: the tap's must not wait for them.
+  let questions: [(String, () -> Bool)] = [
+    ("tapIsEnabled", { CGEvent.tapIsEnabled(tap: port) }),
+    ("AXIsProcessTrusted", { AXIsProcessTrusted() }),
+    ("CGPreflightListenEventAccess", { CGPreflightListenEventAccess() }),
+    ("CGPreflightPostEventAccess", { CGPreflightPostEventAccess() }),
+    ("a trial tapCreate", { canTap(.defaultTap) }),
+  ]
+  let asking = Thread {
+    var answers = [Bool?](repeating: nil, count: questions.count)
+    var costs = [[UInt64]](repeating: [], count: questions.count)
+    let end = Date().addingTimeInterval(seconds - 0.5)
+    while Date() < end {
+      for (index, question) in questions.enumerated() {
+        let start = clock_gettime_nsec_np(CLOCK_UPTIME_RAW)
+        let answer = question.1()
+        costs[index].append((clock_gettime_nsec_np(CLOCK_UPTIME_RAW) - start) / 1000)
+        if answers[index] != answer {
+          answers[index] = answer
+          file.write(Data("\(now()) question \(question.0) = \(answer ? "yes" : "no")\n".utf8))
+        }
+      }
+      Thread.sleep(forTimeInterval: 0.01)
+    }
+    for (index, question) in questions.enumerated() {
+      let sorted = costs[index].sorted()
+      guard !sorted.isEmpty else { continue }
+      file.write(Data(
+        "\(now()) cost \(question.0): \(sorted.count) calls, µs: median \(sorted[sorted.count / 2]), 99th \(sorted[min(sorted.count - 1, sorted.count * 99 / 100)]), worst \(sorted[sorted.count - 1])\n".utf8))
+    }
+  }
+  asking.start()
   CFRunLoopRunInMode(.defaultMode, seconds, false)
   file.write(Data("\(now()) the end: the tap is \(CGEvent.tapIsEnabled(tap: port) ? "on" : "off")\n".utf8))
 }
@@ -281,6 +431,11 @@ case "stream":
   stream(seconds: number(1), every: number(2), at: CGPoint(x: number(3), y: number(4)), kinds: kinds, held: held.map { $0[0]...$0[1] })
 case "arrivals":
   arrivals(seconds: number(1))
+case "pairs":
+  pairs(seconds: number(1), at: CGPoint(x: number(2), y: number(3)))
+case "window":
+  guard arguments.count == 7 else { fail(usage) }
+  onlook(seconds: number(1), into: arguments[2], frame: CGRect(x: number(3), y: number(4), width: number(5), height: number(6)))
 case "tap":
   guard arguments.count == 3 else { fail(usage) }
   tap(seconds: number(1), into: arguments[2])

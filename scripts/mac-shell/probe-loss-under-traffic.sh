@@ -211,7 +211,10 @@ between() { [ "$ROAD" = row ] && echo "FROM THE ROW'S DELETION UNTIL ARBOR NOTIC
 afterwards() {
   tail -n "+$((LOG_MARK + 1))" "$ARBOR_HOME/arbor.log" | grep -E "ermission|event tap|stopped|ERROR" | grep -v "DEBUG said" | cut -c 12-220 | tail -n 8
   # Whichever noticed first: the taps' own check, or the controller.
-  REMOVED=$(tail -n "+$((LOG_MARK + 1))" "$ARBOR_HOME/arbor.log" | grep -m 1 -E "permission is gone|permission was taken away" | cut -c 12-23)
+  # Not before the deed: an Arbor that takes its taps out when macOS is slow to answer (a doubt) writes the same line.
+  REMOVED=$(tail -n "+$((LOG_MARK + 1))" "$ARBOR_HOME/arbor.log" \
+    | awk -v taken="$TAKEN" 'substr($0, 12, 12) >= taken && /permission is gone|permission was taken away/ { print substr($0, 12, 12); exit }')
+  echo "doubts (\"macOS has not said for …\"): $(tail -n "+$((LOG_MARK + 1))" "$ARBOR_HOME/arbor.log" | grep -c "macOS has not said for"); \"permission is back\": $(tail -n "+$((LOG_MARK + 1))" "$ARBOR_HOME/arbor.log" | grep -c "permission is back"); of them before the deed: $(tail -n "+$((LOG_MARK + 1))" "$ARBOR_HOME/arbor.log" | awk -v taken="$TAKEN" 'substr($0, 12, 12) < taken && /macOS has not said for/' | wc -l | tr -d ' ')"
   [ -n "$REMOVED" ] || { echo "FINDING: Arbor has not noticed by now. Its taps: $(arbor_taps | wc -l | tr -d ' '). Everything after the deed counts as \"after\" below."; REMOVED=$TAKEN; }
   echo "lines about a tap that macOS switched off: $(tail -n "+$((LOG_MARK + 1))" "$ARBOR_HOME/arbor.log" | grep -c -E "event tap was off|switched (it|them) back on|too slow|of user input")"
   [ "$REMOVED" = "$TAKEN" ] || check "round $round: Arbor has no event tap left" eventually no_taps
