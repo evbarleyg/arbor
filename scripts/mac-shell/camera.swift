@@ -103,6 +103,8 @@ final class Reel {
   var frames: [(time: Int64, pixels: Pixels)] = []
   var lines: [(time: Int64, text: String)] = []
   var dropped = 0
+  /// When the film began. A frame that was shown before, and handed over after, is what the film's first frame already shows.
+  var began: Int64 = 0
 
   func note(_ text: String, at time: Int64 = now()) {
     lock.lock()
@@ -115,7 +117,7 @@ final class Reel {
     self.width = width
     self.height = height
     latest = pixels
-    if folder != nil {
+    if folder != nil, time > began {
       if (frames.count + 1) * pixels.count * 4 <= room {
         frames.append((time, pixels))
       } else {
@@ -163,6 +165,7 @@ func begin(_ folder: String) {
   startedAt = (Date().timeIntervalSince1970 * 1000, uptime())
   let time = now()
   reel.folder = folder
+  reel.began = time
   reel.frames = [(time, first)]
   reel.lines = []
   reel.dropped = 0
@@ -304,8 +307,8 @@ final class Lens: NSObject, SCStreamOutput, SCStreamDelegate {
   }
 
   func stream(_ stream: SCStream, didStopWithError error: any Error) {
-    print("camera: the stream stopped: \(error.localizedDescription)")
-    if !isReady { fail("the stream stopped before its first frame: \(error.localizedDescription)") }
+    // Better no camera than one that goes on making films of the last frame it got: the script sees that it is gone.
+    fail("the stream stopped: \(error.localizedDescription)")
   }
 }
 

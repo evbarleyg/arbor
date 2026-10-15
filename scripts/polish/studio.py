@@ -58,8 +58,8 @@ FRAMED = {RED: (12, 43, 1000, 650), BLUE: (12, 717, 1000, 650), GREEN: (1036, 43
 
 
 def shoot(folder, kind="camera", start=None, end=None, curve=(0.2, 0, 0, 1), seconds=0.46, latency=34, cards=False, hop=0,
-          pause=None, blink=False, flash=False, overshoot=0.0, stutter=None, late=None, bars=False, lag=None, instant=False,
-          afterthought=False, fps=60, fade=0, offset=0, left=None):
+          pause=None, blink=False, flash=False, overshoot=0.0, stutter=None, bars=False, lag=None, instant=False,
+          afterthought=False, fps=60, fade=0, offset=0, left=None, words=True):
     """Draws one film. Every argument but the first few is one way of getting it wrong."""
     start, end = start or GRID, end or FRAMED
     x, y = bezier(curve)
@@ -112,7 +112,7 @@ def shoot(folder, kind="camera", start=None, end=None, curve=(0.2, 0, 0, 1), sec
                 places[colour] = between(start[colour], target, mine)
             extra = None
             if flash and 10 <= step < 12:
-                extra = lambda picture: paint(picture, (700, 420, 150, 110), (250, 250, 250))
+                extra = lambda picture: paint(picture, (700, 420, 150, 110) if flash is True else flash, (250, 250, 250))
             if bars and 3 <= step < 20:
                 extra = lambda picture: picture.__setitem__((slice(712, 762), slice(40, 984)), 20)
             if blink and step == count:
@@ -128,14 +128,12 @@ def shoot(folder, kind="camera", start=None, end=None, curve=(0.2, 0, 0, 1), sec
             count = step
         # The stage lifts, and the real windows are what is seen.
         take(begins + (count + 2) * tick, end)
-    if late:
-        take(times[-1] + late, {**end, RED: (end[RED][0], end[RED][1], end[RED][2] - 40, end[RED][3])})
-        take(times[-1] + 2 * TICK, end)
     if afterthought:
         moved = {**end, RED: (end[RED][0] + 60, end[RED][1], end[RED][2] - 60, end[RED][3])}
         take(times[-1] + 400, moved)
     # The heads-up line goes, as it does after every command: no afterthought.
-    take(times[-1] + 1500, frames and (moved if afterthought else end), extra=lambda picture: paint(picture, (410, 612, 200, 36), (60, 60, 64)))
+    if words:
+        take(times[-1] + 1500, moved if afterthought else end, extra=lambda picture: paint(picture, (410, 612, 200, 36), (60, 60, 64)))
     for number, rect in enumerate((moved if afterthought else end).values()):
         if rect[0] + rect[2] <= ROOM[2] and rect[1] + rect[3] <= ROOM[3]:
             lines.append((times[-1], f"M after {number} {rect[0]} {rect[1]} {rect[2]} {rect[3]} docked"))
@@ -145,11 +143,11 @@ def shoot(folder, kind="camera", start=None, end=None, curve=(0.2, 0, 0, 1), sec
     write_film(folder, frames, times, lines, visible=[0, 31, 1024, 674])
 
 
-def shoot_drag(folder, pull=0, preview_off=0):
+def shoot_drag(folder, pull=0, preview_off=0, drop=(1021, 368), tint=False):
     """A window dragged by its title bar to the right edge, held there over a preview, let go: it glides into the slot."""
     x, y = bezier((0.2, 0, 0, 1))
     slot, begin = (518, 43, 494, 650), (200, 200, 400, 300)
-    press, drop = (400, 212), (1021, 368)
+    press = (400, 212)
     frames, times = [], []
     down = BEGAN + LEAD
     lines = [(BEGAN + 1, "M kind drag"), (BEGAN + LEAD - 20, "M action"), (down, f"B down {press[0]} {press[1]}")]
@@ -159,7 +157,8 @@ def shoot_drag(folder, pull=0, preview_off=0):
         window(picture, GRID[BLUE], BLUE)
         if preview:
             paint(picture, slot, (24, 62, 118))
-        window(picture, rect, RED)
+        # A preview drawn over the window that is held tints it: ugly, and not the hand-over's fault.
+        window(picture, rect, (150, 60, 120) if preview and tint else RED)
         if not frames or (picture != frames[-1]).any():
             frames.append(picture)
             times.append(int(round(time)))
@@ -193,11 +192,12 @@ def shoot_drag(folder, pull=0, preview_off=0):
     write_film(folder, frames, times, lines, visible=[0, 31, 1024, 674])
 
 
-def shoot_panel(folder, late=34, fade=5, slide=0):
+def shoot_panel(folder, late=34, fade=5, slide=0, click=False):
     """A panel that a key brings and the same key sends away."""
     frames, times = [], []
     first, second = BEGAN + LEAD, BEGAN + LEAD + 1500
-    lines = [(BEGAN + 1, "M kind panel"), (BEGAN + LEAD - 20, "M action"), (first, "K down"), (first + 40, "K up"), (second, "K down"), (second + 40, "K up")]
+    opens = [(first, "B down 770 15"), (first + 40, "B up 770 15")] if click else [(first, "K down"), (first + 40, "K up")]
+    lines = [(BEGAN + 1, "M kind panel"), (BEGAN + LEAD - 20, "M action"), *opens, (second, "K down"), (second + 40, "K up")]
 
     def take(time, mix, shift=0):
         picture = desk()
