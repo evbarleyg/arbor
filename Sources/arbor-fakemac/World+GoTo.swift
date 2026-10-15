@@ -24,13 +24,15 @@ extension World {
       return false
     case ([], .returnKey): overlays.chooseInFinder()
     case ([], .escape): overlays.dismissFinder()
-    case ([], .down), ([], .tab): overlays.moveFinderSelection(by: 1)
-    case ([], .up), ([.shift], .tab): overlays.moveFinderSelection(by: -1)
+    case ([], .down): overlays.moveFinderSelection(by: 1)
+    case ([], .up): overlays.moveFinderSelection(by: -1)
+    case ([], .tab): overlays.tabInFinder(by: 1)
+    case ([.shift], .tab): overlays.tabInFinder(by: -1)
     // An empty field reports no change.
     case ([], .delete): if !palette.query.isEmpty { overlays.typeInFinder(String(palette.query.dropLast())) }
     case ([], .space): overlays.typeInFinder(palette.query + " ")
     case ([.command], let key):
-      if let digit = Int(key.name), digit >= 1 { overlays.chooseInFinder(row: digit) }
+      if let digit = Int(key.name), digit >= 1 { overlays.chooseInFinder(digit: digit) }
     case ([], let key) where key.name.count == 1:
       overlays.typeInFinder(palette.query + key.name)
     default: break

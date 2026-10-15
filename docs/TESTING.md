@@ -104,8 +104,8 @@ Mac each is one or more round trips to another app. A change that makes `nothing
 fail has made Arbor slower, whatever the clock says. `movesAlone` counts moves that were not announced with `moveTogether` (each
 waits for its app on its own), `unclaimedMoves` those that were announced and never asked for (a wrong forecast: a bug). `setSizeStep` makes a window round its size like a
 terminal, `quit(pid:)` closes an app's windows one after the other.
-Go to…: `h.overlays.finder` is the palette while it is open, the same `FinderSession` the real one draws; `typeInFinder`, `moveFinderSelection(by:)`,
-`chooseInFinder(row:)` and `dismissFinder()` are the user's keys and clicks, `finderBeeps` counts the beeps. With `h.system.restoresLate = true` a
+Go to…: `h.overlays.finder` is the palette while it is open, the same `FinderSession` the real one draws; `typeInFinder`, `moveFinderSelection(by:)`, `tabInFinder(by:)`,
+`chooseInFinder(row:digit:)` and `dismissFinder()` are the user's keys and clicks, `finderBeeps` counts the beeps. With `h.system.restoresLate = true` a
 window that is un-minimised or unhidden reports it only at `finishRestoring()`, as on macOS, where other reports can overtake that one.
 
 Edge resizes: `userResize(_:to:release:)` drags a window's edges the way the
@@ -178,7 +178,7 @@ It has no other commands for Spaces; those need a scenario test.
 targets activate; add `quick` to let go at once and `cmd` to hold ⌘.
 **The simulated Mac comes as a real one does, with macOS's own tiling on**: the left, right and top edges of the screen are macOS's, and a window let go at their
 last point is tiled by the stand-in as macOS was seen to do it. `mac-tiling off` makes every edge Arbor's (in a test: `h.system.tiling = .off`; in a chaos script the same words).
-`find` prints the palette of Go to… as text; `finder-type [text]`, `finder-move <rows>`, `finder-choose [n]` and `finder-cancel` are the keys pressed in it.
+`find` prints the palette of Go to… as text; `finder-type [text]`, `finder-move <rows>`, `finder-tab <steps>`, `finder-choose [n]` (Return, or a click), `finder-digit <n>` and `finder-cancel` are the keys pressed in it.
 
 `focus 101` is the user clicking a window; with anything but a window id (`focus left`, `focus next`) it is Arbor's own
 command. With `focusIsSlow` the fake's `focus` takes effect only at `finishSlowFocus()`, as on a Mac, where the next key can

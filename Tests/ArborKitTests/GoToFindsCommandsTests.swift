@@ -52,7 +52,7 @@ import Testing
     }
   }
 
-  /// ⌃⌥G, the text, ↓ to the first command, Return.
+  /// ⌃⌥G, the text, ⇥ to the first command, Return.
   @discardableResult
   private func choose(_ h: Harness, _ text: String) -> Bool {
     h.run("find")
@@ -60,11 +60,10 @@ import Testing
     return h.overlays.chooseInFinder()
   }
 
-  /// What ↓ comes to after this was typed, past the places that hold the letters: the first command.
+  /// What ⇥ comes to after this was typed: the first command.
   private func picked(_ h: Harness, typing text: String) -> FinderDestination? {
     h.overlays.typeInFinder(text)
-    let places = h.overlays.finder?.items.prefix { $0.row.place != .command }.count ?? 0
-    h.overlays.moveFinderSelection(by: max(places, 1))
+    h.overlays.tabInFinder(by: 1)
     return h.overlays.finder?.selected
   }
 
@@ -358,7 +357,7 @@ import Testing
     h.controller.perform(.find(nil), from: .shortcut)
     let other = h.controller.workspaces[Self.side.id]
     h.overlays.typeInFinder("undo")
-    h.overlays.moveFinderSelection(by: 1)
+    h.overlays.tabInFinder(by: 1)
     // The elbow nudges the mouse: the pointer was used last, on the other display.
     h.scheduler.advance(by: 2)
     h.system.cursor = CGPoint(x: 2010, y: 500)
@@ -646,13 +645,47 @@ import Testing
     #expect(h.system.focused == (chosen == .window(first) ? second : first))
   }
 
-  @Test func pickedWithTheArrowItRuns() {
+  /// What #288 left open, closed by the product owner's ruling (board 1.94): ↓ or a digit that counts on a place that is not there came to a
+  /// command that begins with the same letters. One window of Pages, or none; `pa` ↓ Return, `pa` ⌘2: Arbor paused.
+  @Test func anArrowOrADigitThatCountsOnAPlaceThatIsNotThereRunsNothing() throws {
+    for windows in [0, 1] {
+      let (h, _, _, mail) = makeHarness()
+      let pages = (0..<windows).map { _ in h.system.open(app: "Pages", title: "Letter") }
+      h.system.userFocus(mail)
+      h.scheduler.advance(by: 1)
+      let keys: [(name: String, press: (Harness) -> Void)] = [
+        ("↓ ↩", { $0.overlays.moveFinderSelection(by: 1); $0.overlays.chooseInFinder() }),
+        ("↓ ↓ ↩", { $0.overlays.moveFinderSelection(by: 2); $0.overlays.chooseInFinder() }),
+        ("↑ ↩", { $0.overlays.moveFinderSelection(by: -1); $0.overlays.chooseInFinder() }),
+        ("Page Down ↩", { $0.overlays.pageFinderSelection(by: 1); $0.overlays.chooseInFinder() }),
+        ("⌘2", { $0.overlays.chooseInFinder(digit: 2) }), ("⌘1", { $0.overlays.chooseInFinder(digit: 1) }),
+      ]
+      for key in keys {
+        h.run("find")
+        h.overlays.typeInFinder("pa")
+        #expect(h.overlays.finder?.items.contains { $0.row.destination == .command("toggle-pause") } == true, "or this looks at nothing")
+        key.press(h)
+        h.scheduler.advance(by: 1)
+        #expect(!h.controller.isPaused && h.controller.settings == Settings(), "\(windows) of Pages, \(key.name)")
+        // It went to the one window there is, as it did before commands were listed, or nowhere.
+        #expect(h.system.focused == (h.overlays.finder == nil ? pages.first : mail), "\(windows) of Pages, \(key.name)")
+        h.overlays.dismissFinder()
+        h.system.userFocus(mail)
+        h.scheduler.advance(by: 1)
+      }
+    }
+  }
+
+  @Test func pickedWithTabItRuns() {
     let (h, _, _, mail) = makeHarness()
     h.run("find")
     h.overlays.typeInFinder("dock left")
     #expect(!h.overlays.chooseInFinder(), "Return alone: a beep")
     #expect(h.overlays.finder != nil && h.workspace.floating[mail] != nil)
     h.overlays.moveFinderSelection(by: 1)
+    #expect(!h.overlays.chooseInFinder(), "nor after ↓, which did nothing in an empty list")
+    #expect(h.overlays.finder != nil && h.workspace.floating[mail] != nil)
+    h.overlays.tabInFinder(by: 1)
     #expect(h.overlays.chooseInFinder())
     #expect(h.overlays.finder == nil && h.workspace.tree.leaf(containing: mail) != nil)
   }

@@ -82,8 +82,10 @@ import Foundation
 //   rehearse-stage               from here on, while a trace is recorded, a stage that does everything right logs its
 //                                frames into it as the real one does on a Mac, for `arbor-sim stage-judge` (RehearsedStage)
 //   finder-type [text]           replace the text in the field of Go to… (`find` opens it)
-//   finder-move <rows>           move its selection down, or with a negative number up
-//   finder-choose [n]            press Return, or choose the n-th row that shows
+//   finder-move <rows>           press ↓ that often, or with a negative number ↑
+//   finder-tab <steps>           press ⇥ that often, or with a negative number ⇧⇥
+//   finder-choose [n]            press Return, or click the n-th row that shows
+//   finder-digit <n>             press ⌘ and that digit
 //   finder-cancel                press Escape
 //   scene                        list what Arbor draws at rest: the backdrop, tiles and seams
 // `open Terminal` has the bundle id com.example.terminal, for `rule add` and `exclude`.
@@ -695,7 +697,7 @@ func simulate(_ words: [String], harness: Harness, printLayout: inout Bool) -> (
     settings.holdStillFor.append(words.dropFirst().joined(separator: " "))
     harness.controller.apply(settings: settings)
     return ("holding still for \(settings.holdStillFor.count) kind(s) of window", true)
-  case "finder-type", "finder-move", "finder-choose", "finder-cancel":
+  case "finder-type", "finder-move", "finder-tab", "finder-choose", "finder-digit", "finder-cancel":
     let overlays = harness.overlays
     guard overlays.finder != nil else { return ("error: Go to… is not open; `find` opens it", false) }
     switch words[0] {
@@ -704,6 +706,12 @@ func simulate(_ words: [String], harness: Harness, printLayout: inout Bool) -> (
     case "finder-move":
       guard let rows = words.count > 1 ? Int(words[1]) : nil else { return usage("finder-move <rows>") }
       overlays.moveFinderSelection(by: rows)
+    case "finder-tab":
+      guard let steps = words.count > 1 ? Int(words[1]) : nil else { return usage("finder-tab <steps>") }
+      overlays.tabInFinder(by: steps)
+    case "finder-digit":
+      guard let digit = words.count > 1 ? Int(words[1]) : nil else { return usage("finder-digit <n>") }
+      guard overlays.chooseInFinder(digit: digit) else { return ("error: nothing to choose there", false) }
     case "finder-choose":
       let row = words.count > 1 ? Int(words[1]) : nil
       guard words.count == 1 || row != nil else { return usage("finder-choose [n]") }

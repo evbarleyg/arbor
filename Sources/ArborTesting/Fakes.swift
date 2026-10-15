@@ -182,16 +182,21 @@ public final class FakeOverlays: OverlayPresenter {
   /// The user replaces the text in the field.
   public func typeInFinder(_ text: String) { finder?.type(text) }
 
-  /// ↓ and ⇥ (positive) or ↑ and ⇧⇥ (negative).
+  /// ↓ (positive) or ↑ (negative).
   public func moveFinderSelection(by rows: Int) { finder?.moveSelection(by: rows) }
+  /// ⇥ (positive) or ⇧⇥ (negative).
+  public func tabInFinder(by steps: Int) { finder?.tab(by: steps) }
   public func pageFinderSelection(by pages: Int) { finder?.pageSelection(by: pages) }
 
-  /// Return, or with `row` a click on that row or ⌘ and its number, counted from 1 at the top of the
-  /// palette. Returns false if there is nothing there to choose.
+  /// Return; or with `row` a click on that row, counted from 1 at the top of the palette; or with `digit` ⌘ and that digit. Returns false
+  /// if there is nothing there to choose.
   @discardableResult
-  public func chooseInFinder(row: Int? = nil) -> Bool {
+  public func chooseInFinder(row: Int? = nil, digit: Int? = nil) -> Bool {
     guard let finder else { return false }
-    let destination = if let row { row >= 1 ? finder.destination(atVisible: row - 1) : nil } else { finder.selected }
+    let destination =
+      if let digit { finder.destination(atDigit: digit) } else if let row { row >= 1 ? finder.destination(atVisible: row - 1) : nil } else {
+        finder.selected
+      }
     guard let destination else { return false }
     actions?.finderChose(destination)
     return true

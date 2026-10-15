@@ -29,8 +29,8 @@ for everywhere the view can go (docs/KEYBOARD.md).
   it, as they are laid out; then the named spaces, in the order `go` looks in; then the saved views. So Return straight after ⌃⌥G goes to the window the user was in before, as ⌘Tab does, and doing
   it again comes back. The focused window is never first, also right after launch, when no other window has had the keyboard yet.
 - **Typing filters and ranks** (below). The best match is selected, if it is a place (see "It finds commands too"). Matched letters are set off.
-- ↓ and ⇥ select the next row, ↑ and ⇧⇥ the previous one, going round at the ends; Page Up and Page Down move by a palette's length and stop
-  at the ends; the list scrolls just far enough. Return chooses the selected row, ⌘1–⌘9 and a click choose a row directly. Moving the
+- ↓ selects the next place, ↑ the previous one, going round at the ends; Page Up and Page Down move by a palette's length and stop
+  at the ends; the list scrolls just far enough. Return chooses the selected row, ⌘1–⌘9 choose a place directly, a click any row. ⇥ and ⇧⇥ are the commands' keys (below); they used to step as ↓ and ↑ do. Moving the
   pointer over the rows changes nothing. ⌘A, ⌘X, ⌘C and ⌘V work in the field.
 - **Not for an audience**: the palette lists titles, so it keeps out of shared screens and recordings, as the minimap does and as far as macOS honours it (`sharingType`).
 - **The palette always closes**: when a row is chosen, on Escape, on ⌃⌥G again, when the keyboard goes to another window (a click elsewhere, ⌘Tab, a window that
@@ -40,7 +40,7 @@ for everywhere the view can go (docs/KEYBOARD.md).
 - It does not open while a window is being dragged.
 - The list is a **snapshot** from the moment the palette opened. Nothing is added, removed or reordered under the user's hands. If what they
   choose has gone meanwhile (the window closed), the palette beeps, says "That window has closed", and stays open with a fresh list and the text as typed. **Return runs only what the person has seen selected**: in that list nothing is selected
-  until a key picks a row or something is typed, since whatever took the row's place was on screen for no time; a second Return beeps. ↓ picks the first row, ↑ the last place. (A row that was refused and is still there stays selected.)
+  until a key picks a row or something is typed, since whatever took the row's place was on screen for no time; a second Return beeps. ↓ picks the first place, ↑ the last. (A row that was refused and is still there stays selected.)
 - With no windows at all, `find` fails ("there are no windows to go to") instead of opening an empty palette.
 
 ### Matching (`FinderQuery`)
@@ -87,27 +87,28 @@ Choosing a **saved view** moves the view of its own display there, as `view <n>`
 
 ### It finds commands too (board 0.14)
 
-With nine keys bound (QUESTIONS Q29, 1) everything else is "in the menu and in Go to…". Whoever knows what a thing is called types a few letters of it and picks it: ⌃⌥G `bal` ↓ ↩ balances the sizes.
+With nine keys bound (QUESTIONS Q29, 1) everything else is "in the menu and in Go to…". Whoever knows what a thing is called types a few letters of it and picks it: ⌃⌥G `bal` ⇥ ↩ balances the sizes.
 
 **Letters and Return do what they did before commands were listed: they go to the best place, or beep.** ⌃⌥G, a few letters, Return, without a look, is what Go to… is for, and the fingers do it also when the app they mean is not open, or has
 just closed behind the palette. Three rules see to it, for every command alike; there is no list of commands too weighty for a reflex.
 
-1. **The list is what it was, with the commands after it.** The places that match come first, in the order they always had, however they were found; then the commands. So the row that is selected and the rows ⌘1–⌘9 point at are the same as before, as far as there
-   are places. **Only ↓ or ⇥ past the last place leads on to the commands.** ↑ and ⇧⇥ from the top go round to the last place, and Page Down stops there however often it is pressed, as ever: `pa` ↑ ↩ is the last of Pages' windows, not Pause Arbor below it. Coming
-   up out of the commands, ↑ stays among the places likewise. The price: a place that holds the letters here and there stands above a command that was spelt out (`undo`: TextEdit's Untitled Document). Typing on sends it away.
+1. **The list is what it was, with the commands after it.** The places that match come first, in the order they always had, however they were found; then the commands. **⇥ is the commands' own key** (the product owner, board 1.94),
+   since every other key of the palette meant places before commands were listed, and the fingers know them. Return, ↓, ↑, the Page keys and ⌘1–⌘9 do what they did then, whatever stands below the places: ↓ from the last place goes round to the first, Page Down stops there, ⌘ with
+   the digit of a command's row beeps, and where no place matches the arrows do nothing, as in an empty list. ⇥ goes to the first command, bringing as many of them into view as fit, and on from one to the next; ⇧⇥ back up, and from the first command back to the places as they were left. Among the commands the arrows go
+   round and the Page keys stop at the ends, as in a list. Among the places ⇧⇥ does nothing, and ⇥ nothing where no command is listed. Wherever a command is listed and none is picked, the line under the rows says "⇥ picks a command, ↩ runs it": nobody guesses the key.
+   The price: a place that holds the letters here and there stands above a command that was spelt out (`undo`: TextEdit's Untitled Document). Typing on sends it away.
 2. **A command has to be named to be listed.** Every word typed is the beginning of a word of its way through the menu, letters together: `bal`, `siz`, `dock left`, `dont arr` (the apostrophe need not be typed, and a word of nothing but signs, like the ▸
    of a name that was copied, asks for nothing). Nothing scattered, nothing from inside a word, no initials: that is how a title is found, of which nobody knows the words; a command's are in the menu to be read. **And by a word of its own**: Don’t Arrange
    “Safari” is about Safari and is not called Safari. What stands between quotation marks narrows (`dont saf`) and lists nothing by itself. Every word counts, also beyond the eight that a place is found by.
-3. **Return alone never runs a command.** Where no place matches, the command on top is shown, not selected, and the line under the rows says "↓ picks a command, ↩ runs it"; Return beeps. Picked by hand it runs: ↓, ↑, ⇥, a Page key, then Return; a click; ⌘ and
-   the row's digit. ↓ and the Page keys pick the first row, ↑ the last. Whatever is typed afterwards unpicks, and so does a fresh list in which the picked row is no more: such a list selects nothing, a place no more than a command (the product owner's line, board 0.25).
+3. **Return alone never runs a command.** Where no place matches, the command on top is shown, not selected; Return beeps. Picked by hand it runs: ⇥, then Return; or a click. Whatever is typed afterwards unpicks, and so does a fresh list in which the picked row is no more: such a list selects nothing, a place no more than a command (the product owner's line, board 0.25).
 
 Found on the way to the second build. Over "Focused Window ▸ Don’t Arrange “Safari”" the letters of `notes` are scattered: `notes`, Notes closes behind the palette, Return ("That window has closed"), Return again: Safari
 was out of the arrangement, and settings.json said so. By thinking on from there: `pa` ↩ for Pages paused Arbor, `ar` ↩ for Arc arranged everything, `sa` ↩ for Safari saved view 1, `shortcuts` ↩ for the app of that name switched Arbor's shortcuts off in the
 app in front, which is a whole first word: no rule about how much to type closes it. And by a reader who was asked what Return can still run: in Safari's one window `saf` ↓ ↩, for the next of its windows, took Safari out of the arrangement, since the rows about
 the app in front hold its name; and by a second reader: `pa` ↑ ↩ with two windows of Pages, counted rightly, paused Arbor, and `sa` Page Down ↩ saved view 8.
 
-**What is left.** ↓, ⇥ or a digit that counts on a place that is not there comes to a command, if one begins with the same letters: `pa` ↓ ↩ or `pa` ⌘2, for the second of Pages' windows when there is one, pauses Arbor. It takes a wrong count; a shared beginning is
-common (`sa`, `ar`, `ke`, `re`, `st`, `ho` all begin a command's word). Nothing short of a key of their own for the commands closes that, since ↓, ⇥ and the digits mean places already: a question for the product owner.
+What that left, ↓ or a digit that counts on a place that is not there (`pa` ↓ ↩ or `pa` ⌘2, for the second of Pages' windows when there is one, paused Arbor: a wrong count, and a shared beginning is common), the key of their own closes. **What is left now**: whoever used ⇥
+for ↓ has to learn ↓, and `pa` ⇥ ↩, done blind by such a hand, pauses Arbor.
 
 - **The rows are the menu's**, read from the menu as it stands when the palette opens (`Controller+FinderCommands.swift`): every row that runs a command, under the name the menu gives it then
   ("Undo Dock", "Don’t Arrange “Safari”"), with the key in effect and the tick the menu shows. A row added to the menu is found here without another line. A row of a submenu is called by its way
@@ -133,9 +134,9 @@ common (`sa`, `ar`, `ke`, `re`, `st`, `ho` all begin a command's word). Nothing 
 - A trace holds the choice as `{"command":"dock left"}`, the log its first word. No row's command holds a name somebody gave.
 
 ✔ `everyCommandInTheMenuIsFoundByItsNameInTheMenu`, `aCommandTheMenuHasUnderTwoNamesIsFoundByEither`, `everyCommandThatHasAKeyInTheWholeMapIsFoundWhetherOrNotTheMenuHasIt`, `withAllShortcutsOffEveryCommandIsStillFound`,
-`itRunsOnTheWindowThePaletteOpenedOver`, `lettersAndReturnMeantForAnAppThatIsNotOpenRunNothing`, `notesClosesBehindThePaletteAndReturnIsPressedTwice`, `afterAPlaceHasGoneASecondReturnRunsNothing`, `theNameOfTheAppInFrontAndTheArrowStayAmongThePlaces`, `theArrowUpAndPageDownStayAmongThePlaces`, `aWindowThatClosedBehindThePaletteLeavesNoOtherWindowSelected`, `pickedWithTheArrowItRuns`, `theRowsAreAboutTheDisplayThePaletteIsOnWhereverThePointerRests`, `andTheCommandActsThere`, `chosenItRunsNothingAndThePaletteSaysSoAndStays`, `aRowNeverDoesTheOppositeOfWhatItSays`,
+`itRunsOnTheWindowThePaletteOpenedOver`, `lettersAndReturnMeantForAnAppThatIsNotOpenRunNothing`, `notesClosesBehindThePaletteAndReturnIsPressedTwice`, `afterAPlaceHasGoneASecondReturnRunsNothing`, `theNameOfTheAppInFrontAndTheArrowStayAmongThePlaces`, `theArrowUpAndPageDownStayAmongThePlaces`, `aWindowThatClosedBehindThePaletteLeavesNoOtherWindowSelected`, `anArrowOrADigitThatCountsOnAPlaceThatIsNotThereRunsNothing`, `pickedWithTabItRuns`, `theRowsAreAboutTheDisplayThePaletteIsOnWhereverThePointerRests`, `andTheCommandActsThere`, `chosenItRunsNothingAndThePaletteSaysSoAndStays`, `aRowNeverDoesTheOppositeOfWhatItSays`,
 `findWithTextGoesToPlacesAndRunsNothing`, `aLinkThatSaysFindRunsNothingEvenWhereAllLinksAreAllowed`, `aTraceHoldsTheChoiceAndReplaysIt`, `aCommandThatChangesASettingReplaysToTheSameSetting` (`GoToFindsCommandsTests`);
-`theListIsWhatItWasWithTheCommandsAfterIt`, `amongManyPlacesTheListScrollsAsItDid`, `onlyTheArrowDownPastTheLastPlaceLeadsToTheCommands`, `lettersScatteredOverACommandsNameDoNotListIt`, `aCommandIsListedOnlyWhenEveryWordTypedBeginsAWordOfItsName`, `anAppsNameInACommandsNameSaysWhomItIsAboutAndDoesNotListIt`,
+`theListIsWhatItWasWithTheCommandsAfterIt`, `amongManyPlacesTheListScrollsAsItDid`, `onlyTabLeadsToTheCommandsAndShiftTabBack`, `shiftTabLeavesThePlacesAsTabFoundThem`, `tabBringsTheCommandsIntoView`, `whereNoCommandIsListedTabDoesNothing`, `aDigitChoosesAPlaceAndNeverACommand`, `whereNoPlaceMatchesTheArrowsAndThePageKeysDoNothing`, `lettersScatteredOverACommandsNameDoNotListIt`, `aCommandIsListedOnlyWhenEveryWordTypedBeginsAWordOfItsName`, `anAppsNameInACommandsNameSaysWhomItIsAboutAndDoesNotListIt`,
 `ofACommandEveryWordCountsHoweverManyAreTyped`, `returnAloneNeverChoosesACommand`, `pickedByHandItIsChosen`, `aFreshListUnpicksUnlessThePickedRowIsStillThere`, `aPickDoesNotPassToTheCommandThatTookThePlacesRow`,
 `aListThatChangedByItselfSelectsNothingUnlessTheRowIsStillThere`, `afterTheSelectedRowHasGoneEveryKeyComesFromOutsideTheList`, `aFreshListKeepsTheVeryRowAndNotItsTwin`, `theRowWhoseTitleWasTypedInFullComesFirstWhereverInTheMenuItIs`,
 `theWordsAfterAnAppsNameAreTheCommandsOwn` (`FinderCommandRowTests`); scenario 94.
@@ -202,7 +203,7 @@ focused"), a space's name is replaced in it as everywhere in the log (F20), and 
 
 ## Shipped
 
-Everything above, with 147 tests, `collab/scenarios/27-go-to.sim`, in arbor-sim `find`, `finder-type`, `finder-move`, `finder-choose [n]` and `finder-cancel`, and in `arbor-e2e` nine steps on real windows (`GoTo.swift`).
+Everything above, with 147 tests, `collab/scenarios/27-go-to.sim`, in arbor-sim `find`, `finder-type`, `finder-move`, `finder-tab`, `finder-choose [n]`, `finder-digit` and `finder-cancel`, and in `arbor-e2e` nine steps on real windows (`GoTo.swift`).
 
 On a Mac: it compiles, all tests pass, and `arbor-e2e` has seen the palette come and go, a window found by its title, and a window brought back from the Dock
 to its slot with the keyboard.
