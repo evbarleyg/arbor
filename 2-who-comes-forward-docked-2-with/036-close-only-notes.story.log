@@ -1,0 +1,49 @@
+36 close-only-notes: presses ⌘W on the only window of notes
+expected: {'act': 'open-close', 'settled': 'quiet:1184', 'moves': '145,162,145,', 'leaves': '162', 'floating': '142,154,159,163,164,166,168', 'docked': '145'}
+FAIL rule 2: finder (w142) a floating window, moved, and the step did not name it
+FAIL rule 2: textedit (w154) a floating window, moved, and the step did not name it
+FAIL rule 2: terminal (w159) a floating window, moved, and the step did not name it
+FAIL rule 2: calendar (w163) a floating window, moved, and the step did not name it
+FAIL rule 2: settings (w164) a floating window, moved, and the step did not name it
+FAIL rule 2: preview (w166) a floating window, moved, and the step did not name it
+FAIL rule 2: mail (w168) a floating window, moved, and the step did not name it
+ODD rule 2: w170 of Mail moved along with a window of its app
+
+12:08:42.169 SCREEN -- begin 36 close-only-notes
+12:08:42.169 SCREEN -- text 36 presses ⌘W on the only window of notes
+12:08:42.318 MACOS pid 17004 AXUIElementDestroyed w162
+12:08:42.327 SCREEN notes (w162) 12,42 1576×769
+12:08:42.357 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 8 stand-ins, 0.46 s
+12:08:42.357 DEBUG the stage kept the windows waiting 4 ms: its panel 0, 8 costumes 0 (0 not ready), the desktop 1, going up 2
+12:08:42.372 SCREEN w202 of Arbor 0,0 1600×900 (level 4)
+12:08:42.372 SCREEN notes (w162) 23,48 1554×757
+12:08:42.372 SCREEN safari (w145) 12,43 574×767
+12:08:42.431 SCREEN notes (w162) 26,49 1548×755
+12:08:42.442 MACOS pid 16505 AXMoved w145 AXWindow/AXStandardWindow 12 43 782 767
+12:08:42.443 MACOS pid 16505 AXResized w145 AXWindow/AXStandardWindow 12 43 782 767
+12:08:42.444 MACOS pid 14876 AXMoved w142 AXWindow/AXStandardWindow 340 120 920 436
+12:08:42.444 MACOS pid 16611 AXMoved w154 AXWindow/AXStandardWindow 165 65 673 439
+12:08:42.450 MACOS pid 16913 AXMoved w159 AXWindow/AXStandardWindow 40 51 877 499
+12:08:42.470 MACOS pid 17070 AXMoved w163 AXWindow/AXStandardWindow 403 115 937 600
+12:08:42.477 MACOS pid 17365 AXMoved w164 AXWindow/AXStandardWindow 437 85 723 625
+12:08:42.477 MACOS pid 17499 AXMoved w166 AXWindow/AXStandardWindow 4 35 708 424
+12:08:42.478 MACOS pid 17564 AXMoved w168 AXWindow/AXStandardWindow 240 72 1120 630
+12:08:42.497 SCREEN notes (w162) 28,50 1544×753
+12:08:42.497 SCREEN calendar (w163) 403,115 937×600
+12:08:42.497 SCREEN preview (w166) 4,35 708×424
+12:08:42.497 SCREEN safari (w145) 12,43 782×767
+12:08:42.497 SCREEN textedit (w154) 165,65 673×439
+12:08:42.497 SCREEN w170 of Mail 565,179 470×416
+12:08:42.497 SCREEN mail (w168) 240,72 1120×630
+12:08:42.497 SCREEN settings (w164) 437,85 723×625
+12:08:42.497 SCREEN terminal (w159) 40,51 877×499
+12:08:42.497 SCREEN finder (w142) 340,120 920×436
+12:08:42.584 SCREEN w217 of Arbor 794,43 12×767
+12:08:42.584 SCREEN w208 of Arbor left the screen
+12:08:42.584 SCREEN front to back: notes calendar preview safari textedit w201 w170 mail settings terminal finder w217
+12:08:42.642 SCREEN notes (w162) left the screen
+12:08:42.642 SCREEN front to back: calendar preview safari textedit w201 w170 mail settings terminal finder w217
+12:08:42.935 DEBUG stage down
+12:08:42.964 SCREEN w202 of Arbor left the screen
+12:08:43.822 SCREEN -- end 36 act=open-close settled=quiet:1184 moves=145,162,145, leaves=162 floating=142,154,159,163,164,166,168 docked=145
+12:08:44.069 SCRIPT == 37 dock-icon-textedit
