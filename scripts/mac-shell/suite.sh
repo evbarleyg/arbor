@@ -90,6 +90,12 @@ for section in $sections; do
   failed=$((failed + ${section_failed:-0}))
   known=$((known + ${section_known:-0}))
   note=""
+  # A section whose closing dies (lib.sh's arbor_exit, or what it was given at_exit, meets a variable nobody set) ends with what its last command came to, 0 as
+  # likely as not, before it has stopped its Arbor, closed its windows and counted. The count is the last line of its evidence.
+  if [ "$code" -le 1 ] && [ -s "$evidence" ] && ! tail -n 1 "$evidence" | grep -q '^[0-9][0-9]* passed, [0-9][0-9]* failed$'; then
+    echo "  ✘ the section ended with exit code $code and never counted: its closing died"
+    code=2
+  fi
   case "$code" in
     0 | 1) ;;
     77) note="  SKIPPED" ;;
