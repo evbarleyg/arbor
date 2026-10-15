@@ -7,6 +7,7 @@
 #   filmed <name> "<what is done>" <command…>   one film of one thing: the command is the thing. What the processes burnt meanwhile is noted; the pictures of a
 #                                   film in which the display never stood still for 150 ms are thrown away, its log is kept
 #   mover <step…>                   mover.swift on the cast's windows
+#   still_has <seconds> "<what>"    whether there is time left for that; says what is left out when there is not
 #   away_and_back <name> [n]        n times (3): ⌃⌥D, a film; ⌃⌥[, a film: <name>-<i>-away, <name>-<i>-back
 #   watched <name> <command…>       `filmed`, with spindump (or, with STILL_WATCH=sample, `sample` of the window server, Arbor and the cast), the system's log at debug level and macOS's own pictures beside it. Not for measuring: for seeing who waits for whom
 #   system_log_of_the_worst [n]     what the system's log holds about the n (6) longest standstills of the run
@@ -28,9 +29,13 @@ still_build() {
   cast_build
   [ -z "${ARBOR_REHEARSAL:-}" ] || return 0
   for tool in pulse mover; do
+    # A slip in one of them costs the scenes that need it, not the run.
+    arbor_is_current "$ARBOR_ROOT/scripts/mac-shell/$tool.swift" "$ARBOR_ROOT/.build/mac-shell/$tool" && continue
     if ! swiftc -O -swift-version 5 "$ARBOR_ROOT/scripts/mac-shell/$tool.swift" -o "$ARBOR_ROOT/.build/mac-shell/$tool" > "$ARBOR_OUT/build-$tool.log" 2>&1; then
       grep -A 6 "error:" "$ARBOR_OUT/build-$tool.log" | head -n 60
-      die "scripts/mac-shell/$tool.swift did not compile"
+      echo "scripts/mac-shell/$tool.swift DID NOT COMPILE: what needs it is left out"
+      [ "$tool" = pulse ] && STILL_PULSE=""
+      [ "$tool" = mover ] && STILL_MOVER=""
     fi
   done
 }
@@ -60,7 +65,7 @@ still_end() {
 pulse_start() {
   local tiers=""
   [ -z "${ARBOR_REHEARSAL:-}" ] || { echo "> pulse_start (not rehearsed)"; return 0; }
-  [ -z "$STILL_PULSE_PID" ] || return 0
+  [ -z "$STILL_PULSE_PID" ] && [ -n "$STILL_PULSE" ] || return 0
   if command -v taskpolicy > /dev/null; then tiers="taskpolicy -l 0 -t 0"; fi
   # Between the menu bar and the windows, in the middle, where the Desktop's part of the arrangement is.
   # shellcheck disable=SC2086
@@ -86,7 +91,8 @@ still_pids() {
 
 still_cpu() {
   [ -z "${ARBOR_REHEARSAL:-}" ] || return 0
-  ps -o comm=,cputime= -p "$(still_pids)" 2>/dev/null | awk '{ n = split($1, path, "/"); print "cpu", path[n], $2 }' | while read -r line; do note "$line"; done
+  # The name last: ps cuts every column but the last to its width.
+  ps -o cputime=,comm= -p "$(still_pids)" 2>/dev/null | awk '{ n = split($2, path, "/"); print "cpu", path[n], $1 }' | while read -r line; do note "$line"; done
 }
 
 filmed() {
@@ -108,8 +114,17 @@ filmed() {
 
 mover() {
   [ -z "${ARBOR_REHEARSAL:-}" ] || { echo "> mover $* (not rehearsed)"; return 0; }
+  [ -n "$STILL_MOVER" ] || { echo "> mover $* (there is no mover)"; return 1; }
   echo "> mover $*"
   "$STILL_MOVER" "$ARBOR_OUT/mover.log" "${ARBOR_WINDOWS_PID:-0}${ARBOR_EXTRA_PIDS:+,$ARBOR_EXTRA_PIDS}" "$@" 3>&- 4>&- 5>&- 6>&- 7>&- 8>&- 9>&-
+}
+
+# still_has <seconds>: whether there is time for something that takes so long, and for the end of the script after it. What comes last in a script is what
+# can best be done without.
+still_has() {
+  [ $((SECONDS + $1 + 230)) -lt "${ARBOR_TIME_LIMIT:-1100}" ] && return 0
+  echo "LEFT OUT for want of time, $SECONDS s into the script: ${2:-the next group}"
+  return 1
 }
 
 away_and_back() {
@@ -146,14 +161,15 @@ watched() {
   filmed "$name" "the same, watched" "$@"
   STILL_KEEP=$keep
   [ -n "$stream" ] || return 0
+  kill_started "$stream"
   # They go on for a good while after the sampling: they look up the names. (Root's processes: `kill -0` says nothing about them.)
-  while ps -axo comm= | grep -q -E '/(spindump|sample)$' && [ "$tries" -lt 120 ]; do
+  while ps -axo comm= | grep -q -E '/(spindump|sample)$' && [ "$tries" -lt 60 ]; do
     sleep 1
     tries=$((tries + 1))
   done
   echo "watched: the samplers were done after $tries s"
-  kill_started "$stream"
-  sudo chmod a+r "$ARBOR_OUT"/spindump-* "$ARBOR_OUT"/sample-* 2>/dev/null
+  # safe anywhere: the name is handed to chown, not printed
+  sudo chown "$(id -un)" "$ARBOR_OUT"/spindump-* "$ARBOR_OUT"/sample-* 2>/dev/null
   still_thin "$ARBOR_OUT/spindump-$name.txt"
   tail -n 3 "$ARBOR_OUT/spindump-$name.log" 2>/dev/null
   echo "watched: $(wc -l < "$ARBOR_OUT/log-$name.txt" | tr -d ' ') lines of the system's log"
@@ -178,14 +194,22 @@ PYTHON
 system_log_of_the_worst() {
   local from to name
   [ -z "${ARBOR_REHEARSAL:-}" ] || return 0
+  # Whoever held the display is named, if at all, when macOS takes it back: of the whole run, what speaks of that.
+  limit 90 log show --last 25m --info --debug --style compact --predicate \
+    '(process == "WindowServer" OR sender == "QuartzCore" OR sender == "SkyLight") AND (eventMessage CONTAINS[c] "fence" OR eventMessage CONTAINS[c] "disable" OR eventMessage CONTAINS[c] "timed out" OR eventMessage CONTAINS[c] "timeout" OR eventMessage CONTAINS[c] "stall")' \
+    2>&1 | head -n 3000 > "$ARBOR_OUT/system-log-holds.txt"
+  echo "system-log-holds.txt: $(wc -l < "$ARBOR_OUT/system-log-holds.txt" | tr -d ' ') lines"
   python3 "$STILL_PY" worst "$ARBOR_OUT" "${1:-6}" | while read -r from to name; do
     limit 60 log show --start "$(date -r "$from" '+%Y-%m-%d %H:%M:%S')" --end "$(date -r "$to" '+%Y-%m-%d %H:%M:%S')" --info --debug --style compact \
-      2>&1 | head -n 6000 > "$ARBOR_OUT/system-log-$name.txt"
+      --predicate 'process == "WindowServer" OR process == "Arbor" OR process == "Oak" OR process == "Elm" OR process == "Ash" OR process == "Fir" OR process == "Dock" OR process == "mover" OR process == "runningboardd" OR process == "ArborTestWindows" OR sender == "QuartzCore" OR sender == "SkyLight"' \
+      2>&1 | head -n 8000 > "$ARBOR_OUT/system-log-$name.txt"
     echo "system-log-$name.txt: $(wc -l < "$ARBOR_OUT/system-log-$name.txt" | tr -d ' ') lines"
   done
 }
 
-# The arrangement of the films in which the standstill was found: two columns of two with the Desktop between them.
+# The arrangement of the films in which the standstill was found: two columns of two with the Desktop between them, and the gap beside the left
+# column dragged 100 points to the right, which leaves the Desktop too narrow to use: Arbor shows a tile in its place.
+# still_arrange wide: without the drag. The Desktop is itself, and there is no tile.
 still_arrange() {
   ctl float-all
   sleep 1
@@ -193,6 +217,11 @@ still_arrange() {
   ctl dock "$W3" right
   ctl dock "$W2" beside "$W4" bottom
   ctl dock "$W1" beside "$W3" bottom
+  sleep 1.5
+  [ "${1:-}" = wide ] && return 0
+  # shellcheck disable=SC2046
+  set -- $(seam_right_of "$W4")
+  drag "$1" "$2" $(($1 + 100)) "$2" --duration 0.9
   sleep 1.5
 }
 

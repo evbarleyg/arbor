@@ -20,8 +20,9 @@ PIDS=""
 IDS=""
 COUNT=0
 # The first four that have a window to show for themselves.
-for app in com.apple.TextEdit:"$APPS_SCRATCH/oak.txt" com.apple.Safari:"$APPS_SCRATCH/page.html" com.apple.Terminal: com.apple.Notes: \
-  com.apple.Preview:"$APPS_SCRATCH/leaf.png"; do
+# Those first that can be as narrow as a column of this display.
+for app in com.apple.TextEdit:"$APPS_SCRATCH/oak.txt" com.apple.Terminal: com.apple.Preview:"$APPS_SCRATCH/leaf.png" \
+  com.apple.Safari:"$APPS_SCRATCH/page.html" com.apple.Notes:; do
   [ "$COUNT" -lt 4 ] || break
   # shellcheck disable=SC2086
   if app_open "${app%%:*}" ${app#*:} && [ -n "$APP_WINDOW" ]; then
@@ -53,7 +54,7 @@ brief
 shot apps-arranged
 
 step "1. real apps, with Arbor"
-away_and_back apps 4
+away_and_back apps 3
 
 step "2. one framed and everything again, which was never seen to stand still"
 i=1
@@ -66,11 +67,16 @@ done
 BACK=""
 AWAY=""
 read -r dx dy dw dh <<< "$(display_frame_of 1)"
+MOVED=0
 for id in $IDS; do
+  # One that is a tile is in the corner in both views: nothing of it comes back.
+  is parked "$id" && continue
   read -r x y _ _ <<< "$(real_of "$id")"
   BACK="$BACK move:$id:${x:-12}:${y:-43}"
   AWAY="$AWAY move:$id:$((dx + dw - 1)):$((dy + dh - 1))"
+  MOVED=$((MOVED + 1))
 done
+echo "$MOVED windows leave and come back"
 
 step "3. who waits for whom"
 key ctrl+opt+d
@@ -84,17 +90,17 @@ sleep 1
 i=1
 while [ "$i" -le 3 ]; do
   # shellcheck disable=SC2086
-  filmed "apps-control-$i-away" "a tool sends the windows to the corner" mover wait:700 go $AWAY
+  filmed "apps-control-$i-away" "a tool sends the windows to the corner" mover observe wait:700 go $AWAY
   # shellcheck disable=SC2086
-  filmed "apps-control-$i-back" "a tool brings them back" mover wait:700 go $BACK
+  filmed "apps-control-$i-back" "a tool brings them back" mover observe wait:700 go $BACK
   i=$((i + 1))
 done
 i=1
 while [ "$i" -le 3 ]; do
   # shellcheck disable=SC2086
-  filmed "apps-cover-$i-away" "a tool sends the windows to the corner, under a cover" mover wait:700 go cover:0.46 $AWAY
+  filmed "apps-cover-$i-away" "a tool sends the windows to the corner, under a cover" mover observe wait:700 go cover:0.46 $AWAY
   # shellcheck disable=SC2086
-  filmed "apps-cover-$i-back" "a tool brings them back, under a cover" mover wait:700 go cover:0.46 $BACK
+  filmed "apps-cover-$i-back" "a tool brings them back, under a cover" mover observe wait:700 go cover:0.46 $BACK
   i=$((i + 1))
 done
 

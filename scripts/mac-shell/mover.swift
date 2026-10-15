@@ -8,19 +8,24 @@
 //   go                         writes `M go`: the moment that stands for the key going down
 //   cover:<seconds>            a panel over the whole display goes up, as Arbor's stage does (same kind, level and order of calls), with a card for every
 //                              window that a later step moves. The cards travel for that long on Arbor's curve; then the cover fades for 0.08 s
-//                              and leaves. `cover:<seconds>:clear` has no ground: what happens under it shows
+//                              and leaves. `cover:<seconds>:clear` has no ground: what happens under it shows. The panel is made, and has been up once
+//                              unseen, before the first step: Arbor's is kept from one motion to the next
 //   move:<window>:<x>:<y>      the window's position through Accessibility, as AXWindowSystem.setFrame does where the size stays: ask the
 //                              app for AXEnhancedUserInterface, set AXPosition, read AXPosition and AXSize back
 //   main:<window>              AXMain = true
 //   raise:<window>             AXRaise
 //   activate:<window>          NSRunningApplication.activate() for its app
 //   focus:<window>             the three, as AXWindowSystem.focus does: the last only if the app is not in front
-//   panel:<x>:<y>:<w>:<h>      a borderless panel of the tool's own is ordered in at the normal level, behind everything of that level, as Arbor's tiles are
-//   ring:<window>              a clear borderless panel is ordered in straight above that window, as Arbor's focus ring is
+//   tile:<x>:<y>:<w>:<h>:<fade>   a borderless panel of the tool's own with something drawn in it and a shadow is ordered in at the normal level, behind everything of
+//                              that level, and fades in over <fade> seconds through the window's own alpha, as a tile of Arbor's does (0: at once)
+//   leave:<fade>               the tiles fade out over that long and are then ordered out, as a tile of Arbor's leaves
+//   ring:<window>              a clear borderless panel is ordered in straight above that window, and again 0.15 s later, as Arbor's focus ring is
+//   observe                    from here on the tool listens, as Arbor does, to AXMoved and AXResized of every window of the processes named and to who has the
+//                              keyboard there, and reads position and size of whatever it hears of
 //   hold:<ms>                  asks the window server to hold screen updates (NSDisableScreenUpdates), sleeps for that long and lets go: what a hold that
 //                              is KNOWN to be one looks like in a film, in macOS's own pictures and in the system's log, and after how long macOS ends it
 //
-// It ends 0.3 s after the last step, or after the cover has left. Windows are the window server's numbers. It needs Accessibility, reads no title, and moves
+// It ends 0.5 s after the last step, or after the cover has left. Windows are the window server's numbers. It needs Accessibility, reads no title, and moves
 // only the windows it is told to, which belong to the processes it is told. The log is in the grammar of sampler.swift's: `<ms since 1970> M <step> <ms it took>`.
 
 import AppKit
@@ -37,7 +42,11 @@ func _AXUIElementGetWindow(_ element: AXUIElement, _ identifier: UnsafeMutablePo
 
 var arguments = Array(CommandLine.arguments.dropFirst())
 guard arguments.count >= 3 else { fail("usage: mover <log file> <pid,pid,…> <step>…") }
-guard let logFile = fopen(arguments[0], "a") else { fail("cannot write to \(arguments[0])") }
+/// Not `guard let`: what that binds at the top of a file is no global, and the functions below could not use it.
+let logFile: UnsafeMutablePointer<FILE> = {
+  guard let file = fopen(arguments[0], "a") else { fail("cannot write to \(arguments[0])") }
+  return file
+}()
 let pids = arguments[1].split(separator: ",").compactMap { pid_t($0) }
 let steps = Array(arguments.dropFirst(2))
 
@@ -122,32 +131,59 @@ func overlayPanel() -> NSPanel {
 
 var coverIsUp = false
 var kept: [NSPanel] = []
+var tiles: [NSPanel] = []
+var observers: [AXObserver] = []
 
-func cover(seconds: Double, clear: Bool, cards: [(from: CGRect, to: CGRect)]) {
-  let panel = overlayPanel()
-  panel.level = NSWindow.Level(rawValue: NSWindow.Level.floating.rawValue + 1)
-  panel.ignoresMouseEvents = true
-  panel.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]
+/// The cover's panel and its layers, made once, as Arbor keeps its stage.
+let coverPanel = overlayPanel()
+let canvas = CALayer()
+let ground = CALayer()
+
+/// A picture the size of the display, as the stage has one of the desktop.
+func blackPicture() -> CGImage? {
+  let context = CGContext(
+    data: nil, width: Int(display.width), height: Int(display.height), bitsPerComponent: 8, bytesPerRow: 0,
+    space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedFirst.rawValue)
+  context?.setFillColor(CGColor(gray: 0, alpha: 1))
+  context?.fill(CGRect(origin: .zero, size: display.size))
+  return context?.makeImage()
+}
+
+func makeCover() {
+  coverPanel.level = NSWindow.Level(rawValue: NSWindow.Level.floating.rawValue + 1)
+  coverPanel.ignoresMouseEvents = true
+  coverPanel.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]
   let view = NSView(frame: .zero)
   let root = CALayer()
   view.layer = root
   view.wantsLayer = true
-  panel.contentView = view
-  let canvas = CALayer()
+  coverPanel.contentView = view
   root.addSublayer(canvas)
-  kept.append(panel)
-
+  ground.contentsGravity = .resizeAspectFill
+  ground.zPosition = -1
+  canvas.addSublayer(ground)
+  // Up and down again with nothing to be seen, as `Stage.rehearse` does.
+  coverPanel.alphaValue = 0
   CATransaction.begin()
   CATransaction.setDisableActions(true)
-  panel.setFrame(display, display: false)
+  coverPanel.setFrame(display, display: false)
   canvas.frame = CGRect(origin: .zero, size: display.size)
-  if !clear {
-    let ground = CALayer()
-    ground.backgroundColor = NSColor.black.cgColor
-    ground.frame = canvas.bounds
-    ground.zPosition = -1
-    canvas.addSublayer(ground)
-  }
+  ground.frame = canvas.bounds
+  ground.contents = blackPicture()
+  CATransaction.commit()
+  coverPanel.orderFrontRegardless()
+  CATransaction.flush()
+  coverPanel.orderOut(nil)
+  coverPanel.alphaValue = 1
+}
+
+func cover(seconds: Double, clear: Bool, cards: [(from: CGRect, to: CGRect)]) {
+  let timing = CAMediaTimingFunction(controlPoints: 0.2, 0, 0, 1)
+  CATransaction.begin()
+  CATransaction.setDisableActions(true)
+  coverPanel.setFrame(display, display: false)
+  canvas.opacity = 1
+  ground.isHidden = clear
   var layers: [CALayer] = []
   for card in cards {
     let layer = CALayer()
@@ -156,20 +192,31 @@ func cover(seconds: Double, clear: Bool, cards: [(from: CGRect, to: CGRect)]) {
     layer.shadowColor = NSColor.black.cgColor
     layer.shadowOpacity = 0.3
     layer.shadowRadius = 14
+    layer.shadowOffset = CGSize(width: 0, height: -6)
     layer.frame = local(card.from)
+    layer.shadowPath = CGPath(rect: layer.bounds, transform: nil)
     canvas.addSublayer(layer)
     layers.append(layer)
   }
   CATransaction.commit()
-  panel.orderFrontRegardless()
+  coverPanel.orderFrontRegardless()
   CATransaction.flush()
   coverIsUp = true
 
   CATransaction.begin()
   CATransaction.setDisableActions(false)
   CATransaction.setAnimationDuration(seconds)
-  CATransaction.setAnimationTimingFunction(CAMediaTimingFunction(controlPoints: 0.2, 0, 0, 1))
-  for (layer, card) in zip(layers, cards) { layer.frame = local(card.to) }
+  CATransaction.setAnimationTimingFunction(timing)
+  for (layer, card) in zip(layers, cards) {
+    let shadow = CABasicAnimation(keyPath: "shadowPath")
+    shadow.fromValue = layer.shadowPath
+    layer.frame = local(card.to)
+    layer.shadowPath = CGPath(rect: layer.bounds, transform: nil)
+    shadow.toValue = layer.shadowPath
+    shadow.duration = seconds
+    shadow.timingFunction = timing
+    layer.add(shadow, forKey: "shadowPath")
+  }
   CATransaction.commit()
   CATransaction.flush()
 
@@ -181,13 +228,28 @@ func cover(seconds: Double, clear: Bool, cards: [(from: CGRect, to: CGRect)]) {
     CATransaction.commit()
     let drop = Timer(timeInterval: 0.08, repeats: false) { _ in
       let began = now()
-      panel.orderOut(nil)
+      coverPanel.orderOut(nil)
       write("cover down \(Int(now() - began))")
       coverIsUp = false
     }
     RunLoop.main.add(drop, forMode: .common)
   }
   RunLoop.main.add(lift, forMode: .common)
+}
+
+/// Something drawn, as a tile has: the window server shapes the shadow after it.
+final class TileLook: NSView {
+  override func draw(_ dirtyRect: NSRect) {
+    NSColor.systemGray.withAlphaComponent(0.6).setFill()
+    NSBezierPath(roundedRect: bounds, xRadius: 16, yRadius: 16).fill()
+  }
+}
+
+func setAlphaAtOnce(_ panel: NSPanel, _ alpha: CGFloat) {
+  NSAnimationContext.runAnimationGroup { context in
+    context.duration = 0
+    panel.animator().alphaValue = alpha
+  }
 }
 
 // MARK: The steps
@@ -242,15 +304,48 @@ func perform(_ index: Int) {
     if NSWorkspace.shared.frontmostApplication?.processIdentifier != target.pid {
       _ = NSRunningApplication(processIdentifier: target.pid)?.activate()
     }
-  case "panel":
+  case "tile":
     let numbers = words.dropFirst().compactMap { Double($0) }
-    guard numbers.count == 4 else { fail("panel:<x>:<y>:<w>:<h>") }
+    guard numbers.count == 5 else { fail("tile:<x>:<y>:<w>:<h>:<fade>") }
     let panel = overlayPanel()
     panel.level = .normal
-    panel.backgroundColor = NSColor.systemGray.withAlphaComponent(0.5)
+    let look = TileLook()
+    panel.contentView = look
+    look.needsDisplay = true
     panel.setFrame(appKit(CGRect(x: numbers[0], y: numbers[1], width: numbers[2], height: numbers[3])), display: true)
-    panel.order(.below, relativeTo: 0)
-    kept.append(panel)
+    panel.hasShadow = true
+    panel.invalidateShadow()
+    tiles.append(panel)
+    if numbers[4] > 0 {
+      setAlphaAtOnce(panel, 0)
+      panel.order(.below, relativeTo: 0)
+      NSAnimationContext.runAnimationGroup { context in
+        context.duration = numbers[4]
+        panel.animator().alphaValue = 1
+      }
+    } else {
+      setAlphaAtOnce(panel, 1)
+      panel.order(.below, relativeTo: 0)
+    }
+  case "leave":
+    guard words.count == 2, let fade = Double(words[1]) else { fail("leave:<fade>") }
+    for panel in tiles {
+      panel.ignoresMouseEvents = true
+      guard fade > 0 else {
+        panel.orderOut(nil)
+        continue
+      }
+      NSAnimationContext.runAnimationGroup(
+        { context in
+          context.duration = fade
+          panel.animator().alphaValue = 0
+        },
+        completionHandler: {
+          let began = now()
+          panel.orderOut(nil)
+          write("tile out \(Int(now() - began))", at: began)
+        })
+    }
   case "ring":
     guard words.count == 2, let id = Int(words[1]) else { fail("ring:<window>") }
     let panel = overlayPanel()
@@ -260,6 +355,25 @@ func perform(_ index: Int) {
     panel.setFrame(appKit(frame(of: window(words[1]).element).insetBy(dx: -6, dy: -6)), display: false)
     panel.order(.above, relativeTo: id)
     kept.append(panel)
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { panel.order(.above, relativeTo: id) }
+  case "observe":
+    for pid in pids {
+      var made: AXObserver?
+      let heard: AXObserverCallback = { _, element, _, _ in _ = frame(of: element) }
+      guard AXObserverCreate(pid, heard, &made) == .success, let observer = made else { continue }
+      for one in known.values where one.pid == pid {
+        AXObserverAddNotification(observer, one.element, kAXMovedNotification as CFString, nil)
+        AXObserverAddNotification(observer, one.element, kAXResizedNotification as CFString, nil)
+      }
+      for name in [
+        kAXFocusedWindowChangedNotification, kAXMainWindowChangedNotification, kAXApplicationActivatedNotification,
+        kAXApplicationDeactivatedNotification,
+      ] {
+        AXObserverAddNotification(observer, AXUIElementCreateApplication(pid), name as CFString, nil)
+      }
+      CFRunLoopAddSource(CFRunLoopGetMain(), AXObserverGetRunLoopSource(observer), .commonModes)
+      observers.append(observer)
+    }
   case "hold":
     guard words.count == 2, let ms = Double(words[1]) else { fail("hold:<ms>") }
     NSDisableScreenUpdates()
@@ -277,11 +391,14 @@ func finish() {
     DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { finish() }
     return
   }
-  DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+  DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
     write("end")
     exit(0)
   }
 }
 
-DispatchQueue.main.async { perform(0) }
+DispatchQueue.main.async {
+  if steps.contains(where: { $0.hasPrefix("cover") }) { makeCover() }
+  perform(0)
+}
 application.run()

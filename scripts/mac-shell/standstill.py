@@ -4,9 +4,9 @@
 With pulse.swift's strip on the display every frame differs from the one before, so a wait between two frames is a display that showed one
 picture for that long, whatever else was or was not meant to move.
 
-  standstill.py table <run folder>             a line for each film: the longest wait that begins between the cause and 1.5 s after it, every wait of
+  standstill.py table <run folder>             a line for each film: the longest wait that begins between the cause and 1.5 s after it | the same for what is not the strip, every wait of
                                                100 ms and more, the longest wait before the cause (nothing is being done then), what the processes burnt meanwhile; then a line for each group of films
-  standstill.py longest <film folder>          that film's longest wait, in ms: for a script that decides what to keep
+  standstill.py longest <film folder>          that film's longest wait, of the display or of what is not the strip, in ms: for a script that decides what to keep
   standstill.py worst <run folder> <n>         `<from> <to> <film>` in seconds since 1970, outwards to whole seconds, for the n longest waits
   standstill.py story <run folder> <film>      everything that is known about that film on one clock, ms after the cause: frames, marks, the mover's steps,
                                                the pulse's own trouble, the sampler's lines, Arbor's log
@@ -56,6 +56,12 @@ class Film:
         times = [time for time, _, _ in self.frames]
         return [(a - self.cause, b - a) for a, b in zip(times, times[1:]) if SINCE <= a - self.cause <= UNTIL and b - a >= least]
 
+    def waits_elsewhere(self):
+        """The same for what is not the pulse's strip, while a motion should be playing (waits that begin up to 0.35 s after the cause): a display that goes on while the
+        stage stands still, and a film without the strip, in which the rest after the motion is no standstill."""
+        times = [time for time, _, place in self.frames if not inside_the_strip(place)]
+        return [(a - self.cause, b - a) for a, b in zip(times, times[1:]) if 0 <= a - self.cause <= 350]
+
     def before(self):
         """The longest wait that ends before the cause: what this Mac does with nothing being done, in the same film."""
         times = [time for time, _, _ in self.frames]
@@ -65,13 +71,23 @@ class Film:
         return max(self.waits(), key=lambda wait: wait[1], default=(0, 0))
 
     def burnt(self):
-        """What each process burnt between the two marks `cpu …`, in ms: {name: ms}"""
+        """What each process burnt between the two marks `cpu …`, in ms of processor for each second that passed: {name: ms}"""
         seen = {}
-        for _, mark in self.marks:
+        for time, mark in self.marks:
             words = mark.split()
             if len(words) == 3 and words[0] == "cpu":
-                seen.setdefault(words[1], []).append(seconds(words[2]))
-        return {name: round((values[-1] - values[0]) * 1000) for name, values in seen.items() if len(values) > 1}
+                seen.setdefault(words[1], []).append((time, seconds(words[2])))
+        return {name: round((values[-1][1] - values[0][1]) * 1e6 / max(values[-1][0] - values[0][0], 1)) for name, values in seen.items() if len(values) > 1}
+
+
+STRIP = (440, 31, 256, 12)
+
+
+def inside_the_strip(place):
+    if len(place) < 4:
+        return False
+    x, y, w, h = place
+    return STRIP[0] <= x and STRIP[1] <= y and x + w <= STRIP[0] + STRIP[2] and y + h <= STRIP[1] + STRIP[3]
 
 
 def seconds(cputime):
@@ -84,8 +100,9 @@ def seconds(cputime):
 
 def films_of(run):
     movers = lines_of(os.path.join(run, "mover.log"))
-    folders = sorted(glob.glob(os.path.join(run, "films", "*", "film.log")), key=os.path.getmtime)
-    return [Film(os.path.dirname(path), movers) for path in folders]
+    films = [Film(os.path.dirname(path), movers) for path in glob.glob(os.path.join(run, "films", "*", "film.log"))]
+    # In the order in which they were taken. Not by the files' own times, which do not survive the way home.
+    return sorted(films, key=lambda film: film.lines[0][0] if film.lines else 0)
 
 
 def table(run):
@@ -95,14 +112,17 @@ def table(run):
             print(f"{film.name}: no frames")
             continue
         start, length = film.longest()
+        elsewhere = max(film.waits_elsewhere(), key=lambda wait: wait[1], default=(0, 0))
         others = ", ".join(f"{long} from {at:+d}" for at, long in film.waits(100) if (at, long) != (start, length))
         shown = sum(1 for time, _, _ in film.frames if 0 <= time - film.cause <= UNTIL)
         burnt = " ".join(f"{name} {ms}" for name, ms in sorted(film.burnt().items()))
-        print(f"{length:5d} ms from {start:+5d}  {film.name:34s} {shown:3d} frames in 1.5 s ({film.how}); {film.before()} before" + (f"; also {others}" if others else "") + (f"; cpu ms: {burnt}" if burnt else ""))
-        groups.setdefault(re.sub(r"-\d+(?=-|$)", "", film.name, count=1), []).append(length)
+        print(f"{length:5d} ms from {start:+5d} | {elsewhere[1]:5d} from {elsewhere[0]:+5d}  {film.name:34s} {shown:3d} frames in 1.5 s ({film.how}); {film.before()} before" + (f"; also {others}" if others else "") + (f"; cpu ms/s: {burnt}" if burnt else ""))
+        groups.setdefault(re.sub(r"-\d+(?=-|$)", "", film.name, count=1), []).append((length, elsewhere[1]))
     print()
-    for name, lengths in groups.items():
-        print(f"{name:34s} {' '.join(f'{length:5d}' for length in lengths)}   median {sorted(lengths)[len(lengths) // 2]}")
+    print("group: the display's longest standstill in each film | the longest wait of what is not the strip, that begins in the first 0.35 s")
+    for name, pairs in groups.items():
+        whole, rest = [pair[0] for pair in pairs], [pair[1] for pair in pairs]
+        print(f"{name:34s} {' '.join(f'{length:5d}' for length in whole)}   median {sorted(whole)[len(whole) // 2]:5d} | {' '.join(f'{length:5d}' for length in rest)}   median {sorted(rest)[len(rest) // 2]}")
     return 0
 
 
@@ -163,7 +183,8 @@ def main(arguments):
     if len(arguments) == 2 and arguments[0] == "table":
         return table(arguments[1])
     if len(arguments) == 2 and arguments[0] == "longest":
-        print(Film(arguments[1], lines_of(os.path.join(arguments[1], "..", "..", "mover.log"))).longest()[1])
+        film = Film(arguments[1], lines_of(os.path.join(arguments[1], "..", "..", "mover.log")))
+        print(max([film.longest()[1]] + [length for _, length in film.waits_elsewhere()]))
         return 0
     if len(arguments) == 3 and arguments[0] == "worst":
         return worst(arguments[1], int(arguments[2]))

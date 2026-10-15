@@ -30,7 +30,11 @@ let arguments = Array(CommandLine.arguments.dropFirst())
 guard arguments.count == 3, let left = Double(arguments[1]), let top = Double(arguments[2]) else {
   fail("usage: pulse <log file> <x> <y>")
 }
-guard let logFile = fopen(arguments[0], "a") else { fail("cannot write to \(arguments[0])") }
+/// Not `guard let`: what that binds at the top of a file is no global, and the functions below could not use it.
+let logFile: UnsafeMutablePointer<FILE> = {
+  guard let file = fopen(arguments[0], "a") else { fail("cannot write to \(arguments[0])") }
+  return file
+}()
 
 func now() -> Double { Date().timeIntervalSince1970 * 1000 }
 func write(_ line: String) {
