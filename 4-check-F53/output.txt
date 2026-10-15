@@ -1,0 +1,316 @@
+# mac-shell: scripts/mac-shell/check-F53.sh at b98d3f2, macOS 26.6.2, 2026-10-15T07:44Z
+built Arbor, the pointer tool and the app bundles in 6s
+
+== an editor and a browser from one app, a scratch window from another; ⌃⌥` summons it
+session 1: Arbor pid 21946, test windows 180 181 (pid 21929,21903)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+  ✔ Arbor arranges the other app's window too
+w179 is of app ArborTestWindows2 (dev.arbor.testwindows2)
+w180 is of app ArborTestWindows (dev.arbor.testwindows)
+w181 is of app ArborTestWindows (dev.arbor.testwindows)
+> dock 180 left
+docked w180 at the left edge
+> dock 181 right
+docked w181 at the right edge
+> click 174 368
+> zoom 180
+framed w180
+  ✔ framed on the editor: the scratch window is out of view with the Desktop
+  ✔ the editor has the keyboard
+shot: mac-shell/01-framed.png
+
+== 1: the shortcut
+> key ctrl+opt+`
+  ✔ summoned: in view
+  ✔ summoned: Arbor says summoned
+  ✔ summoned: it has the keyboard
+  ✔ summoned: nothing covers it
+  ✔ summoned: and it stays
+  ✔ summoned: the view did not move
+  ✔ the editor has not moved
+display 0 0 1024 768, visible 0 31 1024 674, camera n1, back yes
+  w179 272 194 480 348      floating focused
+  w180 12 56 1000 625       docked
+  w181 1023 677 325 524     docked parked
+shot: mac-shell/02-summoned.png
+
+== 2: the shortcut again
+> key ctrl+opt+`
+  ✔ sent away: out of view
+  ✔ sent away: Arbor says stashed
+  ✔ sent away: the keyboard is in 180
+  ✔ sent away: the view did not move
+  ✔ the editor has not moved
+shot: mac-shell/03-sent-away.png
+
+== 4: it remembers where it was put
+> key ctrl+opt+`
+  ✔ summoned again: in view
+  ✔ summoned again: Arbor says summoned
+  ✔ summoned again: it has the keyboard
+  ✔ summoned again: nothing covers it
+  ✔ summoned again: and it stays
+  ✔ summoned again: the view did not move
+> drag 548 206 280 103 --no-release
+  ✔ dragged over the editor's edge: no preview
+> release
+  ✔ dropped, it is still summoned
+put at 272 194 480 348
+
+== 3: a real click on another app's window sends it away
+> click 952 116
+  ✔ after a click on the editor: out of view
+  ✔ after a click on the editor: Arbor says stashed
+  ✔ after a click on the editor: the keyboard is in 180
+  ✔ after a click on the editor: the view did not move
+> key ctrl+opt+`
+  ✔ summoned a third time: in view
+  ✔ summoned a third time: Arbor says summoned
+  ✔ summoned a third time: it has the keyboard
+  ✔ summoned a third time: nothing covers it
+  ✔ summoned a third time: and it stays
+  ✔ summoned a third time: the view did not move
+  ✔ where it was put
+shot: mac-shell/04-where-it-was-put.png
+> key ctrl+opt+`
+  ✔ sent away: out of view
+  ✔ sent away: Arbor says stashed
+  ✔ sent away: the keyboard is in 180
+  ✔ sent away: the view did not move
+
+== where the Desktop is in view it goes out of view all the same
+> show-all
+showing everything
+  ✔ showing everything, it is still out of view
+shot: mac-shell/05-everything-without-it.png
+> key ctrl+opt+`
+  ✔ summoned over everything: in view
+  ✔ summoned over everything: Arbor says summoned
+  ✔ summoned over everything: it has the keyboard
+  ✔ summoned over everything: nothing covers it
+  ✔ summoned over everything: and it stays
+  ✔ summoned over everything: the view did not move
+> key ctrl+opt+`
+  ✔ sent away: out of view
+  ✔ sent away: Arbor says stashed
+  ✔ sent away: the keyboard is in 180
+  ✔ sent away: the view did not move
+
+== framing a window that was sent away summons it; float makes it an ordinary window again
+> zoom 179
+summoned ArborTestWindows2 (w179)
+  ✔ framed: in view
+  ✔ framed: Arbor says summoned
+  ✔ framed: it has the keyboard
+  ✔ framed: nothing covers it
+  ✔ framed: and it stays
+  ✔ framed: the view did not move
+  ✔ where it was put
+> key ctrl+opt+`
+  ✔ sent away: out of view
+  ✔ sent away: Arbor says stashed
+  ✔ sent away: the keyboard is in 180
+  ✔ sent away: the view did not move
+> float 179
+w179 floats on the Desktop again and no longer comes and goes with `summon`
+  ✔ floated: in view, on the Desktop
+  ✔ floated: no longer stashed
+  ✔ floated: nor summoned
+  ✔ floated: the keyboard is still in the editor
+> key ctrl+opt+`
+  ✔ summoned from the Desktop: in view
+  ✔ summoned from the Desktop: Arbor says summoned
+  ✔ summoned from the Desktop: it has the keyboard
+  ✔ summoned from the Desktop: nothing covers it
+  ✔ summoned from the Desktop: and it stays
+  ✔ summoned from the Desktop: the view did not move
+> key ctrl+opt+`
+  ✔ sent away: out of view
+  ✔ sent away: Arbor says stashed
+  ✔ sent away: the keyboard is in 180
+  ✔ sent away: the view did not move
+
+== ⌃⌥0 brings it back to the Desktop as an ordinary window
+> key ctrl+opt+0
+  ✔ in view
+  ✔ no longer stashed
+shot: mac-shell/05b-home.png
+
+== a docked window has a place
+> zoom 180
+framed w180
+  ✔ framed
+> summon ArborTestWindows
+ArborTestWindows is docked: showing it where it is
+> status
+running: 1 display, 2 docked and 1 floating, 2 out of view
+Arbor dev
+display 0 0 1024 768, visible 0 31 1024 674, camera n1, back yes
+  w179 1023 677 326 348     floating parked
+  w180 12 43 1000 650       docked focused
+  w181 1023 677 325 650     docked parked
+
+== summonStays
+> zoom 180
+framed w180
+> click 512 368
+> reload-settings
+settings reloaded
+> key ctrl+opt+`
+  ✔ summoned: in view
+  ✔ summoned: Arbor says summoned
+  ✔ summoned: it has the keyboard
+  ✔ summoned: nothing covers it
+  ✔ summoned: and it stays
+  ✔ summoned: the view did not move
+  ✔ it lies over the editor
+  ✔ state does not call it covered
+> click 952 103
+  ✔ after a click on the editor the editor has the keyboard
+  ✔ it is still summoned
+  ✔ where it was
+  ✔ the editor, which was clicked, lies over it
+  ✔ and state says covered
+shot: mac-shell/06-stays.png
+> click 952 103
+  ✔ a second click on the editor raises nothing
+  ✔ the editor still has the keyboard
+> key ctrl+opt+`
+  ✔ summoned away: out of view
+  ✔ summoned away: Arbor says stashed
+  ✔ summoned away: the keyboard is in 180
+  ✔ summoned away: the view did not move
+> reload-settings
+settings reloaded
+
+== pause and resume
+> key ctrl+opt+`
+  ✔ summoned: in view
+  ✔ summoned: Arbor says summoned
+  ✔ summoned: it has the keyboard
+  ✔ summoned: nothing covers it
+  ✔ summoned: and it stays
+  ✔ summoned: the view did not move
+> pause
+paused until `resume`; windows are back in view, in their own sizes
+  ✔ paused: it has not moved
+> resume
+resumed
+  ✔ running again
+  ✔ resumed with the keyboard still in it: summoned again
+  ✔ where it was
+> pause
+paused until `resume`; windows are back in view, in their own sizes
+> click 952 103
+> resume
+resumed
+  ✔ running again
+  ✔ resumed: out of view
+  ✔ resumed: stashed
+
+== 4: quit and launch again on the same windows
+> quit
+quitting
+  ✔ Arbor exits
+  ✘ quit: the scratch window is back in view — only 12 % of it is to be seen: 272 -306 480 348
+      picture: mac-shell/fail-check-F53-1.png
+      log | INFO  stopped; all windows returned to view
+      log | INFO  Arbor quit
+      in the way? | 164 18729 8 272 -118 480 160 on Dictation
+shot: mac-shell/07-after-quit.png
+  ✔ running again
+  ✔ relaunched: an ordinary window
+  ✘ relaunched: still in view, where the quit put it — only 12 % of it is to be seen: 272 -306 480 348
+      picture: mac-shell/fail-check-F53-2.png
+state.py: window 180 is out of view
+> click
+pointer: expected x and y
+usage: pointer <command>
+  move x y                      glide the pointer there
+  click x y [count] [--right]   click (count 2 is a double-click), with the right button if asked
+      [--quick]                 the button comes up at once, as with tap to click (otherwise after 0.04 s)
+  drag x1 y1 x2 y2              press at the first point, drag to the second, release
+      [--steps n]               intermediate events (default 30)
+      [--duration s]            how long the movement takes (default 0.6)
+      [--hold s]                wait at the end before releasing (default 0.2)
+      [--no-release]            leave the button down; finish with `release`
+      [--no-settle]             without the small movement at the end that lets Arbor catch up
+  drag-on x y                   with the button down since a `drag --no-release`: carry on to that point and rest there
+      [--steps n] [--duration s] [--hold s]      as for drag
+  release [x y]                 release the button there (default: where the pointer is)
+  key <chord>                   press a shortcut, e.g. ctrl+opt+space, cmd+shift+f5, escape
+      [--down]                  press the modifiers and the key, and leave them all down
+      [--up]                    release the key, then the modifiers (modifiers alone, or a key alone, work too)
+      [--held]                  press and release the key only: its modifiers are down already, and stay down
+      [--repeat n]              n more key-down events marked as auto-repeat, as a key that is held sends
+  calm                          let go of every mouse button and key that is down, and say which, if any: for the end of a run
+  pinch x y <amount>            spread two fingers there (negative: pinch them together) by that much
+      [--steps n]               magnification, in that many events (default 10)
+  where                         the pointer's position and whether the left button is down
+  activity                      seconds since the pointer was used, seconds since a key was released, and the count
+                                of key presses, as Arbor reads them (AXWindowSystem+Input.swift)
+  displays                      id x y w h pixel-width pixel-height scale, one line per display
+  windows [--pid n]             id pid layer x y w h on|off owner, as the window server sees them
+      [--on-screen]             only those on screen, from the frontmost to the one at the back
+  frame <window id>             x y w h, as the window server sees it
+  visible <window id>           the share of the window that is on some display, 0 to 1; 0 when the window
+                                server does not show it (minimized, hidden, on another Space)
+  grab <window id>              x y: a point on its title bar that no other window covers
+  spot <window id>              x y: a point on its content that no other window covers
+  button <window id> <which>    x y: the middle of its close, minimize or zoom button
+  ax <window id>                its Accessibility role and subrole, e.g. AXWindow AXStandardWindow
+  front                         the process id of the app in front, which has the keyboard
+  status-item <pid> [--frame]   x y: the middle of that process's menu bar item (--frame: x y w h)
+  menu-item <pid> <title>       x y: the middle of the item of its open menu whose title starts so
+  menu-mark <pid> <title>       that item's mark, e.g. ✓, or - when it has none
+  button <pid> x y <name>       x y: the middle of the close, minimize or zoom button of that process's
+                                window whose top-left corner is nearest the point
+  screen-access | ax-access     true or false: Screen Recording, Accessibility
+  reduce-motion                 true or false: what an app launched now is told about Reduce Motion
+  asleep                        true or false: whether the main display is asleep
+  picture <file> <w> <h> <#rrggbb> [<#rrggbb>]
+                                write a PNG: one colour, or a gradient between two under a grid
+  wallpaper [file]              show that picture on the desktop of every display; print what each shows
+click, drag, release and pinch take --mods <chord of modifiers>, e.g. --mods shift+cmd, held meanwhile.
+Every command that posts events takes --tap session, to post them after the window server's own handling.
+> key ctrl+opt+`
+  ✘ relaunched and summoned: in view — only 12 % of it is to be seen: 272 -306 480 348
+      picture: mac-shell/fail-check-F53-3.png
+  ✔ relaunched and summoned: Arbor says summoned
+  ✔ relaunched and summoned: it has the keyboard
+  ✔ relaunched and summoned: nothing covers it
+  ✔ relaunched and summoned: and it stays
+  ✔ relaunched and summoned: the view did not move
+  ✘ where it was put before the restart
+      picture: mac-shell/fail-check-F53-4.png
+shot: mac-shell/08-relaunched.png
+> float-all
+floated 3 windows
+  ✔ float-all: an ordinary window again
+  ✘ float-all: in view — only 12 % of it is to be seen: 272 -306 480 348
+      picture: mac-shell/fail-check-F53-5.png
+
+== 5: apps without a window
+> summon No Such App 42
+arborctl: no app called No Such App 42: use its name as the Dock shows it, or its bundle id
+> summon Calculator
+opening Calculator
+  ✔ Calculator was launched by its name
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✘ window 1 is back on screen after quitting — only 3 % of it is to be seen: -468 189 480 348
+      picture: mac-shell/fail-check-F53-6.png
+      log | INFO  stopped; all windows returned to view
+      log | INFO  Arbor quit
+      in the way? | 164 18729 8 272 -118 480 160 on Dictation
+  ✘ window 2 is back on screen after quitting — only 3 % of it is to be seen: -341 -306 480 348
+      picture: mac-shell/fail-check-F53-7.png
+shot: mac-shell/09-quit.png
+
+120 passed, 7 failed
+exit code 1

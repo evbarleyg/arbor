@@ -1,0 +1,379 @@
+# mac-shell: scripts/mac-shell/check-F49.sh at b98d3f2, macOS 26.6.2, 2026-10-15T07:40Z
+built Arbor, the pointer tool and the app bundles in 20s
+
+== an editor and a browser from one app, a call from another; shortcuts and the menu bar item on
+session 1: Arbor pid 6911, test windows 30 31 (pid 6856,6707)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+  ✔ Arbor arranges the other app's window too
+> test windows: move 29 170 220 180 140
+  ✔ the call is 180 x 140
+front to back before anything: 31 30 29 
+> pin 29
+keeping w29 in view
+  ✔ state says pinned
+  ✔ pinning raises it over everything but the window that has the keyboard
+  ✔ and does not give it the keyboard
+> drag 296 232 960 63
+> dock 30 left
+docked w30 at the left edge
+> dock 31 right
+docked w31 at the right edge
+the call is at 812 51 180 140
+display 0 0 1024 768, visible 0 31 1024 674, room 0 31 812 674, camera n2, back no
+  Desktop          279 43 254 650
+  w29 812 51 180 140       floating pinned
+  w30 12 79 255 578        docked
+  w31 545 106 255 524      docked focused
+  ✘ the browser is in view, and no tile — it is at 545 106 255 524, its slot at 545 43 255 650
+      picture: mac-shell/fail-check-F49-1.png
+      | display 0 0 1024 768, visible 0 31 1024 674, room 0 31 812 674, camera n2, back no
+      |   Desktop          279 43 254 650
+      |   w29 812 51 180 140       floating pinned
+      |   w30 12 79 255 578        docked
+      |   w31 545 106 255 524      docked focused
+      log | INFO  Arbor dev starting, pid 6911, home /tmp/arbor-shell.NF85UN/home
+      log | INFO  control socket at /tmp/arbor-shell.NF85UN/home/arbor.sock
+      log | INFO  keyboard layout: U.S.
+      log | INFO  registered 53 shortcuts in 1729 µs
+      log | INFO  the menu bar item is up
+      log | INFO  started: 1 display(s), 3 managed window(s)
+      log | DEBUG raised w29, which stays in view
+      log | INFO  pin 29: keeping w29 in view
+      log | DEBUG focus is on w29
+      log | DEBUG w29 has the keyboard
+      log | DEBUG w29 is being dragged
+      log | DEBUG drag of w29: on float
+      log | INFO  dropped w29 on float, display 07230EFA-7A8D-4E37-845C-19CC8737EEF5
+      log | DEBUG no stage: Reduce motion is on
+      log | DEBUG no stage: Reduce motion is on
+      log | INFO  dock 30 left: docked w30 at the left edge
+      log | DEBUG pid 6856 came forward, and macOS still names another app as the one in front
+      log | DEBUG focus is on w30
+      log | DEBUG w30 has the keyboard
+      log | DEBUG no stage: Reduce motion is on
+      log | DEBUG no stage: Reduce motion is on
+      log | INFO  dock 31 right: docked w31 at the right edge
+      log | DEBUG focus is on w31
+      log | DEBUG w31 has the keyboard
+  ✘ so is the editor — it is at 12 79 255 578, its slot at 12 43 255 650
+      picture: mac-shell/fail-check-F49-2.png
+  ✔ the browser keeps clear of the call
+  ✔ and so does the editor
+  ✔ the browser reaches the edge of what is left
+  ✔ after docking two windows beside it: the call has not moved
+  ✔ after docking two windows beside it: the call is not out of view
+  ✔ after docking two windows beside it: Arbor does not count it as out of view
+  ✔ after docking two windows beside it: nothing covers the call
+  ✔ after docking two windows beside it: the keyboard is in 31
+shot: mac-shell/01-docked-beside-the-call.png
+
+== 1 and 2: camera moves
+> zoom 30
+framed w30
+  ✔ the browser went out of view
+  ✘ the editor fills what is left — it is at 12 56 788 625, not 12 43 788 650
+      picture: mac-shell/fail-check-F49-3.png
+      | display 0 0 1024 768, visible 0 31 1024 674, room 0 31 812 674, camera n1, back yes
+      |   w29 812 51 180 140       floating pinned
+      |   w30 12 56 788 625        docked focused
+      |   w31 1023 677 255 524     docked parked
+      log | DEBUG no stage: Reduce motion is on
+      log | DEBUG no stage: Reduce motion is on
+      log | INFO  zoom 30: framed w30
+      log | DEBUG focus is on w30
+      log | DEBUG w30 has the keyboard
+  ✔ and keeps clear of the call
+  ✔ state does not call it covered
+  ✔ framed on the editor: the call has not moved
+  ✔ framed on the editor: the call is not out of view
+  ✔ framed on the editor: Arbor does not count it as out of view
+  ✔ framed on the editor: nothing covers the call
+  ✔ framed on the editor: the keyboard is in 30
+shot: mac-shell/02-editor-framed.png
+> neighbor right
+moved to the Desktop
+  ✔ on the Desktop (the keyboard stays in the editor, which is out of view): the call has not moved
+  ✔ on the Desktop (the keyboard stays in the editor, which is out of view): the call is not out of view
+  ✔ on the Desktop (the keyboard stays in the editor, which is out of view): Arbor does not count it as out of view
+  ✔ on the Desktop (the keyboard stays in the editor, which is out of view): nothing covers the call
+  ✔ on the Desktop (the keyboard stays in the editor, which is out of view): the keyboard is in 30
+> neighbor right
+moved to ArborTestWindows (n3)
+  ✔ the editor went out of view
+  ✔ the browser fills what is left
+  ✔ framed on the browser: the call has not moved
+  ✔ framed on the browser: the call is not out of view
+  ✔ framed on the browser: Arbor does not count it as out of view
+  ✔ framed on the browser: nothing covers the call
+  ✔ framed on the browser: the keyboard is in 31
+shot: mac-shell/03-browser-framed.png
+> zoom 31
+framed w31
+  ✔ framed again on the window that has the keyboard: the call has not moved
+  ✔ framed again on the window that has the keyboard: the call is not out of view
+  ✔ framed again on the window that has the keyboard: Arbor does not count it as out of view
+  ✔ framed again on the window that has the keyboard: nothing covers the call
+  ✔ framed again on the window that has the keyboard: the keyboard is in 31
+> show-all
+showing everything
+  ✔ showing everything: the call has not moved
+  ✔ showing everything: the call is not out of view
+  ✔ showing everything: Arbor does not count it as out of view
+  ✔ showing everything: nothing covers the call
+  ✔ showing everything: the keyboard is in 31
+
+== real clicks on the windows beside it
+> click 139 653
+  ✔ after clicking the editor, beside it: the call has not moved
+  ✔ after clicking the editor, beside it: the call is not out of view
+  ✔ after clicking the editor, beside it: Arbor does not count it as out of view
+  ✔ after clicking the editor, beside it: nothing covers the call
+  ✔ after clicking the editor, beside it: the keyboard is in 30
+> click 672 653
+film: 6 pictures in .65 s
+shot: mac-shell/04-click-1.png
+shot: mac-shell/04-click-2.png
+shot: mac-shell/04-click-3.png
+shot: mac-shell/04-click-4.png
+shot: mac-shell/04-click-5.png
+shot: mac-shell/04-click-6.png
+  ✔ after clicking the browser: the call has not moved
+  ✔ after clicking the browser: the call is not out of view
+  ✔ after clicking the browser: Arbor does not count it as out of view
+  ✔ after clicking the browser: nothing covers the call
+  ✔ after clicking the browser: the keyboard is in 31
+> click 672 613
+  ✔ after clicking the browser again: the call has not moved
+  ✔ after clicking the browser again: the call is not out of view
+  ✔ after clicking the browser again: Arbor does not count it as out of view
+  ✔ after clicking the browser again: nothing covers the call
+  ✔ after clicking the browser again: the keyboard is in 31
+
+== a real click on the call itself
+> zoom 30
+framed w30
+  ✔ framed
+> click 902 121
+  ✔ the call has the keyboard
+  ✔ the view did not move
+  ✔ the call has not moved
+> neighbor right
+moved to the Desktop
+  ✔ on the empty Desktop, where nothing arrives, the keyboard stays in it
+> neighbor right
+moved to ArborTestWindows (n3)
+  ✔ the next move of the view takes the keyboard along to the browser
+  ✔ and the call has not moved
+> show-all
+showing everything
+
+== one raise, as it was pinned, and none since
+raised 1 time(s) so far
+  ✔ Arbor has raised it once at most
+
+== 3: a real drag never docks it, and the docked windows follow when it is let go
+> drag 938 63 60 300 --no-release
+  ✔ over the editor's left edge: no preview
+shot: mac-shell/05-dragged-over-an-edge.png
+  ✔ while it is in the hand the editor has not moved
+> release
+  ✔ dropped there it still floats
+  ✔ and is still pinned
+  ✔ let go, the editor makes room on that side
+  ✔ in view, and no tile
+  ✔ and the browser has the right edge back
+shot: mac-shell/05-room-on-the-left.png
+> drag 39 300 2 300 --no-release
+  ✔ at the screen edge: no preview
+> release
+  ✔ dropped there it still floats
+  ✔ and is still pinned
+> drag 2 300 960 63
+> zoom 30
+framed w30
+  ✔ where it was dropped, after the next camera move: the call has not moved
+  ✔ where it was dropped, after the next camera move: the call is not out of view
+  ✔ where it was dropped, after the next camera move: Arbor does not count it as out of view
+  ✔ where it was dropped, after the next camera move: nothing covers the call
+  ✔ where it was dropped, after the next camera move: the keyboard is in 30
+> show-all
+showing everything
+
+== in the middle of the screen there is no room to make, and Arbor says what is so
+> drag 970 63 512 268
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back yes
+  Desktop          349 43 326 650
+  w29 417 256 180 140      floating pinned focused
+  w30 12 43 325 650        docked
+  w31 687 43 325 650       docked
+> click 174 368
+> zoom 30
+framed w30
+  ✔ the editor fills the whole screen
+  ✔ the call lies within it
+  ✔ the call has not moved
+  ✔ Arbor does not count it as out of view
+  ✔ the window server has the editor over it
+  ✔ and state says covered
+shot: mac-shell/05-covered-in-the-middle.png
+> show-all
+showing everything
+> drag 543 268 960 63
+  ✔ back in the corner it has its room again
+  ✔ beside the browser, which is in view and no tile
+  ✔ and state no longer says covered
+
+== the shortcut and the menu
+> click 932 121
+  ✔ the call has the keyboard
+> click 732 15
+shot: mac-shell/06-menu-with-a-tick.png
+> key escape
+> key ctrl+opt+shift+d
+  ✔ ⌃⌥⇧D (from bindings) unpins
+  ✔ and moves nothing
+> click 732 15
+shot: mac-shell/07-menu-without-a-tick.png
+> key escape
+> key ctrl+opt+shift+d
+  ✔ again pins
+
+== 3: dock unpins, pin floats
+> dock 29 beside 31 bottom
+docked w29 below w31 and it is no longer kept in view
+  ✔ docked
+  ✔ no longer pinned
+> pin 29
+keeping w29 in view
+  ✔ pinning floats it
+  ✔ pinned
+display 0 0 1024 768, visible 0 31 1024 674, room 0 31 760 674, camera n2, back yes
+  tile n1 window   12 43 237 650  holds w30
+  tile n0 desktop  261 43 238 650  holds -
+  tile n3 window   511 43 237 650  holds w31
+  w29 760 464 180 140      floating pinned focused
+  w30 1023 677 325 650     docked parked
+  w31 1023 677 325 319     docked parked
+shot: mac-shell/08-pinned-from-docked.png
+> drag 886 476 960 63
+
+== float-all and pause leave it exactly where it is
+> zoom 30
+framed w30
+> float-all
+floated 2 windows
+  ✔ float-all: the call has not moved
+  ✔ float-all: still pinned
+> dock 30 left
+docked w30 at the left edge
+> dock 31 right
+docked w31 at the right edge
+> zoom 30
+framed w30
+  ✔ framed
+> pause
+paused until `resume`; windows are back in view, in their own sizes
+  ✔ paused: the call has not moved
+> resume
+resumed
+  ✔ running again
+  ✔ resumed: still pinned
+  ✔ resumed: the call has not moved
+
+== a second display: the pin goes along, comes to the main display when it is unplugged, and goes back
+> display_add 800 600: display 2, 871747BB-9729-41F2-8C5A-7F56A75F374A
+> display_move right: now at 1920 0 800 600
+  ✔ Arbor arranges two displays
+> show-all
+showing everything
+> drag 1845 73 2530 51 --duration 1
+  ✔ dragged there, the second display's workspace holds it
+  ✔ still pinned
+> zoom 30
+framed w30
+  ✔ framed on the main display
+shot: mac-shell/09-call-on-the-second-display.png
+> display_remove
+  ✔ unplugged: the main display's workspace holds it
+  ✔ unplugged: still pinned
+  ✔ unplugged: in view, though the Desktop is not
+  ✔ unplugged: Arbor does not count it as out of view
+  ✔ unplugged: nothing covers it
+shot: mac-shell/10-unplugged.png
+> display_add 800 600: display 3, 871747BB-9729-41F2-8C5A-7F56A75F374A
+> display_move right: now at 1920 0 800 600
+  ✔ plugged in again: back on the second display
+  ✔ plugged in again: still pinned
+  ✔ plugged in again: exactly where it was (2403 39 180 140)
+shot: mac-shell/11-plugged-in-again.png
+> drag 2529 51 1856 63 --duration 1
+  ✔ dragged back
+> display_remove
+> show-all
+showing everything
+
+== 5: quit and launch again on the same windows
+> zoom 30
+framed w30
+  ✔ framed
+> quit
+quitting
+  ✔ Arbor exits
+  ✔ quit: the call has not moved
+shot: mac-shell/12-after-quit.png
+  ✔ running again
+  ✔ relaunched: still pinned
+  ✔ relaunched: the call has not moved
+> zoom 30
+framed w30
+  ✔ relaunched and framed on the editor: the call has not moved
+  ✔ relaunched and framed on the editor: the call is not out of view
+  ✔ relaunched and framed on the editor: Arbor does not count it as out of view
+  ✔ relaunched and framed on the editor: nothing covers the call
+  ✔ relaunched and framed on the editor: the keyboard is in 30
+shot: mac-shell/13-relaunched.png
+
+== what the log says about raising and focus
+1
+2026-10-15T07:40:24.614Z DEBUG raised w29, which stays in view
+2026-10-15T07:40:25.529Z DEBUG w29 has the keyboard
+2026-10-15T07:40:28.926Z DEBUG w30 has the keyboard
+2026-10-15T07:40:29.117Z DEBUG w31 has the keyboard
+2026-10-15T07:40:36.635Z DEBUG w30 has the keyboard
+2026-10-15T07:40:41.733Z DEBUG w31 has the keyboard
+2026-10-15T07:40:44.407Z DEBUG w30 has the keyboard
+2026-10-15T07:40:45.431Z DEBUG w31 has the keyboard
+2026-10-15T07:40:48.021Z DEBUG w30 has the keyboard
+2026-10-15T07:40:48.932Z DEBUG w29 has the keyboard
+2026-10-15T07:40:51.939Z DEBUG w31 has the keyboard
+2026-10-15T07:40:54.103Z DEBUG w29 has the keyboard
+2026-10-15T07:41:08.170Z DEBUG w30 has the keyboard
+2026-10-15T07:41:09.177Z DEBUG w29 has the keyboard
+2026-10-15T07:41:13.424Z DEBUG w30 has the keyboard
+2026-10-15T07:41:15.817Z DEBUG w29 has the keyboard
+2026-10-15T07:41:32.850Z DEBUG w30 has the keyboard
+2026-10-15T07:41:33.104Z DEBUG w31 has the keyboard
+2026-10-15T07:41:33.179Z DEBUG w30 has the keyboard
+2026-10-15T07:41:34.718Z DEBUG w30 has the keyboard
+2026-10-15T07:41:35.621Z DEBUG w30 has the keyboard
+2026-10-15T07:41:37.663Z DEBUG w30 has the keyboard
+2026-10-15T07:41:39.832Z DEBUG w29 has the keyboard
+2026-10-15T07:41:44.389Z DEBUG w30 has the keyboard
+2026-10-15T07:41:47.430Z DEBUG w30 has the keyboard
+2026-10-15T07:41:50.643Z DEBUG w30 has the keyboard
+2026-10-15T07:41:54.461Z DEBUG w29 has the keyboard
+2026-10-15T07:41:59.739Z DEBUG w29 has the keyboard
+2026-10-15T07:42:01.221Z DEBUG w30 has the keyboard
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+shot: mac-shell/14-quit.png
+
+132 passed, 3 failed
+exit code 1

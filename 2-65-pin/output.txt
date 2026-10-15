@@ -1,0 +1,197 @@
+# mac-shell: scripts/mac-shell/suite/65-pin.sh at b98d3f2, macOS 26.6.2, 2026-10-15T07:42Z
+built Arbor, the pointer tool and the app bundles in 7s
+session 1: Arbor pid 13550, test windows 116 117 118 119 (pid 13497,13531)
+running: 1 display, 0 docked and 4 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> test windows: move 119 170 220 180 140
+> dock 116 left
+docked w116 at the left edge
+> dock 117 right
+docked w117 at the right edge
+display 0 0 1024 768, visible 0 31 1024 677, camera n2, back no
+  Desktop          349 43 326 653
+  w116 12 79 325 581        docked
+  w117 687 106 325 527      docked focused
+  w118 349 140 326 348      floating
+  w119 349 220 180 140      floating
+
+▸ choose Keep … in View from the menu: the focused floating window is pinned where it is, and the item is ticked
+> click 441 308
+  ✔ the other app's window has the keyboard
+> click 732 15 --right
+> click 830.5 395
+  ✔ the item can be clicked
+  ✔ Arbor ran toggle-pin
+  ✔ Arbor calls it pinned
+  ✔ it still floats
+  ✔ it has not moved
+> click 732 15 --right
+  ✔ the item is ticked
+> key escape
+
+▸ drag a pinned window over a docked one, far from every edge: no preview shows, it lies where it was dropped, still pinned, and no room is made
+> drag 475 232 727 369 --no-release
+  ✔ no drop preview shows
+> release
+  ✔ it still floats
+  ✔ it is still pinned
+  ✔ two are docked, as before
+  ✔ it lies over the docked window
+  ✘ the docked window has not made way — it is at 687 106 325 527, its slot at 687 43 325 653
+      picture: mac-shell/fail-65-pin-1.png
+      | display 0 0 1024 768, visible 0 31 1024 677, camera n2, back no
+      |   Desktop          349 43 326 653
+      |   w116 12 79 325 581        docked
+      |   w117 687 106 325 527      docked
+      |   w118 349 140 326 348      floating
+      |   w119 601 357 180 140      floating pinned focused
+      log | DEBUG w119 is being dragged
+      log | DEBUG drag of w119: on float
+      log | INFO  dropped w119 on float, display 07230EFA-7A8D-4E37-845C-19CC8737EEF5
+  ✔ which reaches the screen's own edge
+  ✘ windows match Arbor's layout — w116 expected 12 43 325 653 actual 12 79 325 581; w117 expected 687 43 325 653 actual 687 106 325 527
+      picture: mac-shell/fail-65-pin-2.png
+
+▸ drag it to the top right corner: nothing else moves while it is in the hand, and when it is let go the docked windows make room beside it
+> drag 727 369 960 63 --no-release
+  ✔ in the hand: the docked window has not moved
+> release
+  ✔ it is still pinned
+  ✘ the second docked window is in its place, in view — it is at 560 69 262 601, its slot at 560 43 262 653
+      picture: mac-shell/fail-65-pin-3.png
+      | display 0 0 1024 768, visible 0 31 1024 677, room 0 31 834 677, camera n2, back no
+      |   Desktop          286 43 262 653
+      |   w116 12 56 262 628        docked
+      |   w117 560 69 262 601       docked
+      |   w118 286 140 262 348      floating
+      |   w119 834 51 180 140       floating pinned focused
+      log | DEBUG w119 is being dragged
+      log | DEBUG drag of w119: on float
+      log | INFO  dropped w119 on float, display 07230EFA-7A8D-4E37-845C-19CC8737EEF5
+  ✔ and no tile
+  ✔ it keeps clear of the pinned one
+  ✔ and so does the first
+  ✔ the second reaches the edge of what is left
+  ✘ windows match Arbor's layout — w116 expected 12 43 262 653 actual 12 56 262 628; w117 expected 560 43 262 653 actual 560 69 262 601
+      picture: mac-shell/fail-65-pin-4.png
+
+▸ ⌃⌥↩, ⌃⌥→ and ⌃⌥0 move the view: the pinned window keeps its place, all of it to be seen beside every view; other floating windows leave
+> click 140 384
+> key ctrl+opt+return
+  ✔ ⌃⌥↩ reaches Arbor
+  ✔ the first window fills what is left of the screen
+  ✔ and keeps clear of the pinned one
+  ✔ the floating window that is not pinned left with the Desktop
+  ✔ framed on the first window: the pinned window has not moved
+  ✔ framed on the first window: it is in view
+  ✔ framed on the first window: nothing covers it
+  ✔ framed on the first window: it has not taken the keyboard
+> key ctrl+opt+right
+  ✔ ⌃⌥→ reaches Arbor
+> key ctrl+opt+right
+  ✔ ⌃⌥→ again
+  ✔ the second window fills the screen
+  ✔ framed on the second window: the pinned window has not moved
+  ✔ framed on the second window: it is in view
+  ✔ framed on the second window: nothing covers it
+  ✔ framed on the second window: it has not taken the keyboard
+> key ctrl+opt+0
+  ✔ ⌃⌥0 reaches Arbor
+  ✔ the camera is on everything
+  ✔ showing everything: the pinned window has not moved
+  ✔ showing everything: it is in view
+  ✔ showing everything: nothing covers it
+  ✔ showing everything: it has not taken the keyboard
+  ✔ windows match Arbor's layout
+
+▸ click the docked windows beside a pinned one: nothing covers it, the keyboard stays in the window clicked
+> click 140 383
+  ✔ the first window has the keyboard
+> click 688 383
+  ✔ the window beside it has the keyboard
+  ✔ nothing covers the pinned window
+  ✔ it stays so
+  ✔ the keyboard is still in the clicked window
+  ✔ its app is still the one in front
+  ✔ the pinned window has not moved
+  ✔ windows match Arbor's layout
+
+▸ ⌃⌥⇧D, bound to toggle-pin in settings.json, unpins: the window leaves with the Desktop when the view next moves
+> click 926 139
+  ✔ the pinned window has the keyboard
+> key ctrl+opt+shift+d
+  ✔ ⌃⌥⇧D reaches Arbor
+  ✔ it is no longer pinned
+  ✔ it has not moved
+> click 732 15 --right
+  ✔ the menu's item is no longer ticked
+> key escape
+  ✔ the docked windows have its room back: the second reaches the screen's own edge, under it
+> click 851 383
+  ✔ a click on the docked window under it now leaves it covered
+> click 176 383
+> key ctrl+opt+return
+  ✔ ⌃⌥↩ reaches Arbor
+  ✔ the first window fills the screen
+  ✔ the window that was pinned is out of view
+> key ctrl+opt+0
+  ✔ ⌃⌥0 reaches Arbor
+  ✔ it comes back with the Desktop
+  ✔ windows match Arbor's layout
+
+▸ ⌃⌥⇧D pins again; quit Arbor and start it again: the window is still pinned, in the same place
+> click 587 139
+> key ctrl+opt+shift+d
+  ✔ ⌃⌥⇧D reaches Arbor
+  ✔ it is pinned
+> zoom 116
+framed w116
+  ✔ the first window fills the screen
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ quitting leaves it where it is
+session 1: Arbor pid 16331, test windows 116 117 118 119 (pid 13497,13531)
+running: 1 display, 2 docked and 2 floating (1 kept in view), 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+  ✔ it is still pinned
+  ✔ the camera shows everything
+> back
+back to ArborTestWindows (n1)
+  ✔ one step back the first window fills the screen
+  ✔ the pinned window has not moved
+  ✔ it is in view
+  ✔ nothing covers it
+> show-all
+showing everything
+  ✔ windows match Arbor's layout
+
+▸ dock a pinned window by command and the pin ends; pin a docked window by command and it floats, pinned
+> dock 119 beside 117 bottom
+  ✔ dock succeeds
+  ✔ it is docked
+  ✔ it is no longer pinned
+> pin 119
+  ✔ pin succeeds
+  ✔ it floats
+  ✔ it is pinned
+  ✔ at its own size
+  ✔ its slot has closed: two are docked
+> unpin 119
+  ✔ unpin succeeds
+  ✔ it is no longer pinned
+  ✔ windows match Arbor's layout
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+
+90 passed, 4 failed
+exit code 1
