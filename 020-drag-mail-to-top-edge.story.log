@@ -1,0 +1,101 @@
+20 drag-mail-to-top-edge: drags mail by its title bar against the top edge of the screen and lets go
+expected: {'act': 'drag-where-macos-tiles', 'settled': 'quiet:370', 'drags': '66', 'moves': ',,', 'front': '66', 'own': '66', 'floating': '31,34,44,50,53,59,60,62,66', 'docked': ''}
+ODD rule 2: w68 of Mail moved along with a window of its app
+FAIL rule 3: w68 of Mail moved 3 times
+
+06:57:57.393 SCREEN -- begin 20 drag-mail-to-top-edge
+06:57:57.394 SCREEN -- text 20 drags mail by its title bar against the top edge of the screen and lets go
+06:57:57.453 SCRIPT drag w66 from 758,84 to 800,0
+06:57:58.043 SCREEN the button is down 758 84
+06:57:58.300 SCREEN w68 of Mail 566,176 470×416
+06:57:58.300 SCREEN mail (w66) 241,69 1120×630
+06:57:58.344 DEBUG w66 is being dragged
+06:57:58.349 DEBUG drag of w66: on float
+06:57:58.365 SCREEN w68 of Mail 567,173 470×416
+06:57:58.365 SCREEN mail (w66) 242,66 1120×630
+06:57:58.369 MACOS pid 6465 AXMoved w66 AXWindow/AXStandardWindow 242 66 1120 630
+06:57:58.438 SCREEN w68 of Mail 569,170 470×416
+06:57:58.438 SCREEN mail (w66) 244,63 1120×630
+06:57:58.480 SCREEN w68 of Mail 570,167 470×416
+06:57:58.480 SCREEN mail (w66) 245,60 1120×630
+06:57:58.516 MACOS pid 6465 AXMoved w66 AXWindow/AXStandardWindow 245 60 1120 630
+06:57:58.520 SCREEN w68 of Mail 572,165 470×416
+06:57:58.520 SCREEN mail (w66) 247,58 1120×630
+06:57:58.556 SCREEN w68 of Mail 573,162 470×416
+06:57:58.556 SCREEN mail (w66) 248,55 1120×630
+06:57:58.589 SCREEN w68 of Mail 574,159 470×416
+06:57:58.589 SCREEN mail (w66) 249,52 1120×630
+06:57:58.618 MACOS pid 6465 AXMoved w66 AXWindow/AXStandardWindow 249 52 1120 630
+06:57:58.646 SCREEN w68 of Mail 576,156 470×416
+06:57:58.646 SCREEN mail (w66) 251,49 1120×630
+06:57:58.713 SCREEN w68 of Mail 577,153 470×416
+06:57:58.713 SCREEN mail (w66) 252,46 1120×630
+06:57:58.730 MACOS pid 6465 AXMoved w66 AXWindow/AXStandardWindow 252 46 1120 630
+06:57:58.807 SCREEN w68 of Mail 579,151 470×416
+06:57:58.807 SCREEN mail (w66) 254,44 1120×630
+06:57:58.902 MACOS pid 6465 AXMoved w66 AXWindow/AXStandardWindow 255 41 1120 630
+06:57:58.940 SCREEN w68 of Mail 580,148 470×416
+06:57:58.940 SCREEN mail (w66) 255,41 1120×630
+06:57:58.947 SCREEN w68 of Mail 581,145 470×416
+06:57:58.947 SCREEN mail (w66) 256,38 1120×630
+06:57:59.030 SCREEN w68 of Mail 583,142 470×416
+06:57:59.030 SCREEN mail (w66) 258,35 1120×630
+06:57:59.046 MACOS pid 6465 AXMoved w66 AXWindow/AXStandardWindow 258 35 1120 630
+06:57:59.086 SCREEN w68 of Mail 584,139 470×416
+06:57:59.086 SCREEN mail (w66) 259,32 1120×630
+06:57:59.182 SCREEN w68 of Mail 586,138 470×416
+06:57:59.182 SCREEN mail (w66) 261,31 1120×630
+06:57:59.202 MACOS pid 6465 AXMoved w66 AXWindow/AXStandardWindow 261 31 1120 630
+06:57:59.236 SCREEN w68 of Mail 587,138 470×416
+06:57:59.236 SCREEN mail (w66) 262,31 1120×630
+06:57:59.345 MACOS pid 6465 AXMoved w66 AXWindow/AXStandardWindow 263 31 1120 630
+06:57:59.356 SCREEN w68 of Mail 588,138 470×416
+06:57:59.356 SCREEN mail (w66) 263,31 1120×630
+06:57:59.425 SCREEN w68 of Mail 590,138 470×416
+06:57:59.425 SCREEN mail (w66) 265,31 1120×630
+06:57:59.511 DEBUG drag of w66: on float, left to macOS’s tiling
+06:57:59.528 MACOS pid 6465 AXMoved w66 AXWindow/AXStandardWindow 266 31 1120 630
+06:57:59.548 SCREEN w68 of Mail 591,138 470×416
+06:57:59.548 SCREEN mail (w66) 266,31 1120×630
+06:57:59.553 SCREEN w68 of Mail 593,138 470×416
+06:57:59.553 SCREEN mail (w66) 268,31 1120×630
+06:57:59.632 SCREEN w68 of Mail 594,138 470×416
+06:57:59.632 SCREEN mail (w66) 269,31 1120×630
+06:57:59.653 MACOS pid 6465 AXMoved w66 AXWindow/AXStandardWindow 269 31 1120 630
+06:57:59.722 SCREEN w131 of WindowManager -15,16 1630×821
+06:57:59.722 SCREEN w68 of Mail 595,138 470×416
+06:57:59.722 SCREEN mail (w66) 270,31 1120×630
+06:57:59.722 SCREEN w130 of WindowManager -15,16 1630×821
+06:57:59.722 SCREEN front to back: w131 w68 mail w130 safari preview w93 calendar textedit settings notes terminal finder
+06:57:59.765 SCREEN w68 of Mail 597,138 470×416
+06:57:59.765 SCREEN mail (w66) 272,31 1120×630
+06:57:59.771 MACOS pid 6465 AXMoved w66 AXWindow/AXStandardWindow 272 31 1120 630
+06:57:59.835 SCREEN w68 of Mail 598,138 470×416
+06:57:59.835 SCREEN mail (w66) 273,31 1120×630
+06:57:59.936 MACOS pid 6465 AXMoved w66 AXWindow/AXStandardWindow 275 31 1120 630
+06:57:59.940 SCREEN w68 of Mail 600,138 470×416
+06:57:59.940 SCREEN mail (w66) 275,31 1120×630
+06:57:59.998 SCREEN w68 of Mail 601,138 470×416
+06:57:59.998 SCREEN mail (w66) 276,31 1120×630
+06:58:00.104 MACOS pid 6465 AXMoved w66 AXWindow/AXStandardWindow 277 31 1120 630
+06:58:00.115 SCREEN w68 of Mail 604,138 470×416
+06:58:00.115 SCREEN mail (w66) 279,31 1120×630
+06:58:00.115 SCREEN w131 of WindowManager left the screen
+06:58:00.115 SCREEN w130 of WindowManager left the screen
+06:58:00.115 SCREEN front to back: w68 mail safari preview w93 calendar textedit settings notes terminal finder
+06:58:00.159 SCREEN w68 of Mail 605,138 470×416
+06:58:00.159 SCREEN mail (w66) 280,31 1120×630
+06:58:00.221 MACOS pid 6465 AXMoved w66 AXWindow/AXStandardWindow 280 31 1120 630
+06:58:00.225 SCREEN w68 of Mail 607,138 470×416
+06:58:00.225 SCREEN mail (w66) 282,31 1120×630
+06:58:00.322 MACOS pid 6465 AXMoved w66 AXWindow/AXStandardWindow 282 31 1120 630
+06:58:00.476 SCREEN w68 of Mail 608,138 470×416
+06:58:00.476 SCREEN mail (w66) 283,31 1120×630
+06:58:00.576 MACOS pid 6465 AXMoved w66 AXWindow/AXStandardWindow 283 31 1120 630
+06:58:01.948 SCREEN w68 of Mail 607,138 470×416
+06:58:01.948 SCREEN mail (w66) 282,31 1120×630
+06:58:01.987 MACOS pid 6465 AXMoved w66 AXWindow/AXStandardWindow 282 31 1120 630
+06:58:01.988 INFO  dropped w66 on float, display 07230EFA-7A8D-4E37-845C-19CC8737EEF5, left to macOS’s tiling
+06:58:02.007 SCREEN the button is up 800 0
+06:58:05.645 SCREEN -- end 20 act=drag-where-macos-tiles settled=quiet:370 drags=66 moves=,, front=66 own=66 floating=31,34,44,50,53,59,60,62,66 docked=
+06:58:05.934 SCRIPT == 21 dock-icon-preview

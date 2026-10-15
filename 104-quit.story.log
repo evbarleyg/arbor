@@ -1,0 +1,18 @@
+104 quit: chooses Quit Arbor in Arbor's menu
+expected: {'act': 'quit-and-start', 'settled': 'quiet:856', 'moves': 'any', 'restores': 'all', 'places': '1', 'everything': '1'}
+FAIL rule -: Arbor's process ended, and nobody asked it to
+FAIL rule 5: w68 of Mail has its size back but not its place: 765,138 470×416, it was at 565,179 470×416
+
+07:04:42.975 SCREEN -- begin 104 quit
+07:04:42.975 SCREEN -- text 104 chooses Quit Arbor in Arbor's menu
+07:04:43.661 SCREEN w440 of Arbor 1308,31 286×785 (level 101)
+07:04:44.883 SCREEN w440 of Arbor left the screen
+07:04:44.937 INFO  trace day-2 ended: 72 lines, Arbor stopped
+07:04:44.937 INFO  stopped; all windows returned to view
+07:04:44.938 INFO  Arbor quit
+07:04:45.000 SCREEN w93 of Arbor left the screen
+07:04:45.000 SCREEN front to back: preview safari finder textedit w68 mail calendar notes settings terminal
+07:04:45.115 SCREEN -- arbor gone
+07:04:46.085 SCREEN -- finding 104 -:crash FAIL Arbor's process ended, and nobody asked it to
+07:04:46.094 SCREEN -- end 104 act=quit-and-start settled=quiet:856 moves=any restores=all places=1 everything=1
+07:04:46.272 SCRIPT == 105 input-after

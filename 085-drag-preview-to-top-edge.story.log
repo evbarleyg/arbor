@@ -1,0 +1,123 @@
+85 drag-preview-to-top-edge: drags preview by its title bar against the top edge of the screen and lets go
+expected: {'act': 'drag-where-macos-tiles', 'settled': 'quiet:385', 'drags': '156', 'moves': ',,', 'front': '156', 'own': '156', 'floating': '31,50,53,59,60,66,156,226,304', 'docked': ''}
+ODD rule 3: preview (w156) changed its size while it was being dragged
+
+07:02:53.110 SCREEN -- begin 85 drag-preview-to-top-edge
+07:02:53.110 SCREEN -- text 85 drags preview by its title bar against the top edge of the screen and lets go
+07:02:53.165 SCRIPT drag w156 from 1108,43 to 800,0
+07:02:53.780 SCREEN the button is down 1108 43
+07:02:54.028 SCREEN preview (w156) 789,31 800×791
+07:02:54.079 DEBUG w156 is being dragged
+07:02:54.082 DEBUG drag of w156: on float
+07:02:54.084 SCREEN preview (w156) 770,31 800×791
+07:02:54.100 MACOS pid 11969 AXResized w156 AXWindow/AXStandardWindow 800 31 800 788
+07:02:54.114 MACOS pid 11969 AXMoved w156 AXWindow/AXStandardWindow 770 31 789 746
+07:02:54.114 MACOS pid 11969 AXResized w156 AXWindow/AXStandardWindow 770 31 789 746
+07:02:54.132 MACOS pid 11969 AXResized w156 AXWindow/AXStandardWindow 770 31 774 686
+07:02:54.138 SCREEN preview (w156) 770,31 774×686
+07:02:54.146 SCREEN preview (w156) 788,31 774×686
+07:02:54.150 MACOS pid 11969 AXResized w156 AXWindow/AXStandardWindow 770 31 759 627
+07:02:54.161 SCREEN preview (w156) 794,31 759×627
+07:02:54.164 MACOS pid 11969 AXResized w156 AXWindow/AXStandardWindow 770 31 746 575
+07:02:54.183 MACOS pid 11969 AXResized w156 AXWindow/AXStandardWindow 770 31 736 535
+07:02:54.194 SCREEN preview (w156) 802,31 736×535
+07:02:54.197 MACOS pid 11969 AXResized w156 AXWindow/AXStandardWindow 770 31 728 503
+07:02:54.201 SCREEN preview (w156) 792,31 736×535
+07:02:54.216 MACOS pid 11969 AXResized w156 AXWindow/AXStandardWindow 770 31 722 480
+07:02:54.231 MACOS pid 11969 AXResized w156 AXWindow/AXStandardWindow 770 31 718 463
+07:02:54.250 MACOS pid 11969 AXResized w156 AXWindow/AXStandardWindow 770 31 715 451
+07:02:54.254 SCREEN preview (w156) 798,31 718×463
+07:02:54.259 SCREEN preview (w156) 799,31 715×451
+07:02:54.269 MACOS pid 11969 AXMoved w156 AXWindow/AXStandardWindow 792 31 713 443
+07:02:54.270 MACOS pid 11969 AXResized w156 AXWindow/AXStandardWindow 792 31 713 443
+07:02:54.280 MACOS pid 11969 AXResized w156 AXWindow/AXStandardWindow 792 31 712 437
+07:02:54.300 MACOS pid 11969 AXResized w156 AXWindow/AXStandardWindow 792 31 711 433
+07:02:54.314 MACOS pid 11969 AXResized w156 AXWindow/AXStandardWindow 792 31 710 430
+07:02:54.326 SCREEN preview (w156) 791,31 710×430
+07:02:54.332 MACOS pid 11969 AXResized w156 AXWindow/AXStandardWindow 792 31 709 428
+07:02:54.346 MACOS pid 11969 AXResized w156 AXWindow/AXStandardWindow 792 31 709 427
+07:02:54.364 MACOS pid 11969 AXResized w156 AXWindow/AXStandardWindow 792 31 709 426
+07:02:54.395 MACOS pid 11969 AXResized w156 AXWindow/AXStandardWindow 792 31 709 425
+07:02:54.397 SCREEN preview (w156) 781,31 709×425
+07:02:54.412 MACOS pid 11969 AXMoved w156 AXWindow/AXStandardWindow 781 31 709 425
+07:02:54.444 SCREEN preview (w156) 771,31 709×425
+07:02:54.461 SCREEN preview (w156) 760,31 709×425
+07:02:54.462 DEBUG drag of w156: on float, left to macOS’s tiling
+07:02:54.529 SCREEN preview (w156) 750,31 709×425
+07:02:54.545 MACOS pid 11969 AXMoved w156 AXWindow/AXStandardWindow 750 31 709 425
+07:02:54.637 SCREEN preview (w156) 740,31 709×425
+07:02:54.647 SCREEN preview (w156) 730,31 709×425
+07:02:54.729 MACOS pid 11969 AXMoved w156 AXWindow/AXStandardWindow 719 31 709 425
+07:02:54.746 SCREEN preview (w156) 719,31 709×425
+07:02:54.753 SCREEN preview (w156) 709,31 709×425
+07:02:54.828 SCREEN preview (w156) 699,31 709×425
+07:02:54.832 MACOS pid 11969 AXMoved w156 AXWindow/AXStandardWindow 699 31 709 425
+07:02:54.886 SCREEN preview (w156) 678,31 709×425
+07:02:54.952 MACOS pid 11969 AXMoved w156 AXWindow/AXStandardWindow 678 31 709 425
+07:02:55.011 SCREEN preview (w156) 668,31 709×425
+07:02:55.067 SCREEN preview (w156) 658,31 709×425
+07:02:55.097 MACOS pid 11969 AXMoved w156 AXWindow/AXStandardWindow 658 31 709 425
+07:02:55.168 SCREEN preview (w156) 647,31 709×425
+07:02:55.201 SCREEN preview (w156) 637,31 709×425
+07:02:55.270 SCREEN preview (w156) 627,31 709×425
+07:02:55.279 MACOS pid 11969 AXMoved w156 AXWindow/AXStandardWindow 627 31 709 425
+07:02:55.304 SCREEN preview (w156) 617,31 709×425
+07:02:55.363 SCREEN preview (w156) 606,31 709×425
+07:02:55.371 MACOS pid 11969 AXMoved w156 AXWindow/AXStandardWindow 606 31 709 425
+07:02:55.397 SCREEN preview (w156) 596,31 709×425
+07:02:55.494 MACOS pid 11969 AXMoved w156 AXWindow/AXStandardWindow 586 31 709 425
+07:02:55.512 SCREEN preview (w156) 576,31 709×425
+07:02:55.557 SCREEN preview (w156) 565,31 709×425
+07:02:55.589 SCREEN preview (w156) 555,31 709×425
+07:02:55.609 MACOS pid 11969 AXMoved w156 AXWindow/AXStandardWindow 555 31 709 425
+07:02:55.662 SCREEN preview (w156) 545,31 709×425
+07:02:55.751 MACOS pid 11969 AXMoved w156 AXWindow/AXStandardWindow 545 31 709 425
+07:02:55.873 SCREEN w377 of WindowManager -15,16 1630×821
+07:02:55.873 SCREEN w376 of WindowManager -15,16 1630×821
+07:02:55.873 SCREEN front to back: w377 preview w376 safari w68 mail calendar textedit notes finder settings terminal w93
+07:02:55.928 SCREEN preview (w156) 546,31 709×425
+07:02:55.995 MACOS pid 11969 AXMoved w156 AXWindow/AXStandardWindow 546 31 709 425
+07:02:56.021 SCREEN preview (w156) 545,31 709×425
+07:02:56.116 MACOS pid 11969 AXMoved w156 AXWindow/AXStandardWindow 545 31 709 425
+07:02:57.498 INFO  dropped w156 on float, display 07230EFA-7A8D-4E37-845C-19CC8737EEF5, left to macOS’s tiling
+07:02:57.515 MACOS pid 11969 AXResized w156 AXWindow/AXStandardWindow 538 31 719 430
+07:02:57.522 SCREEN preview (w156) 538,31 719×430
+07:02:57.522 SCREEN w377 of WindowManager left the screen
+07:02:57.522 SCREEN w376 of WindowManager left the screen
+07:02:57.522 SCREEN front to back: preview safari w68 mail calendar textedit notes finder settings terminal w93
+07:02:57.522 SCREEN the button is up 800 0
+07:02:57.576 SCREEN preview (w156) 385,31 969×532
+07:02:57.579 SCREEN preview (w156) 297,31 1114×592
+07:02:57.587 MACOS pid 11969 AXResized w156 AXWindow/AXStandardWindow 222 31 1237 642
+07:02:57.588 MACOS pid 11969 AXResized w156 AXWindow/AXStandardWindow 222 31 1237 642
+07:02:57.588 MACOS pid 11969 AXResized w156 AXWindow/AXStandardWindow 222 31 1237 642
+07:02:57.601 MACOS pid 11969 AXResized w156 AXWindow/AXStandardWindow 222 31 1336 683
+07:02:57.601 MACOS pid 11969 AXResized w156 AXWindow/AXStandardWindow 161 31 1336 683
+07:02:57.615 MACOS pid 11969 AXResized w156 AXWindow/AXStandardWindow 115 31 1411 714
+07:02:57.634 MACOS pid 11969 AXResized w156 AXWindow/AXStandardWindow 81 31 1467 737
+07:02:57.646 SCREEN preview (w156) 81,31 1467×737
+07:02:57.649 MACOS pid 11969 AXResized w156 AXWindow/AXStandardWindow 57 31 1507 753
+07:02:57.669 MACOS pid 11969 AXResized w156 AXWindow/AXStandardWindow 39 31 1536 765
+07:02:57.684 MACOS pid 11969 AXResized w156 AXWindow/AXStandardWindow 27 31 1556 773
+07:02:57.701 MACOS pid 11969 AXResized w156 AXWindow/AXStandardWindow 18 31 1570 779
+07:02:57.705 SCREEN preview (w156) 18,31 1570×779
+07:02:57.717 MACOS pid 11969 AXResized w156 AXWindow/AXStandardWindow 12 31 1580 783
+07:02:57.734 MACOS pid 11969 AXResized w156 AXWindow/AXStandardWindow 8 31 1587 786
+07:02:57.753 MACOS pid 11969 AXResized w156 AXWindow/AXStandardWindow 5 31 1591 788
+07:02:57.763 SCREEN preview (w156) 5,31 1591×788
+07:02:57.766 MACOS pid 11969 AXResized w156 AXWindow/AXStandardWindow 3 31 1594 789
+07:02:57.782 MACOS pid 11969 AXResized w156 AXWindow/AXStandardWindow 2 31 1596 790
+07:02:57.794 SCREEN preview (w156) 2,31 1596×790
+07:02:57.800 MACOS pid 11969 AXResized w156 AXWindow/AXStandardWindow 1 31 1598 790
+07:02:57.808 SCREEN preview (w156) 1,31 1598×790
+07:02:57.817 MACOS pid 11969 AXResized w156 AXWindow/AXStandardWindow 1 31 1599 791
+07:02:57.828 SCREEN preview (w156) 1,31 1599×791
+07:02:57.828 MACOS pid 11969 AXMoved w156 AXWindow/AXStandardWindow 0 31 1599 791
+07:02:57.844 SCREEN preview (w156) 0,31 1599×791
+07:02:57.853 MACOS pid 11969 AXResized w156 AXWindow/AXStandardWindow 0 31 1600 791
+07:02:57.891 SCREEN preview (w156) 0,31 1600×791
+07:02:58.059 DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: macOS tiled this window; Arbor stood aside · ⌃⌥⌘← docks it · Check Setup… in the menu
+07:02:58.075 SCREEN w279 of Arbor 465,728 670×38 (level 6)
+07:03:03.135 SCREEN -- end 85 act=drag-where-macos-tiles settled=quiet:385 drags=156 moves=,, front=156 own=156 floating=31,50,53,59,60,66,156,226,304 docked=
+07:03:03.425 SCREEN w279 of Arbor left the screen
+07:03:03.540 SCRIPT == 86 dock-icon-textedit

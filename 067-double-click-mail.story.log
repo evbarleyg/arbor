@@ -1,0 +1,41 @@
+67 double-click-mail: double-clicks mail's title bar: macOS zooms the window
+expected: {'act': 'macos-own', 'settled': 'quiet:943', 'zooms': '66', 'front': '66', 'floating': '31,50,53,59,60,66,156,226,304', 'docked': ''}
+ODD rule 2: w68 of Mail moved along with a window of its app
+
+07:01:35.201 SCREEN -- begin 67 double-click-mail
+07:01:35.201 SCREEN -- text 67 double-clicks mail's title bar: macOS zooms the window
+07:01:35.808 SCREEN in front: process 6465 com.apple.mail
+07:01:35.809 MACOS pid 364 AXApplicationDeactivated
+07:01:35.809 MACOS workspace didActivate pid 6465 com.apple.mail regular
+07:01:35.810 MACOS workspace didDeactivate pid 364 com.apple.finder regular
+07:01:35.815 SCREEN front to back: w68 mail preview textedit settings safari calendar notes terminal w93
+07:01:35.815 SCREEN the button is down 772 43
+07:01:35.847 MACOS pid 6465 AXApplicationActivated
+07:01:35.849 MACOS pid 6465 AXFocusedWindowChanged w68 AXSheet/- 607 138 470 416
+07:01:35.850 MACOS pid 6465 AXMainWindowChanged w66 AXWindow/AXStandardWindow 282 31 1120 630
+07:01:35.902 SCREEN the button is up 772 43
+07:01:36.005 SCREEN the button is down 772 43
+07:01:36.033 SCREEN the button is up 772 43
+07:01:36.114 SCREEN w68 of Mail 607,139 470×416
+07:01:36.114 SCREEN mail (w66) 279,31 1126×632
+07:01:36.177 SCREEN w68 of Mail 602,147 470×416
+07:01:36.177 SCREEN mail (w66) 250,31 1174×648
+07:01:36.217 SCREEN w68 of Mail 594,163 470×416
+07:01:36.217 SCREEN mail (w66) 195,31 1268×680
+07:01:36.312 SCREEN w68 of Mail 584,183 470×416
+07:01:36.312 SCREEN mail (w66) 123,31 1391×721
+07:01:36.370 SCREEN w68 of Mail 572,204 470×416
+07:01:36.370 SCREEN mail (w66) 49,31 1516×763
+07:01:36.403 SCREEN w68 of Mail 567,216 470×416
+07:01:36.403 SCREEN mail (w66) 9,31 1585×786
+07:01:36.458 MACOS pid 6465 AXResized w66 AXWindow/AXStandardWindow 0 31 1600 791
+07:01:36.458 MACOS pid 6465 AXResized w66 AXWindow/AXStandardWindow 0 31 1600 791
+07:01:36.459 MACOS pid 6465 AXResized w66 AXWindow/AXStandardWindow 0 31 1600 791
+07:01:36.459 MACOS pid 6465 AXResized w66 AXWindow/AXStandardWindow 0 31 1600 791
+07:01:36.459 MACOS pid 6465 AXResized w66 AXWindow/AXStandardWindow 0 31 1600 791
+07:01:36.459 MACOS pid 6465 AXResized w66 AXWindow/AXStandardWindow 0 31 1600 791
+07:01:36.460 MACOS pid 6465 AXResized w66 AXWindow/AXStandardWindow 0 31 1600 791
+07:01:36.462 SCREEN w68 of Mail 565,218 470×416
+07:01:36.462 SCREEN mail (w66) 0,31 1600×791
+07:01:39.110 SCREEN -- end 67 act=macos-own settled=quiet:943 zooms=66 front=66 floating=31,50,53,59,60,66,156,226,304 docked=
+07:01:39.422 SCRIPT == 68 double-click-mail-again

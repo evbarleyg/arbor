@@ -1,0 +1,19 @@
+21 dock-icon-preview: clicks preview's icon in the Dock
+expected: {'act': 'switch', 'settled': 'quiet:394', 'front': '62', 'floating': '31,34,44,50,53,59,60,62,66', 'docked': ''}
+FAIL rule 6: the button came up, and the apps heard of it 138 ms later
+
+06:58:05.947 SCREEN -- begin 21 dock-icon-preview
+06:58:05.947 SCREEN -- text 21 clicks preview's icon in the Dock
+06:58:06.635 SCREEN the button is down 1332 854
+06:58:06.746 SCREEN front to back: preview w68 mail safari w93 calendar textedit settings notes terminal finder
+06:58:06.746 SCREEN the button is up 1332 854
+06:58:06.885 SCREEN in front: process 6177 com.apple.Preview
+06:58:06.887 MACOS pid 6177 AXApplicationActivated
+06:58:06.888 MACOS workspace didActivate pid 6177 com.apple.Preview regular
+06:58:06.888 MACOS workspace didDeactivate pid 6465 com.apple.mail regular
+06:58:06.888 MACOS pid 6465 AXApplicationDeactivated
+06:58:06.890 SCREEN (nothing was seen for 143 ms)
+06:58:06.895 DEBUG focus is on w62
+06:58:06.900 DEBUG w62 has the keyboard
+06:58:08.302 SCREEN -- end 21 act=switch settled=quiet:394 front=62 floating=31,34,44,50,53,59,60,62,66 docked=
+06:58:08.582 SCRIPT == 22 quit-preview
