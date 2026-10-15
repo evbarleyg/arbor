@@ -62,14 +62,22 @@ extension Controller {
     return .success("\(id) floats on the Desktop again and no longer comes and goes with `summon`")
   }
 
-  private func summon(_ window: WindowSnapshot, on display: DisplayID) -> CommandResult {
+  /// `awaitedSince`: it is the window `summon` has been waiting for (its app had none, or none that showed), and this is who had the keyboard
+  /// when it was asked for. Such a window has the keyboard as soon as it is there, on a Mac before anybody says that it was created:
+  /// its app was opened in front. Nobody is using it where it is and nobody came from it, so the keyboard counts as being where it was.
+  private func summon(_ window: WindowSnapshot, on display: DisplayID, awaitedSince asked: WindowID?? = nil) -> CommandResult {
     stopAwaitingSummon()
+    var keyboard = system.focusedWindow()
+    // (Or nobody has it yet, as far as macOS can tell: the app is in front and has not named a window.)
+    if let asked, keyboard == window.id || keyboard == nil {
+      keyboard = asked.flatMap { windows[$0] != nil && $0 != window.id ? $0 : nil } ?? focusHistory.first { $0 != window.id }
+    }
     guard let home = workspaceID(containing: window.id) else { return .failure("\(window.id) is not on any display") }
     if let leaf = workspaces[home]!.tree.leaf(containing: window.id) {
       // A docked window has a place, and the place wins: go there, as ⌘Tab would. Again, and it is back where you were,
       // so that one key does for an app wherever its window lives.
       if let back = returnFromDockedWindow(window, on: home) { return back }
-      let before = (camera: workspaces[home]!.camera, keyboard: system.focusedWindow())
+      let before = (camera: workspaces[home]!.camera, keyboard: keyboard)
       let inactiveTab = workspaces[home]!.tree.activeWindow(of: leaf) != window.id
       if inactiveTab { workspaces[home]!.tree.activate(window.id) }
       if parked.contains(window.id) || layouts[home]?.windowFrames[window.id] == nil {
@@ -89,7 +97,7 @@ extension Controller {
       system.focus(window.id)
       return .success("\(window.appName) is kept in view already")
     }
-    present(window.id, on: display, keyboardWas: system.focusedWindow())
+    present(window.id, on: display, keyboardWas: keyboard)
     system.focus(window.id)
     return .success("summoned \(window.appName) (\(window.id))")
   }
@@ -233,6 +241,12 @@ extension Controller {
     case .focus(let focused) where focused != visitToDockedWindow?.window: visitToDockedWindow = nil
     default: break
     }
+    // An app can take seconds to open. Whoever takes the keyboard meanwhile is who gets it back.
+    if case .focus(let focused) = change, let awaited = awaitedSummon, let window = windows[focused],
+      !Self.isWindow(window, of: awaited.app), system.focusedWindow() == focused
+    {
+      awaitedSummon?.keyboard = focused
+    }
     summonAwaitedWindow()
     guard case .focus(let focused) = change, !settings.summonStays else { return }
     for display in workspaces.keys.sorted() {
@@ -256,10 +270,12 @@ extension Controller {
   // MARK: Apps without a window
 
   private func openAndAwait(_ app: String, on display: DisplayID) -> CommandResult {
+    // Asked before the app is: it comes to the front.
+    let keyboard = system.focusedWindow()
     guard system.openApplication(app) else {
       return .failure("no app called \(app): use its name as the Dock shows it, or its bundle id")
     }
-    awaitedSummon = (app, display)
+    awaitedSummon = (app, display, keyboard)
     scheduler.schedule("summon-wait", after: Self.summonWait) { [weak self] in
       guard let self, self.awaitedSummon != nil else { return }
       self.awaitedSummon = nil
@@ -275,7 +291,7 @@ extension Controller {
 
   /// Summons the window `summon` is waiting for, if it has appeared (or is no longer minimized or hidden).
   func summonAwaitedWindow() {
-    guard isRunning, let (app, display) = awaitedSummon, workspaces[display] != nil,
+    guard isRunning, let (app, display, keyboard) = awaitedSummon, workspaces[display] != nil,
       // The one used last, if the app showed several again; of windows never used, the newest.
       let window = windows.values
         .filter({ Self.isWindow($0, of: app) && $0.isPresent && filter.manages($0) && workspaceID(containing: $0.id) != nil })
@@ -284,6 +300,6 @@ extension Controller {
           return ra != rb ? ra < rb : a.id > b.id
         })
     else { return }
-    _ = summon(window, on: display)
+    _ = summon(window, on: display, awaitedSince: keyboard)
   }
 }

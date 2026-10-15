@@ -504,6 +504,103 @@ private let side = DisplaySnapshot(
     #expect(h.system.focused == editor)
   }
 
+  /// `summon` opens the app in front, so on a Mac its window has the keyboard by the time anybody says that it was created, and "the focus is
+  /// on it" can even come first. It was taken for a window somebody is using where it is, which must not jump: it stayed where its
+  /// app had opened it, and that was remembered as the app's place for every summon to come.
+  @Test(arguments: [false, true]) func alsoWhenItHasTheKeyboardBeforeArborHearsOfIt(focusIsReportedFirst: Bool) throws {
+    let (h, editor, _, _) = makeHarness()
+    let camera = h.workspace.camera
+    h.run("summon Notes")
+    // The world runs ahead of the reports.
+    let listener = h.system.events
+    h.system.events = nil
+    let notes = h.system.open(app: "Notes", pid: 1004, frame: CGRect(x: 10, y: 30, width: 300, height: 400))
+    h.system.events = listener
+    #expect(h.system.focused == notes)
+    let snapshot = try #require(h.system.windows[notes]?.snapshot)
+    if focusIsReportedFirst { h.controller.windowFocused(notes) }
+    h.controller.windowAppeared(snapshot)
+    if !focusIsReportedFirst { h.controller.windowFocused(notes) }
+    h.scheduler.runPending()
+
+    #expect(h.workspace.isSummoned(notes))
+    let middle = try #require(h.frame(notes))
+    #expect(abs(middle.midX - h.visibleFrame.midX) <= 1 && abs(middle.midY - h.visibleFrame.midY) <= 1, "\(middle)")
+    #expect(h.workspace.camera == camera)
+    // Sent away, the keyboard is back where it was; and summoned again it comes to the same place.
+    h.run("summon Notes")
+    #expect(isOutOfView(notes, h))
+    #expect(h.system.focused == editor)
+    h.run("summon Notes")
+    #expect(h.frame(notes) == middle)
+  }
+
+  /// The keyboard goes back to where it was when `summon` was asked, also to a window Arbor does not arrange: a call, say.
+  @Test(arguments: [false, true]) func sentAwayTheKeyboardGoesBackToAnAppArborDoesNotArrange(theWorldRunsAhead: Bool) throws {
+    let (h, editor, _, _) = makeHarness()
+    let call = h.system.open(app: "Call", pid: 1006)
+    h.run("exclude com.example.call")
+    // So that the call is not simply the last window Arbor saw with the keyboard, from when it still arranged it.
+    h.system.userFocus(editor)
+    h.system.userFocus(call)
+    h.run("summon Notes")
+    let listener = h.system.events
+    if theWorldRunsAhead { h.system.events = nil }
+    let notes = h.system.open(app: "Notes", pid: 1004, frame: CGRect(x: 10, y: 30, width: 300, height: 400))
+    if theWorldRunsAhead {
+      h.system.events = listener
+      h.controller.windowAppeared(try #require(h.system.windows[notes]?.snapshot))
+      h.controller.windowFocused(notes)
+    }
+    #expect(h.workspace.isSummoned(notes))
+    h.run("summon Notes")
+    #expect(isOutOfView(notes, h))
+    #expect(h.system.focused == call)
+  }
+
+  /// An app can take seconds to open. Whoever goes on working elsewhere meanwhile is there when its window comes.
+  @Test(arguments: [false, true]) func whoeverTookTheKeyboardWhileTheAppWasOpeningGetsItBack(theWorldRunsAhead: Bool) throws {
+    let (h, editor, browser, _) = makeHarness()
+    h.run("show-all")
+    settle(h)
+    h.system.userFocus(editor)
+    h.run("summon Notes")
+    h.system.userFocus(browser)
+    let listener = h.system.events
+    if theWorldRunsAhead { h.system.events = nil }
+    let notes = h.system.open(app: "Notes", pid: 1004, frame: CGRect(x: 10, y: 30, width: 300, height: 400))
+    if theWorldRunsAhead {
+      h.system.events = listener
+      h.controller.windowAppeared(try #require(h.system.windows[notes]?.snapshot))
+      h.controller.windowFocused(notes)
+    }
+    h.scheduler.runPending()
+    #expect(h.workspace.isSummoned(notes))
+    h.run("summon Notes")
+    #expect(h.system.focused == browser)
+  }
+
+  /// A docked window has a place, and `summon` goes there and, pressed again, back. Also when it had to be fetched from the Dock first and
+  /// has the keyboard by the time Arbor hears that it is there again.
+  @Test func aDockedWindowThatWasWaitedForHasAWayBack() throws {
+    let (h, editor, browser, _) = makeHarness()
+    let camera = h.workspace.camera
+    h.system.setMinimized(browser, true)
+    h.run("summon Browser")
+    let listener = h.system.events
+    h.system.events = nil
+    h.system.setMinimized(browser, false)
+    h.system.userFocus(browser)
+    h.system.events = listener
+    h.controller.windowChanged(try #require(h.system.windows[browser]?.snapshot), userInitiated: true)
+    h.controller.windowFocused(browser)
+    h.scheduler.runPending()
+    #expect(h.system.isVisible(browser))
+    h.run("summon Browser")
+    #expect(h.workspace.camera == camera)
+    #expect(h.system.focused == editor)
+  }
+
   @Test func aWindowThatComesTooLateIsAnOrdinaryNewWindow() {
     let (h, _, _, _) = makeHarness()
     h.run("summon Notes")

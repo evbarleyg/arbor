@@ -278,8 +278,8 @@ public final class Controller {
   var keyboardBeforeSummon: WindowID?
   /// Where `summon` came from when it went to a docked window, until the next press (Controller+Summon.swift).
   var visitToDockedWindow: VisitToDockedWindow?
-  /// The app `summon` has asked to open a window, and the display to summon it on.
-  var awaitedSummon: (app: String, display: DisplayID)?
+  /// The app `summon` has asked to open a window, the display to summon it on, and who had the keyboard when it asked.
+  var awaitedSummon: (app: String, display: DisplayID, keyboard: WindowID?)?
   /// Arrangements waiting for the windows of apps that `layout --open` opened (Controller+LayoutNotation.swift).
   var pendingLayouts: [DisplayID: PendingLayout] = [:]
   /// The changes `undo` and `redo` step through (Controller+Undo.swift). Not saved between launches.
