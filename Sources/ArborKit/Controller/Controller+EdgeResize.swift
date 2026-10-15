@@ -29,6 +29,8 @@ extension Controller {
   }
 
   public func resizeEnded(_ id: WindowID) {
+    actsOfAHand += 1
+    defer { actsOfAHand -= 1 }
     if edgeResize?.window == id { edgeResize = nil }
     guard isRunning, isManaged(id) else { return }
     if workspaces.values.contains(where: { $0.isFloating(id) }) { aHandHasPlaced(id) }

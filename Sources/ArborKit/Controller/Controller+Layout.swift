@@ -81,7 +81,7 @@ extension Controller {
     // Before anything is moved (Controller+Hold.swift). A new node alone is no move of the view: docking a window at the edge of the
     // view makes a group of the two, with the same things to see, and a rule that waited does that at the very end of a hold.
     if reason == .camera, holdLevel != .view, layouts[displayID]?.camera != layout.camera { holdLetsInWhatWaited(on: displayID) }
-    if reason != .enforce, let tree = workspaces[displayID]?.tree { enforcement.reset(tree.allWindows) }
+    if reason != .enforce { giveAFreshStart(in: layout, on: displayID) }
     // What a window does after Arbor has given it a frame is its answer to that, not to a double-click before it.
     if reason != .enforce { appsDoubleClick = nil }
     let staged = stageTransition(on: displayID, to: layout, reason: reason, motion: motion, puttingBack: waiting)
@@ -317,6 +317,8 @@ extension Controller {
   /// moving reliably).
   func park(_ window: WindowID, on display: DisplaySnapshot) {
     guard let current = windows[window] else { return }
+    // Out of view it is left to nobody: the layout that brings it back puts it into its slot.
+    enforcement.reset([window])
     parkedAgain[window] = parked.contains(window) ? parkedAgain[window, default: 0] + 1 : nil
     let size = parkingSize(for: window, now: current.frame.size)
     let target = CGRect(origin: parkingOrigin(for: size, of: window, on: display), size: size)

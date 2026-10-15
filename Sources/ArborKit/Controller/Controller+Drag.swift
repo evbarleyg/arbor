@@ -73,7 +73,7 @@ extension Controller {
     cancelDrag()
     closeFinderBecauseTheUserLeft()
     // A second press that drags is no double-click.
-    appsDoubleClick = nil
+    aHandTakes(id)
     guard isRunning, isManaged(id) else { return }
     rememberDragOrigin(of: id)
     // Out of view a floating window may have been made small (`shrinkOutOfView`). It takes its own size when it is let go. (A docked
@@ -94,6 +94,8 @@ extension Controller {
   }
 
   public func dragMoved(_ id: WindowID, to point: CGPoint) {
+    actsOfAHand += 1
+    defer { actsOfAHand -= 1 }
     guard drag?.window == id else { return }
     drag?.point = point
     if drag?.edgesNeverLeft.isEmpty == false { drag?.edgesNeverLeft.formIntersection(screenEdges(near: point)) }
@@ -101,6 +103,8 @@ extension Controller {
   }
 
   public func dragEnded(_ id: WindowID, at point: CGPoint) {
+    actsOfAHand += 1
+    defer { actsOfAHand -= 1 }
     guard drag?.window == id else { return }
     drag?.point = point
     if drag?.edgesNeverLeft.isEmpty == false { drag?.edgesNeverLeft.formIntersection(screenEdges(near: point)) }

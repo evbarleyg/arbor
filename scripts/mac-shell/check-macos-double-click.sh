@@ -11,7 +11,7 @@
 # double-clicks: the window goes where macOS sends it, by one road, and stays; nobody else moves; Arbor sets no frame
 # (its own trace says so); macOS's second double-click brings it back to its slot; and after a third, one command of
 # Arbor's does, in one move. Then as a person met it: four windows, `arrange`, the double-click, and what comes next (other
-# windows are switched to, one opens, ⌃⌥0 and back). Then the first round with two of macOS's own apps.
+# windows are switched to, one opens and closes, ⌃⌥0 and back, a docked neighbour closes), and a session with all that lays out unasked. Then the first round with two of macOS's own apps.
 #
 # The question only a Mac can answer: does the Accessibility layer's monitor hear the second press, with its count, before the
 # app reports the new frame? The traces come back in traces/: what macOS reports round a title bar's double-click.
@@ -62,6 +62,7 @@ one_road() {
 stayed() { [ "$(wc -l < "$1" | tr -d ' ')" -eq 1 ]; }
 real_frame_is() { [ "$(real_frame_of "$1")" = "$2" ]; }
 differs() { [ "$1" != "$2" ]; }
+same() { [ "$1" = "$2" ]; }
 not() { ! "$@"; }
 # must <press…>: on somebody's Mac the nets may decline a press, and then nothing happens either.
 must() { "$@" || check "the press was let through: $*" false; }
@@ -166,12 +167,10 @@ there_and_back() {
   else
     check "macOS returns it to where it stood" eventually real_frame_is "$window" "$slot"
     check "by one road" one_road "$ARBOR_OUT/frames-$name-2.txt"
-    if [ "$stood" = yes ]; then
-      check "from where Arbor keeps it like any docked window" eventually grep -q "w$window is back in its slot" "$ARBOR_HOME/arbor.log"
-      check "and says so" not is letBe "$window"
-    else
-      echo "it did not stand in its slot before the zoom ($slot; its slot: $(arbor_ask slot "$window")): whether that counts as home is not asked here"
-    fi
+    # Where the zoom began is home, though an app that rounds its size stands a few points out of its slot there.
+    [ "$stood" = yes ] || echo "it did not stand in its slot before the zoom ($slot; its slot: $(arbor_ask slot "$window"))"
+    check "from where Arbor keeps it like any docked window" eventually grep -q "w$window is back in its slot" "$ARBOR_HOME/arbor.log"
+    check "and says so" not is letBe "$window"
   fi
   shot "$name-2-back"
 
@@ -194,13 +193,17 @@ there_and_back() {
 # as_a_person_met_it <name>: four windows, `arrange`, macOS's own double-click on a title bar (collab/IDEAS.md, I19: it "works for a
 # moment, then Arbor puts it back where the arrangement had it"), and then what a day brings next.
 as_a_person_met_it() {
-  local name=$1 slot zoomed bar beside new zx zy zw
+  local name=$1 slot zoomed bar beside new next had zx zy zw
   ctl arrange
   sleep 1
   summary
   slot=$(real_frame_of "$W1")
   beside="$(real_frame_of "$W2") $(real_frame_of "$W3") $(real_frame_of "$W4")"
   bar=$(titlebar_of "$W1")
+  # `arrange` makes columns. The one that shares its column: when that one goes, its slot grows.
+  for next in "$W2" "$W3" "$W4"; do
+    if same_column "$W1" "$next" > /dev/null 2>&1; then break; fi
+  done
   the_others_stayed() { [ "$(real_frame_of "$W2") $(real_frame_of "$W3") $(real_frame_of "$W4")" = "$beside" ]; }
 
   step "$name, arranged: double-click a title bar"
@@ -231,10 +234,14 @@ as_a_person_met_it() {
   check "it is where macOS put it" real_frame_is "$W1" "$zoomed"
   check "the other three did not move" the_others_stayed
 
-  step "$name, arranged: a window opens"
+  step "$name, arranged: a window opens, and closes"
   open_window new 300 300 500 300
   sleep 1.5
   check "it is where macOS put it" real_frame_is "$W1" "$zoomed"
+  tw close "$new"
+  forget_window "$new"
+  sleep 1.5
+  check "and after that one has closed" real_frame_is "$W1" "$zoomed"
   check "the other three did not move" the_others_stayed
 
   step "$name, arranged: everything (the key is ⌃⌥0), and back"
@@ -261,6 +268,144 @@ as_a_person_met_it() {
     check "by one road" one_road "$ARBOR_OUT/frames-$name-arranged-3.txt"
   fi
   shot "$name-arranged-2-back"
+
+  # What becomes of a neighbour says nothing about this window (collab/QUESTIONS.md, Q22).
+  step "$name, arranged: there once more, and a docked neighbour closes"
+  # shellcheck disable=SC2086
+  must dblclick $bar
+  sleep 2
+  zoomed=$(real_frame_of "$W1")
+  check "macOS gave it another frame" differs "$zoomed" "$slot"
+  had=$(arbor_ask slot "$W1")
+  trace_on "arranged-$name-neighbour" "the zoomed window's docked neighbour closes; then macOS's second double-click"
+  frames_during "$W1" "$ARBOR_OUT/frames-$name-arranged-4.txt" tw close "$next"
+  forget_window "$next"
+  check "it did not move at all" stayed "$ARBOR_OUT/frames-$name-arranged-4.txt"
+  check "it is docked, and let be" is letBe "$W1"
+  check "the room is shared behind it: its slot is another now" differs "$(arbor_ask slot "$W1")" "$had"
+  summary
+  shot "$name-arranged-3-a-neighbour-has-closed"
+
+  step "$name, arranged: macOS's second double-click, and the slot is another by now"
+  read -r zx zy zw _ <<< "$zoomed"
+  frames_during "$W1" "$ARBOR_OUT/frames-$name-arranged-5.txt" must dblclick "$((${zx%.*} + ${zw%.*} / 2))" "$((${zy%.*} + 12))"
+  trace_off "arranged-$name-neighbour"
+  if fill_is_set; then
+    check "set to fill, macOS leaves it filled" stayed "$ARBOR_OUT/frames-$name-arranged-5.txt"
+    ctl show-all
+  fi
+  check "it ends at its slot as it is now: the corner and the width" eventually at_its_slot "$W1"
+  check "a docked window like any other" not is letBe "$W1"
+  echo "Arbor set its frame $(moves_of "$W1") time(s): once is what is allowed, after macOS's own way back"
+  shot "$name-arranged-4-in-the-slot-as-it-is-now"
+}
+
+# what_nobody_asked_for <name>: three windows and one of a second app, `arrange`, macOS's double-click, and then everything that lays out
+# without anybody having asked Arbor for it (collab/QUESTIONS.md, Q22, second answer). After each: is it where macOS put it?
+what_nobody_asked_for() {
+  local name=$1 slot zoomed bar dialog
+  ctl arrange
+  sleep 1
+  summary
+  slot=$(real_frame_of "$W1")
+  bar=$(titlebar_of "$W1")
+  # shellcheck disable=SC2086
+  must dblclick $bar
+  sleep 2
+  zoomed=$(real_frame_of "$W1")
+  check "macOS gave it another frame" differs "$zoomed" "$slot"
+  check "it is docked, and let be" is letBe "$W1"
+  # still_there <what happened>
+  still_there() {
+    check "$1: it is where macOS put it" eventually real_frame_is "$W1" "$zoomed"
+    check "$1: docked, and let be" is letBe "$W1"
+  }
+  trace_on "unasked-$name" "a zoomed docked window, and what lays out without anybody asking"
+
+  step "$name, nobody asked: a dialog opens over a neighbour, and closes"
+  open_dialog dialog "$W2"
+  sleep 1.5
+  still_there "a dialog is up"
+  frames_during "$W1" "$ARBOR_OUT/frames-$name-unasked-1.txt" tw close "$dialog"
+  forget_window "$dialog"
+  check "it did not move at all" stayed "$ARBOR_OUT/frames-$name-unasked-1.txt"
+  still_there "the dialog has closed"
+
+  step "$name, nobody asked: a docked neighbour goes to the Dock, and comes back"
+  frames_during "$W1" "$ARBOR_OUT/frames-$name-unasked-2.txt" tw minimize "$W2"
+  check "it did not move at all" stayed "$ARBOR_OUT/frames-$name-unasked-2.txt"
+  still_there "a neighbour is minimized"
+  frames_during "$W1" "$ARBOR_OUT/frames-$name-unasked-3.txt" tw restore "$W2"
+  check "it did not move at all" stayed "$ARBOR_OUT/frames-$name-unasked-3.txt"
+  still_there "the neighbour is back"
+
+  step "$name, nobody asked: a neighbour's app is hidden, and shown"
+  frames_during "$W1" "$ARBOR_OUT/frames-$name-unasked-4.txt" tw2 hide
+  check "it did not move at all" stayed "$ARBOR_OUT/frames-$name-unasked-4.txt"
+  still_there "the other app is hidden"
+  frames_during "$W1" "$ARBOR_OUT/frames-$name-unasked-5.txt" tw2 unhide
+  check "it did not move at all" stayed "$ARBOR_OUT/frames-$name-unasked-5.txt"
+  still_there "the other app shows again"
+  shot "$name-unasked-1-after-the-neighbours"
+
+  step "$name, nobody asked: the window itself goes to the Dock, and comes back"
+  tw minimize "$W1"
+  check "it is in the Dock" eventually is minimized "$W1"
+  sleep 1
+  tw restore "$W1"
+  check "it is back" eventually not is minimized "$W1"
+  sleep 1.5
+  still_there "back from the Dock"
+
+  step "$name, nobody asked: its own app is hidden, and shown"
+  tw hide
+  check "it is hidden" eventually is hidden "$W1"
+  sleep 1
+  tw unhide
+  check "it shows again" eventually not is hidden "$W1"
+  sleep 1.5
+  still_there "shown again"
+  shot "$name-unasked-2-after-its-own-trips"
+
+  if on_throwaway_mac; then
+    step "$name, nobody asked: another Space, and back"
+    space_add
+    spaces
+    space_go right
+    spaces
+    sleep 1
+    space_go left
+    spaces
+    sleep 1.5
+    still_there "back on its Space"
+  fi
+
+  step "$name, nobody asked: a neighbour's app quits"
+  # It lives until its stdin closes, of which this shell holds the other end.
+  the_other_app_quits() {
+    exec 8>&-
+    arbor_await_exit "$ARBOR_WINDOWS_PID_2" 30 || echo "the second app is still there"
+    ARBOR_WINDOWS_PID_2=""
+  }
+  frames_during "$W1" "$ARBOR_OUT/frames-$name-unasked-6.txt" the_other_app_quits
+  forget_window "$V1"
+  check "Arbor knows that its window is gone" eventually not is known "$V1"
+  check "it did not move at all" stayed "$ARBOR_OUT/frames-$name-unasked-6.txt"
+  still_there "the other app has quit"
+  trace_off "unasked-$name"
+  check "in all of that Arbor never set its frame" same "$(moves_of "$W1")" "$([ -n "$TRACE" ] && echo 0 || echo "?")"
+  shot "$name-unasked-3-at-the-end"
+
+  # No check yet: today a pause gives every docked window the frame it floated at, this one too, and a resume puts it into its slot. The
+  # product owner leans to "a pause there and back is nothing"; that is a change of its own.
+  step "$name: pause, and resume (what happens today)"
+  ctl pause
+  sleep 1.5
+  echo "paused: $(real_frame_of "$W1") (macOS had put it at $zoomed; its slot was $slot)"
+  ctl resume
+  sleep 1.5
+  echo "resumed: $(real_frame_of "$W1")"
+  summary
 }
 
 arbor_build
@@ -291,6 +436,15 @@ for action in $actions; do
   grep -i "double-click" "$ARBOR_HOME/arbor.log" | tail -n 8 | cut -c 1-200 | sed 's/^/    /'
   arbor_stop
 done
+step "session: three windows and another app's, arranged; macOS's own action as it is"
+title_bar_action "$(on_throwaway_mac && echo default || echo as-it-is)"
+arbor_settings '{}'
+ARBOR_SECOND_APP=1
+arbor_start 3
+what_nobody_asked_for unasked
+grep -i -E "double-click|slot" "$ARBOR_HOME/arbor.log" | tail -n 8 | cut -c 1-200 | sed 's/^/    /'
+arbor_stop
+ARBOR_SECOND_APP=0
 on_throwaway_mac || echo "a person's Mac: leaving out macOS's other settings and the real apps, which run only on GitHub's Macs"
 on_throwaway_mac || exit 0
 title_bar_action default

@@ -398,9 +398,17 @@ a press with an even click count has reached the window under the pointer: `doub
 keeps a note for a docked window (`AppsDoubleClick`), and a new frame of that window within two seconds, with the button
 up, stays (`standsAsideAfterADoubleClick`, from `windowChanged`): no frame is set and no timer started. The window is still docked
 and its slot stays empty behind it; it is left alone like one Arbor has given up on (`EnforcementLimiter.leave`) until macOS's
-second double-click returns it or the layout next changes, which takes it back in one move. The first three times a line on screen says so
-(`HeadsUpHint.zoomedByMacOS`). A drag or an edge resize drops
-the note. Not covered: ⌥-click on the green button and the tiles in its menu, which no press tells apart from an app's whim.
+second double-click returns it or a person asks Arbor for a layout, which takes it back in one move. The first three times a line on
+screen says so (`HeadsUpHint.zoomedByMacOS`). A drag or an edge resize drops the note.
+
+A layout that nobody asked for leaves such a window where it is (`stillLetBe`, asked by `relayout`): a dialog closes, a neighbour
+closes or is minimized or hidden, a rule docks a new window. The others share the room behind it. `aPersonAsks` is what tells the
+two apart: a command is being performed, from wherever it came, or one of the ways in that a hand has (a drag, an edge, a gap, a tile,
+a gesture, a key, Go to…, the settings) is on the stack. Whatever says nothing, a timer too, counts as not asked. Two things end it
+whoever asked: the window leaves the view, and the displays change. macOS's second double-click returns the window to
+the frame it had (`whereAZoomBegan`), which was its slot then; if the slot is another by now, the window is a docked window that something
+has moved from the first report of its way back, and is put into its slot a quarter of a second after the last (`noteWhetherItIsBackInItsSlot`).
+In the Dock, hidden or on another Space it stays let be, and so does another tab of its group in its stead. Not covered: ⌥-click on the green button and the tiles in its menu, which no press tells apart from an app's whim.
 
 ## Drag and drop
 

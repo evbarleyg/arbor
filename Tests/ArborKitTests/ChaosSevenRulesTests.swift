@@ -355,6 +355,19 @@ private let b = WindowID(102)
     #expect(!nets(after: oneDocked, then: "focus 102") { _ = $0.setFrame(self.rect(820, 300, 500, 400), of: b) }.contains("moved-unasked"))
   }
 
+  @Test func aWindowItsPersonHadZoomedStaysThroughWhatNobodyAskedFor() {
+    let zoomed = oneDocked + ["dock 102 right", "open 103 Finder pid 1003 at 500 300 300 200", "settle", "double-click 101", "settle"]
+    #expect(nets(after: zoomed, then: "close 103").isEmpty)
+    #expect(nets(after: zoomed, then: "close 103") { _ = $0.setFrame(self.rect(12, 37, 500, 400), of: a) }.contains("moved-out-of-its-zoom"))
+    // Asked for, it is another matter.
+    #expect(!nets(after: zoomed, then: "show-all").contains("moved-out-of-its-zoom"))
+    // So it is where nobody could reach it. Partly over the edge is within reach.
+    #expect(!nets(after: zoomed + ["move 101 1300 800 600 400", "settle"], then: "close 103").contains("moved-out-of-its-zoom"))
+    #expect(
+      nets(after: zoomed + ["move 101 663 679 513 328", "settle"], then: "close 103") { _ = $0.setFrame(self.rect(12, 37, 500, 400), of: a) }
+        .contains("moved-out-of-its-zoom"))
+  }
+
   @Test func whatFloatsInViewStaysWhereItIsAtLaunchAndWhenAPauseEnds() {
     let again = oneDocked + ["quit"]
     #expect(nets(after: again, then: "launch").isEmpty)

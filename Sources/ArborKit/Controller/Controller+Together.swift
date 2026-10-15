@@ -24,6 +24,8 @@ extension Controller {
       if !parked.contains(window), current.frame.approximatelyEquals(target, tolerance: 1) || misfits[window] != nil {
         continue
       }
+      // Let be through this layout (`stillLetBe`), as `apply` lets it be.
+      if enforcement.givenUp.contains(window) { continue }
       // The first frame `apply` asks for.
       moves.append((window, questionBeforePlacing(current, in: target, on: displayID) ?? request(for: current, in: target)))
     }

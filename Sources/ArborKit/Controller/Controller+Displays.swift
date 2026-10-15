@@ -34,6 +34,8 @@ extension Controller {
       for (window, place) in workspace.floating { all[window] = areaShowing(of: place) }
     }
     displays = system.displays()
+    // No frame outlives the displays it was made for (Controller+AppsDoubleClick.swift).
+    if displays != before { enforcement.reset(enforcement.leftAlone) }
     followDisplaysThatMoved(since: before)
     endUndoHistoryIfDisplaysMoved(
       since: Dictionary(before.map { ($0.id, $0.frame.origin) }) { first, _ in first },

@@ -245,6 +245,7 @@ extension Controller {
     check("owedMoves", owedMoves)
     check("givenUp", enforcement.givenUp)
     check("appsDoubleClick", [appsDoubleClick?.window].compactMap { $0 })
+    check("whereAZoomBegan", whereAZoomBegan.keys)
     check("focusHistory", focusHistory)
     check("letBe", [letBe?.window].compactMap { $0 })
     check("ignoredWindowIDs", filter.ignoredWindowIDs)

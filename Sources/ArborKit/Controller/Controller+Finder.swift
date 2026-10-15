@@ -302,6 +302,8 @@ extension Controller {
   // MARK: What the user did in the palette (part of `OverlayActions`)
 
   public func finderChose(_ destination: FinderDestination) {
+    actsOfAHand += 1
+    defer { actsOfAHand -= 1 }
     guard isRunning, let display = finder?.display else { return }
     let gone: String?
     switch destination {

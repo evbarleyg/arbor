@@ -1112,6 +1112,8 @@ extension FakeWindowSystem {
     windows[id] = FakeWindow(snapshot: snapshot, minimumSize: front.minimumSize, maximumSize: front.maximumSize)
     windows[id]!.ownTitleBar = front.ownTitleBar
     (windows[id]!.sizeStep, windows[id]!.sizeMargin) = (front.sizeStep, front.sizeMargin)
+    // One window to macOS's zoom, and to whoever double-clicked it.
+    (windows[id]!.zoom, windows[id]!.doubleClicks) = (growth == 0 ? front.zoom : nil, front.doubleClicks)
     if focused == window { focused = id }
     events?.windowReplaced(window, by: snapshot)
     return id
@@ -1121,6 +1123,7 @@ extension FakeWindowSystem {
   public func selectTab(_ tab: WindowID, insteadOf front: WindowID) {
     guard var fake = backgroundTabs.removeValue(forKey: tab), let old = windows.removeValue(forKey: front) else { return }
     fake.snapshot.frame = old.snapshot.frame
+    (fake.zoom, fake.doubleClicks) = (old.zoom, old.doubleClicks)
     backgroundTabs[front] = old
     windows[tab] = fake
     if focused == front { focused = tab }
