@@ -1,0 +1,396 @@
+# mac-shell: scripts/mac-shell/check-moves-of-the-view.sh at 6bf1fc1, macOS 26.6.2, 2026-10-15T12:56Z
+built Arbor, the pointer tool and the app bundles in 9s
+
+== a sheet on a docked window
+session 1: Arbor pid 8424, test windows 29 30 31 (pid 8385)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 29 left
+docked w29 at the left edge
+> dock 30 right
+docked w30 at the right edge
+> test windows: open kind=sheet:29 size=220x120
+display 0 0 1024 768, visible 0 31 1024 677, camera n2, back no
+  Desktop          349 43 326 653
+  w29 12 43 325 653        docked
+  w30 687 43 325 653       docked
+  w31 270 140 480 348      floating
+
+▸ a sheet whose window stays in view keeps the keyboard when the view moves
+> zoom 29
+framed w29
+> click 512 385
+> key x
+  ✔ before: an x reaches it
+names: the keyboard is in a sheet of test window 29, the sheet is 40 (in front: 8385 dev.arbor.testwindows):
+names:   focused-window 40 AXSheet -
+names:   main-window 29 AXWindow AXStandardWindow
+names:   focused-element 40 AXSheet -
+names:   window-of-the-focused-element 29 AXWindow AXStandardWindow
+> show-all
+showing everything
+  ✔ its window is in view
+> key x
+  ✔ after show-all: an x reaches it
+shot: mac-shell/sheet-1-stays.png
+
+▸ a sheet whose window the move takes out of view hands the keyboard on to a window in view
+> zoom 29
+framed w29
+> click 512 385
+> key x
+  ✔ before: an x reaches it
+> neighbor right
+moved to the Desktop
+  ✔ its window is out of view
+> key x
+  ✔ after neighbor right: an x does not reach it
+> key x
+  ✔ the window on the Desktop, which is in view: an x reaches it
+shot: mac-shell/sheet-2-leaves.png
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+shot: mac-shell/sheet-3-quit.png
+
+== a free-standing panel of the same app
+session 2: Arbor pid 9436, test windows 47 48 49 (pid 9414)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 47 left
+docked w47 at the left edge
+> dock 48 right
+docked w48 at the right edge
+> test windows: open kind=panel size=220x140
+display 0 0 1024 768, visible 0 31 1024 677, camera n2, back no
+  Desktop          349 43 326 653
+  w47 12 43 325 653        docked
+  w48 687 43 325 653       docked focused
+  w49 270 140 480 348      floating
+
+▸ a panel keeps the keyboard while its app's window used last stays in view
+> zoom 47
+framed w47
+> click 512 383
+> click 340 443
+> key x
+  ✔ before: an x reaches it
+names: the keyboard is in a free-standing panel, 58, of the app of test window 47 (in front: 9414 dev.arbor.testwindows):
+names:   focused-window 58 AXWindow AXFloatingWindow
+names:   main-window 47 AXWindow AXStandardWindow
+names:   focused-element 58 AXWindow AXFloatingWindow
+names:   window-of-the-focused-element none
+> show-all
+showing everything
+> key x
+  ✔ after show-all: an x reaches it
+
+== the panel, when that window leaves the view: written down, not judged
+> zoom 47
+framed w47
+> click 512 383
+> click 340 443
+> key x
+  ✔ before: an x reaches it
+> neighbor right
+moved to the Desktop
+> key x
+names: after neighbor right took window 47 away, of one x the panel got 0 events and the window in view 1
+shot: mac-shell/panel-1-its-window-left.png
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+shot: mac-shell/panel-2-quit.png
+
+== an app with a bundle id that writes down its keys, and that Arbor is not pointed at
+session 3: Arbor pid 11226, test windows 67 68 (pid 11205)
+running: 1 display, 0 docked and 2 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 67 left
+docked w67 at the left edge
+> dock 68 right
+docked w68 at the right edge
+  ✔ Arbor does not know the app's window
+display 0 0 1024 768, visible 0 31 1024 679, camera n2, back no
+  Desktop          349 43 326 655
+  w67 12 43 325 655        docked
+  w68 687 43 325 655       docked focused
+shot: mac-shell/unseen-0-the-witness.png
+
+▸ show-all moves the view and leaves the keyboard with an app Arbor does not look at
+> desktop
+showing the Desktop
+> click 512 588
+> key x
+  ✔ before: an x reaches the app
+  ✔ before: the app is in front
+> show-all
+showing everything
+  ✔ the view has moved
+> key x
+  ✔ after show-all: an x reaches the app
+  ✔ after show-all: the app is in front
+  ✔ the app never left the front
+names: the keyboard is in the window of an app that Arbor does not observe (in front: 11167 dev.arbor.test.keys):
+names:   focused-window 62 AXWindow AXStandardWindow
+names:   main-window 62 AXWindow AXStandardWindow
+names:   focused-element 62 AXWindow AXStandardWindow
+names:   window-of-the-focused-element none
+
+▸ home moves the view and leaves the keyboard with an app Arbor does not look at
+> desktop
+showing the Desktop
+> click 512 588
+> key x
+  ✔ before: an x reaches the app
+  ✔ before: the app is in front
+> home
+showing everything
+  ✔ the view has moved
+> key x
+  ✔ after home: an x reaches the app
+  ✔ after home: the app is in front
+  ✔ the app never left the front
+
+▸ neighbor right moves the view and leaves the keyboard with an app Arbor does not look at
+> desktop
+showing the Desktop
+> click 512 588
+> key x
+  ✔ before: an x reaches the app
+  ✔ before: the app is in front
+> neighbor right
+moved to ArborTestWindows (n3)
+  ✔ the view has moved
+> key x
+  ✔ after neighbor right: an x reaches the app
+  ✔ after neighbor right: the app is in front
+  ✔ the app never left the front
+
+▸ out moves the view and leaves the keyboard with an app Arbor does not look at
+> desktop
+showing the Desktop
+> click 512 588
+> key x
+  ✔ before: an x reaches the app
+  ✔ before: the app is in front
+> out
+stepped out to everything
+  ✔ the view has moved
+> key x
+  ✔ after out: an x reaches the app
+  ✔ after out: the app is in front
+  ✔ the app never left the front
+
+▸ desktop moves the view and leaves the keyboard with an app Arbor does not look at
+> show-all
+showing everything
+> click 512 588
+> key x
+  ✔ before: an x reaches the app
+  ✔ before: the app is in front
+> desktop
+showing the Desktop
+  ✔ the view has moved
+> key x
+  ✔ after desktop: an x reaches the app
+  ✔ after desktop: the app is in front
+  ✔ the app never left the front
+> zoom 67
+framed w67
+
+▸ back moves the view and leaves the keyboard with an app Arbor does not look at
+> desktop
+showing the Desktop
+> click 512 588
+> key x
+  ✔ before: an x reaches the app
+  ✔ before: the app is in front
+> back
+back to ArborTestWindows (n1)
+  ✔ the view has moved
+> key x
+  ✔ after back: an x reaches the app
+  ✔ after back: the app is in front
+  ✔ the app never left the front
+
+▸ ⌃⌥Space moves the view and leaves the keyboard with an app Arbor does not look at
+> desktop
+showing the Desktop
+> click 512 588
+> key x
+  ✔ before: an x reaches the app
+  ✔ before: the app is in front
+> key ctrl+opt+space
+  ✔ the view has moved
+> key x
+  ✔ after ⌃⌥Space: an x reaches the app
+  ✔ after ⌃⌥Space: the app is in front
+  ✔ the app never left the front
+
+▸ ⌃⌥→ moves the view and leaves the keyboard with an app Arbor does not look at
+> desktop
+showing the Desktop
+> click 512 588
+> key x
+  ✔ before: an x reaches the app
+  ✔ before: the app is in front
+> key ctrl+opt+right
+  ✔ the view has moved
+> key x
+  ✔ after ⌃⌥→: an x reaches the app
+  ✔ after ⌃⌥→: the app is in front
+  ✔ the app never left the front
+
+▸ ⌃⌥0 moves the view and leaves the keyboard with an app Arbor does not look at
+> desktop
+showing the Desktop
+> click 512 588
+> key x
+  ✔ before: an x reaches the app
+  ✔ before: the app is in front
+> key ctrl+opt+0
+  ✔ the view has moved
+> key x
+  ✔ after ⌃⌥0: an x reaches the app
+  ✔ after ⌃⌥0: the app is in front
+  ✔ the app never left the front
+shot: mac-shell/unseen-1-after-the-moves.png
+
+▸ what names a place takes the keyboard there, whoever had it
+> zoom 68
+framed w68
+> save-view 1
+saved view 1: ArborTestWindows (n3)
+> desktop
+showing the Desktop
+> click 512 588
+> key x
+  ✔ before: an x reaches the app
+  ✔ before: the app is in front
+> view 1
+view 1: ArborTestWindows (n3)
+  ✔ the view is on window 2
+> key x
+  ✔ an x does not reach the app
+  ✔ the test windows' app is in front
+what the app wrote down about coming to the front and leaving it:
+12:57:39.474 ready pid=11167 bundle=dev.arbor.test.keys
+12:57:39.579 active
+12:57:39.967 resigned
+12:57:45.863 active
+12:58:00.340 resigned
+12:58:01.418 active
+12:58:14.548 resigned
+12:58:15.693 active
+12:58:16.223 resigned
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+shot: mac-shell/unseen-2-quit.png
+
+== TextEdit: its Save sheet and its Open panel
+> open -g -b com.apple.TextEdit /tmp/arbor-apps.YOizBJ/scratch/oak.txt
+pid 13263 lists (id role subrole x y w h flags):
+  89 AXWindow AXStandardWindow 79 56 673 439 main
+companions: pid 13309, 2 windows
+session 4: Arbor pid 13352, ARBOR_ONLY_PIDS=13263,13309: running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+> dock 89 left
+docked w89 at the left edge
+> dock 91 right
+docked w91 at the right edge
+> click 180 55
+> move 180 175
+names: TextEdit, the keyboard in its document window 89 (in front: 13263 com.apple.TextEdit):
+names:   focused-window 89 AXWindow AXStandardWindow
+names:   main-window 89 AXWindow AXStandardWindow
+names:   focused-element 89 AXTextArea -
+names:   window-of-the-focused-element 89 AXWindow AXStandardWindow
+> key cmd+shift+opt+s
+TextEdit lists (id role subrole x y w h flags):
+  89 AXWindow AXStandardWindow 12 43 325 655 main,close-disabled,sheets=1
+names: TextEdit, Save As… is up over window 89 (in front: 13263 com.apple.TextEdit):
+names:   focused-window 103 AXSheet -
+names:   main-window 89 AXWindow AXStandardWindow
+names:   focused-element 104 AXTextField -
+names:   window-of-the-focused-element none
+snap: mac-shell/textedit-1-sheet.jpg
+> show-all
+showing everything
+names: TextEdit, after show-all, with its window in view (in front: 13263 com.apple.TextEdit):
+names:   focused-window 103 AXSheet -
+names:   main-window 89 AXWindow AXStandardWindow
+names:   focused-element 104 AXTextField -
+names:   window-of-the-focused-element none
+> zoom 89
+framed w89
+names: TextEdit, after zoom on its window (in front: 13263 com.apple.TextEdit):
+names:   focused-window 103 AXSheet -
+names:   main-window 89 AXWindow AXStandardWindow
+names:   focused-element 104 AXTextField -
+names:   window-of-the-focused-element none
+> neighbor right
+moved to the Desktop
+names: TextEdit, after neighbor right took its window away (in front: 13309 ?):
+names:   focused-window 103 AXSheet -
+names:   main-window 89 AXWindow AXStandardWindow
+names:   focused-element 104 AXTextField -
+names:   window-of-the-focused-element none
+snap: mac-shell/textedit-2-sheet-left.jpg
+> show-all
+showing everything
+> click 180 55
+> move 180 175
+> key escape
+> key cmd+o
+TextEdit lists (id role subrole x y w h flags):
+  113 AXWindow AXStandardWindow 72 89 880 448 main,no-close,no-minimize,no-zoom
+  89 AXWindow AXStandardWindow 12 43 325 655 -
+names: TextEdit, Open… is up, free-standing (in front: 13263 com.apple.TextEdit):
+names:   focused-window 113 AXWindow AXStandardWindow
+names:   main-window 113 AXWindow AXStandardWindow
+names:   focused-element 114 AXList -
+names:   window-of-the-focused-element none
+snap: mac-shell/textedit-3-panel.jpg
+> show-all
+showing everything
+names: TextEdit, after show-all (in front: 13263 com.apple.TextEdit):
+names:   focused-window 113 AXWindow AXStandardWindow
+names:   main-window 113 AXWindow AXStandardWindow
+names:   focused-element 114 AXList -
+names:   window-of-the-focused-element none
+> zoom 91
+framed w91
+names: TextEdit, after zoom on another app's window, which names a window (in front: 13309 ?):
+names:   focused-window 113 AXWindow AXStandardWindow
+names:   main-window 113 AXWindow AXStandardWindow
+names:   focused-element 114 AXList -
+names:   window-of-the-focused-element none
+snap: mac-shell/textedit-4-panel-left.jpg
+> key escape
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+
+82 passed, 0 failed
+exit code 0
