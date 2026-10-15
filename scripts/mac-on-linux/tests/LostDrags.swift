@@ -22,7 +22,7 @@ private func account(_ one: StoreyOne, _ window: FakeMac.Window, pressedAt: Time
   let began = one.mac.journal.first { $0.contains("reports: drag began w\(window.number)") }.flatMap { Double($0.trimmingCharacters(in: .whitespaces).prefix(while: { $0 != " " })) }
   let moved = one.heard.all.filter { $0 == .dragMoved(window.number) }.count
   let changes = one.heard.all.filter { $0 == .changed(window.number, byUser: true) }.count
-  return began.map { "drag began \(Int((($0 + 10_000) - pressedAt) * 1000)) ms after the press, \(moved) moves" } ?? "NO DRAG; \(changes) reports that the window changed, not by Arbor"
+  return began.map { "drag began \(Int((($0 + one.mac.dawn) - pressedAt) * 1000)) ms after the press, \(moved) moves" } ?? "NO DRAG; \(changes) reports that the window changed, not by Arbor"
 }
 
 /// A slow drag (a second, 200 points) or a flick (a quarter of a second).

@@ -24,7 +24,7 @@ public final class AXObserver: NSObject {
 }
 public final class AXValue: NSObject, _CFTypeWithID {
   public static var _typeID: CFTypeID { AXValueGetTypeID() }
-  enum Held { case point(CGPoint), size(CGSize), rect(CGRect), nothing }
+  enum Held { case point(CGPoint), size(CGSize), rect(CGRect), error(AXError), nothing }
   var _held = Held.nothing
   convenience init(_ held: Held) {
     self.init()
@@ -54,15 +54,7 @@ public func AXUIElementCreateApplication(_ pid: pid_t) -> AXUIElement { AXUIElem
 public func AXUIElementCreateSystemWide() -> AXUIElement { AXUIElement(.systemWide) }
 public func AXUIElementCopyAttributeValue(_ element: AXUIElement, _ attribute: CFString, _ value: UnsafeMutablePointer<CFTypeRef?>) -> AXError {
   let (answer, found) = FakeMac.current.read(attribute as String, of: element._stands, timeout: element._timeout)
-  switch found {
-  case .string(let text): value.pointee = text as NSString
-  case .bool(let flag): value.pointee = flag ? kCFBooleanTrue : kCFBooleanFalse
-  case .point(let point): value.pointee = AXValue(.point(point))
-  case .size(let size): value.pointee = AXValue(.size(size))
-  case .element(let other): value.pointee = AXUIElement(other)
-  case .elements(let others): value.pointee = others.map { AXUIElement($0) } as NSArray
-  case nil: break
-  }
+  if let found { value.pointee = _object(found) }
   return AXError(answer)
 }
 public func AXUIElementSetAttributeValue(_ element: AXUIElement, _ attribute: CFString, _ value: CFTypeRef) -> AXError {
@@ -74,7 +66,7 @@ public func AXUIElementSetAttributeValue(_ element: AXUIElement, _ attribute: CF
     switch held._held {
     case .point(let point): given = .point(point)
     case .size(let size): given = .size(size)
-    case .rect, .nothing: return .illegalArgument
+    case .rect, .error, .nothing: return .illegalArgument
     }
   default: return .illegalArgument
   }
@@ -108,7 +100,24 @@ public struct AXCopyMultipleAttributeOptions: OptionSet, Sendable {
 }
 public func AXUIElementCopyMultipleAttributeValues(
   _ element: AXUIElement, _ attributes: CFArray, _ options: AXCopyMultipleAttributeOptions, _ values: UnsafeMutablePointer<CFArray?>
-) -> AXError { .failure }
+) -> AXError {
+  let names = (attributes as? [String]) ?? []
+  let (answer, found) = FakeMac.current.read(names, of: element._stands, timeout: element._timeout)
+  guard answer == .success else { return AXError(answer) }
+  // An attribute the element lacks comes back as the error, wrapped.
+  values.pointee = found.map { $0.map(_object) ?? AXValue(.error(.attributeUnsupported)) } as NSArray
+  return .success
+}
+private func _object(_ value: FakeMac.Value) -> AnyObject {
+  switch value {
+  case .string(let text): text as NSString
+  case .bool(let flag): flag ? kCFBooleanTrue : kCFBooleanFalse
+  case .point(let point): AXValue(.point(point))
+  case .size(let size): AXValue(.size(size))
+  case .element(let other): AXUIElement(other)
+  case .elements(let others): others.map { AXUIElement($0) } as NSArray
+  }
+}
 public func AXUIElementCopyAttributeNames(_ element: AXUIElement, _ names: UnsafeMutablePointer<CFArray?>) -> AXError { .failure }
 public func AXUIElementCopyAttributeValues(
   _ element: AXUIElement, _ attribute: CFString, _ index: CFIndex, _ maxValues: CFIndex, _ values: UnsafeMutablePointer<CFArray?>
@@ -133,6 +142,7 @@ public func AXValueGetType(_ value: AXValue) -> AXValueType {
   case .point: .cgPoint
   case .size: .cgSize
   case .rect: .cgRect
+  case .error: .axError
   case .nothing: .illegal
   }
 }

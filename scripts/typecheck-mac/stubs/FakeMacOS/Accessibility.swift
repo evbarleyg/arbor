@@ -25,9 +25,10 @@ extension FakeMac {
   /// What every call that goes to an app's process begins with. Nil: the app is there and listens.
   ///
   /// - A process that is gone fails at once (docs/ARCHITECTURE.md, "an app can end without a word").
-  /// - One that hangs makes the caller wait for the whole timeout, on the model's clock: the main thread does nothing else meanwhile, and
-  ///   what falls due is delivered afterwards. A call from another thread cannot hold the model's one clock up, so it fails at once:
-  ///   Arbor's question "are you back?" is asked every 0.5 s here and every 1.5 s on a Mac.
+  /// - One that hangs makes the caller wait for the whole timeout, on the model's clock, unless it wakes before. The main thread does nothing else meanwhile, and what
+  ///   falls due for it is delivered afterwards; the Mac and Arbor's other threads go on (Threads.swift). A call on a queue's thread waits likewise. Only a job of Swift's global
+  ///   pool (`Task.detached`), which the pump runs on the main thread, cannot wait: its call fails at once, so that Arbor's question "are you back?" is asked every 0.5 s here
+  ///   and every 1.5 s on a Mac.
   private func refusal(by pid: pid_t, timeout: TimeInterval?) -> Answer? {
     calls += 1
     guard isTrusted else { return .apiDisabled }
@@ -36,17 +37,22 @@ extension FakeMac {
       app.hangsAfterCalls = left > 0 ? left - 1 : nil
       if left == 0 { hang(app) }
     }
+    let isOnAThread = Worker.holder != nil
     if app.isHung {
-      if !Pump.isOffTheMainThread {
-        // A timeout of 0 means the default, not "do not wait".
-        let wait = timeout.flatMap { $0 > 0 ? $0 : nil } ?? processTimeout
-        now += wait
-        secondsWaitedInVain += wait
-        note("    (Arbor waited \(wait) s for pid \(pid), which hangs)")
+      // A job of the global pool runs on the main thread here, which cannot wait in its stead.
+      guard isOnAThread || !Pump.isOffTheMainThread else { return .cannotComplete }
+      // A timeout of 0 means the default, not "do not wait".
+      let wait = timeout.flatMap { $0 > 0 ? $0 : nil } ?? processTimeout
+      self.wait(until: now + wait) { !app.isHung || !app.isAlive }
+      guard app.isAlive else { return .cannotComplete }
+      if app.isHung || hasEnded {
+        if !isOnAThread { secondsWaitedInVain += wait }
+        note("    (\(isOnAThread ? "a thread of Arbor's" : "Arbor") waited \(wait) s for pid \(pid), which hangs)")
+        return .cannotComplete
       }
-      return .cannotComplete
+      // It woke in time, has seen to what was in its queue, and answers this call late.
     }
-    if !Pump.isOffTheMainThread { now += timing.answer }
+    if isOnAThread { Worker.holder?.wait(timing.answer) } else if !Pump.isOffTheMainThread { now += timing.answer }
     return nil
   }
 
@@ -58,7 +64,12 @@ extension FakeMac {
   public func read(_ attribute: String, of element: Element, timeout: TimeInterval?) -> (answer: Answer, value: Value?) {
     guard let pid = element.pid else { return (isTrusted ? .attributeUnsupported : .apiDisabled, nil) }
     if let refusal = refusal(by: pid, timeout: timeout) { return (refusal, nil) }
-    guard let app = app(pid) else { return (.cannotComplete, nil) }
+    return answer(to: attribute, of: element)
+  }
+
+  /// What an app that listens says.
+  private func answer(to attribute: String, of element: Element) -> (answer: Answer, value: Value?) {
+    guard let pid = element.pid, let app = app(pid) else { return (.cannotComplete, nil) }
     func answer(_ value: Value?) -> (Answer, Value?) { value.map { (.success, $0) } ?? (.noValue, nil) }
 
     guard case .window = element else {
@@ -117,6 +128,16 @@ extension FakeMac {
   func listWillChange(of app: App) {
     let lag = app.listLagsBy > 0 ? app.listLagsBy : manners.lag(upTo: manners.staleness)
     if lag > 0, app.staleList == nil { app.staleList = (now + lag, currentList(of: app)) }
+  }
+
+  /// `AXUIElementCopyMultipleAttributeValues`: one message, one wait. As many answers as questions; nil for an attribute the element has not got.
+  public func read(_ attributes: [String], of element: Element, timeout: TimeInterval?) -> (answer: Answer, values: [Value?]) {
+    guard let pid = element.pid else { return (isTrusted ? .illegalArgument : .apiDisabled, []) }
+    if let refusal = refusal(by: pid, timeout: timeout) { return (refusal, []) }
+    if case .window = element {
+      guard let window = window(for: element), window.isOpen else { return (.invalidUIElement, []) }
+    }
+    return (.success, attributes.map { answer(to: $0, of: element).value })
   }
 
   public func isSettable(_ attribute: String, of element: Element, timeout: TimeInterval?) -> (answer: Answer, settable: Bool) {

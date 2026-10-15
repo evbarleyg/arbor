@@ -8,6 +8,7 @@
 //   Apps.swift            what apps and the people in front of them do: launch, quit, come forward, hide, hang
 //   Windows.swift         open, close, minimize, full screen, tabs, Spaces
 //   Mouse.swift           presses, drags, releases
+//   Threads.swift         other threads than Arbor's main one, on the model's clock
 //
 // Every delay and every order of reports here says where it was seen. "Guess" marks what nobody has measured.
 import Foundation
@@ -30,7 +31,8 @@ public final class FakeMac: @unchecked Sendable {
   public let arbor: App
   /// The apps that run, in the order they were launched.
   public internal(set) var apps: [App]
-  var lastPID: pid_t = 500
+  /// No two Macs have a process of the same number: what Arbor keeps for the whole of its own process, by pid, must not colour the next story.
+  nonisolated(unsafe) static var lastPID: pid_t = 500
   var lastWindowNumber: UInt32 = 100
   var windowsMade = 0
   var windowsBySerial: [Int: Window] = [:]
@@ -89,12 +91,18 @@ public final class FakeMac: @unchecked Sendable {
   /// How many Accessibility calls Arbor has made, and how long it waited in them for apps that did not answer.
   public internal(set) var calls = 0
   public internal(set) var secondsWaitedInVain: TimeInterval = 0
+  /// How long Arbor's main thread has stood still in all: in calls to apps that did not answer, and waiting for its own other threads.
+  public internal(set) var secondsTheMainThreadWaited: TimeInterval = 0
+  var workers: [Worker] = []
+  /// What is put on Arbor's main dispatch queue has its turn so much later. To the run loop the queue is one source among others.
+  public var mainQueueIsLateBy: TimeInterval = 0
 
   // MARK: The clock
 
   /// Seconds since this Mac started. It moves only in `pass`, and inside an Accessibility call.
-  public internal(set) var now: TimeInterval = FakeMac.dawn
-  static let dawn: TimeInterval = 10_000
+  public internal(set) var now: TimeInterval = 10_000
+  /// When this Mac started. The same for every Mac, so that a story's times are the same to the last digit whatever was told before it.
+  public let dawn: TimeInterval = 10_000
 
   /// What `ProcessInfo.processInfo.systemUptime` becomes in the copy of Arbor's sources (scripts/mac-on-linux/retime.py).
   public static var uptime: TimeInterval { current.now }
@@ -121,6 +129,10 @@ public final class FakeMac: @unchecked Sendable {
     case system
     /// A task of Arbor's that sleeps. Each is a source of its own.
     case sleeper(Int)
+    /// Arbor's main dispatch queue.
+    case mainQueue
+    /// A thread of Arbor's that is not the main one (Threads.swift).
+    case thread(Int)
   }
 
   struct Pending {
@@ -141,14 +153,20 @@ public final class FakeMac: @unchecked Sendable {
 
   public func note(_ text: @autoclosure () -> String) {
     guard keepsJournal else { return }
-    journal.append(String(format: "%9.4f  ", now - Self.dawn) + text())
+    journal.append(String(format: "%9.4f  ", now - dawn) + text())
   }
 
   /// Sends something on its way. With `manners.overtaking` it may be held up, so that what another source sent later arrives first.
   func send(after delay: TimeInterval, from source: Source, _ label: String, _ run: @escaping () -> Void) {
     var due = now + max(delay, 0)
-    if case .sleeper = source {
-      // Arbor's own timers are not macOS's to delay.
+    guard !hasEnded else { return }
+    var isArborsOwn = false
+    switch source {
+    case .sleeper, .thread: isArborsOwn = true
+    default: break
+    }
+    if isArborsOwn {
+      // Arbor's own timers and threads are not macOS's to delay.
     } else {
       if manners.overtaking > 0 { due += manners.fraction() * manners.overtaking }
       due = max(due, lastDue[source] ?? 0)
@@ -158,9 +176,11 @@ public final class FakeMac: @unchecked Sendable {
     pending.append(Pending(due: due, order: sent, source: source, label: label, run: run))
   }
 
-  private func takeNext(until end: TimeInterval) -> Pending? {
+  /// `forTheMainThread: false`: the main thread is waiting, and what is meant for it stays where it is.
+  func takeNext(until end: TimeInterval, forTheMainThread: Bool = true) -> Pending? {
     var best: (index: Int, key: (TimeInterval, Int, TimeInterval, Int))?
     for (index, item) in pending.enumerated() {
+      if !forTheMainThread, isForTheMainThread(item.source) { continue }
       let key = turn(of: item)
       guard key.0 <= end else { continue }
       if let best, best.key <= key { continue }
@@ -188,15 +208,22 @@ public final class FakeMac: @unchecked Sendable {
     backlogOrder = order
   }
 
+  private func isForTheMainThread(_ source: Source) -> Bool {
+    switch source {
+    case .accessibility, .mouse, .workspace, .screens, .sleeper, .mainQueue: true
+    case .workspaceCache, .mouseCache, .app, .system, .thread: false
+    }
+  }
+
   /// When an item's turn comes, and among those whose turn comes at the same time, which goes first.
   private func turn(of item: Pending) -> (TimeInterval, Int, TimeInterval, Int) {
     let rank: Int
     switch item.source {
     case .accessibility: rank = backlogOrder == .accessibilityFirst ? 0 : 1
     case .mouse: rank = backlogOrder == .mouseFirst ? 0 : 1
-    case .workspace, .screens, .sleeper: rank = 1
-    // The Mac's own business waits for nobody.
-    case .workspaceCache, .mouseCache, .app, .system: return (item.due, 0, item.due, item.order)
+    case .workspace, .screens, .sleeper, .mainQueue: rank = 1
+    // The Mac's own business waits for nobody, nor do Arbor's other threads.
+    case .workspaceCache, .mouseCache, .app, .system, .thread: return (item.due, 0, item.due, item.order)
     }
     guard item.due < arborIsBusyUntil else { return (item.due, 0, item.due, item.order) }
     return (arborIsBusyUntil, backlogOrder == .byTime ? 0 : rank, item.due, item.order)
@@ -225,7 +252,7 @@ public final class FakeMac: @unchecked Sendable {
 
   private var sleepers: [Int: UnsafeContinuation<Void, any Error>] = [:]
   private var sleepersMade = 0
-  private var hasEnded = false
+  private(set) var hasEnded = false
 
   /// What `Task.sleep(nanoseconds:)` becomes in the copy. Like the real one it ends early, with an error, when its task is cancelled.
   public static func sleep(nanoseconds: UInt64) async throws { try await current.sleep(Double(nanoseconds) / 1e9) }
@@ -256,6 +283,9 @@ public final class FakeMac: @unchecked Sendable {
     hasEnded = true
     pending.removeAll()
     sleepers.removeAll()
+    for worker in workers { worker.finish() }
+    workers.removeAll()
+    Pump.runTasks()
   }
 
   // MARK: Which macOS

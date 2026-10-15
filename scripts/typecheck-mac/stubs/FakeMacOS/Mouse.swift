@@ -78,7 +78,7 @@ extension FakeMac {
     mouse.eventCounts[type, default: 0] += 1
   }
 
-  public func secondsSinceLastEvent(_ type: UInt32) -> TimeInterval { now - (mouse.lastEvent[type] ?? Self.dawn - 3600) }
+  public func secondsSinceLastEvent(_ type: UInt32) -> TimeInterval { now - (mouse.lastEvent[type] ?? dawn - 3600) }
   public func eventCount(_ type: UInt32) -> UInt32 { mouse.eventCounts[type] ?? 0 }
 
   private func setButton(_ down: Bool) {

@@ -38,7 +38,7 @@ libraries="ArborCore ArborIPC ArborKit ArborTesting"
 # running them would show nothing.
 kit="Controller Platform Support Trace AX App/FrontmostAppWatcher.swift App/ArborEnvironment.swift App/MacFacts.swift"
 # These must know no clock but the model's (retime.py).
-onTheModelsClock="ArborKit/AX ArborKit/App ArborKit/Platform/Scheduler.swift"
+onTheModelsClock="ArborKit/AX ArborKit/App ArborKit/Support/AppLanes.swift ArborKit/Support/CallStats.swift ArborKit/Platform/Scheduler.swift"
 
 mkdir -p "$work/modules" "$work/objects" "$work/src"
 cd "$work" || exit 2

@@ -10,8 +10,8 @@ extension FakeMac {
   public func launch(
     _ name: String, bundleID: String? = nil, policy: Policy = .regular, announced: Bool = true, readyAfter: TimeInterval = 0, comesForward: Bool = true
   ) -> App {
-    lastPID += 1
-    let app = App(pid: lastPID, name: name, bundleID: bundleID ?? "test.\(name.lowercased())", policy: policy)
+    Self.lastPID += Self.lastPID + 1 == getpid() ? 2 : 1
+    let app = App(pid: Self.lastPID, name: name, bundleID: bundleID ?? "test.\(name.lowercased())", policy: policy)
     app.refusesObserversUntil = now + readyAfter
     apps.append(app)
     note("\(name) is launched, pid \(app.pid)")
@@ -133,8 +133,10 @@ extension FakeMac {
   // MARK: Hanging
 
   /// The app's main thread is stuck. It answers no call and posts nothing; the window server goes on showing and moving its windows.
-  public func hang(_ app: App) {
+  /// `for`: it wakes by itself so much later.
+  public func hang(_ app: App, for seconds: TimeInterval? = nil) {
     guard app.isAlive, !app.isHung else { return }
+    if let seconds { send(after: seconds, from: .system, "") { [self] in wake(app) } }
     note("\(app.name) (pid \(app.pid)) hangs")
     app.isHung = true
     if frontmost === app { app.hasHungInFront = true }

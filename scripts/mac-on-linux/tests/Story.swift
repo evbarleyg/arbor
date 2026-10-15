@@ -165,7 +165,7 @@ final class Story {
     endings.append { [book, name] in
       book.writeDown([
         "story": name, "storey": storey, "manners": "as told", "heard": listener.everything.map(\.event.word),
-        "ms": listener.everything.map { Int((($0.time - start) * 1000).rounded()) },
+        "ms": listener.everything.map { Int((($0.time - start) * 1000 + 0.0001).rounded(.down)) },
       ])
     }
   }

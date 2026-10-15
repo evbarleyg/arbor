@@ -19,11 +19,20 @@ REWRITES = [
     (re.compile(r"\bProcessInfo\.processInfo\.operatingSystemVersion\b"), "FakeMac.operatingSystemVersion"),
     # The model's processes are nobody's on this machine.
     (re.compile(r"(?<![\w.])kill\("), "FakeMac.kill("),
+    (re.compile(r"\bDispatchTime\b"), "FakeDispatchTime"),
+]
+
+# Other threads than the main one, and the main one's waiting for them (stubs/FakeMacOS/Threads.swift). Only where the clock must be the model's: elsewhere a queue is for files.
+THREADS = [
+    (re.compile(r"\bDispatchQueue\.main\.async\b(?!After)"), "FakeMac.mainAsync"),
+    (re.compile(r"\bDispatchQueue\b(?!\.(main|global)\b)"), "FakeDispatchQueue"),
+    (re.compile(r"\bDispatchSemaphore\b"), "FakeDispatchSemaphore"),
+    (re.compile(r"\bDispatchGroup\b"), "FakeDispatchGroup"),
 ]
 
 OTHER_CLOCKS = re.compile(
     r"\bTask\.sleep\(|\basyncAfter\(|\bTimer\.|\bThread\.sleep|\busleep\(|\bnanosleep\(|(?<![\w.])sleep\(|\bContinuousClock\b|\bSuspendingClock\b"
-    r"|\bDate\(\)|\bDate\.now\b|\bDispatchTime\.now\(|\bDispatchWallTime\b|\bCFAbsoluteTimeGetCurrent\(|\bCACurrentMediaTime\(|\bmach_absolute_time\("
+    r"|\bDate\(\)|\bDate\.now\b|\bDispatchWallTime\b|\bDispatchWorkItem\b|\bDispatchQueue\.global\b|\bOperationQueue\b|\bCFAbsoluteTimeGetCurrent\(|\bCACurrentMediaTime\(|\bmach_absolute_time\("
     r"|\bclock_gettime|\bDispatchSource\.makeTimerSource|\bperform\(.*afterDelay:|\bRunLoop\b.*\brun\(")
 
 
@@ -41,14 +50,15 @@ def main():
             changed = False
             for number, line in enumerate(lines):
                 new = line
-                for pattern, replacement in REWRITES:
+                is_strict = any(path == named or path.startswith(named + os.sep) for named in strict)
+                for pattern, replacement in REWRITES + (THREADS if is_strict else []):
                     new = pattern.sub(replacement, new)
                 if new != line:
                     lines[number] = new
                     changed = True
                 code = new.split("//")[0]
                 match = OTHER_CLOCKS.search(code)
-                if match and any(path == named or path.startswith(named + os.sep) for named in strict):
+                if match and is_strict:
                     problems.append(f"{os.path.relpath(path, root)}:{number + 1}:{match.start() + 1}: error: '{match.group(0)}' goes by the machine's clock, "
                                     "which the model of a Mac does not rule: teach scripts/mac-on-linux/retime.py to send it there")
             if changed:
