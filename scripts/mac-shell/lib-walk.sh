@@ -63,7 +63,7 @@ WALK_NEW=""
 WALK_MINIMIZED=""
 WALK_HIDDEN=""
 WALK_PAUSED="" WALK_BEFORE_PAUSE="" WALK_MOVED_IN_PAUSE="" WALK_AT_PAUSE=""
-WALK_CAST_NAME=stock
+DESK_a="" DESK_b="" DESK_PID_a="" DESK_PID_b=""
 WALK_FULL_SCREEN=""
 # Whether this walk may have a second display, and whether it is plugged in.
 WALK_TWO=""
@@ -861,67 +861,99 @@ idle_act() {
 # starts, when it has `started`, before the `last` Quit and `after` it. The witness writes down how late each arrived, and jolts.py holds started to before and last to after: the same
 # Mac, minutes apart, which is as like with like as it gets. Two hosted Macs differed by 35 against 76 ms with nobody holding anything, and one drifted from 41 to 76 within seven minutes.
 #
+# It is played on two windows of its own (desk.swift), each a program of its own, side by side. Real apps' windows will not do: in a pile of nine, eight title bars could be pressed where ten
+# were needed, and the one meant for the keys was covered in three rounds of four. A dozen presses on the two title bars in turn, each on the app that is not in front; a dozen on the one in
+# front; a dozen arrow keys, a scroll there and back, and a drag inside the text, which selects.
 # It says what it posted, by kind: with Arbor, an event that never arrives is a finding; without, the instrument's own trouble, and the journey says nothing of that kind.
-# It moves no window and changes nothing, and every detector stays awake through it. Fourteen presses on title bars of apps that are not in front, whichever show a free point. Then, in one
-# quiet place, a dozen presses on the title bar of the app in front, a dozen arrow keys, a scroll there and back, and a drag inside the text, which selects.
-input_round() {
-  local name=$1 desk=textedit each window x y w h turn pressed=0
-  # TextEdit has an open panel up in that cast, and takes nothing else meanwhile.
-  [ "$WALK_CAST_NAME" != awkward ] || desk=safari
-  act instrument "input-$name" "a round of input: presses on windows behind and in front, keys, a scroll, a drag inside a window"
-  for turn in 1 2 3 4; do
-    for each in $WALK_CAST; do
-      [ "$pressed" -lt 14 ] || break
-      # Mail's window has a sheet, which answers for it.
-      [ "$each" != mail ] && [ "$each" != "$desk" ] && present "$each" && [ "$(front_pid)" != "$(pid_of "$each")" ] || continue
-      read -r x y _ <<< "$(apptool grab "$(window_of "$each")" 2> /dev/null)"
-      [ -n "${x:-}" ] || continue
-      click "$x" "$y" > /dev/null
-      pressed=$((pressed + 1))
-      sleep 0.1
-    done
+# It moves no window and changes nothing, and every detector stays awake through it.
+desks_open() {
+  local each x=$((WALK_X + 40)) said tries
+  for each in a b; do
+    : > "$APPS_TEMP/desk-$each"
+    "$DAY_DESK" "$each" "$x" "$((WALK_Y + 70))" 300 190 < /dev/null >> "$APPS_TEMP/desk-$each" 2>> "$ARBOR_OUT/desk.log" 5<&- 6>&- 8>&- 9>&- &
+    started "$!"
+    tries=0
+    until [ -s "$APPS_TEMP/desk-$each" ] || [ "$tries" -ge 50 ]; do sleep 0.1; tries=$((tries + 1)); done
+    read -r said <<< "$(cat "$APPS_TEMP/desk-$each")"
+    [ -n "$said" ] || die "desk $each did not open: $(tail -n 3 "$ARBOR_OUT/desk.log")"
+    eval "DESK_PID_$each=\${said% *} DESK_$each=\${said#* }"
+    label "${said#* }" "desk-$each"
+    x=$((x + 320))
   done
-  window=$(window_of "$desk")
-  read -r x y _ <<< "$(present "$desk" && apptool grab "$window" 2> /dev/null)"
-  if [ -n "${x:-}" ]; then
-    click "$x" "$y" > /dev/null
-    sleep 0.3
-    # Six points to either side in turn, so that no two are a double-click, whatever counts them.
-    for turn in 1 2 3 4 5 6; do
-      click "$((x - 6))" "$y" > /dev/null
-      sleep 0.1
-      click "$((x + 6))" "$y" > /dev/null
-      sleep 0.1
-    done
-    for turn in 1 2 3 4 5 6; do
-      key right > /dev/null
-      key left > /dev/null
-    done
-    read -r x y w h <<< "$(real_of "$window")"
-    x=$((x + w / 2)) y=$((y + h / 2))
-    move "$x" "$y" > /dev/null
-    "$DAY_WITNESS" scroll "$x" "$y" 0 -36 --steps 12 > /dev/null
-    "$DAY_WITNESS" scroll "$x" "$y" 0 36 --steps 12 > /dev/null
-    drag "$x" "$y" "$((x + 60))" "$((y + 20))" --steps 20 --no-settle > /dev/null
-    # What was selected is let go of again.
-    key left > /dev/null
-    echo "  $pressed presses on windows behind; the rest in $desk"
-    # What was posted, so that what never arrives is missed: the presses behind, one to come here, a dozen here, the drag's; thirteen keys; a scroll begins, goes its steps and ends.
+}
+
+# The middle of a desk's title bar, wherever the desk is by now.
+desk_bar() {
+  local x y w h
+  read -r x y w h <<< "$(real_of "$1")"
+  [ -n "${w:-}" ] && echo "$((x + w / 2)) $((y + 14))"
+}
+
+input_round() {
+  local name=$1 ax ay bx by x y w h turn
+  act instrument "input-$name" "a round of input on two windows of its own: presses behind and in front, keys, a scroll, a drag inside the text"
+  # To the front, the second first: from here on they are the two frontmost windows, and nothing covers either. No input, so nothing of this is counted.
+  apptool activate "$DESK_PID_b" > /dev/null 2>&1
+  sleep 0.3
+  apptool activate "$DESK_PID_a" > /dev/null 2>&1
+  sleep 0.5
+  read -r ax ay <<< "$(desk_bar "$DESK_a")"
+  read -r bx by <<< "$(desk_bar "$DESK_b")"
+  if [ -z "${ax:-}" ] || [ -z "${bx:-}" ]; then
+    echo "  a desk is gone: nothing is posted"
     # shellcheck disable=SC2086
-    acted round="$name" front="$window" posted="press:$((pressed + 14)),up:$((pressed + 14)),key:13,scroll:28,dragged:20" ${WALK_ROUND_SAYS:-}
-  else
-    echo "  $pressed presses on windows behind; $desk shows no free point of its title bar, so that is all"
-    # shellcheck disable=SC2086
-    acted round="$name" posted="press:$pressed,up:$pressed" ${WALK_ROUND_SAYS:-}
+    acted round="$name" posted="press:0" ${WALK_ROUND_SAYS:-}
+    return
   fi
+  for turn in 1 2 3 4 5 6; do
+    click "$bx" "$by" > /dev/null
+    sleep 0.15
+    click "$ax" "$ay" > /dev/null
+    sleep 0.15
+  done
+  # Six points to either side in turn, so that no two are a double-click, whatever counts them.
+  for turn in 1 2 3 4 5 6; do
+    click "$((ax - 6))" "$ay" > /dev/null
+    sleep 0.1
+    click "$((ax + 6))" "$ay" > /dev/null
+    sleep 0.1
+  done
+  for turn in 1 2 3 4 5 6; do
+    key right > /dev/null
+    key left > /dev/null
+  done
+  read -r x y w h <<< "$(real_of "$DESK_a")"
+  x=$((x + w / 2 - 30)) y=$((y + h / 2 + 10))
+  move "$x" "$y" > /dev/null
+  "$DAY_WITNESS" scroll "$x" "$y" 0 -36 --steps 12 > /dev/null
+  "$DAY_WITNESS" scroll "$x" "$y" 0 36 --steps 12 > /dev/null
+  drag "$x" "$y" "$((x + 60))" "$((y + 20))" --steps 20 --no-settle > /dev/null
+  # What was selected is let go of again.
+  key left > /dev/null
+  # What was posted, so that what never arrives is missed: two dozen presses and the drag's; thirteen keys; a scroll begins, goes its steps and ends.
+  # shellcheck disable=SC2086
+  acted round="$name" front="$DESK_a" posted="press:25,up:25,key:13,scroll:28,dragged:20" ${WALK_ROUND_SAYS:-}
 }
 
 # MARK: The beginning and the end
+
+# Of an app that was downloaded macOS asks, the first time, whether it is really to be opened, and `open` waits for an answer nobody is there to give (90 s and longer, seen on a hosted
+# Mac for Chrome, Firefox and Edge). The mark that makes it ask is taken off.
+trusted() {
+  local each
+  for each in /Applications/*.app; do
+    [ "$(defaults read "$each/Contents/Info" CFBundleIdentifier 2> /dev/null)" = "$1" ] || continue
+    sudo -n xattr -dr com.apple.quarantine "$each" 2> /dev/null || xattr -dr com.apple.quarantine "$each" 2> /dev/null
+    return 0
+  done
+  return 1
+}
 
 walk_open() {
   local name=$1 document
   document=$(document_of "$name")
   act open-close "open-$name" "opens $name"
+  case "$name" in chrome | firefox | edge) trusted "$(bundle_of "$name")" ;; esac
   case "$name" in
     # Neither a welcome nor the question which browser is to be the Mac's own: nobody has an account here to answer with.
     chrome | edge) set -- --args --no-first-run --no-default-browser-check "file://$document" ;;
@@ -997,7 +1029,6 @@ fills_the_display() {
 
 walk_begin() {
   local cast=${1:-stock} display=${2:-laptop} tiling=${3:-defaults} seed=${4:-} commit=${5:-} name listed probe seen try
-  WALK_CAST_NAME=$cast
   apps_watchdog "${WALK_LIMIT:-1060}"
   step "the Mac"
   echo "macOS $(sw_vers -productVersion) ($(sw_vers -buildVersion)) on $(uname -m)"
@@ -1092,6 +1123,10 @@ walk_begin() {
   day_manifest cast "\"$cast\""
   day_manifest apps "[$(for name in $WALK_CAST; do printf '"%s",' "$(bundle_of "$name")"; done | sed 's/,$//')]"
 
+  act open-close open-desks "opens the two windows that input is tried on"
+  desks_open
+  sleep 1
+  acted setup=1 own=all
   input_round before
   chapter "The walk"
   if with_arbor; then
@@ -1109,6 +1144,8 @@ walk_end() {
   while [ -n "${WALK_MINIMIZED// /}" ]; do restore; done
   if with_arbor && arbor_answers; then
     chapter "The end"
+    # Everything in view, the two desks among it.
+    view home
     input_round last
     walk_quit
     input_round after

@@ -34,6 +34,14 @@ look() {
   step "$name ($bundle)"
   if app_running "$bundle"; then echo "it runs already"; fi
   # A large app that has never run is looked over by macOS first, which takes longer than any later start. What `open` says and how long it takes is part of the answer.
+  # "… is an app downloaded from the Internet. Are you sure you want to open it?": that is what `open` waited for. Without the mark macOS does not ask.
+  if [ -n "${SURVEY_ONLY:-}" ]; then
+    for each in /Applications/*.app; do
+      [ "$(defaults read "$each/Contents/Info" CFBundleIdentifier 2>/dev/null)" = "$bundle" ] || continue
+      echo "the mark on $each: $(xattr -p com.apple.quarantine "$each" 2>&1 | cut -c 1-60)"
+      sudo -n xattr -dr com.apple.quarantine "$each" && echo "taken off"
+    done
+  fi
   began=$SECONDS
   # What is on the screen while `open` waits: a question nobody is there to answer?
   if [ -n "${SURVEY_ONLY:-}" ]; then (sleep 12; snap_now "survey-$name-while-open-waits" > /dev/null) 5<&- 6>&- 8>&- 9>&- & fi
