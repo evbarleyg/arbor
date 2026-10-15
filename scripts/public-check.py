@@ -26,7 +26,7 @@ Usage: scripts/public-check.py             what this branch adds to origin's mai
        … --base REF [--head REF] [--branch NAME] [--tag NAME]   what REF..head adds (head: HEAD); CI's way. For swarm/trunk less what origin's
                                            main has, for any branch but those two less what either has: that was read when it got there
        … --pre-push [--to URL]             as git's pre-push hook, which says on standard input what is being pushed; where to is
-                                           in $PUBLIC_CHECK_TO or after --to
+                                           in $PUBLIC_CHECK_TO or after --to, or else the remote's name in $PUBLIC_CHECK_REMOTE
        … --rules                           only whether the rules have changed since this clone last said it had read them (below)
        … --text [FILE…]                    free text, from standard input without a file: read a pull request's body or a
                                            comment through this BEFORE posting it
@@ -42,8 +42,8 @@ number with `git config arbor.rulesRead` and refuses the push while they differ.
 
 Pushes nobody read. All of this guards only a clone in which `make hooks` has been said, and nothing in a push tells whether it came from one. So
 the hook leaves a note of each branch and tag it has read on its way to the public repository: a small file named after the commit and the ref, in
-the folder `pushes-read` beside the private words, which is to lie outside every clone: nothing goes into commits. Not of a push upon what stood there
-unread, which it does not read again. `--unread` asks the public repository where its branches and tags stand and names those for which there is no
+the folder `pushes-read` beside the private words, which is to lie outside every clone: nothing goes into commits. What it reads is all that main and the
+trunk do not hold, whatever other branch has it already, so a push upon one that nobody read hides nothing. `--unread` asks the public repository where its branches and tags stand and names those for which there is no
 note, or tells of one with `--branch`. `--unread --begin` names them, writes them down as they stand and ends with 0: at the beginning, for what was pushed
 before there was a record, and later, with `--branch`, for what somebody has looked at. It is a way to notice, not a lock: whoever can write to
 the folder can write a note, a branch that is gone again before anybody asks is not seen, and what is called as workflows call theirs is left out.
@@ -69,7 +69,7 @@ import urllib.request
 HERE = os.path.dirname(os.path.abspath(__file__))
 # Raise it whenever the check gets stricter or a hole in it is mended. The hook has two copies to choose from, the one `make hooks` kept
 # and the one on the branch that is checked out, and lets the newer do the reading.
-VERSION = 9
+VERSION = 10
 # The first public commit. All history begins here.
 ROOT_COMMIT = "51b162d5f28c02846134c1f4a113c787f5164602"
 # Where work is integrated: what these hold on origin has been read before. In this order: see read_elsewhere.
@@ -408,10 +408,11 @@ def first_commit_if_here(cwd=None):
     return [ROOT_COMMIT] if git("cat-file", "-e", ROOT_COMMIT + "^{commit}", cwd=cwd, check=False)[0] == 0 else []
 
 
-def public_already(top):
+def public_already(top, read=False):
     """What need not be read again, as arguments for git rev-list: what the public repository is known to have, and the remote being pushed
     to (the hook says which, in $PUBLIC_CHECK_REMOTE). NOT what any other remote has: a clone that also knows a private place is the very
-    clone this check is for, and what lies there is new to the public however long this clone has had it."""
+    clone this check is for, and what lies there is new to the public however long this clone has had it.
+    `read`: only what was read on its way there, which is what main and the trunk hold. Any other branch may have come from a clone without the hook."""
     names = {os.environ.get("PUBLIC_CHECK_REMOTE", "")}
     for line in git("remote", "--verbose", cwd=top).splitlines():
         name, _, rest = line.partition("\t")
@@ -419,6 +420,9 @@ def public_already(top):
             names.add(name)
     known = set(git("remote", cwd=top).split())
     # Where the history begins is checked apart from this, so remote-tracking refs from somewhere else under a good name gain nothing.
+    if read:
+        integrated = [f"refs/remotes/{name}/{branch}" for name in sorted(names & known) for branch in INTEGRATION]
+        return [ref for ref in integrated if git("rev-parse", "--verify", "--quiet", ref, cwd=top, check=False)[0] == 0] + first_commit_if_here(top)
     return [f"--remotes={name}/*" for name in sorted(names & known)] + first_commit_if_here(top)
 
 
@@ -673,17 +677,11 @@ def unguarded(top):
 
 
 def leave_notes(top, read):
-    """After a push that was read and let pass. `read`: what went, where to, and what stood there."""
+    """After a push that was read and let pass. `read`: what went, and where to."""
     # Only whoever may push to the public repository gets to read this.
     if read and wordless(top):
         print(f"public-check: {wordless(top)}. No note of this push is left, so it counts as one that no hook has read", file=sys.stderr)
-    folder = record_of_pushes(top)
-    # What stood there unread is not read now either: this clone has fetched it, so it counts as public already. The branch goes on being named.
-    upon = [(ref, there) for _, ref, there in read if folder and not ZERO.match(there) and not os.path.exists(os.path.join(folder, note(there, ref)))]
-    for ref, there in upon:
-        print(f"public-check: {fit_for_a_line(ref)} stood at {there[:8]}, of which no note says that a hook has read it, so there is none of this push either "
-              "(scripts/public-check.py --unread)", file=sys.stderr)
-    if not write_down(top, f"read-by-{VERSION}", [(sha, ref) for sha, ref, there in read if (ref, there) not in upon]):  # which is no reason not to push
+    if not write_down(top, f"read-by-{VERSION}", read):  # which is no reason not to push
         print("public-check: it could not be written down that this push was read: it will be taken for one that no hook has seen", file=sys.stderr)
 
 
@@ -730,7 +728,7 @@ def unread_pushes(top, begin, only=None):
         return 0
     if unread:
         print(f"public-check: {len(unread)} of {ours} branches and tags stand where no hook has read them; {rest}. Such a push came past the hook (no `make hooks`, a scratch repository, "
-              "--no-verify), through a check older than version 8, from a clone that knows of no private words, upon one that was unread itself, or was made at GitHub; or its note has "
+              "--no-verify), through a check older than version 8, from a clone that knows of no private words, or was made at GitHub; or its note has "
               "not got here yet: the folder is shared over a network, so ask again in a few minutes. Read it (--base … --head …); --unread --begin --branch … then writes it off")
     else:
         print(f"public-check: all {ours} branches and tags stand where a hook has read them or where they were written down as they stood; {rest}")
@@ -764,7 +762,8 @@ def pre_push(top, lines, masked, url=None):
             continue
         commit = git("rev-parse", "--verify", sha + "^{commit}", cwd=top).strip()
         checker = checker_for(top, commit=commit)
-        problems, findings, count = check_range(checker, [commit, "--not", *public_already(top)], commit, top)
+        # On its way to the public repository all is read that main and the trunk do not hold: a note of this push then needs no note of the one before.
+        problems, findings, count = check_range(checker, [commit, "--not", *public_already(top, read=public)], commit, top)
         if remote_ref.startswith("refs/tags/"):
             kind, name = "tag", remote_ref[len("refs/tags/"):]
             more_problems, more = check_tag(checker, name, top)
@@ -775,7 +774,7 @@ def pre_push(top, lines, masked, url=None):
             if guarded in INTEGRATION:
                 problems += landing_problems(top, guarded, commit, there)
         if public:
-            read.append((sha, remote_ref, there))
+            read.append((sha, remote_ref))
         shown = checker.fit_to_print(kind, name) if masked else name
         code |= report(checker, problems, findings, f"{kind} {shown} ({new_commits(count)})", masked)
     if code:
@@ -810,7 +809,7 @@ def main(arguments=None, cwd=None):
         if options.begin:
             raise Unclear("--begin goes with --unread")
         if options.pre_push:
-            return pre_push(top, sys.stdin.read().split("\n"), masked, options.to or os.environ.get("PUBLIC_CHECK_TO"))
+            return pre_push(top, sys.stdin.read().split("\n"), masked, options.to or os.environ.get("PUBLIC_CHECK_TO") or os.environ.get("PUBLIC_CHECK_REMOTE"))
         checker = checker_for(top) if options.text or options.tree else None
         if options.text:
             findings = []

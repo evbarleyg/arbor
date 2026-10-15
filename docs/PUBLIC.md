@@ -69,8 +69,8 @@ a note of each branch and tag it has read** on its way here: a small file named 
 private words, which is to lie outside every clone. Nothing goes into commits. `scripts/public-check.py --unread` asks the public repository where
 its branches and tags stand, by git and not through the API, and names those for which there is no note. Such a push came past the hook (no
 `make hooks`, a scratch repository, `--no-verify`), through a check from before there were notes, from a clone that knows of no private words,
-upon a push that was unread itself (the hook does not read that again, and says so), or was made at GitHub; or its note has not got there yet, the
-folder being shared over a network. `--unread --begin` names them and writes them down as they stand: once at the beginning, and later, with
+or was made at GitHub; or its note has not got there yet, the folder being shared over a network. A push upon such a one hides nothing: on its way
+here the hook reads all that `main` and the trunk do not hold, whatever other branch has it already. `--unread --begin` names them and writes them down as they stand: once at the beginning, and later, with
 `--branch`, for what somebody has looked at. What is called as workflows call theirs (the output of Mac shell runs, `state/github`, Dependabot's
 branches) is left out, and counted. It is a way to notice, not a lock: whoever can write to the folder can write a note, and a branch that is
 gone again before anybody asks is not seen.

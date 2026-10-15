@@ -888,7 +888,7 @@ def check_history():
             repository = Repository(folder)
             more = prepare(repository)
             code, _, output = repository.run("--pre-push", *arguments, **more)
-            words = [word for word in ("could not be written down", "so there is none of this push either", "in a way this check does not know", "caf\ufffd stood at", "KNOWS OF NO PRIVATE WORDS") if word in output]
+            words = [word for word in ("could not be written down", "in a way this check does not know", "KNOWS OF NO PRIVATE WORDS") if word in output]
             called = {"HEAD": repository.git("rev-parse", "HEAD"), **({"THE-TAG": repository.git("rev-parse", "v9")} if repository.git("tag") else {})}
             row(what, (code, *notes(folder, **called), words, repository.git("status", "--porcelain", "--untracked-files=all")), (*expected, "\n".join(inside)))
     by = [f"when read-by-{check.VERSION}\n"]
@@ -928,13 +928,22 @@ def check_history():
     noted("where one of two cannot be written down the other is", (0, ["HEAD-refs%2Fheads%2Fy"], by, ["could not be written down"]),
           hold(None, pushed="refs/heads/x {head} refs/heads/x {none}\nrefs/heads/x {head} refs/heads/y {none}",
                also=lambda r: os.makedirs(os.path.join(os.path.dirname(r.path), "notes", "pushes-read", r.git("rev-parse", "HEAD") + "-refs%2Fheads%2Fx"))), "--to", HERE_URL)
-    upon = "refs/heads/x {head} refs/heads/x " + "1" * 40
-    noted("upon what a hook has read", (0, sorted(["1" * 40 + "-refs%2Fheads%2Fx", "HEAD-refs%2Fheads%2Fx"]), sorted(["", *by]), []),
-          hold(None, pushed=upon, also=lambda r: r.write("../notes/pushes-read/" + "1" * 40 + "-refs%2Fheads%2Fx", "")), "--to", HERE_URL)
-    noted("upon what stood there unread, which is not read now either: no note, and it says so", (0, ["1" * 40 + "-refs%2Fheads%2Fy"], [""], ["so there is none of this push either"]),
-          hold(None, pushed=upon, also=lambda r: r.write("../notes/pushes-read/" + "1" * 40 + "-refs%2Fheads%2Fy", "")), "--to", HERE_URL)
-    noted("of two, one of which goes upon what is unread, the other has its note", (0, ["HEAD-refs%2Fheads%2Fy"], by, ["so there is none of this push either"]),
-          hold(None, pushed=upon + "\nrefs/heads/x {head} refs/heads/y {none}"), "--to", HERE_URL)
+    noted("upon whatever stood there, of which there may be a note or none", one, hold(None, pushed="refs/heads/x {head} refs/heads/x " + "1" * 40), "--to", HERE_URL)
+
+    def there_already(branch):
+        """A line that must not be pushed is on a branch of the remote, which this clone has fetched; something harmless comes upon it."""
+        def also(r):
+            line(r)
+            r.git("push", "--quiet", "origin", f"HEAD:refs/heads/{branch}")
+            r.environment["PUBLIC_CHECK_REMOTE"] = "origin"
+            r.write("docs/more.md", "fine\n")
+            r.commit()
+        return hold(None, also=also)
+    noted("what some other branch of the public repository has already is read all the same: it may have come past the hook, and a note would hide it", refused, there_already("w"), "--to", HERE_URL)
+    noted("so is what stood on this very branch", refused, there_already("x"), "--to", HERE_URL)
+    for branch in check.INTEGRATION:
+        noted(f"what {branch} holds was read on its way there", one, there_already(branch), "--to", HERE_URL)
+    noted("a fork has what it has: that is not new to it", nothing, there_already("w"), "--to", FORK_URL)
     long = "a" * 200
     noted("a name too long for a file's: as much of it as goes, and the rest told apart; those after it have their notes", these(f"heads%2F{long}"[:72] + "-AND-SO-ON", f"heads%2F{long}"[:72] + "-AND-SO-ON", "heads%2Fz"),
           hold(None, pushed=f"refs/heads/x {{head}} refs/heads/{long}b {{none}}\nrefs/heads/x {{head}} refs/heads/{long}c {{none}}\nrefs/heads/x {{head}} refs/heads/z {{none}}"), "--to", HERE_URL)
@@ -942,7 +951,7 @@ def check_history():
                                ("a sign that stands for another", "a%2Fb", "a%252Fb")):
         noted(f"a name that holds {what}", these(f"heads%2F{quoted}"), hold(None, pushed=f"refs/heads/x {{head}} refs/heads/{name} {{none}}"), "--to", HERE_URL)
         noted(f"a name that holds {what}: it is read like any other", refused, hold(None, also=line, pushed=f"refs/heads/x {{head}} refs/heads/{name} {{none}}"), "--to", HERE_URL)
-    noted("and such a name can be said", (0, None, [], ["so there is none of this push either", "caf\ufffd stood at"]), hold(None, pushed="refs/heads/x {head} refs/heads/caf\udce9 " + "1" * 40), "--to", HERE_URL)
+    row("and such a name can be said", check.fit_for_a_line("refs/heads/caf\udce9"), "caf\ufffd")
     noted("what is pushed is called by words with spaces between them", one, hold(None, pushed="HEAD@{{1 day ago}} {head} refs/heads/x {none}"), "--to", HERE_URL)
     noted("and is read like anything else", refused, hold(None, also=line, pushed="HEAD@{{1 day ago}} {head} refs/heads/x {none}"), "--to", HERE_URL)
     noted("a line that is not as git writes them: it cannot tell", (2, None, [], ["in a way this check does not know"]), hold(None, pushed="refs/heads/x {head} refs/heads/x"), "--to", HERE_URL)
@@ -1032,7 +1041,7 @@ def check_history():
         r.git("fetch", "--quiet", "origin")
         r.git("push", "--quiet", "origin", "HEAD:refs/heads/fix/unread")
         return {"third": third}
-    asked("--unread: a push that was read, upon one that was not, does not hide it", unread(named=[("✘", "fix/unread", "third")]), record=stood,
+    asked("--unread: a push through the hook, upon one past it: both were read", unread("third-refs%2Fheads%2Ffix%2Funread", named=[]), record=stood,
           prepare=hook("HEAD {head} refs/heads/fix/unread {before}", really=one_more))
     asked("--unread: no notes at all: nothing has been read", (1, [("✘", "fix/read", "first"), ("✘", "fix/unread", "second"), ("✘", "main", "main")], [("3", "3", "3")], [], [], []))
 
@@ -1139,11 +1148,14 @@ def check_history():
                 r.write("scripts/public-check.py", re.sub(r'(?m)^ROOT_COMMIT = .*', f'ROOT_COMMIT = "{r.root}"', re.sub(r"(?m)^VERSION = .*", f"VERSION = {check.VERSION + 1}", handle.read())))
             shutil.copy(os.path.join(HERE, "public-check.allow"), os.path.join(r.path, "scripts"))
             got = []
-            for flags in ([], ["--no-verify"], []):
-                r.git("commit", "--quiet", "--allow-empty", "--message", "fix: something")
+            for text, flags in (("one", []), ("two", ["--no-verify"]), ("three", []), ("it failed on his Mac", ["--no-verify"]), ("five", [])):
+                r.write("docs/x.md", text + "\n")
+                r.git("add", "docs/x.md")
+                r.git("commit", "--quiet", "--message", "fix: something")
                 pushed = subprocess.run(["git", "push", "--quiet", *flags, "origin", "fix/something"], cwd=r.path, env=r.environment, capture_output=True, text=True, check=False)
-                got.append((pushed.returncode, "so there is none of this push either" in pushed.stderr, r.run("--unread", "--branch", "fix/something")[0]))
-            row("the whole way: a push through the hook, one past it, and one through it upon that", (got, notes(folder)[1]), ([(0, False, 0), (0, False, 1), (0, True, 1)], [f"when read-by-{check.VERSION + 1}\n"]))
+                got.append((pushed.returncode == 0, r.run("--unread", "--branch", "fix/something")[0]))
+            row("the whole way: a push through the hook; one past it, which shows; one through it upon that, which reads both; one past it that should never have gone, and the next is refused for it",
+                (got, notes(folder)[1]), ([(True, 0), (True, 1), (True, 0), (True, 1), (False, 1)], [f"when read-by-{check.VERSION + 1}\n"]))
     the_whole_way()
 
     situation("--text: what somebody is about to post", (1, ["person", "session"]),
@@ -1409,7 +1421,7 @@ def main():
         except (Exception, SystemExit) as error:  # a git that behaves otherwise, say: that is one row red, and the other parts still have their say
             place = traceback.extract_tb(error.__traceback__)
             row(f"{part.__name__} gets to its end", f"line {[frame.lineno for frame in place if frame.name == part.__name__][-1]}: {type(error).__name__}: {error}", "it does")
-    wrong, rows = 0, table.finish(exactly=449)
+    wrong, rows = 0, table.finish(exactly=452)
     for what, got, expected in rows:
         if got != expected:
             wrong += 1
