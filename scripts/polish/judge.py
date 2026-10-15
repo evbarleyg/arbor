@@ -17,6 +17,8 @@ verdicts (collab/polish/eyes-run-<n>.json) it counts like its own.
                                         ruler claims, to confirm or refute. REVIEWERS.md, beside this file, is what each reviewer is told
   judge.py eyes <run id> <commit> <verdicts.json>… > eyes-run-<n>.json
                                         the reviewers' files as one, in the form `score --eyes` reads
+  judge.py home <run folder>            of every scene with stand-ins: when the window server had each real window at its place, beside when the stand-ins
+                                        went and when the display last changed (needs the run's samples.log). It scores nothing: it says where to look
   judge.py frame <film folder> <n> <png>    one frame, whole
   judge.py curve <film folder>          time and progress, one line per frame: the easing curve as it was seen
   judge.py --self-test                  films drawn by studio.py, each wrong in one known way: every check must catch its own
@@ -778,6 +780,51 @@ def score(folder, eyes_path=None, stills_path=None, out=sys.stdout):
 # MARK: The judge judged
 
 
+def home_of(samples, since, until, windows):
+    """What the window server says of one scene, from the lines of sampler.swift between two moments: when the stage came and went, when each of
+    the windows was moved last, which of them after the stage had gone, and the longest the sampler saw nothing for."""
+    stage, up, down, moved, blind = None, None, None, {}, 0
+    for words in samples:
+        time, kind = int(words[0]), words[1]
+        if not since <= time <= until:
+            continue
+        if kind == "W" and int(words[4]) == PASSING[1] and words[9] == "Arbor" and stage is None:
+            stage, up = words[2], time
+        elif kind == "G" and words[2] == stage and down is None:
+            down = time
+        elif kind == "W" and int(words[2]) in windows:
+            moved[int(words[2])] = time
+        elif kind == "L":
+            blind = max(blind, int(words[2]))
+    late = sorted(window for window, time in moved.items() if down is not None and time > down)
+    return {"up": up, "down": down, "moved": moved, "late": late, "blind": blind}
+
+
+def home(folder, out=sys.stdout):
+    with open(os.path.join(folder, "samples.log"), encoding="utf-8") as log:
+        samples = [words for words in map(str.split, log) if len(words) > 2 and words[1] in ("W", "G", "L")]
+    films, late = os.path.join(folder, "films"), 0
+    for name in sorted(os.listdir(films)):
+        if not os.path.isfile(os.path.join(films, name, "film.log")) or name.startswith("metronome-"):
+            continue
+        film = Film(os.path.join(films, name))
+        cause = cause_of(film)[0]
+        said = home_of(samples, cause - 20, cause + 4000, set(film.after))
+        if said["up"] is None:
+            continue
+        # The line of words goes seconds later, by itself.
+        shown = [int(time) for time, place in zip(film.times, film.places) if cause < time <= cause + 2500 and place[2] * place[3] > 40000 * film.scale**2]
+        after = {window: time - cause for window, time in sorted(said["moved"].items())}
+        late += bool(said["late"])
+        print(f"{name}: stage {said['up'] - cause:+d} to {said['down'] - cause if said['down'] else '?':+}; windows moved last at "
+              + (", ".join(f"{window} {time:+d}" for window, time in after.items()) or "no time")
+              + f"; the display changed last at {shown[-1] - cause if shown else 0:+d}"
+              + (f"; AFTER THE STAGE WENT: {', '.join(map(str, said['late']))}" if said["late"] else "")
+              + (f"; the sampler saw nothing for up to {said['blind']} ms" if said["blind"] else ""), file=out)
+    print(f"{late} scenes in which a window was still being moved when the stand-ins had gone", file=out)
+    return 0
+
+
 def self_test():
     import studio
 
@@ -842,7 +889,12 @@ def self_test():
             failures += bool(wrong)
             print(f"{'✘' if wrong else '✔'} {name}: missed {', '.join(missed) or 'nothing'}" + "".join(f"\n    {line}" for line in wrong))
     print(f"{len(cases) - failures} of {len(cases)} drawn films judged as they should be")
-    return 1 if failures else 0
+    account = [line.split() for line in ("90 W 7 1 0 0 0 9 9 Oak", "110 W 50 2 4 0 0 100 100 Arbor", "120 W 7 1 0 5 5 9 9 Oak", "130 W 8 1 0 5 5 9 9 Elm",
+                                         "140 W 51 2 3 0 0 9 9 Arbor", "300 L 45", "600 G 50", "640 W 8 1 0 6 6 9 9 Elm", "5000 W 7 1 0 1 1 9 9 Oak")]
+    said = home_of(account, 100, 4000, {7, 8})
+    wanted = {"up": 110, "down": 600, "moved": {7: 120, 8: 640}, "late": [8], "blind": 45}
+    print(f"{'✔' if said == wanted else '✘'} the window server's account: {said}")
+    return 1 if failures or said != wanted else 0
 
 
 def option(arguments, name, default=None):
@@ -967,6 +1019,8 @@ def main(arguments):
                     scenes[name] = entry
         json.dump({"run": arguments[0], "commit": arguments[1], "scenes": scenes}, sys.stdout, indent=1, ensure_ascii=False)
         return 0
+    if command == "home":
+        return home(arguments[0])
     if command == "frame":
         Image.fromarray(Film(arguments[0]).frame(int(arguments[1]))).save(arguments[2])
         return 0
