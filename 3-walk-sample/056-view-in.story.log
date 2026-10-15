@@ -1,0 +1,48 @@
+56 view-in: presses ⌃⌥↓
+expected: {'act': 'view', 'settled': 'quiet:1036', 'moves': 'any', 'floating': '445,450,451,454,455,460,554,565', 'docked': '433'}
+ODD rule 3: the last window came to rest 717 ms after the key or the button
+
+00:50:35.848 SCREEN -- begin 56 view-in
+00:50:35.848 SCREEN -- text 56 presses ⌃⌥↓
+00:50:35.928 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 9 stand-ins, 0.46 s
+00:50:35.931 MACOS pid 44529 AXMoved w433 AXWindow/AXStandardWindow 1599 770 782 767
+00:50:35.933 MACOS pid 45400 AXMoved w445 AXWindow/AXStandardWindow 165 65 673 439
+00:50:35.938 MACOS pid 45460 AXMoved w450 AXWindow/AXStandardWindow 97 238 877 499
+00:50:35.938 MACOS pid 45460 AXTitleChanged w450 AXWindow/AXStandardWindow 97 238 877 499
+00:50:35.938 MACOS pid 45460 AXResized w450 AXWindow/AXStandardWindow 97 238 877 499
+00:50:35.952 SCREEN w493 of Arbor 0,0 1600×900 (level 4)
+00:50:35.952 SCREEN textedit (w445) 165,65 673×439
+00:50:35.952 SCREEN finder (w433) 1599,770 782×767
+00:50:35.952 SCREEN notes (w451) 0,31 794×791
+00:50:35.952 SCREEN terminal (w450) 97,238 793×499
+00:50:35.972 MACOS pid 45521 AXMoved w451 AXWindow/AXStandardWindow 0 31 800 791
+00:50:35.972 MACOS pid 45521 AXResized w451 AXWindow/AXStandardWindow 0 31 800 791
+00:50:35.988 SCREEN notes (w451) 0,31 800×791
+00:50:35.988 SCREEN terminal (w450) 97,238 877×499
+00:50:35.990 MACOS pid 45933 AXMoved w454 AXWindow/AXStandardWindow 415 115 909 600
+00:50:35.990 MACOS pid 45933 AXResized w454 AXWindow/AXStandardWindow 415 115 909 600
+00:50:35.992 MACOS pid 45986 AXMoved w455 AXWindow/AXStandardWindow 437 85 723 625
+00:50:35.996 SCREEN calendar (w454) 415,115 909×600
+00:50:36.018 SCREEN settings (w455) 437,85 723×625
+00:50:36.018 SCREEN w462 of Mail 441,179 470×416
+00:50:36.018 SCREEN mail (w460) 240,72 871×630
+00:50:36.058 MACOS pid 46101 AXMoved w460 AXWindow/AXStandardWindow 240 72 871 630
+00:50:36.059 MACOS pid 46101 AXResized w460 AXWindow/AXStandardWindow 240 72 1120 630
+00:50:36.089 MACOS pid 51482 AXMoved w554 AXWindow/AXStandardWindow 138 31 1324 790
+00:50:36.090 MACOS pid 51482 AXResized w554 AXWindow/AXStandardWindow 138 31 1324 790
+00:50:36.091 MACOS pid 53628 AXMoved w565 AXWindow/AXStandardWindow 4 35 708 424
+00:50:36.093 INFO  in: stepped in to the Desktop
+00:50:36.094 DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Your other window is out of view, not closed · ⌃⌥Space shows everything
+00:50:36.114 SCREEN w481 of Arbor 525,728 550×38 (level 6)
+00:50:36.114 SCREEN w495 of Arbor 428,76 741×643
+00:50:36.114 SCREEN preview (w565) 4,35 708×424
+00:50:36.114 SCREEN safari (w554) 138,31 1324×790
+00:50:36.114 SCREEN w462 of Mail 565,179 470×416
+00:50:36.114 SCREEN mail (w460) 240,72 1120×630
+00:50:36.114 SCREEN w494 of Arbor left the screen
+00:50:36.114 SCREEN front to back: w495 settings calendar preview safari w462 mail textedit finder notes w477 terminal
+00:50:36.332 SCREEN w496 of Arbor left the screen
+00:50:36.611 DEBUG stage down
+00:50:36.669 SCREEN w493 of Arbor left the screen
+00:50:37.286 SCREEN -- end 56 act=view settled=quiet:1036 moves=any floating=445,450,451,454,455,460,554,565 docked=433
+00:50:37.527 SCRIPT == 57 dock-icon-mail

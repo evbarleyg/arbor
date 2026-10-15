@@ -1,0 +1,111 @@
+{
+ "gate": 1,
+ "commit": "012c88da96550ef957f3ac9c1e861e32fb794927",
+ "run": "38660779228",
+ "attempt": 1,
+ "part": 1,
+ "parts": 4,
+ "script": "day-sabotage.sh",
+ "settings": "shipped",
+ "build": "debug",
+ "macos": "26.6.2 (25G83)",
+ "seconds": 201,
+ "kind": "sabotage",
+ "seed": "",
+ "seed_commit": "",
+ "tiling": "defaults",
+ "tiling_seen_to_act": true,
+ "display": "laptop",
+ "cast": "stock",
+ "apps": [
+  "com.apple.finder",
+  "com.apple.Safari",
+  "com.apple.TextEdit",
+  "com.apple.Terminal",
+  "com.apple.Notes",
+  "com.apple.iCal",
+  "com.apple.systempreferences",
+  "com.apple.Preview",
+  "com.apple.mail"
+ ],
+ "stage_seen": true,
+ "reduce_motion": false,
+ "offences": [
+  {
+   "detector": "jolt",
+   "id": "moved-twice#1"
+  },
+  {
+   "detector": "jolt",
+   "id": "elsewhere-first#1"
+  },
+  {
+   "detector": "moved-unasked",
+   "id": "somebody-else#1"
+  },
+  {
+   "detector": "flash",
+   "id": "flashes#1"
+  },
+  {
+   "detector": "behind",
+   "id": "covered#1"
+  },
+  {
+   "detector": "focus",
+   "id": "keyboard-taken#1"
+  },
+  {
+   "detector": "focus",
+   "id": "comes-forward#1"
+  },
+  {
+   "detector": "pulled",
+   "id": "out-of-the-hand#1"
+  },
+  {
+   "detector": "stuck",
+   "id": "dropped-elsewhere#1"
+  },
+  {
+   "detector": "slow",
+   "id": "answers-late#1"
+  },
+  {
+   "detector": "size-lost",
+   "id": "wrong-size#1"
+  },
+  {
+   "detector": "lost",
+   "id": "left-out#1"
+  },
+  {
+   "detector": "lost",
+   "id": "vanishes#1"
+  },
+  {
+   "detector": "input-held",
+   "id": "held-back#1"
+  },
+  {
+   "detector": "fought",
+   "id": "both-previews#1"
+  },
+  {
+   "detector": "busy",
+   "id": "busy-doing-nothing#1"
+  },
+  {
+   "detector": "left-behind",
+   "id": "stays-behind#1"
+  },
+  {
+   "detector": "crash",
+   "id": "ends-unasked#1"
+  },
+  {
+   "detector": "told",
+   "id": "tells#1"
+  }
+ ]
+}

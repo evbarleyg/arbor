@@ -1,0 +1,60 @@
+85 double-click-finder: double-clicks finder's title bar: macOS zooms the window
+expected: {'act': 'macos-own', 'settled': 'quiet:1151', 'zooms': '148', 'front': '148', 'floating': '165,166,167,170,172,175,321', 'docked': '148,151'}
+FAIL rule 1: finder (w148) macOS answered the double-click on its title bar, and it was moved again afterwards (2 moves)
+
+00:44:54.915 SCREEN -- begin 85 double-click-finder
+00:44:54.915 SCREEN -- text 85 double-clicks finder's title bar: macOS zooms the window
+00:44:55.609 SCREEN front to back: finder safari textedit calendar notes w177 mail preview settings terminal w190 w258 w253
+00:44:55.609 SCREEN the button is down 264 55
+00:44:55.648 SCREEN the button is up 264 55
+00:44:55.648 DEBUG focus is on w148
+00:44:55.648 MACOS pid 18677 AXFocusedWindowChanged w148 AXWindow/AXStandardWindow 12 43 501 767
+00:44:55.648 MACOS pid 18677 AXFocusedWindowChanged
+00:44:55.649 DEBUG w148 has the keyboard
+00:44:55.649 MACOS pid 18677 AXMainWindowChanged w148 AXWindow/AXStandardWindow 12 43 501 767
+00:44:55.649 MACOS pid 18677 AXMainWindowChanged
+00:44:55.667 SCREEN w243 of Arbor 3,34 519×785
+00:44:55.667 SCREEN front to back: w243 finder safari textedit calendar notes w177 mail preview settings terminal w190 w258 w253
+00:44:55.842 SCREEN the button is down 264 55
+00:44:55.908 SCREEN the button is up 264 55
+00:44:55.959 SCREEN finder (w148) 12,43 502×760
+00:44:56.033 SCREEN finder (w148) 12,43 512×655
+00:44:56.061 SCREEN finder (w148) 12,43 519×586
+00:44:56.084 SCREEN finder (w148) 12,43 523×547
+00:44:56.109 SCREEN finder (w148) 12,43 530×471
+00:44:56.134 SCREEN finder (w148) 12,43 534×434
+00:44:56.142 SCREEN finder (w148) 12,43 537×396
+00:44:56.162 SCREEN finder (w148) 12,43 540×365
+00:44:56.178 SCREEN finder (w148) 12,43 543×335
+00:44:56.194 SCREEN finder (w148) 12,43 546×308
+00:44:56.211 SCREEN finder (w148) 12,43 548×286
+00:44:56.234 SCREEN finder (w148) 12,43 550×270
+00:44:56.271 MACOS pid 18677 AXResized w148 AXWindow/AXStandardWindow 12 43 551 252
+00:44:56.271 MACOS pid 18677 AXResized w148 AXWindow/AXStandardWindow 12 43 551 252
+00:44:56.271 MACOS pid 18677 AXResized w148 AXWindow/AXStandardWindow 12 43 551 252
+00:44:56.272 MACOS pid 18677 AXResized w148 AXWindow/AXStandardWindow 12 43 551 252
+00:44:56.272 MACOS pid 18677 AXResized w148 AXWindow/AXStandardWindow 12 43 551 252
+00:44:56.272 MACOS pid 18677 AXResized w148 AXWindow/AXStandardWindow 12 43 551 252
+00:44:56.273 MACOS pid 18677 AXResized w148 AXWindow/AXStandardWindow 12 43 551 252
+00:44:56.273 MACOS pid 18677 AXResized w148 AXWindow/AXStandardWindow 12 43 551 252
+00:44:56.273 MACOS pid 18677 AXResized w148 AXWindow/AXStandardWindow 12 43 551 252
+00:44:56.274 MACOS pid 18677 AXResized w148 AXWindow/AXStandardWindow 12 43 551 252
+00:44:56.274 MACOS pid 18677 AXResized w148 AXWindow/AXStandardWindow 12 43 551 252
+00:44:56.274 MACOS pid 18677 AXResized w148 AXWindow/AXStandardWindow 12 43 551 252
+00:44:56.275 SCREEN finder (w148) 12,43 551×253
+00:44:56.275 MACOS pid 18677 AXResized w148 AXWindow/AXStandardWindow 12 43 551 252
+00:44:56.275 MACOS pid 18677 AXResized w148 AXWindow/AXStandardWindow 12 43 551 252
+00:44:56.275 MACOS pid 18677 AXResized w148 AXWindow/AXStandardWindow 12 43 551 252
+00:44:56.276 MACOS pid 18677 AXResized w148 AXWindow/AXStandardWindow 12 43 551 252
+00:44:56.276 MACOS pid 18677 AXResized w148 AXWindow/AXStandardWindow 12 43 551 252
+00:44:56.277 MACOS pid 18677 AXResized w148 AXWindow/AXStandardWindow 12 43 551 252
+00:44:56.278 MACOS pid 18677 AXResized w148 AXWindow/AXStandardWindow 12 43 551 252
+00:44:56.278 MACOS pid 18677 AXResized w148 AXWindow/AXStandardWindow 12 43 551 252
+00:44:56.279 MACOS pid 18677 AXResized w148 AXWindow/AXStandardWindow 12 43 551 252
+00:44:56.294 SCREEN w243 of Arbor 3,34 569×270
+00:44:56.294 SCREEN finder (w148) 12,43 551×252
+00:44:56.628 MACOS pid 18677 AXResized w148 AXWindow/AXStandardWindow 12 43 501 767
+00:44:56.636 SCREEN finder (w148) 12,43 501×767
+00:44:56.667 SCREEN w243 of Arbor 3,34 519×785
+00:44:57.799 SCREEN -- end 85 act=macos-own settled=quiet:1151 zooms=148 front=148 floating=165,166,167,170,172,175,321 docked=148,151
+00:44:58.013 SCRIPT == 86 double-click-finder-again

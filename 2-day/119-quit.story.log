@@ -1,0 +1,36 @@
+119 quit: chooses Quit Arbor in Arbor's menu
+expected: {'act': 'quit-and-start', 'settled': 'quiet:823', 'moves': 'any', 'restores': 'all', 'places': '1', 'everything': '1'}
+FAIL rule 5: calendar (w167) has its size back but not its place: 386,118 680×599, it was at 446,178 680×599
+
+00:46:52.236 SCREEN -- begin 119 quit
+00:46:52.236 SCREEN -- text 119 chooses Quit Arbor in Arbor's menu
+00:46:52.821 DEBUG menu bar click: x 67.0 by the event, 67.0 by the screen, button 134.0 wide
+00:46:52.988 SCREEN w413 of Arbor 1229,31 279×785 (level 101)
+00:46:54.301 MACOS pid 18677 AXMoved w148 AXWindow/AXStandardWindow 340 120 920 436
+00:46:54.349 SCREEN safari (w151) 138,31 1324×790
+00:46:54.349 SCREEN finder (w148) 340,120 920×436
+00:46:54.350 MACOS pid 19971 AXResized w151 AXWindow/AXStandardWindow 138 31 1324 790
+00:46:54.351 MACOS pid 19971 AXMoved w151 AXWindow/AXStandardWindow 138 31 1324 790
+00:46:54.355 MACOS pid 19971 AXResized w151 AXWindow/AXStandardWindow 138 31 1324 790
+00:46:54.356 MACOS pid 20332 AXMoved w165 AXWindow/AXStandardWindow 97 238 877 499
+00:46:54.358 MACOS pid 20515 AXMoved w166 AXWindow/AXStandardWindow -1 32 800 791
+00:46:54.365 MACOS pid 20568 AXMoved w167 AXWindow/AXStandardWindow 386 118 680 599
+00:46:54.369 MACOS pid 20627 AXMoved w170 AXWindow/AXStandardWindow 437 85 723 625
+00:46:54.372 MACOS pid 20692 AXMoved w172 AXWindow/AXStandardWindow 4 35 708 424
+00:46:54.379 MACOS pid 21104 AXMoved w175 AXWindow/AXStandardWindow 240 72 1120 630
+00:46:54.382 MACOS pid 33706 AXMoved w321 AXWindow/AXStandardWindow 165 65 673 439
+00:46:54.384 INFO  trace day-16 ended: 43 lines, Arbor stopped
+00:46:54.384 INFO  stopped; all windows returned to view
+00:46:54.386 INFO  Arbor quit
+00:46:54.395 SCREEN preview (w172) 4,35 708×424
+00:46:54.395 SCREEN settings (w170) 437,85 723×625
+00:46:54.395 SCREEN calendar (w167) 386,118 680×599
+00:46:54.395 SCREEN notes (w166) -1,32 800×791
+00:46:54.395 SCREEN terminal (w165) 97,238 877×499
+00:46:54.395 SCREEN w409 of Arbor left the screen
+00:46:54.395 SCREEN w413 of Arbor left the screen
+00:46:54.405 SCREEN w177 of Mail 565,179 470×416
+00:46:54.405 SCREEN mail (w175) 240,72 1120×630
+00:46:54.405 SCREEN textedit (w321) 165,65 673×439
+00:46:55.429 SCREEN -- end 119 act=quit-and-start settled=quiet:823 moves=any restores=all places=1 everything=1
+00:46:55.635 SCRIPT == 120 dock-icon-finder

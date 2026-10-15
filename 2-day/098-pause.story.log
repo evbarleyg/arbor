@@ -1,0 +1,31 @@
+98 pause: presses ⌃⌥⎋
+expected: {'act': 'way-out', 'settled': 'quiet:705', 'moves': 'any', 'restores': 'all', 'everything': '1', 'floating': '', 'docked': ''}
+FAIL rule 5: finder (w148) is 12,433 501×377; its own size was 340,120 920×436
+FAIL rule 5: safari (w151) is 940,433 648×377; its own size was 138,31 1324×791
+FAIL rule 5: terminal (w165) is 525,433 401×379; its own size was 97,238 877×499
+FAIL rule 5: calendar (w167) is 386,118 680×599; its own size was 464,118 936×599
+FAIL rule 5: settings (w170) is 365,352 723×470; its own size was 437,85 723×625
+FAIL rule 5: preview (w172) is 372,433 708×389; its own size was 4,35 708×424
+FAIL rule 5: mail (w175) is 291,433 871×389; its own size was 240,72 1120×630
+FAIL rule 5: textedit (w321) is 525,433 403×389; its own size was 165,65 673×439
+
+00:45:37.917 SCREEN -- begin 98 pause
+00:45:37.917 SCREEN -- text 98 presses ⌃⌥⎋
+00:45:38.080 MACOS pid 20568 AXResized w167 AXWindow/AXStandardWindow 386 118 680 599
+00:45:38.081 MACOS pid 20568 AXMoved w167 AXWindow/AXStandardWindow 386 118 680 599
+00:45:38.085 INFO  trace day-12 ended: 54 lines, Arbor stopped
+00:45:38.087 INFO  registered 1 shortcuts in 1065 µs
+00:45:38.088 INFO  stopped; all windows returned to view
+00:45:38.088 INFO  paused
+00:45:38.089 DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Paused until ⌃⌥⎋; windows that were out of view are back on screen
+00:45:38.094 SCREEN calendar (w167) 386,118 680×599
+00:45:38.167 SCREEN w379 of Arbor 538,728 525×38 (level 6)
+00:45:38.167 SCREEN w248 of Arbor left the screen
+00:45:38.167 SCREEN w252 of Arbor left the screen
+00:45:38.167 SCREEN w253 of Arbor left the screen
+00:45:38.167 SCREEN w258 of Arbor left the screen
+00:45:38.167 SCREEN w244 of Arbor left the screen
+00:45:38.167 SCREEN w243 of Arbor left the screen
+00:45:38.167 SCREEN front to back: safari notes calendar w177 mail preview settings finder textedit terminal w190
+00:45:39.328 SCREEN -- end 98 act=way-out settled=quiet:705 moves=any restores=all everything=1 floating= docked=
+00:45:39.624 SCRIPT == 99 drag-calendar-by

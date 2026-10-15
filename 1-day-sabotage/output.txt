@@ -1,0 +1,393 @@
+# mac-shell: scripts/mac-shell/day-sabotage.sh at 012c88d, macOS 26.6.2, 2026-10-15T00:37Z
+
+== the Mac
+macOS 26.6.2 (25G83) on arm64
+built the tools in 30s
+1600 900 1600 900
+display: 1 0 0 1600 900 1600 900 1
+macOS's own window management, as it comes:
+com.apple.WindowManager EnableTilingByEdgeDrag: not set
+com.apple.WindowManager EnableTopTilingByEdgeDrag: not set
+com.apple.WindowManager EnableTilingOptionAccelerator: not set
+com.apple.WindowManager EnableTiledWindowMargins: not set
+com.apple.WindowManager EnableStandardClickToShowDesktop: not set
+Reduce Motion: false
+the sampler writes mac-shell/samples.log (pid 8980), the witness mac-shell/witness.log (pid 8989)
+
+== Before Arbor: the apps are open already
+
+-- 1 open-finder: opens finder
+> open -g -b com.apple.finder /tmp/arbor-apps.dRuAhg/scratch/told/…-grove
+pid 343 lists (id role subrole x y w h flags):
+  32 AXWindow AXStandardWindow 340 120 920 436 main,toolbar
+  0 AXScrollArea - 0 0 1600 900 fixed-size,fixed-position,no-close,no-minimize,no-zoom
+  w32 is finder
+  (quiet:958 ms) setup=1
+
+-- 2 open-safari: opens safari
+> open -g -b com.apple.Safari /tmp/arbor-apps.dRuAhg/scratch/told/…-page.html
+pid 9074 lists (id role subrole x y w h flags):
+  36 AXWindow AXStandardWindow 138 31 1324 791 main,toolbar
+  w36 is safari
+  (quiet:476 ms) setup=1
+
+-- 3 open-textedit: opens textedit
+> open -g -b com.apple.TextEdit /tmp/arbor-apps.dRuAhg/scratch/told/…-oak.txt
+pid 9281 lists (id role subrole x y w h flags):
+  46 AXWindow AXStandardWindow 165 65 673 439 main
+  w46 is textedit
+  (quiet:2009 ms) setup=1
+
+-- 4 open-terminal: opens terminal
+> open -g -b com.apple.Terminal 
+pid 9502 lists (id role subrole x y w h flags):
+  49 AXWindow AXStandardWindow 40 51 877 499 main
+  w49 is terminal
+  (quiet:1182 ms) setup=1
+
+-- 5 open-notes: opens notes
+> open -g -b com.apple.Notes 
+pid 9591 lists (id role subrole x y w h flags):
+  52 AXWindow AXStandardWindow 300 105 1000 660 main,close-disabled,sheets=1
+  w52 is notes
+something is in the way:
+  AXWindow/AXStandardWindow 300 105 1000 660
+    AXButton/AXCloseButton 308 113 16 16
+    AXButton/AXZoomButton 354 113 16 16
+    AXButton/AXMinimizeButton 331 113 16 16
+    AXSheet/- 563 135 475 600
+      AXButton/- 934 686 85 30 "Continue"
+pressed "Continue": 0
+pressed "Cancel": 0
+  (quiet:351 ms) setup=1
+
+-- 6 open-calendar: opens calendar
+> open -g -b com.apple.iCal 
+pid 9907 lists (id role subrole x y w h flags):
+  58 AXWindow AXStandardWindow 200 86 935 598 main,toolbar
+  w58 is calendar
+  (quiet:1445 ms) setup=1
+
+-- 7 open-settings: opens settings
+> open -g -b com.apple.systempreferences 
+pid 10080 lists (id role subrole x y w h flags):
+  59 AXWindow AXStandardWindow 437 85 723 625 main,toolbar
+  w59 is settings
+  (quiet:836 ms) setup=1
+
+-- 8 open-preview: opens preview
+> open -g -b com.apple.Preview /tmp/arbor-apps.dRuAhg/scratch/told/…-leaf.png
+pid 10153 lists (id role subrole x y w h flags):
+  61 AXWindow AXStandardWindow 4 35 708 424 main,toolbar
+  w61 is preview
+  (quiet:975 ms) setup=1
+
+-- 9 open-mail: opens mail
+> open -g -b com.apple.mail 
+pid 10251 lists (id role subrole x y w h flags):
+  65 AXWindow AXStandardWindow 240 72 1120 630 main,close-disabled,sheets=1,toolbar
+  w65 is mail
+  (quiet:796 ms) setup=1
+the cast: finder safari textedit terminal notes calendar settings preview mail
+
+-- 10 tiling-acts: without Arbor: drags a window by its title bar against the menu bar and lets go
+> click 635 854
+> move 635 654
+> drag 536 98 800 0 --no-release
+> release
+  (quiet:1443 ms) setup=1
+macOS's tiling was seen to act: true
+  ✔ macOS's own tiling acts
+
+-- 11 tiling-acts-back: drags it away again, a hand's breadth down
+> drag 672 43 800 130 --no-release
+> release
+  (quiet:1078 ms) setup=1
+
+-- 12 look-around: looks at the screen
+  (quiet:424 ms) setup=1 own=all
+
+== The walk
+
+== The windows
+
+-- 13 open-second: opens a second document in TextEdit
+  w81 is elm
+  (quiet:1398 ms) setup=1
+
+-- 14 lay-out: hides the other apps and puts five windows side by side
+  (quiet:369 ms) setup=1 own=all
+
+== Honest steps and offences
+
+-- 15 honest-switch: clicks TextEdit's icon in the Dock
+> click 1220 854
+> move 1220 654
+  (quiet:457 ms) front=81
+
+-- 16 honest-click: clicks the first document's title bar
+> click 346 92
+> move 346 212
+  (quiet:406 ms) front=46
+
+-- 17 honest-move: a window is moved once, straight to where it ends up
+  (quiet:1079 ms) moves=46 first=1
+
+-- 18 honest-resize: a window is given another size and another place, which takes two stages
+  (quiet:1067 ms) moves=46
+
+-- 19 moved-twice: OFFENCE: a window is moved, and half a second later moved again
+  (quiet:1092 ms) moves=46 offence=jolt
+
+-- 20 elsewhere-first: OFFENCE: a window goes somewhere else before it goes where it ends up
+  (quiet:1054 ms) moves=46 offence=jolt
+
+-- 21 somebody-else: OFFENCE: a window that the step does not name is moved
+  (quiet:1022 ms) moves=46 offence=moved-unasked
+
+-- 22 honest-park: a window is sent out of view, to the corner
+  (quiet:1022 ms) moves=61
+parked at 1599 770 708 320
+
+-- 23 flashes: OFFENCE: a window that is out of view shows for a moment
+  (quiet:1014 ms) moves=any offence=flash
+
+-- 24 honest-return: it comes back into view
+  (quiet:1016 ms) moves=61
+
+-- 25 covered: OFFENCE: the window switched to is covered by another one at once
+> click 394 112
+> move 394 232
+  (quiet:1048 ms) front=46 offence=behind
+
+-- 26 honest-click-2: clicks the first document's title bar
+> click 394 112
+> move 394 232
+  (quiet:387 ms) front=46
+
+-- 27 honest-minimize: Terminal's window is minimized
+  (quiet:1635 ms) leaves=49
+
+-- 28 keyboard-taken: OFFENCE: after the switch another app, with no window to show, takes the keyboard
+> click 394 112
+> move 394 232
+  (quiet:353 ms) front=46 offence=focus
+
+-- 29 honest-click-3: clicks the first document's title bar
+> click 394 112
+> move 394 232
+  (quiet:395 ms) front=46
+
+-- 30 comes-forward: OFFENCE: nobody does anything, and an app comes forward by itself
+  (quiet:394 ms) offence=focus
+
+-- 31 honest-click-4: clicks the first document's title bar
+> click 394 112
+> move 394 232
+  (quiet:434 ms) front=46
+
+-- 32 honest-drag: drags the first document a little way by its title bar
+> drag 394 112 514 172 --no-release
+> release
+  (quiet:1072 ms) drags=46 place=46
+
+-- 33 out-of-the-hand: OFFENCE: while the button is down the dragged window is pulled away
+> drag 465 132 345 72 --no-release
+> release
+  (quiet:1057 ms) drags=46 place=46 offence=pulled
+
+-- 34 dropped-elsewhere: OFFENCE: a window is dragged and let go, and goes somewhere else altogether
+> drag 345 72 445 112 --no-release
+> release
+  (quiet:1046 ms) drags=46 offence=stuck
+
+-- 35 honest-move-2: it is moved back to where the hand left it, which is its own place from now on
+  (quiet:1021 ms) moves=46 place=46
+
+-- 36 answers-late: OFFENCE: a key is pressed, and the window moves two seconds later
+> key escape
+  (quiet:1023 ms) moves=46 offence=slow
+
+-- 37 honest-idle: nobody does anything for three seconds
+  (quiet:376 ms)
+
+-- 38 wrong-size: OFFENCE: everything is given back, but one window keeps a size that is not its own
+  (quiet:1015 ms) moves=any restores=all offence=size-lost
+
+-- 39 honest-give-back: now it gets its own size and place back too
+  (quiet:1042 ms) moves=any restores=all places=1 everything=1
+
+-- 40 left-out: OFFENCE: everything should be in view, and one window is in the corner
+  (quiet:1071 ms) moves=any everything=1 offence=lost
+
+-- 41 honest-return-2: it comes back
+  (quiet:1059 ms) moves=32
+
+-- 42 vanishes: OFFENCE: a window is closed, and nobody asked for that
+  (quiet:1291 ms) offence=lost
+
+== What only Arbor's own process can do wrong
+
+-- 43 honest-click-5: clicks the first document's title bar, with something that passes for Arbor running
+> click 385 91
+> move 385 211
+  (quiet:376 ms) front=46 floating= docked=
+
+-- 44 under-the-stage: a panel covers the whole display, as Arbor's stage does, and under it a window goes about before it ends up: nobody sees that
+  (quiet:814 ms) moves=46 floating= docked=
+
+-- 45 held-back: OFFENCE: the button comes up, and an event tap keeps that from the apps for a fifth of a second
+> click 425 91
+> move 425 211
+  (quiet:531 ms) front=46 offence=input-held floating= docked=
+
+-- 46 both-previews: OFFENCE: a window is dragged against the menu bar, and a drop preview comes up beside macOS's own
+> drag 425 91 800 0 --no-release
+> release
+  (quiet:1380 ms) drags=46 own=46 offence=fought floating= docked=
+
+-- 47 honest-drag-back: drags it away from the top again
+> drag 798 43 800 130 --no-release
+> release
+  (quiet:1009 ms) drags=46 own=46 floating= docked=
+
+-- 48 busy-doing-nothing: OFFENCE: nobody does anything, and the process keeps a core busy
+  with nothing to do Arbor used 101.0 % of a core and wrote 0 lines a minute
+  (quiet:424 ms) offence=busy floating= docked=
+
+-- 49 honest-idle-2: nobody does anything, and neither does it
+  with nothing to do Arbor used 0.0 % of a core and wrote 0 lines a minute
+  (quiet:411 ms) floating= docked=
+
+-- 50 stays-behind: OFFENCE: it is asked to quit and does, but a second process of its stays
+  ✔ it ends within five seconds
+  (quiet:374 ms) offence=left-behind
+
+-- 51 ends-unasked: OFFENCE: nobody does anything, and the process ends
+  ✘ ARBOR DIED
+  (quiet:373 ms) offence=crash
+
+-- 52 tells: OFFENCE: a window's title is written into a log
+  (quiet:411 ms) offence=told
+
+== the report (all of it: mac-shell/day-report.md)
+52 steps in 166 s, 38 of them judged, 18 with a rule broken. The sampler: samples 6361 seconds 166.8 hz 38.1 cost-ms 1.99 late 72 longest-gap-ms 899.
+Input: 194 presses, releases, keys and scrolls reached the apps, half of them within 638 µs, 99 in 100 within 21053 µs, the latest after 246783 µs.
+
+## Per rule
+
+| Rule | | Steps that checked it | Steps that broke it | Which |
+|---|---|---|---|---|
+| 1 | never fight macOS: where it answers a drag, Arbor stands aside | 5 | 1 | 46 both-previews |
+| 2 | nothing moves that the person did not move | 34 | 2 | 21 somebody-else, 42 vanishes |
+| 3 | no jolts: a window moves once, to where it ends up | 38 | 5 | 19 moved-twice, 23 flashes, 33 out-of-the-hand, 34 dropped-elsewhere, 36 answers-late |
+| 4 | the window you switch to comes to the front and into view | 24 | 3 | 25 covered, 28 keyboard-taken, 30 comes-forward |
+| 5 | quitting, Float All and pause give windows their own sizes back | 2 | 1 | 38 wrong-size |
+| 6 | what a person presses reaches the apps, at once | 14 | 1 | 45 held-back |
+| L | no window is lost or stuck | 38 | 2 | 40 left-out, 42 vanishes |
+| - | what the script itself checked | 38 | 4 | 48 busy-doing-nothing, 50 stays-behind, 51 ends-unasked, 52 tells |
+
+## Findings
+
+### Rule 1: never fight macOS: where it answers a drag, Arbor stands aside
+
+- ✘ **46 both-previews** (OFFENCE: a window is dragged against the menu bar, and a drop preview comes up beside macOS's own): textedit (w46) macOS's tiling preview and Arbor's drop preview were up at the same time [fought]
+
+### Rule 2: nothing moves that the person did not move
+
+- ✘ **21 somebody-else** (OFFENCE: a window that the step does not name is moved): finder (w32) moved, and the step did not name it [moved-unasked]
+  - +0 ms 700,80 560×380 · +42 ms 720,120 560×380
+- ✘ **42 vanishes** (OFFENCE: a window is closed, and nobody asked for that): elm (w81) moved, and the step did not name it [moved-unasked]
+  - +0 ms 140,500 520×300 · +189 ms 144,502 512×296 · +198 ms 145,503 510×294 · +405 ms off the screen
+
+### Rule 3: no jolts: a window moves once, to where it ends up
+
+- ✘ **19 moved-twice** (OFFENCE: a window is moved, and half a second later moved again): textedit (w46) moved 2 times [jolt]
+  - +0 ms 60,60 600×420 · +68 ms 160,100 600×420 · +661 ms 220,100 600×420
+- ✘ **23 flashes** (OFFENCE: a window that is out of view shows for a moment): preview (w61) is out of view before and after, and 100% of it showed in between [flash]
+  - +0 ms 1599,770 708×320 · +22 ms 400,300 708×320 · +51 ms 1599,770 708×320
+- ✘ **33 out-of-the-hand** (OFFENCE: while the button is down the dragged window is pulled away): textedit (w46) moved 400 points further than the pointer did, 3751 ms into the step [pulled]
+  - +0 ms 167,120 600×420 · +47 ms 163,120 600×420 · +148 ms 159,120 600×420 · +931 ms 155,120 600×420 · +1042 ms 108,120 600×420 · +1051 ms 95,105 600×420 · … 10 more … · +1684 ms 51,60 600×420 · +1931 ms 52,60 600×420 · +2038 ms 51,60 600×420 · +2531 ms 451,260 600×420 · +2894 ms 51,60 600×420
+- ✘ **34 dropped-elsewhere** (OFFENCE: a window is dragged and let go, and goes somewhere else altogether): textedit (w46) ended neither where it was let go nor where the preview was: let go at 119,79 600×420, no preview, now at 539,339 600×420 [stuck]
+  - +0 ms 119,79 600×420 · +1652 ms 539,339 600×420
+- ✘ **36 answers-late** (OFFENCE: a key is pressed, and the window moves two seconds later): the last window came to rest 2224 ms after the key or the button [slow]
+- ~ **47 honest-drag-back** (drags it away from the top again): textedit (w46) changed its size while it was being dragged [jolt]
+  - +0 ms 0,33 1600×791 · +36 ms 1,39 1600×791 · +43 ms 1,39 1544×770 · +82 ms 1,39 1204×641 · +144 ms 400,39 797×486 · +150 ms 440,42 717×455 · … 23 more … · +1717 ms 539,109 521×381 · +1843 ms 540,112 521×381 · +1893 ms 540,115 521×381 · +2108 ms 541,115 521×381 · +2250 ms 540,115 521×381
+
+### Rule 4: the window you switch to comes to the front and into view
+
+- ✘ **25 covered** (OFFENCE: the window switched to is covered by another one at once): textedit (w46) is not in front: elm (w81) ahead of it, of which 1 cover part of it [behind]
+- ✘ **28 keyboard-taken** (OFFENCE: after the switch another app, with no window to show, takes the keyboard): textedit (w46) its app is not the one in front (process 9502 is) [focus]
+- ✘ **30 comes-forward** (OFFENCE: nobody does anything, and an app comes forward by itself): the app in front changed (to process 9502), and nobody switched [focus]
+
+### Rule 5: quitting, Float All and pause give windows their own sizes back
+
+- ✘ **38 wrong-size** (OFFENCE: everything is given back, but one window keeps a size that is not its own): textedit (w46) is 119,79 640×460; its own size was 119,79 520×380 [size-lost]
+
+### Rule 6: what a person presses reaches the apps, at once
+
+- ✘ **45 held-back** (OFFENCE: the button comes up, and an event tap keeps that from the apps for a fifth of a second): the button came up, and the apps heard of it 246 ms later [input-held]
+
+### Rule L: no window is lost or stuck
+
+- ✘ **40 left-out** (OFFENCE: everything should be in view, and one window is in the corner): finder (w32) is out of view: 0% of it is on a display, at 1599,770 560×380 [lost]
+- ✘ **42 vanishes** (OFFENCE: a window is closed, and nobody asked for that): elm (w81) left the screen, and the step did not say it would [lost]
+  - +0 ms 140,500 520×300 · +189 ms 144,502 512×296 · +198 ms 145,503 510×294 · +405 ms off the screen
+
+### Rule -: what the script itself checked
+
+- ✘ **48 busy-doing-nothing** (OFFENCE: nobody does anything, and the process keeps a core busy): with nothing to do Arbor used 101.0 % of a core [busy]
+- ✘ **50 stays-behind** (OFFENCE: it is asked to quit and does, but a second process of its stays): after Quit a process of Arbor's is still there: 17773 [left-behind]
+- ✘ **51 ends-unasked** (OFFENCE: nobody does anything, and the process ends): Arbor's process ended, and nobody asked it to [crash]
+- ✘ **52 tells** (OFFENCE: a window's title is written into a log): a window's title is in what the run brings back: saboteur.log [told]
+
+
+== the sabotage
+| # | Step | Offence committed | Reported | |
+|---|---|---|---|---|
+| 15 | honest-switch | none | nothing | ✔ |
+| 16 | honest-click | none | nothing | ✔ |
+| 17 | honest-move | none | nothing | ✔ |
+| 18 | honest-resize | none | nothing | ✔ |
+| 19 | moved-twice | jolt | jolt | ✔ |
+| 20 | elsewhere-first | jolt | nothing | ✘ |
+| 21 | somebody-else | moved-unasked | moved-unasked | ✔ |
+| 22 | honest-park | none | nothing | ✔ |
+| 23 | flashes | flash | flash | ✔ |
+| 24 | honest-return | none | nothing | ✔ |
+| 25 | covered | behind | behind | ✔ |
+| 26 | honest-click-2 | none | nothing | ✔ |
+| 27 | honest-minimize | none | nothing | ✔ |
+| 28 | keyboard-taken | focus | focus | ✔ |
+| 29 | honest-click-3 | none | nothing | ✔ |
+| 30 | comes-forward | focus | focus | ✔ |
+| 31 | honest-click-4 | none | nothing | ✔ |
+| 32 | honest-drag | none | nothing | ✔ |
+| 33 | out-of-the-hand | pulled | pulled | ✔ |
+| 34 | dropped-elsewhere | stuck | stuck | ✔ |
+| 35 | honest-move-2 | none | nothing | ✔ |
+| 36 | answers-late | slow | slow | ✔ |
+| 37 | honest-idle | none | nothing | ✔ |
+| 38 | wrong-size | size-lost | size-lost | ✔ |
+| 39 | honest-give-back | none | nothing | ✔ |
+| 40 | left-out | lost | lost | ✔ |
+| 41 | honest-return-2 | none | nothing | ✔ |
+| 42 | vanishes | lost | lost, moved-unasked | ✘ |
+| 43 | honest-click-5 | none | nothing | ✔ |
+| 44 | under-the-stage | none | nothing | ✔ |
+| 45 | held-back | input-held | input-held | ✔ |
+| 46 | both-previews | fought | fought | ✔ |
+| 47 | honest-drag-back | none | nothing | ✔ |
+| 48 | busy-doing-nothing | busy | busy | ✔ |
+| 49 | honest-idle-2 | none | nothing | ✔ |
+| 50 | stays-behind | left-behind | left-behind | ✔ |
+| 51 | ends-unasked | crash | crash | ✔ |
+| 52 | tells | told | told | ✔ |
+
+16 kinds of offence committed: behind, busy, crash, flash, focus, fought, input-held, jolt, left-behind, lost, moved-unasked, pulled, size-lost, slow, stuck, told. 2 steps were judged wrongly.
+
+2 passed, 1 failed
+still running when the script had ended, and stopped now:
+  8048 sleep
+  17772 sleep
+exit code 1

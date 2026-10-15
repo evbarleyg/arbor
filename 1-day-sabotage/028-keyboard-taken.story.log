@@ -1,0 +1,15 @@
+28 keyboard-taken: OFFENCE: after the switch another app, with no window to show, takes the keyboard
+expected: {'act': 'switch', 'settled': 'quiet:353', 'front': '46', 'offence': 'focus'}
+FAIL rule 4: textedit (w46) its app is not the one in front (process 9502 is)
+
+00:39:08.356 SCREEN -- begin 28 keyboard-taken
+00:39:08.356 SCREEN -- text 28 OFFENCE: after the switch another app, with no window to show, takes the keyboard
+00:39:08.985 SCREEN the button is down 394 112
+00:39:09.009 SCREEN the button is up 394 112
+00:39:10.117 SCREEN in front: process 9502 com.apple.Terminal
+00:39:10.118 MACOS pid 9281 AXApplicationDeactivated
+00:39:10.122 MACOS workspace didActivate pid 9502 com.apple.Terminal regular
+00:39:10.123 MACOS workspace didDeactivate pid 9281 com.apple.TextEdit regular
+00:39:10.147 MACOS pid 9502 AXApplicationActivated
+00:39:10.477 SCREEN -- end 28 act=switch settled=quiet:353 front=46 offence=focus
+00:39:10.654 SCRIPT == 29 honest-click-3

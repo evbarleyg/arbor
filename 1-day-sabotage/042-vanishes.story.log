@@ -1,0 +1,16 @@
+42 vanishes: OFFENCE: a window is closed, and nobody asked for that
+expected: {'act': 'idle', 'settled': 'quiet:1291', 'offence': 'lost'}
+FAIL rule 2: elm (w81) moved, and the step did not name it
+FAIL rule L: elm (w81) left the screen, and the step did not say it would
+
+00:39:45.495 SCREEN -- begin 42 vanishes
+00:39:45.495 SCREEN -- text 42 OFFENCE: a window is closed, and nobody asked for that
+00:39:45.621 MACOS pid 9281 AXUIElementDestroyed w81
+00:39:45.684 SCREEN elm (w81) 144,502 512×296
+00:39:45.693 SCREEN elm (w81) 145,503 510×294
+00:39:45.900 SCREEN elm (w81) left the screen
+00:39:45.900 SCREEN front to back: textedit preview finder
+00:39:46.913 SCREEN -- end 42 act=idle settled=quiet:1291 offence=lost
+00:39:47.077 SCREEN -- chapter What only Arbor's own process can do wrong
+00:39:50.407 SCREEN -- arbor 15664
+00:39:51.538 SCRIPT == 43 honest-click-5

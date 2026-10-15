@@ -1,0 +1,785 @@
+# mac-shell: scripts/mac-shell/walk-sample.sh at 012c88d, macOS 26.6.2, 2026-10-15T00:47Z
+
+== the Mac
+macOS 26.6.2 (25G83) on arm64
+built Arbor and the pointer tool in 4s
+1600 900 1600 900
+display: 1 0 0 1600 900 1600 900 1
+macOS's own window management, as it comes:
+com.apple.WindowManager EnableTilingByEdgeDrag: not set
+com.apple.WindowManager EnableTopTilingByEdgeDrag: not set
+com.apple.WindowManager EnableTilingOptionAccelerator: not set
+com.apple.WindowManager EnableTiledWindowMargins: not set
+com.apple.WindowManager EnableStandardClickToShowDesktop: not set
+Reduce Motion: false
+the sampler writes mac-shell/samples.log (pid 45158), the witness mac-shell/witness.log (pid 45172)
+
+== Before Arbor: the apps are open already
+
+-- 1 open-finder: opens finder
+> open -g -b com.apple.finder /tmp/arbor-apps.m9OwqE/scratch/told/…-grove
+pid 44529 lists (id role subrole x y w h flags):
+  433 AXWindow AXStandardWindow 340 120 920 436 main,toolbar
+  0 AXScrollArea - 0 0 1600 900 fixed-size,fixed-position,no-close,no-minimize,no-zoom
+  w433 is finder
+  (quiet:1084 ms) setup=1
+
+-- 2 open-safari: opens safari
+> open -g -b com.apple.Safari /tmp/arbor-apps.m9OwqE/scratch/told/…-page.html
+pid 45338 lists (id role subrole x y w h flags):
+  436 AXWindow AXStandardWindow 138 31 1324 790 main,toolbar
+  w436 is safari
+  (quiet:468 ms) setup=1
+
+-- 3 open-textedit: opens textedit
+> open -g -b com.apple.TextEdit /tmp/arbor-apps.m9OwqE/scratch/told/…-oak.txt
+pid 45400 lists (id role subrole x y w h flags):
+  445 AXWindow AXStandardWindow 165 65 673 439 main
+  w445 is textedit
+  (quiet:1365 ms) setup=1
+
+-- 4 open-terminal: opens terminal
+> open -g -b com.apple.Terminal 
+pid 45460 lists (id role subrole x y w h flags):
+  450 AXWindow AXStandardWindow 97 238 877 499 main
+  w450 is terminal
+  (quiet:1297 ms) setup=1
+
+-- 5 open-notes: opens notes
+> open -g -b com.apple.Notes 
+pid 45521 lists (id role subrole x y w h flags):
+  451 AXWindow AXStandardWindow 0 31 800 791 main,toolbar
+  w451 is notes
+  (quiet:1327 ms) setup=1
+
+-- 6 open-calendar: opens calendar
+> open -g -b com.apple.iCal 
+pid 45933 lists (id role subrole x y w h flags):
+  454 AXWindow AXStandardWindow 386 118 908 599 main,toolbar
+  w454 is calendar
+  (quiet:1361 ms) setup=1
+
+-- 7 open-settings: opens settings
+> open -g -b com.apple.systempreferences 
+pid 45986 lists (id role subrole x y w h flags):
+  455 AXWindow AXStandardWindow 437 85 723 625 main,toolbar
+  w455 is settings
+  (quiet:725 ms) setup=1
+
+-- 8 open-preview: opens preview
+> open -g -b com.apple.Preview /tmp/arbor-apps.m9OwqE/scratch/told/…-leaf.png
+pid 46046 lists (id role subrole x y w h flags):
+  459 AXWindow AXStandardWindow 4 35 708 424 main,toolbar
+  w459 is preview
+  (quiet:1042 ms) setup=1
+
+-- 9 open-mail: opens mail
+> open -g -b com.apple.mail 
+pid 46101 lists (id role subrole x y w h flags):
+  460 AXWindow AXStandardWindow 240 72 1120 630 main,close-disabled,sheets=1,toolbar
+  w460 is mail
+  (quiet:873 ms) setup=1
+the cast: finder safari textedit terminal notes calendar settings preview mail
+
+-- 10 tiling-acts: without Arbor: drags a window by its title bar against the menu bar and lets go
+> click 635 854
+> move 635 654
+> drag 708 130 800 0 --no-release
+> release
+  (quiet:1432 ms) setup=1
+macOS's tiling was seen to act: true
+  ✔ macOS's own tiling acts
+
+-- 11 tiling-acts-back: drags it away again, a hand's breadth down
+> drag 672 43 800 130 --no-release
+> release
+  (quiet:1032 ms) setup=1
+
+-- 12 look-around: looks at the screen
+  (quiet:424 ms) setup=1 own=all
+
+== The walk
+
+-- 13 launch: starts Arbor
+session 1: Arbor pid 47650, ARBOR_LIMIT=none: running: 1 display, 0 docked and 9 floating, 0 out of view
+Arbor dev
+recording traces/2026-10-15-004807-day-1.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+  (quiet:1108 ms) moves=,, everything=1 floating=433,436,445,450,451,454,455,459,460 docked=
+
+-- 14 view-all: presses ⌃⌥Space
+> key ctrl+opt+space
+  (quiet:847 ms) moves=any everything=1 tiles= keyboard=454 returns=13 floating=433,436,445,450,451,454,455,459,460 docked= first=1
+
+-- 15 dock-icon-calendar: clicks calendar's icon in the Dock
+> click 635 854
+> move 635 654
+  (quiet:444 ms) front=454 floating=433,436,445,450,451,454,455,459,460 docked=
+
+-- 16 minimize-calendar: presses ⌘M
+> key cmd+m
+  (quiet:763 ms) moves=,, leaves=454 floating=433,436,445,450,451,454,455,459,460 docked=
+
+-- 17 view-frame: presses ⌃⌥↩
+> key ctrl+opt+return
+  (quiet:715 ms) moves=any front=454 floating=433,436,445,450,451,454,455,459,460 docked=
+
+-- 18 restore-calendar: clicks its miniature in the Dock
+  ✘ the act was not performed: false
+  (quiet:350 ms) judge=no moves=,, comes=454 front=454 floating=433,436,445,450,451,454,455,459,460 docked=
+
+-- 19 view-all: presses ⌃⌥Space
+> key ctrl+opt+space
+  (quiet:702 ms) moves=any everything=1 tiles= keyboard=454 floating=433,436,445,450,451,454,455,459,460 docked=
+
+-- left out: close_new: no window that open_new opened is within reach
+
+-- 20 dock-icon-notes: clicks notes's icon in the Dock
+> click 803 854
+> move 803 654
+  (quiet:508 ms) front=451 floating=433,436,445,450,451,454,455,459,460 docked=
+
+-- 21 hide-notes: presses ⌘H
+> key cmd+h
+  (quiet:869 ms) moves=,, leaves=451, floating=433,436,445,450,451,454,455,459,460 docked=
+
+-- 22 unhide-notes: clicks its icon in the Dock
+> click 803 854
+> move 803 654
+  (quiet:462 ms) moves=,, comes=451 front=451 returns=20 floating=433,436,445,450,451,454,455,459,460 docked=
+
+-- 23 focus-up: presses ⌃⌥⇧ and the up arrow
+> key ctrl+opt+shift+up
+  (quiet:384 ms) moves=any front=459 floating=433,436,445,450,451,454,455,459,460 docked=
+
+-- 24 dock-icon-finder: clicks finder's icon in the Dock
+> click 131 854
+> move 131 654
+  (quiet:512 ms) front=433 floating=433,436,445,450,451,454,455,459,460 docked=
+
+-- 25 dock-left: presses ⌃⌥⌘ and the left arrow
+> key ctrl+opt+cmd+left
+  ✔ it is docked
+  (quiet:1105 ms) moves=,433, front=433 floating=436,445,450,451,454,455,459,460 docked=433
+
+-- left out: switch_backtick: the app in front has one window
+
+-- 26 view-desktop: presses ⌃⌥D
+> key ctrl+opt+d
+  (quiet:862 ms) moves=any floating=436,445,450,451,454,455,459,460 docked=433
+
+-- 27 view-in: presses ⌃⌥↓
+> key ctrl+opt+down
+  (quiet:713 ms) moves=any floating=436,445,450,451,454,455,459,460 docked=433
+
+-- left out: close_new: no window that open_new opened is within reach
+
+-- left out: drag_edge finder right: nothing to take hold of
+
+-- left out: title_double_click finder: no free point of its title bar shows
+
+-- 28 quit-preview: presses ⌘Q in preview
+> key cmd+q
+  (quiet:877 ms) moves=433,433, leaves=459, floating=436,445,450,451,454,455,460 docked=433
+
+-- 29 view-all: presses ⌃⌥Space
+> key ctrl+opt+space
+  (quiet:919 ms) moves=any everything=1 tiles= keyboard=433 floating=436,445,450,451,454,455,460 docked=433
+
+-- 30 dock-icon-calendar: clicks calendar's icon in the Dock
+> click 635 854
+> move 635 654
+  (quiet:549 ms) front=454 floating=436,445,450,451,454,455,460 docked=433
+
+-- 31 minimize-calendar: presses ⌘M
+> key cmd+m
+  (quiet:1663 ms) moves=433,433, leaves=454 floating=436,445,450,451,454,455,460 docked=433
+
+-- 32 reopen-preview: opens preview's document again
+> open -g -b com.apple.Preview /tmp/arbor-apps.m9OwqE/scratch/told/…-leaf.png
+pid 49747 lists (id role subrole x y w h flags):
+  507 AXWindow AXStandardWindow 4 35 708 424 main,toolbar
+  w507 is preview
+  (quiet:1004 ms) moves=433,433, front=507 floating=436,445,450,451,454,455,460,507 docked=433
+
+-- 33 dock-icon-safari: clicks safari's icon in the Dock
+> click 215 854
+> move 215 654
+  (quiet:428 ms) front=436 floating=436,445,450,451,454,455,460,507 docked=433
+
+-- 34 full-screen: presses ⌃⌘F in Safari
+> key ctrl+cmd+f
+  (quiet:407 ms) moves=any leaves=any floating=436,445,450,451,454,455,460,507 docked=433
+
+-- 35 leave-full-screen: presses ⌃⌘F again
+> key ctrl+cmd+f
+  (quiet:394 ms) moves=any leaves=any comes=436 front=436 returns=33 floating=436,445,450,451,454,455,460,507 docked=433
+
+-- 36 cmd-tab-1: holds ⌘ and presses Tab 1 time(s)
+> key cmd+tab --down
+> key cmd+tab --up
+  (quiet:522 ms) front=507 floating=436,445,450,451,454,455,460,507 docked=433
+
+-- 37 restore-calendar: clicks its miniature in the Dock
+> click 1441 854
+> move 1441 654
+  (quiet:1010 ms) moves=433,433, comes=454 front=454 floating=436,445,450,451,454,455,460,507 docked=433
+
+-- 38 dock-icon-textedit: clicks textedit's icon in the Dock
+> click 1220 854
+> move 1220 654
+  (quiet:475 ms) front=445 floating=436,445,450,451,454,455,460,507 docked=433
+
+-- 39 view-frame: presses ⌃⌥↩
+> key ctrl+opt+return
+  (quiet:1234 ms) moves=any front=445 floating=436,445,450,451,454,455,460,507 docked=433
+
+-- 40 dock-icon-safari: clicks safari's icon in the Dock
+> click 243 854
+> move 243 654
+  (quiet:531 ms) front=436 floating=436,445,450,451,454,455,460,507 docked=433
+
+-- 41 quit-safari: presses ⌘Q in safari
+> key cmd+q
+  (quiet:750 ms) moves=433,433, leaves=436, floating=445,450,451,454,455,460,507 docked=433
+
+-- 42 reopen-safari: opens safari's document again
+> open -g -b com.apple.Safari /tmp/arbor-apps.m9OwqE/scratch/told/…-page.html
+pid 51482 lists (id role subrole x y w h flags):
+  554 AXWindow AXStandardWindow 138 31 1324 790 main,toolbar
+  w554 is safari
+  (quiet:794 ms) moves=433,433, front=554 floating=445,450,451,454,455,460,507,554 docked=433
+
+-- left out: drag_onto safari mail top: mail is not docked and in view
+
+-- 43 leave-alone: does nothing for half a minute
+  with nothing to do Arbor used 1.6 % of a core and wrote 0 lines a minute
+  (quiet:411 ms) floating=445,450,451,454,455,460,507,554 docked=433
+
+-- 44 dock-icon-preview: clicks preview's icon in the Dock
+> click 1332 854
+> move 1332 654
+  (quiet:364 ms) front=507 floating=445,450,451,454,455,460,507,554 docked=433
+
+-- 45 quit-preview: presses ⌘Q in preview
+> key cmd+q
+  (quiet:921 ms) moves=433,433, leaves=507, floating=445,450,451,454,455,460,554 docked=433
+
+-- 46 cmd-tab-3: holds ⌘ and presses Tab 3 time(s)
+> key cmd+tab --down
+> key cmd+tab --held
+> key cmd+tab --held
+> key cmd+tab --up
+  (quiet:455 ms) front=454 floating=445,450,451,454,455,460,554 docked=433
+
+-- left out: switch_click finder: no free point of its title bar shows
+
+-- 47 reopen-preview: opens preview's document again
+> open -g -b com.apple.Preview /tmp/arbor-apps.m9OwqE/scratch/told/…-leaf.png
+pid 53628 lists (id role subrole x y w h flags):
+  565 AXWindow AXStandardWindow 4 35 708 424 main,toolbar
+  w565 is preview
+  (quiet:1024 ms) moves=433,433, front=565 floating=445,450,451,454,455,460,554,565 docked=433
+
+-- 48 dock-icon-safari: clicks safari's icon in the Dock
+> click 243 854
+> move 243 654
+  (quiet:385 ms) front=554 floating=445,450,451,454,455,460,554,565 docked=433
+
+-- 49 window-menu-safari: chooses safari's first window in the Window menu
+> click 426 15
+> click 517 570
+  (quiet:1303 ms) front=554 floating=445,450,451,454,455,460,554,565 docked=433
+
+-- 50 view-desktop: presses ⌃⌥D
+> key ctrl+opt+d
+  (quiet:684 ms) moves=any floating=445,450,451,454,455,460,554,565 docked=433
+
+-- 51 leave-alone: does nothing for half a minute
+  with nothing to do Arbor used 1.5 % of a core and wrote 0 lines a minute
+  (quiet:372 ms) floating=445,450,451,454,455,460,554,565 docked=433
+
+-- 52 view-out: presses ⌃⌥↑
+> key ctrl+opt+up
+  (quiet:929 ms) moves=any floating=445,450,451,454,455,460,554,565 docked=433
+
+-- 53 cmd-tab-2: holds ⌘ and presses Tab 2 time(s)
+> key cmd+tab --down
+> key cmd+tab --held
+> key cmd+tab --up
+  (quiet:459 ms) front=565 floating=445,450,451,454,455,460,554,565 docked=433
+
+-- 54 cmd-tab-3: holds ⌘ and presses Tab 3 time(s)
+> key cmd+tab --down
+> key cmd+tab --held
+> key cmd+tab --held
+> key cmd+tab --up
+  (quiet:514 ms) front=454 floating=445,450,451,454,455,460,554,565 docked=433
+
+-- 55 dock-icon-settings: clicks settings's icon in the Dock
+> click 1139 854
+> move 1139 654
+  (quiet:658 ms) front=455 floating=445,450,451,454,455,460,554,565 docked=433
+
+-- 56 view-in: presses ⌃⌥↓
+> key ctrl+opt+down
+  (quiet:1036 ms) moves=any floating=445,450,451,454,455,460,554,565 docked=433
+
+-- left out: tile_click 1: no such tile stands in for a window
+
+-- 57 dock-icon-mail: clicks mail's icon in the Dock
+> click 355 854
+> move 355 654
+  (quiet:490 ms) front=462 floating=445,450,451,454,455,460,554,565 docked=433
+
+-- 58 redo: presses ⌃⌥⇧Z
+> key ctrl+opt+shift+z
+  (quiet:807 ms) moves=any floating=445,450,451,454,455,460,554,565 docked=433
+
+-- 59 quit: chooses Quit Arbor in Arbor's menu
+> click 1300 15 --right
+> key up
+> key return
+  ✔ Arbor ends within five seconds
+  (quiet:969 ms) moves=any restores=all places=1 everything=1
+
+-- 60 dock-icon-finder: clicks finder's icon in the Dock
+> click 131 854
+> move 131 654
+  (quiet:387 ms) front=433
+
+-- 61 dock-icon-safari: clicks safari's icon in the Dock
+> click 243 854
+> move 243 654
+  (quiet:439 ms) front=554
+
+-- 62 dock-icon-textedit: clicks textedit's icon in the Dock
+> click 1220 854
+> move 1220 654
+  (quiet:372 ms) front=445
+
+-- 63 dock-icon-terminal: clicks terminal's icon in the Dock
+> click 1276 854
+> move 1276 654
+  (quiet:380 ms) front=450
+
+-- 64 dock-icon-notes: clicks notes's icon in the Dock
+> click 803 854
+> move 803 654
+  (quiet:486 ms) front=451
+
+-- 65 dock-icon-calendar: clicks calendar's icon in the Dock
+> click 635 854
+> move 635 654
+  (quiet:460 ms) front=454
+
+-- 66 dock-icon-settings: clicks settings's icon in the Dock
+> click 1139 854
+> move 1139 654
+  (quiet:397 ms) front=455
+
+-- 67 dock-icon-preview: clicks preview's icon in the Dock
+> click 1332 854
+> move 1332 654
+  (quiet:426 ms) front=565
+
+-- 68 dock-icon-mail: clicks mail's icon in the Dock
+> click 355 854
+> move 355 654
+  (quiet:367 ms) front=462
+
+-- 69 launch: starts Arbor
+session 2: Arbor pid 58162, ARBOR_LIMIT=none: running: 1 display, 1 docked and 8 floating, 1 out of view
+Arbor dev
+recording traces/2026-10-15-005102-day-2.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+  (quiet:943 ms) moves=,433, everything=1 floating=445,450,451,454,455,460,554,565 docked=433
+
+-- 70 float-all: presses ⌃⌥⇧F
+> key ctrl+opt+shift+f
+  (quiet:822 ms) moves=any restores=all places=1 everything=1 floating=433,445,450,451,454,455,460,554,565 docked= first=1
+
+-- 71 click-safari: clicks safari's title bar
+> click 1076 43
+> move 1076 163
+  (quiet:405 ms) front=554 floating=433,445,450,451,454,455,460,554,565 docked=
+
+-- 72 dock-left: presses ⌃⌥⌘ and the left arrow
+> key ctrl+opt+cmd+left
+  ✔ it is docked
+  (quiet:782 ms) moves=,554, front=554 floating=433,445,450,451,454,455,460,565 docked=554
+
+-- 73 dock-icon-textedit: clicks textedit's icon in the Dock
+> click 1220 854
+> move 1220 654
+  (quiet:410 ms) front=445 floating=433,445,450,451,454,455,460,565 docked=554
+
+-- left out: drag_onto textedit preview bottom: preview is not docked and in view
+
+-- 74 dock-icon-terminal: clicks terminal's icon in the Dock
+> click 1276 854
+> move 1276 654
+  (quiet:411 ms) front=450 floating=433,445,450,451,454,455,460,565 docked=554
+
+-- 75 double-click-terminal: double-clicks terminal's title bar: macOS zooms the window
+> click 1198 250 2
+> move 1198 370
+  (quiet:930 ms) zooms=450 front=450 floating=433,445,450,451,454,455,460,565 docked=554
+
+-- 76 double-click-terminal-again: double-clicks it again: macOS takes the window back
+> click 798 43 2
+> move 798 163
+  (quiet:711 ms) zooms=450 front=450 returns=73 floating=433,445,450,451,454,455,460,565 docked=554
+
+-- 77 float-all-here: floats every window of this display
+> float-all here
+floated 1 window
+  (quiet:1039 ms) moves=any restores=all places=1 everything=1 floating=433,445,450,451,454,455,460,554,565 docked=
+
+-- 78 dock-icon-settings: clicks settings's icon in the Dock
+> click 1139 854
+> move 1139 654
+  (quiet:399 ms) front=455 floating=433,445,450,451,454,455,460,554,565 docked=
+
+-- 79 dock-down: presses ⌃⌥⌘ and the down arrow
+> key ctrl+opt+cmd+down
+  ✔ it is docked
+  (quiet:661 ms) moves=,455, front=455 floating=433,445,450,451,454,460,554,565 docked=455
+
+-- 80 view-all: presses ⌃⌥Space
+> key ctrl+opt+space
+  (quiet:664 ms) moves=any everything=1 tiles= keyboard=455 floating=433,445,450,451,454,460,554,565 docked=455
+
+-- 81 dock-icon-safari: clicks safari's icon in the Dock
+> click 243 854
+> move 243 654
+  (quiet:484 ms) front=554 floating=433,445,450,451,454,460,554,565 docked=455
+
+-- 82 full-screen: presses ⌃⌘F in Safari
+> key ctrl+cmd+f
+  (quiet:393 ms) moves=any leaves=any floating=433,445,450,451,454,460,554,565 docked=455
+
+-- 83 leave-full-screen: presses ⌃⌘F again
+> key ctrl+cmd+f
+  (quiet:382 ms) moves=any leaves=any comes=554 front=554 returns=81 floating=433,445,450,451,454,460,554,565 docked=455
+
+-- left out: switch_click notes: no free point of its title bar shows
+
+-- left out: tile_click 2: no such tile stands in for a window
+
+-- 84 dock-icon-textedit: clicks textedit's icon in the Dock
+> click 1220 854
+> move 1220 654
+  (quiet:475 ms) front=445 floating=433,445,450,451,454,460,554,565 docked=455
+
+-- 85 quit-textedit: presses ⌘Q in textedit
+> key cmd+q
+  (quiet:760 ms) moves=455,455, leaves=445, floating=433,450,451,454,460,554,565 docked=455
+
+-- left out: tile_click 1: no such tile stands in for a window
+
+-- left out: drag_onto terminal mail top: mail is not docked and in view
+
+-- 86 reopen-textedit: opens textedit's document again
+> open -g -b com.apple.TextEdit /tmp/arbor-apps.m9OwqE/scratch/told/…-oak.txt
+pid 60735 lists (id role subrole x y w h flags):
+  657 AXWindow AXStandardWindow 165 65 673 439 main
+  w657 is textedit
+  (quiet:1024 ms) moves=455,455, front=657 floating=433,450,451,454,460,554,565,657 docked=455
+
+-- 87 dock-icon-notes: clicks notes's icon in the Dock
+> click 803 854
+> move 803 654
+  (quiet:577 ms) front=451 floating=433,450,451,454,460,554,565,657 docked=455
+
+-- 88 dock-icon-notes: clicks notes's icon in the Dock
+> click 803 854
+> move 803 654
+  (quiet:362 ms) front=451 floating=433,450,451,454,460,554,565,657 docked=455
+
+-- 89 minimize-notes: presses ⌘M
+> key cmd+m
+  (quiet:1728 ms) moves=455,455, leaves=451 floating=433,450,451,454,460,554,565,657 docked=455
+
+-- 90 view-left: presses ⌃⌥←
+> key ctrl+opt+left
+  (quiet:680 ms) moves=any floating=433,450,451,454,460,554,565,657 docked=455
+
+-- 91 drag-preview-to-left-edge: drags preview by its title bar against the left edge of the screen and lets go
+> drag 102 43 0 450 --no-release
+> release
+  (quiet:1341 ms) drags=565 moves=455,455,565, front=565 floating=433,450,451,454,460,554,657 docked=455,565
+
+-- 92 restore-notes: clicks its miniature in the Dock
+  ✘ the act was not performed: false
+  (quiet:357 ms) judge=no moves=455,565,455,565, comes=451 front=451 floating=433,450,451,454,460,554,657 docked=455,565
+
+-- 93 dock-icon-finder: clicks finder's icon in the Dock
+> click 103 854
+> move 103 654
+  (quiet:447 ms) front=433 floating=433,450,451,454,460,554,657 docked=455,565
+
+-- 94 double-click-finder: double-clicks finder's title bar: macOS zooms the window
+> click 1198 43 2
+> move 1198 163
+  (quiet:769 ms) zooms=433 front=433 floating=433,450,451,454,460,554,657 docked=455,565
+
+-- 95 double-click-finder-again: double-clicks it again: macOS takes the window back
+> click 1086 43 2
+> move 1086 163
+  (quiet:730 ms) zooms=433 front=433 returns=92 floating=433,450,451,454,460,554,657 docked=455,565
+
+-- 96 dock-icon-safari: clicks safari's icon in the Dock
+> click 215 854
+> move 215 654
+  (quiet:396 ms) front=554 floating=433,450,451,454,460,554,657 docked=455,565
+
+-- 97 new-window-safari: presses ⌘N in safari
+> key cmd+n
+  w675 is safari-new-97
+  (quiet:1023 ms) front=675 floating=433,450,451,454,460,554,657,675 docked=455,565
+
+-- 98 dock-icon-textedit: clicks textedit's icon in the Dock
+> click 1192 854
+> move 1192 654
+  (quiet:386 ms) front=657 floating=433,450,451,454,460,554,657,675 docked=455,565
+
+-- 99 minimize-textedit: presses ⌘M
+> key cmd+m
+  (quiet:1745 ms) moves=455,565,455,565, leaves=657 floating=433,450,451,454,460,554,657,675 docked=455,565
+
+-- 100 close-window: presses ⌘W
+> key cmd+w
+  (quiet:725 ms) leaves=675 moves=455,565,455,565, floating=433,450,451,454,460,554,657 docked=455,565
+
+-- 101 pause: presses ⌃⌥⎋
+> key ctrl+opt+escape
+  (quiet:915 ms) moves=any restores=all everything=1 floating= docked=
+
+-- 102 restore-textedit: clicks its miniature in the Dock
+> click 1467 854
+> move 1467 654
+  (quiet:775 ms) moves=,, comes=657 front=657 floating= docked=
+
+-- left out: float_all: Arbor is not acting
+
+-- 103 resume: presses ⌃⌥⎋
+> key ctrl+opt+escape
+  (quiet:1126 ms) moves=any floating=433,450,451,454,460,554,657 docked=455,565
+recording traces/2026-10-15-005221-day-3.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+
+-- left out: drag_by textedit -190 27: that would end at an edge
+
+== The end
+recording traces/2026-10-15-005221-day-4.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+
+-- 104 quit: chooses Quit Arbor in Arbor's menu
+> click 1300 15 --right
+> key up
+> key return
+  ✔ Arbor ends within five seconds
+  (quiet:926 ms) moves=any restores=all places=1 everything=1
+
+-- 105 dock-icon-finder: clicks finder's icon in the Dock
+> click 103 854
+> move 103 654
+  (quiet:475 ms) front=433
+
+-- 106 dock-icon-safari: clicks safari's icon in the Dock
+> click 215 854
+> move 215 654
+  (quiet:374 ms) front=554
+
+-- 107 dock-icon-textedit: clicks textedit's icon in the Dock
+> click 1192 854
+> move 1192 654
+  (quiet:383 ms) front=657
+
+-- 108 dock-icon-terminal: clicks terminal's icon in the Dock
+> click 1248 854
+> move 1248 654
+  (quiet:366 ms) front=450
+
+-- 109 dock-icon-notes: clicks notes's icon in the Dock
+> click 775 854
+> move 775 654
+  (quiet:868 ms) front=451
+
+-- 110 dock-icon-calendar: clicks calendar's icon in the Dock
+> click 635 854
+> move 635 654
+  (quiet:361 ms) front=454
+
+-- 111 dock-icon-settings: clicks settings's icon in the Dock
+> click 1139 854
+> move 1139 654
+  (quiet:408 ms) front=455
+
+-- 112 dock-icon-preview: clicks preview's icon in the Dock
+> click 1332 854
+> move 1332 654
+  (quiet:431 ms) front=565
+
+-- 113 dock-icon-mail: clicks mail's icon in the Dock
+> click 355 854
+> move 355 654
+  (quiet:471 ms) front=462
+
+101 acts, 15 left out because they did not apply
+
+== the report (all of it: mac-shell/day-report.md)
+113 steps in 316 s, 97 of them judged, 18 with a rule broken. The sampler: samples 12372 seconds 316.9 hz 39.0 cost-ms 2.00 late 26 longest-gap-ms 706.
+Input: 189 presses, releases, keys and scrolls reached the apps, half of them within 522 µs, 99 in 100 within 37158 µs, the latest after 68634 µs.
+
+## Per rule
+
+| Rule | | Steps that checked it | Steps that broke it | Which |
+|---|---|---|---|---|
+| 1 | never fight macOS: where it answers a drag, Arbor stands aside | 5 | 1 | 91 drag-preview-to-left-edge |
+| 2 | nothing moves that the person did not move | 78 | 9 | 25 dock-left, 28 quit-preview, 35 leave-full-screen, 72 dock-left, 79 dock-down, 89 minimize-notes, 91 drag-preview-to-left-edge, 99 minimize-textedit, 109 dock-icon-notes |
+| 3 | no jolts: a window moves once, to where it ends up | 99 | 1 | 103 resume |
+| 4 | the window you switch to comes to the front and into view | 69 | 1 | 91 drag-preview-to-left-edge |
+| 5 | quitting, Float All and pause give windows their own sizes back | 5 | 3 | 77 float-all-here, 101 pause, 104 quit |
+| 6 | what a person presses reaches the apps, at once | 49 | 0 |  |
+| L | no window is lost or stuck | 99 | 1 | 69 launch |
+| - | what the script itself checked | 99 | 4 | 18 restore-calendar, 43 leave-alone, 51 leave-alone, 92 restore-notes |
+
+## Findings
+
+### Rule 1: never fight macOS: where it answers a drag, Arbor stands aside
+
+- ✘ **91 drag-preview-to-left-edge** (drags preview by its title bar against the left edge of the screen and lets go): preview (w565) macOS's tiling preview and Arbor's drop preview were up at the same time [fought]
+- ✘ **91 drag-preview-to-left-edge** (drags preview by its title bar against the left edge of the screen and lets go): preview (w565) macOS answered the drag, and Arbor docked the window [fought]
+
+### Rule 2: nothing moves that the person did not move
+
+- ✘ **25 dock-left** (presses ⌃⌥⌘ and the left arrow): safari (w436) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 138,31 1324×790 · +1264 ms 806,31 794×790
+- ✘ **25 dock-left** (presses ⌃⌥⌘ and the left arrow): textedit (w445) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 165,65 673×439 · +1264 ms 806,65 673×439
+- ✘ **25 dock-left** (presses ⌃⌥⌘ and the left arrow): terminal (w450) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 97,238 877×499 · +1264 ms 806,238 793×499
+- ✘ **25 dock-left** (presses ⌃⌥⌘ and the left arrow): notes (w451) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 0,31 800×791 · +1264 ms 806,31 794×791
+- ✘ **25 dock-left** (presses ⌃⌥⌘ and the left arrow): calendar (w454) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 415,115 909×600 · +1264 ms 806,115 794×600
+- ✘ **25 dock-left** (presses ⌃⌥⌘ and the left arrow): settings (w455) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 437,85 723×625 · +1264 ms 806,85 723×625
+- ✘ **25 dock-left** (presses ⌃⌥⌘ and the left arrow): preview (w459) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 4,35 708×424 · +1264 ms 806,35 708×424
+- ✘ **25 dock-left** (presses ⌃⌥⌘ and the left arrow): mail (w460) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 240,72 1120×630 · +1264 ms 729,72 871×630
+- ~ **25 dock-left** (presses ⌃⌥⌘ and the left arrow): w462 of Mail moved along with a window of its app [moved-unasked]
+  - +0 ms 565,179 470×416 · +1264 ms 930,179 470×416
+- ✘ **28 quit-preview** (presses ⌘Q in preview): safari (w436) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 138,31 1324×790 · +990 ms 1599,770 1324×790
+- ✘ **28 quit-preview** (presses ⌘Q in preview): textedit (w445) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 165,65 673×439 · +990 ms 1599,790 673×439
+- ✘ **28 quit-preview** (presses ⌘Q in preview): terminal (w450) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 97,238 877×499 · +990 ms 1599,790 877×499
+- ✘ **28 quit-preview** (presses ⌘Q in preview): notes (w451) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 0,31 800×791 · +990 ms 1599,770 800×791
+- ✘ **28 quit-preview** (presses ⌘Q in preview): calendar (w454) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 415,115 909×600 · +990 ms 1599,770 909×600
+- ✘ **28 quit-preview** (presses ⌘Q in preview): settings (w455) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 437,85 723×625 · +990 ms 1599,770 723×625
+- ✘ **28 quit-preview** (presses ⌘Q in preview): mail (w460) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 240,72 1120×630 · +990 ms 1599,770 1120×630
+- ~ **28 quit-preview** (presses ⌘Q in preview): w462 of Mail moved along with a window of its app [moved-unasked]
+  - +0 ms 565,179 470×416 · +990 ms 1924,877 470×416
+- ✘ **35 leave-full-screen** (presses ⌃⌘F again): preview (w507) is not back where it was after step 33: 806,35 708×424, it was at 4,35 708×424 [moved-unasked]
+- ✘ **72 dock-left** (presses ⌃⌥⌘ and the left arrow): finder (w433) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 340,120 920×436 · +1092 ms 806,120 794×436
+- ✘ **72 dock-left** (presses ⌃⌥⌘ and the left arrow): textedit (w445) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 165,65 673×439 · +1092 ms 806,65 673×439
+- ✘ **72 dock-left** (presses ⌃⌥⌘ and the left arrow): terminal (w450) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 97,238 877×499 · +1092 ms 806,238 793×499
+- ✘ **72 dock-left** (presses ⌃⌥⌘ and the left arrow): notes (w451) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 0,31 800×791 · +1092 ms 806,31 794×791
+- ✘ **72 dock-left** (presses ⌃⌥⌘ and the left arrow): calendar (w454) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 415,115 909×600 · +1092 ms 806,115 794×600
+- ✘ **72 dock-left** (presses ⌃⌥⌘ and the left arrow): settings (w455) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 437,85 723×625 · +1092 ms 806,85 723×625
+- ✘ **72 dock-left** (presses ⌃⌥⌘ and the left arrow): mail (w460) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 240,72 1120×630 · +1092 ms 729,72 871×630
+- ~ **72 dock-left** (presses ⌃⌥⌘ and the left arrow): w462 of Mail moved along with a window of its app [moved-unasked]
+  - +0 ms 565,179 470×416 · +1092 ms 930,179 470×416
+- ✘ **72 dock-left** (presses ⌃⌥⌘ and the left arrow): preview (w565) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 4,35 708×424 · +1092 ms 806,35 708×424
+- ✘ **79 dock-down** (presses ⌃⌥⌘ and the down arrow): finder (w433) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 340,120 920×436 · +1183 ms 340,31 920×297
+- ✘ **79 dock-down** (presses ⌃⌥⌘ and the down arrow): textedit (w445) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 165,65 673×439 · +1183 ms 165,31 673×297
+- ✘ **79 dock-down** (presses ⌃⌥⌘ and the down arrow): terminal (w450) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 806,238 795×499 · +1183 ms 806,31 795×289
+- ✘ **79 dock-down** (presses ⌃⌥⌘ and the down arrow): notes (w451) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 0,31 800×791 · +1183 ms 0,31 800×320
+- ✘ **79 dock-down** (presses ⌃⌥⌘ and the down arrow): calendar (w454) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 415,115 909×600 · +1183 ms 415,31 909×503
+- ✘ **79 dock-down** (presses ⌃⌥⌘ and the down arrow): mail (w460) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 240,72 1120×630 · +1183 ms 240,31 1120×297
+- ~ **79 dock-down** (presses ⌃⌥⌘ and the down arrow): w462 of Mail moved along with a window of its app [moved-unasked]
+  - +0 ms 565,179 470×416 · +1183 ms 565,83 470×416
+- ✘ **79 dock-down** (presses ⌃⌥⌘ and the down arrow): safari (w554) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 138,31 1324×790 · +1183 ms 138,31 1324×297
+- ✘ **79 dock-down** (presses ⌃⌥⌘ and the down arrow): preview (w565) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 4,35 708×424 · +1183 ms 4,31 708×297
+- ✘ **89 minimize-notes** (presses ⌘M): textedit (w657) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 165,65 673×439 · +1332 ms 165,31 673×297
+- ✘ **91 drag-preview-to-left-edge** (drags preview by its title bar against the left edge of the screen and lets go): finder (w433) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 340,31 920×297 · +5690 ms 806,31 794×297
+- ✘ **91 drag-preview-to-left-edge** (drags preview by its title bar against the left edge of the screen and lets go): calendar (w454) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 415,31 909×503 · +5690 ms 806,31 794×503
+- ✘ **91 drag-preview-to-left-edge** (drags preview by its title bar against the left edge of the screen and lets go): mail (w460) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 240,31 1120×297 · +5690 ms 729,31 871×297
+- ~ **91 drag-preview-to-left-edge** (drags preview by its title bar against the left edge of the screen and lets go): w462 of Mail moved along with a window of its app [moved-unasked]
+  - +0 ms 565,83 470×416 · +5690 ms 930,83 470×416
+- ✘ **91 drag-preview-to-left-edge** (drags preview by its title bar against the left edge of the screen and lets go): safari (w554) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 138,31 1324×297 · +5690 ms 806,31 794×297
+- ✘ **91 drag-preview-to-left-edge** (drags preview by its title bar against the left edge of the screen and lets go): textedit (w657) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 165,31 673×297 · +5690 ms 806,31 673×297
+- ✘ **99 minimize-textedit** (presses ⌘M): safari-new-97 (w675) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 0,60 794×297 · +1425 ms 806,31 794×297
+- ✘ **109 dock-icon-notes** (clicks notes's icon in the Dock): notes (w451) moved, and the step did not name it [moved-unasked]
+  - +0 ms 1413,812 53×53 · +21 ms 1398,779 67×86 · +83 ms 1088,579 374×286 · +150 ms 485,351 973×514 · +156 ms 392,315 1066×550 · +217 ms 53,131 1400×734 · … 3 more … · +327 ms 0,31 1244×790 · +367 ms 0,31 1071×790 · +431 ms 0,31 856×790 · +437 ms 0,31 833×790 · +469 ms 0,31 800×790
+
+### Rule 3: no jolts: a window moves once, to where it ends up
+
+- ~ **25 dock-left** (presses ⌃⌥⌘ and the left arrow): the last window came to rest 1013 ms after the key or the button [slow]
+- ~ **56 view-in** (presses ⌃⌥↓): the last window came to rest 717 ms after the key or the button [slow]
+- ~ **72 dock-left** (presses ⌃⌥⌘ and the left arrow): the last window came to rest 808 ms after the key or the button [slow]
+- ~ **79 dock-down** (presses ⌃⌥⌘ and the down arrow): the last window came to rest 895 ms after the key or the button [slow]
+- ✘ **103 resume** (presses ⌃⌥⎋): preview (w565) moved 2 times [jolt]
+  - +0 ms 4,35 708×424 · +296 ms 1599,770 708×424 · +1046 ms 12,43 782×767
+- ~ **103 resume** (presses ⌃⌥⎋): the last window came to rest 819 ms after the key or the button [slow]
+
+### Rule 4: the window you switch to comes to the front and into view
+
+- ✘ **91 drag-preview-to-left-edge** (drags preview by its title bar against the left edge of the screen and lets go): preview (w565) is not wholly in view: 0% of it, at 1599,770 800×791 in 0,31 1600×791 [focus]
+
+### Rule 5: quitting, Float All and pause give windows their own sizes back
+
+- ✘ **77 float-all-here** (floats every window of this display): terminal (w450) is 806,238 795×499; its own size was 97,238 877×499 [size-lost]
+- ✘ **101 pause** (presses ⌃⌥⎋): finder (w433) is 806,31 794×297; its own size was 340,120 920×436 [size-lost]
+- ✘ **101 pause** (presses ⌃⌥⎋): terminal (w450) is 806,31 795×289; its own size was 97,238 877×499 [size-lost]
+- ✘ **101 pause** (presses ⌃⌥⎋): calendar (w454) is 806,31 794×503; its own size was 415,115 909×600 [size-lost]
+- ✘ **101 pause** (presses ⌃⌥⎋): settings (w455) is 835,340 723×470; its own size was 437,85 723×625 [size-lost]
+- ✘ **101 pause** (presses ⌃⌥⎋): mail (w460) is 729,31 871×297; its own size was 240,72 1120×630 [size-lost]
+- ✘ **101 pause** (presses ⌃⌥⎋): safari (w554) is 806,31 794×297; its own size was 138,31 1324×790 [size-lost]
+- ✘ **104 quit** (chooses Quit Arbor in Arbor's menu): finder (w433) is 806,31 794×297; its own size was 340,120 920×436 [size-lost]
+- ✘ **104 quit** (chooses Quit Arbor in Arbor's menu): terminal (w450) is 806,238 795×499; its own size was 97,238 877×499 [size-lost]
+
+### Rule L: no window is lost or stuck
+
+- ✘ **69 launch** (starts Arbor): finder (w433) is out of view: 0% of it is on a display, at 1599,770 920×436 [lost]
+
+### Rule -: what the script itself checked
+
+- ✘ **18 restore-calendar** (clicks its miniature in the Dock): the act was not performed: false could not be done [script]
+- ✘ **43 leave-alone** (does nothing for half a minute): with nothing to do Arbor used 1.6 % of a core [busy]
+- ✘ **51 leave-alone** (does nothing for half a minute): with nothing to do Arbor used 1.5 % of a core [busy]
+- ✘ **92 restore-notes** (clicks its miniature in the Dock): the act was not performed: false could not be done [script]
+
+
+6 passed, 1 failed
+still running when the script had ended, and stopped now:
+  44749 sleep
+exit code 1

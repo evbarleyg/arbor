@@ -1,0 +1,63 @@
+100 resume: presses ⌃⌥⎋
+expected: {'act': 'way-out', 'settled': 'quiet:960', 'moves': 'any', 'floating': '165,166,170,172,175,321', 'docked': '148,151,167'}
+FAIL rule 3: calendar (w167) moved 2 times
+ODD rule 3: the last window came to rest 746 ms after the key or the button
+
+00:45:44.760 SCREEN -- begin 100 resume
+00:45:44.760 SCREEN -- text 100 presses ⌃⌥⎋
+00:45:44.935 INFO  started: 1 display(s), 9 managed window(s)
+00:45:44.937 MACOS pid 20568 AXMoved w167 AXWindow/AXStandardWindow 1599 770 680 599
+00:45:44.948 INFO  registered 52 shortcuts in 5416 µs
+00:45:44.948 INFO  pinch event tap installed
+00:45:44.949 INFO  scroll event tap installed
+00:45:44.949 INFO  rectangle event taps installed
+00:45:44.949 DEBUG w167 has the keyboard
+00:45:44.960 SCREEN calendar (w167) 1599,770 680×599
+00:45:44.961 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 9 stand-ins, 0.46 s
+00:45:44.967 SCREEN w241 of Arbor 0,0 1600×900 (level 4)
+00:45:44.967 SCREEN w382 of Arbor 12,43 1576×378
+00:45:44.967 SCREEN w383 of Arbor 513,433 12×377
+00:45:44.967 SCREEN w384 of Arbor 928,433 12×377
+00:45:44.967 SCREEN w385 of Arbor 12,421 1576×12
+00:45:44.967 SCREEN w386 of Arbor 0,31 1600×791 (level -2147483602)
+00:45:44.967 SCREEN front to back: calendar safari notes w177 mail preview settings finder textedit terminal w190 w382 w383 w384 w385
+00:45:44.985 SCREEN calendar (w167) 1599,770 1576×767
+00:45:44.998 MACOS pid 20568 AXResized w167 AXWindow/AXStandardWindow 12 43 1576 767
+00:45:44.999 MACOS pid 20568 AXMoved w167 AXWindow/AXStandardWindow 12 43 1576 767
+00:45:45.000 MACOS pid 18677 AXMoved w148 AXWindow/AXStandardWindow 1599 770 501 377
+00:45:45.003 MACOS pid 19971 AXMoved w151 AXWindow/AXStandardWindow 1599 770 648 377
+00:45:45.004 MACOS pid 20332 AXMoved w165 AXWindow/AXStandardWindow 1599 790 401 379
+00:45:45.006 MACOS pid 20515 AXMoved w166 AXWindow/AXStandardWindow 1599 770 800 791
+00:45:45.008 MACOS pid 20627 AXMoved w170 AXWindow/AXStandardWindow 1599 770 723 470
+00:45:45.009 MACOS pid 20692 AXMoved w172 AXWindow/AXStandardWindow 1599 770 708 389
+00:45:45.018 MACOS pid 21104 AXMoved w175 AXWindow/AXStandardWindow 1599 770 871 389
+00:45:45.020 MACOS pid 33706 AXMoved w321 AXWindow/AXStandardWindow 1599 790 403 389
+00:45:45.022 INFO  resumed
+00:45:45.022 DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Resumed
+00:45:45.026 DEBUG pinch event tap installed
+00:45:45.026 DEBUG scroll event tap installed
+00:45:45.026 DEBUG rectangle event tap installed
+00:45:45.026 DEBUG rectangle drag event tap installed
+00:45:45.033 SCREEN w379 of Arbor 749,728 102×38 (level 6)
+00:45:45.033 SCREEN w387 of Arbor 3,34 1594×785
+00:45:45.033 SCREEN calendar (w167) 12,43 1576×767
+00:45:45.033 SCREEN safari (w151) 1599,770 648×377
+00:45:45.033 SCREEN notes (w166) 1599,770 800×791
+00:45:45.033 SCREEN w177 of Mail 1800,822 470×416
+00:45:45.033 SCREEN mail (w175) 1599,770 871×389
+00:45:45.033 SCREEN preview (w172) 1599,770 708×389
+00:45:45.033 SCREEN settings (w170) 1599,770 723×470
+00:45:45.033 SCREEN finder (w148) 1599,770 501×377
+00:45:45.033 SCREEN textedit (w321) 1599,790 403×389
+00:45:45.033 SCREEN terminal (w165) 1599,790 401×379
+00:45:45.033 SCREEN w385 of Arbor left the screen
+00:45:45.033 SCREEN w384 of Arbor left the screen
+00:45:45.033 SCREEN w383 of Arbor left the screen
+00:45:45.033 SCREEN front to back: w387 calendar safari notes w177 mail preview settings finder textedit terminal w190 w382
+00:45:45.183 SCREEN w382 of Arbor left the screen
+00:45:45.183 SCREEN front to back: w387 calendar safari notes w177 mail preview settings finder textedit terminal w190
+00:45:45.645 DEBUG stage down
+00:45:45.655 SCREEN w241 of Arbor left the screen
+00:45:46.340 SCREEN -- end 100 act=way-out settled=quiet:960 moves=any floating=165,166,170,172,175,321 docked=148,151,167
+00:45:46.491 INFO  trace day-13: recording to /tmp/arbor-shell.qemBJC/home/traces/2026-10-15-004546-day-13.jsonl
+00:45:46.528 SCRIPT == 101 float-all

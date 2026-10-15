@@ -1,0 +1,23 @@
+36 drag-gap-beside-finder: drags the gap to the right of finder by 60 points
+expected: {'act': 'resize', 'settled': 'quiet:1039', 'moves': '148,151,160,148,151,160,', 'floating': '165,166,167,170,172,175', 'docked': '148,151,160'}
+FAIL rule 4: the app in front changed (to process 20332), and nobody switched
+
+00:43:02.616 SCREEN -- begin 36 drag-gap-beside-finder
+00:43:02.616 SCREEN -- text 36 drags the gap to the right of finder by 60 points
+00:43:03.130 SCREEN front to back: terminal w243 finder textedit safari w177 mail preview settings calendar notes w190 w252 w258 w248 w253
+00:43:03.130 SCREEN the button is down 519 426
+00:43:03.131 SCREEN in front: process 20332 com.apple.Terminal
+00:43:03.137 MACOS pid 20332 AXApplicationActivated
+00:43:03.138 MACOS workspace didActivate pid 20332 com.apple.Terminal regular
+00:43:03.138 MACOS workspace didDeactivate pid 18677 com.apple.finder regular
+00:43:03.138 MACOS pid 18677 AXApplicationDeactivated
+00:43:03.140 DEBUG focus is on w165
+00:43:03.140 DEBUG w165 has the keyboard
+00:43:03.195 SCREEN w243 of Arbor 88,229 895×517
+00:43:03.195 SCREEN front to back: w243 terminal finder textedit safari w177 mail preview settings calendar notes w190 w252 w258 w248 w253
+00:43:05.908 SCREEN the button is up 579 426
+00:43:06.990 SCREEN -- end 36 act=resize settled=quiet:1039 moves=148,151,160,148,151,160, floating=165,166,167,170,172,175 docked=148,151,160
+00:43:07.305 SCREEN -- chapter Switching between apps, with an arrangement
+00:43:07.313 INFO  trace day-5 ended: 127 lines, trace off
+00:43:07.321 INFO  trace day-6: recording to /tmp/arbor-shell.qemBJC/home/traces/2026-10-15-004307-day-6.jsonl
+00:43:07.374 SCRIPT == 37 view-all

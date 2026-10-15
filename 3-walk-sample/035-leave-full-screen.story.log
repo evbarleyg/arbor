@@ -1,0 +1,49 @@
+35 leave-full-screen: presses ⌃⌘F again
+expected: {'act': 'macos-own', 'settled': 'quiet:394', 'moves': 'any', 'leaves': 'any', 'comes': '436', 'front': '436', 'returns': '33', 'floating': '436,445,450,451,454,455,460,507', 'docked': '433'}
+FAIL rule 2: preview (w507) is not back where it was after step 33: 806,35 708×424, it was at 4,35 708×424
+
+00:48:49.062 SCREEN -- begin 35 leave-full-screen
+00:48:49.062 SCREEN -- text 35 presses ⌃⌘F again
+00:48:49.201 MACOS pid 45338 AXWindowCreated w531 AXWindow/AXUnknown 0 0 1600 900
+00:48:49.212 SCREEN w531 of Safari 0,0 1600×900
+00:48:49.212 SCREEN safari (w436) left the screen
+00:48:49.212 SCREEN w516 of Safari left the screen
+00:48:49.212 SCREEN front to back: w531
+00:48:49.217 DEBUG w436 is no longer listed
+00:48:49.217 MACOS pid 45338 AXResized w436 AXWindow/AXStandardWindow 138 31 1324 790
+00:48:49.219 DEBUG w436 left full screen
+00:48:49.241 MACOS pid 45338 AXMoved w436 AXWindow/AXStandardWindow 138 31 1324 790
+00:48:49.241 MACOS pid 45338 AXMoved w531 AXWindow/AXUnknown 0 0 1600 900
+00:48:49.246 SCREEN preview (w507) 806,35 708×424
+00:48:49.246 SCREEN finder (w433) 12,43 782×767
+00:48:49.246 SCREEN notes (w451) 806,31 794×791
+00:48:49.246 SCREEN w477 of Arbor 520,121 560×434
+00:48:49.246 SCREEN textedit (w445) 806,65 673×439
+00:48:49.246 SCREEN w462 of Mail 930,179 470×416
+00:48:49.246 SCREEN mail (w460) 729,72 871×630
+00:48:49.246 SCREEN settings (w455) 806,85 723×625
+00:48:49.246 SCREEN terminal (w450) 806,238 793×499
+00:48:49.246 SCREEN front to back: w531 preview finder notes w477 textedit w462 mail settings terminal
+00:48:49.764 MACOS pid 45338 AXUIElementDestroyed w531
+00:48:49.779 SCREEN safari (w436) 138,31 1324×790
+00:48:49.779 SCREEN w531 of Safari left the screen
+00:48:49.779 SCREEN front to back: safari preview finder notes w477 textedit w462 mail settings terminal
+00:48:49.786 DEBUG w433 is listed again
+00:48:49.787 DEBUG w436 is listed again
+00:48:49.787 DEBUG w445 is listed again
+00:48:49.787 DEBUG w450 is listed again
+00:48:49.788 DEBUG w451 is listed again
+00:48:49.788 DEBUG w455 is listed again
+00:48:49.789 DEBUG w460 is listed again
+00:48:49.789 DEBUG w507 is listed again
+00:48:49.790 DEBUG focus is on w436
+00:48:49.817 MACOS pid 45338 AXResized w436 AXWindow/AXStandardWindow 806 31 794 790
+00:48:49.818 MACOS pid 45338 AXMoved w436 AXWindow/AXStandardWindow 806 31 794 790
+00:48:49.820 DEBUG w436 has the keyboard
+00:48:49.843 SCREEN w495 of Arbor 797,25 809×803
+00:48:49.843 SCREEN safari (w436) 806,31 794×790
+00:48:49.843 SCREEN w494 of Arbor 794,43 12×767
+00:48:49.843 SCREEN w496 of Arbor 0,31 1600×791 (level -2147483602)
+00:48:49.843 SCREEN front to back: w495 safari preview finder notes w477 textedit w462 mail settings terminal w494
+00:48:52.075 SCREEN -- end 35 act=macos-own settled=quiet:394 moves=any leaves=any comes=436 front=436 returns=33 floating=436,445,450,451,454,455,460,507 docked=433
+00:48:52.281 SCRIPT == 36 cmd-tab-1

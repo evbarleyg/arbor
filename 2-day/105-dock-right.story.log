@@ -1,0 +1,56 @@
+105 dock-right: presses ⌃⌥⌘ and the right arrow
+expected: {'act': 'dock-key', 'settled': 'quiet:968', 'moves': '148,148,151,', 'front': '151', 'floating': '165,166,167,170,172,175,321', 'docked': '148,151'}
+FAIL rule 2: terminal (w165) a floating window, moved, and the step did not name it
+FAIL rule 2: notes (w166) a floating window, moved, and the step did not name it
+FAIL rule 2: calendar (w167) a floating window, moved, and the step did not name it
+FAIL rule 2: settings (w170) a floating window, moved, and the step did not name it
+FAIL rule 2: preview (w172) a floating window, moved, and the step did not name it
+FAIL rule 2: mail (w175) a floating window, moved, and the step did not name it
+ODD rule 2: w177 of Mail moved along with a window of its app
+FAIL rule 2: textedit (w321) a floating window, moved, and the step did not name it
+ODD rule 3: the last window came to rest 719 ms after the key or the button
+
+00:45:54.572 SCREEN -- begin 105 dock-right
+00:45:54.572 SCREEN -- text 105 presses ⌃⌥⌘ and the right arrow
+00:45:54.855 INFO  made room for w151
+00:45:54.861 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 9 stand-ins, 0.46 s
+00:45:54.876 SCREEN w241 of Arbor 0,0 1600×900 (level 4)
+00:45:54.898 MACOS pid 18677 AXResized w148 AXWindow/AXStandardWindow 12 43 517 767
+00:45:54.912 SCREEN finder (w148) 12,43 517×767
+00:45:54.923 SCREEN safari (w151) 806,31 574×767
+00:45:54.923 MACOS pid 19971 AXResized w151 AXWindow/AXStandardWindow 1014 43 574 767
+00:45:54.924 MACOS pid 19971 AXMoved w151 AXWindow/AXStandardWindow 1014 43 574 767
+00:45:54.933 MACOS pid 20332 AXTitleChanged w165 AXWindow/AXStandardWindow 541 238 464 499
+00:45:54.937 MACOS pid 20332 AXResized w165 AXWindow/AXStandardWindow 541 238 457 499
+00:45:54.937 MACOS pid 20332 AXMoved w165 AXWindow/AXStandardWindow 541 238 457 499
+00:45:54.938 MACOS pid 20332 AXTitleChanged w165 AXWindow/AXStandardWindow 541 238 457 499
+00:45:54.939 MACOS pid 20332 AXResized w165 AXWindow/AXStandardWindow 541 238 457 499
+00:45:54.957 MACOS pid 20515 AXResized w166 AXWindow/AXStandardWindow 417 32 709 791
+00:45:54.957 MACOS pid 20515 AXMoved w166 AXWindow/AXStandardWindow 417 32 709 791
+00:45:54.959 MACOS pid 20568 AXMoved w167 AXWindow/AXStandardWindow 431 118 680 599
+00:45:54.964 MACOS pid 20627 AXMoved w170 AXWindow/AXStandardWindow 410 85 723 625
+00:45:54.967 MACOS pid 20692 AXMoved w172 AXWindow/AXStandardWindow 417 35 708 424
+00:45:54.969 MACOS pid 21104 AXMoved w175 AXWindow/AXStandardWindow 336 72 871 630
+00:45:54.970 SCREEN safari (w151) 1014,43 574×767
+00:45:54.970 SCREEN notes (w166) 417,32 709×791
+00:45:54.970 SCREEN terminal (w165) 541,238 457×499
+00:45:54.975 MACOS pid 33706 AXResized w321 AXWindow/AXStandardWindow 541 65 461 439
+00:45:54.976 MACOS pid 33706 AXMoved w321 AXWindow/AXStandardWindow 541 65 461 439
+00:45:54.980 SCREEN calendar (w167) 431,118 680×599
+00:45:54.980 SCREEN w177 of Mail 537,179 470×416
+00:45:54.980 SCREEN mail (w175) 336,72 871×630
+00:45:54.980 SCREEN preview (w172) 417,35 708×424
+00:45:54.980 SCREEN settings (w170) 410,85 723×625
+00:45:54.980 SCREEN textedit (w321) 541,65 461×439
+00:45:54.983 DEBUG stage retargeted on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 9 stand-ins, 0.46 s
+00:45:55.001 INFO  dock right: docked w151 at the right edge
+00:45:55.026 SCREEN w387 of Arbor 1005,34 592×785
+00:45:55.026 SCREEN w384 of Arbor 529,43 12×767
+00:45:55.026 SCREEN w383 of Arbor 1002,43 12×767
+00:45:55.026 SCREEN front to back: w387 safari finder calendar notes w177 mail preview settings textedit terminal w190 w384 w383
+00:45:55.034 SCREEN front to back: safari w387 finder calendar notes w177 mail preview settings textedit terminal w190 w384 w383
+00:45:55.300 SCREEN front to back: w387 safari finder calendar notes w177 mail preview settings textedit terminal w190 w384 w383
+00:45:55.568 DEBUG stage down
+00:45:55.595 SCREEN w241 of Arbor left the screen
+00:45:56.431 SCREEN -- end 105 act=dock-key settled=quiet:968 moves=148,148,151, front=151 floating=165,166,167,170,172,175,321 docked=148,151
+00:45:56.670 SCRIPT == 106 view-frame

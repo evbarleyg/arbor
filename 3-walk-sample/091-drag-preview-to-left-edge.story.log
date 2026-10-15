@@ -1,0 +1,161 @@
+91 drag-preview-to-left-edge: drags preview by its title bar against the left edge of the screen and lets go
+expected: {'act': 'drag-where-macos-tiles', 'settled': 'quiet:1341', 'drags': '565', 'moves': '455,455,565,', 'front': '565', 'floating': '433,450,451,454,460,554,657', 'docked': '455,565'}
+FAIL rule 2: finder (w433) a floating window, moved, and the step did not name it
+FAIL rule 2: calendar (w454) a floating window, moved, and the step did not name it
+FAIL rule 2: mail (w460) a floating window, moved, and the step did not name it
+ODD rule 2: w462 of Mail moved along with a window of its app
+FAIL rule 2: safari (w554) a floating window, moved, and the step did not name it
+FAIL rule 1: preview (w565) macOS's tiling preview and Arbor's drop preview were up at the same time
+FAIL rule 1: preview (w565) macOS answered the drag, and Arbor docked the window
+FAIL rule 2: textedit (w657) a floating window, moved, and the step did not name it
+FAIL rule 4: preview (w565) is not wholly in view: 0% of it, at 1599,770 800×791 in 0,31 1600×791
+
+00:51:49.821 SCREEN -- begin 91 drag-preview-to-left-edge
+00:51:49.821 SCREEN -- text 91 drags preview by its title bar against the left edge of the screen and lets go
+00:51:49.860 SCRIPT drag w565 from 102,43 to 0,450
+00:51:50.300 SCREEN w613 of Arbor left the screen
+00:51:50.412 SCREEN the button is down 102 43
+00:51:50.449 SCREEN front to back: preview w617 textedit safari settings terminal w462 mail calendar finder w616
+00:51:50.451 SCREEN in front: process 53628 com.apple.Preview
+00:51:50.452 MACOS pid 53628 AXApplicationActivated
+00:51:50.453 MACOS workspace didActivate pid 53628 com.apple.Preview regular
+00:51:50.453 MACOS workspace didDeactivate pid 60735 com.apple.TextEdit regular
+00:51:50.453 MACOS pid 60735 AXApplicationDeactivated
+00:51:50.454 DEBUG focus is on w565
+00:51:50.454 DEBUG w565 has the keyboard
+00:51:50.495 SCREEN w617 of Arbor -5,25 726×312
+00:51:50.495 SCREEN front to back: w617 preview textedit safari settings terminal w462 mail calendar finder w616
+00:51:50.600 SCREEN preview (w565) 0,44 708×297
+00:51:50.680 DEBUG w565 is being dragged
+00:51:50.681 DEBUG drag of w565: on float
+00:51:50.700 MACOS pid 53628 AXMoved w565 AXWindow/AXStandardWindow 0 72 708 297
+00:51:50.716 SCREEN preview (w565) 0,72 708×297
+00:51:50.716 SCREEN w617 of Arbor left the screen
+00:51:50.716 SCREEN front to back: preview textedit safari settings terminal w462 mail calendar finder w616
+00:51:50.774 SCREEN preview (w565) 0,85 708×297
+00:51:50.884 SCREEN preview (w565) 0,99 708×297
+00:51:50.887 MACOS pid 53628 AXMoved w565 AXWindow/AXStandardWindow 0 99 708 297
+00:51:50.993 SCREEN preview (w565) 0,112 708×297
+00:51:51.050 SCREEN preview (w565) 0,126 708×297
+00:51:51.059 MACOS pid 53628 AXMoved w565 AXWindow/AXStandardWindow 0 126 708 297
+00:51:51.127 SCREEN preview (w565) 0,139 708×297
+00:51:51.184 SCREEN preview (w565) 0,153 708×297
+00:51:51.191 MACOS pid 53628 AXMoved w565 AXWindow/AXStandardWindow 0 153 708 297
+00:51:51.260 SCREEN preview (w565) 0,167 708×297
+00:51:51.273 MACOS pid 53628 AXMoved w565 AXWindow/AXStandardWindow 0 167 708 297
+00:51:51.285 SCREEN preview (w565) 0,180 708×297
+00:51:51.384 SCREEN preview (w565) 0,194 708×297
+00:51:51.384 MACOS pid 53628 AXMoved w565 AXWindow/AXStandardWindow 0 194 708 297
+00:51:51.474 SCREEN preview (w565) 0,207 708×297
+00:51:51.573 MACOS pid 53628 AXMoved w565 AXWindow/AXStandardWindow 0 221 708 297
+00:51:51.584 SCREEN preview (w565) 0,221 708×297
+00:51:51.642 SCREEN preview (w565) 0,234 708×297
+00:51:51.679 SCREEN preview (w565) 0,248 708×297
+00:51:51.726 SCREEN preview (w565) 0,262 708×297
+00:51:51.740 MACOS pid 53628 AXMoved w565 AXWindow/AXStandardWindow 0 262 708 297
+00:51:51.784 SCREEN preview (w565) 0,275 708×297
+00:51:51.871 MACOS pid 53628 AXMoved w565 AXWindow/AXStandardWindow 0 289 708 297
+00:51:51.894 SCREEN preview (w565) 0,302 708×297
+00:51:51.967 SCREEN preview (w565) 0,316 708×297
+00:51:51.988 MACOS pid 53628 AXMoved w565 AXWindow/AXStandardWindow 0 316 708 297
+00:51:52.073 SCREEN preview (w565) 0,329 708×297
+00:51:52.096 DEBUG drag of w565: waiting over beside(n1, ArborCore.Edge.top)
+00:51:52.101 SCREEN preview (w565) 0,343 708×297
+00:51:52.165 MACOS pid 53628 AXMoved w565 AXWindow/AXStandardWindow 0 343 708 297
+00:51:52.185 DEBUG drag of w565: waiting over beside(n1, ArborCore.Edge.left)
+00:51:52.217 SCREEN preview (w565) 0,357 708×297
+00:51:52.225 SCREEN preview (w565) 0,370 708×297
+00:51:52.294 MACOS pid 53628 AXMoved w565 AXWindow/AXStandardWindow 0 370 708 297
+00:51:52.343 SCREEN preview (w565) 0,384 708×297
+00:51:52.376 DEBUG drag of w565: on beside(n1, ArborCore.Edge.left)
+00:51:52.408 SCREEN w665 of Arbor 12,340 782×470 (level 3)
+00:51:52.408 SCREEN preview (w565) 0,397 708×297
+00:51:52.416 MACOS pid 53628 AXMoved w565 AXWindow/AXStandardWindow 0 397 708 297
+00:51:52.421 DEBUG drag of w565: on cameraEdge(ArborCore.Edge.left)
+00:51:52.451 SCREEN w665 of Arbor 12,275 782×535 (level 3)
+00:51:52.451 SCREEN preview (w565) 0,411 708×297
+00:51:52.496 SCREEN w665 of Arbor 12,120 782×690 (level 3)
+00:51:52.501 SCREEN w665 of Arbor 12,80 782×730 (level 3)
+00:51:52.528 MACOS pid 53628 AXMoved w565 AXWindow/AXStandardWindow 0 424 708 297
+00:51:52.535 SCREEN w665 of Arbor 12,46 782×764 (level 3)
+00:51:52.535 SCREEN preview (w565) 0,424 708×297
+00:51:52.538 SCREEN w665 of Arbor 12,43 782×767 (level 3)
+00:51:52.538 SCREEN preview (w565) 0,438 708×297
+00:51:52.599 SCREEN w667 of WindowManager -15,16 830×821
+00:51:52.599 SCREEN preview (w565) 0,452 708×297
+00:51:52.599 SCREEN w666 of WindowManager -15,16 830×821
+00:51:52.599 SCREEN front to back: w667 preview w666 textedit safari settings terminal w462 mail calendar finder w616
+00:51:52.641 MACOS pid 53628 AXMoved w565 AXWindow/AXStandardWindow 0 452 708 297
+00:51:54.407 SCREEN the button is up 0 450
+00:51:54.412 INFO  dropped w565 on cameraEdge(ArborCore.Edge.left), display 07230EFA-7A8D-4E37-845C-19CC8737EEF5
+00:51:54.413 SCREEN w666 of WindowManager left the screen
+00:51:54.413 SCREEN w667 of WindowManager left the screen
+00:51:54.413 SCREEN front to back: preview textedit safari settings terminal w462 mail calendar finder w616
+00:51:54.428 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 8 stand-ins, 0.46 s
+00:51:54.436 MACOS pid 53628 AXResized w565 AXWindow/AXStandardWindow 0 431 713 322
+00:51:54.436 MACOS pid 45986 AXMoved w455 AXWindow/AXStandardWindow 806 340 723 470
+00:51:54.438 MACOS pid 45986 AXMoved w455 AXWindow/AXStandardWindow 835 340 723 470
+00:51:54.443 SCREEN w612 of Arbor 0,0 1600×900 (level 4)
+00:51:54.443 SCREEN preview (w565) 0,431 713×322
+00:51:54.443 SCREEN settings (w455) 835,340 723×470
+00:51:54.495 SCREEN preview (w565) 0,299 742×477
+00:51:54.525 MACOS pid 53628 AXResized w565 AXWindow/AXStandardWindow 12 43 782 767
+00:51:54.526 MACOS pid 53628 AXResized w565 AXWindow/AXStandardWindow 0 140 777 664
+00:51:54.553 MACOS pid 53628 AXMoved w565 AXWindow/AXStandardWindow 0 108 784 701
+00:51:54.554 MACOS pid 53628 AXResized w565 AXWindow/AXStandardWindow 0 108 784 701
+00:51:54.555 MACOS pid 53628 AXResized w565 AXWindow/AXStandardWindow 0 108 784 701
+00:51:54.555 MACOS pid 53628 AXResized w565 AXWindow/AXStandardWindow 0 108 784 701
+00:51:54.555 MACOS pid 53628 AXResized w565 AXWindow/AXStandardWindow 0 108 784 701
+00:51:54.555 MACOS pid 53628 AXResized w565 AXWindow/AXStandardWindow 0 108 784 701
+00:51:54.568 SCREEN preview (w565) 0,108 784×701
+00:51:54.604 MACOS pid 53628 AXMoved w565 AXWindow/AXStandardWindow 14 95 795 761
+00:51:54.604 MACOS pid 53628 AXResized w565 AXWindow/AXStandardWindow 14 95 795 761
+00:51:54.612 SCREEN preview (w565) 14,95 795×761
+00:51:54.618 MACOS pid 53628 AXResized w565 AXWindow/AXStandardWindow 14 95 797 771
+00:51:54.619 MACOS pid 53628 AXResized w565 AXWindow/AXStandardWindow 0 48 797 771
+00:51:54.620 MACOS pid 53628 AXMoved w565 AXWindow/AXStandardWindow 0 48 797 771
+00:51:54.620 MACOS pid 53628 AXResized w565 AXWindow/AXStandardWindow 1599 899 797 771
+00:51:54.621 MACOS pid 53628 AXResized w565 AXWindow/AXStandardWindow 1599 899 797 771
+00:51:54.621 MACOS pid 53628 AXMoved w565 AXWindow/AXStandardWindow 1599 899 797 771
+00:51:54.651 MACOS pid 53628 AXResized w565 AXWindow/AXStandardWindow 0 39 799 785
+00:51:54.652 MACOS pid 44529 AXResized w433 AXWindow/AXStandardWindow 806 31 794 297
+00:51:54.652 MACOS pid 53628 AXResized w565 AXWindow/AXStandardWindow 0 37 799 785
+00:51:54.653 MACOS pid 44529 AXMoved w433 AXWindow/AXStandardWindow 806 31 794 297
+00:51:54.676 MACOS pid 53628 AXResized w565 AXWindow/AXStandardWindow 0 35 800 787
+00:51:54.681 MACOS pid 45933 AXResized w454 AXWindow/AXStandardWindow 806 31 794 503
+00:51:54.682 SCREEN preview (w565) 0,35 800×787
+00:51:54.682 SCREEN finder (w433) 806,31 794×297
+00:51:54.682 MACOS pid 45933 AXMoved w454 AXWindow/AXStandardWindow 806 31 794 503
+00:51:54.685 MACOS pid 53628 AXResized w565 AXWindow/AXStandardWindow 0 33 800 789
+00:51:54.688 MACOS pid 45933 AXFocusedWindowChanged w454 AXWindow/AXStandardWindow 806 31 794 503
+00:51:54.689 DEBUG raised w454, which was left hanging over docked windows
+00:51:54.689 MACOS pid 45933 AXMainWindowChanged w454 AXWindow/AXStandardWindow 806 31 794 503
+00:51:54.707 MACOS pid 53628 AXResized w565 AXWindow/AXStandardWindow 0 32 800 790
+00:51:54.714 SCREEN preview (w565) 0,32 800×790
+00:51:54.714 SCREEN calendar (w454) 806,31 794×503
+00:51:54.714 SCREEN front to back: preview calendar textedit safari settings terminal w462 mail finder w616
+00:51:54.734 SCREEN preview (w565) 0,31 800×791
+00:51:54.734 MACOS pid 53628 AXResized w565 AXWindow/AXStandardWindow 0 31 800 791
+00:51:54.770 MACOS pid 46101 AXResized w460 AXWindow/AXStandardWindow 729 31 871 297
+00:51:54.771 MACOS pid 46101 AXMoved w460 AXWindow/AXStandardWindow 729 31 871 297
+00:51:54.788 SCREEN w462 of Mail 930,83 470×416
+00:51:54.788 SCREEN mail (w460) 729,31 871×297
+00:51:54.805 MACOS pid 51482 AXResized w554 AXWindow/AXStandardWindow 806 31 794 297
+00:51:54.806 MACOS pid 51482 AXMoved w554 AXWindow/AXStandardWindow 806 31 794 297
+00:51:54.807 MACOS pid 60735 AXMoved w657 AXWindow/AXStandardWindow 806 31 673 297
+00:51:54.814 DEBUG stage retargeted on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 8 stand-ins, 0.46 s
+00:51:54.816 SCREEN textedit (w657) 806,31 673×297
+00:51:54.816 SCREEN safari (w554) 806,31 794×297
+00:51:54.820 DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Too small to show: click the tile to zoom in · ⌃⌥G goes there too
+00:51:54.845 SCREEN w613 of Arbor 558,728 485×38 (level 6)
+00:51:54.845 SCREEN w668 of Arbor 12,43 782×767
+00:51:54.845 SCREEN w616 of Arbor 806,328 782×12
+00:51:54.845 SCREEN w669 of Arbor 794,43 12×767
+00:51:54.845 SCREEN front to back: preview calendar textedit safari settings terminal w462 mail finder w668 w616 w669
+00:51:54.893 SCREEN w665 of Arbor left the screen
+00:51:55.204 SCREEN preview (w565) 1599,770 800×791
+00:51:55.205 MACOS pid 53628 AXMoved w565 AXWindow/AXStandardWindow 1599 770 800 791
+00:51:55.495 DEBUG stage down
+00:51:55.511 SCREEN w612 of Arbor left the screen
+00:51:56.316 SCREEN -- end 91 act=drag-where-macos-tiles settled=quiet:1341 drags=565 moves=455,455,565, front=565 floating=433,450,451,454,460,554,657 docked=455,565
+00:51:56.558 SCRIPT == 92 restore-notes

@@ -1,0 +1,64 @@
+73 restore-safari: clicks its miniature in the Dock
+expected: {'act': 'open-close', 'settled': 'quiet:1029', 'moves': '148,151,160,148,151,160,', 'comes': '151', 'front': '151', 'returns': '71', 'floating': '165,166,167,170,172,175', 'docked': '148,151,160'}
+FAIL rule 2: terminal (w165) is not back where it was after step 71: 525,238 331×499, it was at 97,238 877×499
+FAIL rule 2: notes (w166) is not back where it was after step 71: 335,105 709×660, it was at 300,105 1000×660
+FAIL rule 2: calendar (w167) is not back where it was after step 71: 350,118 680×599, it was at 464,118 936×599
+FAIL rule 2: settings (w170) is not back where it was after step 71: 328,85 723×625, it was at 437,85 723×625
+FAIL rule 2: preview (w172) is not back where it was after step 71: 336,35 708×424, it was at 4,35 708×424
+FAIL rule 2: mail (w175) is not back where it was after step 71: 254,72 871×630, it was at 240,72 1120×630
+FAIL rule 2: w177 of Mail is not back where it was after step 71: 455,179 470×416, it was at 565,179 470×416
+
+00:44:21.633 SCREEN -- begin 73 restore-safari
+00:44:21.633 SCREEN -- text 73 clicks its miniature in the Dock
+00:44:22.217 SCREEN the button is down 1441 854
+00:44:22.253 SCREEN the button is up 1441 854
+00:44:22.259 SCREEN safari (w151) 1423,821 36×60
+00:44:22.259 SCREEN front to back: safari w243 calendar notes w177 mail preview settings terminal finder textedit w190 w258 w253
+00:44:22.284 SCREEN safari (w151) 1422,805 37×76
+00:44:22.293 SCREEN safari (w151) 1420,792 39×89
+00:44:22.333 SCREEN safari (w151) 1373,698 85×183
+00:44:22.341 SCREEN safari (w151) 1345,665 113×216
+00:44:22.366 SCREEN safari (w151) 1263,593 194×288
+00:44:22.371 SCREEN safari (w151) 1212,555 245×326
+00:44:22.443 SCREEN safari (w151) 786,279 668×602
+00:44:22.455 SCREEN safari (w151) 742,243 711×638
+00:44:22.488 SCREEN safari (w151) 635,118 816×763
+00:44:22.543 SCREEN safari (w151) 617,44 827×768
+00:44:22.553 SCREEN safari (w151) 617,43 822×767
+00:44:22.612 SCREEN safari (w151) 617,43 745×767
+00:44:22.622 SCREEN safari (w151) 617,43 728×767
+00:44:22.679 SCREEN safari (w151) 617,43 634×767
+00:44:22.689 SCREEN safari (w151) 617,43 620×767
+00:44:22.734 SCREEN safari (w151) 617,43 581×767
+00:44:22.742 SCREEN safari (w151) 617,43 576×767
+00:44:22.779 SCREEN safari (w151) 617,43 574×767
+00:44:22.824 MACOS pid 19971 AXApplicationActivated
+00:44:22.825 SCREEN in front: process 19971 com.apple.Safari
+00:44:22.825 MACOS workspace didActivate pid 19971 com.apple.Safari regular
+00:44:22.825 MACOS workspace didDeactivate pid 20568 com.apple.iCal regular
+00:44:22.826 MACOS pid 19971 AXFocusedWindowChanged w151 AXWindow/AXStandardWindow 617 43 574 767
+00:44:22.826 MACOS pid 20568 AXApplicationDeactivated
+00:44:22.829 DEBUG focus is on w151
+00:44:22.829 DEBUG focus report for w151, which does not have the keyboard or takes no space; 4 checks left
+00:44:22.829 MACOS pid 19971 AXMainWindowChanged w151 AXWindow/AXStandardWindow 617 43 574 767
+00:44:22.830 MACOS pid 19971 AXWindowDeminiaturized w151 AXWindow/AXStandardWindow 617 43 574 767
+00:44:22.830 MACOS pid 19971 AXApplicationActivated
+00:44:22.837 INFO  made room for w148
+00:44:22.841 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 9 stand-ins, 0.46 s
+00:44:22.849 MACOS pid 20043 AXResized w160 AXWindow/AXStandardWindow 1203 43 385 767
+00:44:22.850 MACOS pid 20043 AXMoved w160 AXWindow/AXStandardWindow 1203 43 385 767
+00:44:22.852 DEBUG w151 has the keyboard
+00:44:22.855 SCREEN w241 of Arbor 0,0 1600×900 (level 4)
+00:44:22.855 SCREEN w243 of Arbor left the screen
+00:44:22.855 SCREEN front to back: safari calendar notes w177 mail preview settings terminal finder textedit w190 w258 w253
+00:44:22.865 SCREEN w243 of Arbor 608,34 592×785
+00:44:22.865 SCREEN textedit (w160) 867,43 385×767
+00:44:22.865 SCREEN w252 of Arbor 525,43 80×767
+00:44:22.865 SCREEN w253 of Arbor 605,43 12×767
+00:44:22.865 SCREEN w248 of Arbor 1191,43 12×767
+00:44:22.865 SCREEN front to back: w243 safari calendar notes w177 mail preview settings terminal finder textedit w190 w252 w258 w253 w248
+00:44:22.927 SCREEN textedit (w160) 1203,43 385×767
+00:44:23.554 DEBUG stage down
+00:44:23.602 SCREEN w241 of Arbor left the screen
+00:44:24.041 SCREEN -- end 73 act=open-close settled=quiet:1029 moves=148,151,160,148,151,160, comes=151 front=151 returns=71 floating=165,166,167,170,172,175 docked=148,151,160
+00:44:24.290 SCRIPT == 74 click-finder

@@ -1,0 +1,28 @@
+101 pause: presses ⌃⌥⎋
+expected: {'act': 'way-out', 'settled': 'quiet:915', 'moves': 'any', 'restores': 'all', 'everything': '1', 'floating': '', 'docked': ''}
+FAIL rule 5: finder (w433) is 806,31 794×297; its own size was 340,120 920×436
+FAIL rule 5: terminal (w450) is 806,31 795×289; its own size was 97,238 877×499
+FAIL rule 5: calendar (w454) is 806,31 794×503; its own size was 415,115 909×600
+FAIL rule 5: settings (w455) is 835,340 723×470; its own size was 437,85 723×625
+FAIL rule 5: mail (w460) is 729,31 871×297; its own size was 240,72 1120×630
+FAIL rule 5: safari (w554) is 806,31 794×297; its own size was 138,31 1324×790
+
+00:52:15.349 SCREEN -- begin 101 pause
+00:52:15.349 SCREEN -- text 101 presses ⌃⌥⎋
+00:52:15.575 MACOS pid 53628 AXResized w565 AXWindow/AXStandardWindow 4 35 708 424
+00:52:15.577 MACOS pid 53628 AXMoved w565 AXWindow/AXStandardWindow 4 35 708 424
+00:52:15.585 INFO  trace day-2 ended: 2001 lines, Arbor stopped
+00:52:15.587 INFO  registered 1 shortcuts in 1250 µs
+00:52:15.588 SCREEN preview (w565) 4,35 708×424
+00:52:15.588 INFO  stopped; all windows returned to view
+00:52:15.588 INFO  paused
+00:52:15.589 DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Paused until ⌃⌥⎋; windows that were out of view are back on screen
+00:52:15.616 SCREEN w682 of Arbor 538,728 525×38 (level 6)
+00:52:15.616 SCREEN w616 of Arbor left the screen
+00:52:15.616 SCREEN w668 of Arbor left the screen
+00:52:15.616 SCREEN w669 of Arbor left the screen
+00:52:15.616 SCREEN w617 of Arbor left the screen
+00:52:15.616 SCREEN w618 of Arbor left the screen
+00:52:15.616 SCREEN front to back: safari finder preview calendar settings terminal w462 mail
+00:52:16.778 SCREEN -- end 101 act=way-out settled=quiet:915 moves=any restores=all everything=1 floating= docked=
+00:52:16.978 SCRIPT == 102 restore-textedit

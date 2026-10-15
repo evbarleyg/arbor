@@ -1,0 +1,16 @@
+122 dock-icon-textedit: clicks textedit's icon in the Dock
+expected: {'act': 'switch', 'settled': 'quiet:365', 'front': '321'}
+FAIL rule 6: the button came up, and the apps heard of it 57 ms later
+
+00:46:59.679 SCREEN -- begin 122 dock-icon-textedit
+00:46:59.679 SCREEN -- text 122 clicks textedit's icon in the Dock
+00:47:00.279 SCREEN the button is down 1220 854
+00:47:00.389 MACOS pid 19971 AXApplicationDeactivated
+00:47:00.391 SCREEN in front: process 33706 com.apple.TextEdit
+00:47:00.391 SCREEN front to back: textedit safari finder w177 mail preview settings calendar notes terminal
+00:47:00.391 SCREEN the button is up 1220 854
+00:47:00.391 MACOS workspace didActivate pid 33706 com.apple.TextEdit regular
+00:47:00.391 MACOS workspace didDeactivate pid 19971 com.apple.Safari regular
+00:47:00.392 MACOS pid 33706 AXApplicationActivated
+00:47:01.468 SCREEN -- end 122 act=switch settled=quiet:365 front=321
+00:47:01.651 SCRIPT == 123 dock-icon-terminal

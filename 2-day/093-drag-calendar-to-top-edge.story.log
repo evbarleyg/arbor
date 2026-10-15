@@ -1,0 +1,179 @@
+93 drag-calendar-to-top-edge: drags calendar by its title bar against the top edge of the screen and lets go
+expected: {'act': 'drag-where-macos-tiles', 'settled': 'quiet:1350', 'drags': '167', 'moves': '148,151,148,151,167,', 'front': '167', 'floating': '165,166,170,172,175,321', 'docked': '148,151,167'}
+FAIL rule 2: terminal (w165) a floating window, moved, and the step did not name it
+FAIL rule 1: calendar (w167) macOS's tiling preview and Arbor's drop preview were up at the same time
+FAIL rule 1: calendar (w167) macOS answered the drag, and Arbor docked the window
+FAIL rule 3: calendar (w167) went 620 points out of its way before it ended up
+FAIL rule 2: settings (w170) a floating window, moved, and the step did not name it
+FAIL rule 2: preview (w172) a floating window, moved, and the step did not name it
+FAIL rule 2: mail (w175) a floating window, moved, and the step did not name it
+ODD rule 2: w177 of Mail moved along with a window of its app
+FAIL rule 2: textedit (w321) a floating window, moved, and the step did not name it
+FAIL rule 4: calendar (w167) is not wholly in view: 0% of it, at 1599,770 1600×791 in 0,31 1600×791
+
+00:45:23.819 SCREEN -- begin 93 drag-calendar-to-top-edge
+00:45:23.819 SCREEN -- text 93 drags calendar by its title bar against the top edge of the screen and lets go
+00:45:23.863 SCRIPT drag w167 from 876,130 to 800,0
+00:45:24.367 SCREEN front to back: calendar w243 notes finder safari textedit w177 mail preview settings terminal w190 w258 w253
+00:45:24.367 SCREEN the button is down 876 130
+00:45:24.555 SCREEN calendar (w167) 383,113 680×599
+00:45:24.568 DEBUG w167 is being dragged
+00:45:24.568 DEBUG drag of w167: on float
+00:45:24.600 SCREEN calendar (w167) 380,109 680×599
+00:45:24.648 MACOS pid 20568 AXMoved w167 AXWindow/AXStandardWindow 380 109 680 599
+00:45:24.662 SCREEN calendar (w167) 378,105 680×599
+00:45:24.662 SCREEN w243 of Arbor left the screen
+00:45:24.662 SCREEN front to back: calendar notes finder safari textedit w177 mail preview settings terminal w190 w258 w253
+00:45:24.731 SCREEN calendar (w167) 375,100 680×599
+00:45:24.768 MACOS pid 20568 AXMoved w167 AXWindow/AXStandardWindow 375 100 680 599
+00:45:24.790 SCREEN calendar (w167) 373,96 680×599
+00:45:24.861 SCREEN calendar (w167) 370,92 680×599
+00:45:24.889 MACOS pid 20568 AXMoved w167 AXWindow/AXStandardWindow 370 92 680 599
+00:45:24.972 SCREEN calendar (w167) 368,87 680×599
+00:45:25.049 SCREEN calendar (w167) 365,83 680×599
+00:45:25.051 MACOS pid 20568 AXMoved w167 AXWindow/AXStandardWindow 365 83 680 599
+00:45:25.159 SCREEN calendar (w167) 363,79 680×599
+00:45:25.168 SCREEN calendar (w167) 360,74 680×599
+00:45:25.201 SCREEN calendar (w167) 358,70 680×599
+00:45:25.217 MACOS pid 20568 AXMoved w167 AXWindow/AXStandardWindow 358 70 680 599
+00:45:25.286 SCREEN calendar (w167) 355,66 680×599
+00:45:25.333 SCREEN calendar (w167) 353,61 680×599
+00:45:25.389 MACOS pid 20568 AXMoved w167 AXWindow/AXStandardWindow 353 61 680 599
+00:45:25.408 SCREEN calendar (w167) 350,57 680×599
+00:45:25.473 SCREEN calendar (w167) 348,53 680×599
+00:45:25.490 MACOS pid 20568 AXMoved w167 AXWindow/AXStandardWindow 348 53 680 599
+00:45:25.517 SCREEN calendar (w167) 345,48 680×599
+00:45:25.575 SCREEN calendar (w167) 342,44 680×599
+00:45:25.614 SCREEN calendar (w167) 340,40 680×599
+00:45:25.616 MACOS pid 20568 AXMoved w167 AXWindow/AXStandardWindow 340 40 680 599
+00:45:25.621 SCREEN calendar (w167) 337,35 680×599
+00:45:25.713 SCREEN calendar (w167) 335,31 680×599
+00:45:25.719 MACOS pid 20568 AXMoved w167 AXWindow/AXStandardWindow 335 31 680 599
+00:45:25.787 DEBUG drag of w167: on cameraEdge(ArborCore.Edge.top)
+00:45:25.792 SCREEN calendar (w167) 332,31 680×599
+00:45:25.882 SCREEN calendar (w167) 330,31 680×599
+00:45:25.891 MACOS pid 20568 AXMoved w167 AXWindow/AXStandardWindow 330 31 680 599
+00:45:25.931 SCREEN w257 of Arbor 12,43 1576×378 (level 3)
+00:45:25.944 SCREEN calendar (w167) 327,31 680×599
+00:45:25.981 SCREEN calendar (w167) 325,31 680×599
+00:45:26.044 SCREEN calendar (w167) 322,31 680×599
+00:45:26.050 MACOS pid 20568 AXMoved w167 AXWindow/AXStandardWindow 322 31 680 599
+00:45:26.095 SCREEN calendar (w167) 320,31 680×599
+00:45:26.138 SCREEN calendar (w167) 317,31 680×599
+00:45:26.169 SCREEN calendar (w167) 315,31 680×599
+00:45:26.181 MACOS pid 20568 AXMoved w167 AXWindow/AXStandardWindow 315 31 680 599
+00:45:26.218 SCREEN calendar (w167) 312,31 680×599
+00:45:26.283 SCREEN calendar (w167) 310,31 680×599
+00:45:26.319 MACOS pid 20568 AXMoved w167 AXWindow/AXStandardWindow 310 31 680 599
+00:45:26.422 SCREEN w376 of WindowManager -15,16 1630×821
+00:45:26.422 SCREEN w375 of WindowManager -15,16 1630×821
+00:45:26.422 SCREEN front to back: w376 calendar w375 notes finder safari textedit w177 mail preview settings terminal w190 w258 w253
+00:45:26.583 SCREEN calendar (w167) 311,31 680×599
+00:45:26.672 MACOS pid 20568 AXMoved w167 AXWindow/AXStandardWindow 311 31 680 599
+00:45:28.001 SCREEN calendar (w167) 310,31 680×599
+00:45:28.036 SCREEN the button is up 800 0
+00:45:28.039 INFO  dropped w167 on cameraEdge(ArborCore.Edge.top), display 07230EFA-7A8D-4E37-845C-19CC8737EEF5
+00:45:28.042 MACOS pid 20568 AXMoved w167 AXWindow/AXStandardWindow 310 31 680 599
+00:45:28.043 SCREEN w376 of WindowManager left the screen
+00:45:28.043 SCREEN w375 of WindowManager left the screen
+00:45:28.043 SCREEN front to back: calendar notes finder safari textedit w177 mail preview settings terminal w190 w258 w253
+00:45:28.053 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 9 stand-ins, 0.46 s
+00:45:28.073 MACOS pid 20568 AXResized w167 AXWindow/AXStandardWindow 283 31 758 616
+00:45:28.075 MACOS pid 18677 AXResized w148 AXWindow/AXStandardWindow 12 433 501 377
+00:45:28.075 MACOS pid 20568 AXResized w167 AXWindow/AXStandardWindow 283 31 758 616
+00:45:28.075 MACOS pid 18677 AXMoved w148 AXWindow/AXStandardWindow 12 433 501 377
+00:45:28.090 SCREEN w241 of Arbor 0,0 1600×900 (level 4)
+00:45:28.090 SCREEN calendar (w167) 283,31 758×616
+00:45:28.090 SCREEN finder (w148) 12,433 501×377
+00:45:28.102 MACOS pid 19971 AXResized w151 AXWindow/AXStandardWindow 940 433 648 377
+00:45:28.120 SCREEN calendar (w167) 234,31 904×646
+00:45:28.120 SCREEN safari (w151) 940,433 648×377
+00:45:28.120 MACOS pid 20568 AXResized w167 AXWindow/AXStandardWindow 138 31 1191 706
+00:45:28.121 MACOS pid 19971 AXMoved w151 AXWindow/AXStandardWindow 940 433 648 377
+00:45:28.126 SCREEN calendar (w167) 138,31 1191×706
+00:45:28.142 SCREEN calendar (w167) 138,31 1462×503
+00:45:28.175 MACOS pid 20568 AXResized w167 AXWindow/AXStandardWindow 12 43 1462 503
+00:45:28.176 SCREEN calendar (w167) 72,31 1384×746
+00:45:28.195 MACOS pid 20568 AXResized w167 AXWindow/AXStandardWindow 51 31 1447 760
+00:45:28.201 SCREEN calendar (w167) 36,31 1493×769
+00:45:28.208 MACOS pid 20568 AXResized w167 AXWindow/AXStandardWindow 76 43 1493 769
+00:45:28.209 MACOS pid 20568 AXMoved w167 AXWindow/AXStandardWindow 76 43 1447 760
+00:45:28.218 SCREEN calendar (w167) 76,43 1493×769
+00:45:28.220 MACOS pid 20568 AXResized w167 AXWindow/AXStandardWindow 76 43 1447 760
+00:45:28.221 MACOS pid 20568 AXResized w167 AXWindow/AXStandardWindow 17 31 1549 781
+00:45:28.230 SCREEN calendar (w167) 17,31 1549×781
+00:45:28.230 MACOS pid 20568 AXResized w167 AXWindow/AXStandardWindow 17 31 1447 760
+00:45:28.231 MACOS pid 20568 AXResized w167 AXWindow/AXStandardWindow 1599 899 1447 760
+00:45:28.232 MACOS pid 20568 AXMoved w167 AXWindow/AXStandardWindow 1599 899 1447 760
+00:45:28.232 MACOS pid 20568 AXResized w167 AXWindow/AXStandardWindow 1599 899 1447 760
+00:45:28.233 MACOS pid 20568 AXMoved w167 AXWindow/AXStandardWindow 1599 899 1447 760
+00:45:28.234 MACOS pid 20568 AXResized w167 AXWindow/AXStandardWindow 1599 899 1447 760
+00:45:28.234 MACOS pid 20568 AXResized w167 AXWindow/AXStandardWindow 1599 899 1447 760
+00:45:28.234 MACOS pid 20568 AXMoved w167 AXWindow/AXStandardWindow 1599 899 1447 760
+00:45:28.247 MACOS pid 20332 AXTitleChanged w165 AXWindow/AXStandardWindow 525 433 401 394
+00:45:28.248 MACOS pid 20332 AXResized w165 AXWindow/AXStandardWindow 525 433 401 394
+00:45:28.249 MACOS pid 20332 AXMoved w165 AXWindow/AXStandardWindow 525 433 401 394
+00:45:28.251 SCREEN calendar (w167) 17,31 1447×760
+00:45:28.251 SCREEN terminal (w165) 525,433 401×394
+00:45:28.255 MACOS pid 20568 AXResized w167 AXWindow/AXStandardWindow 8 31 1577 787
+00:45:28.259 MACOS pid 20332 AXTitleChanged w165 AXWindow/AXStandardWindow 525 433 401 379
+00:45:28.263 SCREEN calendar (w167) 8,31 1577×787
+00:45:28.263 MACOS pid 20332 AXResized w165 AXWindow/AXStandardWindow 525 433 401 379
+00:45:28.272 MACOS pid 20568 AXResized w167 AXWindow/AXStandardWindow 5 31 1584 788
+00:45:28.291 MACOS pid 20627 AXResized w170 AXWindow/AXStandardWindow 365 433 723 470
+00:45:28.292 MACOS pid 20568 AXResized w167 AXWindow/AXStandardWindow 3 31 1590 789
+00:45:28.305 SCREEN calendar (w167) 3,31 1590×789
+00:45:28.305 SCREEN terminal (w165) 525,433 401×379
+00:45:28.305 MACOS pid 20627 AXMoved w170 AXWindow/AXStandardWindow 365 352 723 470
+00:45:28.305 MACOS pid 20627 AXMoved w170 AXWindow/AXStandardWindow 365 352 723 470
+00:45:28.308 MACOS pid 20568 AXResized w167 AXWindow/AXStandardWindow 2 31 1593 790
+00:45:28.309 DEBUG raised w170, which was left hanging over docked windows
+00:45:28.313 SCREEN calendar (w167) 2,31 1593×790
+00:45:28.313 SCREEN settings (w170) 365,352 723×470
+00:45:28.313 SCREEN front to back: calendar settings notes finder safari textedit w177 mail preview terminal w190 w258 w253
+00:45:28.313 MACOS pid 20627 AXFocusedWindowChanged w170 AXWindow/AXStandardWindow 365 352 723 470
+00:45:28.313 MACOS pid 20627 AXMainWindowChanged w170 AXWindow/AXStandardWindow 365 352 723 470
+00:45:28.320 MACOS pid 20568 AXResized w167 AXWindow/AXStandardWindow 1 31 1596 790
+00:45:28.326 MACOS pid 20692 AXResized w172 AXWindow/AXStandardWindow 372 433 708 389
+00:45:28.330 SCREEN calendar (w167) 1,31 1596×790
+00:45:28.330 MACOS pid 20692 AXMoved w172 AXWindow/AXStandardWindow 372 433 708 389
+00:45:28.334 DEBUG raised w172, which was left hanging over docked windows
+00:45:28.334 MACOS pid 20692 AXFocusedWindowChanged w172 AXWindow/AXStandardWindow 372 433 708 389
+00:45:28.335 MACOS pid 20692 AXMainWindowChanged w172 AXWindow/AXStandardWindow 372 433 708 389
+00:45:28.339 MACOS pid 20568 AXResized w167 AXWindow/AXStandardWindow 1 31 1597 791
+00:45:28.356 MACOS pid 20568 AXResized w167 AXWindow/AXStandardWindow 0 31 1598 791
+00:45:28.367 SCREEN calendar (w167) 0,31 1598×791
+00:45:28.367 SCREEN preview (w172) 372,433 708×389
+00:45:28.367 SCREEN front to back: calendar preview settings notes finder safari textedit w177 mail terminal w190 w258 w253
+00:45:28.375 SCREEN calendar (w167) 0,31 1599×791
+00:45:28.375 SCREEN w177 of Mail 492,124 470×416
+00:45:28.375 SCREEN mail (w175) 291,72 871×389
+00:45:28.380 MACOS pid 21104 AXResized w175 AXWindow/AXStandardWindow 291 433 871 389
+00:45:28.386 MACOS pid 20568 AXResized w167 AXWindow/AXStandardWindow 0 31 1600 791
+00:45:28.387 MACOS pid 21104 AXMoved w175 AXWindow/AXStandardWindow 291 433 871 389
+00:45:28.387 MACOS pid 20568 AXResized w167 AXWindow/AXStandardWindow 0 31 1600 791
+00:45:28.389 DEBUG raised w175, which was left hanging over docked windows
+00:45:28.390 MACOS pid 21104 AXFocusedWindowChanged w177 AXSheet/- 492 485 470 416
+00:45:28.390 MACOS pid 21104 AXMainWindowChanged w175 AXWindow/AXStandardWindow 291 433 871 389
+00:45:28.399 MACOS pid 33706 AXResized w321 AXWindow/AXStandardWindow 525 433 403 389
+00:45:28.400 SCREEN calendar (w167) 0,31 1600×791
+00:45:28.400 SCREEN w177 of Mail 492,485 470×416
+00:45:28.400 SCREEN mail (w175) 291,433 871×389
+00:45:28.400 SCREEN front to back: calendar w177 mail preview settings notes finder safari textedit terminal w190 w258 w253
+00:45:28.400 MACOS pid 33706 AXMoved w321 AXWindow/AXStandardWindow 525 433 403 389
+00:45:28.403 DEBUG stage retargeted on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 9 stand-ins, 0.46 s
+00:45:28.405 DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Too small to show: click the tile to zoom in · ⌃⌥G goes there too
+00:45:28.417 SCREEN textedit (w321) 525,433 403×389
+00:45:28.838 SCREEN w245 of Arbor 558,728 485×38 (level 6)
+00:45:28.838 SCREEN w252 of Arbor 12,43 1576×378
+00:45:28.838 SCREEN w258 of Arbor 513,433 12×377
+00:45:28.838 SCREEN w253 of Arbor 928,433 12×377
+00:45:28.838 SCREEN w248 of Arbor 12,421 1576×12
+00:45:28.838 SCREEN front to back: calendar w177 mail preview settings notes finder safari textedit terminal w190 w252 w258 w253 w248
+00:45:28.873 SCREEN w257 of Arbor left the screen
+00:45:29.052 DEBUG stage down
+00:45:29.067 SCREEN w241 of Arbor left the screen
+00:45:29.174 MACOS pid 20568 AXMoved w167 AXWindow/AXStandardWindow 1599 770 1600 791
+00:45:29.180 SCREEN calendar (w167) 1599,770 1600×791
+00:45:30.315 SCREEN -- end 93 act=drag-where-macos-tiles settled=quiet:1350 drags=167 moves=148,151,148,151,167, front=167 floating=165,166,170,172,175,321 docked=148,151,167
+00:45:30.642 SCRIPT == 94 view-all

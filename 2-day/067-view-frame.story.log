@@ -1,0 +1,43 @@
+67 view-frame: presses ⌃⌥↩
+expected: {'act': 'view', 'settled': 'quiet:949', 'moves': 'any', 'front': '151', 'floating': '165,166,167,170,172,175', 'docked': '148,151,160'}
+ODD rule 3: the last window came to rest 711 ms after the key or the button
+
+00:44:09.740 SCREEN -- begin 67 view-frame
+00:44:09.740 SCREEN -- text 67 presses ⌃⌥↩
+00:44:09.972 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 9 stand-ins, 0.46 s
+00:44:09.984 SCREEN w241 of Arbor 0,0 1600×900 (level 4)
+00:44:10.021 MACOS pid 19971 AXResized w151 AXWindow/AXStandardWindow 12 43 983 767
+00:44:10.022 MACOS pid 19971 AXMoved w151 AXWindow/AXStandardWindow 12 43 983 767
+00:44:10.040 SCREEN safari (w151) 617,43 983×767
+00:44:10.045 MACOS pid 19971 AXResized w151 AXWindow/AXStandardWindow 12 43 1576 767
+00:44:10.051 MACOS pid 18677 AXMoved w148 AXWindow/AXStandardWindow 1599 770 501 767
+00:44:10.053 MACOS pid 20043 AXMoved w160 AXWindow/AXStandardWindow 1599 790 385 767
+00:44:10.055 MACOS pid 20332 AXMoved w165 AXWindow/AXStandardWindow 1599 790 877 499
+00:44:10.057 MACOS pid 20515 AXMoved w166 AXWindow/AXStandardWindow 1599 770 1000 660
+00:44:10.058 MACOS pid 20568 AXMoved w167 AXWindow/AXStandardWindow 1599 770 936 599
+00:44:10.065 MACOS pid 20627 AXMoved w170 AXWindow/AXStandardWindow 1599 770 723 625
+00:44:10.067 MACOS pid 20692 AXMoved w172 AXWindow/AXStandardWindow 1599 770 708 424
+00:44:10.078 MACOS pid 21104 AXMoved w175 AXWindow/AXStandardWindow 1599 770 1120 630
+00:44:10.079 SCREEN safari (w151) 12,43 1576×767
+00:44:10.079 SCREEN calendar (w167) 1599,770 936×599
+00:44:10.079 SCREEN terminal (w165) 1599,790 877×499
+00:44:10.079 SCREEN preview (w172) 1599,770 708×424
+00:44:10.079 SCREEN notes (w166) 1599,770 1000×660
+00:44:10.079 SCREEN settings (w170) 1599,770 723×625
+00:44:10.079 SCREEN finder (w148) 1599,770 501×767
+00:44:10.079 SCREEN textedit (w160) 1599,790 385×767
+00:44:10.084 INFO  zoom: framed w151
+00:44:10.145 SCREEN w243 of Arbor 3,34 1594×785
+00:44:10.145 SCREEN w177 of Mail 1924,877 470×416
+00:44:10.145 SCREEN mail (w175) 1599,770 1120×630
+00:44:10.145 SCREEN w248 of Arbor left the screen
+00:44:10.145 SCREEN w253 of Arbor left the screen
+00:44:10.145 SCREEN w258 of Arbor left the screen
+00:44:10.145 SCREEN front to back: safari w243 calendar w177 mail terminal preview notes settings finder textedit w190 w252
+00:44:10.258 SCREEN front to back: w243 safari calendar w177 mail terminal preview notes settings finder textedit w190 w252
+00:44:10.295 SCREEN w252 of Arbor left the screen
+00:44:10.295 SCREEN front to back: w243 safari calendar w177 mail terminal preview notes settings finder textedit w190
+00:44:10.653 DEBUG stage down
+00:44:10.695 SCREEN w241 of Arbor left the screen
+00:44:11.387 SCREEN -- end 67 act=view settled=quiet:949 moves=any front=151 floating=165,166,167,170,172,175 docked=148,151,160
+00:44:11.607 SCRIPT == 68 new-window-safari

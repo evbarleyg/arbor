@@ -1,0 +1,15 @@
+95 click-tile: clicks the tile that stands in for a window
+expected: {'act': 'tile-click', 'settled': 'quiet:911', 'moves': 'any', 'front': '167', 'floating': '165,166,170,172,175,321', 'docked': '148,151,167'}
+FAIL rule 4: calendar (w167) is not in front: notes (w166) ahead of it, none of which covers it
+FAIL rule 4: calendar (w167) its app is not the one in front (process 20515 is)
+FAIL rule 4: calendar (w167) is not wholly in view: 0% of it, at 1599,770 1600×791 in 0,31 1600×791
+
+00:45:32.271 SCREEN -- begin 95 click-tile
+00:45:32.271 SCREEN -- text 95 clicks the tile that stands in for a window
+00:45:32.827 SCREEN the button is down 800 232
+00:45:32.942 SCREEN front to back: notes w243 calendar w177 mail preview settings finder safari textedit terminal w190 w252 w258 w253 w248
+00:45:32.942 SCREEN the button is up 800 232
+00:45:32.950 SCREEN front to back: w243 notes calendar w177 mail preview settings finder safari textedit terminal w190 w252 w258 w253 w248
+00:45:33.058 SCREEN w245 of Arbor left the screen
+00:45:34.049 SCREEN -- end 95 act=tile-click settled=quiet:911 moves=any front=167 floating=165,166,170,172,175,321 docked=148,151,167
+00:45:34.317 SCRIPT == 96 view-all

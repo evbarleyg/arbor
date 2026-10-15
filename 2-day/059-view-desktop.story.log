@@ -1,0 +1,40 @@
+59 view-desktop: presses ⌃⌥D
+expected: {'act': 'view', 'settled': 'quiet:942', 'moves': 'any', 'floating': '165,166,167,170,172,175', 'docked': '148,151,160'}
+ODD rule 3: the last window came to rest 702 ms after the key or the button
+
+00:43:50.798 SCREEN -- begin 59 view-desktop
+00:43:50.798 SCREEN -- text 59 presses ⌃⌥D
+00:43:50.953 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 9 stand-ins, 0.46 s
+00:43:50.955 MACOS pid 18677 AXMoved w148 AXWindow/AXStandardWindow 1599 770 501 767
+00:43:50.959 MACOS pid 19971 AXMoved w151 AXWindow/AXStandardWindow 1599 770 574 767
+00:43:50.959 MACOS pid 20043 AXMoved w160 AXWindow/AXStandardWindow 1599 790 385 767
+00:43:50.960 SCREEN w241 of Arbor 0,0 1600×900 (level 4)
+00:43:50.960 SCREEN safari (w151) 1599,770 574×767
+00:43:50.960 SCREEN finder (w148) 1599,770 501×767
+00:43:50.960 SCREEN textedit (w160) 1599,790 385×767
+00:43:50.968 MACOS pid 20568 AXFocusedWindowChanged w167 AXWindow/AXStandardWindow 464 118 936 599
+00:43:50.969 MACOS pid 20568 AXMainWindowChanged w167 AXWindow/AXStandardWindow 464 118 936 599
+00:43:51.001 MACOS pid 20568 AXFocusedWindowChanged w167 AXWindow/AXStandardWindow 464 118 936 599
+00:43:51.003 SCREEN in front: process 20568 com.apple.iCal
+00:43:51.003 MACOS pid 20568 AXMainWindowChanged w167 AXWindow/AXStandardWindow 464 118 936 599
+00:43:51.003 MACOS pid 19971 AXApplicationDeactivated
+00:43:51.003 MACOS pid 20568 AXApplicationActivated
+00:43:51.004 INFO  desktop: showing the Desktop
+00:43:51.005 DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Your other windows are out of view, not closed · ⌃⌥Space shows everything
+00:43:51.005 MACOS workspace didActivate pid 20568 com.apple.iCal regular
+00:43:51.005 MACOS workspace didDeactivate pid 19971 com.apple.Safari regular
+00:43:51.007 DEBUG focus is on w167
+00:43:51.007 DEBUG w167 has the keyboard
+00:43:51.044 SCREEN w245 of Arbor 516,728 568×38 (level 6)
+00:43:51.044 SCREEN w243 of Arbor 455,109 954×617
+00:43:51.044 SCREEN w248 of Arbor left the screen
+00:43:51.044 SCREEN w253 of Arbor left the screen
+00:43:51.044 SCREEN w258 of Arbor left the screen
+00:43:51.044 SCREEN front to back: w243 calendar safari w177 mail terminal preview notes settings finder textedit w190 w252
+00:43:51.212 SCREEN w252 of Arbor left the screen
+00:43:51.212 SCREEN w244 of Arbor left the screen
+00:43:51.212 SCREEN front to back: w243 calendar safari w177 mail terminal preview notes settings finder textedit w190
+00:43:51.635 DEBUG stage down
+00:43:51.662 SCREEN w241 of Arbor left the screen
+00:43:52.365 SCREEN -- end 59 act=view settled=quiet:942 moves=any floating=165,166,167,170,172,175 docked=148,151,160
+00:43:52.559 SCRIPT == 60 view-all

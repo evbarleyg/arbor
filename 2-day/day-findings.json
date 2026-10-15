@@ -1,0 +1,4026 @@
+{
+ "sampler": "samples 15299 seconds 382.3 hz 40.0 cost-ms 2.00 late 29 longest-gap-ms 743",
+ "input": {
+  "events": 394,
+  "p50_us": 594,
+  "p99_us": 57749,
+  "max_us": 68941
+ },
+ "stage_seen": true,
+ "witnessed": true,
+ "steps": [
+  {
+   "number": 13,
+   "slug": "launch",
+   "chapter": "The walk",
+   "text": "starts Arbor",
+   "act": "quit-and-start",
+   "judged": true,
+   "began": 1792024897121,
+   "milliseconds": 1625,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 14,
+   "slug": "leave-alone",
+   "chapter": "The walk",
+   "text": "does nothing for half a minute",
+   "act": "idle",
+   "judged": true,
+   "began": 1792024898991,
+   "milliseconds": 30524,
+   "moved": {},
+   "findings": [
+    {
+     "rule": "-",
+     "detector": "busy",
+     "level": "FAIL",
+     "window": null,
+     "what": "with nothing to do Arbor used 1.6 % of a core",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 15,
+   "slug": "dock-icon-finder",
+   "chapter": "Switching between apps, nothing docked yet",
+   "text": "clicks finder's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "began": 1792024929822,
+   "milliseconds": 2067,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 16,
+   "slug": "dock-icon-safari",
+   "chapter": "Switching between apps, nothing docked yet",
+   "text": "clicks safari's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "began": 1792024932148,
+   "milliseconds": 1892,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 17,
+   "slug": "dock-icon-textedit",
+   "chapter": "Switching between apps, nothing docked yet",
+   "text": "clicks textedit's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "began": 1792024934241,
+   "milliseconds": 1875,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 18,
+   "slug": "dock-icon-terminal",
+   "chapter": "Switching between apps, nothing docked yet",
+   "text": "clicks terminal's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "began": 1792024936314,
+   "milliseconds": 1898,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 19,
+   "slug": "dock-icon-notes",
+   "chapter": "Switching between apps, nothing docked yet",
+   "text": "clicks notes's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "began": 1792024938392,
+   "milliseconds": 1858,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 20,
+   "slug": "dock-icon-calendar",
+   "chapter": "Switching between apps, nothing docked yet",
+   "text": "clicks calendar's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "began": 1792024940435,
+   "milliseconds": 2010,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 21,
+   "slug": "dock-icon-settings",
+   "chapter": "Switching between apps, nothing docked yet",
+   "text": "clicks settings's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "began": 1792024942638,
+   "milliseconds": 2024,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 22,
+   "slug": "dock-icon-preview",
+   "chapter": "Switching between apps, nothing docked yet",
+   "text": "clicks preview's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "began": 1792024944882,
+   "milliseconds": 1974,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 23,
+   "slug": "dock-icon-mail",
+   "chapter": "Switching between apps, nothing docked yet",
+   "text": "clicks mail's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "began": 1792024947077,
+   "milliseconds": 1771,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 24,
+   "slug": "cmd-tab-1",
+   "chapter": "Switching between apps, nothing docked yet",
+   "text": "holds ⌘ and presses Tab 1 time(s)",
+   "act": "switch",
+   "judged": true,
+   "began": 1792024949039,
+   "milliseconds": 1697,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 25,
+   "slug": "cmd-tab-2",
+   "chapter": "Switching between apps, nothing docked yet",
+   "text": "holds ⌘ and presses Tab 2 time(s)",
+   "act": "switch",
+   "judged": true,
+   "began": 1792024950930,
+   "milliseconds": 2015,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 26,
+   "slug": "dock-icon-finder",
+   "chapter": "The first docks, by key",
+   "text": "clicks finder's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "began": 1792024953198,
+   "milliseconds": 1795,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 27,
+   "slug": "dock-left",
+   "chapter": "The first docks, by key",
+   "text": "presses ⌃⌥⌘ and the left arrow",
+   "act": "dock-key",
+   "judged": true,
+   "began": 1792024955245,
+   "milliseconds": 2636,
+   "moved": {
+    "148": [
+     1,
+     1,
+     0
+    ],
+    "151": [
+     1,
+     1,
+     0
+    ],
+    "160": [
+     1,
+     1,
+     0
+    ],
+    "165": [
+     1,
+     1,
+     0
+    ],
+    "166": [
+     1,
+     1,
+     0
+    ],
+    "167": [
+     1,
+     1,
+     0
+    ],
+    "170": [
+     1,
+     1,
+     0
+    ],
+    "172": [
+     1,
+     1,
+     0
+    ],
+    "175": [
+     1,
+     1,
+     0
+    ],
+    "177": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "safari (w151)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 138,31 1324×791 · +2101 ms 806,31 794×791"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "textedit (w160)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 165,65 673×439 · +2101 ms 806,65 673×439"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "terminal (w165)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 740,300 877×499 · +2101 ms 806,300 793×499"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "notes (w166)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 300,105 1000×660 · +2101 ms 806,105 794×660"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "calendar (w167)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 464,118 936×599 · +2101 ms 806,118 794×599"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "settings (w170)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 437,85 723×625 · +2101 ms 806,85 723×625"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "preview (w172)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 4,35 708×424 · +2101 ms 806,35 708×424"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "mail (w175)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 240,72 1120×630 · +2101 ms 729,72 871×630"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "ODD",
+     "window": "w177 of Mail",
+     "what": "moved along with a window of its app",
+     "trace": "+0 ms 565,179 470×416 · +2101 ms 930,179 470×416",
+     "explained": "follows its window"
+    },
+    {
+     "rule": "3",
+     "detector": "slow",
+     "level": "ODD",
+     "window": null,
+     "what": "the last window came to rest 1816 ms after the key or the button, in Arbor's first act since it started",
+     "trace": null,
+     "explained": "listed, and no reason, until the release build has answered"
+    }
+   ]
+  },
+  {
+   "number": 28,
+   "slug": "dock-icon-safari",
+   "chapter": "The first docks, by key",
+   "text": "clicks safari's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "began": 1792024958211,
+   "milliseconds": 1914,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 29,
+   "slug": "dock-right",
+   "chapter": "The first docks, by key",
+   "text": "presses ⌃⌥⌘ and the right arrow",
+   "act": "dock-key",
+   "judged": true,
+   "began": 1792024960382,
+   "milliseconds": 1763,
+   "moved": {
+    "148": [
+     1,
+     1,
+     0
+    ],
+    "151": [
+     1,
+     1,
+     0
+    ],
+    "160": [
+     1,
+     1,
+     0
+    ],
+    "165": [
+     1,
+     1,
+     0
+    ],
+    "166": [
+     1,
+     1,
+     0
+    ],
+    "167": [
+     1,
+     1,
+     0
+    ],
+    "170": [
+     1,
+     1,
+     0
+    ],
+    "172": [
+     1,
+     1,
+     0
+    ],
+    "175": [
+     1,
+     1,
+     0
+    ],
+    "177": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "textedit (w160)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 806,65 673×439 · +1111 ms 541,65 461×439"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "terminal (w165)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 806,300 793×499 · +1111 ms 541,300 457×499"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "notes (w166)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 806,105 794×660 · +1111 ms 417,105 709×660"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "calendar (w167)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 806,118 794×599 · +1111 ms 431,118 680×599"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "settings (w170)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 806,85 723×625 · +1111 ms 410,85 723×625"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "preview (w172)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 806,35 708×424 · +1111 ms 417,35 708×424"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "mail (w175)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 729,72 871×630 · +1111 ms 336,72 871×630"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "ODD",
+     "window": "w177 of Mail",
+     "what": "moved along with a window of its app",
+     "trace": "+0 ms 930,179 470×416 · +1111 ms 537,179 470×416",
+     "explained": "follows its window"
+    },
+    {
+     "rule": "3",
+     "detector": "slow",
+     "level": "ODD",
+     "window": null,
+     "what": "the last window came to rest 877 ms after the key or the button",
+     "trace": null,
+     "explained": "listed, and no reason, until the release build has answered"
+    }
+   ]
+  },
+  {
+   "number": 30,
+   "slug": "dock-icon-textedit",
+   "chapter": "The first docks, by key",
+   "text": "clicks textedit's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "began": 1792024962431,
+   "milliseconds": 1965,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 31,
+   "slug": "dock-right",
+   "chapter": "The first docks, by key",
+   "text": "presses ⌃⌥⌘ and the right arrow",
+   "act": "dock-key",
+   "judged": true,
+   "began": 1792024964649,
+   "milliseconds": 1596,
+   "moved": {
+    "148": [
+     1,
+     1,
+     0
+    ],
+    "151": [
+     1,
+     1,
+     0
+    ],
+    "160": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 32,
+   "slug": "dock-icon-terminal",
+   "chapter": "Docking by real drags",
+   "text": "clicks terminal's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "began": 1792024966489,
+   "milliseconds": 1943,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 33,
+   "slug": "drag-terminal-onto-finder-right",
+   "chapter": "Docking by real drags",
+   "text": "drags terminal by its title bar onto the right part of finder and lets go",
+   "act": "drag",
+   "judged": true,
+   "began": 1792024968804,
+   "milliseconds": 5433,
+   "moved": {
+    "148": [
+     1,
+     1,
+     0
+    ],
+    "151": [
+     1,
+     1,
+     0
+    ],
+    "160": [
+     1,
+     1,
+     0
+    ],
+    "165": [
+     1,
+     1,
+     0
+    ],
+    "166": [
+     1,
+     1,
+     0
+    ],
+    "167": [
+     1,
+     1,
+     0
+    ],
+    "170": [
+     1,
+     1,
+     0
+    ],
+    "172": [
+     1,
+     1,
+     0
+    ],
+    "175": [
+     1,
+     1,
+     0
+    ],
+    "177": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "notes (w166)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 417,105 709×660 · +4554 ms 202,105 709×660"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "calendar (w167)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 431,118 680×599 · +4554 ms 217,118 680×599"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "settings (w170)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 410,85 723×625 · +4554 ms 195,85 723×625"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "preview (w172)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 417,35 708×424 · +4554 ms 203,35 708×424"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "mail (w175)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 336,72 871×630 · +4554 ms 121,72 871×630"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "ODD",
+     "window": "w177 of Mail",
+     "what": "moved along with a window of its app",
+     "trace": "+0 ms 537,179 470×416 · +4554 ms 322,179 470×416",
+     "explained": "follows its window"
+    },
+    {
+     "rule": "3",
+     "detector": "slow",
+     "level": "ODD",
+     "window": null,
+     "what": "the last window came to rest 739 ms after the key or the button",
+     "trace": null,
+     "explained": "listed, and no reason, until the release build has answered"
+    }
+   ]
+  },
+  {
+   "number": 34,
+   "slug": "drag-terminal-out",
+   "chapter": "Docking by real drags",
+   "text": "drags terminal out of the arrangement onto the Desktop and lets go",
+   "act": "drag",
+   "judged": true,
+   "began": 1792024974617,
+   "milliseconds": 5466,
+   "moved": {
+    "148": [
+     1,
+     1,
+     0
+    ],
+    "151": [
+     1,
+     1,
+     0
+    ],
+    "160": [
+     1,
+     1,
+     0
+    ],
+    "165": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "3",
+     "detector": "slow",
+     "level": "ODD",
+     "window": null,
+     "what": "the last window came to rest 761 ms after the key or the button",
+     "trace": null,
+     "explained": "listed, and no reason, until the release build has answered"
+    }
+   ]
+  },
+  {
+   "number": 35,
+   "slug": "click-finder",
+   "chapter": "Sizes",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792024980442,
+   "milliseconds": 1845,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 36,
+   "slug": "drag-gap-beside-finder",
+   "chapter": "Sizes",
+   "text": "drags the gap to the right of finder by 60 points",
+   "act": "resize",
+   "judged": true,
+   "began": 1792024982616,
+   "milliseconds": 4374,
+   "moved": {},
+   "findings": [
+    {
+     "rule": "4",
+     "detector": "focus",
+     "level": "FAIL",
+     "window": null,
+     "what": "the app in front changed (to process 20332), and nobody switched",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 37,
+   "slug": "view-all",
+   "chapter": "Switching between apps, with an arrangement",
+   "text": "presses ⌃⌥Space",
+   "act": "view",
+   "judged": true,
+   "began": 1792024987383,
+   "milliseconds": 1415,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 38,
+   "slug": "dock-icon-finder",
+   "chapter": "Switching between apps, with an arrangement",
+   "text": "clicks finder's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "began": 1792024988972,
+   "milliseconds": 1960,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 39,
+   "slug": "dock-icon-safari",
+   "chapter": "Switching between apps, with an arrangement",
+   "text": "clicks safari's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "began": 1792024991191,
+   "milliseconds": 1707,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 40,
+   "slug": "dock-icon-textedit",
+   "chapter": "Switching between apps, with an arrangement",
+   "text": "clicks textedit's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "began": 1792024993083,
+   "milliseconds": 1840,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 41,
+   "slug": "dock-icon-terminal",
+   "chapter": "Switching between apps, with an arrangement",
+   "text": "clicks terminal's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "began": 1792024995108,
+   "milliseconds": 1811,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 42,
+   "slug": "dock-icon-notes",
+   "chapter": "Switching between apps, with an arrangement",
+   "text": "clicks notes's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "began": 1792024997099,
+   "milliseconds": 1922,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 43,
+   "slug": "dock-icon-calendar",
+   "chapter": "Switching between apps, with an arrangement",
+   "text": "clicks calendar's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "began": 1792024999218,
+   "milliseconds": 1991,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 44,
+   "slug": "dock-icon-settings",
+   "chapter": "Switching between apps, with an arrangement",
+   "text": "clicks settings's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "began": 1792025001401,
+   "milliseconds": 1896,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 45,
+   "slug": "dock-icon-preview",
+   "chapter": "Switching between apps, with an arrangement",
+   "text": "clicks preview's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "began": 1792025003497,
+   "milliseconds": 2018,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 46,
+   "slug": "dock-icon-mail",
+   "chapter": "Switching between apps, with an arrangement",
+   "text": "clicks mail's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "began": 1792025005709,
+   "milliseconds": 1862,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 47,
+   "slug": "cmd-tab-1",
+   "chapter": "Switching between apps, with an arrangement",
+   "text": "holds ⌘ and presses Tab 1 time(s)",
+   "act": "switch",
+   "judged": true,
+   "began": 1792025007774,
+   "milliseconds": 1672,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 48,
+   "slug": "click-finder",
+   "chapter": "The view goes in and out",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792025009709,
+   "milliseconds": 1920,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 49,
+   "slug": "view-frame",
+   "chapter": "The view goes in and out",
+   "text": "presses ⌃⌥↩",
+   "act": "view",
+   "judged": true,
+   "began": 1792025011963,
+   "milliseconds": 1870,
+   "moved": {
+    "148": [
+     1,
+     1,
+     0
+    ],
+    "151": [
+     1,
+     1,
+     0
+    ],
+    "160": [
+     1,
+     1,
+     0
+    ],
+    "165": [
+     1,
+     1,
+     0
+    ],
+    "166": [
+     1,
+     1,
+     0
+    ],
+    "167": [
+     1,
+     1,
+     0
+    ],
+    "170": [
+     1,
+     1,
+     0
+    ],
+    "172": [
+     1,
+     1,
+     0
+    ],
+    "175": [
+     1,
+     1,
+     0
+    ],
+    "177": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 50,
+   "slug": "dock-icon-safari",
+   "chapter": "The view goes in and out",
+   "text": "clicks safari's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "began": 1792025014028,
+   "milliseconds": 2049,
+   "moved": {
+    "148": [
+     1,
+     1,
+     0
+    ],
+    "151": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 51,
+   "slug": "cmd-tab-1",
+   "chapter": "The view goes in and out",
+   "text": "holds ⌘ and presses Tab 1 time(s)",
+   "act": "switch",
+   "judged": true,
+   "began": 1792025016258,
+   "milliseconds": 1731,
+   "moved": {
+    "148": [
+     1,
+     1,
+     0
+    ],
+    "151": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 52,
+   "slug": "dock-icon-calendar",
+   "chapter": "The view goes in and out",
+   "text": "clicks calendar's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "began": 1792025018155,
+   "milliseconds": 2226,
+   "moved": {
+    "148": [
+     1,
+     1,
+     0
+    ],
+    "165": [
+     1,
+     1,
+     0
+    ],
+    "166": [
+     1,
+     1,
+     0
+    ],
+    "167": [
+     1,
+     1,
+     0
+    ],
+    "170": [
+     1,
+     1,
+     0
+    ],
+    "172": [
+     1,
+     1,
+     0
+    ],
+    "175": [
+     1,
+     1,
+     0
+    ],
+    "177": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 53,
+   "slug": "view-all",
+   "chapter": "The view goes in and out",
+   "text": "presses ⌃⌥Space",
+   "act": "view",
+   "judged": true,
+   "began": 1792025020601,
+   "milliseconds": 1307,
+   "moved": {
+    "148": [
+     1,
+     1,
+     0
+    ],
+    "151": [
+     1,
+     1,
+     0
+    ],
+    "160": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "notes (w166)",
+     "what": "is not back where it was after step 37: 300,105 1000×660, it was at 202,105 709×660",
+     "trace": null
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "calendar (w167)",
+     "what": "is not back where it was after step 37: 464,118 936×599, it was at 217,118 680×599",
+     "trace": null
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "settings (w170)",
+     "what": "is not back where it was after step 37: 437,85 723×625, it was at 195,85 723×625",
+     "trace": null
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "preview (w172)",
+     "what": "is not back where it was after step 37: 4,35 708×424, it was at 203,35 708×424",
+     "trace": null
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "mail (w175)",
+     "what": "is not back where it was after step 37: 240,72 1120×630, it was at 121,72 871×630",
+     "trace": null
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "w177 of Mail",
+     "what": "is not back where it was after step 37: 565,179 470×416, it was at 322,179 470×416",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 54,
+   "slug": "click-safari",
+   "chapter": "The view goes in and out",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792025022190,
+   "milliseconds": 1828,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 55,
+   "slug": "view-frame",
+   "chapter": "The view goes in and out",
+   "text": "presses ⌃⌥↩",
+   "act": "view",
+   "judged": true,
+   "began": 1792025024250,
+   "milliseconds": 1554,
+   "moved": {
+    "148": [
+     1,
+     1,
+     0
+    ],
+    "151": [
+     1,
+     1,
+     0
+    ],
+    "160": [
+     1,
+     1,
+     0
+    ],
+    "165": [
+     1,
+     1,
+     0
+    ],
+    "166": [
+     1,
+     1,
+     0
+    ],
+    "167": [
+     1,
+     1,
+     0
+    ],
+    "170": [
+     1,
+     1,
+     0
+    ],
+    "172": [
+     1,
+     1,
+     0
+    ],
+    "175": [
+     1,
+     1,
+     0
+    ],
+    "177": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 56,
+   "slug": "view-left",
+   "chapter": "The view goes in and out",
+   "text": "presses ⌃⌥←",
+   "act": "view",
+   "judged": true,
+   "began": 1792025025990,
+   "milliseconds": 1362,
+   "moved": {
+    "151": [
+     1,
+     1,
+     0
+    ],
+    "165": [
+     1,
+     1,
+     0
+    ],
+    "166": [
+     1,
+     1,
+     0
+    ],
+    "167": [
+     1,
+     1,
+     0
+    ],
+    "170": [
+     1,
+     1,
+     0
+    ],
+    "172": [
+     1,
+     1,
+     0
+    ],
+    "175": [
+     1,
+     1,
+     0
+    ],
+    "177": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 57,
+   "slug": "view-back",
+   "chapter": "The view goes in and out",
+   "text": "presses ⌃⌥[",
+   "act": "view",
+   "judged": true,
+   "began": 1792025027568,
+   "milliseconds": 1409,
+   "moved": {
+    "151": [
+     1,
+     1,
+     0
+    ],
+    "165": [
+     1,
+     1,
+     0
+    ],
+    "166": [
+     1,
+     1,
+     0
+    ],
+    "167": [
+     1,
+     1,
+     0
+    ],
+    "170": [
+     1,
+     1,
+     0
+    ],
+    "172": [
+     1,
+     1,
+     0
+    ],
+    "175": [
+     1,
+     1,
+     0
+    ],
+    "177": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 58,
+   "slug": "view-out",
+   "chapter": "The view goes in and out",
+   "text": "presses ⌃⌥↑",
+   "act": "view",
+   "judged": true,
+   "began": 1792025029175,
+   "milliseconds": 1421,
+   "moved": {
+    "148": [
+     1,
+     1,
+     0
+    ],
+    "151": [
+     1,
+     1,
+     0
+    ],
+    "160": [
+     1,
+     1,
+     0
+    ],
+    "165": [
+     1,
+     1,
+     0
+    ],
+    "166": [
+     1,
+     1,
+     0
+    ],
+    "167": [
+     1,
+     1,
+     0
+    ],
+    "170": [
+     1,
+     1,
+     0
+    ],
+    "172": [
+     1,
+     1,
+     0
+    ],
+    "175": [
+     1,
+     1,
+     0
+    ],
+    "177": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "3",
+     "detector": "slow",
+     "level": "ODD",
+     "window": null,
+     "what": "the last window came to rest 702 ms after the key or the button",
+     "trace": null,
+     "explained": "listed, and no reason, until the release build has answered"
+    }
+   ]
+  },
+  {
+   "number": 59,
+   "slug": "view-desktop",
+   "chapter": "The view goes in and out",
+   "text": "presses ⌃⌥D",
+   "act": "view",
+   "judged": true,
+   "began": 1792025030798,
+   "milliseconds": 1567,
+   "moved": {
+    "148": [
+     1,
+     1,
+     0
+    ],
+    "151": [
+     1,
+     1,
+     0
+    ],
+    "160": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "3",
+     "detector": "slow",
+     "level": "ODD",
+     "window": null,
+     "what": "the last window came to rest 702 ms after the key or the button",
+     "trace": null,
+     "explained": "listed, and no reason, until the release build has answered"
+    }
+   ]
+  },
+  {
+   "number": 60,
+   "slug": "view-all",
+   "chapter": "The view goes in and out",
+   "text": "presses ⌃⌥Space",
+   "act": "view",
+   "judged": true,
+   "began": 1792025032567,
+   "milliseconds": 1362,
+   "moved": {
+    "148": [
+     1,
+     1,
+     0
+    ],
+    "151": [
+     1,
+     1,
+     0
+    ],
+    "160": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 61,
+   "slug": "click-safari",
+   "chapter": "Windows come and go",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792025034344,
+   "milliseconds": 1919,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 62,
+   "slug": "new-window-safari",
+   "chapter": "Windows come and go",
+   "text": "presses ⌘N in safari",
+   "act": "open-close",
+   "judged": false,
+   "began": 1792025036481,
+   "milliseconds": 2070,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 63,
+   "slug": "window-menu-safari",
+   "chapter": "Windows come and go",
+   "text": "chooses safari's first window in the Window menu",
+   "act": "switch",
+   "judged": false,
+   "began": 1792025039779,
+   "milliseconds": 4417,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 64,
+   "slug": "cmd-backtick",
+   "chapter": "Windows come and go",
+   "text": "presses ⌘` for the app's next window",
+   "act": "switch",
+   "judged": true,
+   "began": 1792025044430,
+   "milliseconds": 1386,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 65,
+   "slug": "close-window",
+   "chapter": "Windows come and go",
+   "text": "presses ⌘W",
+   "act": "open-close",
+   "judged": true,
+   "began": 1792025046011,
+   "milliseconds": 1349,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 66,
+   "slug": "click-safari",
+   "chapter": "Windows come and go",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792025047654,
+   "milliseconds": 1873,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 67,
+   "slug": "view-frame",
+   "chapter": "Windows come and go",
+   "text": "presses ⌃⌥↩",
+   "act": "view",
+   "judged": true,
+   "began": 1792025049740,
+   "milliseconds": 1647,
+   "moved": {
+    "148": [
+     1,
+     1,
+     0
+    ],
+    "151": [
+     1,
+     1,
+     0
+    ],
+    "160": [
+     1,
+     1,
+     0
+    ],
+    "165": [
+     1,
+     1,
+     0
+    ],
+    "166": [
+     1,
+     1,
+     0
+    ],
+    "167": [
+     1,
+     1,
+     0
+    ],
+    "170": [
+     1,
+     1,
+     0
+    ],
+    "172": [
+     1,
+     1,
+     0
+    ],
+    "175": [
+     1,
+     1,
+     0
+    ],
+    "177": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "3",
+     "detector": "slow",
+     "level": "ODD",
+     "window": null,
+     "what": "the last window came to rest 711 ms after the key or the button",
+     "trace": null,
+     "explained": "listed, and no reason, until the release build has answered"
+    }
+   ]
+  },
+  {
+   "number": 68,
+   "slug": "new-window-safari",
+   "chapter": "Windows come and go",
+   "text": "presses ⌘N in safari",
+   "act": "open-close",
+   "judged": true,
+   "began": 1792025051618,
+   "milliseconds": 1591,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 69,
+   "slug": "close-window",
+   "chapter": "Windows come and go",
+   "text": "presses ⌘W",
+   "act": "open-close",
+   "judged": true,
+   "began": 1792025053460,
+   "milliseconds": 1358,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 70,
+   "slug": "view-all",
+   "chapter": "Windows come and go",
+   "text": "presses ⌃⌥Space",
+   "act": "view",
+   "judged": true,
+   "began": 1792025055029,
+   "milliseconds": 1358,
+   "moved": {
+    "148": [
+     1,
+     1,
+     0
+    ],
+    "151": [
+     1,
+     1,
+     0
+    ],
+    "160": [
+     1,
+     1,
+     0
+    ],
+    "165": [
+     1,
+     1,
+     0
+    ],
+    "166": [
+     1,
+     1,
+     0
+    ],
+    "167": [
+     1,
+     1,
+     0
+    ],
+    "170": [
+     1,
+     1,
+     0
+    ],
+    "172": [
+     1,
+     1,
+     0
+    ],
+    "175": [
+     1,
+     1,
+     0
+    ],
+    "177": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 71,
+   "slug": "click-safari",
+   "chapter": "Windows come and go",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792025056740,
+   "milliseconds": 2024,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 72,
+   "slug": "minimize-safari",
+   "chapter": "Windows come and go",
+   "text": "presses ⌘M",
+   "act": "open-close",
+   "judged": true,
+   "began": 1792025058973,
+   "milliseconds": 2474,
+   "moved": {
+    "151": [
+     1,
+     17,
+     452
+    ],
+    "160": [
+     1,
+     1,
+     0
+    ],
+    "165": [
+     1,
+     1,
+     0
+    ],
+    "166": [
+     1,
+     1,
+     0
+    ],
+    "167": [
+     1,
+     1,
+     0
+    ],
+    "170": [
+     1,
+     1,
+     0
+    ],
+    "172": [
+     1,
+     1,
+     0
+    ],
+    "175": [
+     1,
+     1,
+     0
+    ],
+    "177": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "terminal (w165)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 97,238 877×499 · +1440 ms 525,238 331×499"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "notes (w166)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 300,105 1000×660 · +1440 ms 335,105 709×660"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "calendar (w167)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 464,118 936×599 · +1440 ms 350,118 680×599"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "settings (w170)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 437,85 723×625 · +1440 ms 328,85 723×625"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "preview (w172)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 4,35 708×424 · +1440 ms 336,35 708×424"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "mail (w175)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 240,72 1120×630 · +1440 ms 254,72 871×630"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "ODD",
+     "window": "w177 of Mail",
+     "what": "moved along with a window of its app",
+     "trace": "+0 ms 565,179 470×416 · +1440 ms 455,179 470×416",
+     "explained": "follows its window"
+    }
+   ]
+  },
+  {
+   "number": 73,
+   "slug": "restore-safari",
+   "chapter": "Windows come and go",
+   "text": "clicks its miniature in the Dock",
+   "act": "open-close",
+   "judged": true,
+   "began": 1792025061633,
+   "milliseconds": 2408,
+   "moved": {
+    "151": [
+     1,
+     18,
+     495
+    ],
+    "160": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "terminal (w165)",
+     "what": "is not back where it was after step 71: 525,238 331×499, it was at 97,238 877×499",
+     "trace": null
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "notes (w166)",
+     "what": "is not back where it was after step 71: 335,105 709×660, it was at 300,105 1000×660",
+     "trace": null
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "calendar (w167)",
+     "what": "is not back where it was after step 71: 350,118 680×599, it was at 464,118 936×599",
+     "trace": null
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "settings (w170)",
+     "what": "is not back where it was after step 71: 328,85 723×625, it was at 437,85 723×625",
+     "trace": null
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "preview (w172)",
+     "what": "is not back where it was after step 71: 336,35 708×424, it was at 4,35 708×424",
+     "trace": null
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "mail (w175)",
+     "what": "is not back where it was after step 71: 254,72 871×630, it was at 240,72 1120×630",
+     "trace": null
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "w177 of Mail",
+     "what": "is not back where it was after step 71: 455,179 470×416, it was at 565,179 470×416",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 74,
+   "slug": "click-finder",
+   "chapter": "Windows come and go",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792025064298,
+   "milliseconds": 1948,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 75,
+   "slug": "hide-finder",
+   "chapter": "Windows come and go",
+   "text": "presses ⌘H",
+   "act": "open-close",
+   "judged": true,
+   "began": 1792025066493,
+   "milliseconds": 1679,
+   "moved": {
+    "151": [
+     1,
+     1,
+     0
+    ],
+    "160": [
+     1,
+     2,
+     74
+    ],
+    "165": [
+     1,
+     1,
+     0
+    ],
+    "166": [
+     1,
+     1,
+     0
+    ],
+    "167": [
+     1,
+     1,
+     0
+    ],
+    "170": [
+     1,
+     1,
+     0
+    ],
+    "172": [
+     1,
+     1,
+     0
+    ],
+    "175": [
+     1,
+     1,
+     0
+    ],
+    "177": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "terminal (w165)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 525,238 331×499 · +349 ms 0,238 268×499"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "notes (w166)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 335,105 709×660 · +349 ms 0,105 709×660"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "calendar (w167)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 350,118 680×599 · +349 ms 0,118 680×599"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "settings (w170)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 328,85 723×625 · +349 ms 0,85 723×625"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "preview (w172)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 336,35 708×424 · +349 ms 0,35 708×424"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "mail (w175)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 254,72 871×630 · +349 ms 0,72 871×630"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "ODD",
+     "window": "w177 of Mail",
+     "what": "moved along with a window of its app",
+     "trace": "+0 ms 455,179 470×416 · +349 ms 201,179 470×416",
+     "explained": "follows its window"
+    }
+   ]
+  },
+  {
+   "number": 76,
+   "slug": "unhide-finder",
+   "chapter": "Windows come and go",
+   "text": "clicks its icon in the Dock",
+   "act": "open-close",
+   "judged": true,
+   "began": 1792025068349,
+   "milliseconds": 1896,
+   "moved": {
+    "151": [
+     1,
+     1,
+     0
+    ],
+    "160": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "terminal (w165)",
+     "what": "is not back where it was after step 74: 0,238 268×499, it was at 525,238 331×499",
+     "trace": null
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "notes (w166)",
+     "what": "is not back where it was after step 74: 0,105 709×660, it was at 335,105 709×660",
+     "trace": null
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "calendar (w167)",
+     "what": "is not back where it was after step 74: 0,118 680×599, it was at 350,118 680×599",
+     "trace": null
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "settings (w170)",
+     "what": "is not back where it was after step 74: 0,85 723×625, it was at 328,85 723×625",
+     "trace": null
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "preview (w172)",
+     "what": "is not back where it was after step 74: 0,35 708×424, it was at 336,35 708×424",
+     "trace": null
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "mail (w175)",
+     "what": "is not back where it was after step 74: 0,72 871×630, it was at 254,72 871×630",
+     "trace": null
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "w177 of Mail",
+     "what": "is not back where it was after step 74: 201,179 470×416, it was at 455,179 470×416",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 77,
+   "slug": "dock-icon-textedit",
+   "chapter": "Windows come and go",
+   "text": "clicks textedit's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "began": 1792025070436,
+   "milliseconds": 1982,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 78,
+   "slug": "quit-textedit",
+   "chapter": "Windows come and go",
+   "text": "presses ⌘Q in textedit",
+   "act": "open-close",
+   "judged": true,
+   "began": 1792025072637,
+   "milliseconds": 1742,
+   "moved": {
+    "151": [
+     1,
+     1,
+     0
+    ],
+    "165": [
+     1,
+     1,
+     0
+    ],
+    "166": [
+     1,
+     1,
+     0
+    ],
+    "167": [
+     1,
+     1,
+     0
+    ],
+    "170": [
+     1,
+     1,
+     0
+    ],
+    "172": [
+     1,
+     1,
+     0
+    ],
+    "175": [
+     1,
+     1,
+     0
+    ],
+    "177": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "terminal (w165)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 0,238 268×499 · +906 ms 525,238 401×499"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "notes (w166)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 0,105 709×660 · +906 ms 372,105 709×660"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "calendar (w167)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 0,118 680×599 · +906 ms 386,118 680×599"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "settings (w170)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 0,85 723×625 · +906 ms 365,85 723×625"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "preview (w172)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 0,35 708×424 · +906 ms 372,35 708×424"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "mail (w175)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 0,72 871×630 · +906 ms 291,72 871×630"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "ODD",
+     "window": "w177 of Mail",
+     "what": "moved along with a window of its app",
+     "trace": "+0 ms 201,179 470×416 · +906 ms 492,179 470×416",
+     "explained": "follows its window"
+    }
+   ]
+  },
+  {
+   "number": 79,
+   "slug": "reopen-textedit",
+   "chapter": "Windows come and go",
+   "text": "opens textedit's document again",
+   "act": "open-close",
+   "judged": false,
+   "began": 1792025074559,
+   "milliseconds": 2259,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 80,
+   "slug": "click-safari",
+   "chapter": "Full screen",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792025077157,
+   "milliseconds": 2016,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 81,
+   "slug": "full-screen",
+   "chapter": "Full screen",
+   "text": "presses ⌃⌘F in Safari",
+   "act": "macos-own",
+   "judged": true,
+   "began": 1792025079382,
+   "milliseconds": 3139,
+   "moved": {
+    "151": [
+     1,
+     1,
+     0
+    ],
+    "165": [
+     1,
+     1,
+     0
+    ],
+    "166": [
+     1,
+     1,
+     0
+    ],
+    "167": [
+     1,
+     2,
+     129
+    ],
+    "170": [
+     1,
+     1,
+     0
+    ],
+    "172": [
+     1,
+     1,
+     0
+    ],
+    "175": [
+     1,
+     1,
+     0
+    ],
+    "177": [
+     1,
+     1,
+     0
+    ],
+    "321": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 82,
+   "slug": "leave-full-screen",
+   "chapter": "Full screen",
+   "text": "presses ⌃⌘F again",
+   "act": "macos-own",
+   "judged": true,
+   "began": 1792025082695,
+   "milliseconds": 2974,
+   "moved": {
+    "151": [
+     1,
+     2,
+     66
+    ],
+    "165": [
+     1,
+     1,
+     0
+    ],
+    "166": [
+     1,
+     1,
+     0
+    ],
+    "167": [
+     1,
+     1,
+     0
+    ],
+    "170": [
+     1,
+     1,
+     0
+    ],
+    "172": [
+     1,
+     1,
+     0
+    ],
+    "175": [
+     1,
+     1,
+     0
+    ],
+    "177": [
+     1,
+     1,
+     0
+    ],
+    "321": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "textedit (w321)",
+     "what": "is not back where it was after step 80: 525,65 403×439, it was at 165,65 673×439",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 83,
+   "slug": "click-wallpaper",
+   "chapter": "A click lands on the wallpaper, a double-click on a title bar",
+   "text": "clicks on the wallpaper",
+   "act": "macos-own",
+   "judged": true,
+   "began": 1792025089910,
+   "milliseconds": 2240,
+   "moved": {
+    "148": [
+     1,
+     1,
+     0
+    ],
+    "151": [
+     1,
+     1,
+     0
+    ],
+    "165": [
+     1,
+     1,
+     0
+    ],
+    "166": [
+     1,
+     1,
+     0
+    ],
+    "167": [
+     1,
+     1,
+     0
+    ],
+    "170": [
+     1,
+     1,
+     0
+    ],
+    "172": [
+     1,
+     1,
+     0
+    ],
+    "175": [
+     1,
+     1,
+     0
+    ],
+    "177": [
+     1,
+     1,
+     0
+    ],
+    "321": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 84,
+   "slug": "click-wallpaper-again",
+   "chapter": "A click lands on the wallpaper, a double-click on a title bar",
+   "text": "clicks on the wallpaper again",
+   "act": "macos-own",
+   "judged": true,
+   "began": 1792025092350,
+   "milliseconds": 2308,
+   "moved": {
+    "148": [
+     1,
+     1,
+     0
+    ],
+    "151": [
+     1,
+     1,
+     0
+    ],
+    "165": [
+     1,
+     1,
+     0
+    ],
+    "166": [
+     1,
+     1,
+     0
+    ],
+    "167": [
+     1,
+     1,
+     0
+    ],
+    "170": [
+     1,
+     1,
+     0
+    ],
+    "172": [
+     1,
+     1,
+     0
+    ],
+    "175": [
+     1,
+     1,
+     0
+    ],
+    "177": [
+     1,
+     1,
+     0
+    ],
+    "321": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 85,
+   "slug": "double-click-finder",
+   "chapter": "A click lands on the wallpaper, a double-click on a title bar",
+   "text": "double-clicks finder's title bar: macOS zooms the window",
+   "act": "macos-own",
+   "judged": true,
+   "began": 1792025094915,
+   "milliseconds": 2884,
+   "moved": {
+    "148": [
+     2,
+     15,
+     677
+    ]
+   },
+   "findings": [
+    {
+     "rule": "1",
+     "detector": "fought",
+     "level": "FAIL",
+     "window": "finder (w148)",
+     "what": "macOS answered the double-click on its title bar, and it was moved again afterwards (2 moves)",
+     "trace": "+0 ms 12,43 501×767 · +1044 ms 12,43 502×760 · +1118 ms 12,43 512×655 · +1146 ms 12,43 519×586 · +1169 ms 12,43 523×547 · +1194 ms 12,43 530×471 · … 5 more … · +1296 ms 12,43 548×286 · +1319 ms 12,43 550×270 · +1360 ms 12,43 551×253 · +1379 ms 12,43 551×252 · +1721 ms 12,43 501×767"
+    }
+   ]
+  },
+  {
+   "number": 86,
+   "slug": "double-click-finder-again",
+   "chapter": "A click lands on the wallpaper, a double-click on a title bar",
+   "text": "double-clicks it again: macOS takes the window back",
+   "act": "macos-own",
+   "judged": true,
+   "began": 1792025098021,
+   "milliseconds": 2713,
+   "moved": {
+    "148": [
+     2,
+     13,
+     663
+    ]
+   },
+   "findings": [
+    {
+     "rule": "1",
+     "detector": "fought",
+     "level": "FAIL",
+     "window": "finder (w148)",
+     "what": "macOS answered the double-click on its title bar, and it was moved again afterwards (2 moves)",
+     "trace": "+0 ms 12,43 501×767 · +888 ms 12,43 501×766 · +912 ms 12,43 504×745 · +960 ms 12,43 510×683 · +981 ms 12,43 513×649 · +1000 ms 12,43 516×613 · … 3 more … · +1129 ms 12,43 544×333 · +1171 ms 12,43 550×269 · +1224 ms 12,43 551×253 · +1231 ms 12,43 551×252 · +1551 ms 12,43 501×767"
+    }
+   ]
+  },
+  {
+   "number": 87,
+   "slug": "dock-icon-calendar",
+   "chapter": "A click lands on the wallpaper, a double-click on a title bar",
+   "text": "clicks calendar's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "began": 1792025100969,
+   "milliseconds": 1884,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 88,
+   "slug": "double-click-calendar",
+   "chapter": "A click lands on the wallpaper, a double-click on a title bar",
+   "text": "double-clicks calendar's title bar: macOS zooms the window",
+   "act": "macos-own",
+   "judged": true,
+   "began": 1792025103181,
+   "milliseconds": 2404,
+   "moved": {
+    "167": [
+     1,
+     8,
+     320
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 89,
+   "slug": "double-click-calendar-again",
+   "chapter": "A click lands on the wallpaper, a double-click on a title bar",
+   "text": "double-clicks it again: macOS takes the window back",
+   "act": "macos-own",
+   "judged": true,
+   "began": 1792025105783,
+   "milliseconds": 2478,
+   "moved": {
+    "167": [
+     1,
+     15,
+     383
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 90,
+   "slug": "dock-icon-notes",
+   "chapter": "Where macOS tiles too",
+   "text": "clicks notes's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "began": 1792025108503,
+   "milliseconds": 1775,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 91,
+   "slug": "drag-notes-to-left-edge",
+   "chapter": "Where macOS tiles too",
+   "text": "drags notes by its title bar against the left edge of the screen and lets go",
+   "act": "drag-where-macos-tiles",
+   "judged": true,
+   "began": 1792025110525,
+   "milliseconds": 10947,
+   "moved": {
+    "166": [
+     1,
+     7,
+     268
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 92,
+   "slug": "click-calendar",
+   "chapter": "Where macOS tiles too",
+   "text": "clicks calendar's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792025121798,
+   "milliseconds": 1792,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 93,
+   "slug": "drag-calendar-to-top-edge",
+   "chapter": "Where macOS tiles too",
+   "text": "drags calendar by its title bar against the top edge of the screen and lets go",
+   "act": "drag-where-macos-tiles",
+   "judged": true,
+   "began": 1792025123819,
+   "milliseconds": 6496,
+   "moved": {
+    "148": [
+     1,
+     1,
+     0
+    ],
+    "151": [
+     1,
+     1,
+     0
+    ],
+    "165": [
+     1,
+     1,
+     0
+    ],
+    "167": [
+     1,
+     2,
+     113
+    ],
+    "170": [
+     1,
+     1,
+     0
+    ],
+    "172": [
+     1,
+     1,
+     0
+    ],
+    "175": [
+     1,
+     1,
+     0
+    ],
+    "177": [
+     1,
+     1,
+     0
+    ],
+    "321": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "terminal (w165)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 525,238 401×499 · +5248 ms 525,433 401×379"
+    },
+    {
+     "rule": "1",
+     "detector": "fought",
+     "level": "FAIL",
+     "window": "calendar (w167)",
+     "what": "macOS's tiling preview and Arbor's drop preview were up at the same time",
+     "trace": null
+    },
+    {
+     "rule": "1",
+     "detector": "fought",
+     "level": "FAIL",
+     "window": "calendar (w167)",
+     "what": "macOS answered the drag, and Arbor docked the window",
+     "trace": null
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "calendar (w167)",
+     "what": "went 620 points out of its way before it ended up",
+     "trace": "+0 ms 310,31 680×599 · +1066 ms 0,31 1600×791 · +1179 ms 1599,770 1600×791"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "settings (w170)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 365,85 723×625 · +5248 ms 365,352 723×470"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "preview (w172)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 372,35 708×424 · +5248 ms 372,433 708×389"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "mail (w175)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 291,72 871×630 · +5248 ms 291,433 871×389"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "ODD",
+     "window": "w177 of Mail",
+     "what": "moved along with a window of its app",
+     "trace": "+0 ms 492,179 470×416 · +5248 ms 492,485 470×416",
+     "explained": "follows its window"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "textedit (w321)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 525,65 403×439 · +5248 ms 525,433 403×389"
+    },
+    {
+     "rule": "4",
+     "detector": "focus",
+     "level": "FAIL",
+     "window": "calendar (w167)",
+     "what": "is not wholly in view: 0% of it, at 1599,770 1600×791 in 0,31 1600×791",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 94,
+   "slug": "view-all",
+   "chapter": "Where macOS tiles too",
+   "text": "presses ⌃⌥Space",
+   "act": "view",
+   "judged": true,
+   "began": 1792025130653,
+   "milliseconds": 1383,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 95,
+   "slug": "click-tile",
+   "chapter": "Where macOS tiles too",
+   "text": "clicks the tile that stands in for a window",
+   "act": "tile-click",
+   "judged": true,
+   "began": 1792025132271,
+   "milliseconds": 1778,
+   "moved": {},
+   "findings": [
+    {
+     "rule": "4",
+     "detector": "behind",
+     "level": "FAIL",
+     "window": "calendar (w167)",
+     "what": "is not in front: notes (w166) ahead of it, none of which covers it",
+     "trace": null
+    },
+    {
+     "rule": "4",
+     "detector": "focus",
+     "level": "FAIL",
+     "window": "calendar (w167)",
+     "what": "its app is not the one in front (process 20515 is)",
+     "trace": null
+    },
+    {
+     "rule": "4",
+     "detector": "focus",
+     "level": "FAIL",
+     "window": "calendar (w167)",
+     "what": "is not wholly in view: 0% of it, at 1599,770 1600×791 in 0,31 1600×791",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 96,
+   "slug": "view-all",
+   "chapter": "Where macOS tiles too",
+   "text": "presses ⌃⌥Space",
+   "act": "view",
+   "judged": true,
+   "began": 1792025134325,
+   "milliseconds": 1282,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 97,
+   "slug": "click-safari",
+   "chapter": "The ways out",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792025135985,
+   "milliseconds": 1688,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 98,
+   "slug": "pause",
+   "chapter": "The ways out",
+   "text": "presses ⌃⌥⎋",
+   "act": "way-out",
+   "judged": true,
+   "began": 1792025137917,
+   "milliseconds": 1411,
+   "moved": {
+    "167": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "5",
+     "detector": "size-lost",
+     "level": "FAIL",
+     "window": "finder (w148)",
+     "what": "is 12,433 501×377; its own size was 340,120 920×436",
+     "trace": null
+    },
+    {
+     "rule": "5",
+     "detector": "size-lost",
+     "level": "FAIL",
+     "window": "safari (w151)",
+     "what": "is 940,433 648×377; its own size was 138,31 1324×791",
+     "trace": null
+    },
+    {
+     "rule": "5",
+     "detector": "size-lost",
+     "level": "FAIL",
+     "window": "terminal (w165)",
+     "what": "is 525,433 401×379; its own size was 97,238 877×499",
+     "trace": null
+    },
+    {
+     "rule": "5",
+     "detector": "size-lost",
+     "level": "FAIL",
+     "window": "calendar (w167)",
+     "what": "is 386,118 680×599; its own size was 464,118 936×599",
+     "trace": null
+    },
+    {
+     "rule": "5",
+     "detector": "size-lost",
+     "level": "FAIL",
+     "window": "settings (w170)",
+     "what": "is 365,352 723×470; its own size was 437,85 723×625",
+     "trace": null
+    },
+    {
+     "rule": "5",
+     "detector": "size-lost",
+     "level": "FAIL",
+     "window": "preview (w172)",
+     "what": "is 372,433 708×389; its own size was 4,35 708×424",
+     "trace": null
+    },
+    {
+     "rule": "5",
+     "detector": "size-lost",
+     "level": "FAIL",
+     "window": "mail (w175)",
+     "what": "is 291,433 871×389; its own size was 240,72 1120×630",
+     "trace": null
+    },
+    {
+     "rule": "5",
+     "detector": "size-lost",
+     "level": "FAIL",
+     "window": "textedit (w321)",
+     "what": "is 525,433 403×389; its own size was 165,65 673×439",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 99,
+   "slug": "drag-calendar-by",
+   "chapter": "The ways out",
+   "text": "drags calendar, which floats, by its title bar 60 across and 60 down",
+   "act": "drag",
+   "judged": true,
+   "began": 1792025139631,
+   "milliseconds": 4953,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 100,
+   "slug": "resume",
+   "chapter": "The ways out",
+   "text": "presses ⌃⌥⎋",
+   "act": "way-out",
+   "judged": true,
+   "began": 1792025144760,
+   "milliseconds": 1580,
+   "moved": {
+    "148": [
+     1,
+     1,
+     0
+    ],
+    "151": [
+     1,
+     1,
+     0
+    ],
+    "165": [
+     1,
+     1,
+     0
+    ],
+    "166": [
+     1,
+     1,
+     0
+    ],
+    "167": [
+     2,
+     2,
+     695
+    ],
+    "170": [
+     1,
+     1,
+     0
+    ],
+    "172": [
+     1,
+     1,
+     0
+    ],
+    "175": [
+     1,
+     1,
+     0
+    ],
+    "177": [
+     1,
+     1,
+     0
+    ],
+    "321": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "calendar (w167)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 446,178 680×599 · +200 ms 1599,770 680×599 · +895 ms 12,43 1576×767"
+    },
+    {
+     "rule": "3",
+     "detector": "slow",
+     "level": "ODD",
+     "window": null,
+     "what": "the last window came to rest 746 ms after the key or the button",
+     "trace": null,
+     "explained": "listed, and no reason, until the release build has answered"
+    }
+   ]
+  },
+  {
+   "number": 101,
+   "slug": "float-all",
+   "chapter": "The ways out",
+   "text": "presses ⌃⌥⇧F",
+   "act": "way-out",
+   "judged": true,
+   "began": 1792025146535,
+   "milliseconds": 1685,
+   "moved": {
+    "148": [
+     1,
+     1,
+     0
+    ],
+    "151": [
+     1,
+     1,
+     0
+    ],
+    "165": [
+     1,
+     1,
+     0
+    ],
+    "166": [
+     1,
+     1,
+     0
+    ],
+    "167": [
+     1,
+     1,
+     0
+    ],
+    "170": [
+     1,
+     1,
+     0
+    ],
+    "172": [
+     1,
+     1,
+     0
+    ],
+    "175": [
+     1,
+     1,
+     0
+    ],
+    "177": [
+     1,
+     1,
+     0
+    ],
+    "321": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "5",
+     "detector": "size-lost",
+     "level": "FAIL",
+     "window": "calendar (w167)",
+     "what": "has its size back but not its place: 386,118 680×599, it was at 446,178 680×599",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 102,
+   "slug": "dock-icon-finder",
+   "chapter": "The ways out",
+   "text": "clicks finder's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "began": 1792025148434,
+   "milliseconds": 1973,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 103,
+   "slug": "dock-left",
+   "chapter": "The ways out",
+   "text": "presses ⌃⌥⌘ and the left arrow",
+   "act": "dock-key",
+   "judged": true,
+   "began": 1792025150619,
+   "milliseconds": 1483,
+   "moved": {
+    "148": [
+     1,
+     1,
+     0
+    ],
+    "151": [
+     1,
+     1,
+     0
+    ],
+    "165": [
+     1,
+     1,
+     0
+    ],
+    "166": [
+     1,
+     1,
+     0
+    ],
+    "167": [
+     1,
+     1,
+     0
+    ],
+    "170": [
+     1,
+     1,
+     0
+    ],
+    "172": [
+     1,
+     1,
+     0
+    ],
+    "175": [
+     1,
+     1,
+     0
+    ],
+    "177": [
+     1,
+     1,
+     0
+    ],
+    "321": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "safari (w151)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 138,31 1324×791 · +827 ms 806,31 794×791"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "terminal (w165)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 97,238 877×499 · +827 ms 806,238 793×499"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "notes (w166)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms -1,32 800×791 · +827 ms 806,32 794×791"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "calendar (w167)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 386,118 680×599 · +827 ms 806,118 680×599"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "settings (w170)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 437,85 723×625 · +827 ms 806,85 723×625"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "preview (w172)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 4,35 708×424 · +827 ms 806,35 708×424"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "mail (w175)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 240,72 1120×630 · +827 ms 729,72 871×630"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "ODD",
+     "window": "w177 of Mail",
+     "what": "moved along with a window of its app",
+     "trace": "+0 ms 565,179 470×416 · +827 ms 930,179 470×416",
+     "explained": "follows its window"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "textedit (w321)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 165,65 673×439 · +827 ms 806,65 673×439"
+    }
+   ]
+  },
+  {
+   "number": 104,
+   "slug": "click-safari",
+   "chapter": "The ways out",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792025152498,
+   "milliseconds": 1825,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 105,
+   "slug": "dock-right",
+   "chapter": "The ways out",
+   "text": "presses ⌃⌥⌘ and the right arrow",
+   "act": "dock-key",
+   "judged": true,
+   "began": 1792025154572,
+   "milliseconds": 1859,
+   "moved": {
+    "148": [
+     1,
+     1,
+     0
+    ],
+    "151": [
+     1,
+     1,
+     0
+    ],
+    "165": [
+     1,
+     1,
+     0
+    ],
+    "166": [
+     1,
+     1,
+     0
+    ],
+    "167": [
+     1,
+     1,
+     0
+    ],
+    "170": [
+     1,
+     1,
+     0
+    ],
+    "172": [
+     1,
+     1,
+     0
+    ],
+    "175": [
+     1,
+     1,
+     0
+    ],
+    "177": [
+     1,
+     1,
+     0
+    ],
+    "321": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "terminal (w165)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 806,238 793×499 · +1023 ms 541,238 457×499"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "notes (w166)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 806,32 794×791 · +1023 ms 417,32 709×791"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "calendar (w167)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 806,118 680×599 · +1023 ms 431,118 680×599"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "settings (w170)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 806,85 723×625 · +1023 ms 410,85 723×625"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "preview (w172)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 806,35 708×424 · +1023 ms 417,35 708×424"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "mail (w175)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 729,72 871×630 · +1023 ms 336,72 871×630"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "ODD",
+     "window": "w177 of Mail",
+     "what": "moved along with a window of its app",
+     "trace": "+0 ms 930,179 470×416 · +1023 ms 537,179 470×416",
+     "explained": "follows its window"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "textedit (w321)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 806,65 673×439 · +1023 ms 541,65 461×439"
+    },
+    {
+     "rule": "3",
+     "detector": "slow",
+     "level": "ODD",
+     "window": null,
+     "what": "the last window came to rest 719 ms after the key or the button",
+     "trace": null,
+     "explained": "listed, and no reason, until the release build has answered"
+    }
+   ]
+  },
+  {
+   "number": 106,
+   "slug": "view-frame",
+   "chapter": "The ways out",
+   "text": "presses ⌃⌥↩",
+   "act": "view",
+   "judged": true,
+   "began": 1792025156679,
+   "milliseconds": 1571,
+   "moved": {
+    "148": [
+     1,
+     1,
+     0
+    ],
+    "151": [
+     1,
+     1,
+     0
+    ],
+    "165": [
+     1,
+     1,
+     0
+    ],
+    "166": [
+     1,
+     1,
+     0
+    ],
+    "167": [
+     1,
+     1,
+     0
+    ],
+    "170": [
+     1,
+     1,
+     0
+    ],
+    "172": [
+     1,
+     1,
+     0
+    ],
+    "175": [
+     1,
+     1,
+     0
+    ],
+    "177": [
+     1,
+     1,
+     0
+    ],
+    "321": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 107,
+   "slug": "quit",
+   "chapter": "Quit, and the next morning",
+   "text": "chooses Quit Arbor in Arbor's menu",
+   "act": "quit-and-start",
+   "judged": true,
+   "began": 1792025158467,
+   "milliseconds": 3349,
+   "moved": {
+    "148": [
+     1,
+     1,
+     0
+    ],
+    "151": [
+     1,
+     2,
+     65
+    ],
+    "165": [
+     1,
+     1,
+     0
+    ],
+    "166": [
+     1,
+     1,
+     0
+    ],
+    "167": [
+     1,
+     1,
+     0
+    ],
+    "170": [
+     1,
+     1,
+     0
+    ],
+    "172": [
+     1,
+     1,
+     0
+    ],
+    "175": [
+     1,
+     1,
+     0
+    ],
+    "177": [
+     1,
+     1,
+     0
+    ],
+    "321": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "5",
+     "detector": "size-lost",
+     "level": "FAIL",
+     "window": "calendar (w167)",
+     "what": "has its size back but not its place: 386,118 680×599, it was at 446,178 680×599",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 108,
+   "slug": "dock-icon-finder",
+   "chapter": "Quit, and the next morning",
+   "text": "clicks finder's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "began": 1792025162017,
+   "milliseconds": 1736,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 109,
+   "slug": "dock-icon-safari",
+   "chapter": "Quit, and the next morning",
+   "text": "clicks safari's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "began": 1792025163917,
+   "milliseconds": 1818,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 110,
+   "slug": "dock-icon-textedit",
+   "chapter": "Quit, and the next morning",
+   "text": "clicks textedit's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "began": 1792025165930,
+   "milliseconds": 1935,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 111,
+   "slug": "dock-icon-terminal",
+   "chapter": "Quit, and the next morning",
+   "text": "clicks terminal's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "began": 1792025168047,
+   "milliseconds": 1765,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 112,
+   "slug": "dock-icon-notes",
+   "chapter": "Quit, and the next morning",
+   "text": "clicks notes's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "began": 1792025169966,
+   "milliseconds": 1897,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 113,
+   "slug": "dock-icon-calendar",
+   "chapter": "Quit, and the next morning",
+   "text": "clicks calendar's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "began": 1792025172046,
+   "milliseconds": 1773,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 114,
+   "slug": "dock-icon-settings",
+   "chapter": "Quit, and the next morning",
+   "text": "clicks settings's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "began": 1792025174001,
+   "milliseconds": 1777,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 115,
+   "slug": "dock-icon-preview",
+   "chapter": "Quit, and the next morning",
+   "text": "clicks preview's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "began": 1792025175950,
+   "milliseconds": 1685,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 116,
+   "slug": "dock-icon-mail",
+   "chapter": "Quit, and the next morning",
+   "text": "clicks mail's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "began": 1792025177822,
+   "milliseconds": 1796,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 117,
+   "slug": "launch",
+   "chapter": "Quit, and the next morning",
+   "text": "starts Arbor",
+   "act": "quit-and-start",
+   "judged": true,
+   "began": 1792025179805,
+   "milliseconds": 1364,
+   "moved": {
+    "148": [
+     1,
+     1,
+     0
+    ],
+    "151": [
+     1,
+     1,
+     0
+    ],
+    "165": [
+     1,
+     1,
+     0
+    ],
+    "166": [
+     1,
+     1,
+     0
+    ],
+    "167": [
+     1,
+     1,
+     0
+    ],
+    "170": [
+     1,
+     1,
+     0
+    ],
+    "172": [
+     1,
+     1,
+     0
+    ],
+    "175": [
+     1,
+     1,
+     0
+    ],
+    "177": [
+     1,
+     1,
+     0
+    ],
+    "321": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "terminal (w165)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 97,238 877×499 · +242 ms 1599,790 877×499"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "notes (w166)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms -1,32 800×791 · +242 ms 1599,770 800×791"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "calendar (w167)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 386,118 680×599 · +242 ms 1599,770 680×599"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "settings (w170)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 437,85 723×625 · +242 ms 1599,770 723×625"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "preview (w172)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 4,35 708×424 · +288 ms 1599,770 708×424"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "mail (w175)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 240,72 1120×630 · +288 ms 1599,770 1120×630"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "ODD",
+     "window": "w177 of Mail",
+     "what": "moved along with a window of its app",
+     "trace": "+0 ms 565,179 470×416 · +288 ms 1924,877 470×416",
+     "explained": "follows its window"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "textedit (w321)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 165,65 673×439 · +288 ms 1599,790 673×439"
+    },
+    {
+     "rule": "L",
+     "detector": "lost",
+     "level": "FAIL",
+     "window": "finder (w148)",
+     "what": "is out of view: 0% of it is on a display, at 1599,770 920×436",
+     "trace": null
+    },
+    {
+     "rule": "L",
+     "detector": "lost",
+     "level": "FAIL",
+     "window": "terminal (w165)",
+     "what": "is out of view: 0% of it is on a display, at 1599,790 877×499",
+     "trace": null
+    },
+    {
+     "rule": "L",
+     "detector": "lost",
+     "level": "FAIL",
+     "window": "notes (w166)",
+     "what": "is out of view: 0% of it is on a display, at 1599,770 800×791",
+     "trace": null
+    },
+    {
+     "rule": "L",
+     "detector": "lost",
+     "level": "FAIL",
+     "window": "calendar (w167)",
+     "what": "is out of view: 0% of it is on a display, at 1599,770 680×599",
+     "trace": null
+    },
+    {
+     "rule": "L",
+     "detector": "lost",
+     "level": "FAIL",
+     "window": "settings (w170)",
+     "what": "is out of view: 0% of it is on a display, at 1599,770 723×625",
+     "trace": null
+    },
+    {
+     "rule": "L",
+     "detector": "lost",
+     "level": "FAIL",
+     "window": "preview (w172)",
+     "what": "is out of view: 0% of it is on a display, at 1599,770 708×424",
+     "trace": null
+    },
+    {
+     "rule": "L",
+     "detector": "lost",
+     "level": "FAIL",
+     "window": "mail (w175)",
+     "what": "is out of view: 0% of it is on a display, at 1599,770 1120×630",
+     "trace": null
+    },
+    {
+     "rule": "L",
+     "detector": "lost",
+     "level": "FAIL",
+     "window": "textedit (w321)",
+     "what": "is out of view: 0% of it is on a display, at 1599,790 673×439",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 118,
+   "slug": "leave-alone",
+   "chapter": "Quit, and the next morning",
+   "text": "does nothing for half a minute",
+   "act": "idle",
+   "judged": true,
+   "began": 1792025181410,
+   "milliseconds": 30598,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 119,
+   "slug": "quit",
+   "chapter": "The end",
+   "text": "chooses Quit Arbor in Arbor's menu",
+   "act": "quit-and-start",
+   "judged": true,
+   "began": 1792025212236,
+   "milliseconds": 3193,
+   "moved": {
+    "148": [
+     1,
+     1,
+     0
+    ],
+    "151": [
+     1,
+     1,
+     0
+    ],
+    "165": [
+     1,
+     1,
+     0
+    ],
+    "166": [
+     1,
+     1,
+     0
+    ],
+    "167": [
+     1,
+     1,
+     0
+    ],
+    "170": [
+     1,
+     1,
+     0
+    ],
+    "172": [
+     1,
+     1,
+     0
+    ],
+    "175": [
+     1,
+     1,
+     0
+    ],
+    "177": [
+     1,
+     1,
+     0
+    ],
+    "321": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "5",
+     "detector": "size-lost",
+     "level": "FAIL",
+     "window": "calendar (w167)",
+     "what": "has its size back but not its place: 386,118 680×599, it was at 446,178 680×599",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 120,
+   "slug": "dock-icon-finder",
+   "chapter": "The end",
+   "text": "clicks finder's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "began": 1792025215637,
+   "milliseconds": 1849,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 121,
+   "slug": "dock-icon-safari",
+   "chapter": "The end",
+   "text": "clicks safari's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "began": 1792025217684,
+   "milliseconds": 1798,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 122,
+   "slug": "dock-icon-textedit",
+   "chapter": "The end",
+   "text": "clicks textedit's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "began": 1792025219679,
+   "milliseconds": 1789,
+   "moved": {},
+   "findings": [
+    {
+     "rule": "6",
+     "detector": "input-held",
+     "level": "FAIL",
+     "window": null,
+     "what": "the button came up, and the apps heard of it 57 ms later",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 123,
+   "slug": "dock-icon-terminal",
+   "chapter": "The end",
+   "text": "clicks terminal's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "began": 1792025221652,
+   "milliseconds": 1786,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 124,
+   "slug": "dock-icon-notes",
+   "chapter": "The end",
+   "text": "clicks notes's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "began": 1792025223624,
+   "milliseconds": 1599,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 125,
+   "slug": "dock-icon-calendar",
+   "chapter": "The end",
+   "text": "clicks calendar's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "began": 1792025225407,
+   "milliseconds": 1841,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 126,
+   "slug": "dock-icon-settings",
+   "chapter": "The end",
+   "text": "clicks settings's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "began": 1792025227437,
+   "milliseconds": 1754,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 127,
+   "slug": "dock-icon-preview",
+   "chapter": "The end",
+   "text": "clicks preview's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "began": 1792025229372,
+   "milliseconds": 1868,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 128,
+   "slug": "dock-icon-mail",
+   "chapter": "The end",
+   "text": "clicks mail's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "began": 1792025231440,
+   "milliseconds": 1753,
+   "moved": {},
+   "findings": []
+  }
+ ]
+}

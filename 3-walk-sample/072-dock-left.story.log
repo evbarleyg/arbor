@@ -1,0 +1,57 @@
+72 dock-left: presses ⌃⌥⌘ and the left arrow
+expected: {'act': 'dock-key', 'settled': 'quiet:782', 'moves': ',554,', 'front': '554', 'floating': '433,445,450,451,454,455,460,565', 'docked': '554'}
+FAIL rule 2: finder (w433) a floating window, moved, and the step did not name it
+FAIL rule 2: textedit (w445) a floating window, moved, and the step did not name it
+FAIL rule 2: terminal (w450) a floating window, moved, and the step did not name it
+FAIL rule 2: notes (w451) a floating window, moved, and the step did not name it
+FAIL rule 2: calendar (w454) a floating window, moved, and the step did not name it
+FAIL rule 2: settings (w455) a floating window, moved, and the step did not name it
+FAIL rule 2: mail (w460) a floating window, moved, and the step did not name it
+ODD rule 2: w462 of Mail moved along with a window of its app
+FAIL rule 2: preview (w565) a floating window, moved, and the step did not name it
+ODD rule 3: the last window came to rest 808 ms after the key or the button
+
+00:51:07.863 SCREEN -- begin 72 dock-left
+00:51:07.863 SCREEN -- text 72 presses ⌃⌥⌘ and the left arrow
+00:51:08.114 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 9 stand-ins, 0.46 s
+00:51:08.135 MACOS pid 51482 AXResized w554 AXWindow/AXStandardWindow 12 43 782 767
+00:51:08.136 MACOS pid 51482 AXMoved w554 AXWindow/AXStandardWindow 12 43 782 767
+00:51:08.147 SCREEN w612 of Arbor 0,0 1600×900 (level 4)
+00:51:08.147 SCREEN safari (w554) 12,43 782×767
+00:51:08.156 MACOS pid 44529 AXResized w433 AXWindow/AXStandardWindow 806 120 794 436
+00:51:08.156 MACOS pid 44529 AXMoved w433 AXWindow/AXStandardWindow 806 120 794 436
+00:51:08.157 MACOS pid 45400 AXMoved w445 AXWindow/AXStandardWindow 806 65 673 439
+00:51:08.169 MACOS pid 45460 AXTitleChanged w450 AXWindow/AXStandardWindow 806 238 793 499
+00:51:08.169 MACOS pid 45460 AXResized w450 AXWindow/AXStandardWindow 806 238 793 499
+00:51:08.170 MACOS pid 45460 AXMoved w450 AXWindow/AXStandardWindow 806 238 793 499
+00:51:08.194 MACOS pid 45521 AXResized w451 AXWindow/AXStandardWindow 806 31 794 791
+00:51:08.195 SCREEN terminal (w450) 97,238 793×499
+00:51:08.195 SCREEN textedit (w445) 806,65 673×439
+00:51:08.195 SCREEN finder (w433) 806,120 794×436
+00:51:08.195 MACOS pid 45521 AXMoved w451 AXWindow/AXStandardWindow 806 31 794 791
+00:51:08.200 SCREEN notes (w451) 806,31 794×791
+00:51:08.200 SCREEN terminal (w450) 806,238 793×499
+00:51:08.209 MACOS pid 45933 AXResized w454 AXWindow/AXStandardWindow 806 115 794 600
+00:51:08.216 MACOS pid 45933 AXMoved w454 AXWindow/AXStandardWindow 806 115 794 600
+00:51:08.216 MACOS pid 45986 AXMoved w455 AXWindow/AXStandardWindow 806 85 723 625
+00:51:08.241 SCREEN settings (w455) 806,85 723×625
+00:51:08.241 SCREEN calendar (w454) 806,115 794×600
+00:51:08.261 MACOS pid 46101 AXResized w460 AXWindow/AXStandardWindow 806 72 871 630
+00:51:08.266 MACOS pid 46101 AXMoved w460 AXWindow/AXStandardWindow 806 72 871 630
+00:51:08.267 MACOS pid 46101 AXMoved w460 AXWindow/AXStandardWindow 729 72 871 630
+00:51:08.268 MACOS pid 53628 AXMoved w565 AXWindow/AXStandardWindow 806 35 708 424
+00:51:08.270 DEBUG stage retargeted on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 9 stand-ins, 0.46 s
+00:51:08.285 INFO  dock left: docked w554 at the left edge
+00:51:08.286 DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Docked · ⌃⌥↩ frames it
+00:51:08.292 SCREEN w462 of Mail 930,179 470×416
+00:51:08.292 SCREEN mail (w460) 729,72 871×630
+00:51:08.292 SCREEN preview (w565) 806,35 708×424
+00:51:08.367 SCREEN w613 of Arbor 696,728 208×38 (level 6)
+00:51:08.367 SCREEN w617 of Arbor 3,34 800×785
+00:51:08.367 SCREEN w616 of Arbor 794,43 12×767
+00:51:08.367 SCREEN w618 of Arbor 0,31 1600×791 (level -2147483602)
+00:51:08.367 SCREEN front to back: w617 safari w462 mail preview settings calendar notes terminal textedit finder w616
+00:51:08.951 DEBUG stage down
+00:51:08.955 SCREEN w612 of Arbor left the screen
+00:51:09.487 SCREEN -- end 72 act=dock-key settled=quiet:782 moves=,554, front=554 floating=433,445,450,451,454,455,460,565 docked=554
+00:51:09.743 SCRIPT == 73 dock-icon-textedit

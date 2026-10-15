@@ -1,0 +1,34 @@
+109 dock-icon-notes: clicks notes's icon in the Dock
+expected: {'act': 'switch', 'settled': 'quiet:868', 'front': '451'}
+FAIL rule 2: notes (w451) moved, and the step did not name it
+
+00:52:33.264 SCREEN -- begin 109 dock-icon-notes
+00:52:33.264 SCREEN -- text 109 clicks notes's icon in the Dock
+00:52:33.927 SCREEN the button is down 775 854
+00:52:33.973 SCREEN in front: process 45521 com.apple.Notes
+00:52:33.974 MACOS pid 45460 AXApplicationDeactivated
+00:52:33.975 MACOS workspace didActivate pid 45521 com.apple.Notes regular
+00:52:33.975 MACOS workspace didDeactivate pid 45460 com.apple.Terminal regular
+00:52:33.975 MACOS pid 45521 AXApplicationActivated
+00:52:33.992 SCREEN the button is up 775 854
+00:52:34.050 SCREEN notes (w451) 1413,812 53×53
+00:52:34.050 SCREEN front to back: notes terminal textedit safari finder preview calendar settings w462 mail
+00:52:34.071 SCREEN notes (w451) 1398,779 67×86
+00:52:34.133 SCREEN notes (w451) 1088,579 374×286
+00:52:34.200 SCREEN notes (w451) 485,351 973×514
+00:52:34.206 SCREEN notes (w451) 392,315 1066×550
+00:52:34.267 SCREEN notes (w451) 53,131 1400×734
+00:52:34.272 SCREEN notes (w451) 31,107 1421×758
+00:52:34.334 SCREEN notes (w451) 0,31 1409×790
+00:52:34.370 SCREEN notes (w451) 0,31 1284×790
+00:52:34.377 SCREEN notes (w451) 0,31 1244×790
+00:52:34.417 SCREEN notes (w451) 0,31 1071×790
+00:52:34.481 SCREEN notes (w451) 0,31 856×790
+00:52:34.487 SCREEN notes (w451) 0,31 833×790
+00:52:34.519 SCREEN notes (w451) 0,31 800×790
+00:52:34.536 MACOS pid 45521 AXFocusedWindowChanged w451 AXWindow/AXStandardWindow 0 31 800 790
+00:52:34.536 MACOS pid 45521 AXMainWindowChanged w451 AXWindow/AXStandardWindow 0 31 800 790
+00:52:34.537 MACOS pid 45521 AXWindowDeminiaturized w451 AXWindow/AXStandardWindow 0 31 800 790
+00:52:34.537 MACOS pid 45521 AXWindowCreated w451 AXWindow/AXStandardWindow 0 31 800 790
+00:52:35.584 SCREEN -- end 109 act=switch settled=quiet:868 front=451
+00:52:35.756 SCRIPT == 110 dock-icon-calendar

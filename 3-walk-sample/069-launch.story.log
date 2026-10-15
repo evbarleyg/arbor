@@ -1,0 +1,25 @@
+69 launch: starts Arbor
+expected: {'act': 'quit-and-start', 'settled': 'quiet:943', 'moves': ',433,', 'everything': '1', 'floating': '445,450,451,454,455,460,554,565', 'docked': '433'}
+FAIL rule L: finder (w433) is out of view: 0% of it is on a display, at 1599,770 920×436
+
+00:51:02.420 SCREEN -- begin 69 launch
+00:51:02.420 SCREEN -- text 69 starts Arbor
+00:51:02.500 INFO  Arbor dev starting, pid 58162, home /tmp/arbor-shell.yrysVu/home
+00:51:02.501 INFO  control socket at /tmp/arbor-shell.yrysVu/home/arbor.sock
+00:51:02.533 INFO  keyboard layout: U.S.
+00:51:02.586 INFO  started: 1 display(s), 9 managed window(s)
+00:51:02.589 MACOS pid 44529 AXMoved w433 AXWindow/AXStandardWindow 1599 770 920 436
+00:51:02.603 INFO  registered 52 shortcuts in 1185 µs
+00:51:02.608 INFO  pinch event tap installed
+00:51:02.608 INFO  scroll event tap installed
+00:51:02.608 INFO  rectangle event taps installed
+00:51:02.609 SCREEN finder (w433) 1599,770 920×436
+00:51:02.619 ERROR setup: Desktop & Dock settings: as they stand, macOS reacts to the same clicks and drags as Arbor. In System Settings → Desktop & Dock: | “Click wallpaper to reveal desktop”: choose “Only in Stage Manager”. Otherwise a click on the Desktop sends every window away | “Drag windows to left or right edge of screen to tile”: switch it off | “Drag windows to menu bar to fill screen”: switch it off | “Hold ⌥ key while dragging windows to tile”: switch it off
+00:51:02.625 DEBUG pinch event tap installed
+00:51:02.625 DEBUG scroll event tap installed
+00:51:02.625 DEBUG rectangle event tap installed
+00:51:02.625 DEBUG rectangle drag event tap installed
+00:51:02.716 SCREEN -- arbor 58162
+00:51:02.730 INFO  trace day-2: recording to /tmp/arbor-shell.yrysVu/home/traces/2026-10-15-005102-day-2.jsonl
+00:51:03.760 SCREEN -- end 69 act=quit-and-start settled=quiet:943 moves=,433, everything=1 floating=445,450,451,454,455,460,554,565 docked=433
+00:51:04.020 SCRIPT == 70 float-all

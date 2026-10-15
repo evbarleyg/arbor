@@ -1,0 +1,52 @@
+103 resume: presses ⌃⌥⎋
+expected: {'act': 'way-out', 'settled': 'quiet:1126', 'moves': 'any', 'floating': '433,450,451,454,460,554,657', 'docked': '455,565'}
+FAIL rule 3: preview (w565) moved 2 times
+ODD rule 3: the last window came to rest 819 ms after the key or the button
+
+00:52:19.519 SCREEN -- begin 103 resume
+00:52:19.519 SCREEN -- text 103 presses ⌃⌥⎋
+00:52:19.787 INFO  started: 1 display(s), 9 managed window(s)
+00:52:19.791 MACOS pid 45986 AXMoved w455 AXWindow/AXStandardWindow 806 340 723 470
+00:52:19.793 MACOS pid 45986 AXMoved w455 AXWindow/AXStandardWindow 835 340 723 470
+00:52:19.797 MACOS pid 53628 AXMoved w565 AXWindow/AXStandardWindow 1599 770 708 424
+00:52:19.808 INFO  registered 52 shortcuts in 1393 µs
+00:52:19.808 INFO  pinch event tap installed
+00:52:19.808 INFO  scroll event tap installed
+00:52:19.808 INFO  rectangle event taps installed
+00:52:19.809 DEBUG w657 has the keyboard
+00:52:19.809 INFO  resumed
+00:52:19.810 DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Resumed
+00:52:19.815 SCREEN preview (w565) 1599,770 708×424
+00:52:19.819 DEBUG pinch event tap installed
+00:52:19.819 DEBUG scroll event tap installed
+00:52:19.819 DEBUG rectangle event tap installed
+00:52:19.819 DEBUG rectangle drag event tap installed
+00:52:19.837 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 8 stand-ins, 0.46 s
+00:52:19.852 MACOS pid 53628 AXResized w565 AXWindow/AXStandardWindow 12 43 782 767
+00:52:19.853 MACOS pid 53628 AXMoved w565 AXWindow/AXStandardWindow 12 43 782 767
+00:52:19.862 SCREEN w682 of Arbor 749,728 102×38 (level 6)
+00:52:19.862 SCREEN w612 of Arbor 0,0 1600×900 (level 4)
+00:52:19.862 SCREEN w687 of Arbor 797,25 691×312
+00:52:19.862 SCREEN preview (w565) 1599,770 782×767
+00:52:19.862 SCREEN w684 of Arbor 12,43 782×767
+00:52:19.862 SCREEN w685 of Arbor 806,328 782×12
+00:52:19.862 SCREEN w686 of Arbor 794,43 12×767
+00:52:19.862 SCREEN w688 of Arbor 0,31 1600×791 (level -2147483602)
+00:52:19.862 SCREEN front to back: w687 textedit safari finder preview calendar settings terminal w462 mail w684 w685 w686
+00:52:19.862 MACOS pid 45460 AXTitleChanged w450 AXWindow/AXStandardWindow 806 31 795 304
+00:52:19.869 MACOS pid 45460 AXResized w450 AXWindow/AXStandardWindow 806 31 795 289
+00:52:19.870 MACOS pid 45460 AXTitleChanged w450 AXWindow/AXStandardWindow 806 31 795 289
+00:52:19.871 MACOS pid 45460 AXResized w450 AXWindow/AXStandardWindow 806 31 795 289
+00:52:19.872 DEBUG stage retargeted on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 8 stand-ins, 0.46 s
+00:52:19.930 SCREEN preview (w565) 12,43 782×767
+00:52:20.111 SCREEN w684 of Arbor left the screen
+00:52:20.111 SCREEN front to back: w687 textedit safari finder preview calendar settings terminal w462 mail w685 w686
+00:52:20.558 DEBUG stage down
+00:52:20.565 SCREEN w612 of Arbor left the screen
+00:52:21.295 SCREEN -- end 103 act=way-out settled=quiet:1126 moves=any floating=433,450,451,454,460,554,657 docked=455,565
+00:52:21.470 INFO  trace day-3: recording to /tmp/arbor-shell.yrysVu/home/traces/2026-10-15-005221-day-3.jsonl
+00:52:21.593 SCREEN -- chapter The end
+00:52:21.603 INFO  trace day-3 ended: 6 lines, trace off
+00:52:21.610 INFO  trace day-4: recording to /tmp/arbor-shell.yrysVu/home/traces/2026-10-15-005221-day-4.jsonl
+00:52:21.657 SCRIPT == 104 quit
+00:52:21.668 SCREEN w682 of Arbor left the screen
