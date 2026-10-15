@@ -1545,7 +1545,8 @@ def check_mac_shell_batch():
          ["5", "fine.sh", "exit", "0"]])
     row("ci-mac-shell.sh: all pass", tried("fine.sh", "fine.sh")[0], 0)
 
-    code, left, _, _ = tried("hangs.sh", "fine.sh", limit="1")
+    # Three seconds, not one: the limit is the next script's too, and on a busy machine one that does nothing has taken longer than a second over it.
+    code, left, _, _ = tried("hangs.sh", "fine.sh", limit="3")
     row("ci-mac-shell.sh: one that hangs is stopped, may clean up, and the next one runs",
         (code, left["1-hangs/output.txt"].splitlines()[-2:], left["2-fine/exit-code.txt"]), (124, ["cleaned up", "exit code 124"], "0\n"))
     code, left, _, took = tried("leaves.sh", "fine.sh")
