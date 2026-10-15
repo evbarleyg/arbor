@@ -63,6 +63,9 @@ extension Controller {
     // However this ends: a window that was promised a place gets it.
     defer { putBackWhatWaits() }
     guard isRunning, holdFences(displayID) else { return }
+    layoutsMade[displayID, default: 0] += 1
+    // Before anything in here touches a gap (Controller+RelaunchedApps.swift).
+    let found = closedPlaces[displayID] == nil ? nil : workspaces[displayID]
     // Not when a window is only put back where it was: that moves nothing else.
     if reason != .enforce { dropOverdueSlots(on: displayID) }
     refreshVisibleFrame(of: displayID)
@@ -107,6 +110,7 @@ extension Controller {
       overlays.update(display: displayID, scene: overlayScene(for: layout, on: displayID))
     }
     arrangementChangedDuringDrag(on: displayID, for: reason)
+    closedPlacesFollow(layoutOf: displayID, whichFound: found)
     notify(.layout(displayID))
   }
 

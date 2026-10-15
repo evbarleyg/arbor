@@ -16,6 +16,7 @@ import Foundation
 //                                open a window (ids start at 101); `fixed`: its size cannot be changed
 //   close <id> | minimize <id> | restore <id>
 //   focus <id>                   click a window (`focus left`, `focus next`… are Arbor's own commands)
+//   quit-app <App> | kill-app <App>   the app ends: its windows close and then the process goes, or the other way round
 //   cursor <x> <y>               move the pointer (camera commands use it)
 //   press <command>              press and release a shortcut bound to that command
 //   from <source> <command>      run it as a shortcut, menu, gesture, script or url would (plain commands: script)
@@ -374,6 +375,11 @@ func simulate(_ words: [String], harness: Harness, printLayout: inout Bool) -> (
     harness.scheduler.advance(by: 2)
     let moves = comeBack.map { "\($0.rawValue) \(system.sightings(of: $0).count)×" }.joined(separator: ", ")
     return ("closed \(id.rawValue) in full screen; seen to move when their Space came back: \(moves)", true)
+  case "quit-app", "kill-app":
+    guard words.count == 2 else { return usage("\(words[0]) <App>") }
+    system.quit(pid: pid(ofApp: words[1]), windowsFirst: words[0] == "quit-app")
+    livesSoFar[words[1].lowercased(), default: 0] += 1
+    return ("\(words[1]) has ended", true)
   case "minimize", "restore":
     guard let id = window(1) else { return usage("\(words[0]) <id>") }
     system.setMinimized(id, words[0] == "minimize")
@@ -668,9 +674,14 @@ func simulate(_ words: [String], harness: Harness, printLayout: inout Bool) -> (
   }
 }
 
-/// Every app name gets a process of its own, so `hide` hides one app's windows.
+/// How often each app has ended (`quit-app`, `kill-app`).
+nonisolated(unsafe) var livesSoFar: [String: Int32] = [:]
+
+/// Every app name gets a process of its own, so `hide` hides one app's windows. Opened again after it ended it is another
+/// process.
 func pid(ofApp app: String) -> Int32 {
   Int32(2000 + app.lowercased().unicodeScalars.reduce(0) { ($0 &* 31 &+ Int($1.value)) % 10_000 })
+    + 10_000 * (livesSoFar[app.lowercased()] ?? 0)
 }
 
 func describe(_ state: StateSnapshot) -> String {

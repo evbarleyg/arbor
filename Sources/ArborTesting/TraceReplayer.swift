@@ -245,6 +245,11 @@ public final class TraceReplayer {
         bridge.events?.windowFound(snapshot)
       },
       "pointerPressed": { [bridge] _ in bridge.events?.pointerPressed() },
+      // Its windows go with lines of their own, before or after.
+      "applicationTerminated": { [bridge] arguments in
+        guard let pid: Int32 = arguments.first?.decoded() else { return }
+        bridge.events?.applicationTerminated(pid)
+      },
       // What follows depends on what macOS then said, which is in the trace as a read.
       "accessibilityWasRefused": { [bridge] _ in bridge.events?.accessibilityWasRefused() },
       "applicationActivated": { [unowned self] arguments in

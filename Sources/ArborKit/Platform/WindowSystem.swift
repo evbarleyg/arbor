@@ -245,9 +245,14 @@ public protocol WindowSystemEvents: AnyObject {
   /// A window that was open all along has come to notice: its macOS Space is showing for the first time
   /// since `start()`. Nobody just opened it, which is what `windowAppeared` says.
   func windowFound(_ window: WindowSnapshot)
+  /// The process `pid` has ended: quit, killed or crashed. Its windows are reported with `windowDestroyed` as ever,
+  /// before this (an app that closes them as it quits) or right after (one that is simply gone).
+  func applicationTerminated(_ pid: Int32)
 }
 
 extension WindowSystemEvents {
   /// To a listener that makes no difference between the two, a window that was found is one more window.
   public func windowFound(_ window: WindowSnapshot) { windowAppeared(window) }
+  /// A listener that keeps nothing for apps that come back has nothing to do: their windows are reported gone one by one.
+  public func applicationTerminated(_ pid: Int32) {}
 }

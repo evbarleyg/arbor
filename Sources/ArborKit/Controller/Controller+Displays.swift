@@ -137,6 +137,8 @@ extension Controller {
       })
     else { return }
     for id in Set(corners.keys).union(displays.map(\.id)) { undoHistory.removeAll(on: id) }
+    // They hold workspaces from the past as well (Controller+RelaunchedApps.swift).
+    forgetClosedPlaces()
   }
 
   /// For a workspace read from a file that does not say where its display was (written before 2026-10-14): its frames may
@@ -235,6 +237,7 @@ extension Controller {
     workspace.stayAfterALook()
     if namePrompt?.display == displayID { namePrompt = nil }
     undoHistory.removeAll(on: displayID)
+    closedPlaces[displayID] = nil
     overlays.update(display: displayID, scene: OverlayScene())
     // Without a window there can still be a name to come back to: the Desktop of a second display, say (F20).
     if !workspace.allWindows.isEmpty || !workspace.names.isEmpty {
@@ -494,7 +497,7 @@ extension Controller {
         }
         if let replacement, !workspace.contains(replacement) {
           workspace.replaceWindow(window, with: replacement)
-          undoHistory.renumber(window, as: replacement)
+          renumberInThePast(window, as: replacement)
         } else if replacement == nil, let hint = savedHints[window],
           // Not for a window that is here, the same app's as before, and no longer arranged.
           windows[window] == nil || windows[window]?.bundleID != hint.bundleID

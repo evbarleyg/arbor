@@ -754,12 +754,14 @@ private func endReason(_ entries: [TraceEntry]) -> String? {
     events.windowFound(snapshot)
     events.applicationActivated(FrontmostApp(bundleID: nil, name: "a.out"))
     events.applicationActivated(nil)
+    events.applicationTerminated(4242)
     events.windowDestroyed(id)
     #expect(
       listener.heard == [
         "appeared w5", "changed w5 true", "changed w5 false", "focused w5", "dragBegan w5 9,10", "dragMoved w5 9,10",
         "dragEnded w5 9,10", "resizeBegan w5", "resizeEnded w5", "displaysChanged", "keyboardFocusMoved", "dragCancelled w5",
-        "windowReplaced w4 w5", "found w5", "activated a.out", "activated nobody", "destroyed w5",
+        "windowReplaced w4 w5", "found w5", "activated a.out", "activated nobody", "terminated 4242",
+        "destroyed w5",
       ])
     system.stop()
     #expect(spy.calls.last == "stop")
@@ -1022,4 +1024,5 @@ final class SpyEvents: WindowSystemEvents {
   func windowFound(_ window: WindowSnapshot) { heard.append("found \(window.id)") }
   func applicationActivated(_ app: FrontmostApp?) { heard.append("activated \(app?.name ?? "nobody")") }
   func pointerPressed() { heard.append("pointerPressed") }
+  func applicationTerminated(_ pid: Int32) { heard.append("terminated \(pid)") }
 }

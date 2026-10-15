@@ -25,9 +25,13 @@ public enum ReplayInvariants {
       for window in workspace.tree.allWindows { homes[window, default: 0] += 1 }
       for window in workspace.floating.keys { homes[window, default: 0] += 1 }
     }
+    // A place kept for a window that is expected back has a number in the tree and no window; `state` lists those.
+    let waiting = controller.waitingSlotIDs
     for (window, count) in homes.sorted(by: { $0.key < $1.key }) {
       if count > 1 { problems.append("\(window) is in \(count) places at once") }
-      if controller.windows[window] == nil { problems.append("\(window) is arranged but no longer exists") }
+      if controller.windows[window] == nil, !waiting.contains(window) {
+        problems.append("\(window) is arranged but no longer exists")
+      }
     }
 
     // Nothing lost: Arbor knows every window there is, and every one it arranges has a place.

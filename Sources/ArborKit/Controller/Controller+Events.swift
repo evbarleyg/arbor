@@ -13,7 +13,7 @@ extension Controller: WindowSystemEvents {
       giveUpPendingSlot(of: window.id)
       return
     }
-    if claimPendingSlot(for: window) { return }
+    if goesBackToItsPlace(window) { return }
     if let display = workspaceID(containing: window.id) {
       relayout(display, reason: .structure)
       return
@@ -29,8 +29,9 @@ extension Controller: WindowSystemEvents {
 
   public func windowDestroyed(_ id: WindowID) {
     defer { holdForgets(id) }
-    let app = windows[id]?.pid
-    let appName = windows[id]?.appName
+    let (closed, closedMinimum) = (windows[id], minimumSizes[id])
+    let app = closed?.pid
+    let appName = closed?.appName
     windows[id] = nil
     parked.remove(id)
     settled[id] = nil
@@ -64,7 +65,9 @@ extension Controller: WindowSystemEvents {
     defer { endUndoStep(undoScope) }
     for display in workspaces.keys.sorted() where workspaces[display]!.contains(id) {
       if !slotWaitsAgain(after: id, on: display) {
+        let before = workspaces[display]!
         workspaces[display]!.forget(id, shareSpace: settings.shareRemovedSpace)
+        rememberPlace(of: closed, minimumSize: closedMinimum, in: before, on: display)
       }
       relayout(display, reason: .structure)
       if hadKeyboard { keyboardLeft(id, of: app, on: display) }
@@ -99,7 +102,7 @@ extension Controller: WindowSystemEvents {
     hints[window.id] = WindowHint(bundleID: window.bundleID, title: window.title)
     if previous?.title != window.title {
       notify(.windows)
-      if claimPendingSlot(for: window) { return }
+      if goesBackToItsPlace(window) { return }
     }
 
     // A Space switch reports each window separately: see Controller+Spaces.swift. What has gone away nobody sees, so the layout can wait

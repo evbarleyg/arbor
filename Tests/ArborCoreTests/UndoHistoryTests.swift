@@ -995,3 +995,69 @@ private func change(_ before: UInt32, _ after: UInt32) -> UndoHistory.Change {
     #expect(asked == 1)
   }
 }
+
+/// Steps made while a window was away (`rewriteSteps`).
+extension UndoHistoryTests {
+  @Test func theNewestStepsThatDoNotKnowAWindowAreRewrittenOrDropped() {
+    let display = DisplayID("main")
+    let (window, other) = (WindowID(1), WindowID(2))
+    var without = Workspace()
+    without.dock(other, at: .cameraEdge(.right))
+    var with = without
+    with.dock(window, at: .cameraEdge(.left))
+    func step(_ id: Int, _ label: String, _ workspace: Workspace, _ changedTo: Workspace) -> UndoStep {
+      UndoStep(id: id, label: label, workspace: workspace, changedTo: changedTo)
+    }
+    var history = UndoHistory()
+    // From before the window was docked, which does not know it either; the dock; then two made while it was away, the first
+    // under an id from before, as a step has that was undone and redone meanwhile.
+    history.push(step(1, "older", Workspace(), without), to: .undo, on: display)
+    history.push(step(2, "dock", without, with), to: .undo, on: display)
+    history.push(step(1, "walked through", without, without), to: .undo, on: display)
+    history.push(step(3, "to be dropped", without, without), to: .undo, on: display)
+    history.push(step(2, "known", with, with), to: .redo, on: display)
+    history.push(step(4, "undone meanwhile", without, without), to: .redo, on: display)
+    history.push(step(5, "elsewhere", without, without), to: .undo, on: DisplayID("second"))
+    var seen: [String] = []
+    history.rewriteSteps(on: display, madeWithout: window) { step in
+      seen.append(step.label)
+      guard step.label != "to be dropped" else { return nil }
+      var step = step
+      step.label += ", rewritten"
+      return step
+    }
+    #expect(seen == ["walked through", "to be dropped", "undone meanwhile"])
+    #expect(history.steps(.undo, on: display).map(\.label) == ["older", "dock", "walked through, rewritten"])
+    #expect(history.steps(.redo, on: display).map(\.label) == ["known", "undone meanwhile, rewritten"])
+    #expect(history.steps(.undo, on: DisplayID("second")).map(\.label) == ["elsewhere"])
+  }
+}
+
+/// A window that has the number of another (`setOwnFrame`).
+extension UndoHistoryTests {
+  @Test func whereAStepWouldLetTheWindowFloatIsItsOwnFrame() {
+    let display = DisplayID("main")
+    let (window, other) = (WindowID(1), WindowID(2))
+    let (old, own) = (CGRect(x: 10, y: 20, width: 789, height: 499), CGRect(x: 200, y: 150, width: 500, height: 300))
+    var floats = Workspace()
+    floats.floating[window] = old
+    floats.floating[other] = old
+    var docked = floats
+    docked.dock(window, at: .cameraEdge(.left))
+    #expect(docked.undockedFrame(of: window) == old)
+    var history = UndoHistory()
+    history.push(
+      UndoStep(id: 1, label: "dock", workspace: floats, frames: [window: old, other: old], changedTo: docked), to: .undo, on: display)
+    history.push(UndoStep(id: 2, label: "later", workspace: docked, changedTo: docked), to: .redo, on: display)
+    history.setOwnFrame(own, of: window)
+    let step = history.steps(.undo, on: display)[0]
+    #expect(step.workspace.floating == [window: own, other: old])
+    #expect(step.frames == [window: own, other: old])
+    #expect(step.changedTo.undockedFrame(of: window) == own)
+    #expect(history.steps(.redo, on: display)[0].workspace.undockedFrame(of: window) == own)
+    // A workspace that does not know the window learns nothing about it.
+    var stranger = Workspace()
+    stranger.setOwnFrame(own, of: window)
+    #expect(stranger == Workspace())
+  }
+}

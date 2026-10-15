@@ -585,6 +585,73 @@ public struct LayoutTree: Codable, Sendable, Equatable {
   }
 }
 
+extension LayoutTree {
+  /// Whether `other` is this arrangement with at most its gaps moved and other tabs in front: the same nodes in the same
+  /// places holding the same windows, and no node made since. Gaps move without anybody rearranging anything (room
+  /// before tiles), and so do the marks that keep groups. (`hasSameArrangement(as:)`, for undo, counts a moved gap as a
+  /// change, and takes a tree that was changed and changed back for the same.)
+  public func isSameArrangement(as other: LayoutTree) -> Bool {
+    guard root == other.root, nextRawID == other.nextRawID, nodes.count == other.nodes.count else { return false }
+    return nodes.allSatisfy { id, node in
+      guard let twin = other.nodes[id], node.parent == twin.parent else { return false }
+      switch (node.kind, twin.kind) {
+      case (.desktop, .desktop): return true
+      case (.split(let axis, let children), .split(let otherAxis, let otherChildren)):
+        return axis == otherAxis && children == otherChildren
+      case (.stack(let windows, _), .stack(let otherWindows, _)): return windows == otherWindows
+      default: return false
+      }
+    }
+  }
+
+  /// This tree is the arrangement before docked windows went; `left` is what their going made of it, and `now` is that
+  /// arrangement later (`isSameArrangement`). Every gap that has moved between those two moves as far in this tree, and
+  /// nothing else does: with nothing moved it stays exactly as it is, and a gap moved by a hair moves by a hair. The tabs
+  /// that are in front now stay in front.
+  public mutating func follow(gapsOf now: LayoutTree, since left: LayoutTree) {
+    /// What stands for a node of this tree in the other two: itself, or what is left of a group that was dissolved.
+    func remains(of id: NodeID) -> [NodeID] {
+      if left.contains(id) { return [id] }
+      var parts = children(of: id).flatMap(remains)
+      // Which can be a group in its turn, one that this tree does not have: here its members lie in a row with a window
+      // that went.
+      while let group = parts.lazy.compactMap({ left.parent(of: $0) })
+        .first(where: { !contains($0) && left.children(of: $0).allSatisfy(parts.contains) })
+      {
+        parts.removeAll { left.parent(of: $0) == group }
+        parts.append(group)
+      }
+      return parts
+    }
+    for split in preorder() where isSplit(split) {
+      let parts = children(of: split).map { (node: $0, remains: remains(of: $0)) }.filter { !$0.remains.isEmpty }
+      // With one part left there was no gap to move. With more, they lie side by side in the other two trees as well.
+      guard parts.count > 1 else { continue }
+      func weights(in tree: LayoutTree) -> [Double] {
+        parts.map { $0.remains.reduce(0) { $0 + (tree.nodes[$1]?.weight ?? 0) } }
+      }
+      let (then, today) = (weights(in: left), weights(in: now))
+      // (To the last digits but a few: whoever keeps `left` may have added to it what Arbor did to the gaps, by arithmetic.)
+      guard zip(then, today).contains(where: { abs($0 - $1) > 1e-9 * max(abs($0), abs($1)) }) else { continue }
+      // A group that was dissolved shared its own weight out among its members.
+      let rate = left.contains(split) ? 1 : parts.reduce(0) { $0 + nodes[$1.node]!.weight } / then.reduce(0, +)
+      for (index, part) in parts.enumerated() {
+        // Whoever gave room to a window that comes back may have been made narrower than that room since, and is
+        // left with something.
+        let weight = nodes[part.node]!.weight
+        nodes[part.node]!.weight = max(weight + (today[index] - then[index]) * rate, weight * 0.1)
+      }
+      steadyWeights(of: split)
+    }
+    follow(loansOf: now, since: left)
+    for leaf in now.preorder() {
+      if case .stack(let windows, _) = nodes[leaf]?.kind, windows.count > 1, let inFront = now.activeWindow(of: leaf) {
+        activate(inFront)
+      }
+    }
+  }
+}
+
 /// Where references to deleted nodes should point after a tree change.
 public struct Remap: Sendable, Equatable {
   public private(set) var moved: [NodeID: NodeID] = [:]

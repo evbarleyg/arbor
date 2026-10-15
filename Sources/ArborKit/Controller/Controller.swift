@@ -319,6 +319,15 @@ public final class Controller {
   var overdueSlots: Set<WindowID> = []
   /// Windows that took a waiting slot on the strength of their app alone, until the wait is over.
   var provisionalSlots: [WindowID: ProvisionalSlot] = [:]
+  /// Where docked windows that closed lately were, in case their app ended and is opened again
+  /// (Controller+RelaunchedApps.swift).
+  var closedPlaces: [DisplayID: ClosedPlaces] = [:]
+  /// How often each display has been laid out, for whoever has to lay out unless somebody it called has.
+  var layoutsMade: [DisplayID: Int] = [:]
+  /// Processes that ended a moment ago.
+  var endedApps: Set<Int32> = []
+  /// Processes of which a window that was not docked went a moment ago, and when.
+  var looseWindowsGone: [Int32: Date] = [:]
   // Controller+Economy.swift
   /// Where commands and layouts are counted and timed (the `stats` command).
   public var stats = CallStats.shared
@@ -457,6 +466,7 @@ public final class Controller {
     pendingSlots.removeAll()
     overdueSlots.removeAll()
     provisionalSlots.removeAll()
+    forgetClosedPlaces()
     drag = nil
     soleFloats.dragged = nil
     edgeResize = nil
@@ -568,6 +578,7 @@ public final class Controller {
     returningWindows.removeAll()
     keyboardHandOver = KeyboardHandOver()
     scheduler.cancel("pending-slots")
+    forgetClosedPlaces()
     forgetHold()
     scheduler.cancel(Self.afterLaunchKey)
     soleFloats.isWaitingAfterLaunch = false
@@ -779,7 +790,7 @@ public final class Controller {
           let replacement = rematch(hint, managed: managed, claimed: claimed.union(inPlace), workspace: workspace)
         {
           workspace.replaceWindow(window, with: replacement)
-          undoHistory.renumber(window, as: replacement)
+          renumberInThePast(window, as: replacement)
           hints[replacement] = hint
           claimed.insert(replacement)
         } else if let hint, windows[window] == nil || windows[window]?.bundleID != hint.bundleID {

@@ -55,7 +55,7 @@ extension Controller {
 
   /// Window numbers restart after a reboot, so a saved number may soon belong, or already belongs,
   /// to an unrelated window. The slot moves to a number no real window has.
-  private func moveToStandIn(_ window: WindowID, hint: WindowHint, in workspace: inout Workspace) {
+  func moveToStandIn(_ window: WindowID, hint: WindowHint, in workspace: inout Workspace) {
     var candidate = UInt32.max
     func isTaken(_ id: WindowID) -> Bool {
       pendingSlots.contains(id) || windows[id] != nil || hints[id] != nil || workspace.contains(id)
@@ -70,7 +70,7 @@ extension Controller {
       return
     }
     workspace.replaceWindow(window, with: standIn)
-    undoHistory.renumber(window, as: standIn)
+    renumberInThePast(window, as: standIn)
     pendingSlots.remove(window)
     pendingSlots.insert(standIn)
     hints[standIn] = hint
@@ -87,7 +87,7 @@ extension Controller {
     scheduleCheckOfPendingSlots()
   }
 
-  private func scheduleCheckOfPendingSlots() {
+  func scheduleCheckOfPendingSlots() {
     scheduler.schedule("pending-slots", after: Self.pendingSlotLifetime) { [weak self] in
       guard let self else { return }
       let existing = self.system.existingWindowIDs()
@@ -182,9 +182,7 @@ extension Controller {
       provisionalSlots[window.id] = nil
       endWaitIfOver()
     }
-    guard !hasSlot(window.id),
-      AppRule.firstMatch(in: settings.rules, bundleID: window.bundleID, title: window.title)?.action != .ignore
-    else { return false }
+    guard mayTakeASlot(window) else { return false }
     let exact = slot(withTitleOf: window)
     if exact == nil, let taken = takeOverProvisionalSlot(for: window) { return taken }
     guard let slot = exact ?? onlySlot(ofAppOf: window) else { return false }
@@ -203,7 +201,7 @@ extension Controller {
         holdProvisionally(in: dormant[id]!.workspace.tree)
         break
       }
-      undoHistory.renumber(slot, as: window.id)
+      renumberInThePast(slot, as: window.id)
       hints[slot] = nil
       pendingSlots.remove(slot)
       endWaitIfOver()
@@ -212,7 +210,7 @@ extension Controller {
     }
     for id in workspaces.keys.sorted() { workspaces[id]!.floating[window.id] = nil }
     workspaces[display]!.replaceWindow(slot, with: window.id)
-    undoHistory.renumber(slot, as: window.id)
+    renumberInThePast(slot, as: window.id)
     holdProvisionally(in: workspaces[display]!.tree)
     hints[slot] = nil
     pendingSlots.remove(slot)
@@ -220,8 +218,14 @@ extension Controller {
     return true
   }
 
+  /// Whether `window` could be given a slot if one waited for it.
+  func mayTakeASlot(_ window: WindowSnapshot) -> Bool {
+    drag?.window != window.id && !hasSlot(window.id)
+      && AppRule.firstMatch(in: settings.rules, bundleID: window.bundleID, title: window.title)?.action != .ignore
+  }
+
   /// The waiting slots of the app of `window`: stand-ins first, in the order they were made.
-  private func slots(ofAppOf window: WindowSnapshot) -> [WindowID] {
+  func slots(ofAppOf window: WindowSnapshot) -> [WindowID] {
     guard window.bundleID != nil else { return [] }
     return pendingSlots.sorted(by: >).filter { hints[$0]?.bundleID == window.bundleID }
   }
@@ -237,10 +241,14 @@ extension Controller {
     let ofApp = slots(ofAppOf: window)
     // A slot that waits under its own number waits for that very window.
     guard ofApp.count == 1, Self.isStandIn(ofApp[0]) else { return nil }
+    return isItsAppsOnlyWindowWithoutASlot(window) ? ofApp[0] : nil
+  }
+
+  func isItsAppsOnlyWindowWithoutASlot(_ window: WindowSnapshot) -> Bool {
     let loose = windows.values.filter { other in
       other.bundleID == window.bundleID && filter.manages(other) && !hasSlot(other.id)
     }
-    return loose.count == 1 ? ofApp[0] : nil
+    return loose.count == 1
   }
 
   /// Whether `window` is docked already, be it on a display that is not connected.
@@ -253,7 +261,17 @@ extension Controller {
     hints[window.id] = WindowHint(bundleID: window.bundleID, title: window.title)
     endWaitIfOver()
     Log.info("\(window.id) is back in its saved slot")
-    relayout(display, reason: .structure)
+    // By the time Arbor hears of a new window it has the keyboard as a rule, and the view goes to whoever has it, as a tab
+    // comes to the front. First, so that the window is moved once, to where it ends up, and not out of view on the way.
+    let view = workspaces[display]?.camera
+    let layoutsBefore = layoutsMade[display]
+    if system.focusedWindow() == window.id, let tree = workspaces[display]?.tree, let view,
+      let leaf = tree.leaf(containing: window.id),
+      !tree.subtree(view, contains: leaf) || tree.activeWindow(of: leaf) != window.id
+    {
+      bringIntoViewIfFocused(window.id, retries: 0)
+    }
+    if layoutsMade[display] == layoutsBefore { relayout(display, reason: .structure) }
     scheduleSave()
   }
 
@@ -305,6 +323,10 @@ extension Controller {
     /// Where in the tree. If the window is anywhere else by now, the user has decided about it.
     var leaf: NodeID
     var openedAt: CGRect
+    /// How small the window that had the slot was found to go, if that was lent to the holder (Controller+RelaunchedApps.swift).
+    var minimumSize: CGSize? = nil
+    /// The slot is that of an app that was quit and opened again, not one saved by an earlier run.
+    var isAfterARelaunch = false
   }
 
   private var isWaitOver: Bool { pendingSlots.isEmpty && provisionalSlots.isEmpty }
@@ -324,9 +346,11 @@ extension Controller {
     else { return nil }
     defer { endWaitIfOver() }
     if let display = workspaces.keys.sorted().first(where: { workspaces[$0]!.tree.leaf(containing: holder) == held.leaf }) {
+      let own = workspaces.values.lazy.compactMap { $0.floating[window.id] }.first ?? window.frame
       for id in workspaces.keys.sorted() { workspaces[id]!.floating[window.id] = nil }
       workspaces[display]!.replaceWindow(holder, with: window.id)
-      undoHistory.renumber(holder, as: window.id)
+      renumberInThePast(holder, as: window.id)
+      if held.isAfterARelaunch { isAnotherWindow(window.id, whichOpenedAt: own, on: display) }
       // The one that came first is a new window after all. It floats where its app had put it.
       let home = displayID(at: held.openedAt.center).flatMap { workspaces[$0] == nil ? nil : $0 } ?? display
       workspaces[home]!.floating[holder] = held.openedAt
@@ -334,6 +358,7 @@ extension Controller {
       parked.remove(holder)
       settled[holder] = nil
       misfits[holder] = nil
+      if let known = held.minimumSize { (minimumSizes[window.id], minimumSizes[holder]) = (known, nil) }
       Log.info("\(window.id) takes the saved slot over from \(holder)")
       settle(window, on: display)
       return true
@@ -341,7 +366,7 @@ extension Controller {
     for id in dormant.keys.sorted() where dormant[id]!.workspace.tree.leaf(containing: holder) == held.leaf {
       dormant[id]!.workspace.floating[window.id] = nil
       dormant[id]!.workspace.replaceWindow(holder, with: window.id)
-      undoHistory.renumber(holder, as: window.id)
+      renumberInThePast(holder, as: window.id)
       scheduleSave()
       return false
     }

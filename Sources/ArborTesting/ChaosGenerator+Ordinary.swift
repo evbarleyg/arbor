@@ -137,6 +137,8 @@ extension ChaosGenerator {
     var new = ChaosAction.NewWindow(id: WindowID(nextWindow), app: app.name, pid: Int32(1000 + index), frame: CGRect(origin: origin, size: size))
     nextWindow += 1
     (new.minimum, new.maximum) = (app.minimum, app.maximum)
+    // In one word, so that a script that opens the app again under the same title can be read back.
+    new.title = "\(app.name)-\(new.id.rawValue)"
     return new
   }
 
@@ -180,7 +182,7 @@ extension ChaosGenerator {
       default: return .advance(1)
       }
     }
-    enum Kind { case open, close, minimize, hide, click, commandTab, drag, edge, seam, tile, key, hold, menu, time, fullScreen, displays, cursor, summon }
+    enum Kind { case open, close, minimize, hide, click, commandTab, drag, edge, seam, tile, key, hold, menu, time, fullScreen, displays, cursor, summon, quitAndReopen }
     let windows = system.windows.count
     let tiles = world.harness.overlays.tiles.values.reduce(0) { $0 + $1.count }
     let seams = world.harness.overlays.seams.values.reduce(0) { $0 + $1.count }
@@ -188,7 +190,7 @@ extension ChaosGenerator {
       random.pick(weighted: [
         (windows < 3 ? 100 : windows < 7 ? 30 : 4, Kind.open), (windows > 2 ? 14 : 2, .close), (14, .minimize), (5, .hide), (50, .click),
         (30, .commandTab), (40, .drag), (14, .edge), (seams > 0 ? 12 : 0, .seam), (tiles > 0 ? 24 : 0, .tile), (300, .key), (10, .hold),
-        (30, .menu), (30, .time), (4, .fullScreen), (desk.kind == .both ? 10 : 0, .displays), (16, .cursor), (6, .summon),
+        (30, .menu), (30, .time), (4, .fullScreen), (desk.kind == .both ? 10 : 0, .displays), (16, .cursor), (6, .summon), (windows > 1 ? 20 : 0, .quitAndReopen),
       ]) ?? .time
     switch kind {
     case .open:
@@ -283,6 +285,22 @@ extension ChaosGenerator {
       thenAMoment([.settle])
       return .displays(desk.displays, random.pick([.late, .silent, .first])!)
     case .cursor: return .cursor(point(in: world))
+    case .quitAndReopen:
+      // ⌘Q, a while, and the app again with the windows it had, under their titles, wherever it likes to open them.
+      guard let window = existing(world, .inView) else { return .flush }
+      let pid = system.windows[window]!.snapshot.pid
+      var again: [ChaosAction] = [.react, .advance(random.pick([1, 5, 20])!), .react]
+      for id in system.windows.keys.sorted() where system.windows[id]!.snapshot.pid == pid {
+        let old = system.windows[id]!
+        var new = ordinaryWindow(on: system.displayList)
+        (new.app, new.pid, new.title) = (old.snapshot.appName, pid, old.snapshot.title)
+        (new.minimum, new.maximum) = (old.minimumSize, old.maximumSize)
+        new.frame.size.width = min(max(new.frame.width, old.minimumSize.width), old.maximumSize?.width ?? .infinity)
+        new.frame.size.height = min(max(new.frame.height, old.minimumSize.height), old.maximumSize?.height ?? .infinity)
+        again += [.open(new), .focus(new.id), .react]
+      }
+      thenAMoment(again)
+      return .quitApp(pid: pid)
     }
   }
 }

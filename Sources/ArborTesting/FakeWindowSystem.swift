@@ -1015,9 +1015,13 @@ extension FakeWindowSystem {
 // MARK: Apps
 
 extension FakeWindowSystem {
-  /// The app quits: like the Accessibility layer, this reports each of its windows destroyed, in order.
-  public func quit(pid: Int32) {
+  /// The app quits: like the Accessibility layer, this reports each of its windows destroyed, in order, and that
+  /// the process ended: afterwards for an app that closes its windows as it quits, first for one that is
+  /// killed, crashes or simply exits.
+  public func quit(pid: Int32, windowsFirst: Bool = true) {
+    if !windowsFirst, started { events?.applicationTerminated(pid) }
     for id in windows.keys.sorted() where windows[id]?.snapshot.pid == pid { close(id) }
+    if windowsFirst, started { events?.applicationTerminated(pid) }
   }
 }
 

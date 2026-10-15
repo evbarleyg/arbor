@@ -982,7 +982,16 @@ takes no space, and whatever draws or lists a tree's windows must skip it; `stat
 `status` counts the ones whose window is not open yet. A window that got a slot by its app alone holds it
 provisionally until the wait is over (`provisionalSlots`): what an app shows first is often a welcome window, so a window
 with the saved title takes the slot over, and if the holder closes the slot waits again. After `resume` only windows
-that still exist keep a slot: what is missing was closed by the user, not by a reboot. Slots wait in the
+that still exist keep a slot: what is missing was closed by the user, not by a reboot. **An app that is quit and opened
+again while Arbor runs** goes back to its places too (`Controller+RelaunchedApps.swift`). A docked window that goes is forgotten at once,
+whatever the reason, so quitting an app costs nothing and nothing moves later on its account; Arbor keeps a note beside the tree
+(`closedPlaces`: the workspace before, the workspace after, and which windows went when). If `applicationTerminated` says within five
+seconds that the app ended, a window of that app appears within three minutes that would take one of the places, and the arrangement has not
+changed otherwise (`isSameArrangement`: gaps aside), the tree is put back as it was with that window and without the others that are
+still away (`Workspace.restoreStructure`), the window claims its slot, and there is one layout. The note stays for the others. What differs
+between the note's `after` and the tree is what a person has done: those gaps move as far in the tree that is put back
+(`LayoutTree.follow(gapsOf:since:)`), while what a layout does to the gaps goes into the note (`closedPlacesFollow`). The steps of `undo`
+recorded meanwhile are rewritten the same way (`UndoHistory.rewriteSteps`). Slots wait in the
 remembered arrangements of disconnected displays too: the window floats where it appears and returns to its slot
 with the display. Whatever is found mostly off-screen (parked by a run
 that did not quit cleanly) counts as parked, so the first layout brings back everything the

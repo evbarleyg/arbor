@@ -39,6 +39,12 @@ extension Workspace {
     setUndockedFrame(frame, of: replacement)
   }
 
+  /// `window` is another window than the one that was here under its number: its app was quit and opened again. What that one
+  /// looked like when it floated is nothing to this one. Where it floats, or would float again, is `frame`.
+  public mutating func setOwnFrame(_ frame: CGRect, of window: WindowID) {
+    if isFloating(window) { floating[window] = frame } else if isDocked(window) { setUndockedFrame(frame, of: window) }
+  }
+
   /// After docked windows were traded with another display's tree (`swap`): those that left are forgotten here, and
   /// those that came are remembered at the frames they would float at here.
   public mutating func rememberUndockedFrames(ofArrivals arrivals: [WindowID: CGRect]) {
