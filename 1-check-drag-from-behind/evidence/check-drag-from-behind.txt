@@ -1,0 +1,62 @@
+# check-drag-from-behind 2026-10-15T06:25Z on macOS 26.6.2, commit 4e1ad12
+
+▸ the window in front is dragged onto the side of a docked window
+  ✔ it has the keyboard
+  ✔ in front: Arbor sees a drag
+  ✔ in front: a preview shows where it would go
+  ✔ in front: let go, it is docked
+
+▸ another window of the app in front is dragged onto the side of a docked window, without a click first
+  ✔ the docked window has the keyboard
+  ✔ of the same app: Arbor sees a drag
+  ✔ of the same app: a preview shows where it would go
+  ✔ of the same app: let go, it is docked
+
+▸ a window of an app in the background is dragged onto the side of a docked window, without a click first
+  ✔ the docked window has the keyboard
+  ✔ of another app: Arbor sees a drag
+  ✔ of another app: a preview shows where it would go
+  ✔ of another app: let go, it is docked
+
+▸ the window in front is dragged to the bottom edge of the screen
+  ✔ it has the keyboard
+  ✔ in front: Arbor sees a drag
+  ✔ in front: a preview shows where it would go
+  ✔ in front: let go, it is docked
+
+▸ another window of the app in front is dragged to the bottom edge of the screen, without a click first
+  ✔ the docked window has the keyboard
+  ✔ of the same app: Arbor sees a drag
+  ✔ of the same app: a preview shows where it would go
+  ✔ of the same app: let go, it is docked
+
+▸ a window of an app in the background is dragged to the bottom edge of the screen, without a click first
+  ✔ the docked window has the keyboard
+  ✔ of another app: Arbor sees a drag
+  ✔ of another app: a preview shows where it would go
+  ✔ of another app: let go, it is docked
+
+▸ another window of the app in front is dragged with ⌘ held from before the press: macOS does not bring it forward
+  ✔ the docked window has the keyboard
+  ✔ ⌘ from the first: Arbor sees a drag
+
+▸ another window of the app in front is dragged, and ⌘ goes down on the way
+  ✔ the docked window has the keyboard
+  ✔ ⌘ on the way: Arbor sees a drag
+
+▸ a window of an app in the background is dragged with ⌘ held from before the press: macOS does not bring it forward
+  ✔ the docked window has the keyboard
+  ✔ ⌘ from the first: Arbor sees a drag
+
+▸ a window of an app in the background is dragged, and ⌘ goes down on the way
+  ✔ the docked window has the keyboard
+  ✔ ⌘ on the way: Arbor sees a drag
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+
+37 passed, 0 failed

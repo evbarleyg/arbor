@@ -1,0 +1,175 @@
+# mac-shell: scripts/mac-shell/e2e-drag.sh at 4e1ad12, macOS 26.6.2, 2026-10-15T06:28Z
+This takes over the real pointer for about half a minute. Hands off the mouse until it says it is done.
+built Arbor, the pointer tool and the app bundles in 3s
+session 1: Arbor pid 21491, test windows 102 103 104 (pid 21474)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+display 0 0 1024 768, visible 0 31 1024 674, camera n0, back no
+  Desktop          12 43 1000 650
+  w102 170 220 480 348      floating
+  w103 220 180 480 348      floating
+  w104 270 140 480 348      floating
+
+== drag a window by its title bar to the left screen edge
+> drag 546 152 3 368 --no-release
+  ✔ with macOS's tiling on Arbor offers nothing along the edge
+> release
+  ✔ let go short of macOS's point, the window floats
+  ✔ where it was let go
+> dock 104 left
+docked w104 at the left edge
+  ✔ a command docks it
+  ✔ it sits at the left edge
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          518 43 494 650
+  w102 518 220 480 348      floating
+  w103 518 180 480 348      floating
+  w104 12 194 494 348       docked focused
+
+== drag the right edge of the docked window 60 points to the right
+> drag 505 368 565 368
+  ✘ the window is 60 points wider
+      picture: mac-shell/fail-e2e-drag-1.png
+      | display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+      |   Desktop          578 43 434 650
+      |   w102 578 220 446 348      floating
+      |   w103 578 180 446 348      floating
+      |   w104 12 113 554 510       docked focused
+      log | DEBUG stage down
+      log | DEBUG the button went down at 505,368, the pointer is at 505,368: it is on w104
+      log | DEBUG w104 is being resized by its edges
+      log | DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 3 stand-ins, 0.46 s
+      log | DEBUG the stage kept the windows waiting 5 ms: its panel 0, 3 costumes 0 (0 not ready), the desktop 2, going up 3
+      log | DEBUG stage retargeted on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 3 stand-ins, 0.4521560287475586 s
+      log | DEBUG edge resize of w104: edges ["right"], seams beside ["right"]
+      log | DEBUG stage down
+  ✔ the Desktop gave up the space
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          578 43 434 650
+  w102 578 220 446 348      floating
+  w103 578 180 446 348      floating
+  w104 12 113 554 510       docked focused
+
+== drag another window onto the right part of the docked one
+> drag 836 192 482 368
+  ✔ it docks
+  ✔ to the right of the first
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          583 43 429 650
+  w102 583 220 441 348      floating
+  w103 298 194 273 348      docked focused
+  w104 12 73 274 591        docked
+
+== double-click the title bar of a docked window (H5)
+> click 180 85 2
+  ✔ the window is in its slot
+  ✘ no seam moved
+      picture: mac-shell/fail-e2e-drag-2.png
+      | display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+      |   Desktop          583 43 429 650
+      |   w102 583 220 441 348      floating
+      |   w103 298 194 273 348      docked
+      |   w104 12 43 274 650        docked focused
+      log | DEBUG stage down
+      log | DEBUG the button went down at 180,85, the pointer is at 180,85: it is on w104
+      log | DEBUG focus is on w104
+      log | DEBUG w104 has the keyboard
+      log | DEBUG the button went down at 180,85, the pointer is at 180,85: it is on w104
+
+== press inside a docked window and move the pointer
+> drag 149 368 239 428 --no-release
+  ✔ that is not a drag: no preview
+> release
+  ✔ the window is in its slot
+
+== drag a docked window out onto the Desktop
+> drag 466 206 797 103
+  ✔ it floats
+  ✔ the first window is still docked
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          578 43 434 650
+  w102 578 220 446 348      floating
+  w103 523 91 480 348       floating focused
+  w104 12 43 554 650        docked
+
+== let go of a docked window at the very edge of the screen, where macOS tiles
+> drag 324 55 0 368 --hold 1 --no-release
+  ✔ Arbor shows no preview beside macOS's
+> release
+  ✔ macOS gives it its tile
+  ✔ where it stays
+  ✔ it floats
+  ✔ and Arbor knows where it is
+display 0 0 1024 768, visible 0 31 1024 674, camera n0, back no
+  Desktop          12 43 1000 650
+  w102 170 220 480 348      floating
+  w103 523 91 480 348       floating
+  w104 -1 32 513 674        floating focused
+
+== let go of a floating window in the menu bar, where macOS fills the screen
+> drag 799 103 512 15 --hold 1 --no-release
+  ✔ Arbor shows no preview beside macOS's
+> release
+  ✔ macOS gives it its tile
+  ✔ where it stays
+  ✔ it floats
+  ✔ and Arbor knows where it is
+display 0 0 1024 768, visible 0 31 1024 674, camera n0, back no
+  Desktop          12 43 1000 650
+  w102 170 220 480 348      floating
+  w103 0 31 1024 674        floating focused
+  w104 -1 32 513 674        floating
+
+== with macOS's tiling switched off meanwhile, the menu bar and the last point of the edge are Arbor's
+com.apple.WindowManager EnableTilingByEdgeDrag: 0
+com.apple.WindowManager EnableTopTilingByEdgeDrag: 0
+com.apple.WindowManager EnableTilingOptionAccelerator: not set
+com.apple.WindowManager EnableTiledWindowMargins: not set
+> drag 546 43 512 231
+> drag 532 224 512 15 --hold 1 --no-release
+  ✔ a drop preview shows
+> release
+  ✔ the window docks
+  ✘ in its slot — it is at 118 43 788 319, its slot at 12 43 1000 319
+      picture: mac-shell/fail-e2e-drag-3.png
+      | display 0 0 1024 768, visible 0 31 1024 674, camera n5, back no
+      |   Desktop          12 374 1000 319
+      |   w102 170 374 480 331      floating
+      |   w103 118 43 788 319       docked focused
+      |   w104 0 374 514 331        floating
+      log | DEBUG the button went down at 546,43, the pointer is at 546,43: it is on w103
+      log | DEBUG w103 is being dragged
+      log | DEBUG drag of w103: on float
+      log | INFO  dropped w103 on float, display 07230EFA-7A8D-4E37-845C-19CC8737EEF5
+      log | DEBUG the button went down at 532,224, the pointer is at 532,224: it is on w103
+      log | DEBUG w103 is being dragged
+      log | DEBUG drag of w103: on float
+      log | DEBUG drag of w103: on cameraEdge(ArborCore.Edge.top)
+      log | INFO  dropped w103 on cameraEdge(ArborCore.Edge.top), display 07230EFA-7A8D-4E37-845C-19CC8737EEF5
+      log | DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 3 stand-ins, 0.46 s
+      log | DEBUG the stage kept the windows waiting 11 ms: its panel 0, 3 costumes 0 (0 not ready), the desktop 8, going up 2
+      log | DEBUG stage retargeted on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 3 stand-ins, 0.44877692222595217 s
+      log | DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Docked · ⌃⌥↩ frames it
+      log | DEBUG stage down
+> drag 288 386 0 536 --hold 1 --no-release
+  ✔ a drop preview shows
+> release
+  ✔ the window docks
+  ✔ in its slot
+display 0 0 1024 768, visible 0 31 1024 674, camera n7, back no
+  Desktop          518 374 494 319
+  w102 518 374 480 331      floating
+  w103 518 43 494 319       docked
+  w104 12 43 494 650        docked focused
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+Done: the pointer is yours again.
+
+32 passed, 3 failed
+exit code 1

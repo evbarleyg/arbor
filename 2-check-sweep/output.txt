@@ -1,0 +1,156 @@
+# mac-shell: scripts/mac-shell/check-sweep.sh at 4e1ad12, macOS 26.6.2, 2026-10-15T06:26Z
+built Arbor, the pointer tool and the app bundles in 6s
+com.apple.WindowManager EnableStandardClickToShowDesktop: not set
+Reduce Motion: false
+session 1: Arbor pid 15491, test windows 53 54 55 56 57 (pid 15416)
+running: 1 display, 0 docked and 5 floating, 0 out of view
+Arbor dev
+> dock 53 left
+docked w53 at the left edge
+> dock 54 right
+docked w54 at the right edge
+> dock 57 bottom
+docked w57 at the bottom edge
+display 0 0 1024 768, visible 0 31 1024 677, camera n5, back no
+  Desktop          349 43 326 321
+  w53 12 43 325 321        docked
+  w54 687 43 325 321       docked
+  w55 349 53 157 200       floating
+  w56 518 53 157 200       floating
+  w57 174 376 675 320      docked focused
+
+== s1 a click on the wallpaper, and another
+swept aside by a click at 999,683: -313 -145 325 321 | 1012 -145 325 321 | 277 -158 157 200 | 591 -158 157 200 | 173 756 675 320 | 
+  ✔ Arbor goes on believing them where they are
+shot: mac-shell/1-swept.png
+  ✔ they are back
+  ✔ every window is where it was, by the window server
+  ✔ and where Arbor believes it
+  ✔ the arrangement is what it was
+
+== s2 a click on a docked window's strip that slips by three points
+swept aside by a click at 999,683: -313 -145 325 321 | 1012 -145 325 321 | 277 -158 157 200 | 591 -158 157 200 | 173 756 675 320 | 
+> drag 6 104 9 107 --steps 6 --duration 0.25 --hold 0.1 --no-release
+  ✔ no drop preview shows while the button is down
+> release
+  ✔ they are back
+  ✔ every window is where it was, by the window server
+  ✔ and where Arbor believes it
+  ✔ the arrangement is what it was
+  ✔ 53 is docked
+
+== s3 a press on a floating window's strip that slips and rests, longer than a drop target takes
+swept aside by a click at 999,683: -313 -145 325 321 | 1012 -145 325 321 | 277 -158 157 200 | 591 -158 157 200 | 173 756 675 320 | 
+> drag 355 37 358 40 --steps 6 --duration 0.25 --hold 0.8 --no-release
+  ✔ no drop preview shows while the button is down
+> release
+  ✔ they are back
+  ✔ every window is where it was, by the window server
+  ✔ and where Arbor believes it
+  ✔ the arrangement is what it was
+  ✔ 55 is floating
+  ✔ 56 is floating
+
+== s4 somebody tries to pull a docked window in by its strip
+swept aside by a click at 999,683: -313 -145 325 321 | 1012 -145 325 321 | 277 -158 157 200 | 591 -158 157 200 | 173 756 675 320 | 
+> drag 1018 104 868 114 --steps 6 --duration 0.25 --hold 0.8 --no-release
+  ✔ no drop preview shows while the button is down
+> release
+  ✔ they are back
+  ✔ every window is where it was, by the window server
+  ✔ and where Arbor believes it
+  ✔ the arrangement is what it was
+  ✔ 54 is docked
+
+== s5 and a floating one
+swept aside by a click at 999,683: -313 -145 325 321 | 1012 -145 325 321 | 277 -158 157 200 | 591 -158 157 200 | 173 756 675 320 | 
+> drag 669 37 679 187 --steps 6 --duration 0.25 --hold 0.8 --no-release
+  ✔ no drop preview shows while the button is down
+> release
+  ✔ they are back
+  ✔ every window is where it was, by the window server
+  ✔ and where Arbor believes it
+  ✔ the arrangement is what it was
+  ✔ 55 is floating
+  ✔ 56 is floating
+
+== s6 the control: with nothing swept, a layout is shown as motion
+> resize 53 right 40
+resized w53
+  ✔ the stage went up
+display 0 0 1024 768, visible 0 31 1024 677, camera n5, back no
+  Desktop          389 43 286 321
+  w53 12 43 365 321        docked
+  w54 687 43 325 321       docked
+  w55 389 53 157 200       floating
+  w56 518 53 157 200       floating
+  w57 174 376 675 320      docked
+
+== s7 the same while they are aside: unseen
+swept aside by a click at 999,683: -353 -181 365 321 | 1012 -145 325 321 | 351 -158 157 200 | 591 -158 157 200 | 173 756 675 320 | 
+> resize 53 right -40
+resized w53
+  ✔ no stage went up over the bare desktop
+  ✔ they are still aside
+  ✔ Arbor has laid out meanwhile
+shot: mac-shell/7-laid-out-while-swept.png
+and a press on the outermost point of a strip, of a window that comes back with another size
+> drag 1 86 4 89 --steps 6 --duration 0.25 --hold 0.8 --no-release
+  ✔ no drop preview shows while the button is down
+> release
+  ✔ they are back
+  ✔ every window is where Arbor put it meanwhile, by the window server
+  ✔ and where Arbor believes it
+  ✔ the arrangement is what it was
+display 0 0 1024 768, visible 0 31 1024 677, camera n5, back no
+  Desktop          349 43 326 321
+  w53 12 43 325 321        docked
+  w54 687 43 325 321       docked
+  w55 349 53 157 200       floating
+  w56 518 53 157 200       floating
+  w57 174 376 675 320      docked
+
+== s8 the control: a real drag is still a drag
+> click 632 65
+> drag 632 65 632 125 --steps 20 --duration 0.5
+  ✔ the window went along, sixty points down
+
+== s9 the control: so is one that is flung
+> drag 632 125 632 65 --steps 3 --duration 0.05
+  ✔ the window went along, sixty points up
+
+== s10 a command given while they are aside does what it says, and brings them back
+swept aside by a click at 999,683: -313 -145 325 321 | 1012 -145 325 321 | 277 -158 157 200 | 591 -158 157 200 | 173 756 675 320 | 
+> focus 54
+focused w54
+  ✔ they are back
+  ✔ every window is where it was, by the window server
+  ✔ and where Arbor believes it
+  ✔ the arrangement is what it was
+  ✔ 54 has the keyboard
+
+== s11 the end
+> trace off
+trace saved: /tmp/arbor-shell.tfTHm4/home/traces/2026-10-15-062740-sweep.jsonl: 870 lines, trace off
+  ✔ from the first click to the last pull Arbor was told of no drag
+  ✔ of no resize by hand
+  ✔ and of no window moved by hand
+  ✔ it showed no drop preview
+  ✔ and it set no frame
+  ✔ nor was it told of a drag of the window that came back with another size
+  ✔ or of a resize by hand
+  ✔ and it showed no drop preview
+  ✔ the two real drags were drags
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+  ✔ window 5 is back on screen after quitting
+
+62 passed, 0 failed
+exit code 0
