@@ -62,19 +62,19 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 | [geometry](#geometry) | 35 | 2 | 11 | 15 | 7 | 2 | 24 | 1 | 2 | 8 | 6 |
 | [identity](#identity) | 31 | 4 | 7 | 6 | 7 | 11 | 13 | 1 | 4 | 13 | 9 |
 | [permissions](#permissions) | 23 | 8 | 6 | 3 | 3 | 11 | 12 | 2 | 2 | 7 | 4 |
-| [timing](#timing) | 54 | 7 | 7 | 16 | 9 | 22 | 29 | 4 | 7 | 14 | 10 |
+| [timing](#timing) | 55 | 7 | 7 | 16 | 10 | 22 | 30 | 4 | 7 | 14 | 10 |
 | [input](#input) | 59 | 8 | 7 | 15 | 13 | 24 | 24 | 6 | 8 | 21 | 11 |
 | [looks](#looks) | 21 | 0 | 0 | 0 | 1 | 20 | 2 | 2 | 3 | 14 | 6 |
 | [never-exercised](#never-exercised) | 15 | 7 | 1 | 13 | 0 | 1 | 0 | 0 | 14 | 1 | 15 |
 | [toolchain](#toolchain) | 45 | 1 | 0 | 1 | 4 | 40 | 26 | 1 | 2 | 16 | 7 |
-| **all** | 464 | 62 | 94 | 126 | 67 | 177 | 241 | 19 | 60 | 144 | 109 |
+| **all** | 465 | 62 | 94 | 126 | 68 | 177 | 242 | 19 | 60 | 144 | 109 |
 
 **Where the difference bit**
 
 | Where | That is | Cases | Hurt 1 or 2 | Guarded without a Mac | Guarded only on CI's Macs | Only when somebody starts a script | Not guarded |
 |---|---|---|---|---|---|---|---|
 | below the seam | in the macOS-only code under the platform protocols (AX, Input, UI, App), which no test on Linux runs | 144 | 89 | 46 | 13 | 33 | 52 |
-| at the seam | in what crosses the platform protocols: a stand-in can play it to the controller | 163 | 97 | 124 | 0 | 11 | 28 |
+| at the seam | in what crosses the platform protocols: a stand-in can play it to the controller | 164 | 98 | 125 | 0 | 11 | 28 |
 | controller | in the controller or the core, given reports that were right | 28 | 15 | 16 | 0 | 1 | 11 |
 | test | in a test, a script or a harness that expected the wrong thing | 83 | 0 | 28 | 5 | 11 | 39 |
 | machine | in the machine, the toolchain or the way things are built and installed | 46 | 3 | 27 | 1 | 4 | 14 |
@@ -204,6 +204,7 @@ So no test on Linux can meet it. (Those they play partly are not listed: see eac
 | [the-resize-may-come-before-the-full-screen-flag](#the-resize-may-come-before-the-full-screen-flag) | 2 | at the seam | no | only when somebody starts a script |
 | [a-dragged-window-may-stand-still-until-the-pointer-is-24-points-away](#a-dragged-window-may-stand-still-until-the-pointer-is-24-points-away) | 2 | controller | no | guarded without a mac |
 | [a-rotation-rides-along-with-a-pinch](#a-rotation-rides-along-with-a-pinch) | 2 | controller | no | guarded without a mac |
+| [asking-for-the-keyboard-for-a-window-in-the-dock-takes-half-a-second](#asking-for-the-keyboard-for-a-window-in-the-dock-takes-half-a-second) | 2 | at the seam | no | guarded without a mac |
 | [macos-leaves-out-a-menu-bar-item-that-does-not-fit](#macos-leaves-out-a-menu-bar-item-that-does-not-fit) | 2 | at the seam | no | guarded without a mac |
 
 ## Ring 2: what the walks on Linux cannot vouch for
@@ -3713,6 +3714,18 @@ Timing: how long things take, and what can happen meanwhile.
 - **Arbor copes:** **not yet**
 - **Read in:** `Sources/ArborKit/Input/HotKeyCenter.swift`, `Sources/ArborKit/App/ArborApp.swift`, `scripts/mac-shell/probe-whose-key.sh`
 
+### asking-for-the-keyboard-for-a-window-in-the-dock-takes-half-a-second
+
+*hurt 2 · at the seam*
+
+- **Expected:** `focus` returns at once, as the stand-ins' does, and macOS flies the window out of the Dock afterwards, while Arbor goes on.
+- **Happened:** Asked for the keyboard for a window that had just been asked out of the Dock, the call took 540 to 566 ms, three rounds of three: the flight happens inside it, and Arbor stands still meanwhile. The reports (the keyboard, the window back) came 8 to 50 ms after it had returned. For a window of a hidden app the same call took 11 to 14 ms. So whatever Arbor puts on screen before that call stays there for the length of it: a view moved first, to the place of a window that is not there yet, shows its neighbour for more than half a second. And work scheduled before the call begins to count only after it: the scheduler's task starts when the main actor is free.
+- **Found by:** A Mac shell run of check-comes-back.sh on a hosted Mac, macOS 26.6.2, which records itself: read from the times in the recording.
+- **Stand-ins play it:** **no**
+- **Guard:** `e2e: what is on screen stays, and its neighbour never shows` (by hand); `test: whatIsOnScreenStaysUntilItIsBack`
+- **Arbor copes:** Controller.awaitTheReturn: no view moves before the call; what is on screen stays until the window is reported back.
+- **Read in:** `scripts/mac-shell/check-comes-back.sh`, `Sources/ArborKit/Controller/Controller+OneLayout.swift`, `Sources/ArborKit/Platform/Scheduler.swift`
+
 ### docking-into-a-slot-too-small-took-seven-to-twelve-seconds
 
 *hurt 2 · at the seam · touches `slow`, `crash`*
@@ -3854,7 +3867,7 @@ Timing: how long things take, and what can happen meanwhile.
 - **Found by:** Films of a hosted Mac in which each scene was played once on a fresh Mac, so that "the first time" looked like "always in these two scenes". Then three runs on hosted Macs in the night of 2026-10-15 (macOS 26.6.2, VirtualMac2,1): a strip on top of everything whose squares never stop, so that a wait between two frames is a display that stood still also where nothing is meant to move; each act played several times from fresh starts, filmed and unfilmed in turns; the system's log on one clock; and a control without Arbor, which was calm, and proved nothing by it, until it did everything Arbor does.
 - **Stand-ins play it:** cannot: it lies below or beside the seam
 - **Guard:** `e2e: the first way out, which costs what macOS makes it cost, took no more than that` (by hand); `e2e: the strip is seen to move, and the display does not stand still by itself` (by hand); `tool: mac-shell/standstill.py`
-- **Arbor copes:** scripts/mac-shell/check-standstill.sh measures and prints every way back, fails on a later one that stands still for 0.3 s and on a first one over 1.5 s, and has the plain tool's figures beside them, so that a standstill that is Arbor's own would show. Arbor itself does nothing about it. Whoever films or times Arbor on a hosted Mac plays an act once before it counts, and prints what that first play took. A cure that might hold, tried in the plain tool only: draw into a bitmap in memory and hand that over as the layer's contents, so that Core Animation has nothing to draw.
+- **Arbor copes:** scripts/mac-shell/check-standstill.sh measures and prints every way back, fails on a later one that stands still for 0.3 s and on a first one over 2.5 s (over 1.5 s it is marked), and has the plain tool's figures beside them, so that a standstill that is Arbor's own would show. Arbor itself does nothing about it. Whoever films or times Arbor on a hosted Mac plays an act once before it counts, and prints what that first play took. A cure that might hold, tried in the plain tool only: draw into a bitmap in memory and hand that over as the layer's contents, so that Core Animation has nothing to draw.
 - **Read in:** `scripts/mac-shell/check-standstill.sh`, `scripts/mac-shell/mover.swift`, `scripts/mac-shell/pulse.swift`, `scripts/mac-shell/framewatch.swift`, `Sources/ArborKit/UI/AppKitOverlays.swift`
 
 ### core-animations-completion-comes-late
