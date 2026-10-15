@@ -9010,22 +9010,6 @@
    ]
   },
   {
-   "id": "pythons-http-server-brings-up-the-local-network-alert",
-   "kind": "second-actor",
-   "layer": "machine",
-   "expected": "A script may stand in for a web server with `python3 -m http.server --bind 127.0.0.1`, unseen.",
-   "happened": "As it starts it asks macOS for this Mac's name, and macOS 26 answers with an alert, \"Allow Python to find devices on local networks?\", in front of everything, with the keyboard, for the rest of the job: it outlived three scripts and lies over a third of their pictures.",
-   "found": "The gallery's first run on a hosted Mac.",
-   "modelled": "cannot",
-   "knobs": [],
-   "guards": [],
-   "copes": "scripts/mac-shell/shots-gallery.sh: one `nc -l 127.0.0.1`, started for the one question and gone with its answer.",
-   "hurt": 4,
-   "sources": [
-    "scripts/mac-shell/shots-gallery.sh"
-   ]
-  },
-  {
    "id": "quitting-while-an-app-hangs-strands-its-windows",
    "kind": "late-or-partial-answer",
    "layer": "at the seam",
