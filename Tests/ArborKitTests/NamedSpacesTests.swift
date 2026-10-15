@@ -864,7 +864,7 @@ private let third = DisplaySnapshot(
     let spaces = d.h.controller.namedSpaces()
     #expect(spaces.count == 1)
     #expect(spaces[0].name == "Writing" && spaces[0].display == d.h.display && spaces[0].node == d.column)
-    #expect(spaces[0].label == "Notes, Mail and Notes (\(d.column))")
+    #expect(spaces[0].label == "2 Notes windows and Mail (\(d.column))")
     #expect(spaces[0].windows == [d.notes, d.mail, extra])
     #expect(spaces[0].apps == ["Notes", "Mail"], "each app once")
     #expect(!spaces[0].isInView && spaces[0].isReachable)

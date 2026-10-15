@@ -189,7 +189,7 @@ What a display shows has changed: the view moved, or it holds other windows now,
 | Field | |
 |---|---|
 | `displayID` | The display's UUID, as in every event. (`display` is kept for the display's number, which commands take; events do not carry it yet) |
-| `label` | The space in view, in the words Arbor's replies use: "everything", "the Desktop", "Safari", "Safari and Notes", "5 windows". **This is the status bar's label** |
+| `label` | The space in view, in the words Arbor's replies use: "everything", "the Desktop", "Safari", "Safari and Notes", "2 Safari windows", "5 windows". **This is the status bar's label** |
 | `kind` | `everything` (as after Show Everything), `desktop`, `window` (one window or tab group, framed) or `group` (a space of several) |
 | `depth` | How many steps out (⌃⌥↑) it takes to see everything; 0 when everything is in view |
 | `outOfView` | How many of the display's windows are out of view |

@@ -490,6 +490,35 @@ private let side = DisplaySnapshot(
     #expect(h.controller.menuBarModel().button(.view(1))?.title == "View 1: 5 windows")
   }
 
+  /// Seen in a film from a hosted Mac: "View 1: Safari and Safari".
+  @Test func windowsOfOneAppAreCountedNotRepeated() {
+    let h = Harness()
+    let windows = ["Safari", "Safari", "Mail", "Safari", "Safari"].map { h.system.open(app: $0) }
+    h.start()
+    h.run("dock \(windows[0].rawValue) left")
+    h.run("dock \(windows[1].rawValue) beside \(windows[0].rawValue) bottom")
+    let tree = { h.workspace.tree }
+    let column = tree().parent(of: tree().leaf(containing: windows[0])!)!
+    #expect(h.controller.describe(column, on: h.display) == "2 Safari windows")
+    h.run("zoom-node \(column.rawValue)")
+    h.run("save-view 1")
+    #expect(h.controller.menuBarModel().button(.view(1))?.title == "View 1: 2 Safari windows")
+
+    // Where the first of them stands.
+    h.run("dock \(windows[2].rawValue) beside \(windows[0].rawValue) bottom")
+    #expect(h.controller.describe(column, on: h.display) == "2 Safari windows and Mail")
+    h.run("float \(windows[2].rawValue)")
+    h.run("dock \(windows[2].rawValue) beside \(windows[0].rawValue) top")
+    #expect(h.controller.describe(column, on: h.display) == "Mail and 2 Safari windows")
+
+    // More than three are counted, as ever, and of one app the count can say so.
+    h.run("dock \(windows[3].rawValue) beside \(windows[0].rawValue) bottom")
+    #expect(h.controller.describe(column, on: h.display) == "4 windows")
+    h.run("float \(windows[2].rawValue)")
+    h.run("dock \(windows[4].rawValue) beside \(windows[0].rawValue) bottom")
+    #expect(h.controller.describe(column, on: h.display) == "4 Safari windows")
+  }
+
   // MARK: Clicks
 
   @Test func clickingEachButtonGoesThereAndFillsItIn() {

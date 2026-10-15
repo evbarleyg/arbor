@@ -5,7 +5,8 @@ import ArborCore
 /// `zoom-node` takes it and the log needs it. App names only: window titles are never logged, and
 /// every reply is.
 extension Controller {
-  /// "everything", "the Desktop", "Safari", "Safari and Mail", "Safari, Mail and the Desktop", "5 windows".
+  /// "everything", "the Desktop", "Safari", "Safari and Mail", "Safari, Mail and the Desktop", "5 windows". Windows of one
+  /// app are counted where the first of them stands: "2 Safari windows and Mail".
   /// A space that has a name is called by it (F20): "Writing (n5)". With `byName` false it is not, which is for
   /// whatever goes to the log without passing through `perform`: names are the user's own words, and are not logged.
   func name(of node: NodeID, on display: DisplayID, byName: Bool = true) -> String {
@@ -15,22 +16,27 @@ extension Controller {
     if node == tree.desktop { return "the Desktop" }
     // Only what can be seen there is named: a minimized window, a hidden app, a window on another of
     // macOS's Spaces and a place kept for a window that does not exist (yet) take no room.
-    var parts: [String] = []
-    var shown = 0
+    var apps: [(name: String, windows: Int)] = []
+    var desktopComesAfter: Int?
     for leaf in tree.preorder(from: node) {
       if leaf == tree.desktop {
-        parts.append("the Desktop")
+        desktopComesAfter = apps.count
       } else if let window = tree.activeWindow(of: leaf), let snapshot = windows[window], snapshot.isPresent {
-        parts.append(snapshot.appName)
-        shown += 1
+        if let index = apps.firstIndex(where: { $0.name == snapshot.appName }) {
+          apps[index].windows += 1
+        } else {
+          apps.append((snapshot.appName, 1))
+        }
       }
     }
+    let shown = apps.reduce(0) { $0 + $1.windows }
+    var parts = apps.map { $0.windows == 1 ? $0.name : "\($0.windows) \($0.name) windows" }
+    if let desktopComesAfter { parts.insert("the Desktop", at: desktopComesAfter) }
     let words: String
-    switch parts.count {
+    switch shown + (desktopComesAfter == nil ? 0 : 1) {
     case 0: return "\(node)"
-    case 1: words = parts[0]
-    case 2, 3: words = parts.dropLast().joined(separator: ", ") + " and " + parts[parts.count - 1]
-    default: words = Self.count(shown, "window")
+    case 1...3: words = parts.count == 1 ? parts[0] : parts.dropLast().joined(separator: ", ") + " and " + parts[parts.count - 1]
+    default: words = parts.count == 1 ? parts[0] : Self.count(shown, "window")
     }
     return "\(words) (\(node))"
   }
