@@ -126,15 +126,25 @@ session() {
 }
 
 # whole <name>: a pane from top to bottom: <name>, and <name>-2, <name>-3… for as long as there is more below. A click in the
-# scroll bar under its knob goes on by a page, as it does for a person.
+# scroll bar just under its knob goes on by a page, as it does for a person. Just under it: at the foot of the bar lies the window's
+# corner, which takes the click for itself, and where little is out of view the knob reaches down there. It ends when the pane is
+# at its end, when no room is left under the knob (what is out of view then is a few points of margin), or when a click moved nothing.
 whole() {
-  local x y w h page=1
+  local x y w h kx ky kw kh at before page=1
   wshot "$1"
-  while [ "$page" -lt 9 ]; do
+  while [ "$page" -lt 12 ]; do
     read -r x y w h <<< "$(ax frame AXScrollBar "" 2> /dev/null)"
     [ -n "${h:-}" ] || return 0
-    awk -v at="$(ax value AXScrollBar "")" 'BEGIN { exit !(at >= 0.99) }' && return 0
-    click $((x + w / 2)) $((y + h - 8)) > /dev/null || return 1
+    before=$(ax value AXScrollBar "")
+    awk -v at="$before" 'BEGIN { exit !(at >= 0.99) }' && return 0
+    # The knob is the line after its bar in the tree. (By its role alone the first found would be a slider's.)
+    read -r kx ky kw kh <<< "$(ax tree | awk '$1 == "AXScrollBar" { getline; if ($1 == "AXValueIndicator") print $(NF - 3), $(NF - 2), $(NF - 1), $NF; exit }')"
+    [ -n "${kh:-}" ] || return 0
+    [ $((ky + kh + 10)) -lt $((y + h - 12)) ] || return 0
+    click $((kx + kw / 2)) $((ky + kh + 10)) > /dev/null || return 1
+    sleep 0.3
+    at=$(ax value AXScrollBar "")
+    [ "$at" != "$before" ] || { echo "  $1: the click under the knob moved nothing (at $at)"; return 0; }
     page=$((page + 1))
     wshot "$1-$page"
   done
@@ -343,8 +353,10 @@ arbor_settings "$SETTINGS"
 check "the file is read again" eventually setting_is gap 12
 
 step "⌘W closes the window and the app from before has the keyboard again; what was being typed is handed over"
-# shellcheck disable=SC2046
-click $(titlebar_of "$W2")
+# Where the test window shows below the settings window. Its title bar shows above it too, by three points: there the settings window's
+# own edge, which reaches a little beyond what is drawn, takes the click to resize it.
+read -r x y w h <<< "$(frame_of "$W2")"
+click $((${x%.*} + ${w%.*} / 2)) $((${y%.*} + ${h%.*} - 20))
 check "a test window has the keyboard" eventually front_is "$ARBOR_WINDOWS_PID"
 check "the settings window is an ordinary window meanwhile" eventually level_is 0
 shot 02-behind-a-clicked-window
