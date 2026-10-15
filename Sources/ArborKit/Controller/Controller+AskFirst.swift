@@ -16,24 +16,27 @@ import CoreGraphics
 /// - **a window that could not grow is expected not to** (`request`): it goes straight to the middle of its slot.
 extension Controller {
   /// `layout`, or what `again` makes of the display once everybody in it who may refuse to be as small as their slot has been asked.
-  func askingFirst(_ layout: Layout, on displayID: DisplayID, again: () -> Layout?) -> Layout {
+  /// `first` is asked before the others, and also if it has been seen that small: an app's smallest size can have grown since.
+  func askingFirst(_ layout: Layout, on displayID: DisplayID, beginningWith first: WindowID? = nil, again: () -> Layout?) -> Layout {
     var layout = layout
     // There is an end without counting: what a window took instead has then been seen, so each refuses here once at
     // most. An app that asks for more every time it is asked is `relayout`'s to deal with.
     for _ in 0...layout.windowFrames.count + layout.tiles.count {
-      guard askThoseWhoMayRefuse(layout, on: displayID), let known = again() else { break }
+      guard askThoseWhoMayRefuse(layout, on: displayID, beginningWith: first), let known = again() else { break }
       layout = known
     }
     return layout
   }
 
   /// Returns true if one of them will not be as small as its slot: `layout` no longer holds.
-  private func askThoseWhoMayRefuse(_ layout: Layout, on displayID: DisplayID) -> Bool {
+  private func askThoseWhoMayRefuse(_ layout: Layout, on displayID: DisplayID, beginningWith first: WindowID?) -> Bool {
     let shown = layouts[displayID]?.windowFrames ?? [:]
     let unknown = layout.windowFrames.keys.sorted().filter { window in
       guard window != drag?.window, let current = windows[window], isStillToBePlaced(current, in: layout.windowFrames[window]!)
       else { return false }
-      return seen(current).mayRefuseToShrink(to: layout.windowFrames[window]!.size)
+      let slot = layout.windowFrames[window]!.size
+      if window == first, slot.width < current.frame.width - 1 || slot.height < current.frame.height - 1 { return true }
+      return seen(current).mayRefuseToShrink(to: slot)
     }
     // How far each has to shrink: whoever is squeezed most is the likeliest to refuse.
     func squeeze(_ window: WindowID) -> CGFloat {
@@ -42,27 +45,44 @@ extension Controller {
     }
     // One at a time, and no further than the first refusal: whoever has shrunk by then has shrunk for a layout that never
     // comes, and may have to grow again. So newcomers come first, who are what the others make room for.
-    for group in [unknown.filter { shown[$0] == nil }, unknown.filter { shown[$0] != nil }] {
-      for window in group.sorted(by: { (squeeze($0), $0.rawValue) < (squeeze($1), $1.rawValue) }) {
-        guard let current = windows[window], let question = question(current, toTake: layout.windowFrames[window]!.size)
-        else { continue }
-        if ask(window, question, on: displayID) { return true }
-      }
+    func turn(_ window: WindowID) -> (Int, Int, CGFloat, WindowID.RawValue) {
+      (window == first ? 0 : 1, shown[window] == nil ? 0 : 1, squeeze(window), window.rawValue)
+    }
+    for window in unknown.sorted(by: { turn($0) < turn($1) }) {
+      guard let current = windows[window], let question = question(current, toTake: layout.windowFrames[window]!.size)
+      else { continue }
+      if ask(window, question, on: displayID) { return true }
     }
     return false
   }
 
   /// Whether `place` would move the window at all. It would not if the window is in its slot; if it could not take this slot's
   /// size and is still where that attempt left it (asking again would walk it through the slot's corner and back on
-  /// every layout); or if Arbor has given up on it.
+  /// every layout); or if Arbor has given up on it. In its slot to the point, if what it stands at is its answer to another question.
   func isStillToBePlaced(_ window: WindowSnapshot, in slot: CGRect) -> Bool {
-    if isInPlace(window, at: slot) || enforcement.givenUp.contains(window.id) { return false }
+    if enforcement.givenUp.contains(window.id) { return false }
+    if isInPlace(window, at: slot) { return window.frame != slot && hasAnsweredForAnotherSize(window.id, than: slot.size) }
     if !parked.contains(window.id), let misfit = misfits[window.id], misfit.slot == slot,
       window.frame.approximatelyEquals(misfit.frame, tolerance: 1)
     {
       return false
     }
     return true
+  }
+
+  /// A point off its slot is what an app makes of the slot it was offered, and it is not asked again. One that stands there because that
+  /// was its answer to some other size, asked of it where it stood or offered as a slot the layout no longer has for it, has not
+  /// been offered this one.
+  func hasAnsweredForAnotherSize(_ window: WindowID, than size: CGSize) -> Bool {
+    guard let offered = justAnswered[window] ?? misfits[window]?.slot.size else { return false }
+    return abs(offered.width - size.width) > 1 || abs(offered.height - size.height) > 1
+  }
+
+  /// It has answered where it stood, and that is where the answer belongs: there is nothing left to ask for. `asked` is what `place` would
+  /// ask of it (`request`). What is not asked for is not foretold either (`movesInSight`).
+  func isWhereItsAnswerBelongs(_ window: WindowSnapshot, asked: CGRect, in slot: CGRect) -> Bool {
+    justAnswered[window.id] != nil && !parked.contains(window.id) && asked.approximatelyEquals(window.frame, tolerance: 1)
+      && (asked == window.frame || !hasAnsweredForAnotherSize(window.id, than: slot.size))
   }
 
   /// What has been seen of a window's sizes, the one it has now included.
