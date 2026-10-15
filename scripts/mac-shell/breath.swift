@@ -13,6 +13,10 @@
 //                   loop, which stands still while the main thread waits for an answer (Arbor today), or on a thread of its own, which
 //                   never does. Does an app that has somebody to tell take longer to answer, and does it matter who is listening?
 //
+//   BREATH_GUARD=1  before each window its APP is asked whether assistive tools have "enhanced user interface" on, as Arbor asks
+//   BREATH_REST=2   so many seconds of rest after each round (0.4): an app that is left alone for a while may be slower to answer
+//   BREATH_EACH=1   also say how long each window took
+//
 // Each round takes the windows from a pile to a grid or back. `grid` or `pile` for a number: that one act from wherever the windows
 // are, for a film. Meanwhile a thread of its own asks the window server for these windows'
 // bounds as fast as it answers. A line a round: how long the calls took, when the first and the last change showed, in how many
@@ -79,9 +83,20 @@ func frame(of element: AXUIElement) -> CGRect? {
 func now() -> Double { ProcessInfo.processInfo.systemUptime }
 
 nonisolated(unsafe) var inTwo = false
+let guarded = ProcessInfo.processInfo.environment["BREATH_GUARD"] != nil
+let pause = Double(ProcessInfo.processInfo.environment["BREATH_REST"] ?? "") ?? 0.4
+let sayEach = ProcessInfo.processInfo.environment["BREATH_EACH"] != nil
+nonisolated(unsafe) var guardTook: [Double] = []
 
 /// As `AXWindowSystem.setFrame` does it for a window that changes its size (`FramePlan.full`), or in two calls.
 func move(_ window: Window, to target: CGRect) {
+  if guarded {
+    let began = now()
+    var value: CFTypeRef?
+    _ = AXUIElementCopyAttributeValue(AXUIElementCreateApplication(window.pid), "AXEnhancedUserInterface" as CFString, &value)
+    // Only where one thread does it all.
+    if sayEach { guardTook.append((now() - began) * 1000) }
+  }
   if inTwo, let now = frame(of: window.element) {
     let (grows, shrinks) = (
       target.width >= now.width && target.height >= now.height, target.width <= now.width && target.height <= now.height
@@ -242,11 +257,17 @@ for round in 1...rounds {
   watcher.start()
   rest(0.1)
   let before = heard
+  var each: [Double] = []
+  guardTook = []
   let began = now()
   var sent = began
   switch way {
   case "one-by-one":
-    for (index, window) in all.enumerated() { move(window, to: targets[index]) }
+    for (index, window) in all.enumerated() {
+      let before = now()
+      move(window, to: targets[index])
+      each.append((now() - before) * 1000)
+    }
   case "side-by-side":
     DispatchQueue.concurrentPerform(iterations: apps.count) { app in
       for index in apps[app] { move(all[index], to: targets[index]) }
@@ -263,7 +284,7 @@ for round in 1...rounds {
     for window in all { _ = frame(of: window.element) }
   }
   let answered = now()
-  rest(0.4)
+  rest(max(pause, 0.4))
   let (changes, looks) = watcher.stop()
   let final = Watcher.bounds(of: all.map(\.id))
   let arrived = all.indices.filter { index in
@@ -280,4 +301,8 @@ for round in 1...rounds {
       + (way == "no-wait" ? " (sent \(ms(sent)))" : "")
       + ", first change \(after.first.map { ms($0.at) } ?? "-"), last \(after.last.map { ms($0.at) } ?? "-"), span \(span) ms, "
       + "\(pieces) pieces, \(after.count) changes, \(arrived) of \(all.count) arrived, \(looks) looks, \(heard - before) heard")
+  if sayEach, !each.isEmpty {
+    print("    each window, ms: " + each.map { String(format: "%.1f", $0) }.joined(separator: " "))
+    if guarded { print("    of that the question to its app: " + guardTook.map { String(format: "%.1f", $0) }.joined(separator: " ")) }
+  }
 }

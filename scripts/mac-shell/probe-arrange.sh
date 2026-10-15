@@ -83,8 +83,15 @@ ctl pause
 if [ -n "${ARBOR_BUILT:-}" ]; then
   echo "a rehearsal has no Accessibility to ask"
 else
+  # As it was measured before; then left alone for two seconds between the acts, as Arbor's acts are; then with Arbor's question to the app.
   # shellcheck disable=SC2086
-  limit 60 "$BREATH" one-by-one 6 $PIDS
+  BREATH_EACH=1 limit 60 "$BREATH" one-by-one 6 $PIDS
+  # shellcheck disable=SC2086
+  BREATH_EACH=1 BREATH_REST=2 limit 60 "$BREATH" one-by-one 6 $PIDS
+  # shellcheck disable=SC2086
+  BREATH_EACH=1 BREATH_REST=2 BREATH_GUARD=1 limit 60 "$BREATH" one-by-one 6 $PIDS
+  # shellcheck disable=SC2086
+  BREATH_REST=2 BREATH_GUARD=1 limit 60 "$BREATH" side-by-side 6 $PIDS
 fi
 ctl resume
 sleep 2
