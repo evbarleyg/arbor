@@ -202,6 +202,7 @@ The focused window too small? **⌃⌥⌘=** grows it and **⌃⌥⌘-** shrinks
 Most of your windows are out of view most of the time. That is the point, and it is why **⌃⌥G**, Go to…, exists. Press it, type a few letters of the app or of the window's title, press Return: the view moves to that window
 and it has the keyboard. It does not matter what kept it out of view: another space, another tab, the Dock, ⌘H, another display, another macOS Space.
 If you were framed on one window, the one you go to is framed in its place; from a group, the view steps out just far enough to show both.
+The same field finds what Arbor can do: type what it is called in the menu, `bal` for Balance Sizes or `float all`, and Return runs it on the window you were in.
 
 ```
  ⌃⌥G   inb ↩

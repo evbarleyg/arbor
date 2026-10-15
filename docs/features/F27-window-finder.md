@@ -84,6 +84,43 @@ Choosing a **window**, and `reveal [window]`:
 
 Choosing a **saved view** moves the view of its own display there, as `view <n>` does for the display under the pointer.
 
+### It finds commands too (board 0.14)
+
+With nine keys bound (QUESTIONS Q29, 1) everything else is "in the menu and in Go to…". Whoever knows what a thing is called types a few letters of it: ⌃⌥G `bal` ↩ balances the sizes.
+
+- **The rows are the menu's**, read from the menu as it stands when the palette opens (`Controller+FinderCommands.swift`): every row that runs a command, under the name the menu gives it then
+  ("Undo Dock", "Don’t Arrange “Safari”"), with the key in effect and the tick the menu shows. A row added to the menu is found here without another line. A row of a submenu is called by its way
+  there: "Dock Focused Window ▸ Left", "Saved Views ▸ Save This View As ▸ View 3", so `left`, `dock left` and `save 3` all find theirs, and the row says where in the menu it is. A command the menu has under two names
+  (holding still: Release, and the tick on Hold Still) is found by either.
+- Then the commands that have a key in the whole map and no row in the menu (Space to the Left, Window Above, Show Everything on All Displays), under their titles in the panel of shortcuts.
+- Not listed: Go to… itself; the rows that lead to a window, a saved view or a named space, which are listed as the places they are; and what only the app can do and is no command (Settings File…, Show Log, About Arbor, Quit Arbor).
+- **The rows are about the display the palette is on**, when they are read and when one is run. The menu is about the display under the pointer, which chose it; here the pointer may rest anywhere. "Undo Dock" undoes that display's Dock, and
+  "View 3 (replace)" says so of that display's view 3.
+- **With nothing typed the list is what it always was**: places. A command comes when it is called by name. The empty field says "A window, a space, a saved view or a command".
+- **Whoever types a piece of an app's name or of a title and presses Return goes there, as before.** Places and commands are ranked together, with three rules for the commands:
+  1. All of a command is its name, so its letters count as a title's do, not as an app's; and between equally good matches every place comes before every command. `3` is the window called Report 3, not Save This View As ▸ View 3.
+  2. **Letters that stand together in a place are that place**, also inside a word, where they score less than at the beginning of a command's: `vie` is Preview and not Hold This View, `all` the window called Wallpaper and not Float All
+     Windows. No command comes before such a place, nor before the places that rank above it.
+  3. Among equally good commands those whose name begins with a word that was typed come first (`dock`: Dock New Windows before Undo Dock), then the menu's order decides, which has the ways back and what is used most first (`float`: Float Focused Window
+     before Float All Windows).
+
+  Only against letters scattered through a place does a command that was spelt out win: a title of 200 characters holds the letters of nearly any short word. The places keep their order among themselves.
+- A command's row shows ⌘ where a window has its icon, and at the right `command`, with ✓ if the menu ticks it, and its key if it has one: `command ✓, ⌃⌥Space`.
+- **Chosen, it runs as its key would**: the palette closes, the app behind it has the keyboard again, and the command acts on the window the palette opened over. It is answered on screen as a key is (F43). One undo takes it back.
+- **What the menu greys out is listed, so that it is found where it is looked for, and says `command, not now`. Chosen, it runs nothing**: the palette beeps, says "“Step Out” can do nothing just now" and stays. The menu greys a row out because it would
+  fail, or because it would do something else than it says: Float Focused Window is `toggle-float`, which would dock a window that floats. Whether a row can act is asked when it is chosen, not when the palette opened.
+- **Only in the palette.** `find <text>`, which goes somewhere without showing anything, finds places and nothing else: a script, a binding or (where all links are allowed) a link that says `find` names a place, and must not thereby
+  run whatever it spells.
+- With no windows at all `find` still fails: for what remains then there is the menu. While the view is held there is no palette.
+- With `messageLevel` off a key that fails beeps, which is the app's doing; a command from the palette that fails after all is silent.
+- A trace holds the choice as `{"command":"dock left"}`, the log its first word. No row's command holds a name somebody gave.
+
+✔ `everyCommandInTheMenuIsFoundByItsNameInTheMenu`, `aCommandTheMenuHasUnderTwoNamesIsFoundByEither`, `everyCommandThatHasAKeyInTheWholeMapIsFoundWhetherOrNotTheMenuHasIt`, `withAllShortcutsOffEveryCommandIsStillFound`,
+`returnRunsItOnTheWindowThePaletteOpenedOver`, `theRowsAreAboutTheDisplayThePaletteIsOnWhereverThePointerRests`, `andTheCommandActsThere`, `chosenItRunsNothingAndThePaletteSaysSoAndStays`, `aRowNeverDoesTheOppositeOfWhatItSays`,
+`findWithTextGoesToPlacesAndRunsNothing`, `aLinkThatSaysFindRunsNothingEvenWhereAllLinksAreAllowed`, `aTraceHoldsTheChoiceAndReplaysIt`, `aCommandThatChangesASettingReplaysToTheSameSetting` (`GoToFindsCommandsTests`);
+`lettersThatStandTogetherInsideAWordOfAPlaceAreThatPlace`, `aLetterOfATitleIsWorthWhatALetterOfACommandIs` (`FinderCommandRowTests`); scenario 94.
+Not yet: no key has been pressed in it on a Mac, and nobody has looked at a row (`scripts/mac-shell/shots-finder.sh` takes the picture).
+
 ### Commands
 
 | Command | Does |

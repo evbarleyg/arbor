@@ -188,7 +188,7 @@ arguments and its result as plain JSON:
 |---|---|
 | `{"event":"dragCancelled","args":[7]}` | Something else the window system reported (a stimulus) |
 | `{"event":"shortcut","args":["ctrl+opt+space","show-all","pressed"]}` | The key of one of Arbor's shortcuts went down or came up. The command it runs, if any, follows as a nested line; a key that is held is a peek (F51) |
-| `{"action":"cheatSheetDismissed"}`, `{"action":"finderChose","args":[{"window":101}]}` | Something else the user did with an overlay (a stimulus) |
+| `{"action":"cheatSheetDismissed"}`, `{"action":"finderChose","args":[{"window":101}]}`, `{"action":"finderChose","args":[{"command":"dock left"}]}` | Something else the user did with an overlay (a stimulus). The command that a row of Go to… runs follows as a nested line |
 | `{"call":"raise","args":[7]}`, `{"call":"launchApp","args":["Safari"],"result":true}` | Something else Arbor asked for that a person can see. Strict replays compare name and arguments |
 | `{"read":"inputActivity","result":{"keyPresses":9,"pointerIdle":0.25}}`, `{"read":"isHolding","args":["ctrl+opt+space"],"result":true}` | Another question Arbor asked, with the answer. JSON has no infinity: a hand that has not been used at all is left out |
 

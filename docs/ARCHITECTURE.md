@@ -1211,6 +1211,9 @@ passes keys on. It is the one panel of Arbor's that takes the keyboard: non-acti
 no focus to restore when it closes.
 
 - The list is a snapshot. The controller checks a choice when it is made; what has gone meanwhile is answered with a fresh model carrying a `notice`.
+- **Commands** are a second list of the model (`FinderModel.commands`, Controller+FinderCommands.swift), read from `menuModel()`, searched only once something is typed, and never by `find <text>`. A destination holds a command as
+  its text form; `finderChose` reads the menu again, finds the row by that text, and runs its command through `perform(_:from: .shortcut)` unless the menu greys it out by now. Reading and running are about the palette's display
+  (`on(_:_:)`, Controller+Lead.swift), not the pointer's. **A new row in the menu needs nothing here.**
 - Order: `focusHistory`, with the focused window after the others, then layout order, then saved views. The query's ties keep that order.
 - `reveal` asks the window system to unhide and un-minimise, calls `bringIntoView` (tab, camera) at once and focuses. It does not leave the camera to the focus
   report (Controller+Focus.swift), so it does what it says whether or not the window gets the keyboard. macOS confirms those requests late, so for
