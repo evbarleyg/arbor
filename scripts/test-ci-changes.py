@@ -65,7 +65,7 @@ TABLE = [
     (True, "resources", pull(), dict(files=["Makefile", "Resources/Info.plist"])),
     (False, "what looks after the repository itself, on Linux or at GitHub's", pull(), dict(files=[
         "scripts/public-check.py", "scripts/public-check.allow", "scripts/test-public-check.py", "scripts/git-hooks/pre-push", "scripts/lint-workflows.py",
-        "scripts/housekeeping.py", ".github/workflows/public-check.yml", ".github/workflows/housekeeping.yml", ".github/dependabot.yml",
+        "scripts/housekeeping.py", "scripts/gh-state.py", ".github/workflows/public-check.yml", ".github/workflows/housekeeping.yml", ".github/dependabot.yml",
         ".claude/settings.json"])),
     (True, "scripts and workflows that only begin like those", pull(), dict(files=["scripts/publish-release.sh"])),
     (True, "the same", pull(), dict(files=["scripts/public/x.sh"])),

@@ -10,6 +10,7 @@ lint:
 	@python3 scripts/lint-mac-shell.py
 	@python3 scripts/lint-paste-safe.py --self-test && python3 scripts/lint-paste-safe.py
 	@for test in scripts/test-public-*.py; do python3 $$test || exit 1; done
+	@python3 scripts/gh-state.py --self-test
 	@python3 scripts/reality-ledger.py --self-test && python3 scripts/reality-ledger.py --check
 
 # Reads what this branch adds (lines, file names, commit messages, its own name) for what should stay private, and checks

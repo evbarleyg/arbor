@@ -45,7 +45,7 @@ PROSE = re.compile(
     r"|^\.github/workflows/mac-shell\.yml$|^\.github/actions/mac-(setup|keep-build)/|^scripts/ci-(build|build-key|mtimes)\.(sh|py)$"
     r"|^scripts/ci-mac-shell\.sh$|^scripts/(test-)?(ci-changes|mac-queue)\.py$|^scripts/test-tooling\.py$"
     # The Makefile: no step of a macOS job calls make. And what looks after the repository itself, on Linux or at GitHub's.
-    r"|^Makefile$|^scripts/(test-)?public-[a-z-]+\.\w+$|^scripts/git-hooks/|^scripts/(lint-workflows|housekeeping)\.py$|^\.github/(workflows/(public-[a-z-]+|housekeeping)|dependabot)\.yml$|^\.claude/"
+    r"|^Makefile$|^scripts/(test-)?public-[a-z-]+\.\w+$|^scripts/git-hooks/|^scripts/(lint-workflows|housekeeping|gh-state)\.py$|^\.github/(workflows/(public-[a-z-]+|housekeeping)|dependabot)\.yml$|^\.claude/"
 )
 # What Package.swift builds on Linux too. Anything in neither list needs a Mac.
 HEADLESS = re.compile(
