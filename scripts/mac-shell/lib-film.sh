@@ -31,6 +31,7 @@
 #   cast_stop [name]                arbor_stop, and the cast goes home
 #   tell <n> <command…>             a command for the app of the nth window (Sources/ArborTestWindows/Commands.swift)
 #   trace_ends                      end the session's trace now and keep it (cast_stop does; a scene that quits Arbor has to, before)
+#   key_for <command…>              the shortcut that runs it in the map in effect, or nothing: so that a film follows the keys that ship
 #   view_now                        the node the camera is at, for `played`
 #   played "<scene>" <view before>  a check that the camera went somewhere: a film in which nothing happens is a Mac's time for nothing
 #   glass on|off                    translucent materials, as a Mac comes (on), or Reduce Transparency, as GitHub's Macs come (off)
@@ -421,6 +422,9 @@ trace_ends() {
     [ -f "$file" ] && cp "$file" "$ARBOR_OUT/traces/${file##*/}"
   done
 }
+
+# The line is `<chord> → <command>`; on a keyboard that is not a US one `<chord> (<as it is typed there>) → <command>`.
+key_for() { "$ARBOR_BIN/arborctl" bindings 2>/dev/null | awk -v command="$*" '{ key = $1; sub(/^.*→ /, ""); if ($0 == command) { print key; exit } }'; }
 
 view_now() { summary | sed -n 's/.*camera \(n[0-9]*\).*/\1/p' | head -n 1; }
 film_elsewhere() { [ "$(view_now)" != "$1" ]; }

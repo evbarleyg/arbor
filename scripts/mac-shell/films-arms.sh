@@ -54,9 +54,18 @@ front() {
   sleep 0.6
 }
 
+# act <name> "<what the person does>" <command…>: by the key that does it in that arm's own map; where none does, by the command, which no camera can time.
 act() {
-  scene "$1" instant "$2 ($3)"
-  key "$3"
+  local name=$1 text=$2 chord
+  shift 2
+  chord=$(key_for "$@")
+  if [ -n "$chord" ]; then
+    scene "$name" instant "$text ($chord)"
+    key "$chord"
+  else
+    scene "$name" told "$text (no key does: the command)"
+    ctl "$@"
+  fi
   scene_end 1.6
 }
 
@@ -90,24 +99,24 @@ play() {
   ctl trace on "arm-$p" || true
   home
   front
-  act "$p-1-dock-left" "docks it at the left" ctrl+opt+cmd+left
-  act "$p-2-float" "floats it" ctrl+opt+f
-  act "$p-3-dock-right" "docks it at the right" ctrl+opt+cmd+right
-  act "$p-4-float" "floats it" ctrl+opt+f
-  act "$p-5-dock-top" "docks it at the top" ctrl+opt+cmd+up
+  act "$p-1-dock-left" "docks it at the left" dock left
+  act "$p-2-float" "floats it" toggle-float
+  act "$p-3-dock-right" "docks it at the right" dock right
+  act "$p-4-float" "floats it" toggle-float
+  act "$p-5-dock-top" "docks it at the top" dock top
   summary
   sleep 1
   ctl trace off || true
-  scene "$p-6-quit" instant "quits Arbor"
+  scene "$p-6-quit" told "quits Arbor"
   ctl quit
   scene_end 1.6
   arbor_ended
-  scene "$p-7-launch" instant "starts Arbor again"
+  scene "$p-7-launch" told "starts Arbor again"
   arbor_relaunch
   scene_end 2.5
   front
-  act "$p-8-float" "floats it" ctrl+opt+f
-  act "$p-9-dock-left" "docks it at the left: the first dock after a launch" ctrl+opt+cmd+left
+  act "$p-8-float" "floats it" toggle-float
+  act "$p-9-dock-left" "docks it at the left: the first dock after a launch" dock left
   summary
   arbor_stop
 }

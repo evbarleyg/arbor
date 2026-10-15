@@ -26,9 +26,6 @@ press() {
   sleep 0.6
 }
 
-# key_for <command…>: the shortcut that runs it in the map in effect, or nothing.
-key_for() { "$ARBOR_BIN/arborctl" bindings 2>/dev/null | awk -v command="$*" '{ key = $1; $1 = ""; $2 = ""; sub(/^ +/, ""); if ($0 == command) { print key; exit } }'; }
-
 # act <name> "<what the person does>" <key>: one key, one film. Without a key there is no such act as it ships, and no film: said aloud, since the scenes after it begin elsewhere than they think.
 act() {
   check "$1: a key does that in the map in effect" test -n "$3" || return 0
