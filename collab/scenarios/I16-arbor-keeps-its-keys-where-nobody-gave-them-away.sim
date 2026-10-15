@@ -18,7 +18,7 @@ wait 10
 expect shortcut ctrl+opt+left on
 key ctrl+opt+left
 expect fail
-expect said Arbor needs the Accessibility permission
+expect said Arbor needs the Accessibility permission · Check Setup… in its menu
 expect still
 # Still the one from the control: nothing has come after it.
 expect app-got ctrl+opt+shift+cmd+f12
@@ -34,7 +34,7 @@ expect replied waiting for Accessibility permission
 expect shortcut ctrl+opt+left on
 key ctrl+opt+left
 expect fail
-expect said Arbor needs the Accessibility permission
+expect said Arbor needs the Accessibility permission · Check Setup… in its menu
 expect still
 expect app-got ctrl+opt+shift+cmd+f12
 # It starts by itself when the permission comes, and the key works.

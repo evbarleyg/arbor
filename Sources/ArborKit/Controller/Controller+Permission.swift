@@ -233,7 +233,8 @@ extension Controller {
   /// time, and short-lived: never a dialog, and nobody is taken out of the app they are in.
   var whyAKeyDidNothing: HeadsUpModel? {
     guard !accessibilityGranted else { return nil }
-    return HeadsUpModel(kind: .problem, text: "Arbor needs the Accessibility permission", hint: Self.whereToGrantAccessibility)
+    // Not the way to the switch: for a new build over an old grant the switch there looks on. Check Setup says to switch it off and on again.
+    return HeadsUpModel(kind: .problem, text: "Arbor needs the Accessibility permission", hint: "Check Setup… in its menu")
   }
 
   /// The same in lines short enough for a menu; empty unless the permission was taken away.

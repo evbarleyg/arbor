@@ -46,7 +46,7 @@ import Testing
     #expect(pressEverything(h) == [])
     let reply = h.key("ctrl+opt+z")
     #expect(reply?.ok == false)
-    #expect(line(h) == "Arbor needs the Accessibility permission · System Settings → Privacy & Security → Accessibility")
+    #expect(line(h) == "Arbor needs the Accessibility permission · Check Setup… in its menu")
     #expect(h.system.frameLog.isEmpty, "and nothing has moved")
   }
 
@@ -59,7 +59,7 @@ import Testing
     h.scheduler.advance(by: 3)
     #expect(h.controller.permissionLoss?.windows == 0, "nothing is out of view: the case in which Arbor held nothing at all")
     #expect(pressEverything(h) == [])
-    #expect(line(h) == "Arbor needs the Accessibility permission · System Settings → Privacy & Security → Accessibility")
+    #expect(line(h) == "Arbor needs the Accessibility permission · Check Setup… in its menu")
     h.grantAccessibility()
     h.scheduler.advance(by: 1)
     #expect(h.controller.isRunning)

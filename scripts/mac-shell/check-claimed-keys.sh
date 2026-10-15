@@ -170,7 +170,7 @@ taken() { [ "$REACHED" -eq 0 ]; }
 answered() { [ "$ACTED" -gt 0 ]; }
 # The last line Arbor put on screen, as its log has it.
 said() { grep "said on " "$ARBOR_HOME/arbor.log" | tail -n 1 | grep -qF "$1"; }
-NEEDS="Arbor needs the Accessibility permission"
+NEEDS="Arbor needs the Accessibility permission · Check Setup… in its menu"
 
 arbor_build
 swiftc -O -swift-version 5 "$ARBOR_ROOT/scripts/mac-shell/keys.swift" -o "$KEYS" > "$ARBOR_OUT/build-keys.log" 2>&1 || {
