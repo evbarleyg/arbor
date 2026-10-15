@@ -13,7 +13,7 @@ second column, *the options*, judged by the same rules and read by no gate. And 
 
 | | |
 |---|---|
-| What Linux proves | that the film scripts play (`scripts/mac-shell/rehearse.sh scripts/mac-shell/films-light.sh scripts/mac-shell/films.sh`) and that the judge catches what it claims to catch (`scripts/polish/judge.py --self-test`: 69 drawn films, each wrong in one known way or right; `scripts/polish/stills.py --self-test`: 30 drawn pictures) |
+| What Linux proves | that the film scripts play (`scripts/mac-shell/rehearse.sh scripts/mac-shell/films-light.sh scripts/mac-shell/films.sh`) and that the judge catches what it claims to catch (`scripts/polish/judge.py --self-test`: 73 drawn films, each wrong in one known way or right; `scripts/polish/stills.py --self-test`: 30 drawn pictures) |
 | What a Mac must run | `scripts/mac-shell/films-light.sh`, what ships: unattended, on a free hosted runner, about ten minutes; for the options `scripts/mac-shell/films.sh`, about a quarter of an hour. They only record |
 | What the sandbox judges afterwards | everything: `scripts/polish/judge.py score <run folder>`, then the sheets, by eye |
 
@@ -82,6 +82,10 @@ what lies under a menu that macOS is fading out (the menu's frame is noted, and 
 
 M1, M8, M9, M11, M13 and S8 are asked here too (S8 not in the dark scenes: on a light wallpaper shadows fill the gaps, and no ruler can measure them). **R5 is the second build's mark** (the product owner, 2026-10-15): size and place are two askings, so the state between them must lie within the old frame or the new one; what grows is seen to before what leaves is
 sent away; tiles come at once. R4, none at all, stays the aim: `fill`, `everything` and `back` show that it can be had.
+
+**R5 has one exception** (the product owner, 2026-10-15), told by its predicate and not by a list of acts: a window may show its new size at its old place if it grows (wider or higher by half a point or more) and its new frame lies within no display's room
+(x from the display's left to its right edge, y from its top to the visible frame's bottom). macOS cuts growth at the display's edge once the window stands there, and a size lost for good outranks a frame seen for a moment. It excuses only the new size at the old
+place: a hole, an empty desk or a stray anywhere else in the same act is booked as ever, and R4 books the frame all the same. The ruler counts how often the exception was used and prints it beside the verdict and under the score: an exception that nobody counts grows.
 
 ### Motion, an option: asked of every scene in which Arbor moves windows with `animationDuration` above 0
 

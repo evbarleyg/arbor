@@ -345,10 +345,27 @@ def pieces(m, until=None):
     return {"frames": frames, "times": [int(film.times[index]) - cause for index in frames], "between": sorted(between), "followed": followed, "sized": sorted(sized)}
 
 
+def grows_where_it_cannot(film, old):
+    """The one exception to "over" (the product owner, 2026-10-15): a window may show its new size at its old place if it grows, wider or higher by half a point or more, and its new frame lies
+    within no display's room: x from the display's left edge to its right one, y from its top to the visible frame's bottom. macOS cuts growth at the display's edge once the window stands there,
+    and a size lost for good outranks a frame seen for a moment. The display shows only what of such a frame lies on it, so the frames are Arbor's own account, before and after; the window is the
+    one whose frame before has the followed rectangle's left, right and bottom. False where the film does not say."""
+    if not film.display or not film.visible:
+        return False
+    edges = tuple(value / film.scale for value in old.edges)
+    for window, (x, y, w, h) in film.before.items():
+        if window in film.after and max(abs(x - edges[0]), abs(x + w - edges[2]), abs(y + h - edges[3])) <= 3:
+            left, top, wide, high = film.after[window]
+            grows = wide - w >= 0.5 or high - h >= 0.5
+            within = film.display[0] <= left and left + wide <= film.display[0] + film.display[2] and film.display[1] <= top and top + high <= film.visible[1] + film.visible[3]
+            return grows and not within
+    return False
+
+
 def in_one_piece(m, until=None):
     """What is worse than a window a frame late, frame by frame between the first change of an act and its last: {"holes": frames in which the ground shows where there is a window both before
     the act and after it, "empty": frames in which there is nothing at all on a desk that had windows and has them again, "over": frames in which a window on its way covers what neither
-    its old frame nor its new one covers}. None where the wallpaper is not plain."""
+    its old frame nor its new one covers, "excused": those of them that `grows_where_it_cannot` lets pass, which are counted and not booked}. None where the wallpaper is not plain."""
     film, scan, cause = m["film"], m["scan"], m["cause"]
     said = pieces(m, until)
     if scan.background is None or not said["frames"]:
@@ -356,7 +373,7 @@ def in_one_piece(m, until=None):
     until = int(film.times[-1]) - cause if until is None else until
     x, y, width, height = (int(value * film.scale) for value in film.visible)
     first, last = said["frames"][0], said["frames"][-1]
-    room, taken, found, menus = width * height, {}, {"holes": [], "empty": [], "over": []}, apart(film)
+    room, taken, found, menus = width * height, {}, {"holes": [], "empty": [], "over": [], "excused": []}, apart(film)
     for index, _, picture, _ in film.frames():
         if first - 1 <= index <= last:
             # Arbor darkens the ground behind docked windows: that is ground too.
@@ -391,8 +408,10 @@ def in_one_piece(m, until=None):
                 right, bottom = min([rect.right] + [other.right for other in others]), min([rect.bottom] + [other.bottom for other in others])
                 return max(right - left, 0) * max(bottom - top, 0)
             if rect.area - shared(old) - shared(new) + shared(old, new) > 400 * film.scale**2:
-                found["over"].append(index)
-    found["over"] = sorted(set(found["over"]))
+                # The exception excuses the new size at the old place, and nothing else that happens in the same act.
+                there = max(abs(rect.left - old.left), abs(rect.top - old.top)) <= 2 * film.scale
+                found["excused" if there and grows_where_it_cannot(film, old) else "over"].append(index)
+    found["over"], found["excused"] = sorted(set(found["over"])), sorted(set(found["excused"]))
     return found
 
 
@@ -404,7 +423,9 @@ def whole(m, allow):
         return Verdict(UNSEEN, "no window could be followed, the wallpaper is not plain, or no window has another frame after the act than before it")
     said = [f"{what} in {len(frames)} frames" for what, frames in (("the desk is empty", found["empty"]), ("the ground shows through a hole", found["holes"]),
                                                                   ("a window covers what neither its old nor its new frame covers", found["over"])) if frames]
-    return Verdict(MISS if said else PASS, "; ".join(said) or "no hole, no empty desk, no window over what neither of its frames covers",
+    # An exception that nobody counts grows.
+    excused = f"; the exception for what grows where it cannot was used in {len(found['excused'])} frames" if found["excused"] else ""
+    return Verdict(MISS if said else PASS, ("; ".join(said) or "no hole, no empty desk, no window over what neither of its frames covers") + excused,
                    sorted(set(found["empty"] + found["holes"] + found["over"]))[:8])
 
 
@@ -1029,6 +1050,8 @@ def score(folder, eyes_path=None, stills_path=None, out=sys.stdout, without=(), 
     worst = sum(1 for cell in cells if cell[5].status == MISS and cell[3] == 1)
     print(f"\n## Score: {number:.1f} of 100 ({earned} of {total} points); seen {100 * seen / total:.0f}%; {worst} misses of severity 1", file=out)
     print("That is Arbor as it ships, on a Mac as it comes." if which == "ships" else "That is the options, each switched on: the second column, which no gate reads.", file=out)
+    excused = [cell[0] for cell in cells if cell[1] == "R5" and "the exception for what grows where it cannot" in cell[5].said]
+    print(f"The one exception to R5, for what grows where it cannot, was used in {len(excused)} scenes" + (f": {', '.join(excused)}." if excused else "."), file=out)
     if pictures:
         print(f"The pictures at rest are of {pictures['commit']}: {pictures['from']}." + (f" Left out, because what draws them has changed since: {', '.join(without)}." if without else ""), file=out)
     print(f"The rubric {'PASSES' if not gate and number >= 90 else 'does not pass'}: {len(gate)} cells of severity 1 or 2 in what the gate asks for "
@@ -1128,6 +1151,7 @@ def acts(folder, out=sys.stdout):
     films = os.path.join(folder, "films")
     print("| Scene | Answers | On the display: pieces | first to last | frames with a window neither old nor new | holes, empty desk, over others | By the window server: first to last move | steps of each window that moved | frames in between |\n"
           "|---|---|---|---|---|---|---|---|---|", file=out)
+    used = 0
     for name in sorted(os.listdir(films)):
         if not os.path.isfile(os.path.join(films, name, "film.log")):
             continue
@@ -1142,6 +1166,8 @@ def acts(folder, out=sys.stdout):
               + (f"{seen['times'][-1] - seen['times'][0]} ms" if seen["frames"] else "") + f" | {len(seen['between'])} {seen['between'][:8] if seen['between'] else ''}" + (f", of them the new size at the old place: {len(seen['sized'])}" if seen["sized"] else "") + " | "
               + (", ".join(f"{what} {frames}" for what, frames in worse.items() if frames) or "none") + " | "
               + (f"{said['last'] - said['first']} ms" if said["moves"] else "nothing moved") + f" | {steps or 'none'} | {said['between']} |", file=out)
+        used += bool(worse.get("excused"))
+    print(f"\nThe one exception to \"over\", for what grows where it cannot (\"excused\"), was used in {used} acts.", file=out)
     return 0
 
 
@@ -1208,6 +1234,16 @@ def self_test():
                                                                                    (34, {studio.BLUE: (12, 43, 1000, 650), studio.RED: (300, 300, 200, 160)}),
                                                                                    (284, {studio.BLUE: (12, 43, 1000, 650), studio.RED: (600, 100, 200, 160)}),
                                                                                    (1900, {studio.BLUE: (12, 43, 1000, 650), studio.RED: (600, 100, 200, 160), **words})]}, ["R1", "R4", "R5"], []),
+        # From 612,243 200 by 300 to 500 by 400 at 700,100, which hangs over the display's right edge: the new size shows at the old place first, and may.
+        "grows-where-it-cannot": (studio.shoot_steps, {"steps": [(None, {studio.BLUE: (12, 43, 494, 650), studio.RED: (612, 243, 200, 300)}), (34, {studio.BLUE: (12, 43, 494, 650), studio.RED: (612, 243, 500, 400)}),
+                                                                 (51, {studio.BLUE: (12, 43, 494, 650), studio.RED: (700, 100, 500, 400)}),
+                                                                 (1900, {studio.BLUE: (12, 43, 494, 650), studio.RED: (700, 100, 500, 400), **words})]}, ["R4"], []),
+        "grows-where-it-can": (studio.shoot_steps, {"steps": [(None, {studio.BLUE: (12, 43, 494, 650), studio.RED: (612, 243, 200, 300)}), (34, {studio.BLUE: (12, 43, 494, 650), studio.RED: (612, 243, 400, 400)}),
+                                                              (51, {studio.BLUE: (12, 43, 494, 650), studio.RED: (520, 100, 400, 400)}),
+                                                              (1900, {studio.BLUE: (12, 43, 494, 650), studio.RED: (520, 100, 400, 400), **words})]}, ["R4", "R5"], ["S8"]),
+        "grows-where-it-cannot-and-strays": (studio.shoot_steps, {"steps": [(None, {studio.BLUE: (12, 43, 494, 650), studio.RED: (612, 243, 200, 300)}), (34, {studio.BLUE: (12, 43, 494, 650), studio.RED: (100, 243, 500, 400)}),
+                                                                            (51, {studio.BLUE: (12, 43, 494, 650), studio.RED: (700, 100, 500, 400)}),
+                                                                            (1900, {studio.BLUE: (12, 43, 494, 650), studio.RED: (700, 100, 500, 400), **words})]}, ["R4", "R5"], []),
         "drop": (studio.shoot_drop, {}, [], []),
         "drop-with-the-new-size-first": (studio.shoot_drop, {"halfway": True}, ["R4", "R5"], []),
         "drop-that-takes-its-time": (studio.shoot_drop, {"late": 300}, ["R1"], ["R5"]),
@@ -1250,6 +1286,10 @@ def self_test():
             wrong += [f"{identifier} saw nothing: {verdicts[identifier].said}" for identifier in unseen]
             failures += bool(wrong)
             print(f"{'✘' if wrong else '✔'} {name}: missed {', '.join(missed) or 'nothing'}" + "".join(f"\n    {line}" for line in wrong))
+        _, verdicts = judge(os.path.join(folder, "grows-where-it-cannot"))
+        counted = "was used in 1 frames" in verdicts["R5"].said
+        failures += not counted
+        print(f"{'✔' if counted else '✘'} the exception is counted: {verdicts['R5'].said}")
         for name, (draw, how) in barren.items():
             draw(os.path.join(folder, name), **how)
             _, verdicts = judge(os.path.join(folder, name))
@@ -1270,7 +1310,7 @@ def self_test():
         right = (not film.after or "AFTER THE STAGE WENT" in told.getvalue()) and "stage +15 to +600" in told.getvalue()
         failures += not right
         print(f"{'✔' if right else '✘'} home: {told.getvalue().splitlines()[0]}")
-    print(f"{len(cases) + len(barren) + 1 - failures} of {len(cases) + len(barren) + 1} drawn films judged as they should be")
+    print(f"{len(cases) + len(barren) + 2 - failures} of {len(cases) + len(barren) + 2} drawn films judged as they should be")
     account = [line.split() for line in ("90 W 7 1 0 0 0 9 9 Oak", "110 W 50 2 4 0 0 100 100 Arbor", "120 W 7 1 0 5 5 9 9 Oak", "130 W 8 1 0 5 5 9 9 Elm",
                                          "140 W 51 2 3 0 0 9 9 Arbor", "300 L 45", "600 G 50", "640 W 8 1 0 6 6 9 9 Elm", "5000 W 7 1 0 1 1 9 9 Oak")]
     said = home_of(account, 100, 4000, {7, 8})
