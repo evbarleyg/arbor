@@ -1243,36 +1243,65 @@ extension FakeWindowSystem {
   public func takeSizeBeforeTile(of window: WindowID) -> CGSize? { sizesBeforeTiles.removeValue(forKey: window) }
 
   /// What macOS does about a window that had the frame `start` when it was let go with the pointer where it is now. As seen on
-  /// a Mac: Arbor hears of the release first and does what it does. Then macOS grows the window from where it was let go
-  /// to the tile, over a third of a second, whatever has become of it meanwhile, and its app reports every step.
+  /// a Mac: Arbor hears of the release first and does what it does. Then macOS takes the window from where it was let go to the
+  /// tile, whatever has become of it meanwhile, over a third of a second (0.27 to 0.39 s), in ever smaller steps, the last ones
+  /// a point or two apart. A test window reported 16 to 20 of them, real apps 8 to 15.
   ///
   /// Thrown into the menu bar and let go at once, the window is left alone (`MacTiling.menuBarRest`); at the sides macOS waits for
   /// nothing. A window that cannot take the tile's size keeps the nearest it can: one too small lies against the side of the
-  /// screen, or in the middle of a screen it should have filled, half way up; one too large begins where the tile does.
-  /// ⌥ means nothing for a window of a fixed size.
+  /// screen, or in the middle of a screen it should have filled, half way up; one too large begins where the left half does, or
+  /// ends with the right half. ⌥ means nothing for a window of a fixed size.
+  ///
+  /// A window whose size changes on the way comes to rest a hair short of where it was going, by a whole point: a point further
+  /// left if it came from the left, a point wider if it shrank, a point lower if its lower edge came from below. So the left
+  /// half of (0,31 1024×674) was (-1,31 512×674) for a window of 480×348 and (-1,32 513×674) for one of 554×650, and a right
+  /// half of (800,31 800×791) was (799,31 801×791) for a wide window that came from the left, while the preview promised the
+  /// tile itself. One that is only moved arrives. Some sixty sightings of the two halves bear it out, with real apps too and
+  /// with no Arbor running. The whole screen was only ever reached from the right by windows that grew, and was exact. Where a
+  /// quarter ends, and a height that shrinks, have not been measured. One that was too wide for the right half ended a point
+  /// past it (one sighting).
   public func letMacOSTile(_ window: WindowID, letGoAt start: CGRect) {
     guard var tile = macTile(at: cursor), let claim = macClaim(at: cursor), let fake = windows[window] else { return }
     if claim == .menuBar, clock() - (inMenuBarSince ?? clock()) < MacTiling.menuBarRest { return }
     if claim == .optionKey, fake.maximumSize == fake.minimumSize { return }
-    let largest = fake.maximumSize ?? tile.size
+    let asked = CGSize(width: tile.width + (start.width > tile.width ? 1 : 0), height: tile.height)
+    let largest = fake.maximumSize ?? asked
     let size = CGSize(
-      width: max(min(tile.width, largest.width), fake.minimumSize.width),
-      height: max(min(tile.height, largest.height), fake.minimumSize.height))
+      width: max(min(asked.width, largest.width), fake.minimumSize.width),
+      height: max(min(asked.height, largest.height), fake.minimumSize.height))
+    let resized = size != start.size
     if size.width < tile.width {
       tile.origin.x = claim == .menuBar ? (tile.midX - size.width / 2).rounded() : tile.minX > start.midX ? tile.maxX - size.width : tile.minX
+    } else if size.width > asked.width, displayList.contains(where: { $0.frame.contains(cursor) && tile.minX > $0.visibleFrame.minX }) {
+      tile.origin.x = tile.maxX - size.width + (resized ? 1 : 0)
     }
-    if size.height < tile.height { tile.origin.y = (tile.midY - size.height / 2).rounded() }
+    let halfWayUp = size.height < tile.height
+    if halfWayUp { tile.origin.y = tile.midY - size.height / 2 }
     tile.size = size
+    let fromBelow = resized && start.maxY > tile.maxY
+    // Half a point left over half way up is rounded once, downwards on the screen, whether or not the window stops short.
+    if halfWayUp {
+      tile.origin.y = fromBelow ? tile.minY.rounded(.down) + 1 : tile.minY.rounded(.up)
+    } else if fromBelow {
+      tile.origin.y += 1
+    }
+    if resized, start.minX < tile.minX { tile.origin.x -= 1 }
     sizesBeforeTiles[window] = start.size
-    let halfway = CGRect(
-      x: (start.minX + tile.minX) / 2, y: (start.minY + tile.minY) / 2, width: (start.width + tile.width) / 2,
-      height: (start.height + tile.height) / 2
-    ).integral
-    for step in [halfway, tile] {
-      passTime?(0.15)
-      userMove(window, to: step)
+    for left in Self.wayLeftToTheTile {
+      passTime?(0.3 / Double(Self.wayLeftToTheTile.count))
+      func onTheWay(_ from: CGFloat, _ to: CGFloat) -> CGFloat { to + ((from - to) * left).rounded(.towardZero) }
+      let frame = CGRect(
+        x: onTheWay(start.minX, tile.minX), y: onTheWay(start.minY, tile.minY), width: onTheWay(start.width, tile.width),
+        height: onTheWay(start.height, tile.height))
+      // Where the window is already, nothing is reported. Where somebody has put it elsewhere meanwhile, macOS puts it back on its way.
+      if frame != self.frame(of: window) { userMove(window, to: frame) }
     }
   }
+
+  /// How much of its way to the tile a window still had before it at each report, in a recording of 18 reports in 0.3 s.
+  private static let wayLeftToTheTile: [CGFloat] = [
+    0.995, 0.9, 0.74, 0.58, 0.43, 0.31, 0.22, 0.16, 0.11, 0.075, 0.05, 0.035, 0.025, 0.015, 0.01, 0.0075, 0.005, 0,
+  ]
 
   /// The button comes up and nobody sees it, until the AX layer finds it up and calls the drag off.
   public func loseTheReleaseOfTheDrag() {

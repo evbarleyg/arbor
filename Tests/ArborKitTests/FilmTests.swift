@@ -345,11 +345,12 @@ private func near(_ a: CGRect, _ b: CGRect, within tolerance: CGFloat = 0.01) ->
     for key in ["preview", "backdrop", "stage"] { #expect(film.frames.allSatisfy { $0[key] == nil }) }
     // 0.5 + 0.5 + 1 + 0.5 s, then the button comes up: macOS grows the window to its half over a third of a second, in the film's time.
     let places = try film.frames.map { try window(101, in: $0) }
-    let half = CGRect(x: 0, y: 24, width: 720, height: 710)
+    // A hair short of its half, (0,24 720×710), as a Mac leaves a window that comes from the left and from below and shrinks.
+    let half = CGRect(x: -1, y: 25, width: 721, height: 710)
     let lifted = 150
     #expect(places[lifted].size == CGSize(width: 800, height: 500))
     let onTheWay = places[lifted + 10].width
-    #expect(onTheWay < 800 && onTheWay > 720)
+    #expect(onTheWay < 800 && onTheWay > half.width)
     #expect(places[lifted + 19] == half)
     #expect(places.last == half)
     #expect(film.frames.count == lifted + 18 + 60 + 1)

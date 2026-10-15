@@ -1127,7 +1127,7 @@ private let side = DisplaySnapshot(
     s.h.system.moveDrag(to: CGPoint(x: 0, y: 450), holding: 1)
     s.h.system.endDrag()
     s.h.scheduler.advance(by: 3)
-    #expect(s.frame(s.c) == CGRect(x: 0, y: 25, width: 720, height: 875), "where macOS put it")
+    #expect(s.frame(s.c) == CGRect(x: -1, y: 25, width: 720, height: 875), "where macOS put it")
     #expect(!s.h.system.frameLog.contains { $0.window == s.c }, "Arbor set no frame on it: \(s.h.system.frameLog)")
     s.expectNothingLeftBehind()
   }

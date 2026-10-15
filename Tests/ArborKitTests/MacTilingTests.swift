@@ -16,18 +16,20 @@ import Testing
     return s
   }
 
-  /// The places where macOS acts on the standard display, 1440×900 with a menu bar of 25, and what it makes of the window.
-  nonisolated static let places: [(CGPoint, CGRect)] = [
-    (CGPoint(x: 0, y: 450), CGRect(x: 0, y: 25, width: 720, height: 875)),
-    (CGPoint(x: 1439, y: 450), CGRect(x: 720, y: 25, width: 720, height: 875)),
-    (CGPoint(x: 700, y: 0), CGRect(x: 0, y: 25, width: 1440, height: 875)),
-    (CGPoint(x: 700, y: 24), CGRect(x: 0, y: 25, width: 1440, height: 875)),
-    (CGPoint(x: 0, y: 0), CGRect(x: 0, y: 25, width: 720, height: 437.5)),
-    (CGPoint(x: 0, y: 899), CGRect(x: 0, y: 462.5, width: 720, height: 437.5)),
+  /// The places where macOS acts on the standard display, 1440×900 with a menu bar of 25, and what it makes of the floating
+  /// window, 400×300, and of a docked one, 464×851. They rest a hair short of the tile: a point to the left where they come
+  /// from the left, a point lower where they reached lower than the tile (`sightings`).
+  nonisolated static let places: [(CGPoint, CGRect, CGRect)] = [
+    (CGPoint(x: 0, y: 450), CGRect(x: -1, y: 25, width: 720, height: 875), CGRect(x: -1, y: 26, width: 720, height: 875)),
+    (CGPoint(x: 1439, y: 450), CGRect(x: 720, y: 25, width: 720, height: 875), CGRect(x: 720, y: 26, width: 720, height: 875)),
+    (CGPoint(x: 700, y: 0), CGRect(x: 0, y: 25, width: 1440, height: 875), CGRect(x: 0, y: 25, width: 1440, height: 875)),
+    (CGPoint(x: 700, y: 24), CGRect(x: 0, y: 25, width: 1440, height: 875), CGRect(x: 0, y: 25, width: 1440, height: 875)),
+    (CGPoint(x: 0, y: 0), CGRect(x: -1, y: 25, width: 720, height: 437.5), CGRect(x: -1, y: 26, width: 720, height: 437.5)),
+    (CGPoint(x: 0, y: 899), CGRect(x: -1, y: 463.5, width: 720, height: 437.5), CGRect(x: -1, y: 463.5, width: 720, height: 437.5)),
   ]
 
   @Test(arguments: places.indices) func aFloatingWindowLetGoWhereMacOSTilesIsLeftToMacOS(index: Int) {
-    let (point, tile) = Self.places[index]
+    let (point, tile, _) = Self.places[index]
     let s = scene()
     let others = [s.a: s.frame(s.a), s.b: s.frame(s.b)]
     s.h.system.beginDrag(s.c)
@@ -46,7 +48,7 @@ import Testing
   /// It cannot go back to its slot: macOS is about to move it. So it leaves the arrangement, as over the Desktop, and Arbor
   /// does not give it its own size either, which would be a second hand on a window that is moving.
   @Test(arguments: places.indices) func aDockedWindowLetGoThereLeavesTheArrangementAndIsNotTouched(index: Int) {
-    let (point, tile) = Self.places[index]
+    let (point, _, tile) = Self.places[index]
     let s = scene()
     s.h.system.beginDrag(s.a)
     s.h.system.moveDrag(to: s.onDesktop, holding: 0.3)
@@ -212,7 +214,7 @@ import Testing
     s.h.system.holdModifierKeys([])
     s.h.scheduler.advance(by: 3)
     #expect(s.h.workspace.isFloating(s.c))
-    #expect(s.frame(s.c) == CGRect(x: 720, y: 25, width: 720, height: 875))
+    #expect(s.frame(s.c) == CGRect(x: 720, y: 26, width: 720, height: 875))
     #expect(s.h.system.frameLog.isEmpty, "\(s.h.system.frameLog)")
     #expect(s.h.overlays.messages.isEmpty, "whoever holds ⌥ asked macOS, and needs no telling")
 
@@ -274,11 +276,207 @@ import Testing
     let s = scene()
     s.h.system.drag(s.c, through: [s.frame(s.c).center, CGPoint(x: 0, y: 450)], holding: 0)
     s.h.scheduler.advance(by: 3)
-    #expect(s.frame(s.c) == CGRect(x: 0, y: 25, width: 720, height: 875))
+    #expect(s.frame(s.c) == CGRect(x: -1, y: 25, width: 720, height: 875))
     #expect(s.h.system.frameLog.isEmpty, "\(s.h.system.frameLog)")
   }
 
-  /// macOS was seen to take a window that cannot change its size as well, and to move it into the tile as it is.
+  /// What hosted Macs were seen to do, in their numbers: where the pointer let go, the frame the window was last seen with
+  /// before that, the smallest and the largest size it takes, and where it came to rest. The displays are theirs: 1024×768 and
+  /// 1600×900, visible from y 31, with a Dock below.
+  struct Sighting: Sendable, CustomTestStringConvertible {
+    var testDescription: String
+    var wide = false
+    var pointer: CGPoint
+    var held: CGRect
+    var smallest = CGSize.zero
+    var largest: CGSize?
+    var rest: CGRect
+  }
+
+  nonisolated static let sightings: [Sighting] = [
+    Sighting(
+      testDescription: "grows into the left half", pointer: CGPoint(x: 0, y: 368), held: CGRect(x: -240, y: 356, width: 480, height: 348),
+      rest: CGRect(x: -1, y: 31, width: 512, height: 674)),
+    Sighting(
+      testDescription: "a docked window, wider and lower than the left half", pointer: CGPoint(x: 0, y: 368),
+      held: CGRect(x: -202, y: 212, width: 554, height: 650), rest: CGRect(x: -1, y: 32, width: 513, height: 674)),
+    Sighting(
+      testDescription: "thrown there, reaching six points lower than the half", pointer: CGPoint(x: 0, y: 368),
+      held: CGRect(x: -243, y: 356, width: 487, height: 355), rest: CGRect(x: -1, y: 32, width: 512, height: 674)),
+    Sighting(
+      testDescription: "a smallest width of 700", pointer: CGPoint(x: 0, y: 368), held: CGRect(x: -221, y: 356, width: 480, height: 348),
+      smallest: CGSize(width: 700, height: 100), rest: CGRect(x: -1, y: 31, width: 700, height: 674)),
+    Sighting(
+      testDescription: "a largest size of 300×240", pointer: CGPoint(x: 0, y: 368), held: CGRect(x: -136, y: 356, width: 300, height: 236),
+      largest: CGSize(width: 300, height: 240), rest: CGRect(x: -1, y: 249, width: 300, height: 240)),
+    Sighting(
+      testDescription: "a fixed size, only moved", pointer: CGPoint(x: 0, y: 368), held: CGRect(x: -136, y: 298, width: 300, height: 240),
+      smallest: CGSize(width: 300, height: 240), largest: CGSize(width: 300, height: 240),
+      rest: CGRect(x: 0, y: 248, width: 300, height: 240)),
+    Sighting(
+      testDescription: "fills the screen", pointer: CGPoint(x: 512, y: 15), held: CGRect(x: 296, y: 31, width: 480, height: 348),
+      rest: CGRect(x: 0, y: 31, width: 1024, height: 674)),
+    Sighting(
+      testDescription: "Notes", wide: true, pointer: CGPoint(x: 0, y: 450), held: CGRect(x: -350, y: 240, width: 709, height: 660),
+      rest: CGRect(x: -1, y: 32, width: 800, height: 791)),
+    Sighting(
+      testDescription: "Notes, as large as the tile already: only moved", wide: true, pointer: CGPoint(x: 0, y: 450),
+      held: CGRect(x: -115, y: 435, width: 800, height: 791), rest: CGRect(x: 0, y: 31, width: 800, height: 791)),
+    Sighting(
+      testDescription: "Safari, wide and from the left into the right half", wide: true, pointer: CGPoint(x: 1599, y: 450),
+      held: CGRect(x: 661, y: 433, width: 1324, height: 224), rest: CGRect(x: 799, y: 31, width: 801, height: 791)),
+    Sighting(
+      testDescription: "TextEdit", wide: true, pointer: CGPoint(x: 1599, y: 450), held: CGRect(x: 1207, y: 438, width: 782, height: 212),
+      rest: CGRect(x: 800, y: 31, width: 800, height: 791)),
+    Sighting(
+      testDescription: "TextEdit, reaching lower, with no Arbor running", wide: true, pointer: CGPoint(x: 1599, y: 450),
+      held: CGRect(x: 961, y: 424, width: 674, height: 440), rest: CGRect(x: 800, y: 32, width: 800, height: 791)),
+    Sighting(
+      testDescription: "Calendar, ending level with the tile", wide: true, pointer: CGPoint(x: 1599, y: 450),
+      held: CGRect(x: 1351, y: 319, width: 794, height: 503), rest: CGRect(x: 800, y: 31, width: 800, height: 791)),
+    Sighting(
+      testDescription: "Mail, which goes no narrower than 872", wide: true, pointer: CGPoint(x: 1599, y: 450),
+      held: CGRect(x: 1013, y: 307, width: 1120, height: 630), smallest: CGSize(width: 872, height: 400),
+      rest: CGRect(x: 729, y: 32, width: 872, height: 791)),
+    // Its rows of text leave it short of the tile's height, by an odd number of points and by an even one.
+    Sighting(
+      testDescription: "Terminal, 784 high", wide: true, pointer: CGPoint(x: 1599, y: 450),
+      held: CGRect(x: 1165, y: 322, width: 877, height: 499), largest: CGSize(width: 2000, height: 784), rest: CGRect(x: 800, y: 35, width: 801, height: 784)),
+    Sighting(
+      testDescription: "Terminal, 785 high, with no Arbor running", wide: true, pointer: CGPoint(x: 1599, y: 450),
+      held: CGRect(x: 1139, y: 410, width: 877, height: 500), largest: CGSize(width: 2000, height: 785),
+      rest: CGRect(x: 800, y: 35, width: 801, height: 785)),
+    Sighting(
+      testDescription: "Calendar fills the screen", wide: true, pointer: CGPoint(x: 800, y: 0),
+      held: CGRect(x: 310, y: 31, width: 680, height: 600), rest: CGRect(x: 0, y: 31, width: 1600, height: 791)),
+  ]
+
+  /// A Mac like theirs with one window, held where it was held, the pointer having rested where it let go.
+  func mac(_ seen: Sighting) -> (Harness, WindowID) {
+    let size = seen.wide ? CGSize(width: 1600, height: 900) : CGSize(width: 1024, height: 768)
+    let h = Harness(displays: [
+      DisplaySnapshot(
+        id: DisplayID("main"), frame: CGRect(origin: .zero, size: size),
+        visibleFrame: CGRect(x: 0, y: 31, width: size.width, height: seen.wide ? 791 : 674), isMain: true)
+    ])
+    let window = h.system.open(app: "Notes", frame: seen.held, minimumSize: seen.smallest)
+    h.system.setMaximumSize(window, seen.largest)
+    h.start()
+    h.system.clearFrameLog()
+    h.system.cursor = seen.pointer
+    h.scheduler.advance(by: 1)
+    return (h, window)
+  }
+
+  /// The stand-in is held to them.
+  @Test(arguments: sightings) func theStandInLeavesAWindowWhereAMacDid(_ seen: Sighting) {
+    let (h, window) = mac(seen)
+    let began = h.scheduler.now
+    h.system.letMacOSTile(window, letGoAt: seen.held)
+    #expect(h.frame(window) == seen.rest)
+    #expect(abs(h.scheduler.now - began - 0.3) < 0.001, "a third of a second: \(h.scheduler.now - began)")
+    h.scheduler.advance(by: 3)
+    #expect(h.frame(window) == seen.rest)
+    #expect(h.system.frameLog.isEmpty, "Arbor has no hand in it, then or later: \(h.system.frameLog)")
+  }
+
+  /// And to the way there, as the controller heard it of the second of them: 18 reports in 0.3 s, ever closer together, the
+  /// last a point apart.
+  @Test func theStandInTravelsAsAMacDid() {
+    let recorded: [(CGFloat, CGFloat, CGFloat, CGFloat)] = [
+      (-202, 211, 554, 651), (-182, 194, 550, 653), (-150, 165, 544, 657), (-117, 135, 537, 661), (-88, 109, 531, 664), (-64, 88, 526, 667),
+      (-46, 72, 522, 669), (-33, 60, 519, 671), (-23, 51, 517, 672), (-16, 45, 516, 673), (-11, 41, 515, 673), (-8, 37, 514, 674),
+      (-6, 35, 514, 674), (-4, 34, 513, 674), (-3, 33, 513, 674), (-2, 33, 513, 674), (-2, 32, 513, 674), (-1, 32, 513, 674),
+    ]
+    let (h, window) = mac(Self.sightings[1])
+    // Where it is each time the clock moves on, which is before each step, and at the end.
+    var steps: [CGRect] = []
+    let passTime = h.system.passTime
+    h.system.passTime = { seconds in
+      steps.append(h.system.frame(of: window)!)
+      passTime?(seconds)
+    }
+    h.system.letMacOSTile(window, letGoAt: Self.sightings[1].held)
+    steps.append(h.system.frame(of: window)!)
+    #expect(steps.count == recorded.count + 1)
+    for (step, (x, y, width, height)) in zip(steps.dropFirst(), recorded) {
+      let off = max(abs(step.minX - x), abs(step.minY - y), abs(step.width - width), abs(step.height - height))
+      #expect(off <= 2, "\(step) for (\(x),\(y) \(width)×\(height))")
+    }
+    #expect(zip(steps, steps.dropFirst()).allSatisfy { $0 != $1 }, "each of the 18 is a step, and is reported")
+  }
+
+  /// macOS goes by where the window was let go, whatever has become of it since: a frame set on it during the travel lasts
+  /// until the next step, and one set when it has all but arrived does not outlast the end.
+  @Test(arguments: [0.1, 0.29]) func whateverBecomesOfTheWindowOnTheWayMacOSTakesItToItsTile(after seconds: Double) {
+    let seen = Self.sightings[0]
+    let (h, window) = mac(seen)
+    h.scheduler.schedule("somebody", after: seconds) { h.system.place(window, at: CGRect(x: 300, y: 300, width: 200, height: 200)) }
+    h.system.letMacOSTile(window, letGoAt: seen.held)
+    #expect(h.frame(window) == seen.rest)
+  }
+
+  /// A tile that lies a point off the display is no reason to fetch the window. It lies over the Desktop here, where Arbor does
+  /// place floating windows: it comes back to the very point from out of view, and Float All leaves it there.
+  @Test func aTileAPointOffTheDisplayComesBackWhereMacOSLeftIt() {
+    let h = Harness()
+    let docked = h.system.open(app: "Notes", frame: CGRect(x: 900, y: 200, width: 400, height: 400))
+    let window = h.system.open(app: "Mail", frame: CGRect(x: 300, y: 300, width: 400, height: 700))
+    h.start()
+    h.run("dock \(docked.rawValue) right")
+    h.scheduler.advance(by: 3)
+    h.system.drag(window, through: [h.frame(window)!.center, CGPoint(x: 0, y: 450)])
+    h.scheduler.advance(by: 3)
+    let tile = CGRect(x: -1, y: 26, width: 720, height: 875)
+    #expect(h.frame(window) == tile, "from the left, and reaching lower than the tile")
+    h.run("zoom \(docked.rawValue)")
+    h.scheduler.advance(by: 3)
+    #expect(h.frame(window) != tile, "out of view")
+    h.run("back")
+    h.scheduler.advance(by: 3)
+    // The point is what this is about. That it comes back narrower, squeezed off the docked window, is the board's 1.18.
+    #expect(h.frame(window)?.origin == tile.origin)
+    h.run("float-all")
+    h.scheduler.advance(by: 3)
+    #expect(h.frame(window) == tile)
+  }
+
+  /// macOS's last steps are a point apart, which is how far a report may differ in size from the one before and still be taken
+  /// for a move. The size the window ends with is its own all the same, and Float All leaves it as it is. A window as high as
+  /// the display is remembered two points wider than it ends, and Float All makes it so. One whose height grows meanwhile is
+  /// spared by that alone: what is remembered is never less high than the window. On a Mac a window of 513×674 was given 514 at
+  /// the next layout.
+  @Test(arguments: [CGSize(width: 1000, height: 500), CGSize(width: 1000, height: 875)])
+  func aWindowThatShrankIntoItsTileIsRememberedAsLargeAsItIs(size: CGSize) {
+    let s = scene()
+    s.h.system.userMove(s.c, to: CGRect(origin: CGPoint(x: 200, y: 25), size: size))
+    s.h.scheduler.advance(by: 3)
+    s.h.system.clearFrameLog()
+    s.h.system.drag(s.c, through: [CGPoint(x: 700, y: 35), CGPoint(x: 400, y: 300), CGPoint(x: 0, y: 450)])
+    s.h.scheduler.advance(by: 3)
+    let tile = s.frame(s.c)
+    #expect(tile.size == CGSize(width: 721, height: 875))
+    withKnownIssue("board 1.68: the last steps of macOS's tiling are taken for moves") {
+      #expect(s.h.workspace.floating[s.c] == tile, "what is remembered: \(String(describing: s.h.workspace.floating[s.c]))")
+    } when: {
+      size.height == 875
+    }
+    s.h.run("float-all")
+    s.h.scheduler.advance(by: 3)
+    withKnownIssue("board 1.68") {
+      #expect(s.frame(s.c) == tile)
+    } when: {
+      size.height == 875
+    }
+    withKnownIssue("board 1.68") {
+      #expect(!s.h.system.frameLog.contains { $0.window == s.c }, "\(s.h.system.frameLog)")
+    } when: {
+      size.height == 875
+    }
+  }
+
+  /// macOS was seen to take a window that cannot change its size as well, and to move it into the tile as it is: that one
+  /// arrives.
   @Test func aWindowOfAFixedSizeIsLeftToMacOSToo() {
     let s = scene()
     let fixed = s.h.system.open(app: "Calculator", frame: CGRect(x: 600, y: 300, width: 230, height: 400), isResizable: false)
@@ -386,7 +584,7 @@ import Testing
     s.h.system.endDrag()
     s.h.scheduler.advance(by: 3)
     #expect(!s.h.system.frameLog.contains { $0.window == s.c }, "Arbor set no frame on it: \(s.h.system.frameLog)")
-    #expect(s.frame(s.c) == CGRect(x: 720, y: 25, width: 720, height: 875))
+    #expect(s.frame(s.c) == CGRect(x: 720, y: 26, width: 720, height: 875))
   }
 
   /// What a trace holds is what Arbor was told, so that a replay stands aside where the recording did, whatever the
