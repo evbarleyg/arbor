@@ -186,6 +186,12 @@ import Testing
 
   func realMoves(_ h: Harness, since mark: Int) -> [FakeWindowSystem.Move] { h.system.moveLog[mark...].filter { $0.before != $0.after } }
 
+  /// `window` went straight to where it ended up. A size it was asked for where it stood is part of the road, not a second move.
+  func expectOneRoad(_ h: Harness, _ window: WindowID, since mark: Int, sourceLocation: SourceLocation = #_sourceLocation) {
+    let detour = FakeWindowSystem.detour(h.system.road(of: window, since: mark))
+    #expect(detour == nil, "\(window) \(detour ?? "")", sourceLocation: sourceLocation)
+  }
+
   @Test(arguments: ["close", "minimize"]) func aGoingInAColumnMovesOnlyWhatItMakesRoomFor(going: String) {
     let (h, a, a2, b, c) = aColumnInView()
     let mark = h.system.moveLog.count
@@ -193,7 +199,7 @@ import Testing
     h.scheduler.advance(by: 2)
     // `c` grows into the room. Nobody else has anything to do with it.
     #expect(Set(realMoves(h, since: mark).map(\.window)) == [c], "\(realMoves(h, since: mark))")
-    #expect(realMoves(h, since: mark).count == 1, "\(realMoves(h, since: mark))")
+    expectOneRoad(h, c, since: mark)
     #expect(h.system.focused == c)
     #expect(!h.system.isVisible(a2) && !h.system.isVisible(b))
   }
@@ -208,8 +214,7 @@ import Testing
     #expect(h.system.isVisible(a2))
     #expect(h.system.focused == a2)
     h.scheduler.advance(by: 2)
-    let moves = realMoves(h, since: mark)
-    #expect(Set(moves.map(\.window)).count == moves.count, "each at most once: \(moves)")
+    for window in Set(realMoves(h, since: mark).map(\.window)).sorted() { expectOneRoad(h, window, since: mark) }
     expectWindowsMatchLayout(h)
   }
 
@@ -298,7 +303,8 @@ import Testing
     #expect(h.system.isVisible(a))
     #expect(h.system.focused == a)
     h.scheduler.advance(by: 2)
-    #expect(realMoves(h, since: mark).count == 1, "\(realMoves(h, since: mark))")
+    #expect(Set(realMoves(h, since: mark).map(\.window)) == [a], "\(realMoves(h, since: mark))")
+    expectOneRoad(h, a, since: mark)
   }
 
   // MARK: Who does not wait, and what ends the wait

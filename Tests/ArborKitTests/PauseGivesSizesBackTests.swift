@@ -251,7 +251,8 @@ import Testing
       return runner.system.frame(of: WindowID(103))
     }
     let before = whereTheOtherNotesWindowEnds(["focus 103", "resume"])
-    #expect(before == whereTheOtherNotesWindowEnds(["resume", "focus 103"]))
+    // Later than the view waits for a going within one app (`timeForAGoing`), so that it has followed and is taken back.
+    #expect(before == whereTheOtherNotesWindowEnds(["resume", "focus 103", "advance 0.1"]))
     #expect(before.map { FakeWindowSystem.standardDisplay.frame.contains($0) } == false, "out of view again: \(String(describing: before))")
   }
 
