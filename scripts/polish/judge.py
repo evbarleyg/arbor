@@ -253,13 +253,14 @@ def bars(m, allow):
 
 def pieces(m, until=1500):
     """An act without motion, by its windows alone (a line of words that fades in afterwards is no part of their arriving): {"frames": those in which a window came, went, or changed its
-    place or size, "times": when, "between": the frames in which some window is seen at a place or size that is neither its old nor its new one, "followed": how many windows}."""
+    place or size, "times": when, "between": the frames in which some window is seen at a place or size that is neither its old nor its new one, "sized": those of them in which it has
+    the size of the end at the place of the start, "followed": how many windows}."""
     cause, film = m["cause"], m["film"]
 
     def same(a, b):
         return a is not None and b is not None and max(abs(p - q) for p, q in zip(a, b)) <= 2
 
-    changed, between, followed = set(), set(), 0
+    changed, between, followed, sized = set(), set(), 0, set()
     for track in m["scan"].tracks:
         if track.detail:
             continue
@@ -293,13 +294,17 @@ def pieces(m, until=1500):
                 moved = True
             if not same(edges, old) and not same(edges, new):
                 between.add(index)
+                # The commonest of them: it has been given its new size and not yet its new place.
+                # (Its corner is where it was and its size is no longer what it was: how much of the new size shows depends on the room.)
+                if old is not None and max(abs(edges[0] - old[0]), abs(edges[1] - old[1])) <= 2:
+                    sized.add(index)
             before = edges
         if new is None and after[-1][1] + 1 < len(film):
             changed.add(after[-1][1] + 1)
             moved = True
         followed += moved
     frames = sorted(changed)
-    return {"frames": frames, "times": [int(film.times[index]) - cause for index in frames], "between": sorted(between), "followed": followed}
+    return {"frames": frames, "times": [int(film.times[index]) - cause for index in frames], "between": sorted(between), "followed": followed, "sized": sorted(sized)}
 
 
 def in_one_piece(m, until=1500):
@@ -1077,7 +1082,7 @@ def acts(folder, out=sys.stdout):
         said = act_of(samples, cause - 20, min(cause + 2000, film.ends))
         steps = ", ".join(f"{window}: {len(moved) - 1}" for window, moved in sorted(said["moves"].items()))
         print(f"| `{name}` | {f'{seen_at(seen)} ms' if seen['frames'] and m['cause_known'] == 'exact' else '?'} | {len(seen['frames']) or 'none followed'} | "
-              + (f"{seen['times'][-1] - seen['times'][0]} ms" if seen["frames"] else "") + f" | {len(seen['between'])} {seen['between'][:8] if seen['between'] else ''} | "
+              + (f"{seen['times'][-1] - seen['times'][0]} ms" if seen["frames"] else "") + f" | {len(seen['between'])} {seen['between'][:8] if seen['between'] else ''}" + (f", of them the new size at the old place: {len(seen['sized'])}" if seen["sized"] else "") + " | "
               + (", ".join(f"{what} {frames}" for what, frames in worse.items() if frames) or "none") + " | "
               + (f"{said['last'] - said['first']} ms" if said["moves"] else "nothing moved") + f" | {steps or 'none'} | {said['between']} |", file=out)
     return 0
