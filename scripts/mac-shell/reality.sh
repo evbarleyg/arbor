@@ -153,8 +153,44 @@ at() {
   x=${x%.*} y=${y%.*} w=${w%.*} h=${h%.*}
   echo "$(($2)) $(($3))"
 }
-title_of() { at "$1" "x + w / 2" "y + 12"; }
 middle_of() { at "$1" "x + w / 2" "y + h / 2"; }
+# The test windows on screen from the front: id x y w h. What Arbor draws lets presses through, or is what a step aims at by itself.
+in_order() {
+  pointer windows --on-screen | awk -v ours=" $(cut -d ' ' -f 1 "$NAMES" | tr '\n' ' ')" 'index(ours, " " $1 " ") { print $1, int($4), int($5), int($6), int($7) }'
+}
+# title_of <window>: where a person would take it: the middle of its title bar if that shows, else the middle of the widest stretch of it that does. A floating
+# window stays where it is when another docks, so a docked one may lie over half of it. The three buttons on the left are no handle. Nothing, if nothing shows.
+title_of() {
+  in_order | awk -v id="$1" '
+    $1 != id { n++; fx[n] = $2; fy[n] = $3; fw[n] = $4; fh[n] = $5; next }
+    {
+      line = $3 + 12
+      for (x = $2 + 70; x <= $2 + $4 - 8; x++) {
+        free = 1
+        for (i = 1; i <= n; i++) if (x >= fx[i] && x < fx[i] + fw[i] && line >= fy[i] && line < fy[i] + fh[i]) free = 0
+        shows[x] = free
+        run = free ? run + 1 : 0
+        if (run > best) { best = run; end = x }
+      }
+      middle = $2 + int($4 / 2)
+      if (shows[middle]) print middle, line
+      else if (best > 0) print end - int(best / 2), line
+      exit
+    }'
+}
+# meets <name> <window> <x> <y>: a check that a press there reaches that window and not one that lies over it. A press that takes hold of something else, or of
+# nothing, comes out the same in both worlds: no divergence, and nothing played.
+meets() {
+  check "a press at $3,$4 meets $1" test "$(in_order | awk -v x="$3" -v y="$4" 'x >= $2 && x < $2 + $4 && y >= $3 && y < $3 + $5 { print $1; exit }')" = "$2"
+}
+# carried "<step>" <name> <window> <x> <y>: by its title bar to that point and let go, and a check that it went.
+carried() {
+  local before
+  before=$(real_frame_of "$3")
+  # shellcheck disable=SC2046
+  does "$1" drag $(title_of "$3") "$4" "$5"
+  check "$2 went along" test "$(real_frame_of "$3")" != "$before"
+}
 
 shows() { pointer windows --on-screen | awk -v id="$1" '$1 == id { found = 1 } END { exit !found }'; }
 in_front() { [ "$(pointer keyboard | cut -d ' ' -f 1)" = "$1" ]; }
@@ -268,19 +304,24 @@ if wanted pointer; then
   ARBOR_TEST_WINDOWS_ARGS="--min-size 1:700x500"
   journey pointer 3
   ARBOR_TEST_WINDOWS_ARGS=""
-  # shellcheck disable=SC2046
-  does "drag W3 to the bottom edge" drag $(title_of "$W3") $((sx + sw / 2)) $((sy + sh - 3))
+  carried "drag W3 to the bottom edge" W3 "$W3" $((sx + sw / 2)) $((sy + sh - 3))
   # The bottom edge is the one that is Arbor's whatever macOS tiles. The rest wants the window on the left, which is macOS's to drag to.
   does "dock W3 left" ctl dock "$W3" left
   # shellcheck disable=SC2046
+  meets W3 "$W3" $(at "$W3" "x + w - 1" "y + h / 2")
+  # shellcheck disable=SC2046
   does "drag W3's right edge 60 to the right" drag $(at "$W3" "x + w - 1" "y + h / 2") $(at "$W3" "x + w + 59" "y + h / 2")
   # shellcheck disable=SC2046
-  does "drag W2 onto the right of W3" drag $(title_of "$W2") $(at "$W3" "x + w * 85 / 100" "y + h / 2")
+  carried "drag W2 onto the right of W3" W2 "$W2" $(at "$W3" "x + w * 85 / 100" "y + h / 2")
+  # shellcheck disable=SC2046
+  meets W3 "$W3" $(title_of "$W3")
   # shellcheck disable=SC2046
   does "double-click W3's title bar" dblclick $(title_of "$W3")
   # macOS's zoom of a docked window stays, over everything else. A second double-click is how a person undoes it, and what comes after is about what lies beneath.
   # shellcheck disable=SC2046
   does "double-click W3's title bar again" dblclick $(title_of "$W3")
+  # shellcheck disable=SC2046
+  meets W3 "$W3" $(middle_of "$W3")
   # shellcheck disable=SC2046
   does "press inside W3 and move, held" drag $(middle_of "$W3") $(at "$W3" "x + w / 2 + 90" "y + h / 2 + 60") --no-release
   does "let go inside W3" release
@@ -288,8 +329,7 @@ if wanted pointer; then
   does "drag the seam right of W3 20 to the left" drag $(at "$W3" "x + w + $ARBOR_GAP / 2" "y + h / 2") $(at "$W3" "x + w + $ARBOR_GAP / 2 - 20" "y + h / 2")
   # Near the top of the Desktop: a window as tall as its slot let go of half way down would hang off the display.
   read -r dx dy dw _ <<< "$(arbor_ask desktop)"
-  # shellcheck disable=SC2046
-  does "drag W2 out onto the Desktop" drag $(title_of "$W2") $((${dx:-0} + ${dw:-0} / 2)) $((${dy:-0} + 60))
+  carried "drag W2 out onto the Desktop" W2 "$W2" $((${dx:-0} + ${dw:-0} / 2)) $((${dy:-0} + 60))
   does "dock W1, too big for its slot, below W3" ctl dock "$W1" beside "$W3" bottom
   does "show-all" ctl show-all
   # shellcheck disable=SC2046
@@ -301,6 +341,8 @@ if wanted keys; then
   journey keys 3 ARBOR_NO_HOTKEYS=0
   does "dock W1 left" ctl dock "$W1" left
   does "dock W2 right" ctl dock "$W2" right
+  # shellcheck disable=SC2046
+  meets W1 "$W1" $(middle_of "$W1")
   # shellcheck disable=SC2046
   does "click W1" click $(middle_of "$W1")
   does "⌃⌥↩ zoom" key ctrl+opt+return
