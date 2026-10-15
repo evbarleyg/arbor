@@ -212,6 +212,16 @@ public enum SettingsSchema {
         "Dropping a window on the middle of another makes the two a tab group.", hidden: true)
     ])
 
+  /// The switch a setting does nothing without, by key; that switch may need another in its turn. The settings window dims a setting
+  /// while any of them is off: a blue switch under one that is off says what is not so. Here and not with the entries, like `order`, so
+  /// that saying it of a setting never collides with a change to the setting. Only what the code bears out (`SettingsNeedsTests`).
+  public static let needs: [String: String] = [
+    "gesturesEnabled": "pointerGestures", "frameRectangleModifier": "pointerGestures", "frameRectangleOnDesktop": "pointerGestures",
+    "guardDesktopClicks": "pointerGestures", "scrollZoom": "gesturesEnabled", "continuousZoom": "gesturesEnabled",
+    "pinchThreshold": "gesturesEnabled", "scrollZoomThreshold": "scrollZoom", "scrollOnDesktopZooms": "scrollZoom",
+    "historyButtons": "menuBarControls", "menuBarFill": "menuBarControls",
+  ]
+
   private static let gestures = section(
     .gestures,
     [

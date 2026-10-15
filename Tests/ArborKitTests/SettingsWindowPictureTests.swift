@@ -71,7 +71,8 @@
         NSBitmapImageRep(
           bitmapDataPlanes: nil, pixelsWide: Int(size.width * scale), pixelsHigh: Int(size.height * scale),
           bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB,
-          bytesPerRow: 0, bitsPerPixel: 0))
+          bytesPerRow: 0, bitsPerPixel: 0
+        )?.retagging(with: .sRGB))  // as in `OffscreenPicture`: so that colours come back as they went in
       // The size in points: what is drawn is scaled up to the pixels there are.
       bitmap.size = size
       // The window's own background, which `cacheDisplay` leaves out.
@@ -113,6 +114,81 @@
       }
     }
     return (count > 0 ? sum / count : 0, shades.count)
+  }
+
+  /// A picture taken at one pixel to the point, as colours. The row at the top is 0. (`OffscreenPicture` reads a picture it has drawn
+  /// itself; these come out of a window, which SwiftUI's views need.)
+  private struct Pixels {
+    let wide: Int
+    let high: Int
+    private let bytes: [UInt8]
+    private let bytesPerRow: Int
+
+    init(_ bitmap: NSBitmapImageRep) throws {
+      wide = bitmap.pixelsWide
+      high = bitmap.pixelsHigh
+      bytesPerRow = bitmap.bytesPerRow
+      try #require(bitmap.samplesPerPixel == 4 && wide > 300 && high > 100)
+      bytes = Array(UnsafeBufferPointer(start: try #require(bitmap.bitmapData), count: bytesPerRow * high))
+    }
+
+    /// Everything in these pictures is opaque: the window's background was filled in first.
+    subscript(x: Int, y: Int) -> RGBA {
+      let at = y * bytesPerRow + x * 4
+      return RGBA(red: Double(bytes[at]) / 255, green: Double(bytes[at + 1]) / 255, blue: Double(bytes[at + 2]) / 255)
+    }
+
+    /// Right of the sidebar and the line beside it.
+    var pane: Range<Int> { 201..<wide }
+
+    /// How far a colour is on the side of orange and red. Greys have none, the accent colour's blue less than none.
+    static func warmth(_ colour: RGBA) -> Double { colour.red - max(colour.green, colour.blue) }
+
+    struct Mark {
+      var x: ClosedRange<Int>
+      var y: ClosedRange<Int>
+      var colour: RGBA
+    }
+
+    /// The first thing from the top that is in a warm colour, right of the sidebar: the box of such pixels, down to the first row
+    /// without any, and the warmest of them.
+    var firstMark: Mark? {
+      var mark: Mark?
+      for y in 0..<high {
+        let warm = pane.filter { Self.warmth(self[$0, y]) > 0.3 }
+        guard let first = warm.first, let last = warm.last else {
+          if mark != nil { break }
+          continue
+        }
+        let warmest = warm.map { self[$0, y] }.max { Self.warmth($0) < Self.warmth($1) } ?? self[first, y]
+        if let so = mark {
+          mark = Mark(
+            x: min(so.x.lowerBound, first)...max(so.x.upperBound, last), y: so.y.lowerBound...y,
+            colour: Self.warmth(warmest) > Self.warmth(so.colour) ? warmest : so.colour)
+        } else {
+          mark = Mark(x: first...last, y: y...y, colour: warmest)
+        }
+      }
+      return mark
+    }
+
+    /// A form's cards from the top, and under the last words of each how far it is to the card's foot. A card is told from the pane
+    /// by its ground, five points inside its left edge, where it has neither words nor lines.
+    var feetOfTheCards: [Int] {
+      var feet: [Int] = []
+      var top: Int?
+      for y in 0...high {
+        let inACard = y < high && self[226, y] != self[205, y]
+        if inACard, top == nil { top = y }
+        guard !inACard, let from = top else { continue }
+        top = nil
+        guard y - from >= 20 else { continue }
+        let ground = self[226, (from + y) / 2]
+        let last = (from..<y).last { row in (231..<700).contains { self[$0, row].contrast(with: ground) >= 2 } }
+        if let last { feet.append(y - 1 - last) }
+      }
+      return feet
+    }
   }
 
   @Suite @MainActor struct SettingsWindowPictureTests {
@@ -225,6 +301,106 @@
       studio.model.answer(yes: false)
       studio.model.startRecording(commandText: "no such command")
       try studio.picture("light-shortcuts-whole-with-a-refusal", size: CGSize(width: 780, height: 2600))
+    }
+
+    /// What is asked of a notice, on the real views as a Mac draws them. Words in macOS's orange and red were measured at 2.0 and 3.1
+    /// to 1 on a hosted Mac, in boxes 160 to 210 points wide.
+    private func expectAMarkAndPlainWords(_ bitmap: NSBitmapImageRep, _ name: String) throws {
+      let pixels = try Pixels(bitmap)
+      let mark = try #require(pixels.firstMark, "\(name): nothing is in colour")
+      #expect(mark.x.count <= 24, "\(name): \(mark.x.count) points in a row are in colour: words, not a mark")
+      let row = (mark.y.lowerBound + mark.y.upperBound) / 2
+      let ground = pixels[max(mark.x.lowerBound - 3, 0), row]
+      #expect(abs(Pixels.warmth(ground)) < 0.03, "\(name): the ground is tinted: \(ground)")
+      let stands = mark.colour.contrast(with: ground)
+      #expect(stands >= 3, "\(name): the mark \(mark.colour) on \(ground): \(stands)")
+      var ink = ground
+      for y in mark.y {
+        for x in stride(from: mark.x.upperBound + 3, to: min(mark.x.upperBound + 120, pixels.wide), by: 1)
+        where pixels[x, y].contrast(with: ground) > ink.contrast(with: ground) {
+          ink = pixels[x, y]
+        }
+      }
+      let reads = ink.contrast(with: ground)
+      #expect(reads >= 4.5, "\(name): the words \(ink) on \(ground): \(reads)")
+      #expect(Pixels.warmth(ink) < 0.15, "\(name): the words are in colour: \(ink)")
+    }
+
+    private func expectAMarkAndPlainWords(in studio: Studio, _ name: String) throws {
+      try expectAMarkAndPlainWords(try studio.picture("light-\(name)-1x", scale: 1), "light-\(name)")
+      try expectAMarkAndPlainWords(try studio.picture("dark-\(name)-1x", dark: true, scale: 1), "dark-\(name)")
+    }
+
+    @Test func aRefusalIsAMarkInColourAndWordsInTheInkOfEverythingElse() throws {
+      let studio = Studio(settings: Self.lived)
+      studio.model.go(to: .section(.windows))
+      studio.model.set("gap", to: "500")
+      #expect(studio.model.rows(in: .windows).first?.error != nil)
+      try expectAMarkAndPlainWords(in: studio, "refusal")
+    }
+
+    @Test func soAreAClashAndACaution() throws {
+      // Without shortcuts of its own: one of them might come with a caution, further up than what is looked for.
+      let studio = Studio()
+      studio.model.go(to: .shortcuts)
+      let row = try #require(studio.model.shortcutRows.first)
+      studio.model.startRecording(row)
+      #expect(studio.model.keyPressed(code: KeyChord.Key.up.code, modifiers: [.control, .option]))
+      #expect(studio.model.clash != nil)
+      try expectAMarkAndPlainWords(in: studio, "clash")
+      studio.model.cancelRecording()
+      studio.model.startRecording(row)
+      #expect(studio.model.keyPressed(code: KeyChord.Key.w.code, modifiers: [.command]))
+      #expect(studio.model.shortcutRows.first?.caution != nil)
+      try expectAMarkAndPlainWords(in: studio, "caution")
+    }
+
+    /// Their ground is the window's own: over a tint of Arbor's the words on macOS's buttons came to 3.8 to 1 in the dark look.
+    @Test func soAreTheBannersOnTheWindowsOwnGround() throws {
+      let studio = Studio(settings: Self.lived)
+      studio.breakTheFile("line 3, column 3: expected `,` or `}` after the value of `gap`, found `\"`")
+      try expectAMarkAndPlainWords(in: studio, "file-broken")
+      let text = #"{"gap": 500, "focusRingColour": "mauve", "pinchThreshold": "far"}"#
+      let unusable = Studio(settings: try JSONDecoder().decode(ArborCore.Settings.self, from: Data(text.utf8)))
+      #expect(!unusable.model.valueProblems.isEmpty)
+      try expectAMarkAndPlainWords(in: unusable, "values-unusable")
+    }
+
+    /// Counted in ink: the labels of the rows below the switch are among the strongest words of the pane, and are not while it is off. On
+    /// a hosted Mac's picture of the pane 463 of 1402 such pixels were the switch's own label and the word Advanced, which stay. One label
+    /// left in full ink would make it 0.47. Without the bar at the foot, whose button is greyed in one of the two.
+    @Test(arguments: [false, true]) func underASwitchThatIsOffWhatHangsOnItIsDimmed(dark: Bool) throws {
+      func strongInk(gestures: Bool) throws -> Int {
+        var settings = ArborCore.Settings()
+        settings.pointerGestures = gestures
+        let studio = Studio(settings: settings)
+        studio.model.go(to: .section(.gestures))
+        let name = "\(dark ? "dark" : "light")-gestures-\(gestures ? "on" : "off")-1x"
+        let pixels = try Pixels(try studio.picture(name, dark: dark, scale: 1))
+        // In the card, left of where its words begin.
+        let ground = pixels[226, 60]
+        var count = 0
+        for y in 0..<(pixels.high - 50) {
+          for x in pixels.pane where pixels[x, y].contrast(with: ground) >= 7 { count += 1 }
+        }
+        return count
+      }
+      let on = try strongInk(gestures: true), off = try strongInk(gestures: false)
+      #expect(on > 500, "\(on) pixels of strong ink with the switch on: is anything drawn?")
+      #expect(off > 100, "\(off) with it off: the switch's own label is not to be dimmed")
+      #expect(off * 20 < on * 9, "\(off) pixels of strong ink with the switch off, \(on) with it on")
+    }
+
+    /// Under its last words the card behind Advanced was 20 points deep and the one above it 13, in a hosted Mac's pictures, and General
+    /// scrolled for those seven. (Two of what is allowed are a letter's tail.)
+    @Test func theCardBehindAdvancedIsAsDeepAtItsFootAsTheOneAbove() throws {
+      let studio = Studio()
+      studio.model.go(to: .section(.general))
+      studio.model.setAdvanced(true, in: .general)
+      let size = CGSize(width: 780, height: 1100)
+      let feet = try Pixels(try studio.picture("light-general-advanced-1x", scale: 1, size: size)).feetOfTheCards
+      try #require(feet.count == 2, "the cards' feet: \(feet)")
+      #expect(abs(feet[0] - feet[1]) <= 3, "the cards' feet: \(feet)")
     }
 
     @Test func aFreshArbor() throws {

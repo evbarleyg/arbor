@@ -125,10 +125,7 @@ struct ShortcutRowView: View {
         ShortcutClashView(store: store, clash: clash)
       }
       if let caution = row.caution {
-        Text("Mind that \(caution).")
-          .font(.caption)
-          .foregroundStyle(.orange)
-          .fixedSize(horizontal: false, vertical: true)
+        SettingsNotice(mark: .caution, text: "Mind that \(caution).")
       }
       SettingsErrorText(text: store.model.errors[row.id])
     }
@@ -149,9 +146,7 @@ struct ShortcutClashView: View {
 
   var body: some View {
     HStack(spacing: 8) {
-      Text(clash.message)
-        .font(.caption)
-        .foregroundStyle(.orange)
+      SettingsNotice(mark: .caution, text: clash.message)
       Button("Use It Here Instead") { store.model.replaceHolder() }
         .controlSize(.small)
       Button("Cancel") { store.model.cancelRecording() }
@@ -246,16 +241,21 @@ struct RuleRowView: View {
         }
         Spacer()
       }
-      TextField("", text: title, prompt: Text("Only windows whose title contains… (any title)"))
-        .labelsHidden()
-        .textFieldStyle(.roundedBorder)
-        .accessibilityIdentifier("rule.\(row.number).title")
-        .accessibilityLabel("Rule \(row.number): only windows whose title contains")
-        .focused($titleIsFocused)
-        .onSubmit { commitTitle() }
-        .onChange(of: titleIsFocused) {
-          if !titleIsFocused { commitTitle() }
-        }
+      // What the field is for stands before it. In it, macOS draws words too faint to count as a label.
+      HStack(spacing: 8) {
+        Text("Only windows whose title contains")
+          .accessibilityHidden(true)
+        TextField("", text: title, prompt: Text("any title"))
+          .labelsHidden()
+          .textFieldStyle(.roundedBorder)
+          .accessibilityIdentifier("rule.\(row.number).title")
+          .accessibilityLabel("Rule \(row.number): only windows whose title contains")
+          .focused($titleIsFocused)
+          .onSubmit { commitTitle() }
+          .onChange(of: titleIsFocused) {
+            if !titleIsFocused { commitTitle() }
+          }
+      }
     }
     .padding(.vertical, 2)
     // Lines are told apart by their place. If another rule comes to this place, or this one changes by another hand, the field

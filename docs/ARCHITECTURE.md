@@ -833,6 +833,9 @@ the command acted on (`executeAndSay` in `Controller+HeadsUp.swift`; spec F43). 
   **The measure:** in the look that ships, over a saturated red, a saturated blue, white and black, on a picture: words a person must read to act at least 4.5 to 1, all others at least 3, nothing below.
   `PanelLookTests` reckon that anywhere from what the materials were measured to be on a hosted Mac. macOS's secondary and tertiary label colours are not used in what Arbor draws by hand: there they are greys
   that stay grey whatever the ground has become. With Increase Contrast macOS itself outlines every window that has a shadow, so Arbor draws no line then.
+- **What is wrong is never said in colour**, on the panels or in the settings window: no red can be read on red, and macOS's orange and red are colours for shapes, 2.0 and 3.1 to 1 as small words on
+  a form's card. The words are in the ink everything else is in. In the settings window a mark stands before them, a triangle or a circle in a colour of Arbor's (`Platform/SettingsLook.swift`,
+  `SettingsLookTests`), and nothing of Arbor's is laid under macOS's buttons, which let through what they lie on. (Still owed: the welcome window says a failure in macOS's red.)
 
 ## What Arbor draws at rest
 

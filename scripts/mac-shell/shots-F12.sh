@@ -104,6 +104,7 @@ tree() { ax tree | grep -v AXMenuItem > "$ARBOR_OUT/$1.txt"; }
 SETTINGS='{
   "focusRing": false,
   "minimumUsableWidth": 100,
+  "pointerGestures": false,
   "bindings": { "ctrl+opt+shift+f9": "desktop", "ctrl+opt+shift+f6": "set gap 0", "ctrl+opt+d": null },
   "rules": [
     { "app": "com.example.mail", "title": "Inbox", "action": "dock left" },
@@ -260,12 +261,20 @@ ctl settings-window general
 ctl settings-window windows
 check "leaving the pane with the keyboard in the field changes nothing" setting_is gap 12
 
+# Not in Gestures, as it was: there every switch but the first is dimmed, and the first installs event taps, which are not this script's to try.
 step "a switch, and Restore Defaults"
+ctl settings-window dragging
+press_switch previewDrags
+check "the switch reached Arbor" eventually setting_is previewDrags false
+press AXButton "Restore Defaults"
+check "Restore Defaults put it back" eventually setting_is previewDrags true
+
+# The click is the one that has just worked on a switch that was not dimmed.
+step "under a switch that is off what hangs on it is dimmed"
 ctl settings-window gestures
 press_switch frameRectangleOnDesktop
-check "the switch reached Arbor" eventually setting_is frameRectangleOnDesktop false
-press AXButton "Restore Defaults"
-check "Restore Defaults put it back" eventually setting_is frameRectangleOnDesktop true
+sleep 0.5
+check "a click on a dimmed switch changes nothing" setting_is frameRectangleOnDesktop true
 
 step "search finds advanced settings and the lists"
 press AXTextField search
