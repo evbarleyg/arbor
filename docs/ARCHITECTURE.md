@@ -1117,7 +1117,7 @@ start, and dormant workspaces older than 30 days are dropped on start
 windows to a corner that is out of view with the displays as they are now.
 
 A display whose picture is shown on another as well (a projector, a television, AirPlay) has `DisplaySnapshot.isMirrored`
-(the real window system does not fill it in yet); its beginning and end are expected to arrive as display changes, which nobody has seen on a Mac yet. `Controller.isMirroring`, `"mirrored"` in `state`,
+(`CGDisplayIsInMirrorSet`); its beginning and end are expected to arrive as display changes, which nobody has seen on a Mac yet. `Controller.isMirroring`, `"mirrored"` in `state`,
 the log's line about displays and a trace's say so. Meanwhile Arbor holds still if `holdStillWhileMirroring` is on (it ships off, an experiment): one more sign in `refreshHoldCaller()`, asked first thing in
 `updateDisplays()` when mirroring begins and last thing when it ends. A call and an audience are two occasions: a release made on one does not outlast it.
 
