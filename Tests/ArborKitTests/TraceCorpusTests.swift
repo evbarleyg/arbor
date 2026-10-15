@@ -113,7 +113,17 @@ import Testing
         let wasFloating = inMacOSsHand.map { id in h.controller.workspaces.values.contains { $0.isFloating(id) } } ?? false
         let carriedTo = inMacOSsHand.flatMap { h.system.frame(of: $0) }
         // "Nothing is docked" is an answer too. What counts is what can be seen afterwards.
-        if way == "float-all" { h.run("float-all") }
+        // A trace cut between macOS's own moves of the windows and `displaysChanged`: whatever moves a window is refused and nothing is done
+        // (`WhileTheDisplaysChangeTests`). On a Mac the report is on its way: the layer below announces whatever differs from what it
+        // announced last. It comes, and the person asks again. (Before there was such a refusal Float All gave frames back by the displays
+        // Arbor still believed in: 47 of these states, in five traces of a display that goes or changes side.)
+        let moves = h.system.frameLog.count
+        if way == "float-all", h.run("float-all").message.hasPrefix("the displays are still changing") {
+          #expect(h.system.frameLog.count == moves, "refused, and nothing is moved")
+          h.controller.displaysChanged()
+          h.scheduler.runPending()
+          #expect(!h.run("float-all").message.hasPrefix("the displays are still changing"), "Arbor has heard")
+        }
         if way != "float-all" { h.controller.shutdown() }
         if way.hasSuffix("start again, float-all") {
           h.controller.start()

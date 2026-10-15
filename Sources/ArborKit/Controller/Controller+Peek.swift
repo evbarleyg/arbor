@@ -45,7 +45,8 @@ extension Controller {
       if phase == .pressed, binding.command != .showShortcuts { hideCheatSheet() }
       if holdIgnores(binding, phase) || peekTakes(binding, phase) || minimapTakes(binding, phase) || phase == .released { return }
       result = run?(binding.command) ?? perform(binding.command, from: .shortcut)
-      minimapKeyWentDown(binding)
+      // A press that was refused has brought up no minimap for the key to hold.
+      if result?.ok != false { minimapKeyWentDown(binding) }
     }
     return result
   }
@@ -90,11 +91,11 @@ extension Controller {
 
   /// Shows everything, as the command does, and waits to see whether the key stays down. False leaves the
   /// key to the plain command: peeking is off, Arbor is not running, the mouse is busy with a window, or the view
-  /// is held, and the command says so.
+  /// is held or the displays are changing, and the command says so.
   private func beginPeek(holding chord: KeyChord) -> Bool {
     // As before a command: a peek must not pretend either (Controller+Permission.swift).
     askAboutAccessibility(beyondDoubt: true, inPassing: true)
-    guard settings.peek, isRunning, holdLevel != .view, drag == nil, edgeResize == nil,
+    guard settings.peek, isRunning, holdLevel != .view, drag == nil, edgeResize == nil, !theDisplaysAreStillChanging(),
       let (display, workspace) = deciding(true, { from(.shortcut) { cameraDisplay() } }),
       // Behind a window that fills the view there is nothing to look at. The command takes it out of the way first (Controller+Fill.swift).
       workspace.filled == nil

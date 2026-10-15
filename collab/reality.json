@@ -2169,7 +2169,7 @@
     "scenario: 52-pulled-off-the-dock-and-quit.sim",
     "e2e: quit with two displays, then unplug"
    ],
-   "copes": "Controller.lookAtTheDisplaysBeforeLettingGo: a quit and a pause look at the displays macOS has before they give any frame back. Not while there is no display at all; a display that has only just come takes nothing away. Float All does not look yet.",
+   "copes": "Controller.lookAtTheDisplaysBeforeLettingGo: a quit and a pause look at the displays macOS has before they give any frame back. Not while there is no display at all; a display that has only just come takes nothing away. Float All is refused meanwhile (float-all-inside-arbors-wait-for-the-displays-goes-by-the-old-ones).",
    "hurt": 1,
    "touches": [
     "lost"
@@ -6598,15 +6598,21 @@
    "layer": "at the seam",
    "expected": "Float All gives every window its own earlier frame, on the displays that are there.",
    "happened": "Inside the second and a half in which Arbor has not yet heard of a change of displays, Float All gives frames back by the displays Arbor believes in. Found when the replayer was mended (the-replayer-had-the-new-displays-only-when-arbor-was-told) and the test that tries every way back from every state of a trace really played that time: 47 states with a window out of view, all by `float-all`, none by `quit`, in five traces of a virtual display on a hosted Mac: the display moved above 8, to the left 8, low and to the right 8, unplugged 10, unplugged while arranged 13. By reading, not seen: in life Arbor hears a second and a half later and fetches them, which is a flash and a jolt; in a trace cut there nobody tells it. The cure for Quit and pause does not reach it (a-quit-inside-arbors-wait-for-the-displays-goes-by-the-old-ones).",
-   "found": "Traces recorded by a script for two displays on a hosted Mac, replayed on Linux by the author of the cure for the quit. The five traces wait for this cure and are not on the trunk yet.",
+   "found": "Traces recorded by a script for two displays on a hosted Mac, replayed on Linux by the author of the cure for the quit. The five traces came to the trunk with the cure.",
    "modelled": "yes",
    "knobs": [
     "FakeWindowSystem.unplug",
     "FakeWindowSystem.displayList",
     "FakeWindowSystem.moveSilently"
    ],
-   "guards": [],
-   "copes": "open",
+   "guards": [
+    "test: everyWayBackReturnsEveryWindowFromEveryStateOfATrace",
+    "test: whatMovesWindowsOrViewsIsRefusedUntilArborHasHeardAndNothingIsDone",
+    "test: pressedAgainItEndsAsIfItHadBeenPressedOnlyThen",
+    "test: inABlinkTheKeyIsRefusedOnlyWhileTheDisplayIsAway",
+    "scenario: 52-a-key-before-the-displays-have-settled.sim"
+   ],
+   "copes": "Controller.refusalWhileTheDisplaysChange: while macOS has other displays than Arbor was told of, whatever is not on Command.leavesWindowsAndViewsAlone is refused, nothing is changed, and a line placed by macOS's own displays says why. Three seconds at most from the first sign, after which commands are carried out as before. Arbor takes no look of its own: in a blink that made an unplugging and a plugging in. Events in that time (a focus, a window minimized, closed or opened, a drop, a peek let go) still go by the displays Arbor believes in.",
    "hurt": 3,
    "touches": [
     "lost",
@@ -6616,7 +6622,10 @@
    "sources": [
     "Sources/ArborKit/Controller/Controller+Displays.swift",
     "Tests/ArborKitTests/TraceCorpusTests.swift",
-    "Sources/ArborTesting/TraceReplayer.swift"
+    "Sources/ArborTesting/TraceReplayer.swift",
+    "Sources/ArborCore/CommandDisplays.swift",
+    "Tests/ArborKitTests/WhileTheDisplaysChangeTests.swift",
+    "scripts/mac-shell/check-a-key-in-the-wait.sh"
    ]
   },
   {

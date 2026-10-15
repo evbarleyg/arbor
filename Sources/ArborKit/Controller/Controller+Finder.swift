@@ -319,6 +319,12 @@ extension Controller {
     actsOfAHand += 1
     defer { actsOfAHand -= 1 }
     guard isRunning, let display = finder?.display else { return }
+    // A row goes where a command would (`refusalWhileTheDisplaysChange`). The panel is where the person is looking: it stays and says why.
+    if !leavesWindowsAndViewsAlone(destination), theDisplaysAreStillChanging() {
+      Log.debug("find: \(Self.displaysMessage)")
+      if let model = finderModel(on: display, notice: "The displays are still changing") { overlays.showFinder(model) }
+      return
+    }
     let gone: String?
     switch destination {
     case .window(let window):
@@ -351,6 +357,12 @@ extension Controller {
     // As `perform` does for the commands it runs: the focus ring flashes on the window gone to.
     expectFocusToMove()
     go(to: destination, by: "find")
+  }
+
+  /// Whether the row is a command that is carried out while the displays change: Pause and Quit are ways out from here too.
+  private func leavesWindowsAndViewsAlone(_ destination: FinderDestination) -> Bool {
+    guard case .command(let text) = destination, let command = try? Command.parse(text) else { return false }
+    return command.leavesWindowsAndViewsAlone
   }
 
   public func finderDismissed() {

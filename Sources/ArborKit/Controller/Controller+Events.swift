@@ -202,6 +202,8 @@ extension Controller: WindowSystemEvents {
     // floating window a new home, and it would not go back with its display. Which displays there are counts,
     // not their order, which is never reported by itself.
     guard knowsTheDisplays else { return noteMoveBehindArborsBack(of: window.id) }
+    // They are as Arbor knows them (again): the next change has three seconds of its own (`longestRefusal`).
+    displaysUnknownSince = nil
 
     if workspaces[display]!.isFloating(window.id) {
       // A new title arrives the same way as a move. Taking it for one would replace the frame
@@ -314,7 +316,7 @@ extension Controller: OverlayActions {
     defer { actsOfAHand -= 1 }
     guard isRunning, workspaces[display]?.tree.contains(node) == true else { return }
     // Refused as the command it stands for, so that a click that does nothing is told why in the words a key is.
-    guard holdLevel != .view else { return _ = perform(.zoomNode(node), from: .gesture) }
+    guard holdLevel != .view, !theDisplaysAreStillChanging() else { return _ = perform(.zoomNode(node), from: .gesture) }
     let outer = following.namesAPlace
     following.namesAPlace = true
     defer { following.namesAPlace = outer }

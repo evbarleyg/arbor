@@ -139,12 +139,18 @@ public final class Controller {
   /// The current time. Tests replace it to age dormant workspaces.
   public var now: () -> Date = { Date() }
   public internal(set) var displays: [DisplaySnapshot] = [] {
-    didSet { if let main = displays.first(where: \.isMain) ?? displays.first { lastMainDisplay = main } }
+    didSet {
+      if let main = displays.first(where: \.isMain) ?? displays.first { lastMainDisplay = main }
+      // Arbor has heard, or looked for itself at a start.
+      displaysUnknownSince = nil
+    }
   }
   /// The main display, or what it was when the last display went (asleep, unplugged with the lid closed).
   var lastMainDisplay: DisplaySnapshot?
   /// Windows macOS moved while it had other displays than Arbor was told of (Controller+Displays.swift).
   var movedBehindArborsBack: Set<WindowID> = []
+  /// Since when macOS is known to have other displays than Arbor was told of.
+  var displaysUnknownSince: Date?
   public internal(set) var windows: [WindowID: WindowSnapshot] = [:] {
     didSet { desktopGuardZonesMayHaveChanged() }
   }

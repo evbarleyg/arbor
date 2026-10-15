@@ -210,7 +210,10 @@ private let upperDisplay = DisplaySnapshot(
     h.system.displayList = [FakeWindowSystem.standardDisplay]
     var text = command
     for (index, window) in w.enumerated() { text = text.replacingOccurrences(of: "$\(index)", with: String(window.rawValue)) }
-    _ = h.run(text)
+    // At first it is refused (`WhileTheDisplaysChangeTests`). With the report overdue it is carried out, by the displays Arbor believes in.
+    #expect(h.run(text).message.hasPrefix("the displays are still changing"))
+    h.scheduler.advance(by: 3)
+    #expect(!h.run(text).message.hasPrefix("the displays are still changing"))
     for displays in [[FakeWindowSystem.standardDisplay], both] {
       h.system.setDisplays(displays)
       h.scheduler.advance(by: 5)

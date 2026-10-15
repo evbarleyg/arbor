@@ -246,12 +246,72 @@ extension Controller {
     updateDisplays(lettingGo: true)
   }
 
+  // MARK: A command given meanwhile
+
+  static let displaysMessage = "the displays are still changing: nothing was done; ask again in a moment"
+
+  /// For how long commands are refused at most. Arbor has heard 1.5 to 2.4 s after macOS's first notice wherever that was recorded.
+  static let longestRefusal: TimeInterval = 3
+
+  /// A sign that comes this long after the first belongs to another change. For as long as the look-out for a blink lasts.
+  static let aChangeIsOver = TimeInterval(blinkTries) * (DisplayChange.comingAndGoing + 0.5)
+
+  /// A sign that macOS has other displays than Arbor was told of. The clock of `longestRefusal` starts at the first.
+  ///
+  /// Nobody tells Arbor that the displays are as they were again, so a clock can be left running: a key was refused, no window spoke, the
+  /// display came back, and nothing was asked of Arbor since. Hence `aChangeIsOver`, also for a Mac that slept meanwhile. A change
+  /// that follows sooner than that finds the three seconds spent, and commands are carried out as before.
+  func noteThatTheDisplaysAreUnknown() {
+    if let since = displaysUnknownSince, now().timeIntervalSince(since) < Self.aChangeIsOver { return }
+    displaysUnknownSince = now()
+  }
+
+  /// Whether macOS has other displays than Arbor was told of, and is not known to have had for longer than a report takes to come.
+  func theDisplaysAreStillChanging() -> Bool {
+    guard isRunning, !knowsTheDisplays else {
+      displaysUnknownSince = nil
+      return false
+    }
+    noteThatTheDisplaysAreUnknown()
+    // Not before it either: a clock that is set back meanwhile does not make three seconds last.
+    return displaysUnknownSince.map { (0..<Self.longestRefusal).contains(now().timeIntervalSince($0)) } ?? false
+  }
+
+  /// Whoever asks for something before Arbor has heard of a change of displays (`DisplayChange`) is looking at the displays that
+  /// are, and was answered by the ones Arbor still believed in: windows went to slots and corners on a display that was gone and
+  /// were fetched again at the report, and the key acted on an arrangement about to go to sleep. As in every other wait of Arbor's,
+  /// the key is taken, nothing is done, and a line says why.
+  ///
+  /// Arbor does not look for itself and go on. The wait is there for a display that only blinks, on wake and while a dock negotiates,
+  /// and a look in the midst of a blink makes an unplugging and a plugging in of it, whose traces stay: Float All was answered with
+  /// "nothing is docked" and undone when the display was back. Nor can it: whoever reports the displays says nothing after a blink, and
+  /// reads every window's frame anew only before it speaks. An Arbor that goes on arranging windows changes what it believes at a
+  /// report alone. Nor is the command kept for later: a key is an act of its moment, about the window in front at the press.
+  ///
+  /// For `longestRefusal` from the first sign, however the displays go on changing: then commands are carried out as before, so that
+  /// Arbor's keys are never dead for longer. In a blink nothing is refused from the moment the displays are as they were.
+  func refusalWhileTheDisplaysChange(_ command: Command) -> CommandResult? {
+    // One key, two meanings, and no slip. ⌃⌥⎋ pauses, which is carried out: a pause looks at the displays itself. Under a held view it lets go
+    // of the hold instead, which lays out what the hold put off (displays held empty, windows a rule waits to dock, a settings file that
+    // changed) and takes no look of its own.
+    let wouldLetGo = letsGoOfTheHoldInstead(command)
+    guard !command.leavesWindowsAndViewsAlone || wouldLetGo, theDisplaysAreStillChanging() else { return nil }
+    // No hold was let go of, so no key is "still down from letting go" (`holdIgnores`).
+    if wouldLetGo { keyThatReleasedTheHold = nil }
+    // The press is a command's all the same. Unnoted it would pass for typing, and the same key pressed again would follow the keyboard where
+    // this press followed the pointer. Asks nothing about the displays.
+    deciding(true) { _ = currentLead() }
+    Log.debug("\(command.textWhenRefused) failed: \(Self.displaysMessage)")
+    return .failure(Self.displaysMessage)
+  }
+
   /// macOS moved `window` because a display came or went that Arbor has not heard of yet. If the report comes,
   /// `updateDisplays` puts every window where it belongs. If the display only blinked, on wake or while a dock
   /// negotiates, there never is a report (`DisplayChange`), and nobody else would: the move was not the user's, so nothing
   /// followed it, and it is not put back at once, because there may be no display to put it back on.
   func noteMoveBehindArborsBack(of window: WindowID) {
     movedBehindArborsBack.insert(window)
+    noteThatTheDisplaysAreUnknown()
     lookForABlink(triesLeft: Self.blinkTries)
   }
 
@@ -273,6 +333,7 @@ extension Controller {
       if triesLeft > 0 { lookForABlink(triesLeft: triesLeft) } else { movedBehindArborsBack = [] }
       return
     }
+    displaysUnknownSince = nil
     // What macOS has put back itself by now is left alone: a docked window in its slot by the layout, a floating one here.
     let moved = movedBehindArborsBack.sorted().filter { window in
       guard let home = workspaceID(containing: window).flatMap({ workspaces[$0]!.floating[window] }) else { return true }

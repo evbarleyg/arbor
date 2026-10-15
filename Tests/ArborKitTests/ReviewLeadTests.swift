@@ -235,6 +235,10 @@ private let far = DisplaySnapshot(
     let desk = Desk([main, side, far])
     desk.restPointer(on: 0, typeIn: desk.left[2])
     desk.h.system.displayList = [main, side]  // gone, not reported yet
+    // At first they are refused, whichever display they would have found (`WhileTheDisplaysChangeTests`). With the report overdue they are
+    // carried out.
+    #expect(desk.h.press("out").message.hasPrefix("the displays are still changing"))
+    desk.h.scheduler.advance(by: 3)
     #expect(desk.h.press("out").ok)
     desk.h.system.setDisplays([main, side])
     desk.h.scheduler.advance(by: 1)

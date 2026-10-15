@@ -18,6 +18,8 @@ extension Controller {
     var showing: DisplayID?
     /// The line as it was placed there, to place it again when the minimap below it comes or goes.
     var line: HeadsUpModel?
+    /// The display as it was then. It need not be as Arbor knows it (`showWithoutLooking`).
+    var display: DisplaySnapshot?
     /// Each display as it was when last looked at, to tell a teaching moment by what changed.
     var facts: [DisplayID: HeadsUpFacts] = [:]
     /// How often each teaching moment has been shown, ever. Saved with the arrangement.
@@ -109,6 +111,10 @@ extension Controller {
     }
     // Only for what failed for want of the permission: whatever else goes wrong meanwhile has a reason of its own.
     if !result.ok, result.message == statusText, let why = whyAKeyDidNothing { return showWithoutLooking(why) }
+    // Where it can be read: by the displays macOS has, not by the ones Arbor believes in, one of which may be gone or stand elsewhere.
+    if !result.ok, result.message == Self.displaysMessage {
+      return showWithoutLooking(HeadsUpModel(kind: kind, text: "The displays are still changing", hint: "try again in a moment"))
+    }
     guard let display = display ?? cameraDisplay()?.0 ?? pointerDisplayID else { return }
     if var line = lineOfItsOwn(for: command, result, changedNothing: changedNothing) {
       line.kind = kind
@@ -319,7 +325,8 @@ extension Controller {
     guard mayShowUnasked || model.kind == .problem else { return }
     if let old = headsUp.showing, old != id { overlays.showHeadsUp(nil, on: old) }
     headsUp.showing = id
-    var placed = model.placed(in: display.visibleFrame, above: minimapFrame(on: id))
+    headsUp.display = display
+    var placed = model.placed(in: display.visibleFrame, above: minimapFrame(under: display))
     // Said while a person's command is being carried out. What follows from one a moment later is Arbor's own remark.
     placed.isAnswer = headsUp.source?.isAnsweredOnScreen == true
     headsUp.line = placed
@@ -331,11 +338,17 @@ extension Controller {
 
   /// The minimap came, went or grew on `id`. The line keeps directly above it, and its time runs on.
   func placeHeadsUpAgain(on id: DisplayID) {
-    guard headsUp.showing == id, let line = headsUp.line, let display = display(id) else { return }
-    let placed = line.placed(in: display.visibleFrame, above: minimapFrame(on: id))
+    guard headsUp.showing == id, let line = headsUp.line, let display = headsUp.display else { return }
+    let placed = line.placed(in: display.visibleFrame, above: minimapFrame(under: display))
     guard placed != line else { return }
     headsUp.line = placed
     overlays.showHeadsUp(placed, on: id)
+  }
+
+  /// The minimap that the line keeps above. It was placed by the display as Arbor knows it: on one that stands elsewhere by now it
+  /// says nothing of where a line can be read.
+  private func minimapFrame(under display: DisplaySnapshot) -> CGRect? {
+    self.display(display.id)?.frame == display.frame ? minimapFrame(on: display.id) : nil
   }
 
   func hideHeadsUp() {

@@ -7,6 +7,9 @@ extension Controller {
   /// Runs a command. Every entry point (hotkeys, menu, socket, URLs, tests)
   /// ends up here, by way of `perform(_:from:)` (Controller+Lead.swift).
   func execute(_ command: Command) -> CommandResult {
+    // First of all, because it says "nothing was done": what follows ends a peek, closes Go to…, fetches what a hold kept out and can
+    // let go of a hold.
+    if let refusal = refusalWhileTheDisplaysChange(command) { return refusal }
     // Before it changes anything: a peek ends on the arrangement it began with. Here, so that no way in goes round it.
     // The one exception is no command but a click (Controller+FrameRect.swift).
     if let landed = landPeek(insteadOf: command) { return landed }

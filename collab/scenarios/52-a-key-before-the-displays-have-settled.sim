@@ -1,0 +1,68 @@
+# Proposed by the swarm (2026-10-15; board 1.66); the documenter may edit or drop it.
+# Story: three windows docked and one floating on the big display at a desk, one of them filling it; a fifth on the laptop. The cable comes
+# out. macOS brings the four windows over to the laptop by itself, and their apps say so. Arbor hears of displays only once they have
+# settled, a second and a half later. The windows have jumped, so the person presses the key that shows everything, at once. As in every
+# other wait of Arbor's the key is taken, nothing moves, and a line says why; pressed again a moment later it does what it says.
+# Before: Arbor answered by the displays it still believed in. Float All sent all four back to the display that was gone.
+# Spec: docs/features/F08-displays-and-spaces.md. Window ids start at 101.
+quiet
+plug desk right 1920x1080
+open Code 480x348
+open Safari 480x348
+open Terminal 480x348
+open Chat 480x348
+open Notes 480x348
+move 101 1600 100 480 348
+move 102 1700 150 480 348
+move 103 1800 200 480 348
+move 104 1900 250 480 348
+cursor 2000 500
+dock 101 left
+dock 102 right
+dock 103 beside 102 bottom
+zoom 101
+wait 5
+loud
+expect count docked 3
+expect hidden 102
+# The cable comes out.
+quietly unplug desk
+move 101 170 220 480 348
+move 102 220 180 480 348
+move 103 270 140 480 348
+move 104 320 100 480 348
+cursor 400 300
+wait 0.4
+key ctrl+opt+space
+expect fail
+expect said The displays are still changing
+expect at 101 170 220
+expect at 102 220 180
+expect at 103 270 140
+expect at 104 320 100
+expect at 105 300 200
+# The way out is refused like the rest: nothing is sent to where there is no display.
+float-all
+expect fail
+expect at 101 170 220
+expect at 104 320 100
+# Now Arbor is told.
+wait 1.3
+report-displays
+wait 1
+key ctrl+opt+space
+expect visible 101
+expect visible 102
+expect visible 103
+expect visible 104
+expect size 101 480x348
+expect size 102 480x348
+expect size 103 480x348
+expect at 105 300 200
+# Back at the desk, the arrangement is too, with Code filling the display as it did.
+plug desk right 1920x1080
+wait 3
+expect count docked 3
+expect visible 101
+expect hidden 102
+expect hidden 103

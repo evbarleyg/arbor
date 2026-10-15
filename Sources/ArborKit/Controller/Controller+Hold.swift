@@ -178,7 +178,7 @@ extension Controller {
   func holdAnswers(_ command: Command) -> CommandResult? {
     guard holdLevel == .view, following.source == .shortcut else { return nil }
     switch command {
-    case .pause, .togglePause:
+    case _ where letsGoOfTheHoldInstead(command):
       let result = release()
       return result.ok && !isHeld ? .success(result.message + "; the same key again pauses Arbor") : result
     case .floatAll, .floatAllHere:
@@ -186,6 +186,15 @@ extension Controller {
       return .failure(heldMessage)
     default:
       return nil
+    }
+  }
+
+  /// Whether `command` lets go of the hold instead of doing what it says, as `holdAnswers` has it.
+  func letsGoOfTheHoldInstead(_ command: Command) -> Bool {
+    guard holdLevel == .view, following.source == .shortcut else { return false }
+    switch command {
+    case .pause, .togglePause: return true
+    default: return false
     }
   }
 
