@@ -356,7 +356,8 @@ def whole(rects, room, scale):
     for rect in joined:
         # What has a title bar, or is as large as a window, is a window wherever it lies: a floating one over a docked one. (A tile's icon grows as large as that, and is square.)
         wide, high = rect.right - rect.left, rect.bottom - rect.top
-        large = min(wide, high) > 150 * scale and abs(wide - high) > 0.1 * max(wide, high)
+        # Of one that the room's edge cuts, the shape says nothing.
+        large = min(wide, high) > 150 * scale and abs(wide - high) > 0.1 * max(wide, high) and not any(rect.cut)
         rect.detail = not rect.titled and not large and any(other is not rect and other.area > 4 * rect.area and other.left - slack <= rect.left and other.top - slack <= rect.top
                           and other.right + slack >= rect.right and other.bottom + slack >= rect.bottom for other in joined)
     return joined
