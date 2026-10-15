@@ -45,6 +45,7 @@ make typecheck-mac  # on Linux: type-check all the macOS-only code, tests includ
 make mac-on-linux   # on Linux: RUN the real Accessibility layer (Sources/ArborKit/AX) on a model of a rude Mac; after every change there (scripts/mac-on-linux/README.md)
 make trace NAME=x  # record a trace from the running Arbor into collab/evidence/traces/x.jsonl (docs/TRACES.md)
 make replay FILE=x # replay a trace against the real controller and see what happened
+make film SCRIPT=x OUT=y # play a film script against the real controller and write every frame down as JSON (docs/FILM.md)
 make attack     # hostile and broken clients against the control socket, for half a minute; after changing the socket
 make scenarios  # the documenter's user journeys (collab/scenarios); VERBOSE=1 for arbor-sim's output
 make parity     # score Arbor against TrellisWM; regenerates docs/FEATURES.md
@@ -74,7 +75,7 @@ new. See "Executors without a Mac" in `collab/README.md`.
 | `Sources/ArborIPC`, `Sources/ArborKit/IPC` | The control socket: paths, framing and client; server and endpoint | POSIX and Dispatch only, so it builds and is tested everywhere. The server runs on the main queue: never block. |
 | `Sources/Arbor` | The app's `main.swift`: calls `ArborApp.run()` | macOS only. |
 | `Sources/LinuxShims` | A module named CoreGraphics that re-exports Foundation, whose `CGRect` Linux uses | Declared only off macOS. |
-| `Sources/ArborTesting` | `FakeWindowSystem`, `FakeOverlays`, `MemoryStateStore`, `ManualScheduler`, `Harness`, `ScenarioExpectation` (the `expect` lines), `TraceReplayer` | Used by tests and arbor-sim. |
+| `Sources/ArborTesting` | `FakeWindowSystem`, `FakeOverlays`, `MemoryStateStore`, `ManualScheduler`, `Harness`, `ScenarioExpectation` (the `expect` lines), `TraceReplayer`, `Film/` (what a display shows, frame by frame: docs/FILM.md) | Used by tests and arbor-sim. A fade or a duration changed in `ArborKit/UI` changes in `Film/` too; `StageTimingTests` says so on a Mac. |
 | `Sources/arborctl` | CLI client for the control socket | macOS only. |
 | `Sources/arbor-sim` | Scriptable simulator printing ASCII layouts | Builds on Linux. |
 | `Sources/arbor-fakemac` | The stand-ins behind `scripts/mac-shell/rehearse.sh`: Mac shell scripts run on Linux against the real controller | Built on Linux only. Wraps the fakes and copies `ArborApp`'s wiring: a new member of `WindowSystem` or `OverlayPresenter` needs a line in `Arbor.swift`. |

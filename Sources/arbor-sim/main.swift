@@ -92,6 +92,7 @@ import Foundation
 //   map <id>|desktop|beside      click in the minimap: on a window, on the Desktop's outline, beside the map.
 //                                Whenever the minimap changes it is printed as `minimap: [w101] w102 desktop`, with
 //                                what is in view in brackets, or `minimap: gone`
+// `arbor-sim film <script.txt> [--out <frames.jsonl>] [--fps <n>]` writes a script down frame by frame (Film.swift, docs/FILM.md).
 // `arbor-sim launch [--state <file>] [--settings <file>] … [lines…]` starts on real files first (Launch.swift).
 //
 // A command that fails (a misspelt verb, a window that does not exist) also makes arbor-sim exit with
@@ -120,6 +121,7 @@ func runSimulation() {
   }
   // `replay <file>` replays a trace; `replay` alone, a chaos script from standard input.
   if lines.first == "replay", lines.dropFirst().contains(where: { !$0.hasPrefix("--") }) { runReplay(Array(lines.dropFirst())) }
+  if lines.first == "film" { runFilm(Array(lines.dropFirst())) }
   if let code = runChaosMode(lines) { exit(code) }
   if lines.first == "sweep" { exit(runSweep(Array(lines.dropFirst()))) }
   let launch = LaunchOptions(taking: &lines)

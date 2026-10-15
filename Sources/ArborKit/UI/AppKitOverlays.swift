@@ -106,7 +106,7 @@ public final class AppKitOverlays: OverlayPresenter {
     }
   }
 
-  private static let previewMotion = 0.12
+  static let previewMotion = 0.12
 
   public func update(display: DisplayID, scene: OverlayScene) {
     showTilesAndSeams(of: scene, on: display)

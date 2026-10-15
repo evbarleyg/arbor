@@ -42,6 +42,18 @@ output=$(.build/debug/arbor-sim quiet "settings-file $folder/settings.json" "set
 grep -q "^\* gap = 20 " <<<"$output" || fail "settings does not list the changed gap"
 [ "$(head -n 3 "$folder/settings.json")" = "$(printf '{\n  "gap": 20,\n  "myNote": "mine",')" ] \
   || fail "set changed more of settings.json than the gap"
+
+# A film (docs/FILM.md): the simulator's own words and the film's in one script, a line of JSON per frame, and no film of what Arbor refuses.
+printf '%s\n' "display 1440x810 bar 24 dock 76" "open Safari 800x500" "mac-tiling off" "launch" "glide window 101 title in 0.2" "press" \
+  "glide 3 400 in 0.5" "wait 0.3" "lift" "wait 0.7" "expect docked 101" "tap ctrl+opt+return" "wait 0.6" > "$folder/film.txt"
+output=$(.build/debug/arbor-sim film "$folder/film.txt" --out "$folder/film.jsonl") || fail "the film script failed"
+grep -q "the button is down on the title bar of w101" <<<"$output" || fail "the film's pointer missed the title bar"
+grep -q "^146 frames, 2.43 s at 60 frames a second" <<<"$output" || fail "the film has the wrong length"
+[ "$(wc -l < "$folder/film.jsonl" | tr -d ' ')" = 147 ] || fail "a film is a header and one line per frame"
+[ "$(grep -c '"stage":' "$folder/film.jsonl")" -ge 60 ] || fail "two motions were not filmed"
+echo "tap ctrl+opt+left" >> "$folder/film.txt"
+if output=$(.build/debug/arbor-sim film "$folder/film.txt" --out "$folder/film.jsonl"); then fail "a film was made of a key Arbor refused"; fi
+grep -q "LINE FAILED: .tap ctrl+opt+left" <<<"$output" || fail "the film does not say which line failed"
 echo "sim smoke test passed"
 
 # The same for the control socket: the real arborctl against the simulator.

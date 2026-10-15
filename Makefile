@@ -1,4 +1,4 @@
-.PHONY: public-check hooks lint build test check sim scenarios parity linux run app install uninstall release e2e e2e-drag day typecheck-mac typecheck-mac-selftest rehearse trace trace-check replay fuzz attack clean
+.PHONY: public-check hooks lint build test check sim scenarios parity linux run app install uninstall release e2e e2e-drag day typecheck-mac typecheck-mac-selftest rehearse trace trace-check replay film fuzz attack clean
 
 # Files that would compile on Linux but not on macOS, and Mac shell scripts that would change a person's Mac,
 # found without a Mac. And a ledger of macOS's surprises (docs/REALITY.md) that names what is no longer there.
@@ -122,6 +122,11 @@ trace-check:
 #   make replay FILE=collab/evidence/traces/drag-to-edge.jsonl [STRICT=1] [VERBOSE=1]
 replay: build
 	@.build/debug/arbor-sim replay "$(FILE)" $(if $(STRICT),--strict) $(if $(VERBOSE),--verbose)
+
+# Plays a film script against the real controller and writes down what the display shows, frame by frame (docs/FILM.md).
+#   make film SCRIPT=script.txt OUT=frames.jsonl [FPS=30]
+film: build
+	@.build/debug/arbor-sim film "$(SCRIPT)" --out "$(OUT)" $(if $(FPS),--fps $(FPS))
 
 # Starts Arbor on damaged state.json and settings.json files, a fresh process each (docs/TESTING.md, "Launch fuzzing").
 # A sample, a few minutes; `scripts/fuzz-launch.py all` for everything, about an hour.

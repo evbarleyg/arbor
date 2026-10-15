@@ -48,16 +48,34 @@ public final class FakeOverlays: OverlayPresenter {
   /// Every `update`, in order. On a Mac each one moves and reorders a panel per tile and seam.
   public private(set) var updateLog: [Update] = []
 
+  /// One call of the controller's.
+  public enum Call {
+    case dropPreview(CGRect?)
+    case update(DisplayID, OverlayScene)
+    case removeAll
+    case animate(Transition)
+    case finishAnimations
+    case headsUp(HeadsUpModel?, DisplayID)
+    case cheatSheet(CheatSheetModel?, DisplayID)
+    case minimap(MinimapModel?, DisplayID)
+  }
+
+  /// Hears of every call that has a moment to it, in order, once it is recorded: for whoever plays them back in time, as the
+  /// panels on a Mac do with their fades and glides (`OverlayPlayback`).
+  public var onCall: ((Call) -> Void)?
+
   public init() {}
 
   public func showDropPreview(_ frame: CGRect?) {
     preview = frame
     previewHistory.append(frame)
+    onCall?(.dropPreview(frame))
   }
 
   public func update(display: DisplayID, scene: OverlayScene) {
     updateLog.append(Update(display: display, changed: (scenes[display] ?? OverlayScene()) != scene))
     scenes[display] = scene
+    onCall?(.update(display, scene))
   }
 
   public func removeAll() {
@@ -67,6 +85,7 @@ public final class FakeOverlays: OverlayPresenter {
     headsUp.removeAll()
     cheatSheets.removeAll()
     minimaps.removeAll()
+    onCall?(.removeAll)
   }
 
   public func clickTile(_ node: NodeID, on display: DisplayID = FakeWindowSystem.standardDisplay.id) {
@@ -93,6 +112,7 @@ public final class FakeOverlays: OverlayPresenter {
     }
     transitions.append(transition)
     onAnimate?(transition)
+    onCall?(.animate(transition))
   }
 
   public func rehearse(_ rehearsal: Rehearsal) {
@@ -101,7 +121,10 @@ public final class FakeOverlays: OverlayPresenter {
     readyApps.formUnion(rehearsal.apps)
   }
 
-  public func finishAnimations() { finishedAnimations += 1 }
+  public func finishAnimations() {
+    finishedAnimations += 1
+    onCall?(.finishAnimations)
+  }
 
   /// Forgets the transitions recorded so far, so a test can look at one step's.
   public func clearTransitions() { transitions.removeAll() }
@@ -109,10 +132,12 @@ public final class FakeOverlays: OverlayPresenter {
   public func showHeadsUp(_ model: HeadsUpModel?, on display: DisplayID) {
     headsUp[display] = model
     if let model { messages.append((display, model)) }
+    onCall?(.headsUp(model, display))
   }
 
   public func showCheatSheet(_ model: CheatSheetModel?, on display: DisplayID) {
     cheatSheets[display] = model
+    onCall?(.cheatSheet(model, display))
   }
 
   /// Presses a key, or clicks, while the panel of shortcuts is up.
@@ -178,6 +203,7 @@ public final class FakeOverlays: OverlayPresenter {
   public func showMinimap(_ model: MinimapModel?, on display: DisplayID) {
     minimaps[display] = model
     minimapHistory.append((display, model))
+    onCall?(.minimap(model, display))
   }
 
   /// Clicks at `point`, in the panel's coordinates. As on screen, a minimap that is not there or does not take clicks

@@ -723,6 +723,9 @@ Somebody with a Mac may check out a branch they have not read, by hand or from a
 
 ## 6. Traces (`make trace`, `make replay`)
 
+(For what a display **shows** over time, without a Mac: `make film`, `docs/FILM.md`. A script runs against the real controller and every sixtieth of a second is
+written down: windows, overlays with their fades, the stage and its stand-ins, pointer and keys.)
+
 A trace is a recording of everything that passed between Arbor and macOS for a while, as JSON lines: window events, every
 call Arbor made with its answer (the frame it asked for and the frame the app took), commands and their results, clicks on
 tiles and seam drags, when scheduled work ran, and the raw Accessibility notifications and mouse events underneath.

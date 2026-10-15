@@ -36,8 +36,8 @@ final class Minimaps {
 /// `roundedMask` down.
 final class MinimapPanel: OverlayPanel {
   private static let cornerRadius: CGFloat = 12
-  private static let fadeIn: TimeInterval = 0.1
-  private static let fadeOut: TimeInterval = 0.25
+  static let fadeIn: TimeInterval = 0.1
+  static let fadeOut: TimeInterval = 0.25
 
   private let background = NSVisualEffectView()
   private let mapView = MinimapView()
