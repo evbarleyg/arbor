@@ -4,7 +4,7 @@ import SwiftUI
 
 /// The welcome window (docs/features/F10-menu-bar-and-onboarding.md). Its first page says what Arbor does and
 /// shows the permissions and macOS settings that matter, with whether each is in order; its second has
-/// three moves to try, ticked off as the user makes them. It opens at launch while Accessibility
+/// four moves to try, ticked off as the user makes them. It opens at launch while Accessibility
 /// permission is missing, from Welcome… and Check Setup… in the menu, and when Arbor is opened again.
 ///
 /// What it says, and when it turns the page, is decided by an `OnboardingSession`; this file lays the
@@ -22,8 +22,10 @@ final class OnboardingWindow: NSObject, NSWindowDelegate {
   /// What the window last showed.
   private var shown: OnboardingModel?
   private var timer: Timer?
-  /// It has gone to the side for the three moves, in this showing. From then on it stays where it is put.
-  private var isAside = false
+  /// Somebody has taken hold of it during the moves, in this showing: from then on it stays where it is put.
+  private var staysPut = false
+  /// Where it is gliding to.
+  private var destination: NSRect?
 
   /// - Parameters:
   ///   - onButton: a row's button was clicked.
@@ -50,10 +52,9 @@ final class OnboardingWindow: NSObject, NSWindowDelegate {
       if let page { session.go(to: page) }
     } else {
       session.begin(on: page ?? .permissions)
-      isAside = false
+      staysPut = false
+      shown = nil
       render()
-      window.center()
-      stepAside()
     }
     // In front of everything, without making Arbor the active app (see `makeWindow`).
     window.orderFrontRegardless()
@@ -105,11 +106,10 @@ final class OnboardingWindow: NSObject, NSWindowDelegate {
       onBack: { [weak self] in self?.session?.go(to: .permissions) })
   }
 
-  /// Shows the session's model, and fits the window to it with its title bar staying where it is.
+  /// Shows the session's model, fits the window to it and puts it where `OnboardingModel.placement` says.
   private func render() {
     guard let session, let window, let content else { return }
     let model = session.model
-    let old = window.frame
     let visible = (window.screen ?? NSScreen.main)?.visibleFrame
     // With much to say on a small display the rows scroll, so that the buttons below them stay in reach. Measured on
     // views of their own: the one on show is set once, or its scroll view would be made anew and jump back to the top
@@ -125,29 +125,60 @@ final class OnboardingWindow: NSObject, NSWindowDelegate {
     }
     content.rootView = view(model, rowsHeight: rowsHeight)
     content.layoutSubtreeIfNeeded()
-    var frame = window.frameRect(forContentRect: NSRect(origin: .zero, size: content.fittingSize))
-    frame.origin = NSPoint(x: old.minX, y: old.maxY - frame.height)
-    // Growing downward must not push the buttons under the Dock.
-    if let visible, frame.minY < visible.minY { frame.origin.y = visible.minY }
-    if frame != old { window.setFrame(frame, display: true) }
+    let size = window.frameRect(forContentRect: NSRect(origin: .zero, size: content.fittingSize)).size
+    if let visible {
+      let placement = OnboardingModel.placement(
+        page: model.page, previous: shown?.page, staysPut: staysPut, old: ScreenGeometry.global(fromAppKit: destination ?? window.frame),
+        size: size, visible: ScreenGeometry.global(fromAppKit: visible), desktops: model.desktops)
+      move(window, to: ScreenGeometry.appKit(fromGlobal: placement.frame), gliding: placement.glides)
+    } else {
+      window.setContentSize(content.fittingSize)
+    }
     // The moves are made in other apps' windows, one of which then fills the display: stay above them.
     window.level = model.page == .firstSteps ? .floating : .normal
-    if window.isVisible { stepAside() }
     // Whoever has just put something right did it in System Settings, which lies over this window.
     if window.isVisible, let shown, model.isWorthComingForward(after: shown) { window.orderFrontRegardless() }
     shown = model
   }
 
-  /// The first move is a drag to a screen edge, and most people take the left. So for the three moves the window waits at the
-  /// right, where it covers neither that edge nor what docks there.
-  private func stepAside() {
-    guard !isAside, let window, session?.model.page == .firstSteps,
-      let visible = (window.screen ?? NSScreen.main)?.visibleFrame
-    else { return }
-    isAside = true
-    var frame = window.frame
-    frame.origin.x = visible.maxX - frame.width - 24
-    window.setFrame(frame, display: true)
+  private func move(_ window: NSWindow, to frame: NSRect, gliding: Bool) {
+    guard frame != destination ?? window.frame else { return }
+    let glides = gliding && window.isVisible && !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+    if !glides {
+      endGlide(window)
+      window.setFrame(frame, display: true)
+      return
+    }
+    // Through the animator, not `setFrame(_:display:animate:)`, which holds the main thread for as long as the window is under way.
+    destination = frame
+    NSAnimationContext.runAnimationGroup(
+      { context in
+        context.duration = 0.25
+        window.animator().setFrame(frame, display: true)
+      },
+      completionHandler: { [weak self] in
+        MainActor.assumeIsolated {
+          if self?.destination == frame { self?.destination = nil }
+        }
+      })
+  }
+
+  /// Where it is now, it stays: an animation of no length replaces the one under way.
+  private func endGlide(_ window: NSWindow) {
+    guard destination != nil else { return }
+    destination = nil
+    NSAnimationContext.runAnimationGroup { context in
+      context.duration = 0
+      window.animator().setFrame(window.frame, display: false)
+    }
+  }
+
+  /// Sent when somebody takes hold of the window, not when it moves itself. On the first page that says nothing about the moves.
+  func windowWillMove(_ notification: Notification) {
+    guard session?.model.page == .firstSteps, let window else { return }
+    staysPut = true
+    // Not out of their hand.
+    endGlide(window)
   }
 
   private func height(of view: OnboardingView) -> CGFloat { NSHostingView(rootView: view).fittingSize.height }
@@ -212,7 +243,7 @@ struct OnboardingView: View {
   let onBack: @MainActor () -> Void
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 20) {
+    VStack(alignment: .leading, spacing: isCompact ? 12 : 20) {
       header
       if model.page == .permissions {
         if let rowsHeight {
@@ -227,28 +258,33 @@ struct OnboardingView: View {
             .font(.caption)
             .foregroundStyle(.secondary)
             .padding(.horizontal, 12)
-            .padding(.bottom, -12)
+            .padding(.bottom, -6)
         }
         steps
+        offer
         waysBack
         loginBox
       }
       footer
     }
-    .padding(24)
-    .frame(width: 560)
+    .padding(isCompact ? 16 : 24)
+    .frame(width: OnboardingModel.width(of: model.page))
   }
 
+  /// For the moves: the window lies over the windows they are made on.
+  private var isCompact: Bool { model.page == .firstSteps }
+
   private var header: some View {
-    HStack(alignment: .center, spacing: 14) {
+    HStack(alignment: .center, spacing: isCompact ? 10 : 14) {
       Image(nsImage: icon)
         .resizable()
-        .frame(width: 76, height: 76)
+        .frame(width: isCompact ? 36 : 76, height: isCompact ? 36 : 76)
         .accessibilityHidden(true)
-      VStack(alignment: .leading, spacing: 4) {
+      VStack(alignment: .leading, spacing: isCompact ? 1 : 4) {
         Text(model.title)
-          .font(.title.bold())
+          .font(isCompact ? .title3.bold() : .title.bold())
         Text(model.summary)
+          .font(isCompact ? .caption : .body)
           .foregroundStyle(.secondary)
           .fixedSize(horizontal: false, vertical: true)
       }
@@ -391,20 +427,46 @@ struct OnboardingView: View {
           VStack(alignment: .leading, spacing: 3) {
             Text(step.lead)
               .font(.headline)
-            Text(step.text)
-              .font(.callout)
-              .foregroundStyle(.secondary)
+              .foregroundStyle(step.isDone ? Color.secondary : Color.primary)
               .fixedSize(horizontal: false, vertical: true)
+            if step.isNext {
+              Text(step.text)
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            }
           }
           Spacer(minLength: 0)
         }
-        .padding(12)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
         if step.id != model.steps.last?.id {
           Divider().padding(.leading, 46)
         }
       }
     }
     .modifier(Box())
+  }
+
+  @ViewBuilder private var offer: some View {
+    if let offer = model.offer {
+      VStack(alignment: .leading, spacing: 4) {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+          Text(offer.text)
+            .font(.callout)
+            .fixedSize(horizontal: false, vertical: true)
+          Spacer(minLength: 0)
+          Button(offer.action.title) { onAction(offer.action.command) }
+        }
+        if !offer.failure.isEmpty {
+          Text(offer.failure)
+            .font(.callout)
+            .foregroundStyle(.red)
+            .fixedSize(horizontal: false, vertical: true)
+        }
+      }
+      .padding(.horizontal, 12)
+    }
   }
 
   private var waysBack: some View {

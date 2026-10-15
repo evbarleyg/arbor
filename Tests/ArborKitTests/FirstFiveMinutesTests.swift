@@ -33,8 +33,8 @@ import Testing
     h.launchForTheFirstTime()
     #expect(
       h.welcome.text == """
-        Welcome to Arbor
-        Put windows side by side (“dock” them), make any one fill the screen, then return to the side-by-side view. Nothing moves until you dock a window.
+        Arbor keeps your windows arranged
+        Arrange windows side by side once. Fill the screen with any one, and one key brings the arrangement back. Your Mac’s own tiling forgets an arrangement; Arbor keeps it. Nothing moves until you “dock” a window: put it at a side of the screen.
 
         → Accessibility (Required)  [Open Settings…]
             macOS asks your permission before an app may move other apps’ windows. Arbor reads only each window’s position and title, and nothing leaves your Mac. Flip the switch next to Arbor in System Settings. This window comes back by itself.
@@ -47,8 +47,8 @@ import Testing
         """)
   }
 
-  /// The way most will go: the permission, the one step, the three moves as they are worded.
-  @Test func thePermissionTheOneStepAndTheThreeMoves() throws {
+  /// The way most will go: the permission, the one step, the four moves as they are worded.
+  @Test func thePermissionTheOneStepAndTheFourMoves() throws {
     let (h, windows, found) = makeDesk()
     h.launchForTheFirstTime()
     #expect(h.welcome.isOpen && !h.controller.isRunning)
@@ -59,33 +59,54 @@ import Testing
     #expect(h.welcome.panesOpened == [.accessibility])
     h.permissionArrives()
     #expect(h.welcome.timesComeForward == 1)
-    #expect(h.welcome.model.title == "Ready, with one suggestion" && h.welcome.model.page == .permissions)
+    #expect(h.welcome.model.title == "Arbor keeps your windows arranged" && h.welcome.model.page == .permissions)
+    #expect(h.welcome.text?.contains("* macOS tiling (Recommended)") == true, "how it stands is in the rows")
     #expect(nothingHasMoved(h, windows, found), "the findings are on show, and no frame has been set")
     #expect(windows.allSatisfy { h.workspace.isFloating($0) })
 
     // One click.
     #expect(h.welcome.click("Switch Off macOS Tiling"))
     #expect(h.mac.on == [.clickWallpaper], "the three, and nothing else")
-    #expect(h.welcome.model.title == "Arbor is ready")
     #expect(h.welcome.text?.contains("✔ macOS tiling (Off)  [Put Them Back]") == true)
     #expect(h.welcome.text?.contains("Arbor switched off 3 settings of macOS for you.") == true)
     #expect(h.welcome.text?.contains("A window dragged to a screen edge docks now.") == true)
     #expect(nothingHasMoved(h, windows, found))
 
-    // The three moves, each made as it is worded.
+    // The four moves, each made as it is worded.
     #expect(h.welcome.click("Continue"))
-    #expect(h.welcome.model.steps.map(\.lead) == ["Drag a window to the left edge of the screen", "Then press ⌃⌥↩", "Then press ⌃⌥Space"])
+    #expect(
+      h.welcome.model.steps.map(\.lead) == [
+        "Drag a window to the left edge of the screen", "Drag another to the right edge", "Then press ⌃⌥↩", "Then press ⌃⌥Space",
+      ])
+    #expect(h.welcome.model.footnote == "Arbor lives in the menu bar, under this icon.", "during the moves, little but the moves")
     // The press on a title bar brings the window forward, which the stand-in's drag leaves to its caller.
     h.system.userFocus(windows[2])
     h.system.drag(windows[2], through: [CGPoint(x: 800, y: 310), CGPoint(x: 300, y: 350), CGPoint(x: 0, y: 400)])
     #expect(h.workspace.isDocked(windows[2]))
-    #expect(h.welcome.model.steps.map(\.isDone) == [true, false, false])
+    #expect(h.welcome.model.steps.map(\.isDone) == [true, false, false, false])
+    h.system.userFocus(windows[1])
+    h.system.drag(windows[1], through: [CGPoint(x: 700, y: 210), CGPoint(x: 1200, y: 350), CGPoint(x: 1439, y: 400)])
+    #expect(h.workspace.isDocked(windows[1]) && h.workspace.isFloating(windows[0]))
+    #expect(h.welcome.model.steps.map(\.isDone) == [true, true, false, false])
+    // The window keeps to the Desktop, which lies between the two, where the third window is. It follows at once.
+    #expect(h.welcome.model.desktops == [h.layout?.desktopFrame])
     let framed = h.key("ctrl+opt+return")
     #expect(framed?.ok == true, "\(framed?.message ?? "no such shortcut")")
-    #expect(h.welcome.model.steps.map(\.isDone) == [true, true, false])
+    #expect(h.welcome.model.steps.map(\.isDone) == [true, true, true, false])
     h.key("ctrl+opt+space")
-    #expect(h.welcome.model.steps.map(\.isDone) == [true, true, true])
     #expect(h.welcome.model.title == "That is all there is to it")
+    #expect(h.welcome.model.footnote.contains("Right-click it for all commands"), "the item is a row of buttons now")
+    // The way back is at hand where the moves end, too.
+    #expect(h.welcome.text?.contains("macOS tiling is off: drag a window to a screen edge, and it docks. [Put Them Back]") == true)
+
+    // One more, for whoever likes: the window that was left lying.
+    #expect(h.welcome.model.steps.map(\.isDone) == [true, true, true, true, false])
+    #expect(h.welcome.model.steps.last?.lead == "One more, if you like: drag a third onto the edge of a docked one")
+    let docked = try #require(h.frame(windows[2]))
+    h.system.userFocus(windows[0])
+    h.system.drag(windows[0], through: [CGPoint(x: 600, y: 130), CGPoint(x: docked.midX, y: 700), CGPoint(x: docked.midX, y: docked.maxY - 20)])
+    #expect(h.workspace.isDocked(windows[0]))
+    #expect(h.welcome.model.steps.map(\.isDone) == [true, true, true, true, true])
     #expect(h.welcome.click("Done") && !h.welcome.isOpen)
 
     // It has been seen, and does not open by itself again.
@@ -99,12 +120,20 @@ import Testing
     h.launchForTheFirstTime()
     h.permissionArrives()
     #expect(h.welcome.click("Continue"))
-    #expect(h.welcome.model.steps.map(\.lead) == ["Click a window and press ⌃⌥⌘←", "Then press ⌃⌥↩", "Then press ⌃⌥Space"])
+    #expect(
+      h.welcome.model.steps.map(\.lead) == [
+        "Click a window and press ⌃⌥⌘←", "Click another and press ⌃⌥⌘→", "Then press ⌃⌥↩", "Then press ⌃⌥Space",
+      ])
     h.system.userFocus(windows[0])
     h.key("ctrl+opt+cmd+left")
+    h.system.userFocus(windows[1])
+    h.key("ctrl+opt+cmd+right")
     h.key("ctrl+opt+return")
+    #expect(h.welcome.model.offer == nil, "not in the middle of the moves")
     h.key("ctrl+opt+space")
-    #expect(h.welcome.model.steps.map(\.isDone) == [true, true, true])
+    #expect(h.welcome.model.steps.map(\.isDone) == [true, true, true, true, false])
+    // The offer once more, where it is understood. It is passed by again.
+    #expect(h.welcome.text?.contains("Want to dock with the mouse too? [Switch Off macOS Tiling]") == true)
     #expect(h.welcome.click("Done"))
 
     #expect(h.mac.writes.isEmpty, "declined is declined")
@@ -115,6 +144,52 @@ import Testing
     // The offer is where it was said to be.
     #expect(h.run("check-setup").ok)
     #expect(h.welcome.buttons.contains("Switch Off macOS Tiling"))
+  }
+
+  /// Somebody who made the moves with the keys and now knows what the edges are for.
+  @Test func afterTheMovesTheOfferCanBeTakenWhereItStands() throws {
+    let (h, windows, _) = makeDesk()
+    h.launchForTheFirstTime(permitted: true)
+    h.welcome.click("Continue")
+    h.system.userFocus(windows[0])
+    h.key("ctrl+opt+cmd+left")
+    h.system.userFocus(windows[1])
+    h.key("ctrl+opt+cmd+right")
+    h.key("ctrl+opt+return")
+    h.key("ctrl+opt+space")
+    let before = windows.map { h.frame($0) }
+    #expect(h.welcome.click("Switch Off macOS Tiling"))
+    #expect(h.mac.on == [.clickWallpaper])
+    #expect(h.welcome.model.page == .firstSteps, "it stays where it was clicked")
+    #expect(h.welcome.text?.contains("macOS tiling is off: drag a window to a screen edge, and it docks. [Put Them Back]") == true)
+    #expect(h.welcome.click("Put Them Back"))
+    #expect(h.mac.values.isEmpty && h.mac.before.isEmpty)
+    #expect(h.welcome.text?.contains("Want to dock with the mouse too?") == true)
+    #expect(windows.map { h.frame($0) } == before, "no window moves for either")
+    // A step that fails is said beside the button.
+    h.mac.managed = [.screenEdges]
+    #expect(h.welcome.click("Switch Off macOS Tiling"))
+    #expect(h.welcome.model.offer?.failure.hasPrefix("That did not work: ") == true)
+    // Beside the button that was pressed, and not on the page it was not pressed on.
+    h.welcome.click("Back")
+    #expect(h.welcome.model.row(.desktopAndDock)?.failure.isEmpty == true)
+  }
+
+  /// The other way round: a step that failed on the first page is not held against an offer nobody has taken.
+  @Test func aFailureOnTheFirstPageIsNotShownUnderTheOfferAfterTheMoves() {
+    let (h, windows, _) = makeDesk()
+    h.launchForTheFirstTime(permitted: true)
+    h.mac.managed = [.screenEdges]
+    h.welcome.click("Switch Off macOS Tiling")
+    #expect(h.welcome.model.row(.desktopAndDock)?.failure.isEmpty == false)
+    h.welcome.click("Continue")
+    h.system.userFocus(windows[0])
+    h.key("ctrl+opt+cmd+left")
+    h.system.userFocus(windows[1])
+    h.key("ctrl+opt+cmd+right")
+    h.key("ctrl+opt+return")
+    h.key("ctrl+opt+space")
+    #expect(h.welcome.model.offer?.text == "Want to dock with the mouse too?" && h.welcome.model.offer?.failure.isEmpty == true)
   }
 
   /// A hand that has read nothing drags to the edge all the same. macOS takes the window, Arbor stands aside and says who took it and where
@@ -128,7 +203,7 @@ import Testing
     // It is said once macOS has moved the window.
     h.scheduler.advance(by: 2)
     #expect(h.workspace.isFloating(windows[2]))
-    #expect(h.welcome.model.steps.map(\.isDone) == [false, false, false])
+    #expect(h.welcome.model.steps.map(\.isDone) == [false, false, false, false])
     #expect(h.overlays.messages.last?.model.line == "macOS tiled this window; Arbor stood aside · ⌃⌥⌘← docks it · Check Setup… in the menu")
     // And there it can.
     h.run("check-setup")

@@ -487,7 +487,7 @@ import Testing
     let model = h.controller.onboardingModel(facts)
     #expect(model.rows.map(\.isSatisfied) == [false, false])
     // Nothing is registered before Arbor starts, so the window shows what the settings promise.
-    #expect(model.steps.map(\.lead) == ["Drag a window to the left edge of the screen", "Then press ⌃⌥↩", "Then press ⌃⌥Space"])
+    #expect(model.steps.map(\.lead) == ["Drag a window to the left edge of the screen", "Drag another to the right edge", "Then press ⌃⌥↩", "Then press ⌃⌥Space"])
 
     var settings = Settings()
     settings.bindings = ["ctrl+opt+return": nil, "ctrl+opt+z": "zoom"]
@@ -509,9 +509,10 @@ import Testing
 
   func ticks(_ model: OnboardingModel) -> [Bool] { model.steps.map(\.isDone) }
 
-  @Test func aNewcomerIsTakenFromThePermissionToTheThreeMoves() {
+  @Test func aNewcomerIsTakenFromThePermissionToTheFourMoves() {
     let h = Harness()
     let a = h.system.open(app: "Safari")
+    let b = h.system.open(app: "Mail")
     let mac = Mac()
     h.controller.accessibilityGranted = false
     h.controller.systemFacts = { mac.facts }
@@ -542,17 +543,19 @@ import Testing
     h.start()
     session.refresh()
     #expect(session.model.page == .firstSteps)
-    #expect(ticks(session.model) == [false, false, false])
+    #expect(ticks(session.model) == [false, false, false, false])
 
     // Each move is ticked off as it happens, with no look at the clock.
     h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
     h.system.drag(a, through: [CGPoint(x: 600, y: 210), CGPoint(x: 300, y: 300), CGPoint(x: 2, y: 400)])
-    #expect(ticks(session.model) == [true, false, false])
+    #expect(ticks(session.model) == [true, false, false, false])
+    h.run("dock \(b.rawValue) right")
+    #expect(ticks(session.model) == [true, true, false, false])
     h.system.userFocus(a)
     h.run("zoom")
-    #expect(ticks(session.model) == [true, true, false])
+    #expect(ticks(session.model) == [true, true, true, false])
     h.run("show-all")
-    #expect(ticks(session.model) == [true, true, true])
+    #expect(ticks(session.model) == [true, true, true, true, false], "the four, and one more for whoever likes")
     #expect(session.model.title == "That is all there is to it")
     #expect(shown.last == session.model)
   }
@@ -662,13 +665,13 @@ import Testing
     h.run("dock \(a.rawValue) left")
     h.run("zoom \(a.rawValue)")
     h.run("show-all")
-    #expect(ticks(session.model) == [true, true, true])
+    #expect(ticks(session.model) == [true, false, true, true])
     session.end()
 
     session.begin()
     #expect(session.model.page == .permissions)
     session.go(to: .firstSteps)
-    #expect(ticks(session.model) == [true, false, false], "a window is docked already; the other moves are to be made again")
+    #expect(ticks(session.model) == [true, false, false, false], "a window is docked already; the other moves are to be made again")
   }
 
   @Test func aClosedWindowIsLeftAlone() {

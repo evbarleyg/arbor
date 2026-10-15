@@ -1,4 +1,5 @@
 import ArborCore
+import CoreGraphics
 
 /// The welcome window (docs/features/F10-menu-bar-and-onboarding.md). The controller says what it shows;
 /// `OnboardingWindow` lays that out and reports the buttons.
@@ -17,8 +18,22 @@ extension Controller {
     return OnboardingModel(
       facts, flow: flow, windowsOutOfView: permissionLoss?.windows ?? 0, offersScreenRecording: offersScreenRecording, appsWithOwnShortcuts: passThroughSuggestions.map(\.name),
       canFixSetup: macSwitchboard != nil, switchesChangedByArbor: macSwitchesChangedByArbor, fixSetupFailure: fixSetupFailure,
+      menuBarIsOneIcon: menuBarIsSurelyOneIcon, desktops: desktopsBetweenWhatIsDocked,
       isNewcomer: isFirstLaunch && workspaces.values.allSatisfy { $0.tree.allWindows.isEmpty }, isPaused: isPaused && accessibilityGranted,
       shortcut: { KeyBindings.label(for: $0, in: bindings) })
+  }
+
+  /// Short of asking `menuBarModel()`, which looks where the pointer is: this is asked once a second. Where it says no the item may still be
+  /// one icon (the pointer is on an empty display, the menu bar is full), and a right click opens that too.
+  private var menuBarIsSurelyOneIcon: Bool {
+    !isRunning || !settings.menuBarControls || workspaces.values.allSatisfy { $0.tree.allWindows.isEmpty }
+  }
+
+  /// The Desktop's part of each display on which something is docked, while it is in view.
+  fileprivate var desktopsBetweenWhatIsDocked: [CGRect] {
+    displays.compactMap { display in
+      workspaces[display.id]?.tree.allWindows.isEmpty == false ? layouts[display.id]?.desktopFrame : nil
+    }
   }
 
   /// Both must say yes: macOS's own flag, and Arbor, whose probe can find the permission gone before the flag follows (F63). Otherwise
@@ -37,7 +52,7 @@ extension Controller {
 
   /// The page to open the welcome window on by itself, now that Arbor arranges windows, or nil if this person has seen
   /// it. With the permission already there a first launch changes nothing on the display, and the one new icon may be
-  /// behind a notch. What there is to put right comes first; with nothing of the kind, the three moves.
+  /// behind a notch. What there is to put right comes first; with nothing of the kind, the four moves.
   public func pageToWelcomeOn() -> OnboardingFlow.Page? {
     guard isRunning, !hasWelcomed else { return nil }
     let facts =
@@ -65,7 +80,7 @@ public final class OnboardingSession {
   private var facts: SystemFacts
   private var flow: OnboardingFlow
   private var isOpen = false
-  /// What the row's button answered when it last failed.
+  /// What a button of the page on show answered when it last failed.
   private var failure: String?
   private weak var controller: Controller?
   private let onChange: @MainActor (OnboardingModel) -> Void
@@ -107,7 +122,9 @@ public final class OnboardingSession {
   public func refresh() {
     guard isOpen, let controller else { return }
     facts = Self.facts(of: controller)
+    let page = flow.page
     flow.update(isReady: facts.accessibility, needsAttention: controller.onboardingModel(facts).needsAttention)
+    if flow.page != page { failure = nil }
     publish()
   }
 
@@ -121,6 +138,8 @@ public final class OnboardingSession {
   /// The Continue and Back buttons.
   public func go(to page: OnboardingFlow.Page) {
     guard isOpen else { return }
+    // What went wrong is said beside the button that was pressed, which is on the page being left.
+    if flow.page != page { failure = nil }
     flow.go(to: page)
     publish()
   }
@@ -130,7 +149,8 @@ public final class OnboardingSession {
     // Most changes tick nothing off (every step of a gap being dragged is one), so look before wording it all again.
     let before = flow.steps
     flow.steps.observe(controller.workspaces)
-    if flow.steps != before { publish() }
+    // The window rests over the Desktop, so it follows that too.
+    if flow.steps != before || (flow.page == .firstSteps && controller.desktopsBetweenWhatIsDocked != model.desktops) { publish() }
   }
 
   private func publish() {

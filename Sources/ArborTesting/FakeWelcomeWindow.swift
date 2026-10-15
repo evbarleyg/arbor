@@ -62,6 +62,7 @@ public final class FakeWelcomeWindow {
     if model.page == .permissions {
       for row in model.rows { titles += [row.action?.title, row.button, row.undo?.title].compactMap { $0 } }
     }
+    if let offer = model.offer { titles.append(offer.action.title) }
     titles += [model.backButton, model.isPrimaryEnabled ? model.primaryButton : nil].compactMap { $0 }
     return titles
   }
@@ -82,7 +83,9 @@ public final class FakeWelcomeWindow {
         }
       }
     }
-    if title == model.backButton {
+    if let offer = model.offer, offer.action.title == title {
+      session.actionEnded(controller.perform(offer.action.command, from: .script))
+    } else if title == model.backButton {
       session.go(to: .permissions)
     } else if model.page == .permissions {
       session.go(to: .firstSteps)

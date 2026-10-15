@@ -19,7 +19,7 @@ import Testing
   @Test func aNewcomerWhoHasThePermissionIsWelcomedOnce() {
     let h = makeHarness()
     h.start()
-    #expect(h.controller.pageToWelcomeOn() == .firstSteps, "nothing to put right, so straight to the three moves")
+    #expect(h.controller.pageToWelcomeOn() == .firstSteps, "nothing to put right, so straight to the four moves")
     #expect(h.controller.pageToWelcomeOn() == .firstSteps, "asking is not showing")
     h.controller.noteWelcomed()
     #expect(h.controller.pageToWelcomeOn() == nil)

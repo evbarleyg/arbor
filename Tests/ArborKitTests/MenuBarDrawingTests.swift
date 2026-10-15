@@ -270,10 +270,12 @@
 
     @Test func picturesOfEveryPageAndTheRoomEachTakes() throws {
       func model(
-        _ facts: SystemFacts, flow: OnboardingFlow? = nil, apps: [String] = [], changed: [MacSwitch] = [], isPaused: Bool = false
+        _ facts: SystemFacts, flow: OnboardingFlow? = nil, apps: [String] = [], changed: [MacSwitch] = [], isNewcomer: Bool = false,
+        isPaused: Bool = false
       ) -> OnboardingModel {
         OnboardingModel(
-          facts, flow: flow, appsWithOwnShortcuts: apps, canFixSetup: true, switchesChangedByArbor: changed, isPaused: isPaused
+          facts, flow: flow, appsWithOwnShortcuts: apps, canFixSetup: true, switchesChangedByArbor: changed, isNewcomer: isNewcomer,
+          isPaused: isPaused
         ) { command in
           KeyBindings.label(for: command)
         }
@@ -295,6 +297,8 @@
       workspace.dock(window, at: .cameraEdge(.left))
       done.steps.observe([DisplayID("main"): workspace])
       let half = done
+      workspace.dock(WindowID(2), at: .cameraEdge(.right))
+      done.steps.observe([DisplayID("main"): workspace])
       workspace.moveCamera(to: try #require(workspace.tree.leaf(containing: window)))
       done.steps.observe([DisplayID("main"): workspace])
       workspace.moveCamera(to: workspace.tree.root)
@@ -302,25 +306,27 @@
       #expect(done.steps.isComplete)
 
       let pages: [(String, OnboardingModel, CGFloat?)] = [
-        ("1-first-launch", model(fresh), nil),
-        ("2-permission-granted", model(granted), nil),
+        ("1-first-launch", model(fresh, isNewcomer: true), nil),
+        ("2-permission-granted", model(granted, isNewcomer: true), nil),
         ("3-all-in-order", model(tuned), nil),
         ("4-everything-wrong", model(everything, apps: ["Emacs"]), nil),
         ("5-everything-wrong-scrolling", model(everything, apps: ["Emacs"]), 300),
-        ("6-three-moves", model(tuned, flow: moves), nil),
+        ("6-four-moves", model(tuned, flow: moves), nil),
         ("7-one-move-made", model(tuned, flow: half), nil),
         ("8-all-moves-made", model(tuned, flow: done), nil),
         ("9-paused", model(tuned, flow: moves, isPaused: true), nil),
         ("10-switched-off-by-arbor", model(tuned, changed: tiling), nil),
         // What every Mac shows as it comes, to whoever passed the offer by.
-        ("11-three-moves-with-macos-tiling-on", model(granted, flow: moves), nil),
+        ("11-four-moves-with-macos-tiling-on", model(granted, flow: moves), nil),
+        ("12-all-moves-made-with-macos-tiling-on", model(granted, flow: done), nil),
+        ("13-check-setup-after-a-year", model(granted), nil),
       ]
       var sizes = ""
       var heights: [String: CGFloat] = [:]
       for (name, model, rowsHeight) in pages {
         for isDark in [false, true] {
           let size = try page(model, rowsHeight: rowsHeight, isDark: isDark, as: name)
-          #expect(size.width == 560, "\(name)")
+          #expect(size.width == OnboardingModel.width(of: model.page), "\(name)")
           heights[name] = size.height
           if !isDark { sizes += "\(name): \(Int(size.width)) x \(Int(size.height))\n" }
         }
@@ -329,11 +335,13 @@
 
       // 644 points are what a 1024 x 768 display leaves between the menu bar and the Dock, less the title bar.
       // The first page's rows scroll when they must; the second page has nothing that could.
-      for name in ["6-three-moves", "7-one-move-made", "8-all-moves-made", "9-paused", "11-three-moves-with-macos-tiling-on"] {
+      for (name, model, _) in pages where model.page == .firstSteps {
         #expect((heights[name] ?? 0) < 644, "\(name) fits the smallest display: \(heights[name] ?? 0)")
       }
       // Rows in order lose their text, so the better things stand, the smaller the window.
       #expect((heights["3-all-in-order"] ?? 0) < (heights["2-permission-granted"] ?? 0))
+      // During the moves the window lies over the windows they are made on: what can wait, waits.
+      #expect((heights["6-four-moves"] ?? 0) < (heights["8-all-moves-made"] ?? 0))
       #expect((heights["5-everything-wrong-scrolling"] ?? 0) < (heights["4-everything-wrong"] ?? 0), "the rows scroll")
     }
   }

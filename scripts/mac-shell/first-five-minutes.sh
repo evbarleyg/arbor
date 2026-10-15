@@ -6,9 +6,9 @@
 #
 #   1  the launch: nothing moves, the welcome window opens, the menu bar says what is missing
 #   2  the permission: Open Settings…, the grant, and whether the window is to be seen afterwards
-#   3  somebody who passes the offer by: the three moves as the window words them with macOS's own tiling on, and no reminder afterwards
+#   3  somebody who passes the offer by: the four moves as the window words them with macOS's own tiling on, and no reminder afterwards
 #   4  the one step: Switch Off macOS Tiling, and whether macOS obeys at once
-#   5  the three moves as the window words them then, the drag ending at the very edge, where a hand ends it
+#   5  the four moves as the window words them then, the drags ending at the very edge, where a hand ends them
 #   6  afterwards: the menu, Check Setup…, Put Them Back
 #   7  quitting: every window as it was found
 #
@@ -29,12 +29,29 @@ ax() { "$AXFIND" "$ARBOR_PID" "$@"; }
 status_starts() { case "$("$ARBOR_BIN/arborctl" status 2>&1)" in "$1"*) return 0 ;; *) return 1 ;; esac; }
 switches() { for name in $KEYS; do echo "  $name: $(defaults read $DOMAIN "$name" 2>/dev/null || echo "not set")"; done; }
 all_switches_are() { for name in $KEYS; do [ "$(defaults read $DOMAIN "$name" 2>/dev/null || echo "not set")" = "$1" ] || return 1; done; }
-frames() { echo "$(real_frame_of "$W1") | $(real_frame_of "$W2") | $(real_frame_of "$W3")"; }
+frames() { echo "$(real_frame_of "$W1") | $(real_frame_of "$W2") | $(real_frame_of "$W3") | $(real_frame_of "$W4")"; }
 nothing_moved() { [ "$(frames)" = "$found" ]; }
 
-# The welcome window is 560 points wide.
-welcome_id() { overlays | awk '$8 == "on" && $6 == 560 { print $1; exit }'; }
-welcome_frame() { overlays | awk '$8 == "on" && $6 == 560 { print $4, $5, $6, $7; found = 1; exit } END { exit !found }'; }
+# The welcome window, by its title: its width changes with the page, and glides.
+welcome_id() { ax window Arbor 2>/dev/null; }
+welcome_frame() {
+  local id
+  id=$(welcome_id) || return 1
+  overlays | awk -v id="$id" '$1 == id && $8 == "on" { printf "%d %d %d %d\n", $4, $5, $6, $7; found = 1 } END { exit !found }'
+}
+# Where it has come to rest: two looks that agree.
+settled_frame() {
+  local before now tries=0
+  before=$(welcome_frame) || return 1
+  while [ "$tries" -lt 10 ]; do
+    sleep 0.3
+    now=$(welcome_frame) || return 1
+    [ "$now" = "$before" ] && break
+    before=$now
+    tries=$((tries + 1))
+  done
+  echo "$now"
+}
 no_welcome_window() { ! welcome_frame > /dev/null; }
 says() { ax point - "$1" > /dev/null 2>&1; }
 says_not() { ! says "$1"; }
@@ -57,8 +74,7 @@ macos_preview() { pointer windows | awk '$8 == "on" && $9 == "WindowManager" { f
 no_macos_preview() { ! macos_preview; }
 # Arbor's own. For the moves the welcome window is at the preview's level, so has_overlay 3 would say yes to it.
 arbor_preview() { overlays | awk -v welcome="$(welcome_id)" '$3 == 3 && $8 == "on" && $1 != welcome { found = 1 } END { exit !found }'; }
-# Where to take hold of a window, and where to click in it: towards its left, because for the three moves the welcome window waits at the
-# right of the display, above everything, and on a display 1024 points wide it reaches over the middle.
+# Where to take hold of a window, and where to click in it: towards its left.
 grab_of() {
   local x y w h
   read -r x y w h <<< "$(real_frame_of "$1")"
@@ -71,6 +87,37 @@ inside_of() {
   read -r x y w h <<< "$(real_frame_of "$1")"
   x=${x%.*}; y=${y%.*}; h=${h%.*}
   echo "$((x + 60)) $((y + h / 2))"
+}
+# uncover <x> <y>: on a small display the welcome window, which floats above everything, may lie over the point. A person would push it
+# aside, and so does this, to the top corner further from the point, and counts it: from then on the window stays where it was put.
+pushed=0
+uncover() {
+  local frame wx wy ww wh
+  frame=$(settled_frame) || return 0
+  read -r wx wy ww wh <<< "$frame"
+  [ "$1" -ge "$wx" ] && [ "$1" -le "$((wx + ww))" ] && [ "$2" -ge "$wy" ] && [ "$2" -le "$((wy + wh))" ] || return 0
+  echo "the welcome window ($wx $wy $ww $wh) lies over ($1 $2): pushed aside by hand"
+  pushed=$((pushed + 1))
+  if [ "$1" -lt "$((screen_width / 2))" ]; then
+    drag "$((wx + ww / 2))" "$((wy + 14))" "$((screen_width - ww / 2 - 8))" 50
+  else
+    drag "$((wx + ww / 2))" "$((wy + 14))" "$((ww / 2 + 8))" 50
+  fi
+  sleep 0.5
+}
+# Where the window rests, while nobody has pushed it: it glides there.
+rests_right_of() {
+  local frame wx wy ww wh x y w h
+  frame=$(welcome_frame) || return 1
+  read -r wx wy ww wh <<< "$frame"
+  read -r x y w h <<< "$(real_frame_of "$1")"
+  [ "$wx" -ge "$((${x%.*} + ${w%.*}))" ]
+}
+rests_in_the_middle() {
+  local frame wx wy ww wh
+  frame=$(welcome_frame) || return 1
+  read -r wx wy ww wh <<< "$frame"
+  [ "$((2 * wx + ww - screen_width))" -ge -4 ] && [ "$((2 * wx + ww - screen_width))" -le 4 ]
 }
 menu_is_open() { pointer windows | awk '$3 == 101 && $8 == "on" { found = 1 } END { exit !found }'; }
 menu_is_closed() { ! menu_is_open; }
@@ -107,7 +154,9 @@ at_exit "tcc \"DELETE FROM access WHERE client = '$BUNDLE_ID';\"; for name in $K
 
 step "1  the launch"
 ARBOR_BUNDLE=$app ARBOR_MAY_LACK_PERMISSION=1 ARBOR_TEST_WINDOWS_ARGS="--regular" \
-  arbor_start 3 ARBOR_NO_PROMPT=0 ARBOR_NO_HOTKEYS=0 ARBOR_NO_STATUS_ITEM=0 ARBOR_MAC_SWITCHES=1
+  arbor_start 4 ARBOR_NO_PROMPT=0 ARBOR_NO_HOTKEYS=0 ARBOR_NO_STATUS_ITEM=0 ARBOR_MAC_SWITCHES=1
+# The moves are made on three of them, front to back; the one at the back no hand touches.
+FIRST=$W4 SECOND=$W3 THIRD=$W2
 found=$(frames)
 echo "the windows as they were found: $found"
 ctl status
@@ -169,7 +218,7 @@ else
   check "the welcome window is in front of System Settings" welcome_is_in_front
 fi
 check "it has not gone on past the offer" says "Switch Off macOS Tiling"
-check "and is headed by what is true" says "Ready, with one suggestion"
+check "and is headed by what Arbor is for" says "Arbor keeps your windows arranged"
 check "nothing has moved" nothing_moved
 killall "System Settings" 2>/dev/null
 sleep 1
@@ -179,19 +228,21 @@ sleep 1
 ticks() { ax tree 2>/dev/null | grep AXImage | grep -c '"Done"'; }
 ticked() { [ "$(ticks)" = "$1" ]; }
 frame_and_show_everything() {
-  check "the second move is worded with the keys" says "Then press ⌃⌥↩"
+  check "the third move is worded with the keys" says "Then press ⌃⌥↩"
   key ctrl+opt+return
-  check "⌃⌥↩ framed the docked window" eventually is parked "$W1"
-  check "the second move is ticked" eventually ticked 2
-  see "$1-framed"
-  check "the third move is worded with the keys" says "Then press ⌃⌥Space"
-  key ctrl+opt+space
-  check "⌃⌥Space showed everything" eventually is on_screen "$W1"
+  check "⌃⌥↩ framed the window docked last: the other is out of view" eventually is parked "$FIRST"
+  check "and so is the one that was never docked" eventually is parked "$THIRD"
   check "the third move is ticked" eventually ticked 3
+  see "$1-framed"
+  check "the fourth move is worded with the keys" says "Then press ⌃⌥Space"
+  key ctrl+opt+space
+  check "⌃⌥Space showed everything" eventually is on_screen "$FIRST"
+  check "the window that was never docked as well" eventually is on_screen "$THIRD"
+  check "the fourth move is ticked" eventually ticked 4
   see "$1-everything"
 }
 
-step "3  somebody who passes the offer by: the three moves with macOS's tiling on"
+step "3  somebody who passes the offer by: the four moves with macOS's tiling on"
 ctl trace on first-five-minutes
 press "Continue"
 sleep 1
@@ -200,20 +251,40 @@ check "nothing is ticked yet" ticked 0
 check "the first move is one that works on this Mac as it is set" says "Click a window and press ⌃⌥⌘←"
 check "and no drag to an edge is taught" says_not "Drag a window to the left edge of the screen"
 # shellcheck disable=SC2046
-click $(inside_of "$W3")
+uncover $(inside_of "$FIRST")
+# shellcheck disable=SC2046
+click $(inside_of "$FIRST")
 key ctrl+opt+cmd+left
-check "the window docked" eventually is docked "$W3"
+check "the window docked" eventually is docked "$FIRST"
 check "the first move is ticked" eventually ticked 1
 see 31-docked
-frame_and_show_everything 32
+[ "$pushed" -gt 0 ] || check "the welcome window has gone over the Desktop, beside the docked window" eventually rests_right_of "$FIRST"
+check "the second move is made with the keys as well" says "Click another and press ⌃⌥⌘→"
+echo "the second window is at $(real_frame_of "$SECOND"), the welcome window at $(welcome_frame)"
+# shellcheck disable=SC2046
+uncover $(grab_of "$SECOND")
+# shellcheck disable=SC2046
+click $(grab_of "$SECOND")
+key ctrl+opt+cmd+right
+check "the second window docked" eventually is docked "$SECOND"
+check "the second move is ticked" eventually ticked 2
+see 32-side-by-side
+[ "$pushed" -gt 0 ] || check "the welcome window is between the two" eventually rests_in_the_middle
+check "during the moves it says little but the moves" says_not "Can’t see the icon?"
+frame_and_show_everything 33
+check "after the last tick the offer is made once more, where it is understood" says "Want to dock with the mouse too?"
+check "and one more move, for whoever likes" says "One more, if you like: drag a third onto the edge of a docked one"
+check "and what to do when the icon cannot be seen" says "Can’t see the icon?"
 # What a hand does that has read nothing: all the way to the edge. Also the control for step 5: here macOS must be seen to tile. The window
 # in front, whose title bar nothing covers.
 ctl float-all
 sleep 1
-held_from=$(real_frame_of "$W3")
+held_from=$(real_frame_of "$FIRST")
 # shellcheck disable=SC2046
-drag $(grab_of "$W3") 0 400 --hold 1.2 --no-release
-check "the window came along" test "$(real_frame_of "$W3")" != "$held_from"
+uncover $(grab_of "$FIRST")
+# shellcheck disable=SC2046
+drag $(grab_of "$FIRST") 0 400 --hold 1.2 --no-release
+check "the window came along" test "$(real_frame_of "$FIRST")" != "$held_from"
 shot 34-held-at-the-edge-with-tiling-on
 check "with its tiling on, macOS shows its preview at the edge" macos_preview
 echo "Arbor shows a preview too: $(arbor_preview && echo yes || echo no)"
@@ -221,11 +292,13 @@ release
 film 35-let-go 6
 sleep 1.5
 shot 36-let-go
-echo "the window ended at $(real_frame_of "$W3"); Arbor says $(frame_of "$W3"), $(is docked "$W3" && echo docked || echo floating)"
+echo "the window ended at $(real_frame_of "$FIRST"); Arbor says $(frame_of "$FIRST"), $(is docked "$FIRST" && echo docked || echo floating)"
 tail -n 8 "$ARBOR_HOME/arbor.log" | cut -c 12-220
-is docked "$W3" && ctl float "$W3"
+is docked "$FIRST" && ctl float "$FIRST"
 # shellcheck disable=SC2046
-drag $(grab_of "$W3") 380 152
+uncover $(grab_of "$FIRST")
+# shellcheck disable=SC2046
+drag $(grab_of "$FIRST") 380 152
 sleep 1
 press "Done"
 check "Done closes the window" eventually no_welcome_window
@@ -256,27 +329,58 @@ if press "Switch Off macOS Tiling"; then
 fi
 check "no window moved for it" test "$(frames)" = "$before_the_step"
 
-step "5  the three moves with the screen edges Arbor's"
+step "5  the four moves with the screen edges Arbor's"
 press "Continue"
 sleep 1
 see 50-moves-with-tiling-off
 check "nothing is ticked yet" ticked 0
 check "the first move is the drag now" says "Drag a window to the left edge of the screen"
 # shellcheck disable=SC2046
-drag $(grab_of "$W3") 0 400 --hold 1.2 --no-release
+uncover $(grab_of "$FIRST")
+# shellcheck disable=SC2046
+drag $(grab_of "$FIRST") 0 400 --hold 1.2 --no-release
 shot 51-held-at-the-edge
 check "macOS is seen to have stopped tiling: it shows no preview" no_macos_preview
 check "Arbor shows where the window will land" arbor_preview
 release
 film 52-let-go 6
-check "the window docked" eventually is docked "$W3"
-check "and is where Arbor put it" eventually is in_slot "$W3"
+check "the window docked" eventually is docked "$FIRST"
+check "and is where Arbor put it" eventually is in_slot "$FIRST"
 check "the first move is ticked" eventually ticked 1
 see 53-docked
-frame_and_show_everything 54
+check "the second move is a drag as well" says "Drag another to the right edge"
+echo "the second window is at $(real_frame_of "$SECOND"), the welcome window at $(welcome_frame)"
+# shellcheck disable=SC2046
+uncover $(grab_of "$SECOND")
+# shellcheck disable=SC2046
+drag $(grab_of "$SECOND") "$((screen_width - 1))" 400 --hold 1.2 --no-release
+shot 54-held-at-the-right-edge
+check "macOS shows no preview there either" no_macos_preview
+check "Arbor shows where the window will land" arbor_preview
+release
+check "the second window docked" eventually is docked "$SECOND"
+check "and is where Arbor put it" eventually is in_slot "$SECOND"
+check "the second move is ticked" eventually ticked 2
+see 55-side-by-side
+frame_and_show_everything 56
+check "the way back is at hand where the moves end" says "macOS tiling is off: drag a window to a screen edge, and it docks."
+# The fifth, for whoever likes: the window that was left lying, onto the lower edge of the one docked at the right.
+echo "the third window is at $(real_frame_of "$THIRD"), the welcome window at $(welcome_frame)"
+# shellcheck disable=SC2046
+uncover $(grab_of "$THIRD")
+read -r x y w h <<< "$(real_frame_of "$SECOND")"
+# shellcheck disable=SC2046
+drag $(grab_of "$THIRD") "$((${x%.*} + ${w%.*} / 2))" "$((${y%.*} + ${h%.*} - 20))" --hold 1.5 --no-release
+shot 57-held-over-a-docked-windows-edge
+check "Arbor shows where the window will land" arbor_preview
+release
+check "the third window docked" eventually is docked "$THIRD"
+check "the fifth move is ticked" eventually ticked 5
+see 58-three-docked
 press "Done"
 check "Done closes the window" eventually no_welcome_window
-shot 56-after-the-window
+shot 59-after-the-window
+echo "on a display of $screen_width by $screen_height the welcome window had to be pushed aside $pushed times"
 
 step "6  afterwards"
 if item=$(status_item); then
@@ -315,7 +419,12 @@ echo "before: $(frames)"
 sleep 2.5
 echo "after:  $(frames)"
 echo "found:  $found"
-check "the two windows that no hand touched are exactly where they were found" test "$(real_frame_of "$W1") | $(real_frame_of "$W2")" = "${found% | *}"
+# Arbor itself has moved it, onto the Desktop and out of view and back.
+check "the window that no hand touched is exactly where it was found" test "$(real_frame_of "$W1")" = "${found%% | *}"
 size_of() { real_frame_of "$1" | awk '{ print int($3), int($4) }'; }
-check "the one that was docked and dragged has its own size back" test "$(size_of "$W3")" = "$(echo "${found##* | }" | awk '{ print int($3), int($4) }')"
+# All three were opened at one size.
+own_size=$(echo "${found##* | }" | awk '{ print int($3), int($4) }')
+for id in "$FIRST" "$SECOND" "$THIRD"; do
+  check "window $id, docked and dragged, has its own size back" test "$(size_of "$id")" = "$own_size"
+done
 arbor_stop 70-after-quit

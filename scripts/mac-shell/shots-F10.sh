@@ -6,7 +6,7 @@
 #
 # Session 1 runs Arbor as every Mac shell script does (a child process, which has the runner's permissions), with the
 # menu bar item and the shortcuts on. Real clicks on the item's buttons must move the view; a right click, a
-# ⌃-click and an ⌥-click must open the menu; the three moves of the welcome window are made with a real drag and
+# ⌃-click and an ⌥-click must open the menu; the moves of the welcome window are made with a real drag and
 # real key presses. Session 2 wraps the same binary in a bundle and opens it through Launch Services, which
 # makes it answer for its own permissions: it has none, as on a newcomer's Mac. Session 3 is dark.
 #
@@ -45,7 +45,7 @@ bar() {
 
 # The ids of Arbor's open menus (a submenu is a window of its own), its welcome window and its About panel.
 menu_ids() { overlays | awk '$3 == 101 && $8 == "on" { print $1 }'; }
-welcome_id() { overlays | awk '$8 == "on" && $6 == 560 { print $1; exit }'; }
+welcome_id() { overlays | awk '$8 == "on" && ($6 == 560 || ($6 == 420 && $3 == 3)) { print $1; exit }'; }
 about_id() { overlays | awk '$8 == "on" && $3 == 0 && $6 != 560 && $6 > 200 && $7 > 100 { print $1; exit }'; }
 # look_menu <name>: every open menu, the submenu as <name>-2.
 look_menu() {
@@ -141,11 +141,25 @@ close_menu() {
   eventually menu_is_closed
 }
 
-# x y w h of the welcome window, which is 560 points wide.
-welcome_frame() { overlays | awk '$8 == "on" && $6 == 560 { print $4, $5, $6, $7; found = 1; exit } END { exit !found }'; }
+# x y w h of the welcome window, which is 560 points wide, and for the four moves 420 and above other windows.
+welcome_frame() { overlays | awk '$8 == "on" && ($6 == 560 || ($6 == 420 && $3 == 3)) { print $4, $5, $6, $7; found = 1; exit } END { exit !found }'; }
 no_welcome_window() { ! welcome_frame > /dev/null; }
+# press_button <title>: a real click on the button of that title in a window of Arbor's, found as VoiceOver finds it: where it lies depends on the words.
+AXFIND="$ARBOR_ROOT/.build/mac-shell/axfind"
+press_button() {
+  local where
+  where=$("$AXFIND" "$ARBOR_PID" point AXButton "$1" 2>/dev/null) || { check "there is a button “$1” to press" false; return 1; }
+  # shellcheck disable=SC2086
+  click $where
+}
+# It glides there.
+rests_at_the_right() {
+  local wx wy ww wh
+  read -r wx wy ww wh <<< "$(welcome_frame)"
+  [ "$((wx + ww))" -ge "$((screen_width - 40))" ]
+}
 # Its second page floats above other windows (level 3).
-on_second_page() { [ "$(overlays | awk '$8 == "on" && $6 == 560 { print $3; exit }')" = 3 ]; }
+on_second_page() { overlays | awk '$8 == "on" && $6 == 420 && $3 == 3 { found = 1 } END { exit !found }'; }
 on_first_page() { [ "$(overlays | awk '$8 == "on" && $6 == 560 { print $3; exit }')" = 0 ]; }
 # look_welcome <name>: a picture of the welcome window. Its first page shows what `doctor` found on the Mac: other window managers by name, the
 # Desktop & Dock switches, VoiceOver, input sources. What is kept out of the words must not leave in a picture, so on a person's Mac the
@@ -170,6 +184,9 @@ close_window_at() {
 }
 
 arbor_build
+# The fake Mac of a rehearsal has no welcome window, so nothing to find in one.
+[ -n "${ARBOR_REHEARSAL:-}" ] || swiftc -O -swift-version 5 "$ARBOR_ROOT/scripts/mac-shell/axfind.swift" -o "$AXFIND" > "$ARBOR_OUT/build-axfind.log" 2>&1 \
+  || { cat "$ARBOR_OUT/build-axfind.log"; die "scripts/mac-shell/axfind.swift did not compile"; }
 read -r _ _ _ screen_width screen_height _ <<< "$(pointer displays | head -n 1)"
 echo "the display is $screen_width by $screen_height points"
 
@@ -347,9 +364,8 @@ step "the welcome window, with everything granted"
 ctl float-all
 check "with everything floating the item is the mark again" eventually single_icon
 ctl welcome
-check "welcome opens the window on the three moves" eventually on_second_page
-read -r wx wy ww wh <<< "$(welcome_frame)"
-check "where it waits at the right of the display, clear of the left edge" test "$((wx + ww))" -ge "$((screen_width - 40))"
+check "welcome opens the window on the four moves" eventually on_second_page
+check "where it waits at the right of the display, clear of the left edge" eventually rests_at_the_right
 ctl check-setup
 check "check-setup turns it to the first page" eventually on_first_page
 check "the welcome window is on screen" eventually welcome_frame
@@ -358,11 +374,9 @@ overlays
 check "it opens on its first page" on_first_page
 shot 40-welcome-ready
 look_welcome 40-welcome-ready-own
-if welcome_frame > /dev/null; then
-  read -r wx wy ww wh <<< "$(welcome_frame)"
-  click "$((wx + ww - 62))" "$((wy + wh - 38))"
-fi
+press_button "Continue"
 check "a click on Continue turned the page" eventually on_second_page
+eventually rests_at_the_right
 shot 41-first-steps
 look_welcome 41-first-steps-own
 read -r wx wy ww wh <<< "$(welcome_frame)"
@@ -371,17 +385,21 @@ drag "$((wx + ww / 2))" "$((wy + 14))" "$((screen_width - ww / 2 - 4))" "$((scre
 echo "the welcome window is at: $(welcome_frame)"
 summary
 
-step "the three moves, for real"
+step "the four moves, for real"
 # shellcheck disable=SC2046
 drag $(titlebar_of "$W1") 3 400
 check "the dragged window docked" eventually is docked "$W1"
 shot 42-docked
 look_welcome 42-docked-own
+ctl dock "$W2" right
+check "the second window docked" eventually is docked "$W2"
+shot 42-two-docked
+look_welcome 42-two-docked-own
 # A click on the welcome window must not take the focus from the window that was docked.
 read -r wx wy ww wh <<< "$(welcome_frame)"
 click "$((wx + 300))" "$((wy + 70))"
 shortcut ctrl+opt+return zoom
-check "⌃⌥↩ framed the docked window although the welcome window was clicked last" eventually is parked "$W2"
+check "⌃⌥↩ framed the docked window although the welcome window was clicked last" eventually is parked "$W3"
 shot 43-framed
 look_welcome 43-framed-own
 shortcut ctrl+opt+space show-all
@@ -390,9 +408,7 @@ shot 44-all-ticked
 look_welcome 44-all-ticked-own
 
 step "Back, and the close button"
-read -r wx wy ww wh <<< "$(welcome_frame)"
-# Back is left of Done, at the bottom right.
-click "$((wx + ww - 120))" "$((wy + wh - 38))"
+press_button "Back"
 check "Back turned to the first page" eventually on_first_page
 # shellcheck disable=SC2046
 close_window_at $(welcome_frame)
@@ -467,9 +483,7 @@ look_welcome 63-reopened-own
 step "its button"
 # It makes macOS ask its own question and put this copy of Arbor in the Accessibility list.
 if on_throwaway_mac && welcome_frame > /dev/null; then
-  read -r wx wy ww wh <<< "$(welcome_frame)"
-  # The first row's button, at the right under the header.
-  click "$((wx + ww - 90))" "$((wy + 28 + 24 + 76 + 20 + 26))"
+  press_button "Open Settings…"
   sleep 9
   shot 64-open-settings
 fi
@@ -549,7 +563,8 @@ read -r _ vy _ vh <<< "$(arbor_ask screen)"
 read -r wx wy ww wh <<< "$(welcome_frame)"
 echo "the welcome window is at: $wx $wy $ww $wh; the display shows $vy to $((vy + vh))"
 check "the welcome window fits between the menu bar and the Dock" test "$((wy + wh))" -le "$((vy + vh))"
-click "$((wx + ww - 62))" "$((wy + wh - 38))"
+press_button "Continue"
+sleep 0.5
 shot 74-dark-first-steps
 look_welcome 74-dark-first-steps-own
 # shellcheck disable=SC2046

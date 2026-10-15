@@ -339,7 +339,7 @@ import Testing
 
   /// Rule 2, said to whom it is true of: Arbor has never run here and nothing is docked.
   @Test func aNewcomerIsPromisedThatNothingMoves() throws {
-    let promise = "Nothing moves until you dock a window."
+    let promise = "Nothing moves until you “dock” a window: put it at a side of the screen."
     let h = makeHarness()
     let a = h.system.open(app: "Safari")
     func summary() throws -> String { h.controller.onboardingModel(try #require(h.controller.systemFacts?())).summary }

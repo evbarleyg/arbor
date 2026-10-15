@@ -1,6 +1,9 @@
 # Arbor
 
-A free, open-source window manager for macOS. Your real windows dock into
+A free, open-source window manager for macOS. **Arrange windows side by side once. Fill the screen with any one, and one key
+brings the arrangement back. Your Mac's own tiling forgets an arrangement; Arbor keeps it.**
+
+Your real windows dock into
 nested splits, with the Desktop kept as a space between them, and a camera
 zooms between those spaces: frame one window, step out to its group, step
 out again to see everything.
@@ -169,14 +172,15 @@ and shows what matters, with a live tick on everything that is in order and a bu
   app that uses ⌃⌥ itself is open (Emacs, a virtual machine, a JetBrains IDE).
 
 When the permission arrives the window comes forward. If something on its first page is still in the way it waits there, because
-that is where the offer is made; Continue goes on. Otherwise it goes on by itself, to **three moves to try** on your own windows, ticked off as you
-make them, in any order: drag a window to the left edge of the screen, ⌃⌥↩ to frame it, ⌃⌥Space to show everything. The window never teaches a move
-that cannot work on the Mac as it is set: while macOS's own tiling has the screen edges, the first move is "Click a window and press ⌃⌥⌘←", and
+that is where the offer is made; Continue goes on. Otherwise it goes on by itself, to **four moves to try** on your own windows, ticked off as you
+make them, in any order: drag a window to the left edge of the screen, another to the right edge, ⌃⌥↩ to frame one, ⌃⌥Space to show everything. For the moves the
+window is small, says nothing but the moves and the ways back, explains only the next one, and waits low over the Desktop until you put it elsewhere. After the last tick it offers one more (a third window onto the edge of a docked one) and, to whoever made the moves with the keys, the one step once more. It never teaches a move
+that cannot work on the Mac as it is set: while macOS's own tiling has the screen edges, the two docks are "Click a window and press ⌃⌥⌘←" and "Click another and press ⌃⌥⌘→", and
 it changes its words the moment the edges are Arbor's. There are always three ways
 back: Show Everything, Float All Windows (your Mac is back to normal), and quitting Arbor, which brings every window
-back into view. The same page has the box for Open at Login, which is also in the settings window, under General.
+back into view. After the moves the same page has the box for Open at Login, which is also in the settings window, under General.
 
-To see the window again, choose Help → Check Setup… (the first page) or Help → Welcome… (the three moves) in Arbor's menu, open
+To see the window again, choose Help → Check Setup… (the first page) or Help → Welcome… (the four moves) in Arbor's menu, open
 Arbor again (the way in when a crowded menu bar hides its item behind the notch), or run `arborctl check-setup` or
 `arborctl welcome`.
 `arborctl doctor` checks all of the above and more, one

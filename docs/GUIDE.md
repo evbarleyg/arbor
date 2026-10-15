@@ -13,7 +13,7 @@ is in [KEYBOARD.md](KEYBOARD.md). Pictures will replace the drawings.
 
 ## 1. The idea, on one page
 
-**Dock windows side by side, then zoom between them.**
+**Arrange windows side by side once. Fill the screen with any one, and one key brings the arrangement back. Your Mac's own tiling forgets an arrangement; Arbor keeps it.**
 
 A Mac's windows pile up. Arbor lets you give some of them a *place*: drag a window to a screen edge and it **docks** there, sharing the screen with whatever else is docked. Nothing overlaps. What is left
 between the docked windows is **the Desktop**, where all your other windows **float** exactly as they always have.
@@ -112,7 +112,7 @@ Arbor checks all of this for you before it arranges anything, and changes none o
 
 ### Launch and permission
 
-Arbor has no Dock icon. At the first launch a **welcome window** opens by itself, with the permission it needs, what competes with it, and three moves to try, each ticked off as you make it on your own windows. After that Arbor is the small icon of three columns in the menu bar. On a MacBook with a notch and many menu bar icons it may be hidden behind the notch: quit a few, or hold ⌘ and drag icons to reorder them; opening Arbor again brings the welcome window back, as menu → Help → Welcome… does.
+Arbor has no Dock icon. At the first launch a **welcome window** opens by itself, with the permission it needs, what competes with it, and four moves to try, each ticked off as you make it on your own windows. After that Arbor is the small icon of three columns in the menu bar. On a MacBook with a notch and many menu bar icons it may be hidden behind the notch: quit a few, or hold ⌘ and drag icons to reorder them; opening Arbor again brings the welcome window back, as menu → Help → Welcome… does.
 
 Once something is docked the icon grows into a row of small **buttons for where you are**: back, forward, the Desktop, everything, one for each saved view, and the menu. A right click anywhere on them opens the menu too. If the menu bar has no room, Arbor goes back to the single icon by itself; `arborctl set menuBarControls false` keeps it so.
 
@@ -121,11 +121,12 @@ Security → Accessibility; Arbor notices within a second. If the switch is alre
 
 Nothing moves when permission arrives. Arbor arranges nothing until you ask.
 
-### Three moves
+### Four moves
 
-1. **Dock.** Drag any window by its title bar to the left edge of the screen. (With macOS's own tiling on, that edge is macOS's: click the window and press **⌃⌥⌘←** instead, which works at every setting. The welcome window words this move as your Mac is set.) A preview shows where it will land; let go. Drag another to the right edge. Windows that were floating where the docked ones now sit are nudged onto the Desktop between them.
-2. **Frame.** Click one of the docked windows and press **⌃⌥↩**. It fills the screen. **Your other windows are out of view, not closed.**
-3. **Show everything.** Press **⌃⌥Space** (or ⌃⌥↩ again). Everything is back.
+1. **Dock.** Drag any window by its title bar to the left edge of the screen. (With macOS's own tiling on, that edge is macOS's: click the window and press **⌃⌥⌘←** instead, which works at every setting. The welcome window words this move as your Mac is set.) A preview shows where it will land; let go.
+2. **Dock a second.** Drag another to the right edge (or click it and press **⌃⌥⌘→**). Windows that were floating where the docked ones now sit are nudged onto the Desktop between them.
+3. **Frame.** Click one of the docked windows and press **⌃⌥↩**. It fills the screen. **Your other windows are out of view, not closed.**
+4. **Show everything.** Press **⌃⌥Space** (or ⌃⌥↩ again). Everything is back.
 
 Now try: ⌃⌥← and ⌃⌥→ while framed, to walk to the neighbouring space. ⌃⌥[ to go back, like a browser. Drag the gap between two docked windows to resize both. Drag a third window onto the **bottom edge of a docked window** to put it underneath: that makes a group, and ⌃⌥↑ from either
 of its windows, framed, shows the group.

@@ -62,7 +62,7 @@ public enum Command: Equatable, Sendable, Codable {
   /// Opens the welcome window on its first page: permissions, macOS settings and other apps that matter, with
   /// whether each is in order. Works before Arbor has any permission.
   case checkSetup
-  /// Opens the welcome window on its second page, three moves to try (or the first, while Arbor may not move windows).
+  /// Opens the welcome window on its second page, four moves to try (or the first, while Arbor may not move windows).
   case welcome
   /// A query: the buttons the menu bar item shows and where each one is (see Controller+MenuBar.swift).
   case menuBar
@@ -722,7 +722,7 @@ public enum Command: Equatable, Sendable, Codable {
       rules                                      per-app rules and which one the focused window matches
       watch [events…] [--titles]                 stream changes as lines of JSON (docs/SCRIPTING.md)
       doctor                                     check permissions, macOS settings, shortcuts and settings.json
-      check-setup | welcome                      open the welcome window: what matters on this Mac | three moves to try
+      check-setup | welcome                      open the welcome window: what matters on this Mac | four moves to try
       fix-setup [undo]                           switch off the macOS settings `doctor` finds in Arbor's way | put them back as they were
       menu-bar | menu                            the buttons the menu bar item shows, and where each is | its menu, as text
       stats [reset]                              what commands and calls to other apps cost | start counting afresh

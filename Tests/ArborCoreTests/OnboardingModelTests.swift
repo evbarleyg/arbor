@@ -44,12 +44,21 @@ private let tuned = SystemFacts(accessibility: true, screenRecording: true, swit
     #expect(model.rows.map(\.importance) == ["Required", "Optional", "Recommended"])
     #expect(model.rows.map(\.status) == ["Not granted", "Not granted", "On"])
     #expect(model.rows.allSatisfy { !$0.isSatisfied && !$0.detail.isEmpty && $0.button != nil })
-    let what = "Put windows side by side (“dock” them), make any one fill the screen, then return to the side-by-side view."
-    #expect(model.summary == what, "in words that need no glossary, teaching the one word the menu uses")
+    let what =
+      "Arrange windows side by side once. Fill the screen with any one, and one key brings the arrangement back. Your Mac’s own tiling forgets "
+      + "an arrangement; Arbor keeps it."
+    #expect(model.summary == what, "what it is for, and what it has over the tiling a Mac comes with")
     // The promise somebody wants who is about to let an app move their windows, made where it holds.
     #expect(
       OnboardingModel(fresh, isNewcomer: true).summary
-        == what + " Nothing moves until you dock a window.")
+        == what + " Nothing moves until you “dock” a window: put it at a side of the screen.")
+    // To a newcomer the heading says what Arbor is for, with the permission and without; how it stands is in the rows.
+    #expect(OnboardingModel(fresh, isNewcomer: true).title == "Arbor keeps your windows arranged")
+    var permitted = fresh
+    permitted.accessibility = true
+    #expect(OnboardingModel(permitted, isNewcomer: true).title == "Arbor keeps your windows arranged")
+    #expect(OnboardingModel(permitted).title == "Ready, with one suggestion", "Check Setup… after a year")
+    #expect(OnboardingModel(permitted, isNewcomer: true, isPaused: true).title == "Arbor is paused", "or Continue would lead to moves that do nothing")
     // An ad-hoc build loses the permission while System Settings still shows the switch on.
     #expect(model.row(.accessibility)?.detail.contains("off and on again") == true)
     #expect(OnboardingModel(fresh, isNewcomer: true).row(.accessibility)?.detail.hasSuffix("This window comes back by itself.") == true, "it cannot be in the list yet")
@@ -273,7 +282,10 @@ private let tuned = SystemFacts(accessibility: true, screenRecording: true, swit
     // The menu bar item can be hidden by a notch, and Arbor has no Dock icon.
     #expect(ready.footnote.contains("Can’t see the icon? Open Arbor again and this window returns."), "the only door then")
     // Nobody would guess the right click, so it is said from the start.
-    #expect(ready.footnote.contains("Right-click it for all commands, including Quit Arbor"), "what somebody in a panic looks for")
+    #expect(ready.footnote.contains("Click it for all commands, including Quit Arbor"), "what somebody in a panic looks for")
+    // Only what is true of the item as it is: with something docked it is a row of buttons, and a plain click runs one of them.
+    #expect(
+      OnboardingModel(tuned, menuBarIsOneIcon: false, shortcut: defaults).footnote.contains("Right-click it for all commands, including Quit Arbor"))
     #expect(ready.footnoteShowsMark && !waiting.footnoteShowsMark)
   }
 
@@ -388,39 +400,48 @@ private let tuned = SystemFacts(accessibility: true, screenRecording: true, swit
     return OnboardingModel(tuned, flow: flow, shortcut: shortcut)
   }
 
-  @Test func theSecondPageAsksForThreeMovesWithTheShortcutsInEffect() {
+  @Test func theSecondPageAsksForFourMovesWithTheShortcutsInEffect() {
     let model = secondPage()
     #expect(model.page == .firstSteps)
-    #expect(model.title == "Three moves to try")
-    #expect(model.steps.map(\.id) == [.dock, .frame, .showEverything])
-    #expect(model.steps.map(\.lead) == ["Drag a window to the left edge of the screen", "Then press ⌃⌥↩", "Then press ⌃⌥Space"])
+    #expect(model.title == "Four moves to try")
+    #expect(model.steps.map(\.id) == [.dock, .dockSecond, .frame, .showEverything])
+    #expect(
+      model.steps.map(\.lead) == [
+        "Drag a window to the left edge of the screen", "Drag another to the right edge", "Then press ⌃⌥↩", "Then press ⌃⌥Space",
+      ])
+    // What Arbor is for, which one docked window does not show. Nothing is said that the arrangement does not do.
+    #expect(model.step(.dockSecond)?.text == "It takes the other side.")
+    // The window lies over the windows the moves are made on, so it is kept small: only the next move is explained.
+    #expect(model.steps.map(\.isNext) == [true, false, false, false])
+    #expect(OnboardingModel.width(of: .firstSteps) == 420 && OnboardingModel.width(of: .permissions) == 560)
     #expect(model.summary == "On your own windows, one after the other. Each is ticked off here as you do it.", "one breath")
-    // What it is all for, which one docked window does not show.
-    #expect(model.step(.showEverything)?.text == "Every window is back in view. Drag another to the right edge, and the two share the screen.")
+    #expect(model.step(.showEverything)?.text == "Every window is back in view.")
     #expect(model.steps.allSatisfy { !$0.isDone })
     #expect(
       model.step(.dock)?.text
-        == "A preview shows where it will land. Let go, and it docks: it takes that half of the screen and stays there.")
-    #expect(model.keysLegend == "⌃ is Control, ⌥ Option, ⌘ Command, ↩ Return.")
+        == "A preview shows where it will land. Let go, and it docks: it takes that side of the screen and stays there.")
+    #expect(model.keysLegend == "⌃ is Control, ⌥ Option, ↩ Return.")
     // Those that are on the page, and no others.
-    #expect(secondPage { $0 == .floatAll ? "⌃⌥⇧F" : defaults($0) }.keysLegend == "⌃ is Control, ⌥ Option, ⇧ Shift, ⌘ Command, ↩ Return.")
+    #expect(secondPage { $0 == .floatAll ? "⌃⌥⇧F" : defaults($0) }.keysLegend == "⌃ is Control, ⌥ Option, ⇧ Shift, ↩ Return.")
     #expect(secondPage { $0 == .zoom(nil) ? "⌃⌘Z" : $0 == .showAll ? "⌃⌘X" : nil }.keysLegend == "⌃ is Control, ⌘ Command.")
     #expect(
       model.step(.frame)?.text
-        == "The docked window fills the screen (it is “framed”). Your other windows are out of view, not closed: ⌘Tab and the Dock still "
-        + "reach them.")
+        == "The window you are in fills the screen (it is “framed”); the menu bar stays, and it is not macOS’s full screen. Your other "
+        + "windows are out of view, not closed: ⌘Tab and the Dock still reach them.")
     #expect(model.primaryButton == "Done" && model.isPrimaryEnabled && model.backButton == "Back")
-    #expect(model.footnote.contains("Right-click it for all commands") && model.footnoteShowsMark)
+    // During the moves, nothing but the moves, the ways back, and the one thing nobody can guess: not everybody has seen the first page.
+    #expect(model.footnote == "Arbor lives in the menu bar, under this icon." && model.footnoteShowsMark)
+    #expect(model.opensAtLogin == nil && model.offer == nil)
   }
 
   @Test func aMoveWithoutAShortcutIsExplainedByTheMenu() {
     let model = secondPage(shortcut: { _ in nil })
     #expect(
       model.steps.map(\.lead) == [
-        "Drag a window to the left edge of the screen", "Then choose Frame Focused Window in Arbor’s menu",
-        "Then choose Show Everything in Arbor’s menu",
+        "Drag a window to the left edge of the screen", "Drag another to the right edge",
+        "Then choose Frame Focused Window in Arbor’s menu", "Then choose Show Everything in Arbor’s menu",
       ])
-    #expect(model.keysLegend == "⌘ is Command.", "⌘Tab is macOS's own, and is named whatever Arbor's keys are")
+    #expect(model.keysLegend.isEmpty, "no key is named, so none is explained")
   }
 
   /// A hand that drags to a screen edge ends at the very edge, and there macOS, as it comes, takes the window. Whoever passed the advice by
@@ -433,12 +454,12 @@ private let tuned = SystemFacts(accessibility: true, screenRecording: true, swit
     let dock = try #require(OnboardingModel(facts, flow: flow, shortcut: defaults).step(.dock))
     #expect(dock.lead == "Click a window and press ⌃⌥⌘←")
     #expect(
-      dock.text == "It docks: it takes the left half of the screen and stays there. Prefer the mouse? Click Back and switch off macOS tiling; "
+      dock.text == "It docks: it takes the left side of the screen and stays there. Prefer the mouse? Click Back and switch off macOS tiling; "
         + "then you just drag a window to the edge.")
-    // Nor is the invitation to dock a second one.
+    // Nor is the second.
+    #expect(OnboardingModel(facts, flow: flow, shortcut: defaults).step(.dockSecond)?.lead == "Click another and press ⌃⌥⌘→")
     #expect(
-      OnboardingModel(facts, flow: flow, shortcut: defaults).step(.showEverything)?.text
-        == "Every window is back in view. Click another and press ⌃⌥⌘→, and the two share the screen.")
+      OnboardingModel(facts, flow: flow).step(.dockSecond)?.lead == "Click another and choose Dock Focused Window → Right in Arbor’s menu")
     #expect(
       OnboardingModel(facts, flow: flow).step(.dock)?.lead == "Click a window and choose Dock Focused Window → Left in Arbor’s menu")
     // The others leave the left and right edges alone.
@@ -456,6 +477,63 @@ private let tuned = SystemFacts(accessibility: true, screenRecording: true, swit
       ])
     let withShortcut = secondPage { $0 == .floatAll ? "⌃⌥⇧F" : defaults($0) }
     #expect(withShortcut.waysBack[1] == "Float All Windows (⌃⌥⇧F) puts your Mac back to normal")
+  }
+
+  /// What is not about the moves waits for the last tick: where Arbor lives, Open at Login, one more move for whoever likes, and the one
+  /// step once more for whoever made the moves with the keys.
+  @Test func afterTheLastTickComesWhatHadToWait() throws {
+    var workspace = Workspace()
+    var steps = FirstSteps()
+    workspace.dock(WindowID(1), at: .cameraEdge(.left))
+    workspace.dock(WindowID(2), at: .cameraEdge(.right))
+    workspace.moveCamera(to: try #require(workspace.tree.leaf(containing: WindowID(1))))
+    steps.observe([DisplayID("main"): workspace])
+    workspace.moveCamera(to: workspace.tree.root)
+    steps.observe([DisplayID("main"): workspace])
+    #expect(steps.isComplete && !steps.dockedThree)
+    var flow = OnboardingFlow(isReady: true)
+    flow.go(to: .firstSteps)
+    flow.steps = steps
+    var facts = tuned
+    facts.opensAtLogin = false
+    func model(changed: [MacSwitch] = [], failure: String? = nil, isPaused: Bool = false) -> OnboardingModel {
+      OnboardingModel(
+        facts, flow: flow, canFixSetup: true, switchesChangedByArbor: changed, fixSetupFailure: failure, menuBarIsOneIcon: false,
+        isPaused: isPaused, shortcut: defaults)
+    }
+    let done = model()
+    #expect(done.title == "That is all there is to it" && done.summary == "The arrangement stays until you change it.")
+    #expect(done.footnote.contains("Right-click it for all commands") && done.footnoteShowsMark && done.opensAtLogin == false)
+    #expect(done.steps.map(\.id) == [.dock, .dockSecond, .frame, .showEverything, .dockThird])
+    let third = try #require(done.step(.dockThird))
+    #expect(third.lead == "One more, if you like: drag a third onto the edge of a docked one" && third.isNext && !third.isDone)
+    #expect(third.text == "A preview shows where it will land. The two share that room.")
+    #expect(done.offer == nil, "macOS's tiling is off, and not by Arbor's hand")
+
+    // The edges of docked windows are Arbor's whoever has the screen's, so the fifth move is worded the same.
+    facts.switches = [.screenEdges, .menuBar, .optionKey]
+    #expect(model().step(.dockThird) == third)
+    #expect(
+      model().offer
+        == OnboardingModel.Offer(text: "Want to dock with the mouse too?", action: .init("Switch Off macOS Tiling", .fixSetup(undo: false))))
+    #expect(model(failure: "no").offer?.failure == "That did not work: no.")
+    #expect(model(isPaused: true).offer == nil)
+    // Only the edges are what the mouse needs.
+    facts.switches = [.optionKey]
+    #expect(model().offer == nil)
+    // Taken, and one of them switched on again by hand: nothing is promised of "a screen edge".
+    facts.switches = [.menuBar]
+    #expect(model(changed: [.screenEdges, .menuBar, .optionKey]).offer == nil)
+    // Taken: what it did, and the way back.
+    facts.switches = []
+    #expect(
+      model(changed: [.screenEdges, .menuBar, .optionKey]).offer
+        == OnboardingModel.Offer(
+          text: "macOS tiling is off: drag a window to a screen edge, and it docks.", action: .init("Put Them Back", .fixSetup(undo: true))))
+
+    workspace.dock(WindowID(3), at: .cameraEdge(.right))
+    flow.steps.observe([DisplayID("main"): workspace])
+    #expect(model().step(.dockThird)?.isDone == true && model().steps.allSatisfy { !$0.isNext })
   }
 
   @Test func theLoginBoxIsOfferedOnlyWhereArborCanOpenAtLogin() {
@@ -497,7 +575,98 @@ private let tuned = SystemFacts(accessibility: true, screenRecording: true, swit
     workspace.moveCamera(to: workspace.tree.root)
     steps.observe([main: workspace])
     #expect(ticks(steps) == [true, true, true])
-    #expect(steps.isComplete)
+    #expect(!steps.dockedTwo && !steps.isComplete, "two side by side are what Arbor is for, and have not been seen")
+
+    workspace.dock(notes, at: .cameraEdge(.right))
+    steps.observe([main: workspace])
+    #expect(steps.dockedTwo && steps.isComplete)
+  }
+
+  /// Side by side is something to see, so it counts on one display.
+  @Test func twoDockedWindowsCountOnOneDisplay() {
+    var steps = FirstSteps()
+    var one = Workspace()
+    one.dock(safari, at: .cameraEdge(.left))
+    var other = Workspace()
+    other.dock(notes, at: .cameraEdge(.left))
+    steps.observe([main: one, side: other])
+    #expect(steps.docked && !steps.dockedTwo)
+    one.dock(WindowID(3), at: .cameraEdge(.right))
+    steps.observe([main: one, side: other])
+    #expect(steps.dockedTwo)
+    // A tick stays.
+    one.undock(safari, floatingAt: .zero)
+    steps.observe([main: one, side: other])
+    #expect(steps.dockedTwo)
+  }
+
+  /// The window keeps to the Desktop, as every window does that is not docked, and low, clear of title bars and of the heads-up line.
+  @Test func duringTheMovesTheWindowWaitsOverTheDesktop() {
+    let visible = CGRect(x: 0, y: 25, width: 1440, height: 875)
+    let width = OnboardingModel.width(of: .firstSteps)
+    func place(_ desktops: [CGRect], height: CGFloat = 400, in visible: CGRect = visible) -> CGPoint {
+      OnboardingModel.placement(
+        page: .firstSteps, previous: .firstSteps, staysPut: false, old: CGRect(x: 1, y: 2, width: 3, height: 4),
+        size: CGSize(width: width, height: height), visible: visible, desktops: desktops
+      ).frame.origin
+    }
+    #expect(width == 420)
+    #expect(place([]).x == 996, "at the right while nothing is docked: the first move goes to the left edge")
+    let beside = CGRect(x: 726, y: 37, width: 702, height: 851), between = CGRect(x: 488, y: 37, width: 464, height: 851)
+    #expect(place([beside]).x == 867, "beside the first docked window")
+    #expect(place([between]).x == 510, "between the two")
+    // Here it hides nothing of what the moves have made.
+    for desktop in [beside, between] {
+      #expect(desktop.contains(CGRect(origin: place([desktop]), size: CGSize(width: width, height: 400))))
+    }
+    // Never off the display, and over the Desktop of its own display, whichever comes first.
+    #expect(place([CGRect(x: 1200, y: 37, width: 228, height: 851)]).x == 1020)
+    #expect(place([CGRect(x: 12, y: 37, width: 200, height: 851)]).x == 0)
+    let elsewhere = CGRect(x: 1452, y: 37, width: 900, height: 851)
+    #expect(place([elsewhere]).x == 996)
+    #expect(place([elsewhere, between]).x == 510)
+    // The line that says what a move did shows under it, not over its buttons.
+    let line = HeadsUpModel(kind: .hint, text: "Docked").placed(in: visible)
+    #expect(place([]).y + 400 <= line.anchor.y - 40, "its lower edge, and the top of a line of one row")
+    #expect(place([], height: 2000).y == visible.minY, "taller than the display: its title bar stays in reach")
+    // On whole points, whatever the Desktop's width and the window's height.
+    let odd = place([CGRect(x: 349, y: 37, width: 325, height: 600)], height: 331.5, in: CGRect(x: 0, y: 25, width: 1024, height: 673))
+    #expect(odd == CGPoint(x: odd.x.rounded(), y: odd.y.rounded()))
+  }
+
+  /// Where the window goes whenever it has something else to show.
+  @Test func theWindowGoesWhereItIsLeastInTheWayAndStaysWhereItIsPut() {
+    let visible = CGRect(x: 0, y: 25, width: 1440, height: 805)
+    let first = CGSize(width: 560, height: 500), moves = CGSize(width: 420, height: 400)
+    func placement(
+      _ page: OnboardingFlow.Page, after previous: OnboardingFlow.Page?, staysPut: Bool = false, old: CGRect, size: CGSize
+    ) -> OnboardingModel.Placement {
+      OnboardingModel.placement(page: page, previous: previous, staysPut: staysPut, old: old, size: size, visible: visible, desktops: [])
+    }
+    // It opens where macOS centres a window, at once.
+    let opened = placement(.permissions, after: nil, old: .zero, size: first)
+    #expect(opened == .init(frame: CGRect(x: 440, y: 127, width: 560, height: 500), glides: false))
+    // A row loses its text: the title bar stays where it is.
+    let shorter = placement(.permissions, after: .permissions, old: opened.frame, size: CGSize(width: 560, height: 420))
+    #expect(shorter == .init(frame: CGRect(x: 440, y: 127, width: 560, height: 420), glides: false))
+    // Growing does not push the buttons under the Dock.
+    let low = CGRect(x: 440, y: 500, width: 560, height: 300)
+    #expect(placement(.permissions, after: .permissions, old: low, size: first).frame.maxY == visible.maxY)
+    // Continue: it glides to where it rests. Opened on the moves, it is there at once.
+    let resting = placement(.firstSteps, after: .permissions, old: opened.frame, size: moves)
+    #expect(resting.glides && resting.frame == CGRect(x: 996, y: 326, width: 420, height: 400))
+    #expect(placement(.firstSteps, after: nil, old: .zero, size: moves) == .init(frame: resting.frame, glides: false))
+    // Back: to the middle again.
+    #expect(placement(.permissions, after: .firstSteps, old: resting.frame, size: first) == opened)
+
+    // Somebody has pushed it half off the display, to see their windows. There it stays, whatever is ticked.
+    let pushed = CGRect(x: 1300, y: 700, width: 420, height: 400)
+    #expect(placement(.firstSteps, after: .firstSteps, staysPut: true, old: pushed, size: moves) == .init(frame: pushed, glides: false))
+    let smaller = placement(.firstSteps, after: .firstSteps, staysPut: true, old: pushed, size: CGSize(width: 420, height: 380))
+    #expect(smaller.frame.origin == pushed.origin)
+    // Only what it grows by is kept on the display, so that Back and Done stay in reach.
+    let back = placement(.permissions, after: .firstSteps, staysPut: true, old: pushed, size: first)
+    #expect(back.frame.maxX == visible.maxX && back.frame.maxY == visible.maxY && !back.glides)
   }
 
   /// Nobody reads a list from the top (F46, acceptance 1): each move is ticked when it is made.
@@ -574,7 +743,7 @@ private let tuned = SystemFacts(accessibility: true, screenRecording: true, swit
     #expect(ticks(steps) == [true, true, false], "the other display has shown everything all along")
     framed.moveCamera(to: framed.tree.root)
     steps.observe([main: other, side: framed])
-    #expect(steps.isComplete)
+    #expect(steps.showedEverything)
   }
 
   @Test func unpluggingThatDisplayBringsItsWindowsIntoViewToo() {
@@ -584,7 +753,7 @@ private let tuned = SystemFacts(accessibility: true, screenRecording: true, swit
     framed.moveCamera(to: framed.tree.leaf(containing: safari)!)
     steps.observe([main: Workspace(), side: framed])
     steps.observe([main: Workspace()])
-    #expect(steps.isComplete)
+    #expect(steps.showedEverything)
   }
 }
 
