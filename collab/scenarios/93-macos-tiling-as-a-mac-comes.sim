@@ -28,6 +28,22 @@ expect docked 103
 # So does the bottom edge, and the edges of a docked window.
 drag 101 900 897
 expect docked 101
+# A docked window let go in macOS's part of the screen belongs to whoever takes it. Short of macOS's own point nobody does: it goes home.
+drag 103 5 450
+wait 1
+expect docked 103
+drag 103 700 27
+wait 1
+expect docked 103
+# Thrown into the menu bar and let go at once, macOS leaves it too.
+drag 103 700 10 quick
+wait 1
+expect docked 103
+# Pushed against the right edge, macOS takes it: it leaves the arrangement.
+drag 103 1439 450
+wait 1
+expect floating 103
+expect size 103 720x875
 # With the switches off, every edge is Arbor's.
 mac-tiling off
 drag 102 1437 450

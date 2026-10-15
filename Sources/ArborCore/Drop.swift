@@ -73,7 +73,8 @@ public enum DropResolver {
     let edgeDistances = distances(from: point, toTheEdgesOf: visibleFrame).filter { $0.1 < options.screenEdgeBand }
     // A pointer travels. On its way to the last point of an edge, which is macOS's, it crosses this band, and a preview that comes up
     // there goes again as macOS's comes: two promises for one drag. So the whole band is macOS's, in the corners too, and
-    // whatever else lies in it. Let go there, short of macOS's own point, the window floats where it is.
+    // whatever else lies in it. Let go there, short of macOS's own point, a floating window floats where it is; a docked one the controller
+    // sends home to its slot, since nothing was offered (`Controller.dropTarget`).
     if edgeDistances.contains(where: { options.silentEdges.contains($0.0) }) { return .float }
     if let nearest = edgeDistances.min(by: { $0.1 < $1.1 }) { return .cameraEdge(nearest.0) }
 

@@ -147,6 +147,8 @@ extension Controller: WindowSystemEvents {
       if knowsTheDisplays { scheduleEnforce(display) } else { noteMoveBehindArborsBack(of: window.id) }
     }
 
+    if userInitiated { macOSTookTheWindowItWasLeft(window) }
+
     // A drag by the title bar changes no size, with one exception: macOS gives a window that is dragged off a tile of its own the
     // size it had before. That is the window's own size again. Left as it was, what is remembered would be the tile's,
     // and the smaller window would pass for one that Arbor had squeezed (`frameToRemember`). Only the size: where it is on its way

@@ -49,6 +49,9 @@ extension Controller {
     /// bar in the top band: slid sideways, or merely nudged, it has not been carried to that edge. Nothing is offered along it
     /// until the pointer has left the band once.
     var edgesNeverLeft: Set<Edge> = []
+    /// The button is up, over a place of macOS's, and the window is docked: what it was let go over and the frame it had then. It belongs
+    /// to whoever takes it, and until that shows it counts as in the hand (`waitForMacOS`).
+    var letGoOverMacOS: (hover: Hover, frame: CGRect)?
   }
 
   /// Held while dragging, this turns docking off. Not ⌥: since macOS 15 that brings up macOS's own
@@ -64,6 +67,10 @@ extension Controller {
   static let dragDwellKey = "drag-dwell"
   /// The timer that looks at what macOS made of a window that was left to it.
   static let leftToMacOSKey = "left-to-macos"
+  /// The timer that ends the wait for macOS to take a docked window, and how long that is, in seconds. On a Mac its first step was
+  /// reported within a fiftieth of a second of the release.
+  static let waitForMacOSKey = "drag-wait-for-macos"
+  static let waitForMacOS = 0.3
 
   // MARK: Events
 
@@ -92,7 +99,7 @@ extension Controller {
   }
 
   public func dragMoved(_ id: WindowID, to point: CGPoint) {
-    guard drag?.window == id else { return }
+    guard drag?.window == id, drag?.letGoOverMacOS == nil else { return }
     drag?.point = point
     if drag?.edgesNeverLeft.isEmpty == false { drag?.edgesNeverLeft.formIntersection(screenEdges(near: point)) }
     updateHover()
@@ -109,7 +116,30 @@ extension Controller {
     // Let go before the target was held long enough, nothing the preview has not shown happens: a
     // floating window stays where it is. A docked one goes back to its slot rather than lie undocked over
     // the others: word of a drag reaches Arbor late, so a brisk drag ends before any hold can.
-    if held { endDrag(on: hover) } else { cancelDrag() }
+    guard held else { return cancelDrag() }
+    if hover.leftToMacOS != nil, workspaces.values.contains(where: { $0.isDocked(id) }) { return waitForMacOS(on: hover) }
+    endDrag(on: hover)
+  }
+
+  /// A docked window let go in a place of macOS's belongs to whoever takes it. macOS does not always: it fills the screen only for a pointer
+  /// that has rested in the menu bar. Arbor cannot know at the release, so it looks. At macOS's first move the window is
+  /// macOS's: it leaves the arrangement, its place closes, and Arbor sets no frame on it. If none comes, nothing was offered and
+  /// nothing happens: it goes home to its slot. Meanwhile the drag goes on in all but name, so whatever ends a drag ends the wait.
+  private func waitForMacOS(on hover: Hover) {
+    guard let window = drag?.window, let frame = windows[window]?.frame else { return cancelDrag() }
+    scheduler.cancel(Self.dragDwellKey)
+    overlays.showDropPreview(nil)
+    drag?.letGoOverMacOS = (hover, frame)
+    scheduler.schedule(Self.waitForMacOSKey, after: Self.waitForMacOS) { [weak self] in
+      guard self?.drag?.letGoOverMacOS != nil else { return }
+      self?.cancelDrag()
+    }
+  }
+
+  /// Part of `windowChanged`: the window that waits for macOS has been moved, and not by Arbor.
+  func macOSTookTheWindowItWasLeft(_ window: WindowSnapshot) {
+    guard drag?.window == window.id, let waiting = drag?.letGoOverMacOS, window.frame != waiting.frame else { return }
+    endDrag(on: waiting.hover, letGoAs: waiting.frame)
   }
 
   // MARK: The target under the pointer
@@ -207,7 +237,10 @@ extension Controller {
       let onDesktop =
         seen.layout.leafOrTile(at: point, in: seen.tree) == seen.tree.desktop
         || seen.layout.desktopFrame.map { floatingRegion($0, on: display).contains(point) } == true
-      if !onDesktop { return Hover(display: displayID, target: .none, isNowhere: true) }
+      // In a band where nothing is offered nothing is meant either, though the Desktop reaches up to that edge.
+      let inASilentBand = !DropResolver.screenEdges(near: point, visibleFrame: display.visibleFrame, options: dropOptions)
+        .isDisjoint(with: dropOptions.silentEdges)
+      if !onDesktop || inASilentBand { return Hover(display: displayID, target: .none, isNowhere: true) }
     }
     // Dropped there it would widen a held view (Controller+Hold.swift). A docked window goes back to its
     // place; a floating one stays where it is let go.
@@ -282,9 +315,11 @@ extension Controller {
   // MARK: The end
 
   /// Ends the drag in progress with the window dropped on `hover`.
-  func endDrag(on hover: Hover) {
+  /// `letGoAs`: the frame it had when the button came up, if that was a while ago.
+  func endDrag(on hover: Hover, letGoAs: CGRect? = nil) {
     guard let session = drag else { return }
     scheduler.cancel(Self.dragDwellKey)
+    scheduler.cancel(Self.waitForMacOSKey)
     drag = nil
     overlays.showDropPreview(nil)
     finishDrop(session.window, on: hover, at: session.point, sizeOwed: session.sizeOwed, after: session.reflow)
@@ -293,7 +328,7 @@ extension Controller {
     // Whoever meant Arbor's edge and got macOS's tile is told where that can be changed. Whoever held ⌥ asked macOS. Said once macOS
     // has moved the window, which it does not always do: thrown into the menu bar and let go at once, it stays as it is.
     if let claim = hover.leftToMacOS, claim != .optionKey, let display = hover.display,
-      let letGo = windows[session.window]?.frame
+      let letGo = letGoAs ?? windows[session.window]?.frame
     {
       scheduler.schedule(Self.leftToMacOSKey, after: 0.5) { [weak self] in
         guard let self, let now = self.windows[session.window]?.frame, now != letGo else { return }

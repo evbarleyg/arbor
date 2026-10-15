@@ -428,6 +428,10 @@ band. Let go there, short of macOS's point, a floating window stays where it is 
 was promised. The bottom edge, docked windows' own edges further in and the keys stay Arbor's.
 An edge is silent in the same way, at every setting, while the pointer has not left the band in which it took hold (`DragSession.edgesNeverLeft`): a window that
 lies under the menu bar has its title bar in the top band, and slid sideways it has not been carried to the top.
+**A docked window let go in a place of macOS's belongs to whoever takes it.** macOS does not always take it, and Arbor cannot know at the release, so it looks
+(`waitForMacOS`, 0.3 s): the drag goes on in all but name, with `DragSession.letGoOverMacOS` set. At the first move that is not Arbor's the window is
+macOS's and leaves the arrangement as above; if none comes it goes home to its slot in one move. In a silent band short of macOS's point it goes home at
+once, over the Desktop's part of the band too. A floating window needs no wait: it stays where the hand left it, whoever moves it next.
 A release that Arbor never saw ends the same way at an edge or in the menu bar (`dragCancelled`), because macOS saw it; a drag
 that ends with the button still down (a pause, a quit) does not. Dragged off its tile, a window gets its earlier size
 back from macOS, the one change of size `windowChanged` takes from a window in the hand. One point decides, so

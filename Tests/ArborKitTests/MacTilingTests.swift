@@ -118,6 +118,78 @@ import Testing
     s.expectNothingLeftBehind()
   }
 
+  /// A docked window let go in macOS's part of the screen belongs to whoever takes it (board 1.56). macOS does not always: it fills the screen only
+  /// for a pointer that has rested in the menu bar, and in the band short of its own point it does nothing at all. Then nothing was
+  /// offered and nothing happens: the window goes home to its slot in one move, and its neighbours are not touched. At all three
+  /// edges and in the corners alike, over the Desktop's part of the band too.
+  @Test(arguments: [
+    CGPoint(x: 5, y: 450), CGPoint(x: 1434, y: 450), CGPoint(x: 720, y: 27), CGPoint(x: 300, y: 30), CGPoint(x: 5, y: 30),
+    CGPoint(x: 1434, y: 30),
+  ])
+  func aDockedWindowThatMacOSDoesNotTakeGoesHomeFromTheBand(point: CGPoint) {
+    let s = scene()
+    let before = s.outcome
+    s.h.system.beginDrag(s.a)
+    s.h.system.moveDrag(to: s.onDesktop, holding: 0.3)
+    s.h.system.moveDrag(to: point, holding: 1)
+    #expect(s.h.overlays.preview == nil)
+    s.h.system.clearFrameLog()
+    s.h.system.endDrag()
+    s.h.scheduler.advance(by: 3)
+    #expect(s.h.workspace.isDocked(s.a), "at \(point)")
+    #expect(s.outcome == before, "at \(point)")
+    #expect(s.h.system.frameLog.map(\.window) == [s.a], "home in one move, nobody else moved: \(s.h.system.frameLog)")
+    #expect(s.h.overlays.messages.isEmpty)
+    s.expectNothingLeftBehind()
+  }
+
+  /// Thrown into the menu bar and let go at once: macOS's own place, and macOS leaves it. Arbor cannot know at the release, so it looks for
+  /// macOS's move for a moment, and then takes the window home.
+  @Test func aDockedWindowThrownIntoTheMenuBarGoesHomeWhenMacOSLeavesIt() {
+    let s = scene()
+    let before = s.outcome
+    s.h.system.beginDrag(s.a)
+    s.h.system.moveDrag(to: s.onDesktop)
+    s.h.system.moveDrag(to: CGPoint(x: 700, y: 10), holding: 0.05)
+    s.h.system.clearFrameLog()
+    s.h.system.endDrag()
+    #expect(s.h.system.frameLog.isEmpty, "not at the release: macOS may be about to move it")
+    s.h.scheduler.advance(by: 0.25)
+    #expect(s.h.system.frameLog.isEmpty, "\(s.h.system.frameLog)")
+    s.h.scheduler.advance(by: 3)
+    #expect(s.outcome == before)
+    #expect(s.h.system.frameLog.map(\.window) == [s.a], "\(s.h.system.frameLog)")
+    #expect(s.h.overlays.messages.isEmpty)
+    s.expectNothingLeftBehind()
+  }
+
+  /// While Arbor looks, the window is still in the hand as far as everything else goes: whatever ends a drag ends the wait.
+  @Test func theWaitForMacOSEndsWithWhateverEndsADrag() {
+    let s = scene()
+    let before = s.outcome
+    s.h.system.beginDrag(s.a)
+    s.h.system.moveDrag(to: s.onDesktop)
+    s.h.system.moveDrag(to: CGPoint(x: 700, y: 10), holding: 0.05)
+    s.h.system.endDrag()
+    s.h.run("pause")
+    s.h.run("resume")
+    s.h.scheduler.advance(by: 3)
+    #expect(s.h.workspace.isDocked(s.a))
+    #expect(s.outcome.workspaces == before.workspaces)
+    s.expectNothingLeftBehind()
+
+    // The next drag, of another window, begun within the wait.
+    let other = scene()
+    other.h.system.beginDrag(other.a)
+    other.h.system.moveDrag(to: other.onDesktop)
+    other.h.system.moveDrag(to: CGPoint(x: 700, y: 10), holding: 0.05)
+    other.h.system.endDrag()
+    other.h.system.drag(other.c, through: [other.frame(other.c).center, other.onDesktop])
+    other.h.scheduler.advance(by: 3)
+    #expect(other.h.workspace.isDocked(other.a) && other.h.workspace.isFloating(other.c))
+    other.expectNothingLeftBehind()
+  }
+
   /// The bottom edge is nobody's but Arbor's, away from the corners. With the switches off so are the others, to one point from the end.
   @Test func theBottomEdgeStaysArborsAndWithTheSwitchesOffSoDoTheOthers() {
     for (tiling, point, edge) in [
@@ -250,23 +322,20 @@ import Testing
   }
 
   /// macOS fills the screen only for a pointer that has rested in the menu bar. Arbor stands aside all the same: it cannot tell to a
-  /// tenth of a second what macOS will do, and nothing was promised. So the window floats where it was let go, and nothing is said.
+  /// tenth of a second what macOS will do, and nothing was promised. So a floating window stays where it was let go, and nothing is said.
   @Test func thrownIntoTheMenuBarAndLetGoAtOnceTheWindowStaysAsItIs() {
-    for docked in [false, true] {
-      let s = scene()
-      let window = docked ? s.a : s.c
-      s.h.system.beginDrag(window)
-      s.h.system.moveDrag(to: s.onDesktop)
-      s.h.system.moveDrag(to: CGPoint(x: 700, y: 10), holding: 0.05)
-      let letGo = s.frame(window)
-      s.h.system.endDrag()
-      s.h.scheduler.advance(by: 3)
-      #expect(s.frame(window) == letGo, "docked: \(docked)")
-      #expect(s.h.workspace.isFloating(window))
-      #expect(!s.h.system.frameLog.contains { $0.window == window }, "\(s.h.system.frameLog)")
-      #expect(s.h.overlays.messages.isEmpty, "macOS took nothing, so there is nothing to say: \(s.h.overlays.messages.map(\.model.line))")
-      s.expectNothingLeftBehind()
-    }
+    let s = scene()
+    s.h.system.beginDrag(s.c)
+    s.h.system.moveDrag(to: s.onDesktop)
+    s.h.system.moveDrag(to: CGPoint(x: 700, y: 10), holding: 0.05)
+    let letGo = s.frame(s.c)
+    s.h.system.endDrag()
+    s.h.scheduler.advance(by: 3)
+    #expect(s.frame(s.c) == letGo)
+    #expect(s.h.workspace.isFloating(s.c))
+    #expect(s.h.system.frameLog.isEmpty, "\(s.h.system.frameLog)")
+    #expect(s.h.overlays.messages.isEmpty, "macOS took nothing, so there is nothing to say: \(s.h.overlays.messages.map(\.model.line))")
+    s.expectNothingLeftBehind()
   }
 
   /// At the sides macOS waits for nothing.

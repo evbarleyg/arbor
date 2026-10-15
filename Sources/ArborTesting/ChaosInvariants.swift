@@ -20,7 +20,7 @@ extension ChaosRunner {
     "displays-blinked", "menu-bar",
     "back-from-full-screen",
     "desktop-guard-zones",
-    "left-to-macos",
+    "left-to-macos", "drag-wait-for-macos",
     "rehearsal",
   ]
 
