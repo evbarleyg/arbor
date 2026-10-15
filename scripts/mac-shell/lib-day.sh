@@ -504,13 +504,15 @@ bare_spot() {
 day_manifest() { DAY_MANIFEST="$DAY_MANIFEST$1=$2"$'\n'; }
 
 day_write_manifest() {
-  day_manifest reduce_motion "$("$ARBOR_POINTER" reduce-motion)"
+  # The first time the tools are not built yet.
+  [ ! -x "$ARBOR_POINTER" ] || day_manifest reduce_motion "$("$ARBOR_POINTER" reduce-motion)"
   DAY_MANIFEST=$DAY_MANIFEST DAY_OFFENCES=$DAY_OFFENCES python3 - "$ARBOR_OUT/run.json" "$(git -C "$ARBOR_ROOT" rev-parse HEAD)" "$(basename "$ARBOR_SCRIPT")" \
     "$(sw_vers -productVersion) ($(sw_vers -buildVersion))" "$SECONDS" << 'PYTHON'
 import json, os, sys
 path, commit, script, macos, seconds = sys.argv[1:]
 # Several scripts can share one run of the workflow: which of them this is, and of how many, is for the batch to say before the first begins.
-run = {"gate": 1, "commit": commit, "run": os.environ.get("GITHUB_RUN_ID", ""), "attempt": int(os.environ.get("GITHUB_RUN_ATTEMPT", "1")),
+# "started": whoever hands out the parts leaves a manifest that says false in each one's place, so that a part nobody played is told from one that is kept back.
+run = {"gate": 1, "started": True, "commit": commit, "run": os.environ.get("GITHUB_RUN_ID", ""), "attempt": int(os.environ.get("GITHUB_RUN_ATTEMPT", "1")),
        "part": int(os.environ.get("MAC_SHELL_PART", "1")), "parts": int(os.environ.get("MAC_SHELL_PARTS", "1")),
        "script": script, "settings": "shipped", "build": "debug", "macos": macos, "seconds": int(seconds)}
 for line in os.environ["DAY_MANIFEST"].splitlines():
@@ -582,3 +584,6 @@ day_last_words() {
   return "$code"
 }
 trap 'day_last_words; apps_exit' EXIT
+
+# Written when the run begins and completed when it ends: a script that is stopped before it can say a last word has still been started, and counts as that.
+day_write_manifest
