@@ -2590,11 +2590,11 @@
    "kind": "late-or-partial-answer",
    "layer": "at the seam",
    "expected": "`focusedWindow()` is nil when nobody has the keyboard: the bare Desktop.",
-   "happened": "It is also nil whenever the app in front is not observed or does not answer: Spotlight, another launcher, a menu bar app's panel, a sheet. A shortcut that moves the view then takes the keyboard out of the launcher somebody is typing in, which it was decided to leave as it is for commands a person gives. A window closing behind a launcher makes Arbor give the keyboard to another window a quarter of a second later. What a real Spotlight does then is still to be tried by hand.",
+   "happened": "It is also nil whenever the app in front is not observed or does not answer: Spotlight, another launcher, a menu bar app's panel, a sheet. A shortcut that moves the view then takes the keyboard out of the launcher somebody is typing in, which it was decided to leave as it is for commands a person gives. A window closing behind a launcher that brings no app forward makes Arbor give the keyboard to another window a quarter of a second later (behind Finder or another app no longer: the-window-used-last-is-not-the-window-with-the-keyboard). What a real Spotlight does then is still to be tried by hand.",
    "found": "A rehearsal check that was bisected, then reading the Accessibility layer, and a headless probe. Not seen on a Mac.",
    "modelled": "partly",
    "knobs": [
-    "FakeWindowSystem.userFocusesNothing"
+    "FakeWindowSystem.sheetTakesTheKeyboard"
    ],
    "guards": [
     "test: theKeyboardStaysInASheet"
@@ -2615,6 +2615,37 @@
     "M1609"
    ],
    "certainty": "suspected"
+  },
+  {
+   "id": "the-window-used-last-is-not-the-window-with-the-keyboard",
+   "kind": "missing-report",
+   "layer": "controller",
+   "expected": "The window that was last reported focused has the keyboard until another window is reported. So when it closes or goes into the Dock the keyboard is lost, and Arbor hands it to a window in view.",
+   "happened": "A click on the wallpaper brings Finder forward. All Arbor hears is that the keyboard moved, and from then on nobody it knows has it. 38 s later the window used last was minimized by its app: Arbor took that for the loss of the keyboard and focused another window a quarter of a second later, whose app came forward. Whoever is renaming a file on the desktop loses the keyboard, and windows swept aside by the click all come back. From the same place a window's own sheet looks like the desktop; what tells them apart is the app in front. Finder's own windows are the exception: with one of them used last, Finder is in front before and after the click.",
+   "found": "The check of windows swept aside on a hosted Mac, in a step meant as its control; its trace is in the corpus. That a sheet is heard the same way was read in the Accessibility layer and has not been seen on a Mac.",
+   "modelled": "yes",
+   "knobs": [
+    "FakeWindowSystem.userFocusesNothing",
+    "FakeWindowSystem.sheetTakesTheKeyboard"
+   ],
+   "guards": [
+    "test: aWindowThatGoesWhileTheKeyboardIsWithFinderCostsFinderNothing",
+    "test: norDoesAWindowOfFindersOwn",
+    "test: aWindowsOwnSheetIsNotFinder",
+    "test: finderComingForwardIsHeardWhicheverReportComesFirst",
+    "test: theKeyboardIsNotTakenFromFinder",
+    "trace: minimized-with-finder-in-front.expect"
+   ],
+   "copes": "Controller.hadKeyboard: the window last seen with the keyboard, and since when it has been seen without, are kept; its going is a loss only if it still had the keyboard, had lost it within the second, or the keyboard is in a sheet of its own app.",
+   "hurt": 2,
+   "touches": [
+    "focus"
+   ],
+   "sources": [
+    "Sources/ArborKit/Controller/Controller+Focus.swift",
+    "Tests/ArborKitTests/FocusTests.swift",
+    "collab/evidence/traces/README.md"
+   ]
   },
   {
    "id": "nsworkspace-tells-a-process-without-a-run-loop-nothing-new",
@@ -5437,7 +5468,7 @@
    "knobs": [
     "World.extras",
     "FakeWindowSystem.strangers",
-    "FakeWindowSystem.userFocusesNothing",
+    "FakeWindowSystem.sheetTakesTheKeyboard",
     "FakeWindowSystem.openStrayDialog"
    ],
    "guards": [
@@ -10256,7 +10287,8 @@
   "| `comesForward` | FWS | polite | an app brings itself forward, nobody touched anything | 34 / 5; sim; 1 scenario; lab: never |",
   "| `secondsSinceInput` | FWS | polite (infinity; 0 during `userFocus`) | how long since a click or a modifier key | 11 / 4 |",
   "| `userSwitchesApp` | FWS | polite | ⌘Tab as macOS alone reports it: no `windowFocused` (not what Arbor's layer sends: K1978) | 12 / 8; lab `switch-app`; fake Mac |",
-  "| `userFocusesNothing` | FWS | polite | the keyboard goes to the Desktop, a sheet, a launcher | 10 / 7; lab; fake Mac |",
+  "| `userFocusesNothing` | FWS | polite | a click on the Desktop: Finder comes forward, and no known window has the keyboard | 15 / 6; lab |",
+  "| `sheetTakesTheKeyboard` | FWS | polite | the keyboard goes to a sheet, a panel or a launcher: no known window has it, and the app in front stays | 2 / 2; fake Mac |",
   "| `userClick` | FakeWindowSystem+Stacking.swift | polite | a click in the focused window raises it and reports no focus | 6 / 3 |",
   "| `activate(bundleID:)` | FWS | polite | an app without a window comes to the front | 13 / 5; lab |",
   "| `openStrayDialog` | FWS | polite | a dialog that opens beside a window out of view | 7 / 2 |",

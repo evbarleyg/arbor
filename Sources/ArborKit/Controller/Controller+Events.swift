@@ -52,6 +52,7 @@ extension Controller: WindowSystemEvents {
     fittedToADisplay[id] = nil
     hints[id] = nil
     let hadKeyboard = hadKeyboard(id)
+    if keyboardHandOver.holder?.window == id { keyboardHandOver.holder = nil }
     unplaced.remove(id)
     owedTheWayBack[id] = nil
     owedMoves.remove(id)

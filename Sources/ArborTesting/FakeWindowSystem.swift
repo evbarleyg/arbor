@@ -907,9 +907,17 @@ extension FakeWindowSystem {
 // MARK: Focus outside the known windows
 
 extension FakeWindowSystem {
-  /// The user clicks the desktop, or switches to something that is not one of these windows (a sheet, a
-  /// panel, an app that is not observed).
+  /// The user clicks the desktop: Finder comes forward, and none of these windows has the keyboard. The same is
+  /// heard of any app that is not observed.
   public func userFocusesNothing() {
+    focused = nil
+    activate(bundleID: "com.apple.finder", name: "Finder")
+    events?.keyboardFocusMoved()
+  }
+
+  /// A sheet, a dialog or a panel of the app in front takes the keyboard ("Do you want to keep this document?"), or a
+  /// launcher that brings no app forward. None of these windows has it then either, and the app in front stays.
+  public func sheetTakesTheKeyboard() {
     focused = nil
     events?.keyboardFocusMoved()
   }

@@ -19,7 +19,7 @@ private let b = WindowID(102)
     let runner = ChaosRunner()
     for line in lines { _ = runner.step(ChaosAction(text: line)) }
     if let fault { runner.beforeTheNextCheck = { fault($0.system) } }
-    let prefixes = ["flashed-", "moved-", "sized-", "fetched-", "switched-to-", "app-switch-", "size-", "home-", "there-and-back-", "start-", "pause-and-", "quit-", "displays-", "dragged-"]
+    let prefixes = ["flashed-", "moved-", "sized-", "fetched-", "switched-to-", "app-switch-", "size-", "home-", "there-and-back-", "start-", "pause-and-", "quit-", "displays-", "dragged-", "keyboard-"]
     return Set(([last] + later).flatMap { runner.step(ChaosAction(text: $0)) }.map(\.rule).filter { rule in prefixes.contains { rule.hasPrefix($0) } })
   }
 
@@ -244,6 +244,24 @@ private let b = WindowID(102)
     #expect(nets(after: overlapping + ["focus 101", "react"], then: "settle") { $0.raise(b) }.contains("switched-to-behind"))
   }
 
+  // MARK: The keyboard stays with Finder
+
+  @Test func theKeyboardIsNotTakenFromFinder() {
+    let onTheDesktop = oneDocked + ["focus 101", "react", "advance 1", "focus-nothing", "advance 2"]
+    for going in ["close 101", "minimize 101", "hide 1001", "quit-app 1001", "advance 1"] {
+      #expect(nets(after: onTheDesktop, then: going, "advance 1").isEmpty, "\(going)")
+      #expect(nets(after: onTheDesktop, then: going) { $0.focus(b) }.contains("keyboard-taken-from-finder"), "\(going)")
+      #expect(nets(after: onTheDesktop + [going], then: "advance 1") { $0.focus(b) }.contains("keyboard-taken-from-finder"), "\(going), later")
+    }
+    // Whoever asks Arbor for something may get the keyboard with it, and whoever clicks a window has moved it.
+    for asking in ["zoom 102", "focus 102", "open 103 Safari pid 1003 at 300 300 500 400"] {
+      #expect(!nets(after: onTheDesktop + [asking], then: "advance 1") { $0.focus(b) }.contains("keyboard-taken-from-finder"), "\(asking)")
+    }
+    // One event of macOS's: the keyboard's going is reported a moment before the window's.
+    let atOnce = oneDocked + ["focus 101", "react", "advance 1", "focus-nothing", "close 101"]
+    #expect(!nets(after: atOnce, then: "advance 1") { $0.focus(b) }.contains("keyboard-taken-from-finder"))
+  }
+
   // MARK: The ways home
 
   @Test(arguments: ["float-all", "quit", "pause"]) func aWayOutGivesEveryWindowItsOwnSizeBack(way: String) {
@@ -301,6 +319,19 @@ private let b = WindowID(102)
     }
     func asked(_ net: String) -> Int { (ChaosRunner.questionsAsked[net] ?? 0) - (before[net] ?? 0) }
     for (net, floor) in Self.floors { #expect(asked(net) >= floor, "\(net) was asked \(asked(net)) times") }
+  }
+
+  /// Only the wild walks click the desktop. Forty of them asked fourteen times when this was written. The floor is far below, because
+  /// every change to the generator makes other walks of them: what it holds is that the question is asked at all.
+  @Test func wildWalksAskWhoTookTheKeyboardFromFinder() {
+    let before = ChaosRunner.questionsAsked["keyboard"] ?? 0
+    for seed in UInt64(1)...40 {
+      let runner = ChaosRunner()
+      var generator = ChaosGenerator(seed: seed)
+      for _ in 0..<200 { _ = runner.step(generator.next(runner)) }
+    }
+    let asked = (ChaosRunner.questionsAsked["keyboard"] ?? 0) - before
+    #expect(asked >= 3, "asked \(asked) times")
   }
 
   private static let floors = [

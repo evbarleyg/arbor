@@ -401,6 +401,8 @@ gave the keyboard to either. Sort, or take a `min(by:)` whose last key is the wi
 - Of what is above the seams only shortcuts are recorded (`shortcut` lines): menu clicks, pinches and ⌃⌥-drags appear as the commands they end as.
 - What the controller remembers about the hands (which of pointer and keyboard led last, when the focus last moved: `Controller+Lead.swift`) is not in the header. The first command
   of a trace started in the middle of a session may choose differently in a replay.
+- Which app is in front is in no header, and the real app tells the controller of it past the recorder, so a trace from a Mac has only the `raw didActivateApplication` lines. In a replay the controller then does not know the app in front. It needs
+  it to tell Finder's desktop from a window's own sheet (`Controller+Focus.swift`), and without it goes by time alone: a sheet that was up for more than a second counts as the desktop.
 - Work already scheduled when recording starts is not in the header; a strict replay may miss it.
 - The undo history is not in the header (up to a hundred steps of two arrangements each, for every display). So an `undo` of a step from *before* the recording finds nothing to undo in a replay, and the replay goes on from another arrangement. A strict replay says so
   ("`undo` succeeded … now it fails with "nothing to undo""). **A free replay reports no problem** and simply ends elsewhere: give such a trace an `.expect` file, or start recording before the step. Steps taken while recording are undone in a replay as they were.

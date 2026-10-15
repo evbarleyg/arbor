@@ -69,6 +69,7 @@ extension Controller {
   func noteFocus() {
     let window = system.focusedWindow()
     confirmFocusRequest(at: window)
+    noteWhetherTheKeyboardStayed(with: window)
     if let focus = following.focus, focus.window == window { return }
     following.focus = (window, now())
     following.lead.focusChanged()

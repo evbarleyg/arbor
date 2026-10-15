@@ -49,6 +49,8 @@ extension Controller {
   public func applicationActivated(_ app: FrontmostApp?) {
     guard app != frontmostApp else { return }
     frontmostApp = app
+    // No question to an app that is only just coming forward: the report of the keyboard asks (`noteFocus`).
+    if isRunning, let seen = following.focus { noteWhetherTheKeyboardStayed(with: seen.window) }
     holdNotesActivation(of: app)
     followFrontmostApp(justActivated: true)
   }

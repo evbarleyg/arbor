@@ -167,7 +167,7 @@ around that window, where the window is; there is none), `outline <id>|desktop|n
 `in-front <id>` (no window covers it), `size <id> <w>x<h>`, `summoned <id>`, `space <name>` (some display's view is on the space of that name), `no-space <name>`,
 `field open` / `field closed` (the field of `ask-name`; `field-type [text]` types into it and presses ↩, `field-cancel` presses ⎋), `minimap <id>|desktop|everything|none` (what the minimap marks as filling the view; there is none;
 `map <id>|desktop|beside` clicks in it),
-`held view|still|no` (F58), `focused <id>` (that window has the keyboard),
+`held view|still|no` (F58), `focused <id>|none` (that window has the keyboard; `none`: Finder, or an app Arbor does not know),
 `still` / `still <id>` (during the line before, Arbor moved no window, or not that one), `moved-once` (it moved something, and nothing twice),
 `at <id> <x> <y>` (the window's top-left corner), `replied <words>` (what the line before printed contains those words, ignoring case),
 `preview none|showing` (the drop preview), `jolt <id>` (see below),

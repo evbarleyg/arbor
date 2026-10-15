@@ -175,6 +175,7 @@ extension Controller {
     hints[window.id] = WindowHint(bundleID: window.bundleID, title: window.title)
     focusHistory.removeAll { $0 == window.id }
     if let index = focusHistory.firstIndex(of: old) { focusHistory[index] = window.id }
+    if keyboardHandOver.holder?.window == old { keyboardHandOver.holder?.window = window.id }
     // `old` is in no workspace any more, so this only clears what is remembered about it, and ends a drag of it.
     windowDestroyed(old)
     // The app has just shown the switch in its own way, and there is no picture of the new tab yet.

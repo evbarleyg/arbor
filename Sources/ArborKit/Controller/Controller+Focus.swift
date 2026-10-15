@@ -73,6 +73,7 @@ extension Controller {
     // Only now. A report is not the keyboard: an app in the background reports its windows too, and taking one of those for the
     // window in use made the going of the one that was no loss (`hadKeyboard`), so that nobody got the keyboard.
     recordFocus(id)
+    keyboardHandOver.holder = (id, nil)
     cancelFocusLooks()
     // macOS picks once. Whatever this report is, the next one is somebody's own doing.
     let loss = keyboardHandOver.loss
@@ -123,6 +124,9 @@ extension Controller {
       var floatingInView: [(window: WindowID, frame: CGRect)]
     }
     var reveal: Reveal?
+    /// The window last seen with the keyboard, and since when it has been seen without (nil: it has it still).
+    /// The first of `focusHistory` is the same window for as long as it lives, whoever has had the keyboard since.
+    var holder: (window: WindowID, leftAt: Date?)?
     /// The window with the keyboard went away, on this display. `app` is the process macOS picks the next window
     /// from, or nil if it picks another app (its own was hidden).
     var loss: (display: DisplayID, app: Int32?, time: Date)?
@@ -135,8 +139,47 @@ extension Controller {
 
   /// Whether `id` had the keyboard until now, or until the report that just moved the view. Ask before
   /// forgetting the window.
+  ///
+  /// Until now: not "it was the last of Arbor's windows to have it". Finder has it since a click on the desktop, or
+  /// an app that Arbor does not arrange, and the going of that window is no loss. Handing the keyboard on then took
+  /// it from somebody renaming a file, and brought back the windows that a click on the wallpaper had swept aside
+  /// (seen on a hosted Mac).
   func hadKeyboard(_ id: WindowID) -> Bool {
-    focusHistory.first == id || keyboardHandOver.reveal?.holder == id
+    hasOrHasJustLostTheKeyboard(id) || keyboardHandOver.reveal?.holder == id
+  }
+
+  /// macOS can say that the keyboard has left the known windows before it says that the window is gone: another app
+  /// comes forward because this one quits. Milliseconds where it was recorded; a busy Mac takes longer. Nobody
+  /// clicks the desktop and has the window they came from close by itself within the same second. Heard later
+  /// than that, the keyboard stays where macOS put it, as it would without Arbor.
+  static let keyboardGoesFirstBy: TimeInterval = 1
+
+  private func hasOrHasJustLostTheKeyboard(_ id: WindowID) -> Bool {
+    guard let holder = keyboardHandOver.holder, holder.window == id else { return false }
+    return holder.leftAt.map { now().timeIntervalSince($0) < Self.keyboardGoesFirstBy } ?? true
+  }
+
+  /// Called with who has the keyboard whenever it may have moved (`noteFocus`), and with who had it at the last look
+  /// when another app has come forward, which is reported on a channel of its own, before or after. The keyboard
+  /// comes back without a report of its window, too: ⌘Tab to an app whose focused window is the one it was.
+  func noteWhetherTheKeyboardStayed(with window: WindowID?) {
+    guard let holder = keyboardHandOver.holder else { return }
+    if holder.window == window || isInItsOwnAppsSheet(holder.window, focused: window) {
+      keyboardHandOver.holder?.leftAt = nil
+    } else if holder.leftAt == nil {
+      keyboardHandOver.holder?.leftAt = now()
+    }
+  }
+
+  /// "Do you want to keep this document?" The keyboard is in a sheet, a dialog or a panel, which is no window Arbor
+  /// knows, and looks like the desktop from here. But the app in front is still the window's own, and when the sheet
+  /// is answered and the window closes, seconds later, the keyboard goes with it. The same goes for an app that
+  /// does not answer for a while. Not for Finder, whose desktop is what this is to be told apart from.
+  private func isInItsOwnAppsSheet(_ holder: WindowID, focused: WindowID?) -> Bool {
+    guard focused.flatMap({ windows[$0] }) == nil, let window = windows[holder], let front = frontmostApp,
+      front.bundleID != "com.apple.finder"
+    else { return false }
+    return front.bundleID == window.bundleID && (front.bundleID != nil || front.name == window.appName)
   }
 
   /// Call after `id`, which `hadKeyboard`, closed or stopped taking space, and `display` was laid out without it.

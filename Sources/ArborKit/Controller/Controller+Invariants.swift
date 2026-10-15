@@ -238,6 +238,7 @@ extension Controller {
     check("owedMoves", owedMoves)
     check("givenUp", enforcement.givenUp)
     check("focusHistory", focusHistory)
+    check("keyboardHolder", [keyboardHandOver.holder?.window].compactMap { $0 })
     check("ignoredWindowIDs", filter.ignoredWindowIDs)
     check("landsAt", landsAt.keys)
     check("sharedItsSpace", sharedItsSpace.keys)

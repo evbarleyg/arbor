@@ -470,6 +470,134 @@ import Testing
     #expect(h.system.focusedWindow() == b, "not the one that happens to be under the pointer")
   }
 
+  // MARK: The keyboard is with Finder
+
+  /// The ways a window goes that nobody at the keyboard need have asked for: its app closes it, a script minimizes
+  /// it, the Dock's menu quits it.
+  static let goings: [(String, (Harness, WindowID) -> Void)] = [
+    ("close", { h, window in h.system.close(window) }),
+    ("minimize", { h, window in h.system.setMinimized(window, true) }),
+    ("hide", { h, window in h.system.setHidden(pid: pid(of: window, h), true) }),
+    ("quit", { h, window in h.system.quit(pid: pid(of: window, h)) }),
+  ]
+
+  static func pid(of window: WindowID, _ h: Harness) -> Int32 {
+    h.system.allWindows().first { $0.id == window }!.pid
+  }
+
+  /// `b` has the keyboard, `meanwhile` happens, and `b` goes in each of the ways. Returns, for each, which windows
+  /// Arbor focused from then on.
+  func focusedAfterItGoes(
+    framed: Bool = false, _ meanwhile: (Harness, WindowID) -> Void
+  ) -> [(way: String, focused: [WindowID], h: Harness)] {
+    Self.goings.map { name, go in
+      let (h, _, b, _) = makeHarness()
+      if framed { h.run("zoom \(b.rawValue)") }
+      h.system.userFocus(b)
+      h.scheduler.advance(by: 1)
+      meanwhile(h, b)
+      let asked = h.system.focusLog.count
+      go(h, b)
+      h.scheduler.advance(by: 2)
+      expectWindowsMatchLayout(h)
+      return (name, h.system.focusLog.dropFirst(asked).map(\.window), h)
+    }
+  }
+
+  /// Somebody clicks the desktop and renames a file there. The window used last goes away meanwhile. It had the
+  /// keyboard once, not now. Arbor gives it to nobody: that would end the renaming, and bring back all the windows
+  /// that a click on the wallpaper swept aside.
+  @Test(arguments: [false, true]) func aWindowThatGoesWhileTheKeyboardIsWithFinderCostsFinderNothing(framed: Bool) {
+    let stories = focusedAfterItGoes(framed: framed) { h, _ in
+      h.system.userFocusesNothing()
+      h.scheduler.advance(by: 2)
+    }
+    for story in stories {
+      #expect(story.focused == [], "\(story.way)")
+      #expect(story.h.system.focusedWindow() == nil, "\(story.way)")
+    }
+  }
+
+  /// Finder is in front already, so no app comes forward at the click on the desktop.
+  @Test func norDoesAWindowOfFindersOwn() {
+    let (h, _, _, _) = makeHarness()
+    let finder = h.system.open(app: "Finder", bundleID: "com.apple.finder", pid: 14)
+    h.run("dock \(finder.rawValue) top")
+    h.system.userFocus(finder)
+    h.scheduler.advance(by: 1)
+    h.system.userFocusesNothing()
+    h.scheduler.advance(by: 2)
+    let asked = h.system.focusLog.count
+    h.system.close(finder)
+    h.scheduler.advance(by: 2)
+    #expect(h.system.focusLog.dropFirst(asked).map(\.window) == [])
+    expectWindowsMatchLayout(h)
+  }
+
+  /// That another app is in front and that the keyboard has moved are reported on two channels. Either can be first.
+  @Test(arguments: [false, true]) func finderComingForwardIsHeardWhicheverReportComesFirst(appFirst: Bool) {
+    let stories = focusedAfterItGoes { h, _ in
+      h.system.focused = nil
+      if !appFirst { h.controller.keyboardFocusMoved() }
+      h.system.activate(bundleID: "com.apple.finder", name: "Finder")
+      if appFirst { h.controller.keyboardFocusMoved() }
+      h.scheduler.advance(by: 2)
+    }
+    for story in stories { #expect(story.focused == [], "\(story.way)") }
+  }
+
+  /// A pause forgets who had the keyboard, and nobody tells Arbor what happened meanwhile.
+  @Test func afterAPauseThatEndsWithTheKeyboardWithFinderNothingIsTakenFromIt() {
+    let stories = focusedAfterItGoes { h, _ in
+      h.run("pause")
+      h.system.userFocusesNothing()
+      h.run("resume")
+      h.scheduler.advance(by: 2)
+    }
+    for story in stories { #expect(story.focused == [], "\(story.way)") }
+  }
+
+  /// The other side: these are losses, and a window in view ends up with the keyboard, from Arbor or (after a hide)
+  /// from macOS, because shortcuts that act on the focused window would have nothing to act on.
+  func expectHandedOn(_ stories: [(way: String, focused: [WindowID], h: Harness)]) {
+    for story in stories {
+      let focused = story.h.system.focusedWindow()
+      #expect(focused != nil && focused.map { story.h.system.isVisible($0) } == true, "\(story.way)")
+    }
+  }
+
+  /// macOS can say that the keyboard has left the known windows a moment BEFORE it says that the window is gone: the
+  /// app quits, and Finder is next. That is one event, and the window had the keyboard when it went.
+  @Test func theKeyboardsGoingReportedAMomentBeforeTheWindowsIsStillALoss() {
+    expectHandedOn(
+      focusedAfterItGoes { h, _ in
+        h.system.userFocusesNothing()
+        h.scheduler.advance(by: 0.01)
+      })
+  }
+
+  /// ⌘W on a document with changes: its sheet has the keyboard for as long as the person thinks, then sheet and
+  /// window go together. From where Arbor stands a sheet looks like the desktop, but for the app in front.
+  @Test func aWindowsOwnSheetIsNotFinder() {
+    expectHandedOn(
+      focusedAfterItGoes { h, _ in
+        h.system.sheetTakesTheKeyboard()
+        h.scheduler.advance(by: 5)
+      })
+  }
+
+  /// Back from Finder with ⌘Tab: the app's focused window is the one it was, so macOS says only that an app came
+  /// forward.
+  @Test func aWindowThatHasTheKeyboardBackFromFinderHasIt() {
+    expectHandedOn(
+      focusedAfterItGoes { h, b in
+        h.system.userFocusesNothing()
+        h.scheduler.advance(by: 2)
+        h.system.userSwitchesApp(to: b)
+        h.scheduler.advance(by: 1)
+      })
+  }
+
   /// macOS's own pick uses up what Arbor remembers of the loss, in view or not. What comes next is the user's.
   @Test func afterAnAppIsHiddenTheUsersOwnSwitchIsFollowedAtOnce() {
     for swapped in [false, true] {
