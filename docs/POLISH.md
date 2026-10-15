@@ -209,10 +209,10 @@ new table, in the same commit, so that a longer table is never mistaken for a wo
 
 ## Scoreboard
 
-Restated on 2026-10-15 under the table as it is now (S4 on glass and S7 added; the drag to an edge asked as `aside`; no cells where a panel has no words to read or no ground to see through): run 1 was 36.6 and run 2 was 42.8 under the table they were first scored by. In both, gestures still shipped on and the edges were Arbor's, so the two columns are one.
+Restated on 2026-10-15 under the table as it is now (S4 on glass and S7 added; the drag to an edge asked as `aside`; no cells where a panel has no words to read or no ground to see through) and by the judge as a second review left it (a film in which no window moves earns nothing; of two keys in a row the second's answer cannot be told): run 1 was 36.6 and run 2 was 42.8 as they were first scored. In both, gestures still shipped on and the edges were Arbor's, so the two columns are one.
 
 | Date (UTC) | Commit | Score, as it ships | With everything on | Seen | Severity 1 misses | Note |
 |---|---|---|---|---|---|---|
-| 2026-10-14 23:27 | `a391fe4` | **36.9** | 36.9 | 50% | 36 | Run 1 (`collab/polish/run-1.md`). Tabs, double clicks, the followed pinch and all stills unseen; four films void |
-| 2026-10-15 01:38 | `302a0b0` | **42.7** | 42.7 | 55% | 40 | Run 2 (`collab/polish/run-2.md`). A cast of four apps, panels in the picture; two films void |
-| 2026-10-15 04:20 | `302a0b0`, pictures of `5f18637` | **45.9** | 45.9 | 60% | 41 | Run 2's films, and for the first time the pictures at rest (`collab/polish/stills-1.md`): 64 of 125 cells seen, 45 pass |
+| 2026-10-14 23:27 | `a391fe4` | **36.2** | 36.2 | 49% | 36 | Run 1 (`collab/polish/run-1.md`). Tabs, double clicks, the followed pinch and all stills unseen; four films void |
+| 2026-10-15 01:38 | `302a0b0` | **41.9** | 41.9 | 54% | 40 | Run 2 (`collab/polish/run-2.md`). A cast of four apps, panels in the picture; two films void |
+| 2026-10-15 05:00 | `302a0b0`, pictures of `5f18637` | **44.6** | 44.6 | 59% | 41 | Run 2's films, and for the first time the pictures at rest (`collab/polish/stills-1.md`): 56 of 125 cells seen, 38 pass |

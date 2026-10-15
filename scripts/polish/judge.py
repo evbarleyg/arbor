@@ -577,6 +577,13 @@ def complete(m):
     return m
 
 
+def much(m):
+    """Whether a tenth of the room or more changed, over three frames or more: windows on their way, whether or not the ruler could tell which."""
+    _, _, width, height = m["film"].visible
+    room = width * height * m["film"].scale**2
+    return any(last - first >= 2 and (box[2] - box[0]) * (box[3] - box[1]) >= room / 10 for _, _, first, last, box in m["episodes"])
+
+
 def judge(folder, allow=None):
     film = Film(folder)
     m = complete(measure(film))
@@ -589,8 +596,8 @@ def judge(folder, allow=None):
                 verdicts[identifier] = Verdict(UNSEEN, f"the camera ran out of room: the film's last {film.dropped} frames are missing")
             elif not m["episodes"] and verdicts[identifier].status == PASS:
                 verdicts[identifier] = Verdict(UNSEEN, "nothing happens in the film")
-            # A line of words that comes and goes is a change too. Where windows were to move and none was seen to, the key did nothing or the ruler lost them.
-            elif film.kind in SETTLES and not m["motion"].seen and verdicts[identifier].status == PASS:
+            # A line of words that comes and goes is a change too. Where windows were to move, none could be followed and little of the room ever changed, the key did nothing.
+            elif film.kind in SETTLES and not m["motion"].seen and not much(m) and verdicts[identifier].status == PASS:
                 verdicts[identifier] = Verdict(UNSEEN, "no window was seen to move")
     return m, verdicts
 

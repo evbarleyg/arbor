@@ -1,10 +1,11 @@
 {
- "from": "the gallery, branch gallery/pictures ee9c11c: Actions run 38669956766, the trunk at 5f18637 with three pull requests that had not landed; older pictures where its page says so",
+ "commit": "5f18637",
+ "from": "the gallery, branch gallery/pictures ee9c11c, Actions run 38669956766: the trunk at 5f18637 with three pull requests, of which one, on tiles, has not landed; older pictures where its page says so",
  "panels": {
   "heads-up line": {
    "S1 at 1x": {
     "status": "pass",
-    "said": "Top and bottom of the line's box, every one 0 pixels between: line-hint-light at 224,611,576,38 steps of 72 and 76 levels; line-problem-light at 397,611,231,38 steps of 96 and 101; line-sentence-light at 296,611,433,38 steps of 91 and 117; bar-paused-light at 271,611,482,38 steps of 62 and 91. The upright sides are 38 px, too short to ask. The line has no other straight line of its own. (In line-hint-dark the ruler says 3 and 5 pixels between: two to four of them are the shadow's fade on the red outside, one the light rim; the side itself is one black row, then one lighter row, then the ground.)",
+    "said": "Top and bottom of the line's box, every one 0 pixels between: line-hint-light at 224,611,576,38 steps of 73 and 78 levels; line-problem-light at 397,611,231,38 steps of 97 and 102; line-sentence-light at 296,611,433,38 steps of 92 and 118; bar-paused-light at 271,611,482,38 steps of 62 and 94. The upright sides are 38 px, too short to ask. The line has no other straight line of its own. (Not asked here, for the record: line-hint-dark top a step of 80 over 1 pixel between, the light rim; bottom 54 levels, too small to ask.)",
     "pictures": [
      "line-hint-light",
      "line-problem-light",
@@ -14,14 +15,14 @@
    },
    "S1 at 2x": {
     "status": "pass",
-    "said": "line-2x-light is the panel alone, 1152 by 76, and ends at the panel's own sides, so edges on it finds no step. Its first and last row are covered 249 to 255 parts of 255 and its first and last column 255; laid over red in my own folder, edges at 20,20,1152,76 says a step of 164 levels over 0 pixels between, top and bottom. What macOS adds around it (hairline, shadow) is not in this picture at 2x.",
+    "said": "line-2x-light is the panel alone, 1152 by 76, and ends at the panel's own sides, so edges at 0,0,1152,76 finds a step of 0 on all four. The picture does say how far its outermost pixels are covered: first and last row 249 to 255 parts of 255, first and last column 255. Laid over red by that in my own folder, edges at 20,20,1152,76 says a step of 164 levels over 0 pixels between on all four sides, none half-way, no line of its own at the side. What macOS adds around it (hairline, shadow) is not in this picture at 2x.",
     "pictures": [
      "line-2x-light"
     ]
    },
    "S2": {
     "status": "pass",
-    "said": "No side with one row half-way in any of the four light pictures (boxes as in S1). Enlarged: outside one full darker row (line-hint-light row 610: 172,38,40), then one lighter row (611: 238,138,140), then ground from row 613. Left and right are mirror images to the level even where the width is odd: line-problem-light 231 px, columns 396 and 397 against 628 and 627; line-sentence-light 433 px.",
+    "said": "No side with one row half-way in any of the four light pictures (boxes as in S1), nor in parts of line-sentence-light at 300,611,145,38, at 450,611,160,38 and at 625,611,102,38. Enlarged: outside one full darker row (line-hint-light row 610: 172,38,40), then one lighter row (611: 238,138,140), then ground from row 613. Left and right are mirror images to the level even where the width is odd: line-problem-light 231 px, columns 396 and 397 against 628 and 627; line-sentence-light 433 px.",
     "pictures": [
      "line-hint-light",
      "line-problem-light",
@@ -31,7 +32,7 @@
    },
    "S3": {
     "status": "pass",
-    "said": "In all thirteen: 18 to 19 pt at the left, 19 to 20 at the right, 13 to 14 above, 10 below (13 where no letter goes under the line). On the whole box fits is fooled by what shows outside the round corners (0 all round), so the sides come from the middle rows (line-hint-light at 224,623,576,14: 19 and 19) and above and below from the box without its corners (at 236,611,552,38: 13 and 10). Whole box where the ground allows: line-problem-dark at 397,611,231,38: 18, 13, 19, 10; bar-paused-dark at 271,611,482,38: 19, 13, 19, 10; line-2x-light at 0,0,1152,76 with scale 2: 18.5, 13.5, 19, 10. By eye no word cut, none ending in dots, none touching another. The longest line shown is 576 pt of a screen of 1024; none longer, and no larger text size, is in the pictures.",
+    "said": "fits on the whole box now answers in twelve of thirteen: left, top, right, bottom in pt: line-hint at 224,611,576,38: 19, 13, 19, 10 (dark, and contrast at 224,617,576,38: 18, 13, 19, 10); line-sentence at 296,611,433,38: 19, 14, 20, 10 (dark, and contrast at 296,617,433,38: 18, 13, 19, 10); bar-paused at 271,611,482,38 and at 271,617,482,38: 19, 13, 19, 10 in all three; line-problem-dark at 397,611,231,38 and -contrast at 397,617,231,38: 18, 13, 19, 10; line-2x-light at 0,0,1152,76 with scale 2: 18.5, 13.5, 19, 10. In line-problem-light the glass goes from pale to middle green within the box and the pale end counts as ink (3, 1, 19, 1), so part by part: at 397,611,60,38: 19 left, 14 above, 13 below; at 480,611,148,38: 19 right, 14 above, 10 below. By eye no word cut, none ending in dots, none touching another. The longest line shown is 576 pt of a screen of 1024; none longer, and no larger text size, is in the pictures.",
     "pictures": [
      "line-hint-light",
      "line-hint-dark",
@@ -50,7 +51,7 @@
    },
    "S4 light on glass": {
     "status": "miss",
-    "said": "The worst ground is not the red window but the dark wallpaper seen through the Desktop's tile, which the glass turns into a middle green (115,150,137) under ink of (35,45,41). line-sentence-light at 313,623,398,17: worst 4.31 : 1 at x 553 (the wh of where), 4.36 at x 505 and 529 (the 9 of the keys and saves), 7.25 at best over the pale tile; its keys alone at 457,623,52,17: 4.55 and 5.13. line-problem-light at 414,623,196,17: 4.36 to 4.40 in five strips of eight (showing everything), best 6.38. These sentences are all the line says and one names the keys to press, so 4.5 is asked: short by 0.1 to 0.2. Over the red window line-hint-light holds 5.05 for the sentence at 242,623,328,17 and 5.02 for the hint with its keys at 588,623,196,17; bar-paused-light at 288,623,448,17: 5.31 at worst, keys 5.87.",
+    "said": "The worst ground is not the red window but the dark wallpaper seen through the Desktop's tile, which the glass turns into a middle green (115,150,137) under ink of (35,46,42). line-sentence-light at 313,623,398,17: worst 4.30 : 1, at most 4.48 with the ruler's error, at x 529 (saves); 4.32 at x 505 and 4.34 at x 553 beside it; 7.26 at best over the pale tile; its keys alone at 457,623,52,17: 4.43, at most 4.61, which reaches the mark. line-problem-light at 414,623,196,17: worst 4.31, at most 4.49, at x 534; 4.32 and 4.33 beside it (showing everything); best 6.95. These sentences are all the line says and one names the keys to press, so 4.5 is asked, which a reading of 4.32 reaches: both worst strips stay 0.01 to 0.02 under that. It is no quirk of a strip: the darkest pixel of any stroke there, (35,45,41) at 530,629 and in line-problem-light at 524,629, is 4.36 : 1 to its ground, and the same ink fills the strokes of five strips. Elsewhere it holds: over the red window line-hint-light 5.00 (at most 5.20) for the sentence at 242,623,328,17 and 4.96 (5.17) for the hint with its keys at 588,623,196,17; bar-paused-light at 288,623,448,17: 5.25 (5.47) at worst, keys at 378,623,48,17: 5.73. The colour is macOS's label colour on macOS's material; both are Arbor's choice for a panel of its own.",
     "pictures": [
      "line-sentence-light",
      "line-problem-light",
@@ -60,7 +61,7 @@
    },
    "S4 dark on glass": {
     "status": "pass",
-    "said": "Worst over the red window: line-hint-dark 6.12 : 1 for the sentence at 242,623,328,17 and 6.12 for the hint with its keys at 588,623,196,17, ink (246,233,234) on (163,40,45). line-sentence-dark at 313,623,398,17: 7.62 at worst (x 697, over the green icon), 14.38 at best. line-problem-dark at 414,623,196,17: 10.81 at worst. bar-paused-dark at 288,623,448,17: 12.35 at worst.",
+    "said": "Worst over the red window: line-hint-dark 6.06 : 1 (at most 6.32) for the sentence at 242,623,328,17 and 6.03 (6.28) for the hint with its keys at 588,623,196,17, ink (245,231,232) on (163,40,45). line-sentence-dark at 313,623,398,17: 7.65 (7.97) at worst (x 697, over the green icon), 14.26 at best; its keys at 457,623,52,17: 13.15. line-problem-dark at 414,623,196,17: 10.91 (11.36) at worst. bar-paused-dark at 288,623,448,17: 12.24 (12.75) at worst, keys at 378,623,48,17: 12.29.",
     "pictures": [
      "line-hint-dark",
      "line-problem-dark",
@@ -70,7 +71,7 @@
    },
    "S6": {
     "status": "pass",
-    "said": "Outline to what is outside, top and bottom: bar-paused-contrast at 271,617,482,38: 3.95 and 6.51 : 1 (the lowest); line-hint-contrast at 224,617,576,38 over red: 4.21 and 4.78; line-sentence-contrast at 296,617,433,38: 8.43 and 12.37, and over the pale tiles at 625,617,102,38: 7.11 and 6.3, where the dark hairline (54,59,57) carries it; line-problem-contrast at 397,617,231,38: 11.6 and 12.37. Ink to ground, on a flat (220,220,220): line-hint-contrast at 242,629,540,17: 14.97 at worst; the other three 15.31 throughout. The dot between sentence and hint, no word, at 571,632,14,10: 3.07.",
+    "said": "The line at the side to what is outside, top and bottom (the ground's own in brackets): bar-paused-contrast at 271,617,482,38: 4.01 and 6.83 : 1 (3.28, 5.59); line-hint-contrast at 224,617,576,38 over red: 4.33 and 5.05 (3.56, 4.15); line-sentence-contrast at 296,617,433,38: 9.27 and 12.55 (7.63, 10.34); line-problem-contrast at 397,617,231,38: 11.71 and 12.55 (9.65, 10.34). Over the pale tiles the ground alone would not do and the dark hairline carries it: line-sentence-contrast at 625,617,102,38: 6.87 and 5.9 (1.21, 1.56); at 300,617,145,38 bottom 5.88 (1.59), top 3.2 (2.69), where a tile's label stands right above the side and darkens what counts as outside. The lowest is 3.2. Ink to ground, on a flat (220,220,220), worst strip (at most, with the ruler's error): line-hint-contrast hint at 588,629,196,17: 15.07 (15.70), sentence at 242,629,328,17: 15.08 (15.71); line-sentence-contrast at 313,629,398,17: 15.11 (15.74); line-problem-contrast at 414,629,196,17: 15.14 (15.77); bar-paused-contrast at 288,629,448,17: 15.15 (15.78). The alert about Python in line-hint-contrast is 250 px above the line and touches nothing of it.",
     "pictures": [
      "line-hint-contrast",
      "line-problem-contrast",
@@ -82,7 +83,7 @@
   "name field": {
    "S1 at 1x": {
     "status": "pass",
-    "said": "name-light and name-typed-light at 322,179,380,96: top a step of 77 levels, bottom 82, each over 0 pixels between. The upright sides, asked over 60 rows of their straight part with the box at 322,177,380,100: 79 levels over 0 pixels between, left and right. The panel has no other straight line of its own: nothing is drawn round the field.",
+    "said": "name-light and name-typed-light at 322,179,380,96, all four sides now asked by the tool itself: left 80 levels, top 78, right 80, bottom 84, each over 0 pixels between. The panel has no other straight line of its own: nothing is drawn round the field. (Not asked here: name-dark left and right 68 levels over 2 pixels between, 1 with a reach of 3: one is the shadow's fade on the red outside, one the light rim.)",
     "pictures": [
      "name-light",
      "name-typed-light"
@@ -90,7 +91,7 @@
    },
    "S2": {
     "status": "pass",
-    "said": "No side with one row or column half-way, at 322,179,380,96 and at 322,177,380,100. Enlarged: one full darker column outside (321: 163,36,38), one lighter (322: 240,141,146), ground from 324; the right side mirrors it at 702 and 701; top rows 178 and 179, bottom 275 and 274 likewise.",
+    "said": "No side with one row or column half-way at 322,179,380,96 in either. Enlarged: one full darker column outside (321: 163,36,38), one lighter (322: 240,141,146), ground from 324; the right side mirrors it at 702 and 701; top rows 178 and 179, bottom 275 and 274 likewise.",
     "pictures": [
      "name-light",
      "name-typed-light"
@@ -98,7 +99,7 @@
    },
    "S3": {
     "status": "pass",
-    "said": "fits at 322,179,380,96: name-light, name-dark and name-typed-dark 18 pt left, 15 above, 272 right, 17 below; name-typed-light 19, 15, 272, 17. In the contrast pair the alert about Python covers x 382 to 641; what is left of it keeps 18 to 19 pt from the left (at 322,197,380,64). By eye nothing cut, nothing ending in dots. All the words shown are short (the longest, Name this space, is 89 px of 380): no picture has a long name typed or a long name in the note, so the hardest case of the check S3 is not shown.",
+    "said": "fits at 322,179,380,96: name-light, name-dark and name-typed-dark 18 pt left, 15 above, 272 right, 17 below; name-typed-light 19, 15, 272, 17. In the contrast pair the alert about Python covers x 382 to 641; the part left of it at 322,181,58,96 keeps 18 (typed: 19) pt from the left, 15 above, 17 below. By eye nothing cut, nothing ending in dots. All the words shown are short (the longest, Name this space, is 89 px of 380): no picture has a long name typed or a long name in the note, so the hardest case of the check S3 is not shown.",
     "pictures": [
      "name-light",
      "name-dark",
@@ -110,7 +111,7 @@
    },
    "S4 light on glass": {
     "status": "pass",
-    "said": "Passes by the ruling that macOS is the measure of what macOS draws in its own colour (docs/POLISH.md). The heading above the field says what it is for, so the placeholder is not its only label. As measured: Over the red window, the only ground shown. The placeholder Name in name-light at 340,212,52,25: 2.02 : 1, ink (183,73,79) on (240,130,136): under 3, and it is the only mark of where one types. The rest holds: heading Name this space at 340,192,91,13: 4.80; note Arbor at 339,248,31,11: 4.80; in name-typed-light the typed name at 340,216,56,21: 6.89, the note with the return sign at 340,248,82,11: 4.77 at worst. The placeholder's colour is macOS's own.",
+    "said": "Over the red window, the only ground shown. The heading Name this space is the field's label, words one must read in order to act, in a secondary colour that is Arbor's choice: at 340,192,91,13 in both pictures 4.65 : 1 at worst (at most 4.85), 4.78 at best, ink (113,3,9) on (240,130,136): over 4.5 without the ruler's error being called on. Typed name in name-typed-light at 340,216,56,21: 6.86 (7.15). Notes, secondary: Arbor in name-light at 339,248,31,11: 4.68 (4.87); the one with the return sign in name-typed-light at 340,248,82,11: 4.68 (4.88) at worst. The placeholder Name in name-light at 340,212,52,25: 2.02 (2.10), ink (183,73,79): under 3, but it is macOS's own placeholder in macOS's own colour and the heading above says what the field is for, so it costs nothing.",
     "pictures": [
      "name-light",
      "name-typed-light"
@@ -118,7 +119,7 @@
    },
    "S4 dark on glass": {
     "status": "miss",
-    "said": "The placeholder is exempt (the heading says what the field is for), but that heading, and the note that says what return will do, are what one reads in order to act, and stay under 4.5. As measured: Over the red window, the only ground shown. The placeholder Name in name-dark at 340,212,52,25: 2.26 : 1, ink (228,107,112) on (163,42,48): under 3. The heading at 340,192,91,13: 3.85, and in name-typed-dark the note that says what return will do at 340,248,82,11: 3.83, ink (255,166,171): enough for secondary words, not the 4.5 of words one reads in order to act. Note Arbor in name-dark at 339,248,31,11: 3.86. The typed name at 340,216,56,21: 7.16.",
+    "said": "Over the red window, the only ground shown. The heading Name this space, the field's label, at 340,192,91,13 in both pictures: 3.75 : 1 at worst (at most 3.90), 3.84 at best, ink (255,165,170) on (163,42,47): 4.5 is asked of words one must read in order to act, which a reading of 4.32 would reach; the secondary colour is Arbor's choice. The placeholder Name in name-dark at 340,212,52,25: 2.26 (2.35), ink (227,106,112): macOS's own, with a heading above it, costs nothing. Typed name in name-typed-dark at 340,216,56,21: 7.14 (7.44). Notes, secondary: Arbor in name-dark at 339,248,31,11: 3.77 (3.93); the one with the return sign in name-typed-dark at 340,248,82,11: 3.79 (3.95) at worst.",
     "pictures": [
      "name-dark",
      "name-typed-dark"
@@ -128,7 +129,7 @@
   "go to": {
    "S1 at 1x": {
     "status": "pass",
-    "said": "go-to-light: the panel at 212,199,600,300: steps of 104, 99, 148 and 116 levels (left, top, right, bottom), each over 0 pixels between. The chosen row at 220,263,584,38: bottom 172 levels over 0 pixels; for its top the ruler says 7 pixels, which is fooled (the dividing line at y 255 lies within its reach): pixel by pixel 237,161,164 at y 262 is followed by 0,112,245 at y 263, nothing between. The dividing line is one whole row, y 255, of 230,230,230. go-to-none-light: the panel at 212,199,600,102: 112, 99, 148 and 93 levels, each over 0 pixels.",
+    "said": "go-to-light: the panel at 212,199,600,300: steps of 106, 100, 148 and 118 levels (left, top, right, bottom), each over 0 pixels between; the same with a reach of 3. The chosen row at 220,263,584,38: top 168 levels over 0 pixels, bottom 172 over 0 (its ends are 38 px: not asked). The dividing line at 212,255,600,1 is one whole row of 230,230,230; its step is too small to ask. go-to-none-light: the panel at 212,199,600,102: 114, 100, 148 and 96 levels, each over 0 pixels.",
     "pictures": [
      "go-to-light",
      "go-to-none-light"
@@ -136,7 +137,7 @@
    },
    "S2": {
     "status": "pass",
-    "said": "go-to-light at 212,199,600,300 and go-to-none-light at 212,199,600,102: no side has a row half-way; the rim is one whole pixel (232,232,232 at x 212 and x 811, y 199 and y 498), the dark hairline outside it one whole pixel, the dividing line one whole row at y 255, the chosen row begins at x 220 and y 263 and ends at x 803 and y 300 without a mixed pixel. Enlarged eight times the corners are smooth and the sides sharp.",
+    "said": "go-to-light at 212,199,600,300 and at 220,263,584,38, go-to-none-light at 212,199,600,102: the ruler finds no side with a row half-way, at a reach of 5 or of 3. Enlarged: the rim is one whole pixel (232,232,232 at x 212 and x 811, y 199 and y 498), the dark hairline outside it one whole pixel, the dividing line one whole row at y 255, the chosen row runs from x 220 to x 803 and y 263 to y 300 without a mixed pixel.",
     "pictures": [
      "go-to-light",
      "go-to-none-light"
@@ -144,11 +145,12 @@
    },
    "S3": {
     "status": "pass",
-    "said": "The ruler on the whole panel is fooled (0 pt: the dividing line runs from side to side on purpose; 8 pt in go-to-alone-light is the chosen row's fill), so it measured part by part. go-to-alone-light, -dark, -contrast: in the chosen row at 8,64,584,38 the ink keeps 12 pt from the left, 9 from the top, 13 from the right, 9 from the bottom. In the panel: caret at x 21, icons from x 19, words from x 52, notes end at x 578 of 600 (21 pt), the field's words y 13 to 38 (13 pt from the top, 17 from the dividing line), the last row's words end at y 279 of 300 (20 pt). apps-go-to-light and -dark (nine rows, 600 by 414): 12, 9, 12 to 13, 9 in the chosen row; last words end at y 393 of 414. go-to-none-light and -dark: 'Nothing matches' at 231,270,99,15 is 20 pt from the left and 17 from the bottom. go-to-2x-light (1.11 pixels to the point, see other): chosen row at 476,347,649,42: 11.7, 9, 13.5, 9 pt; the longest note, 'floating, on Arbor Test Display', ends 19 pt from the panel's side; the longest title, at 575,444,240,17, ends 113 pt before its note begins. No word is cut, none ends in an ellipsis, none touches another (app to title: 10 to 12 pt). Not shown in any picture: a title long enough to meet its note; the longest here is 32 letters.",
+    "said": "Part by part, as the ruler's header asks (the dividing line and the chosen row's fill are ink to it: 8 pt or 1 pt on the whole panel). go-to-alone-contrast, where every word is 60 levels from the ground: the field at 0,0,600,56: 21 pt from the left (the caret), 13 from the top, 200 from the right, 17 from the dividing line; the rows at 0,102,600,198: 23 from the left, 21 from the right, 20 from the bottom; the same on screen, go-to-contrast at 212,379,600,122: 23, 12, 21, 20. The chosen row at 8,64,584,38 in all three go-to-alone pictures: 12, 9, 13, 9. apps-go-to-light and -dark (nine rows): chosen row 12, 9, 12 to 13, 9; rows at 0,102,600,312: 20 from the left, 17 to 21 from the bottom. go-to-none-light, -dark, -contrast: what is typed 23 from the left, 13 to 18 from the top (field at 212,199,220,56); 'Nothing matches' 21 from the left, 17 from the line above and 17 from the bottom (at 212,256,220,45). go-to-2x-light (1.11 pixels to the point, see other): chosen row at 476,347,649,42: 11.7, 9, 13.5, 9. In the light and dark looks the placeholder, titles and notes are under 60 levels from the ground and are no ink to the ruler; by hand at 20 to 25 levels they lie where they lie in the contrast look (placeholder x 24 to 399, titles x 97 to 311, notes x 545 to 578 of 600). By eye: no word cut, none ending in an ellipsis, none touching another (app to title 10 to 12 pt; the longest title, go-to-2x-light at 575,444,240,17, ends 113 pt before its note). Not shown in any picture: a title long enough to meet its note; the longest here has 32 letters.",
     "pictures": [
      "go-to-alone-light",
      "go-to-alone-dark",
      "go-to-alone-contrast",
+     "go-to-contrast",
      "go-to-none-light",
      "go-to-none-dark",
      "go-to-none-contrast",
@@ -159,7 +161,7 @@
    },
    "S4 light on glass": {
     "status": "miss",
-    "said": "go-to-light: the field's placeholder at 232,213,384,27: 1.06 to 1.26 : 1 (198,198,198 on 237,155,159 over the red window, on 156,198,228 over the blue; the strip at x 448 that says 1.01 took the ground's own gradient for ink and is left out). Titles, which one must read to choose among six windows of one app: 1.84 : 1 over the red window at 309,312,122,16 and at 309,350,218,16 (128,128,128 on 237,155,159), at best 2.39 at 309,464,118,16. Notes: 1.11 : 1 over the blue window at 775,428,18,13, 1.12 at 754,352,39,13, at best 1.15. App names hold: 5.70 to 6.44 at 263,350,38,16. In the chosen row: app 4.53, title 3.42 at 309,274,108,16, note 2.96 at 775,276,18,13. go-to-none-light: 'Nothing matches' 1.88 : 1 at 231,270,99,15; what is typed 8.54 at 233,215,34,21. go-to-2x-light, over sky: titles 2.93 to 3.26, notes 1.14 to 1.47 at 938,403,174,15, placeholder about 1.26.",
+    "said": "Each reading is followed in brackets by what it is at most, the ruler's error allowed for. go-to-light. Placeholder at 232,213,384,27: 1.06 : 1 at worst (at most 1.10; x 592, 197,197,198 on 150,198,235 over the blue window), 1.25 at best (over red), middle 1.19. macOS draws it, in its own colour; that it is the field's ONLY label is Arbor's choice (no heading, no magnifier), so it needs 4.5. Titles, which one must read to choose among six windows of one app, drawn by Arbor in macOS's secondary grey: 1.84 (1.91) over the red window at 309,312,122,16 and at 309,350,218,16, at best 2.38 at 309,464,118,16. Notes, drawn by Arbor in the tertiary grey: 1.11 (1.16) over the blue window at 775,428,18,13 and 775,466,18,13, 1.12 (1.16) at 754,390,39,13, at best 1.15 at 775,314,18,13. App names hold: 5.67 (5.90) at 263,350,38,16 to 6.46. The chosen row is Arbor's own drawing too (a rounded fill in macOS's accent colour, not a table's selection): app name, white on the accent as macOS pairs them, 4.50 (4.69) at 263,274,38,16; the title at four fifths of white 3.40 (3.55) at 309,274,108,16, under the 4.5 of words one must read; the note at seven tenths 2.93 (3.05) at 775,276,18,13, which reaches 3 within the ruler's error. go-to-none-light: 'Nothing matches' 1.88 (1.96) at 231,270,99,15; what is typed 8.49 at 233,215,34,21. go-to-2x-light, over sky: titles 2.95 (3.08) at 575,528,240,17 to 3.23, notes 1.16 (1.20) at 938,403,174,15 to 1.44, placeholder 1.03 (1.07) at x 514 to 1.26 at 490,292,424,30.",
     "pictures": [
      "go-to-light",
      "go-to-none-light",
@@ -168,7 +170,7 @@
    },
    "S4 dark on glass": {
     "status": "miss",
-    "said": "go-to-dark: the placeholder at 232,213,384,27: 1.01 : 1 at x 424 (64,64,64 on 117,37,52), 1.02 to 1.07 over the red window, at best 1.55 over the night sky: it is darker than its ground on the left and lighter on the right. Titles 2.31 : 1 at 309,426,160,16 and 2.35 to 2.40 over the red window at 309,350,218,16 (124,124,124 on 122,35,41), at best 3.45 past x 477. Notes 1.34 : 1 over the blue window at 754,390,39,13 (62,66,68 on 29,89,125, darker than the ground), at best 1.42. App names hold: 8.14 to 9.79 at 263,426,38,16. In the chosen row (0,122,255): app 4.02 at 263,274,38,16, under 4.5; title 3.08; note 2.69 at 775,276,18,13. go-to-none-dark: 'Nothing matches' 2.18 : 1 at 231,270,99,15; what is typed 9.42.",
+    "said": "Each reading is followed in brackets by what it is at most. go-to-dark. Placeholder at 232,213,384,27 (macOS's drawing and colour; the field's only label by Arbor's choice, so 4.5 is asked): 1.02 : 1 at worst (at most 1.07; x 352, 65,64,64 on 122,35,41), 1.02 to 1.08 all over the red window, at best 1.55 over the night sky. Titles (Arbor's drawing, secondary grey): 2.28 (2.38) at 309,426,160,16, 2.33 (2.43) and 2.34 (2.44) over the red window at 309,312,122,16 and 309,350,218,16, at best 3.43 past x 477. Notes (Arbor's, tertiary grey): 1.35 (1.40) over the blue window at 754,390,39,13, darker than their ground, at best 1.41 at 775,314,18,13. App names hold: 8.08 (8.41) at 263,426,38,16 to 9.69. The chosen row (Arbor's fill of macOS's accent, 0,122,255): app name in white 3.99 (4.16) at 263,274,38,16, macOS's own pairing, which costs nothing; title at four fifths of white 3.07 (3.19) at 309,274,108,16, under 4.5; note at seven tenths 2.66 (2.77) at 775,276,18,13, under 3 even with the error allowed: these two are Arbor's choices. go-to-none-dark: 'Nothing matches' 2.19 (2.28) at 231,270,99,15; what is typed 9.43 at 233,215,34,21.",
     "pictures": [
      "go-to-dark",
      "go-to-none-dark"
@@ -176,7 +178,7 @@
    },
    "S6": {
     "status": "miss",
-    "said": "The outline passes, the ink does not. Outline, go-to-contrast, panel at 212,201,600,300: 4.15 : 1 at the left (red), 4.17 at the right (blue), top 3.95 over red (x 230 to 380) and 3.96 over blue (x 645 to 795), bottom 6.63 over the pale tiles, 7.11 over the dark green, 4.47 over blue; the middle of the top is under the alert about Python and was not measured. Ink on 230,230,230: app names 16.83, titles 7.36 to 9.40 at 309,390,216,16, 'Nothing matches' 8.59 (go-to-none-contrast at 231,272,99,15), typed words 16.83: these pass. Under 7 : 1: the placeholder 3.80 at 232,215,146,27 (115,115,115), the same along its whole length in go-to-alone-contrast at 24,14,378,27; notes 4.07 at 754,354,39,13 and 4.60 at 775,316,18,13 (102,102,102); in the chosen row (0,64,221) the title 5.35 (go-to-alone-contrast at 97,75,108,16) and the note 4.43 at 775,278,18,13; its app name 7.56 passes.",
+    "said": "It misses on ink. Each reading is followed in brackets by what it is at most. Ink on 230,230,230, under 7 : 1: the placeholder (macOS's drawing and colour, the field's only label by Arbor's choice) 3.78 (3.93) at 232,215,96,27 clear of the alert's shadow, 3.77 (3.93) along its whole length in go-to-alone-contrast at 24,14,378,27; notes (Arbor's drawing, tertiary grey) 4.34 (4.53) at 754,354,39,13 and 754,392,39,13, 4.49 (4.68) at 775,316,18,13; in the chosen row (Arbor's fill of macOS's accent, 0,64,221) the title 5.30 (5.53) in go-to-alone-contrast at 97,75,108,16 and the note 4.37 (4.55) at 775,278,18,13, Arbor's choices. At 7 or more: app names 16.72 at 263,314,38,16; titles 8.89 at 309,428,160,16 and 309,466,118,16 and in go-to-alone-contrast at 97,113,122,16, 97,151,218,16 and 97,189,216,16, and 7.36 (7.67) even under the shadow of the alert about Python at 309,390,216,16; 'Nothing matches' 9.12 (go-to-none-contrast at 231,272,99,15); typed words 16.74 at 233,217,33,21; the chosen row's app name in white 7.50 (7.81) at 263,276,38,16. Outline, go-to-contrast, panel at 212,201,600,300, the line at the side and then the ground, to what is outside: left (red) 3.28 and 4.19; right (blue) 3.19 and 4.19; top over red (x 230 to 380) 3.45 and 3.92, over blue (x 645 to 795) 3.47 and 3.93; bottom over the pale tiles 6.13 and 1.65, over blue 4.05 and 4.55: all at 3 or more. One stretch is under: the bottom over the dark green wallpaper (x 462 to 612) 2.06 for the line, a dark hairline (13,23,17) on dark green (44,81,59), where the pale ground behind it stands 7.11 and the side is plain to the eye. That hairline lies outside the panel's 600 points: macOS's. go-to-none-contrast at 212,201,600,102: 3.27 left, 3.80 right, top 3.45 and 3.47, bottom 4.03 and 4.01. The middle of the top is under the alert and was not measured.",
     "pictures": [
      "go-to-contrast",
      "go-to-none-contrast",
@@ -187,7 +189,7 @@
   "minimap": {
    "S1 at 1x": {
     "status": "pass",
-    "said": "minimap-light: the panel at 396,489,232,160: top 73, right 75, bottom 77 levels, each over 0 pixels between. Left: the ruler says 1 pixel, fooled (the blue line round the view at x 403 lies within its reach); pixel by pixel at y 615: 228,50,54 at x 394, hairline 163,36,38 at x 395, 236,138,139 at x 396: nothing between. The line round the view at 403,496,99,94: top 180 levels over 1 pixel (that pixel is the tinted gap inside it, a colour of its own), bottom 113 over 0. The large plate at 536,499,82,110: right 89 levels over 0, left over 1 (the Desktop strip's outline, in reach). The strip at 501,499,33,140: 1 and 1. Every change of colour I read pixel by pixel (x 403 to 406, 451 to 454, 498 to 502, 533 to 536, 617 to 618; y 496 to 499, 587 to 590, 608 to 611, 638 to 639) happens between two neighbouring pixels. apps-minimap-light: the same: 210,214,212 then 0,112,245 twice then 185,201,215 then the plate; the ruler's 2 pixels at the ring's top at 7,7,216,146 are the ring and the gap, not a blur.",
+    "said": "minimap-light: the panel at 396,489,232,160: steps of 76, 74, 76 and 79 levels (left, top, right, bottom), each over 0 pixels between; the same at a reach of 3. The large plate at 536,499,82,110, reach 3: top and right 89 levels over 0 pixels (left and bottom too small to ask: a neighbour 2 px away is within reach). The blue line round the view at 403,496,99,94, reach 3: left, top and right 116 levels over 1 pixel. The plate in view at 406,499,93,88: 154 levels over 1 pixel on all four sides; that pixel is the tinted gap between line and plate, a colour of its own. The Desktop strip at 501,499,33,140: left 116 over 1. apps-minimap-light, reach 3: the line at 7,7,216,146: 90, 84, 80 and 99 levels over 1; plates at 112,10,85,69, 112,81,85,69 and 36,62,48,88: 0 or 1 pixel on every side asked. Pixel by pixel, lines across both pictures (minimap-light y 540, y 625, x 430, x 580; apps-minimap-light y 40, y 130, x 60, x 150) are runs of flat colour that change between two neighbouring pixels, for example 237,128,130 then 0,112,245 twice then 208,125,143 once then 35,102,91 for 93 pixels: no blended pixel anywhere.",
     "pictures": [
      "minimap-light",
      "apps-minimap-light"
@@ -195,7 +197,7 @@
    },
    "S2": {
     "status": "pass",
-    "said": "minimap-light at 396,489,232,160: the ruler's ONE ROW HALF-WAY at the left is the blue line at x 403 within its reach, not the side: at x 395 to 396 there is no mixed pixel, nor at the top (y 488 to 489), right (x 627 to 628) or bottom (y 648 to 649). Margins are 10 px on all four sides, gaps between plates 2 px throughout. The pixel inside the blue line (208,125,143 at x 405, x 499, y 498, y 587) is the ground with 12 in a hundred of blue, the same on all four sides and over the whole view in apps-minimap-light (185,201,215): a tint, not a half-covered row.",
+    "said": "minimap-light: the panel at 396,489,232,160: no side with a row half-way, at a reach of 5 or 3 (the first ruler's flag at the left is gone). The ruler does say ONE ROW HALF-WAY on all four sides of the plate in view at 406,499,93,88, and in apps-minimap-light on sides of the line at 7,7,216,146 and of the plates at 112,10,85,69 and 112,81,85,69: in each case the row is the gap of 1 or 2 px between two marks, which the shortest reach (3) cannot leave out. The pixel in question (208,125,143 at x 405, x 499, y 498, y 587) is the ground with 12 in a hundred of the accent colour; the same tint fills every gap inside the view in apps-minimap-light (185,201,215, in runs of 1 and 2 whole pixels): a fill, not a half-covered row. Margins are 10 px on all four sides, gaps between plates 2 px throughout.",
     "pictures": [
      "minimap-light",
      "apps-minimap-light"
@@ -203,7 +205,7 @@
    },
    "S6": {
     "status": "pass",
-    "said": "minimap-contrast: the panel at 397,495,231,160 on the red window: outline 4.43 : 1 at the left, 4.22 at the top, 4.43 at the right, 4.78 at the bottom; all four sides crisp (steps of 178 to 201 levels over 0 pixels). It has a dark hairline (61,5,12, by itself 3.11 : 1 to the red 208,19,40) and a pale rim (242,241,241). No words, so no ink is asked. What is inside it is fainter: see other.",
+    "said": "minimap-contrast: the panel at 397,495,231,160 on the red window, the line at the side and then the ground, to what is outside: left 4.64 and 3.81, top 4.34 and 3.57, right 4.64 and 3.81, bottom 5.08 and 4.17; all four sides crisp (200 to 202 levels over 0 pixels). The line is a dark hairline outside the frame (61,5,12, by itself 3.11 : 1 to the red 208,19,40; macOS's) and a pale rim (242,241,241, 4.89). No words, so no ink is asked. What is inside is fainter: see other.",
     "pictures": [
      "minimap-contrast"
     ]
@@ -212,7 +214,7 @@
   "shortcuts": {
    "S1 at 1x": {
     "status": "pass",
-    "said": "sheet-light, panel at 29,145,967,446: left a step of 77 levels over 0 pixels between, top 80 over 0, right 119 over 0; the bottom's step is 23 levels over the pale tiles, too small to ask. The bottom can be asked in sheet-own-light at 29,75,967,586: 114 levels over 0. opaque-light at 29,148,967,446: left 175 over 0, top 95 over 0, right 228 over 0. The panel has no straight line of its own inside.",
+    "said": "sheet-light, panel at 29,145,967,446: left a step of 78 levels over 0 pixels between, top 80 over 0, right 119 over 0 (the same at a reach of 3); the bottom's step is 30 levels over the pale tiles, too small to ask. opaque-light at 29,148,967,446: left 176 over 0, top 98 over 0, right 228 over 0, bottom 62 over 0. sheet-own-light at 29,75,967,586: left 176 over 0, bottom 118 over 0; top 24 and right 44 levels, too small. The panel has no straight line of its own inside.",
     "pictures": [
      "sheet-light",
      "opaque-light",
@@ -221,7 +223,7 @@
    },
    "S2": {
     "status": "pass",
-    "said": "No side with one row half-way in sheet-light at 29,145,967,446, opaque-light at 29,148,967,446 or sheet-own-light at 29,75,967,586. Pixel by pixel across the left side of sheet-light at row 300: red (228,50,54), one dark rim pixel (163,36,38) at x 28, then the panel (239,141,144) at x 29; the same on the right at x 995 and 996. The corners enlarged 8 times (20,136,60,40 and 960,560,50,40) show one clean rim.",
+    "said": "No side with one row half-way in sheet-light at 29,145,967,446 or opaque-light at 29,148,967,446, at a reach of 5 or of 3, nor in sheet-own-light at 29,75,967,586 at 5. (At a reach of 3 the ruler calls sheet-own-light's right side half-way: outside it there, at x 996 to 998, lies the two-pixel edge of a green window, not the panel's.) Pixel by pixel across the left side of sheet-light at row 300: red (228,50,54), one dark rim pixel (163,36,38) at x 28, then the panel (239,141,144) at x 29; the same on the right at x 995 and 996. The corners enlarged 8 times (20,136,60,40 and 960,560,50,40) show one clean rim.",
     "pictures": [
      "sheet-light",
      "opaque-light",
@@ -230,7 +232,7 @@
    },
    "S3": {
     "status": "pass",
-    "said": "sheet-own-light at 29,75,967,586 (the longest list, flat ground): ink keeps 27 pt from the left, 24 from the top, 28 from the right, 22 from the bottom. opaque-light and sheet-contrast at 29,148,967,446: 27 left, 28 right, 22 bottom (their top is under the Python alert). On glass the whole box fools the ruler (three grounds), so side by side: sheet-light at 700,200,296,260 keeps 28 from the right; sheet-dark at 440,520,150,71 keeps 22 from the bottom. sheet-2x-light (1.11 px to the point, see other) in four stretches: 29.7 left, 25.2 top, 28.8 right, 23.4 bottom. By eye: no word cut off, only Go to… ends in dots and that is its name; keys end at x 135 and titles begin at x 148 (13 px); the longest title of column one ends at x 326 and column two's keys begin at x 363 (37 px); column two to three 645 to 683 (38 px).",
+    "said": "sheet-own-light at 29,75,967,586 (the longest list, flat ground): ink keeps 27 pt from the left, 24 from the top, 28 from the right, 22 from the bottom. opaque-light and sheet-contrast at 29,148,967,446: 27 left, 28 right, 22 bottom (their top is under the Python alert). On glass the whole box fools the ruler (three grounds), so part by part. sheet-light: 27 from the left at 29,480,200,24, 28 from the right at 700,200,296,260, 24 from the top at 480,145,110,60; at 440,520,150,71 the last line is too faint to be ink. sheet-dark: the same 27, 28, 24, and 22 from the bottom at 440,520,150,71. sheet-2x-light (1.11 px to the point, see other) in four parts: 29.7 left, 25.2 top, 28.8 right, 23.4 bottom. By eye: no word cut off, only Go to… ends in dots and that is its name; keys end at x 135 and titles begin at x 148 (13 px); the longest title of column one ends at x 326 and column two's keys begin at x 363 (37 px); column two to three 645 to 683 (38 px).",
     "pictures": [
      "sheet-own-light",
      "opaque-light",
@@ -242,7 +244,7 @@
    },
    "S4 light on glass": {
     "status": "miss",
-    "said": "sheet-light: the headings are flat grey (128,128,128) whatever is behind: Look 1.55 : 1 over the red window at 148,204,27,11; Arrange 1.62 at 454,204,46,13; Arbor itself 2.00 over the blue window at 837,204,62,11; Pointer and trackpad 2.07 at 837,298,114,13. Press any key to close 1.56 at 454,558,117,12 (under 60 levels from its ground: the S3 ruler finds no ink there at all). All are under 3. What one must read holds: the title 4.93 at 438,167,150,18; the worst of 37 row titles 4.86 (Step In at 148,284,40,16), the worst of 37 keys 4.91 (at 102,304,33,16), both over red; over blue the worst strips are 5.71 to 6.18. sheet-2x-light agrees: Look 1.58 at 360,315,34,16, Arbor itself 2.23 at 1192,315,76,16, the last line 2.36 over green at 729,746,142,18, rows 5.22 and more.",
+    "said": "Arbor's own panel and text. sheet-light: the headings are one grey (128,128,128) whatever is behind: Look 1.54 : 1 (at most 1.61) over the red window at 148,204,27,11; Arrange 1.65 (at most 1.72) at 454,204,46,13; Arbor itself 2.00 (at most 2.08) over the blue window at 837,204,62,11; Pointer and trackpad 2.04 (at most 2.13) at 837,298,114,13. Press any key to close 1.54 (at most 1.61) at 454,558,117,12. All far under 3. The words one must read hold again: of 74 lines of titles and keys the worst is the key for Forward 4.81 (at most 5.01) at 108,364,27,16, then 4.91 at 102,324,33,16 and 4.92 at 148,324,104,16 and 148,404,103,16, all over red, ink (76,41,42) on (239,130,134); the best 6.95. The title 5.16 (at most 5.38) at 438,167,150,18. sheet-2x-light agrees: Look 1.57 at 360,315,34,16, Arbor itself 2.23 at 1192,315,76,16, Arrange 2.87 (at most 2.99) at 731,315,56,18, the last line 2.36 (at most 2.46) over green at 729,746,142,18, Show Everything 5.16 over red at 360,342,115,18.",
     "pictures": [
      "sheet-light",
      "sheet-2x-light"
@@ -250,14 +252,14 @@
    },
    "S4 dark on glass": {
     "status": "miss",
-    "said": "sheet-dark: the headings are flat grey (124,124,124): Pointer and trackpad 1.26 : 1 over the blue window at 837,298,114,13; Arbor itself 1.35 at 837,204,62,11; Look 1.71 over the red window at 148,204,27,11; Arrange 3.04 at 454,204,46,13 over the dark wallpaper. Press any key to close 3.46 at 454,558,117,12, over the dark wallpaper only, its kindest ground. Rows and keys just hold over blue: worst 4.59 (Drag to a screen edge at 698,318,127,16), 4.64 (Dock at 837,318,30,16), none of column three above 4.88; over red 5.64 to 6.09; the title 7.36 at 438,167,150,18.",
+    "said": "Arbor's own panel and text. sheet-dark: the headings are one grey (124,124,124): Pointer and trackpad 1.26 : 1 (at most 1.31) over the blue window at 837,298,114,13; Arbor itself 1.35 (at most 1.40) at 837,204,62,11; Look 1.70 (at most 1.77) over the red window at 148,204,27,11; Arrange 3.09 at 454,204,46,13 over the dark wallpaper. Press any key to close 3.42 (at most 3.57) at 454,558,117,12, over the dark wallpaper only, its kindest ground. The words one must read hold again, narrowly, over blue (21,112,166): Drag to a screen edge 4.54 (at most 4.73) at 698,318,127,16, Dock 4.56 at 837,318,30,16, Dock Beside It 4.59 at 837,338,82,16, Settings 4.60 at 837,264,47,16; no line of column three is above 4.86. Over red 5.60 and more; the title 8.12 at 438,167,150,18.",
     "pictures": [
      "sheet-dark"
     ]
    },
    "S4 light": {
     "status": "pass",
-    "said": "By a hair, and only if the headings and the last line count as secondary words (3 : 1), which is how I count them: any key closes the panel, read or not. opaque-light, ground (228,228,228): Look 3.11 : 1 at 148,205,27,15, Arbor itself 3.11 at 837,205,62,15, Pointer and trackpad 3.11 at 837,299,114,16, Press any key to close 3.04 at 454,559,117,16. Rows and keys outside the Python alert's shadow: worst 6.67 (Step In at 148,287,40,16). The title and Arrange are under the alert; in sheet-own-light, equally flat: title 7.54 at 438,97,150,18, Arrange 3.11 at 454,133,46,16.",
+    "said": "Arbor's own text, counted as secondary words (3 : 1): any key closes the panel, read or not. On the mark and no more. opaque-light, ground (228,228,228): Press any key to close 2.99 : 1 (at most 3.11) at 454,559,117,16, strips 2.99 to 3.00, which reaches 3 by the ruler's error (2.88); Look 3.08 (at most 3.21) at 148,205,27,15; Arbor itself 3.09 at 837,205,62,15; Pointer and trackpad 3.08 at 837,299,114,16. Rows and keys outside the Python alert's shadow: worst 6.87 (the key for Forward at 108,367,27,16). The title and Arrange are under the alert; in sheet-own-light, equally flat: title 7.43 at 438,97,150,18, Arrange 3.08 at 454,133,46,16, the last line 2.99 (at most 3.11) at 454,626,117,16.",
     "pictures": [
      "opaque-light",
      "sheet-own-light"
@@ -265,14 +267,14 @@
    },
    "S6": {
     "status": "pass",
-    "said": "sheet-contrast at 29,148,967,446. Outline to what is outside: left 4.43 : 1 over red, right 4.45 over blue, top 4.08 over red (29,148,340,446) and 4.10 over blue (650,148,346,446), bottom 6.45 over the pale tiles, 10.03 over the dark gap, 6.61 at the right; the least is 4.08. Ink to ground (220,220,220): rows and keys outside the alert's shadow 14.34 at worst (148,287,40,16), headings 8.81 (148,205,27,15; 837,205,62,15; 837,299,114,16), Press any key to close 7.83 at 454,559,117,16, the nearest to the bar of 7. The title and the heading Arrange are under the Python alert: not measured.",
+    "said": "sheet-contrast at 29,148,967,446. The line at the side, to what is outside: left 4.64 : 1 over red, right 4.63 over blue (4.50 at 29,400,967,194), top 4.20 over red (29,148,340,446) and 4.22 over blue (650,148,346,446), bottom 6.04 over the pale tiles (29,148,420,446), 10.38 over the dark gap (400,148,280,446), 6.21 at the right (630,148,366,446); the least is 4.20. Ink to ground (220,220,220): Press any key to close 7.83 (at most 8.16) at 454,559,117,16, the nearest to 7 (three strips can be read: 8.37, 8.37, 7.83); headings 8.46 (837,205,62,15), 8.61 (837,299,114,16), 8.68 (148,205,27,15); rows and keys outside the alert's shadow 14.60 at worst (108,367,27,16). The title and the heading Arrange are under the Python alert: not measured.",
     "pictures": [
      "sheet-contrast"
     ]
    },
    "S7": {
     "status": "pass",
-    "said": "opaque-light: the ground varies by 0.0 levels over the red window at 33,152,300,290, over the blue one at 700,152,292,390, over the pale tiles at 33,470,400,120, over the dark gap at 460,470,160,120, and its middle value is (228,228,228) in all four. For comparison, on glass sheet-light varies by 82 levels at 33,149,959,438.",
+    "said": "opaque-light, boxes without words, nothing left out as ink: 0.0 levels over the red window at 33,152,300,50 and 33,210,40,230; 0.0 over the blue one at 700,152,292,50, 975,152,18,390 and 660,460,330,88; 0.0 over the pale tiles at 33,548,400,42 and 640,575,350,16; 0.0 over the dark gap at 460,470,160,80. The middle colour of all eight is (228,228,228): no difference between boxes.",
     "pictures": [
      "opaque-light"
     ]
@@ -281,21 +283,21 @@
   "menu": {
    "S1 at 1x": {
     "status": "pass",
-    "said": "macOS's own menu. menu-light at 651,31,286,668: left a step of 150 levels over 0 pixels between, right 146 over 0, bottom 164 over 0; the top's step to the menu bar is 46 levels, too small to ask. The separators (x 667 to 920, at y 305, 460 and 663) are one row each, 26 levels from the ground: too small to ask, and nothing beside them. The glyphs, plates and the highlight in the menu bar have no straight side of 60 px with a step of 60 levels. The pictures of the whole menu and the submenus are shrunk (see other) and cannot be asked.",
+    "said": "macOS's own menu. menu-light at 651,31,286,668: left a step of 150 levels over 0 pixels between, right 146 over 0, bottom 164 over 0 (the same at a reach of 3); the top's step to the menu bar is 46 levels, too small to ask. The separators (x 667 to 920, at y 305, 460 and 663) are one row each, 26 levels from the ground: too small to ask. The highlight behind Arbor's item at 663,3,138,24: top 26 levels, bottom 48, too small; its ends are under 60 px. The glyphs and plates are under 60 px. The pictures of the whole menu and the submenus are shrunk (see other) and cannot be asked.",
     "pictures": [
      "menu-light"
     ]
    },
    "S2": {
     "status": "pass",
-    "said": "menu-light at 651,31,286,668: no side with one row half-way. Across the left side at row 300: blue (0,122,228), one rim pixel (0,104,193) at x 650, a light edge (173,247,255) at x 651, then the ground (152,229,255). Corners enlarged 8 times at 640,24,60,40 and 890,670,60,40 are clean. (In menu-contrast the ruler calls left and bottom half-way: that is macOS's grey line (182,183,183), one pixel on all four sides, an outline and no misplacement.)",
+    "said": "menu-light at 651,31,286,668: no side with one row half-way, at a reach of 5 or 3. Across the left side at row 300: blue (0,122,228), one rim pixel (0,104,193) at x 650, a light edge (173,247,255) at x 651, then the ground (152,229,255). Corners enlarged 8 times at 640,24,60,40 and 890,670,60,40 are clean. (In menu-contrast the ruler calls left and bottom half-way: that is macOS's grey line (182,183,183), one pixel on all four sides, an outline and no misplacement.)",
     "pictures": [
      "menu-light"
     ]
    },
    "S3": {
     "status": "miss",
-    "said": "menu-contrast: on 1024 by 768 the menu does not fit and macOS scrolls it; the heading of the last group is cut off to its top three rows of pixels at 675,677,15,5, above the arrow at 788,689,11,8: two grey specks under the last separator. In menu-light and menu-dark the menu is 6 px shorter and the heading is not there at all. The cutting is macOS's; the height is the menu's. The distances pass: menu-contrast at 651,31,286,674 keeps 10 pt from the left (the tick; words 23), 14 from the top, 16 from the right, 9 from the bottom; menu-light at 651,84,286,210 keeps 24 and 17; menu-paused-light and menu-no-permission-light keep 17, 13, 17, 11. The longest title ends at x 833 (Keep This Window in View, no key); Frame Focused Window ends at x 819, its key begins at x 883.",
+    "said": "menu-contrast: on 1024 by 768 the menu does not fit and macOS scrolls it; the heading of the last group is cut off to its top three rows of pixels at 675,677,15,5, above the arrow at 788,689,11,8: two grey specks under the last separator. In menu-light and menu-dark the menu is 6 px shorter and the heading is not there at all. The cutting is macOS's drawing; the height that brings it about is Arbor's choice. The distances pass: menu-contrast at 651,31,286,674 keeps 10 pt from the left (the tick; words 23 to 24), 14 from the top, 16 from the right, 9 from the bottom; menu-light and menu-dark at 651,84,286,210 and 651,330,286,100 keep 23 to 24 and 17; menu-paused-light at 0,0,425,152 keeps 17, 13, 17, 11; menu-no-permission-light at 0,0,302,152 keeps 17, 13, 16, 11. The longest title ends at x 833 (Keep This Window in View, no key); Frame Focused Window ends at x 819, its key begins at x 883.",
     "pictures": [
      "menu-contrast",
      "menu-light",
@@ -306,25 +308,28 @@
    },
    "S4 light on glass": {
     "status": "pass",
-    "said": "Passes by the ruling that macOS is the measure of what macOS draws in its own colour (docs/POLISH.md). The items themselves hold; headings, key equivalents, greyed items and the selected row are a standard menu's. As measured: All macOS's own drawing. menu-light over the blue window: the headings 1.82 to 1.84 : 1 (View at 673,42,28,16; Focused Window at 674,317,93,16; Arrangement at 673,472,73,16); every key equivalent 1.78 to 1.83 (worst 1.78 at 882,542,37,16; Space 1.79 at 844,64,82,16); greyed items 1.82 to 1.83 (Step Out at 674,136,54,16; Shortcuts Off in This App at 674,435,153,16). All under 3: one cannot learn a shortcut from this menu. The items themselves 10.96 to 13.16; the arrow for more 3.63 at 782,679,24,16. Over orange (menu-saved-views-light, a shrunk picture): Save This View As 1.73 at 320,215,84,14, keys 1.76 at 436,253,46,14; the selected row, white on macOS's blue (34,137,246), 3.49 at best and 3.11 at worst at 320,233,36,14, its key 3.04 at 436,233,46,14: under 4.5. menu-dock-light: Left, greyed, 1.73 at 310,283,22,14. menu-whole-light over green: heading Arbor 1.82 at 507,562,30,13, Quit's key 1.75 at 691,710,24,14. In the menu bar with the menu open: back 8.74 at 677,6,14,18, forward (greyed) 1.93 at 700,6,14,18, the dots 9.27.",
+    "said": "What counts holds. The items one acts on, menu-light over the blue window: 10.68 : 1 at worst (Arrange Windows at 671,542,111,16), 10.79 (Back at 674,184,31,16), up to 12.67; the tick 11.87 at 656,64,16,16; the arrows to submenus 11.35 at 906,256,18,16. Arbor's own glyphs in the menu bar: with the menu open the tiles on their plate 5.74 (at most 5.98) at 746,8,16,14; closed (sheet-light) the Desktop 11.36 at 723,6,18,18, the tiles 7.18. The arrows and the dots have four or five pixels of one colour each, the ruler wants six and says nothing of them; so I give two bounds, the second round's reading, which was low, and the contrast of the glyph's farthest pixel, which is my own look and not the ruler's. Menu open: back 7.33 to 9.17 at 677,6,14,18, the dots 8.40 to 9.27 at 772,8,15,12; closed the dots 10.27 to 11.66. No must-read words stand in a greyed item in these pictures. In the shrunk, soft pictures the ruler can read only some lines: Move to Next Display 7.26 at 310,372,108,14 (menu-dock-light, orange to green), View 8 7.98 at 320,373,36,14 (menu-saved-views-light), Mirror Group 8.16 at 347,581,68,14 (menu-adjust-light), Settings File… 8.41 at 375,710,74,14 (menu-help-light), Pause Arbor 8.40 at 507,690,64,14 and Hold Still 9.22 at 507,601,48,14 (menu-whole-light); of View 2 to 7 over orange it says nothing (second round, low: 6.82 and more; farthest pixel 11.84 at 320,273,36,14). macOS's own, which costs nothing, for the record: headings 1.81 to 1.82 (at most 1.89; 674,317,93,16), key equivalents 1.80 to 1.86 (worst 844,64,82,16), greyed items 1.81 to 1.82 (674,136,54,16), the arrow for more 3.60 at 782,679,24,16; the selected row, white on (34,137,246), 3.45 (at most 3.60) at 320,233,36,14 and 3.21 at 310,303,28,14. Greyed forward in the bar 1.84 to 1.98 at 700,6,14,18.",
     "pictures": [
      "menu-light",
      "menu-saved-views-light",
      "menu-dock-light",
      "menu-whole-light",
-     "menu-adjust-light"
+     "menu-adjust-light",
+     "menu-help-light",
+     "sheet-light"
     ]
    },
    "S4 dark on glass": {
     "status": "pass",
-    "said": "Passes by the ruling that macOS is the measure of what macOS draws in its own colour (docs/POLISH.md). The items themselves hold; headings, key equivalents, greyed items and the selected row are a standard menu's. As measured: macOS's own drawing. menu-dark over the blue window: headings 1.89 : 1 (Focused Window at 674,317,93,16), 1.94 (Arrangement at 673,472,73,16), 2.22 (View at 673,42,28,16); key equivalents 1.89 to 2.19 (worst at 882,280,39,16); greyed items 1.92 to 1.96 (Shortcuts Off in This App at 674,435,154,16). All under 3. The items 7.28 to 10.56 (worst Dock Focused Window at 674,339,139,16); the arrow for more 5.59 at 782,679,24,16. In the menu bar with the menu open: back 9.08 at 677,6,14,18, forward (greyed) 2.48 at 700,6,14,18.",
+    "said": "What counts holds. The items, menu-dark over the blue window: 7.21 : 1 at worst (Dock Focused Window at 674,339,139,16), 7.28 (674,363,138,16), up to 10.52; the tick 9.59 at 656,64,16,16; the arrows to submenus 7.57 at 906,256,18,16. Arbor's own glyphs in the menu bar: with the menu open the tiles on their plate 4.91 (at most 5.11) at 746,8,16,14, the nearest to 4.5; closed (sheet-dark) the Desktop 12.70 at 723,6,18,18, the tiles 6.52. The arrows and the dots have four or five pixels of one colour each, the ruler wants six and says nothing of them; so I give two bounds, the second round's reading, which was low, and the contrast of the glyph's farthest pixel, which is my own look and not the ruler's. Menu open: back 7.93 to 9.37 at 677,6,14,18, the dots 8.73 to 9.54 at 772,8,15,12; closed the dots 12.11 to 13.42. macOS's own, which costs nothing, for the record: headings 1.88 (674,317,93,16), 1.94, 2.19 (673,42,28,16); key equivalents 1.90 to 2.18 (worst 882,280,39,16; of 882,542,44,16 the ruler says nothing); greyed items 1.91 to 1.95 (674,435,154,16); the arrow for more 5.50. Greyed forward in the bar 2.33 to 2.54 at 700,6,14,18.",
     "pictures": [
-     "menu-dark"
+     "menu-dark",
+     "sheet-dark"
     ]
    },
    "S4 light": {
     "status": "miss",
-    "said": "The two short menus are pictures of the menu alone, nothing behind it, ground (242,242,242) varying by 2.0 levels at 12,8,400,136: flat, though the pictures do not say whether Reduce Transparency was on. The one line that says what is the matter is a greyed item: Arbor is paused: it leaves windows and shortcuts alone 1.86 : 1 at 15,10,335,16 (menu-paused-light); Arbor needs Accessibility permission 1.86 at 15,10,226,16 (menu-no-permission-light). One must read these to act: 4.5 is asked. Key equivalents 1.86 to 1.87 (370,34,40,16; 382,128,28,16). The items 12.10 to 13.69. The grey is macOS's for a disabled item; using a disabled item for the message is Arbor's. In the flat menu bar (bar-buttons-light, bar-nine-light, ground 218): digits 11.66 (249,7,13,16), on a plate 7.18 (117,8,14,14), glyphs 10.88 to 11.66, forward greyed 2.00 at 176,6,14,18.",
+    "said": "The two short menus are pictures of the menu alone, nothing behind it, ground (242,242,242), 0.0 levels at 100,46,250,10, 100,105,250,10 and 100,140,250,8: flat, though the pictures do not say whether Reduce Transparency was on. The one line that says what is the matter is a greyed item: Arbor is paused: it leaves windows and shortcuts alone 1.85 : 1 (at most 1.93) at 15,10,335,16 (menu-paused-light); Arbor needs Accessibility permission 1.86 (at most 1.93) at 15,10,226,16 (menu-no-permission-light). One must read these to act: 4.5 is asked. The grey is macOS's for a disabled item; putting the message into a disabled item is Arbor's choice, and that counts. The rest holds: items 12.86 to 13.29. macOS's key equivalents 1.86 (370,34,40,16; 382,128,28,16) cost nothing. In the flat menu bar (bar-buttons-light, bar-nine-light, ground 218): digits 11.49 (249,7,13,16) and 11.44 (271,7,14,16), on a plate 6.96 to 7.09 (161,8,14,14), the Desktop 11.36, the tiles on the plate 7.18; of the thin glyphs the ruler says nothing: back 8.78 (second round, low) to 11.52 (farthest pixel, my own look) at 153,6,14,18, forward, greyed, 1.90 to 2.04 at 176,6,14,18.",
     "pictures": [
      "menu-paused-light",
      "menu-no-permission-light",
@@ -334,7 +339,7 @@
    },
    "S6": {
     "status": "miss",
-    "said": "The outline passes: menu-contrast at 651,31,286,674: left 5.47 : 1, top 9.63, right 5.14, bottom 8.22. The ink does not. (1) With the menu open Arbor's glyphs in the menu bar turn white on the light grey highlight (192,192,192): back 1.78 at 677,6,14,18, the dots 1.81 at 772,8,15,12, the tiles on their plate 1.56 at 746,8,16,14, forward under 25 levels, no ink to the ruler, at 700,6,14,18. In menu-light the same glyphs stay dark, 8.74: Increase Contrast makes this worse. Whose drawing it is the picture does not say. (2) macOS's own greys in the menu stop at 4.8, 7 is asked: headings 4.82 to 4.86 (673,42,28,16), all key equivalents 4.83 to 4.86 (882,88,37,16), greyed items 4.82 to 4.86 (674,208,50,16). Items 20.0 and more, separators (86,89,89). (3) bar-buttons-contrast, menu closed: back and forward, both greyed, 2.28 and 2.30 at 677,6,14,18 and 700,6,14,18; the plate that marks the present view is (163,163,163) on (218,218,218), about 1.8; the other glyphs 15.0, the tiles on the plate 8.33. bar-icon-contrast: the icon 15.02 at 770,5,24,20.",
+    "said": "It misses by Arbor's own glyphs. menu-contrast, menu open: they turn white on the light grey highlight (192,192,192). The tiles on their plate 1.56 : 1 (at most 1.62) at 746,8,16,14; 7 is asked. The arrows and the dots have four or five pixels of one colour each, the ruler wants six and says nothing of them; so I give two bounds, the second round's reading, which was low, and the contrast of the glyph's farthest pixel, which is my own look and not the ruler's. Back 1.71 to 1.80 at 677,6,14,18, its whitest pixel (254,254,254); the dots 1.77 to 1.82 at 772,8,15,12; forward at most 1.25 at 700,6,14,18. In menu-light the same glyphs stay dark (tiles 5.74, back 7.33 to 9.17): Increase Contrast makes them worse. The highlight is macOS's; the glyphs are Arbor's. With the menu closed they hold: bar-buttons-contrast the Desktop 14.49 at 723,6,18,18, the tiles on the plate 8.33, the dots 14.03 to 15.02; bar-icon-contrast the icon 15.02 at 770,5,24,20. The items of the menu 19.64 and more. macOS's own, which costs nothing, for the record: headings 4.67 to 4.71 (at most 4.90; 673,472,73,16), key equivalents 4.70 to 4.82 (worst 852,64,67,16), greyed items 4.65 to 4.75 (674,518,32,16); greyed back and forward in bar-buttons-contrast 2.11 to 2.34. The menu's outline, macOS's too, at 651,31,286,674: the line at the side top 9.63, bottom 4.09, right 3.15 (3.00 at a reach of 3), the ground 5.10 and more; left 2.72, but that side lies in the shadow of the Python alert. The plate that marks the present view is (163,163,163) on (218,218,218), about 1.8.",
     "pictures": [
      "menu-contrast",
      "bar-buttons-contrast",
@@ -345,7 +350,7 @@
   "settings": {
    "S1 at 1x": {
     "status": "pass",
-    "said": "settings-on-screen-light, the window at 122,57,780,568: every side that can be asked takes 0 pixels between. Left over the red window a step of 195 levels, left over the pale tile (at 122,475,780,135) 75, right over the blue window 240, top over the dark tile (at 462,57,150,568) 200, bottom 104 to 226 over pale and dark tiles. The top over the two grey title bars behind is a step of 20 to 21 levels: too small to ask. Lines of its own in settings-general-light are all under 60 levels, so not asked, and each is exactly one pixel by its values: line under the title bar 244 > 202 > 240 at y 28, sidebar's line 240 > 217 > 240 at x 200, line over Restore Defaults 240 > 217 > 240 at y 527, lines between rows 236 > 225 > 236; selected entry at 10,80,180,28 goes 240 > 204 at once; the search field's focus ring at 8,36,184,26 goes 240 > 123 and 128 > 255 at once. macOS's drawing throughout.",
+    "said": "Measured again with the mended ruler. settings-on-screen-light, the window at 122,57,780,568: every side that can be asked takes 0 pixels between: left a step of 196 levels over the red window (at 122,97,780,345) and 78 over the pale tile (at 122,475,780,135), right 240 over the blue window, top 200 over the dark tile (at 462,57,150,568), bottom 108 to 110 over the pale tiles (at 240,57,200,568 and 640,57,250,568) and 227 over the dark one. The top over the two grey title bars behind is a step of 34 to 39 levels: too small to ask. Of its own lines in settings-general-light only the search field's focus ring can be asked (at 8,36,184,26, reach 3): top 120 levels over 0 pixels, bottom 130 over 1. All others step by under 60 levels and are not asked (groups 4, selected entry 36, buttons 15 to 19, fields 0, banner 41 to 50); by their values each is one pixel: line under the title bar 244 > 202 > 240 at y 28, sidebar's line 240 > 217 > 240 at x 200, line over Restore Defaults 240 > 217 > 240 at y 527. macOS's drawing throughout.",
     "pictures": [
      "settings-on-screen-light",
      "settings-general-light"
@@ -353,7 +358,7 @@
    },
    "S2": {
     "status": "pass",
-    "said": "settings-on-screen-light: no side of the window at 122,57,780,568 has a row or column half-way (edges reports none on left, right, bottom, nor on the top at 462,57,150,568); the window is 780 x 568 whole pixels. No half-way row on the groups, the selected entry, the fields or the buttons either. One oddity in the enlargement, not a half-way row: the hairline round each group (at 221,48,539,324 and 221,382,539,44) is drawn on the right and bottom sides and in the corners but not on the left and top sides: light 229 against a fill of 236 at x 759 and y 371, nothing at x 221 and y 48; dark 56 against 43, nothing left and top. With Increase Contrast all four sides have it (143 to 144). macOS's grouped form.",
+    "said": "settings-on-screen-light: edges reports no row or column half-way on any side of the window at 122,57,780,568, whole or over each ground behind it; 780 x 568 whole pixels. None on the groups, the selected entry, the fields, the buttons or the ring in settings-general-light, -windows-light, -rules-light, -shortcuts-light either. One oddity in the enlargement, not a half-way row: the hairline round each group (at 221,48,539,324 and 221,382,539,44) is on the right and bottom sides and in the corners but not on the left and top: dark, edges finds a line of 1.26 : 1 at right and bottom and no line at left and top (56 against a fill of 43); light 229 against 236 at x 759 and y 371, nothing at x 221 and y 48. With Increase Contrast all four sides have it (2.95 to 2.99 : 1). macOS's grouped form.",
     "pictures": [
      "settings-on-screen-light",
      "settings-general-light",
@@ -362,7 +367,7 @@
    },
    "S3": {
     "status": "pass",
-    "said": "All 63 pictures looked through in every look: no word clipped, none truncated (the only … are meant: Add an App…, Add a Rule for…, Press the keys…, Replace It with the Defaults…, the placeholder), none touching. fits, window at 122,57,780,568 in settings-on-screen-light: 8 pt left, 8 top, 29 right, 9 bottom. Sidebar at 0,29,200,539: 8, 7, 8, 9 in all three looks. Groups: words 10 pt from the left, 10 to 12 from the right, 11 to 17 above and below (general at 221,48,539,324; advanced open at 221,382,539,140; apps at 221,48,539,196; rules at 221,48,539,236), the same in light, dark and contrast within 1 pt. Banner at 201,29,579,103: 12 left, 14 top, 31 right (24 in settings-broken-dark, its longest line), 11 bottom. Buttons: Restore Defaults at 642,537,119,22: 10, 5, 10, 7; Open the File at 667,201,84,18: 7, 5, 8, 3. Tightest, against a control's own edge and not the panel's: ctrl+opt 4 pt from the right edge of its field and 3 from its bottom (settings-gestures-light at 590,107,160,21), numbers 5 pt (4 for 0.15 in dark) from the right of theirs (at 656,57,60,21), Inbox 5 pt from the left of its field (settings-rules-light at 231,156,519,21): macOS's own insets, under 6 pt but not touching. With Increase Contrast a pop-up's title ends 2 px before its dark arrow box (settings-general-advanced-contrast: ink to x 728, box from x 731). Cut only by scrolling: in settings-shortcuts-* the list runs to the window's lower edge, so at rest Forward ends 3 px above it (rows 555 to 564 of 568) and its keys are cut through (only rows 562 to 567 show, at 577,560,128,8); a scroller shows beside it. Not counted as clipping. No picture at a larger text size or with longer words.",
+    "said": "All 63 pictures looked through in every look: no word clipped, none truncated (the only … are meant: Add an App…, Add a Rule for…, Press the keys…, Replace It with the Defaults…, the placeholder), none touching. fits again, same numbers as before, and now also in the contrast pictures, where the old ruler said 0: window at 122,57,780,568 in settings-on-screen-light: 8 pt left, 8 top, 29 right, 9 bottom (in settings-on-screen-contrast the black line under the title bar and the sidebar's line run from side to side and count as ink, so measured part by part). Sidebar at 0,29,200,539: 8, 7, 8, 9 in all three looks; its entries 18 pt from the left (at 0,110,200,280), the version line 51, 19 to 20, 52 to 53, 9 (at 0,530,200,38); Search 10 pt from the left of its field (settings-windows-light at 12,40,176,18). Groups: words 9 to 10 pt from the left, 10 to 12 from the right, 11 to 17 above and below (general at 221,48,539,324; advanced open at 221,382,539,140; apps at 221,48,539,196; rules at 221,48,539,236) in light, dark and contrast. Banner at 201,29,579,103: 12 left, 14 top, 31 right (24 in settings-broken-dark, its longest line), 11 bottom. Buttons: Restore Defaults at 642,537,119,22: 10, 5, 10, 7; Open the File at 667,201,84,18: 7 to 8, 4 to 5, 8, 3; Use It Here Instead at 371,81,115,18: 7, 5, 9, 5; keys at 577,89,128,22: 34, 5, 34, 4. Tightest, against a control's own edge and not the panel's: ctrl+opt 4 pt from the right edge of its field and 3 from its bottom (settings-gestures-light, -dark, -contrast at 590,107,160,21), numbers 5 pt (4 for 0.15 in dark) from the right of theirs (at 656,57,60,21), Inbox 5 pt from the left of its field (at 231,156,519,21): macOS's own insets in macOS's own fields, not touching. With Increase Contrast a pop-up's title ends 2 px before its dark arrow box (settings-general-advanced-contrast: ink to x 728, box from x 731). Cut only by scrolling: in settings-shortcuts-* the list runs to the window's lower edge, so at rest Forward ends 3 px above it (rows 555 to 564 of 568) and its keys are cut through (only rows 562 to 567 show, at 577,560,128,8); a scroller shows beside it. Not counted as clipping. No picture at a larger text size or with longer words.",
     "pictures": [
      "settings-on-screen-light",
      "settings-general-light",
@@ -377,14 +382,15 @@
    },
    "S4 light on glass": {
     "status": "miss",
-    "said": "The search field is a plain text field without a magnifier, so its placeholder is its only label and a word one must read in order to act (docs/POLISH.md). As measured: settings-on-screen-light, the sidebar: the placeholder Search is 1.82 : 1, ink 192 on white at 142,99,44,14: under 3. It is macOS's search field, and its ground is the field's opaque white, not glass. The rest passes: the selected entry General 8.82 : 1 on (204,182,184) over the red window at 160,144,50,14, the only place where anything comes through; the ten other entries 13.74 : 1 each (Windows at 160,172,58,14 to Rules at 161,424,36,14) on (240,243,243); the version line, secondary, 3.52 : 1 at 171,604,101,14; the window's title 8.31 : 1 at 462,63,98,17. The sidebar's ground itself lets nothing through here: flat says 0.0 levels over the red window, the gap and the pale tile (at 124,90,196,530), and apart from the selected entry, the corners and the caret the picture is the same as the window alone.",
+    "said": "Third round of read. settings-on-screen-light, the sidebar: the placeholder Search is 1.80 : 1, at most 1.88 (second round 1.75, first 1.82), ink 192 on white at 142,99,44,14. The colour is macOS's, but the field has no magnifier, no label and no heading, with the keyboard in it or without (enlarged: settings-general-light and settings-refused-light at 4,32,196,34), so the placeholder is the field's only label and needs 4.5 (4.32 with the ruler's error): Arbor's choice, and it counts. Its ground is the field's opaque white, not glass. The rest passes: the selected entry General 8.68 : 1, at most 9.04 (second round 7.77) on (204,182,184) over the red window at 160,144,50,14, the only place where anything comes through, and macOS's own selected row; the ten other entries 13.02 to 13.46 : 1 at worst (second round 11.16 to 12.19; Windows at 160,172,58,14 to Rules at 161,424,36,14) on (240,243,243); the version line, secondary, 3.47 : 1, at most 3.61 (second round 3.16) at 171,604,101,14; the window's title 8.17 : 1 (second round 7.01) at 462,63,98,17. The sidebar's ground lets nothing through here: flat says 0.0 levels, nothing left out as ink, over the red window (at 230,170,86,250) and across the red window's end, the gap and the pale tile (at 130,445,186,150), and both are (240,243,243), as the form is.",
     "pictures": [
-     "settings-on-screen-light"
+     "settings-on-screen-light",
+     "settings-refused-light"
     ]
    },
    "S4 light": {
     "status": "miss",
-    "said": "Under 3: the placeholder Only windows whose title contains… (any title), the only words that say what that field is for, 1.81 : 1, ink 177 on 236, settings-rules-light at 234,255,281,16 (macOS's placeholder colour); the orange warnings 2.03 : 1 (settings-clash-light, ⌃⌥⇧F9 runs desktop now., ink (254,143,45) on 242 at 230,84,134,14, with two buttons that depend on reading it) and 2.04 : 1 (settings-caution-light at 229,82,216,14); the disabled Restore Defaults 1.82 : 1 (settings-windows-light at 650,540,103,14; macOS's disabled button). Under 4.5 though one must read them to act: the red refusals 3.10 : 1 (settings-refused-light at 230,106,197,14) and 3.09 : 1 (settings-broken-asks-light at 229,248,517,14). Secondary and over 3, but not by much: the small text under rows 3.44 to 3.52 : 1 at worst, 3.7 in the middle (settings-general-light at 229,76,215,14 and 229,258,459,14; settings-gestures-light at 229,193,396,14; the Rules pane's introduction at 229,58,516,14), rule numbers 3.37 (settings-rules-light at 230,109,14,14), command words 3.60 (settings-shortcuts-light at 230,102,52,12), units pt, %, s 3.64 to 3.84, none 3.84. Well over: row titles, Advanced, pop-up titles, field values, list entries 13.2 to 13.5 : 1; headings 13.7 to 14.0; button titles and keys 13.8 to 15.1; banner title and text 12.05 to 12.5 on (248,225,205) (settings-broken-light at 212,63,539,17). The clash, caution, refused, broken and search pictures are of an earlier build (sidebar says Arbor dev).",
+    "said": "Third round of read. What counts. The placeholder Only windows whose title contains… (any title) is 1.80 : 1, at most 1.87 (second round 1.72), ink 177 on 236, settings-rules-light at 235,256,281,14: macOS's placeholder colour, but nothing else says what the field is for (the filled one above it reads Inbox and no more), so it is the only label and needs 4.5: Arbor's choice. The orange warnings, Arbor's text in a colour Arbor chose: 2.03 : 1, at most 2.12 (second round 1.94; settings-clash-light, ⌃⌥⇧F9 runs desktop now., ink (254,143,45) on 242 at 230,84,134,14, with two buttons that depend on reading it) and 2.05, at most 2.13 (settings-caution-light at 229,82,216,14): under 3 (2.88). The red refusals, which one must read to act: 3.11 : 1, at most 3.24 (second round 2.97; settings-refused-light at 230,106,197,14), 3.12 and 3.14, at most 3.25 and 3.27 (second round 2.91 and 2.95; settings-broken-asks-light at 229,248,517,14 and 229,261,365,14): over 3 again, but far under 4.5 (4.32). What costs nothing: the greyed Restore Defaults, macOS's, 1.80 : 1 (second round 1.74; settings-windows-light at 650,540,103,14; settings-broken-light at 640,500,103,14). Secondary and over 3: the small text under rows 3.57 to 3.65 : 1 at worst, 3.67 to 3.74 in the middle (second round 3.11 to 3.21; the Rules pane's introduction 3.61 at 229,58,516,14; settings-gestures-light 3.65 at 229,193,396,14; settings-general-light 3.63 at 229,76,215,14 and 3.59 at 229,258,459,14; settings-apps-advanced-light 3.57 at 352,306,276,14), command words 3.56 (settings-shortcuts-light at 230,102,52,12), units %, s, pt 3.54 to 3.81, none 3.75, rule numbers 3.77 (the 2. at 229,204,16,14; the 1. has too little ink for the ruler). Well over: row titles, Advanced, pop-up titles, field values, list entries 12.6 to 14.6 : 1 at worst; headings 13.26 to 13.75; button titles and keys 13.9 to 14.7; banner title and text 11.82 to 12.21 on (248,225,205) (settings-broken-light at 212,63,539,17). The clash, caution, refused, broken and search pictures are of an earlier build (sidebar says Arbor dev).",
     "pictures": [
      "settings-rules-light",
      "settings-clash-light",
@@ -399,12 +405,12 @@
    },
    "S4 dark": {
     "status": "miss",
-    "said": "Under 3: the placeholder in Rules 2.25 : 1, ink 96 on 43, settings-rules-dark at 234,255,281,16; the disabled Restore Defaults 2.05 : 1 (settings-windows-dark at 650,540,103,14) and 2.02 (settings-refused-dark at 640,504,103,14). Both macOS's colours. Under 4.5 though one must read them to act: the red refusal 3.86 : 1 (settings-refused-dark at 230,106,197,14); the banner's two buttons 4.06 : 1, ink (236,233,231) on (126,110,95) (settings-broken-dark, Open the File at 219,102,85,17, Replace It with the Defaults… at 325,102,179,17). The rest passes: row titles, Advanced, pop-ups, field values 10.5 to 10.6 : 1; heading Look 10.91; small text under rows 5.20 to 5.34; units, none, rule numbers, command words 5.26 to 5.34; button titles and keys 5.06 to 5.22 on 94 to 96; orange warning 6.06 (settings-clash-dark at 230,84,134,14); banner title and text 7.82 on (83,61,42); window title 5.67. The sidebar, only as the window alone shows it and so not counted: entries 10.91, selected 5.26, version 5.48, placeholder Search 2.17 (settings-windows-dark at 20,42,44,14).",
+    "said": "Third round of read. What counts. The placeholder in Rules, its field's only label, 2.20 : 1, at most 2.29 (second round 2.13), ink 95 on 44, settings-rules-dark at 235,256,281,14: macOS's colour, Arbor's choice to let it be the label; needs 4.5. The red refusal, to be read in order to act, 3.90 : 1, at most 4.06 (second round 3.56; settings-refused-dark at 230,106,197,14): under 4.32. The banner's two buttons 4.03 and 4.02 : 1, at most 4.20 and 4.19 (second round 3.86 and 3.85), ink (235,232,230) on (126,110,95) (settings-broken-dark, Open the File at 219,102,85,17, Replace It with the Defaults… at 325,102,179,17): still under 4.32. The buttons are macOS's, and on the form the same kind reads 4.95 to 5.06; it is the brown ground Arbor put under them that comes through their fill and costs the rest. What costs nothing: the greyed Restore Defaults 2.02 : 1 (second round 1.97; settings-windows-dark at 650,540,103,14) and 1.99 (settings-refused-dark at 640,504,103,14). The rest passes: row titles, Advanced, pop-ups, field values 10.2 to 10.5 : 1 at worst (8.88 in the field with the keyboard, settings-refused-dark at 695,61,17,14); heading Look 10.73; small text under rows 5.23 to 5.26 (second round 4.62 to 4.73); units, none, rule numbers, command words 5.11 to 5.32; button titles and keys on the form 4.95 to 5.06 on 95 to 96; orange warning 6.11 (second round 5.45; settings-clash-dark at 230,84,134,14); banner title and text 7.71 to 7.75 on (83,61,42); window title 5.62. The sidebar, only as the window alone shows it and so not counted: entries 10.80, selected 5.13, version 5.40, and the placeholder Search, the only label of a field without a magnifier, 2.12 (settings-windows-dark at 20,42,44,14) and 2.15 without the keyboard (settings-refused-dark).",
     "pictures": [
      "settings-rules-dark",
-     "settings-windows-dark",
      "settings-refused-dark",
      "settings-broken-dark",
+     "settings-windows-dark",
      "settings-clash-dark",
      "settings-general-dark",
      "settings-shortcuts-dark"
@@ -412,34 +418,36 @@
    },
    "S6": {
     "status": "miss",
-    "said": "The outline passes: settings-on-screen-contrast, window at 122,59,780,568: 5.82 : 1 to the red window at the left, 5.83 to the pale tile (at 122,475,780,135), 5.78 to the blue at the right, 8.05 and 9.37 to the grey title bars above, 7.51 to the dark tile above, 4.52 to 4.63 to the pale tiles below, 15.36 to the dark one. The ink does not reach 7 : 1 in three kinds of words, all in macOS's own colours: the placeholder Search 3.95 : 1, ink 128 on white (settings-on-screen-contrast at 142,101,44,14; settings-windows-advanced-contrast at 20,42,44,14); the placeholder in Rules 4.83 : 1, ink 112 on white (settings-rules-contrast at 235,256,281,14); the disabled Restore Defaults 4.93 : 1 (settings-windows-contrast at 650,540,103,14). Everything else does: titles, pop-ups, fields, buttons, keys 18.1 to 21 : 1; selected sidebar entry 11.30; window title 10.68; small text under rows 8.17 at worst (settings-rules-contrast at 229,58,516,14), 9.1 in the middle; version 8.60; command words 8.90; units 8.98 to 9.89; rule numbers 7.83. Inside the window: the groups' outline is 2.95 to 2.99 : 1 to the window's ground (settings-general-contrast at 221,48,539,324), fields and key buttons 5.99 to 7.59. No picture with Increase Contrast of the warnings, the refusals or the banner. macOS's alert about Python covers the upper middle of settings-on-screen-contrast: measured beside it.",
+    "said": "Third round of read. Ink. Two placeholders are their fields' only labels and need 7 : 1 (6.72 with the ruler's error): Search 3.85 : 1, at most 4.01 (second round 3.54), ink 129 on white (settings-on-screen-contrast at 142,101,44,14; settings-windows-advanced-contrast at 20,42,44,14; no magnifier; in settings-windows-contrast the caret is in the box and fools the ruler, so not used); the one in Rules 4.72 : 1, at most 4.92 (second round 4.17), ink 115 on white (settings-rules-contrast at 235,256,281,14). macOS's colour, Arbor's choice. These two alone make the miss. Withdrawn: the second round's finding that the small text falls just short of 7 was the ruler's error. It reads 8.99 to 9.59 : 1 at worst: the Rules pane's introduction 9.02 (second round 6.67; at 229,58,516,14), text under a row 9.12 (second round 6.90; settings-gestures-contrast at 229,193,396,14), settings-general-contrast 9.18 at 229,76,215,14 and 8.99 at 229,258,459,14; the version line 8.48 (second round 6.95; settings-on-screen-contrast at 171,606,101,14); command words 8.79 (second round 6.97; settings-shortcuts-contrast at 230,102,52,12). Costs nothing: the greyed Restore Defaults 4.72 : 1 (second round 4.22; settings-windows-contrast at 650,540,103,14). Everything else is over 7: titles, pop-ups, fields, buttons, keys 17.7 to 20.8 : 1 at worst; selected sidebar entry 11.16; window title 10.47; units 8.57 to 9.74; none 9.65; rule numbers 9.53. Outline, as in the second round: settings-on-screen-contrast, window at 122,59,780,568, in two numbers (line at the side, then ground, to what is outside): over the red window 2.81 and 5.71, the blue 2.75 and 5.69, the dark tile above 2.32 and 7.48, the dark tile below 1.25 and 14.65; over the pale tile at the left 5.56 and 2.05, the pale tiles below 4.34 to 4.45 and 2.97 to 3.06, the grey title bars above 4.68 to 4.74 and 2.08 to 2.47 (5.7 to 6.4 with reach 3, without the shadow). So the dark line alone is under 3 over strong and dark colours; everywhere one of the two is at least 4.3. It is macOS's own window frame in macOS's own colour: said, not counted. Inside the window: the groups' outline 2.95 to 2.99 : 1 (settings-general-contrast at 221,48,539,324), fields and buttons 6.69 to 7.82, the search field's ring 10.5. No picture with Increase Contrast of the warnings, the refusals or the banner. macOS's alert about Python covers the upper middle of settings-on-screen-contrast: measured beside it.",
     "pictures": [
      "settings-on-screen-contrast",
      "settings-windows-advanced-contrast",
      "settings-rules-contrast",
-     "settings-windows-contrast",
-     "settings-general-contrast"
+     "settings-gestures-contrast",
+     "settings-shortcuts-contrast",
+     "settings-general-contrast",
+     "settings-windows-contrast"
     ]
    }
   },
   "drop preview": {
    "S1 at 1x": {
     "status": "pass",
-    "said": "preview-light: edges on the line's outer edge at 12,374,325,319: left a step of 128 levels over 0 pixels between, right 158 over 0; top (46 levels, over the red window) and bottom (12 levels, over the window in the hand) too small to ask. On its inner edge at 15,377,319,313: left 145 over 0, right 168 over 0. Pixel by pixel the four sides are alike: outside, 2 px of (0,122,255), 1 px of a light line (234,171,183), then the fill (209,68,95), each a whole pixel.",
+    "said": "preview-light: edges on the line's outer edge at 12,374,325,319: left 144 levels over 0 pixels between, right 168 over 0; top (53 levels, over the red window) and bottom (12, over the window in the hand) too small to ask. On its inner edge at 15,377,319,313: left 151 over 0, right 172 over 0. Each step by itself, with --reach 3: from outside onto the accent line, box drawn 2 px outside it at 10,372,329,323: 169, 255, 184, 71 levels (left, top, right, bottom), each over 0; from the accent line onto the fill at 15,377,319,313: 209, 209, 209 over 0, bottom 59 too small. The border is 2 px of (0,122,255) and 1 px of a light line (234,171,183), whole pixels on all four sides.",
     "pictures": [
      "preview-light"
     ]
    },
    "S2": {
     "status": "pass",
-    "said": "preview-light: no side with a row half-way at 12,374,325,319, at 14,376,321,315 or at 15,377,319,313; in the enlargement of the corner at 4,366,60,40 the accent line is 2 whole pixels and the light line 1 whole pixel on every side.",
+    "said": "preview-light: no side with a row half-way at 12,374,325,319, at 14,376,321,315 or at 15,377,319,313, nor with --reach 3 at 10,372,329,323 and 15,377,319,313. With --reach 3 on the outer box itself the top is flagged, but there the inner sample is one pixel of light line and one of fill: fooled. In the enlargement at 4,366,60,40 every line is whole pixels.",
     "pictures": [
      "preview-light"
     ]
    },
    "S6": {
     "status": "miss",
-    "said": "preview-contrast: edges at 12,377,325,322: on the way at most 2.04 : 1 at the top (over the red window) and 2.34 : 1 at the bottom (over the window in the hand); right 3.36, left 4.45 (that is the docked window's own dark edge (19,36,26), macOS's). The accent line (0,64,221) by itself is 1.66 : 1 to the red and 1.64 : 1 to the teal; the best of the border is its light inner line (226,153,175). The border is 2 + 1 px, no wider than without Increase Contrast.",
+    "said": "preview-contrast: edges at 12,377,325,322: the line at the side is 2.04 : 1 to what is outside at the top (over the red window) and 2.34 at the bottom (over the window in the hand); right 3.23, left 3.03. The 3.03 is not the preview's: it is the dark edge (19,36,26) macOS draws round the docked window, one pixel outside the box (the same 3.03 at 10,375,329,326 with --reach 3). There the accent line (0,64,221) by itself is 1.66 : 1 to the red, 1.64 to the teal, 1.41 and 1.05 to the surface left and right. The fill is 1.1 to 1.2. The border is 2 + 1 px, no wider than without Increase Contrast.",
     "pictures": [
      "preview-contrast"
     ]
@@ -448,7 +456,7 @@
   "seam": {
    "S2": {
     "status": "pass",
-    "said": "gap-hover-light: the handle is at 211,456,37,4. edges does not ask (under 60 px), so by the pixels of column 230: ground (73,102,81) at y 455, four whole rows (168,171,168) to (170,172,170) at y 456 to 459, its shadow (56,78,62) at y 460: no row half-way above or below. gap-dragged-light at 211,486,37,4: four whole rows (0,85,179) to (0,88,182). The round ends do sit half a pixel off: columns 211 and 247 are covered by a third (106 between 73 and 166), because the window above is 435 px wide and the 36 pt handle is centred on it; both ends alike, and they have no straight side.",
+    "said": "gap-hover-light: the handle is at 211,456,37,4; edges still does not ask it (37 px, under 60), so by the pixels of column 230: ground (73,102,81) at y 455, four whole rows (168,171,168) to (170,172,170) at y 456 to 459, its shadow (56,78,62) at y 460: no row half-way above or below. gap-dragged-light at 211,486,37,4: four whole rows (0,85,179) to (0,88,182). The round ends sit half a pixel off: columns 211 and 247 are covered by a third (106 between 73 and 166), because the window above is 435 px wide and the 36 pt handle is centred on it; both ends alike, and they have no straight side.",
     "pictures": [
      "gap-hover-light",
      "gap-dragged-light"
@@ -456,7 +464,7 @@
    },
    "S6": {
     "status": "miss",
-    "said": "gap-hover-contrast: the handle at 211,459,37,4 is (168,170,168) on (75,104,84): read at 199,458,24,8 gives 2.66 : 1 and at 236,458,24,8 gives 2.65 : 1 (edges does not ask under 60 px). Pixel for pixel the colour of gap-hover-light (2.64 : 1 at 199,455,24,8): Increase Contrast changes nothing about it, and it has no outline. Only the one row of shadow under it reaches 3.86 : 1.",
+    "said": "gap-hover-contrast: the handle at 211,459,37,4: read at 199,458,24,8 and at 236,458,24,8: 2.55 : 1, at most 2.66 with the ruler's error, (166,168,166) on (75,105,84); 3 is asked, 2.88 would reach it (edges does not ask under 60 px). The same 2.55, at most 2.66, in gap-hover-light at 199,455,24,8: Increase Contrast changes nothing about it, and it has no outline.",
     "pictures": [
      "gap-hover-contrast"
     ]
@@ -465,21 +473,21 @@
   "focus ring": {
    "S1 at 1x": {
     "status": "pass",
-    "said": "ring-light: edges on the outer edge at 9,39,331,657: steps of 143, 176, 171, 227 levels (left, top, right, bottom), each over 0 pixels between; on the inner edge at 12,42,325,651: 155, 182, 172, 230, each over 0. Across every side 3 whole pixels of (0,122,255) between the surface and the window.",
+    "said": "ring-light: edges on the outer edge at 9,39,331,657: steps of 146, 176, 166, 228 levels (left, top, right, bottom), each over 0 pixels between; on the inner edge at 12,42,325,651: 176, 193, 183, 234, each over 0; from the line alone onto the window, at 13,43,323,649 with --reach 3: 255, 246, 255, 254, each over 0. The line is 3 whole pixels of (0,122,255) on every side.",
     "pictures": [
      "ring-light"
     ]
    },
    "S1 at 2x": {
     "status": "pass",
-    "said": "ring-2x-light (a corner only: left and top sides): edges on the outer edge at 26,26,400,400: left 175 levels over 0 pixels between, top 171 over 0. On the inner edge at 32,32,400,400 it says 1 and 2 between, but is fooled: its outside sample straddles the line's outer edge and it counts the surface's own pixels; drawn 2 px further in, at 34,34,400,400, so that the sample is all line: left 255 levels over 0, top 246 over 0. The line is 6 whole pixels of (0,122,255), x 26 to 31 and y 26 to 31.",
+    "said": "ring-2x-light (a corner: left and top sides only): edges on the outer edge at 26,26,400,400, from the surface onto the line: left 114 levels over 0 pixels between, top 98 over 0; on the inner edge at 32,32,400,400, from the line onto the window: left 255 over 0, top 246 over 0. The line is 6 whole pixels, x 26 to 31 and y 26 to 31.",
     "pictures": [
      "ring-2x-light"
     ]
    },
    "S2": {
     "status": "pass",
-    "said": "ring-light: no side with a row half-way at 9,39,331,657 or at 12,42,325,651; the line is x 9 to 11, x 337 to 339, y 39 to 41, y 693 to 695, every pixel (0,122,255) (bottom (0,121,253) to (0,122,254)). The one paler pixel inside it, (255,76,80), is the window's own edge, macOS's. The same in ring-2x-light.",
+    "said": "ring-light: no side with a row half-way at 9,39,331,657, 12,42,325,651 or 13,43,323,649 (--reach 3); the line is x 9 to 11, x 337 to 339, y 39 to 41, y 693 to 695. The one paler pixel inside it, (255,76,80), is the window's own edge, macOS's. None in ring-2x-light at 26,26,400,400 and 32,32,400,400 either.",
     "pictures": [
      "ring-light",
      "ring-2x-light"
@@ -487,7 +495,7 @@
    },
    "S6": {
     "status": "miss",
-    "said": "ring-contrast: edges on the outer edge at 9,40,331,662: on the way at most 2.78 : 1 at the left, 3.0 right, 3.39 top, 5.73 bottom, and the best pixel on the way is not the ring but the light line macOS draws round the window, (248,185,192), or the white title bar. The ring itself, (0,64,221), is 1.50 : 1 (left), 1.34 (top), 1.14 (right), 1.71 (bottom) to the surface it lies on, (79,115,141), (53,107,154), (72,96,109), (19,56,43): darker than in ring-light, on a dark surface, and still 3 px wide.",
+    "said": "ring-contrast: edges on the outer edge at 9,40,331,662: the line at the side is 2.67 : 1 (left), 2.22 (top), 1.64 (right), 1.31 (bottom) to the wallpaper beyond the 3 px of surface; with --reach 3, to the surface it lies on: 1.54, 1.35, 1.10, 1.69. All eight under 3. The ring is (0,64,221), darker than in ring-light, on a dark surface, and still 3 px wide. What does stand out there, 2.99 (left), 4.02 (right), 7.71 (bottom) at 12,43,325,656, is the light line (248,185,192) macOS draws round the window.",
     "pictures": [
      "ring-contrast"
     ]
@@ -496,21 +504,21 @@
   "peek outline": {
    "S1 at 1x": {
     "status": "pass",
-    "said": "peek-light: edges on the outer edge at 622,37,395,520: left 108 levels over 1 pixel between, top 86 over 1, right 136 over 2, bottom 155 over 2; on the accent line's inner edge at 626,41,387,512: 1, 1, 2, 1. The twos are fooled: between the tool's two samples lie five things of one whole pixel or more, and it counts the others as the way. Pixel by pixel at the right: wallpaper (132,184,211), 1 px of the surface (98,136,157), 4 px of (0,122,255), 1 px of light line (172,192,205), 1 px of the window's own edge (22,145,255), macOS's, then the window. Drawn again so that one sample is all line, at 622,37,400,520: right 136 levels over 1 (the pixel of surface). The accent line is 4 whole pixels on all four sides, the same pixel value all along each side.",
+    "said": "peek-light: the outline is 4 px of (0,122,255) and inside it 1 px of light line, so the reach is shortened to keep each sample in one colour. edges with --reach 3 on the outer edge at 622,37,395,520, from outside onto the accent line: left 102 levels over 0 pixels between, top 71 over 1, right 132 over 1, bottom 190 over 0; the one pixel at the top (y 36) and right (x 1017) is the sliver of surface left outside the outline. From the accent line onto the window at 627,42,385,510: top 206 over 1 (the light line); the other sides 12 levels, blue on blue, too small. At the usual reach the outer box says 1, 1, too small, 1; only at 626,41,387,512 does the top say 2, its outside sample being half surface, half line.",
     "pictures": [
      "peek-light"
     ]
    },
    "S2": {
     "status": "pass",
-    "said": "peek-light: edges flags ONE ROW HALF-WAY at the top at 622,37,395,520 and at top and bottom at 626,41,387,512. The row it means is the light line inside the accent one (y 41, y 552, x 626, x 1012): white at about half strength over the surface, (158,183,206) over (53,109,158), as in the drop preview, so by chance between the colours either side. It is 1 px on all four sides, and the accent line's outer edge goes from (53,109,158) to (0,122,255) with nothing between: nothing is off the grid in the enlargements at 616,32,50,40 and 980,525,44,44.",
+    "said": "peek-light: with --reach 3 no side has a row half-way, at 622,37,395,520 or at 627,42,385,510. At the usual reach the left of 622,37,395,520 is flagged: its inner sample is one pixel of light line (173,191,205) and one of the window's own edge (22,145,255), macOS's, and the pixel it flags is that light line itself, held against the mixture: fooled, not a half-covered column. The accent line is 4 whole pixels and the light line 1 on all four sides (x 622 to 626, x 1012 to 1016, y 37 to 41, y 552 to 556); enlargements at 616,32,50,40 and 980,525,44,44.",
     "pictures": [
      "peek-light"
     ]
    },
    "S6": {
     "status": "miss",
-    "said": "peek-contrast: edges on the outer edge at 622,38,395,523: on the way at most 2.6 : 1 at the top, 2.98 at the bottom, 3.74 at the right; the left, measured below macOS's alert at 622,310,395,290: 2.66. The accent line (0,64,221) by itself is 1.06 : 1 to the surface under it at the bottom (38,90,66), 1.38 at the top, 1.46 at the left; the light line inside it, (145,155,160), 2.82 at the bottom. Only against the bright wallpaper at the right does the line pass.",
+    "said": "peek-contrast: edges on the outer edge at 622,38,395,523: the line at the side is 2.29 : 1 at the top, 1.05 at the bottom, 3.66 at the right; the left, below macOS's alert, at 622,310,395,290: 1.51. With --reach 3 the accent line reads 2.28, 1.06, 3.54, 1.49. It is (0,64,221) on the dark surface (38,90,66): only against the bright wallpaper at the right does it pass. The light line inside it, (145,155,160), cannot be had alone from the tool (macOS's window edge (164,193,248) is its neighbour); by the tool's formula it is 2.82 : 1 to the surface at the bottom.",
     "pictures": [
      "peek-contrast"
     ]
@@ -519,136 +527,81 @@
   "rectangle": {
    "S2": {
     "status": "pass",
-    "said": "band-light: the rectangle is at 721,115,249,526, a line of 1 px: (0,123,255) at x 721, x 969, y 115, y 640, with (0,136,255) outside and (0,134,255) inside right beside it on every side; no second, fainter row anywhere (enlargement at 712,106,40,30). edges cannot flag a half row here, the step being 2 levels.",
+    "said": "band-light: the rectangle is at 721,115,249,526, a line of 1 px: (0,123,255) at x 721, x 969, y 115, y 640, with (0,136,255) outside and (0,134,255) inside right beside it on every side; no second, fainter row anywhere (enlargement at 712,106,40,30). edges cannot flag a half row here, the step being 2 levels on every side.",
     "pictures": [
      "band-light"
-    ]
-   }
-  },
-  "tile": {
-   "S1 at 1x": {
-    "status": "pass",
-    "said": "tiles-icons-light: edges on the tiles at 12,464,212,229 and 236,464,211,229: steps of 89 to 152 levels over 0 or 1 pixel between on all eight sides; the group's tile at 627,564,385,129: 145 to 159 levels over 1 on all four. The one pixel is the tile's own hairline, (177,191,187) beside (192,211,205). The plates inside the group at 635,572,183,113 and 821,572,183,113: steps of 0 to 18 levels, too small to ask. tile-large-light at 12,374,325,319: 179 to 192 levels over 0, 1, 1, 0.",
-    "pictures": [
-     "tiles-icons-light",
-     "tile-large-light"
-    ]
-   },
-   "S2": {
-    "status": "pass",
-    "said": "tiles-icons-light at 12,464,212,229, 236,464,211,229, 627,564,385,129 and tile-large-light at 12,374,325,319: no side with a row half-way; in the enlargements at 4,456,50,40 and 618,556,50,40 the hairline is one whole pixel at about nine tenths of the step, the same on opposite sides.",
-    "pictures": [
-     "tiles-icons-light",
-     "tile-large-light"
-    ]
-   },
-   "S3": {
-    "status": "pass",
-    "said": "The count 2 in its capsule, the only word. tiles-icons-dark: fits on the capsule at 982,663,18,18: 6.0 pt left, 5.0 top, 6.0 right, 5.0 bottom. In tiles-icons-light the same box says 0 all round, fooled by the plate showing in the box's corners (the capsule is round); on a box inside the capsule at 984,666,14,12: 4.0, 2.0, 4.0, 2.0, which with the 2 and 3 px left out is again 6, 5, 6, 5; the same in tiles-icons-contrast and opaque-light at 984,672,14,12. The digit is whole. The capsule itself keeps 4.0 pt from the right and 4.0 from the bottom of its plate (fits at 821,572,183,113), the digit 10 and 9. No picture shows a count of two digits.",
-    "pictures": [
-     "tiles-icons-light",
-     "tiles-icons-dark",
-     "tiles-icons-contrast",
-     "opaque-light"
-    ]
-   },
-   "S4 light on glass": {
-    "status": "pass",
-    "said": "tiles-icons-light: the count, read at 985,666,12,11: 5.94 : 1, ink (255,255,255) on (92,102,99). One capsule in the picture, over the pale green plate (184,203,197); nothing shows through the plate.",
-    "pictures": [
-     "tiles-icons-light"
-    ]
-   },
-   "S4 dark on glass": {
-    "status": "pass",
-    "said": "tiles-icons-dark: the count, read at 985,666,12,11: 5.35 : 1, ink (255,255,255) on (96,110,104).",
-    "pictures": [
-     "tiles-icons-dark"
-    ]
-   },
-   "S4 light": {
-    "status": "pass",
-    "said": "opaque-light: the count, read at 985,672,12,11: 5.94 : 1, ink (255,255,255) on (92,102,99), pixel for pixel as on glass.",
-    "pictures": [
-     "opaque-light"
-    ]
-   },
-   "S6": {
-    "status": "miss",
-    "said": "tiles-icons-contrast: ink: the count, read at 985,672,12,11, is 5.94 : 1, (255,255,255) on (92,102,99), the same as without Increase Contrast; 7 is asked. Outlines: the tiles at 12,467,212,232 and 236,467,211,232 get a light line (228,233,231) with a dark one (12,28,20) outside it: 4.07 to 6.62 : 1 at the sides and bottom, 2.94 : 1 at the top of both, where the shadow of the window above dims it to (175,179,177); the group's tile at 627,568,385,131: 4.15 to 7.18. The two plates inside the group, at 635,576,183,115 and 821,576,183,115, keep the hairline of the light look, (170,186,181): 1.31 to 1.58 : 1 to the frame round them.",
-    "pictures": [
-     "tiles-icons-contrast"
-    ]
-   },
-   "S7": {
-    "status": "pass",
-    "said": "opaque-light (what shows of the tiles under the sheet): flat across each ground, in bands 8 px high: 2.0, 1.0, 2.0 levels at 16,640,204,8, 16,660,204,8, 16,685,204,8, with (41,98,72) behind at the tile's left and (25,72,56) at its right; 1.0 at 240,660,204,8, at 640,670,170,8, at 826,670,150,8 and along the group's frame at 640,692,360,5. Over the whole of a ground it is more: 4.4 at 16,625,204,68, 5.0 at 240,625,204,68, 4.0 at 640,655,170,28, 10.0 down the group's frame at 629,600,5,90. That is a shade drawn from top to bottom: green 207 at y 625 to 203 at y 685 in every column of both tiles, whatever is behind, and the same values as in tiles-icons-light. Weak as a test: only two greens of the wallpaper lie behind a tile here, no window of a strong colour.",
-    "pictures": [
-     "opaque-light"
     ]
    }
   }
  },
  "other": [
-  "name-contrast, name-typed-contrast: macOS's alert about Python has the keyboard and its shadow lies on the field, so S6 of the name field is left out: 6.15 : 1 for the typed name was measured there, where 7 is asked.",
-  "line-hint-light, line-hint-dark: the dot that parts the sentence from the hint can hardly be seen: 1.34 : 1 at 571,626,14,10 in the light look, 1.38 in the dark one (3.07 in line-hint-contrast). What parts the two is the gap of 22 px (columns 567 to 588), and that the sentence is heavier than the hint.",
+  "name-contrast, name-typed-contrast: S6 for the name field is left out. The alert about Python covers x 382 to 641 of the panel's 322 to 701, its shadow lies on all the words that are left (ground 207 to 216 at x 340, 188 to 192 at x 364, where the panel's own is 220), and it has taken the keyboard, so the field is not as a person has it (no caret, the typed name greyer than the heading). For what they are worth, strip at x 340, then strip at x 364 nearer the alert: heading at 340,194,38,12: 8.24 and 7.01 : 1; note Arbor at 339,250,31,12: 8.25; note with the return sign at 340,250,38,12: nothing said and 6.87; typed name at 340,216,38,22: 6.52 and 5.29; placeholder at 340,216,38,22: 4.18 and 3.34 (in these last two the strip at x 340 is read with its neighbour's ink, which the shadow has darkened, so they are high if anything). The typed name wants a clean picture: it is the one that may truly be under 7. What the alert does not touch: left and right sides at 322,181,380,96, the line at the side 4.57 : 1 to the red outside, the ground 3.81.",
+  "line-hint-light, line-hint-dark: the dot that parts the sentence from the hint can hardly be seen. It is 4 pixels, too few for read to say anything; its farthest pixel at 578,631 is (191,191,191) on (237,127,129), 1.44 : 1, in the light look, (65,65,65) on (163,40,45), 1.41 : 1, in the dark one, and (98,98,98) on (220,220,220), 4.45 : 1, in line-hint-contrast at 578,637. What parts the two is the gap of 22 px (columns 567 to 588), and that the sentence is heavier than the hint.",
   "line-sentence-light, line-sentence-dark, line-problem-light, line-problem-dark: the line's top side lies on the feet of a tile's label, quokkadoo Notes on oaks. Where it is free (line-problem-light at 335,603,57,8) its letters end in row 610; the line's hairline is row 610 and its ground begins in 611, so from x 296 (from 397 in line-problem) the letters stand on the line's edge with no pixel between and their last row is the hairline. In the contrast pair the letters end in row 615 and the hairline is row 616: nothing lost, still no pixel between.",
   "line-sentence-light, -dark, -contrast: the right end of the line covers 22 of the 40 px of a tile's icon (whole in line-problem-light at 707,609,40,40); the white and green rest sticks out at 729,609,18,40 like a tab on the line.",
   "bar-paused-light, -dark, -contrast: at one pixel to the point the sign for escape in Paused until ... at 406,622,14,17 is a ring of 12 px with a stroke in it and reads as a clock; only someone who knows the sign will find the key.",
-  "line-problem-dark, line-sentence-dark, bar-paused-dark: over the dark wallpaper the line's ground is 4 to 20 levels from what is around it; only its rim sets it off, at most 1.96 to 2.23 : 1. In line-hint-light the ground is 1.37 : 1 to the red around it and the hairline 1.84. No cell asks this outside Increase Contrast.",
-  "name-light, name-dark: no caret in the empty field in either picture (the ink at 341,217,50,15 is the placeholder alone; a caret takes rows 213 to 236). It may be its blink. With the placeholder at 2 : 1 and nothing drawn round the field, nothing then says that one can type.",
-  "name-typed-light: the caret at 398,213,2,24 is (180,125,164) on (240,130,136): 1.29 : 1; in name-typed-dark (163,164,255): 3.18 : 1. It may be caught fading. In both it stands against the g of writing with no pixel between (columns 397 and 398). The caret is macOS's.",
+  "line-problem-dark, line-sentence-dark, bar-paused-dark: over the dark wallpaper the line's ground is 3 to 21 levels from what is around it, 1.03 to 1.19 : 1; only the line at its side sets it off, 1.94 to 2.24 : 1. In line-hint-light over red the ground is 1.45 and 1.72 : 1, the line at the side 1.79 and 1.88; the name field in name-light 1.51 to 1.78 and 1.79 to 1.93. No cell asks this outside Increase Contrast.",
+  "name-light, name-dark: no caret in the empty field in either picture (the ink at 341,217,50,15 is the placeholder alone; a caret takes rows 213 to 236). It may be its blink. With the placeholder at 2 : 1 and nothing drawn round the field, nothing in the field itself then says that one can type; the heading does.",
+  "name-typed-light: the caret at 398,213,2,24, read at 392,213,14,5, is (180,125,164) on (240,130,136): 1.29 : 1 (at most 1.34); in name-typed-dark (163,164,255): 3.18 : 1 (3.31). It may be caught fading. In both it stands against the g of writing with no pixel between (columns 397 and 398). The caret is macOS's.",
   "name field and heads-up line, all contrast pictures: with Increase Contrast both have a flat ground of (220,220,220) in what is otherwise the light look, greyer than the windows in the same pictures (line-hint-contrast: the update window (246,246,246), a title bar (253,253,253)).",
-  "No picture shows either panel with Reduce Transparency (opaque-light shows the shortcut sheet only), nor the name field at 2x: S7, S4 light, S4 dark for both, and S1 at 2x for the name field are left out. The name field is shown over red only, the line never over black or white.",
-  "go-to-2x-light is not at two pixels to the point: its own metadata says the screenshot was 2880 by 1800 and the file is 1600 by 1000, so one pixel of the picture is 1.8 of the display's and the 600 pt panel is 666 px wide, at 467,276,666,291. It has been resampled (overshoot beside the chosen row: 191,233,241 at y 345, 0,108,245 at y 347). S1 at 2x for go to is therefore left out: nothing shows it. For what it is worth, in the shrunk picture: left 110 levels over 1 pixel, right 149 over 1 with one row half-way, chosen row at 476,347,649,42 top 186 over 1 and bottom 189 over 1, which is what shrinking by 5 to 9 does to a sharp side.",
-  "go to, even with nothing behind it: go-to-alone-light: placeholder 1.27 : 1 at 24,14,378,27, titles 2.95 at 97,151,218,16, notes 1.37 at 542,153,39,13; go-to-alone-dark: placeholder 1.68, titles 1.46, notes 1.63, app names 5.21. So the greys miss on the material by itself; the windows behind only make it worse in the light look, and in the dark look the titles are better over red (2.4) than on the bare material (1.46).",
-  "go-to-dark: the fainter words change sides: the placeholder and the notes are darker than their ground over the red and the blue window and lighter than it over the night sky, so along one line the words fade out and come back (placeholder 1.07 at x 232, 1.01 at x 424, 1.55 at x 520).",
-  "go-to-light and go-to-dark: what one sees first in each row is 'Arbor' six times in bold (5.7 to 9.8 : 1); the part that differs from row to row is the faint part (1.84 to 3.45).",
-  "go-to-light, go-to-dark: the dividing line under the field (y 255) is 230,230,230 in the light look: 1.64 : 1 to the ground over red, 1.49 in the middle, 1.32 over blue; in the dark look 35,35,35: 1.64 over red, 2.11 over blue, 1.0 : 1 over the night sky (32,32,59), where it is gone.",
-  "minimap-dark: over the red window the plates out of view (107,67,57) stand 1.16 : 1 to the panel's ground (162,41,46), and the plate in view (35,104,93) 1.11 : 1: in lightness both merge with the ground and only the hue tells them apart. The gaps of 2 px between the four small plates (x 452, y 609) are all but gone. The blue line round the view is 1.81 : 1 to the ground, the Desktop strip's outline 1.89.",
-  "minimap-light: plates out of view (148,115,103) 1.63 : 1 to the ground (237,128,130), plate in view 2.57, blue line 1.73 to the ground and 1.48 to the plate it surrounds; the panel's ground is 1.67 : 1 to the red window and its hairline 1.69: nothing in it reaches 3 : 1 over red, though the eye still sorts it by hue.",
-  "minimap-contrast: inside the panel Increase Contrast changes little: plates out of view (139,166,153) 1.91 : 1 to the ground (220,220,220), the Desktop strip's outline (154,154,154) 2.05 : 1; the blue line (0,64,221) is 5.51 to the ground but 1.05 : 1 to the plate it surrounds (35,97,89), kept apart only by the one pale pixel between. No plate has an outline of its own.",
-  "apps-minimap-dark (the panel alone): the grey plate at 134,105,21,45 (106,119,132) is 1.10 : 1 to the tinted ground (111,126,144) and the two blue plates at 10,10,122,47 and 10,59,122,44 (54,120,194 and 45,122,198) 1.10 and 1.07 : 1: three of eleven windows nearly vanish. apps-minimap-light: the pale plates at 86,10,24,45 (155,167,183) 1.44 : 1.",
-  "minimap-light, -dark, -contrast: the blue line round the view fills the 2 px gap below the plate (y 588 to 589) and so touches the two plates under it, and at the right (x 500 to 501) it covers the Desktop strip's left outline for the height of the view; at the left and top it stands 3 px outside the plates' common edge, so the plate in view looks larger than its neighbours' column.",
+  "No picture shows either panel with Reduce Transparency (opaque-light shows the shortcut sheet only), nor the name field at 2x: S7, S4 light, S4 dark for both, and S1 at 2x for the name field are left out. The name field is shown over red only, the line never over black or white: the line's worst ground so far is the darkest thing it was shown over.",
+  "go-to-2x-light is not at two pixels to the point: its own metadata says the screenshot was 2880 by 1800 and the file is 1600 by 1000, so one pixel of the picture is 1.8 of the display's and the 600 pt panel is 666 px wide, at 467,276,666,291. It has been resampled (overshoot beside the chosen row: 191,233,241 at y 345, 0,108,245 at y 347). S1 at 2x for go to is therefore left out: nothing shows it. For what it is worth, in the shrunk picture: left 111 levels over 1 pixel and right 149 over 1, both with one row half-way; chosen row at 476,347,649,42 top 185 over 1 and bottom 189 over 1: what shrinking by 5 to 9 does to a sharp side.",
+  "go to, even with nothing behind it: go-to-alone-light: placeholder 1.27 : 1 at 24,14,378,27, titles 2.91 (at most 3.03) at 97,151,218,16, notes 1.37 at 542,153,39,13, app names 7.32; go-to-alone-dark: placeholder 1.68, titles 1.45, notes 1.65, app names 5.20. The greys miss on the material by itself; in the dark look the titles are better over red (2.3) than on the bare material (1.45).",
+  "go-to-dark: the fainter words change sides: the placeholder and the notes are darker than their ground over the red and the blue window and lighter than it over the night sky, so along one line the words fade out and come back (placeholder 1.08 at x 232, 1.02 at x 352, 1.55 at x 520).",
+  "go-to-light and go-to-dark: what one sees first in each row is 'Arbor' six times in bold (5.67 to 9.69 : 1); the part that differs from row to row is the faint part (1.84 to 3.43).",
+  "Whose drawing, from Sources/ArborKit/UI/FinderPanel.swift in the worktree: the field is macOS's text field with its placeholder; rows, chosen row, titles, notes, 'Nothing matches', dividing line and outline are drawn by Arbor's own view in macOS's named colours (label, secondary, tertiary, separator, accent) over a popover material. Drawn so, the greys do not take on the ground's colour as macOS's own labels on a material do.",
+  "go-to-light, go-to-dark: the dividing line under the field (y 255; Arbor's, in macOS's separator colour): light 1.66 : 1 to the ground over red (at 182,255,250,1), 1.50 in the middle, 1.32 over blue; dark 1.62 over red, 2.08 over blue, 1.01 : 1 over the night sky (at 412,255,250,1), where it is gone.",
+  "go-to-contrast against go-to-alone-contrast: the panel's own outline is 150,150,150 in the picture of the panel alone (x 0) and 221,221,221 followed by 234,234,234 on the screen (x 212, x 213), with the dark hairline outside it at x 211. In the dark look likewise: 35,35,35 alone, 79,79,79 on screen. What marks the side on the screen is what macOS adds round the window, not the line Arbor draws.",
+  "minimap-dark: over the red window the plates out of view (107,67,57) stand 1.16 : 1 to the panel's ground (162,41,46) (the ruler, at 536,499,82,110: 1.16), and the plate in view (35,104,93) 1.11 : 1: in lightness both merge with the ground and only the hue tells them apart. The gaps of 2 px between the small plates (x 452, y 609) are all but gone. The blue line round the view is 1.81 : 1 to the ground, the Desktop strip's outline 1.89. The panel's own side: line 4.18 to 5.02, ground 1.58 to 1.94 to the red outside.",
+  "minimap-light: plates out of view (148,115,103) 1.63 : 1 to the ground (237,128,130), plate in view 2.57, blue line 1.73 to the ground and 1.48 to the plate it surrounds; the panel's side at 396,489,232,160: line 1.79 to 1.88, ground 1.46 to 1.73 to the red window. Nothing in it reaches 3 : 1 over red, though the eye still sorts it by hue.",
+  "minimap-contrast: inside the panel Increase Contrast changes little: plates out of view (139,166,153) 1.91 : 1 to the ground (220,220,220), the Desktop strip's outline (154,154,154) 2.05 : 1; the blue line (0,64,221) is 5.51 to the ground but 1.05 : 1 to the plate it surrounds (35,97,89), kept apart only by the one pale pixel between. No plate has an outline of its own. All of it is Arbor's drawing (MinimapPanel.swift: plates out of view at 0.45 of their colour).",
+  "apps-minimap-dark (the panel alone): the grey plate at 134,105,21,45 (106,119,132) is 1.10 : 1 to the tinted ground (111,126,144) and the two blue plates at 10,10,122,47 and 10,59,122,44 (54,120,194 and 45,122,198) 1.10 and 1.07 : 1: three of eleven windows nearly vanish; the blue line is 1.02 : 1 to the grey outside it. apps-minimap-light: the pale plates at 86,10,24,45 (155,167,183) 1.44 : 1.",
+  "minimap-light, -dark, -contrast: the blue line round the view fills the 2 px gap below the plate (y 588 to 589) and so touches the two plates under it, and at the right (x 500 to 501) it covers the Desktop strip's left outline for the height of the view; at the left and top it stands 3 px outside the plates' common edge.",
   "minimap-contrast: the panel is 231 px wide and begins at x 397, in minimap-light 232 px at x 396 (the Dock is wider in that picture, so the room's shape differs); both are on whole pixels.",
-  "go-to-contrast, go-to-none-contrast: the alert about Python covers x 382 to 642 of the panel: the end of the placeholder, three titles and the middle of the top side were measured in go-to-alone-contrast or not at all.",
-  "sheet-2x-light is not at two pixels to the point: its own metadata says the screenshot was 2880 by 1800 and the file is 1600 by 1000, so 1.11 px to the point, resampled. S1 at 2x cannot be asked of it and I left the cell out for both panels. What is in it, panel at 217,246,1166,541: left 79 levels over 0 pixels, right 83 over 0, bottom 77 over 1 with one row half-way, which resampling alone explains. go-to-2x-light and tiles-2x-light carry the same metadata.",
-  "menu-whole-light, menu-saved-views-light, menu-dock-light, menu-adjust-light and menu-help-light are shrunk too: rows 20 px apart against 24 in menu-light, the menu 241 px wide against 286, so about 0.84 px to the point, and soft when enlarged. Their contrasts read a little low on thin strokes; no edge in them can be asked S1 or S2.",
+  "go-to-contrast, go-to-none-contrast: the alert about Python covers x 382 to 642 of the panel and its shadow darkens the ground to about x 330 and down to the fourth row (230 falls to 198): the end of the placeholder and three titles were measured in go-to-alone-contrast, the middle of the top side not at all.",
+  "The ruler: its shortest reach is 3 px, and the minimap's marks lie 1 and 2 px apart, so on the small marks it still counts a neighbour in; those sides were settled pixel by pixel.",
+  "sheet-2x-light is not at two pixels to the point: its own metadata says the screenshot was 2880 by 1800 and the file is 1600 by 1000, so 1.11 px to the point, resampled. S1 at 2x cannot be asked of it and I left the cell out for both panels. What is in it, panel at 217,246,1166,541: left 80 levels over 0 pixels, right 86 over 0, bottom 80 over 1 with one row half-way, which resampling alone explains. go-to-2x-light and tiles-2x-light carry the same metadata.",
+  "menu-whole-light, menu-saved-views-light, menu-dock-light, menu-adjust-light and menu-help-light are shrunk too: rows 20 px apart against 24 in menu-light, the menu 241 px wide against 286, so about 0.84 px to the point, and soft when enlarged. No edge in them can be asked S1 or S2, and of the 43 lines of words I asked in them the third ruler can read 14: soft letters have fewer than six pixels of one colour to a strip.",
   "menu-whole-light: the whole menu is 705 px high at 488,26,241,705 in that shrunk picture, which makes about 840 points, not 705. menu-light: on 1024 by 768 the menu ends at y 698 with an arrow; the whole last group (Hold This View, Hold Still, Settings…, Keyboard Shortcuts…, Help, Pause Arbor, Quit Arbor) is below the fold.",
+  "menu-light: nobody can learn a shortcut from this menu on glass: every key equivalent is 1.80 to 1.86 : 1 (dark 1.90 to 2.18). It is macOS's drawing and costs nothing in the cells; a person would notice all the same, and the panel of shortcuts is then the only place to read them.",
   "menu-light at 870,130,60,45: the up and down arrow keys come out as small solid triangles beside Step Out and Step In, and in menu-dock-light all four do, where the panel of shortcuts (sheet-light at 104,266,31,11) shows arrows for the same keys. macOS's doing in the menu.",
   "The same commands stand under different headings in the two places: the panel says Look, Arrange, Arbor itself (sheet-light); the menu says View, Focused Window, Arrangement, Arbor (menu-whole-light).",
-  "sheet-light, sheet-2x-light: on glass the panel is three colours at once, red, grey-blue and blue with pale green below (the ground varies by 82 levels at 33,149,959,438; dark 58). The words hold; the panel looks like a patchwork of what is behind it.",
+  "sheet-light, sheet-2x-light: on glass the panel is three colours at once: (239,130,134) over the red window, (119,197,242) over the blue one, (197,221,214) over the pale tiles, grey-blue between. The ruler leaves 35 % of 33,149,959,438 out as ink, which is to say the ground itself is in several colours. It looks like a patchwork of what is behind it.",
   "sheet-light, column three: the rows are 20 px apart except one step of 21 px between Click a tile (765,380,60,11) and the pinch row (767,401,58,13). Nobody would see it; a ruler does.",
-  "sheet-light: columns two and three end at y 452 while column one runs to y 538, leaving about 540 by 100 px empty at 360,450,630,100 above the last line.",
+  "sheet-light: columns two and three end at y 452 while column one runs to y 538, leaving about 630 by 100 px empty at 360,450,630,100 above the last line.",
   "sheet-own-light is an older picture (its clock says Wed Oct 14) with a flat ground and the spelling Neighbouring Window at 148,555,125,14, where sheet-light says Neighboring Window. It shows no glass.",
   "The pointer lies on Show Everything on All Displays at 228,246,14,18 in sheet-light, sheet-dark, sheet-contrast and opaque-light, and on the Desktop glyph at 731,14,12,16 in menu-light, menu-dark and menu-contrast: the script's doing; I measured beside it.",
-  "sheet-dark: the ruler says 4 pixels between on the left and right sides; it is fooled by the panel's shadow darkening the red and blue outside (239 down to 222 over six pixels). Pixel by pixel the side is one black rim pixel at x 28 and a light edge fading over two.",
+  "sheet-dark at 29,145,967,446: the ruler says 2 pixels between on the left and right sides at a reach of 5, and 1 on the left at a reach of 3 (the right's step is then 58 levels, too small): the panel's shadow darkens the red and blue outside. menu-dark at 651,31,286,668 likewise: 2 at a reach of 5, 0 at 3. Pixel by pixel each side is one black rim pixel and a light edge.",
   "bar-nine-light: nine saved views make the item 306 px wide (3 to 309); seven of nine digits carry a plate, 20 px wide and 2 px apart (158,6,130,18), so they read as one grey band. The plate is (172,172,172) on (218,218,218), 1.6 : 1, and is the only mark of where one is.",
-  "bar-buttons-dark (flat, ground 32): glyphs 12.72 to 13.42 : 1, the digit 13.42 at 271,7,13,16, the tiles on the plate 6.34 at 244,8,16,14, forward greyed 2.78 at 198,6,14,18. I left S4 dark out for the menu: no picture shows the menu's own words flat in the dark look. For the same reason S7 is left out for the menu, and S4 dark for the shortcuts.",
+  "bar-buttons-dark (flat, ground 32): the Desktop 12.72 : 1 at 221,6,18,18, the digit 13.27 at 271,7,13,16, the tiles on the plate 6.34 at 244,8,16,14; of back, forward and the dots the ruler says nothing (second round 10.86, 2.56 greyed, 12.14; farthest pixels 13.30, 2.84, 13.42). I left S4 dark out for the menu: no picture shows the menu's own words flat in the dark look. For the same reason S7 is left out for the menu, and S4 dark for the shortcuts.",
   "bar-icon-light, bar-icon-dark: the single icon 11.66 and 13.42 : 1 at 770,5,24,20, 18 by 14 px, sharp.",
   "menu-help-light: the picture ends at y 760 and cuts the Help submenu after Show Log at 375,750,50,10: the picture's edge, not the menu's; the rest of that submenu cannot be judged.",
   "menu-contrast: the menu's ground darkens toward its left side, (220,224,224) at x 652 to (245,254,254) at x 700: the shadow of the Python alert beside it, the script's doing.",
+  "About the ruler of the third round: it agrees with the first round to within 0.05 on the lines that sit near a mark (first, second, third: opaque-light's headings 3.11, 2.92, 3.08; sheet-light's worst row 4.86, 4.29, 4.81; sheet-contrast's last line 7.83, 6.64, 7.83). Its blind spot is new: a strip with fewer than six pixels within 6 % of the farthest says nothing, and that silences every thin glyph in the menu bar (back, forward, the dots: four or five such pixels each) and most lines of the shrunk pictures. No verdict of mine turns on a silent box: each cell has a reading of the ruler's own that decides it. Two passes sit on their marks: the shortcuts' last line flat, 2.99 against 3, and column three in the dark on glass, 4.54 against 4.5.",
   "settings-apps-advanced-light, -dark, -contrast: behind Advanced, Pause for, its text and its Add an App… begin at x 355 and 362, where every other row of the window begins at x 232 and 239: 123 px to the right, with nothing to its left.",
   "settings-general-advanced-*, settings-gestures-advanced-*, settings-windows-advanced-*: rows behind Advanced stand 12 to 14 px apart (last line of one row's text to the next title) and have no line between them; rows of the group above stand 25 to 27 px apart with a line. The first row's title begins 10 px under the word Advanced, so it reads as one block.",
-  "settings-general-dark (also light, fainter): each group's hairline shows on its right and bottom sides and corners only, 56 against 43, so the groups look lit from one side; see at 215,376,60,56 against 710,376,60,56. macOS's drawing at one pixel to the point.",
-  "settings-gestures-light, settings-rules-light, settings-windows-light: text fields have the group's own fill (236,239,239) and an outline of 1.21 to 1.25 : 1 (1.32 to 1.39 in dark): an empty field, as at 231,251,519,21 with its 1.81 : 1 placeholder, is nearly invisible. macOS's.",
+  "settings-general-dark (also light, fainter): each group's hairline shows on its right and bottom sides and corners only, 1.26 : 1, so the groups look lit from one side; see at 215,376,60,56 against 710,376,60,56. macOS's drawing at one pixel to the point.",
+  "settings-gestures-light, settings-rules-light, settings-windows-light: text fields have the group's own fill (ground 1.0 : 1) and an outline of 1.25 : 1 (1.39 in dark): an empty field, as at 231,251,519,21 with its 1.80 : 1 placeholder, is nearly invisible. The field is macOS's; a label beside it would cure both.",
   "settings-on-screen-light: the selected sidebar entry turns pink-grey (204,182,184) over the red window while the sidebar round it stays (240,243,243) everywhere: the selection is the only glass in this window.",
   "settings-shortcuts-light, -dark, -contrast: this pane alone has no bar with Restore Defaults, and its list runs under the window's rounded lower edge; the last row is cut through at rest.",
-  "settings-general-light and most others: the caret of the focused search field stands on the S of the placeholder Search (at 4,32,196,34). macOS's. The field has no magnifying glass.",
+  "settings-general-light and most others: the caret of the focused search field stands on the S of the placeholder Search (at 4,32,196,34). macOS's. The field has no magnifying glass in any picture, with the keyboard or without.",
+  "The small grey text carries most of what the window explains and is the faintest of Arbor's own words that pass: 3.57 : 1 against 3 in light (settings-apps-advanced-light at 352,306,276,14), 5.23 in dark, 8.48 against 7 with Increase Contrast. As words one must read to act it would miss in light.",
   "settings-recording-, -clash-, -caution-, -search-, -refused-, -broken-*: these are of an earlier build (Arbor dev, blue sidebar icons, flat grey grounds, Restore Defaults in a card of its own, three shades in the dark sidebar), so what is said of warnings, refusals and the banner rests on that build. There is no picture of them with Increase Contrast, and none of recording, caution, search or the question in the banner in the dark look.",
   "No picture of the settings window at 2x, with Reduce Transparency, or in the dark look over windows: S1 at 2x, S7 and S4 dark on glass are left out.",
-  "tiles-2x-light is not at two pixels to the point, so the tile's S1 at 2x is left out: the 12 pt gap between its two tiles measures 13.3 px (y 510 to 522), the menu bar 33 px: about 1.1 px to the point, a larger picture scaled down to 1600 x 1000. macOS's own edges are soft in it too: the menu bar's lower edge goes (218,218,218), (224,221,218), (162,192,218), (79,155,218), with ONE ROW HALF-WAY at 0,0,1600,33; the red window's left edge has a column (162,97,104). For what it is worth, edges on the tiles at 1071,47,516,463 and 1071,523,516,463 says 1 pixel between on every side that can be asked.",
-  "seam: S1 is left out at 1x: the handle's straight sides are 33 px, edges says under 60 px, not asked. By the pixels (gap-hover-light, column 230) the step of 95 levels onto it and of 114 off it take 0 pixels between. No picture of it at 2x.",
-  "rectangle: S1 is left out: in band-light every step at 721,115,249,526 and 722,116,247,524 is 2 levels, too small to ask. The line is 1.13 : 1 to the blue window it lies on, (0,123,255) on (0,136,255), and the fill changes the window by 2 levels: I found it only by enlarging. The picture is of 14 October, 10:41 PM, older than the others; there is none with Increase Contrast and none in the dark look.",
-  "seam, gap-dragged-light: the handle while dragged is (0,87,182) on (73,102,83): read at 199,483,24,10 gives 1.09 : 1. It differs from the gap in hue alone; the resting handle in gap-hover-light is 2.64 : 1, in gap-hover-dark 3.88 : 1. The picture is of 14 October, older than the others.",
+  "tiles-2x-light is not at two pixels to the point, so the tile's S1 at 2x is left out: the 12 pt gap between its two tiles measures 13.3 px (y 510 to 522), the menu bar 33 px: about 1.1 px to the point, a larger picture scaled down to 1600 x 1000. macOS's own edges are soft in it too: edges flags ONE ROW HALF-WAY at the menu bar's lower edge at 0,0,1600,33 and at the red window's left at 14,46,516,880. For what it is worth, the tiles at 1071,47,516,463 and 1071,523,516,463 take 0 or 1 pixel between on all eight sides, with a row half-way at the lower tile's top and bottom.",
+  "seam: S1 is left out at 1x: the handle is 37 px long, edges asks from 60. By the pixels (gap-hover-light, column 230) the step of 95 levels onto it and of 114 off it take 0 pixels between. No picture of it at 2x.",
+  "rectangle: S1 is left out: in band-light every step at 721,115,249,526 and 722,116,247,524 is 2 levels, too small to ask. edges: the line at the side 1.13 : 1 to the blue window it lies on, the fill 1.02: I found it only by enlarging. The picture is of 14 October, 10:41 PM, older than the others; there is none with Increase Contrast and none in the dark look.",
+  "seam, gap-dragged-light: the handle while dragged, read at 199,483,24,10 and 236,483,24,10: 1.00 : 1, at most 1.05, (0,86,179) on (66,94,83), a ground with the handle's own shadow in it; to the plain gap (73,102,83) 1.09. It differs from the gap in hue alone; at rest it is 2.55 : 1 (at most 2.66) in gap-hover-light and 3.63 (at most 3.78) in gap-hover-dark at 199,455,24,8. The picture is of 14 October, older than the others.",
   "seam, gap-hover-light and gap-hover-contrast: with the ring on the window above, one pixel of gap is left between the ring (y 452 to 454) and the handle (y 456 to 459), and the pointer at 160,462 is 50 px from the handle and still an arrow.",
-  "focus ring, ring-light: in lightness the ring hardly differs from the surface it lies on: (0,122,255) is 1.24 : 1 (left), 1.40 (top), 1.63 (right), 3.21 (bottom) to it; it is told by its hue. In ring-dark 4.11 to 4.99 : 1.",
+  "focus ring, ring-light: in lightness the ring hardly differs from the surface it lies on: edges at 9,39,331,657 with --reach 3: the line at the side 1.21 : 1 (left), 1.4 (top), 1.68 (right), 3.18 (bottom); it is told by its hue. In ring-dark 4.3 to 4.97.",
   "peek outline, peek-light, peek-dark, peek-contrast: two frames of the same (0,122,255) at once: the ring, 3 px, round the red window at 9,39,441,416 and peek's outline, 4 + 1 px, round the blue one at 622,37,395,520. On the blue window the accent line and the window, (0,134,255), differ by 12 levels: only the 1 px light line parts them.",
   "peek outline, peek-light: the outline takes 5 of the 6 px of surface round the column, so a sliver of 1 px of darker surface is left outside it at the top (y 36) and right (x 1017).",
-  "drop preview, preview-light, preview-dark, preview-contrast: the preview lies over the window in the hand: its border crosses that window at y 690 to 692 (696 to 698 with Increase Contrast) and its fill tints that window's title bar: (159,215,239) under the preview at x 100, (194,235,236) beside it at x 5. Without Increase Contrast its border is at most 1.87 : 1 (light) and 1.84 : 1 (dark) to the red window at the top.",
+  "drop preview, preview-light, preview-dark, preview-contrast: the preview lies over the window in the hand: its border crosses that window at y 690 to 692 (696 to 698 with Increase Contrast) and its fill tints that window's title bar: (159,215,239) under the preview at x 100, (194,235,236) beside it at x 5. Without Increase Contrast the line at the side is 1.87 : 1 (preview-light) and 1.84 (preview-dark) to the red window at the top, at 12,374,325,319.",
   "tile, tiles-icons-light and tiles-icons-dark: the two single tiles are alike to the pixel (same icon, no word), and so are the two plates in the group: nothing in the picture says which window is which.",
-  "tile, tiles-icons-dark: the capsule, (96,110,104), is 2.0 : 1 to its plate (47,66,58); in the light look 3.55 : 1 (read at 976,658,24,25). The tiles' outlines in the dark look: 3.97 to 4.5 : 1 at the sides and bottom, 2.1 at the top, under the shadow of the window above.",
+  "tile: the capsule against its plate: tiles-icons-light, read at 976,640,24,44: 3.60 : 1, at most 3.75, (92,102,99) on (186,205,200); in tiles-icons-dark the tool takes the digit for the ink there, by its formula (96,110,104) on (47,66,58) is 2.0. The tiles' outlines in tiles-icons-dark: 4.02 to 4.52 : 1 at the sides and bottom, 2.09 at the top, under the shadow of the window above; the group's 2.79 to 3.28; the plates in it 2.04 to 2.59.",
   "tile, tiles-icons-light and tile-large-light: the shadows of neighbouring windows fall on the tiles: the top 40 px of a tile go from (153,167,162) at y 465 to (193,212,206) at y 505 (column 60), and the right 25 px of the large tile from (183,184,187) at x 310 to (167,168,170) at x 335 (row 600), beside the focused window.",
-  "No picture at 2x of the drop preview, the seam, peek's outline or the rectangle was in my brief: those cells are left out."
+  "About the ruler: the line at the side still takes in the pixel just outside the box, so the dark edge macOS draws round every window with Increase Contrast can be its answer: preview-contrast left 3.03 (the docked window's edge), tiles-icons-contrast, the group's top 2.23. And for a line thinner than the reach the inner sample falls beyond the line: --reach 3, with the box shifted where need be, keeps each sample in one colour; a 3 px line on a 3 px band (the ring at 1x, outer step) cannot be had alone.",
+  "No picture at 2x of the drop preview, the seam, peek's outline or the rectangle was in my brief: those cells are left out.",
+  "tile: left out of the count. It was pictured only on a branch with a change to tiles that has not landed (with that branch's setting for icons alone). As measured there: S1 at 1x: pass; S2: pass; S3: pass; S4 light on glass: pass; S4 dark on glass: pass; S4 light: pass; S6: miss; S7: pass."
  ]
 }
