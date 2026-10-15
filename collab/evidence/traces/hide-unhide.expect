@@ -1,3 +1,24 @@
 # B1, fixed: unhiding brings windows that were out of view back on screen, and Arbor puts them out of view again.
 # (The invariants check that; nothing more is expected here.)
 camera root
+# ---- what Arbor did, written by scripts/trace-to-test.py on 2026-10-15; `--again` writes it anew, and what stands above this line stays ----
+moved 50 0
+frame 50 599 216 413 352
+floating 50
+visible 50
+moved 51 1 at 22
+frame 51 1023 677 1000 650
+docked 51
+hidden 51
+tile 51
+moved 52 2 at 23 24
+frame 52 1023 677 700 650
+docked 52
+hidden 52
+tile 52
+moved 53 3 at 5 7 24
+frame 53 12 43 241 650
+docked 53
+visible 53
+asked-focus none
+focused 53
