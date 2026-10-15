@@ -1,6 +1,7 @@
 #!/bin/bash
-# Who holds a press back? With Arbor running, a press on a window's title bar that brings another app forward was seen to reach the apps some 35 ms late, and up to 69.
-# macOS takes time over such a press by itself. This asks how much of it is Arbor's, and what of Arbor's.
+# Who holds a press back? In an ordinary day with Arbor, presses on windows' title bars reached the apps 35 to 69 ms late; in runs without Arbor hardly any did. It looked like a
+# fault of Arbor's. **It is macOS's own doing**: a press on a window of an app that is not in front is passed on only when macOS has brought the app forward, and the day was full of
+# such presses while the runs without Arbor had two. This is the probe that said so, kept for the next time somebody suspects a tap.
 #
 #   scripts/mac-shell/run.sh scripts/mac-shell/probe-presses.sh          six minutes
 #
@@ -11,7 +12,9 @@
 # while Arbor arranged them, and a round says of how many of its presses another app came forward.
 # A listen-only tap at the far end of the session's taps writes down how late each press and release arrived (witness.swift log).
 #
-# The first run's answer: it is no event tap. 38, 35, 35 and 35 ms (half of the presses within) as shipped, without the rectangle's taps, with no tap at all, as shipped again.
+# What it answered on hosted Macs on 2026-10-15, half of the presses within so many ms. First run: 38, 35, 35, 35 as shipped, without the rectangle's taps, with no tap of Arbor's in the window
+# server's list, as shipped again: it is no event tap. Second run, on a slower Mac: 51 as shipped, 41 without a trace, 42 without the line, 57 without taps, 60 paused, 61 as shipped again, and
+# 77 without Arbor.
 #
 # What comes back: presses.txt, the table; witness.log; taps-<round>.txt, the taps as the window server lists them.
 #
