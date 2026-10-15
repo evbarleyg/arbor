@@ -1,0 +1,7 @@
+# In a clone that has said `make hooks` (scripts/mergeable.py says all about it); elsewhere git takes no notice.
+# Merged by what they mean, not line by line:
+collab/parity.json merge=by-meaning
+collab/reality.json merge=by-meaning
+# Generated, so right only for the tree it was made from: stays as it is on our side, to be made again:
+docs/FEATURES.md merge=keep-ours
+docs/REALITY.md merge=keep-ours

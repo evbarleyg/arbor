@@ -139,6 +139,7 @@ TABLE = [
     (FULL, "every night", ("schedule", {}), dict()),
     (FULL, "every night, whatever has passed", ("schedule", {}), dict(fresh={"H"})),
     (FULL, "started by hand, for which there is no rule", ("workflow_dispatch", {}), dict()),
+    (NO, "how git merges the files everybody changes, which is tried on Linux", pull(), dict(files=["scripts/mergeable.py", ".gitattributes"])),
 ]
 
 # What goes to $GITHUB_OUTPUT, where every line is an answer and the last one of a name counts.

@@ -130,6 +130,14 @@ A step the runner has but the evidence does not yet is not counted and breaks no
 code 2 when `parity.json` itself is wrong: an unknown status or a spec that does not
 exist.
 
+`parity.json` is kept a key to a line and a name to a line, the names of a list sorted (`scripts/mergeable.py --tidy` writes
+it so, `make lint` insists), because nearly every pull request lists its tests there: two that add a test to one item then
+change different lines. After `make hooks` git also merges the file by what it means, in every rebase, merge and cherry-pick:
+items by their id, lists as sets. A conflict is left only where both sides changed the same key of the same item. A test that
+one side listed and the other renamed ends up listed and gone, and `make parity` says "not found".
+`collab/reality.json` is kept and merged the same way: its cases stand in the order of their ids, so a new one goes where the
+alphabet puts it and not to the end, where everybody's would meet.
+
 What the tests did is read from the record Swift Testing writes for tools (`make test` leaves it in
 `.build/test-report.jsonl`), never from what `swift test` prints, which loses some hundred lines now and
 then from a run that went well. So "test … not found" means what it says: no such test ran. Do not run it

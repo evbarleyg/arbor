@@ -1,5 +1,6 @@
 #!/bin/sh
-# `make hooks`: has git run scripts/public-check.py before every push from this clone and its worktrees, and looks through the
+# `make hooks`: has git run scripts/public-check.py before every push from this clone and its worktrees, has it merge
+# collab/parity.json and collab/reality.json by what they mean (scripts/mergeable.py), and looks through the
 # clone for history from somewhere else (scripts/public-clone.py). The first thing to do in a clone; again whenever the
 # check has changed, for the copy that branches without the check are read with. Fails when the hook could not be installed
 # or the clone is not clean.
@@ -34,8 +35,10 @@ install_hook() {
 
 install_hook
 hook=$?
+python3 "$here/../mergeable.py" --install
+driver=$?
 # Whatever became of the hook: what the clone holds is a question of its own.
 python3 "$here/../public-clone.py"
 clone=$?
-[ "$hook" -eq 0 ] || exit 1
+[ "$hook" -eq 0 ] && [ "$driver" -eq 0 ] || exit 1
 exit "$clone"

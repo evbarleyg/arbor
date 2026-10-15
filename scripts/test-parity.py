@@ -12,6 +12,7 @@ import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
+import mergeable  # noqa: E402
 import parity  # noqa: E402
 
 spec = importlib.util.spec_from_file_location("suite_parity", os.path.join(HERE, "mac-shell", "suite-parity.py"))
@@ -89,6 +90,36 @@ def check_relisting():
         found, ({"T01": ["one", "two"], "A02": ["one"]}, ["one", "two", "three"]))
 
 
+def check_rewriting():
+    """suite-parity.py from end to end, on a parity.json of three items: what it writes is in the shape `make lint` asks for."""
+    before = {"about": "w", "features": [{"id": "T01", "status": "shipped", "tests": ["t"], "e2e": ["dock the first window"]},
+                                         {"id": "T02", "status": "shipped", "e2e": ["gone"]}, {"id": "T03", "status": "shipped"}]}
+    after = {"about": "w", "features": [{"id": "T01", "status": "shipped", "tests": ["t"], "e2e": ["b", "a", "dock the first window"]},
+                                        {"id": "T02", "status": "shipped"}, {"id": "T03", "status": "shipped", "e2e": ["a"]}]}
+    saved = parity.PARITY, parity.read_evidence, suite_parity.scripts, sys.argv, sys.stdout
+    with tempfile.TemporaryDirectory() as folder:
+        script = os.path.join(folder, "suite.sh")
+        with open(script, "w", encoding="utf-8") as handle:
+            handle.write('claim "b"\nproves T01\nclaim "a"\nproves T01 T03\nclaim "gone"\nproves T02\n')
+        parity.PARITY, suite_parity.scripts = os.path.join(folder, "parity.json"), lambda: [script]
+        parity.read_evidence = lambda: ({"a": True, "b": True, "gone": False}, [])
+        sys.stdout = open(os.devnull, "w", encoding="utf-8")
+        try:
+            codes = []
+            for arguments in (["--check"], [], ["--check"]):
+                if not codes:
+                    mergeable.write(parity.PARITY, mergeable.shaped(before))
+                sys.argv = ["suite-parity.py"] + arguments
+                codes.append(suite_parity.main())
+            with open(parity.PARITY, encoding="utf-8") as handle:
+                text = handle.read()
+        finally:
+            sys.stdout.close()
+            parity.PARITY, parity.read_evidence, suite_parity.scripts, sys.argv, sys.stdout = saved
+    row("the suite's claims are listed and taken off, and the file is still in the shape that merges", text, mergeable.shaped(after))
+    row("--check says that it is out of date, and afterwards that it is not", codes, [1, 0, 0])
+
+
 def check_the_suite():
     proofs, titles = suite_parity.claims_in(suite_parity.scripts())
     row("the suite: no claim is made twice", sorted({t for t in titles if titles.count(t) > 1}), [])
@@ -103,6 +134,7 @@ def check_the_suite():
 def main():
     check_evidence()
     check_relisting()
+    check_rewriting()
     check_the_suite()
     wrong = 0
     for what, got, expected in rows:

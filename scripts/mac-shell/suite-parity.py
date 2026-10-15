@@ -18,7 +18,6 @@ claims without a `proves` line, stay as they are listed.
 """
 
 import glob
-import json
 import os
 import re
 import sys
@@ -26,6 +25,7 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
 sys.path.insert(0, os.path.join(ROOT, "scripts"))
+import mergeable  # noqa: E402
 import parity  # noqa: E402
 
 CLAIM = re.compile(r'^\s*claim "(.*)"\s*\n(?:\s*proves ([^\n#]*))?', re.MULTILINE)
@@ -61,31 +61,23 @@ def main():
     check = "--check" in sys.argv[1:]
     proofs, titles = claims_in(scripts())
     steps, _ = parity.read_evidence()
-    with open(parity.PARITY, encoding="utf-8") as handle:
-        lines = handle.read().split("\n")
+    data = mergeable.parsed(mergeable.text_in(parity.PARITY))
 
     managed = {title for claims in proofs.values() for title in claims}
     known, changed, verified = set(), [], 0
-    for index, line in enumerate(lines):
-        text = line.strip()
-        # One item to a line, which is how the file is kept.
-        if not text.startswith('{"id"'):
-            continue
-        item = json.loads(text.rstrip(","))
+    for item in data["features"]:
         known.add(item["id"])
         listed, missing = relist(item, proofs, managed, steps)
         for title, reason in missing:
             print(f"{item['id']} is not verified by the suite: '{title}' {reason}")
         verified += bool(proofs.get(item["id"]) and not missing)
-        if listed == item.get("e2e", []):
+        # The file keeps its lists sorted, so that they merge.
+        if sorted(listed) == sorted(item.get("e2e", [])):
             continue
         changed.append(item["id"])
+        item.pop("e2e", None)
         if listed:
-            item["e2e"] = listed
-        else:
-            del item["e2e"]
-        indent = line[:len(line) - len(line.lstrip())]
-        lines[index] = indent + json.dumps(item, ensure_ascii=False) + ("," if text.endswith(",") else "")
+            item["e2e"] = sorted(listed)
 
     unknown = sorted(set(proofs) - known)
     if unknown:
@@ -98,7 +90,7 @@ def main():
         return 1
     # All of it or none: a run that is stopped here must not leave half a scoreboard.
     with open(parity.PARITY + ".new", "w", encoding="utf-8") as handle:
-        handle.write("\n".join(lines))
+        handle.write(mergeable.text_of(data, mergeable.SHAPES["collab/parity.json"]))
     os.replace(parity.PARITY + ".new", parity.PARITY)
     print(f"collab/parity.json: relisted {', '.join(changed)}; now run `make parity`")
     return 0

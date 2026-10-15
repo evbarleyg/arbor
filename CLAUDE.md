@@ -87,6 +87,7 @@ new. See "Executors without a Mac" in `collab/README.md`.
 | `docs/` | `ARCHITECTURE.md`, `TESTING.md`, `ROADMAP.md`, `features/F*.md` specs, generated `FEATURES.md` | Specs belong to the documenter |
 | `docs/CENSUS.md` | What each test touches, which premises of the fakes a recording bears out, which real code nothing runs, which features no Mac has tried | Generated: `scripts/census.py --write`, words in `scripts/census-template.md`. By hand, not part of `make check` |
 | `collab/` | Board, questions, ideas, scenarios, parity data, evidence | See `collab/README.md` |
+| `collab/parity.json`, `collab/reality.json`, `scripts/mergeable.py`, `.gitattributes` | The files nearly every pull request adds to, and what makes that merge: a key and a name to a line, sorted (the ledger: its cases by id), and after `make hooks` a merge by meaning (items by id, lists as sets) in every rebase | Edited one by hand: `scripts/mergeable.py --tidy`. `make lint` holds them to the shape. The generated `docs/FEATURES.md` and `docs/REALITY.md` stay as they are in a rebase: make them again. |
 | `collab/reality.json`, generated `docs/REALITY.md` | Every known case where real macOS differed from the stand-ins or from what a test expected, and what guards it | A real Mac surprised you: add an entry and run `scripts/reality-ledger.py`. `make lint` fails on a name that is gone or a stale page: you renamed a test or reworded a step that a case names, and the line under each ✘ says what to put where. |
 
 ## How to verify your work without permissions
