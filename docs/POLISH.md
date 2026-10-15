@@ -199,5 +199,5 @@ Restated on 2026-10-15 under the table as it is now (S4 on glass and S7 added; t
 
 | Date (UTC) | Commit | Score, as it ships | With everything on | Seen | Severity 1 misses | Note |
 |---|---|---|---|---|---|---|
-| 2026-10-14 23:27 | `a391fe4` | **35.6** | 48% | 36 | Run 1 (`collab/polish/run-1.md`). Tabs, double clicks, the followed pinch and all stills unseen; four films void |
-| 2026-10-15 01:38 | `302a0b0` | **41.6** | 54% | 41 | Run 2 (`collab/polish/run-2.md`). A cast of four apps, panels in the picture; two films void |
+| 2026-10-14 23:27 | `a391fe4` | **35.8** | 35.8 | 48% | 36 | Run 1 (`collab/polish/run-1.md`). Tabs, double clicks, the followed pinch and all stills unseen; four films void |
+| 2026-10-15 01:38 | `302a0b0` | **41.5** | 41.5 | 54% | 40 | Run 2 (`collab/polish/run-2.md`). A cast of four apps, panels in the picture; two films void |
