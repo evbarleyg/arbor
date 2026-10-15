@@ -373,10 +373,14 @@ if wanted pointer; then
   # shellcheck disable=SC2046
   does "press inside W3 and move, held" drag $(middle_of "$W3") $(at "$W3" "x + w / 2 + 90" "y + h / 2 + 60") --no-release
   does "let go inside W3" release
-  # W1 floats behind W3 and W2 and shows through the gap between them. First the gap in its middle, over W1. As things are the press is W1's, which comes forward
-  # over both and takes the keyboard, and no seam moves. It is to become the seam's: so this step is played as a person would play it and nothing is claimed of it
-  # yet. It comes before any other press on this seam: played after a drag of it, on a hosted Mac, the same press went to the handle and not to W1, with nothing mended.
+  # W1 floats behind W3 and W2 and shows through the gap between them. First the gap in its middle, over W1, which lies behind both: the gap between two docked
+  # neighbours is the arrangement's, so the press is the seam's. It comes before any other press on this seam: played after a drag of it, on a hosted Mac, the same
+  # press went to the handle before anything was mended, and the checks would have proved nothing.
+  widths="$(width_of "$W3") $(width_of "$W2")"
   in_the_gap "drag the seam right of W3 20 to the left" -20
+  check "the seam moved: W3 is narrower by what W2 is wider" test "$(($(width_of "$W3") + $(width_of "$W2")))" = "$((${widths% *} + ${widths#* }))" -a "$(width_of "$W3")" -lt "${widths% *}"
+  check "the keyboard is not in W1" test "$(pointer keyboard | cut -d ' ' -f 2)" != "$W1"
+  check "W1 still lies behind W3 and W2" test "$(in_order | tail -n 1 | cut -d ' ' -f 1)" = "$W1"
   w1_goes_behind ""
   # Then the seam where no window lies behind the gap or in front of it. To the right: it gives W3 back what the step before may have taken.
   read -r gx gy <<< "$(bare_seam_right_of "$W3")"
