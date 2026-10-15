@@ -1431,10 +1431,12 @@ no longer the one `layout` built (the user moved on), after a minute, and on pau
 
 ## Shortcuts
 
-`KeyBindings.defaults` is the built-in table. The `bindings` object in
+There are two built-in tables: `KeyBindings.core`, the nine keys that ship, and `KeyBindings.all`, the whole map. The setting
+`shortcuts` (`core` or `all`) chooses, and `KeyBindings.standard(settings)` is the one chosen. The `bindings` object in
 `settings.json` maps chord text (parsed by `KeyChord` in ArborCore) to command
-text, and `KeyBindings.effective(settings:)` applies it over the defaults,
-returning the entries it had to skip and why. `ArborApp` registers the result
+text, and `KeyBindings.effective(settings:)` applies it over the chosen table,
+returning the entries it had to skip and why. Nothing else may read a table: whatever names a key (a menu, a tooltip, a line on
+screen, the panel of shortcuts, the coach) asks for the shortcut of a command among the ones in effect, and does without where there is none. `ArborApp` registers the result
 with Carbon (`HotKeyCenter`) at start and again whenever
 `Controller.apply(settings:)` runs (`onSettingsApplied`), which is how
 `reload-settings` picks up edits.

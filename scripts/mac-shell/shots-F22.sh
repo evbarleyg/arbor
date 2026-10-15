@@ -6,6 +6,7 @@
 #   scripts/mac-shell/run.sh scripts/mac-shell/shots-F22.sh
 #
 # Nothing here crosses displays: the runner has one, and on a Mac with two the test windows stay where they opened.
+ARBOR_SHORTCUTS=all  # it presses keys of the whole map, of which nine ship
 source "$(dirname "$0")/lib.sh"
 arbor_build
 

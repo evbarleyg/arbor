@@ -14,6 +14,7 @@
 # Safe on a person's Mac: it arranges only its own test windows, sends keys only while they or its own app are in front,
 # and keeps that app in the build folder. It does move the pointer and take the keyboard. The two measurements that cannot
 # afford the time lib.sh's nets take, and the switching of layouts, are left out there.
+ARBOR_SHORTCUTS=all  # it presses keys of the whole map, of which nine ship
 source "$(dirname "$0")/lib.sh"
 source "$(dirname "$0")/lib-gestures.sh"
 

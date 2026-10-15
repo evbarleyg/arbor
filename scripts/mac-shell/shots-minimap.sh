@@ -15,6 +15,7 @@
 #
 # Safe on a person's Mac: it touches only its own test windows and temporary files, moves the pointer and presses ⌃⌥M. The one
 # system setting it would change (Reduce Motion) is left alone anywhere but on GitHub's Macs: `macos_reduce_motion` declines.
+ARBOR_SHORTCUTS=all  # it presses keys of the whole map, of which nine ship
 source "$(dirname "$0")/lib.sh"
 
 # The panel keeps out of shared screens and recordings as far as macOS lets it (`sharingType`), and so out of these pictures, unless told

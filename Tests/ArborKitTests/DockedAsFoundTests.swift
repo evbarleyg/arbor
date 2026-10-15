@@ -405,7 +405,7 @@ import Testing
         """
         launch
         open 101 Mail pid 1002 at 368 293 957 595 min 760 400
-        key down arrange
+        via shortcut arrange
         key down float-all
         edge 101 368 293 1274 595
         key down undo

@@ -368,7 +368,7 @@ import Testing
     h.run("zoom \(a.rawValue)")
     let outOfView = h.run("resize \(a.rawValue) right 100")
     #expect(!outOfView.ok)
-    #expect(outOfView.message == "that edge is not in view; step out first")
+    #expect(outOfView.message == "that edge is not in view; `show-all` first")
     #expect(h.run("resize \(a.rawValue) left 100").message == "\(a) has no neighbor on the left")
   }
 }

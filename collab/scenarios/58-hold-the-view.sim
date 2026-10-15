@@ -2,6 +2,8 @@
 #
 # Someone presents Keynote on a shared screen. Mail and Slack are docked out of view, Notes floats on the
 # Desktop. Nothing may jump, appear or change size that they did not ask for.
+# As the first build shipped it: the whole map of shortcuts, of which nine ship now (22-nine-keys.sim).
+set shortcuts all
 quiet
 open Keynote
 open Mail
@@ -35,7 +37,7 @@ expect hidden 102
 expect focused 101
 expect fills 101
 
-# A slip of the fingers on ⌃⌥Space, ⌃⌥↑, ⌃⌥→, ⌃⌥A.
+# A slip of the fingers on ⌃⌥Space, ⌃⌥↑, ⌃⌥→, or on Arrange Windows.
 show-all
 expect fail
 out

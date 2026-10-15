@@ -221,7 +221,7 @@ private let side = DisplaySnapshot(
 
     h.run("dock left", from: .shortcut)
 
-    #expect(lines(h) == ["Safari fills the view; step out first"])
+    #expect(lines(h) == ["Safari fills the view; ⌃⌥Space first"])
     #expect(h.overlays.messages[0].display == h.display)
   }
 
@@ -254,9 +254,9 @@ private let side = DisplaySnapshot(
   @Test func theFrameShortcutOnAFloatingWindowSaysWhatToDoFirst() {
     let (h, _, _, _) = makeHarness()
     #expect(h.run("zoom", from: .shortcut).ok)
-    #expect(lines(h) == ["Safari floats · ⌃⌥⌘← docks it, then ⌃⌥↩ frames it"])
+    #expect(lines(h) == ["Safari floats · ⌃⌥← docks it, then ⌃⌥↩ frames it"])
 
-    let (bare, _, _, _) = makeHarness(settings: settings { $0.bindings = ["ctrl+opt+cmd+left": nil] })
+    let (bare, _, _, _) = makeHarness(settings: settings { $0.bindings = ["ctrl+opt+left": nil] })
     bare.run("zoom", from: .menu)
     #expect(lines(bare) == ["Safari floats"])
   }
@@ -720,7 +720,8 @@ private let side = DisplaySnapshot(
   }
 
   @Test func anotherShortcutThatDoesTheJobStandsIn() {
-    let (h, _, _, _) = makeHarness(settings: settings { $0.bindings = ["ctrl+opt+space": nil] }, taught: false)
+    // `home` has a key in the whole map only.
+    let (h, _, _, _) = makeHarness(settings: settings { $0.bindings = ["ctrl+opt+space": nil] }.withEveryKey, taught: false)
     h.run("dock left", from: .shortcut)
     h.run("zoom", from: .shortcut)
     #expect(lines(h).last == "Your other windows are out of view, not closed · ⌃⌥0 shows everything")

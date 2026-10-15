@@ -10,6 +10,7 @@
 #
 # The part on two displays plugs in a virtual display, so it runs only on GitHub's Macs. The rest touches nothing but
 # its own test windows, the pointer and the keyboard: it types a few letters into a test window.
+ARBOR_SHORTCUTS=all  # it presses keys of the whole map, of which nine ship
 source "$(dirname "$0")/lib.sh"
 
 arbor_build

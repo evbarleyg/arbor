@@ -441,8 +441,8 @@ private let simpleEntries = SettingsSchema.entries.filter {
   }
 
   @Test func aWordFromTheLabelFindsTheKey() {
-    // What people see is "Use keyboard shortcuts", not `hotkeysEnabled`.
-    #expect(SettingsSchema.suggestions(for: "shortcuts").contains("hotkeysEnabled"))
+    // What people see is "Use keyboard shortcuts", not `hotkeysEnabled`. (`shortcuts` is a key itself and needs no suggestion.)
+    #expect(SettingsSchema.suggestions(for: "keyboard").contains("hotkeysEnabled"))
     #expect(SettingsSchema.suggestions(for: "don't arrange").contains("excludedBundleIDs"))
     // However it is spelt.
     #expect(SettingsSchema.suggestions(for: "Smallest-Usable-Width") == ["minimumUsableWidth"])

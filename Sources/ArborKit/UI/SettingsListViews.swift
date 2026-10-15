@@ -18,6 +18,11 @@ struct ShortcutsPane: View {
             .foregroundStyle(.secondary)
         }
       }
+      if let map = store.model.shortcutsMapRow {
+        Section {
+          SettingRowView(store: store, row: map)
+        }
+      }
       ForEach(store.model.shortcutSections) { section in
         Section(section.title) {
           ForEach(section.rows) { row in

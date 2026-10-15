@@ -7,8 +7,9 @@ import Testing
 
 /// The default shortcuts and how settings.json's `bindings` change them.
 @Suite struct KeyBindingsTests {
+  /// On the whole map, which has every kind of shortcut to replace, remove and add to. `NineKeysTests` has the nine.
   func settings(_ bindings: [String: String?]) -> Settings {
-    var settings = Settings()
+    var settings = Settings.withEveryKey
     settings.bindings = bindings
     return settings
   }
@@ -20,30 +21,30 @@ import Testing
   }
 
   @Test func everyDefaultRoundTripsThroughItsText() throws {
-    for binding in KeyBindings.defaults {
+    for binding in KeyBindings.all {
       #expect(try KeyChord(text: binding.chord.text) == binding.chord, "\(binding.chord.text)")
     }
   }
 
   @Test func defaultChordsAreDistinct() {
-    #expect(Set(KeyBindings.defaults.map(\.chord)).count == KeyBindings.defaults.count)
+    #expect(Set(KeyBindings.all.map(\.chord)).count == KeyBindings.all.count)
   }
 
   @Test func defaultLabelsAreTheOnesTheMenuAlwaysShowed() {
-    #expect(KeyBindings.label(for: .showAll) == "⌃⌥Space")
-    #expect(KeyBindings.label(for: .zoom(nil)) == "⌃⌥↩")
-    #expect(KeyBindings.label(for: .back) == "⌃⌥[")
-    #expect(KeyBindings.label(for: .arrange) == "⌃⌥A")
+    #expect(KeyBindings.label(for: .showAll, in: KeyBindings.all) == "⌃⌥Space")
+    #expect(KeyBindings.label(for: .zoom(nil), in: KeyBindings.all) == "⌃⌥↩")
+    #expect(KeyBindings.label(for: .back, in: KeyBindings.all) == "⌃⌥[")
+    #expect(KeyBindings.label(for: .arrange, in: KeyBindings.all) == nil)  // it had ⌃⌥A, which is nobody's now
     // ⌃⌥⇧↑ was `neighbor up`. `focus up` does the same when no window lies that way in view (docs/KEYBOARD.md).
-    #expect(KeyBindings.label(for: .focus(.direction(.top))) == "⌃⌥⇧↑")
-    #expect(KeyBindings.label(for: .dock(nil, .left)) == "⌃⌥⌘←")
-    #expect(KeyBindings.label(for: .goToView(9)) == "⌃⌥9")
-    #expect(KeyBindings.label(for: .saveView(4)) == "⌃⌥⇧4")
+    #expect(KeyBindings.label(for: .focus(.direction(.top)), in: KeyBindings.all) == "⌃⌥⇧↑")
+    #expect(KeyBindings.label(for: .dock(nil, .left), in: KeyBindings.all) == "⌃⌥⌘←")
+    #expect(KeyBindings.label(for: .goToView(9), in: KeyBindings.all) == "⌃⌥9")
+    #expect(KeyBindings.label(for: .saveView(4), in: KeyBindings.all) == "⌃⌥⇧4")
   }
 
   @Test func withoutBindingsTheDefaultsApplyUnchanged() {
-    let (bindings, problems) = KeyBindings.effective(settings: Settings())
-    #expect(bindings == KeyBindings.defaults)
+    let (bindings, problems) = KeyBindings.effective(settings: .withEveryKey)
+    #expect(bindings == KeyBindings.all)
     #expect(problems.isEmpty)
   }
 
@@ -56,17 +57,17 @@ import Testing
         "ctrl+opt+cmd+f12": nil,  // not bound by default: nothing to remove
       ]))
     #expect(problems.isEmpty)
-    #expect(bindings.count == KeyBindings.defaults.count)  // one removed, one added
+    #expect(bindings.count == KeyBindings.all.count)  // one removed, one added
     #expect(try command(at: "ctrl+opt+space", in: bindings) == .arrange)
     #expect(try command(at: "ctrl+opt+d", in: bindings) == nil)
     #expect(try command(at: "ctrl+opt+cmd+h", in: bindings) == .dock(nil, .left))
     #expect(try command(at: "ctrl+opt+cmd+left", in: bindings) == .dock(nil, .left))
-    #expect(try command(at: "ctrl+opt+a", in: bindings) == .arrange)
+    #expect(try command(at: "ctrl+opt+a", in: bindings) == nil)  // `arrange` has the person's key and no other
     // Every other default is untouched.
     let changed = try ["ctrl+opt+space", "ctrl+opt+d"].map { try KeyChord(text: $0) }
     #expect(
       bindings.filter { !["ctrl+opt+space", "ctrl+opt+cmd+h"].contains($0.chord.text) }
-        == KeyBindings.defaults.filter { !changed.contains($0.chord) })
+        == KeyBindings.all.filter { !changed.contains($0.chord) })
     // Menu labels prefer the user's own chord for a command.
     #expect(KeyBindings.label(for: .arrange, in: bindings) == "⌃⌥Space")
     #expect(KeyBindings.label(for: .dock(nil, .left), in: bindings) == "⌃⌥⌘H")
@@ -129,7 +130,8 @@ import Testing
     let settings = SettingsFile.load(from: url)
     #expect(settings.gap == 8)
     #expect(settings.bindings.isEmpty)
-    #expect(KeyBindings.effective(settings: settings).bindings == KeyBindings.defaults)
+    // Every default of today's: a file that says nothing about `shortcuts` gets the nine.
+    #expect(KeyBindings.effective(settings: settings).bindings == KeyBindings.core)
   }
 }
 
@@ -142,16 +144,16 @@ import Testing
   }
 
   @Test func bindingsListsTheEffectiveTableSortedByCommand() throws {
-    var settings = Settings()
+    var settings = Settings.withEveryKey
     settings.bindings = ["ctrl+opt+cmd+h": "dock left", "ctrl+opt+d": nil, "hyper+x": "show-all"]
     let h = Harness(settings: settings)
     let result = h.run("bindings")  // a query: it works before start, like `state`
     #expect(result.ok)
-    #expect(result.message == "\(KeyBindings.defaults.count) shortcuts, 1 skipped")
+    #expect(result.message == "\(KeyBindings.all.count) shortcuts, 1 skipped")
     let sections = try #require(result.text).components(separatedBy: "\n\n")
-    #expect(sections.count == 2)
+    #expect(sections.count == 3)
     let table = rows(sections[0])
-    #expect(table.count == KeyBindings.defaults.count)
+    #expect(table.count == KeyBindings.all.count)
     #expect(table.allSatisfy { $0.count == 2 })
     #expect(table.map { $0[1] } == table.map { $0[1] }.sorted())
     #expect(table.contains(["ctrl+opt+cmd+h", "dock left"]))
@@ -160,10 +162,11 @@ import Testing
     #expect(table.contains(["ctrl+opt+shift+3", "save-view 3"]))
     #expect(!table.contains { $0[0] == "ctrl+opt+d" })
     #expect(sections[1] == "skipped hyper+x: unknown modifier `hyper`; use ctrl, opt, cmd or shift")
+    #expect(sections[2] == "no shortcut runs `desktop`: your `bindings` take ctrl+opt+d from it")
   }
 
   @Test func bindingsSaysWhenShortcutsAreOff() {
-    var settings = Settings()
+    var settings = Settings.withEveryKey
     settings.hotkeysEnabled = false
     let h = Harness(settings: settings)
     h.start()
@@ -171,7 +174,7 @@ import Testing
     #expect(result.ok)
     #expect(result.message.contains("hotkeysEnabled is false"))
     // The whole table all the same, and then, in what `arborctl` prints, why none of it works.
-    #expect(result.text?.split(separator: "\n").filter { $0.contains(" → ") }.count == KeyBindings.defaults.count)
+    #expect(result.text?.split(separator: "\n").filter { $0.contains(" → ") }.count == KeyBindings.all.count)
     #expect(result.text?.hasSuffix("\n\nRight now: all off because hotkeysEnabled is false.") == true)
   }
 

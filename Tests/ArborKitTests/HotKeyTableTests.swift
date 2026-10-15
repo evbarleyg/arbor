@@ -5,7 +5,7 @@ import Testing
 
 /// What `HotKeyCenter` does to macOS's table of shortcuts, step by step: the real `HotKeyTable` against a `FakeHotKeyServer`.
 @Suite struct HotKeyTableTests {
-  private let all = KeyBindings.defaults
+  private let all = KeyBindings.all
 
   private struct World {
     var table = HotKeyTable<UInt32>()
@@ -47,7 +47,7 @@ import Testing
 
   /// The sets a day brings, one after the other: a pause, an app that keeps its own ⌃⌥, another keyboard, none at all.
   private var day: [[KeyBinding]] {
-    let german = KeyBindings.effective(settings: Settings(), layout: SampleKeyLayouts.german).bindings
+    let german = KeyBindings.effective(settings: .withEveryKey, layout: SampleKeyLayouts.german).bindings
     return [
       all, KeyBindings.whilePaused(all), all, KeyBindings.whilePassingThrough(all), all, german, all, [], all,
       KeyBindings.whileWindowsAreOutOfReach(all), all,
@@ -90,15 +90,15 @@ import Testing
     var world = World()
     _ = world.hold(all)
     let pause = try #require(KeyBindings.whilePaused(all).first)
-    let arrange = try #require(all.first { $0.command == .arrange })
+    let float = try #require(all.first { $0.command == .toggleFloat(nil) })
     let pauseNumber = try #require(world.number(of: pause))
-    let arrangeNumber = try #require(world.number(of: arrange))
+    let floatNumber = try #require(world.number(of: float))
     _ = world.hold(KeyBindings.whilePaused(all))
     #expect(world.number(of: pause) == pauseNumber)
-    #expect(world.table.binding(for: arrangeNumber) == nil, "a press of it still on its way is nobody's")
+    #expect(world.table.binding(for: floatNumber) == nil, "a press of it still on its way is nobody's")
     _ = world.hold(all)
     #expect(world.number(of: pause) == pauseNumber)
-    #expect(world.number(of: arrange) != arrangeNumber)
+    #expect(world.number(of: float) != floatNumber)
     #expect(Set(world.server.numbers).count == world.server.numbers.count, "no number is used twice")
   }
 
@@ -130,7 +130,7 @@ import Testing
   /// Nothing else is touched for its sake, which is what one refused key used to cost at every change.
   @Test func whatMacOSRefusedIsTriedAgainAndAlone() {
     var world = World()
-    let refused = all.first { $0.command == .arrange }!
+    let refused = all.first { $0.command == .toggleFloat(nil) }!
     #expect(refused.chord.hasFnTwin)
     world.server.refuses = [HotKey(refused)]
     let others = all.filter { $0 != refused }
@@ -162,13 +162,13 @@ import Testing
   @Test func aKeyThatMacOSWillNotTakeBackIsNotForgotten() throws {
     var world = World()
     _ = world.hold(all)
-    let arrange = try #require(all.first { $0.command == .arrange })
+    let float = try #require(all.first { $0.command == .toggleFloat(nil) })
     let paused = KeyBindings.whilePaused(all)
-    world.server.keeps = [HotKey(arrange)]
-    #expect(world.hold(paused) == HotKeyOutcome(held: paused + [arrange], stuck: [.init(arrange, -1)]))
+    world.server.keeps = [HotKey(float)]
+    #expect(world.hold(paused) == HotKeyOutcome(held: paused + [float], stuck: [.init(float, -1)]))
     #expect(world.agree, "not swallowed and dead")
-    #expect(world.runs(arrange) == .arrange)
-    #expect(world.hold(paused).stuck.map(\.binding) == [arrange], "tried again")
+    #expect(world.runs(float) == .toggleFloat(nil))
+    #expect(world.hold(paused).stuck.map(\.binding) == [float], "tried again")
     world.server.keeps = []
     #expect(world.hold(paused) == HotKeyOutcome(held: paused))
     #expect(world.server.held == Set(paused.map(HotKey.init)))
@@ -409,14 +409,14 @@ import Testing
   /// The key is Arbor's all the same. Tried again whenever the table is asked, and the key is not touched for it.
   @Test func aTwinThatMacOSRefusesIsReportedApartAndTriedAgain() throws {
     var world = World()
-    let arrange = try #require(all.first { $0.command == .arrange })
-    world.server.refusesTwins = [HotKey(arrange)]
-    #expect(world.hold(all) == HotKeyOutcome(held: all, withoutTwin: [.init(arrange, -9879)]))
-    #expect(world.runs(arrange) == .arrange)
-    #expect(world.server.fires(HotKey(arrange), fn: true).isEmpty)
+    let float = try #require(all.first { $0.command == .toggleFloat(nil) })
+    world.server.refusesTwins = [HotKey(float)]
+    #expect(world.hold(all) == HotKeyOutcome(held: all, withoutTwin: [.init(float, -9879)]))
+    #expect(world.runs(float) == .toggleFloat(nil))
+    #expect(world.server.fires(HotKey(float), fn: true).isEmpty)
     let asked = world.server.asked
     world.server.steps = []
-    #expect(world.hold(all).withoutTwin.map(\.binding) == [arrange])
+    #expect(world.hold(all).withoutTwin.map(\.binding) == [float])
     #expect(world.server.asked == asked + 1 && world.server.steps.isEmpty)
     world.server.refusesTwins = []
     #expect(world.hold(all) == HotKeyOutcome(held: all))
@@ -439,13 +439,13 @@ import Testing
 
   /// macOS lets the plain key go and keeps the twin, or the other way round. Nothing leaks, and it is put right at the next occasion.
   @Test func ifMacOSKeepsOnlyOneOfTheTwoNothingLeaksAndItIsPutRightLater() throws {
-    let arrange = try #require(all.first { $0.command == .arrange })
+    let float = try #require(all.first { $0.command == .toggleFloat(nil) })
     let paused = KeyBindings.whilePaused(all)
     var world = World()
     _ = world.hold(all)
-    world.server.keepsTwins = [HotKey(arrange)]
-    #expect(world.hold(paused).stuck == [.init(arrange, -1)])
-    #expect(world.server.held.contains(HotKey(arrange)), "the key stays with its twin: never given away while Arbor takes it with fn")
+    world.server.keepsTwins = [HotKey(float)]
+    #expect(world.hold(paused).stuck == [.init(float, -1)])
+    #expect(world.server.held.contains(HotKey(float)), "the key stays with its twin: never given away while Arbor takes it with fn")
     #expect(world.agree)
     world.server.keepsTwins = []
     #expect(world.hold(paused) == HotKeyOutcome(held: paused))

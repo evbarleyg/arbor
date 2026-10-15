@@ -117,7 +117,7 @@ import Testing
         }
       }
       let chord = try KeyChord(text: key.chord)
-      let bound = try #require(KeyBindings.defaults.first { $0.chord == chord }, "\(key.chord) is bound to nothing").command.text
+      let bound = try #require(KeyBindings.all.first { $0.chord == chord }, "\(key.chord) is bound to nothing").command.text
       #expect(pressed == [bound], "\(key.word): \(key.chord)")
       let spelt = try body(of: key.function, in: text).split { " \"\n;".contains($0) }.map(String.init)
       #expect(spelt.contains(key.written), "lib-walk.sh's \(key.function) does not press \(key.written)")

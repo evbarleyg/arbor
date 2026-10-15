@@ -53,12 +53,17 @@ would fail, and whatever would do something else than its title says.
 
 `▸` opens a submenu, `✓` is a tick when on. "Shipped" means on `swarm/trunk` when this was written.
 
+**The Shortcut column is the whole map's** (`shortcuts` set to `all`; `docs/KEYBOARD.md`). As Arbor ships nine keys are bound: ⌃⌥Space, ⌃⌥↩, ⌃⌥[, ⌃⌥G,
+⌃⌥F, ⌃⌥Z and ⌃⌥⎋ stand at the rows they have below, and ⌃⌥← and ⌃⌥→ at `Left` and `Right` of Dock Focused Window. **A row whose command has no key
+shows none.** The menu is then the way to everything else, so a command that loses its key must have a row. Three kinds have none, being nothing without
+a key: `neighbor`, `focus <direction>` and `home` (`NineKeysTests.whatHasNoKeyIsInTheMenu` keeps the list).
+
 | # | Row | Shortcut | Command | From | Notes |
 |---|---|---|---|---|---|
 | | *state lines, if any, and a separator* | | | | see [States](#states) |
-| 1 | Arrange Windows | ⌃⌥A | `arrange` | shipped | the first command (Q29, point 2): its key goes with the nine keys (board 0.3) and is never bound again, so it is run from here; and arranging is what a newcomer came for |
+| 1 | Arrange Windows | | `arrange` | shipped | the first command (Q29, point 2): it has no key in either map, ⌃⌥A is never bound again (`docs/KEYBOARD.md`), so it is run from here; and arranging is what a newcomer came for |
 | 2 | Windows ▸ | | | shipped | every open window; a click brings it to the front and into view |
-| 3 | Show Everything | ⌃⌥Space | `show-all` | shipped | ✓ when that is the view. With several displays, holding ⌥ turns it into **Show Everything on All Displays** (⌃⌥0, `home`) |
+| 3 | Show Everything | ⌃⌥Space | `show-all` | shipped | ✓ when that is the view. |
 | 4 | Frame Focused Window | ⌃⌥↩ | `zoom` | shipped | ✓ when it is framed; choosing it again un-frames, as the key does |
 | 5 | Go to… | ⌃⌥G | `find` | F27 | |
 | 6 | Saved Views ▸ | | | shipped, F10 | |

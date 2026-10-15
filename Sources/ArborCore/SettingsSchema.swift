@@ -28,7 +28,7 @@ public enum SettingsSchema {
   /// not named here comes after the ones that are, in the order of the entries.
   public static let order: [SettingsSection: [String]] = [
     .general: [
-      "hotkeysEnabled", "peek", "messages", "automaticUpdateChecks", "stepInToward", "shortcutsFollowLayout", "bindings",
+      "hotkeysEnabled", "shortcuts", "peek", "messages", "automaticUpdateChecks", "stepInToward", "shortcutsFollowLayout", "bindings",
     ],
     .windows: [
       "gap", "minimumUsableWidth", "minimumUsableHeight", "newWindows", "newWindowsWhileFramed", "rules",
@@ -57,8 +57,13 @@ public enum SettingsSchema {
     [
       .toggle(
         "hotkeysEnabled", \.hotkeysEnabled, "Use keyboard shortcuts",
-        "Global keyboard shortcuts: ⌃⌥ moves the view and ⌃⌥⌘ moves windows, unless you change them.",
+        "Global keyboard shortcuts, each ⌃⌥ and one key unless you change them.",
         whenOff: "Settings… in Arbor's menu is the way back"),
+      .choice(
+        "shortcuts", \.shortcuts, ["core": "The nine", "all": "All of them"], "Shortcuts",
+        "The nine, each ⌃⌥ and one key: dock left and right, frame a window and go back, show everything, back, undo, float, Go to… and "
+          + "pause. The menu has more. All of them: some fifty, with ⇧ and ⌘ as well; there ⌃⌥ and an arrow looks, ⌃⌥⌘ and an arrow docks. "
+          + "For none, switch off Use keyboard shortcuts."),
       .toggle(
         "peek", \.peek, "Hold Show Everything to peek",
         "While the Show Everything shortcut is held everything shows, and letting go frames the outlined space. "
@@ -139,7 +144,7 @@ public enum SettingsSchema {
         advanced: true),
       .number(
         "resizeStep", \.resizeStep, min: 1, max: 1000, step: 10, unit: "pt", "Grow and Shrink by",
-        "How much bigger or smaller Grow and Shrink (⌃⌥⌘= and ⌃⌥⌘-) make the focused window at a time.", advanced: true),
+        "How much bigger or smaller Grow and Shrink make the focused window at a time.", advanced: true),
       .list(
         "displays", \.displays, shape: "a list of entries: `match` and the settings that differ there",
         editedWith: "a text editor; `displays` shows what is in effect on each display", "Options per display",
@@ -457,7 +462,7 @@ public enum SettingsSchema {
   }
 
   /// Up to three keys that `name` may be a misspelling or a part of, or whose label has the word (people
-  /// remember "shortcuts", not `hotkeysEnabled`), the likeliest first.
+  /// remember "keyboard", not `hotkeysEnabled`), the likeliest first.
   public static func suggestions(for name: String) -> [String] {
     let typed = name.lowercased()
     // Longer than any key could be misspelt into, and comparing costs time in proportion to the length.
@@ -604,7 +609,7 @@ public enum SettingsSchema {
       "Arbor keeps its settings in `~/Library/Application Support/Arbor/settings.json` (menu → Open Settings",
       "File). There are four ways to change one, and each takes effect at once and shows in the others:",
       "",
-      "- **The settings window**: Settings… in the menu, or ⌃⌥,. It has the sections below, the settings marked",
+      "- **The settings window**: Settings… in the menu. It has the sections below, the settings marked",
       "  *Advanced* behind a disclosure, a search field, and panes for your shortcuts and rules. A few settings are not",
       "  in it, for the few who look for them; they are marked too.",
       "- **A command**: `arborctl set gap 16`. `arborctl get gap` prints one value, `arborctl settings` lists them",

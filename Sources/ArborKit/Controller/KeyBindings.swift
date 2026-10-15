@@ -39,9 +39,30 @@ extension KeyChord.Key {
 }
 
 public enum KeyBindings {
-  /// The default shortcuts. ⌃⌥ moves the camera; ⌃⌥⌘ moves windows. The `bindings` key of
-  /// settings.json changes them; see `effective(settings:)`.
-  public static let defaults: [KeyBinding] = {
+  /// The shortcuts as Arbor ships (`shortcuts` is `core`): nine, each ⌃⌥ and one key, which a newcomer learns in a minute. A global
+  /// shortcut is taken from every app on the Mac, so the rest is in the menu, and has a key for whoever asks (collab/IDEAS.md, I22).
+  /// `LessByDefaultTests` holds the list to ten and to ⌃⌥: an eleventh takes the place of another.
+  public static let core: [KeyBinding] = [
+    KeyBinding(.hyperless, .left, .dock(nil, .left)),
+    KeyBinding(.hyperless, .right, .dock(nil, .right)),
+    KeyBinding(.hyperless, .returnKey, .zoom(nil)),
+    KeyBinding(.hyperless, .space, .showAll),
+    KeyBinding(.hyperless, .leftBracket, .back),
+    KeyBinding(.hyperless, .z, .undo),
+    KeyBinding(.hyperless, .f, .toggleFloat(nil)),
+    KeyBinding(.hyperless, .g, .find(nil)),
+    KeyBinding(.hyperless, .escape, .togglePause),
+  ]
+
+  /// Arbor's own shortcuts under these settings, before `bindings` changes single keys.
+  public static func standard(_ settings: Settings) -> [KeyBinding] { settings.bindsTheWholeMap ? all : core }
+
+  /// The whole map (`shortcuts` is `all`), which shipped until the nine did. ⌃⌥ moves the camera; ⌃⌥⌘ moves windows. The `bindings`
+  /// key of settings.json changes it; see `effective(settings:)`.
+  ///
+  /// `arrange` has no key, here or among the nine. It had ⌃⌥A, which reached a chat app in front and archived the conversation there
+  /// (collab/IDEAS.md, I16): that key is never bound again unless a person binds it.
+  public static let all: [KeyBinding] = {
     let base: KeyBinding.Modifiers = .hyperless
     let move: KeyBinding.Modifiers = [.control, .option, .command]
     let shifted: KeyBinding.Modifiers = [.control, .option, .shift]
@@ -57,7 +78,6 @@ public enum KeyBindings {
       KeyBinding(base, .leftBracket, .back),
       KeyBinding(base, .rightBracket, .forward),
       KeyBinding(base, .d, .desktop),
-      KeyBinding(base, .a, .arrange),
       KeyBinding(base, .f, .toggleFloat(nil)),
       KeyBinding(move, .left, .dock(nil, .left)),
       KeyBinding(move, .right, .dock(nil, .right)),
@@ -107,8 +127,8 @@ public enum KeyBindings {
 
   /// The shortcuts to register on top of `bindings` while a peek started with `chord` is held. The arrow keys
   /// and ⎋ arrive with the modifiers that are being held, and a peek takes those chords whatever they are bound
-  /// to (by default all five are bound). These are the ones that are bound to nothing, so that they
-  /// reach Arbor at all; their commands are never run.
+  /// to (of the nine ←, → and ⎋ are bound, in the whole map all five). These are the ones that are bound to nothing, so that
+  /// they reach Arbor at all; their commands are never run.
   public static func whilePeeking(_ chord: KeyChord, besides bindings: [KeyBinding]) -> [KeyBinding] {
     let keys: [(KeyChord.Key, Command)] = [
       (.left, .neighbor(.left)), (.right, .neighbor(.right)), (.up, .neighbor(.top)), (.down, .neighbor(.bottom)),
@@ -130,8 +150,8 @@ public enum KeyBindings {
     bindings.filter(\.command.bringsWindowsBack)
   }
 
-  /// The shortcuts in effect: `defaults` with settings.json's `bindings` applied. An entry for a
-  /// chord that is bound by default replaces that binding, a null command removes it, and other
+  /// The shortcuts in effect: `standard(settings)` with settings.json's `bindings` applied. An entry for a
+  /// chord that is bound there replaces that binding, a null command removes it, and other
   /// chords are added. The user's bindings come first, so `label(for:)` shows the user's own shortcut
   /// for a command that has one. Entries that cannot be used are skipped; `problems` says which and
   /// why, one line each, starting with the chord as written.
@@ -141,7 +161,7 @@ public enum KeyBindings {
   public static func effective(
     settings: Settings, layout: KeyLayout = .us
   ) -> (bindings: [KeyBinding], problems: [String]) {
-    var remaining = defaults
+    var remaining = standard(settings)
     var added: [KeyBinding] = []
     var problems: [String] = []
     func skip(_ text: String, _ reason: String) { problems.append("\(text): \(reason)") }
@@ -236,8 +256,8 @@ public enum KeyBindings {
     }
   }
 
-  /// The menu label of the first binding for `command`, e.g. ⌃⌥Space.
-  public static func label(for command: Command, in bindings: [KeyBinding] = defaults) -> String? {
+  /// The menu label of the first binding for `command` among `bindings`, e.g. ⌃⌥Space. Which are the ones in effect, for whatever a person reads.
+  public static func label(for command: Command, in bindings: [KeyBinding]) -> String? {
     bindings.first { $0.command == command }?.label
   }
 }

@@ -6,7 +6,7 @@ import Testing
 /// A key of Arbor's that stays Arbor's is not let go of for a moment: the difference (`HotKeyChanges`). What is done with it,
 /// step by step, is in `HotKeyTableTests`.
 @Suite struct HotKeyChangesTests {
-  private let all = KeyBindings.defaults
+  private let all = KeyBindings.all
 
   @Test func theSameAgainChangesNothing() {
     let changes = HotKeyChanges(from: all, to: all)

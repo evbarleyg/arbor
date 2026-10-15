@@ -81,7 +81,7 @@ import Testing
     h.grantAccessibility()
     h.scheduler.advance(by: 1)
     #expect(h.controller.isRunning && !held.isEmpty)
-    #expect(Set(held) == [KeyBindings.defaults.count], "whenever the app is told to look again, the answer is the same: \(held)")
+    #expect(Set(held) == [KeyBindings.core.count], "whenever the app is told to look again, the answer is the same: \(held)")
   }
 
   /// Only someone who misses a window is led to System Settings. Everybody else stays in the app they are in.

@@ -16,6 +16,7 @@
 #
 # Safe on a person's Mac: it changes no setting, touches only windows it opened, and moves the pointer and
 # presses keys. The part that launches Calculator is left out there.
+ARBOR_SHORTCUTS=all  # it presses keys of the whole map, of which nine ship
 source "$(dirname "$0")/lib.sh"
 
 # What `summon` is asked for. A name no app on anybody's Mac has: when Arbor knows no window of an app of that name,

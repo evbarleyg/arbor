@@ -28,19 +28,20 @@
 #   switch_cmdtab [n]            ⌘ down, ⇥ n times, ⌘ up                switch_backtick        ⌘` : the app's next window
 #   switch_menu <app>            its first window's line in the Window menu (the app is brought forward first, which is an act of its own)
 #   tile_click [n]               clicks the n-th tile that stands in for a window (1): the real window comes wholly into view, with the keyboard
-#   focus_key left|right|up|down ⌃⌥⇧ + arrow: the nearest window that way      summon <app>           taken, and not played yet
+#   focus_key left|right|up|down the nearest window that way; left out where it has no key      summon <app>           taken, and not played yet
 #   open_new                     ⌘N in the app in front                 close_new              ⌘W, if the window in front is one that open_new opened
 #   minimize | restore [app]     ⌘M on the window in front | a click on its miniature in the Dock. A walk cannot know which window was in front: if that
 #   hide | unhide [app]          ⌘H on the app in front | a click on its icon in the Dock        app is not the one, whichever was last comes back
 #   quit_app <app> | reopen <app>                     ⌘Q (the app is brought forward first) | its document opened again. textedit preview safari
-#   dock_key left|right|up|down  ⌃⌥⌘ + arrow on the window in front     float_key              ⌃⌥F, if it is docked
-#   arrange_key                  ⌃⌥A: every window is docked            undo | redo            ⌃⌥Z | ⌃⌥⇧Z
-#   rotate | mirror              ⌃⌥R | ⌃⌥⇧R on the window in front's group                     pin        `arborctl toggle-pin`: the menu's, it has no key
+#   A COMMAND OF ARBOR'S IS RUN AS A PERSON WOULD: by the key it has now (nine ship: docs/KEYBOARD.md), else from the menu, for which `arborctl` stands in (way_to)
+#   dock_key left|right|up|down  the window in front                    float_key              ⌃⌥F, if it is docked
+#   arrange_key                  every window is docked                 undo | redo
+#   rotate | mirror              the window in front's group            pin        `arborctl toggle-pin`: the menu's, it has no key
 #   drag_onto <app> <app> left|right|top|bottom       by its title bar onto that part of the other's window, which has to be docked and in view
 #   drag_out <app>               a docked window, onto the Desktop      drag_by <app> <dx> <dy> [click]   a floating one, that far
 #   drag_edge <app> left|right|top                    against that edge of the display, where macOS tiles too
-#   view frame|out|in|left|right|back|forward|all|home|desktop               (all: ⌃⌥Space tapped; home: ⌃⌥0, every display)
-#   peek                         ⌃⌥Space held for a second and a half, then let go             save_view <1-9> | view_n <1-9>     ⌃⌥⇧digit | ⌃⌥digit
+#   view frame|out|in|left|right|back|forward|all|home|desktop               (all: ⌃⌥Space tapped; home: every display; left, right: left out where they have no key)
+#   peek                         ⌃⌥Space held for a second and a half, then let go             save_view <1-9> | view_n <1-9>
 #   resize_gap <app> <points>    the gap to the right of its docked window, dragged that far     resize_key grow|shrink|balance
 #   resize_edge <app> left|right|top|bottom <points>  its docked window's own edge, dragged that far outwards (inwards if negative)
 #   full_screen on|off           ⌃⌘F in the app in front                wallpaper_click        a click on a bare spot, and a second one
@@ -242,11 +243,25 @@ tile_click() {
   acted moves=any front="$window"
 }
 
+# How a person runs a command of Arbor's: by the key it has now, or from Arbor's menu where it has none, for which `arborctl` stands in. Nine keys
+# ship, and a walk plays Arbor as it ships; with `shortcuts` set to `all` there are some fifty (docs/KEYBOARD.md), and the same words press those.
+# way_to <command…> sets WALK_CHORD, empty for the menu, and WALK_WAY, the words for the act. go_that_way <command…> then does it.
+way_to() {
+  WALK_CHORD=$("$ARBOR_BIN/arborctl" bindings 2>/dev/null \
+    | awk -v want="$*" '{ at = index($0, " → ") } at && substr($0, at + length(" → ")) == want { print $1; exit }')
+  if [ -n "$WALK_CHORD" ]; then WALK_WAY="presses $WALK_CHORD"; else WALK_WAY="chooses \`$*\` from Arbor's menu"; fi
+}
+# What Arbor refuses is nothing, as a key that can do nothing is, and a row that is grey.
+go_that_way() { if [ -n "$WALK_CHORD" ]; then key "$WALK_CHORD"; else ctl "$@" || true; fi; }
+
 focus_key() {
   arbor_acts || { left_out "focus_key $1: Arbor is not acting"; return; }
   case "$1" in left | right | up | down) ;; *) die "focus_key: left, right, up or down, not $1" ;; esac
-  walk_act switch "focus-$1" "presses ⌃⌥⇧ and the $1 arrow"
-  key "ctrl+opt+shift+$1"
+  way_to focus "$1"
+  # It is nothing without a key, and has no row in the menu.
+  [ -n "$WALK_CHORD" ] || { left_out "focus_key $1: it has no key"; return; }
+  walk_act switch "focus-$1" "$WALK_WAY"
+  key "$WALK_CHORD"
   sleep 0.4
   # With no window that way in view, the view goes to the neighbouring space.
   acted moves=any front="$(front_window)"
@@ -384,12 +399,14 @@ reopen() {
 # MARK: Arranging
 
 dock_key() {
-  local window
+  local window edge
   arbor_acts || { left_out "dock_key $1: Arbor is not acting"; return; }
   window=$(front_window)
   [ -n "$window" ] && is managed "$window" 2>/dev/null || { left_out "dock_key $1: Arbor does not arrange the window in front"; return; }
-  walk_act dock-key "dock-$1" "presses ⌃⌥⌘ and the $1 arrow"
-  key "ctrl+opt+cmd+$1"
+  case "$1" in up) edge=top ;; down) edge=bottom ;; *) edge=$1 ;; esac
+  way_to dock "$edge"
+  walk_act dock-key "dock-$1" "$WALK_WAY"
+  go_that_way dock "$edge"
   changed
   want "it is docked" eventually is docked "$window"
   acted moves=docked front="$window"
@@ -406,23 +423,24 @@ float_key() {
   acted moves=docked front="$window" restores="$window"
 }
 
-# One of Arbor's keys that changes the arrangement as a whole. $1 slug, $2 what is pressed, $3 the chord, then what `acted` is to hold it to.
+# One of Arbor's commands that changes the arrangement as a whole, by its key or from the menu. $1 the command, then what `acted` is to hold it to.
 arrangement_key() {
-  local slug=$1 keys=$2 chord=$3
-  shift 3
-  arbor_acts || { left_out "$slug: Arbor is not acting"; return; }
-  walk_act dock-key "$slug" "presses $keys"
-  key "$chord"
+  local command=$1
+  shift
+  arbor_acts || { left_out "$command: Arbor is not acting"; return; }
+  way_to "$command"
+  walk_act dock-key "$command" "$WALK_WAY"
+  go_that_way "$command"
   changed
   acted "$@"
 }
-# Every window on the display is docked, so every one of them may move.
-arrange_key() { arrangement_key arrange "⌃⌥A" ctrl+opt+a moves=any; }
+# Every window on the display is docked, so every one of them may move. (It has no key in either map: ⌃⌥A is never bound again.)
+arrange_key() { arrangement_key arrange moves=any; }
 # What comes back may have floated, been docked or been out of view.
-undo() { arrangement_key undo "⌃⌥Z" ctrl+opt+z moves=any; }
-redo() { arrangement_key redo "⌃⌥⇧Z" ctrl+opt+shift+z moves=any; }
-rotate() { arrangement_key rotate "⌃⌥R" ctrl+opt+r moves=docked; }
-mirror() { arrangement_key mirror "⌃⌥⇧R" ctrl+opt+shift+r moves=docked; }
+undo() { arrangement_key undo moves=any; }
+redo() { arrangement_key redo moves=any; }
+rotate() { arrangement_key rotate moves=docked; }
+mirror() { arrangement_key mirror moves=docked; }
 
 pin() {
   local window
@@ -554,18 +572,14 @@ resize_edge() {
 }
 
 resize_key() {
-  local window chord keys
+  local window
   arbor_acts || { left_out "resize_key $1: Arbor is not acting"; return; }
   window=$(front_window)
   [ -n "$window" ] && is docked "$window" 2>/dev/null || { left_out "resize_key $1: the window in front is not docked"; return; }
-  case "$1" in
-    grow) chord=ctrl+opt+cmd+= keys="⌃⌥⌘=" ;;
-    shrink) chord=ctrl+opt+cmd+- keys="⌃⌥⌘-" ;;
-    balance) chord=ctrl+opt+cmd+0 keys="⌃⌥⌘0" ;;
-    *) die "resize_key: grow, shrink or balance, not $1" ;;
-  esac
-  walk_act resize "$1" "presses $keys"
-  key "$chord"
+  case "$1" in grow | shrink | balance) ;; *) die "resize_key: grow, shrink or balance, not $1" ;; esac
+  way_to "$1"
+  walk_act resize "$1" "$WALK_WAY"
+  go_that_way "$1"
   changed
   acted moves=docked front="$window"
 }
@@ -573,27 +587,28 @@ resize_key() {
 # MARK: The view
 
 view() {
-  local chord keys window wants=""
+  local command window wants=""
   arbor_acts || { left_out "view $1: Arbor is not acting"; return; }
   window=$(front_window)
   case "$1" in
     frame)
       [ -n "$window" ] && is managed "$window" 2>/dev/null || { left_out "view frame: Arbor does not arrange the window in front"; return; }
-      chord=ctrl+opt+return keys="⌃⌥↩" wants="front=$window" ;;
-    out) chord=ctrl+opt+up keys="⌃⌥↑" ;;
-    in) chord=ctrl+opt+down keys="⌃⌥↓" ;;
-    left) chord=ctrl+opt+left keys="⌃⌥←" ;;
-    right) chord=ctrl+opt+right keys="⌃⌥→" ;;
-    back) chord="ctrl+opt+[" keys="⌃⌥[" ;;
-    forward) chord="ctrl+opt+]" keys="⌃⌥]" ;;
-    desktop) chord=ctrl+opt+d keys="⌃⌥D" ;;
+      command=zoom wants="front=$window" ;;
+    out | in | back | forward | desktop) command=$1 ;;
+    left | right) command="neighbor $1" ;;
     # Show Everything is about one display.
-    all) chord=ctrl+opt+space keys="⌃⌥Space"; [ -n "$WALK_SECOND" ] || wants="everything=1 tiles=ok $(back_home)" ;;
-    home) chord=ctrl+opt+0 keys="⌃⌥0" wants="everything=1 tiles=ok $(back_home)" ;;
+    all) command=show-all; [ -n "$WALK_SECOND" ] || wants="everything=1 tiles=ok $(back_home)" ;;
+    # No row in the menu: without a key it is `arborctl home`, which the guide names.
+    home) command=home wants="everything=1 tiles=ok $(back_home)" ;;
     *) die "view: no such move: $1" ;;
   esac
-  walk_act view "view-$1" "presses $keys"
-  key "$chord"
+  # shellcheck disable=SC2086
+  way_to $command
+  # Walking to the neighbouring space is nothing without a key, and has no row in the menu.
+  case "$1" in left | right) [ -n "$WALK_CHORD" ] || { left_out "view $1: it has no key"; return; } ;; esac
+  walk_act view "view-$1" "$WALK_WAY"
+  # shellcheck disable=SC2086
+  go_that_way $command
   # shellcheck disable=SC2086
   acted moves=any $wants
   case "$1" in
@@ -614,8 +629,9 @@ peek() {
 save_view() {
   arbor_acts || { left_out "save_view $1: Arbor is not acting"; return; }
   case "$1" in [1-9]) ;; *) die "save_view: 1 to 9, not $1" ;; esac
-  walk_act view "save-view-$1" "presses ⌃⌥⇧$1"
-  key "ctrl+opt+shift+$1"
+  way_to save-view "$1"
+  walk_act view "save-view-$1" "$WALK_WAY"
+  go_that_way save-view "$1"
   # Remembering where one looks moves nothing.
   acted
 }
@@ -623,8 +639,9 @@ save_view() {
 view_n() {
   arbor_acts || { left_out "view_n $1: Arbor is not acting"; return; }
   case "$1" in [1-9]) ;; *) die "view_n: 1 to 9, not $1" ;; esac
-  walk_act view "view-$1" "presses ⌃⌥$1"
-  key "ctrl+opt+$1"
+  way_to view "$1"
+  walk_act view "view-$1" "$WALK_WAY"
+  go_that_way view "$1"
   acted moves=any
 }
 
@@ -773,8 +790,9 @@ resume() {
 
 float_all() {
   arbor_acts || { left_out "float_all: Arbor is not acting"; return; }
-  walk_act way-out float-all "presses ⌃⌥⇧F"
-  key ctrl+opt+shift+f
+  way_to float-all
+  walk_act way-out float-all "$WALK_WAY"
+  go_that_way float-all
   acted moves=any restores=all places=1 everything=1
   at_home
 }
@@ -795,8 +813,8 @@ hold_view() {
   walk_act way-out hold "holds the view, as for a shared screen"
   must ctl hold || { acted; return; }
   acted
-  walk_act view show-desktop-while-held "presses ⌃⌥D, which would show the Desktop: the view is held"
-  key ctrl+opt+d
+  walk_act view show-everything-while-held "presses ⌃⌥Space, which would show everything: the view is held"
+  key ctrl+opt+space
   acted
   walk_act way-out release "lets the view go again"
   must ctl release

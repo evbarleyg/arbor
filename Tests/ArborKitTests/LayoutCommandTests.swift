@@ -1132,7 +1132,7 @@ private func expectNothingLost(_ h: Harness, sourceLocation: SourceLocation = #_
 
   /// `bind` (F12) takes a whole command, and a line has signs of its own in it: `|`, `/` and brackets.
   @Test func bindTakesALineSignsAndAll() throws {
-    let h = harness("Safari", "Mail", "Notes")
+    let h = harness("Safari", "Mail", "Notes", settings: .withEveryKey)
     let line = "layout Safari | (Mail / Notes)"
     #expect(h.run("bind ctrl+opt+1 \(line)").message == "ctrl+opt+1 runs `\(line)` (it ran `view 1`)")
     let bound = try #require(KeyBindings.effective(settings: h.controller.settings).bindings.first { $0.chord.text == "ctrl+opt+1" })

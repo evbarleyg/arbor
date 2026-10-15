@@ -58,7 +58,7 @@ extension Controller {
     walk(deciding(false) { on(display) { menuModel() } }.sections, under: [], isSubmenu: false)
 
     let bindings = bindingsInEffect
-    for command in KeyBindings.defaults.map(\.command).sorted(by: { ($0.helpOrder, $0.text) < ($1.helpOrder, $1.text) })
+    for command in KeyBindings.all.map(\.command).sorted(by: { ($0.helpOrder, $0.text) < ($1.helpOrder, $1.text) })
     where !texts.contains(command.text) {
       add(command, name: command.title, shortcut: shortcut(for: command, among: bindings)?.label, isOn: false, isAvailable: true)
     }

@@ -1,7 +1,7 @@
 # Rule 7 of the product direction (issue #3): useful daily, not just impressive. There is always a way back.
-# Story: somebody is three steps deep in a view, has lost track, and presses what the guide names: ⌃⌥Space, ⌃⌥0, ⌃⌥⇧F.
-# By the keys themselves, not by the commands they are bound to. Pin, peek, hold and summon have stories of their
-# own: scenarios 49, 51, 58 and 53.
+# Story: somebody is three steps deep in a view, has lost track, and does what the guide names: ⌃⌥Space, ⌃⌥[, ⌃⌥Z by the keys themselves, not by the
+# commands they are bound to; Show the Desktop and Float All Windows from the menu; `arborctl home`. Arbor as it ships: no setting is changed.
+# Pin, peek, hold and summon have stories of their own: scenarios 49, 51, 58 and 53.
 quiet
 open Safari 900x600
 open Terminal 600x400
@@ -24,18 +24,18 @@ expect visible 104
 # ⌃⌥[ goes back like a browser.
 key ctrl+opt+[
 expect fills 103
-# ⌃⌥0: everything on every display, from anywhere.
-key ctrl+opt+0
+# `arborctl home`: everything on every display, from anywhere.
+home
 expect camera root
 expect visible 101
 expect visible 104
-# ⌃⌥D: whatever floats.
+# Show the Desktop, in the menu: whatever floats.
 zoom 101
-key ctrl+opt+d
+from menu desktop
 expect camera desktop
 expect visible 104
-# ⌃⌥⇧F: back to a normal Mac, each window at its own size. ⌃⌥Z takes even that back.
-key ctrl+opt+shift+f
+# Float All Windows, in the menu: back to a normal Mac, each window at its own size. ⌃⌥Z takes even that back.
+from menu float-all
 expect count docked 0
 expect size 101 900x600
 expect size 102 600x400

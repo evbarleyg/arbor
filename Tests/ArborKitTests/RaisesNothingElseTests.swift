@@ -69,7 +69,7 @@ import Testing
     open 101 Xcode pid 1004 at 70 31 1188 776 min 1188 685
     open 102 Terminal pid 1003 at 197 324 991 444 min 177 60
     launch
-    key down arrange
+    via shortcut arrange
     key down in
     open 103 Terminal pid 1003 at 152 278 965 394 min 177 60
     focus 101

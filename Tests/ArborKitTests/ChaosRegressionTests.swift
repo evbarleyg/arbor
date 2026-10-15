@@ -1122,8 +1122,8 @@ private let c = WindowID(103)
 
   /// The same root spoke as plain `codable` too, where history did not differ and only the visit did.
   @Test(arguments: [
-    "open 104 Notes pid 1001 at 559 129 846 708 min 709 300\nlaunch\nkey down arrange\nkey down zoom\nkey down neighbor right",
-    "open 102 Notes pid 1001 at 518 417 873 570 min 709 300\nlaunch\nkey down arrange\nkey down desktop\nkey down focus left",
+    "open 104 Notes pid 1001 at 559 129 846 708 min 709 300\nlaunch\nvia shortcut arrange\nkey down zoom\nkey down neighbor right",
+    "open 102 Notes pid 1001 at 518 417 873 570 min 709 300\nlaunch\nvia shortcut arrange\nkey down desktop\nkey down focus left",
   ]) func whateverTheViewWasWhatIsSavedWhileAPeekIsHeldReadsBack(before: String) {
     expectEveryInvariantHolds(before + "\nkey down show-all\nsettle")
   }

@@ -330,7 +330,7 @@ private let handEdited = """
     ("bind ctrl+opt+j dock right", #""dock left" }"#, #""dock left", "ctrl+opt+j": "dock right" }"#),
     ("bind ctrl+opt+h dock right", #""ctrl+opt+h": "dock left""#, #""ctrl+opt+h": "dock right""#),
     ("unbind ctrl+opt+h", #"{ "ctrl+opt+x": 5, "ctrl+opt+h": "dock left" }"#, #"{ "ctrl+opt+x": 5 }"#),
-    ("unbind ctrl+opt+d", #""dock left" }"#, #""dock left", "ctrl+opt+d": null }"#),
+    ("unbind ctrl+opt+g", #""dock left" }"#, #""dock left", "ctrl+opt+g": null }"#),
     (
       "rule add com.apple.mail dock left title Inbox", "\"action\": \"float\" }\n",
       "\"action\": \"float\" },\n    { \"app\": \"com.apple.mail\", \"title\": \"Inbox\", \"action\": \"dock left\" }\n"

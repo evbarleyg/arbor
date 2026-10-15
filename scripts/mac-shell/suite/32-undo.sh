@@ -119,10 +119,10 @@ check "it is docked where it was" eventually frame_is "$W1" $first
 check "Arbor says that it is docked" is docked "$W1"
 settled
 
-claim "⌃⌥A by mistake, then ⌃⌥Z: everything is back, the floating window included"
+claim "Arrange Windows by mistake, then ⌃⌥Z: everything is back, the floating window included"
 proves A31
 click_window "$W1"
-check "⌃⌥A reaches Arbor" pressed ctrl+opt+a arrange
+check "arrange succeeds" ctl arrange
 check "all three are docked" eventually count docked 3
 check "⌃⌥Z reaches Arbor" pressed ctrl+opt+z undo
 check "two are docked" eventually count docked 2

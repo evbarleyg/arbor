@@ -551,7 +551,7 @@ private let third = DisplaySnapshot(
     d.h.system.close(d.notes)
     d.h.run("go writing")
     for edge in ["left", "right", "top", "bottom"] {
-      #expect(d.h.run("dock \(d.mail.rawValue) \(edge)").message == "\(d.mail) fills the view; step out first")
+      #expect(d.h.run("dock \(d.mail.rawValue) \(edge)").message == "\(d.mail) fills the view; `show-all` first")
     }
     #expect(d.windows(named: "Writing") == [d.mail] && d.inView() == [d.mail])
   }
@@ -1090,8 +1090,8 @@ private let third = DisplaySnapshot(
 
   @Test func theShortcutIsControlOptionN() throws {
     let chord = try KeyChord(text: "ctrl+opt+n")
-    #expect(KeyBindings.defaults.first { $0.chord == chord }?.command == .askName(cancel: false))
-    #expect(KeyBindings.label(for: .askName(cancel: false)) == "⌃⌥N")
+    #expect(KeyBindings.all.first { $0.chord == chord }?.command == .askName(cancel: false))
+    #expect(KeyBindings.label(for: .askName(cancel: false), in: KeyBindings.all) == "⌃⌥N")
   }
 
   @Test func askingShowsTheFieldOverTheSpaceAndMovesNothing() {

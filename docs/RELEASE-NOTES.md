@@ -15,6 +15,13 @@ Last brought up to date: 2026-10-15, the sections "On the way to the second buil
 
 Nothing here has been used by a person for a working day yet. All real-Mac evidence is from test windows on macOS 26.6; none is from Safari, Slack, Terminal or Zoom.
 
+## Build 2, in the making: less by default
+
+What the first person to work with Arbor said of build 1: it does too much by itself (`collab/QUESTIONS.md`, Q29). A line stands here once its code is on the trunk. What came to `main` in the morning of 2026-10-15 is the next section, and has none of these yet.
+
+- **Nine keys instead of fifty.** Each is ⌃⌥ and one key: ⌃⌥← and ⌃⌥→ dock the window in front, ⌃⌥↩ frames it and goes back, ⌃⌥Space shows everything, ⌃⌥[ goes back, ⌃⌥Z undoes, ⌃⌥F floats, ⌃⌥G is Go to…, ⌃⌥⎋ pauses. Every other key is the apps' again, and the menu has the rest. **Coming from build 1:** the nine are what you get at the next start, and ⌃⌥← and ⌃⌥→ now dock where they used to look. `arborctl set shortcuts all` (Settings… → Shortcuts → All of them) brings the whole map back as it was; shortcuts of your own in `bindings` stay as they are. ● on a hosted Mac, posted events, a window of another app in front that writes down every key (`suite/41-nine-keys.sh`, 84 of 84, once): each of the nine acts and none reaches the app; nineteen keys of the whole map reach it and Arbor does nothing. ◐ for the choice in the settings window, which nobody has seen
+- **⌃⌥A is never bound again**, in either map. With a widely used chat app in front it archived the open conversation there. Arrange Windows is the first row of the menu. ● the key arrives in the app with either map (the same run)
+
 ## On the way to the second build: not it (`main`, 2026-10-15, in the morning)
 
 **This is not the second build.** It is what of it was finished, gated together and seen on hosted Macs by the morning of 2026-10-15, brought to `main` because a cure that is not in the build a person tries is worth nothing to them. It is better than Build 1 in everything that was played and worse in nothing we know of. The second build is cut when its whole list is in; `collab/BOARD.md`, section 0, has the list.

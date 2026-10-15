@@ -652,15 +652,15 @@ private let side = sideDisplay
       ("⌃⌥⌘0", .equalize(all: false)), ("⌃⌥R", .rotate), ("⌃⌥⇧R", .mirror),
     ]
     for (label, command) in expected {
-      #expect(KeyBindings.label(for: command) == label, "\(command.text)")
+      #expect(KeyBindings.label(for: command, in: KeyBindings.all) == label, "\(command.text)")
     }
     // Left to `bindings`: the vi keys, swap, cycling and the display commands.
     for text in ["ctrl+opt+h", "ctrl+opt+j", "ctrl+opt+k", "ctrl+opt+l"] {
       let chord = try KeyChord(text: text)
-      #expect(!KeyBindings.defaults.contains { $0.chord == chord })
+      #expect(!KeyBindings.all.contains { $0.chord == chord })
     }
     for command: Command in [.swap(nil, .left), .focus(.next), .focusDisplay(.next), .moveToDisplay(.next, nil)] {
-      #expect(KeyBindings.label(for: command) == nil)
+      #expect(KeyBindings.label(for: command, in: KeyBindings.all) == nil)
     }
     // The recipe in the README works.
     var settings = Settings()

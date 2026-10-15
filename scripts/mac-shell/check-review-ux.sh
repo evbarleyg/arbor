@@ -8,6 +8,7 @@
 # unit tests); ⌘Tab to an app whose focused window is out of view; the menu, running and paused;
 # arborctl without Arbor. It also records, without judging, what a click on the wallpaper does to
 # the windows ("Click wallpaper to reveal desktop", macOS 14 and later), for F42 and F14.
+ARBOR_SHORTCUTS=all  # it presses keys of the whole map, of which nine ship
 source "$(dirname "$0")/lib.sh"
 
 paused() { "$ARBOR_BIN/arborctl" status | grep -q "^paused"; }

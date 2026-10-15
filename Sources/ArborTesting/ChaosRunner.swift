@@ -54,7 +54,9 @@ public final class ChaosRunner {
 
   /// settings.json, as the object in the file. A walk begins with the gestures switched on, though they ship off: the net over the zones of
   /// the Desktop (`guard-zones`) catches nothing where nobody asks for zones. `set pointerGestures` is among a walk's steps.
-  private var settingsFile: [String: Any] = ["pointerGestures": true]
+  /// And with the whole map of shortcuts, though nine ship: a walk presses the key of a command (`key down home`), and a command without
+  /// a key is a step in which nothing happens and no net catches anything. `set shortcuts` is among a walk's steps too.
+  private var settingsFile: [String: Any] = ["pointerGestures": true, "shortcuts": "all"]
   /// state.json, and what was written to it, as of the last save.
   private var stateFile: Data?
   private var stateWritten: PersistedState?

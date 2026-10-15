@@ -321,7 +321,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func aViewWhoseWindowClosedGoesWhereTheViewCommandGoes() {
-    let (h, a, b, c) = makeHarness()
+    let (h, a, b, c) = makeHarness(settings: .withEveryKey)
     h.run("dock \(c.rawValue) beside \(a.rawValue) bottom")
     h.run("zoom \(c.rawValue)")
     h.run("save-view 1")
@@ -440,7 +440,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func tooltipsShowTheShortcutsThatWork() throws {
-    let (h, a, b, c) = makeHarness()
+    let (h, a, b, c) = makeHarness(settings: .withEveryKey)
     h.run("dock \(c.rawValue) beside \(a.rawValue) bottom")
     h.run("zoom-node \(h.workspace.tree.parent(of: h.workspace.tree.leaf(containing: a)!)!.rawValue)")
     h.run("save-view 1")
@@ -452,7 +452,7 @@ private let side = DisplaySnapshot(
       ])
 
     // macOS refused ⌃⌥Space, and the user moved Back.
-    var settings = Settings()
+    var settings = Settings.withEveryKey
     settings.bindings = ["ctrl+opt+[": nil, "ctrl+opt+b": "back"]
     h.controller.apply(settings: settings)
     h.controller.registeredBindings = KeyBindings.effective(settings: settings).bindings.filter { $0.command != .showAll }
@@ -641,7 +641,7 @@ private let side = DisplaySnapshot(
   // MARK: Commands
 
   @Test func theMenuBarCommandListsTheButtonsAndWhereTheyAre() {
-    let (h, a, _, _) = makeHarness()
+    let (h, a, _, _) = makeHarness(settings: .withEveryKey)
     h.run("zoom \(a.rawValue)")
     h.run("save-view 3")
     let result = h.run("menu-bar")

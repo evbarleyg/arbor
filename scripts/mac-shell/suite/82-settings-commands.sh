@@ -27,8 +27,9 @@ second_copy() {
 }
 
 # A file somebody has worked on: a key Arbor does not know, spacing and an order of their own. Written here and not by arbor_settings, which
-# writes it anew in its own spacing. With the mark of a file that holds only what somebody chose, which a launch leaves as it is.
-printf '%s\n' '{"format": 2, "noteToSelf": "narrower?",   "gap": 12, "tabsEnabled": false}' > "$ARBOR_HOME/settings.json"
+# writes it anew in its own spacing. With the mark of a file that holds only what somebody chose, which a launch leaves as it is, and the whole map of
+# shortcuts, which arbor_settings would have put under it: ⌃⌥D is unbound below.
+printf '%s\n' '{"format": 2, "shortcuts": "all", "noteToSelf": "narrower?",   "gap": 12, "tabsEnabled": false}' > "$ARBOR_HOME/settings.json"
 arbor_start 2 ARBOR_NO_HOTKEYS=0
 file="$ARBOR_HOME/settings.json"
 ctl dock "$W1" left
@@ -40,7 +41,7 @@ proves A17
 check "the docked window starts 12 points from the edge" eventually inset_is 12
 check "set gap 16 says what changed" says "gap = 16 (was 12)" arborctl set gap 16
 check "the docked window starts 16 points from the edge" eventually inset_is 16
-check "the rest of the file is as the person wrote it" file_is '{"format": 2, "noteToSelf": "narrower?",   "gap": 16, "tabsEnabled": false}'
+check "the rest of the file is as the person wrote it" file_is '{"format": 2, "shortcuts": "all", "noteToSelf": "narrower?",   "gap": 16, "tabsEnabled": false}'
 check "get gap prints it" setting_is gap 16
 check "keys ignore case" setting_is GAP 16
 check "Arbor does not take its own save for somebody's edit" stays fails logged "settings.json read and applied"
@@ -63,7 +64,7 @@ check "a word for a number is refused too" says "\`gap\` needs a number from 0 t
 check "and a number for a switch" says "\`tabsEnabled\` is true or false" arborctl set tabsEnabled 7
 check "the gap in use stays" setting_is gap 16
 check "the docked window stays" stays inset_is 16
-check "the file stays" file_is '{"format": 2, "noteToSelf": "narrower?",   "gap": 16, "tabsEnabled": false}'
+check "the file stays" file_is '{"format": 2, "shortcuts": "all", "noteToSelf": "narrower?",   "gap": 16, "tabsEnabled": false}'
 
 claim "misspell a setting by command: Arbor asks whether the nearest one was meant"
 proves A17
@@ -210,8 +211,10 @@ check "the first copy is still running" kill -0 "$ARBOR_PID"
 check "it still answers" says "running" arborctl status
 # shellcheck disable=SC2086
 check "no window moved" stays frame_is "$W1" $first
-check "its shortcuts still work" pressed ctrl+opt+d desktop
-check "the docked window is out of view" eventually out_of_view "$W1"
+# One of the nine: the files written by hand since say nothing of the whole map.
+click_window "$W2"
+check "its shortcuts still work" pressed ctrl+opt+return zoom
+check "the other docked window is out of view" eventually out_of_view "$W1"
 check "⌃⌥Space brings it back" pressed ctrl+opt+space show-all
 settled
 

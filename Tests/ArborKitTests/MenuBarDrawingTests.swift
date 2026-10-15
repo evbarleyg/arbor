@@ -279,7 +279,7 @@
           menuBarIcon: !facts.accessibility ? .needsPermission : isPaused ? .paused : MenuBarModel.Icon(), isNewcomer: isNewcomer,
           isPaused: isPaused
         ) { command in
-          KeyBindings.label(for: command)
+          KeyBindings.label(for: command, in: KeyBindings.all)
         }
       }
       let tiling: [MacSwitch] = [.screenEdges, .menuBar, .optionKey]

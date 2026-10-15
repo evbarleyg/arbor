@@ -168,7 +168,7 @@ private let side = DisplaySnapshot(
   @Test func theWaysHomeHaveShortcuts() throws {
     func command(_ chord: String) throws -> Command? {
       let chord = try KeyChord(text: chord)
-      return KeyBindings.defaults.first { $0.chord == chord }?.command
+      return KeyBindings.all.first { $0.chord == chord }?.command
     }
     #expect(try command("ctrl+opt+0") == .home)
     #expect(try command("ctrl+opt+shift+f") == .floatAll)
@@ -180,7 +180,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func noTwoDefaultsShareAChord() {
-    let chords = KeyBindings.defaults.map(\.chord)
+    let chords = KeyBindings.all.map(\.chord)
     #expect(Set(chords).count == chords.count)
   }
 
@@ -197,13 +197,13 @@ private let side = DisplaySnapshot(
     }
     for (text, command) in table {
       let chord = try KeyChord(text: text)
-      #expect(KeyBindings.defaults.first { $0.chord == chord }?.command == command, "\(text)")
+      #expect(KeyBindings.all.first { $0.chord == chord }?.command == command, "\(text)")
     }
   }
 
   @Test func menusShowTheShortFormOfAShortcutThatHasTwo() {
-    #expect(KeyBindings.label(for: .neighbor(.left)) == "⌃⌥←")
-    #expect(KeyBindings.label(for: .showAll) == "⌃⌥Space")
+    #expect(KeyBindings.label(for: .neighbor(.left), in: KeyBindings.all) == "⌃⌥←")
+    #expect(KeyBindings.label(for: .showAll, in: KeyBindings.all) == "⌃⌥Space")
   }
 }
 

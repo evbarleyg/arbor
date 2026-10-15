@@ -11,10 +11,12 @@
 # (ARBOR_KEYBOARD_LAYOUT), which proves the reading of macOS's tables, the registration and the labels.
 # Second part, only on one of GitHub's throwaway Macs: the layouts are really selected (keys.swift) while Arbor runs, which
 # proves that it hears of the change although it is never the active app, and shows how soon.
+ARBOR_SHORTCUTS=all  # it presses keys of the whole map, of which nine ship
 source "$(dirname "$0")/lib.sh"
 
 KEYS="$ARBOR_ROOT/.build/mac-shell/keys"
-BINDINGS='"bindings": {"ctrl+opt+z": "desktop", "ctrl+opt+y": "home", "ctrl+opt+us:k": "relayout"}'
+# ⌃⌥A is no key of Arbor's any more. Here it is somebody's own, for a letter that a French keyboard has elsewhere.
+BINDINGS='"bindings": {"ctrl+opt+z": "desktop", "ctrl+opt+y": "home", "ctrl+opt+us:k": "relayout", "ctrl+opt+a": "arrange"}'
 
 ran() { grep -c "INFO  $1" "$ARBOR_HOME/arbor.log"; }
 ran_is() { [ "$(ran "$1")" = "$2" ]; }

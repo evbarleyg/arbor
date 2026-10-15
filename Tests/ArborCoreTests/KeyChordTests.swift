@@ -60,6 +60,7 @@ import Testing
     #expect(try KeyChord(text: "ctrl+opt+cmd+return").caution?.hasPrefix("Xcode") == true)
     #expect(try KeyChord(text: "ctrl+opt+shift+cmd+a").caution?.contains("hyper key") == true)
     #expect(try KeyChord(text: "ctrl+opt+shift+cmd+left").caution?.contains("hyper key") == true)
+    #expect(try KeyChord(text: "ctrl+opt+a").caution?.contains("archives the open conversation with ⌃⌥A") == true)
     #expect(try KeyChord(text: "ctrl+opt+q").caution == "⌃⌥Q is one slipped finger from ⌘Q")
     #expect(try KeyChord(text: "ctrl+opt+w").caution == "⌃⌥W is one slipped finger from ⌘W")
     #expect(try KeyChord(text: "ctrl+opt+delete").caution == "⌃⌥⌫ reads as “delete”")
