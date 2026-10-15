@@ -50,30 +50,30 @@ differed becomes cases of the other kinds, what held is said, and the entry goes
 
 | Kind | Cases | Hurt 1 | Stand-ins play it | partly | not yet | cannot | Guarded without a Mac | Guarded only on CI's Macs | Only when somebody starts a script | Not guarded | Arbor does not cope yet, or nobody knows |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| [order-of-reports](#order-of-reports) | 25 | 3 | 9 | 6 | 5 | 5 | 15 | 1 | 0 | 9 | 3 |
-| [missing-report](#missing-report) | 37 | 6 | 12 | 6 | 3 | 16 | 21 | 1 | 1 | 14 | 7 |
+| [order-of-reports](#order-of-reports) | 26 | 4 | 9 | 7 | 5 | 5 | 15 | 1 | 1 | 9 | 4 |
+| [missing-report](#missing-report) | 38 | 6 | 12 | 6 | 3 | 17 | 21 | 1 | 2 | 14 | 8 |
 | [extra-report](#extra-report) | 8 | 0 | 1 | 4 | 1 | 2 | 5 | 0 | 0 | 3 | 0 |
-| [late-or-partial-answer](#late-or-partial-answer) | 39 | 8 | 10 | 12 | 6 | 11 | 27 | 0 | 3 | 9 | 9 |
-| [second-actor](#second-actor) | 41 | 6 | 11 | 16 | 8 | 6 | 27 | 0 | 3 | 11 | 5 |
-| [geometry](#geometry) | 26 | 0 | 7 | 12 | 5 | 2 | 15 | 1 | 2 | 8 | 5 |
-| [identity](#identity) | 27 | 4 | 6 | 5 | 6 | 10 | 11 | 1 | 1 | 14 | 6 |
+| [late-or-partial-answer](#late-or-partial-answer) | 40 | 8 | 11 | 12 | 6 | 11 | 27 | 0 | 3 | 10 | 10 |
+| [second-actor](#second-actor) | 42 | 6 | 11 | 16 | 9 | 6 | 27 | 0 | 4 | 11 | 6 |
+| [geometry](#geometry) | 27 | 0 | 7 | 12 | 6 | 2 | 15 | 1 | 2 | 9 | 6 |
+| [identity](#identity) | 29 | 4 | 6 | 6 | 7 | 10 | 11 | 1 | 3 | 14 | 8 |
 | [permissions](#permissions) | 17 | 6 | 5 | 3 | 3 | 6 | 10 | 2 | 2 | 3 | 1 |
 | [timing](#timing) | 37 | 6 | 4 | 13 | 8 | 12 | 21 | 4 | 2 | 10 | 3 |
-| [input](#input) | 51 | 5 | 5 | 11 | 12 | 23 | 20 | 6 | 6 | 19 | 7 |
-| [looks](#looks) | 17 | 0 | 0 | 0 | 1 | 16 | 1 | 2 | 3 | 11 | 4 |
-| [never-exercised](#never-exercised) | 16 | 7 | 2 | 13 | 0 | 1 | 0 | 0 | 15 | 1 | 16 |
+| [input](#input) | 52 | 5 | 5 | 11 | 13 | 23 | 20 | 6 | 7 | 19 | 8 |
+| [looks](#looks) | 19 | 0 | 0 | 0 | 1 | 18 | 1 | 2 | 3 | 13 | 6 |
+| [never-exercised](#never-exercised) | 15 | 7 | 1 | 13 | 0 | 1 | 0 | 0 | 14 | 1 | 15 |
 | [toolchain](#toolchain) | 37 | 1 | 0 | 1 | 4 | 32 | 22 | 1 | 0 | 14 | 5 |
-| **all** | 378 | 52 | 72 | 102 | 62 | 142 | 195 | 19 | 38 | 126 | 71 |
+| **all** | 387 | 53 | 72 | 104 | 66 | 145 | 195 | 19 | 43 | 130 | 80 |
 
 **Where the difference bit**
 
 | Where | That is | Cases | Hurt 1 or 2 | Guarded without a Mac | Guarded only on CI's Macs | Only when somebody starts a script | Not guarded |
 |---|---|---|---|---|---|---|---|
-| below the seam | in the macOS-only code under the platform protocols (AX, Input, UI, App), which no test on Linux runs | 117 | 73 | 39 | 13 | 19 | 46 |
-| at the seam | in what crosses the platform protocols: a stand-in can play it to the controller | 140 | 85 | 103 | 0 | 8 | 29 |
-| controller | in the controller or the core, given reports that were right | 17 | 9 | 13 | 0 | 1 | 3 |
-| test | in a test, a script or a harness that expected the wrong thing | 68 | 0 | 18 | 5 | 8 | 37 |
-| machine | in the machine, the toolchain or the way things are built and installed | 36 | 3 | 22 | 1 | 2 | 11 |
+| below the seam | in the macOS-only code under the platform protocols (AX, Input, UI, App), which no test on Linux runs | 121 | 73 | 39 | 13 | 20 | 49 |
+| at the seam | in what crosses the platform protocols: a stand-in can play it to the controller | 142 | 87 | 103 | 0 | 10 | 29 |
+| controller | in the controller or the core, given reports that were right | 18 | 10 | 13 | 0 | 1 | 4 |
+| test | in a test, a script or a harness that expected the wrong thing | 69 | 0 | 18 | 5 | 9 | 37 |
+| machine | in the machine, the toolchain or the way things are built and installed | 37 | 3 | 22 | 1 | 3 | 11 |
 
 Each case is counted under the best guard it has: one that goes red on any machine (a test, a scenario, a replayed trace, a tool that `make check` or CI runs), one that needs CI's Macs (a test for macOS alone, a step of a real-window run that CI starts), one that somebody has to start, or none.
 
@@ -90,6 +90,7 @@ A fault that is known and open.
 | Case | Hurt | Where | Stand-ins play it | Guard |
 |---|---|---|---|---|
 | [the-keyboard-stays-in-a-window-that-went-out-of-view](#the-keyboard-stays-in-a-window-that-went-out-of-view) | 1 | at the seam | yes | not guarded |
+| [a-window-on-its-way-to-the-dock-comes-back-when-it-is-given-the-keyboard](#a-window-on-its-way-to-the-dock-comes-back-when-it-is-given-the-keyboard) | 1 | at the seam | partly | only when somebody starts a script |
 | [quitting-while-an-app-hangs-strands-its-windows](#quitting-while-an-app-hangs-strands-its-windows) | 1 | at the seam | partly | guarded without a mac |
 | [stage-manager-rearranges-windows-on-its-own](#stage-manager-rearranges-windows-on-its-own) | 1 | at the seam | no | guarded without a mac |
 | [a-click-then-drag-arrives-as-a-double-click](#a-click-then-drag-arrives-as-a-double-click) | 2 | below the seam | cannot | not guarded |
@@ -99,10 +100,13 @@ A fault that is known and open.
 | [behind-a-locked-screen-arbor-takes-no-window](#behind-a-locked-screen-arbor-takes-no-window) | 2 | below the seam | cannot | not guarded |
 | [docking-into-a-slot-too-small-took-seven-to-twelve-seconds](#docking-into-a-slot-too-small-took-seven-to-twelve-seconds) | 2 | at the seam | no | not guarded |
 | [on-the-way-out-of-full-screen-the-space-notice-may-come-a-moment-too-early](#on-the-way-out-of-full-screen-the-space-notice-may-come-a-moment-too-early) | 2 | below the seam | no | not guarded |
+| [one-shrink-moves-a-window-that-will-not-shrink-four-times](#one-shrink-moves-a-window-that-will-not-shrink-four-times) | 2 | controller | yes | not guarded |
 | [the-second-click-of-a-double-click-lands-in-the-window-just-framed](#the-second-click-of-a-double-click-lands-in-the-window-just-framed) | 2 | below the seam | partly | not guarded |
 | [the-windows-of-an-app-that-ended-in-silence-stay-until-arbor-next-calls-it](#the-windows-of-an-app-that-ended-in-silence-stay-until-arbor-next-calls-it) | 2 | below the seam | cannot | not guarded |
 | [twins-and-displays-without-a-uuid-share-one-name](#twins-and-displays-without-a-uuid-share-one-name) | 2 | at the seam | no | not guarded |
 | [two-windows-in-one-place-on-two-spaces-are-taken-for-tabs](#two-windows-in-one-place-on-two-spaces-are-taken-for-tabs) | 2 | below the seam | cannot | not guarded |
+| [macos-puts-windows-that-are-out-of-view-into-view-when-displays-change](#macos-puts-windows-that-are-out-of-view-into-view-when-displays-change) | 2 | at the seam | no | only when somebody starts a script |
+| [no-focused-window-that-arbor-knows-is-taken-for-nobody-at-the-keyboard](#no-focused-window-that-arbor-knows-is-taken-for-nobody-at-the-keyboard) | 2 | at the seam | partly | only when somebody starts a script |
 | [raise-does-not-lift-a-window-over-the-active-apps-key-window](#raise-does-not-lift-a-window-over-the-active-apps-key-window) | 2 | at the seam | no | only when somebody starts a script |
 | [macos-remembers-a-tile-arbor-has-undone](#macos-remembers-a-tile-arbor-has-undone) | 2 | at the seam | partly | guarded without a mac |
 | [nobody-has-the-keyboard-also-means-a-launcher-has-it](#nobody-has-the-keyboard-also-means-a-launcher-has-it) | 2 | at the seam | partly | guarded without a mac |
@@ -118,19 +122,18 @@ Within reach as Arbor ships, and never tried on a real Mac, or only once and by 
 | [f05-no-hand-has-drawn-the-rectangle](#f05-no-hand-has-drawn-the-rectangle) | 1 | below the seam | partly | only when somebody starts a script |
 | [f08-a-virtual-display-once-no-cable-no-lid-no-space](#f08-a-virtual-display-once-no-cable-no-lid-no-space) | 1 | at the seam | partly | only when somebody starts a script |
 | [f51-no-finger-has-held-the-key](#f51-no-finger-has-held-the-key) | 1 | below the seam | partly | only when somebody starts a script |
-| [f53-summon-its-own-check-has-never-run](#f53-summon-its-own-check-has-never-run) | 1 | at the seam | partly | only when somebody starts a script |
+| [f53-no-real-apps-window-has-been-summoned](#f53-no-real-apps-window-has-been-summoned) | 1 | at the seam | partly | only when somebody starts a script |
 | [f55-no-wheel-and-no-trackpad-has-scrolled](#f55-no-wheel-and-no-trackpad-has-scrolled) | 1 | below the seam | cannot | only when somebody starts a script |
-| [f58-hold-the-view-its-own-check-has-never-run](#f58-hold-the-view-its-own-check-has-never-run) | 1 | below the seam | partly | only when somebody starts a script |
-| [f63-the-permission-went-once-and-input-afterwards-was-not-tried](#f63-the-permission-went-once-and-input-afterwards-was-not-tried) | 1 | below the seam | partly | only when somebody starts a script |
+| [f58-no-held-view-has-been-empty-and-no-audience-has-looked](#f58-no-held-view-has-been-empty-and-no-audience-has-looked) | 1 | below the seam | partly | only when somebody starts a script |
+| [f63-nothing-has-been-pressed-while-the-permission-is-gone](#f63-nothing-has-been-pressed-while-the-permission-is-gone) | 1 | below the seam | partly | only when somebody starts a script |
 | [f11-no-rule-has-placed-a-real-window](#f11-no-rule-has-placed-a-real-window) | 2 | at the seam | yes | not guarded |
-| [f13-nothing-has-been-installed-signed-or-updated](#f13-nothing-has-been-installed-signed-or-updated) | 2 | machine | partly | only when somebody starts a script |
-| [f20-the-name-field-its-own-check-has-never-run](#f20-the-name-field-its-own-check-has-never-run) | 2 | below the seam | partly | only when somebody starts a script |
-| [f22-the-tiling-keys-were-pressed-once-and-their-own-check-has-never-run](#f22-the-tiling-keys-were-pressed-once-and-their-own-check-has-never-run) | 2 | at the seam | yes | only when somebody starts a script |
-| [f26-the-minimap-its-own-check-has-never-run](#f26-the-minimap-its-own-check-has-never-run) | 2 | below the seam | partly | only when somebody starts a script |
-| [f27-go-to-no-key-is-known-to-have-been-pressed-in-it](#f27-go-to-no-key-is-known-to-have-been-pressed-in-it) | 2 | below the seam | partly | only when somebody starts a script |
-| [f41-no-listed-app-has-had-its-keys](#f41-no-listed-app-has-had-its-keys) | 2 | below the seam | partly | only when somebody starts a script |
-| [f44-no-key-has-been-pressed-on-another-layout](#f44-no-key-has-been-pressed-on-another-layout) | 2 | below the seam | partly | only when somebody starts a script |
-| [f49-pin-its-own-check-has-never-run](#f49-pin-its-own-check-has-never-run) | 2 | at the seam | partly | only when somebody starts a script |
+| [f13-nothing-has-been-installed-or-updated-and-no-key-has-signed](#f13-nothing-has-been-installed-or-updated-and-no-key-has-signed) | 2 | machine | partly | only when somebody starts a script |
+| [f20-no-click-elsewhere-has-closed-the-name-field](#f20-no-click-elsewhere-has-closed-the-name-field) | 2 | below the seam | partly | only when somebody starts a script |
+| [f26-no-click-outside-the-minimap-while-it-takes-clicks](#f26-no-click-outside-the-minimap-while-it-takes-clicks) | 2 | below the seam | partly | only when somebody starts a script |
+| [f27-go-to-has-not-been-closed-by-a-click-with-a-witness-looking-on](#f27-go-to-has-not-been-closed-by-a-click-with-a-witness-looking-on) | 2 | below the seam | partly | only when somebody starts a script |
+| [f41-no-key-has-been-pressed-in-the-moment-of-the-switch](#f41-no-key-has-been-pressed-in-the-moment-of-the-switch) | 2 | below the seam | partly | only when somebody starts a script |
+| [f44-no-finger-has-pressed-a-key-on-another-layout](#f44-no-finger-has-pressed-a-key-on-another-layout) | 2 | below the seam | partly | only when somebody starts a script |
+| [f49-what-quit-does-to-a-pin-that-no-hand-moved-is-only-inferred](#f49-what-quit-does-to-a-pin-that-no-hand-moved-is-only-inferred) | 2 | at the seam | partly | only when somebody starts a script |
 
 ### Arbor copes, and nothing would notice if it stopped
 
@@ -173,6 +176,7 @@ So no test on Linux can meet it. (Those they play partly are not listed: see eac
 | [on-the-way-out-of-full-screen-the-space-notice-may-come-a-moment-too-early](#on-the-way-out-of-full-screen-the-space-notice-may-come-a-moment-too-early) | 2 | below the seam | no | not guarded |
 | [the-resize-may-come-before-the-full-screen-flag](#the-resize-may-come-before-the-full-screen-flag) | 2 | at the seam | no | not guarded |
 | [twins-and-displays-without-a-uuid-share-one-name](#twins-and-displays-without-a-uuid-share-one-name) | 2 | at the seam | no | not guarded |
+| [macos-puts-windows-that-are-out-of-view-into-view-when-displays-change](#macos-puts-windows-that-are-out-of-view-into-view-when-displays-change) | 2 | at the seam | no | only when somebody starts a script |
 | [raise-does-not-lift-a-window-over-the-active-apps-key-window](#raise-does-not-lift-a-window-over-the-active-apps-key-window) | 2 | at the seam | no | only when somebody starts a script |
 | [a-dragged-window-may-stand-still-until-the-pointer-is-24-points-away](#a-dragged-window-may-stand-still-until-the-pointer-is-24-points-away) | 2 | controller | no | guarded without a mac |
 | [a-rotation-rides-along-with-a-pinch](#a-rotation-rides-along-with-a-pinch) | 2 | controller | no | guarded without a mac |
@@ -180,21 +184,21 @@ So no test on Linux can meet it. (Those they play partly are not listed: see eac
 
 ## Ring 2: what the walks on Linux cannot vouch for
 
-The viable gate (`docs/VIABLE.md`, section 2) asks of this ledger that no open row touches one of the detectors of its section 5: with such a row open, ten thousand clean walks against the stand-ins say nothing about that detector. Each case says which detectors a person's trouble would set off (*touches*). It counts here when Arbor does not cope with it yet or nobody knows (**bold**), or when it crosses the seam and the stand-ins play it only partly or not at all. 98 cases count, each once, however many detectors it touches: that is the number `scripts/reality-ledger.py --rings` hands to the gate.
+The viable gate (`docs/VIABLE.md`, section 2) asks of this ledger that no open row touches one of the detectors of its section 5: with such a row open, ten thousand clean walks against the stand-ins say nothing about that detector. Each case says which detectors a person's trouble would set off (*touches*). It counts here when Arbor does not cope with it yet or nobody knows (**bold**), or when it crosses the seam and the stand-ins play it only partly or not at all. 101 cases count, each once, however many detectors it touches: that is the number `scripts/reality-ledger.py --rings` hands to the gate.
 
 | Detector | Cases | Open or unplayed cases that touch it |
 |---|---|---|
-| `moved-unasked` | 24 | **[f08-a-virtual-display-once-no-cable-no-lid-no-space](#f08-a-virtual-display-once-no-cable-no-lid-no-space)**, **[f51-no-finger-has-held-the-key](#f51-no-finger-has-held-the-key)**, **[stage-manager-rearranges-windows-on-its-own](#stage-manager-rearranges-windows-on-its-own)**, **[a-click-then-drag-arrives-as-a-double-click](#a-click-then-drag-arrives-as-a-double-click)**, **[a-move-that-timed-out-is-carried-out-when-the-app-wakes](#a-move-that-timed-out-is-carried-out-when-the-app-wakes)**, **[arbor-pulls-at-a-window-on-its-way-into-full-screen](#arbor-pulls-at-a-window-on-its-way-into-full-screen)**, **[f11-no-rule-has-placed-a-real-window](#f11-no-rule-has-placed-a-real-window)**, **[f44-no-key-has-been-pressed-on-another-layout](#f44-no-key-has-been-pressed-on-another-layout)**, **[open-says-yes-to-any-name](#open-says-yes-to-any-name)**, **[twins-and-displays-without-a-uuid-share-one-name](#twins-and-displays-without-a-uuid-share-one-name)**, **[two-windows-in-one-place-on-two-spaces-are-taken-for-tabs](#two-windows-in-one-place-on-two-spaces-are-taken-for-tabs)**, [macos-moves-windows-at-once-and-arbor-hears-of-the-displays-later](#macos-moves-windows-at-once-and-arbor-hears-of-the-displays-later), [a-key-is-a-position-not-a-letter](#a-key-is-a-position-not-a-letter), [a-space-switch-brings-an-app-forward-before-or-after-its-windows-are-known](#a-space-switch-brings-an-app-forward-before-or-after-its-windows-are-known), [a-window-macos-tiled-gets-its-old-size-back-in-the-hand](#a-window-macos-tiled-gets-its-old-size-back-in-the-hand), [after-a-change-of-displays-macos-pulls-a-parked-window-into-view](#after-a-change-of-displays-macos-pulls-a-parked-window-into-view), [leaving-full-screen-lands-where-macos-chooses](#leaving-full-screen-lands-where-macos-chooses), [leaving-full-screen-pulls-the-apps-parked-windows-onto-the-screen](#leaving-full-screen-pulls-the-apps-parked-windows-onto-the-screen), [one-focus-change-is-reported-two-to-four-times](#one-focus-change-is-reported-two-to-four-times), [terminal-grows-out-of-its-slot-when-the-font-grows](#terminal-grows-out-of-its-slot-when-the-font-grows), [the-resize-may-come-before-the-full-screen-flag](#the-resize-may-come-before-the-full-screen-flag), [unhiding-moves-windows-before-it-says-shown](#unhiding-moves-windows-before-it-says-shown), [pressing-an-unfocused-window-focuses-it-first](#pressing-an-unfocused-window-focuses-it-first), [the-dock-resizes-and-the-visible-frame-with-it](#the-dock-resizes-and-the-visible-frame-with-it) |
-| `jolt` | 16 | **[arbor-pulls-at-a-window-on-its-way-into-full-screen](#arbor-pulls-at-a-window-on-its-way-into-full-screen)**, **[f22-the-tiling-keys-were-pressed-once-and-their-own-check-has-never-run](#f22-the-tiling-keys-were-pressed-once-and-their-own-check-has-never-run)**, **[an-app-settles-its-size-after-the-mouse-is-up](#an-app-settles-its-size-after-the-mouse-is-up)**, **[the-fake-obeys-a-move-of-a-minimized-or-hidden-window](#the-fake-obeys-a-move-of-a-minimized-or-hidden-window)**, [displays-blink-on-wake](#displays-blink-on-wake), [a-double-click-on-a-title-bar-zooms-the-window](#a-double-click-on-a-title-bar-zooms-the-window), [a-minimize-posts-a-change-of-displays](#a-minimize-posts-a-change-of-displays), [every-setframe-is-echoed-after-the-call-returns](#every-setframe-is-echoed-after-the-call-returns), [leaving-full-screen-lands-where-macos-chooses](#leaving-full-screen-lands-where-macos-chooses), [the-resize-may-come-before-the-full-screen-flag](#the-resize-may-come-before-the-full-screen-flag), [a-size-set-at-the-old-place-is-cut-to-what-fits-there](#a-size-set-at-the-old-place-is-cut-to-what-fits-there), [focus-reports-lag-behind-a-burst-of-new-windows](#focus-reports-lag-behind-a-burst-of-new-windows), [resized-can-stall-for-a-second](#resized-can-stall-for-a-second), [the-dock-resizes-and-the-visible-frame-with-it](#the-dock-resizes-and-the-visible-frame-with-it), [windows-of-an-unplugged-display-land-in-a-heap](#windows-of-an-unplugged-display-land-in-a-heap), [windows-turn-up-one-by-one-at-launch](#windows-turn-up-one-by-one-at-launch) |
+| `moved-unasked` | 25 | **[a-window-on-its-way-to-the-dock-comes-back-when-it-is-given-the-keyboard](#a-window-on-its-way-to-the-dock-comes-back-when-it-is-given-the-keyboard)**, **[f08-a-virtual-display-once-no-cable-no-lid-no-space](#f08-a-virtual-display-once-no-cable-no-lid-no-space)**, **[f51-no-finger-has-held-the-key](#f51-no-finger-has-held-the-key)**, **[stage-manager-rearranges-windows-on-its-own](#stage-manager-rearranges-windows-on-its-own)**, **[a-click-then-drag-arrives-as-a-double-click](#a-click-then-drag-arrives-as-a-double-click)**, **[a-move-that-timed-out-is-carried-out-when-the-app-wakes](#a-move-that-timed-out-is-carried-out-when-the-app-wakes)**, **[arbor-pulls-at-a-window-on-its-way-into-full-screen](#arbor-pulls-at-a-window-on-its-way-into-full-screen)**, **[f11-no-rule-has-placed-a-real-window](#f11-no-rule-has-placed-a-real-window)**, **[f44-no-finger-has-pressed-a-key-on-another-layout](#f44-no-finger-has-pressed-a-key-on-another-layout)**, **[open-says-yes-to-any-name](#open-says-yes-to-any-name)**, **[twins-and-displays-without-a-uuid-share-one-name](#twins-and-displays-without-a-uuid-share-one-name)**, **[two-windows-in-one-place-on-two-spaces-are-taken-for-tabs](#two-windows-in-one-place-on-two-spaces-are-taken-for-tabs)**, [macos-moves-windows-at-once-and-arbor-hears-of-the-displays-later](#macos-moves-windows-at-once-and-arbor-hears-of-the-displays-later), [a-key-is-a-position-not-a-letter](#a-key-is-a-position-not-a-letter), [a-space-switch-brings-an-app-forward-before-or-after-its-windows-are-known](#a-space-switch-brings-an-app-forward-before-or-after-its-windows-are-known), [a-window-macos-tiled-gets-its-old-size-back-in-the-hand](#a-window-macos-tiled-gets-its-old-size-back-in-the-hand), [after-a-change-of-displays-macos-pulls-a-parked-window-into-view](#after-a-change-of-displays-macos-pulls-a-parked-window-into-view), [leaving-full-screen-lands-where-macos-chooses](#leaving-full-screen-lands-where-macos-chooses), [leaving-full-screen-pulls-the-apps-parked-windows-onto-the-screen](#leaving-full-screen-pulls-the-apps-parked-windows-onto-the-screen), [one-focus-change-is-reported-two-to-four-times](#one-focus-change-is-reported-two-to-four-times), [terminal-grows-out-of-its-slot-when-the-font-grows](#terminal-grows-out-of-its-slot-when-the-font-grows), [the-resize-may-come-before-the-full-screen-flag](#the-resize-may-come-before-the-full-screen-flag), [unhiding-moves-windows-before-it-says-shown](#unhiding-moves-windows-before-it-says-shown), [pressing-an-unfocused-window-focuses-it-first](#pressing-an-unfocused-window-focuses-it-first), [the-dock-resizes-and-the-visible-frame-with-it](#the-dock-resizes-and-the-visible-frame-with-it) |
+| `jolt` | 16 | **[arbor-pulls-at-a-window-on-its-way-into-full-screen](#arbor-pulls-at-a-window-on-its-way-into-full-screen)**, **[one-shrink-moves-a-window-that-will-not-shrink-four-times](#one-shrink-moves-a-window-that-will-not-shrink-four-times)**, **[an-app-settles-its-size-after-the-mouse-is-up](#an-app-settles-its-size-after-the-mouse-is-up)**, **[the-fake-obeys-a-move-of-a-minimized-or-hidden-window](#the-fake-obeys-a-move-of-a-minimized-or-hidden-window)**, [displays-blink-on-wake](#displays-blink-on-wake), [a-double-click-on-a-title-bar-zooms-the-window](#a-double-click-on-a-title-bar-zooms-the-window), [a-minimize-posts-a-change-of-displays](#a-minimize-posts-a-change-of-displays), [every-setframe-is-echoed-after-the-call-returns](#every-setframe-is-echoed-after-the-call-returns), [leaving-full-screen-lands-where-macos-chooses](#leaving-full-screen-lands-where-macos-chooses), [the-resize-may-come-before-the-full-screen-flag](#the-resize-may-come-before-the-full-screen-flag), [a-size-set-at-the-old-place-is-cut-to-what-fits-there](#a-size-set-at-the-old-place-is-cut-to-what-fits-there), [focus-reports-lag-behind-a-burst-of-new-windows](#focus-reports-lag-behind-a-burst-of-new-windows), [resized-can-stall-for-a-second](#resized-can-stall-for-a-second), [the-dock-resizes-and-the-visible-frame-with-it](#the-dock-resizes-and-the-visible-frame-with-it), [windows-of-an-unplugged-display-land-in-a-heap](#windows-of-an-unplugged-display-land-in-a-heap), [windows-turn-up-one-by-one-at-launch](#windows-turn-up-one-by-one-at-launch) |
 | `pulled` | 2 | [a-title-bar-never-goes-under-the-menu-bar](#a-title-bar-never-goes-under-the-menu-bar), [macos-holds-a-dragged-window-back-where-edges-meet](#macos-holds-a-dragged-window-back-where-edges-meet) |
-| `flash` | 5 | **[the-display-showing-most-of-a-window-stops-it](#the-display-showing-most-of-a-window-stops-it)**, [after-a-change-of-displays-macos-pulls-a-parked-window-into-view](#after-a-change-of-displays-macos-pulls-a-parked-window-into-view), [leaving-full-screen-pulls-the-apps-parked-windows-onto-the-screen](#leaving-full-screen-pulls-the-apps-parked-windows-onto-the-screen), [unhiding-moves-windows-before-it-says-shown](#unhiding-moves-windows-before-it-says-shown), [how-far-above-the-bottom-a-window-stops-differs](#how-far-above-the-bottom-a-window-stops-differs) |
-| `fought` | 10 | **[macos-remembers-a-tile-arbor-has-undone](#macos-remembers-a-tile-arbor-has-undone)**, **[command-and-shift-do-not-stop-macos-tiling](#command-and-shift-do-not-stop-macos-tiling)**, **[macos-half-tile-is-a-point-off](#macos-half-tile-is-a-point-off)**, [a-double-click-on-a-title-bar-zooms-the-window](#a-double-click-on-a-title-bar-zooms-the-window), [a-window-macos-tiled-gets-its-old-size-back-in-the-hand](#a-window-macos-tiled-gets-its-old-size-back-in-the-hand), [macos-tiling-travels-although-reduce-motion-is-on](#macos-tiling-travels-although-reduce-motion-is-on), [option-held-in-a-drag-brings-up-macos-tiling-preview](#option-held-in-a-drag-brings-up-macos-tiling-preview), [two-previews-for-one-drag](#two-previews-for-one-drag), [macos-tiling-does-not-answer-every-drag-to-the-menu-bar](#macos-tiling-does-not-answer-every-drag-to-the-menu-bar), [with-option-held-macos-shows-its-preview-and-does-not-tile](#with-option-held-macos-shows-its-preview-and-does-not-tile) |
-| `lost` | 16 | **[f08-a-virtual-display-once-no-cable-no-lid-no-space](#f08-a-virtual-display-once-no-cable-no-lid-no-space)**, **[f51-no-finger-has-held-the-key](#f51-no-finger-has-held-the-key)**, **[f53-summon-its-own-check-has-never-run](#f53-summon-its-own-check-has-never-run)**, **[f58-hold-the-view-its-own-check-has-never-run](#f58-hold-the-view-its-own-check-has-never-run)**, **[f63-the-permission-went-once-and-input-afterwards-was-not-tried](#f63-the-permission-went-once-and-input-afterwards-was-not-tried)**, **[quitting-while-an-app-hangs-strands-its-windows](#quitting-while-an-app-hangs-strands-its-windows)**, **[a-move-that-timed-out-is-carried-out-when-the-app-wakes](#a-move-that-timed-out-is-carried-out-when-the-app-wakes)**, **[twins-and-displays-without-a-uuid-share-one-name](#twins-and-displays-without-a-uuid-share-one-name)**, **[the-labs-own-book-keeping-raised-false-alarms](#the-labs-own-book-keeping-raised-false-alarms)**, [a-refusal-comes-from-inside-a-call](#a-refusal-comes-from-inside-a-call), [displays-blink-on-wake](#displays-blink-on-wake), [every-display-notice-restarts-the-wait](#every-display-notice-restarts-the-wait), [macos-moves-windows-at-once-and-arbor-hears-of-the-displays-later](#macos-moves-windows-at-once-and-arbor-hears-of-the-displays-later), [one-refusal-from-a-busy-app-is-not-a-minimum-size](#one-refusal-from-a-busy-app-is-not-a-minimum-size), [real-apps-are-wider-than-a-column](#real-apps-are-wider-than-a-column), [terminal-grows-out-of-its-slot-when-the-font-grows](#terminal-grows-out-of-its-slot-when-the-font-grows) |
+| `flash` | 7 | **[macos-puts-windows-that-are-out-of-view-into-view-when-displays-change](#macos-puts-windows-that-are-out-of-view-into-view-when-displays-change)**, **[one-shrink-moves-a-window-that-will-not-shrink-four-times](#one-shrink-moves-a-window-that-will-not-shrink-four-times)**, **[the-display-showing-most-of-a-window-stops-it](#the-display-showing-most-of-a-window-stops-it)**, [after-a-change-of-displays-macos-pulls-a-parked-window-into-view](#after-a-change-of-displays-macos-pulls-a-parked-window-into-view), [leaving-full-screen-pulls-the-apps-parked-windows-onto-the-screen](#leaving-full-screen-pulls-the-apps-parked-windows-onto-the-screen), [unhiding-moves-windows-before-it-says-shown](#unhiding-moves-windows-before-it-says-shown), [how-far-above-the-bottom-a-window-stops-differs](#how-far-above-the-bottom-a-window-stops-differs) |
+| `fought` | 11 | **[a-window-on-its-way-to-the-dock-comes-back-when-it-is-given-the-keyboard](#a-window-on-its-way-to-the-dock-comes-back-when-it-is-given-the-keyboard)**, **[macos-remembers-a-tile-arbor-has-undone](#macos-remembers-a-tile-arbor-has-undone)**, **[command-and-shift-do-not-stop-macos-tiling](#command-and-shift-do-not-stop-macos-tiling)**, **[macos-half-tile-is-a-point-off](#macos-half-tile-is-a-point-off)**, [a-double-click-on-a-title-bar-zooms-the-window](#a-double-click-on-a-title-bar-zooms-the-window), [a-window-macos-tiled-gets-its-old-size-back-in-the-hand](#a-window-macos-tiled-gets-its-old-size-back-in-the-hand), [macos-tiling-travels-although-reduce-motion-is-on](#macos-tiling-travels-although-reduce-motion-is-on), [option-held-in-a-drag-brings-up-macos-tiling-preview](#option-held-in-a-drag-brings-up-macos-tiling-preview), [two-previews-for-one-drag](#two-previews-for-one-drag), [macos-tiling-does-not-answer-every-drag-to-the-menu-bar](#macos-tiling-does-not-answer-every-drag-to-the-menu-bar), [with-option-held-macos-shows-its-preview-and-does-not-tile](#with-option-held-macos-shows-its-preview-and-does-not-tile) |
+| `lost` | 16 | **[f08-a-virtual-display-once-no-cable-no-lid-no-space](#f08-a-virtual-display-once-no-cable-no-lid-no-space)**, **[f51-no-finger-has-held-the-key](#f51-no-finger-has-held-the-key)**, **[f53-no-real-apps-window-has-been-summoned](#f53-no-real-apps-window-has-been-summoned)**, **[f58-no-held-view-has-been-empty-and-no-audience-has-looked](#f58-no-held-view-has-been-empty-and-no-audience-has-looked)**, **[f63-nothing-has-been-pressed-while-the-permission-is-gone](#f63-nothing-has-been-pressed-while-the-permission-is-gone)**, **[quitting-while-an-app-hangs-strands-its-windows](#quitting-while-an-app-hangs-strands-its-windows)**, **[a-move-that-timed-out-is-carried-out-when-the-app-wakes](#a-move-that-timed-out-is-carried-out-when-the-app-wakes)**, **[twins-and-displays-without-a-uuid-share-one-name](#twins-and-displays-without-a-uuid-share-one-name)**, **[the-labs-own-book-keeping-raised-false-alarms](#the-labs-own-book-keeping-raised-false-alarms)**, [a-refusal-comes-from-inside-a-call](#a-refusal-comes-from-inside-a-call), [displays-blink-on-wake](#displays-blink-on-wake), [every-display-notice-restarts-the-wait](#every-display-notice-restarts-the-wait), [macos-moves-windows-at-once-and-arbor-hears-of-the-displays-later](#macos-moves-windows-at-once-and-arbor-hears-of-the-displays-later), [one-refusal-from-a-busy-app-is-not-a-minimum-size](#one-refusal-from-a-busy-app-is-not-a-minimum-size), [real-apps-are-wider-than-a-column](#real-apps-are-wider-than-a-column), [terminal-grows-out-of-its-slot-when-the-font-grows](#terminal-grows-out-of-its-slot-when-the-font-grows) |
 | `stuck` | 6 | **[stage-manager-rearranges-windows-on-its-own](#stage-manager-rearranges-windows-on-its-own)**, **[the-fakes-announce-a-drag-without-asking-the-judge](#the-fakes-announce-a-drag-without-asking-the-judge)**, [a-drag-is-heard-of-a-third-of-a-second-late](#a-drag-is-heard-of-a-third-of-a-second-late), [the-app-learns-of-a-drag-later-than-the-window-server](#the-app-learns-of-a-drag-later-than-the-window-server), [macos-holds-a-dragged-window-back-where-edges-meet](#macos-holds-a-dragged-window-back-where-edges-meet), [a-title-bar-let-go-behind-the-dock-is-pulled-up](#a-title-bar-let-go-behind-the-dock-is-pulled-up) |
-| `behind` | 7 | **[f53-summon-its-own-check-has-never-run](#f53-summon-its-own-check-has-never-run)**, **[f49-pin-its-own-check-has-never-run](#f49-pin-its-own-check-has-never-run)**, **[raise-does-not-lift-a-window-over-the-active-apps-key-window](#raise-does-not-lift-a-window-over-the-active-apps-key-window)**, [a-clicked-window-takes-the-keyboard-first-and-comes-forward-afterwards](#a-clicked-window-takes-the-keyboard-first-and-comes-forward-afterwards), [raising-a-window-can-make-its-app-report-a-focus-change](#raising-a-window-can-make-its-app-report-a-focus-change), [an-app-that-comes-forward-raises-only-its-key-window](#an-app-that-comes-forward-raises-only-its-key-window), [a-command-click-raises-nothing-and-the-three-buttons-work-from-behind](#a-command-click-raises-nothing-and-the-three-buttons-work-from-behind) |
-| `focus` | 20 | **[f58-hold-the-view-its-own-check-has-never-run](#f58-hold-the-view-its-own-check-has-never-run)**, **[the-keyboard-stays-in-a-window-that-went-out-of-view](#the-keyboard-stays-in-a-window-that-went-out-of-view)**, **[f20-the-name-field-its-own-check-has-never-run](#f20-the-name-field-its-own-check-has-never-run)**, **[f22-the-tiling-keys-were-pressed-once-and-their-own-check-has-never-run](#f22-the-tiling-keys-were-pressed-once-and-their-own-check-has-never-run)**, **[f27-go-to-no-key-is-known-to-have-been-pressed-in-it](#f27-go-to-no-key-is-known-to-have-been-pressed-in-it)**, **[f49-pin-its-own-check-has-never-run](#f49-pin-its-own-check-has-never-run)**, **[nobody-has-the-keyboard-also-means-a-launcher-has-it](#nobody-has-the-keyboard-also-means-a-launcher-has-it)**, **[on-the-way-out-of-full-screen-the-space-notice-may-come-a-moment-too-early](#on-the-way-out-of-full-screen-the-space-notice-may-come-a-moment-too-early)**, **[a-pause-for-an-app-ends-inside-the-notice-and-reads-the-old-focus](#a-pause-for-an-app-ends-inside-the-notice-and-reads-the-old-focus)**, **[the-labs-switch-app-is-not-command-tab](#the-labs-switch-app-is-not-command-tab)**, [a-new-window-has-the-keyboard-before-arbor-hears-of-it](#a-new-window-has-the-keyboard-before-arbor-hears-of-it), [a-space-switch-brings-an-app-forward-before-or-after-its-windows-are-known](#a-space-switch-brings-an-app-forward-before-or-after-its-windows-are-known), [one-focus-change-is-reported-two-to-four-times](#one-focus-change-is-reported-two-to-four-times), [raising-a-window-can-make-its-app-report-a-focus-change](#raising-a-window-can-make-its-app-report-a-focus-change), [the-window-and-its-app-report-in-either-order](#the-window-and-its-app-report-in-either-order), [an-app-that-comes-forward-raises-only-its-key-window](#an-app-that-comes-forward-raises-only-its-key-window), [an-app-that-comes-forward-says-the-keyboard-moved-up-to-three-times](#an-app-that-comes-forward-says-the-keyboard-moved-up-to-three-times), [hiding-an-app-brings-finder-forward-first](#hiding-an-app-brings-finder-forward-first), [the-fake-says-the-keyboard-moved-from-within-every-focus-call](#the-fake-says-the-keyboard-moved-from-within-every-focus-call), [what-a-background-app-does-with-its-focus-is-not-passed-on](#what-a-background-app-does-with-its-focus-is-not-passed-on) |
-| `size-lost` | 8 | **[quitting-while-an-app-hangs-strands-its-windows](#quitting-while-an-app-hangs-strands-its-windows)**, **[macos-remembers-a-tile-arbor-has-undone](#macos-remembers-a-tile-arbor-has-undone)**, **[an-app-settles-its-size-after-the-mouse-is-up](#an-app-settles-its-size-after-the-mouse-is-up)**, [every-setframe-is-echoed-after-the-call-returns](#every-setframe-is-echoed-after-the-call-returns), [terminal-snaps-to-whole-cells-late](#terminal-snaps-to-whole-cells-late), [the-app-learns-of-a-drag-later-than-the-window-server](#the-app-learns-of-a-drag-later-than-the-window-server), [a-stopped-layer-is-deaf-and-the-fake-goes-on-talking](#a-stopped-layer-is-deaf-and-the-fake-goes-on-talking), [the-fake-says-the-person-did-it-where-the-mac-says-nobody-did](#the-fake-says-the-person-did-it-where-the-mac-says-nobody-did) |
-| `input-held` | 9 | **[f05-no-hand-has-drawn-the-rectangle](#f05-no-hand-has-drawn-the-rectangle)**, **[f55-no-wheel-and-no-trackpad-has-scrolled](#f55-no-wheel-and-no-trackpad-has-scrolled)**, **[f63-the-permission-went-once-and-input-afterwards-was-not-tried](#f63-the-permission-went-once-and-input-afterwards-was-not-tried)**, **[a-click-then-drag-arrives-as-a-double-click](#a-click-then-drag-arrives-as-a-double-click)**, **[f26-the-minimap-its-own-check-has-never-run](#f26-the-minimap-its-own-check-has-never-run)**, **[f41-no-listed-app-has-had-its-keys](#f41-no-listed-app-has-had-its-keys)**, **[voiceover-and-other-window-managers-use-control-option-too](#voiceover-and-other-window-managers-use-control-option-too)**, **[a-press-reaches-the-tap-before-its-app-comes-forward](#a-press-reaches-the-tap-before-its-app-comes-forward)**, **[a-title-bar-an-app-draws-itself-answers-with-bare-groups](#a-title-bar-an-app-draws-itself-answers-with-bare-groups)** |
+| `behind` | 7 | **[f53-no-real-apps-window-has-been-summoned](#f53-no-real-apps-window-has-been-summoned)**, **[f49-what-quit-does-to-a-pin-that-no-hand-moved-is-only-inferred](#f49-what-quit-does-to-a-pin-that-no-hand-moved-is-only-inferred)**, **[raise-does-not-lift-a-window-over-the-active-apps-key-window](#raise-does-not-lift-a-window-over-the-active-apps-key-window)**, [a-clicked-window-takes-the-keyboard-first-and-comes-forward-afterwards](#a-clicked-window-takes-the-keyboard-first-and-comes-forward-afterwards), [raising-a-window-can-make-its-app-report-a-focus-change](#raising-a-window-can-make-its-app-report-a-focus-change), [an-app-that-comes-forward-raises-only-its-key-window](#an-app-that-comes-forward-raises-only-its-key-window), [a-command-click-raises-nothing-and-the-three-buttons-work-from-behind](#a-command-click-raises-nothing-and-the-three-buttons-work-from-behind) |
+| `focus` | 20 | **[f58-no-held-view-has-been-empty-and-no-audience-has-looked](#f58-no-held-view-has-been-empty-and-no-audience-has-looked)**, **[the-keyboard-stays-in-a-window-that-went-out-of-view](#the-keyboard-stays-in-a-window-that-went-out-of-view)**, **[f20-no-click-elsewhere-has-closed-the-name-field](#f20-no-click-elsewhere-has-closed-the-name-field)**, **[f27-go-to-has-not-been-closed-by-a-click-with-a-witness-looking-on](#f27-go-to-has-not-been-closed-by-a-click-with-a-witness-looking-on)**, **[f49-what-quit-does-to-a-pin-that-no-hand-moved-is-only-inferred](#f49-what-quit-does-to-a-pin-that-no-hand-moved-is-only-inferred)**, **[no-focused-window-that-arbor-knows-is-taken-for-nobody-at-the-keyboard](#no-focused-window-that-arbor-knows-is-taken-for-nobody-at-the-keyboard)**, **[nobody-has-the-keyboard-also-means-a-launcher-has-it](#nobody-has-the-keyboard-also-means-a-launcher-has-it)**, **[on-the-way-out-of-full-screen-the-space-notice-may-come-a-moment-too-early](#on-the-way-out-of-full-screen-the-space-notice-may-come-a-moment-too-early)**, **[a-pause-for-an-app-ends-inside-the-notice-and-reads-the-old-focus](#a-pause-for-an-app-ends-inside-the-notice-and-reads-the-old-focus)**, **[the-labs-switch-app-is-not-command-tab](#the-labs-switch-app-is-not-command-tab)**, [a-new-window-has-the-keyboard-before-arbor-hears-of-it](#a-new-window-has-the-keyboard-before-arbor-hears-of-it), [a-space-switch-brings-an-app-forward-before-or-after-its-windows-are-known](#a-space-switch-brings-an-app-forward-before-or-after-its-windows-are-known), [one-focus-change-is-reported-two-to-four-times](#one-focus-change-is-reported-two-to-four-times), [raising-a-window-can-make-its-app-report-a-focus-change](#raising-a-window-can-make-its-app-report-a-focus-change), [the-window-and-its-app-report-in-either-order](#the-window-and-its-app-report-in-either-order), [an-app-that-comes-forward-raises-only-its-key-window](#an-app-that-comes-forward-raises-only-its-key-window), [an-app-that-comes-forward-says-the-keyboard-moved-up-to-three-times](#an-app-that-comes-forward-says-the-keyboard-moved-up-to-three-times), [hiding-an-app-brings-finder-forward-first](#hiding-an-app-brings-finder-forward-first), [the-fake-says-the-keyboard-moved-from-within-every-focus-call](#the-fake-says-the-keyboard-moved-from-within-every-focus-call), [what-a-background-app-does-with-its-focus-is-not-passed-on](#what-a-background-app-does-with-its-focus-is-not-passed-on) |
+| `size-lost` | 9 | **[quitting-while-an-app-hangs-strands-its-windows](#quitting-while-an-app-hangs-strands-its-windows)**, **[f49-what-quit-does-to-a-pin-that-no-hand-moved-is-only-inferred](#f49-what-quit-does-to-a-pin-that-no-hand-moved-is-only-inferred)**, **[macos-remembers-a-tile-arbor-has-undone](#macos-remembers-a-tile-arbor-has-undone)**, **[an-app-settles-its-size-after-the-mouse-is-up](#an-app-settles-its-size-after-the-mouse-is-up)**, [every-setframe-is-echoed-after-the-call-returns](#every-setframe-is-echoed-after-the-call-returns), [terminal-snaps-to-whole-cells-late](#terminal-snaps-to-whole-cells-late), [the-app-learns-of-a-drag-later-than-the-window-server](#the-app-learns-of-a-drag-later-than-the-window-server), [a-stopped-layer-is-deaf-and-the-fake-goes-on-talking](#a-stopped-layer-is-deaf-and-the-fake-goes-on-talking), [the-fake-says-the-person-did-it-where-the-mac-says-nobody-did](#the-fake-says-the-person-did-it-where-the-mac-says-nobody-did) |
+| `input-held` | 9 | **[f05-no-hand-has-drawn-the-rectangle](#f05-no-hand-has-drawn-the-rectangle)**, **[f55-no-wheel-and-no-trackpad-has-scrolled](#f55-no-wheel-and-no-trackpad-has-scrolled)**, **[f63-nothing-has-been-pressed-while-the-permission-is-gone](#f63-nothing-has-been-pressed-while-the-permission-is-gone)**, **[a-click-then-drag-arrives-as-a-double-click](#a-click-then-drag-arrives-as-a-double-click)**, **[f26-no-click-outside-the-minimap-while-it-takes-clicks](#f26-no-click-outside-the-minimap-while-it-takes-clicks)**, **[f41-no-key-has-been-pressed-in-the-moment-of-the-switch](#f41-no-key-has-been-pressed-in-the-moment-of-the-switch)**, **[voiceover-and-other-window-managers-use-control-option-too](#voiceover-and-other-window-managers-use-control-option-too)**, **[a-press-reaches-the-tap-before-its-app-comes-forward](#a-press-reaches-the-tap-before-its-app-comes-forward)**, **[a-title-bar-an-app-draws-itself-answers-with-bare-groups](#a-title-bar-an-app-draws-itself-answers-with-bare-groups)** |
 | `slow` | 9 | **[docking-into-a-slot-too-small-took-seven-to-twelve-seconds](#docking-into-a-slot-too-small-took-seven-to-twelve-seconds)**, **[on-the-way-out-of-full-screen-the-space-notice-may-come-a-moment-too-early](#on-the-way-out-of-full-screen-the-space-notice-may-come-a-moment-too-early)**, **[picture-sweeps-hold-the-main-actor](#picture-sweeps-hold-the-main-actor)**, **[the-first-dock-after-a-start-takes-seconds](#the-first-dock-after-a-start-takes-seconds)**, [every-display-notice-restarts-the-wait](#every-display-notice-restarts-the-wait), [app-nap-delays-an-accessory-apps-timers](#app-nap-delays-an-accessory-apps-timers), [starting-asks-every-running-app](#starting-asks-every-running-app), [during-a-pause-each-try-for-a-hung-apps-window-waits-for-the-app-itself](#during-a-pause-each-try-for-a-hung-apps-window-waits-for-the-app-itself), [every-call-is-a-round-trip-to-another-process](#every-call-is-a-round-trip-to-another-process) |
 | `crash` | 1 | **[docking-into-a-slot-too-small-took-seven-to-twelve-seconds](#docking-into-a-slot-too-small-took-seven-to-twelve-seconds)** |
 | `busy` | 0 | none |
@@ -220,6 +224,18 @@ Order of reports: what belongs together arrives in another order than expected.
 - **Guard:** `test: theLidOpensAndTheAppSpeaksFirst`; `test: theLidClosesAndTheAppSpeaksFirst`; `test: aDisplayOnTheLeftGetsASmallerResolution`; `test: aDisplayChangesSidesAndShrinks`
 - **Arbor copes:** Controller.spokenLately: the window is the witness. A remembered place whose window spoke within the last 30 s and really is there is not shifted. The 30 s are reasoned, not measured. A window that ends whole on the wrong display after the lid closes and opens is still open.
 - **Read in:** `Sources/ArborKit/Controller/Controller+Displays.swift`, `Tests/ArborKitTests/MovedDisplayTests.swift`, `Tests/ArborKitTests/AReportAcrossABorderTests.swift`, `Sources/ArborTesting/Chaos.swift`, `collab/BACKLOG.md`
+
+### a-window-on-its-way-to-the-dock-comes-back-when-it-is-given-the-keyboard
+
+*hurt 1 · at the seam · touches `moved-unasked`, `fought`*
+
+- **Expected:** F58: a window that is minimized while the view is held on it goes to the Dock, and the held view is empty. A person's ⌘M is never undone.
+- **Happened:** macOS reported the app's next window, which was out of view, as focused 0.58 s before it reported the minimizing. Arbor took that for a window pushing itself forward and sent the keyboard back to the window shown, which was on its way to the Dock: fourteen milliseconds after `AXWindowMiniaturized` came `AXWindowDeminiaturized`. The window flew down and back. Seven checks about an empty held view were green over a view that was never empty.
+- **Found by:** Behind greens in the first run of `check-F58.sh` on a hosted Mac on 2026-10-15 (the trunk at `0951b7f3`, macOS 26, one display of 1024×768, Reduce Motion on, once, every key and click a posted event; its output is not in the repository); in the trace.
+- **Stand-ins play it:** partly (`FakeWindowSystem.setMinimized`)
+- **Guard:** `e2e: W1 stays in the Dock` (by hand)
+- **Arbor copes:** **not yet**
+- **Read in:** `scripts/mac-shell/check-F58.sh`, `Sources/ArborKit/Controller/Controller+Hold.swift`, `Sources/ArborTesting/FakeWindowSystem.swift`, `collab/BOARD.md`
 
 ### closing-or-minimizing-names-the-next-window-first
 
@@ -591,7 +607,7 @@ Missing reports: something happens and nobody says so.
 
 - **Expected:** Whatever brings a window to the front is followed by a focus report, so pinned and summoned windows need looking at only then.
 - **Happened:** A click in the window that already has the keyboard brings it to the front and reports no change of focus. Every click in the editor one is working in buried the pinned call until the next layout. Whether a real click brings the window in front of another app's raised window is still open.
-- **Found by:** Rehearsing a real-window script on the fake Mac found the fault in Arbor. The scripts that would show it on real windows have not run on a Mac yet.
+- **Found by:** Rehearsing a real-window script on the fake Mac found the fault in Arbor. The two scripts that would show it on real windows ran on hosted Macs on 2026-10-15 and could show nothing of it: the raise did not reach the front there (raise-does-not-lift-a-window-over-the-active-apps-key-window).
 - **Stand-ins play it:** yes (`FakeWindowSystem.userClick`, `World.press`)
 - **Guard:** `test: clickingInTheWindowThatAlreadyHasTheKeyboardDoesNotBuryIt`; `test: whileTheButtonStaysDownInThatWindowItIsNotLeftCovered`; `test: framingTheWindowThatAlreadyHasTheKeyboardDoesNotBuryIt`; `test: withSummonStaysAClickInTheWindowThatAlreadyHasTheKeyboardDoesNotBuryIt`; `e2e: after clicking the browser again` (by hand); `e2e: after a second click on the editor nothing covers it either` (by hand)
 - **Arbor copes:** Controller.lookAfterPinnedWindowsAfterAPress looks at every press (`pointerPressed`), every 0.2 s while the button is down and three more times after.
@@ -824,6 +840,18 @@ Missing reports: something happens and nobody says so.
 - **Guard:** **none**
 - **Arbor copes:** AXWindowSystem.pressLandedOnArbor is fed by a local monitor beside the global one, as are the stage, Go to… and the scroll tap's keys.
 - **Read in:** `collab/evidence/traces/README.md`, `Sources/ArborKit/AX/AXWindowSystem.swift`, `Sources/ArborKit/Input/GestureTap.swift`, `Sources/ArborKit/UI/StageDirector.swift`, `Sources/ArborKit/UI/FinderPanel.swift`
+
+### go-to-outlives-a-look-at-mission-control
+
+*hurt 3 · below the seam*
+
+- **Expected:** Whatever takes the keyboard elsewhere closes the palette of Go to…: `resignKey`, and under it a global monitor of keys and clicks and the workspace's notices of another app or another Space. The source names Mission Control's choice of a Space among them.
+- **Happened:** ⌃⌥G, then ⌃↑ for Mission Control, then ⎋: three seconds later the palette was still listed on screen. Neither `resignKey` nor the global monitor of keys had fired. It was not stuck: a later click, or a change of Space, closed it. The fault is Arbor's. It cannot be played headless: no stand-in has Mission Control.
+- **Found by:** The first run of `shots-finder.sh` on a hosted Mac, on 2026-10-15 (macOS 26.6.2, one display of 1024×768, posted events, once; 62 passed, 5 failed). Of the five reds this is the one that is Arbor's.
+- **Stand-ins play it:** cannot: it lies below or beside the seam
+- **Guard:** `e2e: no palette after Mission Control` (by hand)
+- **Arbor copes:** **not yet**
+- **Read in:** `Sources/ArborKit/UI/FinderPanel.swift`, `scripts/mac-shell/shots-finder.sh`, `docs/features/F27-window-finder.md`
 
 ### nothing-reports-the-end-of-a-gap-drag
 
@@ -1289,6 +1317,18 @@ Late or partial answers: a call returns before the deed, after it, with half of 
 - **Arbor copes:** Controller.looksOnTheWayOut: from the report on Arbor looks ten times a second, for as long as the way may take, and asks again while the window is somewhere else than its slot. Nothing is concluded from what it answers.
 - **Read in:** `docs/features/F30-full-screen-windows.md`, `Sources/ArborKit/Controller/Controller+OnTheWayBack.swift`, `Sources/ArborTesting/FakeWindowSystem.swift`
 
+### one-shrink-moves-a-window-that-will-not-shrink-four-times
+
+*hurt 2 · controller · touches `jolt`, `flash`*
+
+- **Expected:** F22: grow and shrink do their work in one move. `shots-F22.sh` asks a second later where the windows have ended up, and every check was green.
+- **Happened:** For one `shrink 200` the focused window, whose app refuses to go below 300 points wide, was moved four times in 0.45 s, and one of the moves put it out of view for 0.43 s. A floating window moved three times. Where it ended was right: in view, no tile, 300 wide. The stand-ins play its kin, with one press of ⌃⌥⌘-: `arbor-sim quiet "display-size 1024x768 31" "open A" "open B" "min 102 300x200" "dock 101 left" "dock 102 right" "focus 102" "key ctrl+opt+cmd+-"` sets frames six times, once off screen.
+- **Found by:** Behind a green check in the first run of `shots-F22.sh` on a hosted Mac, on 2026-10-15 (macOS 26.6.2, one display of 1024×768, posted events, once; 64 of 64). All nine default shortcuts were pressed there as real keys, 16 presses, and the line was round the right window in all 17 pictures. Frames and focus were read from Arbor's own `state`; only `on_screen` asks the window server.
+- **Stand-ins play it:** yes (`FakeWindow.minimumSize`)
+- **Guard:** **none**
+- **Arbor copes:** **not yet**
+- **Read in:** `scripts/mac-shell/shots-F22.sh`, `docs/features/F22-keyboard-tiling-tools.md`, `Sources/ArborKit/Controller/Controller+Tiling.swift`
+
 ### open-says-yes-to-any-name
 
 *hurt 2 · at the seam · K1900 · K1901 · touches `moved-unasked`*
@@ -1307,11 +1347,11 @@ Late or partial answers: a call returns before the deed, after it, with half of 
 
 - **Expected:** `raise` puts a window in front of every other. `FakeWindowSystem.raise` and the fake Mac do exactly that, and a pin (F49), a summoned window that stays (F53) and every check that says "raised" rest on it.
 - **Happened:** Accessibility's raise action lifts a window of an app in the background over everything but the key window of the active app. So a pinned window of another app lies behind the very window the person is working in, which is where a pin matters. All of it is green on Linux and false on a Mac: the gravest of the six differences that run brought out. Decided since (the board, 1.25): Keep in View is to make room beside the pinned window instead of fighting for the front. Not built yet.
-- **Found by:** The first run, on hosted Macs, of a suite of real-window checks that is not on the trunk yet (macOS 26.6.2; 1,406 of 1,454 checks passed), beside its rehearsal on Linux, where this was green.
+- **Found by:** The first run, on hosted Macs, of a suite of real-window checks that is not on the trunk yet (macOS 26.6.2; 1,406 of 1,454 checks passed), beside its rehearsal on Linux, where this was green. Borne out twice on 2026-10-15, in the first runs of the two features' own checks. In `check-F49.sh` only the first of 54 raises in the trace reached the front, and Finder was the active app then; the call lay wholly hidden behind the framed editor while `state` said pinned. In `check-F53.sh`, with `summonStays`, seven raises left the window list as it was, the summoned window wholly behind the editor.
 - **Stand-ins play it:** **no**
-- **Guard:** `e2e: pinning alone brings it in front of the other app's windows` (by hand); `e2e: nothing covers the call` (by hand)
+- **Guard:** `e2e: pinning alone brings it in front of the other app's windows` (by hand); `e2e: nothing covers the call` (by hand); `e2e: after a second click on the editor nothing covers it either` (by hand)
 - **Arbor copes:** **not yet**
-- **Read in:** `Sources/ArborTesting/FakeWindowSystem+Stacking.swift`, `Sources/arbor-fakemac/Arbor.swift`, `Sources/ArborKit/AX/AXWindowSystem.swift`, `Sources/ArborKit/Controller/Controller+Pin.swift`, `docs/features/F49-pin.md`, `scripts/mac-shell/check-F49.sh`, `collab/BOARD.md`
+- **Read in:** `Sources/ArborTesting/FakeWindowSystem+Stacking.swift`, `Sources/arbor-fakemac/Arbor.swift`, `Sources/ArborKit/AX/AXWindowSystem.swift`, `Sources/ArborKit/Controller/Controller+Pin.swift`, `docs/features/F49-pin.md`, `scripts/mac-shell/check-F49.sh`, `collab/BOARD.md`, `scripts/mac-shell/check-F53.sh`
 
 ### size-limits-show-only-in-the-frame-read-back
 
@@ -1725,6 +1765,18 @@ A second actor: macOS, an app or another tool moves things too.
 - **Arbor copes:** Controller.hasLeftItsCorner: it is parked again with the next put-back, three times at most. Only the origin is compared, so a parked window that grows into view from the same corner stays in view (known failure `parked-not-put-back`).
 - **Read in:** `Tests/ArborKitTests/OutOfViewTests.swift`, `Sources/ArborKit/Controller/Controller+Events.swift`, `scripts/mac-shell/shots-review-controller.sh`, `collab/parity.json`, `Sources/ArborTesting/ChaosKnownFailures.swift`
 
+### macos-puts-windows-that-are-out-of-view-into-view-when-displays-change
+
+*hurt 2 · at the seam · suspected · touches `flash`*
+
+- **Expected:** What Arbor keeps out of view stays there while a display comes or goes; with the view held that is a promise to an audience.
+- **Happened:** When the virtual display came, macOS itself put all four windows that were out of view in plain view, at frames of before Arbor touched them (480×348 at 582,300, 450,372, 715,227 and 582,300), and the window shown at 0,424. The report of the displays reached the controller 1.85 s later, after the 1.5 s the app waits for displays to settle, and Arbor put all five right within twenty milliseconds. At the unplugging the same, for 1.75 s. The reports of those windows' moves came at once and were not acted on. Not known: what showed, since these are Accessibility's frames and the script slept meanwhile; and whether it is the display or the change of the main display's size that came with it (plugging-in-the-virtual-display-changes-the-main-one). Each window out of view was also given the same frame twice per change.
+- **Found by:** Behind greens in the first run of `check-F58.sh` on a hosted Mac on 2026-10-15 (the trunk at `0951b7f3`, macOS 26, one display of 1024×768, Reduce Motion on, once, every key and click a posted event; its output is not in the repository); in the trace.
+- **Stand-ins play it:** **no**
+- **Guard:** `e2e: held, nothing that is out of view lay on a display while one came` (by hand)
+- **Arbor copes:** **not yet**
+- **Read in:** `scripts/mac-shell/check-F58.sh`, `Sources/ArborKit/Controller/Controller+Displays.swift`, `collab/BOARD.md`
+
 ### macos-remembers-a-tile-arbor-has-undone
 
 *hurt 2 · at the seam · touches `fought`, `size-lost`*
@@ -2137,6 +2189,18 @@ Geometry: displays, bars, sizes and coordinates that are not what was assumed.
 - **Arbor copes:** Sources/ArborKit/Controller/Controller+Layout.swift never asks for such a place: slots lie inside the visible frame, and no window is left hanging over the top.
 - **Read in:** `Sources/arbor-fakemac/World+Input.swift`, `Sources/arbor-fakemac/World+TestApps.swift`, `Sources/ArborTesting/ChaosRunner.swift`, `Sources/ArborKit/Controller/Controller+Layout.swift`, `collab/BACKLOG.md`
 
+### a-window-asked-to-lie-beyond-the-edge-is-thrown-forty-points-into-view
+
+*hurt 3 · below the seam*
+
+- **Expected:** F58's spec kept a way in reserve for a shared screen: a window put at the display's very edge, x = maxX, of which not even one point shows.
+- **Happened:** macOS 26 refuses it. Asked for x 1024, 1064 or 3072 on a display 1024 wide, a window ends at 984, with forty points in view. On the left −479 is taken for a window 480 wide and −480 becomes −440. One point is the least. Of a window at 1023 the last column of the display shows the title bar and the window's own colour from y 692 down, and shadows add up: with four windows there the column beside it is 96 of 255 darker, the next 53, the twelfth still 25, against 35, 16 and 7 for one window. ScreenCaptureKit lists all of them as on screen, so the pickers of the programs for calls offer them, whole.
+- **Found by:** Parts 1, 2 and 2b of `check-F58.sh`, which measure without Arbor, on a hosted Mac on 2026-10-15 (the trunk at `0951b7f3`, macOS 26, one display of 1024×768, Reduce Motion on, once, every key and click a posted event; its output is not in the repository).
+- **Stand-ins play it:** **no**
+- **Guard:** **none**
+- **Arbor copes:** **not yet**
+- **Read in:** `scripts/mac-shell/check-F58.sh`, `docs/features/F58-hold-the-view.md`, `collab/BOARD.md`
+
 ### appkit-pushes-panels-out-from-under-the-menu-bar
 
 *hurt 3 · below the seam · K537 · K1141*
@@ -2287,11 +2351,11 @@ Geometry: displays, bars, sizes and coordinates that are not what was assumed.
 
 - **Expected:** A second display is added beside a main display that stays as it is.
 - **Happened:** On the hosted Macs plugging the virtual display in also switches the main one from 1024×768 to 1920×1080, and macOS shuffles the windows. Unplugging switches it back. So every plug is a change of resolution too.
-- **Found by:** The displays script on a hosted Mac.
+- **Found by:** The displays script on a hosted Mac. Seen again in the first run of `check-F49.sh`, on 2026-10-15.
 - **Stand-ins play it:** partly (`FakeWindowSystem.setDisplays`)
 - **Guard:** `test: soIsAnotherResolutionOrAnotherPrimaryDisplay`; `test: parkedWindowsStayOutOfViewWhenTheResolutionGrows`; `test: floatingWindowsStayOnTheScreenWhenTheResolutionShrinks`
 - **Arbor copes:** Sources/ArborKit/Controller/Controller+Displays.swift lays every display out afresh after the settle time. Scripts ask for the screen and the frames again after each plug.
-- **Read in:** `scripts/mac-shell/check-displays.sh`, `docs/TESTING.md`
+- **Read in:** `scripts/mac-shell/check-displays.sh`, `docs/TESTING.md`, `scripts/mac-shell/check-F49.sh`
 
 ### scripts-press-beside-their-goal-on-1024-points
 
@@ -2404,6 +2468,18 @@ Identity: what counts as a window, an app or a display, and whether it is the sa
 - **Guard:** `e2e: close a docked window` (on CI's Macs)
 - **Arbor copes:** AXWindowSystem.makeRecord registers each window's notifications with the window number as their reference value.
 - **Read in:** `Sources/ArborKit/AX/AXWindowSystem.swift`, `scripts/mac-shell/axwatch.swift`, `scripts/mac-shell/apptool.swift`
+
+### no-focused-window-that-arbor-knows-is-taken-for-nobody-at-the-keyboard
+
+*hurt 2 · at the seam · touches `focus`*
+
+- **Expected:** A key that moves the view leaves the keyboard with whoever has it, unless their window goes out of view.
+- **Happened:** With an app in front that Arbor does not look at, `focusedWindow()` answers nothing, and after a move of the view Arbor reads that as nobody having the keyboard and gives it to the docked window used last. ⌃⌥Space: `show-all` at 41.829 s, the app resigns at 41.834, a test window has the keyboard at 41.837. With `home` ten times of ten, 1 to 6 ms later. In the script that was an app outside the processes Arbor was pointed at. On a person's Mac Arbor looks at no accessory app (a launcher's field, a menu bar app's window), nor at an app that does not answer Accessibility.
+- **Found by:** Through the two failures of the first run of `check-F41.sh` on a hosted Mac on 2026-10-15 (the trunk at `0951b7f3`, macOS 26, one display of 1024×768, Reduce Motion on, once, every key and click a posted event; its output is not in the repository): Arbor's log beside the log of an app that writes down when it comes forward and leaves.
+- **Stand-ins play it:** partly (`FakeWindowSystem.frontmost`)
+- **Guard:** `e2e: an app Arbor does not look at, in the same place` (by hand)
+- **Arbor copes:** **not yet**
+- **Read in:** `scripts/mac-shell/check-F41.sh`, `scripts/mac-shell/check-keyboard-returns.sh`, `Sources/ArborKit/Controller/Controller+Layout.swift`, `Sources/ArborKit/AX/AXWindowSystem.swift`, `collab/BOARD.md`
 
 ### one-window-apps-show-the-same-number-again
 
@@ -2536,6 +2612,18 @@ Identity: what counts as a window, an app or a display, and whether it is the sa
 - **Guard:** `test: moreItemsInATallerMenuBarAreFurniture`
 - **Arbor copes:** Sources/ArborKit/UI/StatusMenu.swift takes the pointer's place on screen against the button's as a second opinion. PointerSurface treats what is at those levels as furniture whoever owns it, and the scripts' pointer tool asks Accessibility for the item.
 - **Read in:** `Sources/ArborKit/UI/StatusMenu.swift`, `docs/TESTING.md`, `scripts/mac-shell/pointer.swift`, `collab/QUESTIONS.md`, `Sources/arbor-fakemac/World+Pointer.swift`
+
+### the-imported-key-is-filed-under-another-label-than-the-tool-looks-for
+
+*hurt 3 · machine*
+
+- **Expected:** `scripts/make-signing-identity.sh`, given the keychain's password, lets codesign use the new key without a dialog: it changes the partition list of "the key with our label" and of no other.
+- **Happened:** The file it imports names key and certificate "Arbor Local Signing", and the keychain showed the key under the label "Imported Private Key". `security set-key-partition-list -l "Arbor Local Signing"` therefore found no key and failed, and the tool, which takes every failure there for a wrong password, said "$ARBOR_KEYCHAIN_PASSWORD is not this keychain's password". It was the right one. A person who types the password at the prompt would be told so three times.
+- **Found by:** The first run of `check-F13.sh` on a hosted Mac on 2026-10-15 (the trunk at `0951b7f3`, macOS 26.6.2, one display of 1024×768, Reduce Motion on, once, every key and click a posted event; its output is not in the repository), with LibreSSL 3.3.6.
+- **Stand-ins play it:** **no**
+- **Guard:** `e2e: codesign could use the key at once, without a dialog` (by hand)
+- **Arbor copes:** **not yet**
+- **Read in:** `scripts/make-signing-identity.sh`, `scripts/mac-shell/check-F13.sh`, `scripts/mac-shell/probe-signing-key.sh`, `docs/INSTALL.md`
 
 ### a-closed-test-window-stays-in-the-window-servers-list
 
@@ -2750,8 +2838,8 @@ Permissions: what macOS allows, to whom, and how it says no.
 *hurt 2 · at the seam · suspected · K127 · M1051*
 
 - **Expected:** Once `AXIsProcessTrusted()` says yes, event taps can be made.
-- **Happened:** Nobody has seen whether a process that gets the permission while it runs may make event taps at once. macOS may say yes by the flag and refuse the tap, and then a thorough question would announce a loss in front of the welcome window.
-- **Found by:** Writing the feature. The script that asks a Mac has not run.
+- **Happened:** Nobody had seen whether a process that gets the permission while it runs may make event taps at once. macOS might say yes by the flag and refuse the tap, and then a thorough question would announce a loss in front of the welcome window. Asked once since, on macOS 26.6.2: granted while it waited, Arbor started by itself and could make taps at once (f63-nothing-has-been-pressed-while-the-permission-is-gone).
+- **Found by:** Writing the feature. The script that asks a Mac got through for the first time on a hosted Mac on 2026-10-15.
 - **Stand-ins play it:** yes (`FakeWindowSystem.refusesTaps`)
 - **Guard:** `test: ifMacOSRefusesTapsFromTheFirstMinuteArborBelievesTheFlagAndGoesOn`; `e2e: ten seconds later it is still running: no false alarm in front of the welcome window` (by hand)
 - **Arbor copes:** Sources/ArborKit/Controller/Controller+Permission.swift believes the flag until a tap has worked once in this process, and goes on arranging windows.
@@ -2807,11 +2895,11 @@ Permissions: what macOS allows, to whom, and how it says no.
 
 ### a-process-started-without-the-permission-goes-on-hearing-no
 
-*hurt 4 · test · suspected*
+*hurt 4 · test*
 
 - **Expected:** Once the permission's rows in the database say allowed and the daemon has been restarted, a waiting Arbor hears yes within seconds.
-- **Happened:** A process that was started without the permission went on hearing no from `AXIsProcessTrusted()` for 153 s after the rows were set to allowed and the daemon restarted five times, while a new process had the permission at once. The flag seems to be remembered inside a running process when the database changes behind it: a write to the database announces nothing, the switch in System Settings does. Suspected to be the script's way of granting, and being probed. Arbor's wait for the permission logs nothing, so no log can tell "asked and was told no" from "never asked".
-- **Found by:** The first run of four Mac shell scripts as they stand, on one hosted Mac, on 2026-10-15 (the trunk at `8aa9e10`, macOS 26.6.2, posted events, once). `check-F63.sh`: 15 passed, 16 failed, all behind this.
+- **Happened:** A process that was started without the permission went on hearing no from `AXIsProcessTrusted()` for 153 s after the rows were set to allowed and the daemon restarted five times, while a new process had the permission at once. The cause is known since: a running process hears of a grant or of a loss only through the distributed notification `com.apple.accessibility.api`. A write to the database sends none, and neither does restarting the daemon. So it was the script's way of granting, and not Arbor. Mended, the script writes, restarts the daemon, waits and posts the notification itself, and its second run got through: 30 passed, 1 failed (f63-nothing-has-been-pressed-while-the-permission-is-gone). Arbor's wait for the permission logs nothing, so no log can tell "asked and was told no" from "never asked".
+- **Found by:** The first run of four Mac shell scripts as they stand, on one hosted Mac, on 2026-10-15 (the trunk at `8aa9e10`, macOS 26.6.2, posted events, once). `check-F63.sh`: 15 passed, 16 failed, all behind this. The cause was found the same night, and the mended script's run bears it out.
 - **Stand-ins play it:** **no**
 - **Guard:** `e2e: it starts by itself when the permission arrives` (by hand)
 - **Arbor copes:** **not yet**
@@ -3718,12 +3806,12 @@ Input: where presses, keys and gestures really go.
 *hurt 4 · test*
 
 - **Expected:** A click in the middle of Arbor's menu bar item opens its menu, as the scripts' helper and the fake Mac of the time agreed.
-- **Happened:** With something docked the item is a row of buttons, and a plain click in its middle presses one of them. The helper had been wrong for real Macs since those buttons shipped; it showed, as 82 red checks, only when the fake Mac learnt the buttons. A green rehearsal agrees with the fake of that hour.
-- **Found by:** Rehearsing the Mac shell scripts against the fake Mac at two display sizes.
+- **Happened:** With something docked the item is a row of buttons, and a plain click in its middle presses one of them. The helper had been wrong for real Macs since those buttons shipped; it showed, as 82 red checks, only when the fake Mac learnt the buttons. A green rehearsal agrees with the fake of that hour. On 2026-10-15 hosted Macs showed how far it went: ten scripts clicked the middle of the item to "open the menu", and the middle is Show the Desktop. None of their pictures showed a menu, and the view changed under the steps that followed. A secondary click opens the menu; whether the scripts' `rightclick` does so on a hosted Mac is for their next runs to show.
+- **Found by:** Rehearsing the Mac shell scripts against the fake Mac at two display sizes. Then a sweep, on hosted Macs, of the checks that had never run.
 - **Stand-ins play it:** yes (`World.statusItemLayout`, `World.clickStatusItem`)
 - **Guard:** `tool: mac-shell/rehearse.sh`
 - **Arbor copes:** Sources/arbor-fakemac/World+Menu.swift lays the row of buttons out as the app does, so a rehearsal shows the slip; the last button and a right click open the menu.
-- **Read in:** `Sources/arbor-fakemac/World+Menu.swift`, `collab/QUESTIONS.md`, `scripts/mac-shell/pointer.swift`
+- **Read in:** `Sources/arbor-fakemac/World+Menu.swift`, `collab/QUESTIONS.md`, `scripts/mac-shell/pointer.swift`, `scripts/mac-shell/lib.sh`
 
 ### a-command-click-raises-nothing-and-the-three-buttons-work-from-behind
 
@@ -3772,6 +3860,18 @@ Input: where presses, keys and gestures really go.
 - **Guard:** **none**
 - **Arbor copes:** scripts/mac-shell/lib-apps.sh moves the pointer 120 points down after every click on a title bar. There is nothing to mend in Arbor.
 - **Read in:** `scripts/mac-shell/lib-apps.sh`
+
+### a-press-on-the-name-field-stops-at-the-field
+
+*hurt 4 · test*
+
+- **Expected:** In a rehearsal a press on the open name field goes on to the window under it. The fake Mac asks only whether the press is outside the field, to close it (`leaveNameField`), and then lets it land as if no field were there.
+- **Happened:** On a Mac the field is a panel above the windows, and a press on it stops there: the field stays open and the window under it hears nothing. On a display of 1024×768 the middle of the window lies under the field, so the script's "click in a window" landed on the field. One red check, and one more in its wake. The script is mended; the fake Mac is as it was.
+- **Found by:** The first run of `check-F20.sh` on a hosted Mac, on 2026-10-15 (macOS 26.6.2, posted events, once; 28 passed, 3 failed), read beside the fake Mac's source.
+- **Stand-ins play it:** **no**
+- **Guard:** `e2e: a click in a window closes it` (by hand)
+- **Arbor copes:** **not yet**
+- **Read in:** `Sources/arbor-fakemac/World+Input.swift`, `Sources/arbor-fakemac/Arbor.swift`, `Sources/ArborKit/UI/NamePanel.swift`, `scripts/mac-shell/check-F20.sh`
 
 ### a-press-with-control-held-does-not-drag
 
@@ -4041,6 +4141,30 @@ Looks: what is on the screen is not what the model said.
 - **Arbor copes:** docs/features/F30-full-screen-windows.md says what is seen. The product owner accepts the cut, because no window is at rest in a wrong place; a glide of Arbor's own from the old frame to the slot would be polish.
 - **Read in:** `docs/features/F30-full-screen-windows.md`
 
+### the-minimaps-windows-out-of-view-cannot-be-told-from-the-panel-in-the-dark-look
+
+*hurt 3 · below the seam*
+
+- **Expected:** F26: what is out of view is on the map too, "still there, only fainter" (`outOfViewAlpha`, 0.45). `MinimapDrawingTests` finds it so off screen, pixel by pixel, light and dark.
+- **Happened:** In the dark look a window out of view is (35,36,35) on a panel of (38,38,38): no eye can tell the two apart. These Macs draw the panel's material as one flat colour (hosted-macs-draw-every-material-as-one-flat-colour), which is what a person with Reduce Transparency sees. Over a wallpaper, on a Mac that draws materials, nobody has looked.
+- **Found by:** Looking at the pictures of the first run of `shots-minimap.sh` on a hosted Mac, on 2026-10-15 (macOS 26.6.2, one display of 1024×768, once; 76 of 76: no check has an eye for it).
+- **Stand-ins play it:** cannot: it lies below or beside the seam
+- **Guard:** **none**
+- **Arbor copes:** **not yet**
+- **Read in:** `Sources/ArborKit/UI/MinimapPanel.swift`, `Tests/ArborKitTests/MinimapDrawingTests.swift`, `scripts/mac-shell/shots-minimap.sh`, `docs/features/F26-minimap.md`
+
+### the-surface-behind-docked-windows-does-not-travel-with-the-stage
+
+*hurt 3 · below the seam*
+
+- **Expected:** While the stage plays, the surface behind docked windows goes along with them: by the source's own words it "fades into its new shape while the windows travel". The fake Mac records a motion and shows nothing of it.
+- **Happened:** To the eye it does not travel with the stage's stand-ins for the windows: empty rounded panels stay where the columns were until the stage comes down. A tile travels as a dark card and pops to a light tile at the end.
+- **Found by:** Looking at a run of `shots-F02.sh` on a hosted Mac, on 2026-10-15 (macOS 26.6.2, one display of 1024×768, once; 51 of 51: no check has an eye for it). The script had switched Reduce Motion off, so the stage really played: 21 stages up, 21 down, 10 retargeted, each up for the set length and about 0.23 s more (0.686 s for 0.46), and no panel of Arbor's left at the end. `windowPictures` was never switched on.
+- **Stand-ins play it:** cannot: it lies below or beside the seam
+- **Guard:** **none**
+- **Arbor copes:** **not yet**
+- **Read in:** `Sources/ArborKit/UI/Stage.swift`, `Sources/ArborKit/UI/BackdropPanel.swift`, `scripts/mac-shell/shots-F02.sh`, `docs/features/F02-animated-transitions.md`
+
 ### the-welcome-window-was-taller-than-a-small-display
 
 *hurt 3 · below the seam · K911*
@@ -4189,15 +4313,15 @@ Never exercised: what ships switched on, or within reach, and has never had a ke
 - **Arbor copes:** **nobody knows**
 - **Read in:** `docs/CENSUS.md`, `docs/features/F51-peek.md`, `scripts/mac-shell/check-F51.sh`, `Sources/ArborKit/Input/HotKeyCenter.swift`, `collab/BOARD.md`
 
-### f53-summon-its-own-check-has-never-run
+### f53-no-real-apps-window-has-been-summoned
 
 *hurt 1 · at the seam · touches `lost`, `behind`*
 
 - **Expected:** F53: a shortcut of one's own brings an app's window over any view, and the same shortcut, or a click elsewhere, sends it away again.
-- **Happened:** Nobody knows: by the spec's own words `check-F53.sh` "is written and has not run". Its rehearsal passes 123 of 123, without a real app. A suite of real-window checks that is not on the trunk yet ran once on hosted Macs, on 2026-10-14 (its evidence is not in the repository yet, and none of the scripts named here is part of it). What it showed of summon is bad news: a summoned window that is to stay rests on a raise that stops short of the active app's key window (raise-does-not-lift-a-window-over-the-active-apps-key-window). A window sent away is kept out of view whatever the view shows, so a stale focus report at the wrong moment loses it: that is not known to have been tried.
-- **Found by:** A census of the tests and specs.
+- **Happened:** Nobody knows: what a real app's window does when it is summoned and sent away, and what a resume does after the keyboard went elsewhere during a pause. `check-F53.sh` ran for the first time on a hosted Mac on 2026-10-15 (the trunk of between 02:20 and 02:55 UTC, macOS 26.6.2, one display of 1024×768, once, every key and click a posted event; its output is not in the repository): 121 passed, 4 failed. With ⌃⌥` pressed as a real key, everything else about summoning, sending away, ⌘Tab, pause, quit and a relaunch was green, on test windows of two apps. Two reds are the known raise, with `summonStays`, which ships off (raise-does-not-lift-a-window-over-the-active-apps-key-window). Two are the script's own, mended since: a pause gives windows their own frames back, so its click during the pause hit bare wallpaper, and macOS swept every window aside. The fake Mac plays that rightly: the rehearsal was red in the same two checks. By the script's own words it arranges only its own test windows, and a real app's window summoned "is for a person to see". Nothing automatic starts the script. The spec still says "is written and has not run".
+- **Found by:** A census of the tests and specs, then the script's first run.
 - **Stand-ins play it:** partly (`FakeWindowSystem.raise`, `FakeWindowSystem.missingApps`, `FakeWindowSystem.backgroundFocus`)
-- **Guard:** `e2e: 1: the shortcut` (by hand); `e2e: 3: a real click on another app's window sends it away` (by hand); `e2e: ⌃⌥0 brings it back to the Desktop as an ordinary window` (by hand)
+- **Guard:** `e2e: 1: the shortcut` (by hand); `e2e: 3: a real click on another app's window sends it away` (by hand); `e2e: ⌃⌥0 brings it back to the Desktop as an ordinary window` (by hand); `e2e: resumed: out of view` (by hand)
 - **Arbor copes:** **nobody knows**
 - **Read in:** `docs/CENSUS.md`, `docs/features/F53-summon.md`, `scripts/mac-shell/check-F53.sh`, `Sources/ArborKit/Controller/Controller+Summon.swift`
 
@@ -4213,25 +4337,25 @@ Never exercised: what ships switched on, or within reach, and has never had a ke
 - **Arbor copes:** **nobody knows**
 - **Read in:** `docs/CENSUS.md`, `docs/features/F55-zoom-with-a-mouse.md`, `scripts/mac-shell/input-taps.sh`, `Sources/ArborKit/Input/EventTap.swift`
 
-### f58-hold-the-view-its-own-check-has-never-run
+### f58-no-held-view-has-been-empty-and-no-audience-has-looked
 
 *hurt 1 · below the seam · touches `lost`, `focus`*
 
 - **Expected:** F58: while the view is held nothing that is out of view comes into it, whatever comes forward, and when the hold ends or Arbor quits everything that waited is there again. It is an item of the menu.
-- **Happened:** Nobody knows: by the spec's own words "no hold has been tried on real windows" and `check-F58.sh` "has not run yet"; it cannot be rehearsed. How late a real ⌘Tab is reported, on which the half second rests that tells a person's switch from an app pushing itself forward, has never been measured. A suite of real-window checks that is not on the trunk yet ran once on hosted Macs, on 2026-10-14 (its evidence is not in the repository yet, and none of the scripts named here is part of it). The menu bar item was right-clicked there and its items clicked; what was asked of a hold is not on record here. The sensors for camera and microphone ship off.
-- **Found by:** A census of the tests and specs.
+- **Happened:** Nobody knows: what a held view shows once the window in it is gone, since Arbor fetched it back (a-window-on-its-way-to-the-dock-comes-back-when-it-is-given-the-keyboard); what an audience sees while displays change (macos-puts-windows-that-are-out-of-view-into-view-when-displays-change); where keys land that are typed in the 9 to 35 ms for which the keyboard is out of view; new windows, rules and dialogs during a hold; `hold <minutes>`; the sensors, which ship off. `check-F58.sh` ran for the first time on a hosted Mac on 2026-10-15 (the trunk at `0951b7f3`, macOS 26, one display of 1024×768, Reduce Motion on, once, every key and click a posted event; its output is not in the repository): 81 passed, 2 failed, both the script's own (it took a Dock that four thumbnails had made five points lower for a view that had moved). What held, borne out by the trace: six keys and ⌃⌥⇧F reached Arbor and were refused; a drag showed no preview and the drop went back in one move; an app that came forward by itself had the keyboard for 14 to 17 ms, by ⌘Tab for 9 to 12, a restored window for 32 to 34; no frame Arbor set put a window that was out of view into view; ⌃⌥⎋ released and moved nothing; holding still followed ⌘Tab; Quit took one move a window. Forty of the 81 are Arbor's own word for "out of view", not the window server's. "Kept down for three seconds" could not fail: a posted key does not repeat. The tool that asks ScreenCaptureKit for a picture of one window fell over twice and nothing went red. All three are mended in the script.
+- **Found by:** A census of the tests and specs, then the script's first run, its trace read line by line.
 - **Stand-ins play it:** partly (`FakeWindowSystem.comesForward`, `FakeWindowSystem.secondsSinceInput`)
-- **Guard:** `e2e: held: another app comes forward by itself` (by hand); `e2e: held: ⌘Tab to it is turned away as well` (by hand); `e2e: quitting while held brings every window back` (by hand)
+- **Guard:** `e2e: held: another app comes forward by itself` (by hand); `e2e: held: ⌘Tab to it is turned away as well` (by hand); `e2e: quitting while held brings every window back` (by hand); `e2e: W1 stays in the Dock` (by hand)
 - **Arbor copes:** **nobody knows**
 - **Read in:** `docs/CENSUS.md`, `docs/features/F58-hold-the-view.md`, `scripts/mac-shell/check-F58.sh`, `Sources/ArborKit/Controller/Controller+Hold.swift`, `collab/BOARD.md`
 
-### f63-the-permission-went-once-and-input-afterwards-was-not-tried
+### f63-nothing-has-been-pressed-while-the-permission-is-gone
 
 *hurt 1 · below the seam · touches `lost`, `input-held`*
 
 - **Expected:** F63: when Accessibility is taken from a running Arbor, within three seconds the icon changes and a window asks for the permission back, mouse and keyboard keep working, and once it is given back every window is in view.
-- **Happened:** Nobody knows: whether mouse and keyboard keep working after the loss, and whether the windows come back after the grant. Half of it ran for the first time on a hosted Mac on 2026-10-15 (the trunk at `8aa9e10`, macOS 26.6.2, once, started by hand, every key, click and scroll a posted event; its output is not in the repository). Session 4 of `input-taps.sh`, 5 of 5: under a second after `tccutil reset Accessibility` Arbor said that the permission was gone and had let go of its four taps, caught by the thorough question while the flag still said yes (the-trusted-flag-may-go-on-saying-yes). No input was tried after the loss: the script's own tools cannot press by then. `check-F63.sh` passed 15 and failed 16, all for one reason that is still being probed: launched without the permission and then granted it by a write to the database, Arbor never heard yes (a-process-started-without-the-permission-goes-on-hearing-no), so its part that takes the permission away has still never run. The spec still says "the switch itself has not been tried".
-- **Found by:** A census of the tests and specs, then the two scripts' first run.
+- **Happened:** Nobody knows: whether mouse and keyboard keep working while the permission is gone, why most of the changes were noticed late, and what happens when a hand flips the switch in System Settings. `check-F63.sh`, mended after its first run (a-process-started-without-the-permission-goes-on-hearing-no), got through on a hosted Mac on 2026-10-15 (the trunk of between 02:20 and 02:55 UTC, macOS 26.6.2, one display of 1024×768, once, every key and click a posted event; its output is not in the repository), with `pointerGestures` on, which ships off: 30 passed, 1 failed. Launched without the permission Arbor waits and holds no tap; granted, it starts by itself and may make taps at once. The loss with two windows out of view was noticed in 0.58 s: the taps gone, the four ways home registered, the warning sign in the menu bar, the window "Arbor needs its permission back" up, and commands fail with the sentence. Given back: every window in view, the taps and 52 shortcuts back, Back returns to the view, and a real ⌃⌥Space works. With nothing out of view no shortcut is held. The one red is the script's: it took that window for something left over. `input-taps.sh` had seen the four taps let go within a second of the loss earlier that day (the-trusted-flag-may-go-on-saying-yes). What is left: the three grants were noticed after 7.7, 8.1 and 9.3 s and the second loss after 6.7 s, where criterion 10 says three. The script waited only half a second for the daemon before it announced the change; whether that is the cause is not known. And no key and no click was tried between a loss and a grant, because the script's own tools cannot press by then: so that the four ways home answer is not shown either. The spec still says "the switch itself has not been tried".
+- **Found by:** A census of the tests and specs, then the two scripts' first runs, then the second run of `check-F63.sh`.
 - **Stand-ins play it:** partly (`FakeWindowSystem.isDenied`, `Harness.revokeAccessibility`, `FakeWindowSystem.flagLags`)
 - **Guard:** `e2e: the permission goes` (by hand); `e2e: the permission returns` (by hand); `e2e: session 4: Accessibility is taken away while the taps are installed` (by hand)
 - **Arbor copes:** **nobody knows**
@@ -4249,99 +4373,87 @@ Never exercised: what ships switched on, or within reach, and has never had a ke
 - **Arbor copes:** **nobody knows**
 - **Read in:** `docs/CENSUS.md`, `docs/features/F11-app-rules.md`, `docs/features/F33-behaviour-switches.md`, `docs/features/F25-per-display-options.md`, `scripts/mac-shell/check-F12.sh`
 
-### f13-nothing-has-been-installed-signed-or-updated
+### f13-nothing-has-been-installed-or-updated-and-no-key-has-signed
 
 *hurt 2 · machine*
 
 - **Expected:** F13: a download opens, `make install` gives Arbor an identity under which its permission survives the next build, an update is offered, and Arbor opens at login.
-- **Happened:** Nobody knows: by the spec's own words "nothing here has run on a Mac yet", and the release workflow "has never run". `check-F13.sh`, `check-F13-system.sh` and `watchdog-bundle.sh` have never run and cannot be rehearsed (no keychain, no `codesign`); `release-tools-test.sh` runs against stand-ins for the macOS tools. Everybody installs.
-- **Found by:** A census of the tests and specs.
+- **Happened:** Nobody knows: whether `make install` gives Arbor an identity under which its permission survives the next build, whether a second build has the same requirement, what uninstalling leaves, whether an update is offered, what `make release` makes and what Gatekeeper says to it, whether Arbor opens at login. `check-F13.sh` ran for the first time on a hosted Mac on 2026-10-15 (the trunk at `0951b7f3`, macOS 26.6.2, one display of 1024×768, Reduce Motion on, once, every key and click a posted event; its output is not in the repository) and ended in its second step of ten, 11 passed and 2 failed, of 75 checks. What held: `make app` builds and signs ad hoc, `codesign --verify --deep --strict` passes, `arborctl` has an identifier of its own, version, build number and commit are stamped, the property list is valid; the identity is made, is in the keychain, and nobody is asked to trust it; the account's own keychain settings are as they were. What did not: the-imported-key-is-filed-under-another-label-than-the-tool-looks-for; and with every key of that keychain let at, codesign still did not sign within twenty seconds. What it said was not kept; `probe-signing-key.sh` asks. `check-F13-system.sh` and `watchdog-bundle.sh` have never run; none of the three can be rehearsed (no keychain, no `codesign`); `release-tools-test.sh` runs against stand-ins for the macOS tools. The road the guide recommends, a dialog of macOS's own, has never been walked. Everybody installs.
+- **Found by:** A census of the tests and specs, then the script's first run.
 - **Stand-ins play it:** partly (`FakeLoginItem`, `FakeReleaseFeed`)
 - **Guard:** `e2e: 3  does the permission survive a rebuild?` (by hand); `e2e: 2  make install, as a person runs it` (by hand); `e2e: 4  a different build, the same requirement` (by hand); `e2e: launch the bundle through Launch Services` (by hand)
 - **Arbor copes:** **nobody knows**
-- **Read in:** `docs/CENSUS.md`, `docs/features/F13-distribution.md`, `scripts/mac-shell/check-F13.sh`, `scripts/mac-shell/check-F13-system.sh`, `scripts/mac-shell/watchdog-bundle.sh`, `scripts/install.sh`
+- **Read in:** `docs/CENSUS.md`, `docs/features/F13-distribution.md`, `scripts/mac-shell/check-F13.sh`, `scripts/mac-shell/check-F13-system.sh`, `scripts/mac-shell/watchdog-bundle.sh`, `scripts/install.sh`, `scripts/mac-shell/probe-signing-key.sh`
 
-### f20-the-name-field-its-own-check-has-never-run
+### f20-no-click-elsewhere-has-closed-the-name-field
 
 *hurt 2 · below the seam · touches `focus`*
 
 - **Expected:** F20: ⌃⌥N opens a field, a name is typed, ↩ gives it to the space in view, and the keyboard is back with the app that had it.
-- **Happened:** Nobody knows: by the spec's own words "the field has not run on a Mac". `check-F20.sh` has never run there; its rehearsal passes 30 and fails 1. A suite of real-window checks that is not on the trunk yet ran once on hosted Macs, on 2026-10-14 (its evidence is not in the repository yet, and none of the scripts named here is part of it). In it every shortcut that `arborctl bindings` lists was pressed with real key events and checked against the window server: 143 checks, all green. ⌃⌥N is one of them, so the key is no longer never pressed; whether a name was typed is not on record here. Whether a borderless panel of an app that is never active gets the keys, and whether the app in front stays in front and has the keyboard afterwards, is what `check-F20.sh` would show.
-- **Found by:** A census of the tests and specs.
+- **Happened:** Nobody knows: whether a click elsewhere closes the field, and who has the keyboard then. `check-F20.sh` ran for the first time on a hosted Mac on 2026-10-15 (the trunk of between 02:20 and 02:55 UTC, macOS 26.6.2, one display of 1024×768, once, every key and click a posted event; its output is not in the repository): 28 passed, 3 failed. Shown with real keys: the field gets what is typed, capital and all, without Arbor becoming the active app; no key reached the app while it was open; ↩, ⎋, ⌃⌥N again, a move of the view and a pause close it. Not shown by that script: every key pressed after a close was one of Arbor's own hot keys, which says nothing about who has the keyboard. That the keyboard goes back was shown later the same night by `check-keyboard-returns.sh` on a hosted Mac on 2026-10-15 (the trunk at `0951b7f3`, macOS 26.6.2, one display of 1024×768, Reduce Motion on, once, every key and click a posted event; its output is not in the repository): with an app in front that writes down every key it is given, a plain x reached it before the panel came, did not while the panel had the keyboard, and did again afterwards; 128 of 128, once with an app Arbor arranges and once with one it does not look at. The app stayed the active one throughout. For the field: closed by ⎋, by ↩ and by ⌃⌥N (the board, 1.13). In `check-F20.sh` two greens compared nothing with nothing, because `pointer front` answers nothing on hosted Macs (the-rehearsal-never-runs-the-real-test-app). All three reds are the script's, mended since; its rehearsal now passes 32 of 32. Its click elsewhere landed on the field itself (a-press-on-the-name-field-stops-at-the-field), with one more red in its wake, and "the name is gone" failed because a click on the middle of the menu bar item had shown the Desktop (a-click-in-the-middle-of-the-menu-bar-item-presses-a-button). To the eye the reason for a refused name is cut off and carries backticks. Nothing automatic starts the script. The spec still says "the field has not run on a Mac".
+- **Found by:** A census of the tests and specs, then the script's first run.
 - **Stand-ins play it:** partly (`WatchedOverlays.typeIntoNameField`, `FakeOverlays.submitName`)
-- **Guard:** `e2e: ⌃⌥N, type, ↩` (by hand); `e2e: the keyboard is back with the app` (by hand); `e2e: ⌃⌥N again, and a click elsewhere, close it` (by hand)
+- **Guard:** `e2e: ⌃⌥N, type, ↩` (by hand); `e2e: the keyboard is back with the app` (by hand); `e2e: ⌃⌥N again, and a click elsewhere, close it` (by hand); `e2e: the name field, closed with ↩` (by hand)
 - **Arbor copes:** **nobody knows**
-- **Read in:** `docs/CENSUS.md`, `docs/features/F20-named-spaces.md`, `scripts/mac-shell/check-F20.sh`, `Sources/ArborKit/UI/NamePanel.swift`, `collab/BOARD.md`
+- **Read in:** `docs/CENSUS.md`, `docs/features/F20-named-spaces.md`, `scripts/mac-shell/check-F20.sh`, `Sources/ArborKit/UI/NamePanel.swift`, `collab/BOARD.md`, `scripts/mac-shell/check-keyboard-returns.sh`
 
-### f22-the-tiling-keys-were-pressed-once-and-their-own-check-has-never-run
-
-*hurt 2 · at the seam · touches `jolt`, `focus`*
-
-- **Expected:** F22: nine default shortcuts move the focus, trade places, grow, shrink, balance, rotate and mirror, each in one move, with the focus on the window that is shown.
-- **Happened:** Nobody knows: by the spec's own words "the real-window checks have not run". `shots-F22.sh` has never run on a Mac; its rehearsal passes 64 of 64. A suite of real-window checks that is not on the trunk yet ran once on hosted Macs, on 2026-10-14 (its evidence is not in the repository yet, and none of the scripts named here is part of it). In it every shortcut that `arborctl bindings` lists was pressed with real key events and checked against the window server: 143 checks, all green. The nine are among them, so they are no longer never pressed. ⌃⌥⇧→ and ⌃⌥⇧← were also posted in a comparison of one script with its rehearsal, and what Arbor believed and what was true agreed with the rehearsal; only the order of the reports differed. What else `shots-F22.sh` asks is not known to have been tried: that the slots keep their sizes in a swap, a window whose app refuses to shrink, a tile in the way, where the pointer is left, and whether macOS's echo of each change of focus leaves the view alone.
-- **Found by:** A census of the tests and specs.
-- **Stand-ins play it:** yes (`FakeWindowSystem.deliverEchoes`, `World.pressKey`)
-- **Guard:** `e2e: focus by the real shortcuts` (by hand); `e2e: grow, shrink and balance by the real shortcuts` (by hand); `e2e: rotate and mirror by the real shortcuts` (by hand); `e2e: the pointer stays where the hand left it` (by hand)
-- **Arbor copes:** **nobody knows**
-- **Read in:** `docs/CENSUS.md`, `docs/features/F22-keyboard-tiling-tools.md`, `scripts/mac-shell/shots-F22.sh`
-
-### f26-the-minimap-its-own-check-has-never-run
+### f26-no-click-outside-the-minimap-while-it-takes-clicks
 
 *hurt 2 · below the seam · touches `input-held`*
 
 - **Expected:** F26: ⌃⌥M shows a small map of the arrangement that can be clicked to go somewhere; one that only passes by lets every click through, and none ever takes the keyboard.
-- **Happened:** Nobody knows: by the spec's own words "nobody has seen the panel yet". Its drawing is tried off screen in `swift test` on a Mac. `shots-minimap.sh` has never run there; its rehearsal passes 76 of 76. A suite of real-window checks that is not on the trunk yet ran once on hosted Macs, on 2026-10-14 (its evidence is not in the repository yet, and none of the scripts named here is part of it). In it every shortcut that `arborctl bindings` lists was pressed with real key events and checked against the window server: 143 checks, all green. ⌃⌥M is one of them. No click on the map, no hold of the key and no click through a passing one is on record. By itself the map ships off (`minimapDuration` 0); the key is a default shortcut.
-- **Found by:** A census of the tests and specs.
+- **Happened:** Nobody knows: where a click outside the panel goes while the map takes clicks, and what the panel looks like where materials are really drawn. `shots-minimap.sh` ran for the first time on a hosted Mac on 2026-10-15 (the trunk of between 02:20 and 02:55 UTC, macOS 26.6.2, one display of 1024×768, once, every key and click a posted event; its output is not in the repository): 76 of 76. ⌃⌥M was pressed 13 times as a real key: tapped, held, let go. Three real clicks in the map were taken by it and acted on. A click through a map that only passes by reached the app, but only the trace proves it: the script's checks there could not fail. The script's "click beside the map" lies in the panel's own padding and was taken by Arbor, so a click outside the panel was never tried. Place and size are fine on 1024×768. To the eye one thing is not: the-minimaps-windows-out-of-view-cannot-be-told-from-the-panel-in-the-dark-look. Blur and translucency cannot be judged on these Macs (hosted-macs-draw-every-material-as-one-flat-colour). By itself the map ships off (`minimapDuration` 0); the key is a default shortcut. Nothing automatic starts the script. The spec still says "nobody has seen the panel yet".
+- **Found by:** A census of the tests and specs, then the script's first run.
 - **Stand-ins play it:** partly (`FakeOverlays.minimaps`, `WatchedOverlays.minimapPanel`)
-- **Guard:** `e2e: a click where it is goes through to the window below` (by hand); `e2e: on demand, with real keys: ⌃⌥M` (by hand); `e2e: quitting while it shows` (by hand)
+- **Guard:** `e2e: on demand, with real keys: ⌃⌥M` (by hand); `e2e: a click on the window at the right frames it` (by hand); `e2e: quitting while it shows` (by hand)
 - **Arbor copes:** **nobody knows**
 - **Read in:** `docs/CENSUS.md`, `docs/features/F26-minimap.md`, `scripts/mac-shell/shots-minimap.sh`, `Sources/ArborKit/UI/MinimapPanel.swift`
 
-### f27-go-to-no-key-is-known-to-have-been-pressed-in-it
+### f27-go-to-has-not-been-closed-by-a-click-with-a-witness-looking-on
 
 *hurt 2 · below the seam · touches `focus`*
 
 - **Expected:** F27: ⌃⌥G, a few letters and ↩ bring a window into view with the keyboard in it; ⎋, or anything that takes the keyboard elsewhere, closes the palette and gives the keyboard back.
-- **Happened:** Nobody knows: CI opens and closes the palette by command on real windows (ten steps of arbor-e2e; whether it has the keyboard is only observed there). By the spec's own words "no real key has been pressed in it yet", `shots-finder.sh` "has never run on a Mac", and nobody has looked at a picture of the palette. Its rehearsal passes 67 of 67. A suite of real-window checks that is not on the trunk yet ran once on hosted Macs, on 2026-10-14 (its evidence is not in the repository yet, and none of the scripts named here is part of it). In it every shortcut that `arborctl bindings` lists was pressed with real key events and checked against the window server: 143 checks, all green. ⌃⌥G, which opens the palette, is one of them; that letters, arrows, ↩ or ⎋ were pressed in it is not on record.
-- **Found by:** A census of the tests and specs.
+- **Happened:** Nobody knows: who has the keyboard after a click elsewhere has closed the palette, and what a person sees with motion on. `shots-finder.sh` ran for the first time on a hosted Mac on 2026-10-15 (the trunk of between 02:20 and 02:55 UTC, macOS 26.6.2, one display of 1024×768, once, every key and click a posted event; its output is not in the repository): 62 passed, 5 failed. Real keys were typed into the palette: letters, digits, arrows, ⇥, ⌘2, ↩ and ⎋. It gets them without Arbor becoming active. Four reds are a tool's fault, mended since: `pointer front` answers nothing on hosted Macs (the-rehearsal-never-runs-the-real-test-app); what they asked is true on other evidence. The fifth is Arbor's: go-to-outlives-a-look-at-mission-control. Seen beside the checks: after ↩ on a minimized window the palette stays up for about 0.6 s, and the window lands first in its old slot, over the framed window, and only then is framed. CI still only opens and closes the palette by command (ten steps of arbor-e2e), and nothing automatic starts the script. The spec still says "no real key has been pressed in it yet". That the keyboard goes back was shown later the same night by `check-keyboard-returns.sh` on a hosted Mac on 2026-10-15 (the trunk at `0951b7f3`, macOS 26.6.2, one display of 1024×768, Reduce Motion on, once, every key and click a posted event; its output is not in the repository): with an app in front that writes down every key it is given, a plain x reached it before the panel came, did not while the panel had the keyboard, and did again afterwards; 128 of 128, once with an app Arbor arranges and once with one it does not look at. The app stayed the active one throughout. For the palette: closed by ⎋ and by ⌃⌥G (the board, 1.13).
+- **Found by:** A census of the tests and specs, then the script's first run.
 - **Stand-ins play it:** partly (`World.paletteTakes`, `World.paletteTakesPress`)
-- **Guard:** `e2e: type with real keys: 3 finds Arbor Test 3` (by hand); `e2e: ⌃⌥G, then Return at once: back to the window before` (by hand); `e2e: a click on another window closes it` (by hand); `e2e: quitting with the palette open` (by hand)
+- **Guard:** `e2e: type with real keys: 3 finds Arbor Test 3` (by hand); `e2e: ⌃⌥G, then Return at once: back to the window before` (by hand); `e2e: a click on another window closes it` (by hand); `e2e: quitting with the palette open` (by hand); `e2e: Go to…, closed with its own shortcut` (by hand)
 - **Arbor copes:** **nobody knows**
-- **Read in:** `docs/CENSUS.md`, `docs/features/F27-window-finder.md`, `scripts/mac-shell/shots-finder.sh`, `Sources/ArborKit/UI/FinderPanel.swift`, `Sources/arbor-e2e/GoTo.swift`
+- **Read in:** `docs/CENSUS.md`, `docs/features/F27-window-finder.md`, `scripts/mac-shell/shots-finder.sh`, `Sources/ArborKit/UI/FinderPanel.swift`, `Sources/arbor-e2e/GoTo.swift`, `scripts/mac-shell/check-keyboard-returns.sh`
 
-### f41-no-listed-app-has-had-its-keys
+### f41-no-key-has-been-pressed-in-the-moment-of-the-switch
 
 *hurt 2 · below the seam · touches `input-held`*
 
 - **Expected:** F41: while an app on `passThroughApps` is in front, ⌃⌥ keys and drags are that app's, ⌃⌥⎋ still answers, and after ⌘Tab away they are Arbor's again.
-- **Happened:** Nobody knows: it builds and passes every test on a Mac. By the spec's own words the proof with real keys "is still to be run": `check-F41.sh` has never run, and cannot be rehearsed. Who gets a key pressed straight after a switch of apps is what it would record, and that rests on a notice known to outrun what it announces (the-activation-notice-outruns-the-frontmost-app). The list ships empty; the menu offers it.
-- **Found by:** A census of the tests and specs.
+- **Happened:** Nobody knows: who gets a key pressed within the 65 to 156 ms after a click into a listed app in which its ⌃⌥ keys are still Arbor's; whether the app gets the ⌃⌥-drag, a pinch or a scroll; the listed app's own windows docked; a real Emacs, remote desktop or virtual machine. `check-F41.sh` ran for the first time on a hosted Mac on 2026-10-15 (the trunk at `0951b7f3`, macOS 26, one display of 1024×768, Reduce Motion on, once, every key and click a posted event; its output is not in the repository): 51 passed, 2 failed, both the script's own: its app had lost the keyboard before the second `pass-through` (no-focused-window-that-arbor-knows-is-taken-for-nobody-at-the-keyboard). What held: in the listed app four shortcuts reached the app and not Arbor, one shortcut stayed registered and no tap was left; ⌃⌥⎋ answered there; after ⌘Tab away fifty-two shortcuts were back in 3 ms and the taps in 20; `pauseForApps` paused 8 ms after the app came forward and had resumed 52 ms after it left; both menus say so, in the pictures. Registering forty-five hot keys takes 1.3 ms at the median; in Arbor going to one shortcut took up to 23 ms of the main thread. A press passed on with `postToPid` arrived twice of twice, within a millisecond, and did not come back as a hot key. The round "a key pressed straight after the switch, ten times each way" was void: the app was off the list by then, and the keys came 215 to 457 ms after the switch, later than the gap. A trace ends at a pause, so none covers what came after the first.
+- **Found by:** A census of the tests and specs, then the script's first run.
 - **Stand-ins play it:** partly (`FakeWindowSystem.activate`, `World.bringForward`)
 - **Guard:** `e2e: in the listed app they are the app's` (by hand); `e2e: ⌘Tab away and they are back` (by hand); `e2e: ⌃⌥⎋ answers everywhere` (by hand)
 - **Arbor copes:** **nobody knows**
 - **Read in:** `docs/CENSUS.md`, `docs/features/F41-pass-through-apps.md`, `scripts/mac-shell/check-F41.sh`, `Sources/ArborKit/Controller/Controller+PassThrough.swift`, `Sources/ArborKit/App/FrontmostAppWatcher.swift`
 
-### f44-no-key-has-been-pressed-on-another-layout
+### f44-no-finger-has-pressed-a-key-on-another-layout
 
 *hurt 2 · below the seam · touches `moved-unasked`*
 
 - **Expected:** F44: a shortcut is the key that bears its letter on the layout in use, the menu shows that letter, and a change of layout reaches Arbor in the background.
-- **Happened:** Nobody knows: the sample tables were compared with macOS's own layouts in `swift test` on a Mac. By the spec's own words the proof with real keys "is still to be run": `check-F44.sh` has never run, and cannot be rehearsed. One measurement there is: with a second layout enabled ⌃⌥Space still reached Arbor. Whoever types on German, French or Dvorak has it from the first launch.
-- **Found by:** A census of the tests and specs.
+- **Happened:** Nobody knows: what a real keyboard of another country does (ISO against ANSI; only one keyboard type was seen); whether Arbor hears of a switch to a layout without Latin letters; who gets ⌃⌥Space with two layouts enabled; a press within the first fifth of a second after a switch. `check-F44.sh` ran for the first time on a hosted Mac on 2026-10-15 (the trunk at `0951b7f3`, macOS 26.6.2, keyboard type 198, once, every key a posted event; its output is not in the repository): 53 of 53, fifteen of them the harness's own. Told to go by German, French and Dvorak while US stayed selected, Arbor ran the right command for 22 keys pressed by position, each once, and nothing for the two that should run nothing; with `shortcutsFollowLayout` off the positions were a US keyboard's again. German and Dvorak were really selected while Arbor ran in the background: it had registered its 54 shortcuts anew 0.155 s and 0.028 s after the test app heard of the switch, and the next press went by the new layout. For those 0.155 s the old positions were still registered. The menu shows ⌃⌥Ü and ⌃⌥+ on German, in the picture. What proves nothing: Russian (no line in Arbor's log and no new registration, which is also what a deaf Arbor would show; the key pressed was one left over from Dvorak); the position shortcut on German, where k is where it is in the US; "how soon" printed Arbor's own two lines and no time of macOS's. The step about ⌃⌥Space skipped itself with a note. French, which criterion 5 names, was never really selected. A trace holds neither the layout nor its change, so none can replay F44.
+- **Found by:** A census of the tests and specs, then the script's first run.
 - **Stand-ins play it:** partly (`SampleKeyLayouts`)
 - **Guard:** `e2e: going by the German layout: ⌃⌥Z shows the Desktop, ⌃⌥Y everything` (by hand); `e2e: German, selected while Arbor runs in the background` (by hand); `e2e: going by Dvorak: nothing is where a US keyboard has it` (by hand)
 - **Arbor copes:** **nobody knows**
 - **Read in:** `docs/CENSUS.md`, `docs/features/F44-shortcuts-follow-the-keyboard-layout.md`, `scripts/mac-shell/check-F44.sh`, `Sources/ArborKit/Input/HotKeyCenter.swift`
 
-### f49-pin-its-own-check-has-never-run
+### f49-what-quit-does-to-a-pin-that-no-hand-moved-is-only-inferred
 
-*hurt 2 · at the seam · touches `behind`, `focus`*
+*hurt 2 · at the seam · touches `behind`, `focus`, `size-lost`*
 
 - **Expected:** F49: a pinned window keeps its place through every move of the view and stays in front, and the keyboard stays where it was. It is an item of the menu.
-- **Happened:** Nobody knows: by the spec's own words `check-F49.sh` "is written and has not run". Its rehearsal passes 101 of 101, without its second display. A suite of real-window checks that is not on the trunk yet ran once on hosted Macs, on 2026-10-14 (its evidence is not in the repository yet, and none of the scripts named here is part of it). What it showed of a pin is bad news: the raise a pin rests on did not lift the window over the active app's key window (raise-does-not-lift-a-window-over-the-active-apps-key-window). The rest, real clicks under the pin, a real drag of it, a display unplugged, is not known to have been tried.
-- **Found by:** A census of the tests and specs.
+- **Happened:** Nobody knows: what Quit and Float All do to a pin that something other than a hand has moved, and whether a pin is in front again after a real click under it. `check-F49.sh` ran for the first time on a hosted Mac on 2026-10-15 (the trunk of between 02:20 and 02:55 UTC, macOS 26.6.2, one display of 1024×768, once, every key and click a posted event; its output is not in the repository), with its virtual second display: 95 passed, 19 failed. 17 of the reds are the known raise or follow from it (raise-does-not-lift-a-window-over-the-active-apps-key-window): the call lay wholly hidden behind the framed editor while `state` said pinned. So what the script asks about the front could not be seen, and will be asked anew once Keep in View makes room instead (the board, 1.25). The run brought out two faults of Arbor's own that arbor-sim plays just as well, so they are the board's and no cases here: a pin that a hand left with under half of it showing is pulled in at the next layout (251 points on the Mac), and a pin that comes back with its display loses its overhang (40 points). A third is probable and not recorded: after the main display's change of resolution (plugging-in-the-virtual-display-changes-the-main-one) Quit seems to put the pin at the frame it remembered. That is read from the code and from one picture. One fault was the script's, mended since: it dragged the call 251 points off the display and then pressed at x -11. Nothing automatic starts the script. The spec still says "is written and has not run".
+- **Found by:** A census of the tests and specs, then the script's first run.
 - **Stand-ins play it:** partly (`FakeWindowSystem.raise`, `FakeWindowSystem.raiseLog`, `FakeWindowSystem.userClick`)
-- **Guard:** `e2e: pinning alone brings it in front of the other app's windows` (by hand); `e2e: real clicks on the window under it` (by hand); `e2e: no storm: a second of rest raises nothing` (by hand)
+- **Guard:** `e2e: pinning alone brings it in front of the other app's windows` (by hand); `e2e: real clicks on the window under it` (by hand); `e2e: no storm: a second of rest raises nothing` (by hand); `e2e: 5: quit and launch again on the same windows` (by hand)
 - **Arbor copes:** **nobody knows**
 - **Read in:** `docs/CENSUS.md`, `docs/features/F49-pin.md`, `scripts/mac-shell/check-F49.sh`, `Sources/ArborKit/Controller/Controller+Pin.swift`
 
@@ -4498,12 +4610,12 @@ Toolchain and machines: compilers, runners and shells that differ from the ones 
 *hurt 4 · test*
 
 - **Expected:** A check script that nobody has run says what Arbor does today.
-- **Happened:** Scripts that wait for their first run grow old meanwhile. In the first run of four, some reds were the scripts' own: one expects the Desktop guard to watch the mouse, and `guardDesktopClicks` ships off; one expects a window that cannot shrink to be a tile, and F61 makes room before tiles; one clicks the menu bar item as if it were one button, and it is a row of buttons. Each has to be read before anybody can say what the run showed.
+- **Happened:** Scripts that wait for their first run grow old meanwhile. In the first run of four, some reds were the scripts' own: one expects the Desktop guard to watch the mouse, and `guardDesktopClicks` ships off; one expects a window that cannot shrink to be a tile, and F61 makes room before tiles; one clicks the menu bar item as if it were one button, and it is a row of buttons. Each has to be read before anybody can say what the run showed. A sweep of the checks that had never run, later that night, found more of the kind. A pause now gives windows their own frames back: one script's click during a pause hit bare wallpaper, and another's drag took hold of a window lying under another and dragged nothing, which left two of its greens empty. Ten clicked the middle of the menu bar item (a-click-in-the-middle-of-the-menu-bar-item-presses-a-button).
 - **Found by:** The first run of four Mac shell scripts as they stand, on one hosted Mac, on 2026-10-15 (the trunk at `8aa9e10`, macOS 26.6.2, posted events, once).
 - **Stand-ins play it:** cannot: it lies below or beside the seam
 - **Guard:** **none**
 - **Arbor copes:** **not yet**
-- **Read in:** `scripts/mac-shell/input-taps.sh`, `scripts/mac-shell/check-displays.sh`, `docs/features/F61-room-before-tiles.md`, `docs/CENSUS.md`
+- **Read in:** `scripts/mac-shell/input-taps.sh`, `scripts/mac-shell/check-displays.sh`, `docs/features/F61-room-before-tiles.md`, `docs/CENSUS.md`, `scripts/mac-shell/check-F53.sh`, `scripts/mac-shell/check-review-ux.sh`
 
 ### dispatchmain-gives-up-the-main-thread-on-macos
 
@@ -4879,23 +4991,16 @@ As the repository's own documents say it. Three reasons recur. CI drives real wi
 | Check | What it would prove | Why it has not run | Source |
 |---|---|---|---|
 | `check-harness.sh`, `run-list.sh` | The harness's own safety nets: the sweep after a script ends, the curtain, presses only onto the run's own windows; that the helper tools compile | Rebuilt since its last run and proved on Linux only. Rehearsal 12/1 | `collab/BACKLOG.md` (K496) |
-| `check-F63.sh`, from "the permission goes" on | How fast the loss and the return of the permission are noticed; shortcuts stop swallowing keys; windows out of view come back after the grant | Hosted Macs only: it takes Accessibility from every app. Its first run (2026-10-15, 15/16) did not get past its first step, the grant to a waiting Arbor. Cannot be rehearsed: a tool of its own needs AppKit | `docs/features/F63-permission-taken-away.md`; `collab/BACKLOG.md` |
 | `desktop-facts.sh` | What a Mac in daily use lists in front of and behind Finder's icons, at which levels; what Finder answers when it is not in front, and how fast. The rules it feeds were written from the list of one idle hosted Mac | By hand. It only reads | `scripts/mac-shell/deskfacts.swift`, `collab/BACKLOG.md` |
 | `check-F58.sh` | A held view survives ⌘Tab, six shortcuts and a drag to the edge; how late a real ⌘Tab is reported; what an audience sees of windows out of view | By hand. "No hold has been tried on real windows". Cannot be rehearsed | `docs/features/F58-hold-the-view.md`, `collab/BACKLOG.md` |
 | `check-F41.sh` | That ⌃⌥ keys reach a listed app; no tap is left behind; who gets a key pressed straight after a switch of apps | By hand. Cannot be rehearsed | `docs/features/F41-pass-through-apps.md`, `docs/RELEASE-NOTES.md`, `collab/BACKLOG.md` |
 | `check-F44.sh` | Real keys on German, French and Dvorak; whether a change of layout reaches Arbor in the background, and how soon | By hand; its second part on hosted Macs only. Cannot be rehearsed | `docs/features/F44-shortcuts-follow-the-keyboard-layout.md`; `collab/BACKLOG.md` |
 | `check-F56.sh` | Whether macOS's idle figures tell typing, pointing and Arbor's own shortcuts apart | By hand. Rehearsal 13/0, then it stops at the second display | `docs/RELEASE-NOTES.md`, `collab/BACKLOG.md` |
-| `check-F49.sh` | That raising alone lifts a pinned window of an app that is not in front, and the keyboard stays put | By hand. Rehearsal 101/0 without its second display | `docs/features/F49-pin.md`, `docs/RELEASE-NOTES.md`, `collab/BACKLOG.md` |
-| `check-F53.sh` | That a stale focus report does not send a summoned window away at once; where the keyboard goes at the second press | By hand. Rehearsal 123/0 without a real app | `docs/features/F53-summon.md`, `docs/RELEASE-NOTES.md`, `collab/BACKLOG.md` |
-| `check-F20.sh` | That a borderless panel of an app that is never active gets the keys, and the app in front stays in front | By hand. Rehearsal 30/1 | `docs/features/F20-named-spaces.md`, `collab/BACKLOG.md` |
 | `check-F54.sh` | `layout` on real windows; `open -g` makes the window in the background | By hand. Rehearsal 16/0 without its part on real apps | `collab/BACKLOG.md` |
 | `check-F18.sh` | A sole floating window on the Desktop with real drags and resizes | By hand. Rehearsal 23/0 | `collab/BACKLOG.md` |
 | `check-F13.sh`, `check-F13-system.sh`, the release workflow | `make install` as a person runs it; that the permission survives a rebuild; launch at login across a reinstall | By hand; the second on hosted Macs only. "Nothing here has run on a Mac yet". Cannot be rehearsed: no keychain, no `codesign` | `docs/features/F13-distribution.md`; `collab/BACKLOG.md` |
-| `shots-finder.sh` | That the palette gets real keys; corners, shadow, matched letters in both modes | By hand. Rehearsal 67/0 | `docs/features/F27-window-finder.md`, `collab/BACKLOG.md` |
-| `shots-minimap.sh` | Place, blur, corners and fades of the minimap; a click goes through a passing one | By hand. "Nobody has seen the panel yet". Rehearsal 76/0 | `docs/features/F26-minimap.md`, `collab/BACKLOG.md` |
-| `shots-F22.sh` | That macOS's echo of each focus change leaves the view alone; where the pointer lands | By hand. Rehearsal 64/0 | `docs/features/F22-keyboard-tiling-tools.md`, `collab/BACKLOG.md` |
 | `shots-F19.sh` | A gap drag and an edge resize are one step of undo each | Held back until its drags were mended. Rehearsal 29/0 | `collab/BACKLOG.md` |
-| `shots-F02.sh` with pictures | That Arbor survives its first sweep of window pictures | The only run crashed; the mended code has not run since. Rehearsal 49/2: nothing takes time there | `docs/features/F02-animated-transitions.md`, `collab/BACKLOG.md` |
+| `shots-F02.sh` with pictures | That Arbor survives its first sweep of window pictures | The only run crashed; the mended code has not run since. The script ran on 2026-10-15 (51/0) with `windowPictures` never switched on. Rehearsal 49/2: nothing takes time there | `docs/features/F02-animated-transitions.md`, `collab/BACKLOG.md` |
 | `shots-F15-apps.sh`, `compat-extras.sh`, `compat-pictures.sh` | Icon colours of real apps; native tabs, restarts and full screen with stock apps | Hosted Macs only, or with the owner's word: they open and quit real apps. A rehearsal has no apps | `docs/TESTING.md`; `collab/BACKLOG.md` |
 | `watchdog-bundle.sh` | That the bundled app comes back after `kill -9`, and the crash loop ends | By hand; cannot be rehearsed, it builds the app | `collab/BACKLOG.md` |
 | `probe-keyboard.sh` | Who has the keyboard when the window that had it goes out of view | By hand; the file it is to leave is not in the repository. Cannot be rehearsed | `scripts/mac-shell/probe-keyboard.sh`, `docs/TESTING.md` |
@@ -4910,9 +5015,10 @@ Beside the table:
 - **CI presses no key.** arbor-e2e sends commands over the socket and posts no input; `e2e-drag.sh` uses the pointer only. So no shortcut, hot key, event tap, gesture or panel that takes the keyboard is exercised on a real Mac by CI. Both macOS jobs are left out when `scripts/ci-changes.py` decides that a Mac could prove nothing new. CI does not run `make check`, so not `scripts/test-tooling.py`, `scripts/privacy-smoke.sh` or `make rehearse`.
 - **One run has pressed keys since.** A suite of real-window checks that is not on the trunk yet ran once on hosted Macs, on 2026-10-14 (its evidence is not in the repository yet, and none of the scripts named here is part of it). In it every shortcut that `arborctl bindings` lists was pressed with real key events and checked against the window server: 143 checks, all green. A peek was held and let go, green; the menu bar item was right-clicked and its items clicked. Its section with the ⌃⌥ rectangle, the ⌃⌥-click, the ⇧-drag and the ⌥-pinch has not run yet, nothing in it scrolls, and nothing in it switches Reduce Motion off. The table above is about each feature's own script.
 - **Four scripts have left the table.** On 2026-10-15 `check-F51.sh` (35/0), `check-F63.sh` (15/16), `check-displays.sh` (110/19) and `input-taps.sh` (146/14; only a first version had run before) ran for the first time, one after the other on one hosted Mac, at `8aa9e10`, once, started by hand, with posted events. Peek, the ⌃⌥ rectangle, posted pinches and ⌃⌥ + scroll were green in every step; the taps were let go within a second of the permission's loss; a virtual second display can be made there. 13 of the 14 failures of `input-taps.sh` are the Desktop guard's, which is shelved. Their output is not in the repository. What is still unknown is under [never-exercised](#never-exercised).
+- **Seven more have left it.** A sweep of the checks that had never run, on hosted Macs on 2026-10-15 (the trunk of between 02:20 and 02:55 UTC, macOS 26.6.2, one display of 1024×768, each once, posted events): `check-F49.sh` (95/19), `check-F53.sh` (121/4), `check-F20.sh` (28/3), `shots-F22.sh` (64/0), `shots-minimap.sh` (76/0), `shots-finder.sh` (62/5) and, mended, `check-F63.sh` (30/1). Of the 32 reds 19 are the raise or follow from it (raise-does-not-lift-a-window-over-the-active-apps-key-window), and ten are a script's or a tool's own. Beside them ran `shots-F02.sh` (51/0), without pictures of windows, and `check-review-ux.sh` (46/0): ⌃⌥⎋ was pressed as a real key both ways, one shortcut was registered during the pause and 52 after it, two other real shortcuts pressed meanwhile did nothing, and the menu bar item is one dimmed glyph while paused. Some greens proved nothing: two of `check-review-ux.sh`, whose drag during the pause dragged nothing; two of `check-F20.sh`, which compared nothing with nothing; those of `shots-minimap.sh` for a click through a passing map. `shots-F02.sh` left Reduce Motion off and its wallpaper up, so the next two scripts on that Mac ran with stages; it is mended. F22 has no case under never-exercised any more: its nine shortcuts were pressed and every check held, though frames and focus were read from Arbor's own `state`, and what showed behind a green is one-shrink-moves-a-window-that-will-not-shrink-four-times. The outputs are not in the repository. What differed is in the cases above; what is still unknown is under [never-exercised](#never-exercised).
 - **Shipped off until seen on a Mac:** `windowPictures`, `guardDesktopClicks`, `holdStillWhileCameraIsOn`, `holdStillWhileMicrophoneIsOn`, `continuousZoom`, `tabsEnabled`, `minimapDuration` (0).
-- **Never done by anybody:** a real lid closed, a real cable pulled, sleep and wake, mirroring, fast user switching, a logout with windows out of view, a pinch on a real trackpad, a real wheel, real keys pressed in any of the three panels that take the keyboard, the permission taken away by hand, a working day. (`docs/RELEASE-NOTES.md`, `collab/BACKLOG.md`)
-- **"Compiled, and its picture tests pass on a Mac" is not "seen".** By the documents nobody has looked at the minimap, the name field, the palette, the backdrop and tiles, or the ring's flash on a screen.
+- **Never done by anybody:** a real lid closed, a real cable pulled, sleep and wake, mirroring, fast user switching, a logout with windows out of view, a pinch on a real trackpad, a real wheel, the permission taken away by hand, a working day. (`docs/RELEASE-NOTES.md`, `collab/BACKLOG.md`)
+- **"Compiled, and its picture tests pass on a Mac" is not "seen".** By the documents nobody has looked at the minimap, the name field, the palette, the backdrop and tiles, or the ring's flash on a screen. Pictures of the minimap, the name field and the stage from hosted Macs were looked at on 2026-10-15; what the eye found is in the cases above.
 - The backlog holds 266 questions "no script answers". Those on which a stand-in's model rests: which display stops a window whose corner is on none (M1366); how far down a window may go without a Dock, where the fake assumes 32 points (M665); whether Accessibility can move a window at all with no display connected (M1945); whether macOS moves windows back when a display returns (M1953); the order of `didActivateApplication` and `activeSpaceDidChange` (M1096); whether a background app's report is what `backgroundFocus` plays (M1968); whether a held shortcut repeats through Carbon hot keys, which `Harness` plays as "sends its press again and again" (M1082). (`collab/BACKLOG.md`)
 
 ## Evidence that is cited and is not in the repository
