@@ -1,7 +1,7 @@
 #!/bin/bash
 # What does macOS do with a POSITION call through Accessibility while a hand is dragging the window by its title bar? ARBOR IS NOT RUNNING.
 #
-#   scripts/mac-shell/run.sh scripts/mac-shell/probe-a-position-call-in-the-hand.sh          about seven minutes
+#   scripts/mac-shell/run.sh scripts/mac-shell/probe-a-position-call-in-the-hand.sh          about eight minutes
 #
 # probe-a-size-call-in-the-hand.sh found: a size call in the hand is taken as at rest, the origin stays, and the drag goes on at the old distance between pointer and origin. So a window that is made narrower than the
 # point it is held at is left behind by the pointer, and still follows it from afar. Can it be put under the pointer again, in the hand? Does the drag go on from the NEW hold, or does the window jump back by the old one
@@ -20,6 +20,8 @@
 #   X   carried by the hand to a LARGER display at the right and dropped the moment it has crossed; then one size call that asks for more height than the display it came from could hold, 1, 50, 200 and 1000 ms after the
 #       button came up; and the same call still in the hand over the larger display. Who judges the size: the display it came from, or the one it is on? (By calls alone, a size call within 6 ms of the position call that
 #       changed the display was judged by the old one: probe-how-far-a-window-grows.sh.) Dropped with its origin 10 points past the edge; and, three times at 1 and 200 ms, with only its middle across
+#       And what a window manager would do after such a drop: held near the RIGHT end of its title bar and dropped with the pointer 50 points over the border, so that three quarters of it are still on the display it comes from;
+#       200 ms and 1 s later a position call to a place wholly on the larger display and the size call right behind it; and 500 ms after that the size call once more: does asking again heal it?
 #   S   Safari and Terminal, held where a short pull has shown that the window comes along: the first probe's T1 (smaller), T4 (narrower than where it is held) and T6a (the cut, and whole higher up)
 # All of P to W three times, then P and M twice more, then X five times, then S.
 #
@@ -50,7 +52,7 @@ for job in $COMPILING; do
   grep -A 6 "error:" "$ARBOR_OUT/build-${job%:*}.log" | head -n 40
   die "scripts/mac-shell/${job%:*}.swift did not compile"
 done
-apps_watchdog 600
+apps_watchdog 660
 echo "clock: built after ${SECONDS}s"
 
 # MARK: The tools
@@ -247,6 +249,22 @@ across() {
   tell
 }
 
+# own_pair <trial> <time> <ms of rest after the drop>
+own_pair() {
+  local x=$((EDGE - 450)) px py waiter
+  begin "$1" "$2" "$x" 200 400 300 || return 0
+  px=$((x + 350)) py=$((200 + GRIP))
+  printf '%s\n' "chain pair after-release $3 pos r1+100 200 size 400 $TALL" "chain asked-again size 400 $TALL" > "$STEPS/later"
+  limit 30 "$GROW" "$PID" "$WINDOW" "$LABEL" "$STEPS/later" > "$STEPS/said" 2>&1 5<&- 6>&- 8>&- 9>&- &
+  waiter=$!
+  sleep 0.4
+  hand drag "$px" "$py" $((EDGE + 50)) "$py" --steps 8 --duration 0.3 --hold 0 --no-settle
+  wait "$waiter"
+  tee -a "$RESULTS" < "$STEPS/said" >> "$STEPS/trial"
+  ask "look rest"
+  tell
+}
+
 # the first probe's T1, T4 and T6a, for an app whose hold had to be found
 in_hand() {
   local x=$3 y=$4 at=$7 w=$8 h=$9 px py
@@ -350,7 +368,7 @@ for time in 4 5; do worth_most "$time"; done
 echo "clock: one display done after ${SECONDS}s"
 [ -z "$TEXTEDIT" ] || app_quit "$TEXTEDIT"
 
-BUDGET=$((BUDGET + 160))
+BUDGET=$((BUDGET + 215))
 if in_time "the larger display"; then
   step "a larger display at the right"
   display_add 2560 1440 right
@@ -368,6 +386,10 @@ if in_time "the larger display"; then
   done
   for time in 1 2 3; do
     for after in 1 200; do across "X-dropped-with-its-middle-across-$after-ms" "$time" -190 "$after"; done
+  done
+  echo "the forecast for what follows, from a model: the pair's size is cut to what the display it came from holds, and the second asking heals it"
+  for time in 1 2 3 4 5; do
+    for after in 200 1000; do own_pair "X-dropped-mostly-behind-then-position-and-size-after-$after-ms" "$time" "$after"; done
   done
   display_remove
   sleep 3
