@@ -48,6 +48,7 @@ WINDOW_FIRST = {"zoom", "dock", "float", "toggle-float", "resize", "pin", "unpin
 # stands, and nothing that only one world has gets through: ids of displays and nodes, titles, what a test app is called. Held to the sources too.
 NAMED = {
     "shortcut": ("plain", "command", "plain"), "pointerPressed": (), "accessibilityWasRefused": (), "dragCancelled": ("window",),
+    "doubleClickReached": ("window",),
     "applicationActivated": (None, "app"), "windowFound": ("snapshot",), "windowReplaced": ("window", "snapshot"), "settingsFileMayHaveChanged": (),
     "callSignalsChanged": ("plain", "plain"), "raise": ("window",), "setMinimized": ("window", "plain"), "unhideApp": ("process",),
     "leaveStrayDialogs": ("plain", "app"), "bringInStrayDialogs": ("app",), "openApplication": ("app",), "launchApp": ("app",),
