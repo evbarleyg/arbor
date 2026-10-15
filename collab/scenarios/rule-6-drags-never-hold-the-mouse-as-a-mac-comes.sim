@@ -1,0 +1,70 @@
+# Rule 6 of the product direction (issue #3; QUESTIONS Q17), on a Mac as it comes (rule 1): drags must never block input.
+# Story: the same as in rule-6-drags-never-hold-the-mouse.sim, with macOS's own tiling on. The left, right and top edges of the screen are
+# macOS's then (Q23), so the windows are dragged to what stays Arbor's: the bottom edge and the edges of docked windows.
+# However a drag ends, whoever takes the window, nothing of Arbor's is left on the screen that could take the next click.
+quiet
+open Safari
+open Notes
+open Mail
+# The keys work at every setting.
+dock 101 left
+expect docked 101
+# The bottom edge is Arbor's.
+drag 102 1000 897
+expect docked 102
+expect preview none
+# Let go at once, before any target has woken up.
+drag 103 300 850 quick
+expect preview none
+# With ⌘ nothing docks and nothing is offered.
+drag 103 1000 897 cmd
+expect floating 103
+expect preview none
+# It lies at the bottom edge now. Taken hold of there and only nudged, it has not been carried to that edge: nothing is offered.
+pick-up 103 1010 897
+expect preview none
+let-go
+expect floating 103
+drag 103 1100 200
+expect floating 103
+# Out of a slot and back onto the Desktop.
+drag 102 1000 300
+expect floating 102
+expect preview none
+# Dropped on another window's edge.
+drag 102 300 850
+expect docked 102
+expect preview none
+# The control: while a window is held over a target of Arbor's there is a preview to lose.
+pick-up 103 1000 897
+expect preview showing
+let-go
+expect docked 103
+expect preview none
+# Along macOS's edges there is none to lose, on the way there or at the last point, and none afterwards.
+float 103
+pick-up 103 1435 400
+expect preview none
+let-go
+expect floating 103
+expect preview none
+pick-up 103 1439 400
+expect preview none
+let-go
+wait 1
+expect floating 103
+expect preview none
+pick-up 103 700 0
+expect preview none
+let-go
+wait 1
+expect floating 103
+expect preview none
+# Arbor is paused with a window in the hand, over a target of its own.
+pick-up 103 1000 897
+expect preview showing
+pause
+expect preview none
+let-go
+resume
+expect preview none

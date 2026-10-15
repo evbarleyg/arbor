@@ -524,6 +524,43 @@ the Desktop leave with it. At the end `settle` lays the displays out
 from their real trees and puts those windows where a drag without reflow
 would have left them, so the setting never changes where anything ends up.
 
+### Arbor's panels and the mouse
+
+Drags must never block input (`collab/QUESTIONS.md`, Q17). While a mouse button is down that went down outside Arbor's own panels, Arbor puts no
+panel that takes the mouse under the pointer and moves none there, and no panel that takes the mouse covers a whole display, except
+the peek's outline while its keys are held. There is no drop layer: the preview is a panel that ignores the mouse.
+
+This is the one table of them. `PanelsAndTheMouseTests` reads it and the sources, and fails for a panel that is not in it, for a level
+that differs, and for a panel that is "no" here and ever says anything else in its source. It reads what stands in a panel's own braces, so
+that is where all of it has to stand. It fails as well for a line anywhere else in the app that says whether a panel takes the mouse or sets a
+window's level (an extension, another class, the code that shows a panel), for a second level in one panel, for a window class that is
+not declared in the first column, and for a bare `NSWindow` or `NSPanel` made anywhere but for the settings window.
+
+| Panel | Level | Takes the mouse | Why |
+|---|---|---|---|
+| the drop preview | floating | no | Only looked at. It lies under the pointer of every drag that is about to dock |
+| `StagePanel` | floating + 1 | no | Covers a display while windows move |
+| `BackdropPanel` | desktop icons + 1 | no | The surface behind the arrangement; can cover a display |
+| `RubberBandPanel` | floating | no | The rectangle being drawn, under the pointer that draws it |
+| `FocusRingPanel` | normal | no | Lies around a window, over its resize area |
+| `HeadsUpPanel` | floating + 3 | no | A line that comes and goes by itself |
+| `TilePanel` | normal | yes | A click zooms in. No larger than its space; behind every window; lets everything through once it begins to leave |
+| `SeamPanel` | normal | yes | A drag moves the gap. As wide as the gap; behind every window |
+| `PeekOutlinePanel` | floating | yes | A click chooses the space, and must not reach the app under it with ⌃⌥ held. Only while the peek's keys are held |
+| `MinimapPanel` | floating + 2 | when asked | A click goes there while the model says that it takes clicks (`MinimapModel.takesClicks`); nothing once it begins to leave |
+| `CheatSheetPanel` | floating + 2 | yes | Any click puts it away |
+| `NamePanel` | modal panel | yes | A text field |
+| `FinderPanel` | floating + 2 | yes | A text field and a list |
+
+Three more are ordinary windows with a title bar, which a person opens and closes. They take the mouse as any window does, and none of them covers
+a display. They float at times, and the test knows those lines word for word:
+
+| Window | Level | Why |
+|---|---|---|
+| the welcome window | floating in its first steps, otherwise normal | The moves it teaches are made in other apps' windows, one of which then fills the display. For those steps it waits at the right of the screen |
+| the settings window | floating while it has the keyboard, otherwise normal | Tiles and gap handles come to the front whenever the layout is drawn again, which every change made in it causes |
+| the update window, an alert of macOS's | floating | Arbor has no Dock icon to find it by |
+
 ## Leaving the arrangement
 
 Docking stretches a window to its slot. `Workspace.undockedFrames` remembers the frame it floated at (the one

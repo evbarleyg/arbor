@@ -68,6 +68,11 @@ struct Pointer {
       drag-on x y                   with the button down since a `drag --no-release`: carry on to that point and rest there
           [--steps n] [--duration s] [--hold s]      as for drag
       release [x y]                 release the button there (default: where the pointer is)
+          [--timed]                 print how many milliseconds later the login session had the button up, as apps are told it
+                                    (1000: not within a second). An event tap that keeps the release to itself shows here
+          [--then-click x,y]        click there as soon as the pointer is there, 0.3 s after the release at the earliest, and print, on the same
+                                    line, how many milliseconds after it the button went down: about 500 on a hosted Mac, where two
+                                    calls of this tool lie 600 to 800 apart
       key <chord>                   press a shortcut, e.g. ctrl+opt+space, cmd+shift+f5, escape
           [--down]                  press the modifiers and the key, and leave them all down
           [--up]                    release the key, then the modifiers (modifiers alone, or a key alone, work too)
@@ -577,13 +582,35 @@ struct Pointer {
       rest(wait)
 
     case "release":
+      let timed = flag("--timed")
+      let next = option("--then-click").map { $0.split(separator: ",").map { number(String($0)) } }
+      guard next.map({ $0.count == 2 }) ?? true else { fail("--then-click takes x,y") }
       let target = arguments.count >= 2 ? point(at: 0) : location
       // The modifiers were pressed by the `drag --no-release` this finishes.
       for modifier in held { flags.insert(modifier.flag) }
       mouse(.leftMouseDragged, at: target, clicks: 1, from: location)
       rest(0.05)
       mouse(.leftMouseUp, at: target, clicks: 1)
+      let posted = Date()
+      func sincePosted() -> String { String(Int((Date().timeIntervalSince(posted) * 1000).rounded())) }
+      var said: [String] = []
+      if timed {
+        while CGEventSource.buttonState(.combinedSessionState, button: .left), Date().timeIntervalSince(posted) < 1 { rest(0.001) }
+        said.append(sincePosted())
+      }
       letGo(held)
+      if let next {
+        let there = CGPoint(x: next[0], y: next[1])
+        // On a hosted Mac the way there alone takes half a second: each of its short rests lasts some 30 ms longer than it says.
+        move(to: there)
+        rest(0.3 - Date().timeIntervalSince(posted))
+        said.append(sincePosted())
+        mouse(.leftMouseDown, at: there, clicks: 1)
+        rest(0.04)
+        mouse(.leftMouseUp, at: there, clicks: 1)
+        rest(0.08)
+      }
+      if !said.isEmpty { print(said.joined(separator: " ")) }
 
     case "key":
       // ---- F51 (peek): keys that stay down from one call of this tool to the next --------------------------

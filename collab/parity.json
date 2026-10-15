@@ -2513,6 +2513,21 @@
       ]
     },
     {
+      "id": "A228",
+      "area": "Arbor only",
+      "title": "Drags never block input",
+      "trellis": "",
+      "arbor": "No drop layer: the preview is a panel that ignores the mouse, and so is whatever can cover a display. One table of Arbor's panels (level, takes the mouse or not, why) that a test holds against the sources. After every real drop the button is up within 100 ms and a click where the preview was, half a second later, arrives in the window, with Arbor's event taps installed too: `make e2e-drag`",
+      "status": "shipped",
+      "spec": "F09",
+      "priority": 1,
+      "tests": [
+        "everyPanelIsInTheTableAsItIsWritten",
+        "nothingIsSaidOfAPanelOutsideItsOwnBraces",
+        "whatIsOnlyLookedAtIgnoresTheMouse"
+      ]
+    },
+    {
       "id": "A41",
       "area": "Arbor only",
       "title": "Home: everything on every display",

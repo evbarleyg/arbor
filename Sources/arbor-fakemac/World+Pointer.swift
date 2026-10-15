@@ -162,6 +162,8 @@ extension World {
       drag(to: end)
       // The real tool rests here before it lets go, which is what lets a drop target activate (F09).
       arbor?.scheduler.advance(by: 0.25 + Double(hold))
+      // On the world's clock too: macOS fills the screen only for a pointer that has rested in the menu bar.
+      elapsed += 0.25 + Double(hold)
       if release { lift(at: end, modifiers: held) }
 
     case "drag-on":
@@ -182,6 +184,9 @@ extension World {
       arbor?.scheduler.advance(by: 0.25 + Double(hold))
 
     case "release":
+      let timed = arguments.flag("--timed")
+      let next = try arguments.option("--then-click").map { try $0.split(separator: ",").map { try arguments.number(String($0)) } }
+      guard next.map({ $0.count == 2 }) ?? true else { throw fail("--then-click takes x,y") }
       let target = arguments.words.count >= 2 ? try arguments.point(at: 0) : system.cursor
       try arguments.expect(atMost: 2, for: command)
       guard isButtonDown else {
@@ -190,6 +195,16 @@ extension World {
       }
       drag(to: target)
       lift(at: target, modifiers: held)
+      if let next {
+        let there = CGPoint(x: next[0], y: next[1])
+        arbor?.scheduler.advance(by: 0.3)
+        elapsed += 0.3
+        movePointer(to: there)
+        press(at: there, modifiers: [], clicks: 1, right: false)
+        lift(at: there)
+      }
+      // Nothing here can keep a release to itself, or a click waiting.
+      if timed || next != nil { return .printing([timed ? "0" : nil, next != nil ? "300" : nil].compactMap { $0 }.joined(separator: " ")) }
 
     case "calm":
       // Lets go of whatever is still held: the button, and a shortcut with its modifiers. Other modifiers never outlive a line.

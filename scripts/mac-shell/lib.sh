@@ -157,6 +157,8 @@
 #   film <name> <count>             <name>-1.png … as fast as pictures can be taken: `ctl zoom $W1 & film zoom 4`
 # Other
 #   arbor_log                       copy arbor.log to mac-shell/ now (arbor_stop and the exit trap do it too)
+#   arbor_mac_facts                 how long the Mac was left alone, locked or not, screen saver or not, and what lies in front: for a press that
+#                                     took hold of nothing
 #   macos_tiling [on|off]           print, or set, macOS's own "drag windows to screen edges to tile"
 #   macos_tiles | screen_edges_dock whether macOS tiles at the screen's edges, where Arbor then stands aside | before arbor_start, for a script that
 #                                     docks by dragging to a screen edge: switches that off on a throwaway Mac; false where a person has it on
@@ -1998,6 +2000,22 @@ film() {
   done
 }
 
+# What decides whether a press reaches a test window at all, for a run that has to explain why one did not. Yes, no and numbers, and whose
+# windows lie in front: on somebody's Mac the owners' names stay out of it (arbor_nameless).
+arbor_mac_state() {
+  echo "no input for $(ioreg -c IOHIDSystem 2>/dev/null | awk '/HIDIdleTime/ { print int($NF / 1000000000); exit }') s;" \
+    "screen locked: $(ioreg -n Root -d1 2>/dev/null | grep -q '"CGSSessionScreenIsLocked"=Yes' && echo yes || echo no);" \
+    "screen saver: $(pgrep -x ScreenSaverEngine > /dev/null 2>&1 && echo yes || echo no);" \
+    "pointer: $("$ARBOR_POINTER" where 2>/dev/null)"
+}
+arbor_mac_facts() {
+  # The first input wakes a Mac up, so what it was like before is written down then (arbor_before_input).
+  echo "the Mac before this run's first input: $(cat "$ARBOR_LEDGER/state-before-input" 2>/dev/null)"
+  echo "the Mac now: $(arbor_mac_state)"
+  echo "on the screen, from the front (id pid level x y w h on owner):"
+  pointer windows --on-screen | head -n 14
+}
+
 # MARK: Real input
 
 # Nothing is pressed once nobody is left to let go of it, and the pointer's place is noted before it first moves.
@@ -2009,6 +2027,7 @@ arbor_before_input() {
   fi
   [ -f "$ARBOR_LEDGER/pointer" ] && return 0
   : > "$ARBOR_LEDGER/input"
+  arbor_mac_state > "$ARBOR_LEDGER/state-before-input"
   "$ARBOR_POINTER" where > "$ARBOR_LEDGER/pointer" 2>/dev/null
 }
 # The window server's list names every app the person has open. What a script prints of it names the run's own and macOS's furniture.

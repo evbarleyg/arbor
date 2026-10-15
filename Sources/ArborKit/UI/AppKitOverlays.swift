@@ -175,7 +175,7 @@ public final class AppKitOverlays: OverlayPresenter {
     minimaps.show(model, on: display)
   }
 
-  private func makePreviewPanel() -> OverlayPanel {
+  func makePreviewPanel() -> OverlayPanel {
     let panel = OverlayPanel()
     panel.level = .floating
     panel.ignoresMouseEvents = true

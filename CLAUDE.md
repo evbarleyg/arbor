@@ -38,7 +38,7 @@ make app        # build build/Arbor.app (release; signed as docs/INSTALL.md desc
 make install    # make app, replace ~/Applications/Arbor.app, link arborctl, start it; make uninstall undoes it
 make release    # universal build/Arbor.app as zip and disk image, with checksums, notes and the Homebrew cask
 make e2e        # real windows, real Accessibility; see docs/TESTING.md
-make e2e-drag   # real drags with the real pointer, which it takes over for half a minute
+make e2e-drag   # real drags with the real pointer, which it takes over for one to three minutes
 make suite      # every shipped feature on real windows with real drags, clicks, keys and menus, in sections (SECTIONS="30 60"); docs/TESTING.md, section 10
 make day        # from anywhere: an ordinary day with real apps on a hosted Mac, every frame sampled, a table of what broke which rule (docs/TESTING.md)
 make newcomer   # from anywhere: a hosted Mac for somebody who knows nothing, seen in pictures, one act a round through Git; scored against macOS alone (scripts/newcomer/README.md)
