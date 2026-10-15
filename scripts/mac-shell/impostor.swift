@@ -1,7 +1,7 @@
 // impostor: a program that passes for Arbor, for the sabotage run (day-sabotage.sh).
 //
 // Some offences only Arbor can commit: a drop preview beside macOS's own, a busy process with nothing to do, a process that ends unasked or stays
-// behind after Quit, a mouse-up that is held back. The detectors tell Arbor by its process. So the sabotage run, in which Arbor is not even built,
+// behind after Quit, a mouse-up that is held back, a key that is swallowed. The detectors tell Arbor by its process. So the sabotage run, in which Arbor is not even built,
 // compiles this in the place where Arbor's program would be, calls it Arbor's process, and tells it which offence to commit.
 //
 //   impostor            reads commands from its standard input, one per line, until that ends:
@@ -10,6 +10,7 @@
 //     unpanel                  put it away
 //     spin <seconds>           keep one core busy that long
 //     hold <ms> <seconds>      for that many seconds every left mouse-up waits that many milliseconds in an event tap before it goes on
+//     drop <n> <seconds>       the next n key-downs within that many seconds go no further: an event tap swallows them
 //     die                      end at once, unasked, with exit code 3
 //     quit                     end in good order
 //
@@ -63,6 +64,30 @@ nonisolated(unsafe) var holdMilliseconds = 0.0
   }
 }
 
+nonisolated(unsafe) var toDrop = 0
+
+@MainActor func drop(_ count: Int, seconds: Double) {
+  toDrop = count
+  let callback: CGEventTapCallBack = { _, type, event, _ in
+    if type == .keyDown, toDrop > 0 {
+      toDrop -= 1
+      return nil
+    }
+    return Unmanaged.passUnretained(event)
+  }
+  guard
+    let port = CGEvent.tapCreate(
+      tap: .cgSessionEventTap, place: .headInsertEventTap, options: .defaultTap,
+      eventsOfInterest: CGEventMask(1) << CGEventMask(CGEventType.keyDown.rawValue), callback: callback, userInfo: nil)
+  else { fail("macOS refused the tap") }
+  CFRunLoopAddSource(CFRunLoopGetMain(), CFMachPortCreateRunLoopSource(kCFAllocatorDefault, port, 0), .commonModes)
+  CGEvent.tapEnable(tap: port, enable: true)
+  DispatchQueue.main.asyncAfter(deadline: .now() + seconds) {
+    CGEvent.tapEnable(tap: port, enable: false)
+    CFMachPortInvalidate(port)
+  }
+}
+
 let listening = Thread {
   while let line = readLine() {
     let words = line.split(separator: " ").map(String.init)
@@ -92,6 +117,8 @@ let listening = Thread {
       }.start()
     case "hold" where numbers.count == 2:
       DispatchQueue.main.async { MainActor.assumeIsolated { hold(milliseconds: numbers[0], seconds: numbers[1]) } }
+    case "drop" where numbers.count == 2:
+      DispatchQueue.main.async { MainActor.assumeIsolated { drop(Int(numbers[0]), seconds: numbers[1]) } }
     case "die":
       exit(3)
     case "quit":

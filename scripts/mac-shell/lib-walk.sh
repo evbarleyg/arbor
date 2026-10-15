@@ -861,6 +861,7 @@ idle_act() {
 # starts, when it has `started`, before the `last` Quit and `after` it. The witness writes down how late each arrived, and jolts.py holds started to before and last to after: the same
 # Mac, minutes apart, which is as like with like as it gets. Two hosted Macs differed by 35 against 76 ms with nobody holding anything, and one drifted from 41 to 76 within seven minutes.
 #
+# It says what it posted, by kind: with Arbor, an event that never arrives is a finding; without, the instrument's own trouble, and the journey says nothing of that kind.
 # It moves no window and changes nothing, and every detector stays awake through it. Fourteen presses on title bars of apps that are not in front, whichever show a free point. Then, in one
 # quiet place, a dozen presses on the title bar of the app in front, a dozen arrow keys, a scroll there and back, and a drag inside the text, which selects.
 input_round() {
@@ -901,14 +902,17 @@ input_round() {
     move "$x" "$y" > /dev/null
     "$DAY_WITNESS" scroll "$x" "$y" 0 -36 --steps 12 > /dev/null
     "$DAY_WITNESS" scroll "$x" "$y" 0 36 --steps 12 > /dev/null
-    drag "$x" "$y" "$((x + 60))" "$((y + 20))" > /dev/null
+    drag "$x" "$y" "$((x + 60))" "$((y + 20))" --steps 20 --no-settle > /dev/null
     # What was selected is let go of again.
     key left > /dev/null
     echo "  $pressed presses on windows behind; the rest in $desk"
-    acted round="$name" front="$window"
+    # What was posted, so that what never arrives is missed: the presses behind, one to come here, a dozen here, the drag's; thirteen keys; a scroll begins, goes its steps and ends.
+    # shellcheck disable=SC2086
+    acted round="$name" front="$window" posted="press:$((pressed + 14)),up:$((pressed + 14)),key:13,scroll:28,dragged:20" ${WALK_ROUND_SAYS:-}
   else
     echo "  $pressed presses on windows behind; $desk shows no free point of its title bar, so that is all"
-    acted round="$name"
+    # shellcheck disable=SC2086
+    acted round="$name" posted="press:$pressed,up:$pressed" ${WALK_ROUND_SAYS:-}
   fi
 }
 

@@ -60,7 +60,8 @@ The script says what it is doing in marks (lib-day.sh writes them):
     docked=<ids>           these are docked at the end
     offence=<detector>     the script committed this offence itself during the step, to see whether it is found (`jolts.py sabotage`)
     round=<name>           no act either, but an instrument: a round of input (lib-walk.sh, input_round), `before` Arbor starts, when it has `started`, before the `last` Quit, `after` it.
-                           Every detector stays awake through it. How late its events arrived is what input-held goes by: started against before, last against after
+                           Every detector stays awake through it. How late its events arrived is what input-held goes by: started against before, last against after.
+                           posted=press:28,up:28,key:13,…: what it posted, by kind. With Arbor, what does not arrive is a finding
     performed=no           the act could not be performed (undone=<what>): it is not judged, and listed
     setup=1                no act at all: the script sets the scene (opens an app, lays windows out) before anything counts. Nothing is judged
     judge=no               nothing is judged: Arbor is not running yet, and apps place their own windows as they open
@@ -584,19 +585,32 @@ def lateness(steps):
     if not kinds and not rounds:
         return None
     told = account_of([delay for late in kinds.values() for delay in late]) if kinds else {}
-    judged_kinds, silent = verdicts(rounds)[1:]
+    judged_kinds, silent = verdicts(rounds, instrument_lost(steps))[1:]
     return dict(told, kinds={kind: account_of(late) for kind, late in sorted(kinds.items())}, rounds=rounds, judged=judged_kinds, silent=silent)
 
 
-def verdicts(rounds):
-    """What the rounds of a run say: ([(round, kind, with Arbor, without, µs)] where input is held back, the kinds that were judged, {kind: why it was not})."""
-    held, judged_kinds, silent = [], [], {}
+def never_came(step):
+    """[(what was posted, how many, how many of them reached the far end of the taps)] where fewer arrived than the round says it posted. Where a press falls varies from round to round, so
+    `down` and `forward` are counted together, as `press`. What Arbor passes on under its own mark has arrived."""
+    arrived = {}
+    for _, kind, _, _ in step.arrived:
+        arrived["press" if kind == "down" else kind] = arrived.get("press" if kind == "down" else kind, 0) + 1
+    posted = dict(word.split(":", 1) for word in step.wants.get("posted", "").split(",") if ":" in word)
+    return [(what, int(count), arrived.get(what, 0)) for what, count in sorted(posted.items()) if count.isdigit() and arrived.get(what, 0) < int(count)]
+
+
+def verdicts(rounds, lost=None):
+    """What the rounds of a run say: ([(round, kind, with Arbor, without, µs)] where input is held back, the kinds that were judged, {kind: why it was not}).
+    `lost`: {kind: why}, the kinds of which a round without Arbor did not see all it posted, or does not say what it posted: the instrument's own trouble."""
+    held, judged_kinds, silent = [], [], dict(lost or {})
 
     def half(name, kind):
         told = rounds.get(name, {}).get(kind)
         return told["p50_us"] if told and told["events"] >= EVENTS else None
 
     for kind in KINDS_OF_INPUT:
+        if kind in silent:
+            continue
         limit = HELD_MORE_FORWARD if kind == "forward" else HELD_MORE
         before, after = half("before", kind), half("after", kind)
         if before is None or after is None:
@@ -607,18 +621,39 @@ def verdicts(rounds):
             silent[kind] = f"half of them within {before} µs before Arbor started and within {after} µs after it had quit: the Mac moved"
             continue
         pairs = [(name, half(name, kind), alone) for name, alone in ((name, half(measure, kind)) for name, measure in ROUNDS) if half(name, kind) is not None]
-        if not pairs:
-            silent[kind] = f"fewer than {EVENTS} such events in every round with Arbor"
+        # What one pair finds is found, whatever the other says.
+        held += [(name, kind, told, alone) for name, told, alone in pairs if told > alone + limit]
+        # Both, not one of them: Arbor with an arrangement, its panels and its observers at work is the more telling of the two, and must not go unjudged in silence.
+        if len(pairs) < len(ROUNDS):
+            silent[kind] = f"fewer than {EVENTS} such events in a round with Arbor"
             continue
         judged_kinds.append(kind)
-        held += [(name, kind, told, alone) for name, told, alone in pairs if told > alone + limit]
     return held, judged_kinds, silent
 
 
+def instrument_lost(steps):
+    """{kind: why}: of which kinds a round without Arbor saw less than it posted, or any round does not say what it posted. Then the instrument is at fault, and says nothing."""
+    lost = {}
+    for step in steps:
+        if not step.wants.get("round"):
+            continue
+        if "posted" not in step.wants:
+            lost.update({kind: f"the round `{step.wants['round']}` does not say what it posted" for kind in KINDS_OF_INPUT})
+        elif step.wants["round"] in [measure for _, measure in ROUNDS]:
+            for what, posted, arrived in never_came(step):
+                lost.update({kind: f"only {arrived} of {posted} reached the far end of the taps in the round `{step.wants['round']}`, with no Arbor running"
+                             for kind in (("down", "forward") if what == "press" else (what,))})
+    return lost
+
+
 def hold_rounds_to_account(steps):
-    """A finding at each round with Arbor in which half of the events of a kind took longer than without, by more than is allowed."""
+    """A finding at each round with Arbor in which an event never arrived, or half of the events of a kind took longer than without, by more than is allowed."""
     rounds = (lateness(steps) or {}).get("rounds") or {}
-    for name, kind, told, alone in verdicts(rounds)[0]:
+    for step in steps:
+        if step.wants.get("round") in [name for name, _ in ROUNDS]:
+            for what, posted, arrived in never_came(step):
+                step.find("6", "FAIL", None, f"{posted - arrived} of {posted} events of the kind {what} never reached the apps")
+    for name, kind, told, alone in verdicts(rounds, instrument_lost(steps))[0]:
         step = next(step for step in steps if step.wants.get("round") == name)
         step.find("6", "FAIL", None, f"half of the events of the kind {kind} reached the apps within {told} µs; in the round without Arbor beside it, within {alone} µs")
 
@@ -1593,7 +1628,10 @@ def self_test():
                         time += 400
                         lines += [f"{time} Z 1,2", f"{time} A 10 app"]
                 time += 1000
-                lines.append(f"{time} M end {number} act=instrument round={name} moves=none")
+                posted = {what: sum(late.get(f"{name}_{kind}_events", 12) + late.get(f"{name}_{kind}_dropped", 0) for kind in kinds)
+                          for what, kinds in (("press", ("down", "forward")), ("up", ("up",)), ("key", ("key",)), ("dragged", ("dragged",)), ("scroll", ("scroll",)))}
+                says = "" if late.get(f"{name}_says_nothing") else " posted=" + ",".join(f"{what}:{count}" for what, count in posted.items())
+                lines.append(f"{time} M end {number} act=instrument round={name} moves=none{says}")
                 time += 1000
             with open(samples, "w", encoding="utf-8") as handle:
                 handle.write("\n".join(lines) + "\n")
@@ -1617,8 +1655,18 @@ def self_test():
                  [kind for kind in every_kind if kind != "key"]),
                 ("too few of a kind without Arbor", {"before_scroll_events": EVENTS - 1, "started_scroll": 90000}, [], [kind for kind in every_kind if kind != "scroll"]),
                 ("just enough of them", {"before_scroll_events": EVENTS, "started_scroll": 90000}, [("input-started", "input-held")], every_kind),
-                ("too few in one round with Arbor: the other speaks", {"started_dragged_events": EVENTS - 1, "started_dragged": 90000, "last_dragged": 90000}, [("input-last", "input-held")], every_kind),
-                ("too few in both", {"started_down_events": 2, "last_down_events": 2}, [], [kind for kind in every_kind if kind != "down"])):
+                ("too few in one round with Arbor: what the other finds is found, and the kind is not judged", {"started_dragged_events": EVENTS - 1, "started_dragged": 90000, "last_dragged": 90000},
+                 [("input-last", "input-held")], [kind for kind in every_kind if kind != "dragged"]),
+                ("too few in the last round, and nothing wrong in the first: not judged", {"last_forward_events": EVENTS - 1}, [], [kind for kind in every_kind if kind != "forward"]),
+                ("too few in both", {"started_down_events": 2, "last_down_events": 2}, [], [kind for kind in every_kind if kind != "down"]),
+                ("two of fourteen keys never arrive once Arbor has started: the twelve that do are in good time", {"started_key_dropped": 2}, [("input-started", "input-held")], every_kind),
+                ("one scroll never arrives before the last Quit", {"last_scroll_dropped": 1}, [("input-last", "input-held")], every_kind),
+                ("one press never arrives, whichever kind it would have been", {"started_forward_dropped": 1}, [("input-started", "input-held")], every_kind),
+                ("so many are dropped that too few are left to time: it is found all the same", {"started_key_events": 3, "started_key_dropped": 9}, [("input-started", "input-held")],
+                 [kind for kind in every_kind if kind != "key"]),
+                ("a key never arrives with no Arbor running: the instrument's own trouble", {"before_key_dropped": 1, "started_key": 90000}, [], [kind for kind in every_kind if kind != "key"]),
+                ("… a press: neither kind of press is judged", {"after_down_dropped": 1}, [], [kind for kind in every_kind if kind not in ("down", "forward")]),
+                ("a round that does not say what it posted", {"last_says_nothing": 1}, [], [])):
             got, told = rounds(**late)
             if got != found or told["judged"] != judged_kinds or set(told["silent"]) != set(every_kind) - set(judged_kinds):
                 failures.append(f"rounds of input: {name}: found {got}, judged {told['judged']}, silent {told['silent']}")
