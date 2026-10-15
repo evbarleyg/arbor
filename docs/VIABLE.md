@@ -53,6 +53,7 @@ Until all of it is there the verdict is `INVALID`, for want of evidence: `script
   "share_of_acts_judged_min": 0.9,
   "share_of_runs_that_do_not_count_max": 0.2,
   "sampler": {"late_ms": 100, "share_of_samples_late_max": 0.01, "blind_ms_max": 250},
+  "input": {"release_ms_max": 100, "p99_more_ms_max": 10},
   "detectors": ["moved-unasked", "jolt", "pulled", "flash", "fought", "lost", "stuck", "behind", "focus", "size-lost", "input-held", "slow", "crash", "busy", "left-behind", "told"],
   "controls": {"without_arbor_per_cell_min": 1, "sabotage_runs_min": 1, "sabotage_offences_missed_max": 0},
   "linux": {"walks": 10000, "acts_per_walk": 300, "violations_max": 0, "known_failures_of_severity_1_or_2_max": 0},
