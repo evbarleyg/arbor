@@ -1,0 +1,12 @@
+# mac-shell: scripts/mac-shell/probe-mac-spoil.sh at e843fba, macOS 26.6.2, 2026-10-15T03:53Z
+built Arbor, the pointer tool and the app bundles in 2s
+
+== taking Accessibility away
+before: true
+Successfully reset Accessibility
+after: false
+.ci/scripts/ci-mac-shell.sh: line 68: echo: write error: Broken pipe
+.ci/scripts/ci-mac-shell.sh: line 69: echo: write error: Broken pipe
+mac-shell: it was:  Accessibility for the runner's processes: true
+mac-shell: it is:   Accessibility for the runner's processes: false
+exit code 0
