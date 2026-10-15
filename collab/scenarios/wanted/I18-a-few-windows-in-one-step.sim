@@ -1,0 +1,18 @@
+# Wanted (IDEAS I18; QUESTIONS Q29, 9; board 0.12). Fails until it is answered; then it moves up into collab/scenarios.
+# Story: of five open windows a person picks three. One step, and the three are side by side in the order picked and fill the screen.
+# The other two are not touched. One undo takes it all back. The command's name is its builder's to choose; Go to… runs it for what is ticked.
+open Safari
+open Notes
+open Mail
+open Music
+open Preview
+side-by-side 103 101 104
+expect ok
+expect count docked 3
+expect left-of 103 101
+expect left-of 101 104
+expect still 102
+expect still 105
+undo
+expect count docked 0
+expect size 101 640x420

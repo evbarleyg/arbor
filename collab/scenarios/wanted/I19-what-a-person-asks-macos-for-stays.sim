@@ -1,0 +1,21 @@
+# Wanted (IDEAS I19, I25 a; QUESTIONS Q22 and Q29, 7; board 0.8). Fails until it is answered; then it moves up into collab/scenarios.
+# Story: after Arrange Windows a person double-clicks a title bar, and macOS makes the window fill the screen. It stays so: through time,
+# through a switch to another window and back, and through a neighbour that closes. The second double-click takes it back.
+# `double-click <id>` is the chaos script's word; the plain simulator has to learn it.
+open Safari
+open Notes
+open Mail
+arrange
+double-click 102
+expect ok
+expect still
+expect size 102 1440x875
+wait 5
+expect size 102 1440x875
+focus 101
+focus 102
+expect size 102 1440x875
+close 103
+expect size 102 1440x875
+double-click 102
+expect docked 102

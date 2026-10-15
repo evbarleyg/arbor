@@ -206,10 +206,11 @@ Each window at most once, straight to where it ends up: that holds in every row,
 | Arbor starts for the first time; `idle`; a switch to a window in view; anything done to a floating window but a drag of it | nothing. One exception, at a start and when a window opens: what nobody could get hold of (no 24 points of its title bar on any display) may be fetched, once. Anything else stays: what is found counts as left, and people do park windows three quarters off an edge |
 | Arbor starts again | what was docked when it stopped. No window that is in view goes out of view (Q16) |
 | A window opens | nothing, and the new window stays where its app put it (`newWindows` ships `"float"`) |
-| A dock, by key or drag | that window and the docked windows. **No floating window, ever** (Q20) |
+| A dock, by key or by a drag with ⌘ held | that window and the docked windows. **No floating window, ever** (Q20) |
 | A float; a docked window closes, is minimized or hidden, or comes back | that window and the docked windows. There and back is nothing: hidden and unhidden, every window is where it was |
-| A drag | the dragged window goes where the pointer goes. Everything else waits for the button (`reflowWhileDragging` ships false) |
-| A move of the view; a switch to a window out of view | the docked windows; floating windows only out of view and back to exactly where they were |
+| A drag | the dragged window goes where the pointer goes. Everything else waits for the button (`reflowWhileDragging` ships false). **A plain drag of a floating window is what it is without Arbor** (Q29): nothing of Arbor's shows, nothing else moves at the release. A docked window dragged plainly comes out, and the docked windows close its place |
+| A move of the view; a switch to a window out of view | the docked windows. **No floating window** (Q29 withdraws Q20's one exception) |
+| What a person asks macOS for: a double-click on a title bar, full screen, a size or a place set by hand | what macOS makes of it. **Arbor reverses none of it** (IDEAS I25 a) |
 | A gap or an edge is dragged | the windows on both sides of it |
 | A window is kept in view, let go of again, or dragged or resized while it is kept in view | a docked window that is pinned goes to its own earlier size, once; after that the pinned window moves by the hand only. The docked windows, which make room beside it (Q25) |
 | Pause, resume, Float All, Quit; the permission lost and returned, which is a pause and a resume | anything, once; afterwards `size-lost` and `lost` have their say |
@@ -310,3 +311,16 @@ What the product owner asks of the rubric, whatever else it holds. The first fiv
 | `docs/POLISH.md`, the films of the five moves, the stage's log of frames, the judge | Q |
 | `"part"` and `"parts"` handed to every script by whoever starts a run, counted over all its Macs | O |
 | `make viable`; `viable.py --self-test` as part of `make check`; the workflow that starts a gate, lists its runs for `--runs` and keeps to the queue's priorities. (`scripts/mac-shell/viable.py` itself is there) | O, D |
+
+## 10. Beside the gate: what a person feels
+
+The gate asks whether Arbor does rightly what it does. The first person to work with it quit it for macOS's own tiling, and no detector had said why: none asks whether the person wanted it done (`collab/HANDOFF-2026-10-14-maintainer.md`; `collab/IDEAS.md`, I24 and I25; `collab/QUESTIONS.md`, Q29). So `VIABLE` is no longer enough to hand Arbor to somebody. Beside it, on the same commit, at the switches that ship:
+
+1. **Unasked actions: none.** By section 6's table, in every run that counts: a window the act does not name that moved, and an act of the person's that Arbor reversed. Each is a `FAIL` at the weight of `lost`.
+2. **Against macOS alone: worse on no journey.** The same journeys with Arbor and in the control, scored on steps, keys and surprises.
+3. **The budget is kept**: at most ten default shortcuts, none with a modifier besides ⌃⌥, one item in the menu bar.
+4. **No default of Arbor's is a key of a common app's.**
+5. **No complaint is unanswered**: `collab/scenarios/wanted/` is empty.
+6. **The newcomer's eval**: better than macOS alone, task by task.
+
+Their numbers go into the block of section 1 when each instrument has shown, on the first build, that it catches what the maintainer met.

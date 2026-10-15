@@ -1,0 +1,24 @@
+# Wanted (IDEAS I20 c, I17, I25 a; QUESTIONS Q20 and Q29, 4; board 0.5). Fails until it is answered; then it moves up.
+# Story: three windows lie about. One is docked. The other two stay exactly as they are: same place, same size. Then the docked
+# one fills the screen: the two are still where they were, behind it, and not sent out of view.
+open Safari
+open Notes
+open Mail
+move 102 500 200 640 420
+move 103 700 350 640 420
+dock 101 left
+expect still 102
+expect still 103
+expect at 102 500 200
+expect size 102 640x420
+expect at 103 700 350
+expect size 103 640x420
+zoom 101
+expect fills 101
+expect still 102
+expect still 103
+expect at 102 500 200
+expect at 103 700 350
+zoom 101
+expect still 102
+expect still 103

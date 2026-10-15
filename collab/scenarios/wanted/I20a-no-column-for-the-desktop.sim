@@ -1,0 +1,20 @@
+# Wanted (IDEAS I20 a; QUESTIONS Q28 and Q29, 5; board 0.6). Fails until it is answered; then it moves up into collab/scenarios.
+# Story: two windows, side by side, are two halves of the screen, by two docks or by Arrange Windows. No column is left for the Desktop.
+open Safari
+open Notes
+dock 101 left
+expect size 101 702x851
+dock 102 right
+expect still 101
+expect at 101 12 37
+expect size 101 702x851
+expect at 102 726 37
+expect size 102 702x851
+float-all
+arrange
+expect count docked 2
+expect size 101 702x851
+expect size 102 702x851
+# The Desktop can still be gone to.
+desktop
+expect camera desktop
