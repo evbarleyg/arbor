@@ -672,7 +672,7 @@ extension Controller {
     let target =
       focusHistory.first { candidates[$0] != nil }
       ?? (underPointer.first { workspace.isFloating($0.key) } ?? underPointer.first ?? ordered.first)?.key
-    if let target { system.focus(target) }
+    if let target { askForTheKeyboard(for: target) }
     return target != nil
   }
 

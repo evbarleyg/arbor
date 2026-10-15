@@ -360,7 +360,7 @@ extension Controller {
   func zoom(_ window: WindowID?) -> CommandResult {
     // The shortcut has just un-framed a window that is a tile out here, so the focus went to another one. Pressed
     // again it is still about the first: it goes back and forth, as for any window.
-    if window == nil, let last = unframedIntoATile, last.heir == system.focusedWindow(), isManaged(last.window),
+    if window == nil, let last = unframedIntoATile, last.heir == keyboardFocus(), isManaged(last.window),
       now().timeIntervalSince(last.time) < Self.unframedIsRemembered
     {
       return zoom(last.window)
@@ -389,13 +389,14 @@ extension Controller {
     // stays idempotent, for scripts.
     if window == nil, workspaces[display]!.camera == space, space != tree.root {
       let result = unframe(space, on: display)
-      if isOutOfView(id, on: display), let heir = system.focusedWindow(), heir != id {
+      // Whom the keyboard was asked for, not whom macOS names: it has not had the time to get there.
+      if isOutOfView(id, on: display), let heir = keyboardFocus(), heir != id {
         unframedIntoATile = (id, heir, now())
       }
       return result
     }
     moveCamera(on: display, to: space)
-    system.focus(inFront(of: id, on: display))
+    askForTheKeyboard(for: inFront(of: id, on: display))
     if space == tree.desktop { return .success("showing the Desktop, where \(id) floats") }
     return .success(tree.leaf(containing: id) == nil ? "framed \(name(of: space, on: display))" : "framed \(id)")
   }

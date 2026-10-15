@@ -155,6 +155,48 @@ import Testing
     #expect(h.workspace.camera == h.workspace.tree.root)
   }
 
+  /// Across apps a Mac moves the keyboard only after the call has returned. Asked in the same breath who has it, it still names the
+  /// window that has just gone out of view, so nothing was remembered, and the next press framed whoever had the keyboard by then.
+  @Test func alsoWhenMacOSTakesAMomentToMoveTheKeyboard() throws {
+    let (h, big) = framedOnATile()
+    h.system.focusIsSlow = true
+    h.run("zoom")
+    #expect(h.workspace.camera == h.workspace.tree.root)
+    let heir = try #require(h.system.focusRequests.last)
+    #expect(heir != big)
+    h.system.finishSlowFocus()
+    #expect(h.system.focusedWindow() == heir)
+    h.run("zoom")
+    #expect(h.workspace.camera == h.workspace.tree.leaf(containing: big), "and not \(heir)")
+    h.system.finishSlowFocus()
+    #expect(h.system.focusedWindow() == big)
+    h.run("zoom")
+    #expect(h.workspace.camera == h.workspace.tree.root)
+  }
+
+  /// The key pressed twice in one roll of the fingers.
+  @Test func andWhenTheSecondPressComesBeforeMacOSHasMovedIt() {
+    let (h, big) = framedOnATile()
+    h.system.focusIsSlow = true
+    h.run("zoom")
+    #expect(h.workspace.camera == h.workspace.tree.root)
+    h.run("zoom")
+    #expect(h.workspace.camera == h.workspace.tree.leaf(containing: big))
+    h.system.finishSlowFocus()
+    #expect(h.system.focusedWindow() == big)
+  }
+
+  /// Whom Arbor asked for counts for a moment only, and not against a person.
+  @Test func aClickWhileMacOSIsStillOnItsWayHasTheLastWord() {
+    let (h, big) = framedOnATile()
+    h.system.focusIsSlow = true
+    h.run("zoom")
+    let other = h.workspace.tree.allWindows.first { $0 != big && $0 != h.system.focusRequests.last }!
+    h.system.userFocus(other)
+    h.run("zoom")
+    #expect(h.workspace.camera == h.workspace.tree.leaf(containing: other))
+  }
+
   @Test func afterTheUserPicksAnotherWindowTheShortcutIsAboutThatOne() {
     let (h, big) = framedOnATile()
     h.run("zoom")

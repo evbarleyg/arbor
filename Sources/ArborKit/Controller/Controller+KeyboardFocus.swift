@@ -153,6 +153,19 @@ extension Controller {
     // macOS reports the change a moment later. Hearing of it now puts it in the history and tells the
     // observers before the command returns; hearing it again from macOS does no harm.
     windowFocused(window)
+    noteFocusRequest(for: window, replacing: replaced)
+  }
+
+  /// Asks macOS to give `window` the keyboard, and remembers having asked until macOS has got there. Across apps a Mac moves the
+  /// keyboard only after the call has returned: whoever asks it in the same breath who has the keyboard is told the old window.
+  /// `keyboardFocus()` knows better. (Nothing comes into view for it, and nobody is told: that is `giveFocus`.)
+  func askForTheKeyboard(for window: WindowID) {
+    let replaced = focusRequest
+    system.focus(window)
+    noteFocusRequest(for: window, replacing: replaced)
+  }
+
+  private func noteFocusRequest(for window: WindowID, replacing replaced: FocusRequest?) {
     guard system.focusedWindow() != window else {
       focusRequest = nil
       return
