@@ -228,7 +228,7 @@ public final class ArborApp: NSObject, NSApplicationDelegate {
         onGesture: { [weak self] update in self?.controller.gesture(update) },
         // A press that a tap holds back reaches no monitor, and a press ends a motion all the same.
         onPress: { [weak self] in self?.controller.pointerPressed() })
-      // Its watchdog looks once a second, and what it finds out about the permission concerns more than the taps.
+      // The taps' thread keeps asking, and what it finds out about the permission concerns more than the taps.
       input.onPermissionChange = { [weak self] in self?.controller.askAboutAccessibility(beyondDoubt: true) }
       input.update()
       input.publish(controller.desktopGuardZones())

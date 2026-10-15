@@ -20,7 +20,7 @@ Arbor cannot prevent this. It can notice at once, stop pretending, say what is g
 
 - Arbor asks macOS every 2 s whether it still may (1 s while it may not). One "no" is not believed (the privacy daemon restarts now and then); Arbor asks again half a second later, and believes the second.
 - Before every command that is not a query it asks as well, and there one "no" is enough: a command must never pretend. The same before a peek (F51), which begins without a command. Commands can come tens to the second (a held shortcut, the steps of a pinch), so within a second of a thorough "yes" only the flag is read; if the flag lags, the refused calls that follow are heard.
-- The pointer taps' own watchdog (once a second, because a tap held without permission can stop all input) reports what it finds, which counts as a second opinion.
+- The pointer taps' own watchdog (every 0.15 s on the taps' own thread, because macOS 26 was seen to drop all input while a process has taps and not the permission: `TapPermission`) reports what macOS tells it, which counts as a second opinion. That macOS said nothing in time takes the taps out and counts for nothing else.
 - So does a call that macOS refuses because Accessibility is disabled: not everything that moves windows is a command (a drop, a window that closes, a gap that is dragged).
 
 **Stopping.** Nothing is moved: it could not be, and if the alarm was false nothing shows. Arbor saves the arrangement and the view, removes its own tiles, gap handles, previews and focus ring (they would

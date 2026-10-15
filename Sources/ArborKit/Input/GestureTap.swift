@@ -142,12 +142,6 @@ final class GestureTap {
     keyMonitors = [global, local].compactMap { $0 }
   }
 
-  /// See `EventTap.reviveIfSwitchedOff`.
-  func revive() {
-    tap?.reviveIfSwitchedOff()
-    scrollTap?.reviveIfSwitchedOff()
-  }
-
   var isInstalled: Bool { tap != nil || scrollTap != nil }
 
   /// The names of the taps installed now, for `doctor`.
