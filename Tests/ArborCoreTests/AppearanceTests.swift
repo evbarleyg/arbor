@@ -309,4 +309,43 @@ import Testing
       }
     }
   }
+
+  /// By the gap's width: how many points across each shape is, from the outside in.
+  @Test(arguments: [
+    (2, []), (3, [3, 1]), (4, [4, 2]), (5, [5, 3, 1]), (6, [6, 4, 2]), (7, [6, 4, 2]), (12, [6, 4, 2]), (13, [6, 4, 2]), (40, [6, 4, 2]),
+  ] as [(CGFloat, [CGFloat])])
+  func withIncreaseContrastTheHandleIsBlackRoundWhiteRoundACore(gap: CGFloat, across: [CGFloat]) throws {
+    func isOnWholePoints(_ rect: CGRect) -> Bool {
+      [rect.minX, rect.minY, rect.width, rect.height].allSatisfy { $0 == $0.rounded() }
+    }
+    for axis in Axis.allCases {
+      // Where a layout's weights put it: not always on a whole point.
+      for start: CGFloat in [0, 457, 457.5] {
+        let seam =
+          axis == .vertical
+          ? CGRect(x: 12, y: start, width: 464, height: gap) : CGRect(x: start, y: 37, width: gap, height: 851)
+        let shapes = SeamHandle.strongShapes(pill: try #require(SeamHandle.pill(in: seam, axis: axis)), in: seam)
+        // Half a point of the gap is lost at either end to the whole points.
+        guard start == start.rounded() else {
+          for shape in shapes { #expect(seam.contains(shape) && isOnWholePoints(shape), "\(shape) in \(seam)") }
+          continue
+        }
+        #expect(shapes.map { min($0.width, $0.height) } == across, "\(axis), from \(start)")
+        for (shape, next) in zip(shapes, shapes.dropFirst()) { #expect(next == shape.insetBy(dx: 1, dy: 1)) }
+        for shape in shapes { #expect(seam.contains(shape) && isOnWholePoints(shape), "\(shape) in \(seam)") }
+        // In the middle wherever whole points allow: six in seven cannot be.
+        if let outer = shapes.first, Int(gap - min(outer.width, outer.height)) % 2 == 0 {
+          #expect(outer.midX == seam.midX || axis == .vertical)
+          #expect(outer.midY == seam.midY || axis == .horizontal)
+        }
+      }
+    }
+  }
+
+  @Test func whatCannotBeDrawnHasNoShapes() {
+    let seam = CGRect(x: 0, y: 0, width: 400, height: 12)
+    #expect(SeamHandle.strongShapes(pill: .null, in: seam).isEmpty && SeamHandle.strongShapes(pill: .zero, in: seam).isEmpty)
+    #expect(SeamHandle.strongShapes(pill: CGRect(x: 182, y: 4, width: 36, height: 4), in: .null).isEmpty)
+    #expect(SeamHandle.strongShapes(pill: CGRect(x: 182, y: 40, width: 36, height: 4), in: seam).isEmpty, "beside its seam")
+  }
 }

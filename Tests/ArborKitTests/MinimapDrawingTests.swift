@@ -187,6 +187,31 @@
       #expect(canvas.pixel(view.midX, view.minY - 5).isNear(backing(isDark: false)), "and nothing beyond the line")
     }
 
+    /// Whatever its app's colour: one of the ground's own brightness was not there at all.
+    @Test func everyWindowHasALineRoundItAndAFullOneWithIncreaseContrast() throws {
+      // One window framed: over the other two no tint of the view's lies.
+      let tree = threeWindows()
+      let model = try model(tree, camera: tree.leaf(containing: window(2)))
+      let paper = backing(isDark: false)
+      for strong in [false, true] {
+        let canvas = try Canvas(size: model.frame.size, scale: 2)
+        canvas.draw(isDark: false) {
+          paper.colour.setFill()
+          CGRect(origin: .zero, size: model.frame.size).fill()
+          // Every window in the paper's own colour.
+          MinimapDrawing.draw(model, accent: accent.colour, ink: ink(isDark: false).colour, increasesContrast: strong) { _ in
+            paper.colour
+          }
+        }
+        #expect(model.items.contains { $0.isInView } && model.items.contains { !$0.isInView })
+        for item in model.items {
+          let edge = canvas.pixel(item.frame.minX + 0.5, item.frame.midY)
+          #expect(!edge.isNear(paper, within: 0.2), "\(item.window), strong: \(strong)")
+          if !item.isInView, strong { #expect(edge.isNear(ink(isDark: false), within: 0.1), "\(item.window)") }
+        }
+      }
+    }
+
     @Test func theDesktopIsAnOutline() throws {
       let tree = threeWindows()
       let model = try model(tree, camera: tree.leaf(containing: window(2)))

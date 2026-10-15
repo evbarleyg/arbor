@@ -185,4 +185,22 @@ public enum SeamHandle {
     let size = axis == .horizontal ? CGSize(width: across, height: along) : CGSize(width: along, height: across)
     return CGRect(x: seam.midX - size.width / 2, y: seam.midY - size.height / 2, width: size.width, height: size.height)
   }
+
+  /// With Increase Contrast: `pill` as capsules to fill one on the other, from the outside in: a point of black, a point of white,
+  /// the core. On whole points: a line stroked along the pill's edge fell on two rows of pixels at half strength (seen on a
+  /// hosted Mac). The black lies round the pill as far as `seam` has the room, and else takes the pill's own outermost point.
+  /// Four points across have no room for a core, and under three there is none for two tones: nothing then, and the pill is drawn as
+  /// without the setting. All in black it would not be there at all on a dark wallpaper.
+  public static func strongShapes(pill: CGRect, in seam: CGRect) -> [CGRect] {
+    guard RoundedPath.isDrawable(pill), RoundedPath.isDrawable(seam) else { return [] }
+    let whole = CGRect(
+      x: pill.minX.rounded(), y: pill.minY.rounded(), width: pill.width.rounded(), height: pill.height.rounded())
+    let (left, top) = (seam.minX.rounded(.up), seam.minY.rounded(.up))
+    let room = CGRect(x: left, y: top, width: seam.maxX.rounded(.down) - left, height: seam.maxY.rounded(.down) - top)
+    guard RoundedPath.isDrawable(room), whole.overlaps(room) else { return [] }
+    let outer = whole.insetBy(dx: -1, dy: -1).intersection(room)
+    let across = min(outer.width, outer.height)
+    guard across >= 3 else { return [] }
+    return ([0, 1, 2] as [CGFloat]).filter { across - 2 * $0 >= 1 }.map { outer.insetBy(dx: $0, dy: $0) }
+  }
 }

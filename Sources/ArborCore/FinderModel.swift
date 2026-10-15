@@ -96,6 +96,9 @@ public struct FinderModel: Equatable, Sendable {
       self.bundleID = bundleID
     }
 
+    /// `detail` as a row shows it: nothing where the window is called what its app is called ("Maps  Maps").
+    public var shownDetail: String { detail == name ? "" : detail }
+
     /// What is searched. Only a space's name is a person's own word for a place: typed in full, it is what they mean.
     public var candidate: FinderCandidate {
       FinderCandidate(name: name, detail: detail, isAName: place == .namedSpace, isACommand: place == .command)
@@ -376,7 +379,7 @@ public struct FinderSession: Equatable, Sendable {
   public var text: String {
     var lines = ["go to: \(query)"]
     for (place, item) in items.enumerated() {
-      let detail = item.row.detail.isEmpty ? "" : "  \(item.row.detail)"
+      let detail = item.row.shownDetail.isEmpty ? "" : "  \(item.row.shownDetail)"
       let mark = item.isSelected ? ">" : " "
       let tick = item.tick.map { "  [\($0)]" } ?? ""
       lines.append("\(mark) \(place + 1) \(item.row.destination)  \(item.row.name)\(detail)  (\(item.row.note))\(tick)")
