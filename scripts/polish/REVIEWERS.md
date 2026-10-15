@@ -25,6 +25,10 @@ the colour of the app's icon, with the icon on it. That cards are used instead o
    For a scene of kind `drag`, two more, in the same form, about the time while the button is down:
    - D3 The drop preview comes and goes softly, once: a fade of some 80 to 250 ms, no blink, no second coming while the pointer rests.
    - D4 Others make room in one motion: windows that are not dragged move once, eased, together, or not at all.
+   In a scene of kind `aside` macOS itself acts (it tiles the window that was dragged to the screen's edge) and Arbor stands aside. Do not hold macOS's own motion against Arbor. Ask of E1 and E4:
+   would somebody who has never seen Arbor understand what happened, whose doing it was, and what to do next to dock the window?
+   A scene named `on-…` is the same move with Arbor's gestures switched on and macOS's own tiling off. In a scene without that prefix every switch is as it ships: if the gesture does nothing there, say
+   so in E1 to E4 as misses (a person made the gesture and nothing answered). That is no void film: it is what ships.
    "Looks fine" is not a verdict. A pass also says what you saw.
 5. Note anything else a person would notice that no check names ("other").
 6. If the film does not show its scene at all (the key did nothing, the click went elsewhere, the panel is in no frame), say so in "void", in a sentence: nothing in it is counted then.

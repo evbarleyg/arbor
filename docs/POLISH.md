@@ -29,8 +29,10 @@ the scenes for tabs, double clicks and continuous zoom are in the sum from the f
 
 - **The Mac**: GitHub's `macos-26` runner, one display of 1024 × 768 at 1x; a virtual Retina display for pictures at 2x. macOS at
   its default settings (its own edge tiling on, click-wallpaper on): the runners come with Reduce Motion and Reduce Transparency on, and the script switches both off.
-- **Arbor**: as it ships, but for one switch: "Trackpad and mouse gestures" (`pointerGestures`), which ships off, is on in the sessions that film the five moves, because two of them are gestures.
-  Every session records a trace (`docs/TRACES.md`), which comes back beside the films.
+- **Arbor, in two columns.** **As it ships**: every switch of Arbor's and of macOS's as it comes. This is the score, and what the gate reads. A move that does nothing as shipped is filmed doing
+  nothing, and scores nothing. **With everything on** (`on-…`): the moves again with "Trackpad and mouse gestures" on and macOS's own tiling off. The laboratory's own column, for climbing: it says how good
+  a move will be the day it ships, and passes no gate.
+- Every session records a trace (`docs/TRACES.md`), which comes back beside the films.
 - **The windows**: `ArborTestWindows`, each one flat colour, on a plain wallpaper: a window is then a rectangle that a script can find in every
   frame to the pixel. Each is an app of its own (`cast_start`), with a name and an icon in the window's colour, because a person's windows are not all
   one app's, and cards that all look alike are harder on the eye, and on the ruler, than anybody's desk.
@@ -142,7 +144,7 @@ The scenes of the five moves, and `frame`, are filmed twice: in light mode on a 
 | Scene | Kind | What the person does | Move |
 |---|---|---|---|
 | `tab-make`, `tab-change`, `tab-drag-group` | drag, structure, drag | drops a window on the middle of another; ⌃⌥⇥; drags the group to an edge | 1 (not landed: unseen) |
-| `dock-drag-edge` | drag | drags a window to the bottom edge, waits, lets go (with macOS's own tiling on, as a Mac comes, the other three edges are macOS's) | 2 |
+| `dock-drag-edge` | aside | drags a window to the left edge of the screen, waits, lets go. On a Mac as it comes that edge is macOS's: it tiles the window, Arbor stands aside and says so. What moves is macOS's to answer for; asked of Arbor: M1, M8, M9, M11, M13, and by eye whether a stranger understands what happened and what to do next. With everything on it is a `drag` like the others | 2 |
 | `dock-drag-beside` | drag | drags a window onto a part of a docked one: a space inside a space | 2 |
 | `rearrange` | drag | drags a docked window to another place | 2 |
 | `tile`, `tile-open`, `tile-back` | structure, camera, camera | docks a window that is too large for its slot; clicks the tile; ⌃⌥[ (light only) | 2 |
@@ -162,6 +164,7 @@ The scenes of the five moves, and `frame`, are filmed twice: in light mode on a 
 | `quit` | instant | quits Arbor: every window gets its own size back, at once | |
 | `reduced-dock-key`, `reduced-frame`, `reduced-show-everything` | instant | the same keys with Reduce Motion on | |
 | `eight-frame`, `eight-show-everything` | camera | the same keys with eight windows docked on a display of 1920 × 1080 | |
+| `on-…`, `on-dark-…` | | the scenes of the moves with everything on: the second column | |
 | `pictures-…` | | the same with `windowPictures`, which ships off: judged and reported, **not counted** | |
 | `drag-alone` | bare | a drag that Arbor leaves alone (⌘ held): what macOS does by itself, to hold D1 against. Not counted | |
 | `metronome-…` | control | the camera's own square: tests the instruments, not counted | |
@@ -172,8 +175,8 @@ shortcuts, the name field, the menu, the settings window, the coach, the setup c
 ## The score
 
 Every check that is asked of a scene is a cell. A cell that passes earns its severity's points; a miss, or a cell nobody could see,
-earns nothing. **Score = 100 × points earned ÷ points there are.** `judge.py score` prints the table, the findings with the frames that show them,
-and the number; beside it, how much of the table has been seen at all.
+earns nothing. **Score = 100 × points earned ÷ points there are**, as it ships. `judge.py score` prints the table, the findings with the frames that show them,
+and the number; beside it, how much of the table has been seen at all, and the number with everything on: the same table with the scenes of the moves taken from the `on-…` films.
 
 **The rubric passes** (issue #4, "Definition of viable"; `docs/VIABLE.md`) when no cell of severity 1 or 2 in a scene of the five moves, light or dark, misses or is unseen, and the score is at least 90.
 
@@ -192,9 +195,9 @@ new table, in the same commit, so that a longer table is never mistaken for a wo
 
 ## Scoreboard
 
-Restated on 2026-10-15 under a table 112 points longer (S4 on glass, S7): run 1 was 36.6 and run 2 was 42.8 under the table they were first scored by.
+Restated on 2026-10-15 under the table as it is now (S4 on glass and S7 added; the drag to an edge asked as `aside`): run 1 was 36.6 and run 2 was 42.8 under the table they were first scored by. In both, gestures still shipped on and the edges were Arbor's, so the two columns are one.
 
-| Date (UTC) | Commit | Score | Seen | Severity 1 misses | Note |
-|---|---|---|---|---|---|
+| Date (UTC) | Commit | Score, as it ships | With everything on | Seen | Severity 1 misses | Note |
+|---|---|---|---|---|---|---|
 | 2026-10-14 23:27 | `a391fe4` | **35.6** | 48% | 36 | Run 1 (`collab/polish/run-1.md`). Tabs, double clicks, the followed pinch and all stills unseen; four films void |
 | 2026-10-15 01:38 | `302a0b0` | **41.6** | 54% | 41 | Run 2 (`collab/polish/run-2.md`). A cast of four apps, panels in the picture; two films void |

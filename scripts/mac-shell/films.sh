@@ -9,15 +9,17 @@
 # afterwards: all of it. The script checks only that its scenes played; it has no opinion on how they looked.
 #
 # 1. The metronome: the camera and the judge are tried on a motion that is known, right once and wrong in five ways.
-# 2. Arbor at macOS's default settings (GitHub's Macs come with Reduce Motion and Reduce Transparency on: both are switched off), as it
-#    ships but for one switch: "Trackpad and mouse gestures", because two of the moves are gestures. The moves (below), then
+# 2. Arbor as it ships, at macOS's default settings (GitHub's Macs come with Reduce Motion and Reduce Transparency on: both are switched
+#    off). The moves (below), whether or not they do anything as shipped, then
 #    the rest of the camera, peek, a seam, Arbor's own panels, quitting; then docking by key, floating, undo and closing.
 # 3. A window too large for its slot: the tile, and opening it.
 # 4. The moves again in dark mode, on a light wallpaper, where shadows and dark lines show.
 # 5. With Reduce Motion on: the same result at once, and no stage.
 # 6. With pictures of the windows (`windowPictures`, which ships off): judged, not counted.
 # 7. Eight windows on a large display.
-ARBOR_TIME_LIMIT=1050
+# 8. The moves again, light and dark, with everything on: "Trackpad and mouse gestures", and macOS's own tiling off. The laboratory's own
+#    column: how good a move is once it ships. No gate reads it.
+ARBOR_TIME_LIMIT=1120
 source "$(dirname "$0")/lib-film.sh"
 needs_throwaway_mac "film the whole display, and change Reduce Motion, the appearance, the wallpaper and the display's size"
 
@@ -38,6 +40,9 @@ home() {
 
 # Two columns of two: W4 over W2 on the left, W3 over W1 on the right.
 arrange() {
+  # From nothing, so that the shares are even whatever the scenes before have left.
+  ctl float-all
+  sleep 1
   ctl dock "$W4" left
   ctl dock "$W3" right
   ctl dock "$W2" beside "$W4" bottom
@@ -45,16 +50,28 @@ arrange() {
   sleep 1.5
 }
 
-# moves <prefix>: what docs/POLISH.md calls the five moves, as far as Arbor has them, from four floating windows.
+# moves <prefix> shipped|on: what docs/POLISH.md calls the five moves, as far as Arbor has them, from four floating windows.
+# shipped: every switch of Arbor's and of macOS's as it comes. A move that does nothing then is filmed doing nothing: that is its score.
+# on: the session has switched Arbor's gestures on and macOS's own tiling off, and every scene has to play.
 moves() {
-  local p=$1 x y w h x2 y2 w2 h2 view
+  local p=$1 how=$2 x y w h x2 y2 w2 h2 view
   read -r x y w h <<< "$(screen_of 1)"
-  # The bottom edge: with macOS's own tiling on, as a Mac comes, the other three are macOS's, and Arbor stands aside there.
-  scene "${p}dock-drag-edge" drag "drags a window by its title bar to the bottom edge, waits, lets go"
-  # shellcheck disable=SC2046
-  hold_drag $(titlebar_of "$W4") $((x + w / 2)) $((y + h - 3)) --duration 0.8
-  scene_end
-  check "the dragged window docked" is docked "$W4"
+  if [ "$how" = shipped ]; then
+    # As a person meets it on a Mac as it comes: the edge is macOS's, which tiles the window; Arbor stands aside, and says so.
+    scene "${p}dock-drag-edge" aside "drags a window by its title bar to the left edge of the screen, waits, lets go"
+    # shellcheck disable=SC2046
+    hold_drag $(titlebar_of "$W4") "$x" $((y + h / 2)) --duration 0.8
+    scene_end 4
+    summary
+    ctl dock "$W4" left
+    sleep 1.5
+  else
+    scene "${p}dock-drag-edge" drag "drags a window by its title bar to the left edge of the screen, waits, lets go"
+    # shellcheck disable=SC2046
+    hold_drag $(titlebar_of "$W4") $((x + 3)) $((y + h / 2)) --duration 0.8
+    scene_end
+    check "the dragged window docked" is docked "$W4"
+  fi
 
   read -r x y w h <<< "$(frame_of "$W4")"
   scene "${p}dock-drag-beside" drag "drags a window onto the right part of a docked one, waits, lets go"
@@ -90,7 +107,7 @@ moves() {
   scene "${p}rectangle" drag "holds ⌃⌥ and drags a rectangle over the left column"
   drag $((x + 30)) $((y + 60)) $((x2 + w2 - 30)) $((y2 + h2 - 30)) --mods ctrl+opt --duration 0.7 --hold 0.3
   scene_end
-  played "${p}rectangle" "$view"
+  [ "$how" = shipped ] || played "${p}rectangle" "$view"
 
   scene "${p}save-view" panel "presses ⌃⌥⇧1"
   key ctrl+opt+shift+1
@@ -100,7 +117,7 @@ moves() {
   scene "${p}view" camera "presses ⌃⌥1"
   key ctrl+opt+1
   scene_end
-  played "${p}view" "$view"
+  [ "$how" = shipped ] || played "${p}view" "$view"
   home
 
   # shellcheck disable=SC2046
@@ -110,12 +127,12 @@ moves() {
   scene "${p}pinch-in" camera "holds ⌥ and spreads two fingers over a window"
   pinch "$1" "$2" 0.8 --opt
   scene_end
-  [ -n "${ARBOR_REHEARSAL:-}" ] || played "${p}pinch-in" "$view"
+  [ "$how" = shipped ] || [ -n "${ARBOR_REHEARSAL:-}" ] || played "${p}pinch-in" "$view"
   view=$(view_now)
   scene "${p}pinch-out" camera "holds ⌥ and pinches"
   pinch "$1" "$2" -0.8 --opt
   scene_end
-  [ -n "${ARBOR_REHEARSAL:-}" ] || played "${p}pinch-out" "$view"
+  [ "$how" = shipped ] || [ -n "${ARBOR_REHEARSAL:-}" ] || played "${p}pinch-out" "$view"
   home
 }
 
@@ -163,18 +180,10 @@ ARBOR_TEST_WINDOWS_ARGS="--regular"
 # Shortcuts on, as a person has them; and the two panels that keep out of shared screens let the camera see them.
 FACE="ARBOR_NO_HOTKEYS=0 ARBOR_PANELS_IN_PICTURES=1"
 
-# Once, for whoever wonders whether macOS's own recorder would do: it is not what the films are made with.
-if [ -z "${ARBOR_REHEARSAL:-}" ]; then
-  step "macOS's own recorder, for three seconds"
-  limit 15 screencapture -v -V 3 -x "$ARBOR_OUT/own-recorder.mov" < /dev/null > "$ARBOR_OUT/own-recorder.log" 2>&1
-  echo "exit code $?, $(du -k "$ARBOR_OUT/own-recorder.mov" 2>/dev/null | cut -f 1) KB; it said: $(head -c 300 "$ARBOR_OUT/own-recorder.log")"
-fi
-
 step "1. the metronome"
 for kind in good linear slow twice hop flash; do metronome "$kind"; done
 
 step "2. Arbor as it ships"
-arbor_settings "{$ARBOR_GESTURES_ON}"
 cast_start 4 $FACE ARBOR_NO_STATUS_ITEM=0
 # The Dock grows by an icon, which changes the room there is.
 sleep 3
@@ -187,7 +196,7 @@ set -- $(titlebar_of "$W4")
 drag "$1" "$2" $(($1 - 120)) $(($2 + 90)) --duration 0.8 --mods cmd
 scene_end 1
 
-moves ""
+moves "" shipped
 summary
 shot still-everything
 
@@ -348,10 +357,9 @@ ARBOR_TEST_WINDOWS_ARGS="--regular"
 step "4. dark, on a light wallpaper"
 appearance dark
 wallpaper "#b9bec6"
-arbor_settings "{$ARBOR_GESTURES_ON}"
 cast_start 4 $FACE ARBOR_NO_STATUS_ITEM=0
 sleep 3
-moves dark-
+moves dark- shipped
 shot still-dark-everything
 cast_stop
 appearance light
@@ -388,5 +396,25 @@ scene eight-show-everything camera "presses ⌃⌥Space"
 key ctrl+opt+space
 scene_end
 cast_stop
+
+display_size 1024 768
+
+step "8. the moves with everything on: Arbor's gestures, and every edge Arbor's"
+macos_tiling off
+arbor_settings "{$ARBOR_GESTURES_ON}"
+cast_start 4 $FACE ARBOR_NO_STATUS_ITEM=0
+sleep 3
+moves on- on
+cast_stop
+appearance dark
+wallpaper "#b9bec6"
+arbor_settings "{$ARBOR_GESTURES_ON}"
+cast_start 4 $FACE ARBOR_NO_STATUS_ITEM=0
+sleep 3
+moves on-dark- on
+cast_stop
+appearance light
+wallpaper "#000000"
+macos_tiling on
 
 camera_stop

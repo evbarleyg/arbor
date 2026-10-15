@@ -43,7 +43,8 @@ WEIGHT = {1: 5, 2: 3, 3: 1}
 
 MOVES = ("camera", "structure", "control")
 SETTLES = MOVES + ("drag", "follow")
-ALL = SETTLES + ("hold", "instant", "panel")
+# aside: macOS acts and Arbor stands aside. What moves is macOS's to answer for; Arbor's part is to add nothing, and to say what happened.
+ALL = SETTLES + ("hold", "instant", "panel", "aside")
 # Of Arbor's own windows, the levels of those that have no business on screen once things are at rest: the drop preview, the stage.
 PASSING = (3, 4)
 
@@ -515,7 +516,7 @@ EYES = [
 # failed or because Arbor cannot do it yet, scores nothing.
 MOVES_FILMED_TWICE = [
     ("tab-make", "drag", 1), ("tab-change", "structure", 1), ("tab-drag-group", "drag", 1),
-    ("dock-drag-edge", "drag", 2), ("dock-drag-beside", "drag", 2), ("rearrange", "drag", 2),
+    ("dock-drag-edge", "aside", 2), ("dock-drag-beside", "drag", 2), ("rearrange", "drag", 2),
     ("double-click-desktop", "camera", 3), ("double-click-again", "camera", 3), ("double-click-title", "camera", 3),
     ("rectangle", "drag", 4), ("save-view", "panel", 4), ("view", "camera", 4),
     ("show-everything", "camera", 5), ("pinch-in", "camera", 5), ("pinch-out", "camera", 5), ("zoom-continuous", "follow", 5),
@@ -531,6 +532,10 @@ SCENES = MOVES_FILMED_TWICE + [("dark-" + name, kind, move) for name, kind, move
     ("reduced-dock-key", "instant", 0), ("reduced-frame", "instant", 0), ("reduced-show-everything", "instant", 0),
     ("eight-frame", "camera", 0), ("eight-show-everything", "camera", 0),
 ]
+
+# The laboratory's own column: the same table, with every scene of the moves taken from the session in which Arbor's gestures are on and
+# macOS's own tiling is off (`on-…`), where it was filmed. There the drag to an edge is Arbor's.
+ON = {"dock-drag-edge": "drag"}
 
 # Whatever Arbor draws of its own, and what is asked of a picture of each (docs/POLISH.md, "Panels"): check, severity.
 PANELS = ["heads-up line", "drop preview", "tile", "seam", "focus ring", "peek outline", "rectangle", "minimap", "go to", "shortcuts",
@@ -675,54 +680,63 @@ def score(folder, eyes_path=None, stills_path=None, out=sys.stdout):
     if seen_by_eye and str(seen_by_eye.get("run")) not in os.path.basename(os.path.normpath(folder)):
         raise SystemExit(f"judge.py: {eyes_path} is about run {seen_by_eye.get('run')}, not about {folder}")
     eyes, stills = seen_by_eye.get("scenes", {}), read(stills_path).get("panels", {})
-    cells = []  # (scene or panel, check, title, severity, move, Verdict)
-    table = []
-    for name, kind, move in SCENES:
-        row = {}
-        for identifier, title, severity, kinds, _ in CHECKS:
-            if kind not in kinds:
-                continue
-            verdict = results[name][1].get(identifier) if name in results else Verdict(UNSEEN, "not filmed")
-            if verdict is None:
-                verdict = Verdict(UNSEEN, f"filmed as {results[name][0]['film'].kind}, not as {kind}")
-            # What the ruler cannot measure yet, eyes may settle.
-            by_eye = eyes.get(name, {}).get(identifier)
-            if verdict.said == not_yet(None, None).said and by_eye:
-                verdict = Verdict(by_eye["status"], by_eye["said"], by_eye.get("frames", []))
-            # A miss that somebody with eyes could not find in the frames is no finding. It is no pass either: nothing was measured.
-            fooled = eyes.get(name, {}).get("refuted", {}).get(identifier)
-            if verdict.status == MISS and fooled:
-                verdict = Verdict(UNSEEN, "the ruler was fooled, say eyes")
-            if eyes.get(name, {}).get("void"):
-                verdict = Verdict(UNSEEN, "the film does not show its scene, say eyes")
-            cells.append((name, identifier, title, severity, move, verdict))
-            row[identifier] = verdict.status
-        for identifier, title, severity in EYES:
-            seen = eyes.get(name, {}).get(identifier) if name in results and not eyes.get(name, {}).get("void") else None
-            verdict = Verdict(seen["status"], seen["said"], seen.get("frames", [])) if seen else Verdict(UNSEEN, "nobody has gone through the sheet")
-            cells.append((name, identifier, title, severity, move, verdict))
-            row[identifier] = verdict.status
-        table.append((name, kind, move, row))
-    for panel in PANELS:
-        for identifier, severity in STILLS:
-            seen = stills.get(panel, {}).get(identifier)
-            verdict = Verdict(seen["status"], seen["said"]) if seen else Verdict(UNSEEN, "no picture has been measured")
-            cells.append((panel, identifier, "", severity, 0, verdict))
+    def column(everything_on):
+        """(cells, table): a cell is (scene or panel, check, title, severity, move, Verdict)."""
+        cells, table = [], []
+        for name, kind, move in SCENES:
+            plain = name[5:] if name.startswith("dark-") else name
+            twin = ("on-dark-" if name.startswith("dark-") else "on-") + plain
+            if everything_on and twin in results:
+                name, kind = twin, ON.get(plain, kind)
+            row = {}
+            for identifier, title, severity, kinds, _ in CHECKS:
+                if kind not in kinds:
+                    continue
+                verdict = results[name][1].get(identifier) if name in results else Verdict(UNSEEN, "not filmed")
+                if verdict is None:
+                    verdict = Verdict(UNSEEN, f"filmed as {results[name][0]['film'].kind}, not as {kind}")
+                # What the ruler cannot measure yet, eyes may settle.
+                by_eye = eyes.get(name, {}).get(identifier)
+                if verdict.said == not_yet(None, None).said and by_eye:
+                    verdict = Verdict(by_eye["status"], by_eye["said"], by_eye.get("frames", []))
+                # A miss that somebody with eyes could not find in the frames is no finding. It is no pass either: nothing was measured.
+                fooled = eyes.get(name, {}).get("refuted", {}).get(identifier)
+                if verdict.status == MISS and fooled:
+                    verdict = Verdict(UNSEEN, "the ruler was fooled, say eyes")
+                if eyes.get(name, {}).get("void"):
+                    verdict = Verdict(UNSEEN, "the film does not show its scene, say eyes")
+                cells.append((name, identifier, title, severity, move, verdict))
+                row[identifier] = verdict.status
+            for identifier, title, severity in EYES:
+                seen = eyes.get(name, {}).get(identifier) if name in results and not eyes.get(name, {}).get("void") else None
+                verdict = Verdict(seen["status"], seen["said"], seen.get("frames", [])) if seen else Verdict(UNSEEN, "nobody has gone through the sheet")
+                cells.append((name, identifier, title, severity, move, verdict))
+                row[identifier] = verdict.status
+            table.append((name, kind, move, row))
+        for panel in PANELS:
+            for identifier, severity in STILLS:
+                seen = stills.get(panel, {}).get(identifier)
+                verdict = Verdict(seen["status"], seen["said"]) if seen else Verdict(UNSEEN, "no picture has been measured")
+                cells.append((panel, identifier, "", severity, 0, verdict))
+        return cells, table
 
+    cells, table = column(False)
+    lab_cells, lab_table = column(True)
     total = sum(WEIGHT[cell[3]] for cell in cells)
     earned = sum(WEIGHT[cell[3]] for cell in cells if cell[5].status == PASS)
     seen = sum(WEIGHT[cell[3]] for cell in cells if cell[5].status != UNSEEN)
     number = 100 * earned / total
+    lab_number = 100 * sum(WEIGHT[cell[3]] for cell in lab_cells if cell[5].status == PASS) / sum(WEIGHT[cell[3]] for cell in lab_cells)
 
     identifiers = [check[0] for check in CHECKS] + [check[0] for check in EYES]
     sign = {PASS: "✔", MISS: "✘", UNSEEN: "·", None: " "}
     print("## The table (✔ passes, ✘ misses, · could not be seen, which counts as a miss)\n", file=out)
     print("| scene | kind | move | " + " | ".join(identifiers) + " |", file=out)
     print("|---|---|---|" + "---|" * len(identifiers), file=out)
-    for name, kind, move, row in table:
+    for name, kind, move, row in table + [line for line in lab_table if line[0].startswith("on-")]:
         print(f"| {name} | {kind} | {move or ''} | " + " | ".join(sign[row.get(identifier)] for identifier in identifiers) + " |", file=out)
 
-    trials = [name for name in filmed if name not in {scene[0] for scene in SCENES} and not name.startswith("metronome-")]
+    trials = [name for name in filmed if name not in {scene[0] for scene in SCENES} and not name.startswith(("metronome-", "on-"))]
     if trials:
         print("\n## Judged, not counted\n", file=out)
         for name in trials:
@@ -731,7 +745,7 @@ def score(folder, eyes_path=None, stills_path=None, out=sys.stdout):
             print(f"- `{name}`: {said or 'passes all that was asked'}", file=out)
 
     print("\n## Findings, the worst first\n", file=out)
-    misses = [cell for cell in cells if cell[5].status == MISS]
+    misses = [cell for cell in cells + [cell for cell in lab_cells if cell[0].startswith("on-")] if cell[5].status == MISS]
     for name, identifier, title, severity, move, verdict in sorted(misses, key=lambda cell: (cell[3], cell[1], cell[0])):
         where = f" (frames {', '.join(map(str, verdict.frames))})" if verdict.frames else ""
         print(f"- **severity {severity}** {identifier} {title}: `{name}`: {verdict.said}{where}", file=out)
@@ -745,17 +759,19 @@ def score(folder, eyes_path=None, stills_path=None, out=sys.stdout):
         print(f"- {said}: {names}", file=out)
 
     gate = [cell for cell in cells if cell[4] and cell[3] <= 2 and cell[5].status != PASS]
-    worst = sum(1 for cell in misses if cell[3] == 1)
+    worst = sum(1 for cell in cells if cell[5].status == MISS and cell[3] == 1)
     print(f"\n## Score: {number:.1f} of 100 ({earned} of {total} points); seen {100 * seen / total:.0f}%; {worst} misses of severity 1", file=out)
+    print(f"That is Arbor as it ships, on a Mac as it comes. With everything on (the laboratory's own column, which no gate reads): {lab_number:.1f}.", file=out)
     print(f"The rubric {'PASSES' if not gate and number >= 90 else 'does not pass'}: {len(gate)} cells of severity 1 or 2 in the five moves "
           "miss or are unseen.", file=out)
     if not trusted:
         print("\nTHE INSTRUMENTS FAILED THEIR OWN TEST: the score above is not to be believed.", file=out)
     return {
-        "score": round(number, 1), "earned": earned, "total": total, "seen": round(100 * seen / total, 1), "trusted": trusted,
+        "score": round(number, 1), "everything_on": round(lab_number, 1), "earned": earned, "total": total, "seen": round(100 * seen / total, 1), "trusted": trusted,
         "leeway": allow, "gate": len(gate), "severity1": worst,
         "cells": [{"where": name, "check": identifier, "severity": severity, "move": move, "status": verdict.status, "said": verdict.said,
-                   "frames": [int(frame) for frame in verdict.frames]} for name, identifier, _, severity, move, verdict in cells],
+                   "frames": [int(frame) for frame in verdict.frames]}
+                  for name, identifier, _, severity, move, verdict in cells + [cell for cell in lab_cells if cell[0].startswith("on-")]],
     }
 
 
