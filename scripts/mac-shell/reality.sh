@@ -180,6 +180,8 @@ step "the Mac"
 echo "macOS $(sw_vers -productVersion)"
 pointer displays
 macos_tiling
+# The same journeys on a Mac that is changed first: reality-dock-left.sh and reality-second-display.sh define this and then read this file in.
+if declare -F reality_before > /dev/null; then reality_before; fi
 
 if wanted commands; then
   journey commands 3
@@ -196,6 +198,13 @@ if wanted commands; then
   does "desktop" ctl desktop
   does "show-all" ctl show-all
   does "zoom W3" ctl zoom "$W3"
+  if [ -n "${REALITY_SECOND_DISPLAY:-}" ]; then
+    # From the smaller display to the larger and back, or the other way round. In a model the window arrived short; no Mac has been asked.
+    does "show-all before the move" ctl show-all
+    does "dock W1 left again" ctl dock "$W1" left
+    does "move W1 to the next display" ctl move-to-display next "$W1"
+    does "move W1 to the next display again" ctl move-to-display next "$W1"
+  fi
   journey_ends
 fi
 
