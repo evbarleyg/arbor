@@ -101,6 +101,7 @@ TABLE = [
     (UPON, "scripts and workflows that only begin like those", pull(), dict(files=["scripts/publish-release.sh"])),
     (UPON, "the same", pull(), dict(files=["scripts/public/x.sh"])),
     (UPON, "the same", pull(), dict(files=[".github/workflows/publish.yml"])),
+    (NO, "the scripts under the oldest Python, which Linux tries", pull(), dict(files=[".github/workflows/old-python.yml"])),
     (UPON, "a path nobody has thought of", pull(), dict(files=[".gitignore"])),
     (UPON, "macOS-only code renamed into docs/", pull(), dict(files=["docs/B.md", UI])),
     (UPON, "[mac] in the subject", pull(), dict(files=[CORE], subject="fix: y [mac]")),

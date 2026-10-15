@@ -766,6 +766,9 @@ make trace NAME=safari-drag   # record something odd on real windows; it becomes
 make replay FILE=collab/evidence/traces/drag-to-edge.jsonl   # see what happened in a trace
 ```
 
+`make check` and the tools in `scripts/` want a `python3`, 3.9 or later.
+Building and installing Arbor needs none.
+
 Arbor is built by agents in two roles, a documenter and executors, who
 collaborate through this repository: see [collab/README.md](collab/README.md),
 the [board](collab/BOARD.md), and the generated

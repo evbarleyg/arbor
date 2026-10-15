@@ -1,6 +1,7 @@
 # Installing Arbor
 
 Arbor needs macOS 14 or later. Building it needs Swift 6.4 or later: Xcode 27 or later (or its Command Line Tools). Swift 6.3 crashes on one of its files.
+Nothing else: only `make check` and the tools in `scripts/` want a `python3`, 3.9 or later.
 
 ## From source, in three commands
 
