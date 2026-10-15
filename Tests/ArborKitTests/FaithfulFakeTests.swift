@@ -117,7 +117,7 @@ private final class Recorder: WindowSystemEvents {
     let (system, recorder, _, b, _) = make()
     system.focus(b)
     system.setFrame(CGRect(x: 10.5, y: 20, width: 300.7, height: 200), of: b)
-    #expect(recorder.log == ["keyboard moved"], "nothing else is reported from inside the call")
+    #expect(recorder.log.isEmpty, "nothing is reported from inside the call")
     #expect(system.frame(of: b) == CGRect(x: 10, y: 20, width: 300, height: 200), "whole points")
     recorder.log.removeAll()
     #expect(system.deliverEchoes() == 1)
@@ -127,6 +127,24 @@ private final class Recorder: WindowSystemEvents {
     system.setFrame(CGRect(x: 10, y: 20, width: 300, height: 200), of: b)
     system.deliverEchoes()
     #expect(recorder.log.isEmpty, "a window that has the keyboard and the frame already answers with nothing")
+  }
+
+  /// That the keyboard has moved is what the Accessibility layer makes of an app coming forward or stepping back. So Arbor's own `focus`
+  /// brings it only across apps, and after the echoes of the frames and the window's own report. As recorded on a hosted Mac: within
+  /// an app "changed… focused", 13 times of 13; across apps "changed… focused, keyboard moved", 5 times of 7.
+  @Test func theKeyboardIsSaidToHaveMovedOnlyAcrossAppsAndAfterTheCall() {
+    let (system, recorder, _, b, c) = make()
+    system.setFrame(CGRect(x: 10, y: 20, width: 640, height: 420), of: b)
+    system.focus(b)
+    #expect(recorder.log.isEmpty)
+    system.deliverEchoes()
+    #expect(recorder.log == ["changed \(b) echo", "focused \(b)"], "within one app")
+    recorder.log.removeAll()
+    system.setFrame(CGRect(x: 30, y: 40, width: 640, height: 420), of: c)
+    system.focus(c)
+    #expect(recorder.log.isEmpty)
+    system.deliverEchoes()
+    #expect(recorder.log == ["changed \(c) echo", "focused \(c)", "keyboard moved"], "to another app")
   }
 
   @Test func everySwitchCanBeTurnedOff() {

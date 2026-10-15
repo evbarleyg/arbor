@@ -408,19 +408,20 @@ private let second = DisplaySnapshot(
   }
 
   @Test func eventsThatArriveFromInsideACallAreDeliveredInsideTheSameCall() {
-    // The fake reports that the keyboard moved from within `focus`, so in the middle of the `dock` command.
+    // Something is reported from within `setFrame`, so in the middle of the `dock` command, as a refusal is by the real layer.
     let (trace, original) = record(
       before: { h in
         h.system.open(app: "Safari")
         h.system.open(app: "Notes")
         h.system.userFocus(WindowID(101))
+        h.system.willSetFrame = { [system = h.system] _, _ in system.events?.keyboardFocusMoved() }
       },
       { $0.run("dock 102 left") })
-    let focus = trace.entries.firstIndex { $0.line == .focus(WindowID(102)) } ?? -1
+    let command = trace.entries.firstIndex { if case .command = $0.line { true } else { false } } ?? -1
     let moved = trace.entries.firstIndex { $0.line == .keyboardFocusMoved } ?? -1
     let done = trace.entries.firstIndex { if case .done = $0.line { true } else { false } } ?? -1
-    #expect(focus >= 0 && focus < moved && moved < done)
-    #expect(trace.entries[moved].nested)
+    #expect(command >= 0 && command < moved && moved < done)
+    #expect(moved >= 0 && trace.entries[moved].nested)
 
     let replayer = TraceReplayer(trace, mode: .strict)
     #expect(replayer.run().problems == [])

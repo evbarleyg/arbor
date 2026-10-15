@@ -526,6 +526,8 @@ private let side = DisplaySnapshot(
     h.scheduler.advance(by: 2)
     let before = ring(h)!.pulse
     h.overlays.clickTile(h.layout!.tiles.first { $0.windows.contains(big) }!.node)
+    // The ring goes by what macOS reports, which comes a moment after Arbor's own call.
+    h.system.deliverEchoes()
     expectRing(h, around: big)
     #expect(ring(h)!.pulse != before)
   }

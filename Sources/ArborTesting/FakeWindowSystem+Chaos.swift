@@ -67,6 +67,7 @@ extension FakeWindowSystem {
         }
       case .focus(let window):
         if windows[window] != nil { events?.windowFocused(window) }
+      case .keyboardMoved: events?.keyboardFocusMoved()
       }
     }
   }

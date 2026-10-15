@@ -2114,11 +2114,17 @@
    "kind": "extra-report",
    "layer": "at the seam",
    "expected": "`FakeWindowSystem.focus` reports `keyboardFocusMoved` from within every call that moves the focus, before the call returns.",
-   "happened": "On the Mac that report comes after the echoes of the frames, and only when another app comes forward. Within one app Arbor's own focus call brings none.",
+   "happened": "On the Mac that report comes after the echoes of the frames, and only when another app comes forward. Within one app Arbor's own focus call brings none. Counted in that run's traces: within an app the frames' echoes and then the window's own report, 13 times of 13; across apps the same and then the keyboard's report, once (5 of 7) or twice, once also one before the window's.",
    "found": "The first comparison, line by line, of one script played on a hosted Mac (six runs, macOS 26.6.2, one display of 1024×768) and in a rehearsal on Linux. The difference was seen; its cause is a reading.",
-   "modelled": "no",
-   "knobs": [],
-   "guards": [],
+   "modelled": "yes",
+   "knobs": [
+    "FakeWindowSystem.focus",
+    "Echoes.focus"
+   ],
+   "guards": [
+    "test: theKeyboardIsSaidToHaveMovedOnlyAcrossAppsAndAfterTheCall",
+    "test: arborsOwnCallsAreAnsweredAfterTheyReturn"
+   ],
    "copes": "Controller.keyboardFocusMoved only notes who has the keyboard and redraws the focus ring, and looks once more a quarter of a second later.",
    "hurt": 4,
    "touches": [

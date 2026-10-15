@@ -382,12 +382,14 @@ public final class FakeWindowSystem: WindowSystem {
     // Its app comes forward, which brings back what macOS had swept aside.
     sweptAside = nil
     let moved = focused != window
+    let crossesApps = moved && focused.flatMap { windows[$0]?.snapshot.pid } != windows[window]?.snapshot.pid
     // macOS reports it two to four times when it crosses apps. Telling those apart is the Accessibility layer's job.
     if moved, echoes.focus { undelivered.append(.focus(window)) }
+    // macOS reports the focus changes Arbor asks for like any other, a moment later: nothing comes from within the call. That the
+    // keyboard has moved is said when an app comes forward or steps back, so only across apps, and after the window's own report.
+    if crossesApps, echoes.focus { undelivered.append(.keyboardMoved) }
     focused = window
     bringToFront(window)
-    // macOS reports the focus changes Arbor asks for like any other, a moment later.
-    if moved { events?.keyboardFocusMoved() }
   }
 
   public func focusedWindow() -> WindowID? {
@@ -780,6 +782,7 @@ extension FakeWindowSystem {
   enum Echo: Equatable {
     case focus(WindowID)
     case frame(WindowID)
+    case keyboardMoved
   }
 
   /// Delivers what is queued, and what Arbor's reactions queue meanwhile. Returns how many focus reports
@@ -803,6 +806,7 @@ extension FakeWindowSystem {
       case .frame(let window):
         // Like the Accessibility layer, this reads the frame when the report arrives, not when it was sent.
         if let snapshot = windows[window]?.snapshot { events?.windowChanged(snapshot, userInitiated: false) }
+      case .keyboardMoved: events?.keyboardFocusMoved()
       }
     }
     return focusReports
