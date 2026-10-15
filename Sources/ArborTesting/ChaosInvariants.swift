@@ -601,8 +601,11 @@ extension ChaosRunner {
   }
 
   /// A floating window that fills the view (Controller+Fill.swift) is in view, where the fill left it. The fill's size is Arbor's: it is never
-  /// what is remembered as the window's own, and no window is left in it without the mark, which is what the key goes by.
+  /// what is remembered as the window's own, and no window is left in it without the mark, which is what the key goes by. Not later either:
+  /// macOS gives a window back what it had before macOS's own zoom or tile, so the net remembers what a fill gave each window.
   func fillViolations(_ problems: inout [InvariantViolation]) {
+    // For one run of Arbor, as Arbor does (decided 2026-10-15): what macOS gives back after a quit between its zoom and the way back is not known for what it is.
+    if !isRunning, !isPaused { for window in system.windows.keys { system.windows[window]?.filledAt = nil } }
     guard isRunning, system.dragging == nil, system.resizing == nil, !system.mouseDown, !system.hasHeldEchoes else { return }
     for (display, workspace) in controller.workspaces where !isDueForLayout(display) {
       guard !harness.scheduler.pendingKeys.contains(where: { $0.hasPrefix("fill-in-hand-") || $0.hasPrefix("enforce-") }) else { continue }
@@ -615,6 +618,16 @@ extension ChaosRunner {
         }
         if let own = workspace.floating[window], own.approximatelyEquals(fillsAt, tolerance: 1), fake.maximumSize == nil {
           problems.append(.init("fill-became-its-own", "\(window) fills the view of \(display), and \(own.brief) is remembered as its own frame"))
+        }
+        system.windows[window]?.filledAt = fillsAt
+      }
+      for (window, own) in workspace.floating.sorted(by: { $0.key < $1.key }) where !workspace.isFilled(window) {
+        guard let fake = system.windows[window], let filledAt = fake.filledAt, fake.maximumSize == nil, cooperates(fake) else { continue }
+        if own.approximatelyEquals(filledAt, tolerance: 1) {
+          problems.append(
+            .init("fill-became-its-own", "\(window) filled the view of \(display) and no longer does, and the frame that gave it, \(own.brief), is remembered as its own"))
+          // Said once.
+          system.windows[window]?.filledAt = nil
         }
       }
     }

@@ -56,6 +56,8 @@ public final class FakeWindowSystem: WindowSystem {
     public internal(set) var doubleClicks = 0
     /// How often its person has asked macOS for another frame for it in some other way.
     public internal(set) var asksOfMacOS = 0
+    /// Where Arbor last had it fill the view, noted by the walks (`fillViolations`): macOS remembers that frame, and can give it back.
+    var filledAt: CGRect?
 
     public static func == (a: FakeWindow, b: FakeWindow) -> Bool {
       a.snapshot == b.snapshot && a.minimumSize == b.minimumSize && a.maximumSize == b.maximumSize

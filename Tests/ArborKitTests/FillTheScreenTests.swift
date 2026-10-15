@@ -1216,4 +1216,208 @@ private let own = CGRect(x: 200, y: 150, width: 640, height: 420)
     h.press("zoom")
     #expect(h.frame(note) == own)
   }
+
+  // MARK: macOS gives the fill's frame back
+
+  /// Fills, and then two double-clicks on the title bar: macOS zooms the window, and gives it back what it had before its zoom.
+  private func filledZoomedAndBack() -> (Harness, note: WindowID, other: WindowID) {
+    let (h, note, other) = newcomer()
+    h.press("zoom")
+    settle(h)
+    for _ in 1...2 {
+      h.system.doubleClickTitleBar(of: note)
+      settle(h)
+    }
+    h.system.clearFrameLog()
+    return (h, note, other)
+  }
+
+  /// Found by a hunter's walk. What macOS had before its zoom was the fill's frame, and Arbor remembered it like any other: the window's own
+  /// size was lost for good.
+  @Test func whatMacOSGivesBackAfterItsOwnZoomIsTheFillAndNotTheWindowsOwnFrame() {
+    let (h, note, _) = filledZoomedAndBack()
+    #expect(h.frame(note) == view(h), "the story: macOS has put it where the fill had")
+    #expect(h.controller.isFilled(note), "so it fills")
+    #expect(h.workspace.floating[note] == own, "and has the frame to go back to that it had")
+    #expect(touched(h).isEmpty, "nothing moves for that")
+  }
+
+  @Test(arguments: ["zoom", "show-all", "undo", "float-all", "pause", "quit"]) func afterMacOSsZoomAndBackEveryWayOutGivesTheOwnFrameBack(way: String) {
+    let (h, note, other) = filledZoomedAndBack()
+    let others = h.frame(other)
+    if way == "quit" { h.controller.shutdown() } else { h.press(way) }
+    settle(h)
+    #expect(h.frame(note) == own, "\(way)")
+    #expect(h.frame(other) == others)
+    #expect(way == "pause" || !h.controller.isFilled(note), "\(way)")
+  }
+
+  /// By another road: macOS's own half, and its Return to Previous Size.
+  @Test func whatMacOSGivesBackAfterItsOwnTileIsTheFillToo() {
+    let (h, note, _) = newcomer()
+    h.press("zoom")
+    settle(h)
+    h.system.askMacOS(for: .left, about: note)
+    settle(h)
+    #expect(!h.controller.isFilled(note), "the story: a size that its person asked macOS for is its own")
+    h.system.userMove(note, to: view(h))
+    settle(h)
+    #expect(h.controller.isFilled(note) && h.workspace.floating[note] == own)
+    h.press("zoom")
+    #expect(h.frame(note) == own)
+  }
+
+  /// A terminal stops short of the view, at whole lines. Where the fill left it is what counts, not the view.
+  @Test func aWindowThatStoppedShortIsKnownByWhereTheFillLeftIt() throws {
+    let h = Harness()
+    let terminal = h.system.open(app: "Terminal", pid: 1003, frame: own)
+    h.system.setMaximumSize(terminal, CGSize(width: 1000, height: 700))
+    h.start()
+    h.system.userFocus(terminal)
+    h.press("zoom")
+    settle(h)
+    let left = try #require(h.frame(terminal))
+    #expect(left.size == CGSize(width: 1000, height: 700))
+    h.system.userMove(terminal, to: CGRect(x: 0, y: 25, width: 900, height: 600))
+    settle(h)
+    #expect(!h.controller.isFilled(terminal))
+    h.system.userMove(terminal, to: left)
+    settle(h)
+    #expect(h.controller.isFilled(terminal) && h.workspace.floating[terminal] == own)
+  }
+
+  // The controls: what has not come back to where the fill had put it is the window's own, as ever.
+
+  @Test func afterOneDoubleClickMacOSsZoomIsTheWindowsOwn() throws {
+    let (h, note, _) = newcomer()
+    h.press("zoom")
+    settle(h)
+    h.system.doubleClickTitleBar(of: note)
+    settle(h)
+    let zoomed = try #require(h.frame(note))
+    #expect(zoomed != view(h) && !h.controller.isFilled(note) && h.workspace.floating[note] == zoomed)
+    h.controller.shutdown()
+    #expect(h.frame(note) == zoomed)
+  }
+
+  /// But the key is never dead where Arbor knows the way back: whoever filled the screen with the key and presses it again means "back".
+  @Test func afterOneDoubleClickTheKeyGivesTheOwnFrameBack() {
+    let (h, note, other) = newcomer()
+    let others = h.frame(other)
+    h.press("zoom")
+    settle(h)
+    h.system.doubleClickTitleBar(of: note)
+    settle(h)
+    h.system.clearFrameLog()
+    #expect(h.press("zoom").ok)
+    settle(h)
+    #expect(h.frame(note) == own && !h.controller.isFilled(note) && h.workspace.floating[note] == own)
+    #expect(h.system.frameLog.filter { $0.window == note }.count == 1 && h.frame(other) == others, "in one move, and nothing else")
+    // What was kept is spent: macOS's zoom of a window that Arbor never filled is its own, and the key says so.
+    h.system.doubleClickTitleBar(of: note)
+    settle(h)
+    let zoomed = h.frame(note)
+    #expect(h.press("zoom").message.contains("fills the screen already") && h.frame(note) == zoomed)
+  }
+
+  /// Named, the command is idempotent, as for any window: a script that says `zoom 101` twice does not get the opposite.
+  @Test func afterOneDoubleClickTheCommandWithTheWindowNamedLeavesIt() {
+    let (h, note, _) = newcomer()
+    h.press("zoom")
+    settle(h)
+    h.system.doubleClickTitleBar(of: note)
+    settle(h)
+    let zoomed = h.frame(note)
+    #expect(h.run("zoom \(note.rawValue)").message.contains("fills the screen already") && h.frame(note) == zoomed)
+  }
+
+  @Test(arguments: ["show-all", "float-all", "pause"]) func afterOneDoubleClickWhatDoesNotNameTheWindowLeavesMacOSsZoom(way: String) {
+    let (h, note, _) = newcomer()
+    h.press("zoom")
+    settle(h)
+    h.system.doubleClickTitleBar(of: note)
+    settle(h)
+    let zoomed = h.frame(note)
+    h.press(way)
+    settle(h)
+    #expect(h.frame(note) == zoomed, "\(way)")
+  }
+
+  @Test func aFrameBesideWhereTheFillHadPutItIsTheWindowsOwn() {
+    let (h, note, _) = newcomer()
+    h.press("zoom")
+    settle(h)
+    h.system.askMacOS(for: .left, about: note)
+    settle(h)
+    let near = view(h).offsetBy(dx: 3, dy: 0)
+    h.system.userMove(note, to: near)
+    settle(h)
+    #expect(!h.controller.isFilled(note) && h.workspace.floating[note] == near)
+  }
+
+  /// With the button down it is a hand that sizes it, and what a hand gives a window is its own.
+  @Test func aHandThatSizesItToTheViewGivesItThatSize() {
+    let (h, note, _) = newcomer()
+    h.press("zoom")
+    settle(h)
+    h.system.askMacOS(for: .left, about: note)
+    settle(h)
+    h.system.mouseDown = true
+    h.system.userResize(note, to: view(h))
+    #expect(!h.controller.isFilled(note))
+    h.system.releaseMouse()
+    settle(h)
+    #expect(!h.controller.isFilled(note) && h.workspace.floating[note] == view(h))
+  }
+
+  /// A size that a hand gave it is its own: "back" after macOS's zoom is not to what it had before a fill of long ago.
+  @Test(arguments: [true, false]) func aSizeGivenByHandEndsWhatIsKeptOfAFill(endsTheFill: Bool) throws {
+    let (h, note, _) = newcomer()
+    h.press("zoom")
+    settle(h)
+    if !endsTheFill {
+      h.system.askMacOS(for: .left, about: note)
+      settle(h)
+    }
+    let byHand = CGRect(x: 100, y: 100, width: 800, height: 500)
+    h.system.mouseDown = true
+    h.system.userResize(note, to: byHand)
+    h.system.releaseMouse()
+    settle(h)
+    #expect(!h.controller.isFilled(note) && h.workspace.floating[note] == byHand)
+    h.system.doubleClickTitleBar(of: note)
+    settle(h)
+    let zoomed = try #require(h.frame(note))
+    #expect(h.press("zoom").message.contains("fills the screen already") && h.frame(note) == zoomed, "Arbor knows no way back, and macOS does")
+    h.system.userMove(note, to: view(h))
+    settle(h)
+    #expect(!h.controller.isFilled(note) && h.workspace.floating[note] == view(h))
+  }
+
+  /// What was kept of a fill is over with the next one, and when the window is docked.
+  @Test(arguments: ["fill", "dock"]) func whatIsKeptOfAFillIsForgotten(by way: String) throws {
+    let (h, note, _) = newcomer()
+    h.press("zoom")
+    settle(h)
+    h.system.askMacOS(for: .left, about: note)
+    settle(h)
+    let half = try #require(h.frame(note))
+    if way == "fill" {
+      h.press("zoom")
+      settle(h)
+      h.system.askMacOS(for: .right, about: note)
+      settle(h)
+      h.system.userMove(note, to: view(h))
+      settle(h)
+      #expect(h.controller.isFilled(note) && h.workspace.floating[note] == half, "the frame it had before the last fill")
+    } else {
+      h.run("dock \(note.rawValue) left")
+      settle(h)
+      h.run("float \(note.rawValue)")
+      settle(h)
+      h.system.userMove(note, to: view(h))
+      settle(h)
+      #expect(!h.controller.isFilled(note) && h.workspace.floating[note] == view(h))
+    }
+  }
 }

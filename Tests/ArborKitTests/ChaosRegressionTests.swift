@@ -1155,6 +1155,49 @@ private let c = WindowID(103)
     expectEveryInvariantHolds(script)
   }
 
+  /// The rules `fill-became-its-own` and `size-not-given-back`, found by a hunter's walk. The key; a double-click, and macOS zooms the window; a
+  /// second one, and macOS gives it back what it had before its zoom: the fill's frame, which was then remembered as its own, for good.
+  @Test(
+    arguments: ["Safari pid 1000 at 362 206 719 519 min 574 220", "Terminal pid 1003 at 362 206 719 519 min 177 64 cells 7 15 2 4"],
+    ["", "key down zoom\nkey up zoom\nsettle\n", "key down zoom\nkey up zoom\nkey down zoom\nkey up zoom\nsettle\n", "key down undo\nkey up undo\nsettle\n", "via menu float-all\nsettle\n"]
+  ) func whatMacOSGivesBackAfterItsOwnZoomIsNeverTheWindowsOwn(window: String, way: String) {
+    expectItsOwnSizeIsKept(
+      "settings {}\nmac-tiling off\nopen 103 \(window)\nlaunch\nsettle\nfocus 103\nkey down zoom\nkey up zoom\nsettle\n"
+        + "double-click 103\nsettle\nreact\ndouble-click 103\nsettle\nreact\n\(way)quit")
+  }
+
+  /// `size-not-given-back` is on the list of known failures, for another story. A name on that list says nothing of a new script that breaks the
+  /// rule, so here it is excused as little as the fill's own.
+  private func expectItsOwnSizeIsKept(_ script: String, sourceLocation: SourceLocation = #_sourceLocation) {
+    let runner = ChaosRunner()
+    let strict: Set = ["size-not-given-back", "fill-became-its-own", "fill"]
+    for action in ChaosAction.script(script) {
+      let violations = runner.step(action).filter { strict.contains($0.rule) || !ChaosRunner.knownRules.contains($0.rule) }
+      #expect(violations.isEmpty, "\(action.text): \(violations)", sourceLocation: sourceLocation)
+    }
+  }
+
+  /// After ONE double-click macOS's zoom is the window's own, and Quit leaves it. But the key names the window and means "back": then its own size is
+  /// the one from before the fill again, and that is what Quit leaves.
+  @Test(
+    arguments: ["Safari pid 1000 at 362 206 719 519 min 574 220", "Terminal pid 1003 at 362 206 719 519 min 177 64 cells 7 15 2 4"],
+    ["", "key down zoom\nkey up zoom\nsettle\n"]
+  ) func afterOneDoubleClickTheKeyMeansBackAndQuitLeavesWhatItFinds(window: String, way: String) {
+    expectItsOwnSizeIsKept(
+      "settings {}\nmac-tiling off\nopen 103 \(window)\nlaunch\nsettle\nfocus 103\nkey down zoom\nkey up zoom\nsettle\n"
+        + "double-click 103\nsettle\nreact\n\(way)quit")
+  }
+
+  /// The control of the net: it speaks of a window without the mark, too. (A hand that gives a window the very frame a fill gave it, to the
+  /// point, is what the lab can play of that; no walk does it.)
+  @Test func theNetRemembersWhatAFillGaveAWindow() {
+    let runner = ChaosRunner()
+    for line in ["open 103 Safari pid 1000 at 362 206 719 519 min 574 220", "launch", "settle", "zoom 103", "settle", "edge 103 12 37 900 600", "settle"] {
+      #expect(runner.step(ChaosAction(text: line)).isEmpty, "\(line)")
+    }
+    #expect(runner.step(ChaosAction(text: "edge 103 12 37 1416 851")).map(\.rule) == ["fill-became-its-own"])
+  }
+
   /// The rule `undo-redo`: an undo of which nothing comes, because the window's app hangs, says so and keeps its step.
   @Test func anUndoOfAFillWhoseAppHangsIsNoUndo() {
     expectEveryInvariantHolds("open 109 Mail pid 1002 at 416 658 481 204\nlaunch\nzoom 109\nhang 1002\nundo\nredo")

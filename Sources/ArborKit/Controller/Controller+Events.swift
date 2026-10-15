@@ -61,6 +61,7 @@ extension Controller: WindowSystemEvents {
     fittedToADisplay[id] = nil
     fills.inHand.remove(id)
     fills.saidToGoNoLarger.remove(id)
+    fills.gaveWay[id] = nil
     hints[id] = nil
     let hadKeyboard = hadKeyboard(id)
     keyboardHandOver.newcomers[id] = nil

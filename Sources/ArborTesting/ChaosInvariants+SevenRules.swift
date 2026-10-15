@@ -384,6 +384,17 @@ extension ChaosRunner {
             seven.ownSizes[window] = frame.size
           }
         }
+      // The key that filled the screen with a window, pressed again after macOS has zoomed it, names that window and means "back" (decided 2026-10-15,
+      // board 0.16). To the size that was its own before macOS's zoom by the lab's own account, and to no other.
+      case .zoom:
+        for window in Set(movesSeenInThisStep.map(\.window)) where controller.workspaces.values.contains(where: { $0.isFloating(window) && !$0.isFilled(window) }) {
+          if seven.concerned?.contains(window) == true, workspacesBefore.values.contains(where: { $0.isFloating(window) && !$0.isFilled(window) }),
+            let size = system.windows[window]?.snapshot.frame.size, let before = seven.ownSizesBeforeTheLastHand[window],
+            abs(size.width - before.width) <= 1.5, abs(size.height - before.height) <= 1.5
+          {
+            (seven.ownSizes[window], seven.earlierOwnSizes[window]) = (before, nil)
+          }
+        }
       default: break
       }
     }

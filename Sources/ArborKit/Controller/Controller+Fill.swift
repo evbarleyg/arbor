@@ -29,6 +29,9 @@ extension Controller {
     var saidToGoNoLarger: Set<WindowID> = []
     /// Those that the layout now under way takes out of the view they filled, and where to (`endingFills`).
     var goingBack: [WindowID: CGRect] = [:]
+    /// Those whose fill ended with a size that was not Arbor's doing: where the fill had put them, and the frame that was their own
+    /// then (`takesUpItsFill`). For this run of Arbor. It names its display, and sleeps while that one is away.
+    var gaveWay: [WindowID: (display: DisplayID, at: CGRect, own: CGRect)] = [:]
   }
 
   // MARK: Lookup
@@ -59,8 +62,12 @@ extension Controller {
     if current.isPresent, !parked.contains(id), current.frame.insetBy(dx: -1, dy: -1).contains(view),
       workspaces[displayID]!.floating[id].map({ !wasPushedAside(id, from: $0) }) == true
     {
+      // Unless Arbor knows the way back: the key filled the screen with it, and macOS has zoomed it since. Whoever presses the key
+      // again means "back", whatever happened between.
+      if again, takesUpItsFill(current, on: displayID, whereverItIs: true) { return endFill(of: id, on: display) }
       return .success("\(id) fills the screen already")
     }
+    fills.gaveWay[id] = nil
     // What Arbor gave up on while the window was docked (its app fought, macOS zoomed it) is over: its person asks for something else.
     enforcement.reset([id])
     // Its own frame is the view's, and Arbor has squeezed it: there it goes, and there is nothing to go back to.
@@ -124,6 +131,8 @@ extension Controller {
   /// Called by every layout. What is written down is where the window is: a display that got another corner has taken it along.
   func noteWhereFillsHaveGotTo(on displayID: DisplayID) {
     guard let display = display(displayID) else { return }
+    // What is kept of a fill that gave way is over when the window is docked.
+    fills.gaveWay = fills.gaveWay.filter { $0.value.display != displayID || workspaces[displayID]?.isFloating($0.key) == true }
     for (window, fillsAt) in workspaces[displayID]?.filled ?? [:] {
       guard let current = windows[window], current.isPresent, current.frame != fillsAt, window != drag?.window,
         !fills.inHand.contains(window), !unplaced.contains(window), !isStillToFillTheView(current, on: display)
@@ -245,6 +254,7 @@ extension Controller {
   func keepOnlyFillsThatStillHold() {
     fills.inHand.removeAll()
     fills.saidToGoNoLarger.formIntersection(windows.keys)
+    fills.gaveWay = fills.gaveWay.filter { windows[$0.key] != nil }
     for (id, workspace) in workspaces {
       for (window, fillsAt) in workspace.filled ?? [:] {
         guard let current = windows[window] else { continue }
@@ -264,9 +274,15 @@ extension Controller {
   /// A new size is the window's own from now on, and the caller remembers it like any other. A move alone is not a size: with
   /// the button down it is a hand's, which is waited for; without, it is let be.
   func filledWindowChanged(_ window: WindowSnapshot, on display: DisplayID) -> Bool {
-    guard workspaces[display]?.isFilled(window.id) == true, let fillsAt = workspaces[display]?.filled?[window.id] else { return false }
+    guard workspaces[display]?.isFilled(window.id) == true, let fillsAt = workspaces[display]?.filled?[window.id] else {
+      return takesUpItsFill(window, on: display)
+    }
     // Measured on the size the fill left it in, not on the last report: an edge dragged slowly comes a point at a time.
     guard abs(fillsAt.width - window.frame.width) <= 1, abs(fillsAt.height - window.frame.height) <= 1 else {
+      // A hand that sizes it gives it a size of its own, and macOS has nothing to give back but that.
+      if !system.isMouseButtonDown(), !fills.inHand.contains(window.id), let own = workspaces[display]?.floating[window.id] {
+        fills.gaveWay[window.id] = (display, fillsAt, own)
+      }
       unmarkFill(of: window.id, on: display)
       return false
     }
@@ -276,6 +292,25 @@ extension Controller {
     } else {
       letBe(window, on: display)
     }
+    return true
+  }
+
+  /// macOS remembers frames too. What it gives a window back after its own zoom (a second double-click on the title bar) or its own tile
+  /// (Return to Previous Size) is what the window had before: the fill's frame, if that is what macOS took it out of. Remembered like any
+  /// other, the fill's size would be the window's own, and its own lost for good. So a window that comes back to exactly where the
+  /// fill had put it, with no button down, fills again: the mark is back, its own frame is the one from before the fill, nothing moves.
+  /// `whereverItIs`: its person has named it with the key.
+  private func takesUpItsFill(_ window: WindowSnapshot, on display: DisplayID, whereverItIs: Bool = false) -> Bool {
+    guard let before = fills.gaveWay[window.id], before.display == display, workspaces[display]?.isFloating(window.id) == true else { return false }
+    // What a hand gives it since is its own, and what it had before the fill is no longer what "back" means.
+    if !whereverItIs, system.isMouseButtonDown() { fills.gaveWay[window.id] = nil }
+    guard whereverItIs || (fills.gaveWay[window.id] != nil && window.frame.approximatelyEquals(before.at, tolerance: 1)) else { return false }
+    fills.gaveWay[window.id] = nil
+    workspaces[display]!.floating[window.id] = before.own
+    workspaces[display]!.fill(window.id, at: window.frame)
+    noteThatItFillsAsFarAsItWill(window, on: display)
+    notify(.layout(display))
+    scheduleSave()
     return true
   }
 
