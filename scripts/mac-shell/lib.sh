@@ -167,7 +167,7 @@
 #   macos_tiling [on|off]           print, or set, macOS's own "drag windows to screen edges to tile"
 #   macos_tiles | screen_edges_dock whether macOS tiles at the screen's edges, where Arbor then stands aside | before arbor_start, for a script that
 #                                     docks by dragging to a screen edge: switches that off on a throwaway Mac; false where a person has it on
-#   macos_dictation_shortcut off    ⌃ pressed twice no longer asks whether to enable Dictation
+#   macos_dictation_shortcut off    ⌃ pressed twice no longer asks whether to enable Dictation; arbor_build says it on a throwaway Mac
 #   macos_click_wallpaper [on|off]  print, or set, "click wallpaper to reveal desktop", which sweeps every window aside
 #   macos_reduce_motion [on|off]    print, or set (before arbor_start), Reduce Motion, which GitHub's Macs come with
 #                                     and which turns Arbor's motion off
@@ -1137,6 +1137,8 @@ arbor_build() {
       && cp "$ARBOR_ROOT/Resources/Info.plist" "$ARBOR_APP/Contents/Info.plist" \
       || die "could not make $ARBOR_APP"
     arbor_sign Arbor || echo "note: could not sign $ARBOR_APP: $(tail -n 1 "$ARBOR_OUT/build-bundles.log")"
+    # Here and not in suite.sh: a section run alone met the question too.
+    macos_dictation_shortcut off
   fi
   echo "built Arbor$([ "$ARBOR_CONFIGURATION" = debug ] || echo " ($ARBOR_CONFIGURATION)"), the pointer tool and the app bundles in $((SECONDS - started))s"
   : > "$ARBOR_LEDGER/built"
