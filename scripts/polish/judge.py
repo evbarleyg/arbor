@@ -249,15 +249,71 @@ def bars(m, allow):
     return Verdict(MISS, "; ".join(faults)) if faults else Verdict(PASS, "the menu bar and the Dock stay as they are")
 
 
+def pieces(m, until=1500):
+    """An act without motion, by its windows alone (a line of words that fades in afterwards is no part of their arriving): {"frames": those in which a window came, went, or changed its
+    place or size, "times": when, "between": the frames in which some window is seen at a place or size that is neither its old nor its new one, "followed": how many windows}."""
+    cause, film = m["cause"], m["film"]
+
+    def same(a, b):
+        return a is not None and b is not None and max(abs(p - q) for p, q in zip(a, b)) <= 2
+
+    changed, between, followed = set(), set(), 0
+    for track in m["scan"].tracks:
+        if track.detail:
+            continue
+        # The line of words is low and wide, and so is what it leaves of a window it lies across.
+        seen = [(int(time), index, rect.edges, rect.ragged) for time, index, rect in zip(track.times, track.indices, track.rects) if time <= cause + until and not rect.thin]
+        after = [entry for entry in seen if entry[0] >= cause]
+        clean = [entry for entry in after if not entry[3]]
+        if not clean:
+            continue
+        old = next((edges for time, _, edges, ragged in reversed(seen) if time < cause and not ragged), None)
+        here = any(time < cause for time, _, _, _ in seen)
+        # What is still there at the end has arrived; what has gone before that has no new place in view.
+        new = clean[-1][2] if track.indices[-1] >= len(film) - 1 or track.times[-1] > cause + until else None
+        before, moved = old, False
+        for _, index, edges, ragged in after:
+            if not here:
+                # It comes into view in this frame, whatever shows of it.
+                changed.add(index)
+                here = moved = True
+                before = None if ragged else edges
+            # Of a shape that is no rectangle (something lies across it) the edges say nothing.
+            if ragged:
+                continue
+            if before is not None and not same(edges, before):
+                changed.add(index)
+                moved = True
+            if not same(edges, old) and not same(edges, new):
+                between.add(index)
+            before = edges
+        if new is None and after[-1][1] + 1 < len(film):
+            changed.add(after[-1][1] + 1)
+            moved = True
+        followed += moved
+    frames = sorted(changed)
+    return {"frames": frames, "times": [int(film.times[index]) - cause for index in frames], "between": sorted(between), "followed": followed}
+
+
 def at_once(m, allow):
-    """For Reduce Motion, and for whatever is not meant to move: the end, at once, and nothing in between."""
+    """For whatever is not meant to move: the end, at once."""
     if not m["episodes"]:
         return Verdict(UNSEEN, "nothing changed")
-    first = m["episodes"][0]
-    took = first[1] - first[0]
+    said = pieces(m)
+    if not said["followed"]:
+        return Verdict(UNSEEN, "no window could be followed")
+    took = said["times"][-1] - said["times"][0]
     limit = 100 + allow["gap"]
-    return Verdict(PASS if took <= limit else MISS, f"from the first change to the last {ms(took)} (at most {ms(limit)}), in {first[3] - first[2] + 1} frames",
-                   list(range(first[2], min(first[3], first[2] + 5) + 1)))
+    return Verdict(PASS if took <= limit else MISS, f"the windows arrive in {len(said['frames'])} pieces, {ms(took)} from the first to the last (at most {ms(limit)})", said["frames"][:8])
+
+
+def old_or_new(m, allow):
+    if not m["episodes"]:
+        return Verdict(UNSEEN, "nothing changed")
+    said = pieces(m)
+    if not said["followed"]:
+        return Verdict(UNSEEN, "no window could be followed")
+    return Verdict(MISS if said["between"] else PASS, f"in {len(said['between'])} frames a window is at a place or size that is neither its old nor its new one (none)", said["between"][:8])
 
 
 def few_places(m, allow):
@@ -508,6 +564,7 @@ CHECKS = [
     ("R1", "without motion: the end at once, nothing in between", 1, ("instant",), at_once),
     ("R2", "without motion: the same end", 2, ("instant",), not_yet),
     ("R3", "without motion: no slide anywhere", 2, ("instant",), few_places),
+    ("R4", "without motion: every window is where it was or where it belongs", 1, ("instant",), old_or_new),
     ("D1", "Arbor never pulls what is being dragged", 1, ("drag",), not_pulled),
     ("D2", "the preview tells the truth", 2, ("drag",), preview_true),
     ("D3", "the preview comes and goes softly, once", 2, ("drag",), not_yet),
@@ -871,7 +928,7 @@ def act_of(samples, since, until, tick=1000 / 60):
     it was before; when the first and the last move were seen; and for how many of the display's frames some window was at a place or size that is neither its old nor its new one."""
     before, moves = {}, {}
     for words in samples:
-        if words[1] != "W" or words[4] != "0":
+        if words[1] != "W" or words[4] != "0" or words[9] == "Arbor":
             continue
         time, window, frame = int(words[0]), int(words[2]), tuple(float(word) for word in words[5:9])
         if time < since:
@@ -896,27 +953,26 @@ def acts(folder, out=sys.stdout):
     with open(os.path.join(folder, "samples.log"), encoding="utf-8") as log:
         samples = [words for words in map(str.split, log) if len(words) > 8 and words[1] == "W"]
     films = os.path.join(folder, "films")
-    print("| Scene | Answers | The display: first to last change | in frames | The window server: first to last move | windows moved, steps each | frames with a window neither old nor new |\n|---|---|---|---|---|---|---|", file=out)
+    print("| Scene | Answers | On the display: pieces | first to last | frames with a window neither old nor new | By the window server: first to last move | steps of each window that moved | frames in between |\n"
+          "|---|---|---|---|---|---|---|---|", file=out)
     for name in sorted(os.listdir(films)):
         if not os.path.isfile(os.path.join(films, name, "film.log")):
             continue
         film = Film(os.path.join(films, name))
         if film.kind not in ("instant", "bare") or name.startswith("metronome-"):
             continue
-        cause, known = cause_of(film)
-        until = min(cause + 2000, film.ends)
-        # The pointer, a caret and the line of words change little; a window that moves changes much.
-        large = [int(time) for time, (w, h) in zip(film.times, film.extents) if cause <= time <= until and w * h > 10000 * film.scale**2]
-        spell = [large[0]] if large else []
-        for time in large[1:]:
-            if time - spell[-1] > 250:
-                break
-            spell.append(time)
-        said = act_of(samples, cause - 20, until)
+        m = measure(film)
+        cause, seen = m["cause"], pieces(m)
+        said = act_of(samples, cause - 20, min(cause + 2000, film.ends))
         steps = ", ".join(f"{window}: {len(moved) - 1}" for window, moved in sorted(said["moves"].items()))
-        print(f"| `{name}` | {f'{spell[0] - cause} ms' if spell and known == 'exact' else '?'} | {f'{spell[-1] - spell[0]} ms' if spell else 'nothing changed'} | {len(spell)} | "
+        print(f"| `{name}` | {f'{seen_at(seen)} ms' if seen['frames'] and m['cause_known'] == 'exact' else '?'} | {len(seen['frames']) or 'none followed'} | "
+              + (f"{seen['times'][-1] - seen['times'][0]} ms" if seen["frames"] else "") + f" | {len(seen['between'])} {seen['between'][:8] if seen['between'] else ''} | "
               + (f"{said['last'] - said['first']} ms" if said["moves"] else "nothing moved") + f" | {steps or 'none'} | {said['between']} |", file=out)
     return 0
+
+
+def seen_at(seen):
+    return seen["times"][0]
 
 
 def self_test():
@@ -950,7 +1006,9 @@ def self_test():
         "flash-of-everything": ({"flash": (0, 31, 1024, 674)}, ["M9"], ["M7", "M8"]),
         "bars": ({"bars": True}, ["M11"], []),
         "at-once": ({"instant": True, "kind": "instant"}, [], []),
-        "not-at-once": ({"kind": "instant"}, ["R1", "R3"], []),
+        "not-at-once": ({"kind": "instant"}, ["R1", "R3", "R4"], []),
+        "new-size-at-the-old-place": ({"instant": True, "kind": "instant", "halfway": True}, ["R4"], ["R3"]),
+        "one-by-one": ({"instant": True, "kind": "instant", "one_by_one": True}, ["R1"], ["R3", "R4"]),
         "uneven": ({"end": {**studio.FRAMED, studio.RED: (12, 43, 996, 650)}}, ["S8"], []),
     }
     # The same for what is drawn by another hand: name -> (who draws it, how it is wrong, must miss, may miss)
