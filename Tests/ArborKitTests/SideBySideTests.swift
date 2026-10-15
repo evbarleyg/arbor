@@ -347,6 +347,23 @@ private let side = DisplaySnapshot(
       """)
   }
 
+  /// Two of three were in the Dock, and an act came between the command and their landing: the road then begins in the slot.
+  @Test func thereAndBackWhateverCameBetween() {
+    expectNoRuleBroken(
+      """
+      open 101 Finder pid 1005 at 2300 1065 2780 1759
+      launch
+      open 103 Mail pid 1002 at 1257 911 1000 590 min 1000 590
+      minimize 103
+      limits 101 min 2272 2036
+      open 104 Xcode pid 1004 at -727 826 789 511
+      minimize 101
+      side-by-side 103 101 104
+      release
+      settle
+      """)
+  }
+
   @Test func namingTheWindowInTheHandMovesNobody() {
     expectNoRuleBroken(
       """

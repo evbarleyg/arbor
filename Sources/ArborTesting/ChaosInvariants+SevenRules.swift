@@ -516,8 +516,9 @@ extension ChaosRunner {
         continue
       }
       // The same a step later, for one that was in the Dock and could not be asked at all: it lands, does not fit, and all is taken back.
+      // Back is where it stood before the command, not where this road begins: an act may have come between, and begun a new one.
       if everybodyAwaitedBefore.contains(window), controller.everybodyOfTheAwaitedGroup.isEmpty,
-        road[0].approximatelyEquals(road[road.count - 1], tolerance: 1)
+        let home = framesBeforeAnybodyWasAwaited[window], home.approximatelyEquals(road[road.count - 1], tolerance: 1)
       {
         continue
       }

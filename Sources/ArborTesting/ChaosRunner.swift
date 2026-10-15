@@ -81,6 +81,8 @@ public final class ChaosRunner {
   var awaitedGroupBefore: Set<WindowID> = []
   /// `Controller.everybodyOfTheAwaitedGroup` when the step began.
   var everybodyAwaitedBefore: Set<WindowID> = []
+  /// Where every window stood at the beginning of the last step at which nobody was awaited: before the `side-by-side` that awaits.
+  var framesBeforeAnybodyWasAwaited: [WindowID: CGRect] = [:]
   /// Windows whose app did not answer when they were to be moved: the move comes when it does, whatever else happens then.
   var owedAMoveBefore: Set<WindowID> = []
   /// Where macOS put each floating window that was wholly on a display when that display moved without changing, and how often
@@ -240,6 +242,7 @@ public final class ChaosRunner {
     )
     viewsBefore = controller.layouts.mapValues(\.camera)
     framesBefore = system.windows.mapValues(\.snapshot.frame)
+    if everybodyAwaitedBefore.isEmpty { framesBeforeAnybodyWasAwaited = framesBefore }
     presentBefore = Set(system.windows.values.lazy.filter(\.snapshot.isPresent).map(\.snapshot.id))
     timersBefore = harness.scheduler.pendingKeys
     wasTryingOutADrop = controller.draggedWindow != nil && controller.settings.reflowWhileDragging
