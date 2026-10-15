@@ -120,7 +120,7 @@ final class FocusRingPanel: OverlayPanel {
       layer.path = path
       layer.fillColor = colour
     }
-    showEdges(of: model.band(automaticRadius: radius), in: area, scale: scale)
+    showEdges(of: model.band(automaticRadius: radius), in: area, scale: scale, colour: colour)
     CATransaction.commit()
 
     ringedWindow = model.window
@@ -138,32 +138,30 @@ final class FocusRingPanel: OverlayPanel {
   }
 
   /// The accent of Increase Contrast stood out from the darkened wallpaper it lies on by 1.1 to 1.7 to 1. In `AccentInk`'s
-  /// order: black outside, then white, and the accent has what is left. A line too thin for both has a point of white.
-  private func showEdges(of band: FocusRingModel.Band, in area: CGRect, scale: CGFloat) {
+  /// order: black outside, then white, and the ring's colour has what is left (`PanelLook.strongLines(within:of:)`).
+  private func showEdges(of band: FocusRingModel.Band, in area: CGRect, scale: CGFloat, colour: CGColor) {
     let outer = CGRect(
       x: band.frame.minX - area.minX, y: area.maxY - band.frame.maxY, width: band.frame.width, height: band.frame.height)
-    var bands: [(from: CGFloat, colour: NSColor)] = []
+    var lines: [RGBA] = []
     if NSWorkspace.shared.accessibilityDisplayShouldIncreaseContrast {
-      if band.thickness >= CGFloat(AccentInk.strongLines.count) {
-        bands = AccentInk.strongLines.enumerated().map { (CGFloat($0.offset), $0.element) }
-      } else if band.thickness > 1 {
-        bands = [(0, .white)]
-      }
+      lines = PanelLook.strongLines(within: band.thickness, of: NSColor(cgColor: colour).map(AccentInk.rgba) ?? .black)
     }
     for (place, layer) in edges.enumerated() {
-      guard place < bands.count else {
+      guard place < lines.count else {
         layer.path = nil
         continue
       }
-      let from = bands[place].from
+      // Each reaches in as far as the last of them and is painted over by the next, and under them all lies the ring's own line: so
+      // nothing of what is behind the ring shows through the soft edge two of them share. Not as far as the ring's inner edge, with
+      // its colour on top: a colour a person chose may be translucent, and would come out paler over white.
+      let (from, to) = (CGFloat(place), CGFloat(lines.count))
       let path = CGMutablePath()
       path.addPath(ContinuousCorners.path(outer.insetBy(dx: from, dy: from), radius: max(band.cornerRadius - from, 0)))
-      path.addPath(
-        ContinuousCorners.path(outer.insetBy(dx: from + 1, dy: from + 1), radius: max(band.cornerRadius - from - 1, 0)))
+      path.addPath(ContinuousCorners.path(outer.insetBy(dx: to, dy: to), radius: max(band.cornerRadius - to, 0)))
       layer.frame = CGRect(origin: .zero, size: area.size)
       layer.contentsScale = scale
       layer.path = path
-      layer.fillColor = bands[place].colour.cgColor
+      layer.fillColor = lines[place].nsColor.cgColor
     }
   }
 

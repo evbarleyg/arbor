@@ -173,11 +173,9 @@ enum MinimapDrawing {
     for item in model.items {
       colour(item).withAlphaComponent(item.isInView ? 1 : outOfViewAlpha).setFill()
       NSBezierPath(roundedRect: item.frame, xRadius: 2.5, yRadius: 2.5).fill()
-      guard let strength = PanelLook.Map.line(isInView: item.isInView, increasesContrast: increasesContrast),
-        item.frame.width > 2, item.frame.height > 2
-      else { continue }
+      guard item.frame.width > 2, item.frame.height > 2 else { continue }
       let edge = NSBezierPath(roundedRect: item.frame.insetBy(dx: 0.5, dy: 0.5), xRadius: 2, yRadius: 2)
-      ink.withAlphaComponent(CGFloat(strength)).setStroke()
+      ink.withAlphaComponent(CGFloat(PanelLook.Map.plateEdge(increasesContrast: increasesContrast))).setStroke()
       edge.lineWidth = 1
       edge.stroke()
     }

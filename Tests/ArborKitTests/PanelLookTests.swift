@@ -179,15 +179,26 @@ import Testing
     return RGBA(white: isDark ? 1 : 0, alpha: strength).over(fill).contrast(with: ground)
   }
 
-  @Test(arguments: underAHeadsUpPanel) func aWindowOutOfViewHasALineThatStandsOutFromTheMap(ground: Ground) throws {
+  @Test(arguments: underAHeadsUpPanel) func everyWindowHasALineThatStandsOutFromTheMap(ground: Ground) {
     let under = PanelLook.veil(isDark: ground.isDark).over(ground.colour)
-    let strength = try #require(PanelLook.Map.line(isInView: false, increasesContrast: false))
+    let strength = PanelLook.Map.plateEdge(increasesContrast: false)
     // Also an app of the ground's own colour: its fill is not there at all.
     for app in Self.apps + [under] {
-      #expect(
-        line(strength, round: app, isInView: false, on: under, isDark: ground.isDark) >= 3,
-        "\(app) on \(ground), dark: \(ground.isDark)")
+      for isInView in [false, true] {
+        #expect(
+          line(strength, round: app, isInView: isInView, on: under, isDark: ground.isDark) >= 3,
+          "\(app) on \(ground), dark: \(ground.isDark), in view: \(isInView)")
+      }
     }
+  }
+
+  /// The control: a window in view had its colour alone. Of these apps on these grounds more than half did not stand out by 3, and a
+  /// fifth not by 1.5.
+  @Test func withoutALineAWindowInViewOftenDidNot() {
+    let fills = Self.underAHeadsUpPanel.flatMap { ground in
+      Self.apps.map { $0.contrast(with: PanelLook.veil(isDark: ground.isDark).over(ground.colour)) }
+    }
+    #expect(fills.count == 112 && fills.filter { $0 < 3 }.count == 59 && fills.filter { $0 < 1.5 }.count == 22)
   }
 
   /// The control: at 0.3, as it was. The ruler read 1.91 in the light look over black.
@@ -197,11 +208,11 @@ import Testing
     #expect(abs(line(0.3, round: under, isInView: false, on: under, isDark: false) - 1.95) < 0.02)
   }
 
-  @Test func withIncreaseContrastEveryWindowOnTheMapAndTheDesktopHaveAWholeLine() throws {
+  @Test func withIncreaseContrastEveryWindowOnTheMapAndTheDesktopHaveAWholeLine() {
     for isDark in [false, true] {
       let ground = Self.flat(isDark: isDark)
       for isInView in [false, true] {
-        let strength = try #require(PanelLook.Map.line(isInView: isInView, increasesContrast: true))
+        let strength = PanelLook.Map.plateEdge(increasesContrast: true)
         for app in Self.apps + [ground] {
           #expect(line(strength, round: app, isInView: isInView, on: ground, isDark: isDark) >= 3, "\(app), dark: \(isDark)")
         }
@@ -212,7 +223,6 @@ import Testing
       let before = PanelLook.Map.desktopLine(isInView: false, increasesContrast: false)
       #expect(RGBA(white: isDark ? 1 : 0, alpha: before).over(ground).contrast(with: ground) < 3)
     }
-    #expect(PanelLook.Map.line(isInView: true, increasesContrast: false) == nil, "without it a window in view has its colour alone")
   }
 
   // MARK: Lines on other apps' windows
@@ -240,6 +250,23 @@ import Testing
     #expect(abs(best(of: [accent, .white], on: red) - 2.94) < 0.01)
     #expect(abs(best(of: [accent, .white], on: cyan) - 2.8) < 0.01)
     for window in [red, cyan] { #expect(best(of: PanelLook.strongLines, on: window) >= 7) }
+  }
+
+  /// The focus ring is 1 to 12 points thick, and of a colour a person may have chosen.
+  @Test func aThinRingKeepsItsColourAndHasTheOneLineThatStandsOutFromIt() {
+    let blue = RGBA(red: 23 / 255, green: 116 / 255, blue: 218 / 255), yellow = RGBA(red: 1, green: 0.83, blue: 0.15)
+    for colour in [blue, yellow] {
+      #expect(PanelLook.strongLines(within: 1, of: colour).isEmpty)
+      for thickness: CGFloat in [3, 3.5, 12] { #expect(PanelLook.strongLines(within: thickness, of: colour) == [.black, .white]) }
+      for thickness: CGFloat in [1.5, 2, 2.5] {
+        let lines = PanelLook.strongLines(within: thickness, of: colour)
+        #expect(lines == [colour == yellow ? .black : .white], "\(thickness)")
+        #expect(CGFloat(lines.count) < thickness, "something of the colour is left")
+      }
+    }
+    // The control: white outside a yellow ring round a white window: neither is there.
+    #expect(best(of: [.white, yellow], on: .white) < 1.5)
+    #expect(best(of: PanelLook.strongLines(within: 2, of: yellow) + [yellow], on: .white) > 20)
   }
 
   /// The gap's handle is ordered behind the docked windows, and their shadows fall on it as on the wallpaper beside it: the accent

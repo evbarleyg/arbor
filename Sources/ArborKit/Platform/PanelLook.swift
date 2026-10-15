@@ -86,13 +86,11 @@ public enum PanelLook {
     /// Of its app's colour, in a window out of view: still there, only fainter.
     public static let fillOutOfView = 0.45
 
-    /// Of the line round a window; nil: it has none. Fainter must not mean gone: at 0.3 a window of the ground's own brightness was
-    /// still not there, 1.02 to 1 its fill and 1.9 its line in the light look over black (the judges' ruler, on a hosted Mac). With
-    /// Increase Contrast every window has a line, and a whole one.
-    public static func line(isInView: Bool, increasesContrast: Bool) -> Double? {
-      if increasesContrast { return 1 }
-      return isInView ? nil : 0.6
-    }
+    /// Of the line round a window, in view or not: what is in view is told by the accent's frame, not by who has an edge. Fainter must
+    /// not mean gone: at 0.3 a window out of view of the ground's own brightness was still not there, 1.02 to 1 its fill and 1.9 its
+    /// line in the light look over black (the judges' ruler, on a hosted Mac); and without a line a window in view of about the
+    /// ground's colour was not either. With Increase Contrast a whole line.
+    public static func plateEdge(increasesContrast: Bool) -> Double { increasesContrast ? 1 : 0.7 }
 
     /// Of the Desktop's outline.
     public static func desktopLine(isInView: Bool, increasesContrast: Bool) -> Double {
@@ -107,4 +105,18 @@ public enum PanelLook {
   /// one stands out from the worst ground by the root of R: the accent and white, 4.6 apart in the dark look, left every ground of
   /// middling brightness under 3 (a bright red window 2.9, a cyan one 2.8). Black and white are 21 apart: 4.58 on anything.
   public static let strongLines: [RGBA] = [.black, .white]
+
+  /// The same for a line `thickness` points thick in all, of a colour that may be a person's own choice (the focus ring's). Under three
+  /// points black and white would leave nothing of it: one line then, whichever of the two stands out from the colour. A point
+  /// has no room for any.
+  public static func strongLines(within thickness: CGFloat, of colour: RGBA) -> [RGBA] {
+    if thickness >= CGFloat(strongLines.count + 1) { return strongLines }
+    return thickness > 1 ? [secondLine(inside: colour).withAlpha(1)] : []
+  }
+
+  /// Without the setting: the line inside the accent's. A hint of an edge on most things, and the whole edge on a few.
+  public static func secondLine(inside accent: RGBA) -> RGBA {
+    let brightness = 0.2126 * accent.red + 0.7152 * accent.green + 0.0722 * accent.blue
+    return brightness > 0.6 ? RGBA.black.withAlpha(0.45) : RGBA.white.withAlpha(0.55)
+  }
 }

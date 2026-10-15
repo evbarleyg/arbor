@@ -58,10 +58,13 @@ enum AccentInk {
   /// With Increase Contrast: the lines outside the accent's, each a point wide, from the outside in.
   static let strongLines: [NSColor] = PanelLook.strongLines.map(\.nsColor)
 
-  /// A hint of an edge on most things, and the whole edge on a few.
+  /// For the model to choose by. Black for a colour that has no red, green and blue: the choice is then white, as it was.
+  static func rgba(_ colour: NSColor) -> RGBA {
+    guard let plain = colour.usingColorSpace(.sRGB) else { return .black }
+    return RGBA(red: plain.redComponent, green: plain.greenComponent, blue: plain.blueComponent, alpha: plain.alphaComponent)
+  }
+
   static func secondLine(inside accent: NSColor) -> NSColor {
-    guard let colour = accent.usingColorSpace(.sRGB) else { return NSColor.white.withAlphaComponent(0.55) }
-    let brightness = 0.2126 * colour.redComponent + 0.7152 * colour.greenComponent + 0.0722 * colour.blueComponent
-    return brightness > 0.6 ? NSColor.black.withAlphaComponent(0.45) : NSColor.white.withAlphaComponent(0.55)
+    PanelLook.secondLine(inside: rgba(accent)).nsColor
   }
 }

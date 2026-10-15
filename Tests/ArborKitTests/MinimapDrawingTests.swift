@@ -188,7 +188,7 @@
     }
 
     /// Whatever its app's colour: one of the ground's own brightness was not there at all.
-    @Test func aWindowOutOfViewHasALineRoundItAndEveryWindowAFullOneWithIncreaseContrast() throws {
+    @Test func everyWindowHasALineRoundItAndAFullOneWithIncreaseContrast() throws {
       // One window framed: over the other two no tint of the view's lies.
       let tree = threeWindows()
       let model = try model(tree, camera: tree.leaf(containing: window(2)))
@@ -206,7 +206,7 @@
         #expect(model.items.contains { $0.isInView } && model.items.contains { !$0.isInView })
         for item in model.items {
           let edge = canvas.pixel(item.frame.minX + 0.5, item.frame.midY)
-          if !item.isInView || strong { #expect(!edge.isNear(paper, within: 0.2), "\(item.window), strong: \(strong)") }
+          #expect(!edge.isNear(paper, within: 0.2), "\(item.window), strong: \(strong)")
           if !item.isInView, strong { #expect(edge.isNear(ink(isDark: false), within: 0.1), "\(item.window)") }
         }
       }
