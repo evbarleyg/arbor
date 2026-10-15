@@ -332,6 +332,14 @@ extension World {
       try arguments.expect(atMost: 0, for: command)
       return .printing(String(frontApp))
 
+    case "keyboard":
+      try arguments.expect(atMost: 0, for: command)
+      // The window Accessibility calls the focused one of the app in front: one that Arbor knows, or a panel,
+      // a sheet or a dialog.
+      let known = system.focused.flatMap { owner(of: $0.rawValue) == frontApp ? $0.rawValue : nil }
+      let extra = apps[frontApp]?.focused.flatMap { extras[$0] != nil && isOnScreen($0) ? $0 : nil }
+      return .printing("\(frontApp) \((known ?? extra).map(String.init) ?? "-")")
+
     case "menu-item", "menu-mark":
       guard arguments.words.count > 1, let pid = Int32(arguments.words[0]) else {
         throw fail("expected a process id and a title")

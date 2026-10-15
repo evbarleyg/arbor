@@ -189,6 +189,7 @@ enum Driver {
       let last = index == entries.count - 1
       world.begin(entry)
       if last, live, let session { world.noticeChanges(in: session.home, settingsIn: session.rehearsal) }
+      if last { world.traceLinesBefore = world.traces.mapValues(\.lines.count) }
       reply = world.perform(entry.fields)
       if !(last && lastAsks) { world.letTimePass() }
     }
@@ -345,6 +346,21 @@ struct Session {
         name == "state.json" ? nil : try? FileManager.default.attributesOfItem(atPath: path)[.posixPermissions]
       try? data.write(to: URL(fileURLWithPath: path), options: .atomic)
       try? FileManager.default.setAttributes([.posixPermissions: before ?? 0o600], ofItemAtPath: path)
+    }
+    // A trace grows line by line on a Mac. Here each replay has all of it, so the file is replaced by one that
+    // is as long as the real one would be by now. Only a trace that the last line added to: a finished one is
+    // the script's to move or delete, and must not come back.
+    for (name, sink) in world.traces.sorted(by: { $0.key < $1.key }) {
+      let before = world.traceLinesBefore[name]
+      guard sink.lines.count != before else { continue }
+      let path = home + "/traces/" + name
+      // Of a trace that is being recorded, the real Arbor goes on writing into a file nobody can see.
+      if before != nil, !FileManager.default.fileExists(atPath: path) { continue }
+      // As `FileTraceSink` makes them.
+      try? FileManager.default.createDirectory(
+        atPath: home + "/traces", withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
+      try? Data(sink.text.utf8).write(to: URL(fileURLWithPath: path), options: .atomic)
+      try? FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: path)
     }
     if let pid = world.arbor?.pid {
       try? Data("\(pid)\n".utf8).write(to: URL(fileURLWithPath: marker), options: .atomic)

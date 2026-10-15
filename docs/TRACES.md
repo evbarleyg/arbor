@@ -23,7 +23,8 @@ make replay FILE="<file>"         # the story as text, with drawings of the layo
 
 Arbor's home is `~/Library/Application Support/Arbor` (or `$ARBOR_HOME`). arbor-sim understands the `trace` commands too, so
 a simulated session can be recorded the same way; without an `ARBOR_HOME` its home is `arbor-guests-<uid>` in the temporary
-directory, never the real Arbor's (its reply says where the file is).
+directory, never the real Arbor's (its reply says where the file is). So does a rehearsal of a Mac shell script (`scripts/mac-shell/rehearse.sh`): the same script
+leaves a trace on a Mac and on Linux, which is what `make reality` compares (`docs/TESTING.md`).
 
 ## What is never in a trace
 
