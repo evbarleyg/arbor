@@ -382,7 +382,7 @@ Arrange the windows by hand once, ask for the line, and bind it to a shortcut: `
 | **I want to start again** | | `arborctl reset everything` (the settings; a file Arbor could not read is kept as `settings.unreadable.json`). For the arrangement, quit Arbor and delete `state.json` in `~/Library/Application Support/Arbor` |
 | **I want it gone** | | Quit Arbor (windows come back into view), delete Arbor.app and that folder, and remove it under Privacy & Security → Accessibility |
 
-When reporting a problem, attach `arbor.log` from that folder. It contains window numbers and the names and identifiers of apps, never window titles or names you gave, and of what else you typed only what is one of Arbor’s own words: where something in `settings.json` is wrong it says where, and `arborctl doctor` tells you what. `state.json` does contain titles: look before you share it.
+When reporting a problem, attach `arbor.log` from that folder. It contains window numbers and the names and identifiers of apps, never window titles or names you gave, `~` for your home folder (whose name is your account’s), and of what else you typed only what is one of Arbor’s own words: where something in `settings.json` is wrong it says where, and `arborctl doctor` tells you what. `state.json` does contain titles: look before you share it.
 
 ## 6. On its way
 

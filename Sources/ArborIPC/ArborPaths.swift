@@ -29,6 +29,38 @@ public enum ArborPaths {
     return support.appendingPathComponent("Arbor", isDirectory: true)
   }
 
+  /// `text` with `~` for a home folder: this account's, wherever it is, and anybody's under `/Users`. For whatever people pass on: the
+  /// log, and what `arborctl` says when it cannot reach Arbor, are what gets pasted into a public issue, and an account's name is a
+  /// person's name as often as not. Not for what a program goes by: a reply that says where a trace is recorded is read by scripts.
+  public static func withoutHomeFolder(_ text: String, homes: [String] = homeFolders) -> String {
+    guard text.contains("/") else { return text }
+    /// What a name in a path ends at.
+    func ends(_ character: Character?) -> Bool { character.map { $0 == "/" || $0.isWhitespace || "\"'`:,;)]".contains($0) } ?? true }
+    var result = ""
+    var rest = Substring(text)
+    while let slash = rest.firstIndex(of: "/") {
+      result += rest[..<slash]
+      rest = rest[slash...]
+      // Only where a path begins, also after `file://`: `/Users` in the middle of one is a folder like any other.
+      let begins = result.hasSuffix("://") || (result.last.map { !($0.isLetter || $0.isNumber || "._-~/".contains($0)) } ?? true)
+      if begins, let home = homes.first(where: { rest.hasPrefix($0) && ends(rest.dropFirst($0.count).first) }) {
+        result += "~"
+        rest = rest.dropFirst(home.count)
+      } else if begins, rest.hasPrefix("/Users/"), case let name = rest.dropFirst(7).prefix(while: { !ends($0) }), !name.isEmpty, name != "Shared" {
+        result += "~"
+        rest = rest.dropFirst(7 + name.count)
+      } else {
+        result.append(rest.removeFirst())
+      }
+    }
+    return result + rest
+  }
+
+  /// What this account's home folder goes by: as the system has it, and as `HOME` says, which need not be the same. The longest first.
+  /// Read once: `environment` copies every variable each time it is asked.
+  public static let homeFolders: [String] = Set([NSHomeDirectory(), ProcessInfo.processInfo.environment["HOME"] ?? ""])
+    .map { $0.count > 1 && $0.hasSuffix("/") ? String($0.dropLast()) : $0 }.filter { $0.count > 1 && $0.hasPrefix("/") }.sorted { $0.count > $1.count }
+
   public static var socketPath: String {
     if let override = ProcessInfo.processInfo.environment["ARBOR_SOCKET"], !override.isEmpty {
       return NSString(string: override).expandingTildeInPath
@@ -61,13 +93,13 @@ public enum ArborPaths {
       at: folder, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
     var info = stat()
     guard stat(folder.path, &info) == 0 else {
-      throw Problem(description: "cannot examine \(folder.path): \(String(cString: strerror(errno)))")
+      throw Problem(description: "cannot examine \(withoutHomeFolder(folder.path)): \(String(cString: strerror(errno)))")
     }
     guard info.st_uid == geteuid() else {
-      throw Problem(description: "\(folder.path) belongs to another user (uid \(info.st_uid)); Arbor keeps no files there")
+      throw Problem(description: "\(withoutHomeFolder(folder.path)) belongs to another user (uid \(info.st_uid)); Arbor keeps no files there")
     }
     if info.st_mode & 0o077 != 0, chmod(folder.path, 0o700) != 0 {
-      throw Problem(description: "\(folder.path) is open to other users and cannot be closed to them")
+      throw Problem(description: "\(withoutHomeFolder(folder.path)) is open to other users and cannot be closed to them")
     }
   }
 }

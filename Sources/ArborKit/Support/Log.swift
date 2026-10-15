@@ -10,7 +10,7 @@ import Foundation
 
 /// Logs to the unified log (subsystem `dev.arbor`) and to `arbor.log` in
 /// Arbor's home folder, which agents and the end-to-end runner read.
-/// Window titles are never logged; use window ids and bundle ids.
+/// Window titles are never logged; use window ids and bundle ids. A home folder is written `~`.
 public enum Log {
   private static let file = LogFile(url: ArborPaths.logFile)
   /// Read once: `environment` copies every variable each time it is asked.
@@ -47,7 +47,8 @@ public enum Log {
   }
 
   private static func write(_ level: Level, _ message: String) {
-    let text = sanitized(message)
+    // Here, so that it holds for every line there is and will be: a path can come in the words of an error of macOS's as well.
+    let text = sanitized(ArborPaths.withoutHomeFolder(message))
     #if canImport(os)
       switch level {
       case .info: unifiedLog.info("\(text, privacy: .public)")

@@ -46,6 +46,9 @@ host   *   localhost|127\.0\.0\.1|0\.0\.0\.0
 host   Sources/ArborTesting/ChaosGenerator.swift     dock
 host   Tests/ArborCoreTests/CommandURLTests.swift    dock
 
+# The test of what writes `~` for a home folder needs home folders to write it for. All made up.
+home   Tests/ArborKitTests/LogPrivacyTests.swift   /(Users/(jo|jojo|al|okapiword)|root/x)
+
 # This repository, and the tap `brew install` finds it through.
 repository   *   [^/]+/(arbor|homebrew-tap|tap)(\.git)?
 
