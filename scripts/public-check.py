@@ -23,11 +23,17 @@ in $PUBLIC_CHECK_WORDS. Honest exceptions are in public-check.allow, each with i
 Usage: scripts/public-check.py             what this branch adds to origin's main and swarm/trunk (`make public-check`)
        … --base REF [--head REF] [--branch NAME] [--tag NAME]   what REF..head adds (head: HEAD); CI's way
        … --pre-push                        as git's pre-push hook, which says on standard input what is being pushed
+       … --rules                           only whether the rules have changed since this clone last said it had read them (below)
        … --text [FILE…]                    free text, from standard input without a file: read a pull request's body or a
                                            comment through this BEFORE posting it
        … --tree                            every file at HEAD, old and new: an audit to read, not a gate
        … --mask                            print findings without the words found (always so in GitHub Actions, whose
                                            logs and annotations are as public as the repository)
+
+Rules that change. Agents who work to a brief kept outside the repository are deep in long work when a rule changes, and a message does
+not reach them until they look up. So the change is enforced where the act happens. Beside the file of private words lies
+`rules-version.txt`; its first line is a number, a time, and a sentence on what changed and what to read again. The hook compares the
+number with `git config arbor.rulesRead` and refuses the push while they differ. No such file, as in a stranger's clone: not a word.
 
 Exit code 0 when nothing was found, 1 when something was, 2 when it could not tell.
 scripts/test-public-check.py holds it to a table of situations; `make lint` runs that.
@@ -471,7 +477,27 @@ def new_commits(count):
     return f"{count} new commit{'' if count == 1 else 's'}"
 
 
+def unread_rules(top):
+    """What to tell whoever has not read the rules as they now are; None when there is nothing to tell."""
+    code, words = git("config", "--get", "arbor.privateWords", cwd=top, check=False)
+    if code != 0 or not words.strip():
+        return None
+    try:
+        with open(os.path.join(os.path.dirname(os.path.expanduser(words.strip())), "rules-version.txt"), encoding="utf-8") as handle:
+            number, _, what = handle.readline().strip().partition(" ")
+    except OSError:
+        return None
+    if not number or git("config", "--get", "arbor.rulesRead", cwd=top, check=False)[1].strip() == number:
+        return None
+    return (f"THE RULES YOU WORK TO HAVE CHANGED, and this clone has not said that it has read them. Version {number}: {what}\n"
+            f"Read your inbox and what that sentence names, now. Then: git config arbor.rulesRead {number}")
+
+
 def pre_push(top, lines, masked):
+    unread = unread_rules(top)
+    if unread:
+        print(f"✘ {unread}\npublic-check: nothing was pushed.")
+        return 1
     checker, code = None, 0
     for line in lines:
         fields = line.split()
@@ -499,7 +525,7 @@ def main(arguments=None, cwd=None):
     parser = argparse.ArgumentParser(usage="see the top of scripts/public-check.py", add_help=False)
     for flag in ("--base", "--head", "--branch", "--tag"):
         parser.add_argument(flag)
-    for flag in ("--pre-push", "--text", "--tree", "--mask", "--help"):
+    for flag in ("--pre-push", "--rules", "--text", "--tree", "--mask", "--help"):
         parser.add_argument(flag, action="store_true")
     parser.add_argument("files", nargs="*")
     options = parser.parse_args(arguments)
@@ -511,6 +537,10 @@ def main(arguments=None, cwd=None):
         if options.files and not options.text:
             raise Unclear(f"what is to be done with {options.files[0]}? --text reads files; without it a branch is read")
         top = git("rev-parse", "--show-toplevel", cwd=cwd).strip()
+        if options.rules:
+            unread = unread_rules(top)
+            print(f"✘ {unread}" if unread else "public-check: the rules are as this clone last read them, or there are none to read")
+            return 1 if unread else 0
         if options.pre_push:
             return pre_push(top, sys.stdin.read().splitlines(), masked)
         checker = checker_for(top)

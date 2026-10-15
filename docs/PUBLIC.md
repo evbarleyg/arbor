@@ -45,6 +45,12 @@ the commits were made.
 It prints the place, the rule, what to write instead, and the line with the find between » and «. In GitHub Actions, whose
 logs are as public as the rest, everything found is blanked out, in file and branch names too.
 
+The hook has one more job, for agents who work to a brief that is kept outside the repository. A rule that changes while they are deep in
+long work does not reach them by message. Beside the file of private words lies `rules-version.txt`, whose first line is a number, a
+time, and a sentence on what changed. While the number differs from `git config arbor.rulesRead`, the hook refuses every push and
+prints the sentence. `scripts/public-check.py --rules` asks the same before anything else that cannot be taken back. Where there is no
+such file, nothing is said.
+
 ## The clone itself
 
 A clone is not always what it seems. A machine that is handed a prepared or cached copy, or a folder in use since before the

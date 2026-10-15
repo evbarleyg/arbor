@@ -573,6 +573,35 @@ def check_history():
     situation("pre-push: to one's fork, what the public repository has under another name is not new", (0, []),
               second_remote_has_it("upstream", "https://github.com/evbarleyg/arbor.git", pushing_to="origin"), "--pre-push")
 
+    # Rules that change while agents are deep in work.
+    def rules(version="7 12:00 UTC patches go up by hand-over only: read section 3 again", read=None, words=True):
+        def prepare(r):
+            clean(r)
+            r.write("../notes/words.txt", "quux7\n")
+            if version is not None:
+                r.write("../notes/rules-version.txt", version + "\nolder lines, which nobody reads\n")
+            if words:
+                r.git("config", "arbor.privateWords", os.path.join(os.path.dirname(r.path), "notes", "words.txt"))
+            if read is not None:
+                r.git("config", "arbor.rulesRead", read)
+            return {"standard_input": f"refs/heads/x {r.git('rev-parse', 'HEAD')} refs/heads/x {'0' * 40}\n"}
+        return prepare
+
+    def told(what, expected, prepare, *arguments):
+        with tempfile.TemporaryDirectory() as folder:
+            repository = Repository(folder)
+            more = prepare(repository)
+            code, _, output = repository.run(*(arguments or ("--pre-push",)), **(more if not arguments else {}))
+            row(what, (code, "by hand-over only: read section 3 again" in output, "git config arbor.rulesRead 7" in output), expected)
+    told("the rules have changed and this clone has never read any: refused, with the sentence and the way on", (1, True, True), rules())
+    told("it has read an earlier version", (1, True, True), rules(read="6"))
+    told("it has read this one", (0, False, False), rules(read="7"))
+    told("there is no such file", (0, False, False), rules(version=None))
+    told("the file is empty", (0, False, False), rules(version=""))
+    told("a stranger's clone, which knows of no private words: not a word", (0, False, False), rules(words=False))
+    told("--rules: the same question, for whoever is about to do something else than push", (1, True, True), rules(read="6"), "--rules")
+    told("--rules: read", (0, False, False), rules(read="7"), "--rules")
+
     situation("--text: what somebody is about to post", (1, ["person", "session"]),
               lambda r: {"standard_input": "It failed on his Mac.\n\nhttps://claude.ai/code/session_01AbCdEfGhIjKlMnOpQrStUv\n"}, "--text")
     situation("--text: fit to post", (0, []), lambda r: {"standard_input": "It failed on a tester's Mac. See #3.\n"}, "--text")
@@ -656,6 +685,17 @@ def check_hook():
                                env=repository.environment, capture_output=True, check=False).returncode == 0
         row("make hooks: git calls the hook, and a refusal stops the push",
             (done.returncode != 0, "does not descend" in done.stdout + done.stderr, there), (True, True, False))
+        # A branch whose own check is from before the rules were asked about: the hook asks all the same.
+        repository.write("scripts/public-check.py", "import sys\nsys.exit(0)\n")
+        repository.write("../notes/words.txt", "quux7\n")
+        repository.write("../notes/rules-version.txt", "7 12:00 UTC read section 3 again\n")
+        repository.git("config", "arbor.privateWords", os.path.join(folder, "notes", "words.txt"))
+        push = lambda: subprocess.run(["git", "push", "origin", "fix/something"], cwd=repository.path, env=repository.environment, capture_output=True, text=True, check=False)
+        done = push()
+        row("the hook: the rules have changed, and the branch's own check knows nothing of rules", (done.returncode != 0, "read section 3 again" in done.stdout + done.stderr), (True, True))
+        repository.git("config", "arbor.rulesRead", "7")
+        row("the hook: read, and the push goes on to the branch's own check", push().returncode, 0)
+        os.remove(os.path.join(repository.path, "scripts", "public-check.py"))
         again = subprocess.run([install], cwd=repository.path, env=repository.environment, capture_output=True, check=False).returncode
         row("make hooks: a second time renews it", again, 2)
         hook = os.path.join(repository.path, ".git", "hooks", "pre-push")
