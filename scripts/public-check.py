@@ -48,6 +48,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT_COMMIT = "51b162d5f28c02846134c1f4a113c787f5164602"
 # Where work is integrated: what these hold on origin has been read before.
 INTEGRATION = ("main", "swarm/trunk")
+# The public repository itself, under whatever name a clone knows it.
+UPSTREAM = re.compile(r"github\.com[:/]evbarleyg/arbor(\.git)?/?$", re.IGNORECASE)
 NO_REPLY = re.compile(r"^([\w.+\[\]-]+@users\.noreply\.github\.com|noreply@github\.com)$")
 MASK = "▒▒▒"
 # A little more than the newest number passes: a branch is pushed before its pull request has one, others are opened
@@ -145,7 +147,8 @@ def told_by_this_machine(environment, hostname):
     for name, value in environment.items():
         if TELLING.search(name):
             values[value] = name
-    return {value: name for value, name in values.items() if len(value) >= TELLING_LENGTH and value.lower() not in ORDINARY}
+    # Not a no-reply address: it is what commits are meant to carry, trailers too.
+    return {value: name for value, name in values.items() if len(value) >= TELLING_LENGTH and value.lower() not in ORDINARY and not NO_REPLY.match(value)}
 
 
 def blanked(line, spans, first=0, last=None):
@@ -348,6 +351,20 @@ def first_commit_if_here(cwd=None):
     return [ROOT_COMMIT] if git("cat-file", "-e", ROOT_COMMIT + "^{commit}", cwd=cwd, check=False)[0] == 0 else []
 
 
+def public_already(top):
+    """What need not be read again, as arguments for git rev-list: what the public repository is known to have, and the remote being pushed
+    to (the hook says which, in $PUBLIC_CHECK_REMOTE). NOT what any other remote has: a clone that also knows a private place is the very
+    clone this check is for, and what lies there is new to the public however long this clone has had it."""
+    names = {os.environ.get("PUBLIC_CHECK_REMOTE", "")}
+    for line in git("remote", "--verbose", cwd=top).splitlines():
+        name, _, rest = line.partition("\t")
+        if UPSTREAM.search(rest.rsplit(" ", 1)[0]):
+            names.add(name)
+    known = set(git("remote", cwd=top).split())
+    # Where the history begins is checked apart from this, so remote-tracking refs from somewhere else under a good name gain nothing.
+    return [f"--remotes={name}/*" for name in sorted(names & known)] + first_commit_if_here(top)
+
+
 def highest_number(cwd=None):
     """The highest number an issue or pull request may be referred to by; None when nobody can be asked."""
     if os.environ.get("PUBLIC_CHECK_HIGHEST", "").isdigit():
@@ -434,9 +451,7 @@ def pre_push(top, lines, masked):
         _, sha, remote_ref, _ = fields
         checker = checker or checker_for(top)
         commit = git("rev-parse", "--verify", sha + "^{commit}", cwd=top).strip()
-        # New is what no remote is known to have. Where the history begins is checked apart from that, so a clone whose
-        # remote-tracking refs are from somewhere else gains nothing by them.
-        problems, findings, count = check_range(checker, [commit, "--not", "--remotes", *first_commit_if_here(top)], commit, top)
+        problems, findings, count = check_range(checker, [commit, "--not", *public_already(top)], commit, top)
         if remote_ref.startswith("refs/tags/"):
             kind, name = "tag", remote_ref[len("refs/tags/"):]
             more_problems, more = check_tag(checker, name, top)

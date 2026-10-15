@@ -5,4 +5,5 @@ top=$(git rev-parse --show-toplevel) && common=$(git rev-parse --git-common-dir)
 check="$top/scripts/public-check.py"
 # A branch from before the check existed is as public as any other: it is read with the copy `make hooks` kept.
 [ -f "$check" ] || check="$common/arbor-public-check/public-check.py"
-exec python3 "$check" --pre-push
+# Which remote goes by the environment: the check on an older branch knows no argument for it, and must not trip over one.
+PUBLIC_CHECK_REMOTE="$1" exec python3 "$check" --pre-push

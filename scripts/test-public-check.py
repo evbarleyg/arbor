@@ -167,7 +167,7 @@ def check_texts():
     row("the line is counted from where the text begins", [f.number for f in checker().check("x", "fine\nhe said", 10)], [11])
 
     here = check.told_by_this_machine(
-        {"SOME_SESSION_ID": "abcdef-123456", "A_CONTAINER_ID": "container-77", "MY_EMAIL": "r@mail.org", "X_TOKEN": "t0ken-t0ken", "HOME": "/home/runner",
+        {"SOME_SESSION_ID": "abcdef-123456", "A_CONTAINER_ID": "container-77", "MY_EMAIL": "r@mail.org", "X_TOKEN": "t0ken-t0ken", "HOME": "/home/runner", "GIT_AUTHOR_EMAIL": "1+someone@users.noreply.github.com",
          "USER": "claude-user", "PATH": "/usr/local/bin", "SHORT_ID": "x1"},
         "box-7f3a")
     row("what a machine would give away about itself", here, {"abcdef-123456": "SOME_SESSION_ID", "container-77": "A_CONTAINER_ID", "r@mail.org": "MY_EMAIL", "t0ken-t0ken": "X_TOKEN", "box-7f3a": "host name"})
@@ -518,6 +518,30 @@ def check_history():
     situation("pre-push: deleting a branch adds nothing", (0, []),
               lambda r: {"standard_input": f"(delete) {'0' * 40} refs/heads/robins-display {r.root}\n"}, "--pre-push")
     situation("pre-push: nothing to push", (0, []), lambda r: {"standard_input": ""}, "--pre-push")
+
+    # What counts as public already: what the public repository has, and the remote being pushed to. Not what some other remote has.
+    def second_remote_has_it(name="archive", url=None, pushing_to=None):
+        def prepare(r):
+            line(r)  # it goes back to the first public commit, like a branch of patches kept somewhere private
+            other = os.path.join(os.path.dirname(r.path), "archive.git")
+            subprocess.run(["git", "init", "--quiet", "--bare", other], check=True, env=r.environment)
+            r.git("remote", "add", name, other)
+            r.git("push", "--quiet", name, "HEAD:refs/heads/patches")
+            r.git("fetch", "--quiet", name)
+            if url:
+                r.git("remote", "set-url", name, url)
+            r.write("docs/more.md", "fine\n")
+            r.commit()
+            if pushing_to:
+                r.environment["PUBLIC_CHECK_REMOTE"] = pushing_to
+            return {"standard_input": f"refs/heads/x {r.git('rev-parse', 'HEAD')} refs/heads/x {'0' * 40}\n"}
+        return prepare
+    situation("pre-push: a commit that only a second remote knows is new to the public", (1, ["person"]), second_remote_has_it(pushing_to="origin"), "--pre-push")
+    situation("pre-push: the same from a hook that does not say where to", (1, ["person"]), second_remote_has_it(), "--pre-push")
+    situation("pre-push: the same when the second remote's name begins like origin's", (1, ["person"]), second_remote_has_it("origin2", pushing_to="origin"), "--pre-push")
+    situation("pre-push: to that second remote itself, which has it", (0, []), second_remote_has_it(pushing_to="archive"), "--pre-push")
+    situation("pre-push: to one's fork, what the public repository has under another name is not new", (0, []),
+              second_remote_has_it("upstream", "https://github.com/evbarleyg/arbor.git", pushing_to="origin"), "--pre-push")
 
     situation("--text: what somebody is about to post", (1, ["person", "session"]),
               lambda r: {"standard_input": "It failed on his Mac.\n\nhttps://claude.ai/code/session_01AbCdEfGhIjKlMnOpQrStUv\n"}, "--text")
