@@ -186,6 +186,8 @@ api -X POST "repos/$repo/actions/workflows/mac-shell.yml/dispatches" \
   -f "inputs[macs]=$([ "$macs" -eq 1 ] || echo "$shares" | sed 's/.*/"&"/' | paste -sd, - | sed 's/.*/[&]/')" >/dev/null \
   || fail "could not start the workflow of $home for $ref"
 echo "started ${scripts[*]} at $ref (${remote:0:7}), tag $tag$([ "$macs" -eq 1 ] || echo ", on $macs Macs")"
+# For whoever shares a look at the queue: there is one more waiting now. Costs no call.
+python3 scripts/mac-queue.py --repo "$repo" --started "$macs" --for "$ref" >/dev/null 2>&1
 
 start=$(date +%s)
 run=""

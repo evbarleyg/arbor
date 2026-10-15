@@ -326,6 +326,22 @@ def ran(branch, name):
     return commands
 
 
+def after_a_start(kept, macs=1, repo="owner/repo"):
+    """Whether a start was noted in a cache that holds `kept`, and what three who hold back at priorities 1, 2 and 3 for another branch read there."""
+    with tempfile.TemporaryDirectory() as folder:
+        path = os.path.join(folder, "queue.json")
+        if kept is not None:
+            with open(path, "w", encoding="utf-8") as handle:
+                handle.write(kept)
+        noted = queue.note_started(repo, NOON, "feat/first", macs, path)
+        runs = queue.shared("owner/repo", NOON + timedelta(seconds=5), lambda: [], path)
+        found = queue.facts(runs, NOON + timedelta(seconds=5))
+        return noted, found["waiting"], [bool(queue.hold_back(found, priority, "feat/second")) for priority in (1, 2, 3)]
+
+
+EMPTY_QUEUE = json.dumps({"repo": "owner/repo", "at": "2026-01-01T11:59:50Z", "runs": []})
+
+
 def kept_at(time, repo="owner/repo"):
     return json.dumps({"repo": repo, "at": at(time), "runs": [{"id": "kept"}]})
 
@@ -365,6 +381,17 @@ SINGLE = [
     ("the cache: half a file", lambda: cached(kept_at("11:59:30")[:25]), (1, [{"id": 1}])),
     ("the cache: not what was expected there", lambda: cached("[1, 2]"), (1, [{"id": 1}])),
     ("the cache: cannot be written: both ask, and that is all", lambda: cached(None, writable=False), (2, [{"id": 2}])),
+    ("a start out of an empty queue: the next one at priority 3 reads that somebody waits", lambda: after_a_start(EMPTY_QUEUE), (True, 1, [False, False, True])),
+    ("a start on three Macs holds priority 2 back as well", lambda: after_a_start(EMPTY_QUEUE, macs=3), (True, 3, [False, True, True])),
+    ("a start: whose branch it is counts towards that branch's two", lambda: (lambda path: (
+        open(path, "w", encoding="utf-8").write(EMPTY_QUEUE), queue.note_started("owner/repo", NOON, "feat/first", 2, path),
+        bool(queue.hold_back(queue.facts(queue.shared("owner/repo", NOON, lambda: [], path), NOON), 1, "feat/first")), os.remove(path))[2])(
+            os.path.join(tempfile.gettempdir(), f"queue-{os.getpid()}.json")), True),
+    ("a start: no cache yet: nothing is noted, and nothing goes wrong", lambda: after_a_start(None), (False, 0, [False, False, False])),
+    ("a start: another repository's cache is left alone", lambda: after_a_start(EMPTY_QUEUE, repo="other/repo"), (False, 0, [False, False, False])),
+    ("a start: half a file is left alone", lambda: after_a_start(EMPTY_QUEUE[:30])[0], False),
+    ("a start: no cache is named", lambda: queue.note_started("owner/repo", NOON, "feat/first", 1, ""), False),
+    ("--started: exit code 0, not a word, GitHub is not asked", lambda: ends_with(None, "--started", "2", "--for", "feat/first"), (0, "")),
     ("no cache is named: everybody asks", lambda: [queue.shared("owner/repo", NOON, lambda: "asked", "")], ["asked"]),
     ("the cache is brought up to date before it is read", lambda: brought(), ["kept"]),
     ("no branch is named, or the cache goes by another name than it has there: nothing is run", lambda: [ran("", "mac-queue-cache.json"), ran("state/github", "queue.json")], [[], []]),
