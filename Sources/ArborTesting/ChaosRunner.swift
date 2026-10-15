@@ -550,7 +550,11 @@ public final class ChaosRunner {
       for id in system.windows.keys { system.windows[id]!.groundHasShifted = true }
       system.setDisplays(displays)
     case .first:
-      for move in moves { system.userMove(move.window, to: move.frame) }
+      for move in moves {
+        // As in the other orders what Arbor last asked of it goes along with it: a window in the middle of its slot is there afterwards too.
+        system.moveSilently(move.window, to: move.frame)
+        system.report(move.window, userInitiated: true)
+      }
       system.setDisplays(displays)
     case .silent:
       for move in moves { system.moveSilently(move.window, to: move.frame) }

@@ -1,0 +1,21 @@
+# The row's story at what the code does today (the windows of the unplugged display float): no refused line in it.
+launch
+displays main:0,0,1440,900:25,0,0,0* side:1440,0,1920,1080:25,0,0,0 windows-late
+open 101 Editor pid 1001 at 100 100 900 700 min 400 300
+open 102 Browser pid 1002 at 120 60 1200 800 min 440 240
+open 103 Slack pid 1003 at 200 200 600 400
+open 104 Term pid 1004 at 240 240 600 400
+settle
+dock 101 left
+dock 102 right
+move 103 1600 100 600 400
+move 104 2400 100 600 400
+focus 103
+dock 103 left
+focus 104
+dock 104 right
+focus 101
+settle
+displays main:0,0,1440,900:25,0,0,0* windows-late
+settle
+state

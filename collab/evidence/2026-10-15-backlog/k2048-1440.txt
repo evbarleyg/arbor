@@ -1,0 +1,16 @@
+# A window 1300 wide beside one that insists on 820 of 1440; hidden Dock, so the display's own edge is the line.
+launch
+displays main:0,0,1440,900:25,0,0,0* windows-late
+open 102 Safari pid 1003 at 60 100 1300 600
+open 105 Mail pid 1004 at 100 100 900 700 min 820 500
+settle
+dock 105 left
+settle
+move 102 844 301 596 600
+settle
+relayout
+home
+settle
+undo
+home
+settle

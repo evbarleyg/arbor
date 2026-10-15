@@ -215,12 +215,14 @@ extension ChaosRunner {
       story: "Two moves of one window by a layout that a timer runs (a Space that comes back, a tile clicked), or one by the command and one a moment later with "
         + "nobody touching anything.",
       script: """
-        displays third:0,0,1440,900:25,0,52,0* windows-silent
-        open 113 Notes pid 1001 at -135 803 721 296
+        displays main:-1512,200,1512,982:37,0,0,0 side:0,0,2560,1440:25,86,0,0* windows-never
         launch
-        arrange all
-        tile third 0
-        settle
+        open 101 Xcode pid 1004 at 998 373 1365 752 min 1188 685
+        key down dock top
+        open 103 Finder pid 1005 at 424 47 892 523 min 501 300
+        key down focus right
+        seam side 0 -42
+        react
         """),
     ChaosKnownFailure(
       rule: "moved-again-sizing", owner: "rule 3: a refused size costs no second move", severity: 3,
@@ -438,6 +440,191 @@ extension ChaosRunner {
         quit
         settings {"gap":1000000000}
         launch
+        """),
+    ChaosKnownFailure(
+      rule: "flashed-into-view", owner: "rule 3: a refused size costs no second move", severity: 2,
+      story: "A window too large for its slot is a tile. At the next dock Arbor asks it again whether it fits by now, IN VIEW: it shows across the display and goes again. "
+        + "One ordinary walk in seven meets it: an editor on a laptop is enough.",
+      script: """
+        launch
+        open 102 Finder pid 1005 at 211 312 957 336 min 501 300
+        open 104 Xcode pid 1004 at 103 25 1188 789 min 1188 685
+        key down arrange
+        key down dock bottom
+        """,
+      """
+        open 101 Xcode pid 1004 at 91 57 1417 904 min 1188 685
+        open 104 Preview pid 1007 at 423 244 723 670 min 723 400 max 723 2000
+        launch
+        key down arrange
+        key down dock top
+        """),
+    ChaosKnownFailure(
+      rule: "flashed-out-of-view", owner: "rule 3: a refused size costs no second move", severity: 2,
+      story: "One command sends a window out of view and fetches it again: a first layout makes it a tile, a second one, which knows more about sizes, gives it a slot. "
+        + "Also: a summoned window at the end of a pause.",
+      script: """
+        open 101 Xcode pid 1004 at 0 115 1188 808 min 1188 685
+        launch
+        open 104 Safari pid 1000 at 27 188 1392 784 min 574 240
+        key down toggle-float
+        key down focus left
+        key down arrange
+        """,
+      """
+        open 103 Xcode pid 1004 at 120 658 1430 685 min 1188 685
+        launch
+        via shortcut summon Xcode
+        toggle-pause
+        toggle-pause
+        """),
+    ChaosKnownFailure(
+      rule: "moved-over-and-over", owner: "rule 3: a refused size costs no second move", severity: 2,
+      story: "A window that cannot grow, just back out of the Dock, is docked: within a second it goes corner, middle, corner, middle, with nobody touching anything.",
+      script: """
+        open 104 Preview pid 1007 at 468 62 723 650 min 723 400 max 723 2000
+        launch
+        minimize 104
+        restore 104
+        key down dock top
+        advance 1
+        """),
+    ChaosKnownFailure(
+      rule: "placed-mostly-out", owner: "displays: what macOS rescued is not sent back", severity: 1,
+      story: "One display above another. A window is dragged so that its title bar is on the upper one and its body on the lower one, which then goes. macOS brings "
+        + "the window wholly into view, and Arbor pushes it back down: a strip of 32 points shows. Nothing need be docked. ⌃⌥0, Show Everything, Float All, "
+        + "turning to it and starting again do not fetch it; quit and pause do.",
+      script: """
+        displays main:0,0,2560,1440:25,0,0,0* side:524,1440,1512,982:0,0,0,0 windows-never
+        launch
+        open 101 Notes pid 1001 at 300 200 800 600 min 709 300
+        settle
+        grab 101
+        carry 1200 1425
+        release
+        settle
+        displays main:0,0,2560,1440:25,0,0,0* windows-late
+        settle
+        """,
+      """
+        displays main:0,0,2560,1440:25,0,0,0* side:524,1440,1512,982:0,0,0,0 windows-never
+        launch
+        open 101 Notes pid 1001 at 300 200 800 600 min 709 300
+        settle
+        grab 101
+        carry 1200 1425
+        release
+        settle
+        displays main:0,0,2560,1440:25,0,0,0* windows-silent
+        settle
+        """),
+    ChaosKnownFailure(
+      rule: "displays-left-mostly-out", owner: "displays: afterwards nothing is lost", severity: 2,
+      story: "The same story seen at rest; and: a display changes side and shrinks in one step and the windows' own reports come first: 7 % of a floating window "
+        + "shows, Arbor makes no move, and ⌃⌥0, Show Everything and Float All do not fetch it.",
+      script: """
+        displays main:0,0,1440,900:25,0,0,0* side:-2560,400,2560,1440:25,0,0,0 windows-late
+        launch
+        open 107 Finder pid 1005 at 100 100 500 400
+        open 110 Music pid 1006 at -1332 709 700 400
+        settle
+        displays main:0,0,1440,900:25,0,0,0* side:1440,300,1280,720:25,0,0,0 windows-first
+        settle
+        """),
+    ChaosKnownFailure(
+      rule: "dragged-gap-did-not-last", owner: "the arrangement is its person's: a gap dragged by hand", severity: 2,
+      story: "A docked window stands at its app's smallest size, on room lent to it. Its person drags the gap to make it larger. ⌃⌥0 at home, Show Everything, a "
+        + "look elsewhere and back, any window opening and closing take the drag back.",
+      script: """
+        displays side:0,0,2560,1440:25,0,86,0* windows-never
+        launch
+        open 101 Mail pid 1002 at 932 442 913 595 min 760 400
+        focus 101
+        key down dock top
+        key up dock top
+        settle
+        open 103 Music pid 1006 at 69 256 1117 564 min 680 480
+        focus 103
+        settle
+        grab 103
+        advance 0.5
+        release
+        settle
+        key down dock bottom
+        key up dock bottom
+        settle
+        seam side 0 -145
+        settle
+        key down home
+        key up home
+        settle
+        """),
+    ChaosKnownFailure(
+      rule: "pause-and-resume-moved", owner: "rule 3: a resume is one move each, to the view there was", severity: 3,
+      story: "The keyboard is in a window that is out of view. A pause and a resume with nothing between end with the view on that window: the resume lays the old "
+        + "view out and then follows the keyboard, so every window moves twice as well.",
+      script: """
+        launch
+        open 104 Safari pid 1000 at 10 25 1248 727 min 574 240
+        key down dock bottom
+        key down desktop
+        advance 5
+        react
+        toggle-pause
+        toggle-pause
+        react
+        advance 1
+        """),
+    ChaosKnownFailure(
+      rule: "switched-to-behind", owner: "rule 4: Arbor raises nothing else", severity: 3,
+      story: "A window opens over a framed one. Away to another window and back to the framed one: it has the keyboard, and the window that lay over it is raised in "
+        + "front of it on purpose, as a guest that comes back with its view.",
+      script: """
+        open 101 Xcode pid 1004 at 70 31 1188 776 min 1188 685
+        open 102 Terminal pid 1003 at 197 324 991 444 min 177 60
+        launch
+        key down arrange
+        key down in
+        open 103 Terminal pid 1003 at 152 278 965 394 min 177 60
+        focus 101
+        focus 102
+        react
+        advance 1
+        """),
+    ChaosKnownFailure(
+      rule: "moved-at-launch", owner: "rule 2: nothing moves at a start", severity: 2,
+      story: "Quit at the desk, started on the lap: the displays change while Arbor is away, its person puts a floating window where they want it, and the start "
+        + "sends it to where it lay on this display the last time Arbor saw it.",
+      script: """
+        displays main:0,0,1512,982:37,0,0,0* windows-never
+        launch
+        open 101 Safari pid 1000 at 100 100 700 500 min 574 240
+        open 102 Notes pid 1001 at 300 200 720 420 min 709 300
+        dock 101 left
+        settle
+        displays side:0,0,2560,1440:25,0,0,0* windows-late
+        settle
+        move 102 1500 700 720 420
+        settle
+        quit
+        displays main:0,0,1512,982:37,0,0,0* windows-first
+        move 102 500 400 720 420
+        launch
+        settle
+        """),
+    ChaosKnownFailure(
+      rule: "quit-left-out-of-reach", owner: "the ways home: quitting while an app hangs (K003)", severity: 1,
+      story: "Arbor is quit while an app with a window out of view does not answer. The window is still past the corner when the app wakes, and Arbor is gone. "
+        + "Opening Arbor again does not fetch it by itself; ⌃⌥0, Show Everything, Float All or turning to the window then do.",
+      script: """
+        launch
+        open 101 Safari pid 1000 at 100 100 700 500
+        open 102 Notes pid 2000 at 300 200 600 400
+        dock 101 left
+        zoom 101
+        hang 2000
+        quit
+        wake 2000
         """),
   ]
 

@@ -1,0 +1,9 @@
+# The lid opens, one floating window on the external display, and the window's own report reaches Arbor first.
+launch
+displays desk:0,0,2560,1440:25,0,0,0* windows-first
+open 202 Terminal pid 1202 at 590 429 1164 262
+settle
+displays builtin:0,0,1728,1117:33,0,0,0* desk:1728,-323,2560,1440:25,0,0,0 windows-first
+settle
+home
+settle

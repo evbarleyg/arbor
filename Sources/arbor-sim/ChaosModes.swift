@@ -133,7 +133,8 @@ func runChaosMode(_ arguments: [String]) -> Int32? {
       say(quiet ? "STEP \(index + 1)" : "> \(action.text)")
       let mark = runner.system.frameLog.count
       let violations = runner.step(action)
-      if !quiet { for refusal in runner.refusals { say("  REFUSED: \(refusal)") } }
+      // Also when quiet: a script whose line was refused proves nothing, and whoever checks scripts by program reads the quiet form.
+      for refusal in runner.refusals { say("  REFUSED: \(refusal)") }
       if !quiet { say(runner.harness.ascii(columns: 64, rows: 16) + "\n") }
       if arguments.contains("--frames") {
         // Who moved what: Arbor's own moves in this step, in order, then where every window is.

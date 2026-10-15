@@ -1,0 +1,18 @@
+# Road 3: the window hangs over the far edge of a second display by hand; the display goes; its app narrows it; the display returns.
+launch
+displays main:0,0,1440,900:25,0,0,0* side:-1920,0,1920,1080:25,0,0,0 windows-late
+open 102 Safari pid 1000 at -1500 203 1200 444
+open 104 Finder pid 1005 at 247 300 589 529
+settle
+dock 104 left
+settle
+move 102 -2900 300 1200 444
+settle
+displays main:0,0,1440,900:25,0,0,0* windows-late
+settle
+limits 102 min 150 200 max 200 444
+settle
+displays main:0,0,1440,900:25,0,0,0* side:-1920,0,1920,1080:25,0,0,0 windows-late
+settle
+home
+settle

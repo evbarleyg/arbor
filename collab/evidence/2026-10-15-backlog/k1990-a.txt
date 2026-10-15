@@ -1,0 +1,16 @@
+# (A) the display a floating window was on goes; a smaller one is all that is left.
+launch
+displays main:0,0,1440,900:37,0,0,0* side:-1512,-295,1512,982:37,0,0,0 third:1440,61,1512,982:0,0,0,0 windows-silent
+open 112 Mail pid 1002 at 2812 605 138 103 max 493 585
+grab 112
+carry 2763 831
+release
+displays side:-21,900,1440,900:0,69,0,0 main:0,0,1440,900:25,88,0,0* windows-late
+displays third:0,0,1280,800:37,0,0,0* windows-late
+settle
+home
+settle
+pause
+resume
+home
+settle

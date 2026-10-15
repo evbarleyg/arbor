@@ -1,0 +1,17 @@
+# Every line but the controls must be REFUSED: the words of tab groups (F04, F34) and of F52's setting are not in the code.
+launch
+open 101 Safari pid 1001 at 100 100 700 500
+open 102 Mail pid 1002 at 200 150 700 500
+open 103 Notes pid 1003 at 300 200 600 400
+# controls: these are taken
+set gap 20
+set tabsEnabled true
+dock 101 left
+# these are not
+set unpluggedDisplays group
+get unpluggedDisplays
+set windowButtonsActOnGroup true
+tab 103 with 102
+tab close
+tab next
+tab 101

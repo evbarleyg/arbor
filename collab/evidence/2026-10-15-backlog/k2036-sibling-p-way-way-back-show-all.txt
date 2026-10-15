@@ -1,0 +1,11 @@
+# Found by sweep-k2036.py: the display changes side AND shrinks in one step, and the window's report comes first.
+displays main:0,0,1440,900:25,0,0,0* side:-2560,400,2560,1440:25,0,0,0 windows-late
+launch
+open 107 Finder pid 1005 at 100 100 500 400
+open 110 Music pid 1006 at -1332 709 700 400
+settle
+displays main:0,0,1440,900:25,0,0,0* side:1440,300,1280,720:25,0,0,0 windows-first
+settle
+dock 107 left
+settle
+way-back show-all

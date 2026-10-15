@@ -1,0 +1,24 @@
+# The same with a real drag of an ordinary window far over the left edge (cmd held: no docking).
+launch
+open 102 Safari pid 1000 at 200 203 1200 444
+open 104 Finder pid 1005 at 247 300 589 529
+settle
+dock 104 right
+settle
+edge 102 12 203 1200 444
+settle
+cmd down
+grab 102
+carry -500 400
+release
+cmd up
+settle
+focus 104
+zoom 104
+settle
+limits 102 min 300 200 max 400 444
+settle
+back
+settle
+focus 102
+settle

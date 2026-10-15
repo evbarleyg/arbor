@@ -1,0 +1,27 @@
+# Tab groups' commands and strips (F04, F34) are not in the code. What IS there is the bare stack behind the hidden setting
+# tabsEnabled (off as shipped): a window dropped on the middle of a docked one shares its slot. The row's story told with that.
+launch
+set tabsEnabled true
+open 101 Safari pid 1001 at 100 100 700 500
+open 102 Mail pid 1002 at 200 150 700 500
+open 103 Notes pid 1003 at 300 200 600 400
+settle
+dock 101 left
+dock 102 right
+settle
+grab 103
+carry 900 400
+carry 1196 462
+advance 0.3
+carry 1197 463
+release
+settle
+minimize 103
+settle
+show-all
+settle
+pause
+resume
+settle
+restore 103
+settle

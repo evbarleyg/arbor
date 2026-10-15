@@ -1,0 +1,11 @@
+# Control: a setting that exists is taken, ones that do not exist are refused.
+launch
+set gap 20
+get gap
+set guardDesktopClicks true
+get guardDesktopClicks
+set unpluggedDisplays group
+set tabsEnabled true
+set windowButtonsActOnGroup true
+settings {"unpluggedDisplays":"group","tabsEnabled":true}
+get unpluggedDisplays

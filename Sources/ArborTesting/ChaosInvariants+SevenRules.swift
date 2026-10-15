@@ -9,7 +9,7 @@ import Foundation
 /// | Rule | Net |
 /// |---|---|
 /// | Nothing moves until the person docks something | `moved-before-any-dock`, `fetched-before-any-dock`, `moved-at-launch`, `moved-at-resume`, `start-took-out-of-view`, `launch-keyboard-in-a-tile`, `pause-and-resume-moved`, `there-and-back-moved`, `moved-unasked` |
-/// | No jolts: a window moves once, to where it ends up | `moved-twice`, `moved-again`; both with `-sizing` where its app refused a size, `-sizing-again` where it had refused before |
+/// | No jolts: a window moves once, to where it ends up | `moved-twice`, `moved-again`; both with `-sizing` where its app refused a size, `-sizing-again` where it had refused before; `flashed-into-view`, `flashed-out-of-view`, `moved-over-and-over` |
 /// | The window you switch to comes to the front and into view | `switched-to-out-of-view`, `app-switch-out-of-view`, `switched-to-partly-out`, `switched-to-behind` |
 /// | Quitting, Float All and pause give windows their own earlier sizes back | `size-not-given-back` |
 /// | After any way home no window is less than wholly in view | `home-not-whole`, `home-behind-the-dock`, `home-leaves-out` |
@@ -31,6 +31,12 @@ extension ChaosRunner {
     var earlierOwnSizes: [WindowID: CGSize] = [:]
     /// The last thing somebody did was to plug, unplug or rearrange displays, which has rules of its own (`left-its-place`, `moved-for-nothing`).
     var displaysChangedLast = false
+    var askedSinceTheDisplaysChanged = true
+    /// A gap was dragged on this display and all has not come to rest yet; and, once it has, where the docked windows in view then were.
+    var gapDraggedOn: DisplayID?
+    var afterTheGapWasDragged: (display: DisplayID, view: NodeID, frames: [WindowID: CGRect])?
+    /// Arbor was quit, not killed, and has not been started since: it had its chance to bring everything back.
+    var hasQuit = false
     /// In the current step nobody does anything; and the last thing somebody did was a command that asks for everything.
     var timeOnly = false
     var askedForEverything = false
@@ -54,8 +60,8 @@ extension ChaosRunner {
   /// The detector of docs/VIABLE.md, section 5, that a rule of the walks stands for: one vocabulary on Linux and on a Mac.
   public nonisolated static func detector(for rule: String) -> String? {
     let table: [(prefix: String, detector: String)] = [
-      ("moved-twice", "jolt"), ("moved-again", "jolt"), ("moved-", "moved-unasked"), ("fetched-", "moved-unasked"), ("there-and-back", "moved-unasked"),
-      ("pause-and-resume", "moved-unasked"), ("left-its-place", "moved-unasked"), ("start-took", "lost"), ("switched-to-behind", "behind"),
+      ("moved-twice", "jolt"), ("moved-again", "jolt"), ("flashed-", "flash"), ("moved-over-and-over", "stuck"), ("moved-", "moved-unasked"), ("fetched-", "moved-unasked"), ("there-and-back", "moved-unasked"), ("dragged-gap", "moved-unasked"),
+      ("pause-and-resume", "moved-unasked"), ("left-its-place", "moved-unasked"), ("start-took", "lost"), ("quit-left", "lost"), ("displays-left", "lost"), ("switched-to-behind", "behind"),
       ("switched-to", "focus"), ("app-switch", "focus"), ("size-", "size-lost"), ("home-", "lost"), ("lost", "lost"), ("out-of-reach", "lost"),
       ("placed-", "lost"), ("vanished", "lost"), ("parked-on-the-desktop", "lost"), ("restless", "stuck"), ("given-up", "stuck"),
     ]
@@ -94,8 +100,13 @@ extension ChaosRunner {
     seven.concerned = windowsConcerned(by: action)
     seven.askedForEverything = asksForEverything(action)
     seven.switchedTo = nil
-    if case .displays = action { seven.displaysChangedLast = true } else { seven.displaysChangedLast = false }
+    if case .displays = action { (seven.displaysChangedLast, seven.askedSinceTheDisplaysChanged) = (true, false) } else { seven.displaysChangedLast = false }
     if case .key(_, .released) = action { return }
+    if case .seam(let display, _, _) = action {
+      (seven.gapDraggedOn, seven.afterTheGapWasDragged) = (display, nil)
+    } else if !leavesTheArrangementAlone(action) {
+      (seven.gapDraggedOn, seven.afterTheGapWasDragged) = (nil, nil)
+    }
     seven.backDue = seven.there.flatMap { takesBack(action, $0.action) ? ($0.frames, $0.action.text, "there-and-back-moved") : nil }
     let atRest = isRunning && !isWaitingForALayout() && system.dragging == nil && system.resizing == nil && !system.mouseDown
     seven.there = atRest ? (framesBefore, action, controller.workspaces.mapValues(\.camera)) : nil
@@ -152,9 +163,10 @@ extension ChaosRunner {
         (seven.ownSizes[new], seven.earlierOwnSizes[new]) = (seven.ownSizes[old], seven.earlierOwnSizes[old])
       }
     // What Arbor learnt about sizes it learnt in a process that is gone.
-    case .launch, .crash: (seven.refusedLess, seven.refusedMore) = ([], [])
+    case .launch, .crash: (seven.refusedLess, seven.refusedMore, seven.hasQuit) = ([], [], false)
     // A native tab has the size of its group.
-    case .openTab(let new, let front), .selectTab(let new, let front): if let size = seven.ownSizes[front] { seven.ownSizes[new] = size }
+    case .openTab(let new, let front): if framesBefore[new] == nil, let size = seven.ownSizes[front] { seven.ownSizes[new] = size }
+    case .selectTab(let new, let front): if let size = seven.ownSizes[front] { seven.ownSizes[new] = size }
     case .closeTab(let front, let next): if let size = seven.ownSizes[front] { seven.ownSizes[next] = size }
     case .focus(let window): if system.windows[window] != nil { (seven.switchedTo, seven.onlyTheAppWasReported) = (window, false) }
     case .switchApp(let window):
@@ -180,9 +192,11 @@ extension ChaosRunner {
       guard fake.movesNotArbors != movesBefore[id], let home = fake.home, let before = framesBefore[id], home.size != before.size,
         !fake.snapshot.isFullScreen, !seven.fullScreenBefore.contains(id)
       else { continue }
-      // The edges of a docked window move the gaps between slots.
+      // The edges of a docked window move the gaps between slots. But one that is dragged out and let go where macOS itself tiles has the size
+      // its person asked macOS for.
+      let tiledByMacOS = inHandBefore == id && system.dragging != id && !fake.placeIsArborsDoing && !controller.workspaces.values.contains { $0.isDocked(id) }
       let wasDocked = wasRunningBefore && workspacesBefore.values.contains { $0.isDocked(id) }
-      if !wasDocked, home.size != known {
+      if !wasDocked || tiledByMacOS, home.size != known {
         seven.ownSizes[id] = home.size
         seven.earlierOwnSizes[id] = nil
       }
@@ -234,6 +248,8 @@ extension ChaosRunner {
     noteAPauseThatEnded()
     thereAndBackViolations(&problems)
     startViolations(after: action, &problems)
+    afterDisplaysViolations(&problems)
+    draggedGapViolations(&problems)
     switchedToViolations(&problems)
   }
 
@@ -265,7 +281,24 @@ extension ChaosRunner {
       let more = moves.contains { $0.after.width < $0.requested.width - 1 || $0.after.height < $0.requested.height - 1 }
       let refused = less || more
       let knew = (less && seven.refusedLess.contains(window)) || (more && seven.refusedMore.contains(window))
-      let path = ([moves[0].before] + moves.map(\.after)).map(\.brief).joined(separator: " → ")
+      let road = [moves[0].before] + moves.map(\.after)
+      let path = road.map(\.brief).joined(separator: " → ")
+      // Out of view at both ends and in view between, or the other way round: a flash.
+      let (first, last) = (isInView(road[0]), isInView(road[road.count - 1]))
+      if first == last, road.dropFirst().dropLast().contains(where: { isInView($0) != first }) {
+        problems.append(
+          .init(
+            first ? "flashed-out-of-view" : "flashed-into-view",
+            "\(window) \(first ? "left the screen and came back" : "showed and went again") for one thing that happened: \(path)"))
+        continue
+      }
+      // More than three times with nobody acting: Arbor and the window are stuck with each other.
+      if timeOnly, moves.count > 3 {
+        problems.append(.init("moved-over-and-over", "Arbor moved \(window) \(moves.count) times with nobody touching anything: \(path)"))
+        continue
+      }
+      // A window Arbor meets for the first time is sized where it stands and then moved once: each coordinate goes one way only.
+      if refused, !knew, Self.goesOneWayOnly(road) { continue }
       problems.append(
         .init(
           (timeOnly ? "moved-again" : "moved-twice") + (knew ? "-sizing-again" : refused ? "-sizing" : ""),
@@ -275,6 +308,15 @@ extension ChaosRunner {
       if move.after.width > move.requested.width + 1 || move.after.height > move.requested.height + 1 { seven.refusedLess.insert(move.window) }
       if move.after.width < move.requested.width - 1 || move.after.height < move.requested.height - 1 { seven.refusedMore.insert(move.window) }
     }
+  }
+
+  /// Whether no coordinate of the frames turns back on the way: left edge, top edge, width and height each only grow or only shrink.
+  public static func goesOneWayOnly(_ road: [CGRect]) -> Bool {
+    for coordinate in [\CGRect.minX, \CGRect.minY, \CGRect.width, \CGRect.height] {
+      let steps = zip(road, road.dropFirst()).map { $1[keyPath: coordinate] - $0[keyPath: coordinate] }.filter { abs($0) > 1 }
+      if steps.contains(where: { $0 > 0 }), steps.contains(where: { $0 < 0 }) { return false }
+    }
+    return true
   }
 
   // MARK: Nothing moves that was not asked to
@@ -386,10 +428,86 @@ extension ChaosRunner {
     }
   }
 
+  /// Once Arbor has quit nobody fetches anything: no window is where Arbor put it and nobody can get hold of it. Asked at every step after the
+  /// quit, because an app that hung at that moment wakes up later.
+  func afterQuitViolations(after action: ChaosAction, _ problems: inout [InvariantViolation]) {
+    if action.parsedCommand == .quit, wasRunningBefore || seven.pausedBefore, !isRunning, !isPaused { seven.hasQuit = true }
+    guard seven.hasQuit, !isRunning, !isPaused else { return }
+    asked("after-quit")
+    for window in windowsOutOfReach() {
+      problems.append(
+        .init("quit-left-out-of-reach", "Arbor has quit and \(window) is at \(system.windows[window]!.snapshot.frame.brief), where Arbor put it and nobody can get hold of it"))
+    }
+  }
+
+  /// Looking elsewhere and back, switching windows, a floating window that comes or goes: none of it is about how the docked windows share the display.
+  private func leavesTheArrangementAlone(_ action: ChaosAction) -> Bool {
+    switch action {
+    case .focus, .switchApp, .focusNothing, .backgroundFocus, .activate, .cursor, .open: return true
+    case .close(let window), .minimize(let window, _): return controller.workspaces.values.contains { $0.isFloating(window) }
+    default:
+      guard let command = action.parsedCommand else { return false }
+      switch command {
+      case .home, .showAll, .zoom, .back, .forward, .stepIn, .stepOut, .neighbor, .desktop, .goToView, .saveView, .focus: return true
+      default: return command.isQuery
+      }
+    }
+  }
+
+  /// A gap its person dragged stays where they left it, for as long as the same windows share the same view.
+  func draggedGapViolations(_ problems: inout [InvariantViolation]) {
+    guard isRunning, !isWaitingForALayout(), system.dragging == nil, system.resizing == nil, !controller.aPeekIsUnderWay else { return }
+    if let display = seven.gapDraggedOn, let layout = controller.layouts[display] {
+      seven.gapDraggedOn = nil
+      let frames = layout.windowFrames.keys.reduce(into: [WindowID: CGRect]()) { $0[$1] = system.windows[$1]?.snapshot.frame }
+      seven.afterTheGapWasDragged = (display, layout.camera, frames)
+      return
+    }
+    guard let left = seven.afterTheGapWasDragged, let layout = controller.layouts[left.display], layout.camera == left.view else { return }
+    guard Set(layout.windowFrames.keys) == Set(left.frames.keys), controller.displays == displaysBefore else {
+      // Somebody else shares the view now: a window that a rule docked, one that left.
+      seven.afterTheGapWasDragged = nil
+      return
+    }
+    asked("dragged-gap")
+    for (window, frame) in left.frames.sorted(by: { $0.key < $1.key }) {
+      guard let fake = isFairGame(window), !fake.snapshot.frame.approximatelyEquals(frame, tolerance: 1), fake.placeIsArborsDoing else { continue }
+      seven.afterTheGapWasDragged = nil
+      problems.append(
+        .init("dragged-gap-did-not-last", "\(window) was at \(frame.brief) when its person had dragged the gap, the same windows share the same view, and it is at \(fake.snapshot.frame.brief)"))
+    }
+  }
+
+  /// A display comes, goes, moves or changes size: afterwards nothing is lost. Whoever left it there, macOS or Arbor, a window that is meant to be
+  /// in view shows at least half of itself once all has come to rest, unless its person left it hanging so on this display as it is.
+  func afterDisplaysViolations(_ problems: inout [InvariantViolation]) {
+    guard seven.displaysChangedLast, !seven.askedSinceTheDisplaysChanged, isRunning, !isWaitingForALayout(), !system.displayList.isEmpty,
+      system.dragging == nil, system.resizing == nil, controller.holdLevel == nil
+    else { return }
+    seven.askedSinceTheDisplaysChanged = true
+    asked("after-displays")
+    let largest = system.displayList.map(\.visibleFrame.area).max() ?? 0
+    for window in system.windows.keys.sorted() {
+      // The same numbers on other displays is what no Mac does.
+      guard let fake = isFairGame(window), !fake.groundHasShifted, !controller.parked.contains(window), !controller.windowsOwedAMove.contains(window)
+      else { continue }
+      let frame = fake.snapshot.frame
+      let showing = Self.area(of: frame, showingOn: system.displayList)
+      guard showing < 0.5 * min(frame.area, largest),
+        !(userPlaces[window] ?? []).contains(where: { place in system.displayList.contains { place.allows(frame, on: $0) } })
+      else { continue }
+      problems.append(
+        .init(
+          "displays-left-mostly-out",
+          "the displays have changed and \(window) is at \(frame.brief), \(Int((100 * showing / frame.area).rounded())) % in view, and does not count as out of view"))
+    }
+  }
+
   /// A start takes no window out of view that is in view when Arbor starts, but for what Show Everything itself has out of view: windows
   /// in tiles, and tabs behind the one in front (collab/QUESTIONS.md, Q16).
   func startViolations(after action: ChaosAction, _ problems: inout [InvariantViolation]) {
-    guard action == .launch, isRunning, !wasRunningBefore, !seven.pausedBefore, !system.displayList.isEmpty else { return }
+    guard action == .launch && !wasRunningBefore && !seven.pausedBefore || action == .wayBack(.startAgain), isRunning, !system.displayList.isEmpty
+    else { return }
     asked("start")
     let behind = controller.workspaces.keys.reduce(into: Set<WindowID>()) {
       $0.formUnion(controller.layoutOfEverything(on: $1)?.hiddenWindows ?? [])
@@ -474,7 +592,10 @@ extension ChaosRunner {
       let stashed = isRunning && controller.workspaces.values.contains { $0.isStashed(window) }
       if isRunning, controller.parked.contains(window) {
         // A window too large for its slot shows as a tile, which is there to be seen and clicked.
-        let isATile = controller.layouts.values.contains { $0.tiles.contains { $0.windows.contains(window) } }
+        // So does a tab behind the one in front: what Show Everything itself has out of view.
+        let isATile =
+          controller.layouts.values.contains { $0.tiles.contains { $0.windows.contains(window) } }
+          || controller.workspaces.keys.contains { controller.layoutOfEverything(on: $0)?.hiddenWindows.contains(window) == true }
         if !stashed, !isATile, !controller.windowsOwedAMove.contains(window) {
           problems.append(.init("home-leaves-out", "after \(name), \(window) is still out of view, at \(frame.brief)"))
         }

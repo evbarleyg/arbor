@@ -1,0 +1,12 @@
+# From sweep-k2036.py: the display goes from the right (high) to the left (low) and shrinks, the window's report first.
+displays main:0,0,1440,900:25,0,0,0* side:1440,-400,2560,1440:25,0,0,0 windows-late
+launch
+open 107 Finder pid 1005 at 100 100 500 400
+open 110 Music pid 1006 at 2742 335 700 400
+settle
+displays main:0,0,1440,900:25,0,0,0* side:-1920,400,1920,1080:25,0,0,0 windows-first
+settle
+dock 107 left
+settle
+home
+settle

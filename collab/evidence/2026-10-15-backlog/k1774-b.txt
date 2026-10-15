@@ -1,0 +1,15 @@
+# Road 2: one display, a wide floating window over the LEFT edge by hand; another is zoomed; the maximum shrinks; back.
+launch
+open 102 Safari pid 1000 at 200 203 958 444
+open 104 Finder pid 1005 at 247 300 589 529
+settle
+move 102 -1700 339 2129 500
+dock 104 left
+settle
+focus 104
+zoom 104
+settle
+limits 102 min 300 200 max 400 500
+settle
+back
+settle

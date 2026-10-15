@@ -19,7 +19,7 @@ private let b = WindowID(102)
     let runner = ChaosRunner()
     for line in lines { _ = runner.step(ChaosAction(text: line)) }
     if let fault { runner.beforeTheNextCheck = { fault($0.system) } }
-    let prefixes = ["moved-", "fetched-", "switched-to-", "app-switch-", "size-", "home-", "there-and-back-", "start-", "pause-and-"]
+    let prefixes = ["flashed-", "moved-", "fetched-", "switched-to-", "app-switch-", "size-", "home-", "there-and-back-", "start-", "pause-and-", "quit-", "displays-", "dragged-"]
     return Set(([last] + later).flatMap { runner.step(ChaosAction(text: $0)) }.map(\.rule).filter { rule in prefixes.contains { rule.hasPrefix($0) } })
   }
 
@@ -65,6 +65,33 @@ private let b = WindowID(102)
       _ = $0.setFrame(self.rect(100, 100, 500, 400), of: a)
     }
     #expect(twice.contains("moved-twice"))
+  }
+
+  @Test func aWindowThatShowsAndGoesAgainOrGoesAndComesBackIsAFlash() {
+    let framed = oneDocked + ["zoom 101", "settle"]
+    let shown = nets(after: framed, then: "cursor 10 10") {
+      _ = $0.setFrame(self.rect(800, 300, 500, 400), of: b)
+      _ = $0.setFrame(self.rect(1439, 868, 500, 400), of: b)
+    }
+    #expect(shown.contains("flashed-into-view") && !shown.contains("moved-twice"))
+    let gone = nets(after: oneDocked, then: "cursor 10 10") {
+      _ = $0.setFrame(self.rect(1439, 868, 500, 400), of: b)
+      _ = $0.setFrame(self.rect(800, 300, 500, 400), of: b)
+    }
+    #expect(gone.contains("flashed-out-of-view"))
+  }
+
+  @Test func aWindowMovedOverAndOverWithNobodyActingIsStuck() {
+    let stuck = nets(after: oneDocked + ["dock 102 right", "react"], then: "flush") {
+      for x in [730, 726, 730, 726] as [CGFloat] { _ = $0.setFrame(self.rect(x, 37, 702, 851), of: b) }
+    }
+    #expect(stuck.contains("moved-over-and-over"))
+  }
+
+  /// Sized where it stands, then moved once: two moves, and nothing turns back.
+  @Test func aFirstMeetingInWhichEachCoordinateGoesOneWayOnlyIsNoJolt() {
+    #expect(ChaosRunner.goesOneWayOnly([rect(300, 200, 500, 455), rect(300, 200, 500, 851), rect(113, 37, 500, 851)]))
+    #expect(!ChaosRunner.goesOneWayOnly([rect(300, 200, 500, 455), rect(12, 37, 500, 851), rect(113, 37, 500, 851)]))
   }
 
   @Test func whatNobodyCanSeeIsNoJolt() {
@@ -115,6 +142,38 @@ private let b = WindowID(102)
     let again = oneDocked + ["quit"]
     #expect(!nets(after: again, then: "launch").contains("start-took-out-of-view"))
     #expect(nets(after: again, then: "launch") { _ = $0.setFrame(self.rect(1439, 868, 500, 400), of: b) }.contains("start-took-out-of-view"))
+  }
+
+  @Test func aQuitLeavesNothingWhereNobodyCanGetHoldOfIt() {
+    let framed = oneDocked + ["zoom 101", "settle"]
+    #expect(nets(after: framed, then: "quit", "advance 1").isEmpty)
+    #expect(nets(after: framed, then: "quit", "advance 1") { _ = $0.setFrame(self.rect(1439, 868, 500, 400), of: b) }.contains("quit-left-out-of-reach"))
+    // A process that was killed had no chance.
+    #expect(!nets(after: framed, then: "crash", "advance 1").contains("quit-left-out-of-reach"))
+  }
+
+  @Test func afterAChangeOfDisplaysNothingIsMostlyOutOfView() {
+    let two = ["displays main:0,0,1440,900:25,0,0,0* side:1440,0,1920,1080:25,0,0,0 windows-never"] + twoFloating + ["move 102 1600 300 500 400", "settle"]
+    let unplug = "displays main:0,0,1440,900:25,0,0,0* windows-late"
+    #expect(!nets(after: two, then: unplug, "react", "settle").contains("displays-left-mostly-out"))
+    #expect(
+      nets(after: two, then: unplug, "react", "settle") { _ = $0.setFrame(self.rect(1380, 300, 500, 400), of: b) }.contains("displays-left-mostly-out"))
+  }
+
+  @Test func aGapItsPersonDraggedLasts() {
+    let dragged = oneDocked + ["dock 102 right", "settle", "seam main 0 -100", "react", "settle"]
+    #expect(!nets(after: dragged, then: "key down home", "key up home", "react", "settle").contains("dragged-gap-did-not-last"))
+    #expect(
+      nets(after: dragged, then: "key down home", "key up home", "react", "settle") { system in
+        let frame = system.frame(of: a)!
+        _ = system.setFrame(CGRect(x: frame.minX, y: frame.minY, width: frame.width + 60, height: frame.height), of: a)
+      }.contains("dragged-gap-did-not-last"))
+    // Once the arrangement is changed on purpose there is nothing to hold it to.
+    #expect(
+      !nets(after: dragged + ["balance", "settle"], then: "key down home", "key up home", "react", "settle") { system in
+        let frame = system.frame(of: a)!
+        _ = system.setFrame(CGRect(x: frame.minX, y: frame.minY, width: frame.width + 60, height: frame.height), of: a)
+      }.contains("dragged-gap-did-not-last"))
   }
 
   @Test func thereAndBackIsNothing() {
@@ -168,6 +227,12 @@ private let b = WindowID(102)
     let resized = twoFloating + ["move 101 100 100 640 480", "dock 101 left", "settle"]
     #expect(nets(after: resized, then: "float-all").isEmpty)
     #expect(nets(after: resized, then: "float-all") { _ = $0.setFrame(self.rect(100, 100, 500, 400), of: a) }.contains("size-not-given-back"))
+  }
+
+  /// Dragged out of its slot to the side of the display, where macOS tiles: half the display is what its person asked macOS for.
+  @Test func theSizeMacOSGaveItAtItsPersonsDragIsItsOwn() {
+    let tiled = oneDocked + ["grab 101", "carry 1439 400", "advance 0.5", "release", "react", "settle"]
+    #expect(!nets(after: tiled, then: "quit").contains("size-not-given-back"))
   }
 
   @Test func afterAWayHomeEveryWindowIsWhollyInView() {

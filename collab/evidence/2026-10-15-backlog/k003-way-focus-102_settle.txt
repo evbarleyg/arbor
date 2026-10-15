@@ -1,0 +1,15 @@
+# Quit Arbor while an app with a window out of view hangs.
+launch
+open 101 Safari pid 1000 at 100 100 700 500
+open 102 Notes pid 2000 at 300 200 600 400
+settle
+dock 101 left
+dock 102 right
+settle
+zoom 101
+settle
+hang 2000
+quit
+wake 2000
+focus 102
+settle

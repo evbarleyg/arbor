@@ -1,0 +1,15 @@
+# The sibling that Arbor lives to see: a pause (not a quit) while the app hangs. Arbor keeps trying and pays when the app wakes.
+launch
+open 101 Safari pid 1000 at 100 100 700 500
+open 102 Notes pid 2000 at 300 200 600 400
+settle
+dock 101 left
+dock 102 right
+settle
+zoom 101
+settle
+hang 2000
+pause
+advance 5
+wake 2000
+advance 10

@@ -1,0 +1,20 @@
+# Road 2 again, the hand leaving the wide window over the LEFT edge AFTER the dock, so that the overhang is the hand's own.
+launch
+open 102 Safari pid 1000 at 200 203 958 444
+open 104 Finder pid 1005 at 247 300 589 529
+settle
+dock 104 right
+settle
+move 102 -1700 339 2129 500
+settle
+focus 104
+zoom 104
+settle
+limits 102 min 300 200 max 400 500
+settle
+back
+settle
+home
+settle
+relayout
+settle

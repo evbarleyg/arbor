@@ -1,0 +1,18 @@
+# What the controller does while an app with three docked windows hangs: do the others still obey, and is what was owed paid when it wakes?
+launch
+open 101 Safari pid 1000 at 100 100 700 500
+open 102 Notes pid 2000 at 300 200 600 400
+open 103 Notes pid 2000 at 320 220 600 400
+open 104 Notes pid 2000 at 340 240 600 400
+settle
+arrange all
+settle
+hang 2000
+zoom 101
+settle
+home
+settle
+float-all
+settle
+wake 2000
+settle

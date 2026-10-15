@@ -1103,12 +1103,13 @@ done to the world as if Arbor had done it, at which the net has to speak, beside
 
 | Rule of the product | Rules of the walks | Detector |
 |---|---|---|
-| Nothing moves until the person docks something, and nothing that was not asked to | `moved-before-any-dock`, `fetched-before-any-dock`, `moved-at-launch`, `moved-at-resume`, `moved-unasked`, `there-and-back-moved`, `pause-and-resume-moved` | `moved-unasked` |
-| A start takes nothing out of view, but for what Show Everything itself has out of view | `start-took-out-of-view`, `launch-keyboard-in-a-tile` (the keyboard is in such a window, and takes the view) | `lost` |
-| A window moves once, to where it ends up | `moved-twice` (in the step of the command or event), `moved-again` (later, with nobody touching anything); `-sizing` where its app refused a size, `-sizing-again` where it had refused in the same way before | `jolt` |
+| Nothing moves until the person docks something, and nothing that was not asked to | `moved-before-any-dock`, `fetched-before-any-dock`, `moved-at-launch`, `moved-at-resume`, `moved-unasked`, `there-and-back-moved`, `pause-and-resume-moved`, `dragged-gap-did-not-last` | `moved-unasked` |
+| A start takes nothing out of view, but for what Show Everything itself has out of view; a quit leaves nothing there | `start-took-out-of-view`, `launch-keyboard-in-a-tile` (the keyboard is in such a window, and takes the view), `quit-left-out-of-reach` | `lost` |
+| A window moves once, to where it ends up | `moved-twice` (in the step of the command or event), `moved-again` (later, with nobody touching anything); `-sizing` where its app refused a size, `-sizing-again` where it had refused in the same way before. A first meeting in which each coordinate goes one way only is no jolt | `jolt` |
+| Out of view means out of view, and nothing goes on for ever | `flashed-into-view`, `flashed-out-of-view`; `moved-over-and-over` (more than three moves with nobody acting) | `flash`, `stuck` |
 | The window you switch to comes to the front and into view | `switched-to-out-of-view`, `switched-to-partly-out`, `app-switch-out-of-view` (only the app was reported), `switched-to-behind` | `focus`, `behind` |
 | Quitting, Float All and pause give windows their own sizes back | `size-not-given-back` | `size-lost` |
-| After any way home no window shows less than its person left showing | `home-not-whole`, `home-behind-the-dock`, `home-leaves-out` | `lost` |
+| After any way home no window shows less than its person left showing; after a change of displays none is mostly out of view | `home-not-whole`, `home-behind-the-dock`, `home-leaves-out`; `displays-left-mostly-out` | `lost` |
 
 The ways home (`way-back home`, `show-all`, `pause`, `float-all`, `start-again`, `quit`) are each taken at the end of every walk, the ones that leave the arrangement alone first.
 A hunt ends with `asked: <net> <n> times`: **a net that never asks its question catches nothing**, and `ordinaryWalksReachEveryQuestion` holds each to a floor.

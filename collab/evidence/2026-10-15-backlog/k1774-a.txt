@@ -1,0 +1,11 @@
+# Road 1: a floating window left hanging over the left edge; another is framed; its app narrows it; the keyboard goes to it.
+open 102 Safari pid 1000 at 1138 203 958 444
+open 104 Finder pid 1005 at 247 614 589 529
+launch
+move 102 -849 339 2129 1271
+dock 104 left
+focus 104
+in
+limits 102 min 785 506 max 785 740
+focus 102
+settle

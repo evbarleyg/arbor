@@ -1,0 +1,9 @@
+# The set of displays stays, one corner moves by 300, the app speaks first.
+launch
+displays main:0,0,1440,900:25,0,0,0* side:1440,0,1920,1080:25,0,0,0 windows-late
+open 202 Terminal pid 1202 at 2200 300 600 400
+settle
+displays main:0,0,1440,900:25,0,0,0* side:1440,300,1920,1080:25,0,0,0 windows-first
+settle
+home
+settle

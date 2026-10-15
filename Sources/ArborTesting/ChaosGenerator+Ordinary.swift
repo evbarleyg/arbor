@@ -160,6 +160,17 @@ extension ChaosGenerator {
     if !planned.isEmpty { return planned.removeFirst() }
     let system = world.system
     guard world.isRunning else {
+      // Quit at the desk, started on the lap: the displays change while Arbor is not looking, and a window is put somewhere by hand.
+      if desk.kind == .both, random.chance(world.isPaused ? 12 : 30) {
+        desk.plugged = random.pick(Desk.Plugged.allCases.filter { $0 != desk.plugged })!
+        if random.chance(50), let window = existing(world), let size = system.windows[window]?.snapshot.frame.size,
+          let visible = random.pick(desk.displays)?.visibleFrame, size.width <= visible.width, size.height <= visible.height
+        {
+          planned.append(
+            .move(window, CGRect(x: random.points(visible.minX, visible.maxX - size.width), y: random.points(visible.minY, visible.maxY - size.height), width: size.width, height: size.height)))
+        }
+        return .displays(desk.displays, .first)
+      }
       if !world.isPaused { return .launch }
       // Paused, a person goes on working for a while.
       switch random.int(0...5) {

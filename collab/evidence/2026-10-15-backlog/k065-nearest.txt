@@ -1,0 +1,31 @@
+# Tab strips are not in the code, so no strip can hold the button. The nearest thing that can be told headless: a window torn out of a bare
+# stack of two (hidden settings tabsEnabled and reflowWhileDragging on) and the mouse-up never arrives. Does the controller wait for ever?
+launch
+set tabsEnabled true
+set reflowWhileDragging true
+open 101 Safari pid 1001 at 100 100 700 500
+open 102 Mail pid 1002 at 200 150 700 500
+open 103 Notes pid 1003 at 300 200 600 400
+settle
+dock 101 left
+dock 102 right
+settle
+grab 103
+carry 900 400
+carry 1196 462
+advance 0.3
+carry 1197 463
+release
+settle
+grab 103
+carry 900 300
+advance 0.3
+carry 700 300
+lose-release
+settle
+advance 5
+home
+zoom 101
+settle
+home
+settle

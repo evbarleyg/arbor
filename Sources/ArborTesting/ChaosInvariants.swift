@@ -52,6 +52,7 @@ extension ChaosRunner {
       // Quitting and pausing move more windows at once than anything else, each of them once.
       var jolts: [InvariantViolation] = []
       onceViolations(after: action, &jolts)
+      afterQuitViolations(after: action, &jolts)
       return inside + jolts + (harness.overlays.finder == nil ? [] : [.init("palette", "Go to… is open and Arbor is paused or not running")])
     }
     var problems: [InvariantViolation] = []
@@ -68,7 +69,8 @@ extension ChaosRunner {
     }
     focusRingViolations(&problems)
     // A trial that shows the Desktop brings floating windows into view. Called off, they go again.
-    if !isTryingOutADrop, !wasTryingOutADrop { vanishedViolations(&problems) }
+    // What a start takes out of view has a rule of its own, also where the start is part of a way back.
+    if !isTryingOutADrop, !wasTryingOutADrop, action != .wayBack(.startAgain) { vanishedViolations(&problems) }
     pinViolations(&problems)
     nameViolations(&problems)
     undoViolations(after: action, &problems)
@@ -415,7 +417,11 @@ extension ChaosRunner {
         $0.isOn(display) && Self.area(of: frame, showingOn: system.displayList) >= $0.showing - 1
       }
       // The product owner's blocker: its user had it wholly in view, never across an edge, and less than half of it shows now.
-      let mostlyOut = floats && !leftAcrossAnEdge.contains(window) && Self.area(of: frame, showingOn: system.displayList) < 0.5 * frame.area
+      // Or across the border of two displays, where all of it showed: that is no window left hanging.
+      let showingNow = Self.area(of: frame, showingOn: system.displayList)
+      let leastEverLeftShowing = (userPlaces[window] ?? []).map(\.showing).min()
+      let neverLeftHanging = !leftAcrossAnEdge.contains(window) || (leastEverLeftShowing.map { $0 >= 0.995 * frame.area } ?? false)
+      let mostlyOut = floats && neverLeftHanging && showingNow < 0.5 * frame.area
       problems.append(
         .init(!floats ? "docked-partly-out" : mostlyOut ? "placed-mostly-out" : showsAsMuch ? "grown-while-hanging" : "placed-partly-out", "Arbor put \(window) at \(frame.brief), \(share) % of it on a display, and nobody had left it there on \(display.id) as it is"))
     }
@@ -471,8 +477,10 @@ extension ChaosRunner {
         window != controller.draggedWindow, controller.filter.manages(fake.snapshot), isInView(fake.snapshot.frame),
         fake.placeIsArborsDoing,
         // A tile, a tab behind another, a window on a Desktop that was squeezed: they are part of what the view is on.
-        !workspacesBefore.values.contains(where: { before in
-          before.tree.windows(under: before.camera).contains(window)
+        // What the display really showed counts: more than its camera while the space the camera is on had nothing to show.
+        !workspacesBefore.contains(where: { display, before in
+          let view = viewsBefore[display] ?? before.camera
+          return before.tree.windows(under: before.camera).contains(window) || before.tree.windows(under: view).contains(window)
             || (before.isFloating(window)
               && (before.camera == before.tree.desktop || before.tree.ancestors(of: before.tree.desktop).contains(before.camera)))
         })

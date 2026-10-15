@@ -1,0 +1,12 @@
+# `tab close` outside a tab group must not close the focused window.
+launch
+open 101 Safari pid 1001 at 100 100 700 500
+open 102 Mail pid 1002 at 200 150 700 500
+settle
+focus 102
+tab close
+tab next
+tab 101
+url arbor://tab/close
+url arbor://tab%20close
+settle
