@@ -1,0 +1,66 @@
+AXWindow - "Arbor Settings" "" 122 57 780 572
+  AXGroup - "" "" 122 89 780 540
+    AXTextField search "Search the settings" "" 132 99 180 24
+    AXScrollArea - "" "" 122 133 200 467
+      AXOutline - "Sidebar" "" 122 133 200 467
+        AXRow - "" "" 122 143 200 32
+          AXCell - "" "" 132 143 180 32
+            AXStaticText pane.general "" "General" 144 151 72 16
+        AXRow - "" "" 122 175 200 32
+          AXCell - "" "" 132 175 180 32
+            AXStaticText pane.windows "" "Windows" 144 183 79 16
+        AXRow - "" "" 122 207 200 32
+          AXCell - "" "" 132 207 180 32
+            AXStaticText pane.dragging "" "Dragging" 144 214 80 16
+        AXRow - "" "" 122 239 200 32
+          AXCell - "" "" 132 239 180 32
+            AXStaticText pane.gestures "" "Gestures" 145 247 78 16
+        AXRow - "" "" 122 271 200 32
+          AXCell - "" "" 132 271 180 32
+            AXStaticText pane.calls "" "Calls" 144 279 54 16
+        AXRow - "" "" 122 303 200 32
+          AXCell - "" "" 132 303 180 32
+            AXStaticText pane.appearance "" "Appearance" 144 311 97 16
+        AXRow - "" "" 122 335 200 32
+          AXCell - "" "" 132 335 180 32
+            AXStaticText pane.menu-bar "" "Menu Bar" 144 343 82 16
+        AXRow - "" "" 122 367 200 32
+          AXCell - "" "" 132 367 180 32
+            AXStaticText pane.apps "" "Apps" 145 375 55 16
+        AXRow - "" "" 122 399 200 32
+          AXCell - "" "" 132 399 180 32
+            AXStaticText pane.scripting "" "Scripting" 144 407 79 16
+        AXRow - "" "" 122 431 200 32
+          AXCell - "" "" 132 431 180 32
+            AXStaticText pane.shortcuts "" "Shortcuts" 143 439 84 16
+        AXRow - "" "" 122 463 200 32
+          AXCell - "" "" 132 463 180 32
+            AXStaticText pane.rules "" "Rules" 145 471 57 16
+        AXColumn ListColumn "" "" 132 133 180 467
+    AXScrollArea - "" "" 323 89 579 495
+      AXGroup - "" "" 343 109 539 272
+        AXStaticText - "" "Use keyboard shortcuts" 353 119 145 16
+        AXStaticText - "" "Global keyboard shortcuts: ⌃⌥ moves the view and ⌃⌥⌘ moves windows, unless you change them." 353 137 420 26
+        AXCheckBox hotkeysEnabled "" "1" 836 119 36 16
+        AXStaticText - "" "Hold Show Everything to peek" 353 184 182 16
+        AXStaticText - "" "While the Show Everything shortcut is held everything shows, and letting go frames the outlined space. Off, holding it does the same as a tap." 353 202 466 26
+        AXCheckBox peek "" "1" 836 184 36 16
+        AXStaticText - "" "Check for updates" 353 249 112 16
+        AXStaticText - "" "Ask GitHub for a newer release a minute after starting and once a week. No window opens: the menu then offers the update, and nothing is ever downloaded. Off, Arbor uses the network only when asked to." 353 267 463 39
+        AXCheckBox automaticUpdateChecks "" "0" 836 249 36 16
+        AXStaticText - "" "Messages on screen" 353 327 125 16
+        AXStaticText - "" "A line on screen after a shortcut, a gesture or a menu item: what went wrong, what changed out of view, and a few hints for newcomers." 353 345 375 26
+        AXPopUpButton messages "" "When it helps" 741 324 131 24
+      AXGroup - "" "" 331 391 551 44
+        AXDisclosureTriangle - "Advanced" "0" 331 405 537 16
+    AXStaticText - "" "Arbor dev" 198 608 48 13
+    AXButton - "Restore Defaults" "" 757 595 125 24
+  AXButton - "" "" 130 65 16 16
+  AXButton - "" "" 176 65 16 16
+    AXGroup - "" "" 177 66 14 14
+  AXButton - "" "" 153 65 16 16
+  AXStaticText - "" "Arbor Settings" 204 65 99 16
+AXWindow - "" "" 253 43 12 650
+AXWindow - "" "" 506 43 12 650
+AXWindow - "" "" 759 43 12 650
+AXWindow - "" "" 0 31 1024 674

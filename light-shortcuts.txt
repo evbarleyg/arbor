@@ -1,0 +1,336 @@
+AXWindow - "Arbor Settings" "" 122 57 780 572
+  AXGroup - "" "" 122 89 780 540
+    AXTextField search "Search the settings" "" 132 99 180 24
+    AXScrollArea - "" "" 122 133 200 467
+      AXOutline - "Sidebar" "" 122 133 200 467
+        AXRow - "" "" 122 143 200 32
+          AXCell - "" "" 132 143 180 32
+            AXStaticText pane.general "" "General" 144 151 72 16
+        AXRow - "" "" 122 175 200 32
+          AXCell - "" "" 132 175 180 32
+            AXStaticText pane.windows "" "Windows" 144 183 79 16
+        AXRow - "" "" 122 207 200 32
+          AXCell - "" "" 132 207 180 32
+            AXStaticText pane.dragging "" "Dragging" 144 214 80 16
+        AXRow - "" "" 122 239 200 32
+          AXCell - "" "" 132 239 180 32
+            AXStaticText pane.gestures "" "Gestures" 145 247 78 16
+        AXRow - "" "" 122 271 200 32
+          AXCell - "" "" 132 271 180 32
+            AXStaticText pane.calls "" "Calls" 144 279 54 16
+        AXRow - "" "" 122 303 200 32
+          AXCell - "" "" 132 303 180 32
+            AXStaticText pane.appearance "" "Appearance" 144 311 97 16
+        AXRow - "" "" 122 335 200 32
+          AXCell - "" "" 132 335 180 32
+            AXStaticText pane.menu-bar "" "Menu Bar" 144 343 82 16
+        AXRow - "" "" 122 367 200 32
+          AXCell - "" "" 132 367 180 32
+            AXStaticText pane.apps "" "Apps" 145 375 55 16
+        AXRow - "" "" 122 399 200 32
+          AXCell - "" "" 132 399 180 32
+            AXStaticText pane.scripting "" "Scripting" 144 407 79 16
+        AXRow - "" "" 122 431 200 32
+          AXCell - "" "" 132 431 180 32
+            AXStaticText pane.shortcuts "" "Shortcuts" 143 439 84 16
+        AXRow - "" "" 122 463 200 32
+          AXCell - "" "" 132 463 180 32
+            AXStaticText pane.rules "" "Rules" 145 471 57 16
+        AXColumn ListColumn "" "" 132 133 180 467
+    AXStaticText - "" "Arbor dev" 198 608 48 13
+    AXScrollArea - "" "" 323 89 579 540
+      AXHeading - "Look" "" 353 109 31 16
+      AXGroup - "" "" 343 135 539 1819
+        AXStaticText - "" "Show Everything" 353 145 102 16
+        AXStaticText - "" "show-all" 353 163 50 13
+        AXButton record.show-all "Shortcut for Show Everything: ⌃⌥Space" "" 692 149 134 24
+        AXButton remove.show-all "Remove the shortcut for Show Everything" "" 835 154 13 13
+        AXButton restore.show-all "Restore the shortcut for Show Everything" "" 858 154 13 13
+        AXStaticText - "" "Step Out" 353 197 54 16
+        AXStaticText - "" "out" 353 215 19 13
+        AXButton record.out "Shortcut for Step Out: ⌃⌥↑" "" 692 201 134 24
+        AXButton remove.out "Remove the shortcut for Step Out" "" 835 206 13 13
+        AXButton restore.out "Restore the shortcut for Step Out" "" 858 206 13 13
+        AXStaticText - "" "Step In" 353 249 43 16
+        AXStaticText - "" "in" 353 267 13 13
+        AXButton record.in "Shortcut for Step In: ⌃⌥↓" "" 692 253 134 24
+        AXButton remove.in "Remove the shortcut for Step In" "" 835 258 13 13
+        AXButton restore.in "Restore the shortcut for Step In" "" 858 258 13 13
+        AXStaticText - "" "Space to the Left" 353 301 104 16
+        AXStaticText - "" "neighbor left" 353 319 81 13
+        AXButton record.neighbor left "Shortcut for Space to the Left: ⌃⌥←" "" 692 305 134 24
+        AXButton remove.neighbor left "Remove the shortcut for Space to the Left" "" 835 310 13 13
+        AXButton restore.neighbor left "Restore the shortcut for Space to the Left" "" 858 310 13 13
+        AXStaticText - "" "Space to the Right" 353 353 112 16
+        AXStaticText - "" "neighbor right" 353 371 87 13
+        AXButton record.neighbor right "Shortcut for Space to the Right: ⌃⌥→" "" 692 357 134 24
+        AXButton remove.neighbor right "Remove the shortcut for Space to the Right" "" 835 362 13 13
+        AXButton restore.neighbor right "Restore the shortcut for Space to the Right" "" 858 362 13 13
+        AXStaticText - "" "Window Above" 353 405 90 16
+        AXStaticText - "" "focus up" 353 423 50 13
+        AXButton record.focus up "Shortcut for Window Above: ⌃⌥⇧↑" "" 692 409 134 24
+        AXButton remove.focus up "Remove the shortcut for Window Above" "" 835 414 13 13
+        AXButton restore.focus up "Restore the shortcut for Window Above" "" 858 414 13 13
+        AXStaticText - "" "Window Below" 353 457 89 16
+        AXStaticText - "" "focus down" 353 475 62 13
+        AXButton record.focus down "Shortcut for Window Below: ⌃⌥⇧↓" "" 692 461 134 24
+        AXButton remove.focus down "Remove the shortcut for Window Below" "" 835 466 13 13
+        AXButton restore.focus down "Restore the shortcut for Window Below" "" 858 466 13 13
+        AXStaticText - "" "Frame Focused Window" 353 509 146 16
+        AXStaticText - "" "zoom" 353 527 25 13
+        AXButton record.zoom "Shortcut for Frame Focused Window: ⌃⌥↩" "" 692 513 134 24
+        AXButton remove.zoom "Remove the shortcut for Frame Focused Window" "" 835 518 13 13
+        AXButton restore.zoom "Restore the shortcut for Frame Focused Window" "" 858 518 13 13
+        AXStaticText - "" "Back" 353 561 30 16
+        AXStaticText - "" "back" 353 579 25 13
+        AXButton record.back "Shortcut for Back: ⌃⌥[" "" 692 565 134 24
+        AXButton remove.back "Remove the shortcut for Back" "" 835 570 13 13
+        AXButton restore.back "Restore the shortcut for Back" "" 858 570 13 13
+        AXStaticText - "" "Forward" 353 613 50 16
+        AXStaticText - "" "forward" 353 631 44 13
+        AXButton record.forward "Shortcut for Forward: ⌃⌥]" "" 692 617 134 24
+        AXButton remove.forward "Remove the shortcut for Forward" "" 835 622 13 13
+        AXButton restore.forward "Restore the shortcut for Forward" "" 858 622 13 13
+        AXStaticText - "" "Show the Desktop" 353 665 111 16
+        AXStaticText - "" "desktop" 353 683 44 13
+        AXButton record.desktop "Shortcut for Show the Desktop: ⌃⌥⇧F9" "" 692 669 134 24
+        AXButton remove.desktop "Remove the shortcut for Show the Desktop" "" 835 674 13 13
+        AXButton restore.desktop "Restore the shortcut for Show the Desktop" "" 858 674 13 13
+        AXStaticText - "" "View 1" 353 717 39 16
+        AXStaticText - "" "view 1" 353 735 38 13
+        AXButton record.view 1 "Shortcut for View 1: ⌃⌥1" "" 692 721 134 24
+        AXButton remove.view 1 "Remove the shortcut for View 1" "" 835 726 13 13
+        AXButton restore.view 1 "Restore the shortcut for View 1" "" 858 726 13 13
+        AXStaticText - "" "Save View 1" 353 769 72 16
+        AXStaticText - "" "save-view 1" 353 787 68 13
+        AXButton record.save-view 1 "Shortcut for Save View 1: ⌃⌥⇧1" "" 692 773 134 24
+        AXButton remove.save-view 1 "Remove the shortcut for Save View 1" "" 835 778 13 13
+        AXButton restore.save-view 1 "Restore the shortcut for Save View 1" "" 858 778 13 13
+        AXStaticText - "" "View 2" 353 821 41 16
+        AXStaticText - "" "view 2" 353 839 38 13
+        AXButton record.view 2 "Shortcut for View 2: ⌃⌥2" "" 692 825 134 24
+        AXButton remove.view 2 "Remove the shortcut for View 2" "" 835 830 13 13
+        AXButton restore.view 2 "Restore the shortcut for View 2" "" 858 830 13 13
+        AXStaticText - "" "Save View 2" 353 873 74 16
+        AXStaticText - "" "save-view 2" 353 891 68 13
+        AXButton record.save-view 2 "Shortcut for Save View 2: ⌃⌥⇧2" "" 692 877 134 24
+        AXButton remove.save-view 2 "Remove the shortcut for Save View 2" "" 835 882 13 13
+        AXButton restore.save-view 2 "Restore the shortcut for Save View 2" "" 858 882 13 13
+        AXStaticText - "" "View 3" 353 925 41 16
+        AXStaticText - "" "view 3" 353 943 38 13
+        AXButton record.view 3 "Shortcut for View 3: ⌃⌥3" "" 692 929 134 24
+        AXButton remove.view 3 "Remove the shortcut for View 3" "" 835 934 13 13
+        AXButton restore.view 3 "Restore the shortcut for View 3" "" 858 934 13 13
+        AXStaticText - "" "Save View 3" 353 977 74 16
+        AXStaticText - "" "save-view 3" 353 995 68 13
+        AXButton record.save-view 3 "Shortcut for Save View 3: ⌃⌥⇧3" "" 692 981 134 24
+        AXButton remove.save-view 3 "Remove the shortcut for Save View 3" "" 835 986 13 13
+        AXButton restore.save-view 3 "Restore the shortcut for Save View 3" "" 858 986 13 13
+        AXStaticText - "" "View 4" 353 1029 42 16
+        AXStaticText - "" "view 4" 353 1047 38 13
+        AXButton record.view 4 "Shortcut for View 4: ⌃⌥4" "" 692 1033 134 24
+        AXButton remove.view 4 "Remove the shortcut for View 4" "" 835 1038 13 13
+        AXButton restore.view 4 "Restore the shortcut for View 4" "" 858 1038 13 13
+        AXStaticText - "" "Save View 4" 353 1081 74 16
+        AXStaticText - "" "save-view 4" 353 1099 68 13
+        AXButton record.save-view 4 "Shortcut for Save View 4: ⌃⌥⇧4" "" 692 1085 134 24
+        AXButton remove.save-view 4 "Remove the shortcut for Save View 4" "" 835 1090 13 13
+        AXButton restore.save-view 4 "Restore the shortcut for Save View 4" "" 858 1090 13 13
+        AXStaticText - "" "View 5" 353 1133 41 16
+        AXStaticText - "" "view 5" 353 1151 38 13
+        AXButton record.view 5 "Shortcut for View 5: ⌃⌥5" "" 692 1137 134 24
+        AXButton remove.view 5 "Remove the shortcut for View 5" "" 835 1142 13 13
+        AXButton restore.view 5 "Restore the shortcut for View 5" "" 858 1142 13 13
+        AXStaticText - "" "Save View 5" 353 1185 74 16
+        AXStaticText - "" "save-view 5" 353 1203 68 13
+        AXButton record.save-view 5 "Shortcut for Save View 5: ⌃⌥⇧5" "" 692 1189 134 24
+        AXButton remove.save-view 5 "Remove the shortcut for Save View 5" "" 835 1194 13 13
+        AXButton restore.save-view 5 "Restore the shortcut for Save View 5" "" 858 1194 13 13
+        AXStaticText - "" "View 6" 353 1237 41 16
+        AXStaticText - "" "view 6" 353 1255 38 13
+        AXButton record.view 6 "Shortcut for View 6: ⌃⌥6" "" 692 1241 134 24
+        AXButton remove.view 6 "Remove the shortcut for View 6" "" 835 1246 13 13
+        AXButton restore.view 6 "Restore the shortcut for View 6" "" 858 1246 13 13
+        AXStaticText - "" "Save View 6" 353 1289 74 16
+        AXStaticText - "" "save-view 6" 353 1307 68 13
+        AXButton record.save-view 6 "Shortcut for Save View 6: ⌃⌥⇧6" "" 692 1293 134 24
+        AXButton remove.save-view 6 "Remove the shortcut for Save View 6" "" 835 1298 13 13
+        AXButton restore.save-view 6 "Restore the shortcut for Save View 6" "" 858 1298 13 13
+        AXStaticText - "" "View 7" 353 1341 41 16
+        AXStaticText - "" "view 7" 353 1359 38 13
+        AXButton record.view 7 "Shortcut for View 7: ⌃⌥7" "" 692 1345 134 24
+        AXButton remove.view 7 "Remove the shortcut for View 7" "" 835 1350 13 13
+        AXButton restore.view 7 "Restore the shortcut for View 7" "" 858 1350 13 13
+        AXStaticText - "" "Save View 7" 353 1393 73 16
+        AXStaticText - "" "save-view 7" 353 1411 68 13
+        AXButton record.save-view 7 "Shortcut for Save View 7: ⌃⌥⇧7" "" 692 1397 134 24
+        AXButton remove.save-view 7 "Remove the shortcut for Save View 7" "" 835 1402 13 13
+        AXButton restore.save-view 7 "Restore the shortcut for Save View 7" "" 858 1402 13 13
+        AXStaticText - "" "View 8" 353 1445 41 16
+        AXStaticText - "" "view 8" 353 1463 38 13
+        AXButton record.view 8 "Shortcut for View 8: ⌃⌥8" "" 692 1449 134 24
+        AXButton remove.view 8 "Remove the shortcut for View 8" "" 835 1454 13 13
+        AXButton restore.view 8 "Restore the shortcut for View 8" "" 858 1454 13 13
+        AXStaticText - "" "Save View 8" 353 1497 74 16
+        AXStaticText - "" "save-view 8" 353 1515 68 13
+        AXButton record.save-view 8 "Shortcut for Save View 8: ⌃⌥⇧8" "" 692 1501 134 24
+        AXButton remove.save-view 8 "Remove the shortcut for Save View 8" "" 835 1506 13 13
+        AXButton restore.save-view 8 "Restore the shortcut for Save View 8" "" 858 1506 13 13
+        AXStaticText - "" "View 9" 353 1549 41 16
+        AXStaticText - "" "view 9" 353 1567 38 13
+        AXButton record.view 9 "Shortcut for View 9: ⌃⌥9" "" 692 1553 134 24
+        AXButton remove.view 9 "Remove the shortcut for View 9" "" 835 1558 13 13
+        AXButton restore.view 9 "Restore the shortcut for View 9" "" 858 1558 13 13
+        AXStaticText - "" "Save View 9" 353 1601 74 16
+        AXStaticText - "" "save-view 9" 353 1619 68 13
+        AXButton record.save-view 9 "Shortcut for Save View 9: ⌃⌥⇧9" "" 692 1605 134 24
+        AXButton remove.save-view 9 "Remove the shortcut for Save View 9" "" 835 1610 13 13
+        AXButton restore.save-view 9 "Restore the shortcut for Save View 9" "" 858 1610 13 13
+        AXStaticText - "" "Show Everything on All Displays" 353 1653 193 16
+        AXStaticText - "" "home" 353 1671 25 13
+        AXButton record.home "Shortcut for Show Everything on All Displays: ⌃⌥0" "" 692 1657 134 24
+        AXButton remove.home "Remove the shortcut for Show Everything on All Displays" "" 835 1662 13 13
+        AXButton restore.home "Restore the shortcut for Show Everything on All Displays" "" 858 1662 13 13
+        AXStaticText - "" "Name This Space" 353 1705 106 16
+        AXStaticText - "" "ask-name" 353 1723 50 13
+        AXButton record.ask-name "Shortcut for Name This Space: ⌃⌥N" "" 692 1709 134 24
+        AXButton remove.ask-name "Remove the shortcut for Name This Space" "" 835 1714 13 13
+        AXButton restore.ask-name "Restore the shortcut for Name This Space" "" 858 1714 13 13
+        AXStaticText - "" "Go to…" 353 1757 44 16
+        AXStaticText - "" "find" 353 1775 25 13
+        AXButton record.find "Shortcut for Go to…: ⌃⌥G" "" 692 1761 134 24
+        AXButton remove.find "Remove the shortcut for Go to…" "" 835 1766 13 13
+        AXButton restore.find "Restore the shortcut for Go to…" "" 858 1766 13 13
+        AXStaticText - "" "Show Minimap" 353 1809 88 16
+        AXStaticText - "" "minimap" 353 1827 44 13
+        AXButton record.minimap "Shortcut for Show Minimap: ⌃⌥M" "" 692 1813 134 24
+        AXButton remove.minimap "Remove the shortcut for Show Minimap" "" 835 1818 13 13
+        AXButton restore.minimap "Restore the shortcut for Show Minimap" "" 858 1818 13 13
+        AXStaticText - "" "Window to the Left" 353 1861 115 16
+        AXStaticText - "" "focus left" 353 1879 62 13
+        AXButton record.focus left "Shortcut for Window to the Left: ⌃⌥⇧←" "" 692 1865 134 24
+        AXButton remove.focus left "Remove the shortcut for Window to the Left" "" 835 1870 13 13
+        AXButton restore.focus left "Restore the shortcut for Window to the Left" "" 858 1870 13 13
+        AXStaticText - "" "Window to the Right" 353 1913 123 16
+        AXStaticText - "" "focus right" 353 1931 68 13
+        AXButton record.focus right "Shortcut for Window to the Right: ⌃⌥⇧→" "" 692 1917 134 24
+        AXButton remove.focus right "Remove the shortcut for Window to the Right" "" 835 1922 13 13
+        AXButton restore.focus right "Restore the shortcut for Window to the Right" "" 858 1922 13 13
+      AXHeading - "Arrange" "" 353 1984 51 16
+      AXGroup - "" "" 343 2010 539 727
+        AXStaticText - "" "Arrange Windows" 353 2020 107 16
+        AXStaticText - "" "arrange" 353 2038 44 13
+        AXButton record.arrange "Shortcut for Arrange Windows: ⌃⌥A" "" 692 2024 134 24
+        AXButton remove.arrange "Remove the shortcut for Arrange Windows" "" 835 2029 13 13
+        AXButton restore.arrange "Restore the shortcut for Arrange Windows" "" 858 2029 13 13
+        AXStaticText - "" "Float or Dock Focused Window" 353 2072 188 16
+        AXStaticText - "" "toggle-float" 353 2090 75 13
+        AXButton record.toggle-float "Shortcut for Float or Dock Focused Window: ⌃⌥F" "" 692 2076 134 24
+        AXButton remove.toggle-float "Remove the shortcut for Float or Dock Focused Window" "" 835 2081 13 13
+        AXButton restore.toggle-float "Restore the shortcut for Float or Dock Focused Window" "" 858 2081 13 13
+        AXStaticText - "" "Dock Left" 353 2124 59 16
+        AXStaticText - "" "dock left" 353 2142 56 13
+        AXButton record.dock left "Shortcut for Dock Left: ⌃⌥⌘←" "" 692 2128 134 24
+        AXButton remove.dock left "Remove the shortcut for Dock Left" "" 835 2133 13 13
+        AXButton restore.dock left "Restore the shortcut for Dock Left" "" 858 2133 13 13
+        AXStaticText - "" "Dock Right" 353 2176 67 16
+        AXStaticText - "" "dock right" 353 2194 62 13
+        AXButton record.dock right "Shortcut for Dock Right: ⌃⌥⌘→" "" 692 2180 134 24
+        AXButton remove.dock right "Remove the shortcut for Dock Right" "" 835 2185 13 13
+        AXButton restore.dock right "Restore the shortcut for Dock Right" "" 858 2185 13 13
+        AXStaticText - "" "Dock Top" 353 2228 58 16
+        AXStaticText - "" "dock top" 353 2246 50 13
+        AXButton record.dock top "Shortcut for Dock Top: ⌃⌥⌘↑" "" 692 2232 134 24
+        AXButton remove.dock top "Remove the shortcut for Dock Top" "" 835 2237 13 13
+        AXButton restore.dock top "Restore the shortcut for Dock Top" "" 858 2237 13 13
+        AXStaticText - "" "Dock Bottom" 353 2280 79 16
+        AXStaticText - "" "dock bottom" 353 2298 68 13
+        AXButton record.dock bottom "Shortcut for Dock Bottom: ⌃⌥⌘↓" "" 692 2284 134 24
+        AXButton remove.dock bottom "Remove the shortcut for Dock Bottom" "" 835 2289 13 13
+        AXButton restore.dock bottom "Restore the shortcut for Dock Bottom" "" 858 2289 13 13
+        AXStaticText - "" "Undo" 353 2332 33 16
+        AXStaticText - "" "undo" 353 2350 25 13
+        AXButton record.undo "Shortcut for Undo: ⌃⌥Z" "" 692 2336 134 24
+        AXButton remove.undo "Remove the shortcut for Undo" "" 835 2341 13 13
+        AXButton restore.undo "Restore the shortcut for Undo" "" 858 2341 13 13
+        AXStaticText - "" "Redo" 353 2384 32 16
+        AXStaticText - "" "redo" 353 2402 25 13
+        AXButton record.redo "Shortcut for Redo: ⌃⌥⇧Z" "" 692 2388 134 24
+        AXButton remove.redo "Remove the shortcut for Redo" "" 835 2393 13 13
+        AXButton restore.redo "Restore the shortcut for Redo" "" 858 2393 13 13
+        AXStaticText - "" "Float All Windows" 353 2436 108 16
+        AXStaticText - "" "float-all" 353 2454 56 13
+        AXButton record.float-all "Shortcut for Float All Windows: ⌃⌥⇧F" "" 692 2440 134 24
+        AXButton remove.float-all "Remove the shortcut for Float All Windows" "" 835 2445 13 13
+        AXButton restore.float-all "Restore the shortcut for Float All Windows" "" 858 2445 13 13
+        AXStaticText - "" "Grow" 353 2488 32 16
+        AXStaticText - "" "grow" 353 2506 25 13
+        AXButton record.grow "Shortcut for Grow: ⌃⌥⌘=" "" 692 2492 134 24
+        AXButton remove.grow "Remove the shortcut for Grow" "" 835 2497 13 13
+        AXButton restore.grow "Restore the shortcut for Grow" "" 858 2497 13 13
+        AXStaticText - "" "Shrink" 353 2540 39 16
+        AXStaticText - "" "shrink" 353 2558 38 13
+        AXButton record.shrink "Shortcut for Shrink: ⌃⌥⌘-" "" 692 2544 134 24
+        AXButton remove.shrink "Remove the shortcut for Shrink" "" 835 2549 13 13
+        AXButton restore.shrink "Restore the shortcut for Shrink" "" 858 2549 13 13
+        AXStaticText - "" "Balance Sizes" 353 2592 84 16
+        AXStaticText - "" "balance" 353 2610 44 13
+        AXButton record.balance "Shortcut for Balance Sizes: ⌃⌥⌘0" "" 692 2596 134 24
+        AXButton remove.balance "Remove the shortcut for Balance Sizes" "" 835 2601 13 13
+        AXButton restore.balance "Restore the shortcut for Balance Sizes" "" 858 2601 13 13
+        AXStaticText - "" "Rotate Group" 353 2644 81 16
+        AXStaticText - "" "rotate" 353 2662 38 13
+        AXButton record.rotate "Shortcut for Rotate Group: ⌃⌥R" "" 692 2648 134 24
+        AXButton remove.rotate "Remove the shortcut for Rotate Group" "" 835 2653 13 13
+        AXButton restore.rotate "Restore the shortcut for Rotate Group" "" 858 2653 13 13
+        AXStaticText - "" "Mirror Group" 353 2696 78 16
+        AXStaticText - "" "mirror" 353 2714 38 13
+        AXButton record.mirror "Shortcut for Mirror Group: ⌃⌥⇧R" "" 692 2700 134 24
+        AXButton remove.mirror "Remove the shortcut for Mirror Group" "" 835 2705 13 13
+        AXButton restore.mirror "Restore the shortcut for Mirror Group" "" 858 2705 13 13
+      AXHeading - "Arbor itself" "" 353 2767 71 16
+      AXGroup - "" "" 343 2793 539 155
+        AXStaticText - "" "Settings" 353 2803 51 16
+        AXStaticText - "" "settings-window" 353 2821 93 13
+        AXButton record.settings-window "Shortcut for Settings: ⌃⌥," "" 692 2807 134 24
+        AXButton remove.settings-window "Remove the shortcut for Settings" "" 835 2812 13 13
+        AXButton restore.settings-window "Restore the shortcut for Settings" "" 858 2812 13 13
+        AXStaticText - "" "Pause or Resume Arbor" 353 2855 143 16
+        AXStaticText - "" "toggle-pause" 353 2873 75 13
+        AXButton record.toggle-pause "Shortcut for Pause or Resume Arbor: ⌃⌥⎋" "" 692 2859 134 24
+        AXButton remove.toggle-pause "Remove the shortcut for Pause or Resume Arbor" "" 835 2864 13 13
+        AXButton restore.toggle-pause "Restore the shortcut for Pause or Resume Arbor" "" 858 2864 13 13
+        AXStaticText - "" "Keyboard Shortcuts" 353 2907 120 16
+        AXStaticText - "" "show-shortcuts" 353 2925 87 13
+        AXButton record.show-shortcuts "Shortcut for Keyboard Shortcuts: ⌃⌥⇧/" "" 692 2911 134 24
+        AXButton remove.show-shortcuts "Remove the shortcut for Keyboard Shortcuts" "" 835 2916 13 13
+        AXButton restore.show-shortcuts "Restore the shortcut for Keyboard Shortcuts" "" 858 2916 13 13
+      AXHeading - "Your own" "" 353 2978 59 16
+      AXGroup - "" "" 343 3004 539 51
+        AXStaticText - "" "Set Gap 0" 353 3014 61 16
+        AXStaticText - "" "set gap 0" 353 3032 56 13
+        AXButton record.set gap 0 "Shortcut for Set Gap 0: ⌃⌥⇧F6" "" 692 3018 134 24
+        AXButton remove.set gap 0 "Remove the shortcut for Set Gap 0" "" 835 3023 13 13
+        AXButton restore.set gap 0 "Restore the shortcut for Set Gap 0" "" 858 3023 13 13
+      AXHeading - "A shortcut for another command" "" 353 3085 206 16
+      AXGroup - "" "" 343 3111 539 44
+        AXTextField new-shortcut.field "A command to give a shortcut to" "" 353 3121 388 24
+        AXButton - "Record Shortcut" "" 749 3121 123 24
+      AXGroup - "" "" 343 3165 539 44
+        AXButton - "Restore All Shortcuts…" "" 710 3175 162 24
+      AXScrollBar - "" "0" 884 88 19 534
+        AXValueIndicator - "" "0" 888 92 11 90
+        AXButton - "" "" 885 89 0 0
+        AXButton - "" "" 885 89 0 0
+        AXButton - "" "" 888 183 11 435
+        AXButton - "" "" 888 92 11 0
+  AXButton - "" "" 130 65 16 16
+  AXButton - "" "" 176 65 16 16
+    AXGroup - "" "" 177 66 14 14
+      AXGroup - "" "" 177 66 14 14
+  AXButton - "" "" 153 65 16 16
+  AXStaticText - "" "Arbor Settings" 204 65 99 16
+AXWindow - "" "" 253 43 12 650
+AXWindow - "" "" 506 43 12 650
+AXWindow - "" "" 759 43 12 650
+AXWindow - "" "" 0 31 1024 674

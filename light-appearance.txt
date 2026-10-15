@@ -1,0 +1,88 @@
+AXWindow - "Arbor Settings" "" 122 57 780 572
+  AXGroup - "" "" 122 89 780 540
+    AXTextField search "Search the settings" "" 132 99 180 24
+    AXScrollArea - "" "" 122 133 200 467
+      AXOutline - "Sidebar" "" 122 133 200 467
+        AXRow - "" "" 122 143 200 32
+          AXCell - "" "" 132 143 180 32
+            AXStaticText pane.general "" "General" 144 151 72 16
+        AXRow - "" "" 122 175 200 32
+          AXCell - "" "" 132 175 180 32
+            AXStaticText pane.windows "" "Windows" 144 183 79 16
+        AXRow - "" "" 122 207 200 32
+          AXCell - "" "" 132 207 180 32
+            AXStaticText pane.dragging "" "Dragging" 144 214 80 16
+        AXRow - "" "" 122 239 200 32
+          AXCell - "" "" 132 239 180 32
+            AXStaticText pane.gestures "" "Gestures" 145 247 78 16
+        AXRow - "" "" 122 271 200 32
+          AXCell - "" "" 132 271 180 32
+            AXStaticText pane.calls "" "Calls" 144 279 54 16
+        AXRow - "" "" 122 303 200 32
+          AXCell - "" "" 132 303 180 32
+            AXStaticText pane.appearance "" "Appearance" 144 311 97 16
+        AXRow - "" "" 122 335 200 32
+          AXCell - "" "" 132 335 180 32
+            AXStaticText pane.menu-bar "" "Menu Bar" 144 343 82 16
+        AXRow - "" "" 122 367 200 32
+          AXCell - "" "" 132 367 180 32
+            AXStaticText pane.apps "" "Apps" 145 375 55 16
+        AXRow - "" "" 122 399 200 32
+          AXCell - "" "" 132 399 180 32
+            AXStaticText pane.scripting "" "Scripting" 144 407 79 16
+        AXRow - "" "" 122 431 200 32
+          AXCell - "" "" 132 431 180 32
+            AXStaticText pane.shortcuts "" "Shortcuts" 143 439 84 16
+        AXRow - "" "" 122 463 200 32
+          AXCell - "" "" 132 463 180 32
+            AXStaticText pane.rules "" "Rules" 145 471 57 16
+        AXColumn ListColumn "" "" 132 133 180 467
+    AXScrollArea - "" "" 323 89 579 495
+      AXGroup - "" "" 343 109 539 415
+        AXStaticText - "" "Focus ring" 353 119 64 16
+        AXStaticText - "" "Draw a line around the focused window, if Arbor arranges it." 353 137 289 13
+        AXCheckBox focusRing "" "0" 836 119 36 16
+        AXStaticText - "" "Motion" 353 171 42 16
+        AXStaticText - "" "How long a zoom, a dock or a close takes to play; 0 applies everything at once. “Reduce motion” in System Settings turns the motion off as well." 353 189 251 39
+        AXSlider animationDuration.slider "Motion" "0.46" 620 171 150 16
+          AXValueIndicator - "" "0.46" 650 171 20 16
+        AXTextField animationDuration.field "Motion, s" "0.46" 778 167 60 24
+        AXStaticText - "" "s" 846 171 7 16
+        AXStaticText - "" "Show minimap after each move" 353 249 190 16
+        AXStaticText - "" "For how long the minimap shows by itself after the view has moved. 0 is off; its shortcut shows it either way." 353 267 254 39
+        AXSlider minimapDuration.slider "Show minimap after each move" "0" 620 249 150 16
+          AXValueIndicator - "" "0" 620 249 20 16
+        AXTextField minimapDuration.field "Show minimap after each move, s" "0" 778 245 60 24
+        AXStaticText - "" "s" 846 249 7 16
+        AXStaticText - "" "Darken behind docked windows" 353 327 193 16
+        AXStaticText - "" "How much darker the wallpaper is behind docked windows, so that they read as one surface: from as it is to black." 353 345 257 39
+        AXSlider dimBehindArranged.slider "Darken behind docked windows" "25" 620 327 150 16
+          AXValueIndicator - "" "25" 653 327 20 16
+        AXTextField dimBehindArranged.field "Darken behind docked windows, %" "25" 778 323 60 24
+        AXStaticText - "" "%" 846 327 12 16
+        AXStaticText - "" "Tiles show" 353 405 64 16
+        AXStaticText - "" "What the tile of a window too small to use shows on its colour." 353 423 300 13
+        AXPopUpButton tileStyle "" "The icon" 771 402 101 24
+        AXStaticText - "" "Gaps between windows" 353 457 143 16
+        AXStaticText - "" "Whether dragging a gap resizes the windows on both sides of it, and whether a handle shows in the gap under the pointer. A window's own edges resize it either way." 353 475 302 39
+        AXPopUpButton gapHandles "" "Drag them, with a handle" 672 454 200 24
+      AXGroup - "" "" 331 534 551 44
+        AXDisclosureTriangle - "Advanced" "0" 331 548 537 16
+      AXScrollBar - "" "0" 884 88 19 497
+        AXValueIndicator - "" "0" 888 92 11 475
+        AXButton - "" "" 885 89 0 0
+        AXButton - "" "" 885 89 0 0
+        AXButton - "" "" 888 568 11 13
+        AXButton - "" "" 888 92 11 0
+    AXStaticText - "" "Arbor dev" 198 608 48 13
+    AXButton - "Restore Defaults" "" 757 595 125 24
+  AXButton - "" "" 130 65 16 16
+  AXButton - "" "" 176 65 16 16
+    AXGroup - "" "" 177 66 14 14
+      AXGroup - "" "" 177 66 14 14
+  AXButton - "" "" 153 65 16 16
+  AXStaticText - "" "Arbor Settings" 204 65 99 16
+AXWindow - "" "" 253 43 12 650
+AXWindow - "" "" 506 43 12 650
+AXWindow - "" "" 759 43 12 650
+AXWindow - "" "" 0 31 1024 674

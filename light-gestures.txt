@@ -1,0 +1,70 @@
+AXWindow - "Arbor Settings" "" 122 57 780 572
+  AXGroup - "" "" 122 89 780 540
+    AXTextField search "Search the settings" "" 132 99 180 24
+    AXScrollArea - "" "" 122 133 200 467
+      AXOutline - "Sidebar" "" 122 133 200 467
+        AXRow - "" "" 122 143 200 32
+          AXCell - "" "" 132 143 180 32
+            AXStaticText pane.general "" "General" 144 151 72 16
+        AXRow - "" "" 122 175 200 32
+          AXCell - "" "" 132 175 180 32
+            AXStaticText pane.windows "" "Windows" 144 183 79 16
+        AXRow - "" "" 122 207 200 32
+          AXCell - "" "" 132 207 180 32
+            AXStaticText pane.dragging "" "Dragging" 144 214 80 16
+        AXRow - "" "" 122 239 200 32
+          AXCell - "" "" 132 239 180 32
+            AXStaticText pane.gestures "" "Gestures" 145 247 78 16
+        AXRow - "" "" 122 271 200 32
+          AXCell - "" "" 132 271 180 32
+            AXStaticText pane.calls "" "Calls" 144 279 54 16
+        AXRow - "" "" 122 303 200 32
+          AXCell - "" "" 132 303 180 32
+            AXStaticText pane.appearance "" "Appearance" 144 311 97 16
+        AXRow - "" "" 122 335 200 32
+          AXCell - "" "" 132 335 180 32
+            AXStaticText pane.menu-bar "" "Menu Bar" 144 343 82 16
+        AXRow - "" "" 122 367 200 32
+          AXCell - "" "" 132 367 180 32
+            AXStaticText pane.apps "" "Apps" 145 375 55 16
+        AXRow - "" "" 122 399 200 32
+          AXCell - "" "" 132 399 180 32
+            AXStaticText pane.scripting "" "Scripting" 144 407 79 16
+        AXRow - "" "" 122 431 200 32
+          AXCell - "" "" 132 431 180 32
+            AXStaticText pane.shortcuts "" "Shortcuts" 143 439 84 16
+        AXRow - "" "" 122 463 200 32
+          AXCell - "" "" 132 463 180 32
+            AXStaticText pane.rules "" "Rules" 145 471 57 16
+        AXColumn ListColumn "" "" 132 133 180 467
+    AXScrollArea - "" "" 323 89 579 495
+      AXGroup - "" "" 343 109 539 311
+        AXStaticText - "" "Trackpad and mouse gestures" 353 119 183 16
+        AXStaticText - "" "The pinch, ⌃⌥ and scroll, and rectangles drawn with the pointer. Off, Arbor holds back no click, scroll or pinch of the Mac, whatever the switches below say. Dragging windows, gaps and tiles works either way." 353 137 466 39
+        AXCheckBox pointerGestures "" "0" 836 119 36 16
+        AXStaticText - "" "Pinch to zoom" 353 197 87 16
+        AXStaticText - "" "A trackpad pinch with ⌥ held, or over the Desktop, zooms the view in and out." 353 215 378 13
+        AXCheckBox gesturesEnabled "" "1" 836 197 36 16
+        AXStaticText - "" "Frame a rectangle with" 353 249 139 16
+        AXStaticText - "" "Hold these keys and drag a rectangle to frame what it covers; none turns this off." 353 267 327 26
+        AXTextField frameRectangleModifier.field "Frame a rectangle with" "ctrl+opt" 712 245 160 24
+        AXStaticText - "" "⇧-drag on the Desktop frames" 353 314 188 16
+        AXStaticText - "" "A ⇧-drag that starts on the Desktop, in a gap or on a tile also frames a rectangle." 353 332 393 13
+        AXCheckBox frameRectangleOnDesktop "" "1" 836 314 36 16
+        AXStaticText - "" "Zoom with ⌃⌥ and scroll" 353 366 154 16
+        AXStaticText - "" "Scrolling with ⌃⌥ held zooms: up steps in toward the pointer, down steps out. Off with Pinch to zoom too." 353 384 465 26
+        AXCheckBox scrollZoom "" "1" 836 366 36 16
+      AXGroup - "" "" 331 430 551 44
+        AXDisclosureTriangle - "Advanced" "0" 331 444 537 16
+    AXStaticText - "" "Arbor dev" 198 608 48 13
+    AXButton - "Restore Defaults" "" 757 595 125 24
+  AXButton - "" "" 130 65 16 16
+  AXButton - "" "" 176 65 16 16
+    AXGroup - "" "" 177 66 14 14
+      AXGroup - "" "" 177 66 14 14
+  AXButton - "" "" 153 65 16 16
+  AXStaticText - "" "Arbor Settings" 204 65 99 16
+AXWindow - "" "" 253 43 12 650
+AXWindow - "" "" 506 43 12 650
+AXWindow - "" "" 759 43 12 650
+AXWindow - "" "" 0 31 1024 674
