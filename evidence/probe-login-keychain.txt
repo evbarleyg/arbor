@@ -1,0 +1,14 @@
+# probe-login-keychain 2026-10-15T06:30Z on macOS 26.6.2, commit 46ffa66
+
+== the Mac
+
+== A1  the account's own login keychain: the file is named after the certificate; Deny
+
+== A2  the key's access list there, and in a keychain of the test's own
+
+== A3  how long a dialog outlives codesign
+
+== B  the login keychain made anew, with a known password
+  ✘ the script ends by saying that codesign can sign
+
+0 passed, 1 failed
