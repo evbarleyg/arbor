@@ -161,6 +161,8 @@ public enum ChaosAction: Equatable, Sendable, CustomStringConvertible {
   case sleep(days: Double)
   /// While Arbor is not running: state.json is damaged, in a way that follows from the number.
   case corrupt(UInt64)
+  /// macOS's own tiling as a Mac comes, or all of it switched off in System Settings.
+  case macTiling(Bool)
 
   public struct NewWindow: Equatable, Sendable {
     public var id: WindowID
@@ -173,6 +175,8 @@ public enum ChaosAction: Equatable, Sendable, CustomStringConvertible {
     public var title: String?
     public var hasBundleID = true
     public var behaviour: FakeWindowSystem.Behaviour = .normal
+    /// The bundle id of a real app, for walks that are also taken on a Mac. Nil is one made up from the app's name.
+    public var bundle: String?
 
     public init(id: WindowID, app: String, pid: Int32, frame: CGRect) {
       self.id = id
@@ -181,7 +185,7 @@ public enum ChaosAction: Equatable, Sendable, CustomStringConvertible {
       self.frame = frame
     }
 
-    public var bundleID: String? { hasBundleID ? "com.example.\(app.lowercased())" : nil }
+    public var bundleID: String? { hasBundleID ? bundle ?? "com.example.\(app.lowercased())" : nil }
   }
 
   public enum PaletteKey: Equatable, Sendable {
@@ -225,6 +229,7 @@ public enum ChaosAction: Equatable, Sendable, CustomStringConvertible {
       if let maximum = window.maximum { words += ["max", size(maximum)] }
       if let title = window.title { words += ["title", title] }
       if !window.hasBundleID { words.append("no-bundle") }
+      if let bundle = window.bundle { words += ["bundle", bundle] }
       if window.behaviour != .normal { words.append(window.behaviour.rawValue) }
       return words.joined(separator: " ")
     case .close(let window): return "close \(window.rawValue)"
@@ -290,6 +295,7 @@ public enum ChaosAction: Equatable, Sendable, CustomStringConvertible {
     case .renumber(let old, let new): return "renumber \(old.rawValue) \(new.rawValue)"
     case .sleep(let days): return "sleep \(Self.format(days))"
     case .corrupt(let how): return "corrupt \(how)"
+    case .macTiling(let on): return "mac-tiling \(on ? "on" : "off")"
     }
   }
 
@@ -361,6 +367,10 @@ public enum ChaosAction: Equatable, Sendable, CustomStringConvertible {
         case "no-bundle":
           new.hasBundleID = false
           index += 1
+        case "bundle":
+          guard index + 1 < count else { return nil }
+          new.bundle = words[index + 1]
+          index += 2
         default:
           guard let behaviour = FakeWindowSystem.Behaviour(rawValue: words[index]) else { return nil }
           new.behaviour = behaviour
@@ -475,6 +485,7 @@ public enum ChaosAction: Equatable, Sendable, CustomStringConvertible {
       return .renumber(old, new)
     case ("sleep", 2): return number(1).map { .sleep(days: Double($0)) }
     case ("corrupt", 2): return UInt64(words[1]).map { .corrupt($0) }
+    case ("mac-tiling", 2) where words[1] == "on" || words[1] == "off": return .macTiling(words[1] == "on")
     default: return nil
     }
   }

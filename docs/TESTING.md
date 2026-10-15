@@ -906,6 +906,54 @@ was none (after Quit one window covered the others, and every click fell on the 
 
 For a script of your own, `lib-day.sh` is the harness below the acts (its header lists everything) and `jolts.py`'s header lists the marks and keys.
 
+### Walks for a hosted Mac (`arbor-sim walk`)
+
+The gate wants half of its 2,400 acts from walks that nobody wrote by hand (`docs/VIABLE.md`, "Who writes the journey"). `arbor-sim walk` writes them, in `lib-walk.sh`'s words, and plays the same
+file against the stand-ins. So **one seed is one journey in both places, judged by the same rules**, and every difference between the two playings is either a lie of the stand-ins
+(`collab/reality.json`) or a fault that only a Mac shows (the board).
+
+```bash
+swift build -c release --product arbor-sim; B=.build/release/arbor-sim
+$B walk f1240ac3.1 110 --for-a-mac stock laptop defaults <commit> > scripts/mac-shell/f1240ac3.1.sh   # a walk of about 110 acts: a file that bash runs on a hosted Mac as it stands
+$B walk f1240ac3.1 110 --words stock laptop defaults                    # only its words, one a line
+$B walk --rehearse --samples linux.log < scripts/mac-shell/f1240ac3.1.sh   # plays a walk, whoever wrote it: the story, what was left out, which rules broke
+python3 scripts/mac-shell/jolts.py report linux.log                     # the detectors of the gate, over the playing on Linux
+$B walk --rehearse --shrink --quiet < a-walk.sh                         # for each rule that broke and is no known failure: the shortest script that still breaks it
+$B walk --rehearse --script < a-walk.sh | $B replay --frames --go-on    # its events are a script of the chaos lab's
+$B walk --many 1 200 110 laptop off                                     # writes and plays 200 walks and adds up: acts by kind, left out, rules
+```
+
+**The seed** is any word without a space; the gate takes it from the commit's own hash, so that nobody can pick one that passes. The same seed, length and setting give the same walk on Linux
+and on a Mac, **for one commit**: only acts that apply are written, so what Arbor does has a say, and a fix leads walks elsewhere. Compare walks of one commit only.
+
+**It plays as it writes.** `lib-walk.sh` leaves out an act that does not apply, so a walk may be written blind; but then one act in seven is a Mac's time spent on nothing (15 of 116 in the first walk on a
+hosted Mac). The writer plays each word on the stand-ins first and writes it only if it was played there: fewer than one act in a hundred is left out on Linux. What a Mac leaves out all the same is
+no bad luck but a measured difference. The kinds come in the proportions of `acts_min`; what belongs together stays near each other (a pause is resumed, what is minimized is restored, an app that quit is
+opened again, within a few acts); the last line of the file counts the acts by kind. A word at which an expectation of the script's own does not hold on the stand-ins (a window dropped where there is no
+room floats, and "it is docked" is not so) is struck out and the walk written again from the same seed: on a Mac it would be a finding, and the gate allows none. `--many` counts them.
+
+**The first version** has `switch`, `open-close`, `dock-key`, `drag`, `drag-where-macos-tiles`, `view`, `resize`, `way-out`, `quit-and-start`, `idle` and `tile-click`, with the cast `stock`. Changes of
+displays, hiding, native tabs and full screen come from the written days. The rehearsal plays those words too, so a walk of `walk.py`'s can be rehearsed; a click on the wallpaper and a double-click on
+a title bar it cannot play ("not rehearsed"): the stand-in's macOS does neither.
+
+**A walk is plain text and nothing else:** the shebang, comments, the one `source`, `walk_begin`, one word with its arguments a line, `walk_end`. `Walk(text:)` refuses the rest, so a walk cannot sleep, call
+`arborctl`, set a variable or name anything but the cast. Never a title.
+
+**The player on Linux is `lib-walk.sh` over again** (`WalkPlayer+Words.swift`, function by function: the same conditions, reasons, slugs and keys for `jolts.py`). `WalkTests` reads `lib-walk.sh`: a word that is added
+there, a key that is no longer bound to the command played here, a reason that is worded otherwise, a number of `docs/VIABLE.md` that has changed, each turns a test red.
+
+**After a run on a Mac**, lay the two side by side. An app remembers its frame from the script before, so no two runs begin alike: `--scene` begins the rehearsal where the run began (its display, its
+windows' frames, its pile, which apps had been in front).
+
+```bash
+$B walk --rehearse --scene mac/samples.log --samples linux.log --quiet < the-walk.sh
+python3 scripts/mac-shell/walk-diff.py mac/samples.log linux.log [--all] [--within 2]
+```
+
+It says which acts were played in one place alone, where windows, the pile or what is docked differ at the end of an act that both played, and **where the two part for the first time**: from there on one
+difference breeds the next, so that act is the one to look at. The first comparison, of a walk a hosted Mac had already played, ended 29 acts in a row alike to the point and corrected five smallest sizes
+of `RealApps.swift`, where ⌘Tab leads, and where a window lies that is dragged off a tile of macOS's.
+
 ## 8. Type-checking macOS-only code on Linux (`make typecheck-mac`)
 
 Half of Arbor builds only on macOS: `ArborKit/{AX,UI,Input,App,IPC}`, `Arbor`, `arborctl`, `arbor-e2e`, `ArborTestWindows`, the test files with `#if os(macOS)` in them, and the Mac shell's helper tools (`scripts/mac-shell/*.swift`), which only a script that is already running on a Mac compiles. `make typecheck-mac`
@@ -1131,6 +1179,7 @@ a moment between one thing and the next. No settings edited by hand, no app that
 ```bash
 ARBOR_CHAOS_ORDINARY=1 .build/release/arbor-sim hunt 1 2000 300                                # the seed chooses the desk
 ARBOR_CHAOS_ORDINARY=1 ARBOR_CHAOS_DESK=laptop ARBOR_CHAOS_DOCK=left .build/release/arbor-sim hunt 1 2000 300   # laptop | desk | both; bottom | left | right | hidden
+ARBOR_CHAOS_ORDINARY=1 ARBOR_CHAOS_TILING=off .build/release/arbor-sim hunt 1 2000 300          # macOS's own tiling: on | off. Left out, the seed chooses, half the walks each way
 ARBOR_CHAOS_ORDINARY=1 .build/release/arbor-sim hunt 1 2000 300 --known                        # the known failures end a walk like any other
 ```
 

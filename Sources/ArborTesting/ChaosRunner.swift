@@ -464,6 +464,7 @@ public final class ChaosRunner {
       renumbered[old] = new
     case .sleep(let days): if !isRunning, !isPaused { elapsed += min(max(days, 0), 400) * 86_400 }
     case .corrupt(let how): if !isRunning, !isPaused { damageStateFile(how) }
+    case .macTiling(let on): system.tiling = on ? .on : .off
     }
   }
 

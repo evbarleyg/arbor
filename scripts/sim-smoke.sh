@@ -42,6 +42,20 @@ output=$(.build/debug/arbor-sim quiet "settings-file $folder/settings.json" "set
 grep -q "^\* gap = 20 " <<<"$output" || fail "settings does not list the changed gap"
 [ "$(head -n 3 "$folder/settings.json")" = "$(printf '{\n  "gap": 20,\n  "myNote": "mine",')" ] \
   || fail "set changed more of settings.json than the gap"
+
+# A walk for a hosted Mac (docs/TESTING.md) is the same whoever writes it, and so is what its playing shows. Two processes order their dictionaries and sets
+# differently, which is what a test inside one process cannot see; a Mac and Linux differ no less.
+for turn in 1 2; do
+  .build/debug/arbor-sim walk smoke.1 60 --for-a-mac stock two off 0123abcd > "$folder/walk-$turn.sh" || fail "no walk was written"
+  .build/debug/arbor-sim walk --rehearse --samples "$folder/samples-$turn.log" < "$folder/walk-$turn.sh" > "$folder/story-$turn.txt"
+  [ $? -le 1 ] || fail "the walk could not be played"
+done
+bash -n "$folder/walk-1.sh" || fail "bash cannot read the walk"
+for file in walk-%.sh samples-%.log story-%.txt; do
+  cmp -s "$folder/${file/\%/1}" "$folder/${file/\%/2}" || fail "one seed, two processes, and ${file/\%/1} is not ${file/\%/2}"
+done
+.build/debug/arbor-sim walk 'smoke.1' 60 --for-a-mac stock laptop off '$(id)' > /dev/null 2>&1 && fail "a commit that is shell went into a walk"
+.build/debug/arbor-sim walk '' 60 --for-a-mac stock laptop off > /dev/null 2>&1 && fail "a walk was written from no seed"
 echo "sim smoke test passed"
 
 # The same for the control socket: the real arborctl against the simulator.

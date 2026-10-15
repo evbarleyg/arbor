@@ -113,13 +113,14 @@ extension ChaosRunner {
     let inHand = Set([system.dragging, system.resizing].compactMap { $0 })
     switch action {
     case .open(let new): return [new.id]
-    case .close, .quitApp, .focusNothing, .cursor, .press, .commandKey, .save, .flush, .advance, .react: return []
+    case .close, .quitApp, .focusNothing, .press, .commandKey, .save, .flush, .advance, .react, .macTiling: return []
     case .minimize(let window, _), .space(let window, _), .fullScreen(let window, _), .title(let window, _), .limits(let window, _, _),
       .behave(let window, _), .move(let window, _), .focus(let window), .switchApp(let window), .backgroundFocus(let window),
       .listed(let window, _):
       return [window]
     case .grab(let window), .edge(let window, _, _): return inHand.union([window])
-    case .carry, .release, .loseRelease, .settle: return inHand
+    // The pointer does not leave a window it is holding behind.
+    case .carry, .cursor, .release, .loseRelease, .settle: return inHand
     case .hide(let pid, _), .hang(let pid, _): return windows(of: pid)
     case .activate(let bundleID): return Set(system.windows.values.lazy.filter { $0.snapshot.bundleID == bundleID }.map(\.snapshot.id))
     case .openTab(let a, let b), .selectTab(let a, let b), .closeTab(let a, let b), .renumber(let a, let b): return [a, b]

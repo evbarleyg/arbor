@@ -1105,5 +1105,9 @@ extension FakeWindowSystem {
     guard let (window, start, grab) = inHand, windows[window] != nil else { return }
     windows[window]!.snapshot.frame.origin = CGPoint(
       x: start.minX + point.x - grab.x, y: start.minY + point.y - grab.y)
+    // The pointer goes up to the menu bar and into it. The window it holds stays below.
+    if let top = displayList.first(where: { $0.frame.contains(point) })?.visibleFrame.minY {
+      windows[window]!.snapshot.frame.origin.y = max(windows[window]!.snapshot.frame.minY, top)
+    }
   }
 }

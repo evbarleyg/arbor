@@ -68,7 +68,7 @@ new. See "Executors without a Mac" in `collab/README.md`.
 | `Sources/ArborIPC`, `Sources/ArborKit/IPC` | The control socket: paths, framing and client; server and endpoint | POSIX and Dispatch only, so it builds and is tested everywhere. The server runs on the main queue: never block. |
 | `Sources/Arbor` | The app's `main.swift`: calls `ArborApp.run()` | macOS only. |
 | `Sources/LinuxShims` | A module named CoreGraphics that re-exports Foundation, whose `CGRect` Linux uses | Declared only off macOS. |
-| `Sources/ArborTesting` | `FakeWindowSystem`, `FakeOverlays`, `MemoryStateStore`, `ManualScheduler`, `Harness`, `ScenarioExpectation` (the `expect` lines), `TraceReplayer` | Used by tests and arbor-sim. |
+| `Sources/ArborTesting` | `FakeWindowSystem`, `FakeOverlays`, `MemoryStateStore`, `ManualScheduler`, `Harness`, `ScenarioExpectation` (the `expect` lines), `TraceReplayer`, the chaos lab (`Chaos*`), walks for a hosted Mac (`Walk*`, `RealApps`) | Used by tests and arbor-sim. |
 | `Sources/arborctl` | CLI client for the control socket | macOS only. |
 | `Sources/arbor-sim` | Scriptable simulator printing ASCII layouts | Builds on Linux. |
 | `Sources/arbor-fakemac` | The stand-ins behind `scripts/mac-shell/rehearse.sh`: Mac shell scripts run on Linux against the real controller | Built on Linux only. Wraps the fakes and copies `ArborApp`'s wiring: a new member of `WindowSystem` or `OverlayPresenter` needs a line in `Arbor.swift`. |
