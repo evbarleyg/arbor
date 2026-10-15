@@ -1,0 +1,139 @@
+# check-moves-of-the-view 2026-10-15T14:14Z on macOS 26.6.2, commit 8f47bda
+
+== a sheet on a docked window
+
+▸ a sheet whose window stays in view keeps the keyboard when the view moves
+  ✔ before: an x reaches it
+  ✔ its window is in view
+  ✔ after show-all: an x reaches it
+
+▸ a sheet whose window the move takes out of view hands the keyboard on to a window in view
+  ✔ before: an x reaches it
+  ✔ its window is out of view
+  ✔ after neighbor right: an x does not reach it
+  ✔ the window on the Desktop, which is in view: an x reaches it
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== a free-standing panel of the same app
+
+▸ a panel keeps the keyboard while its app's window stays in view
+  ✔ before: an x reaches it
+  ✔ after show-all: an x reaches it
+
+▸ a panel keeps the keyboard when its app's window leaves the view: it is still there itself
+  ✔ before: an x reaches it
+  ✔ the window is out of view
+  ✘ the panel is in view
+  ✔ after neighbor right: an x reaches it
+
+▸ what names a place takes the keyboard from a panel too
+  ✔ before: an x reaches it
+  ✔ the view is on window 2
+  ✔ after view 1: an x does not reach it
+  ✔ the window of the saved view: an x reaches it
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== an app with a bundle id that writes down its keys, and that Arbor is not pointed at
+  ✔ Arbor does not know the app's window
+
+▸ show-all moves the view and leaves the keyboard with an app Arbor does not look at
+  ✔ before: an x reaches the app
+  ✔ before: the app is in front
+  ✔ the view has moved
+  ✔ after show-all: an x reaches the app
+  ✔ after show-all: the app is in front
+  ✔ the app never left the front
+
+▸ home moves the view and leaves the keyboard with an app Arbor does not look at
+  ✔ before: an x reaches the app
+  ✔ before: the app is in front
+  ✔ the view has moved
+  ✔ after home: an x reaches the app
+  ✔ after home: the app is in front
+  ✔ the app never left the front
+
+▸ neighbor right moves the view and leaves the keyboard with an app Arbor does not look at
+  ✔ before: an x reaches the app
+  ✔ before: the app is in front
+  ✔ the view has moved
+  ✔ after neighbor right: an x reaches the app
+  ✔ after neighbor right: the app is in front
+  ✔ the app never left the front
+
+▸ out moves the view and leaves the keyboard with an app Arbor does not look at
+  ✔ before: an x reaches the app
+  ✔ before: the app is in front
+  ✔ the view has moved
+  ✔ after out: an x reaches the app
+  ✔ after out: the app is in front
+  ✔ the app never left the front
+
+▸ desktop moves the view and leaves the keyboard with an app Arbor does not look at
+  ✔ before: an x reaches the app
+  ✔ before: the app is in front
+  ✔ the view has moved
+  ✔ after desktop: an x reaches the app
+  ✔ after desktop: the app is in front
+  ✔ the app never left the front
+
+▸ back moves the view and leaves the keyboard with an app Arbor does not look at
+  ✔ before: an x reaches the app
+  ✔ before: the app is in front
+  ✔ the view has moved
+  ✔ after back: an x reaches the app
+  ✔ after back: the app is in front
+  ✔ the app never left the front
+
+▸ ⌃⌥Space moves the view and leaves the keyboard with an app Arbor does not look at
+  ✔ before: an x reaches the app
+  ✔ before: the app is in front
+  ✔ the view has moved
+  ✔ after ⌃⌥Space: an x reaches the app
+  ✔ after ⌃⌥Space: the app is in front
+  ✔ the app never left the front
+
+▸ ⌃⌥→ moves the view and leaves the keyboard with an app Arbor does not look at
+  ✔ before: an x reaches the app
+  ✔ before: the app is in front
+  ✘ the view has moved — it succeeded: camera_on desktop
+  ✔ after ⌃⌥→: an x reaches the app
+  ✔ after ⌃⌥→: the app is in front
+  ✔ the app never left the front
+
+▸ ⌃⌥0 moves the view and leaves the keyboard with an app Arbor does not look at
+  ✔ before: an x reaches the app
+  ✔ before: the app is in front
+  ✘ the view has moved — it succeeded: camera_on desktop
+  ✔ after ⌃⌥0: an x reaches the app
+  ✔ after ⌃⌥0: the app is in front
+  ✔ the app never left the front
+
+▸ what names a place takes the keyboard there, whoever had it
+  ✔ before: an x reaches the app
+  ✔ before: the app is in front
+  ✔ the view is on window 2
+  ✔ an x does not reach the app
+  ✔ the test windows' app is in front
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+
+== TextEdit: its Save sheet and its Open panel
+  ✔ Open… keeps the keyboard: TextEdit is still in front
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+
+87 passed, 3 failed

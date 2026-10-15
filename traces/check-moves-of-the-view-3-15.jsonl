@@ -1,0 +1,83 @@
+{"arbor":"dev","cursor":[512,588],"displays":[{"frame":[0,0,1024,768],"id":"07230EFA-7A8D-4E37-845C-19CC8737EEF5","main":true,"name":"display-1","visible":[0,31,1024,679]}],"focusHistory":[71,70],"framePlan":2,"mouseDown":false,"name":"check-moves-of-the-view-3-15","onlyPIDs":[9679],"os":"macOS Version 26.6.2 (Build 25G83)","recorded":"2026-10-15T14:16:26Z","seenSizes":{"70":[[325,348],[494,655],[0,0],[0,0],[0,0]],"71":[[325,348],[1000,655],[0,0],[0,0],[0,0]]},"settings":{"allowAllURLCommands":false,"animationDuration":0.46,"appColourAmount":0.25,"appColours":true,"arrangeDesktopWeight":0.5,"autoDockMinimumHeight":300,"autoDockMinimumWidth":400,"automaticUpdateChecks":false,"bindings":{},"blurBehindArranged":0,"continuousZoom":false,"desktopEdge":0.05,"dimBehindArranged":0.25,"displays":[],"dropDwell":0.15,"excludedBundleIDs":[],"floatingWindowsMakeWay":false,"focusRing":true,"focusRingColour":"accent","focusRingRadius":0,"focusRingWidth":3,"frameRectangleModifier":"ctrl+opt","frameRectangleOnDesktop":true,"gap":12,"gapHandles":"shown","gesturesEnabled":true,"guardDesktopClicks":false,"historyButtons":true,"holdStillFor":[],"holdStillWhileCameraIsOn":false,"holdStillWhileMicrophoneIsOn":false,"hotkeysEnabled":true,"keepPushed":true,"makeRoom":true,"menuBarControls":true,"menuBarFill":0.25,"messages":"helpful","minimapDuration":0,"minimumUsableHeight":160,"minimumUsableWidth":240,"newWindows":"float","newWindowsWhileFramed":"guest","passThroughApps":[],"pauseForApps":[],"peek":true,"pinchThreshold":0.25,"pointerGestures":false,"previewDrags":true,"reflowWhileDragging":false,"resizeStep":40,"ruleTitleWait":2,"rules":[],"screenEdgeBand":12,"scrollOnDesktopZooms":false,"scrollZoom":true,"scrollZoomThreshold":40,"shareRemovedSpace":true,"shortcuts":"core","shortcutsFollowLayout":true,"shrinkOutOfView":false,"soleFloatTakesDesktop":false,"stepInToward":"auto","summonStays":false,"tabsEnabled":false,"tileFade":0.2,"tileRetryMinutes":10,"tileStyle":"icon","tintBehindArranged":0,"windowEdgeFraction":0.3,"windowPictures":false},"thinning":0.05,"trace":1,"windows":[{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[12,43,325,655],"id":70,"pid":9679,"title":"title[1]"},{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[687,43,325,655],"id":71,"pid":9679,"title":"title[2]"}],"workspaces":{"07230EFA-7A8D-4E37-845C-19CC8737EEF5":{"back":[2,0,2,0,2,0,3,0],"camera":2,"floating":{},"forward":[],"names":{},"savedViews":{},"tree":{"desktop":0,"loans":[],"nextRawID":4,"nodes":{"0":{"id":0,"kind":{"desktop":{}},"parent":2,"weight":1},"1":{"id":1,"kind":{"stack":{"active":0,"windows":[70]}},"parent":2,"weight":1},"2":{"id":2,"kind":{"split":{"axis":"horizontal","children":[1,0,3]}},"weight":1},"3":{"id":3,"kind":{"stack":{"active":0,"windows":[71]}},"parent":2,"weight":1}},"root":2,"visits":[]},"undockedFrames":{"70":[[170,220],[480,348]],"71":[[220,180],[480,348]]}}}}
+{"t":0.0013,"note":"desktop moves the view and leaves the keyboard with an app Arbor does not look at"}
+{"t":0.0150,"command":"show-all","from":"script"}
+{"t":0.0156,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":0.0158,"read":"inputActivity","result":{"keyPresses":20,"keyboardIdle":0.250132583,"pointerIdle":2.354947541}}
+{"t":0.0161,"call":"focusedWindow","result":null}
+{"t":0.0161,"call":"focusedWindow","result":null}
+{"t":0.0162,"call":"cursorLocation","result":[512,588]}
+{"t":0.0163,"call":"displays","result":[{"frame":[0,0,1024,768],"id":"07230EFA-7A8D-4E37-845C-19CC8737EEF5","main":true,"name":"display-1","visible":[0,31,1024,679]}]}
+{"t":0.0174,"call":"isMouseButtonDown","result":false}
+{"t":0.0175,"call":"focusedWindow","result":null}
+{"t":0.0186,"call":"focusedWindow","result":null}
+{"t":0.0190,"done":"show-all","message":"showing everything","ok":true}
+{"t":0.6002,"timer":"save"}
+{"t":1.2042,"raw":"leftMouseDown 512,588"}
+{"t":1.2062,"event":"pointerPressed"}
+{"t":1.2784,"raw":"leftMouseUp 512,588"}
+{"t":1.7427,"note":"✔ before: an x reaches the app"}
+{"t":1.7769,"note":"✔ before: the app is in front"}
+{"t":1.8009,"command":"desktop","from":"script"}
+{"t":1.8014,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":1.8016,"read":"inputActivity","result":{"keyPresses":21,"keyboardIdle":0.137442959,"pointerIdle":0.598238625}}
+{"t":1.8019,"call":"focusedWindow","result":null}
+{"t":1.8019,"call":"focusedWindow","result":null}
+{"t":1.8020,"call":"cursorLocation","result":[512,588]}
+{"t":1.8021,"call":"displays","result":[{"frame":[0,0,1024,768],"id":"07230EFA-7A8D-4E37-845C-19CC8737EEF5","main":true,"name":"display-1","visible":[0,31,1024,679]}]}
+{"t":1.8034,"read":"stackedWindows","result":[{"frame":[[382,508],[260,160]],"id":65},{"frame":[[687,43],[325,655]],"id":71},{"frame":[[12,43],[325,655]],"id":70}]}
+{"t":1.8039,"note":"moveTogether, 2 windows, took 0.0 s"}
+{"t":1.8063,"call":"setFrame","frame":[1023,767,325,655],"id":70,"result":[1023,682,325,655],"took":0.0022}
+{"t":1.8073,"call":"setFrame","frame":[1023,767,325,655],"id":71,"result":[1023,682,325,655]}
+{"t":1.8077,"call":"isMouseButtonDown","result":false}
+{"t":1.8078,"call":"focusedWindow","result":null}
+{"t":1.8122,"call":"focusedWindow","result":null}
+{"t":1.8126,"done":"desktop","message":"showing the Desktop","ok":true}
+{"t":1.8132,"raw":"AXMoved w70"}
+{"t":1.8146,"event":"changed","user":false,"window":{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[1023,682,325,655],"id":70,"pid":9679,"title":"title[1]"}}
+{"t":1.8155,"raw":"AXMoved w71"}
+{"t":1.8161,"event":"changed","user":false,"window":{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[1023,682,325,655],"id":71,"pid":9679,"title":"title[2]"}}
+{"t":2.3218,"timer":"save"}
+{"t":2.3233,"event":"settingsFileMayHaveChanged"}
+{"t":2.3243,"event":"settingsFileMayHaveChanged"}
+{"t":2.6951,"timer":"settings-file"}
+{"t":2.9187,"command":"state","from":"script"}
+{"t":2.9200,"call":"focusedWindow","result":null}
+{"t":2.9202,"done":"state","message":"running: 1 display, 2 docked and 0 floating, 2 out of view","ok":true}
+{"t":2.9949,"note":"✔ the view has moved"}
+{"t":3.3786,"note":"✔ after desktop: an x reaches the app"}
+{"t":3.4190,"note":"✔ after desktop: the app is in front"}
+{"t":3.4562,"note":"✔ the app never left the front"}
+{"t":3.4784,"command":"zoom 70","from":"script"}
+{"t":3.4792,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":3.4798,"call":"displays","result":[{"frame":[0,0,1024,768],"id":"07230EFA-7A8D-4E37-845C-19CC8737EEF5","main":true,"name":"display-1","visible":[0,31,1024,679]}]}
+{"t":3.4821,"read":"stackedWindows","result":[{"frame":[[382,508],[260,160]],"id":65},{"frame":[[1023,682],[325,655]],"id":71},{"frame":[[1023,682],[325,655]],"id":70}]}
+{"t":3.4952,"call":"setFrame","frame":[1023,682,1000,655],"id":70,"result":[1023,682,1000,655],"took":0.0122}
+{"t":3.5009,"call":"setFrame","frame":[12,43,1000,655],"id":70,"result":[12,43,1000,655],"took":0.0053}
+{"t":3.5016,"call":"isMouseButtonDown","result":false}
+{"t":3.5020,"call":"focusedWindow","result":null}
+{"t":3.5043,"call":"focusedWindow","result":null}
+{"t":3.5046,"call":"focus","id":70}
+{"t":3.5198,"call":"focusedWindow","result":null}
+{"t":3.5216,"done":"zoom 70","message":"framed w70","ok":true}
+{"t":3.5309,"args":["dev.arbor.testwindows","ArborTestWindows"],"event":"applicationActivated"}
+{"t":3.5315,"raw":"didActivateApplication pid 9679"}
+{"t":3.5320,"raw":"frontmostApplication still names pid 9627"}
+{"t":3.5337,"raw":"AXResized w70"}
+{"t":3.5530,"event":"changed","user":false,"window":{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[12,43,1000,655],"id":70,"pid":9679,"title":"title[1]"}}
+{"t":3.5541,"raw":"AXMoved w70"}
+{"t":3.5547,"event":"changed","user":false,"window":{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[12,43,1000,655],"id":70,"pid":9679,"title":"title[1]"}}
+{"t":3.5553,"raw":"AXFocusedWindowChanged"}
+{"t":3.5588,"event":"focused","id":70}
+{"t":3.5593,"call":"focusedWindow","result":70}
+{"t":3.5597,"call":"focusedWindow","result":70}
+{"t":3.5602,"call":"focusedWindow","result":70}
+{"t":3.5603,"call":"isMouseButtonDown","result":false}
+{"t":3.5697,"raw":"AXMainWindowChanged"}
+{"t":3.5721,"raw":"AXFocusedWindowChanged"}
+{"t":3.5748,"raw":"AXMainWindowChanged"}
+{"t":3.5764,"raw":"AXApplicationActivated"}
+{"t":3.5767,"event":"keyboardFocusMoved"}
+{"t":3.5773,"call":"focusedWindow","result":70}
+{"t":3.5774,"call":"isMouseButtonDown","result":false}
+{"t":3.5938,"raw":"frontmostApplication names pid 9679"}
+{"t":3.6559,"end":"another trace was started","lines":82,"thinned":0}
