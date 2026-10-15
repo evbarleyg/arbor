@@ -16,7 +16,8 @@ A Mac is left out when it could prove nothing new, or nothing that will not be p
      Linux (the core, the controller, the platform protocols, the fakes, arbor-sim, the tests);
   3. or only prose has changed since the nearest earlier commit that passed the macOS job. That covers
      the report pushed after the code, and a branch moving forward to the tested head of a pull
-     request, where nothing changed at all.
+     request, where nothing changed at all. Passed means all of it: the job `macos`, and the jobs that
+     speak for it, `real-windows` and `tests-accounted-for`.
 
 Rule 2 can let through a change that breaks the macOS-only code which uses it. So it does not apply where
 work is integrated: pushes to `main`, pull requests into `main`, and the pull request whose head is the swarm's trunk. There every
@@ -84,6 +85,10 @@ HOW = {
 }
 # The check that says a Mac passed, and the one that says it had built from nothing when it did.
 CHECK, FRESH_CHECK = "macos", "macos-from-nothing"
+# The macOS job goes on after a real-window check that failed, so that one run tells all there is to tell, and succeeds. What real windows said, and whether
+# every test ran somewhere, are jobs of their own. A commit at which one of them is red, or did not run, has not passed on a Mac: or a line of prose pushed
+# after it would find "nothing a Mac could check has changed since it passed", leave the Mac out, those jobs with it, and show no red at all.
+WITH_IT = ("real-windows", "tests-accounted-for")
 # How many commits back to look for one that passed.
 LOOK_BACK = 10
 # The comparison API lists at most this many files and does not say when it left some out.
@@ -174,12 +179,16 @@ def recent_commits(repo, head):
     return commits
 
 
+def succeeded(repo, sha):
+    """The names of the checks that have succeeded at that commit."""
+    [names] = api(f"repos/{repo}/commits/{sha}/check-runs?per_page=100", '[.check_runs[] | select(.conclusion == "success") | .name] | unique')
+    return names
+
+
 def passed_on_a_mac(repo, sha, check):
-    [passed] = api(
-        f"repos/{repo}/commits/{sha}/check-runs?check_name={check}&per_page=100",
-        '[.check_runs[].conclusion] | any(. == "success")',
-    )
-    return passed
+    """Whether the macOS job passed there, and the jobs that speak for it did."""
+    names = succeeded(repo, sha)
+    return all(name in names for name in (check, *WITH_IT))
 
 
 def subject(repo, sha):

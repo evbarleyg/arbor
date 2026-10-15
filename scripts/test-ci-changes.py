@@ -74,6 +74,15 @@ TABLE = [
     (NO, "macOS-only code whose head has passed", pull(), dict(files=[CORE, UI], passed={"H"})),
     (NO, "prose since the pass", pull(), dict(files=[CORE, UI, DOC], passed={"P1"}, between={("P1", "H"): [DOC]})),
     (UPON, "code since the pass", pull(), dict(files=[CORE, UI], passed={"P1"}, between={("P1", "H"): [CORE]})),
+    (UPON, "prose since a commit whose macOS job succeeded while real windows were red: that is no pass", pull(),
+     dict(files=[CORE, UI, DOC], passed={"P1"}, but={"P1": ["real-windows"]}, between={("P1", "H"): [DOC]})),
+    (UPON, "nor is one at which a test ran nowhere", pull(), dict(files=[CORE, UI, DOC], passed={"P1"}, but={"P1": ["tests-accounted-for"]}, between={("P1", "H"): [DOC]})),
+    (UPON, "nor the head itself, run again by hand after such a red", pull(), dict(files=[CORE, UI], passed={"H"}, but={"H": ["real-windows"]})),
+    (NO, "an earlier commit that did pass all of it counts, past the one that did not", pull(),
+     dict(files=[CORE, UI, DOC], passed={"P1", "P2"}, but={"P1": ["real-windows"]}, between={("P1", "H"): [DOC], ("P2", "H"): [DOC]})),
+    (UPON, "and what has changed is reckoned from that one", pull(),
+     dict(files=[CORE, UI, DOC], passed={"P1", "P2"}, but={"P1": ["real-windows"]}, between={("P1", "H"): [DOC], ("P2", "H"): [DOC, UI]})),
+    (UPON, "real windows and the net alone are no pass either: the macOS job was red", pull(), dict(files=[CORE, UI, DOC], passed={"P1"}, but={"P1": ["macos"]}, between={("P1", "H"): [DOC]})),
     (UPON, "the manifest (which is part of a build's name, so nothing is built upon)", pull(), dict(files=["Package.swift"])),
     (UPON, "a script CI runs", pull(), dict(files=["scripts/parity.py"])),
     (UPON, "a workflow", pull(), dict(files=[".github/workflows/ci.yml"])),
@@ -112,6 +121,7 @@ TABLE = [
      dict(files=[UI], passed={"P1"}, fresh={"P2"}, between={("P2", "H"): [DOC]})),
     (FRESH, "any other branch into main is integration too", pull(ref="hotfix/x", base=rules.MAIN), dict(files=[UI])),
     (FRESH, "into main: code that builds on Linux", pull(ref="hotfix/x", base=rules.MAIN), dict(files=[CORE])),
+    (FRESH, "trunk: built from nothing, but real windows were red: no pass", TRUNK, dict(files=[UI, DOC], fresh={"P1"}, but={"P1": ["real-windows"]}, between={("P1", "H"): [DOC]})),
     (FRESH, "into main: a pass upon a cache does not count", pull(ref="hotfix/x", base=rules.MAIN), dict(files=[UI], passed={"H"})),
     (NO, "into main: only prose", pull(ref="hotfix/x", base=rules.MAIN), dict(files=[DOC])),
     (NO, "push: only prose", push(), dict(between={("B", "H"): [DOC]})),
@@ -156,7 +166,7 @@ REACH = [
 ]
 
 
-def pretend(files=None, between=None, passed=(), fresh=(), subject="feat: x"):
+def pretend(files=None, between=None, passed=(), fresh=(), subject="feat: x", but=None):
     def files_of_pull_request(_repo, _number):
         if files is None:
             raise rules.Unclear("no list")
@@ -172,8 +182,10 @@ def pretend(files=None, between=None, passed=(), fresh=(), subject="feat: x"):
     rules.files_of_pull_request = files_of_pull_request
     rules.files_between = files_between
     rules.recent_commits = lambda _repo, _head: ["H", "P1", "P2"]
-    # A Mac that passed after building from nothing has passed.
-    rules.passed_on_a_mac = lambda _repo, sha, check: sha in fresh or (check == rules.CHECK and sha in passed)
+    # A Mac that passed after building from nothing has passed. `but`: the checks that did not succeed at a commit all the same.
+    rules.succeeded = lambda _repo, sha: sorted(
+        (({"changes", "linux", rules.CHECK, *rules.WITH_IT} if sha in passed or sha in fresh else {"changes", "linux"})
+         | ({rules.FRESH_CHECK} if sha in fresh else set())) - set((but or {}).get(sha, ())))
     rules.subject = lambda _repo, _sha: subject
     # Of the scripts in the table these two are out of the macOS job's reach.
     rules.out_of_reach = lambda: rules.re.compile(r"^scripts/(census\.py|tools/ledger\.py)$")

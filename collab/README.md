@@ -272,7 +272,8 @@ Three rules keep the Linux build working and the platforms telling the same stor
      `Sources/ArborKit/{Controller,Platform,Support}`, `Sources/ArborTesting`,
      `Sources/arbor-sim`, `Sources/LinuxShims`, `Tests`;
    - or only prose has changed since the last commit that passed on a Mac
-     (the report pushed after the code; a branch moved to a tested head).
+     (the report pushed after the code; a branch moved to a tested head). Passed means the job `macos`
+     and the two that speak for it, `real-windows` and `tests-accounted-for`: all three green.
 
    The second rule does not hold where work is integrated (pushes to `main`, pull requests into it,
    the pull request from `swarm/trunk`): there every change of code is compiled
