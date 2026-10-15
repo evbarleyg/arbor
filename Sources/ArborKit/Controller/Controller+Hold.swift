@@ -52,16 +52,22 @@ extension Controller {
     var empty: Set<DisplayID> = []
     /// settings.json was saved while the view was held. It is read when the view is let go.
     var settingsFileWaits = false
-    /// The window whose focus report came right after a click or a modifier key.
+    /// The window whose focus report came right after a click or a modifier key, and when it came.
     var askedFor: WindowID?
+    var askedAt = Date.distantPast
     /// The window the person asked for by name (`holdNotesRequest`), and until when its focus reports count as asked for.
     var requested: (window: WindowID, until: Date)?
     /// The window last sent away from the keyboard, how often, since when, and when last.
     var sentBack: (window: WindowID, times: Int, since: Date, last: Date)?
     /// The keyboard was asked back and it is not yet known whether it came (`holdLooksAgain`).
     var isSendingBack = false
-    /// The apps of which it has been said on screen, during this hold, that they were turned away.
+    /// The apps of which it has been said on screen, during this hold, that they were turned away: at each level, whose advice differs.
     var saidOf: Set<String> = []
+    /// On a held view: the window just turned away that its person seems to have picked, and the window that had the keyboard until
+    /// then. Said when the arrival is over (`holdSaysWhatIsOwed`).
+    var owedAWord: (window: WindowID, from: WindowID?)?
+    /// When what was owed was last dealt with, in words or by keeping quiet.
+    var answeredAt = Date.distantPast
   }
 
   /// The docked windows of the space a held view is on, showing or not (tabs, tiles, minimized), and
@@ -75,6 +81,9 @@ extension Controller {
   /// notification click, or letting go of ⌘ after ⌘Tab. Reports arrive within 0.1 s of either on a real Mac
   /// (collab/evidence/ax-events.txt); an app that comes forward by itself rarely picks that moment.
   static let askedWithin = 0.5
+  /// For as long as a report that does not match the keyboard yet is looked at again (Controller+Focus.swift). After that whatever brings
+  /// the window up again (a display that goes, a Space that comes back) is not its person asking.
+  static let askingLasts = askedWithin + Double(focusCheckRetries) * focusCheckInterval
   /// A window asked for by name can be on another macOS Space. macOS slides over to it first, which takes most of a second, and only
   /// then reports that it has the keyboard, after reports about whatever had it there before.
   static let requestLasts: TimeInterval = 2
@@ -426,7 +435,11 @@ extension Controller {
     let wasRequested = hold.requested.map { $0.window == id && now() < $0.until } ?? false
     // A report nobody asked for unsays only what was said of its own window. One from an app in the background, between ⌘Tab and the
     // moment the view follows, is about another.
-    if wasRequested || seconds <= Self.askedWithin { hold.askedFor = id } else if hold.askedFor == id { hold.askedFor = nil }
+    if wasRequested || seconds <= Self.askedWithin {
+      (hold.askedFor, hold.askedAt) = (id, now())
+    } else if hold.askedFor == id {
+      hold.askedFor = nil
+    }
     if system.focusedWindow() == id, !isOutOfView(id) {
       let before = appInUse
       hold.home = id
@@ -480,7 +493,16 @@ extension Controller {
       hold.sentBack = (id, 1, now, now)
     }
     Log.info("hold: \(id) took the keyboard out of view; sending it back")
-    if level == .still { holdSaysThatItTurnedAway(id) }
+    if level == .still {
+      holdSaysThatItTurnedAway(id)
+    } else if hold.askedFor == id, now.timeIntervalSince(hold.askedAt) < Self.askingLasts, hold.askedAt > hold.answeredAt,
+      hold.owedAWord?.window != id
+    {
+      // On a held view only of what the person did themselves: an app that pushes itself forward gets no word in front of an audience.
+      // One asking, one answer, which goes by the window that had the keyboard at first: a window that keeps the keyboard is turned away
+      // again at every look, and by then that one may have gone.
+      hold.owedAWord = (id, hold.home)
+    }
     hold.isSendingBack = true
     scheduler.schedule("focus-held", after: Self.arrivalSpan) { [weak self] in self?.holdLooksAgain() }
     let home = hold.home.flatMap { windows[$0]?.isPresent == true && !isOutOfView($0) ? $0 : nil }
@@ -496,6 +518,8 @@ extension Controller {
     hold.sentBack = countedSoFar
     hold.isSendingBack = false
     scheduler.cancel("focus-held")
+    // Nor is a word owed about a window that was not sent away: kept, it would be said at the next look, of another moment.
+    hold.owedAWord = nil
     return true
   }
 
@@ -507,17 +531,34 @@ extension Controller {
 
   /// Holding still goes by time and can be wrong: a launcher, `open` in a terminal, or a link whose browser takes more than half a second
   /// are the person's own doing and are turned away like a chat that pushes itself forward. Never in silence: the second try would
-  /// end the same, and nothing would say why. Once for each app and hold. Not on a held view, where nothing of Arbor's appears
-  /// but the reason why a key did nothing.
+  /// end the same, and nothing would say why. Once for each app and hold.
+  ///
+  /// On a held view nothing of Arbor's appears but the reason why a key did nothing. A pick in Mission Control, ⌘Tab and a click in
+  /// the Dock are such keys: there no way leads to the window but the end of the hold, so that is what the line names.
   private func holdSaysThatItTurnedAway(_ id: WindowID) {
-    guard settings.messageLevel != .off, let window = windows[id], let display = workspaceID(containing: id),
-      hold.saidOf.insert(window.bundleID ?? window.appName).inserted
+    guard settings.messageLevel != .off, let level = holdLevel, let window = windows[id], let display = workspaceID(containing: id),
+      self.display(display) != nil, hold.saidOf.insert("\(level.rawValue) \(window.bundleID ?? window.appName)").inserted
     else { return }
+    guard holdLevel == .still else {
+      return showHeadsUp(
+        HeadsUpModel(kind: .problem, text: "\(window.appName) is out of view: the view is held", hint: wayOutOfAHold), on: display)
+    }
     let ways = ["⌘Tab"] + [shortcutLabel(for: .find(nil))].compactMap { $0 }
     showHeadsUp(
       HeadsUpModel(
         kind: .problem, text: "\(window.appName) is out of view: holding still", hint: "\(ways.joined(separator: " or ")) goes there"),
       on: display)
+  }
+
+  /// Not at once. ⌘W, ⌘M, ⌘H and ⌘Q are keys as well, and macOS names the window it hands the keyboard to a moment before it says that
+  /// the other went, or a moment after (a hosted Mac did both): nobody picked that one. By the end of the arrival it is known whether
+  /// the window that had the keyboard is still there. (Where the going came first and nothing is left in view, nothing is owed:
+  /// `holdTurnsAway`.)
+  private func holdSaysWhatIsOwed() {
+    guard let owed = hold.owedAWord else { return }
+    (hold.owedAWord, hold.answeredAt) = (nil, now())
+    guard owed.from.map({ windows[$0]?.isPresent == true }) ?? true else { return }
+    holdSaysThatItTurnedAway(owed.window)
   }
 
   /// Reports within `arrivalSpan` are one arrival, so nothing is done about them. But an app can take the keyboard a moment
@@ -527,6 +568,7 @@ extension Controller {
   private func holdLooksAgain() {
     hold.isSendingBack = false
     if let last = hold.sentBack, system.focusedWindow() == last.window { _ = holdTurnsAway(last.window, lookingAgain: true) }
+    holdSaysWhatIsOwed()
     // Left where it is, out of view, there is no window to draw the line around.
     keyboardFocusMoved()
   }
