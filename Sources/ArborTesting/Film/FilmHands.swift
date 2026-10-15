@@ -197,6 +197,25 @@ public final class FilmHands {
     return harness.overlays.seams[display.id]?.first { $0.frame.contains(point) }
   }
 
+  /// The middle of the gap that `first` and `second` have between them, side by side or one above the other, where both border on it.
+  /// Nil if they are no neighbours, or something lies over that point.
+  public func gapSpot(between first: WindowID, and second: WindowID) -> CGPoint? {
+    guard let a = system.frame(of: first), let b = system.frame(of: second) else { return nil }
+    for seam in harness.overlays.seams[display.id] ?? [] {
+      let gap = seam.frame
+      let spot: CGPoint
+      if seam.axis == .horizontal {
+        guard abs(min(a.maxX, b.maxX) - gap.minX) < 1, abs(max(a.minX, b.minX) - gap.maxX) < 1 else { continue }
+        spot = CGPoint(x: gap.midX, y: (max(a.minY, b.minY, gap.minY) + min(a.maxY, b.maxY, gap.maxY)) / 2)
+      } else {
+        guard abs(min(a.maxY, b.maxY) - gap.minY) < 1, abs(max(a.minY, b.minY) - gap.maxY) < 1 else { continue }
+        spot = CGPoint(x: (max(a.minX, b.minX, gap.minX) + min(a.maxX, b.maxX, gap.maxX)) / 2, y: gap.midY)
+      }
+      if gap.contains(spot), self.seam(at: spot) != nil, !isUnderAPanel(spot) { return spot }
+    }
+    return nil
+  }
+
   /// The gap between the same two neighbours as `seam`, where it is now: it moves with every step of a drag.
   private func current(_ seam: Seam) -> Seam {
     harness.overlays.seams[display.id]?.first {

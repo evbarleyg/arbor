@@ -418,6 +418,40 @@ private func near(_ a: CGRect, _ b: CGRect, within tolerance: CGFloat = 0.01) ->
     for line in ["lift", "keyup cmd"] { #expect(director.run(line).ok) }
   }
 
+  @Test func thePointerFindsTheGapBetweenTwoNeighbours() throws {
+    let film = try film(dragToTheLeftEdge + "\nopen Mail 500x400 600,200\ndock 102 right\ndock 103 beside 102 bottom\nwait 1")
+    #expect(film.failures.isEmpty)
+    let (director, system) = (film.director, film.director.harness.system)
+    let (upper, lower) = (try #require(system.frame(of: WindowID(102))), try #require(system.frame(of: WindowID(103))))
+    // One above the other, named in either order: the middle of the gap, where both border on it.
+    for line in ["glide gap 102 103 in 0.1", "glide gap 103 102 in 0.1"] {
+      #expect(director.run(line).ok, "\(line)")
+      #expect(system.cursor == CGPoint(x: upper.midX, y: (upper.maxY + lower.minY) / 2))
+    }
+    // Taken hold of there and dragged, it moves both.
+    for line in ["press", "glide \(Int(upper.midX)) \(Int(upper.maxY) + 66) in 0.2", "lift"] { #expect(director.run(line).ok, "\(line)") }
+    #expect(director.camera.hands.landedOn == "a gap")
+    #expect(system.frame(of: WindowID(102))?.height == upper.height + 60 && system.frame(of: WindowID(103))?.height == lower.height - 60)
+
+    // Who are no neighbours have none; nor is there one to reach under a window that lies over it.
+    #expect(!director.run("glide gap 101 101").ok && !director.run("glide gap 101 103").ok && !director.run("glide gap 101 109").ok && !director.run("glide gap 101").ok)
+    let over = system.open(app: "Call", pid: 2009, frame: CGRect(x: upper.midX - 100, y: upper.maxY, width: 200, height: 200))
+    system.userFocus(over)
+    #expect(!director.run("glide gap 102 103").ok)
+  }
+
+  @Test func theGapBetweenTwoSideBySideIsFoundWhereBothBorderOnIt() throws {
+    // Wide enough for three in the left column's place: one beside the other, and a third under the second.
+    let script = dragToTheLeftEdge.replacingOccurrences(of: "display 1440x810", with: "display 2880x1620")
+    let film = try film(script + "\nopen Mail 500x400 600,200\ndock 102 beside 101 right\ndock 103 beside 102 bottom\nwait 1")
+    #expect(film.failures.isEmpty)
+    let (director, system) = (film.director, film.director.harness.system)
+    let (left, upper) = (try #require(system.frame(of: WindowID(101))), try #require(system.frame(of: WindowID(102))))
+    #expect(left.height > upper.height * 2 && left.maxX < upper.minX)
+    #expect(director.run("glide gap 101 102 in 0.1").ok)
+    #expect(system.cursor == CGPoint(x: (left.maxX + upper.minX) / 2, y: upper.midY))
+  }
+
   @Test func everySixtiethOfASecondIsOneLine() throws {
     let film = try film("display 1440x810\nwait 1.5\nwait 0.25")
     #expect(film.failures.isEmpty)

@@ -273,12 +273,14 @@ public final class FilmDirector {
 
   // MARK: The pointer
 
-  /// `glide <x> <y>`, `glide window <id> title|visible|middle|<share of width> <share of height>`, `glide item [button]` (Arbor's menu bar
-  /// item) or `glide menu <title>` (a row of its open menu), each with `in <seconds>` after it if the time matters.
+  /// `glide <x> <y>`, `glide window <id> title|visible|middle|<share of width> <share of height>`, `glide gap <id> <id>`,
+  /// `glide item [button]` (Arbor's menu bar item) or `glide menu <title>` (a row of its open menu), each with `in <seconds>` after it
+  /// if the time matters.
   private func glide(_ words: [String]) -> Outcome {
     var words = words
     let time = seconds(after: "in", in: &words)
-    let usage = "usage: glide <x> <y> | window <id> title|visible|middle|<fx> <fy> | item [button] | menu <title>, then [in <seconds>]"
+    let usage =
+      "usage: glide <x> <y> | window <id> title|visible|middle|<fx> <fy> | gap <id> <id> | item [button] | menu <title>, then [in <seconds>]"
     let target: CGPoint?
     switch words.first {
     case "window":
@@ -296,6 +298,10 @@ public final class FilmDirector {
       } else {
         return (usage, false)
       }
+    case "gap":
+      guard words.count == 3, let first = WindowID(word: words[1]), let second = WindowID(word: words[2]) else { return (usage, false) }
+      target = hands.gapSpot(between: first, and: second)
+      if target == nil { return ("error: \(first) and \(second) have no gap between them that can be reached", false) }
     case "item":
       guard words.count <= 2 else { return (usage, false) }
       target = hands.statusItemSpot(words.count == 2 ? words[1] : nil)
