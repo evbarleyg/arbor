@@ -34,9 +34,12 @@ let usage = """
                                     silence, a move of the pointer, a notch of the wheel, and one press and release of the button, the key and ⇧, a second apart
     window <seconds> <file> x y w h an app with one window there (global top-left coordinates) that appends to <file> every press, release, drag, key and change of
                                     modifiers IT is given, and, whenever one of them changes, what the window server holds to be down
-    tap <seconds> <file>            install one active tap on mouse-downs, at the head of the session's taps as Arbor's are, pass everything on, and never let
+    tap <seconds> <file> [off|off+idle|late <s>]
+                                    install one active tap on mouse-downs, at the head of the session's taps as Arbor's are, pass everything on, and never let
                                     go of it; append to <file> when it is in, whenever macOS switches it off, and, asked every 10 ms on another thread, whenever one
-                                    of the cheap questions changes its answer; at the end what one call of each costs
+                                    of the cheap questions changes its answer; at the end what one call of each costs.
+                                    off: the tap is in but switched off. off+idle: and a second tap, switched on, for a kind of event that never comes (a tablet's pen).
+                                    late <s>: switched off, and switched on <s> seconds after it went in
     monitor <seconds> <file>        no tap at all, but a global NSEvent monitor for presses and changes of modifiers, as Arbor has beside its taps; append to <file> when it
                                     is in, and how many events it was given, once a second
     now                             the time as all of these write it, and as arbor.log does
@@ -365,7 +368,7 @@ var bareTap: CFMachPort?
 var bareLog: FileHandle?
 
 /// What any tool with an event tap is, and nothing more: to tell what macOS does to a tapper that loses the permission from what Arbor does about it.
-func tap(seconds: Double, into path: String) {
+func tap(seconds: Double, into path: String, manner: String = "on", after delay: Double = 0) {
   if !FileManager.default.fileExists(atPath: path) { FileManager.default.createFile(atPath: path, contents: nil) }
   guard let file = FileHandle(forWritingAtPath: path) else { fail("cannot write \(path)") }
   file.seekToEndOfFile()
@@ -384,8 +387,24 @@ func tap(seconds: Double, into path: String) {
     fail("macOS refused the tap")
   }
   CFRunLoopAddSource(CFRunLoopGetCurrent(), CFMachPortCreateRunLoopSource(kCFAllocatorDefault, port, 0), .commonModes)
-  CGEvent.tapEnable(tap: port, enable: true)
-  file.write(Data("\(now()) tap-ready pid=\(getpid())\n".utf8))
+  CGEvent.tapEnable(tap: port, enable: manner == "on")
+  var idle: CFMachPort?
+  if manner == "off+idle" {
+    idle = CGEvent.tapCreate(
+      tap: .cgSessionEventTap, place: .headInsertEventTap, options: .defaultTap,
+      eventsOfInterest: CGEventMask(1) << CGEventMask(CGEventType.tabletProximity.rawValue), callback: callback, userInfo: nil)
+    guard let idle else { fail("macOS refused the second tap") }
+    CFRunLoopAddSource(CFRunLoopGetCurrent(), CFMachPortCreateRunLoopSource(kCFAllocatorDefault, idle, 0), .commonModes)
+    CGEvent.tapEnable(tap: idle, enable: true)
+  }
+  if manner == "late" {
+    Thread {
+      Thread.sleep(forTimeInterval: delay)
+      CGEvent.tapEnable(tap: port, enable: true)
+      file.write(Data("\(now()) switched on by its owner; macOS now calls it \(CGEvent.tapIsEnabled(tap: port) ? "on" : "off")\n".utf8))
+    }.start()
+  }
+  file.write(Data("\(now()) tap-ready pid=\(getpid()) manner=\(manner)\n".utf8))
 
   // Which question turns at the instant of the withdrawal, and what does asking cost? On a thread of its own: the tap's must not wait for them.
   let questions: [(String, () -> Bool)] = [
@@ -420,7 +439,7 @@ func tap(seconds: Double, into path: String) {
   }
   asking.start()
   CFRunLoopRunInMode(.defaultMode, seconds, false)
-  file.write(Data("\(now()) the end: the tap is \(CGEvent.tapIsEnabled(tap: port) ? "on" : "off")\n".utf8))
+  file.write(Data("\(now()) the end: the tap is \(CGEvent.tapIsEnabled(tap: port) ? "on" : "off")\(idle.map { ", the idle one \(CGEvent.tapIsEnabled(tap: $0) ? "on" : "off")" } ?? "")\n".utf8))
 }
 
 // MARK: A bare monitor
@@ -481,8 +500,8 @@ case "window":
   guard arguments.count == 7 else { fail(usage) }
   onlook(seconds: number(1), into: arguments[2], frame: CGRect(x: number(3), y: number(4), width: number(5), height: number(6)))
 case "tap":
-  guard arguments.count == 3 else { fail(usage) }
-  tap(seconds: number(1), into: arguments[2])
+  guard (3...5).contains(arguments.count) else { fail(usage) }
+  tap(seconds: number(1), into: arguments[2], manner: arguments.count > 3 ? arguments[3] : "on", after: arguments.count > 4 ? number(4) : 0)
 case "monitor":
   guard arguments.count == 3 else { fail(usage) }
   monitor(seconds: number(1), into: arguments[2])

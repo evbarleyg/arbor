@@ -198,7 +198,7 @@ one_round() {
       : > "$ARBOR_OUT/tapper-$round.txt"
       limit 20 open -n "$tapper" --args tap 30 "$ARBOR_OUT/tapper-$round.txt"
       eventually grep -q tap-ready "$ARBOR_OUT/tapper-$round.txt" || { invalid "the bare tapper has its tap"; return; }
-      pid=$(sed -n 's/.*tap-ready pid=//p' "$ARBOR_OUT/tapper-$round.txt")
+      pid=$(sed -n 's/.*tap-ready pid=\([0-9]*\).*/\1/p' "$ARBOR_OUT/tapper-$round.txt")
       started "$pid" ;;
   esac
   [ -z "$pid" ] || echo "$who is pid $pid with $(taps_of "$pid") taps"

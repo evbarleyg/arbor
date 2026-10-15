@@ -1316,6 +1316,13 @@ With `Arbor.app` running and permission granted:
   sign and the welcome window asks for the permission back, counting the windows; the menu counts the windows out of view and its Quit says that they would stay there;
   ⌃⌥Space beeps and opens the settings; ⌃⌥↩ reaches the frontmost app. Switch it on: every window is in view within a second or
   two, and ⌃⌥[ returns to the framed window. Also with the − button instead of the switch. With nothing out of view: only the icon changes.
+- **The switch, measured.** For whoever has a Mac and likes to try; nobody is asked to, and nothing waits for it. No script can click that switch: macOS asks for a password (`scripts/mac-shell/README-permission-probes.md`). So in which order the word, the flag and the
+  right to tap go for a person, and whether a click is lost meanwhile, has never been seen. No `sudo`, nothing written to the permission database: only Arbor as installed, with `"pointerGestures": true` in its settings so that it has its taps, the switch, and one tool built from the checkout:
+  `swiftc -O -swift-version 5 scripts/mac-shell/asker.swift -o /tmp/asker` (the terminal needs Accessibility, to post the key).
+  In three terminals: `/tmp/asker hear 60 > /tmp/heard.txt`, `/tmp/asker arrivals 60 > /tmp/arrivals.txt`, and, with the Accessibility pane open and the password already given, `/tmp/asker stream 45 20 0 0 --kinds key > /tmp/stream.txt`. Switch Arbor off; click twice on the
+  pane's empty part, a second apart; switch it on again.
+  `heard.txt` says when `com.apple.accessibility.api` was posted; a number missing from `arrivals.txt` is an event that was dropped, and the clicks are its lines with `other=`; Arbor's log has "Accessibility permission is gone (…)" with who said no. The three files hold times, kinds of events, numbers and
+  modifiers: no window title, no app's name, and no key but F19, which the tool itself posts (other keys pressed meanwhile appear as `key-down other=0`, without saying which). Delete the files and `/tmp/asker` afterwards; nothing else was changed. A result goes into `collab/reality.json`.
 - Quit Arbor from the menu: every window is visible afterwards.
 - Motion (`scripts/mac-shell/shots-F02.sh` films most of this). ⌃⌥↩ on one of several docked windows: it grows
   to fill the view while the others slide out past the screen edges, behind the Dock and the menu bar; ⌃⌥Space

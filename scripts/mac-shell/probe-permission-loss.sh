@@ -157,7 +157,7 @@ by_the_row_and_a_word() {
 
 # arbor-stopped is sabotage: the whole process is halted (SIGSTOP) two seconds before the deed, so that nobody is there to take the taps out, which is the nearest there is today to
 # "the thread that keeps the permission's clock sleeps for good". How long until input is back? The Mac is given back whatever happens: twenty seconds after the deed Arbor is killed.
-# one_round <number> <how the permission goes> [arbor|arbor-without-taps|nobody|bare-tapper|bare-monitor|arbor-stopped] [sampled]: all but the first are controls.
+# one_round <number> <how the permission goes> [arbor|arbor-without-taps|nobody|bare-tapper[-off|-off+idle|-late]|bare-monitor|arbor-stopped] [sampled]: all but the first are controls.
 # bare-monitor is the tapper's bundle with no tap but a global NSEvent monitor, which Arbor has beside its scroll tap and takes out in the same turn: is anything dropped for that? If input stands still without
 # Arbor's taps as well, it is not the taps' doing. sampled: `sample` looks at Arbor from the deed on, for what its main thread is doing meanwhile; it halts
 # Arbor at every look, so such a round's figures are not to be compared with the others'.
@@ -184,11 +184,15 @@ one_round() {
     TAPPER_PID=$(sed -n 's/.*monitor-ready pid=\([0-9]*\).*/\1/p' "$ARBOR_OUT/monitor-$round.txt")
     started "$TAPPER_PID"
     head -n 1 "$ARBOR_OUT/monitor-$round.txt"
-  elif [ "$who" = bare-tapper ]; then
+  elif [ "${who#bare-tapper}" != "$who" ]; then
     : > "$ARBOR_OUT/tapper-$round.txt"
-    limit 20 open -n "$tapper" --args tap "$((length + 5))" "$ARBOR_OUT/tapper-$round.txt"
+    # bare-tapper-off, bare-tapper-off+idle, bare-tapper-late: see `asker tap`. Late: switched on three seconds after the deed, which comes about five seconds after the tap went in.
+    manner=${who#bare-tapper}
+    manner=${manner#-}
+    # shellcheck disable=SC2086
+    limit 20 open -n "$tapper" --args tap "$((length + 5))" "$ARBOR_OUT/tapper-$round.txt" $manner $([ "$manner" = late ] && echo 8)
     eventually grep -q tap-ready "$ARBOR_OUT/tapper-$round.txt" || { cat "$ARBOR_OUT/tapper-$round.txt"; invalid "the bare tapper has its tap"; return; }
-    TAPPER_PID=$(sed -n 's/.*tap-ready pid=//p' "$ARBOR_OUT/tapper-$round.txt")
+    TAPPER_PID=$(sed -n 's/.*tap-ready pid=\([0-9]*\).*/\1/p' "$ARBOR_OUT/tapper-$round.txt")
     started "$TAPPER_PID"
     "$WITNESS" taps | grep "pid=$TAPPER_PID "
   elif [ "$who" != nobody ]; then
@@ -254,7 +258,7 @@ one_round() {
   elif [ "$who" = bare-monitor ]; then
     echo "the monitor's own words:"; cat "$ARBOR_OUT/monitor-$round.txt"
     kill_started "$TAPPER_PID"
-  elif [ "$who" = bare-tapper ]; then
+  elif [ "${who#bare-tapper}" != "$who" ]; then
     # It ends by itself a few seconds after the stream, and says then what its questions cost.
     for _ in 1 2 3 4 5 6 7 8 9 10; do grep -q "the end" "$ARBOR_OUT/tapper-$round.txt" && break; sleep 1; done
     echo "the tapper's own words:"; cat "$ARBOR_OUT/tapper-$round.txt"
@@ -284,7 +288,7 @@ one_round() {
   fi
 
   python3 - "$ARBOR_OUT/arrivals-$round.txt" "$ARBOR_OUT/stream-$round.txt" "$taken" "${removed:-$back}" "$between" \
-    "$([ "$who" = bare-tapper ] && echo "$ARBOR_OUT/tapper-$round.txt" || echo -)" "${BEAT:-50}" \
+    "$([ "${who#bare-tapper}" != "$who" ] && echo "$ARBOR_OUT/tapper-$round.txt" || echo -)" "${BEAT:-50}" \
     "$(echo "${KINDS:-click,key,wheel}" | awk -F, '{ n = 0; for (i = 1; i <= NF; i++) n += ($i == "wheel" ? 1 : $i == "pinch" ? 3 : 2); print n }')" \
     > "$ARBOR_SESSION_DIR/verdict" <<'PYTHON'
 import re, sys
@@ -353,7 +357,7 @@ if missing:
 if tapper != "-":
     # How long after the first lost event (or, if none was, after the deed) each of the tapper's questions changed its answer; and what asking costs.
     for line in open(tapper):
-        match = re.match(r"(\S+) (question .*|switched-off .*)", line)
+        match = re.match(r"(\S+) (question .*|switched-off .*|switched on by .*)", line)
         if match and seconds(match.group(1)) >= taken - 0.1:
             print(f"  {match.group(2)}: {(seconds(match.group(1)) - (first if missing else taken)) * 1000:+.0f} ms from {'the first lost event' if missing else 'the deed'}")
         if " cost " in line:
@@ -370,7 +374,7 @@ PYTHON
   [ "${posted:-0}" -ge 500 ] || invalid "the stream posted its events (${posted:-0})"
   [ "${before:-0}" -ge 100 ] || invalid "events arrived before the loss (${before:-0})"
   # The bare tapper never lets go: that nothing arrives afterwards is what it is there to show.
-  [ "$who" = bare-tapper ] || [ "${after:-0}" -ge 100 ] || invalid "events arrived after the taps were gone (${after:-0})"
+  [ "${who#bare-tapper}" != "$who" ] || [ "${after:-0}" -ge 100 ] || invalid "events arrived after the taps were gone (${after:-0})"
   # The rule: three absolutes, and the comparison on the same Mac. A hosted Mac is never quite still: with nothing taken from anybody events have been 85 ms late there.
   check "round $round: NOTHING LOST: every event that was posted arrived (${missing:-?} did not)" test "${missing:-1}" -eq 0
   check "round $round: the hole while the permission went (${hole_during:-?} ms) is no longer than a second" test "${hole_during:-9999}" -le 1000
@@ -389,7 +393,7 @@ PYTHON
 
 # ROUNDS="<how>:<who>[:sampled] …" plays others than these; BEAT=<ms> and KINDS=click,key,wheel make another stream (probe-tapper-questions.sh).
 number=0
-for each in ${ROUNDS:-by_tccutil:arbor by_tccutil:nobody by_tccutil:arbor-without-taps by_tccutil:bare-tapper \
+for each in ${ROUNDS:-by_tccutil:arbor by_tccutil:nobody by_tccutil:arbor-without-taps by_tccutil:bare-tapper by_tccutil:bare-monitor \
   by_the_row_and_a_word:arbor by_the_row_and_a_word:nobody by_the_row_and_a_word:arbor-without-taps by_the_row_and_a_word:bare-tapper \
   by_the_row:arbor by_the_row:nobody by_the_row:bare-tapper \
   by_tccutil:arbor by_the_row_and_a_word:arbor by_tccutil:arbor by_the_row_and_a_word:arbor \

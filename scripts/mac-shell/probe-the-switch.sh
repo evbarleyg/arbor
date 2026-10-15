@@ -218,7 +218,7 @@ step "the bare tapper's switch, off: one click gives the order"
 : > "$ARBOR_OUT/tapper.txt"
 limit 20 open -n -g "$tapper" --args tap 40 "$ARBOR_OUT/tapper.txt"
 eventually grep -q tap-ready "$ARBOR_OUT/tapper.txt" || die "the bare tapper has no tap: $(cat "$ARBOR_OUT/tapper.txt")"
-TAPPER_PID=$(sed -n 's/.*tap-ready pid=//p' "$ARBOR_OUT/tapper.txt")
+TAPPER_PID=$(sed -n 's/.*tap-ready pid=\([0-9]*\).*/\1/p' "$ARBOR_OUT/tapper.txt")
 started "$TAPPER_PID"
 at_exit "kill -9 $TAPPER_PID 2>/dev/null"
 flip 02-tapper "$TAPPER_ID" "$TAPPER_NAME" "$TAPPER_PID" "$ARBOR_OUT/tapper.txt" || { cat "$ARBOR_OUT/heard.txt"; exit 1; }
