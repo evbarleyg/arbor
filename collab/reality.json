@@ -1982,11 +1982,12 @@
    "kind": "extra-report",
    "layer": "at the seam",
    "expected": "What Arbor does itself is not reported back to it: the fake's `setFrame` emitted nothing. One move would at most be one report, with the final frame.",
-   "happened": "Every `setFrame` that changes something comes back as one to three reports (resized where it stood, moved, resized again), each with the window's frame of that moment, after the controller's handler has returned. One that changes nothing has no echo, and all of a layout's calls are made before any echo is heard. None of it is the person's doing. Each echo was read with two calls on the main thread right after the command. In a later comparison with a rehearsal one `setFrame` had two to four echoes on the Mac, because a move and a resize are reported apart and some twice, where `FakeWindowSystem.deliverEchoes` sends one: 46 of its 319 differences.",
+   "happened": "Every `setFrame` that changes something comes back as one to three reports (resized where it stood, moved, resized again), each with the window's frame of that moment, after the controller's handler has returned. One that changes nothing has no echo, and all of a layout's calls are made before any echo is heard. None of it is the person's doing. Each echo was read with two calls on the main thread right after the command. In a later comparison with a rehearsal one `setFrame` had two to four echoes on the Mac, because a move and a resize are reported apart and some twice, where `FakeWindowSystem.deliverEchoes` sends one: 46 of its 319 differences. How many there are follows a rule, read off the recordings since: one for each step of the frame plan (size, place, size; or the place alone) that changes something, so one for a move or a resize alone and two for both; a third when the new size does not fit on the display at the old place, where macOS cuts the first resize short. It holds for some nineteen in twenty bundles of calls in the committed traces; the others bring one report more, after a drop. At the seam nearly all carry the final frame (213 of 215 in those traces), whatever the window's frame of that moment was: the layer reads the frame when a report arrives, which is after the call. They come 4 to 400 ms after the call.",
    "found": "A recording of Accessibility notifications and traces of test windows and real apps on a hosted Mac (drag-to-edge, finder-commands, calculator-commands), and a performance review's measurements on a Mac.",
    "modelled": "partly",
    "knobs": [
     "Echoes.frames",
+    "FakeWindowSystem.reports",
     "FakeWindowSystem.deliverEchoes",
     "FakeWindowSystem.holdsEchoes",
     "FakeWindowSystem.appsReact"
@@ -1994,12 +1995,15 @@
    "guards": [
     "test: anythingRightAfterAMoveIsAnEcho",
     "test: arborsOwnCallsAreAnsweredAfterTheyReturn",
+    "test: aSetFrameBringsAsManyReportsAsOnAMac",
+    "test: theRecordingsBearTheNumberOfReportsOut",
+    "test: twoCallsBringTheReportsOfBoth",
     "test: theEchoesOfGoingAndComingBackChangeNothing",
     "test: echoesOfArborsOwnActionsDoNotDisturbTheHistory",
     "test: echoesOfFramesTheOldArborSetDoNotMoveWindowsTheNewArborPlaced",
     "trace: drag-to-edge.expect"
    ],
-   "copes": "EchoFilter.judge takes any report about a window within 0.15 s of Arbor's move for an echo, and a report of the frame it was given for a second. The fake queues one echo for a window and round, not two or three. Not reading a fresh echo at all is named in the backlog and is not in the tree.",
+   "copes": "EchoFilter.judge takes any report about a window within 0.15 s of Arbor's move for an echo, and a report of the frame it was given for a second. The fake queues as many echoes as the rule says, all with the final frame and all at the end of the command: not the odd fourth, nor how late they come. Not reading a fresh echo at all is named in the backlog and is not in the tree.",
    "hurt": 2,
    "touches": [
     "jolt",
@@ -2382,11 +2386,15 @@
    "kind": "late-or-partial-answer",
    "layer": "at the seam",
    "expected": "Position, then size, gives a window its frame. In the fake `setFrame` is one step: size and place change together, and one echo carries the frame asked for.",
-   "happened": "The size a window may take depends on where it stands. Asked for 12,43 1000×319 from 272,31 480×348, the window first reports 752×319, which is what fits between x 272 and the display's right edge, then moves, then takes 1000. Going back to a floating size it reports 512×661 before 512×673. One command, three reports with three different frames. A large window is clamped in the same way on its way to a smaller display, and the frame Arbor believes a window has can be out of date.",
+   "happened": "The size a window may take depends on where it stands. Asked for 12,43 1000×319 from 272,31 480×348, the window first reports 752×319, which is what fits between x 272 and the display's right edge, then moves, then takes 1000. Going back to a floating size it reports 512×661 before 512×673. One command, three reports with three different frames. A large window is clamped in the same way on its way to a smaller display, and the frame Arbor believes a window has can be out of date. The stand-in plays the number of reports this makes (a third where the size does not fit at the old place; none for a window at its minimum, or one that hung over that edge already), not the frames in between, which the real layer does not pass on either: it reads the frame when a report arrives.",
    "found": "A watcher of raw Accessibility notifications that ran beside probe scripts on a hosted Mac. The clamp between displays stands in the frame plan's own comments, which name no run.",
-   "modelled": "no",
-   "knobs": [],
+   "modelled": "partly",
+   "knobs": [
+    "FakeWindowSystem.reports"
+   ],
    "guards": [
+    "test: aSetFrameBringsAsManyReportsAsOnAMac",
+    "test: aWindowAtItsMinimumIsNotCutShort",
     "test: aChangeOfSizeTakesTheFullPlan",
     "test: anythingRightAfterAMoveIsAnEcho",
     "test: aWrongBeliefAboutTheSizeIsCaughtByReadingBack"

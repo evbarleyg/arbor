@@ -53,11 +53,13 @@ extension FakeWindowSystem {
   public func appsReact() {
     let echoes = undelivered
     undelivered.removeAll()
+    var snappedBack: Set<WindowID> = []
     for echo in echoes {
       switch echo {
       case .frame(let window):
-        guard let fake = windows[window] else { continue }
+        guard let fake = windows[window], !snappedBack.contains(window) else { continue }
         if fake.behaviour == .snapsBack, let home = fake.home, home != fake.snapshot.frame {
+          snappedBack.insert(window)
           windows[window]!.snapshot.frame = home
           events?.windowChanged(windows[window]!.snapshot, userInitiated: true)
         } else {

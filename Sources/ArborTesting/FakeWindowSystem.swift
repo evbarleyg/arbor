@@ -293,9 +293,8 @@ public final class FakeWindowSystem: WindowSystem {
     if hearHalfNext.remove(window) != nil { frame.origin = fake.snapshot.frame.origin }
     var applied = Self.accepted(frame, by: fake)
     if fake.behaviour != .frozen { applied = whereMacOSPuts(applied, titleBar: fake.titleBar) }
-    let changed = fake.snapshot.frame != applied
-    moveLog.append(
-      Move(window: window, requested: frame, before: fake.snapshot.frame, after: applied, together: together))
+    let (before, changed) = (fake.snapshot.frame, fake.snapshot.frame != applied)
+    moveLog.append(Move(window: window, requested: frame, before: before, after: applied, together: together))
     let (home, moves) = (fake.home ?? fake.snapshot.frame, fake.movesNotArbors)
     fake.snapshot.frame = applied
     (fake.home, fake.movesNotArbors) = (home, moves)
@@ -306,8 +305,36 @@ public final class FakeWindowSystem: WindowSystem {
     windows[window] = fake
     frameLog.append((window, applied))
     if changed, fake.snapshot.isPresent || inSightUnlisted.contains(window) { sightings.append((window, applied)) }
-    if changed, echoes.frames, !undelivered.contains(.frame(window)) { undelivered.append(.frame(window)) }
+    if changed, echoes.frames {
+      undelivered += Array(repeating: .frame(window), count: reports(ofTheWayFrom: before, to: applied, atLeast: fake.minimumSize))
+    }
     return applied
+  }
+
+  /// How many reports one `setFrame` that changed something brings. The Accessibility layer sets the size, the place and the size again, or
+  /// the place alone (`FramePlan`), and macOS reports each step that changed something: "resized" and "moved" are two reports. A third
+  /// comes when the new size does not fit on the display at the old place: macOS cuts the first resize short, though never below the
+  /// window's minimum, and the last step makes up for it. A window that hung over that edge already is not cut short. The layer reads
+  /// the frame when a report arrives, which is after the call, so they all say the same. And no report stands for two calls.
+  /// Measured with one display. With several, that the display with the window's middle is the one that counts is a guess.
+  public func reports(ofTheWayFrom old: CGRect, to new: CGRect, atLeast minimum: CGSize = .zero) -> Int {
+    let middle = CGPoint(x: old.midX, y: old.midY)
+    let room = (displayList.first { $0.frame.contains(middle) } ?? displayList.first { $0.frame.overlaps(old) })?.visibleFrame
+    var (frame, count) = (old, 0)
+    for (index, step) in FramePlan.steps(from: old, to: new).enumerated() {
+      var next = frame
+      switch step {
+      case .position: next.origin = new.origin
+      case .size:
+        next.size = new.size
+        guard index == 0, let room else { break }
+        if frame.maxX <= room.maxX { next.size.width = max(min(next.width, room.maxX - frame.minX), minimum.width) }
+        if frame.maxY <= room.maxY { next.size.height = max(min(next.height, room.maxY - frame.minY), minimum.height) }
+      }
+      if next != frame { count += 1 }
+      frame = next
+    }
+    return max(count, 1)
   }
 
   /// The title bar of a window nobody has said anything else about, in points. There is no one height: the window's app decides. On one
@@ -762,7 +789,8 @@ extension FakeWindowSystem {
     guard !holdsEchoes else { return 0 }
     var focusReports = 0
     var rounds = 0
-    while !undelivered.isEmpty, rounds < 100 {
+    // Up to three reports for each window of a layout, and some for what Arbor does about them. More would be Arbor chasing its own tail.
+    while !undelivered.isEmpty, rounds < 100 + 3 * windows.count {
       rounds += 1
       switch undelivered.removeFirst() {
       case .focus(let window):

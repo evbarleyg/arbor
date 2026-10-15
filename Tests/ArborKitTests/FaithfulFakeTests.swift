@@ -2,6 +2,7 @@ import ArborCore
 import ArborKit
 import ArborTesting
 import CoreGraphics
+import Foundation
 import Testing
 
 /// Writes down what a window system reports, in order.
@@ -120,7 +121,7 @@ private final class Recorder: WindowSystemEvents {
     #expect(system.frame(of: b) == CGRect(x: 10, y: 20, width: 300, height: 200), "whole points")
     recorder.log.removeAll()
     #expect(system.deliverEchoes() == 1)
-    #expect(recorder.log == ["focused \(b)", "changed \(b) echo"])
+    #expect(recorder.log == ["focused \(b)", "changed \(b) echo", "changed \(b) echo"], "resized, and moved")
     recorder.log.removeAll()
     system.focus(b)
     system.setFrame(CGRect(x: 10, y: 20, width: 300, height: 200), of: b)
@@ -140,5 +141,124 @@ private final class Recorder: WindowSystemEvents {
     #expect(recorder.log == ["keyboard moved", "destroyed \(a)", "appeared \(new)"])
     #expect(system.frame(of: b)?.minX == 10.5)
     #expect(system.focused == nil)
+  }
+
+  // MARK: How many reports one setFrame brings
+
+  /// A hosted Mac's display: a menu bar of 31 points, a Dock of 63.
+  private static let hosted = DisplaySnapshot(
+    id: DisplayID("hosted"), frame: CGRect(x: 0, y: 0, width: 1024, height: 768),
+    visibleFrame: CGRect(x: 0, y: 31, width: 1024, height: 674), isMain: true)
+
+  /// Each line was recorded on a hosted Mac: where the window was, what Arbor asked for, how many reports came back. They are from the
+  /// traces of one script played on a hosted Mac to be compared with its rehearsal (collab/evidence/reality-mac/traces, journeys
+  /// apps, commands and keys), which come into the tree with that comparison.
+  @Test(arguments: [
+    // A move alone, and a resize alone.
+    (CGRect(x: 270, y: 140, width: 480, height: 348), CGRect(x: 518, y: 140, width: 480, height: 348), 1),
+    (CGRect(x: 12, y: 43, width: 494, height: 650), CGRect(x: 12, y: 43, width: 325, height: 650), 1),
+    // Both: "resized" and "moved".
+    (CGRect(x: 518, y: 220, width: 480, height: 348), CGRect(x: 349, y: 220, width: 326, height: 348), 2),
+    (CGRect(x: 12, y: 43, width: 390, height: 319), CGRect(x: 40, y: 71, width: 346, height: 277), 2),
+    // The new size does not fit at the old place, downwards or to the right: "resized", "moved", "resized".
+    (CGRect(x: 170, y: 220, width: 480, height: 348), CGRect(x: 12, y: 43, width: 494, height: 650), 3),
+    (CGRect(x: 687, y: 43, width: 325, height: 650), CGRect(x: 518, y: 43, width: 494, height: 650), 3),
+    (CGRect(x: 771, y: 43, width: 241, height: 650), CGRect(x: 272, y: 194, width: 480, height: 348), 3),
+    // Out of view it hangs over both edges already, and nothing is cut short.
+    (CGRect(x: 1023, y: 677, width: 325, height: 650), CGRect(x: 12, y: 43, width: 1000, height: 650), 2),
+  ])
+  func aSetFrameBringsAsManyReportsAsOnAMac(from: CGRect, to: CGRect, reports: Int) {
+    let system = FakeWindowSystem(displays: [Self.hosted])
+    let recorder = Recorder()
+    system.events = recorder
+    let window = system.open(app: "Safari", frame: from)
+    system.start()
+    #expect(system.setFrame(to, of: window) == to)
+    #expect(recorder.log.isEmpty, "nothing is reported from inside the call")
+    system.deliverEchoes()
+    #expect(recorder.log == Array(repeating: "changed \(window) echo", count: reports))
+  }
+
+  /// macOS does not cut a window below its minimum size, so the first resize is the whole of it. As recorded: 480×348 at 518,220, asked
+  /// to be 446×348 at 578,220, took 700×500 and sent "resized" and "moved".
+  @Test func aWindowAtItsMinimumIsNotCutShort() {
+    let system = FakeWindowSystem(displays: [Self.hosted])
+    let recorder = Recorder()
+    system.events = recorder
+    let window = system.open(app: "Safari", frame: CGRect(x: 518, y: 220, width: 480, height: 348))
+    system.setMinimumSize(window, CGSize(width: 700, height: 500))
+    system.start()
+    recorder.log.removeAll()
+    #expect(system.setFrame(CGRect(x: 578, y: 220, width: 446, height: 348), of: window) == CGRect(x: 578, y: 220, width: 700, height: 500))
+    system.deliverEchoes()
+    #expect(recorder.log == Array(repeating: "changed \(window) echo", count: 2))
+  }
+
+  /// No report stands for two calls: asked twice before its app gets round to reporting, a window reports both.
+  @Test func twoCallsBringTheReportsOfBoth() {
+    let system = FakeWindowSystem(displays: [Self.hosted])
+    let recorder = Recorder()
+    system.events = recorder
+    let window = system.open(app: "Safari", frame: CGRect(x: 12, y: 374, width: 700, height: 300))
+    system.start()
+    system.setFrame(CGRect(x: 12, y: 43, width: 700, height: 300), of: window)
+    system.setFrame(CGRect(x: 1023, y: 767, width: 700, height: 300), of: window)
+    system.deliverEchoes()
+    #expect(recorder.log == Array(repeating: "changed \(window) echo", count: 2))
+  }
+
+  /// The rule, held against every recording of real windows on one display. Calls on one window less than 1.5 s apart count together: their
+  /// reports cannot be told apart, and come up to 0.7 s late where Arbor is busy. Left out: what a hand, a drag, a display that comes or
+  /// goes, the window's end or the end of the session cuts across; a window that is minimized, hidden, in full screen or on its way out of
+  /// it, which is macOS's to move; and reports that say something else (a title, a Space, the Dock), which are no echoes. A few
+  /// bundles bring one report more than the rule says, most after a drop or from Terminal, and nobody knows why. Most are one call and
+  /// one report: a rule of one report a call, one without the cut and one without the exception for a window that hangs over the
+  /// edge all fail this.
+  @Test func theRecordingsBearTheNumberOfReportsOut() throws {
+    var (agreeing, differing) = (0, [String]())
+    for name in TraceCorpusTests.names {
+      let trace = try Trace(contentsOf: TraceCorpusTests.folder.appendingPathComponent(name + ".jsonl"))
+      guard trace.header.os != "simulated", trace.header.displays.count == 1 else { continue }
+      let system = FakeWindowSystem(displays: trace.header.displays.map { DisplaySnapshot($0) })
+      var known = Dictionary(trace.header.windows.map { ($0.id, $0) }, uniquingKeysWith: { $1 })
+      var open: [WindowID: (expected: Int, seen: Int, at: Double)] = [:]
+      func close(_ window: WindowID) {
+        guard let bundle = open.removeValue(forKey: window) else { return }
+        if bundle.expected == bundle.seen { agreeing += 1 } else { differing.append("\(name) \(window): \(bundle.expected), not \(bundle.seen)") }
+      }
+      for entry in trace.entries {
+        for (window, bundle) in open where entry.t - bundle.at > 1.5 { close(window) }
+        switch entry.line {
+        case .displaysChanged(let displays):
+          // The Dock changing size is no cut. A display that comes or goes is: macOS moves windows then.
+          if displays.count != 1 || system.displayList.count != 1 { open.removeAll() }
+          system.displayList = displays.map { DisplaySnapshot($0) }
+        case .stop, .dragBegan, .resizeBegan: open.removeAll()
+        case .setFrame(let window, _, let took, _):
+          guard let took, let before = known[window], system.displayList.count == 1,
+            !(before.minimized || before.hidden || before.offSpace || before.fullScreen)
+          else {
+            open[window] = nil
+            if let took { known[window]?.frame = took }
+            continue
+          }
+          guard took != before.frame else { continue }
+          open[window, default: (0, 0, entry.t)].expected += system.reports(ofTheWayFrom: before.frame, to: took)
+          open[window]?.at = entry.t
+          known[window]?.frame = took
+        case .appeared(let window): known[window.id] = window
+        case .destroyed(let window): open[window] = nil
+        case .changed(let window, let user):
+          var sameButForTheFrame = window
+          if let before = known[window.id] { sameButForTheFrame.frame = before.frame }
+          let saysSomethingElse = known[window.id].map { $0 != sameButForTheFrame } ?? false
+          known[window.id] = window
+          if user { open[window.id] = nil } else if !saysSomethingElse { open[window.id]?.seen += 1 }
+        default: break
+        }
+      }
+    }
+    #expect(agreeing >= 60, "the recordings are there and were read")
+    #expect(differing.count * 20 <= agreeing, "\(differing)")
   }
 }
