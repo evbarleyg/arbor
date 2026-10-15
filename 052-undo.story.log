@@ -1,0 +1,65 @@
+52 undo: presses ctrl+opt+z
+expected: {'act': 'dock-key', 'settled': 'quiet:1422', 'moves': 'any', 'floating': '', 'docked': '31,35,45,51,54,60,63,65,69'}
+ODD rule 3: the last window came to rest 1032 ms after the key or the button
+
+12:32:05.057 SCREEN -- begin 52 undo
+12:32:05.057 SCREEN -- text 52 presses ctrl+opt+z
+12:32:05.275 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 9 stand-ins, 0.46 s
+12:32:05.275 DEBUG the stage kept the windows waiting 8 ms: its panel 0, 9 costumes 0 (0 not ready), the desktop 3, going up 4
+12:32:05.305 SCREEN w97 of Arbor 0,0 1600×900 (level 4)
+12:32:05.334 MACOS pid 360 AXResized w31 AXWindow/AXStandardWindow 787 43 709 252
+12:32:05.335 MACOS pid 360 AXMoved w31 AXWindow/AXStandardWindow 787 43 709 252
+12:32:05.354 MACOS pid 13716 AXResized w45 AXWindow/AXStandardWindow 165 65 376 247
+12:32:05.356 MACOS pid 13716 AXMoved w45 AXWindow/AXStandardWindow 12 303 376 247
+12:32:05.365 SCREEN textedit (w45) 12,303 376×247
+12:32:05.365 SCREEN finder (w31) 787,43 709×252
+12:32:05.428 MACOS pid 13979 AXTitleChanged w51 AXWindow/AXStandardWindow 400 303 373 244
+12:32:05.428 MACOS pid 13979 AXResized w51 AXWindow/AXStandardWindow 400 303 373 244
+12:32:05.428 MACOS pid 13979 AXMoved w51 AXWindow/AXStandardWindow 400 303 373 244
+12:32:05.431 SCREEN terminal (w51) 40,51 373×244
+12:32:05.466 SCREEN terminal (w51) 400,303 373×244
+12:32:05.470 MACOS pid 13979 AXMoved w51 AXWindow/AXStandardWindow 401 305 373 244
+12:32:05.514 SCREEN terminal (w51) 401,305 373×244
+12:32:05.525 MACOS pid 14253 AXResized w54 AXWindow/AXStandardWindow 787 510 709 300
+12:32:05.527 MACOS pid 14253 AXMoved w54 AXWindow/AXStandardWindow 787 510 709 300
+12:32:05.534 SCREEN notes (w54) 300,105 709×300
+12:32:05.567 SCREEN notes (w54) 787,510 709×300
+12:32:05.605 MACOS pid 13473 AXMoved w35 AXWindow/AXStandardWindow 1599 770 1324 790
+12:32:05.617 SCREEN calendar (w60) 1599,770 936×599
+12:32:05.617 SCREEN safari (w35) 1599,770 1324×790
+12:32:05.617 MACOS pid 14947 AXMoved w60 AXWindow/AXStandardWindow 1599 770 936 599
+12:32:05.623 MACOS pid 15029 AXMoved w63 AXWindow/AXStandardWindow 1599 770 723 625
+12:32:05.627 MACOS pid 15101 AXMoved w65 AXWindow/AXStandardWindow 1599 770 708 424
+12:32:05.642 SCREEN preview (w65) 1599,770 708×424
+12:32:05.642 SCREEN w71 of Mail 1924,877 470×416
+12:32:05.642 SCREEN mail (w69) 1599,770 1120×630
+12:32:05.642 SCREEN settings (w63) 1599,770 723×625
+12:32:05.655 MACOS pid 15462 AXMoved w69 AXWindow/AXStandardWindow 1599 770 1120 630
+12:32:05.801 SCREEN (nothing was seen for 159 ms)
+12:32:05.802 DEBUG stage retargeted on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 9 stand-ins, 0.15 s
+12:32:05.836 INFO  undo: undid float-all
+12:32:05.836 DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Undid Float All
+12:32:05.954 SCREEN w103 of Arbor 731,728 139×38 (level 6)
+12:32:05.954 SCREEN w101 of Arbor 778,501 727×318
+12:32:05.954 SCREEN w138 of Arbor 12,43 376×248
+12:32:05.954 SCREEN w136 of Arbor 12,562 376×248
+12:32:05.954 SCREEN w117 of Arbor 400,43 375×248
+12:32:05.954 SCREEN w118 of Arbor 400,562 375×248
+12:32:05.954 SCREEN w139 of Arbor 787,307 709×191
+12:32:05.954 SCREEN w137 of Arbor 1508,43 80×767
+12:32:05.954 SCREEN w110 of Arbor 12,291 376×12
+12:32:05.954 SCREEN w144 of Arbor 12,550 376×12
+12:32:05.954 SCREEN w100 of Arbor 400,291 375×12
+12:32:05.954 SCREEN w140 of Arbor 400,550 375×12
+12:32:05.954 SCREEN w143 of Arbor 787,295 709×12
+12:32:05.954 SCREEN w114 of Arbor 787,498 709×12
+12:32:05.954 SCREEN w142 of Arbor 388,43 12×767
+12:32:05.954 SCREEN w141 of Arbor 775,43 12×767
+12:32:05.954 SCREEN w145 of Arbor 1496,43 12×767
+12:32:05.954 SCREEN w102 of Arbor 0,31 1600×791 (level -2147483602)
+12:32:05.954 SCREEN front to back: w101 notes preview calendar textedit safari w95 w71 mail settings terminal finder w138 w136 w117 w118 w139 w137 w110 w144 w100 w140 w143 w114 w142 w141 w145
+12:32:06.319 DEBUG stage down
+12:32:06.337 SCREEN w97 of Arbor left the screen
+12:32:07.301 SCREEN -- end 52 act=dock-key settled=quiet:1422 moves=any floating= docked=31,35,45,51,54,60,63,65,69
+12:32:07.899 SCREEN w103 of Arbor left the screen
+12:32:07.954 SCRIPT == 53 pause

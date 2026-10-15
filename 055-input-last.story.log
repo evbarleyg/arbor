@@ -1,0 +1,381 @@
+55 input-last: a round of input: presses on windows behind and in front, keys, a scroll, a drag inside a window
+expected: {'act': 'instrument', 'settled': 'quiet:967', 'round': 'last', 'front': '45', 'posted': 'press:26,up:26,key:13,scroll:28,dragged:20', 'floating': '', 'docked': '31,35,45,51,54,60,63,65,69'}
+FAIL rule 3: w186 of TextEdit opened in one place and was then moved to another
+FAIL rule 3: w191 of TextEdit opened in one place and was then moved to another
+FAIL rule 3: w191 of TextEdit moved 2 times
+FAIL rule 3: w195 of TextEdit opened in one place and was then moved to another
+FAIL rule 3: w195 of TextEdit moved 2 times
+FAIL rule 3: w199 of TextEdit opened in one place and was then moved to another
+FAIL rule 3: w199 of TextEdit moved 2 times
+FAIL rule 3: w203 of TextEdit opened in one place and was then moved to another
+FAIL rule 3: w203 of TextEdit moved 2 times
+FAIL rule 3: w207 of TextEdit opened in one place and was then moved to another
+FAIL rule 3: w207 of TextEdit moved 2 times
+
+12:32:13.403 SCREEN -- begin 55 input-last
+12:32:13.403 SCREEN -- text 55 a round of input: presses on windows behind and in front, keys, a scroll, a drag inside a window
+12:32:14.181 SCREEN (nothing was seen for 113 ms)
+12:32:14.181 SCREEN front to back: finder w95 w170 notes preview calendar textedit safari w71 mail settings terminal w155 w156 w157 w158 w159 w160 w161 w162 w163 w164 w165 w166 w167 w168 w169
+12:32:14.181 SCREEN the button is down 1137 55
+12:32:14.181 SCREEN the button is up 1137 55
+12:32:14.182 SCREEN in front: process 360 com.apple.finder
+12:32:14.182 MACOS pid 14253 AXApplicationDeactivated
+12:32:14.183 MACOS workspace didActivate pid 360 com.apple.finder regular
+12:32:14.183 MACOS workspace didDeactivate pid 14253 com.apple.Notes regular
+12:32:14.241 MACOS pid 360 AXApplicationActivated
+12:32:14.242 DEBUG focus is on w31
+12:32:14.243 DEBUG w31 has the keyboard
+12:32:14.300 SCREEN w170 of Arbor 778,34 727×270
+12:32:14.300 SCREEN front to back: w170 finder w95 notes preview calendar textedit safari w71 mail settings terminal w155 w156 w157 w158 w159 w160 w161 w162 w163 w164 w165 w166 w167 w168 w169
+12:32:14.323 DEBUG the button went down at 1137,55, the pointer is at 1137,55: it is on w31
+12:32:15.423 SCREEN front to back: terminal w170 finder w95 notes preview calendar textedit safari w71 mail settings w155 w156 w157 w158 w159 w160 w161 w162 w163 w164 w165 w166 w167 w168 w169
+12:32:15.423 SCREEN the button is down 499 317
+12:32:15.437 SCREEN in front: process 13979 com.apple.Terminal
+12:32:15.467 MACOS pid 360 AXApplicationDeactivated
+12:32:15.468 MACOS workspace didActivate pid 13979 com.apple.Terminal regular
+12:32:15.469 MACOS workspace didDeactivate pid 360 com.apple.finder regular
+12:32:15.477 SCREEN the button is up 499 317
+12:32:15.632 MACOS pid 13979 AXApplicationActivated
+12:32:15.633 DEBUG focus is on w51
+12:32:15.634 DEBUG w51 has the keyboard
+12:32:15.667 SCREEN w170 of Arbor 392,296 391×262
+12:32:15.667 SCREEN front to back: w170 terminal finder w95 notes preview calendar textedit safari w71 mail settings w155 w156 w157 w158 w159 w160 w161 w162 w163 w164 w165 w166 w167 w168 w169
+12:32:15.677 DEBUG the button went down at 499,317, the pointer is at 499,317: it is on w51
+12:32:16.466 SCREEN front to back: notes w170 terminal finder w95 preview calendar textedit safari w71 mail settings w155 w156 w157 w158 w159 w160 w161 w162 w163 w164 w165 w166 w167 w168 w169
+12:32:16.466 SCREEN the button is down 1137 522
+12:32:16.474 SCREEN in front: process 14253 com.apple.Notes
+12:32:16.475 MACOS workspace didActivate pid 14253 com.apple.Notes regular
+12:32:16.476 MACOS workspace didDeactivate pid 13979 com.apple.Terminal regular
+12:32:16.542 MACOS pid 14253 AXApplicationActivated
+12:32:16.542 MACOS pid 13979 AXApplicationDeactivated
+12:32:16.552 DEBUG focus is on w54
+12:32:16.553 DEBUG w54 has the keyboard
+12:32:16.577 DEBUG the button went down at 1137,522, the pointer is at 1137,522: it is on w54
+12:32:16.586 SCREEN w170 of Arbor 778,501 727×318
+12:32:16.586 SCREEN front to back: w170 notes terminal finder w95 preview calendar textedit safari w71 mail settings w155 w156 w157 w158 w159 w160 w161 w162 w163 w164 w165 w166 w167 w168 w169
+12:32:16.586 SCREEN the button is up 1137 522
+12:32:17.647 SCREEN front to back: finder w170 notes terminal w95 preview calendar textedit safari w71 mail settings w155 w156 w157 w158 w159 w160 w161 w162 w163 w164 w165 w166 w167 w168 w169
+12:32:17.647 SCREEN the button is down 1137 55
+12:32:17.691 SCREEN in front: process 360 com.apple.finder
+12:32:17.692 MACOS pid 360 AXApplicationActivated
+12:32:17.693 MACOS workspace didActivate pid 360 com.apple.finder regular
+12:32:17.693 MACOS workspace didDeactivate pid 14253 com.apple.Notes regular
+12:32:17.693 MACOS pid 14253 AXApplicationDeactivated
+12:32:17.699 DEBUG focus is on w31
+12:32:17.700 DEBUG w31 has the keyboard
+12:32:17.734 DEBUG the button went down at 1137,55, the pointer is at 1137,55: it is on w31
+12:32:17.739 SCREEN w170 of Arbor 778,34 727×270
+12:32:17.739 SCREEN front to back: w170 finder notes terminal w95 preview calendar textedit safari w71 mail settings w155 w156 w157 w158 w159 w160 w161 w162 w163 w164 w165 w166 w167 w168 w169
+12:32:17.778 SCREEN the button is up 1137 55
+12:32:18.574 SCREEN in front: process 13979 com.apple.Terminal
+12:32:18.586 MACOS pid 13979 AXApplicationActivated
+12:32:18.587 MACOS workspace didActivate pid 13979 com.apple.Terminal regular
+12:32:18.587 MACOS workspace didDeactivate pid 360 com.apple.finder regular
+12:32:18.587 MACOS pid 360 AXApplicationDeactivated
+12:32:18.598 SCREEN front to back: terminal w170 finder notes w95 preview calendar textedit safari w71 mail settings w155 w156 w157 w158 w159 w160 w161 w162 w163 w164 w165 w166 w167 w168 w169
+12:32:18.598 SCREEN the button is down 583 317
+12:32:18.598 DEBUG focus is on w51
+12:32:18.599 DEBUG w51 has the keyboard
+12:32:18.650 SCREEN the button is up 583 317
+12:32:18.682 SCREEN w170 of Arbor 392,296 391×262
+12:32:18.682 SCREEN front to back: w170 terminal finder notes w95 preview calendar textedit safari w71 mail settings w155 w156 w157 w158 w159 w160 w161 w162 w163 w164 w165 w166 w167 w168 w169
+12:32:18.711 DEBUG the button went down at 583,317, the pointer is at 583,317: it is on w51
+12:32:19.717 SCREEN front to back: notes w170 terminal finder w95 preview calendar textedit safari w71 mail settings w155 w156 w157 w158 w159 w160 w161 w162 w163 w164 w165 w166 w167 w168 w169
+12:32:19.717 SCREEN the button is down 1137 522
+12:32:19.731 SCREEN in front: process 14253 com.apple.Notes
+12:32:19.739 MACOS workspace didActivate pid 14253 com.apple.Notes regular
+12:32:19.740 MACOS workspace didDeactivate pid 13979 com.apple.Terminal regular
+12:32:19.807 MACOS pid 14253 AXApplicationActivated
+12:32:19.808 MACOS pid 13979 AXApplicationDeactivated
+12:32:19.814 SCREEN the button is up 1137 522
+12:32:19.817 DEBUG focus is on w54
+12:32:19.820 DEBUG w54 has the keyboard
+12:32:19.841 DEBUG the button went down at 1137,522, the pointer is at 1137,522: it is on w54
+12:32:19.874 SCREEN w170 of Arbor 778,501 727×318
+12:32:19.874 SCREEN front to back: w170 notes terminal finder w95 preview calendar textedit safari w71 mail settings w155 w156 w157 w158 w159 w160 w161 w162 w163 w164 w165 w166 w167 w168 w169
+12:32:20.891 SCREEN front to back: finder w170 notes terminal w95 preview calendar textedit safari w71 mail settings w155 w156 w157 w158 w159 w160 w161 w162 w163 w164 w165 w166 w167 w168 w169
+12:32:20.891 SCREEN the button is down 1137 55
+12:32:20.898 SCREEN in front: process 360 com.apple.finder
+12:32:20.904 MACOS workspace didActivate pid 360 com.apple.finder regular
+12:32:20.905 MACOS workspace didDeactivate pid 14253 com.apple.Notes regular
+12:32:20.973 SCREEN the button is up 1137 55
+12:32:20.989 MACOS pid 360 AXApplicationActivated
+12:32:20.993 MACOS pid 14253 AXApplicationDeactivated
+12:32:20.995 DEBUG focus is on w31
+12:32:20.998 DEBUG w31 has the keyboard
+12:32:21.119 SCREEN (nothing was seen for 120 ms)
+12:32:21.131 SCREEN w170 of Arbor 778,34 727×270
+12:32:21.131 SCREEN front to back: w170 finder notes terminal w95 preview calendar textedit safari w71 mail settings w155 w156 w157 w158 w159 w160 w161 w162 w163 w164 w165 w166 w167 w168 w169
+12:32:21.145 DEBUG the button went down at 1137,55, the pointer is at 1137,55: it is on w31
+12:32:22.046 SCREEN in front: process 13979 com.apple.Terminal
+12:32:22.046 SCREEN front to back: terminal w170 finder notes w95 preview calendar textedit safari w71 mail settings w155 w156 w157 w158 w159 w160 w161 w162 w163 w164 w165 w166 w167 w168 w169
+12:32:22.046 SCREEN the button is down 583 317
+12:32:22.046 SCREEN the button is up 583 317
+12:32:22.046 MACOS pid 13979 AXApplicationActivated
+12:32:22.051 MACOS workspace didActivate pid 13979 com.apple.Terminal regular
+12:32:22.053 MACOS workspace didDeactivate pid 360 com.apple.finder regular
+12:32:22.083 MACOS pid 360 AXApplicationDeactivated
+12:32:22.131 DEBUG focus is on w51
+12:32:22.132 DEBUG w51 has the keyboard
+12:32:22.152 SCREEN w170 of Arbor 392,296 391×262
+12:32:22.152 SCREEN front to back: w170 terminal finder notes w95 preview calendar textedit safari w71 mail settings w155 w156 w157 w158 w159 w160 w161 w162 w163 w164 w165 w166 w167 w168 w169
+12:32:22.163 DEBUG the button went down at 583,317, the pointer is at 583,317: it is on w51
+12:32:23.064 SCREEN in front: process 14253 com.apple.Notes
+12:32:23.066 MACOS workspace didActivate pid 14253 com.apple.Notes regular
+12:32:23.067 MACOS workspace didDeactivate pid 13979 com.apple.Terminal regular
+12:32:23.118 SCREEN front to back: notes w170 terminal finder w95 preview calendar textedit safari w71 mail settings w155 w156 w157 w158 w159 w160 w161 w162 w163 w164 w165 w166 w167 w168 w169
+12:32:23.118 SCREEN the button is down 1137 522
+12:32:23.118 SCREEN the button is up 1137 522
+12:32:23.138 MACOS pid 14253 AXApplicationActivated
+12:32:23.140 MACOS pid 13979 AXApplicationDeactivated
+12:32:23.144 DEBUG focus is on w54
+12:32:23.150 DEBUG w54 has the keyboard
+12:32:23.206 DEBUG the button went down at 1137,522, the pointer is at 1137,522: it is on w54
+12:32:23.209 SCREEN w170 of Arbor 778,501 727×318
+12:32:23.209 SCREEN front to back: w170 notes terminal finder w95 preview calendar textedit safari w71 mail settings w155 w156 w157 w158 w159 w160 w161 w162 w163 w164 w165 w166 w167 w168 w169
+12:32:24.299 SCREEN in front: process 360 com.apple.finder
+12:32:24.301 SCREEN front to back: finder w170 notes terminal w95 preview calendar textedit safari w71 mail settings w155 w156 w157 w158 w159 w160 w161 w162 w163 w164 w165 w166 w167 w168 w169
+12:32:24.301 SCREEN the button is down 1137 55
+12:32:24.339 MACOS pid 14253 AXApplicationDeactivated
+12:32:24.339 MACOS workspace didActivate pid 360 com.apple.finder regular
+12:32:24.340 MACOS workspace didDeactivate pid 14253 com.apple.Notes regular
+12:32:24.373 MACOS pid 360 AXApplicationActivated
+12:32:24.374 DEBUG focus is on w31
+12:32:24.376 DEBUG w31 has the keyboard
+12:32:24.407 SCREEN the button is up 1137 55
+12:32:24.447 SCREEN w170 of Arbor 778,34 727×270
+12:32:24.447 SCREEN front to back: w170 finder notes terminal w95 preview calendar textedit safari w71 mail settings w155 w156 w157 w158 w159 w160 w161 w162 w163 w164 w165 w166 w167 w168 w169
+12:32:24.477 DEBUG the button went down at 1137,55, the pointer is at 1137,55: it is on w31
+12:32:25.433 SCREEN front to back: terminal w170 finder notes w95 preview calendar textedit safari w71 mail settings w155 w156 w157 w158 w159 w160 w161 w162 w163 w164 w165 w166 w167 w168 w169
+12:32:25.433 SCREEN the button is down 583 317
+12:32:25.464 SCREEN in front: process 13979 com.apple.Terminal
+12:32:25.510 MACOS pid 13979 AXApplicationActivated
+12:32:25.511 MACOS workspace didActivate pid 13979 com.apple.Terminal regular
+12:32:25.511 MACOS workspace didDeactivate pid 360 com.apple.finder regular
+12:32:25.512 MACOS pid 360 AXApplicationDeactivated
+12:32:25.522 DEBUG focus is on w51
+12:32:25.523 DEBUG w51 has the keyboard
+12:32:25.526 SCREEN w170 of Arbor 392,296 391×262
+12:32:25.526 SCREEN front to back: w170 terminal finder notes w95 preview calendar textedit safari w71 mail settings w155 w156 w157 w158 w159 w160 w161 w162 w163 w164 w165 w166 w167 w168 w169
+12:32:25.526 SCREEN the button is up 583 317
+12:32:25.588 DEBUG the button went down at 583,317, the pointer is at 583,317: it is on w51
+12:32:26.432 SCREEN front to back: notes w170 terminal finder w95 preview calendar textedit safari w71 mail settings w155 w156 w157 w158 w159 w160 w161 w162 w163 w164 w165 w166 w167 w168 w169
+12:32:26.432 SCREEN the button is down 1137 522
+12:32:26.438 SCREEN in front: process 14253 com.apple.Notes
+12:32:26.444 MACOS workspace didActivate pid 14253 com.apple.Notes regular
+12:32:26.445 DEBUG focus is on w54
+12:32:26.445 DEBUG w54 has the keyboard
+12:32:26.445 MACOS workspace didDeactivate pid 13979 com.apple.Terminal regular
+12:32:26.527 MACOS pid 14253 AXApplicationActivated
+12:32:26.527 MACOS pid 13979 AXApplicationDeactivated
+12:32:26.533 SCREEN (nothing was seen for 100 ms)
+12:32:26.533 SCREEN the button is up 1137 522
+12:32:26.589 DEBUG the button went down at 1137,522, the pointer is at 1137,522: it is on w54
+12:32:26.591 SCREEN w170 of Arbor 778,501 727×318
+12:32:26.591 SCREEN front to back: w170 notes terminal finder w95 preview calendar textedit safari w71 mail settings w155 w156 w157 w158 w159 w160 w161 w162 w163 w164 w165 w166 w167 w168 w169
+12:32:27.853 SCREEN the button is down 194 315
+12:32:27.900 SCREEN in front: process 13716 com.apple.TextEdit
+12:32:27.900 SCREEN front to back: textedit w170 notes terminal finder w95 preview calendar safari w71 mail settings w155 w156 w157 w158 w159 w160 w161 w162 w163 w164 w165 w166 w167 w168 w169
+12:32:27.900 SCREEN the button is up 194 315
+12:32:27.916 MACOS pid 14253 AXApplicationDeactivated
+12:32:27.916 MACOS workspace didActivate pid 13716 com.apple.TextEdit regular
+12:32:27.916 MACOS workspace didDeactivate pid 14253 com.apple.Notes regular
+12:32:27.920 DEBUG the button went down at 194,315, the pointer is at 194,315: it is on w45
+12:32:27.970 MACOS pid 13716 AXApplicationActivated
+12:32:27.972 DEBUG focus is on w45
+12:32:27.973 DEBUG w45 has the keyboard
+12:32:28.035 SCREEN w170 of Arbor 3,294 394×265
+12:32:28.035 SCREEN front to back: w170 textedit notes terminal finder w95 preview calendar safari w71 mail settings w155 w156 w157 w158 w159 w160 w161 w162 w163 w164 w165 w166 w167 w168 w169
+12:32:28.925 DEBUG the button went down at 188,315, the pointer is at 188,315: it is on w45
+12:32:28.927 SCREEN the button is down 188 315
+12:32:28.975 SCREEN the button is up 188 315
+12:32:28.981 SCREEN front to back: textedit w170 notes terminal finder w95 preview calendar safari w71 mail settings w155 w156 w157 w158 w159 w160 w161 w162 w163 w164 w165 w166 w167 w168 w169
+12:32:29.056 SCREEN front to back: w170 textedit notes terminal finder w95 preview calendar safari w71 mail settings w155 w156 w157 w158 w159 w160 w161 w162 w163 w164 w165 w166 w167 w168 w169
+12:32:29.636 SCREEN (nothing was seen for 139 ms)
+12:32:30.463 SCREEN (nothing was seen for 827 ms)
+12:32:30.463 SCREEN w186 of TextEdit 376,327 28×13
+12:32:30.463 SCREEN front to back: w170 w186 textedit notes terminal finder w95 preview calendar safari w71 mail settings w155 w156 w157 w158 w159 w160 w161 w162 w163 w164 w165 w166 w167 w168 w169
+12:32:30.862 SCREEN (nothing was seen for 399 ms)
+12:32:30.862 SCREEN w186 of TextEdit -5,326 671×154
+12:32:30.862 SCREEN the button is down 200 315
+12:32:30.862 SCREEN the button is up 200 315
+12:32:31.015 SCREEN (nothing was seen for 152 ms)
+12:32:31.015 SCREEN w186 of TextEdit -1,327 663×151
+12:32:31.015 SCREEN front to back: w186 textedit w170 notes terminal finder w95 preview calendar safari w71 mail settings w155 w156 w157 w158 w159 w160 w161 w162 w163 w164 w165 w166 w167 w168 w169
+12:32:31.034 DEBUG the button went down at 200,315, the pointer is at 200,315: it is on w45
+12:32:31.035 SCREEN w186 of TextEdit 0,327 661×150
+12:32:31.065 SCREEN front to back: w170 w186 textedit notes terminal finder w95 preview calendar safari w71 mail settings w155 w156 w157 w158 w159 w160 w161 w162 w163 w164 w165 w166 w167 w168 w169
+12:32:31.253 SCREEN w186 of TextEdit 47,327 535×122
+12:32:31.271 SCREEN w186 of TextEdit 106,327 375×86
+12:32:31.271 SCREEN front to back: w186 w170 textedit notes terminal finder w95 preview calendar safari w71 mail settings w155 w156 w157 w158 w159 w160 w161 w162 w163 w164 w165 w166 w167 w168 w169
+12:32:31.318 SCREEN w186 of TextEdit 178,327 181×42
+12:32:31.352 SCREEN w186 of TextEdit 195,327 135×32
+12:32:31.393 SCREEN w186 of TextEdit 234,327 30×8
+12:32:31.457 SCREEN w186 of TextEdit 243,327 4×2
+12:32:31.494 SCREEN w186 of TextEdit left the screen
+12:32:31.494 SCREEN front to back: w170 textedit notes terminal finder w95 preview calendar safari w71 mail settings w155 w156 w157 w158 w159 w160 w161 w162 w163 w164 w165 w166 w167 w168 w169
+12:32:31.726 DEBUG the button went down at 188,315, the pointer is at 188,315: it is on w45
+12:32:31.733 SCREEN the button is down 188 315
+12:32:31.750 SCREEN the button is up 188 315
+12:32:31.993 SCREEN w191 of TextEdit 330,327 76×34
+12:32:31.993 SCREEN front to back: w170 w191 textedit notes terminal finder w95 preview calendar safari w71 mail settings w155 w156 w157 w158 w159 w160 w161 w162 w163 w164 w165 w166 w167 w168 w169
+12:32:32.011 SCREEN w191 of TextEdit 168,327 325×75
+12:32:32.049 SCREEN w191 of TextEdit 127,327 407×93
+12:32:32.068 SCREEN w191 of TextEdit 65,327 531×121
+12:32:32.135 SCREEN w191 of TextEdit 14,327 633×144
+12:32:32.140 SCREEN w191 of TextEdit 6,327 649×148
+12:32:32.164 SCREEN w191 of TextEdit -3,326 667×153
+12:32:32.252 SCREEN w191 of TextEdit -5,326 671×154
+12:32:32.297 SCREEN w191 of TextEdit -3,326 667×153
+12:32:32.357 SCREEN w191 of TextEdit -1,327 663×151
+12:32:32.502 SCREEN w191 of TextEdit 0,327 661×150
+12:32:32.673 SCREEN the button is down 200 315
+12:32:32.677 DEBUG the button went down at 200,315, the pointer is at 200,315: it is on w45
+12:32:32.763 SCREEN front to back: w191 textedit w170 notes terminal finder w95 preview calendar safari w71 mail settings w155 w156 w157 w158 w159 w160 w161 w162 w163 w164 w165 w166 w167 w168 w169
+12:32:32.763 SCREEN the button is up 200 315
+12:32:32.776 SCREEN w191 of TextEdit 1,327 658×150
+12:32:32.843 SCREEN w191 of TextEdit 99,327 393×90
+12:32:32.843 SCREEN front to back: w191 w170 textedit notes terminal finder w95 preview calendar safari w71 mail settings w155 w156 w157 w158 w159 w160 w161 w162 w163 w164 w165 w166 w167 w168 w169
+12:32:32.901 SCREEN w191 of TextEdit 174,327 192×44
+12:32:32.909 SCREEN w191 of TextEdit 192,327 143×34
+12:32:32.929 SCREEN w191 of TextEdit 217,327 75×18
+12:32:33.007 SCREEN w191 of TextEdit 241,327 11×4
+12:32:33.068 SCREEN w191 of TextEdit left the screen
+12:32:33.068 SCREEN front to back: w170 textedit notes terminal finder w95 preview calendar safari w71 mail settings w155 w156 w157 w158 w159 w160 w161 w162 w163 w164 w165 w166 w167 w168 w169
+12:32:33.552 DEBUG the button went down at 188,315, the pointer is at 188,315: it is on w45
+12:32:33.568 SCREEN the button is down 188 315
+12:32:33.654 SCREEN the button is up 188 315
+12:32:33.803 SCREEN w195 of TextEdit 361,327 44×20
+12:32:33.803 SCREEN front to back: w170 w195 textedit notes terminal finder w95 preview calendar safari w71 mail settings w155 w156 w157 w158 w159 w160 w161 w162 w163 w164 w165 w166 w167 w168 w169
+12:32:33.818 SCREEN w195 of TextEdit 319,327 88×39
+12:32:33.868 SCREEN w195 of TextEdit 119,327 423×97
+12:32:33.949 SCREEN w195 of TextEdit 12,327 637×145
+12:32:33.978 SCREEN w195 of TextEdit -1,327 663×151
+12:32:34.014 SCREEN w195 of TextEdit -5,326 671×154
+12:32:34.085 SCREEN w195 of TextEdit -4,326 669×153
+12:32:34.151 SCREEN w195 of TextEdit -2,326 665×152
+12:32:34.160 SCREEN w195 of TextEdit -1,327 663×151
+12:32:34.243 SCREEN w195 of TextEdit 0,327 661×150
+12:32:34.557 DEBUG the button went down at 200,315, the pointer is at 200,315: it is on w45
+12:32:34.577 SCREEN the button is down 200 315
+12:32:34.688 SCREEN w195 of TextEdit 5,327 648×147
+12:32:34.688 SCREEN front to back: w195 textedit w170 notes terminal finder w95 preview calendar safari w71 mail settings w155 w156 w157 w158 w159 w160 w161 w162 w163 w164 w165 w166 w167 w168 w169
+12:32:34.688 SCREEN the button is up 200 315
+12:32:34.706 SCREEN front to back: w195 w170 textedit notes terminal finder w95 preview calendar safari w71 mail settings w155 w156 w157 w158 w159 w160 w161 w162 w163 w164 w165 w166 w167 w168 w169
+12:32:34.728 SCREEN w195 of TextEdit 51,327 523×119
+12:32:34.783 SCREEN w195 of TextEdit 137,327 291×67
+12:32:34.794 SCREEN w195 of TextEdit 161,327 227×53
+12:32:34.827 SCREEN w195 of TextEdit 210,327 93×22
+12:32:34.899 SCREEN w195 of TextEdit 234,327 29×8
+12:32:34.910 SCREEN w195 of TextEdit 239,327 16×5
+12:32:34.927 SCREEN w195 of TextEdit 242,327 8×3
+12:32:34.960 SCREEN w195 of TextEdit left the screen
+12:32:34.960 SCREEN front to back: w170 textedit notes terminal finder w95 preview calendar safari w71 mail settings w155 w156 w157 w158 w159 w160 w161 w162 w163 w164 w165 w166 w167 w168 w169
+12:32:35.608 DEBUG the button went down at 188,315, the pointer is at 188,315: it is on w45
+12:32:35.635 SCREEN the button is down 188 315
+12:32:35.701 SCREEN the button is up 188 315
+12:32:35.791 SCREEN w199 of TextEdit 399,327 4×3
+12:32:35.791 SCREEN front to back: w170 w199 textedit notes terminal finder w95 preview calendar safari w71 mail settings w155 w156 w157 w158 w159 w160 w161 w162 w163 w164 w165 w166 w167 w168 w169
+12:32:35.813 SCREEN w199 of TextEdit 334,327 72×32
+12:32:35.862 SCREEN w199 of TextEdit 131,327 399×91
+12:32:35.929 SCREEN w199 of TextEdit 45,327 571×130
+12:32:35.959 SCREEN w199 of TextEdit 6,327 649×147
+12:32:36.041 SCREEN w199 of TextEdit -5,326 671×154
+12:32:36.116 SCREEN w199 of TextEdit -4,326 669×153
+12:32:36.181 SCREEN w199 of TextEdit -2,327 665×151
+12:32:36.200 SCREEN w199 of TextEdit -1,327 663×151
+12:32:36.277 SCREEN w199 of TextEdit 0,327 661×150
+12:32:36.618 SCREEN the button is down 200 315
+12:32:36.621 DEBUG the button went down at 200,315, the pointer is at 200,315: it is on w45
+12:32:36.778 SCREEN w199 of TextEdit 32,327 574×131
+12:32:36.778 SCREEN front to back: w199 w170 textedit notes terminal finder w95 preview calendar safari w71 mail settings w155 w156 w157 w158 w159 w160 w161 w162 w163 w164 w165 w166 w167 w168 w169
+12:32:36.778 SCREEN the button is up 200 315
+12:32:36.808 SCREEN w199 of TextEdit 90,327 418×95
+12:32:36.868 SCREEN w199 of TextEdit 167,327 209×48
+12:32:36.880 SCREEN w199 of TextEdit 186,327 158×37
+12:32:36.903 SCREEN w199 of TextEdit 202,327 116×27
+12:32:36.923 SCREEN w199 of TextEdit 214,327 83×20
+12:32:36.931 SCREEN w199 of TextEdit 224,327 57×14
+12:32:36.949 SCREEN w199 of TextEdit 236,327 24×7
+12:32:37.018 SCREEN w199 of TextEdit 244,328 2×1
+12:32:37.049 SCREEN w199 of TextEdit left the screen
+12:32:37.049 SCREEN front to back: w170 textedit notes terminal finder w95 preview calendar safari w71 mail settings w155 w156 w157 w158 w159 w160 w161 w162 w163 w164 w165 w166 w167 w168 w169
+12:32:37.554 DEBUG the button went down at 188,315, the pointer is at 188,315: it is on w45
+12:32:37.595 SCREEN the button is down 188 315
+12:32:37.604 SCREEN the button is up 188 315
+12:32:37.729 SCREEN w203 of TextEdit 360,327 45×20
+12:32:37.729 SCREEN front to back: w170 w203 textedit notes terminal finder w95 preview calendar safari w71 mail settings w155 w156 w157 w158 w159 w160 w161 w162 w163 w164 w165 w166 w167 w168 w169
+12:32:37.746 SCREEN w203 of TextEdit 317,327 90×40
+12:32:37.765 SCREEN w203 of TextEdit 199,327 263×60
+12:32:37.782 SCREEN w203 of TextEdit 117,327 427×97
+12:32:37.833 SCREEN w203 of TextEdit 58,327 545×124
+12:32:37.844 SCREEN w203 of TextEdit 38,327 585×133
+12:32:37.865 SCREEN w203 of TextEdit 11,327 639×145
+12:32:37.901 SCREEN w203 of TextEdit 4,327 653×148
+12:32:37.934 SCREEN w203 of TextEdit -4,326 669×153
+12:32:37.974 SCREEN w203 of TextEdit -5,326 671×154
+12:32:38.033 SCREEN w203 of TextEdit -4,326 669×153
+12:32:38.072 SCREEN w203 of TextEdit -2,326 665×152
+12:32:38.077 SCREEN w203 of TextEdit -2,327 665×151
+12:32:38.107 SCREEN w203 of TextEdit -1,327 663×151
+12:32:38.184 SCREEN w203 of TextEdit 0,327 661×150
+12:32:38.427 DEBUG the button went down at 200,315, the pointer is at 200,315: it is on w45
+12:32:38.429 SCREEN the button is down 200 315
+12:32:38.548 SCREEN w203 of TextEdit 3,327 653×148
+12:32:38.548 SCREEN front to back: w203 textedit w170 notes terminal finder w95 preview calendar safari w71 mail settings w155 w156 w157 w158 w159 w160 w161 w162 w163 w164 w165 w166 w167 w168 w169
+12:32:38.548 SCREEN the button is up 200 315
+12:32:38.582 SCREEN w203 of TextEdit 21,327 605×138
+12:32:38.582 SCREEN front to back: w203 w170 textedit notes terminal finder w95 preview calendar safari w71 mail settings w155 w156 w157 w158 w159 w160 w161 w162 w163 w164 w165 w166 w167 w168 w169
+12:32:38.595 SCREEN w203 of TextEdit 47,327 534×122
+12:32:38.613 SCREEN w203 of TextEdit 76,327 455×104
+12:32:38.631 SCREEN w203 of TextEdit 106,327 375×86
+12:32:38.645 SCREEN w203 of TextEdit 133,327 301×69
+12:32:38.664 SCREEN w203 of TextEdit 157,327 236×54
+12:32:38.685 SCREEN w203 of TextEdit 178,327 180×42
+12:32:38.695 SCREEN w203 of TextEdit 195,327 134×32
+12:32:38.727 SCREEN w203 of TextEdit 219,327 69×17
+12:32:38.762 SCREEN w203 of TextEdit 234,327 30×8
+12:32:38.776 SCREEN w203 of TextEdit 238,327 18×5
+12:32:38.800 SCREEN w203 of TextEdit 241,327 10×3
+12:32:38.811 SCREEN w203 of TextEdit 243,327 4×2
+12:32:38.862 SCREEN w203 of TextEdit left the screen
+12:32:38.862 SCREEN front to back: w170 textedit notes terminal finder w95 preview calendar safari w71 mail settings w155 w156 w157 w158 w159 w160 w161 w162 w163 w164 w165 w166 w167 w168 w169
+12:32:39.332 SCREEN the button is down 188 315
+12:32:39.337 DEBUG the button went down at 188,315, the pointer is at 188,315: it is on w45
+12:32:39.425 SCREEN the button is up 188 315
+12:32:39.434 SCREEN front to back: textedit w170 notes terminal finder w95 preview calendar safari w71 mail settings w155 w156 w157 w158 w159 w160 w161 w162 w163 w164 w165 w166 w167 w168 w169
+12:32:39.484 SCREEN front to back: w170 textedit notes terminal finder w95 preview calendar safari w71 mail settings w155 w156 w157 w158 w159 w160 w161 w162 w163 w164 w165 w166 w167 w168 w169
+12:32:39.515 SCREEN w207 of TextEdit 392,327 11×6
+12:32:39.515 SCREEN front to back: w170 w207 textedit notes terminal finder w95 preview calendar safari w71 mail settings w155 w156 w157 w158 w159 w160 w161 w162 w163 w164 w165 w166 w167 w168 w169
+12:32:39.546 SCREEN w207 of TextEdit 317,327 90×40
+12:32:39.605 SCREEN w207 of TextEdit 156,327 349×80
+12:32:39.615 SCREEN w207 of TextEdit 85,327 491×112
+12:32:39.673 SCREEN w207 of TextEdit 38,327 585×133
+12:32:39.680 SCREEN w207 of TextEdit 22,327 617×140
+12:32:39.704 SCREEN w207 of TextEdit 12,327 637×145
+12:32:39.719 SCREEN w207 of TextEdit 4,327 653×148
+12:32:39.735 SCREEN w207 of TextEdit -1,327 663×151
+12:32:39.745 SCREEN w207 of TextEdit -5,326 671×154
+12:32:39.829 SCREEN w207 of TextEdit -4,326 669×153
+12:32:39.887 SCREEN w207 of TextEdit -2,326 665×152
+12:32:39.913 SCREEN w207 of TextEdit -1,327 663×151
+12:32:39.993 SCREEN w207 of TextEdit 0,327 661×150
+12:32:40.262 SCREEN the button is down 200 315
+12:32:40.267 DEBUG the button went down at 200,315, the pointer is at 200,315: it is on w45
+12:32:40.379 SCREEN the button is up 200 315
+12:32:40.405 SCREEN w207 of TextEdit 0,327 660×150
+12:32:40.405 SCREEN front to back: w207 textedit w170 notes terminal finder w95 preview calendar safari w71 mail settings w155 w156 w157 w158 w159 w160 w161 w162 w163 w164 w165 w166 w167 w168 w169
+12:32:40.442 SCREEN w207 of TextEdit 66,327 482×110
+12:32:40.442 SCREEN front to back: w207 w170 textedit notes terminal finder w95 preview calendar safari w71 mail settings w155 w156 w157 w158 w159 w160 w161 w162 w163 w164 w165 w166 w167 w168 w169
+12:32:40.467 SCREEN w207 of TextEdit 124,327 325×75
+12:32:40.537 SCREEN w207 of TextEdit 205,327 108×26
+12:32:40.611 SCREEN w207 of TextEdit 240,327 13×4
+12:32:40.673 SCREEN w207 of TextEdit 244,328 2×1
+12:32:40.679 SCREEN w207 of TextEdit left the screen
+12:32:40.679 SCREEN front to back: w170 textedit notes terminal finder w95 preview calendar safari w71 mail settings w155 w156 w157 w158 w159 w160 w161 w162 w163 w164 w165 w166 w167 w168 w169
+12:32:45.960 SCREEN the button is down 200 426
+12:32:45.966 DEBUG the button went down at 200,426, the pointer is at 200,426: it is on w45
+12:32:46.782 DEBUG the press on w45 has moved nothing so far: looking less often
+12:32:48.318 SCREEN the button is up 260 446
+12:32:49.744 SCREEN -- end 55 act=instrument settled=quiet:967 round=last front=45 posted=press:26,up:26,key:13,scroll:28,dragged:20 floating= docked=31,35,45,51,54,60,63,65,69
+12:32:50.400 SCRIPT == 56 quit

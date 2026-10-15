@@ -1,0 +1,40 @@
+45 float: presses ⌃⌥F
+expected: {'act': 'dock-key', 'settled': 'quiet:905', 'moves': '35,45,54,60,35,45,60,', 'front': '54', 'restores': '54', 'floating': '31,51,54,63,65,69', 'docked': '35,45,60'}
+FAIL rule 2: finder (w31) a floating window, moved, and the step did not name it
+FAIL rule 2: terminal (w51) a floating window, moved, and the step did not name it
+FAIL rule 2: settings (w63) a floating window, moved, and the step did not name it
+FAIL rule 2: preview (w65) a floating window, moved, and the step did not name it
+FAIL rule 2: mail (w69) a floating window, moved, and the step did not name it
+ODD rule 2: w71 of Mail moved along with a window of its app
+
+12:31:46.802 SCREEN -- begin 45 float
+12:31:46.802 SCREEN -- text 45 presses ⌃⌥F
+12:31:47.068 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 7 stand-ins, 0.46 s
+12:31:47.068 DEBUG the stage kept the windows waiting 5 ms: its panel 0, 7 costumes 0 (0 not ready), the desktop 2, going up 4
+12:31:47.083 SCREEN w97 of Arbor 0,0 1600×900 (level 4)
+12:31:47.102 MACOS pid 14253 AXResized w54 AXWindow/AXStandardWindow 300 97 1000 660
+12:31:47.102 MACOS pid 14253 AXMoved w54 AXWindow/AXStandardWindow 300 97 1000 660
+12:31:47.143 SCREEN notes (w54) 300,97 1000×660
+12:31:47.143 SCREEN safari (w35) 12,43 574×767
+12:31:47.208 MACOS pid 13473 AXMoved w35 AXWindow/AXStandardWindow 12 43 782 767
+12:31:47.209 MACOS pid 13473 AXResized w35 AXWindow/AXStandardWindow 12 43 782 767
+12:31:47.220 SCREEN safari (w35) 12,43 782×767
+12:31:47.220 SCREEN finder (w31) 340,120 920×436
+12:31:47.221 MACOS pid 360 AXMoved w31 AXWindow/AXStandardWindow 340 120 920 436
+12:31:47.233 MACOS pid 13979 AXMoved w51 AXWindow/AXStandardWindow 40 51 877 499
+12:31:47.240 MACOS pid 15029 AXMoved w63 AXWindow/AXStandardWindow 437 85 723 625
+12:31:47.243 SCREEN terminal (w51) 40,51 877×499
+12:31:47.244 MACOS pid 15101 AXMoved w65 AXWindow/AXStandardWindow 4 35 708 424
+12:31:47.257 MACOS pid 15462 AXMoved w69 AXWindow/AXStandardWindow 240 72 1120 630
+12:31:47.260 SCREEN preview (w65) 4,35 708×424
+12:31:47.260 SCREEN settings (w63) 437,85 723×625
+12:31:47.260 INFO  toggle-float: w54 is floating; showing the Desktop
+12:31:47.326 SCREEN w101 of Arbor 291,88 1018×678
+12:31:47.326 SCREEN w71 of Mail 565,179 470×416
+12:31:47.326 SCREEN mail (w69) 240,72 1120×630
+12:31:47.326 SCREEN w100 of Arbor 794,43 12×767
+12:31:47.326 SCREEN front to back: w101 notes preview calendar textedit safari w95 w71 mail settings terminal finder w100
+12:31:47.698 DEBUG stage down
+12:31:47.728 SCREEN w97 of Arbor left the screen
+12:31:48.522 SCREEN -- end 45 act=dock-key settled=quiet:905 moves=35,45,54,60,35,45,60, front=54 restores=54 floating=31,51,54,63,65,69 docked=35,45,60
+12:31:48.948 SCRIPT == 46 undo
