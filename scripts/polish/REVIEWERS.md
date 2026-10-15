@@ -23,6 +23,9 @@ A hosted Mac draws every system material as one flat colour: do not judge transl
    - E2 No frame is ugly: no smeared or squashed text, no hole, no stray line, no half-drawn panel, no colour that belongs to nothing.
    - E3 It could be macOS's own: corners, shadows, materials, type and timing as the system's own windows and panels have them.
    - E4 It says what is needed and no more: words right, in the right place, over nothing one is looking at, gone in time.
+   For a scene of kind `drag`, two more, in the same form, about the time while the button is down:
+   - D3 The drop preview comes and goes softly, once: a fade of some 80 to 250 ms, no blink, no second coming while the pointer rests.
+   - D4 Others make room in one motion: windows that are not dragged move once, eased, together, or not at all.
    "Looks fine" is not a verdict. A pass also says what you saw.
 5. Note anything else a person would notice that no check names ("other").
 6. If the film does not show its scene at all (the key did nothing, the click went elsewhere, the panel is in no frame), say so in "void", in a sentence: nothing in it is counted then.
