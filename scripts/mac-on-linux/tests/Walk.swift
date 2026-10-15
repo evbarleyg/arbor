@@ -629,7 +629,8 @@ func tellOfTheWalk(_ book: Book) {
         freshStarts += Walker.freshStarts
       }
       // How much of a net it was must not go unsaid.
-      book.remark("the rude walk (\(manners.name)) took \(walked) of \(seeds.count * book.options.walkSteps) steps, and started the layer afresh \(freshStarts) times after a listed fault")
+      let withTheRing = manners.storey == 2 ? "; the ring was drawn in \(seeds.filter { WalkUpstairs.drawsTheRing(seed: UInt64($0)) }.count) of \(seeds.count) seeds" : ""
+      book.remark("the rude walk (\(manners.name)) took \(walked) of \(seeds.count * book.options.walkSteps) steps, and started the layer afresh \(freshStarts) times after a listed fault\(withTheRing)")
       if book.options.heardFile != nil, book.isWholeRun, manners.storey == 1 { book.writeDown(Walker.heard(manners: manners, seeds: seeds, steps: book.options.walkSteps)) }
       for rule in rules {
         guard let finding = first[rule] else {

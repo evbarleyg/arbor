@@ -124,7 +124,8 @@ took and how often it started afresh. Going on found three faults at once that n
 
 The same walk at storey two (`tests/WalkUpstairs.swift`): the real controller on top, and among the steps what a person asks of Arbor (dock, float, arrange, zoom, out, in, back, show-all, focus, pause, resume) and a quit with a new start on the same Mac and the same saved state. The rules look at the model's SCREEN, as a person does, and hold it
 against what the controller says it has in view and out of view: every window that shows is known, and where Arbor believes it; a docked window in view is in its place, and no two lie over each other; nothing is out of view that Arbor has in view, nor the other way round; with the Desktop in view so is every floating window; no place is kept
-for a window that has closed; the window with the keyboard is in view, with the ring around it; a floating window stays where it is while something else happens and the arrangement stays as it is; paused or quit, everything is in view; Arbor comes to rest within five seconds. They are asked when Arbor has come to rest.
+for a window that has closed; the window with the keyboard is in view, and is the one Arbor last saw it in (its own book, `focusHistory`: nothing is asked, a look must not be an act); where a ring is drawn it is around that window; a floating window stays where it is while something else happens and the arrangement stays as it is; paused or quit, everything is in view; Arbor comes to rest within five seconds. They are asked when Arbor has come to rest.
+The walk plays Arbor as it ships, which draws no ring: every fourth seed has that option on, so that the rule about it can speak, and the summary line says in how many seeds. Each of the two rules has a change in `mutants.py` that must turn it red.
 
 Two kinds of manners: the polite control and all four at once; which kind does what is for storey one to tell. What a hang does is known, and goes by names of its own (", though an app has hung"), so that it hides nothing else. Ten seeds by default; `--only upstairs --seeds 1-400` for a hunt, a minute. A replay (`--replay 'upstairs, polite|95|arrange 48 51;
 drag 27 48'`) prints the controller's own drawing of the arrangement, and where the windows are on the screen, wherever a rule breaks. What it found on a polite Mac is told as stories in `tests/FoundUpstairs.swift`, each with the lines that show the same in `arbor-sim`.
@@ -138,7 +139,7 @@ hears. If the reports in the file are out of date the run rewrites it and fails 
 
 ## Does the net hold? (`make mac-on-linux-selftest`)
 
-A story that stays green without the cure it is about proves nothing. `mutants.py` has thirty-five small changes to the copy, each of which takes one cure out of the layer again (the count of windows that tells a new one from a found one, the looks at an app macOS does not name in front yet, the watch for a lost release, the second reading of the lists after a Space switch, the
+A story that stays green without the cure it is about proves nothing. `mutants.py` has thirty-eight small changes to the copy, each of which takes one cure out of the layer again (the count of windows that tells a new one from a found one, the looks at an app macOS does not name in front yet, the watch for a lost release, the second reading of the lists after a Space switch, the
 look at the window server during a drag…), and names the checks that must go red, **and be news: one that the list of known failures excuses does not count**. Only the changed file is compiled again: eight seconds each. Before that it holds the program to its own book-keeping: arguments that select nothing or cannot be read
 (`--only zzzzz`, `--seeds 3-x`, `--steps 0`, a `--replay` with a step it does not know) are refused with exit code 2, and a listed line with another number of seeds, or with `sometimes: `, excuses nothing. A change that no longer fits the sources is reported: write it anew, or delete it with its story.
 
@@ -180,7 +181,7 @@ now, and lines in `known-failures.txt` that say which lines of the layer are con
 | A story, or a file of the layer | 10 to 15 s |
 | A stand-in or the model (everything is compiled again) | 45 to 80 s on four cores |
 | From nothing (`make mac-on-linux-build` in a fresh checkout) | 2 min 20 s on four cores, 3 min 40 s of processor time: the stand-ins 25 s, ArborCore 30 s, ArborKit 40 s, ArborTesting 30 s, the stories 10 s. 130 MB under `.build` |
-| The self-test | 10 minutes: thirty-five changes, each built and run |
+| The self-test | 10 minutes: thirty-eight changes, each built and run |
 | 400 seeds of the walk | 1 minute |
 
 `REF=` and `SOURCES=` build in a work folder of their own, from nothing the first time (2 minutes). The stories read two things of the controller's that old commits do not have, `seenSizes` (since 9820641) and `windowLetBe` (since 493e65f): a commit older than those does not compile against them. A second run in the same work folder waits for the first. The stand-ins are compiled whole, with a stamp as in `check.sh`. Arbor's modules and the stories are compiled incrementally, as `swift build` does it: the copy is brought up to date file by file, touching only those whose text differs.

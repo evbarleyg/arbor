@@ -319,6 +319,21 @@ MUTANTS = [
             "Arbor moves a window 80 points, 20 ms later the button goes down on its title bar and the pointer goes across, served on time: the drag is reported to begin",
         ],
     },
+    {
+        # Two rules of the walk at storey two, each shown to be able to speak. Arbor ships without the ring, and a rule that reads what is not drawn says nothing for ever.
+        "name": "who has the keyboard is not written down",
+        "file": "ArborKit/Controller/Controller+Rules.swift",
+        "old": "    focusHistory.insert(id, at: 0)\n",
+        "new": "    _ = id\n",
+        "red": ["the rude walk (upstairs, polite): the window with the keyboard is the one Arbor last saw it in"],
+    },
+    {
+        "name": "the ring stays behind when the keyboard moves",
+        "file": "ArborKit/Controller/Controller+FocusRing.swift",
+        "old": "    guard settings.focusRing else { return }\n    refreshFocusRing(.focus, focused: focused)\n",
+        "new": "    guard settings.focusRing, false else { return }\n    refreshFocusRing(.focus, focused: focused)\n",
+        "red": ["the rude walk (upstairs, polite): the focus ring is around the window with the keyboard"],
+    },
 ]
 
 

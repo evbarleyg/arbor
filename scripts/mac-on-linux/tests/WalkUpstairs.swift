@@ -22,6 +22,7 @@ enum RuleUpstairs {
   static let tiles = "a window that is shown as a tile, for want of room, does not keep the keyboard"
   static let nothing = "where the view holds no window at all, the keyboard is with no window out of view"
   static let ring = "the focus ring is around the window with the keyboard"
+  static let belief = "the window with the keyboard is the one Arbor last saw it in"
   static let desktop = "with the Desktop in view, so is every floating window"
   static let unasked = "a floating window stays where it is while something else happens and the arrangement stays as it is"
   static let letGo = "with Arbor paused or quit, every window is in view"
@@ -29,7 +30,7 @@ enum RuleUpstairs {
   static let patience = "Arbor's main thread waits at most two seconds for one hang"
   /// What a hang does to Arbor is known (the stories of slow apps), and must hide nothing else: a breach about a window whose app has hung since Arbor last started goes by a name of its own.
   static let afterAHang = ", though an app has hung"
-  private static let plain = [knows, believed, place, lost, shows, overlap, ghost, ghostWithoutAWord, keyboard, tiles, nothing, ring, desktop, unasked, letGo]
+  private static let plain = [knows, believed, place, lost, shows, overlap, ghost, ghostWithoutAWord, keyboard, tiles, nothing, ring, belief, desktop, unasked, letGo]
   static let all = plain + plain.map { $0 + afterAHang } + [rest, patience]
 }
 
@@ -43,13 +44,13 @@ private final class ArborRunning {
   private let recording: RecordingWindowSystem
   private let watcher: FrontmostAppWatcher
 
-  init(on mac: FakeMac, store: MemoryStateStore) {
+  init(on mac: FakeMac, store: MemoryStateStore, settings: Settings) {
     let recorder = TraceRecorder()
     layer.recorder = recorder
     recording = RecordingWindowSystem(wrapping: layer, recorder: recorder)
     controller = Controller(
       system: recording, overlays: RecordingOverlays(wrapping: overlays, recorder: recorder), store: store,
-      scheduler: RecordingScheduler(wrapping: MainQueueScheduler(), recorder: recorder), settings: Settings())
+      scheduler: RecordingScheduler(wrapping: MainQueueScheduler(), recorder: recorder), settings: settings)
     let start = Date(timeIntervalSinceReferenceDate: 800_000_000)
     controller.now = { start.addingTimeInterval(mac.now) }
     heard.mac = mac
@@ -83,8 +84,13 @@ final class WalkUpstairs: Walking {
   private var arrangement: [CGRect] = []
   private var touched: Set<UInt32> = []
   private var somethingWasAsked = false
+  private let settings: Settings
+
+  /// The walk plays Arbor as it ships, which draws no ring. So that the rule about the ring is not a rule that cannot speak, every fourth seed has the option on.
+  static func drawsTheRing(seed: UInt64) -> Bool { seed % 4 == 0 }
 
   init(manners: WalkManners, seed: UInt64, keepsJournal: Bool) {
+    settings = Self.drawsTheRing(seed: seed) ? Settings().withRing : Settings()
     FakeMac.current = mac
     mac.keepsJournal = keepsJournal
     let first = mac.launch("App1")
@@ -100,7 +106,7 @@ final class WalkUpstairs: Walking {
     mac.note("Arbor starts")
     mac.arborIsBack()
     hasHung = Set(mac.apps.filter(\.isHung).map(\.pid))
-    arbor = ArborRunning(on: mac, store: store)
+    arbor = ArborRunning(on: mac, store: store, settings: settings)
     mac.pass(1)
     somethingWasAsked = true
   }
@@ -319,6 +325,11 @@ final class WalkUpstairs: Walking {
       if fraction(key) < 0.25, !touched.contains(key.number) { breach(hasTiles && out.contains(key.number) ? RuleUpstairs.tiles : slots.isEmpty && floatsNow.isEmpty ? RuleUpstairs.nothing : RuleUpstairs.keyboard, about: key, anyApp: true, "w\(key.number) has it, at \(key.bounds.text)") }
       let ring = arbor.overlays.scenes.values.compactMap(\.focusRing).first?.window.rawValue
       if let ring, ring != key.number { breach(RuleUpstairs.ring, about: key, anyApp: true, "w\(key.number) has it, the ring is around w\(ring)") }
+      // Where no ring is drawn: what Arbor goes by when it picks an heir or hands the keyboard over. Its own book is read and nothing is asked: a look must not be an act.
+      let last = controller.focusHistory.first
+      if controller.isManaged(WindowID(key.number)), last?.rawValue != key.number {
+        breach(RuleUpstairs.belief, about: key, anyApp: true, "w\(key.number) has it, Arbor last saw it in \(last.map { "w\($0.rawValue)" } ?? "nobody's")")
+      }
     }
     // For whoever reads a replay: how Arbor sees it, and where the windows are.
     if !found.isEmpty, mac.keepsJournal {
