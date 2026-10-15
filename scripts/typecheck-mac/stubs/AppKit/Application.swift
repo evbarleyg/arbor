@@ -384,6 +384,10 @@ open class NSSound: NSObject {
   open var isPlaying: Bool { false }
 }
 public func NSBeep() {}
+@available(*, deprecated, message: "Use +[NSAnimationContext runAnimationGroup:completionHandler:] to perform atomic updates across runloop invocations.")
+public func NSDisableScreenUpdates() {}
+@available(*, deprecated, message: "Use +[NSAnimationContext runAnimationGroup:completionHandler:] to perform atomic updates across runloop invocations.")
+public func NSEnableScreenUpdates() {}
 
 open class NSPasteboard: NSObject {
   public struct PasteboardType: RawRepresentable, Hashable, Sendable {

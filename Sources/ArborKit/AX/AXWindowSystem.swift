@@ -306,6 +306,9 @@ public final class AXWindowSystem: WindowSystem {
 
   public func focus(_ window: WindowID) {
     guard let record = records[window], answers(record.snapshot.pid) else { return }
+    // PROBE ONLY, never to land: which part of giving the keyboard away the display stands still for.
+    let probe = ProcessInfo.processInfo.environment["ARBOR_PROBE"] ?? ""
+    if probe.contains("no-focus") { return }
     let pid = record.snapshot.pid
     let began = uptime
     let answer = record.element.setBool(kAXMainAttribute, true)
@@ -319,6 +322,7 @@ public final class AXWindowSystem: WindowSystem {
     }
     AXUIElementPerformAction(record.element, kAXRaiseAction as CFString)
     guard NSWorkspace.shared.frontmostApplication?.processIdentifier != pid else { return }
+    if probe.contains("no-activate") { return }
     NSRunningApplication(processIdentifier: pid)?.activate()
 
     // Since macOS 14 activation is cooperative, and a request from an app in the background may be ignored. It has

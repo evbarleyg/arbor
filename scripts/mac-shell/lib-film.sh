@@ -36,7 +36,8 @@
 #   glass on|off                    translucent materials, as a Mac comes (on), or Reduce Transparency, as GitHub's Macs come (off)
 #   metronome <kind>                a scene of its own: the camera's square, moving in a way that is known (camera.swift)
 #   pinch x y <amount> [options]    a pinch at that place (witness.swift)
-source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+# Not twice: a script with real apps has sourced lib-apps.sh, and lib.sh with it.
+[ -n "${ARBOR_STATE_PY:-}" ] || source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/lib-gestures.sh"
 needs_throwaway_mac "film the whole display, with whatever is on it"
 
