@@ -58,10 +58,12 @@ For users: [docs/INSTALL.md](../INSTALL.md).
 
 ## Not shipped, not proven
 
-- **Nothing here has run on a Mac yet.** The
-  Swift that only compiles on macOS has not been compiled; the scripts are rehearsed under bash 3.2 against stand-ins
-  for the macOS tools. `scripts/mac-shell/check-F13.sh` proves criteria 1 and 2 and much more, and is safe on a person's Mac;
-  `check-F13-system.sh` (the permission database, login items) is for GitHub's throwaway Macs.
+- **What has run on hosted Macs (2026-10-15):** `scripts/mac-shell/check-signing.sh` whole on macOS 14.8.9, 15.7.9 and 26.6.2 (56 of 56 each):
+  the identity, macOS's dialog, Always Allow, silence afterwards; on 26 in a keychain beside the login keychain, whose own password macOS
+  refuses there. `check-F13.sh` to its end on 26.6.2 (80 of 84; the four were the script's own, mended since and not run again).
+  `check-F13-system.sh` on 26.6.2 (27 of 28): **the next build signed with the identity runs without being granted anything**, an ad-hoc
+  build does not, launch at login survives a new build and is off after `make uninstall`. The one that failed is known: `tccutil` knows no
+  bundle under /tmp, so what `make install` advises for a stale entry has not been tried from a real ~/Applications.
 - Criterion 3 (notarized artefacts pass `spctl --assess`) is written and cannot be tried without a Developer ID.
 - The release workflow has never run; `scripts/release-tools-test.sh` tests its publishing step against a stand-in for GitHub.
 - **T74 stays partial, by design** (coordinator's decision). Arbor checks (weekly, off by default) and links to the release; it does
