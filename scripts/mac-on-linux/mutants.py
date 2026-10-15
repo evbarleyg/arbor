@@ -87,8 +87,8 @@ MUTANTS = [
     },
     {
         "name": "a second press does not end what the first began",
-        "old": "      releaseWasLost()\n      press = makePress(at: cursorLocation())\n",
-        "new": "      _ = 0\n      press = makePress(at: cursorLocation())\n",
+        "old": "      releaseWasLost()\n      // Whoever clicks says where the keyboard goes.\n",
+        "new": "      _ = 0\n      // Whoever clicks says where the keyboard goes.\n",
         "red": ["a window is dragged, the release is never heard, and the button goes down again at once: a button cannot go down twice: the drag is called off"],
     },
     {
@@ -108,8 +108,9 @@ MUTANTS = [
     },
     {
         "name": "what comes right after a move is its echo, whatever it says",
-        "old": "    if verdict == .early { lookAgain(at: window) }\n",
-        "new": "    _ = verdict\n",
+        # What comes within the blanket time is not even read any more; the look afterwards is what finds the app's own answer out.
+        "old": "      lookAgain(at: window)\n      // Whoever listens hears of it as ever, with the frame that is in the books.\n",
+        "new": "      _ = 0\n      // Whoever listens hears of it as ever, with the frame that is in the books.\n",
         "red": ["a window goes back to its old frame 0.05 s after every move: and has been told that this was not its own doing"],
     },
     {
@@ -129,18 +130,19 @@ MUTANTS = [
     },
     {
         "name": "an app that let a call time out is asked again and again",
-        "old": "  private func answers(_ pid: pid_t) -> Bool { !unresponsive.contains(pid) }\n",
+        "old": "  private func answers(_ pid: pid_t) -> Bool { !unresponsive.contains(pid) && !lanes.isBusy(pid) }\n",
         "new": "  private func answers(_ pid: pid_t) -> Bool { true }\n",
         "red": [
             "an app hangs: from then on nothing is asked of the app, and nothing waits for it",
-            "three docked windows of an app that hangs: within three seconds",
         ],
     },
     {
         "name": "the timeout is left at the system's six seconds",
-        "old": "  private static let messagingTimeout: Float = 1\n",
-        "new": "  private static let messagingTimeout: Float = 0\n",
-        "red": ["an app hangs: after waiting for one call, a second, and not for six"],
+        # A move is waited for on a lane, and by the main thread for its patience only. What is asked on the main thread still waits the timeout out.
+        "file": "ArborKit/AX/AXCalls.swift",
+        "old": "  static let timeout: Float = 1\n",
+        "new": "  static let timeout: Float = 0\n",
+        "red": ["⌘Tab three times to an app that hangs: Arbor's main thread has waited a second for it once, not each time"],
     },
     {
         "name": "a window that leaves the list has left, tab or no tab",
@@ -154,8 +156,9 @@ MUTANTS = [
     },
     {
         "name": "a shortened plan is never followed by the full one",
-        "old": "    if let taken = result, FramePlan.needsFullPlan(after: steps, result: taken, target: frame) {\n",
-        "new": "    if let taken = result, false, FramePlan.needsFullPlan(after: steps, result: taken, target: frame) {\n",
+        "file": "ArborKit/AX/AXMover.swift",
+        "old": "    if let result = reading.frame, FramePlan.needsFullPlan(after: steps, result: result, target: move.target) {\n",
+        "new": "    if let result = reading.frame, false, FramePlan.needsFullPlan(after: steps, result: result, target: move.target) {\n",
         "red": ["the frame Arbor believes a window has is out of date: a move that was thought to need no resize gets one"],
     },
     {
@@ -178,8 +181,8 @@ MUTANTS = [
     },
     {
         "name": "an app in the background may report its focus",
-        "old": "    guard NSWorkspace.shared.frontmostApplication?.processIdentifier == pid else { return }\n    guard let app = apps[pid], answers(pid), let element",
-        "new": "    _ = 0\n    guard let app = apps[pid], answers(pid), let element",
+        "old": "    guard NSWorkspace.shared.frontmostApplication?.processIdentifier == pid else { return }\n    guard let app = apps[pid], answers(pid) else {\n",
+        "new": "    _ = 0\n    guard let app = apps[pid], answers(pid) else {\n",
         "red": ["an app in the background changes its focused window: nothing is said about the keyboard, which is where it was"],
     },
     {
@@ -193,6 +196,32 @@ MUTANTS = [
         "old": "    guard let delay = DisplayChange.settleTime(from: reportedDisplays, to: displays()) else { return }\n",
         "new": "    guard let delay = Optional(0.0) else { return }\n",
         "red": ["a second display is plugged in and unplugged: for a moment nothing is said: displays blink"],
+    },
+    {
+        # The question before a move is also a guard: an app that hangs by then is sent nothing that it could carry out on waking.
+        "name": "what an app said before a move is remembered for half a minute",
+        "file": "ArborKit/AX/AXCalls.swift",
+        "old": "    if let entry, CallStats.seconds(since: entry.asked) < 1 { return entry.isOn }\n",
+        "new": "    if let entry, CallStats.seconds(since: entry.asked) < 30 { return entry.isOn }\n",
+        "red": [
+            "an app hangs for 8 s at the beginning of a move out of view, and Arbor is quit meanwhile: and it was never told to take one out of view: it hung before the move began",
+        ],
+    },
+    {
+        "name": "no word is left for an app that does not answer at a quit",
+        "old": "    leaveWordForAppsThatDoNotAnswer()\n",
+        "new": "    _ = 0\n",
+        "red": [
+            "Arbor is quit 0.0 s after an app with windows out of view begins to hang: when the app wakes its windows come back into view, though Arbor is gone",
+            "Arbor is quit 1.0 s after an app with windows out of view begins to hang: when the app wakes its windows come back into view, though Arbor is gone",
+            "an app hangs for 8 s at the first call that sets something in a move out of view, and Arbor is quit meanwhile: in the end all its windows are in view: nothing that was asked of it in vain takes one away after Arbor is gone",
+        ],
+    },
+    {
+        "name": "an app that answers again is not asked which of its windows has the keyboard",
+        "old": "      // If it came forward while it was silent, nobody has heard which of its windows has the keyboard.\n      reportFocus(of: pid)\n",
+        "new": "      // If it came forward while it was silent, nobody has heard which of its windows has the keyboard.\n      _ = 0\n",
+        "red": ["⌘Tab to an app that hangs, and wakes two seconds later: once it wakes, its window, which has the keyboard, is reported focused"],
     },
 ]
 

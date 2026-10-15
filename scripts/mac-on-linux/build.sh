@@ -186,13 +186,13 @@ if [ "${1:-}" = --self-test ]; then
   refuses --no-such-argument
   # The list of known failures excuses what it was written for and nothing else.
   excuses_not() {
-    if "$work/mac-on-linux" --quiet --known known-changed.txt --only "walk (polite" > /dev/null 2>&1
+    if "$work/mac-on-linux" --quiet --known known-changed.txt --only "walk (overtaking" > /dev/null 2>&1
     then echo "✘ $1 excuses a rule of the walk that breaks"; touch self-test-failed; else echo "✔ $1 excuses nothing"; fi
   }
-  grep -q '^the rude walk (polite): .* seeds\]' "$here/known-failures.txt" || { echo "✘ no rule of the polite walk is listed any more: write these two checks anew"; touch self-test-failed; }
-  sed 's/^\(the rude walk (polite): .*\) \[[0-9]* of 40 seeds\]/\1 [39 of 40 seeds]/' "$here/known-failures.txt" > known-changed.txt
+  grep -q '^the rude walk (overtaking): .* seeds\]' "$here/known-failures.txt" || { echo "✘ no rule of the overtaking walk is listed any more: write these two checks anew"; touch self-test-failed; }
+  sed 's/^\(the rude walk (overtaking): .*\) \[[0-9]* of 40 seeds\]/\1 [39 of 40 seeds]/' "$here/known-failures.txt" > known-changed.txt
   excuses_not "a line with another number of seeds"
-  sed 's/^\(the rude walk (polite): .*\) \[[0-9]* of 40 seeds\]/sometimes: \1/' "$here/known-failures.txt" > known-changed.txt
+  sed 's/^\(the rude walk (overtaking): .*\) \[[0-9]* of 40 seeds\]/sometimes: \1/' "$here/known-failures.txt" > known-changed.txt
   excuses_not "a line that says sometimes, with the usual seeds,"
   # What the layer was heard to report goes out of date by the reports, not by the milliseconds.
   kept="$root/collab/evidence/mac-on-linux/heard.jsonl"
