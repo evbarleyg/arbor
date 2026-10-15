@@ -14,6 +14,20 @@ world is from a Mac. New cases go into `collab/reality.json`; `scripts/reality-l
 `make lint` fails when a name is gone or the page is stale. If that happens to you because you renamed a test or reworded a step, the line
 under each ✘ says which field of which case to change, and to what.
 
+**What green on Linux cannot tell your change:** `make unplayed` (`scripts/reality-ledger.py --for`), which `make gate` prints under its steps. It reads what the branch adds to the
+trunk and lists the cases of that page which the stand-ins play partly, not at all or never can, and which the change leans on. Above the seam that is by name: a line
+it adds to the code that ships calls a member of the platform protocols (`system.setFrame(`), or writes one, and the case names that member. Below the seam it is by file: it touches
+macOS-only code, which no test on Linux runs, and the case cites that file. The worst first, a dozen lines at most (`ALL=1` for the rest; `FOR=` a commit, a range or a diff file).
+**If the list is not empty, that is the argument for a Mac run before landing.** It is advice and never a failure, it takes a fifth of a second and no network, and to a change of pages,
+scenarios, tools, tests or stand-ins it says nothing at all.
+Why it is there: on 2026-10-15 "a refused size costs nobody a second move" passed everything on Linux, landed, and left the first dock on a Mac short of its slot, while
+`a-size-set-at-the-old-place-is-cut-to-what-fits-there` had stood in the ledger as not played, and nobody held the change against it. For that change the list has seven cases, that one the fifth.
+How much it talks, measured that day: of the last thirty changes to the trunk that touch `Sources/` it has nothing to say to twenty, and ten cases at most; of the twenty newest
+branches, nothing to sixteen, and two lists were cut (25 and 70 cases: they touch the panels and `AXWindowSystem.swift`). By every file a case cites the same thirty gave 32 cases in the middle and
+172 at most, since everybody cites the backlog; by every Swift file that ships, 3 and 19, much of it by way of `Settings.swift` and `ArborApp.swift`.
+**Silence is no clean bill.** A change that leans on a report rather than a call (full screen, a display that goes, an app that hides) names no member of the seam, and a case that does not
+name the call it is about is not found. So a case about a call does well to name it in backticks.
+
 ## 1. Core unit tests (`Tests/ArborCoreTests`)
 
 Pure functions over value types: tree operations (including a seeded random
@@ -1149,7 +1163,7 @@ sources of the tests** (`Tests/…`): where the tests are divided among machines
 `make gate` (`scripts/gate.sh`; `make check-fast` is the same) is everything a change must pass on Linux, each thing once: lint, the build,
 the tests as above, the smoke runs and the scenarios, then side by side the type-check of the macOS-only code, the tools' self-test and
 parity, which reads what the tests left instead of running them again. One line for each step; all output in `.build/gate/`. It goes on
-after a failure, so one round tells all. What `make check` runs besides lint, the build and the tests it reads from the Makefile, so a step
+after a failure, so one round tells all. Under the steps stands, if there is any, the reading list of `make unplayed` (above): it shuts nothing. What `make check` runs besides lint, the build and the tests it reads from the Makefile, so a step
 added there is a step of the gate.
 
 **One gate at a time on one machine** (one container counts as one, whatever the checkouts): two shut each other, and so do a gate and a

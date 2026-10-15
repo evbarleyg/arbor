@@ -64,6 +64,12 @@ gate:
 	@./scripts/gate.sh $(if $(CHECK),--check)
 check-fast: gate
 
+# What green on Linux cannot tell this change: the cases of docs/REALITY.md that the stand-ins do not play and it leans on. Advice, never a failure; silent
+# where there is nothing to say. FOR=<commit, range or diff file>; without it, what this branch adds to the trunk. ALL=1: more than a dozen lines.
+.PHONY: unplayed
+unplayed:
+	@python3 scripts/reality-ledger.py --for $(FOR) $(if $(ALL),--all)
+
 # On Linux: the tests alone, a process to a file, as many at a time as there are cores (scripts/fast-tests.py).
 test-fast:
 	@./scripts/fast-tests.py run

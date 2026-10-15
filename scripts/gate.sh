@@ -13,6 +13,7 @@
 #
 # Every step runs, whatever became of the others, unless the build failed: one round tells all there is to tell. A line for each, with its
 # seconds; of a step that failed, the end of its output. All output: .build/gate/<step>.log. Exit code 1 if any step failed.
+# Under the steps, if there is any, a reading list: the cases of docs/REALITY.md that the stand-ins do not play and the change leans on. It shuts nothing.
 # On Linux only: on a Mac `make check` sees the real thing.
 set -uo pipefail
 cd "$(dirname "$0")/.." || exit 2
@@ -89,6 +90,10 @@ gate() {
     step parity python3 scripts/parity.py --report "$logs/test-events.jsonl" ${parity[@]+"${parity[@]}"} &
   fi
   wait
+
+  # No step and no verdict: what all of the above cannot know about this change, because the stand-ins do not play it (docs/TESTING.md). Where there is
+  # nothing to say it says nothing, and whatever becomes of it is nobody's business.
+  python3 scripts/reality-ledger.py --for 2>/dev/null
 
   failed=$(cd "$logs" && ls ./*.failed 2>/dev/null | sed 's#^\./##; s#\.failed$##' | tr '\n' ' ')
   if [ -n "$failed" ]; then

@@ -4,6 +4,7 @@
     scripts/reality-ledger.py              check collab/reality.json, print the counts, rewrite docs/REALITY.md
     scripts/reality-ledger.py --check      also fail if docs/REALITY.md is out of date (`make lint`, CI)
     scripts/reality-ledger.py --rings [f]  print what ring 2 of docs/VIABLE.md asks of this ledger, or put it into the rings.json named
+    scripts/reality-ledger.py --for [x]    what green on Linux cannot tell a change: the cases the stand-ins do not play that it leans on (`make unplayed`, `make gate`)
     scripts/reality-ledger.py --self-test  situations that must come out as failures
 
 collab/reality.json holds one entry for every known case. An entry says what was expected, what happened, how it was found, whether the
@@ -36,6 +37,13 @@ Ring 2 of docs/VIABLE.md asks that no open row of this ledger touches a detector
 yet, or it crosses the seam and the stand-ins play it partly or not at all: then the walks on Linux cannot vouch for that detector. `--rings` prints
 `{"stand_ins": {"commit": …, "open_divergences_that_touch_a_detector": n}}`, each case counted once, which is what scripts/mac-shell/viable.py reads from a
 rings.json; given a file it puts that key into it and keeps the others. It refuses while the ledger differs from the commit it would name.
+
+`--for` is advice to whoever is about to land a change, and no gate: it always ends with 0, and where it has nothing to say it says nothing. x is a commit, a range for
+`git diff` (`origin/swarm/trunk...HEAD`), a file that holds a diff, or `-` for a diff on standard input; without it, what this branch and the working tree add to the trunk. It
+lists the cases that are played partly, not at all, or never can be, and that the change leans on: a line it adds to the code that ships calls or writes a member of the seam
+(the protocols in Sources/ArborKit/Platform) that the case names, in backticks or as `Type.member`; or it touches a file of the macOS-only code that the case cites. The first
+kind comes first; then the worst hurt, what crosses the seam, what is not played at all. A dozen lines at most; `--all` for the rest. So a case that is about a call does well
+to name it.
 
 Exit code 1 if a name is not found or, with --check, the page does not say what reality.json says; 2 if reality.json itself is wrong. A page whose
 counts have moved only because the rest of the repository has (CI starts another script, the gate has a new detector) gets a note, so that nobody's lint
@@ -89,6 +97,15 @@ HURT = {
 TEXTS = ["id", "kind", "layer", "expected", "happened", "found", "modelled", "copes"]
 LISTS = ["knobs", "guards", "sources"]
 STAND_INS = ("Sources/ArborTesting/*.swift", "Sources/arbor-fakemac/*.swift", "Sources/arbor-sim/*.swift")
+# For `--for`. What a person gets: not the stand-ins, the simulator, the real-window runner and its windows.
+SHIPS = ("Sources/ArborCore/", "Sources/ArborKit/", "Sources/ArborIPC/", "Sources/Arbor/", "Sources/arborctl/")
+SEAM = "Sources/ArborKit/Platform/*.swift"
+# Of that, what Package.swift leaves out everywhere but on macOS: no test on Linux runs a line of it.
+BELOW = ("Sources/ArborKit/AX/", "Sources/ArborKit/UI/", "Sources/ArborKit/Input/", "Sources/ArborKit/App/", "Sources/Arbor/")
+# What a green run on Linux says nothing of, the most telling first: a stand-in could play it and does not, plays some of it, or never can.
+UNPLAYED = ["no", "partly", "cannot"]
+TRUNKS = ("origin/swarm/trunk", "origin/main")
+DOZEN = 12
 # How well an entry is guarded, best first. Every entry is in exactly one.
 WATCHES = collections.OrderedDict([
     ("linux", "Guarded without a Mac"),
@@ -626,6 +643,127 @@ def rings(root, target, head=head_of):
     return 0
 
 
+def seam_of(tree):
+    """What crosses the seam, and through whom: for each protocol in Sources/ArborKit/Platform what it declares, and for each name under which the code that ships
+    holds one of them (`let system: any WindowSystem`) which protocol that is."""
+    members = {}
+    for path in tree.paths(SEAM):
+        code = without_comments(tree.read(path))
+        for match in re.finditer(r"\bprotocol\s+(\w+)[^{]*\{", code):
+            depth, end = 1, match.end()
+            while depth and end < len(code):
+                depth += {"{": 1, "}": -1}.get(code[end], 0)
+                end += 1
+            members[match.group(1)] = set(re.findall(r"\b(?:func|var)\s+`?(\w+)", code[match.end():end]))
+    holders = collections.defaultdict(set)
+    if members:
+        held = re.compile(r"\b(?:let|var)\s+(\w+)\s*:\s*\(?\s*(?:any\s+)?(" + "|".join(sorted(members)) + r")\b")
+        for path in tree.paths(*(folder + "**/*.swift" for folder in SHIPS)):
+            for name, protocol in held.findall(without_comments(tree.read(path))):
+                holders[name].add(protocol)
+    return members, holders
+
+
+def read_diff(diff):
+    """The lines a unified diff adds, by file, and every file it touches."""
+    added, touched, file = collections.defaultdict(list), set(), None
+    for line in diff.split("\n"):
+        if line.startswith(("--- ", "+++ ")):
+            path = line[4:].split("\t")[0]
+            path = None if path == "/dev/null" else path[2:] if path.startswith(("a/", "b/")) else path
+            touched.update({path} - {None})
+            file = path if line.startswith("+++ ") else file
+        elif line.startswith("+") and file:
+            added[file].append(line[1:])
+    return added, touched
+
+
+def leans_on(entries, tree, diff):
+    """The cases the stand-ins do not play that a change leans on, each with why, the most pressing first.
+
+    Only what ships counts (SHIPS): a page, a scenario, a tool, a test or a stand-in leans on nothing. Two roads, one on each side of the seam:
+    - above it, by name: a line the change adds calls a member of the seam on one who holds it (`system.setFrame(`), or writes one (`func setFrame(`), and the case names that
+      member, in backticks or as `Type.member`.
+    - below it, by file: the change touches a file that no test on Linux runs (BELOW), and the case cites that file under `sources`.
+    What each was measured to say, and the wider roads that were tried and said too much, is in docs/TESTING.md. A third road, by the detectors a case touches, is not taken: a
+    change to a detector's code is a change to a tool, and to tools this has nothing to say."""
+    added, touched = read_diff(diff)
+    ships = lambda path: path.startswith(SHIPS) and path.endswith(".swift")
+    members, holders = seam_of(tree)
+    every = set().union(*members.values()) if members else set()
+    called = set()
+    for path, lines in added.items():
+        if ships(path):
+            code = without_comments("\n".join(lines))
+            called.update(member for holder, member in re.findall(r"\b(\w+)[?!]?\.(\w+)", code) if any(member in members[protocol] for protocol in holders.get(holder, ())))
+            called.update(member for member in re.findall(r"\bfunc\s+`?(\w+)", code) if member in every)
+    found = []
+    for entry in entries:
+        if entry["modelled"] not in UNPLAYED:
+            continue
+        words = " ".join(entry[key] for key in ("expected", "happened", "found", "copes"))
+        named = sorted(member for member in called if re.search(rf"`[^`]*\b{member}\b[^`]*`|\w\.{member}\b", words))
+        cited = sorted(source for source in entry["sources"] if source.startswith(BELOW) and source.endswith(".swift") and source in touched)
+        if named or cited:
+            found.append((entry, ", ".join(named or [os.path.basename(source) for source in cited]), not named))
+    nearest = ["at the seam"] + [layer for layer in LAYERS if layer != "at the seam"]
+    return sorted(found, key=lambda one: (one[2], one[0]["hurt"], nearest.index(one[0]["layer"]), UNPLAYED.index(one[0]["modelled"])))
+
+
+def reading_list(root, diff, everything=False):
+    """What `--for` prints, line by line: nothing where there is nothing to say, and a dozen lines at most unless all are asked for."""
+    data, tree, wrong = load(root)
+    found = [] if wrong else leans_on(data["entries"], tree, diff)
+    if not found:
+        return []
+    shown = found if everything or len(found) < DOZEN else found[:DOZEN - 2]
+    played = {"no": "not played", "partly": "played partly", "cannot": "cannot be played"}
+    lines = [f"Green on Linux cannot tell you these: {len(found)} case{'s' if len(found) > 1 else ''} in docs/REALITY.md that the stand-ins do not play and this change leans on. The argument for a Mac run before it lands."]
+    for entry, why, _ in shown:
+        # The first sentence, and the next while that says as little as "It does."
+        first = ""
+        for sentence in re.split(r"(?<=[.?!])\s", entry["happened"].replace("**", "")):
+            first = f"{first} {sentence}".strip()
+            if len(first) >= 40:
+                break
+        copes = "nobody knows whether Arbor copes" if entry["kind"] == UNTRIED else "Arbor does not cope yet" if entry["copes"] == "open" else "Arbor copes"
+        lines.append(f"  {entry['id']}  {first if len(first) <= 120 else first[:117].rstrip() + '…'}  (hurt {entry['hurt']}, {played[entry['modelled']]}, {copes}; {why})")
+    if len(shown) < len(found):
+        lines.append(f"  and {len(found) - len(shown)} more: --all")
+    return lines
+
+
+def diff_of(root, what):
+    """The diff that `--for` is asked about: `-` is standard input, a file is read, a commit is what it changed, anything else is for `git diff`. Nothing named: what this
+    branch and the working tree add to the trunk. None if it cannot be had."""
+    if what == "-":
+        return sys.stdin.read()
+    if what and os.path.isfile(what):
+        with open(what, encoding="utf-8", errors="replace") as file:
+            return file.read()
+
+    def git(*words):
+        done = subprocess.run(["git", "-C", root, *words], capture_output=True, text=True, errors="replace", check=False)
+        return done.stdout if done.returncode == 0 else None
+    try:
+        if not what:
+            bases = [base.strip() for base in (git("merge-base", trunk, "HEAD") for trunk in TRUNKS) if base]
+            return git("diff", bases[0]) if bases else None
+        return git("diff", what) if ".." in what else git("show", "--format=", what)
+    except OSError:
+        return None
+
+
+def advise(root, what, everything):
+    """It is advice and no gate: whatever happens, 0."""
+    diff = diff_of(root, what)
+    if diff is None:
+        print(f"reality-ledger: git has no diff for {what or 'this branch against ' + ' or '.join(TRUNKS)}", file=sys.stderr)
+    for line in reading_list(root, diff or "", everything):
+        print(line)
+    return 0
+
+
 def run(root, check):
     data, tree, wrong = load(root)
     if wrong:
@@ -950,6 +1088,83 @@ def self_test():
         with contextlib.redirect_stdout(io.StringIO()):
             if run(root, check=True) != 2:
                 failures.append("a file that is no JSON does not end with 2")
+    # What Linux cannot tell a change. The first is history: on 2026-10-15 "a refused size costs nobody a second move" landed green, and left a plain first dock on a
+    # Mac short of its slot. The case it leant on had stood in the ledger as not played. These are lines of that change and words of that case.
+    asked = ("diff --git a/Sources/ArborKit/Controller/Controller+AskFirst.swift b/Sources/ArborKit/Controller/Controller+AskFirst.swift\n--- /dev/null\n"
+             "+++ b/Sources/ArborKit/Controller/Controller+AskFirst.swift\n@@ -0,0 +1,3 @@\n+extension Controller {\n"
+             "+    guard let was = windows[window]?.frame.size, var actual = system.setFrame(question, of: window) else { return false }\n+}\n")
+    cut = dict(good, id="a-size-set-at-the-old-place-is-cut-to-what-fits-there", modelled="no", knobs=[], hurt=3, copes="Controller.copes does",
+               expected="Position, then size, gives a window its frame. In the fake `setFrame` is one step.", happened="The size a window may take depends on where it stands. Asked for more, it reports less.")
+    cases = [
+        cut,
+        dict(cut, id="played-by-now", modelled="yes", knobs=["Fake.knob"]),
+        dict(cut, id="about-the-keyboard", expected="`focus` moves the keyboard at once.", happened="It moves later."),
+        dict(cut, id="the-word-alone", expected="Whoever wants to setFrame may.", happened="A word that is no name."),
+        dict(cut, id="worse-and-partly", modelled="partly", knobs=["Fake.knob"], hurt=1, expected="A call returns.", happened="It waits. AXWindowSystem.setFrame waits for the app. For a second."),
+        dict(cut, id="by-its-file", expected="Nothing of the kind.", happened="A file knows more.", sources=["Sources/ArborKit/AX/Real.swift"], hurt=1),
+        dict(cut, id="by-a-file-that-linux-runs", expected="Nothing of the kind.", happened="The tests have been there.", sources=["Sources/ArborKit/Controller/Controller+AskFirst.swift"], hurt=1),
+        dict(cut, id="by-a-page", expected="Nothing of the kind.", happened="A page is everybody's.", sources=["docs/A.md"]),
+    ]
+    with tempfile.TemporaryDirectory() as root:
+        for path, text in dict(files, **{
+            "Sources/ArborKit/Platform/WindowSystem.swift": "// protocol Nor { func copes() }\npublic protocol WindowSystem: AnyObject {\n  var events: (any WindowSystemEvents)? { get set }\n"
+                                                            "  func setFrame(_ frame: CGRect, of window: WindowID) -> CGRect?\n  func focus(_ window: WindowID)\n}\n"
+                                                            "public protocol WindowSystemEvents: AnyObject {\n  func windowChanged(_ window: WindowSnapshot)\n}\n",
+            "Sources/ArborKit/Controller/Controller.swift": "final class Controller {\n  public let system: any WindowSystem\n  var other = Other()\n}\n",
+        }).items():
+            os.makedirs(os.path.dirname(os.path.join(root, path)), exist_ok=True)
+            with open(os.path.join(root, path), "w", encoding="utf-8") as file:
+                file.write(text)
+
+        def listed(diff, entries=cases, **more):
+            with open(os.path.join(root, "collab", "reality.json"), "w", encoding="utf-8") as file:
+                json.dump({"preface": ["# Reality"], "entries": entries}, file)
+            return reading_list(root, diff, **more)
+
+        def elsewhere(path, line="+    system.setFrame(frame, of: window)"):
+            return f"diff --git a/{path} b/{path}\n--- a/{path}\n+++ b/{path}\n@@ -1 +1,2 @@\n context\n{line}\n"
+
+        lines = listed(asked + elsewhere("Sources/ArborKit/AX/Real.swift", "+    let sum = 1 + 1"))
+        if not any("a-size-set-at-the-old-place-is-cut-to-what-fits-there" in line and "The size a window may take depends on where it stands." in line and "hurt 3" in line for line in lines):
+            failures.append(f"the change that asks a window for a size where it stands is not told of the case that says what a size depends on: {lines}")
+        if [line.split()[0] for line in lines[1:]] != ["worse-and-partly", "a-size-set-at-the-old-place-is-cut-to-what-fits-there", "by-its-file"]:
+            failures.append(f"what a change leans on: the cases that name a member of the seam it calls, the worst first, then those that cite a file of the macOS-only code it touches; none that is played, "
+                            f"is about another member, has the word without the name, or cites a page or a file that the tests on Linux run: {lines}")
+        if not any("  It waits. AXWindowSystem.setFrame waits for the app.  (" in line for line in lines):
+            failures.append(f"one line of what happened: the first sentence, and the next if the first says nothing by itself: {lines}")
+        for name, diff in [
+            ("a page", elsewhere("docs/A.md")), ("a scenario", elsewhere("collab/scenarios/01.sim")), ("a tool", elsewhere("scripts/t.py")), ("a test", elsewhere("Tests/T/T.swift")),
+            ("a stand-in", elsewhere("Sources/ArborTesting/Fake.swift")), ("the ledger itself", elsewhere("collab/reality.json")), ("nothing", ""),
+            ("a line taken out", elsewhere("Sources/ArborKit/C.swift", "-    system.setFrame(frame, of: window)")),
+            ("a comment", elsewhere("Sources/ArborKit/C.swift", "+    // system.setFrame(frame, of: window) used to stand here")),
+            ("somebody else's member of that name", elsewhere("Sources/ArborKit/C.swift", "+    other.setFrame(frame)")),
+            ("code that calls nothing of the seam", elsewhere("Sources/ArborKit/C.swift", "+    let sum = 1 + 1")),
+        ]:
+            if said := listed(diff):
+                failures.append(f"silence must be possible: a change to {name} is told {said}")
+        if not any("a-size-set" in line for line in listed(elsewhere("Sources/ArborKit/AX/Real.swift", "+  public func setFrame(_ frame: CGRect, of window: WindowID) -> CGRect? {"))):
+            failures.append("whoever writes a member of the seam anew is not told what is known of it")
+        many = [dict(cut, id=f"case-{number:02}", hurt=1 + number % 4) for number in range(40)]
+        lines = listed(asked, many)
+        if len(lines) != 12 or "and 30 more" not in lines[-1] or "40" not in lines[0] or not all("hurt 1" in line for line in lines[1:11]):
+            failures.append(f"a list of forty is noise: a dozen lines, the worst first, and how many more: {len(lines)} lines, {lines[:1]} … {lines[-1:]}")
+        if len(listed(asked, many, everything=True)) != 41:
+            failures.append("whoever asks for all of them does not get them")
+        if len(listed(asked, many[:11])) != 12 or "more" in listed(asked, many[:11])[-1]:
+            failures.append("eleven cases fit into a dozen lines, and are cut all the same")
+        listed("")
+        with open(os.path.join(root, "a.diff"), "w", encoding="utf-8") as file:
+            file.write(asked)
+        for name, what, words in [("a diff in a file", os.path.join(root, "a.diff"), "a-size-set-at-the-old-place"), ("a range git does not know", "no-such..range", ""), ("a commit git does not know", "no-such-commit", "")]:
+            said = io.StringIO()
+            with contextlib.redirect_stdout(said), contextlib.redirect_stderr(io.StringIO()):
+                code = advise(root, what, False)
+            if code != 0 or (words not in said.getvalue()) or (not words and said.getvalue()):
+                failures.append(f"it is advice: {name} ends with {code} and says {said.getvalue()!r}")
+        with open(os.path.join(root, "collab", "reality.json"), "w", encoding="utf-8") as file:
+            file.write("{ not json")
+        if reading_list(root, asked):
+            failures.append("a ledger that cannot be read has something to say to a change")
     for failure in failures:
         print(f"✘ reality-ledger self-test: {failure}")
     return 1 if failures else 0
@@ -959,9 +1174,11 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--check", action="store_true")
     parser.add_argument("--rings", nargs="?", const="", metavar="FILE")
+    parser.add_argument("--for", nargs="?", const="", metavar="CHANGE", dest="change")
+    parser.add_argument("--all", action="store_true")
     parser.add_argument("--self-test", action="store_true")
     args = parser.parse_args()
-    sys.exit(self_test() if args.self_test else rings(ROOT, args.rings) if args.rings is not None else run(ROOT, args.check))
+    sys.exit(self_test() if args.self_test else advise(ROOT, args.change, args.all) if args.change is not None else rings(ROOT, args.rings) if args.rings is not None else run(ROOT, args.check))
 
 
 if __name__ == "__main__":

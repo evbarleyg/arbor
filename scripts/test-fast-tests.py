@@ -333,7 +333,11 @@ RECIPE = [line for line in CHECK.split("\n") if line.startswith("\t")]
 STEPS = 5 + len(RECIPE)
 
 
-def gate(fail="", *arguments, rule=CHECK):
+# What the ledger of macOS's surprises has to say to the change: whatever READING holds, and then it fails, which is nobody's business.
+READING_STAND_IN = 'import os, sys\nif sys.argv[1:] == ["--for"] and os.environ.get("READING"):\n    print(os.environ["READING"])\nprint("a traceback", file=sys.stderr)\nsys.exit(3)\n'
+
+
+def gate(fail="", *arguments, rule=CHECK, reading=""):
     """The exit code of gate.sh and what it printed when the steps FAIL names fail."""
     with tempfile.TemporaryDirectory() as folder:
         os.makedirs(os.path.join(folder, "scripts"))
@@ -346,8 +350,10 @@ def gate(fail="", *arguments, rule=CHECK):
             with open(os.path.join(folder, path), "w", encoding="utf-8") as handle:
                 handle.write((PYTHON_STAND_IN if run_by_python else STAND_IN) % os.path.basename(path))
             os.chmod(os.path.join(folder, path), 0o755)
+        with open(os.path.join(folder, "scripts", "reality-ledger.py"), "w", encoding="utf-8") as handle:
+            handle.write(READING_STAND_IN)
         done = subprocess.run(["bash", os.path.join(folder, "scripts", "gate.sh"), *arguments], capture_output=True, text=True, check=False,
-                              env={**os.environ, "PATH": os.path.join(folder, "bin") + os.pathsep + os.environ["PATH"], "FAIL": fail})
+                              env={**os.environ, "PATH": os.path.join(folder, "bin") + os.pathsep + os.environ["PATH"], "FAIL": fail, "READING": reading})
         return done.returncode, done.stdout + done.stderr
 
 
@@ -381,6 +387,13 @@ else:
     code, said = gate("fast-tests.py run")
     row("gate.sh: the tests fail, so parity is not asked", (code, "not asked" in said, "the gate is shut: tests (" in said), (1, True, True))
     row("gate.sh: parity fails", gate("parity.py")[0], 1)
+    plain = gate()[1]
+    code, said = gate(reading="Green on Linux cannot tell you these\n  a-case  It happened.")
+    row("gate.sh: what green on Linux cannot tell the change is a reading list under the steps, and no step: the gate is as open as before",
+        (code, said.count("✔"), re.sub(r"\d+ s", "", said).split("\n")[-4:]), (0, STEPS, ["Green on Linux cannot tell you these", "  a-case  It happened.", "the gate is open ()", ""]))
+    row("gate.sh: nothing to read, nothing said, not even by a tool that falls over", ("Green" in plain, "traceback" in plain, len(plain.split("\n"))), (False, False, len(said.split("\n")) - 2))
+    code, said = gate("scenarios.sh", reading="Green on Linux cannot tell you these")
+    row("gate.sh: a gate that is shut has the list too", (code, "Green on Linux cannot tell you these\nthe gate is shut: scenarios (" in said), (1, True))
     row("gate.sh: an argument it does not know", (gate("", "--fast")[0], "✔" in gate("", "--fast")[1]), (64, False))
 
 # MARK: the real files
