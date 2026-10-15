@@ -262,6 +262,34 @@ def touches_any(edges, boxes):
     return any(edges[0] < right and edges[2] > left and edges[1] < bottom and edges[3] > top for left, top, right, bottom in boxes)
 
 
+def healed(track, film):
+    """The track's rectangles, edges only, with what a panel of Arbor's own cuts off them put back. The line of words comes up a moment after an act, or goes during the next, across whatever
+    window lies there: what is left of the window above it is a lower rectangle, and no window has moved. So where one side alone has gone inwards, to the panel's own edge, the rectangle
+    is the one before; and the same read backwards, for a panel that goes. The panels are those the script noted, before the act or after it."""
+    panels = [tuple(value * film.scale for value in (x, y, x + w, y + h)) for _, level, (x, y, w, h) in film.overlays if 0 < level < 100]
+    edges = [tuple(rect.edges) for rect in track.rects]
+
+    def cut(whole, part):
+        sides = [side for side in range(4) if abs(part[side] - whole[side]) > 2]
+        if len(sides) != 1:
+            return False
+        side = sides[0]
+        for panel in panels:
+            # The side that moved stands where the panel's facing side is, and the panel lies across the window there.
+            across = panel[0] < whole[2] and panel[2] > whole[0] if side in (1, 3) else panel[1] < whole[3] and panel[3] > whole[1]
+            inwards = part[side] > whole[side] if side < 2 else part[side] < whole[side]
+            if across and inwards and abs(part[side] - panel[(side + 2) % 4]) <= 3 * film.scale:
+                return True
+        return False
+    if panels:
+        for order in (range(1, len(edges)), range(len(edges) - 2, -1, -1)):
+            step = 1 if order.step == 1 else -1
+            for index in order:
+                if not track.rects[index].ragged and not track.rects[index - step].ragged and cut(edges[index - step], edges[index]):
+                    edges[index] = edges[index - step]
+    return edges
+
+
 def has_moved(film):
     """Whether, by Arbor's own account before and after, any window has another frame or another state. None where the film does not say."""
     if not film.before or not any(mark.startswith("windows after") for _, mark in film.marks):
@@ -325,7 +353,7 @@ def pieces(m, until=None):
         if len(track.indices) <= 2 and track.times[0] >= cause and track.indices[-1] < len(film) - 1:
             continue
         # The line of words is low and wide, and so is what it leaves of a window it lies across.
-        seen = [(int(time), index, rect.edges, rect.ragged) for time, index, rect in zip(track.times, track.indices, track.rects)
+        seen = [(int(time), index, edges, rect.ragged) for time, index, rect, edges in zip(track.times, track.indices, track.rects, healed(track, film))
                 if time <= cause + until and not rect.thin and not touches_any(rect.edges, menus)]
         after = [entry for entry in seen if entry[0] >= cause]
         clean = [entry for entry in after if not entry[3]]
@@ -346,20 +374,26 @@ def pieces(m, until=None):
             if following > index + 1 and film.times[following] >= cause:
                 changed.update((index + 1, following))
                 moved = True
+        veiled = []
         for _, index, edges, ragged in after:
             if not here:
                 # It comes into view in this frame, whatever shows of it.
                 changed.add(index)
                 here = moved = True
                 before = None if ragged else edges
-            # Of a shape that is no rectangle (something lies across it) the edges say nothing.
+            # Of a shape that is no rectangle (something lies across it) the edges say nothing by themselves.
             if ragged:
+                veiled.append((index, edges))
                 continue
             # Held against where it was when it last counted as moved: steps of a pixel or two add up.
             if before is not None and not same(edges, before):
-                changed.add(index)
+                # It was there already in the frames just before, in which something lay across it, if their outline is this one: the move is as old as the first of them.
+                while veiled and not all(same(outline, edges) for _, outline in veiled):
+                    veiled.pop(0)
+                changed.add(veiled[0][0] if veiled else index)
                 moved = True
                 before = edges
+            veiled = []
             if before is None:
                 before = edges
             if not same(edges, old) and not same(edges, new):
@@ -434,7 +468,8 @@ def in_one_piece(m, until=None):
     for track in scan.tracks:
         if track.detail:
             continue
-        clean = [(int(time), index, rect) for time, index, rect in zip(track.times, track.indices, track.rects)
+        clean = [(int(time), index, types.SimpleNamespace(edges=edges, left=edges[0], top=edges[1], right=edges[2], bottom=edges[3]))
+                 for time, index, rect, edges in zip(track.times, track.indices, track.rects, healed(track, film))
                  if not rect.thin and not rect.ragged and time <= cause + until and not touches_any(rect.edges, menus)]
         old = next((rect for time, _, rect in reversed(clean) if time < cause), None)
         new = clean[-1][2] if clean and clean[-1][0] >= cause else None
@@ -445,11 +480,12 @@ def in_one_piece(m, until=None):
             if time < cause or index >= last or any(max(abs(p - q) for p, q in zip(rect.edges, other.edges)) <= 2 for other in (old, new)):
                 continue
             # The part of it that lies in neither: its area, less what it shares with the old frame and with the new, plus what those two share within it.
+            # Less two pixels all round, as above: a title bar that lights up moves the edge the ruler finds by as much, and along a whole side that is an area.
             def shared(*others):
-                left, top = max([rect.left] + [other.left for other in others]), max([rect.top] + [other.top for other in others])
-                right, bottom = min([rect.right] + [other.right for other in others]), min([rect.bottom] + [other.bottom for other in others])
+                left, top = max([rect.left + 2] + [other.left for other in others]), max([rect.top + 2] + [other.top for other in others])
+                right, bottom = min([rect.right - 2] + [other.right for other in others]), min([rect.bottom - 2] + [other.bottom for other in others])
                 return max(right - left, 0) * max(bottom - top, 0)
-            if rect.area - shared(old) - shared(new) + shared(old, new) > 400 * film.scale**2:
+            if shared() - shared(old) - shared(new) + shared(old, new) > 400 * film.scale**2:
                 # The exception excuses the new size at the old place, and nothing else that happens in the same act.
                 there = max(abs(rect.left - old.left), abs(rect.top - old.top)) <= 2 * film.scale
                 found["excused" if there and grows_where_it_cannot(film, old, rect) else "over"].append(index)
@@ -1391,6 +1427,27 @@ def self_test():
                                                                                    (284, {studio.BLUE: (12, 43, 1000, 650), studio.RED: (600, 100, 200, 160)}),
                                                                                    (1900, {studio.BLUE: (12, 43, 1000, 650), studio.RED: (600, 100, 200, 160), **words})]}, ["R1", "R4", "R5"], []),
         # From 612,243 200 by 300 to 500 by 400 at 700,100, which hangs over the display's right edge: the new size shows at the old place first, and may.
+        # What a hosted Mac's films showed the ruler to get wrong, 2026-10-15. The line of words comes up 150 ms after the act across a window from side to side: no window has moved then,
+        # and what shows of that one above the line is not its new frame.
+        "the-line-comes-across-a-window": (studio.shoot_steps, {"steps": [(None, {studio.BLUE: (12, 43, 494, 650), studio.GREEN: (518, 43, 494, 650)}), (34, {studio.BLUE: (40, 70, 300, 200), studio.GREEN: (400, 500, 300, 190)}),
+                                                                         (184, {studio.BLUE: (40, 70, 300, 200), studio.GREEN: (400, 500, 300, 190), "words": (278, 618, 469, 38)}),
+                                                                         (1900, {studio.BLUE: (40, 70, 300, 200), studio.GREEN: (400, 500, 300, 190), "words": (278, 618, 469, 38)})],
+                                                               "how": "floating", "extra": [(studio.BEGAN + studio.LEAD + 1900, "M overlay after 6 278 618 469 38")]}, [], []),
+        # The line of the act before goes, over 150 ms, across the corner of a window that has arrived beneath it at once: the window is as old as its outline.
+        "the-line-goes-over-a-window-that-has-arrived": (studio.shoot_steps, {"steps": [(None, {studio.BLUE: (40, 70, 300, 200), studio.GREEN: (400, 300, 300, 190), "words": (278, 618, 469, 38)}),
+                                                                                       (34, {studio.BLUE: (12, 43, 494, 650), studio.GREEN: (518, 43, 494, 650), "words": (278, 618, 469, 38)}),
+                                                                                       (101, {studio.BLUE: (12, 43, 494, 650), studio.GREEN: (518, 43, 494, 650), "words": (278, 618, 469, 38)}),
+                                                                                       (184, {studio.BLUE: (12, 43, 494, 650), studio.GREEN: (518, 43, 494, 650)}), (1900, {studio.BLUE: (12, 43, 494, 650), studio.GREEN: (518, 43, 494, 650)})],
+                                                                             "was": "floating", "extra": [(studio.BEGAN + 3, "M overlay before 6 278 618 469 38")]}, [], []),
+        # And one that does arrive late under the line is still late.
+        "a-window-is-late-under-the-line": (studio.shoot_steps, {"steps": [(None, {studio.BLUE: (40, 70, 300, 200), studio.GREEN: (400, 300, 300, 190), "words": (278, 618, 469, 38)}),
+                                                                          (34, {studio.BLUE: (12, 43, 494, 650), studio.GREEN: (400, 300, 300, 190), "words": (278, 618, 469, 38)}),
+                                                                          (184, {studio.BLUE: (12, 43, 494, 650), studio.GREEN: (518, 43, 494, 650), "words": (278, 618, 469, 38)}),
+                                                                          (251, {studio.BLUE: (12, 43, 494, 650), studio.GREEN: (518, 43, 494, 650)}), (1900, {studio.BLUE: (12, 43, 494, 650), studio.GREEN: (518, 43, 494, 650)})],
+                                                                "was": "floating", "extra": [(studio.BEGAN + 3, "M overlay before 6 278 618 469 38")]}, ["R1"], ["M8"]),
+        # On its way a window stands two pixels higher than its frames, as one whose title bar lights up seems to: along a whole side that is an area, and no window lies over anything.
+        "two-pixels-along-a-side": (studio.shoot_steps, {"steps": [(None, {studio.BLUE: (12, 43, 300, 200)}), (34, {studio.BLUE: (12, 41, 400, 300)}), (51, {studio.BLUE: (12, 43, 494, 650)}), (1900, {studio.BLUE: (12, 43, 494, 650)})],
+                                                        "was": "floating"}, ["R4"], []),
         "grows-where-it-cannot": (studio.shoot_steps, {"steps": [(None, {studio.BLUE: (12, 43, 494, 650), studio.RED: (612, 243, 200, 300)}), (34, {studio.BLUE: (12, 43, 494, 650), studio.RED: (612, 243, 500, 400)}),
                                                                  (51, {studio.BLUE: (12, 43, 494, 650), studio.RED: (700, 100, 500, 400)}),
                                                                  (1900, {studio.BLUE: (12, 43, 494, 650), studio.RED: (700, 100, 500, 400), **words})]}, ["R4"], []),

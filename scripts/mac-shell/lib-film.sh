@@ -18,7 +18,7 @@
 # A film shows the whole display, so all of this is for GitHub's Macs only.
 #
 #   film_build                      arbor_build, and compile camera.swift, witness.swift (for pinches), apptool.swift (for display_size), sampler.swift
-#   camera_start | camera_stop      start the camera (fails, and says why, where it gets no frames) | stop it
+#   camera_start | camera_stop      start the camera (fails, and says why, where it gets no frames) | stop it, and ask for the room the films need to come home (keep-mb.txt)
 #   sampler_start | sampler_stop    beside the films, where the window server has every window, sixty times a second: mac-shell/samples.log
 #   display_size <w> <h>            switch the display to that size, if it offers it, with the camera stopped meanwhile
 #   scene <name> <kind> "<what the person does>"      a film begins: mac-shell/films/<name>/. The kind tells the judge which checks
@@ -159,6 +159,16 @@ camera_stop() {
   ended "$FILM_CAMERA_PID" 30 || kill_started "$FILM_CAMERA_PID"
   FILM_CAMERA_PID=""
   echo "films: $FILM_COUNT, $(du -sk "$ARBOR_OUT/films" | cut -f 1) KB"
+  films_come_home
+}
+
+# A run brings 40 MB home unless it asks for more, 200 at most (scripts/ci-keep-output.py), and what is over goes the largest first: of a film that is its first frame, the only whole one, without
+# which the rest says nothing. So the films ask for what they weigh and a quarter more, each time the camera stops; and where that is not to be had, it is a ✘ here and not a surprise at home.
+films_come_home() {
+  local all
+  all=$(($(du -sk "$ARBOR_OUT" | cut -f 1) / 1000 + 1))
+  echo $((all * 5 / 4 < 200 ? all * 5 / 4 + 5 : 200)) > "$ARBOR_OUT/keep-mb.txt"
+  [ "$all" -lt 195 ] || check "the films fit what a run may bring home: $all MB of 200" false
 }
 
 # The camera is told the display's size when it starts.
