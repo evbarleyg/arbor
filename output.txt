@@ -1,0 +1,918 @@
+# mac-shell: scripts/mac-shell/probe-presses.sh at 12ff9ad, macOS 26.6.2, 2026-10-15T01:30Z
+
+== the Mac
+macOS 26.6.2 (25G83) on arm64
+built Arbor and the pointer tool in 10s
+1600 900 1600 900
+display: 1 0 0 1600 900 1600 900 1
+macOS's own window management, as it comes:
+com.apple.WindowManager EnableTilingByEdgeDrag: not set
+com.apple.WindowManager EnableTopTilingByEdgeDrag: not set
+com.apple.WindowManager EnableTilingOptionAccelerator: not set
+com.apple.WindowManager EnableTiledWindowMargins: not set
+com.apple.WindowManager EnableStandardClickToShowDesktop: not set
+Reduce Motion: false
+the sampler writes mac-shell/samples.log (pid 4245), the witness mac-shell/witness.log (pid 4254)
+
+== Before Arbor: the apps are open already
+
+-- 1 open-finder: opens finder
+> open -g -b com.apple.finder /tmp/arbor-apps.hE1MfM/scratch/told/…-grove
+pid 353 lists (id role subrole x y w h flags):
+  32 AXWindow AXStandardWindow 340 120 920 436 main,toolbar
+  0 AXScrollArea - 0 0 1600 900 fixed-size,fixed-position,no-close,no-minimize,no-zoom
+  w32 is finder
+  (quiet:648 ms) setup=1
+
+-- 2 open-safari: opens safari
+> open -g -b com.apple.Safari /tmp/arbor-apps.hE1MfM/scratch/told/…-page.html
+pid 4365 lists (id role subrole x y w h flags):
+  35 AXWindow AXStandardWindow 138 31 1324 791 main,toolbar
+  w35 is safari
+  (quiet:375 ms) setup=1
+
+-- 3 open-textedit: opens textedit
+> open -g -b com.apple.TextEdit /tmp/arbor-apps.hE1MfM/scratch/told/…-oak.txt
+pid 4612 lists (id role subrole x y w h flags):
+  45 AXWindow AXStandardWindow 165 65 673 439 main
+  w45 is textedit
+  (quiet:1719 ms) setup=1
+
+-- 4 open-terminal: opens terminal
+> open -g -b com.apple.Terminal 
+pid 4676 lists (id role subrole x y w h flags):
+  48 AXWindow AXStandardWindow 40 51 877 499 main
+  w48 is terminal
+  (quiet:970 ms) setup=1
+
+-- 5 open-notes: opens notes
+> open -g -b com.apple.Notes 
+pid 4788 lists (id role subrole x y w h flags):
+  51 AXWindow AXStandardWindow 300 105 1000 660 main,close-disabled,sheets=1
+  w51 is notes
+something is in the way:
+  AXWindow/AXStandardWindow 300 105 1000 660
+    AXButton/AXCloseButton 308 113 16 16
+    AXButton/AXZoomButton 354 113 16 16
+    AXButton/AXMinimizeButton 331 113 16 16
+    AXSheet/- 563 135 475 600
+      AXButton/- 934 686 85 30 "Continue"
+pressed "Continue": 0
+pressed "Cancel": 0
+  (quiet:381 ms) setup=1
+
+-- 6 open-calendar: opens calendar
+> open -g -b com.apple.iCal 
+pid 5207 lists (id role subrole x y w h flags):
+  57 AXWindow AXStandardWindow 200 86 935 598 main,toolbar
+  w57 is calendar
+  (quiet:1434 ms) setup=1
+
+-- 7 open-settings: opens settings
+> open -g -b com.apple.systempreferences 
+pid 5326 lists (id role subrole x y w h flags):
+  58 AXWindow AXStandardWindow 437 85 723 625 main,toolbar
+  w58 is settings
+  (quiet:428 ms) setup=1
+
+-- 8 open-preview: opens preview
+> open -g -b com.apple.Preview /tmp/arbor-apps.hE1MfM/scratch/told/…-leaf.png
+pid 5578 lists (id role subrole x y w h flags):
+  62 AXWindow AXStandardWindow 4 35 708 424 main,toolbar
+  w62 is preview
+  (quiet:393 ms) setup=1
+
+-- 9 open-mail: opens mail
+> open -g -b com.apple.mail 
+pid 5995 lists (id role subrole x y w h flags):
+  66 AXWindow AXStandardWindow 240 72 1120 630 main,close-disabled,sheets=1,toolbar
+  w66 is mail
+  (quiet:840 ms) setup=1
+the cast: finder safari textedit terminal notes calendar settings preview mail
+
+-- 10 tiling-acts: without Arbor: drags a window by its title bar against the menu bar and lets go
+> click 635 854
+> move 635 654
+> drag 536 98 800 0 --no-release
+> release
+  (quiet:1400 ms) setup=1
+
+-- 11 tiling-acts-back: drags it away again, a hand's breadth down
+> drag 672 43 800 130 --no-release
+> release
+  (quiet:1000 ms) setup=1
+macOS's tiling was seen to act: true
+  ✔ macOS's own tiling acts
+
+-- 12 look-around: looks at the screen
+  (quiet:438 ms) setup=1 own=all
+
+== The walk
+
+-- 13 launch: starts Arbor
+session 1: Arbor pid 7315, ARBOR_LIMIT=none: running: 1 display, 0 docked and 9 floating, 0 out of view
+Arbor dev
+recording traces/2026-10-15-013211-day-1.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+  (quiet:1083 ms) moves=,, everything=1 floating=32,35,45,48,51,57,58,62,66 docked=
+
+-- 14 dock-icon-finder: clicks finder's icon in the Dock
+> click 131 854
+> move 131 654
+  (quiet:409 ms) front=32 floating=32,35,45,48,51,57,58,62,66 docked=
+
+-- 15 dock-left: presses ⌃⌥⌘ and the left arrow
+> key ctrl+opt+cmd+left
+  ✔ it is docked
+  (quiet:979 ms) moves=,32, front=32 floating=35,45,48,51,57,58,62,66 docked=32 first=1
+
+-- 16 dock-icon-safari: clicks safari's icon in the Dock
+> click 243 854
+> move 243 654
+  (quiet:387 ms) front=35 floating=35,45,48,51,57,58,62,66 docked=32
+
+-- 17 dock-right: presses ⌃⌥⌘ and the right arrow
+> key ctrl+opt+cmd+right
+  ✔ it is docked
+  (quiet:939 ms) moves=32,32,35, front=35 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 18 view-all: presses ⌃⌥Space
+> key ctrl+opt+space
+  (quiet:599 ms) moves=any everything=1 tiles= keyboard=35 floating=45,48,51,57,58,62,66 docked=32,35
+
+== Arbor as it ships
+recording traces/2026-10-15-013225-day-2.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+Arbor's taps:
+  tap 1025202362 pid=7315 point=1 options=0 mask=0x44 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+  tap 1189641421 pid=7315 point=1 options=0 mask=0x2 enabled=true latency_us min=3725096.8 avg=3725096.8 max=3725096.8
+  tap 596516649 pid=7315 point=1 options=0 mask=0x400000 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+  tap 1649760492 pid=7315 point=1 options=0 mask=0x20000000 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+
+-- 19 click-finder: clicks finder's title bar
+> click 264 55
+> move 264 175
+  (quiet:360 ms) front=32 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 20 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:406 ms) front=35 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 21 click-finder: clicks finder's title bar
+> click 264 55
+> move 264 175
+  (quiet:367 ms) front=32 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 22 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:350 ms) front=35 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 23 click-finder: clicks finder's title bar
+> click 264 55
+> move 264 175
+  (quiet:438 ms) front=32 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 24 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:438 ms) front=35 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 25 click-finder: clicks finder's title bar
+> click 264 55
+> move 264 175
+  (quiet:386 ms) front=32 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 26 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:357 ms) front=35 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 27 click-finder: clicks finder's title bar
+> click 264 55
+> move 264 175
+  (quiet:406 ms) front=32 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 28 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:397 ms) front=35 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 29 click-finder: clicks finder's title bar
+> click 264 55
+> move 264 175
+  (quiet:387 ms) front=32 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 30 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:409 ms) front=35 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 31 click-finder: clicks finder's title bar
+> click 264 55
+> move 264 175
+  (quiet:387 ms) front=32 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 32 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:394 ms) front=35 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 33 click-finder: clicks finder's title bar
+> click 264 55
+> move 264 175
+  (quiet:384 ms) front=32 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 34 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:371 ms) front=35 floating=45,48,51,57,58,62,66 docked=32,35
+
+== Without a trace being recorded
+recording traces/2026-10-15-013305-day-3.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+> trace off
+trace saved: /tmp/arbor-shell.MVcbtb/home/traces/2026-10-15-013305-day-3.jsonl: 3 lines, trace off
+Arbor's taps:
+  tap 1025202362 pid=7315 point=1 options=0 mask=0x44 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+  tap 1189641421 pid=7315 point=1 options=0 mask=0x2 enabled=true latency_us min=640308.7 avg=640308.7 max=640308.7
+  tap 596516649 pid=7315 point=1 options=0 mask=0x400000 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+  tap 1649760492 pid=7315 point=1 options=0 mask=0x20000000 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+
+-- 35 click-finder: clicks finder's title bar
+> click 264 55
+> move 264 175
+  (quiet:425 ms) front=32 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 36 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:386 ms) front=35 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 37 click-finder: clicks finder's title bar
+> click 264 55
+> move 264 175
+  (quiet:399 ms) front=32 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 38 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:408 ms) front=35 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 39 click-finder: clicks finder's title bar
+> click 264 55
+> move 264 175
+  (quiet:431 ms) front=32 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 40 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:435 ms) front=35 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 41 click-finder: clicks finder's title bar
+> click 264 55
+> move 264 175
+  (quiet:412 ms) front=32 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 42 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:440 ms) front=35 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 43 click-finder: clicks finder's title bar
+> click 264 55
+> move 264 175
+  (quiet:360 ms) front=32 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 44 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:488 ms) front=35 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 45 click-finder: clicks finder's title bar
+> click 264 55
+> move 264 175
+  (quiet:382 ms) front=32 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 46 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:380 ms) front=35 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 47 click-finder: clicks finder's title bar
+> click 264 55
+> move 264 175
+  (quiet:360 ms) front=32 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 48 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:352 ms) front=35 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 49 click-finder: clicks finder's title bar
+> click 264 55
+> move 264 175
+  (quiet:362 ms) front=32 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 50 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:419 ms) front=35 floating=45,48,51,57,58,62,66 docked=32,35
+
+== Without the line round the focused window
+recording traces/2026-10-15-013341-day-4.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+> reload-settings
+settings reloaded
+Arbor's taps:
+  tap 1025202362 pid=7315 point=1 options=0 mask=0x44 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+  tap 1189641421 pid=7315 point=1 options=0 mask=0x2 enabled=true latency_us min=581464.44 avg=581464.44 max=581464.44
+  tap 596516649 pid=7315 point=1 options=0 mask=0x400000 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+  tap 1649760492 pid=7315 point=1 options=0 mask=0x20000000 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+
+-- 51 click-finder: clicks finder's title bar
+> click 264 55
+> move 264 175
+  (quiet:371 ms) front=32 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 52 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:365 ms) front=35 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 53 click-finder: clicks finder's title bar
+> click 264 55
+> move 264 175
+  (quiet:392 ms) front=32 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 54 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:350 ms) front=35 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 55 click-finder: clicks finder's title bar
+> click 264 55
+> move 264 175
+  (quiet:411 ms) front=32 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 56 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:432 ms) front=35 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 57 click-finder: clicks finder's title bar
+> click 264 55
+> move 264 175
+  (quiet:423 ms) front=32 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 58 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:408 ms) front=35 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 59 click-finder: clicks finder's title bar
+> click 264 55
+> move 264 175
+  (quiet:378 ms) front=32 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 60 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:418 ms) front=35 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 61 click-finder: clicks finder's title bar
+> click 264 55
+> move 264 175
+  (quiet:360 ms) front=32 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 62 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:466 ms) front=35 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 63 click-finder: clicks finder's title bar
+> click 264 55
+> move 264 175
+  (quiet:369 ms) front=32 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 64 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:455 ms) front=35 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 65 click-finder: clicks finder's title bar
+> click 264 55
+> move 264 175
+  (quiet:420 ms) front=32 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 66 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:371 ms) front=35 floating=45,48,51,57,58,62,66 docked=32,35
+
+== With no event tap at all
+recording traces/2026-10-15-013418-day-5.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+> reload-settings
+settings reloaded
+Arbor's taps:
+
+-- 67 click-finder: clicks finder's title bar
+> click 264 55
+> move 264 175
+  (quiet:389 ms) front=32 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 68 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:428 ms) front=35 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 69 click-finder: clicks finder's title bar
+> click 264 55
+> move 264 175
+  (quiet:378 ms) front=32 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 70 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:403 ms) front=35 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 71 click-finder: clicks finder's title bar
+> click 264 55
+> move 264 175
+  (quiet:368 ms) front=32 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 72 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:415 ms) front=35 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 73 click-finder: clicks finder's title bar
+> click 264 55
+> move 264 175
+  (quiet:413 ms) front=32 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 74 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:553 ms) front=35 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 75 click-finder: clicks finder's title bar
+> click 264 55
+> move 264 175
+  (quiet:434 ms) front=32 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 76 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:453 ms) front=35 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 77 click-finder: clicks finder's title bar
+> click 264 55
+> move 264 175
+  (quiet:413 ms) front=32 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 78 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:351 ms) front=35 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 79 click-finder: clicks finder's title bar
+> click 264 55
+> move 264 175
+  (quiet:419 ms) front=32 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 80 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:486 ms) front=35 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 81 click-finder: clicks finder's title bar
+> click 264 55
+> move 264 175
+  (quiet:370 ms) front=32 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 82 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:401 ms) front=35 floating=45,48,51,57,58,62,66 docked=32,35
+> reload-settings
+settings reloaded
+
+== Paused, the windows put back where they were
+recording traces/2026-10-15-013500-day-6.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+
+-- 83 pause: presses ⌃⌥⎋
+> key ctrl+opt+escape
+  (quiet:1490 ms) moves=any restores=all places=1 everything=1 front=35 floating= docked=
+Arbor's taps:
+
+-- 84 click-finder: clicks finder's title bar
+> click 264 55
+> move 264 175
+  (quiet:376 ms) front=32 floating= docked=
+
+-- 85 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:409 ms) front=35 floating= docked=
+
+-- 86 click-finder: clicks finder's title bar
+> click 264 55
+> move 264 175
+  (quiet:368 ms) front=32 floating= docked=
+
+-- 87 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:419 ms) front=35 floating= docked=
+
+-- 88 click-finder: clicks finder's title bar
+> click 264 55
+> move 264 175
+  (quiet:390 ms) front=32 floating= docked=
+
+-- 89 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:426 ms) front=35 floating= docked=
+
+-- 90 click-finder: clicks finder's title bar
+> click 264 55
+> move 264 175
+  (quiet:357 ms) front=32 floating= docked=
+
+-- 91 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:389 ms) front=35 floating= docked=
+
+-- 92 click-finder: clicks finder's title bar
+> click 264 55
+> move 264 175
+  (quiet:422 ms) front=32 floating= docked=
+
+-- 93 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:401 ms) front=35 floating= docked=
+
+-- 94 click-finder: clicks finder's title bar
+> click 264 55
+> move 264 175
+  (quiet:376 ms) front=32 floating= docked=
+
+-- 95 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:354 ms) front=35 floating= docked=
+
+-- 96 click-finder: clicks finder's title bar
+> click 264 55
+> move 264 175
+  (quiet:350 ms) front=32 floating= docked=
+
+-- 97 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:358 ms) front=35 floating= docked=
+
+-- 98 click-finder: clicks finder's title bar
+> click 264 55
+> move 264 175
+  (quiet:385 ms) front=32 floating= docked=
+
+-- 99 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:358 ms) front=35 floating= docked=
+
+-- 100 resume: presses ⌃⌥⎋
+> key ctrl+opt+escape
+  (quiet:836 ms) moves=any floating=45,48,51,57,58,62,66 docked=32,35
+recording traces/2026-10-15-013546-day-7.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+
+== As it ships, once more: is it the settings, or the time of day?
+recording traces/2026-10-15-013546-day-8.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+
+-- 101 view-all: presses ⌃⌥Space
+> key ctrl+opt+space
+  (quiet:721 ms) moves=any everything=1 tiles= keyboard=35 floating=45,48,51,57,58,62,66 docked=32,35
+Arbor's taps:
+  tap 1034949299 pid=7315 point=1 options=0 mask=0x44 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+  tap 1037127828 pid=7315 point=1 options=0 mask=0x2 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+  tap 1450573622 pid=7315 point=1 options=0 mask=0x400000 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+  tap 502278611 pid=7315 point=1 options=0 mask=0x20000000 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+
+-- 102 click-finder: clicks finder's title bar
+> click 264 55
+> move 264 175
+  (quiet:360 ms) front=32 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 103 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:401 ms) front=35 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 104 click-finder: clicks finder's title bar
+> click 264 55
+> move 264 175
+  (quiet:448 ms) front=32 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 105 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:417 ms) front=35 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 106 click-finder: clicks finder's title bar
+> click 264 55
+> move 264 175
+  (quiet:414 ms) front=32 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 107 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:371 ms) front=35 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 108 click-finder: clicks finder's title bar
+> click 264 55
+> move 264 175
+  (quiet:409 ms) front=32 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 109 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:422 ms) front=35 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 110 click-finder: clicks finder's title bar
+> click 264 55
+> move 264 175
+  (quiet:365 ms) front=32 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 111 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:410 ms) front=35 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 112 click-finder: clicks finder's title bar
+> click 264 55
+> move 264 175
+  (quiet:500 ms) front=32 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 113 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:440 ms) front=35 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 114 click-finder: clicks finder's title bar
+> click 264 55
+> move 264 175
+  (quiet:395 ms) front=32 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 115 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:405 ms) front=35 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 116 click-finder: clicks finder's title bar
+> click 264 55
+> move 264 175
+  (quiet:408 ms) front=32 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 117 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:507 ms) front=35 floating=45,48,51,57,58,62,66 docked=32,35
+
+-- 118 quit: chooses Quit Arbor in Arbor's menu
+> click 1308 15 --right
+> key up
+> key return
+  ✔ Arbor ends within five seconds
+  (quiet:655 ms) moves=any restores=all places=1 everything=1
+
+== After Quit, the windows put back where they were: the same Mac without Arbor
+Arbor's taps:
+
+-- 119 click-finder: clicks finder's title bar
+> click 264 55
+> move 264 175
+  (quiet:416 ms) front=32
+
+-- 120 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:374 ms) front=35
+
+-- 121 click-finder: clicks finder's title bar
+> click 264 55
+> move 264 175
+  (quiet:430 ms) front=32
+
+-- 122 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:438 ms) front=35
+
+-- 123 click-finder: clicks finder's title bar
+> click 264 55
+> move 264 175
+  (quiet:451 ms) front=32
+
+-- 124 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:357 ms) front=35
+
+-- 125 click-finder: clicks finder's title bar
+> click 264 55
+> move 264 175
+  (quiet:394 ms) front=32
+
+-- 126 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:436 ms) front=35
+
+-- 127 click-finder: clicks finder's title bar
+> click 264 55
+> move 264 175
+  (quiet:419 ms) front=32
+
+-- 128 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:367 ms) front=35
+
+-- 129 click-finder: clicks finder's title bar
+> click 264 55
+> move 264 175
+  (quiet:429 ms) front=32
+
+-- 130 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:390 ms) front=35
+
+-- 131 click-finder: clicks finder's title bar
+> click 264 55
+> move 264 175
+  (quiet:355 ms) front=32
+
+-- 132 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:427 ms) front=35
+
+-- 133 click-finder: clicks finder's title bar
+> click 264 55
+> move 264 175
+  (quiet:353 ms) front=32
+
+-- 134 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:370 ms) front=35
+
+== the table
+round           what        n  half within   9 in 10  the latest  over 20 ms   (ms; presses that brought another app forward, other presses, releases)
+shipped         forward    16         51.0      90.2       114.2          16
+shipped         release    16          2.6       5.2         5.3           0
+no-trace        forward    16         41.2      88.4       100.2          15
+no-trace        release    16          0.4       5.1        27.2           1
+no-line         forward    16         41.6      67.5        78.8          16
+no-line         release    16          1.3      13.2        26.3           1
+no-taps         forward    16         57.4     106.0       133.0          14
+no-taps         release    16          1.8      11.7        17.0           0
+paused          forward    16         60.4     101.3       107.9          14
+paused          release    16          2.7      15.7        16.8           0
+shipped-again   forward    16         60.8      87.9       123.5          16
+shipped-again   release    16          1.7       5.2         8.0           0
+without-arbor   forward    16         76.5     118.6       137.4          14
+without-arbor   release    16          1.0       9.5        10.9           0
+
+122 acts, 0 left out because they did not apply
+
+== the report (all of it: mac-shell/day-report.md)
+134 steps in 359 s, 122 of them judged, 4 with a rule broken. The sampler: samples 10790 seconds 299.1 hz 36.1 cost-ms 2.53 late 46 longest-gap-ms 191 whole-samples 13011 whole-seconds 360.6 whole-late 76.
+Input: 236 presses, releases, keys and scrolls reached the apps, half of them within 10088 µs, 99 in 100 within 123457 µs, the latest after 137396 µs.
+
+## Per rule
+
+| Rule | | Steps that checked it | Steps that broke it | Which |
+|---|---|---|---|---|
+| 1 | never fight macOS: where it answers a drag, Arbor stands aside | 0 | 0 |  |
+| 2 | nothing moves that the person did not move | 117 | 2 | 15 dock-left, 17 dock-right |
+| 3 | no jolts: a window moves once, to where it ends up | 122 | 2 | 83 pause, 118 quit |
+| 4 | the window you switch to comes to the front and into view | 117 | 0 |  |
+| 5 | quitting, Float All and pause give windows their own sizes back | 2 | 0 |  |
+| 6 | what a person presses reaches the apps, at once | 114 | 0 |  |
+| L | no window is lost or stuck | 122 | 0 |  |
+| - | what the script itself checked | 122 | 0 |  |
+
+## Findings
+
+### Rule 2: nothing moves that the person did not move
+
+- ✘ **15 dock-left** (presses ⌃⌥⌘ and the left arrow): safari (w35) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 138,31 1324×791 · +2699 ms 806,31 794×791
+- ✘ **15 dock-left** (presses ⌃⌥⌘ and the left arrow): textedit (w45) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 165,65 673×439 · +2699 ms 806,65 673×439
+- ✘ **15 dock-left** (presses ⌃⌥⌘ and the left arrow): terminal (w48) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 40,51 877×499 · +2699 ms 806,51 793×499
+- ✘ **15 dock-left** (presses ⌃⌥⌘ and the left arrow): notes (w51) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 300,105 1000×660 · +2699 ms 806,105 794×660
+- ✘ **15 dock-left** (presses ⌃⌥⌘ and the left arrow): calendar (w57) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 404,115 936×599 · +2699 ms 806,115 794×599
+- ✘ **15 dock-left** (presses ⌃⌥⌘ and the left arrow): settings (w58) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 437,85 723×625 · +2699 ms 806,85 723×625
+- ✘ **15 dock-left** (presses ⌃⌥⌘ and the left arrow): preview (w62) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 4,35 708×424 · +2699 ms 806,35 708×424
+- ✘ **15 dock-left** (presses ⌃⌥⌘ and the left arrow): mail (w66) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 240,72 1120×630 · +2699 ms 719,72 881×630
+- ~ **15 dock-left** (presses ⌃⌥⌘ and the left arrow): w68 of Mail moved along with a window of its app [moved-unasked]
+  - +0 ms 565,179 470×416 · +2699 ms 925,179 470×416
+- ✘ **17 dock-right** (presses ⌃⌥⌘ and the right arrow): textedit (w45) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 806,65 673×439 · +1217 ms 541,65 461×439
+- ✘ **17 dock-right** (presses ⌃⌥⌘ and the right arrow): terminal (w48) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 806,51 793×499 · +1217 ms 541,51 457×499
+- ✘ **17 dock-right** (presses ⌃⌥⌘ and the right arrow): notes (w51) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 806,105 794×660 · +1217 ms 417,105 709×660
+- ✘ **17 dock-right** (presses ⌃⌥⌘ and the right arrow): calendar (w57) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 806,115 794×599 · +1217 ms 431,115 680×599
+- ✘ **17 dock-right** (presses ⌃⌥⌘ and the right arrow): settings (w58) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 806,85 723×625 · +1217 ms 410,85 723×625
+- ✘ **17 dock-right** (presses ⌃⌥⌘ and the right arrow): preview (w62) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 806,35 708×424 · +1217 ms 417,35 708×424
+- ✘ **17 dock-right** (presses ⌃⌥⌘ and the right arrow): mail (w66) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 719,72 881×630 · +1217 ms 331,72 881×630
+- ~ **17 dock-right** (presses ⌃⌥⌘ and the right arrow): w68 of Mail moved along with a window of its app [moved-unasked]
+  - +0 ms 925,179 470×416 · +1217 ms 537,179 470×416
+
+### Rule 3: no jolts: a window moves once, to where it ends up
+
+- ~ **15 dock-left** (presses ⌃⌥⌘ and the left arrow): the last window came to rest 2420 ms after the key or the button, in Arbor's first act since it started [slow]
+- ~ **17 dock-right** (presses ⌃⌥⌘ and the right arrow): the last window came to rest 1064 ms after the key or the button [slow]
+- ✘ **83 pause** (presses ⌃⌥⎋): finder (w32) moved 2 times [jolt]
+  - +0 ms 12,43 517×767 · +386 ms 340,120 920×436 · +2486 ms 340,120 517×701 · +2525 ms 12,43 517×767
+- ✘ **83 pause** (presses ⌃⌥⎋): safari (w35) moved 2 times [jolt]
+  - +0 ms 1014,43 574×767 · +453 ms 138,31 586×778 · +512 ms 138,31 1324×790 · +2585 ms 1014,43 574×767
+- ✘ **83 pause** (presses ⌃⌥⎋): textedit (w45) moved 2 times [jolt]
+  - +0 ms 541,65 461×439 · +601 ms 165,65 673×439 · +2733 ms 541,65 461×439
+- ✘ **83 pause** (presses ⌃⌥⎋): terminal (w48) moved 2 times [jolt]
+  - +0 ms 541,51 457×499 · +652 ms 40,51 877×499 · +2801 ms 541,51 457×499
+- ✘ **83 pause** (presses ⌃⌥⎋): notes (w51) moved 2 times [jolt]
+  - +0 ms 417,105 709×660 · +737 ms 300,105 1000×660 · +2918 ms 300,105 709×660 · +2995 ms 417,105 709×660
+- ✘ **83 pause** (presses ⌃⌥⎋): calendar (w57) moved 2 times [jolt]
+  - +0 ms 431,115 680×599 · +786 ms 431,115 936×599 · +804 ms 404,115 936×599 · +3054 ms 404,115 680×599 · +3071 ms 431,115 680×599
+- ✘ **83 pause** (presses ⌃⌥⎋): settings (w58) moved 2 times [jolt]
+  - +0 ms 410,85 723×625 · +804 ms 437,85 723×625 · +3185 ms 410,85 723×625
+- ✘ **83 pause** (presses ⌃⌥⎋): preview (w62) moved 2 times [jolt]
+  - +0 ms 417,35 708×424 · +851 ms 4,35 708×424 · +3253 ms 417,35 708×424
+- ✘ **83 pause** (presses ⌃⌥⎋): mail (w66) moved 2 times [jolt]
+  - +0 ms 331,72 881×630 · +912 ms 331,72 1120×630 · +950 ms 240,72 1120×630 · +3424 ms 331,72 881×630
+- ✘ **83 pause** (presses ⌃⌥⎋): w68 of Mail moved 2 times [jolt]
+  - +0 ms 537,179 470×416 · +912 ms 656,179 470×416 · +950 ms 565,179 470×416 · +3424 ms 537,179 470×416
+- ~ **83 pause** (presses ⌃⌥⎋): finder (w32) was still moving 379 ms after everything had been quiet for a second [jolt]
+- ~ **83 pause** (presses ⌃⌥⎋): safari (w35) was still moving 439 ms after everything had been quiet for a second [jolt]
+- ~ **83 pause** (presses ⌃⌥⎋): textedit (w45) was still moving 587 ms after everything had been quiet for a second [jolt]
+- ~ **83 pause** (presses ⌃⌥⎋): terminal (w48) was still moving 655 ms after everything had been quiet for a second [jolt]
+- ~ **83 pause** (presses ⌃⌥⎋): notes (w51) was still moving 849 ms after everything had been quiet for a second [jolt]
+- ~ **83 pause** (presses ⌃⌥⎋): calendar (w57) was still moving 925 ms after everything had been quiet for a second [jolt]
+- ~ **83 pause** (presses ⌃⌥⎋): settings (w58) was still moving 1039 ms after everything had been quiet for a second [jolt]
+- ~ **83 pause** (presses ⌃⌥⎋): preview (w62) was still moving 1107 ms after everything had been quiet for a second [jolt]
+- ~ **83 pause** (presses ⌃⌥⎋): mail (w66) was still moving 1278 ms after everything had been quiet for a second [jolt]
+- ~ **83 pause** (presses ⌃⌥⎋): w68 of Mail was still moving 1278 ms after everything had been quiet for a second [jolt]
+- ✘ **83 pause** (presses ⌃⌥⎋): the last window came to rest 3173 ms after the key or the button [slow]
+- ✘ **118 quit** (chooses Quit Arbor in Arbor's menu): finder (w32) moved 2 times [jolt]
+  - +0 ms 12,43 517×767 · +2787 ms 340,120 920×436 · +4939 ms 340,120 517×701 · +4957 ms 12,43 517×767
+- ✘ **118 quit** (chooses Quit Arbor in Arbor's menu): safari (w35) moved 2 times [jolt]
+  - +0 ms 1014,43 574×767 · +2871 ms 1014,43 586×778 · +2905 ms 138,31 586×778 · +3003 ms 138,31 1324×790 · +5051 ms 138,31 574×767 · +5069 ms 1014,43 574×767
+- ✘ **118 quit** (chooses Quit Arbor in Arbor's menu): textedit (w45) moved 2 times [jolt]
+  - +0 ms 541,65 461×439 · +3003 ms 541,65 673×439 · +3011 ms 165,65 673×439 · +5287 ms 541,65 461×439
+- ✘ **118 quit** (chooses Quit Arbor in Arbor's menu): terminal (w48) moved 2 times [jolt]
+  - +0 ms 541,51 457×499 · +3072 ms 541,51 877×499 · +3088 ms 40,51 877×499 · +5346 ms 541,51 457×499
+- ✘ **118 quit** (chooses Quit Arbor in Arbor's menu): notes (w51) moved 2 times [jolt]
+  - +0 ms 417,105 709×660 · +3145 ms 300,105 1000×660 · +5496 ms 417,105 709×660
+- ✘ **118 quit** (chooses Quit Arbor in Arbor's menu): calendar (w57) moved 2 times [jolt]
+  - +0 ms 431,115 680×599 · +3236 ms 431,115 936×599 · +3254 ms 404,115 936×599 · +5613 ms 404,115 680×599 · +5662 ms 431,115 680×599
+- ✘ **118 quit** (chooses Quit Arbor in Arbor's menu): settings (w58) moved 2 times [jolt]
+  - +0 ms 410,85 723×625 · +3267 ms 437,85 723×625 · +5716 ms 410,85 723×625
+- ✘ **118 quit** (chooses Quit Arbor in Arbor's menu): preview (w62) moved 2 times [jolt]
+  - +0 ms 417,35 708×424 · +3307 ms 4,35 708×424 · +5784 ms 417,35 708×424
+- ✘ **118 quit** (chooses Quit Arbor in Arbor's menu): mail (w66) moved 2 times [jolt]
+  - +0 ms 331,72 881×630 · +3411 ms 240,72 1120×630 · +5969 ms 240,72 881×630 · +5974 ms 331,72 881×630
+- ✘ **118 quit** (chooses Quit Arbor in Arbor's menu): w68 of Mail moved 2 times [jolt]
+  - +0 ms 537,179 470×416 · +3411 ms 565,179 470×416 · +5969 ms 446,179 470×416 · +5974 ms 537,179 470×416
+- ~ **118 quit** (chooses Quit Arbor in Arbor's menu): finder (w32) was still moving 484 ms after everything had been quiet for a second [jolt]
+- ~ **118 quit** (chooses Quit Arbor in Arbor's menu): safari (w35) was still moving 596 ms after everything had been quiet for a second [jolt]
+- ~ **118 quit** (chooses Quit Arbor in Arbor's menu): textedit (w45) was still moving 814 ms after everything had been quiet for a second [jolt]
+- ~ **118 quit** (chooses Quit Arbor in Arbor's menu): terminal (w48) was still moving 873 ms after everything had been quiet for a second [jolt]
+- ~ **118 quit** (chooses Quit Arbor in Arbor's menu): notes (w51) was still moving 1023 ms after everything had been quiet for a second [jolt]
+- ~ **118 quit** (chooses Quit Arbor in Arbor's menu): calendar (w57) was still moving 1189 ms after everything had been quiet for a second [jolt]
+- ~ **118 quit** (chooses Quit Arbor in Arbor's menu): settings (w58) was still moving 1243 ms after everything had been quiet for a second [jolt]
+- ~ **118 quit** (chooses Quit Arbor in Arbor's menu): preview (w62) was still moving 1311 ms after everything had been quiet for a second [jolt]
+- ~ **118 quit** (chooses Quit Arbor in Arbor's menu): mail (w66) was still moving 1501 ms after everything had been quiet for a second [jolt]
+- ~ **118 quit** (chooses Quit Arbor in Arbor's menu): w68 of Mail was still moving 1501 ms after everything had been quiet for a second [jolt]
+
+
+4 passed, 1 failed
+still running when the script had ended, and stopped now:
+  2765 sleep
+exit code 1

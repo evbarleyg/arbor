@@ -1,0 +1,2169 @@
+{
+ "sampler": "samples 10790 seconds 299.1 hz 36.1 cost-ms 2.53 late 46 longest-gap-ms 191 whole-samples 13011 whole-seconds 360.6 whole-late 76",
+ "input": {
+  "events": 236,
+  "p50_us": 10088,
+  "p99_us": 123457,
+  "max_us": 137396
+ },
+ "stage_seen": true,
+ "witnessed": true,
+ "steps": [
+  {
+   "number": 13,
+   "slug": "launch",
+   "chapter": "The walk",
+   "text": "starts Arbor",
+   "act": "quit-and-start",
+   "judged": true,
+   "began": 1792027930841,
+   "milliseconds": 1826,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 14,
+   "slug": "dock-icon-finder",
+   "chapter": "The walk",
+   "text": "clicks finder's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "began": 1792027933060,
+   "milliseconds": 2015,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 15,
+   "slug": "dock-left",
+   "chapter": "The walk",
+   "text": "presses ⌃⌥⌘ and the left arrow",
+   "act": "dock-key",
+   "judged": true,
+   "began": 1792027935568,
+   "milliseconds": 3206,
+   "moved": {
+    "32": [
+     1,
+     1,
+     0
+    ],
+    "35": [
+     1,
+     1,
+     0
+    ],
+    "45": [
+     1,
+     1,
+     0
+    ],
+    "48": [
+     1,
+     1,
+     0
+    ],
+    "51": [
+     1,
+     1,
+     0
+    ],
+    "57": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "62": [
+     1,
+     1,
+     0
+    ],
+    "66": [
+     1,
+     1,
+     0
+    ],
+    "68": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "safari (w35)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 138,31 1324×791 · +2699 ms 806,31 794×791"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "textedit (w45)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 165,65 673×439 · +2699 ms 806,65 673×439"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "terminal (w48)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 40,51 877×499 · +2699 ms 806,51 793×499"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "notes (w51)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 300,105 1000×660 · +2699 ms 806,105 794×660"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "calendar (w57)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 404,115 936×599 · +2699 ms 806,115 794×599"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "settings (w58)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 437,85 723×625 · +2699 ms 806,85 723×625"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "preview (w62)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 4,35 708×424 · +2699 ms 806,35 708×424"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "mail (w66)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 240,72 1120×630 · +2699 ms 719,72 881×630"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "ODD",
+     "window": "w68 of Mail",
+     "what": "moved along with a window of its app",
+     "trace": "+0 ms 565,179 470×416 · +2699 ms 925,179 470×416",
+     "explained": "follows its window"
+    },
+    {
+     "rule": "3",
+     "detector": "slow",
+     "level": "ODD",
+     "window": null,
+     "what": "the last window came to rest 2420 ms after the key or the button, in Arbor's first act since it started",
+     "trace": null,
+     "explained": "listed, and no reason, until the release build has answered"
+    }
+   ]
+  },
+  {
+   "number": 16,
+   "slug": "dock-icon-safari",
+   "chapter": "The walk",
+   "text": "clicks safari's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "began": 1792027939188,
+   "milliseconds": 1999,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 17,
+   "slug": "dock-right",
+   "chapter": "The walk",
+   "text": "presses ⌃⌥⌘ and the right arrow",
+   "act": "dock-key",
+   "judged": true,
+   "began": 1792027941545,
+   "milliseconds": 1815,
+   "moved": {
+    "32": [
+     1,
+     1,
+     0
+    ],
+    "35": [
+     1,
+     1,
+     0
+    ],
+    "45": [
+     1,
+     1,
+     0
+    ],
+    "48": [
+     1,
+     1,
+     0
+    ],
+    "51": [
+     1,
+     1,
+     0
+    ],
+    "57": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "62": [
+     1,
+     1,
+     0
+    ],
+    "66": [
+     1,
+     1,
+     0
+    ],
+    "68": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "textedit (w45)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 806,65 673×439 · +1217 ms 541,65 461×439"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "terminal (w48)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 806,51 793×499 · +1217 ms 541,51 457×499"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "notes (w51)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 806,105 794×660 · +1217 ms 417,105 709×660"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "calendar (w57)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 806,115 794×599 · +1217 ms 431,115 680×599"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "settings (w58)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 806,85 723×625 · +1217 ms 410,85 723×625"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "preview (w62)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 806,35 708×424 · +1217 ms 417,35 708×424"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "mail (w66)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 719,72 881×630 · +1217 ms 331,72 881×630"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "ODD",
+     "window": "w68 of Mail",
+     "what": "moved along with a window of its app",
+     "trace": "+0 ms 925,179 470×416 · +1217 ms 537,179 470×416",
+     "explained": "follows its window"
+    },
+    {
+     "rule": "3",
+     "detector": "slow",
+     "level": "ODD",
+     "window": null,
+     "what": "the last window came to rest 1064 ms after the key or the button",
+     "trace": null,
+     "explained": "listed, and no reason, until the release build has answered"
+    }
+   ]
+  },
+  {
+   "number": 18,
+   "slug": "view-all",
+   "chapter": "The walk",
+   "text": "presses ⌃⌥Space",
+   "act": "view",
+   "judged": true,
+   "began": 1792027943714,
+   "milliseconds": 1293,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 19,
+   "slug": "click-finder",
+   "chapter": "Arbor as it ships",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792027945493,
+   "milliseconds": 1953,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 20,
+   "slug": "click-safari",
+   "chapter": "Arbor as it ships",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792027947854,
+   "milliseconds": 2111,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 21,
+   "slug": "click-finder",
+   "chapter": "Arbor as it ships",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792027950655,
+   "milliseconds": 1926,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 22,
+   "slug": "click-safari",
+   "chapter": "Arbor as it ships",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792027952990,
+   "milliseconds": 1987,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 23,
+   "slug": "click-finder",
+   "chapter": "Arbor as it ships",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792027955253,
+   "milliseconds": 1959,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 24,
+   "slug": "click-safari",
+   "chapter": "Arbor as it ships",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792027957524,
+   "milliseconds": 2013,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 25,
+   "slug": "click-finder",
+   "chapter": "Arbor as it ships",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792027959814,
+   "milliseconds": 1810,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 26,
+   "slug": "click-safari",
+   "chapter": "Arbor as it ships",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792027961986,
+   "milliseconds": 1961,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 27,
+   "slug": "click-finder",
+   "chapter": "Arbor as it ships",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792027964226,
+   "milliseconds": 1815,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 28,
+   "slug": "click-safari",
+   "chapter": "Arbor as it ships",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792027966777,
+   "milliseconds": 2003,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 29,
+   "slug": "click-finder",
+   "chapter": "Arbor as it ships",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792027969166,
+   "milliseconds": 2037,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 30,
+   "slug": "click-safari",
+   "chapter": "Arbor as it ships",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792027971534,
+   "milliseconds": 1964,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 31,
+   "slug": "click-finder",
+   "chapter": "Arbor as it ships",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792027973751,
+   "milliseconds": 1884,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 32,
+   "slug": "click-safari",
+   "chapter": "Arbor as it ships",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792027976019,
+   "milliseconds": 2206,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 33,
+   "slug": "click-finder",
+   "chapter": "Arbor as it ships",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792027979106,
+   "milliseconds": 3540,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 34,
+   "slug": "click-safari",
+   "chapter": "Arbor as it ships",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792027983118,
+   "milliseconds": 2065,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 35,
+   "slug": "click-finder",
+   "chapter": "Without a trace being recorded",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792027985525,
+   "milliseconds": 1874,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 36,
+   "slug": "click-safari",
+   "chapter": "Without a trace being recorded",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792027987746,
+   "milliseconds": 1937,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 37,
+   "slug": "click-finder",
+   "chapter": "Without a trace being recorded",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792027989933,
+   "milliseconds": 1910,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 38,
+   "slug": "click-safari",
+   "chapter": "Without a trace being recorded",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792027992207,
+   "milliseconds": 1908,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 39,
+   "slug": "click-finder",
+   "chapter": "Without a trace being recorded",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792027994444,
+   "milliseconds": 1948,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 40,
+   "slug": "click-safari",
+   "chapter": "Without a trace being recorded",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792027996692,
+   "milliseconds": 2079,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 41,
+   "slug": "click-finder",
+   "chapter": "Without a trace being recorded",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792027999185,
+   "milliseconds": 2034,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 42,
+   "slug": "click-safari",
+   "chapter": "Without a trace being recorded",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028001599,
+   "milliseconds": 1872,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 43,
+   "slug": "click-finder",
+   "chapter": "Without a trace being recorded",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028003747,
+   "milliseconds": 1872,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 44,
+   "slug": "click-safari",
+   "chapter": "Without a trace being recorded",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028005918,
+   "milliseconds": 1950,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 45,
+   "slug": "click-finder",
+   "chapter": "Without a trace being recorded",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028008156,
+   "milliseconds": 1857,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 46,
+   "slug": "click-safari",
+   "chapter": "Without a trace being recorded",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028010348,
+   "milliseconds": 1919,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 47,
+   "slug": "click-finder",
+   "chapter": "Without a trace being recorded",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028012744,
+   "milliseconds": 1960,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 48,
+   "slug": "click-safari",
+   "chapter": "Without a trace being recorded",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028015003,
+   "milliseconds": 1949,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 49,
+   "slug": "click-finder",
+   "chapter": "Without a trace being recorded",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028017253,
+   "milliseconds": 1819,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 50,
+   "slug": "click-safari",
+   "chapter": "Without a trace being recorded",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028019380,
+   "milliseconds": 1954,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 51,
+   "slug": "click-finder",
+   "chapter": "Without the line round the focused window",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028022723,
+   "milliseconds": 1802,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 52,
+   "slug": "click-safari",
+   "chapter": "Without the line round the focused window",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028024901,
+   "milliseconds": 1888,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 53,
+   "slug": "click-finder",
+   "chapter": "Without the line round the focused window",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028027089,
+   "milliseconds": 1758,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 54,
+   "slug": "click-safari",
+   "chapter": "Without the line round the focused window",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028029134,
+   "milliseconds": 1930,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 55,
+   "slug": "click-finder",
+   "chapter": "Without the line round the focused window",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028031325,
+   "milliseconds": 1826,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 56,
+   "slug": "click-safari",
+   "chapter": "Without the line round the focused window",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028033462,
+   "milliseconds": 1953,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 57,
+   "slug": "click-finder",
+   "chapter": "Without the line round the focused window",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028035663,
+   "milliseconds": 1943,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 58,
+   "slug": "click-safari",
+   "chapter": "Without the line round the focused window",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028038029,
+   "milliseconds": 1927,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 59,
+   "slug": "click-finder",
+   "chapter": "Without the line round the focused window",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028040418,
+   "milliseconds": 1992,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 60,
+   "slug": "click-safari",
+   "chapter": "Without the line round the focused window",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028042801,
+   "milliseconds": 1847,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 61,
+   "slug": "click-finder",
+   "chapter": "Without the line round the focused window",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028045040,
+   "milliseconds": 1967,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 62,
+   "slug": "click-safari",
+   "chapter": "Without the line round the focused window",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028047329,
+   "milliseconds": 2020,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 63,
+   "slug": "click-finder",
+   "chapter": "Without the line round the focused window",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028049668,
+   "milliseconds": 2035,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 64,
+   "slug": "click-safari",
+   "chapter": "Without the line round the focused window",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028052103,
+   "milliseconds": 1835,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 65,
+   "slug": "click-finder",
+   "chapter": "Without the line round the focused window",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028054262,
+   "milliseconds": 1919,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 66,
+   "slug": "click-safari",
+   "chapter": "Without the line round the focused window",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028056468,
+   "milliseconds": 1923,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 67,
+   "slug": "click-finder",
+   "chapter": "With no event tap at all",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028059816,
+   "milliseconds": 1900,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 68,
+   "slug": "click-safari",
+   "chapter": "With no event tap at all",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028062005,
+   "milliseconds": 1864,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 69,
+   "slug": "click-finder",
+   "chapter": "With no event tap at all",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028064086,
+   "milliseconds": 2133,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 70,
+   "slug": "click-safari",
+   "chapter": "With no event tap at all",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028067173,
+   "milliseconds": 2490,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 71,
+   "slug": "click-finder",
+   "chapter": "With no event tap at all",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028070336,
+   "milliseconds": 3057,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 72,
+   "slug": "click-safari",
+   "chapter": "With no event tap at all",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028073936,
+   "milliseconds": 2267,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 73,
+   "slug": "click-finder",
+   "chapter": "With no event tap at all",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028076731,
+   "milliseconds": 1998,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 74,
+   "slug": "click-safari",
+   "chapter": "With no event tap at all",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028079157,
+   "milliseconds": 1911,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 75,
+   "slug": "click-finder",
+   "chapter": "With no event tap at all",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028081390,
+   "milliseconds": 1866,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 76,
+   "slug": "click-safari",
+   "chapter": "With no event tap at all",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028083627,
+   "milliseconds": 1850,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 77,
+   "slug": "click-finder",
+   "chapter": "With no event tap at all",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028085844,
+   "milliseconds": 1786,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 78,
+   "slug": "click-safari",
+   "chapter": "With no event tap at all",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028087996,
+   "milliseconds": 1776,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 79,
+   "slug": "click-finder",
+   "chapter": "With no event tap at all",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028090234,
+   "milliseconds": 1917,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 80,
+   "slug": "click-safari",
+   "chapter": "With no event tap at all",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028092689,
+   "milliseconds": 2115,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 81,
+   "slug": "click-finder",
+   "chapter": "With no event tap at all",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028095123,
+   "milliseconds": 1911,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 82,
+   "slug": "click-safari",
+   "chapter": "With no event tap at all",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028097552,
+   "milliseconds": 1974,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 83,
+   "slug": "pause",
+   "chapter": "Paused, the windows put back where they were",
+   "text": "presses ⌃⌥⎋",
+   "act": "way-out",
+   "judged": true,
+   "began": 1792028100994,
+   "milliseconds": 2146,
+   "moved": {
+    "32": [
+     2,
+     3,
+     2139
+    ],
+    "35": [
+     2,
+     3,
+     2132
+    ],
+    "45": [
+     2,
+     2,
+     2132
+    ],
+    "48": [
+     2,
+     2,
+     2149
+    ],
+    "51": [
+     2,
+     3,
+     2258
+    ],
+    "57": [
+     2,
+     4,
+     2285
+    ],
+    "58": [
+     2,
+     2,
+     2381
+    ],
+    "62": [
+     2,
+     2,
+     2402
+    ],
+    "66": [
+     2,
+     3,
+     2512
+    ],
+    "68": [
+     2,
+     3,
+     2512
+    ]
+   },
+   "findings": [
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "finder (w32)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 12,43 517×767 · +386 ms 340,120 920×436 · +2486 ms 340,120 517×701 · +2525 ms 12,43 517×767"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "safari (w35)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 1014,43 574×767 · +453 ms 138,31 586×778 · +512 ms 138,31 1324×790 · +2585 ms 1014,43 574×767"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "textedit (w45)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 541,65 461×439 · +601 ms 165,65 673×439 · +2733 ms 541,65 461×439"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "terminal (w48)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 541,51 457×499 · +652 ms 40,51 877×499 · +2801 ms 541,51 457×499"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "notes (w51)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 417,105 709×660 · +737 ms 300,105 1000×660 · +2918 ms 300,105 709×660 · +2995 ms 417,105 709×660"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "calendar (w57)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 431,115 680×599 · +786 ms 431,115 936×599 · +804 ms 404,115 936×599 · +3054 ms 404,115 680×599 · +3071 ms 431,115 680×599"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "settings (w58)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 410,85 723×625 · +804 ms 437,85 723×625 · +3185 ms 410,85 723×625"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "preview (w62)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 417,35 708×424 · +851 ms 4,35 708×424 · +3253 ms 417,35 708×424"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "mail (w66)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 331,72 881×630 · +912 ms 331,72 1120×630 · +950 ms 240,72 1120×630 · +3424 ms 331,72 881×630"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "w68 of Mail",
+     "what": "moved 2 times",
+     "trace": "+0 ms 537,179 470×416 · +912 ms 656,179 470×416 · +950 ms 565,179 470×416 · +3424 ms 537,179 470×416"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "ODD",
+     "window": "finder (w32)",
+     "what": "was still moving 379 ms after everything had been quiet for a second",
+     "trace": null
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "ODD",
+     "window": "safari (w35)",
+     "what": "was still moving 439 ms after everything had been quiet for a second",
+     "trace": null
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "ODD",
+     "window": "textedit (w45)",
+     "what": "was still moving 587 ms after everything had been quiet for a second",
+     "trace": null
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "ODD",
+     "window": "terminal (w48)",
+     "what": "was still moving 655 ms after everything had been quiet for a second",
+     "trace": null
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "ODD",
+     "window": "notes (w51)",
+     "what": "was still moving 849 ms after everything had been quiet for a second",
+     "trace": null
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "ODD",
+     "window": "calendar (w57)",
+     "what": "was still moving 925 ms after everything had been quiet for a second",
+     "trace": null
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "ODD",
+     "window": "settings (w58)",
+     "what": "was still moving 1039 ms after everything had been quiet for a second",
+     "trace": null
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "ODD",
+     "window": "preview (w62)",
+     "what": "was still moving 1107 ms after everything had been quiet for a second",
+     "trace": null
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "ODD",
+     "window": "mail (w66)",
+     "what": "was still moving 1278 ms after everything had been quiet for a second",
+     "trace": null
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "ODD",
+     "window": "w68 of Mail",
+     "what": "was still moving 1278 ms after everything had been quiet for a second",
+     "trace": null
+    },
+    {
+     "rule": "3",
+     "detector": "slow",
+     "level": "FAIL",
+     "window": null,
+     "what": "the last window came to rest 3173 ms after the key or the button",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 84,
+   "slug": "click-finder",
+   "chapter": "Paused, the windows put back where they were",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028105628,
+   "milliseconds": 2084,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 85,
+   "slug": "click-safari",
+   "chapter": "Paused, the windows put back where they were",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028108126,
+   "milliseconds": 1881,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 86,
+   "slug": "click-finder",
+   "chapter": "Paused, the windows put back where they were",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028110347,
+   "milliseconds": 1908,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 87,
+   "slug": "click-safari",
+   "chapter": "Paused, the windows put back where they were",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028112749,
+   "milliseconds": 2053,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 88,
+   "slug": "click-finder",
+   "chapter": "Paused, the windows put back where they were",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028115200,
+   "milliseconds": 1932,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 89,
+   "slug": "click-safari",
+   "chapter": "Paused, the windows put back where they were",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028117819,
+   "milliseconds": 2082,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 90,
+   "slug": "click-finder",
+   "chapter": "Paused, the windows put back where they were",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028120275,
+   "milliseconds": 1931,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 91,
+   "slug": "click-safari",
+   "chapter": "Paused, the windows put back where they were",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028123060,
+   "milliseconds": 2043,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 92,
+   "slug": "click-finder",
+   "chapter": "Paused, the windows put back where they were",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028125667,
+   "milliseconds": 1991,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 93,
+   "slug": "click-safari",
+   "chapter": "Paused, the windows put back where they were",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028128337,
+   "milliseconds": 1862,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 94,
+   "slug": "click-finder",
+   "chapter": "Paused, the windows put back where they were",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028130606,
+   "milliseconds": 2025,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 95,
+   "slug": "click-safari",
+   "chapter": "Paused, the windows put back where they were",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028133183,
+   "milliseconds": 2016,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 96,
+   "slug": "click-finder",
+   "chapter": "Paused, the windows put back where they were",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028135617,
+   "milliseconds": 1919,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 97,
+   "slug": "click-safari",
+   "chapter": "Paused, the windows put back where they were",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028138036,
+   "milliseconds": 2028,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 98,
+   "slug": "click-finder",
+   "chapter": "Paused, the windows put back where they were",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028140415,
+   "milliseconds": 1881,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 99,
+   "slug": "click-safari",
+   "chapter": "Paused, the windows put back where they were",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028142697,
+   "milliseconds": 1878,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 100,
+   "slug": "resume",
+   "chapter": "Paused, the windows put back where they were",
+   "text": "presses ⌃⌥⎋",
+   "act": "way-out",
+   "judged": true,
+   "began": 1792028144877,
+   "milliseconds": 1459,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 101,
+   "slug": "view-all",
+   "chapter": "As it ships, once more: is it the settings, or the time of day?",
+   "text": "presses ⌃⌥Space",
+   "act": "view",
+   "judged": true,
+   "began": 1792028146752,
+   "milliseconds": 1490,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 102,
+   "slug": "click-finder",
+   "chapter": "As it ships, once more: is it the settings, or the time of day?",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028148606,
+   "milliseconds": 1829,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 103,
+   "slug": "click-safari",
+   "chapter": "As it ships, once more: is it the settings, or the time of day?",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028150875,
+   "milliseconds": 1863,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 104,
+   "slug": "click-finder",
+   "chapter": "As it ships, once more: is it the settings, or the time of day?",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028153117,
+   "milliseconds": 1819,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 105,
+   "slug": "click-safari",
+   "chapter": "As it ships, once more: is it the settings, or the time of day?",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028155317,
+   "milliseconds": 1895,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 106,
+   "slug": "click-finder",
+   "chapter": "As it ships, once more: is it the settings, or the time of day?",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028157558,
+   "milliseconds": 1938,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 107,
+   "slug": "click-safari",
+   "chapter": "As it ships, once more: is it the settings, or the time of day?",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028159911,
+   "milliseconds": 1940,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 108,
+   "slug": "click-finder",
+   "chapter": "As it ships, once more: is it the settings, or the time of day?",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028162219,
+   "milliseconds": 1904,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 109,
+   "slug": "click-safari",
+   "chapter": "As it ships, once more: is it the settings, or the time of day?",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028164637,
+   "milliseconds": 1863,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 110,
+   "slug": "click-finder",
+   "chapter": "As it ships, once more: is it the settings, or the time of day?",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028166857,
+   "milliseconds": 1966,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 111,
+   "slug": "click-safari",
+   "chapter": "As it ships, once more: is it the settings, or the time of day?",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028169256,
+   "milliseconds": 1946,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 112,
+   "slug": "click-finder",
+   "chapter": "As it ships, once more: is it the settings, or the time of day?",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028171587,
+   "milliseconds": 1898,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 113,
+   "slug": "click-safari",
+   "chapter": "As it ships, once more: is it the settings, or the time of day?",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028173848,
+   "milliseconds": 1959,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 114,
+   "slug": "click-finder",
+   "chapter": "As it ships, once more: is it the settings, or the time of day?",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028176124,
+   "milliseconds": 1912,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 115,
+   "slug": "click-safari",
+   "chapter": "As it ships, once more: is it the settings, or the time of day?",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028178436,
+   "milliseconds": 2075,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 116,
+   "slug": "click-finder",
+   "chapter": "As it ships, once more: is it the settings, or the time of day?",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028180834,
+   "milliseconds": 1836,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 117,
+   "slug": "click-safari",
+   "chapter": "As it ships, once more: is it the settings, or the time of day?",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028183282,
+   "milliseconds": 2014,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 118,
+   "slug": "quit",
+   "chapter": "As it ships, once more: is it the settings, or the time of day?",
+   "text": "chooses Quit Arbor in Arbor's menu",
+   "act": "quit-and-start",
+   "judged": true,
+   "began": 1792028185801,
+   "milliseconds": 4473,
+   "moved": {
+    "32": [
+     2,
+     3,
+     2170
+    ],
+    "35": [
+     2,
+     5,
+     2198
+    ],
+    "45": [
+     2,
+     3,
+     2284
+    ],
+    "48": [
+     2,
+     3,
+     2274
+    ],
+    "51": [
+     2,
+     2,
+     2351
+    ],
+    "57": [
+     2,
+     4,
+     2426
+    ],
+    "58": [
+     2,
+     2,
+     2449
+    ],
+    "62": [
+     2,
+     2,
+     2477
+    ],
+    "66": [
+     2,
+     3,
+     2563
+    ],
+    "68": [
+     2,
+     3,
+     2563
+    ]
+   },
+   "findings": [
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "finder (w32)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 12,43 517×767 · +2787 ms 340,120 920×436 · +4939 ms 340,120 517×701 · +4957 ms 12,43 517×767"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "safari (w35)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 1014,43 574×767 · +2871 ms 1014,43 586×778 · +2905 ms 138,31 586×778 · +3003 ms 138,31 1324×790 · +5051 ms 138,31 574×767 · +5069 ms 1014,43 574×767"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "textedit (w45)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 541,65 461×439 · +3003 ms 541,65 673×439 · +3011 ms 165,65 673×439 · +5287 ms 541,65 461×439"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "terminal (w48)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 541,51 457×499 · +3072 ms 541,51 877×499 · +3088 ms 40,51 877×499 · +5346 ms 541,51 457×499"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "notes (w51)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 417,105 709×660 · +3145 ms 300,105 1000×660 · +5496 ms 417,105 709×660"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "calendar (w57)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 431,115 680×599 · +3236 ms 431,115 936×599 · +3254 ms 404,115 936×599 · +5613 ms 404,115 680×599 · +5662 ms 431,115 680×599"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "settings (w58)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 410,85 723×625 · +3267 ms 437,85 723×625 · +5716 ms 410,85 723×625"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "preview (w62)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 417,35 708×424 · +3307 ms 4,35 708×424 · +5784 ms 417,35 708×424"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "mail (w66)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 331,72 881×630 · +3411 ms 240,72 1120×630 · +5969 ms 240,72 881×630 · +5974 ms 331,72 881×630"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "w68 of Mail",
+     "what": "moved 2 times",
+     "trace": "+0 ms 537,179 470×416 · +3411 ms 565,179 470×416 · +5969 ms 446,179 470×416 · +5974 ms 537,179 470×416"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "ODD",
+     "window": "finder (w32)",
+     "what": "was still moving 484 ms after everything had been quiet for a second",
+     "trace": null
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "ODD",
+     "window": "safari (w35)",
+     "what": "was still moving 596 ms after everything had been quiet for a second",
+     "trace": null
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "ODD",
+     "window": "textedit (w45)",
+     "what": "was still moving 814 ms after everything had been quiet for a second",
+     "trace": null
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "ODD",
+     "window": "terminal (w48)",
+     "what": "was still moving 873 ms after everything had been quiet for a second",
+     "trace": null
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "ODD",
+     "window": "notes (w51)",
+     "what": "was still moving 1023 ms after everything had been quiet for a second",
+     "trace": null
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "ODD",
+     "window": "calendar (w57)",
+     "what": "was still moving 1189 ms after everything had been quiet for a second",
+     "trace": null
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "ODD",
+     "window": "settings (w58)",
+     "what": "was still moving 1243 ms after everything had been quiet for a second",
+     "trace": null
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "ODD",
+     "window": "preview (w62)",
+     "what": "was still moving 1311 ms after everything had been quiet for a second",
+     "trace": null
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "ODD",
+     "window": "mail (w66)",
+     "what": "was still moving 1501 ms after everything had been quiet for a second",
+     "trace": null
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "ODD",
+     "window": "w68 of Mail",
+     "what": "was still moving 1501 ms after everything had been quiet for a second",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 119,
+   "slug": "click-finder",
+   "chapter": "After Quit, the windows put back where they were: the same Mac without Arbor",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028192944,
+   "milliseconds": 1954,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 120,
+   "slug": "click-safari",
+   "chapter": "After Quit, the windows put back where they were: the same Mac without Arbor",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028195416,
+   "milliseconds": 1829,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 121,
+   "slug": "click-finder",
+   "chapter": "After Quit, the windows put back where they were: the same Mac without Arbor",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028197549,
+   "milliseconds": 1833,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 122,
+   "slug": "click-safari",
+   "chapter": "After Quit, the windows put back where they were: the same Mac without Arbor",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028199753,
+   "milliseconds": 2007,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 123,
+   "slug": "click-finder",
+   "chapter": "After Quit, the windows put back where they were: the same Mac without Arbor",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028202080,
+   "milliseconds": 1769,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 124,
+   "slug": "click-safari",
+   "chapter": "After Quit, the windows put back where they were: the same Mac without Arbor",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028204164,
+   "milliseconds": 1748,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 125,
+   "slug": "click-finder",
+   "chapter": "After Quit, the windows put back where they were: the same Mac without Arbor",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028206242,
+   "milliseconds": 2066,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 126,
+   "slug": "click-safari",
+   "chapter": "After Quit, the windows put back where they were: the same Mac without Arbor",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028208687,
+   "milliseconds": 1907,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 127,
+   "slug": "click-finder",
+   "chapter": "After Quit, the windows put back where they were: the same Mac without Arbor",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028210900,
+   "milliseconds": 1859,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 128,
+   "slug": "click-safari",
+   "chapter": "After Quit, the windows put back where they were: the same Mac without Arbor",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028213339,
+   "milliseconds": 1895,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 129,
+   "slug": "click-finder",
+   "chapter": "After Quit, the windows put back where they were: the same Mac without Arbor",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028215642,
+   "milliseconds": 1709,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 130,
+   "slug": "click-safari",
+   "chapter": "After Quit, the windows put back where they were: the same Mac without Arbor",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028217813,
+   "milliseconds": 1703,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 131,
+   "slug": "click-finder",
+   "chapter": "After Quit, the windows put back where they were: the same Mac without Arbor",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028220079,
+   "milliseconds": 1918,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 132,
+   "slug": "click-safari",
+   "chapter": "After Quit, the windows put back where they were: the same Mac without Arbor",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028222407,
+   "milliseconds": 2038,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 133,
+   "slug": "click-finder",
+   "chapter": "After Quit, the windows put back where they were: the same Mac without Arbor",
+   "text": "clicks finder's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028224894,
+   "milliseconds": 1765,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 134,
+   "slug": "click-safari",
+   "chapter": "After Quit, the windows put back where they were: the same Mac without Arbor",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "began": 1792028227149,
+   "milliseconds": 1859,
+   "moved": {},
+   "findings": []
+  }
+ ]
+}
