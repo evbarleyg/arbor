@@ -1,5 +1,10 @@
 # The journey of probe-went-and-came-back.sh and of its control, second playing: a display goes and comes back, with four windows that live on it and two
 # that lie across its edge. Read in by those two, which say whether Arbor runs (JOURNEY_ARBOR=yes|no) and differ in nothing else but the places. Do not run it.
+# And by probe-the-top-corners.sh, which plays one part of it alone. JOURNEY_PARTS names the parts to play: S F M L D H P1 if nothing is said, which is
+# what the two play. T (without Arbor) is played only where it is named, after P1. A part that is not named is left out without a word but for the line
+# `parts: …`; the build, the Mac, `stays`, the windows, `arbor`, `quit`, `end` and the clean-up are always played, s0 to s2 and z1 for any of S F M L D H, s2c for S and
+# F; STRADDLES and CARRIED are opened for all but T. D asks what it asks only straight after a return: name it with L. T alone (probe-the-top-corners.sh) has
+# no `stays` and opens LIVES, TEXT and JAVA only.
 #
 # Nothing here is a verdict. The script ends itself (`die`, exit code 2) only where going on would measure nothing: a tool that did not compile, a display
 # that did not come, no sampler, fewer than two windows, no window on A, with Arbor no trace at the start. What else goes wrong is said (`!!!`, `SKIPPED:`) and
@@ -49,6 +54,7 @@
 #   h3   the app is unhidden, the window restored: `whole` says whether each lies wholly on one display      h4  plug A
 #  z1    unplug A
 #  P1, with Arbor alone: see part_P1
+#  T, without Arbor and only where JOURNEY_PARTS names it: the top corners. t0 to t9: see part_T
 #   quit   Arbor quits (the control: nothing happens)               end    the display that stays is unplugged
 # A display that does not come where it belongs is moved there at once (`vdisplay move`), and the line `> plug` says which of the two it was.
 #
@@ -65,7 +71,7 @@
 #                                before it, at a plug from after it; `went`: what the account had under A just before A last went
 #   clock: <step> done <n>s …    seconds since the script began
 # Besides: `put <step> <NAME> <id> asked <x y w h> took <x y w h>`; `carry <step> <NAME> <id> try <n> …` and `carried … dropped at <x y w h>`; `> plug`, `> unplug`;
-#   `window <NAME> …` once; `whole`, `parked`, `corner`, `visible` where the steps above name them;
+#   `window <NAME> …` once; `parts: …` once; `whole`, `parked`, `corner`, `visible` where the steps above name them;
 #   `SKIPPED: <what>` for a step the clock left no time for (none begins after JOURNEY_BUDGET seconds, 900) and for what hangs on something that failed;
 #   `!!! …` for what spoils the comparison (a display is not where it was, a window is missing or not where it was put, Arbor has ended, an Arbor runs in the
 #   control) and for four findings: Arbor's log counts fewer windows than its account had under A; its account has fewer under A than lie on it; a window that
@@ -76,7 +82,7 @@
 #                       `M begin <n> <name>`, `M text <n> …`, `M end <n> …`, `M label <id> <NAME>`. A change of displays is called `display-<step>-…`
 #   macos-reports.log   what Accessibility reported of the apps' windows, to the millisecond (apptool watch), with the steps as `SCRIPT ==` lines
 #   traces/*.jsonl      with Arbor: went-and-came-back-S, -F, -M, -L, -D, -H, -P1, one for each part, every step as a remark (docs/TRACES.md)
-#   arbor-<script>.log  with Arbor: its log at debug level
+#   arbor-<script>.log  with Arbor: its log at debug level.
 # A reader of the `Y` lines has to keep every display, by its id: `stays` is one of them.
 case "${JOURNEY_ARBOR:-}" in
   yes | no) ;;
@@ -87,6 +93,14 @@ esac
 JOURNEY_BUDGET=${JOURNEY_BUDGET:-900}
 JOURNEY_REST=${JOURNEY_REST:-4}
 JOURNEY_LONG=${JOURNEY_LONG:-30}
+# Which parts are played, whatever the order they are named in: always in the order S F M L D H P1 T.
+JOURNEY_PARTS=${JOURNEY_PARTS:-S F M L D H P1}
+for part in $JOURNEY_PARTS; do
+  case "$part" in
+    S | F | M | L | D | H | P1 | T) ;;
+    *) echo "JOURNEY_PARTS: no part is called $part (S F M L D H P1 T)" >&2; exit 64 ;;
+  esac
+done
 # Under the 1,200 s of scripts/ci-mac-shell.sh, so that a journey that hangs is ended by lib.sh's supervisor, which cleans up and lets the logs come back.
 ARBOR_TIME_LIMIT=${ARBOR_TIME_LIMIT:-1020}
 source "$(dirname "${BASH_SOURCE[0]}")/lib-day.sh"
@@ -116,6 +130,11 @@ MOTION_WAS=""
 
 with_arbor() { [ "$JOURNEY_ARBOR" = yes ]; }
 in_cast() { case " $CAST " in *" $1 "*) return 0 ;; esac; return 1; }
+plays() { case " $JOURNEY_PARTS " in *" $1 "*) return 0 ;; esac; return 1; }
+# The parts that begin with A plugged in and the windows on it: s0, s1 and s2 are played for them. Those and P1 have the two windows that lie across the edge.
+begins_on_A() { plays S || plays F || plays M || plays L || plays D || plays H; }
+# T alone has no display that stays, and three windows.
+only_T() { [ "$JOURNEY_PARTS" = T ]; }
 if with_arbor; then OX=0 OY=0; else OX=40 OY=30; fi
 
 # MARK: The clock, and words
@@ -127,6 +146,16 @@ in_time() {
 }
 clock() { echo "clock: $* ${SECONDS}s after the script began, at $(date -u +%H:%M:%SZ)"; }
 loud() { echo "!!! $*"; }
+# no_arbor <step>: says whether an Arbor runs, loudly if one does
+no_arbor() {
+  local found
+  found=$(pgrep -x Arbor | tr '\n' ' ')
+  if [ -z "$found" ]; then
+    echo "no Arbor runs at $1: \`pgrep -x Arbor\` finds no process"
+  else
+    loud "$1: AN ARBOR RUNS (\`pgrep -x Arbor\`: $found)"
+  fi
+}
 
 # within <seconds> <command…>: tries it until it holds. Prints what the last try printed if it never did.
 within() {
@@ -200,7 +229,8 @@ await_count() {
   arbor_await_displays "$((BUILT_IN + $#))" || loud "macOS lists $ARBOR_DISPLAY_COUNT displays five seconds later, not $((BUILT_IN + $#))"
 }
 
-# plug <name> [side]: right, left, under (flush with the main display's left edge), under-and-wider (centred under it), left-of-stays
+# plug <name> [side]: right, left, under (flush with the main display's left edge), under-and-wider (centred under it), left-of-stays, left-and-lower (500 points
+# down), right-and-higher (700 points up), above (flush with the left edge)
 plug() {
   local name=$1 width="" height="" serial="" side="" file pid hello="" tries=0 id x y main at
   read -r width height serial side <<< "$(display_facts "$name")"
@@ -235,6 +265,9 @@ plug() {
     left-of-stays) x=$((-1280 - width)) y=0 ;;
     under) x=0 y=${main#* } ;;
     under-and-wider) x=$(((${main% *} - width) / 2)) y=${main#* } ;;
+    left-and-lower) x=-$width y=500 ;;
+    right-and-higher) x=${main% *} y=-700 ;;
+    above) x=0 y=-$height ;;
     *) die "plug: no side is called $side" ;;
   esac
   eval "DISPLAY_PID_$name=\$pid DISPLAY_ID_$name=\$id DISPLAY_AT_$name=\"\$x \$y \$width \$height\""
@@ -505,7 +538,7 @@ put_on_A() {
   local step=$1 name x y w h ax="" ay="" aw="" ah=""
   A_is_there || { echo "SKIPPED: $step (the windows are put on A): A is not plugged in"; return 1; }
   in_time "$step (the windows are put on A)" || return 1
-  begin_step instrument "put-$step-on-A" "$step: $FOR_A are put wholly on A and STRADDLES across the edge between the main display and A, through Accessibility"
+  begin_step instrument "put-$step-on-A" "$step: $FOR_A are put wholly on A$(in_cast STRADDLES && echo " and STRADDLES across the edge between the main display and A"), through Accessibility"
   read -r ax ay aw ah <<< "$(frame_of_display "$DISPLAY_ID_A")"
   [ -n "$ah" ] || die "$step: \`pointer displays\` does not list display A ($DISPLAY_ID_A)"
   ON_A=""
@@ -582,6 +615,7 @@ step "the Mac"
 echo "macOS $(sw_vers -productVersion) ($(sw_vers -buildVersion)) on $(uname -m), commit $(git rev-parse --short HEAD)"
 echo "this is $ARBOR_NAME: $(if with_arbor; then echo "WITH ARBOR"; else echo "THE CONTROL, without Arbor"; fi); playing ${MAC_SHELL_PART:-1} of ${MAC_SHELL_PARTS:-1} on this dispatch"
 echo "its places are $OX points to the right and $OY down of the table's"
+echo "parts: $JOURNEY_PARTS"
 # The size the first playing had. A hosted Mac's own 1024×768 is smaller than the windows need.
 display_mode 1600x900 1680x1050 1920x1080
 macos_tiling
@@ -596,8 +630,14 @@ tell before
 sampler_start
 sleep 1
 
-step "the display that stays"
-change_now stays plug stays
+if only_T; then
+  step "no display stays: a display comes and goes once, before the main display's frame is read"
+  change_now t0a plug B
+  change_now t0b unplug B
+else
+  step "the display that stays"
+  change_now stays plug stays
+fi
 MAIN=$("$ARBOR_VDISPLAY" list | awk '$8 == "main" { print $1, $3, $4, $5, $6 }')
 [ -n "$MAIN" ] || die "vdisplay list names no main display"
 echo "the main display from here on (id x y w h): $MAIN"
@@ -631,7 +671,8 @@ if java=$("${JOURNEY_JAVA_HOME:-/usr/libexec/java_home}" 2>/dev/null) && [ -x "$
   "$java/bin/jconsole" > /dev/null 2>&1 3>&- 5<&- 6>&- 8>&- 9>&- &
   P_JAVA=$!
   started "$P_JAVA"
-  W_JAVA=$(apptool wait-window "$P_JAVA" 25 | awk '$3 == "AXStandardWindow" { print $1; exit }')
+  # T alone is to be short: there it has eight seconds to open its window.
+  W_JAVA=$(apptool wait-window "$P_JAVA" "$(if only_T; then echo 8; else echo 25; fi)" | awk '$3 == "AXStandardWindow" { print $1; exit }')
 fi
 if [ -n "$W_JAVA" ]; then
   label "$W_JAVA" JAVA
@@ -642,20 +683,26 @@ else
   P_JAVA=""
 fi
 REST_NOW=2 rested
-opens PICTURE com.apple.Preview "$APPS_SCRATCH/leaf.png"
-in_cast PICTURE || opens PICTURE com.apple.Console
-opens STRADDLES com.apple.Terminal
-begin_step open-close open-CARRIED "opens a second document in TextEdit"
-if in_cast TEXT && app_open com.apple.TextEdit "$APPS_SCRATCH/elm.txt" > /dev/null && app_await_window "$P_TEXT" "$W_TEXT" 10; then
-  W_CARRIED=$NEW_WINDOW P_CARRIED=$P_TEXT
-  label "$W_CARRIED" CARRIED
-  CAST="$CAST CARRIED"
-else
-  loud "CARRIED: TextEdit opened no second window: no window is carried by the pointer"
+if ! only_T; then
+  opens PICTURE com.apple.Preview "$APPS_SCRATCH/leaf.png"
+  in_cast PICTURE || opens PICTURE com.apple.Console
 fi
-REST_NOW=2 rested
-opens DESK com.apple.ScriptEditor2 "$APPS_SCRATCH/hello.applescript"
-in_cast DESK || opens DESK com.apple.ActivityMonitor
+if begins_on_A || plays P1; then
+  opens STRADDLES com.apple.Terminal
+  begin_step open-close open-CARRIED "opens a second document in TextEdit"
+  if in_cast TEXT && app_open com.apple.TextEdit "$APPS_SCRATCH/elm.txt" > /dev/null && app_await_window "$P_TEXT" "$W_TEXT" 10; then
+    W_CARRIED=$NEW_WINDOW P_CARRIED=$P_TEXT
+    label "$W_CARRIED" CARRIED
+    CAST="$CAST CARRIED"
+  else
+    loud "CARRIED: TextEdit opened no second window: no window is carried by the pointer"
+  fi
+  REST_NOW=2 rested
+fi
+if ! only_T; then
+  opens DESK com.apple.ScriptEditor2 "$APPS_SCRATCH/hello.applescript"
+  in_cast DESK || opens DESK com.apple.ActivityMonitor
+fi
 
 # An app may have swapped the window it opened with for another meanwhile.
 kept=""
@@ -705,14 +752,18 @@ pointer windows --on-screen | head -n 40
 
 # MARK: Arbor, or none
 
+# As a person runs it: every regular app's windows, its shortcuts, its event taps, its menu bar item, the settings it ships with. All but the
+# welcome window (ARBOR_NO_PROMPT=1 is arbor_start_apps' own), which would lie over the windows until a pointer closed it.
+start_arbor() {
+  arbor_start_apps all ARBOR_NO_HOTKEYS=0 ARBOR_NO_STATUS_ITEM=0 || return 1
+  note "arbor $ARBOR_PID"
+}
+
 step "Arbor"
 if with_arbor; then
   [ ! -e "$ARBOR_HOME/settings.json" ] || die "there is a settings.json in Arbor's home: these would not be the settings it ships with"
   begin_step quit-and-start arbor "arbor: Arbor is started"
-  # As a person runs it: every regular app's windows, its shortcuts, its event taps, its menu bar item, the settings it ships with. All but the
-  # welcome window (ARBOR_NO_PROMPT=1 is arbor_start_apps' own), which would lie over the windows until a pointer closed it.
-  arbor_start_apps all ARBOR_NO_HOTKEYS=0 ARBOR_NO_STATUS_ITEM=0 || die "Arbor did not start"
-  note "arbor $ARBOR_PID"
+  start_arbor || die "Arbor did not start"
   floating=0
   for name in $CAST; do
     eval "window=\$W_$name"
@@ -741,14 +792,18 @@ tell arbor
 
 # MARK: S. The first playing's steps, with more windows
 
-step "S. the display goes and comes back"
-if with_arbor; then
-  record went-and-came-back-S || die "no trace is being recorded: what Arbor asks of the windows, which is the question, would not come back"
+if begins_on_A; then
+  step "S. the display goes and comes back"
+  if with_arbor; then
+    record went-and-came-back-S || die "no trace is being recorded: what Arbor asks of the windows, which is the question, would not come back"
+  fi
+  put_home s0
+  change s1 plug A
+  put_on_A s2
 fi
-put_home s0
-change s1 plug A
-put_on_A s2
-if ! in_cast CARRIED; then
+if ! plays S && ! plays F; then
+  :
+elif ! in_cast CARRIED; then
   echo "SKIPPED: s2c (a window is carried across the edge by the pointer): there is no such window"
 elif ! A_is_there; then
   echo "SKIPPED: s2c (a window is carried across the edge by the pointer): A is not plugged in"
@@ -764,16 +819,18 @@ elif in_time "s2c (a window is carried across the edge by the pointer)"; then
   rested
   tell s2c
 fi
-change s3 unplug A
-change s4 plug A
-change s5 unplug A
-change s6 plug B
-change s7 unplug B
-change s8 plug A
+if plays S; then
+  change s3 unplug A
+  change s4 plug A
+  change s5 unplug A
+  change s6 plug B
+  change s7 unplug B
+  change s8 plug A
+fi
 
 # MARK: F. A change elsewhere, while A is there and windows hang over the main display's right edge
 
-if with_A F; then
+if plays F && with_A F; then
   part F "a change of displays elsewhere, while A is there"
   change f1 plug B left-of-stays
   change f2 unplug B
@@ -783,7 +840,7 @@ fi
 
 # MARK: M. Moved on the main display while A is away
 
-if with_A M; then
+if plays M && with_A M; then
   part M "windows of A's are moved on the main display while A is away"
   change m1 unplug A
   if in_cast LIVES && in_time "m2 (LIVES is moved through Accessibility)"; then
@@ -806,7 +863,7 @@ fi
 
 # MARK: L. A longer absence
 
-if with_A L; then
+if plays L && with_A L; then
   part L "a longer absence"
   REST_NOW=$JOURNEY_LONG change l1 unplug A
   change l2 plug A
@@ -844,7 +901,7 @@ dock_and_frame() {
   within 5 is docked "$W_DESK" > /dev/null || loud "$1: DESK is not docked"
   ctl zoom "$W_DESK"
 }
-if ! with_arbor; then
+if ! with_arbor || ! plays D; then
   :
 elif ! arbor_answers || ! in_cast DESK || ! A_is_there; then
   echo "SKIPPED: D, all of it: it takes Arbor, DESK and A"
@@ -878,28 +935,41 @@ whole() {
   shown=$("$ARBOR_POINTER" visible "$id" 2>/dev/null)
   echo "whole $1 $2 $id $([ "$shown" = 1.00 ] && echo yes || echo no) shown ${shown:--} server $(real_frame_of "$id" 2>&1)"
 }
-if with_A H; then
+# hide_and_minimize <step> "<what the step says>", unhide_and_restore <step> "<…>": each a step of its own. AWAY: they are, until they are shown again.
+AWAY=""
+hide_and_minimize() {
+  begin_step macos-own "hide-$1" "$2"
+  AWAY=yes
+  if in_cast PICTURE; then apptool hide "$P_PICTURE" || loud "$1: PICTURE's app was not hidden"; else echo "SKIPPED: the hidden window: there is no PICTURE"; fi
+  if in_cast TEXT; then apptool minimize "$W_TEXT" || loud "$1: TEXT was not minimized"; else echo "SKIPPED: the minimized window: there is no TEXT"; fi
+  rested
+  tell "$1"
+}
+unhide_and_restore() {
+  local name
+  begin_step macos-own "unhide-$1" "$2"
+  if in_cast PICTURE; then apptool unhide "$P_PICTURE" || loud "$1: PICTURE's app was not unhidden"; fi
+  if in_cast TEXT; then apptool unminimize "$W_TEXT" || loud "$1: TEXT was not restored"; fi
+  AWAY=""
+  rested
+  tell "$1"
+  for name in PICTURE TEXT; do
+    if in_cast "$name"; then whole "$1" "$name"; fi
+  done
+}
+if plays H && with_A H; then
   part H "a hidden app's window and a minimized window, both on A"
   put_on_A h0
-  begin_step macos-own hide-h1 "h1: PICTURE's app is hidden and TEXT is minimized, both on A"
-  if in_cast PICTURE; then apptool hide "$P_PICTURE" || loud "h1: PICTURE's app was not hidden"; else echo "SKIPPED: the hidden window: there is no PICTURE"; fi
-  if in_cast TEXT; then apptool minimize "$W_TEXT" || loud "h1: TEXT was not minimized"; else echo "SKIPPED: the minimized window: there is no TEXT"; fi
-  rested
-  tell h1
+  hide_and_minimize h1 "h1: PICTURE's app is hidden and TEXT is minimized, both on A"
   change h2 unplug A
-  begin_step macos-own unhide-h3 "h3: PICTURE's app is unhidden and TEXT is restored, while A is away"
-  if in_cast PICTURE; then apptool unhide "$P_PICTURE" || loud "h3: PICTURE's app was not unhidden"; fi
-  if in_cast TEXT; then apptool unminimize "$W_TEXT" || loud "h3: TEXT was not restored"; fi
-  rested
-  tell h3
-  for name in PICTURE TEXT; do
-    if in_cast "$name"; then whole h3 "$name"; fi
-  done
+  unhide_and_restore h3 "h3: PICTURE's app is unhidden and TEXT is restored, while A is away"
   change h4 plug A
 fi
 
-step "A goes for the last time"
-change z1 unplug A
+if begins_on_A; then
+  step "A goes for the last time"
+  change z1 unplug A
+fi
 
 # MARK: P1, with Arbor alone: windows that are out of view, with a display under both bottom corners of the main one
 
@@ -958,11 +1028,159 @@ part_P1() {
   change P1h unplug below
   in_time "the corners after P1h" && corners P1h
 }
-if with_arbor; then part_P1; fi
+if with_arbor && plays P1; then part_P1; fi
+
+# MARK: T, without Arbor: the top corners
+
+# Asked through Accessibility for a place under the menu bar AT A TOP CORNER of the main display, where does a window end? On record so far are eight calls, all in the
+# middle of a display (x 170 or 220; asked for y 0 and y -50; the window went to the visible top, 31, and kept its x and its size), and none at a corner.
+# TEXT at 640×420, LIVES at 1000×660 if they take those sizes, JAVA at the size it has. In each arrangement each window is asked four times with `apptool set-frame` (size, position, size, as Arbor sets a
+# frame), each time from 300 200 on the main display, where it is put and seen to lie first:
+#   a  the top RIGHT corner: x = the main display's right edge less 1, y = its top      b  the same x, y 50 points above the top
+#   c  the top LEFT corner: x = its left edge less the window's width plus 1, y = its top      d  the same x, y 50 points above the top
+# And in t1 and t2 two places at the bottom, for the table to be laid beside another probe's:
+#   e  the bottom RIGHT corner: x = the right edge less 1, y = the bottom less 1      f  x = the right edge of the VISIBLE frame less 1, the same y; left out where that is e
+# A second later: `top <arrangement> <NAME> <id> asked <x y w h> | accessibility <x y w h> | server <x y w h> | shown <0.00…1.00> on <display>`: how much of it is on one display
+# (pointer visible), and the display most of its frame lies on. Before it `answer …`, what set-frame read back at once.
+# Each ask is a step in the samples, top-<arrangement>-<NAME>-<a…f>. `dock: …`, once: where the Dock is, and what is taken off each side of the main display.
+# Played in this order, so that what the clock cuts is what matters least:
+#   t2  `below`, 1920×1080, centred under the main display       t3  a left neighbour that begins lower: B at -1280, 500
+#   t5  a display above: B at 0, -800                            t4  the left neighbour of t3, and A at the right
+#   t1  the main display alone                                   t6  a right neighbour that begins higher: A at the main display's width, -700
+# Of the first window, TEXT, a picture is taken at each resting place with lib.sh's `shot`, which takes every display, one file each: top-<arrangement>-<a…f>.png is
+# the main display, -d2.png and -d3.png the others, to be told apart by their sizes (1280 wide: B; 1600, made smaller from 1920: A or `below`).
+# `stays` lies at the left and would change the question. Played alone, this part never plugs it in: B is plugged in and out once instead (t0a, t0b), so that whatever the
+# first virtual display does to the main display's size is over before its frame is read. Played after other parts, `stays` is unplugged for the part (t0) and
+# plugged in again after it (t9).
+# `visible <arrangement> <display> <x y w h>`: each display between its menu bar and the Dock, as the sampler last wrote it down (its V and Y lines: NSScreen's visibleFrame).
+# A display that macOS does not have where it was asked for is a `!!!`, and the arrangement is SKIPPED.
+T_NAMES=""
+
+visible_frames() {
+  local name id
+  echo "visible $1 main $(awk '$2 == "V" { seen = $3 " " $4 " " $5 " " $6 } END { print (seen == "" ? "not known" : seen) }' "$DAY_SAMPLES")"
+  for name in $PLUGGED; do
+    eval "id=\$DISPLAY_ID_$name"
+    echo "visible $1 $name $(awk -v id="$id" '$2 == "Y" && $3 == id && NF >= 11 { seen = $8 " " $9 " " $10 " " $11 } END { print (seen == "" ? "not known" : seen) }' "$DAY_SAMPLES")"
+  done
+}
+
+# in_place <arrangement> <display>: whether macOS has it where `plug` asked for it. `tell` has said so loudly if not.
+in_place() {
+  local id want
+  eval "id=\${DISPLAY_ID_$2:-} want=\${DISPLAY_AT_$2:-}"
+  if [ -n "$id" ] && [ "$("$ARBOR_VDISPLAY" list | awk -v id="$id" '$1 == id { print $3, $4, $5, $6 }')" = "$want" ]; then return 0; fi
+  echo "SKIPPED: $1: display $2 is not where the arrangement wants it"
+  return 1
+}
+
+# top_corners <arrangement>: the four asks of each window
+top_corners() {
+  local t=$1 list mx="" my="" mw="" mh="" vx="" vw="" name id hx=300 hy=200 w h letters="a b c d" letter x y said server
+  in_time "$t (the asks)" || return 0
+  list=$("$ARBOR_VDISPLAY" list)
+  read -r mx my mw mh <<< "$(echo "$list" | awk '$8 == "main" { print $3, $4, $5, $6 }')"
+  [ -n "$mh" ] || { echo "SKIPPED: $t: vdisplay list names no main display"; return 0; }
+  visible_frames "$t"
+  case "$t" in t1 | t2) letters="a b c d e f" ;; esac
+  read -r vx _ vw _ <<< "$(awk '$2 == "V" { seen = $3 " " $4 " " $5 " " $6 } END { print seen }' "$DAY_SAMPLES")"
+  for name in $T_NAMES; do
+    in_time "$t $name" || return 0
+    eval "id=\$W_$name"
+    for letter in $letters; do
+      if [ "$letter" = f ] && [ -z "$vw" ]; then
+        echo "SKIPPED: top $t $name f: the main display's visible frame is not known"
+        continue
+      elif [ "$letter" = f ] && [ $((vx + vw)) -eq $((mx + mw)) ]; then
+        echo "SKIPPED: top $t $name f: the same place as e: nothing is taken off the main display's right"
+        continue
+      fi
+      put "$t" "$name" "$hx" "$hy" - - near "$hx" "$hy" || { echo "SKIPPED: top $t $name $letter: it is not at $hx $hy, where every ask begins"; continue; }
+      sleep 0.3
+      w="" h=""
+      read -r _ _ w h <<< "$(real_of "$id")"
+      [ -n "$h" ] || { echo "SKIPPED: top $t $name $letter: the window server does not say how large it is"; continue; }
+      case "$letter" in
+        a) x=$((mx + mw - 1)) y=$my ;;
+        b) x=$((mx + mw - 1)) y=$((my - 50)) ;;
+        c) x=$((mx - w + 1)) y=$my ;;
+        d) x=$((mx - w + 1)) y=$((my - 50)) ;;
+        e) x=$((mx + mw - 1)) y=$((my + mh - 1)) ;;
+        f) x=$((vx + vw - 1)) y=$((my + mh - 1)) ;;
+      esac
+      begin_step instrument "top-$t-$name-$letter" "$t: $name is asked through Accessibility for $x $y, at the size it has"
+      echo "answer $t $name $id asked $x $y $w $h took $(apptool set-frame "$id" "$x" "$y" "$w" "$h" 2>&1)"
+      REST_NOW=1 rested
+      said=$(apptool describe "$id" 2>/dev/null | awk 'NF >= 7 { print $4, $5, $6, $7 }')
+      server=$(real_frame_of "$id" 2>/dev/null)
+      echo "top $t $name $id asked $x $y $w $h | accessibility ${said:-- - - -} | server ${server:-- - - -} | shown $("$ARBOR_POINTER" visible "$id" 2>/dev/null || echo -) on $(lies "$server" "$list" | cut -d ' ' -f 2)"
+      # It has rested a second already.
+      if [ "$name" = "${T_NAMES%% *}" ]; then ARBOR_SETTLE=0 shot "top-$t-$letter"; fi
+    done
+    put "$t" "$name" "$hx" "$hy" - - near "$hx" "$hy"
+  done
+  clock "$t asked"
+}
+
+part_T() {
+  local name again=""
+  in_time "T, all of it" || return 0
+  step "T. the top corners"
+  no_arbor T
+  for name in TEXT LIVES JAVA; do
+    if in_cast "$name"; then T_NAMES="${T_NAMES:+$T_NAMES }$name"; fi
+  done
+  # Wider than 501 points, both: in t3 and t4 the top left place then lies nearer to the left neighbour, 500 points below it, than to the main display, a window's width
+  # less 1 away. Only so do "the nearest display stops it" and "the display that has most of it stops it" give two answers. JAVA keeps the size it has.
+  if in_cast TEXT; then put T TEXT 300 200 640 420 near 300 200; fi
+  if in_cast LIVES; then put T LIVES 300 200 1000 660 near 300 200; fi
+  case " $PLUGGED " in
+    *" stays "*)
+      change_now t0 unplug stays
+      again=yes
+      MAIN=$("$ARBOR_VDISPLAY" list | awk '$8 == "main" { print $1, $3, $4, $5, $6 }')
+      echo "the main display while \`stays\` is away (id x y w h): $MAIN" ;;
+  esac
+  echo "dock: orientation $(defaults read com.apple.dock orientation 2>/dev/null || echo "not set, which is the bottom"), autohide $(defaults read com.apple.dock autohide 2>/dev/null || echo "not set, which is off");" \
+    "the main display ${MAIN#* }, visible $(awk '$2 == "V" { seen = $3 " " $4 " " $5 " " $6 } END { print (seen == "" ? "not known" : seen) }' "$DAY_SAMPLES")"
+  change t2 plug below under-and-wider
+  if in_place t2 below; then top_corners t2; fi
+  change t2z unplug below
+  change t3 plug B left-and-lower
+  if in_place t3 B; then top_corners t3; fi
+  change t3z unplug B
+  change t5 plug B above
+  if in_place t5 B; then top_corners t5; fi
+  change t5z unplug B
+  change t4b plug B left-and-lower
+  change t4 plug A right
+  if in_place t4 B && in_place t4 A; then top_corners t4; fi
+  change t4y unplug A
+  change t4z unplug B
+  top_corners t1
+  change t6 plug A right-and-higher
+  if in_place t6 A; then top_corners t6; fi
+  change t6z unplug A
+  if [ -n "$again" ]; then
+    # Whatever the clock says: the end expects it.
+    for name in $PLUGGED; do change_now "t9-$name" unplug "$name"; done
+    change_now t9 plug stays
+    MAIN=$("$ARBOR_VDISPLAY" list | awk '$8 == "main" { print $1, $3, $4, $5, $6 }')
+  fi
+}
+if ! plays T; then
+  :
+elif with_arbor; then
+  echo "SKIPPED: T, all of it: it is asked of macOS alone, and this script runs Arbor"
+else
+  part_T
+fi
 
 # MARK: The end
 
 step "the end"
+# Only a part that was cut short has left them so.
+[ -z "$AWAY" ] || unhide_and_restore end-shown "end-shown: PICTURE's app is unhidden and TEXT is restored"
 if with_arbor; then
   begin_step quit-and-start quit "quit: Arbor quits"
   # Quitting ends the trace. arbor_stop brings the log and the traces to mac-shell/.
@@ -976,7 +1194,10 @@ tell quit
 # Only what was cut short has left anything but `stays`.
 for name in $PLUGGED; do [ "$name" = stays ] || change_now "end-$name" unplug "$name"; done
 MAIN=""
-change_now end unplug stays
+case " $PLUGGED " in
+  *" stays "*) change_now end unplug stays ;;
+  *) tell end ;;
+esac
 found=$(pgrep -x Arbor | tr '\n' ' ')
 if [ -z "$found" ]; then
   echo "no Arbor runs now: \`pgrep -x Arbor\` finds no process"
