@@ -181,7 +181,7 @@ extension ChaosRunner {
   /// what is known of the way back excuses nothing as Arbor ships.
   static let rulesThatMakingWayBreaks: Set = [
     "moved-unasked", "moved-before-any-dock", "grown-while-hanging", "left-its-place", "parked-beside-another-display",
-    "displays-left-mostly-out", "moved-at-launch-after-a-crash", "moved-twice-floating-windows-first",
+    "displays-left-mostly-out", "moved-at-launch-after-a-crash", "moved-twice-floating-windows-first", "plain-drag-moved-another",
   ]
 
   func nameWhatComesOfMakingWay(_ problems: inout [InvariantViolation]) {

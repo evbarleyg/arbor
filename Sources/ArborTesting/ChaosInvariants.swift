@@ -22,6 +22,7 @@ extension ChaosRunner {
     "desktop-guard-zones",
     "left-to-macos",
     "rehearsal",
+    "meet-",
   ]
 
   /// How far a docked window may sit from its slot: 4 points of the app rounding its size
@@ -53,6 +54,8 @@ extension ChaosRunner {
       var jolts: [InvariantViolation] = []
       onceViolations(after: action, &jolts)
       afterQuitViolations(after: action, &jolts)
+      // With nothing arranged a quit or a pause has nothing to give back.
+      unaskedViolations(after: action, &jolts)
       return inside + jolts + (harness.overlays.finder == nil ? [] : [.init("palette", "Go to… is open and Arbor is paused or not running")])
     }
     var problems: [InvariantViolation] = []
@@ -176,7 +179,8 @@ extension ChaosRunner {
         // A window nudged within the tolerance may lean a few points over a narrow gap.
         if exactly { shown.append((window, actual)) }
         if refused { tooLarge.insert(window) }
-        if !refused, !bounds.contains(actual) {
+        // One whose app has only just answered again is placed a moment later.
+        if !refused, !bounds.contains(actual), !owedAMoveBefore.contains(window) {
           problems.append(
             .init("outside", "\(window) at \(actual.brief) leaves the visible frame \(display.visibleFrame.brief) of \(display.id)"))
         }
@@ -418,7 +422,7 @@ extension ChaosRunner {
         // It can be made to fit.
         fake.minimumSize.width <= display.visibleFrame.width, fake.minimumSize.height <= display.visibleFrame.height,
         // Left hanging over an edge, it may hang as far when Arbor makes room beside it or gives it another size.
-        !(userPlaces[window] ?? []).contains(where: { $0.allows(frame, on: display) })
+        !(userPlaces[window] ?? []).contains(where: { place in system.displayList.contains { place.allows(frame, on: $0) } })
       else { continue }
       let share = Int((100 * Self.area(of: frame, showingOn: system.displayList) / frame.area).rounded())
       // A rule name of its own for a docked window that is kept larger than its slot and hangs out of the display on that account.
@@ -492,6 +496,7 @@ extension ChaosRunner {
         !workspacesBefore.contains(where: { display, before in
           let view = viewsBefore[display] ?? before.camera
           return before.tree.windows(under: before.camera).contains(window) || before.tree.windows(under: view).contains(window)
+            || before.guests?[window] != nil
             || (before.isFloating(window)
               && (before.camera == before.tree.desktop || before.tree.ancestors(of: before.tree.desktop).contains(before.camera)))
         })
@@ -665,8 +670,10 @@ extension ChaosRunner {
       guard let snapshot = system.windows[window]?.snapshot else { continue }
       // What Arbor put out of view it brings back, also once it has let go of the window: an app that did not answer then is
       // asked again when it has something to report.
+      // And what a start or a resume finds out of view it fetches, whoever's it is: an earlier run may have put it there.
+      let foundOutOfView = !wasRunningBefore && isRunning && framesBefore[window].map { Self.area(of: $0, showingOn: system.displayList) < 0.5 * $0.area } == true
       if !filter.manages(snapshot), !filterBefore.manages(snapshot), !owedAPlaceBefore.contains(window),
-        !owedTheWayBackBefore.contains(window)
+        !owedTheWayBackBefore.contains(window), !foundOutOfView
       {
         problems.append(.init("untouched", "Arbor moved \(window), which it does not arrange"))
       }

@@ -8,6 +8,10 @@ import Foundation
 /// edited by hand, no apps that fight back, no crash, no nonsense. **What such a walk finds is likely on a real desk**; what only the wild walks
 /// find has to be looked at for how a person would get there.
 ///
+/// `ARBOR_CHAOS_ORDINARY=light`: of those, the walks of a person who has read nothing (collab/QUESTIONS.md, Q29): a plain drag is the commonest
+/// thing they do, they know nine keys, the rest is in the menu, and no setting has been touched (`settings {}` at the script's head). Any other
+/// value: the whole map of keys, as before.
+///
 /// `ARBOR_CHAOS_DESK=laptop|desk|both` chooses the displays (`both`: a laptop and an external display that comes and goes, in the orders a Mac
 /// has), `ARBOR_CHAOS_DOCK=bottom|left|right|hidden` the side of the Dock, `ARBOR_CHAOS_TILING=on|off` whether macOS's own tiling is as a Mac comes or
 /// switched off. Left out, the seed chooses: half the walks each way.
@@ -104,6 +108,16 @@ extension ChaosGenerator {
     (2, "view 2"), (1, "minimap"),
   ]
 
+  /// The nine, each ⌃⌥ and one key. (Go to… is played by the wild walks; the key that pauses is in `lightMenu`, since the harness takes it as a command.)
+  private static let nineKeys: [(weight: Int, value: String)] = [
+    (20, "dock left"), (20, "dock right"), (20, "zoom"), (10, "show-all"), (8, "back"), (12, "undo"), (12, "toggle-float"),
+  ]
+
+  /// What a person who knows the nine finds in the menu.
+  private static let lightMenu: [(weight: Int, value: String)] = [
+    (10, "arrange"), (6, "toggle-pause"), (4, "float-all"), (4, "home"), (2, "toggle-pin"), (2, "move-to-display next"), (2, "dock top"), (2, "dock bottom"), (1, "quit"),
+  ]
+
   /// What is in the menu and on no key, or is refused as a key by the harness.
   private static let menu: [(weight: Int, value: String)] = [
     (4, "toggle-pin"), (3, "toggle-pause"), (2, "hold"), (2, "release"), (6, "move-to-display next"), (2, "float-all here"), (1, "quit"),
@@ -112,6 +126,8 @@ extension ChaosGenerator {
 
   mutating func startOrdinaryWalk() {
     planned = [.displays(desk.displays, .never), .macTiling(on: desk.macTiling)]
+    // At the switches that ship.
+    if light { planned.append(.settings("{}")) }
     let before = random.int(0...4)
     for _ in 0..<before { planned.append(.open(ordinaryWindow(on: desk.displays))) }
     planned.append(.launch)
@@ -166,6 +182,16 @@ extension ChaosGenerator {
         }
         return .displays(desk.displays, .first)
       }
+      // What a hand does while Arbor is not looking: a window dragged elsewhere, or made another size.
+      if random.chance(world.isPaused ? 25 : 35), let window = existing(world), let frame = system.windows[window]?.snapshot.frame,
+        system.windows[window]!.snapshot.isPresent
+      {
+        if random.chance(50) {
+          planned.append(contentsOf: [.carry(point(in: world, dragging: window)), .release, .advance(1)])
+          return .grab(window)
+        }
+        return .edge(window, CGRect(x: frame.minX, y: frame.minY, width: max(frame.width + random.points(-250, 250), 200), height: max(frame.height + random.points(-200, 200), 150)), hold: false)
+      }
       if !world.isPaused { return .launch }
       // Paused, a person goes on working for a while.
       switch random.int(0...5) {
@@ -175,16 +201,26 @@ extension ChaosGenerator {
       default: return .advance(1)
       }
     }
-    enum Kind { case open, close, minimize, hide, click, commandTab, drag, edge, seam, tile, key, hold, menu, time, fullScreen, displays, cursor, summon }
+    enum Kind { case open, close, minimize, hide, click, desktopClick, commandTab, drag, edge, seam, tile, key, hold, menu, time, fullScreen, displays, cursor, summon }
     let windows = system.windows.count
     let tiles = world.harness.overlays.tiles.values.reduce(0) { $0 + $1.count }
     let seams = world.harness.overlays.seams.values.reduce(0) { $0 + $1.count }
     let kind =
       random.pick(weighted: [
-        (windows < 3 ? 100 : windows < 7 ? 30 : 4, Kind.open), (windows > 2 ? 14 : 2, .close), (14, .minimize), (5, .hide), (50, .click),
+        (windows < 3 ? 100 : windows < 7 ? 30 : 4, Kind.open), (windows > 2 ? 14 : 2, .close), (14, .minimize), (5, .hide), (50, .click), (12, .desktopClick),
         (30, .commandTab), (40, .drag), (14, .edge), (seams > 0 ? 12 : 0, .seam), (tiles > 0 ? 24 : 0, .tile), (300, .key), (10, .hold),
         (30, .menu), (30, .time), (4, .fullScreen), (desk.kind == .both ? 10 : 0, .displays), (16, .cursor), (6, .summon),
-      ]) ?? .time
+      ].map { weight, kind in
+        guard light else { return (weight, kind) }
+        // The mouse first. No key summons an app.
+        switch kind {
+        case .drag: return (300, kind)
+        case .key: return (150, kind)
+        case .edge: return (30, kind)
+        case .summon: return (0, kind)
+        default: return (weight, kind)
+        }
+      }) ?? .time
     switch kind {
     case .open:
       let new = ordinaryWindow(on: system.displayList)
@@ -209,6 +245,10 @@ extension ChaosGenerator {
       guard let window = existing(world, .inView) else { return .flush }
       thenAMoment()
       return .focus(window)
+    case .desktopClick:
+      // On the wallpaper or an icon there: the keyboard goes to nothing Arbor knows.
+      thenAMoment()
+      return .focusNothing
     case .commandTab:
       // Onto any window of any app, in view or not, that is not in the Dock or hidden with its app.
       guard let window = random.pick(system.windows.keys.sorted().filter { !system.windows[$0]!.snapshot.isMinimized && !system.windows[$0]!.snapshot.isHidden })
@@ -244,7 +284,12 @@ extension ChaosGenerator {
       return .tile(tile.display, tile.node)
     case .key:
       // Down and up again.
-      let line = random.pick(weighted: Self.keys)!
+      let line = random.pick(weighted: light ? Self.nineKeys : Self.keys)!
+      // The key that fills the screen, and again: back.
+      if light, line == "zoom", random.chance(50) {
+        thenAMoment([.key(line, .released), .react, .advance(1), .react, .key(line, .pressed), .key(line, .released)])
+        return .key(line, .pressed)
+      }
       // A look elsewhere and straight back.
       let andBack: [ChaosAction] =
         ["zoom", "out", "in", "home", "desktop", "neighbor left", "neighbor right"].contains(line) && random.chance(30)
@@ -256,7 +301,7 @@ extension ChaosGenerator {
       thenAMoment([.advance(0.5), .advance(0.5), .key("show-all", .released)])
       return .key("show-all", .pressed)
     case .menu:
-      let line = random.pick(weighted: Self.menu)!
+      let line = random.pick(weighted: light ? Self.lightMenu : Self.menu)!
       // A pause that is over before anything else has happened.
       if line == "toggle-pause", random.chance(40) { thenAMoment([.react, .advance(1), .command("toggle-pause")]) } else { thenAMoment() }
       return ["quit", "toggle-pause"].contains(line) ? .command(line) : .via(.menu, line)
