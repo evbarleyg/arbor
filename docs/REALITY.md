@@ -58,7 +58,7 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 | [missing-report](#missing-report) | 40 | 7 | 12 | 6 | 4 | 18 | 21 | 1 | 4 | 14 | 10 |
 | [extra-report](#extra-report) | 8 | 0 | 3 | 3 | 0 | 2 | 6 | 0 | 0 | 2 | 0 |
 | [late-or-partial-answer](#late-or-partial-answer) | 43 | 8 | 10 | 14 | 6 | 13 | 27 | 0 | 5 | 11 | 13 |
-| [second-actor](#second-actor) | 44 | 6 | 12 | 16 | 9 | 7 | 26 | 0 | 4 | 14 | 8 |
+| [second-actor](#second-actor) | 44 | 6 | 12 | 17 | 8 | 7 | 27 | 0 | 3 | 14 | 8 |
 | [geometry](#geometry) | 29 | 1 | 7 | 12 | 8 | 2 | 16 | 1 | 2 | 10 | 7 |
 | [identity](#identity) | 28 | 4 | 6 | 5 | 6 | 11 | 11 | 1 | 2 | 14 | 7 |
 | [permissions](#permissions) | 22 | 8 | 6 | 3 | 3 | 10 | 11 | 2 | 2 | 7 | 4 |
@@ -67,14 +67,14 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 | [looks](#looks) | 18 | 0 | 0 | 0 | 1 | 17 | 1 | 2 | 3 | 12 | 4 |
 | [never-exercised](#never-exercised) | 16 | 7 | 2 | 13 | 0 | 1 | 0 | 0 | 15 | 1 | 16 |
 | [toolchain](#toolchain) | 41 | 1 | 0 | 1 | 4 | 36 | 23 | 1 | 0 | 17 | 6 |
-| **all** | 422 | 59 | 80 | 109 | 67 | 166 | 204 | 19 | 53 | 146 | 99 |
+| **all** | 422 | 59 | 80 | 110 | 66 | 166 | 205 | 19 | 52 | 146 | 99 |
 
 **Where the difference bit**
 
 | Where | That is | Cases | Hurt 1 or 2 | Guarded without a Mac | Guarded only on CI's Macs | Only when somebody starts a script | Not guarded |
 |---|---|---|---|---|---|---|---|
 | below the seam | in the macOS-only code under the platform protocols (AX, Input, UI, App), which no test on Linux runs | 137 | 88 | 41 | 13 | 32 | 51 |
-| at the seam | in what crosses the platform protocols: a stand-in can play it to the controller | 146 | 91 | 108 | 0 | 10 | 28 |
+| at the seam | in what crosses the platform protocols: a stand-in can play it to the controller | 146 | 91 | 109 | 0 | 9 | 28 |
 | controller | in the controller or the core, given reports that were right | 25 | 13 | 13 | 0 | 1 | 11 |
 | test | in a test, a script or a harness that expected the wrong thing | 74 | 0 | 19 | 5 | 8 | 42 |
 | machine | in the machine, the toolchain or the way things are built and installed | 40 | 3 | 23 | 1 | 2 | 14 |
@@ -177,7 +177,6 @@ No guard, or only a script that somebody has to start.
 | [a-new-window-gets-its-subrole-a-moment-late](#a-new-window-gets-its-subrole-a-moment-late) | 2 | below the seam | cannot | only when somebody starts a script |
 | [a-permission-belongs-to-a-signature](#a-permission-belongs-to-a-signature) | 2 | machine | cannot | only when somebody starts a script |
 | [events-arbor-posts-pass-its-own-taps-again](#events-arbor-posts-pass-its-own-taps-again) | 2 | below the seam | cannot | only when somebody starts a script |
-| [macos-puts-windows-back-on-a-display-that-returns](#macos-puts-windows-back-on-a-display-that-returns) | 2 | at the seam | no | only when somebody starts a script |
 | [taps-see-every-gesture-as-event-type-29](#taps-see-every-gesture-as-event-type-29) | 2 | below the seam | cannot | only when somebody starts a script |
 | [the-resize-may-come-before-the-full-screen-flag](#the-resize-may-come-before-the-full-screen-flag) | 2 | at the seam | no | only when somebody starts a script |
 | [two-cures-that-each-pass-alone-lose-a-drag-together](#two-cures-that-each-pass-alone-lose-a-drag-together) | 2 | below the seam | cannot | only when somebody starts a script |
@@ -201,7 +200,6 @@ So no test on Linux can meet it. (Those they play partly are not listed: see eac
 | [macos-never-refused-a-shortcut-that-another-process-holds](#macos-never-refused-a-shortcut-that-another-process-holds) | 2 | below the seam | no | not guarded |
 | [real-apps-are-reported-gone-before-their-sibling-has-the-keyboard](#real-apps-are-reported-gone-before-their-sibling-has-the-keyboard) | 2 | at the seam | no | not guarded |
 | [twins-and-displays-without-a-uuid-share-one-name](#twins-and-displays-without-a-uuid-share-one-name) | 2 | at the seam | no | not guarded |
-| [macos-puts-windows-back-on-a-display-that-returns](#macos-puts-windows-back-on-a-display-that-returns) | 2 | at the seam | no | only when somebody starts a script |
 | [raise-does-not-lift-a-window-over-the-active-apps-key-window](#raise-does-not-lift-a-window-over-the-active-apps-key-window) | 2 | at the seam | no | only when somebody starts a script |
 | [the-resize-may-come-before-the-full-screen-flag](#the-resize-may-come-before-the-full-screen-flag) | 2 | at the seam | no | only when somebody starts a script |
 | [a-dragged-window-may-stand-still-until-the-pointer-is-24-points-away](#a-dragged-window-may-stand-still-until-the-pointer-is-24-points-away) | 2 | controller | no | guarded without a mac |
@@ -1894,10 +1892,10 @@ A second actor: macOS, an app or another tool moves things too.
 - **Expected:** Whether macOS moves windows back when a display returns was an open question. Arbor remembers the arrangement and puts them back itself, and a display that did not change keeps its windows as they are.
 - **Happened:** It does. 0.15 to 0.2 s after a virtual display with the same identifier came back, macOS itself had put the three windows that had been on it back on it, at their old frames, 1.6 s before Arbor's `displaysChanged`. And when the second display changed side, the keyboard went to another window, and the two windows docked on the main display, which did not change, were moved and resized by macOS; a second word about the screens followed, and then Arbor put the two back.
 - **Found by:** Traces of each change of displays, recorded by the script for two displays on a hosted Mac (macOS 26.6.2); they are to be committed.
-- **Stand-ins play it:** **no**
-- **Guard:** `e2e: replugged: the arrangement is the one that went away` (by hand)
+- **Stand-ins play it:** partly (`FakeWindowSystem.userMove`, `FakeWindowSystem.displayList`)
+- **Guard:** `e2e: replugged: the arrangement is the one that went away` (by hand); `test: whereMacOSPutsWindowsBackItselfArborMovesNothing`; `test: whatMacOSHasBroughtBackItselfIsNotMovedAgain`
 - **Arbor copes:** Sources/ArborKit/Controller/Controller+Displays.swift lays every display out again when it hears of the change, so the arrangement is the one that went away: `check-displays.sh` passed 136 of 137 there. Until then, for a second and a half, macOS's places are what a person sees.
-- **Read in:** `scripts/mac-shell/check-displays.sh`, `Sources/ArborKit/Controller/Controller+Displays.swift`, `Sources/ArborTesting/FakeWindowSystem.swift`, `collab/BACKLOG.md`
+- **Read in:** `scripts/mac-shell/check-displays.sh`, `Sources/ArborKit/Controller/Controller+Displays.swift`, `Sources/ArborTesting/FakeWindowSystem.swift`, `collab/BACKLOG.md`, `Tests/ArborKitTests/DisplaysComeAndGoTests.swift`
 
 ### macos-remembers-a-tile-arbor-has-undone
 
