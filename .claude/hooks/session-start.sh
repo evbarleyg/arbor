@@ -4,7 +4,8 @@
 #
 # The repository is public (docs/PUBLIC.md), and the two things every session has to do first were sentences in a brief:
 # have git check every push, and look through the clone it was given for history from somewhere else. `make hooks` does
-# both, in about a second. It changes nothing but this clone's own pre-push hook. It never fails the session: an agent that
+# both, in about a second. It changes nothing but this clone's own pre-push hook and settings: a machine that starts again may bring the clone
+# back without `arbor.privateWords`, and `make hooks` puts that back or says that it is missing. It never fails the session: an agent that
 # has been told what is wrong can put it right, one that was never started cannot.
 cd "${CLAUDE_PROJECT_DIR:-$(dirname "$0")/../..}" 2>/dev/null && top=$(git rev-parse --show-toplevel 2>/dev/null) && cd "$top" || exit 0
 [ -x scripts/git-hooks/install.sh ] || exit 0

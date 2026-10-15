@@ -16,7 +16,8 @@ Whatever is pushed or posted here is public at once and for good. `docs/PUBLIC.m
 maintainer", "a tester"), anything about one person's Mac, apps, days or work, ids of and links to working sessions, e-mail
 addresses, paths on a particular machine, internal hosts, cost, names of models, roles and numbers of the private phase.
 
-- First thing in a clone: `make hooks`. Git then runs `scripts/public-check.py` before every push, and `scripts/public-clone.py`
+- First thing in a clone: `git config arbor.privateWords <path>` (the list of words no rule covers; whoever has none: `/dev/null`), then
+  `make hooks`. Git then runs `scripts/public-check.py` before every push, and `scripts/public-clone.py`
   looks through the clone for history from somewhere else: a clone you were handed can hold branches that are not this
   repository's, under names that look right. Look at what it found and have it removed (`--remove`) before anything else. In a Claude Code session
   `.claude/hooks/session-start.sh` has run it for you, and you have read what it printed.

@@ -69,7 +69,7 @@ import urllib.request
 HERE = os.path.dirname(os.path.abspath(__file__))
 # Raise it whenever the check gets stricter or a hole in it is mended. The hook has two copies to choose from, the one `make hooks` kept
 # and the one on the branch that is checked out, and lets the newer do the reading.
-VERSION = 10
+VERSION = 11
 # The first public commit. All history begins here.
 ROOT_COMMIT = "51b162d5f28c02846134c1f4a113c787f5164602"
 # Where work is integrated: what these hold on origin has been read before. In this order: see read_elsewhere.
@@ -662,8 +662,8 @@ def wordless(top):
     """What to tell a clone that knows of no private words. The setting lies in the clone: one made anew has lost it, a second one never had it."""
     if git("config", "--get", "arbor.privateWords", cwd=top, check=False)[1].strip() or os.environ.get("PUBLIC_CHECK_WORDS"):
         return None
-    return ("THIS CLONE KNOWS OF NO PRIVATE WORDS (git config arbor.privateWords <path>; docs/PUBLIC.md): it reads by kinds alone, and does not ask whether the rules have "
-            "changed or pushes are held")
+    return ("THIS CLONE KNOWS OF NO PRIVATE WORDS: it reads by kinds alone, does not ask whether the rules have changed or pushes are held, and the hook lets nothing go "
+            "from it to the public repository. git config arbor.privateWords <path>; whoever has no such list says so: git config arbor.privateWords /dev/null (docs/PUBLIC.md)")
 
 
 def unguarded(top):
@@ -678,9 +678,6 @@ def unguarded(top):
 
 def leave_notes(top, read):
     """After a push that was read and let pass. `read`: what went, and where to."""
-    # Only whoever may push to the public repository gets to read this.
-    if read and wordless(top):
-        print(f"public-check: {wordless(top)}. No note of this push is left, so it counts as one that no hook has read", file=sys.stderr)
     if not write_down(top, f"read-by-{VERSION}", read):  # which is no reason not to push
         print("public-check: it could not be written down that this push was read: it will be taken for one that no hook has seen", file=sys.stderr)
 
@@ -741,6 +738,11 @@ def pre_push(top, lines, masked, url=None):
     pushed = [line.rsplit(" ", 3) for line in lines if line]
     if any(len(fields) != 4 for fields in pushed):
         raise Unclear("git says what is being pushed in a way this check does not know")
+    public = url is None or UPSTREAM.search(address(top, url))
+    # A check that can be missed by accident is not good enough here: seven clones in one night read by kinds alone, and nobody knew. A fork is its owner's business.
+    if public and wordless(top) and not all(ZERO.match(fields[1]) for fields in pushed):
+        print(f"✘ {wordless(top)}\npublic-check: nothing was pushed.")
+        return 1
     unread = unread_rules(top)
     if unread:
         print(f"✘ {unread}\npublic-check: nothing was pushed.")
@@ -752,7 +754,6 @@ def pre_push(top, lines, masked, url=None):
         print(f"✘ {hold}\npublic-check: nothing was pushed.")
         return 1
     code, read = 0, []
-    public = url is None or UPSTREAM.search(address(top, url))
     for _, sha, remote_ref, there in pushed:
         # A fork's branches are its owner's business.
         guarded = remote_ref.replace("refs/heads/", "", 1) if remote_ref.startswith("refs/heads/") and public else None

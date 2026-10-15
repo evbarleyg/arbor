@@ -488,10 +488,12 @@ def main():
         done = run(os.path.join(repository.path, ".claude", "hooks", "session-start.sh"), CLAUDE_PROJECT_DIR=os.path.join(repository.path, "docs"))
         row("the session's hook: started in a folder below the top, it finds its way, and never fails the session",
             (done.returncode, "git now runs" in done.stdout, "public-clone:" in done.stdout), (0, True, True))
+        done = run(os.path.join(repository.path, ".claude", "hooks", "session-start.sh"), CLAUDE_PROJECT_DIR=repository.path, PUBLIC_CHECK_WORDS="")
+        row("the session's hook: in a clone that knows of no private words the agent reads so, and the session starts", (done.returncode, "THIS CLONE KNOWS OF NO PRIVATE WORDS" in done.stdout), (0, True))
         done = run(os.path.join(repository.path, ".claude", "hooks", "session-start.sh"), CLAUDE_PROJECT_DIR=outside)
         row("the session's hook: started outside any repository it says nothing, and does not fail", (done.returncode, done.stdout), (0, ""))
 
-    wrong, rows = 0, table.finish(exactly=88)
+    wrong, rows = 0, table.finish(exactly=89)
     for what, got, expected in rows:
         if got != expected:
             wrong += 1

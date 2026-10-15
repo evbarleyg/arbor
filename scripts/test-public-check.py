@@ -238,7 +238,8 @@ class Repository:
         # Nothing of git's from outside: inside a hook or `git rebase --exec`, GIT_DIR and its kin point at the real repository,
         # and every commit made here would land there.
         outside = {key: value for key, value in os.environ.items() if not key.startswith(("GIT_", "GITHUB_", "PUBLIC_CHECK_"))}
-        self.environment = dict(outside, GIT_CONFIG_GLOBAL=os.devnull, GIT_CONFIG_NOSYSTEM="1", PUBLIC_CHECK_HIGHEST="40")
+        # With private words, as a clone has to have them to push at all; a situation about a clone without takes them away.
+        self.environment = dict(outside, GIT_CONFIG_GLOBAL=os.devnull, GIT_CONFIG_NOSYSTEM="1", PUBLIC_CHECK_HIGHEST="40", PUBLIC_CHECK_WORDS="quux0")
         os.makedirs(self.path)
         self.git("init", "--quiet", "--initial-branch=main")
         self.write("LICENSE", LICENCE)
@@ -774,7 +775,7 @@ def check_history():
     told("it has read this one", (0, False, False), rules(read="7"))
     told("there is no such file", (0, False, False), rules(version=None))
     told("the file is empty", (0, False, False), rules(version=""))
-    told("a stranger's clone, which knows of no private words: not a word", (0, False, False), rules(words=False))
+    told("a clone whose private words come from the environment has no file for the rules to lie beside: not a word", (0, False, False), rules(words=False))
     told("--rules: the same question, for whoever is about to do something else than push", (1, True, True), rules(read="6"), "--rules")
     told("--rules: read", (0, False, False), rules(read="7"), "--rules")
 
@@ -863,7 +864,7 @@ def check_history():
     stopped("one branch among them that does is enough", HELD, hold(f"until {soon}{why}", pushed="(delete) {none} refs/heads/y {head}\nrefs/heads/x {head} refs/heads/x {none}"))
     stopped("no such file", FREE, hold(None))
     stopped("an empty one", FREE, hold(""))
-    stopped("a stranger's clone, which knows of no private words: not a word", FREE, hold(f"until {soon}{why}", words=False))
+    stopped("a clone whose private words come from the environment has no file for a hold to lie beside: not a word", FREE, hold(f"until {soon}{why}", words=False))
     stopped("--rules: the same question, for whoever is about to start a run on a Mac", HELD, hold(f"until {soon}{why}"), "--rules")
     stopped("--rules: nothing held", FREE, hold(f"until {past}{why}"), "--rules")
 
@@ -913,13 +914,18 @@ def check_history():
                pushed=lambda r: f"refs/tags/v9 {r.git('rev-parse', 'v9')} refs/tags/v9 {{none}}"), "--to", HERE_URL)
     noted("a push to a fork", nothing, hold(None), "--to", FORK_URL)
     noted("to a fork, by the remote's name", nothing, hold(None, also=lambda r: r.git("remote", "add", "mine", FORK_URL)), "--to", "mine")
-    wordless = (0, None, [], ["KNOWS OF NO PRIVATE WORDS"])
-    noted("where there are no private words there are no notes either, and whoever pushes to the public repository is told: a clone made anew has lost them", wordless, hold(None, words=False), "--to", HERE_URL)
-    noted("from a hook that does not say where to, likewise", wordless, hold(None, words=False))
-    noted("a stranger, who pushes to a fork: not a word", nothing, hold(None, words=False), "--to", FORK_URL)
-    noted("a push that was refused has enough to say", refused, hold(None, words=False, also=line), "--to", HERE_URL)
-    noted("a branch that is deleted: nothing was read", nothing, hold(None, words=False, pushed="(delete) {none} refs/heads/x {head}"), "--to", HERE_URL)
-    noted("private words from the environment are private words; the notes want a place", nothing, hold(None, words=False, also=lambda r: r.environment.update(PUBLIC_CHECK_WORDS="quux7")), "--to", HERE_URL)
+    def none(**more):
+        return hold(None, words=False, **dict(more, also=lambda r: (r.environment.pop("PUBLIC_CHECK_WORDS"), more["also"](r) if "also" in more else None)))
+    wordless = (1, None, [], ["KNOWS OF NO PRIVATE WORDS"])
+    noted("a clone that knows of no private words pushes nothing to the public repository, and is told the line that cures it", wordless, none(), "--to", HERE_URL)
+    noted("from a hook that does not say where to, likewise", wordless, none())
+    noted("a tag likewise", wordless, none(pushed="refs/tags/v9 {head} refs/tags/v9 {none}", also=lambda r: r.git("tag", "v9")), "--to", HERE_URL)
+    noted("one branch that goes and one that is deleted, likewise", wordless, none(pushed="(delete) {none} refs/heads/y {head}\nrefs/heads/x {head} refs/heads/x {none}"), "--to", HERE_URL)
+    noted("a stranger, who pushes to a fork: not a word", nothing, none(), "--to", FORK_URL)
+    noted("a branch that is deleted brings nothing", nothing, none(pushed="(delete) {none} refs/heads/x {head}"), "--to", HERE_URL)
+    noted("nor does a push with nothing to send", nothing, none(pushed=""), "--to", HERE_URL)
+    noted("whoever has no list and has said so pushes; there is no place for a note", nothing, none(also=lambda r: r.git("config", "arbor.privateWords", os.devnull)), "--to", HERE_URL)
+    noted("private words from the environment are private words; the notes want a place", nothing, hold(None, words=False), "--to", HERE_URL)
     noted("beside what is there already", (0, ["0123-refs%2Fheads%2Fw", "HEAD-refs%2Fheads%2Fx"], sorted(["when stood-there\n", *by]), []),
           hold(None, also=lambda r: r.write("../notes/pushes-read/0123-refs%2Fheads%2Fw", "2026-01-02T03:04:05Z stood-there\n")), "--to", HERE_URL)
     noted("the same push once more: the same note", one, hold(None, also=lambda r: r.write(f"../notes/pushes-read/{r.git('rev-parse', 'HEAD')}-refs%2Fheads%2Fx", "")), "--to", HERE_URL)
@@ -1235,14 +1241,28 @@ def check_hook():
         row("make hooks: it goes on to look through the clone, and of this one it cannot tell", (first.returncode, "public-clone: cannot tell" in first.stdout), (2, True))
         row("make hooks: it fails for that, and says that the hook is in all the same", first.stdout.strip().splitlines()[-1].startswith("make hooks: THE HOOK IS IN"), True)
 
-        def wordless(**more):
-            said = subprocess.run([install], cwd=repository.path, env=dict(repository.environment, **more), capture_output=True, text=True, check=False).stdout
-            return said.count("THIS CLONE KNOWS OF NO PRIVATE WORDS")
-        row("make hooks: a clone that knows of no private words is told so: one made anew has lost them", wordless(), 1)
-        row("make hooks: words from the environment will do", wordless(PUBLIC_CHECK_WORDS="quux7"), 0)
-        repository.git("config", "arbor.privateWords", os.path.join(folder, "notes", "words.txt"))
-        row("make hooks: a clone that knows of some: not a word", wordless(), 0)
-        repository.git("config", "--unset", "arbor.privateWords")
+        def hooks(**more):
+            """Its exit code, which is 2 in this clone when all else is well; what it says of the settings; and what they are afterwards."""
+            done = subprocess.run([install], cwd=repository.path, env=dict(repository.environment, **more), capture_output=True, text=True, check=False)
+            after = [subprocess.run(["git", "config", "--get", f"arbor.{key}"], cwd=repository.path, env=repository.environment, capture_output=True, text=True, check=False).stdout.strip()
+                     for key in ("privateWords", "rulesRead")]
+            return done.returncode, [word for word in ("KNOWS OF NO PRIVATE WORDS", "arbor.privateWords WAS GONE", "arbor.rulesRead WAS GONE", "git now runs") if word in done.stdout], after
+        words = os.path.join(folder, "notes", "words.txt")
+        row("make hooks: in a clone that knows of no private words it does not call itself done, though the hook is in", hooks(PUBLIC_CHECK_WORDS=""), (1, ["KNOWS OF NO PRIVATE WORDS", "git now runs"], ["", ""]))
+        row("make hooks: words from the environment will do", hooks(), (2, ["git now runs"], ["", ""]))
+        repository.git("config", "arbor.privateWords", words)
+        repository.git("config", "arbor.rulesRead", "7")
+        row("make hooks: a clone that knows of some: not a word", hooks(PUBLIC_CHECK_WORDS=""), (2, ["git now runs"], [words, "7"]))
+        repository.git("config", "--remove-section", "arbor")
+        row("make hooks: a machine that started again has brought the clone back without its settings: they are put back, and it says so",
+            hooks(PUBLIC_CHECK_WORDS=""), (2, ["arbor.privateWords WAS GONE", "arbor.rulesRead WAS GONE", "git now runs"], [words, "7"]))
+        repository.git("config", "arbor.rulesRead", "8")
+        hooks()
+        repository.git("config", "--unset", "arbor.rulesRead")
+        row("make hooks: as they were when it was last said", hooks(PUBLIC_CHECK_WORDS=""), (2, ["arbor.rulesRead WAS GONE", "git now runs"], [words, "8"]))
+        repository.git("config", "--remove-section", "arbor")
+        shutil.rmtree(os.path.join(repository.path, ".git", "arbor-public-check"))
+        row("make hooks: a clone made anew has nothing to put back", hooks(PUBLIC_CHECK_WORDS=""), (1, ["KNOWS OF NO PRIVATE WORDS", "git now runs"], ["", ""]))
 
         def by_hand(*arguments, **more):
             """Which of the two things it says, run by hand in this clone, where the hook now is."""
@@ -1252,19 +1272,19 @@ def check_hook():
             repository.environment = saved
             return [word for word in ("THIS CLONE HAS NO HOOK", "KNOWS OF NO PRIVATE WORDS") if word in output]
         there = os.path.join(repository.path, ".git", "hooks", "pre-push")
-        row("by hand: the hook is in, the private words are not", by_hand(), ["KNOWS OF NO PRIVATE WORDS"])
-        row("by hand: a range likewise", by_hand("--base", "HEAD", "--head", "HEAD", "--branch", "x"), ["KNOWS OF NO PRIVATE WORDS"])
-        row("by hand: with words from the environment there is nothing to say", by_hand(PUBLIC_CHECK_WORDS="quux7"), [])
-        row("by hand: at GitHub there is nobody to push", by_hand(GITHUB_ACTIONS="true"), [])
+        row("by hand: the hook is in, the private words are not", by_hand(PUBLIC_CHECK_WORDS=""), ["KNOWS OF NO PRIVATE WORDS"])
+        row("by hand: a range likewise", by_hand("--base", "HEAD", "--head", "HEAD", "--branch", "x", PUBLIC_CHECK_WORDS=""), ["KNOWS OF NO PRIVATE WORDS"])
+        row("by hand: with words from the environment there is nothing to say", by_hand(), [])
+        row("by hand: at GitHub there is nobody to push", by_hand(GITHUB_ACTIONS="true", PUBLIC_CHECK_WORDS=""), [])
         repository.git("config", "core.hooksPath", "elsewhere")
-        row("by hand: git looks for hooks elsewhere: as good as none", by_hand(PUBLIC_CHECK_WORDS="quux7"), ["THIS CLONE HAS NO HOOK"])
+        row("by hand: git looks for hooks elsewhere: as good as none", by_hand(), ["THIS CLONE HAS NO HOOK"])
         repository.git("config", "--unset", "core.hooksPath")
         os.rename(there, there + ".aside")
-        row("by hand: whoever runs the check before every push and never said `make hooks` is told, every time", by_hand(), ["THIS CLONE HAS NO HOOK", "KNOWS OF NO PRIVATE WORDS"])
+        row("by hand: whoever runs the check before every push and never said `make hooks` is told, every time", by_hand(PUBLIC_CHECK_WORDS=""), ["THIS CLONE HAS NO HOOK", "KNOWS OF NO PRIVATE WORDS"])
         repository.write(".git/hooks/pre-push", "#!/bin/sh\n")
-        row("by hand: somebody else's hook is not this one", by_hand(PUBLIC_CHECK_WORDS="quux7"), ["THIS CLONE HAS NO HOOK"])
+        row("by hand: somebody else's hook is not this one", by_hand(), ["THIS CLONE HAS NO HOOK"])
         os.replace(there + ".aside", there)
-        row("by hand: free text and the whole tree are read for other reasons: not a word", (by_hand("--tree"), by_hand("--text", os.path.join(repository.path, "LICENSE"))), ([], []))
+        row("by hand: free text and the whole tree are read for other reasons: not a word", (by_hand("--tree", PUBLIC_CHECK_WORDS=""), by_hand("--text", os.path.join(repository.path, "LICENSE"), PUBLIC_CHECK_WORDS="")), ([], []))
         repository.write("docs/x.md", "fine\n")
         repository.commit()
         done = subprocess.run(["git", "push", "origin", "fix/something"], cwd=repository.path, env=repository.environment,
@@ -1421,7 +1441,7 @@ def main():
         except (Exception, SystemExit) as error:  # a git that behaves otherwise, say: that is one row red, and the other parts still have their say
             place = traceback.extract_tb(error.__traceback__)
             row(f"{part.__name__} gets to its end", f"line {[frame.lineno for frame in place if frame.name == part.__name__][-1]}: {type(error).__name__}: {error}", "it does")
-    wrong, rows = 0, table.finish(exactly=452)
+    wrong, rows = 0, table.finish(exactly=458)
     for what, got, expected in rows:
         if got != expected:
             wrong += 1

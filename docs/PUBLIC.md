@@ -154,9 +154,12 @@ of things, not things:
 Words that no kind covers go in a plain file outside the repository, one to a line, named with
 `git config arbor.privateWords <path>`. They are looked for in that clone only, wherever they stand, whatever their case. A
 list that git was told of and that cannot be read stops the push: the check cannot tell. The setting lies in the clone, so **a clone made
-anew has lost it**, a second clone never had it, and nothing in the repository can say where the list is: `make hooks` says that the clone knows
-of no private words, and so do the hook at every push to the public repository and the check whenever it is run by hand on a branch, which then
-also says if the clone has no hook: to run it before every push is not the whole of the rule. `Public text` can be given such
+anew has lost it**, a second clone never had it, and nothing in the repository can say where the list is. In one night seven clones read by kinds
+alone, and nobody knew. So **from a clone that knows of no private words the hook lets nothing go to the public repository**, and `make hooks` does
+not call itself done there. Whoever has no such list says so, once and knowingly: `git config arbor.privateWords /dev/null`. A fork is its owner's
+business: not a word. A machine that starts again may bring a clone back with its settings as they first were: `make hooks`, which a session's
+start runs, keeps this one and `arbor.rulesRead` beside the kept check and puts them back. The check run by hand on a branch says what the clone
+lacks, the hook or the words: to run it before every push is not the whole of the rule. `Public text` can be given such
 words in a secret, `PUBLIC_CHECK_WORDS`. It looks for them only in what those who work here post, and then names the post and
 nothing more: if it answered strangers, anybody could post guesses and read the list off the answers.
 
