@@ -1,0 +1,459 @@
+#!/bin/bash
+# Does the Mac's input survive when Arbor loses the Accessibility permission with its event taps installed?
+#
+#   scripts/mac-shell/run.sh scripts/mac-shell/probe-permission-loss.sh      (about seventeen minutes; README-permission-probes.md says how to read it)
+#
+# macOS holds every event a tap has asked for until the tap's owner answers, and has been reported to stop all input when that owner
+# loses the permission. check-F63.sh and input-taps.sh take the permission from everything, their own tools included, so neither can
+# press anything afterwards. Here Arbor is a bundle under an identifier of its own, opened by Launch Services, so that it
+# answers for its own permission: that one entry is given and taken, and this script's tools keep theirs.
+#
+# Each round: the entry is written, Arbor is opened and has its taps; asker.swift posts a click, a key and a notch of the wheel every
+# 50 ms, each with a number, for twelve seconds; four seconds in, the permission goes; a listener at the far end of the taps writes down
+# what arrived and when. The roads it goes by:
+#   by_tccutil              `tccutil reset Accessibility <identifier>`: felt at once
+#   by_the_row_and_a_word   the entry deleted, and the notification com.apple.accessibility.api posted, at which running processes ask again
+#   by_the_row              the entry deleted and tccd killed, nothing said: felt 4 to 16 s later, or not within half a minute. Until then Arbor keeps its
+#                           taps and is told yes. Those rounds' streams last 34 s
+#   by_the_row_announced    the same, and the notification
+# Killing tccd is no person's deed, and it blocks whoever posts events for seconds, with nobody else running: a hole in which no number is missing.
+#
+# The controls: the same deed and the same stream with nobody running; with an Arbor that has no taps (ARBOR_NO_HOTKEYS=1); and with a bare tapper, a tool that
+# has one active tap under an identifier of its own and does nothing about losing the permission: what macOS does to any tapper.
+#
+# What is asked (the rule of 2026-10-15): nothing lost; the hole while the permission goes no longer than a second; afterwards no later and no longer
+# a hole than the same Mac had before the loss. The bars as they first stood are printed beside.
+# A round in which nothing could be posted, nothing arrived before the loss, or Arbor had no taps proves nothing: it says INVALID and fails. One in which
+# Arbor never notices is a FINDING. arrivals-<n>.txt and stream-<n>.txt are the raw lists, sample-<n>.txt what `sample` saw of Arbor.
+#
+# What it does not try: see probe-loss-under-traffic.sh for the taps that are on only at times. The clicks here go through the tap on mouse-downs, which is
+# always on. Arbor runs with ARBOR_NO_PROMPT=1: no window of its own, and no question of macOS's, comes between the clicks and the test window.
+source "$(dirname "$0")/lib.sh"
+source "$(dirname "$0")/lib-gestures.sh"
+needs_throwaway_mac "write to the permission database with sudo, restart tccd and reset a bundle's Accessibility permission"
+
+BUNDLE_ID=com.evbarleyg.arbor.probe-permission-loss
+TCC="/Library/Application Support/com.apple.TCC/TCC.db"
+ASKER="$ARBOR_ROOT/.build/mac-shell/asker"
+WITNESS="$ARBOR_ROOT/.build/mac-shell/witness"
+
+tcc() { sudo sqlite3 "$TCC" "$1"; }
+status_starts() { case "$("$ARBOR_BIN/arborctl" status 2>&1)" in "$1"*) return 0 ;; *) return 1 ;; esac; }
+arbor_taps() { "$WITNESS" taps | grep "pid=$ARBOR_PID "; }
+has_taps() { [ "$(arbor_taps | wc -l)" -ge 3 ]; }
+no_taps() { [ "$(arbor_taps | wc -l)" -eq 0 ]; }
+gone() { ! kill -0 "$1" 2>/dev/null; }
+invalid() { echo "INVALID: $1"; check "round $round is valid: $1" false; }
+
+arbor_build
+for tool in asker witness; do
+  swiftc -O -swift-version 5 "$ARBOR_ROOT/scripts/mac-shell/$tool.swift" -o "$ARBOR_ROOT/.build/mac-shell/$tool" \
+    > "$ARBOR_OUT/build-$tool.log" 2>&1 || { cat "$ARBOR_OUT/build-$tool.log"; die "scripts/mac-shell/$tool.swift did not compile"; }
+done
+tcc "SELECT count(*) FROM access;" > /dev/null 2>&1 || die "the permission database cannot be read here"
+echo "the tools' own permission: $(pointer ax-access)"
+[ "$(pointer ax-access)" = true ] || die "INVALID: this script's own tools have no Accessibility permission, so nothing can be posted"
+
+step "the bundle"
+# The test windows come with a session; its Arbor, a child of this shell that shares the shell's permission, makes way for the bundle.
+# This is about the taps, so it asks for them, whatever Arbor ships with. The file stays in the session's home, which every Arbor of this run is given.
+arbor_settings "{$ARBOR_GESTURES_ON}"
+arbor_start 2
+"$ARBOR_BIN/arborctl" quit > /dev/null
+ended "$ARBOR_PID" || die "the session's own Arbor did not quit"
+ARBOR_PID=""
+# Not in the session's folder: tccutil finds a bundle by its identifier in Launch Services' list, and of one under /tmp it says "No such bundle identifier",
+# as the user and as root, registered or not.
+app="$HOME/Applications/ArborProbePermissionLoss.app"
+at_exit 'rm -rf "${app:?}"'
+rm -rf "${app:?}"
+mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
+cp "$ARBOR_BIN/Arbor" "$app/Contents/MacOS/Arbor"
+cp Resources/Info.plist "$app/Contents/Info.plist"
+/usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier $BUNDLE_ID" -c "Delete :CFBundleURLTypes" "$app/Contents/Info.plist" \
+  || die "could not edit Info.plist"
+codesign --force --sign - --identifier "$BUNDLE_ID" "$app" || die "codesign failed"
+/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f "$app" || echo "lsregister could not register the bundle"
+codesign --display --requirements - "$app" 2>/dev/null | sed -n 's/^\(# \)\{0,1\}designated => //p' | tee "$ARBOR_SESSION_DIR/requirement.txt"
+csreq -r "$ARBOR_SESSION_DIR/requirement.txt" -b "$ARBOR_SESSION_DIR/requirement.bin" || die "csreq could not read the bundle's requirement"
+REQUIREMENT="X'$(xxd -p "$ARBOR_SESSION_DIR/requirement.bin" | tr -d '\n')'"
+at_exit "tcc \"DELETE FROM access WHERE client = '$BUNDLE_ID';\""
+
+# The third control: a tool that has one active tap and does nothing about losing the permission, under an identifier of its own. What happens to input then is
+# macOS's way with any tapper.
+TAPPER_ID=com.evbarleyg.arbor.probe-bare-tapper
+tapper="$HOME/Applications/ArborProbeBareTapper.app"
+at_exit 'rm -rf "${tapper:?}"'
+rm -rf "${tapper:?}"
+mkdir -p "$tapper/Contents/MacOS"
+cp "$ASKER" "$tapper/Contents/MacOS/asker"
+cat > "$tapper/Contents/Info.plist" <<PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>CFBundleIdentifier</key><string>$TAPPER_ID</string>
+  <key>CFBundleExecutable</key><string>asker</string>
+  <key>CFBundleName</key><string>ArborProbeBareTapper</string>
+  <key>CFBundlePackageType</key><string>APPL</string>
+  <key>LSUIElement</key><true/>
+</dict></plist>
+PLIST
+codesign --force --sign - --identifier "$TAPPER_ID" "$tapper" || die "codesign failed"
+/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f "$tapper" || echo "lsregister could not register the tapper"
+codesign --display --requirements - "$tapper" 2>/dev/null | sed -n 's/^\(# \)\{0,1\}designated => //p' > "$ARBOR_SESSION_DIR/requirement.txt"
+csreq -r "$ARBOR_SESSION_DIR/requirement.txt" -b "$ARBOR_SESSION_DIR/requirement.bin" || die "csreq could not read the tapper's requirement"
+TAPPER_REQUIREMENT="X'$(xxd -p "$ARBOR_SESSION_DIR/requirement.bin" | tr -d '\n')'"
+at_exit "tcc \"DELETE FROM access WHERE client = '$TAPPER_ID';\""
+ARBOR_ID=$BUNDLE_ID
+ARBOR_REQUIREMENT=$REQUIREMENT
+rows() { tcc "SELECT client, auth_value FROM access WHERE service = 'kTCCServiceAccessibility' AND client = '$BUNDLE_ID';"; }
+
+# What the switch in System Settings records. A new process asks the daemon, which answers from memory, so it is restarted.
+grant() {
+  tcc "INSERT OR REPLACE INTO access (service, client, client_type, auth_value, auth_reason, auth_version, csreq, indirect_object_identifier, flags, last_modified) VALUES ('kTCCServiceAccessibility', '$BUNDLE_ID', 0, 2, 3, 1, $REQUIREMENT, 'UNUSED', 0, strftime('%s', 'now'));" \
+    || die "INVALID: the grant could not be written"
+  sudo killall -9 tccd 2>/dev/null
+  # Not one second: whoever posts events has been blocked for two seconds four and a half seconds after such a kill. That must be over before the stream begins.
+  sleep 6
+}
+launch() {
+  limit 20 open -n "$app" --env ARBOR_HOME="$ARBOR_HOME" --env ARBOR_SOCKET="$ARBOR_SOCKET" --env ARBOR_DEBUG=1 \
+    --env ARBOR_ONLY_PIDS="$ARBOR_WINDOWS_PID" --env ARBOR_NO_WATCHDOG=1 --env ARBOR_NO_PICTURES=1 --env ARBOR_NO_PROMPT=1 \
+    --env ARBOR_NO_STATUS_ITEM=1 --env ARBOR_NO_HOTKEYS="$1" ${2:+--env "$2"}
+  sleep 2
+  ARBOR_PID=$(pgrep -f "$app/Contents/MacOS/Arbor" | head -n 1)
+  [ -n "$ARBOR_PID" ] || die "INVALID: the bundle did not start"
+  started "$ARBOR_PID"
+}
+leave() {
+  [ -n "$ARBOR_PID" ] || return 0
+  "$ARBOR_BIN/arborctl" quit > /dev/null 2>&1
+  eventually gone "$ARBOR_PID" || kill_started "$ARBOR_PID"
+  ARBOR_PID=""
+}
+
+by_tccutil() { tccutil reset Accessibility "$BUNDLE_ID" || sudo tccutil reset Accessibility "$BUNDLE_ID"; }
+by_the_row() {
+  tcc "DELETE FROM access WHERE service = 'kTCCServiceAccessibility' AND client = '$BUNDLE_ID';"
+  sudo killall -9 tccd 2>/dev/null
+  echo "the entry deleted, tccd restarted"
+}
+
+# Probably what the switch in System Settings comes to: a process that is running goes by what it was told last until this notification is posted
+# (probe-permission-grant.sh).
+by_the_row_announced() {
+  by_the_row
+  "$ASKER" announce
+}
+
+# A control: nothing is taken.
+nothing() { echo "nothing is taken"; }
+
+# The same without violence: no person kills a daemon. tccd is left alone and only told of nothing; the processes are told to ask again.
+by_the_row_and_a_word() {
+  tcc "DELETE FROM access WHERE service = 'kTCCServiceAccessibility' AND client = '$BUNDLE_ID';"
+  "$ASKER" announce
+}
+
+# arbor-stopped is sabotage: the whole process is halted (SIGSTOP) two seconds before the deed, so that nobody is there to take the taps out, which is the nearest there is today to
+# "the thread that keeps the permission's clock sleeps for good". How long until input is back? The Mac is given back whatever happens: twenty seconds after the deed Arbor is killed.
+# arbor-clock-stopped is the sabotage that matters: ARBOR_TAP_CLOCK_STOPS_AFTER=<s> ends the timer of the taps' clock, once, and nothing else; arbor.log says "the event taps' clock is stopped". The tap thread goes on
+# answering, so nothing times out. The deed is done after that line. INVALID on an Arbor that does not know the variable. Killed twenty seconds after the deed as well.
+# one_round <number> <how the permission goes> [arbor|arbor-without-taps|nobody|bare-tapper[-off|-off+idle|-late]|bare-monitor|arbor-stopped|arbor-clock-stopped] [sampled|sparse]: all but the first are controls.
+# bare-monitor is the tapper's bundle with no tap but a global NSEvent monitor, which Arbor has beside its scroll tap and takes out in the same turn: is anything dropped for that? If input stands still without
+# Arbor's taps as well, it is not the taps' doing. sampled: `sample` looks at Arbor from the deed on, for what its main thread is doing meanwhile; it halts
+# Arbor at every look, so such a round's figures are not to be compared with the others'.
+one_round() {
+  local how=$2 who=${3:-arbor} manner=${4:-} sampled="" sparse="" beat=${BEAT:-50} x y w h log_mark taken back length=12 between killed=""
+  [ "$manner" = sampled ] && sampled=yes
+  # A dense stream hides the shape of a thing: one event a second, in the same order.
+  [ "$manner" = sparse ] && sparse=--sparse beat=1000 length=26
+  round=$1
+  # By that road the loss came 14 s after the deed: the stream has to last until then.
+  [ "$how" = by_the_row ] && length=34
+  [ "$how" = by_the_row ] && [ -n "$sparse" ] && length=40
+  between="from the loss until the taps were gone"
+  [ "$how" = by_the_row ] && between="FROM THE ROW'S DELETION UNTIL ARBOR NOTICED"
+  if [ "$who" = arbor-stopped ]; then
+    length=30
+    between="FROM THE LOSS UNTIL ARBOR, HALTED, WAS KILLED"
+  fi
+  if [ "$who" = arbor-clock-stopped ]; then
+    length=30
+    between="FROM THE LOSS UNTIL ARBOR, ITS CLOCK STOPPED, WAS KILLED"
+  fi
+  step "round $round: $how, with $who${manner:+, $manner}"
+  # Whose entry is written and taken.
+  BUNDLE_ID=$ARBOR_ID REQUIREMENT=$ARBOR_REQUIREMENT
+  case "$who" in bare-*) BUNDLE_ID=$TAPPER_ID REQUIREMENT=$TAPPER_REQUIREMENT ;; esac
+  grant
+  if [ "$who" = bare-monitor ]; then
+    : > "$ARBOR_OUT/monitor-$round.txt"
+    limit 20 open -n "$tapper" --args monitor "$((length + 5))" "$ARBOR_OUT/monitor-$round.txt"
+    eventually grep -q monitor-ready "$ARBOR_OUT/monitor-$round.txt" || { invalid "the bare monitor is in"; return; }
+    TAPPER_PID=$(sed -n 's/.*monitor-ready pid=\([0-9]*\).*/\1/p' "$ARBOR_OUT/monitor-$round.txt")
+    started "$TAPPER_PID"
+    head -n 1 "$ARBOR_OUT/monitor-$round.txt"
+  elif [ "${who#bare-tapper}" != "$who" ]; then
+    : > "$ARBOR_OUT/tapper-$round.txt"
+    # bare-tapper-off, bare-tapper-off+idle, bare-tapper-late: see `asker tap`. Late: switched on three seconds after the deed, which comes about five seconds after the tap went in.
+    manner=${who#bare-tapper}
+    manner=${manner#-}
+    # shellcheck disable=SC2086
+    limit 20 open -n "$tapper" --args tap "$((length + 5))" "$ARBOR_OUT/tapper-$round.txt" $manner $([ "$manner" = late ] && echo 8)
+    eventually grep -q tap-ready "$ARBOR_OUT/tapper-$round.txt" || { cat "$ARBOR_OUT/tapper-$round.txt"; invalid "the bare tapper has its tap"; return; }
+    TAPPER_PID=$(sed -n 's/.*tap-ready pid=\([0-9]*\).*/\1/p' "$ARBOR_OUT/tapper-$round.txt")
+    started "$TAPPER_PID"
+    "$WITNESS" taps | grep "pid=$TAPPER_PID "
+  elif [ "$who" != nobody ]; then
+    log_mark=$(wc -l < "$ARBOR_HOME/arbor.log")
+    launch "$([ "$who" = arbor-without-taps ] && echo 1 || echo 0)" "$([ "$who" = arbor-clock-stopped ] && echo ARBOR_TAP_CLOCK_STOPS_AFTER=2)"
+    if ! eventually status_starts running; then
+      "$ARBOR_BIN/arborctl" status
+      invalid "Arbor has the permission at launch"
+      leave
+      return
+    fi
+    echo "Arbor pid $ARBOR_PID, entry: $(rows)"
+    if [ "$who" != arbor-without-taps ]; then
+      eventually has_taps || { invalid "Arbor has its event taps"; leave; return; }
+      arbor_taps
+    else
+      no_taps || { invalid "this Arbor has no event taps"; leave; return; }
+    fi
+  fi
+  if [ "$who" = arbor-clock-stopped ]; then
+    at_exit "kill -9 $ARBOR_PID 2>/dev/null"
+    clock_stopped() { tail -n "+$((log_mark + 1))" "$ARBOR_HOME/arbor.log" | grep -q "the event taps' clock is stopped"; }
+    for _ in 1 2 3 4; do clock_stopped && break; sleep 2; done
+    clock_stopped || { invalid "this Arbor knows ARBOR_TAP_CLOCK_STOPS_AFTER: its log says that the clock is stopped"; leave; return; }
+    tail -n "+$((log_mark + 1))" "$ARBOR_HOME/arbor.log" | grep "the event taps' clock is stopped" | cut -c 12-150
+  fi
+  # The second window is in front. By the window server, which is there whoever runs.
+  read -r x y w h <<< "$(real_frame_of "$W2")"
+  x=$((${x%.*} + ${w%.*} / 2)) y=$((${y%.*} + ${h%.*} / 2))
+  log_mark=$(wc -l < "$ARBOR_HOME/arbor.log")
+
+  "$ASKER" arrivals "$((length + 5))" > "$ARBOR_OUT/arrivals-$round.txt" 2>&1 &
+  started $!
+  eventually grep -q arrivals-ready "$ARBOR_OUT/arrivals-$round.txt" || { invalid "the listener at the end of the taps started"; leave; return; }
+  # shellcheck disable=SC2086
+  "$ASKER" stream "$length" "$beat" "$x" "$y" --kinds "${KINDS:-click,key,wheel}" $sparse > "$ARBOR_OUT/stream-$round.txt" 2>&1 &
+  stream=$!
+  started "$stream"
+  if [ "$who" = arbor-stopped ]; then
+    sleep 2
+    at_exit "kill -9 $ARBOR_PID 2>/dev/null"
+    echo "$("$ASKER" now) Arbor is halted"
+    kill -STOP "$ARBOR_PID"
+    sleep 2
+  else
+    sleep 4
+  fi
+  if [ -n "$sampled" ] && [ -n "$ARBOR_PID" ]; then
+    sample "$ARBOR_PID" "$((length - 5))" 5 -file "$ARBOR_OUT/sample-$round.txt" > /dev/null 2>&1 &
+    started $!
+  fi
+  taken=$("$ASKER" now)
+  "$how"
+  back=$("$ASKER" now)
+  echo "the permission was taken between $taken and $back"
+  if [ "$who" = arbor-stopped ] || [ "$who" = arbor-clock-stopped ]; then
+    sleep 20
+    echo "its taps, twenty seconds on:"; arbor_taps
+    killed=$("$ASKER" now)
+    kill -9 "$ARBOR_PID" 2>/dev/null
+    echo "$killed Arbor is killed"
+  fi
+  ended "$stream" "$((length * 10 + 30))" || invalid "the stream came to its end"
+  sleep 1
+  cat "$ARBOR_OUT/stream-$round.txt"
+  tail -n "+$((log_mark + 1))" "$ARBOR_HOME/arbor.log" | grep -E "ermission|event tap|stopped|ERROR" | cut -c 12-220 | tail -n 8
+  echo "the tools' own permission afterwards: $(pointer ax-access)"
+  removed=""
+  if [ "$who" = arbor-stopped ] || [ "$who" = arbor-clock-stopped ]; then
+    tail -n "+$((log_mark + 1))" "$ARBOR_HOME/arbor.log" | grep -E "ermission|event tap|stopped|ERROR" | grep -v "DEBUG said" | cut -c 12-200 | tail -n 6
+    removed=$killed
+    ARBOR_PID=""
+  elif [ "$who" = bare-monitor ]; then
+    echo "the monitor's own words:"; cat "$ARBOR_OUT/monitor-$round.txt"
+    kill_started "$TAPPER_PID"
+  elif [ "${who#bare-tapper}" != "$who" ]; then
+    # It ends by itself a few seconds after the stream, and says then what its questions cost.
+    for _ in 1 2 3 4 5 6 7 8 9 10; do grep -q "the end" "$ARBOR_OUT/tapper-$round.txt" && break; sleep 1; done
+    echo "the tapper's own words:"; cat "$ARBOR_OUT/tapper-$round.txt"
+    echo "its tap now, by the window server's list: $("$WITNESS" taps | grep "pid=$TAPPER_PID " || echo none)"
+    removed=$(grep -m 1 switched-off "$ARBOR_OUT/tapper-$round.txt" | cut -c 1-12)
+    kill_started "$TAPPER_PID"
+  elif [ "$who" != nobody ]; then
+    "$ARBOR_BIN/arborctl" status | head -n 1 | cut -c 1-100
+        # Not before the deed: an Arbor that takes its taps out when macOS is slow to answer (a doubt) writes the same line.
+    # From the line of whoever takes the taps out. The controller's comes later, after the cure up to 3 s later or never; it serves only where there is no other
+    # (an Arbor without taps; the code of 2026-10-15, in which the controller was now and then the first).
+    removed=$(tail -n "+$((log_mark + 1))" "$ARBOR_HOME/arbor.log" | awk -v taken="$taken" 'substr($0, 12, 12) >= taken && /permission is gone/ { print substr($0, 12, 12); exit }')
+    if [ -z "$removed" ]; then
+      removed=$(tail -n "+$((log_mark + 1))" "$ARBOR_HOME/arbor.log" | awk -v taken="$taken" 'substr($0, 12, 12) >= taken && /permission was taken away/ { print substr($0, 12, 12); exit }')
+      [ -z "$removed" ] || echo "(\"noticed\" is the controller's line: there is no line about the taps' going)"
+    fi
+    echo "doubts (\"macOS has not said …\"): $(tail -n "+$((log_mark + 1))" "$ARBOR_HOME/arbor.log" | grep -c "macOS has not said"); \"permission is back\": $(tail -n "+$((log_mark + 1))" "$ARBOR_HOME/arbor.log" | grep -c "permission is back"); of them before the deed: $(tail -n "+$((log_mark + 1))" "$ARBOR_HOME/arbor.log" | awk -v taken="$taken" 'substr($0, 12, 12) < taken && /macOS has not said/' | wc -l | tr -d ' ')"
+    echo "false alarms (\"permission is back after N ms (macOS has not said in time …\"): $(tail -n "+$((log_mark + 1))" "$ARBOR_HOME/arbor.log" | grep -c "permission is back after .*macOS has not said")"
+    echo "slow answers (\"macOS took N ms to say …\"), N: $(tail -n "+$((log_mark + 1))" "$ARBOR_HOME/arbor.log" | sed -n 's/.*macOS took \([0-9.]*\) ms to say.*/\1/p' | tr '\n' ' ')"
+    tail -n "+$((log_mark + 1))" "$ARBOR_HOME/arbor.log" | grep -E "macOS was asked|permission is back" | cut -c 12-200 | head -n 4
+    echo "lines about a tap that macOS switched off: $(tail -n "+$((log_mark + 1))" "$ARBOR_HOME/arbor.log" | grep -c -E "event tap was off|switched (it|them) back on|too slow|of user input|switched the .* event tap off")"
+    # macOS reports a process's own tapEnable(false) to its callback as "by user input", at once: such words count Arbor's own pauses. "By timeout" is the one that means something.
+    echo "  of them because of user input: $(tail -n "+$((log_mark + 1))" "$ARBOR_HOME/arbor.log" | grep -c "of user input"); because it was too slow (by timeout): $(tail -n "+$((log_mark + 1))" "$ARBOR_HOME/arbor.log" | grep -c -E "too slow|by timeout|timed out")"
+    tail -n "+$((log_mark + 1))" "$ARBOR_HOME/arbor.log" | grep -E "event tap was off|switched (it|them) back on|too slow|of user input|switched the .* event tap off" | cut -c 12-200 | head -n 5
+    [ -z "$removed" ] || check "round $round: Arbor has no event tap left" eventually no_taps
+    if [ -z "$removed" ]; then
+      echo "FINDING: $((length - 4)) s after the deed Arbor has not noticed. Its taps: $(arbor_taps | wc -l | tr -d ' '). Whether input suffered meanwhile is below: everything after the deed counts as \"after\"."
+    fi
+  fi
+
+  python3 - "$ARBOR_OUT/arrivals-$round.txt" "$ARBOR_OUT/stream-$round.txt" "$taken" "${removed:-$back}" "$between" \
+    "$([ "${who#bare-tapper}" != "$who" ] && echo "$ARBOR_OUT/tapper-$round.txt" || echo -)" "$beat" \
+    "$([ -n "$sparse" ] && echo 1 || echo "${KINDS:-click,key,wheel}" | awk -F, '{ n = 0; for (i = 1; i <= NF; i++) n += ($i == "wheel" ? 1 : $i == "pinch" ? 3 : 2); print n }')" \
+    > "$ARBOR_SESSION_DIR/verdict" <<'PYTHON'
+import re, sys
+
+def seconds(text):
+    hours, minutes, rest = text.split(":")
+    return int(hours) * 3600 + int(minutes) * 60 + float(rest)
+
+arrivals, stream, taken, removed, between, tapper = sys.argv[1:7]
+beat, each = float(sys.argv[7]) / 1000, int(sys.argv[8])
+taken, removed = seconds(taken), seconds(removed)
+text = open(stream).read()
+posted = re.search(r"stream ends: (\d+) events posted", text)
+posted = int(posted.group(1)) if posted else 0
+begins, ends = (seconds(re.search(r"(\S+) stream " + word, text).group(1)) for word in ("begins", "ends"))
+def due(number):
+    """When an event was to be posted, by the stream's own beat."""
+    return begins + (number - 1) // each * beat
+found = []
+for line in open(arrivals):
+    match = re.match(r"(\S+) (\S+) n=(\d+) late_us=(-?\d+)", line)
+    if match:
+        found.append((seconds(match.group(1)), match.group(2), int(match.group(3)), int(match.group(4))))
+numbers = {entry[2] for entry in found}
+missing = [number for number in range(1, posted + 1) if number not in numbers]
+kinds = ["down", "up", "key-down", "key-up", "wheel"]
+print(f"posted {posted}, arrived {len(numbers)}, missing {len(missing)}" + (f": {missing[:20]}" if missing else ""))
+print("arrived by kind: " + ", ".join(f"{kind} {sum(1 for entry in found if entry[1] == kind)}" for kind in kinds))
+spans = [("before the loss", float("-inf"), taken), (between, taken, removed), ("after the taps were gone", removed, float("inf"))]
+worst = {}
+for name, start, end in spans:
+    part = [entry for entry in found if start <= entry[0] < end]
+    # A hole belongs to the stretch its middle lies in, an event to the one it was due in: the last beat before the deed is up to a beat older than the deed.
+    holes = [(later[0] - earlier[0], earlier[0]) for earlier, later in zip(found, found[1:]) if start <= (earlier[0] + later[0]) / 2 < end]
+    hole = max(holes) if holes else (0, 0)
+    late = max((entry[3] for entry in part), default=0)
+    over = sum(1 for entry in part if entry[3] > 10000)
+    worst[name] = (len(part), hole[0], late, over)
+    owed = [number for number in range(1, posted + 1) if start <= due(number) < end]
+    print(f"{name}: {sum(1 for number in owed if number in numbers)} arrived of {len(owed)} posted, longest hole {hole[0] * 1000:.0f} ms, worst lateness {late / 1000:.1f} ms, more than 10 ms late: {over}")
+# The comparison, as the rule reads it: at the median, by kind of event.
+def median(values):
+    values = sorted(values)
+    return values[len(values) // 2] / 1000 if values else 0
+worse = 0
+told = []
+for kind in kinds:
+    first, then = (median([entry[3] for entry in found if entry[1] == kind and start <= entry[0] < end]) for _, start, end in (spans[0], spans[2]))
+    if any(entry[1] == kind for entry in found):
+        told.append(f"{kind} {first:.2f} / {then:.2f}")
+        worse = max(worse, then - first)
+print("median lateness in ms, before the loss / after the taps were gone: " + ", ".join(told))
+def stamp(time):
+    return f"{int(time // 3600):02d}:{int(time % 3600 // 60):02d}:{time % 60:06.3f}"
+for earlier, later in zip(found, found[1:]):
+    if later[0] - earlier[0] > max(0.15, 2.5 * beat) or later[2] - earlier[2] > 1:
+        print(f"  a hole of {(later[0] - earlier[0]) * 1000:.0f} ms from {stamp(earlier[0])} (n={earlier[2]}) to {stamp(later[0])} (n={later[2]}): {later[2] - earlier[2] - 1} events lost in it")
+silence = ends - found[-1][0] if found else ends - begins
+if silence > max(0.15, 2.5 * beat):
+    last = spans[2][0]
+    worst[last] = (worst[last][0], max(worst[last][1], silence), worst[last][2], worst[last][3])
+    print(f"  NOTHING ARRIVED from {stamp(found[-1][0]) if found else stamp(begins)} to the end of the stream, {silence * 1000:.0f} ms: {posted - (found[-1][2] if found else 0)} events lost in it")
+if missing:
+    first = due(missing[0])
+    print(f"the first event that was lost (n={missing[0]}) was due at {stamp(first)}, {(first - taken) * 1000:+.0f} ms from the beginning of the deed")
+if tapper != "-":
+    # How long after the first lost event (or, if none was, after the deed) each of the tapper's questions changed its answer; and what asking costs.
+    for line in open(tapper):
+        match = re.match(r"(\S+) (question .*|switched-off .*|switched on by .*)", line)
+        if match and seconds(match.group(1)) >= taken - 0.1:
+            print(f"  {match.group(2)}: {(seconds(match.group(1)) - (first if missing else taken)) * 1000:+.0f} ms from {'the first lost event' if missing else 'the deed'}")
+        if " cost " in line:
+            print("  " + line.split(" ", 1)[1].strip())
+print(f"the taps were gone {(removed - taken) * 1000:.0f} ms after the permission began to go")
+holes = [(later[0] - earlier[0], earlier[0]) for earlier, later in zip(found, found[1:])] + ([(silence, found[-1][0])] if found else [])
+print(f"THE LONGEST HOLE: {max(holes)[0] * 1000:.0f} ms" if holes else "THE LONGEST HOLE: nothing arrived")
+print("facts", posted, len(missing), worst["before the loss"][0], worst["after the taps were gone"][0], worst["after the taps were gone"][3],
+      round(max(holes)[0] * 1000) if holes else 999999, round(worst["before the loss"][2] / 1000), round(worst["after the taps were gone"][2] / 1000),
+      round(worst["before the loss"][1] * 1000), round(worst[between][1] * 1000), round(worst["after the taps were gone"][1] * 1000), round(worse))
+PYTHON
+  grep -v "^facts " "$ARBOR_SESSION_DIR/verdict"
+  read -r _ posted missing before after late hole late_before late_after hole_before hole_during hole_after median_worse <<< "$(grep "^facts " "$ARBOR_SESSION_DIR/verdict")"
+  if [ -n "$sparse" ]; then
+    # Which events were lost, and which arrived between them, is what such a round is for: it is read, not barred, but for the one absolute.
+    [ "${posted:-0}" -ge 20 ] || invalid "the stream posted its events (${posted:-0})"
+    [ "${before:-0}" -ge 3 ] || invalid "events arrived before the loss (${before:-0})"
+    echo "what became of each event from the deed on (n, kind, ms from the deed):"
+    python3 - "$ARBOR_OUT/arrivals-$round.txt" "$ARBOR_OUT/stream-$round.txt" "$taken" "${KINDS:-click,key,wheel}" <<'SPARSE'
+import re, sys
+def seconds(text):
+    hours, minutes, rest = text.split(":")
+    return int(hours) * 3600 + int(minutes) * 60 + float(rest)
+arrivals, stream, taken, kinds = sys.argv[1:5]
+taken = seconds(taken)
+names = [name for kind in kinds.split(",") for name in {"click": ["down", "up"], "key": ["key-down", "key-up"], "wheel": ["wheel"], "pinch": ["gesture"] * 3}[kind]]
+text = open(stream).read()
+begins = seconds(re.search(r"(\S+) stream begins", text).group(1))
+posted = int(re.search(r"stream ends: (\d+)", text).group(1))
+arrived = {int(match.group(1)) for match in (re.search(r" n=(\d+) ", line) for line in open(arrivals)) if match}
+print("  " + "  ".join(f"{number} {names[(number - 1) % len(names)]} {(begins + number - 1 - taken) * 1000:+.0f} {'arrived' if number in arrived else 'LOST'};" for number in range(1, posted + 1) if begins + number - 1 >= taken - 1.5))
+SPARSE
+    check "round $round: NOTHING LOST: every event that was posted arrived (${missing:-?} did not)" test "${missing:-1}" -eq 0
+    shot "round-$round-afterwards"
+    leave
+    return
+  fi
+  [ "${posted:-0}" -ge 500 ] || invalid "the stream posted its events (${posted:-0})"
+  [ "${before:-0}" -ge 100 ] || invalid "events arrived before the loss (${before:-0})"
+  # The bare tapper never lets go: that nothing arrives afterwards is what it is there to show.
+  [ "${who#bare-tapper}" != "$who" ] || [ "${after:-0}" -ge 100 ] || invalid "events arrived after the taps were gone (${after:-0})"
+  # The rule: three absolutes, and the comparison on the same Mac. A hosted Mac is never quite still: with nothing taken from anybody events have been 85 ms late there.
+  check "round $round: NOTHING LOST: every event that was posted arrived (${missing:-?} did not)" test "${missing:-1}" -eq 0
+  check "round $round: the hole while the permission went (${hole_during:-?} ms) is no longer than a second" test "${hole_during:-9999}" -le 1000
+  check "round $round: AT THE MEDIAN, by kind of event, no more than 10 ms later after the taps were gone than before the loss (${median_worse:-?} ms at most)" \
+    test "${median_worse:-99}" -le 10
+  check "round $round: (at the worst) no later after the taps were gone (${late_after:-?} ms) than this Mac was before the loss (${late_before:-?} ms), or 10 ms" \
+    test "${late_after:-9999}" -le "$((${late_before:-0} > 10 ? ${late_before:-0} : 10))"
+  check "round $round: no longer a hole after the taps were gone (${hole_after:-?} ms) than before the loss (${hole_before:-?} ms), or 150 ms" \
+    test "${hole_after:-9999}" -le "$((${hole_before:-0} > 150 ? ${hole_before:-0} : 150))"
+  # The bars as they first stood, beside it.
+  check "round $round: (the first bar) none more than 10 ms late once the taps were gone" test "${late:-1}" -eq 0
+  check "round $round: (the first bar) input never stood still for a quarter of a second (${hole:-?} ms)" test "${hole:-999999}" -lt 250
+  shot "round-$round-afterwards"
+  leave
+}
+
+# ROUNDS="<how>:<who>[:sampled] …" plays others than these; BEAT=<ms> and KINDS=click,key,wheel make another stream (probe-tapper-questions.sh).
+number=0
+for each in ${ROUNDS:-by_tccutil:arbor by_tccutil:nobody by_tccutil:arbor-without-taps by_tccutil:bare-tapper by_tccutil:bare-monitor \
+  by_the_row_and_a_word:arbor by_the_row_and_a_word:nobody by_the_row_and_a_word:arbor-without-taps by_the_row_and_a_word:bare-tapper \
+  by_the_row:arbor by_the_row:nobody by_the_row:bare-tapper \
+  by_tccutil:arbor by_the_row_and_a_word:arbor by_tccutil:arbor by_the_row_and_a_word:arbor \
+  by_tccutil:arbor:sampled by_the_row_and_a_word:arbor:sampled by_the_row_announced:arbor:sampled \
+  by_tccutil:arbor:sparse by_tccutil:arbor:sparse by_tccutil:bare-tapper:sparse by_tccutil:nobody:sparse \
+  nothing:arbor-stopped by_tccutil:arbor-stopped by_tccutil:arbor-clock-stopped by_tccutil:arbor-clock-stopped:sparse}; do
+  number=$((number + 1))
+  IFS=: read -r how who manner <<< "$each"
+  one_round "$number" "$how" "$who" "$manner"
+done
+
+step "side by side"
+grep -E "^== round|THE LONGEST HOLE|^posted|a hole of|noticed|INVALID" "$ARBOR_OUT/output.txt" 2>/dev/null | cut -c 1-170
+
+step "the end"
+arbor_log
+arbor_close_windows
