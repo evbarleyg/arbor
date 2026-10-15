@@ -327,6 +327,46 @@ MUTANTS = [
         "new": "      // If it came forward while it was silent, nobody has heard which of its windows has the keyboard.\n      _ = 0\n",
         "red": ["⌘Tab to an app that hangs, and wakes two seconds later: once it wakes, its window, which has the keyboard, is reported focused"],
     },
+    {
+        # A move out of view that lies in a hung app's queue is carried out when it wakes, for as long as Arbor lives. The word left at the pause lies behind it.
+        "name": "a pause leaves no word for an app that does not answer",
+        "old": "    if leavesWord { leaveWordForAppsThatDoNotAnswer() }\n",
+        "new": "    if leavesWord { _ = 0 }\n",
+        "red": [
+            "an app hangs for 8 s at the first call that sets something in a move out of view, and Arbor is paused meanwhile: and all its windows are in view, as a pause promises",
+            "an app hangs for 8 s half a second after it last answered Arbor, its windows are sent out of view, and Arbor is paused meanwhile: and stay there for as long as the pause lasts",
+        ],
+    },
+    {
+        # Several places are tried for a window while Arbor lets go. The first is where it floated, in its own size; the last is "anywhere in view".
+        "name": "the word left at a pause is the last place that was tried",
+        "old": "    guard isLettingGo, undelivered[window] == nil, let known = records[window]?.snapshot.frame else { return }\n",
+        "new": "    guard isLettingGo, undelivered[window] != .zero, let known = records[window]?.snapshot.frame else { return }\n",
+        "red": [
+            "an app hangs for 8 s at the first call that sets something in a move out of view, and Arbor is paused meanwhile: the one that was on its way out is where it floated, in its own size",
+        ],
+    },
+    {
+        # Where its person keeps it is the first place asked for, and the considered one, however little of it shows.
+        "name": "word is left only for a place of which half is in view",
+        "old": "    guard known.showsLessThanHalf(on: screens), frame.titleBarIsWithinReach(on: screens) else { return }\n",
+        "new": "    guard known.showsLessThanHalf(on: screens), !frame.showsLessThanHalf(on: screens) else { return }\n",
+        "red": [
+            "a floating window is dragged most of the way over the right edge, goes out of view with the Desktop, its app hangs for 8 s, and Arbor is paused meanwhile: "
+            "half a second after its app wakes it is exactly where its person keeps it",
+        ],
+    },
+    {
+        # A move that finds its app busy is turned away, and no layout has a place for a floating window that is in view.
+        "name": "a frame that is owed to a floating window is never paid",
+        "file": "ArborKit/Controller/Controller+Hardening.swift",
+        "old": "    payTheFrameOwed(to: window, on: display)\n",
+        "new": "    _ = 0\n",
+        "red": [
+            "`float-all` while an app with two docked windows takes 0.8 s over every move: every window has its own earlier frame back",
+            "`undo` while an app with two docked windows takes 0.8 s over every move: every window has its own earlier frame back",
+        ],
+    },
 ]
 
 
