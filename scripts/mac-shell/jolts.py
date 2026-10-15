@@ -542,7 +542,7 @@ def hear(path, steps):
 def lateness(steps):
     """How late the events that are not Arbor's own reached the apps, over the steps that are judged: how many, the middle one, the latest but one in a hundred, the latest. All
     together, for the report, and **by kind**, to be compared with: a figure over all events says more about what a journey is made of than about who held anything back.
-    A press on a window of an app that is not in front takes macOS some 20 ms by itself, and any other press 1 ms (one on an icon in the Dock too, which brings an app forward
+    A press on a window of an app that is not in front is held by macOS itself, which brings the app forward first: 17 to 137 ms with no Arbor running. Any other press takes 1 ms (one on an icon in the Dock too, which brings an app forward
     afterwards), so they are two kinds: `forward` and `down`. In a run with Arbor only what arrived while a process of Arbor's was there counts: what comes after Quit is the Mac's."""
     there = any(step.alive for step in steps)
     kinds = {}

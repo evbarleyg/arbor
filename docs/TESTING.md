@@ -900,9 +900,10 @@ its end; whoever hands out the parts leaves a stub (`"started": false`) in each 
 and the whole run's figures stay beside it (`whole-…`). What is over within one sample (26 ms) shows to nobody: an offence planted for the sabotage run lasts a tenth of a second. A window that is wholly
 transparent is not on the screen. The line Arbor draws round the focused window lets presses through, so `apptool top-at` and `grab` look through it. macOS's own tiling does not answer every drag, an app does not obey
 every key: a journey checks that what it did took hold, and otherwise the act counts as not performed. A release has been seen to take 57 ms to reach the apps with no Arbor running: a single one has 100.
-**A figure over all events says what a journey is made of as much as who held anything back**: a press on a window of an app that is not in front takes macOS some 20 ms by itself, any other press 1 ms. So lateness is
+**A figure over all events says what a journey is made of as much as who held anything back**: a press on a window of an app that is not in front is held by macOS itself, which brings the app forward first (17 to 137 ms with no Arbor running), any other press takes 1 ms. So lateness is
 counted by kind of event (`forward`, `down`, `up`, `key`, `dragged`, `scroll`), and `viable.py` compares a journey only with its own control, kind by kind.
-`probe-presses.sh` asks which of Arbor's event taps holds a press back, in rounds with different settings and one after Quit.
+`probe-presses.sh` asks who holds such a press back, in rounds with different settings and one after Quit. Its answer: macOS. The round without Arbor was the slowest. Its first run had a baseline that
+was none (after Quit one window covered the others, and every click fell on the app in front already): **a control has to do the same thing, not only run the same lines.**
 
 For a script of your own, `lib-day.sh` is the harness below the acts (its header lists everything) and `jolts.py`'s header lists the marks and keys.
 
