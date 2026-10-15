@@ -39,15 +39,15 @@ public enum LayoutNotation {
   /// A whole arrangement for one display, as written: names, not windows.
   ///
   /// Every value can be written as text and read back as the same value, because `init` tidies what
-  /// it is given: groups have at least two members, tab groups at least one slot, the Desktop
-  /// appears at most once, and sizes are thousandths from 0.001 to 1000.
+  /// it is given: groups have at least two members, tab groups at least one slot, the Desktop and
+  /// a window's number appear at most once, and sizes are thousandths from 0.001 to 1000.
   public struct Spec: Equatable, Sendable, CustomStringConvertible {
     public let root: Space
 
     /// An arrangement with nothing in it is the Desktop alone.
     public init(root: Space) {
-      var seenDesktop = false
-      var tidy = Self.tidied(root, seenDesktop: &seenDesktop) ?? Space(.desktop)
+      var seen = Seen()
+      var tidy = Self.tidied(root, seen: &seen) ?? Space(.desktop)
       // It has no neighbours to be measured against.
       tidy.size = 1
       self.root = tidy
@@ -55,20 +55,29 @@ public enum LayoutNotation {
 
     public var description: String { text }
 
-    private static func tidied(_ space: Space, seenDesktop: inout Bool) -> Space? {
+    /// What has one place only, and has it already. The parser refuses the second; here it is left out.
+    private struct Seen {
+      var desktop = false
+      var windows: Set<WindowID> = []
+    }
+
+    private static func tidied(_ space: Space, seen: inout Seen) -> Space? {
       let size = LayoutNotation.tidySize(space.size)
       switch space.kind {
       case .desktop:
-        guard !seenDesktop else { return nil }
-        seenDesktop = true
+        guard !seen.desktop else { return nil }
+        seen.desktop = true
         return Space(.desktop, size: size)
       case .windows(let slots):
-        let kept = slots.compactMap(tidied)
+        let kept = slots.compactMap(tidied).filter { slot in
+          if case .window(let id) = slot.owner { return seen.windows.insert(id).inserted }
+          return true
+        }
         return kept.isEmpty ? nil : Space(.windows(kept), size: size)
       case .group(let axis, let members):
         var kept: [Space] = []
         for member in members {
-          if let tidy = tidied(member, seenDesktop: &seenDesktop) { kept.append(tidy) }
+          if let tidy = tidied(member, seen: &seen) { kept.append(tidy) }
         }
         guard kept.count > 1 else {
           // Brackets around one thing are that thing, at the size written outside them.

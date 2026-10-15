@@ -58,7 +58,7 @@ Every example on this page is run by the tests (`DocTranscriptTests`), against t
 | `"Visual Studio Code"` | a name with spaces or punctuation goes in quotes, single or double |
 | `Safari*` | all the windows of Safari that remain, as tabs |
 | `Safari~Inbox` | the Safari window with "Inbox" in its title, if there is one |
-| `412` | the window with that number (from `layout --ids` or `state`) |
+| `412` | the window with that number (from `layout --ids` or `state`). A window has one place, so a number is written once; an app's name twice means two of its windows |
 
 `|` and `/` cannot be mixed without brackets, because nobody should have to remember which binds tighter:
 
@@ -112,7 +112,7 @@ something like `:1.373`.
 ## The Desktop
 
 Every display has one Desktop. If the line does not mention it, it is added at the right, `arrangeDesktopWeight` (0.5) times as
-wide as the average space beside it, as `arrange` does:
+wide as the average place beside it, as `arrange` does:
 
 <!-- windows: Safari, Mail -->
 ```console
@@ -315,11 +315,19 @@ apart the space that has it: "`layout` would cost 1 saved view and 1 name, which
 
 ## What else to know
 
-- The view shows the whole new arrangement, and `back` returns to where it was. Saved views and the view's history go on pointing at the spaces that still hold
-  the same windows, wherever those are now; the others are dropped. So the same line again, or the same windows at other sizes, loses nothing.
+- The view shows the whole new arrangement, and `back` returns to where it was. Saved views, the names you gave to spaces and the view's history go on pointing at the
+  spaces that still hold the same windows, wherever those are now. So the same line again, or the same windows elsewhere or at other sizes, loses nothing. A space that the line
+  takes apart is gone, and what pointed at it with it. Nobody sees that go, so the reply says it: "arranged 3 windows; 1 saved view is gone; 1 name is gone".
+- What `layout --ids` prints, read back, costs nothing: no group, no name, no saved view. (So does what `layout` prints, unless an app has two windows docked: a name takes
+  the window you used last.) One thing a line cannot write: a named group that is down to one window. Brackets around one thing are that thing, so the name is then the name of that window's place.
+- A window that was kept in view, or that comes and goes with a key of its own (`summon`), is an ordinary docked window once a line docks it. The reply says that too:
+  "arranged 2 windows; w101 is no longer kept in view", "…; w101 no longer comes and goes with its key". From a shortcut or the menu the line on screen says it with the app's name, and ⌃⌥Z takes it back.
+- Not carried: windows that were guests of a view, the way forward in the view's history, and (below) places kept for windows that are not back yet.
 - A whole line in quotes is unwrapped, for places where no shell takes the quotes off: `"ctrl+opt+1": "layout \"Safari | Mail\""` works. (An app whose name holds `|`, `/`, `(` or
   `[`, alone on the line, therefore goes in brackets as well: `("a|b")`.)
-- A group inside a group of the same direction joins it: `(A | B) | C` is printed as `A | B | C:2`.
+- Brackets you write are kept, also in the direction of the group around them: `A | (B | C)` gives everybody the share of the room that `A:2 | B | C` gives (to a few points: the gap
+  inside the brackets comes out of the group's own room), and B and C are a group that you can frame and name, like a group that you turned with `rotate`. Only a group that comes to
+  run like the one around it because an app is not open, so that its place closed up, joins it: without Mail, `A | ((B | C) / Mail)` is `A:2 | B | C`.
 - Brackets around one thing are that thing. The size of the whole line means nothing.
 - Which tab of a tab group shows is not written: it is the window you used last.
 - Apps Arbor does not arrange (`exclude`, `ignore` rules) have no windows as far as `layout` is concerned; the reply says "Arbor does not arrange Music", and `--open` leaves them alone.
@@ -354,6 +362,10 @@ $ arborctl layout "Safari | Desktop | Desktop"
 layout, column 20: the Desktop is already in this arrangement
   Safari | Desktop | Desktop
                      ^
+$ arborctl layout "101 | Desktop | w101"
+layout, column 17: window 101 is already in this arrangement
+  101 | Desktop | w101
+                  ^
 $ arborctl layout --titles Safari
 layout, column 1: `--titles` goes with `layout` on its own, which prints the arrangement
   --titles Safari

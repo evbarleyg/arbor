@@ -733,7 +733,7 @@ private let side = DisplaySnapshot(
   @Test func dockingOrPinningItMakesItAnOrdinaryWindowOfThatKind() {
     let (h, editor, _, terminal) = makeHarness()
     h.run("summon Terminal")
-    #expect(h.run("dock \(terminal.rawValue) right").message.contains("and it no longer comes and goes with `summon`"))
+    #expect(h.run("dock \(terminal.rawValue) right").message.contains("and it no longer comes and goes with its key"))
     #expect(h.workspace.isDocked(terminal) && h.workspace.summoned == nil && h.workspace.stashed == nil)
     h.run("float \(terminal.rawValue)")
     #expect(h.workspace.role(of: terminal) == nil)

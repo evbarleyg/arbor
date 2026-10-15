@@ -1,5 +1,6 @@
 import ArborCore
 import CoreGraphics
+import Foundation
 import Testing
 
 private func window(_ id: UInt32, _ app: String, title: String = "") -> WindowCandidate {
@@ -79,12 +80,41 @@ private let everyone = [
     #expect(try shape(build("Desktop", everyone).tree) == "D")
   }
 
+  /// A group that comes to lie in a group of its own direction because the place of an app that is not open closed up. (Until
+  /// brackets that are written were kept, these were the same lines without `/ Gone` and `| Gone`.)
   @Test func groupsOfTheSameDirectionJoinKeepingTheirShare() throws {
-    #expect(try shape(build("(Safari | Mail) | Notes | Desktop", everyone).tree) == "h(101 102 103*2.0 D*2.0)")
-    #expect(try shape(build("(Safari | Mail):2 | Notes | Desktop", everyone).tree) == "h(101 102 103 D)")
-    #expect(try shape(build("(Safari:3 | Mail):4 | Notes | Desktop", everyone).tree) == "h(101*3.0 102 103 D)")
-    #expect(try shape(build("Desktop / (Safari / (Mail / (Notes / Xcode)))", everyone).tree) == "v(D*8.0 101*4.0 102*2.0 103 104)")
-    #expect(try build("(Safari | Mail) | Notes", everyone).tree.notation { "\($0.rawValue)" } == "\"101\" | \"102\" | \"103\":2 | Desktop:0.667")
+    #expect(try shape(build("((Safari | Mail) / Gone) | Notes | Desktop", everyone).tree) == "h(101 102 103*2.0 D*2.0)")
+    #expect(try shape(build("((Safari | Mail) / Gone):2 | Notes | Desktop", everyone).tree) == "h(101 102 103 D)")
+    #expect(try shape(build("((Safari:3 | Mail) / Gone):4 | Notes | Desktop", everyone).tree) == "h(101*3.0 102 103 D)")
+    #expect(
+      try shape(build("Desktop / ((Safari / ((Mail / ((Notes / Xcode) | Gone)) | Gone)) | Gone)", everyone).tree)
+        == "v(D*8.0 101*4.0 102*2.0 103 104)")
+    #expect(
+      try build("((Safari | Mail) / Gone) | Notes", everyone).tree.notation { "\($0.rawValue)" }
+        == "\"101\" | \"102\" | \"103\":2 | Desktop:0.667")
+  }
+
+  /// Brackets somebody wrote are kept, whichever way they run: a group to frame and to name, in the room it would have had.
+  @Test func bracketsWrittenInTheDirectionOfTheGroupAroundThemStay() throws {
+    #expect(try shape(build("(Safari | Mail) | Notes | Desktop", everyone).tree) == "h(h(101 102) 103 D)")
+    #expect(try shape(build("(Safari | Mail):2 | Notes | Desktop", everyone).tree) == "h(h(101 102)*2.0 103 D)")
+    #expect(try shape(build("(Safari:3 | Mail):4 | Notes | Desktop", everyone).tree) == "h(h(101*3.0 102)*4.0 103 D)")
+    #expect(try shape(build("Desktop / (Safari / (Mail / (Notes / Xcode)))", everyone).tree) == "v(D v(101 v(102 v(103 104))))")
+    // The Desktop that is added is as wide as without the brackets: a seventh here, as beside `Safari | Mail | Notes:2`.
+    let tree = try build("(Safari | Mail) | Notes", everyone).tree
+    #expect(tree.notation { "App\($0.rawValue)" } == "(App101 | App102) | App103 | Desktop:0.333")
+    #expect(try shape(build("Safari | (Mail | (Notes | Xcode))", everyone).tree) == "h(101*4.0 h(102 h(103 104))*4.0 D)")
+    // Marked as a group that was turned is, and only where that makes a difference.
+    #expect(tree.kept(for: .turned).map { tree.windows(under: $0) } == [[WindowID(101), WindowID(102)]])
+    #expect(try build("(Safari / Mail) | Notes", everyone).tree.kept(for: .turned).isEmpty)
+    // One whose other members are not open is that member, as any group is.
+    #expect(try shape(build("(Safari | Gone) | Notes | Desktop", everyone).tree) == "h(101 103 D)")
+    #expect(try shape(build("((Safari | Mail) | Gone) | Notes | Desktop", everyone).tree) == "h(h(101 102) 103 D)")
+    // Those inside a group that joins rise with it, and are still brackets. So are those whose row closed up round them.
+    #expect(try shape(build("((Safari | (Mail | Xcode)) / Gone) | Notes | Desktop", everyone).tree) == "h(101 h(102 104) 103*2.0 D*2.0)")
+    #expect(try shape(build("(((Safari | Mail) | Gone) / Gone) | Notes | Desktop", everyone).tree) == "h(h(101 102) 103 D)")
+    // Across the group they end up in, they stand by themselves and need no mark.
+    #expect(try build("((Safari | Mail) | Gone) / Notes", everyone).tree.kept(for: .turned).isEmpty)
   }
 
   // MARK: Several windows of one app
@@ -160,8 +190,28 @@ private let everyone = [
   }
 
   @Test func missingThingsAreReportedOnce() throws {
-    let resolution = try build("Mail | mail | [Mail MAIL*] | 7 | 7", []).resolution
-    #expect(resolution.missing == [.app("Mail"), .window(WindowID(7))])
+    // An app can be written as often as it has windows; a number only once, which the parser sees to.
+    let resolution = try build("Mail | mail | [Mail MAIL*] | 7 | 8", []).resolution
+    #expect(resolution.missing == [.app("Mail"), .window(WindowID(7)), .window(WindowID(8))])
+    #expect(throws: LayoutNotation.ParseError.self) { try LayoutNotation.parse("7 | 7") }
+    // Nor is a number reported twice that reaches an arrangement twice by another road than the parser.
+    let seven = LayoutNotation.Space(.windows([.window(WindowID(7))]))
+    let twice = LayoutNotation.Spec(root: .init(.group(.horizontal, [.init(.windows([.app("Mail")])), seven, seven])))
+    #expect(twice.resolve([]).missing == [.app("Mail"), .window(WindowID(7))])
+  }
+
+  /// "Every value can be written as text and read back as the same value": also one that was given a window twice.
+  @Test func anArrangementGivenAWindowTwiceHoldsItOnce() throws {
+    func window(_ id: UInt32) -> LayoutNotation.Space { .init(.windows([.window(WindowID(id))])) }
+    let flat = LayoutNotation.Spec(root: .init(.group(.horizontal, [window(7), window(7)])))
+    #expect(flat.text == "7")
+    let tabs = LayoutNotation.Space(.windows([.window(WindowID(9)), .window(WindowID(8)), .window(WindowID(9))]))
+    let deep = LayoutNotation.Spec(root: .init(.group(.horizontal, [window(7), .init(.group(.vertical, [window(8), window(7)])), tabs])))
+    #expect(deep.text == "7 | 8 | 9")
+    for spec in [flat, deep] {
+      #expect(try LayoutNotation.parse(spec.text) == spec)
+      #expect(try JSONDecoder().decode(LayoutNotation.Spec.self, from: JSONEncoder().encode(spec)) == spec)
+    }
   }
 
   @Test func aCallerThatListsNonsenseStillGetsAValidTree() throws {
@@ -415,13 +465,26 @@ private let everyone = [
     let spec = try LayoutNotation.parse(line)
     let windows = spec.slots.enumerated().map { [WindowID(UInt32($0.offset + 1))] }
     #expect(spec.tree(filling: windows).invariantViolations().isEmpty)
-    // The same direction all the way down: everything joins one group, and no share vanishes.
+    // The same direction all the way down: brackets in brackets, each of them kept.
     var flat = "X"
     for level in 0..<LayoutNotation.maximumDepth { flat = "(\(flat):0.001 | L\(level):1000)" }
+    let written = try LayoutNotation.parse(flat)
+    let nested = written.tree(filling: written.slots.enumerated().map { [WindowID(UInt32($0.offset + 1))] })
+    #expect(nested.invariantViolations().isEmpty)
+    #expect(nested.kept(for: .turned).count == LayoutNotation.maximumDepth - 1)
+    // With a place that closes up at every other level, everything joins one group, and no share vanishes.
+    let levels = LayoutNotation.maximumDepth / 2
+    flat = "X"
+    for level in 0..<levels { flat = "((\(flat):0.001 | L\(level):1000) / Gone)" }
     let joined = try LayoutNotation.parse(flat)
-    let tree = joined.tree(filling: joined.slots.enumerated().map { [WindowID(UInt32($0.offset + 1))] })
+    var next: UInt32 = 0
+    let tree = joined.tree(
+      filling: joined.slots.map { slot in
+        next += 1
+        return slot == .app("Gone") ? [] : [WindowID(next)]
+      })
     #expect(tree.invariantViolations().isEmpty)
-    #expect(tree.children(of: tree.root).count == LayoutNotation.maximumDepth + 2)
+    #expect(tree.children(of: tree.root).count == levels + 2)
     let weights = tree.children(of: tree.root).map { tree[$0]!.weight }
     #expect(weights.min()! / weights.max()! >= 1e-6 * 0.999)
   }

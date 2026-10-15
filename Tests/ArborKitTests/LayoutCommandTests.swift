@@ -662,6 +662,397 @@ private func expectNothingLost(_ h: Harness, sourceLocation: SourceLocation = #_
     #expect(h.workspace.isFloating(second))
   }
 
+  // MARK: What nobody sees is said
+
+  /// A window has one place, as the Desktop has.
+  @Test(arguments: [("101 | 101", 7), ("101 | w101", 7), ("101 | (102 / W101)", 14), ("[101 102 101]", 10)])
+  func aWindowWrittenTwiceByNumberIsRefused(line: String, column: Int) {
+    let h = harness("A", "B")
+    let refused = h.run("layout \(line)")
+    #expect(!refused.ok && refused.message.hasPrefix("layout, column \(column): window 101 is already in this arrangement"), "\(refused.message)")
+    #expect(h.workspace.tree.allWindows.isEmpty, "and nothing changed")
+    // An app's name twice is two of its windows.
+    #expect(h.run("layout A | A").message == "arranged 1 window; only 1 window of A")
+  }
+
+  /// Docking ends a pin. `dock` says so, and so does a line.
+  @Test func aPinThatALineEndsIsMentioned() {
+    let h = harness("A", "B", "C")
+    #expect(h.run("pin 101").ok)
+    #expect(h.run("layout A | B").message == "arranged 2 windows; w101 is no longer kept in view")
+    #expect(!h.controller.isPinned(w(101)))
+    #expect(h.run("layout Desktop").ok && h.run("pin 101").ok && h.run("pin 102").ok && h.run("pin 103").ok)
+    #expect(h.run("layout A | B").message == "arranged 2 windows; 2 windows are no longer kept in view")
+    #expect(h.controller.isPinned(w(103)), "one that the line does not name stays as it is")
+    #expect(h.run("layout A | B").message == "arranged 2 windows", "and the same line again has nothing to say")
+  }
+
+  /// So does what `summon` gave a window: whether it is here for a moment or has been sent away, docked it is neither any more.
+  @Test func aWindowThatCameAndWentWithItsKeyIsMentionedToo() {
+    let h = harness("A", "B", "C", "D")
+    #expect(h.run("summon A").ok, "here for a moment")
+    #expect(h.run("layout A | B").message == "arranged 2 windows; w101 no longer comes and goes with its key")
+    #expect(h.controller.role(of: w(101)) == nil)
+    #expect(h.run("layout Desktop").ok && h.run("summon A").ok && h.run("summon B").ok, "B is here, and A has been sent away")
+    #expect(h.workspace.isStashed(w(101)) && h.workspace.isSummoned(w(102)))
+    #expect(h.run("pin 103").ok)
+    #expect(
+      h.run("layout A | B | C").message
+        == "arranged 3 windows; w103 is no longer kept in view; 2 windows no longer come and go with their keys")
+    #expect(h.run("layout A | B | C").message == "arranged 3 windows", "and the same line again has nothing to say")
+  }
+
+  /// "⌃⌥Z takes it back", says the line on screen, and so it does.
+  @Test func takingTheLineBackBringsBackWhatTheWindowsWere() {
+    let h = harness("A", "B", "C", "D")
+    #expect(h.run("summon A").ok && h.run("summon B").ok && h.run("pin 103").ok)
+    #expect(h.run("layout A | B | C").ok)
+    #expect([w(101), w(102), w(103)].allSatisfy { h.controller.role(of: $0) == nil })
+    #expect(h.run("undo").ok)
+    #expect(h.workspace.isStashed(w(101)) && h.workspace.isSummoned(w(102)) && h.workspace.isPinned(w(103)))
+    #expect(h.run("redo").ok)
+    #expect([w(101), w(102), w(103)].allSatisfy { h.controller.role(of: $0) == nil && h.workspace.isDocked($0) })
+  }
+
+  /// A window that comes over from another display was what it was there.
+  @Test func aPinOnAnotherDisplayThatALineEndsIsMentioned() {
+    let h = twoDisplays()
+    #expect(h.run("pin 103").ok && h.controller.workspaces[side.id]?.isPinned(w(103)) == true)
+    #expect(h.run("layout @1 Safari | Notes").message == "arranged 2 windows; w103 is no longer kept in view")
+    #expect(h.workspace.isDocked(w(103)) && !h.controller.isPinned(w(103)))
+  }
+
+  // MARK: Names of spaces (F20)
+
+  /// Saved views and history follow the spaces that still hold the same windows. So do the names a person gave them.
+  @Test func aNameFollowsItsSpaceThroughALine() {
+    let h = harness("Safari", "Mail", "Notes")
+    #expect(h.run("layout Safari | (Mail / Notes)").ok)
+    h.run("zoom 102")
+    h.run("out")
+    #expect(h.run("name Post").ok && h.run("save-view 1").ok)
+    h.run("zoom 101")
+    #expect(h.run("name Reading").ok)
+    h.run("home")
+    for line in ["layout Safari:2 | (Mail / Notes)", "layout (Mail / Notes) | Safari", "layout (Notes / Mail):3 | Desktop | Safari"] {
+      #expect(h.run(line).message == "arranged 3 windows", "\(line): nothing is gone, and nothing is said to be")
+      #expect(Set(h.workspace.names.keys) == ["Post", "Reading"], "\(line): \(h.workspace.names)")
+      #expect(h.run("go Post").ok, "\(line)")
+      #expect(Set(h.workspace.tree.windows(under: h.workspace.camera)) == [w(102), w(103)], "\(line)")
+      #expect(h.run("go Reading").ok && h.workspace.tree.windows(under: h.workspace.camera) == [w(101)], "\(line)")
+      #expect(h.run("view 1").ok && Set(h.workspace.tree.windows(under: h.workspace.camera)) == [w(102), w(103)], "\(line)")
+      h.run("home")
+      #expect(h.workspace.tree.invariantViolations().isEmpty)
+    }
+  }
+
+  /// A space that the line takes apart is gone, and its name with it: there is nothing left to call that.
+  @Test func aNameGoesWithASpaceThatTheLineTakesApart() {
+    let h = harness("Safari", "Mail", "Notes")
+    #expect(h.run("layout Safari | (Mail / Notes)").ok)
+    h.run("zoom 102")
+    h.run("out")
+    #expect(h.run("name Post").ok && h.run("save-view 1").ok)
+    // Nobody sees them go, so the reply says it, in the words of `arrange`.
+    #expect(h.run("layout (Safari / Mail) | Notes").message == "arranged 3 windows; 1 saved view is gone; 1 name is gone")
+    #expect(h.workspace.names.isEmpty, "\(h.workspace.names)")
+    #expect(!h.run("go Post").ok)
+    #expect(h.workspace.tree.invariantViolations().isEmpty)
+  }
+
+  /// Undo takes back the arrangement, not what a person has done since. A space that a line carried along and that was given
+  /// another name since is still that space when the line is taken back, and has the name it was given last.
+  @Test func aSpaceRenamedAfterALineKeepsItsNewNameWhenTheLineIsTakenBack() {
+    let h = harness("Safari", "Mail", "Notes")
+    #expect(h.run("layout Safari | (Mail / Notes)").ok)
+    h.run("zoom 102")
+    h.run("out")
+    #expect(h.run("name Post").ok)
+    #expect(h.run("layout (Mail / Notes) | Safari").ok && h.run("go Post").ok && h.run("name Letters").ok)
+    #expect(h.run("undo").ok)
+    #expect(h.run("layout").text == "Safari | (Mail / Notes) | Desktop:0.5")
+    #expect(Array(h.workspace.names.keys) == ["Letters"], "\(h.workspace.names)")
+    #expect(h.run("go Letters").ok && Set(h.workspace.tree.windows(under: h.workspace.camera)) == [w(102), w(103)])
+    // Put back, the line has it too.
+    #expect(h.run("redo").ok)
+    #expect(Array(h.workspace.names.keys) == ["Letters"], "\(h.workspace.names)")
+    #expect(h.run("go Letters").ok && Set(h.workspace.tree.windows(under: h.workspace.camera)) == [w(102), w(103)])
+  }
+
+  /// One that had no name when the line was applied is known by what it holds: after a line the numbers begin again.
+  @Test func aNameGivenAfterALineStaysWithItsWindowsWhenTheLineIsTakenBack() {
+    let h = harness("Safari", "Mail", "Notes")
+    #expect(h.run("layout Safari | (Mail / Notes)").ok && h.run("layout Safari | (Notes / Mail)").ok)
+    h.run("zoom 103")
+    #expect(h.run("name N").ok && h.run("undo").ok)
+    #expect(h.run("layout").text == "Safari | (Mail / Notes) | Desktop:0.5")
+    #expect(h.run("go N").ok && h.workspace.tree.windows(under: h.workspace.camera) == [w(103)], "\(h.workspace.names)")
+  }
+
+  /// What it holds says more than its number, where the two disagree.
+  @Test func aNameGivenAfterALineGoesToTheSameWindowsNotToTheSameNumber() {
+    let h = harness("A", "B", "C", "D")
+    #expect(h.run("layout ((A | B) / C) | D | Desktop").ok && h.run("layout (A / B) | C | D | Desktop").ok)
+    h.run("zoom 101")
+    h.run("out")
+    #expect(h.run("name Pair").ok && h.run("undo").ok)
+    #expect(h.run("go Pair").ok && h.workspace.tree.windows(under: h.workspace.camera) == [w(101), w(102)], "\(h.workspace.names)")
+  }
+
+  /// But it pushes out no name that nobody touched: a space has one name, and the one it had all along is the one it keeps.
+  @Test func aNameGivenAfterALinePushesOutNoNameThatComesBack() {
+    let h = harness("A", "B")
+    #expect(h.run("layout A | Desktop").ok && h.run("name Home").ok, "everything is called Home")
+    #expect(h.run("layout B | (A | Desktop)").ok)
+    h.run("zoom 101")
+    h.run("out")
+    #expect(h.run("name Side").ok && h.run("undo").ok)
+    #expect(h.workspace.names == ["Home": h.workspace.tree.root], "\(h.workspace.names)")
+  }
+
+  /// A dock at the edge of a named view hands the name to the group of the two. Renamed since, it is the space that was docked
+  /// at which has the new name when the dock is taken back.
+  @Test func aSpaceRenamedAfterADockAtItsEdgeKeepsItsNewNameWhenTheDockIsTakenBack() {
+    let h = harness("Code", "Terminal", "Mail")
+    #expect(h.run("layout Code | Mail").ok)
+    h.run("zoom 101")
+    #expect(h.run("name Work").ok && h.run("dock 102 bottom").ok)
+    #expect(h.workspace.node(named: "Work").map { h.workspace.tree.windows(under: $0) } == [w(101), w(102)])
+    #expect(h.run("name Dev").ok && h.run("undo").ok)
+    #expect(h.workspace.isFloating(w(102)))
+    #expect(Array(h.workspace.names.keys) == ["Dev"], "\(h.workspace.names)")
+    #expect(h.workspace.node(named: "Dev").map { h.workspace.tree.windows(under: $0) } == [w(101)])
+  }
+
+  /// And one whose name was taken off since stays without.
+  @Test func aNameTakenOffAfterALineStaysOffWhenTheLineIsTakenBack() {
+    let h = harness("Safari", "Mail", "Notes")
+    #expect(h.run("layout Safari | (Mail / Notes)").ok)
+    h.run("zoom 102")
+    h.run("out")
+    #expect(h.run("name Post").ok)
+    #expect(h.run("layout (Mail / Notes) | Safari").ok && h.run("unname Post").ok)
+    #expect(h.run("undo").ok)
+    #expect(h.workspace.names.isEmpty, "\(h.workspace.names)")
+  }
+
+  // MARK: Brackets somebody wrote are kept
+
+  /// A pair that runs like the group around it stands only because something points at it (F62), and `layout` prints it in
+  /// brackets. Read back, those brackets make the pair again, or the very line Arbor printed would cost the name and the view.
+  @Test func theLineOfAPairThatRunsLikeTheGroupAroundItCostsNothing() {
+    let h = harness("Safari", "Notes", "Mail")
+    #expect(h.run("layout Safari | (Notes / Mail)").ok)
+    h.run("zoom 102")
+    h.run("out")
+    #expect(h.run("name Writing").ok && h.run("save-view 1").ok && h.run("rotate").ok)
+    h.run("home")
+    let line = h.run("layout").text
+    #expect(line == "Safari | (Notes | Mail) | Desktop:0.5")
+    #expect(h.run("layout \(line ?? "")").message == "arranged 3 windows")
+    #expect(h.run("layout").text == line)
+    #expect(h.run("go Writing").ok && h.workspace.tree.windows(under: h.workspace.camera) == [w(102), w(103)])
+    h.run("home")
+    #expect(h.run("view 1").ok && h.workspace.tree.windows(under: h.workspace.camera) == [w(102), w(103)])
+    #expect(h.workspace.tree.invariantViolations().isEmpty)
+  }
+
+  /// Written by hand they mean the same: a group one can frame and name. On screen it looks as it would without them.
+  @Test func bracketsInTheDirectionOfTheGroupAroundThemMakeAGroup() {
+    let h = harness("A", "B", "C")
+    #expect(h.run("layout A:2 | B | C | Desktop").ok)
+    let frames = [w(101), w(102), w(103)].map { h.frame($0) }
+    #expect(h.run("layout A | (B | C) | Desktop:0.5").ok)
+    #expect(h.run("layout").text == "A | (B | C) | Desktop:0.5")
+    for (window, frame) in zip([w(101), w(102), w(103)], frames) {
+      #expect(h.frame(window)?.approximatelyEquals(frame ?? .zero, tolerance: 7) == true, "\(window): within half a gap")
+    }
+    h.run("zoom 102")
+    h.run("out")
+    #expect(h.workspace.tree.windows(under: h.workspace.camera) == [w(102), w(103)])
+    #expect(h.workspace.tree.invariantViolations().isEmpty)
+  }
+
+  /// Also where the line leaves the Desktop to Arbor, which makes it as wide as it would without the brackets.
+  @Test func bracketsChangeNoFrameWhereTheDesktopIsNotWritten() {
+    let h = harness("A", "B", "C")
+    #expect(h.run("layout A:2 | B | C").ok)
+    let (frames, desktop) = ([w(101), w(102), w(103)].map { h.frame($0) }, h.layout?.nodeFrames[h.workspace.tree.desktop])
+    #expect(h.run("layout A | (B | C)").ok)
+    for (window, frame) in zip([w(101), w(102), w(103)], frames) {
+      #expect(h.frame(window)?.approximatelyEquals(frame ?? .zero, tolerance: 7) == true, "\(window): \(h.frame(window)?.brief ?? "")")
+    }
+    #expect(h.layout?.nodeFrames[h.workspace.tree.desktop]?.approximatelyEquals(desktop ?? .zero, tolerance: 7) == true)
+  }
+
+  /// The Desktop that is made wide enough for a window that floats counts the places as well.
+  @Test func besideAWrittenPairTheDesktopIsMadeWideEnoughToUse() throws {
+    let h = harness("A", "B", "C", "Terminal")
+    h.system.userFocus(w(104))
+    #expect(h.run("layout A | (B | C)").ok)
+    #expect(try #require(h.layout?.desktopFrame).width >= 240)
+    #expect(isOnDesktop(w(104), h))
+    #expect(h.layout?.tiles.isEmpty == true)
+  }
+
+  /// Brackets that are all there is of the line, because the app beside them is not open, are brackets still: the Desktop is added
+  /// beside the pair, not into it. So the line costs the pair's name nothing, with the Desktop written or not.
+  @Test(arguments: ["C | (A | B)", "(A | B) | C", "C | (A | B) | Desktop"])
+  func aWrittenPairThatIsAllThereIsOfTheLineIsStillAPair(line: String) {
+    let h = harness("A", "B", "C")
+    #expect(h.run("layout C | (A | B) | Desktop").ok)
+    h.run("zoom 101")
+    h.run("out")
+    #expect(h.run("name Pair").ok)
+    h.run("home")
+    h.system.close(w(103))
+    #expect(h.run("layout \(line)").message == "arranged 2 windows; no window of C")
+    #expect(h.workspace.node(named: "Pair").map { h.workspace.tree.windows(under: $0) } == [w(101), w(102)])
+    #expect(h.workspace.node(named: "Pair") != h.workspace.tree.root)
+    #expect(h.run("layout").text?.hasPrefix("(A | B) | Desktop") == true, "\(h.run("layout").text ?? "")")
+    #expect(h.workspace.tree.invariantViolations().isEmpty)
+  }
+
+  /// And when the app's window arrives, whoever was looking at everything still is.
+  @Test(arguments: ["Slack | (A | B)", "Slack | (A | Desktop)", "Slack | (A | B) | Desktop", "Slack / (A / B)"])
+  func everythingIsStillEverythingWhenALatecomerArrivesBesideAWrittenPair(line: String) {
+    let h = harness("A", "B")
+    #expect(h.run("layout --open \(line)").ok && h.run("save-view 1").ok)
+    #expect(h.workspace.camera == h.workspace.tree.root)
+    let slack = openInBackground(h, "Slack")
+    #expect(h.workspace.isDocked(slack), "\(line)")
+    #expect(h.workspace.camera == h.workspace.tree.root, "\(line)")
+    #expect(h.workspace.savedView(slot: 1) == h.workspace.tree.root, "\(line)")
+    #expect(h.system.isVisible(slack), "\(line)")
+    #expect(h.workspace.tree.invariantViolations().isEmpty)
+  }
+
+  /// They outlive what an arrangement outlives: a step back and forth, and a quit.
+  @Test func aWrittenPairComesBackWithUndoRedoAndARelaunch() {
+    let h = harness("A", "B", "C")
+    let line = "A | (B | C) | Desktop:0.5"
+    #expect(h.run("layout \(line)").ok && h.run("layout A | B | C | Desktop").ok)
+    #expect(h.run("undo").ok && h.run("layout").text == line)
+    #expect(h.run("redo").ok && h.run("layout").text == "A | B | C | Desktop")
+    #expect(h.run("undo").ok && h.run("layout").text == line)
+    h.controller.shutdown()
+    let again = Harness(saved: h.store.saved)
+    for app in ["A", "B", "C"] { again.system.open(app: app) }
+    again.start()
+    #expect(again.run("layout").text == line)
+    #expect(again.workspace.tree.invariantViolations().isEmpty)
+  }
+
+  /// A window that arrives later takes its place inside them.
+  @Test func aLatecomerJoinsAWrittenPair() {
+    let h = harness("A", "B")
+    #expect(h.run("layout --open A | (B | C) | Desktop").message == "arranged 2 windows; opening C")
+    #expect(h.run("layout").text == "A | B | Desktop")
+    h.system.open(app: "C")
+    #expect(h.run("layout").text == "A | (B | C) | Desktop")
+    #expect(h.workspace.tree.invariantViolations().isEmpty)
+    expectWindowsMatchLayout(h)
+  }
+
+  /// THE LIMIT. A named group that is down to one window stands only for its name (F62), and brackets round one thing are that
+  /// thing: the line has no way to write it. Read back, the name is the window's place's. If that has a name of its own, one
+  /// of the two goes, and the reply says so.
+  @Test func aNamedGroupThatIsDownToOneWindowIsWrittenAsThatWindow() {
+    let h = harness("Safari", "Mail", "Notes")
+    #expect(h.run("layout Safari | (Mail / Notes)").ok)
+    h.run("zoom 102")
+    h.run("out")
+    #expect(h.run("name Post").ok)
+    h.run("home")
+    #expect(h.run("float 103").ok)
+    #expect(h.run("layout --ids").text == "101 | 102 | Desktop:0.5")
+    #expect(h.run("layout 101 | 102 | Desktop:0.5").message == "arranged 2 windows")
+    #expect(h.workspace.node(named: "Post").map { h.workspace.tree.windows(under: $0) } == [w(102)])
+    // Two names for what the line can write as one place only.
+    #expect(h.run("layout Safari | (Mail / Notes)").ok)
+    h.run("zoom 102")
+    #expect(h.workspace.names.keys.sorted() == ["Post"], "it is the place of Mail that is called Post now")
+    h.run("out")
+    #expect(h.run("name Both").ok)
+    h.run("home")
+    #expect(h.run("float 103").ok && h.workspace.names.count == 2)
+    #expect(h.run("layout 101 | 102 | Desktop:0.5").message == "arranged 2 windows; 1 name is gone")
+  }
+
+  /// A group that only comes to run like the one around it, because the place of an app that is not open closed up, still joins it.
+  @Test func aGroupLeftRunningLikeTheOneAroundItByAMissingAppJoinsIt() {
+    var h = harness("A", "B", "C")
+    #expect(h.run("layout A | ((B | C) / Missing)").ok)
+    #expect(h.run("layout").text == "A:2 | B | C | Desktop:0.667")
+    #expect(h.workspace.tree.invariantViolations().isEmpty)
+    // Brackets written inside it rise with it, and are still brackets.
+    h = harness("A", "B", "C", "D")
+    #expect(h.run("layout A | ((B | (C | D)) / Missing)").ok)
+    #expect(h.run("layout").text == "A:2 | B | (C | D) | Desktop:0.5")
+    #expect(h.workspace.tree.invariantViolations().isEmpty)
+  }
+
+  /// The test of a text form: what Arbor prints, read back, costs nothing. There and back is nothing, for lines as for windows.
+  /// Whatever the walk has made of the display, the line printed and applied leaves the arrangement, the names and the saved
+  /// views as they were, and says that nothing went.
+  @Test(arguments: 0..<300) func whatIsPrintedAndReadBackCostsNothing(seed: Int) {
+    var random = ChaosRandom(seed: UInt64(seed) &* 6151 &+ 3)
+    let apps = ["A", "B", "C", "D", "E"]
+    let h = Harness()
+    for app in apps { h.system.open(app: app) }
+    h.start()
+    func window(_ r: inout ChaosRandom) -> Int { 100 + r.int(1...apps.count) }
+    func edge(_ r: inout ChaosRandom) -> String { r.pick(["left", "right", "top", "bottom"])! }
+    /// What a name or a saved view points at, as a person knows it: these windows, with the Desktop or without.
+    func content(_ node: NodeID) -> String {
+      let tree = h.workspace.tree
+      return "\(tree.windows(under: node).sorted())\(tree.subtree(node, contains: tree.desktop) ? " and the Desktop" : "")"
+    }
+    var walk: [String] = []
+    for step in 0..<24 {
+      let command: String
+      switch random.int(0...17) {
+      case 0, 1: command = "dock \(window(&random)) \(edge(&random))"
+      case 2, 3: command = "dock \(window(&random)) beside \(window(&random)) \(edge(&random))"
+      case 4: command = "zoom \(window(&random))"
+      case 5: command = "out"
+      case 6: command = "rotate"
+      case 7: command = "save-view \(random.int(1...4))"
+      case 8: command = "name N\(random.int(1...4))"
+      case 9: command = "float \(window(&random))"
+      case 10: command = "home"
+      case 11: command = "mirror"
+      case 12: command = "equalize"
+      case 13: command = "swap \(window(&random)) \(window(&random))"
+      case 14: command = "undo"
+      case 15: command = "redo"
+      case 16: command = "focus \(window(&random))"
+      default:
+        var ids = Array(101...105)
+        for i in ids.indices.reversed() { ids.swapAt(i, random.int(0...i)) }
+        command = "layout [\(ids[0]) \(ids[1])] | (\(ids[2]) \(random.pick(["|", "/"])!) \(ids[3]))"
+      }
+      walk.append(command)
+      h.run(command)
+      // All but the one thing a line cannot write (`aNamedGroupThatIsDownToOneWindowIsWrittenAsThatWindow`).
+      let tree = h.workspace.tree
+      let unwritable = Set(h.workspace.names.values).union(h.workspace.savedViews.values).contains {
+        tree.isSplit($0) && tree.children(of: $0).count == 1
+      }
+      guard step > 4, !unwritable, random.chance(30), let line = h.run("layout --ids").text else { continue }
+      let names = h.workspace.names.mapValues(content), views = h.workspace.savedViews.mapValues(content)
+      let docked = h.workspace.tree.allWindows.count
+      let story = "seed \(seed), \(walk), layout \(line)"
+      let reply = h.run("layout \(line)").message
+      #expect(reply.hasPrefix("arranged \(docked) window") && !HeadsUpText.namesALoss(reply), "\(story): \(reply)")
+      #expect(h.run("layout --ids").text == line, "\(story)")
+      #expect(h.workspace.names.mapValues(content) == names, "\(story)")
+      #expect(h.workspace.savedViews.mapValues(content) == views, "\(story)")
+      #expect(h.workspace.tree.invariantViolations().isEmpty, "\(story)")
+      walk.append("layout \(line)")
+    }
+  }
+
   // MARK: What is printed can be read
 
   /// A line is at most 4096 bytes, and a title is cut by characters: 60 of them are 180 bytes in Chinese or Japanese.

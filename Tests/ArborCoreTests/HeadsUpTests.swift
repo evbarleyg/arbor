@@ -62,11 +62,14 @@ import Testing
   @Test func aLossIsWhatAReplySaysWentBesidesWhatWasAskedFor() {
     for reply in [
       "arranged 4 windows; 2 saved views are gone", "arranged 4 windows; 1 saved view is gone; 1 name is gone", "floated 3 windows; 2 names are gone",
-      "docked w7 at the left edge and it is no longer kept in view",
+      "docked w7 at the left edge and it is no longer kept in view", "docked w7 at the left edge and it no longer comes and goes with its key",
+      "arranged 2 windows; w7 is no longer kept in view", "arranged 3 windows, floated 1; 2 windows are no longer kept in view",
+      "arranged 2 windows; w7 no longer comes and goes with its key", "arranged 2 windows; 2 windows no longer come and go with their keys",
     ] { #expect(HeadsUpText.namesALoss(reply), "\(reply)") }
     for reply in [
       "arranged 4 windows", "no longer keeping w7 in view", "removed the name Work from everything", "w7 is gone", "no longer arranging Safari",
-      "named everything: all is gone",
+      "named everything: all is gone", "⌃⌥K no longer runs `zoom`; no shortcut does now",
+      "w7 floats on the Desktop again and no longer comes and goes with `summon`",
     ] { #expect(!HeadsUpText.namesALoss(reply), "\(reply)") }
   }
 

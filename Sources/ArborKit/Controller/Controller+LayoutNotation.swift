@@ -110,6 +110,8 @@ extension Controller {
     // As for `arrange`: what the user arranged is not for a rule to undo when a window's title arrives late.
     stopWatchingTitles()
     let isPlaced = Set(placed)
+    // Docking ends what a floating window was besides, kept in view or coming and going with its key. Nobody sees that go either.
+    let endOfRoles = endOfRoleNotes(placed)
     for other in workspaces.keys.sorted() where other != display {
       let taken = workspaces[other]!.allWindows.filter(isPlaced.contains)
       guard !taken.isEmpty else { continue }
@@ -161,7 +163,7 @@ extension Controller {
     if unseen > 0 {
       notes.append("\(Self.count(unseen, "window")) on the Desktop \(unseen == 1 ? "is" : "are") out of view: the Desktop is too small to use")
     }
-    return .success(([message] + notes).joined(separator: "; "))
+    return .success(([message] + notes + endOfRoles).joined(separator: "; "))
   }
 
   /// The tree of `spec`. The Desktop that is added when the line does not mention it is as narrow as `arrange` makes it,
@@ -182,8 +184,8 @@ extension Controller {
     }
     let before = trial(usual)
     guard before.desktopFrame == nil else { return usual }
-    // Beside n spaces of average size 1, a Desktop of size s gets s / (n + s) of the room.
-    let beside = Double(max(usual.children(of: usual.root).count - 1, 1))
+    // Beside n places of average size 1, a Desktop of size s gets s / (n + s) of the room.
+    let beside = Double(max(usual.places(in: usual.root, along: .horizontal) - 1, 1))
     let room = Double(display.visibleFrame.width) - here.gap * (beside + 2)
     let needed = here.minimumUsableWidth + 2
     guard room > needed else { return usual }

@@ -485,6 +485,30 @@ private let side = DisplaySnapshot(
     return h.overlays.messages.count - before
   }
 
+  /// A line of text is mostly run from a shortcut or the menu, where its reply is not read. What it ends unseen is said on screen,
+  /// by the app's name: nobody knows a window's number.
+  @Test func aRoleThatALineEndsIsSaidOnScreen() {
+    let (h, a, b, c) = makeHarness(taught: true)
+    h.run("pin \(a.rawValue)")
+    h.run("layout \(a.rawValue) | \(b.rawValue)", from: .shortcut)
+    #expect(lines(h) == ["Arranged 2 windows; Safari is no longer kept in view · ⌃⌥Z takes it back"])
+    #expect(h.overlays.messages.last?.model.kind == .change)
+    h.run("layout Desktop")
+    h.run("summon \(h.system.windows[c]!.snapshot.appName)")
+    h.run("layout \(c.rawValue)", from: .menu)
+    #expect(lines(h).last == "Arranged 1 window; \(h.system.windows[c]!.snapshot.appName) no longer comes and goes with its key · ⌃⌥Z takes it back")
+  }
+
+  /// So is the one `dock` ends, whichever it was.
+  @Test func dockingAWindowThatCameAndWentWithItsKeyIsSaidOnScreen() {
+    let (h, a, _, _) = makeHarness(taught: true)
+    h.run("summon Safari")
+    #expect(h.workspace.isSummoned(a))
+    h.run("dock \(a.rawValue) left", from: .shortcut)
+    #expect(lines(h) == ["Docked Safari at the left edge and it no longer comes and goes with its key · ⌃⌥Z takes it back"])
+    #expect(h.overlays.messages.last?.model.kind == .change)
+  }
+
   @Test func whatWasLostComesBeforeAnyHintAndIsSaidToAnOldHandToo() {
     for taught in [false, true] {
       let (h, a, _, _) = makeHarness(taught: taught)

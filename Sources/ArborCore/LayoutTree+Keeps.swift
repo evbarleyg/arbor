@@ -24,7 +24,8 @@ public struct Keeps: OptionSet, Codable, Hashable, Sendable {
   /// that one, the window would land outside. Set and taken off again within `Workspace.dock`, never saved.
   static let move = Keeps(rawValue: 1 << 3)
   /// It was turned (`rotate`) and now runs the same way as the group around it. Kept so that turning it again turns the
-  /// same windows back. `rotate` and `Workspace` see to this one.
+  /// same windows back. So is a group that a line of text has in brackets that run like the group around them
+  /// (LayoutNotation+Tree.swift): somebody wrote them. `rotate`, `Spec.tree` and `Workspace` see to this one.
   public static let turned = Keeps(rawValue: 1 << 4)
 
   /// The reasons that keep a split even when it is down to one child, so that windows docked beside

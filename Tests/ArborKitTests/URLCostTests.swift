@@ -68,14 +68,13 @@ private let side = DisplaySnapshot(
     #expect(h.controller.workspaces == before, "asking changes nothing")
   }
 
-  /// Saved views follow the spaces that still hold the same windows, so such a line costs nothing.
+  /// Saved views and names follow the spaces that still hold the same windows, so such a line costs nothing.
   @Test func aLineThatKeepsTheSavedSpaceIsAllowed() {
     let h = desk()
-    #expect(h.run("unname Post").ok)
     for url in ["arbor://layout/Safari:2%20%7C%20(Mail%20%2F%20Notes)", "arbor://layout/(Notes%20%2F%20Mail)%20%7C%20Safari"] {
       guard case .success(let command) = h.controller.admit(url: url) else { Issue.record("\(url) was refused: \(refusal(h, url) ?? "")"); continue }
       #expect(h.controller.perform(command, from: .url).message == "arranged 3 windows", "\(url)")
-      #expect(made(h).views == 1)
+      #expect(made(h) == (1, 1))
     }
   }
 

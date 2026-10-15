@@ -1027,11 +1027,14 @@ private let third = DisplaySnapshot(
   }
 
   @Test func whicheverCommandTakesANameAlongSaysSo() {
-    // A line of text builds the arrangement anew, even the one that is there.
+    // A line of text builds the arrangement anew. A name stays with a space that still holds the same windows, so the line of
+    // the arrangement that is there takes nothing along, and another one does.
     var d = Desk()
     d.nameColumn()
     let line = d.h.run("layout").text ?? d.h.run("layout").message
-    #expect(d.h.run("layout \(line)").message.hasSuffix("; 1 name is gone"), "\(line)")
+    #expect(d.h.run("layout \(line)").message == "arranged 3 windows", "\(line)")
+    #expect(d.windows(named: "Writing") == [d.notes, d.mail])
+    #expect(d.h.run("layout Mail | Safari | Notes").message.hasSuffix("; 1 name is gone"))
     #expect(d.workspace.names.isEmpty)
 
     // The last window of a named space floats.

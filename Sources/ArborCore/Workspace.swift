@@ -41,7 +41,8 @@ public struct Workspace: Codable, Sendable, Equatable {
   /// Where each app's window was the last time it was summoned here, by `Summon.app`.
   public private(set) var summonFrames: [String: CGRect]?
   /// The names given to spaces, as typed. No two are alike and no space has two: change them only
-  /// through `setName` and `removeName` (Workspace+Names.swift).
+  /// through `setName` and `removeName` (Workspace+Names.swift). Whoever moves a whole table of them (`reset(tree:carrying:)`,
+  /// `restored(over:since:)`) keeps to both rules itself and ends with `keepWhatIsNamed()`.
   public internal(set) var names: [String: NodeID] = [:]
   /// True while the Desktop is a tile because Arbor took room from it for a docked window (F61), not because
   /// somebody wanted it narrow. Nil otherwise, and in files written before this existed.
@@ -327,14 +328,23 @@ public struct Workspace: Codable, Sendable, Equatable {
     if done { tree.stopKeepingWhereItChangesNothing(for: [.view, .turned]) }
   }
 
-  /// Replaces the tree and shows everything, like `reset(tree:)`, but keeps the saved views and the history that
+  /// Replaces the tree and shows everything, like `reset(tree:)`, but keeps the saved views, the history and the names that
   /// `counterparts` can carry over (from a node of the old tree to the node of the new one that stands for it).
   /// Where the view was is the last entry of the history, so `back` returns there.
   public mutating func reset(tree newTree: LayoutTree, carrying counterparts: [NodeID: NodeID]) {
-    let (views, history) = (savedViews, back + [camera])
+    let (views, history, named) = (savedViews, back + [camera], names)
     reset(tree: newTree)
-    savedViews = views.compactMapValues { counterparts[$0] }.filter { newTree.contains($0.value) }
-    back = Self.dedupe(history.compactMap { counterparts[$0] }.filter(newTree.contains))
+    // A name whose space is gone goes with it. In the order names are walked in everywhere, for the case that two spaces have
+    // become one, which can have one name only. They are names already, so they are only put down, and the tree is told once.
+    for name in SpaceName.sorted(named.keys) {
+      guard let counterpart = named[name].flatMap({ counterparts[$0] }), newTree.contains(counterpart),
+        self.name(of: counterpart) == nil
+      else { continue }
+      names[name] = counterpart
+    }
+    keepWhatIsNamed()
+    savedViews = views.compactMapValues { counterparts[$0] }.filter { tree.contains($0.value) }
+    back = Self.dedupe(history.compactMap { counterparts[$0] }.filter(tree.contains))
     while back.last == camera { back.removeLast() }
   }
 
@@ -727,7 +737,8 @@ extension Workspace {
   /// Whatever differs between `reference` and `current` was done since, and is carried over as far
   /// as it still makes sense in the restored tree:
   /// - the camera stays where it was moved to, and history keeps the places that still exist;
-  /// - views saved since are kept if their node still exists, and so are names given since; names taken off since stay off;
+  /// - views saved since are kept if their node still exists, and so are names given since; names taken off since stay off; a
+  ///   space that the change itself took to another node (a line of text does) is still that space, whatever it is called now;
   /// - floating windows moved since stay where they were put;
   /// - windows that became guests since stay guests if their host still exists, and visits that ended stay over;
   /// - windows pinned since stay pinned while they float, and pins taken away stay away; the same goes for the summoned
@@ -759,11 +770,23 @@ extension Workspace {
     // paper first, and the tree is told once: a group can exist only because it is named (F62). One that is between two names,
     // be it for a moment, dissolves, and the name meant for it would go to a node that is gone, which `setName` takes for the root.
     var named = result.names
+    // The change itself can have taken a name to another node: a line of text builds the tree anew and carries names to the nodes
+    // that stand for their spaces, and a dock at the edge of a named view hands the name to the group. To the person it is one
+    // space, so what they have called it since, they have called the space that comes back.
+    var home: [NodeID: NodeID] = [:]
+    for (name, node) in reference.names { home[node] = self.node(named: name) }
+    // One that had no name then is known by what it holds, and only then by its number: after a line the numbers begin again,
+    // and the same number can be another space. Worked out only if it is asked for.
+    var twins: [NodeID: NodeID]?
     for name in reference.names.keys where current.node(named: name) == nil {
       if let held = SpaceName.exact(name, among: named.keys) { named[held] = nil }
     }
     for name in SpaceName.sorted(current.names.keys) {
-      guard let node = current.names[name], reference.names[name] != node, survives(node) else { continue }
+      guard let there = current.names[name], reference.names[name] != there else { continue }
+      if home[there] == nil, twins == nil { twins = current.tree.counterparts(in: tree) }
+      // Found by what it holds, it pushes out no name that comes back and that nobody has touched.
+      let twin = twins?[there].flatMap { twin in named.values.contains(twin) ? nil : twin }
+      guard let node = home[there] ?? twin ?? (twins?[there] == nil && survives(there) ? there : nil) else { continue }
       // As `setName` has it: a space has one name, and a name one space.
       named = named.filter { $0.value != node }
       if let taken = SpaceName.exact(name, among: named.keys) { named[taken] = nil }

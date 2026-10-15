@@ -94,10 +94,15 @@ extension LayoutNotation.Spec {
   /// order of `slots` (see `resolve`).
   ///
   /// - Slots without windows are closed up: an empty space vanishes, a group left with one member
-  ///   becomes that member, and a group inside a group of the same direction joins it, keeping
-  ///   its share. So the tree's invariants hold whatever was found.
+  ///   becomes that member, and a group that so comes to lie in a group of the same direction joins
+  ///   it, keeping its share. So the tree's invariants hold whatever was found.
+  /// - Brackets somebody wrote are kept: `A | (B | C)` makes a group of B and C, which has the shares of `A:2 | B | C` (the
+  ///   gap inside comes out of the group's own room, so frames differ by a few points, as for every kept group) and can be
+  ///   framed and named. Arbor itself keeps such a group where something points at it (LayoutTree+Keeps.swift) and prints
+  ///   it so, and what is printed, read back, costs nothing. It is marked as one that was turned is (`Keeps.turned`).
   /// - If the Desktop is not mentioned it is added at the right, `desktopSize` times as wide as the
-  ///   average space beside it.
+  ///   average place beside it. A group in written brackets that runs like the row counts for the places it shows, so that
+  ///   the brackets change nobody's share of the room.
   /// - A tab group shows the window that comes first in `recent`.
   /// - **Node ids depend only on the text**: each space has the number of its place in the line,
   ///   filled or not. A window that arrives later (`layout --open`) is added by building the tree again,
@@ -114,13 +119,18 @@ extension LayoutNotation.Spec {
     var desktop = TreeBuilder.Part(id: TreeBuilder.desktopID, weight: desktopSize, kind: .desktop)
     let whole: TreeBuilder.Part
     if var top = built, !mentionsDesktop {
-      if case .split(.horizontal, let parts) = top.kind {
-        desktop.weight *= parts.reduce(0) { $0 + $1.weight } / Double(parts.count)
+      if case .split(.horizontal, let parts) = top.kind, !top.isWrittenSo {
+        desktop.weight *= parts.reduce(0) { $0 + $1.weight } / Double(parts.reduce(0) { $0 + $1.places(along: .horizontal) })
         top.kind = .split(.horizontal, parts + [desktop])
         whole = top
       } else {
+        // Written brackets that are all there is of a row are brackets still: the Desktop goes beside them, not into them.
+        // The whole has the row's number and they have their own, as they will when what is missing arrives.
+        var line = wrapperID
+        if case .split(.horizontal, _) = top.kind, let own = top.ownID { (line, top.id) = (top.id, own) }
+        desktop.weight /= Double(top.places(along: .horizontal))
         top.weight = 1
-        whole = TreeBuilder.Part(id: wrapperID, weight: 1, kind: .split(.horizontal, [top, desktop]))
+        whole = TreeBuilder.Part(id: line, weight: 1, kind: .split(.horizontal, [top, desktop]))
       }
     } else {
       whole = built ?? desktop
@@ -128,8 +138,9 @@ extension LayoutNotation.Spec {
     var rank: [WindowID: Int] = [:]
     for (index, window) in recent.enumerated() where rank[window] == nil { rank[window] = index }
     var nodes: [NodeID: LayoutTree.Node] = [:]
-    func emit(_ part: TreeBuilder.Part, parent: NodeID?) {
+    func emit(_ part: TreeBuilder.Part, parent: NodeID?, along around: Axis? = nil) {
       let kind: LayoutTree.Kind
+      var keeps: Keeps?
       switch part.kind {
       case .desktop:
         kind = .desktop
@@ -138,14 +149,16 @@ extension LayoutNotation.Spec {
         kind = .stack(windows: windows, active: shown ?? 0)
       case .split(let axis, let parts):
         kind = .split(axis: axis, children: parts.map(\.id))
+        // Across the group around it, and as the whole arrangement, a group stands without a mark.
+        if part.isWrittenSo, axis == around { keeps = .turned }
         // Groups that joined their parent can leave shares far too small to lay out or to drag.
         let floor = parts.reduce(0) { max($0, $1.weight) } * 1e-6
         for var child in parts {
           child.weight = max(child.weight, floor)
-          emit(child, parent: part.id)
+          emit(child, parent: part.id, along: axis)
         }
       }
-      nodes[part.id] = LayoutTree.Node(id: part.id, parent: parent, kind: kind, weight: part.weight)
+      nodes[part.id] = LayoutTree.Node(id: part.id, parent: parent, kind: kind, weight: part.weight, keeps: keeps)
     }
     emit(whole, parent: nil)
     return LayoutTree(assembled: nodes, root: whole.id, desktop: TreeBuilder.desktopID, nextRawID: builder.takeID().rawValue)
@@ -215,6 +228,16 @@ private struct TreeBuilder {
     var id: NodeID
     var weight: Double
     var kind: Kind
+    /// A group in brackets that were written in the direction of the group around them. It stays one wherever it ends up.
+    var isWrittenSo = false
+    /// Its own number, while it goes by that of the row it was written in because it is all that is left of that row.
+    var ownID: NodeID?
+
+    /// How many places it shows in a group that runs along `axis`: such brackets look like part of the row around them.
+    func places(along axis: Axis) -> Int {
+      guard isWrittenSo, case .split(axis, let parts) = kind else { return 1 }
+      return parts.reduce(0) { $0 + $1.places(along: axis) }
+    }
   }
 
   /// The id `LayoutTree()` gives it.
@@ -248,16 +271,32 @@ private struct TreeBuilder {
     case .group(let axis, let members):
       var parts: [Part] = []
       for member in members {
-        guard let part = build(member) else { continue }
+        guard var part = build(member) else { continue }
         guard case .split(let inner, let grandchildren) = part.kind, inner == axis else {
           parts.append(part)
           continue
         }
+        // Brackets somebody wrote in a row are a group in whichever row they end up. Those that had to be written, round a row
+        // in a column whose other places closed up, were never meant for one.
+        if case .group(axis, _) = member.kind { part.isWrittenSo = true }
+        guard !part.isWrittenSo else {
+          parts.append(part)
+          continue
+        }
         let total = grandchildren.reduce(0) { $0 + $1.weight }
-        parts += grandchildren.map { Part(id: $0.id, weight: $0.weight / total * part.weight, kind: $0.kind) }
+        // What rises goes on running like the group around it, so brackets written in there are still brackets.
+        parts += grandchildren.map {
+          Part(id: $0.id, weight: $0.weight / total * part.weight, kind: $0.kind, isWrittenSo: $0.isWrittenSo, ownID: $0.ownID)
+        }
       }
       guard parts.count > 1 else {
-        return parts.first.map { Part(id: $0.id, weight: space.size, kind: $0.kind) }
+        guard let only = parts.first else { return nil }
+        // Brackets that are all that is left of their row go by the row's number, as the row did when they still joined it: what
+        // points at the row goes on pointing at it when a window that was missing arrives (`layout --open`).
+        guard only.isWrittenSo, case .split(axis, _) = only.kind else {
+          return Part(id: only.id, weight: space.size, kind: only.kind, isWrittenSo: only.isWrittenSo, ownID: only.ownID)
+        }
+        return Part(id: id, weight: space.size, kind: only.kind, isWrittenSo: true, ownID: only.ownID ?? only.id)
       }
       return Part(id: id, weight: space.size, kind: .split(axis, parts))
     }

@@ -84,13 +84,30 @@ extension Controller {
     }
   }
 
-  /// For the reply of a command that is about to dock `window`, which ends its pin.
+  /// For the reply of a command that is about to dock `window`, which ends what it was besides floating.
   func endOfPinNote(_ window: WindowID) -> String {
     switch role(of: window) {
     case .pinned: " and it is no longer kept in view"
-    case .summoned, .stashed: " and it no longer comes and goes with `summon`"
+    case .summoned, .stashed: " and it no longer comes and goes with its key"
     case nil: ""
     }
+  }
+
+  /// The same for the reply of a command that is about to dock several, as clauses of their own: "w7 is no longer kept in view",
+  /// "2 windows no longer come and go with their keys". The line on screen knows them for a loss (`HeadsUpText.namesALoss`).
+  func endOfRoleNotes(_ windows: [WindowID]) -> [String] {
+    let pinned = windows.filter { role(of: $0) == .pinned }
+    let summoned = windows.filter { role(of: $0) != nil && !pinned.contains($0) }
+    var notes: [String] = []
+    if let only = pinned.first {
+      notes.append(pinned.count == 1 ? "\(only) is no longer kept in view" : "\(Self.count(pinned.count, "window")) are no longer kept in view")
+    }
+    if let only = summoned.first {
+      notes.append(
+        summoned.count == 1
+          ? "\(only) no longer comes and goes with its key" : "\(Self.count(summoned.count, "window")) no longer come and go with their keys")
+    }
+    return notes
   }
 
   // MARK: Lookup

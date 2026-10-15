@@ -648,7 +648,7 @@ extension LayoutTree {
 
   /// How many places `id` shows along `axis`: one, or for a group that runs the same way (kept, F62), which looks like part of
   /// the row around it, as many as its children show. (With gaps that is a point or two off; the tree does not know the gap.)
-  private func places(in id: NodeID, along axis: Axis) -> Int {
+  public func places(in id: NodeID, along axis: Axis) -> Int {
     guard case .split(axis, let children) = nodes[id]?.kind else { return 1 }
     return max(children.reduce(0) { $0 + places(in: $1, along: axis) }, 1)
   }

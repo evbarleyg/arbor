@@ -253,11 +253,13 @@ public enum HeadsUpText {
   static let longest = 160
 
   /// Whether a reply says, after what was asked for, that something else went with it: "arranged 4 windows; 2 saved views are
-  /// gone", "docked w7 at the left edge and it is no longer kept in view". Read from the words, which are the only place
-  /// where commands say it; HeadsUpTests runs the commands that do, so that another wording does not go unheard.
+  /// gone", "docked w7 at the left edge and it is no longer kept in view", "arranged 2 windows; w7 no longer comes and goes with
+  /// its key". Read from the words, which are the only place where commands say it; HeadsUpTests runs the commands that do, so
+  /// that another wording does not go unheard.
   public static func namesALoss(_ reply: String) -> Bool {
-    reply.split(separator: "; ").dropFirst().contains { $0.hasSuffix(" is gone") || $0.hasSuffix(" are gone") }
-      || reply.contains(" and it is no longer ")
+    reply.split(separator: "; ").dropFirst().contains {
+      $0.hasSuffix(" is gone") || $0.hasSuffix(" are gone") || $0.contains(" no longer ")
+    } || reply.contains(" and it is no longer ") || reply.contains(" and it no longer ")
   }
 
   /// - "stepped in to Safari and Mail (n5)" loses the node number: "Stepped in to Safari and Mail". So does

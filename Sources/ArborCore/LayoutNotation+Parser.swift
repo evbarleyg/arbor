@@ -227,6 +227,8 @@ extension LayoutNotation {
     let end: Int
     var position = 0
     var desktopColumn: Int?
+    /// The windows written by number so far: a window has one place, like the Desktop.
+    var numbered: Set<WindowID> = []
 
     static let expectedSpace = "expected an app's name, a window number, `Desktop`, `(` or `[`"
     static let joinsItsNeighbour = "a name cannot begin or end with a character that joins the one beside it"
@@ -356,6 +358,9 @@ extension LayoutNotation {
         if let mark = next, mark.kind == .all || mark.kind == .title {
           throw ParseError(
             column: mark.column, message: "this goes after an app's name, not a window number; an app called \(word) needs quotes")
+        }
+        guard numbered.insert(id).inserted else {
+          throw ParseError(column: token.column, message: "window \(id.rawValue) is already in this arrangement")
         }
         return .window(id)
       case .word(let name), .quoted(let name):
