@@ -11,6 +11,8 @@ What goes:
   output   `mac-shell-out/*` whose one commit is more than a day old.
   landed   A branch that had a pull request, now closed, still stands where it stood then, and holds nothing that `main` or `swarm/trunk`
            lacks. Nothing is lost with it: every commit is in the history.
+  trains   `train/*`, and `line/*`, the trunk-to-be that is shown while it is being tried by hand. Neither ever has a pull request. Each goes as soon
+           as `main` or `swarm/trunk` holds all of it: the trunk has moved forward to it. One that failed stays, like other work that has not landed.
 
 What never goes, whatever else is true of it: the default branch, `main`, `swarm/trunk`, a protected branch, a branch that an open pull
 request comes from or goes into (whoever's), and `gallery/*`, whose pictures pages link to by the branch's name. A branch that never
@@ -41,6 +43,7 @@ import urllib.parse
 import urllib.request
 
 OUTPUT_PREFIX = "mac-shell-out/"
+TRAIN_PREFIX = ("train/", "line/")
 KEPT_PREFIXES = ("gallery/",)
 KEPT_FOR = datetime.timedelta(days=1)
 INTEGRATION = ("main", "swarm/trunk")
@@ -130,9 +133,9 @@ def to_prune(github, now):
             if age > KEPT_FOR:
                 going.append((name, sha, f"the output of a Mac shell run, {age.days} day{'' if age.days == 1 else 's'} old"))
             continue
-        holder = next((base for base in INTEGRATION if base in names and github.adds_nothing_to(base, sha)), None) if (name, sha) in closed_at else None
+        holder = next((base for base in INTEGRATION if base in names and github.adds_nothing_to(base, sha)), None) if (name, sha) in closed_at or name.startswith(TRAIN_PREFIX) else None
         if holder:
-            going.append((name, sha, f"its pull request is closed and {holder} holds all of it"))
+            going.append((name, sha, f"{'a merge train,' if name.startswith(TRAIN_PREFIX) else 'its pull request is closed'} and {holder} holds all of it"))
         else:
             staying += 1
     return going, staying
@@ -271,6 +274,11 @@ def self_test():
         ("a fork's open pull request from a branch of the same name does not protect this one",
          pruned(branches=X, pulls=merged + [("fix/x", "F", "swarm/trunk", "open", "someone/arbor")], held=on_trunk), (0, ["fix/x"])),
         ("never had a pull request, and the trunk holds all of it: a mark somebody set", pruned(branches=X, held=on_trunk), (0, [])),
+        ("a merge train that the trunk has moved forward to", pruned(branches={"train/7": ("A", False)}, held=on_trunk), (0, ["train/7"])),
+        ("the line that was tried by hand, likewise", pruned(branches={"line/13": ("A", False)}, held=on_trunk), (0, ["line/13"])),
+        ("a merge train that failed", pruned(branches={"train/7": ("A", False)}, hours={"A": 99}), (0, [])),
+        ("a merge train with an open pull request after all", pruned(branches={"train/7": ("A", False)}, pulls=[("train/7", "A", "main", "open")], held=on_trunk), (0, [])),
+        ("a branch that only begins like a train", pruned(branches={"trains": ("A", False)}, held=on_trunk), (0, [])),
         ("work that has not landed, however old", pruned(branches={"probe/x": ("A", False)}, hours={"A": 9999}), (0, [])),
         ("no ancestor in common with anything", pruned(branches={"fix/x": ("ORPHAN", False)}, pulls=[("fix/x", "ORPHAN", "swarm/trunk", "closed")]), (0, [])),
         ("a protected branch that has landed", pruned(branches={"fix/x": ("A", True)}, pulls=merged, held=on_trunk), (0, [])),
