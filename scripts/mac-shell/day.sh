@@ -106,7 +106,7 @@ switch_to calendar
 drag_edge calendar top
 drag_by calendar 0 118
 view all
-switch_tile
+tile_click 1
 view all
 
 chapter "The ways out"
