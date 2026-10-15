@@ -184,17 +184,17 @@ extension World {
       return
     }
     // With the windows swept aside, the next press only brings them back, as soon as the button is down, and
-    // nobody gets it. The Accessibility layer notes the window under it (`makePress`), unless it is listed elsewhere
-    // than its app has it.
+    // nobody gets it. The Accessibility layer notes the window under it (`makePress`), unless `WindowGrab.hold` says that
+    // the press takes hold of nothing.
     if isSwept {
       for case .window(let id) in stack {
         let reach = -World.borderReach
         guard let real = system.frame(of: WindowID(id)), let strip = sweptFrames[id],
           strip.insetBy(dx: reach, dy: reach).contains(point)
         else { continue }
-        if !WindowGrab.isListedElsewhere(strip, than: real) {
-          held = .strip(WindowID(id), from: strip, at: point, taken: .undecided)
-        }
+        let top = WindowGrab.Top.known(WindowID(id), listed: strip, believed: real)
+        let hold = WindowGrab.hold(pressedAt: point, pointerNow: point, underPress: top, underPointer: top, desktopIsShown: true)
+        if let window = hold.window { held = .strip(window, from: hold.frame, at: hold.point, taken: .undecided) }
         break
       }
       isSwept = false

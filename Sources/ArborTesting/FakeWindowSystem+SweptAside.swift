@@ -63,9 +63,11 @@ extension FakeWindowSystem {
     sweptAside = nil
     events?.pointerPressed()
     cursor = CGPoint(x: pressed.x + slip.width, y: pressed.y + slip.height)
+    let top = WindowGrab.Top.known(window, listed: listed, believed: frame)
+    let hold = WindowGrab.hold(pressedAt: pressed, pointerNow: pressed, underPress: top, underPointer: top, desktopIsShown: true)
     let verdict =
-      WindowGrab.isListedElsewhere(listed, than: frame)
-      ? .neither : WindowGrab.classify(pressedAt: pressed, frameAtPress: listed, frameNow: frame, pointerNow: cursor)
+      hold.window == nil
+      ? .neither : WindowGrab.classify(pressedAt: hold.point, frameAtPress: hold.frame, frameNow: frame, pointerNow: cursor)
     switch verdict {
     case .drag:
       events?.dragBegan(window, at: cursor)

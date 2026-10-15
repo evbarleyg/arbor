@@ -1288,7 +1288,8 @@ public final class AXWindowSystem: WindowSystem {
     let now = ScreenGeometry.global(fromAppKit: NSEvent.mouseLocation)
     let underPress = topWindow(at: point, in: list)
     let hold = WindowGrab.hold(
-      pressedAt: point, pointerNow: now, underPress: underPress, underPointer: topWindow(at: now, in: list))
+      pressedAt: point, pointerNow: now, underPress: underPress, underPointer: topWindow(at: now, in: list),
+      desktopIsShown: desktopIsShown(by: list))
     if Log.debugEnabled { logPress(at: point, pointer: now, on: underPress, hold) }
     return Press(point: hold.point, window: hold.window, frame: hold.frame, isSettled: hold.isSettled)
   }
@@ -1304,6 +1305,19 @@ public final class AXWindowSystem: WindowSystem {
     case (nil, nil): what = "no window is there"
     }
     Log.debug("the button went down at \(traceText(point)), the pointer is at \(traceText(pointer)): \(what)")
+  }
+
+  /// Whether macOS has swept the windows aside, going by where the list has those that Arbor knows.
+  private func desktopIsShown(by list: [[String: Any]]) -> Bool {
+    let listed = list.compactMap { info -> StackedWindow? in
+      guard (info[kCGWindowLayer as String] as? NSNumber)?.intValue == 0,
+        let number = (info[kCGWindowNumber as String] as? NSNumber)?.uint32Value, let bounds = Self.bounds(in: info)
+      else { return nil }
+      return StackedWindow(id: WindowID(number), frame: bounds)
+    }
+    return SweptAside.isSwept(
+      believed: records.mapValues(\.snapshot.frame), listed: listed,
+      displays: NSScreen.screens.map { ScreenGeometry.global(fromAppKit: $0.frame) })
   }
 
   /// The first ordinary window, front to back, that the point belongs to.

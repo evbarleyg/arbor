@@ -420,9 +420,9 @@ nobody sees move. What it must not do is believe the window server:
   is of now. A window that is in the hand by then is listed elsewhere than its app last said as well, or
   has left the place of the press, with another window showing there. `makePress` reads what shows at
   the press and what shows at the pointer, and `WindowGrab.hold` decides. A window that is ahead of
-  its app's word, the way the pointer went and no farther, is in the hand, and is judged from the
-  press and its app's word; a strip can only be pulled the other way than its window was swept.
-  An edge that has left the press behind is judged from where the pointer is.
+  its app's word, the way the pointer went and no farther, taken where a hand can take one (its top,
+  an edge), is in the hand, and is judged from the press and its app's word. While the desktop
+  is shown nothing is. An edge that has left the press behind is judged from where the pointer is.
 - A layout is shown as motion from where the windows are to where they go. With the windows aside
   there is nothing on screen to lead from, and the stage would put stand-ins on a desktop that
   somebody wanted bare: `stageTransition` asks `SweptAside`, which compares what Arbor believes

@@ -208,8 +208,8 @@ MUTANTS = [
     },
     {
         "name": "a press is looked for at its own place only, however late it is served",
-        "old": "      pressedAt: point, pointerNow: now, underPress: underPress, underPointer: topWindow(at: now, in: list))\n",
-        "new": "      pressedAt: point, pointerNow: point, underPress: underPress, underPointer: underPress)\n",
+        "old": "      pressedAt: point, pointerNow: now, underPress: underPress, underPointer: topWindow(at: now, in: list),\n",
+        "new": "      pressedAt: point, pointerNow: point, underPress: underPress, underPointer: underPress,\n",
         "red": [
             "a window is dragged for a second, and the monitor hears of the press 500 ms late: the drag is reported to begin",
             "a window is dragged sideways for a second while Arbor's main thread is busy for 300 ms from the press, and what queued up comes byTime: "
@@ -222,11 +222,52 @@ MUTANTS = [
     {
         "name": "whatever is under the pointer when a press is served late is in the hand",
         "file": "ArborCore/WindowGrab.swift",
-        "old": "    where isInTheHand(listed: listed, believed: believed, pressedAt: pressedAt, pointerNow: pointerNow) {\n",
-        "new": "    where pressedAt != pointerNow {\n",
+        "old": "    where !desktopIsShown && isInTheHand(listed: listed, believed: believed, pressedAt: pressedAt, pointerNow: pointerNow) {\n",
+        "new": "    where !desktopIsShown && pressedAt != pointerNow {\n",
         "red": [
             "the button goes down on the wallpaper while Arbor's main thread is busy for 300 ms, the pointer comes to a window, and its app moves it: "
             "no drag and no resize is made of it",
+        ],
+    },
+    {
+        "name": "a window can be in the hand while macOS shows its desktop",
+        "old": "      desktopIsShown: desktopIsShown(by: list))\n",
+        "new": "      desktopIsShown: list.isEmpty)\n",
+        "red": [
+            "judge: J1 macOS shows its desktop, a rubber band from x 595 is thrown to the right edge of the display and let go, the press heard 500 ms late: "
+            "no drag and no resize is made of it",
+            "judge: J1 macOS shows its desktop, a rubber band from x 605 is thrown to the right edge of the display and let go, Arbor busy for 500 ms, then byTime: "
+            "no drag and no resize is made of it",
+        ],
+    },
+    {
+        "name": "a window held by its title bar is judged from a corner the pointer has got to",
+        "file": "ArborCore/WindowGrab.swift",
+        "old": "        pressedAt.y >= listed.minY + top\n",
+        "new": "        pressedAt.y >= listed.minY\n",
+        "red": [
+            "judge: J3 the window starts 400 ms late, the pointer 120 points along its title bar at its left edge by then, the press heard 300 ms late: "
+            "the drag is reported to begin",
+        ],
+    },
+    {
+        "name": "a hand can take a window along by the middle of it",
+        "file": "ArborCore/WindowGrab.swift",
+        "old": "      return pressedAt.y < believed.minY + top || isNearEdge(pressedAt, of: believed)\n",
+        "new": "      return true\n",
+        "red": [
+            "judge: J2 a stubborn window goes back 60 points while text is selected in it the same way, Arbor busy for 500 ms, then byTime: "
+            "no drag and no resize is made of it",
+        ],
+    },
+    {
+        "name": "a window a step ahead of its app is in the hand wherever on it the pointer is",
+        "file": "ArborCore/WindowGrab.swift",
+        "old": "    return ahead <= lag && (pointerNow.y < listed.minY + top || isNearEdge(pointerNow, of: listed))\n",
+        "new": "    return ahead <= lag\n",
+        "red": [
+            "judge: J2b the button goes down on the wallpaper, the pointer comes to a window whose app has moved it 40 points the same way meanwhile, "
+            "Arbor busy for 500 ms, then byTime: no drag and no resize is made of it",
         ],
     },
 ]

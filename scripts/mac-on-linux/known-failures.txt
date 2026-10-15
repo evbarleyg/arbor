@@ -34,6 +34,8 @@ a docked window enters full screen and leaves it, saying so late: and Arbor has 
 # the window server as they are by then: a gesture that is over before Arbor hears of the press compares the last frame with itself. (3) A press has the place where it happened, and what the window server lists when it is
 # served. `WindowGrab.hold` knows a window in the hand by its being ahead of its app's word, the way the pointer went. What is at rest by then, or has been heard, or is held by an edge that takes its place nowhere, it does not
 # know. All of (3) was lost before `hold` as well, none of it is taken for something else, and nothing is logged.
+# (4) Older than `hold`, and the same with it: a window that goes the pointer's way by itself under a press that is served ON TIME is taken for a drag (`classify`); and a window server that runs a whole step
+# ahead of the pointer (67 points were measured on a hosted Mac) has the window farther than the pointer went, which is not what a window in the hand looks like.
 a window is flicked, and the monitor hears of the press 500 ms late: the drag is reported to begin # the queued events read the pointer and the window server as they are now, not as of the event
 a window is flicked, and the monitor hears of the press 500 ms late: and to end, so that there is a drop to act on # the queued events read the pointer and the window server as they are now, not as of the event
 a window is flicked while Arbor's main thread is busy for 300 ms from the press, and what queued up comes accessibilityFirst: the drag is reported to begin # the queued events read the pointer and the window server as they are now, not as of the event
@@ -74,6 +76,11 @@ a window over another is made narrower by its right edge, Arbor busy for 300 ms,
 a window over another is made narrower by its right edge, Arbor busy for 300 ms, then mouseFirst: the resize is reported # the edge has left the place of the press, which takes hold of the window below
 a window over another is made narrower by its right edge, the press heard 300 ms late: the resize is reported # the edge has left the place of the press, which takes hold of the window below
 a window over another is made narrower by its right edge, the press heard 500 ms late: the resize is reported # the edge has left the place of the press, which takes hold of the window below
+judge: J2 a stubborn window goes back 20 points while text is selected in it the same way, served on time: no drag and no resize is made of it # (4): moved no farther than the pointer went: a drag, by `classify`
+judge: J2 a stubborn window goes back 60 points while text is selected in it the same way, served on time: no drag and no resize is made of it # the same
+judge: J2 a stubborn window goes back 90 points while text is selected in it the same way, served on time: no drag and no resize is made of it # the same
+judge: J4 a window is dragged sideways in steps of 60 points, the window server a step ahead of the pointer, the press heard 500 ms late: the drag is reported to begin # (4): 60 points farther than the pointer went
+judge: J4 a window is dragged sideways in steps of 60 points, the window server a step ahead of the pointer, the press heard 500 ms late: and to end # the same
 
 # The rude walk, with the usual seeds (1-40). Each rule here is one of the faults above, or of those in README.md, "What the walk has found".
 the rude walk (polite): a window whose app hung as it came forward is reported focused once the app wakes [2 of 40 seeds] # reportFocus(of:) waits the second out, notes no silence, and answersAgain reports no focus

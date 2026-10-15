@@ -98,40 +98,46 @@ which under a floating window over tiles is always. And late presses turned out 
 | a window **flicked**, or dragged and held still, the gesture over when the press is served | no drag |
 | a window **made wider by its left edge** | **a drag**, which ends in a drop |
 
-**What changed.** The decision is out of the Accessibility layer. `makePress` reads the list once, and what shows at the press and at the pointer;
-`WindowGrab.hold` (ArborCore, tabled in `WindowGrabTests`) says what the press takes hold of:
+**What changed.** The decision is out of the Accessibility layer. `makePress` reads the list once, what shows at the press and at the pointer, and whether the desktop is
+shown; `WindowGrab.hold` (ArborCore, tabled in `WindowGrabTests`) says what the press takes hold of:
 
 - **A window in the hand goes first**, under the pointer or still under the press. It is known by being ahead of its app's word, the way the pointer went and no
   farther. It is judged from the place of the press and **its app's last word**, which is the nearest there is to the frame it had at the press, and is that
   frame if Arbor was too busy to hear more. So the way it has come counts, and a gesture that is over by then is still seen.
-- **An edge that has left the press behind** (its app heard meanwhile) is judged from where the pointer is, if the pointer is at an edge and the press is not.
+- **A hand takes a window by its top or by an edge.** Where its app has the window under the press, the press must be there (the upper 60 points, or 10 from the border): in a text
+  that is being selected, a window that goes the pointer's way goes by itself. Where it has not, the app has been heard since: it is at most 100 points behind, and the
+  pointer is still where a hand holds.
+- **While macOS shows its desktop nothing is in the hand** (`SweptAside.isSwept`, on the list that is read anyway). Every window is then listed far from its app's word, some of
+  them the way the pointer went.
+- **An edge that has left the press behind** (its app heard meanwhile) is judged from where the pointer is, if the pointer is at an edge and the press is not. Not for a
+  press in the upper 60 points: that is a window held by its title bar that has not stirred yet, with the pointer gone along the bar as far as a corner.
 - Otherwise the press is looked for at its own place, under the rule for strips, as before; and if nothing is found it keeps its own place, which is what a
   report from a window's app is held against.
 - **Nothing is made of a few points**: the pointer must have gone more than 24, the window be 10 ahead. A press on time comes with a tremble, and the two frames of a
   window at rest may differ a little; to go by the app's word then would make a drag of the difference.
-- **A window that the pointer has merely come to is not in the hand**: it is where its app says. (A rubber band over the icons on the desktop.)
-- **No strip is**: it can only be pulled inwards, the other way than its window was swept. That does not rest on the 27 ms, which were measured on a Mac at rest.
-  More than 100 points ahead, a window must also have been under the press by its app's word, so a pointer that comes to a strip from the bare desktop finds nothing.
+- One line at debug level for every press: where the button went down, where the pointer was by then, and what the press was found to be on.
+
+**Three rounds found what argument did not.** Two reviews and an independent judge, each with stories of its own on the model. The first state (the second try put back) took hold of
+whatever the pointer had come to. The second judged every late press from the pointer's place, and lost what had come to rest. The third made **a false drag of a swept window**: a
+press on the bare desktop within ten points of where a tile's far edge really is, the pointer thrown to that tile's strip, the press served late; with the real controller on top two tiles
+were swapped and resized. It also made a drag of a stubborn window going back under a selection, and lost a window alone that starts late. "A strip can only be pulled the other way than it was
+swept" is true of a press ON the strip, and of nothing else. All their stories are in the tree.
 
 **Evidence.** All on the model, which no Mac can be asked for: lateness to order.
 
-- **The model shows its desktop** (`FakeMacOS/DesktopShown.swift`: the key, and a press on a strip). `tests/DesktopShown.swift`: a click that slips and a pull at a strip,
-  heard 0, 20, 100 and 500 ms late and with the main thread busy, in all three orders; a Mac that takes 400 ms to bring the windows back; a window given another
-  frame meanwhile; with the real controller, a floating window's strip. In `tests/LatePresses.swift`, a rubber band from the bare desktop that comes to a strip.
-- `tests/LatePresses.swift` and more of `tests/LostDrags.swift`: with the above, 161 new stories. **55 checks are red on the trunk's layer and green on this one, none the other
-  way** (`REF=origin/swarm/trunk make mac-on-linux`: 1434 ✔ against 1489 ✔). 36 checks of the new stories are red on both, none of them a drag or a resize that was not
-  one, each listed in `known-failures.txt` with its reason. Six lines that stood there are cured and gone.
-- Of the stories that were there before, the layer reports something else in six: four drags seen sooner or at all, two flicks seen at all
-  (`collab/evidence/mac-on-linux/heard.jsonl`).
-- 3,000 random gestures (title bar, four edges, content, wallpaper; alone, over another window, beside a tile; eight kinds of lateness; windows and apps that start
-  late), played on both layers by the second review and again on the last state: **547 come out right that came out wrong, 11 the other way**. Nine of
-  the 11 are drags there and back, which the measure took for nothing. Two are real: see below.
-- Three changes in `mutants.py` take the rules out one by one, and the stories about them go red.
+- **The model shows its desktop** (`FakeMacOS/DesktopShown.swift`: the key, and a press on a strip; its header says what was seen and what is a guess). It is a layer over the list: with the
+  trunk's layer every older story has line for line the account it had.
+- `tests/DesktopShown.swift`, `tests/LatePresses.swift`, `tests/Judge.swift` (the judge's), more of `tests/LostDrags.swift`: 308 new stories, each shape also served on time, as a control.
+- `make mac-on-linux`: **587 stories, 1908 ✔, 111 known ✘, 0 new, exit code 0.** `REF=origin/swarm/trunk make mac-on-linux`, the trunk's layer with the same stories: 1827 ✔, **86 new ✘**.
+  **No check is red here and green there.**
+- 41 checks of the new stories are red on both, none of them made worse, each listed in `known-failures.txt` with its reason. Six lines that stood there are cured and gone.
+- **4,000 random gestures**, the judge's (`tests/JudgeRandom.swift`, told on request; truth is what became of the windows; a quarter with the desktop shown): **3,365 come out right against the
+  trunk layer's 2,826. 539 better, none worse. No false drag or resize, and no wrong one; the trunk's layer has three wrong ones.** The rest are lost on both.
+- `make mac-on-linux-selftest`: 30 changes noticed, seven of them new: each takes one of these rules out.
 
 **Still lost**, as before: what is at rest when the press is served and is dragged on afterwards; an edge that takes the window's place nowhere (right, bottom) or has left
-the place of the press, once its app has been heard; a window stopped by the menu bar with its app heard first. **Worse than before**, two in 3,000: a window
-over another whose window server starts 400 ms late **and** whose press is served 300 ms late, with the pointer near one of its edges by then, is judged from
-there, and the drag is not seen.
+the place of the press, once its app has been heard; a window stopped by the menu bar with its app heard first; a window taken by its background, below the upper 60 points; a window server
+that runs a whole step ahead of the pointer. The facts are gone by then. The cure is to note the window under the press when it happens, off the main thread.
 
 ## Not done, and why
 

@@ -21,6 +21,8 @@ public enum WindowGrab {
   /// How far the pointer may travel with the window standing still before the press is taken to be
   /// about the window's content. A window follows a drag from the first few points.
   public static let patience: CGFloat = 24
+  /// How far below its upper edge a window can be taken along: a title bar, or a toolbar that is one with it.
+  public static let top: CGFloat = 60
   /// How much farther than the pointer a window in the hand may seem to have gone, and how far apart the window
   /// server and Accessibility may have a window that is at rest: they are read a moment apart.
   public static let lead: CGFloat = 32
@@ -78,9 +80,13 @@ public enum WindowGrab {
   ///   - pressedAt: where the button went down.
   ///   - pointerNow: where the pointer is as the press is looked at.
   ///   - underPress, underPointer: what the window server shows at those places now.
-  public static func hold(pressedAt: CGPoint, pointerNow: CGPoint, underPress: Top?, underPointer: Top?) -> Hold {
+  ///   - desktopIsShown: macOS has swept the windows aside (`SweptAside`). Then every one of them is listed far from its app's
+  ///     word, some the way the pointer went, and none is in the hand: a press on a strip takes hold of nothing.
+  public static func hold(
+    pressedAt: CGPoint, pointerNow: CGPoint, underPress: Top?, underPointer: Top?, desktopIsShown: Bool = false
+  ) -> Hold {
     for case .known(let window, let listed, let believed)? in [underPointer, underPress]
-    where isInTheHand(listed: listed, believed: believed, pressedAt: pressedAt, pointerNow: pointerNow) {
+    where !desktopIsShown && isInTheHand(listed: listed, believed: believed, pressedAt: pressedAt, pointerNow: pointerNow) {
       // Its app's last word is the nearest there is to the frame it had at the press, and is that frame if Arbor was
       // too busy to hear more. If not, and it is an edge that is in the hand, the edge has left the press behind.
       if isNearEdge(pointerNow, of: listed), !isNearEdge(pressedAt, of: believed) {
@@ -92,8 +98,11 @@ public enum WindowGrab {
     case nil:
       return Hold(point: pressedAt)
     case .known(let window, let listed, let believed)? where !isListedElsewhere(listed, than: believed):
-      // The same for an edge whose app has been heard all along.
-      if case .known(window, _, _)? = underPointer, isNearEdge(pointerNow, of: listed), !isNearEdge(pressedAt, of: listed) {
+      // The same for an edge whose app has been heard all along. Not for a press at the top: that is a window held by its
+      // title bar which has not stirred yet, with the pointer gone along the bar as far as a corner.
+      if case .known(window, _, _)? = underPointer, isNearEdge(pointerNow, of: listed), !isNearEdge(pressedAt, of: listed),
+        pressedAt.y >= listed.minY + top
+      {
         return Hold(window: window, point: pointerNow, frame: listed)
       }
       return Hold(window: window, point: pressedAt, frame: listed)
@@ -117,9 +126,17 @@ public enum WindowGrab {
     let (px, py) = (pointerNow.x - pressedAt.x, pointerNow.y - pressedAt.y)
     let (dx, dy) = (listed.minX - believed.minX, listed.minY - believed.minY)
     let ahead = (dx * dx + dy * dy).squareRoot()
-    return (px * px + py * py).squareRoot() > patience && ahead >= edgeMargin
-      && wentThePointersWay(from: believed, to: listed, pressedAt: pressedAt, pointerNow: pointerNow, give: edgeMargin)
-      && (ahead <= lag || believed.insetBy(dx: -edgeMargin, dy: -edgeMargin).contains(pressedAt))
+    guard (px * px + py * py).squareRoot() > patience, ahead >= edgeMargin,
+      wentThePointersWay(from: believed, to: listed, pressedAt: pressedAt, pointerNow: pointerNow, give: edgeMargin)
+    else { return false }
+    // Where its app has it under the press, the press must be where a hand can take hold: in a text that is being
+    // selected, a window that goes the pointer's way goes by itself.
+    if believed.insetBy(dx: -edgeMargin, dy: -edgeMargin).contains(pressedAt) {
+      return pressedAt.y < believed.minY + top || isNearEdge(pressedAt, of: believed)
+    }
+    // Where it has not, its app has been heard since the press, and is a step or two behind. The hand is then still where it took
+    // hold, which is where the pointer is.
+    return ahead <= lag && (pointerNow.y < listed.minY + top || isNearEdge(pointerNow, of: listed))
   }
 
   /// Whether a window has moved, each way between nowhere and as far as the pointer, give or take, and not against it.
