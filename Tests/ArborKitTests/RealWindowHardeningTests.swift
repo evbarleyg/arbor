@@ -398,6 +398,82 @@ import Testing
     #expect(h.system.isVisible(a) && h.system.isVisible(c))
   }
 
+  // MARK: A quit while an app hangs (K003, the half that Arbor does not live to see)
+
+  /// Nobody is there to place them when the app wakes, so word is left: a call that is not answered in time is still
+  /// delivered when the app wakes up.
+  @Test func theWindowsOfAnAppThatHangsThroughAQuitComeBackWhenItWakes() {
+    let (h, a, b) = makeHarness()
+    h.run("zoom \(a.rawValue)")
+    #expect(!h.system.isVisible(b))
+    h.system.setUnresponsive(pid: 2000, true)
+    h.controller.shutdown()
+    #expect(!h.system.isVisible(b), "nothing can be done about it now")
+    h.system.setUnresponsive(pid: 2000, false)
+    #expect(h.system.isVisible(b))
+  }
+
+  /// In view is not enough: it goes back to where it floated, in its own size. Several places are tried for a window during a
+  /// quit, and the first is the considered one; the last is "anywhere in view".
+  @Test func itComesBackToWhereItWouldHaveGoneHadItsAppBeenAwake() {
+    func quit(hung: Bool) -> CGRect {
+      let (h, a, b) = makeHarness()
+      h.run("zoom \(a.rawValue)")
+      if hung { h.system.setUnresponsive(pid: 2000, true) }
+      h.controller.shutdown()
+      if hung { h.system.setUnresponsive(pid: 2000, false) }
+      return h.system.frame(of: b)!
+    }
+    #expect(quit(hung: true) == quit(hung: false))
+  }
+
+  /// The last thing that was asked of a hung app's window may have been to go out of view. That is not left as word.
+  @Test func noWordIsLeftThatWouldSendAWindowOutOfView() {
+    let (h, a, b) = makeHarness()
+    h.system.setUnresponsive(pid: 2000, true)
+    h.run("zoom \(a.rawValue)")
+    #expect(h.system.isVisible(b), "it could not be sent out of view")
+    h.controller.shutdown()
+    h.system.setUnresponsive(pid: 2000, false)
+    #expect(h.system.isVisible(b))
+  }
+
+  /// While Arbor runs it places the window itself when the app wakes, as ever: nothing happens behind its back.
+  @Test func noWordIsLeftWhileArborRuns() {
+    let (h, a, b) = makeHarness()
+    h.run("zoom \(a.rawValue)")
+    h.system.setUnresponsive(pid: 2000, true)
+    h.run("back")
+    h.run("zoom \(a.rawValue)")
+    h.system.setUnresponsive(pid: 2000, false)
+    h.scheduler.advance(by: 0.5)
+    #expect(!h.system.isVisible(b), "the view frames Safari, whatever was asked of Notes in between")
+    expectWindowsMatchLayout(h, on: h.display)
+  }
+
+  @Test func quittingWithTheViewHeldWhileAnAppHangsBringsItsWindowBackWhenItWakes() {
+    let (h, a, b) = makeHarness()
+    h.run("zoom \(a.rawValue)")
+    h.run("hold")
+    h.system.setUnresponsive(pid: 2000, true)
+    h.controller.shutdown()
+    h.system.setUnresponsive(pid: 2000, false)
+    #expect(h.system.isVisible(a) && h.system.isVisible(b))
+  }
+
+  /// The log used to say "all windows returned to view" whatever had happened.
+  @Test func whatCouldNotComeBackIsSaid() {
+    let (h, a, b) = makeHarness()
+    h.run("zoom \(a.rawValue)")
+    h.system.setUnresponsive(pid: 2000, true)
+    h.controller.shutdown()
+    #expect(h.controller.lastWords == "stopped; 1 window(s) could not be returned to view, their apps do not answer: \(b)")
+    let (awake, c, _) = makeHarness()
+    awake.run("zoom \(c.rawValue)")
+    awake.controller.shutdown()
+    #expect(awake.controller.lastWords == "stopped; all windows returned to view")
+  }
+
   // MARK: A pause while an app hangs (K003, the half that Arbor lives to see)
 
   /// Safari framed, Notes out of view and hung, and then a pause.
@@ -485,15 +561,17 @@ import Testing
     #expect(!h.scheduler.pendingKeys.contains { $0.contains("could-not-come-back") }, "\(h.scheduler.pendingKeys)")
   }
 
-  /// The quit half of K003 is still open: Arbor is gone when the app wakes. What the release notes say about it has to be true.
+  /// Until the app wakes its window is still out of view, and Arbor may be opened again meanwhile: the word left at the quit is then
+  /// carried out under the new Arbor's eyes. What the release notes say about opening Arbor again has to be true.
   @Test func afterAQuitWhileAnAppHungOpeningArborAgainFindsItsWindow() {
     let (h, a, b) = makeHarness()
     h.run("zoom \(a.rawValue)")
     h.system.setUnresponsive(pid: 2000, true)
     h.controller.shutdown()
-    h.system.setUnresponsive(pid: 2000, false)
-    #expect(!h.system.isVisible(b), "the known problem: it is still out of view")
+    #expect(!h.system.isVisible(b), "its app has not woken yet")
     h.start()
+    h.scheduler.advance(by: 2)
+    h.system.setUnresponsive(pid: 2000, false)
     h.scheduler.advance(by: 2)
     #expect(h.workspace.contains(b), "Arbor knows it again")
     h.run("home")

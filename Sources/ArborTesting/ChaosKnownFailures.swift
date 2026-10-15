@@ -587,20 +587,6 @@ extension ChaosRunner {
         launch
         settle
         """),
-    ChaosKnownFailure(
-      rule: "quit-left-out-of-reach", owner: "the ways home: quitting while an app hangs (K003)", severity: 1,
-      story: "Arbor is quit while an app with a window out of view does not answer. The window is still past the corner when the app wakes, and Arbor is gone. "
-        + "Opening Arbor again does not fetch it by itself; ⌃⌥0, Show Everything, Float All or turning to the window then do.",
-      script: """
-        launch
-        open 101 Safari pid 1000 at 100 100 700 500
-        open 102 Notes pid 2000 at 300 200 600 400
-        dock 101 left
-        zoom 101
-        hang 2000
-        quit
-        wake 2000
-        """),
   ]
 
   public nonisolated static let knownRules = Set(knownFailures.map(\.rule))

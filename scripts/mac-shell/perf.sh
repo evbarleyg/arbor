@@ -1,13 +1,14 @@
 #!/bin/bash
-# What Arbor costs on real windows: how long commands take and where the time goes, then memory after a few hundred
-# commands, and wakeups while idle. Run it with
+# What Arbor costs on real windows: how long commands take and where the time goes, with idle apps, a busy app and an
+# app that hangs; then memory after a few hundred commands, and wakeups while idle. Run it with
 #
 #   scripts/mac-shell/run.sh scripts/mac-shell/perf.sh        (or, on a Mac, bash scripts/mac-shell/perf.sh)
 #
-# Every time comes from Arbor's own `stats` command. The tables are printed and kept as mac-shell/stats-*.txt.
+# Every time comes from Arbor's own `stats` command (commands, layouts, and Accessibility calls by kind, by app and by
+# thread). The tables are printed and kept as mac-shell/stats-*.txt.
 # Safe on a person's Mac: it starts its own test windows and an Arbor limited to them, changes no setting, and only
 # reads with footprint, heap, leaks and top (the first three only where developer mode is on: elsewhere macOS asks for a
-# password in a dialog). It drags one gap with the real pointer. About three minutes.
+# password in a dialog). It drags one gap with the real pointer. About five minutes.
 source "$(dirname "$0")/lib.sh"
 source "$(dirname "$0")/lib-gestures.sh"
 
@@ -53,6 +54,14 @@ perf_start() {
       number=$((number + 1))
       eval "W$number=$id"
       ARBOR_WINDOW_IDS="$ARBOR_WINDOW_IDS $id"
+      # Twelve windows of one process open in a row that runs off a small screen, and that is where a quit puts them back.
+      echo "move $id $((40 + number % 6 * 40)) $((60 + number % 6 * 30)) 480 352" >&"$descriptor"
+    done
+    # Before Arbor looks: a window that moves later has been moved by somebody.
+    tries=0
+    until [ "$(real_frame_of "$id" | cut -d ' ' -f 1)" = "$((40 + number % 6 * 40))" ] || [ "$tries" -ge 50 ]; do
+      sleep 0.1
+      tries=$((tries + 1))
     done
     index=$((index + 1))
   done
@@ -130,7 +139,8 @@ done
 table "1x12-nothing" "one app: 10 x show-all when everything shows already"
 
 step "panels that were put away and handed out again still work"
-on_screen_overlays() { overlays | awk '$8 == "on"' | wc -l | tr -d ' '; }
+# Seam handles are thin. The focus ring, which is there all the time, is as large as its window.
+on_screen_overlays() { overlays | awk '$8 == "on" && ($6 <= 24 || $7 <= 24)' | wc -l | tr -d ' '; }
 before=$(on_screen_overlays)
 quiet zoom "$W1"
 sleep 0.3
@@ -156,10 +166,73 @@ camera 10
 table "4x3-camera" "four apps: 10 x (zoom, back)"
 perf_stop
 
-# soak: 400 commands with tiles and seams coming and going.
+# tell_last <command…>: one line on the stdin of the last process of test windows (ArborTestWindows/Commands.swift).
+# Writing to a pipe nobody reads any more would end this shell.
+tell_last() {
+  kill -0 "$PERF_LAST_PID" 2>/dev/null || return 1
+  eval "echo \"\$*\" >&$((PERF_COUNT + 2))"
+}
+
+all_in_view() {
+  local id
+  for id in $ARBOR_WINDOW_IDS; do
+    is on_screen "$id" || return 1
+  done
+}
+
+for attention in 30 2; do
+  step "twelve windows of four apps, one of them busy 300 ms at a time with $attention ms of attention between"
+  arbor_settings "$small_slots"
+  perf_start 4 3
+  quiet arrange
+  tell_last busy 300 "$attention"
+  sleep 2
+  camera 3
+  busy_ended=$(arbor_now)
+  until all_in_view || [ "$(echo "$(arbor_now) - $busy_ended > 20" | bc)" = 1 ]; do sleep 0.1; done
+  echo "every window was in view $(echo "$(arbor_now) - $busy_ended" | bc) s after the last command"
+  table "busy-$attention-camera" "one app busy (attention $attention ms): 3 x (zoom, back)"
+  # The window that grows belongs to the busy app: its lane is still at work when the focus is asked for.
+  quiet zoom "$W12"
+  check "the keyboard follows into the busy app's window" eventually is focused "$W12"
+  quiet back
+  tell_last busy 0
+  for id in $ARBOR_WINDOW_IDS; do
+    check "window $id ended up in view (busy app)" eventually is on_screen "$id"
+  done
+  perf_stop
+done
+
+step "twelve windows of four apps, one of them hangs for 20 s"
+arbor_settings "$small_slots"
+perf_start 4 3
+quiet arrange
+sleep 1
+quiet stats reset
+tell_last hang 20
+sleep 0.5
+hang_started=$(arbor_now)
+for command in "zoom $W1" back "zoom $W1" back; do
+  started=$(arbor_now)
+  # shellcheck disable=SC2086
+  quiet $command
+  echo "$command: the reply took $(echo "$(arbor_now) - $started" | bc) s"
+done
+table "hang-camera" "one app hung: zoom, back, zoom, back"
+# When the app is back, 20 s after it was told to hang, its windows follow.
+until all_in_view || [ "$(echo "$(arbor_now) - $hang_started > 45" | bc)" = 1 ]; do sleep 0.1; done
+echo "every window was in view $(echo "$(arbor_now) - $hang_started" | bc) s after the hang began"
+for id in $ARBOR_WINDOW_IDS; do
+  check "window $id ended up in view (after the hang)" eventually is on_screen "$id"
+done
+summary
+perf_stop
+
+# soak: 400 commands with tiles and seams coming and going. (A rehearsal replays its whole history at every command:
+# PERF_SOAK_TURNS=2 scripts/mac-shell/rehearse.sh scripts/mac-shell/perf.sh)
 soak() {
   local turn=0
-  while [ "$turn" -lt 50 ]; do
+  while [ "$turn" -lt "${PERF_SOAK_TURNS:-50}" ]; do
     quiet zoom "$W1"
     quiet back
     quiet zoom "$W5"

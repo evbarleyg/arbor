@@ -312,6 +312,8 @@ public final class Controller {
   /// Windows that were out of view when a pause began and could not be brought back, because their app did not answer, and where
   /// each was to go; and how often it has been tried since (Controller+Hardening.swift).
   var couldNotComeBack: [WindowID: CGRect] = [:]
+  /// What the log said when Arbor last stopped.
+  public private(set) var lastWords = ""
   var triesForWhatCouldNotComeBack = 0
   /// Stand-ins for saved docked windows that may still be restored (Controller+PendingSlots.swift).
   var pendingSlots: Set<WindowID> = []
@@ -558,6 +560,8 @@ public final class Controller {
     defer { isStoppingWithoutMoving = false }
     cancelDrag()
     if movingWindows { lookAtTheDisplaysBeforeLettingGo() }
+    // A window whose app is still busy with the last move could not be brought back.
+    system.finishMoves(timeout: 1)
     scheduler.cancel("save")
     overlays.finishAnimations()
     stopWatchingTitles()
@@ -637,7 +641,16 @@ public final class Controller {
     system.stop()
     scheduleUpdateChecks()
     notify(.lifecycle)
-    Log.info(movingWindows ? "stopped; all windows returned to view" : "stopped; no window was moved")
+    let left = managedWindowIDs.filter { isMostlyOffScreen($0) && windows[$0]?.isFullScreen != true }.sorted()
+    if !movingWindows {
+      lastWords = "stopped; no window was moved"
+    } else if left.isEmpty {
+      lastWords = "stopped; all windows returned to view"
+    } else {
+      let ids = left.map { "\($0)" }.joined(separator: " ")
+      lastWords = "stopped; \(left.count) window(s) could not be returned to view, their apps do not answer: \(ids)"
+    }
+    Log.info(lastWords)
   }
 
   /// Does nothing while there is a display.

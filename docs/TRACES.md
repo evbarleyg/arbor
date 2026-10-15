@@ -240,7 +240,7 @@ a trace does not carry. One line in each of these places, and nothing in ArborCo
 | an event (`WindowSystemEvents`) | `func dragCancelled(_ id: WindowID) { recorder.event("dragCancelled", [id]) { events?.dragCancelled(id) } }` | an entry in `knownStimuli()` that takes the arguments apart and calls `bridge.events?.dragCancelled(id)` |
 | an overlay action (`OverlayActions`) | `recorder.action("cheatSheetDismissed") { actions?.cheatSheetDismissed() }` | an entry in `knownStimuli()` that calls `harness.overlays.actions?.…` |
 | something Arbor draws (`OverlayPresenter`) | forward it, unrecorded, as scenes are | nothing |
-| a hint that changes what calls cost and nothing else (`moveTogether`) | forward it; a note with the time it took | an empty function |
+| a hint that changes what calls cost and nothing else (`moveTogether`, `finishMoves`) | forward it; a note with the time it took | an empty function |
 
 Arguments and results must be `Codable` (for a plain struct or an option set, add the word). A `WindowSnapshot` goes as `recorder.window(snapshot)`, which replaces its title, and
 comes back as `WindowSnapshot(arguments[n].decoded(as: TraceWindow.self)!)`. The spies at the end of `TraceRecorderTests.swift` need the method too. Then `make scenarios`: if a scenario depends

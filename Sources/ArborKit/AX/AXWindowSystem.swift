@@ -2,6 +2,7 @@ import AppKit
 import ApplicationServices
 import ArborCore
 import CoreGraphics
+import Dispatch
 
 /// The real `WindowSystem`: finds, observes and moves other apps' windows
 /// through the Accessibility API, and watches the mouse to detect title-bar
@@ -69,7 +70,49 @@ public final class AXWindowSystem: WindowSystem {
   private var broughtIntoView: Set<WindowID> = []
 
   /// How long one Accessibility call waits for an app, in seconds.
-  private static let messagingTimeout: Float = 1
+  private static let messagingTimeout = AXCalls.timeout
+  /// How long the main thread waits for the apps to move their windows, all of them together, in seconds. One that needs
+  /// longer finishes behind Arbor's back and is reported late. Test windows take 1 to 12 ms over a move, real apps 20 to 240
+  /// (measured on hosted Macs), and an app may have several windows to move: this covers them, so that going late stays the
+  /// exception, for an app that is really busy. Every overrun is logged.
+  private static let patience = 0.5
+  /// While Arbor lets go of the windows nobody is waiting for the screen to change, and "it is on its way" must not be said of an
+  /// app that hangs: that silence takes `messagingTimeout` to hear.
+  private static let patienceLettingGo = Double(AXCalls.timeout) + 0.2
+  /// All the waiting of that kind together, so that a quit ends.
+  private static let timeForLettingGo: TimeInterval = 3
+
+  /// Where windows are moved: each app on a lane of its own, off the main thread, side by side (`AppLanes`, `AXMover`). Every call
+  /// is counted and timed for the `stats` command (`AXCalls`). See "What a command costs" in docs/ARCHITECTURE.md.
+  private let lanes = AppLanes<AXMoveOutcome>(late: {
+    DispatchQueue.main.async {
+      MainActor.assumeIsolated { AXWindowSystem.current?.noteLateResults() }
+    }
+  })
+  /// The window that was to get the focus while its app's lane was still busy moving it. It gets it when the lane is free.
+  private var focusWhenFree: WindowID?
+  /// Arbor is about to stop (`finishMoves`). There is no next time for a move that is turned away now, so none is.
+  private var isLettingGo = false
+  /// Since then: where windows were to go that have not been seen to get there, because their apps do not answer
+  /// (`leaveWordForAppsThatDoNotAnswer`).
+  private var undelivered: [WindowID: CGRect] = [:]
+  /// Two calls of a tenth of a second for each window: room for ten.
+  private static let timeForLeavingWord: TimeInterval = 2
+  private var lettingGoEnds: TimeInterval = 0
+  /// Moves that were sent and whose outcome is not known: where each window is going. One that was not answered in time
+  /// is among them until its app answers again, because the app carries it out when it wakes.
+  private var underWay: [WindowID: CGRect] = [:]
+  /// Moves and resizes that were reported while their app's lane was busy and were not looked at, and whether one was a resize.
+  /// `noteLate` makes up for them.
+  private var reportsNotRead: [WindowID: Bool] = [:]
+  /// What came of a move that ended after `move` had stopped waiting, until the window is next asked to move. Whoever got no answer
+  /// asks again when the window is reported, and learns from the answer (that a window refuses its slot's size, for one). From an app
+  /// that is late every time that answer would never come in time; it is here.
+  private var lateAnswers: [WindowID: (requested: CGRect, answer: CGRect)] = [:]
+  /// Late results that are in the books (`absorbLateResults`) and have yet to be reported.
+  private var lateToReport: [(app: pid_t, result: AppLanes<AXMoveOutcome>.Result)] = []
+  /// What came of the moves `moveTogether` made, until `setFrame` asks for it.
+  private var answersAhead: [WindowID: (requested: CGRect, answer: CGRect?)] = [:]
 
   fileprivate static weak var current: AXWindowSystem?
 
@@ -168,6 +211,19 @@ public final class AXWindowSystem: WindowSystem {
   public func stop() {
     guard running else { return }
     running = false
+    // Windows on their way back into view should arrive before Arbor is gone.
+    lanes.waitUntilIdle(timeout: 5)
+    for (_, result) in lanes.takeLate() {
+      for (raw, outcome) in result.outputs where outcome.frame != nil { undelivered[WindowID(raw)] = nil }
+    }
+    leaveWordForAppsThatDoNotAnswer()
+    lateToReport.removeAll()
+    underWay.removeAll()
+    lateAnswers.removeAll()
+    reportsNotRead.removeAll()
+    focusWhenFree = nil
+    isLettingGo = false
+    answersAhead.removeAll()
     for token in tokens {
       NSWorkspace.shared.notificationCenter.removeObserver(token)
       NotificationCenter.default.removeObserver(token)
@@ -231,61 +287,216 @@ public final class AXWindowSystem: WindowSystem {
   }
 
   public func setFrame(_ frame: CGRect, of window: WindowID) -> CGRect? {
-    guard let record = records[window], answers(record.snapshot.pid) else { return nil }
-    // macOS accepts a new size for a full-screen window and does nothing.
-    guard !record.snapshot.isFullScreen else { return record.snapshot.frame }
-    let element = record.element
-    let appElement = apps[record.snapshot.pid]?.element
+    if let ahead = answersAhead.removeValue(forKey: window), ahead.requested == frame { return ahead.answer }
+    return move([(window: window, frame: frame)])[window]
+  }
+
+  public func moveTogether(_ frames: [(window: WindowID, frame: CGRect)]) {
+    reportUnclaimedAnswers()
+    guard !frames.isEmpty else { return }
+    let taken = move(frames)
+    for (window, frame) in frames { answersAhead[window] = (frame, taken[window]) }
+    // The calls that were foretold follow at once. An answer must not wait for a call that comes some other day.
+    DispatchQueue.main.async { [weak self] in
+      MainActor.assumeIsolated { self?.reportUnclaimedAnswers() }
+    }
+  }
+
+  /// A move that was foretold and made, and that nobody then asked for: whoever foretold it believes an old frame.
+  private func reportUnclaimedAnswers() {
+    let unclaimed = answersAhead.keys.sorted()
+    answersAhead.removeAll()
+    for window in unclaimed {
+      guard let record = records[window], !record.isBackgroundTab else { continue }
+      Log.debug("\(window) was moved ahead of a call that did not come")
+      events?.windowChanged(record.snapshot, userInitiated: false)
+    }
+  }
+
+  /// Each app moves its windows on a lane of its own, so the whole takes as long as the slowest app, and never longer
+  /// than `patience`. A window whose app is not answering, or not in time, has no entry in the result: nothing is known
+  /// about where it is, and saying that it took the frame would keep Arbor from ever trying again. `noteLate`
+  /// reports what became of it.
+  private func move(_ frames: [(window: WindowID, frame: CGRect)]) -> [WindowID: CGRect] {
+    // A lane that has just finished: what it did comes before what is planned from it.
+    absorbLateResults()
+    var taken: [WindowID: CGRect] = [:]
+    var jobs: [AppLanes<AXMoveOutcome>.Job] = []
+    for (window, target) in frames {
+      if let late = lateAnswers.removeValue(forKey: window), late.requested == target {
+        taken[window] = late.answer
+        undelivered[window] = nil
+        continue
+      }
+      guard let record = records[window] else { continue }
+      // A slow app with two windows out of view: the first is on its way when the second is asked for.
+      guard isLettingGo ? !unresponsive.contains(record.snapshot.pid) : answers(record.snapshot.pid) else {
+        owe(target, to: window)
+        continue
+      }
+      let pid = record.snapshot.pid
+      let known = record.snapshot.frame
+      // macOS accepts a new size for a full-screen window and does nothing. A window that is there needs nothing; but what is
+      // known of it is a belief, and the last move Arbor makes does not rest on one.
+      if record.snapshot.isFullScreen || (!isLettingGo && known.approximatelyEquals(target, tolerance: 0.5)) {
+        taken[window] = known
+        undelivered[window] = nil
+        continue
+      }
+      let move = AXMove(window: record.element, app: apps[pid]?.element, pid: pid, known: known, target: target)
+      jobs.append(AppLanes<AXMoveOutcome>.Job(app: pid, id: window.rawValue) { AXMover.perform(move) })
+    }
     let began = uptime
-
-    // Apps with "enhanced user interface" on (set by assistive tools) animate
-    // every frame change; turn it off while we move the window.
-    var enhanced = false
-    if let answer = appElement?.read("AXEnhancedUserInterface") {
-      // An app that is silent now will be silent for the five calls to come. One wait is enough.
-      if answer.error == .cannotComplete { return gaveUp(on: record.snapshot.pid, since: began) }
-      // Not the app's silence: Arbor's permission is gone (Controller+Permission.swift). The calls to come would be
-      // refused as well.
-      if answer.error == .apiDisabled {
-        events?.accessibilityWasRefused()
-        return nil
+    let patience = isLettingGo ? max(Self.patience, min(Self.patienceLettingGo, lettingGoEnds - began)) : Self.patience
+    let result = CallStats.shared.time("window system", "wait for the apps to move") {
+      lanes.run(jobs, patience: patience, queueing: isLettingGo)
+    }
+    let sent = Set(jobs.map(\.id))
+    for (window, target) in frames {
+      guard let outcome = result.outputs[window.rawValue] else {
+        if sent.contains(window.rawValue) {
+          underWay[window] = target
+          // Until it has been seen to arrive.
+          owe(target, to: window)
+        }
+        // No answer means "could not", and whoever asked would try something else. This one is on its way, behind
+        // whatever its app is busy with, and nobody will be there to hear how it ended. The books say where it is going,
+        // also for the plan of a move that may follow it.
+        if isLettingGo, sent.contains(window.rawValue), let pid = records[window]?.snapshot.pid,
+          !result.silent.contains(pid)
+        {
+          records[window]?.snapshot.frame = target
+          taken[window] = target
+        }
+        continue
       }
-      if let value = answer.value, CFGetTypeID(value) == CFBooleanGetTypeID() {
-        enhanced = CFBooleanGetValue((value as! CFBoolean))
+      if let actual = note(outcome, of: window) {
+        taken[window] = actual
+      } else if !outcome.refused, let pid = records[window]?.snapshot.pid {
+        // It failed at once: the window is gone, or its whole process is, which not every process's end is reported.
+        noteSilence(of: pid, since: uptime)
       }
     }
-    if enhanced { appElement?.setBool("AXEnhancedUserInterface", false) }
-
-    var steps = FramePlan.steps(from: record.snapshot.frame, to: frame)
-    var result = perform(steps, toward: frame, on: element)
-    if let taken = result, FramePlan.needsFullPlan(after: steps, result: taken, target: frame) {
-      steps = FramePlan.full
-      result = perform(steps, toward: frame, on: element)
+    for pid in result.silent.sorted() { noteSilence(of: pid, since: began) }
+    // Which apps go late, and how often, is what says whether `patience` is right.
+    let late = Set(jobs.filter { result.outputs[$0.id] == nil && !result.silent.contains($0.app) }.map(\.app))
+    for pid in late.sorted() {
+      CallStats.shared.record("window system", "apps that went late", seconds: 0)
+      Log.info("\(apps[pid]?.bundleID ?? "pid \(pid)") took longer than \(patience) s over its moves; its windows follow when it is done")
     }
+    return taken
+  }
 
-    // Also when the app fell silent half way: a call that times out is still delivered when the app wakes up.
-    if enhanced { appElement?.setBool("AXEnhancedUserInterface", true) }
-
-    // Nothing is known about a window whose frame cannot be read back. Saying that it took the frame would
-    // keep Arbor from ever trying again.
-    guard let actual = result else { return gaveUp(on: record.snapshot.pid, since: began) }
+  /// Records where a window ended up, and that the notifications about it are Arbor's own doing.
+  private func note(_ outcome: AXMoveOutcome, of window: WindowID) -> CGRect? {
+    // Heard on the window's lane, said here: the listener lives on the main thread (Controller+Permission.swift).
+    if outcome.refused { events?.accessibilityWasRefused() }
+    underWay[window] = nil
+    guard records[window] != nil, let actual = outcome.frame else { return nil }
+    undelivered[window] = nil
     echoes.expect(actual, for: window, at: uptime)
     records[window]?.snapshot.frame = actual
     return actual
   }
 
-  /// Sets the attributes a plan names and reads the frame back. Nil if the app did not answer. A refusal
-  /// (a window with a fixed size, say) is an answer: the frame read back shows what came of it.
-  private func perform(_ steps: [FramePlan.Step], toward frame: CGRect, on element: AXUIElement) -> CGRect? {
-    for step in steps {
-      let error = step == .size ? element.setSize(frame.size) : element.setPosition(frame.origin)
-      if error == .cannotComplete { return nil }
-      if error == .apiDisabled {
-        events?.accessibilityWasRefused()
-        return nil
-      }
+  public func finishMoves(timeout: Double) {
+    lanes.waitUntilIdle(timeout: timeout)
+    noteLateResults()
+    // Still not done, or waiting for its app to wake: a window on its way out of view would arrive there with Arbor gone, while
+    // everybody believes it in view. The books say where each is going, so that whoever lets go of the windows fetches it
+    // from there; the move that fetches it takes its turn behind this one.
+    for (window, target) in underWay.sorted(by: { $0.key < $1.key }) {
+      guard var record = records[window], !record.isBackgroundTab else { continue }
+      record.snapshot.frame = target
+      records[window] = record
+      events?.windowChanged(record.snapshot, userInitiated: false)
     }
-    return element.frame
+    isLettingGo = true
+    lettingGoEnds = uptime + Self.timeForLettingGo
+    undelivered.removeAll()
+  }
+
+  /// Several places are tried for a window while Arbor lets go, and the first is the considered one: where it floated, in its own
+  /// size. The last is "anywhere in view". Never out of view, whoever asks. And only for a window that is out of view, which would
+  /// be lost: one that is in view in the shape of its slot stays as it is, as before.
+  private func owe(_ frame: CGRect, to window: WindowID) {
+    guard isLettingGo, undelivered[window] == nil, let known = records[window]?.snapshot.frame else { return }
+    let screens = displays().map(\.frame)
+    guard !screens.contains(where: { known.fractionInside($0) >= 0.5 }), screens.contains(where: { frame.fractionInside($0) >= 0.5 })
+    else { return }
+    undelivered[window] = frame
+  }
+
+  /// Arbor is stopping, and nobody will be there to place these windows when their apps wake up: one that is out of view
+  /// would stay there. A call that is not answered in time is still delivered when the app wakes, so the moves are sent
+  /// without waiting for answers. First where, which is what brings a window into view, then how large.
+  private func leaveWordForAppsThatDoNotAnswer() {
+    let deadline = uptime + Self.timeForLeavingWord
+    for (window, frame) in undelivered.sorted(by: { $0.key < $1.key }) {
+      guard uptime < deadline, let record = records[window], !record.snapshot.isFullScreen else { continue }
+      // Of this object alone, which is not used again. A process that is gone fails at once.
+      AXUIElementSetMessagingTimeout(record.element, 0.1)
+      _ = record.element.setPosition(frame.origin)
+      _ = record.element.setSize(frame.size)
+      Log.info("\(window)'s app does not answer; left word where the window is to go when it does")
+    }
+    undelivered.removeAll()
+  }
+
+  /// What lanes did after `move` stopped waiting goes into the books before anything that could be judged by them: the apps'
+  /// reports of those very moves may be handled first, and would pass for the person's doing. Reports nothing.
+  private func absorbLateResults() {
+    for (pid, result) in lanes.takeLate() {
+      if running, apps[pid] != nil {
+        for raw in result.outputs.keys.sorted() {
+          guard let outcome = result.outputs[raw] else { continue }
+          let requested = underWay[WindowID(raw)]
+          if let actual = note(outcome, of: WindowID(raw)), let requested { lateAnswers[WindowID(raw)] = (requested, actual) }
+        }
+        // So does its silence. Its lane is free again, so until that is on record the app passes for one that answers, and whoever
+        // handles its next notification asks it something, on the main thread, and waits the whole timeout.
+        if result.silent.contains(pid) { noteSilence(of: pid, since: uptime - TimeInterval(Self.messagingTimeout)) }
+      }
+      lateToReport.append((pid, result))
+    }
+  }
+
+  private func noteLateResults() {
+    absorbLateResults()
+    let results = lateToReport
+    lateToReport.removeAll()
+    for (pid, result) in results { noteLate(result, from: pid) }
+  }
+
+  /// An app's lane has finished after `move` stopped waiting for it.
+  private func noteLate(_ result: AppLanes<AXMoveOutcome>.Result, from pid: pid_t) {
+    guard running, apps[pid] != nil else { return }
+    if result.silent.contains(pid) {
+      // `AXMover` says so only of an app that took the whole timeout.
+      noteSilence(of: pid, since: uptime - TimeInterval(Self.messagingTimeout))
+      // By the time it answers again the user is somewhere else.
+      if let waiting = focusWhenFree, records[waiting]?.snapshot.pid == pid { focusWhenFree = nil }
+      return
+    }
+    // It was only slow. Reporting its windows makes the controller place the ones it could not move meanwhile. They are read
+    // afresh, and so is its list: whatever it reported while its lane was busy was not looked at (a window that opened,
+    // closed, changed size or went to the Dock, another tab in front).
+    for window in windowIDs(of: pid) {
+      // A report that was not read is judged now as it would have been then: of a window Arbor has just moved it is an echo, of any
+      // other it is somebody's doing (the person's, macOS's own tiling of a window let go at an edge while its neighbours of the same
+      // app are moved). That has to be heard before the plain reading below makes the frame old news.
+      if let resized = reportsNotRead.removeValue(forKey: window) { geometryChanged(window, resized: resized) }
+      refresh(window, userInitiated: false)
+      // Its own answer to the move may still be to come.
+      if result.outputs[window.rawValue] != nil { lookAgain(at: window) }
+    }
+    rescan([pid], afterSpaceSwitch: false)
+    // What was not asked of it while it was busy.
+    if let waiting = focusWhenFree, records[waiting]?.snapshot.pid == pid {
+      focus(waiting)
+    } else {
+      reportFocus(of: pid)
+    }
   }
 
   public func setFrameOnce(_ frame: CGRect, of window: WindowID, pid: Int32) -> CGRect? {
@@ -295,17 +506,37 @@ public final class AXWindowSystem: WindowSystem {
     guard let element = app.elements(kAXWindowsAttribute).first(where: { $0.windowID == window }) else {
       // The long way round, which asks every app.
       start()
+      // There is no next time for a move that finds its app slow: `stop` waits for it, and the answer is where it is going.
+      finishMoves(timeout: 0)
       defer { stop() }
       return setFrame(frame, of: window)
     }
     AXUIElementSetMessagingTimeout(element, Self.messagingTimeout)
     // macOS accepts a new size for a full-screen window and does nothing.
     guard element.bool("AXFullScreen") != true else { return element.frame }
-    return perform(FramePlan.full, toward: frame, on: element)
+    // On this thread and on no lane: the window system is stopped, nothing else is going on, and whoever asks waits for the answer.
+    let outcome = AXMover.take(FramePlan.full, AXMove(window: element, app: nil, pid: pid, known: .null, target: frame))
+    if outcome?.refused == true { events?.accessibilityWasRefused() }
+    return outcome?.frame
   }
 
   public func focus(_ window: WindowID) {
-    guard let record = records[window], answers(record.snapshot.pid) else { return }
+    focusWhenFree = nil
+    guard let record = records[window] else { return }
+    guard answers(record.snapshot.pid) else {
+      // A camera move moves the window and then gives it the focus, and the window that grows is the likeliest to be slow.
+      // Dropping the focus would leave the keyboard in a window that has just gone out of view.
+      if !unresponsive.contains(record.snapshot.pid) { focusWhenFree = window }
+      return
+    }
+    // Making a window main and raising it takes its app some nine milliseconds; asking what has the focus, a fraction of one.
+    if focusedWindow() == window { return }
+    // That look asks the app in front, which may be this one and may have begun to hang: it has cost a second then, and is on record.
+    // Asking again would cost another. The window gets the keyboard when its app answers again (`answersAgain`).
+    guard answers(record.snapshot.pid) else {
+      focusWhenFree = window
+      return
+    }
     let pid = record.snapshot.pid
     let began = uptime
     let answer = record.element.setBool(kAXMainAttribute, true)
@@ -317,7 +548,9 @@ public final class AXWindowSystem: WindowSystem {
       noteSilence(of: pid, since: began)
       return
     }
-    AXUIElementPerformAction(record.element, kAXRaiseAction as CFString)
+    _ = AXCalls.timed("perform AXRaise", record.element) {
+      AXUIElementPerformAction(record.element, kAXRaiseAction as CFString)
+    }
     guard NSWorkspace.shared.frontmostApplication?.processIdentifier != pid else { return }
     NSRunningApplication(processIdentifier: pid)?.activate()
 
@@ -336,17 +569,36 @@ public final class AXWindowSystem: WindowSystem {
   }
 
   public func raise(_ window: WindowID) {
-    guard let record = records[window] else { return }
-    AXUIElementPerformAction(record.element, kAXRaiseAction as CFString)
+    guard let record = records[window], answers(record.snapshot.pid) else { return }
+    _ = AXCalls.timed("perform AXRaise", record.element) {
+      AXUIElementPerformAction(record.element, kAXRaiseAction as CFString)
+    }
   }
 
   public func focusedWindow() -> WindowID? {
+    guard let pid = NSWorkspace.shared.frontmostApplication?.processIdentifier else { return nil }
     // An app that is not observed has no window Arbor knows, and Arbor itself would be asking its own busy main
     // thread. One that hangs is not asked either.
-    guard let front = NSWorkspace.shared.frontmostApplication, let app = apps[front.processIdentifier],
-      answers(front.processIdentifier)
-    else { return nil }
-    return app.element.element(kAXFocusedWindowAttribute)?.windowID
+    guard let app = apps[pid] else { return nil }
+    guard answers(pid) else {
+      // One that is only busy moving its windows has not given the keyboard away: "nobody has it" would take the ring off the
+      // window, and the keyboard from a dialog.
+      guard lanes.isBusy(pid), let last = lastReportedFocus, records[last]?.snapshot.pid == pid else { return nil }
+      return last
+    }
+    let began = uptime
+    guard let element = app.element.elementIfAnswered(kAXFocusedWindowAttribute) else {
+      // Every layout asks this, and would wait as long again.
+      noteSilence(of: pid, since: began)
+      return nil
+    }
+    return element.flatMap { windowID(of: $0, pid: pid) }
+  }
+
+  /// The number of the window behind `element`. Asking for it is a round trip (a millisecond from an app
+  /// that is busy coming forward); comparing with the elements Arbor holds is not.
+  private func windowID(of element: AXUIElement, pid: pid_t) -> WindowID? {
+    records.first { $0.value.snapshot.pid == pid && CFEqual($0.value.element, element) }?.key ?? element.windowID
   }
 
   public func cursorLocation() -> CGPoint {
@@ -407,6 +659,7 @@ public final class AXWindowSystem: WindowSystem {
 
     let element = AXUIElementCreateApplication(pid)
     AXUIElementSetMessagingTimeout(element, Self.messagingTimeout)
+    AXCalls.names.set(app.bundleIdentifier, for: pid)
     var observerRef: AXObserver?
     guard AXObserverCreate(pid, axObserverCallback, &observerRef) == .success, let observer = observerRef else {
       retryObserve(pid: pid, announce: announce, wasRunning: wasRunning, attempt: attempt)
@@ -461,10 +714,17 @@ public final class AXWindowSystem: WindowSystem {
     waitingDialogs.removeAll { $0.pid == pid }
     guard let app = apps.removeValue(forKey: pid) else { return }
     CFRunLoopRemoveSource(CFRunLoopGetMain(), AXObserverGetRunLoopSource(app.observer), .commonModes)
+    lanes.forget(pid)
+    AXEnhancedUI.shared.forget(pid)
+    AXCalls.names.set(nil, for: pid)
     let gone = windowIDs(of: pid)
     for window in gone {
       let known = records.removeValue(forKey: window)?.isBackgroundTab == false
       echoes.forget(window)
+      answersAhead[window] = nil
+      underWay[window] = nil
+      lateAnswers[window] = nil
+      reportsNotRead[window] = nil
       forgetGrab(of: window)
       if announce, known { events?.windowDestroyed(window) }
     }
@@ -484,6 +744,8 @@ public final class AXWindowSystem: WindowSystem {
     recorder?.raw("didActivateApplication pid \(pid)")
     activations += 1
     lastReportedFocus = nil
+    // Whoever switches apps says where the keyboard goes.
+    if let waiting = focusWhenFree, records[waiting]?.snapshot.pid != pid { focusWhenFree = nil }
     if apps[pid] == nil, !waitingToObserve.contains(pid) { observe(pid: pid, announce: true, wasRunning: true) }
     // Whoever came forward before has been overtaken.
     lookAtAppThatCameForward?.cancel()
@@ -508,22 +770,19 @@ public final class AXWindowSystem: WindowSystem {
         self.reportFocus(ofAppThatCameForward: pid, earlierLooks: earlierLooks + 1)
       }
     case .giveUp:
-      Log.debug("pid \(pid) came forward and was never named as the app in front: nothing is reported")
+      // For everybody to read: a switch may have been missed, and nothing else will say so.
+      Log.info("pid \(pid) came forward and was never named as the app in front: nothing is reported")
     }
   }
 
   // MARK: Apps that do not answer
 
-  /// Every call is synchronous, on the main thread, and waits up to `messagingTimeout` for the app. Moving one
-  /// window takes six calls, so a hung app with three docked windows used to stop Arbor for some twenty seconds
-  /// at every layout. Now the first call that times out ends the conversation: nothing more is asked of the app
-  /// until it answers a call made off the main thread, or posts a notification.
-  private func answers(_ pid: pid_t) -> Bool { !unresponsive.contains(pid) }
-
-  private func gaveUp(on pid: pid_t, since began: TimeInterval) -> CGRect? {
-    noteSilence(of: pid, since: began)
-    return nil
-  }
+  /// Every call waits up to `messagingTimeout` for the app. Moving one window took six calls on the main thread, so a
+  /// hung app with three docked windows used to stop Arbor for some twenty seconds at every layout. Now windows are
+  /// moved off the main thread, and the first call that times out, there or here, ends the conversation: nothing
+  /// more is asked of the app until it answers a call made off the main thread, or posts a notification. An app
+  /// that is still busy with the last move is not asked anything either.
+  private func answers(_ pid: pid_t) -> Bool { !unresponsive.contains(pid) && !lanes.isBusy(pid) }
 
   /// Called when a call came back without an answer. A process that made Arbor wait is hung. One that is gone fails at
   /// once; its end is usually reported, but not that of an accessory app or one started from a shell, whose windows
@@ -564,8 +823,21 @@ public final class AXWindowSystem: WindowSystem {
   private func answersAgain(_ pid: pid_t) {
     guard unresponsive.remove(pid) != nil, running, apps[pid] != nil else { return }
     Log.info("pid \(pid) answers again")
+    // Whatever was sent to it has been carried out by now, and is in what it says of its windows.
+    for window in windowIDs(of: pid) {
+      underWay[window] = nil
+      lateAnswers[window] = nil
+      reportsNotRead[window] = nil
+    }
     for window in windowIDs(of: pid) { refresh(window, userInitiated: true) }
     rescan([pid], afterSpaceSwitch: false)
+    if let waiting = focusWhenFree, records[waiting]?.snapshot.pid == pid {
+      // What was asked of it as it fell silent, unless the person has switched apps or clicked since.
+      focus(waiting)
+    } else {
+      // If it came forward while it was silent, nobody has heard which of its windows has the keyboard.
+      reportFocus(of: pid)
+    }
   }
 
   // MARK: Displays
@@ -677,7 +949,7 @@ public final class AXWindowSystem: WindowSystem {
       }
       answered.insert(pid)
       for element in elements {
-        guard let id = element.windowID else { continue }
+        guard let id = windowID(of: element, pid: pid) else { continue }
         listed.append((pid, id, element))
         listedIDs.insert(id)
       }
@@ -817,7 +1089,7 @@ public final class AXWindowSystem: WindowSystem {
   private func addWindow(
     _ element: AXUIElement, pid: pid_t, announce: Bool, wasOpenBefore: Bool = false, attempt: Int = 0
   ) {
-    guard let app = apps[pid], answers(pid), let id = element.windowID, records[id] == nil else { return }
+    guard let app = apps[pid], answers(pid), let id = windowID(of: element, pid: pid), records[id] == nil else { return }
     guard let record = makeRecord(id: id, element: element, app: app) else {
       // Some apps give new windows their subrole a moment after creating them.
       if attempt < Self.lastAttempt {
@@ -907,11 +1179,12 @@ public final class AXWindowSystem: WindowSystem {
   private func makeRecord(id: WindowID, element: AXUIElement, app: ObservedApp) -> WindowRecord? {
     // Window elements do not go by their app element's timeout (F17, H3).
     AXUIElementSetMessagingTimeout(element, Self.messagingTimeout)
-    let subrole = element.string(kAXSubroleAttribute)
+    let roles = element.attributes([kAXRoleAttribute, kAXSubroleAttribute]).values ?? [nil, nil]
+    let subrole = roles[1] as? String
     // Only what claims to be a dialog needs the second look.
     let mayBeOutOfSight = subrole == kAXDialogSubrole
     let kind = WindowKind.classify(
-      role: element.string(kAXRoleAttribute), subrole: subrole,
+      role: roles[0] as? String, subrole: subrole,
       isMinimized: mayBeOutOfSight && element.bool(kAXMinimizedAttribute) == true,
       appIsHidden: mayBeOutOfSight && app.element.bool(kAXHiddenAttribute) == true)
     guard kind != .other, let snapshot = makeSnapshot(id: id, element: element, app: app) else { return nil }
@@ -929,19 +1202,27 @@ public final class AXWindowSystem: WindowSystem {
   /// Reads a window's state. Nil if its app does not answer.
   private func makeSnapshot(id: WindowID, element: AXUIElement, app: ObservedApp) -> WindowSnapshot? {
     let began = uptime
-    let title = element.read(kAXTitleAttribute)
-    guard title.error != .cannotComplete else {
+    // One round trip for the window's own attributes instead of six.
+    let answer = element.attributes([
+      kAXTitleAttribute, kAXPositionAttribute, kAXSizeAttribute, kAXMinimizedAttribute, "AXFullScreen",
+    ])
+    guard answer.error != .cannotComplete else {
       noteSilence(of: app.pid, since: began)
       return nil
     }
+    let values = answer.values ?? [nil, nil, nil, nil, nil]
+    var frame = records[id]?.snapshot.frame ?? .zero
+    if let origin = AXUIElement.point(values[1]), let size = AXUIElement.size(values[2]) {
+      frame = CGRect(origin: origin, size: size)
+    }
     return WindowSnapshot(
       id: id, pid: app.pid, bundleID: app.bundleID, appName: app.name,
-      title: title.value as? String ?? "", frame: element.frame ?? records[id]?.snapshot.frame ?? .zero,
-      isMinimized: element.bool(kAXMinimizedAttribute) ?? false,
+      title: values[0] as? String ?? "", frame: frame,
+      isMinimized: AXUIElement.bool(values[3]) ?? false,
       isHidden: app.element.bool(kAXHiddenAttribute) ?? false,
       // Only `rescan` changes this.
       isOnActiveSpace: records[id]?.snapshot.isOnActiveSpace ?? true,
-      isFullScreen: element.bool("AXFullScreen") ?? false,
+      isFullScreen: AXUIElement.bool(values[4]) ?? false,
       // Asked once: it matters when the window opens, and this runs for every new title.
       isResizable: records[id]?.snapshot.isResizable ?? element.isSettable(kAXSizeAttribute) ?? true)
   }
@@ -961,6 +1242,9 @@ public final class AXWindowSystem: WindowSystem {
     counted.remove(window)
     putAway.insert(window)
     echoes.forget(window)
+    underWay[window] = nil
+    lateAnswers[window] = nil
+    reportsNotRead[window] = nil
     secondLooks.removeValue(forKey: window)?.cancel()
     forgetGrab(of: window)
     if lastReportedFocus == window { lastReportedFocus = nil }
@@ -996,10 +1280,21 @@ public final class AXWindowSystem: WindowSystem {
   /// `appCameForward` reports its focused window.
   private func reportFocus(of pid: pid_t) {
     guard NSWorkspace.shared.frontmostApplication?.processIdentifier == pid else { return }
-    guard let app = apps[pid], answers(pid), let element = app.element.element(kAXFocusedWindowAttribute),
-      let window = element.windowID
-    else {
-      // Finder after a click on the wallpaper, an app that is not observed: the keyboard left the known windows.
+    guard let app = apps[pid], answers(pid) else {
+      // An app that is not observed, or does not answer: `answersAgain` and `noteLate` come back to one that will.
+      keyboardLeftTheKnownWindows()
+      return
+    }
+    let began = uptime
+    guard let answer = app.element.elementIfAnswered(kAXFocusedWindowAttribute) else {
+      // It hangs as it comes forward. Unless that is on record, every further switch to it makes Arbor wait as long again, and nobody
+      // asks it once more when it wakes.
+      noteSilence(of: pid, since: began)
+      keyboardLeftTheKnownWindows()
+      return
+    }
+    guard let element = answer, let window = windowID(of: element, pid: pid) else {
+      // Finder after a click on the wallpaper: the keyboard left the known windows.
       keyboardLeftTheKnownWindows()
       return
     }
@@ -1028,6 +1323,25 @@ public final class AXWindowSystem: WindowSystem {
   }
 
   private func geometryChanged(_ window: WindowID, resized: Bool) {
+    // The app's lane is still at work. Of a window on that lane this is a stage of a move of Arbor's that has no outcome to compare
+    // it with yet, and the half-way frame would pass for the user's doing. Of any window of the app, reading it would wait, on
+    // the main thread, behind the lane's next call to an app that is slow at this very moment. `noteLate` comes back to it.
+    if let pid = records[window]?.snapshot.pid, lanes.isBusy(pid) {
+      CallStats.shared.record("notifications", "not read while the app's lane was busy", seconds: 0)
+      reportsNotRead[window] = reportsNotRead[window] == true || resized
+      return
+    }
+    // Arbor's own move echoing back, up to three times per window. Arbor read the frame when it had moved the window, and
+    // whatever this report names would count as a stage of that move. Reading it would be two or three round trips
+    // each time, on the main thread, right after every camera move; one look when things have settled does.
+    if echoes.isFresh(window, at: uptime) {
+      CallStats.shared.record("notifications", "own moves, not read", seconds: 0)
+      lookAgain(at: window)
+      // Whoever listens hears of it as ever, with the frame that is in the books.
+      if let record = records[window], !record.isBackgroundTab { events?.windowChanged(record.snapshot, userInitiated: false) }
+      return
+    }
+    CallStats.shared.record("notifications", "moves and resizes, read", seconds: 0)
     guard var record = records[window], let frame = record.element.frame else { return }
     let previous = record.snapshot.frame
     record.snapshot.frame = frame
@@ -1047,6 +1361,8 @@ public final class AXWindowSystem: WindowSystem {
     let verdict = echoes.judge(frame, of: window, at: uptime)
     if verdict == .early { lookAgain(at: window) }
     let programmatic = verdict != .other
+    // Somebody has moved it since.
+    if !programmatic { lateAnswers[window] = nil }
 
     if !programmatic, isMouseButtonDown() { noteMoveWhilePressed(window, from: previous, to: frame) }
     events?.windowChanged(record.snapshot, userInitiated: !programmatic)
@@ -1081,12 +1397,19 @@ public final class AXWindowSystem: WindowSystem {
       guard !Task.isCancelled, let self, self.running else { return }
       self.secondLooks[window] = nil
       guard var record = self.records[window], !record.isBackgroundTab, self.answers(record.snapshot.pid),
-        let frame = record.element.frame, self.echoes.hasStrayed(window, now: frame)
+        let frame = record.element.frame
       else { return }
-      Log.debug("\(window) did not stay where it was put")
+      // The reports of the move were not read, so this is the one reading there is: it is kept, and passed on, also when the window has
+      // only settled a point or two from where it was first seen (an app that carries out late what it is asked).
+      let hasStrayed = self.echoes.hasStrayed(window, now: frame)
+      guard hasStrayed || frame != record.snapshot.frame else { return }
+      if hasStrayed {
+        Log.debug("\(window) did not stay where it was put")
+        self.lateAnswers[window] = nil
+      }
       record.snapshot.frame = frame
       self.records[window] = record
-      self.events?.windowChanged(record.snapshot, userInitiated: true)
+      self.events?.windowChanged(record.snapshot, userInitiated: hasStrayed)
     }
   }
 
@@ -1094,6 +1417,7 @@ public final class AXWindowSystem: WindowSystem {
 
   fileprivate func handle(_ notification: String, element: AXUIElement, window raw: UInt32?) {
     guard running else { return }
+    absorbLateResults()
     // Before anything looks at the app's list (`answersAgain` does), where the new window may already be. Helpers that
     // never become windows (tooltips, full-screen scaffolding) are reported too and never announced.
     // This one is registered on the app, without a window's number: the element is the new window.
@@ -1142,9 +1466,9 @@ public final class AXWindowSystem: WindowSystem {
 
     case kAXTitleChangedNotification:
       // Terminals and browsers change titles all the time. Nothing else needs reading, and nobody moved anything.
-      guard let raw, var record = records[WindowID(raw)], let title = record.element.string(kAXTitleAttribute) else {
-        return
-      }
+      guard let raw, var record = records[WindowID(raw)], answers(record.snapshot.pid),
+        let title = record.element.string(kAXTitleAttribute)
+      else { return }
       record.snapshot.title = title
       records[WindowID(raw)] = record
       if !record.isBackgroundTab { events?.windowChanged(record.snapshot, userInitiated: false) }
@@ -1244,6 +1568,8 @@ public final class AXWindowSystem: WindowSystem {
     case .leftMouseDown:
       // A button cannot go down twice: the release of whatever was going on was lost.
       releaseWasLost()
+      // Whoever clicks says where the keyboard goes.
+      focusWhenFree = nil
       press = makePress(at: cursorLocation())
       events?.pointerPressed()
     case .leftMouseDragged:

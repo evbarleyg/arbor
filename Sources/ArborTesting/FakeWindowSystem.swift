@@ -211,6 +211,23 @@ public final class FakeWindowSystem: WindowSystem {
   public var ignoresMoveTogether = false
   /// What came of the moves announced with `moveTogether`, until `setFrame` asks for it.
   public private(set) var answersAhead: [WindowID: (requested: CGRect, answer: CGRect?)] = [:]
+  /// Apps that take longer over a move than Arbor waits. Like the Accessibility layer: the move has no answer and goes on
+  /// behind Arbor's back, whatever else is asked of the app meanwhile is turned away, and when it is done
+  /// (`slowAppsFinish`) its windows are reported.
+  public var slowApps: Set<Int32> = []
+  /// They are not done either when Arbor has waited for them before it lets go (`finishMoves`), only at `stop()` or later.
+  public var slowAppsOutlastTheWait = false
+  private var movesUnderWay: [(window: WindowID, frame: CGRect)] = []
+  /// Like the Accessibility layer: what came of a move that ended late, until the window is next asked to move.
+  private var lateAnswers: [WindowID: (requested: CGRect, answer: CGRect?)] = [:]
+  /// Apps that were busy when a batch began: all of the batch that is theirs is turned away.
+  private var turnedAway: Set<Int32> = []
+  private var focusWhenFree: WindowID?
+  private var isLettingGo = false
+  /// Like the Accessibility layer: where windows out of view whose apps do not answer were to go since `finishMoves`, the first place
+  /// in view asked for each; and what of that was sent all the same at `stop()`, to be carried out when the app wakes.
+  private var unansweredMoves: [WindowID: CGRect] = [:]
+  private var wordLeft: [WindowID: CGRect] = [:]
 
   /// A 1440×900 display with a 25-point menu bar.
   public static let standardDisplay = DisplaySnapshot(
@@ -229,6 +246,14 @@ public final class FakeWindowSystem: WindowSystem {
   }
   /// The real one lets go of every app, so what the apps were about to report of Arbor's last moves is never heard.
   public func stop() {
+    // What is under way ends, and nobody is listening any more.
+    let listener = events
+    events = nil
+    slowAppsFinish()
+    events = listener
+    isLettingGo = false
+    for (window, frame) in unansweredMoves { wordLeft[window] = frame }
+    unansweredMoves.removeAll()
     started = false
     undelivered.removeAll()
   }
@@ -260,18 +285,68 @@ public final class FakeWindowSystem: WindowSystem {
     for window in unclaimed {
       if let snapshot = windows[window]?.snapshot { events?.windowChanged(snapshot, userInitiated: false) }
     }
+    turnedAway = isLettingGo ? [] : Set(movesUnderWay.compactMap { windows[$0.window]?.snapshot.pid })
+    defer { turnedAway = [] }
     for (window, frame) in frames { answersAhead[window] = (frame, move(window, to: frame, together: true)) }
   }
 
+  public func finishMoves(timeout: Double) {
+    defer { isLettingGo = true }
+    unansweredMoves.removeAll()
+    guard slowAppsOutlastTheWait else { return slowAppsFinish() }
+    // Like the Accessibility layer: the books say where each is going, so that whoever lets go of the windows fetches it from there.
+    for (window, frame) in movesUnderWay {
+      guard var snapshot = windows[window]?.snapshot else { continue }
+      snapshot.frame = frame
+      events?.windowChanged(snapshot, userInitiated: false)
+    }
+  }
+
+  /// The slow apps have got round to what they were asked.
+  public func slowAppsFinish() {
+    let moves = movesUnderWay
+    movesUnderWay = []
+    let slow = slowApps
+    slowApps = []
+    for (window, frame) in moves { lateAnswers[window] = (frame, move(window, to: frame, together: true)) }
+    // It is as slow as before for whatever is asked of it on hearing the reports below.
+    slowApps = slow
+    for pid in Set(moves.compactMap { windows[$0.window]?.snapshot.pid }).sorted() {
+      for id in windows.keys.sorted() where windows[id]!.snapshot.pid == pid {
+        events?.windowChanged(windows[id]!.snapshot, userInitiated: false)
+      }
+    }
+    if let window = focusWhenFree { focus(window) }
+  }
+
+  private func isBusy(_ pid: Int32) -> Bool { movesUnderWay.contains { windows[$0.window]?.snapshot.pid == pid } }
+
   private func move(_ window: WindowID, to frame: CGRect, together: Bool) -> CGRect? {
     willSetFrame?(window, frame)
-    guard var fake = windows[window], !unresponsive.contains(fake.snapshot.pid) else { return nil }
+    guard var fake = windows[window] else { return nil }
+    guard !unresponsive.contains(fake.snapshot.pid) else {
+      func isInView(_ frame: CGRect) -> Bool { displayList.contains { frame.fractionInside($0.frame) >= 0.5 } }
+      if isLettingGo, unansweredMoves[window] == nil, !isInView(fake.snapshot.frame), isInView(frame) {
+        unansweredMoves[window] = frame
+      }
+      return nil
+    }
+    unansweredMoves[window] = nil
     if isDenied {
       // Every call fails and the frame cannot be read back; the real window system has been known to answer
       // with the frame it was asked for, which is the worse of the two things it could say.
       deniedCalls += 1
       events?.accessibilityWasRefused()
       return frame
+    }
+    // Whoever got no answer asks again when the window is reported. The answer to that very request is there by now.
+    if let late = lateAnswers.removeValue(forKey: window), late.requested == frame, let answer = late.answer { return answer }
+    if slowApps.contains(fake.snapshot.pid) {
+      // One batch goes on its way. The next is turned away, unless there will be no next time.
+      let isTaken = together ? !turnedAway.contains(fake.snapshot.pid) : isLettingGo || !isBusy(fake.snapshot.pid)
+      if isTaken { movesUnderWay.append((window, frame)) }
+      // On its way, with nobody left to hear how it ended.
+      return isLettingGo ? frame : nil
     }
     // macOS does not let a window in full screen be moved or resized.
     if fake.snapshot.isFullScreen {
@@ -323,10 +398,15 @@ public final class FakeWindowSystem: WindowSystem {
   }
 
   public func focus(_ window: WindowID) {
-    guard windows[window] != nil else { return }
+    focusWhenFree = nil
+    guard let pid = windows[window]?.snapshot.pid else { return }
     if isDenied {
       deniedCalls += 1
       events?.accessibilityWasRefused()
+      return
+    }
+    if isBusy(pid) {
+      focusWhenFree = window
       return
     }
     focusLog.append(Focus(window: window, wasFocused: focused == window))
@@ -937,6 +1017,11 @@ extension FakeWindowSystem {
     if hung {
       unresponsive.insert(pid)
     } else if unresponsive.remove(pid) != nil {
+      // A call that was not answered in time is carried out now.
+      for (id, frame) in wordLeft.sorted(by: { $0.key < $1.key }) where windows[id]?.snapshot.pid == pid {
+        wordLeft[id] = nil
+        _ = move(id, to: frame, together: false)
+      }
       for id in windows.keys.sorted() where windows[id]!.snapshot.pid == pid {
         events?.windowChanged(windows[id]!.snapshot, userInitiated: true)
       }
