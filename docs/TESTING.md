@@ -500,6 +500,12 @@ one that counts: a hosted Mac has drawn none of the apps' icons yet, which is wh
 `first-dock.py`, which needs no Mac: `first-dock.py table <arbor.log> <trace.jsonl>…` says of any recorded session, for every command that moved a
 window, how long it was until the first move, how much of that the stage took, when the last app had answered and when the stage was down.
 
+**Filming.** A burst of screenshots gets fourteen pictures a second, and a motion of Arbor's lasts half a second. `scripts/mac-shell/lib-film.sh` has a camera
+(`camera.swift`: every frame ScreenCaptureKit delivers, lossless, with the moment the display showed it and the moment the key went down):
+`scene zoom camera "presses ⌃⌥↩"; key ctrl+opt+return; scene_end` leaves `mac-shell/films/zoom/`. `scripts/mac-shell/films.sh` films everything of Arbor's that moves,
+and `scripts/polish/judge.py` measures the films anywhere (how long, how eased, how many motions, what hopped, flickered or flashed), lays them out on sheets to look
+at, and scores them against `docs/POLISH.md`. `make polish-selftest` tries the judge on films drawn wrong in known ways.
+
 **Only compiling.** `scripts/mac-shell/run.sh scripts/mac-shell/compile.sh` runs `swift build` on the Mac at your branch's
 head and brings back `build.log`, with the errors and warnings at the end of the output: for macOS-only code, or for a
 pull request whose macOS CI job is left out because it touches only code that Linux builds too (see "Executors
