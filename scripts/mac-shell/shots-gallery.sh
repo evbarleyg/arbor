@@ -262,10 +262,23 @@ ships() {
   before=$(ids_on)
   key ctrl+opt+escape
   both "$p-15-paused" "$before" 0.5
+  before=$(ids_on)
+  # shellcheck disable=SC2046
+  rightclick $(status_item)
+  both "$p-15b-paused-menu" "$before"
+  menu_is_open && key escape
   key ctrl+opt+escape
   shot_after 1 "$p-16-resumed"
 
-  session_over "$p-17-after-quit"
+  claim "the two windows of the first run  ($p)"
+  before=$(ids_on)
+  ctl check-setup
+  both "$p-17-check-setup" "$before" 1
+  before=$(ids_on)
+  ctl welcome
+  both "$p-18-welcome" "$before" 1
+
+  session_over "$p-19-after-quit"
 }
 
 # MARK: One look
@@ -524,25 +537,47 @@ grounds() {
     sleep 1
     pointer_away
     before=$(ids_on)
-    key ctrl+opt+shift+/
+    # By command where a command will do: which keys ship is being decided.
+    ctl show-shortcuts
     shot "$1-on-$ground-1-shortcuts"
     check "the panel of shortcuts is up" has_come "$before"
     key escape
-    key ctrl+opt+g
+    ctl find
     shot "$1-on-$ground-2-go-to"
     type_text bre
     shot "$1-on-$ground-3-go-to-typed"
+    key cmd+return
+    key down
+    key cmd+return
+    shot "$1-on-$ground-3b-go-to-ticked"
+    type_text zzzz
+    shot "$1-on-$ground-3c-go-to-nothing-matches"
+    for _ in 1 2 3 4; do key delete; done
+    type_text bal
+    shot "$1-on-$ground-3d-go-to-commands"
     key escape
     ctl minimap
     shot "$1-on-$ground-4-minimap"
     ctl minimap
     ctl show-all
-    key ctrl+opt+n
+    ctl ask-name
     shot "$1-on-$ground-5-name"
+    type_text writing
+    shot "$1-on-$ground-5b-name-typed"
+    type_text " and everything else that has to be done by then"
+    shot "$1-on-$ground-5c-name-problem"
     key escape
+    # A problem's words; then a sentence, the dot, and a hint with keys in it (said three times and not a fourth).
+    key ctrl+opt+space
+    shot_after 0.4 "$1-on-$ground-6-line-problem"
+    sleep 2
+    # shellcheck disable=SC2046
+    click $(center_of "$W1")
+    pointer_away
+    key ctrl+opt+return
     ctl desktop
-    key ctrl+opt+d
-    shot_after 0.4 "$1-on-$ground-6-line"
+    shot_after 0.2 "$1-on-$ground-6b-line-hint"
+    sleep 2
   done
   session_over
 }
@@ -674,6 +709,22 @@ large() {
   ctl set messages helpful
   key ctrl+opt+return
   both retina-12-line-hint "$before"
+  ctl show-all
+
+  claim "retina: the handle in a gap, peek's outline, the menu"
+  read -r x y <<< "$(seam_right_of "$W1")"
+  move "$x" "$((y - 70))"
+  closeup retina-13-handle-hovered "$((x - 60))" "$((y - 60))" 120 120
+  drag "$x" "$((y - 70))" "$((x + 20))" "$((y - 70))" --no-release
+  closeup retina-14-handle-dragged "$((x - 40))" "$((y - 60))" 120 120
+  release
+  ctl zoom "$W1"
+  key ctrl+opt+space --down
+  sleep 0.9
+  read -r x y w h <<< "$(frame_of "$W1")"
+  move "$((x + w / 2))" "$((y + h / 2))"
+  closeup retina-15-peek-top-left "$((x - 20))" "$((y - 20))" 220 140
+  key ctrl+opt+space --up
   ctl show-all
 
   display_remove
