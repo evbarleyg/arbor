@@ -1,4 +1,4 @@
-// swift-tools-version: 6.0
+// swift-tools-version: 6.2
 import PackageDescription
 
 // AppKit, Accessibility and Carbon exist only on macOS. Everything above the platform protocols
@@ -43,8 +43,8 @@ func sources(of target: String) -> [String]? {
   return names.isEmpty ? nil : names
 }
 
-// Constants with their types written out, not one expression inside `Package(…)`: Swift 6.2 and older give up on that one
-// ("unable to type-check this expression in reasonable time"), and then nothing is built at all.
+// Constants with their types written out, not one expression inside `Package(…)`: Swift 6.2 and older give
+// up on that one ("unable to type-check this expression in reasonable time"), and then nothing is built at all.
 let everywhereProducts: [Product] = [
   .executable(name: "arborctl", targets: ["arborctl"]),
   .executable(name: "arbor-sim", targets: ["arbor-sim"]),

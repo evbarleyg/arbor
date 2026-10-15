@@ -56,6 +56,9 @@ jobs:
         run: ./scripts/ci-changes.py
 
   # The app, the real Accessibility and AppKit code, the tests a Mac can say something about, and real windows.
+  #
+  # With the Swift that comes with the runner's Xcode: what a person who clones Arbor has, and no time is spent
+  # installing it. The other releases Arbor promises to build with have `linux-oldest-swift` and `macos-other-swifts`.
   macos:
     needs: changes
     # Only an explicit "false" saves the Mac: it also runs when `changes` itself failed.
@@ -78,6 +81,7 @@ jobs:
         id: setup
         uses: ./.github/actions/mac-setup
         with:
+          swift: ""
           build-cache: ${{ needs.changes.outputs.build == 'upon' && 'tests' || 'none' }}
       - name: Toolchain
         run: ./scripts/ci-step.py toolchain swift --version
@@ -314,10 +318,36 @@ jobs:
       - name: Parity (no shipped feature may break; FEATURES.md must be current)
         run: ./scripts/ci-step.py parity python3 scripts/parity.py --report linux.tsv.events --check
 
+  # The oldest Swift that README.md and docs/INSTALL.md promise: what Xcode 26.0 to 26.3 come with. What it refuses and
+  # the newest takes (a name it looks up otherwise, an expression it gives up on) it refuses here, on every pull request and
+  # without a Mac: the headless stack and every test are compiled, and all the macOS-only code is type-checked against
+  # the stand-ins. The tests are not run: `linux-tests` and `macos` do that. A pull request that changes only what Linux
+  # builds gets no Mac, so without this it could land what the Mac job's compiler refuses, and the next to get a Mac would pay.
+  # The one job with an image of its own; not the first in this file, whose image scripts/linux.sh runs.
+  linux-oldest-swift:
+    runs-on: ubuntu-latest
+    container: swift:6.2-noble
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - name: Python and make for the scripts, and a git that trusts the checkout
+        # The checkout belongs to the runner's user and the container runs as root, which git refuses to work with.
+        run: |
+          apt-get update -qq && apt-get install -y -qq python3 make
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: Toolchain
+        run: ./scripts/ci-step.py toolchain swift --version
+      - name: Build, tests included
+        run: ./scripts/ci-step.py --summary 'warning:|Build complete' build swift build --build-tests
+      - name: Type-check the macOS-only code against stand-ins
+        env:
+          ALL: 1
+        run: ./scripts/ci-step.py --summary 'error:|type-check' typecheck-mac make typecheck-mac
+
   # The verdict. It runs whatever became of the others: by default a failure among them would leave it
   # skipped, which reads as "nothing against it". Only when the whole run is cancelled is there no verdict.
   linux:
-    needs: [linux-lint, linux-typecheck-mac, linux-sim, linux-tests]
+    needs: [linux-lint, linux-typecheck-mac, linux-sim, linux-tests, linux-oldest-swift]
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -334,3 +364,37 @@ jobs:
                   print(f"::error title=linux::{name}: {result}")
           sys.exit(0 if results and all(result == "success" for result in results.values()) else 1)
           VERDICT
+
+  # The same promise, kept on a Mac, at both of its ends: the oldest Xcode it names and the newest Swift there is
+  # compile everything, tests included, with Apple's own frameworks. It matters: Swift 6.3 crashed on code that 6.4
+  # took, and only with the real SwiftUI, where neither Linux job could see it. Only where work is integrated (pushes to
+  # main, the pull request from the trunk) and at night: a few minutes of two Macs for each merge train, not for each pull request.
+  macos-other-swifts:
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.mac != 'false' && (github.event_name != 'pull_request' || github.head_ref == 'swarm/trunk') }}
+    runs-on: macos-26
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        swift: [oldest, newest]
+    steps:
+      - uses: actions/checkout@v5
+      - name: The oldest Xcode Arbor promises to build with
+        if: matrix.swift == 'oldest'
+        run: |
+          xcode=$(ls -d /Applications/Xcode_26.0*.app | sort -V | head -1)
+          if [ -z "$xcode" ]; then
+            echo "::error::This runner has no Xcode 26.0 any more. Run this job where there is one, or raise what README.md and docs/INSTALL.md promise."
+            exit 1
+          fi
+          sudo xcode-select -s "$xcode"
+      - name: The newest Xcode on the runner, and the newest Swift
+        if: matrix.swift == 'newest'
+        uses: ./.github/actions/mac-setup
+        with:
+          swift: "6.4"
+      - name: Toolchain
+        run: ./scripts/ci-step.py toolchain swift --version
+      - name: Build, tests included
+        run: ./scripts/ci-step.py --summary 'warning:|Build complete' build swift build --build-tests
