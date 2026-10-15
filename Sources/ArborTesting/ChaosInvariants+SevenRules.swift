@@ -239,7 +239,7 @@ extension ChaosRunner {
     if command.isQuery { return [] }
     switch command {
     case .dock, .dockBeside, .float, .toggleFloat, .resize, .pin, .unpin, .togglePin, .zoom, .reveal, .swap, .swapWindows, .grow, .shrink,
-      .moveToDisplay, .frameRect:
+      .moveToDisplay, .frameRect, .sideBySide:
       let named = command.text.split(separator: " ").compactMap { UInt32($0) }.map { WindowID($0) }
       return Set(named + [system.focused].compactMap { $0 })
     case .saveView, .name, .unname, .askName, .showShortcuts, .minimap, .checkForUpdates, .welcome, .checkSetup, .hold, .holdStill, .trace,
@@ -360,7 +360,8 @@ extension ChaosRunner {
       || harness.scheduler.pendingKeys.contains { key in
         // Not the focus ring's own timers, which are pending after most acts and lay nothing out.
         if key.hasPrefix("focus-ring") { return false }
-        return ["space-", "enforce-", "landed-", "displays-blinked", "focus", "back-from-full-screen", "summon-wait", "pending-slots", "sole-float-after-launch", "meet-"]
+        return ["space-", "enforce-", "landed-", "displays-blinked", "focus", "back-from-full-screen", "summon-wait", "pending-slots", "sole-float-after-launch", "meet-",
+          "awaited-back", "awaited-landed"]
           .contains { key.hasPrefix($0) }
       }
   }
@@ -454,6 +455,19 @@ extension ChaosRunner {
         continue
       }
       guard moves.count > 1, FakeWindowSystem.detour(road) != nil else { continue }
+      // A `side-by-side` is all or nothing. A window that can only be asked in its slot may refuse there, when the others have gone to
+      // theirs: all of it is then taken back at once, "and there and back is nothing" (the product owner, 2026-10-15).
+      if case .sideBySide(let named)? = action.parsedCommand, !refusals.isEmpty, named.contains(window),
+        road[0].approximatelyEquals(road[road.count - 1], tolerance: 1)
+      {
+        continue
+      }
+      // The same a step later, for one that was in the Dock and could not be asked at all: it lands, does not fit, and all is taken back.
+      if everybodyAwaitedBefore.contains(window), controller.everybodyOfTheAwaitedGroup.isEmpty,
+        road[0].approximatelyEquals(road[road.count - 1], tolerance: 1)
+      {
+        continue
+      }
       // A terminal takes whole character cells. How many go into a slot shows in the slot, at every size it has not been seen at, and it is
       // set right by less than half a cell. Nothing else is wrong with this road.
       let cell = system.windows[window].map { $0.sizeStep ?? ($0.behaviour == .grid ? CGSize(width: 20, height: 20) : .zero) } ?? .zero

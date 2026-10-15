@@ -233,6 +233,9 @@ extension Controller {
     case .command:
       // `finderChose` runs those. Nothing else that goes somewhere is given one.
       result = .failure("that is a command, not a place")
+    case .together(let windows):
+      // As a command from one of Arbor's own windows: one step to take back, and a refusal is said on screen.
+      return from(.menu) { executeAndSay(.sideBySide(windows), from: .menu) }
     }
     // Replies call a named space by its name; the log does not (F20).
     let message = Self.withoutNames(result.message, everyName())
@@ -318,7 +321,13 @@ extension Controller {
     case .command(let text):
       runFromThePalette(text, on: display)
       return
+    case .together(let windows):
+      let allThere = windows.allSatisfy { isManaged($0) && workspaceID(containing: $0) != nil }
+      gone = allThere ? nil : "One of those windows has closed"
+      // On the display the palette is open on, whichever a command would pick.
+      sideBySideDisplay = display
     }
+    defer { sideBySideDisplay = nil }
     if let gone {
       // The list is a snapshot from when the palette opened. Say so, and show what there is now.
       Log.debug("find: \(destination) has gone")

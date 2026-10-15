@@ -15,7 +15,7 @@ extension ChaosRunner {
   static let knownTimers = ["save", "undo-continuation", "enforce-", "space-", "resume", "focus", "rule-title-", "pending-slots", "peek", "raise-pins",
     "settings-file", "update-check", "summon-wait", "accessibility",
     "landed-", "drag-dwell", "sole-float-after-launch", "layout-open ", "release", "call-over",
-    "events", "control-connection-",
+    "events", "control-connection-", "awaited-back", "awaited-landed",
     "heads-up", "minimap-",
     "displays-blinked", "menu-bar",
     "back-from-full-screen",

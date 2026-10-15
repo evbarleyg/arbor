@@ -9,15 +9,19 @@ public enum FinderDestination: Hashable, Sendable, CustomStringConvertible {
   case space(DisplayID, NodeID)
   /// A command, in its text form (`Command.text`): `dock left`.
   case command(String)
+  /// The windows that were ticked, in the order ticked: docked side by side, they fill the view (`side-by-side`). No row is
+  /// this; it is what Return chooses once two are ticked.
+  case together([WindowID])
 
-  /// For messages and the log: `w101`, `view 3`, `space n4`, `command dock`. Never a title or a name: of a command only its
-  /// first word, since what follows can be a name somebody gave.
+  /// For messages and the log: `w101`, `view 3`, `space n4`, `command dock`, `w103 w101 side by side`. Never a title or a name: of a
+  /// command only its first word, since what follows can be a name somebody gave.
   public var description: String {
     switch self {
     case .window(let window): "\(window)"
     case .view(_, let slot): "view \(slot)"
     case .space(_, let node): "space \(node)"
     case .command(let text): "command \(text.prefix { $0 != " " })"
+    case .together(let windows): windows.map(\.description).joined(separator: " ") + " side by side"
     }
   }
 }
@@ -124,6 +128,19 @@ public struct FinderModel: Equatable, Sendable {
       case .view(_, let slot): String(slot)
       case .space: name.first.map { String($0).uppercased() } ?? ""
       case .command: "⌘"
+      case .together: nil
+      }
+    }
+
+    /// Why this row cannot be ticked, as a sentence for the line under the rows. Nil: it can. Whatever Arbor arranges can, wherever it
+    /// is: docked, floating, out of view, a tile, in the Dock, hidden with its app.
+    public var whyNotTicked: String? {
+      guard case .window = destination else { return "Only windows can be docked side by side" }
+      switch place {
+      case .notArranged: return "Arbor does not arrange \(name)"
+      case .fullScreen: return "A window in full screen stays there"
+      case .otherSpace: return "That window is on another macOS Space"
+      default: return nil
       }
     }
   }
@@ -170,8 +187,16 @@ public struct FinderSession: Equatable, Sendable {
   /// found, and where there is none the command on top is shown, not selected, until a key picks it; a click and ⌘ with a digit
   /// point at a row and need no picking. There is no list of commands that are too weighty for a reflex: none is run by one.
   public private(set) var hasPicked = false
+  /// The windows that are ticked, in the order ticked, which is the order they will stand in from left to right.
+  public private(set) var ticked: [WindowID] = []
+  /// Why the last tick was refused, until something else is done.
+  private var refusal: String?
   private var candidates: [FinderCandidate]
   private var everything: [FinderModel.Row]
+
+  public static let mostTicks = 4
+  /// Under the rows, always: the one thing in the palette nobody could guess.
+  public static let hint = "⌘↩ ticks a window: two to four are docked side by side"
 
   public init(model: FinderModel) {
     self.model = model
@@ -192,7 +217,7 @@ public struct FinderSession: Equatable, Sendable {
 
   /// The text in the field changed: match again and select the best. A notice has been read by then.
   public mutating func type(_ text: String) {
-    if text != query { model.notice = nil }
+    if text != query { (model.notice, refusal) = (nil, nil) }
     match(text)
   }
 
@@ -209,12 +234,14 @@ public struct FinderSession: Equatable, Sendable {
     let destination = selected
     let text = query
     let row = selection.index
-    let picked = hasPicked
+    let (picked, ticks) = (hasPicked, ticked)
     self = FinderSession(model: newModel)
     match(text)
     let same = destination.flatMap { destination in matches.firstIndex { everything[$0.index].destination == destination } }
     selection.select(same ?? min(row, max(places - 1, 0)))
     hasPicked = picked && same != nil
+    // A tick stays on a window that is still listed and can still be ticked.
+    ticked = ticks.filter { window in model.rows.contains { $0.destination == .window(window) && $0.whyNotTicked == nil } }
   }
 
   /// No place matches, and nobody has picked the command on top: it does not show as selected, and Return does not choose it.
@@ -232,6 +259,7 @@ public struct FinderSession: Equatable, Sendable {
   /// the list: ↓ picks the first and ↑ the last.
   public mutating func moveSelection(by rows: Int) {
     guard rows != 0 else { return }
+    refusal = nil
     let waited = awaitsPicking
     hasPicked = true
     let places = places
@@ -246,6 +274,7 @@ public struct FinderSession: Equatable, Sendable {
   /// waits to be picked, either picks the first row.
   public mutating func pageSelection(by pages: Int) {
     guard pages != 0 else { return }
+    refusal = nil
     let waited = awaitsPicking
     hasPicked = true
     let (places, before) = (places, selection)
@@ -256,23 +285,66 @@ public struct FinderSession: Equatable, Sendable {
     }
   }
 
+  /// Ticks the row that shows at `place` from the top, counted from 0, or the selected row; a row that is ticked loses its tick.
+  /// A tick clears the field, for the next window to be looked for. Returns false, which is worth a beep, if the row cannot
+  /// be ticked; `message` then says why.
+  @discardableResult
+  public mutating func tick(atVisible place: Int? = nil) -> Bool {
+    // Whatever stood there has been read by now, and would hide why this one is refused.
+    (refusal, model.notice) = (nil, nil)
+    guard let index = place.map({ selection.row(atVisible: $0) }) ?? selection.selected else { return false }
+    let row = everything[matches[index].index]
+    if let why = row.whyNotTicked {
+      refusal = why
+      return false
+    }
+    guard case .window(let window) = row.destination else { return false }
+    if let old = ticked.firstIndex(of: window) {
+      ticked.remove(at: old)
+    } else if ticked.count < Self.mostTicks {
+      ticked.append(window)
+    } else {
+      refusal = "Four at the most"
+      return false
+    }
+    match("")
+    // Still on the row that was ticked, which is where the eyes are.
+    selection.select(matches.firstIndex { everything[$0.index].destination == row.destination } ?? 0)
+    return true
+  }
+
   /// One row as it shows.
   public struct Item: Equatable, Sendable {
     public var row: FinderModel.Row
     public var match: FinderMatch
     public var isSelected: Bool
+    /// 1 to 4 on a row that is ticked: its place from the left.
+    public var tick: Int?
   }
 
   /// The rows that show, from the top.
   public var items: [Item] {
     selection.visible.map { place in
-      Item(row: everything[matches[place].index], match: matches[place], isSelected: place == selection.selected && !awaitsPicking)
+      let row = everything[matches[place].index]
+      var tick: Int?
+      if case .window(let window) = row.destination { tick = ticked.firstIndex(of: window).map { $0 + 1 } }
+      return Item(row: row, match: matches[place], isSelected: place == selection.selected && !awaitsPicking, tick: tick)
     }
   }
 
-  /// What Return would choose. Nothing, where a command waits to be picked.
+  /// The row that is selected. None, where a command waits to be picked.
   public var selected: FinderDestination? {
     awaitsPicking ? nil : selection.selected.map { everything[matches[$0].index].destination }
+  }
+
+  /// What Return chooses: the windows that are ticked, together; one that is ticked alone, as if it had been chosen; or else
+  /// the selected row.
+  public var chosen: FinderDestination? {
+    switch ticked.count {
+    case 0: selected
+    case 1: .window(ticked[0])
+    default: .together(ticked)
+    }
   }
 
   /// What shows at `place` from the top, counted from 0: what a click there, or ⌘ and the digit
@@ -284,9 +356,15 @@ public struct FinderSession: Equatable, Sendable {
   /// A line to show under the rows, if there is something to say.
   public var message: String? {
     if let notice = model.notice { return notice }
+    if let refusal { return refusal }
     if model.rows.isEmpty, matches.isEmpty { return "No windows" }
-    if awaitsPicking { return "↓ picks a command, ↩ runs it" }
-    return matches.isEmpty ? "Nothing matches" : nil
+    if matches.isEmpty { return "Nothing matches" }
+    switch ticked.count {
+    // With a tick set Return does not look at the selected row, so nothing waits for it.
+    case 0: return awaitsPicking ? "↓ picks a command, ↩ runs it" : Self.hint
+    case 1: return "⌘↩ ticks another; ↩ goes to this one"
+    default: return "↩ docks these \(ticked.count) side by side"
+    }
   }
 
   /// Where everything goes.
@@ -300,7 +378,8 @@ public struct FinderSession: Equatable, Sendable {
     for (place, item) in items.enumerated() {
       let detail = item.row.detail.isEmpty ? "" : "  \(item.row.detail)"
       let mark = item.isSelected ? ">" : " "
-      lines.append("\(mark) \(place + 1) \(item.row.destination)  \(item.row.name)\(detail)  (\(item.row.note))")
+      let tick = item.tick.map { "  [\($0)]" } ?? ""
+      lines.append("\(mark) \(place + 1) \(item.row.destination)  \(item.row.name)\(detail)  (\(item.row.note))\(tick)")
     }
     let hidden = matches.count - selection.visible.count
     if hidden > 0 { lines.append("  and \(hidden) more") }
@@ -370,6 +449,12 @@ public struct FinderLayout: Equatable, Sendable {
     CGRect(
       x: Self.listPadding, y: Self.listPadding + CGFloat(place) * Self.rowHeight,
       width: list.width - 2 * Self.listPadding, height: Self.rowHeight)
+  }
+
+  /// The circle with its number at the end of a row that is ticked, measured like the row.
+  public func tickFrame(_ place: Int) -> CGRect {
+    let row = rowFrame(place)
+    return CGRect(x: row.maxX - 12 - 20, y: row.midY - 10, width: 20, height: 20)
   }
 
   /// The line under the rows, measured like them.

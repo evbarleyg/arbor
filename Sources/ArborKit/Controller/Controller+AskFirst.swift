@@ -32,7 +32,8 @@ extension Controller {
   private func askThoseWhoMayRefuse(_ layout: Layout, on displayID: DisplayID, beginningWith first: WindowID?) -> Bool {
     let shown = layouts[displayID]?.windowFrames ?? [:]
     let unknown = layout.windowFrames.keys.sorted().filter { window in
-      guard window != drag?.window, let current = windows[window], isStillToBePlaced(current, in: layout.windowFrames[window]!)
+      guard window != drag?.window, !awaitedBack.contains(window), let current = windows[window],
+        isStillToBePlaced(current, in: layout.windowFrames[window]!)
       else { return false }
       let slot = layout.windowFrames[window]!.size
       if window == first, slot.width < current.frame.width - 1 || slot.height < current.frame.height - 1 { return true }

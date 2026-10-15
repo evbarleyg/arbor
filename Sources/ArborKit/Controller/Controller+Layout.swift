@@ -166,6 +166,8 @@ extension Controller {
     var unknown: [(window: WindowID, slot: CGRect, question: CGRect)] = []
     // A window being dragged stays in the user's hand whatever happens to the layout meanwhile.
     for (window, target) in layout.windowFrames.sorted(by: { $0.key < $1.key }) where window != drag?.window {
+      // Still in the Dock or hidden: its place is kept, and it is put there when it is back (Controller+SideBySide.swift).
+      if awaitedBack.contains(window) { continue }
       if let current = windows[window], isStillToBePlaced(current, in: target),
         let question = questionBeforePlacing(current, in: target, on: displayID)
       {

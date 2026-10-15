@@ -168,5 +168,48 @@
       panel.load(model(notice: "That window has closed"))
       try PalettePicture(of: panel, isDark: isDark).save("04-notice-\(isDark ? "dark" : "light")", over: backdrop(isDark: isDark))
     }
+
+    /// Board 0.12: a ticked row bears its number in a filled circle at its end, and the note makes way.
+    @Test(arguments: [false, true]) func tickedRowsBearTheirNumbers(isDark: Bool) throws {
+      let panel = FinderPanel()
+      defer { panel.close() }
+      panel.load(model())
+      let bare = try PalettePicture(of: panel, isDark: isDark)
+      panel.type("term")
+      panel.tickSelectedRow()
+      panel.type("mail")
+      panel.tickSelectedRow()
+      let picture = try PalettePicture(of: panel, isDark: isDark)
+      try picture.save("05-ticked-\(isDark ? "dark" : "light")", over: backdrop(isDark: isDark))
+
+      var session = FinderSession(model: model())
+      for text in ["term", "mail"] {
+        session.type(text)
+        session.tick()
+      }
+      let layout = session.layout
+      #expect(picture.size == layout.panel.size, "the field is empty again and the whole list shows")
+      #expect(session.items.map(\.tick) == [2, nil, 1, nil, nil, nil, nil, nil, nil] && session.items[0].isSelected)
+      func circle(_ place: Int) -> CGRect { layout.tickFrame(place).offsetBy(dx: layout.list.minX, dy: layout.list.minY) }
+      // Filled, and round: opaque in the middle of each side, empty in the corners of its box. (On the selected row the corners
+      // are the row's fill.)
+      let third = circle(2)
+      for point in [CGPoint(x: third.minX + 2, y: third.midY), CGPoint(x: third.midX, y: third.minY + 2)] {
+        #expect(picture.alpha(point.x, point.y) > 0.9, "\(point)")
+      }
+      #expect(picture.alpha(third.minX + 1, third.minY + 1) < 0.1 && picture.alpha(third.maxX - 1, third.maxY - 1) < 0.1)
+      #expect(bare.alpha(third.minX + 2, third.midY) < 0.9, "the control: nothing filled there before")
+      // No circle on a row that is not ticked.
+      let second = circle(1)
+      #expect(picture.alpha(second.midX, second.minY + 2) < 0.1)
+      // The note ends 8 points before the circle.
+      let frame = row(2, of: layout)
+      let words = try #require(
+        picture.ink(in: CGRect(x: frame.minX + 44, y: frame.minY + 8, width: third.minX - 2 - frame.minX - 44, height: frame.height - 16)))
+      #expect(abs(words.maxX - (third.minX - 8)) <= 3, "the note ends at \(words.maxX), the circle begins at \(third.minX)")
+      // And the line under the rows says what Return does now.
+      let message = layout.messageFrame.offsetBy(dx: layout.list.minX, dy: layout.list.minY)
+      #expect(picture.ink(in: message) != nil && session.message == "↩ docks these 2 side by side")
+    }
   }
 #endif

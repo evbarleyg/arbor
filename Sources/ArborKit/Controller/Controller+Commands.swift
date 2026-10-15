@@ -176,6 +176,7 @@ extension Controller {
     case .swapWindows(let first, let second): result = swap(first, with: second)
     case .equalize(let all): result = equalize(all: all)
     case .rotate: result = rotate()
+    case .sideBySide(let windows): result = sideBySide(windows)
     case .mirror: result = mirror()
     case .grow(let points): result = resizeFocusedWindow(by: points, growing: true)
     case .shrink(let points): result = resizeFocusedWindow(by: points, growing: false)

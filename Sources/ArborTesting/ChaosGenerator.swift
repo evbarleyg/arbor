@@ -100,6 +100,7 @@ public struct ChaosGenerator {
     case showShortcuts
     case minimap
     case fixSetup
+    case sideBySide
   }
 
   /// No `default`, on purpose: a new `Command` case does not compile until it is listed here.
@@ -188,6 +189,7 @@ public struct ChaosGenerator {
     case .displays: .displays
     case .showShortcuts: .showShortcuts
     case .minimap: .minimap
+    case .sideBySide: .sideBySide
     }
   }
 
@@ -306,6 +308,16 @@ public struct ChaosGenerator {
     case .displays: return .displays
     case .showShortcuts: return .showShortcuts
     case .minimap: return .minimap
+    case .sideBySide:
+      // Two to four, each once where there are that many: what Go to… can send.
+      var picked: [WindowID] = []
+      for _ in 0..<(random.int(2...4) * 3) where picked.count < 4 {
+        let next = window(in: world)
+        if !picked.contains(next) { picked.append(next) }
+      }
+      // On a desk with one window or none: numbers nobody has, which is refused in words like any other.
+      while picked.count < 2 { picked.append(WindowID(nextWindow + 20 + UInt32(picked.count))) }
+      return .sideBySide(Array(picked.prefix(random.int(2...4))))
     }
   }
 
@@ -407,6 +419,7 @@ public struct ChaosGenerator {
     case .find, .reveal: 8
     case .showShortcuts: 2
     case .minimap: 3
+    case .sideBySide: 6
     }
   }
 

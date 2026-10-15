@@ -1345,6 +1345,13 @@ no focus to restore when it closes.
   gone to, `pause`, `shutdown`. Closing twice does nothing.
 - `find` runs through `perform` like any command, so whatever is hooked in there reaches it, but logs for itself: its text is likely to be part of a
   title. `go(to:by:)` logs ids. Whoever else logs a command uses `Command.textForLog`.
+- **Ticks** (board 0.12; QUESTIONS Q29, 9). `FinderSession.ticked` holds up to four windows in the order ticked; `tick(atVisible:)` is ⌘↩, ⌘-click and ⇧-click, and answers false, with
+  its reason in `message`, for what cannot be ticked (`FinderModel.Row.whyNotTicked`). `chosen` is what Return means: with two or more ticked `FinderDestination.together`, which no row is. So the
+  seam is as it was: `finderChose` carries it, a trace holds `{"windows":[103,101]}`, and `go(to:)` runs `side-by-side` as a command from one of Arbor's own windows: one undo step, and a refusal is said on screen.
+- **`side-by-side`** (`Controller+SideBySide.swift`, `Workspace.dockSideBySide`). The group is made of ordinary docks at the edge of the view, with the view first on everything and then on the first of them, so a
+  group that is kept for its view (F62) comes of it, and one recorded move. **All or nothing:** judged by `roomyLayout` on what is known; then everybody who may refuse is asked where they stand (`askingFirst`), before anybody
+  goes anywhere; only then is the display laid out. A window that could only be asked in its slot and refuses there takes all of it back. **Who is in the Dock or hidden counts as present from the start** (`awaitedBack`, part of
+  `presentWindowIDs()`): its place is kept open and nobody puts it there (`apply`, `movesInSight` and `askingFirst` pass it over) until macOS reports it back or two seconds are up. So its neighbours move once.
 Some settings differ from display to display (`displays` in settings.json, F25). `Controller.options(for: displayID)` returns
 the settings in effect on a display: the general ones with what the entries that match it give it in their place (key by key, the first that sets a key)
 (`Settings.applying(to:)`, matched against the display's name, UUID, size, `isMain` and `isBuiltIn`). **Whatever lays out, previews

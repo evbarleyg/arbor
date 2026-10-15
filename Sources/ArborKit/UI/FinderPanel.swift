@@ -59,7 +59,9 @@ final class FinderPanel: NSPanel, NSTextFieldDelegate {
 
     finderView.frame = backdrop.bounds
     finderView.autoresizingMask = [.width, .height]
-    finderView.onClick = { [weak self] place in self?.choose(self?.session?.destination(atVisible: place)) }
+    finderView.onClick = { [weak self] place, ticks in
+      if ticks { self?.tick(atVisible: place) } else { self?.choose(self?.session?.destination(atVisible: place)) }
+    }
     backdrop.addSubview(finderView)
 
     field.isBordered = false
@@ -200,6 +202,16 @@ final class FinderPanel: NSPanel, NSTextFieldDelegate {
     invalidateShadow()
   }
 
+  /// ⌘↩, or a click with ⌘ or ⇧. A tick clears the field.
+  private func tick(atVisible place: Int? = nil) {
+    guard session != nil else { return }
+    if session!.tick(atVisible: place) { field.stringValue = "" } else { NSSound.beep() }
+    refresh()
+  }
+
+  /// What ⌘↩ does, for the tests that draw the palette off screen.
+  func tickSelectedRow() { tick() }
+
   private func choose(_ destination: FinderDestination?) {
     if let destination {
       onChoose?(destination)
@@ -226,7 +238,7 @@ final class FinderPanel: NSPanel, NSTextFieldDelegate {
     case #selector(NSResponder.scrollPageUp(_:)), #selector(NSResponder.pageUp(_:)):
       session?.pageSelection(by: -1)
     case #selector(NSResponder.insertNewline(_:)):
-      choose(session?.selected)
+      choose(session?.chosen)
       return true
     case #selector(NSResponder.cancelOperation(_:)):
       dismiss()
@@ -253,6 +265,11 @@ final class FinderPanel: NSPanel, NSTextFieldDelegate {
       choose(session?.destination(atVisible: digit - 1))
       return true
     }
+    // Return, and Enter on a keypad. Held down it is still one press: the next would take the tick off again.
+    if key == "\r" || key == "\u{3}" {
+      if !event.isARepeat { tick() }
+      return true
+    }
     guard let editor = field.currentEditor() else { return super.performKeyEquivalent(with: event) }
     switch key {
     case "a": editor.selectAll(nil)
@@ -270,8 +287,8 @@ final class FinderPanel: NSPanel, NSTextFieldDelegate {
 private final class FinderView: NSView {
   static let cornerRadius = PanelLook.Corner.panel
 
-  /// A click on the row at this place from the top.
-  var onClick: ((Int) -> Void)?
+  /// A click on the row at this place from the top, and whether ⌘ or ⇧ was held, which ticks.
+  var onClick: ((Int, Bool) -> Void)?
 
   private var items: [FinderSession.Item] = []
   private var message: String?
@@ -305,11 +322,18 @@ private final class FinderView: NSView {
 
   func forgetIcons() { icons.removeAll() }
 
+  /// Whether ⌘ or ⇧ was held when the button went down. People let go of key and button together, in either order.
+  private var pressTicks = false
+
+  override func mouseDown(with event: NSEvent) {
+    pressTicks = !event.modifierFlags.isDisjoint(with: [.command, .shift])
+  }
+
   override func mouseUp(with event: NSEvent) {
     guard let geometry else { return }
     let point = convert(event.locationInWindow, from: nil)
     if let place = geometry.row(at: CGPoint(x: point.x - geometry.list.minX, y: point.y - geometry.list.minY)) {
-      onClick?(place)
+      onClick?(place, pressTicks)
     }
   }
 
@@ -322,7 +346,9 @@ private final class FinderView: NSView {
       NSBezierPath(rect: NSRect(x: 0, y: list.minY, width: bounds.width, height: 1)).fill()
     }
     for (place, item) in items.enumerated() {
-      draw(item, in: geometry.rowFrame(place).offsetBy(dx: list.minX, dy: list.minY))
+      draw(
+        item, in: geometry.rowFrame(place).offsetBy(dx: list.minX, dy: list.minY),
+        tick: geometry.tickFrame(place).offsetBy(dx: list.minX, dy: list.minY))
     }
     if let message {
       let frame = geometry.messageFrame.offsetBy(dx: list.minX, dy: list.minY)
@@ -355,7 +381,7 @@ private final class FinderView: NSView {
       from: .zero, operation: .sourceOver, fraction: 1, respectFlipped: true, hints: nil)
   }
 
-  private func draw(_ item: FinderSession.Item, in frame: NSRect) {
+  private func draw(_ item: FinderSession.Item, in frame: NSRect, tick tickFrame: NSRect) {
     let selected = item.isSelected
     let selection = selected ? PanelInk.selection() : nil
     if let selection {
@@ -388,8 +414,24 @@ private final class FinderView: NSView {
         .font: NSFont.systemFont(ofSize: 11), .foregroundColor: faint, .paragraphStyle: Self.truncatingRightAligned,
       ])
     let noteWidth = min(note.size().width.rounded(.up) + 2, frame.width * 0.45)
-    let noteFrame = NSRect(x: frame.maxX - 12 - noteWidth, y: frame.midY - 7, width: noteWidth, height: 15)
+    // The note makes way for the circle.
+    let noteEnd = item.tick == nil ? frame.maxX - 12 : tickFrame.minX - 8
+    let noteFrame = NSRect(x: noteEnd - noteWidth, y: frame.midY - 7, width: noteWidth, height: 15)
     note.draw(in: noteFrame)
+    if let tick = item.tick {
+      // In the colours of a selected row; on the selected row, the other way round.
+      let colours = selection ?? PanelInk.selection()
+      (selected ? colours.ink : colours.fill).setFill()
+      NSBezierPath(ovalIn: tickFrame).fill()
+      let number = NSAttributedString(
+        string: String(tick),
+        attributes: [
+          .font: NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .bold),
+          .foregroundColor: selected ? colours.fill : colours.ink,
+        ])
+      let size = number.size()
+      number.draw(at: NSPoint(x: tickFrame.midX - size.width / 2, y: tickFrame.midY - size.height / 2))
+    }
 
     let line = styled(
       item.row.name, item.match.nameRanges, font: .systemFont(ofSize: 13, weight: .semibold), colour: primary)
