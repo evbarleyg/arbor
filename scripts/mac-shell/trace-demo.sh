@@ -16,6 +16,8 @@
 # Positions are worked out before a trace starts and nothing polls Arbor while one is recorded, so that a trace holds
 # what happened and not the script's questions.
 source "$(dirname "$0")/lib.sh"
+# It records its own, one for each gesture.
+ARBOR_NO_TRACE=1
 
 TRACES="$ARBOR_OUT/traces"
 REPLAYS="$ARBOR_OUT/replays"

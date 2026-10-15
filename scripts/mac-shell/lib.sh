@@ -61,6 +61,8 @@
 #                                     first). Do not set a trap on EXIT: it would replace the one that cleans up
 #   arbor_build                     swift build, and compile the pointer tool; exits 2 with the errors
 #   arbor_settings '<json>'         settings.json for the next arbor_start
+#   ARBOR_NO_TRACE=1                before arbor_start: on a throwaway Mac every session records a trace, which comes back beside the
+#                                   log; not in a script that says this
 #   arbor_start [count] [NAME=v…]   test windows W1…Wcount (default 4), then Arbor limited to them
 #   arbor_stop [name]               quit Arbor, check that every test window is back on screen (and take the
 #                                     picture <name> of that), close the test windows
@@ -928,6 +930,19 @@ arbor_log_name() {
 
 arbor_log() {
   [ -f "$ARBOR_HOME/arbor.log" ] && cp "$ARBOR_HOME/arbor.log" "$ARBOR_OUT/$(arbor_log_name arbor)"
+  # Each line of a trace is in the file as it happens, so this holds also after a crash or a kill.
+  cp "$ARBOR_HOME"/traces/*.jsonl "$ARBOR_OUT/" 2>/dev/null
+  return 0
+}
+
+# On a throwaway Mac every session records a trace (docs/TRACES.md): all that macOS reported, all that the apps answered and all that Arbor did
+# about it, and no title. A minute on a Mac is paid once, and what went wrong there is replayed on Linux (`make replay`) instead of
+# run again. It comes back beside the log. A trace ends by itself after ten minutes or 20 MB, and at a pause.
+# ARBOR_NO_TRACE=1, before arbor_start: not in this script, which records its own or measures what Arbor costs.
+arbor_record() {
+  on_throwaway_mac && [ -z "${ARBOR_NO_TRACE:-}" ] || return 0
+  "$ARBOR_BIN/arborctl" trace on "$(basename "$0" .sh)-session-$ARBOR_SESSION" > /dev/null 2>&1
+  return 0
 }
 
 arbor_start() {
@@ -998,6 +1013,7 @@ arbor_start() {
       0)
         echo "session $ARBOR_SESSION: Arbor pid $ARBOR_PID, test windows $ARBOR_WINDOW_IDS (pid $pid)"
         "$ARBOR_BIN/arborctl" status
+        arbor_record
         # On a person's Mac an app of theirs is in front until a test window is clicked. Until then keys are declined, an ⌥-click hides that
         # app, and Arbor's menu, which a picture may show, names it ("Shortcuts Off in …"). So the test windows' app comes forward by itself.
         on_throwaway_mac || echo activate >&9
