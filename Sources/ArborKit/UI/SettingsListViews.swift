@@ -390,10 +390,10 @@ struct AppMenu: View {
 extension Binding {
   /// A binding whose two closures run on the main actor, like everything else in a view.
   ///
-  /// Instead of `Binding(get: { @MainActor in … }, set: { @MainActor new in … })` where the binding is wanted, which says the same and which
-  /// Swift 6.3 (Xcode 26.4 to 26.6) crashes on: the initializer takes `@isolated(any)` closures of any `Value`, and that compiler
-  /// dies making the piece between a main-actor closure that takes a `String`, say, and one of those. Here `Value` is still
-  /// any type, so no such piece is made.
+  /// Instead of `Binding(get: { @MainActor in … }, set: { @MainActor new in … })` where the binding is wanted,
+  /// which says the same and which Swift 6.3 (Xcode 26.4 to 26.6) crashes on: the initializer takes
+  /// `@isolated(any)` closures of any `Value`, and that compiler dies making the piece between a main-actor
+  /// closure that takes a `String`, say, and one of those. Here `Value` is still any type, so no such piece is made.
   @MainActor static func onMainActor(
     get: @escaping @MainActor () -> Value, set: @escaping @MainActor (Value) -> Void
   ) -> Binding<Value> {
