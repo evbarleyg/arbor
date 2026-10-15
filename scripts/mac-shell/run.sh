@@ -22,7 +22,7 @@
 #   --on KIND   another of GitHub's Macs than macos-26: macos-15, macos-14 or macos-15-intel. They come out of the same five.
 #   --bare      no toolchain and no build: half a minute saved for a script that only asks the Mac something.
 #   --priority N   GitHub hands its Macs out in no particular order, so the order is kept here, before the run is started: waiting
-#               here costs nobody anything. 1 starts at once: a fault on real windows, a merge train. 2 waits while three or
+#               here costs nobody anything. 1 starts at once, and asks nothing: a fault on real windows, a merge train. 2 waits while three or
 #               more jobs are waiting for a Mac. 3 (the default) waits while any is: pictures, features, whatever can wait.
 #               And whatever the priority, it waits while two jobs for <ref> (3: one) are running or waiting already.
 #
@@ -44,7 +44,7 @@
 #
 # Environment: MAC_SHELL_TIMEOUT  seconds to wait for the run (default 2700)
 #              MAC_SHELL_TAIL     lines of output.txt to print (default 40)
-#              MAC_SHELL_POLL     seconds between two looks at the queue while it holds back (default 120, and up to 30 more)
+#              MAC_SHELL_POLL     seconds between two looks at the queue while it holds back (default 120, and up to a quarter more)
 #              ARBOR_MAC_QUEUE_CACHE   a file in which several checkouts share one look at the queue (scripts/mac-queue.py)
 #              ARBOR_MAC_PRIORITY as --priority
 #              MAC_SHELL_TAG      another tag (letters, digits, . _ -; at most 40)
@@ -148,17 +148,22 @@ elif [ "$ref" = "$(git rev-parse --abbrev-ref HEAD)" ] && [ "$(uname -s)" = Linu
   fi
 fi
 
-# Its turn. What cannot be found out does not hold anything up.
+# Its turn. Only the answer "yes" lets it go. If the queue cannot be read, GitHub is most likely refusing calls because the hour's are used up, and
+# if that meant "go", everybody who was holding back would start at once, at the worst moment. Priority 1 does not ask.
 start=$(date +%s)
 told=""
-while :; do
+while [ "$priority" != 1 ]; do
   why=$(python3 scripts/mac-queue.py --repo "$repo" --turn "$priority" --for "$ref" 2>/dev/null)
-  [ $? -eq 4 ] || break
+  case $? in
+    0) break ;;
+    4) ;;
+    *) why="the queue for the Macs cannot be read (are GitHub's calls for this hour used up? gh api rate_limit says, and costs none)" ;;
+  esac
   [ $(($(date +%s) - start)) -le "$limit" ] || fail "not started after ${limit}s: $why" 98
   [ "$why" = "$told" ] || echo "holding back: $why"
   told=$why
   # Seldom, and not all copies at the same moment: every look costs calls.
-  sleep "$((${MAC_SHELL_POLL:-120} + RANDOM % 30))"
+  sleep "$((${MAC_SHELL_POLL:-120} + RANDOM % (${MAC_SHELL_POLL:-120} / 4 + 1)))"
 done
 
 # What the output branches hold now, which may be an earlier run's: a change is the sign that a Mac has finished.

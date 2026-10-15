@@ -1317,6 +1317,25 @@ esac
     row("run.sh: a branch GitHub does not have, found out without a call", (lambda done, _, made: (done.returncode, made))(*ran("a.sh", "feat/none")), (97, []))
     row("run.sh: a script GitHub does not have at that branch, likewise", (lambda done, _, made: (done.returncode, made))(*ran("z.sh", "feat/x")), (97, []))
 
+    # Whose turn it is, with a stand-in for mac-queue.py that ends as told.
+    real_queue = os.path.join(checkout, "scripts", "mac-queue.py")
+    with open(real_queue, encoding="utf-8") as handle:
+        kept_queue = handle.read()
+    with open(real_queue, "w", encoding="utf-8") as handle:
+        handle.write('import os, sys\nprint("three are waiting")\nsys.exit(int(os.environ["TURN"]))\n')
+    for what, priority, turn, expected in [
+        ("it is its turn", "3", "0", (97, True)),
+        ("it is not", "3", "4", (98, False)),
+        ("the queue cannot be read, as when GitHub refuses: that is no yes", "3", "1", (98, False)),
+        ("the same at priority 2", "2", "1", (98, False)),
+        ("the look at the queue falls over", "3", "120", (98, False)),
+        ("priority 1 does not ask", "1", "4", (97, True)),
+    ]:
+        done, noted, _ = ran("a.sh", "feat/x", ARBOR_MAC_PRIORITY=priority, TURN=turn, MAC_SHELL_TIMEOUT="0", MAC_SHELL_POLL="0")
+        row(f"run.sh: whose turn: {what}", (done.returncode, os.path.exists(noted)), expected)
+    with open(real_queue, "w", encoding="utf-8") as handle:
+        handle.write(kept_queue)
+
     # A whole run. The "Mac" pushes its output a few seconds after the dispatch, as the workflow's last deed but a few.
     pushes = '''( sleep 3; w=$(mktemp -d); cd "$w"; git init -q; echo 0 > exit-code.txt; echo said > output.txt; git add -A
       git -c user.name=m -c user.email=m@example.com commit -q -m "mac-shell: output of a.sh at 1234567 (run 7)"
