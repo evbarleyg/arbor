@@ -1547,6 +1547,8 @@ def self_test():
             wrong += [] if name in SHIPPED or all(bool(cells[name, check]["move"]) == bool(gate) for check in found) else [f"{name}: the gate {'does not ask' if gate else 'asks'} for it"]
         for name in ("eight-arrange", "eight-arrange-again", "crowd-arrange", "crowd-arrange-again", "eight-arrange-told", "eight-arrange-told-again", "crowd-arrange-told", "crowd-arrange-told-again"):
             wrong += [] if (name, "R1") in cells and not cells[name, "R1"]["move"] else [f"{name} is no row of what ships, or the gate asks for it"]
+        for name in ("eight-arrange-told", "eight-arrange-told-again", "crowd-arrange-told", "crowd-arrange-told-again", "quit"):
+            wrong += [] if (name, "M1") not in cells else [f"{name} is by command, which the camera cannot time, and M1 is asked of it"]
         for name in ("fill", "eight-arrange-told", "crowd-arrange-told-again"):
             wrong += [] if all(cells[name, check]["status"] == PASS for check in ("R1", "R4", "R5")) else [f"{name}, drawn clean, does not pass R1, R4 and R5"]
         wrong += [] if cells["crowd-arrange-told", "R5"]["status"] == UNSEEN else ["a scene that was not filmed is not unseen"]
