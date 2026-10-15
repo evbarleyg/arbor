@@ -6,7 +6,7 @@ A.. items are Arbor-only. Levels are explained in `collab/README.md`.
 
 **TrellisWM parity: 39 of 52 reference items shipped (75%), 18 verified on real windows.**
 
-Levels: verified 51, tested 63, partial 7, planned 7, missing 1, not-planned 3.
+Levels: verified 51, tested 63, partial 9, planned 7, missing 1, not-planned 3.
 
 Real-window evidence: mac-shell: scripts/mac-shell/proof.sh at ab40b20, macOS 26.6.2, 2026-10-14T06:48Z.
 
@@ -104,6 +104,8 @@ Real-window evidence: the real-window suite, 33 sections, the newest 2026-10-15T
 | A01 | Keyboard docking and moving |  | ⌃⌥⌘+arrow docks the focused window or moves it one place | verified | tests 22/22, real windows 3/3 | [F01](features/F01-dock-and-zoom.md) |
 | A02 | Command line with JSON state and ASCII layout |  | `arborctl state` (window titles only with `--titles`), `arborctl ascii`; batches from standard input, `--timeout`, exit codes for scripts, shell completion | verified | tests 18/18, real windows 4/4 | [F01](features/F01-dock-and-zoom.md) |
 | A03 | Configurable shortcuts |  | `bindings` in settings.json; `arborctl bindings` | verified | tests 6/6, real windows 7/7 | [F06](features/F06-configurable-keybindings.md) |
+| A230 | A shortcut that stays Arbor's is never let go of, and one that is not is said |  | A pause, a change of settings or of the keyboard layout touches only the keys that change; `bindings` marks each key that is not Arbor's at that moment and why; `doctor`, Check Setup and the log name what macOS refused or was never asked for | partial | tests 13/13 | [F42](features/F42-setup-check.md) |
+| A231 | A shortcut is Arbor's with fn down as well |  | macOS compares the fn key's flag exactly, and fn sits beside ⌃: a shortcut with ⌃⌥ is registered a second time with fn, but for arrows and function keys, which would fire twice, and tab and delete, which nobody has measured. One press runs one command whatever macOS makes of the two. A person sees keys, not registrations. Measured on macOS 15 and 26 with posted events only | partial | tests 16/16 | [F42](features/F42-setup-check.md) |
 | A04 | Rules for new windows per app |  | `rules` in settings.json; `arborctl rules` | verified | tests 13/13, real windows 7/7 | [F11](features/F11-app-rules.md) |
 | A05 | Minimum sizes learned from apps |  | A window that refuses its slot becomes a tile | tested | tests 1/1, real windows 3/4 | [F01](features/F01-dock-and-zoom.md) |
 | A06 | Windows left off-screen by a crash are recovered |  | On launch, and only those: a window kept over an edge of the screen with 24 points of its title bar within reach stays where it is found, at a start, when it opens and at a quit | verified | tests 9/9, real windows 4/4 | [F01](features/F01-dock-and-zoom.md) |
