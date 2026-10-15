@@ -1451,13 +1451,13 @@ Late or partial answers: a call returns before the deed, after it, with half of 
 
 ### nobody-has-the-keyboard-also-means-a-launcher-has-it
 
-*hurt 2 · at the seam · suspected · K1601 · K1608 · M1609 · touches `focus`*
+*hurt 2 · at the seam · K1601 · K1608 · M1609 · touches `focus`*
 
 - **Expected:** `focusedWindow()` is nil when nobody has the keyboard: the bare Desktop.
-- **Happened:** It is also nil whenever the app in front is not observed or does not answer: Spotlight, another launcher, a menu bar app's panel, a sheet. A shortcut that moves the view then takes the keyboard out of the launcher somebody is typing in, which it was decided to leave as it is for commands a person gives. A window closing behind a launcher made Arbor give the keyboard to another window a quarter of a second later; it no longer does (the-window-used-last-is-not-the-window-with-the-keyboard). What a real Spotlight does then is still to be tried by hand.
-- **Found by:** A rehearsal check that was bisected, then reading the Accessibility layer, and a headless probe. Not seen on a Mac.
+- **Happened:** It is also nil whenever the app in front is not observed or does not answer: Spotlight, another launcher, a menu bar app's panel, a sheet. A shortcut that moves the view then took the keyboard out of the launcher somebody was typing in: ten times of ten on a hosted Mac, with an app in front that Arbor was not pointed at. It had been decided to leave that as it is for commands a person gives; that is overruled: Arbor takes the keyboard only from a window that it takes out of view, and goes by the app in front where it knows no focused window (`Controller.ensureFocusIsVisible`). Whether macOS names nobody while a sheet has the keyboard, or the sheet by a number of its own, nobody has recorded: Arbor takes both alike. Open still: what brings no app forward. A window closing behind a launcher made Arbor give the keyboard to another window a quarter of a second later; it no longer does (the-window-used-last-is-not-the-window-with-the-keyboard). What a real Spotlight does then is still to be tried by hand.
+- **Found by:** A rehearsal check that was bisected, then reading the Accessibility layer, and a headless probe. Then seen on a hosted Mac, behind the greens of the check of apps that keep their own shortcuts: the app that writes down its keys resigned 5 ms after `show-all`.
 - **Stand-ins play it:** partly (`FakeWindowSystem.sheetTakesTheKeyboard`)
-- **Guard:** `test: theKeyboardStaysInASheet`
+- **Guard:** `test: aKeyThatMovesTheViewLeavesTheKeyboardWithAnAppArborDoesNotLookAt`; `test: aSheetKeepsTheKeyboardForAsLongAsItsWindowIsInView`; `test: anAppWithNoWindowLeftIsNobody`; `test: theKeyboardStaysInASheet`; `test: theSheetIsWhereItsAppsWindowIs`; `test: whatNamesAPlaceTakesTheKeyboardThereWhoeverHadIt`; `test: withArborItselfInFrontTheKeyboardGoesAlongWithTheView`
 - **Arbor copes:** **not yet**
 - **Read in:** `Sources/ArborKit/AX/AXWindowSystem.swift`, `Tests/ArborKitTests/ReviewTilingTests.swift`, `collab/BACKLOG.md`
 

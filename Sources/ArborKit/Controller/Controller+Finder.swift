@@ -212,6 +212,9 @@ extension Controller {
   func go(to destination: FinderDestination, by source: String) -> CommandResult {
     // Closed first, so the keyboard is back with the apps before one of them is given it.
     closeFinder()
+    let outer = following.namesAPlace
+    following.namesAPlace = true
+    defer { following.namesAPlace = outer }
     let result: CommandResult
     switch destination {
     case .window(let window):
