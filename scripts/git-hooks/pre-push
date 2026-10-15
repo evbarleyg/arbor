@@ -19,7 +19,7 @@ check=$kept
 here=$(version "$check") newest=$here from= whose=
 for remote in $(git remote); do
   git config --get-all "remote.$remote.url" | head -n 1 |
-    grep -Eqi '^(https://([^/@]*@)?|(ssh://)?git@)(ssh\.)?github\.com(:[0-9]+)?[:/]+evbarleyg/arbor(\.git)?/?$' || continue
+    grep -Eqi '^(https://([^/@?#\\]*@)?|(ssh://)?git@)(ssh\.)?github\.com(:[0-9]+)?[:/]+evbarleyg/arbor(\.git)?/?$' || continue
   git remote | grep -q "^$remote/" && continue  # another remote's branches would lie among this one's
   for branch in swarm/trunk main; do
     git show-ref --verify --quiet "refs/remotes/$remote/$branch" || continue

@@ -16,9 +16,12 @@ then looks at
   leftovers commits that nothing points at any more, which stay in the clone until git tidies up;
   the rest  objects borrowed from another repository, replace refs and grafts, repositories and bundles lying inside .git.
 
-Two kinds of commit are meant to have no history, and are let be as long as nothing is built on them: the output of a Mac shell run
-(`origin/mac-shell-out/*`: one commit, made by the workflow or beginning "mac-shell: "), and the commit `git stash --include-untracked`
-keeps untracked files in. Both must be younger than the first public commit.
+Two kinds of commit are meant to have no history, and are let be as long as nothing is built on them: the output of a Mac shell run, and the
+commit `git stash --include-untracked` keeps untracked files in. Both must be younger than the first public commit. An output is known by who
+made it (the workflow), by how it begins ("mac-shell: "), or by where it lies: on a branch `mac-shell-out/*` of a remote that fetches from the
+public repository, going by the clone's record of that remote and that record's reflog. Whoever put it there, it is public already. (The record
+does not say which address it was fetched from: one commit without parents, younger than the first public commit, fetched under that name before the
+remote's address was changed, passes.) The record goes when the branch is pruned, and what it vouched for is then a leftover like any other.
 
 It also says when commits made here would carry an address that is no no-reply address.
 
@@ -50,6 +53,11 @@ spec.loader.exec_module(check)
 
 OUTPUT_AUTHOR = "mac-shell@users.noreply.github.com"
 OUTPUT_SUBJECT = "mac-shell: "
+OUTPUT_BRANCHES = "mac-shell-out/"
+# Put over two outputs on the public repository before anybody had written down how such a commit begins, and fetched by many clones since.
+KNOWN_OUTPUTS = {"2df081ad58dc8bfb59b89b8eb29babd5bfbf0f11"}
+# The whole of the address git fetches from. (public-check.py's own pattern is looser: there a wrong match only makes it stricter.)
+PUBLIC_ADDRESS = re.compile(r"(https://([^/@?#\\]*@)?|(ssh://)?git@)(ssh\.)?github\.com(:\d+)?[:/]+evbarleyg/arbor(\.git)?/?", re.IGNORECASE)
 UNTRACKED_SUBJECT = "untracked files on "
 # What each stands for, and how the operation it belongs to is called off; None: the file is only a note, and can go.
 PSEUDO = {"FETCH_HEAD": None, "ORIG_HEAD": None, "AUTO_MERGE": None, "MERGE_HEAD": ("merge", "--abort"), "CHERRY_PICK_HEAD": ("cherry-pick", "--abort"),
@@ -71,7 +79,7 @@ class Clone:
     def __init__(self, top):
         self.top = top
         self.common = os.path.realpath(os.path.join(top, self.git("rev-parse", "--git-common-dir").strip()))
-        self.parents, self.kinds, self.untracked = {}, {}, set()
+        self.parents, self.kinds, self.untracked, self.outputs = {}, {}, set(), set()
         # Each worktree: the folder git keeps its HEAD in, and where it is.
         self.worktrees = [(self.common, os.path.dirname(self.common) if os.path.basename(self.common) == ".git" else None)]
         for folder in sorted(glob.glob(os.path.join(self.common, "worktrees", "*"))):
@@ -96,7 +104,7 @@ class Clone:
         described = self.git("log", "--no-walk=unsorted", "--stdin", "--format=%H%x00%ae%x00%ct%x00%s", said="".join(f"{root}\n" for root in roots))
         for line in described.splitlines():
             sha, address, made, subject = line.split("\0", 3)
-            is_output = address == OUTPUT_AUTHOR or subject.startswith(OUTPUT_SUBJECT)
+            is_output = address == OUTPUT_AUTHOR or subject.startswith(OUTPUT_SUBJECT) or sha in self.outputs
             if subject.startswith(UNTRACKED_SUBJECT):
                 self.untracked.add(sha)
             self.kinds[sha] = PUBLIC if sha == check.ROOT_COMMIT else LONE if (is_output or sha in self.untracked) and int(made) >= born else FOREIGN
@@ -192,6 +200,10 @@ def look(top):
     fsck = git("fsck", "--unreachable", "--no-reflogs", "--no-progress", "--connectivity-only", check=False)[1]
     loose = re.findall(r"^unreachable commit ([0-9a-f]+)$", fsck, re.MULTILINE)
 
+    remotes = git("remote").splitlines()
+    theirs = tuple(f"refs/remotes/{name}/{OUTPUT_BRANCHES}" for name in remotes if PUBLIC_ADDRESS.fullmatch(git("remote", "get-url", name, check=False)[1].strip())
+                   and not any(other.startswith(name + "/") for other in remotes))  # whose branches would lie among this one's
+    clone.outputs = KNOWN_OUTPUTS | {sha for (ref, _), sha in refs.items() if ref.startswith(theirs)} | {sha for _, entry, sha in remembered if entry.startswith(theirs)}
     clone.read_graph({check.ROOT_COMMIT, *refs.values(), *loose, *(sha for _, _, sha in remembered),
                       *(sha for _, _, _, shas in heads for sha in shas), *(sha for *_, shas in pseudo for sha in shas)})
     found += odd

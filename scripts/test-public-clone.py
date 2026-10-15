@@ -73,16 +73,19 @@ def situation(what, expected, prepare, mentions=(), still=None):
     """Code before; what of `mentions` was not said; the code after --remove and the rest by hand (None where nothing was found);
     and, where `still` is given, whether what is good is still there."""
     with tempfile.TemporaryDirectory() as folder:
-        repository = fresh(folder)
-        prepare(repository)
-        code, output = look(repository)
-        missing = [words for words in mentions if words not in output]
-        after = None
-        if code == 1:
-            _, removed = look(repository, "--remove")
-            by_hand(repository, removed)
-            after = look(repository)[0]
-        row(what, (code, missing, after) + ((still(repository),) if still else ()), expected)
+        try:
+            repository = fresh(folder)
+            prepare(repository)
+            code, output = look(repository)
+            missing = [words for words in mentions if words not in output]
+            after = None
+            if code == 1:
+                _, removed = look(repository, "--remove")
+                by_hand(repository, removed)
+                after = look(repository)[0]
+            row(what, (code, missing, after) + ((still(repository),) if still else ()), expected)
+        except Exception as error:  # a git that behaves otherwise, say: that is this row red, and the others still have their say
+            row(what, f"{type(error).__name__}: {error}", expected)
 
 
 def elsewhere(r, name="swarm/trunk", back="fix/something", **who):
@@ -310,6 +313,81 @@ def main():
     situation("the output of a Mac shell run, fetched, and an earlier one in the reflogs", CLEAN, output_branch)
     situation("what an agent that may not delete branches put in its place", CLEAN, lambda r: output_branch(r, GOOD, "mac-shell: output fetched"))
     situation("history of somebody else's under such a name", FOUND, lambda r: output_branch(r, GOOD, "the first commit"), ["refs/remotes/origin/mac-shell-out/a.b"])
+
+    # Known by where it lies: what the public repository itself has there is public already, whoever made it and whatever it says.
+    def at(address, prepare, remote="origin"):
+        def prepared(r):
+            r.git("remote", "set-url", remote, address) if remote == "origin" else r.git("remote", "add", remote, address)
+            prepare(r)
+        return prepared
+    public, there = "https://github.com/evbarleyg/arbor", "refs/remotes/origin/mac-shell-out/a.b"
+    stub = lambda r, **more: output_branch(r, GOOD, "the output has been fetched", **more)
+    for address in (public, public + ".git", "git@github.com:evbarleyg/arbor.git", "ssh://git@github.com/evbarleyg/arbor", "https://someone@GitHub.com/evbarleyg/arbor/",
+                    "ssh://git@ssh.github.com:443/evbarleyg/arbor.git"):
+        situation(f"a commit of somebody's on an output branch of the public repository's: {address}", CLEAN, at(address, stub))
+    for address in ("https://evil.net/github.com/evbarleyg/arbor", "https://notgithub.com/evbarleyg/arbor", "https://github.com/evbarleyg/arbor-fork", "https://github.com/evbarleyg/old-barn",
+                    "/tmp/github.com/evbarleyg/arbor", "https://github.com.evil.net/evbarleyg/arbor", "https://not.github.com/evbarleyg/arbor",
+                    "https://evil.net/x@github.com/evbarleyg/arbor", "https://evil.net#@github.com/evbarleyg/arbor", "https://evil.net?@github.com/evbarleyg/arbor",
+                    "https://evil.net\\@github.com/evbarleyg/arbor", "http://github.com/evbarleyg/arbor"):
+        situation(f"on a remote whose address only looks like it: {address}", FOUND, at(address, stub), [there])
+    situation("on another remote's, beside the public one", FOUND, at(public, lambda r: (r.git("remote", "add", "fork", "https://github.com/someone/arbor"), stub(r, ref="refs/remotes/fork/mac-shell-out/a.b"))),
+              ["refs/remotes/fork/mac-shell-out/a.b"])
+    situation("on a remote that only pushes to the public repository, and fetches from elsewhere", FOUND,
+              at("https://github.com/someone/arbor", lambda r: (r.git("remote", "set-url", "--push", "origin", public), stub(r))), [there])
+    situation("without a reflog to go by", CLEAN, at(public, lambda r: (stub(r), os.remove(os.path.join(r.path, ".git", "logs", *there.split("/"))))))
+    situation("beside a remote whose address holds a space", CLEAN, at(public, lambda r: (r.git("remote", "add", "disk", "../a disk/arbor.git"), stub(r))))
+    situation("beside a remote without an address", CLEAN, at(public, lambda r: (r.git("config", "remote.odd.fetch", "+refs/heads/*:refs/remotes/odd/*"), stub(r))))
+    situation("in a partial clone", CLEAN, at(public, lambda r: (r.git("config", "remote.origin.promisor", "true"), r.git("config", "remote.origin.partialclonefilter", "blob:none"), stub(r))))
+    # By configuration, as an older git or a hand leaves it: a newer git's `remote add` refuses a name that lies within another's.
+    situation("where another remote's branches lie among the public one's", FOUND,
+              at(public, lambda r: (r.git("config", "remote.origin/mac-shell-out.url", "https://github.com/someone/arbor"), stub(r, ref="refs/remotes/origin/mac-shell-out/main"))),
+              ["refs/remotes/origin/mac-shell-out/main"])
+    situation("the address rewritten to the public one, and away from it", CLEAN, at("gh:evbarleyg/arbor", lambda r: (r.git("config", "url.https://github.com/.insteadOf", "gh:"), stub(r))))
+    situation("away from it", FOUND, at(public, lambda r: (r.git("config", "url.https://mirror.example.com/.insteadOf", "https://github.com/"), stub(r))), [there])
+
+    def pruned(r):
+        stub(r)
+        r.pruned = r.git("rev-parse", there)
+        r.git("update-ref", "-d", there)
+    situation("once the branch is pruned nothing vouches for it any more: a leftover like any other", FOUND, at(public, pruned), ["1 commits that nothing points at any more"])
+    with tempfile.TemporaryDirectory() as folder:
+        repository = fresh(folder)
+        at(public, pruned)(repository)
+        known, clone.KNOWN_OUTPUTS = clone.KNOWN_OUTPUTS, {repository.pruned}
+        row("but for the one that is known by its id", look(repository)[0], 0)
+        clone.KNOWN_OUTPUTS = known
+    row("which is a whole id", [len(sha) for sha in clone.KNOWN_OUTPUTS], [40])
+    situation("the public repository under another name", CLEAN, at(public, lambda r: stub(r, ref="refs/remotes/upstream/mac-shell-out/a.b"), remote="upstream"))
+    situation("on any other branch of the public repository's", FOUND, at(public, lambda r: stub(r, ref="refs/remotes/origin/fix/a.b")), ["refs/remotes/origin/fix/a.b"])
+    situation("on a branch whose name only begins like it", FOUND, at(public, lambda r: stub(r, ref="refs/remotes/origin/mac-shell-outing/a.b")), ["refs/remotes/origin/mac-shell-outing/a.b"])
+    situation("on a local branch, a tag, of that name", FOUND, at(public, lambda r: (stub(r, ref="refs/heads/mac-shell-out/a.b"), stub(r, ref="refs/tags/origin/mac-shell-out/a.b"))),
+              ["refs/heads/mac-shell-out/a.b", "refs/tags/origin/mac-shell-out/a.b"])
+    situation("more than one commit there: that is a history", FOUND, at(public, lambda r: stub(r, more=1)), [there + ": 2 commits"])
+    situation("something built on it elsewhere", FOUND, at(public, lambda r: (stub(r), r.git("checkout", "--quiet", "-b", "feat/on-it", there), r.commit("more"), r.git("checkout", "--quiet", "fix/something"))),
+              ["refs/heads/feat/on-it: 2 commits"])
+
+    def older_stub(r):
+        r.environment.update(GIT_AUTHOR_DATE="2001-01-01T00:00:00Z", GIT_COMMITTER_DATE="2001-01-01T00:00:00Z")
+        stub(r)
+        del r.environment["GIT_AUTHOR_DATE"], r.environment["GIT_COMMITTER_DATE"]
+    situation("one from before the repository was public", FOUND, at(public, older_stub), [there])
+
+    def pointed_at_from_elsewhere(r):
+        stub(r)
+        sha = r.git("rev-parse", there)
+        r.write(".git/FETCH_HEAD", f"{sha}\tnot-for-merge\tbranch 'mac-shell-out/a.b' of {public}\n")
+        r.git("checkout", "--quiet", "--detach", sha)
+        r.git("checkout", "--quiet", "fix/something")
+    situation("what else points at it: FETCH_HEAD, HEAD's reflog", CLEAN, at(public, pointed_at_from_elsewhere))
+
+    def replaced(r):
+        stub(r)
+        r.git("config", "core.logAllRefUpdates", "always")
+        first = r.git("rev-parse", there)
+        r.git("update-ref", "-d", there)
+        r.git("update-ref", "--create-reflog", there, first)
+        output_branch(r)
+    situation("one that the next run's output has replaced: the branch's own reflog knows where it lay", CLEAN, at(public, replaced))
     situation("commits built on such a commit", FOUND, lambda r: output_branch(r, more=2, ref="refs/heads/feat/looks-fine"), ["refs/heads/feat/looks-fine: 3 commits"])
 
     def merged_output(r):
@@ -393,7 +471,8 @@ def main():
         run = lambda *command, cwd=repository.path, **more: subprocess.run(command, cwd=cwd, env=dict(repository.environment, **more), capture_output=True, text=True, check=False)
         repository.git("config", "core.hooksPath", "elsewhere")
         done = run(install)
-        row("make hooks: where the hook cannot be installed the clone is looked through all the same", (done.returncode, "public-clone:" in done.stdout), (1, True))
+        row("make hooks: where the hook cannot be installed the clone is looked through all the same, and nothing says the hook is in",
+            (done.returncode, "public-clone:" in done.stdout, "THE HOOK IS IN" in done.stdout), (1, True, False))
         outside = os.path.join(folder, "no-repository")
         os.makedirs(outside)
         done = run(install, cwd=outside)

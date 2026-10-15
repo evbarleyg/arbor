@@ -74,6 +74,11 @@ ref and every stash, at what `HEAD`, `FETCH_HEAD`, `MERGE_HEAD` and their like p
 entry by entry, at commits nothing points at any more, and at objects borrowed from another repository. It also says when
 commits made here would carry an address that is no no-reply address.
 
+The output of a Mac shell run (`mac-shell-out/<tag>`) is meant to have no history: one commit, with nothing built on it. It is known by who made
+it (the workflow), by how its subject begins (`mac-shell: `), or by lying on such a branch of the public repository's. To be rid of one: leave
+it, for `scripts/housekeeping.py` takes it away after a day and the next run under that tag replaces it; or delete the branch. Where it
+must go at once and the environment may not delete branches, push one commit without parents over it whose subject begins `mac-shell: `.
+
 By itself it changes nothing: deleting is for whoever knows what the thing is. `scripts/public-clone.py --remove` then takes out
 what it listed as foreign through and through, and only that: those refs, those stashes, those reflog entries. Good stashes
 and your own reflog stay. It ends with `git gc --prune=now`, which also drops commits of your own that no branch, stash or

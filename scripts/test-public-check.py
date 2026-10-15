@@ -935,6 +935,7 @@ def check_hook():
         install = os.path.join(HERE, "git-hooks", "install.sh")
         first = subprocess.run([install], cwd=repository.path, env=repository.environment, capture_output=True, text=True, check=False)
         row("make hooks: it goes on to look through the clone, and of this one it cannot tell", (first.returncode, "public-clone: cannot tell" in first.stdout), (2, True))
+        row("make hooks: it fails for that, and says that the hook is in all the same", first.stdout.strip().splitlines()[-1].startswith("make hooks: THE HOOK IS IN"), True)
         repository.write("docs/x.md", "fine\n")
         repository.commit()
         done = subprocess.run(["git", "push", "origin", "fix/something"], cwd=repository.path, env=repository.environment,
@@ -993,7 +994,8 @@ def check_hook():
         for address in ("https://evil.net/github.com/evbarleyg/arbor", "https://notgithub.com/evbarleyg/arbor", "https://not.github.com/evbarleyg/arbor", "https://github.com.evil.net/evbarleyg/arbor",
                         "https://evil.net/x@github.com:evbarleyg/arbor", "evil.net:github.com/evbarleyg/arbor", "/tmp/github.com/evbarleyg/arbor", "https://github.com/evbarleyg/arbor-fork",
                         "https://github.com/someone/evbarleyg/arbor", "https://github.com@evil.net/evbarleyg/arbor", "ext::sh -c x github.com/evbarleyg/arbor",
-                        "https://evil.net/?https://github.com/evbarleyg/arbor", "evil.net:git@github.com:evbarleyg/arbor", "https://githubXcom/evbarleyg/arbor"):
+                        "https://evil.net/?https://github.com/evbarleyg/arbor", "evil.net:git@github.com:evbarleyg/arbor", "https://githubXcom/evbarleyg/arbor",
+                        "https://evil.net#@github.com/evbarleyg/arbor", "https://evil.net?@github.com/evbarleyg/arbor", "https://evil.net\\@github.com/evbarleyg/arbor"):
             repository.git("config", f"url.{repository.origin}.insteadOf", address)
             repository.git("config", "remote.origin.url", address)
             row(f"the hook: an address that only looks like the public repository's: {address}", pushed_with(), own_reads)

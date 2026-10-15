@@ -41,4 +41,6 @@ driver=$?
 python3 "$here/../public-clone.py"
 clone=$?
 [ "$hook" -eq 0 ] && [ "$driver" -eq 0 ] || exit 1
+# It still fails: a clone that holds what must not be pushed is not ready for work. But nobody should take that for a hook that is not there.
+[ "$clone" -eq 0 ] || echo "make hooks: THE HOOK IS IN and reads every push. What is wrong is what the look through the clone says, above."
 exit "$clone"
