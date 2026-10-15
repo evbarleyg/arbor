@@ -9,7 +9,8 @@ public struct Workspace: Codable, Sendable, Equatable {
   public private(set) var back: [NodeID] = []
   public private(set) var forward: [NodeID] = []
   /// Where the view was when somebody began only to look at everything (a peek), and where `returnFromALook` takes it. Nil at
-  /// all other times. Not saved: a look does not outlast Arbor, and what is saved meanwhile is a view of everything.
+  /// all other times. Not saved: a look does not outlast Arbor, and what is written meanwhile is the stay it would become
+  /// (`stayAfterALook`, `Controller.persistedState`).
   public private(set) var lookingFrom: NodeID?
   /// Saved camera positions keyed by slot ("1"…"9").
   public private(set) var savedViews: [String: NodeID] = [:]
@@ -373,6 +374,8 @@ public struct Workspace: Codable, Sendable, Equatable {
     // What it collapsed or merged into. If all it held is gone there is nowhere to return to, and the view is on everything to stay:
     // a view that is there falls back on the nearest thing left, but nobody who lets go expects to land on that.
     lookingFrom = lookingFrom.flatMap { remap.survivor(of: $0, in: tree) }
+    // Or it has become everything: its neighbours have gone, and the root has given way to it.
+    if lookingFrom == tree.root { lookingFrom = nil }
     back = back.map(resolve)
     forward = forward.map(resolve)
     tidyHistory()

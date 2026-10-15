@@ -658,7 +658,8 @@ Whatever its kind, the field also follows `Remap` in `Workspace.apply(_:)`, is c
 `renumber(_:as:)`, and is optional or has a default when decoded.
 
 One field is none of the three: `lookingFrom` (F51) says that the view is only visiting, for as long as a key is held. Every command ends that, `undo`
-included, so a step that was saved meanwhile comes back as the view it would have returned to. It is the one field that is not saved.
+included, so a step that was saved meanwhile comes back as the view it would have returned to. It is the one field that is not saved: whoever reads
+`state.json` finds nobody peeking, so what `persistedState()` writes with the keys down is the stay the look would become (`withEveryLookOver`).
 ## Keyboard tiling tools
 
 `focus`, `swap`, `grow`, `shrink`, `balance` (`equalize` in the code), `rotate`, `mirror`, `move-to-display` and `focus-display` (F22) live in
@@ -1393,7 +1394,7 @@ tap or hold, what the pointer, the arrow keys, ⎋, a click, another command and
   returns, Back and Forward are tidied against the place it came from, that place follows what closes meanwhile like any other, and its group is kept whole
   as the view's is. So a day ends the same with a peek and without one (`theSameDayWithAndWithoutALook`); only when nothing is left of the view that was left does the
   peek stay on everything. Whatever ends the peek puts the camera back (`returnFromALook`), without laying anything out, and then
-  makes one ordinary move: one history entry, or none. A peek that nobody ends (a pause, a display unplugged) becomes a stay (`stayAfterALook`). `moveCamera` calls `peekYields(on:)` first, so a camera moved by anything
+  makes one ordinary move: one history entry, or none. A peek that nobody ends (a pause, a display unplugged, a crash or a quit with the keys down) becomes a stay (`stayAfterALook`). `moveCamera` calls `peekYields(on:)` first, so a camera moved by anything
   else (a clicked tile, a window that took the keyboard) counts as the landing. `perform(_:from:)` interrupts a peek before any command that is not a query.
 - The arrow keys and ⎋ arrive with the held modifiers, as ⌃⌥← and so on, which are bound by default; a peek takes those chords by their keys,
   whatever they are bound to. Chords that are bound to nothing are registered for the length of the hold

@@ -1036,4 +1036,28 @@ private let c = WindowID(103)
         settle
         """)
   }
+
+  /// The rule `codable-history`. With ⌃⌥Space held the view is only visiting, and history is kept by where it belongs: Back can lead to
+  /// everything, where the camera is. Written down like that, without a word on the visit, it was read back with the entry tidied away.
+  /// And with the window closing meanwhile: the root gives way to the Desktop, where the look began.
+  @Test(arguments: ["settle", "close 103\nsettle"]) func whatIsSavedWhileAPeekIsHeldReadsBackAsItWasWritten(then: String) {
+    expectEveryInvariantHolds(
+      """
+      displays main:0,0,1280,800:25,86,0,0* windows-never
+      launch
+      open 103 Finder pid 1005 at 189 80 1086 314 min 501 300
+      key down dock right
+      key down desktop
+      key down show-all
+      \(then)
+      """)
+  }
+
+  /// The same root spoke as plain `codable` too, where history did not differ and only the visit did.
+  @Test(arguments: [
+    "open 104 Notes pid 1001 at 559 129 846 708 min 709 300\nlaunch\nkey down arrange\nkey down zoom\nkey down neighbor right",
+    "open 102 Notes pid 1001 at 518 417 873 570 min 709 300\nlaunch\nkey down arrange\nkey down desktop\nkey down focus left",
+  ]) func whateverTheViewWasWhatIsSavedWhileAPeekIsHeldReadsBack(before: String) {
+    expectEveryInvariantHolds(before + "\nkey down show-all\nsettle")
+  }
 }

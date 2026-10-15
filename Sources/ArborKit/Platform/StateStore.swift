@@ -92,10 +92,15 @@ public struct PersistedState: Codable, Equatable, Sendable {
 
   /// What a launch starts from (`Workspace.showEverything`), on the displays that are not connected too: they may be by now,
   /// or come back while this run lasts.
-  public func showingEverything() -> PersistedState {
+  public func showingEverything() -> PersistedState { changingEveryWorkspace { $0.showEverything() } }
+
+  /// What is written: no look outlasts Arbor (`Workspace.stayAfterALook`).
+  public func withEveryLookOver() -> PersistedState { changingEveryWorkspace { $0.stayAfterALook() } }
+
+  private func changingEveryWorkspace(_ change: (inout Workspace) -> Void) -> PersistedState {
     var state = self
-    for id in state.workspaces.keys { state.workspaces[id]!.showEverything() }
-    for id in state.dormant.keys { state.dormant[id]!.workspace.showEverything() }
+    for id in state.workspaces.keys { change(&state.workspaces[id]!) }
+    for id in state.dormant.keys { change(&state.dormant[id]!.workspace) }
     return state
   }
 

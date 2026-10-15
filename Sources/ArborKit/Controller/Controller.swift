@@ -756,6 +756,10 @@ public final class Controller {
     var state = PersistedState(
       workspaces: workspaces, hints: hints.filter { known.contains($0.key) }, dormant: dormant, welcomed: hasWelcomed)
     state.hintsShown = headsUp.hintsShown
+    // With the keys of a peek down the view is only visiting, and history is kept by where it belongs. Whoever reads this
+    // (a start after a crash or a quit, the end of a pause) finds nobody peeking, so what is written is what the look would
+    // become then: everything shows, and Back leads to where its user was.
+    state = state.withEveryLookOver()
     state = state.written(with: displays)
     if isPaused { state.pause = PersistedState.Pause(until: pauseEnd, forApp: isPausedForApp) }
     return state

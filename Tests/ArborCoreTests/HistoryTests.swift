@@ -160,6 +160,21 @@ private let c = WindowID(3)
     expectClean(looked)
   }
 
+  /// [ Desktop | a ] with the view on the Desktop. a closes, the root gives way to the Desktop, and the place to return to is everything.
+  @Test func whenTheViewThatWasLeftBecomesEverythingTheLookIsOver() {
+    var workspace = Workspace()
+    workspace.dock(a, at: .cameraEdge(.right))
+    workspace.moveCamera(to: workspace.tree.desktop)
+    var plain = workspace
+    plain.forget(a)
+    let looked = looking(workspace) {
+      $0.forget(a)
+      #expect($0.lookingFrom == nil, "and not the root")
+    }
+    #expect(looked == plain && looked.camera == looked.tree.root)
+    expectClean(looked)
+  }
+
   @Test func fromEverythingThereIsNothingToReturnTo() {
     var workspace = Workspace()
     workspace.dock(a, at: .cameraEdge(.left))

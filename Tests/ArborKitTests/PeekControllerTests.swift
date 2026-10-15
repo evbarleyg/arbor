@@ -2,6 +2,7 @@ import ArborCore
 import ArborKit
 import ArborTesting
 import CoreGraphics
+import Foundation
 import Testing
 
 private let space = "ctrl+opt+space"
@@ -105,7 +106,9 @@ private let side = DisplaySnapshot(
     desk.h.keyUp(space)
     #expect(changes.contains(.camera(desk.h.display)), "Back has something to go back to only now")
     desk.h.scheduler.runPending()
-    #expect(desk.h.store.saveCount == saves + 1)
+    // What was written with the key down was this already (`whatIsSavedWhileTheKeysAreDownIsAStay`), so there is nothing to write again.
+    #expect(desk.h.store.saveCount == saves)
+    #expect(desk.h.store.saved?.workspaces[desk.h.display] == desk.h.workspace)
     #expect(desk.h.store.saved?.workspaces[desk.h.display]?.back.last == desk.leaf(desk.a))
   }
 
@@ -708,6 +711,59 @@ private let side = DisplaySnapshot(
       #expect(!desk.h.scheduler.pendingKeys.contains("peek"), "after \(name) the timer has stopped")
       #expect(desk.asked.calls.count == 2, "after \(name): asked once, given back once")
     }
+  }
+
+  // MARK: What is saved with the keys down
+
+  /// Whoever reads it finds nobody peeking. So it is what the look would become: everything shows, which is what is on the screen,
+  /// and Back leads to where its user was. The peek itself goes on as if nothing had been written.
+  @Test func whatIsSavedWhileTheKeysAreDownIsAStay() throws {
+    let desk = Desk()
+    let (origin, history) = (desk.h.workspace.camera, desk.h.workspace.back)
+    desk.hold()
+    desk.h.controller.saveNow()
+    let saved = try #require(desk.h.store.saved?.workspaces[desk.h.display])
+    #expect(saved.lookingFrom == nil && saved.camera == saved.tree.root)
+    #expect(saved.back == history + [origin])
+    let read = try JSONDecoder().decode(Workspace.self, from: JSONEncoder().encode(saved))
+    #expect(read == saved, "and it reads back as it was written")
+    #expect(desk.h.workspace.lookingFrom == origin && desk.h.controller.isPeeking)
+    // Held for long enough to be no tap, and let go where it began.
+    desk.h.scheduler.advance(by: 1.2)
+    desk.h.keyUp(space)
+    #expect(desk.h.workspace.camera == origin && desk.h.workspace.back == history)
+    desk.expectNoTrace()
+    desk.h.controller.saveNow()
+    #expect(desk.h.store.saved?.workspaces[desk.h.display] == desk.h.workspace, "and the file follows")
+  }
+
+  /// A crash in the middle of a peek, or a log-out. Back has not forgotten.
+  @Test(arguments: [true, false]) func anArborThatStartsAfterOneThatEndedInMidPeekKnowsTheWayBack(byTheWatchdog: Bool) {
+    let desk = Desk()
+    let (origin, history) = (desk.h.workspace.camera, desk.h.workspace.back)
+    desk.hold()
+    desk.h.controller.saveNow()
+    let h = desk.h.newProcess(byTheWatchdog: byTheWatchdog)
+    h.start()
+    #expect(h.workspace.lookingFrom == nil && !h.controller.isPeeking)
+    #expect(h.workspace.camera == h.workspace.tree.root)
+    #expect(h.workspace.back == history + [origin])
+    #expect(h.controller.invariantViolations() == [])
+    #expect(h.run("back").ok && h.workspace.camera == origin)
+    expectWindowsMatchLayout(h)
+  }
+
+  /// A pause that asks nobody (the session ends, a game comes to the front) keeps what it will go on from. That is a stay too.
+  @Test func aPauseThatComesInMidPeekGoesOnFromAStay() {
+    let desk = Desk()
+    let (origin, history) = (desk.h.workspace.camera, desk.h.workspace.back)
+    desk.hold()
+    desk.h.controller.sessionIsEnding()
+    #expect(desk.h.controller.invariantViolations().filter { $0.rule == "leak" } == [])
+    #expect(desk.h.run("resume").ok)
+    #expect(desk.h.workspace.lookingFrom == nil && desk.h.workspace.camera == desk.root)
+    #expect(desk.h.workspace.back == history + [origin])
+    #expect(desk.h.controller.invariantViolations() == [])
   }
 
   // MARK: Windows that close
