@@ -109,7 +109,7 @@ focus_is "$W2" "a click focused window 2"
 ctl shrink 200
 sleep 1
 summary
-check "window 2 is not a tile" test ! "$(is tile "$W2" && echo tile)"
+check "window 2 is not a tile" fails is tile "$W2"
 check "it is in view" is on_screen "$W2"
 check "it stopped at the 300 points its app insists on" about "$(width_of "$W2")" 301 3
 focus_is "$W2" "it still has focus"
@@ -169,7 +169,7 @@ check "in either direction" about "${py%.*}" 400 2
 step "the menu"
 if item=$(status_item); then
   # shellcheck disable=SC2086
-  click $item
+  rightclick $item
   shot 10-menu
   key escape
 fi

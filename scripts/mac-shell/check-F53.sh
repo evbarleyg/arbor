@@ -120,7 +120,7 @@ arbor_settings '{"bindings": {"ctrl+opt+`": "summon '$APP'"}}'
 open_scratch
 arbor_start 2 ARBOR_NO_HOTKEYS=0
 check "Arbor arranges the other app's window too" eventually is managed "$SCRATCH"
-arbor_ask json | python3 -c 'import json, sys; [print("w%d is of app %s (%s)" % (w["id"], w["app"], w["bundleID"])) for w in json.load(sys.stdin)["windows"]]'
+arbor_ask json | python3 -c 'import json, sys; [print("w%d is of app %s (%s)" % (w["id"], w["app"], w.get("bundleID"))) for w in json.load(sys.stdin)["windows"]]'
 ctl dock "$W1" left
 ctl dock "$W2" right
 # shellcheck disable=SC2046
@@ -239,7 +239,6 @@ ctl reload-settings
 step "pause and resume"
 key 'ctrl+opt+`'
 here "summoned"
-spot=$(in_the_editor)
 ctl pause
 sleep 1
 check "paused: it has not moved" at "$SCRATCH" "$chosen"
@@ -249,9 +248,14 @@ check "resumed with the keyboard still in it: summoned again" eventually trait "
 check "where it was" at "$SCRATCH" "$chosen"
 ctl pause
 sleep 1
-# The keyboard goes elsewhere during the pause, which Arbor does not see.
-# shellcheck disable=SC2086
-click $spot
+# The keyboard goes elsewhere during the pause, which Arbor does not see. A pause gives the editor its own frame back (Q21), so where it is is asked
+# now: on its first run on a Mac the click went where the framed editor had been, hit the wallpaper, and macOS swept every window aside.
+read -r ex ey ew eh <<< "$(real_frame_of "$W1")"
+click $((ex + ew - 60)) $((ey + 60))
+check "the click was the editor's: macOS has swept nothing aside" is on_screen "$W1"
+# The premise of the two checks after the resume. At the second run on a Mac they failed with the scratch window still looking like the one with the keyboard, and
+# nothing told whether the click had not taken it away or the resume had given it back.
+check "and the editor's app is in front, during the pause" eventually front_is "$ARBOR_WINDOWS_PID"
 ctl resume
 check "running again" eventually running
 check "resumed: out of view" eventually is_not on_screen "$SCRATCH"
