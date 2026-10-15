@@ -16,7 +16,10 @@ extension Controller {
 
   /// Matches the workspaces to the connected displays. Called when displays
   /// are added or removed and when their frames change.
-  func updateDisplays() {
+  ///
+  /// With `lettingGo` only the books are brought up to date and nothing is moved, raised or focused: for `shutdown`, which
+  /// moves every window itself, once (`lookAtTheDisplaysBeforeLettingGo`).
+  func updateDisplays(lettingGo: Bool = false) {
     // If windows were moved behind Arbor's back, here is the report after all. What follows looks after every window.
     movedBehindArborsBack = []
     scheduler.cancel("displays-blinked")
@@ -42,7 +45,9 @@ extension Controller {
     for id in added { workspaces[id] = Workspace() }
     var arriving: [WindowID] = []
     for id in removed { arriving += retireWorkspace(of: id, whichWasAt: before.first { $0.id == id }?.frame.origin) }
-    for id in added { arriving += restoreDormantWorkspace(of: id) }
+    // A display that has only just come takes nothing away. Its arrangement sleeps on, for the next start: windows that
+    // lie still are not sent over to it a moment before they are let go of.
+    if !lettingGo { for id in added { arriving += restoreDormantWorkspace(of: id) } }
     // Windows that had no display to go to (every display was gone).
     let homeless = managedWindowIDs.filter { workspaceID(containing: $0) == nil }
     adoptNewlyManagedWindows()
@@ -57,6 +62,7 @@ extension Controller {
     Log.info("displays changed: \(displays.count) display(s), \(dormant.count) remembered")
     // A lower resolution or a display that moved can leave windows beyond the edges of them all.
     treatStrandedWindowsAsParked()
+    guard !lettingGo else { return }
     // A display that came or went sent windows to another arrangement, whose view may not include the one being
     // typed in. As after a resume, it ends with that window in view. Before anything is laid out, so that every
     // window moves once. Any other report moves no window and no view. Nor is there anything to do for a window that
@@ -160,6 +166,26 @@ extension Controller {
   var knowsTheDisplays: Bool {
     func frames(_ list: [DisplaySnapshot]) -> [DisplayID: CGRect] { Dictionary(list.map { ($0.id, $0.frame) }) { first, _ in first } }
     return frames(system.displays()) == frames(displays)
+  }
+
+  /// Look before letting go. Arbor hears of a change of displays only once it has settled, a second and a half after
+  /// macOS's last notice (`DisplayChange`). Whoever quits or pauses within that time, a laptop pulled off its dock and shut,
+  /// would have every window given back its own earlier frame by the displays Arbor still believes in: on a display that is
+  /// gone, and after a quit nobody is left to fetch it. The last net of `shutdown` reads the same displays. So Arbor
+  /// reads them now, and lets go by the displays that are.
+  ///
+  /// It brings its books up to date and moves nothing: which displays there are, whose arrangement sleeps, who has to come
+  /// over. A layout now would move windows that are moved again a moment later, follow the keyboard, and park.
+  ///
+  /// Only if a display it believes in is gone, or is elsewhere or of another size: one that has only just come takes
+  /// nothing away. And not while there is no display at all, as for a moment on wake and when docking: then there is
+  /// nothing to go by, and what Arbor believes in is the best guess at what comes back.
+  func lookAtTheDisplaysBeforeLettingGo() {
+    guard isRunning else { return }
+    let real = Dictionary(system.displays().map { ($0.id, $0.frame) }) { first, _ in first }
+    guard !real.isEmpty, displays.contains(where: { real[$0.id] != $0.frame }) else { return }
+    Log.info("letting go before a change of displays was reported: looking at the displays first")
+    updateDisplays(lettingGo: true)
   }
 
   /// macOS moved `window` because a display came or went that Arbor has not heard of yet. If the report comes,

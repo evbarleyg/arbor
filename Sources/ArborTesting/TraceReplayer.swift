@@ -733,6 +733,19 @@ public final class TraceReplayer {
     return fake.focused
   }
 
+  /// macOS has other displays before Arbor is told of them (`DisplayChange` waits until they have settled), and Arbor asks in
+  /// between: whether what apps say of their windows can be read yet, and before it lets go.
+  fileprivate func displays() -> [DisplaySnapshot] {
+    for index in unconsumedResponse() {
+      if case .displays(let recorded) = entries[index].line {
+        consumed[index] = true
+        fake.displayList = recorded.map { DisplaySnapshot($0) }
+        break
+      }
+    }
+    return fake.displayList
+  }
+
   fileprivate func cursorLocation() -> CGPoint {
     for index in unconsumedResponse() {
       if case .cursorLocation(let point) = entries[index].line {
@@ -1054,7 +1067,7 @@ private final class ReplayWindowSystem: WindowSystem {
   func start() { fake?.start() }
   func stop() { fake?.stop() }
   func allWindows() -> [WindowSnapshot] { fake?.allWindows() ?? [] }
-  func displays() -> [DisplaySnapshot] { fake?.displays() ?? [] }
+  func displays() -> [DisplaySnapshot] { replayer?.displays() ?? [] }
   func setFrame(_ frame: CGRect, of window: WindowID) -> CGRect? { replayer?.setFrame(frame, of: window) }
   func focus(_ window: WindowID) { replayer?.focus(window) }
   func focusedWindow() -> WindowID? { replayer?.focusedWindow() }

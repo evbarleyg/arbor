@@ -30,6 +30,8 @@ extension Controller {
       endSummonsWithoutMoving()
       // Kept in memory as well, so that resuming does not depend on the file having been written.
       resumeState = persistedState()
+      // First, so that what macOS has shifted meanwhile does not pass for the pause's doing, which the resume undoes.
+      lookAtTheDisplaysBeforeLettingGo()
       let before = windows.mapValues(\.frame)
       shutdown()
       pausedFrames = windows.mapValues(\.frame).filter { before[$0.key] != $0.value }

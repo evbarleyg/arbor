@@ -1,0 +1,56 @@
+# Proposed by the swarm (2026-10-15; board 1.54); the documenter may edit or drop it.
+# Story: three windows docked and one floating on the big display at a desk, a fifth on the laptop. The cable comes out. macOS brings
+# the four windows over to the laptop by itself, and their apps say so. Arbor hears of displays only once they have settled, a second and
+# a half later. Before that the person pauses Arbor (a pause lets go as a Quit does). Every window is in view, at its own size.
+# Seen on a hosted Mac: all four went back to the display that was gone, and after a Quit nobody is left to fetch them.
+# Spec: docs/features/F08-displays-and-spaces.md, docs/features/F40-pause.md. Window ids start at 101.
+quiet
+plug desk right 1920x1080
+open Code 480x348
+open Safari 480x348
+open Terminal 480x348
+open Chat 480x348
+open Notes 480x348
+move 101 1600 100 480 348
+move 102 1700 150 480 348
+move 103 1800 200 480 348
+move 104 1900 250 480 348
+cursor 2000 500
+dock 101 left
+dock 102 right
+dock 103 beside 102 bottom
+wait 5
+loud
+expect count docked 3
+# The cable comes out.
+quietly unplug desk
+move 101 170 220 480 348
+move 102 220 180 480 348
+move 103 270 140 480 348
+move 104 320 100 480 348
+wait 1
+pause
+expect ok
+expect visible 101
+expect visible 102
+expect visible 103
+expect visible 104
+expect visible 105
+expect size 101 480x348
+expect size 102 480x348
+expect size 103 480x348
+expect size 104 480x348
+expect at 105 300 200
+# And the pause ends like any other, on the one display there is.
+wait 60
+resume
+expect ok
+expect visible 101
+expect visible 104
+expect visible 105
+# Back at the desk, the arrangement is too.
+plug desk right 1920x1080
+wait 3
+expect count docked 3
+expect left-of 101 102
+expect above 102 103
