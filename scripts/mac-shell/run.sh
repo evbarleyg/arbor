@@ -66,6 +66,7 @@
 #              MAC_SHELL_POLL     seconds between two looks at the queue while it holds back (default 120, and up to a quarter more)
 #              ARBOR_MAC_QUEUE_CACHE   a file in which several checkouts share one look at the queue (scripts/mac-queue.py)
 #              ARBOR_MAC_PRIORITY as --priority
+#              MAC_SHELL_SWIFT    own: the Swift of the runner's Xcode; 6.4: that release, restored or installed. Without it: own where <ref> builds with it
 #              MAC_SHELL_TAG      another tag (letters, digits, . _ -; at most 40)
 #              MAC_SHELL_WORKFLOW_REF   the branch whose mac-shell.yml runs (default: swarm/trunk if there is one, else main).
 #                                 One for everybody, whatever <ref> is: a run can read only the caches of the branch its workflow is
@@ -192,6 +193,21 @@ if [ "$home" != "$ref" ] && ! git diff --quiet "origin/$home" HEAD -- .github/wo
   echo "run.sh: note: the workflow and its set-up are $home's, not this branch's, which differ (MAC_SHELL_WORKFLOW_REF=$ref runs these)" >&2
 fi
 
+# The Swift that comes with the runner's Xcode costs nothing; 6.4 has to be restored or installed, on a Mac that waits meanwhile. Since the promise of Swift 6.2 Arbor
+# builds with either, and scripts/lint-older-swift.py, which came with the promise and keeps it, tells a commit that does. Asked for only of a workflow that knows the
+# input: GitHub refuses a start with one it does not know.
+swift=${MAC_SHELL_SWIFT:-}
+if [ -z "$swift" ]; then
+  swift=6.4
+  ! git cat-file -e "$remote:scripts/lint-older-swift.py" 2>/dev/null || swift=own
+fi
+case "$swift" in own | 6.4) ;; *) fail "MAC_SHELL_SWIFT is own or 6.4, not '$swift'" ;; esac
+if [ "$swift" = own ]; then
+  if ! git show "$([ "$home" = "$ref" ] && echo "$remote" || echo "origin/$home"):.github/workflows/mac-shell.yml" 2>/dev/null | grep -q '^      swift:$'; then
+    swift=6.4
+  fi
+fi
+
 slug() { printf '%s' "$1" | tr -c 'A-Za-z0-9_-' '-' | cut -c "1-$2"; }
 name=$(slug "$(basename "$script" .sh)" 16)
 [ ${#scripts[@]} -eq 1 ] || name=$(slug "$name" 13)-x${#scripts[@]}
@@ -199,8 +215,8 @@ name=$(slug "$(basename "$script" .sh)" 16)
 # To be read at a glance: the same script on the other build is another question.
 [ "$configuration" = debug ] || name=$(slug "$name" 12)-rel
 # Names are cut short to fit, and a run started under the tag of one that is under way replaces it: so whatever is cut off has its say in a few
-# letters at the end. The same scripts for the same ref on the same kind of Mac and the same build get the same tag again, and nothing else does.
-whole=$(printf '%s\n' "$ref" "$kind" "$configuration" "${scripts[@]}" | git hash-object --stdin | cut -c 1-5)
+# letters at the end. The same scripts for the same ref on the same kind of Mac, the same build and the same compiler get the same tag again, and nothing else does.
+whole=$(printf '%s\n' "$ref" "$kind" "$configuration" "$swift" "${scripts[@]}" | git hash-object --stdin | cut -c 1-5)
 tag=${MAC_SHELL_TAG:-$(slug "$ref" 15).$name.$whole}
 
 # What Linux can say, it says first.
@@ -321,6 +337,7 @@ newest=$(api "$runs" --jq '.workflow_runs[0].id // 0') || fail "cannot list the 
 other=()
 [ "$configuration" = debug ] || other=(-f "inputs[configuration]=$configuration")
 [ "$seconds" -eq 1200 ] || other+=(-f "inputs[limit]=$seconds")
+[ "$swift" = 6.4 ] || other+=(-f "inputs[swift]=own")
 # `script` is for the run's title alone: what runs is in the plan. GitHub cuts a long title, and at its end stand the branch, by which the queue knows whose run it
 # is, and the tag, by which this script knows its own: with twelve paths in it the run was started, never found, and sent again. So: one script by its path, as ever;
 # several by their names; of more than four the first three and how many more.
@@ -336,7 +353,7 @@ api -X POST "repos/$repo/actions/workflows/mac-shell.yml/dispatches" \
   -f "inputs[at-once]=${at_once:-5}" -f "inputs[runner]=$kind" -F "inputs[bare]=$bare" -f "inputs[unchecked]=$(printf '%s' "$unchecked" | tr -c 'A-Za-z0-9 .,:_/-' ' ' | cut -c 1-80)" \
   -f "inputs[macs]=$plan" >/dev/null \
   || fail "could not start the workflow of $home for $ref"
-echo "started ${scripts[*]} at $ref (${remote:0:7}), tag $tag$([ "$macs" -eq 1 ] || echo ", on $macs Macs")$([ "$configuration" = debug ] || echo ", the $configuration build"); waits ${limit} s at most"
+echo "started ${scripts[*]} at $ref (${remote:0:7}), tag $tag$([ "$macs" -eq 1 ] || echo ", on $macs Macs")$([ "$configuration" = debug ] || echo ", the $configuration build")$([ "$swift" = 6.4 ] || echo ", the runner's own Swift"); waits ${limit} s at most"
 # For whoever shares a look at the queue: there is one more waiting now. Costs no call.
 look 20 python3 scripts/mac-queue.py --repo "$repo" --started "$macs" --for "$ref"
 

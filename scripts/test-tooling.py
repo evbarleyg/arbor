@@ -1979,6 +1979,17 @@ esac""",
     git("commit", "--quiet", "--message", "scripts")
     git("remote", "add", "origin", origin)
     git("push", "--quiet", "origin", "HEAD:refs/heads/feat/x")
+    # The branch whose workflow runs, which knows the input `swift`; one that does not; and a commit that keeps the promise of an older Swift.
+    for branch, path, text in (("home", ".github/workflows/mac-shell.yml", "on:\n  workflow_dispatch:\n    inputs:\n      swift:\n        type: string\n"),
+                               ("old-home", ".github/workflows/mac-shell.yml", "on:\n  workflow_dispatch:\n    inputs:\n      tag:\n        type: string\n"),
+                               ("feat/promise", "scripts/lint-older-swift.py", "print('kept')\n")):
+        os.makedirs(os.path.dirname(os.path.join(checkout, path)), exist_ok=True)
+        with open(os.path.join(checkout, path), "w", encoding="utf-8") as handle:
+            handle.write(text)
+        git("add", "--all")
+        git("commit", "--quiet", "--message", branch)
+        git("push", "--quiet", "origin", f"HEAD:refs/heads/{branch}")
+        git("reset", "--quiet", "--hard", "HEAD~1")
     # Two more branches: one whose lib.sh is from before the switch for the release build, one whose lib.sh knows it.
     for branch, text in (("feat/old-lib", "swift build\n"), ("feat/new-lib", 'swift build -c "$ARBOR_CONFIGURATION"\n')):
         with open(os.path.join(checkout, "scripts", "mac-shell", "lib.sh"), "w", encoding="utf-8") as handle:
@@ -2021,8 +2032,8 @@ esac
 
     NOT_STARTED = [None] * 4
 
-    def started(*arguments):
-        done, noted, _ = ran(*arguments)
+    def started(*arguments, **more):
+        done, noted, _ = ran(*arguments, **more)
         if not os.path.exists(noted):
             # Four of nothing, so that a row that looks into it comes out wrong and says so, instead of ending everything with a traceback.
             return done.returncode, NOT_STARTED, {}
@@ -2043,6 +2054,19 @@ esac
     row("run.sh: for one whose lib.sh knows the switch it starts; so it does without a lib.sh, which nothing there can ignore",
         [started("--release", "a.sh", branch)[2].get("inputs[configuration]") for branch in ("feat/new-lib", "feat/x")], ["release", "release"])
     row("run.sh: the debug build of the old branch is nobody's business", started("a.sh", "feat/old-lib")[1][1], "feat/old-lib")
+    compiler = lambda ref, **more: started("a.sh", ref, **more)[2].get("inputs[swift]")
+    row("run.sh: a commit that keeps the promise of an older Swift is built with the runner's own: nothing to restore or install", compiler("feat/promise"), "own")
+    row("run.sh: one from before the promise needs 6.4, and nothing is said: that is what the workflow takes unasked", compiler("feat/x"), None)
+    row("run.sh: a workflow that does not know the input is not sent it: GitHub would refuse the start", compiler("feat/promise", MAC_SHELL_WORKFLOW_REF="old-home"), None)
+    row("run.sh: nor one that cannot be read", compiler("feat/promise", MAC_SHELL_WORKFLOW_REF="nowhere"), None)
+    row("run.sh: MAC_SHELL_SWIFT has the last word, either way", [compiler("feat/promise", MAC_SHELL_SWIFT="6.4"), compiler("feat/x", MAC_SHELL_SWIFT="own")], [None, "own"])
+    tagged = lambda **more: started("a.sh", "feat/promise", **more)[2].get("inputs[tag]")
+    row("run.sh: the same script with the other compiler is another question: a tag of its own, or the one run would cancel the other",
+        (tagged(MAC_SHELL_SWIFT="own") != tagged(MAC_SHELL_SWIFT="6.4"), tagged(MAC_SHELL_SWIFT="own") == tagged()), (True, True))
+    row("run.sh: MAC_SHELL_SWIFT is own or 6.4", started("a.sh", "feat/x", MAC_SHELL_SWIFT="7")[:2], (97, NOT_STARTED))
+    said = lambda ref, **more: ", the runner's own Swift; waits " in ran("a.sh", ref, GOES="true", STATUS="completed", MAC_SHELL_ASK="0", MAC_SHELL_STEP="1", MAC_SHELL_TAG="u", **more)[0].stdout
+    row("run.sh: it says which compiler, and says the truth where the workflow would not take the word",
+        [said("feat/promise"), said("feat/x"), said("feat/promise", MAC_SHELL_WORKFLOW_REF="old-home")], [True, False, False])
     row("run.sh: --bare builds nothing, so not with --release", started("--bare", "--release", "a.sh", "feat/x")[:2], (97, NOT_STARTED))
     given = lambda *arguments: (lambda code, _, asked: (code, asked.get("inputs[limit]"), asked.get("inputs[macs]", "").count('"parts"')))(*started(*arguments, "feat/x"))
     row("run.sh: twenty minutes for a script are not said: an older workflow would refuse the start", given("a.sh"), (97, None, 1))
