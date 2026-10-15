@@ -1,0 +1,101 @@
+# mac-shell: scripts/mac-shell/check-one-jump.sh at 2c68340, macOS 26.6.2, 2026-10-15T16:16Z
+built Arbor, the pointer tool and the app bundles in 3s
+session 1: Arbor pid 22650, test windows 75 76 77 (pid 22622)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 75 left
+docked w75 at the left edge
+> dock 76 beside 75 right
+docked w76 right of w75
+> resize 76 right 116
+resized w76
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          640 43 372 650
+  w75 12 43 244 650        docked
+  w76 268 43 360 650       docked focused
+  w77 270 140 480 348      floating
+
+▸ a stubborn tile goes back while the pointer goes 120 points in the middle of it, the way it goes back
+> test windows: insist 76 268 43 360 650
+  (the hand holds nothing: 448 368 is not on the title bar of window 76 at 268 43 360 650)
+> drag 448 368 388 370 --steps 6 --duration 0.3 --hold 0 --no-release
+> resize 75 right 80
+resized w75
+> drag-on 328 372 --steps 12 --duration 0.8 --hold 0.5
+> release
+    (the button went down at 448,368, the pointer is at 448,368: it is on w76, below its top)
+  ✔ Arbor sent it 80 points, and not out of view
+  ✔ the tile did move under the button
+  ✔ nothing is taken for a drag
+  ✔ no drop preview is left
+  ✔ the stubborn one is a tile still
+  ✔ and so is its neighbor
+> test windows: relent 76
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          640 43 372 650
+  w75 12 43 324 650        docked
+  w76 348 43 280 650       docked focused
+  w77 270 140 480 348      floating
+> resize 75 right -80
+resized w75
+
+▸ a stubborn tile goes back while the pointer goes 120 points in the middle of it, the way Arbor sent it
+> test windows: insist 76 268 43 360 650
+  (the hand holds nothing: 448 368 is not on the title bar of window 76 at 268 43 360 650)
+> drag 448 368 508 370 --steps 6 --duration 0.3 --hold 0 --no-release
+> resize 75 right 80
+resized w75
+> drag-on 568 372 --steps 12 --duration 0.8 --hold 0.5
+> release
+    (the button went down at 448,368, the pointer is at 448,368: it is on w76, below its top)
+  ✔ Arbor sent it 80 points, and not out of view
+  ✔ the tile did move under the button
+  ✔ nothing is taken for a drag
+  ✔ no drop preview is left
+  ✔ the stubborn one is a tile still
+  ✔ and so is its neighbor
+> test windows: relent 76
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          640 43 372 650
+  w75 12 43 324 650        docked
+  w76 348 43 280 650       docked focused
+  w77 270 140 480 348      floating
+> resize 75 right -80
+resized w75
+
+▸ the control: the same tile taken by its title bar is dragged
+> drag 484 55 424 175 --steps 24 --duration 0.7 --then-mods cmd
+    (the button went down at 484,55, the pointer is at 484,55: it is on w76)
+  ✔ Arbor sees a drag
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          640 43 372 650
+  w75 12 43 244 650        docked
+  w76 268 43 360 650       docked focused
+  w77 270 140 480 348      floating
+
+▸ a window that is taken along by its background is dragged
+> test windows: by-background 77
+> click 650 330
+  (the hand holds nothing: 510 314 is not on the title bar of window 77 at 270 140 480 348)
+> drag 510 314 600 374 --steps 24 --duration 0.7 --no-release
+  ✔ Arbor sees a drag while the button is down
+  ✔ the window went along
+> release
+    (the button went down at 510,314, the pointer is at 510,314: it is on w77, below its top)
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          640 43 372 650
+  w75 12 43 244 650        docked
+  w76 268 43 360 650       docked
+  w77 360 200 480 348      floating focused
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+19 passed, 0 failed
+exit code 0

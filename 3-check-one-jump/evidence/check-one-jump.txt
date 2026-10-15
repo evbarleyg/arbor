@@ -1,0 +1,32 @@
+# check-one-jump 2026-10-15T16:16Z on macOS 26.6.2, commit 2c68340
+
+▸ a stubborn tile goes back while the pointer goes 120 points in the middle of it, the way it goes back
+  ✔ Arbor sent it 80 points, and not out of view
+  ✔ the tile did move under the button
+  ✔ nothing is taken for a drag
+  ✔ no drop preview is left
+  ✔ the stubborn one is a tile still
+  ✔ and so is its neighbor
+
+▸ a stubborn tile goes back while the pointer goes 120 points in the middle of it, the way Arbor sent it
+  ✔ Arbor sent it 80 points, and not out of view
+  ✔ the tile did move under the button
+  ✔ nothing is taken for a drag
+  ✔ no drop preview is left
+  ✔ the stubborn one is a tile still
+  ✔ and so is its neighbor
+
+▸ the control: the same tile taken by its title bar is dragged
+  ✔ Arbor sees a drag
+
+▸ a window that is taken along by its background is dragged
+  ✔ Arbor sees a drag while the button is down
+  ✔ the window went along
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+19 passed, 0 failed
