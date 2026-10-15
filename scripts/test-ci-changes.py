@@ -40,6 +40,7 @@ TABLE = [
     (NO, "only code that builds on Linux", pull(), dict(files=[CORE, CONTROLLER, TEST, DOC])),
     (NO, "the same with a Mac shell script", pull(), dict(files=[CORE, SHOTS])),
     (NO, "stand-ins that only Linux compiles", pull(), dict(files=[CORE, "scripts/typecheck-mac/stubs/AppKit/View.swift"])),
+    (NO, "stories that only Linux tells", pull(), dict(files=[CORE, "scripts/mac-on-linux/tests/main.swift", "scripts/mac-on-linux/known-failures.txt"])),
     (NO, "the Mac shell workflow and what runs the scripts there, which CI's own job does not use", pull(), dict(files=[
         ".github/workflows/mac-shell.yml", "scripts/ci-mac-shell.sh", "scripts/mac-shell/run.sh", "scripts/mac-shell/preflight.sh"])),
     (NO, "these rules, their table and the tools' self-tests, which Linux runs", pull(), dict(files=[

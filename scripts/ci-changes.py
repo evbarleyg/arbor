@@ -4,8 +4,8 @@
 A Mac is left out when it could prove nothing new, or nothing that will not be proved soon anyway:
 
   1. everything the pull request changes (for a push: everything since the commit before it) is
-     prose, or data the Linux job checks just as well: collab/, docs/, *.md, scripts/typecheck-mac/ (which
-     only Linux runs), the scripts in scripts/mac-shell/ that CI does not run (it runs e2e-drag.sh and compile-tools.sh, and
+     prose, or data the Linux job checks just as well: collab/, docs/, *.md, scripts/typecheck-mac/ and
+     scripts/mac-on-linux/ (which only Linux runs), the scripts in scripts/mac-shell/ that CI does not run (it runs e2e-drag.sh and compile-tools.sh, and
      with them lib.sh and its tools; and `swift test` on a Mac type-checks every helper tool there, *.swift and *.m),
      the Mac shell workflow, these rules, scripts/mac-queue.py and the tools' self-tests, which run on Linux,
      the Makefile, which the macOS job does not use, and what looks after the repository itself (scripts/public-*, git-hooks, .claude …);
@@ -56,7 +56,7 @@ import subprocess
 import sys
 
 PROSE = re.compile(
-    r"^(collab|docs|scripts/typecheck-mac)/|^scripts/mac-shell/(?!(e2e-drag\.sh|lib\.sh|compile-tools\.sh|state\.py|.*\.swift|.*\.m)$)|\.md$"
+    r"^(collab|docs|scripts/typecheck-mac|scripts/mac-on-linux)/|^scripts/mac-shell/(?!(e2e-drag\.sh|lib\.sh|compile-tools\.sh|state\.py|.*\.swift|.*\.m)$)|\.md$"
     # What CI's macOS job never runs. The Mac shell workflow is proved by a Mac shell run; the Linux jobs' own workflow, these rules and the
     # tools' self-tests by Linux.
     r"|^\.github/workflows/(mac-shell|linux)\.yml$|^scripts/ci-mac-shell\.sh$"
