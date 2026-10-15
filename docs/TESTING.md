@@ -875,7 +875,7 @@ What comes back in `.mac-shell/day-<run>/`:
 
 **Three controls**, without which a silent detector means nothing. *Without Arbor*: apps move their own windows, and so does macOS, so read a finding against the control before
 calling it Arbor's. *Sabotage*: `apptool set-frame`, `raise`, `activate` and `close` do to real windows what Arbor must never do, and a program that passes for Arbor (`impostor.swift`) does what only its own process can do wrong, one offence a step with honest steps between, and `jolts.py sabotage` fails
-unless every offence is reported by its own detector, by no other, and nothing where nothing was done. *The self-test*, part of `make lint`: some hundred and twenty situations, each with the finding it must or must not give.
+unless every offence is reported by its own detector, by no other, and nothing where nothing was done. *The self-test*, part of `make lint`: over a hundred situations, each with the finding it must or must not give.
 
 **What it cannot see**: two changes within one sample (a step during which the sampler saw nothing for more than 250 ms does not count as judged, and the report says `blind for … ms`; what it did see stands, because a gap
 can hide a move and cannot make one up), anything that is
