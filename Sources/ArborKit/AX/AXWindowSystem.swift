@@ -435,8 +435,8 @@ public final class AXWindowSystem: WindowSystem {
     if result.silent.contains(pid) {
       // `AXMover` says so only of an app that took the whole timeout.
       noteSilence(of: pid, since: uptime - TimeInterval(Self.messagingTimeout))
-      // By the time it answers again the user is somewhere else.
-      if let waiting = focusWhenFree, records[waiting]?.snapshot.pid == pid { focusWhenFree = nil }
+      // A focus that waits for it goes on waiting, for `answersAgain`. Should the person be somewhere else by then, they got there by
+      // switching apps or by a click, and either has ended the wait.
       return
     }
     // It was only slow. Reporting its windows makes the controller place the ones it could not move meanwhile. They are read
@@ -482,18 +482,24 @@ public final class AXWindowSystem: WindowSystem {
   }
 
   public func focus(_ window: WindowID) {
+    let waiting = focusWhenFree
     focusWhenFree = nil
     guard let record = records[window] else { return }
     guard answers(record.snapshot.pid) else {
       // A camera move moves the window and then gives it the focus, and the window that grows is the likeliest to be slow.
-      // Dropping the focus would leave the keyboard in a window that has just gone out of view.
-      if !unresponsive.contains(record.snapshot.pid) { focusWhenFree = window }
+      // Dropping the focus would leave the keyboard in a window that has just gone out of view. Nothing new is kept for an app that is
+      // known to hang; but whoever sees nothing happen and presses the same key again must not undo the first press.
+      if !unresponsive.contains(record.snapshot.pid) || waiting == window { focusWhenFree = window }
       return
     }
     // Making a window main and raising it takes its app some nine milliseconds; asking what has the focus, a fraction of one.
     if focusedWindow() == window { return }
     // That look asks the app in front, which may be this one and may have begun to hang: it has cost a second then, and is on record.
-    guard answers(record.snapshot.pid) else { return }
+    // Asking again would cost another. The window gets the keyboard when its app answers again (`answersAgain`).
+    guard answers(record.snapshot.pid) else {
+      focusWhenFree = window
+      return
+    }
     let pid = record.snapshot.pid
     let began = uptime
     let answer = record.element.setBool(kAXMainAttribute, true)
@@ -787,6 +793,13 @@ public final class AXWindowSystem: WindowSystem {
     }
     for window in windowIDs(of: pid) { refresh(window, userInitiated: true) }
     rescan([pid], afterSpaceSwitch: false)
+    if let waiting = focusWhenFree, records[waiting]?.snapshot.pid == pid {
+      // What was asked of it as it fell silent, unless the person has switched apps or clicked since.
+      focus(waiting)
+    } else {
+      // If it came forward while it was silent, nobody has heard which of its windows has the keyboard.
+      reportFocus(of: pid)
+    }
   }
 
   // MARK: Displays
@@ -1229,10 +1242,21 @@ public final class AXWindowSystem: WindowSystem {
   /// `appCameForward` reports its focused window.
   private func reportFocus(of pid: pid_t) {
     guard NSWorkspace.shared.frontmostApplication?.processIdentifier == pid else { return }
-    guard let app = apps[pid], answers(pid), let element = app.element.element(kAXFocusedWindowAttribute),
-      let window = windowID(of: element, pid: pid)
-    else {
-      // Finder after a click on the wallpaper, an app that is not observed: the keyboard left the known windows.
+    guard let app = apps[pid], answers(pid) else {
+      // An app that is not observed, or does not answer: `answersAgain` and `noteLate` come back to one that will.
+      keyboardLeftTheKnownWindows()
+      return
+    }
+    let began = uptime
+    guard let answer = app.element.elementIfAnswered(kAXFocusedWindowAttribute) else {
+      // It hangs as it comes forward. Unless that is on record, every further switch to it makes Arbor wait as long again, and nobody
+      // asks it once more when it wakes.
+      noteSilence(of: pid, since: began)
+      keyboardLeftTheKnownWindows()
+      return
+    }
+    guard let element = answer, let window = windowID(of: element, pid: pid) else {
+      // Finder after a click on the wallpaper: the keyboard left the known windows.
       keyboardLeftTheKnownWindows()
       return
     }
