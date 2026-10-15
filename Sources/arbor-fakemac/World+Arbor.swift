@@ -49,7 +49,8 @@ extension World {
 
     let arbor = Arbor(
       pid: pid, bundled: words[1] == "1", noHotkeys: flag("ARBOR_NO_HOTKEYS"),
-      noStatusItem: flag("ARBOR_NO_STATUS_ITEM"), onlyPIDs: onlyPIDs, settings: settings, world: self)
+      noStatusItem: flag("ARBOR_NO_STATUS_ITEM"), onlyPIDs: onlyPIDs, settings: settings, home: home,
+      world: self)
     self.arbor = arbor
     let controller = arbor.controller
     controller.saveSettings = { [weak self] in try self?.updateSettings(from: $0, to: $1) }

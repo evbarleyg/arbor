@@ -161,6 +161,11 @@ final class World {
   let loginItem = FakeLoginItem()
   /// Seconds since the world began. Controllers come and go; the clock they read does not start over.
   var elapsed: Double = 0
+  /// Every trace recorded so far, by its file's name in `<Arbor home>/traces`. They outlive the Arbor that
+  /// recorded them.
+  var traces: [String: MemoryTraceSink] = [:]
+  /// How many lines each of them had before the line that is happening now, for `Session.publish`.
+  var traceLinesBefore: [String: Int] = [:]
 
   // MARK: The outside
 
