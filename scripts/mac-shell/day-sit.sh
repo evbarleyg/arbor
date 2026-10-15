@@ -5,7 +5,7 @@
 #   scripts/mac-shell/run.sh scripts/mac-shell/day-sit.sh
 WALK_KIND=sit
 source "$(dirname "${BASH_SOURCE[0]}")/lib-walk.sh"
-walk_begin stock laptop defaults
+walk_begin stock "${DAY_DISPLAY:-laptop}" "${DAY_TILING:-defaults}"
 switch_click safari
 dock_key left
 switch_click terminal
