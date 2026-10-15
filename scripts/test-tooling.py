@@ -2161,10 +2161,10 @@ def check_ci_build_key():
         write("Sources/A.swift", "not committed\n")
         row("ci-build-key.sh: a checkout that differs from its commit has no name", key("products"), (2, None))
 
-# MARK: ci-keep-output.py
+# MARK: ci-keep-output.py and trace-to-test.py
 
 def check_recordings():
-    for tool in ("ci-keep-output.py",):
+    for tool in ("ci-keep-output.py", "trace-to-test.py"):
         done = subprocess.run([sys.executable, os.path.join(HERE, tool), "--self-test"], capture_output=True, text=True, check=False)
         row(f"{tool}: its own situations", (done.returncode, [line for line in done.stdout.splitlines() if line.startswith("✘")]), (0, []))
     with open(os.path.join(ROOT, ".github", "workflows", "mac-shell.yml"), encoding="utf-8") as handle:

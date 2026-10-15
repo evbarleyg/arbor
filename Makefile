@@ -148,6 +148,13 @@ replay: build
 film: build
 	@.build/debug/arbor-sim film "$(SCRIPT)" --out "$(OUT)" $(if $(FPS),--fps $(FPS))
 
+# Makes a test for every platform of a trace that came back from a hosted Mac: cuts it, reads it for anything private, puts it under
+# collab/evidence/traces/ and writes down what Arbor did (docs/TRACES.md, "From a run on a Mac to a test").
+#   make test-from-trace TRACE=.mac-shell/day-1/traces/day-9.jsonl NAME=leaving-full-screen SHOWS="Safari leaves full screen." [THROUGH="step 84"] [UNTIL=…] [CURE=<commit>]
+.PHONY: test-from-trace
+test-from-trace:
+	@python3 scripts/trace-to-test.py "$(TRACE)" "$(NAME)" --shows "$(SHOWS)" $(if $(THROUGH),--through "$(THROUGH)") $(if $(UNTIL),--until "$(UNTIL)") $(if $(CURE),--cure "$(CURE)") $(if $(APPS),--apps "$(APPS)")
+
 # Starts Arbor on damaged state.json and settings.json files, a fresh process each (docs/TESTING.md, "Launch fuzzing").
 # A sample, a few minutes; `scripts/fuzz-launch.py all` for everything, about an hour.
 fuzz: build

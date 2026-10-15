@@ -49,6 +49,7 @@ make trace NAME=x  # record a trace from the running Arbor into collab/evidence/
 make replay FILE=x # replay a trace against the real controller and see what happened
 make film SCRIPT=x OUT=y # play a film script against the real controller and write every frame down as JSON (docs/FILM.md)
 make reality    # on Linux: the same script rehearsed and on a hosted Mac, compared step by step; one number; `make reality-trunk` after a batch has landed (docs/TESTING.md, section 11)
+make test-from-trace TRACE=x NAME=y SHOWS="…"  # a trace that came back from a hosted Mac becomes a test for every platform (docs/TRACES.md)
 make attack     # hostile and broken clients against the control socket, for half a minute; after changing the socket
 make scenarios  # the documenter's user journeys (collab/scenarios); VERBOSE=1 for arbor-sim's output
 make parity     # score Arbor against TrellisWM; regenerates docs/FEATURES.md
@@ -107,7 +108,8 @@ against fakes.
    the arrangement out afresh, so it also catches a command that forgot to lay out.
 3. **arbor-sim** to see what happens: `make sim ARGS='"open A" "open B" "dock 101 left" "state"'`.
 4. **Traces** of real windows and real apps in `collab/evidence/traces/`: `make replay FILE=…` shows what macOS reported and
-   what the apps answered, line by line, and replays it against your controller (`docs/TRACES.md`).
+   what the apps answered, line by line, and replays it against your controller (`docs/TRACES.md`). Every Mac shell run brings its
+   traces back; whatever one of them taught you, keep as a test: `scripts/trace-to-test.py`.
 5. `make e2e` only if `arborctl status` reports Accessibility. Without a Mac, CI's
    `macos` job runs it, and a Mac shell script drives the real app with real drags,
    clicks and shortcuts and brings back screenshots (`docs/TESTING.md`, section 5).

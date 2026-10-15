@@ -20,6 +20,7 @@ arborctl trace next day-2 the second hour     # for whoever records all the time
 make trace NAME=safari-drag       # all of the above, a privacy check, and a copy into collab/evidence/traces/
 make trace-check FILE="<file>"    # every piece of free text in a trace, to read before committing it
 make replay FILE="<file>"         # the story as text, with drawings of the layout ([STRICT=1] [VERBOSE=1])
+make test-from-trace TRACE="<file>" NAME=<name> SHOWS="<a sentence>"     # a trace from a hosted Mac becomes a test for every platform (below)
 ```
 
 Arbor's home is `~/Library/Application Support/Arbor` (or `$ARBOR_HOME`). arbor-sim understands the `trace` commands too, so
@@ -468,7 +469,32 @@ problem endless enforcement
 takes every problem whose text contains those words off the list, and fails once there is none, so the test says when
 the bug is fixed and the line can go.
 
-**To add a trace**: `make trace NAME=<name>` (or copy the file), read what `make trace-check` lists, cut it short if it is long
+### From a run on a Mac to a test
+
+One command, where Swift is (on Linux: in the container):
+
+```bash
+scripts/trace-to-test.py .mac-shell/day-38652033829/traces/day-9.jsonl leaving-full-screen \
+  --shows "Safari leaves full screen while two windows are docked." --through "step 89" --cure 00d557e^..bd7f7c7
+```
+
+1. It **cuts** the trace after the step that matters: `--through "<words>"` keeps everything up to the next heading after the first remark that holds the words, `--until "<words>"` ends before that remark.
+2. It **leaves out the script's own questions** (`state`, `status`…, a third of most traces), and replays with and without them: Arbor must do exactly the same to the windows, or they stay.
+3. It **reads it for anything private**: titles must be tokens (`scripts/trace-check.py`); nothing that `scripts/public-check.py` would stop at a push; every app Apple's or Arbor's own test windows, or named with `--apps` by somebody who
+   knows that the Mac was nobody's.
+4. It **puts it** in `collab/evidence/traces/`, with a row in the README there.
+5. It **writes the `.expect` file** from the replay: for every window how often it was moved, where it ended up and in what state; whom Arbor asked to take the keyboard, who has it, what the view is on.
+6. It **proves that the test can fail**. `--cure <commit>` (or a branch, or `<the commit before the first>..<the last>` for a cure of several) builds a second Arbor, without that commit's changes to `Sources/ArborCore` and `Sources/ArborKit` (for a cure that has not landed: with them), a minute or
+   two. The expectations are written from the cured one, must hold there, and must not hold on the other; which of them fail goes into the README's last column. Without `--cure` it says that nobody has seen the test fail: it then only
+   holds today's behaviour in place.
+7. It **runs `TraceCorpusTests`**.
+
+If anything is amiss it says what and writes nothing. When Arbor's behaviour changes, and rightly, `scripts/trace-to-test.py --again <name>` (or `--again --all`) writes the lines below the mark anew and prints what changed; what a person wrote above the
+mark stays. Read the difference: each line is something a person at that Mac would have seen.
+
+What it cannot do: show a fault that lies below the seam (in `AXWindowSystem`, the event taps, AppKit), see "Known limits"; and cut a trace at the front.
+
+**To add a trace by hand**: `make trace NAME=<name>` (or copy the file), read what `make trace-check` lists, cut it short if it is long
 (a trace is text: delete lines from the end, or record again with less in it), look at `make replay`, add a line to
 `collab/evidence/traces/README.md` and, if the end state matters, an `.expect` file. From a cloud Mac:
 `scripts/mac-shell/trace-demo.sh` is the example (`docs/TESTING.md`, "Seeing the real app from anywhere").
