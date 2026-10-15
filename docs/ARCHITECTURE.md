@@ -154,7 +154,8 @@ the slot. A window out of view is asked in its corner, while the others move (`a
 goes on to the middle of it if it turns out unable to, once. A size that cannot be changed is known
 beforehand (`isResizable`, `noteFixedSizes`). A window that once stopped short of a slot is sent straight to the middle of the next, still asked for
 the whole size, so it costs nothing to find out that it can grow again. To
-the eye a question and the move after it are what one `setFrame` has always been (`FramePlan`: size, position, size); tests look at the
+the eye a question, which in view only ever makes a window shrink, and the move after it are what one `setFrame` is (`FramePlan`: what shrinks is sized first,
+what grows is moved first). Tests look at the
 road a window takes (`FakeWindowSystem.detour`), and `Budget.questions` counts what it costs.
 
 A window that gives no such sign is **asked again where nobody can see** (`Controller+LearnedSizes.swift`). A tile's

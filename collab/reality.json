@@ -2300,11 +2300,15 @@
    "guards": [
     "test: aSetFrameBringsAsManyReportsAsOnAMac",
     "test: aWindowAtItsMinimumIsNotCutShort",
-    "test: aChangeOfSizeTakesTheFullPlan",
+    "test: whatGrowsIsMovedFirst",
+    "test: aWindowCannotGrowIntoAFrameThatHangsOverTheEdgeSoItGrowsFirst",
+    "test: aWindowThoughtToShrinkThatEndsUpSmallerThanAskedIsAskedAgainWhereItIs",
+    "test: everyStateLiesWithinTheOldFrameOrTheNewOne",
+    "test: byTodaysOrderOfCallsNothingIsCutOnTheWay",
     "test: anythingRightAfterAMoveIsAnEcho",
     "test: aWrongBeliefAboutTheSizeIsCaughtByReadingBack"
    ],
-   "copes": "FramePlan.full sets size, position, size, and EchoFilter takes the stages in between for echoes. A shortened plan is read back and followed by the full one if the size is not right.",
+   "copes": "FramePlan sizes first what shrinks, then moves, and sizes last what grows, so a window whose frame is known, and whose app moves it at once, grows where it ends up; a window of which no frame is known gets size, position, size, and so does one that grows into a frame that hangs over its display's edge, where growth would be cut. EchoFilter takes the stages in between for echoes. The frame is read back (FramePlan.makingUp): if the size was never asked for and is not right the full plan follows; if it was asked for before the move only and the window is smaller than asked, it is asked once more where the window is by then. For an app that moves late the size still arrives at the old place and is cut there: an answer that ends on such a line may be the screen's and not the window's, so `place` asks once more (Controller.mayHaveBeenStoppedByTheScreen). FramePlan.wasCutWhereItStood is the same fact as a pure function, with the answers measured on a Mac as its tests; nobody calls it yet, and one of the two is to go under the other.",
    "hurt": 3,
    "touches": [
     "jolt"
@@ -3406,7 +3410,7 @@
    "id": "an-app-answers-a-move-inside-the-echo-window",
    "kind": "timing",
    "layer": "below the seam",
-   "expected": "What is reported right after Arbor's move is the echo of Arbor's move. Another frame then is a stage of that move, because size, position and size are set one after the other.",
+   "expected": "What is reported right after Arbor's move is the echo of Arbor's move. Another frame then is a stage of that move, because size and position are set one after the other.",
    "happened": "An app can move or resize its window back within 0.05 to 0.1 s of being placed. Within the first 0.15 s the report was swallowed as the echo: the Accessibility layer said no more, Arbor believed the window docked where it was not, and it stayed out of its place for good. At 0.4 s there were two rounds of a fight, then the same silence.",
    "found": "The review of the Accessibility layer, and traces of a test window that moves itself back, on a hosted Mac (stubborn-fast, stubborn-slow). The real-window runner plays it since. The traces say themselves that the swallowed report lies below what a trace records.",
    "modelled": "partly",
