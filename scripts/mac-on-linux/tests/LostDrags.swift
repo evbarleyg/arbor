@@ -100,6 +100,70 @@ func tellOfLostDrags(_ book: Book) {
     }
   }
 
+  // Coarse steps, as scripts/mac-shell/pointer.swift makes them of a long drag: 30 steps of 42 and of 66 points, a tenth of a second apart. On a hosted Mac three of four such drags were
+  // never taken for drags.
+  let large = FakeMac.Screen(id: 1, name: "Large", frame: CGRect(x: 0, y: 0, width: 2560, height: 1440), visibleFrame: CGRect(x: 0, y: 31, width: 2560, height: 1340))
+  let lateness: [(words: String, start: TimeInterval, always: TimeInterval)] = [
+    ("on time", 0, 0), ("50 ms late to start", 0.05, 0), ("100 ms late to start", 0.1, 0), ("50 ms behind all the way", 0, 0.05), ("100 ms behind all the way", 0, 0.1),
+  ]
+  for step in [42, 66] {
+    for late in lateness {
+      for ahead in [
+        "", ", the pointer read a step late", ", and then a step ahead of the pointer", ", and then a step ahead of the pointer, and the app says nothing until it is over",
+      ] {
+        let words = "a window is dragged in 30 steps of \(step) points, the window server \(late.words)\(ahead)"
+        book.story(words) { story in
+          var window: FakeMac.Window!
+          let one = StoreyOne(story) { mac in
+            mac.setScreens([large], notices: 1)
+            window = mac.open("window", in: mac.launch("Notes"), frame: CGRect(x: 100, y: 100, width: 400, height: 300))
+          }
+          one.mac.serverFollowsPointerAfter = late.start
+          one.mac.serverLagsPointerBy = late.always
+          one.mac.pointerIsReadOneStepLate = ahead.contains("read")
+          one.mac.serverRunsAStepAhead = ahead.contains("ahead")
+          window.app.isSilentDuringDrags = ahead.contains("nothing")
+          let further = ahead.contains("ahead") ? CGPoint(x: CGFloat(step), y: 10) : .zero
+          let pressed = one.mac.now
+          one.mac.drag(from: grip, to: CGPoint(x: grip.x + CGFloat(step * 30), y: grip.y + 300), steps: 30, interval: 0.1, rest: 0.02)
+          one.mac.release()
+          one.mac.pass(3)
+          let short = account(one, window, pressedAt: pressed)
+          story.check("the window has moved", window.bounds.origin == CGPoint(x: 100 + CGFloat(step * 30) + further.x, y: 400 + further.y), window.bounds.text)
+          story.check("the drag is reported to begin", one.heard.all.contains(.dragBegan(window.number)), short)
+          story.check("and to end, so that there is a drop to act on", one.heard.all.contains(.dragEnded(window.number)), short)
+          story.check("Arbor knows where the window is", one.snapshot(window)?.frame == window.bounds, "\(one.snapshot(window)?.frame.text ?? "")")
+          one.mac.note("IN SHORT: \(short)")
+        }
+      }
+    }
+  }
+
+  // The other side of the same coin: a selection, during which the window does something by itself. Never a drag, never a resize.
+  let own: [(words: String, change: (CGRect) -> CGRect)] = [
+    ("moves the pointer's way", { $0.offsetBy(dx: 40, dy: 0) }), ("moves the pointer's way, as far as the pointer has gone", { $0.offsetBy(dx: 80, dy: 0) }),
+    ("moves against the pointer", { $0.offsetBy(dx: -40, dy: 0) }), ("moves across the pointer's way", { $0.offsetBy(dx: 0, dy: 40) }),
+    ("moves aslant, half the pointer's way", { $0.offsetBy(dx: 30, dy: 30) }), ("is resized", { CGRect(x: $0.minX, y: $0.minY, width: $0.width + 40, height: $0.height) }),
+  ]
+  for what in own {
+    book.story("text is selected over 120 points, and meanwhile the window \(what.words), by itself") { story in
+      let (one, window) = stage(story)
+      one.mac.press(at: CGPoint(x: 200, y: 250))
+      one.mac.pass(0.15)
+      for part in 1...12 {
+        one.mac.moveMouse(to: CGPoint(x: 200 + CGFloat(part) * 10, y: 250))
+        one.mac.pass(0.05)
+        if part == 8 { one.mac.appMoves(window, to: what.change(window.frame)) }
+      }
+      one.mac.pass(0.3)
+      one.mac.release()
+      one.mac.pass(2)
+      story.check("it is not taken for a drag", !one.heard.all.contains(.dragBegan(window.number)), one.heard.texts)
+      story.check("nor for a resize by hand", !one.heard.all.contains(.resizeBegan(window.number)), one.heard.texts)
+      story.check("Arbor knows where the window is", one.snapshot(window)?.frame == window.frame, "\(one.snapshot(window)?.frame.text ?? "")")
+    }
+  }
+
   // What a person sees of it.
   for wait in [0, 100] {
     let words = wait > 0 ? ", and the window server begins to move it \(wait) ms after the press, with the pointer 40 points away" : ""

@@ -66,6 +66,14 @@ public final class FakeMac: @unchecked Sendable {
   public var mouseDownIsLateBy: TimeInterval = 0
   /// A loaded Mac. The window server begins to move a window that is dragged so long after the press, and then catches up with the pointer.
   public var serverFollowsPointerAfter: TimeInterval = 0
+  /// A loaded Mac. The window server has a dragged window where the pointer was so long ago, all through the drag. (A hosted Mac: 27 points at the first look, the
+  /// window still in its place.)
+  public var serverLagsPointerBy: TimeInterval = 0
+  /// With the button down `NSEvent.mouseLocation` says where the pointer was one movement ago, so that a dragged window is a step ahead of the pointer as read. Guess.
+  public var pointerIsReadOneStepLate = false
+  /// The window server has a dragged window one movement further than the pointer has gone, and leaves it there. (A hosted Mac: the window ended 67 points further than
+  /// the pointer travelled, which was one step of that drag. Why is not known.)
+  public var serverRunsAStepAhead = false
   /// Whether Arbor has the Accessibility permission. Without it every call is refused with `apiDisabled`.
   public var isTrusted = true
 
