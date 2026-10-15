@@ -46,6 +46,8 @@ extension Controller {
     // Worked out once: before the app has registered any, every asking reads the whole of the settings' bindings again.
     let bindings = bindingsInEffect
     return MenuModel(sections).showingShortcuts { self.shortcut(for: $0, among: bindings) }
+      // Arbor does not write to a file it cannot read. Greyed out under the row that says so and opens the file.
+      .mapItems { settingsFileProblem != nil && $0.command?.changesSettings == true ? $0.enabled(false) : $0 }
       .mapItems { item in
         guard holdLevel == .view else { return item }
         // They open a window, Arbor's own or another app's, over what is being shown. Quitting is a way out.
@@ -93,14 +95,15 @@ extension Controller {
       states.append([Item.text("Arbor is starting…")])
     }
     if !holdState.isEmpty { states.append(holdState.map(item)) }
-    // What the ticked row in Focused Window ▸ does: that is a submenu, and in this state no key helps.
-    if let notice = passThroughNotice {
-      states.append([shortcutsOffInThisApp.command.map { Item.command(notice + " · Turn On", $0).withoutShortcut() } ?? Item.text(notice)])
-    }
+    // Before the state that only a change of settings ends: the topmost way out is never greyed out.
     if let problem = settingsFileProblem {
       // Where, not what: "line 3, column 3". The file's own editor and `doctor` have room for the rest.
       let place = problem.split(separator: ":", maxSplits: 1).first.map(String.init) ?? problem
       states.append([Item.app("Settings.json has a mistake: \(place) · Settings File…", .openSettingsFile)])
+    }
+    // What the ticked row in Focused Window ▸ does: that is a submenu, and in this state no key helps.
+    if let notice = passThroughNotice {
+      states.append([shortcutsOffInThisApp.command.map { Item.command(notice + " · Turn On", $0).withoutShortcut() } ?? Item.text(notice)])
     }
     // What no command ends. The words before the brackets are the news, and as long as a menu's line should be; which file has the rest
     // is in the tooltip, and in `status`.

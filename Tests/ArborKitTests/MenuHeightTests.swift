@@ -127,7 +127,7 @@ import Testing
         == ["Holding still · Release"] + mistake)
     #expect(
       lines("shortcuts are off here and settings.json has a mistake")
-        == ["Shortcuts are off in “Safari” · Turn On"] + mistake)
+        == mistake + ["Shortcuts are off in “Safari” · Turn On"])
     #expect(
       lines("the arrangement was repaired and settings.json has a mistake")
         == mistake + ["The saved arrangement needed 1 repair when it was read"])

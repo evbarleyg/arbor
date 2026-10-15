@@ -247,6 +247,20 @@ public enum SettingsCommand: Equatable, Sendable, Codable {
   }
 }
 
+extension Command {
+  /// Whether it writes to settings.json, so that it is refused while the file cannot be read (`Controller.refusalToChangeSettings`). For a
+  /// menu, which greys out what would fail. `MenuTests` chooses every row with a mistake in the file, and finds what is missing here.
+  public var changesSettings: Bool {
+    switch self {
+    case .exclude, .include, .passThrough, .toggleAutoDock: true
+    // It replaces the file, which is one of the two ways out of the mistake.
+    case .settings(.resetAll(everything: true)): false
+    case .settings(let command): command.saves
+    default: false
+    }
+  }
+}
+
 extension Settings {
   /// Drops everything `bindings` says about `chord`, however the user spelt it (`opt+ctrl+Space`),
   /// including an entry that could not be read. What `bind` and `unbind` do first.
