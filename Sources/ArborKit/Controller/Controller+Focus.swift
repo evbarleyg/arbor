@@ -178,6 +178,15 @@ extension Controller {
     keyboardHandOver.waiting = nil
   }
 
+  /// Called whenever a look finds the keyboard somewhere else (`noteFocus`), with or without a report. That the view followed it from `holder` to
+  /// another window is over once it is back in `holder`, or has gone on after the time in which a going could still belong to it. Kept, the
+  /// record made the going of `holder`, seconds later and with the keyboard in it, the late end of that story, and no loss: nobody got the
+  /// keyboard. Within that time a third window changes nothing: an app can name two on the way.
+  func theKeyboardHasGoneOn(to window: WindowID?) {
+    guard let reveal = keyboardHandOver.reveal, reveal.window != window else { return }
+    if reveal.holder == window || now().timeIntervalSince(reveal.time) >= Self.handOverTime { keyboardHandOver.reveal = nil }
+  }
+
   /// Whether `id` had the keyboard until now, or until the report that just moved the view or is waiting to. Ask before
   /// forgetting the window.
   func hadKeyboard(_ id: WindowID) -> Bool {

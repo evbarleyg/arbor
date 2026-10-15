@@ -83,6 +83,7 @@ extension Controller {
     if let focus = following.focus, focus.window == window { return }
     following.focus = (window, now())
     following.lead.focusChanged()
+    theKeyboardHasGoneOn(to: window)
   }
 
   /// Whether the command being performed follows the pointer or the keyboard.
