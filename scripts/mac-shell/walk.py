@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Writes a walk: a journey for a real Mac, made from a seed, in the words of lib-walk.sh.
 
-  walk.py <seed> [--acts n] [--display laptop|desk|two] [--tiling defaults|off]   prints the script, to be saved as <seed>.sh
-  walk.py <seed> --control                                                        prints its control, which plays <seed>.sh beside it without Arbor
+  walk.py <seed> [--acts n] [--display laptop|desk|two] [--tiling defaults|off] [--reduce-motion on]   prints the script, to be saved as <seed>.sh
+  walk.py <seed> --control                                   prints its control, which plays <seed>.sh beside it without Arbor
   walk.py --self-test
 
 The same seed gives the same walk, on any machine and any version of Python. The kinds of act come in the proportions docs/VIABLE.md asks of the whole
@@ -148,15 +148,18 @@ def walk(seed, acts, two=False):
     return lines
 
 
-def script(seed, acts, display, tiling, control):
+def script(seed, acts, display, tiling, control, still=False):
     head = [
         "#!/bin/bash",
-        f"# A walk from the seed {seed}: scripts/mac-shell/walk.py {seed} --acts {acts} --display {display} --tiling {tiling}" + (" --control" if control else ""),
+        f"# A walk from the seed {seed}: scripts/mac-shell/walk.py {seed} --acts {acts} --display {display} --tiling {tiling}"
+        + (" --reduce-motion on" if still else "") + (" --control" if control else ""),
         "# Written by a program. Change the program, not this file.",
     ]
     if control:
         # The same script, so that what it brings back is told to be the same journey: only Arbor is missing.
         return "\n".join(head + ["export WALK_WITHOUT_ARBOR=1", f'exec "$BASH" "$(dirname "${{BASH_SOURCE[0]}}")/{seed}.sh"']) + "\n"
+    # With Reduce Motion on Arbor puts up no stage, and every move of every window shows.
+    head += ["WALK_REDUCE_MOTION=on"] if still else []
     head += ['source "$(dirname "${BASH_SOURCE[0]}")/lib-walk.sh"', f"walk_begin stock {display} {tiling} {seed}"]
     return "\n".join(head + walk(seed, acts, display == "two") + ["walk_end"]) + "\n"
 
@@ -183,6 +186,9 @@ def self_test():
     plain = [line for line in walk("4711", 110, two=True) if line.split()[0] not in ("display", "send_across")]
     if plain[:60] != walk("4711", 110)[:60]:
         failures.append("with a second display the rest of the walk is another walk")
+    moving, still = script("4711", 110, "laptop", "off", False).split("\n"), script("4711", 110, "laptop", "off", False, still=True).split("\n")
+    if [line for line in still[2:] if line != "WALK_REDUCE_MOTION=on"] != moving[2:] or still.index("WALK_REDUCE_MOTION=on") > still.index(moving[3]):
+        failures.append("with Reduce Motion on it is another walk, or the library hears of it too late")
     words = {line.split()[0] for seed in range(200) for line in walk(seed, 110, two=True)}
     missing = WORDS - words
     if missing:
@@ -209,7 +215,7 @@ def main(arguments):
         print(__doc__)
         return 64
     seed, rest = arguments[0], arguments[1:]
-    options = {"--acts": "110", "--display": "laptop", "--tiling": "defaults"}
+    options = {"--acts": "110", "--display": "laptop", "--tiling": "defaults", "--reduce-motion": "off"}
     control = "--control" in rest
     rest = [word for word in rest if word != "--control"]
     for name, value in zip(rest[::2], rest[1::2]):
@@ -217,7 +223,7 @@ def main(arguments):
             print(f"walk.py: no option {name}", file=sys.stderr)
             return 64
         options[name] = value
-    print(script(seed, int(options["--acts"]), options["--display"], options["--tiling"], control), end="")
+    print(script(seed, int(options["--acts"]), options["--display"], options["--tiling"], control, options["--reduce-motion"] == "on"), end="")
     return 0
 
 
