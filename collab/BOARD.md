@@ -180,6 +180,8 @@ Each train lands whole or not at all, and is judged by the loop of #4, section 2
 
 **Ships:** on, as the motion is. If it fails, the first step stays and the train goes back.
 
+Also for this train: pin, unpin and letting go of a pin move the docked windows at once, without the motion (two layouts of different rooms are not views of one plane). Each window moves once and it is the person's own act, so it ships; in a film it will read as a glitch.
+
 ### 3.2 Tab groups (F04, F34) · J
 
 **For a person:** windows that belong together share one place under a strip of tabs, and move as one.
