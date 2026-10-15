@@ -72,10 +72,11 @@ import Testing
   /// - Parameter framing: the window the view is on when the Mac is shut down; nil: everything shows.
   func evening(_ shape: Shape, framing: Int? = nil) -> Evening {
     let h = Harness(displays: [Self.wide])
+    // In pieces: as one expression Swift 6.2 gives up on it ("unable to type-check this expression in reasonable time").
+    let apps = ["Safari", "Notes", "Mail", "Terminal"]
     let ids = (0..<shape.count).map { index in
-      h.system.open(
-        app: ["Safari", "Notes", "Mail", "Terminal"][index], pid: Int32(500 + index),
-        frame: CGRect(x: 200 + 90 * index, y: 120 + 60 * index, width: 700, height: 500))
+      let frame = CGRect(x: 200 + 90 * index, y: 120 + 60 * index, width: 700, height: 500)
+      return h.system.open(app: apps[index], pid: Int32(500 + index), frame: frame)
     }
     let loose = h.system.open(app: "Music", pid: 600, frame: CGRect(x: 1700, y: 700, width: 200, height: 150))
     h.start()

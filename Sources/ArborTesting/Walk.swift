@@ -258,9 +258,10 @@ public struct Walk: Equatable, Sendable {
   public var text: String {
     var begin = ["walk_begin", setting.cast.rawValue, setting.display.rawValue, setting.tiling.rawValue, setting.seed]
     if !setting.commit.isEmpty { begin.append(setting.commit) }
-    let lines =
-      ["#!/bin/bash"] + head.map { "# \($0)" } + [Self.source, begin.joined(separator: " ")] + words.map(\.text) + ["walk_end"]
-      + foot.map { "# \($0)" }
+    // In pieces: as one sum Swift 6.2 gives up on it ("unable to type-check this expression in reasonable time").
+    var lines = ["#!/bin/bash"] + head.map { "# \($0)" }
+    lines += [Self.source, begin.joined(separator: " ")] + words.map(\.text) + ["walk_end"]
+    lines += foot.map { "# \($0)" }
     return lines.joined(separator: "\n") + "\n"
   }
 
