@@ -173,6 +173,10 @@ public protocol WindowSystem: AnyObject {
   /// macOS takes the window, Arbor stands aside (`MacTiling`). No default: in a wrapper that forgot to pass it on, the fight
   /// over the window would be back in silence.
   func macTiling() -> MacTiling
+
+  /// What macOS itself does at a double-click on a title bar, as it is set right now (F14). No default either: a wrapper that
+  /// forgot to pass it on would take title bars from people who have told macOS to minimize there.
+  func macTitleBarAction() -> MacTitleBarAction
 }
 
 extension WindowSystem {
@@ -244,9 +248,21 @@ public protocol WindowSystemEvents: AnyObject {
   /// A window that was open all along has come to notice: its macOS Space is showing for the first time
   /// since `start()`. Nobody just opened it, which is what `windowAppeared` says.
   func windowFound(_ window: WindowSnapshot)
+  /// The second press of a double-click has gone to `window`'s app. macOS has an action of its own for one on a title
+  /// bar, and whoever puts windows back must not undo it.
+  func doubleClickReached(_ window: WindowID)
+  /// The second click of a double-click arrived at `point`, with no modifier keys held. Returns whether
+  /// it was Arbor's. On macOS only an event tap can keep a click from an app, and it has to decide before
+  /// the controller can be asked, so `DoubleClickTap` decides from a copy of
+  /// `Controller.doubleClickZones()` and runs the command; this does the same in one step.
+  @discardableResult
+  func doubleClicked(at point: CGPoint) -> Bool
 }
 
 extension WindowSystemEvents {
   /// To a listener that makes no difference between the two, a window that was found is one more window.
   public func windowFound(_ window: WindowSnapshot) { windowAppeared(window) }
+
+  /// It matters only to a listener that puts windows back.
+  public func doubleClickReached(_ window: WindowID) {}
 }

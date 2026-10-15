@@ -213,11 +213,20 @@ public struct Settings: Codable, Equatable, Sendable {
   /// Windows moved out of view are also shrunk (to 320 × 200 at most) until they come back.
   public var shrinkOutOfView: Bool = false
   /// The one switch for whatever needs an event tap: the pinch, ⌃⌥ + scroll, the ⌃⌥ rectangle, ⇧-drag on the Desktop, the guard of
-  /// the wallpaper click. Off, Arbor installs no event tap, whatever their own settings say (`Controller.inputSettings`). A key of
+  /// the wallpaper click, double-clicks on title bars and the Desktop. Off, Arbor installs no event tap, whatever their own settings say (`Controller.inputSettings`). A key of
   /// its own because a settings.json written by an earlier build holds theirs as they were then, and cannot hold this one
   /// (collab/QUESTIONS.md, Q26).
   /// Off as Arbor ships: no tap goes in at launch until all its checks of the taps on a Mac are green.
   public var pointerGestures: Bool = false
+  /// Double-clicking a docked window's title bar frames the window, and again goes back, in place of
+  /// macOS's own title-bar action. Floating windows keep macOS's, and so do docked ones while this is off, or while macOS is
+  /// set to minimize or to do nothing there. It ships on once scripts/mac-shell/check-F14.sh has passed on a hosted Mac.
+  public var titleBarDoubleClick: Bool = false
+  /// Double-clicking bare Desktop moves the camera to the Desktop, and again goes back. Off as long as macOS's "Click
+  /// wallpaper to reveal desktop" sweeps every window aside at the first click: the same script says when that is over.
+  public var desktopDoubleClick: Bool = false
+  /// How many points at the top of a docked window count as its title bar, from 10 to 80.
+  public var titleBarHeight: Double = 28
 
   public init() {}
 
@@ -293,6 +302,7 @@ public struct Settings: Codable, Equatable, Sendable {
     case minimapDuration
     case shareRemovedSpace, shrinkOutOfView
     case pointerGestures
+    case titleBarDoubleClick, desktopDoubleClick, titleBarHeight
   }
 
   public init(from decoder: any Decoder) throws {
@@ -399,5 +409,8 @@ public struct Settings: Codable, Equatable, Sendable {
     try read(.shareRemovedSpace, into: &shareRemovedSpace)
     try read(.shrinkOutOfView, into: &shrinkOutOfView)
     try read(.pointerGestures, into: &pointerGestures)
+    try read(.titleBarDoubleClick, into: &titleBarDoubleClick)
+    try read(.desktopDoubleClick, into: &desktopDoubleClick)
+    try read(.titleBarHeight, into: &titleBarHeight)
   }
 }

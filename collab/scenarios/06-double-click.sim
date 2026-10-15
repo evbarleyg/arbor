@@ -1,0 +1,49 @@
+# Story: someone who would rather use the mouse moves the view with double-clicks. A docked window's title
+# bar frames that window, and the same double-click again goes back. Anywhere else a double-click
+# belongs to the app under it. A tile opens on the first click, so the second click of a double-click on
+# one goes nowhere instead of landing in the window just framed.
+# Reference: T40 T51. The display is 1440x900 with a 25-point menu bar and 12-point gaps.
+# Off as Arbor comes, and under the switch for everything that needs an event tap.
+set pointerGestures true
+expect ok
+set titleBarDoubleClick true
+expect ok
+open Safari
+open Notes
+open Mail 300x200
+dock 101 left
+dock 102 right
+# 101 is at 12,37 (464x851), the Desktop at 488,37, 102 at 964,37; 103 floats at 488,200.
+dblclick 200 50
+expect ok
+expect camera 101
+expect fills 101
+expect hidden 102
+expect hidden 103
+# Its title bar is at the top of the display now.
+dblclick 900 50
+expect ok
+expect camera root
+expect visible 102
+expect visible 103
+# A window's content, a floating window's title bar and content, the gap between two spaces.
+dblclick 200 400
+expect fail
+dblclick 600 210
+expect fail
+dblclick 600 300
+expect fail
+dblclick 482 400
+expect fail
+# The bare Desktop (T39) has a switch of its own, `desktopDoubleClick`, which is off.
+dblclick 720 800
+expect fail
+expect camera root
+# Xcode wants more room than its neighbours can spare and becomes a tile: n4 (n1 = 101, n2 = everything, n3 = 102, n4 = 104, n5 = column).
+open Xcode 700x500 min 1200x600
+dock 104 beside 102 bottom
+expect tile 104
+tile n4 2
+expect ok
+expect camera 104
+expect fills 104

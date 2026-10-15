@@ -37,7 +37,7 @@ import Foundation
 //   pull <id> <edge> <points> [<edge> <points>]
 //                                drag a window's edges with the mouse (positive grows it)
 //   seam <index> <delta>         drag the index-th seam handle
-//   tile <node>                  click a tile
+//   tile <node> [2]              click a tile, which opens it, or double-click it
 //   flush                        run pending scheduled work (saves, enforcement)
 //   quiet | loud                 stop/start printing the layout after each step
 //   display <match> <key> <value>  add an entry to the per-display options, e.g. display main gap 30
@@ -53,6 +53,8 @@ import Foundation
 //   macos defaults|tidy          Desktop & Dock is set as macOS comes (its own tiling and the wallpaper click are on), or
 //                                with nothing in Arbor's way; `doctor` says what it makes of it
 //   What Arbor says on screen after a step (a `press`, a drag, a click on a tile) is printed as `on screen: …`.
+//   dblclick <x> <y>             double-click there: a docked window's title bar, the Desktop, or
+//                                anything else, which Arbor leaves alone (the command then fails)
 //   expect <form>                check the layout (collab/README.md, "Scenarios"); a form
 //                                that does not hold prints EXPECTATION FAILED and makes
 //                                arbor-sim exit with code 1 at the end
@@ -426,9 +428,17 @@ func simulate(_ words: [String], harness: Harness, printLayout: inout Bool) -> (
     harness.overlays.dragSeam(seams[index], by: CGFloat(delta))
     return ("dragged seam \(index) by \(Int(delta))", true)
   case "tile":
-    guard words.count > 1, let node = NodeID(word: words[1]) else { return usage("tile <node>") }
+    guard words.count > 1, let node = NodeID(word: words[1]), words.count == 2 || words[2] == "2" else {
+      return usage("tile <node> [2]")
+    }
+    guard let tile = harness.overlays.tiles[harness.display]?.first(where: { $0.node == node }) else {
+      return ("error: \(node) is not a tile", false)
+    }
     harness.overlays.clickTile(node)
-    return ("clicked tile \(node)", true)
+    guard words.count > 2 else { return ("clicked tile \(node)", true) }
+    // The tile is gone after the click that opened it; the second lands on whatever is there now.
+    let swallowed = system.secondClick(at: tile.frame.center)
+    return ("clicked tile \(node); the second click \(swallowed ? "went nowhere" : "reached what is there now")", true)
   case "flush":
     harness.scheduler.runPending()
     return ("ran pending work", true)
@@ -637,6 +647,12 @@ func simulate(_ words: [String], harness: Harness, printLayout: inout Bool) -> (
     guard let spot else { return ("error: \(words[1]) is not on the minimap", false) }
     harness.overlays.clickMinimap(at: spot)
     return ("clicked \(words[1]) in the minimap", true)
+  case "dblclick":
+    guard let x = number(1), let y = number(2), x.isFinite, y.isFinite else { return usage("dblclick <x> <y>") }
+    let point = CGPoint(x: x, y: y)
+    let command = harness.controller.doubleClickZones().action(at: point)
+    let handled = system.doubleClick(at: point)
+    return (handled ? "double-click: \(command?.text ?? "swallowed")" : "error: the double-click is not Arbor's", handled)
   default:
     if let outcome = simulateHands(words, harness: harness) { return outcome }
     let result = harness.run(words.joined(separator: " "))

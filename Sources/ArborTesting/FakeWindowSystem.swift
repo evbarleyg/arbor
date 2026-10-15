@@ -40,6 +40,10 @@ public final class FakeWindowSystem: WindowSystem {
     public internal(set) var movesNotArbors = 0
     /// The app changed its ways since Arbor last asked it for anything.
     public internal(set) var changedItsWays = false
+    /// macOS has zoomed it: the frame it got, and the one it had, to which the next zoom returns it.
+    var zoom: (to: CGRect, from: CGRect)?
+    /// How often it has been double-clicked.
+    public internal(set) var doubleClicks = 0
 
     public static func == (a: FakeWindow, b: FakeWindow) -> Bool {
       a.snapshot == b.snapshot && a.minimumSize == b.minimumSize && a.maximumSize == b.maximumSize
@@ -65,6 +69,8 @@ public final class FakeWindowSystem: WindowSystem {
   /// Since when the pointer has been where macOS fills the screen, which it does only for a pointer that has rested there.
   private var inMenuBarSince: Double?
   public var mouseDown = false
+  /// System Settings → Desktop & Dock → "Double-click a window's title bar to".
+  public var titleBarAction = MacTitleBarAction.fill
   /// The window being resized by its edges until the mouse is released.
   public internal(set) var resizing: WindowID?
   public private(set) var started = false

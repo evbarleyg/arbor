@@ -27,6 +27,7 @@ private final class Recorder: WindowSystemEvents {
   func dragCancelled(_ id: WindowID) {}
   func windowReplaced(_ old: WindowID, by window: WindowSnapshot) { log.append("replaced \(old) by \(window.id)") }
   func pointerPressed() {}
+  func doubleClicked(at point: CGPoint) -> Bool { false }
 }
 
 /// The fake window system reports what macOS 26 was recorded to report, in that order

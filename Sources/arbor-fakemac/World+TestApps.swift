@@ -129,7 +129,6 @@ extension World {
     }
     forget(.window(id))
     counts[id] = nil
-    zoomedFrom[WindowID(id)] = nil
     extras[id] = nil
     system.close(WindowID(id))
     switch held {

@@ -155,19 +155,29 @@ extension Controller {
     pausedFrames.removeAll()
   }
 
-  /// The settings the pointer taps should follow: the user's, with pinch and rectangle framing off
-  /// while paused, while an app that keeps its own ⌃⌥ is frontmost (Controller+PassThrough.swift) and
-  /// without Accessibility permission, so that no event passes through Arbor; and while the view is held, so
-  /// that a slip of the fingers draws no band on a shared screen. And for as long as `pointerGestures` is off.
+  /// The settings the pointer taps should follow: the user's, with pinch, rectangle framing and
+  /// double-clicks off while paused, while an app that keeps its own ⌃⌥ is frontmost
+  /// (Controller+PassThrough.swift) and without Accessibility permission, so that no event passes through Arbor; and
+  /// with pinch and rectangle framing off while the view is held, so that a slip of the fingers draws no band on a
+  /// shared screen. All of them for as long as `pointerGestures` is off. Title bars are left alone as long as macOS is set to
+  /// minimize or to do nothing there.
   public var inputSettings: Settings {
-    guard !settings.pointerGestures || isPaused || isPassingThrough || !accessibilityGranted || holdLevel == .view else {
-      return settings
-    }
     var quiet = settings
+    // Framing replaces "make it big" and nothing else (`MacTitleBarAction`).
+    if !macTitleBarAction.makesTheWindowBig { quiet.titleBarDoubleClick = false }
+    guard !settings.pointerGestures || isPaused || isPassingThrough || !accessibilityGranted || holdLevel == .view else {
+      return quiet
+    }
     quiet.gesturesEnabled = false
     quiet.frameRectangleModifier = "none"
     quiet.frameRectangleOnDesktop = false
     quiet.guardDesktopClicks = false
+    // Not for a held view: without the taps macOS's own title-bar action would run on a docked window, in front of
+    // the audience. With them the double-click is hidden, and its command is refused like any that moves the view.
+    if !settings.pointerGestures || isPaused || isPassingThrough || !accessibilityGranted {
+      quiet.titleBarDoubleClick = false
+      quiet.desktopDoubleClick = false
+    }
     return quiet
   }
 

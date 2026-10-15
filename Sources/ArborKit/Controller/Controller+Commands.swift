@@ -401,32 +401,41 @@ extension Controller {
     return .success(tree.leaf(containing: id) == nil ? "framed \(name(of: space, on: display))" : "framed \(id)")
   }
 
-  /// Leaves a framed space for a wider view: the one the camera came from if that was wider (framing
-  /// a window from the overview returns to the overview), otherwise one level out (after walking
-  /// from neighbour to neighbour, "back" would only frame the previous window).
-  /// Whether `unframe` has somewhere to go, for the menu. Its three ways, in its order.
-  func canUnframe(_ space: NodeID, on display: DisplayID) -> Bool {
-    guard let workspace = workspaces[display] else { return false }
-    if landedByPeek(on: space, display: display) { return true }
-    if let previous = workspace.back.last, previous != space, workspace.tree.subtree(previous, contains: space) { return true }
-    return treeView(display).flatMap { Navigation.stepOut(from: space, in: $0) } != nil
-  }
+  /// Whether `unframe` has somewhere to go, for the menu: by the rule it goes by itself.
+  func canUnframe(_ space: NodeID, on display: DisplayID) -> Bool { wayOut(of: space, on: display) != nil }
 
+  /// Leaves a framed space for a wider view.
   private func unframe(_ space: NodeID, on display: DisplayID) -> CommandResult {
-    let workspace = workspaces[display]!
-    // A peek stood in for Show Everything, so the way out of where it landed is everything.
-    if landedByPeek(on: space, display: display) {
-      moveCamera(on: display, to: workspace.tree.root)
+    let way = wayOut(of: space, on: display)
+    if way == .showAll {
+      moveCamera(on: display, to: workspaces[display]!.tree.root)
       return .success("showing everything")
     }
-    if let previous = workspace.back.last, previous != space, workspace.tree.subtree(previous, contains: space) {
-      return goBack(on: display)
-    }
+    if way == .back { return goBack(on: display) }
     guard let view = treeView(display), let wider = Navigation.stepOut(from: space, in: view) else {
       return .failure("already showing everything")
     }
     moveCamera(on: display, to: wider)
     return .success("stepped out to \(name(of: wider, on: display))")
+  }
+
+  /// How to leave `space`, where the camera is, for a wider view: `back` to the one the camera came from
+  /// if that was wider (framing a window from the overview returns to the overview), otherwise `out` one
+  /// level (after walking from neighbour to neighbour, "back" would only frame the previous window), and
+  /// `show-all` from where a peek landed. Nil when nothing is wider. One rule for ⌃⌥↩ pressed again and for a
+  /// second double-click (F14).
+  func wayOut(of space: NodeID, on display: DisplayID) -> Command? {
+    guard let workspace = workspaces[display], let view = treeView(display) else { return nil }
+    // A peek stood in for Show Everything, so the way out of where it landed is everything.
+    if landedByPeek(on: space, display: display) { return .showAll }
+    // Wider on screen as well as in the tree: with its other windows minimized, a group looks
+    // exactly like the window left in it.
+    if let previous = workspace.back.last, previous != space, workspace.tree.subtree(previous, contains: space),
+      view.passThrough(previous) != view.passThrough(space)
+    {
+      return .back
+    }
+    return Navigation.stepOut(from: space, in: view) == nil ? nil : .stepOut
   }
 
   func zoom(node: NodeID) -> CommandResult {

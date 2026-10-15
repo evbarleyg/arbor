@@ -127,7 +127,7 @@ extension ChaosRunner {
     case .close, .quitApp, .focusNothing, .cursor, .press, .commandKey, .macTiling, .save, .flush, .advance, .react: return []
     case .minimize(let window, _), .space(let window, _), .fullScreen(let window, _), .title(let window, _), .limits(let window, _, _),
       .behave(let window, _), .move(let window, _), .focus(let window), .switchApp(let window), .backgroundFocus(let window),
-      .listed(let window, _):
+      .listed(let window, _), .doubleClick(let window):
       return [window]
     case .grab(let window), .edge(let window, _, _): return inHand.union([window])
     case .carry, .release, .loseRelease, .settle: return inHand

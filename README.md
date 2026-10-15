@@ -50,9 +50,14 @@ independent implementation and is not affiliated with it.
   ⌃⌥ held the drag can start anywhere. Off for now, with the next: `arborctl set pointerGestures true` switches them on.
 - **Zoom with a mouse**: hold ⌃⌥ and scroll: up steps in toward the pointer, down steps out. One step per notch of a
   wheel.
+- **Double-click** a docked window's title bar to frame that window, and again to go back (off by default:
+  `arborctl set titleBarDoubleClick true`, with `pointerGestures` on). It then replaces macOS's own "make it big" for docked windows only; if you have set
+  macOS to minimize or to do nothing there, that stays. While it is off the double-click is macOS's, and Arbor leaves the
+  window where macOS puts it.
 - **Nothing gets lost**: windows outside the view are out of view, not closed: they wait past a
   screen corner and come back when you zoom out or switch to them (⌘Tab). Windows too
-  small to use show as tiles with their app's colour and icon, a group as a miniature of its windows; click one to zoom in.
+  small to use show as tiles with their app's colour and icon, a group as a miniature of its windows; click one to zoom in
+  (with `titleBarDoubleClick` on, a double-click does no harm).
   An app that will not shrink to its place first gets room from the Desktop and its neighbours.
   Unplug a display and its windows float on the main one; plug it back in and
   they return to their places. Windows on other macOS Spaces and in full screen keep
@@ -600,6 +605,8 @@ in the file it costs only its own key. [docs/SETTINGS.md](docs/SETTINGS.md) is t
 | `autoDockMinimumWidth` / `autoDockMinimumHeight` | 400 / 300 | A window that opens smaller than this is never docked by `dock auto` or by a rule for `*` |
 | `minimapDuration` | 0 | Seconds (at most 10) the minimap shows by itself after the view has moved; 0 is off, ⌃⌥M shows it either way |
 | `pointerGestures` | false | The one switch above the pinch, ⌃⌥ + scroll, both ways to draw a rectangle and `guardDesktopClicks`. false: Arbor installs no event tap, so it holds back no click, scroll or pinch of the Mac, whatever their own settings say. Dragging windows, gaps and tiles works either way |
+| `titleBarDoubleClick` | false | Double-clicking a docked window's title bar frames it, and again goes back. For docked windows this replaces what macOS does there (System Settings → Desktop & Dock → "Double-click a window's title bar to"); floating windows keep that, and with macOS set to minimize or to do nothing there Arbor leaves title bars alone. `arborctl set titleBarDoubleClick true` turns it on |
+| `desktopDoubleClick` | false | Double-clicking the bare Desktop gives it the whole view, and again goes back. Off because macOS's "Click wallpaper to reveal desktop", as macOS comes, sweeps every window aside at the first click and brings them back at the second |
 
 The file is yours. When a command changes a setting (`set`, `bind`, `rule add`, "Don't Arrange"…), Arbor
 changes that setting in the file and leaves the rest as you wrote it: your order and spacing, keys

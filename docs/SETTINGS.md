@@ -89,6 +89,9 @@ File). There are four ways to change one, and each takes effect at once and show
 | `scrollZoom` | `true` | true or false | **Zoom with ⌃⌥ and scroll.** Scrolling with ⌃⌥ held zooms: up steps in toward the pointer, down steps out. Off with Pinch to zoom too. |
 | `scrollZoomThreshold` | `40` | 4 to 400 pt | **Scroll travel for one step.** How far a Magic Mouse or trackpad must scroll for one step; smaller is more sensitive. A wheel steps once per notch. *Advanced.* |
 | `scrollOnDesktopZooms` | `false` | true or false | **Scroll on the Desktop zooms.** Scrolling on the Desktop, in a gap or on a tile zooms without the keys. Every scroll on the Mac then passes through Arbor. *Advanced.* |
+| `titleBarDoubleClick` | `false` | true or false | **Double-click title bars.** Double-clicking a docked window's title bar frames the window, and again goes back. For docked windows this replaces what macOS does there (System Settings, Desktop & Dock, “Double-click a window's title bar to”); floating windows keep that, and so do docked ones if macOS is set to minimize or to do nothing. |
+| `desktopDoubleClick` | `false` | true or false | **Double-click the Desktop.** Double-clicking the bare Desktop gives it the whole view, and again goes back. As macOS comes it sweeps every window aside at the first click there (“Click wallpaper to reveal desktop”), and brings them back at the second. *Advanced.* |
+| `titleBarHeight` | `28` | 10 to 80 pt | **Title bar height.** How many points at the top of a docked window count as its title bar for a double-click. *Advanced.* |
 
 ## Calls
 

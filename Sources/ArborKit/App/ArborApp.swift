@@ -230,6 +230,7 @@ public final class ArborApp: NSObject, NSApplicationDelegate {
         onPress: { [weak self] in self?.controller.pointerPressed() })
       // Its watchdog looks once a second, and what it finds out about the permission concerns more than the taps.
       input.onPermissionChange = { [weak self] in self?.controller.askAboutAccessibility(beyondDoubt: true) }
+      input.follow(controller)
       input.update()
       input.publish(controller.desktopGuardZones())
       pointerInput = input

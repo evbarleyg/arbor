@@ -63,6 +63,7 @@ extension Controller {
     }
     checkPermissions(facts, into: &report)
     checkMacOS(facts, into: &report)
+    checkTitleBars(into: &report)
     checkEventTaps(facts, into: &report)
     checkShortcuts(facts, into: &report)
     checkKeyboard(facts, into: &report)
@@ -200,6 +201,7 @@ extension Controller {
     var presses = RectangleGesture()
     _ = presses.follow(input)
     if presses.isEnabled { wanted.append("rectangle") }
+    if input.wantsDoubleClickTap { wanted.append("double-click") }
     let missing = wanted.filter { !facts.eventTaps.contains($0) }
     let installed = facts.eventTaps.isEmpty ? "none" : facts.eventTaps.joined(separator: ", ")
     if !missing.isEmpty {
@@ -213,6 +215,12 @@ extension Controller {
     } else {
       report.add(.ok, title, installed)
     }
+  }
+
+  /// Only where the switch is on and does nothing, so that nobody wonders why.
+  private func checkTitleBars(into report: inout DoctorReport) {
+    guard let why = lookAtMacTitleBarAction() else { return }
+    report.add(.note, "Double-click title bars", why)
   }
 
   private func checkShortcuts(_ facts: SystemFacts?, into report: inout DoctorReport) {

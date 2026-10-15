@@ -257,6 +257,16 @@ extension World {
       installed += ["rectangle", "rectangle drag"]
       Log.info("rectangle event taps installed")
     }
+
+    if !settings.wantsDoubleClickTap, arbor.doubleClickTaps {
+      arbor.doubleClickTaps = false
+      giveBackTheHeldPress(arbor.doubleClick.reset(buttonIsDown: system.mouseDown))
+      Log.info("double-click event taps removed")
+    } else if settings.wantsDoubleClickTap, !arbor.doubleClickTaps {
+      arbor.doubleClickTaps = true
+      installed += ["double-click", "double-click release"]
+      Log.info("double-click event taps installed")
+    }
     for name in installed { Log.debug("\(name) event tap installed") }
   }
 

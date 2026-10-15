@@ -2,13 +2,15 @@ import ArborCore
 import Foundation
 
 /// The pointer input that becomes commands: trackpad pinch (F03,
-/// `GestureTap`) and the modifier-drag rectangle (F05, `RectangleFramer`).
+/// `GestureTap`), the modifier-drag rectangle (F05, `RectangleFramer`) and
+/// double-clicks on title bars and the Desktop (F14, `DoubleClickTap`).
 /// Each has its own event tap, installed only while its setting turns it on
 /// and while Arbor has Accessibility permission.
 @MainActor
 final class PointerInput {
   private let gestures: GestureTap
   private let framer: RectangleFramer
+  private let doubleClicks: DoubleClickTap
   private var permissionCheck: Timer?
   /// True after Accessibility permission went away; the taps stay removed until it returns.
   private var suspended = false
@@ -21,6 +23,12 @@ final class PointerInput {
   ) {
     gestures = GestureTap(settings: settings, onCommand: onCommand, onGesture: onGesture)
     framer = RectangleFramer(settings: settings, onCommand: onCommand, onPress: onPress)
+    doubleClicks = DoubleClickTap(settings: settings, onCommand: onCommand, onPress: onPress)
+  }
+
+  /// Double-clicks mean different things in different places, so their tap follows the controller's layouts.
+  func follow(_ controller: Controller) {
+    doubleClicks.follow(controller)
   }
 
   /// Applies the current settings: installs, removes or reconfigures the
@@ -30,11 +38,13 @@ final class PointerInput {
     guard !suspended else { return }
     gestures.update()
     framer.update()
+    doubleClicks.update()
   }
 
   /// The names of the taps installed now, for `doctor`.
   var installedTaps: [String] {
     gestures.installedTaps + (framer.isInstalled ? ["rectangle"] : [])
+      + (doubleClicks.isInstalled ? ["double-click"] : [])
   }
 
   /// Where a plain click might land on bare Desktop (F60). Call after every change of the layout.
@@ -47,6 +57,7 @@ final class PointerInput {
     permissionCheck = nil
     gestures.stop()
     framer.stop()
+    doubleClicks.stop()
   }
 
   /// Users switch a misbehaving window manager off in System Settings, and
@@ -67,24 +78,28 @@ final class PointerInput {
   }
 
   private func checkPermission() {
-    guard suspended || gestures.isInstalled || framer.isInstalled else { return }
+    guard suspended || gestures.isInstalled || framer.isInstalled || doubleClicks.isInstalled else { return }
     let refusal = EventTap.refusal()
     let permitted = refusal == nil
     if !permitted, !suspended {
       suspended = true
       gestures.stop()
       framer.stop()
-      Log.info("Accessibility permission is gone (\(refusal ?? "")): removed the pinch and rectangle event taps")
+      doubleClicks.stop()
+      Log.info(
+        "Accessibility permission is gone (\(refusal ?? "")): removed the pinch, rectangle and double-click event taps")
       onPermissionChange?()
     } else if permitted, suspended {
       suspended = false
-      Log.info("Accessibility permission is back: installing the pinch and rectangle event taps")
+      Log.info("Accessibility permission is back: installing the pinch, rectangle and double-click event taps")
       gestures.update()
       framer.update()
+      doubleClicks.update()
       onPermissionChange?()
     } else if permitted {
       gestures.revive()
       framer.revive()
+      doubleClicks.revive()
     }
   }
 }

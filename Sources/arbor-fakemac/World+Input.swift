@@ -27,6 +27,8 @@ enum Held {
   /// Pressed on the strip of a window that was swept aside, listed at `from` until then. `taken`: what the
   /// Accessibility layer has taken its way back for, once it has.
   case strip(WindowID, from: CGRect, at: CGPoint, taken: WindowGrab.Verdict)
+  /// So is its double-click tap.
+  case doubleClick(start: CGPoint, clicks: Int)
 }
 
 /// What presses, drags, keys and pinches do, decided by what is under the pointer, frontmost first.
@@ -111,6 +113,19 @@ extension World {
     let point = onScreen(target)
     system.cursor = point
     system.mouseDown = true
+    // `PointerInput` installs these taps last, which puts them in front. They watch the left button alone.
+    if let arbor, arbor.doubleClickTaps, !right,
+      arbor.doubleClick.mouseDown(
+        at: point, clicks: clicks, modifiersHeld: !modifiers.isEmpty,
+        hit: arbor.controller.doubleClickZones().hit(
+          at: point, time: arbor.controller.now().timeIntervalSinceReferenceDate, floatingWindowsCover: false),
+        confirm: { self.isReallyThere($0, at: point) }) == .hold
+    {
+      held = .doubleClick(start: point, clicks: clicks)
+      // `DoubleClickTap`'s `onPress`: no monitor hears of a press that is held back.
+      arbor.controller.pointerPressed()
+      return
+    }
     if let arbor, arbor.rectangleTaps {
       // `RectangleFramer.handleDown`. ArborApp hands it the zones again whenever they may have changed.
       let zones = arbor.controller.desktopGuardZones()
@@ -133,6 +148,55 @@ extension World {
     land(at: point, clicks: clicks, secondary: right || !modifiers.isDisjoint(with: [.control, .option]))
     // What the Accessibility layer's monitor of the mouse passes on.
     system.events?.pointerPressed()
+    reportDoubleClick(clicks)
+  }
+
+  /// What that monitor makes of a press that has landed, if it is the second of a pair.
+  private func reportDoubleClick(_ clicks: Int) {
+    if AppsDoubleClick.isCompleted(byClick: clicks), let window = pressedWindow { system.events?.doubleClickReached(window) }
+  }
+
+  var titleBarAction: MacTitleBarAction {
+    let setting = file(World.titleBarActionSetting).map { String(decoding: $0, as: UTF8.self) }
+    return MacTitleBarAction(setting: setting?.trimmingCharacters(in: .whitespacesAndNewlines))
+  }
+
+  /// The window of an app's that the press in progress landed on.
+  private var pressedWindow: WindowID? {
+    switch held {
+    case .title(let window, _, _, _), .button(let window, _), .resize(let window, _, _, _): window
+    case .content(let id): extras[id] == nil ? WindowID(id) : nil
+    default: nil
+    }
+  }
+
+  /// `DoubleClickTap.reset`: the taps go away, and a press they hold back while the button is still down goes to the app after all.
+  func giveBackTheHeldPress(_ response: DoubleClickGesture.Response) {
+    guard response == .replay, case .doubleClick(let start, let clicks) = held else { return }
+    land(at: start, clicks: clicks, secondary: false)
+    system.events?.pointerPressed()
+    reportDoubleClick(clicks)
+  }
+
+  /// `PointerProbe.confirms`: whether a click would land on what the zones say is there, and on no control in it.
+  private func isReallyThere(_ hit: DoubleClickZones.Hit, at point: CGPoint) -> Bool {
+    // What lies above the windows keeps its clicks (`PointerCover`): `land` asks for these first.
+    if arbor?.menu != nil || (hasStatusItem && statusItemFrame.contains(point)) { return false }
+    if let model = arbor?.overlays.fake.minimaps[display.id], model.takesClicks, model.frame.contains(point) { return false }
+    let top = stack.first { frame(of: $0)?.contains(point) == true }
+    switch hit.target {
+    case .titleBar(let window):
+      // No answer is a no.
+      if let pid = system.windows[window]?.snapshot.pid, hungUntil[pid] != nil { return false }
+      guard case .window(let id)? = top, id == window.rawValue, let frame = frame(of: id),
+        case .title = zone(of: frame, at: point)
+      else { return false }
+      return true
+    case .desktop:
+      return top == nil
+    case .openedTile:
+      return true
+    }
   }
 
   /// A press that got past Arbor's taps.
@@ -247,6 +311,13 @@ extension World {
   func drag(to target: CGPoint) {
     let point = onScreen(target)
     system.cursor = point
+    if let arbor, arbor.doubleClick.isFollowing, arbor.doubleClick.mouseDragged(to: point) == .replay,
+      case .doubleClick(let start, let clicks) = held
+    {
+      // A drag after all: the app gets the press it missed, then this.
+      land(at: start, clicks: clicks, secondary: false)
+      reportDoubleClick(clicks)
+    }
     switch held {
     case .title(let window, var grip, let moved, let clicks):
       guard var frame = system.frame(of: window) else { return }
@@ -329,7 +400,7 @@ extension World {
         system.events?.resizeBegan(window)
       }
 
-    case .nothing, .idle, .button, .tile, .minimap, .menuItem:
+    case .nothing, .idle, .button, .tile, .minimap, .menuItem, .doubleClick:
       break
     }
   }
@@ -341,6 +412,8 @@ extension World {
     held = .nothing
     // Ends an edge resize as the Accessibility layer does, and lets go of the button either way.
     system.releaseMouse()
+    // A hidden click leaves `released` with nothing to do; the Desktop's goes on to Finder.
+    if let arbor, case .run(let command, _) = arbor.doubleClick.mouseUp() { handle(command, from: .gesture) }
 
     switch released {
     case .title(let window, _, let moved, let clicks):
@@ -348,8 +421,13 @@ extension World {
         let letGo = system.frame(of: window)
         system.events?.dragEnded(window, at: point)
         if let letGo { system.letMacOSTile(window, letGoAt: letGo) }
-      } else if clicks == 2 {
-        zoom(window)
+      } else if AppsDoubleClick.isCompleted(byClick: clicks) {
+        // System Settings → Desktop & Dock → "Double-click a window's title bar to". Not set, it fills or zooms.
+        switch titleBarAction {
+        case .nothing: break
+        case .minimize: minimizeWindow(window)
+        case .fill, .zoom: system.zoomAsMacOSDoes(window)
+        }
       }
 
     case .button(let window, let name):
@@ -359,7 +437,7 @@ extension World {
       switch name {
       case "close": closeWindow(window.rawValue)
       case "minimize": minimizeWindow(window)
-      default: zoom(window)
+      default: system.zoomAsMacOSDoes(window)
       }
 
     case .content(let id):
@@ -384,6 +462,7 @@ extension World {
         // A plain modifier-click: the app gets the press it missed, then this release.
         system.mouseDown = true
         land(at: start, clicks: clicks, secondary: false)
+        reportDoubleClick(clicks)
         lift(at: point)
       case .frame(let rect):
         arbor.band?.shown = false
@@ -402,25 +481,9 @@ extension World {
       system.events?.windowChanged(snapshot, userInitiated: true)
       if taken == .drag { system.events?.dragEnded(window, at: point) } else { system.events?.resizeEnded(window) }
 
-    case .nothing, .idle, .panelTitle, .resize, .seam:
+    case .nothing, .idle, .panelTitle, .resize, .seam, .doubleClick:
       break
     }
-  }
-
-  /// What a double-click on the title bar and the green button do: fill the screen, or go back to the size
-  /// before.
-  private func zoom(_ window: WindowID) {
-    guard let fake = system.windows[window] else { return }
-    if let before = zoomedFrom.removeValue(forKey: window) {
-      system.userMove(window, to: before)
-      return
-    }
-    var frame = display.visibleFrame
-    if let maximum = fake.maximumSize {
-      frame.size = CGSize(width: min(frame.width, maximum.width), height: min(frame.height, maximum.height))
-    }
-    zoomedFrom[window] = fake.snapshot.frame
-    system.userMove(window, to: frame)
   }
 
   // MARK: The keyboard

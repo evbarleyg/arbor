@@ -66,12 +66,15 @@ extension Controller {
     // Not when a window is only put back where it was: that moves nothing else.
     if reason != .enforce { dropOverdueSlots(on: displayID) }
     refreshVisibleFrame(of: displayID)
+    lookAtMacTitleBarAction()
     let before = workspaces[displayID]
     guard var layout = roomyLayout(of: displayID, for: reason) else { return }
     // Before anything is moved (Controller+Hold.swift). A new node alone is no move of the view: docking a window at the edge of the
     // view makes a group of the two, with the same things to see, and a rule that waited does that at the very end of a hold.
     if reason == .camera, holdLevel != .view, layouts[displayID]?.camera != layout.camera { holdLetsInWhatWaited(on: displayID) }
     if reason != .enforce, let tree = workspaces[displayID]?.tree { enforcement.reset(tree.allWindows) }
+    // What a window does after Arbor has given it a frame is its answer to that, not to a double-click before it.
+    if reason != .enforce { appsDoubleClick = nil }
     let staged = stageTransition(on: displayID, to: layout, reason: reason, motion: motion, puttingBack: waiting)
     putBackWhatWaits()
     // Once the stage is up, like everything that moves a window.

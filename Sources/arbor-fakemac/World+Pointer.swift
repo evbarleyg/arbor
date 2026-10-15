@@ -146,12 +146,13 @@ extension World {
       _ = try arguments.option("--duration").map { try arguments.number($0) }
       let hold = try arguments.option("--hold").map { try arguments.number($0) } ?? 0.2
       let release = !arguments.flag("--no-release")
+      let clicks = try arguments.option("--clicks").map { max(1, min(3, Int(try arguments.number($0)))) } ?? 1
       let start = try arguments.point(at: 0)
       let end = try arguments.point(at: 2)
       try arguments.expect(atMost: 4, for: command)
       try requireButtonUp(for: command)
       movePointer(to: start)
-      press(at: start, modifiers: held, clicks: 1)
+      press(at: start, modifiers: held, clicks: clicks)
       for step in 1...steps {
         let share = CGFloat(step) / CGFloat(steps)
         drag(to: CGPoint(x: start.x + (end.x - start.x) * share, y: start.y + (end.y - start.y) * share))

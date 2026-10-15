@@ -122,6 +122,11 @@ loads each `json` block that follows `<!-- settings -->`. Comments such as `<!--
 (the header of `Tests/ArborKitTests/DocTranscripts.swift` lists them). After changing a reply, run the tests once with
 `ARBOR_UPDATE_DOCS=1` to write the new output into the files, and read the diff.
 
+Double-clicks: `h.system.doubleClick(at:)` double-clicks a point and returns whether the second click was Arbor's. After
+`h.overlays.clickTile(_:)` it is what follows the click that opened the tile. A second click that is not Arbor's goes to the window
+under the pointer; play what macOS does with that window with `zoomAsMacOSDoes(_:)`, `userMove(_:to:)` or `setMinimized`, or all at once with
+`doubleClickTitleBar(of:)`. `h.system.titleBarAction` is macOS's own setting.
+
 ## 3. arbor-sim
 
 The same harness as a command-line tool, printing an ASCII drawing after each step:
@@ -172,6 +177,9 @@ grows the window; give two edges for a corner): `pull 101 right 100 down 80`.
 `swift build -c release --product arbor-sim` for times worth quoting.
 `press <command>` runs a command as its shortcut would (`press dock left`), so that Arbor answers on screen as well; whatever it
 says there, after this or any other step, is printed as `on screen: …`.
+
+`dblclick <x> <y>` double-clicks a point (it fails when the double-click is not Arbor's), and `tile <node> 2`
+double-clicks a tile.
 
 `expect <form>` checks the layout: `expect docked 101`, `expect left-of 101 102`,
 `expect camera root`, `expect ring 101`, `expect focused 101`, `expect fail` (the forms are listed in `collab/README.md`,
@@ -661,6 +669,7 @@ holds for the commit named (second reading, 10:45 UTC) and says what the script 
 | `check-F56.sh` | trunk | safe, steps skip themselves | 60 s | The second display. Types "arbor" into a test window |
 | `check-F09.sh` | trunk | safe, steps skip themselves | 3 min | Reduce Motion. The button is held for up to 6 s at a time, ⌘ for 2 s. macOS's own edge tiling stays on and may cost some checks at the screen edge |
 | `check-F18.sh` | trunk | safe | 15 s | |
+| `check-macos-double-click.sh` (`lib-double-click.sh`) | trunk | safe, steps skip themselves | 20 s | macOS's other title-bar actions (it would change the setting), TextEdit and Terminal. A test window fills the display for some seconds |
 | `check-F20.sh` | trunk | safe | 60 s, mostly keys | Types "Pair" and "up" with its own test app in front, which for this script has an icon in the Dock. One step is ⌃⌥Space: declined where several input sources are on |
 | `check-F54.sh` | trunk | safe, steps skip themselves | none | Part 2: Arbor over every window, TextEdit and Terminal killed and opened |
 | `check-F53.sh` | trunk | safe, steps skip themselves | 2 min | Launching Calculator by name. A second test app under the name ArborScratch |
@@ -695,7 +704,7 @@ holds for the commit named (second reading, 10:45 UTC) and says what the script 
 | `check-F59.sh` | #158 `6907ce87` | safe | 30 s | During a carry nobody's app gets arrows, ↩ or ⎋ |
 | `shots-F04.sh`, `shots-F34.sh` | #79 `32612c35`, #187 `acf72c67` | safe | 3 min, 60 s | Test windows go to the Dock and come back; one is closed by its tab's button |
 | `shots-F22.sh`, `shots-F19.sh` | trunk | safe | 90 s, 45 s | |
-| `check-F14.sh` | #204 `62e1fae1` | safe, steps skip themselves | 3 min | The double-click on the wallpaper, Safari, the survey of stock apps. A witness that only listens writes down every press of the button meanwhile, with its place. macOS zooms a floating test window to the full display |
+| `check-F14.sh` (`lib-double-click.sh`, `ax-roles.swift`) | trunk | safe, steps skip themselves | 3 min | macOS's own settings, the double-clicks on the wallpaper, Safari, the survey of stock apps. A witness that only listens writes down every press of the button meanwhile, with its place. macOS zooms a floating test window to the full display for a moment |
 | `check-F21.sh` | #102 `9acaae38` | safe, parts skip themselves | two clicks, five keys | The virtual display; Arbor over every window; apps opened |
 | `film-F16.sh` | #98 `a2e34e43` | safe, steps skip themselves | 3 min | Reduce Motion. Pinches and ⌃⌥-scrolls over a test window, each after the net was asked; the helper is on record |
 | `perf.sh` | #45 `fbd7e3b5` | safe, steps skip themselves | one drag | By the second reading, not read again since |
@@ -1180,7 +1189,7 @@ one. It is a function of its seed: no clock, no system randomness, no dictionary
 
 **What it does.** `ChaosGenerator` looks at the state of the world and picks the next `ChaosAction`, mostly one
 that makes sense there and sometimes one that does not: apps open, close, quit, hide, minimize, change Space, go full
-screen, retitle and change their size limits; the user moves, resizes, focuses, clicks tiles, drags seams, types and chooses in Go to…, and drags
+screen, retitle and change their size limits; the user moves, resizes, focuses, double-clicks title bars (and macOS zooms), clicks tiles, drags seams, types and chooses in Go to…, and drags
 windows in pieces (`grab`, `carry`, `release`) so that anything can happen in mid-drag; every `Command` with valid
 and invalid arguments, nonsense lines and `arbor://` URLs; displays added, removed, resized and rearranged, with macOS
 reporting the windows before, after or never; timers fired early or late; settings.json edited sensibly and badly, and every setting in
@@ -1197,7 +1206,7 @@ windows are out of view; nothing Arbor placed is lost beyond the displays; overl
 preview without a drag; one focus ring, around the window that has the keyboard; a floating window in view goes out of view only
 when the camera moves; a pinned window is always in view; Go to… is open only while Arbor runs, on a display that is there and with nothing being
 dragged, and the window chosen in it has the keyboard and is in view; a saved slot that waits for its window is in a tree and has a timer that ends the
-wait; Arbor gives up only on windows that something keeps moving; only known timers, and they run dry; windows Arbor does not arrange are never moved;
+wait; Arbor gives up only on windows that something keeps moving, and lets be only those that a double-click moved; only known timers, and they run dry; windows Arbor does not arrange are never moved;
 `state` and state.json survive JSON; after `quit` or `pause` everything is back in view; a restart keeps the shape of every tree).
 
 **Running it**

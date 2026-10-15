@@ -156,7 +156,9 @@ public final class AXWindowSystem: WindowSystem {
       let type = event.type
       let modifiers = event.modifierFlags
       let location = event.cgEvent?.location
-      MainActor.assumeIsolated { self?.handleMouse(type, modifiers: modifiers, at: location) }
+      // Only a mouse event has a count: asked of any other, AppKit raises an exception.
+      let clicks = type == .leftMouseDown ? event.clickCount : 0
+      MainActor.assumeIsolated { self?.handleMouse(type, modifiers: modifiers, at: location, clicks: clicks) }
     }
     // Global monitors do not see events that go to Arbor's own panels (seams, tiles, the menu).
     localMouseMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown]) { [weak self] event in
@@ -872,6 +874,8 @@ public final class AXWindowSystem: WindowSystem {
     }
   }
 
+  public func macTitleBarAction() -> MacTitleBarAction { MacFacts.titleBarAction }
+
   public func strayDialogsWaiting() -> Int {
     // One that has closed has no subrole any more. Nor has one whose app does not answer, which is not asked.
     waitingDialogs.removeAll { answers($0.pid) && $0.element.string(kAXSubroleAttribute) == nil }
@@ -1223,7 +1227,7 @@ public final class AXWindowSystem: WindowSystem {
   /// How far outside a window's frame a press still belongs to it: macOS's resize area.
   private static let reach: CGFloat = 4
 
-  private func handleMouse(_ type: NSEvent.EventType, modifiers: NSEvent.ModifierFlags, at location: CGPoint?) {
+  private func handleMouse(_ type: NSEvent.EventType, modifiers: NSEvent.ModifierFlags, at location: CGPoint?, clicks: Int) {
     eventModifiers = modifiers
     // Not for movements: of those the newest place is the one to show a preview for.
     if type == .leftMouseDown || type == .leftMouseUp { eventLocation = location }
@@ -1233,7 +1237,7 @@ public final class AXWindowSystem: WindowSystem {
     }
     if let recorder, recorder.isRecording {
       switch type {
-      case .leftMouseDown: recorder.raw("leftMouseDown \(traceText(cursorLocation()))")
+      case .leftMouseDown: recorder.raw("leftMouseDown \(traceText(cursorLocation()))\(clicks > 1 ? " click \(clicks)" : "")")
       case .leftMouseUp: recorder.raw("leftMouseUp \(traceText(cursorLocation()))")
       case .leftMouseDragged: recorder.raw("leftMouseDragged \(traceText(cursorLocation()))", thinKey: "leftMouseDragged")
       case .flagsChanged: recorder.raw("flagsChanged")
@@ -1246,6 +1250,9 @@ public final class AXWindowSystem: WindowSystem {
       releaseWasLost()
       press = makePress(at: cursorLocation())
       events?.pointerPressed()
+      // A monitor hears only what apps get. A press that Arbor's own tap keeps back (F14) never comes here, so this
+      // double-click is the app's, and on a title bar macOS's.
+      if AppsDoubleClick.isCompleted(byClick: clicks), let window = press?.window { events?.doubleClickReached(window) }
     case .leftMouseDragged:
       if let window = draggingWindow {
         events?.dragMoved(window, to: cursorLocation())

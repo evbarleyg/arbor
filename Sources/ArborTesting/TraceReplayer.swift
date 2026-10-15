@@ -245,6 +245,10 @@ public final class TraceReplayer {
         bridge.events?.windowFound(snapshot)
       },
       "pointerPressed": { [bridge] _ in bridge.events?.pointerPressed() },
+      "doubleClickReached": { [bridge] arguments in
+        guard let id: WindowID = arguments.first?.decoded() else { return }
+        bridge.events?.doubleClickReached(id)
+      },
       // What follows depends on what macOS then said, which is in the trace as a read.
       "accessibilityWasRefused": { [bridge] _ in bridge.events?.accessibilityWasRefused() },
       "applicationActivated": { [unowned self] arguments in
@@ -1080,6 +1084,7 @@ private final class ReplayWindowSystem: WindowSystem {
     fake?.bringInStrayDialogs(ofApp: bundleID)
   }
   func strayDialogsWaiting() -> Int { replayer?.answer(read: "strayDialogsWaiting") ?? fake?.strayDialogsWaiting() ?? 0 }
+  func macTitleBarAction() -> MacTitleBarAction { replayer?.answer(read: "macTitleBarAction") ?? fake?.macTitleBarAction() ?? .fill }
   func raise(_ window: WindowID) {
     replayer?.answer(call: "raise", [window])
     fake?.raise(window)

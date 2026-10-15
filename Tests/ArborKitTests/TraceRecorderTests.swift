@@ -727,6 +727,7 @@ private func endReason(_ entries: [TraceEntry]) -> String? {
     #expect(spy.calls.last == "moveTogether w5")
     #expect(system.windowsFrontToBack() == [WindowID(77), WindowID(5)])
     #expect(system.macTiling() == MacTiling(screenEdges: true, menuBar: false, optionKey: true))
+    #expect(system.macTitleBarAction() == .minimize)
     system.setMinimized(id, true)
     #expect(spy.calls.last == "setMinimized w5 true")
     system.unhideApp(pid: 9)
@@ -752,6 +753,7 @@ private func endReason(_ entries: [TraceEntry]) -> String? {
     events.dragCancelled(id)
     events.windowReplaced(WindowID(4), by: snapshot)
     events.windowFound(snapshot)
+    events.doubleClickReached(id)
     events.applicationActivated(FrontmostApp(bundleID: nil, name: "a.out"))
     events.applicationActivated(nil)
     events.windowDestroyed(id)
@@ -759,7 +761,7 @@ private func endReason(_ entries: [TraceEntry]) -> String? {
       listener.heard == [
         "appeared w5", "changed w5 true", "changed w5 false", "focused w5", "dragBegan w5 9,10", "dragMoved w5 9,10",
         "dragEnded w5 9,10", "resizeBegan w5", "resizeEnded w5", "displaysChanged", "keyboardFocusMoved", "dragCancelled w5",
-        "windowReplaced w4 w5", "found w5", "activated a.out", "activated nobody", "destroyed w5",
+        "windowReplaced w4 w5", "found w5", "doubleClickReached w5", "activated a.out", "activated nobody", "destroyed w5",
       ])
     system.stop()
     #expect(spy.calls.last == "stop")
@@ -988,6 +990,7 @@ final class SpyWindowSystem: WindowSystem {
   func stackedWindows() -> [StackedWindow] { [] }
   func modifierKeysDown() -> KeyChord.Modifiers { [.command] }
   func macTiling() -> MacTiling { MacTiling(screenEdges: true, menuBar: false, optionKey: true) }
+  func macTitleBarAction() -> MacTitleBarAction { .minimize }
   func openApplication(_ app: String) -> Bool {
     calls.append("openApplication \(app)")
     return true
@@ -1022,4 +1025,9 @@ final class SpyEvents: WindowSystemEvents {
   func windowFound(_ window: WindowSnapshot) { heard.append("found \(window.id)") }
   func applicationActivated(_ app: FrontmostApp?) { heard.append("activated \(app?.name ?? "nobody")") }
   func pointerPressed() { heard.append("pointerPressed") }
+  func doubleClickReached(_ window: WindowID) { heard.append("doubleClickReached \(window)") }
+  func doubleClicked(at point: CGPoint) -> Bool {
+    heard.append("doubleClicked \(traceText(point))")
+    return true
+  }
 }

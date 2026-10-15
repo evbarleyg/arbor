@@ -6,7 +6,7 @@ import Foundation
 /// - `ARBOR_HOME`, `ARBOR_SOCKET`: see `ArborPaths`.
 /// - `ARBOR_ONLY_PIDS=123,456`: arrange only these processes' windows.
 /// - `ARBOR_NO_HOTKEYS=1`: do not register global shortcuts or install the
-///   pinch and rectangle event taps.
+///   pinch, rectangle and double-click event taps.
 /// - `ARBOR_NO_STATUS_ITEM=1`: no menu bar item.
 /// - `ARBOR_NO_PROMPT=1`: do not open the welcome window at launch when Accessibility permission is
 ///   missing. (`check-setup` and `welcome` still open it.)

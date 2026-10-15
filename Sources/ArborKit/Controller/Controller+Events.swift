@@ -54,6 +54,7 @@ extension Controller: WindowSystemEvents {
     returningWindows.remove(id)
     if unframedIntoATile?.window == id || unframedIntoATile?.heir == id { unframedIntoATile = nil }
     enforcement.reset([id])
+    if appsDoubleClick?.window == id { appsDoubleClick = nil }
     forgetRuleState(of: id)
     releasePendingSlot(of: id)
     if drag?.window == id { cancelDrag() }
@@ -196,8 +197,10 @@ extension Controller: WindowSystemEvents {
     }
     if enforcement.givenUp.contains(window.id) {
       settled[window.id] = window.frame
+      noteWhetherItIsBackInItsSlot(window, on: display)
       return
     }
+    if standsAsideAfterADoubleClick(on: window, display: display) { return }
     scheduleEnforce(display)
   }
 
@@ -257,6 +260,7 @@ extension Controller: OverlayActions {
     guard isRunning, workspaces[display]?.tree.contains(node) == true else { return }
     // Refused as the command it stands for, so that a click that does nothing is told why in the words a key is.
     guard holdLevel != .view else { return _ = perform(.zoomNode(node), from: .gesture) }
+    noteTileOpening(display: display, node: node)
     moveCamera(on: display, to: node)
     if let layout = layouts[display],
       let first = workspaces[display]?.tree.windows(under: node).first(where: { layout.windowFrames[$0] != nil })

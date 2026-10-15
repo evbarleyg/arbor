@@ -22,6 +22,11 @@ enum MacFacts {
     return MacTiling(switches ?? MacSwitch.inTheWay(macOS: macOS) { _ in nil })
   }
 
+  /// What macOS does itself at a double-click on a title bar. The setting is everybody's, so it is among this app's own.
+  static var titleBarAction: MacTitleBarAction {
+    MacTitleBarAction(setting: UserDefaults.standard.string(forKey: "AppleActionOnDoubleClick"))
+  }
+
   /// How many keyboard layouts and input methods the Input menu switches between.
   static var inputSources: Int? {
     let wanted: [String: Any] = [
