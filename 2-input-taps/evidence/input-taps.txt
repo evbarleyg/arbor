@@ -1,0 +1,166 @@
+# input-taps 2026-10-15T13:58Z on macOS 26.6.2, commit 5cc2149
+
+== without Arbor: how long a click takes to reach the end of the taps
+
+== do posted pinches arrive at all? (no Arbor)
+
+== session 1: three windows, taps and shortcuts on
+  ✔ launched with an earlier build's settings Arbor holds no event tap
+  ✔ four taps are installed
+  ✔ the one on drags and mouse-ups is paused
+
+== with Arbor: how long a click on a docked window takes
+  ✔ every plain click arrives: 8 downs
+  ✔ none of them was held back
+  ✔ every plain click arrives: 8 ups
+
+== a plain drag of a floating window passes untouched
+  ✔ the app saw the mouse-down
+  ✔ the app saw the drag
+  ✔ the app saw the mouse-up
+  ✔ the drag tap stayed paused
+
+== ⌃⌥-click: handed back, once, in order
+  ✔ a plain click focuses the first window
+  ✔ one mouse-down reached the app
+  ✔ it is the one Arbor sent on
+  ✔ it still carries ⌃⌥
+  ✔ one mouse-up reached the app
+  ✔ the mouse-down came first
+  ✔ the drag tap is paused again
+
+== ⌃⌥ double-click: both clicks handed back with their click counts
+  ✔ two mouse-downs
+  ✔ the second says it is the second
+  ✔ two mouse-ups
+
+== ⌃⌥-drag: nothing reaches the app, the band shows, release frames
+  ✔ the band is on screen while the button is held
+  ✔ the drag tap is on while the button is held
+  ✔ no mouse-down reached an app
+  ✔ no drag reached an app
+  ✔ no mouse-up reached an app
+  ✔ the rectangle framed the window inside it
+  ✔ the band is gone
+  ✔ the drag tap is paused again
+
+== pinches
+  ✔ the app gets all of it (8 events)
+  ✔ the app gets none of the pinch
+  ✔ the app gets none of the rotation that began during it
+  ✔ Arbor stepped in
+  ✔ it is Arbor's
+  ✔ it is not Arbor's
+  ✔ Arbor still answers
+
+== ⇧-drag that starts on the bare Desktop: nothing reaches an app, release frames
+  ✔ the band is on screen while the button is held
+  ✔ no mouse-down reached an app
+  ✔ no drag reached an app
+  ✔ no mouse-up reached an app
+  ✔ the rectangle framed the window inside it
+  ✔ the band is gone
+
+== ⇧-click on the bare Desktop still reaches Finder
+  ✔ one mouse-down, sent on by Arbor, with ⇧
+  ✔ no other mouse-down
+  ✔ one mouse-up
+  ✔ the mouse-down came first
+
+== ⇧-drag that starts over a window is the app's
+  ✔ the app saw the mouse-down as it was
+  ✔ the app saw the drag
+  ✔ the app saw the mouse-up
+  ✔ no band
+
+== ⇧-click on the menu bar is not held back
+  ✔ the mouse-down arrived as it was
+
+== ⇧-click beside the Dock is outside Arbor's view: not held back
+  ✔ the mouse-down arrived as it was
+
+== with frameRectangleOnDesktop off, ⇧-drag on the Desktop is Finder's
+  ✔ Finder saw the mouse-down as it was
+  ✔ Finder saw the drag
+  ✔ ⌃⌥-drag is still watched for
+  ✔ with both off the guard of the Desktop still watches the mouse
+  ✔ with all three off, only the pinch and scroll taps are left
+  ✔ and back
+
+== pointerGestures off: no tap is left, whatever the other settings say
+  ✔ Arbor holds no event tap
+  ✔ a ⇧-drag on the Desktop is Finder's: the mouse-down arrived as it was
+  ✔ and the drag
+  ✔ switched on again all four are back
+
+== continuousZoom: ⌃⌥-scroll and pinch are streamed, every other scroll is left alone
+  ✔ an ⌥-scroll is the app's (8 events)
+  ✔ at rest the scroll tap is installed and paused
+  ✔ while ⌃⌥ is down it is switched on
+  ✔ and paused again when the keys go up
+  ✔ --ctrl alone leaves it paused
+  ✔ --opt alone leaves it paused
+  ✔ pressed a second time it is switched on again
+  ✔ and paused again
+  ✔ with scrollZoom off as well there is no scroll tap
+  ✔ the scroll tap is installed, and paused
+  ✔ the app gets all of it, momentum too (12 events)
+  ✔ ⌥ alone is never Arbor's: the app gets all of it, momentum too (12 events)
+  ✔ the app gets none of it, nor of its momentum
+  ✔ the next plain scroll is the app's again (8 events)
+  ✔ the app gets none of the pinch
+  ✔ the view moved in
+  ✔ with continuousZoom off again the scroll tap stays, for ⌃⌥-scroll
+
+== F55: ⌃⌥ and a scroll zoom; every other scroll is left alone
+  ✔ the app gets all three notches
+  ✔ and Arbor does nothing
+  ✔ with --opt alone the app gets both notches
+  ✔ with --ctrl alone the app gets both notches
+  ✔ the app gets nothing
+  ✔ the view stepped in once
+  ✔ toward the pointer: window 1 went out of view
+  ✔ the view stepped out once
+  ✔ window 1 is back
+  ✔ the app gets none of it, nor of its momentum
+  ✔ the momentum made no further steps
+  ✔ with the momentum over the tap is paused again
+  ✔ the next plain scroll is the app's again (8 events)
+
+== F55: with macOS's own zoom on ⌃ + scroll, whose is ⌃⌥ + scroll?
+  ✔ Arbor stepped in once
+  ✔ and macOS did not zoom the screen as well
+
+== the permission check leaves the taps alone while permission is there
+  ✔ the taps are still installed
+  ✔ the log does not say that permission went away
+
+== a shortcut held down
+  ✔ the command ran once: shortcuts do not repeat
+
+== Arbor is killed in the middle of a ⌃⌥-drag
+  ✔ the next click arrives whole: a mouse-down
+  ✔ the next click arrives whole: a mouse-up
+  ✔ the killed process leaves no tap behind
+
+== session 2: Arbor stops answering, again and again
+  ✔ round 1: the mouse-down tap is back on
+  ✔ round 2: the mouse-down tap is back on
+  ✔ after three in a row the mouse-down tap is left off
+  ✔ and so is every other tap: they share the thread that was too slow
+  ✔ it does not wait for Arbor
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+
+== session 4: Accessibility is taken away while the taps are installed
+  ✔ the taps are installed
+  ✔ Arbor removes its taps within three seconds
+  ✔ and says so
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+
+111 passed, 0 failed

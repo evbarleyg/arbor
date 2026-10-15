@@ -1,0 +1,59 @@
+{"arbor":"dev","cursor":[280,409],"displays":[{"frame":[0,0,1024,768],"id":"5A42259C-47B8-4590-9762-97DBE4FE7F1B","main":true,"name":"display-1","visible":[0,31,1024,674]}],"focusHistory":[137,136,135],"focused":137,"framePlan":2,"mouseDown":false,"name":"input-taps-1-04","onlyPIDs":[17779],"os":"macOS Version 26.6.2 (Build 25G83)","recorded":"2026-10-15T13:59:36Z","seenSizes":{"135":[[325,319],[494,650],[0,0],[0,0],[0,0]],"136":[[321,348],[480,650],[0,0],[0,0],[0,0]],"137":[[325,319],[480,348],[0,0],[0,0],[0,0]]},"settings":{"allowAllURLCommands":false,"animationDuration":0.46,"appColourAmount":0.25,"appColours":true,"arrangeDesktopWeight":0.5,"autoDockMinimumHeight":300,"autoDockMinimumWidth":400,"automaticUpdateChecks":false,"bindings":{},"blurBehindArranged":0,"continuousZoom":false,"desktopEdge":0.05,"dimBehindArranged":0.25,"displays":[],"dropDwell":0.15,"excludedBundleIDs":[],"floatingWindowsMakeWay":false,"focusRing":true,"focusRingColour":"accent","focusRingRadius":0,"focusRingWidth":3,"frameRectangleModifier":"ctrl+opt","frameRectangleOnDesktop":true,"gap":12,"gapHandles":"shown","gesturesEnabled":true,"guardDesktopClicks":false,"historyButtons":true,"holdStillFor":[],"holdStillWhileCameraIsOn":false,"holdStillWhileMicrophoneIsOn":false,"hotkeysEnabled":true,"keepPushed":true,"makeRoom":true,"menuBarControls":true,"menuBarFill":0.25,"messages":"helpful","minimapDuration":0,"minimumUsableHeight":160,"minimumUsableWidth":240,"newWindows":"float","newWindowsWhileFramed":"guest","passThroughApps":[],"pauseForApps":[],"peek":true,"pinchThreshold":0.25,"pointerGestures":true,"previewDrags":true,"reflowWhileDragging":false,"resizeStep":40,"ruleTitleWait":2,"rules":[],"screenEdgeBand":12,"scrollOnDesktopZooms":false,"scrollZoom":true,"scrollZoomThreshold":40,"shareRemovedSpace":true,"shortcuts":"core","shortcutsFollowLayout":true,"shrinkOutOfView":false,"soleFloatTakesDesktop":false,"stepInToward":"auto","summonStays":false,"tabsEnabled":false,"tileFade":0.2,"tileRetryMinutes":10,"tileStyle":"icon","tintBehindArranged":0,"windowEdgeFraction":0.3,"windowPictures":false},"thinning":0.05,"trace":1,"windows":[{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[12,43,325,319],"id":135,"pid":17779,"title":"title[1]"},{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[687,43,325,650],"id":136,"pid":17779,"title":"title[2]"},{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[12,374,325,319],"id":137,"pid":17779,"title":"title[3]"}],"workspaces":{"5A42259C-47B8-4590-9762-97DBE4FE7F1B":{"back":[],"camera":2,"floating":{},"forward":[],"names":{},"savedViews":{},"tree":{"desktop":0,"loans":[],"nextRawID":9,"nodes":{"0":{"id":0,"kind":{"desktop":{}},"parent":2,"weight":1},"1":{"id":1,"kind":{"stack":{"active":0,"windows":[135]}},"parent":8,"weight":1},"2":{"id":2,"kind":{"split":{"axis":"horizontal","children":[8,0,3]}},"weight":1},"3":{"id":3,"kind":{"stack":{"active":0,"windows":[136]}},"parent":2,"weight":1},"7":{"id":7,"kind":{"stack":{"active":0,"windows":[137]}},"parent":8,"weight":1},"8":{"id":8,"kind":{"split":{"axis":"vertical","children":[1,7]}},"parent":2,"weight":1}},"root":2,"visits":[]},"undockedFrames":{"135":[[170,220],[480,348]],"136":[[220,180],[480,348]],"137":[[0,357],[480,348]]}}}}
+{"t":0.0016,"note":"⌃⌥-click: handed back, once, in order"}
+{"t":0.0175,"command":"state","from":"script"}
+{"t":0.0195,"call":"focusedWindow","result":137}
+{"t":0.0199,"done":"state","message":"running: 1 display, 3 docked and 0 floating, 0 out of view","ok":true}
+{"t":0.2978,"timer":"settings-file"}
+{"t":0.6517,"raw":"leftMouseDown 174,202"}
+{"t":0.6527,"event":"pointerPressed"}
+{"t":0.6528,"raw":"AXFocusedWindowChanged"}
+{"t":0.6601,"event":"focused","id":135}
+{"t":0.6604,"call":"focusedWindow","result":135}
+{"t":0.6609,"call":"focusedWindow","result":135}
+{"t":0.6609,"call":"isMouseButtonDown","result":true}
+{"t":0.6621,"raw":"AXMainWindowChanged"}
+{"t":0.7289,"raw":"leftMouseUp 174,202"}
+{"t":0.8668,"command":"state","from":"script"}
+{"t":0.8678,"call":"focusedWindow","result":135}
+{"t":0.8680,"done":"state","message":"running: 1 display, 3 docked and 0 floating, 0 out of view","ok":true}
+{"t":0.9060,"note":"✔ a plain click focuses the first window"}
+{"t":0.9197,"timer":"focus-ring-again"}
+{"t":0.9198,"call":"isMouseButtonDown","result":false}
+{"t":0.9203,"call":"focusedWindow","result":135}
+{"t":1.4007,"timer":"accessibility"}
+{"t":1.4013,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":1.4017,"command":"state","from":"script"}
+{"t":1.4031,"call":"focusedWindow","result":135}
+{"t":1.4034,"done":"state","message":"running: 1 display, 3 docked and 0 floating, 0 out of view","ok":true}
+{"t":2.0037,"raw":"flagsChanged"}
+{"t":2.0300,"raw":"flagsChanged"}
+{"t":2.0638,"event":"pointerPressed"}
+{"t":2.1721,"timer":"heads-up"}
+{"t":2.1783,"raw":"leftMouseDown 849,368"}
+{"t":2.1792,"event":"pointerPressed"}
+{"t":2.1793,"raw":"AXFocusedWindowChanged"}
+{"t":2.1924,"event":"focused","id":136}
+{"t":2.1928,"call":"focusedWindow","result":136}
+{"t":2.1934,"call":"focusedWindow","result":136}
+{"t":2.1935,"call":"isMouseButtonDown","result":false}
+{"t":2.1943,"raw":"leftMouseUp 849,368"}
+{"t":2.1957,"raw":"AXMainWindowChanged"}
+{"t":2.3095,"raw":"flagsChanged"}
+{"t":2.4036,"raw":"flagsChanged"}
+{"t":2.5223,"timer":"focus-ring-again"}
+{"t":2.5226,"call":"isMouseButtonDown","result":false}
+{"t":2.5235,"call":"focusedWindow","result":136}
+{"t":3.3327,"note":"✔ one mouse-down reached the app"}
+{"t":3.4225,"timer":"accessibility"}
+{"t":3.4228,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":3.8111,"note":"✔ it is the one Arbor sent on"}
+{"t":4.3084,"note":"✔ it still carries ⌃⌥"}
+{"t":4.8030,"note":"✔ one mouse-up reached the app"}
+{"t":5.3230,"note":"✔ the mouse-down came first"}
+{"t":5.4723,"timer":"accessibility"}
+{"t":5.4730,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":5.8482,"command":"state","from":"script"}
+{"t":5.8509,"call":"focusedWindow","result":136}
+{"t":5.8512,"done":"state","message":"running: 1 display, 3 docked and 0 floating, 0 out of view","ok":true}
+{"t":5.9126,"note":"✔ the drag tap is paused again"}
+{"t":5.9291,"end":"another trace was started","lines":58,"thinned":0}
