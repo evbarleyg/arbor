@@ -58,6 +58,14 @@ public struct EchoFilter: Sendable {
     return age < Self.blanket ? .early : .other
   }
 
+  /// Whether Arbor moved `window` so recently that a report about it is `echo` or `early` whatever frame it names. The
+  /// caller can then spare itself reading the frame, if it looks at the window once `settleTime` has passed, as for `early`.
+  public func isFresh(_ window: WindowID, at time: TimeInterval) -> Bool {
+    guard let expectation = expectations[window] else { return false }
+    let age = time - expectation.time
+    return age >= 0 && age < Self.blanket
+  }
+
   public mutating func isEcho(_ frame: CGRect, of window: WindowID, at time: TimeInterval) -> Bool {
     judge(frame, of: window, at: time) != .other
   }

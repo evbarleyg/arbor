@@ -61,6 +61,7 @@ extension Controller: WindowSystemEvents {
     unplaced.remove(id)
     owedTheWayBack[id] = nil
     owedMoves.remove(id)
+    owedFrames[id] = nil
     returningWindows.remove(id)
     if unframedIntoATile?.window == id || unframedIntoATile?.heir == id { unframedIntoATile = nil }
     enforcement.reset([id])

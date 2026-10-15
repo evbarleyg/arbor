@@ -326,6 +326,34 @@ and nothing else is worth optimising.
   window at a time. Only docked windows are foretold, and not when they are put back. The hint changes what the calls cost, never
   what they return: `MoveTogetherTests` walks two desks through everything, one taking the hint and one ignoring it, and compares them after every step.
   **Whoever gives `apply` or `park` a new reason to leave a docked window alone gives it to `movesInSight` as well**; the tests fail otherwise.
+- `AXWindowSystem` moves windows off the main thread, each app on a lane of its own (`Support/AppLanes.swift`, tested with jobs
+  that sleep; `AX/AXMover.swift`): an app's windows move one after the other while other apps' lanes run beside it, and the
+  main thread waits for all of them together, 0.5 s at most (real apps were measured at 20 to 240 ms a move; every overrun is logged by bundle id). A lane that needs longer finishes in the background; until then
+  the app's windows are turned away at once and nothing else is asked of it, and when it has finished its windows and its list
+  are read afresh and reported, which makes the controller place the ones it could not move meanwhile and brings in what the app
+  reported while nobody looked; a move or resize among that is judged then as it would have been, so that what somebody else did to a
+  window Arbor was not moving is still heard as theirs. What a lane did late goes into the books before the next notification is judged or the next
+  move planned, or the app's reports of that very move would pass for the person's doing. What came of a late move is kept until the window is next asked to move, and
+  answers a call for the same frame: whoever got no answer asks again on hearing the report, and from an app that is late every time would
+  otherwise never learn what it made of the size. A focus asked for meanwhile is given
+  then, unless the person has switched apps or clicked since. One that waited for an app that HUNG, which is seconds, is made only if things are as they were when the wait began (`ArborCore/WaitingFocus.swift`): the same app in
+  front by both of macOS's channels, that app's keyboard in the window it was in, and, for a window of an app in the background, within three seconds. Before Arbor lets go of the windows for good it waits for the lanes (`WindowSystem.finishMoves`), or a window on its way
+  out of view would stay there; and from then until `stop`, which waits for the lanes once more, a move that finds its app
+  busy waits its turn on the lane instead of being turned away, because nobody would try again, and is answered with the
+  frame it was asked for, so that nothing is tried in its place. A move that is still not done after the wait is entered in the
+  books as made, so that a window on its way out of view is fetched from there. And while Arbor lets go the main thread waits 1.2 s
+  for a move (3 s in all) instead of 0.5: long enough to hear that an app hangs, of which "on its way" must not be said.
+  For such an app a **pause** leaves word (`finishMoves(timeout:arborLivesOn:)`): an app carries out, when it wakes, what it was asked while it hung, in the order it was asked. So `stop` sends each of its windows that is
+  out of view, or on its way there, without waiting for an answer, to the first place in view that was asked for it while Arbor let go (where it floated, in its own size). A move out of view that lay in the app's queue is
+  carried out first and undone by it; the pause's own tries would have struck the window off, because the window server shows it in view until the app wakes. **A quit leaves none: macOS drops what a dead process asked**
+  (seen on a hosted Mac, of two calls that fetch, each with a timeout of a tenth of a second; that a move out of view goes the same way is taken from that, not measured). So a quit while an app hangs still leaves that app's
+  windows that are out of view where they are. The log's last line says which.
+- It asks as little as it can: a window that is where it should go is not moved, the window that has the focus is not given it,
+  the frame is read back in one call (`AXUIElementCopyMultipleAttributeValues`), as is a window's whole state; whether an app
+  animates frame changes is asked once for all the moves of a moment, not before every one (and again after a second: it is also the
+  question that keeps a move from being sent to an app that hangs already, which would carry it out on waking, when the view may be another); and a window Arbor knows is told by comparing elements,
+  not by asking for its number. Every call is counted and timed by kind, by app and by thread (`AX/AXCalls.swift`): `arborctl stats`
+  says which app makes Arbor feel slow.
 
 ## Holding the view
 
@@ -380,9 +408,10 @@ Every `setFrame` produces AX moved/resized notifications a moment later.
 `AXWindowSystem` remembers the frame it set (`EchoFilter` in ArborCore: any
 report within 0.15 s, the expected frame for a second, on a clock that cannot
 go backwards) and reports matching notifications
-with `userInitiated: false`. A report within 0.15 s of another frame than the expected
-one may be a stage of Arbor's move (position and size are set one after the other) or
-the app's own answer to it, so the window is looked at again 0.3 s later and reported
+with `userInitiated: false`. A report within 0.15 s may be a stage of Arbor's move
+(position and size are set one after the other) or the app's own answer to it. It is not
+even read, which would be two or three calls for each of up to three reports per window, right after
+every camera move: it is passed on with the frame that is in the books, and the window is looked at once, 0.3 s later, and reported
 as moved by its app if it is not where Arbor put it. The controller ignores those, and treats
 user-initiated changes as: floating → remember the new frame; docked with the
 mouse down → a drag or resize in progress; docked and resized by its edges →
@@ -1019,18 +1048,20 @@ a handler; these are the rules for handlers, and `RectangleFramer` is the model.
 
 ## Threading
 
-Everything in ArborKit is `@MainActor`, except the event taps and the queue the state file is written on. AX observer
+Everything in ArborKit is `@MainActor`, except the event taps, the lanes windows are moved on, and the queue the state
+file is written on. AX observer
 callbacks, Carbon hotkey events, NSEvent monitors and the control socket's
 dispatch source all run on the main run loop and enter the main actor with
 `MainActor.assumeIsolated`. Event tap callbacks run on `EventTapThread`
 (above) and hop to the main actor with `DispatchQueue.main.async` only to run
 a command or draw.
 
-AX calls are synchronous, on the main thread, with a 1-second messaging timeout
-set for the whole process and on every element that is kept. Moving one window
-takes four to six calls, so a hung app with a few docked windows could stop
-Arbor for many seconds at every layout. The first call that times out therefore
-ends the conversation: `setFrame` returns nil, and nothing more is asked of that
+AX calls are synchronous, with a 1-second messaging timeout
+set for the whole process and on every element that is kept. Windows are moved on their apps' lanes
+("What a command costs"); code on a lane touches nothing but the elements it was handed (`AXMove`), and results
+are applied on the main actor. Everything else is asked on the main thread. A hung app with three docked windows
+was seen to stop Arbor for 19.5 s. Now the main thread waits 0.5 s for a move, and the first call that times out, on a lane or
+on the main thread, ends the conversation: `setFrame` returns nil, and nothing more is asked of that
 app until it answers a call made off the main thread (tried twice a second) or
 posts a notification. Its windows are then reported again, and the controller
 places the ones it could not move (`unplaced`). A window that could not be parked

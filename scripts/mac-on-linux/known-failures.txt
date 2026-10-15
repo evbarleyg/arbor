@@ -256,25 +256,20 @@ judge2: K9 text is selected in a field 30 points below a window's top while the 
 judge2: K9 text is selected in a field 30 points below a window's top while the window goes back 60 points the same way, the press heard 150 ms late: no drag and no resize is made of it # (6), RED WITH `hold` ONLY: a text field in the upper 60 points of a window that goes back the pointer's way
 
 # The rude walk, with the usual seeds (1-40). Each rule here is one of the faults above, or of those in README.md, "What the walk has found".
-the rude walk (polite): a window whose app hung as it came forward is reported focused once the app wakes [2 of 40 seeds] # reportFocus(of:) waits the second out, notes no silence, and answersAgain reports no focus
 the rude walk (overtaking): Arbor's main thread waits at most two seconds for one hang [3 of 40 seeds] # a second for each ⌘Tab to a hung app, and for each notification that was on its way when the app hung
-the rude walk (overtaking): a window whose app hung as it came forward is reported focused once the app wakes [4 of 40 seeds] # reportFocus(of:) waits the second out, notes no silence, and answersAgain reports no focus
 the rude walk (stale answers): Arbor knows which windows are minimized, hidden, in full screen or on another Space [1 of 40 seeds] # a window first met through a focus report is taken to be on the Space that shows; that AXFocusedWindow names a window on another Space is a guess of the model's
 the rude walk (stale answers): Arbor's main thread waits at most two seconds for one hang [5 of 40 seeds] # a second for each ⌘Tab to a hung app, and for each notification that was on its way when the app hung
 the rude walk (stale answers): a tab is not announced as a window of its own [18 of 40 seeds] # the list is read once; if it lags, or a Space switch is under way, the new tab is added as a window and can be no tab any more
 the rude walk (stale answers): a window that was put away when the layer started is announced as new when it is shown again [1 of 40 seeds] # the start counts whatever the window server lists as there; what was put away is remembered only from having seen it go
-the rude walk (stale answers): a window whose app hung as it came forward is reported focused once the app wakes [2 of 40 seeds] # reportFocus(of:) waits the second out, notes no silence, and answersAgain reports no focus
 the rude walk (stale answers): when the tab in front goes, Arbor knows the one that shows instead [2 of 40 seeds] # the list is read once; if it lags the group is reported gone and the tab that shows stays unknown
 the rude walk (twice or never): Arbor's main thread waits at most two seconds for one hang [6 of 40 seeds] # a second for each ⌘Tab to a hung app, and for each notification that was on its way when the app hung
 the rude walk (twice or never): a window that closed without a word is found out [4 of 40 seeds] # nothing reads the app's list again, and setFrame does not take invalidUIElement for an answer
 the rude walk (twice or never): the windows of an app that ended without a word are found out [12 of 40 seeds] # nobody asks a silent app anything until the next layout that moves its window
 the rude walk (twice or never): the windows of an app that hung when the layer started are known once it has woken [2 of 40 seeds] # each retry to observe it waits a second on the main thread; once the retries are spent (some 40 s) nobody asks again until the app comes forward
-the rude walk (late calls): a window whose app hung as it came forward is reported focused once the app wakes [2 of 40 seeds] # reportFocus(of:) waits the second out, notes no silence, and answersAgain reports no focus
 the rude walk (all four): Arbor's main thread waits at most two seconds for one hang [8 of 40 seeds] # a second for each ⌘Tab to a hung app, and for each notification that was on its way when the app hung
 the rude walk (all four): a tab is not announced as a window of its own [15 of 40 seeds] # the list is read once; if it lags, or a Space switch is under way, the new tab is added as a window and can be no tab any more
 the rude walk (all four): a window that closed without a word is found out [7 of 40 seeds] # nothing reads the app's list again, and setFrame does not take invalidUIElement for an answer
 the rude walk (all four): a window that was put away when the layer started is announced as new when it is shown again [1 of 40 seeds] # the start counts whatever the window server lists as there; what was put away is remembered only from having seen it go
-the rude walk (all four): a window whose app hung as it came forward is reported focused once the app wakes [1 of 40 seeds] # reportFocus(of:) waits the second out, notes no silence, and answersAgain reports no focus
 the rude walk (all four): the windows of an app that ended without a word are found out [12 of 40 seeds] # nobody asks a silent app anything until the next layout that moves its window
 the rude walk (all four): the windows of an app that hung when the layer started are known once it has woken [1 of 40 seeds] # each retry to observe it waits a second on the main thread; once the retries are spent (some 40 s) nobody asks again until the app comes forward
 the rude walk (all four): when the tab in front goes, Arbor knows the one that shows instead [3 of 40 seeds] # the list is read once; if it lags the group is reported gone and the tab that shows stays unknown
@@ -296,12 +291,6 @@ sometimes: the rude walk (all four): Arbor knows where every window is # an app 
 sometimes: the rude walk (all four): a window that has just opened is announced as new # it opens 2 ms before its app hangs, and a Space switch counts it as there before the layer has seen it
 
 # What the walk breaks with some seeds only (seen in 1-400). These may pass.
-
-# An app that hangs, or is still marked as silent, when it comes forward. `reportFocus(of:)` waits the timeout out on the focused window, says only that the keyboard moved, and does not call
-# `noteSilence`: nobody asks whether the app is back, every further ⌘Tab to it costs another second, and `answersAgain`, if it is reached at all, reports no focus.
-⌘Tab to an app that hangs, and wakes two seconds later: once it wakes, its window, which has the keyboard, is reported focused # reportFocus(of:) notes no silence, and answersAgain reports no focus
-⌘Tab three times to an app that hangs: Arbor's main thread has waited a second for it once, not each time # reportFocus(of:) notes no silence
-⌘Tab to an app whose window is out of view and which hangs for two seconds: once the app wakes the view moves to show its window, which has the keyboard # the same, seen from the screen
 
 # "Whoever posts a notification is awake" (`handle`) does not hold for what was on its way when the app hung: each such notification takes the app off the list of the silent, and the next call waits again.
 an app opens a window and is busy at once, loading what goes into it: Arbor's main thread waits for it two seconds at most # a second for each notification that was on its way
@@ -330,7 +319,6 @@ an app hangs for 8 s at the first call that sets something in a move out of view
 an app hangs for 8 s at the reading back in a move out of view, and Arbor is quit meanwhile: in the end all its windows are in view: nothing that was asked of it in vain takes one away after Arbor is gone # a park that timed out is carried out when the app wakes (measured on a hosted Mac), and Arbor is gone by then
 ⌘Tab away while Arbor's request for the keyboard waits for a slow app: the keyboard stays where the person went # the call waits for the app on the main thread, and what follows it (raise, activate) does not ask whether the person has gone elsewhere meanwhile
 ⌘Tab away while Arbor's request for the keyboard waits for a slow app: and the focus ring is there # the call waits for the app on the main thread, and what follows it (raise, activate) does not ask whether the person has gone elsewhere meanwhile
-an app takes 0.7 s over every move, and one of its windows refuses its slot's width: and answers within two seconds # every call of every move is waited for on the main thread
 
 # Found by the walk once it went on past a listed fault, by stopping and starting the layer there: three faults of a start (a launch, the end of a pause), or of what a hang swallows.
 an app's one window was put away before Arbor started, and is shown again, the focus reported first: it is announced as a window that has just opened # the start counts whatever the window server lists as there; what was put away is remembered only from having seen it go

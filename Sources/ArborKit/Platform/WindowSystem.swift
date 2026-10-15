@@ -165,6 +165,18 @@ public protocol WindowSystem: AnyObject {
   /// they return. The default does nothing.
   func moveTogether(_ frames: [(window: WindowID, frame: CGRect)])
 
+  /// Waits, `timeout` seconds at most, until moves that are still under way have ended, and reports what came of them.
+  /// Arbor asks before it lets go of the windows for good: a window whose app is still busy with an earlier move would be
+  /// turned away, and stay out of view with nobody left to try again. For the same reason no move is turned away
+  /// from here until `stop`, which waits for them: one that finds its app busy is made when its turn comes, and
+  /// `setFrame` answers the frame it was asked for. Nil still means that the window could not be moved.
+  ///
+  /// `arborLivesOn`: this is a pause, not a quit. An app that hangs carries out, when it wakes, what it was asked meanwhile, but only
+  /// while the process that asked lives (seen on a hosted Mac). So where Arbor lives on, `stop` sends the windows out of view of apps that
+  /// do not answer to where they were to go, without waiting for an answer. At a quit that would cost time and bring nothing.
+  /// The default does nothing: where there is no `moveTogether`, a move is over when `setFrame` returns.
+  func finishMoves(timeout: Double, arborLivesOn: Bool)
+
   /// `setFrame` for one window of the app `pid` while the window system is stopped (a pause), without starting it:
   /// starting asks every running app for its windows, and one that hangs, which is a reason to pause, makes
   /// everybody wait. Nothing is observed or reported because of it. The default starts, moves and stops.
@@ -195,6 +207,7 @@ extension WindowSystem {
 
 
   public func moveTogether(_ frames: [(window: WindowID, frame: CGRect)]) {}
+  public func finishMoves(timeout: Double, arborLivesOn: Bool) {}
 
   public func setFrameOnce(_ frame: CGRect, of window: WindowID, pid: Int32) -> CGRect? {
     start()

@@ -243,6 +243,7 @@ extension Controller {
     check("titleWatches", titleWatches.keys)
     check("unplaced", unplaced)
     check("owedMoves", owedMoves)
+    check("owedFrames", owedFrames.keys)
     check("givenUp", enforcement.givenUp)
     check("appsDoubleClick", [appsDoubleClick?.window].compactMap { $0 })
     check("whereAZoomBegan", whereAZoomBegan.keys)

@@ -289,6 +289,7 @@ extension World {
     arbor.controller.shutdown()
     Log.info("Arbor quit")
     noteSavedState()
+    system.arborsProcessEnded()
     forgetArbor()
   }
 
@@ -302,6 +303,7 @@ extension World {
   func killArbor() -> Reply {
     system.stop()
     system.events = nil
+    system.arborsProcessEnded()
     killedWithWatchdog = arbor.flatMap { $0.watchdog == nil ? nil : $0.pid }
     forgetArbor()
     return Reply()

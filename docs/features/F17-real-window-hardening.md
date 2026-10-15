@@ -97,4 +97,5 @@ camera (`owedMoves`), a window summoned or pinned, and one that could not come b
 
 Not shipped: the manual check of H1 in Safari, Finder, Terminal, an Electron app and System Settings (`docs/TESTING.md`, "Real apps").
 **Quitting while an app with a window out of view hangs** (K003's quit half): the window is still out of view when the app wakes, and Arbor is gone. Opening Arbor again finds it
-(`afterAQuitWhileAnAppHungOpeningArborAgainFindsItsWindow`). The cure, `stop()` sending such moves without waiting for answers (M16), is written and waits for a Mac that can run real-window tests.
+(`afterAQuitWhileAnAppHungOpeningArborAgainFindsItsWindow`). The cure that was written, `stop()` sending such moves without waiting for answers (M16), was tried on a hosted Mac and does nothing at a quit: macOS drops what a
+dead process asked. At a pause, which Arbor lives through, the same calls bring the windows back, and are made (`itIsBackTheMomentItsAppWakes`, `aMoveOutOfViewThatLiesInAHungAppsQueueDoesNotOutlastThePause`).

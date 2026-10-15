@@ -235,10 +235,13 @@ extension Controller {
       // would ever fetch it, and it is placed when the app answers (`noteThatTheAppAnswers`).
       if wasParked { parked.insert(window) }
       unplaced.insert(window)
+      // In view, nothing else would ever move it. Out of view it is fetched as ever, and what a change of displays left hanging is not for this.
+      if !wasParked, !isMostlyOffScreen(window), let from = windows[window]?.frame { owedFrames[window] = (frame, from) }
       noteThatItCouldNotComeBack(window, to: frame)
       return
     }
     unplaced.remove(window)
+    owedFrames[window] = nil
     // One that took the frame it was asked to is where its user had it, however little of it shows.
     let isSmaller = actual.width < frame.width - 2 || actual.height < frame.height - 2
     if actual.width > frame.width + 2 || actual.height > frame.height + 2

@@ -361,9 +361,14 @@ public final class Controller {
   /// Of those, the ones whose app has answered since. The layout that follows owes them the move they missed, whatever
   /// else that layout is for (Controller+Hardening.swift).
   var owedMoves: Set<WindowID> = []
+  /// Windows that were to get a frame of their own back (Float All, `float`, undo) while their apps did not answer: the frame, and where each
+  /// stood then. No layout has a place for a floating window that is in view, so this is paid by itself (Controller+Hardening.swift).
+  var owedFrames: [WindowID: (frame: CGRect, from: CGRect)] = [:]
   /// Windows that were out of view when a pause began and could not be brought back, because their app did not answer, and where
   /// each was to go; and how often it has been tried since (Controller+Hardening.swift).
   var couldNotComeBack: [WindowID: CGRect] = [:]
+  /// What the log said when Arbor last stopped.
+  public private(set) var lastWords = ""
   var triesForWhatCouldNotComeBack = 0
   /// Stand-ins for saved docked windows that may still be restored (Controller+PendingSlots.swift).
   var pendingSlots: Set<WindowID> = []
@@ -599,6 +604,7 @@ public final class Controller {
     parkedAgain.removeAll()
     unplaced.removeAll()
     owedMoves.removeAll()
+    owedFrames.removeAll()
     enforcement = EnforcementLimiter()
     focusHistory.removeAll { windows[$0] == nil }
     let savedHints = hints
@@ -670,6 +676,8 @@ public final class Controller {
     whereAZoomBegan.removeAll()
     if movingWindows { lookAtTheDisplaysBeforeLettingGo() }
     dropOverdueSlotsBeforeAStop()
+    // A window whose app is still busy with the last move could not be brought back.
+    system.finishMoves(timeout: 1, arborLivesOn: isPaused)
     scheduler.cancel("save")
     overlays.finishAnimations()
     stopWatchingTitles()
@@ -770,7 +778,16 @@ public final class Controller {
     system.stop()
     scheduleUpdateChecks()
     notify(.lifecycle)
-    Log.info(movingWindows ? "stopped; all windows returned to view" : "stopped; no window was moved")
+    let left = managedWindowIDs.filter { isMostlyOffScreen($0) && windows[$0]?.isFullScreen != true }.sorted()
+    if !movingWindows {
+      lastWords = "stopped; no window was moved"
+    } else if left.isEmpty {
+      lastWords = "stopped; all windows returned to view"
+    } else {
+      let ids = left.map { "\($0)" }.joined(separator: " ")
+      lastWords = "stopped; \(left.count) window(s) could not be returned to view, their apps do not answer: \(ids)"
+    }
+    Log.info(lastWords)
   }
 
   /// Does nothing while there is a display.

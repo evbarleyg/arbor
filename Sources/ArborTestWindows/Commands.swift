@@ -21,6 +21,10 @@ import AppKit
 ///   full-screen <id>                enters or leaves macOS's full-screen mode
 ///   hide | unhide | activate        the whole app
 ///   hang <seconds>                  stops answering anyone for that long
+///   busy <ms> [<attention ms>]      from now on works that long at a time, with 30 ms of attention between, or as
+///                                   many as given: a busy app, which answers late. `busy 0` ends it
+///   sluggish <ms>                   from now on takes that long over every move and every resize of a window, as an app does that
+///                                   lays its content out anew: whoever asked waits that long for the answer. `sluggish 0` ends it
 ///
 /// MoreCommands.swift has more: open, front, activate <id>, title, events, list, ping.
 @MainActor
@@ -34,9 +38,19 @@ final class Commands {
   private var ticksAway: [Int: Int] = [:]
   private var patience: [Int: Int] = [:]
   private var insistence: Timer?
+  private var busyness: Timer?
+  private var sluggishness: TimeInterval = 0
 
   init(_ windows: [NSWindow]) {
     self.windows = windows
+    // Posted while the frame is being set, on this thread, so that the one who set it is kept waiting.
+    for name in [NSWindow.didMoveNotification, NSWindow.didResizeNotification] {
+      NotificationCenter.default.addObserver(forName: name, object: nil, queue: nil) { [weak self] _ in
+        MainActor.assumeIsolated {
+          if let seconds = self?.sluggishness, seconds > 0 { Thread.sleep(forTimeInterval: seconds) }
+        }
+      }
+    }
   }
 
   func receive(_ text: String) {
@@ -110,6 +124,18 @@ final class Commands {
       target?.makeKeyAndOrderFront(nil)
     case "hang":
       if words.count > 1, let seconds = Double(words[1]) { Thread.sleep(forTimeInterval: min(max(seconds, 0), 60)) }
+    case "busy":
+      busyness?.invalidate()
+      busyness = nil
+      if words.count > 1, let work = Double(words[1]), work > 0 {
+        let seconds = min(work, 5000) / 1000
+        let attention = min(max(words.count > 2 ? Double(words[2]) ?? 30 : 30, 1), 1000) / 1000
+        busyness = Timer.scheduledTimer(withTimeInterval: seconds + attention, repeats: true) { _ in
+          Thread.sleep(forTimeInterval: seconds)
+        }
+      }
+    case "sluggish":
+      sluggishness = min(max(words.count > 1 ? Double(words[1]) ?? 0 : 0, 0), 900) / 1000
     default: performMore(words)
     }
   }

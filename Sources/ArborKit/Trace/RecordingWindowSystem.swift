@@ -142,6 +142,15 @@ public final class RecordingWindowSystem: WindowSystem {
     recorder.record(.note("moveTogether, \(frames.count) windows, took \(took) s"))
   }
 
+  /// The same: what it waits for is reported as events, which are recorded.
+  public func finishMoves(timeout: Double, arborLivesOn: Bool) {
+    guard recorder.isRecording else { return inner.finishMoves(timeout: timeout, arborLivesOn: arborLivesOn) }
+    let before = recorder.clock()
+    inner.finishMoves(timeout: timeout, arborLivesOn: arborLivesOn)
+    let took = ((recorder.clock() - before) * 10_000).rounded() / 10_000
+    recorder.record(.note("finishMoves took \(took) s"))
+  }
+
   /// In a trace it is a `setFrame` like any other: what was asked of the window, and what came of it.
   public func setFrameOnce(_ frame: CGRect, of window: WindowID, pid: Int32) -> CGRect? {
     let actual = inner.setFrameOnce(frame, of: window, pid: pid)

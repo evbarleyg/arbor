@@ -88,6 +88,90 @@ func tellOfSlowApps(_ book: Book) {
       two.mac.pass(10)
       story.check("the app is awake again", !busy.isHung)
       story.check("in the end all its windows are in view: nothing that was asked of it in vain takes one away after Arbor is gone", theirs.allSatisfy { two.isInView($0) }, places(two, theirs))
+      // The end does not show it where word is left at a quit, which fetches the window again. An app that hangs before the move begins is
+      // asked a question first, and sent nothing when that goes unanswered.
+      if calls == nil {
+        story.check(
+          "and it was never told to take one out of view: it hung before the move began",
+          !two.mac.journal.contains { $0.contains("what was asked of it while it hung: AXPosition = point(Foundation.CGPoint(x: 1023.0") })
+      }
+    }
+  }
+
+  // The same at a pause, whose end Arbor lives to see, so that the park IS carried out when the app wakes. Until then the window server shows the window in view, and
+  // whoever goes by that takes the pause's promise for kept.
+  for (calls, words) in [(Int?.some(1), "at the first call that sets something in a move out of view"), (nil, "half a second after it last answered Arbor, its windows are sent out of view")] {
+    book.story("an app hangs for 8 s \(words), and Arbor is paused meanwhile") { story in
+      let (two, mine, theirs) = stage(story)
+      let busy = theirs[0].app
+      if let calls {
+        busy.hangsAfterCalls = calls
+      } else {
+        // Its windows have just been moved, so it has just answered whatever is asked before a move.
+        two.run("zoom \(theirs[0].number)", then: 2)
+        two.run("show-all", then: 0.5)
+        two.mac.hang(busy)
+      }
+      two.mac.later(8) { two.mac.wake(busy) }
+      two.run("zoom \(mine.number)", then: 0.3)
+      story.check("the pause is taken", two.run("pause", then: 0).ok)
+      // Or the story has not been told.
+      story.check("while the app still hangs", busy.isHung)
+      two.mac.pass(10)
+      story.check("the app is awake again", !busy.isHung)
+      story.check("and all its windows are in view, as a pause promises", theirs.allSatisfy { two.isInView($0) }, places(two, theirs))
+      two.mac.pass(40)
+      story.check("and stay there for as long as the pause lasts", theirs.allSatisfy { two.isInView($0) }, places(two, theirs))
+      story.check("the one that was on its way out is where it floated, in its own size", theirs[0].frame == CGRect(x: 500, y: 60, width: 400, height: 300), places(two, theirs))
+    }
+  }
+
+  // A window its person keeps most of the way over an edge, where a hand can still get hold of it, is theirs there, and a pause gives it back exactly there. So does the word it leaves:
+  // the first place that is asked for is the considered one, though less than half of it is in view. "Anywhere in view", which is asked for last, is not where it belongs.
+  book.story("a floating window is dragged most of the way over the right edge, goes out of view with the Desktop, its app hangs for 8 s, and Arbor is paused meanwhile") { story in
+    var mine: FakeMac.Window!, kept: FakeMac.Window!
+    let two = StoreyTwo(story) { mac in
+      kept = mac.open("kept", in: mac.launch("Busy"), frame: CGRect(x: 600, y: 300, width: 360, height: 260))
+      mine = mac.open("mine", in: mac.launch("Mine"), frame: CGRect(x: 60, y: 100, width: 400, height: 300))
+    }
+    let busy = kept.app
+    story.check("one window is docked at the left, one floats", two.run("dock \(mine.number) left").ok && !two.isDocked(kept), two.whereabouts(kept))
+    two.mac.click(kept)
+    two.mac.pass(1)
+    let hold = CGPoint(x: kept.frame.minX + 30, y: kept.frame.minY + 12)
+    two.mac.drag(from: hold, to: CGPoint(x: 930, y: hold.y))
+    two.mac.pass(0.3)
+    two.mac.release()
+    two.mac.pass(2)
+    let aside = kept.frame
+    story.check("less than half of it shows, and enough to get hold of", aside.minX == 900 && !two.isInView(kept), two.whereabouts(kept))
+    two.run("zoom \(mine.number)", then: 2)
+    story.check("it goes out of view with the Desktop", kept.frame != aside, two.whereabouts(kept))
+    two.mac.hang(busy)
+    two.mac.later(8) { two.mac.wake(busy) }
+    story.check("the pause is taken", two.run("pause", then: 0).ok)
+    story.check("while the app still hangs", busy.isHung)
+    two.mac.pass(8.5)
+    story.check("half a second after its app wakes it is exactly where its person keeps it", kept.frame == aside, two.whereabouts(kept))
+    two.mac.pass(40)
+    story.check("and stays there for as long as the pause lasts", kept.frame == aside, two.whereabouts(kept))
+    two.run("resume", then: 2)
+    two.run("show-all", then: 2)
+    story.check("and after it", kept.frame == aside, two.whereabouts(kept))
+  }
+
+  // The ways out give every window its own earlier frame back. One whose move finds its app busy with its sibling's floats from then on, in view, in the shape of its slot.
+  for way in ["float-all", "undo"] {
+    book.story("`\(way)` while an app with two docked windows takes 0.8 s over every move") { story in
+      let (two, mine, theirs) = stage(story)
+      theirs[0].app.answersIn = 0.12
+      story.check("Arbor takes the command", two.run(way, then: 0).ok)
+      two.mac.pass(30)
+      let own = [CGRect(x: 500, y: 60, width: 400, height: 300), CGRect(x: 500, y: 380, width: 400, height: 300), CGRect(x: 60, y: 100, width: 400, height: 300)]
+      story.check("every window has its own earlier frame back", (theirs + [mine]).map(\.frame) == own, places(two, theirs + [mine]))
+      let asked = theirs.map(\.timesAskedForAFrame)
+      two.mac.pass(10)
+      story.check("and Arbor has done with them", theirs.map(\.timesAskedForAFrame) == asked, "asked again \(zip(theirs.map(\.timesAskedForAFrame), asked).map { $0 - $1 }) times")
     }
   }
 

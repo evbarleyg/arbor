@@ -47,8 +47,9 @@ extension Controller {
   /// (`noteWhereItsUserLeftIt`), or it may be what a change of displays made of it, during a pause for one.
   func noteWhereItLeavesFrom(_ window: WindowID, on displayID: DisplayID) {
     guard !settings.floatingWindowsMakeWay, !parked.contains(window), !showsOnlyASliver(window),
-      // An undo that sends it out of view finds it in the shape of the slot it was docked in.
-      !leavingView.contains(window), workspaces[displayID]?.role(of: window) == nil, let frame = windows[window]?.frame,
+      // An undo that sends it out of view finds it in the shape of the slot it was docked in. So is one whose app did not answer when it
+      // was to get its own frame back.
+      !leavingView.contains(window), owedFrames[window] == nil, workspaces[displayID]?.role(of: window) == nil, let frame = windows[window]?.frame,
       let own = workspaces[displayID]?.floating[window], let display = display(displayID),
       // (macOS puts windows on whole points, whatever was asked for. A whole point off is another place.)
       !own.approximatelyEquals(frame, tolerance: 0.99)

@@ -526,6 +526,17 @@ extension Box where Value == EchoFilter {
     #expect(filter.value.hasStrayed(w, now: set))
   }
 
+  /// Then the frame need not even be read.
+  @Test func aMoveIsFreshForAsLongAsAnyReportIsAnEchoOrEarly() {
+    var filter = EchoFilter()
+    filter.expect(set, for: w, at: 100)
+    #expect(filter.isFresh(w, at: 100) && filter.isFresh(w, at: 100.14))
+    #expect(!filter.isFresh(w, at: 100.15) && !filter.isFresh(w, at: 99), "later, or with the clock behind")
+    #expect(!filter.isFresh(WindowID(8), at: 100.01))
+    #expect(filter.judge(set.offsetBy(dx: 50, dy: 0), of: w, at: 100.14) == .early)
+    #expect(filter.judge(set.offsetBy(dx: 50, dy: 0), of: w, at: 100.15) == .other)
+  }
+
   @Test func expectationsDoNotPileUp() {
     let filter = Box(EchoFilter())
     filter.expect(set, for: w, at: 100)
@@ -938,5 +949,60 @@ extension Box where Value == EchoFilter {
   @Test func aDialogLargerThanTheDisplayKeepsItsTitleBarInReach() {
     let huge = CGRect(x: 1639, y: 905, width: 1600, height: 1000)
     #expect(StrayDialog.home(for: huge, siblings: [corner], displays: [main]) == CGPoint(x: 0, y: 25))
+  }
+}
+
+@Suite struct WaitingFocusTests {
+  let a = WindowID(101)
+  let b = WindowID(102)
+  let c = WindowID(103)
+
+  /// Window b of app 2 is to get the keyboard; app 1 is in front, or app 2 itself, whose window a has it.
+  func waiting(front: Int32?, heard: WindowID? = nil) -> WaitingFocus {
+    WaitingFocus(window: b, app: 2, front: front, activations: 7, heard: heard, began: 100)
+  }
+
+  @Test func withNothingChangedItIsMade() {
+    #expect(waiting(front: 1).verdict(front: 1, activations: 7, at: 102) == .make)
+  }
+
+  /// The report of a switch can be lost, and macOS's word on who is in front can be behind it. Either is enough.
+  @Test func aSwitchOfAppsThatEitherChannelTellsOfEndsIt() {
+    #expect(waiting(front: 1).verdict(front: 3, activations: 7, at: 102) == .drop, "never reported")
+    #expect(waiting(front: 1).verdict(front: 1, activations: 8, at: 102) == .drop, "reported, and macOS still names the old app")
+    #expect(waiting(front: 1).verdict(front: nil, activations: 7, at: 102) == .drop)
+    #expect(waiting(front: 1).verdict(front: 2, activations: 8, at: 102) == .drop, "to the app itself: its person is there, at the window of their choice")
+  }
+
+  /// With another app in front its person can go on typing there, and nothing tells of that.
+  @Test func aRequestForAnAppInTheBackgroundDoesNotKeep() {
+    #expect(waiting(front: 1).verdict(front: 1, activations: 7, at: 100 + WaitingFocus.keeps) == .make)
+    #expect(waiting(front: 1).verdict(front: 1, activations: 7, at: 100.1 + WaitingFocus.keeps) == .drop)
+    #expect(waiting(front: 1).verdict(front: 1, activations: 7, at: 190) == .drop)
+    #expect(waiting(front: 2, heard: a).verdict(front: 2, activations: 7, at: 190) == .ask, "in front of a hung app one can only wait")
+  }
+
+  @Test func theAppInFrontIsAskedWhichOfItsWindowsHasTheKeyboard() {
+    #expect(waiting(front: 2, heard: a).verdict(front: 2, activations: 7, at: 102) == .ask)
+  }
+
+  @Test func aKeyTypedAheadIntoTheHungAppIsNotUndone() {
+    #expect(waiting(front: 2, heard: a).verdict(focused: c) == .drop)
+    #expect(waiting(front: 2, heard: a).verdict(focused: a) == .make, "nothing has happened in there")
+    #expect(waiting(front: 2, heard: a).verdict(focused: b) == .make, "it has it: making the request finds that out and does nothing")
+  }
+
+  /// Also where Arbor never heard which window had the keyboard: the report is of a change.
+  @Test func whatTheAppReportsAsItWakesIsHeard() {
+    #expect(waiting(front: 2, heard: nil).verdict(reported: c) == .drop)
+    #expect(waiting(front: 2, heard: a).verdict(reported: c) == .drop)
+    #expect(waiting(front: 2, heard: a).verdict(reported: a) == .make, "old news, posted before it hung and delivered late")
+    #expect(waiting(front: 2, heard: a).verdict(reported: b) == .make)
+  }
+
+  /// The look that timed out may have been the very question.
+  @Test func whereNothingWasHeardNothingCanBeSeenToHaveChanged() {
+    #expect(waiting(front: 2, heard: nil).verdict(focused: c) == .make)
+    #expect(waiting(front: 2, heard: a).verdict(focused: nil) == .make, "nobody has the keyboard in there")
   }
 }
