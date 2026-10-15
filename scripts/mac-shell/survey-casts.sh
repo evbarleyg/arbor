@@ -29,13 +29,23 @@ echo "Java: $(/usr/libexec/java_home 2>&1 | head -n 1)"
 
 # look <name> <bundle id> [argument for the app…]: opens it, says what it lists, measures its first standard window, quits it.
 look() {
-  local name=$1 bundle=$2 pid lines standard others way limits="-" tries=0 began code path each known
+  local name=$1 bundle=$2 pid lines standard others way limits="-" tries=0 began code path each known program
   shift 2
   step "$name ($bundle)"
   if app_running "$bundle"; then echo "it runs already"; fi
   # A large app that has never run is looked over by macOS first, which takes longer than any later start. What `open` says and how long it takes is part of the answer.
+  # "… is an app downloaded from the Internet. Are you sure you want to open it?": that is what `open` waited for. Without the mark macOS does not ask.
+  if [ -n "${SURVEY_ONLY:-}" ]; then
+    for each in /Applications/*.app; do
+      [ "$(defaults read "$each/Contents/Info" CFBundleIdentifier 2>/dev/null)" = "$bundle" ] || continue
+      echo "the mark on $each: $(xattr -p com.apple.quarantine "$each" 2>&1 | cut -c 1-60)"
+      sudo -n xattr -dr com.apple.quarantine "$each" && echo "taken off"
+    done
+  fi
   began=$SECONDS
-  bounded 90 open -g -b "$bundle" ${1:+--args "$@"}
+  # What is on the screen while `open` waits: a question nobody is there to answer?
+  if [ -n "${SURVEY_ONLY:-}" ]; then (sleep 12; snap_now "survey-$name-while-open-waits" > /dev/null) 5<&- 6>&- 8>&- 9>&- & fi
+  bounded "${SURVEY_OPEN_LIMIT:-90}" open -g -b "$bundle" ${1:+--args "$@"}
   code=$?
   echo "open -b: exit code $code after $((SECONDS - began)) s"
   if [ "$code" -ne 0 ]; then
@@ -45,7 +55,14 @@ look() {
     bounded 90 open -g -a "$path" ${1:+--args "$@"}
     code=$?
     echo "open -a $path: exit code $code after $((SECONDS - began)) s"
-    [ "$code" -eq 0 ] || { printf '%s\t%s\tdoes not open\n' "$name" "$bundle" >> "$SURVEY"; return; }
+    if [ "$code" -ne 0 ]; then
+      # Past Launch Services altogether, as whoever drives a browser from a test does: the program inside the bundle.
+      program="$path/Contents/MacOS/$(defaults read "$path/Contents/Info" CFBundleExecutable 2>/dev/null)"
+      [ -x "$program" ] || { printf '%s\t%s\tdoes not open\n' "$name" "$bundle" >> "$SURVEY"; return; }
+      "$program" "$@" > "$ARBOR_OUT/survey-$name.log" 2>&1 5<&- 6>&- 8>&- 9>&- &
+      started "$!"
+      echo "started $program itself"
+    fi
   fi
   until pid=$(apptool pid "$bundle" 2>/dev/null); do
     [ "$tries" -ge 100 ] && { printf '%s\t%s\tdid not start\n' "$name" "$bundle" >> "$SURVEY"; echo "did not start"; return; }

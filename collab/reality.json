@@ -10068,6 +10068,86 @@
     "docs/VIABLE.md",
     "docs/TESTING.md"
    ]
+  },
+  {
+   "id": "open-waits-for-an-answer-about-a-downloaded-app",
+   "kind": "second-actor",
+   "layer": "machine",
+   "expected": "`open -b <bundle id>` starts an app that is installed, and returns.",
+   "happened": "For Chrome, Firefox and Edge on a hosted Mac it did not return within 90 s, and a second try by the path was refused at once (-10673). A picture taken meanwhile shows why: macOS verifies the app, then asks whether an app downloaded from the Internet is really to be opened, and waits for a click. With the quarantine mark taken off the bundle, `open` returns at once and each opens a window.",
+   "found": "A survey of a hosted Mac, macOS 26, on 2026-10-15, three times: by the time `open` took, by a picture while it waited, and with the mark off.",
+   "modelled": "cannot",
+   "knobs": [],
+   "guards": [
+    "tool: mac-shell/lib-walk.sh"
+   ],
+   "copes": "scripts/mac-shell/lib-walk.sh takes the mark off a downloaded browser before it opens it, on a Mac that is thrown away afterwards.",
+   "hurt": 4,
+   "sources": [
+    "scripts/mac-shell/lib-walk.sh",
+    "scripts/mac-shell/survey-casts.sh"
+   ]
+  },
+  {
+   "id": "macos-lets-a-held-window-catch-up-all-at-once",
+   "kind": "second-actor",
+   "layer": "at the seam",
+   "expected": "A window that macOS holds back under the hand, where its edge meets another window's, stays behind by what it was held.",
+   "happened": "Held for two seconds with its top one point under its neighbour's bottom edge while the pointer climbed 160 points, a window leapt 93 points in one sample, towards where the pointer carried it, as macOS's tiling preview came up. Arbor's own trace has seven calls that set a frame in that step, none for that window, all after the drop. Read as a pull: 77 points further than the pointer went.",
+   "found": "A walk with real apps on a hosted Mac, macOS 26, on 2026-10-15: the raw samples of pointer and window, held against the trace Arbor recorded.",
+   "modelled": "no",
+   "knobs": [],
+   "guards": [
+    "tool: mac-shell/jolts.py"
+   ],
+   "copes": "scripts/mac-shell/jolts.py calls it a pull only if the window ends up further from where the pointer carries it than it was, and measures how far it is ahead from where the hand first took hold.",
+   "hurt": 4,
+   "touches": [
+    "pulled"
+   ],
+   "sources": [
+    "scripts/mac-shell/jolts.py",
+    "docs/VIABLE.md"
+   ]
+  },
+  {
+   "id": "one-program-cannot-count-on-bringing-another-forward",
+   "kind": "late-or-partial-answer",
+   "layer": "test",
+   "expected": "`NSRunningApplication.activate` brings the app it is asked of to the front.",
+   "happened": "Asked by a command-line tool, it did in four rounds of seven. In the other three the app that was in front stayed there, and what was posted next (two dozen presses, keys, a drag) went to its window. An app that activates itself on a signal is not refused.",
+   "found": "The rounds of input on a hosted Mac, macOS 26, on 2026-10-15: the samples show another app's window frontmost at the points that were pressed.",
+   "modelled": "cannot",
+   "knobs": [],
+   "guards": [
+    "tool: mac-shell/lib-walk.sh"
+   ],
+   "copes": "scripts/mac-shell/desk.swift comes forward by itself on SIGUSR1, and scripts/mac-shell/lib-walk.sh posts nothing until the window server's list has both desks frontmost at the points it is about to press.",
+   "hurt": 4,
+   "sources": [
+    "scripts/mac-shell/desk.swift",
+    "scripts/mac-shell/lib-walk.sh"
+   ]
+  },
+  {
+   "id": "a-script-that-says-two-displays-may-have-had-one",
+   "kind": "identity",
+   "layer": "test",
+   "expected": "A run that is written for two displays, and says so in its manifest, was played on two.",
+   "happened": "No line of the walk plugged the second display in; every later line about it was left out as not applying; the run came back whole, 97 % judged, and said \"two\". The samples have one display from beginning to end. It was reported as a journey with two displays, and the checker would have counted it for that cell.",
+   "found": "Counting the acts of two walks by kind on 2026-10-15: none of three display changes had been played.",
+   "modelled": "cannot",
+   "knobs": [],
+   "guards": [
+    "tool: mac-shell/viable.py"
+   ],
+   "copes": "scripts/mac-shell/jolts.py says at the end of each step what displays the sampler saw and how many windows lay on the second; scripts/mac-shell/viable.py counts a run for no cell that its samples do not bear out.",
+   "hurt": 3,
+   "sources": [
+    "scripts/mac-shell/viable.py",
+    "scripts/mac-shell/jolts.py",
+    "docs/VIABLE.md"
+   ]
   }
  ],
  "afterword": [
