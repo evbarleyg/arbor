@@ -31,15 +31,14 @@ final class Minimaps {
 /// A heads-up panel that fades in, shows a `MinimapModel` and fades out. It decides nothing: where it goes, what it holds, whether
 /// it takes clicks and when it comes and goes are the controller's business.
 ///
-/// The look is the one agreed with the heads-up line (F43): a translucent background with 12-point corners, 0.1 s in, 0.25 s out, at once
+/// The look is the one agreed with the heads-up line (F43): a translucent background (`PanelGround`), 0.1 s in, 0.25 s out, at once
 /// with "Reduce motion". Once that line's `PassingPanel` is on the trunk this class should be one, and lose everything from
-/// `roundedMask` down.
+/// `animates` down.
 final class MinimapPanel: OverlayPanel {
-  private static let cornerRadius: CGFloat = 12
   static let fadeIn: TimeInterval = 0.1
   static let fadeOut: TimeInterval = 0.25
 
-  private let background = NSVisualEffectView()
+  private let background = PanelGround()
   private let mapView = MinimapView()
   /// Whether the panel is meant to be seen. It stays on screen a little longer, while it fades out.
   private var isWanted = false
@@ -60,10 +59,6 @@ final class MinimapPanel: OverlayPanel {
     // It only informs the person at the Mac, and says which other apps are open: not for an audience. macOS decides how far this
     // is honoured. The pictures of scripts/mac-shell/shots-minimap.sh need to see it.
     sharingType = ProcessInfo.processInfo.environment["ARBOR_PANELS_IN_PICTURES"] == "1" ? .readOnly : .none
-    background.material = .hudWindow
-    background.blendingMode = .behindWindow
-    background.state = .active  // The app is never active, and an inactive effect view turns flat grey.
-    background.maskImage = Self.roundedMask
     contentView = background
     mapView.frame = background.bounds
     mapView.autoresizingMask = [.width, .height]
@@ -87,22 +82,6 @@ final class MinimapPanel: OverlayPanel {
     mapView.model = model
     appear()
   }
-
-  /// A layer's corner radius does not reach what the window server blurs behind the window; a mask image does. The corners keep
-  /// their size and the middle stretches.
-  private static let roundedMask: NSImage = {
-    let radius = cornerRadius
-    // AppKit may draw an image on any thread, so the closure must not inherit the main actor.
-    let draw: @Sendable (NSRect) -> Bool = { rect in
-      NSColor.black.setFill()
-      NSBezierPath(roundedRect: rect, xRadius: radius, yRadius: radius).fill()
-      return true
-    }
-    let image = NSImage(size: NSSize(width: radius * 2 + 1, height: radius * 2 + 1), flipped: false, drawingHandler: draw)
-    image.capInsets = NSEdgeInsets(top: radius, left: radius, bottom: radius, right: radius)
-    image.resizingMode = .stretch
-    return image
-  }()
 
   private var animates: Bool { !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion }
 
@@ -162,7 +141,7 @@ private final class MinimapView: NSView {
 
   override func draw(_ dirtyRect: NSRect) {
     guard let model else { return }
-    MinimapDrawing.draw(model, accent: .controlAccentColor, ink: .labelColor) {
+    MinimapDrawing.draw(model, accent: .controlAccentColor, ink: PanelInk.main) {
       AppAppearance.colour(pid: $0.pid, bundleID: $0.bundleID)
     }
   }
@@ -174,6 +153,7 @@ private final class MinimapView: NSView {
 enum MinimapDrawing {
   /// What is out of view is still there, only fainter.
   static let outOfViewAlpha: CGFloat = 0.45
+  static let outOfViewEdgeAlpha: CGFloat = 0.3
   static let highlightFillAlpha: CGFloat = 0.12
 
   /// `accent` frames the space in view, `ink` is for the Desktop's outline, the outline under the pointer and the caption, and
@@ -189,6 +169,12 @@ enum MinimapDrawing {
     for item in model.items {
       colour(item).withAlphaComponent(item.isInView ? 1 : outOfViewAlpha).setFill()
       NSBezierPath(roundedRect: item.frame, xRadius: 2.5, yRadius: 2.5).fill()
+      // Fainter must not mean gone: a dark app's window out of view merged with a dark ground (seen on a hosted Mac).
+      guard !item.isInView, item.frame.width > 2, item.frame.height > 2 else { continue }
+      let edge = NSBezierPath(roundedRect: item.frame.insetBy(dx: 0.5, dy: 0.5), xRadius: 2, yRadius: 2)
+      ink.withAlphaComponent(outOfViewEdgeAlpha).setStroke()
+      edge.lineWidth = 1
+      edge.stroke()
     }
 
     // Around the space rather than on it, so that a small window's colour still shows.

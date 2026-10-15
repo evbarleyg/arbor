@@ -112,15 +112,15 @@ struct CheatSheetLayout {
         string: text, attributes: [.font: NSFont.systemFont(ofSize: size * s, weight: weight), .foregroundColor: colour])
     }
 
-    let title = string(model.title, 17, .semibold, .labelColor)
-    let footer = string(model.footer, 12, .regular, .secondaryLabelColor)
+    let title = string(model.title, 17, .semibold, PanelInk.main)
+    let footer = string(model.footer, 12, .regular, PanelInk.second)
     let top = padding + title.size().height + 14 * s
     var x = padding
     var bottom = top
 
     for column in model.columns {
       let rows = column.flatMap(\.rows).map { row in
-        (keys: string(row.keys, 13, .medium, .labelColor), title: string(row.title, 13, .regular, .labelColor))
+        (keys: string(row.keys, 13, .medium, PanelInk.main), title: string(row.title, 13, .regular, PanelInk.main))
       }
       // Keys end and titles begin at the same line all the way down a column.
       let keysWidth = (rows.map { $0.keys.size().width }.max() ?? 0).rounded(.up)
@@ -129,7 +129,7 @@ struct CheatSheetLayout {
       var next = 0
       for (index, section) in column.enumerated() {
         if index > 0 { y += sectionGap }
-        texts.append((string(section.title, 12, .semibold, .secondaryLabelColor), NSPoint(x: x + keysWidth + gutter, y: y)))
+        texts.append((string(section.title, 12, .semibold, PanelInk.second), NSPoint(x: x + keysWidth + gutter, y: y)))
         y += headingHeight
         for _ in section.rows {
           let row = rows[next]

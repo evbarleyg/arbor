@@ -1406,8 +1406,8 @@ pure and in the core: `ReleaseLookup` reads the answer (404 is "nothing publishe
 and builds the release page's address from the tag only after the tag has parsed as a version.
 `Controller+Updates.swift` keeps one check in flight, gives up on a feed that does not answer, and runs the
 automatic checks (`automaticUpdateChecks`) by the clock rather than by one long delay, which would stand still while
-the Mac sleeps; a pause holds them. Only a check somebody asked for shows its answer: `UpdateWindow` draws the decision
-in an ordinary window, because an alert's modal loop would keep Arbor from hearing about other apps' windows. What an
+the Mac sleeps; a pause holds them. Only a check somebody asked for shows its answer: `UpdateWindow` says the decision
+in macOS's own alert, shown and not run, because an alert's modal loop would keep Arbor from hearing about other apps' windows. What an
 automatic check found changes the menu item's title (`updateMenuTitle`) and nothing else. Arbor never downloads or
 installs anything.
 

@@ -22,7 +22,8 @@
       NSColor(deviceRed: 0.85, green: 0.2, blue: 0.18, alpha: 1).setFill()
       NSRect(x: 0, y: 0, width: bounds.width / 3, height: bounds.height).fill()
       NSColor(deviceWhite: isDark ? 0.16 : 0.95, alpha: 0.92).setFill()
-      NSBezierPath(roundedRect: plate, xRadius: PassingPanel.cornerRadius, yRadius: PassingPanel.cornerRadius).fill()
+      let radius = PanelLook.Corner.line(height: plate.height)
+      NSBezierPath(roundedRect: plate, xRadius: radius, yRadius: radius).fill()
     }
   }
 
