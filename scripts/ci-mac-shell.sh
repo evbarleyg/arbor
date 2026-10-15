@@ -28,7 +28,7 @@
 #   taken off the screen,      a question macOS asks in a window of its own ("Allow … to find devices on local networks?"). It lies in the middle of the
 #   and said so                screen, over whatever the next script presses with the pointer, and no script sees it: a whole night's lost drags were
 #                              one of these. A picture of it stays with the script that left it: left-on-the-screen.png. One that will not go cannot be put back.
-#   cannot be put back         Accessibility for the runner's processes is gone (`tccutil reset`), there is another number of Spaces or of displays.
+#   cannot be put back         one of those settings is not what it was at a second look; Accessibility for the runner's processes is gone (`tccutil reset`), there is another number of Spaces or of displays.
 #                              What would run on such a Mac would say nothing about Arbor, so the scripts that are left do not run: each says why, and
 #                              ends with exit code 75. Give a script that does such a thing the last place, or a run of its own.
 # The desktop picture is not looked at: nothing reads it back. Only where there is a `defaults`, so on a Mac.
@@ -81,7 +81,7 @@ mac_note() {
 # Prints what it put back. Returns 1, having printed what differs, if the Mac cannot be made what it was.
 mac_put_back() {
   [ -f "$kept/.settings" ] || return 0
-  local name was now
+  local name was now stuck=""
   while read -r name was; do
     now=$(settings_now | awk -v name="$name" '$1 == name { print $2 }')
     [ "$now" != "$was" ] || continue
@@ -91,13 +91,23 @@ mac_put_back() {
         else defaults write com.apple.universalaccess reduceMotion -bool "$([ "$was" = 1 ] && echo true || echo false)"; fi ;;
       appearance) tool vdisplay appearance "$(echo "$was" | tr 'DL' 'dl')" > /dev/null ;;
       window-manager)
-        defaults import com.apple.WindowManager "$kept/.window-manager.plist" 2>/dev/null
+        # `defaults import` lays the file's keys over what is there, so a key the script added would stay (seen on a hosted Mac, where none of
+        # them is set to begin with): first all of it goes.
+        defaults delete com.apple.WindowManager 2>/dev/null
+        [ ! -s "$kept/.window-manager.plist" ] || defaults import com.apple.WindowManager "$kept/.window-manager.plist" 2>/dev/null
         # It reads its settings when it starts; launchd starts it again.
         killall WindowManager 2>/dev/null
         sleep 1 ;;
     esac
-    echo "mac-shell: put back after $1: $name"
+    # Said only of what a second look finds as it was.
+    if [ "$(settings_now | awk -v name="$name" '$1 == name { print $2 }')" = "$was" ]; then
+      echo "mac-shell: put back after $1: $name"
+    else
+      echo "mac-shell: $1 changed $name, and it will not go back"
+      stuck=yes
+    fi
   done < "$kept/.settings"
+  [ -z "$stuck" ] || return 1
   local asked asker
   asked=$(questions_now)
   if [ -n "$asked" ]; then
@@ -113,8 +123,10 @@ mac_put_back() {
     fi
     echo "mac-shell: taken off the screen after $1"
   fi
-  if ! for_good_now | cmp -s - "$kept/.for-good"; then
-    for_good_now | diff "$kept/.for-good" - | sed -n 's/^< /mac-shell: it was:  /p; s/^> /mac-shell: it is:   /p'
+  # Into a file first: whoever compares stops reading at the first difference, and the rest would complain of a broken pipe into the script's output.
+  for_good_now > "$kept/.for-good-now"
+  if ! cmp -s "$kept/.for-good-now" "$kept/.for-good"; then
+    diff "$kept/.for-good" "$kept/.for-good-now" | sed -n 's/^< /mac-shell: it was:  /p; s/^> /mac-shell: it is:   /p'
     return 1
   fi
 }
@@ -147,7 +159,7 @@ gather() {
 finish() {
   [ -d "$kept" ] || return 0
   [ -z "$now_playing" ] || gather "$number" "$now_playing"
-  rm -f "$kept/.settings" "$kept/.for-good" "$kept/.window-manager.plist"
+  rm -f "$kept/.settings" "$kept/.for-good" "$kept/.for-good-now" "$kept/.window-manager.plist"
   rm -rf "$out"
   mv "$kept" "$out"
 }
