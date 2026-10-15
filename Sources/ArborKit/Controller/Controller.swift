@@ -222,6 +222,7 @@ public final class Controller {
   var focusHistory: [WindowID] = []
   /// Controller+LetBe.swift.
   var letBe: LetBe?
+  var sentIntoTilesAtTheStart: SentIntoTilesAtTheStart?
   /// New windows whose title is still being checked against the rules (Controller+Rules.swift).
   var titleWatches: [WindowID: TitleWatch] = [:]
   /// Windows an `ignore` rule matches that the last run arranged (in the workspace given), found while there was no

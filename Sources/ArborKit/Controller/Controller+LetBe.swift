@@ -46,6 +46,7 @@ extension Controller {
   /// Only one a person sees. After a crash it can be in the corner: see `keyboardAfterAStart`.
   func letTheWindowWithTheKeyboardBe() {
     letBe = nil
+    noteWhereEverybodyStands()
     guard let window = system.focusedWindow(), isManaged(window), let snapshot = windows[window], snapshot.isPresent,
       !parked.contains(window), let tree = workspaceID(containing: window).flatMap({ workspaces[$0]?.tree }),
       // A tab behind another is brought to the front of its group, which moves nobody else.
@@ -57,7 +58,8 @@ extension Controller {
   /// The start's layout is over. A window that has its place in it is no longer on record
   /// (`lettingBeEndsWithAPlace`).
   func theStartHasLaidOut() {
-    guard let state = letBe else { return }
+    guard let state = letBe else { return noteWhoWentIntoATile() }
+    sentIntoTilesAtTheStart = nil
     guard let id = workspaceID(containing: state.window), let display = display(id), let layout = layouts[id],
       layout.hiddenWindows.contains(state.window)
     else { return letBe = nil }
@@ -100,6 +102,72 @@ extension Controller {
     windowFocused(focused)
   }
 
+  // MARK: A report that comes late
+
+  /// macOS does not always say in time who has the keyboard. Whatever started Arbor is still in front and gives the keyboard back
+  /// a moment later, or the app does not answer just then. The start names nobody, the window goes into its tile like any
+  /// other, the report follows, and the view went to it after all, with everybody else leaving.
+  ///
+  /// So for its first second a start remembers whom it took for a tile in a person's sight, and where they stood.
+  struct SentIntoTilesAtTheStart {
+    var found: [WindowID: CGRect]
+    /// When the start had laid out. Nil while it does, which is no layout somebody asked for afterwards.
+    var at: Date?
+  }
+
+  static let lateReport = "focus-late-report"
+  /// By decision. Nobody has measured how late a report can be.
+  static let aReportIsLateFor: TimeInterval = 1
+
+  private func noteWhereEverybodyStands() {
+    scheduler.cancel(Self.lateReport)
+    sentIntoTilesAtTheStart = .init(found: windows.filter { !parked.contains($0.key) && $0.value.isPresent }.mapValues(\.frame))
+  }
+
+  private func noteWhoWentIntoATile() {
+    let inTiles = Set(layouts.values.flatMap { $0.tiles.flatMap(\.windows) })
+    guard let found = sentIntoTilesAtTheStart?.found.filter({ inTiles.contains($0.key) }), !found.isEmpty else {
+      return sentIntoTilesAtTheStart = nil
+    }
+    sentIntoTilesAtTheStart = .init(found: found, at: now())
+    scheduler.schedule(Self.lateReport, after: Self.aReportIsLateFor) { [weak self] in self?.sentIntoTilesAtTheStart = nil }
+  }
+
+  /// `window` has the keyboard, says the first report since the start. If nobody has clicked or pressed anything meanwhile it had
+  /// it all along: it is put back where the start found it, in one request, and let be as if it had been named in time.
+  /// After a click or a key it is a switch, and gets what a switch gets. Returns whether it is let be.
+  func aLateReportLetsItBe(_ window: WindowID) -> Bool {
+    guard let sent = sentIntoTilesAtTheStart, let at = sent.at else { return false }
+    // macOS says once who had it. The next report is a change.
+    sentIntoTilesAtTheStart = nil
+    scheduler.cancel(Self.lateReport)
+    // A view that is held turns away whoever comes forward unasked, and cannot tell this from that (Controller+Hold.swift).
+    guard !isHeld, let found = sent.found[window], system.secondsSinceClickOrModifierKey() > now().timeIntervalSince(at),
+      // Still: a neighbour may have gone meanwhile and left it room.
+      let id = workspaceID(containing: window), layouts[id]?.tiles.contains(where: { $0.windows.contains(window) }) == true,
+      // The displays may have moved meanwhile, and its own with it.
+      displayID(at: found.center) == id
+    else { return false }
+    // Not one whose app did not answer when it was sent away: that stands where it stood.
+    if parked.contains(window) {
+      guard let corner = windows[window]?.frame, let actual = system.setFrame(found, of: window) else { return false }
+      windows[window]?.frame = actual
+      // It does not move, or not yet. Typed into unseen it would be worse off than with the view going to it.
+      guard !isOutOfView(actual) else { return false }
+      Log.info("\(window) had the keyboard when Arbor started, which macOS says only now: back from \(corner) to \(found)")
+      parked.remove(window)
+      parkedAgain[window] = nil
+      settled[window] = nil
+    }
+    unplaced.remove(window)
+    owedMoves.remove(window)
+    letBe = LetBe(window: window, stood: found, phase: .standing)
+    Log.info("\(window) has the keyboard and is a tile: let be where it stands")
+    workspaces[id]?.rememberUndockedFrames(ofArrivals: [window: found])
+    scheduleSave()
+    return true
+  }
+
   // MARK: It ends when a person asks
 
   /// Called by `relayout` before it moves anything: a layout within a command, with a gap or an edge in the hand, or
@@ -114,6 +182,7 @@ extension Controller {
   /// Also called by `moveCamera`, whoever moves the view: a command, a click on a tile, its own too, a switch to a
   /// window out of view.
   func lettingBeIsOver(on display: DisplayID) {
+    if sentIntoTilesAtTheStart?.at != nil { sentIntoTilesAtTheStart = nil }
     guard let state = letBe, state.phase == .standing, workspaceID(containing: state.window) == display,
       // On another Space it goes nowhere now. A timer's layout would send it off when it is back, with nobody to see
       // to the keyboard.

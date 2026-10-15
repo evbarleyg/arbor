@@ -81,6 +81,7 @@ extension Controller {
     // macOS picks once. Whatever this report is, the next one is somebody's own doing.
     let loss = keyboardHandOver.loss
     keyboardHandOver.loss = nil
+    if aLateReportLetsItBe(id) { return }
     guard let display = workspaceID(containing: id), isOutOfView(id, on: display) else {
       bringIntoView(id)  // at most another tab of its group
       return
