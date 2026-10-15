@@ -212,6 +212,19 @@ private let simpleEntries = SettingsSchema.entries.filter {
     }
   }
 
+  /// The window shows a choice's labels and never its values, so help that says "shown: …" explains words nobody there has
+  /// seen. `settings` and docs/SETTINGS.md, where the values are typed, add each value with its label by themselves.
+  @Test func helpDoesNotSpeakInAChoicesValues() {
+    for entry in SettingsSchema.entries {
+      guard case .choice(let choices) = entry.kind else { continue }
+      for choice in choices {
+        #expect(
+          entry.help.firstRange(of: "\(choice.value): ") == nil && entry.help.firstRange(of: "`\(choice.value)`") == nil,
+          "\(entry.key): say what “\(choice.label)” does, not `\(choice.value)`")
+      }
+    }
+  }
+
   @Test func aChoicesValuesAreExplainedWhereTheyAreTyped() throws {
     let entry = try SettingsSchema.entry(named: "newWindowsWhileFramed")
     let note = "`guest`: Stay with that view. `float`: Belong to the Desktop."
@@ -245,6 +258,23 @@ private let simpleEntries = SettingsSchema.entries.filter {
     for words in ["pinch", "gap pinch", "gapp"] { #expect(!gap.matches(search: words), "\(words)") }
     #expect(try SettingsSchema.entry(named: "hotkeysEnabled").matches(search: "shortcuts"))
     #expect(try SettingsSchema.entry(named: "hotkeysEnabled").matches(search: "hotkeys"))
+  }
+
+  @Test func withinASectionTheOrderIsTheOneWrittenDown() {
+    var seen: Set<String> = []
+    for (section, keys) in SettingsSchema.order {
+      for key in keys {
+        #expect(seen.insert(key).inserted, "\(key) is placed twice")
+        // A slip of the pen would send its setting to the end of the pane, and nobody would be told.
+        let entry = try? SettingsSchema.entry(named: key)
+        #expect(entry?.key == key && entry?.section == section, "\(key) is in \(entry?.section.title ?? "no section")")
+      }
+      let there = SettingsSchema.entries(in: section).map(\.key)
+      #expect(Array(there.prefix { keys.contains($0) }) == keys.filter { there.contains($0) }, "\(section.title)")
+    }
+    // What nobody has placed comes last, in the order it was added.
+    #expect(SettingsSchema.entries(in: .windows).first?.key == "gap")
+    #expect(SettingsSchema.entries(in: .general).first?.key == "hotkeysEnabled")
   }
 
   @Test func sectionsKeepTheirOrder() {
@@ -414,6 +444,13 @@ private let simpleEntries = SettingsSchema.entries.filter {
     // What people see is "Use keyboard shortcuts", not `hotkeysEnabled`.
     #expect(SettingsSchema.suggestions(for: "shortcuts").contains("hotkeysEnabled"))
     #expect(SettingsSchema.suggestions(for: "don't arrange").contains("excludedBundleIDs"))
+    // However it is spelt.
+    #expect(SettingsSchema.suggestions(for: "Smallest-Usable-Width") == ["minimumUsableWidth"])
+    #expect(SettingsSchema.suggestions(for: "dont_arrange") == ["excludedBundleIDs"])
+    #expect(SettingsSchema.suggestions(for: "usable-width") == ["minimumUsableWidth"], "from any of its words on")
+    // Not from the middle of a word: run together, "Shortcuts off in" has "sof" in it.
+    #expect(SettingsSchema.suggestions(for: "sof").isEmpty)
+    #expect(SettingsSchema.suggestions(for: "ngw") == ["focusRingWidth"], "a part of the key, and of no label")
   }
 
   @Test func nothingIsSuggestedForSomethingElseEntirely() {

@@ -214,6 +214,7 @@ private final class Panel {
     (30.4, 0.0, 100.0, 1.0, 30.0), (30.5, 0, 100, 1, 31), (-5, 0, 100, 1, 0), (500, 0, 100, 1, 100),
     (0.30000000000000004, 0, 0.5, 0.05, 0.3), (0.32, 0, 0.5, 0.05, 0.3), (0.33, 0, 0.5, 0.05, 0.35),
     (0.07, 0.05, 2, 0.05, 0.05), (1.26, 1, 12, 0.5, 1.5), (2.9, 0.1, 3, 0.1, 2.9), (2.99, 0.1, 3, 0.1, 3),
+    (38, 1, 1000, 10, 40), (3, 1, 1000, 10, 1), (6, 1, 1000, 10, 10), (999, 1, 1000, 10, 1000),
   ]) func slidersLandOnSteps(value: Double, low: Double, high: Double, step: Double, expected: Double) {
     #expect(SettingsPanelModel.snapped(value, in: low...high, step: step) == expected)
   }
@@ -330,6 +331,201 @@ private final class Panel {
   }
 }
 
+/// Fields hand over what was typed on Return and on losing the keyboard. The model sees to it that nothing typed is lost,
+/// or lands in the wrong place, where no field is told anything.
+@Suite @MainActor struct SettingsPanelDraftTests {
+  @Test func whatIsTypedCountsOnlyWhenItIsHandedOver() {
+    let p = Panel()
+    p.model.type("3", into: .setting("gap"))
+    p.model.type("30", into: .setting("gap"))
+    #expect(p.commands.isEmpty && p.model.drafts == [.setting("gap"): "30"] && p.redraws == 2)
+    p.model.handOver(.setting("gap"))
+    #expect(p.commands == ["set gap 30"] && p.settings.gap == 30 && p.model.drafts.isEmpty)
+    p.model.handOver(.setting("gap"))  // Return, and then the field loses the keyboard
+    #expect(p.commands.count == 1)
+  }
+
+  @Test func typingWhatIsThereAlreadyRunsNothing() {
+    let p = Panel()
+    p.model.type("1", into: .setting("gap"))
+    p.model.type("12", into: .setting("gap"))
+    p.model.type("accent", into: .setting("focusRingColour"))
+    p.model.handOverDrafts()
+    #expect(p.commands.isEmpty && p.model.drafts.isEmpty)
+  }
+
+  @Test func aRefusalIsShownAndTheFieldGoesBackToTheSetting() {
+    let p = Panel()
+    p.model.type("500", into: .setting("gap"))
+    p.model.handOver(.setting("gap"))
+    #expect(p.settings.gap == 12 && p.model.drafts.isEmpty && p.model.errors["gap"] != nil)
+  }
+
+  @Test func closingTheWindowLeavingThePaneAndSearchingHandOverWhatWasTyped() {
+    let p = Panel()
+    p.model.go(to: .section(.windows))
+    p.model.type("20", into: .setting("gap"))
+    p.model.type("400", into: .setting("minimumUsableWidth"))
+    p.model.handOverDrafts()  // what the window does as it closes
+    #expect(p.settings.gap == 20 && p.settings.minimumUsableWidth == 400 && p.model.drafts.isEmpty)
+    p.model.type("24", into: .setting("gap"))
+    p.model.pane = .section(.appearance)  // a click in the sidebar, which does not take the keyboard
+    #expect(p.settings.gap == 24 && p.model.drafts.isEmpty)
+    p.model.type("#ff0000", into: .setting("focusRingColour"))
+    p.model.search = "g"
+    #expect(p.settings.focusRingColour.lowercased() == "#ff0000" && p.model.drafts.isEmpty)
+  }
+
+  @Test func theSliderAndRestoreOvertakeTheField() {
+    let p = Panel()
+    p.model.type("99", into: .setting("gap"))
+    p.model.set("gap", to: 16.0)
+    #expect(p.settings.gap == 16 && p.model.drafts.isEmpty)
+    p.model.type("99", into: .setting("gap"))
+    p.model.reset("gap")
+    #expect(p.settings.gap == 12 && p.model.drafts.isEmpty)
+    // The slider is taken hold of, and the field gives the keyboard up for it: nothing moves before the slider is let go of.
+    p.model.type("99", into: .setting("gap"))
+    p.model.forget(.setting("gap"))
+    p.model.handOver(.setting("gap"))
+    #expect(p.settings.gap == 12 && p.model.drafts.isEmpty && p.commands.last == "reset gap")
+    // Restore Defaults is a button, which does not take the keyboard: what stands in a field of its pane goes with the rest.
+    p.model.go(to: .section(.windows))
+    p.model.set("gap", to: 16.0)
+    p.model.type("99", into: .setting("gap"))
+    p.model.restoreDefaults(in: .windows)
+    #expect(p.settings.gap == 12 && p.model.drafts.isEmpty)
+    p.model.handOverDrafts()
+    #expect(p.settings.gap == 12)
+  }
+
+  /// Seen on a Mac: a field that has the keyboard says once more what stands in it after Return, also where that is what it was given to
+  /// show after a refusal. Taken for typing, that stood in the field from then on, whatever became of the setting.
+  @Test func whatAFieldWasGivenToShowIsNotTyping() {
+    let p = Panel()
+    p.model.type("12", into: .setting("gap"))
+    #expect(p.model.drafts.isEmpty && p.redraws == 0)
+    p.model.type("40", into: .setting("gap"))
+    p.model.handOver(.setting("gap"))
+    p.model.type("40", into: .setting("gap"))
+    #expect(p.model.drafts.isEmpty && p.settings.gap == 40)
+    p.model.type("500", into: .setting("gap"))
+    p.model.handOver(.setting("gap"))
+    p.model.type("40", into: .setting("gap"))
+    #expect(p.model.drafts.isEmpty && p.settings.gap == 40 && p.model.errors["gap"] != nil)
+    // Typed and taken back is not typing either.
+    p.model.type("4", into: .setting("gap"))
+    p.model.type("40", into: .setting("gap"))
+    #expect(p.model.drafts.isEmpty)
+    // As the window counts: a share stands in its field in per cent.
+    p.model.type("25", into: .setting("dimBehindArranged"))
+    #expect(p.model.drafts.isEmpty)
+    p.model.type("0.25", into: .setting("dimBehindArranged"))
+    #expect(p.model.drafts == [.setting("dimBehindArranged"): "0.25"])
+    p.model.handOverDrafts()
+    #expect(p.settings.dimBehindArranged == 0.0025)
+    let q = rules()
+    q.model.type("Inbox", into: q.model.ruleRows[0].titleField)
+    q.model.type("", into: q.model.ruleRows[1].titleField)
+    #expect(q.model.drafts.isEmpty && q.redraws == 0)
+  }
+
+  @Test func closingAdvancedHandsOverWhatWasTypedBehindIt() {
+    let p = Panel()
+    p.model.go(to: .section(.windows))
+    p.model.setAdvanced(true, in: .windows)
+    p.model.type("77", into: .setting("resizeStep"))
+    p.model.setAdvanced(false, in: .windows)  // a click on the word, which does not take the keyboard
+    #expect(p.settings.resizeStep == 77 && p.model.drafts.isEmpty)
+  }
+
+  @Test func replacingTheFileWithTheDefaultsTakesWhatStandsInAFieldAlong() {
+    let p = Panel()
+    p.model.type("99", into: .setting("gap"))
+    p.model.replaceFileWithDefaults()
+    p.model.answer(yes: true)
+    #expect(p.model.drafts.isEmpty)
+    p.model.handOverDrafts()
+    #expect(p.settings.gap == 12)
+  }
+
+  /// "Inbox " is "Inbox": nothing is run, and the field goes back to what is so.
+  @Test func aTitleThatComesToTheSameIsForgottenAndTheLineDrawnAgain() {
+    let p = rules()
+    p.model.type("Inbox ", into: p.model.ruleRows[0].titleField)
+    let drawn = p.redraws
+    #expect(!p.model.handOver(p.model.ruleRows[0].titleField))
+    #expect(p.commands.isEmpty && p.model.drafts.isEmpty && p.redraws > drawn)
+  }
+
+  /// A field keeps the keyboard after its own Return and gives it up when its number changes by another hand, so it asks.
+  @Test func handingOverSaysWhetherItChangedAnything() {
+    let p = Panel()
+    #expect(!p.model.handOver(.setting("gap")), "nothing was typed")
+    p.model.type("30", into: .setting("gap"))
+    #expect(p.model.handOver(.setting("gap")) && p.settings.gap == 30)
+    p.model.type("500", into: .setting("gap"))
+    #expect(!p.model.handOver(.setting("gap")), "refused")
+    p.model.type("30.0", into: .setting("gap"))
+    #expect(!p.model.handOver(.setting("gap")), "the same number")
+    let q = rules()
+    q.model.type("Sent", into: q.model.ruleRows[0].titleField)
+    #expect(q.model.handOver(q.model.ruleRows[0].titleField) && q.settings.rules[0].title == "Sent")
+  }
+
+  /// Whoever changed a setting last is right. What stood in its field half typed was typed over another value: it would hide the
+  /// new one, and undo it as the window closes.
+  @Test func aChangeFromOutsideOvertakesTheField() {
+    let p = Panel()
+    p.model.type("99", into: .setting("gap"))
+    p.model.type("300", into: .setting("minimumUsableWidth"))
+    p.h.run("set gap 20")  // arborctl, a shortcut, or an edit to settings.json
+    #expect(p.model.drafts == [.setting("minimumUsableWidth"): "300"], "the other field is about something else")
+    p.model.handOverDrafts()
+    #expect(p.settings.gap == 20 && p.settings.minimumUsableWidth == 300)
+    // A switch of the window is clicked meanwhile, which does not take the keyboard: nothing to do with the field.
+    p.model.type("30", into: .setting("gap"))
+    p.model.set("makeRoom", to: false)
+    #expect(p.model.drafts == [.setting("gap"): "30"])
+  }
+
+  private func rules() -> Panel {
+    var settings = Settings()
+    settings.rules = [
+      AppRule(app: "com.example.mail", title: "Inbox", action: .dock(.left)), AppRule(app: "com.apple.finder", action: .ignore),
+    ]
+    return Panel(settings: settings)
+  }
+
+  @Test func aTitleIsHandedOverBeforeAnythingElseIsDoneToTheRules() {
+    for act: (SettingsPanelModel) -> Void in [
+      { $0.setKind(.float, of: $0.ruleRows[1]) }, { $0.moveRule($0.ruleRows[1], by: -1) },
+      { $0.removeRule($0.ruleRows[0]) }, { $0.addRule(app: "com.example.notes") },
+    ] {
+      let p = rules()
+      p.model.type("Downloads", into: p.model.ruleRows[1].titleField)
+      act(p.model)
+      #expect(p.model.drafts.isEmpty)
+      #expect(p.settings.rules.first { $0.app == "com.apple.finder" }?.title == "Downloads", "\(p.commands)")
+      #expect(p.settings.rules.filter { $0.title == "Downloads" }.count == 1)
+    }
+  }
+
+  @Test func whatWasTypedForARuleThatIsGoneIsDropped() {
+    let p = rules()
+    p.model.type("Downloads", into: p.model.ruleRows[1].titleField)
+    p.model.removeRule(p.model.ruleRows[1])
+    #expect(p.commands == ["rule remove 2"] && p.model.drafts.isEmpty)
+    // Another rule has come to its place behind the window's back.
+    let q = rules()
+    q.model.type("Sent", into: q.model.ruleRows[0].titleField)
+    q.h.run("rule move 1 2")
+    #expect(q.model.drafts[q.model.ruleRows[0].titleField] == nil, "the line that is there now shows its own title")
+    q.model.handOverDrafts()
+    #expect(q.commands.isEmpty && q.model.drafts.isEmpty && !q.settings.rules.contains { $0.title == "Sent" })
+  }
+}
+
 @Suite @MainActor struct SettingsPanelSearchTests {
   @Test func aSearchFindsSettingsInEverySectionAdvancedOnesToo() {
     let p = Panel()
@@ -341,7 +537,11 @@ private final class Panel {
       found.sections.first { $0.section == section }?.rows.map(\.key) ?? []
     }
     #expect(keys(in: .windows).contains("gap"))  // "…and the screen edges"
-    #expect(keys(in: .dragging).starts(with: ["screenEdgeBand", "windowEdgeFraction"]))  // both advanced
+    #expect(keys(in: .dragging).suffix(2) == ["screenEdgeBand", "windowEdgeFraction"])  // both advanced
+    // What is found stands as it stands in its pane.
+    for section in found.sections.map(\.section) {
+      #expect(keys(in: section) == SettingsSchema.entries(in: section).map(\.key).filter { keys(in: section).contains($0) })
+    }
     // In the order of the panes, and nothing that does not say the word.
     let order = found.sections.compactMap { SettingsSection.allCases.firstIndex(of: $0.section) }
     #expect(order == order.sorted())
@@ -508,6 +708,8 @@ private final class Panel {
     let mauve = try JSONDecoder().decode(Settings.self, from: Data(#"{"focusRingColour": "mauve"}"#.utf8))
     #expect(
       Panel(settings: mauve).model.valueProblems == ["focusRingColour: “mauve” is not accent, #RRGGBB or #RRGGBBAA; using the default, accent"])
+    let perDisplay = try JSONDecoder().decode(Settings.self, from: Data(#"{"displays": {"main": {"gap": 4}}}"#.utf8))
+    #expect(Panel(settings: perDisplay).model.valueProblems == ["displays: “displays” must be a list of entries; none were loaded"])
   }
 }
 
@@ -974,6 +1176,20 @@ private final class Panel {
     #expect(!p.h.workspace.contains(p.a), "its window is let go at once")
     p.model.remove("com.example.safari", from: "excludedBundleIDs")
     #expect(try dontArrange(p).listed.isEmpty && p.h.workspace.contains(p.a))
+  }
+
+  @Test func whatAHandEditedFileCanHoldIsShownOnceAndCanBeTakenOff() throws {
+    var settings = Settings()
+    settings.excludedBundleIDs = ["com.example.music", "COM.example.Music", "", "com.example.music", " "]
+    let p = Panel(settings: settings)
+    #expect(try dontArrange(p).listed.map(\.bundleID) == ["com.example.music", "", " "])
+    #expect(try dontArrange(p).listed.map(\.name) == ["com.example.music", "(an empty entry)", "(an empty entry)"])
+    #expect(Set(try dontArrange(p).listed.map(\.id)).count == 3, "lines are told apart")
+    p.model.remove("com.example.music", from: "excludedBundleIDs")
+    #expect(p.settings.excludedBundleIDs == ["", " "])
+    p.model.remove("", from: "excludedBundleIDs")
+    p.model.remove(" ", from: "excludedBundleIDs")
+    #expect(p.settings.excludedBundleIDs.isEmpty, "\(p.model.errors)")
   }
 
   @Test func eachListHasItsOwnApps() throws {

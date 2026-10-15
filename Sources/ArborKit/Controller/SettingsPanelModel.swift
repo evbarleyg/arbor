@@ -62,7 +62,11 @@ public final class SettingsPanelModel {
 
   private func changed() { onChange?() }
 
+  /// By the window, by a command, by a shortcut or in the file.
   private func settingsChanged() {
+    // Whoever changed a setting last is right. What stands half typed in its field was typed over another value: it would
+    // hide the new one, and undo it as the window closes.
+    typing = typing.filter { field, draft in shown(in: field) == draft.over }
     // What was refused because of the file is not held against the file that was mended or replaced.
     if fileProblem == nil { errors = errors.filter { $0.value != Self.refusedForTheFile } }
     changed()
@@ -76,6 +80,7 @@ public final class SettingsPanelModel {
   public var panes: [Pane] { Pane.all }
 
   public var pane: Pane = .section(.general) {
+    willSet { if pane != newValue { handOverDrafts() } }
     didSet {
       guard pane != oldValue else { return }
       cancelRecording()
@@ -130,8 +135,9 @@ public final class SettingsPanelModel {
     case (.text(let example), .text(let value)):
       control = .text(value: value, example: example)
     case (.list, _) where entry.isAppList:
-      let listed = entry.apps(in: settings)
-      let lowered = Set(listed.map { $0.lowercased() })
+      // A hand-edited file can name an app twice, which counts once, and is taken off the list at once too.
+      var lowered: Set<String> = []
+      let listed = entry.apps(in: settings).filter { lowered.insert($0.lowercased()).inserted }
       control = .apps(
         listed: listed.map { AppChoice(bundleID: $0, name: name(of: $0)) },
         candidates: apps.filter { !lowered.contains($0.bundleID.lowercased()) })
@@ -167,6 +173,8 @@ public final class SettingsPanelModel {
   public private(set) var openAdvanced: Set<SettingsSection> = []
 
   public func setAdvanced(_ isOpen: Bool, in section: SettingsSection) {
+    // Closing takes fields away, and a click on the word does not take the keyboard from the one that has it.
+    if !isOpen { handOverDrafts() }
     if isOpen { openAdvanced.insert(section) } else { openAdvanced.remove(section) }
     changed()
   }
@@ -175,6 +183,7 @@ public final class SettingsPanelModel {
 
   /// What is typed in the search field. While it is not empty the window shows `found` instead of a pane.
   public var search = "" {
+    willSet { if search != newValue { handOverDrafts() } }
     didSet { if search != oldValue { changed() } }
   }
 
@@ -285,6 +294,8 @@ public final class SettingsPanelModel {
   /// A switch flipped, a choice picked, text entered: `text` is what `set` would be given, but for a share, which the window
   /// counts in per cent.
   public func set(_ key: String, to text: String) {
+    // Whatever was being typed into its field is overtaken: by Return, or by the slider beside it.
+    typing[.setting(key)] = nil
     guard let entry = try? SettingsSchema.entry(named: key), entry.isShare, case .number(let range, _, _) = entry.kind
     else { return perform([.set(key: key, value: text)], at: key) }
     // Refused here: the command's own words would count from 0 to 1 under a field that says 25 %.
@@ -323,13 +334,108 @@ public final class SettingsPanelModel {
     set(key, to: Self.text(Self.snapped(value, in: range, step: step)))
   }
 
-  public func reset(_ key: String) { perform([.reset(key: key)], at: key) }
+  public func reset(_ key: String) {
+    typing[.setting(key)] = nil
+    perform([.reset(key: key)], at: key)
+  }
 
-  /// `value` on the nearest step counted from the lower end, inside the range, and without the crumbs
-  /// binary fractions leave (0.30000000000000004).
+  // MARK: What is being typed
+
+  /// A field of the window that takes text.
+  public enum Field: Hashable, Sendable {
+    case setting(String)
+    /// The title in a rule's line: the rule's number, and the rule in words as it was when the typing began. Lines are told
+    /// apart by their place, and what was typed for one rule is not meant for another that comes to its place.
+    case ruleTitle(Int, of: String)
+  }
+
+  /// What has been typed into a field and not been handed over yet. It is kept here, where the window can get at it, because
+  /// a field cannot be relied on to say goodbye: buttons and menus do not take the keyboard on a Mac, a pane that is left
+  /// takes its fields with it, and a window that closes may not draw again until it is opened.
+  public var drafts: [Field: String] { typing.mapValues(\.text) }
+
+  /// What a field shows instead of what it is about.
+  public func draft(in field: Field) -> String? { typing[field]?.text }
+
+  private struct Draft {
+    var text: String
+    /// What the field showed when the typing began.
+    let over: String
+  }
+
+  private var typing: [Field: Draft] = [:]
+
+  /// What a field shows while nothing is typed into it, as the window counts: a share in per cent. Nil: there is no such field
+  /// any more.
+  private func shown(in field: Field) -> String? {
+    switch field {
+    case .setting(let key):
+      guard let entry = try? SettingsSchema.entry(named: key) else { return nil }
+      if case .number(let value, _, _, _)? = row(for: entry)?.control { return Self.text(value) }
+      return entry.value(in: settings).text
+    case .ruleTitle:
+      return ruleRows.first { $0.titleField == field }.map { $0.rule.title ?? "" }
+    }
+  }
+
+  /// A field reports whatever comes to stand in it, and not only what a person types: on a Mac one that has the keyboard says
+  /// once more what it holds after Return, also where that is what it was given to show after a refusal. So what the
+  /// field would show anyway is no draft, and neither is what was typed and taken back.
+  public func type(_ text: String, into field: Field) {
+    guard let standing = shown(in: field), text != typing[field]?.text ?? standing else { return }
+    if text == standing {
+      typing[field] = nil
+    } else {
+      typing[field] = Draft(text: text, over: typing[field]?.over ?? standing)
+    }
+    changed()
+  }
+
+  /// Return was pressed, or the field lost the keyboard. What is there already changes nothing. Says whether what the field is
+  /// about has changed by it.
+  @discardableResult
+  public func handOver(_ field: Field) -> Bool {
+    guard let text = typing.removeValue(forKey: field)?.text else { return false }
+    let before = shown(in: field)
+    switch field {
+    case .setting(let key):
+      set(key, to: text)
+    case .ruleTitle(let number, _):
+      guard let row = ruleRows.first(where: { $0.titleField == field }) else {
+        changed()
+        return false
+      }
+      assert(row.number == number)
+      setTitle(text, of: row)
+    }
+    guard shown(in: field) != before else {
+      // Nothing may have been run ("Inbox " for "Inbox"), and the field has to go back to what is so all the same.
+      changed()
+      return false
+    }
+    return true
+  }
+
+  /// The slider beside the field was taken hold of: what stood there half typed is overtaken, before the field, which gives the
+  /// keyboard up for the slider, can hand it over.
+  public func forget(_ field: Field) {
+    guard typing.removeValue(forKey: field) != nil else { return }
+    changed()
+  }
+
+  /// Before anything that takes the fields away or acts on what they are about: another pane, a search, a rule's buttons
+  /// and menus, the window closing.
+  public func handOverDrafts() {
+    // Rules from the last to the first would do as well: a title changes no rule's number.
+    for field in drafts.keys.sorted(by: { "\($0)" < "\($1)" }) { handOver(field) }
+  }
+
+  /// `value` on the nearest multiple of the step, inside the range, and without the crumbs binary fractions
+  /// leave (0.30000000000000004). Multiples, not steps counted from the lower end: from 1 to 1000 in tens is 1, 10, 20, 30,
+  /// not 1, 11, 21.
   public static func snapped(_ value: Double, in range: ClosedRange<Double>, step: Double) -> Double {
     guard value.isFinite, step > 0 else { return range.lowerBound }
-    let onStep = range.lowerBound + ((value - range.lowerBound) / step).rounded() * step
+    let onStep = (value / step).rounded() * step
     return min(max((onStep * 1_000_000).rounded() / 1_000_000, range.lowerBound), range.upperBound)
   }
 
@@ -357,6 +463,8 @@ public final class SettingsPanelModel {
   }
 
   public func restoreDefaults(in section: SettingsSection) {
+    // The button does not take the keyboard: what stands in a field of its pane goes with the rest.
+    for entry in entries(in: section) { typing[.setting(entry.key)] = nil }
     perform(changedKeys(in: section).map { .reset(key: $0) }, at: Pane.section(section).id)
   }
 
@@ -366,9 +474,10 @@ public final class SettingsPanelModel {
   /// above everything else.
   public var fileProblem: String? { controller.settingsFileProblem.map { Self.withoutCodeMarks($0) } }
 
-  /// Values in the file that could not be used as written.
-  public var valueProblems: [String] { settings.valueProblems.map { Self.withoutCodeMarks($0) } }
-
+  /// What is in the file and could not be used as written. (Rules and shortcuts that were skipped show in their panes.)
+  public var valueProblems: [String] {
+    (settings.valueProblems + settings.skippedDisplays.map { "displays: \($0)" }).map { Self.withoutCodeMarks($0) }
+  }
   /// The way out of a file that cannot be read. Asks first.
   public func replaceFileWithDefaults() { ask(.replaceFile) }
 
@@ -414,7 +523,10 @@ public final class SettingsPanelModel {
     guard yes else { return changed() }
     switch asked {
     case .restoreAllShortcuts: perform([.reset(key: "bindings")], at: Pane.shortcuts.id)
-    case .replaceFile: perform([.resetAll(everything: true)], at: "file")
+    case .replaceFile:
+      // Everything goes back to the default, what stands half typed in a field too.
+      typing.removeAll()
+      perform([.resetAll(everything: true)], at: "file")
     }
   }
 
@@ -675,6 +787,7 @@ public final class SettingsPanelModel {
     public var neighbour: String? {
       if case .dockBeside(let bundleID, _) = rule.action { bundleID } else { nil }
     }
+    public var titleField: Field { .ruleTitle(number, of: rule.description) }
     public var id: Int { number }
   }
 
@@ -688,6 +801,7 @@ public final class SettingsPanelModel {
   /// Starts from the rule as it is now, not as it was when the line was drawn: a title typed on the line is
   /// handed over just before its menus act.
   private func change(_ row: RuleRow, _ edit: (inout AppRule) -> Void) {
+    handOverDrafts()
     guard settings.rules.indices.contains(row.number - 1) else { return }
     let old = settings.rules[row.number - 1]
     var rule = old
@@ -698,10 +812,15 @@ public final class SettingsPanelModel {
 
   /// A new rule starts as the commonest one and is adjusted on its line.
   public func addRule(app bundleID: String) {
+    handOverDrafts()
     perform([.addRule(AppRule(app: bundleID, action: .dock(.right)))], at: Pane.rules.id)
   }
 
-  public func removeRule(_ row: RuleRow) { perform([.removeRule(row.number)], at: Pane.rules.id) }
+  public func removeRule(_ row: RuleRow) {
+    typing[row.titleField] = nil
+    handOverDrafts()
+    perform([.removeRule(row.number)], at: Pane.rules.id)
+  }
 
   public func canMove(_ row: RuleRow, by offset: Int) -> Bool {
     (1...max(settings.rules.count, 1)).contains(row.number + offset)
@@ -710,6 +829,7 @@ public final class SettingsPanelModel {
   /// -1 is up, towards being checked first.
   public func moveRule(_ row: RuleRow, by offset: Int) {
     guard canMove(row, by: offset) else { return }
+    handOverDrafts()
     perform([.moveRule(row.number, to: row.number + offset)], at: Pane.rules.id)
   }
 
@@ -766,7 +886,8 @@ public final class SettingsPanelModel {
 
   /// An app's name if it is running, otherwise its bundle id, which is all that is known of it.
   public func name(of bundleID: String) -> String {
-    apps.first { $0.bundleID.lowercased() == bundleID.lowercased() }?.name ?? bundleID
+    if bundleID.allSatisfy(\.isWhitespace) { return "(an empty entry)" }
+    return apps.first { $0.bundleID.lowercased() == bundleID.lowercased() }?.name ?? bundleID
   }
 }
 

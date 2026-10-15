@@ -198,7 +198,8 @@ struct RulesPane: View {
 struct RuleRowView: View {
   @ObservedObject var store: SettingsPanelStore
   let row: SettingsPanelModel.RuleRow
-  @State private var typedTitle: String?
+  /// The rule is about to change by what was typed here.
+  @State private var changedByTheField = false
   @FocusState private var titleIsFocused: Bool
 
   var body: some View {
@@ -216,7 +217,7 @@ struct RuleRowView: View {
           }
         }
         Spacer()
-        RuleOrderButtons(store: store, row: row, before: { commitTitle() })
+        RuleOrderButtons(store: store, row: row)
       }
       HStack(spacing: 8) {
         Picker("", selection: kind) {
@@ -229,7 +230,6 @@ struct RuleRowView: View {
         .fixedSize()
         if let neighbour = row.neighbour {
           AppMenu(title: store.model.name(of: neighbour), apps: store.model.appsForRules) { app in
-            commitTitle()
             store.model.setNeighbour(app.bundleID, of: row)
           }
           .fixedSize()
@@ -258,54 +258,43 @@ struct RuleRowView: View {
         }
     }
     .padding(.vertical, 2)
-    // Lines are told apart by their place. If another rule comes to this place, what was being typed was not
-    // meant for it.
-    .onChange(of: row.rule) { typedTitle = nil }
+    // Lines are told apart by their place. If another rule comes to this place, or this one changes by another hand, the field
+    // gives the keyboard up, as a number's does: what it holds was not meant for what it is about now.
+    .onChange(of: row.rule) {
+      if !changedByTheField { titleIsFocused = false }
+      changedByTheField = false
+    }
   }
 
   private var kind: Binding<SettingsPanelModel.RuleKind> {
     Binding<SettingsPanelModel.RuleKind>(
       get: { @MainActor in row.kind },
-      set: { @MainActor kind in
-        commitTitle()
-        store.model.setKind(kind, of: row)
-      })
+      set: { @MainActor kind in store.model.setKind(kind, of: row) })
   }
 
   private var edge: Binding<ArborCore.Edge> {
     Binding<ArborCore.Edge>(
       get: { @MainActor in row.edge ?? .right },
-      set: { @MainActor edge in
-        commitTitle()
-        store.model.setEdge(edge, of: row)
-      })
+      set: { @MainActor edge in store.model.setEdge(edge, of: row) })
   }
 
   private var title: Binding<String> {
     Binding<String>(
-      get: { @MainActor in typedTitle ?? row.rule.title ?? "" },
-      set: { @MainActor new in typedTitle = new })
+      get: { @MainActor in store.model.draft(in: row.titleField) ?? row.rule.title ?? "" },
+      set: { @MainActor new in store.model.type(new, into: row.titleField) })
   }
 
-  /// Also before anything else is done to the line: buttons and menus do not take the keyboard on a Mac, so the
-  /// field has not lost it, and what was typed would end up on whichever rule has this place afterwards.
-  private func commitTitle() {
-    guard let text = typedTitle else { return }
-    typedTitle = nil
-    store.model.setTitle(text, of: row)
-  }
+  /// (Before anything else is done to the line the model does this by itself.)
+  private func commitTitle() { changedByTheField = store.model.handOver(row.titleField) }
 }
 
 struct RuleOrderButtons: View {
   @ObservedObject var store: SettingsPanelStore
   let row: SettingsPanelModel.RuleRow
-  /// Run before the rule is moved.
-  let before: @MainActor () -> Void
 
   var body: some View {
     HStack(spacing: 4) {
       Button {
-        before()
         store.model.moveRule(row, by: -1)
       } label: {
         Image(systemName: "chevron.up")
@@ -314,7 +303,6 @@ struct RuleOrderButtons: View {
       .help("Check this rule earlier")
       .accessibilityLabel("Check rule \(row.number) earlier")
       Button {
-        before()
         store.model.moveRule(row, by: 1)
       } label: {
         Image(systemName: "chevron.down")

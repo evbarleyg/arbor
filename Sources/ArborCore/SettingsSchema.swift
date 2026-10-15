@@ -19,7 +19,39 @@ import Foundation
 /// words, section or level, write `hidden: true` and it can be placed later without anybody having seen it.
 /// Then run the tests: `everySettingsKeyHasASchemaEntry` fails for a key without an entry, and
 /// `theSettingsDocumentIsUpToDate` rewrites docs/SETTINGS.md (commit it).
+///
+/// Entries are never moved: where a setting stands among the others of its section is said in `order`.
 public enum SettingsSchema {
+  /// The order people read a section in, in the window, in `settings` and in docs/SETTINGS.md: what is looked for first comes
+  /// first, and what belongs together stands together. It is kept apart from the entries, which are added at the end of
+  /// their lists by whoever brings a setting, so that placing one never collides with adding one. A setting that is
+  /// not named here comes after the ones that are, in the order of the entries.
+  public static let order: [SettingsSection: [String]] = [
+    .general: [
+      "hotkeysEnabled", "peek", "messages", "automaticUpdateChecks", "stepInToward", "shortcutsFollowLayout", "bindings",
+    ],
+    .windows: [
+      "gap", "minimumUsableWidth", "minimumUsableHeight", "newWindows", "newWindowsWhileFramed", "rules",
+      "autoDockMinimumWidth", "autoDockMinimumHeight", "makeRoom", "soleFloatTakesDesktop", "summonStays", "shareRemovedSpace",
+      "arrangeDesktopWeight", "resizeStep", "displays", "ruleTitleWait", "tileRetryMinutes", "shrinkOutOfView",
+    ],
+    .dragging: ["previewDrags", "dropDwell", "screenEdgeBand", "windowEdgeFraction", "reflowWhileDragging", "keepPushed"],
+    .tabs: ["tabsEnabled"],
+    .gestures: [
+      "pointerGestures", "gesturesEnabled", "continuousZoom", "scrollZoom", "frameRectangleModifier", "frameRectangleOnDesktop",
+      "pinchThreshold", "scrollZoomThreshold", "scrollOnDesktopZooms", "guardDesktopClicks",
+    ],
+    .calls: ["holdStillWhileCameraIsOn", "holdStillWhileMicrophoneIsOn", "holdStillFor"],
+    .appearance: [
+      "focusRing", "animationDuration", "dimBehindArranged", "tileStyle", "gapHandles", "minimapDuration", "focusRingWidth",
+      "focusRingColour", "blurBehindArranged", "tintBehindArranged", "desktopEdge", "appColours", "appColourAmount",
+      "focusRingRadius", "tileFade", "windowPictures",
+    ],
+    .menuBar: ["menuBarControls", "historyButtons", "menuBarFill"],
+    .apps: ["excludedBundleIDs", "passThroughApps", "pauseForApps"],
+    .scripting: ["allowAllURLCommands"],
+  ]
+
   private static let general = section(
     .general,
     [
@@ -134,8 +166,7 @@ public enum SettingsSchema {
           + "nothing else moves.", advanced: true),
       .toggle(
         "shrinkOutOfView", \.shrinkOutOfView, "Shrink windows out of view",
-        "Windows that go out of view are also shrunk, to 320 by 200 points at most, until they come back.",
-        advanced: true),
+        "Windows that go out of view are also shrunk, to 320 by 200 points at most, until they come back.", hidden: true),
     ])
 
   private static let dragging = section(
@@ -268,7 +299,7 @@ public enum SettingsSchema {
       ).share("0 is gray, 1 is the color itself."),
       .choice(
         "gapHandles", \.gapHandles,
-        ["shown": "Drag them, with a handle", "hidden": "Drag them, nothing drawn", "off": "Only gaps"],
+        ["shown": "Can be dragged, and show a handle", "hidden": "Can be dragged", "off": "Cannot be dragged"],
         "Gaps between windows",
         "Whether dragging a gap resizes the windows on both sides of it, and whether a handle shows in the gap under the "
           + "pointer. A window's own edges resize it either way."
@@ -356,11 +387,15 @@ public enum SettingsSchema {
   ].flatMap { $0 }
 
   private static func section(_ section: SettingsSection, _ entries: [SettingEntry]) -> [SettingEntry] {
-    entries.map { entry in
-      var entry = entry
-      entry.section = section
-      return entry
-    }
+    var places: [String: Int] = [:]
+    for (place, key) in (order[section] ?? []).enumerated() { places[key] = place }
+    return entries.enumerated()
+      .sorted { a, b in (places[a.element.key] ?? Int.max, a.offset) < (places[b.element.key] ?? Int.max, b.offset) }
+      .map { _, entry in
+        var entry = entry
+        entry.section = section
+        return entry
+      }
   }
 
   public static func entries(in section: SettingsSection) -> [SettingEntry] {
@@ -394,9 +429,18 @@ public enum SettingsSchema {
     return range
   }
 
+  /// What is left of a name however it is spelt: `dont-arrange`, `Don't arrange` and `dont_arrange` are one.
+  private static func letters(_ text: String) -> String { text.lowercased().filter { $0.isLetter || $0.isNumber } }
+
+  /// Whether `label` goes on with `spelt` (`letters`) from the beginning of one of its words. Not from the middle of one: run together,
+  /// "Shortcuts off in" has "sof" in it.
+  private static func saysFromAWordOn(_ label: String, _ spelt: String) -> Bool {
+    let words = label.split(separator: " ").map { letters(String($0)) }
+    return words.indices.contains { words[$0...].joined().hasPrefix(spelt) }
+  }
+
   /// A list by its key or by its label, however that is spelt: `excludedBundleIDs`, `dont-arrange`, `Don't arrange`.
   public static func list(named name: String) -> SettingEntry? {
-    func letters(_ text: String) -> String { text.lowercased().filter { $0.isLetter || $0.isNumber } }
     let wanted = letters(name)
     return entries.first { entry in
       guard case .list = entry.kind, !wanted.isEmpty else { return false }
@@ -410,6 +454,7 @@ public enum SettingsSchema {
     let typed = name.lowercased()
     // Longer than any key could be misspelt into, and comparing costs time in proportion to the length.
     guard !typed.isEmpty, typed.count <= 64 else { return [] }
+    let spelt = letters(typed)
     var ranked: [(key: String, distance: Int)] = []
     for entry in entries {
       let key = entry.key.lowercased()
@@ -419,6 +464,9 @@ public enum SettingsSchema {
       } else if distance <= max(1, max(typed.count, key.count) / 3) {
         ranked.append((entry.key, distance))
       } else if typed.count >= 3, entry.label.lowercased().firstRange(of: typed) != nil {
+        ranked.append((entry.key, 1))
+      } else if spelt.count >= 3, saysFromAWordOn(entry.label, spelt) {
+        // The label however it is spelt: `smallest-usable-width`.
         ranked.append((entry.key, 1))
       }
     }

@@ -391,14 +391,18 @@ import Testing
     let json = #"""
       {"rules": [{"app": "com.apple.Notes"}, {"app": "com.apple.mail", "action": "dock left"}],
        "bindings": {"hyper+x": "show-all", "ctrl+opt+j": 7},
-       "frameRectangleModifier": "banana"}
+       "frameRectangleModifier": "banana", "displays": [{"match": "main", "gap": "wide"}]}
       """#
     let settings = try JSONDecoder().decode(Settings.self, from: Data(json.utf8))
     let h = makeHarness(settings: settings)
     let found = try #require(check(h, "settings.json"))
     #expect(found.mark == .problem)
-    #expect(found.detail == "4 entries skipped")
-    #expect(found.notes.count == 4)
+    #expect(found.detail == "5 entries skipped")
+    #expect(found.notes.count == 5)
+    #expect(found.notes.contains { $0.hasPrefix("displays: entry 1 (main)") })
+    // What an entry matches can be a display's name, and that can be a person's: told to whoever asks, never logged.
+    #expect(h.controller.setupProblemLines.contains { $0.hasPrefix("setup: settings.json: 5 entries skipped") })
+    #expect(!h.controller.setupProblemLines.contains { $0.contains("displays:") || $0.contains("(main)") })
     #expect(found.notes.contains { $0.hasPrefix("rules: entry 1 (com.apple.Notes)") })
     #expect(found.notes.contains { $0.hasPrefix("bindings: hyper+x") })
     #expect(found.notes.contains { $0.hasPrefix("bindings: ctrl+opt+j") })
@@ -407,7 +411,7 @@ import Testing
     // The notes are indented under their check.
     let lines = try #require(h.run("doctor").text).components(separatedBy: "\n")
     let index = try #require(lines.firstIndex { $0.hasPrefix("✘ settings.json") })
-    #expect(lines[(index + 1)...(index + 4)].allSatisfy { $0.hasPrefix("    ") })
+    #expect(lines[(index + 1)...(index + 5)].allSatisfy { $0.hasPrefix("    ") })
     // The unreadable modifier falls back to the default, so its tap is still expected.
     #expect(check(h, "Gestures")?.mark == .ok)
   }

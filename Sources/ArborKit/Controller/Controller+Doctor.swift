@@ -323,10 +323,10 @@ extension Controller {
         "cannot be read (\(problem)). Arbor goes on with the settings it had, and refuses to change any until the file is "
           + "mended; `reset everything` writes a new one and keeps this one")
     }
-    // One way of reporting each kind: what `settings`, `rules` and `bindings` say.
+    // One way of reporting each kind: what `settings`, `rules`, `displays` and `bindings` say.
     let notes =
       settings.valueProblems + settings.skippedRules.map { "rules: \($0)" }
-      + effectiveBindings.problems.map { "bindings: \($0)" }
+      + settings.skippedDisplays.map { "displays: \($0)" } + effectiveBindings.problems.map { "bindings: \($0)" }
     if notes.isEmpty {
       report.add(.ok, Self.settingsFileCheck, "no problems")
     } else {

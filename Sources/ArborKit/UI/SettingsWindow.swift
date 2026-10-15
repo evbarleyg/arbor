@@ -81,9 +81,11 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
   /// until something is clicked, and Arbor's own shortcuts find no focused window.
   func windowWillClose(_ notification: Notification) {
     store.model.cancelRecording()
-    // A field that is being typed in loses the keyboard, and so hands over what was typed. The window is kept,
-    // and would otherwise show it again, as if it were the setting, the next time.
+    // What is being typed in a field counts. The window is kept, and would otherwise show it again, as if it were
+    // the setting, the next time. The field hands it over on losing the keyboard, but SwiftUI need not tell it so in a
+    // window that is going away: the model sees to what is left, and to what a field said as its editing ended.
     window?.makeFirstResponder(nil)
+    store.model.handOverDrafts()
     if NSRunningApplication.current.isActive, let appBefore, !appBefore.isTerminated {
       // Since macOS 14 an app comes forward for certain only if the one in front makes way for it.
       NSApp.yieldActivation(to: appBefore)

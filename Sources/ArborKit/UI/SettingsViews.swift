@@ -225,9 +225,17 @@ struct SettingsSectionPane: View {
       if !store.model.advancedRows(in: section).isEmpty {
         Section {
           DisclosureGroup(isExpanded: advanced) {
-            ForEach(store.model.advancedRows(in: section)) { row in
-              SettingRowView(store: store, row: row)
+            // What is behind a group is no row of the form. Left to itself it has neither the lines between rows nor their
+            // room, and what is narrower than the form, a list of apps, stands in the middle.
+            VStack(alignment: .leading, spacing: 0) {
+              ForEach(store.model.advancedRows(in: section)) { row in
+                Divider()
+                SettingRowView(store: store, row: row)
+                  .frame(maxWidth: .infinity, alignment: .leading)
+                  .padding(.vertical, 9)
+              }
             }
+            .padding(.top, 8)
           } label: {
             // By itself only the triangle opens the group: seven points of a line that looks like a button.
             Text("Advanced")
@@ -389,8 +397,8 @@ struct NumberSettingRow: View {
   /// Where the slider is while it is held.
   @State private var held: Double?
   @State private var isHeld = false
-  /// What is in the field while it is being edited.
-  @State private var typed: String?
+  /// The number is about to change by what was typed here.
+  @State private var changedByTheField = false
   @FocusState private var fieldIsFocused: Bool
 
   var body: some View {
@@ -412,11 +420,13 @@ struct NumberSettingRow: View {
           .onChange(of: fieldIsFocused) {
             if !fieldIsFocused { commitField() }
           }
-          // A field that has the keyboard shows what was last typed into it, whatever it is told to show: beside a
-          // slider at 86 it went on saying 40. After Return it keeps the keyboard, so that Tab goes on from there; it gives
-          // it up when its number changes by another hand, the slider's (below) or somebody's outside the window.
+          // Beside a slider at 86 a field that had the keyboard went on saying 40. The model no longer takes for typing what
+          // a field merely says again; and should a field with the keyboard not take what it is told to show, it gives the
+          // keyboard up when its number changes by another hand: the slider's (below) or somebody's outside the
+          // window. After its own Return it keeps it, so that Tab goes on from there.
           .onChange(of: value) {
-            if typed == nil { fieldIsFocused = false }
+            if !changedByTheField, store.model.draft(in: .setting(row.key)) == nil { fieldIsFocused = false }
+            changedByTheField = false
           }
         // As wide as the widest unit, so that the fields of a pane stand in one column.
         Text(unit)
@@ -439,14 +449,23 @@ struct NumberSettingRow: View {
 
   private func sliderChanged(_ isHeldNow: Bool) {
     isHeld = isHeldNow
-    if isHeldNow { fieldIsFocused = false }
+    if isHeldNow {
+      // In this order: a field that loses the keyboard hands over what was typed, and the windows would move for it.
+      store.model.forget(.setting(row.key))
+      fieldIsFocused = false
+    }
     guard !isHeldNow, let final = held else { return }
     held = nil
     store.model.set(row.key, to: final)
   }
 
   private var field: Binding<String> {
-    Binding<String>(get: { @MainActor in typed ?? shownNumber }, set: { @MainActor new in typed = new })
+    Binding<String>(
+      get: { @MainActor in store.model.draft(in: .setting(row.key)) ?? shownNumber },
+      set: { @MainActor new in
+        // What the field says while the slider is held is what the slider gave it to show.
+        if !isHeld { store.model.type(new, into: .setting(row.key)) }
+      })
   }
 
   /// The field follows the slider while it moves.
@@ -454,11 +473,7 @@ struct NumberSettingRow: View {
     SettingsPanelModel.text(held.map { SettingsPanelModel.snapped($0, in: range, step: step) } ?? value)
   }
 
-  private func commitField() {
-    guard let text = typed else { return }
-    typed = nil
-    store.model.set(row.key, to: text)
-  }
+  private func commitField() { changedByTheField = store.model.handOver(.setting(row.key)) }
 }
 
 struct ChoiceSettingRow: View {
@@ -491,7 +506,8 @@ struct TextSettingRow: View {
   let row: SettingsPanelModel.Row
   let value: String
   let example: String
-  @State private var typed: String?
+  /// The text is about to change by what was typed here.
+  @State private var changedByTheField = false
   @FocusState private var isFocused: Bool
 
   var body: some View {
@@ -507,20 +523,23 @@ struct TextSettingRow: View {
         .onChange(of: isFocused) {
           if !isFocused { commit() }
         }
+        // As a number's field does (above).
+        .onChange(of: value) {
+          if !changedByTheField, store.model.draft(in: .setting(row.key)) == nil { isFocused = false }
+          changedByTheField = false
+        }
     } label: {
       SettingLabel(label: row.label, help: row.help)
     }
   }
 
   private var binding: Binding<String> {
-    Binding<String>(get: { @MainActor in typed ?? value }, set: { @MainActor new in typed = new })
+    Binding<String>(
+      get: { @MainActor in store.model.draft(in: .setting(row.key)) ?? value },
+      set: { @MainActor new in store.model.type(new, into: .setting(row.key)) })
   }
 
-  private func commit() {
-    guard let text = typed else { return }
-    typed = nil
-    if text != value { store.model.set(row.key, to: text) }
-  }
+  private func commit() { changedByTheField = store.model.handOver(.setting(row.key)) }
 }
 
 /// A list the window has no editor for.
