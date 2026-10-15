@@ -1,10 +1,10 @@
 # The journey of probe-went-and-came-back.sh and of its control, second playing: a display goes and comes back, with four windows that live on it and two
 # that lie across its edge. Read in by those two, which say whether Arbor runs (JOURNEY_ARBOR=yes|no) and differ in nothing else but the places. Do not run it.
-# And by probe-went-and-came-back-unseen.sh and probe-the-top-corners.sh, each of which plays one part of it alone. JOURNEY_PARTS names the parts to play: S F M L D H P1 if nothing is said, which is
-# what the two play. U (with Arbor) and T (without) are played only where they are named, after P1. A part that is not named is left out without a word but for the line
+# And by probe-went-and-came-back-unseen.sh, probe-the-top-corners.sh and probe-a-display-made-narrower.sh, each of which plays one part of it alone. JOURNEY_PARTS names the parts to play: S F M L D H P1 if nothing is said, which is
+# what the two play. U (with Arbor) and T (without) are played only where they are named, after P1; N only where it is named, before Arbor is started. A part that is not named is left out without a word but for the line
 # `parts: …`; the build, the Mac, `stays`, the windows, `arbor`, `quit`, `end` and the clean-up are always played, s0 to s2 and z1 for any of S F M L D H, s2c for S and
-# F; STRADDLES and CARRIED are opened for all but U and T. D asks what it asks only straight after a return: name it with L. T alone (probe-the-top-corners.sh) has
-# no `stays` and opens LIVES, TEXT and JAVA only.
+# F; STRADDLES and CARRIED are opened for all but U, T and N. D asks what it asks only straight after a return: name it with L. T alone (probe-the-top-corners.sh) has
+# no `stays` and opens LIVES, TEXT and JAVA only; N alone (probe-a-display-made-narrower.sh) has none either, and opens LIVES and TEXT.
 #
 # Nothing here is a verdict. The script ends itself (`die`, exit code 2) only where going on would measure nothing: a tool that did not compile, a display
 # that did not come, no sampler, fewer than two windows, no window on A, with Arbor no trace at the start. What else goes wrong is said (`!!!`, `SKIPPED:`) and
@@ -33,6 +33,7 @@
 # THE STEPS. Each: a mark in the samples and in the trace, the act, four seconds of rest (JOURNEY_REST), then the lines below.
 #   stays  the display that stays is plugged in         open-<NAME>  the windows are opened; every other app with a window is hidden
 #   arbor  Arbor is started (the control: `pgrep -x Arbor` finds none)
+#  N, with no Arbor running and only where JOURNEY_PARTS names it: a display made narrower. n0 to n17: see part_N
 #  S, the first playing's steps with more windows
 #   s0   every window is put wholly on the main display      s1   plug A
 #   s2   LIVES, TEXT, JAVA and PICTURE are put wholly on A, STRADDLES across the edge, through Accessibility
@@ -97,12 +98,12 @@ esac
 JOURNEY_BUDGET=${JOURNEY_BUDGET:-900}
 JOURNEY_REST=${JOURNEY_REST:-4}
 JOURNEY_LONG=${JOURNEY_LONG:-30}
-# Which parts are played, whatever the order they are named in: always in the order S F M L D H P1 U T.
+# Which parts are played, whatever the order they are named in: always in the order N S F M L D H P1 U T.
 JOURNEY_PARTS=${JOURNEY_PARTS:-S F M L D H P1}
 for part in $JOURNEY_PARTS; do
   case "$part" in
-    S | F | M | L | D | H | P1 | U | T) ;;
-    *) echo "JOURNEY_PARTS: no part is called $part (S F M L D H P1 U T)" >&2; exit 64 ;;
+    N | S | F | M | L | D | H | P1 | U | T) ;;
+    *) echo "JOURNEY_PARTS: no part is called $part (N S F M L D H P1 U T)" >&2; exit 64 ;;
   esac
 done
 # Under the 1,200 s of scripts/ci-mac-shell.sh, so that a journey that hangs is ended by lib.sh's supervisor, which cleans up and lets the logs come back.
@@ -114,8 +115,8 @@ rm -f "$ARBOR_OUT/run.json"
 
 # The windows that opened, by name. W_<NAME> is a window's id, P_<NAME> its process.
 CAST=""
-W_LIVES="" W_TEXT="" W_JAVA="" W_PICTURE="" W_STRADDLES="" W_CARRIED="" W_DESK=""
-P_LIVES="" P_TEXT="" P_JAVA="" P_PICTURE="" P_STRADDLES="" P_CARRIED="" P_DESK=""
+W_LIVES="" W_TEXT="" W_JAVA="" W_PICTURE="" W_STRADDLES="" W_CARRIED="" W_DESK="" W_TEST=""
+P_LIVES="" P_TEXT="" P_JAVA="" P_PICTURE="" P_STRADDLES="" P_CARRIED="" P_DESK="" P_TEST=""
 # Those that are meant to lie wholly on A, and those of them that were seen to when they were last put there.
 FOR_A="LIVES TEXT JAVA PICTURE"
 ON_A=""
@@ -131,14 +132,17 @@ LAY_ON_A=""
 NOT_ARBORS=""
 HIDDEN=""
 MOTION_WAS=""
+# The size the main display was found in, where part N is played: w h
+SIZE_FOUND=""
 
 with_arbor() { [ "$JOURNEY_ARBOR" = yes ]; }
 in_cast() { case " $CAST " in *" $1 "*) return 0 ;; esac; return 1; }
 plays() { case " $JOURNEY_PARTS " in *" $1 "*) return 0 ;; esac; return 1; }
 # The parts that begin with A plugged in and the windows on it: s0, s1 and s2 are played for them. Those and P1 have the two windows that lie across the edge.
 begins_on_A() { plays S || plays F || plays M || plays L || plays D || plays H; }
-# T alone has no display that stays, and three windows.
+# T and N by themselves have no display that stays, and two or three windows.
 only_T() { [ "$JOURNEY_PARTS" = T ]; }
+few_windows() { ! begins_on_A && ! plays P1 && ! plays U; }
 if with_arbor; then OX=0 OY=0; else OX=40 OY=30; fi
 
 # MARK: The clock, and words
@@ -219,11 +223,14 @@ display_facts() {
   case "$1" in
     stays) echo "1280 720 9 left" ;;
     A) echo "1920 1080 1 right" ;;
+    Anarrow) echo "1600 900 1 right" ;;
     B) echo "1280 800 2 right" ;;
     below) echo "1920 1080 3 under-and-wider" ;;
   esac
 }
 
+# w h: the size the main display has now
+current_mode() { apptool modes 2>/dev/null | awk '$5 == "*" { print $1, $2; exit }'; }
 # x y w h, as `pointer displays` has it.
 frame_of_display() { pointer displays | awk -v id="$1" '$1 == id { print $2, $3, $4, $5 }'; }
 
@@ -586,6 +593,11 @@ journey_leave() {
   HIDDEN=""
   [ "$MOTION_WAS" != true ] || macos_reduce_motion on
   MOTION_WAS=""
+  if [ -n "$SIZE_FOUND" ] && [ "$(current_mode)" != "$SIZE_FOUND" ]; then
+    # shellcheck disable=SC2086
+    echo "the main display is put back at the size it was found in, ${SIZE_FOUND% *} x ${SIZE_FOUND#* }: $(apptool set-mode $SIZE_FOUND 2>&1)"
+  fi
+  SIZE_FOUND=""
 }
 
 # In place of lib-day.sh's last words, which would have jolts.py judge the samples. Then lib-apps.sh's clean-up, which quits the apps and takes the exit code from here.
@@ -621,6 +633,10 @@ echo "this is $ARBOR_NAME: $(if with_arbor; then echo "WITH ARBOR"; else echo "T
 echo "its places are $OX points to the right and $OY down of the table's"
 echo "parts: $JOURNEY_PARTS"
 # The size the first playing had. A hosted Mac's own 1024×768 is smaller than the windows need.
+if plays N; then
+  SIZE_FOUND=$(current_mode)
+  echo "the main display was found at ${SIZE_FOUND:-a size that apptool modes does not mark}, and is put back there at the end"
+fi
 display_mode 1600x900 1680x1050 1920x1080
 macos_tiling
 # A hosted Mac comes with Reduce Motion on, a person's does not. Arbor reads it when it starts. Put back at the end.
@@ -634,7 +650,7 @@ tell before
 sampler_start
 sleep 1
 
-if only_T; then
+if few_windows; then
   step "no display stays: a display comes and goes once, before the main display's frame is read"
   change_now t0a plug B
   change_now t0b unplug B
@@ -670,24 +686,26 @@ step "the windows"
 apps_scratch
 opens LIVES com.apple.Notes
 opens TEXT com.apple.TextEdit "$APPS_SCRATCH/oak.txt"
-begin_step open-close open-JAVA "starts jconsole, a Java app"
-if java=$("${JOURNEY_JAVA_HOME:-/usr/libexec/java_home}" 2>/dev/null) && [ -x "$java/bin/jconsole" ]; then
-  "$java/bin/jconsole" > /dev/null 2>&1 3>&- 5<&- 6>&- 8>&- 9>&- &
-  P_JAVA=$!
-  started "$P_JAVA"
-  # T alone is to be short: there it has eight seconds to open its window.
-  W_JAVA=$(apptool wait-window "$P_JAVA" "$(if only_T; then echo 8; else echo 25; fi)" | awk '$3 == "AXStandardWindow" { print $1; exit }')
+if [ "$JOURNEY_PARTS" != N ]; then
+  begin_step open-close open-JAVA "starts jconsole, a Java app"
+  if java=$("${JOURNEY_JAVA_HOME:-/usr/libexec/java_home}" 2>/dev/null) && [ -x "$java/bin/jconsole" ]; then
+    "$java/bin/jconsole" > /dev/null 2>&1 3>&- 5<&- 6>&- 8>&- 9>&- &
+    P_JAVA=$!
+    started "$P_JAVA"
+    # T alone is to be short: there it has eight seconds to open its window.
+    W_JAVA=$(apptool wait-window "$P_JAVA" "$(if only_T; then echo 8; else echo 25; fi)" | awk '$3 == "AXStandardWindow" { print $1; exit }')
+  fi
+  if [ -n "$W_JAVA" ]; then
+    label "$W_JAVA" JAVA
+    CAST="$CAST JAVA"
+  else
+    loud "JAVA: no jconsole, or it opened no standard window: every window of this journey is Apple's"
+    [ -z "$P_JAVA" ] || kill_started "$P_JAVA"
+    P_JAVA=""
+  fi
+  REST_NOW=2 rested
 fi
-if [ -n "$W_JAVA" ]; then
-  label "$W_JAVA" JAVA
-  CAST="$CAST JAVA"
-else
-  loud "JAVA: no jconsole, or it opened no standard window: every window of this journey is Apple's"
-  [ -z "$P_JAVA" ] || kill_started "$P_JAVA"
-  P_JAVA=""
-fi
-REST_NOW=2 rested
-if ! only_T; then
+if ! few_windows; then
   opens PICTURE com.apple.Preview "$APPS_SCRATCH/leaf.png"
   in_cast PICTURE || opens PICTURE com.apple.Console
 fi
@@ -703,9 +721,17 @@ if begins_on_A || plays P1; then
   fi
   REST_NOW=2 rested
 fi
-if ! only_T; then
+if ! few_windows; then
   opens DESK com.apple.ScriptEditor2 "$APPS_SCRATCH/hello.applescript"
   in_cast DESK || opens DESK com.apple.ActivityMonitor
+fi
+if plays N && with_arbor; then
+  begin_step open-close open-TEST "opens a window of Arbor's own test app"
+  companions_start 1
+  W_TEST=$C1 P_TEST=$COMPANIONS_PID
+  label "$W_TEST" TEST
+  CAST="$CAST TEST"
+  REST_NOW=2 rested
 fi
 
 # An app may have swapped the window it opened with for another meanwhile.
@@ -753,6 +779,186 @@ done
 sleep 1
 echo "on the screen now, from the front (id pid level x y w h on owner):"
 pointer windows --on-screen | head -n 40
+
+# MARK: N, with no Arbor running: a display made narrower
+
+# A display is made narrower with a window wholly in view at its right edge, so that about a quarter of the window would be left showing, its title bar within reach:
+# does macOS pull it in by itself, how far, and how long after the change? And does the window go back when the display is as wide as it was? Half of it, for comparison.
+# Played before Arbor is started, in whichever script: `pgrep -x Arbor` says that none runs.
+# THE WINDOWS: TEXT, a real app's, and TEST, a window of Arbor's own test app (lib-apps.sh's companions_start), where Arbor is built anyway. In a script that builds no
+# Arbor, LIVES in its place. Each is sized first and then put so that it ends at the display's right edge, 300 points high, high enough up to be wholly in view in both
+# sizes. An app that will not be as narrow as asked is as narrow as it goes: `edge` says how wide it is and how much of it would be left.
+# ON THE MAIN DISPLAY its own size is switched (apptool set-mode), 1920×1080 to 1600×900 and back:
+#   n1  the wide size      n2  both windows at the right edge, 427 wide: a quarter would be left      n3  the narrow size      n4  the wide size again
+#   n5  both windows at the right edge, 640 wide: half would be left      n6  the narrow size      n7  the wide size again      n8  the size the part began with
+# ON A SECOND DISPLAY, which is nearer to what a person does with a monitor. A virtual display has one size for life (vdisplay.m), so A is REPLACED: unplugged, and a display
+# of the other size with the same serial number plugged in at the same place at once. THAT IS AN UNPLUG AND A PLUG, TWO CHANGES, NOT ONE, and the output says so:
+#   n9  plug A, 1920×1080      n10  both windows at A's right edge, a quarter      n11  A is replaced by 1600×900      n12  and that by 1920×1080 again
+#   n13  both at A's right edge, half      n14, n15  the same two replacements      n16  unplug A
+# `stays` is unplugged for the part (n0) and plugged in again after it (n17), where it is there at all.
+# After each change of size, for each window, three lines, half a second, two and five seconds after the command that made the change had returned:
+#   narrow <step> <NAME> <id> before <x y w h> | accessibility <x y w h> | server <x y w h> | shown <0.00…1.00> on <display> | after <seconds>
+# `before`: the window server's frame just before the change. `after`: when this window's look began, by the clock. Then a picture, narrow-<step>.png (lib.sh's `shot`: every display, -d2.png the second). macos-reports.log has what
+# Accessibility reported of the windows, to the millisecond, samples.log every frame between `M begin <n> display-<step>-…` and the next `M begin`.
+# `modes: …`, once: the sizes the main display offers. A size that is not on offer is a `!!!`, and n1 to n8 are SKIPPED.
+# The size the script FOUND the main display in is put back however the script ends (journey_leave): nothing in lib-apps.sh does that.
+N_NAMES=""
+SWITCHED=0
+
+offers() { apptool modes 2>/dev/null | awk -v w="$1" -v h="$2" '$1 == w && $2 == h { found = 1 } END { exit !found }'; }
+# ends_at <x> "<a window's x y w h>": its right edge is there, to two points
+ends_at() {
+  local x="" w=""
+  read -r x _ w _ <<< "$2"
+  [ -n "$w" ] || return 1
+  about "$((${x%.*} + ${w%.*}))" "$1" 2 > /dev/null
+}
+
+# at_the_edge <step> <width> "<the display's x y w h>" <the narrower width>: a step. Every window of the part at the display's right edge
+at_the_edge() {
+  local step=$1 want=$2 dx="" dy="" dw="" dh="" narrower=$4 name id w y=100
+  in_time "$step (the windows are put at the right edge)" || return 1
+  read -r dx dy dw dh <<< "$3"
+  begin_step instrument "put-$step-at-the-edge" "$step: the windows are put at the display's right edge, $want points wide if they go that narrow, through Accessibility"
+  for name in $N_NAMES; do
+    eval "id=\$W_$name"
+    # Sized where there is room, then moved: a window cannot be sized freely at an edge.
+    put "$step" "$name" "$((dx + 200))" "$((dy + y))" "$want" 300 wholly_on "$3" || return 1
+    w=""
+    read -r _ _ w _ <<< "$(real_of "$id")"
+    put "$step" "$name" "$((dx + dw - w))" "$((dy + y))" - - ends_at "$((dx + dw))" || return 1
+    echo "edge $step $name $id is $w wide: $((narrower - dw + w)) points of it, $(echo "$narrower $dw $w" | awk '{ printf "%.2f", ($1 - $2 + $3) / $3 }') of its width, would be left on a display $narrower wide"
+    y=$((y + 340))
+  done
+  REST_NOW=1 rested
+  tell "$step"
+}
+
+note_before() {
+  local name id
+  for name in $N_NAMES; do
+    eval "id=\$W_$name"
+    eval "BEFORE_$name=\$(real_frame_of \"\$id\" 2>/dev/null)"
+  done
+}
+# looks <step>: the three looks after $SWITCHED, the picture, the step's end and what every step tells
+looks() {
+  local step=$1 moment name id list before when said server
+  for moment in 0.5 2 5; do
+    sleep "$(echo "$SWITCHED $moment $(arbor_now)" | awk '{ left = $1 + $2 - $3; print (left > 0 ? left : 0) }')"
+    list=$("$ARBOR_VDISPLAY" list)
+    for name in $N_NAMES; do
+      eval "id=\$W_$name before=\$BEFORE_$name"
+      when=$(arbor_now)
+      said=$(apptool describe "$id" 2>/dev/null | awk 'NF >= 7 { print $4, $5, $6, $7 }')
+      server=$(real_frame_of "$id" 2>/dev/null)
+      echo "narrow $step $name $id before ${before:-- - - -} | accessibility ${said:-- - - -} | server ${server:-- - - -} | shown $("$ARBOR_POINTER" visible "$id" 2>/dev/null || echo -) on $(lies "$server" "$list" | cut -d ' ' -f 2) | after $(echo "$when $SWITCHED" | awk '{ printf "%.2f", $1 - $2 }')"
+    done
+  done
+  ARBOR_SETTLE=0 shot "narrow-$step"
+  REST_NOW=0 rested
+  tell "$step"
+}
+
+# resize <step> <w> <h> [plainly]: the main display's own size is switched, and looked at three times, or plainly rested after. Fails if the clock or macOS says no.
+resize() {
+  local said
+  in_time "$1 (the main display at $2 x $3)" || return 1
+  begin_step display-change "display-$1-size-$2x$3" "$1: the main display is switched to $2 x $3"
+  note_before
+  if ! said=$(apptool set-mode "$2" "$3" 2>&1); then
+    loud "$1: the main display was not switched to $2 x $3: $said"
+    REST_NOW=0 rested
+    return 1
+  fi
+  SWITCHED=$(arbor_now)
+  echo "> the main display at $2 x $3: $said"
+  if [ -z "${4:-}" ]; then
+    looks "$1"
+  else
+    rested
+    tell "$1"
+  fi
+}
+
+# replace <step> <the display that goes> <the one that comes>: both have serial number 1 and the same place
+replace() {
+  in_time "$1 ($2 is replaced by $3)" || return 1
+  begin_step display-change "display-$1-replace-$2-by-$3" "$1: display $2 is unplugged, and $3, of another size and with the same serial number, is plugged in at the same place at once"
+  echo "$1 IS TWO CHANGES, NOT ONE: an unplug and a plug. A virtual display cannot change its size"
+  note_before
+  unplug "$2"
+  plug "$3"
+  SWITCHED=$(arbor_now)
+  looks "$1"
+}
+
+part_N() {
+  local again="" began name wide="1920 1080" narrow="1600 900" frame
+  in_time "N, all of it" || return 0
+  step "N. a display made narrower"
+  no_arbor N
+  echo "modes: $(apptool modes 2>&1 | tr '\n' ';')"
+  N_NAMES=TEXT
+  if in_cast TEST; then N_NAMES="TEXT TEST"; elif in_cast LIVES; then N_NAMES="TEXT LIVES"; fi
+  in_cast TEXT || { echo "SKIPPED: N, all of it: there is no TEXT"; return 0; }
+  began=$(current_mode)
+  # The main display changes on purpose here.
+  MAIN=""
+  case " $PLUGGED " in
+    *" stays "*) change_now n0 unplug stays; again=yes ;;
+  esac
+
+  # shellcheck disable=SC2086
+  if ! offers $wide || ! offers $narrow; then
+    loud "N: the main display does not offer both ${wide% *} x ${wide#* } and ${narrow% *} x ${narrow#* }"
+    echo "SKIPPED: n1 to n8: the main display's own size"
+  else
+    # shellcheck disable=SC2086
+    if resize n1 $wide plainly && at_the_edge n2 427 "0 0 $wide" "${narrow% *}"; then
+      # shellcheck disable=SC2086
+      resize n3 $narrow && resize n4 $wide
+    fi
+    # shellcheck disable=SC2086
+    if [ "$(current_mode)" = "$wide" ] && at_the_edge n5 640 "0 0 $wide" "${narrow% *}"; then
+      # shellcheck disable=SC2086
+      resize n6 $narrow && resize n7 $wide
+    fi
+  fi
+  # Whatever the clock says: the parts that follow count on it.
+  if [ -n "$began" ] && [ "$(current_mode)" != "$began" ]; then
+    begin_step display-change "display-n8-size-${began% *}x${began#* }" "n8: the main display is switched back to the size this part began with"
+    # shellcheck disable=SC2086
+    echo "> the main display at ${began% *} x ${began#* }: $(apptool set-mode $began 2>&1)"
+    rested
+    tell n8
+  fi
+
+  change n9 plug A
+  if A_is_there; then
+    frame=$(frame_of_display "$DISPLAY_ID_A")
+    if at_the_edge n10 427 "$frame" 1600; then
+      replace n11 A Anarrow && replace n12 Anarrow A
+    fi
+    if A_is_there && at_the_edge n13 640 "$(frame_of_display "$DISPLAY_ID_A")" 1600; then
+      replace n14 A Anarrow && replace n15 Anarrow A
+    fi
+  fi
+  # Whatever the clock says, again.
+  for name in $PLUGGED; do change_now "n16-$name" unplug "$name"; done
+  for name in $N_NAMES; do put n16 "$name" 300 200 - - near 300 200; done
+  [ -z "$again" ] || change_now n17 plug stays
+  MAIN=$("$ARBOR_VDISPLAY" list | awk '$8 == "main" { print $1, $3, $4, $5, $6 }')
+  echo "the main display from here on (id x y w h): $MAIN"
+}
+if plays N; then part_N; fi
+# The test window is this part's alone: to an Arbor that arranges every app's windows it would be one more.
+if in_cast TEST; then
+  companions_stop
+  kept=""
+  for name in $CAST; do [ "$name" = TEST ] || kept="$kept $name"; done
+  CAST=$kept
+fi
 
 # MARK: Arbor, or none
 

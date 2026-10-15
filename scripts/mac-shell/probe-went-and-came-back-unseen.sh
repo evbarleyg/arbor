@@ -9,6 +9,9 @@
 # after 900 s, and lib.sh ends the script at 1,020 s. It needs no control: the steps at which no Arbor runs (u3, u4, u9, u10) are macOS alone, on the same windows.
 # Why no pre-flight: the fake Mac has no stand-in for vdisplay, apptool or the sampler, so a rehearsal ends with exit code 2 before the first step.
 #
+# Part N, a display made narrower, can ride along: JOURNEY_PARTS="N U" below. It is played before Arbor is started, has a window of Arbor's own test app beside TextEdit's, because
+# this script builds Arbor anyway, and takes a minute and a half more (part_N in the journey).
+#
 # THE WINDOWS: LIVES (Notes), TEXT (TextEdit), JAVA (jconsole, if it opens) and PICTURE (Preview), all put wholly on A through Accessibility; DESK (Script Editor), a
 # bystander on the main display. Nothing is docked. Arbor runs as a person runs it, all but its welcome window, with the settings it ships with.
 #
