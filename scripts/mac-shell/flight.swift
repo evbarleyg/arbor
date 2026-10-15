@@ -16,6 +16,7 @@
 //   both      … AXMain, then AXRaise: Arbor's `focus` within one app
 //   guarded   … reads AXMinimized, and only if the answer is not yes: AXMain, then AXRaise
 //   late      … waits 100 ms, then as guarded
+//   rest-main, rest-raise   half a second after "miniaturized", with the window at rest in the Dock: AXMain, or AXRaise
 //
 // One line per fact: milliseconds since the start, who says it, what. It reads no title. Needs Accessibility.
 
@@ -49,7 +50,7 @@ func minimized(_ window: AXUIElement) -> String {
 }
 
 let arguments = Array(CommandLine.arguments.dropFirst())
-let modes = ["poll", "sparse", "read", "main", "raise", "both", "guarded", "late"]
+let modes = ["poll", "sparse", "read", "main", "raise", "both", "guarded", "late", "rest-main", "rest-raise"]
 guard arguments.count == 4, let pid = pid_t(arguments[0]), let id = CGWindowID(arguments[1]), let seconds = Double(arguments[2]),
   modes.contains(arguments[3])
 else {
@@ -91,7 +92,7 @@ func guarded() {
 
 var acted = false
 func act() {
-  guard !acted else { return }
+  guard !acted, !mode.hasPrefix("rest-") else { return }
   acted = true
   switch mode {
   case "read":
@@ -113,6 +114,10 @@ func callback(_ observer: AXObserver, _ element: AXUIElement, _ notification: CF
   let about = refcon.map { CGWindowID(truncatingIfNeeded: UInt(bitPattern: $0)) } ?? number(of: element)
   say("app   ", "\(name) w\(about)")
   if name == "AXFocusedWindowChanged", about != id { act() }
+  if name == "AXWindowMiniaturized", mode.hasPrefix("rest-"), !acted {
+    acted = true
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { if mode == "rest-main" { setMain() } else { raise() } }
+  }
 }
 var created: AXObserver?
 guard AXObserverCreate(pid, callback, &created) == .success, let observer = created else {

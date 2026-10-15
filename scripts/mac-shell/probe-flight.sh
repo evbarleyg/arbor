@@ -11,6 +11,7 @@
 #   2. What does the window server say of the window meanwhile?                                           (lines "server")
 #   3. What does a read of AXMinimized answer during the flight, and how long does the answer take?        (modes poll and read)
 #   4. Which of AXMain and AXRaise fetches the window back?                                                (modes main, raise, both)
+#      And what do they do to a window that is at rest in the Dock?                                        (modes rest-main, rest-raise)
 #   5. Does "read AXMinimized first, and leave a minimized window alone" keep it in the Dock?              (modes guarded, late)
 source "$(dirname "$0")/lib-apps.sh"
 needs_throwaway_mac "open TextEdit, minimize windows and switch Reduce Motion"
@@ -35,7 +36,7 @@ round() {
   # The pointer is there before the watch begins, so that only the press falls into it.
   # shellcheck disable=SC2086
   [ "$way" = button ] && [ -n "$point" ] && move $point > /dev/null
-  "$FLIGHT" "$pid" "$window" 2.2 "$mode" >> "$NOTES" 2>&1 &
+  "$FLIGHT" "$pid" "$window" 2.6 "$mode" >> "$NOTES" 2>&1 &
   watcher=$!
   started "$watcher"
   sleep 0.5
@@ -53,7 +54,7 @@ round() {
 
 all_rounds() {
   local name=$1 pid=$2 window=$3 way mode
-  for mode in poll sparse read both guarded late main raise; do round "$name" "$pid" "$window" key "$mode"; done
+  for mode in poll sparse read both guarded late main raise rest-main rest-raise; do round "$name" "$pid" "$window" key "$mode"; done
   for way in button ax; do
     for mode in poll both guarded; do round "$name" "$pid" "$window" "$way" "$mode"; done
   done
