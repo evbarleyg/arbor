@@ -1746,12 +1746,226 @@ private let cameraCommands = [
     s.h.run("hold")
     let said = s.h.overlays.messages.count
     s.h.system.comesForward(s.slack)
+    s.h.scheduler.advance(by: 3)  // what is said on a held view is said when the arrival is over
     #expect(s.h.overlays.messages.count == said)
 
     let quiet = stage { $0.messages = "off" }
     quiet.h.run("hold still")
     quiet.h.system.comesForward(quiet.slack)
     #expect(quiet.h.overlays.messages.isEmpty)
+  }
+
+  /// A held view turns the person's own switch away as well: a pick in Mission Control, ⌘Tab, a click in the Dock. That is a key that did
+  /// nothing, and why a key did nothing is the one thing said on a held view. On a Mac the pick had the keyboard twice, for 31 ms each.
+  @Test func whatAHeldViewTurnsAwayOfThePersonsOwnIsSaidOnceForEachAppAndHold() {
+    let s = stage(apart: true)
+    let h = s.h
+    h.run("hold")
+    let before = picture(h)
+    let said = h.overlays.messages.count
+    h.system.userFocus(s.slack)
+    h.scheduler.advance(by: 0.031)
+    h.system.userFocus(s.slack)
+    h.scheduler.advance(by: 0.5)
+    #expect(h.overlays.messages.count == said + 1, "twice in a moment is one pick")
+    #expect(h.overlays.messages.last?.model.line == "Slack is out of view: the view is held · ⌃⌥⎋ releases it")
+    #expect(h.overlays.messages.last?.model.kind == .problem)
+    #expect(h.system.focused == s.keynote, "and it is turned away as before")
+    h.scheduler.advance(by: 10)
+    #expect(h.overlays.headsUp.isEmpty && picture(h) == before, "nothing an audience could notice is left")
+    h.system.userFocus(s.slack)
+    h.scheduler.advance(by: 10)
+    #expect(h.overlays.messages.count == said + 1, "once")
+    h.system.userFocus(s.mail)
+    h.scheduler.advance(by: 10)
+    #expect(h.overlays.messages.count == said + 2, "for each app")
+    h.run("release")
+    h.run("hold")
+    h.scheduler.advance(by: 10)
+    let again = h.overlays.messages.count
+    h.system.userFocus(s.slack)
+    h.scheduler.advance(by: 0.5)
+    #expect(h.overlays.messages.count == again + 1, "and hold")
+  }
+
+  /// An app that pushed itself forward and was passed over in silence has not used up what the person is owed. Nor if the pick comes
+  /// while Arbor is still counting how often that app has tried.
+  @Test(arguments: [10, 1, 0.1]) func anAppThatCameForwardByItselfFirstIsStillSpokenOfWhenThePersonPicksIt(later: Double) {
+    let s = stage(apart: true)
+    s.h.run("hold")
+    let said = s.h.overlays.messages.count
+    s.h.system.comesForward(s.slack)
+    s.h.scheduler.advance(by: later)
+    #expect(s.h.overlays.messages.count == said)
+    s.h.system.userFocus(s.slack)
+    s.h.scheduler.advance(by: 0.5)
+    #expect(s.h.overlays.messages.count == said + 1)
+  }
+
+  @Test func theLineOnAHeldViewNamesAKeyThatWorksOrTheMenu() {
+    let s = stage { $0.bindings = ["ctrl+opt+escape": nil] }
+    s.h.run("hold")
+    s.h.system.userFocus(s.slack)
+    s.h.scheduler.advance(by: 0.5)
+    #expect(s.h.overlays.messages.last?.model.line == "Slack is out of view: the view is held · Release it from Arbor’s menu")
+
+    let quiet = stage { $0.messages = "off" }
+    quiet.h.run("hold")
+    quiet.h.system.userFocus(quiet.slack)
+    quiet.h.scheduler.advance(by: 0.5)
+    #expect(quiet.h.overlays.messages.isEmpty, "whoever has switched the lines off has")
+  }
+
+  /// The two levels give different advice: ⌘Tab goes there holding still, and does nothing on a held view. What was said at the one
+  /// has not been said at the other.
+  @Test func whatWasSaidHoldingStillIsNotWhatIsSaidOnAHeldViewNorTheOtherWayRound() {
+    let s = stage(apart: true)
+    let h = s.h
+    h.run("hold still")
+    h.system.comesForward(s.slack)
+    #expect(h.overlays.messages.last?.model.line == "Slack is out of view: holding still · ⌘Tab or ⌃⌥G goes there")
+    h.scheduler.advance(by: 10)
+    h.run("hold")
+    h.system.userFocus(s.slack)  // as they were told
+    h.scheduler.advance(by: 0.5)
+    #expect(h.overlays.messages.last?.model.line == "Slack is out of view: the view is held · ⌃⌥⎋ releases it")
+
+    let other = stage(apart: true)
+    other.h.run("hold")
+    other.h.system.userFocus(other.slack)
+    other.h.scheduler.advance(by: 10)
+    other.h.run("hold still")
+    other.h.system.comesForward(other.slack)
+    #expect(other.h.overlays.messages.last?.model.line == "Slack is out of view: holding still · ⌘Tab or ⌃⌥G goes there")
+  }
+
+  enum Going: String, CaseIterable { case closed, minimized, hidden }
+
+  /// ⌘W, ⌘M and ⌘H are keys too, and macOS names its choice before it says what went. Nobody picked that window: no word in front of
+  /// an audience, and the app's one line is not used up.
+  @Test(arguments: Going.allCases) func theWindowMacOSHandsTheKeyboardToWhenAnotherGoesWasNotPicked(going: Going) {
+    let s = stage()  // one app, so that macOS picks among its windows
+    let h = s.h
+    h.run("hold")
+    let said = h.overlays.messages.count
+    h.system.secondsSinceInput = 0
+    switch going {
+    case .closed: h.system.close(s.keynote)
+    case .minimized: h.system.setMinimized(s.keynote, true)
+    case .hidden:
+      // The report of the next window first, as at a close.
+      h.system.focused = s.mail
+      h.system.backgroundFocus(s.mail)
+      h.system.setMinimized(s.keynote, true)
+    }
+    h.system.secondsSinceInput = .infinity
+    h.scheduler.advance(by: 3)
+    #expect(h.overlays.messages.count == said, "\(h.overlays.messages.last?.model.line ?? "")")
+  }
+
+  /// The same as a Mac plays it: a window that is closing does not take the keyboard back, so the one macOS picked still has it when Arbor
+  /// looks again, and is turned away a second time, with nobody at home any more. What is owed goes by who had the keyboard at first.
+  @Test func norWhenTheKeyboardCannotGoBackToAWindowThatIsClosing() {
+    let s = stage()
+    let h = s.h
+    h.run("hold")
+    let said = h.overlays.messages.count
+    h.system.defersFocus = true  // asked back, and macOS does not do it
+    h.system.secondsSinceInput = 0  // ⌘W
+    h.system.focused = s.mail
+    h.system.backgroundFocus(s.mail)
+    h.system.echoes.keyboard = false
+    h.system.close(s.keynote)
+    h.system.secondsSinceInput = .infinity
+    h.scheduler.advance(by: 3)
+    #expect(h.system.focused == s.mail, "the premise")
+    #expect(
+      !h.overlays.messages.dropFirst(said).contains { $0.model.text.hasSuffix("the view is held") },
+      "\(h.overlays.messages.last?.model.line ?? "")")
+  }
+
+  /// ⌘W as a hosted Mac played it: that the window has gone is reported FIRST, and a millisecond later, 0.08 s after the key, the window macOS
+  /// picked. Nobody in view had the keyboard by then, so there is nobody of whom to ask whether they are still there.
+  @Test(arguments: [false, true]) func norWhenTheGoingIsReportedFirst(anotherIsInView: Bool) {
+    let s = stage()
+    let h = s.h
+    let (closing, heir) = anotherIsInView ? (s.mail, s.keynote) : (s.keynote, s.mail)
+    if anotherIsInView {
+      h.run("zoom \(s.mail.rawValue)")
+      h.run("out")
+      h.system.userFocus(s.mail)
+      #expect(h.system.isVisible(s.slack) && !h.system.isVisible(s.keynote), "the premise")
+    }
+    h.run("hold")
+    let said = h.overlays.messages.count
+    h.system.secondsSinceInput = 0.08
+    h.system.echoes.keyboard = false
+    h.system.close(closing)
+    h.system.echoes.keyboard = true
+    h.system.focused = heir
+    h.system.backgroundFocus(heir)
+    h.system.secondsSinceInput = .infinity
+    h.scheduler.advance(by: 3)
+    #expect(
+      !h.overlays.messages.dropFirst(said).contains { $0.model.text.hasSuffix("the view is held") },
+      "\(h.overlays.messages.last?.model.line ?? "")")
+  }
+
+  /// ⌘M as a hosted Mac played it: the app names its next window 0.41 s after the key, when the flight to the Dock is over, and a moment
+  /// before it says that the window is minimized.
+  @Test func norAfterAFlightToTheDock() {
+    let s = stage()
+    let h = s.h
+    h.run("hold")
+    let said = h.overlays.messages.count
+    h.system.secondsSinceInput = 0.41
+    h.system.landInTheDock(s.keynote)
+    h.scheduler.advance(by: 0.004)
+    h.system.reportTheLanding()
+    h.system.secondsSinceInput = .infinity
+    h.scheduler.advance(by: 3)
+    #expect(h.system.windows[s.keynote]?.snapshot.isMinimized == true, "the premise: it stays in the Dock")
+    #expect(
+      !h.overlays.messages.dropFirst(said).contains { $0.model.text.hasSuffix("the view is held") },
+      "\(h.overlays.messages.last?.model.line ?? "")")
+  }
+
+  /// The view is held and empty, so a pick cannot be sent back to anybody, and nobody looks again. What would have been said at that look is
+  /// not kept for the next app that is turned away.
+  @Test func aWordThatCouldNotBeSaidIsNotSaidLaterOfAnotherMoment() {
+    let s = stage(apart: true)
+    let h = s.h
+    h.run("hold")
+    h.system.echoes.keyboard = false
+    h.system.close(s.keynote)
+    h.system.echoes.keyboard = true
+    h.scheduler.advance(by: 2)
+    h.system.secondsSinceInput = 0.1
+    h.system.userFocus(s.mail)
+    h.system.secondsSinceInput = 60
+    h.scheduler.advance(by: 60)
+    let new = h.system.open(app: "Preview")
+    h.scheduler.advance(by: 10)
+    #expect(h.system.focused == new && h.system.isVisible(new), "the premise")
+    let said = h.overlays.messages.count
+    h.system.comesForward(s.slack)
+    h.scheduler.advance(by: 5)
+    #expect(h.system.focused == new, "the premise: it is sent back")
+    #expect(h.overlays.messages.count == said, "\(h.overlays.messages.last?.model.line ?? "")")
+  }
+
+  /// Clicked minutes ago, in view. When its display goes it arrives out of view with the keyboard in it, and nobody has switched anything.
+  @Test func whatWasAskedForAWhileAgoIsNotBeingAskedForNow() {
+    let (s, xcode, _) = twoDisplays()
+    let h = s.h
+    h.run("hold")
+    h.system.userFocus(xcode)
+    h.scheduler.advance(by: 120)
+    let said = h.overlays.messages.count
+    h.system.setDisplays([FakeWindowSystem.standardDisplay])
+    h.scheduler.advance(by: 3)
+    #expect(!h.system.isVisible(xcode) && h.system.focused == s.keynote)
+    #expect(h.overlays.messages.count == said, "\(h.overlays.messages.last?.model.line ?? "")")
   }
 
   /// Read, not run, by the minimap's owner, and true. macOS's answer to "who has the keyboard" can lag behind its report, and then the view

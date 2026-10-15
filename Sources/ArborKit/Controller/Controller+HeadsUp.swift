@@ -164,7 +164,7 @@ extension Controller {
   /// The few outcomes where the reply, written for someone who can name windows and apps at a terminal, has nothing to
   /// offer someone at the keyboard.
   /// What follows "The view is held" on screen, in place of the reply's three ways, the last of which is a command to type.
-  private var wayOutOfAHold: String {
+  var wayOutOfAHold: String {
     let keys = [Command.toggleHold, .release, .togglePause].lazy.compactMap(shortcutLabel(for:)).first
     return keys.map { "\($0) releases it" } ?? "Release it from Arbor’s menu"
   }
