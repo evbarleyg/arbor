@@ -46,6 +46,89 @@ nothing_of() {
 }
 paused() { "$ARBOR_BIN/arborctl" status | grep "^paused" > /dev/null || { echo "Arbor is not paused"; return 1; }; }
 running() { "$ARBOR_BIN/arborctl" status | grep "^running" > /dev/null || { echo "Arbor is not running"; return 1; }; }
+# types_into <id>: a letter typed now arrives in that window.
+types_into() {
+  local keys
+  keys=$(events_of "$1" key) || return 1
+  key_to "$1" x || return 1
+  eventually received "$1" key -gt "$keys"
+}
+
+# A short session of its own with two apps, for what moves the keyboard without any doing of Arbor's.
+ARBOR_SECOND_APP=1
+if on_throwaway_mac; then
+  # In the Dock and in ⌘Tab, like a person's apps. On a person's Mac they could stay among the Dock's recent apps.
+  ARBOR_TEST_WINDOWS_ARGS="--regular"
+  ARBOR_SECOND_APP_ARGS="--regular"
+  # By default a click on the wallpaper sweeps every window aside, and the next one only brings them back.
+  macos_click_wallpaper off
+  at_exit 'macos_click_wallpaper on > /dev/null'
+fi
+arbor_start 2
+ctl dock "$W1" left
+ctl dock "$W2" beside "$W1" bottom
+ctl dock "$V1" right
+summary
+
+claim "another app brings its window forward: the focus ring goes to it, and back with a click"
+proves A15
+click_window "$W1"
+check "the ring is around the first app's window" eventually ring_around "$W1"
+tw2 activate "$V1"
+check "the other app is in front" eventually front_is "$ARBOR_WINDOWS_PID_2"
+check "the ring is around its window" eventually ring_around "$V1"
+check "directly in front of it" eventually ring_in_front_of "$V1"
+check "that is the window that takes the typing" types_into "$V1"
+click_window "$W1"
+check "the ring is back around the first app's window" eventually ring_around "$W1"
+check "no window moved for it" layout_matches
+
+# On a person's Mac ⌘Tab leads to whichever app of theirs was in front last, and a click on the wallpaper sweeps their windows aside.
+if on_throwaway_mac; then
+  claim "⌘Tab to another app and back: the focus ring is around the window that takes the typing"
+  proves A15
+  click_window "$V1"
+  click_window "$W1"
+  check "the ring is around the first app's window" eventually ring_around "$W1"
+  key cmd+tab
+  check "the other app is in front" eventually front_is "$ARBOR_WINDOWS_PID_2"
+  check "the ring is around its window" eventually ring_around "$V1"
+  check "which takes the typing" types_into "$V1"
+  key cmd+tab
+  check "the first app is in front again" eventually front_is "$ARBOR_WINDOWS_PID"
+  check "the ring is back around its window" eventually ring_around "$W1"
+  check "which takes the typing" types_into "$W1"
+
+  # The fake Mac does not know ⌘`: in a rehearsal the app brings the window forward itself, and only the key goes unplayed.
+  next_window() { if [ -n "${ARBOR_REHEARSAL:-}" ]; then tw activate "$2"; else key_to "$1" 'cmd+`'; fi; }
+  claim "⌘ and the key above Tab, to the app's other window and back: the focus ring goes along"
+  proves A15
+  next_window "$W1" "$W2"
+  check "the app's other window has the keyboard" eventually is focused "$W2"
+  check "the ring is around it" eventually ring_around "$W2"
+  check "the first has lost it" fails ring_around "$W1"
+  next_window "$W2" "$W1"
+  check "the first window has the keyboard again" eventually is focused "$W1"
+  check "the ring is back around it" eventually ring_around "$W1"
+
+  claim "click the Desktop: no window takes the typing and the focus ring is gone, and a click on a window brings it back"
+  proves A15
+  check "the ring is around the window that has the keyboard" eventually ring_around "$W1"
+  # shellcheck disable=SC2046
+  click $(desktop_point)
+  check "the app that had the keyboard is no longer in front" eventually fails front_is "$ARBOR_WINDOWS_PID"
+  check "nor is the other" fails front_is "$ARBOR_WINDOWS_PID_2"
+  check "there is no ring" eventually no_ring
+  check "and none comes back" stays no_ring
+  check "no window moved for it" layout_matches
+  click_window "$W1"
+  check "the ring is around the clicked window" eventually ring_around "$W1"
+fi
+
+arbor_stop
+ARBOR_SECOND_APP=0
+ARBOR_TEST_WINDOWS_ARGS=""
+ARBOR_SECOND_APP_ARGS=""
 
 arbor_start 4 ARBOR_NO_HOTKEYS=0
 

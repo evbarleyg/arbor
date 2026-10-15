@@ -1,6 +1,7 @@
 #!/bin/bash
 # Docking by dragging a window to each edge of the screen, the preview on the way, and dragging it off again.
-# T01 dock at a screen edge, T03 the Desktop stays, T06 a leaving window's space, T11 the drop preview.
+# T01 dock at a screen edge, T03 the Desktop stays, T06 a leaving window's space, T10 what is no target,
+# T11 the drop preview.
 source "$(dirname "$0")/../lib.sh"
 arbor_build
 if ! screen_edges_dock; then
@@ -71,6 +72,24 @@ take "x y" titlebar_of "$W4"
 drag "$x" "$y" "$((x + 25))" "$((y + 30))"
 check "it is still docked" eventually is docked "$W4"
 check "it is back in its slot" eventually in_slot "$W4"
+settled
+
+claim "let go of a docked window over the middle of another: no preview shows, and it goes back into its slot"
+proves T10
+place=$(real_frame_of "$W4")
+other=$(real_frame_of "$W3")
+# All the way across the Desktop, which on a wide screen is further than thirty steps can take a window that Arbor is to notice.
+# shellcheck disable=SC2046
+drag_window "$W4" $(center_of "$W3") --steps 60 --no-release
+check "the window has left its slot with the pointer" fails in_slot "$W4"
+check "nothing is promised while the button is held" stays fails has_overlay 3
+release
+# shellcheck disable=SC2086
+check "it is back exactly where it was" eventually frame_is "$W4" ${place:-0 0 0 0}
+check "it is still docked" is docked "$W4"
+# shellcheck disable=SC2086
+check "the window it was let go over has not moved" frame_is "$W3" ${other:-0 0 0 0}
+check "all four are docked" count docked 4
 settled
 
 claim "drag a docked window out onto the Desktop: it floats, and its space goes to the others"
