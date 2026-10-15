@@ -382,7 +382,9 @@ import Testing
   func arranged() -> (Harness, [WindowID]) {
     let h = Harness()
     let windows = ["Safari", "Mail", "Notes", "Terminal"].enumerated().map { index, app in
-      h.system.open(app: app, frame: CGRect(x: 80 + 60 * CGFloat(index), y: 90 + 40 * CGFloat(index), width: 640, height: 420))
+      h.system.open(
+        app: app, pid: 1000 + Int32(index),
+        frame: CGRect(x: 80 + 60 * CGFloat(index), y: 90 + 40 * CGFloat(index), width: 640, height: 420))
     }
     h.start()
     #expect(h.run("arrange").ok)
@@ -434,14 +436,35 @@ import Testing
     #expect(h.system.frameLog.isEmpty, "Arbor moved nothing at all")
   }
 
-  @Test func itStaysWhenAWindowOpens() {
+  @Test func itStaysWhenAWindowOpensAndWhenThatOneCloses() {
     let (h, windows) = arranged()
     h.system.doubleClickTitleBar(of: windows[0])
     h.scheduler.advance(by: 3)
-    h.system.open(app: "Finder", frame: CGRect(x: 200, y: 200, width: 500, height: 300))
+    let new = h.system.open(app: "Finder", frame: CGRect(x: 200, y: 200, width: 500, height: 300))
+    h.scheduler.advance(by: 1)
+    #expect(h.frame(windows[0]) == h.visibleFrame)
+    h.system.close(new)
     h.scheduler.advance(by: 1)
     #expect(h.frame(windows[0]) == h.visibleFrame)
     #expect(h.system.frameLog.filter { windows.contains($0.window) }.isEmpty, "none of the four was moved")
+  }
+
+  /// Whatever else happens to windows that have no part in the arrangement.
+  @Test func aFloatingWindowThatIsMinimizedAndRestoredEndsNothing() {
+    let (h, windows) = arranged()
+    let floating = h.system.open(app: "Finder", frame: CGRect(x: 200, y: 200, width: 500, height: 300))
+    h.scheduler.advance(by: 1)
+    h.system.clearFrameLog()
+    h.system.doubleClickTitleBar(of: windows[0])
+    h.scheduler.advance(by: 3)
+    h.system.setMinimized(floating, true)
+    h.scheduler.advance(by: 1)
+    #expect(h.frame(windows[0]) == h.visibleFrame, "minimized")
+    h.system.setMinimized(floating, false)
+    h.scheduler.advance(by: 1)
+    #expect(h.frame(windows[0]) == h.visibleFrame, "restored")
+    #expect(h.system.frameLog.filter { windows.contains($0.window) }.isEmpty, "none of the four was moved")
+    #expect(h.controller.windowsLeftWhereADoubleClickPutThem == [windows[0]])
   }
 
   /// Q22: "or at the next command that lays out", though the command leaves its slot as it was.
@@ -455,6 +478,346 @@ import Testing
     #expect(h.frame(windows[0]) == slot)
     #expect(h.system.frameLog.filter { $0.window == windows[0] }.count == 1, "one move")
     expectWindowsMatchLayout(h, on: h.display)
+  }
+
+  /// What happens to a neighbour says nothing about this window (Q22): the others share the room behind it.
+  @Test(arguments: ["closes", "is minimized", "is hidden with its app", "goes with its app"])
+  func whateverBecomesOfADockedNeighbourItStays(_ what: String) {
+    let (h, windows) = arranged()
+    let slot = h.frame(windows[0])!
+    h.system.doubleClickTitleBar(of: windows[0])
+    h.scheduler.advance(by: 3)
+    let pid = h.system.windows[windows[1]]!.snapshot.pid
+    switch what {
+    case "closes": h.system.close(windows[1])
+    case "is minimized": h.system.setMinimized(windows[1], true)
+    case "is hidden with its app": h.system.setHidden(pid: pid, true)
+    default: h.system.quit(pid: pid)
+    }
+    h.scheduler.advance(by: 5)
+    #expect(h.frame(windows[0]) == h.visibleFrame)
+    #expect(h.system.frameLog.filter { $0.window == windows[0] }.isEmpty, "Arbor did not move it")
+    #expect(h.workspace.isDocked(windows[0]))
+    let fresh = h.controller.freshLayout(of: h.display)!
+    #expect(fresh.windowFrames[windows[0]] != slot, "the test's own premise: its slot is another now")
+    for other in windows[2...] { #expect(h.frame(other) == fresh.windowFrames[other], "\(other) is in its slot") }
+  }
+
+  /// macOS returns it to the frame it had, which was its slot. From that double-click on it is a docked window like any
+  /// other, so Arbor moves it once more, into the slot as it is now, and does not leave it lying across the others.
+  @Test func afterThatTheSecondDoubleClickEndsInTheSlotAsItIsNow() {
+    let (h, windows) = arranged()
+    let old = h.frame(windows[0])!
+    h.system.doubleClickTitleBar(of: windows[0])
+    h.scheduler.advance(by: 3)
+    h.system.close(windows[1])
+    h.scheduler.advance(by: 3)
+    h.system.clearFrameLog()
+    h.system.doubleClickTitleBar(of: windows[0])
+    #expect(h.frame(windows[0]) == old, "macOS's way back")
+    h.scheduler.advance(by: 0.3)
+    #expect(h.frame(windows[0]) == h.controller.freshLayout(of: h.display)!.windowFrames[windows[0]])
+    #expect(h.system.frameLog.map(\.window) == [windows[0]], "one move, of that window")
+    #expect(h.controller.windowsLeftWhereADoubleClickPutThem.isEmpty)
+    h.scheduler.advance(by: 5)
+    expectWindowsMatchLayout(h, on: h.display)
+    #expect(!h.scheduler.pendingKeys.contains { $0.hasPrefix("enforce") }, "no timer is left behind")
+  }
+
+  /// Seen on a Mac: Terminal stands a few points out of its slot, on its grid of characters, and macOS returns it exactly there.
+  @Test func backWhereTheZoomBeganItIsADockedWindowAgainThoughThatIsNotQuiteItsSlot() throws {
+    let h = Harness()
+    let windows = ["Terminal", "Mail", "Notes", "Safari"].enumerated().map { index, app in
+      h.system.open(
+        app: app, pid: 1000 + Int32(index),
+        frame: CGRect(x: 80 + 60 * CGFloat(index), y: 90 + 40 * CGFloat(index), width: 400, height: 300))
+    }
+    // What its app makes of a slot: less than it, and Arbor accepts that.
+    h.system.setMaximumSize(windows[0], CGSize(width: 500, height: 380))
+    h.start()
+    #expect(h.run("arrange").ok)
+    h.scheduler.advance(by: 5)
+    let stood = try #require(h.frame(windows[0]))
+    let slot = try #require(h.layout?.windowFrames[windows[0]])
+    #expect(!stood.approximatelyEquals(slot, tolerance: 4), "the test's own premise: \(stood) in \(slot)")
+    h.system.setMaximumSize(windows[0], nil)
+    h.system.clearFrameLog()
+    h.system.doubleClickTitleBar(of: windows[0])
+    h.scheduler.advance(by: 3)
+    #expect(h.controller.windowsLeftWhereADoubleClickPutThem == [windows[0]], "the test's own premise")
+    h.system.doubleClickTitleBar(of: windows[0])
+    h.scheduler.advance(by: 3)
+    #expect(h.frame(windows[0]) == stood, "macOS's way back")
+    #expect(h.controller.windowsLeftWhereADoubleClickPutThem.isEmpty, "that is home")
+    #expect(h.system.frameLog.isEmpty, "Arbor moved nothing at all")
+  }
+
+  /// Where macOS is set to fill, a second double-click does nothing (seen on a Mac). It stays, and stays let be.
+  @Test func filledAndDoubleClickedAgainItStaysFilled() {
+    let (h, windows) = arranged()
+    h.system.doubleClick(at: CGPoint(x: h.frame(windows[0])!.midX, y: h.frame(windows[0])!.minY + 12))
+    h.system.zoomAsMacOSDoes(windows[0], andBack: false)
+    h.scheduler.advance(by: 3)
+    h.system.doubleClick(at: CGPoint(x: h.visibleFrame.midX, y: h.visibleFrame.minY + 12))
+    h.system.zoomAsMacOSDoes(windows[0], andBack: false)
+    h.scheduler.advance(by: 5)
+    #expect(h.frame(windows[0]) == h.visibleFrame)
+    #expect(h.controller.windowsLeftWhereADoubleClickPutThem == [windows[0]])
+    #expect(h.system.frameLog.isEmpty, "Arbor moved nothing at all")
+    // The note of the second double-click explains nothing that comes later.
+    h.system.close(windows[1])
+    h.scheduler.advance(by: 5)
+    #expect(h.frame(windows[0]) == h.visibleFrame)
+  }
+
+  /// macOS animates the way back too: Arbor waits until it has stopped.
+  @Test func itIsNotMetHalfWayBack() {
+    let (h, windows) = arranged()
+    let old = h.frame(windows[0])!
+    h.system.doubleClickTitleBar(of: windows[0])
+    h.scheduler.advance(by: 3)
+    h.system.close(windows[1])
+    h.scheduler.advance(by: 3)
+    h.system.clearFrameLog()
+    h.system.doubleClick(at: CGPoint(x: h.visibleFrame.midX, y: h.visibleFrame.minY + 12))
+    let full = h.visibleFrame
+    for share in [0.7, 0.4, 0.0] as [CGFloat] {
+      h.system.userMove(
+        windows[0],
+        to: CGRect(
+          x: old.minX + (full.minX - old.minX) * share, y: old.minY + (full.minY - old.minY) * share,
+          width: old.width + (full.width - old.width) * share, height: old.height + (full.height - old.height) * share))
+      h.scheduler.advance(by: 0.15)
+      #expect(h.system.frameLog.isEmpty, "at \(share)")
+    }
+    h.scheduler.advance(by: 1)
+    #expect(h.system.frameLog.map(\.window) == [windows[0]])
+    expectWindowsMatchLayout(h, on: h.display)
+  }
+
+  @Test func andAKeyTakesItIntoTheSlotAsItIsNow() {
+    let (h, windows) = arranged()
+    h.system.doubleClickTitleBar(of: windows[0])
+    h.scheduler.advance(by: 3)
+    h.system.close(windows[1])
+    h.scheduler.advance(by: 3)
+    h.system.clearFrameLog()
+    #expect(h.run("show-all").ok)
+    h.scheduler.advance(by: 1)
+    #expect(h.system.frameLog.map(\.window) == [windows[0]], "one move, of that window")
+    expectWindowsMatchLayout(h, on: h.display)
+  }
+
+  /// A hand on a gap lays out, and asked for it.
+  @Test func aGapThatIsDraggedTakesItBack() throws {
+    let (h, windows) = arranged()
+    h.system.doubleClickTitleBar(of: windows[0])
+    h.scheduler.advance(by: 3)
+    let seam = try #require(h.layout?.seams.first)
+    h.overlays.dragSeam(seam, by: 30)
+    h.scheduler.advance(by: 1)
+    #expect(h.controller.windowsLeftWhereADoubleClickPutThem.isEmpty)
+    expectWindowsMatchLayout(h, on: h.display)
+  }
+
+  /// Found by walks: where it lies says nothing about who asked. Partly over the edge of its display, it is still its person's.
+  @Test func partlyOverTheEdgeOfItsDisplayItIsStillLetBe() {
+    let (h, windows) = arranged()
+    let floating = h.system.open(app: "Finder", pid: 2000, frame: CGRect(x: 200, y: 200, width: 500, height: 300))
+    h.scheduler.advance(by: 1)
+    h.system.clearFrameLog()
+    h.system.doubleClickTitleBar(of: windows[0])
+    h.scheduler.advance(by: 3)
+    let over = CGRect(x: 663, y: 679, width: 513, height: 328)
+    h.system.userMove(windows[0], to: over)
+    h.scheduler.advance(by: 3)
+    h.system.close(floating)
+    h.scheduler.advance(by: 3)
+    #expect(h.frame(windows[0]) == over)
+    #expect(h.system.frameLog.filter { $0.window == windows[0] }.isEmpty, "Arbor did not move it")
+  }
+
+  /// Found by walks too: an app that keeps its window larger than the display. Most of it never shows, and it is in reach all the same.
+  @Test func largerThanItsDisplayItIsStillLetBe() {
+    let h = Harness()
+    let large = h.system.open(
+      app: "Notes", pid: 1001, frame: CGRect(x: 40, y: 60, width: 2385, height: 2028), minimumSize: CGSize(width: 2385, height: 2028))
+    let other = h.system.open(app: "Safari", pid: 1000, frame: CGRect(x: 700, y: 200, width: 568, height: 607))
+    h.start()
+    #expect(h.run("arrange").ok)
+    #expect(h.run("zoom \(large.rawValue)").ok)
+    h.scheduler.advance(by: 5)
+    h.system.doubleClickTitleBar(of: large)
+    h.scheduler.advance(by: 3)
+    guard h.controller.windowsLeftWhereADoubleClickPutThem == [large], let zoomed = h.frame(large) else {
+      Issue.record("the test's own premise: macOS moved it, and it is let be")
+      return
+    }
+    h.system.clearFrameLog()
+    h.system.close(other)
+    h.scheduler.advance(by: 3)
+    #expect(h.frame(large) == zoomed)
+    #expect(h.system.frameLog.filter { $0.window == large }.isEmpty, "Arbor did not move it")
+  }
+
+  /// But nothing is let be where nobody can reach it.
+  @Test func mostlyOffEveryDisplayItIsFetchedByTheNextLayout() {
+    let (h, windows) = arranged()
+    let floating = h.system.open(app: "Finder", pid: 2000, frame: CGRect(x: 200, y: 200, width: 500, height: 300))
+    h.scheduler.advance(by: 1)
+    h.system.doubleClickTitleBar(of: windows[0])
+    h.scheduler.advance(by: 3)
+    h.system.userMove(windows[0], to: CGRect(x: 1300, y: 800, width: 600, height: 400))
+    h.scheduler.advance(by: 3)
+    h.system.close(floating)
+    h.scheduler.advance(by: 3)
+    #expect(h.controller.windowsLeftWhereADoubleClickPutThem.isEmpty)
+    expectWindowsMatchLayout(h, on: h.display)
+  }
+
+  /// No frame outlives the displays it was made for.
+  @Test func aDisplayThatGetsSmallerTakesItBack() {
+    let (h, windows) = arranged()
+    h.system.doubleClickTitleBar(of: windows[0])
+    h.scheduler.advance(by: 3)
+    h.system.setDisplays([
+      DisplaySnapshot(
+        id: FakeWindowSystem.standardDisplay.id, frame: CGRect(x: 0, y: 0, width: 1280, height: 800),
+        visibleFrame: CGRect(x: 0, y: 25, width: 1280, height: 775), isMain: true)
+    ])
+    h.scheduler.advance(by: 10)
+    #expect(h.controller.windowsLeftWhereADoubleClickPutThem.isEmpty)
+    expectWindowsMatchLayout(h, on: h.display)
+  }
+
+  /// What happens to the window itself, and is no word about its size: there and back it is as it was.
+  @Test(arguments: ["another Space", "the Dock", "its app is hidden"]) func goneAndBackItIsStillWhereMacOSPutIt(_ whereTo: String) {
+    let (h, windows) = arranged()
+    h.system.doubleClickTitleBar(of: windows[0])
+    h.scheduler.advance(by: 3)
+    let pid = h.system.windows[windows[0]]!.snapshot.pid
+    for away in [true, false] {
+      switch whereTo {
+      case "another Space": for window in windows { h.system.setOnActiveSpace(window, !away) }
+      case "the Dock": h.system.setMinimized(windows[0], away)
+      default: h.system.setHidden(pid: pid, away)
+      }
+      h.scheduler.advance(by: 5)
+    }
+    #expect(h.frame(windows[0]) == h.visibleFrame)
+    #expect(h.system.frameLog.filter { $0.window == windows[0] }.isEmpty, "Arbor did not move it")
+    #expect(h.controller.windowsLeftWhereADoubleClickPutThem == [windows[0]])
+  }
+
+  /// A native tab is another window to macOS, and the same one to its person.
+  @Test func anotherTabOfItIsLetBeInItsStead() throws {
+    let (h, windows) = arranged()
+    h.system.doubleClickTitleBar(of: windows[0])
+    h.scheduler.advance(by: 3)
+    let tab = try #require(h.system.openTab(in: windows[0]))
+    h.scheduler.advance(by: 3)
+    #expect(h.frame(tab) == h.visibleFrame)
+    h.system.selectTab(windows[0], insteadOf: tab)
+    h.scheduler.advance(by: 3)
+    #expect(h.frame(windows[0]) == h.visibleFrame)
+    #expect(h.system.frameLog.filter { $0.window == windows[0] || $0.window == tab }.isEmpty, "Arbor moved neither")
+  }
+
+  @Test func aRuleThatDocksANewWindowLeavesItWhereItIs() {
+    let (h, windows) = arranged()
+    #expect(h.run("rule add com.example.finder dock right").ok)
+    h.scheduler.advance(by: 1)
+    h.system.clearFrameLog()
+    h.system.doubleClickTitleBar(of: windows[0])
+    h.scheduler.advance(by: 3)
+    let new = h.system.open(app: "Finder", pid: 2000, frame: CGRect(x: 200, y: 200, width: 500, height: 300))
+    h.scheduler.advance(by: 3)
+    #expect(h.workspace.isDocked(new), "the test's own premise")
+    #expect(h.frame(windows[0]) == h.visibleFrame)
+    #expect(h.system.frameLog.filter { $0.window == windows[0] }.isEmpty, "Arbor did not move it")
+  }
+
+  /// Floated, it is nobody's docked window any more. Docked again, by whomever, it goes into its slot.
+  @Test func floatedAndDockedAgainByARuleItIsADockedWindowLikeAnyOther() {
+    let (h, windows) = arranged()
+    h.system.doubleClickTitleBar(of: windows[0])
+    h.scheduler.advance(by: 3)
+    #expect(h.run("float \(windows[0].rawValue)").ok)
+    h.scheduler.advance(by: 1)
+    #expect(h.controller.windowsLeftWhereADoubleClickPutThem.isEmpty)
+  }
+
+  /// A third double-click right after the second, with the slot another by then: macOS zooms it again, and that stays too.
+  @Test func zoomedAgainOnItsWayBackItStays() {
+    let (h, windows) = arranged()
+    h.system.doubleClickTitleBar(of: windows[0])
+    h.scheduler.advance(by: 3)
+    h.system.close(windows[1])
+    h.scheduler.advance(by: 3)
+    h.system.doubleClickTitleBar(of: windows[0])
+    h.scheduler.advance(by: 0.1)
+    h.system.doubleClickTitleBar(of: windows[0])
+    h.scheduler.advance(by: 5)
+    #expect(h.frame(windows[0]) == h.visibleFrame)
+  }
+
+  /// The ways in that a hand has and that are no commands. Each lays out, and was asked for.
+  @Test(arguments: ["a key held to look", "a tile", "another window dragged in", "the settings file"])
+  func whatAHandAsksForTakesItBack(_ what: String) throws {
+    let (h, windows) = arranged()
+    let floating = h.system.open(app: "Finder", pid: 2000, frame: CGRect(x: 1180, y: 300, width: 240, height: 300))
+    h.scheduler.advance(by: 1)
+    h.system.doubleClickTitleBar(of: windows[0])
+    h.scheduler.advance(by: 3)
+    switch what {
+    case "a key held to look":
+      h.keyDown("ctrl+opt+space")
+      h.scheduler.advance(by: 1)
+      h.keyUp("ctrl+opt+space")
+    case "a tile":
+      h.overlays.clickTile(try #require(h.workspace.tree.leaf(containing: windows[2])))
+    case "another window dragged in":
+      let slot = try #require(h.layout?.windowFrames[windows[3]])
+      h.system.userFocus(floating)
+      h.system.drag(floating, through: [CGPoint(x: 1300, y: 312), CGPoint(x: slot.midX, y: slot.maxY - 60), CGPoint(x: slot.midX, y: slot.maxY - 8)])
+      #expect(h.workspace.isDocked(floating), "the test's own premise")
+    default:
+      var settings = h.controller.settings
+      settings.gap += 6
+      h.controller.apply(settings: settings)
+    }
+    h.scheduler.advance(by: 3)
+    #expect(h.controller.windowsLeftWhereADoubleClickPutThem.isEmpty, "\(what)")
+    #expect(h.frame(windows[0]) != h.visibleFrame, "\(what)")
+  }
+
+  /// The view goes elsewhere because the keyboard did (rule 4), and the zoomed window is not part of it: it goes like the rest.
+  @Test func outOfViewItIsPutAwayLikeAnyOther() {
+    let (h, windows) = arranged()
+    #expect(h.run("zoom \(windows[0].rawValue)").ok)
+    h.scheduler.advance(by: 3)
+    // Framed, with a gap round it: macOS's zoom is a little larger than its slot.
+    h.system.doubleClickTitleBar(of: windows[0])
+    h.scheduler.advance(by: 3)
+    #expect(h.controller.windowsLeftWhereADoubleClickPutThem == [windows[0]], "the test's own premise")
+    h.system.userFocus(windows[2])
+    h.scheduler.advance(by: 3)
+    #expect(h.layout?.windowFrames[windows[2]] != nil, "the window switched to is in view")
+    if h.layout?.windowFrames[windows[0]] == nil {
+      #expect(h.controller.windowsLeftWhereADoubleClickPutThem.isEmpty)
+      #expect(h.controller.parked.contains(windows[0]))
+    }
+  }
+
+  /// Found by a walk: a press on its edge that pulls nothing is followed by no layout, so it must not end anything either.
+  @Test func anEdgeThatIsPressedAndNotPulledLeavesItLetBe() {
+    let (h, windows) = arranged()
+    h.system.doubleClickTitleBar(of: windows[0])
+    h.scheduler.advance(by: 3)
+    h.system.userResize(windows[0], to: h.visibleFrame)
+    h.scheduler.advance(by: 3)
+    #expect(h.frame(windows[0]) == h.visibleFrame)
+    #expect(h.controller.windowsLeftWhereADoubleClickPutThem == [windows[0]])
   }
 
   /// A hand that takes the zoomed window by its title bar has the last word, as with any docked window.

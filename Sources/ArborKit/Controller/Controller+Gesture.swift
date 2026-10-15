@@ -10,6 +10,8 @@ extension Controller {
   /// lift. Until it does, a streamed pinch steps a level per `pinchThreshold`, as F03's does,
   /// and the pan is ignored, so that turning the setting on early changes nothing to look at.
   public func gesture(_ update: GestureUpdate) {
+    actsOfAHand += 1
+    defer { actsOfAHand -= 1 }
     // A held view follows no fingers (Controller+Hold.swift). The taps are gone then; one that was under way is not.
     guard isRunning, holdLevel != .view else {
       gestureSteps.reset()

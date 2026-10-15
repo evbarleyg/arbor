@@ -37,6 +37,8 @@ extension Controller {
   public func shortcut(
     _ binding: KeyBinding, _ phase: KeyPhase, run: ((Command) -> CommandResult)? = nil
   ) -> CommandResult? {
+    actsOfAHand += 1
+    defer { actsOfAHand -= 1 }
     var result: CommandResult?
     traced(binding, phase) {
       // "Any key puts the panel of shortcuts away", also one that a peek takes and that runs no command.
@@ -146,6 +148,8 @@ extension Controller {
 
   /// `OverlayActions`: the outline's panel took a click.
   public func peekOutlineClicked(display: DisplayID) {
+    actsOfAHand += 1
+    defer { actsOfAHand -= 1 }
     guard peeking?.display == display else { return }
     updatePeek { $0.clicked() }
   }

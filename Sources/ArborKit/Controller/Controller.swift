@@ -206,6 +206,11 @@ public final class Controller {
 
   /// The last double-click that went to a docked window's app, until something has come of it.
   var appsDoubleClick: AppsDoubleClick?
+  /// How many of a person's acts that are no commands are being carried out, one within the other (`aPersonAsks`).
+  var actsOfAHand = 0
+  /// Where each window that is let be was when the double-click took it away, which is where macOS's second one returns it.
+  /// And the slot it had then.
+  var whereAZoomBegan: [WindowID: (frame: CGRect, slot: CGRect?)] = [:]
 
   /// Managed windows, most recently focused first. `dock beside` rules use it
   /// to pick which of an app's windows to dock beside (Controller+Rules.swift).
@@ -523,6 +528,7 @@ public final class Controller {
     soleFloats.dragged = nil
     edgeResize = nil
     appsDoubleClick = nil
+    whereAZoomBegan.removeAll()
     system.start()
     let shapes = Dictionary(displays.map { ($0.id, $0.frame) }, uniquingKeysWith: { first, _ in first })
     displays = system.displays()
@@ -648,6 +654,7 @@ public final class Controller {
     defer { isStoppingWithoutMoving = false }
     if movingWindows { cancelDragLettingGo() } else { cancelDrag() }
     appsDoubleClick = nil
+    whereAZoomBegan.removeAll()
     if movingWindows { lookAtTheDisplaysBeforeLettingGo() }
     dropOverdueSlotsBeforeAStop()
     scheduler.cancel("save")
@@ -776,6 +783,9 @@ public final class Controller {
   // MARK: Settings
 
   public func apply(settings newSettings: Settings) {
+    // Whoever changed them, in the window or in the file.
+    actsOfAHand += 1
+    defer { actsOfAHand -= 1 }
     defer {
       followFrontmostApp()
       onSettingsApplied?(newSettings)

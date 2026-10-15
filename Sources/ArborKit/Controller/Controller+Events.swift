@@ -64,6 +64,7 @@ extension Controller: WindowSystemEvents {
     if unframedIntoATile?.window == id || unframedIntoATile?.heir == id { unframedIntoATile = nil }
     enforcement.reset([id])
     if appsDoubleClick?.window == id { appsDoubleClick = nil }
+    whereAZoomBegan[id] = nil
     forgetRuleState(of: id)
     releasePendingSlot(of: id)
     if drag?.window == id { cancelDrag() }
@@ -277,6 +278,8 @@ extension Controller: WindowSystemEvents {
 
 extension Controller: OverlayActions {
   public func tileActivated(display: DisplayID, node: NodeID) {
+    actsOfAHand += 1
+    defer { actsOfAHand -= 1 }
     guard isRunning, workspaces[display]?.tree.contains(node) == true else { return }
     // Refused as the command it stands for, so that a click that does nothing is told why in the words a key is.
     guard holdLevel != .view else { return _ = perform(.zoomNode(node), from: .gesture) }
@@ -289,6 +292,8 @@ extension Controller: OverlayActions {
   }
 
   public func seamDragged(display: DisplayID, seam: Seam, by delta: CGFloat) {
+    actsOfAHand += 1
+    defer { actsOfAHand -= 1 }
     guard isRunning, settings.appearanceOptions.gapHandles != .off, workspaces[display] != nil else { return }
     let undoScope = beginUndoStep(dragging: seam, on: display)
     defer { endUndoStep(undoScope) }

@@ -129,6 +129,8 @@ extension Controller {
   /// of macOS's by now, or on its way there, and no slot is a place to pull it back to. Only by the place: which keys were
   /// down when the button came up, nobody knows any more.
   public func dragCancelled(_ id: WindowID) {
+    actsOfAHand += 1
+    defer { actsOfAHand -= 1 }
     guard let session = drag, session.window == id else { return }
     if let macOSs = hoverLeftToMacOS(session, optionHeld: false) { return endDrag(on: macOSs) }
     cancelDrag()
@@ -174,6 +176,7 @@ extension Controller {
     parkedAgain[window.id] = parkedAgain.removeValue(forKey: old)
     titleBars[window.id] = titleBars.removeValue(forKey: old)
     chosenOnShape[window.id] = chosenOnShape.removeValue(forKey: old)
+    handTheZoomOver(to: window.id, from: old)
     soleFloatReplaced(old, by: window.id)
     shrunk[window.id] = shrunk.removeValue(forKey: old)
     fittedToADisplay[window.id] = fittedToADisplay.removeValue(forKey: old)

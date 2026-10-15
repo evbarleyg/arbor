@@ -8,7 +8,7 @@ import Foundation
 ///
 /// | Rule | Net |
 /// |---|---|
-/// | Nothing moves until the person docks something | `moved-before-any-dock`, `fetched-before-any-dock`, `moved-at-launch`, `moved-at-launch-after-a-crash`, `moved-at-resume`, `start-took-out-of-view`, `pause-and-resume-moved`, `there-and-back-moved`, `moved-unasked` |
+/// | Nothing moves until the person docks something | `moved-before-any-dock`, `fetched-before-any-dock`, `moved-at-launch`, `moved-at-launch-after-a-crash`, `moved-at-resume`, `start-took-out-of-view`, `pause-and-resume-moved`, `there-and-back-moved`, `moved-out-of-its-zoom`, `moved-unasked` |
 /// | No jolts: a window moves once, to where it ends up | `moved-twice`, `moved-again`; both with `-sizing` where its app refused a size, `-sizing-again` where it had refused before, `-floating` for a floating window; `moved-twice-floating-windows-first` (with `soleFloatTakesDesktop`, where macOS reported the window before the displays); `flashed-into-view`, `flashed-out-of-view`, `moved-over-and-over` |
 /// | The window you switch to comes to the front and into view | `switched-to-out-of-view`, `app-switch-out-of-view`, `switched-to-partly-out`, `switched-to-behind` |
 /// | Quitting, Float All and pause give windows their own earlier sizes back | `size-not-given-back` |
@@ -18,6 +18,8 @@ extension ChaosRunner {
   struct SevenRules {
     var moveLogMark = 0
     var layoutsBefore: [DisplayID: Layout] = [:]
+    /// The windows that were where a double-click had put them.
+    var letBeBefore: Set<WindowID> = []
     var focusedBefore: WindowID?
     var pausedBefore = false
     var fullScreenBefore: Set<WindowID> = []
@@ -135,6 +137,7 @@ extension ChaosRunner {
     seven.moveLogMark = system.moveLog.count
     seven.focusLogMark = system.focusLog.count
     seven.layoutsBefore = controller.layouts
+    seven.letBeBefore = controller.windowsLeftWhereADoubleClickPutThem
     seven.focusedBefore = system.focused
     seven.pausedBefore = isPaused
     seven.fullScreenBefore = Set(system.windows.values.lazy.filter(\.snapshot.isFullScreen).map(\.snapshot.id))
@@ -359,6 +362,7 @@ extension ChaosRunner {
   func sevenRulesViolations(after action: ChaosAction, _ problems: inout [InvariantViolation]) {
     onceViolations(after: action, &problems)
     unaskedViolations(after: action, &problems)
+    zoomViolations(after: action, &problems)
     noteAPauseThatEnded()
     thereAndBackViolations(&problems)
     startViolations(after: action, &problems)
@@ -642,6 +646,33 @@ extension ChaosRunner {
       // A rule name of its own for a known failure (ChaosKnownFailures.swift): out of view before and after, nobody sees it.
       let rule = parkedBefore.contains(window) ? "moved-unasked-out-of-view" : "moved-unasked"
       problems.append(.init(rule, "\(whatHappened); what happened was not about it, and \(display) is laid out as it was"))
+    }
+  }
+
+  /// A window that macOS zoomed at its person's double-click is let be through whatever nobody asked of Arbor (collab/QUESTIONS.md,
+  /// Q22): windows that open, close, hide and come forward, and time. It may go out of view with the rest, and is fetched from where
+  /// nobody could reach it.
+  func zoomViolations(after action: ChaosAction, _ problems: inout [InvariantViolation]) {
+    guard !seven.letBeBefore.isEmpty, wasRunningBefore, isRunning, controller.displays == displaysBefore, inHandBefore == nil else { return }
+    switch action {
+    case .open, .close, .quitApp, .minimize, .space, .hide, .title, .focus, .switchApp, .backgroundFocus, .focusNothing, .activate, .openTab,
+      .selectTab, .closeTab, .renumber, .listed, .cursor, .save, .flush, .advance, .react, .settle:
+      break
+    default: return
+    }
+    asked("let-be")
+    for window in seven.letBeBefore.intersection(movesSeenInThisStep.map(\.window)).sorted() {
+      guard let fake = isFairGame(window), let before = framesBefore[window], before != fake.snapshot.frame, !controller.parked.contains(window),
+        // Nothing is let be where nobody can reach it: less than half of it showed, and it covered less than half a display.
+        system.displayList.contains(where: { display in
+          let showing = before.intersection(display.frame)
+          return !showing.isNull && showing.area >= 0.5 * min(before.area, display.frame.area)
+        })
+      else { continue }
+      problems.append(
+        .init(
+          "moved-out-of-its-zoom",
+          "Arbor moved \(window) from \(before.brief), where a double-click had put it, to \(fake.snapshot.frame.brief), and nobody had asked Arbor for anything"))
     }
   }
 
