@@ -341,7 +341,8 @@ private final class FinderView: NSView {
 
   private func drawGlyph(in frame: NSRect) {
     let configuration = NSImage.SymbolConfiguration(pointSize: frame.height - 2, weight: .medium)
-      .applying(NSImage.SymbolConfiguration(paletteColors: [PanelInk.second]))
+      // In the second ink its thin ring stood out by 2.75 to 3 to 1 in the light look (measured on a hosted Mac).
+      .applying(NSImage.SymbolConfiguration(paletteColors: [PanelInk.main]))
     guard
       let image = NSImage(systemSymbolName: "magnifyingglass", accessibilityDescription: nil)?
         .withSymbolConfiguration(configuration),

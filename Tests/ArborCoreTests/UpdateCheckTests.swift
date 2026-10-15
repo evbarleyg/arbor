@@ -85,6 +85,11 @@ import Testing
     let nothing = UpdateCheck.decide(current: "0.9.0", lookup: .nothingPublished)
     #expect(nothing.summary == "no update information (GitHub lists no published release)")
     #expect(nothing.message(current: current).headline == "No update information")
+    // macOS's own words end in a full stop, Arbor's do not: one either way.
+    for reason in ["GitHub could not be reached: Could not connect to the server.", "GitHub lists no published release"] {
+      let detail = UpdateDecision.noInformation(reason).message(current: current).detail
+      #expect(detail.hasSuffix(".") && !detail.hasSuffix(".."), "\(detail)")
+    }
     #expect(nothing.message(current: current).detail.contains("GitHub lists no published release"))
   }
 }

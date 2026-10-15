@@ -65,7 +65,9 @@ public enum UpdateDecision: Equatable, Sendable {
     case .upToDate(let latest):
       return ("Arbor is up to date", "You have \(current.version); the latest release is \(latest).")
     case .noInformation(let reason):
-      return ("No update information", "You have \(current.version). Nothing to compare it with: \(reason).")
+      // macOS's own words for what went wrong end in a full stop (seen on a hosted Mac: "…connect to the server..").
+      let words = reason.hasSuffix(".") ? String(reason.dropLast()) : reason
+      return ("No update information", "You have \(current.version). Nothing to compare it with: \(words).")
     }
   }
 }

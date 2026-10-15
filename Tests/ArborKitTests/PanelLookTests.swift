@@ -29,32 +29,41 @@ import Testing
     Ground("popover over blue", dark: true, 29, 93, 125), Ground("any, Reduce Transparency", dark: true, 38, 38, 38),
   ]
 
-  /// Not measured yet: reckoned from the above, which fit a material that lets through about half of what is behind it.
-  static let reckoned: [Ground] = [
-    Ground("hudWindow over black", 125, 125, 125), Ground("hudWindow over white", 244, 244, 244),
-    Ground("hudWindow over white", dark: true, 164, 164, 164), Ground("hudWindow over black", dark: true, 21, 21, 21),
+  /// The same over plain wallpapers, the worst there is: (255, 82, 76), (0, 157, 255), white and black as they came out on
+  /// screen. Read off pictures of the panels with the veil on them (run 38685258262), and the veil taken off again by
+  /// arithmetic. In the dark look over white a material is lighter than anybody had reckoned: 172, not 164.
+  static let overWallpapers: [Ground] = [
+    Ground("hudWindow over red", 247, 141, 135), Ground("hudWindow over blue", 113, 209, 247),
+    Ground("hudWindow over white", 247, 247, 247), Ground("hudWindow over black", 113, 113, 113),
+    Ground("popover over red", 243, 163, 157), Ground("popover over blue", 141, 219, 243),
+    Ground("popover over white", 243, 243, 243), Ground("popover over black", 141, 141, 141),
+    Ground("hudWindow over red", dark: true, 172, 54, 47), Ground("hudWindow over blue", dark: true, 19, 122, 172),
+    Ground("hudWindow over white", dark: true, 172, 172, 172), Ground("hudWindow over black", dark: true, 19, 19, 19),
+    Ground("popover over red", dark: true, 132, 44, 39), Ground("popover over blue", dark: true, 27, 99, 132),
+    Ground("popover over white", dark: true, 132, 132, 132), Ground("popover over black", dark: true, 27, 27, 27),
   ]
 
-  /// On a picture thin strokes never reach their colour: 15-point text that is 6.9 to 1 by its colours measured 5.3. So
-  /// the colours have to promise a third more than the picture is asked for.
-  static let lostToThinStrokes = 4.0 / 3
+  /// On a picture thin strokes do not quite reach their colour. Measured on those pictures with the judges' ruler: words of 13
+  /// points and more came out as their colours promise (5.79 for 5.79), the 10-point notes an eighth short (5.18 for 5.89). So
+  /// the colours have to promise that much more than the picture is asked for, and a little.
+  static let lostToThinStrokes = 1.15
 
   func contrast(of ink: PanelLook.Ink, on ground: Ground, veiled: Bool = true) -> Double {
     let under = veiled ? PanelLook.veil(isDark: ground.isDark).over(ground.colour) : ground.colour
     return PanelLook.ink(ink, isDark: ground.isDark).over(under).contrast(with: under)
   }
 
-  @Test(arguments: measured + reckoned) func wordsAPersonMustReadStandOutByFourAndAHalfToOne(ground: Ground) {
+  @Test(arguments: measured + overWallpapers) func wordsAPersonMustReadStandOutByFourAndAHalfToOne(ground: Ground) {
     #expect(contrast(of: .main, on: ground) >= 4.5 * Self.lostToThinStrokes, "\(ground), dark: \(ground.isDark)")
   }
 
-  @Test(arguments: measured + reckoned) func allOtherWordsByThreeToOne(ground: Ground) {
+  @Test(arguments: measured + overWallpapers) func allOtherWordsByThreeToOne(ground: Ground) {
     #expect(contrast(of: .second, on: ground) >= 3 * Self.lostToThinStrokes, "\(ground), dark: \(ground.isDark)")
   }
 
   /// The control: what the veil is for.
   @Test func withoutTheVeilTheyWouldNot() {
-    let bare = (Self.measured + Self.reckoned).filter {
+    let bare = (Self.measured + Self.overWallpapers).filter {
       contrast(of: .second, on: $0, veiled: false) < 3 * Self.lostToThinStrokes
     }
     #expect(bare.contains { $0.description == "hudWindow over red" && $0.isDark })

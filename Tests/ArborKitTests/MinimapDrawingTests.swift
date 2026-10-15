@@ -217,8 +217,14 @@
       try canvas.save("checked-long-caption")
       let paper = backing(isDark: false)
       let line = model.captionFrame
-      let left = CGRect(x: 0, y: line.minY + 6, width: line.minX - 1, height: line.height - 10)
-      let right = CGRect(x: line.maxX + 1, y: line.minY + 6, width: model.frame.width - line.maxX - 1, height: line.height - 10)
+      // Beside the line, as far out as the panel's round corner leaves paper at that height.
+      let corner = PanelLook.Corner.panel
+      let depth = max(corner - min(model.frame.height - line.maxY + 4, line.minY + 6), 0)
+      let cut = (corner - (corner * corner - depth * depth).squareRoot()).rounded(.up) + 1
+      let left = CGRect(x: cut, y: line.minY + 6, width: line.minX - 1 - cut, height: line.height - 10)
+      let right = CGRect(
+        x: line.maxX + 1, y: line.minY + 6, width: model.frame.width - line.maxX - 1 - cut, height: line.height - 10)
+      #expect(left.width >= 2 && right.width >= 2, "there is paper to look at: \(left), \(right)")
       let letters = canvas.count(in: line, where: { !$0.isNear(paper) })
       let spiltLeft = canvas.count(in: left, where: { !$0.isNear(paper) })
       let spiltRight = canvas.count(in: right, where: { !$0.isNear(paper) })
