@@ -33,7 +33,8 @@
 # current one, which must be pushed: the Mac runs what GitHub has), waits for it, fetches the branch
 # the workflow pushed its output to into .mac-shell/<script>-<run id>/ in this worktree, deletes that branch,
 # and prints the folder, the exit code and the end of the output. Exits with the script's exit code (of several: the first that is
-# not 0), or with 96 (not through the pre-flight), 97 (could not start), 98 (timed out) or 99 (the run produced no output).
+# not 0), or with 96 (not through the pre-flight), 97 (could not start), 98 (it has waited long enough: THE RUN IS NOT
+# CANCELLED, it goes on without this waiter, and how to watch, fetch and cancel it is printed) or 99 (the run produced no output).
 # With ARBOR_KEEP_EVIDENCE=1 the evidence of the real-window suite's sections (scripts/mac-shell/suite/) is copied to
 # collab/evidence/suite-<section>-latest.txt, where `make parity` reads it; commit it when it should count.
 #
@@ -47,7 +48,9 @@
 # environments may push but not delete branches, and there each run replaces the last one's output
 # instead of adding a branch. Starting the same scripts for the same ref again cancels the run that is still under way.
 #
-# Environment: MAC_SHELL_TIMEOUT  seconds to wait for the run (default 2700)
+# Environment: MAC_SHELL_TIMEOUT  seconds to wait for the run (default 2700), and as many again once it has its Mac. It is this script's patience and nothing
+#                                 else: a run is never cancelled for it. One that waits keeps its place in GitHub's line, one that is half done its minutes.
+#              MAC_SHELL_ASK      seconds until GitHub is first asked whether the run has ended without output (default 180); twice as long each time after
 #              MAC_SHELL_TAIL     lines of output.txt to print (default 40)
 #              MAC_SHELL_POLL     seconds between two looks at the queue while it holds back (default 120, and up to a quarter more)
 #              ARBOR_MAC_QUEUE_CACHE   a file in which several checkouts share one look at the queue (scripts/mac-queue.py)
@@ -219,26 +222,49 @@ done
 echo "run $run: https://github.com/$repo/actions/runs/$run"
 
 # Every Mac pushes its output as its last deed, so Git tells when they have finished. GitHub itself is asked only now and then, for the run
-# that ends without any output: cancelled while it waited, or stopped before its first step.
-status="" asked=$(date +%s)
+# that ends without any output: cancelled while it waited, or stopped before its first step. The longer the wait the more rarely, after 3, 6, 12, 24 and
+# then every 30 minutes: every three minutes is twenty calls an hour for each run that waits, to hear twenty times that nothing has happened.
+#
+# The time limit is this script's patience. It used to cancel the run, counted from the start: GitHub has handed out no Mac for twenty minutes on end, and
+# then a run lost its place in the line, or the minutes its Mac had already spent, to its own waiter.
+let_go() {
+  local some=$tag
+  [ "$macs" -eq 1 ] || some="$tag.1 (to .$macs)"
+  cat >&2 <<END
+run.sh: still $1 after ${limit}s. NOT CANCELLED: the run keeps its place and goes on without this waiter.
+  has it ended?       git ls-remote origin 'refs/heads/mac-shell-out/$tag*'      (a branch for each Mac, as its last deed)
+  what it brought:    git fetch origin mac-shell-out/$some && git archive FETCH_HEAD | tar -x -C <a folder>
+  cancel it by hand:  gh api -X POST repos/$repo/actions/runs/$run/cancel
+END
+  exit 98
+}
+status="" asked=$(date +%s) every=${MAC_SHELL_ASK:-180} dispatched=$start begun=""
+# From the moment it is known to have its Mac the time counts anew, once.
+has_begun() { [ -n "$begun" ] || [ "$status" != in_progress ] || { begun=yes start=$(date +%s); }; }
 while [ "$status" != completed ]; do
   if [ $(($(date +%s) - start)) -gt "$limit" ]; then
-    api -X POST "repos/$repo/actions/runs/$run/cancel" >/dev/null 2>&1
-    fail "still ${status:-under way} after ${limit}s; cancelled the run" 98
+    [ -z "$begun" ] || let_go "under way"
+    status=$(api "repos/$repo/actions/runs/$run" --jq .status 2>/dev/null)
+    has_begun
+    [ "$status" != completed ] || break
+    [ -n "$begun" ] || let_go "waiting for a Mac"
+    continue
   fi
-  sleep 15
+  sleep "${MAC_SHELL_STEP:-15}"
   if [ "$(comm -13 <(echo "$before") <(outputs) | grep -c .)" -ge "$macs" ]; then
     # The job has a few steps left after the push.
     sleep 10
     break
   fi
-  if [ $(($(date +%s) - asked)) -ge 180 ]; then
+  if [ $(($(date +%s) - asked)) -ge "$every" ]; then
     asked=$(date +%s)
+    every=$((every * 2 < 1800 ? every * 2 : 1800))
     status=$(api "repos/$repo/actions/runs/$run" --jq .status 2>/dev/null)
+    has_begun
   fi
 done
 conclusion=$(api "repos/$repo/actions/runs/$run" --jq '.conclusion // .status' 2>/dev/null)
-echo "finished after $(($(date +%s) - start))s: ${conclusion:-GitHub does not say how}"
+echo "finished after $(($(date +%s) - dispatched))s: ${conclusion:-GitHub does not say how}"
 
 annotations() {
   for job in $(api "repos/$repo/actions/runs/$run/jobs" --jq '.jobs[].id'); do
