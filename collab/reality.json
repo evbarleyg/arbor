@@ -3021,13 +3021,17 @@
    "kind": "second-actor",
    "layer": "at the seam",
    "expected": "Nothing but Arbor, the apps and the person moves a window, and whoever moves one is reported. The Desktop and the gaps between docked windows are safe to click.",
-   "happened": "\"Click wallpaper to reveal desktop\" (macOS 14 and later; an absent key means on) sweeps every window to the sides of the screen at one click on the wallpaper or in a gap, and the next click only brings them back. Measured on macOS 26.6: frames at 12,43 and 518,176 went to -482,-17 and 1012,82, with 2 to 4% of each window left in view. The window server has them there; Accessibility reports nothing, so Arbor goes on believing them in their slots. With the mouse-down, the mouse-up or both swallowed in a session event tap nothing moves; a click with ⇧ sweeps nothing.",
-   "found": "Mac shell runs with real clicks on a hosted Mac, and a later experiment with its control. A real-window script that clicked the wallpaper swept every window on the Mac aside and failed two checks.",
-   "modelled": "partly",
+   "happened": "\"Click wallpaper to reveal desktop\" (macOS 14 and later; an absent key means on) sweeps every window to the sides of the screen at one click on the wallpaper or in a gap, and the next click only brings them back. Measured on macOS 26.6: frames at 12,43 and 518,176 went to -482,-17 and 1012,82, with 2 to 4% of each window left in view. It is a picture: the window server lists them there, and goes on listing them with the sizes they had, whatever becomes of them; Accessibility has every window where it is and reports no move. A frame set meanwhile is taken, shows nowhere, does not end the sweep, and is where the window comes back to. They go left, right, up or down, until 12 points show. What brings them back: a click on the wallpaper, a press on a strip, ⌘Tab, an app that comes forward. What does not: a raise, minimizing and restoring, a window that opens (in view), waiting. F11 is the same thing. The Dock announces both ends (AXExposeShowDesktop, AXExposeExit) 0.2 s late. With the mouse-down, the mouse-up or both swallowed in a session event tap nothing moves; a click with ⇧ sweeps nothing.",
+   "found": "Mac shell runs with real clicks on a hosted Mac, and a later experiment with its control. A real-window script that clicked the wallpaper swept every window on the Mac aside and failed two checks. A probe that wrote down both views of every window sixty times a second through 22 sweeps.",
+   "modelled": "yes",
    "knobs": [
     "World.isSwept",
     "World.swept",
-    "World.clickWallpaperSetting"
+    "World.clickWallpaperSetting",
+    "World.sweptFrames",
+    "FakeWindowSystem.clickOnTheWallpaper",
+    "FakeWindowSystem.pressShowDesktopKey",
+    "FakeWindowSystem.whereItWaits"
    ],
    "guards": [
     "test: aClickOnBareDesktopReachesNobody",
@@ -3037,16 +3041,25 @@
     "test: desktopAndDockSettingsCompeteWithArbor",
     "test: theWallpaperClickIsOnlyNotedWhileArborGuardsAgainstIt",
     "e2e: session 3: a click on the Desktop does not sweep the windows away",
-    "e2e: every window is in view after the second click"
+    "e2e: every window is in view after the second click",
+    "test: theStandInSweepsAsAMacDoes",
+    "test: twoClicksOnTheWallpaperAndArborTouchesNothing",
+    "test: whatHappensMeanwhileIsLaidOutAtOnceSoThatNothingMovesOnceTheyAreBack",
+    "test: theSweepAMacRecordedIsOne",
+    "e2e: every window is where it was, by the window server",
+    "e2e: no stage went up over the bare desktop"
    ],
-   "copes": "Settings.guardDesktopClicks keeps the click from macOS, but ships off until it has been seen at work on a Mac. As Arbor comes, `doctor` and the welcome window only name the macOS switch (`MacSwitch.clickWallpaper`).",
+   "copes": "SweptAside.isSwept tells a sweep by the two views disagreeing. Arbor goes by Accessibility and lays out as ever, unseen, without a stage over the bare desktop (`Controller.stageTransition`). Settings.guardDesktopClicks keeps the click from macOS, but ships off until it has been seen at work on a Mac. As Arbor comes, `doctor` and the welcome window only name the macOS switch (`MacSwitch.clickWallpaper`).",
    "hurt": 1,
    "sources": [
     "docs/features/F60-guard-the-wallpaper-click.md",
     "collab/QUESTIONS.md",
     "Sources/ArborCore/SystemFacts.swift",
     "Sources/arbor-fakemac/World.swift",
-    "scripts/mac-shell/lib.sh"
+    "scripts/mac-shell/lib.sh",
+    "collab/reports/2026-10-14-the-desktop-is-shown.md",
+    "Sources/ArborTesting/FakeWindowSystem+SweptAside.swift",
+    "scripts/mac-shell/check-sweep.sh"
    ],
    "backlog": [
     "K001",
@@ -3138,21 +3151,31 @@
    "kind": "second-actor",
    "layer": "below the seam",
    "expected": "A window whose window-server bounds change with the button down is being dragged.",
-   "happened": "A press on a sliver brings swept windows back. If they fly back while the button is down and the pointer stirs, the layer announces a drag and the release is a drop at the screen's edge. Whether macOS brings them back at the press or at the release has not been measured.",
-   "found": "Reading `WindowGrab.classify`. What follows from a drag announced at three stages of the flight was played on the fakes: the window docked each time.",
-   "modelled": "cannot",
-   "knobs": [],
-   "guards": [],
-   "copes": "open",
+   "happened": "A press on the strip of a swept window brings them all back about 27 ms after the button went down, so the window under the pointer leaps across the display in the window server's list. A hand that slipped by three points was enough: the layer announced a drag, a drop preview showed, and the release was a drop at the screen's edge. On the stand-ins the same click docks a floating window.",
+   "found": "Reading `WindowGrab.classify`; then a probe on a hosted Mac, whose trace has the drag from its beginning to its end.",
+   "modelled": "yes",
+   "knobs": [
+    "FakeWindowSystem.clickOnTheStrip",
+    "Held.strip"
+   ],
+   "guards": [
+    "test: aWindowThatComesBackFromTheSideOfTheDisplayUnderAPointerAtRestIsNotInTheHand",
+    "test: aWindowListedAtTheSideOfTheDisplayIsNotWhereItsAppHasIt",
+    "test: aClickOnAStripThatSlipsIsNoDrag",
+    "test: norIsOneOnTheStripOfAWindowThatWasLaidOutMeanwhile",
+    "e2e: no drop preview shows while the button is down"
+   ],
+   "copes": "WindowGrab.isListedElsewhere: a press on a window that is listed elsewhere than Accessibility last had it takes hold of nothing. And `WindowGrab.classify`: a window that moved farther than the pointer went is not in the hand.",
    "hurt": 2,
    "sources": [
     "Sources/ArborCore/WindowGrab.swift",
-    "collab/BACKLOG.md"
+    "collab/BACKLOG.md",
+    "collab/reports/2026-10-14-the-desktop-is-shown.md",
+    "scripts/mac-shell/check-sweep.sh"
    ],
    "backlog": [
     "K2015"
-   ],
-   "certainty": "suspected"
+   ]
   },
   {
    "id": "a-new-window-takes-the-keyboard",
