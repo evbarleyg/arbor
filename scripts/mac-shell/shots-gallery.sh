@@ -546,7 +546,12 @@ for part in $PARTS; do
   step "$part ($(($(date +%s) - ARBOR_RUN_STARTED)) s into the run)"
   case "$part" in
     motion) scene light; motion ;;
-    large) scene light; large ;;
+    large)
+      # The fake Mac has one display, and display_add ends a script that has no tool for a second.
+      if [ -n "${ARBOR_REHEARSAL:-}" ]; then echo "large: cannot be rehearsed"; continue; fi
+      scene light
+      large
+      ;;
     apps-*) scene "${part#apps-}"; apps "${part#apps-}" ;;
     *) scene "$part"; tour "$part" ;;
   esac
