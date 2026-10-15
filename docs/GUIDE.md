@@ -83,7 +83,7 @@ Seven things you can hold Arbor to. Each has a story of its own that is played a
 3. **No jolts.** A window moves once, straight to where it ends up. Arbor never pulls at a window you are dragging. Out of view means out of view: nothing flashes.
    *Not yet:* a window whose app refuses the size it is asked for takes a second move the first time Arbor meets it, and so does one that leaves full screen.
 4. **The window you switch to is the window you get.** ⌘Tab, a click in the Dock, the Window menu: it comes to the front and into view, and the keyboard is in it. The view moves to it; it is never left behind another window.
-5. **It leaves things as it found them.** Float All, Quit and a pause give every window back the size and the place it had before you docked it.
+5. **It leaves things as it found them.** Float All, Quit and a pause give every window back the size and the place it had before you docked it, or the ones you have given it since, while Arbor was paused or not running.
 6. **A drag is yours from the press to the release.** The preview is a picture that lets the mouse through. Nothing of Arbor's can take the release, and however a drag ends, nothing is left on the screen that could take your next click.
 7. **There is always a way back.** ⌃⌥Space shows everything on this display, ⌃⌥0 on all of them, ⌃⌥D whatever floats, ⌃⌥[ where you were, ⌃⌥Z takes the last change back, ⌃⌥⇧F makes it a normal Mac again, and so does quitting. No window is ever closed, hidden or minimised by Arbor.
    *Not yet:* ⌃⌥⇧F answers "nothing is docked" and does nothing while a floating window hangs out of view.

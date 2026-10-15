@@ -740,7 +740,7 @@ Ask of it: **can it change while the tree and the set of floating windows stay t
 | The field | Examples | `hasSameArrangement` | `restored(over:since:)` |
 |---|---|---|---|
 | **is arrangement**: what is docked where and how large, and who floats. Changing it is what `undo` is for | `tree`, the keys of `floating` | compares it | the old value |
-| **follows from the arrangement**: no, it changes only in the same breath as the tree or the set of floating windows | the frame a docked window floated at before (`undockedFrames`, F48); whether Arbor took the Desktop's room (`desktopIsOwedRoom`, F61) | leaves it out | the old value, and a comment that names the field and says so (and `undockedFrames` takes the frame of a floating window moved since) |
+| **follows from the arrangement**: no, it changes only in the same breath as the tree or the set of floating windows | the frame a docked window floated at before (`undockedFrames`, F48); whether Arbor took the Desktop's room (`desktopIsOwedRoom`, F61) | leaves it out | the old value, and a comment that names the field and says so (and `undockedFrames` takes the frame of a floating window moved since; the one way it changes by itself, a frame given while Arbor was paused or not running, is carried over) |
 | **is about the arrangement**: yes. Changing it alone is not a step, like `save-view` | `camera`, `back`, `forward`, `savedViews`, the frames in `floating`, the showing tab, `guests`, `pinned`, `summoned`, `stashed`, `summonFrames`, `names` | leaves it out | carried over |
 
 Carrying over, for a field keyed by window, node or slot: an entry that differs between `reference` (the workspace right after
@@ -1179,7 +1179,14 @@ saved stands, as it always did. Only for a window found on another display than 
 right; the size remembered stands there too, for the file can be half a second behind, and the window in the shape of a slot it knows nothing of.
 Neither rule is for a window found in a corner or in full screen, or for one this start itself had to fetch.
 What was **docked** is docked again, one move each, on a display that is back as well; what was docked on a display that is missing floats where
-it is found, and goes back with that display.
+it is found, and goes back with that display. **A docked window that somebody has touched has the frame it is found at for the one it goes back to**
+(`takeDockedWindowsAsFound`, into `Workspace.undockedFrames`), by the same `leftAt`; moved only, it keeps its own size (`frame(ofSize:from:)`), which
+matters where Arbor left it in another: in the shape of its slot, because its app did not answer. Only a window that was docked then under the number it has
+now: numbers start again after a reboot. Undo does not take such a frame back.
+**macOS moves windows too**, when a display goes, comes back or changes its resolution, and nobody tells Arbor, which hears nothing once it has let go
+(`AXWindowSystem.stop()`). So nothing is learnt of docked windows unless the displays are the ones Arbor let go on (`areTheDisplaysArborLeft`: their frames,
+within one process; which there were, from the file). There and back leaves no trace, so **a pause for an app writes no `leftAt`**, for docked and
+floating windows alike: `pauseForApps` is for games that take the display to a resolution of their own.
 
 ## Ending, and starting again
 

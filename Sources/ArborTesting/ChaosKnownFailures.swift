@@ -469,25 +469,15 @@ extension ChaosRunner {
         key down desktop
         """),
     ChaosKnownFailure(
-      rule: "size-not-given-back", owner: "rule 5: the displays come and go; Undo; carried to a smaller display by hand", severity: 3,
-      story: "The display a window is on goes and comes back, and the window keeps what the other had room for. Also: Undo takes back a resize that a hand made, and "
-        + "Float All leaves the older size. Also: taller than the smaller display, carried there by hand, docked and floated again, a window is fitted with nothing noted, and "
+      rule: "size-not-given-back", owner: "rule 5: the displays come and go; carried to a smaller display by hand", severity: 3,
+      story: "The display a window is on goes and comes back, and the window keeps what the other had room for. "
+        + "Also: taller than the smaller display, carried there by hand, docked and floated again, a window is fitted with nothing noted, and "
         + "sent back it stays small (what `move-to-display`, `swap` or a dock takes there has its own size back).",
       script: """
         displays main:-1440,0,1440,900:25,0,0,0 side:0,0,1920,1080:25,0,59,0* windows-never
         open 101 Xcode pid 1004 at 392 95 1188 920 min 1188 685
         displays main:0,0,1440,900:25,0,59,0* windows-silent
         displays side:0,0,1920,1080:25,0,59,0* windows-first
-        way-back float-all
-        """,
-      """
-        launch
-        open 101 Mail pid 1002 at 368 293 957 595 min 760 400
-        key down arrange
-        key down float-all
-        edge 101 368 293 1274 595
-        key down undo
-        key down undo
         way-back float-all
         """,
       """

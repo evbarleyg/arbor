@@ -430,15 +430,15 @@ import Testing
     expectWindowsMatchLayout(desk.h)
   }
 
-  /// What somebody does with a window during the pause is theirs for as long as it lasts; the arrangement comes back all the same.
-  @Test func aDockedWindowResizedDuringThePauseGoesBackToItsSlotAndStillRemembersItsOwnSize() {
+  /// What somebody does with a window during the pause is theirs from then on (`DockedAsFoundTests`); the arrangement comes back all the same.
+  @Test func aDockedWindowResizedDuringThePauseGoesBackToItsSlotAndHasThatFrameForItsOwn() {
     let desk = makeDesk()
-    let slot = desk.h.frame(desk.finder)
+    let (slot, given) = (desk.h.frame(desk.finder), CGRect(x: 60, y: 60, width: 500, height: 333))
     desk.h.run("pause")
-    desk.h.system.userMove(desk.finder, to: CGRect(x: 60, y: 60, width: 500, height: 333))
+    desk.h.system.userMove(desk.finder, to: given)
     desk.h.run("resume")
     #expect(desk.h.frame(desk.finder) == slot)
-    #expect(desk.h.workspace.undockedFrame(of: desk.finder) == desk.own[desk.finder])
+    #expect(desk.h.workspace.undockedFrame(of: desk.finder) == given)
   }
 
   // MARK: A window in the hand

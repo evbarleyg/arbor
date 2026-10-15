@@ -20,7 +20,8 @@ import Foundation
 /// Found there, nobody has touched it, and what is remembered stands. Found elsewhere, somebody has. Nothing written: nobody can tell,
 /// and what is remembered stands.
 ///
-/// Docked windows are another matter: a start brings back what was docked, one move each (Q16).
+/// **So has a docked one**, for the frame it goes back to when Arbor next lets go of it or it floats again
+/// (Controller+UndockedFrames.swift). It is docked again all the same: a start brings back what was docked, one move each (Q16).
 extension Controller {
   /// Whether `window` is where this start found it, and that is a place somebody may have chosen. Never true outside a start.
   func countsAsLeftWhereItWasFound(_ window: WindowID) -> Bool {
@@ -93,6 +94,35 @@ extension Controller {
         Log.info("window \(window) is taken as it was found")
       }
     }
+  }
+
+  /// After `takeFloatingWindowsAsFound`, and like it: moves nothing, and corrects what is remembered of the docked windows.
+  /// `then`: the arrangements as they were when Arbor let go.
+  func takeDockedWindowsAsFound(leftAt: [WindowID: CGRect], then: [DisplayID: Workspace]) {
+    for id in workspaces.keys.sorted() {
+      var frames: [WindowID: CGRect] = [:]
+      // Docked then under the number it has now: numbers start again after a reboot, and where another window of that number was left says nothing.
+      for window in workspaces[id]!.tree.allWindows.sorted() where then[id]?.isDocked(window) == true && countsAsLeftWhereItWasFound(window) {
+        guard let found = foundAtThisStart[window], let left = leftAt[window], !found.approximatelyEquals(left, tolerance: 1)
+        else { continue }
+        // A move is not a resize. Arbor leaves a window in another size than its own where its app did not answer, or did not obey: in the
+        // shape of its slot, say. Pushed aside like that, it keeps its own to go back to, from where it is now.
+        let own = workspaces[id]!.undockedFrame(of: window)?.size
+        let isMovedOnly = abs(found.width - left.width) <= 1 && abs(found.height - left.height) <= 1
+        frames[window] = isMovedOnly ? frame(ofSize: own ?? found.size, from: found) : found
+        Log.info("docked window \(window) is taken as it was found")
+      }
+      workspaces[id]!.rememberUndockedFrames(ofArrivals: frames)
+      frames.keys.forEach(forgetFitUnlessItStillHolds)
+    }
+  }
+
+  /// Whether the displays are the ones Arbor let go on. macOS fits windows onto what there is when a display goes or changes its resolution, and puts
+  /// them back on one that returns as they were there, in the shape of their slots: with other displays, nobody can tell whose doing a frame
+  /// is. The file says which there were. `shapes`: what they were like, if it was this process that let go.
+  func areTheDisplaysArborLeft(_ saved: PersistedState?, shapes: [DisplayID: CGRect]) -> Bool {
+    let now = Dictionary(displays.map { ($0.id, $0.frame) }) { first, _ in first }
+    return Set((saved?.workspaces ?? [:]).keys) == Set(now.keys) && (shapes.isEmpty || shapes == now)
   }
 
   /// What one start found, and where Arbor had left the windows before it, is nothing a later start may go by.
