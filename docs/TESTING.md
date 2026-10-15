@@ -1169,6 +1169,9 @@ one such session would add to CI. The measurements, each a folder in `coverage/`
 | `e2e`, `drag`, `both` | `arbor-e2e` alone, `e2e-drag.sh` alone, the two together: **`both` is what CI executes** |
 | `session`, `with-session` | the two played scripts alone; everything together |
 
+**The first measurement** (14 October 2026, a hosted Mac with macOS 26.6, both checks green): CI's two checks execute 3,154 of 6,834 lines, 46.2 %: `AX` 81 %, `App` 56 %, `UI` 42 %,
+`Input` 9 %. 895 of 1,507 functions never run, 2,064 of 3,345 regions are never entered, and sixteen files are not entered at all. With the two played scripts it is 63.3 %, and `Input` 64 %.
+
 **Reading it.** `report.txt` (`report.md` is the same as tables for a pull request) has every measurement side by side, per folder and per file, the file with the most lines that never ran first, and closes with
 `real-window coverage: X of Y lines (Z %) of the macOS-only code; N functions never run`. In each folder, `functions.txt` names the functions that never ran, with the largest of all at its end: start
 there. `lines/<file>.txt` is the source with a count before each line, and `0` marks a line nothing reached. `processes.txt` says how many Arbors ran and whether each left a profile.
