@@ -67,7 +67,10 @@ is docked "$W4" || ctl dock "$W4" left
 
 step "drag the seam between the two docked windows 80 points to the right"
 read -r _ _ width_before _ <<< "$(frame_of "$W4")"
-read -r seam_x seam_y <<< "$(seam_right_of "$W4")"
+read -r seam_x _ <<< "$(seam_right_of "$W4")"
+# Near the foot of the seam. A floating window keeps the place it has (Q20), and on a small display the one of 700 by 500 lies over the middle of
+# both docked windows: a press there is a press on it.
+read -r _ seam_y <<< "$(arbor_point_on "$W4" "x" "y + h - 20")"
 move "$seam_x" "$seam_y"
 shot 05-seam-hover
 drag "$seam_x" "$seam_y" "$((seam_x + 80))" "$seam_y"
@@ -78,7 +81,7 @@ check "the seam drag made the left window about 80 points wider" test "$((width_
 
 step "drag a docked window's own right edge 60 points to the right"
 read -r x y w h <<< "$(frame_of "$W1")"
-drag "$((x + w - 1))" "$((y + h / 2))" "$((x + w + 59))" "$((y + h / 2))" --no-release
+drag "$((x + w - 1))" "$((y + h - 20))" "$((x + w + 59))" "$((y + h - 20))" --no-release
 shot 06b-edge-held
 release
 shot 06c-edge-released
@@ -146,7 +149,7 @@ shot 20-menu-bar
 if item=$(status_item); then
   echo "Arbor's menu bar item is at $item"
   # shellcheck disable=SC2086
-  click $item
+  rightclick $item
   shot 21-menu-open
   key escape
 else

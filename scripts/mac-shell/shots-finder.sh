@@ -283,7 +283,7 @@ check "reveal focused window 3" eventually is focused "$W3"
 step "the menu"
 if item=$(status_item); then
   # shellcheck disable=SC2086
-  click $item
+  rightclick $item
   shot 18-menu
   key escape
 fi

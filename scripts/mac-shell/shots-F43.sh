@@ -160,7 +160,7 @@ grep -F "panel of shortcuts" "$ARBOR_HOME/arbor.log" | cut -c 26-
 step "the menu"
 if item=$(status_item); then
   # shellcheck disable=SC2086
-  click $item
+  rightclick $item
   shot 20-menu
   key escape
 fi

@@ -93,6 +93,10 @@ fi
 arbor_build
 grep -E "warning:" "$ARBOR_OUT/build.log" | sort -u | head -n 40
 echo "Screen Recording for a child process: $(pointer screen-access)"
+# As it was, whatever ends the script: the next script on the same Mac must find the Mac as it would alone. (On its first run this one left Reduce Motion
+# off, and the two scripts after it ran with stages that they would not have had.)
+motion_before=$(defaults read com.apple.universalaccess reduceMotion 2>/dev/null)
+at_exit 'reduce_motion "$([ "$motion_before" = 1 ] && echo true || echo false)"'
 reduce_motion false
 throwaway && wallpaper gradient
 if ! throwaway && [ "$(defaults read com.apple.universalaccess reduceMotion 2>/dev/null)" = 1 ]; then

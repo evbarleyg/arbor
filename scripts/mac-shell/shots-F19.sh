@@ -41,7 +41,7 @@ check "there is nothing to undo yet" next_undo_is nothing
 step "the menu with nothing to undo or redo"
 if item=$(status_item); then
   # shellcheck disable=SC2086
-  click $item
+  rightclick $item
   shot 01-menu-nothing-to-undo
   key escape
 else
@@ -137,7 +137,7 @@ step "the menu with something to undo and to redo"
 ctl undo
 if item=$(status_item); then
   # shellcheck disable=SC2086
-  click $item
+  rightclick $item
   shot 11-menu-undo-and-redo
   key escape
 fi

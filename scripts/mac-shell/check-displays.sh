@@ -138,7 +138,9 @@ check_arrangement() {
 
 # MARK: One display, then two
 
-# The third window refuses to be smaller than 700×500, so a small slot turns it into a tile.
+# The third window refuses to be smaller than 700×500. Its neighbours make room for it where they can (F61), and where they cannot it becomes a tile:
+# on a second display of this size they can, as the first runs on a Mac showed. Wherever it is, that place is what has to come back.
+place_of_the_third() { arbor_ask tile "$W3" 2> /dev/null || arbor_ask slot "$W3"; }
 ARBOR_TEST_WINDOWS_ARGS="--min-size 3:700x500"
 step "one display: five windows, one docked"
 arbor_start 5
@@ -154,7 +156,7 @@ summary
 spaces
 shot plugged-in
 
-step "drag three windows across: one dropped in the middle, one at the far edge, one to become a tile"
+step "drag three windows across: one dropped in the middle, one at the far edge, one that cannot shrink"
 # The windows open in a cascade, so the last one is in front and its title bar is free.
 # shellcheck disable=SC2046
 drag $(titlebar_of "$W5") $(middle_of 2)
@@ -174,13 +176,13 @@ sleep 1
 # shellcheck disable=SC2046
 move $(middle_of 2)
 ctl show-all
-check "the window that cannot shrink is a tile on the second display" inside "$(arbor_ask tile "$W3")" "$(display_frame_of 2)"
+check "the window that cannot shrink has its place on the second display, with room made for it or as a tile" inside "$(place_of_the_third)" "$(display_frame_of 2)"
 ctl dock "$W2" right
 
 check_arrangement right
 
 step "unplug the display"
-arranged="$(arbor_ask slot "$W4") / $(arbor_ask slot "$W5") / $(arbor_ask tile "$W3")"
+arranged="$(arbor_ask slot "$W4") / $(arbor_ask slot "$W5") / $(place_of_the_third)"
 display_remove
 check "Arbor arranges one display" eventually arranges 1
 sleep 1
@@ -204,9 +206,9 @@ for id in "$W3" "$W4" "$W5"; do
   check "replugged: window $id is docked on the second display again" eventually docked_on 2 "$id"
 done
 echo "arranged before: $arranged"
-echo "arranged now:    $(arbor_ask slot "$W4") / $(arbor_ask slot "$W5") / $(arbor_ask tile "$W3")"
+echo "arranged now:    $(arbor_ask slot "$W4") / $(arbor_ask slot "$W5") / $(place_of_the_third)"
 check "replugged: the arrangement is the one that went away" \
-  test "$arranged" = "$(arbor_ask slot "$W4") / $(arbor_ask slot "$W5") / $(arbor_ask tile "$W3")"
+  test "$arranged" = "$(arbor_ask slot "$W4") / $(arbor_ask slot "$W5") / $(place_of_the_third)"
 check_geometry replugged
 
 step "move the display to the left of the main one (negative x)"
