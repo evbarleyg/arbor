@@ -1,0 +1,830 @@
+# mac-shell: scripts/mac-shell/probe-full-screen.sh at c564b81, macOS 26.6.2, 2026-10-15T02:18Z
+
+== the Mac
+macOS 26.6.2 (25G83) on arm64
+built Arbor and the pointer tool in 12s
+1600 900 1600 900
+display: 1 0 0 1600 900 1600 900 1
+Reduce Motion: false
+the sampler writes mac-shell/samples.log (pid 7381)
+
+== The apps are open
+
+-- 1 open-finder: opens finder
+> open -g -b com.apple.finder /tmp/arbor-apps.Tw8RN5/scratch/grove
+pid 343 lists (id role subrole x y w h flags):
+  32 AXWindow AXStandardWindow 340 120 920 436 main,toolbar
+  0 AXScrollArea - 0 0 1600 900 fixed-size,fixed-position,no-close,no-minimize,no-zoom
+  w32 is finder
+  (quiet:653 ms) judge=no
+
+-- 2 open-safari: opens safari
+> open -g -b com.apple.Safari /tmp/arbor-apps.Tw8RN5/scratch/page.html
+pid 7478 lists (id role subrole x y w h flags):
+  36 AXWindow AXStandardWindow 138 31 1324 791 main,toolbar
+  w36 is safari
+  (quiet:0 ms) judge=no
+
+-- 3 open-textedit: opens textedit
+> open -g -b com.apple.TextEdit /tmp/arbor-apps.Tw8RN5/scratch/oak.txt
+pid 7652 lists (id role subrole x y w h flags):
+  46 AXWindow AXStandardWindow 165 65 673 439 main
+  w46 is textedit
+  (quiet:2063 ms) judge=no
+
+== With Arbor
+
+-- 4 launch: starts Arbor
+session 1: Arbor pid 7903, ARBOR_LIMIT=none: running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+recording traces/2026-10-15-021946-day-1.jsonl: 1 lines, 2 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+  (quiet:957 ms) judge=no floating=
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+
+-- 5 reach-finder-100: clicks finder's title bar, or its Dock icon if that is covered
+> click 1208 132
+> move 1208 252
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+  (quiet:321 ms) judge=no floating=
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+
+-- 6 dock-finder-left: presses ⌃⌥⌘←
+> key ctrl+opt+cmd+left
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+  (quiet:1122 ms) moves=any judge=no floating=
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+
+-- 7 reach-safari-100: clicks safari's title bar, or its Dock icon if that is covered
+> click 1058 43
+> move 1058 163
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+  (quiet:308 ms) judge=no floating=
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+
+-- 8 dock-safari-right: presses ⌃⌥⌘→
+> key ctrl+opt+cmd+right
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+  (quiet:1208 ms) moves=any judge=no floating=
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+
+-- 9 reach-textedit-100: clicks textedit's title bar, or its Dock icon if that is covered
+> click 765 77
+> move 765 197
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+  (quiet:286 ms) judge=no floating=
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+
+-- 10 dock-textedit-right: presses ⌃⌥⌘→
+> key ctrl+opt+cmd+right
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+  (quiet:721 ms) moves=any judge=no floating=
+    camera n2, visible 0,31 1600×791, Desktop out of view
+      tile n0 desktop 525,43 80×767 holds -
+      w32 com.apple.finder 12,43 501×767, slot 12,43 501×767: docked
+      w36 com.apple.Safari 617,43 574×767, slot 617,43 574×767: docked
+      w46 com.apple.TextEdit 1203,43 385×767, slot 1203,43 385×767: docked focused
+
+== With Arbor: safari, round 101
+recording traces/2026-10-15-022002-day-2.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+
+-- 11 reach-safari-101: clicks safari's title bar, or its Dock icon if that is covered
+> click 1121 55
+> move 1121 175
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+  (quiet:460 ms) judge=no floating=
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+
+-- 12 safari-101-in: presses ⌃⌘F in safari
+> key ctrl+cmd+f
+  ~ w32 is in view for Arbor but the window server does not show it
+  ~ w32 is docked and not parked, but has neither a slot nor a tile
+  ~ w36 is docked and not parked, but has neither a slot nor a tile
+  ~ w46 is in view for Arbor but the window server does not show it
+  ~ w46 is docked and not parked, but has neither a slot nor a tile
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+  (quiet:0 ms) moves=any leaves=any judge=no floating=
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+
+-- 13 safari-101-arbor-out: presses ⌃⌘F again
+> key ctrl+cmd+f
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+  (quiet:0 ms) moves=any leaves=any comes=36 front=36 floating=
+    camera n2, visible 0,31 1600×791, Desktop out of view
+      tile n0 desktop 525,43 80×767 holds -
+      w32 com.apple.finder 12,43 501×767, slot 12,43 501×767: docked
+      w36 com.apple.Safari 617,43 574×767, slot 617,43 574×767: docked focused
+      w46 com.apple.TextEdit 1203,43 385×767, slot 1203,43 385×767: docked
+
+== With Arbor: textedit, round 102
+recording traces/2026-10-15-022011-day-3.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+
+-- 14 reach-textedit-102: clicks textedit's title bar, or its Dock icon if that is covered
+> click 1399 55
+> move 1399 175
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+  (quiet:261 ms) judge=no floating=
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+
+-- 15 textedit-102-in: presses ⌃⌘F in textedit
+> key ctrl+cmd+f
+  ~ w32 is in view for Arbor but the window server does not show it
+  ~ w32 is docked and not parked, but has neither a slot nor a tile
+  ~ w36 is in view for Arbor but the window server does not show it
+  ~ w36 is docked and not parked, but has neither a slot nor a tile
+  ~ w46 is docked and not parked, but has neither a slot nor a tile
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+  (quiet:0 ms) moves=any leaves=any judge=no floating=
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+
+-- 16 textedit-102-arbor-out: presses ⌃⌘F again
+> key ctrl+cmd+f
+  ~ w32 is in view for Arbor but the window server does not show it
+  ~ w32 is docked and not parked, but has neither a slot nor a tile
+  ~ w36 is in view for Arbor but the window server does not show it
+  ~ w36 is docked and not parked, but has neither a slot nor a tile
+  ~ w46 is docked and not parked, but has neither a slot nor a tile
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+  (quiet:0 ms) moves=any leaves=any comes=46 front=46 floating=
+    camera n2, visible 0,31 1600×791, Desktop 12,43 1576×767
+      w32 com.apple.finder 12,43 501×767: docked
+      w36 com.apple.Safari 617,43 574×767: docked
+      w46 com.apple.TextEdit 0,0 1600×900: docked focused
+
+== With Arbor: safari, round 103
+recording traces/2026-10-15-022021-day-4.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+
+-- 17 reach-safari-103: clicks safari's title bar, or its Dock icon if that is covered
+no free point of w36's title bar shows
+> click 299 936
+> move 299 736
+  ~ w32 is in view for Arbor but the window server does not show it
+  ~ w32 is docked and not parked, but has neither a slot nor a tile
+  ~ w36 is in view for Arbor but the window server does not show it
+  ~ w36 is docked and not parked, but has neither a slot nor a tile
+  ~ w46 is docked and not parked, but has neither a slot nor a tile
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+  (quiet:312 ms) judge=no floating=
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+
+-- 18 safari-103-in: presses ⌃⌘F in safari
+> key ctrl+cmd+f
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+  (quiet:0 ms) moves=any leaves=any judge=no floating=
+  safari did not go into full screen: 36 AXWindow AXStandardWindow 617 43 574 767 main,toolbar
+
+== With Arbor: textedit, round 104
+recording traces/2026-10-15-022027-day-5.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+
+-- 19 reach-textedit-104: clicks textedit's title bar, or its Dock icon if that is covered
+no free point of w46's title bar shows
+> click 1276 854
+> move 1276 654
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+  (quiet:402 ms) judge=no floating=
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+
+-- 20 textedit-104-in: presses ⌃⌘F in textedit
+> key ctrl+cmd+f
+  ~ w32 is in view for Arbor but the window server does not show it
+  ~ w32 is docked and not parked, but has neither a slot nor a tile
+  ~ w36 is in view for Arbor but the window server does not show it
+  ~ w36 is docked and not parked, but has neither a slot nor a tile
+  ~ w46 is docked and not parked, but has neither a slot nor a tile
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+  (quiet:0 ms) moves=any leaves=any judge=no floating=
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+
+-- 21 textedit-104-arbor-out: presses ⌃⌘F again
+> key ctrl+cmd+f
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+  (quiet:0 ms) moves=any leaves=any comes=46 front=46 floating=
+    camera n2, visible 0,31 1600×791, Desktop out of view
+      tile n0 desktop 525,43 80×767 holds -
+      w32 com.apple.finder 12,43 501×767, slot 12,43 501×767: docked
+      w36 com.apple.Safari 617,43 574×767, slot 617,43 574×767: docked
+      w46 com.apple.TextEdit 1203,43 385×767, slot 1203,43 385×767: docked focused
+
+== With Arbor: safari, round 105
+recording traces/2026-10-15-022036-day-6.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+
+-- 22 reach-safari-105: clicks safari's title bar, or its Dock icon if that is covered
+> click 1121 55
+> move 1121 175
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+  (quiet:324 ms) judge=no floating=
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+
+-- 23 safari-105-in: presses ⌃⌘F in safari
+> key ctrl+cmd+f
+  ~ w32 is in view for Arbor but the window server does not show it
+  ~ w32 is docked and not parked, but has neither a slot nor a tile
+  ~ w36 is docked and not parked, but has neither a slot nor a tile
+  ~ w46 is in view for Arbor but the window server does not show it
+  ~ w46 is docked and not parked, but has neither a slot nor a tile
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+  (quiet:0 ms) moves=any leaves=any judge=no floating=
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+
+-- 24 safari-105-arbor-out: presses ⌃⌘F again
+> key ctrl+cmd+f
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+  (quiet:0 ms) moves=any leaves=any comes=36 front=36 floating=
+    camera n2, visible 0,31 1600×791, Desktop out of view
+      tile n0 desktop 525,43 80×767 holds -
+      w32 com.apple.finder 12,43 501×767, slot 12,43 501×767: docked
+      w36 com.apple.Safari 617,43 574×767, slot 617,43 574×767: docked focused
+      w46 com.apple.TextEdit 1203,43 385×767, slot 1203,43 385×767: docked
+
+== With Arbor: textedit, round 106
+recording traces/2026-10-15-022046-day-7.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+
+-- 25 reach-textedit-106: clicks textedit's title bar, or its Dock icon if that is covered
+> click 1399 55
+> move 1399 175
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+  (quiet:382 ms) judge=no floating=
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+
+-- 26 textedit-106-in: presses ⌃⌘F in textedit
+> key ctrl+cmd+f
+  ~ w32 is in view for Arbor but the window server does not show it
+  ~ w32 is docked and not parked, but has neither a slot nor a tile
+  ~ w36 is in view for Arbor but the window server does not show it
+  ~ w36 is docked and not parked, but has neither a slot nor a tile
+  ~ w46 is docked and not parked, but has neither a slot nor a tile
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+  (quiet:0 ms) moves=any leaves=any judge=no floating=
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+
+-- 27 textedit-106-arbor-out: presses ⌃⌘F again
+> key ctrl+cmd+f
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+  (quiet:0 ms) moves=any leaves=any comes=46 front=46 floating=
+    camera n2, visible 0,31 1600×791, Desktop out of view
+      tile n0 desktop 525,43 80×767 holds -
+      w32 com.apple.finder 12,43 501×767, slot 12,43 501×767: docked
+      w36 com.apple.Safari 617,43 574×767, slot 617,43 574×767: docked
+      w46 com.apple.TextEdit 1203,43 385×767, slot 1203,43 385×767: docked focused
+
+== With Arbor: back to the desktop while Safari stays in full screen
+recording traces/2026-10-15-022056-day-8.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+
+-- 28 reach-safari-200: clicks safari's title bar, or its Dock icon if that is covered
+> click 1121 55
+> move 1121 175
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+  (quiet:328 ms) judge=no floating=
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+
+-- 29 safari-200-in: presses ⌃⌘F in safari
+> key ctrl+cmd+f
+  ~ w32 is in view for Arbor but the window server does not show it
+  ~ w32 is docked and not parked, but has neither a slot nor a tile
+  ~ w36 is docked and not parked, but has neither a slot nor a tile
+  ~ w46 is in view for Arbor but the window server does not show it
+  ~ w46 is docked and not parked, but has neither a slot nor a tile
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+  (quiet:0 ms) moves=any leaves=any judge=no floating=
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+
+-- 30 back-to-the-desktop: presses ⌃←: the desktop comes back without Safari
+> key ctrl+left
+  ~ w36 is in view for Arbor but the window server does not show it
+  ~ w36 is docked and not parked, but has neither a slot nor a tile
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+  (quiet:0 ms) moves=any leaves=any judge=no floating=
+    camera n2, visible 0,31 1600×791, Desktop 643,43 314×767
+      w32 com.apple.finder 12,43 619×767, slot 12,43 619×767: docked
+      w36 com.apple.Safari 0,0 1600×900: docked
+      w46 com.apple.TextEdit 969,43 619×767, slot 969,43 619×767: docked focused
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+
+-- 31 forth-to-safari: presses ⌃→
+> key ctrl+right
+  ~ w32 is in view for Arbor but the window server does not show it
+  ~ w32 is docked and not parked, but has neither a slot nor a tile
+  ~ w36 is docked and not parked, but has neither a slot nor a tile
+  ~ w46 is in view for Arbor but the window server does not show it
+  ~ w46 is docked and not parked, but has neither a slot nor a tile
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+  (quiet:0 ms) moves=any leaves=any judge=no floating=
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+
+-- 32 safari-200-arbor-out: presses ⌃⌘F again
+> key ctrl+cmd+f
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+  (quiet:0 ms) moves=any leaves=any comes=36 floating=
+    camera n2, visible 0,31 1600×791, Desktop out of view
+      tile n0 desktop 525,43 80×767 holds -
+      w32 com.apple.finder 12,43 501×767, slot 12,43 501×767: docked
+      w36 com.apple.Safari 617,43 574×767, slot 617,43 574×767: docked focused
+      w46 com.apple.TextEdit 1203,43 385×767, slot 1203,43 385×767: docked
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+          ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in <genexpr>
+    print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))
+                                                                                    ~~~~~~^^^^^^^^^^^^^
+KeyError: 'floating'
+
+-- 33 quit: quits Arbor
+> quit
+quitting
+  ✔ Arbor ends within five seconds
+  (quiet:1086 ms) moves=any judge=no
+
+== the report (all of it: mac-shell/day-report.md)
+33 steps in 108 s, 6 of them judged, 3 with a rule broken. The sampler: samples 3785 seconds 115.2 hz 32.9 cost-ms 3.51 late 1210 longest-gap-ms 1243.
+
+## Per rule
+
+| Rule | | Steps that checked it | Steps that broke it | Which |
+|---|---|---|---|---|
+| 2 | nothing moves that the person did not move | 0 | 0 |  |
+| 3 | no jolts: a window moves once, to where it ends up | 6 | 2 | 13 safari-101-arbor-out, 24 safari-105-arbor-out |
+| 4 | the window you switch to comes to the front and into view | 5 | 1 | 16 textedit-102-arbor-out |
+| 5 | quitting, Float All and pause give windows their own sizes back | 0 | 0 |  |
+| L | no window is lost or stuck | 6 | 0 |  |
+| - | what the script itself checked | 6 | 0 |  |
+
+## Findings
+
+### Rule 3: no jolts: a window moves once, to where it ends up
+
+- ✘ **13 safari-101-arbor-out** (presses ⌃⌘F again): finder (w32) went 608 points out of its way before it ended up
+  - +0 ms 12,43 501×767 · +642 ms 12,43 805×767 · +847 ms 12,43 501×767
+- ✘ **13 safari-101-arbor-out** (presses ⌃⌘F again): textedit (w46) went 468 points out of its way before it ended up
+  - +0 ms 1203,43 385×767 · +676 ms 969,43 397×767 · +682 ms 969,43 619×767 · +847 ms 1203,43 385×767
+- ✘ **24 safari-105-arbor-out** (presses ⌃⌘F again): finder (w32) went 236 points out of its way before it ended up
+  - +0 ms 12,43 501×767 · +736 ms 12,43 619×767 · +899 ms 12,43 501×767
+- ✘ **24 safari-105-arbor-out** (presses ⌃⌘F again): textedit (w46) went 468 points out of its way before it ended up
+  - +0 ms 1203,43 385×767 · +780 ms 969,43 397×767 · +832 ms 969,43 619×767 · +899 ms 1203,43 385×767
+
+### Rule 4: the window you switch to comes to the front and into view
+
+- ✘ **16 textedit-102-arbor-out** (presses ⌃⌘F again): textedit (w46) is not in front: w105 of TextEdit ahead of it, none of which covers it
+- ✘ **16 textedit-102-arbor-out** (presses ⌃⌘F again): textedit (w46) is not wholly in view: 88% of it, at 0,0 1600×900 in 0,31 1600×791
+
+### Rule -: what the script itself checked
+
+- ~ **12 safari-101-in** (presses ⌃⌘F in safari): w32 is in view for Arbor but the window server does not show it
+- ~ **12 safari-101-in** (presses ⌃⌘F in safari): w32 is docked and not parked, but has neither a slot nor a tile
+- ~ **12 safari-101-in** (presses ⌃⌘F in safari): w36 is docked and not parked, but has neither a slot nor a tile
+- ~ **12 safari-101-in** (presses ⌃⌘F in safari): w46 is in view for Arbor but the window server does not show it
+- ~ **12 safari-101-in** (presses ⌃⌘F in safari): w46 is docked and not parked, but has neither a slot nor a tile
+- ~ **15 textedit-102-in** (presses ⌃⌘F in textedit): w32 is in view for Arbor but the window server does not show it
+- ~ **15 textedit-102-in** (presses ⌃⌘F in textedit): w32 is docked and not parked, but has neither a slot nor a tile
+- ~ **15 textedit-102-in** (presses ⌃⌘F in textedit): w36 is in view for Arbor but the window server does not show it
+- ~ **15 textedit-102-in** (presses ⌃⌘F in textedit): w36 is docked and not parked, but has neither a slot nor a tile
+- ~ **15 textedit-102-in** (presses ⌃⌘F in textedit): w46 is docked and not parked, but has neither a slot nor a tile
+- ~ **16 textedit-102-arbor-out** (presses ⌃⌘F again): w32 is in view for Arbor but the window server does not show it
+- ~ **16 textedit-102-arbor-out** (presses ⌃⌘F again): w32 is docked and not parked, but has neither a slot nor a tile
+- ~ **16 textedit-102-arbor-out** (presses ⌃⌘F again): w36 is in view for Arbor but the window server does not show it
+- ~ **16 textedit-102-arbor-out** (presses ⌃⌘F again): w36 is docked and not parked, but has neither a slot nor a tile
+- ~ **16 textedit-102-arbor-out** (presses ⌃⌘F again): w46 is docked and not parked, but has neither a slot nor a tile
+- ~ **17 reach-safari-103** (clicks safari's title bar, or its Dock icon if that is covered): w32 is in view for Arbor but the window server does not show it
+- ~ **17 reach-safari-103** (clicks safari's title bar, or its Dock icon if that is covered): w32 is docked and not parked, but has neither a slot nor a tile
+- ~ **17 reach-safari-103** (clicks safari's title bar, or its Dock icon if that is covered): w36 is in view for Arbor but the window server does not show it
+- ~ **17 reach-safari-103** (clicks safari's title bar, or its Dock icon if that is covered): w36 is docked and not parked, but has neither a slot nor a tile
+- ~ **17 reach-safari-103** (clicks safari's title bar, or its Dock icon if that is covered): w46 is docked and not parked, but has neither a slot nor a tile
+- ~ **20 textedit-104-in** (presses ⌃⌘F in textedit): w32 is in view for Arbor but the window server does not show it
+- ~ **20 textedit-104-in** (presses ⌃⌘F in textedit): w32 is docked and not parked, but has neither a slot nor a tile
+- ~ **20 textedit-104-in** (presses ⌃⌘F in textedit): w36 is in view for Arbor but the window server does not show it
+- ~ **20 textedit-104-in** (presses ⌃⌘F in textedit): w36 is docked and not parked, but has neither a slot nor a tile
+- ~ **20 textedit-104-in** (presses ⌃⌘F in textedit): w46 is docked and not parked, but has neither a slot nor a tile
+- ~ **23 safari-105-in** (presses ⌃⌘F in safari): w32 is in view for Arbor but the window server does not show it
+- ~ **23 safari-105-in** (presses ⌃⌘F in safari): w32 is docked and not parked, but has neither a slot nor a tile
+- ~ **23 safari-105-in** (presses ⌃⌘F in safari): w36 is docked and not parked, but has neither a slot nor a tile
+- ~ **23 safari-105-in** (presses ⌃⌘F in safari): w46 is in view for Arbor but the window server does not show it
+- ~ **23 safari-105-in** (presses ⌃⌘F in safari): w46 is docked and not parked, but has neither a slot nor a tile
+- ~ **26 textedit-106-in** (presses ⌃⌘F in textedit): w32 is in view for Arbor but the window server does not show it
+- ~ **26 textedit-106-in** (presses ⌃⌘F in textedit): w32 is docked and not parked, but has neither a slot nor a tile
+- ~ **26 textedit-106-in** (presses ⌃⌘F in textedit): w36 is in view for Arbor but the window server does not show it
+- ~ **26 textedit-106-in** (presses ⌃⌘F in textedit): w36 is docked and not parked, but has neither a slot nor a tile
+- ~ **26 textedit-106-in** (presses ⌃⌘F in textedit): w46 is docked and not parked, but has neither a slot nor a tile
+- ~ **29 safari-200-in** (presses ⌃⌘F in safari): w32 is in view for Arbor but the window server does not show it
+- ~ **29 safari-200-in** (presses ⌃⌘F in safari): w32 is docked and not parked, but has neither a slot nor a tile
+- ~ **29 safari-200-in** (presses ⌃⌘F in safari): w36 is docked and not parked, but has neither a slot nor a tile
+- ~ **29 safari-200-in** (presses ⌃⌘F in safari): w46 is in view for Arbor but the window server does not show it
+- ~ **29 safari-200-in** (presses ⌃⌘F in safari): w46 is docked and not parked, but has neither a slot nor a tile
+- ~ **30 back-to-the-desktop** (presses ⌃←: the desktop comes back without Safari): w36 is in view for Arbor but the window server does not show it
+- ~ **30 back-to-the-desktop** (presses ⌃←: the desktop comes back without Safari): w36 is docked and not parked, but has neither a slot nor a tile
+- ~ **31 forth-to-safari** (presses ⌃→): w32 is in view for Arbor but the window server does not show it
+- ~ **31 forth-to-safari** (presses ⌃→): w32 is docked and not parked, but has neither a slot nor a tile
+- ~ **31 forth-to-safari** (presses ⌃→): w36 is docked and not parked, but has neither a slot nor a tile
+- ~ **31 forth-to-safari** (presses ⌃→): w46 is in view for Arbor but the window server does not show it
+- ~ **31 forth-to-safari** (presses ⌃→): w46 is docked and not parked, but has neither a slot nor a tile
+
+
+1 passed, 1 failed
+still running when the script had ended, and stopped now:
+  4922 sleep
+exit code 1

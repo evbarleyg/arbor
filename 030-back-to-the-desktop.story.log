@@ -1,0 +1,75 @@
+30 back-to-the-desktop: presses ⌃←: the desktop comes back without Safari
+expected: {'act': 'macos-own', 'settled': 'quiet:0', 'moves': 'any', 'leaves': 'any', 'judge': 'no', 'floating': ''}
+ODD rule -: w36 is in view for Arbor but the window server does not show it
+ODD rule -: w36 is docked and not parked, but has neither a slot nor a tile
+
+02:21:02.824 SCREEN -- begin 30 back-to-the-desktop
+02:21:02.824 SCREEN -- text 30 presses ⌃←: the desktop comes back without Safari
+02:21:02.985 SCREEN (nothing was seen for 67 ms)
+02:21:02.985 SCREEN textedit (w46) 1203,43 385×767
+02:21:02.985 SCREEN finder (w32) 12,43 501×767
+02:21:02.985 SCREEN w52 of Arbor 520,121 560×434
+02:21:02.985 SCREEN front to back: w226 safari textedit finder w52
+02:21:03.056 SCREEN (nothing was seen for 70 ms)
+02:21:03.179 SCREEN (nothing was seen for 58 ms)
+02:21:03.243 SCREEN (nothing was seen for 57 ms)
+02:21:03.317 SCREEN (nothing was seen for 50 ms)
+02:21:03.414 SCREEN (nothing was seen for 46 ms)
+02:21:03.550 SCREEN (nothing was seen for 92 ms)
+02:21:03.550 SCREEN w226 of Safari left the screen
+02:21:03.550 SCREEN safari (w36) left the screen
+02:21:03.550 SCREEN front to back: textedit finder w52
+02:21:03.551 MACOS pid 7652 AXApplicationActivated
+02:21:03.566 SCREEN in front: process 7652 com.apple.TextEdit
+02:21:03.566 MACOS workspace didActivate pid 7652 com.apple.TextEdit regular
+02:21:03.566 MACOS workspace didDeactivate pid 7478 com.apple.Safari regular
+02:21:03.566 MACOS pid 7478 AXApplicationDeactivated
+02:21:03.579 DEBUG w36 is no longer listed
+02:21:03.580 DEBUG w32 is listed again
+02:21:03.581 DEBUG w46 is listed again
+02:21:03.582 DEBUG focus is on w46
+02:21:03.671 MACOS pid 343 AXResized w32 AXWindow/AXStandardWindow 12 43 619 767
+02:21:03.689 MACOS pid 7652 AXResized w46 AXWindow/AXStandardWindow 969 43 619 767
+02:21:03.696 SCREEN (nothing was seen for 63 ms)
+02:21:03.696 SCREEN textedit (w46) 1203,43 397×767
+02:21:03.696 SCREEN finder (w32) 12,43 619×767
+02:21:03.699 MACOS pid 7652 AXMoved w46 AXWindow/AXStandardWindow 969 43 619 767
+02:21:03.700 MACOS pid 7652 AXResized w46 AXWindow/AXStandardWindow 969 43 619 767
+02:21:03.702 DEBUG w46 has the keyboard
+02:21:03.742 SCREEN w58 of Arbor 960,34 637×785
+02:21:03.742 SCREEN textedit (w46) 969,43 619×767
+02:21:03.742 SCREEN w57 of Arbor 631,43 12×767
+02:21:03.742 SCREEN w67 of Arbor 957,43 12×767
+02:21:03.742 SCREEN w59 of Arbor 0,31 1600×791 (level -2147483602)
+02:21:03.742 SCREEN front to back: w58 textedit finder w52 w57 w67
+02:21:03.859 SCREEN (nothing was seen for 59 ms)
+02:21:03.922 SCREEN (nothing was seen for 54 ms)
+02:21:04.071 SCREEN (nothing was seen for 61 ms)
+02:21:04.130 SCREEN (nothing was seen for 52 ms)
+02:21:04.231 SCREEN (nothing was seen for 50 ms)
+02:21:04.293 SCREEN (nothing was seen for 55 ms)
+02:21:04.343 SCREEN (nothing was seen for 43 ms)
+02:21:04.400 SCREEN (nothing was seen for 51 ms)
+02:21:04.564 SCREEN (nothing was seen for 77 ms)
+02:21:04.735 SCREEN (nothing was seen for 56 ms)
+02:21:04.791 SCREEN (nothing was seen for 51 ms)
+02:21:04.843 SCREEN (nothing was seen for 45 ms)
+02:21:04.914 SCREEN (nothing was seen for 49 ms)
+02:21:04.963 SCREEN (nothing was seen for 45 ms)
+02:21:05.039 SCREEN (nothing was seen for 74 ms)
+02:21:05.106 SCREEN (nothing was seen for 57 ms)
+02:21:05.256 SCREEN (nothing was seen for 75 ms)
+02:21:05.311 SCREEN (nothing was seen for 52 ms)
+02:21:05.428 SCREEN (nothing was seen for 62 ms)
+02:21:05.430 SCREEN -- finding 30 - ODD w36 is in view for Arbor but the window server does not show it
+02:21:05.430 SCREEN -- finding 30 - ODD w36 is docked and not parked, but has neither a slot nor a tile
+02:21:05.481 SCREEN (nothing was seen for 47 ms)
+02:21:05.524 SCREEN -- end 30 act=macos-own settled=quiet:0 moves=any leaves=any judge=no floating=
+02:21:05.548 SCREEN (nothing was seen for 62 ms)
+02:21:05.609 SCREEN (nothing was seen for 57 ms)
+02:21:05.682 SCREEN (nothing was seen for 67 ms)
+02:21:05.777 SCREEN (nothing was seen for 53 ms)
+02:21:05.893 SCREEN (nothing was seen for 71 ms)
+02:21:05.978 SCREEN (nothing was seen for 62 ms)
+02:21:06.041 SCREEN (nothing was seen for 58 ms)
+02:21:06.137 SCRIPT == 31 forth-to-safari

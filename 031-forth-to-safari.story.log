@@ -1,0 +1,73 @@
+31 forth-to-safari: presses ⌃→
+expected: {'act': 'macos-own', 'settled': 'quiet:0', 'moves': 'any', 'leaves': 'any', 'judge': 'no', 'floating': ''}
+ODD rule -: w32 is in view for Arbor but the window server does not show it
+ODD rule -: w32 is docked and not parked, but has neither a slot nor a tile
+ODD rule -: w36 is docked and not parked, but has neither a slot nor a tile
+ODD rule -: w46 is in view for Arbor but the window server does not show it
+ODD rule -: w46 is docked and not parked, but has neither a slot nor a tile
+
+02:21:06.165 SCREEN -- begin 31 forth-to-safari
+02:21:06.165 SCREEN -- text 31 presses ⌃→
+02:21:06.216 SCREEN (nothing was seen for 56 ms)
+02:21:06.311 SCREEN (nothing was seen for 43 ms)
+02:21:06.364 SCREEN (nothing was seen for 46 ms)
+02:21:06.390 SCREEN w226 of Safari 0,0 1600×52
+02:21:06.390 SCREEN safari (w36) 0,0 1600×900
+02:21:06.390 SCREEN front to back: w58 w226 safari textedit finder w52 w57 w67
+02:21:06.457 SCREEN (nothing was seen for 67 ms)
+02:21:06.514 SCREEN (nothing was seen for 43 ms)
+02:21:06.630 SCREEN (nothing was seen for 62 ms)
+02:21:06.760 SCREEN (nothing was seen for 56 ms)
+02:21:06.811 SCREEN (nothing was seen for 44 ms)
+02:21:07.002 MACOS pid 7652 AXApplicationDeactivated
+02:21:07.002 MACOS workspace didActivate pid 7478 com.apple.Safari regular
+02:21:07.003 SCREEN (nothing was seen for 95 ms)
+02:21:07.003 SCREEN textedit (w46) left the screen
+02:21:07.003 SCREEN w57 of Arbor left the screen
+02:21:07.003 SCREEN w52 of Arbor left the screen
+02:21:07.003 SCREEN w67 of Arbor left the screen
+02:21:07.003 SCREEN finder (w32) left the screen
+02:21:07.003 SCREEN front to back: w58 w226 safari
+02:21:07.003 SCREEN in front: process 7478 com.apple.Safari
+02:21:07.003 MACOS workspace didDeactivate pid 7652 com.apple.TextEdit regular
+02:21:07.017 MACOS pid 7478 AXApplicationActivated
+02:21:07.030 DEBUG w32 is no longer listed
+02:21:07.034 DEBUG w46 is no longer listed
+02:21:07.036 DEBUG w36 is listed again
+02:21:07.037 DEBUG focus is on w36
+02:21:07.041 DEBUG focus report for w36, which does not have the keyboard or takes no space; 4 checks left
+02:21:07.050 SCREEN w58 of Arbor left the screen
+02:21:07.050 SCREEN front to back: w226 safari
+02:21:07.109 SCREEN (nothing was seen for 53 ms)
+02:21:07.172 SCREEN (nothing was seen for 58 ms)
+02:21:07.309 SCREEN (nothing was seen for 50 ms)
+02:21:07.309 SCREEN w59 of Arbor left the screen
+02:21:07.311 DEBUG focus report for w36, which does not have the keyboard or takes no space; 3 checks left
+02:21:07.372 SCREEN (nothing was seen for 56 ms)
+02:21:07.520 SCREEN (nothing was seen for 45 ms)
+02:21:07.620 SCREEN (nothing was seen for 47 ms)
+02:21:07.627 DEBUG focus report for w36, which does not have the keyboard or takes no space; 2 checks left
+02:21:07.756 SCREEN (nothing was seen for 48 ms)
+02:21:07.842 SCREEN (nothing was seen for 64 ms)
+02:21:07.919 SCREEN (nothing was seen for 53 ms)
+02:21:07.935 DEBUG focus report for w36, which does not have the keyboard or takes no space; 1 checks left
+02:21:07.982 SCREEN (nothing was seen for 57 ms)
+02:21:08.037 SCREEN (nothing was seen for 48 ms)
+02:21:08.102 SCREEN (nothing was seen for 59 ms)
+02:21:08.259 DEBUG focus report for w36, which does not have the keyboard or takes no space; 0 checks left
+02:21:08.329 SCREEN (nothing was seen for 51 ms)
+02:21:08.463 SCREEN (nothing was seen for 88 ms)
+02:21:08.569 SCREEN (nothing was seen for 69 ms)
+02:21:08.667 SCREEN -- finding 31 - ODD w32 is in view for Arbor but the window server does not show it
+02:21:08.667 SCREEN -- finding 31 - ODD w32 is docked and not parked, but has neither a slot nor a tile
+02:21:08.667 SCREEN -- finding 31 - ODD w36 is docked and not parked, but has neither a slot nor a tile
+02:21:08.668 SCREEN -- finding 31 - ODD w46 is in view for Arbor but the window server does not show it
+02:21:08.668 SCREEN -- finding 31 - ODD w46 is docked and not parked, but has neither a slot nor a tile
+02:21:08.722 SCREEN (nothing was seen for 67 ms)
+02:21:08.727 SCREEN -- end 31 act=macos-own settled=quiet:0 moves=any leaves=any judge=no floating=
+02:21:08.778 SCREEN (nothing was seen for 47 ms)
+02:21:08.843 SCREEN (nothing was seen for 58 ms)
+02:21:08.939 SCREEN (nothing was seen for 54 ms)
+02:21:09.002 SCREEN (nothing was seen for 57 ms)
+02:21:09.067 SCRIPT == 32 safari-200-arbor-out
+02:21:09.073 SCREEN (nothing was seen for 67 ms)
