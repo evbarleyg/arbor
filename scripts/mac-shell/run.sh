@@ -50,8 +50,9 @@
 # environments may push but not delete branches, and there each run replaces the last one's output
 # instead of adding a branch. Starting the same scripts for the same ref again cancels the run that is still under way.
 #
-# Environment: MAC_SHELL_TIMEOUT  seconds to wait for the run (default 2700), and as many again once it has its Mac. It is this script's patience and nothing
-#                                 else: a run is never cancelled for it. One that waits keeps its place in GitHub's line, one that is half done its minutes.
+# Environment: MAC_SHELL_TIMEOUT  seconds to wait for the run (default 2700 for one script; 1200 more for each further one on the Mac that has most), and as
+#                                 many again once it has its Mac. It is this script's patience and nothing else: a run is never cancelled for it. One that
+#                                 waits keeps its place in GitHub's line, one that is half done its minutes.
 #              MAC_SHELL_ASK      seconds until GitHub is first asked whether the run has ended without output (default 180); twice as long each time after
 #              MAC_SHELL_LOOK     seconds a look at the queue may take before it is left behind (default 60)
 #              ARBOR_MAC_RULES    files, with colons between them, in which whoever coordinates writes what holds for everybody. A run that has held back and
@@ -95,7 +96,6 @@ case "$configuration" in debug | release) ;; *) echo "run.sh: ARBOR_CONFIGURATIO
 [ "$configuration" = debug ] || [ "$bare" = false ] || { echo "run.sh: --bare builds nothing, so there is no release build to drive" >&2; exit 97; }
 ref=${ref:-$(git rev-parse --abbrev-ref HEAD)}
 [ "$ref" != HEAD ] || { echo "run.sh: no branch is checked out; name one: run.sh <script> <ref>" >&2; exit 97; }
-limit=${MAC_SHELL_TIMEOUT:-2700}
 script=${scripts[0]}
 
 # Who runs what: one line for each Mac.
@@ -118,10 +118,16 @@ else
       echo
     done | sed 's/ $//')
 fi
-# As the workflow wants it: for each Mac its scripts, and which playings of how many they are.
-plan=$(echo "$shares" | awk -v total="$([ ${#scripts[@]} -eq 1 ] && echo "$macs" || echo ${#scripts[@]})" '
-  { printf "%s{\"parts\":\"%d-%d\",\"of\":%d,\"scripts\":\"%s\"}", (NR > 1 ? "," : ""), first + 1, first + NF, total, $0; first += NF }
+# As the workflow wants it: for each Mac its scripts, and which playings of how many they are. Only ONE script given to several Macs has a share of its
+# work on each ($MAC_SHELL_SHARE). A Mac that merely has neighbours does all of its scripts' work: nobody else would do the rest.
+plan=$(echo "$shares" | awk -v total="$([ ${#scripts[@]} -eq 1 ] && echo "$macs" || echo ${#scripts[@]})" -v sharing="$([ ${#scripts[@]} -eq 1 ] && [ "$macs" -gt 1 ] && echo "$macs")" '
+  { printf "%s{\"parts\":\"%d-%d\",\"of\":%d,\"scripts\":\"%s\"%s}", (NR > 1 ? "," : ""), first + 1, first + NF, total, $0, (sharing ? sprintf(",\"share\":\"%d/%d\"", NR, sharing) : ""); first += NF }
   END { print "" }' | sed 's/.*/[&]/')
+# How long to wait: 1500 s for a Mac to come free, its set-up and the build, and the twenty minutes each script may take, for the Mac that has most of them;
+# as often as it takes for all the Macs to have had their turn.
+most=$(echo "$shares" | awk '{ if (NF > most) most = NF } END { print most }')
+waves=$(((macs + ${at_once:-5} - 1) / ${at_once:-5}))
+limit=${MAC_SHELL_TIMEOUT:-$((1500 + 1200 * most * waves))}
 
 repo=$(git remote get-url origin | sed -E 's#^(https://[^/]*/|git@[^:]*:|ssh://[^/]*/)##; s#\.git$##; s#/$##')
 api() { gh api "$@"; }
@@ -282,7 +288,7 @@ api -X POST "repos/$repo/actions/workflows/mac-shell.yml/dispatches" \
   -f "inputs[at-once]=${at_once:-5}" -f "inputs[runner]=$kind" -F "inputs[bare]=$bare" -f "inputs[unchecked]=$(printf '%s' "$unchecked" | tr -c 'A-Za-z0-9 .,:_/-' ' ' | cut -c 1-80)" \
   -f "inputs[macs]=$plan" >/dev/null \
   || fail "could not start the workflow of $home for $ref"
-echo "started ${scripts[*]} at $ref (${remote:0:7}), tag $tag$([ "$macs" -eq 1 ] || echo ", on $macs Macs")$([ "$configuration" = debug ] || echo ", the $configuration build")"
+echo "started ${scripts[*]} at $ref (${remote:0:7}), tag $tag$([ "$macs" -eq 1 ] || echo ", on $macs Macs")$([ "$configuration" = debug ] || echo ", the $configuration build"); waits ${limit} s at most"
 # For whoever shares a look at the queue: there is one more waiting now. Costs no call.
 look 20 python3 scripts/mac-queue.py --repo "$repo" --started "$macs" --for "$ref"
 
