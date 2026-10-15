@@ -150,9 +150,11 @@ for each such option, and `Settings.classic` for all of them.
 - A test **about** an option names it: `Harness(settings: .withEveryKey)`, `settings.withEveryKey`.
 - A test about something else whose **means** is yesterday's (it presses a key that is no longer bound) is rewritten to what ships, if that does not change what
   it proves. Otherwise it names the option.
-- Everything else follows what ships. There is no switch that makes every `Harness()` classic.
+- Everything else follows what ships.
 - A scenario says `set shortcuts all` at its head, under a comment that says why.
 - `ArborCoreTests` does not import `ArborTesting`: there the property is set by hand.
+
+**What ships, and what shipped.** An option that went off by default stays in the app. `Sources/ArborTesting/ClassicSettings.swift` has one chaining property for each (`.withDesktopColumn`, `.withEveryKey`, `.withFloatsMakingWay`), and `Settings.classic` for all of them. A test that is about such an option names it. A test whose numbers depend on what ships says `Harness(settings: Settings())`. Every other test says `Harness()`, and runs twice: `make test` as Arbor ships, `make test-classic` (Linux; `ARBOR_TEST_CLASSIC=1`) arranged as the first build arranged (the column, floating windows making way). Whoever turns a default off adds a property and a line to `classic`, in alphabetical order, and for the suite on real windows the key to `ARBOR_EVERYTHING_ON` in `scripts/mac-shell/lib.sh`. A chaos script that needs an option begins with `settings {"desktopColumn":true}`; a scenario with `set desktopColumn true` under a line that says why.
 
 **Shortcuts.** Nine ship (`KeyBindings.core`); `.withEveryKey` is the whole map (`KeyBindings.all`; `docs/KEYBOARD.md`). `h.key("ctrl+opt+d")` returns nil for keys that nobody
 holds, as the app in front would get them: a test that goes on without looking at the reply then proves nothing, so look at it. `h.press("desktop")` and `h.run("desktop", from: .shortcut)`
@@ -645,6 +647,15 @@ It says what it is holding back for, and the wait counts towards `MAC_SHELL_TIME
 taken all five Macs in the minute before three of priority 1 were started. So priority 1 goes at the look that says it is over, `2` a look later, `3` two looks later, and each asks
 again then. A queue that was merely busy is nobody's signal, and nobody gives way after it.
 
+**A lower priority is a delay, not never.** GitHub's own line is first come, first served, and whoever holds back here has no place in it. "Fewer than three waiting" once did not come
+for a whole night: seven sessions held back for up to two hours and started nothing. So after eight looks at a busy queue (some twenty minutes) a run of priority `2` goes whatever
+waits, one of priority `3` after sixteen (`MAC_SHELL_AGE`), and says so. Only a busy queue is outwaited: a train, a declared hold, changed rules and the branch's own runs hold as ever.
+A run that holds back lives as long as the shell it was started from: `nohup scripts/mac-shell/run.sh … > run.log 2>&1 &` outlives it.
+
+**The tag and the branch stand at the end of a run's title, and GitHub cuts a long one.** So `run.sh` sends a short one: one script by its path, several by their names, of more than four the first three "and 9 more". What runs is in the plan. Should a run not be found after GitHub took it (98, "did not appear"), it may stand in the line all the same: `run.sh` prints how to look. Look before sending it again.
+
+A run that ends with 95 says how many looks it has held back: `MAC_SHELL_HELD=N` before the same command carries them over.
+
 **Whoever has waited acts on what was true when the waiting began.** With `ARBOR_MAC_RULES` naming the files (colons between them) in which whoever coordinates writes what holds for
 everybody, a run that has held back and finds one of them changed does not start: it prints what is new and ends with 95. That is for a reader to weigh, not for a timer. Read it,
 then start the run again.
@@ -858,6 +869,11 @@ copy from before the repository was public, and say what the script does once it
 | `check-menu-height.sh` | trunk | **never**: ends with 77 | | Clicks in the menu bar; pauses, holds and quits its Arbor from the menu |
 | `check-window-list.sh` | trunk | **never**: ends with 77 | | Clicks in the menu bar and on rows of Windows ▸; hides and minimizes its own test windows |
 | `check-comes-back.sh` | trunk | safe | | A docked window fetched out of the Dock or out of a hidden app while the view is elsewhere, on real windows, three rounds each: whether its neighbour ever shows on its way, whether what was on screen stays, whether it fills the screen at the end. In the rehearsal it cannot fail for the flight, which the fake Mac does not play |
+| `probe-macos-own-moves.sh` | trunk | **never**: ends with 77 | | 10 min. macOS's own ways of moving a window, on a test window, TextEdit and Terminal, with Arbor paused and running: when the first and the last frame come, in how many steps, and what Arbor asked for meanwhile. A probe: it prints two tables and checks little |
+| `probe-an-app-that-is-ended.sh` | trunk | **never**: ends with 77 | | 3 min. TextEdit with a docked window is ended by SIGKILL, by SIGTERM, and asked to quit: how long the dead window keeps its slot, and what Arbor was told. A probe |
+| `check-moves-of-the-view.sh` | trunk | **never**: ends with 77 | | Four minutes. After a key that moves the view, whose is the keyboard? A plain x is typed and counted where it lands: in an app Arbor does not look at, in a test window's sheet and panel. It also writes down what Accessibility names as the focused window meanwhile (`apptool names <pid>`; lines that begin with "names:"). A rehearsal plays it as far as the first tool the fake Mac lacks, and the fake Mac gives no sheet the keyboard |
+| `check-a-key-in-the-wait.sh` | trunk | **never**: ends with 77 | | A virtual second display goes; Float All and Show Everything through `arborctl` at once, and ⌃⌥Space by a real key: refused, nothing moves, the line is on the display that is left; asked again every quarter of a second until it is carried out. Then a window goes to the Dock and the key half a second later is carried out. Three traces come back |
+| `check-own-size-apps.sh` | trunk | **never**: ends with 77 | | Safari and TextEdit hung over the right edge and over the bottom by a real drag, docked, given back by Float All, a pause and Quit: whole, where they hung |
 | `check-standstill.sh` (`pulse.swift`, `framewatch.swift`, `mover.swift`) | trunk | **never**: ends with 77 | | Watches the whole display for changes, changes Reduce Motion |
 | `probe-mission-control.sh` | trunk | **never**: ends with 77 | | Mission Control and the app's windows opened, a window picked there by a click |
 | `probe-whose-key.sh`, `probe-fn-bit.sh` (`lib-ears.sh`) | trunk | **never**: ends with 77 | | Some fifty shortcuts pressed a dozen times over into whatever is in front; event taps that listen; hot keys registered; secure input switched on and off; Arbor stopped, killed and installed as a bundle of its own under `~/Applications`; the display put to sleep; an entry in the permission database, as root |
@@ -1568,7 +1584,7 @@ one. It is a function of its seed: no clock, no system randomness, no dictionary
 
 **What it does.** `ChaosGenerator` looks at the state of the world and picks the next `ChaosAction`, mostly one
 that makes sense there and sometimes one that does not: apps open, close, quit, hide, minimize, change Space, go full
-screen, retitle and change their size limits; the user moves, resizes, focuses, double-clicks title bars (and macOS zooms), clicks tiles, drags seams, types and chooses in Go to…, and drags
+screen, retitle and change their size limits; the user moves, resizes, focuses, double-clicks title bars (and macOS zooms), asks macOS for another frame with its menu, its keys or ⌥-click on the green button (`ask-macos <window> fill|left|right|top|bottom|quarter|centre`), clicks tiles, drags seams, types and chooses in Go to…, and drags
 windows in pieces (`grab`, `carry`, `release`) so that anything can happen in mid-drag; every `Command` with valid
 and invalid arguments, nonsense lines and `arbor://` URLs; displays added, removed, resized and rearranged, with macOS
 reporting the windows before, after or never; timers fired early or late; settings.json edited sensibly and badly, and every setting in
