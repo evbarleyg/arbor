@@ -371,6 +371,9 @@ day_gone() {
   [ -z "$left" ] || note "finding $DAY_STEP -:left-behind FAIL after Quit a process of Arbor's is still there: $left"
   left=$(pointer windows --pid "$pid" | wc -l | tr -d ' ')
   [ "$left" -eq 0 ] || note "finding $DAY_STEP -:left-behind FAIL after Quit $left windows of Arbor's are still there"
+  # The window server drops a process's taps when it ends. One that is still listed would go on holding every event of the Mac's.
+  left=$("$DAY_WITNESS" taps 2> /dev/null | awk -v pid="pid=$pid" '$3 == pid' | wc -l | tr -d ' ')
+  [ "$left" -eq 0 ] || note "finding $DAY_STEP -:left-behind FAIL after Quit $left event taps of Arbor's are still there"
 }
 
 # MARK: What a person does
