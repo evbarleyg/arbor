@@ -4,7 +4,7 @@
 #
 #   scripts/mac-shell/run.sh scripts/mac-shell/check-F13-system.sh      # about five minutes
 #
-#   1  with the identity in a login keychain on the search list, `make app` finds it by itself
+#   1  with the identity in a keychain on the search list, `make app` finds it by itself
 #   2  `make install` as a person runs it: Arbor is started by macOS, on the account's own settings
 #   3  macOS's permission database honours a grant made to one build for the next, and not for an ad-hoc build
 #   4  launch at login, from ~/Applications, across a reinstall, until `make uninstall`
@@ -30,15 +30,14 @@ swiftc -O -swift-version 5 "$ARBOR_ROOT/scripts/mac-shell/pointer.swift" -o "$AR
 pointer_build=$!
 f13_clone
 
-step "1  the identity in a login keychain"
-# Where the script looks when it is told nothing, under the throwaway HOME.
-keychain="$HOME/Library/Keychains/login.keychain-db"
+step "1  the identity, in a keychain on the search list"
+# Not one named login.keychain-db: there macOS asks in a dialog, which check-signing.sh answers (steps 7 and 8). What follows needs an identity
+# that sign.sh finds by itself, through the search list.
+keychain="$HOME/Library/Keychains/arbor-f13.keychain-db"
 f13_make_keychain
-security list-keychains -d user -s "$keychain"
 echo "the search list: $(security list-keychains -d user | tr -d '\n')"
-ARBOR_KEYCHAIN_PASSWORD=$password limit 120 ./scripts/make-signing-identity.sh < /dev/null 2>&1 | tee "$ARBOR_OUT/identity.txt"
+limit 120 ./scripts/make-signing-identity.sh --keychain "$keychain" < /dev/null 2>&1 | tee "$ARBOR_OUT/identity.txt"
 security find-identity -p codesigning
-check "told nothing, the script used the login keychain" says "$ARBOR_OUT/identity.txt" "in $keychain"
 check "codesign could use the key at once, without a dialog" says "$ARBOR_OUT/identity.txt" "codesign can sign with it"
 check "the identity is found through the search list, as sign.sh looks for it" \
   with "$(security find-identity -p codesigning)" "\"$identity\""

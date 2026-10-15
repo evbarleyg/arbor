@@ -22,7 +22,8 @@ else, so that they can be pasted whole: at its prompt macOS's own shell, zsh, do
 3. replaces `~/Applications/Arbor.app`;
 4. links `arborctl` into `~/.local/bin` if that is on your `PATH`, else into `/usr/local/bin` if you may write there,
    else into `~/.local/bin` all the same, and then tells you the line that adds it to your `PATH`;
-5. starts the new build and prints its status.
+5. starts the new build and prints its status;
+6. if the build is signed ad hoc, says so last and aloud, with what that costs: macOS will ask for the permission again.
 
 It is for a person at a terminal. From a script, a loop or an agent (standard input is no terminal) `make install`, `make uninstall`,
 `make run` and `scripts/make-signing-identity.sh` decline with exit code 77 and touch nothing, because they quit the Arbor you are using, replace it with no
@@ -70,15 +71,20 @@ the same job. `scripts/make-signing-identity.sh` makes it:
 - nothing is trusted, nothing is installed system-wide, nothing leaves the Mac, and no administrator rights are needed.
   `codesign` signs with a certificate nobody trusts, and the permission database only asks whether the next build
   is signed with the same one;
-- `codesign` may use the new key only with your leave. The script asks one question. **Press Return** (recommended): macOS then
-  asks in a dialog of its own, where you type the password you log in with and choose **Always Allow** (Allow would ask
-  again, twice for every build). Or type the password at the question, and there is no dialog: a convenience for people who
-  make identities often. It then goes to macOS's `security` tool and nowhere else, but as an argument, which `ps` can show for
-  an instant; and a login password is not something to get used to typing into scripts from repositories;
-- running it again changes nothing; `--remove` deletes the certificate and the key.
+- it asks for **no password**, takes none, and changes nothing about any key but its own. **macOS asks, once, in a dialog of its own**:
+  "codesign wants to access key “Arbor Local Signing” in your keychain. To allow this, enter the “login” keychain password." Type
+  the password you log in with there, and choose **Always Allow**. Allow works this once, and macOS asks again at every build,
+  twice; after Deny nothing is signed. Why it asks: in the login keychain an imported key has a list of who may use it unasked, and
+  `codesign` is not on it until you say so;
+- it ends by signing something with the new key, and goes by that. If the signature cannot be made, or you press ⌃C, it says why as far as
+  anybody knows and takes the certificate and the key out of the keychain again: a certificate that is there and of no use would make
+  every build fail or wait for a dialog. macOS's dialog it cannot take away: one that nobody answered stays on the screen, asking
+  about a key that is gone. Close it with Deny;
+- running it again changes nothing, but tries a signature and says so if that fails; `--remove` deletes the certificate and the key.
 
 From then on `make app` and `make install` find the certificate and sign with it, and say so. The order is:
-`ARBOR_SIGN_IDENTITY` if set, else "Arbor Local Signing" if a keychain has it, else ad hoc.
+`ARBOR_SIGN_IDENTITY` if set, else "Arbor Local Signing" if a keychain has it, else ad hoc. The build knows which it was:
+`arborctl doctor` has a line **Signature**, and Check Setup says under Accessibility when macOS will ask again after the next update.
 
 **The first build signed this way needs the permission once more**, because its signature is new. If an older build of
 Arbor is listed under Accessibility, clear that entry, between the old Arbor's quitting and the new one's start. The
@@ -192,6 +198,25 @@ tccutil reset Accessibility com.evbarleyg.arbor
 
 and switch it on when it asks. `arborctl status` says `waiting for Accessibility permission` until then, and `running`
 a second after. To see what macOS compares: `codesign -d -r- ~/Applications/Arbor.app`.
+
+**`make install` ends with "THIS BUILD IS SIGNED AD HOC".** No keychain has the signing identity, so every build is a new app to macOS
+and has to be given the permission again. `./scripts/make-signing-identity.sh`, then `make install`, and it is asked once more and
+never again. `security find-identity -p codesigning` lists "Arbor Local Signing" if it is there.
+
+**The script asked for the keychain's password and said it was wrong.** That was its fault, not yours, and it asks no longer:
+`git pull`. It looked for its key by a name that macOS 15 and 26 no longer give, and took every failure for a wrong password. If it
+left a certificate behind, running it again says whether `codesign` can sign with it, and what to do if not.
+
+**"It had no answer in 60 seconds".** The script ran with nobody at a terminal (`ARBOR_UNATTENDED=1`, a job), and nobody answered macOS's
+dialog. Close the dialog with Deny, run the script from a terminal, and answer with Always Allow. `ARBOR_KEYCHAIN_PASSWORD`, which used to
+spare scripts the dialog, is no longer looked at: a login password does not belong in a script's arguments or environment.
+
+**`errSecInternalComponent` from the script's trial.** The dialog was answered Deny or closed, or the keychain is locked, as it is over
+ssh (`security unlock-keychain`).
+
+**"no identity found" or "The specified item could not be found in the keychain" from codesign, with `ARBOR_SIGN_KEYCHAIN` or
+`--keychain`.** codesign finds an identity only in a keychain on the search list, whatever `--keychain` says. `security list-keychains -d user` shows the list; with `-s` and every
+keychain that is to be on it, it sets it.
 
 **macOS asks whether codesign may use the key, at every build.** Someone chose Allow instead of Always Allow. Choose
 Always Allow, or run `scripts/make-signing-identity.sh --remove` and make the identity again.

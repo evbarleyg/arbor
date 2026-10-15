@@ -11,7 +11,8 @@
 #   1. $ARBOR_SIGN_IDENTITY: a certificate's name or SHA-1 hash, or - for an ad-hoc signature
 #   2. "Arbor Local Signing", when a keychain has it (scripts/make-signing-identity.sh makes it, once)
 #   3. ad hoc
-# $ARBOR_SIGN_KEYCHAIN names a keychain file to look in instead of the keychains on the search list.
+# $ARBOR_SIGN_KEYCHAIN names a keychain file to look in instead of all the keychains on the search list. It has to be on the list
+# all the same: codesign finds no identity in a keychain that is not, whatever --keychain says.
 #
 # An identity other than those two is taken to be one Apple issued (Developer ID): it gets the hardened runtime,
 # which notarization requires, and with ARBOR_RELEASE=1 (make release) a secure timestamp as well.
@@ -48,10 +49,23 @@ sign() {
       echo "  If macOS asked to use the key, answer Always Allow. Over ssh, run \`security unlock-keychain\` first." >&2
       echo "  \"ambiguous\" means two certificates have the name: scripts/make-signing-identity.sh --remove, then make it again." >&2
     fi
+    if [ -n "$keychain" ]; then
+      echo "  \"no identity found\", \"could not be found in the keychain\": codesign looks only in keychains on the search list" >&2
+      echo "  (\`security list-keychains\`), whatever --keychain says." >&2
+    fi
     echo "  ARBOR_SIGN_IDENTITY=- builds with an ad-hoc signature instead." >&2
     exit 1
   fi
 }
+
+# The app cannot ask macOS cheaply how it is signed, and what the signature costs is worth a line in `doctor` and in Check Setup
+# (BuildInfo.Signature). Written before the signature is made, which covers the property list.
+case "$identity" in
+  -) kind=adhoc ;;
+  "$local_identity") kind=local ;;
+  *) kind=issued ;;
+esac
+plutil -replace ArborSignature -string "$kind" "$app/Contents/Info.plist"
 
 # Inside out: the bundle's signature covers arborctl's.
 sign --identifier com.evbarleyg.arbor.arborctl "$app/Contents/Helpers/arborctl"
