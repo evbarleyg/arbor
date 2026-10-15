@@ -3,7 +3,7 @@
 
 Nobody is asked to look at Arbor and say whether it feels right. A hosted Mac films it, and this reads the films anywhere: what a
 ruler can settle it measures, and for the rest it lays the frames out on sheets that an agent with eyes goes through, whose
-verdicts (collab/polish/eyes.json) it counts like its own.
+verdicts (collab/polish/eyes-run-<n>.json) it counts like its own.
 
   judge.py score <run folder> [--json <file>] [--eyes <file>] [--stills <file>]
                                         every film in <run folder>/films: the table, the findings with the frames that show
@@ -38,7 +38,7 @@ WEIGHT = {1: 5, 2: 3, 3: 1}
 
 MOVES = ("camera", "structure", "control")
 SETTLES = MOVES + ("drag",)
-ALL = SETTLES + ("hold", "instant", "panel")
+ALL = SETTLES + ("hold", "follow", "instant", "panel")
 # Of Arbor's own windows, the levels of those that have no business on screen once things are at rest: the drop preview, the stage.
 PASSING = (3, 4)
 
@@ -435,6 +435,7 @@ CHECKS = [
     ("D2", "the preview tells the truth", 2, ("drag",), preview_true),
     ("D3", "the preview comes and goes softly, once", 2, ("drag",), not_yet),
     ("D4", "others make room in one motion", 1, ("drag",), not_yet),
+    ("G1", "what follows the fingers follows them closely", 1, ("follow",), not_yet),
     ("P1", "a panel is there at once and gone at once", 2, ("panel",), panel_prompt),
     ("P2", "a panel fades or is there; it does not jump", 2, ("panel",), panel_still),
 ]
@@ -455,7 +456,7 @@ MOVES_FILMED_TWICE = [
     ("dock-drag-edge", "drag", 2), ("dock-drag-beside", "drag", 2), ("rearrange", "drag", 2),
     ("double-click-desktop", "camera", 3), ("double-click-again", "camera", 3), ("double-click-title", "camera", 3),
     ("rectangle", "drag", 4), ("save-view", "panel", 4), ("view", "camera", 4),
-    ("show-everything", "camera", 5), ("pinch-in", "camera", 5), ("pinch-out", "camera", 5), ("zoom-continuous", "hold", 5),
+    ("show-everything", "camera", 5), ("pinch-in", "camera", 5), ("pinch-out", "camera", 5), ("zoom-continuous", "follow", 5),
     ("frame", "camera", 0),
 ]
 SCENES = MOVES_FILMED_TWICE + [("dark-" + name, kind, move) for name, kind, move in MOVES_FILMED_TWICE] + [
@@ -472,7 +473,7 @@ SCENES = MOVES_FILMED_TWICE + [("dark-" + name, kind, move) for name, kind, move
 # Whatever Arbor draws of its own, and what is asked of a picture of each (docs/POLISH.md, "Panels"): check, severity.
 PANELS = ["heads-up line", "drop preview", "tile", "seam", "focus ring", "peek outline", "rectangle", "minimap", "go to", "shortcuts",
           "name field", "menu", "settings", "coach", "setup check", "tab strip"]
-STILLS = [("S1 at 1x", 2), ("S1 at 2x", 2), ("S2", 3), ("S3", 1), ("S4 light", 2), ("S4 dark", 2), ("S6", 2), ("S7", 3)]
+STILLS = [("S1 at 1x", 2), ("S1 at 2x", 2), ("S2", 3), ("S3", 1), ("S4 light", 2), ("S4 dark", 2), ("S6", 2)]
 
 # What the metronome's films must say, or the instruments are not to be believed: kind -> the checks that must miss.
 METRONOME = {"good": [], "linear": ["M3"], "slow": ["M2"], "twice": ["M4"], "hop": ["M6"], "flash": ["M9"]}

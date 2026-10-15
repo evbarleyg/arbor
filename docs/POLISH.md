@@ -9,7 +9,7 @@ regression, found before it lands, like a failing test.
 
 | | |
 |---|---|
-| What Linux proves | that the film script plays (`scripts/mac-shell/rehearse.sh scripts/mac-shell/films.sh`) and that the judge catches what it claims to catch (`scripts/polish/judge.py --self-test`: 24 drawn films, each wrong in one known way) |
+| What Linux proves | that the film script plays (`scripts/mac-shell/rehearse.sh scripts/mac-shell/films.sh`) and that the judge catches what it claims to catch (`scripts/polish/judge.py --self-test`: 32 drawn films, each wrong in one known way or right) |
 | What a Mac must run | `scripts/mac-shell/films.sh`: unattended, on a free hosted runner, one run for everything, under ten minutes. It only records |
 | What the sandbox judges afterwards | everything: `scripts/polish/judge.py score <run folder>`, then the sheets, by eye |
 
@@ -29,8 +29,9 @@ the scenes for tabs, double clicks and continuous zoom are in the sum from the f
 
 - **The Mac**: GitHub's `macos-26` runner, one display of 1024 × 768 at 1x; a virtual Retina display for pictures at 2x. macOS at
   its default settings (its own edge tiling on, click-wallpaper on), except Reduce Motion, which the runners come with and the script switches off.
-- **The windows**: `ArborTestWindows`, each one flat colour, on the runner's black wallpaper: a window is then a rectangle that
-  a script can find in every frame to the pixel. The scenes "for eyes" use a wallpaper with something on it, dark mode, and real apps.
+- **The windows**: `ArborTestWindows`, each one flat colour, on a plain wallpaper: a window is then a rectangle that a script can find in every
+  frame to the pixel. Each is an app of its own (`cast_start`), with a name and an icon in the window's colour, because a person's windows are not all
+  one app's, and cards that all look alike are harder on the eye, and on the ruler, than anybody's desk.
 - **The hand**: real keys and a real pointer (`pointer.swift`, `witness.swift`), one thing a person does per scene. Never the command behind the key.
 - **The camera** (`scripts/mac-shell/camera.swift`): every frame ScreenCaptureKit delivers, up to 60 a second, lossless, each with the moment the display
   showed it; and, from an event tap at the head of the chain, the moment each key and button went down or up. Screen Recording is the one permission
@@ -45,7 +46,7 @@ the scenes for tabs, double clicks and continuous zoom are in the sum from the f
 ## The checks
 
 **By**: *ruler* = `judge.py` measures it; *eyes* = an agent goes through the sheets (`judge.py sheet`) and writes the verdict, with the
-frames that show it, into `collab/polish/eyes.json`; *stills* = measured on pictures of each panel alone (the gallery's `*-alone-*.png`).
+frames that show it, into `collab/polish/eyes-run-<n>.json`; *stills* = measured on pictures of each panel alone (the gallery's `*-alone-*.png`).
 
 ### Motion: asked of every scene in which Arbor moves windows
 
@@ -104,8 +105,18 @@ After the button comes up, M1 to M13 are asked with that as the cause.
 | S4 | **It can be read** | contrast of ink to ground (WCAG) | ≥ 4.5 : 1; ≥ 3 : 1 from 18 pt | stills | 2 |
 | S5 | **Light and dark** | S1 to S4 in both; the ground's lightness follows the system's | so | stills | 2 |
 | S6 | **Increase Contrast is honoured** | with it on: contrast of each panel's outline to what is around it; of ink to ground | ≥ 3 : 1; ≥ 7 : 1 | stills | 2 |
-| S7 | **Reduce Transparency is honoured** | with it on, over a landscape: how much the ground varies | flat (deviation ≤ 2 levels) | stills | 3 |
 | S8 | **Even gaps** | at rest: the gaps between neighbouring windows and to the room's edges | all equal to `gap` within 1 px | ruler | 3 |
+
+**Not scored: translucency and blur.** A hosted Mac draws every system material as one flat colour, in Arbor as in any app: the look of Reduce
+Transparency. So text has to be legible in that flat look (S4), and what a material adds on a person's Mac is not judged here, by ruler or by eye.
+
+### Fingers: what follows a gesture while it lasts
+
+| # | What | How | Passes when | Severity |
+|---|---|---|---|---|
+| G1 | **It follows closely** | the script writes down what the fingers have said so far, event by event (`fingers.log` in the film's folder: `<ms> G <magnification> <pan x> <pan y>`); each stand-in's width in each frame is held against it | never more than 2 frames (35 ms) behind; no step over 2% of the width that the fingers did not make | 1 |
+
+When the fingers come up (the mark `fingers up`), M2 to M13 are asked with that as the cause.
 
 ### Eyes: asked of every scene, on its sheet
 
@@ -135,7 +146,7 @@ The scenes of the five moves, and `frame`, are filmed twice: in light mode on a 
 | `rectangle`, `save-view`, `view` | drag, panel, camera | ⌃⌥ and a drag over two windows; ⌃⌥⇧1; later ⌃⌥1 | 4 |
 | `show-everything` | camera | ⌃⌥Space | 5 |
 | `pinch-in`, `pinch-out` | camera | ⌥ and two fingers apart, together | 5 |
-| `zoom-continuous` | hold | a slow pinch, held half-way, let go | 5 (not landed: unseen) |
+| `zoom-continuous` | follow | a slow pinch, held half-way, let go | 5 (not landed: unseen) |
 | `frame` | camera | ⌃⌥↩ | |
 | `dock-key` | structure | ⌃⌥⌘← on a floating window | |
 | `neighbour`, `back`, `out`, `in`, `desktop`, `desktop-back` | camera | ⌃⌥→, ⌃⌥[, ⌃⌥↑, ⌃⌥↓, ⌃⌥D, ⌃⌥[ | |
@@ -151,7 +162,7 @@ The scenes of the five moves, and `frame`, are filmed twice: in light mode on a 
 | `drag-alone` | bare | a drag that Arbor leaves alone (⌘ held): what macOS does by itself, to hold D1 against. Not counted | |
 | `metronome-…` | control | the camera's own square: tests the instruments, not counted | |
 
-The panels that S1 to S7 are asked of: the heads-up line, the drop preview, a tile, a seam, the focus ring, the peek's outline, the rectangle, the minimap, Go to…, the
+The panels that S1 to S6 are asked of: the heads-up line, the drop preview, a tile, a seam, the focus ring, the peek's outline, the rectangle, the minimap, Go to…, the
 shortcuts, the name field, the menu, the settings window, the coach, the setup check, the tab strip.
 
 ## The score
@@ -169,7 +180,9 @@ new table, in the same commit, so that a longer table is never mistaken for a wo
 ## The loop
 
 1. Film: `scripts/mac-shell/run.sh scripts/mac-shell/films.sh` on the trunk, or on a branch that claims to raise the score.
-2. Judge: `scripts/polish/judge.py score .mac-shell/films-<run>`; then every scene's sheet, by eye; verdicts into `collab/polish/eyes.json`.
+2. Judge: `scripts/polish/judge.py score .mac-shell/films-<run>`; then every scene's sheets (`judge.py sheets`), by reviewers with eyes who have built none of it. They give E1 to E4,
+   and they confirm or refute **every miss the ruler claims**: the ruler follows flat rectangles, and overlapping cards, a preview's tint or a title bar in shadow fool it. A refuted miss
+   counts as unseen, not as passed, and the ruler is mended. Verdicts into `collab/polish/eyes-run-<n>.json`, the report into `collab/polish/run-<n>.md`.
 3. Findings become small pull requests, each naming the cell it turns green and the frame that showed the fault.
 4. Film again. The pull request lands when the cell is green and no other cell has turned.
 
