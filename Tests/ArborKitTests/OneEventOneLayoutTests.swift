@@ -12,11 +12,12 @@ import Testing
   let display: CGRect
 
   /// Every frame each window had while `body` ran and what it scheduled was done, beginning with the one it had before.
-  init(_ h: Harness, during body: () -> Void) {
+  /// `atOnce`: only what is due without any time passing.
+  init(_ h: Harness, atOnce: Bool = false, during body: () -> Void) {
     display = h.system.displayList[0].frame
     let mark = h.system.moveLog.count
     body()
-    for _ in 0..<3 { h.scheduler.runPending() }
+    for _ in 0..<3 { if atOnce { h.scheduler.advance(by: 0) } else { h.scheduler.runPending() } }
     for window in Set(h.system.moveLog[mark...].map(\.window)) { roads[window] = h.system.road(of: window, since: mark) }
   }
 
@@ -462,6 +463,32 @@ private let oneLayout: Set<String> = [
     expectSound(h)
   }
 
+  /// Safari beside a tab group of Notes and Mail. Notes, the tab in front, goes away, so Mail is in front when it comes back.
+  private func aTabThatWentAway() -> (Harness, safari: WindowID, notes: WindowID, mail: WindowID) {
+    let h = Harness()
+    let safari = h.system.open(app: "Safari", pid: 1000)
+    let notes = h.system.open(app: "Notes", pid: 1001)
+    let mail = h.system.open(app: "Mail", pid: 1002)
+    h.start()
+    runOK(h, "layout Safari | [Notes Mail]")
+    h.system.userFocus(notes)
+    h.scheduler.advance(by: 1)
+    h.system.setMinimized(notes, true)
+    h.scheduler.advance(by: 1)
+    return (h, safari, notes, mail)
+  }
+
+  /// On paper a tab that is not in front has no place, in any view. It needs no other view: it needs to be in front.
+  @Test func aTabComesBackToTheFrontOfItsGroupAndTheViewStays() {
+    let (h, safari, notes, _) = aTabThatWentAway()
+    let camera = h.workspace.camera
+    h.system.setMinimized(notes, false)
+    h.scheduler.advance(by: 1)
+    #expect(h.workspace.camera == camera && h.system.focused == notes)
+    #expect(h.layout!.windowFrames[notes] != nil && h.layout!.windowFrames[safari] != nil, "\(h.ascii())")
+    expectSound(h)
+  }
+
   /// Where it shows in the view there is, the view stays.
   @Test func aWindowThatHasRoomComesBackToItsSlot() {
     let (h, w) = tilingScenario(["A", "B"], ["dock $0 left", "dock $1 right"])
@@ -695,4 +722,212 @@ private let oneLayout: Set<String> = [
     restore 103
     """,
   ]) func theWalksOwnScripts(_ script: String) { expectOneLayoutAtTheEnd(of: script) }
+}
+
+/// A window that is in the Dock, or hidden with its app, is fetched by name: Go to…, `reveal`, a row of the menu. On a Mac the report that
+/// it is back comes a moment after it was asked. The view waits for the window: what is on screen stays while macOS flies it
+/// out, and at the report there is one layout, for the view that shows it. (The view used to go at once, to the place of a window
+/// that was not there yet: its neighbour filled the screen for the length of the flight, and was sent away again.)
+@Suite @MainActor struct TheViewWaitsForTheWindowTests {
+  enum Away: CaseIterable { case minimized, hidden }
+
+  /// Safari on the left, Notes above Mail on the right. Mail goes away, and the view is framed on Safari.
+  private func framedElsewhere(_ away: Away) -> (Harness, safari: WindowID, notes: WindowID, mail: WindowID) {
+    let h = Harness()
+    let safari = h.system.open(app: "Safari", pid: 1000)
+    let notes = h.system.open(app: "Notes", pid: 1001)
+    let mail = h.system.open(app: "Mail", pid: 1002)
+    h.start()
+    runOK(h, "dock \(safari.rawValue) left")
+    runOK(h, "dock \(notes.rawValue) right")
+    runOK(h, "dock \(mail.rawValue) beside \(notes.rawValue) bottom")
+    h.system.userFocus(safari)
+    switch away {
+    case .minimized: h.system.setMinimized(mail, true)
+    case .hidden: h.system.setHidden(pid: 1002, true)
+    }
+    h.scheduler.advance(by: 1)
+    runOK(h, "zoom \(safari.rawValue)")
+    h.scheduler.advance(by: 1)
+    return (h, safari, notes, mail)
+  }
+
+  private func expectMailAlone(_ h: Harness, _ mail: WindowID, sourceLocation: SourceLocation = #_sourceLocation) {
+    #expect(h.layout!.windowFrames.keys.sorted() == [mail], "\(h.layout!.windowFrames)", sourceLocation: sourceLocation)
+    #expect(h.system.focused == mail, sourceLocation: sourceLocation)
+    expectSound(h, sourceLocation: sourceLocation)
+  }
+
+  @Test(arguments: Away.allCases) func whatIsOnScreenStaysUntilItIsBack(_ away: Away) {
+    let (h, safari, notes, mail) = framedElsewhere(away)
+    let camera = h.workspace.camera
+    h.system.restoresLate = true
+    let flight = Roads(h, atOnce: true) { runOK(h, "reveal \(mail.rawValue)") }
+    #expect(flight.roads.isEmpty, "nothing moves while it is on its way: \(flight.roads)")
+    #expect(h.workspace.camera == camera && h.system.isVisible(safari))
+    let landing = Roads(h) {
+      h.system.finishRestoring()
+      h.system.reportFocus()
+    }
+    landing.expectOneRoadEach()
+    #expect(landing.roads[notes] == nil, "nobody asked for it: \(landing.roads[notes]?.map(\.brief) ?? [])")
+    expectMailAlone(h, mail)
+  }
+
+  /// The stand-ins' own order: the report comes while the command is still at work.
+  @Test(arguments: Away.allCases) func theReportMayComeAtOnce(_ away: Away) {
+    let (h, _, notes, mail) = framedElsewhere(away)
+    let roads = Roads(h) { runOK(h, "reveal \(mail.rawValue)") }
+    roads.expectOneRoadEach()
+    #expect(roads.roads[mail].map(FakeWindowSystem.changesOfPlace) == 1, "\(roads.roads[mail]?.map(\.brief) ?? [])")
+    #expect(roads.roads[notes] == nil, "nobody asked for it: \(roads.roads[notes]?.map(\.brief) ?? [])")
+    expectMailAlone(h, mail)
+  }
+
+  /// It was asked for by name, so it comes into view whether or not it gets the keyboard: macOS does not always give it.
+  @Test(arguments: Away.allCases) func itNeedNotHaveTheKeyboard(_ away: Away) {
+    let (h, safari, _, mail) = framedElsewhere(away)
+    h.system.restoresLate = true
+    runOK(h, "reveal \(mail.rawValue)")
+    // Nobody reports the keyboard anywhere.
+    h.system.finishRestoring()
+    h.scheduler.advance(by: 0)
+    #expect(h.layout!.windowFrames[mail] != nil && h.layout!.windowFrames[safari] == nil, "\(h.ascii())")
+  }
+
+  /// Whoever turns to another app meanwhile keeps what they turned to: a click, ⌘Tab. The window lands where it belongs, out of view.
+  @Test(arguments: Away.allCases, [true, false]) func whoeverTurnsElsewhereMeanwhileKeepsIt(_ away: Away, itLands: Bool) {
+    let (h, safari, _, mail) = framedElsewhere(away)
+    let camera = h.workspace.camera
+    h.system.restoresLate = true
+    runOK(h, "reveal \(mail.rawValue)")
+    h.scheduler.advance(by: 0.1)
+    h.system.userFocus(safari)
+    h.scheduler.advance(by: 0.1)
+    if itLands { h.system.finishRestoring() }
+    h.scheduler.advance(by: 2)
+    #expect(h.workspace.camera == camera && h.system.focused == safari && h.system.isVisible(safari), "\(h.ascii())")
+  }
+
+  /// A view that was asked for by name has not "followed the keyboard": nothing takes it back when the window that had the keyboard goes.
+  @Test func whatWasAskedForIsNotTakenBack() {
+    let (h, _, _, mail) = framedElsewhere(.hidden)
+    runOK(h, "reveal \(mail.rawValue)")
+    h.scheduler.advance(by: 0.2)
+    h.system.setHidden(pid: 1000, true)
+    h.scheduler.advance(by: 1)
+    #expect(h.workspace.camera == h.workspace.tree.leaf(containing: mail) && h.layout!.windowFrames[mail] != nil, "\(h.ascii())")
+  }
+
+  /// The last one asked for is the one that is shown.
+  @Test func ofTwoThatWereAskedBackTheLastIsShown() {
+    let (h, _, notes, mail) = framedElsewhere(.minimized)
+    runOK(h, "show-all")
+    h.system.setMinimized(notes, true)
+    h.scheduler.advance(by: 1)
+    runOK(h, "zoom 101")
+    h.system.restoresLate = true
+    runOK(h, "reveal \(mail.rawValue)")
+    h.scheduler.advance(by: 0.1)
+    runOK(h, "reveal \(notes.rawValue)")
+    h.system.finishRestoring()
+    h.system.reportFocus()
+    h.scheduler.advance(by: 2)
+    #expect(h.layout!.windowFrames[notes] != nil && h.system.focused == notes, "\(h.ascii())")
+    expectSound(h)
+  }
+
+  /// Nothing is left waiting when Arbor stops.
+  @Test(arguments: ["pause", "quit"]) func nothingWaitsOnceArborStops(_ stop: String) {
+    let (h, _, _, mail) = framedElsewhere(.minimized)
+    h.system.restoresLate = true
+    runOK(h, "reveal \(mail.rawValue)")
+    #expect(h.scheduler.pendingKeys.contains("focus-asked-back"))
+    // As the app does at Quit.
+    if stop == "quit" { h.controller.shutdown() } else { runOK(h, stop) }
+    #expect(!h.scheduler.pendingKeys.contains("focus-asked-back"))
+  }
+
+  /// The answer says what is so.
+  @Test func theAnswerDoesNotClaimWhatHasNotHappened() {
+    let (h, _, _, mail) = framedElsewhere(.minimized)
+    h.system.restoresLate = true
+    #expect(runOK(h, "reveal \(mail.rawValue)").message == "\(mail) is on its way back, and comes into view when it is there")
+    h.system.finishRestoring()
+    h.system.restoresLate = false
+    h.scheduler.advance(by: 1)
+    #expect(runOK(h, "reveal \(mail.rawValue)").message == "\(mail) is in view and focused")
+  }
+
+  /// A tab that is not in front, fetched by name, in a Mac's order.
+  @Test func aTabFetchedByName() {
+    let h = Harness()
+    let safari = h.system.open(app: "Safari", pid: 1000)
+    let notes = h.system.open(app: "Notes", pid: 1001)
+    _ = h.system.open(app: "Mail", pid: 1002)
+    h.start()
+    runOK(h, "layout Safari | [Notes Mail]")
+    h.system.userFocus(notes)
+    h.scheduler.advance(by: 1)
+    h.system.setMinimized(notes, true)
+    h.scheduler.advance(by: 1)
+    h.system.restoresLate = true
+    runOK(h, "reveal \(notes.rawValue)")
+    h.system.reportFocus()
+    h.system.finishRestoring()
+    h.system.reportFocus()
+    h.scheduler.advance(by: 2)
+    #expect(h.system.isVisible(notes) && h.system.focused == notes && h.system.isVisible(safari), "\(h.ascii())")
+    expectSound(h)
+  }
+
+  /// An app that hangs reports nothing. The view goes all the same, as it used to go at once.
+  @Test(arguments: Away.allCases) func withNoReportTheViewGoesAfterAMoment(_ away: Away) {
+    let (h, _, _, mail) = framedElsewhere(away)
+    let camera = h.workspace.camera
+    h.system.restoresLate = true
+    runOK(h, "reveal \(mail.rawValue)")
+    #expect(h.workspace.camera == camera)
+    h.scheduler.advance(by: Controller.timeToLand + 0.01)
+    #expect(h.workspace.camera == h.workspace.tree.leaf(containing: mail))
+    h.system.finishRestoring()
+    h.system.reportFocus()
+    h.scheduler.runPending()
+    expectMailAlone(h, mail)
+  }
+
+  /// Whoever moves the view meanwhile has said where it goes: at the report, and when none comes.
+  @Test(arguments: [true, false]) func aViewMovedMeanwhileIsNotTakenAway(itLands: Bool) {
+    let (h, _, notes, mail) = framedElsewhere(.minimized)
+    h.system.restoresLate = true
+    runOK(h, "reveal \(mail.rawValue)")
+    h.scheduler.advance(by: 0.1)
+    runOK(h, "zoom \(notes.rawValue)")
+    let camera = h.workspace.camera
+    h.scheduler.advance(by: 0.1)
+    if itLands { h.system.finishRestoring() }
+    h.scheduler.advance(by: 2)
+    #expect(h.workspace.camera == camera && h.system.isVisible(notes), "\(h.ascii())")
+  }
+
+  /// It closes on its way.
+  @Test func closedOnItsWay() {
+    let (h, safari, _, mail) = framedElsewhere(.minimized)
+    let camera = h.workspace.camera
+    h.system.restoresLate = true
+    runOK(h, "reveal \(mail.rawValue)")
+    h.system.close(mail)
+    h.scheduler.advance(by: 2)
+    #expect(h.workspace.camera == camera && h.system.isVisible(safari) && !h.scheduler.pendingKeys.contains("focus-asked-back"))
+    expectSound(h)
+  }
+
+  /// A window that is there is shown at once, as ever.
+  @Test func aWindowThatIsThereIsShownAtOnce() {
+    let (h, w) = tilingScenario(["A", "B"], ["dock $0 left", "dock $1 right", "zoom $0"])
+    h.system.restoresLate = true
+    runOK(h, "reveal \(w[1].rawValue)")
+    #expect(h.layout!.windowFrames[w[1]] != nil && h.system.focused == w[1])
+    expectSound(h)
+  }
 }

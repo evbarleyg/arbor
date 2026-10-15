@@ -45,6 +45,7 @@ extension Controller: WindowSystemEvents {
     parkedAgain[id] = nil
     titleBars[id] = nil
     landsAt[id] = nil
+    if askedBack?.window == id { stopAwaitingAReturn() }
     sharedItsSpace[id] = nil
     metAhead[id] = nil
     leftInFullScreen.notes[id] = nil
@@ -233,6 +234,7 @@ extension Controller: WindowSystemEvents {
 
   /// `saysMacOS` is false where Arbor was not looking when the keyboard went there and has found it there itself.
   func keyboardIs(in id: WindowID, saysMacOS: Bool) {
+    if saysMacOS { whoeverWasAskedBackIsNoLongerAwaited(ifTheKeyboardIsIn: id) }
     endFocusRequest(unlessFor: id)
     closeFinderBecauseTheUserLeft(for: id)
     namePromptNoticesFocus(on: id)

@@ -74,8 +74,9 @@ extension Controller {
     returningWindows.removeAll()
     // macOS has just shown the switch in its own way.
     // One of the windows that came back may have been given the keyboard before it was reported.
-    if let focused = system.focusedWindow(), returned.contains(focused) {
-      relayout(displayID, motion: .instant, forTheReturnOf: focused)
+    // Or have been asked back by name.
+    if let back = [askedBack?.window, system.focusedWindow()].compactMap({ $0 }).first(where: returned.contains) {
+      relayout(displayID, motion: .instant, forTheReturnOf: back)
     } else {
       relayout(displayID, reason: .structure, motion: .instant)
     }

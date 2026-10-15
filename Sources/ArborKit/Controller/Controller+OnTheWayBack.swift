@@ -10,7 +10,7 @@ import Foundation
 /// So for a moment nothing is concluded from what it answers, and it is asked once more when the moment is over.
 extension Controller {
   /// Longer than the flight out of the Dock takes.
-  static let timeToLand: TimeInterval = 0.5
+  public static let timeToLand: TimeInterval = 0.5
   /// Longer than the way back from full screen takes, which is reported as over when it begins.
   static let timeToLandFromFullScreen: TimeInterval = 1.2
 

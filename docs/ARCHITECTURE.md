@@ -1305,10 +1305,11 @@ no focus to restore when it closes.
   its text form; `finderChose` reads the menu again, finds the row by that text, and runs its command through `perform(_:from: .shortcut)` unless the menu greys it out by now. Reading and running are about the palette's display
   (`on(_:_:)`, Controller+Lead.swift), not the pointer's. **A new row in the menu needs nothing here.**
 - Order: `focusHistory`, with the focused window after the others, then layout order, then saved views. The query's ties keep that order.
-- `reveal` asks the window system to unhide and un-minimise, calls `bringIntoView` (tab, camera) at once and focuses. It does not leave the camera to the focus
-  report (Controller+Focus.swift), so it does what it says whether or not the window gets the keyboard. macOS confirms those requests late, so for
-  this one caller (`onItsWayBack`) `reveal(_:leaf:on:)` picks the view as if the window were present already; the window takes its place when
-  `windowChanged` says it is back, and the reports then find nothing left to do.
+- `reveal` asks the window system to unhide and un-minimise, and focuses. A window that is there it brings into view at once (`bringIntoView`: tab, camera). It does
+  not leave the camera to the focus report (Controller+Focus.swift), so it does what it says whether or not the window gets the keyboard. macOS confirms
+  those requests late (28 to 73 ms on a hosted Mac), and **the view waits for the window** (`awaitTheReturn`, Controller+OneLayout.swift): what is on screen stays, and
+  `windowChanged`'s word that it is back brings one layout, for the view that shows it. Whoever moves a view or turns to another app meanwhile
+  keeps that. With no word within `timeToLand` the view goes all the same, picked as if the window were present (`onItsWayBack`).
 - The palette opens on the display commands act on (`commandDisplayID()`, F56). The pointer is never moved.
 - **It always closes.** The panel closes itself when it loses the keyboard (`resignKey`), on a click or a key that goes to another app, on a click
   on one of Arbor's own panels, when an app comes forward, the Space changes, the screen sleeps. The controller closes it as well, headlessly, whenever it
