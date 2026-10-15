@@ -62,6 +62,11 @@ class Film:
         times = [time for time, _, place in self.frames if not inside_the_strip(place)]
         return [(a - self.cause, b - a) for a, b in zip(times, times[1:]) if 0 <= a - self.cause <= 350]
 
+    def act(self):
+        """Of what is not the strip: when the display first and last changed after the cause (up to 1.5 s), and in how many frames."""
+        times = [time - self.cause for time, _, place in self.frames if not inside_the_strip(place) and 0 < time - self.cause <= UNTIL]
+        return (times[0], times[-1], len(times)) if times else (0, 0, 0)
+
     def before(self):
         """The longest wait that ends before the cause: what this Mac does with nothing being done, in the same film."""
         times = [time for time, _, _ in self.frames]
@@ -116,7 +121,7 @@ def table(run):
         others = ", ".join(f"{long} from {at:+d}" for at, long in film.waits(100) if (at, long) != (start, length))
         shown = sum(1 for time, _, _ in film.frames if 0 <= time - film.cause <= UNTIL)
         burnt = " ".join(f"{name} {ms}" for name, ms in sorted(film.burnt().items()))
-        print(f"{length:5d} ms from {start:+5d} | {elsewhere[1]:5d} from {elsewhere[0]:+5d}  {film.name:34s} {shown:3d} frames in 1.5 s ({film.how}); {film.before()} before" + (f"; also {others}" if others else "") + (f"; cpu ms/s: {burnt}" if burnt else ""))
+        print(f"{length:5d} ms from {start:+5d} | {elsewhere[1]:5d} from {elsewhere[0]:+5d}  {film.name:34s} {shown:3d} frames in 1.5 s ({film.how}); the act {film.act()[0]:+d} to {film.act()[1]:+d} in {film.act()[2]} frames; {film.before()} before" + (f"; also {others}" if others else "") + (f"; cpu ms/s: {burnt}" if burnt else ""))
         groups.setdefault(re.sub(r"-\d+(?=-|$)", "", film.name, count=1), []).append((length, elsewhere[1]))
     print()
     print("group: the display's longest standstill in each film | the longest wait of what is not the strip, that begins in the first 0.35 s")
