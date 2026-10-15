@@ -57,6 +57,8 @@
 #                                 waits keeps its place in GitHub's line, one that is half done its minutes.
 #              MAC_SHELL_ASK      seconds until GitHub is first asked whether the run has ended without output (default 180); twice as long each time after
 #              MAC_SHELL_AGE      looks at a busy queue after which a run of priority 2 goes whatever waits (default 8; priority 3 twice as many)
+#              MAC_SHELL_FIND     seconds to look for the run after GitHub has taken it (default 180)
+#              MAC_SHELL_HELD     looks at a busy queue that count as held back already: what a run that ended with 95 says, for when it is started again
 #              MAC_SHELL_LOOK     seconds a look at the queue may take before it is left behind (default 60)
 #              ARBOR_MAC_RULES    files, with colons between them, in which whoever coordinates writes what holds for everybody. A run that has held back and
 #                                 finds one of them changed does not start: it prints what is new and ends with 95. What was true when it began to wait may not be any more.
@@ -220,7 +222,8 @@ fi
 # if that meant "go", everybody who was holding back would start at once, at the worst moment. Priority 1 alone is not held up by what cannot be
 # found out, and does not pay for finding out: it reads what somebody else saw of late, and goes if there is nothing to read.
 start=$(date +%s)
-told="" together="" yielded=0 aged=0
+told="" together="" yielded=0 aged=${MAC_SHELL_HELD:-0}
+case "$aged" in "" | *[!0-9]*) fail "MAC_SHELL_HELD is a number of looks, not '$aged'" ;; esac
 # What the rules said when the waiting began.
 rules=$(mktemp -d) || fail "no room for a temporary folder"
 trap 'rm -rf "$rules"' EXIT
@@ -301,7 +304,8 @@ if [ -n "$told" ]; then
   new=$(changed_rules)
   if [ -n "$new" ]; then
     echo "$new"
-    fail "not started: the rules have changed while this run held back. Read what is new, then start it again" 95
+    # Started again it would begin to wait anew, and where the rules are written to often it would never have waited long enough.
+    fail "not started: the rules have changed while this run held back. Read what is new, then start it again, with MAC_SHELL_HELD=$aged before it: the looks it has held back count" 95
   fi
 fi
 
@@ -317,8 +321,18 @@ newest=$(api "$runs" --jq '.workflow_runs[0].id // 0') || fail "cannot list the 
 other=()
 [ "$configuration" = debug ] || other=(-f "inputs[configuration]=$configuration")
 [ "$seconds" -eq 1200 ] || other+=(-f "inputs[limit]=$seconds")
+# `script` is for the run's title alone: what runs is in the plan. GitHub cuts a long title, and at its end stand the branch, by which the queue knows whose run it
+# is, and the tag, by which this script knows its own: with twelve paths in it the run was started, never found, and sent again. So: one script by its path, as ever;
+# several by their names; of more than four the first three and how many more.
+if [ ${#scripts[@]} -eq 1 ]; then
+  title=$script
+else
+  title=$(for each in "${scripts[@]:0:$((${#scripts[@]} > 4 ? 3 : 4))}"; do basename "$each"; done | tr '\n' ' ' | sed 's/ $//')
+  [ ${#scripts[@]} -le 4 ] || title="$title and $((${#scripts[@]} - 3)) more"
+fi
+title=$(printf '%s' "$title" | cut -c 1-100)
 api -X POST "repos/$repo/actions/workflows/mac-shell.yml/dispatches" \
-  -f ref="$home" -f "inputs[ref]=$ref" -f "inputs[script]=${scripts[*]}" -f "inputs[tag]=$tag" ${other[@]+"${other[@]}"} \
+  -f ref="$home" -f "inputs[ref]=$ref" -f "inputs[script]=$title" -f "inputs[tag]=$tag" ${other[@]+"${other[@]}"} \
   -f "inputs[at-once]=${at_once:-5}" -f "inputs[runner]=$kind" -F "inputs[bare]=$bare" -f "inputs[unchecked]=$(printf '%s' "$unchecked" | tr -c 'A-Za-z0-9 .,:_/-' ' ' | cut -c 1-80)" \
   -f "inputs[macs]=$plan" >/dev/null \
   || fail "could not start the workflow of $home for $ref"
@@ -329,7 +343,9 @@ look 20 python3 scripts/mac-queue.py --repo "$repo" --started "$macs" --for "$re
 start=$(date +%s)
 run=""
 while [ -z "$run" ]; do
-  [ $(($(date +%s) - start)) -gt 180 ] && fail "the run did not appear within 3 minutes" 98
+  [ $(($(date +%s) - start)) -gt "${MAC_SHELL_FIND:-180}" ] && fail "the run did not appear within ${MAC_SHELL_FIND:-180} s. GitHub took it, so IT MAY STAND IN THE LINE ALL THE SAME: look before you send it again.
+  what stands there:  gh api '$runs' --jq '.workflow_runs[] | \"\(.id) \(.status) \(.created_at) \(.display_title)\"' | head
+  its output will be: on mac-shell-out/$tag$([ "$macs" -eq 1 ] || echo ".1 to .$macs")" 98
   sleep 6
   run=$(api "$runs" --jq ".workflow_runs[] | select(.id > $newest and (.display_title | endswith(\"[$tag]\"))) | .id" \
     2>/dev/null | tail -n 1)
