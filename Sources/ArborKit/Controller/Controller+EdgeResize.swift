@@ -69,7 +69,16 @@ extension Controller {
       abs(frame.position(of: edge) - slot.position(of: edge)) > edgeTolerance
         && abs(frame.position(of: edge) - before.position(of: edge)) > edgeTolerance
     }
-    guard !moved.isEmpty else { return }
+    guard !moved.isEmpty else {
+      // Too little to tell from an app's rounding which gap was meant, so none follows. But this is the end of a resize: it was a hand, and
+      // the window is not a few points out of its slot because its app wants it so. It goes back, in one move.
+      // (A point is in place to every layout: boundaries are rounded to whole points.)
+      if !frame.approximatelyEquals(before, tolerance: 1) {
+        scheduler.cancel("enforce-\(display.rawValue)")
+        byHand { relayout(display, reason: .enforce) }
+      }
+      return
+    }
 
     // Outer seams first: moving a seam near the root rescales the splits under
     // it, so each edge is measured again, in a fresh layout, before its seam moves.

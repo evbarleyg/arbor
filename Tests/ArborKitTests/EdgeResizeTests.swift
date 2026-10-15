@@ -256,15 +256,47 @@ import Testing
 
   // MARK: Details
 
+  /// No hand is at its edges: the app has rounded its size, and may.
   @Test func smallChangesAreTheAppRoundingAndAreAccepted() {
     let (h, a, _, _) = columns()
     let slotA = h.frame(a)!
     let tree = h.workspace.tree
     h.system.clearFrameLog()
-    h.system.userResize(a, to: dragging(slotA, .right, by: 3))
+    h.system.userMove(a, to: dragging(slotA, .right, by: 3))
+    h.scheduler.advance(by: 2)
     #expect(h.system.frameLog.isEmpty)
     #expect(h.workspace.tree == tree)
     #expect(noEnforcePending(h))
+  }
+
+  /// Between "a resize began" and "it ended" Arbor knows that it was a hand. Too little to tell which gap was meant, so none follows; but the
+  /// window did not stay a few points out of its slot because its app wanted it so. It goes back, in one move, and nothing else moves.
+  /// (From two points: one point is in place to every layout.)
+  @Test(arguments: [Edge.left, .right, .top, .bottom], [CGFloat(-4), -3, -2, 2, 3, 4])
+  func anEdgePulledByAHandTooLittleToMoveAGapIsPutBack(edge: Edge, points: CGFloat) {
+    let (h, a, _, _) = columns()
+    let slotA = h.frame(a)!
+    let tree = h.workspace.tree
+    h.system.clearFrameLog()
+    h.system.userResize(a, to: dragging(slotA, edge, by: points))
+    h.scheduler.advance(by: 2)
+    #expect(h.frame(a) == slotA)
+    #expect(h.system.frameLog.map(\.window) == [a], "one move, of that window: \(h.system.frameLog)")
+    #expect(h.workspace.tree == tree, "no gap has moved")
+    #expect(noEnforcePending(h))
+    #expect(!h.run("undo").message.contains("resize"), "nothing was resized, so there is nothing of the kind to undo")
+    expectWindowsMatchLayout(h)
+  }
+
+  /// A terminal sits some points inside its slot, on its grid of cells. A hand that lets go where it took hold has changed nothing.
+  @Test func aHandThatChangesNothingMovesNothing() {
+    let (h, a, _, _) = columns { h, a, _, _ in h.system.setMaximumSize(a, CGSize(width: 461, height: 2000)) }
+    let sitting = h.frame(a)!
+    #expect(sitting.width == 461)
+    h.system.clearFrameLog()
+    h.system.userResize(a, to: sitting)
+    h.scheduler.advance(by: 2)
+    #expect(h.system.frameLog.isEmpty, "\(h.system.frameLog)")
   }
 
   @Test func anEdgeTheAppKeepsInsideItsSlotDoesNotCountAsMoved() {
