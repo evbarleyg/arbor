@@ -683,6 +683,8 @@ public final class TraceReplayer {
   private func pass(_ entry: TraceEntry) {
     switch entry.line {
     case .setFrame(let id, _, let result?, _): recordedFrames[id] = result
+    // Arbor no longer asks here. The windows moved all the same.
+    case .allWindows(let recorded): if !consumed[current] { hear(ofAll: recorded) }
     case .cursorLocation(let point): fake.cursor = point
     case .isMouseButtonDown(let down): fake.mouseDown = down
     case .focusedWindow(let id): if !isUnasked(id) { fake.focused = id }
@@ -803,6 +805,24 @@ public final class TraceReplayer {
     fake.focus(id)
     // The line is written before the call is made, so what came from inside it stands after it.
     if let match { deliverNestedEvents(after: match) }
+  }
+
+  /// When displays change macOS moves windows without a notification for each, and Arbor reads every frame afresh. What it read then is the only sign
+  /// of those moves, so the world is brought up to it before the question is answered. As with an event: a window that lies where it already lay in the
+  /// recording stays where the replayed Arbor put it. A window no event has told of is not made up here.
+  fileprivate func allWindows() -> [WindowSnapshot] {
+    for index in unconsumedResponse() {
+      if case .allWindows(let recorded) = entries[index].line {
+        consumed[index] = true
+        hear(ofAll: recorded)
+        break
+      }
+    }
+    return fake.allWindows()
+  }
+
+  private func hear(ofAll recorded: [TraceWindow]) {
+    for window in recorded where fake.frame(of: window.id) != nil { install(translated(window)) }
   }
 
   fileprivate func focusedWindow() -> WindowID? {
@@ -1289,7 +1309,7 @@ private final class ReplayWindowSystem: WindowSystem {
 
   func start() { fake?.start() }
   func stop() { fake?.stop() }
-  func allWindows() -> [WindowSnapshot] { fake?.allWindows() ?? [] }
+  func allWindows() -> [WindowSnapshot] { replayer?.allWindows() ?? fake?.allWindows() ?? [] }
   func displays() -> [DisplaySnapshot] { replayer?.displays() ?? [] }
   func setFrame(_ frame: CGRect, of window: WindowID) -> CGRect? { replayer?.setFrame(frame, of: window) }
   func focus(_ window: WindowID) { replayer?.focus(window) }

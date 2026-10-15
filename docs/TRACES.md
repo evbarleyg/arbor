@@ -371,7 +371,8 @@ through the lines, moving the manual scheduler's clock to each line's time and d
    (Terminal: 681, 492 and 247 wide, a step of 7), and the model answers with the nearest point of the grid.
 
 Reads are answered by the recorded read after the same stimulus, else by what the trace last said about the pointer, the
-button and the focus.
+button and the focus. **`allWindows` is more than a read:** when displays change macOS moves windows without a notification for each, and what Arbor then read of every window is the only
+sign of it. The replayed world is brought up to that answer first, by the rule for echoes below.
 
 **Scheduled work** runs where the trace says it ran. Work the trace does not mention (Arbor has gained it since) runs
 when its time comes. Work waits for its line if that comes within five seconds of when it was due.

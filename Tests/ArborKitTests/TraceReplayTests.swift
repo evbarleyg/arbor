@@ -1130,6 +1130,31 @@ private let second = DisplaySnapshot(
     #expect(report.problems.first?.text.contains("if it is fixed, delete that line") == true)
   }
 
+  // MARK: What nobody reported
+
+  /// When a display goes, macOS moves windows without a notification for each, and Arbor reads every frame afresh. What it read is in the trace. A
+  /// replay that answered from the events alone had the window where it was before, and set frames the recording does not have.
+  @Test(arguments: TraceReplayer.Mode.allCases)
+  func aMoveThatNobodyReportedIsReplayedFromWhatArborReadOfEveryWindow(mode: TraceReplayer.Mode) {
+    let (trace, original) = record(
+      displays: [FakeWindowSystem.standardDisplay, second],
+      before: { h in
+        h.system.open(app: "Safari", frame: CGRect(x: 100, y: 100, width: 500, height: 400))
+        h.system.open(app: "Notes", frame: CGRect(x: 1600, y: 100, width: 500, height: 400))
+      }
+    ) { h in
+      // The second display goes, and macOS has shuffled the windows before Arbor hears of it: the one that was there, and one that was not.
+      h.system.moveSilently(WindowID(102), to: CGRect(x: 700, y: 200, width: 500, height: 400))
+      h.system.moveSilently(WindowID(101), to: CGRect(x: 300, y: 260, width: 500, height: 400))
+      h.system.setDisplays([FakeWindowSystem.standardDisplay])
+      h.scheduler.advance(by: 3)
+    }
+    #expect(trace.entries.contains { if case .allWindows = $0.line { true } else { false } }, "Arbor no longer reads every frame when displays change")
+    let replayer = TraceReplayer(trace, mode: mode)
+    #expect(replayer.run().problems == [])
+    expectSameOutcome(replayer, original)
+  }
+
   // MARK: What Arbor did on the way
 
   /// Safari is docked left, then Notes right, which makes Safari narrower; then the view goes to Notes and back.
