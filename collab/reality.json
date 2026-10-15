@@ -3267,26 +3267,43 @@
    "id": "a-title-bar-never-goes-under-the-menu-bar",
    "kind": "geometry",
    "layer": "at the seam",
-   "expected": "A window that is dragged, opened or moved goes wherever the arithmetic puts it. The fake stops a window at the bottom only.",
-   "happened": "The window server does not let a title bar be dragged under the menu bar, AppKit keeps a new window's title bar from hiding under it, and a window asked by `setFrame` to go to y -1 was pushed to y 31, under the menu bar's lower edge.",
-   "found": "Real-window runs on hosted Macs, whose frames the fake Mac was built to print.",
+   "expected": "A window that is dragged, opened or moved goes wherever the arithmetic puts it. The fake stopped a window at the bottom only; it now stops one in a hand, by both its roads, and one that opens while somebody listens, and not yet one that is asked. Arbor reckons alike: its parking places at a display's top corners lie under the menu bar, and `whereItStops` knows the lower stop only.",
+   "happened": "The window server does not let a title bar be dragged under the menu bar: in 71 recorded drags whose pointer went higher than the title bar could follow, of six real apps and of test windows, all with one display, no frame lay above the top of the visible frame. In 69 the window's top stopped exactly there and x went on following; let go there and not tiled it rested there (8 of 8). In two it hardly rose at all, from y 109 to 103 and from 35 not a point, with x following. AppKit keeps a new window's title bar from hiding under it: a test window whose app asked for y 20 opened at the top of the visible frame with its x and its size, 10 of 10 in two runs. A position asked for through Accessibility (`setFrame`) is held back alike: asked for y 0 and for y -50, a test window went to y 31 and kept its x and its size, with one AXMoved, 8 of 8 on one hosted Mac (the Dock at the bottom, at the left, hidden; beside a second display), and none of 664 answers read back in that run lies above the visible top of its display; in an earlier run one asked to go to y -1 was pushed to y 31. Not recorded: a real app asked so, a display above the main one but for two drags that arrived there, the pointer coming down again with the button held, a window that lies higher being taken.",
+   "found": "Sampler logs, traces and a watcher of Accessibility notifications from hosted Macs, read by program; the asked positions in collab/evidence/how-far-a-window-grows/grow.jsonl, where the 8 of 8 and the 664 were counted again for this page.",
    "modelled": "partly",
    "knobs": [
+    "FakeWindowSystem.moveDrag",
+    "FakeWindowSystem.dragAndLoseTheRelease",
+    "FakeWindowSystem.whereItOpens",
+    "FakeWindowSystem.open",
+    "FakeWindowSystem.openUnlisted",
+    "Echoes.titleBarStaysReachable",
     "World.drag",
     "ChaosAction.carry"
    ],
-   "guards": [],
-   "copes": "Sources/ArborKit/Controller/Controller+Layout.swift never asks for such a place: slots lie inside the visible frame, and no window is left hanging over the top.",
+   "guards": [
+    "test: aDraggedWindowStopsAtTheMenuBarAndGoesOnSideways",
+    "test: thrownAtTheMenuBarItRestsBelowIt",
+    "test: aWindowThatLiesUnderTheMenuBarSlidesAlongIt",
+    "test: soItIsWhenTheReleaseIsLost",
+    "test: takingAWindowThatLiesHigherMovesNothing",
+    "test: aNewWindowOpensBelowTheMenuBar",
+    "test: aWindowThatIsSimplyThereLiesWhereItIsSaidTo"
+   ],
+   "copes": "open",
    "hurt": 3,
    "touches": [
     "pulled"
    ],
    "sources": [
+    "Sources/ArborTesting/FakeWindowSystem.swift",
+    "Tests/ArborKitTests/TitleBarAndMenuBarTests.swift",
     "Sources/arbor-fakemac/World+Input.swift",
     "Sources/arbor-fakemac/World+TestApps.swift",
     "Sources/ArborTesting/ChaosRunner.swift",
     "Sources/ArborKit/Controller/Controller+Layout.swift",
-    "collab/BACKLOG.md"
+    "collab/BACKLOG.md",
+    "collab/evidence/how-far-a-window-grows/grow.jsonl"
    ],
    "backlog": [
     "K1202"
@@ -4219,18 +4236,23 @@
    "kind": "missing-report",
    "layer": "test",
    "expected": "A trace holds everything that crossed the seam, so a replay delivers to the controller what the Mac delivered.",
-   "happened": "In the app `FrontmostAppWatcher` calls `Controller.applicationActivated` directly, past the recorder. No trace of a real Mac holds an app coming forward and no replay delivers one, while `FakeWindowSystem` sends it through the seam. A person sees nothing of it; whoever replays a trace about apps that keep their keys, or about a pause for an app, is misled.",
+   "happened": "In the app `FrontmostAppWatcher` called `Controller.applicationActivated` directly, past the recorder, and a press that an event tap had held back went in the same way. No trace of a real Mac held an app coming forward and no replay delivered one, while `FakeWindowSystem` sends it through the seam. A person saw nothing of it; whoever replayed a trace about apps that keep their keys, or about a pause for an app, was misled. What was recorded before the cure holds none to this day.",
    "found": "The first comparison, line by line, of one script played on a hosted Mac (six runs, macOS 26.6.2, one display of 1024×768) and in a rehearsal on Linux. The difference was seen; its cause is a reading.",
    "modelled": "cannot",
    "knobs": [],
-   "guards": [],
-   "copes": "open",
+   "guards": [
+    "test: nobodyHandsTheControllerAReportPastTheRecorder",
+    "trace: two-apps-by-clicks.expect"
+   ],
+   "copes": "Sources/ArborKit/Controller/Controller+Trace.swift: `Controller.reports` is where the app hands in what it hears of macOS by itself, through the recorder like every other report. The app and the fake Mac, which copies its wiring, go that way, and a test reads the sources and fails for whoever calls the controller past it. On a hosted Mac its author's check passed 25 of 25, as told; the first recording of a real Mac that holds an app coming forward is in the tree and is replayed.",
    "hurt": 4,
    "sources": [
     "Sources/ArborKit/App/ArborApp.swift",
     "Sources/ArborKit/App/FrontmostAppWatcher.swift",
     "Sources/ArborKit/Trace/RecordingWindowSystem.swift",
-    "docs/TRACES.md"
+    "docs/TRACES.md",
+    "Sources/ArborKit/Controller/Controller+Trace.swift",
+    "scripts/mac-shell/check-recording.sh"
    ]
   },
   {
@@ -7894,7 +7916,7 @@
    "kind": "second-actor",
    "layer": "at the seam",
    "expected": "A window dragged by its title bar stays under the pointer: the grip (pointer minus corner) is constant. On the fake Mac a window follows the pointer exactly, so after a posted drag its title bar is where the pointer's path put it.",
-   "happened": "macOS holds the window back for a while whenever one of its edges meets another window's, the Dock's or the screen's, and it does not catch up afterwards. The pointer that took hold 12 points below the top was 12 and 60 points off in one run, 100 and 112 in another; with live reflow 100 102 and 99 81. A window dragged while Arbor was paused ended at -28,311 where the pointer's path gave -159,388. For a script the point worked out for the title bar can then be off screen. Later runs give numbers. A window trailed a posted pointer by 40 to 130 points on one axis where its edges met others', in lumps of about 42, and by up to twenty elsewhere. With no Arbor running it was 49 points behind after a drag of 130 and never caught up. A window as tall as its slot stopped when its bottom edge met the Dock (y stayed at 54 while the pointer went on to 103), so it was let go higher up than the pointer's path says. In a resize, an edge flush with a neighbour's gave 9 of the 40 points asked for. `World.drag` keeps the window under the pointer and lets it hang off the screen. **At the Dock's line it is a wall, as far as 19 points went:** a synthetic pointer, Arbor not running, could not carry a window 319 high from y 364 to 404: it stopped at y 385, its foot at 704 of a visible 705, while x went on following and the pointer went 19 points further down alone, 5 of 5. By its keeper's reading of the 60 Hz samples y is 385 in every sample from then on, through half a second of movement and a second at rest. On the way up there is no slack: at the pointer's first step up the window rose, so the hold had changed for good (31 points below the top in place of 12). A window 200 high passed no line on the same way. A longer pull does take it past, by another session's probe of the same morning (one TextEdit window 673×439, every other app hidden, no Arbor, 1600×900 with the Dock's top at 822, straight drags along one axis; its reader's output was read for this page): **it is a hold of some 31 points of the pointer's way, not a wall.** Going outwards the window stands with its left edge at 0, its right edge at 1600, its foot at 821, the visible bottom less 1, and again at 900, the display's, while the pointer goes 32 to 34 points on; then it follows again and never catches up: short by 31, 31 and 63. A distance and not a time at 24 and at 45 points a second; at about 145 a second it was 31 at the right, 9 at the left and 10 + 9 downwards, and what decides there is not known. On the way back in: nothing. Against the menu bar it stopped for the 10 points it was pushed, too few to tell. Nobody has measured a hand. **And against the top, with no Arbor running** (a day's control on a hosted Mac of 1600×900, visible 31 to 822; another session's samples, read by the ledger's keeper, not in the tree): Calendar 1600×791 at y 109, its foot at the display's foot, pressed in the title bar and taken 121 points up and 616 to the left: x followed point for point and y stayed 109 in every sample with the button down, with 78 points of room above it. Preview 708×424 at y 35: x followed, y stayed 35 in 29 samples, 4 points of room not taken. One run, two apps, both drags slanting; a straight pull, a slower hand and a window with much room were not tried. **Two more that the hold of 31 points does not explain**, from walks with real apps, no Arbor, other windows in view, two controls alike (as told by their session): Notes 1000×660 stood with its foot at 821 while the pointer went 88 points further down, to the end of the drag; Mail 1120×630, lying at y 31, stayed there while the pointer went 64 points down, to the end of the drag. None of the four is played by any stand-in.",
+   "happened": "macOS holds the window back for a while whenever one of its edges meets another window's, the Dock's or the screen's, and it does not catch up afterwards. The pointer that took hold 12 points below the top was 12 and 60 points off in one run, 100 and 112 in another; with live reflow 100 102 and 99 81. A window dragged while Arbor was paused ended at -28,311 where the pointer's path gave -159,388. For a script the point worked out for the title bar can then be off screen. Later runs give numbers. A window trailed a posted pointer by 40 to 130 points on one axis where its edges met others', in lumps of about 42, and by up to twenty elsewhere. With no Arbor running it was 49 points behind after a drag of 130 and never caught up. A window as tall as its slot stopped when its bottom edge met the Dock (y stayed at 54 while the pointer went on to 103), so it was let go higher up than the pointer's path says. In a resize, an edge flush with a neighbour's gave 9 of the 40 points asked for. `World.drag` keeps the window under the pointer and lets it hang off the screen. **At the Dock's line it is a wall, as far as 19 points went:** a synthetic pointer, Arbor not running, could not carry a window 319 high from y 364 to 404: it stopped at y 385, its foot at 704 of a visible 705, while x went on following and the pointer went 19 points further down alone, 5 of 5. By its keeper's reading of the 60 Hz samples y is 385 in every sample from then on, through half a second of movement and a second at rest. On the way up there is no slack: at the pointer's first step up the window rose, so the hold had changed for good (31 points below the top in place of 12). A window 200 high passed no line on the same way. A longer pull does take it past, by another session's probe of the same morning (scripts/mac-shell/probe-held-at-the-edges.sh, which has a case of its own, macos-holds-a-slowly-dragged-window-at-the-edges-of-the-screen; one TextEdit window 673×439, every other app hidden, no Arbor, 1600×900 with the Dock's top at 822, straight drags along one axis; its reader's output was read for this page): **it is a hold of some 31 points of the pointer's way, not a wall.** Going outwards the window stands with its left edge at 0, its right edge at 1600, its foot at 821, the visible bottom less 1, and again at 900, the display's, while the pointer goes 32 to 34 points on; then it follows again and never catches up: short by 31, 31 and 63. A distance and not a time at 24 and at 45 points a second; at about 145 a second it was 31 at the right, 9 at the left and 10 + 9 downwards, and what decides there is not known. On the way back in: nothing. Against the menu bar it stopped for the 10 points it was pushed, too few to tell. Nobody has measured a hand. **And against the top, with no Arbor running** (a day's control on a hosted Mac of 1600×900, visible 31 to 822; another session's samples, read by the ledger's keeper, not in the tree): Calendar 1600×791 at y 109, its foot at the display's foot, pressed in the title bar and taken 121 points up and 616 to the left: x followed point for point and y stayed 109 in every sample with the button down, with 78 points of room above it. Preview 708×424 at y 35: x followed, y stayed 35 in 29 samples, 4 points of room not taken. One run, two apps, both drags slanting; a straight pull, a slower hand and a window with much room were not tried. **Two more that the hold of 31 points does not explain**, from walks with real apps, no Arbor, other windows in view, two controls alike (as told by their session): Notes 1000×660 stood with its foot at 821 while the pointer went 88 points further down, to the end of the drag; Mail 1120×630, lying at y 31, stayed there while the pointer went 64 points down, to the end of the drag. None of the four is played by any stand-in.",
    "found": "Three Mac shell runs of the drag polish script on a hosted Mac, with the window's frame traced during the drag, and a rehearsal on the fake Mac compared with the real run. Later a suite of real-window checks, a day with real apps and its control without Arbor, and a comparison of one script with its rehearsal, all on hosted Macs.",
    "modelled": "no",
    "knobs": [],
