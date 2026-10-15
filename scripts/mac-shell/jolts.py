@@ -16,11 +16,11 @@ whether a window was lost. The rules are the product's (docs/TESTING.md, "An ord
 Every finding also names its detector, by the names docs/VIABLE.md gives them: fought, moved-unasked, jolt, pulled, flash, stuck, slow, behind, focus, size-lost, input-held, lost; crash, busy, left-behind and told, which the
 script finds out and hands on; and script for whatever else it checked.
 
-  jolts.py report <samples> [--json <file>] [--control <findings of the run without Arbor>]
+  jolts.py report <samples> [--json <file>]
                                               the findings per rule, each with the step that shows it, then every step.
                                               Exit code 1 when a rule was broken, 0 when none was.
                                               A `witness.log` beside the samples (witness.swift log) is read with them: how late each press, release
-                                              and key reached the far end of the event taps. With --control, that run's lateness is the measure
+                                              and key reached the far end of the event taps
   jolts.py failing <samples>                  the numbers of the steps with a finding, one per line
   jolts.py sabotage <samples>                 for a run in which the script itself commits offences (`offence=`): does every detector report
                                               its own offence, that one alone, and nothing where none was committed? Exit code 1 if not
@@ -59,6 +59,9 @@ The script says what it is doing in marks (lib-day.sh writes them):
     floating=<ids>         for the report: these float, so no arrangement explains a move of theirs
     docked=<ids>           these are docked at the end
     offence=<detector>     the script committed this offence itself during the step, to see whether it is found (`jolts.py sabotage`)
+    round=<name>           no act either, but an instrument: a round of input (lib-walk.sh, input_round), `before` Arbor starts, when it has `started`, before the `last` Quit, `after` it.
+                           Every detector stays awake through it. How late its events arrived is what input-held goes by: started against before, last against after
+    performed=no           the act could not be performed (undone=<what>): it is not judged, and listed
     setup=1                no act at all: the script sets the scene (opens an app, lays windows out) before anything counts. Nothing is judged
     judge=no               nothing is judged: Arbor is not running yet, and apps place their own windows as they open
     settled=<quiet|restless>:<ms>
@@ -125,8 +128,17 @@ DROPPED = 24
 # The button is up for the apps this many microseconds after it came up, at the latest. It was 50,000, which a hosted Mac without Arbor broke once in 118 presses and
 # releases (57 ms): a limit like that measures the Mac. What is systematic and smaller is for the next number.
 HELD = 1000 * of_the_gate("input", "release_ms_max", otherwise=100)
-# Of a hundred events of one kind that are not Arbor's own, the latest but one reaches the apps at most this many microseconds later than in the same journey without Arbor.
-HELD_MORE = 1000 * of_the_gate("input", "p99_more_ms_max", otherwise=10)
+# **Who holds input back** is asked in rounds: the same presses, releases, keys, scrolls and a drag, played before Arbor starts, right after, before the last Quit and after it
+# (lib-walk.sh, input_round). Half of the events of a kind reach the apps at most this many microseconds later with Arbor than without, on the same Mac, minutes apart.
+HELD_MORE = 1000 * of_the_gate("input", "p50_more_ms_max", otherwise=10)
+# A press on a window of an app that is not in front is held by macOS itself, by 35 to 76 ms as it pleases.
+HELD_MORE_FORWARD = 1000 * of_the_gate("input", "forward_p50_more_ms_max", otherwise=100)
+# Fewer events of a kind than this on either side say nothing.
+EVENTS = of_the_gate("input", "events_per_kind_min", otherwise=10)
+KINDS_OF_INPUT = tuple(of_the_gate("input", "kinds", otherwise=["down", "forward", "up", "key", "dragged", "scroll"]))
+# Which round is judged against which. The measure brackets the journey, because a Mac drifts: one went from 41 to 76 ms within seven minutes.
+ROUNDS = (("started", "before"), ("last", "after"))
+NOT_PERFORMED = "not performed, so not judged"
 # A press brings its app forward within 70 ms, and a sample can be 100 ms late: which app was in front before a press is asked of this many milliseconds earlier.
 JUST_NOW = 150
 # With macOS's tiling on, this many points along the left, right and top edges of the screen are macOS's: Arbor offers nothing there.
@@ -518,6 +530,7 @@ def read(path):
     world.witnessed = hear(os.path.join(os.path.dirname(os.path.abspath(path)), "witness.log"), steps)
     for step in steps:
         judge(step, world, by_number, own)
+    hold_rounds_to_account(steps)
     return world, steps, account
 
 
@@ -539,35 +552,75 @@ def hear(path, steps):
     return True
 
 
-def lateness(steps):
-    """How late the events that are not Arbor's own reached the apps, over the steps that are judged: how many, the middle one, the latest but one in a hundred, the latest. All
-    together, for the report, and **by kind**, to be compared with: a figure over all events says more about what a journey is made of than about who held anything back.
-    A press on a window of an app that is not in front is held by macOS itself, which brings the app forward first: 17 to 137 ms with no Arbor running. Any other press takes 1 ms (one on an icon in the Dock too, which brings an app forward
-    afterwards), so they are two kinds: `forward` and `down`. In a run with Arbor only what arrived while a process of Arbor's was there counts: what comes after Quit is the Mac's."""
-    there = any(step.alive for step in steps)
+def arrivals(steps):
+    """{kind of event: how late each arrived, µs}, for the events that are not Arbor's own. A press on a window of an app that is not in front is held by macOS itself, which brings the
+    app forward first: 17 to 137 ms with no Arbor running. Any other press takes 1 ms (one on an icon in the Dock too, which brings an app forward afterwards). So they are two
+    kinds, `forward` and `down`."""
     kinds = {}
     for step in steps:
-        if step.wants.get("judge") == "no" or (there and not step.alive):
-            continue
         presses = iter(step.presses)
         for _, kind, delay, arbors in step.arrived:
             # The sampler and the witness both see every press, in the same order. Arbor's own replays are the witness's alone.
             if not arbors:
                 kinds.setdefault("forward" if kind == "down" and next(presses, False) else kind, []).append(delay)
+    return kinds
 
-    def account(late):
-        late = sorted(late)
-        return {"events": len(late), "p50_us": late[len(late) // 2], "p99_us": late[min(len(late) - 1, len(late) * 99 // 100)], "max_us": late[-1]}
 
-    if not kinds:
+def account_of(late):
+    late = sorted(late)
+    return {"events": len(late), "p50_us": late[len(late) // 2], "p99_us": late[min(len(late) - 1, len(late) * 99 // 100)], "max_us": late[-1]}
+
+
+def lateness(steps):
+    """How late input reached the apps. `rounds`: by round and kind, which is what is judged (`hold_rounds_to_account`). `judged`: the kinds of which this run says something; `silent`:
+    the others, and why. The rest is listed: over the acts that are judged, all together and by kind. **A figure over a journey says what the journey is made of as much as who held
+    anything back**, so nothing is concluded from it. In a run with Arbor only what arrived while a process of Arbor's was there is in it: what comes after Quit is the Mac's."""
+    there = any(step.alive for step in steps)
+    kinds = arrivals(step for step in steps if step.wants.get("judge") != "no" and not step.wants.get("round") and (step.alive or not there))
+    rounds = {}
+    for step in steps:
+        if step.wants.get("round"):
+            rounds[step.wants["round"]] = {kind: account_of(late) for kind, late in sorted(arrivals([step]).items())}
+    if not kinds and not rounds:
         return None
-    return dict(account([delay for late in kinds.values() for delay in late]), kinds={kind: account(late) for kind, late in sorted(kinds.items())})
+    told = account_of([delay for late in kinds.values() for delay in late]) if kinds else {}
+    judged_kinds, silent = verdicts(rounds)[1:]
+    return dict(told, kinds={kind: account_of(late) for kind, late in sorted(kinds.items())}, rounds=rounds, judged=judged_kinds, silent=silent)
 
 
-def held_more(heard, without):
-    """The kinds of event of which 99 in 100 reached the apps later than in the same journey without Arbor, by more than is allowed: (kind, with, without), in µs."""
-    return [(kind, told["p99_us"], without["kinds"][kind]["p99_us"]) for kind, told in sorted(heard["kinds"].items())
-            if kind in without.get("kinds", {}) and told["p99_us"] > without["kinds"][kind]["p99_us"] + HELD_MORE]
+def verdicts(rounds):
+    """What the rounds of a run say: ([(round, kind, with Arbor, without, µs)] where input is held back, the kinds that were judged, {kind: why it was not})."""
+    held, judged_kinds, silent = [], [], {}
+
+    def half(name, kind):
+        told = rounds.get(name, {}).get(kind)
+        return told["p50_us"] if told and told["events"] >= EVENTS else None
+
+    for kind in KINDS_OF_INPUT:
+        limit = HELD_MORE_FORWARD if kind == "forward" else HELD_MORE
+        before, after = half("before", kind), half("after", kind)
+        if before is None or after is None:
+            silent[kind] = f"fewer than {EVENTS} such events in a round without Arbor"
+            continue
+        # With no Arbor at either end: the Mac has moved, or something was left in the way of input. Nobody can tell which, nor what Arbor did between.
+        if abs(after - before) > limit:
+            silent[kind] = f"half of them within {before} µs before Arbor started and within {after} µs after it had quit: the Mac moved"
+            continue
+        pairs = [(name, half(name, kind), alone) for name, alone in ((name, half(measure, kind)) for name, measure in ROUNDS) if half(name, kind) is not None]
+        if not pairs:
+            silent[kind] = f"fewer than {EVENTS} such events in every round with Arbor"
+            continue
+        judged_kinds.append(kind)
+        held += [(name, kind, told, alone) for name, told, alone in pairs if told > alone + limit]
+    return held, judged_kinds, silent
+
+
+def hold_rounds_to_account(steps):
+    """A finding at each round with Arbor in which half of the events of a kind took longer than without, by more than is allowed."""
+    rounds = (lateness(steps) or {}).get("rounds") or {}
+    for name, kind, told, alone in verdicts(rounds)[0]:
+        step = next(step for step in steps if step.wants.get("round") == name)
+        step.find("6", "FAIL", None, f"half of the events of the kind {kind} reached the apps within {told} µs; in the round without Arbor beside it, within {alone} µs")
 
 
 def road(trace):
@@ -683,6 +736,8 @@ def adrift(held, pointer, tops=(), bottoms=()):
 def judge(step, world, by_number, own):
     wants = step.wants
     end = step.at_end
+    if wants.get("performed") == "no":
+        step.find("-", "ODD", None, f"the act was not performed: {wants.get('undone', 'something')} could not be done", None, None, NOT_PERFORMED)
     if wants.get("judge") == "no" and end:
         for window, trace in step.traces.items():
             moves, frames, took, _, _ = measure(trace)
@@ -833,7 +888,7 @@ def judge(step, world, by_number, own):
             step.find("6", "FAIL", None, f"the button came up, and the apps heard of it {delay // 1000} ms later")
 
     tops = [top for top in step.tops if top is not None]
-    if len(tops) > 3:
+    if len(tops) > 3 and not wants.get("round"):
         step.find("4", "ODD", None, "the window in front changed %d times: %s" % (len(tops) - 1, " → ".join(world.name(top) for top in tops[:8])))
 
     frames, order, areas = end["frames"], end["order"], end["visibles"]
@@ -946,10 +1001,15 @@ def report(world, steps, account):
     seconds = (steps[-1].ended or steps[-1].began) - steps[0].began if steps else 0
     out.append(f"{len(steps)} steps in {seconds // 1000} s, {count} of them judged, {broken} with a rule broken. The sampler: {account or 'it was cut off'}.")
     heard = lateness(steps)
-    if heard:
+    if heard and heard.get("events"):
         out.append(f"Input: {heard['events']} presses, releases, keys and scrolls reached the apps, half of them within {heard['p50_us']} µs, 99 in 100 within {heard['p99_us']} µs, the latest after {heard['max_us']} µs.")
-        out.append("By kind (events, half within, 99 in 100 within, µs): " + "; ".join(
+        out.append("By kind, listed only (events, half within, 99 in 100 within, µs): " + "; ".join(
             f"{kind} {told['events']}, {told['p50_us']}, {told['p99_us']}" for kind, told in heard["kinds"].items()) + ". `forward`: a press on a window of an app that was not in front.")
+    if heard:
+        for name, kinds in heard["rounds"].items():
+            out.append(f"The round of input `{name}` (events, half within µs): " + "; ".join(f"{kind} {told['events']}, {told['p50_us']}" for kind, told in kinds.items()) + ".")
+        if heard["rounds"]:
+            out.append("Judged: " + (", ".join(heard["judged"]) or "no kind") + "." + "".join(f" Not {kind}: {why}." for kind, why in heard["silent"].items()))
     out.append("")
     out.append("## Per rule")
     out.append("")
@@ -1020,6 +1080,7 @@ def as_json(world, steps, account):
                 "text": step.text,
                 "act": step.wants.get("act", ""),
                 "judged": judged(step),
+                "performed": step.wants.get("performed") != "no",
                 "began": step.began,
                 "milliseconds": (step.ended or step.began) - step.began,
                 "moved": {str(window): list(value) for window, value in step.moved.items()},
@@ -1445,6 +1506,10 @@ def self_test():
     _, scene, _ = play(start + ["2000 M begin 2 open", "3000 M end 2 setup=1", "4000 M begin 3 undone", "5000 M end 3 judge=no"])
     if [step["slug"] for step in as_json(World(), scene, "")["steps"]] != ["start", "undone"]:
         failures.append("setting the scene is no act, and an act that was not performed is one")
+    _, undone, _ = play(start + ["2000 M begin 2 drag", "2100 W 2 20 0 600 100 400 300 Two", "3000 M end 2 act=drag judge=no performed=no undone=drag_window"])
+    told = as_json(World(), undone, "")["steps"][1]
+    if (told["performed"], told["judged"], [(finding["level"], finding.get("explained")) for finding in told["findings"]]) != (False, False, [("ODD", NOT_PERFORMED)]) or fails(undone[1]):
+        failures.append(f"an act that was not performed is not judged, and listed: {told}")
     expect("what the script found", start + [
         "2000 M begin 2 idle", "2500 M finding 2 - FAIL Arbor believes otherwise", "3000 M end 2"], [("-", "FAIL")])
     expect("a step that never ended", start + ["2000 M begin 2 idle"], [("-", "FAIL")])
@@ -1498,7 +1563,7 @@ def self_test():
         got = [[finding["detector"] for finding in step.findings] for step in heard]
         if got != [[], [], ["input-held"]]:
             failures.append(f"a mouse-up that is held back for 210 ms is input-held, in its own step and no other: {got}")
-        if {key: value for key, value in lateness(heard).items() if key != "kinds"} != {"events": 5, "p50_us": 400, "p99_us": 210000, "max_us": 210000}:
+        if {key: lateness(heard)[key] for key in ("events", "p50_us", "p99_us", "max_us")} != {"events": 5, "p50_us": 400, "p99_us": 210000, "max_us": 210000}:
             failures.append(f"the lateness of five events: {lateness(heard)}")
         if {kind: told["p99_us"] for kind, told in lateness(heard)["kinds"].items()} != {"down": 300, "up": 210000, "key": 900}:
             failures.append(f"the lateness of five events by kind: {lateness(heard)['kinds']}")
@@ -1506,6 +1571,59 @@ def self_test():
             handle.write("4100 E down 300 none\n4350 E up 90000 none\n")
         if any(step.findings for step in read(samples)[1]):
             failures.append("a mouse-up that takes 90 ms is what a hosted Mac does by itself now and then")
+        with open(os.path.join(folder, "witness.log"), "w", encoding="utf-8") as handle:
+            handle.write("4100 E down 300 none\n4350 E up 210000 none\n")
+        def rounds(**late):
+            """A journey with its four rounds, a dozen events of each kind in each. `late`: round_kind=µs, where it is not 500 (forward: 40,000)."""
+            lines, seen, time = list(start), [], 10000
+            for number, name in enumerate(("before", "started", "last", "after"), 2):
+                lines += [f"{time - 500} M arbor {'gone' if name in ('before', 'after') else 99}", f"{time} M begin {number} input-{name}"]
+                for kind in KINDS_OF_INPUT:
+                    for n in range(late.get(f"{name}_{kind}_events", 12)):
+                        time += 400
+                        if kind in ("down", "forward"):
+                            # In turn on the two windows, or always on the one in front.
+                            on_two = kind == "forward" and n % 2 == 0
+                            lines += ([f"{time} Z {'2,1' if on_two else '1,2'}", f"{time} A {20 if on_two else 10} app"] if kind == "forward" else []) + [
+                                f"{time} B down {600 if on_two else 200} 150"]
+                            lines += [f"{time + 40} B up {600 if on_two else 200} 150"]
+                        usual = late.get(f"{name}_{kind}", 40000 if kind == "forward" else 500)
+                        seen.append(f"{time} E {'down' if kind == 'forward' else kind} {late.get(f'{name}_{kind}_stray', usual) if n == 0 else usual} none")
+                    if kind == "forward":
+                        time += 400
+                        lines += [f"{time} Z 1,2", f"{time} A 10 app"]
+                time += 1000
+                lines.append(f"{time} M end {number} act=instrument round={name} moves=none")
+                time += 1000
+            with open(samples, "w", encoding="utf-8") as handle:
+                handle.write("\n".join(lines) + "\n")
+            with open(os.path.join(folder, "witness.log"), "w", encoding="utf-8") as handle:
+                handle.write("\n".join(seen) + "\n")
+            played = read(samples)[1]
+            return [(step.slug, finding["detector"]) for step in played for finding in step.findings], lateness(played)
+
+        every_kind = list(KINDS_OF_INPUT)
+        for name, late, found, judged_kinds in (
+                ("nobody holds anything", {}, [], every_kind),
+                ("keys are held once Arbor has started", {"started_key": 500 + HELD_MORE + 1}, [("input-started", "input-held")], every_kind),
+                ("… by just what is allowed", {"started_key": 500 + HELD_MORE}, [], every_kind),
+                ("scrolls are held before the last Quit", {"last_scroll": 500 + HELD_MORE + 1}, [("input-last", "input-held")], every_kind),
+                ("the last round is held to the one after it, not to the one before", {"last_up": 500 + 2 * HELD_MORE, "after_up": 500 + HELD_MORE}, [], every_kind),
+                ("one stray among a dozen is no holding back: half of them count", {"started_key_stray": 90000}, [], every_kind),
+                ("… and the first to the one before it", {"started_up": 500 + HELD_MORE + 1, "after_up": 500 + HELD_MORE}, [("input-started", "input-held")], every_kind),
+                ("macOS takes its time over a press that brings an app forward", {"started_forward": 40000 + HELD_MORE_FORWARD}, [], every_kind),
+                ("… and Arbor takes long enough to be felt", {"started_forward": 40000 + HELD_MORE_FORWARD + 1}, [("input-started", "input-held")], every_kind),
+                ("the Mac moved: before and after differ, and the journey says nothing of that kind", {"after_key": 500 + HELD_MORE + 1, "started_key": 90000}, [],
+                 [kind for kind in every_kind if kind != "key"]),
+                ("too few of a kind without Arbor", {"before_scroll_events": EVENTS - 1, "started_scroll": 90000}, [], [kind for kind in every_kind if kind != "scroll"]),
+                ("just enough of them", {"before_scroll_events": EVENTS, "started_scroll": 90000}, [("input-started", "input-held")], every_kind),
+                ("too few in one round with Arbor: the other speaks", {"started_dragged_events": EVENTS - 1, "started_dragged": 90000, "last_dragged": 90000}, [("input-last", "input-held")], every_kind),
+                ("too few in both", {"started_down_events": 2, "last_down_events": 2}, [], [kind for kind in every_kind if kind != "down"])):
+            got, told = rounds(**late)
+            if got != found or told["judged"] != judged_kinds or set(told["silent"]) != set(every_kind) - set(judged_kinds):
+                failures.append(f"rounds of input: {name}: found {got}, judged {told['judged']}, silent {told['silent']}")
+        if rounds()[1].get("kinds"):
+            failures.append("what arrives in a round is the round's, and not in the figures of the journey")
         with open(os.path.join(folder, "witness.log"), "w", encoding="utf-8") as handle:
             handle.write("4100 E down 300 none\n4350 E up 210000 none\n")
         for name, lines, wanted in (
@@ -1546,7 +1664,9 @@ def self_test():
     with open(os.path.join(HERE, "sampler.swift"), encoding="utf-8") as handle:
         samplers = re.search(r"static let late = ([0-9.]+)", handle.read())
     for name, mine, path in (("blind_ms_max", 250, ("sampler", "blind_ms_max")), ("late_ms", samplers and float(samplers.group(1)), ("sampler", "late_ms")),
-                             ("release_ms_max", 100, ("input", "release_ms_max")), ("p99_more_ms_max", 10, ("input", "p99_more_ms_max"))):
+                             ("release_ms_max", 100, ("input", "release_ms_max")), ("p50_more_ms_max", 10, ("input", "p50_more_ms_max")),
+                             ("forward_p50_more_ms_max", 100, ("input", "forward_p50_more_ms_max")), ("events_per_kind_min", 10, ("input", "events_per_kind_min")),
+                             ("kinds", ["down", "forward", "up", "key", "dragged", "scroll"], ("input", "kinds"))):
         if of_the_gate(*path, otherwise=None) != mine:
             failures.append(f"docs/VIABLE.md has {of_the_gate(*path, otherwise=None)!r} for {name}, and what judges by it has {mine!r}")
 
@@ -1566,11 +1686,6 @@ def main(arguments):
     world, steps, account = read(path)
     if command == "report":
         options = dict(zip(rest[::2], rest[1::2]))
-        if "--control" in options and steps:
-            with open(options["--control"], encoding="utf-8") as handle:
-                without, heard = json.load(handle).get("input"), lateness(steps)
-            for kind, told, alone in held_more(heard, without) if without and heard else []:
-                steps[-1].find("6", "FAIL", None, f"99 in 100 events of the kind {kind} reached the apps within {told} µs; in the same journey without Arbor, within {alone} µs")
         print(report(world, steps, account), end="")
         if "--json" in options:
             with open(options["--json"], "w", encoding="utf-8") as handle:

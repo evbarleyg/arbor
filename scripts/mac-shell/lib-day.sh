@@ -300,8 +300,8 @@ acted() {
   day_ids
   if [ -n "$DAY_UNDONE" ]; then
     echo "  ✘ the act was not performed:$DAY_UNDONE"
-    note "finding $DAY_STEP - FAIL the act was not performed:$DAY_UNDONE could not be done"
-    wants=" judge=no"
+    # Not judged, and listed: a press that does not take hold of a title bar happens without Arbor too, once in fifty acts. How many there may be in a gate is viable.py's to say.
+    wants=" judge=no performed=no undone=$(echo $DAY_UNDONE | tr ' ' ',')"
   fi
   for word in "$@"; do
     case "$word" in

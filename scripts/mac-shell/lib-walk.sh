@@ -63,6 +63,7 @@ WALK_NEW=""
 WALK_MINIMIZED=""
 WALK_HIDDEN=""
 WALK_PAUSED="" WALK_BEFORE_PAUSE="" WALK_MOVED_IN_PAUSE="" WALK_AT_PAUSE=""
+WALK_CAST_NAME=stock
 WALK_FULL_SCREEN=""
 # Whether this walk may have a second display, and whether it is plugged in.
 WALK_TWO=""
@@ -854,6 +855,63 @@ idle_act() {
   acted
 }
 
+# MARK: Who holds input back
+
+# A round of input: an instrument, not an act (docs/VIABLE.md, section 5, `input-held`). The same presses, releases, keys, scrolls and a drag, four times in a journey: `before` Arbor
+# starts, when it has `started`, before the `last` Quit and `after` it. The witness writes down how late each arrived, and jolts.py holds started to before and last to after: the same
+# Mac, minutes apart, which is as like with like as it gets. Two hosted Macs differed by 35 against 76 ms with nobody holding anything, and one drifted from 41 to 76 within seven minutes.
+#
+# It moves no window and changes nothing, and every detector stays awake through it. Fourteen presses on title bars of apps that are not in front, whichever show a free point. Then, in one
+# quiet place, a dozen presses on the title bar of the app in front, a dozen arrow keys, a scroll there and back, and a drag inside the text, which selects.
+input_round() {
+  local name=$1 desk=textedit each window x y w h turn pressed=0
+  # TextEdit has an open panel up in that cast, and takes nothing else meanwhile.
+  [ "$WALK_CAST_NAME" != awkward ] || desk=safari
+  act instrument "input-$name" "a round of input: presses on windows behind and in front, keys, a scroll, a drag inside a window"
+  for turn in 1 2 3 4; do
+    for each in $WALK_CAST; do
+      [ "$pressed" -lt 14 ] || break
+      # Mail's window has a sheet, which answers for it.
+      [ "$each" != mail ] && [ "$each" != "$desk" ] && present "$each" && [ "$(front_pid)" != "$(pid_of "$each")" ] || continue
+      read -r x y _ <<< "$(apptool grab "$(window_of "$each")" 2> /dev/null)"
+      [ -n "${x:-}" ] || continue
+      click "$x" "$y" > /dev/null
+      pressed=$((pressed + 1))
+      sleep 0.1
+    done
+  done
+  window=$(window_of "$desk")
+  read -r x y _ <<< "$(present "$desk" && apptool grab "$window" 2> /dev/null)"
+  if [ -n "${x:-}" ]; then
+    click "$x" "$y" > /dev/null
+    sleep 0.3
+    # Six points to either side in turn, so that no two are a double-click, whatever counts them.
+    for turn in 1 2 3 4 5 6; do
+      click "$((x - 6))" "$y" > /dev/null
+      sleep 0.1
+      click "$((x + 6))" "$y" > /dev/null
+      sleep 0.1
+    done
+    for turn in 1 2 3 4 5 6; do
+      key right > /dev/null
+      key left > /dev/null
+    done
+    read -r x y w h <<< "$(real_of "$window")"
+    x=$((x + w / 2)) y=$((y + h / 2))
+    move "$x" "$y" > /dev/null
+    "$DAY_WITNESS" scroll "$x" "$y" 0 -36 --steps 12 > /dev/null
+    "$DAY_WITNESS" scroll "$x" "$y" 0 36 --steps 12 > /dev/null
+    drag "$x" "$y" "$((x + 60))" "$((y + 20))" > /dev/null
+    # What was selected is let go of again.
+    key left > /dev/null
+    echo "  $pressed presses on windows behind; the rest in $desk"
+    acted round="$name" front="$window"
+  else
+    echo "  $pressed presses on windows behind; $desk shows no free point of its title bar, so that is all"
+    acted round="$name"
+  fi
+}
+
 # MARK: The beginning and the end
 
 walk_open() {
@@ -935,6 +993,7 @@ fills_the_display() {
 
 walk_begin() {
   local cast=${1:-stock} display=${2:-laptop} tiling=${3:-defaults} seed=${4:-} commit=${5:-} name listed probe seen try
+  WALK_CAST_NAME=$cast
   apps_watchdog "${WALK_LIMIT:-1060}"
   step "the Mac"
   echo "macOS $(sw_vers -productVersion) ($(sw_vers -buildVersion)) on $(uname -m)"
@@ -1029,8 +1088,12 @@ walk_begin() {
   day_manifest cast "\"$cast\""
   day_manifest apps "[$(for name in $WALK_CAST; do printf '"%s",' "$(bundle_of "$name")"; done | sed 's/,$//')]"
 
+  input_round before
   chapter "The walk"
-  if with_arbor; then walk_start; fi
+  if with_arbor; then
+    walk_start
+    input_round started
+  fi
   at_home
 }
 
@@ -1042,8 +1105,12 @@ walk_end() {
   while [ -n "${WALK_MINIMIZED// /}" ]; do restore; done
   if with_arbor && arbor_answers; then
     chapter "The end"
+    input_round last
     walk_quit
+    input_round after
     walk_roll_call
+  else
+    input_round after
   fi
   echo
   echo "$WALK_ACTS acts, $WALK_LEFT_OUT left out because they did not apply"
