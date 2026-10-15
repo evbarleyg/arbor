@@ -73,6 +73,10 @@ the names of spaces, and no word of the reply to a command that changes settings
 **Decided on 2026-10-14 by the product owner, after the first look at it on a hosted Mac**: the next thing a person asks for that changes something puts the line away, whether or not it earns a line of its own. Until then such a command left the last line up, and
 "Your other windows are out of view, not closed" stood on screen with every window in view again. A question, a script's command and a panel that opens leave it alone.
 
+**Afterwards**: the line and the panel of shortcuts also show in another app's full-screen Space, only in
+answer to the person's own key, gesture or menu item (`HeadsUpModel.isAnswer`, `PassingPanel.showsOverFullScreen`). Until then a shortcut that failed there was silent, since the
+beep gave way to the line, and ⌃⌥⇧/ put the panel up unseen, with the keyboard. A press on one of Arbor's own panels puts the shortcuts away too. Not yet seen on a Mac.
+
 **Added after bug bash 1**: Go to… is its own answer; one panel has the keyboard at a time; a hold takes away what was said before it, a held view's refusal is "The view is held · ⌃⌥⎋ releases it", and what holding still
 turns away is said once per app and hold; a success that took something along ("…; 2 saved views are gone") is said at every level but `off`, before any hint, with "⌃⌥Z takes it back"; the end of a peek, an empty Desktop's tile and a
 place that automatic docking tries and takes back teach nothing; the hint about tiles names ⌃⌥G; any change of displays puts the line and the panel away; titles are cut at 48 characters; names of spaces are said as written.

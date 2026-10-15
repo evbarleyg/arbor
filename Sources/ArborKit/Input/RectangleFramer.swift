@@ -377,7 +377,8 @@ final class RubberBandPanel: OverlayPanel {
     super.init()
     level = .floating
     ignoresMouseEvents = true
-    collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle, .fullScreenAuxiliary]
+    // Transient, like every overlay: a stationary panel stays on screen in Mission Control.
+    collectionBehavior = [.canJoinAllSpaces, .transient, .ignoresCycle, .fullScreenAuxiliary]
     contentView = RubberBandView()
   }
 

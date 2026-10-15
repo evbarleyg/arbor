@@ -13,8 +13,6 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
   private let store: SettingsPanelStore
   private var window: NSWindow?
   private var keyMonitor: Any?
-  /// The app that was in front when the window was opened, which gets the keyboard back when it closes.
-  private var appBefore: NSRunningApplication?
 
   init(
     model: SettingsPanelModel, openFile: @escaping @MainActor () -> Void,
@@ -32,13 +30,8 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
     self.window = window
     store.model.refreshApps()
     if let pane { store.model.go(to: pane) }
-    if let front = NSWorkspace.shared.frontmostApplication,
-      front.processIdentifier != NSRunningApplication.current.processIdentifier
-    {
-      appBefore = front
-    }
-    // Arbor is an accessory app: nothing brings it to the front unless it asks.
-    NSApp.activate(ignoringOtherApps: true)
+    // The app in front gets the keyboard back when the window closes.
+    KeyboardLoan.shared.borrow()
     if window.isMiniaturized { window.deminiaturize(nil) }
     window.makeKeyAndOrderFront(nil)
   }
@@ -77,19 +70,11 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
     store.model.cancelRecording()
   }
 
-  /// An accessory app that closes its last window stays the active app, so that no window has the keyboard
-  /// until something is clicked, and Arbor's own shortcuts find no focused window.
   func windowWillClose(_ notification: Notification) {
     store.model.cancelRecording()
     // A field that is being typed in loses the keyboard, and so hands over what was typed. The window is kept,
     // and would otherwise show it again, as if it were the setting, the next time.
     window?.makeFirstResponder(nil)
-    if NSRunningApplication.current.isActive, let appBefore, !appBefore.isTerminated {
-      // Since macOS 14 an app comes forward for certain only if the one in front makes way for it.
-      NSApp.yieldActivation(to: appBefore)
-      _ = appBefore.activate(options: [])
-    }
-    appBefore = nil
   }
 
   // MARK: Recording a shortcut

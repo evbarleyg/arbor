@@ -734,7 +734,8 @@ the command acted on (`executeAndSay` in `Controller+HeadsUp.swift`; spec F43). 
   `Command.helpText`, which it reads (`Command.group`, `helpOrder`), so a command added to the help is in the right place in the panel. Families (⌃⌥1–9, ⌃⌥⌘ + arrow) fold into
   one row while they are complete, and `pointerRows(settings:)` adds what the pointer and the trackpad do. `showCheatSheet(_:on:)` draws it; a key or a click comes back as `OverlayActions.cheatSheetDismissed()`, and any command but a query puts it away, as does any shortcut's key going down (`Controller.shortcut`), since a peek takes keys without running a command.
 - **The panels** (`UI/HeadsUpPanel.swift`, `UI/CheatSheetPanel.swift`) share `PassingPanel`: on a `PanelGround` (below), two levels above `.floating` (the stage is one above),
-  on every Space except other apps' full-screen ones, fading in 0.1 s and out in 0.25 s unless "Reduce motion" is on. The line ignores the mouse. The panel of shortcuts becomes the key
+  on every Space, in another app's full-screen one only in answer to the person's own key or command (the panel of shortcuts always is one; the line says so
+  in `HeadsUpModel.isAnswer`, set by `showHeadsUp` while a person's command is being carried out), fading in 0.1 s and out in 0.25 s unless "Reduce motion" is on. The line ignores the mouse. The panel of shortcuts becomes the key
   window without activating Arbor, so the key that ends it is not typed into the document behind; it leaves at once, because a fading key window would swallow what is typed next.
 - **What every panel stands on** (`UI/PanelGround.swift`; the line, the panel of shortcuts, the minimap, the field for a name, Go to…): one of macOS's materials cut to rounded corners, a veil
   over it, a hairline round it. The numbers are in `Platform/PanelLook.swift`, headless: one table of corners (20 for panels, a capsule for the line), the veil, and two inks, black or white at 85 % and 65 %.
@@ -783,6 +784,56 @@ and plugging in show nothing. It ships off (`minimapDuration` 0). `minimapMayApp
 layout. Asked for (`minimap`), the model says `takesClicks`, and `OverlayActions.minimapClicked` goes the way a click on a tile goes. Its shortcut can be held like the peek's: presses and releases come through
 `Controller.shortcut(_:_:run:)`, a timer (`minimap-tick`) outlines the space under the pointer (`hover`) and finds releases nobody reported, letting go is a click where the pointer is, and ⎋ gives up. Its time starts again for as long as the pointer is on the panel. Where it takes clicks its frame is among `desktopGuardZones().panels`, announced as `.frames`. `UI/MinimapPanel.swift` keeps
 one panel per display and draws the model in one `draw`. `minimapFrame(on:)` is for the heads-up line (F43), which sits above it.
+
+## Who is above whom
+
+Every window Arbor makes, from the top of the stack down. Levels are AppKit's (`.normal` 0, `.floating` 3, `.modalPanel` 8). "All" under
+Spaces is `.canJoinAllSpaces`; "+ full screen" is `.fullScreenAuxiliary`, without which a panel does not show over another app's full-screen window.
+
+| Level | Window | File | Spaces | Takes clicks | Takes the keyboard |
+|---|---|---|---|---|---|
+| 8 | the name field (⌃⌥N) | `UI/NamePanel.swift` | the one it opened on, + full screen | yes | yes |
+| 6 | the heads-up line | `UI/HeadsUpPanel.swift` | all, + full screen while it answers a person | no | no |
+| 5 | Go to… | `UI/FinderPanel.swift` | all, + full screen | yes | yes |
+| 5 | the panel of shortcuts | `UI/CheatSheetPanel.swift` | all, + full screen | yes | yes |
+| 5 | the minimap | `UI/MinimapPanel.swift` | all | while it is held | no |
+| 4 | **the stage**, while windows move | `UI/Stage.swift` | all | no | no |
+| 3 | the drop preview | `UI/AppKitOverlays.swift` | all, + full screen | no | no |
+| 3 | the outline of a peek | `UI/PeekOutlinePanel.swift` | all, + full screen | yes | no |
+| 3 | the rubber band of a ⌃⌥-drag | `Input/RectangleFramer.swift` | all, + full screen | no | no |
+| 3 | the welcome window's three moves | `UI/Onboarding.swift` | comes to the active one | yes | yes |
+| 3 | the settings window while it has the keyboard | `UI/SettingsWindow.swift` | comes to the active one | yes | yes, **activates** |
+| 3 | the answer of an update check | `UI/UpdateWindow.swift` | | yes | yes, **activates** |
+| 0 | the welcome window's first page; the settings window otherwise; About | | | yes | About **activates** |
+| 0 | the focus ring, directly above its window | `UI/FocusRingPanel.swift` | all | no | no |
+| 0, at the back | tiles, gap handles | `UI/AppKitOverlays.swift` | the one they were shown on | yes | no |
+| below 0 | the backdrop, one above the Desktop's icons | `UI/BackdropPanel.swift` | all | no | no |
+
+What follows from it, and what a new panel has to decide:
+
+- **The stage hides what is below it** for as long as a motion lasts, and draws stand-ins only for windows the window system reports. What must be
+  seen during a motion goes above it; what belongs to a display at rest goes below. (F02's second step puts the stage at 2, just below `.floating`, so that
+  the rows at 3 and other apps' floating panels stay in sight, and leaves holes in it for windows at 0 that take no part in the motion.)
+- **Another app's full-screen Space is none of Arbor's business**, and nothing it draws or says by itself shows there. What a person asked for there does:
+  a key that is silent, and a panel that takes the keyboard unseen, are both worse than a line over a film. (Not yet the minimap: ⌃⌥M there shows nothing.)
+- **Every overlay is `.transient`.** A `.stationary` panel stays on screen in Mission Control, over the windows' miniatures. (The stage still is `.stationary`,
+  for the half second that it is up.)
+- **At the normal level the last to be shown is in front**, so what stands where no docked window is goes to the back of it and is sent back there whenever it changes
+  (`OverlayPanel.orderInBehind`: tiles and gap handles). A gap handle draws nothing at rest and takes clicks: in front, it would take a strip of the clicks meant for
+  whatever lies across the gap, Arbor's own titled windows too. See "Stacking" under "What Arbor draws at rest".
+- **A panel that takes the keyboard does so without making Arbor active** (`.nonactivatingPanel`, `canBecomeKey`), so the app in front stays in front and
+  has the keyboard again when the panel goes. It must go when the person turns elsewhere, and hears of that in three ways, none of which covers the
+  others: `resignKey`; a global monitor for clicks and keys that go to other apps; and, for presses on Arbor's own panels that never take
+  the keyboard, a local monitor (`FinderPanel`) or `Controller.pointerPressed` (the panel of shortcuts).
+- **A window that does make Arbor active borrows the keyboard** (`UI/KeyboardLoan.swift`): an accessory app that closes its last window stays active, and
+  no window has the keyboard until something is clicked. When the last such window on the Space in view closes, the app that was in front gets it back, unless
+  the person has sent for another (Open Release Page). Not yet: it does not follow a click into another app and back, and ⌘M on the settings window gives nothing back.
+- **What shows something private keeps out of screen sharing and recordings** (`sharingType = .none`; macOS decides how far that is honoured): Go to…, which lists
+  titles, the name field, which shows a name a person gave, and the minimap, which says which other apps are open. Tiles' captions and the panel of
+  shortcuts name only what is in sight already. Scripts that take pictures of these panels set `ARBOR_PANELS_IN_PICTURES=1`.
+
+`PanelLevelTests` (macOS only, shows nothing) holds the overlays to this table: their levels, `.transient`, which show over a full-screen window, which three may have the keyboard, and which three keep out of pictures. The stage's
+and the drop preview's panels are private to their files, and the titled windows set their level when they open: for those, mind the table by hand.
 
 ## Pointer input
 
