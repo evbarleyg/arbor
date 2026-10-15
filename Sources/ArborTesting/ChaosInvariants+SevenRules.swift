@@ -477,7 +477,9 @@ extension ChaosRunner {
       {
         continue
       }
-      problems.append(.init("moved-unasked", "\(whatHappened); what happened was not about it, and \(display) is laid out as it was"))
+      // A rule name of its own for a known failure (ChaosKnownFailures.swift): out of view before and after, nobody sees it.
+      let rule = parkedBefore.contains(window) ? "moved-unasked-out-of-view" : "moved-unasked"
+      problems.append(.init(rule, "\(whatHappened); what happened was not about it, and \(display) is laid out as it was"))
     }
   }
 

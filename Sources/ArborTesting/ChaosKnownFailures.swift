@@ -26,10 +26,11 @@ extension ChaosRunner {
   /// and `chaos`, `hunt --known` and `ChaosRunner.replay` report these rules like any other.
   public nonisolated static let knownFailures: [ChaosKnownFailure] = [
     ChaosKnownFailure(
-      rule: "parked-beside-another-display", owner: "the controller",
-      story: "A window out of view beside one display is docked on another display, out of view there too. It stays where it was, where "
+      rule: "parked-beside-another-display-making-way", owner: "the controller",
+      story: "Only with `floatingWindowsMakeWay` on, which ships off (F64). A window out of view beside one display is docked on another display, out of view there too. It stays where it was, where "
         + "part of it shows, though the other display has a better place.",
       script: """
+        settings {"floatingWindowsMakeWay":true}
         launch
         mac-tiling off
         open 107 Xcode pid 1004 at 1201 365 2201 2311 min 2201 2311
@@ -39,6 +40,7 @@ extension ChaosRunner {
         layout Preview | Notes | Xcode
         """,
       """
+        settings {"floatingWindowsMakeWay":true}
         launch
         mac-tiling off
         open 103 Mail pid 1002 at -3344 467 2048 1725 min 192 328
@@ -104,10 +106,11 @@ extension ChaosRunner {
         zoom-node 1
         """),
     ChaosKnownFailure(
-      rule: "grown-while-hanging", owner: "the controller",
-      story: "Its user leaves a floating window hanging over an edge and makes it smaller; the next layout that places floating windows gives it its remembered, larger size "
+      rule: "grown-while-hanging-making-way", owner: "the controller",
+      story: "Only with `floatingWindowsMakeWay` on, which ships off (F64). Its user leaves a floating window hanging over an edge and makes it smaller; the next layout that places floating windows gives it its remembered, larger size "
         + "at the same corner. As much shows as its user left showing.",
       script: """
+        settings {"floatingWindowsMakeWay":true}
         launch
         open 101 Terminal pid 1003 at 671 613 738 618
         open 102 Music pid 1006 at -194 842 716 615
@@ -117,6 +120,7 @@ extension ChaosRunner {
         close 102
         """,
       """
+        settings {"floatingWindowsMakeWay":true}
         open 101 Safari pid 1000 at 920 616 441 606 min 399 282
         renumber 101 102
         renumber 102 103
@@ -154,10 +158,11 @@ extension ChaosRunner {
         launch
         """),
     ChaosKnownFailure(
-      rule: "left-its-place", owner: "the controller",
-      story: "With something docked, a display that comes or goes beside this one makes Arbor lay this one out again: a floating window that lay over a docked neighbour is moved "
+      rule: "left-its-place-making-way", owner: "the controller",
+      story: "Only with `floatingWindowsMakeWay` on, which ships off (F64). With something docked, a display that comes or goes beside this one makes Arbor lay this one out again: a floating window that lay over a docked neighbour is moved "
         + "onto the Desktop's part, though nothing about its own display has changed.",
       script: """
+        settings {"floatingWindowsMakeWay":true}
         launch
         open 102 Finder pid 1005 at -435 193 1915 2399 min 1915 2399
         dock left
@@ -165,6 +170,7 @@ extension ChaosRunner {
         displays main:0,0,1440,900:25,0,0,0* side:1440,33,1512,982:0,0,0,0 windows-late
         """,
       """
+        settings {"floatingWindowsMakeWay":true}
         launch
         open 108 Preview pid 1007 at 506 112 231 228 min 231 228 max 485 1084
         DOCK LEFT
@@ -217,9 +223,10 @@ extension ChaosRunner {
         float 102
         """),
     ChaosKnownFailure(
-      rule: "sized-there-and-back-floating", owner: "rule 3: a floating window's frame is its person's", severity: 3,
-      story: "A floating window is squeezed onto the Desktop and given some of it back by the same command.",
+      rule: "sized-there-and-back-floating-making-way", owner: "rule 3: a floating window's frame is its person's", severity: 4,
+      story: "Only with `floatingWindowsMakeWay` on, which ships off (F64). A floating window is squeezed onto the Desktop and given some of it back by the same command.",
       script: """
+        settings {"floatingWindowsMakeWay":true}
         settings {"arrangeDesktopWeight":1}
         launch
         open 106 Preview pid 1007 at -439 605 752 321 title Draft
@@ -228,6 +235,7 @@ extension ChaosRunner {
         layout Xcode | Notes
         """,
       """
+        settings {"floatingWindowsMakeWay":true}
         displays main:0,0,1728,1117:37,86,0,0* side:1728,323,3008,1692:25,0,0,0 windows-never
         launch
         open 103 Preview pid 1007 at 953 480 723 624 min 723 400 max 723 2000
@@ -259,12 +267,13 @@ extension ChaosRunner {
         displays main:0,0,1512,982:25,0,58,0* windows-silent
         """),
     ChaosKnownFailure(
-      rule: "moved-twice-floating-windows-first", owner: "rule 3: a floating window's frame is its person's (board 0.22)", severity: 4,
-      story: "With `soleFloatTakesDesktop` on (it ships off), a display is unplugged, the one that stays loses its menu bar in the same breath, and "
+      rule: "moved-twice-floating-windows-first-making-way", owner: "rule 3: a floating window's frame is its person's (board 0.22)", severity: 4,
+      story: "Only with `floatingWindowsMakeWay` on, which ships off (F64). With `soleFloatTakesDesktop` on (it ships off), a display is unplugged, the one that stays loses its menu bar in the same breath, and "
         + "macOS says where it has moved the window before it says any of that. Arbor takes the move for a person's (`knowsTheDisplays` still "
         + "holds), lays out by the displays it believes in (`floatingWindowMoved`), and again when it hears: the window twitches by the "
         + "height of a menu bar that is no longer there.",
       script: """
+        settings {"floatingWindowsMakeWay":true}
         launch
         set soleFloatTakesDesktop true
         displays main:0,0,2560,1440:25,0,86,0* side:2560,-170,1280,800:0,0,0,0 windows-never
@@ -287,15 +296,17 @@ extension ChaosRunner {
         key down arrange
         """),
     ChaosKnownFailure(
-      rule: "moved-twice-sizing-floating", owner: "rule 3: a floating window's frame is its person's", severity: 2,
-      story: "A floating window is squeezed onto what is left of the Desktop, its app will not make it that small, and it is placed again. Every second ordinary walk meets it.",
+      rule: "moved-twice-sizing-floating-making-way", owner: "rule 3: a floating window's frame is its person's", severity: 4,
+      story: "Only with `floatingWindowsMakeWay` on, which ships off (F64). A floating window is squeezed onto what is left of the Desktop, its app will not make it that small, and it is placed again. Every second ordinary walk meets it.",
       script: """
+        settings {"floatingWindowsMakeWay":true}
         launch
         open 102 Mail pid 1002 at 1406 650 1155 511 min 760 400
         open 103 Notes pid 1001 at 784 678 792 708 min 709 300
         key down dock left
         """,
       """
+        settings {"floatingWindowsMakeWay":true}
         launch
         open 101 Xcode pid 1004 at 66 293 1041 395 min 1041 378 title Inbox
         shrink 353
@@ -331,9 +342,10 @@ extension ChaosRunner {
         restore 103
         """),
     ChaosKnownFailure(
-      rule: "moved-twice-sizing-again-floating", owner: "rule 3: a floating window's frame is its person's", severity: 2,
-      story: "The same as `moved-twice-sizing-floating`, though its app has refused in the same way before.",
+      rule: "moved-twice-sizing-again-floating-making-way", owner: "rule 3: a floating window's frame is its person's", severity: 4,
+      story: "Only with `floatingWindowsMakeWay` on, which ships off (F64). The same as `moved-twice-sizing-floating`, though its app has refused in the same way before.",
       script: """
+        settings {"floatingWindowsMakeWay":true}
         open 101 Finder pid 1005 at 302 264 837 449 min 501 300
         launch
         focus 101
@@ -344,6 +356,7 @@ extension ChaosRunner {
         key down dock top
         """,
       """
+        settings {"floatingWindowsMakeWay":true}
         open 101 Music pid 1006 at 82 260 823 486 min 680 480
         open 103 Terminal pid 1003 at 656 52 851 544 min 177 60
         launch
@@ -372,9 +385,10 @@ extension ChaosRunner {
         advance 1
         """),
     ChaosKnownFailure(
-      rule: "moved-again-floating", owner: "rule 3: a floating window's frame is its person's", severity: 3,
-      story: "As `moved-twice-floating`, in a layout that a timer runs.",
+      rule: "moved-again-floating-making-way", owner: "rule 3: a floating window's frame is its person's", severity: 4,
+      story: "Only with `floatingWindowsMakeWay` on, which ships off (F64). As `moved-twice-floating`, in a layout that a timer runs.",
       script: """
+        settings {"floatingWindowsMakeWay":true}
         open 109 Mail pid 1002 at 803 461 76 133
         renumber 109 110
         open 111 Preview pid 1007 at -83 282 1165 625 min 1165 625
@@ -409,9 +423,10 @@ extension ChaosRunner {
         advance 0.5
         """),
     ChaosKnownFailure(
-      rule: "moved-again-sizing-floating", owner: "rule 3: a floating window's frame is its person's", severity: 3,
-      story: "As `moved-twice-sizing-floating`, in a layout that a timer runs.",
+      rule: "moved-again-sizing-floating-making-way", owner: "rule 3: a floating window's frame is its person's", severity: 4,
+      story: "Only with `floatingWindowsMakeWay` on, which ships off (F64). As `moved-twice-sizing-floating`, in a layout that a timer runs.",
       script: """
+        settings {"floatingWindowsMakeWay":true}
         launch
         hang 1000
         open 108 Safari pid 1000 at -254 915 758 429
@@ -421,10 +436,11 @@ extension ChaosRunner {
         settle
         """),
     ChaosKnownFailure(
-      rule: "moved-unasked", owner: "rule 2: a floating window's frame is its person's", severity: 2,
-      story: "A window opens over docked ones and stays there. The next thing that happens, which has nothing to do with it (a click on another title bar, another "
+      rule: "moved-unasked-making-way", owner: "rule 2: a floating window's frame is its person's", severity: 4,
+      story: "Only with `floatingWindowsMakeWay` on, which ships off (F64). A window opens over docked ones and stays there. The next thing that happens, which has nothing to do with it (a click on another title bar, another "
         + "window closing), shoves it onto the Desktop and shrinks it.",
       script: """
+        settings {"floatingWindowsMakeWay":true}
         launch
         open 102 Mail pid 1002 at 994 188 1320 686 min 760 400
         key down dock top
@@ -433,6 +449,7 @@ extension ChaosRunner {
         release
         """,
       """
+        settings {"floatingWindowsMakeWay":true}
         open 101 Mail pid 1002 at 50 292 803 497 min 760 400
         launch
         open 103 Finder pid 1005 at 44 151 929 510 min 501 300
@@ -441,11 +458,12 @@ extension ChaosRunner {
         close 101
         """),
     ChaosKnownFailure(
-      rule: "moved-before-any-dock", owner: "rule 2: a floating window's frame is its person's", severity: 2,
-      story: "Nothing is docked, and Arbor moves a window that its app opened hanging over an edge of the screen, more than half of it showing, wholly into view at "
+      rule: "moved-before-any-dock-making-way", owner: "rule 2: a floating window's frame is its person's", severity: 4,
+      story: "Only with `floatingWindowsMakeWay` on, which ships off (F64). Nothing is docked, and Arbor moves a window that its app opened hanging over an edge of the screen, more than half of it showing, wholly into view at "
         + "the next layout: at a key that moves the view, when another window closes. (One that was found hanging, or opened with under half showing, stays.) Or "
         + "one that a hand hung over an edge while something was docked: squeezed then, it gets its size back there, or is pulled in, once nothing is docked.",
       script: """
+        settings {"floatingWindowsMakeWay":true}
         launch
         open 108 Mail pid 1002 at 649 39 803 805 min 760 400
         key down desktop
@@ -486,8 +504,9 @@ extension ChaosRunner {
         """),
     ChaosKnownFailure(
       rule: "home-not-whole", owner: "the ways home", severity: 3,
-      story: "After a way home a window Arbor placed hangs over an edge further than anybody left it: its own, larger size given back at the corner a hand gave.",
+      story: "(The script sets `floatingWindowsMakeWay`: as Arbor ships this road is closed, F64, and the walks have others.) After a way home a window Arbor placed hangs over an edge further than anybody left it: its own, larger size given back at the corner a hand gave.",
       script: """
+        settings {"floatingWindowsMakeWay":true}
         displays main:0,0,1728,1117:37,0,59,0* windows-never
         open 101 Music pid 1006 at 240 65 1049 678 min 680 480
         open 103 Notes pid 1001 at 454 516 927 534 min 709 300
@@ -619,10 +638,11 @@ extension ChaosRunner {
         toggle-pause
         """),
     ChaosKnownFailure(
-      rule: "displays-left-mostly-out", owner: "displays: afterwards nothing is lost", severity: 2,
-      story: "The same story seen at rest; and: a display changes side and shrinks in one step and the windows' own reports come first: 7 % of a floating window "
+      rule: "displays-left-mostly-out-making-way", owner: "displays: afterwards nothing is lost", severity: 4,
+      story: "Only with `floatingWindowsMakeWay` on, which ships off (F64). The same story seen at rest; and: a display changes side and shrinks in one step and the windows' own reports come first: 7 % of a floating window "
         + "shows, Arbor makes no move, and ⌃⌥0, Show Everything and Float All do not fetch it.",
       script: """
+        settings {"floatingWindowsMakeWay":true}
         displays main:0,0,1440,900:25,0,0,0* side:-2560,400,2560,1440:25,0,0,0 windows-late
         launch
         open 107 Finder pid 1005 at 100 100 500 400
@@ -676,11 +696,12 @@ extension ChaosRunner {
         advance 1
         """),
     ChaosKnownFailure(
-      rule: "moved-at-launch-after-a-crash", owner: "rule 2: nothing moves at a start, after a run that did not quit", severity: 3,
-      story: "Arbor is killed and nothing starts it again. Its person makes a window that is kept in view smaller, and starts Arbor: the window is blown up to the "
+      rule: "moved-at-launch-after-a-crash-making-way", owner: "rule 2: nothing moves at a start, after a run that did not quit", severity: 4,
+      story: "Only with `floatingWindowsMakeWay` on, which ships off (F64). Arbor is killed and nothing starts it again. Its person makes a window that is kept in view smaller, and starts Arbor: the window is blown up to the "
         + "size remembered for it. Only a quit and a pause write down where they left each window; after a crash Arbor cannot tell a size its person chose from "
         + "one it had squeezed the window to itself. (After a quit or a pause the size is learnt.)",
       script: """
+        settings {"floatingWindowsMakeWay":true}
         launch
         open 106 Xcode pid 1004 at 300 150 840 440
         pin 106
@@ -691,6 +712,7 @@ extension ChaosRunner {
         settle
         """,
       """
+        settings {"floatingWindowsMakeWay":true}
         launch
         open 116 Preview pid 1007 at 2059 599 822 562 min 369 88
         pin 116
@@ -712,6 +734,163 @@ extension ChaosRunner {
         hang 2000
         quit
         wake 2000
+        """),
+    ChaosKnownFailure(
+      rule: "moved-unasked", owner: "nobody yet: what is left of it since F64, none of it an ordinary floating window", severity: 3,
+      story: "A window kept in view that is larger than its display, left hanging by hand, is pulled to the display's corner at the next thing "
+        + "that happens: no display can show half of it, which passes for mostly out of view. And a docked window that a hand has nudged "
+        + "three points out of its place is put back when another window's edge is dragged.",
+      script: """
+        displays side:0,0,1920,1080:25,0,0,0* windows-first
+        launch
+        settings {"rules":[{"app":"com.example.xcode","action":"dock right"},{"app":"com.example.xcode","action":""}]}
+        open 114 Notes pid 1001 at 835 455 3224 1224 min 3224 1224
+        toggle-pin
+        open 116 Xcode pid 1004 at 1553 241 1597 1849 min 1597 1849 frozen
+        grab 114
+        carry 1566 603
+        release
+        grab 116
+        release
+        """,
+      """
+        launch
+        open 101 Terminal pid 1003 at 614 1191 988 520 min 988 520 max 988 1251
+        dock right
+        open 102 Notes pid 1001 at 204 1336 720 203 min 386 140
+        dock top
+        seam main 0 374
+        focus 101
+        summon Notes
+        displays main:0,0,1512,982:0,0,0,0* windows-silent
+        open 106 Mail pid 1002 at -465 731 879 541
+        dock right
+        move 106 765 9 738 958
+        edge 102 12 121 738 305
+        """),
+    ChaosKnownFailure(
+      rule: "grown-while-hanging", owner: "the walks and F64: the rule is older than Q20", severity: 4,
+      story: "A floating window goes back exactly where it was (an undo of a drag, Float All), and that is where its app had opened it or where "
+        + "it was before the display changed: hanging over an edge, more than half of it showing. Since Q20 that is as it should be; the rule "
+        + "asks that only a hand leaves a window hanging.",
+      script: """
+        launch
+        open 106 Music pid 1006 at 639 501 347 476
+        displays main:0,0,1280,800:25,0,0,0* windows-late
+        grab 106
+        carry 1272 426
+        release
+        undo
+        """,
+      """
+        open 106 Finder pid 1005 at -202 490 1126 617 min 1126 617 max 1126 1926
+        launch
+        displays main:0,0,1512,982:25,83,0,0* windows-first
+        grab 106
+        cursor 1498 981
+        way-back float-all
+        """),
+    ChaosKnownFailure(
+      rule: "left-its-place", owner: "nobody yet (F64, a change of displays)", severity: 3,
+      story: "A display moves or its menu bar changes, macOS takes a floating window along, and Arbor puts it some points beside where macOS had "
+        + "it: where it reckons the window was on its display.",
+      script: """
+        displays side:0,0,1512,982:25,45,0,0* main:-1920,58,1920,1080:25,0,0,0 windows-never
+        launch
+        open 102 Terminal pid 1003 at -1562 457 436 481 title Übersicht
+        displays main:0,0,1920,1080:25,0,0,0* windows-first
+        """,
+      """
+        open 107 Notes pid 1001 at 324 420 712 580
+        edge 107 12 12 1416 876 hold
+        release
+        displays side:1440,60,800,600:0,90,0,0 main:0,0,1440,900:37,0,0,0* windows-first
+        launch
+        displays main:0,0,1440,900:37,0,0,0* windows-silent
+        """),
+    ChaosKnownFailure(
+      rule: "parked-beside-another-display", owner: "the controller", severity: 3,
+      story: "A window out of view beside one display is docked on another display, out of view there too. It stays where it was, where part of "
+        + "it shows, though the other display has a better place.",
+      script: """
+        launch
+        displays main:0,0,800,600:25,0,0,0* side:-223,600,2560,1440:0,50,0,0 windows-first
+        open 113 Notes pid 1001 at 1521 1197 1678 1696 min 1678 1696
+        grab 113
+        carry 395 590
+        release
+        carry 373 1301
+        layout Finder | Notes | Preview
+        """,
+      """
+        launch
+        displays main:0,0,1280,800:25,0,97,0* side:-53,800,1440,900:0,0,0,0 windows-late
+        open 105 Preview pid 1007 at 85 41 3955 1815 min 3955 1815 max 3955 1815
+        cursor -53 1700
+        displays side:0,0,1440,900:37,0,0,0* main:-242,900,1920,1080:0,0,0,0 third:-168,1980,1512,982:0,0,0,0 windows-silent
+        dock left
+        layout Preview / Safari
+        """),
+    ChaosKnownFailure(
+      rule: "moved-twice-sizing-floating", owner: "rule 3: a refused size costs no second move; grow and shrink of a floating window", severity: 3,
+      story: "What is left of it as Arbor ships (F64), nearly all of it: `shrink` or `grow` of a floating window whose app refuses part of the size. It is placed for the size that was "
+        + "asked, and again for the size it has.",
+      script: """
+        open 103 Xcode pid 1004 at 100 60 1188 775 min 1188 685
+        launch
+        focus 103
+        do shrink 40
+        """),
+    ChaosKnownFailure(
+      rule: "moved-twice-sizing-again-floating", owner: "rule 3: a refused size costs no second move; grow and shrink of a floating window", severity: 3,
+      story: "The same as `moved-twice-sizing-floating`, though its app has refused in the same way before.",
+      script: """
+        launch
+        open 109 Preview pid 1007 at 1222 256 3257 1451 min 3257 1451
+        displays main:0,0,2560,1440:25,0,0,50* side:130,1440,1920,1080:0,0,0,0 windows-late
+        shrink 46
+        """),
+    ChaosKnownFailure(
+      rule: "sized-there-and-back-floating", owner: "rule 3: a refused size costs no second move; grow and shrink of a floating window", severity: 3,
+      story: "`shrink` of a floating window whose app stops short of the size asked for: it is centred for the one and then for the other.",
+      script: """
+        launch
+        open 104 Xcode pid 1004 at -1093 624 1956 1742 min 528 350 max 556 1899
+        shrink
+        """),
+    ChaosKnownFailure(
+      rule: "own-frame-back-after-undo", owner: "nobody yet (F64)", severity: 4,
+      story: "With two displays: a floating window is carried or sent from one to the other, and an undo or a redo takes that back while the "
+        + "window, or the Desktop it goes to, is out of view. It is in view afterwards, wholly, but when it next goes out of view and "
+        + "comes back it is at the frame remembered on that display, not where the undo had left it. About once in a thousand walks.",
+      script: """
+        displays third:1327,12,1920,1080:0,0,0,0 main:-113,1920,1440,900:25,0,63,0 side:0,0,1080,1920:25,77,0,0* windows-never
+        launch
+        settings {"rules":[{"app":"com.example.music","action":"dock beside com.example.safari right"}]}
+        open 104 Music pid 1006 at 579 373 480 538 min 462 126
+        open 105 Mail pid 1002 at -1202 644 356 460 no-bundle
+        pinch began 0
+        pinch changed 0.3
+        open 111 Music pid 1006 at -734 567 2096 1634 min 2096 1634 title Untitled
+        move-to-display previous 105
+        undo
+        focus 105
+        """,
+      """
+        open 107 Xcode pid 1004 at 897 515 899 718 min 696 718
+        open 110 Terminal pid 1003 at 70 476 700 240 title main.swift
+        launch
+        arrange
+        displays main:0,0,1080,1920:37,0,0,0* side:202,1920,1512,982:0,0,58,0 windows-late
+        float 110
+        edge 107 301 926 696 20
+        grab 110
+        carry 960 2169
+        settle
+        zoom 107
+        cursor 540 961
+        undo
+        key down show-all
         """),
   ]
 

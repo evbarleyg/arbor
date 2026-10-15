@@ -71,6 +71,7 @@ extension ChaosRunner {
     // A trial that shows the Desktop brings floating windows into view. Called off, they go again.
     // What a start takes out of view has a rule of its own, also where the start is part of a way back.
     if !isTryingOutADrop, !wasTryingOutADrop, action != .wayBack(.startAgain) { vanishedViolations(&problems) }
+    ownFrameViolations(after: action, &problems)
     pinViolations(&problems)
     nameViolations(&problems)
     undoViolations(after: action, &problems)
@@ -85,6 +86,7 @@ extension ChaosRunner {
     // Encoding is slow next to everything else, so a random run checks it now and then. A replay checks it at every step:
     // the failure then shows where it begins, and does not depend on how many steps came before, so it can be shrunk.
     if action == .save || checksFilesAtEveryStep || script.count % 64 == 0 { codableViolations(&problems) }
+    nameWhatComesOfMakingWay(&problems)
     return inside + (problems.isEmpty ? problems : problems.sorted { ($0.rule, $0.message) < ($1.rule, $1.message) })
   }
 

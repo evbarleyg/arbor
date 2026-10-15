@@ -119,12 +119,18 @@ public final class ChaosRunner {
   var wasRunningBefore = false
   /// Before the current action the windows were trying out a drop (F09, `reflowWhileDragging`).
   var wasTryingOutADrop = false
+  /// Where the floating windows that are out of view were when they left (ChaosInvariants+OwnFrames.swift), and before the current
+  /// action whether floating windows made way.
+  var departures: [WindowID: Departure] = [:]
+  var leftByHand: [WindowID: HandNote] = [:]
+  var movedByUndo: Set<WindowID> = []
+  var madeWayBefore = false
   /// `desktopGuardZones()` as the mouse-down tap has it: a copy, refreshed as ArborApp refreshes it.
   var guardZonesCopy = DesktopGuardZones()
 
   public init() {
     system.holdsEchoes = true
-    harness = Harness(system: system)
+    harness = Harness(settings: Settings(), system: system)
     system.events = nil  // nothing is observed until `launch`
     displayIDsSeen = Set(system.displayList.map(\.id))
   }
@@ -225,6 +231,7 @@ public final class ChaosRunner {
     inHandBefore = system.dragging ?? system.resizing
     noteBeforeTheSevenRules(action)
     raiseLogMark = system.raiseLog.count
+    madeWayBefore = controller.settings.floatingWindowsMakeWay
     perform(done)
     listen()
     beforeTheNextCheck?(self)

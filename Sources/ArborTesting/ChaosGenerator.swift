@@ -53,7 +53,7 @@ public struct ChaosGenerator {
         .settings(
           "{\"tabsEnabled\":true,\"summonStays\":true,\"continuousZoom\":true,\"guardDesktopClicks\":true,"
             + "\"reflowWhileDragging\":true,\"soleFloatTakesDesktop\":true,\"windowPictures\":true,\"scrollOnDesktopZooms\":true,"
-            + "\"holdStillWhileMicrophoneIsOn\":true,\"allowAllURLCommands\":true,\"newWindows\":\"dock\",\"pointerGestures\":true}"))
+            + "\"holdStillWhileMicrophoneIsOn\":true,\"allowAllURLCommands\":true,\"newWindows\":\"dock\",\"pointerGestures\":true,\"floatingWindowsMakeWay\":true}"))
     }
   }
 
@@ -980,7 +980,9 @@ public struct ChaosGenerator {
       // What a dropped or leaving window meets.
       let framed = random.pick(["guest", "float"])!
       let new = random.pick(["float", "dock"])!
-      return "{\"soleFloatTakesDesktop\":\(random.chance(50)),\"makeRoom\":\(random.chance(60)),\"newWindows\":\"\(new)\",\"newWindowsWhileFramed\":\"\(framed)\"}"
+      // Floating windows that make way (as until Q20) are what F18 needs, and what most rules about floating windows were written for.
+      return "{\"soleFloatTakesDesktop\":\(random.chance(50)),\"makeRoom\":\(random.chance(60)),\"newWindows\":\"\(new)\",\"newWindowsWhileFramed\":\"\(framed)\","
+        + "\"floatingWindowsMakeWay\":\(random.chance(40))}"
     case 10:
       let width = number([1, 3, 12], [0, -3, 500, 1e300], &random)
       let radius = number([0, 10, 17], [-1, 1e300], &random)
