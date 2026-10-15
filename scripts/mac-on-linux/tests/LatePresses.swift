@@ -300,4 +300,34 @@ func tellOfLatePresses(_ book: Book) {
       drags(story, one, window)
     }
   }
+
+  // A press on a window that has not got the keyboard brings its app forward first, and Arbor hears of that about when it hears of the press (trace `drag-onto-window`: 0.4 ms
+  // before). What the layer then asks the app keeps the main thread: 100 to 190 ms for one focus report with Safari and Finder. So this press is late by Arbor's own doing, on a
+  // Mac that is not loaded at all. (A real Mac, macOS 26, 2026-10-15: such a drag was not seen as a drag; the window in front docked fine. THE MODEL DOES NOT SHOW THAT: here the drag
+  // is seen with every slowness played, before `WindowGrab.hold` as well. So whatever lost it is something this model has not got; scripts/mac-shell/check-drag-from-behind.sh asks a Mac.)
+  for answer in [0, 10, 25, 50] {
+    for front in [false, true] {
+      let which = front ? "has the keyboard" : "has not got the keyboard"
+      book.story("a floating window that \(which), of an app that takes \(answer) ms to answer a call, is dragged briskly onto a docked window") { story in
+        var docked: FakeMac.Window!, floating: FakeMac.Window!
+        let two = StoreyTwo(story) { mac in
+          floating = mac.open("floating", in: mac.launch("Notes"), frame: CGRect(x: 600, y: 300, width: 360, height: 260))
+          docked = mac.open("docked", in: mac.launch("Safari"), frame: CGRect(x: 60, y: 100, width: 400, height: 300))
+        }
+        story.check("one window is docked at the left, one floats", two.run("dock \(docked.number) left").ok && !two.isDocked(floating), two.whereabouts(docked))
+        two.mac.click(front ? floating : docked)
+        two.mac.pass(1)
+        if answer > 0 { floating.app.answersIn = Double(answer) / 1000 }
+        two.heard.clear()
+        let to = CGPoint(x: docked.frame.maxX - 30, y: docked.frame.midY)
+        two.mac.drag(from: CGPoint(x: floating.frame.midX, y: floating.frame.minY + 12), to: to, steps: 8, interval: 0.04, rest: 0.02)
+        two.mac.pass(0.6)
+        story.check("the drag is reported to begin", two.heard.all.contains(.dragBegan(floating.number)), two.heard.outline.map(\.text).joined(separator: ", "))
+        story.check("a preview shows where it would go", two.overlays.preview != nil)
+        two.mac.release()
+        two.mac.pass(2)
+        story.check("let go, it is docked", two.isDocked(floating), two.whereabouts(floating))
+      }
+    }
+  }
 }
