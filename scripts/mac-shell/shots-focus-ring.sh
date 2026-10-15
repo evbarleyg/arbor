@@ -164,7 +164,10 @@ step "click the desktop, then a window: another app comes to the front and goes 
 macos_click_wallpaper off
 # It declines on a person's Mac. There the click would throw their windows aside too, and prove nothing about the ring.
 if [ "$(defaults read com.apple.WindowManager EnableStandardClickToShowDesktop 2>/dev/null)" = 0 ]; then
+  # Docked windows have taken all there was. A layout line that names the Desktop gives it room, as Arbor ships: wallpaper to click.
+  ctl layout "$W1 | Desktop | ($W2 / $W3)"
   read -r dx dy dw dh <<< "$(arbor_ask desktop)"
+  [ -n "${dh:-}" ] || die "the Desktop has no room, and the click wants wallpaper"
   click "$((dx + dw / 2))" "$((dy + dh / 2))"
   check "no ring when the desktop has the keyboard" eventually no_ring
   shot 17-desktop-clicked

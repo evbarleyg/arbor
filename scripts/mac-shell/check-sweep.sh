@@ -177,9 +177,9 @@ arbor_settings '{"animationDuration": 0.46}'
 ARBOR_TEST_WINDOWS_ARGS="--regular"
 arbor_start 5
 sampler_start
-ctl dock "$W1" left
-ctl dock "$W2" right
-ctl dock "$W5" bottom
+# Two docks are two halves, with nothing left over. A layout line that names the Desktop gives it room, as Arbor ships: wallpaper to click, and a place
+# for what floats.
+ctl layout "($W1 | Desktop | $W2) / $W5"
 sleep 1
 # Two floating windows side by side at the top of the Desktop. macOS takes them up, where their strips show below the menu bar; what it
 # takes down waits behind the Dock.

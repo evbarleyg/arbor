@@ -65,6 +65,9 @@ floating3=$(real_frame_of "$W3")
 step "a real drag of the gap is one step, and ⌃⌥Z takes it back"
 read -r gap_x gap_y <<< "$(seam_right_of "$W1")"
 [ -n "${gap_y:-}" ] || die "Arbor does not say where the gap is"
+# Low down: two docks are two halves, and the third window floats over the middle of the gap between them.
+read -r x y w h <<< "$(frame_of "$W1")"
+gap_y=$((y + h - 40))
 drag "$gap_x" "$gap_y" "$((gap_x + 90))" "$gap_y" --steps 30 --duration 0.8
 sleep 0.6
 shot 03-gap-dragged
@@ -83,7 +86,7 @@ check "undo put it back once more" eventually is_at "$W1" "$docked1"
 step "a real resize by the window's own edge is one step"
 read -r x y w h <<< "$(frame_of "$W1")"
 [ -n "${h:-}" ] || die "Arbor does not say where window $W1 is"
-drag "$((x + w - 1))" "$((y + h / 2))" "$((x + w + 59))" "$((y + h / 2))" --steps 20 --duration 0.6
+drag "$((x + w - 1))" "$((y + h - 40))" "$((x + w + 59))" "$((y + h - 40))" --steps 20 --duration 0.6
 sleep 0.8
 summary
 if next_undo_is "resize w$W1 by its edges"; then
