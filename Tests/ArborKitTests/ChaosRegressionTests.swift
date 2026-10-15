@@ -805,6 +805,7 @@ private let c = WindowID(103)
       hang 1006
       find
       palette choose
+      react
       """
     let waiting = world(after: hung)
     #expect(waiting.controller.parked.contains(music) && waiting.system.focused == music)

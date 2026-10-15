@@ -7,7 +7,37 @@ import CoreGraphics
 /// would, so tests and arbor-sim exercise the real controller.
 @MainActor
 public final class FakeWindowSystem: WindowSystem {
-  public weak var events: (any WindowSystemEvents)?
+  /// Whoever listens, or with a rude fake the desk that reports go over on their way there (`FakeWindowSystem+Rude.swift`).
+  public var events: (any WindowSystemEvents)? {
+    get { rudeness.isPolite ? listener : desk }
+    set {
+      // A test that takes the listener away for a moment and puts back what it read here got the desk.
+      if let newValue, newValue === desk { return listener = setAside }
+      setAside = listener
+      listener = newValue
+    }
+  }
+  weak var listener: (any WindowSystemEvents)?
+  private weak var setAside: (any WindowSystemEvents)?
+  lazy var desk = ReportDesk(self)
+  /// Which courtesies are dropped. None, unless the environment says otherwise (`ARBOR_RUDE`).
+  public var rudeness = Rudeness.fromEnvironment { didSet { dice = ChaosRandom(seed: rudeness.seed) } }
+  var dice = ChaosRandom(seed: Rudeness.fromEnvironment.seed)
+  /// How many helpers are at work, one inside the other, and what they have reported so far.
+  var burstDepth = 0
+  var held: [Report] = []
+  var wantsAfterEvents = false
+  /// Frames windows have agreed to and not taken yet (`Rudeness.answersLate`).
+  var lateAnswers: [WindowID: CGRect] = [:]
+  /// The windows Arbor asked to give the keyboard to, in order, until they get it (`Rudeness.focusesLate`).
+  var lateFocus: [WindowID] = []
+  /// The number of the only window each app had when it closed (`Rudeness.reusesNumbers`).
+  var putAway: [String: WindowID] = [:]
+  /// An app has come forward since the last report of a focus, so the Accessibility layer would let a second one through (`Rudeness.repeatsReports`).
+  var anAppCameForward = false
+  /// How often an app came to the front without a word (`Rudeness.switchesAppsSilently`).
+  public internal(set) var unnoticedSwitches = 0
+  var focusReportsInBurst = 0
 
   public struct FakeWindow: Equatable {
     public var snapshot: WindowSnapshot {
@@ -96,7 +126,12 @@ public final class FakeWindowSystem: WindowSystem {
   public var echoes = Echoes()
   /// Called at the end of a helper that stands for several reports at once, so that work the controller put
   /// off until they are all in can run. `Harness` runs what is due now.
-  public var afterEvents: (() -> Void)?
+  public var afterEvents: (() -> Void)? {
+    // While a rude fake holds the reports back they are not all in.
+    get { burstDepth > 0 && rudeness.holdsReports ? { [weak self] in self?.wantsAfterEvents = true } : whenAllAreIn }
+    set { whenAllAreIn = newValue }
+  }
+  var whenAllAreIn: (() -> Void)?
   /// Echoes that `deliverEchoes()` has not delivered yet.
   var undelivered: [Echo] = []
   /// With this on, echoes wait for `appsReact()` instead of arriving at the end of every helper and command, so
@@ -230,10 +265,19 @@ public final class FakeWindowSystem: WindowSystem {
   /// What came of the moves announced with `moveTogether`, until `setFrame` asks for it.
   public private(set) var answersAhead: [WindowID: (requested: CGRect, answer: CGRect?)] = [:]
 
-  /// A 1440×900 display with a 25-point menu bar.
-  public static let standardDisplay = DisplaySnapshot(
-    id: DisplayID("main"), frame: CGRect(x: 0, y: 0, width: 1440, height: 900),
-    visibleFrame: CGRect(x: 0, y: 25, width: 1440, height: 875), isMain: true, isBuiltIn: true)
+  /// A 1440×900 display with a 25-point menu bar. With `ARBOR_RUDE=small`, the display below.
+  public static let standardDisplay =
+    Rudeness.smallDisplayFromEnvironment
+    ? hostedMacDisplay
+    : DisplaySnapshot(
+      id: DisplayID("main"), frame: CGRect(x: 0, y: 0, width: 1440, height: 900),
+      visibleFrame: CGRect(x: 0, y: 25, width: 1440, height: 875), isMain: true, isBuiltIn: true)
+
+  /// What a hosted Mac has: 1024×768, a 31-point menu bar and a 63-point Dock. The Desktop between two docked windows is narrower
+  /// there than most windows.
+  public static let hostedMacDisplay = DisplaySnapshot(
+    id: DisplayID("main"), frame: CGRect(x: 0, y: 0, width: 1024, height: 768),
+    visibleFrame: CGRect(x: 0, y: 31, width: 1024, height: 674), isMain: true, isBuiltIn: true)
 
   public init(displays: [DisplaySnapshot] = [FakeWindowSystem.standardDisplay]) {
     displayList = displays
@@ -306,6 +350,11 @@ public final class FakeWindowSystem: WindowSystem {
     var applied = Self.accepted(frame, by: fake)
     if fake.behaviour != .frozen { applied = whereMacOSPuts(applied, titleBar: fake.titleBar) }
     let (before, changed) = (fake.snapshot.frame, fake.snapshot.frame != applied)
+    lateAnswers[window] = nil
+    if rudeness.answersLate, changed, dice.chance(60) {
+      lateAnswers[window] = applied
+      applied = halfWay(from: before, to: applied)
+    }
     moveLog.append(Move(window: window, requested: frame, before: before, after: applied, together: together))
     let (home, moves) = (fake.home ?? fake.snapshot.frame, fake.movesNotArbors)
     fake.snapshot.frame = applied
@@ -387,8 +436,13 @@ public final class FakeWindowSystem: WindowSystem {
     focusLog.append(Focus(window: window, wasFocused: focused == window))
     focusRequests.append(window)
     guard !defersFocus else { return }
+    // The stricter first: a test that says when the keyboard arrives is not overruled by a manner that says "soon".
     if focusIsSlow {
       slowFocus = window
+      return
+    }
+    if rudeness.focusesLate {
+      lateFocus.append(window)
       return
     }
     // Its app comes forward, which brings back what macOS had swept aside.
@@ -453,14 +507,18 @@ public final class FakeWindowSystem: WindowSystem {
     frame: CGRect = CGRect(x: 300, y: 200, width: 640, height: 420), minimumSize: CGSize = .zero,
     isResizable: Bool = true
   ) -> WindowID {
-    let id = WindowID(nextID)
-    nextID += 1
+    // Before the window is there.
+    whatWasAskedHasHappened()
+    let bundleID = bundleID ?? "com.example.\(app.lowercased())"
+    let id = numberForNewWindow(of: pid, bundleID: bundleID)
     let snapshot = WindowSnapshot(
-      id: id, pid: pid, bundleID: bundleID ?? "com.example.\(app.lowercased())", appName: app,
+      id: id, pid: pid, bundleID: bundleID, appName: app,
       title: title ?? "\(app) \(id.rawValue)", frame: frame, isResizable: isResizable)
     windows[id] = FakeWindow(
       snapshot: snapshot, minimumSize: isResizable ? minimumSize : frame.size, maximumSize: isResizable ? nil : frame.size)
     guard started else { return id }
+    beginBurst()
+    defer { endBurst() }
     // By the time anybody hears of a new window it has the keyboard and is in front.
     if echoes.keyboard {
       focused = id
@@ -476,10 +534,14 @@ public final class FakeWindowSystem: WindowSystem {
   public func close(_ window: WindowID) {
     // Nobody hears of a window that closes where the Accessibility API never saw it.
     if unlisted.removeValue(forKey: window) != nil { return }
-    guard windows[window] != nil else { return }
+    guard let closing = windows[window]?.snapshot else { return }
+    beginBurst()
+    defer { endBurst() }
     // The app's next window is reported focused before this one is reported gone.
     if focused == window { giveKeyboard(to: echoes.keyboard ? nextWindowOfApp(after: window) : nil) }
     windows[window] = nil
+    lateAnswers[window] = nil
+    putAway[Self.app(closing.pid, closing.bundleID)] = hasWindows(pid: closing.pid, bundleID: closing.bundleID) ? nil : window
     keyboardOrder.removeAll { $0 == window }
     if inHand?.window == window { inHand = nil }
     events?.windowDestroyed(window)
@@ -488,6 +550,8 @@ public final class FakeWindowSystem: WindowSystem {
 
   public func setMinimized(_ window: WindowID, _ minimized: Bool) {
     guard windows[window] != nil else { return }
+    beginBurst()
+    defer { endBurst() }
     // Either way the focus report comes first: of the app's next window, or of the window flying out of the Dock.
     if echoes.keyboard, started {
       if !minimized {
@@ -504,6 +568,8 @@ public final class FakeWindowSystem: WindowSystem {
   }
 
   public func setHidden(pid: Int32, _ hidden: Bool) {
+    beginBurst()
+    defer { endBurst() }
     for id in windows.keys.sorted() where windows[id]!.snapshot.pid == pid {
       windows[id]!.snapshot.isHidden = hidden
       if restoresLate, !hidden {
@@ -525,6 +591,8 @@ public final class FakeWindowSystem: WindowSystem {
   /// Moves a window's Space in or out of view, as switching Spaces does. Like
   /// the Accessibility layer, this reports the change without a user move.
   public func setOnActiveSpace(_ window: WindowID, _ onActiveSpace: Bool) {
+    whatWasAskedHasHappened()
+    defer { timeHasPassed() }
     guard windows[window] != nil else { return }
     windows[window]!.snapshot.isOnActiveSpace = onActiveSpace
     events?.windowChanged(windows[window]!.snapshot, userInitiated: false)
@@ -536,6 +604,8 @@ public final class FakeWindowSystem: WindowSystem {
 
   /// The user (or another app) moves or resizes a window without Arbor.
   public func userMove(_ window: WindowID, to frame: CGRect) {
+    whatWasAskedHasHappened()
+    defer { timeHasPassed() }
     guard windows[window] != nil else { return }
     windows[window]!.snapshot.frame = frame
     events?.windowChanged(windows[window]!.snapshot, userInitiated: true)
@@ -543,6 +613,8 @@ public final class FakeWindowSystem: WindowSystem {
 
   /// The app changes a window's title, as browsers and editors do once a document has loaded.
   public func setTitle(_ window: WindowID, _ title: String) {
+    whatWasAskedHasHappened()
+    defer { timeHasPassed() }
     unlisted[window]?.snapshot.title = title
     guard windows[window] != nil else { return }
     windows[window]!.snapshot.title = title
@@ -555,6 +627,9 @@ public final class FakeWindowSystem: WindowSystem {
     let before = secondsSinceInput
     if !nobodyTouchedAnything { secondsSinceInput = 0 }
     defer { secondsSinceInput = before }
+    beginBurst()
+    defer { endBurst() }
+    if comesForwardUnnoticed(window) { return }
     focused = window
     undelivered.removeAll { if case .focus = $0 { true } else { false } }
     activateApp(of: window)
@@ -609,6 +684,8 @@ public final class FakeWindowSystem: WindowSystem {
   /// The user brings an app to the front (⌘Tab, its Dock icon), whether or not it has a window. Like
   /// macOS, says nothing if the app is in front already.
   public func activate(bundleID: String?, name: String = "App") {
+    whatWasAskedHasHappened()
+    defer { timeHasPassed() }
     let app = FrontmostApp(bundleID: bundleID, name: name)
     // Whoever comes forward, but for Finder with the desktop, brings back what macOS had swept aside.
     if bundleID != Self.finder { sweptAside = nil }
@@ -624,6 +701,8 @@ public final class FakeWindowSystem: WindowSystem {
   }
 
   public func setDisplays(_ displays: [DisplaySnapshot]) {
+    whatWasAskedHasHappened()
+    defer { timeHasPassed() }
     displayList = displays
     for id in windows.keys { windows[id]!.placeIsArborsDoing = true }
     events?.displaysChanged()
@@ -658,6 +737,8 @@ public final class FakeWindowSystem: WindowSystem {
   /// Takes a window off the list before Arbor starts (its Space is not showing), or puts it back
   /// (the user switched to its Space), which announces it as a window that was open all along.
   public func setListed(_ window: WindowID, _ listed: Bool) {
+    whatWasAskedHasHappened()
+    defer { timeHasPassed() }
     if listed, let fake = unlisted.removeValue(forKey: window) {
       windows[window] = fake
       if started { events?.windowFound(fake.snapshot) }
@@ -720,7 +801,11 @@ extension FakeWindowSystem {
   /// opposite edge stays put. With `release: false` the button stays down
   /// (call again to keep dragging) until `releaseMouse()`.
   public func userResize(_ window: WindowID, to frame: CGRect, release: Bool = true) {
+    // First of all: what follows goes by where the windows are.
+    whatWasAskedHasHappened()
     guard let fake = windows[window] else { return }
+    beginBurst()
+    defer { endBurst() }
     if !mouseDown { events?.pointerPressed() }
     mouseDown = true
     if resizing != window {
@@ -735,6 +820,8 @@ extension FakeWindowSystem {
   /// Releases the mouse button. A resize in progress ends as the AX layer
   /// ends it: the window's final frame, then `resizeEnded`.
   public func releaseMouse() {
+    beginBurst()
+    defer { endBurst() }
     mouseDown = false
     guard let window = resizing else { return }
     resizing = nil
@@ -815,16 +902,22 @@ extension FakeWindowSystem {
   @discardableResult
   public func deliverEchoes() -> Int {
     guard !holdsEchoes else { return 0 }
-    var focusReports = 0
+    if burstDepth == 0 { focusReportsInBurst = 0 }
+    beginBurst()
     var rounds = 0
     // Up to three reports for each window of a layout, and some for what Arbor does about them. More would be Arbor chasing its own tail.
-    while !undelivered.isEmpty, rounds < 100 + 3 * windows.count {
+    while !undelivered.isEmpty || owesSomething, rounds < 100 + 3 * windows.count {
       rounds += 1
+      // What is owed comes before the echoes of what Arbor does about it.
+      if owesSomething {
+        settleLateAnswers()
+        continue
+      }
       switch undelivered.removeFirst() {
       case .focus(let window):
         // Also when the keyboard has moved on since: macOS does not take a report back.
         guard windows[window] != nil else { continue }
-        focusReports += 1
+        focusReportsInBurst += 1
         // `focus` activates the window's app as well.
         if focused == window { activateApp(of: window) }
         events?.windowFocused(window)
@@ -834,7 +927,8 @@ extension FakeWindowSystem {
       case .keyboardMoved: events?.keyboardFocusMoved()
       }
     }
-    return focusReports
+    endBurst()
+    return focusReportsInBurst
   }
 
   /// The name this had when focus was the only echo.
@@ -876,6 +970,8 @@ extension FakeWindowSystem {
   ///
   /// This is the report alone, and kinder than a Mac about the frame. `leaveFullScreen` plays the whole way out as one was seen to.
   public func setFullScreen(_ window: WindowID, _ fullScreen: Bool) {
+    whatWasAskedHasHappened()
+    defer { timeHasPassed() }
     guard let fake = windows[window], fake.snapshot.isFullScreen != fullScreen else { return }
     if fullScreen {
       framesBeforeFullScreen[window] = fake.snapshot.frame
@@ -986,6 +1082,8 @@ extension FakeWindowSystem {
   /// The user clicks the desktop, or switches to something that is not one of these windows (a sheet, a
   /// panel, an app that is not observed).
   public func userFocusesNothing() {
+    whatWasAskedHasHappened()
+    defer { timeHasPassed() }
     focused = nil
     events?.keyboardFocusMoved()
   }
@@ -994,6 +1092,9 @@ extension FakeWindowSystem {
   /// same, so macOS sends no `windowFocused`.
   public func userSwitchesApp(to window: WindowID) {
     guard windows[window] != nil else { return }
+    beginBurst()
+    defer { endBurst() }
+    if comesForwardUnnoticed(window) { return }
     focused = window
     activateApp(of: window)
     bringToFront(window)
@@ -1015,6 +1116,8 @@ extension FakeWindowSystem {
   /// The process stops answering, or answers again. Like a real app, one that wakes up has something to
   /// report about its windows.
   public func setUnresponsive(pid: Int32, _ hung: Bool) {
+    beginBurst()
+    defer { endBurst() }
     if hung {
       unresponsive.insert(pid)
     } else if unresponsive.remove(pid) != nil {
@@ -1029,6 +1132,8 @@ extension FakeWindowSystem {
   /// (`grownBy: 31`) when it first shows.
   @discardableResult
   public func openTab(in window: WindowID, title: String? = nil, grownBy growth: CGFloat = 0) -> WindowID? {
+    whatWasAskedHasHappened()
+    defer { timeHasPassed() }
     guard let front = windows[window] else { return nil }
     let id = WindowID(nextTabID())
     var snapshot = front.snapshot
@@ -1045,6 +1150,8 @@ extension FakeWindowSystem {
 
   /// Brings the background tab `tab` to the front of the group `front` stands for.
   public func selectTab(_ tab: WindowID, insteadOf front: WindowID) {
+    whatWasAskedHasHappened()
+    defer { timeHasPassed() }
     guard var fake = backgroundTabs.removeValue(forKey: tab), let old = windows.removeValue(forKey: front) else { return }
     fake.snapshot.frame = old.snapshot.frame
     backgroundTabs[front] = old
@@ -1056,6 +1163,8 @@ extension FakeWindowSystem {
   /// Closes the tab in front. The tab `next` takes its place first, then the closed one is reported gone,
   /// the order seen on macOS 26.
   public func closeTab(_ front: WindowID, revealing next: WindowID) {
+    beginBurst()
+    defer { endBurst() }
     selectTab(next, insteadOf: front)
     backgroundTabs[front] = nil
     events?.windowDestroyed(front)
@@ -1063,7 +1172,11 @@ extension FakeWindowSystem {
 
   /// The user is dragging `window` and the button's release is never seen.
   public func dragAndLoseTheRelease(_ window: WindowID, to point: CGPoint) {
+    // First of all: what follows goes by where the windows are.
+    whatWasAskedHasHappened()
     guard let start = windows[window]?.snapshot.frame else { return }
+    defer { timeHasPassed() }
+    beginBurst()
     mouseDown = true
     cursor = point
     events?.pointerPressed()
@@ -1072,6 +1185,8 @@ extension FakeWindowSystem {
     events?.windowChanged(windows[window]!.snapshot, userInitiated: true)
     events?.dragMoved(window, to: point)
     mouseDown = false
+    // A burst is a moment, and macOS takes a third of a second over a tile.
+    endBurst()
     // macOS sees every release.
     if let letGo = windows[window]?.snapshot.frame { letMacOSTile(window, letGoAt: letGo) }
     events?.dragCancelled(window)
@@ -1109,7 +1224,10 @@ extension FakeWindowSystem {
 extension FakeWindowSystem {
   /// The app quits: like the Accessibility layer, this reports each of its windows destroyed, in order.
   public func quit(pid: Int32) {
+    beginBurst()
+    defer { endBurst() }
     for id in windows.keys.sorted() where windows[id]?.snapshot.pid == pid { close(id) }
+    forgetNumbers(of: pid)
   }
 }
 
@@ -1145,6 +1263,8 @@ extension FakeWindowSystem {
 
   /// The user clicks somewhere: in a window's content, on anything that starts no drag.
   public func click() {
+    whatWasAskedHasHappened()
+    defer { timeHasPassed() }
     events?.pointerPressed()
   }
 }
@@ -1179,6 +1299,8 @@ extension FakeWindowSystem {
   /// Presses the mouse on `window`'s title bar (10 points below its top, centred) and starts
   /// dragging it with the pointer at `point`, or where it took hold.
   public func beginDrag(_ window: WindowID, at point: CGPoint? = nil) {
+    // First of all: what follows goes by where the windows are.
+    whatWasAskedHasHappened()
     guard var start = windows[window]?.snapshot.frame else { return }
     let ownSize = takeSizeBeforeTile(of: window)
     if let ownSize {
@@ -1186,6 +1308,8 @@ extension FakeWindowSystem {
       windows[window]?.snapshot.frame = start
     }
     let grab = CGPoint(x: start.midX, y: start.minY + 10)
+    beginBurst()
+    defer { endBurst() }
     inHand = (window, start, grab)
     mouseDown = true
     events?.pointerPressed()
@@ -1198,9 +1322,11 @@ extension FakeWindowSystem {
   /// Moves the pointer, and the dragged window with it, to `point` and rests there for `seconds`.
   public func moveDrag(to point: CGPoint, holding seconds: Double = 0) {
     guard let window = inHand?.window else { return }
+    beginBurst()
     follow(point)
     if let snapshot = windows[window]?.snapshot { events?.windowChanged(snapshot, userInitiated: true) }
     events?.dragMoved(window, to: point)
+    endBurst()
     holdDrag(for: seconds)
   }
 
@@ -1212,12 +1338,16 @@ extension FakeWindowSystem {
   /// Presses and releases modifier keys until exactly `keys` are held. During a drag the AX layer
   /// reports that as a move to the same point.
   public func holdModifierKeys(_ keys: KeyChord.Modifiers) {
+    whatWasAskedHasHappened()
+    defer { timeHasPassed() }
     heldModifiers = keys
     if let window = inHand?.window { events?.dragMoved(window, to: cursor) }
   }
 
   /// Releases the mouse where the pointer is.
   public func endDrag() {
+    whatWasAskedHasHappened()
+    defer { timeHasPassed() }
     mouseDown = false
     guard let window = inHand?.window else { return }
     inHand = nil
@@ -1324,6 +1454,8 @@ extension FakeWindowSystem {
 
   /// The button comes up and nobody sees it, until the AX layer finds it up and calls the drag off.
   public func loseTheReleaseOfTheDrag() {
+    whatWasAskedHasHappened()
+    defer { timeHasPassed() }
     mouseDown = false
     guard let window = inHand?.window else { return }
     inHand = nil

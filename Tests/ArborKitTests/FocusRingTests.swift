@@ -130,7 +130,7 @@ private let side = DisplaySnapshot(
 
     let h = Harness(saved: earlier.store.saved)
     let a = h.system.open(app: "Safari")
-    h.system.focus(a)
+    h.system.focused = a
     h.start()
     #expect(h.workspace.isDocked(a))
     expectRing(h, around: a)

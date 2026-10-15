@@ -30,7 +30,8 @@ expect fills 102
 back
 # The user's hand wins: pulled shorter, it stays shorter.
 pull 102 bottom -400
-open Mail 400x200
+# Another app: Mail's only window closed, and Mail may give its next one the same number.
+open Calendar 400x200
 move 104 900 650 400 200
 expect above 102 104
 dock 104 right

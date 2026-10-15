@@ -17,6 +17,10 @@ private let side = DisplaySnapshot(
     _ old: Harness, displays: [DisplaySnapshot] = [main], keeping keep: (WindowSnapshot) -> Bool = { _ in true }
   ) -> Harness {
     let h = Harness(displays: displays, saved: old.store.saved)
+    // Opening and closing to use numbers up is this helper's device and nothing an app does.
+    let manners = h.system.rudeness
+    h.system.rudeness.reusesNumbers = false
+    defer { h.system.rudeness = manners }
     var next: UInt32 = 101
     for window in old.system.allWindows() {
       // The fake numbers windows in order; fill the gaps so numbers stay the same.
@@ -124,7 +128,8 @@ private let side = DisplaySnapshot(
     old.controller.shutdown()
 
     let h = Harness(saved: old.store.saved)
-    for _ in 0..<5 { h.system.close(h.system.open(app: "Filler")) }
+    // Other numbers than before. An app each: one app's only window may come back under the number it had.
+    for filler in 0..<5 { h.system.close(h.system.open(app: "Filler \(filler)")) }
     let a2 = h.system.open(app: "Terminal", title: "zsh")
     let b2 = h.system.open(app: "Terminal", title: "zsh")
     h.start()

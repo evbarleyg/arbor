@@ -53,7 +53,10 @@ public final class Harness {
     let start = Date(timeIntervalSinceReferenceDate: 800_000_000)
     controller.now = { [scheduler] in start.addingTimeInterval(scheduler.now) }
     scheduler.afterEach = { [system] in system.deliverEchoes() }
+    scheduler.whenTimePasses = { [system] in system.timeHasPassed() }
     system.afterEvents = { [scheduler] in scheduler.advance(by: 0) }
+    // A polite fake leaves it to the test (`deliverEchoes()` after a bare `clickTile`), and some tests look in between.
+    overlays.afterAction = { [system] in if !system.rudeness.isPolite { system.deliverEchoes() } }
     system.clock = { [scheduler] in scheduler.now }
     controller.releaseFeed = releases
     controller.loginItem = loginItem

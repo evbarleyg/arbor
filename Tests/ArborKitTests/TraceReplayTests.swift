@@ -411,6 +411,7 @@ private let second = DisplaySnapshot(
     // Something is reported from within `setFrame`, so in the middle of the `dock` command, as a refusal is by the real layer.
     let (trace, original) = record(
       before: { h in
+        h.system.staysPolite(because: "a report from inside the call is what is being recorded and replayed")
         h.system.open(app: "Safari")
         h.system.open(app: "Notes")
         h.system.userFocus(WindowID(101))

@@ -516,6 +516,7 @@ import Testing
 @Suite struct ObserverTests {
   @Test func observersHearAboutLayoutCameraViewsFocusAndSettings() {
     let h = Harness()
+    h.system.staysPolite(because: "observers hear of a focus once for each report of macOS's, and the reports are counted here")
     let a = h.system.open(app: "Safari")
     let b = h.system.open(app: "Notes")
     var changes: [Controller.Change] = []

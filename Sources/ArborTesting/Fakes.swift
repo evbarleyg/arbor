@@ -7,6 +7,8 @@ import CoreGraphics
 @MainActor
 public final class FakeOverlays: OverlayPresenter {
   public weak var actions: (any OverlayActions)?
+  /// Called after a hand has worked one of Arbor's panels. With a rude fake `Harness` lets what is owed come true here, as it does after a command.
+  public var afterAction: (() -> Void)?
   public private(set) var preview: CGRect?
   public private(set) var previewHistory: [CGRect?] = []
   /// The scene last shown on each display.
@@ -92,6 +94,7 @@ public final class FakeOverlays: OverlayPresenter {
 
   public func clickTile(_ node: NodeID, on display: DisplayID = FakeWindowSystem.standardDisplay.id) {
     actions?.tileActivated(display: display, node: node)
+    afterAction?()
   }
 
   /// Clicks the outline of a peek, if one shows. The click is over before any timer looks.
@@ -99,11 +102,13 @@ public final class FakeOverlays: OverlayPresenter {
   public func clickOutline(on display: DisplayID = FakeWindowSystem.standardDisplay.id) -> Bool {
     guard scenes[display]?.peekOutline != nil else { return false }
     actions?.peekOutlineClicked(display: display)
+    afterAction?()
     return true
   }
 
   public func dragSeam(_ seam: Seam, by delta: CGFloat, on display: DisplayID = FakeWindowSystem.standardDisplay.id) {
     actions?.seamDragged(display: display, seam: seam, by: delta)
+    afterAction?()
   }
 
   public func animate(_ transition: Transition) {
@@ -144,19 +149,24 @@ public final class FakeOverlays: OverlayPresenter {
   }
 
   /// Presses a key, or clicks, while the panel of shortcuts is up.
-  public func dismissCheatSheet() { actions?.cheatSheetDismissed() }
+  public func dismissCheatSheet() {
+    actions?.cheatSheetDismissed()
+    afterAction?()
+  }
 
   /// Types `text` into the name field and presses ↩, as `NamePanel` does. Returns nil if the field is
   /// not showing, or does not take the text and stays open.
   @discardableResult
   public func submitName(_ text: String) -> CommandResult? {
     guard let command = namePrompt?.answer(to: text).command else { return nil }
+    defer { afterAction?() }
     return actions?.perform(command)
   }
 
   /// Presses ⎋ in the name field.
   public func cancelName() {
     if namePrompt != nil { actions?.perform(.askName(cancel: true)) }
+    afterAction?()
   }
 
   // MARK: The finder
@@ -193,6 +203,7 @@ public final class FakeOverlays: OverlayPresenter {
     let destination = if let row { row >= 1 ? finder.destination(atVisible: row - 1) : nil } else { finder.selected }
     guard let destination else { return false }
     actions?.finderChose(destination)
+    afterAction?()
     return true
   }
 
@@ -214,6 +225,7 @@ public final class FakeOverlays: OverlayPresenter {
   public func clickMinimap(at point: CGPoint, on display: DisplayID = FakeWindowSystem.standardDisplay.id) {
     guard minimaps[display]?.takesClicks == true else { return }
     actions?.minimapClicked(display: display, at: point)
+    afterAction?()
   }
 }
 
@@ -254,6 +266,8 @@ public final class ManualScheduler: Scheduler {
   private var order: [String] = []
   /// Called after each piece of work. `Harness` delivers the fake window system's echoes here.
   public var afterEach: (@MainActor () -> Void)?
+  /// Called when time is about to pass, before any work that falls due in it. `Harness` lets what a rude fake owes come true here: it takes hundredths of a second.
+  public var whenTimePasses: (@MainActor () -> Void)?
   /// Seconds since the scheduler was made. Only `advance(by:)` moves it.
   public private(set) var now: Double = 0
 
@@ -288,6 +302,7 @@ public final class ManualScheduler: Scheduler {
   /// including work that this work schedules within the same span.
   public func advance(by seconds: Double) {
     let end = now + max(seconds, 0)
+    if seconds > 0 { whenTimePasses?() }
     while let key = order.filter({ pending[$0]!.due <= end }).min(by: { pending[$0]!.due < pending[$1]!.due }),
       let item = pending[key]
     {

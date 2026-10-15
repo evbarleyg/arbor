@@ -150,7 +150,7 @@ private func expectNothingLost(_ h: Harness, sourceLocation: SourceLocation = #_
 
   @Test func theFocusedWindowComesFirstEvenIfNoEventSaidSo() {
     let h = harness("Safari", "Safari")
-    h.system.focus(w(102))
+    h.system.focused = w(102)
     #expect(h.run("layout Safari").ok)
     #expect(h.workspace.tree.allWindows == [w(102)])
   }

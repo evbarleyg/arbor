@@ -74,14 +74,14 @@ setListed openUnlisted finishSlowFocus userResize releaseMouse backgroundFocus s
 userSwitchesApp appsSettle setUnresponsive openTab selectTab closeTab dragAndLoseTheRelease quit quitApp comesForward
 settleFocus click userClick beginDrag moveDrag holdDrag holdModifierKeys endDrag loseTheReleaseOfTheDrag appsReact grab
 carry letGo loseTheRelease moveSilently report renumber finishRestoring openStrayDialog forgetSession type keyDown keyUp
-hold
+hold comesToTheFront
 """.split()
 # The test tells the fake what macOS or an app will answer when Arbor asks or acts. Methods, then properties that are set.
 SYSTEM_ANSWERS = "setMinimumSize setMaximumSize setSizeStep setBehaviour setTitleBar".split()
 SYSTEM_ANSWER_PROPERTIES = """
 cursor mouseDown focused heldModifiers secondsSinceInput displayList stubbornFrames focusIsSlow defersFocus restoresLate
 willSetFrame echoes holdsEchoes isDenied flagLags refusesTaps stackingIsUnknown strangers missingApps unlaunchableApps
-ignoresMoveTogether
+ignoresMoveTogether rudeness
 """.split()
 # Opening a window is set-up by the definition of class C, whether before or after the start. It is counted in part 2 all
 # the same, because after the start it is a report like any other.
@@ -97,7 +97,7 @@ inputActivity isHolding frame isVisible clearFrameLog existingWindowIDs launchAp
 install place remove hasHeldEchoes dragging frameAfterResizing openApplication raise windowsFrontToBack clearRaiseLog
 snapshot minimumSize maximumSize sizeStep behaviour lastRequest placeIsArborsDoing groundHasShifted movesNotArbors
 changedItsWays window requested before after together wasFocused focus frames keyboard wholePoints
-titleBarStaysReachable flightFromTheDock flightFromFullScreen none jolts titleBar usualTitleBar measuredTitleBars reports
+titleBarStaysReachable flightFromTheDock flightFromFullScreen none jolts titleBar usualTitleBar measuredTitleBars reports hostedMacDisplay unnoticedSwitches staysPolite
 """.split()
 
 # A hand on one of Arbor's own panels: the fake calls the action the real panel would call.
@@ -108,7 +108,7 @@ dismissFinder clickMinimap
 OVERLAY_NEUTRAL = """
 actions preview previewHistory scenes tiles seams transitions finishedAnimations onAnimate namePrompt headsUp messages
 cheatSheets minimaps minimapHistory updateLog showDropPreview update removeAll animate finishAnimations clearTransitions
-showHeadsUp showCheatSheet finder finderBeeps showFinder showMinimap display changed
+showHeadsUp showCheatSheet finder finderBeeps showFinder showMinimap display changed afterAction
 """.split()
 
 # Harness: a key that is held, or whose release is a report of its own; the permission taken away.
@@ -121,7 +121,7 @@ workspace layout visibleFrame frame ascii lastTrace layoutProblems staleLayouts 
 # What the stand-ins for GitHub's releases and macOS's login items are told to answer.
 OTHER_ANSWERS = {"releases": "reply answer".split(), "loginItem": "status refuses statusAfterRefusal".split()}
 OTHER_NEUTRAL = """
-saved saveCount repairs keptCopy loadProblem load save afterEach now schedule cancel pendingKeys runPending advance fire location lines isClosed failure
+saved saveCount repairs keptCopy loadProblem load save afterEach whenTimePasses now schedule cancel pendingKeys runPending advance fire location lines isClosed failure
 text write close requests latestRelease changes setEnabled description
 """.split()
 
@@ -1204,6 +1204,7 @@ EVIDENCE = {
     "system.userClick": (["event pointerPressed"], ""),
     "system.click": (["event pointerPressed"], ""),
     "system.comesForward": (["read secondsSinceClickOrModifierKey"], ""),
+    "system.comesToTheFront": (["read windowsFrontToBack"], ""),
     "system.settleFocus": (["focused, answering Arbor's focus"], ""),
     "system.finishSlowFocus": (["focused, answering Arbor's focus"], ""),
     "system.focusIsSlow=": (["focused, answering Arbor's focus"], ""),
@@ -1243,6 +1244,7 @@ EVIDENCE = {
     "system.appsReact": (["changed, echo of Arbor's own move"], ""),
     "system.holdsEchoes=": (["changed, echo of Arbor's own move"], ""),
     "system.echoes=": (["changed, echo of Arbor's own move"], ""),
+    "system.rudeness=": (["changed, echo of Arbor's own move"], ""),
     "system.setBehaviour": (["setFrame, took more than asked", "setFrame, took less than asked"], ""),
     "system.setMinimumSize": (["setFrame, took more than asked"], ""),
     "system.setMaximumSize": (["setFrame, took less than asked"], ""),

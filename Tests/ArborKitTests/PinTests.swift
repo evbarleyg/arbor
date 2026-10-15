@@ -191,7 +191,7 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
     #expect(h.system.raiseLog.isEmpty, "nothing covers it yet")
     // A long press: Arbor goes on looking for as long as the button is down.
     h.scheduler.advance(by: 3)
-    h.system.focus(browser)
+    h.system.comesToTheFront(browser)
     #expect(isCovered(call, h))
     h.system.mouseDown = false
     h.scheduler.advance(by: 0.2)
