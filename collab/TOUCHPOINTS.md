@@ -40,5 +40,5 @@ Every avoidable row names what would have avoided it, and that becomes a board i
 
 | What | Why only they can | Default on silence |
 |---|---|---|
-| A Developer ID, so that a download opens without a warning | identity and money | Arbor ships signed ad hoc, and `docs/INSTALL.md` says what macOS will ask and why |
+| A Developer ID, so that a download opens without a warning | identity and money | Arbor ships signed ad hoc, and `docs/INSTALL.md` says what macOS will ask and why. **What the default costs, seen on a hosted Mac on 2026-10-15:** macOS refuses a downloaded Arbor; the way round is four steps through two dialogs, System Settings and an administrator's password, and in both dialogs the blue default button is Move to Trash. An ordinary person will not get through that: without the ID Arbor can be viable for people who build it or paste one line into Terminal, and for nobody else |
 | The first tag and release | irreversible, under their name | none is made until `docs/VIABLE.md` says `VIABLE`; then the product owner proposes it in the digest, and it waits for their word |

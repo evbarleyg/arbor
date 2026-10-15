@@ -23,6 +23,19 @@ For whoever tries it first, in plain words. It is a build to try, not a release:
 
 **Who has tried it.** Programs only: random walks over simulated windows, well over a hundred thousand of them, and scripts that drive the real app with real apps, a real pointer and real keys on GitHub's hosted Macs. No person has used this build. No lid, no second physical display and no trackpad have met it.
 
+### Opening it for the first time
+
+**Built from source** (`make install`, `docs/INSTALL.md`): macOS asks nothing but the Accessibility permission.
+
+**Downloaded** (there is no download yet; this is what one will meet, seen on a hosted Mac with macOS 26.6): the project has no Apple Developer ID, so macOS refuses the first time: *"Arbor" Not Opened*. **Click Done, not the blue button: in both of macOS's dialogs the blue default button, which Return presses too, is Move to Trash.** The whole road, four steps, once:
+
+1. *"Arbor" Not Opened*: Done.
+2. System Settings → Privacy & Security, down to Security: *"Arbor" was blocked to protect your Mac*: Open Anyway.
+3. *Open "Arbor"?*: Open Anyway, the middle button.
+4. An administrator's name and password; the dialog comes up some seconds late. What follows it nobody has seen: no script can give a password on a hosted Mac.
+
+Or one line in Terminal, which was played to its end: `xattr -dr com.apple.quarantine /Applications/Arbor.app`. Then there is no dialog at all: Arbor starts, shows its welcome window and waits for the permission. The zip, the disk image and Homebrew all end in the same refusal.
+
 ### Better than the build before
 
 - **A start takes nothing away.** The first start moves nothing. A later start puts back what was docked and ends showing everything; no window that was in view when Arbor started leaves it.
