@@ -79,7 +79,7 @@ them). A key is left out when there is nothing of the kind. From back to front, 
 | `stage` | While windows move: `frame`, `opacity` (below 1 while it lifts), `surfaces`, and `standIns` back to front: `id`, `app`, `frame`, `opacity`, `cover`, `picture`, `colour`. It covers everything above, under the Dock and the menu bar. The real windows are at their final frames underneath from its first frame on | `Stage`, `StageDirector` |
 | `nameField`, `minimap`, `shortcuts`, `headsUp`, `goTo` | Arbor's panels, above the stage. Inside `minimap` and `goTo` rectangles are measured from the panel's top-left corner | `NamePanel`, `MinimapPanel`, `CheatSheetPanel`, `HeadsUpPanel`, `FinderPanel` |
 | `menuBar` | Arbor's item: `frame`, and a single `icon` or the `buttons` (`name`, `cell`, `chip`, `enabled`, `current`, `glyph`). A glyph is Arbor's `mark` as rectangles, a `digit`, or the name of a system `symbol` | `StatusMenu`, `ArborArtwork` |
-| `menu` | Its menu while it is open: `frame` and `rows` (`kind`, `title`, `shortcut`, `enabled`, `ticked`, `highlighted`) | `StatusMenu` |
+| `menu` | Its menu while it is open: `frame` and `rows` (`kind`, `title`, `shortcut`, `enabled`, `ticked`, `highlighted`; `news` for a line that cannot be chosen and is not greyed out) | `StatusMenu` |
 | `pointer` | `at`, `down` | |
 | `keys` | What is held: `modifiers`, `key`, `label`; modifier keys held by themselves have no `key`, and their signs for a `label` | |
 | `marks` | The film's own notes | |

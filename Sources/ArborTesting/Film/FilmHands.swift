@@ -14,6 +14,8 @@ public struct FilmMenu: Equatable {
     public var isEnabled = true
     public var isTicked = false
     public var opensSubmenu = false
+    /// It cannot be chosen and is drawn at full strength all the same (`MenuModel.Item.isNews`).
+    public var isNews = false
     /// Global coordinates.
     public var frame = CGRect.zero
     var action: MenuModel.Item.Action?
@@ -42,7 +44,7 @@ public struct FilmMenu: Equatable {
         rows.append(
           Row(
             kind: .item, title: item.title, shortcut: item.showsShortcut ? item.shortcut?.label : nil,
-            isEnabled: item.isEnabled, isTicked: item.isTicked, opensSubmenu: opensSubmenu, action: item.action))
+            isEnabled: item.isEnabled, isTicked: item.isTicked, opensSubmenu: opensSubmenu, isNews: item.isNews, action: item.action))
       }
     }
     let x = min(item.minX, screen.maxX - Self.width - 8)

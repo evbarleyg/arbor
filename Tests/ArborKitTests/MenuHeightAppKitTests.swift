@@ -1,6 +1,7 @@
 #if os(macOS)
   import AppKit
   import ArborCore
+  @testable import ArborKit
   import ArborTesting
   import Testing
 
@@ -18,6 +19,8 @@
           let row = NSMenuItem(title: item.title, action: nil, keyEquivalent: "")
           if item.iconOfProcess != nil { row.image = NSImage(size: NSSize(width: 16, height: 16)) }
           if let note = item.note { row.badge = NSMenuItemBadge(string: note) }
+          // A title with attributes of its own could come out higher.
+          if item.isNews { row.attributedTitle = StatusMenu.news(item.title) }
           menu.addItem(row)
         }
       }

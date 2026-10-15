@@ -35,7 +35,7 @@ close_menu() {
 
 item_is_at_rest() {
   local before
-  before=$(status_item)
+  before=$(status_item) && [ -n "$before" ] || return 1
   sleep 0.5
   [ "$before" = "$(status_item)" ]
 }
@@ -83,6 +83,8 @@ measure() {
   check "$1: it ends above the Dock" test "$((my + mh))" -le "$foot"
   shot "$1"
   look "$1-own" "$MENU_ID"
+  # For whoever measures afterwards (scripts/polish/stills.py read <picture> x,y,w,16): the words begin some 23 points in.
+  echo "$1: in $1.png the words of the first row begin at $((mx + 23)),$((my + padding + 4))"
 }
 
 # submenu <name> <title>: with the menu open, rests on that row, and takes a picture of what opens. Its height is for reading: headings and
@@ -196,13 +198,24 @@ close_menu
 choose "Arbor is paused"
 check "Arbor runs again" eventually says_status "^running"
 
+ctl trace off
+cp "$ARBOR_HOME"/traces/*.jsonl "$ARBOR_OUT/" 2> /dev/null
+
+# A SECOND QUESTION ONLY A MAC CAN ANSWER: news cannot be chosen, and its title has a color of its own (`StatusMenu.news`). Does macOS draw
+# it at full strength all the same, and as high as any other row? The height is checked here; the contrast is measured in the picture.
+step "news that no command ends: the saved arrangement could not be read"
+arbor_quit
+printf 'this is no arrangement\n' > "$ARBOR_HOME/state.json"
+arbor_relaunch
+check "the menu has the news" eventually says_menu "(news)"
+measure 55-news
+close_menu
+
 step "the fourth: Quit Arbor, with a window out of view"
 ctl dock "$W1" left
 ctl dock "$W2" right
 ctl zoom "$W1"
 check "the second window is out of view" eventually is parked "$W2"
-ctl trace off
-cp "$ARBOR_HOME"/traces/*.jsonl "$ARBOR_OUT/" 2> /dev/null
 choose "Quit Arbor"
 check "Arbor exits" arbor_await_exit "$ARBOR_PID" 50
 # Finds Arbor gone, and checks that every window is back on screen.

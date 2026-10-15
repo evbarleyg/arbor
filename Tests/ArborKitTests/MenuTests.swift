@@ -215,6 +215,28 @@ import Testing
     }
   }
 
+  /// News is there to be read, and macOS draws a row that cannot be chosen at 1.86 to 1: it is marked, and `StatusMenu` draws it at full
+  /// strength. A row that stands in for one that cannot act now ("Shortcuts Off in This App") is meant to look greyed out, and is not news.
+  @Test(arguments: MenuHeightTests.running + MenuHeightTests.notRunning) func newsIsMarkedAndNothingElseIs(state: String) {
+    let model = MenuHeightTests().harness(in: state).controller.menuModel()
+    let isAState = model.sections.first?.items.first?.title != "Show Everything"
+    let news = isAState ? (model.sections.first?.items ?? []).filter { $0.action == .text } : []
+    let marked = model.allItems.filter(\.isNews)
+    #expect(marked.map(\.title) == news.map(\.title), "\(state)")
+    let canBeChosen = marked.filter { $0.isEnabled || $0.action != .text }
+    #expect(canBeChosen.isEmpty, "it still cannot be chosen")
+  }
+
+  @Test func thereIsNewsToLookAt() {
+    func news(_ state: String) -> [String] { MenuHeightTests().harness(in: state).controller.menuModel().allItems.filter(\.isNews).map(\.title) }
+    #expect(news("starting") == ["Arbor is starting…"])
+    #expect(news("the permission was taken away and settings.json has a mistake").count == 2)
+    #expect(news("the arrangement was repaired and settings.json has a mistake") == ["The saved arrangement needed 1 repair when it was read"])
+    #expect(news("no windows").isEmpty, "with no window focused the rows about it are greyed out, and are no news")
+    let greyedOut = MenuHeightTests().harness(in: "no windows").controller.menuModel().allItems.filter { $0.action == .text }
+    #expect(!greyedOut.isEmpty, "or that looks at nothing")
+  }
+
   @Test func withoutThePermissionTheMenuLeadsToIt() {
     let h = Harness()
     h.controller.accessibilityGranted = false

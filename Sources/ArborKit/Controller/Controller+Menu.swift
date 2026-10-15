@@ -9,7 +9,7 @@ import Foundation
 ///     Item.command("Balance Sizes", .equalize(all: false))                      // runs a command, shows its shortcut
 ///     Item.command("Step In", .stepIn).enabled(canStep.in)                      // greyed out when it would fail
 ///     Item.command("Keep This Window in View", .togglePin(nil)).ticked(isPinned) // a switch
-///     Item.text("Arbor is starting…")                                           // says something, cannot be chosen
+///     Item.news("Arbor is starting…")                                           // says something, cannot be chosen
 ///     Item.submenu("Tab Group") { … }                                           // the same lines, one level down
 ///     if displays.count > 1 { … }                                               // for what may not exist at all
 ///
@@ -88,11 +88,11 @@ extension Controller {
       // Taken away while Arbor ran (F63): what happened, how many windows are out of view, that they come back with it.
       let lines = permissionMenuLines.isEmpty ? ["Arbor needs Accessibility permission"] : permissionMenuLines
       // Check Setup and not System Settings: with a new build over an old grant the switch there looks on, and only Check Setup says so.
-      states.append([Item.command(lines[0] + " · Check Setup…", .checkSetup)] + lines.dropFirst().map { Item.text($0) })
+      states.append([Item.command(lines[0] + " · Check Setup…", .checkSetup)] + lines.dropFirst().map { Item.news($0) })
     } else if isPaused {
       states.append([Item.command(pausedLine + " · Resume", .togglePause).help("While paused, Arbor leaves windows and shortcuts alone")])
     } else if !isRunning {
-      states.append([Item.text("Arbor is starting…")])
+      states.append([Item.news("Arbor is starting…")])
     }
     if !holdState.isEmpty { states.append(holdState.map(item)) }
     // Before the state that only a change of settings ends: the topmost way out is never greyed out.
@@ -103,13 +103,13 @@ extension Controller {
     }
     // What the ticked row in Focused Window ▸ does: that is a submenu, and in this state no key helps.
     if let notice = passThroughNotice {
-      states.append([shortcutsOffInThisApp.command.map { Item.command(notice + " · Turn On", $0).withoutShortcut() } ?? Item.text(notice)])
+      states.append([shortcutsOffInThisApp.command.map { Item.command(notice + " · Turn On", $0).withoutShortcut() } ?? Item.news(notice)])
     }
     // What no command ends. The words before the brackets are the news, and as long as a menu's line should be; which file has the rest
     // is in the tooltip, and in `status`.
     for notice in notices {
       let news = notice.split(separator: "(", maxSplits: 1).first.map { $0.trimmingCharacters(in: .whitespaces) } ?? notice
-      states.append([news == notice ? Item.text(notice) : Item.text(news).help(notice)])
+      states.append([news == notice ? Item.news(notice) : Item.news(news).help(notice)])
     }
     // More than two would push the first commands, among them the way back, out of their places.
     return Section { states.prefix(2).flatMap { $0 } }

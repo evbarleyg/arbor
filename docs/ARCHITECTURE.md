@@ -1541,7 +1541,7 @@ menu is tested on Linux in every state, and the `menu` query prints it (`arborct
 
 1. add one line in the same place in `Controller+Menu.swift`:
    `Item.command("Balance Sizes", .equalize(all: false))`. Chain what else is true of it: `.enabled(…)` when the command would
-   fail now, `.ticked(…)` for a switch, `.help("…")` for a tooltip, `.withoutShortcut()`. `Item.text("…")` is a line of words,
+   fail now, `.ticked(…)` for a switch, `.help("…")` for a tooltip, `.withoutShortcut()`. `Item.news("…")` is a line of words to be read, `Item.text("…")` one that looks greyed out,
    `Item.submenu("…") { … }` the same lines one level down, and `if` and `for` work inside a section;
 2. add the line to `MenuTests.theWholeMenu`, which is the whole menu written out and fails until the two agree.
 
