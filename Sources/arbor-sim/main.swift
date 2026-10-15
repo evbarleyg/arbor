@@ -57,7 +57,8 @@ import Foundation
 //   fullscreen <id> on|off [where-it-was]
 //                                the green button: the window gets a macOS Space to itself, so the other windows
 //                                of its display are on a Space that does not show; off brings all of it back, as a Mac
-//                                does (FakeWindowSystem.leaveFullScreen), and says where a person saw the window meanwhile.
+//                                does (FakeWindowSystem.enterFullScreen, leaveFullScreen), and says where a person saw the window
+//                                meanwhile, and which others they saw move.
 //                                It lands at the frame it had before Arbor moved it; `where-it-was`: at the one it had last
 //   comes-forward <id>           the window's app brings itself forward: nobody clicked or pressed anything
 //   hold-still-for <bundle id> [title words…]
@@ -441,19 +442,20 @@ func simulate(_ words: [String], harness: Harness, printLayout: inout Bool) -> (
       $0 != id && harness.controller.workspaceID(containing: $0) == display
     }
     let onItsSpace = others.filter { system.windows[$0]?.snapshot.isFullScreen == false }
+    // In the order and at the times of a Mac, where the others are in sight on the way in, and the window is seen before it is reported back.
+    system.clearSightings()
     if on {
-      system.setFullScreen(id, true)
-      for other in onItsSpace { system.setOnActiveSpace(other, false) }
+      system.enterFullScreen(id, leaving: onItsSpace)
     } else {
-      // In the order and at the times of a Mac, where it is seen before it is reported back.
-      system.clearSightings()
       system.leaveFullScreen(id, with: onItsSpace, whereItWas: words.count == 4)
     }
     // macOS reports each window by itself; Arbor lays out once they have all been heard of.
     harness.scheduler.advance(by: 2)
     let seen = system.sightings(of: id).map { "\(Int($0.minX)),\(Int($0.minY)) \(Int($0.width))×\(Int($0.height))" }
     let sighted = on || seen.isEmpty ? "" : " and was seen at \(seen.joined(separator: ", then at "))"
-    return ("\(id.rawValue) \(on ? "went into" : "left") full screen\(sighted)", true)
+    let movers = Set(system.sightings.map(\.window.rawValue)).subtracting([id.rawValue]).sorted()
+    let moved = movers.isEmpty ? "" : "; seen to move meanwhile: \(movers.map(String.init).joined(separator: ", "))"
+    return ("\(id.rawValue) \(on ? "went into" : "left") full screen\(sighted)\(moved)", true)
   case "field-type":
     guard let prompt = harness.overlays.namePrompt else { return ("the name field is not open", false) }
     let text = words.dropFirst().joined(separator: " ")

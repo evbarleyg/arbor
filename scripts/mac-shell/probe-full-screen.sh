@@ -150,7 +150,7 @@ if [ -z "${PROBE_WITHOUT_ARBOR:-}" ]; then
   key ctrl+opt+cmd+right
   acted moves=any judge=no
   brief | sed 's/^/    /'
-  for name in safari safari textedit safari safari textedit safari safari textedit safari safari textedit; do
+  for name in safari textedit safari textedit safari textedit; do
     ROUND=$((ROUND + 1))
     chapter "With Arbor: $name, round $ROUND"
     reach "$name"
@@ -165,6 +165,25 @@ if [ -z "${PROBE_WITHOUT_ARBOR:-}" ]; then
     acted moves=any leaves=any comes="$(window_of "$name")" front="$(window_of "$name")"
     brief | sed 's/^/    /'
   done
+  ROUND=200
+  chapter "With Arbor: back to the desktop while Safari stays in full screen"
+  reach safari
+  if go_in safari; then
+    act macos-own back-to-the-desktop "presses ⌃←: the desktop comes back without Safari"
+    key ctrl+left
+    sleep 2
+    acted moves=any leaves=any judge=no
+    brief | sed 's/^/    /'
+    act macos-own forth-to-safari "presses ⌃→"
+    key ctrl+right
+    sleep 2
+    acted moves=any leaves=any judge=no
+    act macos-own safari-200-arbor-out "presses ⌃⌘F again"
+    key ctrl+cmd+f
+    sleep 2
+    acted moves=any leaves=any comes="$W_safari"
+    brief | sed 's/^/    /'
+  fi
   act quit-and-start quit "quits Arbor"
   ctl quit
   want "Arbor ends within five seconds" day_gone

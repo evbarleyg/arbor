@@ -22,6 +22,28 @@ extension Controller {
     }
   }
 
+  /// Longer than lies between "it is off its app's list" and "it is in full screen": 1 to 4 ms in ten rounds on a hosted Mac.
+  static let timeToSayWhyItWent = 0.1
+  /// Longer than the way into full screen takes: the Space it leaves was reported away 0.47 to 0.62 s after the window had said so.
+  static let timeToLeaveForFullScreen = 1.5
+
+  /// A docked window goes into full screen. It takes no room from now on, and its neighbours are to have it. But not now: the
+  /// way in plays for half a second over the Space they are on, in plain view, and if the window comes straight back they give
+  /// the room up again: two moves each, for nothing. So the layout waits until that Space is away. Then nobody is there to be
+  /// moved; whoever comes back to it without the window finds the neighbours closing up, once; and when the window comes back
+  /// with it, nothing but the window has moved. True if that is what `window` reports, and all there is to do about it.
+  func neighboursWaitWhileItGoesIntoFullScreen(
+    _ window: WindowSnapshot, was previous: WindowSnapshot?, on displayID: DisplayID
+  ) -> Bool {
+    guard window.isFullScreen else { return false }
+    // What else it reports from there (its size is the display's) is nothing to lay out for, nor to put right.
+    guard previous?.isFullScreen == false else { return previous?.isPresent == window.isPresent }
+    // The reports that the Space has gone bring the layout forward.
+    scheduleSpaceRelayout(displayID, after: Self.timeToLeaveForFullScreen)
+    scheduleSave()
+    return true
+  }
+
   private func runPostponedRelayout(of displayID: DisplayID) {
     // A window being dragged can be carried to another Space (⌃→ while
     // holding it, or holding it at the screen edge). Laying out now would

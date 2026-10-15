@@ -240,6 +240,62 @@ import Testing
     expectWindowsMatchLayout(h, on: h.display)
   }
 
+  // MARK: The neighbours
+
+  /// `[a | c | Desktop]` with `f` floating: with `a` away `c` and the Desktop would have its room.
+  func makeRow() -> (Harness, a: WindowID, others: [WindowID]) {
+    let h = Harness()
+    let a = h.system.open(app: "Safari", frame: own)
+    let c = h.system.open(app: "Mail", frame: CGRect(x: 200, y: 150, width: 600, height: 400))
+    let f = h.system.open(app: "Calculator", frame: CGRect(x: 1000, y: 300, width: 320, height: 300))
+    h.start()
+    h.run("dock \(a.rawValue) left")
+    h.run("dock \(c.rawValue) beside \(a.rawValue) right")
+    #expect(h.layout!.tiles.isEmpty)
+    return (h, a, [c, f])
+  }
+
+  /// On a Mac they took its room while the way in played over them, and gave it back when it had returned: two moves each, for nothing.
+  @Test func intoFullScreenAndStraightBackNothingButTheWindowMoves() {
+    let (h, a, others) = makeRow()
+    let before = others.map { h.frame($0)! }
+    h.system.clearSightings()
+    h.system.enterFullScreen(a, leaving: others)
+    h.scheduler.advance(by: 3)
+    h.system.leaveFullScreen(a, with: others)
+    h.scheduler.advance(by: 3)
+    #expect(h.system.sightings.filter { $0.window != a }.isEmpty, "\(h.system.sightings)")
+    #expect(others.map { h.frame($0)! } == before)
+    expectWindowsMatchLayout(h, on: h.display)
+  }
+
+  @Test func whoeverComesBackToTheirSpaceWithoutItFindsThemClosingUpOnce() {
+    let (h, a, others) = makeRow()
+    h.system.enterFullScreen(a, leaving: others)
+    h.scheduler.advance(by: 3)
+    h.system.clearSightings()
+    // A swipe back; Safari stays in full screen on its own Space.
+    h.system.setOnActiveSpace(a, false)
+    for other in others { h.system.setOnActiveSpace(other, true) }
+    h.scheduler.advance(by: 2)
+    #expect(h.layout!.windowFrames[a] == nil)
+    for other in others { #expect(h.system.sightings(of: other).count <= 1, "\(h.system.sightings(of: other))") }
+    #expect(!h.system.sightings.isEmpty, "they have its room")
+    expectWindowsMatchLayout(h, on: h.display)
+  }
+
+  @Test func aSpaceThatNeverGoesAwayIsLaidOutAllTheSame() {
+    let (h, a, others) = makeRow()
+    // Only the first two reports: whatever became of the rest.
+    h.system.setOnActiveSpace(a, false)
+    h.system.setFullScreen(a, true)
+    h.scheduler.advance(by: 3)
+    #expect(h.layout!.windowFrames[a] == nil)
+    #expect(!h.scheduler.pendingKeys.contains { $0.hasPrefix("space") })
+    _ = others
+    expectWindowsMatchLayout(h, on: h.display)
+  }
+
   @Test func quittingLeavesAFullScreenWindowAlone() {
     let (h, a, b, f) = makeHarness()
     enterFullScreen(h, a, others: [b, f])

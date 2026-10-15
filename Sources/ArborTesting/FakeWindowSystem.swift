@@ -787,6 +787,32 @@ extension FakeWindowSystem {
     events?.windowChanged(windows[window]!.snapshot, userInitiated: true)
   }
 
+  /// The way into full screen as a hosted Mac played it (⌃⌘F in Safari and TextEdit, ten rounds), `others` being the windows of the Space
+  /// it leaves:
+  ///
+  ///     0 ms            macOS puts a stand-in on the app's list, which shows the animation. The window is off the list
+  ///     1 to 4 ms       the window reports a resize: in full screen, as large as the display
+  ///     470 to 620 ms   the Space is reported to have changed: the others are off their apps' lists, the window is on its app's again
+  ///
+  /// Until then the others are in plain view, under the animation.
+  public func enterFullScreen(_ window: WindowID, leaving others: [WindowID]) {
+    guard windows[window]?.snapshot.isFullScreen == false else { return }
+    setOnActiveSpace(window, false)
+    afterEvents?()
+    passTime?(0.002)
+    setFullScreen(window, true)
+    afterEvents?()
+    deliverEchoes()
+    passTime?(0.5)
+    for id in others.sorted() { setOnActiveSpace(id, false) }
+    setOnActiveSpace(window, true)
+    // As in `leaveFullScreen`.
+    afterEvents?()
+    if echoes.keyboard { giveKeyboard(to: window) }
+    afterEvents?()
+    deliverEchoes()
+  }
+
   /// The way out of full screen as a hosted Mac played it with a docked Safari window (⌃⌘F, 2026-10-14), `others` being the
   /// windows of the Space that comes back:
   ///
