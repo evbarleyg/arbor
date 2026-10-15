@@ -2,7 +2,8 @@
 # Story: the welcome coach's own first two keys. An editor that will not go under 1188 points goes left, a mail app that will not go under
 # 760 goes right, on a display 1920 wide. Side by side they need 1948 and there are 1896, and halves do not help. macOS alone would let
 # them overlap and hide nothing. So does Arbor: room first, and for what is still missing they overlap. Each keeps its place in
-# the arrangement and stands at its smallest, flush with the outer side of its place; the window the key named lies in front.
+# the arrangement, flush with the outer side of its place: the editor at its smallest, the mail app in the half its key asked for, which it is
+# not made to give up for one that does not fit anyway. The window the key named lies in front.
 display-size 1920x1080
 open Editor 1300x800 min 1188x685
 open Mail 1000x680 min 760x400
@@ -15,11 +16,11 @@ press dock right
 expect visible 101
 expect visible 102
 expect count docked 2
-# Flush left at its smallest, flush right at its smallest.
+# Flush left at its smallest; the right half.
 expect at 101 12 37
 expect size 101 1188x1031
-expect at 102 1148 37
-expect size 102 760x1031
+expect at 102 966 37
+expect size 102 942x1031
 expect in-front 102
 expect focused 102
 expect said Too wide to stand side by side · they overlap
@@ -36,6 +37,6 @@ expect size 102 1000x680
 redo
 expect at 101 12 37
 expect size 101 1188x1031
-expect at 102 1148 37
+expect at 102 966 37
 close 101
 expect visible 102

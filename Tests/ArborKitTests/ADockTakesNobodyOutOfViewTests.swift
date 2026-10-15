@@ -35,15 +35,18 @@ import Testing
   }
 
   let editorFlushLeft = CGRect(x: 12, y: 37, width: 1188, height: 1031)
-  let mailFlushRight = CGRect(x: 1148, y: 37, width: 760, height: 1031)
+  /// Its half: it fits there, and is not made narrower than an even share for one that does not fit anyway.
+  let mailInItsHalf = CGRect(x: 966, y: 37, width: 942, height: 1031)
+  /// With a column for the Desktop an even share is a third, which is less than it needs.
+  let mailAtItsSmallest = CGRect(x: 1148, y: 37, width: 760, height: 1031)
 
   // MARK: The story
 
-  /// The same frames with a column for the Desktop between the two, which ships off, and without.
-  @Test(arguments: [false, true]) func bothAreInViewEachAtItsSmallestFlushWithItsOuterSide(desktopColumn: Bool) {
+  /// With a column for the Desktop between the two, which ships off, and without.
+  @Test(arguments: [false, true]) func bothAreInViewEachFlushWithItsOuterSide(desktopColumn: Bool) {
     let (h, editor, mail) = bothDocked(settings: desktopColumn ? .withDesktopColumn : Settings())
     #expect(h.frame(editor) == editorFlushLeft)
-    #expect(h.frame(mail) == mailFlushRight)
+    #expect(h.frame(mail) == (desktopColumn ? mailAtItsSmallest : mailInItsHalf))
     #expect(h.system.isVisible(editor) && h.system.isVisible(mail))
     #expect(h.layout?.hiddenWindows.isEmpty == true)
     #expect(h.layout?.tiles.allSatisfy { $0.kind == .desktop } == true)
@@ -73,7 +76,7 @@ import Testing
     h.run("dock \(editor.rawValue) left")
     #expect(h.system.windowsFrontToBack().first == editor)
     #expect(h.frame(editor) == editorFlushLeft)
-    #expect(h.frame(mail) == mailFlushRight)
+    #expect(h.frame(mail) == mailInItsHalf)
   }
 
   @Test func eachWindowMovesOnce() throws {
@@ -96,9 +99,41 @@ import Testing
     h.system.userFocus(editor)
     h.press("dock left")
     #expect(h.frame(editor) == editorFlushLeft)
-    #expect(h.frame(mail) == mailFlushRight)
+    #expect(h.frame(mail) == mailInItsHalf)
     #expect(h.system.windowsFrontToBack().first == editor)
     expectWindowsMatchLayout(h)
+  }
+
+  @Test func arrangeGivesTheKeysOwnFrames() {
+    let (h, editor, mail) = desk()
+    #expect(h.run("arrange").ok)
+    #expect(h.frame(editor) == editorFlushLeft)
+    #expect(h.frame(mail) == mailInItsHalf)
+    expectWindowsMatchLayout(h)
+  }
+
+  /// An editor that needs 1200 of a display 1440 wide, and a terminal, which goes down to next to nothing. ⌃⌥→ asks for the right half. The editor hangs
+  /// over whatever the terminal gives, and the terminal used to give all it had, down to a slit. It has its half.
+  @Test(arguments: [false, true]) func aWindowThatFitsKeepsItsHalfBesideOneThatDoesNot(theTerminalFirst: Bool) {
+    let h = Harness(settings: Settings())
+    let editor = h.system.open(
+      app: "Editor", frame: CGRect(x: 100, y: 60, width: 1250, height: 800), minimumSize: CGSize(width: 1200, height: 600))
+    let whereItStood = CGRect(x: 300, y: 200, width: 585, height: 400)
+    let terminal = h.system.open(app: "Terminal", frame: whereItStood, minimumSize: CGSize(width: 177, height: 64))
+    h.start()
+    for (window, key) in theTerminalFirst ? [(terminal, "dock right"), (editor, "dock left")] : [(editor, "dock left"), (terminal, "dock right")] {
+      h.system.userFocus(window)
+      h.press(key)
+    }
+    #expect(h.frame(terminal) == CGRect(x: 726, y: 37, width: 702, height: 851))
+    #expect(h.frame(editor) == CGRect(x: 12, y: 37, width: 1200, height: 851))
+    #expect(h.system.isVisible(editor) && h.system.isVisible(terminal))
+    expectWindowsMatchLayout(h)
+    #expect(h.controller.invariantViolations().isEmpty)
+    guard !theTerminalFirst else { return }
+    h.press("undo")
+    #expect(h.frame(terminal) == whereItStood)
+    #expect(h.frame(editor) == CGRect(x: 12, y: 37, width: 1200, height: 851))
   }
 
   // MARK: Who is in front later
@@ -112,7 +147,7 @@ import Testing
     #expect(h.system.windowsFrontToBack().first == editor)
     #expect(h.system.moveLog.count == mark)
     #expect(h.workspace.tree == tree)
-    #expect(h.frame(editor) == editorFlushLeft && h.frame(mail) == mailFlushRight)
+    #expect(h.frame(editor) == editorFlushLeft && h.frame(mail) == mailInItsHalf)
     #expect(h.workspace.camera == tree.root)
     h.system.userClick(mail)
     h.scheduler.advance(by: 2)
@@ -127,7 +162,7 @@ import Testing
     #expect(h.system.windowsFrontToBack().first == editor)
     #expect(h.run("focus right").ok)
     #expect(h.system.focused == mail)
-    #expect(h.frame(editor) == editorFlushLeft && h.frame(mail) == mailFlushRight)
+    #expect(h.frame(editor) == editorFlushLeft && h.frame(mail) == mailInItsHalf)
   }
 
   // MARK: How it ends, and comes back
@@ -144,7 +179,7 @@ import Testing
     #expect(h.frame(editor) == before)
     #expect(h.workspace.isFloating(mail))
     h.press("redo")
-    #expect(h.frame(editor) == editorFlushLeft && h.frame(mail) == mailFlushRight)
+    #expect(h.frame(editor) == editorFlushLeft && h.frame(mail) == mailInItsHalf)
     expectWindowsMatchLayout(h)
   }
 
@@ -153,10 +188,10 @@ import Testing
     h.press("zoom")
     #expect(h.workspace.camera == h.workspace.tree.leaf(containing: mail))
     h.press("zoom")
-    #expect(h.frame(editor) == editorFlushLeft && h.frame(mail) == mailFlushRight)
+    #expect(h.frame(editor) == editorFlushLeft && h.frame(mail) == mailInItsHalf)
     h.press("zoom")
     h.press("show-all")
-    #expect(h.frame(editor) == editorFlushLeft && h.frame(mail) == mailFlushRight)
+    #expect(h.frame(editor) == editorFlushLeft && h.frame(mail) == mailInItsHalf)
     expectWindowsMatchLayout(h)
   }
 
@@ -188,7 +223,7 @@ import Testing
     let mark = h.system.moveLog.count
     h.scheduler.advance(by: 3600)
     #expect(h.system.moveLog.count == mark)
-    #expect(h.frame(editor) == editorFlushLeft && h.frame(mail) == mailFlushRight)
+    #expect(h.frame(editor) == editorFlushLeft && h.frame(mail) == mailInItsHalf)
   }
 
   @Test func quitGivesBothTheirOwnFramesBackAndTheNextStartTheOverlap() {
@@ -251,7 +286,9 @@ import Testing
     h.system.userResize(editor, to: CGRect(x: was.minX, y: was.minY, width: was.width + 100, height: was.height))
     h.scheduler.advance(by: 2)
     #expect(h.frame(editor) == CGRect(x: was.minX, y: was.minY, width: was.width + 100, height: was.height))
-    #expect(h.layout?.overhangs.values.map(\.width).reduce(0, +) == over + 100)
+    // The gap is where the hand put the edge: the editor has its place, and the mail app, which follows as far as it goes, hangs over.
+    #expect(h.layout?.fits(editor) == true)
+    #expect(h.layout?.overhangs == [mail: CGSize(width: 1288 + 12 + 760 - 1896, height: 0)])
     #expect(h.system.isVisible(editor) && h.system.isVisible(mail))
     #expect(try #require(h.frame(mail)).width == 760)
     expectWindowsMatchLayout(h)
@@ -600,12 +637,15 @@ import Testing
   /// the one that came first left as a tile with nobody acting.
   @Test(arguments: [false, true]) func afterALoginTheSecondComesBackAndTheFirstStays(tiles: Bool) {
     let runner = ChaosRunner()
-    var broken: [InvariantViolation] = []
     for line in [
       tiles ? #"settings {"windowsThatDoNotFit":"tile"}"# : "settings {}", "launch",
       "open 101 Finder pid 1005 at 198 77 1058 419 min 501 252 title Finder-101", "open 103 Music pid 1006 at 321 219 1147 600 min 980 600 title Music-103",
-      "key down dock right", "key up dock right", "focus 101", "key down dock left", "key up dock left", "quit", "close 101", "close 103", "launch",
-      "open 109 Music pid 1006 at 321 219 1147 600 min 980 600 title Music-103", "advance 2",
+      "key down dock right", "key up dock right", "focus 101", "key down dock left", "key up dock left", "quit", "close 101", "close 103",
+    ] { _ = runner.step(ChaosAction(text: line)) }
+    // From the login on. (At the second key Arbor learns how small the Finder goes by asking it: board 1.32, with tiles and without.)
+    var broken: [InvariantViolation] = []
+    for line in [
+      "launch", "open 109 Music pid 1006 at 321 219 1147 600 min 980 600 title Music-103", "advance 2",
       "open 107 Finder pid 1005 at 198 77 1058 419 min 501 252 title Finder-101", "settle",
     ] { broken += runner.step(ChaosAction(text: line)) }
     #expect(runner.harness.workspace.isDocked(WindowID(107)) && runner.harness.workspace.isDocked(WindowID(109)))
@@ -620,7 +660,7 @@ import Testing
     let (h, editor, mail) = bothDocked(settings: .withTiles)
     #expect(h.layout?.tiles.contains { $0.windows == [editor] } == true)
     #expect(!h.system.isVisible(editor))
-    #expect(h.system.isVisible(mail) && h.frame(mail)?.maxX == mailFlushRight.maxX)
+    #expect(h.system.isVisible(mail) && h.frame(mail)?.maxX == mailInItsHalf.maxX)
     #expect(h.layout?.overhangs.isEmpty == true)
     expectWindowsMatchLayout(h)
   }
@@ -630,7 +670,7 @@ import Testing
     #expect(h.run("set windowsThatDoNotFit tile").ok)
     #expect(!h.system.isVisible(editor))
     #expect(h.run("set windowsThatDoNotFit overlap").ok)
-    #expect(h.frame(editor) == editorFlushLeft && h.frame(mail) == mailFlushRight)
+    #expect(h.frame(editor) == editorFlushLeft && h.frame(mail) == mailInItsHalf)
     expectWindowsMatchLayout(h)
   }
 
@@ -759,7 +799,8 @@ import Testing
     // The sheet that kept it wide has closed.
     h.system.setMinimumSize(hanging, CGSize(width: 600, height: 400))
     h.scheduler.advance(by: 11 * 60)
-    #expect(h.frame(editor) == editorFlushLeft && h.frame(mail) == mailFlushRight, "no timer, no second look")
+    #expect(
+      h.frame(editor) == editorFlushLeft && h.frame(mail) == (desktopColumn ? mailAtItsSmallest : mailInItsHalf), "no timer, no second look")
     // Something else causes a layout.
     h.run("zoom \((hanging == editor ? mail : editor).rawValue)")
     h.run("back")

@@ -63,7 +63,8 @@ root  split(horizontal)
   hand is on a gap (`byHand`). A Desktop squeezed into a tile that way takes a usable size back
   once a window floats on it (`Workspace.desktopIsOwedRoom`). A window that hangs over its place is short of room as a tile is: served
   in the same order, on the same terms. Where all fit in the end that is all of it. Where somebody would still hang over, `serve` starts again for
-  the least overlap: when all have been served, whoever is short takes what those who fit can spare, and the Desktop is not topped up. Nothing goes back, and
+  the least overlap: when all have been served, whoever is short takes what the Desktop has and what those who fit have above an even share of their
+  row, no more (a terminal would be a slit), and the Desktop is not topped up. Nothing goes back, and
   nobody pays with their place, for the window with the keyboard: that is for tiles.
 - **There and back is nothing** (`Controller+ThereAndBack.swift`): a docked window that is hidden, minimized or on another
   Space and comes back, nothing else having changed, gets its place back and its neighbours their exact sizes. A plain

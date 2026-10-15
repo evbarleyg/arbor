@@ -98,7 +98,9 @@ public enum MakeRoom {
 
   /// - Parameter forTheLeastOverlap: there is not room for all, and whoever is short hangs over its place. For a tile half a solution helps
   ///   nobody; for a window that hangs over, every point it gets is a point less of its neighbour covered. So:
-  ///   - whoever is still short when all have been served takes what those who fit can spare, the Desktop first, and keeps it;
+  ///   - whoever is still short when all have been served takes what those who fit have above an even share of their row, the Desktop first
+  ///     and all of it, and keeps it (`grownAsFarAsItGoes`);
+  ///   - whoever took what was left over, and that is less than it needs, has an even share first (`shareWhereTooLittleWasLeft`);
   ///   - the Desktop is not served: docked windows come first, and what it got they would take back at once;
   ///   So the gaps come to rest: another layout, for whatever reason and whoever has the keyboard by then, moves none.
   private static func serve(
@@ -110,7 +112,8 @@ public enum MakeRoom {
         tree, camera: camera, in: frame, options: options, isPresent: isPresent, minimumSize: minimumSize)
     }
     var layout = layOut(tree)
-    let shared = shareWhereTooLittleWasLeft(&tree, laidOutAs: layout, options: options, leaving: terms.leaving)
+    let shared = shareWhereTooLittleWasLeft(
+      &tree, laidOutAs: layout, options: options, leaving: terms.leaving, minimumSize: forTheLeastOverlap ? minimumSize : nil)
     if shared { layout = layOut(tree) }
     var gaveBack = shared
     var hadDesktop = false
@@ -171,16 +174,25 @@ public enum MakeRoom {
     }
 
     /// The tree and its layout with `slot`, which cannot have all it needs, grown by what those who fit can spare, or nil if that
-    /// is less than a point. Those who are short themselves give nothing: they would only take it back in their turn.
+    /// is less than a point. Those who are short themselves give nothing: they would only take it back in their turn. **And nobody who fits is
+    /// made narrower, or lower, than an even share of its row for one that does not fit anyway**: a terminal goes down to a slit, and whoever
+    /// pressed the key for the right half has asked for the half. What it has above that it gives, the Desktop first and all it has. Each way by
+    /// itself: too wide whatever is done, it can still be as high as it needs, and that way it has all of it.
     func grownAsFarAsItGoes(_ slot: Short) -> (tree: LayoutTree, layout: Layout)? {
       var (copy, after) = (tree, layout)
       var changed = false
       for axis in [Axis.horizontal, .vertical] {
-        let giver = Giver(
-          view: TreeView(tree: copy, isPresent: isPresent), layout: after, axis: axis, options: options,
-          minimumSize: minimumSize, tilesKeep: options.minimumUsableSize, strangersGive: true, theShortGive: false)
-        guard let now = giver.length(of: slot.node),
-          let shares = giver.shares(growing: slot.node, to: length(slot.minimum, axis), atLeast: now + 1), !shares.isEmpty
+        func giver(keepsAnEvenShare: Bool) -> Giver {
+          Giver(
+            view: TreeView(tree: copy, isPresent: isPresent), layout: after, axis: axis, options: options,
+            minimumSize: minimumSize, tilesKeep: options.minimumUsableSize, strangersGive: true, theShortGive: false,
+            keepsAnEvenShare: keepsAnEvenShare)
+        }
+        let (freely, sparingly, needed) = (giver(keepsAnEvenShare: false), giver(keepsAnEvenShare: true), length(slot.minimum, axis))
+        guard let now = freely.length(of: slot.node) else { continue }
+        let all = freely.shares(growing: slot.node, to: needed, atLeast: needed)
+        let giver = all == nil ? sparingly : freely
+        guard let shares = all ?? sparingly.shares(growing: slot.node, to: needed, atLeast: now + 1), !shares.isEmpty
         else { continue }
         var trial = copy
         for share in shares { trial.setShares(giver.ownStretches(for: share), for: slot.node) }
@@ -362,8 +374,12 @@ public enum MakeRoom {
   /// Whoever took what was left over (`LayoutTree.dock`) took it however much it was. Too little to show any window in is nothing: then
   /// everybody in the row gives, as with nothing left. This is no making of room, and holds with `makeRoom` off as well. Says whether
   /// the tree has changed, so that `layout` no longer holds.
+  ///
+  /// `minimumSize`: where not all fit and somebody will hang over whatever is done, too little for the very window that took it is nothing either. It
+  /// has an even share then, like the key that docked it says, whoever its neighbour is and whichever of the two came first.
   public static func shareWhereTooLittleWasLeft(
-    _ tree: inout LayoutTree, laidOutAs layout: Layout, options: LayoutOptions, leaving: Set<NodeID> = []
+    _ tree: inout LayoutTree, laidOutAs layout: Layout, options: LayoutOptions, leaving: Set<NodeID> = [],
+    minimumSize: ((WindowID) -> CGSize?)? = nil
   ) -> Bool {
     guard !options.desktopColumn else { return false }
     var shared = false
@@ -373,9 +389,11 @@ public enum MakeRoom {
       + layout.tightPlaces.sorted { $0.key < $1.key }.compactMap { window, place in tree.leaf(containing: window).map { (node: $0, frame: place) } }
     for place in places where !leaving.contains(place.node) {
       // Along the row, which is where it took what was left. Across it a share like the others' would be no help.
+      let needs = minimumSize.flatMap { known in tree.windows(under: place.node).compactMap(known).first } ?? .zero
       guard let row = tree.parent(of: place.node), case .split(let axis, _) = tree[row]?.kind,
         axis == .horizontal
-          ? place.frame.width < options.minimumUsableSize.width : place.frame.height < options.minimumUsableSize.height,
+          ? place.frame.width < max(options.minimumUsableSize.width, needs.width)
+          : place.frame.height < max(options.minimumUsableSize.height, needs.height),
         tree.shareWithWhoTookWhatWasLeft(place.node)
       else { continue }
       shared = true
@@ -484,6 +502,8 @@ public enum MakeRoom {
     var tilesOfGroupsGive = false
     /// Whether a window that hangs over its place gives of that as a tile does. Otherwise it keeps what it has.
     var theShortGive = true
+    /// Whether a window gives only what it has above an even share of its row. The Desktop gives as ever.
+    var keepsAnEvenShare = false
 
     func length(of node: NodeID) -> CGFloat? { layout.nodeFrames[node]?.length(along: axis) }
 
@@ -624,10 +644,11 @@ public enum MakeRoom {
         if let over = view.visibleWindow(of: node).flatMap({ layout.overhangs[$0] }), MakeRoom.length(over, axis) > 0 {
           return theShortGive ? min(length, MakeRoom.length(tilesKeep, axis)) : length
         }
+        let even = keepsAnEvenShare ? (evenShare(of: node) ?? 0).rounded(.down) : 0
         guard let learned = view.visibleWindow(of: node).flatMap(minimumSize).map({ MakeRoom.length($0, axis) }) else {
-          return strangersGive ? min(length, MakeRoom.length(options.minimumUsableSize, axis)) : length
+          return strangersGive ? min(length, max(even, MakeRoom.length(options.minimumUsableSize, axis))) : length
         }
-        return min(length, max(learned, MakeRoom.length(options.minimumUsableSize, axis)))
+        return min(length, max(learned, even, MakeRoom.length(options.minimumUsableSize, axis)))
       case .split(let direction, _):
         let children = view.effectiveChildren(of: node)
         if children.count == 1 { return floor(of: children[0]) }

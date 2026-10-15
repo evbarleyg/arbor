@@ -173,6 +173,9 @@ public enum AutoDock {
   ) -> Bool {
     guard after.fits(window), desktopMayGo || before.desktopFrame == nil || after.desktopFrame != nil
     else { return false }
+    // Nor does it come to lie under what hangs over already: that is an overlap more.
+    guard let frame = after.windowFrames[window], !after.windowFrames.contains(where: { $0.key != window && $0.value.overlaps(frame) })
+    else { return false }
     // Whoever hangs over already may go on doing so, and no further.
     func hangsOverNoFurther(_ window: WindowID) -> Bool {
       guard let was = before.overhangs[window], let now = after.overhangs[window] else { return false }

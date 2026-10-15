@@ -108,6 +108,7 @@ extension Controller {
       // (Squeezed against a neighbour that has left since, with everything else left over, it is squeezed by nobody. Squeezed against the
       // Desktop it is as narrow as its person wants it.)
       leaving: (squeezedByHand[displayID] ?? []).filter { node in
+        if theRowAHandSetIsNoMore(on: displayID), hungOverWhenAHandCame[displayID]?.nodes.contains(node) == true { return false }
         guard squeezedAgainstWindows[displayID]?.contains(node) == true, let tree = workspaces[displayID]?.tree,
           let row = tree.parent(of: node)
         else { return true }
@@ -160,7 +161,14 @@ extension Controller {
   func forgetSqueezes(on displayID: DisplayID) {
     squeezedByHand[displayID] = nil
     squeezedAgainstWindows[displayID] = nil
+    hungOverWhenAHandCame[displayID] = nil
     workspaces[displayID]?.desktopIsOwedRoom = nil
+  }
+
+  /// Whether somebody has been docked, or has left for good, since a hand last set a gap. (In the Dock, hidden or out of the view they are docked.)
+  private func theRowAHandSetIsNoMore(on displayID: DisplayID) -> Bool {
+    guard let found = hungOverWhenAHandCame[displayID], let tree = workspaces[displayID]?.tree else { return false }
+    return found.among != Set(tree.allWindows)
   }
 
   /// Keeps track of the slots the person squeezed into tiles, so that no later layout widens them again. Their hand
@@ -183,6 +191,10 @@ extension Controller {
     }
     var squeezed = (squeezedByHand[displayID] ?? []).filter { view.tree.contains($0) }
     let overlaps = options(for: displayID).layoutOptions.overlaps
+    // Whoever only hung over when the hand came was left as it was for the sake of the gaps that hand set. The row is another now.
+    if theRowAHandSetIsNoMore(on: displayID), let found = hungOverWhenAHandCame.removeValue(forKey: displayID) {
+      squeezed.subtract(found.nodes)
+    }
     // A window that hangs over and has room again, because a neighbor has left for good, is like any other from then on. With everything in view:
     // framed on its own it has the whole display, which says nothing. And with everybody there: a neighbor in the Dock comes back, and there and
     // back is nothing. (A tile that is a window again keeps its mark until a hand moves a gap: with tiles nothing changes here.)
@@ -199,15 +211,20 @@ extension Controller {
       // in the view, is still waiting for room. One that hangs over waits for nothing: it is in view, its person has seen the row
       // and set it, and room made for it at some later layout would move the gap they have just put somewhere.
       let shown = layouts[displayID]
-      let byThisHand = short.filter { slot in
+      let shorter = short.filter { slot in
         guard let window = slot.window else { return false }
-        if overlaps { return true }
         guard let shown, !shown.fits(window), let was = shown.nodeFrames[slot.node],
           let now = layout.nodeFrames[slot.node]
         else { return true }
         return now.width < was.width - 0.5 || now.height < was.height - 0.5
       }.map(\.node)
+      let byThisHand = overlaps ? short.filter { $0.window != nil }.map(\.node) : shorter
       squeezed.formUnion(byThisHand)
+      if overlaps {
+        let before = hungOverWhenAHandCame[displayID]?.nodes ?? []
+        let only = before.union(byThisHand).subtracting(shorter)
+        hungOverWhenAHandCame[displayID] = only.isEmpty ? nil : (only, Set(view.tree.allWindows))
+      }
       if view.tree.desktopHasRoom {
         squeezedAgainstWindows[displayID]?.subtract(byThisHand)
       } else {

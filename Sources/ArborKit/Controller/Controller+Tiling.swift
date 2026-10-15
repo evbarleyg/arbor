@@ -127,6 +127,9 @@ extension Controller {
     guard var squeezed = squeezedByHand[display], squeezed.contains(one) != squeezed.contains(other) else { return }
     squeezed.formSymmetricDifference([one, other])
     squeezedByHand[display] = squeezed
+    if let found = hungOverWhenAHandCame[display]?.nodes, found.contains(one) != found.contains(other) {
+      hungOverWhenAHandCame[display]?.nodes.formSymmetricDifference([one, other])
+    }
   }
 
   // MARK: equalize

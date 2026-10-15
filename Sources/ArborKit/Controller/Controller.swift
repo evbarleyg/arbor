@@ -285,6 +285,8 @@ public final class Controller {
   var dockingAsItOpens: WindowID?
   /// Those of them that were squeezed with nothing left over, so against another docked window (`roomTerms`).
   var squeezedAgainstWindows: [DisplayID: Set<NodeID>] = [:]
+  /// Those of them that hung over before the hand came, which made them no shorter, and who was docked then (`rememberSqueezes`).
+  var hungOverWhenAHandCame: [DisplayID: (nodes: Set<NodeID>, among: Set<WindowID>)] = [:]
 
   /// True between `pause` and `resume` (Controller+Pause.swift). `isRunning` is false meanwhile.
   public internal(set) var isPaused = false

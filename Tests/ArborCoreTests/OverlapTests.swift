@@ -219,18 +219,70 @@ private func row(_ windows: [WindowID], axis: Edge = .right) -> (tree: LayoutTre
     #expect(layout.nodeFrames[tree.desktop]?.width == 80)
   }
 
-  @Test func whoeverIsStillShortTakesWhatThoseWhoFitCanSpare() throws {
-    // Two halves, as without a column for the Desktop: 942 each. b fits and can spare 182; a is short by 246.
+  /// A terminal goes down to a slit. Beside an editor that hangs over whatever it gives, it was one.
+  @Test func nobodyWhoFitsGoesBelowAnEvenShareForOneThatDoesNotFitAnyway() throws {
+    // Two halves, as without a column for the Desktop: 942 each. b fits and could spare 182; a is short by 246.
     var (tree, view) = row([a, b])
+    let before = tree
+    let minimums = [a: CGSize(width: 1188, height: 685), b: CGSize(width: 760, height: 400)]
+    let (served, layout, _) = MakeRoom.serve(
+      &tree, camera: view, in: wide, options: overlapping, isPresent: everyone, minimumSize: { minimums[$0] },
+      terms: MakeRoom.Terms(desktopIsInUse: false))
+    #expect(layout.windowFrames[a] == CGRect(x: 12, y: 37, width: 1188, height: 1031))
+    #expect(layout.windowFrames[b] == CGRect(x: 966, y: 37, width: 942, height: 1031))
+    #expect(layout.overhangs[a]?.width == 246)
+    #expect(served.isEmpty && tree == before)
+  }
+
+  @Test func whatItHasAboveAnEvenShareItGives() throws {
+    // b has 1256 of the 1884, a 628.
+    var (tree, view) = row([a, b])
+    tree.setShares([tree.leaf(containing: a)!: 100, tree.leaf(containing: b)!: 200], for: nil)
     let minimums = [a: CGSize(width: 1188, height: 685), b: CGSize(width: 760, height: 400)]
     let (_, layout, _) = MakeRoom.serve(
       &tree, camera: view, in: wide, options: overlapping, isPresent: everyone, minimumSize: { minimums[$0] },
       terms: MakeRoom.Terms(desktopIsInUse: false))
     #expect(layout.windowFrames[a] == CGRect(x: 12, y: 37, width: 1188, height: 1031))
-    #expect(layout.windowFrames[b] == CGRect(x: 1148, y: 37, width: 760, height: 1031))
-    #expect(layout.overhangs[a]?.width == 64)
+    #expect(layout.windowFrames[b] == CGRect(x: 966, y: 37, width: 942, height: 1031))
     // In the ledger like any loan.
     #expect(tree.hasLoans)
+  }
+
+  /// The even share is a limit only where somebody hangs over in the end. Where all fit it is F61, which takes what it needs.
+  @Test func whereAllFitInTheEndTheOneThatFitsGoesBelowItsHalfAsEver() throws {
+    var (tree, view) = row([a, b])
+    let minimums = [a: CGSize(width: 1188, height: 685), b: CGSize(width: 177, height: 64)]
+    let (_, layout, _) = MakeRoom.serve(
+      &tree, camera: view, in: wide, options: overlapping, isPresent: everyone, minimumSize: { minimums[$0] },
+      terms: MakeRoom.Terms(desktopIsInUse: false))
+    #expect(layout.overhangs.isEmpty)
+    #expect(layout.windowFrames[a]?.width == 1188 && layout.windowFrames[b]?.width == 696)
+  }
+
+  /// [(a over c) | b]: a is too wide whatever is done. It can be as high as it needs, and c, which fits, gives that as ever.
+  @Test func eachWayByItself() throws {
+    var (tree, view) = row([a, b])
+    tree.dock(c, beside: tree.leaf(containing: a)!, edge: .bottom)
+    let minimums = [a: CGSize(width: 1188, height: 685), b: CGSize(width: 760, height: 400), c: CGSize(width: 400, height: 300)]
+    let (_, layout, _) = MakeRoom.serve(
+      &tree, camera: view, in: wide, options: overlapping, isPresent: everyone, minimumSize: { minimums[$0] },
+      terms: MakeRoom.Terms(desktopIsInUse: false))
+    #expect(layout.overhangs == [a: CGSize(width: 246, height: 0)])
+    #expect(layout.windowFrames[a]?.height == 685)
+    #expect(layout.windowFrames[b]?.width == 942)
+    #expect(try !#require(layout.windowFrames[c]).overlaps(try #require(layout.windowFrames[a])))
+  }
+
+  /// One above the other likewise.
+  @Test func norLowerThanAnEvenShare() throws {
+    var (tree, view) = row([a, b], axis: .bottom)
+    let minimums = [a: CGSize(width: 300, height: 900), b: CGSize(width: 300, height: 200)]
+    let (_, layout, _) = MakeRoom.serve(
+      &tree, camera: view, in: wide, options: overlapping, isPresent: everyone, minimumSize: { minimums[$0] },
+      terms: MakeRoom.Terms(desktopIsInUse: false))
+    let half = layOut(row([a, b], axis: .bottom).tree, camera: view).windowFrames[b]
+    #expect(layout.windowFrames[b] == half)
+    #expect(layout.windowFrames[a]?.height == 900 && layout.windowFrames[a]?.minY == 37)
   }
 
   @Test func withTilesItIsAllOrNothingAsEver() throws {

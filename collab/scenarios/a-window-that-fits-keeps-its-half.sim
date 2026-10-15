@@ -1,0 +1,25 @@
+# Board 0.26, F69 (the product owner's ruling of 2026-10-15): the giving stops at an even share.
+# Story: an editor that needs 1200 points is docked on a laptop's 1440. ⌃⌥→ on a terminal, which goes down to next to nothing. The two do not
+# fit side by side unless the terminal is a slit, and not even then. Whoever pressed the key for the right half has asked for the half: a window that
+# fits is never made narrower than an even share of its row for one that does not fit anyway.
+open Editor 1250x800 min 1200x600
+open Terminal 585x400 min 177x64
+focus 101
+press dock left
+focus 102
+press dock right
+expect visible 101
+expect visible 102
+expect count docked 2
+# The right half, and the editor flush left at its smallest, under it.
+expect at 102 726 37
+expect size 102 702x851
+expect at 101 12 37
+expect size 101 1200x851
+expect in-front 102
+# ⌃⌥Z, to the point.
+press undo
+expect floating 102
+expect size 102 585x400
+expect at 101 12 37
+expect size 101 1200x851
