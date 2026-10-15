@@ -270,6 +270,9 @@ public final class Controller {
   public var offersScreenRecording: Bool { settings.windowPictures }
   /// What is known about the room the menu bar has for Arbor's item (Controller+MenuBar.swift).
   public internal(set) var menuBarRoom = MenuBarRoom()
+  /// Arbor has never run here: there was no saved state when this launch began. The app says so; the welcome window promises a newcomer that
+  /// nothing moves until they dock a window, which is not true of somebody whose arrangement a start brings back.
+  public var isFirstLaunch = false
   /// The welcome window has been seen, now or at an earlier launch (Controller+Onboarding.swift).
   var hasWelcomed = false
   /// Opens the welcome window on a page, for `check-setup` and `welcome`.

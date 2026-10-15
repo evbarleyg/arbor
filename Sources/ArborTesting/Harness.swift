@@ -22,6 +22,8 @@ public final class Harness {
   public let loginItem = FakeLoginItem()
   /// The switches under Desktop & Dock, as a Mac comes.
   public let mac = FakeMacSwitchboard()
+  /// The welcome window. Made, and wired to the controller, when it is first asked for.
+  public private(set) lazy var welcome = FakeWelcomeWindow(controller: controller)
   /// Records traces into memory (`trace on`, then `lastTrace`).
   public let recorder: TraceRecorder
 
@@ -60,6 +62,8 @@ public final class Harness {
     controller.releaseFeed = releases
     controller.loginItem = loginItem
     controller.macSwitchboard = mac
+    // One Mac: what is stored for the switches is how its window server treats a dragged window.
+    mac.didChange = { [unowned mac, unowned system] in system.tiling = MacTiling(mac.on) }
     // Time also passes while a simulated drag rests at a point.
     system.passTime = { [scheduler] in scheduler.advance(by: $0) }
     firstMark = system.moveLog.count

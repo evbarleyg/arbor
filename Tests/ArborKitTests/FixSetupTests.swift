@@ -264,22 +264,25 @@ import Testing
     h.start()
     let session = OnboardingSession(controller: h.controller) { _ in }
     session.begin()
-    #expect(session.model.title == "One thing is in the way")
+    #expect(session.model.title == "Ready, with one suggestion")
     let step = try #require(session.model.row(.desktopAndDock)?.action)
-    #expect(step.title == "Switch Them Off")
+    #expect(step.title == "Switch Off macOS Tiling")
 
     #expect(h.controller.perform(step.command, from: .menu).ok)
     session.refresh()
     #expect(session.model.title == "Arbor is ready")
     let row = try #require(session.model.row(.desktopAndDock))
-    #expect(row.isSatisfied && row.done == "Arbor switched off 3 settings of macOS for you." && row.action == nil)
+    #expect(row.isSatisfied && row.action == nil)
+    #expect(
+      row.done == "Arbor switched off 3 settings of macOS for you. They stay off, even after you quit Arbor, until you put them back: here, or "
+        + "later under Help → Check Setup… in Arbor’s menu. A window dragged to a screen edge docks now.")
     #expect(session.model.page == .permissions, "it stays, so that what was done can be read")
 
     let back = try #require(row.undo)
     #expect(back.title == "Put Them Back")
     #expect(h.controller.perform(back.command, from: .menu).ok)
     session.refresh()
-    #expect(session.model.row(.desktopAndDock)?.action?.title == "Switch Them Off")
+    #expect(session.model.row(.desktopAndDock)?.action?.title == "Switch Off macOS Tiling")
     #expect(session.model.row(.desktopAndDock)?.undo == nil)
     #expect(h.mac.values.isEmpty)
     #expect(h.frame(a) == before && h.system.frameLog.isEmpty, "and no window has moved for any of it")
@@ -321,14 +324,32 @@ import Testing
     #expect(facts.switches == [.clickWallpaper, .stageManager])
     var row = try #require(h.controller.onboardingModel(facts).row(.desktopAndDock))
     #expect(row.state == .recommended && row.action == nil)
-    #expect(row.undo?.title == "Put Them Back" && row.done == "Arbor switched off 3 settings of macOS for you.")
+    #expect(row.undo?.title == "Put Them Back")
+    #expect(
+      row.done == "Arbor switched off 3 settings of macOS for you. They stay off, even after you quit Arbor, until you put them back: here, or "
+        + "later under Help → Check Setup… in Arbor’s menu. A window dragged to a screen edge docks now.")
 
     // One is switched on again by hand: the step for that one, and the way back for all.
     h.mac.values[.stageManager] = nil
     h.mac.values[.menuBar] = true
     facts = try #require(h.controller.systemFacts?())
     row = try #require(h.controller.onboardingModel(facts).row(.desktopAndDock))
-    #expect(row.action?.title == "Switch It Off" && row.undo?.title == "Put Them Back")
+    #expect(row.action?.title == "Switch Off macOS Tiling" && row.undo?.title == "Put Them Back")
+  }
+
+  /// Rule 2, said to whom it is true of: Arbor has never run here and nothing is docked.
+  @Test func aNewcomerIsPromisedThatNothingMoves() throws {
+    let promise = "Nothing moves until you dock a window."
+    let h = makeHarness()
+    let a = h.system.open(app: "Safari")
+    func summary() throws -> String { h.controller.onboardingModel(try #require(h.controller.systemFacts?())).summary }
+    #expect(try !summary().contains(promise), "a later start brings back what was docked")
+    h.controller.isFirstLaunch = true
+    #expect(try summary().hasSuffix(promise))
+    h.start()
+    #expect(try summary().hasSuffix(promise))
+    h.run("dock \(a.rawValue) left")
+    #expect(try !summary().contains(promise), "it has been kept, and is over")
   }
 
   /// An Arbor under test on somebody's Mac has no switchboard, and shows no button a script's click could land on.
@@ -338,6 +359,31 @@ import Testing
     let facts = try #require(h.controller.systemFacts?())
     let row = try #require(h.controller.onboardingModel(facts).row(.desktopAndDock))
     #expect(row.action == nil && row.state == .recommended)
+  }
+
+  /// The window looks at the Mac once a second, so the first move follows the switch.
+  @Test func theFirstMoveBecomesTheDragOnceTheStepIsTaken() {
+    let h = makeHarness()
+    h.start()
+    let session = OnboardingSession(controller: h.controller) { _ in }
+    session.begin(on: .firstSteps)
+    #expect(session.model.step(.dock)?.lead == "Click a window and press ⌃⌥⌘←")
+    h.run("fix-setup")
+    session.refresh()
+    #expect(session.model.step(.dock)?.lead == "Drag a window to the left edge of the screen")
+  }
+
+  // MARK: In the menu
+
+  /// Whoever passed the offer by has declined it (Q23): neither the menu nor the icon reminds them. Check Setup… has it when they want it.
+  @Test func decliningIsRespected() {
+    let h = makeHarness()
+    h.start()
+    let withTilingOn = h.controller.menuModel()
+    #expect(h.controller.menuBarModel().icon == MenuBarModel.Icon())
+    h.run("fix-setup")
+    #expect(h.controller.menuModel() == withTilingOn, "the menu is the same either way")
+    #expect(withTilingOn.allItems.contains { $0.command == .checkSetup })
   }
 
   // MARK: What `doctor` says

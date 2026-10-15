@@ -108,7 +108,7 @@ One more is good to know and nothing to change: with **Click wallpaper to reveal
 
 Arbor checks all of this for you before it arranges anything, and changes none of it unasked: the welcome window lists what stands in the way, worst first, and so do **Check Setup…** (menu → Help) and `arborctl doctor` at any later time.
 
-**Or in one step.** The row has a button, **Switch Them Off** (`arborctl fix-setup`). It switches off the three above, as far as they are on, and nothing else; macOS obeys at once, nothing restarts and no window moves. Arbor writes down how each was. **Put Them Back**, in the same row afterwards (`arborctl fix-setup undo`), restores exactly that, next week as well as now, and so does uninstalling. Stage Manager is not part of it: whoever has it on chose it.
+**Or in one step.** The row has a button, **Switch Off macOS Tiling** (`arborctl fix-setup`). It switches off the three above, as far as they are on, and nothing else; macOS obeys at once, nothing restarts and no window moves. Arbor writes down how each was. **Put Them Back**, in the same row afterwards (`arborctl fix-setup undo`), restores exactly that, next week as well as now, and so does uninstalling. Stage Manager is not part of it: whoever has it on chose it.
 
 ### Launch and permission
 
@@ -123,7 +123,7 @@ Nothing moves when permission arrives. Arbor arranges nothing until you ask.
 
 ### Three moves
 
-1. **Dock.** Drag any window by its title bar to the left edge of the screen. A preview shows where it will land; let go. Drag another to the right edge. Windows that were floating where the docked ones now sit are nudged onto the Desktop between them.
+1. **Dock.** Drag any window by its title bar to the left edge of the screen. (With macOS's own tiling on, that edge is macOS's: click the window and press **⌃⌥⌘←** instead, which works at every setting. The welcome window words this move as your Mac is set.) A preview shows where it will land; let go. Drag another to the right edge. Windows that were floating where the docked ones now sit are nudged onto the Desktop between them.
 2. **Frame.** Click one of the docked windows and press **⌃⌥↩**. It fills the screen. **Your other windows are out of view, not closed.**
 3. **Show everything.** Press **⌃⌥Space** (or ⌃⌥↩ again). Everything is back.
 
@@ -376,7 +376,7 @@ Arrange the windows by hand once, ask for the line, and bind it to a shortcut: `
 | **Show Everything springs back** when the keys come up | They were held for a second or more, or the pointer moved meanwhile, which is a peek: letting go returns to the outlined view | Let go within a second with the pointer at rest, or use ⌃⌥0, which never peeks. `"peek": false` in `settings.json` turns peeking off |
 | **Clicks, scrolling or pinches feel late or go missing**, in any app, since you switched the gestures on | For the pinch, ⌃⌥ + scroll and the rectangle macOS shows Arbor each press, scroll and pinch first, and holds it until Arbor has answered | Settings… → Gestures → **Trackpad and mouse gestures** off, or `arborctl set pointerGestures false`: nothing waits for Arbor any more. Keys, the menu and dragging windows, gaps and tiles work as before. If that cures it, please tell us |
 | **A beep** | The shortcut has nothing to do here, and `messages` is "off" | Set `messages` to "helpful" and Arbor says why on screen; or ask `arborctl` with the same command: `arborctl in` → "nothing is docked yet: drag a window to a screen edge…" |
-| **A window pushed against the edge takes half the screen**, or all of it at the top, and is not docked | With macOS's own tiling on, the left, right and top edges are macOS's, and Arbor stands aside | ⌃⌥⌘ + an arrow docks it at once. Or Help → Check Setup… → Switch Them Off (or the three switches in section 2 by hand), and every edge is Arbor's |
+| **A window pushed against the edge takes half the screen**, or all of it at the top, and is not docked | With macOS's own tiling on, the left, right and top edges are macOS's, and Arbor stands aside | ⌃⌥⌘ + an arrow docks it at once. Or Help → Check Setup… → Switch Off macOS Tiling (or the three switches in section 2 by hand), and every edge is Arbor's |
 | **A docked window covers the others** after a double-click on its title bar | macOS's own title-bar action (System Settings → Desktop & Dock → "Double-click a window's title bar to"). You asked macOS for it, so Arbor leaves the window where macOS put it | Double-click the title bar again, or press ⌃⌥Space or ⌃⌥0: the window is back in its place |
 | **A window shows as a coloured tile** with its icon | Its place is too small for it, or its app refused to shrink that far | Arbor has already moved the gaps as far as the Desktop and the neighbours could spare. Click the tile to zoom in on it. Give it more room by dragging a gap. Once there is room, Arbor asks the window again, out of view, and gives it the place if it fits |
 | **An app keeps moving its own windows**, or looks wrong when docked | Some apps insist | Don't Arrange "App" in the menu |

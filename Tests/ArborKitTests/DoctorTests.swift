@@ -487,16 +487,16 @@ import Testing
     let model = h.controller.onboardingModel(facts)
     #expect(model.rows.map(\.isSatisfied) == [false, false])
     // Nothing is registered before Arbor starts, so the window shows what the settings promise.
-    #expect(model.steps.map(\.lead) == ["Drag a window to a screen edge", "Press ⌃⌥↩", "Press ⌃⌥Space"])
+    #expect(model.steps.map(\.lead) == ["Drag a window to the left edge of the screen", "Then press ⌃⌥↩", "Then press ⌃⌥Space"])
 
     var settings = Settings()
     settings.bindings = ["ctrl+opt+return": nil, "ctrl+opt+z": "zoom"]
     h.controller.apply(settings: settings)
-    #expect(h.controller.onboardingModel(facts).step(.frame)?.lead == "Press ⌃⌥Z")
+    #expect(h.controller.onboardingModel(facts).step(.frame)?.lead == "Then press ⌃⌥Z")
 
     // With ARBOR_NO_HOTKEYS nothing will ever be registered.
     facts.inputDisabled = true
-    #expect(h.controller.onboardingModel(facts).step(.frame)?.lead == "Choose Frame Focused Window in Arbor’s menu")
+    #expect(h.controller.onboardingModel(facts).step(.frame)?.lead == "Then choose Frame Focused Window in Arbor’s menu")
   }
 }
 
@@ -527,7 +527,7 @@ import Testing
     mac.facts.switches = [.optionKey]
     session.refresh()
     #expect(shown.count == 1)
-    #expect(shown.last?.row(.desktopAndDock)?.points == [MacSwitch.optionKey.advice])
+    #expect(shown.last?.row(.desktopAndDock)?.afterword.hasPrefix("Changes 1 setting in Desktop & Dock, nothing else: \(MacSwitch.optionKey.named).") == true)
 
     // The last one.
     mac.facts.switches = []
@@ -557,8 +557,8 @@ import Testing
     #expect(shown.last == session.model)
   }
 
-  /// Whoever comes back from granting the permission has looked at nothing else on the page. The first of the three moves is a drag to
-  /// a screen edge, which macOS as it comes takes for itself: so the window waits at what is in the way (F46, "Setup: only the
+  /// Whoever comes back from granting the permission has looked at nothing else on the page, and the offer to have the screen edges, which
+  /// macOS as it comes keeps for itself, is made there: so the window waits at what is in the way (F46, "Setup: only the
   /// problems. Skipped when there are none"), and nothing has been arranged by then.
   @Test func withThePermissionThereTheWindowWaitsAtWhatIsStillInTheWay() throws {
     let h = Harness()
@@ -577,7 +577,7 @@ import Testing
     h.start()
     session.refresh()
     #expect(session.model.page == .permissions)
-    #expect(session.model.title == "One thing is in the way")
+    #expect(session.model.title == "Ready, with one suggestion")
     #expect(session.model.row(.accessibility)?.isSatisfied == true)
     #expect(session.model.row(.desktopAndDock)?.state == .recommended)
     #expect(session.model.isPrimaryEnabled, "it is advice: nobody is held up")
@@ -603,7 +603,7 @@ import Testing
     h.controller.registeredBindings = KeyBindings.whilePaused(KeyBindings.defaults)
     session.refresh()
     #expect(session.model.summary.contains("Resume"))
-    #expect(session.model.step(.frame)?.lead == "Press ⌃⌥↩", "the shortcut that will be there again")
+    #expect(session.model.step(.frame)?.lead == "Then press ⌃⌥↩", "the shortcut that will be there again")
     session.go(to: .permissions)
     #expect(session.model.title == "Arbor is paused")
     h.run("resume")

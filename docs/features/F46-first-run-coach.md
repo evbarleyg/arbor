@@ -4,7 +4,8 @@ Written by the executor swarm, 2026-10-14; for the documenter to review.
 
 Status: done, with F10 (`feat/F10-menu-bar`: `FirstSteps`, `OnboardingFlow`, `OnboardingModel`, `OnboardingSession`: "Three moves to try", ticked live, the three ways back with their shortcuts, Open at Login, Arbor's mark beside the words
 that say where it lives; the window reopens when Arbor is opened again) and `feat/F46-first-launch`: it opens by itself at the first launch when the permission is already there (`welcomed` in `state.json`), on what there is to put right or else
-on the three moves; the moves tick in any order; for the three moves the window waits at the right of the display; the footnote says what to do when a full menu bar or the notch hides the icon. **Not shipped**: the link to the shortcuts
+on the three moves; the moves tick in any order; for the three moves the window waits at the right of the display; the footnote says what to do when a full menu bar or the notch hides the icon. Since 2026-10-15 (Q20, Q23, and four readings by an agent that knew nothing, which scored the screens 6, 6, 7 and 7.5 of 10): the first move is worded as the Mac is set ("Click a window and press ⌃⌥⌘←" while macOS's tiling has the left and right edges, "Drag a window to the left edge of the screen" otherwise, changing at once with the switch), and so is the invitation to dock a second window;
+the second and third begin with "Then"; the signs on the keys are named over the moves; the first page is headed "Ready, with one suggestion", marks what is required with an arrow and what is suggested with a lightbulb, and says what Arbor is in words that need no glossary. **Not shipped**: the link to the shortcuts
 (F43's panel is not on the trunk; one line in `OnboardingModel` when it is), finding out whether macOS is hiding the icon (needs a notched Mac to try)
 Depends on: F10 (the window and the permission page), F42 (the setup page)
 Size: small, for what is left

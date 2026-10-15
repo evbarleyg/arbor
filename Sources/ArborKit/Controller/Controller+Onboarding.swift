@@ -16,7 +16,8 @@ extension Controller {
     facts.accessibility = hasPermission(facts)
     return OnboardingModel(
       facts, flow: flow, windowsOutOfView: permissionLoss?.windows ?? 0, offersScreenRecording: offersScreenRecording, appsWithOwnShortcuts: passThroughSuggestions.map(\.name),
-      canFixSetup: macSwitchboard != nil, switchesChangedByArbor: macSwitchesChangedByArbor, fixSetupFailure: fixSetupFailure, isPaused: isPaused && accessibilityGranted,
+      canFixSetup: macSwitchboard != nil, switchesChangedByArbor: macSwitchesChangedByArbor, fixSetupFailure: fixSetupFailure,
+      isNewcomer: isFirstLaunch && workspaces.values.allSatisfy { $0.tree.allWindows.isEmpty }, isPaused: isPaused && accessibilityGranted,
       shortcut: { KeyBindings.label(for: $0, in: bindings) })
   }
 

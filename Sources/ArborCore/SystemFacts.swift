@@ -90,7 +90,15 @@ public enum MacSwitch: String, CaseIterable, Sendable {
     }
   }
 
-  /// The label and what to do about it, as one line of a list.
+  /// What is on, by the name it has in System Settings, as one line of a list. The three about tiling say in plain words what they do.
+  public var named: String {
+    switch self {
+    case .clickWallpaper, .screenEdges, .menuBar, .optionKey: "“\(label)”"
+    case .stageManager: "“\(label)”: it moves windows itself, so use one or the other"
+    }
+  }
+
+  /// The label and what to do about it by hand, as one line of a list.
   public var advice: String {
     switch self {
     case .clickWallpaper: "“\(label)”: choose “Only in Stage Manager”. Otherwise a click on the Desktop sends every window away"

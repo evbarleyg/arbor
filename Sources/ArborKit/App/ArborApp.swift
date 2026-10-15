@@ -40,6 +40,7 @@ public final class ArborApp: NSObject, NSApplicationDelegate {
   /// `Controller.activeBindings` says, whether or not it can act on a press.
   private var holdsKeys = false
   private var permissionTimer: Timer?
+  private var timesAskedForPermission = 0
   private var signalSources: [DispatchSourceSignal] = []
   private var pointerInput: PointerInput?
   private let guards = ProcessGuards()
@@ -123,6 +124,8 @@ public final class ArborApp: NSObject, NSApplicationDelegate {
       self?.updateWindow.show(decision, current: build)
     }
     controller.loginItem = SystemLoginItem()
+    // Asked now, before anything is saved.
+    controller.isFirstLaunch = !FileManager.default.fileExists(atPath: ArborPaths.stateFile.path)
     if environment.onlyPIDs == nil || environment.macSwitches { controller.macSwitchboard = SystemMacSwitchboard() }
     // From the first start on the controller watches the permission itself (Controller+Permission.swift).
     // The taps' own check: the flag, and a tap made and thrown away. It talks to no app, so none can keep it waiting.
@@ -357,11 +360,21 @@ public final class ArborApp: NSObject, NSApplicationDelegate {
   private func waitForAccessibility() {
     controller.accessibilityGranted = false
     Log.info("waiting for Accessibility permission")
+    timesAskedForPermission = 0
     // The window explains first; macOS's own prompt comes when the user clicks its button.
     if !environment.noPrompt { showWelcomeWindow() }
     permissionTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
       MainActor.assumeIsolated {
-        guard AXIsProcessTrusted() else { return }
+        guard AXIsProcessTrusted() else {
+          // Once a minute, so that a log can tell "asked and was told no" from "stopped asking".
+          if let self {
+            self.timesAskedForPermission += 1
+            if self.timesAskedForPermission % 60 == 0 {
+              Log.info("still waiting for Accessibility permission: asked \(self.timesAskedForPermission) times")
+            }
+          }
+          return
+        }
         self?.permissionTimer?.invalidate()
         self?.permissionTimer = nil
         Log.info("Accessibility permission granted")
@@ -495,7 +508,8 @@ public final class ArborApp: NSObject, NSApplicationDelegate {
     if onboarding == nil {
       onboarding = OnboardingWindow(
         controller: controller, onButton: { [weak self] row in self?.openSystemSettings(for: row) },
-        onAction: { [weak self] command in self?.handle(command) ?? .failure("Arbor is quitting") },
+        // As a script would: the window itself shows what came of it, and a line on screen would only say it twice.
+        onAction: { [weak self] command in self?.handle(command, from: .script) ?? .failure("Arbor is quitting") },
         onLogin: { [weak self] in self?.toggleLaunchAtLogin() })
     }
     onboarding?.show(page)

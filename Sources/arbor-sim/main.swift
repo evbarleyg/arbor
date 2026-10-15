@@ -135,12 +135,14 @@ func runSimulation() {
   if lines.first == "sweep" { exit(runSweep(Array(lines.dropFirst()))) }
   if let code = runWalkMode(lines) { exit(code) }
   let launch = LaunchOptions(taking: &lines)
+  let firstLaunch = FirstLaunch(taking: &lines)
   if lines.isEmpty, launch?.audit != true {
     while let line = readLine() { lines.append(line) }
   }
 
-  var harness = launch?.harness() ?? Harness()
-  begin(harness)
+  var harness = firstLaunch?.harness ?? launch?.harness() ?? Harness()
+  // A first launch has begun already, and starts when the permission arrives.
+  begin(harness, starting: firstLaunch == nil)
   // As the app does in its launch: what `doctor` finds wrong goes into the log, whoever asked or did not, and so do the shortcuts skipped.
   if launch != nil {
     harness.controller.logSkippedBindings()
@@ -251,14 +253,14 @@ func runSimulation() {
       harness.beginStep()
     }
     // A number that is no window's is a slip in the script: nothing happens, and `simulate` says so.
-    if words[0] == "crash", words.dropFirst().allSatisfy({ WindowID(word: $0).map { harness.system.windows[$0] != nil } ?? false }) {
+    if words[0] == "crash", firstLaunch == nil, words.dropFirst().allSatisfy({ WindowID(word: $0).map { harness.system.windows[$0] != nil } ?? false }) {
       harness = relaunched(harness) { system in
         reopened = words.dropFirst().compactMap { WindowID(word: $0) }.compactMap { old in system.renumber(old).map { (old, $0) } }
       }
       watcher = SimulatedWatcher(harness: harness)
       (linesPrinted, minimapsPrinted) = (0, 0)
     }
-    var (message, ok) = simulate(words, harness: harness, printLayout: &printLayout)
+    var (message, ok) = firstLaunch?.simulate(words) ?? simulate(words, harness: harness, printLayout: &printLayout)
     if words == ["relaunch", "start"], !startsAgain { (message, ok) = ("Arbor has not been quit with `relaunch quit`", false) }
     // macOS reports the focus changes Arbor asked for back to it.
     harness.system.deliverEchoes()
@@ -291,6 +293,7 @@ func runSimulation() {
       for transition in harness.overlays.transitions { print(transition) }
     }
     watcher.printLines()
+    firstLaunch?.aSecondPasses()
     if printLayout, !["quiet", "loud", "help", "state", "ascii", "settings", "get", "spaces", "scene"].contains(words[0]) {
       print(harness.ascii(columns: 64, rows: 16))
     }
@@ -309,10 +312,11 @@ func runSimulation() {
 
 /// Starts a harness as every run of the simulator's Arbor starts.
 @MainActor
-func begin(_ harness: Harness) {
+func begin(_ harness: Harness, starting: Bool = true) {
   // The clock is the script's: an hour of `wait` is no reason to stop.
   harness.recorder.limits.seconds = .infinity
   harness.recorder.openSink = TraceRecorder.openFile
+  guard starting else { return }
   harness.watchAccessibility()
   harness.beginStep()
   // After `revoke`, a `relaunch` is a start without the permission.

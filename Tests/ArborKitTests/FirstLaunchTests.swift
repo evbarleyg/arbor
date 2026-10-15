@@ -60,7 +60,7 @@ import Testing
     #expect(h.controller.pageToWelcomeOn() == .permissions)
     let row = try #require(h.controller.onboardingModel(facts).row(.desktopAndDock))
     #expect(row.state == .recommended)
-    for tiling in [MacSwitch.screenEdges, .menuBar, .optionKey] { #expect(row.points.contains(tiling.advice)) }
+    for tiling in [MacSwitch.screenEdges, .menuBar, .optionKey] { #expect(row.afterword.contains(tiling.named)) }
     #expect(windows.map { h.frame($0) } == before)
     #expect(h.system.frameLog.isEmpty, "\(h.system.frameLog)")
     #expect(windows.allSatisfy { h.workspace.isFloating($0) })

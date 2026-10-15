@@ -4,7 +4,11 @@ import ArborKit
 /// The switches under Desktop & Dock, in memory. As a Mac comes: nothing is stored.
 @MainActor
 public final class FakeMacSwitchboard: MacSwitchboard {
-  public var values: [MacSwitch: Bool] = [:]
+  public var values: [MacSwitch: Bool] = [:] {
+    didSet { didChange?() }
+  }
+  /// macOS goes by what is stored at once, with nothing restarted. `Harness` has the fake window system follow.
+  public var didChange: (() -> Void)?
   /// What Arbor has written down.
   public var before: [MacSwitchRecord] = []
   /// The major version of this Mac's macOS.

@@ -312,6 +312,8 @@
         ("8-all-moves-made", model(tuned, flow: done), nil),
         ("9-paused", model(tuned, flow: moves, isPaused: true), nil),
         ("10-switched-off-by-arbor", model(tuned, changed: tiling), nil),
+        // What every Mac shows as it comes, to whoever passed the offer by.
+        ("11-three-moves-with-macos-tiling-on", model(granted, flow: moves), nil),
       ]
       var sizes = ""
       var heights: [String: CGFloat] = [:]
@@ -327,7 +329,7 @@
 
       // 644 points are what a 1024 x 768 display leaves between the menu bar and the Dock, less the title bar.
       // The first page's rows scroll when they must; the second page has nothing that could.
-      for name in ["6-three-moves", "7-one-move-made", "8-all-moves-made", "9-paused"] {
+      for name in ["6-three-moves", "7-one-move-made", "8-all-moves-made", "9-paused", "11-three-moves-with-macos-tiling-on"] {
         #expect((heights[name] ?? 0) < 644, "\(name) fits the smallest display: \(heights[name] ?? 0)")
       }
       // Rows in order lose their text, so the better things stand, the smaller the window.

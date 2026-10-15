@@ -155,7 +155,7 @@ and shows what matters, with a live tick on everything that is in order and a bu
 - **Accessibility** (required): macOS lets an app move other apps' windows only with this permission (System Settings →
   Privacy & Security → Accessibility). If the switch is on there and Arbor still says it has no permission, the build's signature has
   changed: switch it off and on again ([docs/INSTALL.md](docs/INSTALL.md) has how to sign so that this does not happen).
-- **Desktop & Dock** (best changed): macOS's own tiling, three settings there, reacts to the same drags as Arbor. **Switch Them Off** in
+- **macOS tiling** (recommended): macOS's own tiling, three settings under Desktop & Dock, reacts to the same drags as Arbor, and before it. **Switch Off macOS Tiling** in
   the row does it in one step (`arborctl fix-setup`): it changes those settings and nothing else, takes effect at once, and writes down how they
   were, so that **Put Them Back** in the same row (Help → Check Setup…, or `arborctl fix-setup undo`) and `make uninstall` leave the Mac as
   Arbor found it. Nothing is changed unasked. By hand: under Windows,
@@ -169,8 +169,10 @@ and shows what matters, with a live tick on everything that is in order and a bu
   app that uses ⌃⌥ itself is open (Emacs, a virtual machine, a JetBrains IDE).
 
 When the permission arrives the window comes forward. If something on its first page is still in the way it waits there, because
-the first move would run into it; Continue goes on. Otherwise it goes on by itself, to **three moves to try** on your own windows, ticked off as you
-make them, in any order: drag a window to a screen edge, ⌃⌥↩ to frame it, ⌃⌥Space to show everything. There are always three ways
+that is where the offer is made; Continue goes on. Otherwise it goes on by itself, to **three moves to try** on your own windows, ticked off as you
+make them, in any order: drag a window to the left edge of the screen, ⌃⌥↩ to frame it, ⌃⌥Space to show everything. The window never teaches a move
+that cannot work on the Mac as it is set: while macOS's own tiling has the screen edges, the first move is "Click a window and press ⌃⌥⌘←", and
+it changes its words the moment the edges are Arbor's. There are always three ways
 back: Show Everything, Float All Windows (your Mac is back to normal), and quitting Arbor, which brings every window
 back into view. The same page has the box for Open at Login, which is also in the settings window, under General.
 

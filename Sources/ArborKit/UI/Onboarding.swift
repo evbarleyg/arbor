@@ -222,6 +222,13 @@ struct OnboardingView: View {
           rows
         }
       } else {
+        if !model.keysLegend.isEmpty {
+          Text(model.keysLegend)
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 12)
+            .padding(.bottom, -12)
+        }
         steps
         waysBack
         loginBox
@@ -278,11 +285,9 @@ struct OnboardingView: View {
             .font(.caption)
             .foregroundStyle(.secondary)
           Spacer(minLength: 8)
-          if let action = row.action {
-            // The one step has the place beside the title. The way to do it by hand comes last, under the text.
-            Button(action.title) { onAction(action.command) }
-              .buttonStyle(.borderedProminent)
-          } else if let undo = row.undo {
+          if row.action != nil {
+            // Its buttons come under the text that says what they are for.
+          } else if row.isSatisfied, let undo = row.undo {
             Button(undo.title) { onAction(undo.command) }
           } else if let title = row.button {
             if row.state == .required {
@@ -309,12 +314,24 @@ struct OnboardingView: View {
               .fixedSize(horizontal: false, vertical: true)
           }
         }
+        if let action = row.action {
+          // The one step, and beside it the way to do the same by hand.
+          HStack(spacing: 8) {
+            Button(action.title) { onAction(action.command) }
+              .buttonStyle(.borderedProminent)
+            if let title = row.button {
+              // A link, so that there is one button to decide about.
+              Button(title) { onButton(row.id) }
+                .buttonStyle(.link)
+            }
+          }
+          .padding(.vertical, 4)
+        }
         if !row.afterword.isEmpty {
           Text(row.afterword)
-            .font(.callout)
+            .font(.caption)
             .foregroundStyle(.secondary)
             .fixedSize(horizontal: false, vertical: true)
-            .padding(.top, 2)
         }
         if !row.failure.isEmpty {
           Text(row.failure)
@@ -322,18 +339,14 @@ struct OnboardingView: View {
             .foregroundStyle(.red)
             .fixedSize(horizontal: false, vertical: true)
         }
-        if row.action != nil || row.undo != nil, !row.isSatisfied, let title = row.button {
-          Button(title) { onButton(row.id) }
-            .padding(.top, 2)
-        }
         if !row.done.isEmpty {
           HStack(alignment: .firstTextBaseline, spacing: 8) {
             Text(row.done)
               .font(.callout)
               .foregroundStyle(.secondary)
               .fixedSize(horizontal: false, vertical: true)
-            // Beside the title when that place is free.
-            if row.action != nil, let undo = row.undo {
+            // Beside the title when the row is in order and that place is free.
+            if !row.isSatisfied, let undo = row.undo {
               Button(undo.title) { onAction(undo.command) }
             }
           }
@@ -346,8 +359,10 @@ struct OnboardingView: View {
   private func symbol(for state: OnboardingModel.Row.State) -> String {
     switch state {
     case .done: "checkmark.circle.fill"
-    case .required: "exclamationmark.circle.fill"
-    case .recommended: "exclamationmark.triangle.fill"
+    // The next thing to do, not something that has gone wrong: it is the first thing a newcomer sees.
+    case .required: "arrow.right.circle.fill"
+    // A suggestion. A warning sign beside "Recommended" reads as if the Mac had a fault.
+    case .recommended: "lightbulb.fill"
     case .optional: "circle"
     case .note: "info.circle"
     }
@@ -356,7 +371,7 @@ struct OnboardingView: View {
   private func colour(for state: OnboardingModel.Row.State) -> Color {
     switch state {
     case .done: .green
-    case .required: .red
+    case .required: .accentColor
     case .recommended: .orange
     case .optional, .note: .secondary
     }
