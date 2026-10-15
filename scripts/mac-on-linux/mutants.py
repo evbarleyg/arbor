@@ -120,8 +120,8 @@ MUTANTS = [
     },
     {
         "name": "a drag is known only by what the app reports",
-        "old": "        lookAtPressedWindow()\n",
-        "new": "        _ = 0\n",
+        "old": "      } else if resizingWindow == nil {\n        lookAtPressedWindow()\n",
+        "new": "      } else if resizingWindow == nil {\n        _ = 0\n",
         "red": [
             "a window is dragged by its title bar, and its app says nothing until it is over: the drag is reported to begin, once",
             "a window of an app that hangs is dragged: the window server moves it all the same, and the drag is reported",
@@ -231,7 +231,7 @@ MUTANTS = [
             "a window is dragged for a second, and the monitor hears of the press 500 ms late: the drag is reported to begin",
             "a window that lies over another is dragged for a second, and the monitor hears of the press 500 ms late: the drag is reported to begin",
             "a window is made wider by its left edge for a second while Arbor's main thread is busy for 300 ms from the press, and what queued up comes byTime: "
-            "it is not taken for a drag",
+            "the resize is reported to begin and to end",
         ],
     },
     {
@@ -258,8 +258,8 @@ MUTANTS = [
     {
         "name": "a window held by its title bar is judged from a corner the pointer has got to",
         "file": "ArborCore/WindowGrab.swift",
-        "old": "        pressedAt.y >= listed.minY + top\n",
-        "new": "        pressedAt.y >= listed.minY\n",
+        "old": "        !isWhereAHandTakesHold(pressedAt, of: listed)\n",
+        "new": "        !isNearEdge(pressedAt, of: listed)\n",
         "red": [
             "judge: J3 the window starts 400 ms late, the pointer 120 points along its title bar at its left edge by then, the press heard 300 ms late: "
             "the drag is reported to begin",
@@ -268,8 +268,8 @@ MUTANTS = [
     {
         "name": "a hand can take a window along by the middle of it",
         "file": "ArborCore/WindowGrab.swift",
-        "old": "      pressedAt.y < believed.minY + top || isNearEdge(pressedAt, of: believed)\n",
-        "new": "      true\n",
+        "old": "    if believed.insetBy(dx: -edgeMargin, dy: -edgeMargin).contains(pressedAt), isWhereAHandTakesHold(pressedAt, of: believed) {\n",
+        "new": "    if believed.insetBy(dx: -edgeMargin, dy: -edgeMargin).contains(pressedAt) {\n",
         "red": [
             "judge: J2 a stubborn window goes back 60 points while text is selected in it the same way, Arbor busy for 500 ms, then byTime: "
             "no drag and no resize is made of it",
@@ -278,7 +278,7 @@ MUTANTS = [
     {
         "name": "a window a step ahead of its app is in the hand wherever on it the pointer is",
         "file": "ArborCore/WindowGrab.swift",
-        "old": "    return ahead <= lag && (pointerNow.y < listed.minY + top || isNearEdge(pointerNow, of: listed))\n",
+        "old": "    return ahead <= lag && isWhereAHandTakesHold(pointerNow, of: listed)\n",
         "new": "    return ahead <= lag\n",
         "red": [
             "judge: J2b the button goes down on the wallpaper, the pointer comes to a window whose app has moved it 40 points the same way meanwhile, "
@@ -306,7 +306,7 @@ MUTANTS = [
     {
         "name": "a window that trails a hand going up is judged from its upper edge",
         "file": "ArborCore/WindowGrab.swift",
-        "old": "      if isNearEdge(pointerNow, of: listed), !isNearEdge(pressedAt, of: believed), pressedAt.y >= believed.minY + top {\n",
+        "old": "      if isNearEdge(pointerNow, of: listed), !isWhereAHandTakesHold(pressedAt, of: believed) {\n",
         "new": "      if isNearEdge(pointerNow, of: listed), !isNearEdge(pressedAt, of: believed) {\n",
         "red": ["judge2: R 1746: it comes out right", "judge2: R 1048: it comes out right"],
     },
@@ -333,6 +333,118 @@ MUTANTS = [
         "old": "    guard settings.focusRing else { return }\n    refreshFocusRing(.focus, focused: focused)\n",
         "new": "    guard settings.focusRing, false else { return }\n    refreshFocusRing(.focus, focused: focused)\n",
         "red": ["the rude walk (upstairs, polite): the focus ring is around the window with the keyboard"],
+    },
+    {
+        "name": "one jump of a window under a press below its top is a hand",
+        "old": "      memory: WindowGrab.Memory(isBelowTheTop: hold.isBelowTheTop))\n",
+        "new": "      memory: WindowGrab.Memory(isBelowTheTop: false))\n",
+        "red": [
+            "Arbor sends a stubborn tile 80 points, it goes back after 0.474 s, the list 150 ms behind; 20 ms after the call text is selected in it the way Arbor sent it: "
+            "both are tiles still",
+            "judge: J2 a stubborn window goes back 60 points while text is selected in it the same way, served on time: no drag and no resize is made of it",
+        ],
+    },
+    {
+        "name": "nothing can be taken along but by its top",
+        "file": "ArborCore/WindowGrab.swift",
+        "old": "    guard abs(frameNow.minX - first.minX) > tremble || abs(frameNow.minY - first.minY) > tremble else {\n",
+        "new": "    guard abs(frameNow.minX - first.minX) > .infinity else {\n",
+        "red": ["a window is dragged for a second by its background, served on time: the drag is reported to begin"],
+    },
+    {
+        "name": "whether a press is below the top goes by the list alone",
+        "file": "ArborCore/WindowGrab.swift",
+        "old": "        isBelowTheTop: !(isAtTheTop(pressedAt, of: listed) && isAtTheTop(pressedAt, of: believed)))\n",
+        "new": "        isBelowTheTop: !isAtTheTop(pressedAt, of: listed))\n",
+        "red": [
+            "Arbor sends a stubborn window up 80 points, the press 125 below its new top, 20 ms after the call, the list 150 ms behind, and the pointer goes the way it goes back: "
+            "no drag and no resize is made of it",
+        ],
+    },
+    {
+        "name": "an edge takes a window along as its top does",
+        "file": "ArborCore/WindowGrab.swift",
+        "old": "        isBelowTheTop: !(isAtTheTop(pressedAt, of: listed) && isAtTheTop(pressedAt, of: believed)))\n",
+        "new": "        isBelowTheTop: !(isAtTheTop(pressedAt, of: listed) && isAtTheTop(pressedAt, of: believed)) && !isNearEdge(pressedAt, of: listed))\n",
+        "red": ["a stubborn window goes back 60 points while a scroll bar 6 points inside its right border is pulled down: no drag and no resize is made of it"],
+    },
+    {
+        "name": "without a list every press is at the top",
+        "old": "      let isBelowTheTop = !WindowGrab.isAtTheTop(press.point, of: previous)\n",
+        "new": "      let isBelowTheTop = false\n",
+        "red": ["the window server gives no list, and a stubborn window goes back 60 points while text is selected in it the same way: no drag and no resize is made of it"],
+    },
+    {
+        "name": "the two signs of one jump are two places",
+        "file": "ArborCore/WindowGrab.swift",
+        "old": "    guard abs(frameNow.minX - first.minX) > tremble || abs(frameNow.minY - first.minY) > tremble else {\n",
+        "new": "    guard abs(frameNow.minX - first.minX) >= 1 || abs(frameNow.minY - first.minY) >= 1 else {\n",
+        "red": ["the list is 2 points off the app's word, and a stubborn window goes back 60 points while text is selected in it the same way: no drag and no resize is made of it"],
+    },
+    {
+        "name": "a window that goes on may change its size as it goes",
+        "file": "ArborCore/WindowGrab.swift",
+        "old": "    guard let first = memory.followedTo, abs(frameNow.width - first.width) < 1, abs(frameNow.height - first.height) < 1 else {\n",
+        "new": "    guard let first = memory.followedTo else {\n",
+        "red": ["a window is made wider by its left edge, which trails the pointer by 30 points when the press is served, the press heard 300 ms late: no drag"],
+    },
+    {
+        "name": "a press that found no window keeps to none",
+        "old": "      self.press?.window = isBelowTheTop ? window : nil\n",
+        "new": "      self.press?.window = nil\n",
+        "red": ["the window server gives no list, and a window is dragged for a second by its background, served on time: the drag is reported to begin"],
+    },
+    {
+        "name": "a press that found no window keeps for good to the first that speaks",
+        "old": "    } else if press.window == nil || press.isAdopted, previous.insetBy(dx: -Self.reach, dy: -Self.reach).contains(press.point) {\n",
+        "new": "    } else if press.window == nil, previous.insetBy(dx: -Self.reach, dy: -Self.reach).contains(press.point) {\n",
+        "red": [
+            "the window server gives no list; a window over another app's is dragged by its title bar; the one beneath moves first by itself, the pointer's way: "
+            "the drag is reported to begin",
+        ],
+    },
+    {
+        "name": "a move of Arbor's own does not start the looks afresh",
+        "old": "      self.press?.memory.startAfresh()\n",
+        "new": "\n",
+        "red": ["text is selected, the window jumps 30 points the pointer's way, Arbor puts it elsewhere, and it jumps 30 points from there: no drag and no resize is made of it"],
+    },
+    {
+        "name": "a window that turns back is still being followed",
+        "file": "ArborCore/WindowGrab.swift",
+        "old": "    guard wentThePointersWay(from: frameAtPress, to: frameNow, pressedAt: pressedAt, pointerNow: pointerNow, give: lag) else {\n      memory.followedTo = nil\n",
+        "new": "    guard wentThePointersWay(from: frameAtPress, to: frameNow, pressedAt: pressedAt, pointerNow: pointerNow, give: lag) else {\n\n",
+        "red": ["text is selected, and the window jumps the pointer's way, back beyond where it was, and the pointer's way again: no drag and no resize is made of it"],
+    },
+    {
+        "name": "after one jump the window server is asked with every movement",
+        "file": "ArborCore/WindowGrab.swift",
+        "old": "        if (x * x + y * y).squareRoot() > patience { memory.stoodStill = true }\n",
+        "new": "\n",
+        "red": ["a window jumps once early in a selection of 600 movements: in those five seconds the window server is asked some ten times a second from the fifth movement on"],
+    },
+    {
+        "name": "a window that has not gone on at the second look is left alone at once",
+        "file": "ArborCore/WindowGrab.swift",
+        "old": "        if (x * x + y * y).squareRoot() > patience { memory.stoodStill = true }\n",
+        "new": "        memory.stoodStill = true\n",
+        "red": ["a window is dragged by its background at sixty movements a second, 1 point a movement: by the background 3 movements later at the most"],
+    },
+    {
+        "name": "a window that jumped is looked at with every movement for as long as the pointer stays in a small spot",
+        "file": "ArborCore/WindowGrab.swift",
+        "old": "      if let time, let since = memory.stoodSince, time - since >= standing { memory.stoodStill = true }\n",
+        "new": "\n",
+        "red": [
+            "a window jumps 30 ms after the press, and the pointer stays within 20 points of there for 600 movements: "
+            "in those five seconds the window server is asked with every movement for half a second, then ten times a second",
+        ],
+    },
+    {
+        "name": "the release looks at nothing",
+        "old": "      if draggingWindow == nil, resizingWindow == nil, press?.memory.isBelowTheTop == true {\n",
+        "new": "      if false, draggingWindow == nil, resizingWindow == nil, press?.memory.isBelowTheTop == true {\n",
+        "red": ["a window is taken by its background, the hand goes 6 points, trembles for 62 movements at sixty a second, flicks it away in 32 ms and lets go: the drag is reported to begin"],
     },
 ]
 

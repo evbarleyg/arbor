@@ -1284,6 +1284,10 @@ public final class AXWindowSystem: WindowSystem {
     var memory = WindowGrab.Memory()
     /// When the window server was last asked.
     var lookedAt: TimeInterval = 0
+    /// The window server's list named no window: this one's app had it under the press (`noteMoveWhilePressed`).
+    var isAdopted = false
+    /// It has been logged that the window moved under this press and was not taken for one in the hand at once.
+    var isLoggedToHaveMoved = false
   }
 
   /// How long the window server is left alone between two looks at a window that stood still: a selection in a long text
@@ -1328,6 +1332,12 @@ public final class AXWindowSystem: WindowSystem {
       // A modifier going down or up counts as a move, so ⌘ takes effect while the pointer rests.
       if let window = draggingWindow { events?.dragMoved(window, to: cursorLocation()) }
     case .leftMouseUp:
+      // One last look, whatever the rest between two looks says: a window that has stood for a while under a press below its
+      // top is looked at ten times a second, and a flick that begins and ends between two looks would never be seen.
+      if draggingWindow == nil, resizingWindow == nil, press?.memory.isBelowTheTop == true {
+        press?.lookedAt = 0
+        lookAtPressedWindow()
+      }
       noteAGrabThatWasMissed()
       press = nil
       endGrab()
@@ -1359,14 +1369,19 @@ public final class AXWindowSystem: WindowSystem {
       pressedAt: point, pointerNow: now, underPress: underPress, underPointer: topWindow(at: now, in: list),
       desktopIsShown: desktopIsShown(by: list))
     if Log.debugEnabled { logPress(at: point, pointer: now, on: underPress, hold) }
-    return Press(point: hold.point, window: hold.window, frame: hold.frame, isSettled: hold.isSettled)
+    return Press(
+      point: hold.point, window: hold.window, frame: hold.frame, isSettled: hold.isSettled,
+      memory: WindowGrab.Memory(isBelowTheTop: hold.isBelowTheTop))
   }
 
   /// A drag that is not seen leaves nothing else behind to tell why.
   private func logPress(at point: CGPoint, pointer: CGPoint, on top: WindowGrab.Top?, _ hold: WindowGrab.Hold) {
     let what: String
     switch (hold.window, top) {
-    case (let window?, _): what = hold.isInTheHand ? "it is served late, with \(window) in the hand" : "it is on \(window)"
+    case (let window?, _):
+      what =
+        hold.isInTheHand
+        ? "it is served late, with \(window) in the hand" : "it is on \(window)" + (hold.isBelowTheTop ? ", below its top" : "")
     case (nil, .known(let window, let listed, let believed)?):
       what = "it is on \(window), listed at \(traceText(listed.origin)), which its app has at \(traceText(believed.origin)): on a picture of it"
     case (nil, .stranger?): what = "it is on a window Arbor does not arrange"
@@ -1441,6 +1456,7 @@ public final class AXWindowSystem: WindowSystem {
     if echoes.isEcho(bounds, of: window, at: uptime) {
       // Arbor moved it itself after the press. Start from there.
       self.press?.frame = bounds
+      self.press?.memory.startAfresh()
       return
     }
     decide(window, from: press.frame, to: bounds, pressedAt: press.point)
@@ -1452,8 +1468,14 @@ public final class AXWindowSystem: WindowSystem {
     guard let press, !press.isSettled, draggingWindow == nil, resizingWindow == nil else { return }
     if press.window == window {
       decide(window, from: press.frame, to: frame, pressedAt: press.point)
-    } else if press.window == nil, previous.insetBy(dx: -Self.reach, dy: -Self.reach).contains(press.point) {
-      // The window server's list was no help; go by where the window was.
+    } else if press.window == nil || press.isAdopted, previous.insetBy(dx: -Self.reach, dy: -Self.reach).contains(press.point) {
+      // The window server's list was no help; go by where the window was. Below its top a window must be looked at twice, so
+      // the press keeps to it from here on. Not for good: the first to speak need not be the one on top, and may close.
+      let isBelowTheTop = !WindowGrab.isAtTheTop(press.point, of: previous)
+      self.press?.window = isBelowTheTop ? window : nil
+      self.press?.frame = isBelowTheTop ? previous : .zero
+      self.press?.isAdopted = isBelowTheTop
+      self.press?.memory = WindowGrab.Memory(isBelowTheTop: isBelowTheTop)
       decide(window, from: previous, to: frame, pressedAt: press.point)
     }
   }
@@ -1472,10 +1494,14 @@ public final class AXWindowSystem: WindowSystem {
     var memory = press?.memory ?? WindowGrab.Memory()
     let late = memory.stoodStill
     let verdict = WindowGrab.judge(
-      pressedAt: point, frameAtPress: before, frameNow: now, pointerNow: cursorLocation(), memory: &memory)
+      pressedAt: point, frameAtPress: before, frameNow: now, pointerNow: cursorLocation(), at: uptime, memory: &memory)
     if memory.stoodStill, !late { Log.debug("the press on \(window) has moved nothing so far: looking less often") }
     press?.memory = memory
     switch verdict {
+    case .neither where memory.isBelowTheTop && press?.isLoggedToHaveMoved == false && now.origin != before.origin:
+      // A drag that is not seen leaves nothing else behind to tell why.
+      press?.isLoggedToHaveMoved = true
+      Log.debug("\(window) has moved under a press below its top: it is in the hand only if it goes on, the pointer's way")
     case .undecided, .neither:
       break
     case .drag:

@@ -34,8 +34,8 @@ a docked window enters full screen and leaves it, saying so late: and Arbor has 
 # the window server as they are by then: a gesture that is over before Arbor hears of the press compares the last frame with itself. (3) A press has the place where it happened, and what the window server lists when it is
 # served. `WindowGrab.hold` knows a window in the hand by its being ahead of its app's word, the way the pointer went. What is at rest by then, or has been heard, or is held by an edge that takes its place nowhere, it does not
 # know. All of (3) was lost before `hold` as well, none of it is taken for something else, and nothing is logged.
-# (4) Older than `hold`, and the same with it: a window that goes the pointer's way by itself under a press that is served ON TIME is taken for a drag (`classify`); and a window server that runs a whole step
-# ahead of the pointer (67 points were measured on a hosted Mac) has the window farther than the pointer went, which is not what a window in the hand looks like.
+# (4) Older than `hold`, and the same with it: a window that goes the pointer's way by itself under a press IN ITS UPPER 60 POINTS that is served on time is taken for a drag (`classify`; below
+# them one jump is no hand: `judge`); and a window server that runs a whole step ahead of the pointer (67 points were measured on a hosted Mac) has the window farther than the pointer went, which is not what a window in the hand looks like.
 # (5) What `hold` does not know for a hand's: a resize taken in a window's upper 60 points (it cannot be told from a title bar held while the pointer goes along it to a corner), a bar taller than 60 points taken
 # below them, a window that lies under another and is moved there with ⌘. Lost or mistaken before `hold` as well.
 # (6) RED WITH `hold` AND GREEN BEFORE IT, three checks (K9), contrived: a window that goes the pointer's way BY ITSELF, under a press in its upper 60 points that is served late. Served on time the same
@@ -80,9 +80,6 @@ a window over another is made narrower by its right edge, Arbor busy for 300 ms,
 a window over another is made narrower by its right edge, Arbor busy for 300 ms, then mouseFirst: the resize is reported # the edge has left the place of the press, which takes hold of the window below
 a window over another is made narrower by its right edge, the press heard 300 ms late: the resize is reported # the edge has left the place of the press, which takes hold of the window below
 a window over another is made narrower by its right edge, the press heard 500 ms late: the resize is reported # the edge has left the place of the press, which takes hold of the window below
-judge: J2 a stubborn window goes back 20 points while text is selected in it the same way, served on time: no drag and no resize is made of it # (4): moved no farther than the pointer went: a drag, by `classify`
-judge: J2 a stubborn window goes back 60 points while text is selected in it the same way, served on time: no drag and no resize is made of it # the same
-judge: J2 a stubborn window goes back 90 points while text is selected in it the same way, served on time: no drag and no resize is made of it # the same
 judge: J4 a window is dragged sideways in steps of 60 points, the window server a step ahead of the pointer, the press heard 500 ms late: the drag is reported to begin # (4): 60 points farther than the pointer went
 judge: J4 a window is dragged sideways in steps of 60 points, the window server a step ahead of the pointer, the press heard 500 ms late: and to end # the same
 judge2: K1 a window beside another is carried briskly to the bottom edge of the display and held there, Arbor busy for 300 ms, then accessibilityFirst: and to end # (3): at rest, or heard, when the press is served
@@ -341,11 +338,6 @@ Arbor starts while an app hangs, which wakes 60 s later: three seconds after it 
 Arbor starts while an app hangs, which wakes 60 s later: half a minute after, at the latest # once the retries to observe it are spent, some 40 s, nobody asks again until the app comes forward
 Arbor starts while an app hangs, which wakes 60 s later: announced as one that was open all along # once the retries to observe it are spent, some 40 s, nobody asks again until the app comes forward
 
-# What the cure for late starts (a3c0281) leaves, as its author says: a window that jumps by itself to within 24 points of the pointer's own travel, during a selection, cannot be told from one that caught up with the hand. It
-# is logged: "wN is being dragged, which began late".
-text is selected over 120 points, and meanwhile the window moves the pointer's way, as far as the pointer has gone, by itself: it is not taken for a drag # late, one look is enough if the window has caught up with the pointer (WindowGrab.judge)
-text is selected over 120 points, and meanwhile the window jumps to within 24 points of the pointer's own travel, by itself: it is not taken for a drag # late, one look is enough if the window has caught up with the pointer (WindowGrab.judge)
-
 # Board 1.56 (QUESTIONS, Q23): a docked window let go in macOS's band belongs to whoever takes it. If macOS does not, it goes home to its slot, one move, its neighbours untouched. So it does short of the left and right edges and just
 # under the menu bar. IN the menu bar `MacTiling.claim` answers, through `hoverLeftToMacOS`, before the resolver is asked: the window is left to macOS at the release, whether macOS then takes it or not.
 with macOS's tiling on, a docked window is thrown into the menu bar and let go at once: macOS does not take it, so it goes home: half a second later it is in its slot # board 1.56: Arbor does not look whether macOS has taken it (0.1 to 0.2 s of rest in the menu bar decide that)
@@ -524,3 +516,14 @@ n19 41 `undo` of a dock that was made from the Desktop: apps 200 ms late, B has 
 n19 41 `undo` of a dock that was made from the Desktop: apps 200 ms late, B has a floating window: the window with the keyboard is in view # NOT the race (red in the control too): with apps that are late, which is a guess: the window has the keyboard and ends at 783,55 300×220, over the right edge; not looked into
 n19 41 `undo` of a dock that was made from the Desktop: apps 200 ms late, THE CONTROL: B has no window: the window that was named is in view # NOT the race (red in the control too): with apps that are late, which is a guess: the window has the keyboard and ends at 783,55 300×220, over the right edge; not looked into
 n19 41 `undo` of a dock that was made from the Desktop: apps 200 ms late, THE CONTROL: B has no window: the window with the keyboard is in view # NOT the race (red in the control too): with apps that are late, which is a guess: the window has the keyboard and ends at 783,55 300×220, over the right edge; not looked into
+
+# (7) What "one jump is no hand" (`judge` for a press below a window's top) costs and leaves.
+# THE PRICE, red with it only: a window taken below its upper 60 points (by its background, or by a taller bar) that starts late and catches up in one jump, with the hand at rest by then, gives one look. So does any gesture of one movement.
+a window that starts 0.4 s late is thrown by its background in 0.18 s and held still: the drag is reported to begin # one look, and the hand is at rest: it cannot be told from a window that jumped by itself
+a window that starts 0.4 s late is thrown by its background in 0.18 s and held still: and to end # one look, and the hand is at rest: it cannot be told from a window that jumped by itself
+served on time, a window is taken by its background and carried 120 points in one movement, and held for a second: the drag is reported to begin # one movement is one look: a hand never makes one, a script that warps the pointer does
+served on time, a window is taken by its background and carried 120 points in one movement, and held for a second: and to end # one movement is one look: a hand never makes one, a script that warps the pointer does
+# LEFT, red before it as well: a window that goes the pointer's way by itself in several steps goes on, as one in the hand does.
+text is selected over 120 points in 0.6 s, and the window goes 90 points the same way by itself in 2 step(s) within 0.2 s: no drag and no resize is made of it # two places the pointer's way are what a hand looks like
+text is selected over 120 points in 0.6 s, and the window goes 90 points the same way by itself in 3 step(s) within 0.2 s: no drag and no resize is made of it # two places the pointer's way are what a hand looks like
+text is selected over 120 points in 0.6 s, and the window goes 90 points the same way by itself in 8 step(s) within 0.2 s: no drag and no resize is made of it # two places the pointer's way are what a hand looks like

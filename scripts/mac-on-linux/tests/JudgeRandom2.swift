@@ -25,10 +25,17 @@ private struct Dice2 {
 
 @MainActor
 func tellOfTheJudgesSecondRandomGestures(_ book: Book) {
+  tellThem(book, "judge2: R", always: [1048, 1746], byTheBackground: false)
+  // The same gestures with every window one that is taken along by its background: a press on its content is a real drag then. --only "judge2: B".
+  tellThem(book, "judge2: B", always: [], byTheBackground: true)
+}
+
+@MainActor
+private func tellThem(_ book: Book, _ name: String, always: [Int], byTheBackground: Bool) {
   // Two are always told: real drags that `hold` once lost and the layer before it saw, a window that trails a hand going up.
-  let asked = book.options.only.contains { $0.hasPrefix("judge2: R") }
-  for seed in asked ? Array(1...4000) : [1048, 1746] {
-    book.story("judge2: R \(seed)") { story in
+  let asked = book.options.only.contains { $0.hasPrefix(name) }
+  for seed in asked ? Array(1...4000) : always {
+    book.story("\(name) \(seed)") { story in
       var dice = Dice2(state: UInt64(seed) &* 104729)
       let scene = dice.int(4)
       var window: FakeMac.Window!, other: FakeMac.Window?
@@ -47,6 +54,8 @@ func tellOfTheJudgesSecondRandomGestures(_ book: Book) {
           window = mac.open("window", in: mac.launch("Notes"), frame: tile)
         }
       }
+      window.isMovedByItsBackground = byTheBackground
+      other?.isMovedByItsBackground = byTheBackground
       let mac = one.mac
       let frame = window.bounds
       var start: CGPoint

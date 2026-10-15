@@ -1,4 +1,5 @@
 import CoreGraphics
+import Foundation
 
 /// What a press of the mouse button followed by movement is doing to the window under the pointer
 /// (F17, H1 and H5). The Accessibility layer records where the button went down and the frame the
@@ -21,6 +22,11 @@ public enum WindowGrab {
   /// How far the pointer may travel with the window standing still before the press is taken to be
   /// about the window's content. A window follows a drag from the first few points.
   public static let patience: CGFloat = 24
+  /// How far apart the window server and a window's app may have a window that stands still. A guess: nobody has measured a
+  /// difference that stays; whole points and the halves between them are what has been seen.
+  public static let tremble: CGFloat = 2
+  /// How long a window that jumped under a press below its top is looked at with every movement, in seconds.
+  public static let standing: TimeInterval = 0.5
   /// How far below its upper edge a window can be taken along: a title bar, or a toolbar that is one with it. A guess, with room
   /// to spare over what has been measured: 26 to 52 points. A taller bar taken lower down is not known for one.
   public static let top: CGFloat = 60
@@ -62,13 +68,24 @@ public enum WindowGrab {
     public var isSettled = false
     /// The press is served late, and the window was found on its way. For the log.
     public var isInTheHand = false
+    /// The press is below the window's top, by where the window server lists it or by its app's word: `judge` asks for two looks.
+    public var isBelowTheTop = false
 
     public init(
-      window: WindowID? = nil, point: CGPoint, frame: CGRect = .zero, isSettled: Bool = false, isInTheHand: Bool = false
+      window: WindowID? = nil, point: CGPoint, frame: CGRect = .zero, isSettled: Bool = false, isInTheHand: Bool = false,
+      isBelowTheTop: Bool = false
     ) {
       (self.window, self.point, self.frame) = (window, point, frame)
-      (self.isSettled, self.isInTheHand) = (isSettled, isInTheHand)
+      (self.isSettled, self.isInTheHand, self.isBelowTheTop) = (isSettled, isInTheHand, isBelowTheTop)
     }
+  }
+
+  /// Whether a place is in the part of a window by which a hand takes it along: its title bar, or a toolbar that is one with it.
+  public static func isAtTheTop(_ point: CGPoint, of frame: CGRect) -> Bool { point.y < frame.minY + top }
+
+  /// By its top a hand takes a window along, by an edge it changes its size.
+  static func isWhereAHandTakesHold(_ point: CGPoint, of frame: CGRect) -> Bool {
+    isAtTheTop(point, of: frame) || isNearEdge(point, of: frame)
   }
 
   /// What a press takes hold of, by what the window server lists when the press is looked at.
@@ -91,7 +108,7 @@ public enum WindowGrab {
       // Its app's last word is the nearest there is to the frame it had at the press, and is that frame if Arbor was
       // too busy to hear more. If not, and it is an edge that is in the hand, the edge has left the press behind.
       // Not for a press at the top: a window that trails a hand going up has the pointer at its upper edge.
-      if isNearEdge(pointerNow, of: listed), !isNearEdge(pressedAt, of: believed), pressedAt.y >= believed.minY + top {
+      if isNearEdge(pointerNow, of: listed), !isWhereAHandTakesHold(pressedAt, of: believed) {
         return Hold(window: window, point: pointerNow, frame: listed, isInTheHand: true)
       }
       return Hold(window: window, point: pressedAt, frame: believed, isInTheHand: true)
@@ -105,12 +122,15 @@ public enum WindowGrab {
     case .known(let window, let listed, let believed)? where !(desktopIsShown && isListedElsewhere(listed, than: believed)):
       // The same for an edge whose app has been heard all along. Not for a press at the top: that is a window held by its
       // title bar which has not stirred yet, with the pointer gone along the bar as far as a corner.
-      if case .known(window, _, _)? = underPointer, isNearEdge(pointerNow, of: listed), !isNearEdge(pressedAt, of: listed),
-        pressedAt.y >= listed.minY + top
+      if case .known(window, _, _)? = underPointer, isNearEdge(pointerNow, of: listed),
+        !isWhereAHandTakesHold(pressedAt, of: listed)
       {
-        return Hold(window: window, point: pointerNow, frame: listed)
+        return Hold(window: window, point: pointerNow, frame: listed, isBelowTheTop: true)
       }
-      return Hold(window: window, point: pressedAt, frame: listed)
+      // The list may be behind: at the top by both, or not at the top.
+      return Hold(
+        window: window, point: pressedAt, frame: listed,
+        isBelowTheTop: !(isAtTheTop(pressedAt, of: listed) && isAtTheTop(pressedAt, of: believed)))
     case .stranger?, .known?:
       return Hold(point: pressedAt, isSettled: true)
     }
@@ -136,14 +156,12 @@ public enum WindowGrab {
     else { return false }
     // A hand takes a window by its top or by an edge: in a text that is being selected, a window that goes the pointer's
     // way goes by itself. If its app has not been heard since the press, its app's word has that place under the press.
-    if believed.insetBy(dx: -edgeMargin, dy: -edgeMargin).contains(pressedAt),
-      pressedAt.y < believed.minY + top || isNearEdge(pressedAt, of: believed)
-    {
+    if believed.insetBy(dx: -edgeMargin, dy: -edgeMargin).contains(pressedAt), isWhereAHandTakesHold(pressedAt, of: believed) {
       return true
     }
     // If it has, it is a step or two behind (and a window that goes up may cover the press still, deep inside). The hand is
     // then still where it took hold, which is where the pointer is.
-    return ahead <= lag && (pointerNow.y < listed.minY + top || isNearEdge(pointerNow, of: listed))
+    return ahead <= lag && isWhereAHandTakesHold(pointerNow, of: listed)
   }
 
   /// Whether a window has moved, each way between nowhere and as far as the pointer, give or take, and not against it.
@@ -202,12 +220,22 @@ public enum WindowGrab {
 
   /// What is remembered of a press between two looks at it.
   public struct Memory: Equatable, Sendable {
-    /// The pointer went far while the window stood still.
+    /// The pointer went far while the window stood still, or the window jumped once and then stood still.
     public internal(set) var stoodStill = false
-    /// Where the window was at the first look that found it gone the pointer's way, but not all the way.
+    /// Where the window was at the first look that found it gone the pointer's way: but not all the way, or under a press below its top.
     var followedTo: CGRect?
+    /// Under a press below its top: where the pointer was at that look.
+    var followedAt: CGPoint?
+    /// Under a press below its top: where the window has stood since it last moved, and since when.
+    var stoodAt: CGRect?
+    var stoodSince: TimeInterval?
+    /// The press is below the window's top (`Hold.isBelowTheTop`).
+    public internal(set) var isBelowTheTop: Bool
 
-    public init() {}
+    public init(isBelowTheTop: Bool = false) { self.isBelowTheTop = isBelowTheTop }
+
+    /// Arbor itself moved the window after the press, and the press is held against the new frame from here on.
+    public mutating func startAfresh() { (followedTo, followedAt, stoodAt, stoodSince) = (nil, nil, nil, nil) }
   }
 
   /// `classify` for a press that is looked at again and again. A pointer that goes far while the window stands still is most
@@ -217,9 +245,16 @@ public enum WindowGrab {
   ///
   /// Late, one look is enough only if the window has caught up with the pointer. One that has merely gone the pointer's way may
   /// have jumped by itself, which cannot be told from a late start at one look. At two it can: a window in hand goes on.
+  ///
+  /// A press below a window's top goes by `judgeBelowTheTop`.
   public static func judge(
-    pressedAt: CGPoint, frameAtPress: CGRect, frameNow: CGRect, pointerNow: CGPoint, memory: inout Memory
+    pressedAt: CGPoint, frameAtPress: CGRect, frameNow: CGRect, pointerNow: CGPoint, at time: TimeInterval? = nil,
+    memory: inout Memory
   ) -> Verdict {
+    if memory.isBelowTheTop {
+      return judgeBelowTheTop(
+        pressedAt: pressedAt, frameAtPress: frameAtPress, frameNow: frameNow, pointerNow: pointerNow, at: time, memory: &memory)
+    }
     guard memory.stoodStill else {
       let verdict = classify(pressedAt: pressedAt, frameAtPress: frameAtPress, frameNow: frameNow, pointerNow: pointerNow)
       if verdict == .neither { memory.stoodStill = true }
@@ -238,6 +273,58 @@ public enum WindowGrab {
       return .neither
     }
     return abs(frameNow.minX - before.minX) >= 1 || abs(frameNow.minY - before.minY) >= 1 ? .drag : .neither
+  }
+
+  /// A hand takes a window along by its top. Below that it selects text, pulls at a scroll bar, or changes the window's size by an
+  /// edge; a window that changes its place under such a press has most likely done so by itself. A stubborn one goes back to
+  /// where it was before Arbor moved it, in one jump, which may be as far as the pointer went. Taken for a drag, that takes a
+  /// docked window out of its arrangement.
+  ///
+  /// But some windows can be taken along by their background, or by a bar taller than `top`. What tells them is that they go
+  /// on: two looks find the window gone the pointer's way, in two places more than a `tremble` apart, at one size. That costs a true
+  /// drag a movement of the pointer or two. What size it had at the press does not count: a window that macOS had tiled gets its
+  /// old size back in the hand, and is seen once it has it. (A window that moves by itself in several steps, the pointer's
+  /// way, still passes for one in the hand.)
+  static func judgeBelowTheTop(
+    pressedAt: CGPoint, frameAtPress: CGRect, frameNow: CGRect, pointerNow: CGPoint, at time: TimeInterval?,
+    memory: inout Memory
+  ) -> Verdict {
+    let resized = abs(frameNow.width - frameAtPress.width) >= 1 || abs(frameNow.height - frameAtPress.height) >= 1
+    if resized, isNearEdge(pressedAt, of: frameAtPress) { return .resize }
+    guard abs(frameNow.minX - frameAtPress.minX) >= 1 || abs(frameNow.minY - frameAtPress.minY) >= 1 else {
+      let (x, y) = (pointerNow.x - pressedAt.x, pointerNow.y - pressedAt.y)
+      guard (x * x + y * y).squareRoot() > patience else { return .undecided }
+      memory.stoodStill = true
+      return .neither
+    }
+    // Nor once it has stood for half a second, wherever the pointer is: text can be selected in a small spot, to and fro, for as
+    // long as one likes. A window in the slowest hand is then looked at ten times a second, and seen when it has gone on.
+    if let stoodAt = memory.stoodAt, abs(frameNow.minX - stoodAt.minX) <= tremble, abs(frameNow.minY - stoodAt.minY) <= tremble {
+      if let time, let since = memory.stoodSince, time - since >= standing { memory.stoodStill = true }
+    } else {
+      (memory.stoodAt, memory.stoodSince) = (frameNow, time)
+    }
+    // Not any way but the pointer's, as for a window that starts late.
+    guard wentThePointersWay(from: frameAtPress, to: frameNow, pressedAt: pressedAt, pointerNow: pointerNow, give: lag) else {
+      memory.followedTo = nil
+      return .neither
+    }
+    // At one size: an edge that has left the press behind takes the window's place along as well, and its size with it.
+    guard let first = memory.followedTo, abs(frameNow.width - first.width) < 1, abs(frameNow.height - first.height) < 1 else {
+      (memory.followedTo, memory.followedAt) = (frameNow, pointerNow)
+      return .neither
+    }
+    // More than the two signs of one jump may differ: the window server's list and the app's word are both looked at.
+    guard abs(frameNow.minX - first.minX) > tremble || abs(frameNow.minY - first.minY) > tremble else {
+      // One jump, and there it stands while the pointer goes on: no need to look at every movement from here on. Not sooner: a
+      // slow hand needs several movements to take a window more than a tremble on, and a movement may be heard twice.
+      if let at = memory.followedAt {
+        let (x, y) = (pointerNow.x - at.x, pointerNow.y - at.y)
+        if (x * x + y * y).squareRoot() > patience { memory.stoodStill = true }
+      }
+      return .neither
+    }
+    return .drag
   }
 
   /// What a later look shows once `classify` has said `neither`. More is asked now than that the window moved: the same size,

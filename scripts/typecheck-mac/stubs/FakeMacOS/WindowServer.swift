@@ -59,6 +59,7 @@ extension FakeMac {
   /// - `only`: that window alone, whether it shows or not (`optionIncludingWindow` by itself).
   /// Costs no time and cannot hang: the window server is not the app.
   public func windowList(onScreenOnly: Bool, withoutDesktop: Bool, only: UInt32?) -> [Listed]? {
+    timesTheListWasAskedFor += 1
     guard !serverGivesNoList else { return nil }
     func listed(_ item: Furniture) -> Listed {
       Listed(

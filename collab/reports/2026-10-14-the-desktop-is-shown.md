@@ -193,6 +193,52 @@ just laid out, listed where it was, could be taken for one in the hand.
 - Measured by the older nets too: `make mac-on-linux` 922 stories, 2656 ✔, 0 new; 18 more listed checks cured (a bar of 90 points taken below the upper 60); the two lots of 4,000 random gestures against the layer
   before: 4 and 15 better, none worse, none false; 34 changes noticed. The model's window server can lag behind a call (`serverListsACallAfter`; half-way frames are not played).
 
+## Afterwards: one jump is no hand (2026-10-15, board 1.85)
+
+Once a plain drag is the way out of an arrangement, **whatever the layer wrongly takes for a drag of a docked window takes the window out**, silently, and its neighbour is laid out anew. The judge's five
+stories, with the real controller: Arbor sends a stubborn tile 80 points, it goes back by itself 0.2 or 0.47 s later, and meanwhile text is selected in it over 120 points, either way, from 20 or 200 ms after Arbor's
+call. Five false drags; two of them take the tile out today, all five with the controller that is coming. `classify` calls "another place, no farther than the pointer went" a drag, wherever the press was.
+
+- **A hand takes a window along by its top.** A press below that (`Hold.isBelowTheTop`: below the upper 60 points) is asked by `WindowGrab.judge` for **two looks**: the window gone the pointer's way, in two places more than
+  two points apart, at one size. One jump, however well it fits the pointer's travel, is no hand. An edge still changes the size at one look. A window that was in the hand when a late press was served has shown where the
+  hand is, and is not asked twice. Nothing changes in the controller.
+- **The five: no drag, no preview, both stay tiles.** Five more listed checks are cured: a stubborn window under a selection served on time (three), and the two that the cure for late starts had left (a window that
+  jumps by itself to within 24 points of the pointer's travel).
+- **The first state was too narrow, and a review with 106 stories of its own said where.** It spoke of "the middle" of a window, which let five false drags through and lost a drag it need not have. Mended, each with its stories
+  and a change in the self-test that they notice:
+  - a **scroll bar** within ten points of the border: an edge changes a window's size, it never merely moves it, so a bare move under it is asked for two looks as well;
+  - **the list behind Arbor's call:** by the frame it still lists, a press in the text can be "at the top" of a window that was sent up. At the top by the list and by the app's word, or not at the top. A move of Arbor's own starts the looks afresh;
+  - **the two signs of one jump:** the window server's list and the app's word are both looked at, and if they differ by a point or two for good, one jump shows as two places. Hence more than two points;
+  - **no list at all**, or nothing listed under a late press: the press is held against where the window's app had it, is asked whether that is at the top, and keeps to that window from there on, so that it can be looked at twice;
+  - **a window that gets its old size back in the hand** (macOS had tiled it), taken by its background or by a tall bar: the size it had at the press does not count, only that two looks agree on one. An edge that has left a late press
+    behind takes the window's place along too, and its size with it: that is why they must agree;
+  - after one jump the window server is asked ten times a second again, not with every movement;
+  - the log says of every press whether it was below the top, and once when a window has moved under such a press.
+- **Red first:** the review's shapes and the judge's five on the layer before: 28 checks are red there (27 false drags, two tiles lost among them) and none here.
+- **Windows that are taken along by their background, by name:** the model can play them (`isMovedByItsBackground`), the test app and its stand-in too (`by-background`). Dragged for a second, on time, heard 300 ms late, with the main
+  thread busy in three orders: seen, 5 of 5, and the same with no list from the window server. At sixty movements a second, two and a half points each, the drag is seen **two movements later at the most** than by the title bar.
+- **On time, with a hand that goes on, nothing is lost:** 24 stories hold that sentence: taken by the background and by a bar of 90 points 70 down, four ways, slowly (2 points a movement), briskly, and in coarse steps of 66 points.
+- By the older nets: `make mac-on-linux` 988 stories, 2786 ✔, 280 known, 0 new. The layer before with the same stories: 33 checks red there and green here, 2 the other way (the price, below). 42 changes noticed by the self-test, seven of them new.
+- **The prices, wider than first said, and wider again by the judge's word** (4,285 stories, the 180 true drags among them: none lost; 12,000 random gestures: no new false drag). None moves a window wrongly: what is not seen goes back
+  to its place, or lies where it was let go.
+  1. **One look is no drag.** Whatever is taken below the upper 60 points gives one look if the window starts late and catches up in one jump with the hand at rest, if its press is served late with little of the gesture left, or **if the whole
+     gesture is one movement of the pointer**, on time too (28 of 28). A hand never makes one; a script that warps the pointer does. Right of 4,000 random gestures against the layer before: 3,382 / 3,383; 3,270 / 3,275; with every window
+     taken along by its background (`judge2: B`, new) 3,096 / 3,116. None better, **none false**.
+  2. **A drag below the top begins later:** a fast hand 8 to 33 ms, one or two movements. A slow hand (1 point a movement) was 150 ms late at the median on the head that was judged: two looks less than a point apart slowed the looks down.
+     Mended: they slow down only once the pointer has gone 24 points on with the window standing. Held now to 3 movements at 1 point, 6 at half a point, 2 where every movement is heard twice.
+  3. **One drag by a plain title bar** is lost that was seen before (seed 621 of the first lot: up to the menu bar, Arbor busy for 300 ms, the window server a step ahead, the app silent). 672 stories aimed at it do not bring it about again.
+  4. **The press that found no window** kept for good to the first that spoke: 12 of 12 lost with the window beneath speaking first, and one new false drag. Mended: it keeps to a window only below that window's top, and gives it up for the
+     next that speaks.
+- **Lines that no story held**, by the judge's taking each out: the fresh start after a move of Arbor's own, forgetting a window that turns back, the slowing down after one jump, the keeping to a window. Each has a story and a change in the
+  self-test now; the model counts how often its list is asked for.
+- **What still takes a tile out**, all red before as well, and dearer once every false drag costs the tile: a press in the upper 60 points that is no title bar (a field of a toolbar 40 down: 5 of 6); a press in the text served late with the
+  pointer come to the window's top by then (1 of 3, before 2); the list 2.5 points or more off the app's word; a window that goes on by itself by 3 points or more, or the pointer's way in several steps.
+- **The order of two words:** where a report from the window's app is the first look, the controller hears "it moved, not by Arbor" before "a drag began", as it does for every window that starts late. A floating window docked that way and undone
+  comes back a step from where it was taken.
+- `scripts/mac-shell/check-one-jump.sh` asks a Mac: the button goes down in the middle of the test app's stubborn window, a tile; Arbor sends it 80 points; it goes back with the pointer going on, each way; that it did move under the button is
+  checked. The same tile by its title bar is the control. A test window told `by-background`. (Its first state asked nothing: the Desktop lay between the two tiles and took the 80 points. Its second was not rehearsed though the rehearsal
+  ended well: the stand-in's pointer had refused an option, and every gesture after it.)
+
 ## Not done, and why
 
 - **A leap of less than 32 points.** A window that hangs off its display with 40 points showing is swept until 12 show. A click on its strip that slips is

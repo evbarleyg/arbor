@@ -4,6 +4,10 @@ import AppKit
 final class CountingView: NSView {
   var counts: [String: Int] = ["down": 0, "up": 0, "dragged": 0, "key": 0, "magnify": 0]
 
+  /// `by-background`: a press on it takes the window along, as in many of Apple's own apps, and never reaches it.
+  var takesTheWindowAlong = false
+
+  override var mouseDownCanMoveWindow: Bool { takesTheWindowAlong }
   override var acceptsFirstResponder: Bool { true }
   override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
   /// The label in the middle, where most presses are aimed, would be asked instead, and it takes no first click.

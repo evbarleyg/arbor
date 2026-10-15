@@ -3656,7 +3656,7 @@
     "test: aWindowThatChangesSizeWhileItIsDraggedByItsTitleBarIsStillDragged",
     "test: draggedOffItsTileTheWindowIsItsOwnSizeForGood"
    ],
-   "copes": "WindowGrab.classify goes by where the press was: away from the border, a window that moved is being dragged whatever its size does. The stand-in gives the size back in one report, not in seventeen.",
+   "copes": "WindowGrab.classify goes by where the press was: away from the border, a window that moved is being dragged whatever its size does. Taken below its upper 60 points it is seen once it has its size: two looks at one size (judge). The stand-in gives the size back in one report, not in seventeen.",
    "hurt": 2,
    "touches": [
     "moved-unasked",
@@ -5805,7 +5805,7 @@
     "trace: textedit-drag.expect",
     "trace: terminal-drag.expect"
    ],
-   "copes": "WindowGrab.classify goes by what the window does after the press, not by where the press was.",
+   "copes": "WindowGrab goes by what the window does after the press. Where the press was decides only how much is asked: in the upper 60 points one look at a window that moved is enough, below them it must go on (judge).",
    "hurt": 4,
    "sources": [
     "scripts/mac-shell/apptool.swift",

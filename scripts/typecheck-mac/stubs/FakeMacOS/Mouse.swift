@@ -140,7 +140,7 @@ extension FakeMac {
     let kind: Grab.Kind
     if !inner.contains(point), window.isResizable, !window.isFullScreen {
       kind = .edge(left: point.x < inner.minX, right: point.x > inner.maxX, top: point.y < inner.minY, bottom: point.y > inner.maxY)
-    } else if point.y < frame.minY + window.titleBarHeight, !window.isFullScreen {
+    } else if point.y < frame.minY + window.titleBarHeight || window.isMovedByItsBackground, !window.isFullScreen {
       kind = .titleBar
     } else {
       kind = .content

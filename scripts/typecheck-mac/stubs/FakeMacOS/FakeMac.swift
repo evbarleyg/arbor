@@ -47,6 +47,8 @@ public final class FakeMac: @unchecked Sendable {
   public var furniture: [Furniture] = []
   /// The call for the list comes back with nothing. Seen: Sources/ArborKit/AX/AXWindowSystem.swift, `countWindows`.
   public var serverGivesNoList = false
+  /// How often the window server has been asked for its list, or for one window of it.
+  public internal(set) var timesTheListWasAskedFor = 0
 
   public internal(set) var activeSpace = 1
   var spacesMade = 1
@@ -88,6 +90,8 @@ public final class FakeMac: @unchecked Sendable {
   /// one move from 518,43 494×650 to 220,180 480×348 the list gave 518,43 480×348, the old place with the new size. What shows on screen meanwhile, and from which frame a drag begun
   /// meanwhile starts, nobody has looked at: here it starts from the listed one. GUESS.
   public var serverListsACallAfter: TimeInterval = 0
+  /// The window server lists every window so many points to the right of where its app has it, for good. GUESS: nobody has measured such a difference; the layer must not depend on there being none.
+  public var listIsOffBy: CGFloat = 0
   /// While macOS shows its desktop: where the window server lists each window it swept aside, by number (DesktopShown.swift).
   public internal(set) var sweptTo: [UInt32: CGRect]?
   /// How long after the button went down on a strip the window server lists the windows where they are again, with the button still down. 27 ms on a hosted
@@ -604,6 +608,8 @@ extension FakeMac {
     /// The test windows': 28 on macOS 26.6.2 (asked for y 767 they took 677 with the visible frame's bottom at 705, 20 times of 20 in the recordings of one night, 2026-10-15); 32 in the older traces (673: traces/README.md,
     /// row 3), where real apps had 26 to 47.
     public var titleBarHeight: CGFloat = 28
+    /// It can be taken along by any part of it that is nothing else (`isMovableByWindowBackground`). Common among Apple's own apps; in no trace.
+    public var isMovedByItsBackground = false
     /// On screen or in the Dock. False once it has closed.
     public internal(set) var isOpen = true
     /// The window server still has its number: true for as long as it is open, and after that for one that was only put away.

@@ -303,7 +303,7 @@ extension World {
 
     let known = [
       "minimize", "restore", "close", "key", "move", "insist", "relent", "min-size", "tab", "dialog", "select",
-      "full-screen", "front", "activate", "title", "events",
+      "full-screen", "front", "activate", "title", "events", "by-background",
     ]
     guard known.contains(verb) else { throw AppRefusal("unknown command \(verb)") }
     let id = try find(words.count > 1 ? words[1] : nil, of: pid)
@@ -356,6 +356,9 @@ extension World {
       system.userMove(window, to: frame)
     case "relent":
       system.stubbornFrames[window] = nil
+    case "by-background":
+      try standardOnly()
+      draggedByTheirBackground.insert(id)
     case "min-size":
       let numbers = words.dropFirst(2).compactMap { Double($0) }
       guard numbers.count == 2, words.count == 4 else { throw AppRefusal("usage: min-size <id> <w> <h>") }

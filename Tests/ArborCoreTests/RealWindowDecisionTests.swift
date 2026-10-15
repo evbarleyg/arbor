@@ -97,7 +97,10 @@ extension Box where Value == EchoFilter {
 
   /// The looks of one press, in order: where the window and the pointer were at each.
   func verdicts(pressedAt: CGPoint, _ looks: [(now: CGRect, pointer: CGPoint)]) -> [WindowGrab.Verdict] {
-    var memory = WindowGrab.Memory()
+    // As the Accessibility layer does: what the press takes hold of says whether it is below the window's top.
+    let top = WindowGrab.Top.known(WindowID(101), listed: frame, believed: frame)
+    let hold = WindowGrab.hold(pressedAt: pressedAt, pointerNow: pressedAt, underPress: top, underPointer: top)
+    var memory = WindowGrab.Memory(isBelowTheTop: hold.isBelowTheTop)
     return looks.map {
       WindowGrab.judge(pressedAt: pressedAt, frameAtPress: frame, frameNow: $0.now, pointerNow: $0.pointer, memory: &memory)
     }
@@ -114,6 +117,201 @@ extension Box where Value == EchoFilter {
     #expect(
       verdicts(pressedAt: titleBar, [(frame, pointer(1)), (frame.offsetBy(dx: -240, dy: 127), pointer(10))]).last == .drag,
       "it has caught up in one leap, and the hand may be at rest by now")
+  }
+
+  // A press below a window's top.
+
+  var middle: CGPoint { CGPoint(x: 400, y: 300) }
+  func fromTheMiddle(_ x: CGFloat, _ y: CGFloat = 0) -> CGPoint { CGPoint(x: middle.x + x, y: middle.y + y) }
+
+  @Test func oneJumpUnderASelectionIsNoHand() {
+    // A stubborn window goes back to where it was before Arbor moved it, while text is selected in it the same way.
+    for back in [20, 60, 80, 90] as [CGFloat] {
+      let gone = frame.offsetBy(dx: -back, dy: 0)
+      #expect(
+        !verdicts(pressedAt: middle, [(frame, fromTheMiddle(-10)), (gone, fromTheMiddle(-20)), (gone, fromTheMiddle(-60)), (gone, fromTheMiddle(-120))])
+          .contains(.drag), "\(back) points, early")
+      #expect(
+        !verdicts(pressedAt: middle, [(frame, fromTheMiddle(-40)), (frame, fromTheMiddle(-back)), (gone, fromTheMiddle(-back)), (gone, fromTheMiddle(-120))])
+          .contains(.drag), "\(back) points, exactly as far as the pointer has gone")
+    }
+  }
+
+  @Test func norWithAnotherSize() {
+    // Arbor made the tile narrower as it sent it along, and it goes back to both.
+    var gone = frame.offsetBy(dx: -80, dy: 0)
+    gone.size.width += 80
+    #expect(!verdicts(pressedAt: middle, [(frame, fromTheMiddle(-40)), (gone, fromTheMiddle(-85)), (gone, fromTheMiddle(-120))]).contains(.drag))
+    #expect(!verdicts(pressedAt: middle, [(frame, fromTheMiddle(-40)), (gone, fromTheMiddle(-85)), (gone, fromTheMiddle(-120))]).contains(.resize))
+  }
+
+  @Test func norUnderAScrollBar() {
+    // Six points inside the right border, pulled down. An edge changes a window's size; it never merely moves it.
+    let scroller = CGPoint(x: 694, y: 250)
+    let gone = frame.offsetBy(dx: -60, dy: 0)
+    func down(_ y: CGFloat) -> CGPoint { CGPoint(x: scroller.x, y: scroller.y + y) }
+    #expect(!verdicts(pressedAt: scroller, [(frame, down(20)), (gone, down(60)), (gone, down(90)), (gone, down(120))]).contains(.drag))
+  }
+
+  @Test func theSameJumpUnderAPressOnTheTitleBarIsAWindowThatCaughtUp() {
+    // The control: there a hand does take a window along.
+    let gone = frame.offsetBy(dx: -80, dy: 0)
+    let at = CGPoint(x: titleBar.x - 80, y: titleBar.y)
+    #expect(verdicts(pressedAt: titleBar, [(frame, CGPoint(x: titleBar.x - 40, y: titleBar.y)), (gone, at)]).last == .drag)
+  }
+
+  @Test func anEdgeStillChangesTheSize() {
+    var wider = frame
+    wider.size.width += 30
+    #expect(verdicts(pressedAt: CGPoint(x: 698, y: 300), [(wider, CGPoint(x: 728, y: 300))]) == [.resize])
+    var toTheLeft = frame
+    toTheLeft.origin.x -= 30
+    toTheLeft.size.width += 30
+    #expect(verdicts(pressedAt: CGPoint(x: 102, y: 300), [(toTheLeft, CGPoint(x: 72, y: 300))]) == [.resize])
+  }
+
+  @Test func aWindowThatIsTakenAlongByItsBackgroundGoesOnAsThePointerDoes() {
+    #expect(
+      verdicts(pressedAt: middle, [(frame.offsetBy(dx: 8, dy: 6), fromTheMiddle(8, 6)), (frame.offsetBy(dx: 16, dy: 12), fromTheMiddle(16, 12))])
+        == [.neither, .drag])
+    // It starts late, and then goes on.
+    #expect(
+      verdicts(
+        pressedAt: middle,
+        [(frame, fromTheMiddle(30, 20)), (frame.offsetBy(dx: 60, dy: 40), fromTheMiddle(60, 40)), (frame.offsetBy(dx: 70, dy: 46), fromTheMiddle(70, 46))])
+        == [.neither, .neither, .drag])
+    // In coarse steps, and a step behind the pointer.
+    #expect(
+      verdicts(
+        pressedAt: middle,
+        [(frame, fromTheMiddle(66)), (frame.offsetBy(dx: 66, dy: 0), fromTheMiddle(132)), (frame.offsetBy(dx: 132, dy: 0), fromTheMiddle(198))])
+        == [.neither, .neither, .drag])
+  }
+
+  @Test func soDoesOneThatGetsItsOldSizeBackInTheHand() {
+    // macOS had tiled it. It is seen once it has its size.
+    func look(_ travel: CGFloat, width: CGFloat) -> (CGRect, CGPoint) {
+      (CGRect(x: frame.minX + travel, y: frame.minY + travel / 2, width: width, height: 400), fromTheMiddle(travel, travel / 2))
+    }
+    #expect(
+      verdicts(pressedAt: middle, [look(10, width: 540), look(20, width: 480), look(30, width: 400), look(40, width: 400)])
+        == [.neither, .neither, .neither, .drag])
+  }
+
+  @Test func aSlowHandIsSeenOnceTheWindowHasGoneOnByMoreThanATremble() {
+    #expect(
+      verdicts(pressedAt: middle, (1...5).map { (frame.offsetBy(dx: 2 * CGFloat($0), dy: 0), fromTheMiddle(2 * CGFloat($0))) })
+        == [.neither, .neither, .drag, .drag, .drag])
+  }
+
+  @Test func aWindowThatGoesAnotherWayThanThePointerIsNotInTheHand() {
+    #expect(
+      !verdicts(
+        pressedAt: middle,
+        [(frame.offsetBy(dx: -20, dy: 0), fromTheMiddle(20)), (frame.offsetBy(dx: -40, dy: 0), fromTheMiddle(40)), (frame.offsetBy(dx: -60, dy: 0), fromTheMiddle(60))]
+      ).contains(.drag))
+    #expect(
+      !verdicts(
+        pressedAt: middle,
+        [(frame.offsetBy(dx: 0, dy: 130), fromTheMiddle(20)), (frame.offsetBy(dx: 0, dy: 150), fromTheMiddle(40)), (frame.offsetBy(dx: 0, dy: 170), fromTheMiddle(60))]
+      ).contains(.drag), "across, and farther than a window may lag")
+  }
+
+  @Test func anEdgeThatHasLeftThePressBehindIsNoDrag() {
+    // The left edge, its app heard meanwhile: the press lies inside the frame by now, and the window's place goes with the pointer. So does its size.
+    func wider(_ by: CGFloat) -> CGRect { CGRect(x: frame.minX - by, y: frame.minY, width: frame.width + by, height: frame.height) }
+    #expect(!verdicts(pressedAt: middle, [(wider(10), fromTheMiddle(-10)), (wider(20), fromTheMiddle(-20)), (wider(30), fromTheMiddle(-30))]).contains(.drag))
+  }
+
+  @Test func oneJumpSeenByBothSignsIsOneJump() {
+    // The window server's list and the app's word, which differ by two points for good, are both looked at.
+    let gone = frame.offsetBy(dx: -60, dy: 0)
+    let listed = gone.offsetBy(dx: -2, dy: 0)
+    #expect(
+      !verdicts(pressedAt: middle, [(gone, fromTheMiddle(-50)), (listed, fromTheMiddle(-54)), (listed, fromTheMiddle(-58)), (gone, fromTheMiddle(-62))])
+        .contains(.drag))
+  }
+
+  @Test func afterOneJumpTheWindowServerIsLeftAloneOnceThePointerHasGoneOn() {
+    var memory = WindowGrab.Memory(isBelowTheTop: true)
+    let gone = frame.offsetBy(dx: -20, dy: 0)
+    func look(_ pointer: CGFloat) {
+      _ = WindowGrab.judge(pressedAt: middle, frameAtPress: frame, frameNow: gone, pointerNow: fromTheMiddle(pointer), memory: &memory)
+    }
+    look(-20)
+    look(-20)
+    #expect(!memory.stoodStill, "a movement heard twice")
+    look(-40)
+    #expect(!memory.stoodStill)
+    look(-45)
+    #expect(memory.stoodStill, "a selection in a long text is thousands of movements")
+  }
+
+  @Test func norIsItAskedForLongWhileThePointerStaysInASmallSpot() {
+    var memory = WindowGrab.Memory(isBelowTheTop: true)
+    let gone = frame.offsetBy(dx: -20, dy: 0)
+    func look(_ pointer: CGFloat, at time: TimeInterval) {
+      _ = WindowGrab.judge(pressedAt: middle, frameAtPress: frame, frameNow: gone, pointerNow: fromTheMiddle(pointer), at: time, memory: &memory)
+    }
+    look(-20, at: 10)
+    look(-25, at: 10.2)
+    look(-15, at: 10.49)
+    #expect(!memory.stoodStill)
+    look(-22, at: 10.5)
+    #expect(memory.stoodStill, "half a second after the jump, however little the pointer has gone")
+  }
+
+  @Test func theSlowestHandIsNotMadeToWait() {
+    // Half a point a movement: the looks must not slow down before the window has gone on by more than a tremble.
+    var memory = WindowGrab.Memory(isBelowTheTop: true)
+    var verdicts: [WindowGrab.Verdict] = []
+    for step in 1...8 {
+      let far = CGFloat(step) / 2
+      verdicts.append(
+        WindowGrab.judge(pressedAt: middle, frameAtPress: frame, frameNow: frame.offsetBy(dx: far, dy: 0), pointerNow: fromTheMiddle(far), memory: &memory))
+      if verdicts.last == .drag { break }
+      #expect(!memory.stoodStill)
+    }
+    #expect(verdicts.last == .drag && verdicts.count == 7, "moved at 1 point, gone on by more than 2 at 3.5")
+  }
+
+  @Test func aWindowThatTurnsBackStartsAfresh() {
+    // The pointer's way, against it, and the pointer's way again to another place: three jumps, none of them a hand's.
+    #expect(
+      !verdicts(
+        pressedAt: middle,
+        [(frame.offsetBy(dx: 30, dy: 0), fromTheMiddle(40)), (frame.offsetBy(dx: -10, dy: 0), fromTheMiddle(50)), (frame.offsetBy(dx: 50, dy: 0), fromTheMiddle(60))]
+      ).contains(.drag))
+  }
+
+  @Test func aMoveOfArborsOwnStartsThePressAfresh() {
+    var memory = WindowGrab.Memory(isBelowTheTop: true)
+    _ = WindowGrab.judge(pressedAt: middle, frameAtPress: frame, frameNow: frame.offsetBy(dx: 10, dy: 0), pointerNow: fromTheMiddle(10), memory: &memory)
+    memory.startAfresh()
+    let sent = frame.offsetBy(dx: 80, dy: 0)
+    #expect(
+      WindowGrab.judge(pressedAt: middle, frameAtPress: sent, frameNow: sent.offsetBy(dx: 10, dy: 0), pointerNow: fromTheMiddle(20), memory: &memory)
+        == .neither, "the first look again")
+  }
+
+  @Test func belowTheTopIsBelowItByTheListOrByTheAppsWord() {
+    func hold(_ point: CGPoint, listed: CGRect? = nil) -> WindowGrab.Hold {
+      let top = WindowGrab.Top.known(WindowID(101), listed: listed ?? frame, believed: frame)
+      return WindowGrab.hold(pressedAt: point, pointerNow: point, underPress: top, underPointer: top)
+    }
+    #expect(hold(middle).isBelowTheTop)
+    #expect(hold(CGPoint(x: 400, y: 161)).isBelowTheTop)
+    #expect(!hold(titleBar).isBelowTheTop)
+    #expect(!hold(CGPoint(x: 400, y: 159)).isBelowTheTop, "a toolbar")
+    #expect(hold(CGPoint(x: 104, y: 300)).isBelowTheTop && hold(CGPoint(x: 400, y: 496)).isBelowTheTop, "an edge")
+    // Arbor has just sent the window up 80 points, and the list is behind: 45 below the top it lists, 125 below the real one.
+    #expect(hold(CGPoint(x: 400, y: 225), listed: frame.offsetBy(dx: 0, dy: 80)).isBelowTheTop)
+    // A window in the hand has shown where the hand is, whatever its app's word makes of the place of the press.
+    let heard = frame.offsetBy(dx: 0, dy: -120)
+    let up = WindowGrab.hold(
+      pressedAt: titleBar, pointerNow: CGPoint(x: titleBar.x, y: titleBar.y - 150),
+      underPress: .known(WindowID(101), listed: frame.offsetBy(dx: 0, dy: -150), believed: heard), underPointer: nil)
+    #expect(up.isInTheHand && !up.isBelowTheTop)
   }
 
   /// It need not be under the pointer, as long as it goes on.
@@ -264,7 +462,9 @@ extension Box where Value == EchoFilter {
     // A selection in a text, served late, in an app whose two frames differ for good.
     let inside = CGPoint(x: 300, y: 300)
     let listed = frame.offsetBy(dx: 2, dy: 2)
-    #expect(hold(pressedAt: inside, pointerWent: 90, 40, listed: listed) == .init(window: window, point: inside, frame: listed))
+    #expect(
+      hold(pressedAt: inside, pointerWent: 90, 40, listed: listed)
+        == .init(window: window, point: inside, frame: listed, isBelowTheTop: true))
   }
 
   @Test func servedLateItTakesHoldOfTheWindowInTheHandAsItsAppLastHadIt() {
@@ -300,7 +500,9 @@ extension Box where Value == EchoFilter {
     wider.origin.x -= 50
     wider.size.width += 50
     let now = CGPoint(x: 50, y: 302)
-    #expect(hold(pressedAt: edge, pointerWent: -50, 2, listed: wider, believed: wider) == .init(window: window, point: now, frame: wider))
+    #expect(
+      hold(pressedAt: edge, pointerWent: -50, 2, listed: wider, believed: wider)
+        == .init(window: window, point: now, frame: wider, isBelowTheTop: true))
     var behind = wider
     behind.origin.x += 15
     behind.size.width -= 15
@@ -318,7 +520,7 @@ extension Box where Value == EchoFilter {
     // It starts late, or its app does: the pointer is well on its way, on the window still.
     #expect(hold(pointerWent: 120, 0, listed: frame) == .init(window: window, point: titleBar, frame: frame))
     let edge = CGPoint(x: 100, y: 300)
-    #expect(hold(pressedAt: edge, pointerWent: 40, 0, listed: frame) == .init(window: window, point: edge, frame: frame))
+    #expect(hold(pressedAt: edge, pointerWent: 40, 0, listed: frame) == .init(window: window, point: edge, frame: frame, isBelowTheTop: true))
   }
 
   @Test func aWindowAtRestThatThePointerHasComeToIsNotTakenHoldOf() {

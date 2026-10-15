@@ -505,6 +505,12 @@ from here on, not with every movement. It is not the last word
 (`WindowGrab.judge`): a window whose app was busy, or had to bring it forward first,
 starts late, and one that then goes the pointer's way at its own size is in hand.
 Moved farther than the pointer went, by more than 32 points → not in the hand, stop looking.
+A press **below a window's top** (its upper 60 points, by where it is listed and by its app's word) is
+asked for two looks from the first: a hand takes a window along by its top, and one that changes
+its place under a selection or a scroll bar has most likely done so by itself, as a stubborn one does
+that goes back in one jump. A window that is taken along by its background goes on: two places the
+pointer's way, more than two points apart, at one size. It is seen a movement or two later. An edge still
+changes the size at one look.
 
 **macOS showing its desktop** (a click on the wallpaper, as macOS 14 and later come; F11; a
 hot corner) is a picture and nothing more: the window server lists every window at the

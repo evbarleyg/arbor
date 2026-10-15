@@ -139,7 +139,7 @@ hears. If the reports in the file are out of date the run rewrites it and fails 
 
 ## Does the net hold? (`make mac-on-linux-selftest`)
 
-A story that stays green without the cure it is about proves nothing. `mutants.py` has thirty-eight small changes to the copy, each of which takes one cure out of the layer again (the count of windows that tells a new one from a found one, the looks at an app macOS does not name in front yet, the watch for a lost release, the second reading of the lists after a Space switch, the
+A story that stays green without the cure it is about proves nothing. `mutants.py` has fifty-three small changes to the copy, each of which takes one cure out of the layer again (the count of windows that tells a new one from a found one, the looks at an app macOS does not name in front yet, the watch for a lost release, the second reading of the lists after a Space switch, the
 look at the window server during a drag…), and names the checks that must go red, **and be news: one that the list of known failures excuses does not count**. Only the changed file is compiled again: eight seconds each. Before that it holds the program to its own book-keeping: arguments that select nothing or cannot be read
 (`--only zzzzz`, `--seeds 3-x`, `--steps 0`, a `--replay` with a step it does not know) are refused with exit code 2, and a listed line with another number of seeds, or with `sometimes: `, excuses nothing. A change that no longer fits the sources is reported: write it anew, or delete it with its story.
 

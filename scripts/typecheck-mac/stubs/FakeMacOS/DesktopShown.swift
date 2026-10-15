@@ -39,7 +39,7 @@ extension FakeMac {
   }
 
   /// The window's frame as the window server lists it.
-  public func listedBounds(of window: Window) -> CGRect { sweptTo?[window.number] ?? window.bounds }
+  public func listedBounds(of window: Window) -> CGRect { sweptTo?[window.number] ?? window.bounds.offsetBy(dx: listIsOffBy, dy: 0) }
 
   /// Whether what shows at the point is the strip of a window that was swept aside.
   func isStrip(at point: CGPoint) -> Bool { windowShowing(at: point, reach: 4).map { sweptTo?[$0.number] != nil } ?? false }

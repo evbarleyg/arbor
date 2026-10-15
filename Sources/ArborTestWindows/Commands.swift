@@ -10,6 +10,7 @@ import AppKit
 ///   insist <id> <x> <y> <w> <h>     and moves it back there, a quarter of a second or so after anyone moves it
 ///   insist <id> <x> <y> <w> <h> quick   the same within a twentieth of a second
 ///   relent <id>                     stops insisting
+///   by-background <id>              can be dragged by its content from now on, not only by its title bar
 ///   min-size <id> <w> <h>           refuses to be smaller from now on
 ///   tab <id>                        opens a new native tab in front of the window; prints {"window":4504}
 ///   dialog <id>                     opens a dialog centred over the window, wherever that is; prints {"window":4505}
@@ -83,6 +84,9 @@ final class Commands {
       }
     case "relent":
       if let target { insisted[target.windowNumber] = nil }
+    case "by-background":
+      target?.isMovableByWindowBackground = true
+      (target?.contentView as? CountingView)?.takesTheWindowAlong = true
     case "min-size":
       let numbers = words.dropFirst(2).compactMap { Double($0) }
       if numbers.count == 2 { target?.minSize = NSSize(width: numbers[0], height: numbers[1]) }

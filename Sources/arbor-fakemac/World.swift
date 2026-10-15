@@ -83,6 +83,10 @@ final class World {
   var apps: [Int32: TestApp] = [:]
   var tabGroups: [TabGroup] = []
   var extras: [UInt32: ExtraWindow] = [:]
+  /// The test windows that were told `by-background`: a press on their content takes them along.
+  var draggedByTheirBackground: Set<UInt32> = []
+  /// What `WindowGrab.judge` remembers of the press that holds a window, as the Accessibility layer keeps it.
+  var grabMemory = WindowGrab.Memory()
   private var nextExtraID: UInt32 = 5001
   /// What each window's content has received: down, up, dragged, key, magnify.
   var counts: [UInt32: [String: Int]] = [:]

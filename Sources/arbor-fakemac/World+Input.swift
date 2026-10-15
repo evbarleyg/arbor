@@ -266,8 +266,10 @@ extension World {
       case .border(let edges):
         giveKeyboard(to: window, byAPress: true)
         held = .resize(window, edges: edges, from: point, frame: frame)
-      case .title:
+      // The condition is the second pattern's alone.
+      case .title, .content where draggedByTheirBackground.contains(id):
         giveKeyboard(to: window, byAPress: true)
+        grabMemory = WindowGrab.Memory(isBelowTheTop: !WindowGrab.isAtTheTop(point, of: frame))
         held = .title(window, grip: grip, moved: false, clicks: clicks)
       case .content:
         giveKeyboard(to: window, byAPress: true)
@@ -303,9 +305,11 @@ extension World {
       // The window server does not let a title bar go under the menu bar.
       frame.origin = CGPoint(x: point.x - grip.width, y: max(point.y - grip.height, display.visibleFrame.minY))
       // As the Accessibility layer does: the first move with the button down is what tells it that a drag
-      // began, if `WindowGrab` agrees. The window server takes the window along either way.
+      // began, if `WindowGrab` agrees; below the window's top the second. The window server takes the window along either way.
       let isDragged =
-        moved || WindowGrab.classify(pressedAt: pressedAt, frameAtPress: before, frameNow: frame, pointerNow: point) == .drag
+        moved
+        || WindowGrab.judge(pressedAt: pressedAt, frameAtPress: before, frameNow: frame, pointerNow: point, memory: &grabMemory)
+          == .drag
       if !moved, isDragged {
         let isOn = World.tilingSettings.map { name in
           file(name).map { String(decoding: $0, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines) } != "0"
