@@ -141,6 +141,8 @@ KINDS_OF_INPUT = tuple(of_the_gate("input", "kinds", otherwise=["down", "forward
 # Which round is judged against which. The measure brackets the journey, because a Mac drifts: one went from 41 to 76 ms within seven minutes.
 ROUNDS = (("started", "before"), ("last", "after"))
 NOT_PERFORMED = "not performed, so not judged"
+# The line Arbor draws round the focused window reaches this far beyond it at the most.
+RING = 24
 # Two previews at once are two promises for one drag. For this long it may be the grain of the samples: two of them.
 TOGETHER = of_the_gate("previews_together_ms_max", otherwise=60)
 # A change this shortly before Arbor's stage is seen to be up belongs to what the stage then shows: two samples, since the stage itself is seen a sample late.
@@ -234,10 +236,13 @@ class Step:
         self.staged_since = None
         self.all_displays = []
         self.under_the_stage = 0
-        # From when to when a stage covered what there is.
-        self.stage_spans = []
-        # The apps on whose windows a press fell.
-        self.pressed = set()
+        self.left_at = None
+        # By window: from when to when a stage hid what it did.
+        self.stage_spans = {}
+        # When each app came forward.
+        self.app_times = []
+        # The apps on whose windows a press fell, and when first.
+        self.pressed = {}
         # Where Arbor's drop preview was when the button came up, if it was up.
         self.preview_at_drop = None
         # When the button first came up. A press after that is a click, and nothing is in the hand any more.
@@ -272,8 +277,9 @@ class Step:
                 last = trace[hidden[-1]]
                 del trace[hidden[0]:]
                 trace.append((time, last[1], last[2]))
+                # A window in plain sight on another display is judged sample by sample, whatever goes on under a stage elsewhere.
+                self.stage_spans.setdefault(window, []).append((since, time))
         self.under_the_stage += 1
-        self.stage_spans.append((since, time))
 
     def find(self, rule, level, window, what, trace=None, detector=None, explained=None):
         self.findings.append({
@@ -314,16 +320,27 @@ class World:
         self.stages = set()
         self.stage_seen = False
         self.both_since = None
+        # Milliseconds in which the sampler saw nothing, all told; and how many it were when both previews came up.
+        self.blind = self.both_blind = 0
         self.labels = {}
         self.witnessed = False
 
     def at_macos_edge(self):
-        """Whether the pointer is in the band along an edge of the main display that is macOS's. On the way there it may rightly cross a docked window's own
-        edge, whose preview is honest."""
+        """Whether the pointer is in the band along an edge of the screen that is macOS's: the left, the right and the top of the display it is on, where no other display adjoins. On the
+        way there it may rightly cross a docked window's own edge, whose preview is honest."""
         if not (self.tiling and self.pointer and self.display and self.visible):
             return False
         x, y = self.pointer
-        return x <= self.display[0] + EDGE_BAND or x >= self.display[0] + self.display[2] - EDGE_BAND or y <= self.visible[1] + EDGE_BAND
+        areas = [(self.display, self.visible)] + list(self.others.values())
+
+        def elsewhere(px, py, but):
+            return any(frame is not but and frame[0] <= px < frame[0] + frame[2] and frame[1] <= py < frame[1] + frame[3] for frame, _ in areas)
+
+        for frame, visible in areas:
+            if frame[0] <= x <= frame[0] + frame[2] and frame[1] <= y <= frame[1] + frame[3]:
+                return (x <= frame[0] + EDGE_BAND and not elsewhere(frame[0] - 1, y, frame) or x >= frame[0] + frame[2] - EDGE_BAND and not elsewhere(frame[0] + frame[2], y, frame)
+                        or y <= visible[1] + EDGE_BAND and not elsewhere(x, frame[1] - 1, frame))
+        return False
 
     def displays(self):
         return ([self.display] if self.display else []) + [frame for frame, _ in self.others.values()]
@@ -334,13 +351,16 @@ class World:
 
     def previews(self, step, time, over=False):
         """Keeps count of how long both previews are up together while the button is down. `over`: the step ends, and what is still up counts so far."""
-        both = bool(self.button and self.macos_previews and self.arbor_previews) and not over
+        both = bool(self.button and self.macos_previews and self.arbor_previews)
         if both and self.both_since is None:
-            self.both_since = time
-        elif not both and self.both_since is not None:
+            self.both_since, self.both_blind = time, self.blind
+        elif self.both_since is not None and (over or not both):
             if step:
-                step.previews_together = max(step.previews_together, time - self.both_since)
-            self.both_since = None
+                # Less what the sampler did not see meanwhile: seen together in one look, with the next look 200 ms late, they were not seen together for 200 ms.
+                step.previews_together = max(step.previews_together, time - self.both_since - (self.blind - self.both_blind))
+            # Still up when a step ends, they go on counting: the step in which they go hears of all of it.
+            if not both:
+                self.both_since = None
 
     def under(self, point):
         """The frontmost ordinary window at a point, or None: the Dock, the menu bar, the wallpaper."""
@@ -349,6 +369,22 @@ class World:
         return next((window for window in self.order if self.ordinary(window) and window in self.frames
                      and self.frames[window][0] <= point[0] < self.frames[window][0] + self.frames[window][2]
                      and self.frames[window][1] <= point[1] < self.frames[window][1] + self.frames[window][3]), None)
+
+    def taker(self, point):
+        """The ordinary window that takes a press at a point, or None. A panel of Arbor's that lies there takes it itself, as the handle in a gap does. But for the line round the focused
+        window, which lets presses through: that is a window of Arbor's that lies within 24 points round somebody else's."""
+        if not point:
+            return None
+        for window in self.order:
+            frame = self.frames.get(window)
+            if not frame or not (frame[0] <= point[0] < frame[0] + frame[2] and frame[1] <= point[1] < frame[1] + frame[3]):
+                continue
+            if self.ordinary(window):
+                return window
+            if self.pids.get(window) in self.arbors and self.layers.get(window) == 0 and not any(
+                    self.ordinary(other) and inside(theirs, frame) and all(abs(a - b) <= 2 * RING for a, b in zip(theirs[2:], frame[2:])) for other, theirs in self.frames.items()):
+                return None
+        return None
 
     def name(self, window):
         if window in self.labels:
@@ -470,6 +506,7 @@ def read(path):
                 world.fronts.append((time, world.app))
                 if current:
                     current.apps.append(world.app)
+                    current.app_times.append((time, world.app))
             elif kind == "B" and rest:
                 world.button = rest[0] == "down"
                 world.previews(current, time)
@@ -482,7 +519,7 @@ def read(path):
                         # The app may have come forward within the same sample, and that is written first.
                         before = next((app for when, app in reversed(world.fronts) if when <= time - JUST_NOW), world.fronts[0][1] if world.fronts else None)
                         current.presses.append(world.pids.get(world.under(world.pointer)) not in (None, before))
-                        current.pressed.add(world.pids.get(world.under(world.pointer)))
+                        current.pressed.setdefault(world.pids.get(world.taker(world.pointer)), time)
                     if not world.button and current.dropped is None:
                         current.dropped = time
                         # Within one sample the windows are written first: what one does in the sample in which the button is seen to be up, it does out of the hand. The first
@@ -517,6 +554,7 @@ def read(path):
                 else:
                     world.others.pop(rest[0], None)
             elif kind == "L" and rest:
+                world.blind += int(rest[0])
                 if current:
                     current.late_samples.append(int(rest[0]))
             elif kind == "S":
@@ -559,6 +597,10 @@ def read(path):
                         step.wants["judge"] = "no"
                     step.at_end = world.snapshot()
                     world.previews(step, time, over=True)
+    for step in steps:
+        # A journey that is cut short: what was there when the samples ended is what is known of its last step.
+        if step.at_end is None:
+            step.left_at = world.snapshot()
     world.witnessed = hear(os.path.join(os.path.dirname(os.path.abspath(path)), "witness.log"), steps)
     for step in steps:
         judge(step, world, by_number, own)
@@ -716,7 +758,7 @@ def measure(trace, staged=()):
     moves = 1
     for before, after in zip(changes, changes[1:]):
         # Well before the stage goes up is another move, however long the stage then stays.
-        hidden = sum(min(after[0], down) - before[0] for up, down in staged if up - STAGE_MARGIN <= before[0] <= down and after[0] >= up)
+        hidden = sum(down - before[0] for up, down in staged if up - STAGE_MARGIN <= before[0] <= down <= after[0])
         if after[0] - before[0] - hidden > EPISODE_GAP:
             moves += 1
     detour = 0
@@ -791,13 +833,15 @@ def adrift(held, pointer, tops=(), bottoms=()):
     """Over the drag so far: the most the window was ahead of the pointer's travel, and the most it was behind. A slow glide out of the hand, or a window that is put
     back at every move, adds up, however seldom anybody looks.
     `tops`, `bottoms`: where macOS itself holds a dragged window back for a while: its top under the menu bar, its bottom on the Dock's top and on the bottom of a display (198 points
-    behind after a drag of 333 downwards, with nobody pulling). While an edge rests there, how far it is behind is measured anew. It may stay behind, or catch up: so how far it is
-    ahead goes by where the hand first took hold."""
+    behind after a drag of 333 downwards, with nobody pulling). While an edge rests there, up and down are measured anew. From there it may stay behind, or catch up: what brings it
+    nearer to where the hand carries it, from where it first took hold, is no running ahead. What takes it further from there is."""
     ahead = behind = 0
     taken = first = resized = None
+    # How far it was from where the hand carries it, up and down, when that was last measured anew.
+    lag = 0
     for (_, old, _), (time, new, _) in zip(held, held[1:]):
         if differs(old[2:], new[2:], by=0.6):
-            taken, first, resized = None, None, time
+            taken, resized = None, time
         if resized is not None and time - resized < RESIZING:
             continue
         near = [(x, y) for at, x, y in pointer if time - SKEW[0] <= at <= time + SKEW[1]] or [(x, y) for at, x, y in pointer if at <= time][-1:]
@@ -809,9 +853,15 @@ def adrift(held, pointer, tops=(), bottoms=()):
             continue
         if any(abs(new[1] - line) <= SAME for line in tops) or any(abs(new[1] + new[3] - line) <= SAME for line in bottoms):
             taken = ((taken[0][0], new[1]) + tuple(taken[0][2:]), (taken[1][0], near[-1][1]))
+            lag = sum(astray(new[1] - first[0][1], [point[1] - first[1][1] for point in near]))
         for axis in (0, 1):
-            ahead = max(ahead, astray(new[axis] - first[0][axis], [point[axis] - first[1][axis] for point in near])[0])
-            behind = max(behind, astray(new[axis] - taken[0][axis], [point[axis] - taken[1][axis] for point in near])[1])
+            by_first = astray(new[axis] - first[0][axis], [point[axis] - first[1][axis] for point in near])
+            by_taken = astray(new[axis] - taken[0][axis], [point[axis] - taken[1][axis] for point in near])
+            ahead = max(ahead, by_first[0])
+            behind = max(behind, by_taken[1])
+            # Since it rested it has gone where the hand did not. Towards where the hand carries it, that is catching up. Further from there than it was, it is out of the hand.
+            if axis == 1 and taken is not first and by_taken[0] and sum(by_first) > lag:
+                ahead = max(ahead, by_taken[0])
     return ahead, behind
 
 
@@ -822,7 +872,7 @@ def judge(step, world, by_number, own):
         step.find("-", "ODD", None, f"the act was not performed: {wants.get('undone', 'something')} could not be done", None, None, NOT_PERFORMED)
     if wants.get("judge") == "no" and end:
         for window, trace in step.traces.items():
-            moves, frames, took, _, _ = measure(trace, step.stage_spans)
+            moves, frames, took, _, _ = measure(trace, step.stage_spans.get(window, ()))
             if moves:
                 step.moved[window] = (moves, frames, took)
         remember(step, own)
@@ -869,7 +919,7 @@ def judge(step, world, by_number, own):
                 step.macos_answered = True
             if step.macos_answered and window in ids(wants.get("docked", "")):
                 step.find("1", "FAIL", window, "macOS answered the drag, and Arbor docked the window")
-            elif step.macos_answered and measure(trace, step.stage_spans)[0] > 1:
+            elif step.macos_answered and measure(trace, step.stage_spans.get(window, ()))[0] > 1:
                 step.find("1", "FAIL", window, "macOS answered the drag and tiled the window, and it was moved again afterwards")
             let_go, ended, drop = trace[0][1], trace[-1][1], step.pointer[-1][1:] if step.pointer else None
             if held and let_go and ended and not step.macos_answered and differs(let_go, ended, by=DROPPED):
@@ -903,7 +953,7 @@ def judge(step, world, by_number, own):
             before = trace[closing - 1][1]
             if before and all(entry[1] and not differs(before, entry[1], by=max(OPENING_REACH, OPENING_SHARE * max(before[2:]))) for entry in trace[closing:-1]):
                 trace = trace[:closing] + trace[-1:]
-        moves, frames, took, detour, elsewhere = measure(trace, step.stage_spans)
+        moves, frames, took, detour, elsewhere = measure(trace, step.stage_spans.get(window, ()))
         # macOS shrinks a window into the Dock and lets it grow out of it, by a road of its own.
         if window in ids(may_leave) | ids(wants.get("comes", "")):
             detour = 0
@@ -965,7 +1015,9 @@ def judge(step, world, by_number, own):
                           None if failed else "listed, and no reason, until the release build has answered")
 
     # A press on a window brings its app forward, and that is the press's doing: the edge of a docked window is dragged, and its app was behind.
-    if wants.get("act") in NO_SWITCH and any(app != step.app_before and app not in step.pressed for app in step.apps):
+    # From the press on, and once: it comes forward and stays. (At the release, as long as 2.8 s later.) Within one sample the app's coming is written first.
+    by_the_press = len(step.app_times) == 1 and step.app_times[0][1] in step.pressed and step.app_times[0][0] >= step.pressed[step.app_times[0][1]] - JUST_NOW
+    if wants.get("act") in NO_SWITCH and not by_the_press and any(app != step.app_before for app in step.apps):
         step.find("4", "FAIL", None, "the app in front changed (to process %s), and nobody switched" % ", ".join(str(app) for app in step.apps))
 
     for time, kind, delay, _ in step.arrived:
@@ -1188,8 +1240,8 @@ def as_json(world, steps, account):
                 "judged": judged(step),
                 "performed": step.wants.get("performed") != "no",
                 # What the sampler saw, not what the script set: a walk written for two displays was once played on one, and said "two".
-                "displays": [[int(frame[2]), int(frame[3])] for frame in (step.at_end or {}).get("displays") or []],
-                "windows_elsewhere": elsewhere(step.at_end),
+                "displays": [[int(frame[2]), int(frame[3])] for frame in (step.at_end or step.left_at or {}).get("displays") or []],
+                "windows_elsewhere": elsewhere(step.at_end or step.left_at),
                 "began": step.began,
                 "milliseconds": (step.ended or step.began) - step.began,
                 "moved": {str(window): list(value) for window, value in step.moved.items()},
@@ -1606,10 +1658,99 @@ def self_test():
         "2000 M begin 2 leave", "2200 G 1", "2800 W 1 10 0 100 100 400 300 One", "2900 W 1 10 0 400 100 400 300 One", "4000 M end 2 moves=any leaves=any comes=1 lands=1"], ["jolt"])
     detectors("… and in the right one", start + [
         "2000 M begin 2 leave", "2200 G 1", "2800 W 1 10 0 400 100 400 300 One", "3900 M end 2 moves=any leaves=any comes=1 lands=1"], [])
+    detectors("… the room it has goes by the size it lands with", away + [
+        "2500 W 1 10 0 139 100 500 300 One", "2600 W 1 10 0 100 100 470 300 One", "3700 M end 3 moves=1 comes=1 lands=1"], [])
+    detectors("it lands in the wrong place, is gone again, and comes where it belongs: it was seen in the wrong place", start + [
+        "2000 M begin 2 leave", "2200 G 1", "2800 W 1 10 0 100 100 400 300 One", "2900 G 1", "3100 W 1 10 0 400 100 400 300 One", "4200 M end 2 moves=any leaves=any comes=1 lands=1"], ["jolt"])
     detectors("a window in sight all the time takes its size and then its place: that is no landing", start + [
         "2000 M begin 2 dock", "2100 W 1 10 0 100 100 500 700 One", "2160 W 1 10 0 0 30 500 700 One", "3200 M end 2 moves=1 lands=1"], [])
     detectors("under the stage it lands where nobody sees it", away + stage + [
         "2500 W 1 10 0 100 100 400 300 One", "2600 W 1 10 0 400 100 400 300 One", "2800 G 70", "3900 M end 3 moves=1 comes=1 lands=1"], [])
+    # What an independent reader found in the mends above, each as it was shown.
+    beside = ["1050 Y 7 1000 0 800 600 1000 25 800 575"]
+    over_there = start + beside + ["1500 M begin 2 move", "1600 W 2 20 0 1200 100 400 300 Two", "1900 M end 2 moves=2", "2000 M begin 3 dock", "2050 W 70 99 4 0 0 1000 800 Arbor"]
+    detectors("a stage on one display forgives nothing to a window in plain sight on the other: twice, 400 ms apart", over_there + [
+        "2100 W 2 20 0 1250 100 400 300 Two", "2500 W 2 20 0 1300 100 400 300 Two", "2600 G 70", "3700 M end 3 moves=2"], ["jolt"])
+    detectors("… also while another goes about unseen under it", over_there + [
+        "2100 W 1 10 0 400 30 500 700 One", "2100 W 2 20 0 1250 100 400 300 Two", "2500 W 1 10 0 0 30 500 700 One", "2500 W 2 20 0 1300 100 400 300 Two", "2600 G 70",
+        "3700 M end 3 moves=1,2"], ["jolt"])
+    detectors("… once while the stage is up and once when it is down again", over_there + [
+        "2100 W 1 10 0 400 30 500 700 One", "2100 W 2 20 0 1250 100 400 300 Two", "2500 W 1 10 0 0 30 500 700 One", "2600 G 70", "2700 W 2 20 0 1300 100 400 300 Two",
+        "3800 M end 3 moves=1,2"], ["jolt"])
+    detectors("… once is once", over_there + ["2100 W 2 20 0 1250 100 400 300 Two", "2600 G 70", "3700 M end 3 moves=2"], [])
+    detectors("… while the one under the stage goes about unseen", over_there[:-1] + [
+        "2040 W 1 10 0 100 100 500 700 One", over_there[-1], "2100 W 1 10 0 400 30 500 700 One", "2500 W 1 10 0 0 30 500 700 One", "2600 G 70", "3700 M end 3 moves=1"], [])
+    detectors("a move 240 ms before the stage, another place when it comes down, a third 240 ms after: not one move", start + [
+        "2000 M begin 2 dock", "2100 W 1 10 0 150 100 400 300 One", "2340 W 70 99 4 0 0 1000 800 Arbor", "2400 W 1 10 0 200 100 400 300 One", "3040 G 70",
+        "3280 W 1 10 0 250 100 400 300 One", "4400 M end 2 moves=1"], ["jolt"])
+    _, cut, _ = play(start + ["2000 M begin 2 launch", "2100 Y 7 1000 0 800 600 1000 25 800 575", "2200 W 2 20 0 1200 100 400 300 Two"])
+    told = as_json(World(), cut, "")["steps"][-1]
+    if (told["displays"], told["windows_elsewhere"], told["judged"]) != ([[1000, 800], [800, 600]], 1, False):
+        failures.append(f"a step that never ended says what was there when the samples ended: {told['displays']}, {told['windows_elsewhere']}, judged {told['judged']}")
+
+    def rests_and_glides(far):
+        """Taken at 400, its top comes to rest under the menu bar while the hand climbs on, 30 points further than it can follow. With the hand at rest it then glides down, out of the
+        hand, ten points a look."""
+        lines = [line.replace("W 1 10 0 100 100 400 300", "W 1 10 0 100 400 400 300") for line in start] + ["2000 M begin 2 drag", "2050 B down 300 410"]
+        for i in range(1, 41):
+            lines += [f"{2100 + 20 * i} P 300 {410 - 10 * i}"] + ([f"{2100 + 20 * i} W 1 10 0 100 {max(30, 400 - 10 * i)} 400 300 One"] if i < 38 else [])
+        for i in range(1, far // 10 + 1):
+            lines += [f"{3200 + 40 * i} P 300 10", f"{3200 + 40 * i} W 1 10 0 100 {30 + 10 * i} 400 300 One"]
+        at = 3400 + 40 * (far // 10)
+        return lines + [f"{at} B up 300 10", f"{at + 1100} M end 2 drags=1"]
+
+    def rests_and_follows(far):
+        """Its bottom comes to rest on the Dock's top while the hand goes on down, 60 points further. With the hand at rest it then follows, ten points a look."""
+        lines = start + ["2000 M begin 2 drag", "2050 B down 300 110"]
+        for i in range(1, 40):
+            lines += [f"{2100 + 20 * i} P 300 {110 + 10 * i}"] + ([f"{2100 + 20 * i} W 1 10 0 100 {min(430, 100 + 10 * i)} 400 300 One"] if i < 35 else [])
+        for i in range(1, far // 10 + 1):
+            lines += [f"{3200 + 40 * i} P 300 500", f"{3200 + 40 * i} W 1 10 0 100 {430 + 10 * i} 400 300 One"]
+        at = 3400 + 40 * (far // 10)
+        return lines + [f"{at} B up 300 500", f"{at + 1100} M end 2 drags=1"]
+
+    for far in (100, 200, 300):
+        detectors(f"its top has rested under the menu bar; then it glides {far} points down, out of a hand at rest", rests_and_glides(far), ["pulled"])
+    detectors("its bottom has rested on the Dock's top; then it follows a hand that has gone on, as far as the hand carries it", rests_and_follows(60), [])
+    detectors("… and as far again beyond", rests_and_follows(120), ["pulled"])
+    detectors("macOS tiles what was dropped, and Arbor's stage goes up for the others: under it the window comes to rest, and has moved once", tiling + [
+        "2300 G 50", "2300 B up 460 110", "2320 W 1 10 0 200 60 700 500 One", "2340 W 70 99 4 0 0 1000 800 Arbor", "2400 W 1 10 0 0 30 1000 700 One", "2900 G 70", "4000 M end 2 drags=1"], [])
+    detectors("seen together in one look, and the next look 200 ms late: that is no 200 ms together", tiling + [
+        "2260 W 51 99 3 0 30 500 700 Arbor", "2460 L 200", "2460 G 51", "2600 B up 460 110", "2610 G 50", "2620 W 1 10 0 0 30 1000 700 One", "3700 M end 2 drags=1"], [])
+    detectors("… seen together before and after the gap, long enough without it; what was not seen earlier is no matter", tiling + [
+        "2250 L 400", "2260 W 51 99 3 0 30 500 700 Arbor", "2500 L 150", f"{2260 + 150 + TOGETHER + 1} G 51", "2700 B up 460 110", "2710 G 50", "2720 W 1 10 0 0 30 1000 700 One", "3800 M end 2 drags=1"],
+        ["fought"])
+    detectors("up together across the end of a step: the step in which they go hears of all of it", tiling + [
+        "2260 W 51 99 3 0 30 500 700 Arbor", f"{2260 + TOGETHER - 5} M end 2 drags=1", f"{2260 + TOGETHER - 4} M begin 3 on", f"{2260 + 2 * TOGETHER - 10} G 51", "2600 B up 460 110", "2610 G 50",
+        "2620 W 1 10 0 0 30 1000 700 One", "3700 M end 3 drags=1"], ["fought"])
+    detectors("an app comes forward by itself, and a second and a half later a press falls on it", start + [
+        "2000 M begin 2 edge", "2100 A 20 app.two", "2100 Z 2,1", "3600 B down 505 250", "3800 B up 505 250", "4900 M end 2 act=resize"], ["focus"])
+    detectors("a press brings its app forward, and then the two take turns", start + [
+        "2000 M begin 2 edge", "2100 B down 505 250", "2200 B up 505 250", "2250 A 20 app.two", "3000 A 10 app.one", "5200 A 20 app.two", "6300 M end 2 act=resize"], ["focus"])
+    detectors("… at the release, nearly three seconds after the press, it is the press's doing still", start + [
+        "2000 M begin 2 edge", "2100 B down 505 250", "4900 B up 505 250", "4950 A 20 app.two", "6000 M end 2 act=resize"], [])
+    detectors("a press on the wallpaper, and an app comes forward", start + [
+        "2000 M begin 2 edge", "2100 B down 950 750", "2200 B up 950 750", "2250 A 20 app.two", "3300 M end 2 act=resize"], ["focus"])
+    handle = start + ["1250 M arbor 99", "1250 W 61 99 0 495 100 10 300 Arbor", "1250 Z 61,1,2", "2000 M begin 2 gap", "2100 B down 502 250", "2200 B up 502 250", "2250 A 20 app.two",
+                      "3300 M end 2 act=resize"]
+    detectors("a press on the handle in a gap, which is Arbor's and lies over a window: no press on that window's app", handle, ["focus"])
+    detectors("… the line round the focused window lets a press through", [line.replace("495 100 10 300", "492 92 416 316") for line in handle], [])
+    far_side = ["1050 Y 7 1000 0 1920 1080 1000 25 1920 1055", "1060 M tiling defaults", "1065 M arbor 99", "1070 W 3 30 0 1400 100 600 500 Three", "1070 M label 3 three"]
+
+    def carried(to_x, preview_from):
+        """A window is dragged from the first display onto the second, and Arbor's preview is up for the last looks."""
+        lines = start + far_side + ["2000 M begin 2 carry", "2100 B down 300 110"]
+        for i in range(1, 41):
+            x = 300 + (to_x - 300) * i // 40
+            lines += [f"{2100 + 20 * i} W 1 10 0 {x - 200} {100 + 3 * i} 400 300 One", f"{2100 + 20 * i} P {x} {110 + 3 * i}"]
+            if i == preview_from:
+                lines.append(f"{2100 + 20 * i} W 60 99 3 1400 100 300 500 Arbor")
+        return lines + [f"3100 B up {to_x} 230", "3100 G 60", "3110 Z 1,3,2", "3120 W 1 10 0 1400 100 300 500 One", "4300 M end 2 act=drag drags=1 moves=1,3 front=1 docked=1,3"]
+
+    detectors("a preview in the middle of the second display is at nobody's edge", carried(1500, 36), [])
+    detectors("… nor is one where the two displays meet", carried(1500, 23), [])
+    detectors("… just inside the second", carried(1480, 24), [])
+    detectors("… at the far edge of the second display it is at macOS's", carried(2915, 39), ["fought"])
     edge = start + ["2000 M begin 2 edge", "2050 B down 300 400"]
     for i in range(1, 7):
         edge += [f"{2100 + 60 * i} W 1 10 0 100 100 400 {300 - 10 * i} One", f"{2100 + 60 * i} P 300 {400 - 10 * i}"]
@@ -1698,9 +1839,12 @@ def self_test():
         "2000 M begin 2 plug", "2100 Y 7 1000 0 1920 1080 1000 0 1920 1080", "3000 M end 2 act=display-change moves=any",
         "4000 M begin 3 across", "4100 W 2 20 0 1200 100 400 300 Two", "5000 M end 3 act=dock-key moves=any",
         "6000 M begin 4 astride", "6100 W 1 10 0 850 100 400 300 One", "7000 M end 4 act=drag moves=any",
-        "8000 M begin 5 unplug", "8100 Y 7", "8100 W 2 20 0 500 100 400 300 Two", "9000 M end 5 act=display-change moves=any"])
+        "7100 M begin 5 mostly-here", "7200 W 1 10 0 700 100 400 300 One", "7300 M end 5 act=drag moves=any",
+        "7400 M begin 6 half-and-half", "7500 W 1 10 0 800 100 400 300 One", "7600 M end 6 act=drag moves=any",
+        "8000 M begin 7 unplug", "8100 Y 7", "8100 W 2 20 0 500 100 400 300 Two", "9000 M end 7 act=display-change moves=any"])
     told = [(step["displays"], step["windows_elsewhere"]) for step in as_json(world_two, two, "")["steps"]]
-    if told != [([[1000, 800]], 0), ([[1000, 800], [1920, 1080]], 0), ([[1000, 800], [1920, 1080]], 1), ([[1000, 800], [1920, 1080]], 2), ([[1000, 800]], 0)]:
+    if told != [([[1000, 800]], 0), ([[1000, 800], [1920, 1080]], 0), ([[1000, 800], [1920, 1080]], 1), ([[1000, 800], [1920, 1080]], 2), ([[1000, 800], [1920, 1080]], 1),
+                ([[1000, 800], [1920, 1080]], 1), ([[1000, 800]], 0)]:
         failures.append(f"the displays at the end of each step, and the windows that lie on the second by their larger part: {told}")
     _, undone, _ = play(start + ["2000 M begin 2 drag", "2100 W 2 20 0 600 100 400 300 Two", "3000 M end 2 act=drag judge=no performed=no undone=drag_window"])
     told = as_json(World(), undone, "")["steps"][1]
@@ -1882,9 +2026,9 @@ def self_test():
         if of_the_gate(*path, otherwise=None) != mine:
             failures.append(f"docs/VIABLE.md has {of_the_gate(*path, otherwise=None)!r} for {name}, and what judges by it has {mine!r}")
         # And it is the page that is read, with the copy to fall back on: a number written here alone would agree today and stay behind tomorrow.
-        asked = "of_the_gate(" + ", ".join(f'"{word}"' for word in path) + ", otherwise="
+        asked = "of_the_gate(" + ", ".join(f'"{word}"' for word in path) + ", otherwise=" + json.dumps(mine) + ")"
         if name != "late_ms" and sum(1 for line in own_source if asked in line and not line.lstrip().startswith(("#", "asked", "if "))) < 1:
-            failures.append(f"nothing here reads {name} from docs/VIABLE.md")
+            failures.append(f"nothing here reads {name} from docs/VIABLE.md with {mine!r} to fall back on")
 
     for failure in failures:
         print(f"✘ {failure}")

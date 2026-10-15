@@ -669,8 +669,10 @@ full_screen() {
 }
 
 title_double_click() {
-  local x y role window before=$DAY_STEP
+  local x y role window before
   can_be_dragged "$1" || { left_out "title_double_click $1: no free point of its title bar shows"; return; }
+  # After the fetch, which may have moved the view: that is what the second double-click brings back.
+  before=$DAY_STEP
   window=$(window_of "$1")
   read -r x y role <<< "$(apptool grab "$window")"
   walk_act macos-own "double-click-$1" "double-clicks $1's title bar: macOS zooms the window"
@@ -753,6 +755,7 @@ carry_across() {
   walk_act drag "carry-$1-across" "drags $1, which floats, by its title bar onto the other display and lets go"
   must drag_window "$window" "$((${x%.*} + ${w%.*} / 2))" "$((${y%.*} + 220))"
   changed
+  [ -z "$WALK_PAUSED" ] || WALK_MOVED_IN_PAUSE="${WALK_MOVED_IN_PAUSE:+$WALK_MOVED_IN_PAUSE,}$window"
   acted drags="$window" front="$window" own="$window"
 }
 
@@ -924,22 +927,40 @@ desk_bar() {
 }
 
 # Both desks in front of everything else, a over b in the pile, and each the frontmost at the middle of its own title bar: by the window server's list, not by anybody's word.
+desks_in_front() {
+  local ax ay bx by
+  read -r ax ay <<< "$(desk_bar "$DESK_a")"
+  read -r bx by <<< "$(desk_bar "$DESK_b")"
+  [ -n "${ax:-}" ] && [ -n "${bx:-}" ] && [ "$(front_pid)" = "$DESK_PID_a" ] && [ "$(apptool top-at "$ax" "$ay" 2> /dev/null | cut -d ' ' -f 1)" = "$DESK_a" ] \
+    && [ "$(apptool top-at "$bx" "$by" 2> /dev/null | cut -d ' ' -f 1)" = "$DESK_b" ]
+}
+
 desks_forward() {
-  local try ax ay bx by
+  local try
   for try in 1 2 3; do
     kill -USR1 "$DESK_PID_b" 2> /dev/null
     sleep 0.4
     kill -USR1 "$DESK_PID_a" 2> /dev/null
     sleep 0.5
-    read -r ax ay <<< "$(desk_bar "$DESK_a")"
-    read -r bx by <<< "$(desk_bar "$DESK_b")"
-    [ -n "${ax:-}" ] && [ -n "${bx:-}" ] || return 1
-    if [ "$(front_pid)" = "$DESK_PID_a" ] && [ "$(apptool top-at "$ax" "$ay" 2> /dev/null | cut -d ' ' -f 1)" = "$DESK_a" ] \
-      && [ "$(apptool top-at "$bx" "$by" 2> /dev/null | cut -d ' ' -f 1)" = "$DESK_b" ]; then
-      return 0
-    fi
+    if desks_in_front; then return 0; fi
   done
   return 1
+}
+
+# ⌃⌥A docks every window, the desks among them, and a docked desk may be a tile or out of view when its turn comes. A person who wants it floats it: forward by itself, as by its icon in
+# the Dock, and ⌃⌥F. An act of its own, and only where it is needed.
+desks_float() {
+  local each pid window
+  arbor_acts || return 0
+  for each in a b; do
+    eval "pid=\$DESK_PID_$each window=\$DESK_$each"
+    is docked "$window" 2> /dev/null || continue
+    walk_act switch "desk-$each-forward" "brings the desk $each forward, which is docked"
+    kill -USR1 "$pid" 2> /dev/null
+    sleep 0.6
+    acted front="$window"
+    float_key
+  done
 }
 
 input_round() {
@@ -952,6 +973,14 @@ input_round() {
     acted round="$name" posted="press:0" ${WALK_ROUND_SAYS:-}
     return
   fi
+  # At rest first: where a desk is while Arbor still moves it is not where the presses would find it.
+  quiet > /dev/null
+  desks_in_front || {
+    echo "  the two desks did not stay in front: nothing is posted"
+    # shellcheck disable=SC2086
+    acted round="$name" posted="press:0" ${WALK_ROUND_SAYS:-}
+    return
+  }
   read -r ax ay <<< "$(desk_bar "$DESK_a")"
   read -r bx by <<< "$(desk_bar "$DESK_b")"
   read -r x y w h <<< "$(real_of "$DESK_a")"
@@ -1172,8 +1201,9 @@ walk_end() {
   while [ -n "${WALK_MINIMIZED// /}" ]; do restore; done
   if with_arbor && arbor_answers; then
     chapter "The end"
-    # Everything in view, the two desks among it.
+    # Everything in view, the two desks among it, and floating as they were.
     view home
+    desks_float
     input_round last
     walk_quit
     input_round after

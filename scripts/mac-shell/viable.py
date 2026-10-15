@@ -39,7 +39,9 @@ leaves out the acts that are Arbor's own keys. The manifest of a sabotage run al
 Everything in a ledger comes from hosted Macs and from Linux. Nothing from a person's Mac belongs in one.
 """
 
+import contextlib
 import copy
+import io
 import json
 import os
 import re
@@ -155,6 +157,9 @@ def why_not(run, gate, commit):
         return f"there is no cast {manifest.get('cast')}"
     if manifest.get("tiling") == "defaults" and manifest.get("tiling_seen_to_act") is not True:
         return "macOS's own tiling was not seen to act before Arbor started"
+    if manifest.get("tiling") == "off" and manifest.get("tiling_seen_to_act") is not False:
+        return ("macOS's own tiling is said to be off, and was seen to act before Arbor started" if manifest.get("tiling_seen_to_act") is True
+                else "macOS's own tiling is said to be off, and it does not say whether it was seen to act")
     if not isinstance(manifest.get("reduce_motion"), bool):
         return "it does not say whether macOS's Reduce Motion was on"
     # Without Arbor there is no stage either way.
@@ -194,9 +199,16 @@ def not_the_display(run, gate):
     for two displays was played on one from beginning to end, because no line of it plugged the second one in, and said "two"."""
     acts = run.get("acts") or []
     for act in acts:
-        displays = act.get("displays")
-        if not isinstance(displays, list) or not all(isinstance(size, list) and len(size) == 2 and all(isinstance(side, int) for side in size) for size in displays):
+        displays, elsewhere = act.get("displays"), act.get("windows_elsewhere")
+        if not isinstance(displays, list) or not all(
+                isinstance(size, list) and len(size) == 2 and all(isinstance(side, int) and not isinstance(side, bool) and side > 0 for side in size) for size in displays):
             return f"{act.get('id')} does not say what displays the sampler saw"
+        if not isinstance(elsewhere, int) or isinstance(elsewhere, bool) or elsewhere < 0:
+            return f"{act.get('id')} does not say how many windows lay on a second display"
+        if elsewhere and len(displays) < 2:
+            return f"{act.get('id')} says that {elsewhere} windows lay on a second display, and that the sampler saw {len(displays)}"
+        if not displays:
+            return f"the sampler saw no display at all at the end of {act.get('id')}"
     seen = [act["displays"] for act in acts]
     wanted, rule = run["manifest"].get("display"), gate["display_seen"]
     if wanted == "two":
@@ -208,9 +220,9 @@ def not_the_display(run, gate):
         # The going and the coming is what the cell is for. A display that goes with nothing on it tries nobody.
         went = came = False
         for before, act in zip(acts, acts[1:]):
-            if act.get("act") != "display-change" or act not in counting:
+            if act.get("act") != "display-change" or act not in counting or not did(act, run):
                 continue
-            if len(act["displays"]) < len(before["displays"]) and count(before.get("windows_elsewhere"), f"{name_of(run)}: the windows on the second display before {act.get('id')}") > 0:
+            if len(act["displays"]) < len(before["displays"]) and before["windows_elsewhere"] > 0:
                 went = True
             # A display that comes back is what the cell is for. A journey that only plugs one in and then unplugs it has not played that.
             elif len(act["displays"]) > len(before["displays"]) and went:
@@ -223,9 +235,11 @@ def not_the_display(run, gate):
     for displays in seen:
         if len(displays) != 1:
             return f"it says it was played on one display ({wanted}), and the sampler saw {len(displays)}"
+        if displays != seen[0]:
+            return f"it says it was played on one display ({wanted}), and the sampler saw {seen[0][0][0]}×{seen[0][0][1]} and then {displays[0][0]}×{displays[0][1]}"
         if wanted == "desk" and displays[0] != list(rule["desk"]):
             return f"it says it was played on a desk's display, and the sampler saw {displays[0][0]}×{displays[0][1]}"
-        if wanted == "laptop" and displays[0][0] > rule["laptop_width_max"]:
+        if wanted == "laptop" and not rule["laptop_width_min"] <= displays[0][0] <= rule["laptop_width_max"]:
             return f"it says it was played on a laptop's display, and the sampler saw {displays[0][0]}×{displays[0][1]}"
     return None
 
@@ -234,6 +248,8 @@ def did(act, run):
     """Whether an act was performed. It has to say."""
     if not isinstance(act.get("performed"), bool):
         raise Unreadable(f"{name_of(run)}: {act.get('id')} does not say whether it was performed")
+    if not act["performed"] and act.get("judged") is True:
+        raise Unreadable(f"{name_of(run)}: {act.get('id')} says that it was not performed, and that it was judged")
     return act["performed"]
 
 
@@ -350,14 +366,32 @@ def judge(ledger, gate, listed=None):
     if everything_asked and len(undone) / everything_asked > gate["share_of_acts_not_performed_max"]:
         invalid.append(f"{len(undone)} of {everything_asked} acts could not be performed: the instrument is sick, or Arbor takes windows from under the pointer")
 
+    def weigh(run, which=""):
+        """What was found in a journey: Arbor's, unless its own control shows the same at the same act."""
+        nonlocal fails, odd
+        for finding in run.get("findings") or []:
+            words = f"{finding['detector']} in {name_of(run)}{which}, at {finding['id']}: {finding.get('what', '')}"
+            if (finding["detector"], finding["id"]) in alone.get(journey(run["manifest"]), ()):
+                table.append(f"  not Arbor's, the run without it shows the same: {words}")
+            elif finding["level"] == "FAIL":
+                fails += 1
+                reasons.append(words)
+            elif not finding.get("explained"):
+                odd += 1
+                reasons.append(f"odd and not explained: {words}")
+
     for run in runs:
         manifest, findings = run["manifest"], run.get("findings") or []
         kind = manifest.get("kind")
         if excuses[id(run)]:
             fell_out += 1
             table.append(f"  does not count: {name_of(run)}: {excuses[id(run)]}")
+            # A journey on this commit with nothing against it but that it was played on another display than it says counts for no cell. What was found in it is found: else a journey
+            # that is cut short, or in which the window is taken from under the hand that carries it across, would fall out and take its findings with it.
+            if kind in COUNTED and excuses[id(run)] == not_the_display(run, gate):
+                weigh(run, ", which counts for no cell")
             # Whatever else was wrong with the run, Arbor fell over on this commit.
-            if manifest.get("commit") == commit and kind in COUNTED:
+            elif manifest.get("commit") == commit and kind in COUNTED:
                 for finding in findings:
                     if finding["detector"] == "crash" and finding["level"] == "FAIL":
                         fails += 1
@@ -402,16 +436,7 @@ def judge(ledger, gate, listed=None):
             # Counted within `drag`, as the page says.
             if act.get("act") == "drag-where-macos-tiles":
                 kinds["drag"] += 1
-        for finding in findings:
-            words = f"{finding['detector']} in {name_of(run)}, at {finding['id']}: {finding.get('what', '')}"
-            if (finding["detector"], finding["id"]) in alone.get(journey(manifest), ()):
-                table.append(f"  not Arbor's, the run without it shows the same: {words}")
-            elif finding["level"] == "FAIL":
-                fails += 1
-                reasons.append(words)
-            elif not finding.get("explained"):
-                odd += 1
-                reasons.append(f"odd and not explained: {words}")
+        weigh(run)
     # The two limits are nought today. Should the page ever allow some, those within the limit are listed and do not decide.
     allowed = (fails <= gate["fail_max"], odd <= gate["odd_unexplained_max"])
     if fails or odd:
@@ -658,7 +683,7 @@ def perfect(gate):
     def manifest(number, kind, cell, cast):
         return {
             "gate": gate["gate"], "started": True, "commit": commit, "run": str(1000 + number), "attempt": 1, "part": 1, "parts": 1, "script": f"{kind}.sh", "kind": kind, "seed": None,
-            "tiling": cell[0], "tiling_seen_to_act": True, "display": cell[1], "cast": cast, "apps": apps, "settings": "shipped",
+            "tiling": cell[0], "tiling_seen_to_act": cell[0] == "defaults", "display": cell[1], "cast": cast, "apps": apps, "settings": "shipped",
             "seconds": gate["run_seconds_max"], "reduce_motion": False, "stage_seen": kind != "control",
         }
 
@@ -908,15 +933,24 @@ def self_test():
     def seen(run, displays, how_many=None):
         for act in run["acts"][:how_many]:
             act["displays"] = copy.deepcopy(displays)
+            # Nothing lies on a display that is not there.
+            if len(displays) < 2:
+                act["windows_elsewhere"] = 0
 
     small, large = [gate["display_seen"]["laptop_width_max"], 900], list(gate["display_seen"]["desk"])
     expect("written for two displays, and played on one from beginning to end", lambda l: seen(on(l, "two")[0], [small]), "NOT VIABLE", "the sampler saw two at the end of 0 of")
     def last_with_two(run):
         return [act for act in run["acts"] if len(act["displays"]) >= 2][-1]
 
-    expect("… the second was there for one act fewer than is asked for", lambda l: last_with_two(on(l, "two")[0]).update(displays=[small]), "NOT VIABLE",
+    expect("… the second was there for one act fewer than is asked for", lambda l: last_with_two(on(l, "two")[0]).update(displays=[small], windows_elsewhere=0), "NOT VIABLE",
            "it says it had two displays, and the sampler saw two at the end of")
-    expect("… it was there during acts that are not judged", lambda l: [act.update(judged=False) for act in on(l, "two")[0]["acts"][4:] if len(act["displays"]) >= 2][:0], "NOT VIABLE", "")
+    def unjudged_with_two(ledger):
+        """A few of the acts with two displays are not judged: few enough for the run to count otherwise."""
+        acts = [act for act in on(ledger, "two")[0]["acts"][4:] if len(act["displays"]) >= 2]
+        for act in acts[:3]:
+            act.update(judged=False)
+
+    expect("… it was there during acts that are not judged", unjudged_with_two, "NOT VIABLE", "it says it had two displays, and the sampler saw two at the end of")
     expect("… it was there all the time: it never went", lambda l: seen(on(l, "two")[0], [small, large]), "NOT VIABLE", "in none of its acts did one go that had a window on it")
     expect("… it went with nothing on it", lambda l: on(l, "two")[0]["acts"][1].update(windows_elsewhere=0), "NOT VIABLE", "in none of its acts did one go that had a window on it")
     expect("… it went in an act of another kind", lambda l: on(l, "two")[0]["acts"][2].update(act="idle"), "NOT VIABLE", "in none of its acts did one go that had a window on it")
@@ -931,19 +965,81 @@ def self_test():
         acts[-1].update(act="display-change", displays=[small], windows_elsewhere=0)
 
     expect("… it came, went, and never came back", never_back, "NOT VIABLE", "in none of its acts did one come back after one had gone")
-    expect("… it does not say how many windows were on it", lambda l: on(l, "two")[0]["acts"][1].pop("windows_elsewhere"), "UNREADABLE", "the windows on the second display before")
+    expect("… it does not say how many windows were on it", lambda l: on(l, "two")[0]["acts"][1].pop("windows_elsewhere"), "NOT VIABLE", "does not say how many windows lay on a second display")
+    for name, value in (("a part of a window", 0.5), ("fewer than none", -1), ("yes", True), ("a word", "one")):
+        expect(f"… or says {name}", lambda l, value=value: on(l, "two")[0]["acts"][1].update(windows_elsewhere=value), "NOT VIABLE", "does not say how many windows lay on a second display")
+    expect("… any act at all that does not say it, in a run on one display too", lambda l: on(l, "laptop")[0]["acts"][7].pop("windows_elsewhere"), "NOT VIABLE",
+           "does not say how many windows lay on a second display")
+    expect("windows on a second display that the sampler did not see", lambda l: on(l, "laptop")[0]["acts"][7].update(windows_elsewhere=5), "NOT VIABLE",
+           "says that 5 windows lay on a second display, and that the sampler saw 1")
+    expect("… it went in an act that was not performed", lambda l: on(l, "two")[0]["acts"][2].update(performed=False, judged=False), "NOT VIABLE", "")
+    expect("… in a control, it went in an act that was not performed", lambda l: on(l, "two", ("control",))[0]["acts"][2].update(performed=False), "NOT VIABLE",
+           "in none of its acts did one go that had a window on it")
+    expect("… it came back in an act of another kind", lambda l: on(l, "two")[0]["acts"][3].update(act="idle"), "NOT VIABLE", "in none of its acts did one come back after one had gone")
+    expect("… it came back in an act that is not judged", lambda l: (
+        on(l, "two")[0]["acts"][3].update(judged=False),
+        # One more act with two displays, so that there are still enough of them.
+        next(act for act in on(l, "two")[0]["acts"][4:] if len(act["displays"]) < 2).update(displays=[small, large])), "NOT VIABLE", "in none of its acts did one come back after one had gone")
+
+    def gone_in_between(ledger):
+        """It goes in an act that is not judged, and the act after it, a judged change of displays, finds one display as the judged act before the two had two: nothing went in that one."""
+        acts = on(ledger, "two")[0]["acts"]
+        acts[2].update(judged=False)
+        acts.insert(3, dict(acts[2], id="display-change#9100", judged=True))
+
+    expect("… it went in an act that is not judged, and the next judged one finds it gone", gone_in_between, "NOT VIABLE", "in none of its acts did one go that had a window on it")
+    expect("… no display at all where there was one", lambda l: on(l, "two")[0]["acts"][0].update(displays=[]), "NOT VIABLE", "the sampler saw no display at all at the end of")
+    expect("an act that was not performed, and was judged", lambda l: on(l, "laptop")[0]["acts"][7].update(performed=False), "UNREADABLE", "says that it was not performed, and that it was judged")
     expect("… a control that says two and had one excuses nothing", lambda l: seen(on(l, "two", ("control",))[0], [small]), "NOT VIABLE", "the sampler saw two at the end of 0 of")
     expect("a second display turns up in a run on a laptop's", lambda l: seen(on(l, "laptop")[0], [small, large], 1), "NOT VIABLE", "played on one display (laptop), and the sampler saw 2")
     expect("… and in one on a desk's", lambda l: seen(on(l, "desk")[0], [large, large], 1), "NOT VIABLE", "played on one display (desk), and the sampler saw 2")
-    expect("no display at all at the end of an act", lambda l: seen(on(l, "laptop")[0], [], 1), "NOT VIABLE", "played on one display (laptop), and the sampler saw 0")
+    expect("no display at all at the end of an act", lambda l: seen(on(l, "laptop")[0], [], 1), "NOT VIABLE", "the sampler saw no display at all at the end of")
     expect("a laptop's display as wide as a desk's", lambda l: seen(on(l, "laptop")[0], [[small[0] + 1, 900]], 1), "NOT VIABLE", "played on a laptop's display, and the sampler saw")
     expect("a desk's display that is a laptop's", lambda l: seen(on(l, "desk")[0], [small], 1), "NOT VIABLE", "played on a desk's display, and the sampler saw")
     expect("… or of the right width and another height", lambda l: seen(on(l, "desk")[0], [[large[0], large[1] + 120]], 1), "NOT VIABLE", "played on a desk's display, and the sampler saw")
+    expect("a laptop's display smaller than any Mac's", lambda l: seen(on(l, "laptop")[0], [[gate["display_seen"]["laptop_width_min"] - 1, 768]]), "NOT VIABLE", "played on a laptop's display, and the sampler saw")
+    expect("… the narrowest that is one", lambda l: [seen(run, [[gate["display_seen"]["laptop_width_min"], 800]]) for run in l["runs"] if run["manifest"]["display"] == "laptop"], "VIABLE", "")
+    expect("… tall and narrow: it goes by the width", lambda l: seen(on(l, "laptop")[0], [[gate["display_seen"]["laptop_width_min"] - 1, small[0]]]), "NOT VIABLE", "played on a laptop's display, and the sampler saw")
+    expect("a display that is another in the middle of the run", lambda l: on(l, "laptop")[0]["acts"][7].update(displays=[[small[0] - 80, 900]]), "NOT VIABLE", "and then")
+    expect("… a second one in the middle of the run", lambda l: on(l, "laptop")[0]["acts"][7].update(displays=[small, large]), "NOT VIABLE", "played on one display (laptop), and the sampler saw 2")
+    expect("… a desk's that is another in the middle of the run", lambda l: on(l, "desk")[0]["acts"][7].update(displays=[small]), "NOT VIABLE", "and then")
+    expect("a control on one display that had two", lambda l: seen(on(l, "laptop", ("control",))[0], [small, large]), "NOT VIABLE", "played on one display (laptop), and the sampler saw 2")
+    expect("a sabotage run on another display than it says", lambda l: seen(every(l, "sabotage")[0], [large]), "INVALID", "played on a laptop's display, and the sampler saw")
+    expect("a sit on another display than it says", lambda l: seen(one_more(l, on(l, "laptop")[0], kind="sit"), [large]), "VIABLE", "played on a laptop's display, and the sampler saw", listed=and_8200)
+    for name, size in (("nothing by nothing", [0, 0]), ("less than nothing", [-5, -5]), ("yes by no", [True, False]), ("a fraction", [1600.5, 900]), ("three sides", [1600, 900, 2])):
+        expect(f"a display of {name}", lambda l, size=size: on(l, "laptop")[0]["acts"][7].update(displays=[size]), "NOT VIABLE", "does not say what displays the sampler saw")
     expect("an act that does not say what displays were seen", lambda l: on(l, "laptop")[0]["acts"][0].pop("displays"), "NOT VIABLE", "does not say what displays the sampler saw")
+    expect("… an act in the middle of the run", lambda l: on(l, "laptop")[0]["acts"][7].pop("displays"), "NOT VIABLE", "does not say what displays the sampler saw")
     expect("… or says it in words", lambda l: on(l, "laptop")[0]["acts"][0].update(displays="one"), "NOT VIABLE", "does not say what displays the sampler saw")
     expect("… or in a number", lambda l: on(l, "laptop")[0]["acts"][0].update(displays=2), "NOT VIABLE", "does not say what displays the sampler saw")
     expect("… or in half a size", lambda l: on(l, "laptop")[0]["acts"][0].update(displays=[[1600]]), "NOT VIABLE", "does not say what displays the sampler saw")
     expect("… or in words for numbers", lambda l: on(l, "laptop")[0]["acts"][0].update(displays=[["1600", "900"]]), "NOT VIABLE", "does not say what displays the sampler saw")
+
+    def cut_short(ledger, level="FAIL", excused=False):
+        """A journey the gate does not need, in which something was found, and whose last act never ended: no display was seen at its end."""
+        control, journeys = pair(ledger)
+        extra = one_more(ledger, journeys[0])
+        found = {"detector": "jolt", "level": level, "id": extra["acts"][5]["id"], "what": "moved 2 times"}
+        extra["findings"].append(found)
+        extra["acts"].append({"id": "launch#99", "act": "quit-and-start", "judged": False, "performed": True, "displays": [], "windows_elsewhere": 0})
+        if excused:
+            control["findings"].append(dict(found))
+
+    expect("a journey that is cut short counts for no cell, and what was found in it is found", cut_short, "NOT VIABLE", "jolt in run 8200.1 (walk.sh), which counts for no cell, at", listed=and_8200)
+    expect("… an oddity too", lambda l: cut_short(l, level="ODD"), "NOT VIABLE", "odd and not explained: jolt in run 8200.1", listed=and_8200)
+    expect("… but for what its own control shows at the same act", lambda l: cut_short(l, excused=True), "VIABLE", "not Arbor's, the run without it shows the same", listed=and_8200)
+
+    def found_on_another_commit(ledger):
+        cut_short(ledger)
+        ledger["runs"][-1]["manifest"]["commit"] = "f" * 40
+
+    expect("… what was found on another commit is not", found_on_another_commit, "VIABLE", "it ran on another commit", listed=and_8200)
+    expect("tiling said to be off, and seen to act", lambda l: [run["manifest"].update(tiling_seen_to_act=True) for run in every(l, *COUNTED) if run["manifest"]["tiling"] == "off"][:0], "INVALID",
+           "is said to be off, and was seen to act")
+    expect("… in one run", lambda l: next(run for run in every(l, *COUNTED) if run["manifest"]["tiling"] == "off")["manifest"].update(tiling_seen_to_act=True), "NOT VIABLE",
+           "is said to be off, and was seen to act")
+    expect("… or it does not say", lambda l: next(run for run in every(l, *COUNTED) if run["manifest"]["tiling"] == "off")["manifest"].pop("tiling_seen_to_act"), "NOT VIABLE",
+           "is said to be off, and it does not say whether it was seen to act")
 
     def undone(ledger, how_many, of=None):
         """So many acts, spread over the journeys, could not be performed."""
@@ -1067,6 +1163,7 @@ def self_test():
     least_seen = min(sum(1 for act in run["acts"] if len(act["displays"]) >= 2) / len(run["acts"]) for run in good["runs"] if run["manifest"]["display"] == "two")
     expect("the page asks for exactly the share of acts that the second display was there for", nothing, "VIABLE", "", page=with_number(["display_seen", "two_displays_share_of_acts_min"], least_seen))
     expect("the page asks for the second display during more of the acts", nothing, "INVALID", "it says it had two displays", page=with_number(["display_seen", "two_displays_share_of_acts_min"], 0.9))
+    expect("the page has a wider smallest laptop", nothing, "INVALID", "played on a laptop's display", page=with_number(["display_seen", "laptop_width_min"], gate["display_seen"]["laptop_width_max"] + 1))
     expect("the page has a narrower laptop", nothing, "INVALID", "played on a laptop's display", page=with_number(["display_seen", "laptop_width_max"], gate["display_seen"]["laptop_width_max"] - 1))
     expect("the page has another desk", nothing, "INVALID", "played on a desk's display", page=with_number(["display_seen", "desk"], [2560, 1440]))
     expect("the page allows no act at all to go unperformed", lambda l: undone(l, 1), "INVALID", "the instrument is sick", page=with_number(["share_of_acts_not_performed_max"], 0))
@@ -1162,6 +1259,16 @@ def self_test():
         said = why_not(run_from(os.path.join(scratch, "says-two")), gate, liar["manifest"]["commit"])
         if said != f"it says it had two displays, and the sampler saw two at the end of 0 of {len(liar['acts'])} acts":
             failures.append(f"a manifest that says two displays over samples that show one: {said}")
+        # 1 is a verdict. Whatever a ledger made by hand can break ends in 2.
+        for name, change in (("nothing among a run's acts", lambda l: every(l, "control")[0]["acts"].append(None)), ("a number for its apps", lambda l: l["runs"][0]["manifest"].update(apps=5)),
+                             ("a list for what it heard", lambda l: l["runs"][0].update(input=[1])), ("a word for its findings", lambda l: l["runs"][0].update(findings="x"))):
+            broken = copy.deepcopy(good)
+            change(broken)
+            put("broken.json", broken)
+            with contextlib.redirect_stdout(io.StringIO()) as said:
+                code = main(["check", os.path.join(scratch, "broken.json")])
+            if code != 2 or "it cannot be read" not in said.getvalue():
+                failures.append(f"a ledger with {name}: exit code {code}, wanted 2; it said: {said.getvalue()[-120:]}")
         put("runs/rings.json", good["rings"])
         listing = put("listed.txt", "".join(f"{identifier} {attempt} 1-1\n" for identifier, attempt in everything))
         ledger = os.path.join(scratch, "ledger.json")
@@ -1227,6 +1334,9 @@ def main(arguments):
             return {"VIABLE": 0, "NOT VIABLE": 1}.get(verdict, 2)
     except Unreadable as problem:
         print(f"viable.py: {problem}")
+        return 2
+    except Exception as problem:  # noqa: BLE001  Whatever a ledger made by hand can break: 1 is a verdict, and this is none.
+        print(f"viable.py: it cannot be read: {type(problem).__name__}: {problem}")
         return 2
     print(__doc__)
     return 2

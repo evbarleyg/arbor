@@ -165,6 +165,26 @@ def self_test():
         if has < at_least:
             failures.append(f"{what}: the plan has {has:.1f}, docs/VIABLE.md wants {at_least:.1f}")
 
+    # The kinds here are a copy of what lib-walk.sh says as it plays each word. The library decides.
+    with open(os.path.join(HERE, "lib-walk.sh"), encoding="utf-8") as handle:
+        library = handle.read()
+    bodies = dict(re.findall(r"^(\w+)\(\) \{ (.*) \}$", library, re.M) + re.findall(r"^(\w+)\(\) \{\n(.*?)^\}", library, re.M | re.S))
+
+    def said_in(word):
+        return re.findall(r"^\s*walk_act ([a-z-]+) ", bodies.get(word, ""), re.M)
+
+    for kind, words in KINDS.items():
+        for known in words.split():
+            for word in [name for name in bodies if name == known or known.endswith("_") and name.startswith(known)] or [known]:
+                # A word may fetch its window first, or be played through another. Its own kind is what it says last, if it says any itself.
+                if said_in(word) and kind not in said_in(word):
+                    failures.append(f"`{word}` is counted as {kind}, and lib-walk.sh plays it as {', '.join(said_in(word))}")
+                if word not in bodies:
+                    failures.append(f"`{word}` is counted as {kind}, and lib-walk.sh has no such word")
+    around = said_in("walk_start") + (["view"] if re.search(r"^\s*view home$", bodies.get("walk_end", ""), re.M) else []) + said_in("walk_quit")
+    if AROUND[:len(AROUND) - len(ROLL_CALL)] != around:
+        failures.append(f"every journey begins and ends with {around}, by lib-walk.sh, and is counted with {AROUND[:len(AROUND) - len(ROLL_CALL)]}")
+
     tries = []
     for n in range(24):
         commit = f"{n * 0x9e3779b97f4a7c15 % 2**64:016x}" * 3

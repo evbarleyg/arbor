@@ -75,7 +75,7 @@ def walk(seed, acts, two=False, cast="stock"):
         # the samples have to show that, in a control as well). Left to the dice, 6 walks of 40 had none of it, and one had the second display for a fifth of its lines.
         lines += back_at_the_desk(apps)
         plugged = True
-    away = 0
+    gone_at = 0
 
     def say(line, worth=1):
         nonlocal count
@@ -88,13 +88,13 @@ def walk(seed, acts, two=False, cast="stock"):
     restarted = False
     while count < acts:
         # Before anything else, and not counted: what is owed comes due, and Arbor is started again, when it would have without.
-        away = 0 if plugged else away + 1
-        if two and (changes.roll(8) == 0 or away > AWAY):
+        if two and (changes.roll(8) == 0 or not plugged and len(lines) - gone_at >= AWAY):
             # Only what applies: what cannot be played is left out on the Mac, and a gate would turn out short of what it believed it had.
             lines.append("display plug" if not plugged else changes.weighted([
                 ("display unplug", 2), ("display left", 1), ("display right", 1), ("display smaller", 1), ("display larger", 1), ("send_across", 3),
                 (f"carry_across {changes.pick(apps)}", 2)]))
             plugged = lines[-1] != "display unplug"
+            gone_at = len(lines)
             continue
         for debt in owed:
             debt[0] -= 1
@@ -227,12 +227,26 @@ def self_test():
         lines = walk(seed, 110, two=True)
         if lines[:4] != ["display plug", "carry_across notes", "display unplug", "display plug"]:
             failures.append(f"seed {seed}: a walk with two displays begins with one that comes, has a window carried onto it, goes and comes back")
-        there, with_two = False, 0
+        there, with_two, away = False, 0, 0
         for line in lines:
             there = line == "display plug" or (there and line != "display unplug")
             with_two += there
+            away = 0 if there or line == "display unplug" else away + 1
+            if away > AWAY + 2:
+                failures.append(f"seed {seed}: the second display is away for more than {AWAY + 2} lines")
+                break
         if with_two < 0.65 * len(lines):
             failures.append(f"seed {seed}: the second display is there for {with_two} of {len(lines)} lines")
+    # Beyond what every such walk begins with, the dice go on with all of it.
+    later = [line for seed in range(200) for line in walk(seed, 110, two=True)[4:]]
+    if len({line for line in later if line.startswith("carry_across ")}) < 5:
+        failures.append("in the course of walks with two displays windows of several apps are carried across")
+    for line in ("display unplug", "display left", "display right", "display smaller", "display larger", "send_across"):
+        if later.count(line) < 50:
+            failures.append(f"in the course of 200 walks with two displays `{line}` is written {later.count(line)} times")
+    for cast, carried in (("stock", "notes"), ("browsers", "textedit"), ("awkward", "textedit")):
+        if walk("4711", 30, two=True, cast=cast)[1] != f"carry_across {carried}":
+            failures.append(f"with the cast {cast} a walk with two displays begins by carrying {carried} across, not: {walk('4711', 30, two=True, cast=cast)[1]}")
     plain = [line for line in walk("4711", 110, two=True) if line.split()[0] not in ("display", "send_across", "carry_across")]
     if plain[:60] != walk("4711", 110)[:60]:
         failures.append("with a second display the rest of the walk is another walk")
@@ -267,7 +281,7 @@ def back_at_the_desk(apps):
     return ["display plug", f"carry_across {next(app for app in ('notes', 'textedit', *apps) if app in apps)}", "display unplug", "display plug"]
 
 
-# The second display is never away for more lines than this.
+# When the second display has been away for this many lines it comes back. One turn may write three lines, so it is away for two more at the most.
 AWAY = 6
 PINNED = ['drag_onto mail preview right', 'switch_to mail', 'float_key']
 

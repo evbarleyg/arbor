@@ -333,7 +333,7 @@ acted() {
       tiles=ok) word="tiles=$DAY_TILES keyboard=$(apptool focused 2>/dev/null | cut -d ' ' -f 1)" ;;
       offence=*) DAY_OFFENCES="$DAY_OFFENCES ${word#offence=}:$DAY_SLUG" ;;
       # Nothing would be checked, and it would look like a pass.
-      front= | comes= | drags=) note "finding $DAY_STEP - FAIL the script could not tell which window ${word%=} is about"; continue ;;
+      front= | comes= | drags= | lands=) note "finding $DAY_STEP - FAIL the script could not tell which window ${word%=} is about"; continue ;;
     esac
     wants="$wants $word"
   done

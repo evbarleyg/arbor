@@ -247,6 +247,12 @@ sleep 0.5
 WALK_ROUND_SAYS="offence=input-held"
 input_round last
 WALK_ROUND_SAYS=""
+# The round has left its two desks in front, over the first document's title bar.
+act switch honest-dock-icon "clicks TextEdit's icon in the Dock, and then the first document's title bar"
+must dock_click com.apple.TextEdit
+sleep 0.5
+must click_window "$A"
+acted front="$A"
 act drag-where-macos-tiles both-previews "OFFENCE: a window is dragged against the menu bar, and a drop preview comes up beside macOS's own"
 must drag_window "$A" "$((dx + dw / 2))" "$dy" --no-release
 sleep 1
