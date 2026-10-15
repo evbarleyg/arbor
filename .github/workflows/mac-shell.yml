@@ -66,7 +66,7 @@ jobs:
   shell:
     runs-on: ${{ inputs.runner || 'macos-26' }}
     # Each script has twenty minutes (scripts/ci-mac-shell.sh); this is for a Mac on which nothing moves any more.
-    timeout-minutes: 100
+    timeout-minutes: 16 # this probe only
     strategy:
       fail-fast: false
       matrix:
@@ -138,6 +138,7 @@ jobs:
         if: ${{ !inputs.bare }}
         uses: ./.ci/.github/actions/mac-setup
         with:
+          swift: "" # this probe only: the runner's own, as a person who clones Arbor has
           build-cache: products
       # Here, so that what is kept is a build and nothing else. A build that fails is the script's to report, as it always was.
       - name: Build
@@ -156,7 +157,7 @@ jobs:
 
       - name: Run the scripts from the repository
         # Shorter than the job's limit, so that whatever happens the output gets pushed.
-        timeout-minutes: 90
+        timeout-minutes: 10 # this probe only
         run: |
           set -f
           .ci/scripts/ci-mac-shell.sh $SCRIPT
