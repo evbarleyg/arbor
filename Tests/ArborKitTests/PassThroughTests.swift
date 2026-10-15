@@ -10,16 +10,17 @@ import Testing
   static let gameID = "com.example.game"
 
   /// [Emacs | Desktop | Safari], Game floating, Safari in front.
-  func makeHarness(passThrough: [String] = [emacsID], pauseFor: [String] = [gameID])
+  /// `apart`: each app is a process of its own, as a story about ⌘Tab needs. Otherwise they are one, and a switch among them is ⌘`.
+  func makeHarness(passThrough: [String] = [emacsID], pauseFor: [String] = [gameID], apart: Bool = false)
     -> (Harness, emacs: WindowID, safari: WindowID, game: WindowID)
   {
     var settings = Settings.withGestures  // what a listed app takes away
     settings.passThroughApps = passThrough
     settings.pauseForApps = pauseFor
     let h = Harness(settings: settings)
-    let emacs = h.system.open(app: "Emacs")
-    let safari = h.system.open(app: "Safari")
-    let game = h.system.open(app: "Game")
+    let emacs = h.system.open(app: "Emacs", pid: apart ? 11 : 1000)
+    let safari = h.system.open(app: "Safari", pid: apart ? 12 : 1000)
+    let game = h.system.open(app: "Game", pid: apart ? 13 : 1000)
     h.start()
     h.run("dock \(emacs.rawValue) left")
     h.run("dock \(safari.rawValue) right")
@@ -101,7 +102,7 @@ import Testing
   }
 
   @Test func itsWindowsAreStillDockedMovedOutOfViewAndRevealed() {
-    let (h, emacs, safari, _) = makeHarness()
+    let (h, emacs, safari, _) = makeHarness(apart: true)
     h.system.userFocus(emacs)
     #expect(h.workspace.isDocked(emacs))
 
@@ -419,7 +420,7 @@ import Testing
 
   /// macOS reports the window first and the app second; the fake does it the other way round.
   @Test func theOrderOfTheTwoReportsDoesNotMatter() {
-    let (h, emacs, safari, game) = makeHarness()
+    let (h, emacs, safari, game) = makeHarness(apart: true)
     h.run("zoom \(safari.rawValue)")
     h.system.focused = emacs
     h.controller.windowFocused(emacs)

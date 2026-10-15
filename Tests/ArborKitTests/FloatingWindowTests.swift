@@ -8,11 +8,12 @@ import Testing
 /// docked windows, and otherwise stay the size and in the place the user gave them.
 @Suite @MainActor struct FloatingWindowTests {
   /// `[a | Desktop | b]` with `f` floating in the middle of the Desktop.
-  func makeHarness() -> (Harness, a: WindowID, b: WindowID, f: WindowID) {
+  /// `apart`: each app is a process of its own, as a story about ⌘Tab needs. Otherwise they are one, and a switch among them is ⌘`.
+  func makeHarness(apart: Bool = false) -> (Harness, a: WindowID, b: WindowID, f: WindowID) {
     let h = Harness()
-    let a = h.system.open(app: "Safari", frame: CGRect(x: 100, y: 100, width: 600, height: 400))
-    let b = h.system.open(app: "Notes", frame: CGRect(x: 300, y: 200, width: 600, height: 400))
-    let f = h.system.open(app: "Calculator", frame: CGRect(x: 560, y: 300, width: 320, height: 300))
+    let a = h.system.open(app: "Safari", pid: apart ? 11 : 1000, frame: CGRect(x: 100, y: 100, width: 600, height: 400))
+    let b = h.system.open(app: "Notes", pid: apart ? 12 : 1000, frame: CGRect(x: 300, y: 200, width: 600, height: 400))
+    let f = h.system.open(app: "Calculator", pid: apart ? 13 : 1000, frame: CGRect(x: 560, y: 300, width: 320, height: 300))
     h.start()
     h.run("dock \(a.rawValue) left")
     h.run("dock \(b.rawValue) right")
@@ -655,7 +656,7 @@ import Testing
   }
 
   @Test func switchingToAFloatingWindowWhoseDesktopIsATileShowsIt() {
-    let (h, a, b, f) = makeHarness()
+    let (h, a, b, f) = makeHarness(apart: true)
     let c = h.system.open(app: "Mail")
     h.run("dock \(c.rawValue) beside \(b.rawValue) bottom")
     h.run("resize \(a.rawValue) right 300")

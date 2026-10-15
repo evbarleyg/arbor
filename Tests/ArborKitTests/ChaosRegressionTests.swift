@@ -62,17 +62,18 @@ private let c = WindowID(103)
     url arbor://dock/beside/108/bottom
     """
 
-  /// The same with the report of the minimize or close a moment late, and for an app that is hidden, whose next window is another
-  /// app's. The camera moves in that step, so the lab's rule has nothing to say: the window is looked at.
+  /// The same with the report of the minimize or close later than the view waits for it within one app (`timeForAGoing`), and for an
+  /// app that is hidden, whose next window is another app's. The camera moves in that step, so the lab's rule has nothing to say:
+  /// the window is looked at.
   @Test(arguments: [
-    (holder: 109, steps: "focus 105\nadvance 0.05\nminimize 109", stays: 104),
-    (holder: 109, steps: "focus 105\nadvance 0.05\nclose 109", stays: 104),
+    (holder: 109, steps: "focus 105\nadvance 0.1\nminimize 109", stays: 104),
+    (holder: 109, steps: "focus 105\nadvance 0.1\nclose 109", stays: 104),
     (holder: 104, steps: "focus 105\nhide 1002", stays: 109),
   ])
   func aViewThatDidFollowAndIsTakenBackLeavesTheFloatingWindowsWhereTheyWere(holder: Int, steps: String, stays: Int) {
     let start = Self.floatsOverAViewThatIsNotTheDesktops + "\nfocus \(holder)"
     let before = world(after: start)
-    let followed = world(after: start + "\nfocus 105")
+    let followed = world(after: start + "\nfocus 105\nadvance 0.1")
     let after = world(after: start + "\n" + steps + "\nsettle")
     let window = WindowID(UInt32(stays))
     let main = before.controller.displays[0].id

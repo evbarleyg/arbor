@@ -4,6 +4,7 @@ import CoreGraphics
 extension Controller: WindowSystemEvents {
   public func windowAppeared(_ window: WindowSnapshot) {
     windows[window.id] = window
+    keyboardHandOver.newcomers[window.id] = now()
     // A window can have the keyboard before Arbor hears of it.
     defer { refreshFocusRing(.focus) }
     refreshHoldCaller()
@@ -54,6 +55,7 @@ extension Controller: WindowSystemEvents {
     fittedToADisplay[id] = nil
     hints[id] = nil
     let hadKeyboard = hadKeyboard(id)
+    keyboardHandOver.newcomers[id] = nil
     unplaced.remove(id)
     owedTheWayBack[id] = nil
     owedMoves.remove(id)
@@ -212,13 +214,16 @@ extension Controller: WindowSystemEvents {
     scheduleEnforce(display)
   }
 
-  public func windowFocused(_ id: WindowID) {
+  public func windowFocused(_ id: WindowID) { keyboardIs(in: id, saysMacOS: true) }
+
+  /// `saysMacOS` is false where Arbor was not looking when the keyboard went there and has found it there itself.
+  func keyboardIs(in id: WindowID, saysMacOS: Bool) {
     endFocusRequest(unlessFor: id)
     closeFinderBecauseTheUserLeft(for: id)
     namePromptNoticesFocus(on: id)
     holdNotesFocus(of: id)
     defer { notify(.focus(id)) }
-    bringIntoViewIfFocused(id)
+    bringIntoViewIfFocused(id, saysMacOS: saysMacOS)
   }
 
   /// Moves the camera, or switches tabs, so that `id` shows. Does nothing if it already does.

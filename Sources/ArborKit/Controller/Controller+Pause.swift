@@ -75,7 +75,7 @@ extension Controller {
     filter.ignoredWindowIDs.formIntersection(windows.keys)
     // Arbor was not looking when the keyboard went where it is now, and the view that just came back may not include
     // that window. A resume always ends with the focused window in view.
-    if isRunning, let focused = system.focusedWindow() { windowFocused(focused) }
+    if isRunning, let focused = system.focusedWindow() { keyboardIs(in: focused, saysMacOS: false) }
     Log.info("resumed")
     return .success("resumed")
   }

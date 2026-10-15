@@ -8,11 +8,12 @@ import Testing
 /// Scenario tests: the real Controller against the fake window system.
 @Suite @MainActor struct ControllerTests {
   /// Three floating windows, started.
-  func makeHarness(settings: Settings = Settings()) -> (Harness, WindowID, WindowID, WindowID) {
+  /// `apart`: each app is a process of its own, as a story about ⌘Tab needs. Otherwise they are one, and a switch among them is ⌘`.
+  func makeHarness(settings: Settings = Settings(), apart: Bool = false) -> (Harness, WindowID, WindowID, WindowID) {
     let h = Harness(settings: settings)
-    let a = h.system.open(app: "Safari", frame: CGRect(x: 100, y: 100, width: 600, height: 400))
-    let b = h.system.open(app: "Notes", frame: CGRect(x: 300, y: 200, width: 600, height: 400))
-    let c = h.system.open(app: "Mail", frame: CGRect(x: 500, y: 300, width: 600, height: 400))
+    let a = h.system.open(app: "Safari", pid: apart ? 11 : 1000, frame: CGRect(x: 100, y: 100, width: 600, height: 400))
+    let b = h.system.open(app: "Notes", pid: apart ? 12 : 1000, frame: CGRect(x: 300, y: 200, width: 600, height: 400))
+    let c = h.system.open(app: "Mail", pid: apart ? 13 : 1000, frame: CGRect(x: 500, y: 300, width: 600, height: 400))
     h.start()
     return (h, a, b, c)
   }
@@ -172,7 +173,7 @@ import Testing
   }
 
   @Test func focusingAParkedWindowRevealsIt() {
-    let (h, a, b, _) = makeHarness()
+    let (h, a, b, _) = makeHarness(apart: true)
     h.run("dock \(a.rawValue) left")
     h.run("dock \(b.rawValue) right")
     h.run("zoom \(a.rawValue)")

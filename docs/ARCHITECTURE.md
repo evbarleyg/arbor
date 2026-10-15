@@ -197,8 +197,13 @@ everything, by zooming out just far enough, or onto it if it would be a tile.
 When the window with the keyboard is closed, minimized or hidden, macOS hands the
 keyboard on by itself. If it picks a window out of view, the view stays and a window in
 view gets the keyboard; the view follows only if nothing is in view. macOS reports
-the new focus before a close or a minimize, after a hide, and sometimes not at all, so
-a view that has already followed is taken back (`Workspace.retractLastMove`).
+the new focus before a close or a minimize, after a hide, and sometimes not at all.
+Until the going is reported, a few milliseconds later, a close looks like ⌘`. So a report that takes the keyboard from
+one window of an app to another that is out of view waits 50 ms (`Controller.timeForAGoing`): if the first window goes
+meanwhile, all is as if its going had been reported first, and nothing has moved. Nothing else waits: another app's
+window, a window that has only just opened, what Arbor itself asked for or found, what a hold turns away. A going that is
+later still finds a view that has followed, which is taken back (`Workspace.retractLastMove`); not where the going dissolves
+the group that was in view, which leaves nothing to go back to: there the view ends on everything.
 Two moves that cancel out are no move to a person. A window can float over a view that is not the Desktop's, and
 nothing in the model says that it does: the move back to such a view would park it. So the floating windows that
 were in view before the first move are where they were after the second (`Reveal.floatingInView`).

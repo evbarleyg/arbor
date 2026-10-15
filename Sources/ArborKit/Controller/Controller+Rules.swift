@@ -284,7 +284,7 @@ extension Controller {
     watchTitle(of: id, above: match, openingFrame: watch.openingFrame)
     if isManaged(id) { hints[id] = WindowHint(bundleID: snapshot.bundleID, title: snapshot.title) }
     // A window docked as it opens is revealed when its app focuses it. This one has the focus already.
-    if system.focusedWindow() == id { windowFocused(id) }
+    if system.focusedWindow() == id { keyboardIs(in: id, saysMacOS: false) }
     scheduleSave()
     return true
   }

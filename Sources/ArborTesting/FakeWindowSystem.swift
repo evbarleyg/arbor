@@ -431,6 +431,10 @@ public final class FakeWindowSystem: WindowSystem {
 
   /// Opens a window and announces it (unless the system has not started, in
   /// which case it is simply there when the controller starts).
+  ///
+  /// Windows opened without a `pid` are one process, whatever their apps are called. To Arbor they are one app's: closing one
+  /// hands the keyboard to another, and a switch among them to one that is out of view is ⌘`, which the view follows after
+  /// `Controller.timeForAGoing`. A story about ⌘Tab gives each app a `pid` of its own.
   @discardableResult
   public func open(
     app: String = "App", bundleID: String? = nil, title: String? = nil, pid: Int32 = 1000,

@@ -14,11 +14,12 @@ private let side = DisplaySnapshot(
 @Suite @MainActor struct FocusRingScenarioTests {
   /// [a | b | Desktop | c], with the keyboard on c, the window docked last, and long enough ago that
   /// nothing that happens next counts as caused by those commands.
-  func makeHarness(settings: Settings = Settings()) -> (Harness, WindowID, WindowID, WindowID) {
+  /// `apart`: each app is a process of its own, as a story about ⌘Tab needs. Otherwise they are one, and a switch among them is ⌘`.
+  func makeHarness(settings: Settings = Settings(), apart: Bool = false) -> (Harness, WindowID, WindowID, WindowID) {
     let h = Harness(settings: settings)
-    let a = h.system.open(app: "Safari", frame: CGRect(x: 100, y: 100, width: 600, height: 400))
-    let b = h.system.open(app: "Notes", frame: CGRect(x: 300, y: 200, width: 600, height: 400))
-    let c = h.system.open(app: "Mail", frame: CGRect(x: 500, y: 300, width: 600, height: 400))
+    let a = h.system.open(app: "Safari", pid: apart ? 11 : 1000, frame: CGRect(x: 100, y: 100, width: 600, height: 400))
+    let b = h.system.open(app: "Notes", pid: apart ? 12 : 1000, frame: CGRect(x: 300, y: 200, width: 600, height: 400))
+    let c = h.system.open(app: "Mail", pid: apart ? 13 : 1000, frame: CGRect(x: 500, y: 300, width: 600, height: 400))
     h.start()
     h.run("dock \(a.rawValue) left")
     h.run("dock \(b.rawValue) beside \(a.rawValue) right")
@@ -509,7 +510,7 @@ private let side = DisplaySnapshot(
 
   @Test func theRingFlashesWhenTheCameraMovesToShowTheFocusedWindow() {
     // ⌘Tab to a window that is out of view.
-    let (h, a, _, c) = makeHarness()
+    let (h, a, _, c) = makeHarness(apart: true)
     h.run("zoom \(a.rawValue)")
     h.scheduler.advance(by: 2)
     let before = ring(h)!.pulse

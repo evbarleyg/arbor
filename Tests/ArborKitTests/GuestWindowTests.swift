@@ -245,7 +245,7 @@ import Testing
   /// and coming back changes no window's place in the order. The ways to the guest are in `RaisesNothingElseTests`.
   @Test func switchingToTheHostFromElsewhereLeavesTheHostInFront() {
     let h = Harness()
-    let ids = ["A", "B", "C", "D", "E"].map { h.system.open(app: $0) }
+    let ids = ["A", "B", "C", "D", "E"].enumerated().map { h.system.open(app: $1, pid: 21 + Int32($0)) }
     h.start()
     h.run("arrange")
     h.run("zoom \(ids[0].rawValue)")
