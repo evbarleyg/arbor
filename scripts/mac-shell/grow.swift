@@ -17,6 +17,10 @@
 //   journey <name> <x y w h> <x y w h>              from the first frame to the second, once in each order, put back before each:
 //                                                     SPS size, position, size (FramePlan.full)      PS position, size      SP size, position
 //                                                     sPS the smaller of both widths and of both heights, position, size
+//   turn <name> <x y w h> <x y w h> <waits> <n> <orders>   to and fro between two frames, which lie on different displays: when does the new display begin to judge a size call?
+//                                                   waits: milliseconds, 0,10,25; n: how often the whole is made; orders: PS position, WAIT, size; SPSS size, position, size back to
+//                                                   back, WAIT, size once more. Nothing is read between the calls. The waits are spun, and the result says how long they really were:
+//                                                   "waited" from the return of the call before the wait, "sincePosition" from the return of the position call, to the start of the last call
 // A number is a sum of numbers and of these, for display 1 (the main one) and 2: l1 t1 r1 b1 (its frame's edges) and vl1 vt1 vr1 vb1 (its
 // visible frame's), in global coordinates, y down: `vb1-12.5`, `r1-494`. A step that names a display that is not there is skipped, and says so.
 //
@@ -200,8 +204,9 @@ func rest(_ seconds: Double) {
 var context: [String: Any] = [:]
 var serial = 0
 var later = false
-/// When the last call returned.
+/// When the last call returned, and when it began.
 var returned = 0.0
+var begun = 0.0
 
 /// Where the window is 50, 200 and 600 ms after the last call returned, by Accessibility and by the window server.
 func looks() -> [[String: Any]] {
@@ -251,6 +256,7 @@ func make(_ call: Call, reads: Bool, quiet: Bool = false) -> CGRect? {
   let error = AXUIElementSetAttributeValue(window, name as CFString, value)
   let end = now()
   returned = end
+  begun = start
   serial += 1
   var line: [String: Any] = [
     "kind": "call", "label": label, "n": serial, "call": call.word, "asked": call.asked, "error": Int(error.rawValue), "t": round3(start),
@@ -283,6 +289,54 @@ func place(_ rect: CGRect) -> CGRect? {
   rest(later ? 0.7 : 0.2)
   _ = notes.take()
   return frame(of: window)
+}
+
+/// To the microsecond, which no timer on a hosted Mac is: it burns a core for as long.
+func spin(until time: Double) { while now() < time {} }
+
+/// After a journey between displays, and after the app has had time to learn where its window is: the frame to the point.
+func settle(at rect: CGRect) {
+  make(.size(rect.size), reads: false, quiet: true)
+  make(.position(rect.origin), reads: false, quiet: true)
+  make(.size(rect.size), reads: false, quiet: true)
+  spin(until: now() + 0.06)
+  _ = notes.take()
+}
+
+func turn(_ name: String, from start: CGRect, to target: CGRect, order: String, wait: Double) {
+  let placed = frame(of: window)
+  var plan: [Call] = order == "PS" ? [.position(target.origin)] : [.size(target.size), .position(target.origin), .size(target.size)]
+  plan.append(.size(target.size))
+  var positioned = 0.0
+  var waited = 0.0
+  let time = now()
+  for (index, call) in plan.enumerated() {
+    if index == plan.count - 1 {
+      let before = returned
+      spin(until: before + wait / 1000)
+      waited = now() - before
+    }
+    make(call, reads: false, quiet: true)
+    if case .position = call { positioned = returned }
+  }
+  let atOnce = frame(of: window)
+  spin(until: now() + 0.3)
+  let atRest = frame(of: window)
+  let arrived = notes.take()
+  var line: [String: Any] = [
+    "kind": "turn", "label": label, "name": name, "order": order, "wait": wait, "waited": round3(waited * 1000),
+    "sincePosition": round3((begun - positioned) * 1000), "placed": list(placed), "placedRight": same(placed, start), "target": list(target),
+    "end": list(atOnce), "rest": list(atRest), "right": same(atRest, target), "ms": round3((returned - time) * 1000),
+    "moved": arrived.filter { $0.1 == "AXMoved" }.count, "resized": arrived.filter { $0.1 == "AXResized" }.count,
+    "notes": arrived.map { [round3(($0.0 - time) * 1000), $0.1] as [Any] },
+  ]
+  if let atRest {
+    line["short"] = [
+      Double(atRest.minX - target.minX), Double(atRest.minY - target.minY), Double(target.width - atRest.width), Double(target.height - atRest.height),
+    ]
+  }
+  for (key, value) in context { line[key] = value }
+  emit(line)
 }
 
 func finish(_ name: String, start: CGRect, placed: CGRect?, target: CGRect?, halfway: [Any], began: Double) {
@@ -433,6 +487,29 @@ while let raw = readLine() {
     context["name"] = nil
     context["order"] = nil
     context["reads"] = nil
+
+  case "turn":
+    guard words.count == 13, let times = Int(words[11]) else { fail("turn <name> <x y w h> <x y w h> <waits> <n> <orders>: \(text)") }
+    guard let here = rect(words[2...5]), let there = rect(words[6...9]) else {
+      emit(["kind": "skipped", "label": label, "name": words[1], "text": text])
+      continue
+    }
+    let waits = words[10].split(separator: ",").compactMap { Double($0) }
+    _ = place(here)
+    rest(0.3)
+    settle(at: here)
+    for round in 1...max(times, 1) {
+      context["repeat"] = round
+      for wait in waits {
+        for order in words[12].split(separator: ",").map(String.init) {
+          turn(words[1] + "-there", from: here, to: there, order: order, wait: wait)
+          settle(at: there)
+          turn(words[1] + "-back", from: there, to: here, order: order, wait: wait)
+          settle(at: here)
+        }
+      }
+    }
+    context["repeat"] = nil
 
   default:
     fail("no such step: \(text)")
