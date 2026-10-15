@@ -371,6 +371,20 @@ macos_reduce_motion on
 cast_start 4 $FACE
 sleep 3
 three_moves reduced instant instant
+# Filmed and not scored. With a stage the display stands still in the middle of these three, for up to a second. Whether it does without one
+# says where the cause is to be looked for: in the stage and what Arbor does around it, or in macOS.
+scene reduced-desktop bare "presses ⌃⌥D"
+key ctrl+opt+d
+scene_end
+scene reduced-desktop-back bare "presses ⌃⌥["
+key ctrl+opt+[
+scene_end
+press "$W4"
+key ctrl+opt+return
+sleep 1.3
+scene reduced-neighbour bare "presses ⌃⌥→"
+key ctrl+opt+right
+scene_end
 check "no stage was ever put up" test -z "$(grep "stage up" "$ARBOR_HOME/arbor.log")"
 cast_stop
 macos_reduce_motion off
