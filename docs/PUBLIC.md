@@ -38,7 +38,7 @@ the commits were made.
 | Before every push, by itself | `make hooks`, once per clone, and again when the check has changed. Git then runs the check, in every worktree and on every branch, and gives up the push if it finds something or cannot tell. Of the copy `make hooks` kept and the one on the branch, the newer does the reading, so a branch from before a hole was mended is read by the mended check; the exceptions are those the pushed commit itself carries, wherever the clone stands |
 | Before a push, by hand | `make public-check` |
 | Before posting a pull request's body, an issue or a comment | `scripts/public-check.py --text body.md`, or pipe the text in |
-| After every push, of a branch or a tag, and on every pull request | The workflow `Public check`, on Linux, in seconds |
+| After every push, of a branch or a tag, and on every pull request | The workflow `Public check`, on Linux, in seconds. What `main` or `swarm/trunk` holds was read by the run for the push that brought it there, and that run said what is wrong with it: a pull request that holds it, and the trunk when it takes `main` in, are not failed for it again. `main` itself reads all that is new to it. No other branch, and no tag, vouches for anything. A commit whose message asks GitHub to start no run is refused |
 | After every post and every edit of one: issues, pull requests, comments, reviews | The workflow `Public text` (`scripts/public-text.py`), see below |
 | To see what the whole tree holds, old lines too | `scripts/public-check.py --tree`. It finds nothing, and `make lint` and CI keep it so |
 

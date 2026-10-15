@@ -537,6 +537,103 @@ def check_history():
         row("--branch: the name CI knows the branch by", repository.verdict("--base", repository.base, "--branch", "fix/robins"), (1, ["name"]))
         row("--base: a commit that is not there", repository.verdict("--base", "0123456789" * 4)[0], 2)
 
+    # A commit is read once, where it first reaches main or swarm/trunk. Here main got one that should not have been made, straight from
+    # its author, and main's own run said so. `before` is where the trunk stood.
+    def two_branches(r, bad_on="main"):
+        r.before = r.git("rev-parse", "HEAD")
+        r.git("push", "--quiet", "origin", "HEAD:refs/heads/swarm/trunk")
+        r.git("checkout", "--quiet", "-b", "elsewhere")
+        line(r)
+        r.git("push", "--quiet", "origin", f"HEAD:refs/heads/{bad_on}")
+        r.git("checkout", "--quiet", "fix/something")
+
+    def merged(r, what, message="chore: take in what is there"):
+        r.git("merge", "--quiet", "--no-ff", "--message", message, what)
+
+    def as_pushed(r, *names):
+        for name in names:
+            r.git("push", "--quiet", "origin", f"HEAD:refs/heads/{name}")
+
+    def once(what, expected, prepare, branch, bad_on="main", base=None):
+        with tempfile.TemporaryDirectory() as folder:
+            repository = Repository(folder)
+            two_branches(repository, bad_on)
+            prepare(repository)
+            row(what, repository.verdict("--base", base or repository.before, *(["--branch", branch] if branch else [])), expected)
+
+    def the_merge(r):
+        merged(r, "origin/main")
+        as_pushed(r, "swarm/trunk")
+    once("main is merged into the trunk: what main's own run has read is not read again", (0, []), the_merge, "swarm/trunk")
+
+    def the_merge_and_more(r):
+        r.write("docs/y.md", "cd /home/robin/arbor\n")
+        r.commit()
+        the_merge(r)
+    once("what comes to the trunk with that merge, and is not main's, is read", (1, ["home"]), the_merge_and_more, "swarm/trunk")
+
+    def the_merge_says(r):
+        merged(r, "origin/main", "chore: take in what Robin made")
+        as_pushed(r, "swarm/trunk")
+    once("so is the merge itself", (1, ["name"]), the_merge_says, "swarm/trunk")
+    once("a pull request that holds main", (0, []), lambda r: (merged(r, "origin/main"), clean(r)), "fix/something")
+    once("what is its own is read", (1, ["home"]), lambda r: (merged(r, "origin/main"), r.write("docs/y.md", "cd /home/robin/arbor\n"), r.commit()), "fix/something")
+    once("a pull request that holds what the trunk got after its base", (0, []), lambda r: (merged(r, "origin/swarm/trunk"), clean(r)), "fix/something",
+         bad_on="swarm/trunk")
+    once("a plain branch of origin's vouches for nothing: a pull request that holds it", (1, ["person"]), lambda r: merged(r, "origin/fix/other"), "fix/something",
+         bad_on="fix/other")
+
+    def a_plain_branch_lands(r):
+        merged(r, "origin/fix/other")
+        as_pushed(r, "swarm/trunk")
+    once("the trunk, when it takes that branch in", (1, ["person"]), a_plain_branch_lands, "swarm/trunk", bad_on="fix/other")
+
+    def both_at_once(r):
+        line(r)
+        as_pushed(r, "swarm/trunk", "main")
+    once("what reaches the trunk and main within a minute: the trunk's run leaves it to main's", (0, []), both_at_once, "swarm/trunk", bad_on="fix/other")
+    once("and main's run reads it, whatever the trunk has", (1, ["person"]), both_at_once, "main", bad_on="fix/other")
+    once("nobody says which branch this is: it is read as asked", (1, ["person"]), lambda r: (the_merge(r), r.git("checkout", "--quiet", "--detach")), None)
+    once("origin's main is not here to go by", (1, ["person"]), lambda r: (the_merge(r), r.git("update-ref", "-d", "refs/remotes/origin/main")), "swarm/trunk")
+
+    def once_more(what, expected, prepare, *arguments, bad_on="main", base=None):
+        with tempfile.TemporaryDirectory() as folder:
+            repository = Repository(folder)
+            two_branches(repository, bad_on)
+            prepare(repository)
+            row(what, repository.verdict("--base", base or repository.before, *arguments), expected)
+    once_more("--head and no --branch: read as asked", (1, ["person"]), the_merge, "--head", "HEAD")
+    once_more("no --branch, on a plain branch that holds main: the branch that is checked out", (0, []), lambda r: (merged(r, "origin/main"), clean(r)))
+    others = lambda r: merged(r, "origin/fix/other")
+    once_more("a tag that is called as origin's main is vouches for nothing", (1, ["person"]), lambda r: (others(r), r.git("tag", "origin/main", "origin/fix/other")),
+              "--branch", "fix/something", bad_on="fix/other")
+    once_more("nor does another remote's main", (1, ["person"]), lambda r: (others(r), r.git("update-ref", "refs/remotes/elsewhere/main", "origin/fix/other")),
+              "--branch", "fix/something", bad_on="fix/other")
+    once_more("nor any tag", (1, ["person"]), lambda r: (others(r), r.git("tag", "v0", "origin/fix/other")), "--branch", "fix/something", bad_on="fix/other")
+    once_more("main takes in what the trunk has had for long: it reads all that is new to it", (1, ["person"]),
+              lambda r: (merged(r, "origin/swarm/trunk"), clean(r), as_pushed(r, "main")), "--branch", "main", bad_on="swarm/trunk")
+
+    # Where the run for a push to one of the two would read nothing, nothing would ever read it.
+    def anew(name):
+        def prepare(r):
+            line(r)
+            r.git("push", "--quiet", "--force", "origin", f"HEAD:refs/heads/{name}")
+        return prepare
+    for name in ("main", "swarm/trunk"):
+        once_more(f"{name} pushed anew, with nothing before it: it does not vouch for itself", (1, ["person"]), anew(name), "--branch", name, bad_on="fix/other", base="0" * 40)
+        once_more(f"{name} pushed by force: what was there before is not here", (1, ["person"]), anew(name), "--branch", name, bad_on="fix/other", base="0123456789" * 4)
+    once_more("the trunk pushed anew still leaves main's to main", (0, []), the_merge, "--branch", "swarm/trunk", base="0" * 40)
+    once_more("a plain branch's first push, as ever", (0, []), lambda r: (merged(r, "origin/main"), clean(r)), "--branch", "fix/something", base="0" * 40)
+
+    with tempfile.TemporaryDirectory() as folder:
+        repository = Repository(folder)
+        two_branches(repository)
+        the_merge(repository)
+        said = repository.run("--base", repository.before, "--branch", "swarm/trunk")[2]
+        row("what was left out is counted, and who has it is named", "1 new commit on swarm/trunk (1 more left out: origin's main has them" in said, True)
+        said = repository.run("--base", "origin/main", "--branch", "main")[2]
+        row("nothing left out: not a word", "left out" in said, False)
+
     def pushed(name, prepare):
         def prepared(r):
             prepare(r)
@@ -544,6 +641,13 @@ def check_history():
         return prepared
     situation("pre-push: a clean branch", (0, []), pushed("fix/something", clean), "--pre-push")
     situation("pre-push: a line", (1, ["person"]), pushed("fix/something", line), "--pre-push")
+
+    def says(message):
+        return lambda r: r.commit(message) and None
+    for words in ("[skip ci]", "[CI SKIP]", "[no ci]", "[skip actions]", "[actions skip]", "and more\n\nskip-checks: true"):
+        situation(f"a message that asks GitHub to start no run: {' '.join(words.split()[-2:])}", (1, []), says(f"fix: something {words}"))
+    situation("pre-push: the same", (1, []), pushed("fix/something", says("fix: something [skip ci]")), "--pre-push")
+    situation("words that only look like it", (0, []), says("fix: skip ci when [ci] says so; skip-checks: false\n\nit says skip-checks: true in the middle of a line"))
     situation("pre-push: the name it gets on the remote", (1, ["name"]), pushed("fix/robins-display", clean), "--pre-push")
     situation("pre-push: history from elsewhere", (1, []), pushed("swarm/trunk", elsewhere), "--pre-push")
     situation("pre-push: deleting a branch adds nothing", (0, []),

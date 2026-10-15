@@ -23,7 +23,8 @@ in $PUBLIC_CHECK_WORDS. Honest exceptions are in public-check.allow, each with i
 compared is held to the exceptions it carries itself, wherever the clone happens to stand.
 
 Usage: scripts/public-check.py             what this branch adds to origin's main and swarm/trunk (`make public-check`)
-       … --base REF [--head REF] [--branch NAME] [--tag NAME]   what REF..head adds (head: HEAD); CI's way
+       … --base REF [--head REF] [--branch NAME] [--tag NAME]   what REF..head adds (head: HEAD); CI's way. For swarm/trunk less what origin's
+                                           main has, for any branch but those two less what either has: that was read when it got there
        … --pre-push [--to URL]             as git's pre-push hook, which says on standard input what is being pushed; where to is
                                            in $PUBLIC_CHECK_TO or after --to
        … --rules                           only whether the rules have changed since this clone last said it had read them (below)
@@ -57,10 +58,10 @@ import urllib.request
 HERE = os.path.dirname(os.path.abspath(__file__))
 # Raise it whenever the check gets stricter or a hole in it is mended. The hook has two copies to choose from, the one `make hooks` kept
 # and the one on the branch that is checked out, and lets the newer do the reading.
-VERSION = 6
+VERSION = 7
 # The first public commit. All history begins here.
 ROOT_COMMIT = "51b162d5f28c02846134c1f4a113c787f5164602"
-# Where work is integrated: what these hold on origin has been read before.
+# Where work is integrated: what these hold on origin has been read before. In this order: see read_elsewhere.
 INTEGRATION = ("main", "swarm/trunk")
 # The public repository itself, under whatever name a clone knows it.
 UPSTREAM = re.compile(r"github\.com(:\d+)?[:/]+evbarleyg/arbor(\.git)?/?$", re.IGNORECASE)  # ssh.github.com:443 is GitHub's too
@@ -70,6 +71,8 @@ MASK = "▒▒▒"
 # meanwhile, and git by itself can only ask the remote for pull requests, not for issues.
 NUMBER_SLACK = 15
 ZERO = re.compile(r"^0+$")
+# What GitHub takes, in the message of the newest commit of a push, for a wish that no workflow be started.
+NO_RUN = re.compile(r"\[(skip ci|ci skip|no ci|skip actions|actions skip)\]|^skip-checks:\s*true", re.IGNORECASE | re.MULTILINE)
 
 
 class Unclear(Exception):
@@ -362,6 +365,8 @@ def check_range(checker, selection, head, cwd=None):
         for who, address in (("author", author_address), ("committer", committer_address)):
             if not NO_REPLY.match(address):
                 problems.append(f"commit {sha[:8]}: its {who}'s address is no no-reply address. {ADDRESS_WAY_OUT}")
+        if NO_RUN.search(message):
+            problems.append(f"commit {sha[:8]}: its message asks GitHub to start no run for the push, and then nothing reads the push there. Make it again without those words")
         keep(checker.check("author", f"{author}\n{committer}", numbered=False), sha[:8], "author")
         keep(checker.check("message", message), sha[:8], sha)
     if commits:
@@ -404,6 +409,23 @@ def public_already(top):
     known = set(git("remote", cwd=top).split())
     # Where the history begins is checked apart from this, so remote-tracking refs from somewhere else under a good name gain nothing.
     return [f"--remotes={name}/*" for name in sorted(names & known)] + first_commit_if_here(top)
+
+
+def read_elsewhere(branch, cwd=None):
+    """With --base: what else need not be read, as arguments for git rev-list. What main or swarm/trunk holds was read by the run for the
+    push that brought it there, and that run said what is wrong with it. The same words once more, in every pull request that holds the
+    commit and when the trunk takes main in, tell nobody anything and cannot be put right there.
+
+    Each of those two leaves out only the ones before it in INTEGRATION, so main leaves out nothing: it reads all that is new to it, whatever
+    the trunk has. Were it each the other, a commit that reaches both within the minute a run takes to start would be left out by both.
+    Nothing else counts, no plain branch of origin's, no tag, no other remote: that is where a commit waits to be read.
+
+    It rests on every push to those two getting its run. So a message that asks GitHub for none is refused (NO_RUN), and one of them pushed
+    anew or by force is read from the start (main() below). A run that ends early for another reason is red, and is to be run again."""
+    if not branch or branch == "HEAD":  # nobody said what this is: it is read as asked
+        return []
+    names = INTEGRATION[:INTEGRATION.index(branch)] if branch in INTEGRATION else INTEGRATION
+    return [f"^refs/remotes/origin/{name}" for name in names if git("rev-parse", "--verify", "--quiet", f"refs/remotes/origin/{name}", cwd=cwd, check=False)[0] == 0]
 
 
 def highest_number(cwd=None):
@@ -667,8 +689,21 @@ def main(arguments=None, cwd=None):
 
         head = git("rev-parse", "--verify", (options.head or "HEAD") + "^{commit}", cwd=top).strip()
         checker = checker_for(top, commit=head)
+        branch = options.branch
+        if branch is None and not options.head and not options.tag:
+            branch = git("rev-parse", "--abbrev-ref", "HEAD", cwd=top).strip()
+        base = None
         if options.base and not ZERO.match(options.base):  # all noughts: a branch's first push has nothing before it
-            selection = [head, "^" + git("rev-parse", "--verify", options.base + "^{commit}", cwd=top).strip()]
+            code, base = git("rev-parse", "--verify", "--quiet", options.base + "^{commit}", cwd=top, check=False)
+            if code != 0 and branch not in INTEGRATION:
+                raise Unclear(f"{options.base} is no commit here")
+            base = base.strip() if code == 0 else None
+        if base:
+            selection = [head, "^" + base, *read_elsewhere(branch, top)]
+        elif options.base and branch in INTEGRATION:
+            # Pushed anew, or by force: what was there before is on no branch any more, and so not here. Neither should ever happen. There is nothing to
+            # hold it against then, and it does not vouch for itself.
+            selection = [head, *read_elsewhere(branch, top), "--not", *first_commit_if_here(top)]
         else:
             # Not "what no remote has": a branch that is on the remote already is read all the same, until it is put right.
             integrated = [f"refs/remotes/origin/{name}" for name in INTEGRATION
@@ -676,14 +711,14 @@ def main(arguments=None, cwd=None):
             if not integrated:
                 raise Unclear("neither origin/main nor origin/swarm/trunk is here to compare with: git fetch origin")
             selection = [head, "--not", *integrated, *first_commit_if_here(top)]
-        branch = options.branch
-        if branch is None and not options.head and not options.tag:
-            branch = git("rev-parse", "--abbrev-ref", "HEAD", cwd=top).strip()
         problems, findings, count = check_range(checker, selection, head, top)
         what = new_commits(count)
+        more = int(git("rev-list", "--count", head, "^" + base, cwd=top)) - count if base else 0
         if branch and branch != "HEAD":
             findings += checker.check("branch", branch, numbered=False)
             what += f" on {checker.fit_to_print('branch', branch) if masked else branch}"
+        if more:
+            what += f" ({more} more left out: origin's {' or '.join(name.rsplit('origin/', 1)[1] for name in read_elsewhere(branch, top))} has them, and they were read on the way there)"
         if options.tag:
             more_problems, more = check_tag(checker, options.tag, top)
             problems, findings = problems + more_problems, findings + more

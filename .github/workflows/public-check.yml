@@ -48,7 +48,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           # A pull request is held against its base, and a push to a branch where work is integrated against what was there
-          # before. Any other branch is read whole at every push: it stays red until its history is clean.
+          # before; what main or the trunk has besides was read on its way there, and the check leaves it out (read_elsewhere).
+          # Any other branch is read whole at every push: it stays red until its history is clean.
           BASE: ${{ github.event.pull_request.base.sha || (contains(fromJSON('["refs/heads/main", "refs/heads/swarm/trunk"]'), github.ref) && github.event.before) || '' }}
           BRANCH: ${{ github.ref_type != 'tag' && (github.head_ref || github.ref_name) || '' }}
           TAG: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
