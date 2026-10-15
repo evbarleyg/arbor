@@ -2582,6 +2582,23 @@
    ]
   },
   {
+   "id": "a-shot-of-a-large-display-is-made-smaller",
+   "kind": "looks",
+   "layer": "test",
+   "expected": "A picture of a Retina display holds two pixels to the point, and edges in it can be measured.",
+   "happened": "`shot` resamples whatever is wider than 1600 pixels, to keep runs small: 2880 by 1800 came back as 1600 by 1000, 1.11 pixels to the point, and a display of 1920 at 0.84. No edge in such a picture can be asked anything, and three pictures \"at 2x\" were judged as if they were.",
+   "found": "The judge of the stills, measuring the gallery's pictures.",
+   "modelled": "cannot",
+   "knobs": [],
+   "guards": [],
+   "copes": "scripts/mac-shell/lib.sh: `closeup` crops with screencapture -R and never scales; the gallery takes every panel on a large display that way too.",
+   "hurt": 4,
+   "sources": [
+    "scripts/mac-shell/lib.sh",
+    "scripts/mac-shell/shots-gallery.sh"
+   ]
+  },
+  {
    "id": "a-silent-tap-freezes-all-input-until-the-next-event",
    "kind": "input",
    "layer": "below the seam",
@@ -7041,21 +7058,24 @@
    ]
   },
   {
-   "id": "hosted-macs-draw-every-material-as-one-flat-colour",
+   "id": "hosted-macs-come-with-reduce-transparency-on",
    "kind": "looks",
    "layer": "machine",
    "expected": "A picture from a hosted Mac shows a translucent panel as a person's Mac would: blurred, and tinted by what lies behind.",
-   "happened": "Every material of an effect view (HUD, popover, menu, sidebar, under the window's background; blending behind the window, state active) is one opaque colour there: exactly (228,228,228) in light and (38,38,38) in dark, over any wallpaper, in Arbor's panels and in the harness's own plain sheet alike. macOS's own menus and the Dock do tint. It was concluded that blur, translucency and `blurBehindArranged` cannot be judged on those Macs, and that is corrected: the runners come with Reduce Transparency on. Switched off before the app starts (`defaults write com.apple.universalaccess reduceTransparency -bool false`), materials blur and tint. Increase Contrast switches it on again by itself.",
-   "found": "Pictures of Arbor's panels and of a sheet of the harness's own over several wallpapers, on hosted Macs. Then a run that takes pictures of everything Arbor draws, which asked the Mac for the setting at its start.",
+   "happened": "Every material of an effect view (HUD, popover, menu, sidebar, under the window's background; blending behind the window, state active) was one opaque colour there: exactly (228,228,228) in light and (38,38,38) in dark, over any wallpaper, in Arbor's panels and in the harness's own plain sheet alike. For a day that was taken for a limit of the virtual machine, and translucency was struck from what is judged. It is a setting: the hosted Macs come with Reduce Transparency switched on, as they come with Reduce Motion. Switched off before the app starts, materials blur and take on the colour of what lies behind them as on anybody's Mac. Increase Contrast switches it on again by itself. So until 2026-10-15 nobody had seen the look that ships, and it was where the faults were: words at 1.1 to 2.4 to 1.",
+   "found": "The gallery's first lines, which print what the Mac says of itself before anything is changed: Reduce Transparency: true. Then the first pictures with it off.",
    "modelled": "cannot",
    "knobs": [],
-   "guards": [],
-   "copes": "docs/VIABLE.md, section 8: translucency and blur are not scored. What is scored is the flat look, which a person with Reduce Transparency sees, and nothing in Arbor may rest on the rest. That page was written before the setting was found.",
+   "guards": [
+    "tool: mac-shell/shots-gallery.sh"
+   ],
+   "copes": "scripts/mac-shell/lib.sh: `macos_reduce_transparency off` before `arbor_start`, as `macos_reduce_motion off` for motion; the setting is among the facts a run compares before and after. The gallery takes the panels both ways.",
    "hurt": 4,
    "sources": [
+    "scripts/mac-shell/lib.sh",
+    "scripts/mac-shell/pointer.swift",
+    "scripts/mac-shell/shots-gallery.sh",
     "scripts/mac-shell/scenery.swift",
-    "Sources/ArborKit/UI/BackdropPanel.swift",
-    "docs/features/F15-appearance-options.md",
     "docs/VIABLE.md"
    ]
   },
@@ -8987,6 +9007,22 @@
    "hurt": 4,
    "sources": [
     "scripts/release-tools-test.sh"
+   ]
+  },
+  {
+   "id": "pythons-http-server-brings-up-the-local-network-alert",
+   "kind": "second-actor",
+   "layer": "machine",
+   "expected": "A script may stand in for a web server with `python3 -m http.server --bind 127.0.0.1`, unseen.",
+   "happened": "As it starts it asks macOS for this Mac's name, and macOS 26 answers with an alert, \"Allow Python to find devices on local networks?\", in front of everything, with the keyboard, for the rest of the job: it outlived three scripts and lies over a third of their pictures.",
+   "found": "The gallery's first run on a hosted Mac.",
+   "modelled": "cannot",
+   "knobs": [],
+   "guards": [],
+   "copes": "scripts/mac-shell/shots-gallery.sh: one `nc -l 127.0.0.1`, started for the one question and gone with its answer.",
+   "hurt": 4,
+   "sources": [
+    "scripts/mac-shell/shots-gallery.sh"
    ]
   },
   {
