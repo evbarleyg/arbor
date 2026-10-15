@@ -29,6 +29,13 @@ case "$tool" in
   pgrep)
     # By exact name: only what this rehearsal started is on this Mac. Another rehearsal on the same machine is another Mac, and a
     # process that has ended and waits for a parent that never asks (containers have such parents) runs nowhere.
+    if [ "${1:-}" = -f ] && [ $# -eq 2 ]; then
+      # By what it was started with. Handed over in the environment: among awk's own arguments it would find awk.
+      ps -eo pid=,stat=,args= | SELF=$$ FOLDER="$ARBOR_REHEARSAL_DIR/" PATTERN="$2" awk '
+        $1 != ENVIRON["SELF"] && $2 !~ /^Z/ && index($0, ENVIRON["FOLDER"]) && $0 ~ ENVIRON["PATTERN"] { print $1; found = 1 }
+        END { exit !found }'
+      exit
+    fi
     [ "${1:-}" = -x ] && [ $# -eq 2 ] || exec /usr/bin/pgrep "$@"
     ps -eo pid=,stat=,args= | awk -v folder="$ARBOR_REHEARSAL_DIR/" -v name="$2" '
       $2 !~ /^Z/ && index($0, folder) {
