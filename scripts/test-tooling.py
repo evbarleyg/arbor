@@ -1335,6 +1335,37 @@ levels
         row("rehearse.sh: the fake Mac lists the heads-up line, the panel of shortcuts, the update window and the backdrop, front to back, and none after Quit",
             [line for line in said.splitlines() if line.startswith("levels:")], ["levels: 6 3 -2147483602", "levels: 5 3 -2147483602", "levels:"])
 
+        # macOS's own preview, round the window that is held where macOS tiles, and gone with the release. With ⌥ it is up for the line after too.
+        with open(script, "w", encoding="utf-8") as handle:
+            handle.write(f"""source '{HERE}/mac-shell/lib.sh'
+level0() {{ echo "level 0:$(pointer windows --on-screen | awk '$3 == 0 && $NF != "Arbor" {{ printf " %s", ($NF == "WindowManager" ? $4 "," $5 "," $6 "," $7 : $1) }}')"; }}
+arbor_build
+arbor_start 3
+ctl pause
+read -r sx sy sw sh <<< "$(arbor_ask screen)"
+read -r fx fy fw fh <<< "$(display_frame_of 1)"
+drag $(titlebar_of "$W3") "$fx" $((sy + sh / 2)) --no-release
+level0
+release
+level0
+drag $(titlebar_of "$W3") $((sx + sw / 2)) $((sy + 200))
+drag $(titlebar_of "$W2") $((sx + sw / 2)) $(((fy + sy) / 2)) --no-release
+level0
+release
+drag $(titlebar_of "$W2") $((sx + sw / 2)) $((sy + 200))
+drag $(titlebar_of "$W2") $((sx + 200)) $((sy + sh / 2)) --mods opt --no-release
+level0
+release --mods opt
+level0
+arbor_stop
+""")
+        said = subprocess.run(
+            ["bash", os.path.join(HERE, "mac-shell", "rehearse.sh"), script], env=environment, capture_output=True, text=True, check=False).stdout
+        row("rehearse.sh: the fake Mac lists macOS's own preview in front of and behind the window that is held where macOS tiles, and not after the release",
+            [line for line in said.splitlines() if line.startswith("level 0:")],
+            ["level 0: -15,16,542,704 103 -15,16,542,704 102 101", "level 0: 103 102 101", "level 0: -15,16,1054,704 102 -15,16,1054,704 103 101",
+             "level 0: -15,16,542,704 102 -15,16,542,704 103 101", "level 0: 102 103 101"])
+
 
 # MARK: ci-mtimes.py
 

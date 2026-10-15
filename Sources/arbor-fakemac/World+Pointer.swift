@@ -107,7 +107,8 @@ extension World {
     let held = chord?.held ?? []
     // What Arbor asks the window system about during a drag: ⌘ turns docking off (F09). What a shortcut that is held down
     // (`key … --down`) keeps down with it stays down from line to line, or every line would be a letting go (F26, F51).
-    let modifiers = chord?.modifiers ?? []
+    // So does what a `drag … --no-release` pressed, until its `release`: the real tool lets go of it only then, whatever is asked meanwhile.
+    let modifiers = chord?.modifiers ?? (isButtonDown ? system.heldModifiers : [])
     system.heldModifiers = heldShortcuts.isEmpty ? modifiers : system.heldModifiers.union(modifiers)
     defer { if !isButtonDown, heldShortcuts.isEmpty { system.heldModifiers = [] } }
     if ["click", "drag"].contains(command), arbor?.overlays.outlinePanel?.shown == true {
@@ -430,6 +431,22 @@ extension World {
       ]
   }
 
+  /// macOS's own preview of the tile it has for the window in the hand: which window that is, and where it shows. Nil where it
+  /// shows none. As the window server listed it on hosted Macs every time it was sampled, some sixty times, at both sides and in
+  /// the menu bar: two windows of WindowManager's at the ordinary level, each the tile grown by 15 points on every side, one right
+  /// in front of the dragged window and one right behind it. All but three went as the button came up.
+  ///
+  /// Not played: their numbers are new every time, the higher one in front. The one in front was also in front of a sheet of the
+  /// dragged window (Mail's, three times). Beside a window that macOS had tiled already the tile was what that one left over, not
+  /// the half (twice). In the menu bar they came 0.17 s after the pointer at the soonest, which no line can see here. Three times, of
+  /// a window that lay under the menu bar already and was pushed up and a little sideways, they went again within 0.4 s, and though
+  /// the pointer rested there for two seconds more the window let go was left alone: here it fills the screen.
+  /// Never recorded: the preview of a quarter, which is listed here like the others.
+  private var macPreview: (of: UInt32, frame: CGRect)? {
+    guard case .title(let window, _, true, _) = held, let tile = system.macTile(at: system.cursor) else { return nil }
+    return (window.rawValue, tile.insetBy(dx: -15, dy: -15))
+  }
+
   /// Every window, those on screen first and front first.
   func windowServerList() -> [ListedWindow] {
     var shown: [ListedWindow] = []
@@ -499,12 +516,16 @@ extension World {
       if case .window(let id) = thing {
         guard let pid = owner(of: id) else { continue }
         frame = sweptFrames[id] ?? frame
+        // In the list only, for whoever reads that. A press goes by `stack`, which has neither, and none can meet them: the button is down.
+        let preview = macPreview.flatMap { $0.of == id ? $0.frame : nil }
+        if let preview { shown.append(ListedWindow(id: 8998, pid: 355, layer: 0, frame: preview, owner: "WindowManager")) }
         if let arbor, let ring = arbor.overlays.ringPanel, ring.shown, ring.window.rawValue == id {
           shown.append(
             ListedWindow(id: ring.id, pid: arbor.pid, layer: 0, frame: swept(ring.frame), owner: "Arbor"))
         }
         shown.append(
           ListedWindow(id: id, pid: pid, layer: level(of: thing), frame: frame, owner: apps[pid]?.name ?? "?"))
+        if let preview { shown.append(ListedWindow(id: 8997, pid: 355, layer: 0, frame: preview, owner: "WindowManager")) }
       } else if let arbor {
         shown.append(
           ListedWindow(id: overlayID(of: thing), pid: arbor.pid, layer: 0, frame: swept(frame), owner: "Arbor"))

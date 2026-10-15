@@ -19,8 +19,9 @@
 #   ArborTesting: one display, test windows where the real ones open, which window is in front, who has the
 #   keyboard, title-bar drags, edge resizes, seams, tiles, shortcuts, the ⌃⌥ rectangle, pinches, the menu, URLs,
 #   pause, quit, signals, SIGKILL and the watchdog, and macOS's own tiling of a window let go where it acts (on, as a Mac comes,
-#   until `defaults write` says otherwise; its preview is not in the list of windows). There is no daemon: a session's history is a text file next
-#   to its ARBOR_HOME, and every call replays it. The header of Sources/arbor-fakemac/main.swift says more.
+#   until `defaults write` says otherwise), with its preview in the list of windows while the window is held there. There is
+#   no daemon: a session's history is a text file next to its ARBOR_HOME, and every call replays it. The header of
+#   Sources/arbor-fakemac/main.swift says more.
 # - screencapture, sips, sw_vers, defaults, killall, launchctl, system_profiler, and sysctl and bc where they
 #   are missing, are rehearse/mac-tools.
 # - `sleep`: the fake Mac's clock moves a second with everything that is done to it, not with the real one. So a
