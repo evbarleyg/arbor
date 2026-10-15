@@ -399,8 +399,17 @@ def problems(text, shared=(), harness=True):
             # One reason to ask whose Mac it is is enough for a line.
             if not found or found[-1][0] != index or names:
                 found += [(index, what, raw.strip(), inside, WAIVER) for what in other]
+            # “$name”: the script ends there with "name\xe2: unbound variable", on a Mac alone, under a count of checks that says "0 failed". No harm
+            # to anybody's Mac, so whose Mac it is does not come into it, and nothing waives it. Not “$1”: that is one digit, and bash looks for no
+            # end of a name (macOS 26.6.2 printed it as meant).
+            for variable in re.findall(r"\$([A-Za-z_]\w*)[^\x00-\x7f]", re.sub(r"'[^']*'", "''", line)):
+                found.append((index, f"macOS's bash 3.2 takes the first byte of the letter after ${variable} for a part of the name: write ${{{variable}}}",
+                              raw.strip(), inside, None))
     kept = []
     for index, what, shown, inside, waiver in found:
+        if waiver is None:
+            kept.append((index + 1, what, shown))
+            continue
         # A function runs when it is called, which is after the guard at the top of the script.
         if whole is not None and (index > whole or inside):
             continue
