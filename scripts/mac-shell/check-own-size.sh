@@ -13,6 +13,10 @@
 #     Quit: whole, and where it was?
 #   - as high as the visible frame: a point short and no more?
 #   - let be at a start, ten points over the right edge: as wide as it stood?
+# And the other way round: no size call puts a window's foot into the Dock's strip. A window as high as its slot, dragged out and let go low, hangs off the
+# display, and asked for its own size it came in no further than the display's bottom: 480×360 for 480×348, written down, and more at every such drop.
+# Now it is moved, as it is, to where it can shrink, and sized from there.
+#   - out of a slot as high as the screen, let go where its own size ends in the strip: its own size? Drop after drop? By a fast drag? After Quit?
 # How it got there is printed from arbor.log after each: how many frames Arbor asked for.
 #
 # Safe on a person's Mac: it changes no setting, touches only windows it opened, and moves the pointer.
@@ -72,6 +76,41 @@ check "docked and floated again it is no more than a point short of it" eventual
 ctl float-all > /dev/null
 sleep 1
 
+own="480 348"
+# Where the pointer has to be let go for a window of that height to end 35 points below the visible frame, in the Dock's strip.
+low=$((bottom - 348 + 35 + 28))
+left_at "$((sx + 300)) $((sy + 30)) $own"
+for round in 1 2 3; do
+  claim "out of a slot as high as the screen, let go where its own size ends in the Dock's strip: its own size (drop $round)"
+  ctl dock "$W2" left
+  check "it is docked, as high as the screen" eventually taller_than "$W2" "$((sh - 40))"
+  take "tx ty" titlebar_of "$W2"
+  drag "$tx" "$ty" "$((sx + sw * 3 / 4))" "$low" --steps 24 --duration 0.8 --plain
+  check "it floats" eventually is floating "$W2"
+  check "at its own size" eventually has_size "$W2" "$own"
+  check "and stays so" stays has_size "$W2" "$own"
+  echo "    it is at $(now_at "$W2"): its foot at $(now_at "$W2" | awk '{ print $2 + $4 }'), the visible frame ends at $bottom, the display at $((fy + fh))"
+  asked_of "$W2"
+  shot "let-go-in-the-strip-$round"
+done
+
+claim "the same by a fast drag, let go without a pause"
+ctl dock "$W2" left
+check "it is docked, as high as the screen" eventually taller_than "$W2" "$((sh - 40))"
+take "tx ty" titlebar_of "$W2"
+drag "$tx" "$ty" "$((sx + sw * 3 / 5))" "$low" --duration 0.25 --steps 12 --hold 0 --plain
+check "it floats" eventually is floating "$W2"
+check "at its own size" eventually has_size "$W2" "$own"
+check "and stays so" stays has_size "$W2" "$own"
+asked_of "$W2"
+ctl dock "$W2" left
+sleep 1
+arbor_quit
+check "docked again, Quit gives it its own size" eventually has_size "$W2" "$own"
+arbor_relaunch
+ctl float-all > /dev/null
+sleep 1
+
 for way in float-all pause quit; do
   claim "left hanging over the bottom, docked in a low slot, given back by $way: whole, where it was"
   hanging="$((sx + 560)) $((bottom - 325)) $tall"
@@ -114,8 +153,9 @@ asked_of "$W2"
 sleep 1
 
 claim "let be at a start, ten points over the right edge, it is as wide as it stood"
-# Too wide for half the display, so that it would be a tile; with the keyboard in it, it is let be where it stands.
-tw min-size "$W2" "$((fw - 124))" 300
+# Too wide for half the display, so that it would be a tile; with the keyboard in it, it is let be where it stands. (Since two docks are two halves, with no
+# column for the Desktop between them, room was found for one that leaves its neighbour 88 points: so it leaves 48.)
+tw min-size "$W2" "$((fw - 84))" 300
 wide="$((fx + 84)) $((sy + 70)) $((fw - 74)) 400"
 left_at "$wide"
 click_window "$W2"

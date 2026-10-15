@@ -489,10 +489,31 @@ public final class FakeWindowSystem: WindowSystem {
   /// frame it ends at: that hangs over a line, and there was no room for the size where the window stood either
   /// (Controller+TheScreensAnswer.swift). It went no further out of its way than it had to: straight above or beside where it ends up, up
   /// against the line. Those who count a window's moves count these two as one.
+  ///
+  /// Or the other way round: **moved as it is to where it can shrink, and sized from there**, because one request would have left it larger than it was
+  /// to be: it hung off the display, and its new size would have ended in the Dock's strip.
   public func isSizedWhereItFits(_ move: Move, then next: Move) -> Bool {
     let (asked, via, end) = (move.requested, move.after, next.after)
     // To a point: half points are rounded on the way.
     func same(_ a: CGFloat, _ b: CGFloat) -> Bool { abs(a - b) <= 1 }
+    // Where its size fits at the goal there is nowhere else to go: it arrives as large as the screen held it where it hung, and is asked once more.
+    if same(via.minX, end.minX), same(via.minY, end.minY), via.size != end.size, move.requested == next.requested {
+      let last = ScreenLines.sizeAfterOneRequest(
+        for: move.requested, from: move.before, rooms: displayList.map { FramePlan.room(onDisplay: $0.frame, visible: $0.visibleFrame) }, lines: lines(at:))
+      return next.before == via && end.approximatelyEquals(next.requested, tolerance: 1) && same(last.width, via.width) && same(last.height, via.height)
+        && (last.width > end.width + 1 || last.height > end.height + 1) && last.width >= end.width - 1 && last.height >= end.height - 1
+    }
+    if via.size == move.before.size, via.size != end.size {
+      guard via.approximatelyEquals(asked, tolerance: 1), next.before == via, end.approximatelyEquals(next.requested, tolerance: 1),
+        let display = display(stopping: end.origin)
+      else { return false }
+      let last = ScreenLines.sizeAfterOneRequest(
+        for: end, from: move.before, rooms: displayList.map { FramePlan.room(onDisplay: $0.frame, visible: $0.visibleFrame) }, lines: lines(at:))
+      let (wide, high) = (last.width > end.width + 1, last.height > end.height + 1)
+      return (wide || high)
+        && (wide ? abs(display.visibleFrame.maxX - (via.minX + end.width)) <= 5 && via.minX < end.minX : same(via.minX, end.minX))
+        && (high ? abs(display.visibleFrame.maxY - (via.minY + end.height)) <= 5 && via.minY < end.minY : same(via.minY, end.minY))
+    }
     guard same(via.minX, asked.minX), same(via.minY, asked.minY), next.before == via, end.approximatelyEquals(next.requested, tolerance: 1),
       end.size == via.size, let display = display(stopping: end.origin),
       // It took what it was asked for, or, from the very edge of the display, all there is room for.

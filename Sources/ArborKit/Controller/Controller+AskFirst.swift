@@ -118,9 +118,15 @@ extension Controller {
     let has = window.frame
     let growsAsAsked =
       parked.contains(window.id) && stopper(of: has.origin).map { has.maxX > $0.frame.maxX && has.maxY > $0.frame.maxY } == true
-    let question = CGRect(
+    var question = CGRect(
       origin: has.origin,
       size: growsAsAsked ? size : CGSize(width: min(size.width, has.width), height: min(size.height, has.height)))
+    // Nor is everybody let shrink where it stands: with its foot in the Dock's strip, as when a Dock has appeared under it, a window is held, and
+    // that is no answer of its app's. So that side is not asked.
+    if let allowed = stopper(of: has.origin)?.lines.allows(question.size, to: has) {
+      if allowed.width > question.width { question.size.width = has.width }
+      if allowed.height > question.height { question.size.height = has.height }
+    }
     guard abs(question.width - has.width) > 1 || abs(question.height - has.height) > 1 else { return nil }
     guard parked.contains(window.id) else {
       let staysThere = whereItStops(question.origin, titleBar: titleBars[window.id] ?? Self.guessedTitleBar) == question.origin
@@ -129,11 +135,11 @@ extension Controller {
     return isOutOfView(question.union(has)) && displays.contains { question.overlaps($0.frame) } ? question : nil
   }
 
-  /// Whether it may have been the screen that kept a window from growing to `asked` while it stood at `origin`: it `took` as much as macOS lets
-  /// a window have there (`sidesTheScreenKept`). A point or two short is nobody's refusal.
+  /// Whether it may have been the screen that kept a window from growing to `asked` while it stood at `origin`, or from shrinking to it: it `took` as
+  /// much as macOS lets a window have there, or as little (`sidesTheScreenKept`). A point or two is nobody's refusal.
   func mayHaveBeenStoppedByTheScreen(_ took: CGSize, shortOf asked: CGSize, at origin: CGPoint) -> Bool {
     let kept = sidesTheScreenKept(of: took, shortOf: asked, at: [origin])
-    return kept.height && took.height < asked.height - 2 || kept.width && took.width < asked.width - 2
+    return kept.height && abs(took.height - asked.height) > 2 || kept.width && abs(took.width - asked.width) > 2
   }
 
   /// Puts a question. Returns true if the window refused to be that small (a new minimum size was learned).

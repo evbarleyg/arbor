@@ -3518,6 +3518,7 @@
       "spec": "F48",
       "priority": 1,
       "tests": [
+        "aDockThatAppearsUnderDockedWindowsTeachesNothing",
         "aDockedWindowDraggedOutAndLetGoLowHasItsOwnSize",
         "aDroppedWindowStaysUnderThePointerThoughTheDesktopMovesAway",
         "aFloatedWindowTakesItsOldFrame",
@@ -3550,7 +3551,9 @@
         "dockedByADragItGoesBackToWhereTheDragBegan",
         "dockedByAKeyItIsWhereItWasOnEveryWayOut",
         "draggedFromSlotToSlotByHandItStillGoesBack",
+        "draggedOutOfAHighSlotItHasItsOwnSizeWhereverItIsLetGo",
         "draggedOutOfItsSlotOnTheSmallerDisplayOntoTheLargerOneItHasItsOwnSize",
+        "dropAfterDropItGrowsByNothing",
         "floatAllPutsEveryWindowBackExactlyWhereItWas",
         "floatingAFramedWindowShowsTheDesktop",
         "framedAndNamedFromElsewhereNobodyElseIsHandedTheKeyboardOnTheWay",

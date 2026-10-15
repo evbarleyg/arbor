@@ -19,6 +19,7 @@ import Testing
     "dock focused": "the docked window is focused although it has the focus",
     "shutdown": "windows that are in place are placed again",
     "quit app": "a layout per window that closes, so a window that stays can move more than once",
+    "displays: Dock grows": "with its foot in the Dock's strip a window is not let shrink where it stands, so one that moves up as well is asked again in its slot",
   ]
 
   @Test(arguments: sizes) func nothingIsDoneTwiceOrForNothing(windows: Int) {
@@ -65,7 +66,9 @@ import Testing
   /// A change on one display leaves the windows and overlays of the other alone.
   @Test(arguments: sizes) func aChangeOnOneDisplayLeavesTheOtherAlone(windows: Int) {
     let budget = BenchmarkCase.named("displays: Dock grows").run(windows: windows).budget
-    #expect(budget.moves - budget.questions == 3 && budget.overlayUpdates - budget.idleOverlayUpdates == 1, "\(budget)")
+    // Three windows. Two of them are asked twice: the Dock has grown under them by more than the gap, what shrinks is sized where it stands, and there
+    // macOS holds it. That answer is the screen's: nothing is learnt from it, and the window is asked once more in its slot (collab/BOARD.md, 0.22).
+    #expect(budget.moves - budget.questions == 5 && budget.repeatMoves == 2 && budget.overlayUpdates - budget.idleOverlayUpdates == 1, "\(budget)")
   }
 
   @Test func terminalsThatRoundTheirSizeAreNotAskedAgain() {
