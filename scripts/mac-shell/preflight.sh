@@ -10,12 +10,12 @@
 #   the code      `make lint`, `swift build`, `make typecheck-mac` (the macOS-only code against stand-ins: no compile error reaches a Mac)
 #                 and `swift test`. Not needed, and not run, while Package.swift, Sources, Tests, the stand-ins and the helper tools are what the
 #                 trunk has: that has been through CI.
-#   each script   `bash -n`; and if it is built on lib.sh, a rehearsal against the fake Mac (rehearse.sh), which must get to the script's
+#   each script   `bash -n`; scripts/lint-mac-shell.py; and if it is built on lib.sh, itself or through a file it reads in, a rehearsal against the fake Mac (rehearse.sh), which must get to the script's
 #                 end: exit code 0, or 1 for a check that came out ✘, which may be the very thing the Mac is asked about. On the way nothing
 #                 may have been said that is a slip whatever the machine: a command bash does not know, a variable nobody set, a command
 #                 Arbor does not know (lib.sh goes on after a step that fails, so the exit code alone does not tell). A script that needs something
 #                 the fake Mac lacks (64) or declines there (77) cannot be rehearsed to its end: that is said, and lets it pass.
-#                 Not needed while the script and lib*.sh are what the trunk has: this is about what is new. (Not every script there can be
+#                 Not needed while the script, what it reads in and lib*.sh are what the trunk has: this is about what is new. (Not every script there can be
 #                 rehearsed to its end. One that cannot, and has changed, is what run.sh's --no-preflight "<why>" is for.)
 #
 # What has passed is noted in .mac-shell/preflight/ (which Git ignores) under Git's hash of what was checked, not under a commit: nothing is
@@ -45,8 +45,27 @@ code_of() {
 # script_of <path>: names the script, everything in its folder it may lean on, and the controller it is rehearsed against.
 script_of() { { echo "$1"; git rev-parse HEAD:scripts/mac-shell HEAD:Sources HEAD:Package.swift; git rev-parse "HEAD:$1"; } 2>/dev/null | short; }
 
-# leans_on <commit> <path>: the script and the library under it.
-leans_on() { { git rev-parse "$1:$2"; git ls-tree "$1" scripts/mac-shell/ | grep -E 'lib[^/]*\.sh|state\.py'; } 2>/dev/null | short; }
+# read_in <commit> <path>: the script, the files beside it that it reads in with `source`, and those that these read in: compat-extras.sh is built on
+# compat.sh, which is built on lib.sh.
+read_in() {
+  local commit=$1 todo=$2 seen="" path name
+  while [ -n "$todo" ]; do
+    path=${todo%% *}
+    todo=${todo#"$path"}
+    todo=${todo# }
+    case " $seen " in *" $path "*) continue ;; esac
+    seen="$seen $path"
+    for name in $(git show "$commit:$path" 2>/dev/null | sed -nE 's/^[[:space:]]*(source|\.)[[:space:]].*\/([A-Za-z0-9._-]+\.sh)"?[[:space:]]*(#.*)?$/\2/p'); do
+      todo="$todo $(dirname "$path")/$name"
+    done
+  done
+  echo "${seen# }"
+}
+# leans_on <commit> <path>: the script, what it reads in, and the library under it.
+leans_on() {
+  local each
+  { for each in $(read_in "$1" "$2"); do git rev-parse "$1:$each"; done; git ls-tree "$1" scripts/mac-shell/ | grep -E 'lib[^/]*\.sh|state\.py'; } 2>/dev/null | short
+}
 
 # shellcheck disable=SC2086
 dirty=$(git status --porcelain -- $CODE scripts/mac-shell "$@" | head -n 5)
@@ -105,7 +124,9 @@ for what in "${owed[@]}"; do
     continue
   fi
   step "$what: bash -n" bash -n "$what" || { failed=1; continue; }
-  if grep -qE '^[[:space:]]*(source|\.)[[:space:]].*lib(-[a-zA-Z0-9]+)?\.sh' "$what"; then
+  # `make lint` has it too, but that is run for the code, and a branch that only adds a script owes nothing for the code.
+  step "$what: lint" python3 scripts/lint-mac-shell.py "$what" || { failed=1; continue; }
+  if read_in HEAD "$what" | tr ' ' '\n' | grep -qE '/lib(-[a-zA-Z0-9]+)?\.sh$'; then
     began=$SECONDS
     log=$(mktemp) || exit 2
     scripts/mac-shell/rehearse.sh "$what" > "$log" 2>&1

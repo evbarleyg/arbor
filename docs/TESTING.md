@@ -548,9 +548,9 @@ scripts/mac-shell/preflight.sh scripts/mac-shell/shots-F09.sh      # where Swift
 
 - **The code:** `make lint`, `swift build`, `make typecheck-mac` and `swift test`. None of it while `Package.swift`, `Sources`, `Tests`, the stand-ins and the helper
   tools are what the trunk has, as on a branch that only adds a script.
-- **Each script:** `bash -n`, and a rehearsal (below) that gets to the script's end: exit code 0, or 1 for a check that came out ✘, which may be the very thing the Mac
+- **Each script:** `bash -n`, `scripts/lint-mac-shell.py`, and, if it is built on `lib.sh`, itself or through a file it reads in, a rehearsal (below) that gets to the script's end: exit code 0, or 1 for a check that came out ✘, which may be the very thing the Mac
   is asked about. On the way it may not have said what is a slip on any machine: a command bash does not know, a variable nobody set, a command Arbor does not
-  know. `lib.sh` goes on after a step that fails, so the exit code alone does not tell. Not needed for a script that is, with `lib*.sh`, what the trunk has.
+  know. `lib.sh` goes on after a step that fails, so the exit code alone does not tell. Not needed for a script that is, with what it reads in and `lib*.sh`, what the trunk has.
 - **What has passed is noted** in `.mac-shell/preflight/`, under Git's hash of what was checked and not under a commit: nothing is checked twice, and the note made
   in a container is found by `run.sh` outside it. What is not committed does not count, and where Git does not work nothing does.
 - **`--no-preflight "<why>"`** starts the run all the same, for a script that needs what the fake Mac lacks. The reason stands in the run's title, for everybody to read.

@@ -1648,6 +1648,8 @@ def check_preflight():
         # The stand-in for the rehearsal does what the script's second line says.
         write("scripts/mac-shell/rehearse.sh", '#!/bin/bash\necho rehearse "$1" >> ran\neval "$(sed -n 2p "$1" | cut -c 3-)"\n', 0o755)
         write("scripts/mac-shell/lib.sh", "# the library\n")
+        # The stand-in for the lint minds one word.
+        write("scripts/lint-mac-shell.py", 'import sys\nopen("ran", "a").write("lint " + sys.argv[1] + "\\n")\nsys.exit("HARM" in open(sys.argv[1]).read())\n')
         write("scripts/typecheck-mac/stub.swift", "")
         write("Tests/T.swift", "")
         write("Package.swift", "")
@@ -1661,7 +1663,7 @@ def check_preflight():
         if sys.platform != "linux":
             row("preflight.sh: only on Linux", flight(new)[0], 2)
             return
-        row("preflight.sh: it is rehearsed, and the code, being the trunk's, is left alone", flight(new)[:2], (0, [f"rehearse {new}"]))
+        row("preflight.sh: it is rehearsed, and the code, being the trunk's, is left alone", flight(new)[:2], (0, [f"lint {new}", f"rehearse {new}"]))
         row("preflight.sh: which is noted", flight("--check", new)[0], 0)
         row("preflight.sh: and not done twice", flight(new)[:2], (0, []))
         for what, line, expected in [
@@ -1680,7 +1682,24 @@ def check_preflight():
         commit({"scripts/mac-shell/new.sh": "if true; then\n"})
         row("preflight.sh: what bash cannot even read", flight(new)[:2], (1, []))
         commit({"scripts/mac-shell/new.sh": "echo hello\n# exit 2\n"})
-        row("preflight.sh: a script that is not built on lib.sh is only read", flight(new)[:2], (0, []))
+        row("preflight.sh: a script that is not built on lib.sh is read and linted, no more", flight(new)[:2], (0, [f"lint {new}"]))
+        commit({"scripts/mac-shell/new.sh": "echo HARM\n"})
+        row("preflight.sh: what the lint minds takes no Mac, though the code is the trunk's and `make lint` is not run", (flight(new)[:2], flight("--check", new)[0]), ((1, [f"lint {new}"]), 1))
+        # Built on lib.sh through another file.
+        middle, upon = "scripts/mac-shell/middle.sh", "scripts/mac-shell/upon.sh"
+        through = 'source "$(dirname "${BASH_SOURCE[0]}")/middle.sh"\n'
+        commit({middle: library + "# exit 0\n", upon: through + "# exit 2\n"})
+        row("preflight.sh: a script built on lib.sh through another file is rehearsed as well", flight(upon)[:2], (1, [f"lint {upon}", f"rehearse {upon}"]))
+        commit({upon: through + "# exit 0\n"})
+        row("preflight.sh: and passes when it gets to its end", (flight(upon)[0], flight("--check", upon)[0]), (0, 0))
+        git("branch", "--force", "with-both")
+        row("preflight.sh: both are the trunk's: nothing is owed", flight("--check", upon, trunk="with-both")[0], 0)
+        shutil.rmtree(os.path.join(folder, ".mac-shell"))
+        commit({middle: library + "# exit 0\n# changed\n"})
+        row("preflight.sh: the file in the middle has changed: the script upon it is no longer what the trunk has", flight("--check", upon, trunk="with-both")[0], 1)
+        commit({"scripts/mac-shell/round.sh": 'source "$(dirname "$0")/round.sh"\n# exit 0\n'})
+        row("preflight.sh: a script that reads itself in does not go round for ever", flight("scripts/mac-shell/round.sh")[0], 0)
+        git("reset", "--quiet", "--hard", "HEAD~5")
         commit({"scripts/mac-shell/lib.sh": "# the library, changed\n"})
         row("preflight.sh: the library has changed, so the trunk's script is owed a rehearsal too", flight("--check", old)[0], 1)
         git("reset", "--quiet", "--hard", "HEAD~1")
