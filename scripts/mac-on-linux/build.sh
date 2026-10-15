@@ -5,6 +5,7 @@
 #   scripts/mac-on-linux/build.sh --self-test     does the net hold? each change in mutants.py is made to the copy, and its stories must go red
 #   scripts/mac-on-linux/build.sh --build-only
 #   REF=origin/fix/some-cure scripts/mac-on-linux/build.sh …   that commit's Sources, with this checkout's stand-ins, scripts and stories
+#   SOURCES=some/folder/Sources scripts/mac-on-linux/build.sh …   that folder, likewise: for sources that are in no commit
 #   COVERAGE=1 scripts/mac-on-linux/build.sh …                 afterwards: how much of each file of the layer the run has entered, and which lines it has not
 # Exit code 0 when it builds and everything is as expected.
 #
@@ -25,6 +26,11 @@ if [ -n "${REF:-}" ]; then
   mkdir -p "$work/checkout"
   git -C "$root" archive "$REF" Sources | tar -x -C "$work/checkout" || { echo "no such commit: $REF"; exit 2; }
   sources="$work/checkout/Sources"
+fi
+if [ -n "${SOURCES:-}" ]; then
+  sources=$(cd "$SOURCES" && pwd) || exit 2
+  work="$root/.build/mac-on-linux-$(echo "$sources" | sha256sum | cut -c1-7)"
+  if [ ! -d "$work" ] && [ -d "$root/.build/mac-on-linux" ]; then cp -R "$root/.build/mac-on-linux" "$work" && rm -rf "$work/module-cache"; fi
 fi
 if [ -n "${COVERAGE:-}" ]; then work="$work-coverage"; fi
 if [ "$(uname)" = Darwin ]; then echo "On a Mac the real thing runs: make e2e."; exit 2; fi
@@ -196,5 +202,5 @@ if [ -n "${COVERAGE:-}" ]; then
 fi
 # What the layer was heard to report is kept for the checkout's own sources.
 heard=()
-[ -z "${REF:-}" ] && heard=(--heard "$root/collab/evidence/mac-on-linux/heard.jsonl")
+[ -z "${REF:-}${SOURCES:-}" ] && heard=(--heard "$root/collab/evidence/mac-on-linux/heard.jsonl")
 exec "$work/mac-on-linux" --known "$here/known-failures.txt" "${heard[@]}" "$@"
