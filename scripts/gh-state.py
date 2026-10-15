@@ -23,7 +23,12 @@ with --publish puts both files on a branch after every round. Readers say --from
 brought up to date by `git fetch`, which no limit counts. Two pollers that publish to one branch hand over by themselves: the one that
 finds the other's commit there was the earlier one, and ends. One that cannot publish three rounds in a row ends with an error.
 
-Usage: scripts/gh-state.py --out FILE [--queue FILE] [--every SECONDS] [--cache FILE] [--once] [--for MINUTES] [--publish BRANCH]
+It hears the title and description of every open pull request each round anyway. With --watch PATTERN --then COMMAND it runs COMMAND, with the
+number after it, for each that has the pattern in them. The workflow uses that for the one thing that must not wait for a runner: a platform
+appends a link to the author's working session to the pull requests it creates, and scripts/public-text.py, which replaces it, is
+started by an event and stands in the queue like everything else. The poller is running already.
+
+Usage: scripts/gh-state.py --out FILE [--queue FILE] [--every SECONDS] [--cache FILE] [--once] [--for MINUTES] [--publish BRANCH] [--watch PATTERN --then COMMAND]
                                                               the poller; every 150 seconds, for ever, by default
        scripts/gh-state.py --read FILE [--from BRANCH] [WHAT]  prints the file, or the lines about WHAT (a pull request's number, a branch, a commit)
        scripts/gh-state.py --read FILE [--from BRANCH] --wait WHAT [--for MINUTES]   waits, asking nobody, until WHAT's checks have all finished; 60 by default
@@ -40,6 +45,7 @@ import importlib.util
 import json
 import os
 import re
+import shlex
 import subprocess
 import sys
 import time
@@ -61,6 +67,8 @@ LOOK_AGAIN = datetime.timedelta(seconds=60)
 # So many rounds in a row that could not be published, and the poller ends with an error: a run that stays green while nobody hears of
 # anything is worse than one that is red.
 UNHEARD = 3
+# So many rounds in a row is somebody told of one pull request. What has not helped by then will not, and every telling costs requests.
+TOLD_AT_MOST = 3
 # Where git is to look, as whoever called has set it. In a hook or a rebase these point at another repository. The others (how to reach
 # a server, whom to ask for a password, which certificates to believe) are needed as they are.
 ELSEWHERE = ("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_OBJECT_DIRECTORY", "GIT_ALTERNATE_OBJECT_DIRECTORIES", "GIT_COMMON_DIR", "GIT_PREFIX", "GIT_NAMESPACE",
@@ -126,15 +134,17 @@ def heads_by_git(cwd=None):
     return {name.replace("refs/heads/", ""): sha[:8] for sha, name in (line.split("\t") for line in listed.stdout.splitlines() if "\t" in line)}
 
 
-def read_state(github, finished, now):
-    """Everything the file says, as a dictionary. `finished`: commit → its checks, for commits whose checks are all in; kept between rounds."""
+def read_state(github, finished, now, watch=None):
+    """Everything the file says, as a dictionary. `finished`: commit → its checks, for commits whose checks are all in; kept between rounds.
+    `watch`: a pattern; which open pull requests have it in their title or description is noted."""
     limit = github.get("rate_limit", lambda body: body["resources"]["core"])
     state = {"limit": limit, "leaves": min(LEAVE, limit["limit"] // 5)}
     state["paused"] = limit["remaining"] < state["leaves"]
     if state["paused"]:
         return state
     pull = lambda item: {"number": item["number"], "branch": item["head"]["ref"], "sha": item["head"]["sha"], "base": item["base"]["ref"], "title": item["title"],
-                         "draft": item["draft"], "merged": bool(item.get("merged_at")), "closed_at": item.get("closed_at")}
+                         "draft": item["draft"], "merged": bool(item.get("merged_at")), "closed_at": item.get("closed_at"),
+                         "watched": bool(watch and watch.search(f"{item['title'] or ''}\n{item.get('body') or ''}"))}
     state["open"] = github.get("/pulls?state=open&per_page=100", lambda body: [pull(item) for item in body])
     state["closed"] = github.get("/pulls?state=closed&sort=updated&direction=desc&per_page=15", lambda body: [pull(item) for item in body])
     run = lambda item: {**{key: item.get(key) for key in OF_A_RUN}, "sha": item["head_sha"]}
@@ -316,9 +326,11 @@ def looked_at(queue):
         return ""
 
 
-def poll(github, out, cache_file, every, once, clock=time.time, sleep=time.sleep, heads=heads_by_git, queue=None, until=None, published=None, standing=None):
-    """`published` puts the files on the branch and says as which commit; `standing` says which commit is there now."""
-    finished, mine, unheard = {}, None, 0
+def poll(github, out, cache_file, every, once, clock=time.time, sleep=time.sleep, heads=heads_by_git, queue=None, until=None, published=None, standing=None, watch=None,
+         told=None):
+    """`published` puts the files on the branch and says as which commit; `standing` says which commit is there now. `told` hears the number
+    of each open pull request that has `watch` in its title or description."""
+    finished, mine, unheard, tries = {}, None, 0, {}
     while True:
         now = datetime.datetime.fromtimestamp(clock(), datetime.timezone.utc)
         if mine and standing:
@@ -332,7 +344,7 @@ def poll(github, out, cache_file, every, once, clock=time.time, sleep=time.sleep
                 return 0
         wrote = False
         try:
-            state = read_state(github, finished, now)
+            state = read_state(github, finished, now, watch)
             github.counted = [at for at in github.counted if at > clock() - 3600]
             save(out, written(state, heads(), now, every, len(github.counted)))
             if queue and not state["paused"]:
@@ -344,6 +356,14 @@ def poll(github, out, cache_file, every, once, clock=time.time, sleep=time.sleep
             print(f"{now.strftime('%H:%M:%S')} written; {state['limit']['remaining']} left, {len(github.counted)} spent here in the last hour", flush=True)
         except (*NO_ANSWER, KeyError, TypeError, subprocess.TimeoutExpired) as error:  # the next round may fare better; the file's time tells
             print(f"{now.strftime('%H:%M:%S')} no round: {type(error).__name__}: {error}", flush=True)
+        if told and wrote:
+            found = [item["number"] for item in state.get("open", []) if item.get("watched")]
+            tries = {number: tries.get(number, 0) + 1 for number in found}
+            for number in [number for number in found if tries[number] <= TOLD_AT_MOST]:
+                try:
+                    told(number)
+                except (OSError, subprocess.SubprocessError) as error:
+                    print(f"{now.strftime('%H:%M:%S')} #{number}: {type(error).__name__}: {error}", flush=True)
         if published and wrote:
             try:
                 mine, unheard = published({STATE: out, **({QUEUE: queue} if queue else {})}), 0
@@ -704,6 +724,11 @@ def self_test():
         os.remove(os.path.join(wired, "r.md"))
         rows.append(("--read without --from fetches nothing, and says so", (called("--read", os.path.join(wired, "r.md"), "2", clone=two)[0], os.path.exists(os.path.join(wired, "r.md"))), (3, False)))
         rows.append(("--read --from --wait: likewise fetched", (called("--read", os.path.join(wired, "r.md"), "--from", "state/wired", "--wait", "2", clone=two)[0], os.path.exists(os.path.join(wired, "r.md"))), (0, True)))
+        noted = os.path.join(wired, "noted")
+        watched = Stub(world(**{"/pulls?state=open&per_page=100": [pull(7, "a", body="https://example.com/watched-1")]}))
+        called("--out", os.path.join(wired, "o.md"), "--once", "--watch", r"example\.com/watched-", "--then", f"{shlex.quote(sys.executable)} -c 'import sys; open(sys.argv[1], \"w\").write(sys.argv[2])' {shlex.quote(noted)}",
+               clone=one, github=watched)
+        rows.append(("--watch --then: the command is run with the number after it", read_text(noted), "7"))
         code, _ = called("--out", os.path.join(wired, "o.md"), "--every", "60", "--for", "0.5", "--publish", "state/wired", clone=one, github=Stub(world()))
         rows.append(("--for: half a minute is no time for a second round", code, 0))
 
@@ -756,6 +781,38 @@ def self_test():
         sent = []
         looped(sent.append, lambda: "a1", rounds=3, github=Stub({"rate_limit": TimeoutError("slow")}))
         rows.append(("a round that was not written is not published", sent, []))
+        link = re.compile(r"https://example\.com/watched-")
+
+        def with_bodies(**bodies):
+            return world(**{"/pulls?state=open&per_page=100": [pull(1, "a", body=bodies.get("one")), pull(2, "b", body=bodies.get("two"), **({"title": bodies["title"]} if "title" in bodies else {}))]})
+
+        def heard(github, rounds=5, change=None, told=None):
+            numbers, ticks = [], []
+
+            def sleep(seconds):
+                ticks.append(seconds)
+                if change:
+                    change(len(ticks), github.answers)
+            with contextlib.redirect_stdout(io.StringIO()):
+                code = poll(github, os.path.join(folder, "p.md"), None, 150, False, clock=lambda: start.timestamp() + 150 * len(ticks), sleep=sleep, heads=lambda: {},
+                            until=start.timestamp() + 150 * rounds, watch=link, told=told or numbers.append)
+            return code, numbers
+        rows += [
+            ("--watch: nothing of the kind in any description, one of which is none at all: nobody is told", heard(Stub(with_bodies(one="fine", two=None))), (0, [])),
+            ("--watch: it stands in one, and stays: told three rounds in a row, and no more", heard(Stub(with_bodies(one="x\nhttps://example.com/watched-1\n"))), (0, [1, 1, 1])),
+            ("--watch: in a title", heard(Stub(with_bodies(title="see https://example.com/watched-1")), rounds=1), (0, [2])),
+            ("--watch: gone after the first telling: told once", heard(Stub(with_bodies(one="https://example.com/watched-1")), change=lambda tick, answers: answers.update(with_bodies(one="mended"))), (0, [1])),
+            ("--watch: gone, and there again later: the count begins anew",
+             heard(Stub(with_bodies(one="https://example.com/watched-1")), rounds=9,
+                   change=lambda tick, answers: answers.update(with_bodies(one="mended" if tick == 4 else "https://example.com/watched-1"))), (0, [1, 1, 1, 1, 1, 1])),
+        ]
+
+        rows.append(("--watch: rounds in which GitHub does not answer tell nobody of what an earlier one heard",
+                     heard(Stub(with_bodies(one="https://example.com/watched-1")), change=lambda tick, answers: answers.update(rate_limit=TimeoutError("slow"))), (0, [1])))
+
+        def falls_over(number):
+            raise subprocess.TimeoutExpired("x", 300)
+        rows.append(("--watch: the command takes for ever, or is not there: the poller goes on", heard(Stub(with_bodies(one="https://example.com/watched-1")), told=falls_over)[0], 0))
         rows.append(("what is left to others is said as it is", ("fewer than 200 requests" in written(read_state(Stub(world(**small(199))), {}, start), {}, start, 150, 0),
                                                                  "fewer than 400 requests" in written(read_state(Stub(world(remaining=399)), {}, start), {}, start, 150, 0)), (True, True)))
     failed = [f"{what}: got {got!r}, expected {wanted!r}" for what, got, wanted in rows if got != wanted]
@@ -768,7 +825,7 @@ def self_test():
 def main(arguments=None, clone=None, root=ROOT, github=None, sleep=time.sleep):
     """All but the first are for the self-test: a clone, a first commit and a GitHub of its own."""
     parser = argparse.ArgumentParser(usage="see the top of scripts/gh-state.py", add_help=False)
-    for flag in ("--out", "--cache", "--queue", "--read", "--wait", "--publish"):
+    for flag in ("--out", "--cache", "--queue", "--read", "--wait", "--publish", "--watch", "--then"):
         parser.add_argument(flag)
     parser.add_argument("--from", dest="branch")
     parser.add_argument("--every", type=int, default=EVERY)
@@ -811,7 +868,9 @@ def main(arguments=None, clone=None, root=ROOT, github=None, sleep=time.sleep):
     return poll(github or GitHub(repository, token, cache), options.out, options.cache, max(60, options.every), options.once, sleep=sleep, queue=options.queue,
                 until=time.time() + options.limit * 60 if options.limit else None,
                 published=(lambda files: publish(options.publish, files, cwd=clone, root=root)) if options.publish else None,
-                standing=(lambda: published_now(options.publish, cwd=clone)) if options.publish else None)
+                standing=(lambda: published_now(options.publish, cwd=clone)) if options.publish else None,
+                watch=re.compile(options.watch) if options.watch and options.then else None,
+                told=(lambda number: subprocess.run([*shlex.split(options.then), str(number)], timeout=300, check=False)) if options.watch and options.then else None)
 
 
 if __name__ == "__main__":

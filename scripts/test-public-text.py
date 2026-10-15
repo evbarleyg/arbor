@@ -266,6 +266,11 @@ def main():
     row("by hand without --dry-run: refused, nothing written", (run(github, "--thread", "7", in_actions=False)[0], github.changes), (2, []))
     row("by hand with it: says what is left", (run(github, "--thread", "7", "--dry-run", in_actions=False)[0], github.changes), (1, []))
     row("--all without --dry-run, even in the workflow", (run(github, "--all")[0], github.changes), (2, []))
+    github = FakeGitHub(body=f"Fine.\n\n{LINK}", line_comments=[])
+    row("--thread in a workflow, as the poller calls it: the link is replaced at once, whatever event the run began with",
+        (run(github, "--thread", "7", event="schedule")[0], github.changes), (0, ["PATCH /issues/7"]))
+    pattern = run(FakeGitHub(), "--link-pattern", in_actions=False)[1].strip()
+    row("--link-pattern: what it prints finds the link, and not the generic one", (bool(re.search(pattern, f"x {LINK} y")), bool(re.search(pattern, "x https://claude.ai/code y"))), (True, False))
 
     class Listing(FakeGitHub):
         def every(self, path):

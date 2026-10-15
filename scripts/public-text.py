@@ -27,6 +27,9 @@ what is quoted back stands in a code block, where it can neither mention anybody
 Usage: scripts/public-text.py                        in the workflow: the thread of the event in $GITHUB_EVENT_PATH
        scripts/public-text.py --recent HOURS          in the workflow, once a night: every thread that changed in that time, for what no
                                                       event brought here (a review on a fork's pull request, a run that failed)
+       scripts/public-text.py --thread N              in a workflow: that thread. The poller (.github/workflows/state.yml) calls it so where a link to a
+                                                      working session stands in a description: it is running already, and waits for no runner
+       scripts/public-text.py --link-pattern          prints what such a link looks like, for the poller to look out for: it stands in one place only
        scripts/public-text.py --thread N --dry-run    by hand: changes nothing and prints what it would do
        scripts/public-text.py --all --dry-run         every thread there is: an audit
 
@@ -212,6 +215,9 @@ def thread_of(event):
 
 
 def main(arguments, make_github=GitHub, make_checker=None):
+    if "--link-pattern" in arguments:
+        print(SESSION_LINK.pattern)
+        return 0
     dry_run = "--dry-run" in arguments
     try:
         repository, token = os.environ.get("GITHUB_REPOSITORY"), os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")

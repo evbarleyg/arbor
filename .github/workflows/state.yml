@@ -10,7 +10,12 @@ name: State
 # run that GitHub starts late, or once not at all, leaves no gap. (Ending the old run when the next is due would: that happens
 # when the next is queued, not when it starts.) On a free hosted Linux runner.
 #
-# The token may push, so: only the schedule and a hand can start it, and nothing anybody posted or pushed is run or written into a
+# One thing more, because it is running already and so waits for no runner. A platform appends a link to the author's working session to the
+# pull requests it creates. `Public text` replaces it, but is started by the event and stands in the queue like everything else: under
+# load the link stood for six minutes. The poller hears every open pull request's description each round anyway, and where that link is
+# in one it has scripts/public-text.py read that thread at once. Everything else that workflow finds can wait for it.
+#
+# The token may push, and edit what people posted, so: only the schedule and a hand can start it, and nothing anybody posted or pushed is run or written into a
 # command. The schedule takes this file from the default branch. A hand can take it from another branch, but only the hand of somebody
 # who may push here anyway; the script is the default branch's in either case. What it reads and writes is public already.
 
@@ -31,7 +36,8 @@ jobs:
       contents: write # the branch it writes
       actions: read
       checks: read
-      pull-requests: read
+      issues: write # scripts/public-text.py: descriptions and comments, as in `Public text`
+      pull-requests: write
     steps:
       # Without history: the script fetches the one commit it hangs its own on. The token stays for the pushes.
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
@@ -40,7 +46,10 @@ jobs:
       - name: Ask, write, publish; again and again
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          # As in `Public text`, so that both say the same of a thread.
+          PUBLIC_CHECK_WORDS: ${{ secrets.PUBLIC_CHECK_WORDS }}
         run: |
           mkdir "$RUNNER_TEMP/state"
           python3 scripts/gh-state.py --out "$RUNNER_TEMP/state/github-state.md" --queue "$RUNNER_TEMP/state/mac-queue-cache.json" \
-            --cache "$RUNNER_TEMP/state/cache.json" --every 120 --for 110 --publish state/github
+            --cache "$RUNNER_TEMP/state/cache.json" --every 120 --for 110 --publish state/github \
+            --watch "$(python3 scripts/public-text.py --link-pattern)" --then 'python3 scripts/public-text.py --thread'

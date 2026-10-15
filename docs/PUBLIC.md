@@ -89,6 +89,10 @@ whole thread each time.
   link to every pull request they create. It is the one edit the workflow makes to anybody's text. The earlier wording stays
   in the post's edit history (the "edited" menu), where only a person with the right to can delete it, and an earlier title stays
   in the thread's "changed the title" line for good; so it is still better not to post the link in the first place.
+  "Right after" means: once the run has a runner, which under load took six minutes. So for this one thing in a pull request's
+  title or description there is a second road that waits for none: the poller (`.github/workflows/state.yml`) is running already, hears every open
+  pull request's description every two minutes, and has that thread read at once. **It is a net, not a replacement for the hand:** whoever
+  opens a pull request still puts their own description back straight away.
 - **Everything else is named in one comment on the thread**: which post, which line, what to write instead, never the words
   themselves. Edit the post in place. The comment changes as things are reworded and goes away when nothing is left.
 - **While a pull request's own title or description holds something, its check `public-text` is red.** For comments, reviews and
