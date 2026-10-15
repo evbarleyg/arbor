@@ -7028,10 +7028,15 @@
    "expected": "Whether macOS moves windows back when a display returns was an open question. Arbor remembers the arrangement and puts them back itself, and a display that did not change keeps its windows as they are.",
    "happened": "It does. 0.15 to 0.2 s after a virtual display with the same identifier came back, macOS itself had put the three windows that had been on it back on it, at their old frames, 1.6 s before Arbor's `displaysChanged`. And when the second display changed side, the keyboard went to another window, and the two windows docked on the main display, which did not change, were moved and resized by macOS; a second word about the screens followed, and then Arbor put the two back.",
    "found": "Traces of each change of displays, recorded by the script for two displays on a hosted Mac (macOS 26.6.2); they are to be committed.",
-   "modelled": "no",
-   "knobs": [],
+   "modelled": "partly",
+   "knobs": [
+    "FakeWindowSystem.userMove",
+    "FakeWindowSystem.displayList"
+   ],
    "guards": [
-    "e2e: replugged: the arrangement is the one that went away"
+    "e2e: replugged: the arrangement is the one that went away",
+    "test: whereMacOSPutsWindowsBackItselfArborMovesNothing",
+    "test: whatMacOSHasBroughtBackItselfIsNotMovedAgain"
    ],
    "copes": "Sources/ArborKit/Controller/Controller+Displays.swift lays every display out again when it hears of the change, so the arrangement is the one that went away: `check-displays.sh` passed 136 of 137 there. Until then, for a second and a half, macOS's places are what a person sees.",
    "hurt": 2,
@@ -7043,7 +7048,8 @@
     "scripts/mac-shell/check-displays.sh",
     "Sources/ArborKit/Controller/Controller+Displays.swift",
     "Sources/ArborTesting/FakeWindowSystem.swift",
-    "collab/BACKLOG.md"
+    "collab/BACKLOG.md",
+    "Tests/ArborKitTests/DisplaysComeAndGoTests.swift"
    ],
    "backlog": [
     "M1953"

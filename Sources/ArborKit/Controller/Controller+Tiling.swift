@@ -467,6 +467,7 @@ extension Controller {
       settled[id] = actual
       workspaces[destination.id]!.floating[id] = preferred
       noteFit(of: id, own: size, into: preferred.size, on: destination.id)
+      aHandHasPlaced(id)
       if role != nil { workspaces[destination.id]!.setRole(role, of: id) } else { receiveAsGuestOfTheView(id) }
       // Both Desktops have a different number of windows now (F18), which lays both displays out.
       floatingWindowMoved(id, from: source)

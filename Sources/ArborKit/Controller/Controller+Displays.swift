@@ -21,6 +21,8 @@ extension Controller {
   /// moves every window itself, once (`lookAtTheDisplaysBeforeLettingGo`).
   func updateDisplays(lettingGo: Bool = false) {
     // If windows were moved behind Arbor's back, here is the report after all. What follows looks after every window.
+    // Moved with this change of displays, as far as can be told: those, and below whatever is not where Arbor knew it.
+    var movedByMacOS = movedBehindArborsBack
     movedBehindArborsBack = []
     scheduler.cancel("displays-blinked")
     overlays.finishAnimations()
@@ -38,7 +40,10 @@ extension Controller {
     // macOS moves windows when displays change, and when the primary display changes every window's
     // coordinates do, without a notification for each. Deciding by the old frames which windows are
     // already in place would leave some where they are.
-    for snapshot in system.allWindows() { windows[snapshot.id]?.frame = snapshot.frame }
+    for snapshot in system.allWindows() {
+      if let known = windows[snapshot.id]?.frame, known != snapshot.frame { movedByMacOS.insert(snapshot.id) }
+      windows[snapshot.id]?.frame = snapshot.frame
+    }
     decideAboutWindowsFoundInTheDark()
     let current = Set(displays.map(\.id))
     let added = current.subtracting(previous).sorted()
@@ -51,7 +56,7 @@ extension Controller {
     for id in removed { arriving += retireWorkspace(of: id, whichWasAt: before.first { $0.id == id }?.frame.origin) }
     // A display that has only just come takes nothing away. Its arrangement sleeps on, for the next start: windows that
     // lie still are not sent over to it a moment before they are let go of.
-    if !lettingGo { for id in added { arriving += restoreDormantWorkspace(of: id) } }
+    if !lettingGo { for id in added { arriving += restoreDormantWorkspace(of: id, movedByMacOS: movedByMacOS) } }
     // Windows that had no display to go to (every display was gone).
     let homeless = managedWindowIDs.filter { workspaceID(containing: $0) == nil }
     adoptNewlyManagedWindows(.displaysChanged)
@@ -286,7 +291,7 @@ extension Controller {
       // A window docked here was docked after any older dormant workspace
       // that still lists it went away, so this is the arrangement to keep.
       for window in workspace.tree.allWindows { forgetInDormantWorkspaces(window) }
-      dormant[displayID] = DormantWorkspace(workspace: workspace, since: now(), origin: corner)
+      dormant[displayID] = DormantWorkspace(workspace: workspace, since: dateToRemember(workspace), origin: corner)
       Log.info("display \(displayID) disconnected; remembering \(workspace.allWindows.count) window(s)")
     }
     guard let main = mainDisplayID, let mainDisplay = display(main), workspaces[main] != nil else {
@@ -315,12 +320,15 @@ extension Controller {
     return moving
   }
 
+  /// How near its remembered frame a floating window counts as back on a display that returned, each way, in points.
+  static let asGoodAsBack: CGFloat = 4
+
   /// Brings back the arrangement `displayID` had when it went away. Windows
   /// that are still open and not docked anywhere else return to their slots
   /// (floating ones to their frames); the rest are dropped from the restored
   /// tree, which moves the camera, history and saved views to the nodes that
-  /// remain. Returns the windows that came back.
-  func restoreDormantWorkspace(of displayID: DisplayID) -> [WindowID] {
+  /// remain. Returns the windows that came back. `movedByMacOS`: the windows macOS has moved with this change of displays.
+  func restoreDormantWorkspace(of displayID: DisplayID, movedByMacOS: Set<WindowID> = []) -> [WindowID] {
     guard let entry = dormant.removeValue(forKey: displayID) else { return [] }
     let arrived = workspaces[displayID] ?? Workspace()
     guard arrived.tree.allWindows.isEmpty else {
@@ -362,6 +370,17 @@ extension Controller {
     }
     for window in returning {
       for id in workspaces.keys.sorted() { workspaces[id]!.floating[window] = nil }
+      endStays(of: window, begunAfter: entry.since)
+      // macOS remembers too. What it has itself brought back as good as there is there: no second move for a few points.
+      // Only what it moved: a window can also have waited at nearly the same numbers on another display, since either
+      // has its corner at 0,0 when it is alone, and taking that for its place would let it creep, a point a day. And
+      // only at its own size: macOS moves windows, and one that is smaller was fitted onto a smaller display meanwhile.
+      if movedByMacOS.contains(window), !parked.contains(window), let remembered = restored.floating[window],
+        let actual = windows[window]?.frame, actual.size == remembered.size,
+        actual.approximatelyEquals(remembered, tolerance: Self.asGoodAsBack)
+      {
+        restored.floating[window] = actual
+      }
     }
     // Windows that floated onto the display before its arrangement came back
     // (at launch, or evacuated from another display) keep floating on it.
@@ -408,6 +427,46 @@ extension Controller {
       }
     }
     return inViewSoon
+  }
+
+  // MARK: Whose a floating window is
+
+  /// The date to remember `workspace` by, whose display is gone: now. A window that floats on it only because its own display
+  /// went earlier is a visitor (to a display: not F57's guest, which visits a view), and which of two displays a window is at
+  /// home on is told by which of them went first (`endStays`). So the date is later than those its visitors are
+  /// remembered by, also where no time has passed between.
+  func dateToRemember(_ workspace: Workspace) -> Date {
+    let homes = dormant.values.filter { home in workspace.floating.keys.contains { home.workspace.contains($0) } }.map(\.since)
+    return max(now(), homes.max()?.addingTimeInterval(0.001) ?? .distantPast)
+  }
+
+  /// `window` goes back to a display that went at `date`. Wherever it has floated since, it was a visitor: it had to be
+  /// somewhere. A display that went in its turn meanwhile remembers it with everything else that was on it, so that a
+  /// visitor too is where and what it was after a blink. Once the window has gone home that is over. It used not to be:
+  /// lid shut, then the laptop alone, then back at the desk, and the browser was taken off the laptop and put on the
+  /// monitor, day after day, wherever its person had put it since.
+  private func endStays(of window: WindowID, begunAfter date: Date) {
+    forgetWhereItFloated(window) { $0.since > date }
+  }
+
+  /// Its person's own hand has just dropped or sized `window`, which floats, or their command has sent it to this display. Where
+  /// it is outranks what Arbor remembers of it: it belongs here now, and no display it floated on fetches it when it comes
+  /// back. Only for what is known to be its person's doing: an app, a tool and macOS itself report a move in the words
+  /// a person's move is reported in, macOS also just before anybody can know that the displays are changing. A slot in
+  /// a display's arrangement stays: its person made that too, and what is nudged here is a stand-in (F08).
+  func aHandHasPlaced(_ window: WindowID) {
+    if forgetWhereItFloated(window, if: { _ in true }) { scheduleSave() }
+  }
+
+  /// Returns whether anything was forgotten.
+  @discardableResult
+  private func forgetWhereItFloated(_ window: WindowID, if applies: (DormantWorkspace) -> Bool) -> Bool {
+    let holders = dormant.keys.sorted().filter { dormant[$0]!.workspace.isFloating(window) && applies(dormant[$0]!) }
+    for id in holders {
+      dormant[id]!.workspace.forget(window, shareSpace: settings.shareRemovedSpace)
+      if dormant[id]!.workspace.allWindows.isEmpty, dormant[id]!.workspace.names.isEmpty { dormant[id] = nil }
+    }
+    return !holders.isEmpty
   }
 
   /// Where `window` was of its own accord, by the arrangement of a display that is gone: where it floated, or where it
@@ -493,14 +552,17 @@ extension Controller {
     var withRolesOnMissingDisplays: [WindowID] = []
     for (id, workspace) in saved.workspaces
     where !connected.contains(id) && dormant[id] == nil && !workspace.allWindows.isEmpty {
-      dormant[id] = DormantWorkspace(workspace: workspace, since: now, origin: saved.origins?[id])
+      dormant[id] = DormantWorkspace(workspace: workspace, since: dateToRemember(workspace), origin: saved.origins?[id])
       withRolesOnMissingDisplays += workspace.floating.keys.filter { workspace.role(of: $0) != nil }.sorted()
     }
     reconcileDormantWindows(hints: savedHints)
     restoreRoles(of: withRolesOnMissingDisplays)
     var returning: [WindowID] = []
     for id in connected.sorted() where dormant[id] != nil {
+      let (remembered, since) = (Set(dormant[id]!.workspace.floating.keys), dormant[id]!.since)
       forgetWhatFloatsInView(inTheArrangementRememberedFor: id)
+      // What is let be has its own display back all the same: whatever it visited since has no claim on it either.
+      for window in remembered.subtracting(dormant[id]!.workspace.floating.keys).sorted() { endStays(of: window, begunAfter: since) }
       returning += restoreDormantWorkspace(of: id)
     }
     placeArrivingWindows(returning)

@@ -351,6 +351,7 @@ extension Controller {
       if wasDocked, hover.target == .float, layout(of: display)?.desktopFrame == nil {
         stayWithTheView(window, on: display)
       }
+      if hover.target == .float { aHandHasPlaced(window) }
       // It floats on another display now, which no layout need show (F24's events).
       if hover.target == .float, let home, home != display { notify(.windows) }
       Log.info("dropped \(window) on \(hover.target), display \(display)\(hover.leftToMacOS != nil ? ", left to macOS’s tiling" : "")")

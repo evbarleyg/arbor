@@ -1,0 +1,57 @@
+# Proposed by an executor (2026-10-15); the documenter may edit or drop it.
+# Story: a laptop beside a monitor, nothing docked, the browser on the laptop, mail on the monitor. The lid is shut for the
+# day; in the evening the laptop goes along alone; next morning the monitor is plugged in again. Everything is where it was.
+# Arbor used to take the browser off the laptop and put it on the monitor, which had only had it to visit while the lid
+# was shut.
+# Played as hosted Macs were recorded: macOS's list of displays is new at once, the apps say where macOS has taken their
+# windows, and Arbor is told once the displays have settled.
+# Reference: rule 2 (nothing moves until the person docks something), Q20 (there and back is nothing), F08.
+plug side right 1920x1080
+open Browser 1000x600
+open Mail 700x500
+move 101 60 65 1000 600
+move 102 1600 100 700 500
+wait 3
+expect floating 101
+expect floating 102
+# The lid is shut: the laptop's display goes, and the monitor has its corner where the laptop's was.
+quietly unplug main
+move 102 160 100 700 500
+wait 1.7
+report-displays
+wait 3
+expect visible 101
+expect visible 102
+# The laptop alone.
+quietly plug main left 1440x900
+quietly make-main main
+quietly unplug side
+wait 1.7
+report-displays
+wait 3
+expect at 101 60 65
+expect visible 102
+# Back at the desk.
+quietly plug side right 1920x1080
+wait 1.7
+report-displays
+expect at 101 60 65
+expect size 101 1000x600
+expect at 102 1600 100
+expect size 102 700x500
+wait 3
+expect still
+# The monitor is unplugged, and mail dragged on the lap meanwhile: it stays. Where a window is outranks what Arbor remembers.
+quietly unplug side
+move 102 160 100 700 500
+wait 1.7
+report-displays
+wait 3
+drag 102 700 300 quick
+wait 1
+quietly plug side right 1920x1080
+wait 1.7
+report-displays
+expect still
+expect at 102 350 290
+expect at 101 60 65
