@@ -48,7 +48,7 @@ extension FakeWindowSystem {
       if !heldModifiers.contains(.command) { bringToFront(window) }
       return
     }
-    guard appWithTheKeyboard != nil, appWithTheKeyboard != windows[window]?.snapshot.pid else {
+    guard appWithTheKeyboard != windows[window]?.snapshot.pid else {
       events?.pointerPressed()
       return userFocus(window)
     }

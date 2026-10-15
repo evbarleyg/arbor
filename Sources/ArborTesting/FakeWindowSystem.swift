@@ -507,12 +507,14 @@ public final class FakeWindowSystem: WindowSystem {
     let wasInTheDock = comesOutOfTheDockIfRaised(window)
     defer { if wasInTheDock, echoes.focus { undelivered.append(.cameBack(window)) } }
     let moved = focused != window
-    let crossesApps = moved && focused.flatMap { windows[$0]?.snapshot.pid } != windows[window]?.snapshot.pid
+    let had = focused.flatMap { windows[$0]?.snapshot.pid }
+    let crossesApps = moved && had != windows[window]?.snapshot.pid
     // macOS reports it two to four times when it crosses apps. Telling those apart is the Accessibility layer's job.
     if moved, echoes.focus { undelivered.append(.focus(window)) }
     // macOS reports the focus changes Arbor asks for like any other, a moment later: nothing comes from within the call. That the
-    // keyboard has moved is said when an app comes forward or steps back, so only across apps, and after the window's own report.
-    if crossesApps, echoes.focus { undelivered.append(.keyboardMoved) }
+    // keyboard has moved is said when an app comes forward or steps back, so only across apps, and after the window's own report. Twice
+    // if a window Arbor knows had the keyboard, whose app steps back (9 of 10 recorded); once if none had (11 of 22; never in 9).
+    if crossesApps, echoes.focus { undelivered += Array(repeating: .keyboardMoved, count: had == nil ? 1 : 2) }
     focused = window
     bringToFront(window)
   }
@@ -684,7 +686,10 @@ public final class FakeWindowSystem: WindowSystem {
     }
     // Another app comes forward, which is reported as its focused window taking the keyboard.
     if hidden, echoes.keyboard, let holder = focused, windows[holder]?.snapshot.pid == pid {
-      giveKeyboard(to: keyboardOrder.first { canTakeKeyboard($0) && windows[$0]?.snapshot.pid != pid })
+      let heir = keyboardOrder.first { canTakeKeyboard($0) && windows[$0]?.snapshot.pid != pid }
+      giveKeyboard(to: heir)
+      // With nobody to take it, it is said twice: something Arbor knows no window of comes forward, and the app that hid steps back.
+      if heir == nil { events?.keyboardFocusMoved() }
     }
     afterEvents?()
     deliverEchoes()
@@ -729,7 +734,8 @@ public final class FakeWindowSystem: WindowSystem {
     let before = secondsSinceInput
     if !nobodyTouchedAnything { secondsSinceInput = 0 }
     defer { secondsSinceInput = before }
-    let changesApp = appWithTheKeyboard != nil && appWithTheKeyboard != windows[window]?.snapshot.pid
+    // Nobody Arbor knows of steps back if no window has had the keyboard yet: then it is said once.
+    let (changesApp, stepsBack) = (appWithTheKeyboard != windows[window]?.snapshot.pid, appWithTheKeyboard != nil)
     focused = window
     undelivered.removeAll { if case .focus = $0 { true } else { false } }
     activateApp(of: window)
@@ -737,7 +743,7 @@ public final class FakeWindowSystem: WindowSystem {
     events?.windowFocused(window)
     if changesApp { events?.keyboardFocusMoved() }
     betweenTheApps()
-    if changesApp { events?.keyboardFocusMoved() }
+    if changesApp, stepsBack { events?.keyboardFocusMoved() }
     deliverEchoes()
   }
 
@@ -792,6 +798,9 @@ public final class FakeWindowSystem: WindowSystem {
     if bundleID != Self.finder { sweptAside = nil }
     guard app != frontmost else { return }
     frontmost = app
+    // For an app Arbor knows no window of (Finder with its Desktop), the one that had the keyboard has stepped back and has said so. If it
+    // comes forward again that is a change of app, and nobody Arbor knows of steps back for it.
+    if !windows.values.contains(where: { $0.snapshot.bundleID == bundleID }) { appWithTheKeyboard = nil }
     events?.applicationActivated(app)
   }
 

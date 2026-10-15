@@ -212,7 +212,8 @@ private final class Recorder: WindowSystemEvents {
 
   /// That the keyboard has moved is what the Accessibility layer makes of an app coming forward or stepping back. So Arbor's own `focus`
   /// brings it only across apps, and after the echoes of the frames and the window's own report. As recorded on a hosted Mac: within
-  /// an app "changed… focused", 13 times of 13; across apps "changed… focused, keyboard moved", 5 times of 7.
+  /// an app "changed… focused", 13 times of 13; from another app's window "changed… focused, keyboard moved, keyboard moved", 9 of 10;
+  /// from no window that Arbor knows, once in 11 of 22 and never in 9.
   @Test func theKeyboardIsSaidToHaveMovedOnlyAcrossAppsAndAfterTheCall() {
     let (system, recorder, _, b, c) = make()
     system.setFrame(CGRect(x: 10, y: 20, width: 640, height: 420), of: b)
@@ -225,7 +226,13 @@ private final class Recorder: WindowSystemEvents {
     system.focus(c)
     #expect(recorder.log.isEmpty)
     system.deliverEchoes()
-    #expect(recorder.log == ["changed \(c) echo", "focused \(c)", "keyboard moved"], "to another app")
+    #expect(recorder.log == ["changed \(c) echo", "focused \(c)", "keyboard moved", "keyboard moved"], "to another app, and the first steps back")
+    // From nobody Arbor knows of: the Desktop, or an app whose windows it does not see. Only the app that comes says so.
+    system.userFocusesNothing()
+    recorder.log.removeAll()
+    system.focus(b)
+    system.deliverEchoes()
+    #expect(recorder.log == ["focused \(b)", "keyboard moved"])
   }
 
   /// Nobody has to say so: windows opened under one name are one app's, under another name another's. So the keyboard does not go to
@@ -297,6 +304,17 @@ private final class Recorder: WindowSystemEvents {
     recorder.log.removeAll()
     system.userFocus(a)
     #expect(recorder.log == ["focused \(a)", "keyboard moved", "keyboard moved"])
+    // An app hides and nobody Arbor knows of takes the keyboard: Finder comes forward and the app steps back. When it comes forward
+    // again, only it says so: of Finder with its Desktop Arbor knows no window.
+    system.close(b)
+    recorder.log.removeAll()
+    system.setHidden(pid: 1, true)
+    system.activate(bundleID: "com.apple.finder", name: "Finder")
+    #expect(recorder.log == ["changed \(a) echo hidden", "keyboard moved", "keyboard moved"])
+    system.setHidden(pid: 1, false)
+    recorder.log.removeAll()
+    system.userFocus(a)
+    #expect(recorder.log == ["focused \(a)", "keyboard moved"])
   }
 
   /// What macOS does by itself does not wait for Arbor. A window that opens takes the keyboard and lies in front, and ⌘M hands the keyboard
