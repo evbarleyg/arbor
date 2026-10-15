@@ -858,8 +858,9 @@ private func endReason(_ entries: [TraceEntry]) -> String? {
     let lines = recordedTrace(h).entries.map(\.line)
     // A window named after its app gives nothing away, and replies that name the app must stay readable.
     #expect(lines.contains(.note("about to move title[1] beside Calculator")))
-    #expect(lines.contains(.command("layout Pages~title[1]")))
-    #expect(lines.contains(.done("layout Pages~title[1]", ok: false, message: "no window called title[1]")))
+    // This text cannot be read as a command, so of the command only the verb is written (`CanaryTests`). The reply keeps its tokens.
+    #expect(lines.contains(.command("layout …")))
+    #expect(lines.contains(.done("layout …", ok: false, message: TraceLine.aboutMark + "no window called title[1]")))
     #expect(lines.contains(.other(.call, "showHeadsUp", arguments: [.object(["text": .string("title[1] docked"), "window": .string("\(a)")])])))
     #expect(lines.contains(.other(.read, "frontmostTitle", result: .string("title[1]"))))
   }
@@ -870,14 +871,14 @@ private func endReason(_ entries: [TraceEntry]) -> String? {
     recorder.clock = { 0 }
     recorder.openSink = { _ in sink }
     try recorder.begin(name: "nest", fileName: "nest") { _ in Self.emptyHeader }
-    recorder.stimulus(.command("outer")) {
+    recorder.stimulus(.command("home")) {
       recorder.record(.focus(WindowID(1)))
       recorder.stimulus(.focused(WindowID(1))) { recorder.record(.focus(WindowID(2))) }
     }
     recorder.stimulus(.focused(WindowID(3))) {}
     #expect(
       sink.lines.dropFirst() == [
-        #"{"t":0.0000,"command":"outer"}"#, #"{"t":0.0000,"call":"focus","id":1}"#,
+        #"{"t":0.0000,"command":"home"}"#, #"{"t":0.0000,"call":"focus","id":1}"#,
         #"{"t":0.0000,"nested":true,"event":"focused","id":1}"#, #"{"t":0.0000,"call":"focus","id":2}"#,
         #"{"t":0.0000,"event":"focused","id":3}"#,
       ])

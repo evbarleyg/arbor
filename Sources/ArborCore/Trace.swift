@@ -890,7 +890,7 @@ public struct TitleTokens: Sendable {
     // A shortcut for `find Inbox` names part of a title as well. A replay does not need it: the line of a shortcut that
     // was pressed says what it ran.
     settings.bindings = settings.bindings.mapValues { text in
-      text.map { (try? Command.parse($0))?.textForLog ?? $0 }
+      text.map { (try? Command.parse($0))?.textForLog ?? Self.unreadable($0) }
     }
     // An entry of `displays` can go by a part of a display's name, and that can be a person's ("Robin's iPad"). One that goes by a
     // display's id stays: ids are in the trace anyway, and a replay matches by them.
@@ -972,8 +972,7 @@ public struct TitleTokens: Sendable {
       guard let text else { continue }
       guard let command = try? Command.parse(text) else {
         // A slip of the keyboard in any of the above. The verb is enough to see which.
-        let words = text.split(whereSeparator: \.isWhitespace)
-        if words.count > 1 { settings.bindings.updateValue("\(words[0]) …", forKey: chord) }
+        settings.bindings.updateValue(Self.unreadable(text), forKey: chord)
         continue
       }
       let shown: String
@@ -987,7 +986,8 @@ public struct TitleTokens: Sendable {
         // The shortcut it would make, as if it were made.
         var made = Settings()
         made.bindings = ["made": text]
-        shown = Command.settings(.bind(chord: inner, command: (sanitisedBindings(made).bindings["made"] ?? text) ?? text)).text
+        // (Whatever it is filed under by then: "made" is no shortcut. And never the text itself, should nothing come back.)
+        shown = Command.settings(.bind(chord: inner, command: (sanitisedBindings(made).bindings.values.first ?? nil) ?? Self.unreadable(text))).text
       case .find(.some): shown = command.textForLog
       case .name(let name): shown = Command.name(nameToken(for: name)).text
       case .goToSpace(let name): shown = Command.goToSpace(nameToken(for: name)).text
@@ -998,6 +998,10 @@ public struct TitleTokens: Sendable {
       default: continue
       }
       settings.bindings.updateValue(shown, forKey: chord)
+    }
+    // What stands where the keys should is somebody's slip too. A replay counts the shortcuts it cannot read, so each stays one.
+    for (number, chord) in settings.bindings.keys.filter({ (try? KeyChord(text: $0)) == nil }).sorted().enumerated() {
+      if let command = settings.bindings.removeValue(forKey: chord) { settings.bindings.updateValue(command, forKey: "…\(number + 1)") }
     }
     return settings
   }
@@ -1062,6 +1066,13 @@ extension TitleTokens {
     if !part.isEmpty { _ = mark(for: part.lowercased()) }
   }
 
+  /// The text of a command that holds `part`, with the part's mark in its place. Here it is known where the part is from, so it is
+  /// taken out as it stands: `withMarks` looks for whole words and never inside a token, and somebody's words can look like one
+  /// ("title[1] and more"), which would then shield the rest.
+  public mutating func withMark(forPart part: String, inCommand text: String) -> String {
+    part.isEmpty ? text : text.replacing(part, with: mark(for: part.lowercased()))
+  }
+
   /// `text` with the parts of titles that rules and `holdStillFor` go by, and the parts of names that `displays` goes by, replaced by their
   /// marks: replies quote them ("title contains "Payslip""). A replay's settings hold the marks, so there the reply comes out the same.
   public func withMarks(_ text: String) -> String {
@@ -1069,6 +1080,20 @@ extension TitleTokens {
     // Not out of a bundle id, which is no title and is in the trace anyway: `rule add com.apple.[p1] …` would be no command.
     return Self.replacing(marks, in: text, sparingWhatIsWrittenWithDots: true)
   }
+
+  /// What a trace holds of a text that cannot be read as a command. The words in a command are hidden by reading it, each kind in its own
+  /// way; what cannot be read cannot be hidden that way, so none of it is written but the verb, if it is one of Arbor's. That a text
+  /// cannot be read does not mean that nobody meant it: a name longer than the reader allows, typed into the name field, is a command
+  /// built in code, which never went through the reader. What is written is no command either (`name …` would be one, so there the `…`
+  /// comes first): a replay stops at it as it stopped at the text itself, and does nothing in its place.
+  public static func unreadable(_ text: String) -> String {
+    guard let verb = text.split(whereSeparator: \.isWhitespace).first.map({ $0.lowercased() }), verbs.contains(verb) else { return "…" }
+    return (try? Command.parse("\(verb) …")) == nil ? "\(verb) …" : "… \(verb)"
+  }
+
+  /// The first words of the lines of `help`.
+  private static let verbs = Set(
+    Command.helpText.split(separator: "\n").compactMap { $0.split(whereSeparator: { !($0.isLetter || $0 == "-") }).first.map { $0.lowercased() } })
 
   /// `text` without `words`, whatever their capitals: `…` stands for each.
   public static func without(_ words: Set<String>, in text: String) -> String {

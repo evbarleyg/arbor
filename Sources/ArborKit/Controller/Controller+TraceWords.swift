@@ -10,7 +10,7 @@ extension Controller: TraceWordsSource {
   public func wordsForTrace(
     inCommand text: String, from source: CommandSource?
   ) -> (text: String, names: Set<String>, sameReply: Bool) {
-    guard let command = try? Command.parse(text) else { return (text, everySpaceName(), true) }
+    guard let command = try? Command.parse(text) else { return (TitleTokens.unreadable(text), everySpaceName(), false) }
     // Looking things up asks which hand leads, and `InputLead` remembers what it answered (F56). Recording changes nothing.
     let before = following
     defer { following = before }
@@ -38,8 +38,8 @@ extension Controller: TraceWordsSource {
     case .settings(.bind(let chord, let text)):
       // What a shortcut is made to run is a command like any other, with the same words in it. A replay does not go by it: the line of
       // a shortcut that was pressed says what it ran.
-      // (One that cannot be read is no command: `bind` is refused before it gets anywhere.)
-      guard let inner = try? Command.parse(text) else { break }
+      // One that cannot be read is no command, and `bind` is refused. Somebody's words are in it all the same.
+      guard let inner = try? Command.parse(text) else { return (.settings(.bind(chord: chord, command: TitleTokens.unreadable(text))), false) }
       // What `find` is to look for is any part of a title. On its own it has a stand-in by now (`textForTrace`), which finds the same;
       // here nothing is looked for yet.
       // The reply repeats the command as it was typed, so it comes out the same only if nothing had to be replaced.

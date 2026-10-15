@@ -175,15 +175,17 @@ public final class TraceRecorder {
     func clean(_ text: String) -> String { titles.withMarks(titles.withNameTokens(titles.scrubbed(asLogged(text), keeping: appNames))) }
     /// The text of a command that is about to run.
     func shown(_ text: String, from source: CommandSource?) -> String {
-      guard let words else { return clean(text) }
+      // Nobody to ask what the words stand for. Then too, what cannot be read as a command is not written down.
+      guard let words else { return (try? Command.parse(text)) == nil ? TitleTokens.unreadable(text) : clean(text) }
       // Working it out takes questions to the window system, which are not Arbor's reaction to anything.
       isRecording = false
       let answer = words.wordsForTrace(inCommand: text, from: source)
       let parts = words.partsOfTitles(inCommand: text)
       isRecording = true
       for name in answer.names.sorted() { _ = titles.nameToken(for: name) }
-      for part in parts { titles.notePartOfATitle(part) }
-      let shown = clean(answer.text)
+      // The longest first, so that no part is cut out of another.
+      let marked = parts.sorted { $0.count > $1.count }.reduce(answer.text) { titles.withMark(forPart: $1, inCommand: $0) }
+      let shown = clean(marked)
       // An app's name goes when a slot is written as a window's number. It is in the trace anyway.
       let apps = appNames.reduce(into: Set<String>()) { $0.formUnion(TitleTokens.words(in: $1)) }
       shownCommands[text] = (shown, answer.sameReply, TitleTokens.words(in: text).subtracting(TitleTokens.words(in: shown)).subtracting(apps))

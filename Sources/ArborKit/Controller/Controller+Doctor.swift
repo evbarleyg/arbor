@@ -272,11 +272,18 @@ extension Controller {
   }
 
   /// One line per problem, with its notes. Names of apps and of settings, never a window's title.
+  ///
+  /// `doctor` answers whoever asks, on their own screen, and may quote their own file to them. The log is passed on. So of what is wrong in
+  /// settings.json the log gets how much, not what: the notes quote the file (a shortcut's command that cannot be read is somebody's
+  /// words), and so does the reason why the whole file cannot be read.
   public var setupProblemLines: [String] {
     doctorReport().checks.filter { $0.mark == .problem }.map { check in
-      "setup: \(check.title): \(([check.detail] + check.notes).joined(separator: " | "))"
+      let notes = check.title == Self.settingsFileCheck ? ["`doctor` lists them"] : check.notes
+      return forTheLog("setup: \(check.title): \(([check.detail] + notes).joined(separator: " | "))")
     }
   }
+
+  private static let settingsFileCheck = "settings.json"
 
   /// Arbor has no window and no Dock icon: if macOS leaves its item out of a full menu bar, it has no face at all.
   private func checkMenuBarItem(into report: inout DoctorReport) {
@@ -305,7 +312,7 @@ extension Controller {
   private func checkSettings(into report: inout DoctorReport) {
     if let problem = settingsFileProblem {
       return report.add(
-        .problem, "settings.json",
+        .problem, Self.settingsFileCheck,
         "cannot be read (\(problem)). Arbor goes on with the settings it had, and refuses to change any until the file is "
           + "mended; `reset everything` writes a new one and keeps this one")
     }
@@ -314,9 +321,9 @@ extension Controller {
       settings.valueProblems + settings.skippedRules.map { "rules: \($0)" }
       + effectiveBindings.problems.map { "bindings: \($0)" }
     if notes.isEmpty {
-      report.add(.ok, "settings.json", "no problems")
+      report.add(.ok, Self.settingsFileCheck, "no problems")
     } else {
-      report.add(.problem, "settings.json", "\(notes.count) entries skipped", notes: notes)
+      report.add(.problem, Self.settingsFileCheck, "\(notes.count) entries skipped", notes: notes)
     }
   }
 }

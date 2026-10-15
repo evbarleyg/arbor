@@ -357,7 +357,8 @@ private let display = TraceDisplay(
     #expect(
       tokens.sanitisedBindings(settings).bindings == [
         "ctrl+opt+1": "go name-1", "ctrl+opt+2": "name name-2", "ctrl+opt+3": "unname name-2", "ctrl+opt+4": "layout Mail | Notes",
-        "ctrl+opt+5": "dock left", "ctrl+opt+6": nil, "ctrl+opt+7": "goo …", "ctrl+opt+8": "unname", "ctrl+opt+9": "nonsense",
+        // What cannot be read keeps its first word only if that is a verb of Arbor's: a slip can put anybody's word first, or alone.
+        "ctrl+opt+5": "dock left", "ctrl+opt+6": nil, "ctrl+opt+7": "…", "ctrl+opt+8": "unname", "ctrl+opt+9": "…",
       ])
   }
 }
