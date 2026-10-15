@@ -48,9 +48,10 @@ struct Menu {
     return first.frame.union(last.frame).insetBy(dx: 0, dy: -Menu.padding)
   }
 
-  static let rowHeight: CGFloat = 22
-  static let separatorHeight: CGFloat = 11
-  static let padding: CGFloat = 5
+  // What macOS 26 gives them, so that the menu itself is as high here as on a Mac, and as `menu` says. Not so a submenu.
+  static let rowHeight = CGFloat(MenuModel.Metrics.macOS26.row)
+  static let separatorHeight = CGFloat(MenuModel.Metrics.macOS26.separator)
+  static let padding = CGFloat(MenuModel.Metrics.macOS26.padding)
 }
 
 extension World {
@@ -98,11 +99,11 @@ extension World {
       case .submenu: action = .submenu
       case .text: action = .nothing
       }
-      // One level of submenus, whose headings are left out: they cannot be chosen, and only this file knows the sizes.
+      // One level of submenus, whose headings and separators are left out: they cannot be chosen.
       return Menu.Item(
         title: model.title, action: action, children: model.sections.flatMap(\.items).map(item), ticked: model.isTicked)
     }
-    /// A nil stands for a separator. A heading is a row that is there to be read.
+    /// A nil stands for a separator. A heading is a row that is there to be read, and as high as one.
     var rows: [Menu.Item?] = []
     for (index, section) in arbor.controller.menuModel().sections.enumerated() {
       if index > 0 { rows.append(nil) }
@@ -113,7 +114,7 @@ extension World {
   }
 
   /// Gives every item a place: the menu hangs below the menu bar item, pushed left to fit the screen, and
-  /// submenus open on the side that has room. The sizes are made up; only this file knows them.
+  /// submenus open on the side that has room. The widths are made up; only this file knows them.
   private func laidOut(_ rows: [Menu.Item?]) -> Menu {
     let width: CGFloat = 300
     let submenuWidth: CGFloat = 240

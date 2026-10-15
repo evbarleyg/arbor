@@ -70,7 +70,7 @@ extension Controller {
     case .exclude(let bundleID):
       // It cannot be undone, being a setting. `undo` says so, and then it should say what can be done.
       if let bundle = bundleID ?? system.focusedWindow().flatMap({ windows[$0]?.bundleID }) {
-        scope?.label = "exclude \(bundle) (`include \(bundle)`, or Arrange Again in the menu, takes that back)"
+        scope?.label = "exclude \(bundle) (`include \(bundle)`, or Arrangement → Arrange Again in the menu, takes that back)"
       }
     default:
       break

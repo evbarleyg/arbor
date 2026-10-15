@@ -15,6 +15,10 @@ import Foundation
 ///
 /// Then add the line to `MenuTests.theWholeMenu`, which is the menu written out and fails until it agrees. Nothing in
 /// `StatusMenu` changes. A row that cannot act now is greyed out, not left out, so that it is found where it was.
+///
+/// **The top level is full** (docs/MENU.md, rule 3): in the state with the most lines the menu is 593 points high, and
+/// it may be 600, so that Pause Arbor and Quit Arbor are never below the fold of a small display. `MenuHeightTests`
+/// counts. A new row goes into the submenu that ends its group.
 extension Controller {
   private typealias Item = MenuModel.Item
   private typealias Section = MenuModel.Section
@@ -67,7 +71,8 @@ extension Controller {
   /// `menu`: the menu as text. A query, so it works before `start()` and during a pause.
   func menuReport() -> CommandResult {
     let model = menuModel()
-    return CommandResult(ok: true, message: "\(model.allItems.count) items", text: model.text)
+    let message = "\(model.allItems.count) items, \(Int(model.height)) points high"
+    return CommandResult(ok: true, message: message, text: model.text)
   }
 
   // MARK: States
@@ -86,8 +91,8 @@ extension Controller {
       states.append([Item.text("Arbor is starting…")])
     }
     if !holdState.isEmpty { states.append(holdState.map(item)) }
-    // The row that ends it is in its usual place, ticked.
-    if let notice = passThroughNotice { states.append([Item.text(notice)]) }
+    // The row that ends it, ticked, as it is in its usual place: that is a submenu, and in this state no key helps.
+    if let notice = passThroughNotice { states.append([Item.text(notice), shortcutsOffInThisApp]) }
     if let problem = settingsFileProblem {
       // Where, not what: "line 3, column 3". The file's own editor and `doctor` have room for the rest.
       let place = problem.split(separator: ":", maxSplits: 1).first.map(String.init) ?? problem
@@ -122,17 +127,24 @@ extension Controller {
     let places = menuBarModel(complete: true)
     let focused = focusedWindowInHand
     let map = minimapInMenu
-    return Section("View") {
+    return Section {
       Item.command("Show Everything", .showAll).like(places.button(.everything))
       Item.command("Show the Desktop", .desktop).like(places.button(.desktop))
       Item.command("Frame Focused Window", .zoom(nil)).enabled(focused.map(canFrame) ?? false).ticked(focused?.isFramed == true)
-      Item.command("Step Out", .stepOut).enabled(canStep.out)
-      Item.command("Step In", .stepIn).enabled(canStep.in)
-      Item.command("Back", .back).like(places.button(.back))
-      Item.command("Forward", .forward).like(places.button(.forward))
       Item.command("Go to…", .find(nil)).enabled(!finderRows().isEmpty)
       Item.submenu("Saved Views", sections: savedViewSections(places))
-      Item.command("Show Minimap", .minimap).enabled(map.canToggle).ticked(map.isUp)
+      Item.submenu(
+        "View",
+        sections: [
+          Section {
+            Item.command("Step Out", .stepOut).enabled(canStep.out)
+            Item.command("Step In", .stepIn).enabled(canStep.in)
+            Item.command("Back", .back).like(places.button(.back))
+            Item.command("Forward", .forward).like(places.button(.forward))
+          },
+          Section { Item.command("Show Minimap", .minimap).enabled(map.canToggle).ticked(map.isUp) },
+          Section { holdRows.map(item) },
+        ])
     }
   }
 
@@ -209,7 +221,7 @@ extension Controller {
   /// Every row is about the focused window or its app, and all are greyed out when there is none.
   private func windowSection() -> Section {
     let focused = focusedWindowInHand
-    return Section("Focused Window") {
+    return Section {
       Item.submenu(
         "Dock Focused Window",
         sections: [
@@ -225,25 +237,36 @@ extension Controller {
         ])
       // The command the shortcut runs. On a window that floats it would dock it, which is not what the row says.
       Item.command("Float Focused Window", .toggleFloat(nil)).enabled(focused?.leaf != nil)
-      // No app's name: it pins a window. The app is what a rule is for.
-      Item.command("Keep This Window in View", .togglePin(nil)).enabled(focused != nil)
-        .ticked(focused.map { isPinned($0.window.id) } ?? false)
-        .help(
-          "It keeps its place wherever you zoom. Dragging moves it and never docks it: to dock it, use Dock Focused "
-            + "Window, or turn this off first.")
-      if let window = focused?.window, let bundle = window.bundleID {
-        Item.command("Don’t Arrange “\(window.appName)”", .exclude(bundleID: bundle))
-      } else {
-        Item.text("Don’t Arrange This App")
-      }
-      // About the app in front, whether or not Arbor arranges its windows. Never about Arbor itself.
-      if let front = frontmostApp, let bundle = front.bundleID, bundle != Bundle.main.bundleIdentifier {
-        Item.command("Shortcuts Off in “\(front.name)”", .passThrough(bundleID: bundle)).withoutShortcut()
-          .ticked(settings.passesThrough(bundle))
-      } else {
-        Item.text("Shortcuts Off in This App")
-      }
+      Item.submenu(
+        "Focused Window",
+        sections: [
+          Section {
+            // No app's name: it pins a window. The app is what a rule is for.
+            Item.command("Keep This Window in View", .togglePin(nil)).enabled(focused != nil)
+              .ticked(focused.map { isPinned($0.window.id) } ?? false)
+              .help(
+                "It keeps its place wherever you zoom. Dragging moves it and never docks it: to dock it, use Dock Focused "
+                  + "Window, or turn this off first.")
+          },
+          Section {
+            if let window = focused?.window, let bundle = window.bundleID {
+              Item.command("Don’t Arrange “\(window.appName)”", .exclude(bundleID: bundle))
+            } else {
+              Item.text("Don’t Arrange This App")
+            }
+            shortcutsOffInThisApp
+          },
+        ])
     }
+  }
+
+  /// About the app in front, whether or not Arbor arranges its windows. Never about Arbor itself.
+  private var shortcutsOffInThisApp: Item {
+    guard let front = frontmostApp, let bundle = front.bundleID, bundle != Bundle.main.bundleIdentifier else {
+      return Item.text("Shortcuts Off in This App")
+    }
+    return Item.command("Shortcuts Off in “\(front.name)”", .passThrough(bundleID: bundle)).withoutShortcut()
+      .ticked(settings.passesThrough(bundle))
   }
 
   /// `dock` has nowhere to take a docked window: asked as `dock` asks it.
@@ -272,14 +295,14 @@ extension Controller {
     let groupsInView = here.map { workspace in workspace.tree.preorder(from: workspace.camera).contains(where: workspace.tree.isSplit) }
     var hasGroup = false
     if case .group = focusedGroup() { hasGroup = true }
-    return Section("Arrangement") {
+    return Section {
       Item.command(undoTitle.map { "Undo \($0)" } ?? "Undo", .undo).enabled(undoTitle != nil)
       Item.command(redoTitle.map { "Redo \($0)" } ?? "Redo", .redo).enabled(redoTitle != nil)
       Item.command("Arrange Windows", .arrange).enabled(anyHere == true)
       // One of the ways back, which are never greyed out: nobody should have to wonder why.
       Item.command("Float All Windows", .floatAll)
       Item.submenu(
-        "Adjust",
+        "Arrangement",
         sections: [
           Section {
             Item.command("Grow", .grow(nil)).enabled(focused.map { hasRoomToTrade($0.window.id) } ?? false)
@@ -291,11 +314,12 @@ extension Controller {
             Item.command("Mirror Group", .mirror).enabled(hasGroup)
           },
           Section { Item.command("Lay Out Again", .relayout) },
+          Section { Item.command("Dock New Windows", .toggleAutoDock).ticked(settings.docksNewWindows) },
+          // Last, because it grows.
+          Section("Arrange Again") {
+            for app in excludedApps { Item.command(app.name, .include(bundleID: app.bundleID)) }
+          },
         ])
-      Item.command("Dock New Windows", .toggleAutoDock).ticked(settings.docksNewWindows)
-      Item.submenu("Arrange Again") {
-        for app in excludedApps { Item.command(app.name, .include(bundleID: app.bundleID)) }
-      }
     }
   }
 
@@ -314,12 +338,8 @@ extension Controller {
   // MARK: Arbor
 
   private func arborSection() -> Section {
-    Section("Arbor") {
-      holdRows.map(item)
+    Section {
       settingsWindow
-      // With none to show the panel does not come (`toggleCheatSheet`).
-      Item.command("Keyboard Shortcuts…", .showShortcuts)
-        .enabled(settings.hotkeysEnabled && !(isPassingThrough ? effectiveBindings.bindings : activeBindings).isEmpty)
       help
     }
   }
@@ -333,6 +353,10 @@ extension Controller {
       "Help",
       sections: [
         Section {
+          // With none to show the panel does not come (`toggleCheatSheet`), nor from an Arbor that is not running.
+          Item.command("Keyboard Shortcuts…", .showShortcuts)
+            .enabled(isRunning && settings.hotkeysEnabled)
+            .enabled(!(isPassingThrough ? effectiveBindings.bindings : activeBindings).isEmpty)
           Item.command("Welcome…", .welcome)
           Item.command("Check Setup…", .checkSetup)
         },

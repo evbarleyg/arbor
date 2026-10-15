@@ -57,7 +57,7 @@ proves T18
 ctl dock "$V1" right
 ctl dock "$W1" beside "$W2" bottom
 click_window "$W2"
-check "the item can be clicked" click_menu "Don’t Arrange"
+check "the submenu's item can be clicked" click_menu "Focused Window" "Don’t Arrange"
 check "Arbor ran exclude" eventually ran exclude "$ARBOR_TEST_BUNDLE"
 check "the app's windows are no longer arranged" eventually fails is managed "$W2"
 check "none of them" fails is managed "$W1"
@@ -69,7 +69,7 @@ check "settings.json has the app" grep -q "$ARBOR_TEST_BUNDLE" "$ARBOR_HOME/sett
 
 claim "choose the app under Arrange Again: its windows are arranged again"
 proves T18
-check "the submenu's item can be clicked" click_menu "Arrange Again" "ArborTestWindows"
+check "the submenu's item can be clicked" click_menu "Arrangement" "ArborTestWindows"
 check "Arbor ran include" eventually ran include "$ARBOR_TEST_BUNDLE"
 check "the app's windows are arranged again" eventually is managed "$W2"
 check "they float" is floating "$W2"

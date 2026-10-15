@@ -177,7 +177,7 @@ extension Controller {
       return nil
     }
     if !ok, let bundle = window.bundleID, filter.excludedBundleIDs.contains(bundle) {
-      return HeadsUpModel(kind: .problem, text: "Arbor does not arrange \(window.appName)", hint: "Arrange Again in the menu")
+      return HeadsUpModel(kind: .problem, text: "Arbor does not arrange \(window.appName)", hint: "Arrangement → Arrange Again in the menu")
     }
     // The headline key, pressed before anything is docked: the Desktop, where the window floats, is in view already.
     if ok, changedNothing, command == .zoom(nil), workspaceID(containing: id).map({ workspaces[$0]?.isFloating(id) == true }) == true {

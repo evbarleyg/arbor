@@ -938,7 +938,9 @@ private let side = DisplaySnapshot(
     #expect(h.overlays.finder?.message == "That window has closed")
     #expect(h.overlays.finder?.query == "notes", "what was typed stays")
     #expect(Set(listedWindows(h)) == [safari, mail, terminal])
-    #expect(h.overlays.finder?.items.isEmpty == true)
+    // No place. The letters are still found, scattered over a command's way through the menu: Focused Window ▸ Don’t Arrange “Safari”.
+    let places = h.overlays.finder?.items.filter { if case .command = $0.row.destination { false } else { true } }
+    #expect(places?.isEmpty == true, "\(places?.map(\.row.name) ?? [])")
     #expect(h.workspace == workspace)
     #expect(h.system.focused == safari)
     // The palette goes on working.

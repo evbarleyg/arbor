@@ -504,7 +504,7 @@ private func near(_ a: CGRect, _ b: CGRect, within tolerance: CGFloat = 0.01) ->
         glide item menu
         click
         wait 0.2
-        glide menu Keep This Window in View
+        glide menu Float All Windows
         wait 0.2
         click
         wait 0.5
@@ -512,11 +512,11 @@ private func near(_ a: CGRect, _ b: CGRect, within tolerance: CGFloat = 0.01) ->
     #expect(film.failures.isEmpty)
     let open = try #require(film.frames.last { $0["menu"] != nil })
     let rows = try #require((open["menu"] as? [String: Any])?["rows"] as? [[String: Any]])
-    #expect(rows.first { $0["highlighted"] as? Bool == true }?["title"] as? String == "Keep This Window in View")
+    #expect(rows.first { $0["highlighted"] as? Bool == true }?["title"] as? String == "Float All Windows")
     #expect(rows.contains { $0["title"] as? String == "Show Everything" && $0["shortcut"] as? String == "⌃⌥Space" })
     let end = try #require(film.frames.last)
     #expect(end["menu"] == nil)
-    #expect((end["headsUp"] as? [String: Any])?["text"] as? String == "Keeping Notes in view")
+    #expect((end["headsUp"] as? [String: Any])?["text"] as? String == "Floated 1 window")
   }
 
   @Test func theItemIsInTheMenuBarFromLaunchToQuitAndQuittingGivesTheWindowBack() throws {

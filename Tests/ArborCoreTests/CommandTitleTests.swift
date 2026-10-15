@@ -31,11 +31,11 @@ import Testing
     #expect(Command.checkForUpdates.title == "Check for Updates", "docs/MENU.md, Help")
     #expect(Command.launchAtLogin(true).title == "Open at Login", "macOS's own words")
     #expect(Command.launchAtLogin(false).title == "Don’t Open at Login")
-    #expect(Command.toggleAutoDock.title == "Dock New Windows", "docs/MENU.md, row 23")
-    #expect(Command.hold(minutes: nil).title == "Hold This View", "docs/MENU.md, row 25")
-    #expect(Command.holdStill(minutes: 30).title == "Hold Still", "docs/MENU.md, row 26")
+    #expect(Command.toggleAutoDock.title == "Dock New Windows", "docs/MENU.md, Arrangement")
+    #expect(Command.hold(minutes: nil).title == "Hold This View", "docs/MENU.md, View")
+    #expect(Command.holdStill(minutes: 30).title == "Hold Still", "docs/MENU.md, View")
     #expect(Command.release.title == "Release the View")
-    #expect(Command.find(nil).title == "Go to…", "docs/MENU.md, row 8, dots and all")
+    #expect(Command.find(nil).title == "Go to…", "docs/MENU.md, row 4, dots and all")
   }
 
   @Test func anArrangementsTitleLeavesOutThePartsOfWindowTitles() throws {

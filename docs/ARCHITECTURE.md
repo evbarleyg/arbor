@@ -1410,6 +1410,11 @@ menu is tested on Linux in every state, and the `menu` query prints it (`arborct
    `Item.submenu("…") { … }` the same lines one level down, and `if` and `for` work inside a section;
 2. add the line to `MenuTests.theWholeMenu`, which is the whole menu written out and fails until the two agree.
 
+**Into a submenu: the top level is full.** `MenuModel.height` adds up what macOS gives a menu's rows, separators and headings (`MenuModel.Metrics`: what
+`NSMenu` answers on macOS 26, which `MenuHeightAppKitTests` asks it on every Mac), as `StatusMenu.fill` puts them together, and `MenuHeightTests` holds it to `MenuModel.tallest`, 600 points, in every state the menu can
+open in: a longer menu scrolls on a small display, and its last rows are Pause Arbor and Quit Arbor. `menu` says the height, and
+`scripts/mac-shell/check-menu-height.sh` holds it against the window a real Mac makes and clicks each way out where the sizes say it is.
+
 That is all: no AppKit, nothing to compile on a Mac. The shortcut is filled in from the ones registered. `MenuTests` holds every item, whoever
 added it, to a few rules: what is not greyed out does not fail when chosen (in five states of the arrangement); rows are greyed out, not left
 out; the ways back are never greyed out; titles use no word the glossary rules out; every command has a text form. **`MenuChaosTests`** asks the

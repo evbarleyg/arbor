@@ -34,7 +34,7 @@ summary
 claim "choose Hold This View from the menu with a window framed: no shortcut moves the view, and a line says why and what releases it"
 proves A58
 check "the others are out of view" eventually out_of_view "$V1"
-check "the item can be clicked" click_menu "Hold This View"
+check "the submenu's item can be clicked" click_menu "View" "Hold This View"
 check "Arbor ran hold" eventually ran hold
 check "status says that the view is held" eventually held
 check "the framed window has the keyboard" eventually is focused "$W1"
@@ -49,7 +49,10 @@ check "and so is the floating one" out_of_view "$W3"
 check "all three are still docked" count docked 3
 open_menu
 check "the menu's first line says that the view is held" eventually pointer menu-item "$ARBOR_PID" "The view is held: nothing moves it"
-check "Hold This View is ticked" marked "Hold This View" "✓"
+key escape
+check "its submenu opens" click_menu "View"
+check "Hold This View is ticked" eventually marked "Hold This View" "✓"
+key escape
 key escape
 
 claim "an app comes forward by itself while the view is held: its window stays out of view and the keyboard goes back"
@@ -156,7 +159,7 @@ proves A59
 click_window "$W1"
 check "⌃⌥↩ frames the focused window" pressed ctrl+opt+return zoom
 check "the other app's window is out of view" eventually out_of_view "$V1"
-check "the item can be clicked" click_menu "Hold Still"
+check "the submenu's item can be clicked" click_menu "View" "Hold Still"
 check "Arbor ran hold still" eventually ran hold still
 check "status says that Arbor holds still" eventually still
 # What takes the keyboard within half a second of a click or a modifier key counts as the person's own doing: let that run out.
@@ -177,8 +180,9 @@ check "and that is not said again" said_times "is out of view: holding still" 1
 check "⌃⌥Space reaches Arbor" pressed ctrl+opt+space show-all
 check "and shows everything" eventually in_view "$V1"
 check "Arbor still holds still" still
-open_menu
+check "its submenu opens" click_menu "View"
 check "Hold Still is ticked" eventually marked "Hold Still" "✓"
+key escape
 key escape
 check "Release can be clicked" click_menu "Release"
 check "it ends" eventually fails still

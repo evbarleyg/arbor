@@ -269,8 +269,8 @@ private let side = DisplaySnapshot(
     h.run("include com.example.safari", from: .menu)
     #expect(
       lines(h) == [
-        "No longer arranging Safari", "Arbor does not arrange Safari · Arrange Again in the menu",
-        "Arbor does not arrange Safari · Arrange Again in the menu", "Arranging Safari again",
+        "No longer arranging Safari", "Arbor does not arrange Safari · Arrangement → Arrange Again in the menu",
+        "Arbor does not arrange Safari · Arrangement → Arrange Again in the menu", "Arranging Safari again",
       ])
     #expect(h.overlays.messages.map(\.model.kind) == [.change, .problem, .problem, .change])
   }

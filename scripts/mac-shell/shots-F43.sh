@@ -158,11 +158,12 @@ ctl show-all
 grep -F "panel of shortcuts" "$ARBOR_HOME/arbor.log" | cut -c 26-
 
 step "the menu"
-if item=$(status_item); then
-  # shellcheck disable=SC2086
-  rightclick $item
+# A right click: a plain one in the middle of the item presses one of its buttons.
+if open_menu; then
+  # Keyboard Shortcuts… is the first row of Help ▸. The first Escape may close only the submenu.
+  key h; key e; key right
   shot 20-menu
-  key escape
+  key escape; key escape
 fi
 
 step "pausing"

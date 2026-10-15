@@ -171,6 +171,41 @@ public struct MenuModel: Equatable, Sendable {
 
   public func section(_ title: String?) -> Section? { sections.first { $0.title == title } }
 
+  // MARK: How high it is
+
+  /// What macOS gives each part of a menu, in points.
+  public struct Metrics: Equatable, Sendable {
+    public var row: Double
+    public var separator: Double
+    public var heading: Double
+    /// Above the first row, and again below the last.
+    public var padding: Double
+
+    public init(row: Double, separator: Double, heading: Double, padding: Double) {
+      (self.row, self.separator, self.heading, self.padding) = (row, separator, heading, padding)
+    }
+
+    /// What `NSMenu` answers on macOS 26 at the default text size (`MenuHeightAppKitTests` asks it on every Mac the
+    /// tests run on). Earlier systems give a row 22, so what fits by these fits there.
+    public static let macOS26 = Metrics(row: 24, separator: 11, heading: 24, padding: 5)
+  }
+
+  /// docs/MENU.md, rule 3. A display 768 points high shows 668 of a menu, between the menu bar and the Dock; what is
+  /// longer scrolls, and its last rows, which are the ways out, are below the fold.
+  public static let tallest = 600.0
+
+  /// How high `StatusMenu.fill` makes a menu of these sections: a separator above each but the first, and a heading
+  /// for a title.
+  public static func height(of sections: [Section], _ metrics: Metrics = .macOS26) -> Double {
+    sections.enumerated().reduce(2 * metrics.padding) { height, next in
+      height + (next.offset > 0 ? metrics.separator : 0) + (next.element.title == nil ? 0 : metrics.heading)
+        + Double(next.element.items.count) * metrics.row
+    }
+  }
+
+  /// The menu's own height, submenus apart.
+  public var height: Double { Self.height(of: sections) }
+
   // MARK: As text
 
   /// What `menu` prints: a line per item, indented under its section or parent, with ✓ for a tick, the shortcut

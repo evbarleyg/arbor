@@ -47,14 +47,16 @@ proves A49
 click_window "$V1"
 check "the other app's window has the keyboard" eventually is focused "$V1"
 place=$(real_frame_of "$V1")
-check "the item can be clicked" click_menu "Keep This Window"
+check "the submenu's item can be clicked" click_menu "Focused Window" "Keep This Window"
 check "Arbor ran toggle-pin" eventually ran toggle-pin
 check "Arbor calls it pinned" eventually is pinned "$V1"
 check "it still floats" is floating "$V1"
 # shellcheck disable=SC2086
 check "it has not moved" is_at "$V1" $place
-open_menu
+# A click on the row that opens a submenu opens it and leaves the menu open. The first Escape may close only the submenu.
+check "its submenu opens" click_menu "Focused Window"
 check "the item is ticked" eventually marked "Keep This Window" "✓"
+key escape
 key escape
 
 claim "drag a pinned window over a docked one: no preview shows, and it lies where it was dropped, still pinned"
@@ -120,8 +122,9 @@ check "⌃⌥⇧D reaches Arbor" pressed ctrl+opt+shift+d toggle-pin
 check "it is no longer pinned" eventually fails is pinned "$V1"
 # shellcheck disable=SC2086
 check "it has not moved" is_at "$V1" $place
-open_menu
+check "its submenu opens" click_menu "Focused Window"
 check "the menu's item is no longer ticked" eventually marked "Keep This Window" "-"
+key escape
 key escape
 click_window "$W2"
 check "a click on the docked window under it now leaves it covered" stays fails uncovered "$V1"

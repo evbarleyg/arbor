@@ -1147,7 +1147,7 @@ private func expectConsistent(_ h: Harness, _ note: String = "", sourceLocation:
     #expect(!first.ok)
     #expect(
       first.message
-        == "cannot undo exclude com.example.notes (`include com.example.notes`, or Arrange Again in the menu, takes that back); "
+        == "cannot undo exclude com.example.notes (`include com.example.notes`, or Arrangement → Arrange Again in the menu, takes that back); "
         + "undo again to take back dock \(a) left")
     #expect(h.workspace.isDocked(a) && h.workspace.isFloating(b))
     #expect(h.run("undo").message == "undid dock \(a) left")

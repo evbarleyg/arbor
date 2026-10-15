@@ -31,14 +31,9 @@ import Testing
     h.run("exclude com.apple.Music")
     #expect(
       h.run("menu").text == """
-        View
           ✓ Show Everything  ⌃⌥Space
             Show the Desktop  ⌃⌥D
             Frame Focused Window  ⌃⌥↩
-            Step Out  ⌃⌥↑  (gray)
-            Step In  ⌃⌥↓
-            Back  ⌃⌥[  (gray)
-            Forward  ⌃⌥]  (gray)
             Go to…  ⌃⌥G
             Saved Views ▸
                 Go To
@@ -55,40 +50,50 @@ import Testing
                     View 9  ⌃⌥⇧9
                 -----
                     Name This Space…  ⌃⌥N
-            Show Minimap  ⌃⌥M
-        Focused Window
+            View ▸
+                Step Out  ⌃⌥↑  (gray)
+                Step In  ⌃⌥↓
+                Back  ⌃⌥[  (gray)
+                Forward  ⌃⌥]  (gray)
+            -----
+                Show Minimap  ⌃⌥M
+            -----
+                Hold This View
+                Hold Still
+        -----
             Dock Focused Window ▸
                 Left  ⌃⌥⌘←  (gray)
                 Right  ⌃⌥⌘→
                 Top  ⌃⌥⌘↑
                 Bottom  ⌃⌥⌘↓
             Float Focused Window  ⌃⌥F
-            Keep This Window in View
-            Don’t Arrange “Safari”
-            Shortcuts Off in “Safari”
-        Arrangement
+            Focused Window ▸
+                Keep This Window in View
+            -----
+                Don’t Arrange “Safari”
+                Shortcuts Off in “Safari”
+        -----
             Undo Dock  ⌃⌥Z
             Redo  ⌃⌥⇧Z  (gray)
             Arrange Windows  ⌃⌥A
             Float All Windows  ⌃⌥⇧F
-            Adjust ▸
-                Grow  ⌃⌥⌘=
-                Shrink  ⌃⌥⌘-
-                Balance Sizes  ⌃⌥⌘0
-            -----
-                Rotate Group  ⌃⌥R
-                Mirror Group  ⌃⌥⇧R
-            -----
-                Lay Out Again
-            Dock New Windows
-            Arrange Again ▸
-                Music
-        Arbor
-            Hold This View
-            Hold Still
+            Arrangement ▸
+                    Grow  ⌃⌥⌘=
+                    Shrink  ⌃⌥⌘-
+                    Balance Sizes  ⌃⌥⌘0
+                -----
+                    Rotate Group  ⌃⌥R
+                    Mirror Group  ⌃⌥⇧R
+                -----
+                    Lay Out Again
+                -----
+                    Dock New Windows
+                Arrange Again
+                    Music
+        -----
             Settings…  ⌃⌥,
-            Keyboard Shortcuts…  ⌃⌥⇧/
             Help ▸
+                Keyboard Shortcuts…  ⌃⌥⇧/
                 Welcome…
                 Check Setup…
             -----
@@ -115,6 +120,7 @@ import Testing
         -----
             Settings…
             Help ▸
+                Keyboard Shortcuts…  (gray)
                 Welcome…
                 Check Setup…
             -----
@@ -157,7 +163,7 @@ import Testing
     let menu = harness(in: state).controller.menuModel()
     #expect(menu.sections.first?.items.first?.title == "Show Everything", "the first command in the menu")
     #expect(menu.sections.last?.items.map(\.title) == ["Pause Arbor", "Quit Arbor"], "the last two rows")
-    #expect(menu.section("Arrangement")?.items.contains { $0.title == "Float All Windows" } == true)
+    #expect(menu.sections.contains { $0.items.map(\.title).suffix(2) == ["Float All Windows", "Arrangement"] }, "in its group")
     for title in ["Show Everything", "Float All Windows", "Pause Arbor", "Quit Arbor"] {
       #expect(menu.item(title)?.isEnabled == true, "\(title)")
     }
@@ -186,19 +192,29 @@ import Testing
   }
 
   @Test func rowsAreGreyedOutNotLeftOut() {
-    func rows(_ state: String) -> [[String]] {
-      harness(in: state).controller.menuModel().sections.map { section in
-        // Without the name of the app, or of the step, a row is about.
-        section.items.map { item in
-          ["Keep", "Don’t Arrange", "Shortcuts Off", "Undo", "Redo"].first { item.title.hasPrefix($0 + " ") } ?? item.title
+    // Submenus too: each row's title after the way to it.
+    func titles(_ sections: [MenuModel.Section], under path: String) -> [[String]] {
+      sections.map { section in
+        section.items.flatMap { item -> [String] in
+          // Without the name of the app, or of the step, a row is about.
+          let title = ["Keep", "Don’t Arrange", "Shortcuts Off", "Undo", "Redo"].first { item.title.hasPrefix($0 + " ") } ?? item.title
+          // Saved Views lists what there is, and what there is differs.
+          guard title != "Saved Views" else { return [title] }
+          return [path + title] + titles(item.sections, under: path + title + " ▸ ").flatMap { $0 }
         }
       }
     }
+    func rows(_ state: String) -> [[String]] { titles(harness(in: state).controller.menuModel().sections, under: "") }
     let usual = rows("everything")
+    #expect(usual.flatMap { $0 }.contains("Focused Window ▸ Don’t Arrange") && usual.flatMap { $0 }.contains("View ▸ Step In"))
     for state in ["framed", "floating", "nothing docked", "no windows"] { #expect(rows(state) == usual, "\(state)") }
     let empty = harness(in: "no windows").controller.menuModel()
-    #expect(empty.section("Focused Window")?.items.allSatisfy { !$0.isEnabled || !$0.sections.isEmpty } == true)
-    #expect(empty.item("Dock Focused Window")?.sections.flatMap(\.items).contains { $0.isEnabled } == false)
+    let group = empty.sections.first { $0.items.first?.title == "Dock Focused Window" }
+    #expect(group?.items.map(\.title) == ["Dock Focused Window", "Float Focused Window", "Focused Window"])
+    #expect(group?.items.allSatisfy { !$0.isEnabled || !$0.sections.isEmpty } == true)
+    for submenu in ["Dock Focused Window", "Focused Window"] {
+      #expect(empty.item(submenu)?.sections.flatMap(\.items).contains { $0.isEnabled } == false, "\(submenu)")
+    }
   }
 
   /// A started harness in one of the states a menu can open in.
@@ -392,7 +408,8 @@ import Testing
     #expect(row?.isTicked == false && row?.shortcut == nil)
     #expect(row?.command.map { h.controller.perform($0, from: .menu).ok } == true)
     let menu = h.controller.menuModel()
-    #expect(menu.sections.first?.items.map(\.title) == ["Shortcuts are off in “Safari”"])
+    #expect(menu.sections.first?.items.map(\.title) == ["Shortcuts are off in “Safari”", "Shortcuts Off in “Safari”"])
+    #expect(menu.sections.first?.items.last?.isTicked == true, "the row that ends it, right under the line: no key helps here")
     #expect(menu.sections.dropFirst().first?.items.first?.title == "Show Everything", "and the rest is where it was")
     #expect(menu.item("Shortcuts Off in “Safari”")?.isTicked == true)
     #expect(menu.allItems.compactMap(\.shortcut?.label) == ["⌃⌥⎋", "⌘Q"], "the one that still works, and the menu's own")
@@ -438,10 +455,14 @@ import Testing
   /// Never a bundle id where a name can be had.
   @Test func appsToArrangeAgainAreListedByName() {
     let (h, _, _, _) = makeHarness()
-    #expect(h.controller.menuModel().item("Arrange Again") == nil, "every app is arranged")
+    func arrangeAgain() -> [MenuModel.Item]? {
+      h.controller.menuModel().item("Arrangement")?.sections.first { $0.title == "Arrange Again" }?.items
+    }
+    #expect(arrangeAgain() == nil, "every app is arranged")
     h.controller.nameOfApp = { $0 == "us.zoom.xos" ? "zoom.us" : nil }
     for bundle in ["us.zoom.xos", "com.apple.Music", "com.example.mail"] { h.run("exclude \(bundle)") }
-    let apps = h.controller.menuModel().item("Arrange Again")?.sections.flatMap(\.items) ?? []
+    let apps = arrangeAgain() ?? []
+    #expect(h.controller.menuModel().item("Arrangement")?.sections.last?.title == "Arrange Again", "last, because it grows")
     #expect(apps.map(\.title) == ["Mail", "Music", "zoom.us"], "from its open window, from its id for want of better, from macOS")
     #expect(apps.map(\.command) == ["com.example.mail", "com.apple.Music", "us.zoom.xos"].map { .include(bundleID: $0) })
   }
@@ -500,7 +521,7 @@ import Testing
     other.run("reload-settings")
     #expect(
       other.controller.menuModel().sections.first?.items.map(\.title)
-        == ["Shortcuts are off in “Safari”", line, "Settings File…"])
+        == ["Shortcuts are off in “Safari”", "Shortcuts Off in “Safari”", line, "Settings File…"])
     // …and so it is during a pause, when shortcuts are off everywhere and that line has nothing to add.
     other.run("pause")
     #expect(
@@ -604,12 +625,22 @@ import Testing
     #expect(row?.isEnabled == false && row?.isTicked == false && row?.command == .togglePin(nil))
   }
 
+  /// It has no row at the top level, and no shortcut out of the box. Given one, it shows it where it is.
+  @Test func aRowInASubmenuShowsItsShortcutToo() {
+    var settings = Settings()
+    settings.bindings = ["ctrl+opt+k": "toggle-pin"]
+    let (h, _, _, _) = makeHarness(settings: settings)
+    let rows = h.controller.menuModel().item("Focused Window")?.sections.flatMap(\.items) ?? []
+    #expect(rows.first { $0.title == "Keep This Window in View" }?.shortcut?.label == "⌃⌥K")
+    #expect(h.run("show-shortcuts").text?.contains("⌃⌥K") == true, "and so does the panel of shortcuts")
+  }
+
   /// A list edited by hand can name an app twice, in other capitals too.
   @Test func arrangeAgainListsAnAppOnce() {
     var settings = Settings()
     settings.excludedBundleIDs = ["com.example.mail", "com.example.Mail", "com.example.mail", "com.example.zoom"]
     let (h, _, _, _) = makeHarness(settings: settings)
-    #expect(h.controller.menuModel().item("Arrange Again")?.sections.flatMap(\.items).count == 2)
+    #expect(h.controller.menuModel().item("Arrangement")?.sections.last?.items.map(\.title) == ["Mail", "zoom"])
   }
 
   /// Before the app has registered any shortcut, each asking reads the whole of the settings' bindings again: once per menu, not per row.

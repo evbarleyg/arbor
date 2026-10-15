@@ -59,7 +59,7 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 | [extra-report](#extra-report) | 8 | 0 | 3 | 3 | 0 | 2 | 6 | 0 | 0 | 2 | 0 |
 | [late-or-partial-answer](#late-or-partial-answer) | 45 | 9 | 11 | 15 | 6 | 13 | 27 | 0 | 6 | 12 | 15 |
 | [second-actor](#second-actor) | 45 | 6 | 12 | 16 | 10 | 7 | 26 | 0 | 5 | 14 | 9 |
-| [geometry](#geometry) | 30 | 1 | 7 | 12 | 9 | 2 | 16 | 1 | 2 | 11 | 8 |
+| [geometry](#geometry) | 31 | 1 | 8 | 13 | 8 | 2 | 18 | 1 | 2 | 10 | 7 |
 | [identity](#identity) | 30 | 4 | 6 | 6 | 7 | 11 | 11 | 1 | 4 | 14 | 9 |
 | [permissions](#permissions) | 22 | 8 | 6 | 3 | 3 | 10 | 11 | 2 | 2 | 7 | 4 |
 | [timing](#timing) | 50 | 7 | 7 | 15 | 8 | 20 | 27 | 4 | 6 | 13 | 9 |
@@ -67,16 +67,16 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 | [looks](#looks) | 20 | 0 | 0 | 0 | 1 | 19 | 1 | 2 | 3 | 14 | 6 |
 | [never-exercised](#never-exercised) | 15 | 7 | 1 | 13 | 0 | 1 | 0 | 0 | 14 | 1 | 15 |
 | [toolchain](#toolchain) | 42 | 1 | 0 | 1 | 4 | 37 | 23 | 1 | 1 | 17 | 7 |
-| **all** | 432 | 60 | 80 | 111 | 71 | 170 | 204 | 19 | 59 | 150 | 109 |
+| **all** | 433 | 60 | 81 | 112 | 70 | 170 | 206 | 19 | 59 | 149 | 108 |
 
 **Where the difference bit**
 
 | Where | That is | Cases | Hurt 1 or 2 | Guarded without a Mac | Guarded only on CI's Macs | Only when somebody starts a script | Not guarded |
 |---|---|---|---|---|---|---|---|
-| below the seam | in the macOS-only code under the platform protocols (AX, Input, UI, App), which no test on Linux runs | 141 | 88 | 41 | 13 | 33 | 54 |
+| below the seam | in the macOS-only code under the platform protocols (AX, Input, UI, App), which no test on Linux runs | 142 | 88 | 42 | 13 | 33 | 54 |
 | at the seam | in what crosses the platform protocols: a stand-in can play it to the controller | 148 | 93 | 108 | 0 | 12 | 28 |
 | controller | in the controller or the core, given reports that were right | 26 | 14 | 13 | 0 | 1 | 12 |
-| test | in a test, a script or a harness that expected the wrong thing | 76 | 0 | 19 | 5 | 10 | 42 |
+| test | in a test, a script or a harness that expected the wrong thing | 76 | 0 | 20 | 5 | 10 | 41 |
 | machine | in the machine, the toolchain or the way things are built and installed | 41 | 3 | 23 | 1 | 3 | 14 |
 
 Each case is counted under the best guard it has: one that goes red on any machine (a test, a scenario, a replayed trace, a tool that `make check` or CI runs), one that needs CI's Macs (a test for macOS alone, a step of a real-window run that CI starts), one that somebody has to start, or none.
@@ -2375,6 +2375,18 @@ Geometry: displays, bars, sizes and coordinates that are not what was assumed.
 - **Arbor copes:** WindowGrab.edgeMargin counts a press within 10 points of the border, inside or outside, as taking hold of an edge.
 - **Read in:** `Sources/ArborCore/WindowGrab.swift`, `Sources/ArborKit/AX/AXWindowSystem.swift`, `Sources/arbor-fakemac/World+Input.swift`
 
+### a-menus-row-is-24-points-high-on-macos-26
+
+*hurt 3 · below the seam*
+
+- **Expected:** A row of a menu is 22 points high, as on earlier systems and in the fake Mac; 29 rows and four headings "just fit a 13-inch display".
+- **Happened:** macOS 26 gives a row 24 points, a heading 24, a separator 11, and 5 above and below. Arbor's menu was 822 points high; a display 768 high shows 668 of a menu, between the menu bar and the Dock, and scrolls the rest. Pause Arbor and Quit Arbor were below the fold, and Accessibility went on giving them the places they would have had, off the display.
+- **Found by:** The real-window suite's click on Quit Arbor, on a hosted Mac: it pressed at y 836 of 768. The sizes were first read off a picture of the open menu, which gave the row and the sums but split them a point wrong (12, 23, 6); then `NSMenu` was asked, in a test, and its sizes put Quit Arbor at 836 exactly.
+- **Stand-ins play it:** partly (`Menu.rowHeight`, `Menu.separatorHeight`, `Menu.padding`)
+- **Guard:** `test: theMenuIsAtMost600PointsHigh`; `test: theFourWaysOutNeedNoScrollingAndNoSubmenu`; `test: macOSMakesAMenuAsHighAsTheModelSays` (on CI's Macs); `e2e: macOS makes it as high as the model says` (by hand)
+- **Arbor copes:** MenuModel.height adds the sizes up as `StatusMenu` puts a menu together; the top level has 18 rows and no headings, and what is not wanted every day is in the submenu that ends its group (docs/MENU.md, rule 3). The fake Mac has the sizes of the menu itself; its submenus leave headings and separators out.
+- **Read in:** `docs/MENU.md`, `Sources/ArborCore/MenuModel.swift`, `scripts/mac-shell/check-menu-height.sh`
+
 ### a-small-pull-at-the-window-that-fills-the-desktop-passes-for-its-apps-rounding
 
 *hurt 3 · controller · suspected*
@@ -2526,9 +2538,9 @@ Geometry: displays, bars, sizes and coordinates that are not what was assumed.
 - **Expected:** Every row of Arbor's open menu can be pressed where Accessibility says it is. The fake Mac's menu is as tall as its rows and is never cut off.
 - **Happened:** 820 points of menu on a display of 768 are clipped: the menu's window reaches from y 31 to 699. Accessibility gives the rows below the cut the places they would have had, and a press there closes the menu and chooses nothing. For a person on a small display Pause and Quit are below the fold (the board, 1.26).
 - **Found by:** The first run, on hosted Macs, of a suite of real-window checks that is not on the trunk yet (macOS 26.6.2; 1,406 of 1,454 checks passed), beside its rehearsal on Linux, where this was green.
-- **Stand-ins play it:** **no**
-- **Guard:** **none**
-- **Arbor copes:** **not yet**
+- **Stand-ins play it:** yes (`Menu.hiddenBelow`)
+- **Guard:** `test: theMenuIsAtMost600PointsHigh`; `test: theFourWaysOutNeedNoScrollingAndNoSubmenu`; `test: macOSMakesAMenuAsHighAsTheModelSays` (on CI's Macs)
+- **Arbor copes:** MenuModel.tallest: Arbor's menu is at most 600 points high in every state, so nothing of it is cut off on a display 768 high (docs/MENU.md, rule 3). The suite's helper still scrolls a menu that is cut off to its end before it presses.
 - **Read in:** `Sources/arbor-fakemac/World+Menu.swift`, `Sources/ArborKit/UI/StatusMenu.swift`, `docs/MENU.md`, `scripts/mac-shell/shots-F10.sh`, `collab/BOARD.md`
 
 ### macos-half-tile-is-a-point-off

@@ -398,7 +398,7 @@ private func model(_ rows: [FinderModel.Row], notice: String? = nil) -> FinderMo
     .command(.dock(nil, .left), name: "Dock Focused Window ▸ Left", shortcut: "⌃⌥←", display: main),
     .command(.undo, name: "Undo Dock", shortcut: "⌃⌥Z", display: main),
     .command(.toggleAutoDock, name: "Dock New Windows", isOn: true, display: main),
-    .command(.equalize(all: false), name: "Adjust ▸ Balance Sizes", display: main),
+    .command(.equalize(all: false), name: "Arrangement ▸ Balance Sizes", display: main),
     .command(.saveView(3), name: "Saved Views ▸ Save This View As ▸ View 3", display: main),
   ]
 
@@ -410,7 +410,7 @@ private func model(_ rows: [FinderModel.Row], notice: String? = nil) -> FinderMo
     var session = session()
     #expect(session.items.map(\.row) == places)
     session.type("bal")
-    #expect(session.items.map(\.row.name) == ["Adjust ▸ Balance Sizes"])
+    #expect(session.items.map(\.row.name) == ["Arrangement ▸ Balance Sizes"])
     session.type("  ")
     #expect(session.items.map(\.row) == places, "spaces ask for nothing")
     session.type("")
@@ -443,7 +443,7 @@ private func model(_ rows: [FinderModel.Row], notice: String? = nil) -> FinderMo
   @Test func lettersThatStandTogetherInsideAWordOfAPlaceAreThatPlace() {
     let commands: [FinderModel.Row] = [
       .command(.hold(minutes: nil), name: "Hold This View", display: main), .command(.floatAll, name: "Float All Windows", display: main),
-      .command(.back, name: "Back", display: main), .command(.rotate, name: "Adjust ▸ Rotate Group", display: main),
+      .command(.back, name: "Back", display: main), .command(.rotate, name: "Arrangement ▸ Rotate Group", display: main),
     ]
     let places = [
       window(101, "Preview", "scan.pdf"), window(102, "Finder", "Wallpaper"), window(103, "Mail", "Feedback"), window(104, "Notes", "Carrot cake"),

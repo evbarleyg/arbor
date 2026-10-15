@@ -24,10 +24,10 @@ public struct FilmMenu: Equatable {
   /// The row under the pointer, if it can be chosen.
   public var highlighted: Int?
 
-  /// About what macOS gives a menu in the system font.
-  static let rowHeight: CGFloat = 22
-  static let separatorHeight: CGFloat = 11
-  static let padding: CGFloat = 5
+  /// What macOS gives a menu in the system font. A heading is as high as a row.
+  static let rowHeight = CGFloat(MenuModel.Metrics.macOS26.row)
+  static let separatorHeight = CGFloat(MenuModel.Metrics.macOS26.separator)
+  static let padding = CGFloat(MenuModel.Metrics.macOS26.padding)
   static let width: CGFloat = 300
 
   /// The menu hanging from `item` in the menu bar, kept on `screen`.

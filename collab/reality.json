@@ -1213,10 +1213,16 @@
    "expected": "Every row of Arbor's open menu can be pressed where Accessibility says it is. The fake Mac's menu is as tall as its rows and is never cut off.",
    "happened": "820 points of menu on a display of 768 are clipped: the menu's window reaches from y 31 to 699. Accessibility gives the rows below the cut the places they would have had, and a press there closes the menu and chooses nothing. For a person on a small display Pause and Quit are below the fold (the board, 1.26).",
    "found": "The first run, on hosted Macs, of a suite of real-window checks that is not on the trunk yet (macOS 26.6.2; 1,406 of 1,454 checks passed), beside its rehearsal on Linux, where this was green.",
-   "modelled": "no",
-   "knobs": [],
-   "guards": [],
-   "copes": "open",
+   "modelled": "yes",
+   "knobs": [
+    "Menu.hiddenBelow"
+   ],
+   "guards": [
+    "test: theMenuIsAtMost600PointsHigh",
+    "test: theFourWaysOutNeedNoScrollingAndNoSubmenu",
+    "test: macOSMakesAMenuAsHighAsTheModelSays"
+   ],
+   "copes": "MenuModel.tallest: Arbor's menu is at most 600 points high in every state, so nothing of it is cut off on a display 768 high (docs/MENU.md, rule 3). The suite's helper still scrolls a menu that is cut off to its end before it presses.",
    "hurt": 4,
    "sources": [
     "Sources/arbor-fakemac/World+Menu.swift",
@@ -1225,6 +1231,34 @@
     "scripts/mac-shell/shots-F10.sh",
     "collab/BOARD.md"
    ]
+  },
+  {
+   "id": "a-menus-row-is-24-points-high-on-macos-26",
+   "kind": "geometry",
+   "layer": "below the seam",
+   "expected": "A row of a menu is 22 points high, as on earlier systems and in the fake Mac; 29 rows and four headings \"just fit a 13-inch display\".",
+   "happened": "macOS 26 gives a row 24 points, a heading 24, a separator 11, and 5 above and below. Arbor's menu was 822 points high; a display 768 high shows 668 of a menu, between the menu bar and the Dock, and scrolls the rest. Pause Arbor and Quit Arbor were below the fold, and Accessibility went on giving them the places they would have had, off the display.",
+   "found": "The real-window suite's click on Quit Arbor, on a hosted Mac: it pressed at y 836 of 768. The sizes were first read off a picture of the open menu, which gave the row and the sums but split them a point wrong (12, 23, 6); then `NSMenu` was asked, in a test, and its sizes put Quit Arbor at 836 exactly.",
+   "modelled": "partly",
+   "knobs": [
+    "Menu.rowHeight",
+    "Menu.separatorHeight",
+    "Menu.padding"
+   ],
+   "guards": [
+    "test: theMenuIsAtMost600PointsHigh",
+    "test: theFourWaysOutNeedNoScrollingAndNoSubmenu",
+    "test: macOSMakesAMenuAsHighAsTheModelSays",
+    "e2e: macOS makes it as high as the model says"
+   ],
+   "copes": "MenuModel.height adds the sizes up as `StatusMenu` puts a menu together; the top level has 18 rows and no headings, and what is not wanted every day is in the submenu that ends its group (docs/MENU.md, rule 3). The fake Mac has the sizes of the menu itself; its submenus leave headings and separators out.",
+   "hurt": 3,
+   "sources": [
+    "docs/MENU.md",
+    "Sources/ArborCore/MenuModel.swift",
+    "scripts/mac-shell/check-menu-height.sh"
+   ],
+   "backlog": []
   },
   {
    "id": "a-miniature-in-the-dock-is-not-always-called-what-its-window-is-called",

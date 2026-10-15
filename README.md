@@ -64,7 +64,7 @@ independent implementation and is not affiliated with it.
   window, whichever tab is in front. An app that hangs does not hold Arbor up, and one
   that insists on placing its own window is left in peace after three tries.
 - **Keep a window in view**: pin a video call, a timer, a music player or a reference document (menu →
-  Keep This Window in View, or `arborctl pin`) and it keeps its place on the display wherever
+  Focused Window → Keep This Window in View, or `arborctl pin`) and it keeps its place on the display wherever
   you zoom. See [Pinned windows](#pinned-windows).
 - **Summon an app**: a terminal, a scratch note, a calculator, a password manager: one shortcut brings its
   window over whatever you are looking at, with the keyboard in it; the same shortcut, or turning to another
@@ -298,7 +298,7 @@ or add a `bindings` object to `settings.json` that maps a shortcut to a command
 - Entries Arbor cannot use are skipped and listed, with the reason, by
   `arborctl bindings` and in the log.
 
-`arborctl bindings` prints the shortcuts in effect; ⌃⌥⇧/ (or Keyboard Shortcuts… in the menu) shows them on screen, by name. `bindings` also lists the ones that macOS uses itself as things stand
+`arborctl bindings` prints the shortcuts in effect; ⌃⌥⇧/ (or menu → Help → Keyboard Shortcuts…) shows them on screen, by name. `bindings` also lists the ones that macOS uses itself as things stand
 (⌃⌥Space switches keyboards on a Mac with several input sources): one of the two does nothing, and it says where to change either.
 
 ### Arranging from the keyboard
@@ -375,7 +375,7 @@ apps you told it not to arrange, every named space and every saved view. Type to
 of each row is where the window is now: in view, out of view, tab, tile, floating, kept in view, summoned, out of view until summoned, minimised, hidden, full screen, on another macOS Space, not arranged, and on
 which display if there are several.
 
-**It finds commands too.** Type what a thing is called in the menu: `bal` ↩ is Adjust ▸ Balance Sizes, `dock left` Dock Focused Window ▸ Left, `float all` Float All Windows. Every row of
+**It finds commands too.** Type what a thing is called in the menu: `bal` ↩ is Arrangement ▸ Balance Sizes, `dock left` Dock Focused Window ▸ Left, `float all` Float All Windows. Every row of
 the menu that runs a command is there, and the commands that have a shortcut but no row (Space to the Left, Window Above). A command's row says `command` at the right, with its shortcut if it has one, or `not now` where
 the menu would grey it out. It acts on the window you were in. Before you type, the list holds places only, and a piece of a window's name still finds the window first.
 
@@ -671,7 +671,7 @@ any app.
 
 ### New windows that dock by themselves
 
-`"newWindows": "dock"` (menu → Dock New Windows) is short for one more rule at the end of the list:
+`"newWindows": "dock"` (menu → Arrangement → Dock New Windows) is short for one more rule at the end of the list:
 
 ```json
 { "app": "*", "action": "dock auto" }

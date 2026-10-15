@@ -844,7 +844,7 @@ extension Controller {
     return entries
   }
 
-  /// The two rows (docs/MENU.md, 25 and 26). Choosing the ticked one releases too.
+  /// The two rows (docs/MENU.md, View ▸). Choosing the ticked one releases too.
   public var holdRows: [HoldMenuEntry] {
     let level = holdLevel
     return [

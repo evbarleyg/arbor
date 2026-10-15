@@ -162,12 +162,13 @@ check "⌃⌥⇧H reaches Arbor" pressed ctrl+opt+shift+h swap left
 check "they have traded back" eventually frame_is "$W1" $wide
 settled
 
+# Adjust ▸ has gone into Arrangement ▸. The claim keeps its words: collab/parity.json and the evidence of the last run on a Mac go by them.
 claim "choose Adjust, Balance Sizes and Adjust, Mirror Group from the menu: they do what the shortcuts do"
 proves A222 A223
-check "Balance Sizes can be clicked" click_menu "Adjust" "Balance Sizes"
+check "Balance Sizes can be clicked" click_menu "Arrangement" "Balance Sizes"
 check "Arbor ran balance" eventually ran balance
 check "the two docked windows are equally wide" eventually same_width "$W1" "$V1"
-check "Mirror Group can be clicked" click_menu "Adjust" "Mirror Group"
+check "Mirror Group can be clicked" click_menu "Arrangement" "Mirror Group"
 check "Arbor ran mirror" eventually ran mirror
 check "the other app's window is on the left" eventually left_of "$V1" "$W1"
 settled

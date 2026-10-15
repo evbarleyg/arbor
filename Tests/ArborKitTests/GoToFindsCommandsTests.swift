@@ -214,7 +214,7 @@ import Testing
     let (before, beeps) = (h.workspace, h.overlays.finderBeeps)
     h.overlays.clearTransitions()
     #expect(choose(h, "step out"))
-    #expect(h.overlays.finder?.message == "“Step Out” can do nothing just now")
+    #expect(h.overlays.finder?.message == "“View ▸ Step Out” can do nothing just now")
     #expect(h.overlays.finder?.query == "step out")
     #expect(h.overlays.finderBeeps == beeps + 1)
     #expect(h.workspace == before && h.overlays.headsUp[h.display] == nil)
@@ -273,7 +273,8 @@ import Testing
     h.overlays.chooseInFinder()
     #expect(h.overlays.finder?.message == "That window has closed")
     h.overlays.typeInFinder("dont arrange")
-    #expect(h.overlays.finder?.items.first?.row.name == h.controller.menuModel().allItems.first { $0.title.hasPrefix("Don’t Arrange") }?.title)
+    let title = try #require(h.controller.menuModel().allItems.first { $0.title.hasPrefix("Don’t Arrange") }?.title)
+    #expect(h.overlays.finder?.items.first?.row.name == "Focused Window ▸ " + title)
     _ = safari
   }
 

@@ -131,6 +131,40 @@ import Testing
             Arbor 0.1.0  (gray)
         """)
   }
+
+  /// As `StatusMenu.fill` builds it: a separator above every section but the first, a heading for a title. Submenus are menus of their own.
+  @Test func aMenuIsAsHighAsItsRowsSeparatorsAndHeadings() {
+    let model = MenuModel([
+      Section { Item.text("Arbor is paused") },
+      Section("View") {
+        Item.command("Back", .back)
+        Item.submenu("Saved Views") { for slot in 1...9 { Item.command("View \(slot)", .goToView(slot)) } }
+      },
+      Section { Item.app("Quit Arbor", .quit) },
+    ])
+    // Four rows, two separators, a heading, and the room above and below.
+    #expect(model.height == 152, "4 × 24 + 2 × 11 + 24 + 2 × 5")
+    #expect(MenuModel.height(of: model.item("Saved Views")?.sections ?? []) == 226, "9 × 24 + 2 × 5")
+    let earlier = MenuModel.Metrics(row: 22, separator: 11, heading: 22, padding: 5)
+    #expect(MenuModel.height(of: model.sections, earlier) == 142, "4 × 22 + 2 × 11 + 22 + 2 × 5")
+  }
+
+  /// What `NSMenu` answered on a hosted Mac with macOS 26, for Arbor's menu and its six submenus. The sizes are solved from
+  /// these; `MenuHeightAppKitTests` asks again wherever the tests run on a Mac.
+  @Test func theSizesGiveWhatNSMenuAnswered() {
+    let answers: [(rows: Int, separators: Int, headings: Int, height: Double)] = [
+      (4, 0, 0, 106), (3, 1, 0, 93), (7, 2, 0, 200), (8, 2, 0, 224), (7, 3, 0, 211), (18, 4, 0, 486), (10, 1, 1, 285),
+    ]
+    for answer in answers {
+      // A section more than there are separators; all rows but one for each of the others in the first.
+      let sections = (0...answer.separators).map { index in
+        Section(index < answer.headings ? "Heading" : nil) {
+          for row in 0..<(index == 0 ? answer.rows - answer.separators : 1) { Item.text("Row \(row)") }
+        }
+      }
+      #expect(MenuModel.height(of: sections) == answer.height, "\(answer)")
+    }
+  }
 }
 
 extension KeyChord.Modifiers {

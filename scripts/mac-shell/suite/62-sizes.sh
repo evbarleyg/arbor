@@ -147,7 +147,7 @@ ctl dock "$W1" left
 ctl dock "$V1" right
 check "docked, it reaches the right edge of the screen" eventually at_edge "$V1" right
 click_window "$V1"
-check "the item can be clicked" click_menu "Don’t Arrange"
+check "the submenu's item can be clicked" click_menu "Focused Window" "Don’t Arrange"
 check "Arbor ran exclude" eventually ran exclude "$ARBOR_TEST_BUNDLE_2"
 check "Arbor no longer arranges it" eventually fails is managed "$V1"
 # shellcheck disable=SC2086

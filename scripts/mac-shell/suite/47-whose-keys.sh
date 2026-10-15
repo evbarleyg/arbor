@@ -113,7 +113,8 @@ proves A61
 # The item is about the app in front, whosever it is.
 click_window "$W1" || exit 1
 check "the first app is in front" eventually front_is "$ARBOR_WINDOWS_PID" || exit 1
-check "the item can be clicked" click_menu "Shortcuts Off in"
+# While they are on the row is in its submenu alone; once off, it also stands under the line that says so, which is what is read below.
+check "the submenu's item can be clicked" click_menu "Focused Window" "Shortcuts Off in"
 check "settings.json lists the app" eventually lists passThroughApps "$ARBOR_TEST_BUNDLE"
 check "⌃⌥↩ goes to the app" goes_to_app "$W1" ctrl+opt+return zoom
 open_menu

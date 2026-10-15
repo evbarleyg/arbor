@@ -215,16 +215,19 @@ step "the shortcut and the menu"
 # shellcheck disable=SC2046
 click $(center_of "$CALL")
 check "the call has the keyboard" eventually is focused "$CALL"
-read -r item_x item_y <<< "$(status_item)"
-rightclick "$item_x" "$item_y"
+# A right click: a plain one in the middle of the item presses one of its buttons, and the first run on a Mac has a picture of that.
+open_menu
+# The row is in Focused Window ▸: typing finds the row, → opens it. The first Escape may close only the submenu.
+key f; key o; key right
 shot 06-menu-with-a-tick
-key escape
+key escape; key escape
 key ctrl+opt+shift+d
 check "⌃⌥⇧D (from bindings) unpins" eventually is_not pinned "$CALL"
 check "and moves nothing" same_place "$home_frame"
-rightclick "$item_x" "$item_y"
+open_menu
+key f; key o; key right
 shot 07-menu-without-a-tick
-key escape
+key escape; key escape
 key ctrl+opt+shift+d
 check "again pins" eventually is pinned "$CALL"
 

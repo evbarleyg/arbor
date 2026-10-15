@@ -152,7 +152,7 @@ ctl show-all
 claim "choose Keyboard Shortcuts… from the menu and type a letter: the panel goes, and the window behind gets not that letter but the next"
 proves A66
 click_window "$W1"
-check "the item can be clicked" click_menu "Keyboard Shortcuts…"
+check "the submenu's item can be clicked" click_menu "Help" "Keyboard Shortcuts…"
 check "Arbor ran show-shortcuts" eventually ran show-shortcuts
 check "Arbor shows the shortcuts" eventually last_answer_is "any key or click puts them away"
 real check "the panel is on screen" eventually has_overlay $PANEL

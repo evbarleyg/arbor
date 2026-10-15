@@ -196,7 +196,7 @@ Changed your mind? Press ⎋, or let go without choosing: you are where you were
 space and the keyboard goes along, so framed on one window the same four keys walk you from window to window; past the last space they cross to the next display.
 
 The focused window too small? **⌃⌥⌘=** grows it and **⌃⌥⌘-** shrinks it, taking room from and giving it to its neighbours; it never shrinks so far that it becomes a tile. **⌃⌥⌘0** balances the sizes of everything in view again.
-**⌃⌥R** rotates the focused window's group: two windows side by side become one above the other. Press it again and they are as they were. **⌃⌥⇧R** mirrors the group: left becomes right. All five are also in the menu, under **Adjust**.
+**⌃⌥R** rotates the focused window's group: two windows side by side become one above the other. Press it again and they are as they were. **⌃⌥⇧R** mirrors the group: left becomes right. All five are also in the menu, under **Arrangement**.
 ### Where is that window?
 
 Most of your windows are out of view most of the time. That is the point, and it is why **⌃⌥G**, Go to…, exists. Press it, type a few letters of the app or of the window's title, press Return: the view moves to that window
@@ -323,7 +323,7 @@ what the keys do.
 
 `"app": "*"` means any app, and `com.jetbrains.*` a family of them.
 
-**New windows that dock by themselves.** If you come from yabai, AeroSpace or i3: menu → **Dock New Windows**. From then on a window you open takes half the place of the window you were working in (to its right if
+**New windows that dock by themselves.** If you come from yabai, AeroSpace or i3: menu → Arrangement → **Dock New Windows**. From then on a window you open takes half the place of the window you were working in (to its right if
 that is wide, below it if it is tall). It is careful: small windows and windows of a fixed size float as always, so does a window there is no room for, nothing becomes a tile because a window opened, the view never moves, and windows
 that were already open stay as they are. Your rules come first, so `{ "app": "com.apple.finder", "action": "float" }` keeps Finder out of it.
 
@@ -368,7 +368,7 @@ Arrange the windows by hand once, ask for the line, and bind it to a shortcut: `
 |---|---|---|
 | **Every window flew to the sides** after a click on the Desktop or in a gap | macOS's "Click wallpaper to reveal desktop" | Click the wallpaper again. Then set it to "Only in Stage Manager" (section 2) |
 | **A window is gone** | It is out of view | ⌃⌥0, or ⌘Tab to its app. Still gone: ⌃⌥⇧F. Still gone: quit Arbor and start it again; at launch it brings back anything left off screen |
-| **The shortcuts do nothing** | No permission; another app has the keys; shortcuts are off, or off in this app; Arbor is paused | Open the menu: it says if permission is missing or Arbor is paused, and Shortcuts Off in “App” has a tick if they are off in the app in front. Quit Rectangle, Magnet and the like. ⌃⌥⇧/ or Keyboard Shortcuts… in the menu shows the shortcuts in effect; `arborctl bindings` lists them too and says if they are off right now, and why |
+| **The shortcuts do nothing** | No permission; another app has the keys; shortcuts are off, or off in this app; Arbor is paused | Open the menu: it says if permission is missing or Arbor is paused, and Shortcuts Off in “App” has a tick if they are off in the app in front. Quit Rectangle, Magnet and the like. ⌃⌥⇧/ or menu → Help → Keyboard Shortcuts… shows the shortcuts in effect; `arborctl bindings` lists them too and says if they are off right now, and why |
 | **Only ⌃⌥Space does nothing**, or ⌃⌥Space no longer switches keyboards | With several keyboards or input methods set up, macOS uses the same keys for "Select next source in Input menu", and only one of the two gets them (on the one Mac where it was measured, Arbor) | ⌃⌥0 shows everything too. Free the key on either side: System Settings → Keyboard → Keyboard Shortcuts → Input Sources, or `arborctl unbind ctrl+opt+space` |
 | **Show Everything springs back** when the keys come up | They were held for a second or more, or the pointer moved meanwhile, which is a peek: letting go returns to the outlined view | Let go within a second with the pointer at rest, or use ⌃⌥0, which never peeks. `"peek": false` in `settings.json` turns peeking off |
 | **Clicks, scrolling or pinches feel late or go missing**, in any app, since you switched the gestures on | For the pinch, ⌃⌥ + scroll and the rectangle macOS shows Arbor each press, scroll and pinch first, and holds it until Arbor has answered | Settings… → Gestures → **Trackpad and mouse gestures** off, or `arborctl set pointerGestures false`: nothing waits for Arbor any more. Keys, the menu and dragging windows, gaps and tiles work as before. If that cures it, please tell us |

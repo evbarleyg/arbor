@@ -59,7 +59,10 @@ private let seeds: [UInt64] = {
         keys.note(action)
         // Without a display there is no menu bar to open the menu from.
         guard step % 3 == 0, !keys.any, !runner.controller.displays.isEmpty else { continue }
-        let rows = runner.controller.menuModel().allItems.filter { $0.command.map { !Self.notTried.contains($0) } ?? false }
+        let menu = runner.controller.menuModel()
+        // docs/MENU.md, rule 3, which `MenuHeightTests` holds the menu to in the states it lists.
+        #expect(menu.height <= MenuModel.tallest, "seed \(seed), step \(step): \(menu.height) points high\n\(menu.text)")
+        let rows = menu.allItems.filter { $0.command.map { !Self.notTried.contains($0) } ?? false }
         guard let row = random.pick(rows), let command = row.command else { continue }
         let before = runner.harness.run("status").message
         let result = runner.harness.run(command.text, from: .menu)
