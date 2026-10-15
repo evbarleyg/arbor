@@ -77,7 +77,7 @@ jobs:
     needs: changes
     if: ${{ !cancelled() && needs.changes.outputs.mac != 'false' }}
     runs-on: macos-26
-    timeout-minutes: 30
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v5
       - name: Use the newest Xcode on the runner
@@ -150,6 +150,12 @@ jobs:
           name: reality-linux
           path: .build/rehearsal/out/reality
           if-no-files-found: warn
+      # Every run gets the number, Mac or no Mac. Only reported: the committed run may be older than what the pull request changes.
+      - name: Reality, against the last run on a Mac that was committed
+        run: >-
+          ./scripts/ci-step.py --summary '^reality:' reality-committed
+          python3 scripts/reality-diff.py collab/evidence/reality-mac .build/rehearsal/out/reality
+          --known collab/evidence/reality-known.txt
       - name: Test
         run: ./scripts/ci-step.py --summary 'Test run with|skipped' --log test.log test swift test
       - name: Simulator smoke test
