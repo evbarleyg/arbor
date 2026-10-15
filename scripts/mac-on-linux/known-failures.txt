@@ -32,9 +32,9 @@ a docked window enters full screen and leaves it, saying so late: and Arbor has 
 
 # Drags that are lost on a loaded Mac. (The first kind, a window that starts late with the pointer more than 24 points away, is cured by a3c0281: 61 lines stood here.) (2) Served late, the mouse's events read the pointer and
 # the window server as they are by then: a gesture that is over before Arbor hears of the press compares the last frame with itself. (3) Since 37d0f05 a press has the place where it happened, and the window under it is still
-# looked for in the window server's list as it is when the press is served: half a second late, the window has moved out from under the point. 531885f looks a second time, at the pointer's place of now, and is defeated by
-# `isListedElsewhere` (see the end of this file). Nothing is logged in these cases.
-a window is dragged for a second, and the monitor hears of the press 500 ms late: the drag is reported to begin # the second makePress finds the window, listed 100 points from where Arbor believes it, and settles the press
+# looked for in the window server's list as it is when the press is served: half a second late, the window has moved out from under the point. 531885f looked a second time, at the pointer's place of now, was defeated by
+# `isListedElsewhere` (12d1835) and lost a drag that had been seen (L4 in the report): those five lines are out again. Kept, and not asking `isListedElsewhere` at the second look, they cure these two. Nothing is logged in these cases.
+a window is dragged for a second, and the monitor hears of the press 500 ms late: the drag is reported to begin # the press's own place is held against the window list of half a second later
 a window is dragged for a second, and the monitor hears of the press 500 ms late: and to end, so that there is a drop to act on # the same
 a window is flicked, and the monitor hears of the press 500 ms late: the drag is reported to begin # the queued events read the pointer and the window server as they are now, not as of the event
 a window is flicked, and the monitor hears of the press 500 ms late: and to end, so that there is a drop to act on # the queued events read the pointer and the window server as they are now, not as of the event
@@ -136,12 +136,3 @@ Arbor starts while an app hangs, which wakes 60 s later: announced as one that w
 # is logged: "wN is being dragged, which began late".
 text is selected over 120 points, and meanwhile the window moves the pointer's way, as far as the pointer has gone, by itself: it is not taken for a drag # late, one look is enough if the window has caught up with the pointer (WindowGrab.judge)
 text is selected over 120 points, and meanwhile the window jumps to within 24 points of the pointer's own travel, by itself: it is not taken for a drag # late, one look is enough if the window has caught up with the pointer (WindowGrab.judge)
-
-# A regression of 531885f, which was meant to cure the press that is heard late (L3). A press served late finds no window under its own place, and used to stay open, so that the app's next "moved" made the drag. Now a second
-# makePress looks at the pointer's place of now, finds the window, and asks `isListedElsewhere` (12d1835): the window server has it where the hand has carried it, Arbor believes it where it was, more than 32 points apart,
-# so it is taken for the strip of a window swept aside and the press is SETTLED: both signs are off. Shown by two changes, one at a time: without the second makePress these four are green again and L3 still red; with it, and not
-# asking `isListedElsewhere` at that second look, these four AND L3 are green, and nothing else changes.
-a window is dragged for a second while Arbor's main thread is busy for 300 ms from the press, and what queued up comes byTime: the drag is reported to begin # since 531885f: the second makePress settles the press (isListedElsewhere, lead 32)
-a window is dragged for a second while Arbor's main thread is busy for 300 ms from the press, and what queued up comes byTime: and to end, so that there is a drop to act on # since 531885f: the second makePress settles the press (isListedElsewhere, lead 32)
-a window is dragged for a second while Arbor's main thread is busy for 300 ms from the press, and what queued up comes mouseFirst: the drag is reported to begin # since 531885f: the second makePress settles the press (isListedElsewhere, lead 32)
-a window is dragged for a second while Arbor's main thread is busy for 300 ms from the press, and what queued up comes mouseFirst: and to end, so that there is a drop to act on # since 531885f: the second makePress settles the press (isListedElsewhere, lead 32)

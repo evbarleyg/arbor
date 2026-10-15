@@ -32,8 +32,8 @@ forty lines further down now. **The findings of round 2 (N9 to N15, the addition
 | N15 | a command answers after 3.3 s because one app is slow | an app that takes 0.1 s over a call | the layer's own logic; slow answers seen |
 | L1 | **a drag of any length is not seen at all; nothing is logged** | the window server a moment late, the pointer more than 24 points away | found on a guess; **since SEEN on a hosted Mac**: three of four drags of 1,244 to 1,991 points in 30 steps never taken for drags, nothing logged. **CURED by a3c0281**, which was held against the stories twice before it was published: 61 listed lines deleted, 2 listed anew (what its author names as left), red again with the cure taken out |
 | L2 | a flick is not seen | the gesture over before Arbor hears of the press | the layer's own logic |
-| L3 | **(new with 37d0f05) a drag of a second is not seen** | the press heard half a second late | the layer's own logic; a regression. **531885f meant to cure it, does not, and loses two drags more** (L4) |
-| L4 | **(new with 531885f) a drag of a second is not seen** | Arbor's main thread busy for 0.3 s from the press | the layer's own logic; a regression; shown by two changes, one at a time |
+| L3 | **(new with 37d0f05) a drag of a second is not seen** | the press heard half a second late | the layer's own logic; a regression. **531885f meant to cure it, did not, and lost two drags more (L4); its lines are out again** (L4) |
+| L4 | **(came with 531885f, gone again the same night: its five lines were taken out) a drag of a second is not seen** | Arbor's main thread busy for 0.3 s from the press | the layer's own logic; a regression; shown by two changes, one at a time |
 
 ## Reproductions of what was already known
 
@@ -216,6 +216,7 @@ Before, both the point and the list were of the moment of serving, which agreed 
 TO CONSIDER: look for the pressed window with the point of the event among the frames Arbor believed BEFORE the first report that came with the button down; or, if no window lies under the event's point, try once more with the pointer's place now.
 
 ### L4. Since 531885f: the second look at a late press settles it
+**Cured the same night by way (A) below: the five lines are out of the trunk again, and the four checks are green. Way (B), which cures L3 as well, is still to come.**
 Found at the rebase onto the trunk that has 531885f. "A window is dragged for a second while Arbor's main thread is busy for 300 ms from the press", with what queued up served by time or the mouse first, was green (drag began at 300 ms) and is RED: no drag, 6 reports that the window changed. With Accessibility served first it is green, and
 better than before (311 ms, was 412). L3 is as red as it was.
 WHY: five new lines in `handleMouse`: if `makePress` at the event's own place finds no window and settles nothing, `makePress` once more at the pointer's place of now. That is the pair L3 asked for. But `makePress` has since 12d1835 a test for macOS showing its desktop: `WindowGrab.isListedElsewhere(bounds, than: record.snapshot.frame)`, more than
