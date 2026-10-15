@@ -1,0 +1,251 @@
+# mac-shell: scripts/mac-shell/reality.sh at 1d76308, macOS 26.6.2, 2026-10-15T08:14Z
+built Arbor, the pointer tool and the app bundles in 7s
+
+== the Mac
+macOS 26.6.2
+1 0 0 1024 768 1024 768 1
+com.apple.WindowManager EnableTilingByEdgeDrag: not set
+com.apple.WindowManager EnableTopTilingByEdgeDrag: not set
+com.apple.WindowManager EnableTilingOptionAccelerator: not set
+com.apple.WindowManager EnableTiledWindowMargins: not set
+
+== journey: commands
+session 1: Arbor pid 5072, test windows 29 30 31 (pid 4943)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+recording /tmp/arbor-shell.82llo6/home/traces/2026-10-15-081459-commands.jsonl: 1 lines, 2 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+observed commands/start
+> dock 29 left
+docked w29 at the left edge
+observed commands/dock W1 left
+> dock 30 right
+docked w30 at the right edge
+observed commands/dock W2 right
+> dock 31 beside 29 bottom
+docked w31 below w29
+observed commands/dock W3 below W1
+> zoom 29
+framed w29
+observed commands/zoom W1
+> back
+back to everything
+observed commands/back
+> resize 29 right 100
+resized w29
+observed commands/resize W1 right 100
+> float 30
+w30 is floating
+observed commands/float W2
+> arrange
+arranged 3 windows
+observed commands/arrange
+> set gap 40
+gap = 40 (was 12)
+observed commands/set gap 40
+> set gap 12
+gap = 12 (was 40)
+observed commands/set gap 12
+> desktop
+showing the Desktop
+observed commands/desktop
+> show-all
+showing everything
+observed commands/show-all
+> zoom 31
+framed w31
+observed commands/zoom W3
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+observed commands/quit
+
+== journey: apps
+session 2: Arbor pid 6538, test windows 40 41 42 43 (pid 6397,6475)
+running: 1 display, 0 docked and 4 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+recording /tmp/arbor-shell.L8F8uj/home/traces/2026-10-15-081532-apps.jsonl: 1 lines, 2 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+observed apps/start
+> dock 40 left
+docked w40 at the left edge
+observed apps/dock W1 left
+> dock 41 right
+docked w41 at the right edge
+observed apps/dock W2 right
+> test windows: minimize 40
+observed apps/the app minimizes docked W1
+> test windows: restore 40
+observed apps/the app restores W1
+> test windows: hide
+observed apps/the app hides
+> test windows: unhide
+observed apps/the app shows again
+> test windows: close 41
+observed apps/docked W2 closes
+> test windows: one more window, as ⌘N opens it
+observed apps/a new window opens
+> the first app comes forward
+observed apps/the first app comes forward
+> the second app comes forward
+observed apps/the second app comes forward
+> dock 43 right
+docked w43 at the right edge
+observed apps/dock W4 right
+> zoom 40
+framed w40
+observed apps/zoom W1
+> the second app comes forward, its window out of view
+observed apps/the second app comes forward, its window out of view
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+observed apps/quit
+
+== journey: edges
+session 3: Arbor pid 8734, test windows 51 52 53 (pid 8717)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+recording /tmp/arbor-shell.Z4UsEq/home/traces/2026-10-15-081612-edges.jsonl: 1 lines, 2 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+observed edges/start
+> test windows: front 53
+observed edges/the app brings W3 forward
+> drag 510 152 0 368 --no-release
+observed edges/W3 held at the left edge
+  ✔ W3 came along to the left edge
+> release
+observed edges/W3 let go at the left edge
+> test windows: front 52
+observed edges/the app brings W2 forward
+> drag 460 192 768 0 --no-release
+observed edges/W2 held at the top edge
+  ✔ W2 came along to the top edge
+> release
+observed edges/W2 let go at the top edge
+> test windows: front 51
+observed edges/the app brings W1 forward
+> drag 410 232 1023 368 --no-release
+observed edges/W1 held at the right edge
+  ✔ W1 came along to the right edge
+> release
+observed edges/W1 let go at the right edge
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+observed edges/quit
+
+== journey: pointer
+session 4: Arbor pid 10367, test windows 62 63 64 (pid 10327)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+recording /tmp/arbor-shell.voeqKG/home/traces/2026-10-15-081648-pointer.jsonl: 1 lines, 2 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+observed pointer/start
+> drag 510 152 512 702
+observed pointer/drag W3 to the bottom edge
+> dock 64 left
+moved w64 left
+observed pointer/dock W3 left
+> drag 505 368 565 368
+observed pointer/drag W3's right edge 60 to the right
+> drag 801 192 482 368
+observed pointer/drag W2 onto the right of W3
+> click 149 87 2
+observed pointer/double-click W3's title bar
+> drag 149 368 239 428 --no-release
+observed pointer/press inside W3 and move, held
+> release
+observed pointer/let go inside W3
+> drag 292 368 272 368
+observed pointer/drag the seam right of W3 20 to the left
+> drag 424 55 797 103
+observed pointer/drag W2 out onto the Desktop
+> dock 62 beside 64 bottom
+docked w62 below w64; its space is too small to show it, so it is a tile
+observed pointer/dock W1, too big for its slot, below W3
+> show-all
+showing everything
+observed pointer/show-all
+> click 195 533
+observed pointer/click the tile
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+observed pointer/quit
+
+== journey: keys
+session 5: Arbor pid 13003, test windows 73 74 75 (pid 12977)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+recording /tmp/arbor-shell.6ZgATG/home/traces/2026-10-15-081742-keys.jsonl: 1 lines, 2 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+observed keys/start
+> dock 73 left
+docked w73 at the left edge
+observed keys/dock W1 left
+> dock 74 right
+docked w74 at the right edge
+observed keys/dock W2 right
+> click 174 368
+observed keys/click W1
+> key ctrl+opt+return
+observed keys/⌃⌥↩ zoom
+> key ctrl+opt+space
+observed keys/⌃⌥Space show-all
+> key ctrl+opt+shift+right
+observed keys/⌃⌥⇧→ focus right
+> key ctrl+opt+shift+right
+observed keys/⌃⌥⇧→ focus right again
+> key ctrl+opt+shift+left
+observed keys/⌃⌥⇧← focus left
+> key ctrl+opt+return
+observed keys/⌃⌥↩ zoom what has the focus
+> key ctrl+opt+[
+observed keys/⌃⌥[ back
+> key ctrl+opt+f
+observed keys/⌃⌥F float
+> key ctrl+opt+f
+observed keys/⌃⌥F dock again
+> key ctrl+opt+d
+observed keys/⌃⌥D desktop
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+observed keys/quit
+
+== written down
+      15 /Users/runner/work/arbor/arbor/mac-shell/reality/apps.jsonl
+      15 /Users/runner/work/arbor/arbor/mac-shell/reality/commands.jsonl
+      11 /Users/runner/work/arbor/arbor/mac-shell/reality/edges.jsonl
+      15 /Users/runner/work/arbor/arbor/mac-shell/reality/keys.jsonl
+      14 /Users/runner/work/arbor/arbor/mac-shell/reality/pointer.jsonl
+      70 total
+
+23 passed, 0 failed
+exit code 0
