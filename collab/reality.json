@@ -24,16 +24,20 @@
   "a check on real windows guards it. *Stand-ins play it* names the switch or helper. *Guard* names what goes red: a test, a scenario, a recorded trace",
   "that is replayed on every platform, or a step on real windows (`e2e:`). CI runs `arbor-e2e` and `e2e-drag.sh` by itself; a step of any other script is marked",
   "\"by hand\": it guards only when somebody starts the script, and some of those scripts have never run on a Mac (see the end of this page).",
+  "*Touches*, in the line under the heading, names the detectors of the viable gate (`docs/VIABLE.md`, section 5) that a person's trouble would set off: what they would see, not",
+  "where the fault lies. A case that touches none is no less true; the gate has no eye for it.",
   "",
   "**How to keep it.**",
   "",
   "1. A real Mac surprised you: add an entry to `collab/reality.json` in the pull request that cures it, or at once with `\"copes\": \"open\"` if there is no cure yet.",
-  "   Say what was expected and by whom (a test, the fake, a comment), what happened, with numbers, and how it was seen.",
+  "   Say what was expected and by whom (a test, the fake, a comment), what happened, with numbers, how it was seen, and in `\"touches\"` which detectors it would set off.",
   "2. A cure is finished when the next person cannot undo it unnoticed. At the seam: teach the stand-in the bad manner, write the test that fails without the",
   "   cure, name both. Below the seam: name the step on real windows that CI runs, and say `\"modelled\": \"cannot\"`.",
   "3. Run `scripts/reality-ledger.py`: it looks every name up (a switch that was renamed, a test that was deleted, a step nobody runs any more), counts, and writes this",
   "   file. `make lint` fails when a name is gone or this file is stale.",
-  "4. Nothing from a person's Mac goes in here beyond the fact itself: no names, no paths, no apps somebody runs, no logs."
+  "4. **Your lint fails here and you never touched the ledger?** You reworded a step, or renamed a test, a stand-in's switch or a file, that a case names as its guard, its knob or its",
+  "   source. Under each ✘ a line that begins with → says which field of which case in `collab/reality.json` to change, and to what. Then run the script and commit both files.",
+  "5. Nothing from a person's Mac goes in here beyond the fact itself: no names, no paths, no apps somebody runs, no logs."
  ],
  "entries": [
   {
@@ -57,6 +61,9 @@
    ],
    "copes": "Controller.keepPinsInFront looks when the event is over and twice more, 0.2 s apart, not counting looks with the button down. The focus line is put above its window again at every mouse-up, 0.15 s later and after every update (Sources/ArborKit/UI/FocusRingPanel.swift).",
    "hurt": 2,
+   "touches": [
+    "behind"
+   ],
    "sources": [
     "docs/features/F37-focus-ring.md",
     "collab/QUESTIONS.md",
@@ -87,6 +94,9 @@
    ],
    "copes": "Sources/ArborKit/Controller/Controller+AutoDock.swift reads \"focused\" from the focus history: the docked window showing in the view that had the keyboard last. For a second a window docked this way heads that history.",
    "hurt": 2,
+   "touches": [
+    "focus"
+   ],
    "sources": [
     "docs/features/F38-focus-as-macos-reports-it.md",
     "docs/features/F23-automatic-docking.md",
@@ -118,6 +128,10 @@
    ],
    "copes": "AXWindowSystem.reportFocus leaves out a window still taken to be on another Space, and every rescan after a switch ends by reporting the front app's focused window. The controller lays out once it has heard all the windows.",
    "hurt": 2,
+   "touches": [
+    "moved-unasked",
+    "focus"
+   ],
    "sources": [
     "Sources/ArborKit/AX/AXWindowSystem.swift",
     "docs/ARCHITECTURE.md",
@@ -152,6 +166,9 @@
    ],
    "copes": "Controller.spokenLately: the window is the witness. A remembered place whose window spoke within the last 30 s and really is there is not shifted. The 30 s are reasoned, not measured. A window that ends whole on the wrong display after the lid closes and opens is still open.",
    "hurt": 1,
+   "touches": [
+    "lost"
+   ],
    "sources": [
     "Sources/ArborKit/Controller/Controller+Displays.swift",
     "Tests/ArborKitTests/MovedDisplayTests.swift",
@@ -192,6 +209,11 @@
    ],
    "copes": "Controller.keyboardLeft takes back a view that has already followed and gives the keyboard to a window in view. The wait of 30 ms that would spare the way out and back is decided and is not in the tree.",
    "hurt": 1,
+   "touches": [
+    "moved-unasked",
+    "jolt",
+    "flash"
+   ],
    "sources": [
     "collab/evidence/traces/README.md",
     "docs/features/F38-focus-as-macos-reports-it.md",
@@ -225,6 +247,9 @@
    ],
    "copes": "Controller.windowReplaced hands the slot to the tab that shows, so the report of the closing finds nothing to remove. Should the order ever be the other way round, the Accessibility layer reads the app's list again before it drops the closed tab.",
    "hurt": 2,
+   "touches": [
+    "jolt"
+   ],
    "sources": [
     "Sources/ArborKit/AX/AXWindowSystem.swift",
     "Sources/ArborTesting/FakeWindowSystem.swift",
@@ -249,6 +274,9 @@
    ],
    "copes": "AXWindowSystem.countWindows counts the window server's windows at the start and after every Space switch. A window seen for the first time that was not counted has opened since, whatever its app said first.",
    "hurt": 2,
+   "touches": [
+    "lost"
+   ],
    "sources": [
     "Sources/ArborKit/AX/AXWindowSystem.swift",
     "docs/RELEASE-NOTES.md",
@@ -283,6 +311,9 @@
    ],
    "copes": "Controller.scheduleSpaceRelayout: one layout after all the reports of one change.",
    "hurt": 2,
+   "touches": [
+    "jolt"
+   ],
    "sources": [
     "Sources/ArborTesting/FakeWindowSystem.swift",
     "Sources/ArborKit/Controller/Controller+Events.swift",
@@ -338,6 +369,9 @@
    ],
    "copes": "Controller.bringIntoViewIfFocused moves no view for a window that is in view, so nothing more is needed.",
    "hurt": 3,
+   "touches": [
+    "moved-unasked"
+   ],
    "sources": [
     "collab/evidence/traces/README.md",
     "Sources/arbor-fakemac/World+Input.swift"
@@ -369,6 +403,10 @@
    ],
    "copes": "Controller.bringIntoViewIfFocused follows a focus report only once the window has the keyboard and takes up space, and looks again four times, 0.25 s apart.",
    "hurt": 2,
+   "touches": [
+    "moved-unasked",
+    "jolt"
+   ],
    "sources": [
     "collab/evidence/traces/README.md",
     "docs/ARCHITECTURE.md",
@@ -395,6 +433,9 @@
    ],
    "copes": "open",
    "hurt": 1,
+   "touches": [
+    "focus"
+   ],
    "sources": [
     "Sources/ArborKit/AX/AXWindowSystem.swift",
     "Sources/arbor-e2e/Misbehaving.swift",
@@ -441,6 +482,9 @@
    ],
    "copes": "Controller.handOverTime: a focus change within 0.3 s of the loss counts as macOS's own choice, a view that followed too early is taken back, and a timer looks once more if no report comes.",
    "hurt": 2,
+   "touches": [
+    "focus"
+   ],
    "sources": [
     "docs/ARCHITECTURE.md",
     "docs/TESTING.md",
@@ -460,6 +504,10 @@
    "guards": [],
    "copes": "AXWindowSystem.rescan compares each listed window's full-screen flag with what is remembered and reports a difference.",
    "hurt": 2,
+   "touches": [
+    "moved-unasked",
+    "jolt"
+   ],
    "sources": [
     "Sources/ArborKit/AX/AXWindowSystem.swift",
     "docs/features/F30-full-screen-windows.md",
@@ -508,6 +556,9 @@
    ],
    "copes": "AXWindowSystem.appCameForward reports the app's focused window again when the app comes forward, and the controller looks at an unmatched report again, up to four times, 0.25 s apart.",
    "hurt": 2,
+   "touches": [
+    "focus"
+   ],
    "sources": [
     "Sources/ArborKit/AX/AXWindowSystem.swift",
     "Sources/ArborKit/Controller/Controller+Focus.swift",
@@ -562,6 +613,9 @@
    ],
    "copes": "Controller.lookAfterPinnedWindowsAfterAPress looks at every press (`pointerPressed`), every 0.2 s while the button is down and three more times after.",
    "hurt": 2,
+   "touches": [
+    "behind"
+   ],
    "sources": [
     "docs/ARCHITECTURE.md",
     "collab/QUESTIONS.md",
@@ -663,6 +717,9 @@
    ],
    "copes": "AXWindowSystem.refreshFrames reads every window's frame again before it reports that the displays changed. `followDisplaysThatMoved` shifts what a workspace remembers along with its display's corner, unless the window itself spoke within 30 s.",
    "hurt": 1,
+   "touches": [
+    "lost"
+   ],
    "sources": [
     "docs/ARCHITECTURE.md",
     "Sources/ArborKit/AX/AXWindowSystem.swift",
@@ -724,6 +781,10 @@
    ],
    "copes": "AXWindowSystem.watchForLostRelease looks at the button twice a second while a window is held. Found up twice in a row, the drag is called off (`dragCancelled`).",
    "hurt": 1,
+   "touches": [
+    "stuck",
+    "focus"
+   ],
    "sources": [
     "Sources/ArborKit/AX/AXWindowSystem.swift",
     "docs/ARCHITECTURE.md",
@@ -777,6 +838,9 @@
    ],
    "copes": "HotKeyCenter.setTemporary puts temporary shortcuts on top of the others and no identifier is used twice; a peek asks `isHolding` itself.",
    "hurt": 2,
+   "touches": [
+    "moved-unasked"
+   ],
    "sources": [
     "Sources/ArborKit/Input/HotKeyCenter.swift",
     "Sources/ArborKit/Platform/WindowSystem.swift",
@@ -802,6 +866,9 @@
    ],
    "copes": "Controller.resume forgets windows, workspaces and layouts and starts afresh.",
    "hurt": 4,
+   "touches": [
+    "size-lost"
+   ],
    "sources": [
     "Sources/arbor-fakemac/Arbor.swift",
     "Sources/ArborKit/AX/AXWindowSystem.swift",
@@ -881,6 +948,9 @@
    ],
    "copes": "AXWindowSystem.rescan marks such a window as off the active Space: it keeps its place and takes no room. Saved slots wait for as long as the window server knows the window (Controller+PendingSlots.swift).",
    "hurt": 1,
+   "touches": [
+    "lost"
+   ],
    "sources": [
     "Sources/ArborKit/Platform/WindowSystem.swift",
     "docs/ARCHITECTURE.md",
@@ -1084,6 +1154,9 @@
    ],
    "copes": "AXWindowSystem.geometryChanged reads the full-screen attribute with every resize, and `rescan` with every reading of the lists; such a window keeps its place, takes no space and is never moved.",
    "hurt": 2,
+   "touches": [
+    "moved-unasked"
+   ],
    "sources": [
     "collab/evidence/gestures-latest.txt",
     "docs/ARCHITECTURE.md",
@@ -1196,6 +1269,9 @@
    ],
    "copes": "GestureTap.watchKeys passes on each event's own flags and remembers nothing from one event to the next; a tap found on for nothing switches itself off.",
    "hurt": 2,
+   "touches": [
+    "input-held"
+   ],
    "sources": [
     "Sources/ArborKit/Input/GestureTap.swift",
     "collab/BACKLOG.md"
@@ -1222,6 +1298,9 @@
    ],
    "copes": "open",
    "hurt": 1,
+   "touches": [
+    "focus"
+   ],
    "sources": [
     "Sources/ArborKit/AX/AXWindowSystem.swift",
     "Sources/arbor-e2e/Misbehaving.swift",
@@ -1249,6 +1328,10 @@
    ],
    "copes": "Sources/ArborKit/Controller/Controller+Permission.swift watches the permission itself, and `PointerInput.checkPermission` removes the taps at once.",
    "hurt": 1,
+   "touches": [
+    "lost",
+    "input-held"
+   ],
    "sources": [
     "Sources/ArborKit/App/ArborApp.swift",
     "Sources/ArborKit/Input/PointerInput.swift",
@@ -1306,6 +1389,9 @@
    ],
    "copes": "AXWindowSystem.appCameForward reports the focused window of the app that the workspace says became active.",
    "hurt": 1,
+   "touches": [
+    "focus"
+   ],
    "sources": [
     "docs/ARCHITECTURE.md",
     "collab/evidence/gestures-latest.txt",
@@ -1358,6 +1444,9 @@
    "guards": [],
    "copes": "open",
    "hurt": 4,
+   "touches": [
+    "focus"
+   ],
    "sources": [
     "Sources/ArborTesting/ChaosRunner.swift",
     "Sources/ArborTesting/FakeWindowSystem.swift",
@@ -1386,6 +1475,9 @@
    ],
    "copes": "AXWindowSystem.reportFocus reports only the app in front, and the controller believes `focusedWindow()`, not the report.",
    "hurt": 4,
+   "touches": [
+    "focus"
+   ],
    "sources": [
     "Sources/arbor-fakemac/World+TestApps.swift",
     "Sources/ArborKit/AX/AXWindowSystem.swift",
@@ -1459,6 +1551,9 @@
    ],
    "copes": "DisplayChange.settleTime decides: nothing changed, nothing reported; visible frames alone after 0.3 s; displays after 1.5 s, and not at all if by then all is as it was. Only the replay of the trace plays it: the fake's minimize still says nothing of the displays.",
    "hurt": 2,
+   "touches": [
+    "jolt"
+   ],
    "sources": [
     "Sources/ArborKit/AX/AXWindowSystem.swift",
     "docs/ARCHITECTURE.md",
@@ -1499,6 +1594,10 @@
    ],
    "copes": "Controller.endFocusRequest keeps track of what Arbor asked for. `giveFocus` tells the controller at once, so hearing the same change again from macOS changes nothing, and commands that arrange windows focus the window they moved only if it shows.",
    "hurt": 2,
+   "touches": [
+    "moved-unasked",
+    "jolt"
+   ],
    "sources": [
     "docs/features/F38-focus-as-macos-reports-it.md",
     "collab/evidence/traces/README.md",
@@ -1531,6 +1630,10 @@
    ],
    "copes": "EchoFilter.judge takes any report about a window within 0.15 s of Arbor's move for an echo, and a report of the frame it was given for a second. The fake queues one echo for a window and round, not two or three. Not reading a fresh echo at all is named in the backlog and is not in the tree.",
    "hurt": 2,
+   "touches": [
+    "jolt",
+    "size-lost"
+   ],
    "sources": [
     "Sources/ArborCore/EchoFilter.swift",
     "collab/evidence/traces/README.md",
@@ -1580,6 +1683,10 @@
    ],
    "copes": "AXWindowSystem.reportFocus reports a window once until another app comes forward, and the controller lets only the window that has the keyboard now move the view. `holdTurnsAway` counts reports within 0.2 s once. The fake queues one report, so a test has to call it three times in a row.",
    "hurt": 2,
+   "touches": [
+    "moved-unasked",
+    "focus"
+   ],
    "sources": [
     "Sources/ArborKit/AX/AXWindowSystem.swift",
     "collab/QUESTIONS.md",
@@ -1615,6 +1722,9 @@
    ],
    "copes": "Controller.windowChanged compares frames before it believes a move: a report with the frame the window already had is no move, and for a docked window differences of up to 4 points count as the app's rounding.",
    "hurt": 4,
+   "touches": [
+    "size-lost"
+   ],
    "sources": [
     "collab/evidence/traces/README.md",
     "Sources/ArborKit/AX/AXWindowSystem.swift",
@@ -1638,6 +1748,10 @@
    ],
    "copes": "ProcessGuards.prepareProcess ignores SIGPIPE first thing in the process, so the write fails with an error.",
    "hurt": 1,
+   "touches": [
+    "lost",
+    "crash"
+   ],
    "sources": [
     "Sources/ArborKit/App/ProcessGuards.swift",
     "Sources/arbor-e2e/main.swift",
@@ -1672,6 +1786,10 @@
    ],
    "copes": "AXWindowSystem.setFrame answers with the frame the window has, without asking, and the snapshot says `isFullScreen`: such a window takes no space and keeps its place. Controller+LeftInFullScreen.swift looks after a window that was out of view when it went.",
    "hurt": 1,
+   "touches": [
+    "lost",
+    "size-lost"
+   ],
    "sources": [
     "Sources/ArborKit/AX/AXWindowSystem.swift",
     "docs/features/F30-full-screen-windows.md",
@@ -1707,6 +1825,11 @@
    ],
    "copes": "AXWindowSystem.noteSilence ends the conversation at the first call that times out, until the app answers a call made off the main thread (tried twice a second) or posts something. The controller then places what it could not move. The stand-ins play the silence and the waking, never the time that is lost.",
    "hurt": 1,
+   "touches": [
+    "input-held",
+    "slow",
+    "crash"
+   ],
    "sources": [
     "docs/ARCHITECTURE.md",
     "Sources/ArborKit/AX/AXWindowSystem.swift",
@@ -1753,6 +1876,10 @@
    "guards": [],
    "copes": "open",
    "hurt": 2,
+   "touches": [
+    "moved-unasked",
+    "lost"
+   ],
    "sources": [
     "Sources/ArborKit/AX/AXWindowSystem.swift",
     "docs/features/F17-real-window-hardening.md",
@@ -1800,6 +1927,10 @@
    ],
    "copes": "Controller.placeFloatingWindows lets the remembered frame grow, on the side the app refuses and away from the screen's edge, to the size the app took; it never shrinks that way.",
    "hurt": 2,
+   "touches": [
+    "lost",
+    "size-lost"
+   ],
    "sources": [
     "collab/QUESTIONS.md",
     "Sources/ArborKit/Controller/Controller+Layout.swift"
@@ -1828,6 +1959,10 @@
    ],
    "copes": "Controller.keyboardFocus answers with the window that was asked for until macOS agrees, for half a second at most. The focus ring and the event feed look once more 0.25 s after each report. Both knobs are off by default: the fake's focus is instant.",
    "hurt": 2,
+   "touches": [
+    "moved-unasked",
+    "focus"
+   ],
    "sources": [
     "docs/ARCHITECTURE.md",
     "docs/features/F37-focus-ring.md",
@@ -1857,6 +1992,9 @@
    ],
    "copes": "FramePlan.full sets size, position, size, and EchoFilter takes the stages in between for echoes. A shortened plan is read back and followed by the full one if the size is not right.",
    "hurt": 3,
+   "touches": [
+    "jolt"
+   ],
    "sources": [
     "Sources/ArborCore/FramePlan.swift",
     "collab/evidence/traces/README.md",
@@ -1884,6 +2022,9 @@
    ],
    "copes": "TapHealth counts what is found off like what is reported off, one count for all the taps of the thread, and leaves them off for thirty seconds after three switch-offs in ten. `reviveIfSwitchedOff` looks once a second for a tap that is off without a word.",
    "hurt": 1,
+   "touches": [
+    "input-held"
+   ],
    "sources": [
     "Tests/ArborCoreTests/PointerInputTests.swift",
     "docs/ARCHITECTURE.md",
@@ -1915,6 +2056,9 @@
    ],
    "copes": "Controller.park asks once more, from the corner worked out for the size the app took.",
    "hurt": 2,
+   "touches": [
+    "flash"
+   ],
    "sources": [
     "Sources/ArborKit/Controller/Controller+Layout.swift",
     "collab/BACKLOG.md"
@@ -1986,6 +2130,10 @@
    "guards": [],
    "copes": "open",
    "hurt": 3,
+   "touches": [
+    "jolt",
+    "size-lost"
+   ],
    "sources": [
     "collab/BACKLOG.md"
    ],
@@ -2008,6 +2156,9 @@
    "guards": [],
    "copes": "AXWindowSystem.rescan leaves alone, and logs, a window that is not listed but that the window server has on screen.",
    "hurt": 2,
+   "touches": [
+    "moved-unasked"
+   ],
    "sources": [
     "Sources/ArborKit/AX/AXWindowSystem.swift"
    ],
@@ -2137,6 +2288,10 @@
    ],
    "copes": "EchoFilter counts any report within 0.15 s and the expected frame for a second, on a clock that cannot go backwards. In the fake an echo is late by steps of a script; no time passes.",
    "hurt": 2,
+   "touches": [
+    "moved-unasked",
+    "size-lost"
+   ],
    "sources": [
     "collab/evidence/traces/README.md",
     "docs/ARCHITECTURE.md",
@@ -2164,6 +2319,9 @@
    ],
    "copes": "DesktopProbe asks on a queue of its own and has 0.5 s for all its questions; no answer counts as an item being there, so nothing is taken that is not known to be the wallpaper's.",
    "hurt": 1,
+   "touches": [
+    "input-held"
+   ],
    "sources": [
     "Sources/ArborKit/Input/DesktopProbe.swift",
     "Sources/ArborKit/Input/RectangleFramer.swift",
@@ -2194,6 +2352,9 @@
    ],
    "copes": "open",
    "hurt": 2,
+   "touches": [
+    "focus"
+   ],
    "sources": [
     "Sources/ArborKit/AX/AXWindowSystem.swift",
     "Tests/ArborKitTests/ReviewTilingTests.swift",
@@ -2240,6 +2401,9 @@
    ],
    "copes": "Sources/ArborKit/Controller/Controller+LearnedSizes.swift lets learned sizes expire: the window is asked again at the first layout after ten minutes. No app in the fakes answers late.",
    "hurt": 1,
+   "touches": [
+    "lost"
+   ],
    "sources": [
     "collab/QUESTIONS.md",
     "collab/BACKLOG.md"
@@ -2268,6 +2432,9 @@
    ],
    "copes": "open",
    "hurt": 2,
+   "touches": [
+    "moved-unasked"
+   ],
    "sources": [
     "Sources/ArborKit/AX/AXWindowSystem+Launch.swift",
     "Sources/ArborKit/Platform/WindowSystem.swift",
@@ -2296,6 +2463,10 @@
    ],
    "copes": "open",
    "hurt": 1,
+   "touches": [
+    "lost",
+    "size-lost"
+   ],
    "sources": [
     "docs/features/F17-real-window-hardening.md",
     "docs/RELEASE-NOTES.md",
@@ -2334,6 +2505,9 @@
    ],
    "copes": "AXWindowSystem.setFrame returns the frame read back; the controller makes room or a tile, remembers the size, and offers a new window its slot before anybody makes room.",
    "hurt": 2,
+   "touches": [
+    "jolt"
+   ],
    "sources": [
     "Sources/ArborKit/Platform/WindowSystem.swift",
     "Sources/ArborKit/AX/AXWindowSystem.swift",
@@ -2360,6 +2534,9 @@
    ],
    "copes": "Sources/ArborKit/Controller/Controller+SoleFloat.swift takes a window that only shrinks by up to a cell in its corner, with no button down, for its app rounding. The tests play it by hand as a move with the button up.",
    "hurt": 2,
+   "touches": [
+    "size-lost"
+   ],
    "sources": [
     "docs/features/F18-sole-floating-window.md",
     "scripts/mac-shell/check-F18.sh",
@@ -2382,6 +2559,9 @@
    "guards": [],
    "copes": "open",
    "hurt": 3,
+   "touches": [
+    "jolt"
+   ],
    "sources": [
     "Sources/ArborTesting/FakeWindowSystem.swift",
     "collab/BACKLOG.md"
@@ -2431,6 +2611,10 @@
    ],
    "copes": "AXWindowSystem.spaceChanged reads the lists at once, for a prompt layout, and once more a second later (`rescanSoon`). The controller lays the display out once afterwards.",
    "hurt": 1,
+   "touches": [
+    "moved-unasked",
+    "lost"
+   ],
    "sources": [
     "Sources/ArborKit/AX/AXWindowSystem.swift",
     "docs/ARCHITECTURE.md",
@@ -2477,6 +2661,10 @@
    ],
    "copes": "AXWindowSystem.countWindows keeps the last count, and each other caller has a safe default (without the list the event is left to the app). The fake can empty the stacking order only.",
    "hurt": 2,
+   "touches": [
+    "moved-unasked",
+    "input-held"
+   ],
    "sources": [
     "Sources/ArborKit/AX/AXWindowSystem.swift",
     "Sources/ArborKit/AX/AXWindowSystem+Stacking.swift",
@@ -2540,6 +2728,10 @@
    ],
    "copes": "Sources/ArborKit/Controller/Controller+Finder.swift does not wait: the view is picked as if the window were back already, and the window takes its place when macOS says so.",
    "hurt": 2,
+   "touches": [
+    "jolt",
+    "focus"
+   ],
    "sources": [
     "Sources/ArborTesting/FakeWindowSystem.swift",
     "docs/ARCHITECTURE.md",
@@ -2566,6 +2758,9 @@
    ],
    "copes": "Sources/ArborKit/Controller/Controller+SoleFloat.swift waits until two seconds after the last window has turned up. There is no knob: the tests open windows after the start.",
    "hurt": 3,
+   "touches": [
+    "jolt"
+   ],
    "sources": [
     "docs/features/F18-sole-floating-window.md",
     "Sources/ArborKit/Controller/Controller+SoleFloat.swift"
@@ -2633,6 +2828,10 @@
    ],
    "copes": "AXWindowSystem.bringIntoViewIfDialog moves such a dialog to the middle of the display, once (`StrayDialog` decides), or lets it wait while a view is held. The fake only counts dialogs that wait: they have no frame and no window.",
    "hurt": 1,
+   "touches": [
+    "lost",
+    "focus"
+   ],
    "sources": [
     "docs/features/F47-dialogs-out-of-view.md",
     "Sources/ArborCore/StrayDialog.swift",
@@ -2667,6 +2866,10 @@
    ],
    "copes": "WindowGrab.classify: only a press within 10 points of the border begins an edge resize. The flash of a docked window remains, and floating windows keep macOS's behaviour by decision.",
    "hurt": 2,
+   "touches": [
+    "jolt",
+    "fought"
+   ],
    "sources": [
     "docs/features/F17-real-window-hardening.md",
     "Sources/arbor-fakemac/World+Input.swift",
@@ -2719,6 +2922,10 @@
    ],
    "copes": "Controller.bringIntoViewIfFocused: the view follows a window that really has the keyboard, by decision; docking by command does not pull the view.",
    "hurt": 2,
+   "touches": [
+    "moved-unasked",
+    "focus"
+   ],
    "sources": [
     "Sources/ArborTesting/FakeWindowSystem.swift",
     "collab/BACKLOG.md"
@@ -2746,6 +2953,10 @@
    ],
    "copes": "Controller.bringIntoViewIfFocused brings it into view; under a hold `holdTurnsAway` sends it out again and asks the keyboard back.",
    "hurt": 2,
+   "touches": [
+    "lost",
+    "focus"
+   ],
    "sources": [
     "scripts/mac-shell/check-F58.sh",
     "Sources/ArborTesting/FakeWindowSystem.swift",
@@ -2771,6 +2982,9 @@
    "guards": [],
    "copes": "Controller.windowChanged takes the report as a move after the drop; nothing more is needed. The fakes correct only frames that Arbor sets, so tests of hands that let go under the Dock's line leave the window hanging there.",
    "hurt": 4,
+   "touches": [
+    "stuck"
+   ],
    "sources": [
     "Sources/ArborTesting/FakeWindowSystem.swift",
     "Sources/arbor-fakemac/World+Input.swift",
@@ -2795,6 +3009,10 @@
    ],
    "copes": "WindowGrab.classify goes by where the press was: away from the border, a window that moved is being dragged whatever its size does.",
    "hurt": 2,
+   "touches": [
+    "moved-unasked",
+    "fought"
+   ],
    "sources": [
     "Sources/ArborCore/WindowGrab.swift",
     "docs/ARCHITECTURE.md",
@@ -2824,6 +3042,10 @@
    ],
    "copes": "Controller.parkAgain: every layout sends out again whatever should be out of view and shows.",
    "hurt": 2,
+   "touches": [
+    "moved-unasked",
+    "flash"
+   ],
    "sources": [
     "Tests/ArborKitTests/SafetyNetTests.swift",
     "scripts/mac-shell/check-displays.sh",
@@ -2862,6 +3084,10 @@
    ],
    "copes": "EnforcementLimiter: after three put-backs within three seconds the window is left where its app wants it, the log says so once, and Arbor tries again when the layout next changes.",
    "hurt": 2,
+   "touches": [
+    "stuck",
+    "busy"
+   ],
    "sources": [
     "docs/ARCHITECTURE.md",
     "collab/QUESTIONS.md",
@@ -2906,6 +3132,9 @@
    ],
    "copes": "RectangleFramer installs both taps together and pauses the drag tap instead of removing it; a tap that macOS switched off is switched on again, and all of them rest if it keeps happening (`TapHealth`).",
    "hurt": 1,
+   "touches": [
+    "input-held"
+   ],
    "sources": [
     "Sources/ArborKit/Input/RectangleFramer.swift",
     "Sources/ArborKit/Input/EventTap.swift",
@@ -2940,6 +3169,10 @@
    ],
    "copes": "AXWindowSystem.reportFocus passes on only what the app in front says; the controller asks `focusedWindow()` before it believes a report, and each look waits under a key of its own (`focus-after-loss`, `focus-again-<window>`).",
    "hurt": 2,
+   "touches": [
+    "moved-unasked",
+    "focus"
+   ],
    "sources": [
     "Sources/ArborKit/AX/AXWindowSystem.swift",
     "Sources/ArborTesting/FakeWindowSystem.swift",
@@ -2967,6 +3200,9 @@
    "guards": [],
    "copes": "open",
    "hurt": 3,
+   "touches": [
+    "fought"
+   ],
    "sources": [
     "docs/features/F09-drag-polish.md",
     "docs/TESTING.md",
@@ -2986,6 +3222,10 @@
    "guards": [],
    "copes": "AXWindowSystem.setFrame switches the attribute off for the move and on again afterwards.",
    "hurt": 2,
+   "touches": [
+    "jolt",
+    "slow"
+   ],
    "sources": [
     "Sources/ArborKit/AX/AXWindowSystem.swift"
    ]
@@ -3031,6 +3271,10 @@
    ],
    "copes": "Controller.hasLeftItsCorner: it is parked again with the next put-back, three times at most. Only the origin is compared, so a parked window that grows into view from the same corner stays in view (known failure `parked-not-put-back`).",
    "hurt": 2,
+   "touches": [
+    "moved-unasked",
+    "flash"
+   ],
    "sources": [
     "Tests/ArborKitTests/OutOfViewTests.swift",
     "Sources/ArborKit/Controller/Controller+Events.swift",
@@ -3051,6 +3295,10 @@
    "guards": [],
    "copes": "Sources/ArborKit/Controller/Controller+Drag.swift chooses drop targets by the pointer, not by the window's frame, and sets no frame on a window that is being dragged. The script asks where the window is before it presses again.",
    "hurt": 3,
+   "touches": [
+    "pulled",
+    "stuck"
+   ],
    "sources": [
     "scripts/mac-shell/check-F09.sh",
     "docs/TESTING.md",
@@ -3092,6 +3340,10 @@
    ],
    "copes": "Controller.knowsTheDisplays: while the displays macOS has are not the ones Arbor was told of (ids and frames), a window that moves was moved by macOS, and the move gives nothing a new home. Two seconds after the last such move Arbor puts back what macOS has not (`displays-blinked`).",
    "hurt": 1,
+   "touches": [
+    "moved-unasked",
+    "lost"
+   ],
    "sources": [
     "Sources/ArborKit/AX/AXWindowSystem.swift",
     "collab/QUESTIONS.md",
@@ -3141,6 +3393,10 @@
    "guards": [],
    "copes": "open",
    "hurt": 2,
+   "touches": [
+    "fought",
+    "size-lost"
+   ],
    "sources": [
     "Sources/ArborCore/WindowGrab.swift",
     "docs/ARCHITECTURE.md",
@@ -3159,6 +3415,10 @@
    "guards": [],
    "copes": "open",
    "hurt": 2,
+   "touches": [
+    "jolt",
+    "fought"
+   ],
    "sources": [
     "docs/GUIDE.md",
     "scripts/mac-shell/lib.sh",
@@ -3188,6 +3448,10 @@
    ],
    "copes": "MacTiling.claim says where macOS takes a window that is let go; there Arbor shows no preview, docks nothing and sets no frame",
    "hurt": 2,
+   "touches": [
+    "jolt",
+    "fought"
+   ],
    "sources": [
     "scripts/mac-shell/lib.sh",
     "docs/GUIDE.md",
@@ -3234,6 +3498,9 @@
    ],
    "copes": "Controller.suppressesDocking goes by ⌘; `doctor` names the macOS switch (`MacSwitch.optionKey`).",
    "hurt": 3,
+   "touches": [
+    "fought"
+   ],
    "sources": [
     "collab/QUESTIONS.md",
     "docs/features/F09-drag-polish.md",
@@ -3260,6 +3527,10 @@
    ],
    "copes": "Sources/ArborKit/Controller/Controller+Pin.swift does not take such a report for the keyboard.",
    "hurt": 2,
+   "touches": [
+    "behind",
+    "focus"
+   ],
    "sources": [
     "Sources/ArborKit/AX/AXWindowSystem.swift",
     "collab/BACKLOG.md"
@@ -3305,6 +3576,10 @@
    ],
    "copes": "open",
    "hurt": 1,
+   "touches": [
+    "moved-unasked",
+    "stuck"
+   ],
    "sources": [
     "docs/TESTING.md",
     "docs/RELEASE-NOTES.md",
@@ -3333,6 +3608,10 @@
    ],
    "copes": "Controller.scheduleEnforce asks for the slot again, and a size a step away from the slot does not count as a refusal. No helper does both halves as Terminal does.",
    "hurt": 2,
+   "touches": [
+    "moved-unasked",
+    "lost"
+   ],
    "sources": [
     "scripts/mac-shell/compat-extras.sh",
     "collab/BACKLOG.md"
@@ -3355,6 +3634,9 @@
    "guards": [],
    "copes": "open",
    "hurt": 1,
+   "touches": [
+    "focus"
+   ],
    "sources": [
     "scripts/mac-shell/probe-keyboard.sh",
     "scripts/mac-shell/whohaskeys.swift",
@@ -3379,6 +3661,9 @@
    "guards": [],
    "copes": "open",
    "hurt": 2,
+   "touches": [
+    "size-lost"
+   ],
    "sources": [
     "docs/features/F48-floating-restores-size.md",
     "docs/GUIDE.md"
@@ -3396,6 +3681,9 @@
    "guards": [],
    "copes": "open",
    "hurt": 3,
+   "touches": [
+    "fought"
+   ],
    "sources": [
     "docs/TESTING.md",
     "docs/GUIDE.md",
@@ -3429,6 +3717,10 @@
    ],
    "copes": "Controller.hasLeftItsCorner: the window goes back out of view with the next put-back, and Arbor gives up after three rounds. The fake's `setHidden` moves nothing, so a test moves the window by hand.",
    "hurt": 2,
+   "touches": [
+    "moved-unasked",
+    "flash"
+   ],
    "sources": [
     "collab/evidence/traces/README.md",
     "collab/evidence/traces/hide-unhide.expect",
@@ -3457,6 +3749,9 @@
    ],
    "copes": "Sources/ArborKit/Controller/Controller+Displays.swift moves arrangements off a display that went and back again itself, once the displays have settled.",
    "hurt": 3,
+   "touches": [
+    "jolt"
+   ],
    "sources": [
     "scripts/mac-shell/check-displays.sh",
     "Sources/ArborTesting/ChaosRunner.swift",
@@ -3478,6 +3773,9 @@
    "guards": [],
    "copes": "Sources/ArborCore/SystemFacts.swift knows macOS's three tiling switches, and the setup check asks for them to be off.",
    "hurt": 4,
+   "touches": [
+    "fought"
+   ],
    "sources": [
     "collab/QUESTIONS.md",
     "docs/GUIDE.md",
@@ -3587,6 +3885,9 @@
    "guards": [],
    "copes": "Sources/ArborKit/Controller/Controller+Layout.swift never asks for such a place: slots lie inside the visible frame, and no window is left hanging over the top.",
    "hurt": 3,
+   "touches": [
+    "pulled"
+   ],
    "sources": [
     "Sources/arbor-fakemac/World+Input.swift",
     "Sources/arbor-fakemac/World+TestApps.swift",
@@ -3665,6 +3966,9 @@
    "guards": [],
    "copes": "Controller.hasLeftItsCorner compares with where the window really stopped; places are still judged with the one number, Controller.reachableTitleBar.",
    "hurt": 4,
+   "touches": [
+    "flash"
+   ],
    "sources": [
     "collab/evidence/traces/README.md",
     "Sources/ArborKit/Controller/Controller+Layout.swift",
@@ -3696,6 +4000,10 @@
    ],
    "copes": "Sources/ArborKit/Controller/Controller+LeftInFullScreen.swift lays out again when the window is present again, and asks again while it is still on its way.",
    "hurt": 2,
+   "touches": [
+    "moved-unasked",
+    "jolt"
+   ],
    "sources": [
     "docs/features/F30-full-screen-windows.md",
     "Sources/ArborTesting/FakeWindowSystem.swift"
@@ -3713,6 +4021,9 @@
    "guards": [],
    "copes": "open",
    "hurt": 4,
+   "touches": [
+    "fought"
+   ],
    "sources": [
     "Sources/arbor-fakemac/main.swift",
     "scripts/mac-shell/lib.sh",
@@ -3731,6 +4042,9 @@
    "guards": [],
    "copes": "open",
    "hurt": 2,
+   "touches": [
+    "fought"
+   ],
    "sources": [
     "docs/TESTING.md",
     "scripts/mac-shell/e2e-drag.sh",
@@ -3810,6 +4124,9 @@
    ],
    "copes": "MakeRoom.serve moves the gaps before a window becomes a tile (Controller+MakeRoom.swift); sizes that were refused are learned.",
    "hurt": 2,
+   "touches": [
+    "lost"
+   ],
    "sources": [
     "docs/features/F61-room-before-tiles.md",
     "docs/features/F23-automatic-docking.md",
@@ -3890,6 +4207,9 @@
    ],
    "copes": "NativeTabs.heightSlack lets the tabs of a group differ by 40 points in height.",
    "hurt": 2,
+   "touches": [
+    "jolt"
+   ],
    "sources": [
     "Sources/ArborCore/NativeTabs.swift",
     "docs/ARCHITECTURE.md",
@@ -3925,6 +4245,10 @@
    ],
    "copes": "Controller.askForLess takes up to 36 points over for sizing in steps and asks for less, up to four times, before a minimum is learned. It does so for docked, floating and new windows.",
    "hurt": 2,
+   "touches": [
+    "lost",
+    "size-lost"
+   ],
    "sources": [
     "collab/evidence/traces/README.md",
     "docs/features/F23-automatic-docking.md",
@@ -3953,6 +4277,9 @@
    "guards": [],
    "copes": "open",
    "hurt": 3,
+   "touches": [
+    "flash"
+   ],
    "sources": [
     "collab/QUESTIONS.md",
     "Sources/ArborKit/Controller/Controller+Layout.swift",
@@ -3986,6 +4313,9 @@
    ],
    "copes": "PointerSurface.under is a list of what is harmless, not of what is not: it allows what a Mac at rest was seen to have, and `whatMayBeWaiting` takes everything else to be waiting for the click.",
    "hurt": 2,
+   "touches": [
+    "input-held"
+   ],
    "sources": [
     "docs/ARCHITECTURE.md",
     "Sources/ArborCore/PointerSurface.swift",
@@ -4021,6 +4351,10 @@
    ],
    "copes": "DisplayChange.visibleFrameOnly: 0.3 s after the last notice the display is laid out again, once. A test has to change the fake's displays by hand, and the fake Mac's Dock keeps its size.",
    "hurt": 3,
+   "touches": [
+    "moved-unasked",
+    "jolt"
+   ],
    "sources": [
     "collab/evidence/traces/README.md",
     "scripts/mac-shell/check-F41.sh",
@@ -4073,6 +4407,9 @@
    ],
    "copes": "open",
    "hurt": 4,
+   "touches": [
+    "lost"
+   ],
    "sources": [
     "Sources/ArborTesting/FakeWindowSystem+Chaos.swift",
     "Sources/ArborTesting/Chaos.swift",
@@ -4097,6 +4434,9 @@
    ],
    "copes": "WindowGrab.edgeMargin counts a press within 10 points of the border, inside or outside, as taking hold of an edge.",
    "hurt": 2,
+   "touches": [
+    "jolt"
+   ],
    "sources": [
     "Sources/ArborCore/WindowGrab.swift",
     "Sources/ArborKit/AX/AXWindowSystem.swift",
@@ -4232,6 +4572,9 @@
    "guards": [],
    "copes": "open",
    "hurt": 3,
+   "touches": [
+    "input-held"
+   ],
    "sources": [
     "collab/BACKLOG.md"
    ],
@@ -4283,6 +4626,9 @@
    ],
    "copes": "Sources/ArborKit/Controller/Controller+PendingSlots.swift keeps a docked window's slot for three minutes, to be claimed by app and title; a pin does not wait yet.",
    "hurt": 1,
+   "touches": [
+    "moved-unasked"
+   ],
    "sources": [
     "docs/ARCHITECTURE.md",
     "Sources/ArborTesting/FakeWindowSystem+Chaos.swift",
@@ -4345,6 +4691,10 @@
    ],
    "copes": "NativeTabs.successor knows a tab by the same corner and width and a height within 40 points, and `windowReplaced` hands over the slot. A tab chosen from code in a group that is not its app's main window is still noticed late.",
    "hurt": 1,
+   "touches": [
+    "moved-unasked",
+    "jolt"
+   ],
    "sources": [
     "docs/ARCHITECTURE.md",
     "collab/QUESTIONS.md",
@@ -4420,6 +4770,9 @@
    ],
    "copes": "WindowSystemEvents.windowFound: such a window is adopted like one found at launch, and of the rules only ignore applies.",
    "hurt": 1,
+   "touches": [
+    "moved-unasked"
+   ],
    "sources": [
     "Sources/ArborKit/Platform/WindowSystem.swift",
     "Sources/ArborKit/AX/AXWindowSystem.swift",
@@ -4528,6 +4881,9 @@
    ],
    "copes": "WindowKind.unconfirmed: such a window is taken on all the same, takes no space meanwhile and is looked at again 0.6 s after it shows.",
    "hurt": 1,
+   "touches": [
+    "moved-unasked"
+   ],
    "sources": [
     "Sources/ArborCore/WindowKind.swift",
     "Tests/ArborCoreTests/RealWindowDecisionTests.swift",
@@ -4555,6 +4911,9 @@
    ],
    "copes": "AXWindowSystem.putAway keeps windows that closed out of the count, so that opened again they are new.",
    "hurt": 2,
+   "touches": [
+    "lost"
+   ],
    "sources": [
     "Sources/ArborKit/AX/AXWindowSystem.swift",
     "Tests/ArborKitTests/OpenAllAlongTests.swift",
@@ -4588,6 +4947,9 @@
    ],
    "copes": "WindowKind.classify takes standard windows only; `StrayDialog` moves a dialog that opens out of view to the middle of the display, once.",
    "hurt": 2,
+   "touches": [
+    "focus"
+   ],
    "sources": [
     "docs/ARCHITECTURE.md",
     "scripts/mac-shell/proof.sh",
@@ -4628,6 +4990,9 @@
    "guards": [],
    "copes": "AXWindowSystem.handle takes the number from the element when the report brings none.",
    "hurt": 2,
+   "touches": [
+    "lost"
+   ],
    "sources": [
     "Sources/ArborKit/AX/AXWindowSystem.swift"
    ]
@@ -4644,6 +5009,10 @@
    "guards": [],
    "copes": "open",
    "hurt": 2,
+   "touches": [
+    "moved-unasked",
+    "lost"
+   ],
    "sources": [
     "Sources/ArborKit/AX/ScreenGeometry.swift",
     "collab/BACKLOG.md"
@@ -4669,6 +5038,9 @@
    ],
    "copes": "Watchdog.run starts a bundled Arbor again through `open -n --env`, so that macOS sees the app itself asking.",
    "hurt": 1,
+   "touches": [
+    "lost"
+   ],
    "sources": [
     "Sources/ArborKit/App/Watchdog.swift",
     "scripts/mac-shell/watchdog-bundle.sh",
@@ -4751,6 +5123,9 @@
    ],
    "copes": "WindowSystemEvents.accessibilityWasRefused is sent from inside the call, which answers nil; the controller acts once the caller has returned.",
    "hurt": 1,
+   "touches": [
+    "lost"
+   ],
    "sources": [
     "Sources/ArborKit/AX/AXWindowSystem.swift",
     "Sources/ArborKit/Platform/WindowSystem.swift",
@@ -4786,6 +5161,10 @@
    ],
    "copes": "AXWindowSystem.focus sets AXFrontmost through Accessibility if no app has come forward 0.3 s after the request. The settings window makes way for the app that was in front before it, and the test app comes forward by itself on a signal. The fake can leave a request unanswered; the rehearsal's focus always succeeds.",
    "hurt": 2,
+   "touches": [
+    "behind",
+    "focus"
+   ],
    "sources": [
     "Sources/ArborKit/AX/AXWindowSystem.swift",
     "scripts/mac-shell/proof.sh",
@@ -4873,6 +5252,9 @@
    ],
    "copes": "PointerInput.checkPermission looks once a second while a tap is installed and removes the taps at once.",
    "hurt": 1,
+   "touches": [
+    "input-held"
+   ],
    "sources": [
     "Sources/ArborKit/Input/PointerInput.swift",
     "docs/features/F03-trackpad-gestures.md",
@@ -4979,6 +5361,9 @@
    ],
    "copes": "docs/INSTALL.md gives the order: install without starting, clear the entry, open; the signing script prints the same.",
    "hurt": 1,
+   "touches": [
+    "lost"
+   ],
    "sources": [
     "docs/INSTALL.md",
     "collab/BACKLOG.md"
@@ -5009,6 +5394,10 @@
    ],
    "copes": "EventTap.refusal asks the flag and then makes a tap and throws it away; PermissionWatch asks again half a second after a no out of the blue.",
    "hurt": 1,
+   "touches": [
+    "lost",
+    "input-held"
+   ],
    "sources": [
     "Sources/ArborKit/Input/EventTap.swift",
     "docs/features/F63-permission-taken-away.md",
@@ -5070,6 +5459,10 @@
    ],
    "copes": "Sources/ArborKit/Controller/Controller+Permission.swift notices within three seconds, stops, says what is out of view, and brings it back when the permission returns.",
    "hurt": 1,
+   "touches": [
+    "lost",
+    "input-held"
+   ],
    "sources": [
     "docs/features/F63-permission-taken-away.md",
     "docs/ARCHITECTURE.md",
@@ -5130,6 +5523,9 @@
    ],
    "copes": "WindowGrab.classify decides from the frame at the press, the frame now and the pointer, and the window server is asked at every movement from the press on. A docked window let go before the hold is over goes back to its slot.",
    "hurt": 2,
+   "touches": [
+    "stuck"
+   ],
    "sources": [
     "collab/evidence/traces/README.md",
     "scripts/mac-shell/pointer.swift",
@@ -5155,6 +5551,10 @@
    ],
    "copes": "AXWindowSystem.messagingTimeout: one second, set on the system-wide element on purpose, on each app element and on each window element when it is first seen.",
    "hurt": 2,
+   "touches": [
+    "slow",
+    "crash"
+   ],
    "sources": [
     "Sources/ArborKit/AX/AXWindowSystem.swift",
     "Sources/ArborKit/Input/DesktopProbe.swift",
@@ -5189,6 +5589,10 @@
    ],
    "copes": "EchoFilter.judge calls another frame in the first moment early. The window is looked at again 0.3 s later (`secondLooks`) and reported as moved by its app if it is not where Arbor put it.",
    "hurt": 1,
+   "touches": [
+    "jolt",
+    "stuck"
+   ],
    "sources": [
     "collab/evidence/traces/README.md",
     "Sources/ArborCore/EchoFilter.swift",
@@ -5212,6 +5616,9 @@
    "guards": [],
    "copes": "ProcessGuards.start begins an activity (`userInitiatedAllowingIdleSystemSleep`) that lasts until Arbor stands down.",
    "hurt": 2,
+   "touches": [
+    "slow"
+   ],
    "sources": [
     "Sources/ArborKit/App/ProcessGuards.swift",
     "Sources/ArborTesting/Fakes.swift",
@@ -5256,6 +5663,10 @@
    ],
    "copes": "Controller.sessionIsEnding lets go of every window as a quit would, in view and in its own size, at the notice. It pauses for two minutes instead of quitting, so that a cancelled logout does not leave the session without Arbor.",
    "hurt": 1,
+   "touches": [
+    "lost",
+    "size-lost"
+   ],
    "sources": [
     "Sources/ArborKit/App/ProcessGuards.swift",
     "Sources/ArborKit/Controller/Controller+Pause.swift",
@@ -5337,6 +5748,10 @@
    ],
    "copes": "DisplayChange.comingAndGoing: 1.5 s of waiting, then a second look; nothing is reported if the displays are as they were, and the controller puts back what macOS moved and did not bring back.",
    "hurt": 1,
+   "touches": [
+    "jolt",
+    "lost"
+   ],
    "sources": [
     "Sources/ArborKit/Platform/DisplayChange.swift",
     "Sources/ArborKit/AX/AXWindowSystem.swift",
@@ -5382,6 +5797,10 @@
    "guards": [],
    "copes": "open",
    "hurt": 2,
+   "touches": [
+    "slow",
+    "crash"
+   ],
    "sources": [
     "Sources/ArborIPC/ControlClient.swift",
     "docs/ARCHITECTURE.md",
@@ -5411,6 +5830,9 @@
    ],
    "copes": "FramePlan makes one call where one does, panels are kept and handed out again, and the stand-ins count calls instead of time. The real window system does not take the hint of `moveTogether` yet.",
    "hurt": 3,
+   "touches": [
+    "slow"
+   ],
    "sources": [
     "docs/ARCHITECTURE.md",
     "collab/evidence/traces/README.md",
@@ -5444,6 +5866,10 @@
    ],
    "copes": "Controller.spokenLately: a window that has said within the last thirty seconds where it is, and is there, is not moved again with its display's corner.",
    "hurt": 1,
+   "touches": [
+    "lost",
+    "slow"
+   ],
    "sources": [
     "Sources/ArborKit/AX/AXWindowSystem.swift",
     "Sources/ArborKit/Platform/DisplayChange.swift",
@@ -5469,6 +5895,9 @@
    ],
    "copes": "Controller.autoDockBurst: for one second a window docked automatically stands in for the focused one.",
    "hurt": 3,
+   "touches": [
+    "jolt"
+   ],
    "sources": [
     "docs/features/F23-automatic-docking.md",
     "Sources/ArborKit/Controller/Controller+AutoDock.swift"
@@ -5487,6 +5916,9 @@
    "guards": [],
    "copes": "AXWindowSystem.lookAgain: the second look is what notices the stray window, after half a second. Nothing waits for the travel to end.",
    "hurt": 3,
+   "touches": [
+    "fought"
+   ],
    "sources": [
     "docs/TESTING.md",
     "Sources/arbor-fakemac/main.swift"
@@ -5527,6 +5959,9 @@
    "guards": [],
    "copes": "open",
    "hurt": 3,
+   "touches": [
+    "slow"
+   ],
    "sources": [
     "collab/BACKLOG.md"
    ],
@@ -5551,6 +5986,9 @@
    ],
    "copes": "Sources/ArborKit/Controller/Controller+EdgeResize.swift: enforcement on that display waits for `resizeEnded`.",
    "hurt": 3,
+   "touches": [
+    "jolt"
+   ],
    "sources": [
     "collab/evidence/traces/README.md"
    ]
@@ -5572,6 +6010,9 @@
    ],
    "copes": "AXWindowSystem.setFrameOnce talks to the one app, without starting.",
    "hurt": 2,
+   "touches": [
+    "slow"
+   ],
    "sources": [
     "Sources/ArborKit/Platform/WindowSystem.swift",
     "Sources/ArborKit/AX/AXWindowSystem.swift",
@@ -5596,6 +6037,10 @@
    ],
    "copes": "RectangleGesture.mouseUp holds the mouse-up as well; both halves are sent on when the answer, or a quarter of a second, has come. The guard ships off.",
    "hurt": 1,
+   "touches": [
+    "moved-unasked",
+    "input-held"
+   ],
    "sources": [
     "Sources/ArborCore/RectangleGesture.swift",
     "Tests/ArborCoreTests/DesktopClickGuardTests.swift",
@@ -5636,6 +6081,10 @@
    ],
    "copes": "AXWindowSystem.lookAtPressedWindow reads the window server's bounds at every move of the pointer, beside the app's notices, and `endGrab` reports those bounds just before the drag ends. Drop targets go by the pointer. Only replays of traces carry the real rhythm: no knob makes a fake app lag or keep silent.",
    "hurt": 2,
+   "touches": [
+    "stuck",
+    "size-lost"
+   ],
    "sources": [
     "Sources/ArborKit/AX/AXWindowSystem.swift",
     "collab/evidence/traces/README.md",
@@ -5668,6 +6117,10 @@
    ],
    "copes": "Controller.timeToLand: for half a second after a docked window comes back nothing is concluded from a frame it does not take.",
    "hurt": 2,
+   "touches": [
+    "jolt",
+    "lost"
+   ],
    "sources": [
     "Sources/ArborTesting/FakeWindowSystem.swift",
     "collab/QUESTIONS.md",
@@ -5719,6 +6172,9 @@
    ],
    "copes": "Sources/ArborKit/Controller/Controller+EdgeResize.swift: enforcement waits for `resizeEnded`, or one round (0.25 s) past the button if the event is lost.",
    "hurt": 2,
+   "touches": [
+    "jolt"
+   ],
    "sources": [
     "docs/ARCHITECTURE.md",
     "docs/features/F07-resize-by-window-edges.md",
@@ -5739,6 +6195,9 @@
    ],
    "copes": "EventTapThread.sync hands the run loop a box that has let go of the closure before the signal.",
    "hurt": 1,
+   "touches": [
+    "crash"
+   ],
    "sources": [
     "Sources/ArborKit/Input/EventTap.swift",
     "Tests/ArborKitTests/EventTapThreadTests.swift",
@@ -5767,6 +6226,10 @@
    ],
    "copes": "Controller.timeToLandFromFullScreen: for 1.2 s nothing is concluded from a frame the returning window does not take; it is asked once more and then believed.",
    "hurt": 2,
+   "touches": [
+    "lost",
+    "size-lost"
+   ],
    "sources": [
     "collab/QUESTIONS.md",
     "Sources/ArborKit/Controller/Controller+OnTheWayBack.swift",
@@ -5888,6 +6351,9 @@
    ],
    "copes": "Settings.guardDesktopClicks ships false until the guard has been seen on a Mac; PointerSurface.whatMayBeWaiting gives the click back unless everything above the palettes is what a Mac at rest has there.",
    "hurt": 1,
+   "touches": [
+    "input-held"
+   ],
    "sources": [
     "docs/features/F60-guard-the-wallpaper-click.md",
     "Sources/ArborCore/PointerSurface.swift",
@@ -5916,6 +6382,10 @@
    "guards": [],
    "copes": "open",
    "hurt": 2,
+   "touches": [
+    "moved-unasked",
+    "input-held"
+   ],
    "sources": [
     "docs/features/F14-double-click-actions.md",
     "collab/BACKLOG.md"
@@ -5940,6 +6410,10 @@
    ],
    "copes": "PeekOutlinePanel takes the click meant for what it outlines, from either button, and only reports it.",
    "hurt": 2,
+   "touches": [
+    "focus",
+    "input-held"
+   ],
    "sources": [
     "Sources/ArborKit/UI/PeekOutlinePanel.swift",
     "scripts/mac-shell/lib.sh"
@@ -5960,6 +6434,9 @@
    "guards": [],
    "copes": "AXWindowSystem goes by reports, not by presses: a window that moves is followed whoever has the keyboard.",
    "hurt": 4,
+   "touches": [
+    "behind"
+   ],
    "sources": [
     "scripts/mac-shell/input-taps.sh",
     "scripts/mac-shell/compat-extras.sh",
@@ -5990,6 +6467,9 @@
    ],
    "copes": "Sources/ArborKit/Input/KeyboardLayout.swift reads macOS's tables and listens for a change of input source; KeyLayout says which key types a character.",
    "hurt": 2,
+   "touches": [
+    "moved-unasked"
+   ],
    "sources": [
     "scripts/mac-shell/check-F44.sh",
     "Sources/ArborTesting/SampleKeyLayouts.swift",
@@ -6096,6 +6576,9 @@
    ],
    "copes": "PointerSurface.appWindowIsUnder judges the window server's whole list, which GestureTap asks for when a pinch begins.",
    "hurt": 2,
+   "touches": [
+    "input-held"
+   ],
    "sources": [
     "Sources/ArborCore/PointerSurface.swift",
     "Sources/arbor-fakemac/World+Input.swift",
@@ -6157,6 +6640,9 @@
    "guards": [],
    "copes": "open",
    "hurt": 3,
+   "touches": [
+    "input-held"
+   ],
    "sources": [
     "docs/features/F41-pass-through-apps.md"
    ],
@@ -6220,6 +6706,9 @@
    ],
    "copes": "TapHealth leaves all the taps off for thirty seconds after three switch-offs in ten: Arbor gives up its gestures rather than freeze the Mac again.",
    "hurt": 1,
+   "touches": [
+    "input-held"
+   ],
    "sources": [
     "docs/ARCHITECTURE.md",
     "Sources/ArborCore/TapHealth.swift",
@@ -6258,6 +6747,9 @@
    "guards": [],
    "copes": "EventTap.refusal makes that tap watch for nothing but a drawing tablet's pen coming near, never for what a mouse or a trackpad sends.",
    "hurt": 2,
+   "touches": [
+    "input-held"
+   ],
    "sources": [
     "Sources/ArborKit/Input/EventTap.swift"
    ]
@@ -6279,6 +6771,9 @@
    ],
    "copes": "EventTapThread runs every tap on a thread of its own: callbacks only decide, taps are paused unless wanted, and logging, commands and drawing hop to the main queue.",
    "hurt": 1,
+   "touches": [
+    "input-held"
+   ],
    "sources": [
     "Sources/ArborKit/Input/EventTap.swift",
     "Sources/ArborKit/Input/GestureTap.swift",
@@ -6307,6 +6802,10 @@
    ],
    "copes": "AXWindowSystem.keyboardLeftTheKnownWindows reports `keyboardFocusMoved`. Only an app's focused window counts, never its main one.",
    "hurt": 2,
+   "touches": [
+    "moved-unasked",
+    "focus"
+   ],
    "sources": [
     "collab/QUESTIONS.md",
     "Sources/ArborKit/AX/AXWindowSystem.swift",
@@ -6371,6 +6870,9 @@
    ],
    "copes": "SettingsWindowController.windowWillClose makes way for the app that was in front when the window opened, and activates it. The update window and About do not do so yet.",
    "hurt": 2,
+   "touches": [
+    "focus"
+   ],
    "sources": [
     "Sources/ArborKit/UI/SettingsWindow.swift",
     "docs/TESTING.md",
@@ -6395,6 +6897,9 @@
    "guards": [],
    "copes": "Sources/ArborKit/Input/RectangleFramer.swift puts no time limit on a callback: no callback waits (DesktopProbe asks from a queue of its own), and what was held is given back whole and in order.",
    "hurt": 1,
+   "touches": [
+    "input-held"
+   ],
    "sources": [
     "docs/ARCHITECTURE.md",
     "collab/QUESTIONS.md",
@@ -6441,6 +6946,10 @@
    ],
    "copes": "OverlayPanel.orderInBehind puts tiles and gap handles behind every other window of their level.",
    "hurt": 2,
+   "touches": [
+    "behind",
+    "input-held"
+   ],
    "sources": [
     "Sources/ArborKit/UI/AppKitOverlays.swift",
     "Sources/arbor-e2e/main.swift",
@@ -6490,6 +6999,9 @@
    ],
    "copes": "SeamPanel says `ignoresMouseEvents = false` out loud, and so do the peek's outline, the minimap and the panel of shortcuts: every panel of Arbor's says one or the other.",
    "hurt": 2,
+   "touches": [
+    "input-held"
+   ],
    "sources": [
     "Sources/ArborKit/UI/PeekOutlinePanel.swift",
     "docs/features/F01-dock-and-zoom.md",
@@ -6557,6 +7069,9 @@
    ],
    "copes": "EventTap.replayMark is set as the source's user data of every event Arbor posts, and each of its taps lets a marked event through.",
    "hurt": 2,
+   "touches": [
+    "input-held"
+   ],
    "sources": [
     "Sources/ArborKit/Input/EventTap.swift",
     "Sources/ArborKit/Input/RectangleFramer.swift"
@@ -6603,6 +7118,9 @@
    ],
    "copes": "Settings.holdStillWhileCameraIsOn ships false, and what Hold Still turns away is said on screen once for each app and hold; counting Return or a launcher as asking is open.",
    "hurt": 2,
+   "touches": [
+    "focus"
+   ],
    "sources": [
     "Sources/ArborTesting/FakeWindowSystem.swift",
     "Sources/ArborKit/AX/AXWindowSystem.swift",
@@ -6671,6 +7189,9 @@
    "guards": [],
    "copes": "Sources/ArborKit/UI/FinderPanel.swift has a global monitor, as the name field and the panel of shortcuts have, that closes the panel at a key or a click that went elsewhere.",
    "hurt": 2,
+   "touches": [
+    "focus"
+   ],
    "sources": [
     "Sources/ArborKit/UI/CheatSheetPanel.swift",
     "Sources/ArborKit/UI/NamePanel.swift",
@@ -6693,6 +7214,10 @@
    ],
    "copes": "GestureTap masks `.gesture`, looks at the type before it reads anything else, and asks for the keys held now as well as the event's flags.",
    "hurt": 2,
+   "touches": [
+    "input-held",
+    "crash"
+   ],
    "sources": [
     "Sources/ArborKit/Input/GestureTap.swift",
     "scripts/mac-shell/witness.swift"
@@ -6713,6 +7238,9 @@
    ],
    "copes": "TapHealth is one for the whole tap thread: switch-offs are counted together, and at the third every tap rests.",
    "hurt": 1,
+   "touches": [
+    "input-held"
+   ],
    "sources": [
     "docs/ARCHITECTURE.md",
     "Sources/ArborKit/Input/EventTap.swift",
@@ -6816,6 +7344,9 @@
    ],
    "copes": "open",
    "hurt": 2,
+   "touches": [
+    "input-held"
+   ],
    "sources": [
     "collab/QUESTIONS.md",
     "Sources/ArborCore/SystemFacts.swift",
@@ -7213,6 +7744,9 @@
    ],
    "copes": "WindowPictures.noBackground is a static that outlives every configuration. The mended code has not run since, so pictures ship off (`windowPictures`).",
    "hurt": 2,
+   "touches": [
+    "crash"
+   ],
    "sources": [
     "Sources/ArborKit/UI/WindowPictures.swift",
     "docs/features/F02-animated-transitions.md",
@@ -7279,6 +7813,9 @@
    "guards": [],
    "copes": "ArborArtwork and the panels' mask closures are `@Sendable` and use nothing but their arguments.",
    "hurt": 1,
+   "touches": [
+    "crash"
+   ],
    "sources": [
     "Sources/ArborKit/UI/ArborArtwork.swift",
     "Sources/ArborKit/UI/BackdropPanel.swift",

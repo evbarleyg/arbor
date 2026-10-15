@@ -3,6 +3,7 @@
 
     scripts/reality-ledger.py              check collab/reality.json, print the counts, rewrite docs/REALITY.md
     scripts/reality-ledger.py --check      also fail if docs/REALITY.md is out of date (`make lint`, CI)
+    scripts/reality-ledger.py --rings [f]  print what ring 2 of docs/VIABLE.md asks of this ledger, or put it into the rings.json named
     scripts/reality-ledger.py --self-test  situations that must come out as failures
 
 collab/reality.json holds one entry for every known case. An entry says what was expected, what happened, how it was found, whether the
@@ -20,6 +21,10 @@ it again. A ledger rots when the things it names are renamed or deleted, so ever
     copes    `open`, or words that begin with a file in the repository, or with `Type.member` or a type declared anywhere under Sources/
     sources  files in the repository, without line numbers, which rot
     backlog  numbers that collab/BACKLOG.md has
+    touches  ids of the detectors a person's trouble would set off: the first column of the table in docs/VIABLE.md, section 5
+
+**Your lint failed and you never touched the ledger?** You reworded a step, or renamed a test, a switch of a stand-in or a file, that a case names. That
+is wanted: it keeps the ledger true. Under every ✘ a line that begins with → says which field of which case to change, and to what.
 
 What goes red BY ITSELF is worked out, not kept by hand: a test (one for macOS alone needs CI's Mac), a scenario, a trace, a tool or a real-window
 runner that .github/workflows/ci.yml or the Makefile's `check` and `lint` start, directly or through a script they start. A step of any other Mac shell
@@ -27,17 +32,26 @@ script, and any other tool, guards only when somebody starts it, and the page sa
 
 The preface and the afterword are prose and are copied as they stand, but for the files they name in backticks, which must exist.
 
+Ring 2 of docs/VIABLE.md asks that no open row of this ledger touches a detector. A case counts there when it names a detector and Arbor does not cope
+yet, or it crosses the seam and the stand-ins play it partly or not at all: then the walks on Linux cannot vouch for that detector. `--rings` prints
+`{"stand_ins": {"commit": …, "open_divergences_that_touch_a_detector": n}}`, each case counted once, which is what scripts/mac-shell/viable.py reads from a
+rings.json; given a file it puts that key into it and keeps the others. It refuses while the ledger differs from the commit it would name.
+
 Exit code 1 if a name is not found or, with --check, the page does not say what reality.json says; 2 if reality.json itself is wrong. A page whose
-counts have moved only because the rest of the repository has (CI starts another script) gets a note, so that nobody's lint fails on it.
+counts have moved only because the rest of the repository has (CI starts another script, the gate has a new detector) gets a note, so that nobody's lint
+fails on it: that part of the page lies between two comments, and --check leaves it out.
 """
 import argparse
 import collections
 import contextlib
+import difflib
 import glob
 import io
 import json
 import os
 import re
+import shutil
+import subprocess
 import sys
 import tempfile
 
@@ -55,6 +69,7 @@ KINDS = collections.OrderedDict([
     ("timing", "Timing: how long things take, and what can happen meanwhile"),
     ("input", "Input: where presses, keys and gestures really go"),
     ("looks", "Looks: what is on the screen is not what the model said"),
+    ("never-exercised", "Never exercised: what ships switched on, or within reach, and has never had a key pressed or a hand laid on it on a real Mac"),
     ("toolchain", "Toolchain and machines: compilers, runners and shells that differ from the ones at hand"),
 ])
 LAYERS = collections.OrderedDict([
@@ -189,10 +204,31 @@ class Tree:
         index = self.index(patterns)
         return member in index[kind] if member and kind in index else not member and (kind in index or kind in index[""])
 
+    def names(self, patterns):
+        """Everything `declares` would say yes to in these files, spelt as a case would spell it."""
+        index = self.index(patterns)
+        return {kind for kind in index if kind} | index[""] | {f"{kind}.{member}" for kind, members in index.items() if kind for member in members}
+
+    def files(self):
+        """Every file a case or the prose may name, from the root."""
+        if "files" not in self.indexes:
+            found = self.paths("Sources/**/*", "scripts/**/*", "docs/**/*", "collab/**/*", "Tests/**/*", "*", ".github/**/*")
+            self.indexes["files"] = sorted(os.path.relpath(path, self.root) for path in found)
+        return self.indexes["files"]
+
+    def detectors(self):
+        """The ids of the viable gate's detectors, in the page's order: the first column, in backticks, of the first table of docs/VIABLE.md's section 5.
+        None where there is no such page or table: then nobody can say which ids there are."""
+        if "detectors" not in self.indexes:
+            section = re.search(r"^## 5\.[^\n]*\n(.*?)(?=^## |\Z)", self.read(os.path.join(self.root, "docs", "VIABLE.md")), re.MULTILINE | re.DOTALL)
+            rows = re.search(r"(?:^\|[^\n]*\n?)+", section.group(1), re.MULTILINE) if section else None
+            self.indexes["detectors"] = (re.findall(r"^\| *`([\w-]+)` *\|", rows.group(0), re.MULTILINE) if rows else []) or None
+        return self.indexes["detectors"]
+
     def tests(self):
         """The tests that run everywhere, and those compiled or enabled on macOS alone."""
         if "tests" not in self.indexes:
-            everywhere, mac = set(), set()
+            everywhere, mac, self.indexes["disabled"] = set(), set(), set()
             for path in self.paths("Tests/**/*.swift"):
                 compiled, kept = [], {True: [], False: []}
                 for line in without_comments(self.read(path)).split("\n"):
@@ -207,8 +243,7 @@ class Tree:
                         kept["mac" in compiled].append(line)
                 for only_mac, lines in kept.items():
                     for arguments, name in TEST.findall("\n".join(lines)):
-                        if ".disabled" not in arguments:
-                            (mac if only_mac else everywhere).add(name)
+                        (self.indexes["disabled"] if ".disabled" in arguments else mac if only_mac else everywhere).add(name)
             self.indexes["tests"] = (everywhere, mac - everywhere)
         return self.indexes["tests"]
 
@@ -272,51 +307,84 @@ def watch_of(entry, tree):
     return next((kind for kind in WATCHES if kind in kinds), "none")
 
 
+def nearest(name, among, before=" (the nearest there is: ", after=")"):
+    """Words for a remedy: what the name was probably changed to, or nothing where nothing is close."""
+    close = difflib.get_close_matches(name, sorted(among), n=1, cutoff=0.6)
+    return f"{before}{close[0]}{after}" if close else ""
+
+
+def moved(path, tree):
+    """The same for a file: one of that name in another folder, or one in any folder whose name is close."""
+    same = [file for file in tree.files() if os.path.basename(file) == os.path.basename(path)]
+    return f" (there is {same[0]})" if same else nearest(path, tree.files())
+
+
 def problems_of(entry, tree):
-    """What is wrong with the names one entry gives."""
+    """What is wrong with the names one entry gives: what to say, the field to change, and what to put there."""
     found = []
+    unguarded = "or take the guard out if nothing checks this any more"
+    a_guard = "write `test: `, `scenario: `, `trace: `, `e2e: ` or `tool: ` and then the name"
     for knob in entry["knobs"]:
         if not tree.declares(knob, STAND_INS):
-            found.append(f"knob `{knob}`: no stand-in declares it (write `Type.member`, or the name of a type or of a function that belongs to none)")
+            found.append((
+                f"knob `{knob}`: no stand-in declares it (write `Type.member`, or the name of a type or of a function that belongs to none)", "knobs",
+                f"put the switch's or the helper's new name{nearest(knob, tree.names(STAND_INS))}, or take it out if no stand-in plays this any more and set “modelled” to match"))
     for guard in entry["guards"]:
         sort, _, name = guard.partition(": ")
         if not name.strip():
-            found.append(f"a guard is `test: `, `scenario: `, `trace: `, `e2e: ` or `tool: ` and a name, not “{guard}”")
+            found.append((f"a guard is `test: `, `scenario: `, `trace: `, `e2e: ` or `tool: ` and a name, not “{guard}”", "guards", a_guard))
         elif sort == "test":
             if name not in tree.tests()[0] | tree.tests()[1]:
-                found.append(f"there is no test `{name}`, or it is disabled")
+                if name in tree.indexes["disabled"]:
+                    found.append((f"the test `{name}` is disabled", "guards", "take the guard out for as long as the test does not run, or name a test that does"))
+                else:
+                    found.append((f"there is no test `{name}`", "guards", f"put the test's new name{nearest(name, tree.tests()[0] | tree.tests()[1])}, {unguarded}"))
         elif sort == "scenario":
             if not name.endswith(".sim") or not tree.is_file(f"collab/scenarios/{name}"):
-                found.append(f"there is no scenario {name}")
+                there = {os.path.basename(file) for file in tree.files() if file.startswith("collab/scenarios/") and file.endswith(".sim")}
+                found.append((f"there is no scenario {name}", "guards", f"put the scenario's new name, a *.sim in collab/scenarios{nearest(name, there)}, {unguarded}"))
         elif sort == "trace":
             recording = name[:-len(".expect")] + ".jsonl" if name.endswith(".expect") else name
             if not recording.endswith(".jsonl") or not all(tree.is_file(f"collab/evidence/traces/{file}") for file in {name, recording}):
-                found.append(f"there is no trace {name}")
+                there = {os.path.basename(file) for file in tree.files() if file.startswith("collab/evidence/traces/") and file.endswith(".jsonl")}
+                found.append((f"there is no trace {name}", "guards", f"put the recording's new name, a *.jsonl in collab/evidence/traces{nearest(recording, there)}, {unguarded}"))
         elif sort == "e2e":
             if len(name) < 8 or name not in tree.steps(by_itself=False):
-                found.append(f"no real-window runner has a step or a check with the words “{name}”")
+                close = nearest(name, set(tree.steps(by_itself=False).split("\n")), " (the nearest there is: “", "”)")
+                found.append((
+                    f"no real-window runner has a step or a check with the words “{name}”", "guards",
+                    f"put words from the new step or check, eight characters or more out of its quotes{close}, {unguarded}"))
         elif sort == "tool":
             if not tree.is_file(f"scripts/{name}"):
-                found.append(f"there is no scripts/{name}")
+                there = {file[len("scripts/"):] for file in tree.files() if file.startswith("scripts/")}
+                found.append((f"there is no scripts/{name}", "guards", f"put the tool's new name, from scripts/ on{nearest(name, there)}, {unguarded}"))
         else:
-            found.append(f"a guard is `test: `, `scenario: `, `trace: `, `e2e: ` or `tool: ` and a name, not “{guard}”")
+            found.append((f"a guard is `test: `, `scenario: `, `trace: `, `e2e: ` or `tool: ` and a name, not “{guard}”", "guards", a_guard))
     if entry["copes"] != "open":
         first = entry["copes"].split()[0].rstrip(":,;")
+        uncured = "or write “open” and nothing more if Arbor no longer copes"
         if "/" in first:
             if not tree.is_file(first):
-                found.append(f"copes: there is no {first}")
+                found.append((f"copes: there is no {first}", "copes", f"begin with the file that holds the cure now{moved(first, tree)}, {uncured}"))
         elif not (first[:1].isupper() or "." in first) or not tree.declares(first, ("Sources/**/*.swift",)):
-            found.append(f"copes: it is `open`, or begins with a file, or with `Type.member` or a type declared under Sources/, not with “{first}”")
+            close = nearest(first, tree.names(("Sources/**/*.swift",))) if NAME.fullmatch(first) and (first[:1].isupper() or "." in first) else ""
+            found.append((
+                f"copes: it is `open`, or begins with a file, or with `Type.member` or a type declared under Sources/, not with “{first}”", "copes",
+                f"begin with the `Type.member`, the type or the file that holds the cure now{close}, {uncured}"))
     for source in entry["sources"]:
         if not tree.is_file(source):
-            found.append(f"source: there is no file {source} (no line numbers: they rot)")
+            found.append((
+                f"source: there is no file {source} (no line numbers: they rot)", "sources",
+                f"put the file's new place, from the repository's root{moved(source.partition(':')[0], tree)}, or another file that tells of this"))
     for number in entry.get("backlog", []):
         if number not in tree.words("collab/BACKLOG.md"):
-            found.append(f"collab/BACKLOG.md has no {number}")
+            found.append((f"collab/BACKLOG.md has no {number}", "backlog", "put the number the backlog has for this now, or take it out"))
     if entry["modelled"] in ("yes", "partly") and not entry["knobs"]:
-        found.append(f"modelled “{entry['modelled']}” but no knob is named")
+        found.append((f"modelled “{entry['modelled']}” but no knob is named", "knobs", "name the switch or the helper of a stand-in that plays this, or set “modelled” to “no”"))
     if entry["modelled"] == "cannot" and entry["layer"] == "at the seam":
-        found.append("what crosses the seam can be played by a stand-in: that it “cannot” be is for what lies below or beside it")
+        found.append((
+            "what crosses the seam can be played by a stand-in: that it “cannot” be is for what lies below or beside it", "modelled",
+            "put “no” if a stand-in could play this and does not, or change “layer” if it does not cross the seam"))
     return found
 
 
@@ -326,7 +394,7 @@ MISSING = "## Evidence that is cited and is not in the repository"
 def prose_problems(data, tree):
     """Files the preface and the afterword name that are not there; a name without a folder is looked for everywhere. Under the heading for what is
     cited and missing it is the other way round: a file that has turned up has no business there."""
-    names = {os.path.basename(path) for path in tree.paths("Sources/**/*", "scripts/**/*", "docs/**/*", "collab/**/*", "Tests/**/*", "*", ".github/**/*")}
+    names = {os.path.basename(path) for path in tree.files()}
     found = set()
     for part in ("preface", "afterword"):
         heading = ""
@@ -337,14 +405,14 @@ def prose_problems(data, tree):
                 if heading == MISSING:
                     # Each item begins with what is missing; the files that cite it follow.
                     if there and line.lstrip("-* ").startswith(f"`{name}`"):
-                        found.add(f"{part}: {name} is listed as missing and is there")
+                        found.add((f"{part}: {name} is listed as missing and is there", part, "take the item out from under that heading"))
                 elif not there and os.path.basename(name) not in names:
-                    found.add(f"{part}: there is no file {name}")
+                    found.add((f"{part}: there is no file {name}", part, f"put the file's new name{nearest(name, tree.files() if '/' in name else names)}, or take the mention out"))
     return sorted(found)
 
 
-def shape_problems(data):
-    """What is wrong with the file itself."""
+def shape_problems(data, detectors=None):
+    """What is wrong with the file itself. `detectors`: the ids “touches” may name, or None where nobody can say."""
     if not isinstance(data, dict):
         return ["the file holds an object with “preface”, “entries” and “afterword”"]
     found, seen = [], set()
@@ -366,13 +434,21 @@ def shape_problems(data):
         for key in TEXTS:
             if not isinstance(entry.get(key), str) or not entry[key].strip():
                 found.append(f"{name}: “{key}” is a text, and not an empty one")
-        for key in LISTS + ["backlog"]:
-            value = entry.get(key, [] if key == "backlog" else None)
+        for key in LISTS + ["backlog", "touches"]:
+            value = entry.get(key, [] if key in ("backlog", "touches") else None)
             if not isinstance(value, list) or not all(isinstance(item, str) and item.strip() for item in value):
                 found.append(f"{name}: “{key}” is a list of texts, none of them empty")
         if entry.get("certainty", "suspected") != "suspected":
             found.append(f"{name}: “certainty” is left out or is “suspected”")
-        if unknown := set(entry) - set(TEXTS) - set(LISTS) - {"hurt", "backlog", "certainty"}:
+        touches = [item for item in entry.get("touches", []) if isinstance(item, str)] if isinstance(entry.get("touches", []), list) else []
+        for item in touches if detectors is not None else []:
+            if item not in detectors:
+                found.append(
+                    f"{name}: “touches” names a detector of docs/VIABLE.md, section 5, and “{item}” is none{nearest(item, detectors)}. They are: {', '.join(detectors)}. "
+                    "Put the detector's new id, or take it out; then python3 scripts/reality-ledger.py and commit both files")
+        if len(set(touches)) != len(touches):
+            found.append(f"{name}: “touches” names a detector twice")
+        if unknown := set(entry) - set(TEXTS) - set(LISTS) - {"hurt", "backlog", "certainty", "touches"}:
             found.append(f"{name}: unknown keys {sorted(unknown)}")
         if name in seen:
             found.append(f"{name}: the id is taken")
@@ -394,6 +470,21 @@ def table(rows, header):
     return lines + ["| " + " | ".join(str(value).replace("|", "\\|").replace("\n", " ") for value in row) + " |" for row in rows]
 
 
+def unvouched(entry):
+    """Whether the walks on Linux cannot vouch for what this case touches: Arbor does not cope, or the stand-ins could play it to the controller and do not, or not wholly."""
+    return entry["copes"] == "open" or (entry["layer"] == "at the seam" and entry["modelled"] in ("no", "partly"))
+
+
+def ring_two(entries):
+    """The rows ring 2 of docs/VIABLE.md counts, each once."""
+    return [entry for entry in entries if entry.get("touches") and unvouched(entry)]
+
+
+# What lies between these two on the page is worked out from the rest of the repository as well as from reality.json.
+WORKED_OUT = ("<!-- Worked out, from here on, from the rest of the repository too: --check leaves it out. -->", "<!-- Worked out, up to here. -->")
+UNTRIED = "never-exercised"
+
+
 def document(data, tree):
     entries = data["entries"]
     watched = {entry["id"]: watch_of(entry, tree) for entry in entries}
@@ -401,7 +492,7 @@ def document(data, tree):
     out = ["<!-- Generated by scripts/reality-ledger.py from collab/reality.json. Do not edit by hand. -->", ""]
     out += data["preface"] + [""]
 
-    out += ["## The count", ""]
+    out += [WORKED_OUT[0], "", "## The count", ""]
     rows = []
     for kind in KINDS:
         if of_kind := [entry for entry in entries if entry["kind"] == kind]:
@@ -430,13 +521,30 @@ def document(data, tree):
 
     hurts = [entry for entry in entries if entry["hurt"] <= 2]
     out += ["## What to do first", "", "Only cases that hurt a person (1 or 2).", ""]
-    out += listing("Arbor does not cope yet", "A fault that is known and open.", [e for e in hurts if e["copes"] == "open"])
+    out += listing("Arbor does not cope yet", "A fault that is known and open.", [e for e in hurts if e["copes"] == "open" and e["kind"] != UNTRIED])
+    if untried := [e for e in hurts if e["copes"] == "open" and e["kind"] == UNTRIED]:
+        out += listing("Nobody knows whether Arbor copes", "Within reach as Arbor ships, and never tried on a real Mac: see [never-exercised](#never-exercised).", untried)
     out += listing(
         "Arbor copes, and nothing would notice if it stopped", "No guard, or only a script that somebody has to start.",
         [e for e in hurts if e["copes"] != "open" and watched[e["id"]] in ("hand", "none")])
     out += listing(
         "The stand-ins could play it and do not", "So no test on Linux can meet it. (Those they play partly are not listed: see each kind.)",
         [e for e in hurts if e["modelled"] == "no"])
+
+    counted = ring_two(entries)
+    detectors = tree.detectors() or sorted({detector for entry in counted for detector in entry["touches"]})
+    rows = []
+    for detector in detectors:
+        some = sorted((e for e in counted if detector in e["touches"]), key=lambda e: (e["copes"] != "open", e["hurt"], e["id"]))
+        rows.append([f"`{detector}`", len(some), ", ".join(f"**[{e['id']}](#{e['id']})**" if e["copes"] == "open" else f"[{e['id']}](#{e['id']})" for e in some) or "none"])
+    out += [
+        "## Ring 2: what the walks on Linux cannot vouch for", "",
+        "The viable gate (`docs/VIABLE.md`, section 2) asks of this ledger that no open row touches one of the detectors of its section 5: with such a row open, ten thousand clean walks "
+        "against the stand-ins say nothing about that detector. Each case says which detectors a person's trouble would set off (*touches*). It counts here when Arbor does not cope with "
+        "it yet or nobody knows (**bold**), or when it crosses the seam and the stand-ins play it only partly or not at all. "
+        f"{len(counted)} cases count, each once, however many detectors it touches: that is the number `scripts/reality-ledger.py --rings` hands to the gate.", ""]
+    out += table(rows, ["Detector", "Cases", "Open or unplayed cases that touch it"])
+    out += ["", f"{sum(1 for row in rows if not row[1])} of the {len(rows)} detectors have none.", "", WORKED_OUT[1], ""]
 
     for kind, title in KINDS.items():
         of_kind = sorted((entry for entry in entries if entry["kind"] == kind), key=lambda e: (e["hurt"], e["id"]))
@@ -445,6 +553,7 @@ def document(data, tree):
         out += [f"## {kind}", "", title + ".", ""]
         for entry in of_kind:
             tags = [f"hurt {entry['hurt']}", entry["layer"]] + ([entry["certainty"]] if entry.get("certainty") else []) + entry.get("backlog", [])
+            tags += ["touches " + ", ".join(f"`{detector}`" for detector in entry["touches"])] if entry.get("touches") else []
             says = {"yes": "yes", "partly": "partly", "no": "**no**", "cannot": "cannot: it lies below or beside the seam"}[entry["modelled"]]
             knobs = ", ".join(f"`{knob}`" for knob in entry["knobs"])
             marks = {"linux": "", "mac": " (on CI's Macs)", "hand": " (by hand)"}
@@ -454,36 +563,80 @@ def document(data, tree):
                 f"- **Expected:** {entry['expected']}", f"- **Happened:** {entry['happened']}", f"- **Found by:** {entry['found']}",
                 f"- **Stand-ins play it:** {says}" + (f" ({knobs})" if knobs else ""),
                 "- **Guard:** " + ("; ".join(guards) if guards else "**none**"),
-                "- **Arbor copes:** " + ("**not yet**" if entry["copes"] == "open" else entry["copes"]),
+                "- **Arbor copes:** " + (("**nobody knows**" if kind == UNTRIED else "**not yet**") if entry["copes"] == "open" else entry["copes"]),
                 "- **Read in:** " + ", ".join(f"`{source}`" for source in entry["sources"]), ""]
     out += data.get("afterword", [])
     return "\n".join(out).rstrip("\n") + "\n"
 
 
 def settled(page):
-    """The page without what is worked out from the rest of the repository: the counts, the lists of what to do first, and how each guard goes red."""
-    first = f"\n## {next(iter(KINDS))}\n"
-    head, _, rest = page.partition("\n## The count\n")
-    return head + first + re.sub(r"(?<=`) \((?:by hand|on CI's Macs)\)", "", rest.partition(first)[2])
+    """The page without what is worked out from the rest of the repository: the counts, the lists of what to do first, ring 2, and how each guard goes red."""
+    head, _, rest = page.partition(WORKED_OUT[0])
+    return head + re.sub(r"(?<=`) \((?:by hand|on CI's Macs)\)", "", rest.partition(WORKED_OUT[1])[2])
 
 
-def run(root, check):
+def load(root):
+    """The ledger and the tree it is looked up in, or None and what is wrong with the file."""
     path = os.path.join(root, "collab", "reality.json")
+    tree = Tree(root)
     try:
         with open(path, encoding="utf-8") as file:
             data = json.load(file)
     except (OSError, ValueError) as error:
-        print(f"reality-ledger: {path}: {error}")
+        return None, tree, [f"{path}: {error}"]
+    return data, tree, shape_problems(data, tree.detectors())
+
+
+def head_of(root):
+    """The commit the ledger belongs to, or None and why not."""
+    def git(*words):
+        return subprocess.run(["git", "-C", root, *words], capture_output=True, text=True, check=True).stdout.strip()
+    try:
+        if changed := git("status", "--porcelain", "--", "collab/reality.json", "docs/VIABLE.md"):
+            return None, f"what is counted would not be the commit's: commit first ({' '.join(changed.split())})"
+        return git("rev-parse", "HEAD"), ""
+    except (OSError, subprocess.CalledProcessError) as error:
+        return None, f"git does not say which commit this is: {error}"
+
+
+def rings(root, target, head=head_of):
+    """What scripts/mac-shell/viable.py reads about ring 2 from a rings.json: printed, or put into the file named beside what other rings have put there."""
+    data, _, wrong = load(root)
+    commit, why = head(root)
+    for line in wrong + ([why] if not commit else []):
+        print(f"reality-ledger: {line}")
+    if wrong or not commit:
         return 2
-    if wrong := shape_problems(data):
+    told = {}
+    if target and os.path.exists(target):
+        try:
+            with open(target, encoding="utf-8") as file:
+                told = json.load(file)
+        except (OSError, ValueError) as error:
+            told = error
+        if not isinstance(told, dict):
+            print(f"reality-ledger: {target} holds no object, and is left as it is: {told}")
+            return 2
+    told["stand_ins"] = {"commit": commit, "open_divergences_that_touch_a_detector": len(ring_two(data["entries"]))}
+    if target:
+        with open(target, "w", encoding="utf-8") as file:
+            json.dump(told, file, indent=1)
+            file.write("\n")
+    print(json.dumps({"stand_ins": told["stand_ins"]}))
+    return 0
+
+
+def run(root, check):
+    data, tree, wrong = load(root)
+    if wrong:
         for line in wrong:
             print(f"reality-ledger: {line}")
         return 2
-    tree = Tree(root)
     code = 0
-    for name, problems in [(entry["id"], problems_of(entry, tree)) for entry in data["entries"]] + [("the prose", prose_problems(data, tree))]:
-        for problem in problems:
-            print(f"✘ {name}: {problem}")
+    for name, problems in [(entry["id"], problems_of(entry, tree)) for entry in data["entries"]] + [(None, prose_problems(data, tree))]:
+        for problem, field, remedy in problems:
+            print(f"✘ {name or 'the prose'}: {problem}")
+            print("  → collab/reality.json, " + (f'case "{name}", ' if name else "") + f'"{field}": {remedy}; then python3 scripts/reality-ledger.py and commit both files')
             code = 1
     text = document(data, tree)
     target = os.path.join(root, "docs", "REALITY.md")
@@ -503,7 +656,8 @@ def run(root, check):
     print(
         f"reality ledger: {len(entries)} cases; the stand-ins play {number(lambda e: e['modelled'] == 'yes')}, partly {number(lambda e: e['modelled'] == 'partly')}, "
         f"not yet {number(lambda e: e['modelled'] == 'no')}, out of their reach {number(lambda e: e['modelled'] == 'cannot')}; "
-        f"{number(lambda e: watch_of(e, tree) in ('hand', 'none'))} that nothing guards by itself; {number(lambda e: e['copes'] == 'open')} Arbor does not cope with yet")
+        f"{number(lambda e: watch_of(e, tree) in ('hand', 'none'))} that nothing guards by itself; {number(lambda e: e['copes'] == 'open' and e['kind'] != UNTRIED)} Arbor does not cope with yet, "
+        f"{number(lambda e: e['kind'] == UNTRIED)} never exercised; {len(ring_two(entries))} open or unplayed that touch a detector")
     return code
 
 
@@ -518,19 +672,24 @@ def self_test():
                                            'func free() { let local = "}" }',
         "Sources/ArborKit/C.swift": "struct Controller { func copes() {} }\nfunc open() {}\nlet the = 1",
         "Tests/T/T.swift": '@Test func aTest() {}\n// @Test func commentedOut() {}\n@Test(.disabled("never")) func switchedOff() {}\nfunc helper() {}\n'
-                           "#if os(macOS)\n@Test func onlyOnAMac() {}\n#endif",
+                           "#if os(macOS)\n@Test func onlyOnAMac() {}\n#endif\n@Test func theWindowComesBack() {}",
         "collab/scenarios/01.sim": "", "collab/scenarios/notes.md": "", "collab/evidence/traces/t.jsonl": "", "collab/evidence/traces/lonely.expect": "",
         "Sources/arbor-e2e/main.swift": 'step("a step on real windows")\n// step("a step that was taken out")\nobserve("a step that only looks on")',
         "scripts/mac-shell/check-F99.sh": 'step "a step somebody has to start"', "scripts/mac-shell/e2e-drag.sh": 'step "a drag that CI makes"',
         "scripts/t.py": "", "scripts/by-hand.py": "", "scripts/e2e.sh": ".build/debug/arbor-e2e", "docs/A.md": "", "collab/BACKLOG.md": "| K7 | a thing |",
         ".github/workflows/ci.yml": "run: ./scripts/e2e.sh\nrun: ./scripts/mac-shell/e2e-drag.sh\nrun: make lint\n# run: ./scripts/by-hand.py",
         "Makefile": "lint:\n\t@python3 scripts/t.py\n",
+        "docs/VIABLE.md": "## 4. Across what\n\n| Value |\n|---|\n| `defaults` |\n\n## 5. The detectors\n\nWords.\n\n| Id | `FAIL` when |\n|---|---|\n| `lost` | a window is gone |\n| `jolt` | it moves twice |\n"
+                          "| `focus` | the keyboard is elsewhere |\n\nMore words.\n\n| Control |\n|---|\n| `sabotage` |\n\n## 6. What an act may move\n\n| Act |\n|---|\n| `idle` |\n",
     }
     failures = []
+    then = "; then python3 scripts/reality-ledger.py and commit both files\n"
 
-    def situation(name, change, expected_code, said_words="", page_words="", top=None):
+    def situation(name, change, expected_code, said_words="", page_words="", top=None, without=()):
         with tempfile.TemporaryDirectory() as root:
             for path, text in files.items():
+                if path in without:
+                    continue
                 os.makedirs(os.path.dirname(os.path.join(root, path)), exist_ok=True)
                 with open(os.path.join(root, path), "w", encoding="utf-8") as file:
                     file.write(text)
@@ -551,6 +710,11 @@ def self_test():
             page = open(os.path.join(root, "docs", "REALITY.md"), encoding="utf-8").read() if os.path.exists(os.path.join(root, "docs", "REALITY.md")) else ""
             if code != expected_code or said_words not in said.getvalue() or page_words not in page or again != 0:
                 failures.append(f"{name}: exit {code} (wanted {expected_code}), check afterwards {again}; said {said.getvalue()!r}")
+            # Whoever is told that something is wrong is told in the next line, and once, what to do about it.
+            lines = said.getvalue().split("\n")
+            for index, line in enumerate(lines[:-1]):
+                if line.startswith("✘ ") != (lines[index + 1].startswith("  → collab/reality.json, ") and (lines[index + 1] + "\n").endswith(then)):
+                    failures.append(f"{name}: a ✘ without its →, or a → without its ✘: {line!r}, {lines[index + 1]!r}")
 
     def sets(**values):
         return lambda entry, entries: entry.update(values)
@@ -595,6 +759,32 @@ def self_test():
         ("out of reach at the seam", {"modelled": "cannot", "knobs": []}, "below or beside"),
     ]:
         situation(name, sets(**values), 1, words)
+    # What to do about it, in words a stranger can follow, with the name it was probably changed to where one is close.
+    for name, values, words in [
+        ("a renamed test is guessed at", {"guards": ["test: theWindowCameBack"]}, '  → collab/reality.json, case "a-case", "guards": put the test\'s new name (the nearest there is: theWindowComesBack), or take the guard out'),
+        ("and not where nothing is close", {"guards": ["test: noSuchTest"]}, "put the test's new name, or take the guard out if nothing checks this any more" + then),
+        ("a disabled test is called disabled", {"guards": ["test: switchedOff"]}, '`switchedOff` is disabled\n  → collab/reality.json, case "a-case", "guards": take the guard out for as long as'),
+        ("a renamed knob", {"knobs": ["Fake.knobs"]}, '"knobs": put the switch\'s or the helper\'s new name (the nearest there is: Fake.knob), or take it out'),
+        ("a knob that moved to another type", {"knobs": ["Faker.elsewhere"]}, "(the nearest there is: Other.elsewhere)"),
+        ("a reworded step", {"guards": ["e2e: a step on the real windows"]},
+         '"guards": put words from the new step or check, eight characters or more out of its quotes (the nearest there is: “a step on real windows”), or take the guard out if nothing checks this any more' + then),
+        ("a step that is gone altogether", {"guards": ["e2e: something quite different from all"]}, "out of its quotes, or take the guard out"),
+        ("a renamed scenario", {"guards": ["scenario: 02.sim"]}, "a *.sim in collab/scenarios (the nearest there is: 01.sim)"),
+        ("a renamed trace", {"guards": ["trace: t2.jsonl"]}, "a *.jsonl in collab/evidence/traces (the nearest there is: t.jsonl)"),
+        ("a renamed tool", {"guards": ["tool: by-hands.py"]}, "from scripts/ on (the nearest there is: by-hand.py)"),
+        ("a renamed cure", {"copes": "Controller.coped does"}, '"copes": begin with the `Type.member`, the type or the file that holds the cure now (the nearest there is: Controller.copes), or write “open”'),
+        ("a cure whose file moved", {"copes": "Sources/ArborCore/C.swift waits"}, '"copes": begin with the file that holds the cure now (there is Sources/ArborKit/C.swift)'),
+        ("a source that moved", {"sources": ["docs/old/A.md"]}, '"sources": put the file\'s new place, from the repository\'s root (there is docs/A.md)'),
+        ("a source with a line number is shown without", {"sources": ["docs/A.md:3"]}, "(there is docs/A.md)"),
+        ("a backlog number", {"backlog": ["K8"]}, '"backlog": put the number the backlog has for this now, or take it out' + then),
+        ("no knob", {"knobs": []}, '"knobs": name the switch or the helper'),
+        ("out of reach", {"modelled": "cannot", "knobs": []}, '"modelled": put “no” if a stand-in could play this'),
+    ]:
+        situation(name, sets(**values), 1, words)
+    situation("two things wrong, two remedies", sets(knobs=["Fake.gone"], backlog=["K8"]), 1, '"backlog": ')
+    situation("the prose has its remedy too", sets(), 1, '  → collab/reality.json, "afterword": put the file\'s new name (the nearest there is: Sources/ArborKit/C.swift), or take the mention out' + then,
+              top=lambda data: dict(data, afterword=["See `Sources/ArborKit/D.swift`."]))
+
     for name, values, words in [
         ("an unknown kind", {"kind": "bad luck"}, "no such kind"), ("an unknown layer", {"layer": "the attic"}, "no such layer"),
         ("an unknown answer to modelled", {"modelled": "maybe"}, "no such modelled"), ("hurt 5", {"hurt": 5}, "hurt is"), ("hurt true", {"hurt": True}, "hurt is"),
@@ -603,6 +793,10 @@ def self_test():
         ("open, with a story", {"copes": "open: nothing yet"}, "nothing more"), ("knobs that are numbers", {"knobs": [1]}, "“knobs” is a list"),
         ("an empty guard", {"guards": [""]}, "“guards” is a list"), ("guards as a text", {"guards": "test: aTest"}, "“guards” is a list"),
         ("a backlog as a text", {"backlog": "K7"}, "“backlog” is a list"), ("another certainty", {"certainty": 7}, "certainty"), ("a key nobody knows", {"colour": "red"}, "unknown keys"),
+        ("a detector nobody knows", {"touches": ["lost", "bad-luck"]}, "“bad-luck” is none. They are: lost, jolt, focus. Put the detector's new id"),
+        ("a detector that was renamed", {"touches": ["jolts"]}, "“jolts” is none (the nearest there is: jolt)"), ("what another table of the page has", {"touches": ["sabotage"]}, "is none"),
+        ("what another section of the page has", {"touches": ["idle"]}, "is none"), ("a detector twice", {"touches": ["lost", "lost"]}, "twice"),
+        ("detectors as a text", {"touches": "lost"}, "“touches” is a list"), ("an empty detector", {"touches": [""]}, "“touches” is a list"),
     ]:
         situation(name, sets(**values), 2, words)
     situation("an id used twice", lambda entry, entries: entries.append(dict(entry)), 2, "taken")
@@ -632,6 +826,112 @@ def self_test():
     situation("no guard", sets(guards=[]), 0, "1 that nothing guards by itself", "**none**")
     situation("an open case that is guarded is still on the list of what to do first", sets(copes="open"), 0, "1 Arbor does not cope", "A fault that is known and open.\n\n| Case | Hurt | Where | Stand-ins play it | Guard |\n|---|---|---|---|---|\n| [a-case]")
 
+    # Which detectors a case touches, and what ring 2 makes of it.
+    none = "| `lost` | 0 | none |\n| `jolt` | 0 | none |\n| `focus` | 0 | none |\n\n3 of the 3 detectors have none."
+    situation("a case says what it touches", sets(touches=["lost", "focus"]), 0, "0 open or unplayed", "*hurt 1 · at the seam · K7 · touches `lost`, `focus`*")
+    situation("played and coped with: the walks can vouch", sets(touches=["lost"]), 0, "0 open or unplayed", none)
+    situation("open counts, in bold, once for two detectors", sets(touches=["lost", "focus"], copes="open"), 0, "1 open or unplayed",
+              "| `lost` | 1 | **[a-case](#a-case)** |\n| `jolt` | 0 | none |\n| `focus` | 1 | **[a-case](#a-case)** |\n\n1 of the 3 detectors have none.")
+    situation("played partly at the seam counts", sets(touches=["jolt"], modelled="partly"), 0, "1 open or unplayed", "| `jolt` | 1 | [a-case](#a-case) |")
+    situation("not played at the seam counts", sets(touches=["jolt"], modelled="no", knobs=[]), 0, "1 open or unplayed", "| `jolt` | 1 | [a-case](#a-case) |")
+    situation("below the seam the stand-ins owe nothing", sets(touches=["jolt"], modelled="partly", layer="below the seam"), 0, "0 open or unplayed", none)
+    situation("open and touching nothing is no row of ring 2", sets(copes="open"), 0, "0 open or unplayed", none)
+    situation("without the gate's page any id passes, and the table has what the cases name", sets(touches=["whatever"], copes="open"), 0, "1 open or unplayed",
+              "| `whatever` | 1 | **[a-case](#a-case)** |\n\n0 of the 1 detectors have none.", without=("docs/VIABLE.md",))
+    situation("what was never tried is on a list of its own, and nobody knows", sets(kind=UNTRIED, copes="open", touches=["lost"]), 0, "0 Arbor does not cope with yet, 1 never exercised; 1 open or unplayed",
+              "### Nobody knows whether Arbor copes")
+    situation("and is no known fault", sets(kind=UNTRIED, copes="open"), 0, "", "A fault that is known and open.\n\n| Case | Hurt | Where | Stand-ins play it | Guard |\n|---|---|---|---|---|\n\n")
+    situation("and its entry says so", sets(kind=UNTRIED, copes="open"), 0, "", "- **Arbor copes:** **nobody knows**")
+
+    # What --check holds the page to, and what it lets pass; and what the gate is told.
+    with tempfile.TemporaryDirectory() as root:
+        for path, text in files.items():
+            os.makedirs(os.path.dirname(os.path.join(root, path)), exist_ok=True)
+            with open(os.path.join(root, path), "w", encoding="utf-8") as file:
+                file.write(text)
+        second = dict(good, id="b-case", copes="open", touches=["lost", "jolt"])
+        third = dict(good, id="c-case", modelled="partly", touches=["jolt"], guards=["e2e: a step somebody has to start"])
+        with open(os.path.join(root, "collab", "reality.json"), "w", encoding="utf-8") as file:
+            json.dump({"preface": ["# Reality"], "entries": [good, second, third, dict(good, id="d-case", touches=["focus"]), dict(good, id="e-case", copes="open")]}, file)
+        page = os.path.join(root, "docs", "REALITY.md")
+
+        def checked(change=None, path=page):
+            """What --check says once a file has been changed, which is then put back."""
+            before = open(path, encoding="utf-8").read()
+            with open(path, "w", encoding="utf-8") as file:
+                file.write(change(before) if change else before)
+            said = io.StringIO()
+            with contextlib.redirect_stdout(said):
+                code = run(root, check=True)
+            with open(path, "w", encoding="utf-8") as file:
+                file.write(before)
+            return code, said.getvalue()
+
+        with contextlib.redirect_stdout(io.StringIO()):
+            run(root, check=False)
+        # No case here is of the first kind: the page is still read to its end.
+        for name, change, path, code, words in [
+            ("a page just written", None, page, 0, "5 cases"),
+            ("a case's words changed by hand, in a ledger without a case of the first kind", lambda text: text.replace("- **Expected:** x", "- **Expected:** something else", 1), page, 1, "out of date"),
+            ("the last line of the page taken off", lambda text: text.rstrip("\n").rpartition("\n")[0] + "\n", page, 1, "out of date"),
+            ("what a case touches changed by hand", lambda text: text.replace("touches `focus`", "touches `lost`"), page, 1, "out of date"),
+            ("the preface changed by hand", lambda text: text.replace("# Reality", "# Fiction"), page, 1, "out of date"),
+            ("a page from before the two comments", lambda text: text.replace(WORKED_OUT[0] + "\n", "").replace(WORKED_OUT[1] + "\n", ""), page, 1, "out of date"),
+            ("a count that moved", lambda text: text.replace("| **all** | 5 |", "| **all** | 6 |"), page, 0, "note: "),
+            ("a detector the gate has got since", lambda text: text.replace("| `focus` |", "| `told` | a word gets out |\n| `focus` |"), os.path.join(root, "docs", "VIABLE.md"), 0, "note: "),
+            ("a script CI starts since", lambda text: text + "\nrun: ./scripts/mac-shell/check-F99.sh", os.path.join(root, ".github", "workflows", "ci.yml"), 0, "note: "),
+            ("a detector the gate has renamed", lambda text: text.replace("`jolt`", "`jerk`"), os.path.join(root, "docs", "VIABLE.md"), 2, "“jolt” is none"),
+        ]:
+            if (got := checked(change, path))[0] != code or words not in got[1]:
+                failures.append(f"--check, {name}: exit {got[0]} (wanted {code}); said {got[1]!r}")
+
+        def told(target, head=lambda root: ("c" * 40, "")):
+            said = io.StringIO()
+            with contextlib.redirect_stdout(said):
+                code = rings(root, target, head)
+            return code, said.getvalue()
+
+        wanted = {"stand_ins": {"commit": "c" * 40, "open_divergences_that_touch_a_detector": 2}}
+        code, said = told("")
+        if code != 0 or json.loads(said) != wanted:
+            failures.append(f"--rings: two cases count, each once: exit {code}, said {said!r}")
+        target = os.path.join(root, "rings.json")
+        if told(target)[0] != 0 or json.load(open(target, encoding="utf-8")) != wanted:
+            failures.append("--rings with a file that is not there yet does not make it")
+        with open(target, "w", encoding="utf-8") as file:
+            json.dump({"linux": {"walks": 10000}, "stand_ins": {"commit": "d" * 40, "open_divergences_that_touch_a_detector": 0}}, file)
+        if told(target)[0] != 0 or json.load(open(target, encoding="utf-8")) != dict(wanted, linux={"walks": 10000}):
+            failures.append("--rings with a file does not keep the other rings, or keeps its own old word")
+        with open(target, "w", encoding="utf-8") as file:
+            file.write("[1]")
+        if told(target)[0] != 2 or open(target, encoding="utf-8").read() != "[1]":
+            failures.append("--rings writes over a file that holds something else")
+        code, said = told("", lambda root: (None, "commit first"))
+        if code != 2 or "commit first" not in said or "stand_ins" in said:
+            failures.append(f"--rings names a commit that does not hold what it counted: exit {code}, said {said!r}")
+        if shutil.which("git"):
+            def git(*words):
+                subprocess.run(["git", "-C", root, "-c", "user.name=t", "-c", "user.email=t@example.com", "-c", "commit.gpgsign=false", *words], capture_output=True, check=False)
+            git("init")
+            if head_of(root)[0] is not None:
+                failures.append("a repository without a commit has one")
+            git("add", "-A")
+            git("commit", "-m", "a ledger")
+            if not re.fullmatch(r"[0-9a-f]{40}", head_of(root)[0] or ""):
+                failures.append(f"the commit of a ledger that is committed is not told: {head_of(root)}")
+            with open(os.path.join(root, "docs", "A.md"), "w", encoding="utf-8") as file:
+                file.write("another file is nobody's business")
+            if not head_of(root)[0]:
+                failures.append("a change to a file that is not counted keeps the commit from being told")
+            with open(os.path.join(root, "docs", "VIABLE.md"), "a", encoding="utf-8") as file:
+                file.write("\n")
+            if head_of(root)[0] or "docs/VIABLE.md" not in head_of(root)[1]:
+                failures.append(f"a ledger counted against a page that is not committed is put down to the commit: {head_of(root)}")
+        with open(os.path.join(root, "collab", "reality.json"), "w", encoding="utf-8") as file:
+            json.dump({"preface": [], "entries": [dict(good, touches=["bad-luck"])]}, file)
+        if told("")[0] != 2:
+            failures.append("--rings counts in a ledger that is wrong")
+
     with tempfile.TemporaryDirectory() as root:
         os.makedirs(os.path.join(root, "collab"))
         os.makedirs(os.path.join(root, "docs"))
@@ -642,7 +942,7 @@ def self_test():
         with contextlib.redirect_stdout(io.StringIO()):
             if run(root, check=True) != 1:
                 failures.append("a page edited by hand passes --check")
-        page = "x\n## The count\n1 | 2\n## order-of-reports\n- **Guard:** `e2e: a step` (by hand); `test: t` (on CI's Macs)\n"
+        page = f"x\n{WORKED_OUT[0]}\n## The count\n1 | 2\n{WORKED_OUT[1]}\n## input\n- **Guard:** `e2e: a step` (by hand); `test: t` (on CI's Macs)\n"
         if settled(page) != settled(page.replace("1 | 2", "3 | 4").replace(" (by hand)", " (on CI's Macs)")) or settled(page) == settled(page.replace("a step", "another")):
             failures.append("counts that moved make a page stale, or other words do not")
         with open(os.path.join(root, "collab", "reality.json"), "w", encoding="utf-8") as file:
@@ -658,9 +958,10 @@ def self_test():
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--check", action="store_true")
+    parser.add_argument("--rings", nargs="?", const="", metavar="FILE")
     parser.add_argument("--self-test", action="store_true")
     args = parser.parse_args()
-    sys.exit(self_test() if args.self_test else run(ROOT, args.check))
+    sys.exit(self_test() if args.self_test else rings(ROOT, args.rings) if args.rings is not None else run(ROOT, args.check))
 
 
 if __name__ == "__main__":
