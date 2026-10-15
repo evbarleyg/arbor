@@ -6,8 +6,7 @@
 #   scripts/polish/arms.py .mac-shell/films-arms-<run id> test|safari   anywhere, afterwards
 #
 # A count of requests on Linux says how often Arbor asks. It cannot say what a person sees: whether a Mac draws the state between two askings. That depends on how long the state lasts and on how
-# fast the app draws. So the acts are played twice: on a test window, which draws at once and so shows every state (the strict judge: a cure is held to it), and on one Safari window on a page of
-# one flat colour (the lenient one: a cure is shown on it). By real keys, without motion; each arm's Arbor built here from its own commit, so that Mac, macOS, apps and camera are the same for all;
+# fast the app draws. So the acts are played twice: on a test window, and on one Safari window on a page of one flat colour. By real keys, without motion; each arm's Arbor built here from its own commit, so that Mac, macOS, apps and camera are the same for all;
 # and macOS's own tiling of the same Safari window, with no Arbor running, as the bar. What is counted, act by act: the frames in which the window is seen at the size of the end
 # and the place of the start, or anywhere outside what its old frame and its new one cover.
 #
