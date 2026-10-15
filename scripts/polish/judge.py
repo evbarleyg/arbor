@@ -815,7 +815,8 @@ GATE_FILMED_TWICE = [
 ]
 SHIPS = GATE_FILMED_TWICE + [("dark-" + name, kind, gate) for name, kind, gate in GATE_FILMED_TWICE] + [
     ("dock-third", "instant", 0), ("dock-fourth", "instant", 0), ("dock-fourth-again", "instant", 0), ("close", "closes", 0), ("quit", "told", 0),
-    ("eight-arrange", "instant", 0), ("eight-fill", "instant", 0), ("eight-everything", "instant", 0),
+    ("eight-arrange", "instant", 0), ("eight-fill", "instant", 0), ("eight-everything", "instant", 0), ("eight-arrange-again", "instant", 0),
+    ("crowd-arrange", "instant", 0), ("crowd-arrange-again", "instant", 0),
 ]
 
 # The laboratory's own column: the same table, with every scene of the moves taken from the session in which Arbor's gestures are on and
