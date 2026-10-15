@@ -66,8 +66,8 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 | [input](#input) | 56 | 7 | 6 | 13 | 13 | 24 | 20 | 6 | 7 | 23 | 11 |
 | [looks](#looks) | 18 | 0 | 0 | 0 | 1 | 17 | 1 | 2 | 3 | 12 | 4 |
 | [never-exercised](#never-exercised) | 16 | 7 | 2 | 13 | 0 | 1 | 0 | 0 | 15 | 1 | 16 |
-| [toolchain](#toolchain) | 40 | 1 | 0 | 1 | 4 | 35 | 22 | 1 | 0 | 17 | 6 |
-| **all** | 420 | 58 | 79 | 109 | 67 | 165 | 202 | 19 | 53 | 146 | 99 |
+| [toolchain](#toolchain) | 41 | 1 | 0 | 1 | 4 | 36 | 23 | 1 | 0 | 17 | 6 |
+| **all** | 421 | 58 | 79 | 109 | 67 | 166 | 203 | 19 | 53 | 146 | 99 |
 
 **Where the difference bit**
 
@@ -77,7 +77,7 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 | at the seam | in what crosses the platform protocols: a stand-in can play it to the controller | 145 | 90 | 107 | 0 | 10 | 28 |
 | controller | in the controller or the core, given reports that were right | 25 | 13 | 13 | 0 | 1 | 11 |
 | test | in a test, a script or a harness that expected the wrong thing | 74 | 0 | 19 | 5 | 8 | 42 |
-| machine | in the machine, the toolchain or the way things are built and installed | 39 | 3 | 22 | 1 | 2 | 14 |
+| machine | in the machine, the toolchain or the way things are built and installed | 40 | 3 | 23 | 1 | 2 | 14 |
 
 Each case is counted under the best guard it has: one that goes red on any machine (a test, a scenario, a replayed trace, a tool that `make check` or CI runs), one that needs CI's Macs (a test for macOS alone, a step of a real-window run that CI starts), one that somebody has to start, or none.
 
@@ -256,11 +256,11 @@ Order of reports: what belongs together arrives in another order than expected.
 *hurt 1 · at the seam · K1772 · K140 · K890 · touches `moved-unasked`, `jolt`, `flash`*
 
 - **Expected:** A window closes, Arbor hears "destroyed" and nothing else. The stand-in's close sent that one report, and its minimize one change.
-- **Happened:** When the focused window is closed or minimized, the app's next window is reported focused first: 10 ms before "destroyed" in one trace, 1 to 4 ms in other recordings. A frame set on the closing window in between succeeds. If the next window is out of view the view goes out to it and is taken back (2 moves, 3 motions, daily with ⌘W). On a Mac, minimizing anything also sent floating windows out of view. A recording of a minimize of the key window with siblings puts it at the end of the flight into the Dock: "focused window changed", "main window changed" 5.4 ms later, "miniaturized" 1.2 ms after that, so 6.6 ms in all. For plain AppKit windows a close has the focus 12 ms before "destroyed". Safari and Finder reach the controller the other way round: real-apps-are-reported-gone-before-their-sibling-has-the-keyboard.
-- **Found by:** The trace close (test windows, the real pointer, a hosted Mac, macOS 26) and a recording of Accessibility notifications on the same kind of Mac. The out-and-back was then found headless, once the stand-in played that order.
+- **Happened:** When the focused window is closed or minimized, the app's next window is reported focused first: 10 ms before "destroyed" in one trace, 1 to 4 ms in other recordings. A frame set on the closing window in between succeeds. If the next window was out of view the view went out to it and was taken back (2 moves, 3 motions, daily with ⌘W), and stayed on everything where the going dissolved the group in view. On a Mac, minimizing anything also sent floating windows out of view. A recording of a minimize of the key window with siblings puts it at the end of the flight into the Dock: "focused window changed", "main window changed" 5.4 ms later, "miniaturized" 1.2 ms after that, so 6.6 ms in all. For plain AppKit windows a close has the focus 12 ms before "destroyed". Safari and Finder reach the controller the other way round: real-apps-are-reported-gone-before-their-sibling-has-the-keyboard.
+- **Found by:** The trace close (test windows, the real pointer, a hosted Mac, macOS 26) and a recording of Accessibility notifications on the same kind of Mac. The out-and-back was then found headless, once the stand-in played that order. The minimize: a recording that a run on a hosted Mac brought back (a sweep of the windows).
 - **Stand-ins play it:** yes (`FakeWindowSystem.close`, `FakeWindowSystem.setMinimized`, `FakeWindowSystem.nextWindowOfApp`, `Echoes.keyboard`)
-- **Guard:** `test: closingTheFocusedWindowFocusesTheAppsNextWindowBeforeItIsReportedGone`; `test: minimizingTheFocusedWindowFocusesTheNextFirstAndRestoringFocusesFirstToo`; `test: theViewDoesNotChaseAKeyboardTheUserDidNotMove`; `test: focusThatArrivesBeforeTheClosingDoesNotConfuseUndo`; `test: askingForTheViewThatIsAlreadyShowingTakesNothingAway`; `trace: close.expect`; `e2e: close a docked window` (on CI's Macs); `e2e: minimize a docked window` (on CI's Macs)
-- **Arbor copes:** Controller.keyboardLeft takes back a view that has already followed and gives the keyboard to a window in view. The wait of 30 ms that would spare the way out and back is decided and is not in the tree.
+- **Guard:** `test: closingTheFocusedWindowFocusesTheAppsNextWindowBeforeItIsReportedGone`; `test: minimizingTheFocusedWindowFocusesTheNextFirstAndRestoringFocusesFirstToo`; `test: theViewDoesNotChaseAKeyboardTheUserDidNotMove`; `test: focusThatArrivesBeforeTheClosingDoesNotConfuseUndo`; `test: askingForTheViewThatIsAlreadyShowingTakesNothingAway`; `test: theGoingOfAnAppsSecondWindowMovesNothing`; `test: theViewStaysOnWhatIsLeftOfAGroupThatDissolves`; `test: aGoingThatComesAfterTheMomentStillTakesTheViewBack`; `trace: close.expect`; `e2e: close a docked window` (on CI's Macs); `e2e: minimize a docked window` (on CI's Macs)
+- **Arbor copes:** Controller.waitsForAGoing: a report that takes the keyboard from one window of an app to another that is out of view waits 50 ms before the view follows. If the first window goes meanwhile, Controller.keyboardLeft goes on as if the going had come first: the view stays and a window in view gets the keyboard. A going later than that finds a view that has followed, and takes it back; where the going dissolves the group that was in view there is nothing to go back to, and the view still ends on everything. The gaps recorded were 7 and 12 ms, on idle Macs, and Arbor's own work was part of the 12; nobody has measured a busy Mac, where a timer that is overdue may well run before a report that is waiting.
 - **Read in:** `collab/evidence/traces/README.md`, `docs/features/F38-focus-as-macos-reports-it.md`, `collab/QUESTIONS.md`, `Sources/ArborTesting/FakeWindowSystem.swift`, `Sources/ArborKit/Controller/Controller+Focus.swift`
 
 ### the-activation-notice-outruns-the-frontmost-app
@@ -4918,6 +4918,18 @@ Toolchain and machines: compilers, runners and shells that differ from the ones 
 - **Guard:** **none**
 - **Arbor copes:** scripts/mac-shell/apptool.swift sets the mode through a configuration that is completed for good.
 - **Read in:** `scripts/mac-shell/apptool.swift`
+
+### a-macs-python3-is-older-than-the-runners
+
+*hurt 4 · machine*
+
+- **Expected:** A script that passes its tests on every runner, Linux and Mac, runs on a Mac.
+- **Happened:** The runners have a newer Python than many a Mac, which has the `python3` it was given one day. A backslash between the braces of an f-string, which Python reads from 3.12 on, stopped `make lint`, and with it `make check`, with a SyntaxError under 3.11.
+- **Found by:** `make check` on a tester's Mac. Seen again on Linux with a real 3.11 and a real 3.9.
+- **Stand-ins play it:** cannot: it lies below or beside the seam
+- **Guard:** `tool: lint-python.py`
+- **Arbor copes:** scripts/lint-python.py has every older Python it finds read the scripts and the Python that stands in shell scripts, workflows and pages, and knows much of what came after 3.9. The workflow `Old Python` runs `make lint` and the tools' own tests under 3.9.
+- **Read in:** `scripts/lint-python.py`, `.github/workflows/old-python.yml`
 
 ### a-probe-that-counts-on-arbors-taps-is-invalid-unless-it-asks-for-the-gestures
 
