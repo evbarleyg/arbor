@@ -111,6 +111,39 @@ import Testing
     #expect(permission.beat(at: 100 + 2 * Self.beat, tapsAreIn: true) == .removeAll(.nothing))
   }
 
+  @Test func whenTheNetFindsTheClockStandingTheThreadForgetsTheTapsAndANewClockAsksWhetherTheyMayReturn() {
+    var permission = TapPermission()
+    #expect(permission.beat(at: 100, tapsAreIn: true) == .ask)
+    #expect(permission.heard(.yes, at: 100.001) == .lookAfter)
+    #expect(permission.clockStood(at: 101.2) == .removeAll(.clockStood))
+    #expect(!permission.mayInstall)
+    #expect(permission.clock(tapsAreIn: false) == TapPermission.beatWhileGone, "another beat, so another timer")
+    #expect(permission.beat(at: 102.2, tapsAreIn: false) == .ask)
+    #expect(permission.heard(.yes, at: 102.25) == .comeBack(after: 102.25 - 101.2, wentFor: .clockStood))
+  }
+
+  @Test func ifThePermissionHadGoneWhileTheClockStoodTheTapsStayAwayAndTheLogSaysWhy() {
+    var permission = TapPermission()
+    #expect(permission.clockStood(at: 101.2) == .removeAll(.clockStood))
+    #expect(permission.beat(at: 102.2, tapsAreIn: false) == .ask)
+    #expect(permission.heard(.tapRefused, at: 102.25) == .nothing)
+    #expect(permission.beat(at: 103.2, tapsAreIn: false) == .ask)
+    #expect(permission.heard(.yes, at: 103.25) == .comeBack(after: 103.25 - 101.2, wentFor: .tapRefused))
+  }
+
+  @Test func aClockFoundStandingWhileThePermissionIsGoneIsNothing() {
+    var permission = TapPermission()
+    _ = permission.beat(at: 100, tapsAreIn: true)
+    _ = permission.heard(.flagSaysNo, at: 100)
+    #expect(permission.clockStood(at: 101.2) == .nothing)
+  }
+
+  @Test func onlyWhatMacOSSaidIsANo() {
+    // Whoever else wants to know about the permission hears of these two and of nothing else.
+    #expect(TapPermission.Answer.flagSaysNo.isANo && TapPermission.Answer.tapRefused.isANo)
+    #expect(!TapPermission.Answer.nothing.isANo && !TapPermission.Answer.clockStood.isANo && !TapPermission.Answer.yes.isANo)
+  }
+
   @Test func theWordsThatScriptsOnMacsRead() {
     #expect(TapPermission.Answer.flagSaysNo.words == "AXIsProcessTrusted says no")
     #expect(TapPermission.Answer.tapRefused.words == "AXIsProcessTrusted says yes, but macOS refused a tap")
@@ -261,7 +294,7 @@ import Testing
         isIn = isIn.map { _ in false }
         mainQueue.append(true)
       case .comeBack(let after, let wentFor):
-        if wentFor == .nothing { falseAlarms.append(after) }
+        if !wentFor.isANo { falseAlarms.append(after) }
         mainQueue.append(false)
       }
       keepTheClock(at: now)

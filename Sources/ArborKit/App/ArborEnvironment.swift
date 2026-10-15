@@ -20,6 +20,8 @@ import Foundation
 ///   appearance, so that both can be looked at without changing a setting of somebody's Mac.
 /// - `ARBOR_NO_PICTURES=1`: take no pictures of windows, as without Screen Recording permission.
 /// - `ARBOR_RELEASES_URL=http://127.0.0.1:8000/latest.json`: ask there instead of GitHub's releases API.
+/// - `ARBOR_TAP_CLOCK_STOPS_AFTER=5`: that many seconds after its first beat the timer that has macOS asked whether Arbor may
+///   still have its event taps ends, and nothing else does: for a probe of the net under it (`TapNet`; read by `EventTapThread`).
 /// - `ARBOR_NO_OPENING=1`: open no app (`summon` with no window to bring). An Arbor under test on somebody's Mac knows only
 ///   its test windows, so to it every app of theirs is one that has to be opened.
 public struct ArborEnvironment: Sendable {

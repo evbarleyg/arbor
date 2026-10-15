@@ -41,6 +41,11 @@ public struct TapPermission: Sendable {
     case tapRefused
     /// Nothing, in time.
     case nothing
+    /// Nobody asked: the clock stood, and the taps were taken out from outside their thread (`TapNet`).
+    case clockStood
+
+    /// Whether macOS said that Arbor may not. Otherwise the taps went to be on the safe side.
+    public var isANo: Bool { self == .flagSaysNo || self == .tapRefused }
 
     /// For the log. Scripts that run on Macs read these words.
     public var words: String {
@@ -49,6 +54,7 @@ public struct TapPermission: Sendable {
       case .flagSaysNo: "AXIsProcessTrusted says no"
       case .tapRefused: "AXIsProcessTrusted says yes, but macOS refused a tap"
       case .nothing: "macOS has not said in time whether Arbor still may"
+      case .clockStood: "the event taps' clock stood"
       }
     }
   }
@@ -60,11 +66,11 @@ public struct TapPermission: Sendable {
     case ask
     /// All is well. See whether macOS left a tap off without a word (`TapHealth.foundOff`).
     case lookAfter
-    /// Remove every tap, and then tell their owners. After `.nothing` nobody has said no: it is no second opinion for
-    /// whoever else wants to know about the permission.
+    /// Remove every tap, and then tell their owners. Unless the answer `isANo` nobody has said no: it is no second opinion
+    /// for whoever else wants to know about the permission.
     case removeAll(Answer)
     /// The permission is back: tell the owners, who install what the settings ask for. For how long the taps were away,
-    /// and what had sent them: after `.nothing` it was a false alarm, which may have cost a pinch or a rectangle in progress.
+    /// and what had sent them: unless that `isANo` it was a false alarm, which may have cost a pinch or a rectangle in progress.
     case comeBack(after: Double, wentFor: Answer)
   }
 
@@ -102,6 +108,12 @@ public struct TapPermission: Sendable {
     guard !isGone, askedAt == nil else { return .nothing }
     askedAt = now
     return .ask
+  }
+
+  /// The net found that the clock stood, and has made the taps harmless. The thread, if it runs, does the rest: as after
+  /// a silence of macOS's, and the clock that is started to ask whether the taps may return is a new one.
+  public mutating func clockStood(at now: Double) -> Order {
+    isGone ? .nothing : lose(.clockStood, at: now)
   }
 
   /// The answer to the question that was out.

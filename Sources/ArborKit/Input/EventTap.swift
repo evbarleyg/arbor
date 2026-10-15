@@ -31,6 +31,14 @@ final class EventTapThread: @unchecked Sendable {
   private var answers = (count: 0, total: 0.0, slowest: 0.0)
   /// Where macOS is asked whether Arbor still may. Whoever waits for that answer answers for no event meanwhile.
   private let asker = DispatchQueue(label: "dev.arbor.event-taps.asker", qos: .userInteractive)
+  /// Looks, from outside this thread, whether the clock still beats. Not on the asker's queue, which a question that hangs holds up.
+  private var lookout: DispatchSourceTimer?
+  /// For a probe of the lookout: this long after the first beat the clock's timer ends, once, and nothing else does
+  /// (`ARBOR_TAP_CLOCK_STOPS_AFTER`, in seconds).
+  private var clockStopsAfter = ProcessInfo.processInfo.environment["ARBOR_TAP_CLOCK_STOPS_AFTER"].flatMap(Double.init)
+  private var firstBeat: Double?
+  // Shared with the lookout.
+  fileprivate let net = OSAllocatedUnfairLock(uncheckedState: (net: TapNet(), ports: [CFMachPort]()))
 
   private init() {
     let ready = DispatchSemaphore(value: 0)
@@ -96,19 +104,57 @@ final class EventTapThread: @unchecked Sendable {
 
   /// Starts the clock, stops it or changes its beat. On the tap thread, after whatever changes which taps there are.
   fileprivate func keepTheClock() {
+    keepTheLookout()
     let interval = permission.clock(tapsAreIn: !taps.isEmpty)
     guard interval != clock?.interval else { return }
     if let clock { CFRunLoopTimerInvalidate(clock.timer) }
+    net.withLockUnchecked { $0.net.beat() }
     clock = interval.map { interval in
       // No tolerance: for how long all input can be lost is counted in these beats.
       let timer = CFRunLoopTimerCreateWithHandler(
         kCFAllocatorDefault, CFAbsoluteTimeGetCurrent() + interval, interval, 0, 0
-      ) { [unowned self] _ in
+      ) { [unowned self] timer in
+        if let after = clockStopsAfter, Self.now() - (firstBeat ?? Self.now()) >= after {
+          clockStopsAfter = nil
+          CFRunLoopTimerInvalidate(timer)
+          return TapLog.error("the event taps' clock is stopped, as ARBOR_TAP_CLOCK_STOPS_AFTER asks")
+        }
+        firstBeat = firstBeat ?? Self.now()
+        net.withLockUnchecked { $0.net.beat() }
         obey(permission.beat(at: Self.now(), tapsAreIn: !taps.isEmpty))
       }
       CFRunLoopAddTimer(runLoop, timer, .commonModes)
       return (timer!, interval)
     }
+  }
+
+  /// Starts the lookout with the first tap and ends it with the last (`TapNet`). On the tap thread.
+  private func keepTheLookout() {
+    if !taps.isEmpty, lookout == nil {
+      let timer = DispatchSource.makeTimerSource(queue: .global(qos: .userInteractive))
+      timer.schedule(deadline: .now() + TapNet.pause, repeating: TapNet.pause)
+      timer.setEventHandler { [unowned self] in look() }
+      timer.activate()
+      lookout = timer
+    } else if taps.isEmpty, let lookout {
+      lookout.cancel()
+      self.lookout = nil
+    }
+  }
+
+  /// Not on the tap thread. If its clock stands, makes the taps harmless from here, which needs nothing of that thread.
+  private func look() {
+    let ports = net.withLockUnchecked { state -> [CFMachPort] in
+      guard state.net.look(tapsAreIn: !state.ports.isEmpty) else { return [] }
+      // Off the list in the same breath: if the thread never runs again, nobody else takes them off, and they would be found again.
+      defer { state.ports = [] }
+      return state.ports
+    }
+    guard !ports.isEmpty else { return }
+    for port in ports { CFMachPortInvalidate(port) }
+    Log.error("the event taps' clock has not beaten for about a second: took all \(ports.count) event taps out from outside their thread")
+    // If the thread runs, and only its timer did not: it forgets the taps, tells their owners, and starts a new clock.
+    async { [self] in obey(permission.clockStood(at: Self.now())) }
   }
 
   /// Does as `TapPermission` says. On the tap thread, and not from a tap's callback unless the order is to ask: a tap must
@@ -143,7 +189,7 @@ final class EventTapThread: @unchecked Sendable {
           + "average and \(Int(answers.slowest * 1e6)) µs at worst")
       // After the taps have gone: an owner gives back a press it holds, and posting an event can take long just now.
       for tap in all { tap.onReset?() }
-      Self.onPermissionChange.withLock { $0 }?(true, answer != .nothing)
+      Self.onPermissionChange.withLock { $0 }?(true, answer.isANo)
     case .comeBack(let after, let wentFor):
       // One line that says how long and why, so that a day's log can be asked how many alarms were false.
       Log.info(
@@ -352,6 +398,7 @@ final class EventTap: @unchecked Sendable {
     self.source = source
     retainedSelf = reference
     EventTapThread.shared.taps.append(self)
+    EventTapThread.shared.net.withLockUnchecked { $0.ports.append(port) }
     installed.withLock { $0 = true }
     EventTapThread.shared.keepTheClock()
     TapLog.debug("\(name) event tap installed")
@@ -366,6 +413,7 @@ final class EventTap: @unchecked Sendable {
     self.port = nil
     source = nil
     EventTapThread.shared.taps.removeAll { $0 === self }
+    EventTapThread.shared.net.withLockUnchecked { $0.ports.removeAll { $0 === port } }
     installed.withLock { $0 = false }
     EventTapThread.shared.keepTheClock()
     // Last, because it may drop the final reference to this object.

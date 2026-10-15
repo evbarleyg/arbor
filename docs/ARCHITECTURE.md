@@ -805,6 +805,11 @@ meanwhile; at a no, or at no answer in time, the taps' thread removes all taps i
 hears afterwards (`PointerInput.permissionChanged`), and the controller only of what macOS said, not of its silence. A late yes, or a yes to the question put once a second from then on, brings them back. Until a
 tap is installed (every gesture switched off) no thread is started, no clock beats, and nobody asks but the controller. After every yes a tap is switched back on that macOS switched off.
 
+If the taps' thread stands altogether its taps do not answer either, and macOS switches them off by itself after about a second. What nothing mends is a thread that goes on
+answering while its clock no longer beats. So while a tap is installed a timer on a queue of its own looks every 0.4 s whether the clock has beaten since the last look (`TapNet`, which counts looks and
+compares no times, so that neither sleep nor a halted process looks like it). At the third look without a beat it invalidates the taps' ports itself, which needs nothing of their thread,
+and leaves that thread a note to forget the taps, tell their owners and start a new clock.
+
 What macOS 26 does with a tap that does not answer, measured by stopping Arbor
 (`scripts/mac-shell/input-taps.sh`): the event waits, and so does every event
 behind it, including types the tap does not watch. Nothing happens until
@@ -1453,6 +1458,7 @@ Everything else is a view of it:
 | `ARBOR_APPEARANCE=dark` | Draw Arbor's own windows, panels and menu dark (or `light`) whatever the system's appearance (pictures) |
 | `ARBOR_KEYBOARD_LAYOUT=com.apple.keylayout.German` | Go by that installed keyboard layout instead of the one selected (tests) |
 | `ARBOR_NO_PICTURES=1` | Take no pictures of windows, as without Screen Recording permission |
+| `ARBOR_TAP_CLOCK_STOPS_AFTER=5` | That many seconds after its first beat the timer of the event taps' clock ends, and nothing else does: for a probe of the net under it (`TapNet`) |
 | `ARBOR_NO_OPENING=1` | Open no app: `summon` with no window to bring answers as if there were no such app |
 | `ARBOR_RELEASES_URL=http://…` | Ask there instead of GitHub's releases API (tests of the real app) |
 | `ARBOR_BUILD=abc1234` | Which commit this build is, for the header of traces |
