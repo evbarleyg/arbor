@@ -1,9 +1,15 @@
 #!/bin/bash
 # Everything Arbor draws, each thing once, in one run: a contact sheet to be LOOKED AT after any change under Sources/ArborKit/UI.
 #
-#   scripts/mac-shell/run.sh scripts/mac-shell/shots-gallery.sh             light and dark; motion; a large display and a Retina one
-#   scripts/mac-shell/run.sh scripts/mac-shell/shots-gallery-looks.sh       Increase Contrast and Reduce Transparency, light and dark;
-#                                                                           real apps
+#   scripts/mac-shell/run.sh scripts/mac-shell/shots-gallery.sh scripts/mac-shell/shots-gallery-moves.sh \
+#     scripts/mac-shell/shots-gallery-looks.sh scripts/mac-shell/shots-offscreen.sh
+#
+#   shots-gallery.sh          the tour, light and dark
+#   shots-gallery-moves.sh    motion; a large display and a Retina one; real apps, light and dark
+#   shots-gallery-looks.sh    the tour with Increase Contrast, light and dark, and with Reduce Transparency
+#   shots-offscreen.sh        what the macOS-only tests draw off screen, at 2x
+#
+# Four scripts because each has twenty minutes on a hosted Mac; one run, because they share the Mac, the checkout and the build.
 #
 # The other shots-*.sh follow one feature through all its states, one build and one Mac each. This one takes the same pictures in
 # every look, under the same names, so that two looks, or two commits, can be laid side by side: <look>-<number>-<what>.png, and
@@ -27,7 +33,7 @@ SCENERY="$ARBOR_ROOT/.build/mac-shell/scenery"
 AXFIND="$ARBOR_ROOT/.build/mac-shell/axfind"
 TITLE="Arbor Settings"
 # What to take: looks (light, dark, each also -contrast and -opaque), and the sessions motion, large, apps-light and apps-dark.
-PARTS=${GALLERY_PARTS:-light dark motion large}
+PARTS=${GALLERY_PARTS:-light dark}
 mkdir -p "$ARBOR_OUT/traces"
 
 claim() { echo; echo "▸ $*"; }
@@ -537,7 +543,7 @@ macos_click_wallpaper off
 macos_reduce_motion on
 
 for part in $PARTS; do
-  step "$part"
+  step "$part ($(($(date +%s) - ARBOR_RUN_STARTED)) s into the run)"
   case "$part" in
     motion) scene light; motion ;;
     large) scene light; large ;;
