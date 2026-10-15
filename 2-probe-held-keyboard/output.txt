@@ -1,0 +1,226 @@
+# mac-shell: scripts/mac-shell/probe-held-keyboard.sh at 50f59d4, macOS 26.6.2, 2026-10-15T14:56Z
+built Arbor, the pointer tool and the app bundles in 3s
+
+== two apps, one window framed, four out of view
+session 1: Arbor pid 11132, test windows 104 105 106 111 112 (pid 11019,11093)
+running: 1 display, 0 docked and 5 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> test windows: title 111 Other App One
+> test windows: title 112 Other App Two
+> dock 104 left
+docked w104 at the left edge
+> dock 105 right
+docked w105 at the right edge
+> dock 106 beside 105 bottom
+docked w106 below w105
+> dock 111 beside 104 bottom
+docked w111 below w104
+display 0 0 1024 768, visible 0 31 1024 679, camera n2, back no
+  Desktop          349 43 326 655
+  w104 12 43 325 322        docked
+  w105 687 43 325 322       docked
+  w106 687 377 325 321      docked
+  w111 12 377 325 321       docked focused
+  w112 220 180 480 348      floating
+
+== 1. the other app comes forward by itself, five times, six seconds apart: it is sent back, and never named
+> release
+arborctl: the view is not held
+> click 210 55
+> zoom 104
+framed w104
+> hold
+holding this view until `release`
+> test windows: activate 111
+film: 5 pictures in .48 s
+shot: mac-shell/01-sent-back-1.png
+shot: mac-shell/01-sent-back-2.png
+shot: mac-shell/01-sent-back-3.png
+shot: mac-shell/01-sent-back-4.png
+shot: mac-shell/01-sent-back-5.png
+> test windows: activate 111
+> test windows: activate 111
+> test windows: activate 111
+> test windows: activate 111
+  log | 14:56:20.425Z DEBUG hold: focus report for w111, 3.259308375 s after the last click or modifier key
+  log | 14:56:20.425Z DEBUG w111 has the keyboard
+  log | 14:56:20.425Z INFO  hold: w111 took the keyboard out of view; sending it back
+  log | 14:56:20.452Z DEBUG hold: focus report for w104, 3.286745625 s after the last click or modifier key
+  log | 14:56:20.453Z DEBUG w104 has the keyboard
+  log | 14:56:22.251Z DEBUG hold: focus report for w111, 5.084755459 s after the last click or modifier key
+  log | 14:56:22.252Z DEBUG w111 has the keyboard
+  log | 14:56:22.252Z INFO  hold: w111 took the keyboard out of view; sending it back
+  log | 14:56:22.272Z DEBUG hold: focus report for w104, 5.1051025 s after the last click or modifier key
+  log | 14:56:22.272Z DEBUG w104 has the keyboard
+  log | 14:56:28.338Z DEBUG hold: focus report for w111, 11.168196167 s after the last click or modifier key
+  log | 14:56:28.339Z DEBUG w111 has the keyboard
+  log | 14:56:28.339Z INFO  hold: w111 took the keyboard out of view; sending it back
+  log | 14:56:28.361Z DEBUG hold: focus report for w104, 11.190998667 s after the last click or modifier key
+  log | 14:56:28.362Z DEBUG w104 has the keyboard
+  log | 14:56:34.660Z DEBUG hold: focus report for w111, 17.487193584 s after the last click or modifier key
+  log | 14:56:34.664Z DEBUG w111 has the keyboard
+  log | 14:56:34.664Z INFO  hold: w111 took the keyboard out of view; sending it back
+  log | 14:56:34.697Z DEBUG hold: focus report for w104, 17.52448425 s after the last click or modifier key
+  log | 14:56:34.698Z DEBUG w104 has the keyboard
+  log | 14:56:40.698Z DEBUG hold: focus report for w111, 23.522358792 s after the last click or modifier key
+  log | 14:56:40.699Z DEBUG w111 has the keyboard
+  log | 14:56:40.699Z INFO  hold: w111 took the keyboard out of view; sending it back
+  log | 14:56:40.713Z DEBUG hold: focus report for w104, 23.537111334 s after the last click or modifier key
+  log | 14:56:40.713Z DEBUG w104 has the keyboard
+  said where the keyboard is: 0 time(s); the line is on screen: no; in front: 11019
+  ✔ nothing is said of where the keyboard is
+  ✔ no line is on screen
+  ✔ W1 has the keyboard
+
+== 2. it takes the keyboard again and again, until Arbor leaves it there
+> release
+released
+> click 546 55
+> zoom 104
+framed w104
+> hold
+holding this view until `release`
+> test windows: activate 111
+> test windows: activate 111
+> test windows: activate 111
+> test windows: activate 111
+> test windows: activate 111
+> test windows: activate 111
+  log | 14:56:50.984Z DEBUG hold: focus report for w111, 3.283611666 s after the last click or modifier key
+  log | 14:56:50.985Z DEBUG w111 has the keyboard
+  log | 14:56:50.985Z INFO  hold: w111 took the keyboard out of view; sending it back
+  log | 14:56:51.016Z DEBUG hold: focus report for w104, 3.315437708 s after the last click or modifier key
+  log | 14:56:51.016Z DEBUG w104 has the keyboard
+  log | 14:56:51.919Z DEBUG hold: focus report for w111, 4.217523833 s after the last click or modifier key
+  log | 14:56:51.923Z DEBUG w111 has the keyboard
+  log | 14:56:51.923Z INFO  hold: w111 took the keyboard out of view; sending it back
+  log | 14:56:51.964Z DEBUG hold: focus report for w111, 4.263214541 s after the last click or modifier key
+  log | 14:56:51.970Z DEBUG w111 has the keyboard
+  log | 14:56:51.994Z DEBUG hold: focus report for w104, 4.293234666 s after the last click or modifier key
+  log | 14:56:51.995Z DEBUG w104 has the keyboard
+  log | 14:56:52.728Z DEBUG hold: focus report for w111, 5.026293625 s after the last click or modifier key
+  log | 14:56:52.734Z DEBUG w111 has the keyboard
+  log | 14:56:52.734Z INFO  hold: w111 took the keyboard out of view; sending it back
+  log | 14:56:52.751Z DEBUG hold: focus report for w104, 5.049749625 s after the last click or modifier key
+  log | 14:56:52.751Z DEBUG w104 has the keyboard
+  log | 14:56:53.586Z DEBUG hold: focus report for w111, 5.884804875 s after the last click or modifier key
+  log | 14:56:53.587Z DEBUG w111 has the keyboard
+  log | 14:56:53.587Z INFO  hold: w111 keeps taking the keyboard; leaving it there, out of view
+  log | 14:56:54.621Z DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: ArborTestWindows2 has the keyboard, out of view · ⌃⌥⎋ releases the view
+  said where the keyboard is: 1 time(s); the line is on screen: yes; in front: 11093
+  Other App One has the keyboard: yes; in view: no
+shot: mac-shell/02-left-there.png
+  ✔ the line is on screen
+  log | 14:56:50.984Z DEBUG hold: focus report for w111, 3.283611666 s after the last click or modifier key
+  log | 14:56:50.985Z DEBUG w111 has the keyboard
+  log | 14:56:50.985Z INFO  hold: w111 took the keyboard out of view; sending it back
+  log | 14:56:51.016Z DEBUG hold: focus report for w104, 3.315437708 s after the last click or modifier key
+  log | 14:56:51.016Z DEBUG w104 has the keyboard
+  log | 14:56:51.919Z DEBUG hold: focus report for w111, 4.217523833 s after the last click or modifier key
+  log | 14:56:51.923Z DEBUG w111 has the keyboard
+  log | 14:56:51.923Z INFO  hold: w111 took the keyboard out of view; sending it back
+  log | 14:56:51.964Z DEBUG hold: focus report for w111, 4.263214541 s after the last click or modifier key
+  log | 14:56:51.970Z DEBUG w111 has the keyboard
+  log | 14:56:51.994Z DEBUG hold: focus report for w104, 4.293234666 s after the last click or modifier key
+  log | 14:56:51.995Z DEBUG w104 has the keyboard
+  log | 14:56:52.728Z DEBUG hold: focus report for w111, 5.026293625 s after the last click or modifier key
+  log | 14:56:52.734Z DEBUG w111 has the keyboard
+  log | 14:56:52.734Z INFO  hold: w111 took the keyboard out of view; sending it back
+  log | 14:56:52.751Z DEBUG hold: focus report for w104, 5.049749625 s after the last click or modifier key
+  log | 14:56:52.751Z DEBUG w104 has the keyboard
+  log | 14:56:53.586Z DEBUG hold: focus report for w111, 5.884804875 s after the last click or modifier key
+  log | 14:56:53.587Z DEBUG w111 has the keyboard
+  log | 14:56:53.587Z INFO  hold: w111 keeps taking the keyboard; leaving it there, out of view
+  log | 14:56:54.621Z DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: ArborTestWindows2 has the keyboard, out of view · ⌃⌥⎋ releases the view
+  said where the keyboard is: 1 time(s); the line is on screen: yes; in front: 11093
+  ✔ ten seconds on it still is
+  ✔ and has been said once
+> click 546 55
+  ✔ a click on the window in view: the line goes
+
+== 3. ⌘W on the only window in view: macOS hands the keyboard on, and nobody is in view to give it to
+> release
+released
+> click 546 55
+> zoom 104
+framed w104
+> hold
+holding this view until `release`
+> key cmd+w
+  log | 14:57:15.083Z INFO  hold: nothing is in the view on 07230EFA-7A8D-4E37-845C-19CC8737EEF5; it stays held
+  log | 14:57:15.094Z DEBUG hold: focus report for w106, 0.240849542 s after the last click or modifier key
+  log | 14:57:15.094Z DEBUG w106 has the keyboard
+  log | 14:57:15.095Z INFO  hold: w106 took the keyboard out of view; sending it back
+  log | 14:57:16.012Z INFO  hold: settings.json has changed; it is read when the view is released
+  log | 14:57:16.176Z DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: ArborTestWindows has the keyboard, out of view · ⌃⌥⎋ releases the view
+  said where the keyboard is: 1 time(s); the line is on screen: yes; in front: 11019
+shot: mac-shell/03-after-cmd-w.png
+  ✔ the line is on screen
+  log | 14:57:15.083Z INFO  hold: nothing is in the view on 07230EFA-7A8D-4E37-845C-19CC8737EEF5; it stays held
+  log | 14:57:15.094Z DEBUG hold: focus report for w106, 0.240849542 s after the last click or modifier key
+  log | 14:57:15.094Z DEBUG w106 has the keyboard
+  log | 14:57:15.095Z INFO  hold: w106 took the keyboard out of view; sending it back
+  log | 14:57:16.012Z INFO  hold: settings.json has changed; it is read when the view is released
+  log | 14:57:16.176Z DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: ArborTestWindows has the keyboard, out of view · ⌃⌥⎋ releases the view
+  said where the keyboard is: 1 time(s); the line is on screen: yes; in front: 11019
+  ✔ ten seconds on it still is
+  ✔ and has been said once
+shot: mac-shell/03-ten-seconds-on.png
+
+== 4. ⌘Tab, blind: what is said then?
+> key cmd+tab
+film: 8 pictures in .92 s
+shot: mac-shell/04-after-cmd-tab-1.png
+shot: mac-shell/04-after-cmd-tab-2.png
+shot: mac-shell/04-after-cmd-tab-3.png
+shot: mac-shell/04-after-cmd-tab-4.png
+shot: mac-shell/04-after-cmd-tab-5.png
+shot: mac-shell/04-after-cmd-tab-6.png
+shot: mac-shell/04-after-cmd-tab-7.png
+shot: mac-shell/04-after-cmd-tab-8.png
+  log | 14:57:31.016Z DEBUG hold: focus report for w111, 0.028747958 s after the last click or modifier key
+  log | 14:57:31.017Z DEBUG w111 has the keyboard
+  log | 14:57:31.017Z INFO  hold: w111 took the keyboard out of view; sending it back
+  log | 14:57:32.054Z DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: ArborTestWindows2 has the keyboard, out of view · ⌃⌥⎋ releases the view
+  said where the keyboard is: 1 time(s); the line is on screen: yes; in front: 11093
+shot: mac-shell/04-after-cmd-tab.png
+
+== 5. a click on the Desktop: the keyboard is with the Finder
+> click 400 300
+  said where the keyboard is: 0 time(s); the line is on screen: no; in front: 371
+  ✔ the line is gone
+shot: mac-shell/05-after-a-click-on-the-desktop.png
+
+== 6. the other app comes forward, with nobody in view; then release
+> test windows: activate 111
+  log | 14:57:42.230Z DEBUG hold: focus report for w111, 4.223129625 s after the last click or modifier key
+  log | 14:57:42.231Z DEBUG w111 has the keyboard
+  log | 14:57:42.231Z INFO  hold: w111 took the keyboard out of view; sending it back
+  log | 14:57:43.393Z DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: ArborTestWindows2 has the keyboard, out of view · ⌃⌥⎋ releases the view
+  said where the keyboard is: 1 time(s); the line is on screen: yes; in front: 11093
+  ✔ the line is on screen
+> release
+released
+  ✔ released: the line is gone
+shot: mac-shell/06-released.png
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✘ window 1 is back on screen after quitting — only 0 % of it is to be seen: 12 43 1000 655
+      picture: mac-shell/fail-probe-held-keyboard-1.png
+      log | INFO  trace probe-held-keyboard-1-07 ended: 48 lines, another trace was started
+      log | INFO  trace probe-held-keyboard-1-08: recording to /tmp/arbor-shell.h5xW9B/home/traces/2026-10-15-145746-probe-held-keyboard-1-08.jsonl
+      log | INFO  trace probe-held-keyboard-1-08 ended: 18 lines, Arbor stopped
+      log | INFO  stopped; all windows returned to view
+      log | INFO  Arbor quit
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+  ✔ window 5 is back on screen after quitting
+shot: mac-shell/07-quit.png
+
+18 passed, 1 failed
+exit code 1

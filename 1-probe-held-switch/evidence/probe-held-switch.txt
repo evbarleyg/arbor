@@ -1,0 +1,38 @@
+# probe-held-switch 2026-10-15T14:53Z on macOS 26.6.2, commit 50f59d4
+
+== two apps, one window framed, four out of view
+
+== 1. the other app comes forward by itself: no word
+  ✔ nothing is said of an app that pushed itself forward
+  ✔ its window stays out of view
+
+== 2. ⌘Tab to it
+  ✔ it is said once
+  ✔ its window stays out of view
+  ✔ W1 has the keyboard back
+
+== 3. a pick in Mission Control: a window of the other app
+  ✔ it is said once
+  ✔ its window stays out of view
+
+== 4. a pick in Mission Control: another window of the app in front
+  ✔ it is said once
+  ✔ its window stays out of view
+
+== 5. twice within five seconds: where is the keyboard then?
+
+== 6. ⌘M on the window in view: macOS hands the keyboard on, and nobody picked anything
+  ✔ nothing is said
+
+== 7. ⌘W on the window in view
+  ✔ nothing is said
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✘ window 1 is back on screen after quitting — only 0 % of it is to be seen: 12 43 1000 655
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+  ✔ window 5 is back on screen after quitting
+
+16 passed, 1 failed

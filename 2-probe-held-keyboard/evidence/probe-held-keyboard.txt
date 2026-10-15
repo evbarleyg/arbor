@@ -1,0 +1,38 @@
+# probe-held-keyboard 2026-10-15T14:56Z on macOS 26.6.2, commit 50f59d4
+
+== two apps, one window framed, four out of view
+
+== 1. the other app comes forward by itself, five times, six seconds apart: it is sent back, and never named
+  ✔ nothing is said of where the keyboard is
+  ✔ no line is on screen
+  ✔ W1 has the keyboard
+
+== 2. it takes the keyboard again and again, until Arbor leaves it there
+  ✔ the line is on screen
+  ✔ ten seconds on it still is
+  ✔ and has been said once
+  ✔ a click on the window in view: the line goes
+
+== 3. ⌘W on the only window in view: macOS hands the keyboard on, and nobody is in view to give it to
+  ✔ the line is on screen
+  ✔ ten seconds on it still is
+  ✔ and has been said once
+
+== 4. ⌘Tab, blind: what is said then?
+
+== 5. a click on the Desktop: the keyboard is with the Finder
+  ✔ the line is gone
+
+== 6. the other app comes forward, with nobody in view; then release
+  ✔ the line is on screen
+  ✔ released: the line is gone
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✘ window 1 is back on screen after quitting — only 0 % of it is to be seen: 12 43 1000 655
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+  ✔ window 5 is back on screen after quitting
+
+18 passed, 1 failed
