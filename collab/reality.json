@@ -2265,8 +2265,8 @@
    "kind": "late-or-partial-answer",
    "layer": "at the seam",
    "expected": "A call that got no answer did not happen. In the fake a hung app's window stays where it is, and the app that wakes reports it there.",
-   "happened": "Measured with a timeout of 1 s: the app carries the queued call out when it wakes. A move out of view that timed out lands late, comes back as a report of the person's own doing, and Arbor remembers the corner as the place the person chose. Measured again on a hosted Mac, both ways: a move out of view that timed out is carried out when the app wakes, so that a window goes out of view after Arbor is gone; and so is a fetch. The stand-ins play neither.",
-   "found": "A probe of the Accessibility layer on a real Mac. The consequence was then played headless by moving the fake's window by hand. Later a script that hangs a test app on a hosted Mac; it is not on the trunk yet.",
+   "happened": "Measured with a timeout of 1 s: the app carries the queued call out when it wakes. A move out of view that timed out lands late, comes back as a report of the person's own doing, and Arbor remembers the corner as the place the person chose. Measured again on a hosted Mac while Arbor lives: at a pause half a second into a hang, a position and a size sent with a timeout of 0.1 s a call brought both windows into view the moment the app woke, 18 s later. **But only while the sender lives.** This case used to say that a window goes out of view after Arbor is gone; nobody had seen that, it was an inference written down as a measurement, and a model of a Mac was built on it. Tried since: Arbor quits half a second into the hang, having sent the same calls; the app wakes; both windows are still past the corner, and an earlier call with the timeout of 1 s was not carried out either. macOS drops what a process asked once that process is dead. A call the app is in the middle of when the sender dies has not been tried. The stand-ins play none of it.",
+   "found": "A probe of the Accessibility layer on a real Mac. The consequence was then played headless by moving the fake's window by hand. Later a script that hangs a test app on a hosted Mac, before and after a cure that leaves word with the app at a quit and at a pause; neither is on the trunk yet.",
    "modelled": "no",
    "knobs": [],
    "guards": [],
@@ -2851,7 +2851,7 @@
    "layer": "at the seam",
    "expected": "Quitting puts every window back in view.",
    "happened": "An app known to hang is sent nothing, so its windows that were out of view are still past the corner when it wakes, and Arbor is gone by then. Opening Arbor again finds them. The same plight at a pause is cured: Arbor tries again after 1, 2, 4 and more seconds.",
-   "found": "A review of the Accessibility layer, confirmed in the Harness with a fake app that hangs. The cure, sending the moves without waiting for answers, cannot be tried without a Mac.",
+   "found": "A review of the Accessibility layer, confirmed in the Harness with a fake app that hangs. The cure that was thought of, sending the moves without waiting for answers, has been tried on a hosted Mac and does not reach a quit: what Arbor sent goes with Arbor (a-move-that-timed-out-is-carried-out-when-the-app-wakes). What is left is not to die before the app answers, or to leave a process alive that asks then.",
    "modelled": "partly",
    "knobs": [
     "FakeWindowSystem.setUnresponsive"
