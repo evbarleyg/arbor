@@ -17,6 +17,10 @@ public enum TraceCommand: Equatable, Sendable, Codable {
   case status
   /// Writes a remark into the trace being recorded, e.g. what the person is about to do.
   case note(String)
+  /// Ends the trace being recorded and begins the next one at once, with a remark as its first line: for whoever records all the time and
+  /// wants pieces that are short and each begin with the world as it was. Such a trace makes way for `on`, and `next` leaves one begun
+  /// with `on` alone.
+  case next(name: String, remark: String?)
 
   /// Names become part of a file name, so they are letters, digits, dots, dashes and underscores.
   public static func isValidName(_ name: String) -> Bool {

@@ -51,6 +51,8 @@ public final class TraceRecorder {
   /// How many traces have been begun. Whoever writes something that has a beginning and an end can tell whether the trace that is
   /// being recorded is still the one that has the beginning.
   public private(set) var tracesBegun = 0
+  /// Whether the trace being recorded is one of a row (`trace next`), which makes way for one that somebody asks for by name (`trace on`).
+  public private(set) var makesWay = false
   /// The sink of the trace being recorded, or of the last one.
   public private(set) var sink: (any TraceSink)?
   /// How the last trace ended, for `trace status`.
@@ -86,11 +88,12 @@ public final class TraceRecorder {
 
   /// Starts a trace. `header` is given the function that turns titles into tokens and settings into
   /// settings without title patterns; it must use them for everything it puts in the header.
-  public func begin(name: String, fileName: String, header: (inout TitleTokens) -> TraceHeader) throws {
+  public func begin(name: String, fileName: String, makesWay: Bool = false, header: (inout TitleTokens) -> TraceHeader) throws {
     if isRecording { end(reason: "another trace was started") }
     let sink = try openSink(fileName)
     self.sink = sink
     self.name = name
+    self.makesWay = makesWay
     startedAt = clock()
     bytes = 0
     lines = 0

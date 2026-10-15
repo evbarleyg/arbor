@@ -246,7 +246,7 @@ private let c = WindowID(3)
     .dockBeside(WindowID(7), target: WindowID(8), .bottom), .float(nil), .float(WindowID(5)),
     .toggleFloat(nil), .arrange, .floatAll, .resize(nil, .right, 40), .resize(WindowID(3), .left, -25.5),
     .exclude(bundleID: nil), .exclude(bundleID: "com.apple.Music"), .include(bundleID: "com.apple.Music"),
-    .relayout, .reloadSettings, .quit, .trace(.on(name: nil)), .trace(.on(name: "safari-drag")), .trace(.off),
+    .relayout, .reloadSettings, .quit, .trace(.on(name: nil)), .trace(.on(name: "safari-drag")), .trace(.off), .trace(.next(name: "day-2", remark: "the second hour")),
   ]
 
   @Test(arguments: samples) func textRoundTrips(command: Command) throws {

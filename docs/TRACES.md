@@ -15,6 +15,7 @@ arborctl trace note dragging Safari to the left edge     # optional remarks, as 
 …do the thing…
 arborctl trace off                # prints the file: <Arbor home>/traces/<date>-safari-drag.jsonl
 arborctl trace status             # whether a trace is being recorded, or how the last one ended
+arborctl trace next day-2 the second hour     # for whoever records all the time: end the trace and begin the next at once, with a remark
 
 make trace NAME=safari-drag       # all of the above, a privacy check, and a copy into collab/evidence/traces/
 make trace-check FILE="<file>"    # every piece of free text in a trace, to read before committing it
@@ -24,7 +25,11 @@ make replay FILE="<file>"         # the story as text, with drawings of the layo
 Arbor's home is `~/Library/Application Support/Arbor` (or `$ARBOR_HOME`). arbor-sim understands the `trace` commands too, so
 a simulated session can be recorded the same way; without an `ARBOR_HOME` its home is `arbor-guests-<uid>` in the temporary
 directory, never the real Arbor's (its reply says where the file is). So does a rehearsal of a Mac shell script (`scripts/mac-shell/rehearse.sh`): the same script
-leaves a trace on a Mac and on Linux, which is what `make reality` compares (`docs/TESTING.md`).
+leaves a trace on a Mac and on Linux.
+
+**Whoever watches changes nothing.** A word to the recorder (`trace on`, `off`, `note`, `next`, `status`) is no command to Arbor: it ends no peek, closes neither Go to… nor the
+cheat sheet, is not what the next command without a window follows, and is not counted. (Until 2026-10-15 it was and did, so a script that wrote a remark while a key
+was held ended what it was looking at.)
 
 ## What is never in a trace
 

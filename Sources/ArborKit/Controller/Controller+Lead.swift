@@ -40,7 +40,10 @@ extension Controller {
   public func perform(_ command: Command) -> CommandResult { perform(command, from: .script, inTraces: nil) }
 
   private func perform(_ command: Command, from source: CommandSource, inTraces recorded: CommandSource?) -> CommandResult {
-    traced(command, from: recorded) { from(source) { executeAndSay(command, from: source) } }
+    // A word to the recorder is no command to Arbor. Whoever watches must not change what is watched: as a command it ended a peek, closed
+    // Go to… and the cheat sheet, and was what the next command without a window followed.
+    if case .trace(let action) = command { return trace(action) }
+    return traced(command, from: recorded) { from(source) { executeAndSay(command, from: source) } }
   }
 
   /// Does `body` as something that came from `source`.

@@ -11,9 +11,8 @@ extension Controller {
 
   /// Does `body`, which performs `command`, as one reaction in the trace. All that a command sets off belongs inside.
   func traced(_ command: Command, from source: CommandSource?, _ body: () -> CommandResult) -> CommandResult {
+    // (A word to the recorder never gets here: `perform`, Controller+Lead.swift. So it is no part of what is recorded, and no replay starts traces of its own.)
     guard let recorder = traceRecorder, recorder.isRecording else { return body() }
-    // Not part of what is being recorded, and a replay must not start traces of its own.
-    if case .trace = command { return body() }
     var result = CommandResult.failure("")
     let (text, typed) = textForTrace(command, recorder)
     recorder.stimulus(.command(text, from: source)) {
@@ -82,21 +81,43 @@ extension Controller {
 
     case .on(let name):
       guard isRunning else { return .failure(statusText) }
-      guard !recorder.isRecording else { return .failure("already \(recorder.statusText); run `trace off` first") }
-      let name = name ?? "trace"
-      let formatter = ISO8601DateFormatter()
-      let date = formatter.string(from: now())  // 2026-10-14T09:30:05Z
-      let stamp = date.replacingOccurrences(of: "T", with: "-").filter { $0 != ":" && $0 != "Z" }
-      recorder.words = self
-      do {
-        try recorder.begin(name: name, fileName: "\(stamp)-\(name).jsonl") { titles in
-          traceHeader(name: name, date: date, recorder: recorder, titles: &titles)
-        }
-      } catch {
-        return .failure("could not start the trace: \(error)")
+      guard !recorder.isRecording || recorder.makesWay else {
+        return .failure("already \(recorder.statusText); run `trace off` first")
       }
-      return .success(recorder.statusText)
+      return beginTrace(name ?? "trace", recorder, makesWay: false)
+
+    case .next(let name, let remark):
+      guard isRunning else { return .failure(statusText) }
+      // Somebody asked for that one by name, and it is theirs to end.
+      guard !recorder.isRecording || recorder.makesWay else {
+        return .failure("\(recorder.statusText): begun with `trace on`, so it goes on until `trace off`")
+      }
+      // A header says where the windows are and not what a hand is in the middle of: a trace that began there would not replay. The one that is
+      // running goes on, and the remark is in it. (Asked of the system inside the decorator, so that asking leaves no line.)
+      let inner = (system as? RecordingWindowSystem)?.inner ?? system
+      guard drag == nil, peeking == nil, !inner.isMouseButtonDown() else {
+        if let remark { recorder.record(.note(remark)) }
+        return .failure("not in the middle of a drag or while a key is held; \(recorder.statusText)")
+      }
+      let result = beginTrace(name, recorder, makesWay: true)
+      if result.ok, let remark { recorder.record(.note(remark)) }
+      return result
     }
+  }
+
+  private func beginTrace(_ name: String, _ recorder: TraceRecorder, makesWay: Bool) -> CommandResult {
+    let formatter = ISO8601DateFormatter()
+    let date = formatter.string(from: now())  // 2026-10-14T09:30:05Z
+    let stamp = date.replacingOccurrences(of: "T", with: "-").filter { $0 != ":" && $0 != "Z" }
+    recorder.words = self
+    do {
+      try recorder.begin(name: name, fileName: "\(stamp)-\(name).jsonl", makesWay: makesWay) { titles in
+        traceHeader(name: name, date: date, recorder: recorder, titles: &titles)
+      }
+    } catch {
+      return .failure("could not start the trace: \(error)")
+    }
+    return .success(recorder.statusText)
   }
 
   /// The world and what Arbor knows of it, read from the system inside the decorator so that reading it

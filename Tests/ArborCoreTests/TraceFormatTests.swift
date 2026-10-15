@@ -243,7 +243,11 @@ private let display = TraceDisplay(
     #expect(try Command.parse("trace") == .trace(.status))
     #expect(try Command.parse("trace note Drag Safari to the edge") == .trace(.note("Drag Safari to the edge")))
     #expect(try Command.parse("trace/on/url-form") == .trace(.on(name: "url-form")))
-    for text in ["trace on", "trace on Safari-drag_2", "trace off", "trace status", "trace note Drag it"] {
+    #expect(try Command.parse("trace next e2e-1-03") == .trace(.next(name: "e2e-1-03", remark: nil)))
+    #expect(try Command.parse("trace next e2e-1-03 Drag it  to the Edge") == .trace(.next(name: "e2e-1-03", remark: "Drag it to the Edge")))
+    for text in [
+      "trace on", "trace on Safari-drag_2", "trace off", "trace status", "trace note Drag it", "trace next a-1", "trace next a-1 Drag it",
+    ] {
       #expect(try Command.parse(text).text == text)
     }
   }
@@ -251,7 +255,7 @@ private let display = TraceDisplay(
   @Test func aTraceNameCannotLeaveTheTracesFolder() {
     for text in [
       "trace on a b", "trace on ~", "trace on a\\b", "trace on $HOME", "trace on é", "trace off now", "trace note",
-      "trace on \(String(repeating: "x", count: 41))", "trace sideways",
+      "trace on \(String(repeating: "x", count: 41))", "trace sideways", "trace next", "trace next ~ x", "trace next a/b",
     ] {
       #expect(throws: Command.ParseError.self, "\(text)") { try Command.parse(text) }
     }
@@ -260,7 +264,7 @@ private let display = TraceDisplay(
   }
 
   @Test func aURLCannotStartOrStopARecording() {
-    for command in [Command.trace(.on(name: nil)), .trace(.off), .trace(.status), .trace(.note("x"))] {
+    for command in [Command.trace(.on(name: nil)), .trace(.off), .trace(.status), .trace(.note("x")), .trace(.next(name: "x", remark: nil))] {
       #expect(!command.isAllowedFromURL)
     }
   }

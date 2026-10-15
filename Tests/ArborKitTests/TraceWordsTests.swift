@@ -297,7 +297,7 @@ import Testing
         "Sources/ArborCore/SettingsCommand.swift", ["set", "get", "reset", "unbind", "addApp", "removeApp"], ["bind", "addRule", "changeRule"]
       ),
       // The name of the file, of letters and digits, which whoever shares the trace sees; and a remark they write into it themselves.
-      "TraceCommand": ("Sources/ArborCore/Trace.swift", ["on", "note"], []),
+      "TraceCommand": ("Sources/ArborCore/Trace.swift", ["on", "note", "next"], []),
     ]
     let source = try source("Sources/ArborCore/Command.swift")
     let payloads = source.matches(of: /\n  case [A-Za-z]+\(([^\n]*)\)/).map { String($0.1) }

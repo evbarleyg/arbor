@@ -451,17 +451,19 @@ public enum Command: Equatable, Sendable, Codable {
       return .find(sought.isEmpty ? nil : sought.joined(separator: " "))
     case "reveal": return .reveal(try optionalWindow())
     case "trace":
-      let usage = "usage: trace on [name] | trace off | trace status | trace note <text>"
+      let usage = "usage: trace on [name] | trace off | trace status | trace note <text> | trace next <name> [text]"
+      let badName = "a trace's name is up to 40 letters, digits, dots, dashes and underscores"
       switch (args.first, args.count) {
       case (nil, _), ("status", 1): return .trace(.status)
       case ("off", 1): return .trace(.off)
       case ("on", 1): return .trace(.on(name: nil))
       case ("on", 2):
-        guard TraceCommand.isValidName(originalArgs[1]) else {
-          throw ParseError("a trace's name is up to 40 letters, digits, dots, dashes and underscores")
-        }
+        guard TraceCommand.isValidName(originalArgs[1]) else { throw ParseError(badName) }
         return .trace(.on(name: originalArgs[1]))
       case ("note", 2...): return .trace(.note(originalArgs.dropFirst().joined(separator: " ")))
+      case ("next", 2...):
+        guard TraceCommand.isValidName(originalArgs[1]) else { throw ParseError(badName) }
+        return .trace(.next(name: originalArgs[1], remark: args.count > 2 ? originalArgs.dropFirst(2).joined(separator: " ") : nil))
       default: throw ParseError(usage)
       }
     case "summon":
@@ -616,6 +618,7 @@ public enum Command: Equatable, Sendable, Codable {
     case .trace(.off): return "trace off"
     case .trace(.status): return "trace status"
     case .trace(.note(let text)): return "trace note \(text)"
+    case .trace(.next(let name, let remark)): return "trace next \(name)" + (remark.map { " \($0)" } ?? "")
     case .summon(let app): return "summon \(app)"
     case .layout(let spec, let display, let open):
       return Self.layoutText(display: display, options: open ? ["open"] : [], line: spec.text)
@@ -746,6 +749,7 @@ public enum Command: Equatable, Sendable, Codable {
       rule change <n> <bundle-id> <action> [title <text>] | rule remove <n> | rule move <n> <place>
       trace on [name] | off | status             record what macOS and Arbor tell each other (docs/TRACES.md)
       trace note <text>                          write a remark into the trace being recorded
+      trace next <name> [text]                   end the trace and begin the next at once, for whoever records all the time
       displays                                   the displays, and the options in effect on each
     """
 }

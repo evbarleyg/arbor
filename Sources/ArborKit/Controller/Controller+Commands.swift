@@ -76,6 +76,7 @@ extension Controller {
     case .settings(let command):
       return performSettings(command)
     case .trace(let action):
+      // Only for the compiler: `perform` answers it before anything else looks at it (Controller+Lead.swift).
       return trace(action)
     case .printLayout(let display, let naming):
       // Needs the windows' names, which Arbor knows only while it runs.

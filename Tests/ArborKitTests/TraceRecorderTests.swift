@@ -121,6 +121,150 @@ private func endReason(_ entries: [TraceEntry]) -> String? {
     #expect(trace.entries.first?.line == .command("float \(a.rawValue)"))
   }
 
+  // MARK: One trace after the other
+
+  @Test func theNextTraceBeginsWhereTheLastOneEnds() {
+    let h = Harness()
+    let a = h.system.open(app: "Safari", title: "First")
+    h.start()
+    var sinks: [MemoryTraceSink] = []
+    h.recorder.openSink = { name in
+      sinks.append(MemoryTraceSink(location: name))
+      return sinks[sinks.count - 1]
+    }
+    #expect(h.run("trace next day-1 the first hour").ok)
+    h.run("dock \(a.rawValue) left")
+    h.scheduler.advance(by: 5)
+    #expect(h.run("trace next day-2 the second hour").ok)
+    h.run("float \(a.rawValue)")
+    #expect(h.run("trace off").ok)
+
+    #expect(sinks.count == 2)
+    let first = try! Trace(text: sinks[0].text)
+    #expect(first.header.name == "day-1")
+    #expect(first.entries.first?.line == .note("the first hour"))
+    #expect(first.entries.contains { $0.line == .command("dock \(a.rawValue) left") })
+    guard case .end(let reason, _, _)? = first.entries.last?.line else {
+      Issue.record("the first trace has no last line")
+      return
+    }
+    #expect(reason == "another trace was started")
+    // The second begins with the world as it was by then, and holds nothing of the first.
+    let second = try! Trace(text: sinks[1].text)
+    #expect(second.header.name == "day-2")
+    #expect(second.header.workspaces[h.display]?.isDocked(a) == true)
+    #expect(second.entries.first?.t == 0)
+    #expect(second.entries.map(\.line).prefix(2) == [.note("the second hour"), .command("float \(a.rawValue)")])
+  }
+
+  /// Whoever records all the time must not be in the way of somebody who records one thing, nor cut their trace in two.
+  @Test func aTraceAskedForByNameTakesOverFromARowAndIsLeftAloneByIt() {
+    let h = Harness()
+    h.system.open(app: "Safari", title: "First")
+    h.start()
+    #expect(h.run("trace next row-1").ok)
+    #expect(h.run("trace on mine").ok)
+    #expect(recordedHeaderName(h) == "mine")
+    let refusal = h.run("trace next row-2")
+    #expect(!refusal.ok)
+    #expect(refusal.message.contains("until `trace off`"))
+    #expect(recordedHeaderName(h) == "mine")
+    // As ever.
+    #expect(!h.run("trace on another").ok)
+    #expect(h.run("trace off").ok)
+    #expect(h.run("trace next row-3").ok)
+    #expect(recordedHeaderName(h) == "row-3")
+  }
+
+  private func recordedHeaderName(_ h: Harness) -> String? {
+    (h.recorder.sink as? MemoryTraceSink).flatMap { try? Trace(text: $0.text) }?.header.name
+  }
+
+  @Test func theNextTraceNeedsArborToBeRunningToo() {
+    let h = Harness()
+    #expect(!h.run("trace next early").ok)
+    h.start()
+    h.run("pause")
+    #expect(!h.run("trace next paused").ok)
+    #expect(!h.recorder.isRecording)
+  }
+
+  /// The header says where the windows are, not what a hand is in the middle of.
+  @Test func noTraceBeginsInTheMiddleOfADragOrWhileAKeyIsHeld() {
+    let h = Harness()
+    let a = h.system.open(app: "Safari", title: "First")
+    h.start()
+    h.run("dock \(a.rawValue) left")
+    #expect(h.run("trace next row-1").ok)
+
+    h.system.beginDrag(a)
+    #expect(!h.run("trace next row-2 in the hand").ok)
+    #expect(recordedHeaderName(h) == "row-1")
+    #expect(recordedTrace(h).entries.last?.line == .note("in the hand"), "the remark is in the trace that goes on")
+    h.system.endDrag()
+    h.scheduler.advance(by: 1)
+    #expect(h.run("trace next row-2").ok)
+
+    // The button alone: a press that is no drag yet, or one on something Arbor hears nothing of.
+    h.system.mouseDown = true
+    #expect(!h.run("trace next row-3").ok)
+    h.system.mouseDown = false
+
+    h.system.userFocus(a)
+    h.keyDown("ctrl+opt+space")
+    #expect(!h.run("trace next row-3").ok)
+    h.keyUp("ctrl+opt+space")
+    h.scheduler.advance(by: 1)
+    #expect(h.run("trace next row-3").ok)
+    #expect(recordedHeaderName(h) == "row-3")
+  }
+
+  // MARK: Whoever watches changes nothing
+
+  /// A script that is recorded says a word to the recorder at every step and after every check. As commands those words ended what was being checked.
+  @Test(arguments: ["trace next row-1 a remark", "trace note a remark", "trace status", "trace on mine", "trace off"])
+  func aWordToTheRecorderLeavesWhatIsOnScreenAlone(word: String) throws {
+    let h = Harness()
+    let a = h.system.open(app: "Safari", title: "First")
+    let b = h.system.open(app: "Notes", title: "Second")
+    h.start()
+    h.run("dock \(a.rawValue) left")
+    h.run("dock \(b.rawValue) right")
+    h.run("zoom \(a.rawValue)")
+    h.run("trace next row-0")
+
+    // Go to… is open.
+    h.run("find")
+    #expect(h.overlays.finder != nil)
+    h.run(word)
+    #expect(h.overlays.finder != nil, "`\(word)` closed Go to…")
+    h.run("find")
+
+    // The cheat sheet shows.
+    h.controller.perform(.showShortcuts, from: .shortcut)
+    #expect(!h.overlays.cheatSheets.isEmpty)
+    h.run(word)
+    #expect(!h.overlays.cheatSheets.isEmpty, "`\(word)` put the cheat sheet away")
+    h.overlays.dismissCheatSheet()
+
+    // ⌃⌥Space is held: a peek.
+    h.system.userFocus(a)
+    h.keyDown("ctrl+opt+space")
+    h.scheduler.advance(by: 0.4)
+    #expect(h.controller.isPeeking)
+    h.run(word)
+    #expect(h.controller.isPeeking, "`\(word)` ended the peek")
+  }
+
+  /// A command without a window follows whichever hand was used last, and remembers what it followed (F56). A word to the recorder follows nothing.
+  @Test func aWordToTheRecorderIsNoCommandToCount() {
+    let h = Harness()
+    h.start()
+    h.run("stats reset")
+    for word in ["trace next row-1 a remark", "trace note a remark", "trace off"] { #expect(h.run(word).ok) }
+    #expect(h.run("stats").text?.contains("trace") != true)
+  }
+
   // MARK: The header
 
   @Test func theHeaderDescribesTheWorldAndWhatArborKnows() {
