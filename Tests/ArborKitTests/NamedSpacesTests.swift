@@ -1146,8 +1146,9 @@ private let third = DisplaySnapshot(
     #expect(fresh.answer(to: "MAIL") == .init(command: .name("MAIL"), note: "↩ moves the name here from Notes and Mail"))
     #expect(
       fresh.answer(to: "up")
-        == .init(command: nil, note: "a space cannot be named `up`: `go up` means the neighboring space", isProblem: true))
-    #expect(fresh.answer(to: String(repeating: "x", count: 41)).isProblem)
+        == .init(command: nil, note: "A space cannot be named “up”: “go up” means the neighboring space", isProblem: true))
+    #expect(fresh.answer(to: String(repeating: "x", count: 41)).note == "A name can have at most 40 characters")
+    #expect(NamePromptModel.onScreen("no display") == "No display" && NamePromptModel.onScreen("").isEmpty)
     for text in ["", "Web", "MAIL"] { #expect(!fresh.answer(to: text).isProblem, "\(text)") }
     #expect(!NamePromptModel.Answer(command: nil, note: "").isProblem)
 

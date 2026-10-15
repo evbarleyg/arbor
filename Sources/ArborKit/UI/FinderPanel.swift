@@ -318,7 +318,8 @@ private final class FinderView: NSView {
     let list = geometry.list
     drawGlyph(in: geometry.glyph)
     if list.height > 0 {
-      NSColor.separatorColor.setFill()
+      // Not macOS's separator colour, one grey whatever the ground: with Reduce Transparency it stood out by 1.01 to 1.
+      PanelInk.second.withAlphaComponent(effectiveAppearance.increasesContrast ? 0.6 : 0.25).setFill()
       NSBezierPath(rect: NSRect(x: 0, y: list.minY, width: bounds.width, height: 1)).fill()
     }
     for (place, item) in items.enumerated() {
@@ -367,7 +368,8 @@ private final class FinderView: NSView {
     // The title is in the main ink too: it is what tells six windows of one app apart. The app's name is set off by its
     // weight, and the letters that matched by theirs: the accent colour cannot be read on every ground.
     let primary: NSColor = selection?.ink ?? PanelInk.main
-    let faint: NSColor = selection?.ink.withAlphaComponent(0.85) ?? PanelInk.second
+    // On the selected row nothing is thinned: its note was the faintest word of the panel, and 3.75 to 1 with Increase Contrast.
+    let faint: NSColor = selection?.ink ?? PanelInk.second
 
     let iconFrame = NSRect(x: frame.minX + 10, y: frame.midY - 12, width: 24, height: 24)
     if let pid = item.row.pid {
@@ -393,10 +395,10 @@ private final class FinderView: NSView {
 
     let line = styled(
       item.row.name, item.match.nameRanges, font: .systemFont(ofSize: 13, weight: .semibold), colour: primary)
-    if !item.row.detail.isEmpty {
+    if !item.row.shownDetail.isEmpty {
       line.append(NSAttributedString(string: "   ", attributes: [.font: NSFont.systemFont(ofSize: 13)]))
       line.append(
-        styled(item.row.detail, item.match.detailRanges, font: .systemFont(ofSize: 13), colour: primary))
+        styled(item.row.shownDetail, item.match.detailRanges, font: .systemFont(ofSize: 13), colour: primary))
     }
     line.addAttribute(.paragraphStyle, value: Self.truncating, range: NSRange(location: 0, length: line.length))
     let left = iconFrame.maxX + 10

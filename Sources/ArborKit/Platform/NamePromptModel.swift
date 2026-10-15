@@ -68,6 +68,15 @@ public struct NamePromptModel: Equatable, Sendable {
     }
   }
 
+  /// A reply's words are a terminal's: they begin small and set commands in backticks. Under the field they are a sentence.
+  public static func onScreen(_ reply: String) -> String {
+    var words = ""
+    for (place, part) in reply.split(separator: "`", omittingEmptySubsequences: false).enumerated() {
+      words += place % 2 == 0 ? String(part) : "“\(part)”"
+    }
+    return words.prefix(1).uppercased() + words.dropFirst()
+  }
+
   public func answer(to text: String) -> Answer {
     switch subject {
     case .space(_, let current, let contents, let others):
@@ -79,7 +88,7 @@ public struct NamePromptModel: Equatable, Sendable {
       do {
         name = try SpaceName.tidied(text)
       } catch {
-        return Answer(command: nil, note: "\(error)", isProblem: true)
+        return Answer(command: nil, note: Self.onScreen("\(error)"), isProblem: true)
       }
       if name == current { return Answer(command: cancel, note: contents) }
       // `others` leaves this space out, so its own name in other capitals is a plain renaming.
