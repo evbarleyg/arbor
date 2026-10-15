@@ -347,8 +347,12 @@ public final class AXWindowSystem: WindowSystem {
       let pid = record.snapshot.pid
       let known = record.snapshot.frame
       // macOS accepts a new size for a full-screen window and does nothing. A window that is there needs nothing; but what is
-      // known of it is a belief, and the last move Arbor makes does not rest on one.
-      if record.snapshot.isFullScreen || (!isLettingGo && known.approximatelyEquals(target, tolerance: 0.5)) {
+      // known of it is a belief, and the last move Arbor makes does not rest on one. Nor does one that follows hard upon another: an app
+      // can say yes and carry it out a moment later, so what was read back after a move out of view is the OLD frame, and sparing
+      // the call that fetches the window from there would leave it where that move then lands, for good. Reports that come that soon are
+      // not read either, so the belief is no better until the second look has been taken.
+      let isSettled = !echoes.isFresh(window, at: uptime) && underWay[window] == nil && secondLooks[window] == nil
+      if record.snapshot.isFullScreen || (!isLettingGo && isSettled && known.approximatelyEquals(target, tolerance: 0.5)) {
         taken[window] = known
         undelivered[window] = nil
         continue
