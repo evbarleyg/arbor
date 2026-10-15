@@ -61,13 +61,13 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 | [second-actor](#second-actor) | 56 | 7 | 19 | 20 | 10 | 7 | 36 | 0 | 4 | 16 | 10 |
 | [geometry](#geometry) | 36 | 2 | 13 | 14 | 7 | 2 | 25 | 1 | 2 | 8 | 6 |
 | [identity](#identity) | 31 | 4 | 7 | 6 | 7 | 11 | 13 | 1 | 4 | 13 | 9 |
-| [permissions](#permissions) | 23 | 8 | 6 | 3 | 3 | 11 | 12 | 2 | 2 | 7 | 4 |
+| [permissions](#permissions) | 23 | 8 | 6 | 3 | 3 | 11 | 12 | 2 | 3 | 6 | 4 |
 | [timing](#timing) | 55 | 7 | 7 | 16 | 10 | 22 | 30 | 4 | 7 | 14 | 10 |
 | [input](#input) | 59 | 8 | 7 | 15 | 13 | 24 | 24 | 6 | 8 | 21 | 11 |
 | [looks](#looks) | 21 | 0 | 0 | 0 | 1 | 20 | 2 | 2 | 3 | 14 | 6 |
 | [never-exercised](#never-exercised) | 15 | 7 | 1 | 13 | 0 | 1 | 0 | 0 | 14 | 1 | 15 |
 | [toolchain](#toolchain) | 45 | 1 | 0 | 1 | 4 | 40 | 26 | 1 | 2 | 16 | 7 |
-| **all** | 469 | 63 | 99 | 124 | 69 | 177 | 245 | 19 | 60 | 145 | 108 |
+| **all** | 469 | 63 | 99 | 124 | 69 | 177 | 245 | 19 | 61 | 144 | 108 |
 
 **Where the difference bit**
 
@@ -76,7 +76,7 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 | below the seam | in the macOS-only code under the platform protocols (AX, Input, UI, App), which no test on Linux runs | 145 | 90 | 46 | 13 | 34 | 52 |
 | at the seam | in what crosses the platform protocols: a stand-in can play it to the controller | 164 | 98 | 126 | 0 | 10 | 28 |
 | controller | in the controller or the core, given reports that were right | 29 | 16 | 17 | 0 | 1 | 11 |
-| test | in a test, a script or a harness that expected the wrong thing | 84 | 0 | 29 | 5 | 11 | 39 |
+| test | in a test, a script or a harness that expected the wrong thing | 84 | 0 | 29 | 5 | 12 | 38 |
 | machine | in the machine, the toolchain or the way things are built and installed | 47 | 3 | 27 | 1 | 4 | 15 |
 
 Each case is counted under the best guard it has: one that goes red on any machine (a test, a scenario, a replayed trace, a tool that `make check` or CI runs), one that needs CI's Macs (a test for macOS alone, a step of a real-window run that CI starts), one that somebody has to start, or none.
@@ -3392,12 +3392,12 @@ Permissions: what macOS allows, to whom, and how it says no.
 *hurt 2 · machine · K414 · M1381*
 
 - **Expected:** Accessibility, once granted to Arbor, stays granted across builds.
-- **Happened:** macOS writes down the signature's designated requirement. An ad hoc build's requirement is the hash of that very build, so the next build, or a copy that replaces it, is a stranger: System Settings still shows Arbor switched on, and Arbor is told it has no permission. No Mac has yet shown that the permission survives a second `make install` with the Mac's own certificate.
-- **Found by:** The usability review and the distribution work.
+- **Happened:** macOS writes down the signature's designated requirement. An ad hoc build's requirement is the hash of that very build, so the next build, or a copy that replaces it, is a stranger: System Settings still shows Arbor switched on, and Arbor is told it has no permission. With the Mac's own certificate it survives: on macOS 26.6.2 a grant made to one build (the requirement names the app and the certificate) held for the next, which was different code, started by macOS and granted nothing. An ad-hoc build installed after that was left waiting, and macOS rewrote the entry to denied (the fourth field 0, the reason 4), so the build with the certificate that followed had to wait as well: one ad-hoc build in between costs the grant. What System Settings shows of such an entry was not looked at.
+- **Found by:** The usability review and the distribution work. `scripts/mac-shell/check-F13-system.sh` on a hosted Mac on 2026-10-15.
 - **Stand-ins play it:** cannot: it lies below or beside the seam
-- **Guard:** `e2e: their designated requirements are identical` (by hand)
+- **Guard:** `e2e: their designated requirements are identical` (by hand); `e2e: THE NEXT BUILD, SIGNED WITH THE SAME IDENTITY, RUNS WITHOUT BEING GRANTED ANYTHING` (by hand); `e2e: an ad-hoc build does not inherit the grant` (by hand)
 - **Arbor copes:** scripts/make-signing-identity.sh and scripts/sign.sh sign every build with a certificate of the Mac's own; Arbor installs no updates for the same reason.
-- **Read in:** `docs/INSTALL.md`, `docs/RELEASE-NOTES.md`, `docs/features/F13-distribution.md`, `docs/features/F42-setup-check.md`, `collab/BACKLOG.md`
+- **Read in:** `docs/INSTALL.md`, `docs/RELEASE-NOTES.md`, `docs/features/F13-distribution.md`, `docs/features/F42-setup-check.md`, `collab/BACKLOG.md`, `scripts/mac-shell/check-F13-system.sh`
 
 ### activate-is-only-a-request
 
@@ -3416,12 +3416,12 @@ Permissions: what macOS allows, to whom, and how it says no.
 *hurt 3 · machine*
 
 - **Expected:** What codesign may do with a key in a keychain that a test has made for itself, it may do with one in a person's login keychain. Six roads were tried in such keychains on three releases of macOS, no dialog came on any, and it was written down, and told to four others, that nobody needs to be asked. And a dialog goes when the program that caused it is killed.
-- **Happened:** In the login keychain an imported key has five access entries, among them `partition_id: apple-tool:`; codesign's partition is `apple:`, so macOS asks: "codesign wants to access key “…” in your keychain. To allow this, enter the “login” keychain password." Always Allow makes the list `apple-tool:, apple:`, and nothing is asked again. In a keychain made with `security create-keychain` the same import gives three entries and no such list, and nothing is asked. A login keychain made anew asks like the old one. After Deny codesign says `errSecInternalComponent` and the dialog goes at once; a dialog that nobody answers outlives codesign (twenty seconds of twenty, after TERM and after INT) and the key it asks about, until Deny or Escape. An unlocked keychain takes any password on macOS 14 and 15; 26 looks at it (exit code 51), and refuses, for a file named login.keychain-db, the very password it was made with, in its dialog too.
-- **Found by:** `scripts/mac-shell/check-signing.sh`, when a step was added that runs the script as a person does, and a probe after it: hosted Macs with macOS 15.7.9 and 26.6.2, on 2026-10-15. The road to its end (the password, Always Allow, silence) on 15.7.9 alone: on 26 no script knows a password the dialog takes.
+- **Happened:** In the login keychain an imported key has five access entries, among them `partition_id: apple-tool:`; codesign's partition is `apple:`, so macOS asks: "codesign wants to access key “…” in your keychain. To allow this, enter the “login” keychain password." Always Allow makes the list `apple-tool:, apple:`, and nothing is asked again. In a keychain made with `security create-keychain` in a folder under /tmp the same import gives three entries and no such list, and nothing is asked. A login keychain made anew asks like the old one. **By what has been measured it is where the file lies, not what it is called or who made it** (on macOS 26.6.2 two keychains there, one under a throwaway HOME and one under the account's own, were asked about, and none of those that three scripts made in folders under /tmp): a keychain made the same way as `arbor-f13.keychain-db` in ~/Library/Keychains, of a throwaway HOME at that, is asked about too ("enter the “arbor-f13” keychain password"), on the macOS on which the one under /tmp was not; so is `arbor-road.keychain-db` beside the account's login keychain, and that dialog takes the password the file was made with. This case's name says less than that. After Deny codesign says `errSecInternalComponent` and the dialog goes at once; a dialog that nobody answers outlives codesign (twenty seconds of twenty, after TERM and after INT) and the key it asks about, until Deny or Escape: six minutes on it was still there, over Gatekeeper's own dialog about a download. An unlocked keychain takes any password on macOS 14 and 15; 26 looks at it (exit code 51), and refuses, for a file named login.keychain-db, the very password it was made with, in its dialog too.
+- **Found by:** `scripts/mac-shell/check-signing.sh`, when a step was added that runs the script as a person does, and a probe after it: hosted Macs with macOS 15.7.9 and 26.6.2, on 2026-10-15. The road to its end (the password, Always Allow, `apple:` on the key's list, silence) in a login keychain made anew on 14.8.9 and 15.7.9; on 26.6.2, where no script knows a password the login keychain's dialog takes, in a keychain beside it. Where the file lies: `scripts/mac-shell/check-F13-system.sh` on 26.6.2 the same day, five of whose six failures followed from that dialog.
 - **Stand-ins play it:** cannot: it lies below or beside the seam
 - **Guard:** `e2e: which is so: the dialog has outlived codesign and the key` (on CI's Macs); `e2e: Always Allow has put codesign's partition on the key's list` (on CI's Macs); `e2e: sign.sh, told nothing, finds it and signs twice with it, and nobody is asked` (on CI's Macs); `tool: release-tools-test.sh`
-- **Arbor copes:** scripts/make-signing-identity.sh says beforehand that macOS will ask and what to choose, says that codesign can sign only of a signature it has just made, gives up after a minute where nobody is there, and says then, and after ⌃C, that the dialog may still be on screen and how to close it. `scripts/mac-shell/check-signing.sh` tries the login keychain itself; the stand-ins in `scripts/release-tools-test.sh` ask in the login keychain and nowhere else.
-- **Read in:** `scripts/make-signing-identity.sh`, `scripts/mac-shell/check-signing.sh`
+- **Arbor copes:** scripts/make-signing-identity.sh says beforehand that macOS will ask and what to choose, says that codesign can sign only of a signature it has just made, gives up after a minute where nobody is there, and says then, and after ⌃C, that the dialog may still be on screen and how to close it. `scripts/mac-shell/check-signing.sh` tries the login keychain itself; the stand-ins in `scripts/release-tools-test.sh` ask about a keychain that lies in ~/Library/Keychains and about no other; `scripts/mac-shell/check-F13-system.sh` keeps its keychain out of there.
+- **Read in:** `scripts/make-signing-identity.sh`, `scripts/mac-shell/check-signing.sh`, `scripts/mac-shell/check-F13-system.sh`
 
 ### the-login-item-can-be-refused
 
@@ -3525,9 +3525,9 @@ Permissions: what macOS allows, to whom, and how it says no.
 
 - **Expected:** `tccutil reset Accessibility <bundle id>` takes the permission from that one app, so a script need not take it from every app.
 - **Happened:** With `sudo` it answers "No such bundle identifier (-10814)" for a bundle that the runner's user opened. As that user it says the same for a bundle under /tmp, in spite of `lsregister`. It works without `sudo` for a bundle in ~/Applications.
-- **Found by:** Probes that are not on the trunk yet, on hosted Macs in the night of 2026-10-15 (macOS 26.6.2, posted events, a debug build).
+- **Found by:** Probes that are not on the trunk yet, on hosted Macs in the night of 2026-10-15 (macOS 26.6.2, posted events, a debug build). And `scripts/mac-shell/check-F13-system.sh` on 2026-10-15, whose copy is installed under /private/tmp and had been started with `open` a moment before.
 - **Stand-ins play it:** cannot: it lies below or beside the seam
-- **Guard:** **none**
+- **Guard:** `e2e: tccutil reset removes the entry` (by hand)
 - **Arbor copes:** **not yet**
 - **Read in:** `scripts/mac-shell/check-F63.sh`, `scripts/mac-shell/input-taps.sh`, `scripts/mac-shell/check-F13-system.sh`
 
@@ -5884,12 +5884,12 @@ Toolchain and machines: compilers, runners and shells that differ from the ones 
 *hurt 4 · test*
 
 - **Expected:** A path is spelt one way.
-- **Happened:** macOS's /tmp is a link to /private/tmp, and that is how `ps` spells the path of a program that runs from there: what was started from /tmp/arbor-x is listed under /private/tmp/arbor-x. On Linux, where the harness's own tests run, /tmp is /tmp. And perhaps the other way about: on 2026-10-15 a copy started from /private/tmp/… logged its watchdog's number, and a second later a search from `^/private/tmp/…` listed the app alone. Whether the watchdog, which Arbor starts from its bundle's own idea of the path, is listed under /tmp/…, or had ended, that run could not tell.
-- **Found by:** Writing the harness's clean-up for real Macs; `scripts/mac-shell/check-F13.sh`'s first run to its end.
+- **Happened:** macOS's /tmp is a link to /private/tmp, and that is how `ps` spells the path of a program that runs from there: what was started from /tmp/arbor-x is listed under /private/tmp/arbor-x. On Linux, where the harness's own tests run, /tmp is /tmp. And the other way about: of a copy that runs from /private/tmp/… the app is listed there, and its watchdog, which Arbor starts by its bundle's own idea of the path (`Bundle.main.executableURL`), under /tmp/…: "21076 /private/tmp/…/Arbor" and "21081 /tmp/…/Arbor --watchdog 21076", side by side. A search that begins at either spelling finds one of the two. So four checks that "nothing is left running" could not have seen a watchdog, and `make install`, had it had to stop such a copy by force, would have killed the app with its watchdog looking on, which starts it again.
+- **Found by:** Writing the harness's clean-up for real Macs; `scripts/mac-shell/check-F13.sh`'s first run to its end, where the watchdog was not found; `scripts/mac-shell/check-F13-system.sh` on macOS 26.6.2 on 2026-10-15, twice, which went by the number in Arbor's log and printed what `ps` calls it.
 - **Stand-ins play it:** cannot: it lies below or beside the seam
 - **Guard:** `tool: test-tooling.py`; `e2e: its watchdog runs beside it` (by hand)
-- **Arbor copes:** scripts/mac-shell/lib.sh takes both spellings, in what it may remove and in whose processes it ends; so does every search of `scripts/mac-shell/lib-F13.sh` (`spelled`), and its check of the watchdog goes by the number in the log, so the next run tells.
-- **Read in:** `scripts/mac-shell/lib.sh`, `scripts/mac-shell/watchdog-bundle.sh`, `scripts/mac-shell/lib-F13.sh`
+- **Arbor copes:** scripts/mac-shell/lib.sh takes both spellings, in what it may remove and in whose processes it ends; so does every search of `scripts/mac-shell/lib-F13.sh` (`spelled`), and `scripts/install.sh` of a copy under /private. In a person's ~/Applications there is one spelling.
+- **Read in:** `scripts/mac-shell/lib.sh`, `scripts/mac-shell/watchdog-bundle.sh`, `scripts/mac-shell/lib-F13.sh`, `scripts/install.sh`, `Sources/ArborKit/App/Watchdog.swift`
 
 ### two-scripts-that-begin-alike-share-one-tag-and-a-queued-job-takes-the-newest-commit
 
