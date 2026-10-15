@@ -151,8 +151,10 @@ enum Driver {
       silenceLog()
       // It looks at the disk too, and writes nothing down: a script that saves settings.json and then only
       // looks sees the edit applied, and the next line that changes something takes note of it.
+      // Most calls only ask, and whoever only asks writes no trace out. A word to the recorder changes nothing but the recording, so the history is replayed
+      // without those words, unrecorded, which takes half the time. Unless the question is about the recording.
       let asked = entries + [Entry(fields: fields)]
-      return finish(replay(asked, lastAsks: true, live: true, session: session).reply)
+      return finish(replay(asked, lastAsks: true, live: true, unrecorded: !World.takesNoTime(fields), session: session).reply)
     }
 
     session.lock()
@@ -181,7 +183,7 @@ enum Driver {
 
   /// Replays `entries`. With `live` the last one is happening now: it reads what it needs from the disk.
   private static func replay(
-    _ entries: [Entry], lastAsks: Bool, live: Bool = false, session: Session?
+    _ entries: [Entry], lastAsks: Bool, live: Bool = false, unrecorded: Bool = false, session: Session?
   ) -> (world: World, reply: Reply) {
     let world = newWorld(entries, socket: session?.socket ?? "")
     var reply = Reply()
@@ -190,8 +192,9 @@ enum Driver {
       world.begin(entry)
       if last, live, let session { world.noticeChanges(in: session.home, settingsIn: session.rehearsal) }
       if last { world.traceLinesBefore = world.traces.mapValues(\.lines.count) }
+      if unrecorded, World.takesNoTime(entry.fields) { continue }
       reply = world.perform(entry.fields)
-      if !(last && lastAsks) { world.letTimePass() }
+      if !(last && lastAsks), !World.takesNoTime(entry.fields) { world.letTimePass() }
     }
     return (world, reply)
   }
@@ -208,7 +211,7 @@ enum Driver {
       if entry.fields[0] == "display" { continue }
       world.begin(entry)
       let reply = world.perform(entry.fields)
-      world.letTimePass()
+      if !World.takesNoTime(entry.fields) { world.letTimePass() }
       print(reply.out + reply.err, terminator: "")
       if reply.code != 0 { print("(exit code \(reply.code))") }
     }

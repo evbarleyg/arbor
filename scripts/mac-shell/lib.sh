@@ -161,6 +161,8 @@
 #   arbor_log                       copy arbor.log to mac-shell/ now (arbor_stop and the exit trap do it too)
 #   arbor_mac_facts                 how long the Mac was left alone, locked or not, screen saver or not, and what lies in front: for a press that
 #                                     took hold of nothing
+#   arbor_traces                    copy the session's traces to mac-shell/traces/ now (arbor_stop and the exit trap do it too)
+#   arbor_trace_next "<remark>"     begin the next trace now and not at the next heading: after a `resume`, which follows a pause that ended one
 #   macos_tiling [on|off]           print, or set, macOS's own "drag windows to screen edges to tile"
 #   macos_tiles | screen_edges_dock whether macOS tiles at the screen's edges, where Arbor then stands aside | before arbor_start, for a script that
 #                                     docks by dragging to a screen edge: switches that off on a throwaway Mac; false where a person has it on
@@ -180,11 +182,12 @@
 #   space_add                       one more Space on the main display (there is no space_remove)
 #   space_go left|right             switch Spaces as a person does, with ⌃← and ⌃→
 #
-# Settings: ARBOR_SETTLE (seconds `shot` waits first, default 0.7), ARBOR_TEST_WINDOWS_ARGS (more arguments
+# Every session is recorded, without the script doing anything for it ("Recording", below): mac-shell/traces/<script>-<session>-<number>.jsonl.
+#
+# Settings: ARBOR_TRACE (0: record nothing, for a script that measures time; 1: record on a person's Mac too), ARBOR_SETTLE (seconds `shot` waits first, default 0.7), ARBOR_TEST_WINDOWS_ARGS (more arguments
 # for ArborTestWindows, e.g. "--min-size 3:700x500"), ARBOR_SECOND_APP (that many windows V1… of a second
 # app, with ARBOR_SECOND_APP_ARGS), ARBOR_EXTRA_PIDS (processes the script started itself whose windows Arbor should
-# arrange too, comma-separated), ARBOR_BUNDLED=1 (run Arbor from an app bundle, as installed; on a throwaway Mac only), ARBOR_RECORD=1 (a trace
-# of every launch on a throwaway Mac, in mac-shell/traces/), ARBOR_TIME_LIMIT
+# arrange too, comma-separated), ARBOR_BUNDLED=1 (run Arbor from an app bundle, as installed; on a throwaway Mac only), ARBOR_TIME_LIMIT
 # (seconds the whole script may take, default 900, on
 # GitHub's Macs 1100; set it above `source lib.sh`). On a person's Mac: ARBOR_SHOTS=1 (take the pictures of what is in front of the
 # curtain), ARBOR_BUSY_OK=1 (start although somebody seems to be using the Mac), ARBOR_QUIET_SINCE (run-list.sh sets it: the time, in seconds since
@@ -467,6 +470,8 @@ arbor_heading() {
   echo "$*"
   arbor_record ""
   arbor_record "$*"
+  # Without the mark in front, == or ▸.
+  arbor_trace_next "${*#* }"
 }
 claim() { arbor_heading "▸ $*"; }
 # Read from the script by suite-parity.py; nothing to do at run time.
@@ -653,6 +658,8 @@ arbor_switches() {
 }
 
 arbor_new_home() {
+  # A script that ends a session by itself (quits Arbor, closes the windows, asks for a new home) leaves the old one behind, and it goes with the run.
+  arbor_bring_back
   scratch_dir shell ARBOR_SESSION_DIR
   ARBOR_SESSION_DIRS="$ARBOR_SESSION_DIRS $ARBOR_SESSION_DIR"
   export ARBOR_HOME="$ARBOR_SESSION_DIR/home"
@@ -749,6 +756,11 @@ arbor_sweep() {
   fi
   # Through cat: of a run that was cut off, the record itself may go at any moment, if its script is still about and cleaning up.
   cat "$ARBOR_LEDGER/dirs" 2>/dev/null | while read -r left; do
+    # A script that was killed brought nothing back, and it is the one whose log and traces somebody will ask for.
+    if [ -d "$left/home" ]; then
+      [ -f "$left/home/arbor.log" ] && cp "$left/home/arbor.log" "$ARBOR_OUT/arbor-${left##*.}-cut-off.log"
+      (ARBOR_HOME=$left/home arbor_traces)
+    fi
     [ -e "$left" ] && scratch_remove "$left"
   done
 }
@@ -1160,10 +1172,83 @@ arbor_log_name() {
 
 arbor_log() {
   if [ -f "$ARBOR_HOME/arbor.log" ]; then cp "$ARBOR_HOME/arbor.log" "$ARBOR_OUT/$(arbor_log_name arbor)"; fi
-  if ls "$ARBOR_HOME"/traces/*.jsonl > /dev/null 2>&1; then
+  arbor_traces
+}
+
+# MARK: Recording
+
+# A Mac is lent for minutes, and what it showed should never need a Mac again. So every session is recorded (docs/TRACES.md: what
+# macOS reported, what Arbor asked of it and what came back; never a window title): one trace from every launch on and the next
+# from every `step` and `claim`, so that each begins with the world as it really was and is short enough to keep. Headings and checks are
+# remarks in them, so that a ✘ can be found. scripts/trace-to-test.py makes a test for Linux of one.
+#
+# Arbor takes a word to its recorder for nothing else: it ends no peek, closes no panel and is no command to follow.
+# - Only on GitHub's Macs. A trace names every app that has a window open, and holds every press of the button wherever it landed, which on
+#   a person's Mac is theirs to tell: ARBOR_TRACE=1.
+# - ARBOR_TRACE=0 is for a script that measures time: a remark is a call to Arbor, and a line written is a line written.
+# - A script that records for itself just does: `trace on` takes over from these, and they go on from the first heading after its `trace off`.
+# - In the middle of a drag and while a key is held Arbor begins no new trace: a header does not say what a hand is doing. The heading is a remark then.
+ARBOR_TRACE_NUMBER=0
+# The session whose log and traces have been copied to mac-shell/.
+ARBOR_BROUGHT_BACK=0
+# Arbor did not answer the last word to its recorder (stopped, hung or gone, which some scripts are about): no more until the next heading.
+ARBOR_TRACE_DEAF=""
+
+arbor_records() {
+  case "${ARBOR_TRACE:-}" in
+    0) return 1 ;;
+    1) return 0 ;;
+  esac
+  on_throwaway_mac
+}
+
+# arbor_recorder <words…>: a word to the recorder of whichever Arbor answers in this session. A second at most, and nothing is printed.
+arbor_recorder() {
+  # --: a heading may look like an option of arborctl's.
+  "$ARBOR_BIN/arborctl" --timeout 1 -- trace "$@" > /dev/null 2>&1
+  case $? in
+    0) return 0 ;;
+    1) return 1 ;;
+    *) ARBOR_TRACE_DEAF=yes; return 2 ;;
+  esac
+}
+
+# arbor_trace_next <remark…>: ends the trace that is running and begins the next one, with the remark as its first line.
+arbor_trace_next() {
+  local name
+  arbor_records && [ -n "$ARBOR_PID" ] || return 0
+  ARBOR_TRACE_DEAF=""
+  name=$(echo "$ARBOR_NAME" | tr -c 'A-Za-z0-9._\n-' _ | cut -c 1-30)
+  # Refused during a pause, in the middle of a drag, and while the script records for itself. A number is used up only by a trace that has begun.
+  arbor_recorder next "$name-$ARBOR_SESSION-$(printf %02d "$((ARBOR_TRACE_NUMBER + 1))")" "$@" && ARBOR_TRACE_NUMBER=$((ARBOR_TRACE_NUMBER + 1))
+  return 0
+}
+
+# arbor_trace_note <remark…>. A trace ends by itself with a pause and after ten minutes: then the next one begins here.
+arbor_trace_note() {
+  arbor_records && [ -n "$ARBOR_PID" ] && [ -z "$ARBOR_TRACE_DEAF" ] || return 0
+  arbor_recorder note "$*"
+  [ $? -eq 1 ] && arbor_trace_next "$*"
+  return 0
+}
+
+# The log and the traces of the session that is ending, once: afterwards the same names would be the next session's home's, and what a tool wrote there
+# (arbor-sim, replaying what was recorded) would come back in place of the session's own.
+arbor_bring_back() {
+  [ "$ARBOR_BROUGHT_BACK" != "$ARBOR_SESSION" ] || return 0
+  arbor_log
+  ARBOR_BROUGHT_BACK=$ARBOR_SESSION
+}
+
+# Without the date in their names: the number says the order. By name, so that what has been copied is not copied twice.
+arbor_traces() {
+  local file base
+  for file in "$ARBOR_HOME"/traces/*.jsonl; do
+    [ -f "$file" ] || continue
+    base=${file##*/}
     mkdir -p "$ARBOR_OUT/traces"
-    cp "$ARBOR_HOME"/traces/*.jsonl "$ARBOR_OUT/traces/"
-  fi
+    cp "$file" "$ARBOR_OUT/traces/${base:18}"
+  done
 }
 
 # arbor_open_app <1|2> <executable> <count> [arguments…]: starts a test app and sets W1… (or V1…).
@@ -1294,13 +1379,7 @@ arbor_launch() {
       0)
         echo "session $ARBOR_SESSION: Arbor pid $ARBOR_PID, test windows$ARBOR_WINDOW_IDS (pid $pids)"
         "$ARBOR_BIN/arborctl" status
-        # With ARBOR_RECORD=1 every launch on a throwaway Mac is recorded (docs/TRACES.md): what macOS reported and what Arbor asked of
-        # it comes back in mac-shell/traces/ and replays on Linux from then on. Never on a person's Mac: a trace holds every press
-        # of the button, wherever it landed.
-        if [ "${ARBOR_RECORD:-}" = 1 ] && on_throwaway_mac && [ -z "${ARBOR_REHEARSAL:-}" ]; then
-          ARBOR_LAUNCHES=$((${ARBOR_LAUNCHES:-0} + 1))
-          "$ARBOR_BIN/arborctl" trace on "$ARBOR_NAME-$ARBOR_LAUNCHES" > /dev/null 2>&1 || echo "note: this launch is not recorded"
-        fi
+        arbor_trace_next "session $ARBOR_SESSION: Arbor has started"
         # So that nobody takes a film in which nothing moves for a bug.
         [ "$("$ARBOR_POINTER" reduce-motion 2>/dev/null)" = true ] \
           && echo "Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)"
@@ -1384,7 +1463,7 @@ arbor_stop() {
   done
   [ -n "${1:-}" ] && shot "$1"
   [ -n "${ARBOR_AFTER_QUIT:-}" ] && "$ARBOR_AFTER_QUIT"
-  arbor_log
+  arbor_bring_back
   arbor_close_windows
   arbor_new_home
 }
@@ -1421,7 +1500,8 @@ arbor_exit() {
   fi
   arbor_stop
   arbor_close_claim
-  arbor_log
+  # Of a session whose Arbor the script stopped by itself: arbor_stop found none and left at once.
+  arbor_bring_back
   arbor_close_windows
   display_remove
   [ -n "$ARBOR_CURTAIN_IS_MINE" ] && kill_started "$ARBOR_CURTAIN_PID"
@@ -1833,6 +1913,7 @@ check() {
     ARBOR_CLAIM_PASSED=$((ARBOR_CLAIM_PASSED + 1))
     echo "  ✔ $what"
     arbor_record "  ✔ $what"
+    arbor_trace_note "✔ $what"
   else
     ARBOR_FAILED=$((ARBOR_FAILED + 1))
     ARBOR_CLAIM_FAILED=$((ARBOR_CLAIM_FAILED + 1))
@@ -1845,6 +1926,7 @@ check() {
     # Why a press or a key was declined names what else is open on somebody's Mac, and evidence gets committed.
     case "$detail" in skipped:*) detail="declined on this Mac" ;; esac
     arbor_record "  ✘ $what${detail:+ — $detail}"
+    arbor_trace_note "✘ $what"
     arbor_explain
     return 1
   fi

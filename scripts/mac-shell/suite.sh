@@ -57,8 +57,6 @@ arbor_build
 on_throwaway_mac && macos_dictation_shortcut off
 # For every Mac that has a share of the sections, whichever they are.
 screen_edges_dock || echo "macOS tiles at the screen's edges on this Mac, so Arbor stands aside there: the claims about docking at an edge skip themselves"
-# What a Mac has shown once can be replayed on Linux for ever (docs/TRACES.md).
-export ARBOR_RECORD=1
 
 began_all=$SECONDS
 report=""

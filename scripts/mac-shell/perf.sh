@@ -8,6 +8,8 @@
 # Safe on a person's Mac: it starts its own test windows and an Arbor limited to them, changes no setting, and only
 # reads with footprint, heap, leaks and top (the first three only where developer mode is on: elsewhere macOS asks for a
 # password in a dialog). It drags one gap with the real pointer. About three minutes.
+# Not recorded (docs/TRACES.md): every line written is time, and time is what is measured here.
+ARBOR_TRACE=0
 source "$(dirname "$0")/lib.sh"
 source "$(dirname "$0")/lib-gestures.sh"
 

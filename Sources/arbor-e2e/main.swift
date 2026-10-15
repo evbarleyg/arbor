@@ -76,6 +76,12 @@ final class Runner {
   var isUnderWay = false
   /// How many bytes of arbor.log were written before this step, or have been shown under one of its checks.
   var logShown = 0
+  /// Where Arbor's log and the traces of the run are left when it is over (`ARBOR_E2E_KEEP`, which scripts/e2e.sh sets on GitHub's Macs only: a
+  /// trace names every app that has a window open). Without it nothing is recorded.
+  let keeps = ProcessInfo.processInfo.environment["ARBOR_E2E_KEEP"].map { URL(fileURLWithPath: $0) }
+  /// The trace being recorded is `e2e-<number>` (docs/TRACES.md): a new one from every heading, so that each begins with the world as it
+  /// was and is short enough to become a test (scripts/trace-to-test.py).
+  var traceNumber = 0
 
   init() throws {
     binaries = URL(fileURLWithPath: CommandLine.arguments[0]).resolvingSymlinksInPath().deletingLastPathComponent()
@@ -191,6 +197,7 @@ final class Runner {
       _ = poll(3) { !helper.isRunning }
       if helper.isRunning { helper.terminate() }
     }
+    keepLogAndTraces()
     let log = home.appendingPathComponent("arbor.log")
     if !failures.isEmpty, let text = try? String(contentsOf: log, encoding: .utf8) {
       print("\n--- arbor.log (last 100 lines) ---")
@@ -336,16 +343,65 @@ final class Runner {
     if condition {
       passes += 1
       print("  ✔ \(name)")
+      remark("✔ \(name)")
     } else {
       let message = detail()
       failures.append("\(name)\(message.isEmpty ? "" : ": \(message)")")
       print("  ✘ \(name)\(message.isEmpty ? "" : " — \(message)")")
+      let recorded = remark("✘ \(name)")
       showWhatArborLogged()
+      if recorded { print("    ↳ recorded in traces/\(traceName(traceNumber)).jsonl") }
     }
   }
 
-  /// A step begins: what Arbor logs from here on belongs to it.
-  func noteWhereTheLogIs() { logShown = arborLog().utf8.count }
+  /// A step begins: what Arbor logs from here on belongs to it, and so does what is recorded.
+  func noteWhereTheLogIs() {
+    logShown = arborLog().utf8.count
+    nextTrace()
+  }
+
+  // MARK: Recording
+
+  func traceName(_ number: Int) -> String { "e2e-" + (number < 10 ? "0" : "") + String(number) }
+
+  /// A word to Arbor's recorder, which Arbor takes for nothing else. Whether it was taken; nil if nobody answered within a second, as
+  /// in the steps that kill Arbor.
+  func recorder(_ words: String) -> Bool? {
+    guard keeps != nil, let reply = try? ControlClient.send("trace " + words, socketPath: socket, timeout: 1) else { return nil }
+    return (try? JSONDecoder().decode(CommandResult.self, from: Data(reply.utf8)))?.ok
+  }
+
+  /// Refused during a pause and in the middle of a drag. A number is used up only by a trace that has begun.
+  func nextTrace(_ remark: String = "") {
+    if recorder("next \(traceName(traceNumber + 1)) \(remark)") == true { traceNumber += 1 }
+  }
+
+  /// Whether the remark is in the trace that holds what it is about. Refused when nothing is being recorded: Arbor was started again, or a pause ended
+  /// the trace. Then the next one begins here, too late for that.
+  @discardableResult
+  func remark(_ text: String) -> Bool {
+    let noted = recorder("note \(text)")
+    if noted == false { nextTrace(text) }
+    return noted == true
+  }
+
+  /// The home folder goes with the run. On a hosted Mac these are all that is left to tell what happened there.
+  func keepLogAndTraces() {
+    guard let keeps else { return }
+    let files = FileManager.default
+    try? files.createDirectory(at: keeps.appendingPathComponent("traces"), withIntermediateDirectories: true)
+    for name in (try? files.contentsOfDirectory(atPath: home.path)) ?? [] where name.hasPrefix("arbor") && name.contains(".log") {
+      try? files.removeItem(at: keeps.appendingPathComponent(name))
+      try? files.copyItem(at: home.appendingPathComponent(name), to: keeps.appendingPathComponent(name))
+    }
+    let traces = home.appendingPathComponent("traces")
+    for name in (try? files.contentsOfDirectory(atPath: traces.path)) ?? [] where name.hasSuffix(".jsonl") {
+      // Without the date and the time: the number says the order.
+      let target = keeps.appendingPathComponent("traces").appendingPathComponent(String(name.dropFirst(18)))
+      try? files.removeItem(at: target)
+      try? files.copyItem(at: traces.appendingPathComponent(name), to: target)
+    }
+  }
 
   /// What Arbor logged since the step began, under the check that failed. The end of the log, printed when the run is over, is
   /// several launches past most steps, and whoever reads the report has nothing else to go by. The arrow is Swift Testing's for a note

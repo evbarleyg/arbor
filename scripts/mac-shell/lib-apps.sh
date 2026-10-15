@@ -356,6 +356,7 @@ arbor_start_apps() {
     case $? in
       0)
         echo "session $ARBOR_SESSION: Arbor pid $ARBOR_PID, $limit: $("$ARBOR_BIN/arborctl" status)"
+        arbor_trace_next "session $ARBOR_SESSION begins"
         return 0 ;;
       3) die "Arbor has no Accessibility permission here, so it cannot move windows" ;;
     esac

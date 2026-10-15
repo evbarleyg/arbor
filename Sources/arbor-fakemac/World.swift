@@ -256,11 +256,8 @@ final class World {
       if words.first == "wallpaper" { return words.count == 1 }
       return !["move", "click", "drag", "drag-on", "release", "calm", "key", "pinch"].contains(words.first ?? "")
     case "arborctl":
-      let arguments = words.first == "--json" ? Array(words.dropFirst()) : words
       // What cannot be read is refused before it gets to the controller.
-      guard !arguments.isEmpty, let command = try? Command.parse(arguments.joined(separator: " ")) else {
-        return true
-      }
+      guard let command = command(ofArborctl: words) else { return true }
       return command.isQuery
     case "lsappinfo":
       return true
@@ -272,6 +269,30 @@ final class World {
     default:
       return false
     }
+  }
+
+  /// arborctl's arguments without its own options, and whether `--json` was among them. How long it waits for an answer (`--timeout`) is nothing to
+  /// this Arbor, which answers at once or is not there.
+  static func arborctlArguments(_ words: [String]) -> (command: [String], rawJSON: Bool) {
+    var arguments = words
+    if arguments.first == "--timeout" { arguments.removeFirst(min(2, arguments.count)) }
+    let rawJSON = arguments.first == "--json"
+    if rawJSON { arguments.removeFirst() }
+    // What follows belongs to the command, whatever it looks like.
+    if arguments.first == "--" { arguments.removeFirst() }
+    return (arguments, rawJSON)
+  }
+
+  static func command(ofArborctl words: [String]) -> Command? {
+    let arguments = arborctlArguments(words).command
+    return arguments.isEmpty ? nil : try? Command.parse(arguments.joined(separator: " "))
+  }
+
+  /// Whether a line takes none of the world's time. A word to the recorder is said about what happens and is no part of it: a script that is
+  /// recorded must find the clock where the same script finds it unrecorded.
+  static func takesNoTime(_ fields: [String]) -> Bool {
+    guard fields[0] == "arborctl", case .trace? = command(ofArborctl: Array(fields.dropFirst())) else { return false }
+    return true
   }
 
   func perform(_ fields: [String]) -> Reply {

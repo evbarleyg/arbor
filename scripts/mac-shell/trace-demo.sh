@@ -15,6 +15,8 @@
 #
 # Positions are worked out before a trace starts and nothing polls Arbor while one is recorded, so that a trace holds
 # what happened and not the script's questions.
+# It records for itself, one trace for each thing to show: the traces lib.sh would begin at every `step` would only lie among them.
+ARBOR_TRACE=0
 source "$(dirname "$0")/lib.sh"
 
 TRACES="$ARBOR_OUT/traces"

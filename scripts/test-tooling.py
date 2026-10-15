@@ -1020,9 +1020,92 @@ kill $mine
                  ("after want: [on the books]" in output, "after day_forgets: []" in output), (True, True)),
                 ("lib-day.sh: day_forgets keeps an Arbor that has not ended", "one that runs: [on the books]" in output, True)]
 
-    throwaway = [second_lock, which_build, folders, full_disk, disk_fills_up, strange_mktemp, refusals, strangers, limited, both_killed, supervisor_killed, two_at_once,
+    # An Arbor that only writes down what it is told, and answers with the exit code in $FAKE/arborctl-code (arborctl's: 1 refused, 4 no answer in time).
+    LISTENS = '#!/bin/bash\necho "$*" >> "$FAKE/told"\nexit "$(cat "$FAKE/arborctl-code" 2>/dev/null || echo 0)"\n'
+    # A session as arbor_start leaves it, without the windows. At the end there is no Arbor to stop.
+    SESSION = 'ARBOR_PID=$$ ARBOR_SESSION=1\n'
+
+    def words_to_the_recorder(mac):
+        return [line.replace("--timeout 1 -- ", "") for line in mac.read("told").splitlines() if " trace " in f" {line} "]
+
+    def recorded(mac):
+        mac.tool("arborctl", LISTENS)
+        code, _ = mac.run(SESSION + 'step "the first thing"\ncheck "it holds" true\ncheck "it does not" false\nstep "the second thing"\n'
+                          'mkdir -p "$ARBOR_HOME/traces"; echo x > "$ARBOR_HOME/traces/2026-10-15-010203-script-1-01.jsonl"\nARBOR_PID=""')
+        return [("lib.sh: on a hosted Mac every step begins a trace, named after the script, the session and its place, and every check is a remark in it",
+                 (code, words_to_the_recorder(mac)),
+                 (1, ["trace next script-1-01 the first thing", "trace note ✔ it holds", "trace note ✘ it does not", "trace next script-1-02 the second thing"])),
+                ("lib.sh: the traces come back, without the date in their names, also of a session whose Arbor the script stopped itself",
+                 os.listdir(os.path.join(mac.folder, "out", "traces")), ["script-1-01.jsonl"])]
+
+    def the_log_is_the_sessions(mac):
+        mac.tool("arborctl", '#!/bin/bash\n[ "$1" = quit ] && kill "$(cat "$FAKE/arbor-pid")"\nexit 0\n')
+        mac.run('sleep 300 &\nARBOR_PID=$! ARBOR_SESSION=1\nstarted "$ARBOR_PID"\necho "$ARBOR_PID" > "$FAKE/arbor-pid"\n'
+                'mkdir -p "$ARBOR_HOME/traces"; echo "the session" > "$ARBOR_HOME/arbor.log"; echo "the session" > "$ARBOR_HOME/traces/2026-10-15-010203-script-1-01.jsonl"\n'
+                'arbor_stop\n'
+                # A tool the script runs afterwards (arbor-sim, to replay what was recorded) finds the next session's home, and writes its own log there.
+                'mkdir -p "$ARBOR_HOME/traces"; echo "a tool" > "$ARBOR_HOME/arbor.log"; echo "a tool" > "$ARBOR_HOME/traces/2026-10-15-010204-script-1-01.jsonl"')
+        return [("lib.sh: what is written into the next session's home after arbor_stop does not come back in place of the session's log and traces",
+                 (mac.read("out/arbor-script.log").strip(), mac.read("out/traces/script-1-01.jsonl").strip()), ("the session", "the session"))]
+
+    def ended_by_the_script(mac):
+        mac.tool("arborctl", LISTENS)
+        mac.run(SESSION + 'mkdir -p "$ARBOR_HOME/traces"; echo one > "$ARBOR_HOME/arbor.log"; echo one > "$ARBOR_HOME/traces/2026-10-15-010203-script-1-01.jsonl"\n'
+                'ARBOR_PID=""\narbor_new_home\nARBOR_PID=$$ ARBOR_SESSION=2\n'
+                'mkdir -p "$ARBOR_HOME/traces"; echo two > "$ARBOR_HOME/arbor.log"; echo two > "$ARBOR_HOME/traces/2026-10-15-010204-script-2-02.jsonl"\nARBOR_PID=""')
+        return [("lib.sh: of a session the script ends by itself, with a new home for the next, log and traces come back too",
+                 (mac.read("out/arbor-script.log").strip(), mac.read("out/arbor-script-2.log").strip(), sorted(os.listdir(os.path.join(mac.folder, "out", "traces")))),
+                 ("one", "two", ["script-1-01.jsonl", "script-2-02.jsonl"]))]
+
+    def not_recorded(mac):
+        mac.tool("arborctl", LISTENS)
+        mac.run(SESSION + 'step "a thing"\ncheck "it holds" true\nARBOR_PID=""')
+        return [(f"lib.sh: {mac.where}nothing is recorded: a trace names the apps that are open", words_to_the_recorder(mac), [])]
+
+    def asked_to_record(mac):
+        mac.tool("arborctl", LISTENS)
+        mac.run(SESSION + 'step "a thing"\nARBOR_PID=""', before="ARBOR_TRACE=1")
+        return [(f"lib.sh: {mac.where}unless the person asks for it", words_to_the_recorder(mac), ["trace next script-1-01 a thing"])]
+
+    def told_not_to_record(mac):
+        mac.tool("arborctl", LISTENS)
+        mac.run(SESSION + 'step "a thing"\ncheck "it holds" true\nARBOR_PID=""', before="ARBOR_TRACE=0")
+        return [("lib.sh: a script that measures time switches recording off", words_to_the_recorder(mac), [])]
+
+    def refused(mac):
+        mac.tool("arborctl", LISTENS)
+        mac.put("arborctl-code", "1")
+        mac.run(SESSION + 'step "in the middle of a drag"\nrm "$FAKE/arborctl-code"\nstep "let go"\nARBOR_PID=""')
+        return [("lib.sh: a trace that Arbor would not begin uses up no number", words_to_the_recorder(mac),
+                 ["trace next script-1-01 in the middle of a drag", "trace next script-1-01 let go"])]
+
+    def trace_had_ended(mac):
+        mac.tool("arborctl", LISTENS)
+        mac.put("arborctl-code", "1")
+        mac.run(SESSION + 'check "after a pause" true\nARBOR_PID=""')
+        return [("lib.sh: a remark that is refused, because a pause or ten minutes ended the trace, begins the next one", words_to_the_recorder(mac),
+                 ["trace note ✔ after a pause", "trace next script-1-01 ✔ after a pause"])]
+
+    def arbor_does_not_answer(mac):
+        mac.tool("arborctl", LISTENS)
+        mac.put("arborctl-code", "4")
+        mac.run(SESSION + 'step "stopped"\ncheck "one" true\ncheck "two" true\nstep "next"\ncheck "three" true\nARBOR_PID=""')
+        return [("lib.sh: an Arbor that does not answer costs a second a step, not a second a check", words_to_the_recorder(mac),
+                 ["trace next script-1-01 stopped", "trace next script-1-01 next"])]
+
+    def cut_off(mac):
+        process = mac.start(NOTES + 'mkdir -p "$ARBOR_HOME/traces"; echo x > "$ARBOR_HOME/traces/2026-10-15-010203-script-1-01.jsonl"; echo y > "$ARBOR_HOME/arbor.log"\n'
+                            'echo ready > "$FAKE/ready"\nsleep 300')
+        mac.await_file("ready")
+        os.kill(int(mac.read("script")), signal.SIGKILL)
+        process.communicate(timeout=90)
+        left = sorted(os.listdir(os.path.join(mac.folder, "out")))
+        return [("lib.sh: of a script that was killed the supervisor brings the log and the traces back",
+                 ([name for name in left if name.endswith("-cut-off.log")] != [], os.path.exists(os.path.join(mac.folder, "out", "traces", "script-1-01.jsonl"))), (True, True))]
+
+    throwaway = [the_log_is_the_sessions, ended_by_the_script, recorded, told_not_to_record, refused, trace_had_ended, arbor_does_not_answer, cut_off, second_lock, which_build, folders, full_disk, disk_fills_up, strange_mktemp, refusals, strangers, limited, both_killed, supervisor_killed, two_at_once,
                  ended("the time limit"), ended("an interrupt"), ended("kill -9"), own_shell]
-    somebodys = [nets, pictures, discreet, nameless, curtain_down, stale_output, defaults_for_arbor, no_curtain, both_killed, supervisor_killed,
+    somebodys = [not_recorded, asked_to_record, nets, pictures, discreet, nameless, curtain_down, stale_output, defaults_for_arbor, no_curtain, both_killed, supervisor_killed,
                  ended("the time limit", "on somebody's Mac, "), ended("an interrupt", "on somebody's Mac, "), ended("kill -9", "on somebody's Mac, "),
                  declined("not beside an Arbor that is running already", running__Arbor=str(canary)),
                  declined("not beside another window manager", running__Rectangle=str(canary)),
@@ -2062,7 +2145,6 @@ def check_ci_build_key():
         row("ci-build-key.sh: no such kind", key("sideways")[0], 64)
         write("Sources/A.swift", "not committed\n")
         row("ci-build-key.sh: a checkout that differs from its commit has no name", key("products"), (2, None))
-
 
 def check_fuzz_launch():
     for situation in fuzz_launch.situations():

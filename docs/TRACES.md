@@ -31,6 +31,23 @@ leaves a trace on a Mac and on Linux.
 cheat sheet, is not what the next command without a window follows, and is not counted. (Until 2026-10-15 it was and did, so a script that wrote a remark while a key
 was held ended what it was looking at.)
 
+## Every run on a hosted Mac is recorded
+
+A hosted Mac is lent for minutes, and what it showed should never need a Mac again. So nobody has to think of recording:
+
+- **Mac shell scripts** (`scripts/mac-shell/lib.sh`), the sections of the real-window suite among them: a trace from every launch of Arbor on and the next one from every `step` and `claim`; every heading and
+  every `check` (✔ or ✘) is a remark. They come back in `traces/<script>-<session>-<number>.jsonl` beside `output.txt` and Arbor's log. A rehearsal on Linux leaves the same files.
+- **arbor-e2e** (`scripts/e2e.sh`): a trace from every heading, `e2e-<number>`, every check a remark. A check that fails names its trace. They are left in `mac-shell/e2e/`, with `arbor.log` at debug level, which
+  `scripts/mac-shell/run.sh scripts/mac-shell/e2e.sh` brings back like everything in `mac-shell/`.
+- **One trace after the other**, with `trace next`, and not one long one: a trace cannot be cut at the front, because its first line is the world it began in. So each piece begins with the
+  world as it really was, told by the Arbor that was there, and is short enough to keep.
+- **Only on GitHub's Macs**, which are nobody's. A trace names every app that has a window open; on a person's Mac that is theirs to tell (`ARBOR_TRACE=1` asks for it).
+- `ARBOR_TRACE=0` above `source lib.sh` is for a script that measures time (`perf.sh`).
+- **A script that records for itself just does.** `trace on <name>` takes over from a trace begun with `trace next`, and `trace next` leaves one begun with `trace on` alone; the row goes on from
+  the first heading after `trace off`.
+- In the middle of a drag, while the button is down and while a key is held for a peek, `trace next` begins nothing: a header does not say what a hand is doing. It is refused, the trace that is running goes on, and the heading is a remark in it.
+- What a pause, ten minutes or 20 MB ended goes on with the next check or step. An Arbor that does not answer within a second (stopped, hung, killed: some scripts are about that) is left alone until the next heading. `arbor_trace_next "<remark>"` begins one at once, right after a `resume`, say.
+
 ## What is never in a trace
 
 **Window titles.** They say what people are reading and writing. Each distinct title is replaced by `title[1]`, `title[2]`… in

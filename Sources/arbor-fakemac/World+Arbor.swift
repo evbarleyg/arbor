@@ -361,9 +361,7 @@ extension World {
 
   /// Sources/arborctl/main.swift and `ArborApp.handleLine`
   func arborctl(_ words: [String]) -> Reply {
-    var arguments = words
-    let rawJSON = arguments.first == "--json"
-    if rawJSON { arguments.removeFirst() }
+    var (arguments, rawJSON) = World.arborctlArguments(words)
     if arguments.isEmpty || arguments == ["--help"] || arguments == ["-h"] { arguments = ["help"] }
     // Answered by arborctl itself, because people read the help before they have Arbor running.
     if arguments == ["help"] { return .printing(Command.helpText) }
