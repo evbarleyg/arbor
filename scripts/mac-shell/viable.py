@@ -54,6 +54,7 @@ MOST = 64
 READ_ELSEWHERE = {
     "sampler.blind_ms_max": "jolts.py: an act during which the sampler was blind for longer is not judged",
     "sampler.late_ms": "sampler.swift: a sample that comes later than this after the one before is counted as late",
+    "input.release_ms_max": "jolts.py: a single release that reaches the apps later than this, with a process of Arbor's there, is input-held",
 }
 
 
@@ -77,6 +78,10 @@ class Numbers(dict):
 
     def items(self):
         return [(key, self[key]) for key in self]
+
+    def plain(self):
+        """A copy in ordinary dictionaries. It asks nothing: `json.dumps` goes through `items` and leaves every number looking read."""
+        return {key: Numbers(value).plain() if isinstance(value, dict) else copy.deepcopy(value) for key, value in dict.items(self)}
 
     def leaves(self):
         for key in self:
@@ -159,12 +164,22 @@ def why_not(run, gate, commit):
         return "the sampler gave no account of itself"
     if count(sampler["late"], "late") / sampler["samples"] > gate["sampler"]["share_of_samples_late_max"]:
         return f"{sampler['late']} of {sampler['samples']} samples came late"
+    if manifest["kind"] != "sabotage" and not heard(run):
+        return "it does not say how late presses, releases and keys reached the apps: the witness saw nothing"
     # In a run without Arbor there is nothing of Arbor's to judge: it is there to be compared with.
     if manifest["kind"] != "control":
         judged = sum(1 for act in acts if act.get("judged") is True)
         if judged / len(acts) < gate["share_of_acts_judged_min"]:
             return f"only {judged} of {len(acts)} acts were judged"
     return None
+
+
+def heard(run):
+    """{kind of event: within how many µs 99 in 100 of them reached the apps}, as jolts.py counted them. Empty if the run does not say."""
+    kinds = (run.get("input") or {}).get("kinds")
+    if not isinstance(kinds, dict):
+        return {}
+    return {kind: count(told.get("p99_us") if isinstance(told, dict) else None, f"{name_of(run)}: the lateness of {kind}") for kind, told in kinds.items()}
 
 
 def journey(manifest):
@@ -244,6 +259,34 @@ def judge(ledger, gate, listed=None):
         if run["manifest"].get("kind") == "control" and not excuses[id(run)]:
             found = alone.setdefault(journey(run["manifest"]), set())
             found.update((finding["detector"], finding["id"]) for finding in run.get("findings") or [])
+
+    # Who holds input back. A figure over a run says what the journey is made of as much as who held anything: a press on a window of an app that is not in front takes
+    # macOS twenty times as long as any other. So like is compared with like: a journey with its own control, kind of event by kind of event. Of several controls the
+    # quickest is the measure.
+    quiet, met, compared = {}, set(), set()
+    for run in runs:
+        if run["manifest"].get("kind") == "control" and not excuses[id(run)]:
+            measure = quiet.setdefault(journey(run["manifest"]), {})
+            for kind, late in heard(run).items():
+                measure[kind] = min(late, measure.get(kind, late))
+    for run in runs:
+        if run["manifest"].get("kind") not in COUNTED or excuses[id(run)] or journey(run["manifest"]) not in quiet:
+            continue
+        met.add(journey(run["manifest"]))
+        for kind, late in sorted(heard(run).items()):
+            alone_late = quiet[journey(run["manifest"])].get(kind)
+            if alone_late is None:
+                continue
+            compared.add(kind)
+            if late > alone_late + 1000 * gate["input"]["p99_more_ms_max"]:
+                fails += 1
+                reasons.append(f"input-held in {name_of(run)}: 99 in 100 events of the kind {kind} reached the apps within {late / 1000:.1f} ms, "
+                               f"in the same journey without Arbor within {alone_late / 1000:.1f}")
+    for run in runs:
+        if run["manifest"].get("kind") == "control" and not excuses[id(run)] and journey(run["manifest"]) not in met:
+            reasons.append(f"{name_of(run)} is the control of no journey that counts: there is nothing to compare it with")
+    for kind in sorted({kind for run in runs if run["manifest"].get("kind") in COUNTED and not excuses[id(run)] for kind in heard(run)} - compared):
+        reasons.append(f"events of the kind {kind} were compared with no run without Arbor: nobody knows whether they are held back")
 
     for run in runs:
         manifest, findings = run["manifest"], run.get("findings") or []
@@ -471,13 +514,14 @@ def account(sampler):
 
 def run_from(directory):
     """One run of the ledger, from what its script and jolts.py left in a directory."""
-    run = {"manifest": read_json(os.path.join(directory, "run.json")), "sampler": {}, "acts": [], "findings": []}
+    run = {"manifest": read_json(os.path.join(directory, "run.json")), "sampler": {}, "input": None, "acts": [], "findings": []}
     path = os.path.join(directory, "day-findings.json")
     # A run that ended before its report is in the ledger all the same: it was started, so it is accounted for.
     if not os.path.exists(path):
         return run
     found = read_json(path)
     run["sampler"] = account(found.get("sampler"))
+    run["input"] = found.get("input")
     times = {}
     for step in found.get("steps") or []:
         slug = step.get("slug") or "?"
@@ -539,6 +583,7 @@ def perfect(gate):
     wanted += ["switch"] * (len(plan) * per_run - len(wanted))
     walks = -(-len(plan) * gate["share_of_acts_from_walks_min"] // 1)
     sampler = {"samples": 30000, "late": 0}
+    arrived = {"kinds": {kind: {"events": 100, "p99_us": late} for kind, late in (("down", 2000), ("forward", 20000), ("up", 1500), ("key", 900))}}
     runs = []
 
     def manifest(number, kind, cell, cast):
@@ -551,16 +596,19 @@ def perfect(gate):
     still = dict.fromkeys(gate["tiling"], gate["reduce_motion"]["acts_that_move_per_tiling_min"])
     for number, (cell, cast) in enumerate(plan):
         acts = [{"id": f"{kind}#{index}", "act": kind, "judged": True} for index, kind in enumerate(wanted[number * per_run:(number + 1) * per_run])]
-        runs.append({"manifest": manifest(number, "walk" if number < walks else "day", cell, cast), "sampler": dict(sampler), "acts": acts, "findings": []})
+        runs.append({"manifest": manifest(number, "walk" if number < walks else "day", cell, cast), "sampler": dict(sampler), "input": copy.deepcopy(arrived), "acts": acts, "findings": []})
         moving = sum(1 for act in acts if act["act"] in gate["reduce_motion"]["kinds_that_move"])
         if still[cell[0]] > 0 and moving:
             still[cell[0]] -= moving
             runs[-1]["manifest"].update(reduce_motion=True, stage_seen=False)
     for again in range(gate["controls"]["without_arbor_per_cell_min"]):
         for number, cell in enumerate(cells):
+            # The same journey as one in its cell, with Arbor not running.
+            model = next(run["manifest"] for run in runs if (run["manifest"]["tiling"], run["manifest"]["display"]) == cell)
             runs.append({
-                "manifest": manifest(5000 + again * len(cells) + number, "control", cell, gate["cast"][0]), "sampler": dict(sampler),
-                "acts": [{"id": "switch#0", "act": "switch", "judged": False}], "findings": [],
+                "manifest": dict(manifest(5000 + again * len(cells) + number, "control", cell, model["cast"]), script=model["script"], seed=model["seed"],
+                                 reduce_motion=model["reduce_motion"]),
+                "sampler": dict(sampler), "input": copy.deepcopy(arrived), "acts": [{"id": "switch#0", "act": "switch", "judged": False}], "findings": [],
             })
     for again in range(gate["controls"]["sabotage_runs_min"]):
         offences = [{"detector": detector, "id": f"idle#{index}"} for index, detector in enumerate(gate["detectors"])]
@@ -732,6 +780,54 @@ def self_test():
     expect("… which do not agree how many they are", lambda l: (batch(l), every(l, "walk")[0]["manifest"].update(parts=3)), "INVALID", "do not agree how many", listed=batched)
     expect("… both calling themselves the first", lambda l: (batch(l), every(l, "walk")[1]["manifest"].update(part=1)), "INVALID", "is in the ledger twice", listed=batched)
 
+    # Who holds input back: a journey against its own control, kind of event by kind of event.
+    more = 1000 * gate["input"]["p99_more_ms_max"]
+
+    def pair(ledger):
+        """A control, and the journeys it is the control of."""
+        control = every(ledger, "control")[0]
+        return control, [run for run in every(ledger, *COUNTED) if journey(run["manifest"]) == journey(control["manifest"])]
+
+    def late(run, kind, by):
+        run["input"]["kinds"][kind]["p99_us"] += by
+
+    expect("presses that bring an app forward are held back", lambda l: late(pair(l)[1][0], "forward", more + 1), "NOT VIABLE", "input-held in run")
+    expect("… by just what is allowed", lambda l: late(pair(l)[1][0], "forward", more), "VIABLE", "")
+    expect("… and so are they without Arbor", lambda l: (late(pair(l)[1][0], "forward", more + 1), late(pair(l)[0], "forward", more + 1)), "VIABLE", "")
+    expect("keys are held back, and presses are quicker by as much: kinds are not set off against each other",
+           lambda l: (late(pair(l)[1][0], "key", more + 1), late(pair(l)[1][0], "forward", -more)), "NOT VIABLE", "of the kind key")
+    def one_more(ledger, of, **changes):
+        """The same journey, or its control, played once more in a run of its own, which the gate does not need."""
+        extra = copy.deepcopy(of)
+        extra["manifest"].update(run="8200", **changes)
+        ledger["runs"].append(extra)
+        return extra
+
+    and_8200 = {**everything, ("8200", 1): {1}}
+    expect("the same journey played twice", lambda l: one_more(l, pair(l)[1][0]), "VIABLE", "", listed=and_8200)
+    expect("… and held back the second time", lambda l: late(one_more(l, pair(l)[1][0]), "up", more + 1), "NOT VIABLE", "input-held in run 8200", listed=and_8200)
+    expect("a run that does not count is compared with nothing", lambda l: late(one_more(l, pair(l)[1][0], settings="mine"), "forward", more + 1), "VIABLE", "does not count: run 8200",
+           listed=and_8200)
+    expect("a control that does not count is no measure", lambda l: late(one_more(l, pair(l)[0], settings="mine"), "forward", -more - 1), "VIABLE", "does not count: run 8200", listed=and_8200)
+    def two_controls(ledger, by):
+        control = pair(ledger)[0]
+        slower = twin(ledger, "control", run="8100")
+        slower["manifest"].update({key: control["manifest"][key] for key in ("script", "seed", "tiling", "display", "cast", "reduce_motion")})
+        late(slower, "forward", by)
+        late(pair(ledger)[1][0], "forward", more + 1)
+    expect("of two controls the quicker is the measure", lambda l: two_controls(l, 5 * more), "NOT VIABLE", "input-held in run", listed={**everything, ("8100", 1): {1}})
+    expect("another journey's control excuses nothing", lambda l: (late(pair(l)[1][0], "forward", more + 1), [late(control, "forward", 5 * more) for control in every(l, "control")[1:]]),
+           "NOT VIABLE", "input-held in run")
+    expect("a journey that does not say how late input arrived", lambda l: pair(l)[1][0].update(input=None), "NOT VIABLE", "the witness saw nothing")
+    expect("… or says it of no kind", lambda l: pair(l)[1][0].update(input={"events": 5, "p99_us": 3}), "NOT VIABLE", "the witness saw nothing")
+    expect("a control that does not say it", lambda l: pair(l)[0].update(input=None), "NOT VIABLE", "the witness saw nothing")
+    expect("a lateness that is no number", lambda l: pair(l)[1][0]["input"]["kinds"]["key"].update(p99_us="soon"), "UNREADABLE", "the lateness of key")
+    expect("a lateness that is not there", lambda l: pair(l)[1][0]["input"]["kinds"]["key"].pop("p99_us"), "UNREADABLE", "the lateness of key")
+    expect("a control of no journey", lambda l: pair(l)[0]["manifest"].update(seed="another"), "NOT VIABLE", "is the control of no journey that counts")
+    expect("a kind of event no control has", lambda l: [control["input"]["kinds"].pop("forward") for control in every(l, "control")], "NOT VIABLE",
+           "events of the kind forward were compared with no run without Arbor")
+    expect("a kind of event one control lacks and another has", lambda l: pair(l)[0]["input"]["kinds"].pop("forward"), "VIABLE", "")
+
     # A hosted Mac's failure does not sink a commit, and who says that a part never ran is GitHub or the batch, never an absence.
     def stub(ledger, part=2, attempt=1, **more):
         """The manifest a job leaves in the place of a part before its first script begins."""
@@ -799,13 +895,14 @@ def self_test():
 
     # Numbers that change on the page change the verdict: none is written down here a second time.
     def with_number(path, value):
-        values = json.loads(json.dumps(gate))
+        values = gate.plain()
         target = values
         for key in path[:-1]:
             target = target[key]
         target[path[-1]] = value
         return Numbers(values)
 
+    expect("the page allows input to be held longer", lambda l: late(pair(l)[1][0], "forward", more + 1), "VIABLE", "", page=with_number(["input", "p99_more_ms_max"], gate["input"]["p99_more_ms_max"] + 1))
     expect("the page allows one oddity", lambda l: find(l, "walk", detector="focus", level="ODD"), "VIABLE", "", page=with_number(["odd_unexplained_max"], 1))
     expect("the page allows one failure", lambda l: find(l, "day", detector="jolt", level="FAIL"), "VIABLE", "", page=with_number(["fail_max"], 1))
     expect("the page asks for more apps a run", nothing, "INVALID", "too many fell out", page=with_number(["apps_per_run_min"], len(good["runs"][0]["manifest"]["apps"]) + 1))
@@ -828,6 +925,12 @@ def self_test():
         verdict, reasons, _ = judge(other, page, {(run["manifest"]["run"], 1): {1} for run in other["runs"]})
         if verdict != "VIABLE":
             failures.append(f"with {'.'.join(path)} at {value} the perfect ledger is {verdict}: {reasons[:3]}")
+    fresh = numbers()
+    if fresh.plain() != json.loads(json.dumps(numbers())) or fresh.used:
+        failures.append(f"a copy of the page's block is another block, or leaves numbers looking read: {sorted(fresh.used)[:4]}")
+    # What only another tool reads is never asked for here. If it looks read, something has walked over the whole block, and the test below has no teeth.
+    if set(READ_ELSEWHERE) & gate.used:
+        failures.append(f"numbers that only another tool reads look read here: {', '.join(sorted(set(READ_ELSEWHERE) & gate.used))}")
     unread = sorted(set(gate.leaves()) - gate.used - set(READ_ELSEWHERE))
     if unread:
         failures.append(f"numbers on the page that nothing reads: {', '.join(unread)}")
@@ -870,7 +973,7 @@ def self_test():
                 by_id[finding["id"]]["findings"].append({"detector": finding["detector"], "rule": "3", "level": finding["level"], "what": finding["what"]})
             if "offences" in run["manifest"]:
                 put(f"{directory}/run.json", dict(run["manifest"], offences=[dict(o, id=o["id"].replace("#", "-") + "#1") for o in run["manifest"]["offences"]]))
-            put(f"{directory}/day-findings.json", {"sampler": "samples 30000 seconds 540.0 hz 55.5 cost-ms 1.20 late 10 longest-gap-ms 200", "steps": steps})
+            put(f"{directory}/day-findings.json", {"sampler": "samples 30000 seconds 540.0 hz 55.5 cost-ms 1.20 late 10 longest-gap-ms 200", "input": run.get("input"), "steps": steps})
         put("runs/rings.json", good["rings"])
         listing = put("listed.txt", "".join(f"{identifier} {attempt} 1-1\n" for identifier, attempt in everything))
         ledger = os.path.join(scratch, "ledger.json")
