@@ -31,6 +31,8 @@
 #   H   A hidden app's window and a minimized window, both on A. A goes; they are unhidden and restored: is each whole, and within reach? (`whole`, `share`)
 #   P1  Windows that Arbor keeps out of view, with a display under both bottom corners of the main one: which corner does it choose? (`corner`) And how many
 #       setFrame calls go to each after each `displaysChanged`? (the trace)
+#   A further part, U, a desk session Arbor never saw, is played alone by probe-went-and-came-back-unseen.sh. Here it would follow P1: JOURNEY_PARTS="S F M L D H P1 U"
+#   above the last line, and some two minutes more.
 #
 # Arbor runs as a person runs it, all but its welcome window: every regular app's windows, shortcuts, event taps and menu bar item on, the settings it ships
 # with, not paused, nothing docked until d1. A trace is recorded of each part (ARBOR_RECORD=1).

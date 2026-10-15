@@ -1,9 +1,9 @@
 # The journey of probe-went-and-came-back.sh and of its control, second playing: a display goes and comes back, with four windows that live on it and two
 # that lie across its edge. Read in by those two, which say whether Arbor runs (JOURNEY_ARBOR=yes|no) and differ in nothing else but the places. Do not run it.
-# And by probe-the-top-corners.sh, which plays one part of it alone. JOURNEY_PARTS names the parts to play: S F M L D H P1 if nothing is said, which is
-# what the two play. T (without Arbor) is played only where it is named, after P1. A part that is not named is left out without a word but for the line
+# And by probe-went-and-came-back-unseen.sh and probe-the-top-corners.sh, each of which plays one part of it alone. JOURNEY_PARTS names the parts to play: S F M L D H P1 if nothing is said, which is
+# what the two play. U (with Arbor) and T (without) are played only where they are named, after P1. A part that is not named is left out without a word but for the line
 # `parts: …`; the build, the Mac, `stays`, the windows, `arbor`, `quit`, `end` and the clean-up are always played, s0 to s2 and z1 for any of S F M L D H, s2c for S and
-# F; STRADDLES and CARRIED are opened for all but T. D asks what it asks only straight after a return: name it with L. T alone (probe-the-top-corners.sh) has
+# F; STRADDLES and CARRIED are opened for all but U and T. D asks what it asks only straight after a return: name it with L. T alone (probe-the-top-corners.sh) has
 # no `stays` and opens LIVES, TEXT and JAVA only.
 #
 # Nothing here is a verdict. The script ends itself (`die`, exit code 2) only where going on would measure nothing: a tool that did not compile, a display
@@ -54,6 +54,7 @@
 #   h3   the app is unhidden, the window restored: `whole` says whether each lies wholly on one display      h4  plug A
 #  z1    unplug A
 #  P1, with Arbor alone: see part_P1
+#  U, with Arbor alone and only where JOURNEY_PARTS names it: a desk session Arbor never saw. u0a to u13: see part_U
 #  T, without Arbor and only where JOURNEY_PARTS names it: the top corners. t0 to t9: see part_T
 #   quit   Arbor quits (the control: nothing happens)               end    the display that stays is unplugged
 # A display that does not come where it belongs is moved there at once (`vdisplay move`), and the line `> plug` says which of the two it was.
@@ -71,7 +72,10 @@
 #                                before it, at a plug from after it; `went`: what the account had under A just before A last went
 #   clock: <step> done <n>s …    seconds since the script began
 # Besides: `put <step> <NAME> <id> asked <x y w h> took <x y w h>`; `carry <step> <NAME> <id> try <n> …` and `carried … dropped at <x y w h>`; `> plug`, `> unplug`;
-#   `window <NAME> …` once; `parts: …` once; `whole`, `parked`, `corner`, `visible` where the steps above name them;
+#   `window <NAME> …` once; `parts: …` once; `whole`, `parked`, `corner`, `visible` where the steps above name them; in U, for each window that lay wholly on A at u0d:
+#     waits <step> <NAME> <id> server <x y w h>                                          back <step> <NAME> <id> <yes|no> server <x y w h> was <x y w h>
+#     drops <step> <NAME> <id> server <x y w h> same-as-<step> <yes|no> same-as-<step> <yes|no>      moved <step> <NAME> <id> <yes|no> server <x y w h> was <x y w h>
+#     set <step> <NAME> <id> <n>            told <step> <yes|no>            who <step> <NAME> <id> macos-reported <yes|no> arbor-set <n> server <x y w h> early <n>
 #   `SKIPPED: <what>` for a step the clock left no time for (none begins after JOURNEY_BUDGET seconds, 900) and for what hangs on something that failed;
 #   `!!! …` for what spoils the comparison (a display is not where it was, a window is missing or not where it was put, Arbor has ended, an Arbor runs in the
 #   control) and for four findings: Arbor's log counts fewer windows than its account had under A; its account has fewer under A than lie on it; a window that
@@ -81,8 +85,8 @@
 #   samples.log         the window server's list sixty times a second (sampler.swift), from before `stays` until after `end`, with lib-day.sh's marks:
 #                       `M begin <n> <name>`, `M text <n> …`, `M end <n> …`, `M label <id> <NAME>`. A change of displays is called `display-<step>-…`
 #   macos-reports.log   what Accessibility reported of the apps' windows, to the millisecond (apptool watch), with the steps as `SCRIPT ==` lines
-#   traces/*.jsonl      with Arbor: went-and-came-back-S, -F, -M, -L, -D, -H, -P1, one for each part, every step as a remark (docs/TRACES.md)
-#   arbor-<script>.log  with Arbor: its log at debug level.
+#   traces/*.jsonl      with Arbor: went-and-came-back-S, -F, -M, -L, -D, -H, -P1, one for each part, -U1, -U2, -U3 for U, every step as a remark (docs/TRACES.md)
+#   arbor-<script>.log  with Arbor: its log at debug level. After U also arbor-<script>-2.log and -3.log, one for each start, each with all that came before it
 # A reader of the `Y` lines has to keep every display, by its id: `stays` is one of them.
 case "${JOURNEY_ARBOR:-}" in
   yes | no) ;;
@@ -93,12 +97,12 @@ esac
 JOURNEY_BUDGET=${JOURNEY_BUDGET:-900}
 JOURNEY_REST=${JOURNEY_REST:-4}
 JOURNEY_LONG=${JOURNEY_LONG:-30}
-# Which parts are played, whatever the order they are named in: always in the order S F M L D H P1 T.
+# Which parts are played, whatever the order they are named in: always in the order S F M L D H P1 U T.
 JOURNEY_PARTS=${JOURNEY_PARTS:-S F M L D H P1}
 for part in $JOURNEY_PARTS; do
   case "$part" in
-    S | F | M | L | D | H | P1 | T) ;;
-    *) echo "JOURNEY_PARTS: no part is called $part (S F M L D H P1 T)" >&2; exit 64 ;;
+    S | F | M | L | D | H | P1 | U | T) ;;
+    *) echo "JOURNEY_PARTS: no part is called $part (S F M L D H P1 U T)" >&2; exit 64 ;;
   esac
 done
 # Under the 1,200 s of scripts/ci-mac-shell.sh, so that a journey that hangs is ended by lib.sh's supervisor, which cleans up and lets the logs come back.
@@ -1030,6 +1034,227 @@ part_P1() {
 }
 if with_arbor && plays P1; then part_P1; fi
 
+# MARK: U, with Arbor alone: a desk session Arbor never saw
+
+# A goes while Arbor runs. Arbor quits. A comes and goes once more with no Arbor to see it. Arbor is started again, on the home it quit with, and then A comes back:
+# what does Arbor make of windows that macOS has had on A and dropped again meanwhile? Nothing is docked.
+#   u0a  only after P1: everything is shown again and DESK floats      u0b  every window home      u0c  plug A      u0d  the four are put wholly on A
+#   u1   unplug A, Arbor running. `waits`: where each window waits on the main display
+#   u2   Arbor quits (lib.sh's arbor_quit, which keeps its home; arbor_stop would give the next start a new one). `waits` again: a quit may move them
+#   u3   plug A, no Arbor (`pgrep -x Arbor`). `back`: is each at the very frame it had on A?
+#   u4   unplug A, no Arbor. `drops`: where macOS leaves each, and whether that is to the point where it waited at u2, and at u1
+#   u5   Arbor is started again, as at `arbor`, with the state it saved. `moved`: is each where it was at u4? `set`: the setFrame calls to each in the new trace up to
+#        the next step's remark. THE TRACE BEGINS ONLY WHEN ARBOR ANSWERS: what a start sets in its first moments is not in it. `moved`, samples.log and
+#        macos-reports.log would show it
+#   u6   plug A. `books`, and from the trace `told` (was there a `displaysChanged` in this step?) and `who`: whether macOS reported a move of the window (`changed`, user
+#        true) before it, how many setFrame calls Arbor made to it after it, and (`early`) before it
+#   u6p  only if one of them does not lie wholly on A: all are put there again, for the second pass to begin as the first did
+#   u7   unplug A, Arbor running. `waits`
+#   u8 to u13  the second pass, u2 to u7 again: u8 quit, u9 plug, u10 unplug, u11 start, u12 plug, u13 unplug. With u9h before the unplug that Arbor does not see: PICTURE's app
+#        is hidden and TEXT is minimized; and u12s once Arbor runs and A is back: both are shown again (`whole`)
+# The traces: -U1 up to the first quit, -U2 from the first start to the second quit, -U3 from the second start on. They are read where Arbor writes them, in its
+# home: each line goes to the file as it happens (TraceFile.swift), and `tell`, which asks Arbor for its state, makes it write what it held back for thinning.
+U_NAMES=""
+
+# note_frames <tag>: where the window server has U's windows now.  noted <tag> <NAME>: what was noted.  alike <a> <b>: yes if both are one frame, to the point
+note_frames() {
+  local name id
+  for name in $U_NAMES; do
+    eval "id=\$W_$name"
+    eval "NOTED_$1_$name=\$(real_frame_of \"\$id\" 2>/dev/null)"
+  done
+}
+noted() { eval "echo \"\${NOTED_$1_$2:-}\""; }
+alike() { if [ -n "$1" ] && [ "$1" = "$2" ]; then echo yes; else echo no; fi; }
+# waits <step>: notes the frames under the step's name, and prints them
+waits() {
+  local name id
+  note_frames "$1"
+  for name in $U_NAMES; do
+    eval "id=\$W_$name"
+    echo "waits $1 $name $id server $(noted "$1" "$name")"
+  done
+}
+
+trace_of() { ls "$ARBOR_HOME"/traces/*-"$1".jsonl 2>/dev/null | tail -n 1; }
+# in_the_trace <file> <a step's name in the marks, or - for the trace's beginning> <window id…>: reads from that step's remark (or the beginning) to the next step's remark.
+# Prints `told yes|no`: was there a `displaysChanged`? Then for each window: <id> <yes|no: a `changed` of it with user true before that> <setFrame calls to it before that> <after it>
+in_the_trace() {
+  python3 -c '
+import json, sys
+path, wanted, ids = sys.argv[1], sys.argv[2], [int(word) for word in sys.argv[3:]]
+inside, told, reported = wanted == "-", False, set()
+before, after = dict.fromkeys(ids, 0), dict.fromkeys(ids, 0)
+with open(path, encoding="utf-8", errors="replace") as lines:
+    for text in lines:
+        try:
+            line = json.loads(text)
+        except ValueError:
+            continue  # the last line, if Arbor is writing it at this moment
+        words = str(line.get("note", "")).split()
+        if len(words) >= 3 and words[0] == "step":
+            if inside:
+                break
+            inside = words[2] == wanted
+        elif not inside:
+            continue
+        elif line.get("event") == "displaysChanged":
+            told = True
+        elif line.get("event") == "changed" and line.get("user") and not told:
+            reported.add(line.get("window", {}).get("id"))
+        elif line.get("call") == "setFrame" and line.get("id") in before:
+            (after if told else before)[line["id"]] += 1
+print("told", "yes" if told else "no")
+for window in ids:
+    print(window, "yes" if window in reported else "no", before[window], after[window])' "$@"
+}
+# from_the_trace <set|who> <step> <trace's name> <the step's name in the marks, or ->
+from_the_trace() {
+  local what=$1 step=$2 file name id ids="" reported before after
+  file=$(trace_of "went-and-came-back-$3")
+  if [ -z "$file" ]; then
+    echo "SKIPPED: $what $step: Arbor's home holds no trace went-and-came-back-$3"
+    return 0
+  fi
+  for name in $U_NAMES; do
+    eval "id=\$W_$name"
+    ids="$ids $id"
+  done
+  # shellcheck disable=SC2086
+  in_the_trace "$file" "$4" $ids > "$APPS_TEMP/in-the-trace" 2>&1 || { echo "SKIPPED: $what $step: $(tail -n 1 "$APPS_TEMP/in-the-trace")"; return 0; }
+  [ "$what" != who ] || echo "told $step $(awk '$1 == "told" { print $2 }' "$APPS_TEMP/in-the-trace")"
+  for name in $U_NAMES; do
+    eval "id=\$W_$name"
+    reported="" before="" after=""
+    read -r _ reported before after <<< "$(awk -v id="$id" '$1 == id' "$APPS_TEMP/in-the-trace")"
+    if [ "$what" = set ]; then
+      echo "set $step $name $id $((before + after))"
+    else
+      echo "who $step $name $id macos-reported $reported arbor-set $after server $(real_frame_of "$id" 2>&1) early $before"
+    fi
+  done
+}
+
+# unseen <quit> <plug> <hide|-> <unplug> <start> <plug> <show|-> <unplug> <the step at which A went with Arbor running> <the trace from the start on>: one pass. Fails where it was cut short.
+unseen() {
+  local quit=$1 plug=$2 hide=$3 unplug=$4 start=$5 again=$6 show=$7 last=$8 went=$9 trace=${10} name id now there
+  in_time "$quit (Arbor quits)" || return 1
+  begin_step quit-and-start "quit-$quit" "$quit: Arbor quits, with A away"
+  arbor_quit
+  note "arbor gone"
+  # The log and the traces so far come to mac-shell/ now: whatever becomes of the rest.
+  arbor_log
+  rested
+  tell "$quit"
+  no_arbor "$quit"
+  waits "$quit"
+
+  change "$plug" plug A
+  A_is_there || return 1
+  no_arbor "$plug"
+  for name in $U_NAMES; do
+    eval "id=\$W_$name"
+    now=$(real_frame_of "$id" 2>/dev/null)
+    echo "back $plug $name $id $(alike "$now" "$(noted onA "$name")") server ${now:-- - - -} was $(noted onA "$name")"
+  done
+
+  if [ "$hide" != - ]; then
+    in_time "$hide (hidden and minimized)" || return 1
+    hide_and_minimize "$hide" "$hide: PICTURE's app is hidden and TEXT is minimized, both on A, with no Arbor running"
+  fi
+
+  change "$unplug" unplug A
+  ! A_is_there || return 1
+  no_arbor "$unplug"
+  note_frames "$unplug"
+  for name in $U_NAMES; do
+    eval "id=\$W_$name"
+    now=$(noted "$unplug" "$name")
+    echo "drops $unplug $name $id server ${now:-- - - -} same-as-$quit $(alike "$now" "$(noted "$quit" "$name")") same-as-$went $(alike "$now" "$(noted "$went" "$name")")"
+  done
+
+  in_time "$start (Arbor is started again)" || return 1
+  begin_step quit-and-start "arbor-$start" "$start: Arbor is started again, on the home it quit with"
+  if ! start_arbor; then
+    loud "$start: ARBOR DID NOT START AGAIN: the rest of U is left out"
+    check "Arbor starts again at $start" false
+    arbor_kill TERM
+    arbor_log
+    rested
+    tell "$start"
+    return 1
+  fi
+  record "went-and-came-back-$trace" || loud "$start: NO TRACE is being recorded ($(arborctl trace status 2>&1 | head -n 1))"
+  rested
+  tell "$start"
+  for name in $U_NAMES; do
+    eval "id=\$W_$name"
+    now=$(real_frame_of "$id" 2>/dev/null)
+    echo "moved $start $name $id $(if [ "$(alike "$now" "$(noted "$unplug" "$name")")" = yes ]; then echo no; else echo yes; fi) server ${now:-- - - -} was $(noted "$unplug" "$name")"
+  done
+
+  change "$again" plug A
+  A_is_there || return 1
+  from_the_trace set "$start" "$trace" -
+  from_the_trace who "$again" "$trace" "display-$again-plug-A"
+
+  if [ "$show" != - ]; then
+    in_time "$show (shown again)" || return 1
+    unhide_and_restore "$show" "$show: PICTURE's app is unhidden and TEXT is restored, with Arbor running and A back"
+  else
+    # The next pass begins as this one did.
+    there=yes
+    for name in $U_NAMES; do
+      eval "id=\$W_$name"
+      wholly_on "$DISPLAY_AT_A" "$(real_frame_of "$id" 2>/dev/null)" || there=no
+    done
+    [ "$there" = yes ] || put_on_A "${again}p" || return 1
+    note_frames onA
+  fi
+
+  change "$last" unplug A
+  ! A_is_there || return 1
+  waits "$last"
+}
+
+part_U() {
+  in_time "U, all of it" || return 0
+  if ! arbor_answers; then
+    echo "SKIPPED: U, all of it: it takes Arbor"
+    return 0
+  fi
+  part U1 "a desk session Arbor never saw"
+  if ! count docked 0 > /dev/null 2>&1; then
+    begin_step view show-u0a-all "u0a: everything is shown again, and DESK floats again: nothing is docked in this part"
+    ctl show-all
+    ctl float "$W_DESK"
+    rested
+    tell u0a
+  fi
+  put_home u0b || return 0
+  A_is_there || change u0c plug A
+  put_on_A u0d || return 0
+  U_NAMES=$ON_A
+  if [ -z "$U_NAMES" ]; then
+    echo "SKIPPED: u1 and what follows: no window lies wholly on A"
+    return 0
+  fi
+  note_frames onA
+  change u1 unplug A
+  ! A_is_there || return 0
+  waits u1
+  unseen u2 u3 - u4 u5 u6 - u7 u1 U2 || return 0
+  in_time "U, the second pass (u8 to u13)" || return 0
+  unseen u8 u9 u9h u10 u11 u12 u12s u13 u7 U3
+}
+if ! plays U; then
+  :
+elif with_arbor; then
+  part_U
+else
+  echo "SKIPPED: U, all of it: it takes Arbor, and this is the control"
+fi
+
 # MARK: T, without Arbor: the top corners
 
 # Asked through Accessibility for a place under the menu bar AT A TOP CORNER of the main display, where does a window end? On record so far are eight calls, all in the
@@ -1181,7 +1406,9 @@ fi
 step "the end"
 # Only a part that was cut short has left them so.
 [ -z "$AWAY" ] || unhide_and_restore end-shown "end-shown: PICTURE's app is unhidden and TEXT is restored"
-if with_arbor; then
+if with_arbor && [ -z "$ARBOR_PID" ]; then
+  begin_step quit-and-start quit "quit: nothing happens: Arbor quit in part U, which was cut short, and was not started again"
+elif with_arbor; then
   begin_step quit-and-start quit "quit: Arbor quits"
   # Quitting ends the trace. arbor_stop brings the log and the traces to mac-shell/.
   arbor_stop
@@ -1229,6 +1456,10 @@ if with_arbor; then
     [ -f "$file" ] || { loud "NO TRACE CAME BACK"; continue; }
     echo "mac-shell/traces/$(basename "$file"): $(lines_of "$file") lines, $(grep -c "displaysChanged" "$file") with displaysChanged in them"
   done
-  echo "mac-shell/$(arbor_log_name arbor): $(lines_of "$ARBOR_OUT/$(arbor_log_name arbor)") lines"
+  # One for each start. All starts share a home, and Arbor adds to the log it finds there: a later file begins with what the earlier ones hold.
+  for file in "$ARBOR_OUT/arbor-$ARBOR_NAME"*.log; do
+    [ -f "$file" ] || { loud "NO LOG OF ARBOR'S CAME BACK"; continue; }
+    echo "mac-shell/$(basename "$file"): $(lines_of "$file") lines"
+  done
 fi
 clock "all done"
