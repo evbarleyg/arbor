@@ -117,7 +117,7 @@ public struct OnboardingModel: Equatable, Sendable {
     public var state: State
     /// The state in a word or two, for VoiceOver: "Granted", "Not granted", "In order".
     public var status: String
-    /// Why it matters and what to do. Empty once the row is in order: a tick says enough, unless it will not last.
+    /// Why it matters and what to do. Empty once the row is in order: a tick says enough. But for one that will not last, on Check Setup….
     public var detail: String
     /// What is on, one line each, listed under the detail.
     public var points: [String] = []
@@ -226,7 +226,8 @@ public struct OnboardingModel: Equatable, Sendable {
   ///   - desktops: see `desktops`.
   ///   - isNewcomer: Arbor has never run on this Mac and nothing is docked.
   ///   - isPaused: the user has paused Arbor, so none of the moves would do anything.
-  ///   - signature: how this build is signed, if anybody said: it decides how long the permission lasts.
+  ///   - signature: how this build is signed, if anybody said: it decides how long the permission lasts. Without the permission that is
+  ///     said on every page; under the tick on Check Setup… alone.
   ///   - shortcut: the label of the shortcut that runs a command, e.g. ⌃⌥Space. A move without one is
   ///     explained by the menu instead, and with no shortcuts at all the rows about what collides
   ///     with them are left out.
@@ -255,7 +256,7 @@ public struct OnboardingModel: Equatable, Sendable {
       appsWithOwnShortcuts: appsWithOwnShortcuts, canFixSetup: canFixSetup, changed: page == .setup ? switchesChangedByArbor : [],
       givenBack: page == .setup ? switchesGivenBack : [], isPaused: isPaused,
       failure: fixSetupFailure, canDock: facts.accessibility && !isPaused,
-      lostShortcuts: lostShortcuts, isNewcomer: isNewcomer, signature: signature, shortcut: shortcut)
+      lostShortcuts: lostShortcuts, isCheckSetup: page == .setup, signature: signature, shortcut: shortcut)
     rows =
       page == .setup
       ? all
@@ -442,7 +443,7 @@ public struct OnboardingModel: Equatable, Sendable {
   private static func rows(
     _ facts: SystemFacts, windowsOutOfView: Int, offersScreenRecording: Bool, appsWithOwnShortcuts apps: [String],
     canFixSetup: Bool, changed: [MacSwitch], givenBack: [MacSwitch], isPaused: Bool, failure: String?, canDock: Bool,
-    lostShortcuts lost: [String], isNewcomer: Bool, signature: BuildInfo.Signature?, shortcut: (Command) -> String?
+    lostShortcuts lost: [String], isCheckSetup: Bool, signature: BuildInfo.Signature?, shortcut: (Command) -> String?
   ) -> [Row] {
     let settings = "Open Settings…"
     let stranded =
@@ -456,8 +457,9 @@ public struct OnboardingModel: Equatable, Sendable {
         state: facts.accessibility ? .done : .required, status: facts.accessibility ? "Granted" : "Not granted",
         detail: facts.accessibility
           // For whoever opens Check Setup while all is well, before the next time comes. Whoever downloads Arbor reads this too, so in a
-          // stranger's words: "signed ad hoc" is a builder's, and `doctor` and `make install` have it. Not in the first minute: no update is near.
-          ? (signature?.outlivesTheBuild == false && !isNewcomer
+          // stranger's words: "signed ad hoc" is a builder's, and `doctor` and `make install` have it. By the page and not by the person: there
+          // somebody has asked, on the first day too; the welcome stays bare for everybody.
+          ? (signature?.outlivesTheBuild == false && isCheckSetup
             ? "macOS will ask for this permission again after each update of Arbor, because Arbor is not yet signed with an Apple "
               + "Developer ID."
             : "")

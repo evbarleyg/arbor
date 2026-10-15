@@ -5279,6 +5279,29 @@
    ]
   },
   {
+   "id": "check-setup-on-the-first-day-had-nothing-under-the-tick",
+   "kind": "permissions",
+   "layer": "controller",
+   "expected": "A build signed ad hoc says under Check Setup's tick for Accessibility that macOS will ask again after each update. A test at the controller asked Check Setup and found the sentence.",
+   "happened": "On a hosted Mac, from a copy stamped and signed ad hoc, the permission granted: \"✔ Accessibility Granted\" and nothing under it. The sentence was kept from a newcomer, and a newcomer is whoever is on the first launch with nothing docked: for the whole first session, on Check Setup too. The test's harness was not on its first launch, and the harness that plays a first launch says nothing of how the build is signed, so no first launch on Linux has ever been a download's.",
+   "found": "`scripts/mac-shell/first-five-minutes.sh` on macOS 26.6.2 on 2026-10-15, by somebody who read the picture: no check looks for the sentence.",
+   "modelled": "partly",
+   "knobs": [
+    "Harness.launchForTheFirstTime"
+   ],
+   "guards": [
+    "test: whoeverOpensCheckSetupOnTheFirstDayIsToldHowLongThePermissionLasts",
+    "test: anAdHocSignatureIsNamedWithWhatItCosts"
+   ],
+   "copes": "OnboardingModel goes by the page and not by the person (the product owner's ruling): on Check Setup… always, on the welcome never.",
+   "hurt": 3,
+   "sources": [
+    "Sources/ArborCore/OnboardingModel.swift",
+    "Sources/ArborTesting/FakeWelcomeWindow.swift",
+    "scripts/mac-shell/first-five-minutes.sh"
+   ]
+  },
+  {
    "id": "clicks-fall-through-what-a-panel-does-not-draw",
    "kind": "input",
    "layer": "below the seam",

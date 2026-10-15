@@ -73,6 +73,25 @@ import Testing
     #expect(h.controller.onboardingModel(Self.healthy).row(.accessibility)?.detail == "")
   }
 
+  /// As a hosted Mac had it: a download, which is signed ad hoc, on its first day, the permission there, nothing docked yet. By the window's
+  /// own road, not by a model made for the test: the one above asked in a harness that was not on its first launch, and was green.
+  @Test func whoeverOpensCheckSetupOnTheFirstDayIsToldHowLongThePermissionLasts() {
+    let sentence = "macOS will ask for this permission again after each update of Arbor"
+    let h = Harness()
+    h.controller.buildInfo.signature = .adHoc
+    h.launchForTheFirstTime(permitted: true)
+    #expect(h.welcome.isOpen && h.welcome.model.isNewcomer && h.welcome.model.page == .permissions)
+    #expect(h.welcome.text?.contains("✔ Accessibility") == true)
+    #expect(h.welcome.text?.contains(sentence) == false, "the welcome stays bare")
+    #expect(h.run("check-setup").ok)
+    #expect(h.welcome.model.isNewcomer && h.welcome.model.page == .setup)
+    #expect(h.welcome.text?.contains(sentence) == true)
+    // Signed with a certificate there is nothing to tell.
+    h.controller.buildInfo.signature = .local
+    #expect(h.run("check-setup").ok)
+    #expect(h.welcome.text?.contains(sentence) == false)
+  }
+
   /// Whoever runs `doctor` has a problem, and should not have to look for it among what is in order.
   @Test func theWorstComesFirst() {
     var facts = Self.healthy

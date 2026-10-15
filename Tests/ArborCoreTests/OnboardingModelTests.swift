@@ -310,8 +310,13 @@ private let tuned = SystemFacts(accessibility: true, screenRecording: true, swit
     #expect(granted.pageToOpenOn == OnboardingModel(tuned).pageToOpenOn)
     // With a certificate, or where nobody said, a tick says enough.
     for signature: BuildInfo.Signature? in [.local, .issued, nil] { #expect(detail(tuned, signature) == "") }
-    // So it does in the first minute: no update is near.
-    #expect(OnboardingModel(tuned, isNewcomer: true, signature: .adHoc).row(.accessibility)?.detail == "")
+    // It goes by the page, not by the person. Whoever opens Check Setup… has asked, on the first day too, with nothing docked yet: seen
+    // on a Mac, a tick with nothing under it. The welcome stays bare for everybody: no update is near, and nobody asked.
+    #expect(OnboardingModel(tuned, isNewcomer: true, signature: .adHoc).row(.accessibility)?.detail == detail(tuned, .adHoc))
+    for isNewcomer in [true, false] {
+      let welcome = OnboardingModel(tuned, flow: OnboardingFlow(isReady: true), isNewcomer: isNewcomer, signature: .adHoc)
+      #expect(welcome.page == .permissions && welcome.row(.accessibility)?.detail == "")
+    }
   }
 
   @Test func otherWindowManagersAreNamed() throws {
