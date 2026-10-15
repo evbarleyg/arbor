@@ -103,6 +103,8 @@ The documenter decides **what** and **in what order**; executors decide
 | Complaints without an answer | none | `collab/scenarios/wanted/` is empty |
 | A newcomer who knows nothing: tasks done, wrong turns, surprises, against macOS alone | better, task by task | a hosted Mac, screenshots only |
 
+**A ruling does not turn a test round.** After two rulings against the trunk the tests, a scenario and a check on CI's Macs went on asking for what had been overruled: green meant that the fault was there, and the first person to try the build met both. So a ruling against what the trunk does comes with three things the same day, from whoever rules: its red scenario in `collab/scenarios/wanted/`; the list, by grep, of the tests, scenarios and Mac checks that hold Arbor to what was overruled; and a mark on each, so that their green is not counted as proof. And what is decided against a rule goes to the head of the line: a decision that is not in the build a person tries is worth nothing to them.
+
 A report says what a change did to these. Parity stays as a list of what the reference has, and `make parity` goes on guarding that what is marked shipped is proven:
 
 `make parity` runs the test suite, reads the real-window evidence in
