@@ -343,7 +343,9 @@ extension Controller {
   /// Not during a hold either, where it depends on who asked whether the view follows (Controller+Hold.swift), nor when
   /// macOS has just handed the keyboard on (`bringIntoViewIfFocused`): both are seen to when the focus is reported, as
   /// before. So is a window that turns out to refuse its slot, which only asking it can tell.
-  private func theViewGoesStraightTo(_ id: WindowID, dockedOn display: DisplayID) -> Bool {
+  ///
+  /// The same for a docked window that comes back with the keyboard (Controller+OneLayout.swift).
+  func theViewGoesStraightTo(_ id: WindowID, dockedOn display: DisplayID) -> Bool {
     let handedOn = keyboardHandOver.loss.map { now().timeIntervalSince($0.time) < Self.handOverTime } ?? false
     guard holdLevel == nil, drag == nil, !handedOn, windows[id]?.isPresent == true, let workspace = workspaces[display],
       let leaf = workspace.tree.leaf(containing: id)
@@ -351,9 +353,12 @@ extension Controller {
     // What macOS says beforehand, as the layout would note it.
     noteFixedSizes(of: [id])
     // The question to the window system last: most windows show where they are docked.
-    guard !theNextLayoutShows(id, on: display), system.focusedWindow() == id else { return false }
+    guard let skipped = theNextLayout(leavingOut: id, on: display), system.focusedWindow() == id else { return false }
     let floatingInView = workspace.floating.keys.sorted().filter { !parked.contains($0) }
       .compactMap { window in windows[window].map { (window: window, frame: $0.frame) } }
+    // From here on as if that layout had been carried out: whether the Desktop comes into view, and gathers what floats, is judged by
+    // what the display would have shown, not by what it showed before the window was there.
+    layouts[display] = skipped
     reveal(id, leaf: leaf, on: display)
     // As after every move that followed the keyboard (`bringIntoViewIfFocused`).
     keyboardHandOver.reveal = .init(

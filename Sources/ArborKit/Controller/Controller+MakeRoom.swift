@@ -65,19 +65,24 @@ extension Controller {
     return layout
   }
 
-  /// Whether the layout of a display as it stands now would show `window`: in its slot, or with the room `roomyLayout` would make
-  /// for it. On paper: no gap moves.
-  func theNextLayoutShows(_ window: WindowID, on displayID: DisplayID) -> Bool {
-    guard let plain = layout(of: displayID), plain.windowFrames[window] == nil else { return true }
+  /// The layout of a display as it stands now, if it would leave `window` out: it has no slot there, nor with the room `roomyLayout`
+  /// would make for it. Nil if it shows. On paper: no gap moves.
+  func theNextLayout(leavingOut window: WindowID, on displayID: DisplayID) -> Layout? {
+    // It begins as the layout does: where windows have only gone or come back, from the gaps that stood, and there no room is made
+    // (Controller+ThereAndBack.swift). Only a look.
+    let (asItIs, noted, standing) = (workspaces[displayID], treesBeforeRoomWasMade[displayID], standingGaps[displayID])
+    defer { (workspaces[displayID], treesBeforeRoomWasMade[displayID], standingGaps[displayID]) = (asItIs, noted, standing) }
+    if let stood = startFromTheGapsThatStood(on: displayID, for: .structure) { return stood.windowFrames[window] == nil ? stood : nil }
+    guard let plain = layout(of: displayID), plain.windowFrames[window] == nil else { return nil }
     guard settings.makeRoom, !gapsInHand, drag == nil, edgeResize == nil, var tree = workspaces[displayID]?.tree,
       let display = display(displayID)
-    else { return false }
+    else { return plain }
     let present = presentWindowIDs()
     let minimums = minimumSizes
     let (_, roomy, _) = MakeRoom.serve(
       &tree, camera: plain.camera, in: display.visibleFrame, options: options(for: displayID).layoutOptions,
       isPresent: { present.contains($0) }, minimumSize: { minimums[$0] }, terms: roomTerms(on: displayID))
-    return roomy.windowFrames[window] != nil
+    return roomy.windowFrames[window] == nil ? roomy : nil
   }
 
   /// - Parameter docking: a floating window about to be docked, for a preview: it no longer counts as on the Desktop.
