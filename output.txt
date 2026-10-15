@@ -1,0 +1,22 @@
+# mac-shell: scripts/mac-shell/probe-which-alert.sh at eaa9e4e, macOS 26.6.2, 2026-10-15T01:24Z
+-- after nothing: 0 alert(s) on screen
+sim-smoke.sh: exit 0, 7 s
+-- after sim-smoke: 0 alert(s) on screen
+scenarios.sh: exit 0, 8 s
+-- after scenarios: 0 alert(s) on screen
+release-tools-test.sh: exit 0, 37 s
+-- after release-tools-test: 1 alert(s) on screen
+34 3865 8 382 118 260 250 on UserNotificationCenter
+2026-10-15 01:24:35.927 Df tccd[373:2917] [com.apple.TCC:access] Platform binary prompting is 'Deny' because: is Platform Binary
+2026-10-15 01:24:36.045 Df tccd[154:2dcf] [com.apple.TCC:access] Platform binary prompting is 'Deny' because: is Platform Binary
+2026-10-15 01:24:37.993 Df tccd[373:2917] [com.apple.TCC:access] Platform binary prompting is 'Deny' because: is Platform Binary
+2026-10-15 01:24:37.997 Df tccd[373:2914] [com.apple.TCC:access] Platform binary prompting is 'Deny' because: is Platform Binary
+2026-10-15 01:24:38.001 Df tccd[373:2914] [com.apple.TCC:access] Platform binary prompting is 'Deny' because: is Platform Binary
+2026-10-15 01:24:52.840 Df tccd[373:3842] [com.apple.TCC:access] Platform binary prompting is 'Deny' because: is Platform Binary
+2026-10-15 01:24:52.847 Df tccd[373:416c] [com.apple.TCC:access] Platform binary prompting is 'Deny' because: is Platform Binary
+2026-10-15 01:24:52.856 Df tccd[373:419c] [com.apple.TCC:access] Platform binary prompting is 'Deny' because: is Platform Binary
+2026-10-15 01:24:52.864 Df tccd[373:3842] [com.apple.TCC:access] Platform binary prompting is 'Deny' because: is Platform Binary
+2026-10-15 01:24:52.872 Df tccd[373:416c] [com.apple.TCC:access] Platform binary prompting is 'Deny' because: is Platform Binary
+2026-10-15 01:24:52.910 Df tccd[373:3842] [com.apple.TCC:access] Platform binary prompting is 'Deny' because: is Platform Binary
+2026-10-15 01:24:52.915 Df tccd[373:419c] [com.apple.TCC:access] Platform binary prompting is 'Deny' because: is Platform Binary
+exit code 0
