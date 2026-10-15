@@ -97,8 +97,8 @@ check "the view is on Pair" eventually in_view Pair
 check "window 1 is out of view" eventually is parked "$W1"
 
 step "the menu"
-read -r item_x item_y <<< "$(status_item)"
-click "$item_x" "$item_y"
+# A right click: with something docked the item is a row of buttons, and a plain click in its middle presses Show the Desktop.
+open_menu
 shot 05-menu
 key escape
 
@@ -120,3 +120,25 @@ ctl resume
 check "and it does not come back" field_closed
 
 arbor_stop 07-quit
+
+step "the field drawn dark: empty, with a name, and with the red line under a name that is refused"
+# This Arbor's own windows alone: the Mac's appearance stays as it is.
+arbor_start 3 ARBOR_NO_HOTKEYS=0 ARBOR_APPEARANCE=dark
+ctl dock "$W1" left
+ctl dock "$W2" right
+# shellcheck disable=SC2046
+click $(center_of "$W2")
+key ctrl+opt+n
+check "⌃⌥N shows the field" eventually field_open
+shot 08-dark-empty
+type_keys shift+p a i r
+shot 09-dark-typed
+key return
+check "↩ names the space" eventually named Pair
+key ctrl+opt+n
+check "the field is open again, with the name" eventually field_open
+type_keys u p
+shot 10-dark-refused
+key escape
+check "⎋ closes it" eventually field_closed
+arbor_stop 11-dark-quit

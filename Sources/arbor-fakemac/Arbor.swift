@@ -271,6 +271,13 @@ final class WatchedOverlays: OverlayPresenter {
   /// field is not open.
   func typeIntoNameField(_ chord: KeyChord) -> Bool {
     guard namePanel?.shown == true, fake.namePrompt != nil else { return false }
+    switch (chord.modifiers, chord.key) {
+    case ([.command], .tab), ([.control], .left), ([.control], .right), ([.control], .up):
+      // macOS's own, as for the palette (`paletteTakes`): the field loses the keyboard and closes, and the key does what it does.
+      fake.cancelName()
+      return false
+    default: break
+    }
     switch chord.key {
     case .returnKey: fake.submitName(typed.text)
     case .escape: fake.cancelName()
