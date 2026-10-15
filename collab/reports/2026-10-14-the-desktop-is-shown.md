@@ -71,7 +71,12 @@ docks it at the edge of the display and resizes everything else.
   `SweptAsideTests.aClickOnAStripThatSlipsIsNoDrag` (preview, arrangement, frames: a mere click docks a floating window),
   `norIsOneOnTheStripOfAWindowThatWasLaidOutMeanwhile`, `whatHappensMeanwhileIsLaidOutAtOnce…` (the stage); the rehearsal of `check-sweep.sh`.
 - Controls that must go on passing: a drag that is flung, one that the menu bar stops, the same layout shown as motion with nothing swept.
-- Real windows: see the pull request.
+- Real windows: `check-sweep.sh` on a hosted Mac (macOS 26.6.2, as it comes), 62 of 62, with the sampler of the ordinary day beside it. In each of seven sweeps every
+  window changed its place in the window server's list exactly twice, out and back, also the one during which Arbor laid out. By the trace Arbor was told of
+  no drag, no resize and no window moved by hand, showed no preview, and through the five sweeps in which nothing was asked of it set no frame. The stage
+  went up for a `resize` with nothing swept, and not for the same while swept. Two real drags, one of them flung, were drags. The first seven steps are
+  `collab/evidence/traces/desktop-shown.jsonl`. (A first run came to 61 of 62: the control for the stage minimized a window, the Dock grew by it, the display's
+  visible frame with the Dock, and a layout for another frame is never shown as motion.)
 
 ## Not done, and why
 

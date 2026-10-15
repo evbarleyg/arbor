@@ -3047,7 +3047,8 @@
     "test: whatHappensMeanwhileIsLaidOutAtOnceSoThatNothingMovesOnceTheyAreBack",
     "test: theSweepAMacRecordedIsOne",
     "e2e: every window is where it was, by the window server",
-    "e2e: no stage went up over the bare desktop"
+    "e2e: no stage went up over the bare desktop",
+    "trace: desktop-shown.jsonl"
    ],
    "copes": "SweptAside.isSwept tells a sweep by the two views disagreeing. Arbor goes by Accessibility and lays out as ever, unseen, without a stage over the bare desktop (`Controller.stageTransition`). Settings.guardDesktopClicks keeps the click from macOS, but ships off until it has been seen at work on a Mac. As Arbor comes, `doctor` and the welcome window only name the macOS switch (`MacSwitch.clickWallpaper`).",
    "hurt": 1,
