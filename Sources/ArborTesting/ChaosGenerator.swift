@@ -31,6 +31,8 @@ public struct ChaosGenerator {
   /// Of the ordinary walks, those of a person who knows the nine keys, the menu and the mouse (ChaosGenerator+Ordinary.swift).
   let light: Bool
   var desk: Desk
+  /// Arbor has been quit because the Mac is restarted: what is open closes, and opens again under new numbers (ChaosGenerator+Ordinary.swift).
+  public internal(set) var isRestartingTheMac = false
 
   public init(
     seed: UInt64, ordinary: Bool = ProcessInfo.processInfo.environment["ARBOR_CHAOS_ORDINARY"] != nil,

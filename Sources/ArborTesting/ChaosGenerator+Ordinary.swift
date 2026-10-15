@@ -148,7 +148,31 @@ extension ChaosGenerator {
     var new = ChaosAction.NewWindow(id: WindowID(nextWindow), app: app.name, pid: Int32(1000 + index), frame: CGRect(origin: origin, size: size))
     nextWindow += 1
     (new.minimum, new.maximum, new.cells) = (app.minimum, app.maximum, app.cells)
+    // One word, as a script's title is, so that the window can open again under its title after a restart of the Mac.
+    if drawsFromEverything { new.title = "\(app.name)-\(new.id.rawValue)" }
     return new
+  }
+
+  /// The Mac restarts: every window closes, and after the login the same apps open the same windows again, where they were, under their titles and under new
+  /// numbers, a few seconds apart and in any order, some before Arbor is there and some after.
+  private mutating func planTheLogin(_ world: ChaosRunner) {
+    var again: [ChaosAction.NewWindow] = []
+    for (id, fake) in world.system.windows.sorted(by: { $0.key < $1.key }) {
+      planned.append(.close(id))
+      let snapshot = fake.snapshot
+      guard !snapshot.isFullScreen, random.chance(85) else { continue }
+      var new = ChaosAction.NewWindow(id: WindowID(nextWindow), app: snapshot.appName, pid: snapshot.pid, frame: snapshot.frame)
+      nextWindow += 1
+      (new.minimum, new.maximum) = (fake.minimumSize, fake.maximumSize)
+      new.cells = Self.realApps.first { $0.name == snapshot.appName }?.cells
+      // One word, as a script's title is.
+      new.title = snapshot.title.replacingOccurrences(of: " ", with: "-")
+      again.append(new)
+    }
+    var late: [ChaosAction.NewWindow] = []
+    for new in again { if random.chance(25) { planned.append(.open(new)) } else { late.insert(new, at: random.int(0...late.count)) } }
+    planned += [.launch, .advance(2)]
+    for new in late { planned += [.open(new), .react, .advance(random.pick([1, 2, 5])!), .react] }
   }
 
   /// A moment goes by, as it does between two things a person does: macOS reports, short timers run.
@@ -171,6 +195,11 @@ extension ChaosGenerator {
     if !planned.isEmpty { return planned.removeFirst() }
     let system = world.system
     guard world.isRunning else {
+      if isRestartingTheMac, !world.isPaused {
+        isRestartingTheMac = false
+        planTheLogin(world)
+        return planned.removeFirst()
+      }
       // Quit at the desk, started on the lap: the displays change while Arbor is not looking, and a window is put somewhere by hand.
       if desk.kind == .both, random.chance(world.isPaused ? 12 : 30) {
         desk.plugged = random.pick(Desk.Plugged.allCases.filter { $0 != desk.plugged })!
@@ -201,7 +230,7 @@ extension ChaosGenerator {
       default: return .advance(1)
       }
     }
-    enum Kind { case open, close, minimize, hide, click, desktopClick, commandTab, drag, edge, seam, tile, key, hold, menu, time, fullScreen, displays, cursor, summon, doubleClick }
+    enum Kind { case open, close, minimize, hide, click, desktopClick, commandTab, drag, edge, seam, tile, key, hold, menu, time, fullScreen, displays, cursor, summon, doubleClick, restartTheMac }
     let windows = system.windows.count
     let tiles = world.harness.overlays.tiles.values.reduce(0) { $0 + $1.count }
     let seams = world.harness.overlays.seams.values.reduce(0) { $0 + $1.count }
@@ -212,6 +241,7 @@ extension ChaosGenerator {
         (30, .menu), (30, .time), (4, .fullScreen), (desk.kind == .both ? 10 : 0, .displays), (16, .cursor), (6, .summon),
         // What came after the first frozen version (ChaosGenerator+Vocabulary.swift).
         (light && drawsFromEverything ? 20 : 0, .doubleClick),
+        (drawsFromEverything && windows > 1 ? 5 : 0, .restartTheMac),
       ].map { weight, kind in
         guard light else { return (weight, kind) }
         // The mouse first. No key summons an app.
@@ -323,8 +353,13 @@ extension ChaosGenerator {
     case .displays:
       desk.plugged = random.pick(Desk.Plugged.allCases.filter { $0 != desk.plugged })!
       thenAMoment([.settle])
-      return .displays(desk.displays, random.pick([.late, .silent, .first])!)
+      // `between` is what hosted Macs were recorded doing for nearly every window.
+      return .displays(desk.displays, random.pick(drawsFromEverything ? [.between, .between, .between, .late, .silent, .first] : [.late, .silent, .first])!)
     case .cursor: return .cursor(point(in: world))
+    case .restartTheMac:
+      // Arbor quits with everything else. What follows is planned once it has let go of the windows, from where they are then.
+      isRestartingTheMac = true
+      return .command("quit")
     case .doubleClick:
       // On a title bar: macOS zooms the window. Half the time again: back.
       guard let window = existing(world, .inView) else { return .flush }

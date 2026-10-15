@@ -82,6 +82,12 @@ extension ChaosRunner {
     var switchedTo: WindowID?
     var onlyTheAppWasReported = false
     var arborMovedItSince = false
+    /// The window that opened last, until somebody does something else.
+    var arrived: WindowID?
+    /// The windows there were when Arbor was last running, and whether this is a login after a restart of the Mac: Arbor has started among windows of which
+    /// none was there then, and since then windows have opened and time has passed, and nothing else.
+    var windowsWhenArborLeft: Set<WindowID> = []
+    var isALogin = false
     /// How many times Arbor had asked for the keyboard to go somewhere when the step began, and whether the last thing somebody did was to ask Arbor
     /// for something.
     var focusLogMark = 0
@@ -113,7 +119,7 @@ extension ChaosRunner {
   /// The detector of docs/VIABLE.md, section 5, that a rule of the walks stands for: one vocabulary on Linux and on a Mac.
   public nonisolated static func detector(for rule: String) -> String? {
     let table: [(prefix: String, detector: String)] = [
-      ("moved-twice", "jolt"), ("moved-again", "jolt"), ("sized-there-and-back", "jolt"), ("set-right-", "jolt"), ("strayed-between", "jolt"), ("eye-", "jolt"), ("flashed-", "flash"), ("flipped", "jolt"), ("moved-over-and-over", "stuck"), ("moved-", "moved-unasked"), ("fetched-", "moved-unasked"), ("there-and-back", "moved-unasked"), ("dragged-gap", "moved-unasked"), ("same-windows", "moved-unasked"), ("displays-out-and-back", "moved-unasked"), ("taken-", "moved-unasked"), ("floating-taken", "lost"), ("parked-before", "lost"), ("dock-took", "lost"), ("keyboard-taken", "focus"), ("plain-drag", "moved-unasked"), ("nothing-in-view", "lost"), ("docked-at-a-start", "moved-unasked"),
+      ("moved-twice", "jolt"), ("moved-again", "jolt"), ("sized-there-and-back", "jolt"), ("set-right-", "jolt"), ("strayed-between", "jolt"), ("eye-", "jolt"), ("flashed-", "flash"), ("flipped", "jolt"), ("moved-over-and-over", "stuck"), ("moved-", "moved-unasked"), ("fetched-", "moved-unasked"), ("there-and-back", "moved-unasked"), ("dragged-gap", "moved-unasked"), ("same-windows", "moved-unasked"), ("displays-out-and-back", "moved-unasked"), ("taken-", "moved-unasked"), ("floating-taken", "lost"), ("parked-before", "lost"), ("arrival-moved", "moved-unasked"), ("arrival-took", "lost"), ("dock-took", "lost"), ("keyboard-taken", "focus"), ("plain-drag", "moved-unasked"), ("nothing-in-view", "lost"), ("docked-at-a-start", "moved-unasked"),
       ("pause-and-resume", "moved-unasked"), ("left-its-place", "moved-unasked"), ("start-took", "lost"), ("quit-left", "lost"), ("displays-left", "lost"), ("switched-to-behind", "behind"),
       ("switched-to", "focus"), ("app-switch", "focus"), ("keyboard-", "focus"), ("size-", "size-lost"), ("home-", "lost"), ("lost", "lost"), ("out-of-reach", "lost"),
       ("placed-", "lost"), ("vanished", "lost"), ("parked-on-the-desktop", "lost"), ("restless", "stuck"), ("given-up", "stuck"),
@@ -158,6 +164,13 @@ extension ChaosRunner {
     seven.askedForEverything = asksForEverything(action)
     seven.tookAWayHome = action.parsedCommand.map { $0.bringsWindowsBack && !isPaused || $0 == .quit || $0 == .relayout } ?? false
     seven.switchedTo = nil
+    if case .open(let new) = action { seven.arrived = new.id } else { seven.arrived = nil }
+    if isRunning { seven.windowsWhenArborLeft = Set(system.windows.keys) }
+    switch action {
+    case .launch: seven.isALogin = !isRunning && !isPaused && !seven.windowsWhenArborLeft.isEmpty && seven.windowsWhenArborLeft.isDisjoint(with: system.windows.keys)
+    case .open: break
+    default: seven.isALogin = false
+    }
     switch action {
     case .tile, .palette, .pinch, .activate, .launch: seven.somebodyAskedArbor = true
     default: seven.somebodyAskedArbor = action.isACommand
@@ -392,6 +405,7 @@ extension ChaosRunner {
     homeDisplayViolations(after: action, &problems)
     emptyDeskViolations(after: action, &problems)
     floatingViolations(&problems)
+    arrivalViolations(after: action, &problems)
     parkedViolations(&problems)
     dockViolations(after: action, &problems)
     untouchedByTheChangeViolations(after: action, &problems)
@@ -596,6 +610,24 @@ extension ChaosRunner {
       && workspaces.values.allSatisfy {
         $0.tree.allWindows.isEmpty && $0.stashedWindows.isEmpty && $0.pinnedWindows.isEmpty && $0.summoned == nil && $0.filled == nil
       }
+  }
+
+  /// After a restart of the Mac the windows come back one by one, and each has its place kept with its room. One that takes its place moves alone: its neighbours
+  /// are where they will be, however many are still to come. (In the login in which the arrangement was saved, whoever is missing was closed: its place waits
+  /// without room, and its neighbours make room when it comes after all. And whoever changes the arrangement has taken it in hand.)
+  func arrivalViolations(after action: ChaosAction, _ problems: inout [InvariantViolation]) {
+    guard seven.isALogin, let arrived = seven.arrived, isRunning, wasRunningBefore, controller.workspaces.values.contains(where: { $0.isDocked(arrived) }),
+      controller.settings.newWindows == Settings().newWindows, controller.settings.rules.isEmpty
+    else { return }
+    asked("arrival")
+    for window in Set(movesSeenInThisStep.map(\.window)).sorted() where window != arrived && isFairGame(window) != nil {
+      // Where the two cannot both fit no room could be kept, and the one that was there first leaves: a name of its own.
+      let left = controller.parked.contains(window) && !parkedBefore.contains(window)
+      problems.append(
+        .init(
+          left ? "arrival-took-a-neighbour-out-of-view" : "arrival-moved-a-neighbour",
+          "\(arrived) opened and took the place that was kept for it, and Arbor \(left ? "took \(window) out of view" : "moved \(window)")"))
+    }
   }
 
   /// With nothing docked, kept in view, summoned or sent away there is no view that could leave a window out: none counts as out of view. (While one does, the
@@ -806,7 +838,11 @@ extension ChaosRunner {
     if seven.arrangementIsDue {
       seven.arrangementIsDue = false
       for (display, layout) in controller.layouts where !layout.windowFrames.isEmpty {
-        seven.arrangements[display] = (layout.camera, layout.windowFrames.keys.reduce(into: [:]) { $0[$1] = system.windows[$1]?.snapshot.frame })
+        // Only where Arbor put them: a docked window that macOS has zoomed, or a hand has taken, is not how the arrangement shares the display, and the way back
+        // to its slot is no fault. With one such window there is nothing to compare until the arrangement changes again.
+        seven.arrangements[display] = (
+          layout.camera, layout.windowFrames.keys.reduce(into: [:]) { $0[$1] = system.windows[$1].flatMap { $0.placeIsArborsDoing ? $0.snapshot.frame : nil } }
+        )
       }
       // A gap at its limit moves nothing, and a gap that did not move settles nothing.
       if seven.aGapWasDragged, seven.arrangements.values.allSatisfy({ $0.frames.allSatisfy { seven.framesBeforeTheGap[$0.key] == $0.value } }) {

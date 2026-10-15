@@ -535,6 +535,12 @@ private let b = WindowID(102)
     #expect(runner.step(.launch).contains { $0.rule == "docked-at-a-start" })
   }
 
+  /// macOS zooms a docked window at a double-click on its title bar; Show Everything is the way back that the line on screen names.
+  @Test func backIntoItsSlotFromMacOSsZoomIsNoFault() {
+    let zoomed = oneDocked + ["dock 102 right", "react", "settle", "double-click 101", "settle"]
+    #expect(!nets(after: zoomed, then: "key down show-all", "key up show-all", "settle").contains("same-windows-other-frames"))
+  }
+
   @Test func theSameWindowsInTheSameViewHaveTheSameFrames() {
     let arranged = oneDocked + ["dock 102 right", "react", "settle"]
     func wider(_ system: FakeWindowSystem) {
@@ -778,6 +784,17 @@ private let b = WindowID(102)
     #expect(!numbers(after: oneDocked + ["dock 102 right", "settle"], then: "zoom 101").contains("dock-took-out-of-view"))
   }
 
+  /// A login: two docked windows closed with the Mac; Arbor starts; they open again under their titles.
+  @Test func aWindowThatTakesItsKeptPlaceMovesAlone() {
+    let login = [
+      "open 101 Safari pid 1000 at 100 100 600 400 title News", "open 102 Notes pid 1001 at 200 100 600 400 title Todo", "launch", "settle", "dock 101 left",
+      "dock 102 beside 101 right", "settle", "quit", "close 101", "close 102", "launch", "advance 2", "open 201 Safari pid 1000 at 100 100 600 400 title News", "react", "advance 2",
+    ]
+    let second = "open 202 Notes pid 1001 at 200 100 600 400 title Todo"
+    #expect(!numbers(after: login, then: second, "react").contains("arrival-moved-a-neighbour"))
+    #expect(numbers(after: login, then: second, "react") { _ = $0.setFrame(self.rect(40, 60, 600, 400), of: WindowID(201)) }.contains("arrival-moved-a-neighbour"))
+  }
+
   /// The fault itself is the control, for as long as it is there: nothing is docked, an app is hidden, its display is unplugged, and its window goes to the corner.
   @Test func withNothingArrangedNoWindowCountsAsOutOfView() {
     let desk = ["displays main:0,0,1512,982:37,0,0,0* side:1512,-200,2560,1440:25,0,0,0 windows-first", "launch", "open 101 Terminal pid 1003 at 2000 200 800 600 min 177 60", "settle"]
@@ -882,6 +899,31 @@ private let b = WindowID(102)
     #expect((ChaosRunner.questionsAsked["plain-drag"] ?? 0) - (before["plain-drag"] ?? 0) > 1000)
     // Since a floating window's frame is its person's, Arbor moves one only out of view and back.
     #expect((ChaosRunner.questionsAsked["floating"] ?? 0) - (before["floating"] ?? 0) > 5)
+  }
+
+  /// Seeds beyond the frozen versions restart the Mac now and then: every window closes, Arbor starts, and the windows open again under their titles and new numbers.
+  @Test func walksBeyondTheFrozenVersionsRestartTheMac() {
+    var (restarts, returns) = (0, 0)
+    for seed in UInt64(5_000_001)...5_000_030 {
+      let runner = ChaosRunner()
+      var generator = ChaosGenerator(seed: seed, ordinary: true)
+      var titles = Set<String>()
+      for _ in 0..<300 {
+        let action = generator.next(runner)
+        if generator.isRestartingTheMac { restarts += 1 }
+        if case .open(let new) = action, let title = new.title { if !titles.insert(title).inserted { returns += 1 } }
+        _ = runner.step(action)
+      }
+    }
+    #expect(restarts > 10)
+    #expect(returns > 20)
+    // And no frozen seed does.
+    var frozen = ChaosGenerator(seed: 7, ordinary: true)
+    let runner = ChaosRunner()
+    for _ in 0..<400 {
+      _ = runner.step(frozen.next(runner))
+      #expect(!frozen.isRestartingTheMac)
+    }
   }
 
   /// `settings {}` at a script's head: the file holds nothing.

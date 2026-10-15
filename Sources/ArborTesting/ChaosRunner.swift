@@ -260,8 +260,8 @@ public final class ChaosRunner {
     let all =
       found + wayHomeViolations(after: action) + raiseViolations(after: action) + undoneViolations(after: action) + check(after: action)
     // Numbers, not gates: no walk, replay or test ends at them.
-    counted = all.filter { Self.countedRules.contains($0.rule) }
-    return counted.isEmpty ? all : all.filter { !Self.countedRules.contains($0.rule) }
+    counted = all.filter { Self.countedInThisRun.contains($0.rule) }
+    return counted.isEmpty ? all : all.filter { !Self.countedInThisRun.contains($0.rule) }
   }
 
   /// Where somebody other than Arbor last put each window, as seen from the corner of the display that shows most of it, and

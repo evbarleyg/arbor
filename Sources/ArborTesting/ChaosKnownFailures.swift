@@ -1,3 +1,5 @@
+import Foundation
+
 /// A bug the chaos test found that is not fixed yet: the rule it breaks, who has it, and the shrunk script.
 public struct ChaosKnownFailure: Sendable {
   /// The rule the script breaks. Random runs carry on past this rule for as long as the entry is here, so a rule
@@ -887,6 +889,86 @@ extension ChaosRunner {
         release
         """),
     ChaosKnownFailure(
+      rule: "own-frame-back", owner: "a floating window's frame is its person's: what macOS answers to \"back where it was\" is where it was", severity: 3,
+      story: "A floating window is pushed down by hand until less than its title bar shows. It goes out of view with the view and comes back a little short, because macOS puts no window there "
+        + "by request. The second time it comes back 140 points to the left and 319 up, fitted in: for the place it was stopped at no hand is on record. New since floating windows "
+        + "make way for nobody; it goes when they are no longer taken out of view.",
+      script: """
+        displays main:0,0,1440,900:25,0,48,0* windows-never
+        launch
+        open 104 Finder pid 1005 at 248 440 745 371 min 501 252
+        open 105 Notes pid 1001 at 381 133 760 560 min 709 300
+        grab 104
+        carry 1208 830
+        release
+        focus 105
+        key down dock left
+        key down zoom
+        key down zoom
+        key down zoom
+        key down zoom
+        """),
+    ChaosKnownFailure(
+      rule: "moved-twice-floating", owner: "less by default (Q29, board 0.5): Arbor never takes a floating window out of view", severity: 4,
+      story: "The corner where windows wait out of view lies beside a monitor that reaches lower than the laptop: a strip would show there. So a floating window is sent to the laptop's bottom "
+        + "right and, in the same breath, to its bottom left.",
+      script: """
+        displays main:0,0,1512,982:37,0,70,0* side:1512,-200,1920,1080:25,0,0,0 windows-never
+        open 101 Finder pid 1005 at 317 65 810 493 min 501 252
+        open 102 Finder pid 1005 at 61 67 1086 453 min 501 252
+        launch
+        focus 101
+        key down dock right
+        key down zoom
+        """),
+    ChaosKnownFailure(
+      rule: "fetched-before-any-dock", owner: "what is found counts as left, in every state: out of the Dock it comes back where macOS puts it", severity: 3,
+      story: "Nothing was ever docked. A window hangs at the foot of the monitor where a hand left it, its title bar in reach. Arbor is paused, the laptop goes, Arbor is resumed. ⌘M and back out "
+        + "of the Dock: Arbor pulls it 595 points up.",
+      script: """
+        displays main:0,0,1512,982:37,0,59,0* side:-2560,323,2560,1440:25,0,0,0 windows-never
+        open 102 Settings pid 1007 at -947 979 723 774 min 723 470 max 723 2000
+        launch
+        grab 102
+        carry -1590 1535
+        release
+        toggle-pause
+        displays side:0,0,2560,1440:25,0,59,0* windows-first
+        toggle-pause
+        minimize 102
+        restore 102
+        """),
+    ChaosKnownFailure(
+      rule: "home-not-whole", owner: "who takes a waiting place; and a size is given back whole where the window hangs over an edge (board 0.22)", severity: 3,
+      story: "After a restart of the Mac a window takes the place that was kept, and at Quit or a pause it is given the frame that was saved for the window of before, over the edge where that one "
+        + "hung: in the first script its own under another number, which macOS had cut at the edge; in the second a sibling with another title, which never was there.",
+      script: """
+        open 102 Terminal pid 1003 at 415 62 947 554 min 177 64 title Terminal-102 cells 7 15 2 4
+        launch
+        grab 102
+        carry 1135 390
+        release
+        via menu arrange
+        quit
+        close 102
+        open 107 Terminal pid 1003 at 661 380 779 559 min 177 64 title Terminal-102 cells 7 15 2 4
+        way-back quit
+        """,
+      """
+        displays main:0,0,1512,982:37,0,70,0* windows-never
+        launch
+        open 104 Settings pid 1007 at 688 280 723 572 min 723 470 max 723 2000 title Settings-104
+        grab 104
+        carry 1462 129
+        release
+        key down dock right
+        key up dock right
+        quit
+        close 104
+        open 108 Settings pid 1007 at -245.5 93 723 722 min 723 470 max 723 2000 title Settings-106
+        way-back pause
+        """),
+    ChaosKnownFailure(
       rule: "plain-drag-moved-another", owner: "less by default (Q29, board 0.4): a plain drag docks nothing", severity: 2,
       story: "Notes are docked at the right. A floating window is dragged to the foot of the display with no key held and let go: it docks, and the notes, which nobody touched, are made lower.",
       script: """
@@ -1230,6 +1312,11 @@ extension ChaosRunner {
   public nonisolated static let countedRules: Set<String> = [
     "eye-moved-twice", "eye-moved-twice-sizing", "eye-moved-again", "eye-moved-again-sizing",
     "floating-taken-out-of-view", "strayed-between", "dock-took-out-of-view", "displays-moved-the-untouched", "plain-drag-left-an-undo-step",
-    "parked-before-any-dock",
+    "parked-before-any-dock", "arrival-moved-a-neighbour", "arrival-took-a-neighbour-out-of-view",
   ]
+
+  /// The same without those that `ARBOR_CHAOS_GATES=rule,rule` makes gates for one run: they end walks there and are shrunk, which is how to read what is behind
+  /// a number, and how to see that it is 0 before taking its name out of the set.
+  nonisolated static let countedInThisRun = countedRules.subtracting(
+    (ProcessInfo.processInfo.environment["ARBOR_CHAOS_GATES"] ?? "").split(separator: ",").map(String.init))
 }
