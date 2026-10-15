@@ -1,0 +1,704 @@
+# mac-shell: scripts/mac-shell/check-terminal-cells.sh at 0b251d6, macOS 26.6.2, 2026-10-15T08:01Z
+
+== the Mac
+macOS 26.6.2 (25G83) on arm64
+built Arbor, the pointer tool and the app bundles in 9s
+1600 900 1600 900
+display: 1 0 0 1600 900 1600 900 1
+macOS's own window management, as it comes:
+com.apple.WindowManager EnableTilingByEdgeDrag: not set
+com.apple.WindowManager EnableTopTilingByEdgeDrag: not set
+com.apple.WindowManager EnableTilingOptionAccelerator: not set
+com.apple.WindowManager EnableTiledWindowMargins: not set
+com.apple.WindowManager EnableStandardClickToShowDesktop: not set
+Reduce Motion: false
+the sampler writes mac-shell/samples.log (pid 8871), the witness mac-shell/witness.log (pid 8890)
+
+== Before Arbor: the apps are open already
+
+-- 1 open-finder: opens finder
+> open -g -b com.apple.finder /tmp/arbor-apps.DHme68/scratch/told/…-grove
+pid 344 lists (id role subrole x y w h flags):
+  32 AXWindow AXStandardWindow 340 120 920 436 main,toolbar
+  0 AXScrollArea - 0 0 1600 900 fixed-size,fixed-position,no-close,no-minimize,no-zoom
+  w32 is finder
+  (quiet:480 ms) setup=1
+
+-- 2 open-safari: opens safari
+> open -g -b com.apple.Safari /tmp/arbor-apps.DHme68/scratch/told/…-page.html
+pid 9128 lists (id role subrole x y w h flags):
+  35 AXWindow AXStandardWindow 138 31 1324 791 main,toolbar
+  w35 is safari
+  (quiet:482 ms) setup=1
+
+-- 3 open-textedit: opens textedit
+> open -g -b com.apple.TextEdit /tmp/arbor-apps.DHme68/scratch/told/…-oak.txt
+pid 9375 lists (id role subrole x y w h flags):
+  46 AXWindow AXStandardWindow 165 65 673 439 main
+  w46 is textedit
+  (quiet:1751 ms) setup=1
+
+-- 4 open-terminal: opens terminal
+> open -g -b com.apple.Terminal 
+pid 9637 lists (id role subrole x y w h flags):
+  51 AXWindow AXStandardWindow 40 51 877 499 main
+  w51 is terminal
+  (quiet:933 ms) setup=1
+
+-- 5 open-notes: opens notes
+> open -g -b com.apple.Notes 
+pid 9928 lists (id role subrole x y w h flags):
+  54 AXWindow AXStandardWindow 300 105 1000 660 main,close-disabled,sheets=1
+  w54 is notes
+something is in the way:
+  AXWindow/AXStandardWindow 300 105 1000 660
+    AXButton/AXCloseButton 308 113 16 16
+    AXButton/AXZoomButton 354 113 16 16
+    AXButton/AXMinimizeButton 331 113 16 16
+    AXSheet/- 563 135 475 600
+      AXButton/- 934 686 85 30 "Continue"
+pressed "Continue": 0
+pressed "Cancel": 0
+  (quiet:478 ms) setup=1
+
+-- 6 open-calendar: opens calendar
+> open -g -b com.apple.iCal 
+pid 10539 lists (id role subrole x y w h flags):
+  60 AXWindow AXStandardWindow 200 86 935 598 main,toolbar
+  w60 is calendar
+  (quiet:1318 ms) setup=1
+
+-- 7 open-settings: opens settings
+> open -g -b com.apple.systempreferences 
+pid 10623 lists (id role subrole x y w h flags):
+  63 AXWindow AXStandardWindow 437 85 723 625 main,toolbar
+  w63 is settings
+  (quiet:395 ms) setup=1
+
+-- 8 open-preview: opens preview
+> open -g -b com.apple.Preview /tmp/arbor-apps.DHme68/scratch/told/…-leaf.png
+pid 10826 lists (id role subrole x y w h flags):
+  67 AXWindow AXStandardWindow 4 35 708 424 main,toolbar
+  w67 is preview
+  (quiet:777 ms) setup=1
+
+-- 9 open-mail: opens mail
+> open -g -b com.apple.mail 
+pid 11135 lists (id role subrole x y w h flags):
+  71 AXWindow AXStandardWindow 240 72 1120 630 main,close-disabled,sheets=1,toolbar
+  w71 is mail
+  (quiet:575 ms) setup=1
+the cast: finder safari textedit terminal notes calendar settings preview mail
+
+-- 10 tiling-acts: without Arbor: drags a window by its title bar against the menu bar and lets go
+> click 635 854
+> move 635 654
+> drag 536 98 800 0 --no-release
+> release
+  (quiet:1421 ms) setup=1
+
+-- 11 tiling-acts-back: drags it away again, a hand's breadth down
+> drag 672 43 800 130 --no-release
+> release
+  (quiet:1058 ms) setup=1
+macOS's tiling was seen to act: true
+  ✔ macOS's own tiling acts
+
+-- 12 look-around: looks at the screen
+  (quiet:350 ms) setup=1 own=all
+
+-- 13 input-before: a round of input: presses on windows behind and in front, keys, a scroll, a drag inside a window
+> click 1076 43
+> click 102 47
+> click 1076 43
+> click 102 47
+> click 1076 43
+> click 102 47
+> click 1076 43
+> click 102 47
+  8 presses on windows behind; textedit shows no free point of its title bar, so that is all
+  (quiet:667 ms) round=before posted=press:8,up:8
+
+== The walk
+
+-- 14 launch: starts Arbor
+session 1: Arbor pid 13133, ARBOR_LIMIT=none: running: 1 display, 0 docked and 9 floating, 0 out of view
+Arbor dev
+recording traces/2026-10-15-080348-day-1.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+  (quiet:964 ms) moves=,, everything=1 floating=32,35,46,51,54,60,63,67,71 docked=
+
+-- 15 input-started: a round of input: presses on windows behind and in front, keys, a scroll, a drag inside a window
+> click 1076 43
+> click 102 47
+> click 1076 43
+> click 102 47
+> click 1076 43
+> click 102 47
+> click 1076 43
+> click 102 47
+  8 presses on windows behind; textedit shows no free point of its title bar, so that is all
+  (quiet:590 ms) round=started posted=press:8,up:8 floating=32,35,46,51,54,60,63,67,71 docked=
+
+-- 16 dock-icon-terminal: clicks terminal's icon in the Dock
+> click 1276 854
+> move 1276 654
+  (quiet:375 ms) front=51 floating=32,35,46,51,54,60,63,67,71 docked=
+
+-- 17 dock-left: presses ⌃⌥⌘ and the left arrow
+> key ctrl+opt+cmd+left
+  ✔ it is docked
+  (quiet:520 ms) moves=,51, front=51 floating=32,35,46,54,60,63,67,71 docked=51 first=1
+
+-- 18 dock-icon-safari: clicks safari's icon in the Dock
+> click 243 854
+> move 243 654
+  (quiet:398 ms) front=35 floating=32,35,46,54,60,63,67,71 docked=51
+
+-- 19 dock-right: presses ⌃⌥⌘ and the right arrow
+> key ctrl+opt+cmd+right
+  ✔ it is docked
+  (quiet:749 ms) moves=51,35,51, front=35 floating=32,46,54,60,63,67,71 docked=35,51
+
+== Ten times away and back
+recording traces/2026-10-15-080417-day-2.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+  ✔ as docked: it is in its slot's corner, within a cell
+
+-- 20 view-frame: presses ⌃⌥↩
+> key ctrl+opt+return
+  (quiet:1006 ms) moves=any front=35 floating=32,46,54,60,63,67,71 docked=35,51
+
+-- 21 view-home: presses ⌃⌥0
+> key ctrl+opt+0
+  (quiet:811 ms) moves=any everything=1 tiles= keyboard=35 floating=32,46,54,60,63,67,71 docked=35,51
+  ✔ as docked, return 1: in its slot's corner, within a cell
+  ✔ as docked, return 1: the frame it had before (12 43 513 769 )
+
+-- 22 view-frame: presses ⌃⌥↩
+> key ctrl+opt+return
+  (quiet:906 ms) moves=any front=35 floating=32,46,54,60,63,67,71 docked=35,51
+
+-- 23 view-home: presses ⌃⌥0
+> key ctrl+opt+0
+  (quiet:834 ms) moves=any everything=1 tiles= keyboard=35 returns=21 floating=32,46,54,60,63,67,71 docked=35,51
+  ✔ as docked, return 2: in its slot's corner, within a cell
+  ✔ as docked, return 2: the frame it had before (12 43 513 769 )
+
+-- 24 view-frame: presses ⌃⌥↩
+> key ctrl+opt+return
+  (quiet:880 ms) moves=any front=35 floating=32,46,54,60,63,67,71 docked=35,51
+
+-- 25 view-home: presses ⌃⌥0
+> key ctrl+opt+0
+  (quiet:951 ms) moves=any everything=1 tiles= keyboard=35 returns=23 floating=32,46,54,60,63,67,71 docked=35,51
+  ✔ as docked, return 3: in its slot's corner, within a cell
+  ✔ as docked, return 3: the frame it had before (12 43 513 769 )
+
+-- 26 view-frame: presses ⌃⌥↩
+> key ctrl+opt+return
+  (quiet:841 ms) moves=any front=35 floating=32,46,54,60,63,67,71 docked=35,51
+
+-- 27 view-home: presses ⌃⌥0
+> key ctrl+opt+0
+  (quiet:778 ms) moves=any everything=1 tiles= keyboard=35 returns=25 floating=32,46,54,60,63,67,71 docked=35,51
+  ✔ as docked, return 4: in its slot's corner, within a cell
+  ✔ as docked, return 4: the frame it had before (12 43 513 769 )
+
+-- 28 view-frame: presses ⌃⌥↩
+> key ctrl+opt+return
+  (quiet:1116 ms) moves=any front=35 floating=32,46,54,60,63,67,71 docked=35,51
+
+-- 29 view-home: presses ⌃⌥0
+> key ctrl+opt+0
+  (quiet:858 ms) moves=any everything=1 tiles= keyboard=35 returns=27 floating=32,46,54,60,63,67,71 docked=35,51
+  ✔ as docked, return 5: in its slot's corner, within a cell
+  ✔ as docked, return 5: the frame it had before (12 43 513 769 )
+
+-- 30 view-frame: presses ⌃⌥↩
+> key ctrl+opt+return
+  ~ w35 fills 1569×767 of its slot 12,43 1576×767
+  (quiet:945 ms) moves=any front=35 floating=32,46,54,60,63,67,71 docked=35,51
+
+-- 31 view-home: presses ⌃⌥0
+> key ctrl+opt+0
+  (quiet:792 ms) moves=any everything=1 tiles= keyboard=35 returns=29 floating=32,46,54,60,63,67,71 docked=35,51
+  ✔ as docked, return 6: in its slot's corner, within a cell
+  ✔ as docked, return 6: the frame it had before (12 43 513 769 )
+
+-- 32 view-frame: presses ⌃⌥↩
+> key ctrl+opt+return
+  (quiet:1015 ms) moves=any front=35 floating=32,46,54,60,63,67,71 docked=35,51
+
+-- 33 view-home: presses ⌃⌥0
+> key ctrl+opt+0
+  (quiet:987 ms) moves=any everything=1 tiles= keyboard=35 returns=31 floating=32,46,54,60,63,67,71 docked=35,51
+  ✔ as docked, return 7: in its slot's corner, within a cell
+  ✔ as docked, return 7: the frame it had before (12 43 513 769 )
+
+-- 34 view-frame: presses ⌃⌥↩
+> key ctrl+opt+return
+  (quiet:1060 ms) moves=any front=35 floating=32,46,54,60,63,67,71 docked=35,51
+
+-- 35 view-home: presses ⌃⌥0
+> key ctrl+opt+0
+  (quiet:934 ms) moves=any everything=1 tiles= keyboard=35 returns=33 floating=32,46,54,60,63,67,71 docked=35,51
+  ✔ as docked, return 8: in its slot's corner, within a cell
+  ✔ as docked, return 8: the frame it had before (12 43 513 769 )
+
+-- 36 view-frame: presses ⌃⌥↩
+> key ctrl+opt+return
+  (quiet:820 ms) moves=any front=35 floating=32,46,54,60,63,67,71 docked=35,51
+
+-- 37 view-home: presses ⌃⌥0
+> key ctrl+opt+0
+  (quiet:752 ms) moves=any everything=1 tiles= keyboard=35 returns=35 floating=32,46,54,60,63,67,71 docked=35,51
+  ✔ as docked, return 9: in its slot's corner, within a cell
+  ✔ as docked, return 9: the frame it had before (12 43 513 769 )
+
+-- 38 view-frame: presses ⌃⌥↩
+> key ctrl+opt+return
+  (quiet:895 ms) moves=any front=35 floating=32,46,54,60,63,67,71 docked=35,51
+
+-- 39 view-home: presses ⌃⌥0
+> key ctrl+opt+0
+  (quiet:870 ms) moves=any everything=1 tiles= keyboard=35 returns=37 floating=32,46,54,60,63,67,71 docked=35,51
+  ✔ as docked, return 10: in its slot's corner, within a cell
+  ✔ as docked, return 10: the frame it had before (12 43 513 769 )
+
+== Another width
+recording traces/2026-10-15-080459-day-3.jsonl: 1 lines, 4 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+it is managed docked at 12 43 513 769
+
+-- left out: resize_gap terminal 45: something lies over the gap
+  ✘ the gap was moved: Terminal's slot is another (12 43 517 767)
+      picture: mac-shell/fail-check-terminal-cells-1.png
+      | display 0 0 1600 900, visible 0 31 1600 791, camera n2, back yes
+      |   Desktop          541 43 461 767
+      |   w32 521 120 501 436      floating
+      |   w35 1014 43 574 767      docked focused
+      |   w46 541 65 461 439       floating
+      |   w51 12 43 513 769        docked
+      |   w54 417 105 709 660      floating
+      |   w60 431 115 680 599      floating
+      |   w63 410 85 723 625       floating
+      |   w67 417 35 708 424       floating
+      |   w71 331 72 881 630       floating
+      log | INFO  trace day-2 ended: 2048 lines, trace off
+      log | INFO  trace day-3: recording to /tmp/arbor-shell.Az7ttj/home/traces/2026-10-15-080459-day-3.jsonl
+
+-- 40 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:405 ms) front=35 floating=32,46,54,60,63,67,71 docked=35,51
+  ✔ the gap moved: it is in its slot's corner, within a cell
+
+-- 41 view-frame: presses ⌃⌥↩
+> key ctrl+opt+return
+  (quiet:1029 ms) moves=any front=35 floating=32,46,54,60,63,67,71 docked=35,51
+
+-- 42 view-home: presses ⌃⌥0
+> key ctrl+opt+0
+  (quiet:855 ms) moves=any everything=1 tiles= keyboard=35 returns=39 floating=32,46,54,60,63,67,71 docked=35,51
+  ✔ the gap moved, return 1: in its slot's corner, within a cell
+  ✔ the gap moved, return 1: the frame it had before (12 43 513 769 )
+
+-- 43 view-frame: presses ⌃⌥↩
+> key ctrl+opt+return
+  (quiet:1050 ms) moves=any front=35 floating=32,46,54,60,63,67,71 docked=35,51
+
+-- 44 view-home: presses ⌃⌥0
+> key ctrl+opt+0
+  (quiet:771 ms) moves=any everything=1 tiles= keyboard=35 returns=42 floating=32,46,54,60,63,67,71 docked=35,51
+  ✔ the gap moved, return 2: in its slot's corner, within a cell
+  ✔ the gap moved, return 2: the frame it had before (12 43 513 769 )
+
+-- 45 view-frame: presses ⌃⌥↩
+> key ctrl+opt+return
+  (quiet:1048 ms) moves=any front=35 floating=32,46,54,60,63,67,71 docked=35,51
+
+-- 46 view-home: presses ⌃⌥0
+> key ctrl+opt+0
+  (quiet:813 ms) moves=any everything=1 tiles= keyboard=35 returns=44 floating=32,46,54,60,63,67,71 docked=35,51
+  ✔ the gap moved, return 3: in its slot's corner, within a cell
+  ✔ the gap moved, return 3: the frame it had before (12 43 513 769 )
+
+-- 47 view-frame: presses ⌃⌥↩
+> key ctrl+opt+return
+  (quiet:990 ms) moves=any front=35 floating=32,46,54,60,63,67,71 docked=35,51
+
+-- 48 view-home: presses ⌃⌥0
+> key ctrl+opt+0
+  (quiet:833 ms) moves=any everything=1 tiles= keyboard=35 returns=46 floating=32,46,54,60,63,67,71 docked=35,51
+  ✔ the gap moved, return 4: in its slot's corner, within a cell
+  ✔ the gap moved, return 4: the frame it had before (12 43 513 769 )
+
+-- 49 view-frame: presses ⌃⌥↩
+> key ctrl+opt+return
+  (quiet:951 ms) moves=any front=35 floating=32,46,54,60,63,67,71 docked=35,51
+
+-- 50 view-home: presses ⌃⌥0
+> key ctrl+opt+0
+  (quiet:775 ms) moves=any everything=1 tiles= keyboard=35 returns=48 floating=32,46,54,60,63,67,71 docked=35,51
+  ✔ the gap moved, return 5: in its slot's corner, within a cell
+  ✔ the gap moved, return 5: the frame it had before (12 43 513 769 )
+
+-- 51 view-frame: presses ⌃⌥↩
+> key ctrl+opt+return
+  (quiet:981 ms) moves=any front=35 floating=32,46,54,60,63,67,71 docked=35,51
+
+-- 52 view-home: presses ⌃⌥0
+> key ctrl+opt+0
+  (quiet:925 ms) moves=any everything=1 tiles= keyboard=35 returns=50 floating=32,46,54,60,63,67,71 docked=35,51
+  ✔ the gap moved, return 6: in its slot's corner, within a cell
+  ✔ the gap moved, return 6: the frame it had before (12 43 513 769 )
+
+-- 53 view-frame: presses ⌃⌥↩
+> key ctrl+opt+return
+  (quiet:993 ms) moves=any front=35 floating=32,46,54,60,63,67,71 docked=35,51
+
+-- 54 view-home: presses ⌃⌥0
+> key ctrl+opt+0
+  (quiet:775 ms) moves=any everything=1 tiles= keyboard=35 returns=52 floating=32,46,54,60,63,67,71 docked=35,51
+  ✔ the gap moved, return 7: in its slot's corner, within a cell
+  ✔ the gap moved, return 7: the frame it had before (12 43 513 769 )
+
+-- 55 view-frame: presses ⌃⌥↩
+> key ctrl+opt+return
+  (quiet:959 ms) moves=any front=35 floating=32,46,54,60,63,67,71 docked=35,51
+
+-- 56 view-home: presses ⌃⌥0
+> key ctrl+opt+0
+  (quiet:829 ms) moves=any everything=1 tiles= keyboard=35 returns=54 floating=32,46,54,60,63,67,71 docked=35,51
+  ✔ the gap moved, return 8: in its slot's corner, within a cell
+  ✔ the gap moved, return 8: the frame it had before (12 43 513 769 )
+
+-- 57 view-frame: presses ⌃⌥↩
+> key ctrl+opt+return
+  (quiet:898 ms) moves=any front=35 floating=32,46,54,60,63,67,71 docked=35,51
+
+-- 58 view-home: presses ⌃⌥0
+> key ctrl+opt+0
+  (quiet:728 ms) moves=any everything=1 tiles= keyboard=35 returns=56 floating=32,46,54,60,63,67,71 docked=35,51
+  ✔ the gap moved, return 9: in its slot's corner, within a cell
+  ✔ the gap moved, return 9: the frame it had before (12 43 513 769 )
+
+-- 59 view-frame: presses ⌃⌥↩
+> key ctrl+opt+return
+  (quiet:1051 ms) moves=any front=35 floating=32,46,54,60,63,67,71 docked=35,51
+
+-- 60 view-home: presses ⌃⌥0
+> key ctrl+opt+0
+  (quiet:793 ms) moves=any everything=1 tiles= keyboard=35 returns=58 floating=32,46,54,60,63,67,71 docked=35,51
+  ✔ the gap moved, return 10: in its slot's corner, within a cell
+  ✔ the gap moved, return 10: the frame it had before (12 43 513 769 )
+
+== A larger font
+recording traces/2026-10-15-080542-day-4.jsonl: 1 lines, 4 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+
+-- 61 click-terminal: clicks terminal's title bar
+> click 264 55
+> move 264 175
+  (quiet:362 ms) front=51 floating=32,46,54,60,63,67,71 docked=35,51
+
+-- 62 larger-font: presses ⌘+ in Terminal
+> key cmd+=
+  ~ w51 fills 517×757 of its slot 12,43 517×767
+  (quiet:1129 ms) moves=any floating=32,46,54,60,63,67,71 docked=35,51
+with the larger font: 12 43 517 757 , before: 12 43 513 769 
+  ✔ the font is larger: Terminal has another size (12 43 513 769 )
+
+-- 63 click-safari: clicks safari's title bar
+> click 1518 55
+> move 1518 175
+  (quiet:380 ms) front=35 floating=32,46,54,60,63,67,71 docked=35,51
+  ✔ a larger font: it is in its slot's corner, within a cell
+
+-- 64 view-frame: presses ⌃⌥↩
+> key ctrl+opt+return
+  (quiet:931 ms) moves=any front=35 floating=32,46,54,60,63,67,71 docked=35,51
+
+-- 65 view-home: presses ⌃⌥0
+> key ctrl+opt+0
+  ~ w51 fills 517×757 of its slot 12,43 517×767
+  (quiet:781 ms) moves=any everything=1 tiles= keyboard=35 returns=60 floating=32,46,54,60,63,67,71 docked=35,51
+  ✔ a larger font, return 1: in its slot's corner, within a cell
+  ✔ a larger font, return 1: the frame it had before (12 43 517 757 )
+
+-- 66 view-frame: presses ⌃⌥↩
+> key ctrl+opt+return
+  (quiet:1047 ms) moves=any front=35 floating=32,46,54,60,63,67,71 docked=35,51
+
+-- 67 view-home: presses ⌃⌥0
+> key ctrl+opt+0
+  ~ w51 fills 517×757 of its slot 12,43 517×767
+  (quiet:709 ms) moves=any everything=1 tiles= keyboard=35 returns=65 floating=32,46,54,60,63,67,71 docked=35,51
+  ✔ a larger font, return 2: in its slot's corner, within a cell
+  ✔ a larger font, return 2: the frame it had before (12 43 517 757 )
+
+-- 68 view-frame: presses ⌃⌥↩
+> key ctrl+opt+return
+  (quiet:1007 ms) moves=any front=35 floating=32,46,54,60,63,67,71 docked=35,51
+
+-- 69 view-home: presses ⌃⌥0
+> key ctrl+opt+0
+  ~ w51 fills 517×757 of its slot 12,43 517×767
+  (quiet:834 ms) moves=any everything=1 tiles= keyboard=35 returns=67 floating=32,46,54,60,63,67,71 docked=35,51
+  ✔ a larger font, return 3: in its slot's corner, within a cell
+  ✔ a larger font, return 3: the frame it had before (12 43 517 757 )
+
+-- 70 view-frame: presses ⌃⌥↩
+> key ctrl+opt+return
+  (quiet:1081 ms) moves=any front=35 floating=32,46,54,60,63,67,71 docked=35,51
+
+-- 71 view-home: presses ⌃⌥0
+> key ctrl+opt+0
+  ~ w51 fills 517×757 of its slot 12,43 517×767
+  (quiet:782 ms) moves=any everything=1 tiles= keyboard=35 returns=69 floating=32,46,54,60,63,67,71 docked=35,51
+  ✔ a larger font, return 4: in its slot's corner, within a cell
+  ✔ a larger font, return 4: the frame it had before (12 43 517 757 )
+
+-- 72 view-frame: presses ⌃⌥↩
+> key ctrl+opt+return
+  (quiet:1015 ms) moves=any front=35 floating=32,46,54,60,63,67,71 docked=35,51
+
+-- 73 view-home: presses ⌃⌥0
+> key ctrl+opt+0
+  ~ w51 fills 517×757 of its slot 12,43 517×767
+  (quiet:808 ms) moves=any everything=1 tiles= keyboard=35 returns=71 floating=32,46,54,60,63,67,71 docked=35,51
+  ✔ a larger font, return 5: in its slot's corner, within a cell
+  ✔ a larger font, return 5: the frame it had before (12 43 517 757 )
+
+-- 74 view-frame: presses ⌃⌥↩
+> key ctrl+opt+return
+  (quiet:1027 ms) moves=any front=35 floating=32,46,54,60,63,67,71 docked=35,51
+
+-- 75 view-home: presses ⌃⌥0
+> key ctrl+opt+0
+  ~ w51 fills 517×757 of its slot 12,43 517×767
+  (quiet:746 ms) moves=any everything=1 tiles= keyboard=35 returns=73 floating=32,46,54,60,63,67,71 docked=35,51
+  ✔ a larger font, return 6: in its slot's corner, within a cell
+  ✔ a larger font, return 6: the frame it had before (12 43 517 757 )
+
+-- 76 view-frame: presses ⌃⌥↩
+> key ctrl+opt+return
+  (quiet:1047 ms) moves=any front=35 floating=32,46,54,60,63,67,71 docked=35,51
+
+-- 77 view-home: presses ⌃⌥0
+> key ctrl+opt+0
+  ~ w51 fills 517×757 of its slot 12,43 517×767
+  (quiet:735 ms) moves=any everything=1 tiles= keyboard=35 returns=75 floating=32,46,54,60,63,67,71 docked=35,51
+  ✔ a larger font, return 7: in its slot's corner, within a cell
+  ✔ a larger font, return 7: the frame it had before (12 43 517 757 )
+
+-- 78 view-frame: presses ⌃⌥↩
+> key ctrl+opt+return
+  (quiet:1039 ms) moves=any front=35 floating=32,46,54,60,63,67,71 docked=35,51
+
+-- 79 view-home: presses ⌃⌥0
+> key ctrl+opt+0
+  ~ w51 fills 517×757 of its slot 12,43 517×767
+  (quiet:854 ms) moves=any everything=1 tiles= keyboard=35 returns=77 floating=32,46,54,60,63,67,71 docked=35,51
+  ✔ a larger font, return 8: in its slot's corner, within a cell
+  ✔ a larger font, return 8: the frame it had before (12 43 517 757 )
+
+-- 80 view-frame: presses ⌃⌥↩
+> key ctrl+opt+return
+  (quiet:1022 ms) moves=any front=35 floating=32,46,54,60,63,67,71 docked=35,51
+
+-- 81 view-home: presses ⌃⌥0
+> key ctrl+opt+0
+  ~ w51 fills 517×757 of its slot 12,43 517×767
+  (quiet:676 ms) moves=any everything=1 tiles= keyboard=35 returns=79 floating=32,46,54,60,63,67,71 docked=35,51
+  ✔ a larger font, return 9: in its slot's corner, within a cell
+  ✔ a larger font, return 9: the frame it had before (12 43 517 757 )
+
+-- 82 view-frame: presses ⌃⌥↩
+> key ctrl+opt+return
+  (quiet:933 ms) moves=any front=35 floating=32,46,54,60,63,67,71 docked=35,51
+
+-- 83 view-home: presses ⌃⌥0
+> key ctrl+opt+0
+  ~ w51 fills 517×757 of its slot 12,43 517×767
+  (quiet:834 ms) moves=any everything=1 tiles= keyboard=35 returns=81 floating=32,46,54,60,63,67,71 docked=35,51
+  ✔ a larger font, return 10: in its slot's corner, within a cell
+  ✔ a larger font, return 10: the frame it had before (12 43 517 757 )
+
+== The end
+recording traces/2026-10-15-080625-day-5.jsonl: 1 lines, 4 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+
+-- 84 input-last: a round of input: presses on windows behind and in front, keys, a scroll, a drag inside a window
+> click 264 55
+> click 725 47
+> click 1518 55
+> click 264 55
+> click 725 47
+> click 1518 55
+> click 264 55
+> click 725 47
+> click 1518 55
+> click 264 55
+> click 725 47
+  11 presses on windows behind; textedit shows no free point of its title bar, so that is all
+  (quiet:718 ms) round=last posted=press:11,up:11 floating=32,46,54,60,63,67,71 docked=35,51
+
+-- 85 quit: chooses Quit Arbor in Arbor's menu
+> click 1308 15 --right
+> key up
+> key return
+  ✔ Arbor ends within five seconds
+  ✘ ARBOR DIED
+  (quiet:733 ms) moves=any restores=all places=1 everything=1
+
+-- 86 input-after: a round of input: presses on windows behind and in front, keys, a scroll, a drag inside a window
+> click 1076 43
+> click 102 47
+> click 1076 43
+> click 102 47
+> click 1076 43
+> click 102 47
+> click 1076 43
+> click 102 47
+  8 presses on windows behind; textedit shows no free point of its title bar, so that is all
+  (quiet:678 ms) round=after posted=press:8,up:8
+
+-- 87 dock-icon-finder: clicks finder's icon in the Dock
+> click 131 854
+> move 131 654
+  (quiet:417 ms) front=32
+
+-- 88 dock-icon-safari: clicks safari's icon in the Dock
+> click 243 854
+> move 243 654
+  (quiet:430 ms) front=35
+
+-- 89 dock-icon-textedit: clicks textedit's icon in the Dock
+> click 1220 854
+> move 1220 654
+  (quiet:415 ms) front=46
+
+-- 90 dock-icon-terminal: clicks terminal's icon in the Dock
+> click 1276 854
+> move 1276 654
+  (quiet:483 ms) front=51
+
+-- 91 dock-icon-notes: clicks notes's icon in the Dock
+> click 803 854
+> move 803 654
+  (quiet:486 ms) front=54
+
+-- 92 dock-icon-calendar: clicks calendar's icon in the Dock
+> click 635 854
+> move 635 654
+  (quiet:389 ms) front=60
+
+-- 93 dock-icon-settings: clicks settings's icon in the Dock
+> click 1139 854
+> move 1139 654
+  (quiet:548 ms) front=63
+
+-- 94 dock-icon-preview: clicks preview's icon in the Dock
+> click 1332 854
+> move 1332 654
+  (quiet:411 ms) front=67
+
+-- 95 dock-icon-mail: clicks mail's icon in the Dock
+> click 355 854
+> move 355 654
+  (quiet:582 ms) front=73
+
+79 acts, 1 left out because they did not apply
+
+== the report (all of it: mac-shell/day-report.md)
+95 steps in 297 s, 82 of them judged, 5 with a rule broken. The sampler: samples 7625 seconds 217.6 hz 35.0 cost-ms 3.29 late 15 longest-gap-ms 331 whole-samples 10455 whole-seconds 298.4 whole-late 136.
+Input: 75 presses, releases, keys and scrolls reached the apps, half of them within 307 µs, 99 in 100 within 119244 µs, the latest after 119244 µs.
+By kind, listed only (events, half within, 99 in 100 within, µs): down 3, 1069, 3449; forward 2, 119244, 119244; key 65, 263, 29477; up 5, 1214, 9296. `forward`: a press on a window of an app that was not in front.
+The round of input `before` (events, half within µs): forward 8, 29640; up 8, 1229.
+The round of input `started` (events, half within µs): forward 8, 60058; up 8, 2405.
+The round of input `last` (events, half within µs): forward 11, 46090; up 11, 2098.
+The round of input `after` (events, half within µs): forward 8, 55532; up 8, 3480.
+Judged: no kind. Not down: fewer than 10 such events in a round without Arbor. Not forward: fewer than 10 such events in a round without Arbor. Not up: fewer than 10 such events in a round without Arbor. Not key: fewer than 10 such events in a round without Arbor. Not dragged: fewer than 10 such events in a round without Arbor. Not scroll: fewer than 10 such events in a round without Arbor.
+
+## Per rule
+
+| Rule | | Steps that checked it | Steps that broke it | Which |
+|---|---|---|---|---|
+| 1 | never fight macOS: where it answers a drag, Arbor stands aside | 0 | 0 |  |
+| 2 | nothing moves that the person did not move | 50 | 3 | 17 dock-left, 19 dock-right, 65 view-home |
+| 3 | no jolts: a window moves once, to where it ends up | 83 | 1 | 62 larger-font |
+| 4 | the window you switch to comes to the front and into view | 46 | 0 |  |
+| 5 | quitting, Float All and pause give windows their own sizes back | 1 | 1 | 85 quit |
+| 6 | what a person presses reaches the apps, at once | 18 | 0 |  |
+| L | no window is lost or stuck | 83 | 0 |  |
+| - | what the script itself checked | 83 | 1 | 85 quit |
+
+## Findings
+
+### Rule 2: nothing moves that the person did not move
+
+- ✘ **17 dock-left** (presses ⌃⌥⌘ and the left arrow): finder (w32) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 340,120 920×436 · +2234 ms 806,120 794×436
+- ✘ **17 dock-left** (presses ⌃⌥⌘ and the left arrow): safari (w35) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 138,31 1324×791 · +2234 ms 806,31 794×791
+- ✘ **17 dock-left** (presses ⌃⌥⌘ and the left arrow): textedit (w46) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 165,65 673×439 · +2234 ms 806,65 673×439
+- ✘ **17 dock-left** (presses ⌃⌥⌘ and the left arrow): notes (w54) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 300,105 1000×660 · +2234 ms 806,105 794×660
+- ✘ **17 dock-left** (presses ⌃⌥⌘ and the left arrow): calendar (w60) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 404,115 936×599 · +2234 ms 806,115 794×599
+- ✘ **17 dock-left** (presses ⌃⌥⌘ and the left arrow): settings (w63) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 437,85 723×625 · +2234 ms 806,85 723×625
+- ✘ **17 dock-left** (presses ⌃⌥⌘ and the left arrow): preview (w67) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 4,35 708×424 · +2234 ms 806,35 708×424
+- ✘ **17 dock-left** (presses ⌃⌥⌘ and the left arrow): mail (w71) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 240,72 1120×630 · +2234 ms 719,72 881×630
+- ~ **17 dock-left** (presses ⌃⌥⌘ and the left arrow): w73 of Mail moved along with a window of its app [moved-unasked]
+  - +0 ms 565,179 470×416 · +2234 ms 925,179 470×416
+- ✘ **19 dock-right** (presses ⌃⌥⌘ and the right arrow): finder (w32) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 806,120 794×436 · +1412 ms 521,120 501×436
+- ✘ **19 dock-right** (presses ⌃⌥⌘ and the right arrow): textedit (w46) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 806,65 673×439 · +1412 ms 541,65 461×439
+- ✘ **19 dock-right** (presses ⌃⌥⌘ and the right arrow): notes (w54) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 806,105 794×660 · +1412 ms 417,105 709×660
+- ✘ **19 dock-right** (presses ⌃⌥⌘ and the right arrow): calendar (w60) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 806,115 794×599 · +1412 ms 431,115 680×599
+- ✘ **19 dock-right** (presses ⌃⌥⌘ and the right arrow): settings (w63) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 806,85 723×625 · +1412 ms 410,85 723×625
+- ✘ **19 dock-right** (presses ⌃⌥⌘ and the right arrow): preview (w67) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 806,35 708×424 · +1412 ms 417,35 708×424
+- ✘ **19 dock-right** (presses ⌃⌥⌘ and the right arrow): mail (w71) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 719,72 881×630 · +1412 ms 331,72 881×630
+- ~ **19 dock-right** (presses ⌃⌥⌘ and the right arrow): w73 of Mail moved along with a window of its app [moved-unasked]
+  - +0 ms 925,179 470×416 · +1412 ms 537,179 470×416
+- ✘ **65 view-home** (presses ⌃⌥0): terminal (w51) is not back where it was after step 60: 12,43 517×757, it was at 12,43 513×769 [moved-unasked]
+
+### Rule 3: no jolts: a window moves once, to where it ends up
+
+- ~ **17 dock-left** (presses ⌃⌥⌘ and the left arrow): the last window came to rest 1917 ms after the key or the button, in Arbor's first act since it started [slow]
+- ~ **19 dock-right** (presses ⌃⌥⌘ and the right arrow): the last window came to rest 1055 ms after the key or the button [slow]
+- ✘ **62 larger-font** (presses ⌘+ in Terminal): terminal (w51) moved 2 times [jolt]
+  - +0 ms 12,43 513×769 · +191 ms 12,43 581×791 · +596 ms 12,43 517×757
+
+### Rule 5: quitting, Float All and pause give windows their own sizes back
+
+- ✘ **85 quit** (chooses Quit Arbor in Arbor's menu): terminal (w51) is 40,51 877×502; its own size was 40,51 877×499 [size-lost]
+
+### Rule -: what the script itself checked
+
+- ~ **30 view-frame** (presses ⌃⌥↩): w35 fills 1569×767 of its slot 12,43 1576×767 [script]
+- ~ **62 larger-font** (presses ⌘+ in Terminal): w51 fills 517×757 of its slot 12,43 517×767 [script]
+- ~ **65 view-home** (presses ⌃⌥0): w51 fills 517×757 of its slot 12,43 517×767 [script]
+- ~ **67 view-home** (presses ⌃⌥0): w51 fills 517×757 of its slot 12,43 517×767 [script]
+- ~ **69 view-home** (presses ⌃⌥0): w51 fills 517×757 of its slot 12,43 517×767 [script]
+- ~ **71 view-home** (presses ⌃⌥0): w51 fills 517×757 of its slot 12,43 517×767 [script]
+- ~ **73 view-home** (presses ⌃⌥0): w51 fills 517×757 of its slot 12,43 517×767 [script]
+- ~ **75 view-home** (presses ⌃⌥0): w51 fills 517×757 of its slot 12,43 517×767 [script]
+- ~ **77 view-home** (presses ⌃⌥0): w51 fills 517×757 of its slot 12,43 517×767 [script]
+- ~ **79 view-home** (presses ⌃⌥0): w51 fills 517×757 of its slot 12,43 517×767 [script]
+- ~ **81 view-home** (presses ⌃⌥0): w51 fills 517×757 of its slot 12,43 517×767 [script]
+- ~ **83 view-home** (presses ⌃⌥0): w51 fills 517×757 of its slot 12,43 517×767 [script]
+- ✘ **85 quit** (chooses Quit Arbor in Arbor's menu): Arbor's process ended, and nobody asked it to [crash]
+
+
+68 passed, 2 failed
+still running when the script had ended, and stopped now:
+  6435 sleep
+exit code 1

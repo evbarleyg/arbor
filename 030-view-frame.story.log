@@ -1,0 +1,44 @@
+30 view-frame: presses ⌃⌥↩
+expected: {'act': 'view', 'settled': 'quiet:945', 'moves': 'any', 'front': '35', 'floating': '32,46,54,60,63,67,71', 'docked': '35,51'}
+ODD rule -: w35 fills 1569×767 of its slot 12,43 1576×767
+
+08:04:39.133 SCREEN -- begin 30 view-frame
+08:04:39.133 SCREEN -- text 30 presses ⌃⌥↩
+08:04:39.330 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 9 stand-ins, 0.46 s
+08:04:39.331 DEBUG the stage kept the windows waiting 3 ms: its panel 0, 9 costumes 0 (0 not ready), the desktop 1, going up 2
+08:04:39.381 SCREEN w99 of Arbor 0,0 1600×900 (level 4)
+08:04:39.381 SCREEN safari (w35) 1014,43 586×767
+08:04:39.406 MACOS pid 9128 AXResized w35 AXWindow/AXStandardWindow 31 43 1569 767
+08:04:39.411 MACOS pid 9128 AXMoved w35 AXWindow/AXStandardWindow 12 43 1569 767
+08:04:39.414 MACOS pid 9128 AXResized w35 AXWindow/AXStandardWindow 12 43 1569 767
+08:04:39.415 MACOS pid 9637 AXMoved w51 AXWindow/AXStandardWindow 1599 790 513 769
+08:04:39.415 MACOS pid 9128 AXMoved w35 AXWindow/AXStandardWindow 12 43 1569 767
+08:04:39.416 MACOS pid 344 AXMoved w32 AXWindow/AXStandardWindow 1599 770 501 436
+08:04:39.418 MACOS pid 9375 AXMoved w46 AXWindow/AXStandardWindow 1599 790 461 439
+08:04:39.420 MACOS pid 9928 AXMoved w54 AXWindow/AXStandardWindow 1599 770 709 660
+08:04:39.422 MACOS pid 10539 AXMoved w60 AXWindow/AXStandardWindow 1599 770 680 599
+08:04:39.424 MACOS pid 10623 AXMoved w63 AXWindow/AXStandardWindow 1599 770 723 625
+08:04:39.425 MACOS pid 10826 AXMoved w67 AXWindow/AXStandardWindow 1599 770 708 424
+08:04:39.429 MACOS pid 11135 AXMoved w71 AXWindow/AXStandardWindow 1599 770 881 630
+08:04:39.432 SCREEN safari (w35) 12,43 1569×767
+08:04:39.432 SCREEN terminal (w51) 1599,790 513×769
+08:04:39.432 SCREEN preview (w67) 1599,770 708×424
+08:04:39.432 SCREEN calendar (w60) 1599,770 680×599
+08:04:39.432 SCREEN textedit (w46) 1599,790 461×439
+08:04:39.432 SCREEN w73 of Mail 1805,877 470×416
+08:04:39.432 SCREEN mail (w71) 1599,770 881×630
+08:04:39.432 SCREEN settings (w63) 1599,770 723×625
+08:04:39.432 SCREEN notes (w54) 1599,770 709×660
+08:04:39.432 SCREEN finder (w32) 1599,770 501×436
+08:04:39.437 DEBUG stage retargeted on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 9 stand-ins, 0.36014910697937014 s
+08:04:39.458 INFO  zoom: framed w35
+08:04:39.498 SCREEN w111 of Arbor 3,34 1587×785
+08:04:39.498 SCREEN w110 of Arbor left the screen
+08:04:39.498 SCREEN w116 of Arbor left the screen
+08:04:39.498 SCREEN front to back: safari w111 terminal preview w98 calendar textedit w73 mail settings notes finder
+08:04:39.673 SCREEN front to back: w111 safari terminal preview w98 calendar textedit w73 mail settings notes finder
+08:04:39.887 DEBUG stage down
+08:04:39.920 SCREEN w99 of Arbor left the screen
+08:04:40.789 SCREEN -- finding 30 - ODD w35 fills 1569×767 of its slot 12,43 1576×767
+08:04:40.789 SCREEN -- end 30 act=view settled=quiet:945 moves=any front=35 floating=32,46,54,60,63,67,71 docked=35,51
+08:04:41.118 SCRIPT == 31 view-home
