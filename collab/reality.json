@@ -7749,20 +7749,28 @@
    "kind": "geometry",
    "layer": "at the seam",
    "expected": "The left half of a visible frame (0,31 1024×674) is (0,31 512×674).",
-   "happened": "Where `macTiling()` says that it tiles, macOS put the window at (-1,31 512×674), at (-1,32 512×674) and once at (-1,32 513×674): a point off the display to the left, and a point lower in about half the cases. The whole screen is exact: (0,31 1024×674).",
-   "found": "Probe scripts and a real-drag run on a hosted Mac.",
-   "modelled": "no",
-   "knobs": [],
-   "guards": [],
-   "copes": "open",
+   "happened": "Where `macTiling()` says that it tiles, macOS put the window at (-1,31 512×674), at (-1,32 512×674) and at (-1,32 513×674), while its preview promised the half itself: (-15,16 542×704), the half grown by 15. It is not the left half's doing but the travel's. A window whose size changes on the way comes to rest a hair short of the tile, in whole points: a point further left if it came from the left, a point wider if it shrank, a point lower if its lower edge came from below the tile's. That one rule gives all fifteen sightings whose start is known, on displays 1024 and 1600 wide, on macOS 26.6 and on 15.7 with its margins ((7,34 500×665) for a tile of (8,33 500×665)), with Notes, Safari, TextEdit, Calendar and test windows, with Arbor running and without: a wide Safari window that came from the left rested at (799,31 801×791) in the right half of (800,31 800×791); windows that came from the right rested exactly, in the right half and on the whole screen. A window that is only moved arrives: one of a fixed size at (0,248), Notes that had the tile's size already at (0,31). One sighting is a point off the rule: Mail, which goes no narrower than 872, rested at (729,32 872×791), a point past the right half. Where a quarter ends, and a height that shrinks, have not been measured. All of it on displays of scale 1.",
+   "found": "Probe scripts, real-drag runs, days with real apps and recorded journeys on hosted Macs, read side by side.",
+   "modelled": "yes",
+   "knobs": [
+    "FakeWindowSystem.letMacOSTile"
+   ],
+   "guards": [
+    "test: theStandInLeavesAWindowWhereAMacDid",
+    "test: aTileAPointOffTheDisplayComesBackWhereMacOSLeftIt",
+    "test: aWindowOfAFixedSizeIsLeftToMacOSToo",
+    "e2e: macOS gives it its tile"
+   ],
+   "copes": "MacTiling.claim says where macOS takes a window that is let go, and there Arbor sets no frame, so a point is nothing to it: the window floats where macOS left it, comes back to that very point from out of view, and the ways out leave it there.",
    "hurt": 4,
    "touches": [
     "fought"
    ],
    "sources": [
-    "Sources/arbor-fakemac/main.swift",
-    "scripts/mac-shell/lib.sh",
-    "docs/TESTING.md"
+    "Sources/ArborTesting/FakeWindowSystem.swift",
+    "Tests/ArborKitTests/MacTilingTests.swift",
+    "Sources/ArborCore/MacTiling.swift",
+    "scripts/mac-shell/e2e-drag.sh"
    ]
   },
   {
@@ -8312,19 +8320,25 @@
    "expected": "With Reduce Motion on, as hosted Macs come, windows jump and nothing travels.",
    "happened": "macOS's own tiling still travels: 17 to 19 steps about 16 ms apart, 0.30 to 0.36 s from the release, easing out. A double-click on a title bar, by contrast, fills the screen in one report.",
    "found": "Probes of real title-bar drags on hosted Macs, with a watcher of Accessibility notifications running.",
-   "modelled": "partly",
+   "modelled": "yes",
    "knobs": [
     "FakeWindowSystem.letMacOSTile"
    ],
-   "guards": [],
-   "copes": "AXWindowSystem.lookAgain: the second look is what notices the stray window, after half a second. Nothing waits for the travel to end. Since Arbor stands aside where macOS tiles (`MacTiling.claim`, from `macTiling()`) it sets no frame during the travel. The stand-in travels in two steps 0.15 s apart.",
+   "guards": [
+    "test: theStandInTravelsAsAMacDid",
+    "test: theStandInLeavesAWindowWhereAMacDid",
+    "test: aWindowThatShrankIntoItsTileIsRememberedAsLargeAsItIs"
+   ],
+   "copes": "AXWindowSystem.lookAgain: the second look is what notices the stray window, after half a second. Nothing waits for the travel to end. Since Arbor stands aside where macOS tiles (`MacTiling.claim`, from `macTiling()`) it sets no frame during the travel. The stand-in travels as one recording did: 18 reports in 0.3 s, within two points of it at every step. What the small last steps showed is a fault of its own, on the board: they are taken for moves, so a window as high as the display is remembered wider than it ends.",
    "hurt": 3,
    "touches": [
     "fought"
    ],
    "sources": [
     "docs/TESTING.md",
-    "Sources/arbor-fakemac/main.swift"
+    "Sources/arbor-fakemac/main.swift",
+    "Sources/ArborTesting/FakeWindowSystem.swift",
+    "Tests/ArborKitTests/MacTilingTests.swift"
    ]
   },
   {
@@ -9011,17 +9025,20 @@
    "expected": "The spec's key for \"do not dock\" during a drag was ⌥, \"and macOS's own tiling is not affected\".",
    "happened": "Since macOS 15, ⌥ held during a window drag brings up macOS's own tiling preview (on by default). The key became ⌘.",
    "found": "Known of macOS 15 and given as the reason when drag polish was built; ⌘ was then seen at work in three Mac shell runs on a hosted Mac.",
-   "modelled": "partly",
+   "modelled": "yes",
    "knobs": [
-    "FakeWindowSystem.tiling"
+    "FakeWindowSystem.tiling",
+    "World.windowServerList",
+    "FakeWindowSystem.optionAloneTiles"
    ],
    "guards": [
     "test: withCommandHeldADropOverAnyTargetFloatsTheWindow",
     "test: theOtherModifiersDoNotSuppressDocking",
     "e2e: no preview at the screen edge with ⌘ held",
-    "test: withOptionHeldEveryPlaceIsMacOSs"
+    "test: withOptionHeldEveryPlaceIsMacOSs",
+    "tool: test-tooling.py"
    ],
-   "copes": "Controller.suppressesDocking goes by ⌘; `doctor` names the macOS switch (`MacSwitch.optionKey`). With ⌥ held Arbor now shows no preview of its own and docks nothing (`MacTiling.claim`, on what `macTiling()` answered when the drag began).",
+   "copes": "Controller.suppressesDocking goes by ⌘; `doctor` names the macOS switch (`MacSwitch.optionKey`). With ⌥ held Arbor now shows no preview of its own and docks nothing (`MacTiling.claim`, on what `macTiling()` answered when the drag began). The fake Mac lists macOS's preview while ⌥ is held in a drag, also for the line after the drag, as a Mac did.",
    "hurt": 3,
    "touches": [
     "fought"
@@ -9031,7 +9048,9 @@
     "docs/features/F09-drag-polish.md",
     "docs/KEYBOARD.md",
     "docs/GUIDE.md",
-    "Sources/arbor-fakemac/main.swift"
+    "Sources/arbor-fakemac/main.swift",
+    "Sources/arbor-fakemac/World+Pointer.swift",
+    "scripts/test-tooling.py"
    ]
   },
   {
@@ -10522,12 +10541,18 @@
    "kind": "looks",
    "layer": "test",
    "expected": "What Arbor shows is among the windows the fake Mac lists, so a script's question whether a panel is on screen at some level has the same answer in a rehearsal.",
-   "happened": "The backdrop behind docked windows (one level above the Desktop's icons, -2147483602), the heads-up line (level 6, still on screen 4 s after \"Paused…\"), the panel of shortcuts and the update window are recorded and not listed. Seventeen differences of one comparison come from the first two, and five checks of a script of pictures are red in a rehearsal and green on a Mac.",
+   "happened": "The backdrop behind docked windows (one level above the Desktop's icons, -2147483602), the heads-up line (level 6, still on screen 4 s after \"Paused…\") and the panel of shortcuts (level 5) were recorded and not listed. The update window was not even recorded: the fake Mac had no release feed, so `check-for-updates` answered that this build cannot check. In rehearsals 14 checks of `shots-F43.sh` and 2 of `shots-F15.sh` were red for want of them and green on a Mac. In three recorded journeys of a hosted Mac beside their rehearsal (38 steps) the backdrop's level differed in 28 steps and the line's in 8.",
    "found": "The first comparison, line by line, of one script played on a hosted Mac (six runs, macOS 26.6.2, one display of 1024×768) and in a rehearsal on Linux. The difference was seen; its cause is a reading. And pictures and checks from hosted Macs beside their rehearsals.",
-   "modelled": "no",
-   "knobs": [],
-   "guards": [],
-   "copes": "open",
+   "modelled": "yes",
+   "knobs": [
+    "WatchedOverlays.showHeadsUp",
+    "WatchedOverlays.showCheatSheet",
+    "World.windowServerList"
+   ],
+   "guards": [
+    "tool: test-tooling.py"
+   ],
+   "copes": "WatchedOverlays keeps a number, a frame and whether it shows for each, and World.windowServerList lists them at their levels; a pause and Quit forget them. What is left: WHEN the line is up (the fake clock: 5 and 4 steps still differ), and sizes, which are measured constants of one display (the line's width within some 50 points). No Mac has listed the update window. For `left-behind` only the pause is really played: the fake Mac lists Arbor's windows only while its process lives, so it can never show a panel that outlives it.",
    "hurt": 4,
    "touches": [
     "left-behind"
@@ -10537,7 +10562,9 @@
     "Sources/arbor-fakemac/World+Pointer.swift",
     "Sources/ArborKit/UI/BackdropPanel.swift",
     "Sources/ArborKit/UI/HeadsUpPanel.swift",
-    "scripts/mac-shell/lib.sh"
+    "scripts/mac-shell/lib.sh",
+    "scripts/test-tooling.py",
+    "Sources/arbor-fakemac/World+Input.swift"
    ]
   },
   {
@@ -12066,20 +12093,22 @@
    "kind": "second-actor",
    "layer": "at the seam",
    "expected": "While a window is held at an edge, Arbor's drop preview (`showDropPreview`) is the only one on the screen.",
-   "happened": "Where macOS tiles it shows a preview of its own at the same time: two windows owned by WindowManager at level 0, the tile grown by 15 points on every side (-15,16 542×704 for the left half of a 1024×768 display, -15,16 1054×704 for the whole). Arbor's blue outline (12,43 494×650) lies inside macOS's white one and promises something else. It was first seen at the edge between two displays; the earlier drags to an outer edge had stopped three points short of it. At the top edge it has also been seen the other way round: in a day with real apps macOS's preview never came up while Arbor's was up, though without Arbor it does. What is left since Arbor stands aside (the board, 1.30): on its way to an edge that is macOS's the pointer crosses Arbor's band, so Arbor's preview is up from 11 points to 1 and gone at 0, one preview after the other.",
+   "happened": "Where macOS tiles it shows a preview of its own at the same time: two windows owned by WindowManager at level 0, the tile grown by 15 points on every side (-15,16 542×704 for the left half of a 1024×768 display, -15,16 1054×704 for the whole). Arbor's blue outline (12,43 494×650) lies inside macOS's white one and promises something else. It was first seen at the edge between two displays; the earlier drags to an outer edge had stopped three points short of it. At the top edge it has also been seen the other way round: in a day with real apps macOS's preview never came up while Arbor's was up, though without Arbor it does. What is left since Arbor stands aside (the board, 1.30): on its way to an edge that is macOS's the pointer crosses Arbor's band, so Arbor's preview is up from 11 points to 1 and gone at 0, one preview after the other. Counted since in the sampler's logs: 63 appearances, always two windows with one frame, the tile grown by 15, one right in front of the dragged window and one right behind it (three times with a sheet between); 60 went within 64 ms of the release. NOT PLAYED by the fake Mac: the top edge seen the other way round; the edge between two displays (it has one display); the 113 ms in which both previews were up on the way to an edge; a tile that is what another tiled window leaves over; a preview that goes again with the button down.",
    "found": "Mac shell runs with a virtual second display on a hosted Mac; later probes that read the window server's list and took a picture with the button held.",
    "modelled": "partly",
    "knobs": [
     "FakeWindowSystem.tiling",
-    "FakeWindowSystem.macTile"
+    "FakeWindowSystem.macTile",
+    "World.windowServerList"
    ],
    "guards": [
     "test: onItsWayToTheEdgePointByPointNoPreviewEverShows",
     "test: whenOptionComesUpThePreviewIsBack",
     "test: aSecondDisplayHasEdgesOfItsOwn",
-    "e2e: Arbor shows no preview beside macOS's"
+    "e2e: Arbor shows no preview beside macOS's",
+    "tool: test-tooling.py"
    ],
-   "copes": "MacTiling.claim says where macOS takes a window that is let go, and there Arbor shows no preview; and while the switch for an edge is on, none in the whole of its own band along that edge (MacTiling.edges), so that none comes up on the way there. The stand-ins know where macOS acts; they list no preview of macOS's.",
+   "copes": "MacTiling.claim says where macOS takes a window that is let go, and there Arbor shows no preview; and while the switch for an edge is on, none in the whole of its own band along that edge (MacTiling.edges), so that none comes up on the way there. The stand-ins know where macOS acts, and the fake Mac lists macOS's preview round the held window.",
    "hurt": 3,
    "touches": [
     "fought"
@@ -12092,7 +12121,9 @@
     "collab/BACKLOG.md",
     "Sources/ArborCore/MacTiling.swift",
     "Tests/ArborKitTests/MacTilingTests.swift",
-    "collab/BOARD.md"
+    "collab/BOARD.md",
+    "Sources/arbor-fakemac/World+Pointer.swift",
+    "scripts/test-tooling.py"
    ],
    "backlog": [
     "K224",
@@ -12574,15 +12605,21 @@
    "kind": "second-actor",
    "layer": "at the seam",
    "expected": "With ⌥ held during a drag macOS takes the window wherever the pointer is: it lands where the preview showed.",
-   "happened": "It has been seen both ways. A probe that held a window at one point after another and looked for macOS's preview among the window server's windows found it wherever the pointer was with ⌥ held, whatever else was held (⇧, ⌘, ⌃⌘, ⌃⇧): `MacTiling` is written from that, and says that macOS takes the window. That probe looked for the preview, not for where the window ended. In later probes that let go, with posted keys, ⌥ alone made macOS show its preview (the left half at x 200, the right half at x 512) and leave the window where it was let go, three times out of three, and no report followed the release. With ⌥⇧, ⌥⌘, ⌃⌥⌘ and ⌃⌥⇧ the same drag ended in the tile.",
-   "found": "A probe script on a hosted Mac. Pointer and keys were posted events; whether a hand on a keyboard gets the same is not known. The stand-in for macOS's tiling that has landed since (`FakeWindowSystem.letMacOSTile`) tiles with ⌥ held, alone or not.",
-   "modelled": "no",
-   "knobs": [],
-   "guards": [
-    "test: withOptionHeldEveryPlaceIsMacOSs",
-    "test: withOptionHeldItTakesTheWindowAnywhere"
+   "happened": "It has been seen both ways. A probe that held a window at one point after another and looked for macOS's preview among the window server's windows found it wherever the pointer was with ⌥ held, whatever else was held (⇧, ⌘, ⌃⌘, ⌃⇧): `MacTiling` is written from that, and says that macOS takes the window. That probe looked for the preview, not for where the window ended. In later probes that let go, with posted keys, ⌥ alone made macOS show its preview (the left half at x 200, the right half at x 512) and leave the window where it was let go, three times out of three, and no report followed the release. Ten more are in outputs that are kept, ten out of ten, five on macOS 26.6.2 and five on 15.7.9: all of one drag, the same test window to (200,368), the left half promised, ⌥ down before the press and up after the release, Arbor paused. ⌥ pressed in the middle of a drag has not been measured. By the name of its switch, \"Hold ⌥ key while dragging windows to tile\", macOS tiles. With ⌥⇧, ⌥⌘, ⌃⌥⌘ and ⌃⌥⇧ the same drag ended in the tile.",
+   "found": "Probe scripts on hosted Macs. Pointer and keys were posted events; whether a hand on a keyboard gets the same is not known.",
+   "modelled": "yes",
+   "knobs": [
+    "FakeWindowSystem.letMacOSTile",
+    "FakeWindowSystem.optionAloneTiles"
    ],
-   "copes": "MacTiling.claim, on what `macTiling()` answered when the drag began, takes every place for macOS's while ⌥ is held, so Arbor stands aside either way: a window that macOS then leaves alone floats where it was let go.",
+   "guards": [
+    "test: letGoWithOptionAloneAFloatingWindowIsMacOSsWhicheverItDoes",
+    "test: shouldOptionAloneTileADockedWindowArborKeepsItsHandsOffIt",
+    "test: withOptionHeldEveryPlaceIsMacOSs",
+    "test: withOptionHeldItTakesTheWindowAnywhere",
+    "test: letGoWithOptionAloneADockedWindowIsNotLeftWithItsSlotsSize"
+   ],
+   "copes": "MacTiling.claim, on what `macTiling()` answered when the drag began, takes every place for macOS's while ⌥ is held, so Arbor stands aside either way: a floating window that macOS then leaves alone floats where it was let go. A DOCKED one is left with its slot's size for good, which is a fault of its own, on the board (1.67).",
    "hurt": 4,
    "touches": [
     "fought"
