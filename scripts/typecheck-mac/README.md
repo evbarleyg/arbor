@@ -97,8 +97,12 @@ written in Swift, says otherwise.
 
 ## Known differences
 
-- **C callbacks.** `AXObserverCallback`, `CGEventTapCallBack`, `CFNotificationCallback` and `CGDisplayReconfigurationCallBack` are `@convention(c)` on the Mac, so they
-  must not capture anything. Here they are ordinary closure types, and a capture goes unnoticed. (Carbon's `EventHandlerUPP` is a real C pointer here too.)
+- **C callbacks.** `AXObserverCallback`, `CGEventTapCallBack`, `CFNotificationCallback` and `CGDisplayReconfigurationCallBack` are `@convention(c)` on the Mac, so what is passed for one
+  must capture nothing. Linux refuses that convention for functions that take classes, so here they are ordinary closure types. A capture is noticed all the same: in the helpers' copy of the
+  stand-ins the four are `@convention(thin)`, and every file that speaks of one goes a stage further than the type checker (`-emit-silgen`, in language mode 5), which refuses a closure or a function
+  with a context; `check.sh` puts the Mac's words in place of the compiler's own ("INTERNAL ERROR: feature not implemented…"). It tells a top-level `let` of a script, which is a global, from what a top-level
+  `guard let` binds, which is not, as a Mac does. It rests on how this compiler happens to treat that convention: the self-test has probes for it, and fails if that changes. Not covered: the tests, and a
+  callback type that is not among the four. (Carbon's `EventHandlerUPP` is a real C pointer here too.)
 - **Availability.** Nothing checks `@available`: an API newer than macOS 14 used without `if #available` passes here and fails there. The stand-ins hold to
   macOS 14; think twice before adding something newer. What the macOS 15 SDK took away (`CGWindowListCreateImage`) is marked unavailable.
 - **Imports.** The Mac's toolchain checks that each file imports the module whose members it uses (`scripts/lint-imports.py`).

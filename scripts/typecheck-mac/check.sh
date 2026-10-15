@@ -68,12 +68,20 @@ flags=(-swift-version 6 -I modules -no-color-diagnostics
 for headers in "$here"/stubs/*/include; do flags+=(-I "$headers"); done
 # Only deprecated in the stand-ins, because that is all they can do, but refused on the Mac (stubs/MacFoundation/HashedGeometry.swift).
 refused="only available in macOS 15.0 or newer"
+# On the Mac these are `@convention(c)`: whatever is passed for one must capture nothing. Linux refuses that convention for functions that take classes, so in the stand-ins they
+# are plain closure types. In the helpers' copy of the stand-ins (below) they are `@convention(thin)`, which the type checker lets pass like the other; the stage after it (SILGen)
+# refuses a closure or a local function with a context, in words of its own. So files that speak of such a callback go one stage further than -typecheck. In language mode 5, the
+# helpers' own: in mode 6 that stage refuses a named function as well.
+callbacks='AXObserverCallback|CGEventTapCallBack|CFNotificationCallback|CGDisplayReconfigurationCallBack'
+makesCallbacks="$callbacks|AXObserverCreate|tapCreate|CGDisplayRegisterReconfigurationCallback|CGDisplayRemoveReconfigurationCallback|CFNotificationCenterAddObserver"
+captures='INTERNAL ERROR: feature not implemented: nontrivial thin function reference'
 # Each message once, with the path a person would open; the stand-ins' own warnings are nobody's business, and what is said about
 # a macro's expansion is said about the line with the macro as well.
 report() {
   grep -E "^[^ ].*:[0-9]+:[0-9]+: (error|warning):" | sed -e 's/ \[#.*$//' -e "s#^$here/#scripts/typecheck-mac/#" -e 's#^src/#Sources/#' -e 's#^tests/#Tests/#' \
     -e 's#^helpers/\([^/]*\)/main\.swift#scripts/mac-shell/\1.swift#' -e "s#^stubs5/#scripts/typecheck-mac/stubs/#" \
     -e "s/: warning: .* is deprecated: \(.*$refused\)/: error: \1/" \
+    -e "s/$captures/a C function pointer cannot be formed from a closure or a local function that captures context/" \
     | grep -v -e "^scripts/typecheck-mac/.*warning:" -e "^/tmp/swift-generated-sources/.*warning:" -e "^/tmp/swift-generated-sources/.*$refused" | sort -u
 }
 failed=0
@@ -108,7 +116,12 @@ done
 if [ "$(cat modules5/stamp 2>/dev/null)" != "$stamp" ]; then
   rm -rf modules5/* stubs5
   cp -R "$here/stubs" stubs5
-  find stubs5 -name '*.swift' -exec sed -i -E 's/^( *)@MainActor (public|open) /\1@preconcurrency @MainActor \2 /' {} +
+  find stubs5 -name '*.swift' -exec sed -i -E -e 's/^( *)@MainActor (public|open) /\1@preconcurrency @MainActor \2 /' \
+    -e "s/^public typealias ($callbacks) = \(/public typealias \1 = @convention(thin) (/" {} +
+  if [ "$(grep -rhE "^public typealias ($callbacks) = @convention\(thin\)" stubs5 | wc -l)" -ne 4 ]; then
+    echo "the stand-ins' C callbacks are not written as check.sh expects them: a capture would go unnoticed"
+    exit 1
+  fi
   for module in $frameworks; do
     # Still in mode 6, as the first set: only the mark differs.
     if ! swiftc "${flags5[@]/#5/6}" -emit-module -parse-as-library -module-name "$module" -emit-module-path "modules5/$module.swiftmodule" \
@@ -204,6 +217,16 @@ for target in $libraries $executables $tests; do
       code=1
     fi ;;
   esac
+  # Callbacks that capture. File by file, whatever became of the rest of the target: a file that does not type-check itself gets no further, and says nothing here.
+  case " $tests " in *" $target "*) ;; *)
+    for file in $(grep -lE "$makesCallbacks" "${files[@]}"); do
+      others=()
+      for other in "${files[@]}"; do [ "$other" = "$file" ] || others+=("$other"); done
+      found=$(swiftc -frontend -emit-silgen "${flags5[@]}" -I modules -package-name arbor -module-name "$module" "${kind[@]}" -primary-file "$file" "${others[@]}" -o /dev/null 2>&1 \
+        | grep -F "$captures")
+      if [ -n "$found" ]; then echo "$found" >> "log-$target.txt"; code=1; fi
+    done ;;
+  esac
   report < "log-$target.txt"
   # The compiler was content, so what imports this can still be looked at.
   if grep -q "$refused" "log-$target.txt"; then failed=1; fi
@@ -231,6 +254,10 @@ for tool in helpers/*/; do
   name=$(basename "$tool")
   swiftc "${flags5[@]}" -typecheck -module-name "${name//-/_}" "helpers/$name/main.swift" > "log-helper-$name.txt" 2>&1
   code=$?
+  if [ "$code" -eq 0 ] && grep -qE "$makesCallbacks" "helpers/$name/main.swift"; then
+    found=$(swiftc "${flags5[@]}" -emit-silgen -module-name "${name//-/_}" "helpers/$name/main.swift" -o /dev/null 2>&1 | grep -F "$captures")
+    if [ -n "$found" ]; then echo "$found" >> "log-helper-$name.txt"; code=1; fi
+  fi
   # What comes from C and Objective-C may be called for its effect alone; Foundation on Linux is written in Swift and says otherwise.
   report < "log-helper-$name.txt" | grep -v "warning: result of call to .* is unused"
   if [ "$code" -ne 0 ]; then
