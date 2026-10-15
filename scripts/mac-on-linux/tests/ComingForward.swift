@@ -49,7 +49,8 @@ func tellOfComingForward(_ book: Book) {
       one.mac.click(second)
       one.mac.pass(2)
       story.check("the window that was clicked is reported focused", one.heard.all.contains(.focused(second.number)), one.heard.texts)
-      story.check("no other window is", !one.heard.all.contains(.focused(first.number)) && !one.heard.all.contains(.focused(mine.number)), one.heard.texts)
+      story.check(
+        "no other window is", !one.heard.all.contains(.focused(first.number)) && !one.heard.all.contains(.focused(mine.number)), one.heard.texts)
     }
 
     book.story("⌘Tab to an app whose window is out of view\(lag.words)") { story in
@@ -96,7 +97,9 @@ func tellOfComingForward(_ book: Book) {
           other = mac.open("other", in: mac.launch("Other"), frame: CGRect(x: 500, y: 100, width: 400, height: 300))
           mine = mac.open("mine", in: mac.launch("Mine"), frame: CGRect(x: 60, y: 100, width: 400, height: 300))
         }
-        story.check("one of two docked windows is framed", two.run("dock \(mine.number) left").ok && two.run("dock \(other.number) right").ok && two.run("zoom \(mine.number)").ok && two.isOutOfView(other))
+        story.check(
+          "one of two docked windows is framed",
+          two.run("dock \(mine.number) left").ok && two.run("dock \(other.number) right").ok && two.run("zoom \(mine.number)").ok && two.isOutOfView(other))
         two.mac.frontmostLagsNoticeBy = lag
         two.mac.activate(other.app)
         two.mac.pass(gap)

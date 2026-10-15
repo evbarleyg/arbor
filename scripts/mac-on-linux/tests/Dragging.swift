@@ -37,9 +37,14 @@ func tellOfDragging(_ book: Book) {
         one.mac.release(release)
         one.mac.pass(0.01)
         story.check("at the release the drag is reported to end", one.heard.outline.last == .dragEnded(window.number), one.heard.texts)
-        story.check("Arbor has the place the window was left at, though its app may not have heard yet", one.snapshot(window)?.frame == CGRect(x: 300, y: 250, width: 400, height: 300), "\(one.snapshot(window)?.frame.text ?? "")")
+        story.check(
+          "Arbor has the place the window was left at, though its app may not have heard yet",
+          one.snapshot(window)?.frame == CGRect(x: 300, y: 250, width: 400, height: 300), "\(one.snapshot(window)?.frame.text ?? "")")
         one.mac.pass(3)
-        story.check("it ends once, and is not cancelled", one.heard.all.filter { $0 == .dragEnded(window.number) }.count == 1 && !one.heard.all.contains(.dragCancelled(window.number)), one.heard.texts)
+        story.check(
+          "it ends once, and is not cancelled",
+          one.heard.all.filter { $0 == .dragEnded(window.number) }.count == 1 && !one.heard.all.contains(.dragCancelled(window.number)),
+          one.heard.texts)
         story.check("nothing begins afterwards", one.heard.outline.last == .dragEnded(window.number), one.heard.texts)
         story.check("and the frame is still right", one.snapshot(window)?.frame == window.frame, "\(one.snapshot(window)?.frame.text ?? "")")
       }
@@ -54,10 +59,16 @@ func tellOfDragging(_ book: Book) {
     one.mac.pass(0.005)
     story.check("the drag began and ended", one.heard.outline == [.dragBegan(window.number), .dragEnded(window.number)], one.heard.texts)
     story.check("the app is still behind", window.frame != window.bounds)
-    story.check("Arbor goes by the window server", one.snapshot(window)?.frame == window.bounds, "\(one.snapshot(window)?.frame.text ?? "") against \(window.bounds.text)")
+    story.check(
+      "Arbor goes by the window server", one.snapshot(window)?.frame == window.bounds,
+      "\(one.snapshot(window)?.frame.text ?? "") against \(window.bounds.text)")
     one.mac.pass(2)
-    story.check("the reports that trickle in afterwards start no second drag", one.heard.outline == [.dragBegan(window.number), .dragEnded(window.number)], one.heard.texts)
-    story.check("and leave the frame right", one.snapshot(window)?.frame == window.bounds, "\(one.snapshot(window)?.frame.text ?? "") against \(window.bounds.text)")
+    story.check(
+      "the reports that trickle in afterwards start no second drag", one.heard.outline == [.dragBegan(window.number), .dragEnded(window.number)],
+      one.heard.texts)
+    story.check(
+      "and leave the frame right", one.snapshot(window)?.frame == window.bounds,
+      "\(one.snapshot(window)?.frame.text ?? "") against \(window.bounds.text)")
   }
 
   // Another tool's event tap can swallow the release, or it goes to a window of Arbor's own.
@@ -66,9 +77,13 @@ func tellOfDragging(_ book: Book) {
     one.mac.drag(from: grip, to: CGPoint(x: 500, y: 262))
     one.mac.release(.lost)
     one.mac.pass(0.4)
-    story.check("for a moment the drag counts as going on", !one.heard.all.contains(.dragCancelled(window.number)) && !one.heard.all.contains(.dragEnded(window.number)), one.heard.texts)
+    story.check(
+      "for a moment the drag counts as going on",
+      !one.heard.all.contains(.dragCancelled(window.number)) && !one.heard.all.contains(.dragEnded(window.number)), one.heard.texts)
     one.mac.pass(1.5)
-    story.check("then it is called off: nobody knows where the window was meant to go", one.heard.outline.last == .dragCancelled(window.number), one.heard.texts)
+    story.check(
+      "then it is called off: nobody knows where the window was meant to go", one.heard.outline.last == .dragCancelled(window.number),
+      one.heard.texts)
     story.check("Arbor has the window's frame", one.snapshot(window)?.frame == window.frame, "\(one.snapshot(window)?.frame.text ?? "")")
   }
 
@@ -82,7 +97,9 @@ func tellOfDragging(_ book: Book) {
     story.check("a button cannot go down twice: the drag is called off", one.heard.all.contains(.dragCancelled(window.number)), one.heard.texts)
     one.mac.release()
     one.mac.pass(2)
-    story.check("once, and it does not end as well", one.heard.all.filter { $0 == .dragCancelled(window.number) }.count == 1 && !one.heard.all.contains(.dragEnded(window.number)), one.heard.texts)
+    story.check(
+      "once, and it does not end as well",
+      one.heard.all.filter { $0 == .dragCancelled(window.number) }.count == 1 && !one.heard.all.contains(.dragEnded(window.number)), one.heard.texts)
   }
 
   book.story("a press and a release on a title bar, without moving") { story in
@@ -101,14 +118,17 @@ func tellOfDragging(_ book: Book) {
     one.mac.drag(from: CGPoint(x: other.frame.midX, y: other.frame.minY + 10), to: CGPoint(x: 400, y: 500))
     one.mac.release()
     one.mac.pass(1)
-    story.check("it is reported focused, then dragged", one.heard.outline == [.focused(other.number), .dragBegan(other.number), .dragEnded(other.number)], one.heard.texts)
+    story.check(
+      "it is reported focused, then dragged", one.heard.outline == [.focused(other.number), .dragBegan(other.number), .dragEnded(other.number)],
+      one.heard.texts)
   }
 
   book.story("a window of an app that hangs is dragged") { story in
     let (one, window, _) = stage(story)
     one.mac.hang(window.app)
     one.mac.drag(from: grip, to: CGPoint(x: 500, y: 262))
-    story.check("the window server moves it all the same, and the drag is reported", one.heard.all.contains(.dragBegan(window.number)), one.heard.texts)
+    story.check(
+      "the window server moves it all the same, and the drag is reported", one.heard.all.contains(.dragBegan(window.number)), one.heard.texts)
     one.mac.release()
     one.mac.pass(0.1)
     story.check("and ends", one.heard.all.contains(.dragEnded(window.number)), one.heard.texts)
@@ -141,8 +161,11 @@ func tellOfDragging(_ book: Book) {
       story.check("it is not taken for a drag", !one.heard.all.contains(.dragBegan(window.number)), one.heard.texts)
       one.mac.release()
       one.mac.pass(1)
-      story.check("at the release it is reported to end", one.heard.outline == [.resizeBegan(window.number), .resizeEnded(window.number)], one.heard.texts)
-      story.check("Arbor has the frame it ended at", one.snapshot(window)?.frame == window.frame, "\(one.snapshot(window)?.frame.text ?? "") against \(window.frame.text)")
+      story.check(
+        "at the release it is reported to end", one.heard.outline == [.resizeBegan(window.number), .resizeEnded(window.number)], one.heard.texts)
+      story.check(
+        "Arbor has the frame it ended at", one.snapshot(window)?.frame == window.frame,
+        "\(one.snapshot(window)?.frame.text ?? "") against \(window.frame.text)")
     }
   }
 
@@ -151,7 +174,9 @@ func tellOfDragging(_ book: Book) {
     one.mac.drag(from: CGPoint(x: 500, y: 250), to: CGPoint(x: 560, y: 250), steps: 8)
     one.mac.release(.lost)
     one.mac.pass(2)
-    story.check("the resize is finished all the same: the frame says how it ended", one.heard.outline == [.resizeBegan(window.number), .resizeEnded(window.number)], one.heard.texts)
+    story.check(
+      "the resize is finished all the same: the frame says how it ended",
+      one.heard.outline == [.resizeBegan(window.number), .resizeEnded(window.number)], one.heard.texts)
   }
 
   // Trace `calculator-edge`.
@@ -186,7 +211,8 @@ func tellOfDragging(_ book: Book) {
     one.mac.release()
     one.mac.pass(2)
     story.check("no drag and no resize of the person's is made of it", !one.heard.outline.contains { $0 != .pressed }, one.heard.texts)
-    story.check("every report of the window's size counts as an echo", !one.heard.all.contains(.changed(window.number, byUser: true)), one.heard.texts)
+    story.check(
+      "every report of the window's size counts as an echo", !one.heard.all.contains(.changed(window.number, byUser: true)), one.heard.texts)
   }
 
   // People let go of the key and the button together, and the key can be up by the time the mouse-up arrives.

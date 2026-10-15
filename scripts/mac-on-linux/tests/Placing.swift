@@ -38,13 +38,21 @@ func tellOfPlacing(_ book: Book) {
   book.story("a window does not take the frame it is given") { story in
     let (one, window) = stage(story)
     window.minimumSize = CGSize(width: 501, height: 200)
-    story.check("too small a size: the layer answers with what the window took", one.layer.setFrame(CGRect(x: 12, y: 43, width: 244, height: 650), of: WindowID(window.number)) == CGRect(x: 12, y: 43, width: 501, height: 650))
-    story.check("half points: it answers in whole ones", one.layer.setFrame(CGRect(x: 150.5, y: 46.5, width: 600, height: 400), of: WindowID(window.number)) == CGRect(x: 150, y: 47, width: 600, height: 400))
-    story.check("parked past the corner: the title bar stays above the Dock", one.layer.setFrame(CGRect(x: 1023, y: 767, width: 600, height: 400), of: WindowID(window.number)) == CGRect(x: 1023, y: 673, width: 600, height: 400))
+    story.check(
+      "too small a size: the layer answers with what the window took",
+      one.layer.setFrame(CGRect(x: 12, y: 43, width: 244, height: 650), of: WindowID(window.number)) == CGRect(x: 12, y: 43, width: 501, height: 650))
+    story.check(
+      "half points: it answers in whole ones",
+      one.layer.setFrame(CGRect(x: 150.5, y: 46.5, width: 600, height: 400), of: WindowID(window.number)) == CGRect(x: 150, y: 47, width: 600, height: 400))
+    story.check(
+      "parked past the corner: the title bar stays above the Dock",
+      one.layer.setFrame(CGRect(x: 1023, y: 767, width: 600, height: 400), of: WindowID(window.number)) == CGRect(x: 1023, y: 673, width: 600, height: 400))
     one.mac.pass(1)
     story.check("none of the reports counts as the person's doing", !one.heard.all.contains(where: isByUser), one.heard.texts)
     window.isResizable = false
-    story.check("a window of a fixed size is moved and keeps its size", one.layer.setFrame(CGRect(x: 12, y: 43, width: 300, height: 300), of: WindowID(window.number)) == CGRect(x: 12, y: 43, width: 600, height: 400))
+    story.check(
+      "a window of a fixed size is moved and keeps its size",
+      one.layer.setFrame(CGRect(x: 12, y: 43, width: 300, height: 300), of: WindowID(window.number)) == CGRect(x: 12, y: 43, width: 600, height: 400))
   }
 
   // Size, position, size: the first resize keeps a large window from being clamped when it moves to a smaller display, the second applies the size the
@@ -57,7 +65,9 @@ func tellOfPlacing(_ book: Book) {
       window = mac.open("window", in: mac.launch("Notes"), frame: CGRect(x: 12, y: 43, width: 1000, height: 650))
     }
     let big = CGRect(x: 1036, y: 37, width: 2536, height: 1391)
-    story.check("a size that is cut to what fits at the old place is applied in full at the new one", one.layer.setFrame(big, of: WindowID(window.number)) == big, window.frame.text)
+    story.check(
+      "a size that is cut to what fits at the old place is applied in full at the new one",
+      one.layer.setFrame(big, of: WindowID(window.number)) == big, window.frame.text)
     let small = CGRect(x: 12, y: 43, width: 1000, height: 650)
     story.check("and back", one.layer.setFrame(small, of: WindowID(window.number)) == small, window.frame.text)
     one.mac.pass(1)
@@ -69,7 +79,8 @@ func tellOfPlacing(_ book: Book) {
     // Nothing is posted: the app is one that says nothing, or the report is still on its way.
     one.mac.changeSilently(window, to: CGRect(x: 100, y: 100, width: 700, height: 500))
     let target = CGRect(x: 12, y: 43, width: 400, height: 300)
-    story.check("a move that was thought to need no resize gets one", one.layer.setFrame(target, of: WindowID(window.number)) == target, window.frame.text)
+    story.check(
+      "a move that was thought to need no resize gets one", one.layer.setFrame(target, of: WindowID(window.number)) == target, window.frame.text)
   }
 
   for delay in [0.05, 0.4] {
@@ -78,7 +89,9 @@ func tellOfPlacing(_ book: Book) {
       window.app.appliesSizeAfter = delay
       let target = CGRect(x: 12, y: 43, width: 500, height: 650)
       let answer = one.layer.setFrame(target, of: WindowID(window.number))
-      story.check("the layer answers with what it could read back: the new place, the old size", answer == CGRect(x: 12, y: 43, width: 400, height: 300), "\(answer?.text ?? "nothing")")
+      story.check(
+        "the layer answers with what it could read back: the new place, the old size", answer == CGRect(x: 12, y: 43, width: 400, height: 300),
+        "\(answer?.text ?? "nothing")")
       one.mac.pass(2)
       story.check("the window has taken the size by now", window.frame == target, window.frame.text)
       story.check("and Arbor knows", one.snapshot(window)?.frame == target, "\(one.snapshot(window)?.frame.text ?? "")")
@@ -105,7 +118,8 @@ func tellOfPlacing(_ book: Book) {
     let (one, window) = stage(story)
     window.app.hasEnhancedUserInterface = true
     let target = CGRect(x: 12, y: 43, width: 500, height: 650)
-    story.check("the window takes its frame at once all the same", one.layer.setFrame(target, of: WindowID(window.number)) == target, window.frame.text)
+    story.check(
+      "the window takes its frame at once all the same", one.layer.setFrame(target, of: WindowID(window.number)) == target, window.frame.text)
     story.check("and the assistive tool finds its switch as it left it", window.app.hasEnhancedUserInterface)
   }
 
@@ -114,7 +128,9 @@ func tellOfPlacing(_ book: Book) {
     window.app.hasEnhancedUserInterface = true
     // The question, the switch off, the size; then silence.
     window.app.hangsAfterCalls = 3
-    story.check("the layer does not know what came of the move", one.layer.setFrame(CGRect(x: 12, y: 43, width: 500, height: 650), of: WindowID(window.number)) == nil)
+    story.check(
+      "the layer does not know what came of the move",
+      one.layer.setFrame(CGRect(x: 12, y: 43, width: 500, height: 650), of: WindowID(window.number)) == nil)
     one.mac.pass(2)
     one.mac.wake(window.app)
     one.mac.pass(2)
@@ -133,7 +149,9 @@ func tellOfPlacing(_ book: Book) {
     one.layer.focus(WindowID(second.number))
     one.mac.pass(1)
     story.check("the window has the keyboard", one.mac.keyWindow === second)
-    story.check("it is in front", one.layer.windowsFrontToBack().first { [mine.number, first.number, second.number].contains($0.rawValue) }?.rawValue == second.number)
+    story.check(
+      "it is in front",
+      one.layer.windowsFrontToBack().first { [mine.number, first.number, second.number].contains($0.rawValue) }?.rawValue == second.number)
     story.check("it is reported focused, once, and no other window is", one.heard.outline == [.focused(second.number)], one.heard.texts)
   }
 
@@ -163,7 +181,9 @@ func tellOfPlacing(_ book: Book) {
     }
     one.mac.appMakesKey(second)
     one.mac.pass(1)
-    story.check("nothing is said about the keyboard, which is where it was", one.heard.all.isEmpty && one.layer.focusedWindow()?.rawValue == mine.number, one.heard.texts)
+    story.check(
+      "nothing is said about the keyboard, which is where it was", one.heard.all.isEmpty && one.layer.focusedWindow()?.rawValue == mine.number,
+      one.heard.texts)
   }
 
   book.story("Arbor minimizes a window and brings it back") { story in
@@ -207,7 +227,9 @@ func tellOfPlacing(_ book: Book) {
     let dialog = one.mac.open("Save changes?", in: window.app, frame: CGRect(x: 150, y: 150, width: 300, height: 200), subrole: "AXDialog")
     one.mac.pass(2)
     story.check("it is left where it is", dialog.frame == CGRect(x: 150, y: 150, width: 300, height: 200), dialog.frame.text)
-    story.check("the layer says that the keyboard has left the windows it knows", one.heard.all.contains(.keyboardMoved) && !one.heard.all.contains(.focused(window.number)), one.heard.texts)
+    story.check(
+      "the layer says that the keyboard has left the windows it knows",
+      one.heard.all.contains(.keyboardMoved) && !one.heard.all.contains(.focused(window.number)), one.heard.texts)
     one.heard.clear()
     one.mac.close(dialog)
     one.mac.pass(1)
@@ -227,7 +249,9 @@ func tellOfPlacing(_ book: Book) {
     one.mac.pass(2)
     story.check("while it is stopped it reports nothing", one.heard.all.isEmpty, one.heard.texts)
     story.check("and knows no windows", one.known.isEmpty)
-    story.check("one window can be moved all the same", one.layer.setFrameOnce(CGRect(x: 12, y: 43, width: 300, height: 300), of: WindowID(b.number), pid: b.app.pid) == CGRect(x: 12, y: 43, width: 300, height: 300))
+    story.check(
+      "one window can be moved all the same",
+      one.layer.setFrameOnce(CGRect(x: 12, y: 43, width: 300, height: 300), of: WindowID(b.number), pid: b.app.pid) == CGRect(x: 12, y: 43, width: 300, height: 300))
     one.mac.pass(1)
     story.check("without anything being reported", one.heard.all.isEmpty, one.heard.texts)
     one.layer.start()
@@ -247,7 +271,9 @@ func tellOfPlacing(_ book: Book) {
     one.mac.switchSpace(to: 1)
     one.mac.pass(2)
     one.mac.serverGivesNoList = false
-    story.check("no window is reported gone or new because of it", one.heard.outline.allSatisfy { if case .focused = $0 { true } else { false } }, one.heard.texts)
+    story.check(
+      "no window is reported gone or new because of it", one.heard.outline.allSatisfy { if case .focused = $0 { true } else { false } },
+      one.heard.texts)
     story.check("the window is known and shows", one.snapshot(window)?.isOnActiveSpace == true)
   }
 
@@ -256,7 +282,9 @@ func tellOfPlacing(_ book: Book) {
     one.mac.pass(5)
     one.mac.click(window)
     one.mac.pass(2)
-    story.check("the layer knows how long ago the last click was", abs(one.layer.secondsSinceClickOrModifierKey() - 2) < 0.01, "\(one.layer.secondsSinceClickOrModifierKey())")
+    story.check(
+      "the layer knows how long ago the last click was", abs(one.layer.secondsSinceClickOrModifierKey() - 2) < 0.01,
+      "\(one.layer.secondsSinceClickOrModifierKey())")
     story.check("and where the pointer is", one.layer.cursorLocation() == CGPoint(x: window.frame.midX, y: window.frame.midY))
     story.check("and that the button is up", !one.layer.isMouseButtonDown())
   }

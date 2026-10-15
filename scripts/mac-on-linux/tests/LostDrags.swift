@@ -121,16 +121,21 @@ func tellOfLostDrags(_ book: Book) {
         other = mac.open("other", in: mac.launch("Safari"), frame: CGRect(x: 500, y: 100, width: 400, height: 300))
         window = mac.open("window", in: mac.launch("Notes"), frame: CGRect(x: 60, y: 100, width: 400, height: 300))
       }
-      story.check("two windows are docked, with the Desktop between them", two.run("dock \(window.number) left").ok && two.run("dock \(other.number) right").ok)
+      story.check(
+        "two windows are docked, with the Desktop between them", two.run("dock \(window.number) left").ok && two.run("dock \(other.number) right").ok)
       let slot = window.frame
       let asked = window.timesAskedForAFrame
       two.mac.serverFollowsPointerAfter = Double(wait) / 1000
       two.mac.drag(from: CGPoint(x: slot.midX, y: slot.minY + 12), to: CGPoint(x: 512, y: 300), steps: 8, interval: 0.04, rest: 0.02)
       two.mac.pass(0.6)
-      story.check("while it is held Arbor does not pull at it", window.timesAskedForAFrame == asked, "asked for a place or a size \(window.timesAskedForAFrame - asked) times")
+      story.check(
+        "while it is held Arbor does not pull at it", window.timesAskedForAFrame == asked,
+        "asked for a place or a size \(window.timesAskedForAFrame - asked) times")
       two.mac.release()
       two.mac.pass(2)
-      story.check("let go over the Desktop, it floats there", !two.isDocked(window) && window.frame.minX > slot.minX + 100, "\(two.isDocked(window) ? "docked" : "floating"), \(two.whereabouts(window))")
+      story.check(
+        "let go over the Desktop, it floats there", !two.isDocked(window) && window.frame.minX > slot.minX + 100,
+        "\(two.isDocked(window) ? "docked" : "floating"), \(two.whereabouts(window))")
     }
   }
 }

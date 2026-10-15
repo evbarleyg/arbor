@@ -100,3 +100,23 @@ sometimes: the rude walk (late calls): a tab is not announced as a window of its
 sometimes: the rude walk (late calls): Arbor's main thread waits at most two seconds for one hang # a second for each ⌘Tab to a hung app, and for each notification that was on its way when the app hung
 sometimes: the rude walk (all four): a window that has just opened is announced as new # it opens 2 ms before its app hangs, and a Space switch counts it as there before the layer has seen it
 sometimes: the rude walk (all four): a window whose app hung as it came forward is reported focused once the app wakes # reportFocus(of:) waits the second out, notes no silence, and answersAgain reports no focus
+
+# An app that hangs, or is still marked as silent, when it comes forward. `reportFocus(of:)` waits the timeout out on the focused window, says only that the keyboard moved, and does not call
+# `noteSilence`: nobody asks whether the app is back, every further ⌘Tab to it costs another second, and `answersAgain`, if it is reached at all, reports no focus.
+⌘Tab to an app that hangs, and wakes two seconds later: once it wakes, its window, which has the keyboard, is reported focused # reportFocus(of:) notes no silence, and answersAgain reports no focus
+⌘Tab three times to an app that hangs: Arbor's main thread has waited a second for it once, not each time # reportFocus(of:) notes no silence
+⌘Tab to an app whose window is out of view and which hangs for two seconds: once the app wakes the view moves to show its window, which has the keyboard # the same, seen from the screen
+
+# "Whoever posts a notification is awake" (`handle`) does not hold for what was on its way when the app hung: each such notification takes the app off the list of the silent, and the next call waits again.
+an app opens a window and is busy at once, loading what goes into it: Arbor's main thread waits for it two seconds at most # a second for each notification that was on its way
+
+# An app's list is read once for each report. If it is behind, "created" finds the old list, `addWindow` announces the new tab as a window of its own, and from then on it is no candidate for a tab; and when the
+# tab in front closes, neither "main window changed" nor "destroyed" finds the successor on the list.
+native tabs of an app whose list of windows is 10 ms behind: a new tab takes the place of the window it was opened in # the list is read once, and believed
+native tabs of an app whose list of windows is 10 ms behind: it is not announced as a window of its own # the same
+native tabs of an app whose list of windows is 10 ms behind: to Arbor the group is one window # the same
+native tabs of an app whose list of windows is 50 ms behind: a new tab takes the place of the window it was opened in # the same
+native tabs of an app whose list of windows is 50 ms behind: it is not announced as a window of its own # the same
+native tabs of an app whose list of windows is 50 ms behind: to Arbor the group is one window # the same
+the tab in front is closed, and the app's list of windows is 50 ms behind: nothing is reported gone: to the person the window is still there # the same
+the tab in front is closed, and the app's list of windows is 50 ms behind: Arbor knows the tab that shows now # the same

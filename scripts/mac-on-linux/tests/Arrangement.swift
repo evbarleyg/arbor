@@ -23,7 +23,9 @@ private func twoDocked(_ story: Story, oneApp: Bool = false) -> (StoreyTwo, Fake
     left = mac.open("left", in: app, frame: CGRect(x: 60, y: 100, width: 400, height: 300))
     mac.activate(app)
   }
-  story.check("two windows are arranged side by side", two.run("arrange").ok && two.isDocked(left) && two.isDocked(right), "\(two.whereabouts(left)); \(two.whereabouts(right))")
+  story.check(
+    "two windows are arranged side by side", two.run("arrange").ok && two.isDocked(left) && two.isDocked(right),
+    "\(two.whereabouts(left)); \(two.whereabouts(right))")
   if left.frame.minX > right.frame.minX { swap(&left, &right) }
   two.mac.click(left)
   two.mac.pass(1)
@@ -43,7 +45,9 @@ func tellOfArrangements(_ book: Book) {
       first.app.reportsFocusBeforeCreated = focusFirst
       let second = two.mac.open("second", in: first.app, frame: CGRect(x: 300, y: 200, width: 400, height: 300))
       two.mac.pass(2)
-      story.check("it is docked beside the other", two.isDocked(second) && !second.frame.intersects(first.frame), "\(two.whereabouts(first)); \(two.whereabouts(second))")
+      story.check(
+        "it is docked beside the other", two.isDocked(second) && !second.frame.intersects(first.frame),
+        "\(two.whereabouts(first)); \(two.whereabouts(second))")
       story.check("the focus ring is around it", two.ring == second.number, "\(String(describing: two.ring))")
     }
   }
@@ -110,7 +114,8 @@ func tellOfArrangements(_ book: Book) {
     story.check("its neighbour gets the room", left.frame.width > leftHome.width * 1.5, two.whereabouts(left))
     two.mac.restore(right)
     two.mac.pass(3)
-    story.check("restored, both are where they were", left.frame == leftHome && right.frame == rightHome, "\(two.whereabouts(left)); \(two.whereabouts(right))")
+    story.check(
+      "restored, both are where they were", left.frame == leftHome && right.frame == rightHome, "\(two.whereabouts(left)); \(two.whereabouts(right))")
   }
 
   book.story("an app with a docked window is hidden and shown again") { story in
@@ -121,7 +126,9 @@ func tellOfArrangements(_ book: Book) {
     story.check("the neighbour gets the room", left.frame.width > leftHome.width * 1.5, two.whereabouts(left))
     two.mac.activate(right.app)
     two.mac.pass(3)
-    story.check("shown again, both are where they were", left.frame == leftHome && right.frame == rightHome, "\(two.whereabouts(left)); \(two.whereabouts(right))")
+    story.check(
+      "shown again, both are where they were", left.frame == leftHome && right.frame == rightHome,
+      "\(two.whereabouts(left)); \(two.whereabouts(right))")
   }
 
   for lists in [FakeMac.ListsDuringTransition.right, .neither] {
@@ -132,9 +139,13 @@ func tellOfArrangements(_ book: Book) {
       two.mac.pass(3)
       two.mac.switchSpace(to: 1, lists: lists)
       two.mac.pass(3)
-      story.check("both windows are docked where they were", two.isDocked(left) && two.isDocked(right) && left.frame == leftHome && right.frame == rightHome, "\(two.whereabouts(left)); \(two.whereabouts(right))")
+      story.check(
+        "both windows are docked where they were", two.isDocked(left) && two.isDocked(right) && left.frame == leftHome && right.frame == rightHome,
+        "\(two.whereabouts(left)); \(two.whereabouts(right))")
       two.run("zoom \(left.number)")
-      story.check("and Arbor goes on arranging them: one is framed, the other goes out of view", left.frame.width > 900 && two.isOutOfView(right), "\(two.whereabouts(left)); \(two.whereabouts(right))")
+      story.check(
+        "and Arbor goes on arranging them: one is framed, the other goes out of view", left.frame.width > 900 && two.isOutOfView(right),
+        "\(two.whereabouts(left)); \(two.whereabouts(right))")
     }
   }
 
@@ -158,10 +169,14 @@ func tellOfArrangements(_ book: Book) {
       two.mac.enterFullScreen(right, saysSoLate: late, lists: late ? .neither : .right)
       two.mac.pass(4)
       story.check("it fills the display", right.frame == FakeMac.Screen.hostedMac.frame, two.whereabouts(right))
-      story.check("and Arbor has not pulled at it on the way", right.timesAskedForAFrame == asked, "asked for a place or a size \(right.timesAskedForAFrame - asked) times")
+      story.check(
+        "and Arbor has not pulled at it on the way", right.timesAskedForAFrame == asked,
+        "asked for a place or a size \(right.timesAskedForAFrame - asked) times")
       two.mac.leaveFullScreen(right)
       two.mac.pass(4)
-      story.check("afterwards both are where they were", left.frame == leftHome && right.frame == rightHome, "\(two.whereabouts(left)); \(two.whereabouts(right))")
+      story.check(
+        "afterwards both are where they were", left.frame == leftHome && right.frame == rightHome,
+        "\(two.whereabouts(left)); \(two.whereabouts(right))")
     }
   }
 
@@ -199,7 +214,8 @@ func tellOfArrangements(_ book: Book) {
     two.mac.release()
     two.mac.pass(2)
     story.check("the window has grown", left.frame.width == leftHome.width + 60, two.whereabouts(left))
-    story.check("and its neighbour has made way", right.frame.minX == rightHome.minX + 60 && right.frame.maxX == rightHome.maxX, two.whereabouts(right))
+    story.check(
+      "and its neighbour has made way", right.frame.minX == rightHome.minX + 60 && right.frame.maxX == rightHome.maxX, two.whereabouts(right))
   }
 
   // Trace `self-move`: Arbor puts it back 0.26 s later.

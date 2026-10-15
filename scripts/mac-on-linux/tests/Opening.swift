@@ -28,7 +28,8 @@ func tellOfOpening(_ book: Book) {
         "the new window is announced once, as one that has just opened", one.heard.about(window).filter { $0 == .appeared(window.number) }.count == 1,
         one.heard.texts)
       story.check("it is not announced as one that was open all along", !one.heard.all.contains(.found(window.number)), one.heard.texts)
-      story.check("then it is reported to have the keyboard", one.heard.outline == [.appeared(window.number), .focused(window.number)], one.heard.texts)
+      story.check(
+        "then it is reported to have the keyboard", one.heard.outline == [.appeared(window.number), .focused(window.number)], one.heard.texts)
       story.check("Arbor has its frame", one.snapshot(window)?.frame == window.frame, "\(String(describing: one.snapshot(window)?.frame))")
       story.check("and its title and app", one.snapshot(window)?.title == "second" && one.snapshot(window)?.appName == "Notes")
     }
@@ -58,7 +59,8 @@ func tellOfOddOpenings(_ book: Book) {
       one.heard.clear()
       one.mac.reopen(window)
       one.mac.pass(1)
-      story.check("opened again, it is announced as a window that has just opened", one.heard.outline.first == .appeared(window.number), one.heard.texts)
+      story.check(
+        "opened again, it is announced as a window that has just opened", one.heard.outline.first == .appeared(window.number), one.heard.texts)
       story.check("and has the keyboard", one.heard.outline == [.appeared(window.number), .focused(window.number)], one.heard.texts)
     }
   }
@@ -75,7 +77,9 @@ func tellOfOddOpenings(_ book: Book) {
       one.mac.pass(0.1)
       story.check("at first it is not taken for a window", !one.known.contains(window.number))
       one.mac.pass(2)
-      story.check("a moment later it is announced, once, as one that has just opened", one.heard.about(window).filter { $0 != .focused(window.number) } == [.appeared(window.number)], one.heard.texts)
+      story.check(
+        "a moment later it is announced, once, as one that has just opened",
+        one.heard.about(window).filter { $0 != .focused(window.number) } == [.appeared(window.number)], one.heard.texts)
       story.check("and is said to have the keyboard, which it has had all along", one.lastWordOnTheKeyboard == window.number, one.heard.texts)
     }
   }
@@ -117,7 +121,9 @@ func tellOfOddOpenings(_ book: Book) {
       one.mac.pass(0.3)
       let window = one.mac.open("hello", in: app)
       one.mac.pass(wait + 10)
-      story.check("its window is announced once, as one that has just opened", one.heard.about(window).filter { $0 != .focused(window.number) } == [.appeared(window.number)], one.heard.texts)
+      story.check(
+        "its window is announced once, as one that has just opened",
+        one.heard.about(window).filter { $0 != .focused(window.number) } == [.appeared(window.number)], one.heard.texts)
       story.check("and is said to have the keyboard", one.lastWordOnTheKeyboard == window.number, one.heard.texts)
     }
   }
@@ -132,7 +138,9 @@ func tellOfOddOpenings(_ book: Book) {
     story.check("nothing says so, and Arbor does not know its window yet", !one.known.contains(window.number))
     one.mac.activate(app)
     one.mac.pass(1)
-    story.check("when it comes forward its window is announced", one.heard.about(window).contains { $0 == .appeared(window.number) || $0 == .found(window.number) }, one.heard.texts)
+    story.check(
+      "when it comes forward its window is announced",
+      one.heard.about(window).contains { $0 == .appeared(window.number) || $0 == .found(window.number) }, one.heard.texts)
     story.check("and is said to have the keyboard", one.lastWordOnTheKeyboard == window.number, one.heard.texts)
   }
 

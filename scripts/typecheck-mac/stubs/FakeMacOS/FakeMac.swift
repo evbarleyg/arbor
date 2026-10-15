@@ -367,6 +367,9 @@ extension FakeMac {
     public var doesNotReportCreated = false
     /// New windows get their subrole so long after they are created.
     public var subroleComesAfter: TimeInterval = 0
+    /// Its list of windows is so long behind every change. A window in plain view has been seen missing from its app's list (AXWindowSystem.swift, `rescan`); for
+    /// how long nobody has measured.
+    public var listLagsBy: TimeInterval = 0
     /// A new size is applied so long after the call returned.
     public var appliesSizeAfter: TimeInterval = 0
     /// Posts no "moved" while a window is dragged, only one at the end.

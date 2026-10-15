@@ -115,7 +115,7 @@ extension FakeMac {
 
   /// To be called before an app's list changes: with bad manners (ii) the old one is given out a while longer.
   func listWillChange(of app: App) {
-    let lag = manners.lag(upTo: manners.staleness)
+    let lag = app.listLagsBy > 0 ? app.listLagsBy : manners.lag(upTo: manners.staleness)
     if lag > 0, app.staleList == nil { app.staleList = (now + lag, currentList(of: app)) }
   }
 

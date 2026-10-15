@@ -37,6 +37,7 @@ make e2e        # real windows, real Accessibility; see docs/TESTING.md
 make e2e-drag   # real drags with the real pointer, which it takes over for half a minute
 make day        # from anywhere: an ordinary day with real apps on a hosted Mac, every frame sampled, a table of what broke which rule (docs/TESTING.md)
 make typecheck-mac  # on Linux: type-check all the macOS-only code, tests included, against stand-ins for Apple's frameworks
+make mac-on-linux   # on Linux: RUN the real Accessibility layer (Sources/ArborKit/AX) on a model of a rude Mac; after every change there (scripts/mac-on-linux/README.md)
 make trace NAME=x  # record a trace from the running Arbor into collab/evidence/traces/x.jsonl (docs/TRACES.md)
 make replay FILE=x # replay a trace against the real controller and see what happened
 make attack     # hostile and broken clients against the control socket, for half a minute; after changing the socket
@@ -64,7 +65,7 @@ new. See "Executors without a Mac" in `collab/README.md`.
 | `Sources/ArborKit/Controller` | `Controller`: turns commands and window events into tree changes and frames; `KeyBindings` | Talks to macOS only through the protocols in `Platform/`. Deterministic. Builds on Linux. |
 | `Sources/ArborKit/Platform`, `Support` | The seams: `WindowSystem`, `OverlayPresenter`, `StateStore`, `Scheduler`, `ReleaseFeed`, `LoginItem`; `Log` | Change a protocol only with a matching change to the fakes in `ArborTesting`. Builds on Linux. |
 | `Sources/ArborKit/Trace` | Recording traces: a decorator around each seam, `TraceRecorder`, the text form | Forwards everything unchanged; costs one branch while off. Never a window title. Builds on Linux. See `docs/TRACES.md`. |
-| `Sources/ArborKit/AX`, `UI`, `Input`, `App` | Real implementations: Accessibility, AppKit panels, Carbon hotkeys, app lifecycle | macOS only: `Package.swift` leaves these folders out elsewhere. Almost none of it can run in tests (`EventTapThreadTests`, on macOS only, is the exception). Keep logic out of them; put it in the controller or core. |
+| `Sources/ArborKit/AX`, `UI`, `Input`, `App` | Real implementations: Accessibility, AppKit panels, Carbon hotkeys, app lifecycle | macOS only: `Package.swift` leaves these folders out elsewhere. Almost none of it can run in tests (`EventTapThreadTests`, on macOS only, is one exception; `AX` is the other: `make mac-on-linux` runs it on a model of a Mac, and a cure there deletes its lines in `scripts/mac-on-linux/known-failures.txt`). Keep logic out of them; put it in the controller or core. |
 | `Sources/ArborIPC`, `Sources/ArborKit/IPC` | The control socket: paths, framing and client; server and endpoint | POSIX and Dispatch only, so it builds and is tested everywhere. The server runs on the main queue: never block. |
 | `Sources/Arbor` | The app's `main.swift`: calls `ArborApp.run()` | macOS only. |
 | `Sources/LinuxShims` | A module named CoreGraphics that re-exports Foundation, whose `CGRect` Linux uses | Declared only off macOS. |

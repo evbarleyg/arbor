@@ -5,6 +5,7 @@
 #   scripts/mac-on-linux/build.sh --self-test     does the net hold? each change in mutants.py is made to the copy, and its stories must go red
 #   scripts/mac-on-linux/build.sh --build-only
 #   REF=origin/fix/some-cure scripts/mac-on-linux/build.sh …   that commit's Sources, with this checkout's stand-ins, scripts and stories
+#   COVERAGE=1 scripts/mac-on-linux/build.sh …                 afterwards: how much of each file of the layer the run has entered, and which lines it has not
 # Exit code 0 when it builds and everything is as expected.
 #
 # It calls the compiler itself, as scripts/typecheck-mac/check.sh does, whose stand-ins and prepare.py it uses: Package.swift knows nothing of
@@ -25,6 +26,7 @@ if [ -n "${REF:-}" ]; then
   git -C "$root" archive "$REF" Sources | tar -x -C "$work/checkout" || { echo "no such commit: $REF"; exit 2; }
   sources="$work/checkout/Sources"
 fi
+if [ -n "${COVERAGE:-}" ]; then work="$work-coverage"; fi
 if [ "$(uname)" = Darwin ]; then echo "On a Mac the real thing runs: make e2e."; exit 2; fi
 
 # The stand-ins the layer needs, each after the ones it imports. Here they are compiled for real, not only read for what they declare.
@@ -124,7 +126,9 @@ for name in os.listdir(folder):
     if name.endswith(".o") and f"{folder}/{name}" not in wanted:
         os.remove(f"{folder}/{name}")
 SWEEP
-  if ! swiftc "${flags[@]}" -incremental -output-file-map "objects/$module.json" -j "$jobs" -package-name arbor -enable-testing "${kind[@]}" \
+  local counting=()
+  [ -n "${COVERAGE:-}" ] && [ "$module" = ArborKit ] && counting=(-profile-generate -profile-coverage-mapping)
+  if ! swiftc "${flags[@]}" "${counting[@]}" -incremental -output-file-map "objects/$module.json" -j "$jobs" -package-name arbor -enable-testing "${kind[@]}" \
     -module-name "$module" -emit-module -emit-module-path "modules/$module.swiftmodule" -c "${files[@]}" > "log-$module.txt" 2>&1
   then
     report < "log-$module.txt"
@@ -136,7 +140,9 @@ SWEEP
 build() {
   for target in $libraries; do compile "$target" "src/$target" library || return 1; done
   compile MacOnLinux "$here/tests" program || return 1
-  if ! swiftc -o "$1" objects/*/*.o > log-link.txt 2>&1; then
+  local counting=()
+  [ -n "${COVERAGE:-}" ] && counting=(-profile-generate)
+  if ! swiftc "${counting[@]}" -o "$1" objects/*/*.o > log-link.txt 2>&1; then
     grep -E "error|undefined" log-link.txt | head -20
     echo "it does not link (whole output: .build/mac-on-linux/log-link.txt)"
     return 1
@@ -175,4 +181,14 @@ fi
 build "$work/mac-on-linux" || exit 1
 echo "built in $((SECONDS - began)) s"
 [ "${1:-}" = --build-only ] && exit 0
+if [ -n "${COVERAGE:-}" ]; then
+  LLVM_PROFILE_FILE="$work/run.profraw" "$work/mac-on-linux" --quiet --known "$here/known-failures.txt" "$@"
+  code=$?
+  llvm-profdata merge -o run.profdata run.profraw
+  # Neither rewriting step moves a line, so the copy's lines are the sources'.
+  llvm-cov report "$work/mac-on-linux" -instr-profile run.profdata src/ArborKit/AX src/ArborKit/App | sed "s#$work/src/#Sources/#"
+  llvm-cov show "$work/mac-on-linux" -instr-profile run.profdata src/ArborKit/AX > coverage.txt
+  echo "line by line: .build/${work##*/.build/}/coverage.txt (a count of 0 marks what no story enters)"
+  exit "$code"
+fi
 exec "$work/mac-on-linux" --known "$here/known-failures.txt" "$@"

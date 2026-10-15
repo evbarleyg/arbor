@@ -874,6 +874,24 @@ when resolving a merge conflict in them. The README lists what it cannot see: ca
 least one into each folder, and expects every line marked wrong to be reported and no other. Run it after changing the tool. It is how we learnt that
 `swift build` reports only the first failing stage, which is why the tool calls the compiler itself, and that `#if os(macOS)` was being skipped.
 
+## 9. The real Accessibility layer on a model of a Mac (`make mac-on-linux`)
+
+Everything above the protocol `WindowSystem` is tested against stand-ins for it. What is below, `Sources/ArborKit/AX`, 1,650 lines full of state, ran in no headless test, and two of the three faults of the first day on hosted Macs lay there: no stand-in
+at the seam can be wrong the way macOS is below it. `make mac-on-linux` compiles the layer as it is, links it with the stand-ins of section 8, of which the part the layer uses has been given behaviour backed by one model of a Mac
+(`scripts/typecheck-mac/stubs/FakeMacOS`: apps, windows, the window server, NSWorkspace and what it caches, screens, the mouse, a clock, and a queue of what is on its way to Arbor), and runs it on Linux: 180 stories and a random walk in five seconds, after a build of four
+seconds to two minutes. `scripts/mac-on-linux/README.md` has all of it; in short:
+
+- **Two storeys.** `AXWindowSystem` alone with a listener that writes down what it reports; and the real `Controller` on top, wired as in the app, where the checks look at the screen ("⌘Tab to an app whose window is out of view: the view moves to show it").
+- **Polite first, then rude**, with the rudeness that was seen on a Mac and the numbers from the traces: reports in the other order, a `frontmostApplication` that lags, lists that are behind, apps that hang in the middle of a move and carry the calls out when they wake, ends nobody reports, releases that are swallowed,
+  a window server that is ahead of the app, or late. What is a guess is marked "Guess" in the model.
+- **Time is the model's**: `mac.pass(0.3)`, no waiting, no threads, no chance. A copy of the sources is rewritten in three places, line for line (`retime.py`).
+- **`known-failures.txt`**: the run fails when a check that is not listed fails and when one that is listed passes. **Whoever lands a cure in the layer deletes its lines.**
+- **`make mac-on-linux-selftest`** takes nineteen known cures out of the copy, one at a time, and expects the stories about them to go red.
+- **The rude walk**: seeded, under four kinds of bad manners in general and once politely as a control; a breach prints the shortest script, which `--replay` plays. `ARGS="--only walk --seeds 1-500"` is a hunt.
+- **`REF=origin/fix/some-cure make mac-on-linux`** holds another commit's layer against this checkout's stories: how a cure is tried before a Mac sees it. `COVERAGE=1` says which lines no story enters (92 % of `AXWindowSystem.swift`'s are entered).
+
+Run it after every change under `Sources/ArborKit/AX`, and tell a story for every fault a Mac shows there. A green story proves the layer right about what we have seen or guessed, not about a Mac; a red one that rests on a guess is worth a run on a hosted Mac.
+
 ## Pictures without a screen (`OffscreenPicture`)
 
 What Arbor draws can be looked at, and checked, without a window, a permission, a script or anybody's screen. `Tests/ArborKitTests/OffscreenPicture.swift` (macOS only) is a bitmap in memory

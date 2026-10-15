@@ -4,7 +4,7 @@ Half of Arbor builds only on macOS: `Sources/ArborKit/{AX,UI,Input,App,IPC}`, `S
 `Sources/arborctl`, `Sources/arbor-e2e`, `Sources/ArborTestWindows`, the tests that draw off screen or look at Carbon, and the Mac shell's helper tools
 (`scripts/mac-shell/*.swift`), which not even `swift build` on a Mac sees. From a Linux container the only compiler for it is a Mac somewhere
 else: minutes of waiting, and not there at all when Actions is down. This folder has stand-ins for the parts of
-Apple's frameworks that code uses: declarations with the SDK's names, types, optionality and actor isolation, and bodies that do nothing. Against
+Apple's frameworks that code uses: declarations with the SDK's names, types, optionality and actor isolation, and bodies that do nothing (but see "The part that does something"). Against
 them the Swift 6 compiler on Linux checks what a compiler checks: names, labels, types, optionals, overrides, required initializers,
 `private`, isolation, `Sendable`.
 
@@ -47,6 +47,12 @@ a test target is read for what it declares, not checked: `make check` compiles i
 | SwiftUI | `stubs/SwiftUI`, fifteen files | As of macOS 14: `View`, `ViewModifier` and the real result builders; the property wrappers, bindings, the environment and preferences; text, fonts, images, colours and shape styles; shapes and paths; stacks, grids, lists, forms, tabs, navigation; the controls and their styles; the common modifiers; animation and transitions; gestures; sheets, alerts, toolbars; accessibility; `Layout`; `App`, scenes and commands; `NSHostingView`, `NSHostingController`, `NSViewRepresentable`. What is left out is listed under "Known differences" |
 
 Not there at all yet: IOKit, CoreImage, CoreText, Metal, AVFoundation, Security. A file that imports one fails with "no such module".
+
+## The part that does something
+
+What Arbor's Accessibility layer calls (the Accessibility API, `NSWorkspace`, `NSRunningApplication`, `NSScreen`, `NSEvent`'s monitors and class properties, `CGWindowListCopyWindowInfo`, `CGEventSource`, type ids, booleans and run loop sources of Core Foundation) has bodies that ask a model of a
+Mac, `stubs/FakeMacOS`, which comes first in `check.sh`'s order. `make mac-on-linux` compiles these same files for real, links them with the layer and runs it (`scripts/mac-on-linux/README.md`). To this tool it makes no difference: it reads what is declared. **Keep the declarations as the SDK has them**; what the
+model needs besides begins with an underscore (`_stands`, `_pid`, `_onRunLoop`), and Arbor's code must not use it.
 
 ## When it complains about something Apple does have
 
@@ -119,4 +125,5 @@ written in Swift, says otherwise.
 - `CFString`, `CFDictionary`, `CFArray`, `CFData`, `CFNumber` and `CFURL` are Foundation's classes, so that `as` bridges as on the Mac. Other Core Foundation types are empty classes.
   The price: a bare string literal passes for a `CFString` here (`AXUIElementSetAttributeValue(element, "AXMain", value)`), and the Mac wants `"AXMain" as CFString`.
 - Key paths for `observe(_:)` need `@objc dynamic` properties on the Mac; here any key path will do.
-- Nothing is linked, so a function that exists in no library goes unnoticed.
+- Nothing is linked, so a function that exists in no library goes unnoticed (`make mac-on-linux` links the Accessibility layer, and only that).
+- `AXObserverCreate`'s callback is `@escaping` here, because the model keeps it. On the Mac it is a C function pointer, to which the word does not apply.

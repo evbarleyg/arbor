@@ -520,7 +520,9 @@ func tellOfTheWalk(_ book: Book) {
         let short = Walker.shrink(finding.script, manners: manners, seed: finding.seed, rule: rule, ignoring: others)
         let text = short.map(\.text).joined(separator: "; ")
         let again = Walker.run(short, manners: manners, seed: finding.seed, ignoring: others, journal: true)
-        story.check(rule, false, "\(counts[rule] ?? 0) of \(seeds.count) seeds; first seed \(finding.seed): \(again?.breach.detail ?? finding.breach.detail)\n      --replay '\(manners.name)|\(finding.seed)|\(text)'")
+        story.check(
+          rule, false,
+          "\(counts[rule] ?? 0) of \(seeds.count) seeds; first seed \(finding.seed): \(again?.breach.detail ?? finding.breach.detail)\n      --replay '\(manners.name)|\(finding.seed)|\(text)'")
         if book.options.isVerbose || book.isNew(story, rule) {
           story.onFailure { "    \(rule): seed \(finding.seed), \(short.count) steps of \(finding.script.count)\n" + (again?.journal ?? []).map { "      " + $0 }.joined(separator: "\n") }
         }
