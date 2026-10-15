@@ -1,22 +1,23 @@
 #!/bin/bash
-# Can the window itself be seen moving? A probe: Arbor does not run, and nothing of Arbor's is changed by what it finds until somebody decides.
+# Can the window itself be seen moving, as macOS's own tiling moves it? A probe: Arbor does not run, and nothing of Arbor's changes by what it finds until somebody decides.
 #
 #   scripts/mac-shell/run.sh scripts/mac-shell/probe-glide.sh          on one of GitHub's Macs, from anywhere: six minutes
 #
-# Arbor's motion shows cards on a stage while the real windows are moved once, underneath. A picture of the window in the card's place needs Screen Recording,
-# which Arbor never asks for. What is left is to move THE REAL WINDOW IN STEPS through Accessibility, which Arbor has anyway (glide.swift).
-# THE QUESTIONS ONLY A MAC CAN ANSWER: how long does each of the day's nine apps take to answer a call that moves its window? Of 8 and of 12 places asked for in
-# 0.2 s, how many does the window server ever show, and how long does the window stand still between two? Does the app lay its content out again on the way? Does it end
-# where it was asked to? How far apart are 2 and 4 windows that move together, and what does a thread for each app gain? What does it cost the processor? Each
-# with a CONTROL: the same move in one call, as Arbor moves windows with its motion off. And beside it, for the other road: how long do pictures of 1, 4 and 8 windows take?
-# WHAT LINUX PROVES (rehearse.sh): that this script gets to its end, that glide.swift (all but its forty lines of Accessibility) paces, counts and writes as its header
-# says, and that the judge reads it. Nothing about any app: rehearse/real-apps makes them up.
-# WHAT IS JUDGED AFTERWARDS, by judge-glide.py, whose header has the limits (`judge-glide.py <folder>`, on any machine, with other limits if wanted): glide.log (every call),
+# Arbor's motion shows cards on a stage while the real windows are moved once, underneath. A picture of the window in the card's place needs Screen Recording, which Arbor
+# never asks for. macOS's own tiling moves the real window: it glides and grows for 0.3 s, a new frame with every frame of the display, four edges in step. What is left to Arbor
+# is to SET THE REAL WINDOW'S FRAME ONCE FOR EVERY FRAME OF THE DISPLAY through Accessibility, which it has anyway: two askings each time, place and size (glide.swift).
+# THE QUESTIONS ONLY A MAC CAN ANSWER, of each of the day's nine apps alone: of 18 frames asked for in 0.3 s, how many does the window server ever show, and how long does the window
+# stand still between two? Which order of the two askings keeps the edges in step, and what shows between them? What does it cost the processor? Where does it end? Each beside a
+# CONTROL (the frame set once, as Arbor does with its motion off, in either order) and beside THE BAR (macOS's own Window > Move & Resize > Left on the same window). Then two
+# windows: one glides, the other is set once. And for the other road: how long do pictures of 1, 4 and 8 windows take?
+# WHAT LINUX PROVES (rehearse.sh): that this script gets to its end, that glide.swift (all but its lines of Accessibility) paces, orders, counts and writes as its header says, and that
+# the judge reads it. Nothing about any app: rehearse/real-apps makes them up.
+# WHAT IS JUDGED AFTERWARDS, by judge-glide.py, whose header has the limits (`judge-glide.py <folder>`, on any machine, with other limits if wanted): glide.log (every asking),
 # samples.log (what the window server showed, 120 times a second), cpu.log, pictures.txt. verdict.txt is what it said on the Mac. If two apps of nine stutter, this road is closed.
-# To look at: film-glide-<n>.png and film-control-<n>.png, four windows on their way, about 70 ms apart; <nnn>-open-<app>.jpg, what each app put up.
+# To look at: film-glide-<n>.png, a pair on its way, about 70 ms apart; <nnn>-open-<app>.jpg, what each app put up.
 #
 # Only on GitHub's Macs: it opens real apps, moves and resizes their windows, quits them, and switches Reduce Motion and the display's size.
-# The apps alone come first: what is cut off is the sets, the films and the pictures, and what is there can still be judged.
+# The apps alone come first: what is cut off is the pairs, the film and the pictures, and what is there can still be judged.
 ARBOR_TIME_LIMIT=450
 # Twice the display's rate: a place that was there for a whole frame cannot fall between two samples.
 DAY_HZ=120
@@ -42,19 +43,24 @@ cpu() {
   [ -z "$SERVER" ] || echo "$1 $2 server $(day_cpu_seconds "$SERVER")" >> "$ARBOR_OUT/cpu.log"
 }
 
-# play <who> <steps> <order> <window>:<x>,<y>[,<w>,<h>]…: one act, called <who>.<n>. One step is the control.
-# FILM=<name>: pictures are taken meanwhile.
+# play <who> <steps> <order> <window>:<x>,<y>,<w>,<h>…: one act, called <who>.<n>. One step is the control; 12 are made in 0.2 s, 18 in 0.3 s.
+# play <who> bar <window>: macOS's own tiling. FILM=<name>: pictures are taken meanwhile.
 play() {
-  local who=$1 steps=$2 order=$3 duration=0.2 glide
-  shift 3
-  [ "$steps" -gt 1 ] || duration=0
+  local who=$1 steps=$2 glide
+  shift 2
+  case "$steps" in
+    bar) set -- --menu "Window/Move & Resize/Left" "$@" ;;
+    1) set -- --steps 1 --duration 0 --order "$@" ;;
+    *) set -- --steps "$steps" --duration "$(echo "$steps" | awk '{ printf "%.3f", $1 / 60 }')" --order "$@" ;;
+  esac
   ACT=$((ACT + 1))
   cpu "$who.$ACT" before
   note "glide $who.$ACT"
   # shellcheck disable=SC2086
-  $TIERS "$TOOLS/glide" "$LOG" "$who.$ACT" --steps "$steps" --duration "$duration" --order "$order" "$@" 5<&- 6>&- &
+  $TIERS "$TOOLS/glide" "$LOG" "$who.$ACT" "$@" 5<&- 6>&- &
   glide=$!
-  [ -z "${FILM:-}" ] || film "$FILM" 6
+  # Of the first act alone.
+  [ -z "${FILM:-}" ] || { film "$FILM" 6; FILM=""; }
   wait "$glide" || echo "  ✘ glide $who.$ACT ended with exit code $?"
   quiet 300 2000 || echo "  ~ windows were still moving after ${QUIET#*:} ms"
   cpu "$who.$ACT" after
@@ -64,53 +70,50 @@ play() {
 place() {
   apptool activate "$(pid_of "$1")"
   apptool raise "$(window_of "$1")"
-  apptool set-frame "$(window_of "$1")" "$2" "$3" "$4" "$5" > /dev/null
-}
-
-# alone <app>: 500 points there and back; the control, 8 steps and 12; then all of it with a change of size.
-alone() {
-  local window steps
-  window=$(window_of "$1")
-  step "$1 alone (w$window)"
-  PLAYERS=$1
-  place "$1" 60 80 700 500
-  quiet 300 2000
-  for steps in 1 8 12; do
-    play "$1" "$steps" by-window "$window:540,220"
-    play "$1" "$steps" by-window "$window:60,80"
-  done
-  for steps in 1 8 12; do
-    play "$1" "$steps" by-window "$window:540,220,620,440"
-    play "$1" "$steps" by-window "$window:60,80,700,500"
-  done
-}
-
-# roads <app…>: puts the windows in a cascade and sets THERE and BACK, the two ends of their roads.
-roads() {
-  local name index=0
-  PLAYERS="$*" THERE="" BACK=""
-  for name in "$@"; do
-    place "$name" $((40 + index * 50)) $((60 + index * 40)) 560 400
-    BACK="$BACK $(window_of "$name"):$((40 + index * 50)),$((60 + index * 40))"
-    THERE="$THERE $(window_of "$name"):$((520 + index * 50)),$((200 + index * 40))"
-    index=$((index + 1))
-  done
-  quiet 300 2000
-}
-
-# together <who> <app…>: windows of different apps at once, in both orders.
-together() {
-  local who=$1 steps
-  shift
-  step "$who: $*"
-  roads "$@"
   # shellcheck disable=SC2086
-  for steps in 1 8 12; do
-    play "$who" "$steps" by-window $THERE
-    play "$who" "$steps" by-window $BACK
-    play "$who" "$steps" threads $THERE
-    play "$who" "$steps" threads $BACK
+  apptool set-frame "$(window_of "$1")" ${2//,/ } > /dev/null
+}
+
+# Two roads. On the first every edge moves. On the second the left edge alone: the others are to stand still, which two askings cannot promise.
+SMALL=60,80,560,400   LARGE=420,160,800,560
+RIGHT=640,80,560,400  WIDE=240,80,960,400
+
+# road <app> <frame> <frame>: there and back, 18 steps in each order, then the control in either.
+road() {
+  local window order
+  window=$(window_of "$1")
+  for order in by-edges place-first size-first; do
+    play "$1" 18 "$order" "$window:$3"
+    play "$1" 18 "$order" "$window:$2"
   done
+  for order in place-first size-first; do
+    play "$1" 1 "$order" "$window:$3"
+    play "$1" 1 "$order" "$window:$2"
+  done
+}
+
+alone() {
+  step "$1 alone (w$(window_of "$1"))"
+  PLAYERS=$1
+  place "$1" "$SMALL"
+  quiet 300 2000
+  road "$1" "$SMALL" "$LARGE"
+  # From the one road to the other: the place alone, 580 points.
+  play "$1" 12 by-edges "$(window_of "$1"):$RIGHT"
+  road "$1" "$RIGHT" "$WIDE"
+  # Last: what macOS has tiled it may treat as its own.
+  play "$1" bar "$(window_of "$1")"
+}
+
+# pair <who> <app> <app>: the first glides, the second is set once as the glide begins. There and back.
+pair() {
+  step "$1: $2 glides, $3 jumps"
+  PLAYERS="$2 $3"
+  place "$3" 700,420,520,300
+  place "$2" "$SMALL"
+  quiet 300 2000
+  play "$1" 18 by-edges "$(window_of "$2"):$LARGE" "$(window_of "$3"):100,500,620,340"
+  play "$1" 18 by-edges "$(window_of "$2"):$SMALL" "$(window_of "$3"):700,420,520,300"
 }
 
 step "the Mac"
@@ -156,17 +159,10 @@ if [ -n "$SERVER" ]; then
 fi
 
 for name in $WALK_CAST; do alone "$name"; done
-together two "$1" "$2"
-together four "$1" "$2" "$3" "$4"
-# The other end of the cast, if it is another four.
-[ $# -lt 8 ] || together four-more "${@:$#-3}"
-
-step "two films: four windows in twelve steps, and the control"
-roads "$1" "$2" "$3" "$4"
-# shellcheck disable=SC2086
-FILM=film-glide play film 12 by-window $THERE
-# shellcheck disable=SC2086
-FILM=film-control play film 1 by-window $BACK
+pair pair1 "$1" "$2"
+pair pair2 "$3" "$4"
+[ $# -lt 8 ] || { pair pair3 "$5" "$6"; pair pair4 "$7" "$8"; }
+FILM=film-glide pair film "$1" "$2"
 
 step "how long pictures take"
 if [ -x "$TOOLS/picture-time" ]; then
