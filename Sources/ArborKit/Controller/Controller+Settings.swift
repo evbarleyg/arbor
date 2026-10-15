@@ -403,7 +403,7 @@ extension Controller {
   /// What became of a look at settings.json.
   public enum SettingsFileOutcome: Equatable, Sendable {
     /// It says what Arbor already uses: Arbor wrote it itself, or the edit changed nothing that counts
-    /// (spacing, the order of the keys, a key Arbor does not know).
+    /// (spacing, the order of the keys, a key Arbor does not know, unless it is in an entry of `displays`, whose report names it).
     case unchanged
     case applied
     /// There is no file. An editor replacing the file can leave such a moment, so nothing is done.

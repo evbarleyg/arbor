@@ -659,7 +659,8 @@ particular entry goes before a general one and need not repeat it: the Studio Di
 its own entry and the rest from `>=2500`. `match` is `main` (the display with the menu bar), `builtin` (a laptop's or an iMac's
 own), the display's width in points compared with a number (`>=2500`, `>`, `<=`, `<`), its UUID, or part of its name; not its number,
 which changes with the arrangement of the displays. `arborctl displays` lists your displays with their names, sizes and UUIDs, each
-value in effect and the entry it comes from, and any entry it could not read and why. `arborctl set gap 20` changes the general
+value in effect and the entry it comes from, any entry it could not read and why, the keys of an entry that it does not read (`gapp`), and
+the entries that change nothing at the moment (a misspelt name looks like a display that is elsewhere). `arborctl set gap 20` changes the general
 value and says which displays keep their own.
 
 A `*` at the end of `app` stands for the rest of the bundle id: `com.jetbrains.*` is every JetBrains app, `*` alone is

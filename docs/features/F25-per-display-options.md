@@ -74,6 +74,9 @@ first entry that matches the display and sets that key.
 
 - Everything above. Tests: `ArborCoreTests/DisplayOptionsTests.swift` (matching, decoding, skipped entries, round trips) and
   `ArborKitTests/DisplayOptionsScenarioTests.swift` (a 1440×900 built-in display beside a 2560×1440 one; one or more scenarios per criterion).
+- Second round (K1830): `displays` also lists the keys of an entry that are not read (`gapp`, a note; the entry counts without them, the log says how many entries have one, and it is no problem at
+  `reload-settings`) and the entries that change nothing at the moment, by their places in the file, with the reason: no connected display matches, entries before it set the same keys, or it sets
+  nothing. `DisplayOptionsEquivalenceTests`: over seeded journeys a value from an entry does exactly what the general setting of that value does (frames, arrangements, what is drawn, motions).
 
 ## Not shipped
 

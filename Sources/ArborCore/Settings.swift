@@ -156,6 +156,12 @@ public struct Settings: Codable, Equatable, Sendable {
   public internal(set) var skippedDisplays: [String] = []
   /// Their places in the file, counted from 1, for the log. Empty if `displays` is not a list at all.
   public internal(set) var skippedDisplayNumbers: [Int] = []
+  /// Entries of `displays` that were read without some of their keys, e.g. "entry 3 (builtin): `gapp` is not read".
+  public internal(set) var displayKeysNotRead: [String] = []
+  /// The place in the file of each entry of `displays`, counted from 1 as the skipped ones are.
+  public var displayNumbers: [Int] {
+    (1...max(displays.count + skippedDisplayNumbers.count, 1)).filter { !skippedDisplayNumbers.contains($0) }.prefix(displays.count).map { $0 }
+  }
   /// How much Arbor says in a line on screen after a shortcut, a gesture or a menu item: `helpful` (what went
   /// wrong, what changed unseen, and a few hints for newcomers), `all` (every reply) or `off`. See HeadsUp.swift.
   public var messages: String = "helpful"
@@ -373,6 +379,7 @@ public struct Settings: Codable, Equatable, Sendable {
     displays = displayList.entries
     skippedDisplays = displayList.skipped
     skippedDisplayNumbers = displayList.skippedNumbers
+    displayKeysNotRead = displayList.notRead
     try read(.messages, into: &messages)
     try read(.dimBehindArranged, into: &dimBehindArranged)
     try read(.blurBehindArranged, into: &blurBehindArranged)

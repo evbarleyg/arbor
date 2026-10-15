@@ -151,6 +151,60 @@ private func decode(_ json: String) throws -> Settings {
     #expect(settings.skippedDisplays.isEmpty)
   }
 
+  @Test func aReasonWrittenForProgrammersIsNotShown() throws {
+    let settings = try decode(#"{"displays": [{"match": "main", "gap": 1e400}, {"match": "main", "gap": 7}]}"#)
+    #expect(settings.displays == [DisplayOptions(match: .main, gap: 7)])
+    #expect(settings.skippedDisplays == ["entry 1 (main): `gap` must be between 0 and 100"])
+  }
+
+  @Test func entriesThatWereReadKeepTheirPlacesInTheFile() throws {
+    let settings = try decode(
+      #"{"displays": [{"match": ">=wide"}, {"match": "main", "gap": 7}, 5, {"gap": 1}, {"match": "builtin"}, {"match": "@2"}]}"#)
+    #expect(settings.skippedDisplayNumbers == [1, 3, 4, 6])
+    #expect(settings.displayNumbers == [2, 5])
+    #expect(Settings().displayNumbers.isEmpty)
+    #expect(try decode(#"{"displays": 5}"#).displayNumbers.isEmpty)
+    #expect(try decode(#"{"displays": [{"match": "main"}, {"match": "builtin"}]}"#).displayNumbers == [1, 2])
+  }
+
+  @Test func anEntryCountsWithoutTheKeysThatAreNotReadAndSaysWhich() throws {
+    let settings = try decode(
+      """
+      {"displays": [
+         {"match": "main", "gap": 7},
+         {"match": "builtin", "gapp": 5, "screenEdgeBand": 20},
+         {"match": ">=2500", "gap": 5, "cornerRadius": 3, "animationDuration": 0}
+       ]}
+      """)
+    #expect(settings.displays.count == 3, "a later Arbor's file still loads")
+    #expect(settings.displays[1] == DisplayOptions(match: .builtIn, screenEdgeBand: 20))
+    #expect(settings.skippedDisplays.isEmpty)
+    #expect(
+      settings.displayKeysNotRead == [
+        "entry 2 (builtin): `gapp` is not read",
+        "entry 3 (>=2500): `animationDuration`, `cornerRadius` are not read",
+      ])
+  }
+
+  @Test func entriesThatChangeNothingSayWhy() throws {
+    let entries = try decode(
+      """
+      {"displays": [
+         {"match": "builtin", "gap": 7},
+         {"match": "Studoi Display", "gap": 5},
+         {"match": "main"},
+         {"match": "main", "gap": 9},
+         {"match": "main", "gap": 9, "screenEdgeBand": 20}
+       ]}
+      """
+    ).displays
+    let idle = DisplayOptions.idle(among: entries, on: [laptop])
+    #expect(idle.map(\.index) == [1, 2, 3])
+    #expect(idle.map(\.why) == ["matches no display that is connected", "sets nothing", "entries before it set the same keys"])
+    #expect(DisplayOptions.idle(among: entries, on: []).map(\.index) == [0, 1, 2, 3, 4])
+    #expect(DisplayOptions.idle(among: [], on: [laptop]).isEmpty)
+  }
+
   @Test func badEntriesAreSkippedWithAReasonAndTheOthersStillApply() throws {
     let settings = try decode(
       """
