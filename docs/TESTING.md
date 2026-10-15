@@ -745,7 +745,7 @@ copy from before the repository was public, and say what the script does once it
 | `check-resume.sh` | trunk | **never**: ends with 77 | | Calculator and TextEdit opened, brought forward in turn, and quit; `ARBOR_APPS_HERE=1` does not open it |
 | `shots-F15-apps.sh` | trunk | **never**: ends with 77 | | Ten real apps opened for their icons, and killed |
 | `first-dock.sh` (`first-dock.py`) | trunk | **never**: ends with 77 | | Nine real apps opened and quit, every window arranged, Reduce Motion, the display's size |
-| `probe-glide.sh` (`glide.swift`, `picture-time.swift`, `judge-glide.py`) | trunk | **never**: ends with 77 | | Nine real apps opened and quit, their windows moved and resized some 200 times through Accessibility, and tiled once each by macOS's own menu, Reduce Motion, the display's size. Arbor does not run. `picture-time` takes pictures of the apps' windows to time them, and keeps none |
+| `probe-glide.sh` (`glide.swift`, `picture-time.swift`, `judge-glide.py`) | trunk | **never**: ends with 77 | | Nine real apps opened and quit, their windows moved and resized some 170 times through Accessibility, and tiled once each by macOS's own menu, Reduce Motion, the display's size. Arbor does not run. `picture-time` takes pictures of the apps' windows to time them, and keeps none |
 | `check-F52.sh`, `check-F63.sh` | not landed, trunk | **never**: end with 77 | | Virtual displays, Accessibility taken from every app |
 | `check-F59.sh` | not landed | safe | 30 s | During a carry nobody's app gets arrows, ↩ or ⎋ |
 | `shots-F04.sh`, `shots-F34.sh` | not landed | safe | 3 min, 60 s | Test windows go to the Dock and come back; one is closed by its tab's button |
