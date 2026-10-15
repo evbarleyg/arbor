@@ -1,0 +1,227 @@
+# mac-shell: scripts/mac-shell/probe-taken-back.sh at 4e65aea, macOS 26.6.2, 2026-10-15T07:22Z
+built Arbor, the pointer tool and the app bundles in 9s
+# probe-taken-back.sh 07:22Z on macOS 26.6.2, commit 4e65aea
+companions: pid 16046, 2 windows
+> open -g -b com.apple.TextEdit /tmp/arbor-apps.JqHwvm/scratch/oak.txt
+pid 16076 lists (id role subrole x y w h flags):
+  137 AXWindow AXStandardWindow 79 56 673 439 main
+
+== turn 1
+
+--- A is a test window, there
+> click 264 92
+> move 264 212
+
+--- A is TextEdit's, there
+> click 744 92
+> move 744 212
+
+--- A is a test window, back
+> click 264 92
+> move 264 212
+
+--- A is TextEdit's, back
+> click 744 92
+> move 744 212
+
+--- A is a test window, back-20
+> click 264 92
+> move 264 212
+
+--- A is TextEdit's, back-20
+> click 744 92
+> move 744 212
+
+--- A is a test window, back-60
+> click 264 92
+> move 264 212
+
+--- A is TextEdit's, back-60
+> click 744 92
+> move 744 212
+
+--- A is a test window, back-150
+> click 264 92
+> move 264 212
+
+--- A is TextEdit's, back-150
+> click 744 92
+> move 744 212
+
+--- A is a test window, recall
+> click 264 92
+> move 264 212
+
+--- A is TextEdit's, recall
+> click 744 92
+> move 744 212
+
+--- A is a test window, recall-20
+> click 264 92
+> move 264 212
+
+--- A is TextEdit's, recall-20
+> click 744 92
+> move 744 212
+
+--- A is a test window, recall-60
+> click 264 92
+> move 264 212
+
+--- A is TextEdit's, recall-60
+> click 744 92
+> move 744 212
+
+== turn 2
+
+--- A is a test window, there
+> click 264 92
+> move 264 212
+
+--- A is TextEdit's, there
+> click 744 92
+> move 744 212
+
+--- A is a test window, back
+> click 264 92
+> move 264 212
+
+--- A is TextEdit's, back
+> click 744 92
+> move 744 212
+
+--- A is a test window, back-20
+> click 264 92
+> move 264 212
+
+--- A is TextEdit's, back-20
+> click 744 92
+> move 744 212
+
+--- A is a test window, back-60
+> click 264 92
+> move 264 212
+
+--- A is TextEdit's, back-60
+> click 744 92
+> move 744 212
+
+--- A is a test window, back-150
+> click 264 92
+> move 264 212
+
+--- A is TextEdit's, back-150
+> click 744 92
+> move 744 212
+
+--- A is a test window, recall
+> click 264 92
+> move 264 212
+
+--- A is TextEdit's, recall
+> click 744 92
+> move 744 212
+
+--- A is a test window, recall-20
+> click 264 92
+> move 264 212
+
+--- A is TextEdit's, recall-20
+> click 744 92
+> move 744 212
+
+--- A is a test window, recall-60
+> click 264 92
+> move 264 212
+
+--- A is TextEdit's, recall-60
+> click 744 92
+> move 744 212
+
+== turn 3
+
+--- A is a test window, there
+> click 264 92
+> move 264 212
+
+--- A is TextEdit's, there
+> click 744 92
+> move 744 212
+
+--- A is a test window, back
+> click 264 92
+> move 264 212
+
+--- A is TextEdit's, back
+> click 744 92
+> move 744 212
+
+--- A is a test window, back-20
+> click 264 92
+> move 264 212
+
+--- A is TextEdit's, back-20
+> click 744 92
+> move 744 212
+
+--- A is a test window, back-60
+> click 264 92
+> move 264 212
+
+--- A is TextEdit's, back-60
+> click 744 92
+> move 744 212
+
+--- A is a test window, back-150
+> click 264 92
+> move 264 212
+
+--- A is TextEdit's, back-150
+> click 744 92
+> move 744 212
+
+--- A is a test window, recall
+> click 264 92
+> move 264 212
+
+--- A is TextEdit's, recall
+> click 744 92
+> move 744 212
+
+--- A is a test window, recall-20
+> click 264 92
+> move 264 212
+
+--- A is TextEdit's, recall-20
+> click 744 92
+> move 744 212
+
+--- A is a test window, recall-60
+> click 264 92
+> move 264 212
+
+--- A is TextEdit's, recall-60
+> click 744 92
+> move 744 212
+
+== the calls that minimize and restore
+
+--- a test window, the tool minimizes and restores it itself
+> click 264 92
+> move 264 212
+
+--- TextEdit's window, the same
+> click 744 92
+> move 744 212
+
+--- a test window, the tool minimizes and restores it itself
+> click 264 92
+> move 264 212
+
+--- TextEdit's window, the same
+> click 744 92
+> move 744 212
+read mac-shell/taken-back.txt
+still running when the script had ended, and stopped now:
+  16019 sleep
+exit code 0

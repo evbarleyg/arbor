@@ -1,0 +1,1198 @@
+# probe-taken-back.sh 07:22Z on macOS 26.6.2, commit 4e65aea
+
+--- A is a test window, there
+    12.3  probe   mode there
+    12.6  looked  in front: A's app; keys go to nobody
+    43.4  looked  in front: A's app; keys go to A's app, A
+   328.5  probe   focus B: main 0 in 2.4 ms, raise 0 in 1.1 ms, activate() says true, with A's app in front, 14.8 ms in all
+   328.8  ax      B's app: AXFocusedWindowChanged B
+   329.3  space   didActivate B's app
+   330.2  space   didDeactivate A's app
+   411.2  ax      B's app: AXMainWindowChanged B
+  1364.8  looked  in front: B's app; keys go to nobody
+  1425.6  ax      B's app: AXFocusedWindowChanged no window
+  1425.9  ax      A's app: AXApplicationDeactivated
+  1804.2  ax      B's app: AXMainWindowChanged B
+  1804.3  ax      B's app: AXApplicationActivated
+  1805.5  looked  in front: B's app; keys go to B's app, B
+  1816.9  probe   the end
+
+--- A is TextEdit's, there
+    20.5  probe   mode there
+    21.3  looked  in front: A's app; keys go to nobody
+    41.1  looked  in front: A's app; keys go to A's app, A
+   348.5  probe   focus B: main 0 in 2.3 ms, raise 0 in 1.3 ms, activate() says true, with A's app in front, 24.1 ms in all
+   351.8  ax      B's app: AXFocusedWindowChanged B
+   354.3  space   didActivate B's app
+   356.0  space   didDeactivate A's app
+   356.1  ax      A's app: AXApplicationDeactivated
+   356.2  ax      B's app: AXMainWindowChanged B
+   356.4  looked  in front: B's app; keys go to B's app, B
+   356.4  ax      B's app: AXFocusedWindowChanged B
+   356.5  ax      B's app: AXMainWindowChanged B
+   356.6  ax      B's app: AXApplicationActivated
+  1820.9  probe   the end
+
+--- A is a test window, back
+    11.5  probe   mode back
+    11.7  looked  in front: A's app; keys go to nobody
+    30.8  looked  in front: A's app; keys go to A's app, A
+   325.5  probe   focus B: main 0 in 1.6 ms, raise 0 in 1.1 ms, activate() says true, with A's app in front, 11.9 ms in all
+   330.6  probe   focus A: main 0 in 1.7 ms, raise 0 in 3.0 ms, no activation: its app is in front, 4.7 ms in all
+   333.5  space   didActivate B's app
+   334.8  space   didDeactivate A's app
+   395.2  ax      B's app: AXFocusedWindowChanged B
+   403.6  ax      B's app: AXMainWindowChanged B
+   403.8  ax      A's app: AXApplicationDeactivated
+   403.9  ax      B's app: AXFocusedWindowChanged B
+   404.1  ax      B's app: AXMainWindowChanged B
+   404.2  ax      B's app: AXApplicationActivated
+   412.2  looked  in front: B's app; keys go to B's app, B
+  1813.3  probe   the end
+
+--- A is TextEdit's, back
+     9.2  probe   mode back
+     9.5  looked  in front: A's app; keys go to nobody
+    19.8  looked  in front: A's app; keys go to A's app, A
+   323.2  probe   focus B: main 0 in 0.4 ms, raise 0 in 0.5 ms, activate() says true, with A's app in front, 10.4 ms in all
+   325.6  looked  in front: A's app; keys go to B's app, B
+   330.6  probe   focus A: main 0 in 6.8 ms, raise 0 in 0.5 ms, no activation: its app is in front, 7.2 ms in all
+   330.8  space   didActivate B's app
+   331.0  space   didDeactivate A's app
+   331.1  ax      B's app: AXFocusedWindowChanged B
+   331.1  ax      A's app: AXApplicationDeactivated
+   331.2  ax      B's app: AXMainWindowChanged B
+   331.3  ax      A's app: AXFocusedWindowChanged A
+   331.4  ax      B's app: AXFocusedWindowChanged B
+   331.4  ax      A's app: AXMainWindowChanged A
+   331.4  ax      B's app: AXMainWindowChanged B
+   331.5  ax      A's app: AXFocusedWindowChanged A
+   331.6  ax      B's app: AXApplicationActivated
+   331.6  ax      A's app: AXMainWindowChanged A
+   336.1  looked  in front: B's app; keys go to B's app, B
+  1812.4  probe   the end
+
+--- A is a test window, back-20
+    12.9  probe   mode back-20
+    13.5  looked  in front: A's app; keys go to nobody
+    32.6  looked  in front: A's app; keys go to A's app, A
+   330.5  probe   focus B: main 0 in 1.4 ms, raise 0 in 1.9 ms, activate() says true, with A's app in front, 12.3 ms in all
+   349.6  ax      B's app: AXFocusedWindowChanged B
+   351.6  space   didActivate B's app
+   351.7  space   didDeactivate A's app
+   351.9  ax      B's app: AXMainWindowChanged B
+   352.6  ax      A's app: AXApplicationDeactivated
+   352.9  ax      B's app: AXFocusedWindowChanged B
+   353.2  ax      B's app: AXMainWindowChanged B
+   353.4  ax      B's app: AXApplicationActivated
+   353.6  looked  in front: B's app; keys go to B's app, B
+   366.8  probe   focus A: main 0 in 0.8 ms, raise 0 in 1.4 ms, activate() says true, with B's app in front, 5.8 ms in all
+   369.0  space   didActivate A's app
+   373.2  space   didDeactivate B's app
+   374.2  ax      A's app: AXFocusedWindowChanged A
+   374.3  ax      B's app: AXApplicationDeactivated
+   374.4  ax      A's app: AXMainWindowChanged A
+   374.5  looked  in front: A's app; keys go to A's app, A
+   374.5  ax      A's app: AXFocusedWindowChanged A
+   374.6  ax      A's app: AXMainWindowChanged A
+   374.6  ax      A's app: AXApplicationActivated
+  1819.0  probe   the end
+
+--- A is TextEdit's, back-20
+    15.3  probe   mode back-20
+    15.8  looked  in front: A's app; keys go to nobody
+    26.2  looked  in front: A's app; keys go to A's app, A
+   331.5  probe   focus B: main 0 in 0.5 ms, raise 0 in 0.7 ms, activate() says true, with A's app in front, 8.2 ms in all
+   332.6  space   didActivate B's app
+   332.8  space   didDeactivate A's app
+   333.7  ax      B's app: AXFocusedWindowChanged B
+   333.7  ax      A's app: AXApplicationDeactivated
+   333.8  ax      B's app: AXMainWindowChanged B
+   333.8  looked  in front: B's app; keys go to B's app, B
+   333.8  ax      B's app: AXFocusedWindowChanged B
+   333.9  ax      B's app: AXMainWindowChanged B
+   333.9  ax      B's app: AXApplicationActivated
+   363.3  probe   focus A: main 0 in 1.0 ms, raise 0 in 0.7 ms, activate() says true, with B's app in front, 4.9 ms in all
+   363.5  space   didActivate A's app
+   363.6  space   didDeactivate B's app
+   363.7  ax      A's app: AXFocusedWindowChanged A
+   363.8  ax      A's app: AXMainWindowChanged A
+   363.9  ax      A's app: AXFocusedWindowChanged A
+   364.0  ax      A's app: AXMainWindowChanged A
+   364.2  ax      B's app: AXApplicationDeactivated
+   369.8  looked  in front: A's app; keys go to A's app, A
+   378.1  ax      A's app: AXApplicationActivated
+  1816.8  probe   the end
+
+--- A is a test window, back-60
+     9.4  probe   mode back-60
+     9.7  looked  in front: A's app; keys go to nobody
+    23.5  looked  in front: A's app; keys go to A's app, A
+   318.0  probe   focus B: main 0 in 0.7 ms, raise 0 in 0.5 ms, activate() says true, with A's app in front, 5.3 ms in all
+   318.4  space   didActivate B's app
+   318.5  space   didDeactivate A's app
+   318.6  ax      B's app: AXFocusedWindowChanged B
+   318.7  ax      B's app: AXMainWindowChanged B
+   318.7  ax      B's app: AXFocusedWindowChanged B
+   318.8  ax      B's app: AXMainWindowChanged B
+   318.8  ax      A's app: AXApplicationDeactivated
+   326.4  ax      B's app: AXApplicationActivated
+   336.0  looked  in front: B's app; keys go to B's app, B
+   396.0  probe   focus A: main 0 in 0.6 ms, raise 0 in 0.6 ms, activate() says true, with B's app in front, 7.6 ms in all
+   396.5  space   didActivate A's app
+   396.7  space   didDeactivate B's app
+   398.1  ax      A's app: AXFocusedWindowChanged A
+   398.2  ax      A's app: AXMainWindowChanged A
+   398.4  ax      A's app: AXFocusedWindowChanged A
+   398.5  ax      A's app: AXMainWindowChanged A
+   398.5  ax      A's app: AXApplicationActivated
+   398.6  looked  in front: A's app; keys go to A's app, A
+   409.3  ax      B's app: AXApplicationDeactivated
+  1815.0  probe   the end
+
+--- A is TextEdit's, back-60
+    10.1  probe   mode back-60
+    10.5  looked  in front: A's app; keys go to nobody
+    20.7  looked  in front: A's app; keys go to A's app, A
+   320.5  probe   focus B: main 0 in 0.6 ms, raise 0 in 0.6 ms, activate() says true, with A's app in front, 4.5 ms in all
+   329.5  space   didActivate B's app
+   330.0  space   didDeactivate A's app
+   330.2  ax      B's app: AXFocusedWindowChanged B
+   330.3  ax      A's app: AXApplicationDeactivated
+   330.4  ax      B's app: AXMainWindowChanged B
+   330.5  looked  in front: B's app; keys go to B's app, B
+   330.6  ax      B's app: AXFocusedWindowChanged B
+   330.6  ax      B's app: AXMainWindowChanged B
+   330.7  ax      B's app: AXApplicationActivated
+   389.1  probe   focus A: main 0 in 0.5 ms, raise 0 in 0.5 ms, activate() says true, with B's app in front, 4.2 ms in all
+   389.4  looked  in front: B's app; keys go to A's app, A
+   389.5  space   didActivate A's app
+   389.6  space   didDeactivate B's app
+   389.7  ax      A's app: AXFocusedWindowChanged A
+   389.7  ax      A's app: AXMainWindowChanged A
+   389.8  ax      A's app: AXFocusedWindowChanged A
+   389.9  ax      A's app: AXMainWindowChanged A
+   389.9  ax      B's app: AXApplicationDeactivated
+   398.3  looked  in front: A's app; keys go to A's app, A
+   404.9  ax      A's app: AXApplicationActivated
+  1815.1  probe   the end
+
+--- A is a test window, back-150
+    11.0  probe   mode back-150
+    11.6  looked  in front: A's app; keys go to nobody
+    30.6  looked  in front: A's app; keys go to A's app, A
+   324.9  probe   focus B: main 0 in 0.9 ms, raise 0 in 0.8 ms, activate() says true, with A's app in front, 8.3 ms in all
+   326.6  space   didActivate B's app
+   327.2  space   didDeactivate A's app
+   363.3  ax      B's app: AXFocusedWindowChanged B
+   363.6  ax      B's app: AXMainWindowChanged B
+   363.7  ax      A's app: AXApplicationDeactivated
+   363.8  ax      B's app: AXFocusedWindowChanged B
+   363.9  ax      B's app: AXMainWindowChanged B
+   364.0  ax      B's app: AXApplicationActivated
+   364.3  looked  in front: B's app; keys go to B's app, B
+   484.0  probe   focus A: main 0 in 0.9 ms, raise 0 in 3.6 ms, activate() says true, with B's app in front, 7.6 ms in all
+   489.5  space   didActivate A's app
+   490.2  space   didDeactivate B's app
+   502.8  ax      A's app: AXFocusedWindowChanged A
+   503.0  ax      B's app: AXApplicationDeactivated
+   503.1  ax      A's app: AXMainWindowChanged A
+   503.2  ax      A's app: AXFocusedWindowChanged A
+   503.3  ax      A's app: AXMainWindowChanged A
+   503.3  ax      A's app: AXApplicationActivated
+   503.8  looked  in front: A's app; keys go to A's app, A
+  1818.5  probe   the end
+
+--- A is TextEdit's, back-150
+    11.4  probe   mode back-150
+    12.0  looked  in front: A's app; keys go to nobody
+    22.3  looked  in front: A's app; keys go to A's app, A
+   338.8  probe   focus B: main 0 in 0.7 ms, raise 0 in 0.9 ms, activate() says true, with A's app in front, 23.3 ms in all
+   342.1  ax      B's app: AXFocusedWindowChanged B
+   342.5  space   didActivate B's app
+   342.6  looked  in front: B's app; keys go to B's app, B
+   343.3  space   didDeactivate A's app
+   343.4  ax      A's app: AXApplicationDeactivated
+   343.5  ax      B's app: AXMainWindowChanged B
+   343.5  ax      B's app: AXFocusedWindowChanged B
+   343.6  ax      B's app: AXMainWindowChanged B
+   343.7  ax      B's app: AXApplicationActivated
+   505.5  probe   focus A: main 0 in 1.2 ms, raise 0 in 0.4 ms, activate() says true, with B's app in front, 9.0 ms in all
+   505.8  space   didActivate A's app
+   506.0  space   didDeactivate B's app
+   506.2  ax      A's app: AXFocusedWindowChanged A
+   506.3  ax      A's app: AXMainWindowChanged A
+   506.5  ax      A's app: AXFocusedWindowChanged A
+   506.7  ax      A's app: AXMainWindowChanged A
+   507.7  looked  in front: A's app; keys go to A's app, A
+   508.8  ax      B's app: AXApplicationDeactivated
+   518.9  ax      A's app: AXApplicationActivated
+  1815.4  probe   the end
+
+--- A is a test window, recall
+    14.9  probe   mode recall
+    15.2  looked  in front: A's app; keys go to nobody
+    38.4  looked  in front: A's app; keys go to A's app, A
+   332.2  probe   focus B: main 0 in 0.8 ms, raise 0 in 0.8 ms, activate() says true, with A's app in front, 6.3 ms in all
+   335.1  looked  in front: A's app; keys go to B's app, B
+   345.3  probe   focus A: main 0 in 5.0 ms, raise 0 in 1.6 ms, activate() says true, with A's app in front, 12.8 ms in all
+   345.8  space   didActivate B's app
+   346.7  space   didDeactivate A's app
+   346.8  space   didActivate A's app
+   347.0  space   didDeactivate B's app
+   349.2  looked  in front: A's app; keys go to A's app, A
+   368.7  ax      B's app: AXFocusedWindowChanged B
+   369.0  ax      A's app: AXApplicationDeactivated
+   380.4  ax      B's app: AXMainWindowChanged B
+   380.6  ax      A's app: AXFocusedWindowChanged A
+   380.7  ax      B's app: AXFocusedWindowChanged B
+   380.8  ax      A's app: AXMainWindowChanged A
+   381.2  ax      B's app: AXMainWindowChanged B
+   381.3  ax      A's app: AXFocusedWindowChanged A
+   381.3  ax      B's app: AXApplicationActivated
+   381.4  ax      A's app: AXMainWindowChanged A
+   381.5  ax      B's app: AXApplicationDeactivated
+   381.5  ax      A's app: AXApplicationActivated
+  1820.5  probe   the end
+
+--- A is TextEdit's, recall
+    14.3  probe   mode recall
+    14.6  looked  in front: A's app; keys go to nobody
+    29.0  looked  in front: A's app; keys go to A's app, A
+   351.8  probe   focus B: main 0 in 1.5 ms, raise 0 in 2.0 ms, activate() says true, with A's app in front, 24.4 ms in all
+   356.5  looked  in front: A's app; keys go to B's app, B
+   371.3  probe   focus A: main 0 in 12.2 ms, raise 0 in 1.0 ms, activate() says true, with A's app in front, 19.4 ms in all
+   371.7  space   didActivate B's app
+   371.8  space   didDeactivate A's app
+   371.8  space   didActivate A's app
+   371.9  space   didDeactivate B's app
+   373.9  ax      B's app: AXFocusedWindowChanged B
+   374.1  ax      A's app: AXApplicationDeactivated
+   374.2  ax      B's app: AXMainWindowChanged B
+   374.5  ax      A's app: AXFocusedWindowChanged A
+   374.7  ax      B's app: AXFocusedWindowChanged B
+   374.9  ax      A's app: AXMainWindowChanged A
+   375.1  ax      B's app: AXMainWindowChanged B
+   375.2  ax      A's app: AXFocusedWindowChanged A
+   375.3  ax      B's app: AXApplicationActivated
+   375.4  ax      A's app: AXMainWindowChanged A
+   375.5  ax      B's app: AXApplicationDeactivated
+   383.5  ax      A's app: AXApplicationActivated
+   400.6  looked  in front: A's app; keys go to A's app, A
+  1818.3  probe   the end
+
+--- A is a test window, recall-20
+    14.6  probe   mode recall-20
+    14.9  looked  in front: A's app; keys go to nobody
+    33.9  looked  in front: A's app; keys go to A's app, A
+   335.3  probe   focus B: main 0 in 1.0 ms, raise 0 in 1.5 ms, activate() says true, with A's app in front, 10.5 ms in all
+   374.2  ax      B's app: AXFocusedWindowChanged B
+   374.9  space   didActivate B's app
+   375.7  space   didDeactivate A's app
+   375.8  looked  in front: B's app; keys go to B's app, B
+   376.1  ax      B's app: AXMainWindowChanged B
+   376.2  ax      A's app: AXApplicationDeactivated
+   376.5  ax      B's app: AXFocusedWindowChanged B
+   376.8  ax      B's app: AXMainWindowChanged B
+   376.8  ax      B's app: AXApplicationActivated
+   396.1  probe   focus A: main 0 in 0.6 ms, raise 0 in 1.5 ms, activate() says true, with B's app in front, 19.2 ms in all
+   410.6  ax      A's app: AXFocusedWindowChanged A
+   411.1  looked  in front: A's app; keys go to A's app, A
+   411.2  space   didActivate A's app
+   411.3  space   didDeactivate B's app
+   411.4  ax      B's app: AXApplicationDeactivated
+   411.5  ax      A's app: AXMainWindowChanged A
+   411.5  ax      A's app: AXFocusedWindowChanged A
+   411.6  ax      A's app: AXMainWindowChanged A
+   411.6  ax      A's app: AXApplicationActivated
+  1826.3  probe   the end
+
+--- A is TextEdit's, recall-20
+     9.5  probe   mode recall-20
+    10.3  looked  in front: A's app; keys go to nobody
+    20.6  looked  in front: A's app; keys go to A's app, A
+   324.1  probe   focus B: main 0 in 0.5 ms, raise 0 in 0.7 ms, activate() says true, with A's app in front, 10.0 ms in all
+   324.8  space   didActivate B's app
+   325.1  space   didDeactivate A's app
+   326.2  ax      B's app: AXFocusedWindowChanged B
+   326.2  ax      A's app: AXApplicationDeactivated
+   326.6  ax      B's app: AXMainWindowChanged B
+   326.8  looked  in front: B's app; keys go to B's app, B
+   326.8  ax      B's app: AXFocusedWindowChanged B
+   326.9  ax      B's app: AXMainWindowChanged B
+   327.5  ax      B's app: AXApplicationActivated
+   352.7  probe   focus A: main 0 in 0.4 ms, raise 0 in 0.5 ms, activate() says true, with B's app in front, 5.2 ms in all
+   352.9  looked  in front: B's app; keys go to A's app, A
+   353.2  space   didActivate A's app
+   354.8  space   didDeactivate B's app
+   354.9  ax      A's app: AXFocusedWindowChanged A
+   355.0  ax      B's app: AXApplicationDeactivated
+   355.0  ax      A's app: AXMainWindowChanged A
+   355.1  ax      A's app: AXFocusedWindowChanged A
+   355.2  ax      A's app: AXMainWindowChanged A
+   359.3  looked  in front: A's app; keys go to A's app, A
+   368.7  ax      A's app: AXApplicationActivated
+  1811.9  probe   the end
+
+--- A is a test window, recall-60
+     8.7  probe   mode recall-60
+     8.9  looked  in front: A's app; keys go to nobody
+    19.2  looked  in front: A's app; keys go to A's app, A
+   314.8  probe   focus B: main 0 in 0.5 ms, raise 0 in 0.6 ms, activate() says true, with A's app in front, 4.5 ms in all
+   315.2  space   didActivate B's app
+   315.2  looked  in front: A's app; keys go to B's app, B
+   315.4  space   didDeactivate A's app
+   315.4  ax      B's app: AXFocusedWindowChanged B
+   315.5  ax      B's app: AXMainWindowChanged B
+   315.6  ax      B's app: AXFocusedWindowChanged B
+   315.6  ax      B's app: AXMainWindowChanged B
+   315.8  ax      A's app: AXApplicationDeactivated
+   319.5  looked  in front: B's app; keys go to B's app, B
+   326.7  ax      B's app: AXApplicationActivated
+   381.5  probe   focus A: main 0 in 0.7 ms, raise 0 in 0.9 ms, activate() says true, with B's app in front, 4.1 ms in all
+   381.8  space   didActivate A's app
+   382.3  space   didDeactivate B's app
+   383.3  ax      A's app: AXFocusedWindowChanged A
+   383.4  ax      A's app: AXMainWindowChanged A
+   383.4  ax      A's app: AXFocusedWindowChanged A
+   383.5  ax      A's app: AXMainWindowChanged A
+   383.5  ax      A's app: AXApplicationActivated
+   390.9  ax      B's app: AXApplicationDeactivated
+   391.5  looked  in front: A's app; keys go to A's app, A
+  1819.1  probe   the end
+
+--- A is TextEdit's, recall-60
+    11.2  probe   mode recall-60
+    11.7  looked  in front: A's app; keys go to nobody
+    25.7  looked  in front: A's app; keys go to A's app, A
+   332.7  probe   focus B: main 0 in 0.5 ms, raise 0 in 1.0 ms, activate() says true, with A's app in front, 11.6 ms in all
+   333.4  ax      B's app: AXFocusedWindowChanged B
+   336.0  space   didActivate B's app
+   336.2  space   didDeactivate A's app
+   336.3  ax      A's app: AXApplicationDeactivated
+   336.4  looked  in front: B's app; keys go to B's app, B
+   336.4  ax      B's app: AXMainWindowChanged B
+   336.5  ax      B's app: AXFocusedWindowChanged B
+   336.8  ax      B's app: AXMainWindowChanged B
+   336.9  ax      B's app: AXApplicationActivated
+   402.4  probe   focus A: main 0 in 0.7 ms, raise 0 in 0.7 ms, activate() says true, with B's app in front, 6.6 ms in all
+   402.7  space   didActivate A's app
+   402.9  space   didDeactivate B's app
+   403.1  ax      A's app: AXFocusedWindowChanged A
+   403.2  ax      A's app: AXMainWindowChanged A
+   403.3  ax      A's app: AXFocusedWindowChanged A
+   403.3  ax      A's app: AXMainWindowChanged A
+   403.4  ax      B's app: AXApplicationDeactivated
+   409.3  ax      A's app: AXApplicationActivated
+   424.8  looked  in front: A's app; keys go to A's app, A
+  1816.0  probe   the end
+
+--- A is a test window, there
+     8.3  probe   mode there
+     8.6  looked  in front: A's app; keys go to nobody
+    16.1  looked  in front: A's app; keys go to A's app, A
+   333.5  probe   focus B: main 0 in 1.4 ms, raise 0 in 1.7 ms, activate() says true, with A's app in front, 17.1 ms in all
+   335.8  space   didActivate B's app
+   335.9  looked  in front: A's app; keys go to B's app, B
+   336.2  space   didDeactivate A's app
+   336.5  ax      B's app: AXFocusedWindowChanged B
+   337.0  ax      B's app: AXMainWindowChanged B
+   337.2  ax      B's app: AXFocusedWindowChanged B
+   337.4  ax      B's app: AXMainWindowChanged B
+   337.5  ax      A's app: AXApplicationDeactivated
+   346.1  ax      B's app: AXApplicationActivated
+   354.9  looked  in front: B's app; keys go to B's app, B
+  1811.1  probe   the end
+
+--- A is TextEdit's, there
+     8.0  probe   mode there
+     8.3  looked  in front: A's app; keys go to nobody
+    18.3  looked  in front: A's app; keys go to A's app, A
+   340.0  probe   focus B: main 0 in 1.2 ms, raise 0 in 3.0 ms, activate() says true, with A's app in front, 23.0 ms in all
+   341.5  ax      B's app: AXFocusedWindowChanged B
+   341.9  space   didDeactivate A's app
+   342.0  space   didActivate B's app
+   342.1  ax      A's app: AXApplicationDeactivated
+   342.5  ax      B's app: AXMainWindowChanged B
+   342.5  ax      B's app: AXFocusedWindowChanged B
+   342.6  looked  in front: B's app; keys go to B's app, B
+   342.6  ax      B's app: AXMainWindowChanged B
+   342.7  ax      B's app: AXApplicationActivated
+  1808.7  probe   the end
+
+--- A is a test window, back
+     8.2  probe   mode back
+     8.4  looked  in front: A's app; keys go to nobody
+    18.7  looked  in front: A's app; keys go to A's app, A
+   322.8  probe   focus B: main 0 in 1.2 ms, raise 0 in 1.0 ms, activate() says true, with A's app in front, 13.1 ms in all
+   323.4  looked  in front: A's app; keys go to B's app, B
+   325.2  probe   focus A: main 0 in 0.7 ms, raise 0 in 1.4 ms, no activation: its app is in front, 2.1 ms in all
+   326.0  space   didActivate B's app
+   326.6  space   didDeactivate A's app
+   344.8  ax      B's app: AXFocusedWindowChanged B
+   345.1  ax      B's app: AXMainWindowChanged B
+   345.2  ax      A's app: AXApplicationDeactivated
+   345.3  ax      B's app: AXFocusedWindowChanged B
+   345.4  ax      B's app: AXMainWindowChanged B
+   345.5  ax      B's app: AXApplicationActivated
+   346.0  looked  in front: B's app; keys go to B's app, B
+  1810.2  probe   the end
+
+--- A is TextEdit's, back
+    18.3  probe   mode back
+    18.9  looked  in front: A's app; keys go to nobody
+    36.8  looked  in front: A's app; keys go to A's app, A
+   341.1  probe   focus B: main 0 in 0.9 ms, raise 0 in 1.6 ms, activate() says true, with A's app in front, 16.3 ms in all
+   348.9  looked  in front: A's app; keys go to B's app, B
+   353.7  probe   focus A: main 0 in 11.6 ms, raise 0 in 0.6 ms, no activation: its app is in front, 12.2 ms in all
+   354.3  space   didActivate B's app
+   354.5  space   didDeactivate A's app
+   355.1  ax      B's app: AXFocusedWindowChanged B
+   355.3  ax      A's app: AXApplicationDeactivated
+   355.8  looked  in front: B's app; keys go to B's app, B
+   355.9  ax      B's app: AXMainWindowChanged B
+   356.2  ax      A's app: AXFocusedWindowChanged A
+   356.3  ax      B's app: AXFocusedWindowChanged B
+   356.4  ax      A's app: AXMainWindowChanged A
+   356.4  ax      B's app: AXMainWindowChanged B
+   356.5  ax      A's app: AXFocusedWindowChanged A
+   356.5  ax      B's app: AXApplicationActivated
+   356.6  ax      A's app: AXMainWindowChanged A
+  1818.9  probe   the end
+
+--- A is a test window, back-20
+    12.0  probe   mode back-20
+    12.7  looked  in front: A's app; keys go to nobody
+    23.5  looked  in front: A's app; keys go to A's app, A
+   325.5  probe   focus B: main 0 in 0.8 ms, raise 0 in 0.7 ms, activate() says true, with A's app in front, 7.9 ms in all
+   328.2  space   didActivate B's app
+   329.9  space   didDeactivate A's app
+   352.2  ax      B's app: AXFocusedWindowChanged B
+   352.5  ax      A's app: AXApplicationDeactivated
+   352.9  ax      B's app: AXMainWindowChanged B
+   353.0  ax      B's app: AXFocusedWindowChanged B
+   353.1  ax      B's app: AXMainWindowChanged B
+   353.2  ax      B's app: AXApplicationActivated
+   354.5  looked  in front: B's app; keys go to B's app, B
+   370.5  probe   focus A: main 0 in 0.6 ms, raise 0 in 1.1 ms, activate() says true, with B's app in front, 15.5 ms in all
+   386.3  ax      A's app: AXFocusedWindowChanged A
+   389.0  space   didActivate A's app
+   389.3  space   didDeactivate B's app
+   389.4  ax      B's app: AXApplicationDeactivated
+   389.5  looked  in front: A's app; keys go to A's app, A
+   390.3  ax      A's app: AXMainWindowChanged A
+   390.8  ax      A's app: AXFocusedWindowChanged A
+   391.0  ax      A's app: AXMainWindowChanged A
+   391.1  ax      A's app: AXApplicationActivated
+  1895.4  probe   the end
+
+--- A is TextEdit's, back-20
+    15.7  probe   mode back-20
+    16.4  looked  in front: A's app; keys go to nobody
+    39.8  looked  in front: A's app; keys go to A's app, A
+   327.9  probe   focus B: main 0 in 0.8 ms, raise 0 in 0.7 ms, activate() says true, with A's app in front, 8.4 ms in all
+   329.0  space   didActivate B's app
+   329.5  space   didDeactivate A's app
+   330.5  ax      B's app: AXFocusedWindowChanged B
+   330.6  ax      A's app: AXApplicationDeactivated
+   330.7  ax      B's app: AXMainWindowChanged B
+   330.7  ax      B's app: AXFocusedWindowChanged B
+   330.8  looked  in front: B's app; keys go to B's app, B
+   330.8  ax      B's app: AXMainWindowChanged B
+   331.0  ax      B's app: AXApplicationActivated
+   360.0  probe   focus A: main 0 in 1.4 ms, raise 0 in 0.7 ms, activate() says true, with B's app in front, 6.1 ms in all
+   360.3  space   didActivate A's app
+   360.6  space   didDeactivate B's app
+   361.1  ax      A's app: AXFocusedWindowChanged A
+   361.3  ax      A's app: AXMainWindowChanged A
+   361.4  ax      B's app: AXApplicationDeactivated
+   361.5  ax      A's app: AXFocusedWindowChanged A
+   361.8  ax      A's app: AXMainWindowChanged A
+   362.0  looked  in front: A's app; keys go to A's app, A
+   373.1  ax      A's app: AXApplicationActivated
+  1819.2  probe   the end
+
+--- A is a test window, back-60
+    12.6  probe   mode back-60
+    13.2  looked  in front: A's app; keys go to nobody
+    31.6  looked  in front: A's app; keys go to A's app, A
+   321.4  probe   focus B: main 0 in 0.5 ms, raise 0 in 0.5 ms, activate() says true, with A's app in front, 4.7 ms in all
+   322.1  space   didActivate B's app
+   322.4  space   didDeactivate A's app
+   322.7  ax      B's app: AXFocusedWindowChanged B
+   322.8  ax      B's app: AXMainWindowChanged B
+   322.9  ax      A's app: AXApplicationDeactivated
+   323.0  ax      B's app: AXFocusedWindowChanged B
+   323.1  ax      B's app: AXMainWindowChanged B
+   325.3  looked  in front: B's app; keys go to B's app, B
+   339.0  ax      B's app: AXApplicationActivated
+   393.3  probe   focus A: main 0 in 0.8 ms, raise 0 in 0.6 ms, activate() says true, with B's app in front, 5.2 ms in all
+   394.0  space   didActivate A's app
+   394.1  space   didDeactivate B's app
+   398.8  ax      A's app: AXFocusedWindowChanged A
+   399.0  ax      A's app: AXMainWindowChanged A
+   399.2  looked  in front: A's app; keys go to A's app, A
+   399.3  ax      A's app: AXFocusedWindowChanged A
+   399.3  ax      A's app: AXMainWindowChanged A
+   399.3  ax      A's app: AXApplicationActivated
+   403.7  ax      B's app: AXApplicationDeactivated
+  1814.2  probe   the end
+
+--- A is TextEdit's, back-60
+     8.9  probe   mode back-60
+     9.1  looked  in front: A's app; keys go to nobody
+    20.2  looked  in front: A's app; keys go to A's app, A
+   320.0  probe   focus B: main 0 in 0.5 ms, raise 0 in 0.8 ms, activate() says true, with A's app in front, 7.4 ms in all
+   321.3  space   didActivate B's app
+   321.5  space   didDeactivate A's app
+   322.2  ax      B's app: AXFocusedWindowChanged B
+   322.2  ax      A's app: AXApplicationDeactivated
+   322.3  ax      B's app: AXMainWindowChanged B
+   322.4  ax      B's app: AXFocusedWindowChanged B
+   322.4  looked  in front: B's app; keys go to B's app, B
+   322.5  ax      B's app: AXMainWindowChanged B
+   322.5  ax      B's app: AXApplicationActivated
+   392.4  probe   focus A: main 0 in 0.5 ms, raise 0 in 0.6 ms, activate() says true, with B's app in front, 4.9 ms in all
+   392.6  space   didActivate A's app
+   392.9  space   didDeactivate B's app
+   393.1  ax      A's app: AXFocusedWindowChanged A
+   393.3  ax      A's app: AXMainWindowChanged A
+   393.4  ax      A's app: AXFocusedWindowChanged A
+   393.5  ax      A's app: AXMainWindowChanged A
+   394.2  ax      B's app: AXApplicationDeactivated
+   394.7  looked  in front: A's app; keys go to A's app, A
+   399.5  ax      A's app: AXApplicationActivated
+  1812.9  probe   the end
+
+--- A is a test window, back-150
+     8.8  probe   mode back-150
+     9.0  looked  in front: A's app; keys go to nobody
+    16.5  looked  in front: A's app; keys go to A's app, A
+   319.6  probe   focus B: main 0 in 1.2 ms, raise 0 in 0.3 ms, activate() says true, with A's app in front, 5.4 ms in all
+   320.8  space   didActivate B's app
+   322.2  space   didDeactivate A's app
+   322.4  ax      B's app: AXFocusedWindowChanged B
+   322.7  ax      A's app: AXApplicationDeactivated
+   323.0  ax      B's app: AXMainWindowChanged B
+   323.3  ax      B's app: AXFocusedWindowChanged B
+   323.4  ax      B's app: AXMainWindowChanged B
+   324.7  looked  in front: B's app; keys go to B's app, B
+   335.9  ax      B's app: AXApplicationActivated
+   479.5  probe   focus A: main 0 in 0.7 ms, raise 0 in 1.2 ms, activate() says true, with B's app in front, 6.7 ms in all
+   489.0  space   didActivate A's app
+   490.6  space   didDeactivate B's app
+   490.7  ax      A's app: AXFocusedWindowChanged A
+   490.7  ax      B's app: AXApplicationDeactivated
+   490.8  looked  in front: A's app; keys go to A's app, A
+   490.9  ax      A's app: AXMainWindowChanged A
+   491.2  ax      A's app: AXFocusedWindowChanged A
+   491.2  ax      A's app: AXMainWindowChanged A
+   491.3  ax      A's app: AXApplicationActivated
+  1812.7  probe   the end
+
+--- A is TextEdit's, back-150
+    11.4  probe   mode back-150
+    11.8  looked  in front: A's app; keys go to nobody
+    24.5  looked  in front: A's app; keys go to A's app, A
+   327.8  probe   focus B: main 0 in 0.5 ms, raise 0 in 1.2 ms, activate() says true, with A's app in front, 10.0 ms in all
+   335.5  space   didActivate B's app
+   335.8  looked  in front: A's app; keys go to B's app, B
+   335.8  space   didDeactivate A's app
+   335.9  ax      B's app: AXFocusedWindowChanged B
+   336.0  ax      A's app: AXApplicationDeactivated
+   336.1  ax      B's app: AXMainWindowChanged B
+   336.1  ax      B's app: AXFocusedWindowChanged B
+   336.2  ax      B's app: AXMainWindowChanged B
+   336.2  ax      B's app: AXApplicationActivated
+   346.2  looked  in front: B's app; keys go to B's app, B
+   484.9  probe   focus A: main 0 in 0.9 ms, raise 0 in 0.6 ms, activate() says true, with B's app in front, 5.4 ms in all
+   485.2  space   didActivate A's app
+   486.7  space   didDeactivate B's app
+   486.9  ax      A's app: AXFocusedWindowChanged A
+   487.0  ax      A's app: AXMainWindowChanged A
+   487.0  ax      A's app: AXFocusedWindowChanged A
+   487.2  ax      A's app: AXMainWindowChanged A
+   489.0  looked  in front: A's app; keys go to A's app, A
+   489.1  ax      B's app: AXApplicationDeactivated
+   500.1  ax      A's app: AXApplicationActivated
+  1812.7  probe   the end
+
+--- A is a test window, recall
+    12.5  probe   mode recall
+    13.3  looked  in front: A's app; keys go to nobody
+    23.9  looked  in front: A's app; keys go to A's app, A
+   328.1  probe   focus B: main 0 in 0.9 ms, raise 0 in 1.1 ms, activate() says true, with A's app in front, 12.2 ms in all
+   330.3  looked  in front: A's app; keys go to B's app, B
+   342.7  probe   focus A: main 0 in 1.5 ms, raise 0 in 1.3 ms, activate() says true, with A's app in front, 14.2 ms in all
+   344.1  space   didActivate B's app
+   344.3  space   didDeactivate A's app
+   344.4  space   didActivate A's app
+   344.4  space   didDeactivate B's app
+   345.4  ax      B's app: AXFocusedWindowChanged B
+   345.6  ax      A's app: AXApplicationDeactivated
+   345.8  ax      B's app: AXMainWindowChanged B
+   346.0  ax      B's app: AXFocusedWindowChanged B
+   346.2  ax      B's app: AXMainWindowChanged B
+   346.3  ax      B's app: AXApplicationDeactivated
+   348.7  ax      A's app: AXApplicationActivated
+   349.2  looked  in front: A's app; keys go to A's app, A
+  1815.8  probe   the end
+
+--- A is TextEdit's, recall
+    12.0  probe   mode recall
+    12.8  looked  in front: A's app; keys go to nobody
+    24.4  looked  in front: A's app; keys go to A's app, A
+   331.8  probe   focus B: main 0 in 1.1 ms, raise 0 in 1.5 ms, activate() says true, with A's app in front, 16.7 ms in all
+   336.4  looked  in front: A's app; keys go to B's app, B
+   352.6  probe   focus A: main 0 in 14.0 ms, raise 0 in 0.7 ms, activate() says true, with A's app in front, 20.6 ms in all
+   354.5  space   didActivate B's app
+   354.9  space   didDeactivate A's app
+   355.1  space   didActivate A's app
+   355.2  space   didDeactivate B's app
+   355.3  ax      B's app: AXFocusedWindowChanged B
+   355.3  ax      A's app: AXApplicationDeactivated
+   355.4  ax      B's app: AXMainWindowChanged B
+   355.5  ax      A's app: AXFocusedWindowChanged A
+   355.6  ax      B's app: AXFocusedWindowChanged B
+   355.6  ax      A's app: AXMainWindowChanged A
+   355.7  ax      B's app: AXMainWindowChanged B
+   355.8  ax      A's app: AXFocusedWindowChanged A
+   355.8  ax      B's app: AXApplicationActivated
+   355.8  ax      A's app: AXMainWindowChanged A
+   355.9  ax      B's app: AXApplicationDeactivated
+   362.1  ax      A's app: AXApplicationActivated
+   384.2  looked  in front: A's app; keys go to A's app, A
+  1822.9  probe   the end
+
+--- A is a test window, recall-20
+    29.2  probe   mode recall-20
+    30.0  looked  in front: A's app; keys go to nobody
+    54.2  looked  in front: A's app; keys go to A's app, A
+   366.5  probe   focus B: main 0 in 6.1 ms, raise 0 in 3.0 ms, activate() says true, with A's app in front, 33.1 ms in all
+   372.9  space   didActivate B's app
+   375.2  space   didDeactivate A's app
+   407.4  ax      B's app: AXFocusedWindowChanged B
+   409.7  ax      B's app: AXMainWindowChanged B
+   412.5  ax      A's app: AXApplicationDeactivated
+   413.0  ax      B's app: AXFocusedWindowChanged B
+   413.3  ax      B's app: AXMainWindowChanged B
+   413.3  ax      B's app: AXApplicationActivated
+   413.7  looked  in front: B's app; keys go to B's app, B
+   431.0  probe   focus A: main 0 in 0.7 ms, raise 0 in 3.1 ms, activate() says true, with B's app in front, 17.1 ms in all
+   438.2  ax      A's app: AXFocusedWindowChanged A
+   439.3  space   didActivate A's app
+   439.5  space   didDeactivate B's app
+   439.6  ax      B's app: AXApplicationDeactivated
+   446.0  ax      A's app: AXMainWindowChanged A
+   450.7  looked  in front: A's app; keys go to A's app, A
+   453.5  ax      A's app: AXFocusedWindowChanged A
+   453.7  ax      A's app: AXMainWindowChanged A
+   453.7  ax      A's app: AXApplicationActivated
+  1843.1  probe   the end
+
+--- A is TextEdit's, recall-20
+    14.5  probe   mode recall-20
+    15.0  looked  in front: A's app; keys go to nobody
+    33.3  looked  in front: A's app; keys go to A's app, A
+   328.1  probe   focus B: main 0 in 1.2 ms, raise 0 in 2.1 ms, activate() says true, with A's app in front, 8.2 ms in all
+   339.9  space   didActivate B's app
+   340.9  space   didDeactivate A's app
+   343.7  ax      B's app: AXFocusedWindowChanged B
+   343.9  ax      A's app: AXApplicationDeactivated
+   344.1  ax      B's app: AXMainWindowChanged B
+   344.2  looked  in front: B's app; keys go to B's app, B
+   344.3  ax      B's app: AXFocusedWindowChanged B
+   344.4  ax      B's app: AXMainWindowChanged B
+   344.5  ax      B's app: AXApplicationActivated
+   364.8  probe   focus A: main 0 in 0.8 ms, raise 0 in 0.7 ms, activate() says true, with B's app in front, 5.5 ms in all
+   365.5  space   didActivate A's app
+   365.8  space   didDeactivate B's app
+   366.1  ax      A's app: AXFocusedWindowChanged A
+   366.2  ax      B's app: AXApplicationDeactivated
+   366.3  ax      A's app: AXMainWindowChanged A
+   366.4  ax      A's app: AXFocusedWindowChanged A
+   366.5  ax      A's app: AXMainWindowChanged A
+   374.2  ax      A's app: AXApplicationActivated
+   398.1  looked  in front: A's app; keys go to A's app, A
+  1821.4  probe   the end
+
+--- A is a test window, recall-60
+    12.8  probe   mode recall-60
+    13.4  looked  in front: A's app; keys go to nobody
+    32.2  looked  in front: A's app; keys go to A's app, A
+   330.0  probe   focus B: main 0 in 1.3 ms, raise 0 in 1.3 ms, activate() says true, with A's app in front, 11.1 ms in all
+   330.8  looked  in front: A's app; keys go to B's app, B
+   330.9  space   didActivate B's app
+   331.0  space   didDeactivate A's app
+   331.1  ax      B's app: AXFocusedWindowChanged B
+   331.2  ax      B's app: AXMainWindowChanged B
+   331.3  ax      B's app: AXFocusedWindowChanged B
+   331.4  ax      B's app: AXMainWindowChanged B
+   331.4  ax      A's app: AXApplicationDeactivated
+   345.0  ax      B's app: AXApplicationActivated
+   356.2  looked  in front: B's app; keys go to B's app, B
+   405.5  probe   focus A: main 0 in 1.1 ms, raise 0 in 2.1 ms, activate() says true, with B's app in front, 7.4 ms in all
+   405.7  space   didActivate A's app
+   405.8  space   didDeactivate B's app
+   407.2  ax      A's app: AXFocusedWindowChanged A
+   407.3  ax      A's app: AXMainWindowChanged A
+   407.4  looked  in front: A's app; keys go to A's app, A
+   407.5  ax      A's app: AXFocusedWindowChanged A
+   407.5  ax      A's app: AXMainWindowChanged A
+   407.6  ax      A's app: AXApplicationActivated
+   440.2  ax      B's app: AXApplicationDeactivated
+  1827.2  probe   the end
+
+--- A is TextEdit's, recall-60
+    17.5  probe   mode recall-60
+    18.3  looked  in front: A's app; keys go to nobody
+    41.5  looked  in front: A's app; keys go to A's app, A
+   347.7  probe   focus B: main 0 in 1.2 ms, raise 0 in 1.4 ms, activate() says true, with A's app in front, 25.2 ms in all
+   349.8  space   didActivate B's app
+   350.0  space   didDeactivate A's app
+   351.5  ax      B's app: AXFocusedWindowChanged B
+   351.6  ax      A's app: AXApplicationDeactivated
+   351.8  looked  in front: B's app; keys go to B's app, B
+   351.9  ax      B's app: AXMainWindowChanged B
+   352.1  ax      B's app: AXFocusedWindowChanged B
+   352.2  ax      B's app: AXMainWindowChanged B
+   352.2  ax      B's app: AXApplicationActivated
+   425.1  probe   focus A: main 0 in 1.0 ms, raise 0 in 1.5 ms, activate() says true, with B's app in front, 9.3 ms in all
+   425.6  looked  in front: B's app; keys go to A's app, A
+   425.6  space   didActivate A's app
+   425.8  space   didDeactivate B's app
+   426.1  ax      A's app: AXFocusedWindowChanged A
+   426.2  ax      A's app: AXMainWindowChanged A
+   426.4  ax      A's app: AXFocusedWindowChanged A
+   426.5  ax      A's app: AXMainWindowChanged A
+   426.5  ax      B's app: AXApplicationDeactivated
+   436.4  looked  in front: A's app; keys go to A's app, A
+   445.2  ax      A's app: AXApplicationActivated
+  1821.5  probe   the end
+
+--- A is a test window, there
+    17.7  probe   mode there
+    17.9  looked  in front: A's app; keys go to nobody
+    33.3  looked  in front: A's app; keys go to A's app, A
+   332.1  probe   focus B: main 0 in 1.3 ms, raise 0 in 0.8 ms, activate() says true, with A's app in front, 8.5 ms in all
+   337.9  space   didActivate B's app
+   341.0  space   didDeactivate A's app
+   367.6  ax      B's app: AXFocusedWindowChanged B
+   367.9  ax      A's app: AXApplicationDeactivated
+   368.3  ax      B's app: AXMainWindowChanged B
+   368.4  ax      B's app: AXFocusedWindowChanged B
+   368.5  ax      B's app: AXMainWindowChanged B
+   368.5  ax      B's app: AXApplicationActivated
+   369.5  looked  in front: B's app; keys go to B's app, B
+  1823.2  probe   the end
+
+--- A is TextEdit's, there
+    14.1  probe   mode there
+    14.6  looked  in front: A's app; keys go to nobody
+    33.1  looked  in front: A's app; keys go to A's app, A
+   344.1  probe   focus B: main 0 in 1.0 ms, raise 0 in 1.9 ms, activate() says true, with A's app in front, 17.5 ms in all
+   344.6  space   didActivate B's app
+   344.9  space   didDeactivate A's app
+   346.4  ax      B's app: AXFocusedWindowChanged B
+   346.4  ax      A's app: AXApplicationDeactivated
+   346.5  ax      B's app: AXMainWindowChanged B
+   346.5  looked  in front: B's app; keys go to B's app, B
+   346.6  ax      B's app: AXFocusedWindowChanged B
+   346.6  ax      B's app: AXMainWindowChanged B
+   346.7  ax      B's app: AXApplicationActivated
+  1826.0  probe   the end
+
+--- A is a test window, back
+    11.7  probe   mode back
+    12.1  looked  in front: A's app; keys go to nobody
+    26.7  looked  in front: A's app; keys go to A's app, A
+   326.6  probe   focus B: main 0 in 1.3 ms, raise 0 in 1.1 ms, activate() says true, with A's app in front, 10.0 ms in all
+   327.5  looked  in front: A's app; keys go to B's app, B
+   329.2  probe   focus A: main 0 in 1.0 ms, raise 0 in 1.3 ms, no activation: its app is in front, 2.3 ms in all
+   329.9  space   didActivate B's app
+   330.4  space   didDeactivate A's app
+   330.8  ax      B's app: AXFocusedWindowChanged B
+   331.1  ax      B's app: AXMainWindowChanged B
+   331.3  ax      A's app: AXApplicationDeactivated
+   331.5  ax      B's app: AXFocusedWindowChanged B
+   331.7  ax      B's app: AXMainWindowChanged B
+   340.7  ax      B's app: AXApplicationActivated
+   355.2  looked  in front: B's app; keys go to B's app, B
+  1815.9  probe   the end
+
+--- A is TextEdit's, back
+    15.3  probe   mode back
+    15.9  looked  in front: A's app; keys go to nobody
+    31.2  looked  in front: A's app; keys go to A's app, A
+   334.9  probe   focus B: main 0 in 1.7 ms, raise 0 in 2.5 ms, activate() says true, with A's app in front, 13.1 ms in all
+   355.4  looked  in front: A's app; keys go to B's app, B
+   367.5  probe   focus A: main 0 in 7.7 ms, raise 0 in 24.7 ms, no activation: its app is in front, 32.4 ms in all
+   367.9  space   didActivate B's app
+   368.1  space   didDeactivate A's app
+   368.2  ax      B's app: AXFocusedWindowChanged B
+   368.3  ax      A's app: AXApplicationDeactivated
+   368.4  ax      B's app: AXMainWindowChanged B
+   368.5  ax      A's app: AXFocusedWindowChanged A
+   368.6  ax      B's app: AXFocusedWindowChanged B
+   368.7  ax      A's app: AXMainWindowChanged A
+   368.8  ax      B's app: AXMainWindowChanged B
+   368.9  ax      B's app: AXApplicationActivated
+   379.2  looked  in front: B's app; keys go to B's app, B
+  1823.1  probe   the end
+
+--- A is a test window, back-20
+    15.0  probe   mode back-20
+    15.5  looked  in front: A's app; keys go to nobody
+    33.3  looked  in front: A's app; keys go to A's app, A
+   322.6  probe   focus B: main 0 in 0.6 ms, raise 0 in 0.6 ms, activate() says true, with A's app in front, 6.2 ms in all
+   322.8  ax      B's app: AXFocusedWindowChanged B
+   323.2  space   didActivate B's app
+   323.3  space   didDeactivate A's app
+   323.4  ax      B's app: AXMainWindowChanged B
+   323.5  ax      B's app: AXFocusedWindowChanged B
+   323.6  ax      B's app: AXMainWindowChanged B
+   325.0  ax      A's app: AXApplicationDeactivated
+   327.0  looked  in front: B's app; keys go to B's app, B
+   337.7  ax      B's app: AXApplicationActivated
+   349.9  probe   focus A: main 0 in 0.9 ms, raise 0 in 0.7 ms, activate() says true, with B's app in front, 6.9 ms in all
+   365.3  ax      A's app: AXFocusedWindowChanged A
+   366.0  looked  in front: A's app; keys go to B's app, B
+   366.1  space   didActivate A's app
+   366.1  space   didDeactivate B's app
+   372.2  ax      A's app: AXMainWindowChanged A
+   372.3  ax      B's app: AXApplicationDeactivated
+   372.4  ax      A's app: AXFocusedWindowChanged A
+   372.4  ax      A's app: AXMainWindowChanged A
+   372.5  ax      A's app: AXApplicationActivated
+   375.7  looked  in front: A's app; keys go to A's app, A
+  1816.3  probe   the end
+
+--- A is TextEdit's, back-20
+     8.0  probe   mode back-20
+     8.3  looked  in front: A's app; keys go to nobody
+    24.4  looked  in front: A's app; keys go to A's app, A
+   331.3  probe   focus B: main 0 in 1.2 ms, raise 0 in 1.7 ms, activate() says true, with A's app in front, 9.7 ms in all
+   342.7  space   didActivate B's app
+   348.6  space   didDeactivate A's app
+   352.1  ax      B's app: AXFocusedWindowChanged B
+   352.2  ax      A's app: AXApplicationDeactivated
+   352.3  ax      B's app: AXMainWindowChanged B
+   352.4  ax      B's app: AXFocusedWindowChanged B
+   352.5  looked  in front: B's app; keys go to B's app, B
+   352.5  ax      B's app: AXMainWindowChanged B
+   352.5  ax      B's app: AXApplicationActivated
+   360.6  probe   focus A: main 0 in 2.7 ms, raise 0 in 0.2 ms, activate() says true, with B's app in front, 7.9 ms in all
+   361.0  space   didActivate A's app
+   361.6  space   didDeactivate B's app
+   379.5  ax      A's app: AXFocusedWindowChanged A
+   382.1  ax      A's app: AXMainWindowChanged A
+   382.2  ax      B's app: AXApplicationDeactivated
+   382.5  ax      A's app: AXFocusedWindowChanged A
+   382.7  looked  in front: A's app; keys go to A's app, A
+   382.9  ax      A's app: AXMainWindowChanged A
+   382.9  ax      A's app: AXApplicationActivated
+  1812.4  probe   the end
+
+--- A is a test window, back-60
+     8.3  probe   mode back-60
+     8.6  looked  in front: A's app; keys go to nobody
+    17.0  looked  in front: A's app; keys go to A's app, A
+   320.0  probe   focus B: main 0 in 0.9 ms, raise 0 in 0.9 ms, activate() says true, with A's app in front, 9.0 ms in all
+   320.9  looked  in front: A's app; keys go to B's app, B
+   321.4  space   didActivate B's app
+   321.8  space   didDeactivate A's app
+   322.1  ax      B's app: AXFocusedWindowChanged B
+   322.3  ax      B's app: AXMainWindowChanged B
+   322.5  ax      B's app: AXFocusedWindowChanged B
+   322.6  ax      B's app: AXMainWindowChanged B
+   322.7  ax      A's app: AXApplicationDeactivated
+   343.2  ax      B's app: AXApplicationActivated
+   355.1  looked  in front: B's app; keys go to B's app, B
+   387.8  probe   focus A: main 0 in 0.4 ms, raise 0 in 0.5 ms, activate() says true, with B's app in front, 4.3 ms in all
+   388.4  space   didActivate A's app
+   388.7  space   didDeactivate B's app
+   389.2  ax      A's app: AXFocusedWindowChanged A
+   389.4  ax      A's app: AXMainWindowChanged A
+   389.5  ax      A's app: AXFocusedWindowChanged A
+   389.6  ax      A's app: AXMainWindowChanged A
+   389.6  ax      A's app: AXApplicationActivated
+   391.4  looked  in front: A's app; keys go to A's app, A
+   394.9  ax      B's app: AXApplicationDeactivated
+  1814.4  probe   the end
+
+--- A is TextEdit's, back-60
+    13.1  probe   mode back-60
+    13.4  looked  in front: A's app; keys go to nobody
+    33.5  looked  in front: A's app; keys go to A's app, A
+   325.7  probe   focus B: main 0 in 0.8 ms, raise 0 in 0.9 ms, activate() says true, with A's app in front, 12.0 ms in all
+   326.6  ax      B's app: AXFocusedWindowChanged B
+   327.5  space   didActivate B's app
+   328.5  space   didDeactivate A's app
+   328.6  ax      A's app: AXApplicationDeactivated
+   328.9  ax      B's app: AXMainWindowChanged B
+   329.0  ax      B's app: AXFocusedWindowChanged B
+   329.1  ax      B's app: AXMainWindowChanged B
+   329.1  ax      B's app: AXApplicationActivated
+   329.2  looked  in front: B's app; keys go to B's app, B
+   393.6  probe   focus A: main 0 in 0.6 ms, raise 0 in 0.6 ms, activate() says true, with B's app in front, 5.3 ms in all
+   394.1  space   didActivate A's app
+   394.3  looked  in front: B's app; keys go to A's app, A
+   394.4  space   didDeactivate B's app
+   394.5  ax      A's app: AXFocusedWindowChanged A
+   394.5  ax      B's app: AXApplicationDeactivated
+   394.6  ax      A's app: AXMainWindowChanged A
+   394.6  ax      A's app: AXFocusedWindowChanged A
+   394.7  ax      A's app: AXMainWindowChanged A
+   402.0  ax      A's app: AXApplicationActivated
+   416.4  looked  in front: A's app; keys go to A's app, A
+  1817.0  probe   the end
+
+--- A is a test window, back-150
+     8.0  probe   mode back-150
+     8.3  looked  in front: A's app; keys go to nobody
+    19.2  looked  in front: A's app; keys go to A's app, A
+   318.1  probe   focus B: main 0 in 0.6 ms, raise 0 in 0.4 ms, activate() says true, with A's app in front, 4.8 ms in all
+   318.4  space   didActivate B's app
+   318.5  space   didDeactivate A's app
+   318.7  ax      B's app: AXFocusedWindowChanged B
+   318.8  ax      B's app: AXMainWindowChanged B
+   318.9  ax      B's app: AXFocusedWindowChanged B
+   319.0  ax      B's app: AXMainWindowChanged B
+   319.0  ax      A's app: AXApplicationDeactivated
+   323.6  looked  in front: B's app; keys go to B's app, B
+   332.1  ax      B's app: AXApplicationActivated
+   484.2  probe   focus A: main 0 in 0.8 ms, raise 0 in 0.7 ms, activate() says true, with B's app in front, 6.7 ms in all
+   485.0  space   didActivate A's app
+   487.1  space   didDeactivate B's app
+   489.4  ax      A's app: AXFocusedWindowChanged A
+   489.5  ax      B's app: AXApplicationDeactivated
+   489.6  ax      A's app: AXMainWindowChanged A
+   489.7  ax      A's app: AXFocusedWindowChanged A
+   489.9  looked  in front: A's app; keys go to A's app, A
+   490.0  ax      A's app: AXMainWindowChanged A
+   490.0  ax      A's app: AXApplicationActivated
+  1817.0  probe   the end
+
+--- A is TextEdit's, back-150
+    10.5  probe   mode back-150
+    10.7  looked  in front: A's app; keys go to nobody
+    20.5  looked  in front: A's app; keys go to A's app, A
+   320.2  probe   focus B: main 0 in 1.2 ms, raise 0 in 1.4 ms, activate() says true, with A's app in front, 8.1 ms in all
+   332.0  space   didActivate B's app
+   339.4  space   didDeactivate A's app
+   342.0  ax      B's app: AXFocusedWindowChanged B
+   342.1  ax      A's app: AXApplicationDeactivated
+   342.3  looked  in front: B's app; keys go to B's app, B
+   342.3  ax      B's app: AXMainWindowChanged B
+   342.4  ax      B's app: AXFocusedWindowChanged B
+   342.5  ax      B's app: AXMainWindowChanged B
+   342.5  ax      B's app: AXApplicationActivated
+   483.3  probe   focus A: main 0 in 1.1 ms, raise 0 in 1.4 ms, activate() says true, with B's app in front, 9.4 ms in all
+   484.0  space   didActivate A's app
+   484.6  space   didDeactivate B's app
+   506.0  ax      A's app: AXFocusedWindowChanged A
+   507.0  ax      A's app: AXMainWindowChanged A
+   507.0  ax      B's app: AXApplicationDeactivated
+   507.4  ax      A's app: AXFocusedWindowChanged A
+   507.5  ax      A's app: AXMainWindowChanged A
+   507.6  ax      A's app: AXApplicationActivated
+   507.6  looked  in front: A's app; keys go to A's app, A
+  1817.2  probe   the end
+
+--- A is a test window, recall
+    12.6  probe   mode recall
+    12.9  looked  in front: A's app; keys go to nobody
+    31.2  looked  in front: A's app; keys go to A's app, A
+   330.9  probe   focus B: main 0 in 1.5 ms, raise 0 in 1.9 ms, activate() says true, with A's app in front, 15.2 ms in all
+   350.5  probe   focus A: main 0 in 6.9 ms, raise 0 in 6.1 ms, activate() says true, with A's app in front, 19.4 ms in all
+   351.7  space   didActivate B's app
+   352.6  space   didDeactivate A's app
+   352.9  space   didActivate A's app
+   353.0  space   didDeactivate B's app
+   372.4  ax      B's app: AXFocusedWindowChanged B
+   372.5  ax      A's app: AXApplicationDeactivated
+   372.9  ax      B's app: AXMainWindowChanged B
+   373.1  ax      A's app: AXFocusedWindowChanged A
+   373.2  looked  in front: A's app; keys go to B's app, B
+   373.3  ax      B's app: AXFocusedWindowChanged B
+   373.3  ax      A's app: AXMainWindowChanged A
+   373.4  ax      B's app: AXMainWindowChanged B
+   373.5  ax      A's app: AXApplicationActivated
+   373.5  ax      B's app: AXApplicationActivated
+   373.5  ax      B's app: AXApplicationDeactivated
+   385.0  looked  in front: A's app; keys go to A's app, A
+  1813.7  probe   the end
+
+--- A is TextEdit's, recall
+     8.7  probe   mode recall
+     8.9  looked  in front: A's app; keys go to nobody
+    19.4  looked  in front: A's app; keys go to A's app, A
+   340.0  probe   focus B: main 0 in 1.2 ms, raise 0 in 2.6 ms, activate() says true, with A's app in front, 24.7 ms in all
+   346.8  looked  in front: A's app; keys go to B's app, B
+   353.8  probe   focus A: main 0 in 6.5 ms, raise 0 in 0.2 ms, activate() says true, with A's app in front, 13.7 ms in all
+   355.0  space   didActivate B's app
+   355.4  space   didDeactivate A's app
+   355.7  space   didActivate A's app
+   355.9  space   didDeactivate B's app
+   359.1  looked  in front: A's app; keys go to A's app, A
+   359.8  ax      B's app: AXFocusedWindowChanged B
+   359.9  ax      A's app: AXApplicationDeactivated
+   360.0  ax      B's app: AXMainWindowChanged B
+   360.1  ax      A's app: AXFocusedWindowChanged A
+   360.2  ax      B's app: AXFocusedWindowChanged B
+   360.3  ax      A's app: AXMainWindowChanged A
+   360.3  ax      B's app: AXMainWindowChanged B
+   360.4  ax      A's app: AXFocusedWindowChanged A
+   360.4  ax      B's app: AXApplicationActivated
+   360.7  ax      A's app: AXMainWindowChanged A
+   360.7  ax      B's app: AXApplicationDeactivated
+   369.5  ax      A's app: AXApplicationActivated
+  1813.7  probe   the end
+
+--- A is a test window, recall-20
+     8.7  probe   mode recall-20
+     8.9  looked  in front: A's app; keys go to nobody
+    20.5  looked  in front: A's app; keys go to A's app, A
+   326.3  probe   focus B: main 0 in 1.1 ms, raise 0 in 1.3 ms, activate() says true, with A's app in front, 11.8 ms in all
+   328.5  space   didActivate B's app
+   329.0  space   didDeactivate A's app
+   344.6  ax      B's app: AXFocusedWindowChanged B
+   344.8  ax      B's app: AXMainWindowChanged B
+   344.8  ax      A's app: AXApplicationDeactivated
+   344.9  ax      B's app: AXFocusedWindowChanged B
+   345.0  ax      B's app: AXMainWindowChanged B
+   345.0  ax      B's app: AXApplicationActivated
+   345.0  looked  in front: B's app; keys go to B's app, B
+   378.9  probe   focus A: main 0 in 0.7 ms, raise 0 in 1.0 ms, activate() says true, with B's app in front, 4.0 ms in all
+   379.5  space   didActivate A's app
+   379.7  space   didDeactivate B's app
+   380.2  ax      A's app: AXFocusedWindowChanged A
+   380.2  ax      A's app: AXMainWindowChanged A
+   380.3  ax      A's app: AXFocusedWindowChanged A
+   380.4  ax      A's app: AXMainWindowChanged A
+   380.4  ax      A's app: AXApplicationActivated
+   382.1  looked  in front: A's app; keys go to A's app, A
+   391.9  ax      B's app: AXApplicationDeactivated
+  1814.2  probe   the end
+
+--- A is TextEdit's, recall-20
+    13.1  probe   mode recall-20
+    13.5  looked  in front: A's app; keys go to nobody
+    33.6  looked  in front: A's app; keys go to A's app, A
+   346.0  probe   focus B: main 0 in 1.2 ms, raise 0 in 1.5 ms, activate() says true, with A's app in front, 22.1 ms in all
+   346.8  space   didActivate B's app
+   347.5  space   didDeactivate A's app
+   348.3  ax      B's app: AXFocusedWindowChanged B
+   348.3  ax      A's app: AXApplicationDeactivated
+   348.4  ax      B's app: AXMainWindowChanged B
+   348.5  looked  in front: B's app; keys go to B's app, B
+   348.5  ax      B's app: AXFocusedWindowChanged B
+   348.5  ax      B's app: AXMainWindowChanged B
+   348.6  ax      B's app: AXApplicationActivated
+   383.7  probe   focus A: main 0 in 0.8 ms, raise 0 in 0.7 ms, activate() says true, with B's app in front, 6.4 ms in all
+   384.3  space   didActivate A's app
+   384.8  space   didDeactivate B's app
+   384.9  ax      A's app: AXFocusedWindowChanged A
+   385.0  ax      A's app: AXMainWindowChanged A
+   385.1  ax      A's app: AXFocusedWindowChanged A
+   385.1  ax      A's app: AXMainWindowChanged A
+   385.4  ax      B's app: AXApplicationDeactivated
+   393.5  ax      A's app: AXApplicationActivated
+   409.9  looked  in front: A's app; keys go to A's app, A
+  1823.0  probe   the end
+
+--- A is a test window, recall-60
+    14.3  probe   mode recall-60
+    14.5  looked  in front: A's app; keys go to nobody
+    28.8  looked  in front: A's app; keys go to A's app, A
+   324.7  probe   focus B: main 0 in 0.5 ms, raise 0 in 0.4 ms, activate() says true, with A's app in front, 4.4 ms in all
+   325.2  space   didActivate B's app
+   325.5  space   didDeactivate A's app
+   325.6  ax      B's app: AXFocusedWindowChanged B
+   325.7  ax      B's app: AXMainWindowChanged B
+   325.7  ax      B's app: AXFocusedWindowChanged B
+   325.8  ax      B's app: AXMainWindowChanged B
+   325.8  ax      A's app: AXApplicationDeactivated
+   328.2  looked  in front: B's app; keys go to B's app, B
+   333.7  ax      B's app: AXApplicationActivated
+   400.2  probe   focus A: main 0 in 0.4 ms, raise 0 in 1.2 ms, activate() says true, with B's app in front, 4.9 ms in all
+   400.6  space   didActivate A's app
+   401.0  space   didDeactivate B's app
+   403.8  ax      A's app: AXFocusedWindowChanged A
+   404.0  ax      A's app: AXMainWindowChanged A
+   404.1  ax      A's app: AXFocusedWindowChanged A
+   404.1  ax      A's app: AXMainWindowChanged A
+   404.2  ax      A's app: AXApplicationActivated
+   404.3  looked  in front: A's app; keys go to A's app, A
+   416.7  ax      B's app: AXApplicationDeactivated
+  1820.3  probe   the end
+
+--- A is TextEdit's, recall-60
+     8.3  probe   mode recall-60
+     8.7  looked  in front: A's app; keys go to nobody
+    18.5  looked  in front: A's app; keys go to A's app, A
+   335.3  probe   focus B: main 0 in 1.3 ms, raise 0 in 1.8 ms, activate() says true, with A's app in front, 22.7 ms in all
+   337.7  space   didActivate B's app
+   338.1  space   didDeactivate A's app
+   339.4  ax      B's app: AXFocusedWindowChanged B
+   339.5  ax      A's app: AXApplicationDeactivated
+   339.6  ax      B's app: AXMainWindowChanged B
+   339.6  looked  in front: B's app; keys go to B's app, B
+   339.7  ax      B's app: AXFocusedWindowChanged B
+   339.7  ax      B's app: AXMainWindowChanged B
+   339.8  ax      B's app: AXApplicationActivated
+   409.2  probe   focus A: main 0 in 0.9 ms, raise 0 in 0.9 ms, activate() says true, with B's app in front, 8.1 ms in all
+   409.6  space   didActivate A's app
+   409.7  space   didDeactivate B's app
+   420.1  ax      A's app: AXFocusedWindowChanged A
+   420.3  ax      A's app: AXMainWindowChanged A
+   420.4  looked  in front: A's app; keys go to A's app, A
+   420.4  ax      B's app: AXApplicationDeactivated
+   420.5  ax      A's app: AXFocusedWindowChanged A
+   420.6  ax      A's app: AXMainWindowChanged A
+   420.6  ax      A's app: AXApplicationActivated
+  1808.7  probe   the end
+
+--- a test window, the tool minimizes and restores it itself
+     9.4  flight  watching w130 of 16046, mode self; AXMinimized no
+   512.9  probe   set AXMinimized yes -> error 0, asked at 512.3, 0.5 ms
+  1132.5  app     AXFocusedWindowChanged w131
+  1132.9  app     AXMainWindowChanged w131
+  1132.9  app     AXWindowMiniaturized w130
+  2015.3  probe   set AXMinimized no -> error 0, asked at 2014.8, 0.4 ms
+  2555.0  app     AXFocusedWindowChanged w130
+  2555.4  app     AXMainWindowChanged w130
+  2555.5  app     AXWindowDeminiaturized w130
+  3613.3  flight  the end: AXMinimized no
+
+--- TextEdit's window, the same
+     6.8  flight  watching w137 of 16076, mode self; AXMinimized no
+   512.2  probe   set AXMinimized yes -> error 0, asked at 511.6, 0.6 ms
+  1072.6  app     AXWindowMiniaturized w137
+  2010.6  probe   set AXMinimized no -> error 0, asked at 2010.2, 0.4 ms
+  2545.3  app     AXFocusedWindowChanged w137
+  2545.7  app     AXMainWindowChanged w137
+  2545.7  app     AXWindowDeminiaturized w137
+  3611.4  flight  the end: AXMinimized no
+
+--- a test window, the tool minimizes and restores it itself
+    11.6  flight  watching w130 of 16046, mode self; AXMinimized no
+   517.9  probe   set AXMinimized yes -> error 0, asked at 517.7, 0.2 ms
+  1051.7  app     AXFocusedWindowChanged w131
+  1051.9  app     AXMainWindowChanged w131
+  1051.9  app     AXWindowMiniaturized w130
+  2012.1  probe   set AXMinimized no -> error 0, asked at 2011.9, 0.2 ms
+  2546.2  app     AXFocusedWindowChanged w130
+  2546.5  app     AXMainWindowChanged w130
+  2546.6  app     AXWindowDeminiaturized w130
+  3621.2  flight  the end: AXMinimized no
+
+--- TextEdit's window, the same
+    10.7  flight  watching w137 of 16076, mode self; AXMinimized no
+   520.0  probe   set AXMinimized yes -> error 0, asked at 519.4, 0.4 ms
+  1061.6  app     AXWindowMiniaturized w137
+  2022.6  probe   set AXMinimized no -> error 0, asked at 2021.9, 0.6 ms
+  2580.6  app     AXFocusedWindowChanged w137
+  2584.6  app     AXMainWindowChanged w137
+  2584.6  app     AXWindowDeminiaturized w137
+  3617.2  flight  the end: AXMinimized no
