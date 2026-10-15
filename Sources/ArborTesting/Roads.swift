@@ -29,6 +29,8 @@ extension FakeWindowSystem {
   /// What is wrong with a road, or nil. A window changes place once at most, and its left edge, its top edge, its width and
   /// its height each go one way only: never past where they end up and back.
   public nonisolated static func detour(_ road: [CGRect]) -> String? {
+    // Nothing was changed about it.
+    guard road.count > 1 else { return nil }
     let steps = Array(zip(road, road.dropFirst()))
     let told = road.map { "(\(Int($0.minX)),\(Int($0.minY)) \(Int($0.width))×\(Int($0.height)))" }.joined(separator: " → ")
     let places = changesOfPlace(road)

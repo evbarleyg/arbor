@@ -29,7 +29,7 @@ extension Controller {
       if enforcement.givenUp.contains(window) { continue }
       // The first frame `apply` asks for.
       if let question = questionBeforePlacing(current, in: target, on: displayID) {
-        moves.append((window, question))
+        moves.append((window, fitted(question, for: window)))
       } else if case let asked = request(for: current, in: target), !isWhereItsAnswerBelongs(current, asked: asked, in: target) {
         moves.append((window, asked))
       }

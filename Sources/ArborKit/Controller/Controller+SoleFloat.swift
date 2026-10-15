@@ -72,14 +72,13 @@ extension Controller {
     var target = fillingFrame(on: desktop, of: display, minimum: minimumSizes[window])
     guard parked.contains(window) || current.frame != frameWhenFilling(desktop, with: window, on: display) else { return }
     // Its app does not answer: it is where it was, and is placed when the app does (as in `apply`).
-    guard var actual = system.setFrame(target, of: window) else {
+    // A few points over can be the nearest character cell, not a refusal (Controller+SizeSteps.swift), as in `apply`.
+    guard var actual = offer(target, to: window) else {
       unplaced.insert(window)
       return
     }
     unplaced.remove(window)
     parked.remove(window)
-    // A few points over can be the nearest character cell, not a refusal (Controller+SizeSteps.swift), as in `apply`.
-    actual = askForLess(window, slot: target, took: actual)
     if actual.width > target.width + 2 || actual.height > target.height + 2 {
       // The app will not make it that small. Remember, so that it is placed in one move from now on.
       minimumSizes[window] = CGSize(
@@ -89,11 +88,9 @@ extension Controller {
       actual = system.setFrame(target, of: window) ?? actual
     }
     if actual.width < target.width - 2 || actual.height < target.height - 2 {
-      // Nor that large. In the middle it looks meant, in the top-left corner broken.
-      let centred = CGRect(
-        x: target.midX - min(actual.width, target.width) / 2, y: target.midY - min(actual.height, target.height) / 2,
-        width: actual.width, height: actual.height)
-      actual = system.setFrame(centred, of: window) ?? actual
+      // Nor that large. In the middle it looks meant, in the top-left corner broken; less than a cell short it has filled it (as in `place`).
+      let rest = restingFrame(of: window, actual.size, in: target)
+      if !actual.approximatelyEquals(rest, tolerance: 1) { actual = system.setFrame(rest, of: window) ?? actual }
     }
     windows[window]?.frame = actual
     settled[window] = actual
@@ -231,7 +228,7 @@ extension Controller {
   }
 
   /// No text cell is larger than this (as in Controller+SizeSteps.swift).
-  static let largestCell: CGFloat = 36
+  static let largestCell = Cells.largest
 
   /// The user moved or resized a floating window, which was on `source`, without dragging it by its title bar. Its
   /// new frame has been recorded as its own.

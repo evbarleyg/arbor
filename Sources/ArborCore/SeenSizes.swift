@@ -14,12 +14,14 @@ public struct SeenSizes: Equatable, Sendable {
   /// is none. A terminal or a window that cannot grow: nobody can tell. Either takes the same again of anything between the two.
   public var closeOffer = CGSize.zero
   public var closeTook = CGSize.zero
+  /// What its answers tell about the character cells it comes in, if it does.
+  public var cells = Cells()
 
   /// A difference that is no refusal: apps round.
   static let slack: CGFloat = 2
   /// No step is larger than this: character cells at a very large font. A terminal takes the whole cells nearest to what it is
   /// offered, so a window that comes this close has not stopped growing. Offered more, it takes more.
-  public static let largestStep: CGFloat = 36
+  public static let largestStep = Cells.largest
 
   public init(_ size: CGSize) {
     least = size
@@ -41,7 +43,7 @@ public struct SeenSizes: Equatable, Sendable {
 
   /// How small and how large it has been it has been. Whether it can grow further is what may have changed.
   public mutating func forgetWhereItStopped() {
-    (stoppedAt, closeOffer, closeTook) = (.zero, .zero, .zero)
+    (stoppedAt, closeOffer, closeTook, cells) = (.zero, .zero, .zero, Cells())
   }
 
   /// The window was offered a size, and this is the size it took.
@@ -76,14 +78,18 @@ public struct SeenSizes: Equatable, Sendable {
   /// How wide and how high it is expected to become at most when it is `offered` a size, being `now` this large; nil where no
   /// limit is known. One that is larger now than where it stopped has outgrown whatever stopped it.
   public func limit(now: CGSize, offered: CGSize) -> (width: CGFloat?, height: CGFloat?) {
-    func limit(_ now: CGFloat, _ offered: CGFloat, _ stoppedAt: CGFloat, _ closeOffer: CGFloat, _ closeTook: CGFloat) -> CGFloat? {
+    func limit(
+      _ now: CGFloat, _ offered: CGFloat, _ stoppedAt: CGFloat, _ closeOffer: CGFloat, _ closeTook: CGFloat, _ cells: Cells.Side
+    ) -> CGFloat? {
       if stoppedAt > 0, now <= stoppedAt + Self.slack { return stoppedAt }
+      // Of a terminal whose cell is known it is known what it makes of any offer.
+      if let whole = cells.wholeCells(in: offered) { return whole }
       if closeTook > 0, now <= closeTook + Self.slack, offered >= closeTook, offered <= closeOffer + Self.slack { return closeTook }
       return nil
     }
     return (
-      limit(now.width, offered.width, stoppedAt.width, closeOffer.width, closeTook.width),
-      limit(now.height, offered.height, stoppedAt.height, closeOffer.height, closeTook.height)
+      limit(now.width, offered.width, stoppedAt.width, closeOffer.width, closeTook.width, cells.width),
+      limit(now.height, offered.height, stoppedAt.height, closeOffer.height, closeTook.height, cells.height)
     )
   }
 

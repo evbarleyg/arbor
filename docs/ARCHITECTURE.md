@@ -417,7 +417,10 @@ mouse down → a drag or resize in progress; docked and resized by its edges →
 move the seams it touched when the mouse is released (see Edge resizes);
 docked otherwise → put it back after the mouse is released
 (`scheduleEnforce`). Differences of up to 4 points are accepted as the app
-rounding the size (terminals snap to character cells).
+rounding the size. Terminals go further: they come in whole character cells, and take the
+nearest, which can be more than they were asked for. The step such a window is talked down by is
+its cell (`Cells`), and from then on it is asked for the whole cells that fit its slot; less than a cell short, it has its slot and stays in the slot's top-left corner
+(`Controller+SizeSteps.swift`).
 
 An app that answers every move with one of its own would make putting back a
 loop without end. After three put-backs of a window within three seconds

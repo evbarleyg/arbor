@@ -67,6 +67,43 @@ import Testing
     #expect(seen.closeTook.width == 0)
   }
 
+  /// Of a terminal whose cell is known it is known what it makes of any offer: nothing is left to ask.
+  @Test func withItsCellKnownNoOfferIsAQuestion() {
+    var seen = SeenSizes(CGSize(width: 464, height: 840))
+    #expect(seen.mayRefuseToGrow(to: CGSize(width: 464, height: 1200), now: CGSize(width: 464, height: 840)))
+    seen.cells.height = Cells.Side(cell: 15, on: 840)
+    #expect(!seen.mayRefuseToGrow(to: CGSize(width: 464, height: 1200), now: CGSize(width: 464, height: 840)))
+    #expect(seen.limit(now: CGSize(width: 464, height: 840), offered: CGSize(width: 464, height: 1200)).height == 1200)
+    #expect(seen.limit(now: CGSize(width: 464, height: 840), offered: CGSize(width: 464, height: 1197)).height == 1185)
+    #expect(seen.limit(now: CGSize(width: 464, height: 840), offered: CGSize(width: 464, height: 1197)).width == nil, "each way by itself")
+  }
+
+  /// What it took of an offer it came close to holds for that offer. The grid holds for every offer, so it comes first: an offer two
+  /// points larger can be a cell more.
+  @Test func theGridComesBeforeWhatItTookLastTime() {
+    var seen = SeenSizes(CGSize(width: 464, height: 840))
+    seen.note(took: CGSize(width: 464, height: 840), offered: CGSize(width: 464, height: 852))
+    let now = CGSize(width: 464, height: 840)
+    #expect(seen.limit(now: now, offered: CGSize(width: 464, height: 854)).height == 840, "nothing else is known")
+    seen.cells.height = Cells.Side(cell: 15, on: 840)
+    #expect(seen.limit(now: now, offered: CGSize(width: 464, height: 854)).height == 855)
+  }
+
+  /// Where it really stopped growing counts for more than its cells.
+  @Test func whereItStoppedComesBeforeTheGrid() {
+    var seen = SeenSizes(CGSize(width: 464, height: 840))
+    seen.cells.height = Cells.Side(cell: 15, on: 840)
+    seen.note(took: CGSize(width: 464, height: 840), offered: CGSize(width: 464, height: 1200))
+    #expect(seen.limit(now: CGSize(width: 464, height: 840), offered: CGSize(width: 464, height: 1200)).height == 840)
+  }
+
+  @Test func forgettingWhereItStoppedForgetsItsCellsToo() {
+    var seen = SeenSizes(CGSize(width: 464, height: 840))
+    seen.cells.height = Cells.Side(cell: 15, on: 840)
+    seen.forgetWhereItStopped()
+    #expect(seen.cells == Cells())
+  }
+
   @Test func aSizeItFillsSaysNothingAboutALargerOne() {
     var seen = SeenSizes(start)
     seen.note(took: start, offered: CGSize(width: 700, height: 420))

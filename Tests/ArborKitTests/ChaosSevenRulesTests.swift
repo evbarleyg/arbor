@@ -255,13 +255,16 @@ private let b = WindowID(102)
       }.isEmpty, "twice")
   }
 
-  /// A terminal is a few points short of any slot, and that it is set right in it has a name and an owner of its own.
+  /// A terminal is a few points short of any slot, and stays in the slot's corner. Were it set right in it, that has a name of its own.
   @Test func aTerminalSetRightInItsSlotHasAName() {
     let terminal = ["launch", "open 101 Terminal pid 1001 at 100 100 500 400", "behave 101 grid", "open 102 Mail pid 1002 at 800 300 500 400", "settle"]
     let below = terminal + ["dock 102 left", "settle"]
     #expect(nets(after: below, then: "dock 101 beside 102 bottom").isEmpty, "the first time nobody could know")
     // It grows to a height it has not been seen at.
-    #expect(nets(after: below + ["dock 101 beside 102 bottom", "settle"], then: "float 102") == ["set-right-by-less-than-a-cell"])
+    let docked = below + ["dock 101 beside 102 bottom", "settle"]
+    #expect(nets(after: docked, then: "float 102").isEmpty)
+    // Into its slot, where it takes 700 × 840 of 702 × 851, and from there to the middle.
+    #expect(nets(after: docked, then: "float 102") { _ = $0.setFrame(self.rect(13, 42, 700, 840), of: a) } == ["set-right-by-less-than-a-cell"])
     // A window that stops a few points short of its slot for another reason is not a terminal.
     let short = ["launch", "open 101 Notes pid 1001 at 100 100 500 400 max 680 2000", "open 102 Mail pid 1002 at 800 300 500 400", "dock 101 left", "settle", "float 101", "settle"]
     #expect(

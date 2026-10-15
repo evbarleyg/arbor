@@ -189,8 +189,11 @@ extension Controller {
       if ask(window, question, on: displayID) { learnedMinimum = true }
     }
     // All that was foretold has been asked for by now, and this foretells anew.
-    let moves = unknown.compactMap { window, slot, _ in
-      windows[window].flatMap { isStillToBePlaced($0, in: slot) ? (window: window, frame: request(for: $0, in: slot)) : nil }
+    let moves = unknown.compactMap { window, slot, _ -> (window: WindowID, frame: CGRect)? in
+      guard let current = windows[window], isStillToBePlaced(current, in: slot) else { return nil }
+      let asked = request(for: current, in: slot)
+      // Not who is there already: `place` asks for nothing.
+      return isWhereItsAnswerBelongs(current, asked: asked, in: slot) ? nil : (window, asked)
     }
     if moves.count > 1 { system.moveTogether(moves) }
     // Whatever it answered: a window that is part of the layout is in its slot when the layout has been applied.
@@ -206,6 +209,9 @@ extension Controller {
     guard isStillToBePlaced(current, in: target) else {
       // Not a misfit's: that is where its own answer left it, which is on record.
       if isInPlace(current, at: target) || enforcement.givenUp.contains(window) { settled[window] = current.frame }
+      // In this slot, it is no misfit of an earlier one. Left on record, that would say at the next layout that it had answered for
+      // another size (`hasAnsweredForAnotherSize`), and it would be asked once more for nothing.
+      if isInPlace(current, at: target) { misfits[window] = nil }
       return false
     }
     let (asked, expected) = (request(for: current, in: target), expectedFrame(of: current, in: target).size)
@@ -219,7 +225,15 @@ extension Controller {
     // One that was only moved, at the size it has, has been through this where it stood.
     let isOnlyMoved = asked.size == current.frame.size
     // Where it was asked, not by way of the slot's corner.
-    if !isOnlyMoved { actual = askForLess(window, slot: asked, took: actual) }
+    // Measured against the slot's size, for what is asked of a terminal is less; or against what was asked where that is more:
+    // a side that has answered where it stood is not talked down again.
+    if !isThere {
+      let slot = CGRect(
+        origin: asked.origin, size: CGSize(width: max(asked.width, target.width), height: max(asked.height, target.height)))
+      let known = seenSizes[window]?.cells
+      actual = offeredAnew(window, slot, unlessItTook: asked, took: actual)
+      if !isOnlyMoved || seenSizes[window]?.cells != known { actual = askForLess(window, slot: slot, took: actual) }
+    }
     // An answer the screen may have given is no refusal (`mayHaveBeenStoppedByTheScreen`). It can be, anywhere but in the slot, which
     // lies on the screen: where the window stood, if its app carries out a move late and was still there when it was asked for the
     // size; and where it answers from, if it was not expected to grow, was asked lower than its slot begins, and has grown. Not
@@ -235,16 +249,15 @@ extension Controller {
     var saysNothing = false
     if !isOnlyMoved, mayBeTheScreens(actual, whichStoodAt: current.frame.origin) {
       let stood = actual.origin
-      actual = system.setFrame(target, of: window) ?? actual
-      actual = askForLess(window, slot: target, took: actual)
+      actual = offer(target, to: window) ?? actual
       saysNothing = mayBeTheScreens(actual, whichStoodAt: stood)
     }
-    // A window that cannot grow to its slot (Calculator, System Settings) sits in the middle of it,
-    // which looks meant, rather than in its top-left corner, which looks broken.
+    // A window that cannot grow to its slot (Calculator, System Settings) sits in the middle of it, which looks meant, rather
+    // than far from filling it in its top-left corner, which looks broken. Less than a cell short, it has filled it, and stays.
     if actual.width < target.width - 2 || actual.height < target.height - 2 {
-      let centred = Self.centred(actual.size, in: target)
+      let rest = restingFrame(of: window, actual.size, in: target)
       // One that was known not to grow is there already.
-      if !actual.approximatelyEquals(centred, tolerance: 1) { actual = system.setFrame(centred, of: window) ?? actual }
+      if !actual.approximatelyEquals(rest, tolerance: 1) { actual = system.setFrame(rest, of: window) ?? actual }
     } else if asked.origin != target.origin, !actual.approximatelyEquals(target, tolerance: 1) {
       // It was not expected to grow, and has.
       actual = system.setFrame(target, of: window) ?? actual
@@ -450,14 +463,15 @@ extension Controller {
       }
       if let current = windows[window], !isInPlace(current, at: target) {
         // Its app does not answer, so it is where it was, out of view if it was. It is placed when the app answers.
-        guard let given = give(target, to: window) else {
+        let request = fitted(target, for: window)
+        guard let given = give(request, to: window) else {
           unplaced.insert(window)
           continue
         }
-        var actual = given.frame
         unplaced.remove(window)
         // A few points over can be the nearest character cell, not a refusal (Controller+SizeSteps.swift), as in `apply`.
-        actual = askForLess(window, slot: target, took: actual)
+        var actual = askForLess(
+          window, slot: target, took: offeredAnew(window, target, unlessItTook: request, took: given.frame))
         if actual.width > target.width + 2 || actual.height > target.height + 2, let room,
           var preferred = workspace.floating[window]
         {
