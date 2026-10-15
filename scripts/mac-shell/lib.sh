@@ -85,6 +85,7 @@
 #                                     (as a check: received <id> <kind> -gt 0)
 # Real input (pointer.swift has the options: --steps, --duration, --hold, --no-release, --mods)
 #   drag x1 y1 x2 y2 [options] | release [x y] | click x y | dblclick x y | rightclick x y | move x y | key <chord>
+#   drag_on x y [options]           after `drag … --no-release`: carry on to that point with the button down, and rest there
 #   key <chord> --down | --up | --held | --repeat n   hold a shortcut, let go of it later, press another key
 #                                     meanwhile, send its auto-repeat (pointer.swift)
 #   key_to <id> <chord>             the same key, but only once that window has the keyboard: for ⌘W, ⌘M, ⌘H and whatever
@@ -1997,6 +1998,7 @@ dblclick() {
   arbor_input click "$x" "$y" 2 "$@"
 }
 drag() { arbor_input drag "$@"; }
+drag_on() { arbor_input drag-on "$@"; }
 release() { arbor_input release "$@"; }
 # A key left down would outlive the script, as a button would: whatever `key … --down` pressed is let go of when the
 # session stops or the script ends, interrupted or not. Letting go of a key that is up already does nothing.

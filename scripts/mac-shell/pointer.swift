@@ -65,6 +65,8 @@ struct Pointer {
           [--hold s]                wait at the end before releasing (default 0.2)
           [--no-release]            leave the button down; finish with `release`
           [--no-settle]             without the small movement at the end that lets Arbor catch up
+      drag-on x y                   with the button down since a `drag --no-release`: carry on to that point and rest there
+          [--steps n] [--duration s] [--hold s]      as for drag
       release [x y]                 release the button there (default: where the pointer is)
       key <chord>                   press a shortcut, e.g. ctrl+opt+space, cmd+shift+f5, escape
           [--down]                  press the modifiers and the key, and leave them all down
@@ -557,6 +559,19 @@ struct Pointer {
         mouse(.leftMouseUp, at: end, clicks: 1)
         letGo(held)
       }
+
+    case "drag-on":
+      let steps = option("--steps").map { max(1, min(1000, Int(number($0)))) } ?? 30
+      let duration = option("--duration").map { max(0, min(30, number($0))) } ?? 0.6
+      let wait = option("--hold").map { max(0, min(30, number($0))) } ?? 0.2
+      let end = point(at: 0)
+      guard arguments.count == 2 else { fail("drag-on takes x y and its options, not \(arguments.dropFirst(2))") }
+      guard CGEventSource.buttonState(.hidSystemState, button: .left) else { fail("drag-on, but the button is not down") }
+      // The modifiers were pressed by the `drag --no-release` this carries on.
+      for modifier in held { flags.insert(modifier.flag) }
+      glide(.leftMouseDragged, from: location, to: end, steps: steps, duration: duration)
+      settle(at: end)
+      rest(wait)
 
     case "release":
       let target = arguments.count >= 2 ? point(at: 0) : location
