@@ -303,7 +303,7 @@ as_a_person_met_it() {
 # what_nobody_asked_for <name>: three windows and one of a second app, `arrange`, macOS's double-click, and then everything that lays out
 # without anybody having asked Arbor for it (collab/QUESTIONS.md, Q22, second answer). After each: is it where macOS put it?
 what_nobody_asked_for() {
-  local name=$1 slot zoomed bar dialog
+  local name=$1 slot zoomed bar dialog beside
   ctl arrange
   sleep 1
   summary
@@ -395,16 +395,32 @@ what_nobody_asked_for() {
   trace_off "unasked-$name"
   check "in all of that Arbor never set its frame" same "$(moves_of "$W1")" "$([ -n "$TRACE" ] && echo 0 || echo "?")"
   shot "$name-unasked-3-at-the-end"
+  beside=$(real_frame_of "$W3")
 
-  # No check yet: today a pause gives every docked window the frame it floated at, this one too, and a resume puts it into its slot. The
-  # product owner leans to "a pause there and back is nothing"; that is a change of its own.
-  step "$name: pause, and resume (what happens today)"
-  ctl pause
-  sleep 1.5
-  echo "paused: $(real_frame_of "$W1") (macOS had put it at $zoomed; its slot was $slot)"
-  ctl resume
-  sleep 1.5
-  echo "resumed: $(real_frame_of "$W1")"
+  # A pause gives back what Arbor took, and of this window it took nothing (Q22, third answer).
+  step "$name: pause, and resume"
+  trace_on "pause-$name" "a zoomed docked window through a pause and a resume"
+  frames_during "$W1" "$ARBOR_OUT/frames-$name-pause-1.txt" ctl pause
+  check "the pause did not move it at all" stayed "$ARBOR_OUT/frames-$name-pause-1.txt"
+  check "a neighbour has its own size again" differs "$(real_frame_of "$W3")" "$beside"
+  shot "$name-pause-1-paused"
+  frames_during "$W1" "$ARBOR_OUT/frames-$name-pause-2.txt" ctl resume
+  trace_off "pause-$name"
+  check "nor did the resume" stayed "$ARBOR_OUT/frames-$name-pause-2.txt"
+  check "in Arbor's own trace it never set that window's frame" same "$(moves_of "$W1")" "$([ -n "$TRACE" ] && echo 0 || echo "?")"
+  still_there "resumed"
+  check "the neighbour is where it was before the pause" eventually real_frame_is "$W3" "$beside"
+  shot "$name-pause-2-resumed"
+
+  step "$name: Quit, and a start"
+  frames_during "$W1" "$ARBOR_OUT/frames-$name-quit.txt" arbor_quit
+  check "Quit did not move it at all" stayed "$ARBOR_OUT/frames-$name-quit.txt"
+  check "a neighbour has its own size again" differs "$(real_frame_of "$W3")" "$beside"
+  shot "$name-quit"
+  # Nothing is let be across a start: it docks what was docked.
+  frames_during "$W1" "$ARBOR_OUT/frames-$name-start.txt" arbor_relaunch
+  check "the start docks it like the rest" eventually not is letBe "$W1"
+  check "by one road" one_road "$ARBOR_OUT/frames-$name-start.txt"
   summary
 }
 

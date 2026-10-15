@@ -300,6 +300,7 @@ extension Controller {
     hints[window.id] = WindowHint(bundleID: window.bundleID, title: window.title)
     endWaitIfOver()
     Log.info("\(window.id) is back in its saved slot")
+    letBeAgainIfThePauseLeftItAlone(window)
     relayout(display, reason: .structure)
     scheduleSave()
   }
