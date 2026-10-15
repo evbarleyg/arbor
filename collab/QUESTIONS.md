@@ -479,6 +479,17 @@ product decisions) answers in place. Do not delete answered questions.
   2. **For the family, after the first build, with care: `settings.json` holds only what differs from the defaults.** Otherwise every flip to come is swallowed (`tileStyle`, `tabsEnabled`, `continuousZoom`). For files already written there is one migration, once: a file without the new mark is stripped of every value that equals the default as it was when such files were written (a frozen table), and is then marked.
      Whoever had chosen a value that happened to be the default loses nothing that day and follows the default from then on: an honest price before a first release, and the notes say so. Hand-edited keys, their order and unknown keys survive as they do now.
 
+## Q28: Two windows are docked, left and right. How much of the screen does each get?
+
+- Asked by: the keeper of the first run, 2026-10-15, who played the coach's sentences in arbor-sim and found three untrue. Dock left gives a half, beside the Desktop. Dock a second right gives **thirds**: window, Desktop, window; and the first window shrinks from a half to a third.
+- **Answer** (product owner, 2026-10-15): **two docks are two halves. The Desktop is what is left over, not a place with a share of its own.**
+  1. "Side by side" means halves to every newcomer, and side by side is the first half of what Arbor is for.
+  2. On a display 1440 points wide a third is 464 points, which Safari (574), Notes (709) and Mail (760) all refuse: tiles at the second dock.
+  3. Since Q20 loose windows are not kept in the middle, so a third of the screen is reserved for nobody. With halves they lie behind the two just docked, and the screen is tidy at the second move.
+- **The rule.** A window that is docked takes its room from what is left first, all of it if need be; docked windows give only when nothing is left. So the second dock moves one window, and the first stays as it is (rule 2). With nothing left the Desktop has no width, no tile and no gap. ⌃⌥D, the menu and the menu bar still go there.
+  Room comes back when a docked window leaves, to where it was taken from; or when a person drags a docked window's inner edge inward.
+- How it is built: after Q20's change has landed; a setting keeps today's thirds, so that the tests written for them keep their meaning.
+
 ## Decided by the executor
 
 One line per product decision made while building, newest last.
