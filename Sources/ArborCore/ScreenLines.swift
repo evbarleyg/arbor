@@ -2,17 +2,21 @@ import CoreGraphics
 
 /// How far macOS lets a window grow where it stands.
 ///
-/// A call that sets a window's size makes it grow no further than to two lines of the display its corner is on, from where it stands at that
-/// moment. A call that sets its position is not held back so. Measured call by call on hosted Macs, macOS 26, with a plain test window and
+/// A call that sets a window's size makes it grow no further than to two lines of its display, from where it stands at that moment. A
+/// call that sets its position is not held back so. Measured call by call on hosted Macs, macOS 26, with a plain test window and
 /// with real apps alike (`collab/reality.json`: a-window-asked-to-grow-stops-at-the-dock). Arbor reckons with it, and the stand-ins play it.
+///
+/// Which display that is, of a window that lies astride two, is for whoever asks. Arbor and the fake go by the window's corner; the one
+/// sighting there is says the larger part. On one display it makes no difference.
 public struct ScreenLines: Equatable, Sendable {
   /// How far to the right growth goes: all the way to the display's edge; a point short of the visible frame's with the Dock at the right.
   public var right: CGFloat
   /// How far down growth goes: a point short of the visible frame's bottom above a Dock; with the Dock at a side or hidden all the way to the
   /// display's bottom.
   public var bottom: CGFloat
-  /// The display's right edge and its bottom. Between a line and these, in the Dock's strip, a window's edge is held as it is. (Seen below.
-  /// At the right it is taken to be the same.)
+  /// The display's right edge and its bottom. Between a line and these, in the Dock's strip, a window's edge is held as it is; past them it is
+  /// free. At the right edge that was seen to the point. Below, a foot at 729 was held and one at 900 free, on a display 768 high, so that it
+  /// turns at the display's bottom is a guess. So is the strip of a Dock at the right, by likeness.
   public var end: CGPoint
 
   public init(frame: CGRect, visibleFrame: CGRect) {
