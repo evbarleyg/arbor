@@ -19,6 +19,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import traceback
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 spec = importlib.util.spec_from_file_location("public_check", os.path.join(HERE, "public-check.py"))
@@ -1040,15 +1041,12 @@ def check_hook():
         repository.git("config", "--replace-all", "remote.fork.url", public)
         row("the hook: the public repository under another name", pushed_with(), (True, [4], True))
         repository.git("remote", "remove", "fork")
-        try:
-            repository.git("remote", "add", "origin/swarm", repository.origin)
-        except RuntimeError as refused:
-            # A newer git than 2.43, GitHub's runners' among them, makes no such remote, so there the situation cannot come about.
-            row("the hook: a remote whose branches would lie among origin's: this git makes none", "is a subset of existing remote" in str(refused), True)
-        else:
-            integrated(trunk, check.VERSION + 1)
-            row("the hook: a remote whose branches lie among origin's: origin's are not gone by", pushed_with(), own_reads)
-            repository.git("remote", "remove", "origin/swarm")
+        # By configuration, as an older git or a hand leaves it: a newer git's `remote add` refuses a name that lies within another's.
+        repository.git("config", "remote.origin/swarm.url", repository.origin)
+        repository.git("config", "remote.origin/swarm.fetch", "+refs/heads/*:refs/remotes/origin/swarm/*")
+        integrated(trunk, check.VERSION + 1)
+        row("the hook: a remote whose branches lie among origin's: origin's are not gone by", pushed_with(), own_reads)
+        repository.git("remote", "remove", "origin/swarm")
         integrated(trunk, check.VERSION + 5, exceptions=False)
         done = push()
         row("the hook: a newer check that is known and cannot be had whole: no push, and no older check reads instead",
@@ -1085,11 +1083,12 @@ def check_hook():
 
 
 def main():
-    check_texts()
-    check_lists()
-    check_history()
-    check_the_test_itself()
-    check_hook()
+    for part in (check_texts, check_lists, check_history, check_the_test_itself, check_hook):
+        try:
+            part()
+        except Exception as error:  # a git that behaves otherwise, say: that is one row red, and the other parts still have their say
+            place = traceback.extract_tb(error.__traceback__)
+            row(f"{part.__name__} gets to its end", f"line {[frame.lineno for frame in place if frame.name == part.__name__][-1]}: {type(error).__name__}: {error}", "it does")
     wrong = 0
     for what, got, expected in rows:
         if got != expected:
