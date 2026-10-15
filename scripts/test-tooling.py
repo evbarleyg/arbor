@@ -15,6 +15,7 @@ import concurrent.futures
 import importlib.util
 import os
 import pty
+import re
 import select
 import shutil
 import signal
@@ -1595,6 +1596,56 @@ def check_fuzz_launch():
         row(*situation)
 
 
+def check_no_server_asks_its_name():
+    """Python's HTTPServer asks for this machine's name when it binds, and macOS answers with an alert over the windows under test."""
+    as_it_is = re.compile(r"HTTPServer\s*\(\s*\(|-m\s+http\.server\b")
+
+    def starts_one(text):
+        return [number + 1 for number, line in enumerate(text.splitlines()) if as_it_is.search(line)]
+
+    row("no server asks its name: the module from the command line is found", starts_one("true\npython3 -m http.server 8765 --bind 127.0.0.1 &"), [2])
+    row("no server asks its name: so is the class as it is", starts_one('server = http.server.HTTPServer(("127.0.0.1", 0), Handler)'), [1])
+    row("no server asks its name: and the one with threads", starts_one('ThreadingHTTPServer( ("", 80), H).serve_forever()'), [1])
+    row("no server asks its name: a class built on it is none, nor is starting that",
+        starts_one('class Server(http.server.HTTPServer):\n    def server_bind(self): pass\nServer(("127.0.0.1", 0), Handler)'), [])
+    listed = subprocess.run(["git", "ls-files", "-z", "--", "scripts", "Tests", ".github", "Makefile"], cwd=ROOT, capture_output=True, text=True, check=False)
+    found, read = [], 0
+    for path in filter(None, listed.stdout.split("\0")):
+        if path == "scripts/test-tooling.py" or not os.path.isfile(os.path.join(ROOT, path)):
+            continue
+        try:
+            with open(os.path.join(ROOT, path), encoding="utf-8") as handle:
+                found += [f"{path}:{number}" for number in starts_one(handle.read())]
+            read += 1
+        except UnicodeDecodeError:
+            pass  # a picture
+    row("no server asks its name: nothing in scripts/, Tests/ or .github/ starts one as it is (scripts/mac-shell/serve.py says why, and does it right)", found, [])
+    row("no server asks its name: and that was read off the files", read > 100, True)
+
+    # The one that does it right never asks, and still answers.
+    probe = """
+import socket, sys, threading, urllib.request
+def asked(*a): raise SystemExit("asked for the name")
+socket.getfqdn = socket.gethostbyaddr = asked
+import importlib.util
+spec = importlib.util.spec_from_file_location("serve", %r)
+serve = importlib.util.module_from_spec(spec); spec.loader.exec_module(serve)
+import http.server
+server = serve.Server(("127.0.0.1", 0), http.server.SimpleHTTPRequestHandler)
+threading.Thread(target=server.serve_forever, daemon=True).start()
+opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+print(opener.open("http://127.0.0.1:%%d/" %% server.server_address[1], timeout=5).status, server.server_name)
+""" % os.path.join(HERE, "mac-shell", "serve.py")
+    with tempfile.TemporaryDirectory(prefix="tooling-") as folder:
+        done = subprocess.run([sys.executable, "-c", probe], cwd=folder, capture_output=True, text=True, check=False, timeout=30)
+    row("serve.py: binds without asking for the name, and answers", (done.returncode, done.stdout.strip()), (0, "200 127.0.0.1"))
+    control = probe.replace("serve.Server(", "http.server.ThreadingHTTPServer(")
+    with tempfile.TemporaryDirectory(prefix="tooling-") as folder:
+        done = subprocess.run([sys.executable, "-c", control], cwd=folder, capture_output=True, text=True, check=False, timeout=30)
+    row("serve.py: the control: Python's own does ask", (done.returncode, done.stderr.strip()), (1, "asked for the name"))
+    row("serve.py: without a port it says how it is used", subprocess.run([sys.executable, os.path.join(HERE, "mac-shell", "serve.py")], capture_output=True, check=False).returncode, 1)
+
+
 def main():
     canary, since = subprocess.Popen(["sleep", "600"]), time.time()
     check_parity()
@@ -1614,6 +1665,7 @@ def main():
     check_mac_shell_batch()
     check_preflight()
     check_fuzz_launch()
+    check_no_server_asks_its_name()
     wrong = 0
     for what, got, expected in rows:
         if got != expected:
