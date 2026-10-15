@@ -205,9 +205,11 @@ extension Controller {
   /// their own say about the keyboard: at the end of the command, of the move of the view, or of the layout.
   func theKeyboardLeavesTheTile() {
     guard let state = letBe, state.phase == .over else { return }
-    // Its app does not answer, so it is where it was, and would be sent off when the app wakes, by nobody's asking.
+    // Its app does not answer, so it is where it was, and would be sent off when the app wakes, by nobody's asking. Unless what was
+    // asked for has a place for it: there it goes when the app wakes, like any docked window.
     guard !unplaced.contains(state.window) else {
-      letBe?.phase = .standing
+      let isHidden = workspaceID(containing: state.window).flatMap { layouts[$0]?.hiddenWindows.contains(state.window) } == true
+      if isHidden { letBe?.phase = .standing } else { letBe = nil }
       return
     }
     letBe = nil
