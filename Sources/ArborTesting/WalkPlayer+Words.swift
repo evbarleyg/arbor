@@ -302,7 +302,7 @@ extension WalkPlayer {
     walkAct(.openClose, "new-window-\(name)", "presses ⌘N in \(name)")
     otherKey()
     let front = mainWindow(ofPid: pid).flatMap { system.windows[$0]?.snapshot.frame }
-    let size = member.app.isABrowser ? front?.size ?? member.app.opens : member.app.onAHostedMac?.size ?? member.app.opens
+    let size = member.app.isABrowser ? front?.size ?? member.app.opens : member.app.newWindow ?? member.app.onAHostedMac?.size ?? member.app.opens
     let new = newWindow(of: member.app, pid: pid, frame: cascaded(from: front ?? CGRect(origin: scene.visible.origin, size: size), size: size))
     pass(0.2)
     does(.open(new))
@@ -643,16 +643,15 @@ extension WalkPlayer {
     }
   }
 
-  /// The stand-in's macOS does not zoom a window. The clicks are played all the same: they bring the window forward, and what comes next is about the window in front.
   private func titleDoubleClick(_ app: String) {
     let before = step
     guard canBeDragged(app), let window = window(of: app), let point = grab(window) else {
       return leaveOut("title_double_click \(app): no free point of its title bar shows")
     }
-    cannotRehearse("title_double_click \(app): the stand-in's macOS does not zoom a window, so only the clicks are played")
     walkAct(.macOSOwn, "double-click-\(app)", "double-clicks \(app)'s title bar: macOS zooms the window")
-    click(point, on: window)
     samples.click(point, at: clock)
+    samples.click(point, at: clock)
+    does(.doubleClick(window))
     does(.cursor(CGPoint(x: point.x, y: point.y + 120)))
     // macOS's frame stays, and nobody else moves.
     acted(["zooms=\(id(window))", "front=\(id(window))"])
@@ -661,8 +660,9 @@ extension WalkPlayer {
       return leaveOut("title_double_click \(app): no free point of its title bar shows for the second one")
     }
     walkAct(.macOSOwn, "double-click-\(app)-again", "double-clicks it again: macOS takes the window back")
-    click(again, on: window)
     samples.click(again, at: clock)
+    samples.click(again, at: clock)
+    does(.doubleClick(window))
     does(.cursor(CGPoint(x: again.x, y: again.y + 120)))
     acted(["zooms=\(id(window))", "front=\(id(window))", "returns=\(before)"])
   }

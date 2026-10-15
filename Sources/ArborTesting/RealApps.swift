@@ -15,11 +15,13 @@ public struct RealApp: Equatable, Sendable {
   /// About how large it opens.
   public var opens: CGSize
   public var maximum: CGSize?
-  /// Where its first window stood when a walk began on a hosted Mac whose display was set to 1600×900. An app remembers its frame from the script
-  /// before, so this is one morning of many: `WalkScene(samples:)` takes the frames a run really began with.
+  /// Where its first window opens on a fresh hosted Mac whose display is set to 1600×900: two such Macs opened all nine of `stock` alike to the point. An app remembers its frame
+  /// from the script before, so a second script on one Mac begins elsewhere: `WalkScene(samples:)` takes the frames a run really began with.
   public var onAHostedMac: CGRect?
   /// ⌘N opens another window.
   public var opensNewWindows = false
+  /// Of this size, whatever its first window has: an empty document of TextEdit's is not as large as the one the harness opened.
+  public var newWindow: CGSize?
   /// And that one is as large as the one in front, as Safari's was seen to be.
   public var isABrowser: Bool { ["safari", "chrome", "firefox", "edge"].contains(word) }
   /// The harness opened a document in it, which can be opened again once the app has quit.
@@ -28,6 +30,8 @@ public struct RealApp: Equatable, Sendable {
   public var secondWindow: CGRect?
   /// Its windows have a yellow button.
   public var canBeMinimized = true
+  /// What macOS's zoom gives its window, where that is not all the screen has: a Finder window shrinks to what it holds.
+  public var zoomsTo: CGSize?
   /// Its size comes in steps, to the nearest of which it rounds whatever it is asked for, with so much besides.
   public var cells: Cells?
 
@@ -41,23 +45,23 @@ public struct RealApp: Equatable, Sendable {
   public static let all: [RealApp] = [
     RealApp(
       word: "safari", name: "Safari", bundleID: "com.apple.Safari", minimum: CGSize(width: 574, height: 220), opens: CGSize(width: 1200, height: 800),
-      onAHostedMac: CGRect(x: 138, y: 31, width: 1324, height: 790), opensNewWindows: true, hasADocument: true),
+      onAHostedMac: CGRect(x: 138, y: 31, width: 1324, height: 791), opensNewWindows: true, hasADocument: true),
     RealApp(
       word: "notes", name: "Notes", bundleID: "com.apple.Notes", minimum: CGSize(width: 709, height: 320), opens: CGSize(width: 900, height: 600),
-      onAHostedMac: CGRect(x: 0, y: 31, width: 800, height: 791)),
+      onAHostedMac: CGRect(x: 300, y: 105, width: 1000, height: 660)),
     RealApp(
       word: "mail", name: "Mail", bundleID: "com.apple.mail", minimum: CGSize(width: 871, height: 236), opens: CGSize(width: 1100, height: 700),
       onAHostedMac: CGRect(x: 240, y: 72, width: 1120, height: 630)),
     RealApp(
       // Characters of 7 by 15 points, and 2 by 4 besides: 24 answers out of 24. How small it goes nobody has asked: 240 wide was taken.
       word: "terminal", name: "Terminal", bundleID: "com.apple.Terminal", minimum: CGSize(width: 177, height: 64), opens: CGSize(width: 877, height: 499),
-      onAHostedMac: CGRect(x: 97, y: 238, width: 877, height: 499), opensNewWindows: true,
+      onAHostedMac: CGRect(x: 40, y: 51, width: 877, height: 499), opensNewWindows: true,
       cells: Cells(step: CGSize(width: 7, height: 15), margin: CGSize(width: 2, height: 4))),
     RealApp(
       word: "xcode", name: "Xcode", bundleID: "com.apple.dt.Xcode", minimum: CGSize(width: 1188, height: 685), opens: CGSize(width: 1300, height: 800)),
     RealApp(
       word: "finder", name: "Finder", bundleID: "com.apple.finder", minimum: CGSize(width: 501, height: 252), opens: CGSize(width: 920, height: 436),
-      onAHostedMac: CGRect(x: 340, y: 120, width: 920, height: 436), opensNewWindows: true, hasADocument: true),
+      onAHostedMac: CGRect(x: 340, y: 120, width: 920, height: 436), opensNewWindows: true, hasADocument: true, zoomsTo: CGSize(width: 551, height: 252)),
     RealApp(
       word: "music", name: "Music", bundleID: "com.apple.Music", minimum: CGSize(width: 980, height: 600), opens: CGSize(width: 980, height: 600),
       onAHostedMac: CGRect(x: 310, y: 84, width: 980, height: 600)),
@@ -69,13 +73,14 @@ public struct RealApp: Equatable, Sendable {
     // limit, and a stand-in that refuses what the app takes sends Arbor another way: so these are below what Arbor asks of any window (`minimumUsableWidth`, `…Height`).
     RealApp(
       word: "textedit", name: "TextEdit", bundleID: "com.apple.TextEdit", minimum: CGSize(width: 100, height: 100), opens: CGSize(width: 673, height: 439),
-      onAHostedMac: CGRect(x: 165, y: 65, width: 673, height: 439), opensNewWindows: true, hasADocument: true),
+      onAHostedMac: CGRect(x: 165, y: 65, width: 673, height: 439), opensNewWindows: true, newWindow: CGSize(width: 603, height: 505), hasADocument: true),
     RealApp(
       word: "calendar", name: "Calendar", bundleID: "com.apple.iCal", minimum: CGSize(width: 680, height: 503), opens: CGSize(width: 909, height: 600),
-      onAHostedMac: CGRect(x: 386, y: 118, width: 909, height: 600)),
+      onAHostedMac: CGRect(x: 200, y: 86, width: 935, height: 598)),
     RealApp(
       word: "preview", name: "Preview", bundleID: "com.apple.Preview", minimum: CGSize(width: 708, height: 100), opens: CGSize(width: 708, height: 424),
-      onAHostedMac: CGRect(x: 4, y: 35, width: 708, height: 424), hasADocument: true),
+      // As large as its picture wants it already: macOS's zoom changes nothing.
+      onAHostedMac: CGRect(x: 4, y: 35, width: 708, height: 424), hasADocument: true, zoomsTo: CGSize(width: 708, height: 424)),
     // Toolkits that are not Apple's. No Mac has been asked about these three yet: sizes and places are guesses, which the first run corrects (`WalkScene(samples:)`).
     RealApp(
       word: "chrome", name: "Chrome", bundleID: "com.google.Chrome", minimum: CGSize(width: 500, height: 375), opens: CGSize(width: 1200, height: 780),

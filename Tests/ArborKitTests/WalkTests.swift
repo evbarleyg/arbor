@@ -316,6 +316,113 @@ import Testing
     }
   }
 
+  // MARK: Somebody who does not know Arbor
+
+  /// `collab/IDEAS.md`, I25: Arbor runs, and nothing is asked of it.
+  @Test func aStrangerAsksNothingOfArbor() {
+    let macOSsAndTheApps: Set<String> = [
+      "switch_dock", "switch_click", "switch_to", "switch_cmdtab", "switch_backtick", "switch_menu", "open_new", "close_new", "minimize", "restore", "hide", "unhide", "quit_app", "reopen",
+      "drag_by", "drag_edge", "title_double_click", "full_screen", "idle_act",
+    ]
+    var seen = Set<String>()
+    for seed in 1...4 {
+      let writer = Log.silenced { WalkWriter(WalkSetting(tiling: seed % 2 == 0 ? .off : .defaults, seed: "stranger.\(seed)"), acts: 90, walker: .stranger) }
+      let names = Set(writer.walk.words.map(\.name))
+      #expect(names.isSubset(of: macOSsAndTheApps), "\(names.subtracting(macOSsAndTheApps).sorted()) is asked of Arbor")
+      seen.formUnion(names)
+      // Arbor is started before the first act and quit after the last, and that is all anybody does to it.
+      #expect(writer.player.played.filter { $0.kind == .quitAndStart }.map(\.slug) == ["launch", "quit"])
+      #expect(writer.player.script.allSatisfy { action in
+        switch action {
+        case .key, .via, .url, .tile, .seam, .palette: false
+        case .command(let line): line == "quit"
+        default: true
+        }
+      }, "a key, a command or a click of Arbor's was played")
+      #expect(writer.walk.head.contains { $0.hasSuffix("--stranger") })
+      #expect(abs(writer.player.played.count - 90) <= 4)
+    }
+    // All of it comes up in a few walks.
+    #expect(seen.isSuperset(of: ["drag_by", "drag_edge", "title_double_click", "full_screen", "hide", "minimize", "open_new", "quit_app", "switch_cmdtab"]), "\(seen.sorted())")
+  }
+
+  /// Somebody arranged two windows once. From then on nothing is asked of Arbor, and what is docked is double-clicked, minimized and hidden like anything else.
+  @Test func aStrangerMayFindWindowsDocked() {
+    var touched = false
+    for seed in 1...3 {
+      let writer = Log.silenced { WalkWriter(WalkSetting(seed: "docked.\(seed)"), acts: 80, walker: .stranger, docked: 2) }
+      let keys = writer.walk.words.enumerated().filter { $0.element.name == "dock_key" }
+      #expect(keys.map(\.element) == [.dockKey(.left), .dockKey(.right)] && keys.allSatisfy { $0.offset < 4 }, "\(writer.walk.words.prefix(5))")
+      let arbors: Set<String> = ["float_key", "arrange_key", "undo", "redo", "view", "pause", "float_all", "drag_onto", "drag_out", "resize_gap", "resize_key", "tile_click", "quit_and_start", "pin"]
+      #expect(Set(writer.walk.words.map(\.name)).isDisjoint(with: arbors))
+      #expect(writer.walk.head.contains { $0.hasSuffix("--stranger --docked 2") })
+      let docked = writer.walk.words.prefix(4).compactMap { word -> String? in if case .switchTo(let app) = word { app } else { nil } }
+      if writer.walk.words.dropFirst(4).contains(where: { word in docked.contains { word == .titleDoubleClick($0) } }) { touched = true }
+    }
+    #expect(touched, "in three walks no docked window's title bar was double-clicked")
+  }
+
+  /// The control of a stranger's walk is the whole walk: there is nothing of Arbor's in it to leave out.
+  @Test func withoutArborAStrangersWalkIsPlayedToo() {
+    let writer = Log.silenced { WalkWriter(WalkSetting(seed: "stranger.control"), acts: 70, walker: .stranger) }
+    let control = rehearsed(writer.walk, withoutArbor: true)
+    #expect(!control.leftOut.contains { $0.hasSuffix("Arbor is not acting") || $0.hasSuffix("Arbor is not running") })
+    // But Arbor's start, its Quit, and the calling up of every app that belongs to the Quit.
+    let journey = writer.player.played.count - 2 - writer.player.cast.count
+    #expect(control.played.count * 10 >= journey * 9 && control.played.count <= journey + 2, "\(control.played.count) of \(journey) acts were played without Arbor")
+  }
+
+  /// As hosted Macs were seen to: Calendar and Terminal fill the space between the menu bar and the Dock, a Finder window shrinks to what it holds, and the second double-click
+  /// takes each back to the very frame.
+  @Test func macOSZoomsAWindowAtADoubleClickOnItsTitleBarAndTakesItBack() {
+    let runner = ChaosRunner()
+    for line in [
+      "displays main:0,0,1600,900:31,0,78,0* windows-never", "open 101 Calendar pid 2001 at 386 118 680 599 min 680 503", "open 102 Terminal pid 2002 at 806 238 793 499 cells 7 15 2 4",
+      "open 103 Finder pid 2003 at 806 31 794 297 min 501 252 ideal 551 252", "open 104 Calculator pid 2004 at 350 411 230 408 min 230 408 max 230 408",
+      "open 105 Settings pid 2005 at 437 85 723 625 min 723 470 max 723 2000",
+    ] { _ = runner.step(ChaosAction(text: line)) }
+    func frame(_ id: UInt32) -> CGRect? { runner.system.frame(of: WindowID(id)) }
+    for (window, before, zoomed) in [
+      (101 as UInt32, CGRect(x: 386, y: 118, width: 680, height: 599), CGRect(x: 0, y: 31, width: 1600, height: 791)),
+      (102, CGRect(x: 806, y: 238, width: 793, height: 499), CGRect(x: 0, y: 31, width: 1598, height: 784)),
+      (103, CGRect(x: 806, y: 31, width: 794, height: 297), CGRect(x: 806, y: 31, width: 551, height: 252)),
+    ] {
+      #expect(frame(window) == before)
+      runner.system.zoomAsMacOSDoes(WindowID(window))
+      #expect(frame(window) == zoomed, "w\(window)")
+      runner.system.zoomAsMacOSDoes(WindowID(window))
+      #expect(frame(window) == before, "w\(window) is not taken back")
+    }
+    // Moved since, it is zoomed afresh, and goes back to where it was moved to.
+    runner.system.zoomAsMacOSDoes(WindowID(101))
+    _ = runner.step(ChaosAction(text: "move 101 100 100 700 600"))
+    runner.system.zoomAsMacOSDoes(WindowID(101))
+    #expect(frame(101) == CGRect(x: 0, y: 31, width: 1600, height: 791))
+    runner.system.zoomAsMacOSDoes(WindowID(101))
+    #expect(frame(101) == CGRect(x: 100, y: 100, width: 700, height: 600))
+    // One size only: there is nothing to zoom to, and it stays where it is.
+    runner.system.zoomAsMacOSDoes(WindowID(104))
+    #expect(frame(104) == CGRect(x: 350, y: 411, width: 230, height: 408))
+    // As wide as it is, whatever anybody asks: it grows where it stands, and does not jump to the corner.
+    runner.system.zoomAsMacOSDoes(WindowID(105))
+    #expect(frame(105) == CGRect(x: 437, y: 31, width: 723, height: 791))
+    // Whole characters that fit, where the nearest would reach under the Dock: 52 rows are 784 points, 53 are 799, and there are 795.
+    _ = runner.step(ChaosAction(text: "displays main:0,0,1600,900:31,0,74,0* windows-never"))
+    runner.system.zoomAsMacOSDoes(WindowID(102))
+    #expect(frame(102)?.height == 784)
+    // Its app reports once.
+    let heard = ChaosRunner()
+    for line in ["open 101 Calendar pid 2001 at 386 118 680 599", "launch", "settle"] { _ = heard.step(ChaosAction(text: line)) }
+    let moves = heard.system.windows[WindowID(101)]!.movesNotArbors
+    _ = heard.step(.doubleClick(WindowID(101)))
+    #expect(heard.system.windows[WindowID(101)]!.movesNotArbors == moves + 1)
+    guard case .open(let finder) = ChaosAction(text: "open 103 Finder pid 2003 at 806 31 794 297 ideal 551 252") else {
+      Issue.record("`ideal` is not read")
+      return
+    }
+    #expect(finder.ideal == CGSize(width: 551, height: 252))
+  }
+
   @Test func anActThatDoesNotApplyIsLeftOutForLibWalksReason() throws {
     let walk = Walk(
       setting: WalkSetting(seed: "1"),
@@ -338,6 +445,23 @@ import Testing
       #expect(text.contains(words), "lib-walk.sh gives no such reason: \(words)")
     }
     #expect(player.played.map(\.slug) == ["launch", "pause", "resume", "quit"] + RealApp.stock.map { "dock-icon-\($0.word)" })
+  }
+
+  /// As two hosted Macs without Arbor had it, alike to the point.
+  @Test func whatAnAppMakesOfANewWindowAndOfAZoomIsItsOwnToSay() throws {
+    let walk = Walk(setting: WalkSetting(seed: "1"), words: [.switchDock("textedit"), .openNew, .switchDock("preview"), .titleDoubleClick("preview"), .switchDock("safari"), .openNew])
+    let player = rehearsed(walk, withoutArbor: true)
+    func frame(_ label: String) throws -> CGRect? { player.runner.system.frame(of: try #require(player.window(labelled: label), "\(label): \(player.played.map(\.slug))")) }
+    let new = try #require(player.samples.text.split(separator: "\n").compactMap { line in line.split(separator: " ").last.flatMap { $0.hasPrefix("textedit-new-") ? String($0) : nil } }.first)
+    // An empty document has its own size, a step down and to the right of the window in front.
+    #expect(try frame("textedit") == CGRect(x: 165, y: 65, width: 673, height: 439))
+    #expect(try frame(new) == CGRect(x: 194, y: 94, width: 603, height: 505))
+    // Preview is as large as its picture wants it.
+    #expect(player.played.map(\.slug).contains("double-click-preview"))
+    #expect(try frame("preview") == CGRect(x: 4, y: 35, width: 708, height: 424))
+    // A browser's is as large as the one in front.
+    let safari = try #require(player.samples.text.split(separator: "\n").compactMap { line in line.split(separator: " ").last.flatMap { $0.hasPrefix("safari-new-") ? String($0) : nil } }.first)
+    #expect(try frame(safari)?.size == CGSize(width: 1324, height: 791))
   }
 
   @Test func withoutArborItsOwnActsAreLeftOutAndTheRestIsPlayed() {

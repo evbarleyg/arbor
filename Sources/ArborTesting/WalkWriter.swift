@@ -20,6 +20,19 @@ public struct WalkWriter {
   /// `share_of_acts_from_walks_min` of them come from walks, of which a gate has about 22 of 110 acts.
   static let (shareFromWalks, actsFromWalks) = (0.5, 22.0 * 110)
 
+  /// Who takes the walk.
+  public enum Walker: String, Sendable {
+    /// Somebody who uses Arbor: its keys, its menu, drags onto what is docked.
+    case knowing
+    /// **Somebody who does not know Arbor.** It runs, and nothing is asked of it: only what is macOS's or an app's is done. Plain drags, double-clicks on title bars, full screen, ⌘Tab,
+    /// ⌘M, ⌘H, ⌘N, ⌘W, ⌘Q, the edges where macOS tiles. The same file is played without Arbor, and the right answer is that nothing differs
+    /// (`scripts/mac-shell/walk-diff.py --with … --without …`): what differs Arbor did unasked, or it undid what the person did.
+    case stranger
+  }
+
+  /// What a stranger does, by how often.
+  static let strangers: [(weight: Int, value: WalkKind)] = [(30, .switch), (22, .openClose), (22, .drag), (10, .dragWhereMacOSTiles), (12, .macOSOwn), (2, .idle)]
+
   /// What the first version leaves to the days that are written by hand: changes of displays, hiding, native tabs, full screen and the rest of what is macOS's own.
   public static let kinds: [WalkKind] = [.switch, .openClose, .dockKey, .drag, .dragWhereMacOSTiles, .view, .resize, .wayOut, .idle, .tileClick]
 
@@ -47,6 +60,10 @@ public struct WalkWriter {
   private var tried = 0
   private var struckOut: Set<Int> = []
   private var embarrassment: Int?
+  private let walker: Walker
+  /// How many windows a stranger finds docked: somebody arranged them once, by the keys, and from then on nothing is asked of Arbor. jolts.py judges such a walk, by what an act may move
+  /// (docs/VIABLE.md, section 6). A control cannot dock: laid beside it, it says what else moved when the windows were docked, and after (walk-diff.py).
+  private let docked: Int
   private static let patience = 24
   /// So many words were struck out that the walk was written with what it met after them: it holds an act at which an expectation of the script's does not hold.
   public private(set) var isResigned = false
@@ -54,7 +71,9 @@ public struct WalkWriter {
   /// that puts every app away in its first minute has nothing left to walk through, and while Arbor is paused its own acts are left out.
   private var owed: [(turns: Int, word: WalkWord)] = []
 
-  public init(_ setting: WalkSetting, acts: Int, scene: WalkScene? = nil) {
+  public init(_ setting: WalkSetting, acts: Int, scene: WalkScene? = nil, walker: Walker = .knowing, docked: Int = 0) {
+    self.walker = walker
+    self.docked = walker == .stranger ? docked : 0
     random = ChaosRandom(seed: Self.number(for: setting.seed))
     player = WalkPlayer(setting, scene: scene)
     walk = Walk(setting: setting, words: [])
@@ -73,10 +92,16 @@ public struct WalkWriter {
       (words, owed, tried, embarrassment) = ([], [], 0, nil)
     }
     let counts = Self.counts(of: player)
-    let command = "arbor-sim walk \(setting.seed) \(acts) --for-a-mac \(setting.cast.rawValue) \(setting.display.rawValue) \(setting.tiling.rawValue) \(setting.commit)"
+    let command = "arbor-sim walk \(setting.seed) \(acts) --for-a-mac \(setting.cast.rawValue) \(setting.display.rawValue) \(setting.tiling.rawValue) \(setting.commit)".trimmingCharacters(in: .whitespaces)
+      + (walker == .stranger ? " --stranger" : "") + (self.docked > 0 ? " --docked \(self.docked)" : "")
     walk = Walk(
       setting: setting, words: words,
-      head: ["A walk from the seed \(setting.seed): \(command.trimmingCharacters(in: .whitespaces))", "Written by a program. Change the program, not this file."],
+      head: ["A walk from the seed \(setting.seed): \(command)", "Written by a program. Change the program, not this file."]
+        + (walker != .stranger
+          ? []
+          : self.docked == 0
+            ? ["By somebody who does not know Arbor: nothing is asked of it. Played without Arbor too, and nothing may differ."]
+            : ["\(self.docked) windows are docked first. From then on by somebody who does not know Arbor: nothing more is asked of it."]),
       foot: [
         "\(player.played.count) acts on the stand-ins: " + WalkKind.ofActs.compactMap { kind in counts[kind].map { "\(kind.rawValue) \($0)" } }.joined(separator: ", ")
       ])
@@ -114,6 +139,13 @@ public struct WalkWriter {
 
   private mutating func write(_ acts: Int) {
     var restarted = false
+    var arranged: [String] = []
+    for place in 0..<docked {
+      guard let app = random.pick(free.filter { !arranged.contains($0) }) else { break }
+      arranged.append(app)
+      say(.switchTo(app))
+      say(.dockKey(place % 2 == 0 ? .left : .right))
+    }
     // A turn that finds nothing to do costs nothing, but there has to be an end to it.
     var turns = 0
     while player.played.count + stillToCome < acts, turns < acts * 4, embarrassment == nil {
@@ -123,7 +155,7 @@ public struct WalkWriter {
         say(owed.remove(at: due).word)
         continue
       }
-      if !restarted, player.played.count >= acts / 2, owed.isEmpty {
+      if !restarted, walker == .knowing, player.played.count >= acts / 2, owed.isEmpty {
         restarted = true
         say(.quitAndStart)
         continue
@@ -137,6 +169,10 @@ public struct WalkWriter {
 
   /// Which kind of thing is done next: by the gate's own proportions, until what is left of the walk is needed for what it still lacks.
   private mutating func kind(of acts: Int, lacking mayInsist: Bool) -> WalkKind {
+    if walker == .stranger {
+      let idle = Self.counts(of: player)[.idle] ?? 0
+      return random.pick(weighted: Self.strangers.filter { $0.value != .idle || idle < Self.mostIdle(in: acts) }) ?? .switch
+    }
     var counts = Self.counts(of: player)
     counts[.drag, default: 0] += counts[.dragWhereMacOSTiles] ?? 0
     let idleIsSpent = (counts[.idle] ?? 0) >= Self.mostIdle(in: acts)
@@ -163,6 +199,35 @@ public struct WalkWriter {
     return random.pick(weighted: weights) ?? .switch
   }
 
+  /// What a stranger does otherwise than somebody who knows Arbor. Nil: the same.
+  private mutating func strangersAttempt(_ kind: WalkKind, _ app: String) -> Bool? {
+    switch kind {
+    case .switch:
+      let word = random.pick(weighted: [
+        (4, WalkWord.switchDock(app)), (4, .switchClick(app)), (4, .switchCmdTab(1)), (1, .switchBacktick),
+        (1, .switchMenu(random.pick(free.filter { RealApp.named($0)?.opensNewWindows == true }) ?? "finder")),
+      ])!
+      // Onto an app without a window nobody could say which window should be in front.
+      if case .switchCmdTab(let times) = word, player.appBehindCmdTab(times).map({ player.present($0) }) != true { return false }
+      return say(word)
+    case .openClose:
+      // ⌘H besides.
+      guard random.chance(20) else { return nil }
+      guard say(.switchTo(app)) else { return false }
+      if say(.hide) { later(.unhide(app)) }
+      return true
+    case .drag:
+      let (across, down) = (random.int(-300...300), random.int(-160...160))
+      return say(.dragBy(app, across, down, click: (across + down) % 2 == 0))
+    case .macOSOwn:
+      if random.chance(70) { return say(.titleDoubleClick(app)) }
+      guard say(.fullScreen(true)) else { return false }
+      say(.fullScreen(false))
+      return true
+    default: return nil
+    }
+  }
+
   /// What is to be resized, dragged onto or dragged out has to be docked first.
   private mutating func dockSomething() -> Bool {
     say(.switchTo(app()))
@@ -177,6 +242,7 @@ public struct WalkWriter {
 
   private mutating func attempt(_ kind: WalkKind) -> Bool {
     let (app, other) = (app(), app())
+    if walker == .stranger, let done = strangersAttempt(kind, app) { return done }
     switch kind {
     case .switch:
       // ⌘Tab once. Where more presses lead depends on how quick the Mac is (`appBehindCmdTab`), and a walk that cannot be foretold parts from its rehearsal there.
@@ -221,7 +287,7 @@ public struct WalkWriter {
       return say(word)
     case .drag:
       let (across, down) = (random.int(-200...200), random.int(-120...120))
-      let docked = player.appsDockedInView
+      let docked = player.appsDockedInView.filter(free.contains)
       if player.arborActs, docked.isEmpty, random.chance(50) { return dockSomething() }
       return say(
         random.pick(weighted: [
@@ -241,9 +307,9 @@ public struct WalkWriter {
       // A gap is between two docked windows that show. Where there are none, a person who wants one makes them first.
       guard player.arborActs else { return false }
       let before = words.count
-      if player.appsDockedInView.count < 2, player.ids().docked.count >= 2 { say(.view(.home)) }
-      for _ in 0..<4 where player.appsDockedInView.count < 2 { _ = dockSomething() }
-      let docked = player.appsDockedInView
+      if player.appsDockedInView.filter(free.contains).count < 2, player.ids().docked.count >= 2 { say(.view(.home)) }
+      for _ in 0..<4 where player.appsDockedInView.filter(free.contains).count < 2 { _ = dockSomething() }
+      let docked = player.appsDockedInView.filter(free.contains)
       guard docked.count >= 2 else { return words.count > before }
       let resized = random.pick(docked) ?? app
       let word = random.pick(weighted: [

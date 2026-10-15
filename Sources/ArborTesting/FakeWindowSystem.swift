@@ -25,6 +25,8 @@ public final class FakeWindowSystem: WindowSystem {
     public var maximumSize: CGSize?
     /// The app sizes the window in steps of this (a terminal's character cells), see `setSizeStep`.
     public var sizeStep: CGSize?
+    /// What its app takes for the right size for what it shows, which is what macOS's zoom gives it. Nil: as much as the screen has.
+    public var idealSize: CGSize?
     /// What a window that comes in steps has besides them: a terminal's is so many characters wide and high, and a few points more.
     public var sizeMargin: CGSize = .zero
     /// How the app treats the frames Arbor asks for (`FakeWindowSystem+Chaos.swift`).

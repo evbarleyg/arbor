@@ -184,6 +184,8 @@ public enum ChaosAction: Equatable, Sendable, CustomStringConvertible {
     public var bundle: String?
     /// Its size comes in steps, with so much besides: a terminal's characters.
     public var cells: RealApp.Cells?
+    /// What macOS's zoom gives it. Nil: as much as the screen has.
+    public var ideal: CGSize?
 
     public init(id: WindowID, app: String, pid: Int32, frame: CGRect) {
       self.id = id
@@ -238,6 +240,7 @@ public enum ChaosAction: Equatable, Sendable, CustomStringConvertible {
       if !window.hasBundleID { words.append("no-bundle") }
       if let bundle = window.bundle { words += ["bundle", bundle] }
       if let cells = window.cells { words += ["cells", size(cells.step), size(cells.margin)] }
+      if let ideal = window.ideal { words += ["ideal", size(ideal)] }
       if window.behaviour != .normal { words.append(window.behaviour.rawValue) }
       return words.joined(separator: " ")
     case .close(let window): return "close \(window.rawValue)"
@@ -381,6 +384,10 @@ public enum ChaosAction: Equatable, Sendable, CustomStringConvertible {
           guard index + 1 < count else { return nil }
           new.bundle = words[index + 1]
           index += 2
+        case "ideal":
+          guard let value = size(index + 1) else { return nil }
+          new.ideal = value
+          index += 3
         case "cells":
           guard let step = size(index + 1), let margin = size(index + 3), step.width >= 1, step.height >= 1 else { return nil }
           new.cells = RealApp.Cells(step: step, margin: margin)
