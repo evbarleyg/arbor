@@ -5,6 +5,7 @@ A mistake there either runs a Mac for nothing or lets code through unchecked, an
 The Linux CI job runs this. Exit code 1 when a row comes out wrong.
 """
 
+import glob
 import importlib.util
 import os
 import sys
@@ -40,6 +41,10 @@ TABLE = [
     (NO, "only code that builds on Linux", pull(), dict(files=[CORE, CONTROLLER, TEST, DOC])),
     (NO, "the same with a Mac shell script", pull(), dict(files=[CORE, SHOTS])),
     (NO, "stand-ins that only Linux compiles", pull(), dict(files=[CORE, "scripts/typecheck-mac/stubs/AppKit/View.swift"])),
+    (NO, "the Mac made of fakes, which no Mac compiles", pull(), dict(files=["Sources/arbor-fakemac/World+Input.swift", "Sources/arbor-fakemac/Arbor.swift"])),
+    (NO, "trunk: the same", TRUNK, dict(files=["Sources/arbor-fakemac/Driver.swift"])),
+    (UPON, "it and macOS-only code", pull(), dict(files=["Sources/arbor-fakemac/Arbor.swift", UI])),
+    (NO, "only it since the pass", pull(), dict(files=[UI, "Sources/arbor-fakemac/Arbor.swift"], passed={"P1"}, between={("P1", "H"): ["Sources/arbor-fakemac/Arbor.swift"]})),
     (NO, "stories that only Linux tells", pull(), dict(files=[CORE, "scripts/mac-on-linux/tests/main.swift", "scripts/mac-on-linux/known-failures.txt"])),
     (NO, "the Mac shell workflow and what runs the scripts there, which CI's own job does not use", pull(), dict(files=[
         ".github/workflows/mac-shell.yml", "scripts/ci-mac-shell.sh", "scripts/mac-shell/run.sh", "scripts/mac-shell/preflight.sh"])),
@@ -205,6 +210,32 @@ def real_pattern_without_a_checkout():
         rules.checkout = real_checkout
 
 
+SETS_IT = rules.re.compile(r"\bARBOR_FAKEMAC\s*[:=]")
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def read(path):
+    with open(os.path.join(ROOT, path), encoding="utf-8") as handle:
+        return handle.read()
+
+
+def workflows():
+    return {os.path.relpath(path, ROOT): read(path) for pattern in (".github/workflows/*.yml", ".github/actions/*/action.yml")
+            for path in glob.glob(os.path.join(ROOT, pattern))}
+
+
+def sets_it_on_a_mac(text):
+    """Whether it sets the variable, without having left everything but Linux before."""
+    sets = SETS_IT.search(text)
+    return bool(sets) and not rules.re.search(r'^if \[ "\$\(uname -s\)" != Linux \]; then\n(.*\n){0,4}?  exit \d+\nfi$', text[:sets.start()], rules.re.M)
+
+
+def on_request_only(manifest):
+    """Whether the part of Package.swift that is for macOS makes arbor-fakemac depend on the variable."""
+    mac = manifest.split("#if os(macOS)", 1)[-1].split("#else", 1)[0]
+    return 'let withFakeMac = Context.environment["ARBOR_FAKEMAC"] != nil' in mac and 'withFakeMac\n  ? [.executableTarget(name: "arbor-fakemac"' in manifest
+
+
 def main():
     wrong = 0
     for expected, situation, (name, event), answers in TABLE:
@@ -233,11 +264,20 @@ def main():
         ("this repository: what the job plainly runs", sorted(plain - reached), []),
         ("this repository: a script nothing names", "scripts/nobody-names-this-one.py" in reached, False),
         ("a checkout without the workflow or the tests: everything counts as within reach", bool(real_pattern_without_a_checkout().search("scripts/census.py")), False),
+        # What the rule about Sources/arbor-fakemac rests on. If one of these comes out wrong a Mac does compile it, and the rule has to go.
+        ("this repository: on a Mac the manifest builds arbor-fakemac only where ARBOR_FAKEMAC is set", on_request_only(read("Package.swift")), True),
+        ("the control: a manifest that builds it everywhere", on_request_only(read("Package.swift").replace('Context.environment["ARBOR_FAKEMAC"] != nil', "true")), False),
+        ("this repository: nothing the macOS job can reach sets it, nor does a workflow or an action",
+         sorted(path for path, text in {**scripts, **workflows()}.items() if (path in reached or path.startswith(".github/")) and sets_it_on_a_mac(text)), []),
+        ("the control: a step that sets it is seen, and a line of a script", [sets_it_on_a_mac("        env:\n          ARBOR_FAKEMAC: 1\n"), sets_it_on_a_mac("export ARBOR_FAKEMAC=1")], [True, True]),
+        ("this repository: the rehearsal sets it, but has left a Mac by then", (bool(SETS_IT.search(read("scripts/mac-shell/rehearse.sh"))), sets_it_on_a_mac(read("scripts/mac-shell/rehearse.sh"))), (True, False)),
+        ("the control: a rehearsal that stays on a Mac", sets_it_on_a_mac(read("scripts/mac-shell/rehearse.sh").replace('if [ "$(uname -s)" != Linux ]; then', "if false; then")), True),
+        ("the control: one that asks only afterwards", sets_it_on_a_mac('export ARBOR_FAKEMAC=1\nif [ "$(uname -s)" != Linux ]; then\n  exit 77\nfi\n'), True),
     ]:
         if got != expected:
             wrong += 1
             print(f"✘ reach: {situation}: expected {expected}, got {got}")
-    count = len(TABLE) + len(OUTPUT) + len(REACH) + 3
+    count = len(TABLE) + len(OUTPUT) + len(REACH) + 10
     print(f"{count - wrong} of {count} situations decided as expected")
     return 1 if wrong else 0
 

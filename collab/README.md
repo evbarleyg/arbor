@@ -265,7 +265,7 @@ Three rules keep the Linux build working and the platforms telling the same stor
    `changes` says why) when a Mac could prove nothing new
    (`scripts/ci-changes.py`; the `linux-lint` job holds its rules to the table of
    cases in `scripts/test-ci-changes.py`):
-   - the pull request changes only `collab/`, `docs/`, `*.md` files, `scripts/typecheck-mac/`, the scripts in
+   - the pull request changes only `collab/`, `docs/`, `*.md` files, `scripts/typecheck-mac/`, `Sources/arbor-fakemac/` (no Mac compiles it), the scripts in
      `scripts/mac-shell/` that CI does not run (it runs `e2e-drag.sh` and `compile-tools.sh`, built on `lib.sh`, `pointer.swift` and
      `state.py`), the Mac shell workflow, and the rules and self-tests that only Linux runs;
    - or besides those only code that Linux builds and tests too: `Sources/ArborCore`,
