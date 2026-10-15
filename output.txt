@@ -1,0 +1,428 @@
+# mac-shell: scripts/mac-shell/probe-held-at-the-edges.sh at 2a3f3fb, macOS 26.6.2, 2026-10-15T07:42Z
+
+== the Mac
+macOS 26.6.2 (25G83) on arm64
+built the tools in 57s
+1600 900 1600 900
+display: 1 0 0 1600 900 1600 900 1
+macOS's own window management, as it comes:
+com.apple.WindowManager EnableTilingByEdgeDrag: not set
+com.apple.WindowManager EnableTopTilingByEdgeDrag: not set
+com.apple.WindowManager EnableTilingOptionAccelerator: not set
+com.apple.WindowManager EnableTiledWindowMargins: not set
+com.apple.WindowManager EnableStandardClickToShowDesktop: not set
+Reduce Motion: false
+the sampler writes mac-shell/samples.log (pid 6518), the witness mac-shell/witness.log (pid 6531)
+
+== Before Arbor: the apps are open already
+
+-- 1 open-finder: opens finder
+> open -g -b com.apple.finder /tmp/arbor-apps.wDzSBH/scratch/told/…-grove
+pid 358 lists (id role subrole x y w h flags):
+  31 AXWindow AXStandardWindow 340 120 920 436 main,toolbar
+  0 AXScrollArea - 0 0 1600 900 fixed-size,fixed-position,no-close,no-minimize,no-zoom
+  w31 is finder
+  (quiet:701 ms) setup=1
+
+-- 2 open-safari: opens safari
+> open -g -b com.apple.Safari /tmp/arbor-apps.wDzSBH/scratch/told/…-page.html
+pid 6860 lists (id role subrole x y w h flags):
+  34 AXWindow AXStandardWindow 138 31 1324 791 main,toolbar
+  w34 is safari
+  (quiet:504 ms) setup=1
+
+-- 3 open-textedit: opens textedit
+> open -g -b com.apple.TextEdit /tmp/arbor-apps.wDzSBH/scratch/told/…-oak.txt
+pid 7080 lists (id role subrole x y w h flags):
+  45 AXWindow AXStandardWindow 165 65 673 439 main
+  w45 is textedit
+  (quiet:2270 ms) setup=1
+
+-- 4 open-terminal: opens terminal
+> open -g -b com.apple.Terminal 
+pid 7299 lists (id role subrole x y w h flags):
+  51 AXWindow AXStandardWindow 40 51 877 499 main
+  w51 is terminal
+  (quiet:1000 ms) setup=1
+
+-- 5 open-notes: opens notes
+> open -g -b com.apple.Notes 
+pid 7424 lists (id role subrole x y w h flags):
+  54 AXWindow AXStandardWindow 300 105 1000 660 main,close-disabled,sheets=1
+  w54 is notes
+something is in the way:
+  AXWindow/AXStandardWindow 300 105 1000 660
+    AXButton/AXCloseButton 308 113 16 16
+    AXButton/AXZoomButton 354 113 16 16
+    AXButton/AXMinimizeButton 331 113 16 16
+    AXSheet/- 563 135 475 600
+      AXButton/- 934 686 85 30 "Continue"
+pressed "Continue": 0
+pressed "Cancel": 0
+  (quiet:376 ms) setup=1
+
+-- 6 open-calendar: opens calendar
+> open -g -b com.apple.iCal 
+pid 7884 lists (id role subrole x y w h flags):
+  60 AXWindow AXStandardWindow 200 86 935 598 main,toolbar
+  w60 is calendar
+  (quiet:1305 ms) setup=1
+
+-- 7 open-settings: opens settings
+> open -g -b com.apple.systempreferences 
+pid 7958 lists (id role subrole x y w h flags):
+  63 AXWindow AXStandardWindow 437 85 723 625 main,toolbar
+  w63 is settings
+  (quiet:353 ms) setup=1
+
+-- 8 open-preview: opens preview
+> open -g -b com.apple.Preview /tmp/arbor-apps.wDzSBH/scratch/told/…-leaf.png
+pid 8041 lists (id role subrole x y w h flags):
+  67 AXWindow AXStandardWindow 4 35 708 424 main,toolbar
+  w67 is preview
+  (quiet:361 ms) setup=1
+
+-- 9 open-mail: opens mail
+> open -g -b com.apple.mail 
+pid 8316 lists (id role subrole x y w h flags):
+  71 AXWindow AXStandardWindow 240 72 1120 630 main,close-disabled,sheets=1,toolbar
+  w71 is mail
+  (quiet:744 ms) setup=1
+the cast: finder safari textedit terminal notes calendar settings preview mail
+
+-- 10 tiling-acts: without Arbor: drags a window by its title bar against the menu bar and lets go
+> click 635 854
+> move 635 654
+> drag 536 98 800 0 --no-release
+> release
+  (quiet:1442 ms) setup=1
+
+-- 11 tiling-acts-back: drags it away again, a hand's breadth down
+> drag 672 43 800 130 --no-release
+> release
+  (quiet:1052 ms) setup=1
+macOS's tiling was seen to act: true
+  ✔ macOS's own tiling acts
+
+-- 12 look-around: looks at the screen
+  (quiet:366 ms) setup=1 own=all
+
+-- 13 input-before: a round of input: presses on windows behind and in front, keys, a scroll, a drag inside a window
+> click 1076 43
+> click 102 47
+> click 1076 43
+> click 102 47
+> click 1076 43
+> click 102 47
+> click 1076 43
+> click 102 47
+  8 presses on windows behind; textedit shows no free point of its title bar, so that is all
+  (quiet:721 ms) round=before posted=press:8,up:8
+
+== The walk
+
+-- 14 dock-icon-textedit: clicks textedit's icon in the Dock
+> click 1220 854
+> move 1220 654
+  (quiet:435 ms) front=45
+
+-- 15 hide-others: presses ⌥⌘H: every other app is hidden
+> key cmd+opt+h
+  (quiet:739 ms) leaves=any
+
+== The left edge, at 50 points a second
+
+-- 16 carry-to-165-120: drags textedit by its title bar 0 across and 55 down, at 600 points a second
+> drag 501 77 501 132 --no-release --steps 28 --duration 0.09
+> release
+  (quiet:1026 ms) drags=45 front=45 own=45 first=1
+
+-- 17 left-out-50: drags textedit by its title bar -380 across and 0 down, at 50 points a second
+> drag 501 132 121 132 --no-release --steps 190 --duration 7.60
+> release
+  (quiet:1039 ms) drags=45 front=45 own=45
+
+-- 18 left-in-50: drags textedit by its title bar 380 across and 0 down, at 50 points a second
+> drag 152 132 532 132 --no-release --steps 190 --duration 7.60
+> release
+  (quiet:1081 ms) drags=45 front=45 own=45
+
+== The left edge, at 150 points a second
+
+-- 19 carry-to-165-120: drags textedit by its title bar -31 across and 0 down, at 600 points a second
+> drag 532 132 501 132 --no-release --steps 16 --duration 0.05
+> release
+  (quiet:1051 ms) drags=45 front=45 own=45
+
+-- 20 left-out-150: drags textedit by its title bar -380 across and 0 down, at 150 points a second
+> drag 501 132 121 132 --no-release --steps 190 --duration 2.53
+> release
+  (quiet:1030 ms) drags=45 front=45 own=45
+
+-- 21 left-in-150: drags textedit by its title bar 380 across and 0 down, at 150 points a second
+> drag 152 132 532 132 --no-release --steps 190 --duration 2.53
+> release
+  (quiet:1113 ms) drags=45 front=45 own=45
+
+== The left edge, at 600 points a second
+
+-- 22 carry-to-165-120: drags textedit by its title bar -31 across and 0 down, at 600 points a second
+> drag 532 132 501 132 --no-release --steps 16 --duration 0.05
+> release
+  (quiet:1092 ms) drags=45 front=45 own=45
+
+-- 23 left-out-600: drags textedit by its title bar -380 across and 0 down, at 600 points a second
+> drag 501 132 121 132 --no-release --steps 190 --duration 0.63
+> release
+  (quiet:1030 ms) drags=45 front=45 own=45
+
+-- 24 left-in-600: drags textedit by its title bar 380 across and 0 down, at 600 points a second
+> drag 130 132 510 132 --no-release --steps 190 --duration 0.63
+> release
+  (quiet:1009 ms) drags=45 front=45 own=45
+
+== The right edge, at 50 points a second
+
+-- 25 carry-to-762-120: drags textedit by its title bar 588 across and 0 down, at 600 points a second
+> drag 510 132 1098 132 --no-release --steps 294 --duration 0.98
+> release
+  (quiet:1091 ms) drags=45 front=45 own=45
+
+-- 26 right-out-50: drags textedit by its title bar 380 across and 0 down, at 50 points a second
+> drag 1098 132 1478 132 --no-release --steps 190 --duration 7.60
+> release
+  (quiet:1043 ms) drags=45 front=45 own=45
+
+-- 27 right-in-50: drags textedit by its title bar -380 across and 0 down, at 50 points a second
+> drag 1447 132 1067 132 --no-release --steps 190 --duration 7.60
+> release
+  (quiet:1012 ms) drags=45 front=45 own=45
+
+== The right edge, at 150 points a second
+
+-- 28 carry-to-762-120: drags textedit by its title bar 31 across and 0 down, at 600 points a second
+> drag 1067 132 1098 132 --no-release --steps 16 --duration 0.05
+> release
+  (quiet:1033 ms) drags=45 front=45 own=45
+
+-- 29 right-out-150: drags textedit by its title bar 380 across and 0 down, at 150 points a second
+> drag 1098 132 1478 132 --no-release --steps 190 --duration 2.53
+> release
+  (quiet:1014 ms) drags=45 front=45 own=45
+
+-- 30 right-in-150: drags textedit by its title bar -380 across and 0 down, at 150 points a second
+> drag 1447 132 1067 132 --no-release --steps 190 --duration 2.53
+> release
+  (quiet:1047 ms) drags=45 front=45 own=45
+
+== The right edge, at 600 points a second
+
+-- 31 carry-to-762-120: drags textedit by its title bar 31 across and 0 down, at 600 points a second
+> drag 1067 132 1098 132 --no-release --steps 16 --duration 0.05
+> release
+  (quiet:1021 ms) drags=45 front=45 own=45
+
+-- 32 right-out-600: drags textedit by its title bar 380 across and 0 down, at 600 points a second
+> drag 1098 132 1478 132 --no-release --steps 190 --duration 0.63
+> release
+  (quiet:1079 ms) drags=45 front=45 own=45
+
+-- 33 right-in-600: drags textedit by its title bar -380 across and 0 down, at 600 points a second
+> drag 1447 132 1067 132 --no-release --steps 190 --duration 0.63
+> release
+  (quiet:1006 ms) drags=45 front=45 own=45
+
+== The Dock, at 50 points a second
+
+-- 34 carry-to-460-120: drags textedit by its title bar -271 across and 0 down, at 600 points a second
+> drag 1067 132 796 132 --no-release --steps 136 --duration 0.45
+> release
+  (quiet:1026 ms) drags=45 front=45 own=45
+
+-- 35 dock-out-50: drags textedit by its title bar 0 across and 500 down, at 50 points a second
+> drag 796 132 796 632 --no-release --steps 250 --duration 10.00
+> release
+  (quiet:1063 ms) drags=45 front=45 own=45
+
+-- 36 dock-in-50: drags textedit by its title bar 0 across and -500 down, at 50 points a second
+> drag 796 569 796 69 --no-release --steps 250 --duration 10.00
+> release
+  (quiet:1048 ms) drags=45 front=45 own=45
+
+== The Dock, at 150 points a second
+
+-- 37 carry-to-460-120: drags textedit by its title bar 0 across and 63 down, at 600 points a second
+> drag 796 69 796 132 --no-release --steps 32 --duration 0.10
+> release
+  (quiet:1045 ms) drags=45 front=45 own=45
+
+-- 38 dock-out-150: drags textedit by its title bar 0 across and 500 down, at 150 points a second
+> drag 796 132 796 632 --no-release --steps 250 --duration 3.33
+> release
+  (quiet:1055 ms) drags=45 front=45 own=45
+
+-- 39 dock-in-150: drags textedit by its title bar 0 across and -500 down, at 150 points a second
+> drag 796 569 796 69 --no-release --steps 250 --duration 3.33
+> release
+  (quiet:1089 ms) drags=45 front=45 own=45
+
+== The Dock, at 600 points a second
+
+-- 40 carry-to-460-120: drags textedit by its title bar 0 across and 63 down, at 600 points a second
+> drag 796 69 796 132 --no-release --steps 32 --duration 0.10
+> release
+  (quiet:1049 ms) drags=45 front=45 own=45
+
+-- 41 dock-out-600: drags textedit by its title bar 0 across and 500 down, at 600 points a second
+> drag 796 132 796 632 --no-release --steps 250 --duration 0.83
+> release
+  (quiet:1012 ms) drags=45 front=45 own=45
+
+-- 42 dock-in-600: drags textedit by its title bar 0 across and -500 down, at 600 points a second
+> drag 796 613 796 113 --no-release --steps 250 --duration 0.83
+> release
+  (quiet:1030 ms) drags=45 front=45 own=45
+
+== The menu bar, at 20 points a second
+
+-- 43 carry-to-460-65: drags textedit by its title bar 0 across and -36 down, at 600 points a second
+> drag 796 113 796 77 --no-release --steps 18 --duration 0.06
+> release
+  (quiet:1033 ms) drags=45 front=45 own=45
+
+-- 44 menu-bar-against-20: drags textedit by its title bar 0 across and -44 down, at 20 points a second
+> drag 796 77 796 33 --no-release --steps 22 --duration 2.20
+> release
+  (quiet:1065 ms) drags=45 front=45 own=45
+
+-- 45 menu-bar-away-20: drags textedit by its title bar 0 across and 240 down, at 20 points a second
+> drag 796 43 796 283 --no-release --steps 120 --duration 12.00
+> release
+  (quiet:995 ms) drags=45 front=45 own=45
+
+== The menu bar, at 50 points a second
+
+-- 46 carry-to-460-65: drags textedit by its title bar 0 across and -206 down, at 600 points a second
+> drag 796 283 796 77 --no-release --steps 103 --duration 0.34
+> release
+  (quiet:1040 ms) drags=45 front=45 own=45
+
+-- 47 menu-bar-against-50: drags textedit by its title bar 0 across and -44 down, at 50 points a second
+> drag 796 77 796 33 --no-release --steps 22 --duration 0.88
+> release
+  (quiet:1049 ms) drags=45 front=45 own=45
+
+-- 48 menu-bar-away-50: drags textedit by its title bar 0 across and 240 down, at 50 points a second
+> drag 796 43 796 283 --no-release --steps 120 --duration 4.80
+> release
+  (quiet:1086 ms) drags=45 front=45 own=45
+
+== The menu bar, at 150 points a second
+
+-- 49 carry-to-460-65: drags textedit by its title bar 0 across and -206 down, at 600 points a second
+> drag 796 283 796 77 --no-release --steps 103 --duration 0.34
+> release
+  (quiet:1018 ms) drags=45 front=45 own=45
+
+-- 50 menu-bar-against-150: drags textedit by its title bar 0 across and -44 down, at 150 points a second
+> drag 796 77 796 33 --no-release --steps 22 --duration 0.29
+> release
+  (quiet:1058 ms) drags=45 front=45 own=45
+
+-- 51 menu-bar-away-150: drags textedit by its title bar 0 across and 240 down, at 150 points a second
+> drag 796 43 796 283 --no-release --steps 120 --duration 1.60
+> release
+  (quiet:1027 ms) drags=45 front=45 own=45
+
+== The menu bar, at 600 points a second
+
+-- 52 carry-to-460-65: drags textedit by its title bar 0 across and -206 down, at 600 points a second
+> drag 796 283 796 77 --no-release --steps 103 --duration 0.34
+> release
+  (quiet:1032 ms) drags=45 front=45 own=45
+
+-- 53 menu-bar-against-600: drags textedit by its title bar 0 across and -44 down, at 600 points a second
+> drag 796 77 796 33 --no-release --steps 22 --duration 0.07
+> release
+  (quiet:1038 ms) drags=45 front=45 own=45
+
+-- 54 menu-bar-away-600: drags textedit by its title bar 0 across and 240 down, at 600 points a second
+> drag 796 43 796 283 --no-release --steps 120 --duration 0.40
+> release
+  (quiet:1081 ms) drags=45 front=45 own=45
+
+-- 55 unhide-mail: clicks its icon in the Dock
+> click 355 854
+> move 355 654
+  (quiet:466 ms) moves=,, comes=71 front=73
+
+-- 56 unhide-preview: clicks its icon in the Dock
+> click 1332 854
+> move 1332 654
+  (quiet:397 ms) moves=,, comes=67 front=67
+
+-- 57 unhide-settings: clicks its icon in the Dock
+> click 1139 854
+> move 1139 654
+  (quiet:513 ms) moves=,, comes=63 front=63
+
+-- 58 unhide-calendar: clicks its icon in the Dock
+> click 635 854
+> move 635 654
+  (quiet:427 ms) moves=,, comes=60 front=60
+
+-- 59 unhide-notes: clicks its icon in the Dock
+> click 803 854
+> move 803 654
+  (quiet:473 ms) moves=,, comes=54 front=54
+
+-- 60 unhide-terminal: clicks its icon in the Dock
+> click 1276 854
+> move 1276 654
+  (quiet:409 ms) moves=,, comes=51 front=51
+
+-- 61 unhide-safari: clicks its icon in the Dock
+> click 243 854
+> move 243 654
+  (quiet:399 ms) moves=,, comes=34 front=34
+
+-- 62 unhide-finder: clicks its icon in the Dock
+> click 131 854
+> move 131 654
+  (quiet:394 ms) moves=,, comes=31 front=31
+
+-- 63 input-after: a round of input: presses on windows behind and in front, keys, a scroll, a drag inside a window
+> click 1076 43
+  1 presses on windows behind; textedit shows no free point of its title bar, so that is all
+  (quiet:356 ms) round=after posted=press:1,up:1
+
+49 acts, 0 left out because they did not apply
+
+== the report (all of it: mac-shell/day-report.md)
+63 steps in 478 s, 48 of them judged, 0 with a rule broken. The sampler: samples 15529 seconds 402.9 hz 38.6 cost-ms 2.30 late 14 longest-gap-ms 690 whole-samples 18483 whole-seconds 479.5 whole-late 148.
+Input: 5475 presses, releases, keys and scrolls reached the apps, half of them within 542 µs, 99 in 100 within 3693 µs, the latest after 88419 µs.
+By kind, listed only (events, half within, 99 in 100 within, µs): down 48, 2054, 13899; dragged 5378, 539, 3489; key 1, 2058, 2058; up 48, 1209, 5089. `forward`: a press on a window of an app that was not in front.
+The round of input `before` (events, half within µs): forward 8, 58709; up 8, 2127.
+The round of input `after` (events, half within µs): forward 1, 56736; up 1, 557.
+Judged: no kind. Not down: fewer than 10 such events in a round without Arbor. Not forward: fewer than 10 such events in a round without Arbor. Not up: fewer than 10 such events in a round without Arbor. Not key: fewer than 10 such events in a round without Arbor. Not dragged: fewer than 10 such events in a round without Arbor. Not scroll: fewer than 10 such events in a round without Arbor.
+
+## Per rule
+
+| Rule | | Steps that checked it | Steps that broke it | Which |
+|---|---|---|---|---|
+| 1 | never fight macOS: where it answers a drag, Arbor stands aside | 39 | 0 |  |
+| 2 | nothing moves that the person did not move | 51 | 0 |  |
+| 3 | no jolts: a window moves once, to where it ends up | 51 | 0 |  |
+| 4 | the window you switch to comes to the front and into view | 48 | 0 |  |
+| 5 | quitting, Float All and pause give windows their own sizes back | 0 | 0 |  |
+| 6 | what a person presses reaches the apps, at once | 50 | 0 |  |
+| L | no window is lost or stuck | 51 | 0 |  |
+| - | what the script itself checked | 51 | 0 |  |
+
+## Findings
+
+
+1 passed, 0 failed
+still running when the script had ended, and stopped now:
+  4462 sleep
+exit code 0
