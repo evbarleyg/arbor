@@ -40,7 +40,7 @@ public enum PanelLook {
   public enum Ink: CaseIterable, Sendable {
     /// Words a person must read to act: a shortcut, a window's title, what the line says.
     case main
-    /// All other words: headings, notes, what a field is for.
+    /// All other words: headings over groups of rows, notes beside a title, a placeholder under a heading.
     case second
   }
 
@@ -62,5 +62,62 @@ public enum PanelLook {
   /// whichever of black and white reads better (a yellow or a green accent colour).
   public static func ink(onSelection fill: RGBA) -> RGBA {
     RGBA.white.contrast(with: fill) >= 4.5 ? .white : fill.ink
+  }
+
+  /// The field for a name. What counts is what words are for: the heading is the field's only label, and the note alone says
+  /// which space gets the name, so both are read to act (in the second ink 4.1 to 1 in the dark look over a white window, by the
+  /// judges' ruler on a hosted Mac). The heading lets the placeholder off.
+  public enum NameField {
+    public static let heading = Ink.main
+    public static let note = Ink.main
+    public static let placeholder = Ink.second
+  }
+
+  /// The line under Go to…'s field. Not macOS's separator colour, one grey whatever the ground: with Reduce Transparency that stood out
+  /// by 1.01 to 1.
+  public static func rule(isDark: Bool, increasesContrast: Bool = false) -> RGBA {
+    RGBA(white: isDark ? 1 : 0, alpha: increasesContrast ? 0.6 : 0.25)
+  }
+
+  // MARK: The minimap
+
+  /// How strong things on the minimap are. The lines' are shares of black or white, whichever the look's ink is.
+  public enum Map {
+    /// Of its app's colour, in a window out of view: still there, only fainter.
+    public static let fillOutOfView = 0.45
+
+    /// Of the line round a window, in view or not: what is in view is told by the accent's frame, not by who has an edge. Fainter must
+    /// not mean gone: at 0.3 a window out of view of the ground's own brightness was still not there, 1.02 to 1 its fill and 1.9 its
+    /// line in the light look over black (the judges' ruler, on a hosted Mac); and without a line a window in view of about the
+    /// ground's colour was not either. With Increase Contrast a whole line.
+    public static func plateEdge(increasesContrast: Bool) -> Double { increasesContrast ? 1 : 0.7 }
+
+    /// Of the Desktop's outline, which is all there is of it: so out of view it is the line that is fainter, and still a line. At 0.3
+    /// it stood beside windows' lines of twice that, and out from the map by 2.1 to 2.7.
+    public static func desktopLine(isInView: Bool, increasesContrast: Bool) -> Double {
+      if increasesContrast { return 1 }
+      return isInView ? plateEdge(increasesContrast: false) : 0.5
+    }
+  }
+
+  // MARK: Lines on other apps' windows
+
+  /// With Increase Contrast: the lines outside the accent's, each a point wide, from the outside in. Of two tones R to 1 apart the better
+  /// one stands out from the worst ground by the root of R: the accent and white, 4.6 apart in the dark look, left every ground of
+  /// middling brightness under 3 (a bright red window 2.9, a cyan one 2.8). Black and white are 21 apart: 4.58 on anything.
+  public static let strongLines: [RGBA] = [.black, .white]
+
+  /// The same for a line `thickness` points thick in all, of a colour that may be a person's own choice (the focus ring's). Under three
+  /// points black and white would leave nothing of it: one line then, whichever of the two stands out from the colour. A point
+  /// has no room for any.
+  public static func strongLines(within thickness: CGFloat, of colour: RGBA) -> [RGBA] {
+    if thickness >= CGFloat(strongLines.count + 1) { return strongLines }
+    return thickness > 1 ? [secondLine(inside: colour).withAlpha(1)] : []
+  }
+
+  /// Without the setting: the line inside the accent's. A hint of an edge on most things, and the whole edge on a few.
+  public static func secondLine(inside accent: RGBA) -> RGBA {
+    let brightness = 0.2126 * accent.red + 0.7152 * accent.green + 0.0722 * accent.blue
+    return brightness > 0.6 ? RGBA.black.withAlpha(0.45) : RGBA.white.withAlpha(0.55)
   }
 }

@@ -141,7 +141,9 @@ private final class MinimapView: NSView {
 
   override func draw(_ dirtyRect: NSRect) {
     guard let model else { return }
-    MinimapDrawing.draw(model, accent: .controlAccentColor, ink: PanelInk.main) {
+    MinimapDrawing.draw(
+      model, accent: .controlAccentColor, ink: PanelInk.main, increasesContrast: effectiveAppearance.increasesContrast
+    ) {
       AppAppearance.colour(pid: $0.pid, bundleID: $0.bundleID)
     }
   }
@@ -151,17 +153,19 @@ private final class MinimapView: NSView {
 /// that a test can have the real thing drawn into a bitmap, in colours it knows, and look at it (MinimapDrawingTests).
 @MainActor
 enum MinimapDrawing {
-  /// What is out of view is still there, only fainter.
-  static let outOfViewAlpha: CGFloat = 0.45
-  static let outOfViewEdgeAlpha: CGFloat = 0.3
+  static let outOfViewAlpha = CGFloat(PanelLook.Map.fillOutOfView)
   static let highlightFillAlpha: CGFloat = 0.12
 
   /// `accent` frames the space in view, `ink` is for the Desktop's outline, the outline under the pointer and the caption, and
   /// `colour` gives each window its app's.
-  static func draw(_ model: MinimapModel, accent: NSColor, ink: NSColor, colour: (MinimapModel.Item) -> NSColor) {
+  static func draw(
+    _ model: MinimapModel, accent: NSColor, ink: NSColor, increasesContrast: Bool = false,
+    colour: (MinimapModel.Item) -> NSColor
+  ) {
     if let desktop = model.desktop {
       let outline = NSBezierPath(roundedRect: desktop.insetBy(dx: 0.5, dy: 0.5), xRadius: 2.5, yRadius: 2.5)
-      ink.withAlphaComponent(model.desktopIsInView ? 0.6 : 0.3).setStroke()
+      let strength = PanelLook.Map.desktopLine(isInView: model.desktopIsInView, increasesContrast: increasesContrast)
+      ink.withAlphaComponent(CGFloat(strength)).setStroke()
       outline.lineWidth = 1
       outline.stroke()
     }
@@ -169,10 +173,9 @@ enum MinimapDrawing {
     for item in model.items {
       colour(item).withAlphaComponent(item.isInView ? 1 : outOfViewAlpha).setFill()
       NSBezierPath(roundedRect: item.frame, xRadius: 2.5, yRadius: 2.5).fill()
-      // Fainter must not mean gone: a dark app's window out of view merged with a dark ground (seen on a hosted Mac).
-      guard !item.isInView, item.frame.width > 2, item.frame.height > 2 else { continue }
+      guard item.frame.width > 2, item.frame.height > 2 else { continue }
       let edge = NSBezierPath(roundedRect: item.frame.insetBy(dx: 0.5, dy: 0.5), xRadius: 2, yRadius: 2)
-      ink.withAlphaComponent(outOfViewEdgeAlpha).setStroke()
+      ink.withAlphaComponent(CGFloat(PanelLook.Map.plateEdge(increasesContrast: increasesContrast))).setStroke()
       edge.lineWidth = 1
       edge.stroke()
     }
@@ -188,7 +191,8 @@ enum MinimapDrawing {
     if let hover = model.hover {
       let outline = NSBezierPath(roundedRect: hover.insetBy(dx: -0.5, dy: -0.5), xRadius: 3, yRadius: 3)
       ink.setStroke()
-      outline.lineWidth = 1.5
+      // Told from the windows' own lines by its width.
+      outline.lineWidth = increasesContrast ? 2.5 : 1.5
       outline.stroke()
     }
 
