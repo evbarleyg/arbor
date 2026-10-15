@@ -1,0 +1,64 @@
+AXWindow - "Arbor Settings" "" 122 58 780 568
+  AXGroup - "" "" 122 86 780 540
+    AXTextField search "Search the settings" "" 132 96 180 22
+    AXScrollArea - "" "" 122 128 200 469
+      AXOutline - "Sidebar" "" 122 128 200 469
+        AXRow - "" "" 122 138 200 28
+          AXCell - "" "" 132 138 180 28
+            AXStaticText pane.general "" "General" 141 144 69 16
+        AXRow - "" "" 122 166 200 28
+          AXCell - "" "" 132 166 180 28
+            AXStaticText pane.windows "" "Windows" 141 172 76 16
+        AXRow - "" "" 122 194 200 28
+          AXCell - "" "" 132 194 180 28
+            AXStaticText pane.dragging "" "Dragging" 141 199 77 16
+        AXRow - "" "" 122 222 200 28
+          AXCell - "" "" 132 222 180 28
+            AXStaticText pane.gestures "" "Gestures" 142 228 75 16
+        AXRow - "" "" 122 250 200 28
+          AXCell - "" "" 132 250 180 28
+            AXStaticText pane.calls "" "Calls" 141 256 51 16
+        AXRow - "" "" 122 278 200 28
+          AXCell - "" "" 132 278 180 28
+            AXStaticText pane.appearance "" "Appearance" 141 284 94 16
+        AXRow - "" "" 122 306 200 28
+          AXCell - "" "" 132 306 180 28
+            AXStaticText pane.menu-bar "" "Menu Bar" 141 312 79 16
+        AXRow - "" "" 122 334 200 28
+          AXCell - "" "" 132 334 180 28
+            AXStaticText pane.apps "" "Apps" 142 340 52 16
+        AXRow - "" "" 122 362 200 28
+          AXCell - "" "" 132 362 180 28
+            AXStaticText pane.scripting "" "Scripting" 141 368 76 16
+        AXRow - "" "" 122 390 200 28
+          AXCell - "" "" 132 390 180 28
+            AXStaticText pane.shortcuts "" "Shortcuts" 140 396 81 16
+        AXRow - "" "" 122 418 200 28
+          AXCell - "" "" 132 418 180 28
+            AXStaticText pane.rules "" "Rules" 142 424 54 16
+        AXColumn ListColumn "" "" 132 128 180 469
+    AXStaticText - "" "Arbor dev" 198 605 48 13
+    AXScrollArea - "" "" 323 86 579 540
+      AXGroup - "" "" 343 106 539 220
+        AXStaticText - "" "Don't arrange" 353 116 84 16
+        AXStaticText - "" "Arbor leaves the windows of these apps alone: it never docks, moves or sends them out of view." 353 134 463 13
+        AXStaticText - "" "com.example.music" 353 155 120 16
+        AXButton excludedBundleIDs.remove.com.example.music "Take com.example.music off the list" "" 858 157 13 13
+        AXStaticText - "" "com.example.game" 353 179 118 16
+        AXButton excludedBundleIDs.remove.com.example.game "Take com.example.game off the list" "" 858 181 13 13
+        AXMenuButton excludedBundleIDs.add "Add an App…" "" 353 203 113 20
+        AXStaticText - "" "Shortcuts off in" 353 244 94 16
+        AXStaticText - "" "Apps that keep ⌃⌥ for themselves: while one of them is in front Arbor gives up its shortcuts and gestures, and goes on arranging windows." 353 262 517 26
+        AXMenuButton passThroughApps.add "Add an App…" "" 353 296 113 20
+      AXGroup - "" "" 331 336 551 44
+        AXDisclosureTriangle - "Advanced" "0" 331 350 537 16
+  AXButton - "" "" 130 65 12 14
+  AXButton - "" "" 170 65 12 14
+    AXGroup - "" "" 169 64 14 16
+      AXGroup - "" "" 169 64 14 16
+  AXButton - "" "" 150 65 12 14
+  AXStaticText - "" "Arbor Settings" 462 63 99 16
+AXWindow - "" "" 253 43 12 650
+AXWindow - "" "" 506 43 12 650
+AXWindow - "" "" 759 43 12 650
+AXWindow - "" "" 0 31 1024 674

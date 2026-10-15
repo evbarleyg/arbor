@@ -1,0 +1,86 @@
+AXWindow - "Arbor Settings" "" 122 58 780 568
+  AXGroup - "" "" 122 86 780 540
+    AXTextField search "Search the settings" "" 132 96 180 22
+    AXScrollArea - "" "" 122 128 200 469
+      AXOutline - "Sidebar" "" 122 128 200 469
+        AXRow - "" "" 122 138 200 28
+          AXCell - "" "" 132 138 180 28
+            AXStaticText pane.general "" "General" 141 144 69 16
+        AXRow - "" "" 122 166 200 28
+          AXCell - "" "" 132 166 180 28
+            AXStaticText pane.windows "" "Windows" 141 172 76 16
+        AXRow - "" "" 122 194 200 28
+          AXCell - "" "" 132 194 180 28
+            AXStaticText pane.dragging "" "Dragging" 141 199 77 16
+        AXRow - "" "" 122 222 200 28
+          AXCell - "" "" 132 222 180 28
+            AXStaticText pane.gestures "" "Gestures" 142 228 75 16
+        AXRow - "" "" 122 250 200 28
+          AXCell - "" "" 132 250 180 28
+            AXStaticText pane.calls "" "Calls" 141 256 51 16
+        AXRow - "" "" 122 278 200 28
+          AXCell - "" "" 132 278 180 28
+            AXStaticText pane.appearance "" "Appearance" 141 284 94 16
+        AXRow - "" "" 122 306 200 28
+          AXCell - "" "" 132 306 180 28
+            AXStaticText pane.menu-bar "" "Menu Bar" 141 312 79 16
+        AXRow - "" "" 122 334 200 28
+          AXCell - "" "" 132 334 180 28
+            AXStaticText pane.apps "" "Apps" 142 340 52 16
+        AXRow - "" "" 122 362 200 28
+          AXCell - "" "" 132 362 180 28
+            AXStaticText pane.scripting "" "Scripting" 141 368 76 16
+        AXRow - "" "" 122 390 200 28
+          AXCell - "" "" 132 390 180 28
+            AXStaticText pane.shortcuts "" "Shortcuts" 140 396 81 16
+        AXRow - "" "" 122 418 200 28
+          AXCell - "" "" 132 418 180 28
+            AXStaticText pane.rules "" "Rules" 142 424 54 16
+        AXColumn ListColumn "" "" 132 128 180 469
+    AXStaticText - "" "Arbor dev" 198 605 48 13
+    AXScrollArea - "" "" 323 86 579 540
+      AXGroup - "" "" 343 106 539 426
+        AXStaticText - "" "What happens to a new window of an app. Rules are checked from the top and the first that matches wins; windows that are already open keep their place." 353 116 516 26
+        AXStaticText - "" "1." 353 165 12 16
+        AXStaticText - "" "com.example.mail" 373 165 109 16
+        AXButton - "Check rule 1 earlier" "" 819 170 12 7
+        AXButton rule.1.down "Check rule 1 later" "" 839 170 12 7
+        AXButton rule.1.remove "Remove rule 1" "" 858 166 13 15
+        AXPopUpButton - "" "Dock at the edge" 353 188 136 20
+        AXPopUpButton - "" "Left" 497 188 56 20
+        AXTextField rule.1.title "Rule 1: only windows whose title contains" "Inbox" 353 214 519 21
+        AXStaticText - "" "2." 353 260 12 16
+        AXStaticText - "" "com.example.terminal" 373 260 133 16
+        AXButton - "Check rule 2 earlier" "" 819 265 12 7
+        AXButton rule.2.down "Check rule 2 later" "" 839 265 12 7
+        AXButton rule.2.remove "Remove rule 2" "" 858 261 13 15
+        AXPopUpButton - "" "Dock beside" 353 283 108 20
+        AXMenuButton - "com.example.mail" "" 469 283 141 20
+        AXPopUpButton - "" "Bottom" 618 283 77 20
+        AXTextField rule.2.title "Rule 2: only windows whose title contains" "" 353 309 519 21
+        AXStaticText - "" "3." 353 355 12 16
+        AXStaticText - "" "com.example.player" 373 355 121 16
+        AXButton - "Check rule 3 earlier" "" 819 360 12 7
+        AXButton rule.3.down "Check rule 3 later" "" 839 360 12 7
+        AXButton rule.3.remove "Remove rule 3" "" 858 356 13 15
+        AXPopUpButton - "" "Float" 353 378 62 20
+        AXTextField rule.3.title "Rule 3: only windows whose title contains" "" 353 404 519 21
+        AXStaticText - "" "4." 353 450 12 16
+        AXStaticText - "" "com.example.palette" 373 450 127 16
+        AXButton - "Check rule 4 earlier" "" 819 455 12 7
+        AXButton rule.4.down "Check rule 4 later" "" 839 455 12 7
+        AXButton rule.4.remove "Remove rule 4" "" 858 451 13 15
+        AXPopUpButton - "" "Leave alone" 353 473 104 20
+        AXTextField rule.4.title "Rule 4: only windows whose title contains" "" 353 499 519 21
+      AXGroup - "" "" 343 542 539 40
+        AXMenuButton - "Add a Rule for…" "" 353 552 127 20
+  AXButton - "" "" 130 65 12 14
+  AXButton - "" "" 170 65 12 14
+    AXGroup - "" "" 169 64 14 16
+      AXGroup - "" "" 169 64 14 16
+  AXButton - "" "" 150 65 12 14
+  AXStaticText - "" "Arbor Settings" 462 63 99 16
+AXWindow - "" "" 253 43 12 650
+AXWindow - "" "" 506 43 12 650
+AXWindow - "" "" 759 43 12 650
+AXWindow - "" "" 0 31 1024 674

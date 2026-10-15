@@ -1,0 +1,421 @@
+# mac-shell: scripts/mac-shell/shots-F12.sh at fc2222b, macOS 26.6.2, 2026-10-15T07:13Z
+built Arbor, the pointer tool and the app bundles in 3s
+
+== light: the window opens in front, with the keyboard, above Arbor's own panels
+session 1: Arbor pid 2826, test windows 28 29 30 (pid 2785)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 28 left
+docked w28 at the left edge
+> dock 29 right
+docked w29 at the right edge
+> dock 30 right
+docked w30 at the right edge
+> settings-window
+the settings window is open
+  ✔ the settings window opens
+  ✔ Arbor is the app in front
+  ✔ the window floats while it has the keyboard
+  ✔ Arbor knows three windows, not its own
+shot: mac-shell/01-over-three-columns.png
+
+== Advanced opens at a click on the word, and closes at another
+> settings-window windows
+the settings window is open at Windows
+  ✔ autoDockMinimumWidth is behind Advanced
+> click 599 501
+  ✔ and shows after the click
+> click 599 501
+  ✔ and is behind it again after another
+
+== light: every pane, from top to bottom, and with Advanced open
+shot: mac-shell/light-general.png
+> click 599 410
+shot: mac-shell/light-general-advanced.png
+> click 894 578
+shot: mac-shell/light-general-advanced-2.png
+> click 894 578
+shot: mac-shell/light-general-advanced-3.png
+> click 894 578
+shot: mac-shell/light-general-advanced-4.png
+> click 894 578
+shot: mac-shell/light-general-advanced-5.png
+> click 894 578
+shot: mac-shell/light-general-advanced-6.png
+> click 894 578
+shot: mac-shell/light-general-advanced-7.png
+> click 894 578
+shot: mac-shell/light-general-advanced-8.png
+> click 894 578
+shot: mac-shell/light-general-advanced-9.png
+shot: mac-shell/light-windows.png
+> click 599 501
+shot: mac-shell/light-windows-advanced.png
+> click 894 578
+shot: mac-shell/light-windows-advanced-2.png
+> click 894 578
+shot: mac-shell/light-windows-advanced-3.png
+shot: mac-shell/light-dragging.png
+shot: mac-shell/light-gestures.png
+> click 599 449
+shot: mac-shell/light-gestures-advanced.png
+> click 894 578
+shot: mac-shell/light-gestures-advanced-2.png
+shot: mac-shell/light-calls.png
+shot: mac-shell/light-appearance.png
+> click 894 578
+shot: mac-shell/light-appearance-2.png
+> click 599 543
+shot: mac-shell/light-appearance-advanced.png
+> click 894 578
+shot: mac-shell/light-appearance-advanced-2.png
+shot: mac-shell/light-menu-bar.png
+> click 599 202
+shot: mac-shell/light-menu-bar-advanced.png
+shot: mac-shell/light-apps.png
+> click 599 358
+shot: mac-shell/light-apps-advanced.png
+shot: mac-shell/light-scripting.png
+shot: mac-shell/light-shortcuts.png
+> click 894 619
+shot: mac-shell/light-shortcuts-2.png
+> click 894 619
+shot: mac-shell/light-shortcuts-3.png
+> click 894 619
+shot: mac-shell/light-shortcuts-4.png
+> click 894 619
+shot: mac-shell/light-shortcuts-5.png
+> click 894 619
+shot: mac-shell/light-shortcuts-6.png
+> click 894 619
+shot: mac-shell/light-shortcuts-7.png
+> click 894 619
+shot: mac-shell/light-shortcuts-8.png
+> click 894 619
+shot: mac-shell/light-shortcuts-9.png
+shot: mac-shell/light-rules.png
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== dark: every pane, a refusal, a clash and the banner
+session 2: Arbor pid 6651, test windows 58 59 60 (pid 6611)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 58 left
+docked w58 at the left edge
+> dock 59 right
+docked w59 at the right edge
+> dock 60 right
+docked w60 at the right edge
+> settings-window
+the settings window is open
+  ✔ the settings window opens
+shot: mac-shell/dark-general.png
+> click 599 410
+shot: mac-shell/dark-general-advanced.png
+> click 894 578
+shot: mac-shell/dark-general-advanced-2.png
+> click 894 578
+shot: mac-shell/dark-general-advanced-3.png
+> click 894 578
+shot: mac-shell/dark-general-advanced-4.png
+> click 894 578
+shot: mac-shell/dark-general-advanced-5.png
+> click 894 578
+shot: mac-shell/dark-general-advanced-6.png
+> click 894 578
+shot: mac-shell/dark-general-advanced-7.png
+> click 894 578
+shot: mac-shell/dark-general-advanced-8.png
+> click 894 578
+shot: mac-shell/dark-general-advanced-9.png
+shot: mac-shell/dark-windows.png
+> click 599 501
+shot: mac-shell/dark-windows-advanced.png
+> click 894 578
+shot: mac-shell/dark-windows-advanced-2.png
+> click 894 578
+shot: mac-shell/dark-windows-advanced-3.png
+shot: mac-shell/dark-dragging.png
+shot: mac-shell/dark-gestures.png
+> click 599 449
+shot: mac-shell/dark-gestures-advanced.png
+> click 894 578
+shot: mac-shell/dark-gestures-advanced-2.png
+shot: mac-shell/dark-calls.png
+shot: mac-shell/dark-appearance.png
+> click 894 578
+shot: mac-shell/dark-appearance-2.png
+> click 599 543
+shot: mac-shell/dark-appearance-advanced.png
+> click 894 578
+shot: mac-shell/dark-appearance-advanced-2.png
+shot: mac-shell/dark-menu-bar.png
+> click 599 202
+shot: mac-shell/dark-menu-bar-advanced.png
+shot: mac-shell/dark-apps.png
+> click 599 358
+shot: mac-shell/dark-apps-advanced.png
+shot: mac-shell/dark-scripting.png
+shot: mac-shell/dark-shortcuts.png
+> click 894 619
+shot: mac-shell/dark-shortcuts-2.png
+> click 894 619
+shot: mac-shell/dark-shortcuts-3.png
+> click 894 619
+shot: mac-shell/dark-shortcuts-4.png
+> click 894 619
+shot: mac-shell/dark-shortcuts-5.png
+> click 894 619
+shot: mac-shell/dark-shortcuts-6.png
+> click 894 619
+shot: mac-shell/dark-shortcuts-7.png
+> click 894 619
+shot: mac-shell/dark-shortcuts-8.png
+> click 894 619
+shot: mac-shell/dark-shortcuts-9.png
+shot: mac-shell/dark-rules.png
+> settings-window windows
+the settings window is open at Windows
+> click 808 125
+> key cmd+a
+> key 5
+> key 0
+> key 0
+> typed 500
+> key return
+  ✔ the reason stands in the window
+shot: mac-shell/dark-gap-refused.png
+> settings-window shortcuts
+the settings window is open at Shortcuts
+> click 763 158
+> key ctrl+opt+shift+f9
+  ✔ the window says who has the keys
+shot: mac-shell/dark-clash.png
+> click 687 185
+> settings-window general
+the settings window is open at General
+  ✔ the banner is up
+shot: mac-shell/dark-file-broken.png
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== a number typed into Gap moves real windows; one out of range is refused under the field
+session 3: Arbor pid 11012, test windows 90 91 92 (pid 10998)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 90 left
+docked w90 at the left edge
+> dock 91 right
+docked w91 at the right edge
+> dock 92 right
+docked w92 at the right edge
+> settings-window
+the settings window is open
+  ✔ the settings window opens
+> settings-window windows
+the settings window is open at Windows
+> click 808 125
+> key cmd+a
+> key 4
+> key 0
+> typed 40
+> key return
+  ✔ gap is 40
+  ✔ the real window starts 40 points from the edge
+  ✔ the window is still above the gap handles, which were drawn again
+> click 808 125
+> key cmd+a
+> key 5
+> key 0
+> key 0
+> typed 500
+> key return
+  ✔ 500 is refused
+  ✔ the reason stands in the window
+  ✔ the field is back at the real value
+shot: mac-shell/light-gap-refused.png
+
+== the slider changes the setting when it is let go of, not on the way
+  ✔ the slider is found
+> drag 680 125 740 125 --no-release
+  ✔ held: gap is still 40
+  ✔ held: the field follows the slider
+  held: the field says 86
+shot: mac-shell/light-slider-held.png
+> release
+  ✔ let go: gap has changed
+> get gap
+86
+  ✔ the refusal is gone after the next change
+
+== a change from outside shows in the open window
+> set gap 20
+gap = 20 (was 86)
+  ✔ the field says 20
+  ✔ and 28 after an edit of the file
+  ✔ and 12 when the file no longer names it
+> settings-window general
+the settings window is open at General
+> settings-window windows
+the settings window is open at Windows
+  ✔ leaving the pane with the keyboard in the field changes nothing
+
+== a switch, and Restore Defaults
+> settings-window gestures
+the settings window is open at Gestures
+> click 858 384
+  ✔ the switch reached Arbor
+> click 823 606
+  ✔ Restore Defaults put it back
+
+== search finds advanced settings and the lists
+> click 222 107
+> key r
+> key i
+> key n
+> key g
+> typed ring
+  ✔ the focus ring's width is found, though advanced
+shot: mac-shell/light-search.png
+> key cmd+a
+> key delete
+
+== recording: new keys for a command
+> settings-window shortcuts
+the settings window is open at Shortcuts
+> click 763 158
+  ✔ the button asks for keys
+shot: mac-shell/light-recording.png
+> key ctrl+opt+shift+f8
+  ✔ ⌃⌥⇧F8 runs show-all
+  ✔ ⌃⌥Space no longer does
+
+== recording: one of Arbor's own shortcuts reaches the recorder instead of running, and clashes
+> click 763 158
+> key ctrl+opt+shift+f9
+  ✔ the window says who has the keys
+  ✔ the shortcut did not run: the view is where it was
+  ✔ nothing is bound yet
+shot: mac-shell/light-clash.png
+> click 598 185
+  ✔ now it runs show-all
+  ✔ and the keys from before are free
+
+== recording: Escape cancels, and a ⌘-chord of the hidden menu is recorded, not obeyed
+> click 763 158
+> key escape
+  ✔ Escape ended the recording
+  ✔ and changed nothing
+> key ctrl+opt+shift+f6
+  ✔ Arbor has its shortcuts again: ⌃⌥⇧F6 ran set gap 0
+> click 763 158
+> key cmd+w
+  ✔ ⌘W did not close the window
+  ✔ it was recorded
+  ✔ with a word of caution on the line
+shot: mac-shell/light-caution.png
+> reset bindings
+bindings = none, the default (was 4 shortcuts); the file as it was is kept as settings.before-reset.json
+  ✔ the defaults are back
+  ✔ and ⌘W is everybody's again
+
+== rules: a title typed on a line goes with its rule when the line's arrow is clicked
+> settings-window rules
+the settings window is open at Rules
+> click 612 319
+> key a
+> key b
+> key c
+> typed abc
+> click 845 268
+> rules
+Rules for new windows, checked in order (the first match wins):
+  1. com.example.mail, title contains "Inbox" → dock left
+  2. com.example.player → float
+  3. com.example.terminal, title contains "abc" → dock beside com.example.mail bottom
+  4. com.example.palette → ignore
+No focused window.
+Rules apply when a window opens. Of windows that were already open, Arbor only ignores those a rule says to.
+  ✔ rule 3 is the terminal's, with the title
+  ✔ rule 2 got none of it
+shot: mac-shell/light-rules-moved.png
+
+== a file that cannot be read is said above everything, and can be replaced
+> settings-window general
+the settings window is open at General
+  ✔ the banner is up
+shot: mac-shell/light-file-broken.png
+> click 858 228
+  ✔ a switch is refused meanwhile
+  ✔ with the reason under it
+shot: mac-shell/light-file-broken-refusal.png
+> click 536 168
+  ✔ it asks first
+  ✔ and has replaced nothing yet
+shot: mac-shell/light-file-broken-question.png
+> click 373 206
+  ✔ the banner is gone, and the refusal that spoke of the same
+  ✔ the old file is kept beside the new one
+  ✔ the new one can be read
+  ✔ values that could not be used are listed
+shot: mac-shell/light-values-unusable.png
+  ✔ the file is read again
+
+== ⌘W closes the window and the app from before has the keyboard again; what was being typed is handed over
+> click 674 55
+  ✘ a test window has the keyboard
+      picture: mac-shell/fail-shots-F12-1.png
+      | display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+      |   Desktop          265 43 241 650
+      |   w90 12 43 241 650        docked
+      |   w91 518 43 241 650       docked
+      |   w92 771 43 241 650       docked
+  ✘ the settings window is an ordinary window meanwhile
+      picture: mac-shell/fail-shots-F12-2.png
+shot: mac-shell/02-behind-a-clicked-window.png
+> key ctrl+opt+,
+  ✔ ⌃⌥, brings it to the front
+  ✔ and it floats again
+shot: mac-shell/03-brought-back-by-the-shortcut.png
+> settings-window windows
+the settings window is open at Windows
+> click 808 125
+> key cmd+a
+> key 3
+> key 3
+> typed 33
+> key cmd+w
+  ✔ the window is closed
+  ✔ the test windows' app is in front again
+  ✔ 33, typed and not entered, was handed over
+> settings-window
+the settings window is open
+  ✔ it opens again
+  ✔ and shows what is so
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+77 passed, 2 failed
+exit code 1

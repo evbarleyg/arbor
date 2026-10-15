@@ -1,0 +1,118 @@
+# shots-F12 2026-10-15T07:13Z on macOS 26.6.2, commit fc2222b
+
+== light: the window opens in front, with the keyboard, above Arbor's own panels
+  ✔ the settings window opens
+  ✔ Arbor is the app in front
+  ✔ the window floats while it has the keyboard
+  ✔ Arbor knows three windows, not its own
+
+== Advanced opens at a click on the word, and closes at another
+  ✔ autoDockMinimumWidth is behind Advanced
+  ✔ and shows after the click
+  ✔ and is behind it again after another
+
+== light: every pane, from top to bottom, and with Advanced open
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== dark: every pane, a refusal, a clash and the banner
+  ✔ the settings window opens
+  ✔ the reason stands in the window
+  ✔ the window says who has the keys
+  ✔ the banner is up
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== a number typed into Gap moves real windows; one out of range is refused under the field
+  ✔ the settings window opens
+  ✔ gap is 40
+  ✔ the real window starts 40 points from the edge
+  ✔ the window is still above the gap handles, which were drawn again
+  ✔ 500 is refused
+  ✔ the reason stands in the window
+  ✔ the field is back at the real value
+
+== the slider changes the setting when it is let go of, not on the way
+  ✔ the slider is found
+  ✔ held: gap is still 40
+  ✔ held: the field follows the slider
+  ✔ let go: gap has changed
+  ✔ the refusal is gone after the next change
+
+== a change from outside shows in the open window
+  ✔ the field says 20
+  ✔ and 28 after an edit of the file
+  ✔ and 12 when the file no longer names it
+  ✔ leaving the pane with the keyboard in the field changes nothing
+
+== a switch, and Restore Defaults
+  ✔ the switch reached Arbor
+  ✔ Restore Defaults put it back
+
+== search finds advanced settings and the lists
+  ✔ the focus ring's width is found, though advanced
+
+== recording: new keys for a command
+  ✔ the button asks for keys
+  ✔ ⌃⌥⇧F8 runs show-all
+  ✔ ⌃⌥Space no longer does
+
+== recording: one of Arbor's own shortcuts reaches the recorder instead of running, and clashes
+  ✔ the window says who has the keys
+  ✔ the shortcut did not run: the view is where it was
+  ✔ nothing is bound yet
+  ✔ now it runs show-all
+  ✔ and the keys from before are free
+
+== recording: Escape cancels, and a ⌘-chord of the hidden menu is recorded, not obeyed
+  ✔ Escape ended the recording
+  ✔ and changed nothing
+  ✔ Arbor has its shortcuts again: ⌃⌥⇧F6 ran set gap 0
+  ✔ ⌘W did not close the window
+  ✔ it was recorded
+  ✔ with a word of caution on the line
+  ✔ the defaults are back
+  ✔ and ⌘W is everybody's again
+
+== rules: a title typed on a line goes with its rule when the line's arrow is clicked
+  ✔ rule 3 is the terminal's, with the title
+  ✔ rule 2 got none of it
+
+== a file that cannot be read is said above everything, and can be replaced
+  ✔ the banner is up
+  ✔ a switch is refused meanwhile
+  ✔ with the reason under it
+  ✔ it asks first
+  ✔ and has replaced nothing yet
+  ✔ the banner is gone, and the refusal that spoke of the same
+  ✔ the old file is kept beside the new one
+  ✔ the new one can be read
+  ✔ values that could not be used are listed
+  ✔ the file is read again
+
+== ⌘W closes the window and the app from before has the keyboard again; what was being typed is handed over
+  ✘ a test window has the keyboard
+  ✘ the settings window is an ordinary window meanwhile
+  ✔ ⌃⌥, brings it to the front
+  ✔ and it floats again
+  ✔ the window is closed
+  ✔ the test windows' app is in front again
+  ✔ 33, typed and not entered, was handed over
+  ✔ it opens again
+  ✔ and shows what is so
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+77 passed, 2 failed
