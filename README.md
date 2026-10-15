@@ -592,7 +592,7 @@ in the file it costs only its own key. [docs/SETTINGS.md](docs/SETTINGS.md) is t
 | `appColours` | true | Tiles take on their app's colour; false: every tile is the same grey |
 | `appColourAmount` | 0.25 | How much of the app's colour goes into its tile, from 0 to 1 |
 | `gapHandles` | "shown" | The gaps between docked windows. "shown": drag one to resize both sides, and a handle shows in it under the pointer. "hidden": the same without the handle. "off": gaps cannot be dragged (window edges and `arborctl resize` still resize) |
-| `tileStyle` | "icon" | What a tile shows on its colour: "icon", "name" (the icon and the app's name) or "plain" (nothing). A space you named shows its name either way |
+| `tileStyle` | "name" | What a tile shows on its colour: "name" (the icon and the window's title, or the app's name while the view is held), "icon" or "plain" (nothing). A space you named shows its name either way |
 | `tintBehindArranged` | 0 | Tint behind docked windows: how much of your accent colour is laid over the wallpaper there, from 0 to 1 |
 | `desktopEdge` | 0.05 | How strong the hairline around the Desktop is where it lies between docked windows, from 0 (none) to 1 |
 | `tileFade` | 0.2 | Seconds a tile takes to fade in and out, from 0 (at once) to 1 |

@@ -27,7 +27,7 @@ Each option is a `settings.json` key, off unless stated:
   with rounded corners. It follows layout changes.
 - Changes apply on `reload-settings`.
 
-**Decided on 2026-10-14 by the product owner (QUESTIONS Q15; not built yet, on the board):** `tileStyle` ships as `"name"`. A window's tile is captioned with the space's name if it has one, else the window's
+**Decided on 2026-10-14 by the product owner (QUESTIONS Q15; built on 2026-10-15, `Controller+TileCaptions.swift`, `TileCaptionTests`):** `tileStyle` ships as `"name"`. A window's tile is captioned with the space's name if it has one, else the window's
 title, else the app's name. A tile too narrow for eight letters shows the icon alone; every tile has its caption as its help tag. While the view is held the app's name stands in for the title. A title is drawn and
 nothing else: never logged, never in a trace. The measure: two windows of one app can be told apart in the overview without a click.
 

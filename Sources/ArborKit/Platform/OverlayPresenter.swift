@@ -19,6 +19,9 @@ public struct TileModel: Equatable, Sendable {
   public var items: [Item]
   /// The name of the space the tile stands for, if it has one (F20).
   public var name: String? = nil
+  /// For a window's tile: the title of the window a click would show, where it may be shown and is what the tile is called
+  /// (Controller+TileCaptions.swift). To be drawn, and never written anywhere.
+  public var windowTitle: String? = nil
   /// Whether the tile takes on its app's colour (settings `appColours`, `appColourAmount`, `tileStyle`).
   /// `TileArt` turns these into what is drawn.
   public var usesAppColour = true
@@ -26,15 +29,18 @@ public struct TileModel: Equatable, Sendable {
   public var colourAmount = 0.25
   public var style = TileStyle.icon
 
-  /// The tile's caption: the space's name, or else the app name, "Desktop", or "N windows".
+  /// The tile's caption: the space's name, or else the window's title, its app's name, "Desktop", or "N windows".
   public var title: String {
     if let name { return name }
     switch kind {
     case .desktop: return "Desktop"
-    case .window: return items.first?.appName ?? "Window"
+    case .window: return windowTitle ?? items.first?.appName ?? "Window"
     case .group: return "\(items.count) windows"
     }
   }
+
+  /// What the pointer is told when it rests on the tile: the caption, whether or not there was room, or a wish, to draw it.
+  public var helpTag: String { title }
 }
 
 /// The surface behind docked windows: where the wallpaper is darkened and blurred, and by how much.

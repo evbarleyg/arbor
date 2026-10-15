@@ -189,6 +189,7 @@ extension NSWindowDelegate {
   open var isMovable = true
   open var isMovableByWindowBackground = false
   open var hidesOnDeactivate = false
+  open var allowsToolTipsWhenApplicationIsInactive = false
   open var canHide = true
   open var isExcludedFromWindowsMenu = false
   open var isRestorable = false
