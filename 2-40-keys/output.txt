@@ -1,0 +1,296 @@
+# mac-shell: scripts/mac-shell/suite/40-keys.sh at 90fd472, macOS 26.6.2, 2026-10-15T09:56Z
+built Arbor, the pointer tool and the app bundles in 5s
+session 1: Arbor pid 9165, test windows 56 57 58 (pid 9120)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+
+▸ Arbor registers every shortcut it lists
+> bindings
+arborctl bindings lists 51
+  ✔ there are at least the 35 defaults
+  ✔ all of them were registered with macOS
+
+▸ ⌃⌥⌘← and ⌃⌥⌘→ dock the focused window at that edge
+> click 412 536
+  ✔ the click gave the window the keyboard
+> key ctrl+opt+cmd+left
+  ✔ ⌃⌥⌘← reaches Arbor
+  ✔ the window is docked at the left edge
+> click 760 496
+> key ctrl+opt+cmd+right
+  ✔ ⌃⌥⌘→ reaches Arbor
+  ✔ the other window is docked at the right edge
+  ✔ the Desktop stays between them
+  ✔ windows match Arbor's layout
+
+▸ ⌃⌥⌘ and an arrow move a docked window one place at a time
+> click 513 330
+> key ctrl+opt+cmd+left
+  ✔ ⌃⌥⌘← docks the third window at the left edge
+  ✔ it is left of the first
+> key ctrl+opt+cmd+right
+  ✔ ⌃⌥⌘→ again
+  ✔ it traded places with the first
+  ✔ the first is at the left edge now
+  ✔ windows match Arbor's layout
+
+▸ ⌃⌥⌘↓ and ⌃⌥⌘↑ take a docked window to the bottom and the top of the view
+> key ctrl+opt+cmd+down
+  ✔ ⌃⌥⌘↓ reaches Arbor
+  ✔ the window is at the bottom edge
+  ✔ below the others
+> key ctrl+opt+cmd+up
+  ✔ ⌃⌥⌘↑ reaches Arbor
+display 0 0 1024 768, visible 0 31 1024 674, camera n6, back no
+  Desktop          349 374 326 319
+  w56 12 374 325 319       docked
+  w57 687 374 325 319      docked
+  w58 12 43 1000 319       docked focused
+> key ctrl+opt+cmd+down
+  ✔ ⌃⌥⌘↓ brings it back down
+  ✔ the window is at the bottom edge again
+  ✔ windows match Arbor's layout
+
+▸ ⌃⌥↩ frames the focused window, and the others leave the screen
+> key ctrl+opt+return
+  ✔ ⌃⌥↩ reaches Arbor
+  ✔ the focused window fills the screen
+  ✔ the first window is out of view
+  ✔ the second window is out of view
+  ✔ Arbor says they are parked
+
+▸ ⌃⌥[ goes back and ⌃⌥] forward
+> key ctrl+opt+[
+  ✔ ⌃⌥[ reaches Arbor
+  ✔ everything is back in view
+  ✔ the second window too
+  ✔ windows match Arbor's layout
+> key ctrl+opt+]
+  ✔ ⌃⌥] reaches Arbor
+  ✔ the window fills the screen again
+  ✔ the others are out of view again
+
+▸ ⌃⌥Space shows everything
+> key ctrl+opt+space
+  ✔ ⌃⌥Space reaches Arbor
+  ✔ the camera is on everything
+  ✔ the first window is in view
+  ✔ the second window is in view
+  ✔ the third window is in view
+  ✔ windows match Arbor's layout
+
+▸ ⌃⌥↓ steps in toward the pointer and ⌃⌥↑ steps out
+> move 174 202
+> key ctrl+opt+down
+  ✔ ⌃⌥↓ reaches Arbor
+  ✔ the row under the pointer fills the screen: the window below it left
+  ✔ the row's windows are in view
+> move 174 368
+> key ctrl+opt+down
+  ✔ ⌃⌥↓ again
+  ✔ the window under the pointer fills the screen
+> key ctrl+opt+up
+  ✔ ⌃⌥↑ reaches Arbor
+  ✔ its row is back
+> key ctrl+opt+up
+  ✔ ⌃⌥↑ again
+  ✔ everything is back
+  ✔ windows match Arbor's layout
+
+▸ ⌃⌥→ and ⌃⌥← go to the neighbouring space, ⌃⌥⇧↓ and ⌃⌥⇧↑ to the one below and above
+> zoom 56
+framed w56
+  ✔ the first window fills the screen
+> key ctrl+opt+right
+  ✔ ⌃⌥→ reaches Arbor
+  ✔ the camera is on the Desktop, its neighbour
+> key ctrl+opt+right
+  ✔ ⌃⌥→ again
+  ✔ the second window fills the screen
+> key ctrl+opt+left
+  ✔ ⌃⌥← reaches Arbor
+  ✔ the camera is back on the Desktop
+> key ctrl+opt+shift+down
+  ✔ ⌃⌥⇧↓ reaches Arbor
+  ✔ the window below fills the screen
+> key ctrl+opt+shift+up
+  ✔ ⌃⌥⇧↑ reaches Arbor
+  ✔ the window below has left again
+> show-all
+showing everything
+
+▸ ⌃⌥⇧ and a digit save a view, ⌃⌥ and the digit recall it
+> zoom 57
+framed w57
+> key ctrl+opt+shift+1
+  ✔ ⌃⌥⇧1 reaches Arbor
+> show-all
+showing everything
+> key ctrl+opt+shift+2
+  ✔ ⌃⌥⇧2 reaches Arbor
+> key ctrl+opt+1
+  ✔ ⌃⌥1 reaches Arbor
+  ✔ the saved window fills the screen
+  ✔ the others are out of view
+> key ctrl+opt+2
+  ✔ ⌃⌥2 reaches Arbor
+  ✔ everything is in view
+  ✔ the first window is back
+  ✔ windows match Arbor's layout
+
+▸ ⌃⌥D shows the Desktop alone
+> key ctrl+opt+d
+  ✔ ⌃⌥D reaches Arbor
+  ✔ the first window is out of view
+  ✔ the second window is out of view
+  ✔ the third window is out of view
+> show-all
+showing everything
+  ✔ they all come back
+
+▸ ⌃⌥F floats the focused window and docks it again
+> click 851 221
+> key ctrl+opt+f
+  ✔ ⌃⌥F reaches Arbor
+  ✔ the window floats
+> key ctrl+opt+f
+  ✔ ⌃⌥F again
+  ✔ the window is docked
+  ✔ windows match Arbor's layout
+
+▸ Arrange Windows docks every window
+> float-all
+floated 3 windows; 2 saved views are gone
+  ✔ nothing is docked
+> arrange
+  ✔ arrange succeeds
+  ✔ all three are docked
+  ✔ nothing overlaps
+  ✔ the first window is in view
+  ✔ windows match Arbor's layout
+
+▸ the app with the keyboard sees none of Arbor's shortcuts
+  ✔ the first window got no key press
+  ✔ the second window got no key press
+  ✔ the third window got no key press
+
+▸ ⌃⌥A is the app's, in the whole map too
+> click 206 221
+> key ctrl+opt+a
+  ✔ the app with the keyboard gets the key
+  ✔ Arbor arranges nothing
+
+▸ every shortcut in arborctl bindings reaches Arbor
+> click 206 221
+> key ctrl+opt+n
+  ✔ ctrl+opt+n runs ask-name
+> key ctrl+opt+[
+  ✔ ctrl+opt+[ runs back
+> key ctrl+opt+cmd+0
+  ✔ ctrl+opt+cmd+0 runs balance
+> key ctrl+opt+d
+  ✔ ctrl+opt+d runs desktop
+> key ctrl+opt+cmd+down
+  ✔ ctrl+opt+cmd+down runs dock bottom
+> key ctrl+opt+cmd+left
+  ✔ ctrl+opt+cmd+left runs dock left
+> key ctrl+opt+cmd+right
+  ✔ ctrl+opt+cmd+right runs dock right
+> key ctrl+opt+cmd+up
+  ✔ ctrl+opt+cmd+up runs dock top
+> key ctrl+opt+g
+  ✔ ctrl+opt+g runs find
+> key ctrl+opt+shift+f
+  ✔ ctrl+opt+shift+f runs float-all
+> key ctrl+opt+shift+down
+  ✔ ctrl+opt+shift+down runs focus down
+> key ctrl+opt+shift+left
+  ✔ ctrl+opt+shift+left runs focus left
+> key ctrl+opt+shift+right
+  ✔ ctrl+opt+shift+right runs focus right
+> key ctrl+opt+shift+up
+  ✔ ctrl+opt+shift+up runs focus up
+> key ctrl+opt+]
+  ✔ ctrl+opt+] runs forward
+> key ctrl+opt+cmd+=
+  ✔ ctrl+opt+cmd+= runs grow
+> key ctrl+opt+0
+  ✔ ctrl+opt+0 runs home
+> key ctrl+opt+down
+  ✔ ctrl+opt+down runs in
+> key ctrl+opt+m
+  ✔ ctrl+opt+m runs minimap
+> key ctrl+opt+shift+r
+  ✔ ctrl+opt+shift+r runs mirror
+> key ctrl+opt+left
+  ✔ ctrl+opt+left runs neighbor left
+> key ctrl+opt+right
+  ✔ ctrl+opt+right runs neighbor right
+> key ctrl+opt+up
+  ✔ ctrl+opt+up runs out
+> key ctrl+opt+shift+z
+  ✔ ctrl+opt+shift+z runs redo
+> key ctrl+opt+r
+  ✔ ctrl+opt+r runs rotate
+> key ctrl+opt+shift+1
+  ✔ ctrl+opt+shift+1 runs save-view 1
+> key ctrl+opt+shift+2
+  ✔ ctrl+opt+shift+2 runs save-view 2
+> key ctrl+opt+shift+3
+  ✔ ctrl+opt+shift+3 runs save-view 3
+> key ctrl+opt+shift+4
+  ✔ ctrl+opt+shift+4 runs save-view 4
+> key ctrl+opt+shift+5
+  ✔ ctrl+opt+shift+5 runs save-view 5
+> key ctrl+opt+shift+6
+  ✔ ctrl+opt+shift+6 runs save-view 6
+> key ctrl+opt+shift+7
+  ✔ ctrl+opt+shift+7 runs save-view 7
+> key ctrl+opt+shift+8
+  ✔ ctrl+opt+shift+8 runs save-view 8
+> key ctrl+opt+shift+9
+  ✔ ctrl+opt+shift+9 runs save-view 9
+> key ctrl+opt+space
+  ✔ ctrl+opt+space runs show-all
+> key ctrl+opt+shift+/
+  ✔ ctrl+opt+shift+/ runs show-shortcuts
+> key ctrl+opt+cmd+-
+  ✔ ctrl+opt+cmd+- runs shrink
+> key ctrl+opt+f
+  ✔ ctrl+opt+f runs toggle-float
+> key ctrl+opt+z
+  ✔ ctrl+opt+z runs undo
+> key ctrl+opt+1
+  ✔ ctrl+opt+1 runs view 1
+> key ctrl+opt+2
+  ✔ ctrl+opt+2 runs view 2
+> key ctrl+opt+3
+  ✔ ctrl+opt+3 runs view 3
+> key ctrl+opt+4
+  ✔ ctrl+opt+4 runs view 4
+> key ctrl+opt+5
+  ✔ ctrl+opt+5 runs view 5
+> key ctrl+opt+6
+  ✔ ctrl+opt+6 runs view 6
+> key ctrl+opt+7
+  ✔ ctrl+opt+7 runs view 7
+> key ctrl+opt+8
+  ✔ ctrl+opt+8 runs view 8
+> key ctrl+opt+9
+  ✔ ctrl+opt+9 runs view 9
+> key ctrl+opt+return
+  ✔ ctrl+opt+return runs zoom
+> show-all
+showing everything
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+144 passed, 0 failed
+exit code 0

@@ -1,0 +1,137 @@
+# mac-shell: scripts/mac-shell/suite/42-peek.sh at 90fd472, macOS 26.6.2, 2026-10-15T09:57Z
+built Arbor, the pointer tool and the app bundles in 7s
+session 1: Arbor pid 13627, test windows 79 80 81 (pid 13601)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 79 left
+docked w79 at the left edge
+> dock 80 right
+docked w80 at the right edge
+> dock 81 beside 79 bottom
+docked w81 below w79
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          349 43 326 650
+  w79 12 43 325 319        docked
+  w80 687 43 325 650       docked
+  w81 12 374 325 319       docked focused
+> show-all
+showing everything
+> zoom 79
+framed w79
+> click 512 383
+
+▸ tap ⌃⌥Space with a window framed: everything shows and stays, and nothing is outlined
+> key ctrl+opt+space
+  ✔ ⌃⌥Space reaches Arbor
+  ✔ every window is in view, in its slot
+  ✔ there is no outline
+  ✔ nothing sprang back
+> key ctrl+opt+[
+  ✔ ⌃⌥[ reaches Arbor
+  ✔ and leads to the window that was framed
+  ✔ windows match Arbor's layout
+> show-all
+showing everything
+> zoom 79
+framed w79
+> click 512 383
+
+▸ hold ⌃⌥Space for a good look and let go without pointing at anything: everything shows meanwhile, then the view that was left is back
+> key ctrl+opt+space --down
+  ✔ every window is in view while the keys are down
+  ✔ the window that was framed is outlined
+  ✔ for as long as the keys are down
+  ✔ everything still shows
+> key ctrl+opt+space --up
+  ✔ the window that was framed fills the screen again, alone
+  ✔ it has the keyboard
+  ✔ the outline is gone
+  ✔ windows match Arbor's layout
+> show-all
+showing everything
+> zoom 79
+framed w79
+> click 512 383
+
+▸ hold ⌃⌥Space and move the pointer from window to window: the outline follows, and letting go frames the outlined window
+> key ctrl+opt+space --down
+  ✔ the window that was framed is outlined
+> move 849 368
+  ✔ the outline is around the window under the pointer
+> move 174 533
+  ✔ and goes on to the next one
+  ✔ no window moved for it
+> key ctrl+opt+space --up
+  ✔ the outlined window fills the screen, alone
+  ✔ it has the keyboard
+  ✔ the outline is gone
+> key ctrl+opt+[
+  ✔ ⌃⌥[ reaches Arbor
+  ✔ one step back is the view before the peek
+  ✔ windows match Arbor's layout
+> show-all
+showing everything
+> zoom 79
+framed w79
+> click 512 383
+
+▸ hold ⌃⌥Space and press ↓: the outline moves to the window below while the view stays, and letting go frames that window
+> key ctrl+opt+space --down
+  ✔ the window that was framed is outlined
+> key ctrl+opt+down --held
+  ✔ the outline is around the window below
+  ✔ Arbor did not step in, as ⌃⌥↓ otherwise does
+  ✔ everything still shows
+> key ctrl+opt+space --up
+  ✔ the outlined window fills the screen, alone
+  ✔ it has the keyboard
+  ✔ windows match Arbor's layout
+> show-all
+showing everything
+> zoom 79
+framed w79
+> click 512 383
+
+▸ hold ⌃⌥Space, point at another window and press ⎋: the view that was left is back, and letting go changes nothing
+> key ctrl+opt+space --down
+  ✔ the window that was framed is outlined
+> move 849 368
+  ✔ the outline is around the window under the pointer
+> key ctrl+opt+escape --held
+  ✔ the window that was framed fills the screen again, alone
+  ✔ the outline is gone
+  ✔ Arbor did not pause, as ⌃⌥⎋ otherwise makes it
+> key ctrl+opt+space --up
+  ✔ the view stays when the keys come up
+  ✔ windows match Arbor's layout
+> show-all
+showing everything
+> zoom 79
+framed w79
+> click 512 383
+
+▸ switch peek off by command: ⌃⌥Space held is plain Show Everything, and letting go over another window frames nothing
+> set peek false
+  ✔ set peek false succeeds
+> key ctrl+opt+space --down
+  ✔ every window is in view
+  ✔ nothing is outlined, however long the keys are down
+> move 849 368
+  ✔ nor under the pointer
+> key ctrl+opt+space --up
+  ✔ everything stays in view when the keys come up
+> set peek true
+  ✔ set peek true succeeds
+  ✔ windows match Arbor's layout
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+50 passed, 0 failed
+exit code 0
