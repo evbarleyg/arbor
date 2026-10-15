@@ -109,6 +109,10 @@ private let b = WindowID(102)
     let paused = oneDocked + ["pause"]
     #expect(nets(after: paused, then: "resume").isEmpty)
     #expect(nets(after: paused, then: "resume") { _ = $0.setFrame(self.rect(820, 300, 500, 400), of: b) }.contains("moved-at-resume"))
+    // One that had made way for a docked window gets its own frame back from the pause, and makes way again, also if something was done meanwhile.
+    let squeezed = ["launch", "open 101 Notes pid 1001 at 100 100 500 400", "open 102 Mail pid 1002 at 300 300 900 400", "dock 101 left", "settle", "pause", "focus 101"]
+    #expect(nets(after: squeezed, then: "resume").isEmpty)
+    #expect(nets(after: squeezed, then: "resume") { _ = $0.setFrame(self.rect(760, 340, 600, 400), of: b) }.contains("moved-at-resume"))
   }
 
   @Test func aStartTakesNothingOutOfView() {
@@ -158,7 +162,7 @@ private let b = WindowID(102)
 
   // MARK: The ways home
 
-  @Test(arguments: ["float-all", "quit"]) func aWayOutGivesEveryWindowItsOwnSizeBack(way: String) {
+  @Test(arguments: ["float-all", "quit", "pause"]) func aWayOutGivesEveryWindowItsOwnSizeBack(way: String) {
     #expect(nets(after: oneDocked, then: way).isEmpty)
     #expect(nets(after: oneDocked, then: way) { _ = $0.setFrame(self.rect(100, 100, 702, 400), of: a) }.contains("size-not-given-back"))
   }
@@ -168,12 +172,6 @@ private let b = WindowID(102)
     let resized = twoFloating + ["move 101 100 100 640 480", "dock 101 left", "settle"]
     #expect(nets(after: resized, then: "float-all").isEmpty)
     #expect(nets(after: resized, then: "float-all") { _ = $0.setFrame(self.rect(100, 100, 500, 400), of: a) }.contains("size-not-given-back"))
-  }
-
-  /// F40 leaves what is in view as it is, so that a pause cannot be seen; the product's fifth rule says a pause gives sizes back. Until that is
-  /// decided the net says so under a name of its own.
-  @Test func whatAPauseLeavesInItsSlotHasANameOfItsOwn() {
-    #expect(nets(after: oneDocked, then: "pause") == ["size-kept-through-a-pause"])
   }
 
   @Test func afterAWayHomeEveryWindowIsWhollyInView() {
