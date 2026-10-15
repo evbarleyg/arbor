@@ -1034,6 +1034,23 @@ private let oneLayout: Set<String> = [
     expectSound(h)
   }
 
+  /// Known, and let pass by the product owner on 2026-10-15: under `hold still` the view waits like any other, but a hold's bookkeeping is not
+  /// pre-empted, so the display is laid out first and the window lands by way of the corner. One jolt, in an option, in place of three
+  /// pictures and a keyboard astray. **Whoever mends it deletes the `withKnownIssue`**, which fails once nothing jolts.
+  @Test func underHoldStillItStillLandsByWayOfTheCorner() {
+    let (h, safari, _, mail) = framedElsewhere(.minimized)
+    runOK(h, "hold still")
+    h.system.restoresLate = true
+    let mark = h.system.moveLog.count
+    runOK(h, "reveal \(mail.rawValue)")
+    h.scheduler.advance(by: 0.05)
+    #expect(h.system.isVisible(safari), "what is on screen stays: \(h.ascii())")
+    h.system.finishRestoring()
+    h.scheduler.advance(by: 2)
+    expectMailAlone(h, mail)
+    withKnownIssue("rule 3: it is seen to move twice") { #expect(h.system.jolts(since: mark) == []) }
+  }
+
   /// An app that hangs reports nothing. The view goes all the same, as it used to go at once.
   @Test(arguments: Away.allCases) func withNoReportTheViewGoesAfterAMoment(_ away: Away) {
     let (h, _, _, mail) = framedElsewhere(away)
